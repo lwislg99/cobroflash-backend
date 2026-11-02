@@ -469,3 +469,73 @@ vivía en un `dist` parcheado que no se conserva).
 `sonda-d.cjs` (D en memoria, `SONDA_D=0|1|2`) · `d-contar-887.mjs <árbol>` (copia efímera de los dos
 tests dentro del árbol, borrada al salir) · `d-cuantos-cambian.cjs` (con `SONDA_D=0` y `--require` de la
 sonda) · salida en `salida-d.txt`.
+
+## SCRUM-1566 (e) · EL REPARTO ENTRE TRAMOS, MEDIDO — dónde nace el céntimo y qué salida baja los tres techos
+
+**Medido contra:** `origin/main` = `06ad4f1bd53d25b701cd11ae42791db753329ceb` · 2026-10-30T17:25:45Z
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1566/reparto-tramos.cjs`
+
+Sólo lectura: ni `src/` ni `dist/` se escriben. La simulación reescribe en memoria el texto al cargar
+(`sonda-e.cjs`). Comentario en Jira: c.21289. Las muestras salen del texto de los propios tests, así que la
+población es la de los techos por construcción.
+
+### Corrige la premisa de c.21276
+
+**El descuento global no es la causa.** Las mismas líneas de la muestra B SIN global dan 30 y 40 frente a 31 y
+43; en los dos conjuntos caen 21 de 31 y 27 de 43. **`distributeStageAmounts` tampoco:** su suma cuadra con lo
+firmado en 2.000 de 2.000 en los dos planes. `billingPlan.ts` no necesita cambio.
+
+### Dónde nace el céntimo
+
+| causa | dónde | medido |
+|---|---|---|
+| ① el bruto tiene huecos al 4 %: base y cuota saltan a la vez | `calcVatBreakdown` | barrido 0-12 €: 48 huecos de 1.249 al 4 %; 0 al 21 %, 10 % y 0 %. Fallos de hoy al 4 %: 26 de 31 y 37 de 43 |
+| ② la ventana de `reconcileToTarget` no llega | `invoiceLines.service.ts:223` | 7 tramos del 50/50 y 6 del 30/70 eran alcanzables y no se alcanzaron |
+| ③ nadie coordina los tramos | `stageLinesReconciled` | en 74 de 74 fallos existe una pareja alcanzable a ±1 cént. que suma lo firmado |
+
+C+D no amplifica nada: el 50/50 conserva sus 31 fallos y añade 6; el 30/70 conserva 39 de 43 y añade 6. **Por
+qué C en concreto añade fallos: sin medir** (el barrido no ve diferencia con y sin C).
+
+### Las salidas
+
+Controles: sin simular, 18·18·14 y 23·31·43; con C, 25·33·47; con C+D, 0·37·45 (las de S1, c.21275). Dirigida:
+los 58 ficheros y 565 tests de S1, base 0 fallos. Suite entera: NO CORRIDA.
+
+**D2:** `calcTotal` = bruto de las líneas que se facturan (variante 2 de `sonda-d.cjs`). **E2:** el último tramo
+cierra contra lo que dieron los anteriores y, si no llega, se mueve ±1 cént. entre tramos; sólo actúa si el
+importe recibido es el reparto del bruto. **F:** segunda pasada más fina en `reconcileToTarget`.
+
+| salida | 887 SIN·A_uno·A_mixto | 887b entero·50/50·30/70 | 30/30/40 B | deriva `scrum141` (tope 1,5 %) | caen de 565 |
+|---|---|---|---|---|---|
+| hoy | 18·18·14 | 23·31·43 | 35 | 0,809 % | 0 |
+| C+D2 | 0·0·0 | 0·37·45 | 45 | 0,833 % | no corrida |
+| C+D (var. 1)+E2 | 0·0·0 | 0·44·44 | 44 | no medida | no corrida |
+| C+D2+E2 | 0·0·0 | 0·0·0 | 0 | 1,638 %, rompe | 6 |
+| F sola | 18·16·6 | 14·26·34 | 27 | 0,644 % | 1 (huella de 887) |
+| ✅ **C+D2+E2+F** | **0·0·0** | **0·0·0** | **0** | 1,287 % | **5** |
+
+Con ✅ caen `scrum293` ×2 y `scrum500` (literales de c.21031 punto 3; la rama de S1 los cambia, no corrido
+junto), `scrum594` (espejo de S2) y la huella de `scrum887` (cambia por definición con D). Ningún techo sube.
+
+### Coste
+
+Muestra adversarial, no presupuestos reales. Total firmado con C+D2: 15,2 / 32,1 / 17,1 %, ±1-2 cént. (control:
+C+D reproduce 15,2 / 32,1 / 19,7). E2+F no cambian lo firmado: mueven un tramo como máximo 1 cént. del importe
+aritmético, en 32-56 de 2.000 presupuestos, y la suma es exacta. Lo guardado no cambia: E2 no actúa si el total
+guardado no es el bruto de las líneas.
+
+### Propuesta y preguntas
+
+En Jira c.21289: todo junto en `conjunto-1566-b-y-c`, con J1 (C, E2, F, `VERIFACTU_VERSION`), S1 (B y `calcTotal`
+en forma D2) y S2 (espejo). ⚠️ `calcTotal` llamando a `lineasParaFacturar` da un ciclo de imports, sin resolver.
+Tres ✅/❌ para el fundador: ampliar el GO a D2+E2+F · aceptar el cambio de lo firmado y regenerar la huella ·
+aceptar 1 cént. de desvío en un tramo.
+
+**NO medido:** suite entera, `scrum523d`, B real junto a esto, ningún XML, presupuestos reales, planes editados
+a mitad o tramos ya emitidos, guards de navegador, ninguna base. Un diseño simulado en memoria no es un diff probado.
+
+### Instrumentos (en `evidencias/SCRUM-1566/`)
+
+`sonda-e.cjs` (`SIM=C,D,D2,E1,E2,F`) · `reparto-tramos.cjs` (`DETALLE=1`, `DUMP=<fichero>`) ·
+`d2-cuantos-shim.cjs` (`d-cuantos-cambian.cjs` contra la variante 2) · salida en `salida-e.txt`.

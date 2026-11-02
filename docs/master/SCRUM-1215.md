@@ -662,3 +662,60 @@ A9: sin fallo que generalice — sólo se sube un guion de lectura y su salida; 
 - Una frase de reintento que no abra con ninguno de los verbos del patrón del guion: no la ve.
 - Los números de línea son de hoy. Quien barra vuelve a lanzar el guion; no se fía de esta foto.
 - Nada en yaqu.app: no cambia ninguna pantalla.
+
+# SCRUM-1215l · de los 77, quedan 34, y ninguno es del equipo de Luis: lo que promete cada uno, contra el código
+
+**Medido contra:** `origin/main` = `142b4579bb965e5d1a74d3937cbb7b9f3f1127aa` · 2026-10-29T18:11:17Z
+(el censo y la lectura se hicieron a las 18:00Z sobre `5a247020e5608fd2b21fad04bcf585694494397a`; los dos commits de en medio sólo tocan `docs/master/SCRUM-1549*`)
+A9: sin fallo que generalice — sólo medir; no cambia ningún texto, ninguna pantalla ni ningún guard
+**Skill UI:** no cargada · no se toca ninguna pantalla: se leen cinco ficheros del panel y se ejecuta una función pura de uno
+
+29-oct-2026 · **S4** (`sesion-4`) · rama `scrum-1215l-lo-que-prometen-las-34`. Encargo del orquestador (`cobroflash-backend-52`, 29-oct): de los textos sin revisar del censo 1157, coger los que **afirman algo comprobable** y comprobarlo contra el código. **Ningún carácter cambia**: cambiar un texto es de quien lleva la pantalla, con la firma del fundador (regla 39).
+
+## La población, antes que el veredicto
+
+`node scripts/_censo-convenio-microcopy.mjs` (el instrumento de SCRUM-1157, sin tocar), salida entera en `evidencias/SCRUM-1215/1215l/censo1157-29oct.txt`:
+
+- 100 ficheros `.js` en `public/` · 52 objetos · **348 hojas** · APROBADO 314 · PENDIENTE 7 · SIN_COMENTARIO 27 → **34 acusadas** · trinquete 0 nuevas / 0 sobran · estado no CIEGO.
+- Control positivo: las seis de `QR_COPY` que el test de 1157 da por sabidas (`PENDIENTES_QR`) salen las seis.
+- **Ninguna de las 34 cae en un fichero de S2 ni de S4.** Carril por `node scripts/carriles.mjs de`: `libroRegistroView.js` (22) e `invoicesView.js` (1) → **J1** · `cobrosView.js` (3) y `paidViaEtiquetas.js` (2) → **J2** · `settingsView.js` (6) → **J3**. Lo de los 77 que era nuestro (parte, albarán, presupuesto, sueltos) ya está revisado y marcado en los tramos de arriba.
+
+## Las que no afirman nada que se pueda comprobar (19)
+
+Cabeceras de columna y rótulos: `libroRegistroView.js` `COPY.colNumero/colFecha/colTipo/colBase/colCuota/colTotal/colEstado/titulo/menu/cargando`, `COBROS_COPY.cabeceras` y `diasEnTabla` (un número con su unidad), y las seis de `QR_COPY` (Formato, Color, Negro, de marca, Tamaño, Descargar). Nombran; no prometen.
+
+## Las que sí prometen algo (15)
+
+«Coincide» = el código hace lo que el texto dice en todo camino que he encontrado. Todo es **leído en el código**, salvo la fila marcada como EJECUTADO.
+
+| texto (clave) | dónde se pinta | qué promete | qué hace el código | veredicto |
+|---|---|---|---|---|
+| `COPY.recuento` («N facturas») | `libroRegistroView.js:236` | que son facturas | cuenta `asientos`; la ruta pide `soloFacturas: true` (`libroRegistro.routes.ts:37`) y los `JUST` salen antes (`libroRegistro.repo.ts:159-161`) | coincide |
+| `COPY.error` | `:193` | no se cargó; se puede reintentar | sale en el `catch` y con respuesta sin `miradas` (`:230`) | coincide |
+| `COPY.vacioDeVerdad` («Todavía no has emitido ninguna factura.») | `:250` | cero facturas emitidas | sale sólo con `miradas === 0`; la carga va sin `desde`/`hasta` (`:179`), o sea, todo el histórico | coincide (ver observación ①) |
+| `COPY.descuadre` («El libro no cuadra…») | `:246` | hay facturas y falta su asiento | sale con `asientos = 0` y `miradas > 0`; `miradas` incluye las `ajenas` y las `sinNumero` (`libroRegistro.ts:282`), que ya tienen su propio aviso | **inalcanzable hoy** (abajo); si se alcanzara, diría «no cuadra» de algo que los otros dos avisos ya explican |
+| `COPY.avisoIlegibles` («…escríbenos y los revisamos.») | `:239` | importe ilegible; hay a quién escribir | `importesIlegibles` = total no legible (`libroRegistro.ts:233`); el enlace `mailto` va pegado (`:216-221`) | coincide |
+| `COPY.avisoAjenas` | `:241` | se descartaron facturas de otro negocio | `ajenas` cuenta `merchantId` distinto (`libroRegistro.ts:216`) | coincide; inalcanzable: la consulta ya filtra por `merchantId` (`libroRegistro.repo.ts:148`) |
+| `COPY.avisoSinNumero` | `:242` | N sin número no son asiento | `sinNumero` = `number` vacío (`libroRegistro.ts:217`) | coincide; inalcanzable en la práctica: `Invoice.number` es `String` no nulo y todos los escritores lo rellenan |
+| `COPY.trazaPresupuestoFirmado` / `…SinFirmar` | `:336-338` | firmado = con firma | `signatureUrl: { not: null }` (`libroRegistro.repo.ts:178`), no `acceptedAt` | coincide |
+| `COPY.trazaAlbaran` | `:343` | el albarán está en la factura | sale de `albaranRefs`, el sello (`libroRegistro.ts:236`) | coincide |
+| `COPY.trazaNoSellado` («Albarán posterior al sello») | `:348` | apunta a la factura y llegó después | mide «apunta hoy y no está en el sello, por id» (`libroRegistro.ts:240-241`); los escritores de `Albaran.invoiceId` (`recapitulativa.service.ts:123-125`, la liberación de `invoicesAdmin.routes.ts:914-916`) sellan en la misma transacción | coincide; lo de «posterior» es la única forma de llegar ahí, no algo que se mida |
+| `COPY.trazaCobro` («Cobro») | `:352` | hubo cobro | `Invoice.chargeId`, que sólo escribe `ensureInvoiceForCharge` (`lib/invoicing.ts:429`), llamado al cobrarse por pasarela | coincide (ver observación ②) |
+| `COBROS_COPY.diasSinCobrar` («Sin cobrar desde hace N días») | `cobrosView.js:663` | días desde que se pidió el dinero | `diasDeDeudaCobro` (`:412`): sólo `estado === 'pending'`, desde `fecha` = `createdAt` del cobro o de la factura (`cobros.service.ts:282`, `:302`) | coincide |
+| `ETIQUETAS_HEREDADAS['card:stripe']` («Tarjeta») | `paidViaEtiquetas.js:52` | se cobró con tarjeta | lo escriben las rutas de Stripe y `receipt.routes.ts` (comentario `:50-51`) | coincide |
+| `ETIQUETAS_HEREDADAS.manual` («Marcado a mano») | `paidViaEtiquetas.js:59` | pagada sin pasarela | ya no lo produce nadie (SCRUM-491); sólo lo pinta si la base lo trae escrito | coincide |
+| `COPY_BULK_PAGADAS.recargaFallida` («Se han marcado como pagadas, pero…») | `invoicesView.js:34`, `:506` | se marcaron | **EJECUTADO** (`evidencias/SCRUM-1215/1215l/sonda-bulk-pagadas.cjs`): con escritura OK, recarga fallida y **0 marcadas**, sale esa frase igual. El servidor salta las ya `paid`/anuladas (`invoicesAdmin.routes.ts:487`, `invoiceAdmin.ts:182`) | **no coincide en un caso de carrera**: la casilla sólo sale en las que se pueden marcar (`invoicesView.js:620`), así que hacen falta dos pestañas o una lista vieja. Leve |
+
+**Ninguna le miente al profesional en el camino normal.** La única que no coincide (`recargaFallida`) lo hace en una carrera; las dos que podrían confundir (`descuadre`, y con ella `avisoAjenas` y `avisoSinNumero`) hoy no se pueden alcanzar.
+
+## Dos observaciones que no son de texto
+
+① **El libro calcula `justificantesFuera` y la pantalla no lo enseña.** `libroRegistro.repo.ts:204` lo devuelve («lo que un libro fiscal descarta se cuenta», `libroRegistro.ts:157-163`), y `libroRegistroView.js` no lo lee. Un negocio con sólo justificantes ve «Todavía no has emitido ninguna factura.»: es cierto (un justificante no es factura), pero no se le dice que hay N que se quedaron fuera, al revés que con `ajenas` y `sinNumero`. Pintarlo sería un texto nuevo → firma del fundador, y la pantalla es de J1. Toca a SCRUM-1523.
+
+② **Una factura marcada a mano no lleva marca de cobro en «De dónde viene y dónde acabó».** «Cobro» sólo sale con `chargeId`; una transferencia o un efectivo dejan `Estado: Cobrada` y en la columna nada sobre el cobro («Factura suelta» si no hay presupuesto ni albarán). No miente, pero la columna que existe para enseñar «dónde acabó» el dinero calla justo en el cobro manual. Es de J1 y, si se arregla, es texto nuevo.
+
+## No medido
+
+- Nada en yaqu.app: ninguna de las 34 se ha visto pintada. La de la carrera se ejecutó como función, no en la pantalla.
+- La rama de `pintar()` del libro con `miradas > 0` y `asientos = 0`: leída, no ejecutada (hace falta una base con facturas sin número o ajenas, y hoy no hay escritor que las cree).
+- Los 314 APROBADO: firma ≠ verdad, pero no eran el encargo.

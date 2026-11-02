@@ -1,0 +1,65 @@
+# jobs.mjs 2026-10-27T13:09:00Z (leído a las 18:20:44Z del 29-oct, cabecera Date de GitHub)
+runs declarados 164 · leídos 164 · consultados 164 · jobs obligatorios 114 · fallos 0
+
+# recuento.mjs juntas.json 2026-10-27T13:09:00Z
+SCRUM-1527g · población: 566 jobs «build + tests» con reintentos · success 418 · cancelled 39 · failure 99 · in_progress 7 · queued 3
+creados de 2026-10-22T09:03:11Z a 2026-10-29T18:17:44Z · 557 ejecuciones
+con paso «Tests»: 541 (success 418 · cancelled 25 · failure 98) · pull_request 464 · push 77
+sin paso «Tests» (no corrieron: CIEGO): 25 (cancelled 14 · failure 1 · in_progress 7 · queued 3)
+paso «Tests» terminado: 516 · de 393 a 1210 s · mediana 674 s · de 800 s o más: 2
+paso «Tests» de 900 s o más (las únicas que pueden llevar el aviso): 1
+   job 119769715166 · 2026-10-22T10:21:15Z · pull_request · scrum-962c-editor-presupuestos-44 · paso failure en 1210 s
+cancelados con el paso «Tests» empezado: 25 · paso más largo 651 s · job más largo 716 s (techo 1.500 s)
+antes del corte 2026-10-27T13:09:00Z: 437 con paso «Tests» (success 340 · cancelled 24 · failure 73) · de 900 s o más: 1
+desde el corte 2026-10-27T13:09:00Z: 104 con paso «Tests» (success 78 · failure 25 · cancelled 1) · de 900 s o más: 0
+control positivo (119769715166): sale, de 900 s o más
+
+# recuento.mjs juntas.json 2026-10-26T23:50:23Z (merge de #2905)
+SCRUM-1527g · población: 566 jobs «build + tests» con reintentos · success 418 · cancelled 39 · failure 99 · in_progress 7 · queued 3
+creados de 2026-10-22T09:03:11Z a 2026-10-29T18:17:44Z · 557 ejecuciones
+con paso «Tests»: 541 (success 418 · cancelled 25 · failure 98) · pull_request 464 · push 77
+sin paso «Tests» (no corrieron: CIEGO): 25 (cancelled 14 · failure 1 · in_progress 7 · queued 3)
+paso «Tests» terminado: 516 · de 393 a 1210 s · mediana 674 s · de 800 s o más: 2
+paso «Tests» de 900 s o más (las únicas que pueden llevar el aviso): 1
+   job 119769715166 · 2026-10-22T10:21:15Z · pull_request · scrum-962c-editor-presupuestos-44 · paso failure en 1210 s
+cancelados con el paso «Tests» empezado: 25 · paso más largo 651 s · job más largo 716 s (techo 1.500 s)
+antes del corte 2026-10-26T23:50:23Z: 422 con paso «Tests» (success 325 · cancelled 24 · failure 73) · de 900 s o más: 1
+desde el corte 2026-10-26T23:50:23Z: 119 con paso «Tests» (success 93 · failure 25 · cancelled 1) · de 900 s o más: 0
+control positivo (119769715166): sale, de 900 s o más
+
+# s3-reproduce-hoy.mjs 2026-10-22T00:00:00Z <casa> --corte 2026-10-27T13:09:00Z --umbral 900 --de-cache
+SCRUM-1527d · ¿se sigue colgando? · ventana desde 2026-10-22T00:00:00Z · corte 2026-10-27T13:09:00Z
+población: 557 ejecuciones CON job obligatorio (de la caché jobs.json; la lista entera de ci.yml no se relee) ·566 jobs «build + tests» con reintentos · success 418 · cancelled 39 · failure 99 · in_progress 7 · queued 3
+antes del corte: 438 jobs con paso «Tests» · 340 en success · 1 con «TANDA SIN VEREDICTO»
+después del corte: 104 jobs con paso «Tests» · 78 en success · 0 con «TANDA SIN VEREDICTO»
+candidatos (paso «Tests» de 900 s o más): 1
+   job 119769715166 · 2026-10-22T10:21:15Z · pull_request · scrum-962c-editor-presupuestos-44 · paso failure en 1210 s · 1409303 B · aviso SÍ · pasan 8390 · lo último que llegó: «SCRUM-615 · 🔴 el módulo no escribe NI UN texto de producto » → scrum615-pedir-tipo-destinatario.test.mjs
+control positivo (115134364145, 2026-10-13T05:07:16Z): fuera de la ventana
+control positivo (119769715166, 2026-10-22T10:21:15Z): sale, con su aviso
+el paso «Tests» más largo fuera de los candidatos: 807 s
+
+# s3-reproduce-hoy.mjs (positivo + los 2 verdes más recientes del 29-oct) --umbral 1: casos que pasan hoy
+SCRUM-1527d · ¿se sigue colgando? · ventana desde 2026-10-22T00:00:00Z · corte 2026-10-27T13:09:00Z
+población: 3 ejecuciones CON job obligatorio (de la caché jobs.json; la lista entera de ci.yml no se relee) ·3 jobs «build + tests» con reintentos · failure 1 · success 2
+antes del corte: 1 jobs con paso «Tests» · 0 en success · 1 con «TANDA SIN VEREDICTO»
+después del corte: 2 jobs con paso «Tests» · 2 en success · 0 con «TANDA SIN VEREDICTO»
+candidatos (paso «Tests» de 1 s o más): 3
+   job 119769715166 · 2026-10-22T10:21:15Z · pull_request · scrum-962c-editor-presupuestos-44 · paso failure en 1210 s · 1409303 B · aviso SÍ · pasan 8390 · lo último que llegó: «SCRUM-615 · 🔴 el módulo no escribe NI UN texto de producto » → scrum615-pedir-tipo-destinatario.test.mjs
+   job 123631359698 · 2026-10-29T17:55:37Z · pull_request · scrum-1634-firmas-de-las-cinco-categorias · paso success en 772 s · 2236872 B · aviso no · pasan 12970 · lo último que llegó: -
+   job 123630531075 · 2026-10-29T17:54:07Z · push · main · paso success en 776 s · 2236385 B · aviso no · pasan 12970 · lo último que llegó: -
+control positivo (115134364145, 2026-10-13T05:07:16Z): fuera de la ventana
+control positivo (119769715166, 2026-10-22T10:21:15Z): sale, con su aviso
+el paso «Tests» más largo fuera de los candidatos: -Infinity s
+
+# s3-reproduce-hoy.mjs 2026-10-27T13:09:00Z <casa> --umbral 900 --de-cache: ventana SIN positivo, rc=2
+SCRUM-1527d · ¿se sigue colgando? · ventana desde 2026-10-27T13:09:00Z
+población: 114 ejecuciones CON job obligatorio (de la caché jobs.json; la lista entera de ci.yml no se relee) ·114 jobs «build + tests» con reintentos · success 78 · failure 25 · cancelled 3 · in_progress 5 · queued 3
+104 jobs con paso «Tests» · 78 en success · 0 con «TANDA SIN VEREDICTO»
+candidatos (paso «Tests» de 900 s o más): 0
+control positivo (115134364145, 2026-10-13T05:07:16Z): fuera de la ventana
+control positivo (119769715166, 2026-10-22T10:21:15Z): fuera de la ventana
+control positivo: NINGUNO en la ventana → CIEGO (empieza la ventana antes de un colgado conocido y parte con --corte)
+el paso «Tests» más largo fuera de los candidatos: 807 s
+CIEGO:
+   · control positivo: ningún colgado conocido cae en la ventana (el último es del 2026-10-22T10:21:15Z); sin positivo, un 0 no se distingue de no mirar
+

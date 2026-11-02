@@ -179,3 +179,52 @@ El rojo es `scrum1321` (temporal en C:, repo en D:, rojo de esta máquina); los 
 censo entero como antes y se sigue cortando; ahora con el `::warning … NO CABE` en vez de una CIEGA más.
 La matriz de `ci.yml` quedó revocada por el orquestador (Jira c.21171) tras la medida de S5 (c.21168).
 La aceptación 1 sigue NO HECHA.
+
+## 29-oct-2026 · S5 · SCRUM-1620b · la matriz de `ci.yml` (la mitad de S5)
+
+**Medido contra:** `origin/main` = `b5190eedcf6165f477b23a942e3720253657aa9e` · 2026-10-29T18:28:06Z
+
+### Por qué #2962 no curó el corte (medido antes de construir)
+
+El log del meta-guard de `main` @ `eafca9fe154c26d38b05a748ca816ba098943724` (run 40872477063, job
+123442782267, con #2962 dentro: `merge-base --is-ancestor fd24ce099 eafca9fe1` = 0) dice
+«parte ÚNICA: el censo entero, 238 guards y 940 declaraciones» y corta en «Juzgadas 735 de 940
+mutaciones. SIN JUZGAR 205, en 46 guard(s)», con el `::warning` NO CABE de #2962. Causa: `ci.yml` no
+pasaba `META_PARTE`, así que el script corría el censo entero, como avisaba el tramo de S3 de arriba.
+No era un fallo de #2962: era la mitad que faltaba. Cifra honesta de ese run: 192 guards con alguna
+mutación juzgada de 238 (238 − 46), no el «238 de 1565 (15 %)» del rótulo, que es el censo.
+
+### Lo que hace este tramo
+
+| pieza | qué |
+|---|---|
+| `ci.yml` · `meta-mutaciones` | matriz `parte: [1, 2, 3]`, `fail-fast: false`, nombre `meta-guard · parte N de 3`; el paso pasa `META_PARTE=N/3` y `META_SALIDA_EN`; sube el resumen con `always()`. Techo 30 min por parte, sin tocar |
+| `ci.yml` · `meta-veredicto` | nombre `meta-guard · los guards caen cuando deben` y paso `Cada guard cae con la mutación que declara` (los que lee el vigía de J6), `needs: meta-mutaciones`, `if: !cancelled()`; `--juntar meta-partes 3` y sale con SU código después de escribir el resumen |
+| `scripts/meta-guard-mutaciones.mjs` | el resumen de cada parte lleva `guardsJuzgados` y `guardsDelCenso`; `--juntar` imprime «guards con alguna mutación juzgada: X de N del censo» («?» si una parte no lo dijo) |
+| `tests/scrum1620b-la-matriz-del-ci.test.mjs` | 4 casos, 5 mutaciones declaradas |
+| `tests/scrum812…` | suelo 37 → 38 por su medida («LA COBERTURA HA SUBIDO a 38») |
+
+`!cancelled()` y no `always()` (que pedía la especificación de arriba): con `always()` el agregador corre
+también en un run CANCELADO y lo pinta CIEGO (2) por partes que nadie dejó acabar. ⚠️ LECTURA MÍA, sin
+medir: en un run sustituido el agregador saldrá `skipped` o `cancelled`; si es `skipped`, la rama
+«sustituido en la cola» del vigía de J6 (`canceladoSinArrancar`) no lo reconoce y daría «sin probar».
+Se mira en el primer run cancelado con la matriz, y si pasa, es de J6.
+
+### Verificado (local, Windows)
+
+- Base: los 4 ficheros que leen este job (1620b, 1620, 935d, 1284): 27/27.
+- Mutaciones con la maquinaria del meta-guard (`evidencias/SCRUM-1620/juzgar-guards.mjs`) sobre 1620b,
+  1620 y 935d: **14 de 14 VIVAS**; el árbol queda limpio.
+- `guards-entrada`: 15 guards, 170/170. Los 5 de árbol entero + 812 + 702: 737 cayó por mis cifras sin
+  ancla (reformuladas sin número) y 812 por la cobertura (suelo subido); después, 15/15.
+- **NO HECHO aquí:** que las tres partes juzguen ≥ 940 y quepan. Lo dice la primera pasada del CI de este
+  PR (línea «censo por partes: juzgadas N de M» y «guards con alguna mutación juzgada»). Si N < 940, la
+  matriz no vale y se para.
+
+## A9
+
+Mi fallo de esta tanda: medí mi contexto tarde y lo crucé (213.878 en el jsonl) a mitad de la tarea, en
+vez de medirlo tras el paso 1. Lo que lo ata ya existe (latido y la norma A19); lo que no cumplí fue
+mirarlo después de cada pieza.
+
+A9: comprobación → `tests/scrum1620b-la-matriz-del-ci.test.mjs`

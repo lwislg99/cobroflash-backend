@@ -2,6 +2,8 @@
 
 **Última medida: 29-oct-2026, 17:50Z-18:10Z** (`Date:` de GitHub) · `origin/main` = `eafca9fe1` · producción: **NO MEDIDA en esta pasada** (no se leyó `/version`) · la escribió S0 (SCRUM-1563g). Recontadas las filas que movieron los 10 PR entrados desde `d12e9978` (2.4, 2.9, 2.11, 2.12, 3.18, 3.21, 5.3, 6.14, 6.15, 6.16); **§1, §4 y §4b NO se han re-medido** y siguen con la medida de la mañana. 🔵 **Las decisiones del fundador, en dos listas (hoy / go-live) y separadas de las que puede tomar el orquestador: `docs/producto/DECISIONES-DEL-FUNDADOR.md`.** La anterior, de las 10:20Z-10:50Z (SCRUM-1563f, sobre `d12e9978`): **`main` se movió tres veces mientras se medía:** al empezar (10:20Z) estaba en `503f0d86`; a las 10:3xZ entró #2962 (SCRUM-1620, el `meta-guard` por partes, `fd24ce09`), y a las 10:40Z #2983 (SCRUM-1594) y #2982 (SCRUM-1626). Producción siguió a cada uno. Las anteriores (18-oct a las 17:13Z y 18:46Z; 19-oct a las 06:43Z; 27-oct a las 18:41Z) siguen en el historial de git. **La de las 07:50Z del 19-oct (SCRUM-1563d, PR #2604) sigue sin entrar**: 10 días abierta, obligatorio en rojo y ahora también en conflicto (§4b).
 
+**🔵 Re-medida a las 18:12Z-18:20Z del 29-oct** (`Date:` de GitHub; S0, SCRUM-1563i) · `origin/main` = `c93f26a76` · **producción (`/version`) = `c93f26a7`, el mismo, leído a las 18:15Z**: cierra el «NO MEDIDA» de la línea de arriba. **Re-medidos §1 ③ y ④, §4 y §4b. §2 NO se ha recontado en esta pasada** (sigue la cuenta de las 17:5xZ).
+
 **Qué es:** UN documento que se ACTUALIZA, no un informe nuevo cada vez. Dice qué le falta al producto para estar completo, de quién depende cada cosa, qué la bloquea y cómo va. Lo pidió el fundador el 18-oct-2026: «molaría sacar un informe con todas las tareas que tenemos que cerrar para el producto y ver cómo las vamos cerrando, para tener algo controlado». Y lo volvió a preguntar el 27-oct: «como va nuestra hoja de ruta con las cosas para tener el proyecto al 100% estamos avanzando queda mucho? lo estás siguiendo? está creciendo cada vez más el jira? estamos cerca de ser esto ya usable por una empresa?» (SCRUM-1563 c.21195). **§1 contesta esas cuatro preguntas.**
 
 **Cómo se lee:**
@@ -44,11 +46,15 @@
 
 | ventana | todo el proyecto | equipo de Luis + sin etiqueta | sólo equipo de Javier (por diferencia) |
 |---|---|---|---|
+| **desde las 10:30Z hasta las 18:1xZ del 29-oct (~8 h)** | 9 cerrados · 6 creados · **−3** | 9 cerrados (1588, 1589, 1594, 1602, 1603, 1608, 1623, 1626, 1627) · 6 creados (1634-1639) · **−3** | **0 cerrados** · 0 creados · 0 |
+| abiertos el 29-oct a las 18:1xZ | **175** | **111** | **64** |
 | **desde las 18:41Z del 27-oct hasta las 10:3xZ del 29-oct (~40 h)** | 3 cerrados · 2 creados · **−1** | 3 cerrados (1087, 1088, 1593) · 2 creados (1632, 1633) · **−1** | **0 cerrados** · 0 creados · 0 |
 | abiertos el 29-oct a las 10:3xZ | **178** | **119** (73 + 46) | **59** |
 | últimas 24 h (hasta las 18:4xZ del 27-oct) | 39 cerrados · 22 creados · **−17** | 7 cerrados · 12 creados · **+5** | 32 cerrados · 10 creados · **−22** |
 | desde las 07:50Z del 19-oct (8 días) | 151 cerrados · 66 creados · **−85** | 9 cerrados · 31 creados · **+22** | 142 cerrados · 35 creados · **−107** |
 | abiertos hoy | **179** (eran 264 el 19-oct) | **121** (67 + 54; eran 99) | **58** (eran 165) |
+
+**29-oct, 18:1xZ (S0, 1563i):** en 8 horas, **−3, y los 9 cierres y los 6 tickets nuevos son del equipo de Luis.** **Control:** 178 − 9 + 6 = 175, exacto. **El equipo de Javier pasa de 59 a 64 sin crear ni cerrar ninguno:** cinco tickets han ganado la etiqueta `equipo-javier` (Luis + sin etiqueta: 119 − 9 + 6 = 116, y hay **111**). **NO medido cuáles** son los cinco. Consulta: `statusCategory != Done` (todo) y `… AND labels = equipo-javier`, la columna del medio por diferencia; cierres y altas por `resolved` / `created` ≥ 29-oct 11:30 hora de Madrid.
 
 **29-oct:** en 40 horas el Jira **casi no se ha movido**: −1 en todo el proyecto, y los tres cierres son nuestros, los tres del triaje de S0 de esta mañana (§4). **El equipo de Javier no ha cerrado ninguno.** **Control:** 179 − 3 + 2 = 178, exacto; 73 + 59 + 46 = 178, exacto. Luis + sin etiqueta da 121 − 3 + 2 = 120 y hay **119**: SCRUM-1631 pasó de no tener etiqueta a `equipo-javier`, que por eso sube de 58 a 59 sin crear nada.
 
@@ -57,7 +63,7 @@
 ### ④ ¿Avanzamos? ¿Lo está siguiendo alguien?
 
 - **Producto:** desde el 19-oct salieron de §2 **nueve filas** (§8): la fecha de fin de periodo de la suscripción (5.2), las casillas de pago (6.10), los CSV (6.11), los textos legales que prometían cobro (7.4), el guion H2 (7.2), la portada (7.5) y tres defectos fiscales (3.11, 3.12 y 3.13, que es la factura doble). **Siete de las nueve las hizo el equipo de Javier.** Entraron **diecisiete nuevas**, doce de ellas con el equipo de Luis dentro.
-- **29-oct:** salen de §2 **una fila**, la 4.3 (SCRUM-1292: el arreglo estaba en `main` desde el 30-sep y la fila decía «espera GO de dinero»), y entra una, la 3.21 (SCRUM-1566, autorizada por el fundador). **Lo que más pesa hoy no es una fila que falta, es trabajo hecho que no llega: 12 PR en conflicto (§4b).**
+- **29-oct:** salen de §2 **una fila**, la 4.3 (SCRUM-1292: el arreglo estaba en `main` desde el 30-sep y la fila decía «espera GO de dinero»), y entra una, la 3.21 (SCRUM-1566, autorizada por el fundador). **Lo que más pesa hoy no es una fila que falta, es trabajo hecho que no llega: 12 PR en conflicto (§4b).** → **18:1xZ: 13** (entra #2738; §4b).
 - **Este documento es el seguimiento.** El 27-oct llevaba 8 días sin actualizarse: la actualización del 19-oct por la tarde (#2604) se quedó en rojo y nadie la vio. **Que el fundador tuviera que preguntar dos veces lo mismo es eso.**
 
 ### Lo que el equipo de Luis puede mover HOY sin esperar a nadie
@@ -65,11 +71,11 @@
 | fila | qué | quién | por qué importa |
 |---|---|---|---|
 | **6.3** | 🔴 **SCRUM-914:** las DOS piezas nuestras de «Equipos del cliente»: `model Equipment` y los cuatro `equipmentId` en `schema.prisma`, y `'equipment'` en `MODELOS_POR_MERCHANT` | **S1** | **la tabla lleva aplicada en las tres bases desde el 29-sep — un MES sin una línea de código que la use.** La rama de J3 existe desde el 20-oct (#2621) y lleva 9 días en conflicto esperando esto. Ya no es «abrir la rama»: es escribir dos piezas |
-| **2.9** | 🔴 **SCRUM-1632, arreglo (b):** que la página de firma limpie el token como ya lo hace la del presupuesto (`parseToken`) | **S1**, tras el GO | **es el enlace del que depende firmar.** Espera un GO de una línea del fundador (c.21202) |
+| **2.9** | 🔴 **SCRUM-1632, arreglo (b):** que la página de firma limpie el token como ya lo hace la del presupuesto (`parseToken`) | **S1**, tras el GO | **es el enlace del que depende firmar.** Espera un GO de una línea del fundador (c.21202). → **18:1xZ: GO DADO** (el fundador delegó en el orquestador) **y construido: PR #2998, ABIERTO, sin mergear** |
 | ~~3.18~~ | SCRUM-1594: traer `llevaLibrosPorSii` en los 6 `select` de S1 | **S1** | 🔵 **HECHO de nuestro lado:** #2983 MERGEADO a las 10:40Z del 29-oct. Ahora J1 puede empujar la comprobación del SII de SIF-1 (SCRUM-1585). Falta cerrar 1594 |
 | **2.4** | SCRUM-1518: el CHIP que pinta «Enviado» lo que no conoce | **S2** | el servidor ya está en `main` (#2688); falta la pantalla. Encargado a S2 el 29-oct (dato del orquestador) |
 | 1.13 · 1.15 · 2.14 · 6.13 · 6.17 | cinco defectos nuevos del equipo de Luis, sin bloqueo de fuera | S1 · S2 | §3 |
-| 2.7 · 2.12 · 6.14 | arreglos ya en `main`: falta verlos en producción con la cuenta QA y cerrar | quien tenga la cuenta QA | §4 |
+| 2.7 · ~~2.12 · 6.14~~ | arreglos ya en `main`: falta verlos en producción con la cuenta QA y cerrar. **18:1xZ: 2.12 (1589) y 6.14 (1608) Finalizadas a las 11:22Z y 11:15Z; queda 2.7 (1562, de Javier)** | quien tenga la cuenta QA | §4 |
 
 ### Lo que el encargo del 29-oct traía y no aguantó la medida
 
@@ -303,13 +309,15 @@ Puede que estén acabados y sólo falte cerrarlos. Lo cierra el orquestador del 
 | SCRUM-1513 | Javier | #2325 | la ráfaga | Tareas por hacer → Tareas por hacer |
 | SCRUM-1525 | Javier | #2370 (el correo) | programar el volcado (7.6) | Tareas por hacer → Tareas por hacer |
 
+**🔵 Re-medido el 29-oct a las 18:1xZ (S0, 1563i; Jira con `fields: key, status, labels, resolutiondate`):** **salen cinco, Finalizadas:** SCRUM-1594 (11:06Z), 1623 (11:06Z), 1626 (11:06Z), 1608 (11:15Z) y 1589 (11:22Z). **SCRUM-1518 cambia:** ya está En curso y las dos mitades están en `main` (el chip, #2986, a las 11:09Z): **le falta verlo y cerrar, no el chip.** El resto, igual que a las 10:2xZ: 1292, 1442, 1512, 1513, 1525, 1558, 1562 y 1115 en «Tareas por hacer»; 1072, 1233 y 1444 en «En curso». **Los tres «para Javier» del triaje (1292, 1512, 1529) siguen abiertos**, y 1529 ya no es cerrable: va como pregunta al fundador (`DECISIONES-DEL-FUNDADOR.md`, final de la parte D).
+
 **Salen de la tabla desde el 19-oct, cerrados:** SCRUM-529 (20-oct), 1258 y 1304 (19-oct), 534 (27-oct), 1564 (19-oct) y 1265 (19-oct). **Entran el 27-oct:** 1518 y 1562 (Facturas). **Entran el 29-oct:** 1589, 1608, 1623 y 1292.
 
 **El triaje se repitió el 29-oct** (S0, sesión anterior, ~10:1xZ): **80 tickets abiertos leídos**, y cada «cerrable» re-verificado por S0 —de los 6 que dieron sus lectores, tumbó 2 releyendo el último comentario (SCRUM-1603 tiene una fila «NO HECHO»; SCRUM-1529 es de J3)—. Resultado: **3 cerrables nuestros, ya CERRADOS** por el orquestador a las 10:14Z (1087, 1088, 1593 → §8) · **2 tras verlos en producción** (1589, 1608) · **3 para Javier** (1292, 1512, 1529; se los pasa el orquestador). ⚠️ **La tabla completa del triaje viajó en un mensaje al orquestador y no está en ningún fichero del repo**: lo que queda escrito es este párrafo. Es el mismo patrón que el triaje del 19-oct (§4b, nota final).
 
 ---
 
-## 4b · Trabajo hecho que no llega: 12 PR en CONFLICTO
+## 4b · Trabajo hecho que no llega: 13 PR en CONFLICTO (12 a las 10:2xZ)
 
 **Medido por S0 el 29-oct a las 10:2xZ**, sobre `503f0d86`: de 23 PR abiertos, **12 en `CONFLICTING`**. El equipo sale de la etiqueta del ticket de cada PR. Un PR en conflicto no se mezcla aunque su obligatorio pase: **es trabajo terminado que no llega a producción.**
 
@@ -327,8 +335,11 @@ Puede que estén acabados y sólo falte cerrarlos. Lo cierra el orquestador del 
 | #2969 | `scrum-1396e-lote-2-temporales` | 27-oct | 2 | rojo | Javier (J6) | — |
 | #2974 | `scrum-1051d-suelta-conserva-causa` | 27-oct | 2 | verde | Javier (J1) | — |
 | #2975 | `scrum-1252h-ancla-firma-correo` | 27-oct | 2 | verde | Javier (J1) | SCRUM-1252 está Finalizada |
+| **#2738** · *entra 18:1xZ* | `scrum-935e-ci-solo-docs` | 23-oct | 6 | **rojo (23-oct, 13:53Z)** | sin etiqueta (SCRUM-935, **Finalizada**) | lo abrió `yaqu-bot`; título «MEDIDO y no se construye» |
 
-**Ocho del equipo de Javier y cuatro nuestros.** De los cuatro nuestros, **dos son de tickets ya Finalizada** (#2392 y #2690): o su trabajo ya no hace falta y el PR sobra, o el ticket se cerró sin él. **NO CONSTA cuál** de las dos: no se ha mirado el contenido de esos dos PR contra `main`.
+**🔵 Re-medido el 29-oct a las 18:1xZ (S0, 1563i), sobre `c93f26a76`:** de **25** PR abiertos, **13 en `CONFLICTING`** y 12 `MERGEABLE`. **Los doce de arriba siguen en conflicto, y entra #2738.** ⚠️ **Cómo se midió, porque la primera pasada mentía:** `gh pr list --json mergeable` dio **20 `UNKNOWN`** (GitHub calcula el estado al pedirlo); se volvió a pedir PR a PR con `gh pr view <n> --json mergeable` y entonces dio 13 + 12 = 25, ninguno `UNKNOWN`. Un `UNKNOWN` leído como «sin conflicto» habría dado **cero**.
+
+**Ocho del equipo de Javier y cuatro nuestros** (a las 10:2xZ; a las 18:1xZ, más #2738, sin etiqueta). De los cuatro nuestros, **dos son de tickets ya Finalizada** (#2392 y #2690): o su trabajo ya no hace falta y el PR sobra, o el ticket se cerró sin él. **NO CONSTA cuál** de las dos: no se ha mirado el contenido de esos dos PR contra `main`.
 
 **El obligatorio en rojo, aparte del conflicto** (los 23 abiertos): 2 del 19-oct (#2604, #2616), 1 del 20-oct (#2621), 1 del 23-oct (#2738), 1 del 26-oct (#2881) y **6 del 27-oct** (#2940, #2949, #2950, #2965, #2969, #2973). El encargo decía «ocho desde el 27-oct»: S0 cuenta **seis** con esa fecha a las 10:2xZ; #2962 estaba re-corriendo y entró a las 10:3xZ. Más **#2980** (1628b, S0), rojo a las 10:24Z por una línea A9 que faltaba: arreglado y re-empujado a las 10:4xZ (`2f4889b6`).
 
