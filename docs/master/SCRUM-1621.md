@@ -151,6 +151,8 @@ A9: comprobación → `tests/scrum854-todo-merge-deja-entrada.test.mjs`
 
 **Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T20:08:53Z (hora de GitHub)
 
+A9: sin fallo que generalice — tramo sólo de registro, copia un comentario de Jira ya escrito
+
 Este tramo no trae código. Lleva al registro lo que ya está en Jira: la pieza 5 (C2, `scrum116` a una base propia)
 la **cerró el orquestador el 2-nov-2026** en el comentario c.21322 de SCRUM-1621, con esta redacción, copiada tal
 cual:
