@@ -267,6 +267,10 @@ Las 22 mutaciones tumban su caso en local, con base verde antes y después y el 
 
 # SCRUM-1335c · La serie del «después» y el ciego de la pérdida en las DOS zonas
 
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T19:37:12Z
+
+A9: sin fallo que generalice — entrega de sólo medida; el ancla que olvidé al empujar la cazó `scrum267` en el CI de su PR, que es justo el guard que existe para eso
+
 S3 · 2-nov-2026 · hora de GitHub 19:37:12Z al arrancar · medido sobre `origin/main`
 `70eefc40cba2eb9636992b733223bf1555c1755f`. **Sólo medida: no cambia ningún guion, test, guard
 ni workflow.** Jira c.21309 (lo coge).
