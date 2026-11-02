@@ -371,3 +371,23 @@ A9: aviso → A10 «Cero no es «está limpio»: es «no he mirado».» — no s
 **Error mío:** las horas de los comentarios de 1631 y 1562 (c.21316, c.21317) dicen «~20:05Z»; Jira los fechó a las 19:57Z. Puse la hora a ojo, sin pedirla.
 
 **NO medido:** las citas de 1393, 523, 1566, 1586 y 1612 (de un lector, sin cotejar) · qué GO pide el `stop-fundador` de 1109 · quién corre la consulta de 1490 con la credencial.
+
+## 2-nov-2026 · S0 · 1563l — la hoja con todo lo de hoy, y las etiquetas que faltaban
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` (= producción) · 2026-11-02T20:27:57Z-20:45Z (`Date:` de GitHub). Jira con `fields` explícito y `labels` dentro.
+
+**Qué cambia en `docs/producto/DECISIONES-DEL-FUNDADOR.md`** (tabla completa en la hoja, «Re-medido el 2-nov-2026 a las 20:27Z»):
+- **0.2 se queda sólo con la cesión**: SCRUM-1283 Finalizada (LICENSE + `UNLICENSED` en `main`); la cesión a la S.L. cuelga de SCRUM-1561.
+- **3.19 sale a la parte E**: SCRUM-1612 c.21141 cotejado (firma de Javier; vale un jefe, `dos-equipos.md:28`).
+- **B3 nueva, `scrum113` (SCRUM-1644)**: bloquea hoy a los dos equipos; opciones ① mover la fecha · ② reclasificar los dos que no pueden migrar (② cotejada).
+- **1.15 nueva en D (SCRUM-1645)**: un sí o un no sobre las aprobaciones del rol asesor de agosto; cierra 9 claves de Cobros + `diasEnTabla` + 2 de `paidVia` (c.21325, cotejado).
+- **7.10 nueva en D (SCRUM-1506)**: la cerradura de carril, `decision-jefe`, los dos equipos (c.21330). Candidata a B.
+- **Parte G**: 1393 (c.21328) y 1586 (c.21159) **sin respuesta de Javier** a las 20:30Z; entra la fila de 1586.
+- Tabla «donde la etiqueta y lo medido NO casan»: + 1097 (sin equipo), 1612 (firmado), 1297 (equipo en discrepancia: título «(J5)», autoría y ficheros de S1/S2).
+- 1629 Finalizada en Jira (ya estaba en A). 3.14, B2 y 1041 ya los había movido 1563k: sin cambios.
+
+**Jira tocado (por encargo del orquestador, sólo en tickets del equipo de Luis):** etiquetas en 1438, 1451, 1558 (+ `stop-fundador`), 1561 (+ `equipo-luis`, `fundador`) y 1283 (+ `equipo-luis`); detalle en la parte F de la hoja. Comentarios: **SCRUM-1558 c.21334** ((a) hecha `d76989122`, (b) viva con el literal pendiente de firma, y que la rama `espera/scrum-1558b-…` es el gemelo del enlace de acceso, no el (b)) · **SCRUM-1595 c.21335** (STOP sólo en el sobre de firma; propuesta de partirlo).
+
+**El agujero, medido:** abiertos sin etiqueta de equipo = **45 de 180** (JQL `statusCategory != Done AND (labels is EMPTY OR labels not in (equipo-luis, equipo-javier))`, 20:2xZ, antes de etiquetar). Control positivo: 1561 y 1558 salían; control negativo: 1595 y 1506, que la llevan, no. Tras etiquetar 1438, 1451, 1558 y 1561 quedan **41** (deducido, no recontado; 1283 estaba cerrado y no contaba). **Cinco de los 41 llevan `area-sN` y son nuestros sin duda** (1215, 1298, 1356, 1439, 1444): no etiquetados, no estaban en el encargo.
+
+**NO medido:** de qué equipo es 1097 · si 1561 debe llevar también `equipo-javier` · el equipo real de 1297.
