@@ -1,13 +1,13 @@
 // tests/scrum1335d-sin-informe-por-zona.test.mjs — SCRUM-1335d · el recuento de los ficheros que
 // NO ENTREGAN SU INFORME, por zona, y distinguiendo «en una zona» de «en las DOS».
 //
-// LO QUE HABÍA (medido en SCRUM-1335c, `evidencias/SCRUM-1335c/salida.txt`): un fichero que pierde su
+// LO QUE HABÍA (medido en SCRUM-1335c; su sonda la repite el caso ④ de aquí): un fichero que pierde su
 // informe en las DOS zonas sale en CERO listas del trinquete, y `run()` pone en su lugar una entrada
 // `pass` con la ruta del fichero por nombre — en las dos zonas `pass`/`pass`, o sea «comparada e
 // igual». El «en la tanda 0 · siguen 0» se imprimía igual sobre un fichero cuyas pruebas nadie vio.
 //
 // LA SEÑAL: `run()` emite un `test:summary` con `file` por cada fichero cuyo informe llega ENTERO, y
-// ninguno para el que enmudece (`evidencias/SCRUM-1335c/eventos.txt`). El hijo apunta esos ficheros
+// ninguno para el que enmudece (medido en SCRUM-1335c). El hijo apunta esos ficheros
 // (`conInforme`) y `sinInformePorZona` cuenta los que faltan.
 //
 // 🔴 ESTO ES UNA LÍNEA DE INFORME Y NO CAMBIA CUÁNDO SALE ROJO (autorizado así por el orquestador,

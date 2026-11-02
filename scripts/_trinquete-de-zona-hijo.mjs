@@ -134,7 +134,7 @@ const flujo = run({
 /**
  * 🔴 SCRUM-1335d · QUÉ FICHEROS ENTREGARON SU INFORME ENTERO. `run()` emite un `test:summary` con
  * `file` por cada fichero cuyo informe llegó hasta el final, y NINGUNO para el que enmudece
- * (medido en SCRUM-1335c, `eventos.txt`). Sin esto, un fichero que pierde el informe en las DOS
+ * (medido en SCRUM-1335c; lo repite el caso ④ de `tests/scrum1335d-…`). Sin esto, un fichero que pierde el informe en las DOS
  * zonas deja en cada una la entrada `pass` con su ruta por nombre, y el comparador lo cuenta como
  * «comparado e igual». Aquí sólo se APUNTA; quien cuenta es `sinInformePorZona`.
  */
