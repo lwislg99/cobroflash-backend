@@ -20,7 +20,7 @@ import path from 'node:path';
 
 import { temporal } from './_temporal.mjs';
 import {
-  RAIZ, ZONAS, medirEnZona, rutaRelativa, sinInformePorZona, veredicto,
+  RAIZ, ZONAS, leerConInforme, medirEnZona, rutaRelativa, sinInformePorZona, veredicto,
 } from '../scripts/_trinquete-de-zona.mjs';
 
 const CAB = "import test from 'node:test';\nconst ZONA = Intl.DateTimeFormat().resolvedOptions().timeZone;\n";
@@ -55,6 +55,12 @@ test('② «no pude contar» NO sale como cero: sin `conInforme` o con una pasad
   const caida = sinInformePorZona([medida('Z1', ['tests/a.test.mjs']), { zona: 'Z2', ok: false, porque: 'murió' }], ficheros);
   assert.equal(caida.medible, false);
   assert.equal(sinInformePorZona([], ficheros).medible, false, 'sin medidas no hay recuento');
+
+  // Y la lectura de la medida del hijo: sin el campo es `null`, no un conjunto vacío.
+  assert.equal(leerConInforme({ veredictos: [] }), null);
+  assert.equal(leerConInforme(null), null);
+  assert.deepEqual([...leerConInforme({ conInforme: ['tests/a.test.mjs'] })], ['tests/a.test.mjs']);
+  assert.equal(leerConInforme({ conInforme: [] }).size, 0, 'una lista vacía SÍ es un dato: nadie informó');
 });
 
 test('③ acepta rutas absolutas y las cuenta con la misma clave que el hijo (`/`, relativa a la raíz)', () => {

@@ -596,6 +596,15 @@ export function arbolQuieto(antes, despues, declaradas = ESCRITURAS_DE_LA_TANDA)
 }
 
 /**
+ * SCRUM-1335d · los ficheros que entregaron su informe, tal y como los apuntó el hijo. `null` = el
+ * hijo no lo dijo (un hijo viejo, una medida a medias), que NO es «ninguno informó»: con `null` el
+ * recuento sale «no pude contar», y con un conjunto vacío saldría «todos sin informe».
+ */
+export function leerConInforme(bruto) {
+  return Array.isArray(bruto?.conInforme) ? new Set(bruto.conInforme) : null;
+}
+
+/**
  * UNA pasada de la tanda con la zona `zona`.
  *
  * ⚠️ EL HIJO ESCRIBE A UN FICHERO, no a stdout, y no es manía: por stdout viaja lo que impriman
@@ -658,9 +667,7 @@ export function medirEnZona({ zona, ficheros, raiz = RAIZ, salida, topes }) {
     zona,
     ok: true,
     veredictos,
-    // SCRUM-1335d · `null` = el hijo no lo dijo, que NO es «ninguno informó»: el recuento sale
-    // «no pude contar», nunca cero.
-    conInforme: Array.isArray(bruto.conInforme) ? new Set(bruto.conInforme) : null,
+    conInforme: leerConInforme(bruto),
     zonaVista: bruto.zonaVista,
     concurrencia: bruto.concurrencia,
     topes: bruto.topes,
