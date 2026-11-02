@@ -264,3 +264,47 @@ Las 22 mutaciones tumban su caso en local, con base verde antes y después y el 
     node docs/master/evidencias/SCRUM-1335b/banco-sembrado.mjs
     node docs/master/evidencias/SCRUM-1335b/mutar-813.mjs .
     node --test tests/scrum813-trinquete-de-zona.test.mjs
+
+# SCRUM-1335f · El job de zona clona con la historia entera y la punta de `main`
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T22:13:22Z
+**Puesto:** S5 (CI) · encargado por el orquestador el 2-nov-2026 («TAREA 1 — `fetch-depth: 0` en el job de zona»).
+A9: sin fallo que generalice — es la misma receta que ya llevaban `test` (SCRUM-388/948) y `meta-mutaciones` (SCRUM-765); al job de zona nadie se la puso.
+⚠️ Los tramos 1335c, 1335d y 1335e viven en sus ramas (S3), todavía sin mergear. Si al fusionar
+chocan los anexos al final de este fichero, **se conservan todos**: no se elige lado.
+
+## Qué cambia
+
+Sólo `.github/workflows/ci.yml`, job `trinquete-zona`: su `actions/checkout@v4` pasa de desnudo
+(superficial, una ref) a `fetch-depth: 0`, y se añade el paso «Traer `main`» con la misma línea que
+los jobs `test` y `meta-mutaciones`. No toca el trinquete, ni `scrum804`, ni la rama de S3.
+
+Hacen falta las DOS líneas: en un `pull_request`, `fetch-depth: 0` trae una sola ref y `origin/main`
+no resuelve (medido en SCRUM-765, tabla en el comentario del job `meta-mutaciones`).
+
+## Por qué, y cuánto cuesta (medido por S3 el 2-nov-2026; no lo he re-medido)
+
+- Sin `origin/main`, `tests/scrum804-la-rama-viva.test.mjs` moría AL CARGAR en las dos zonas por
+  igual (`--merged=null`), y el comparador lo daba por «comparado e igual». Lo cazó la línea
+  `SIN INFORME ENTERO` de 1335d (PR #3029, job 125562740856).
+- Coste: superficial 5,96 s · historia entera 7,03 s + 0,27 s de traer `main` → ~1,3 s en un job de
+  ~16,8 min (0,13 %).
+
+## Control, medido por mí en local
+
+Dos clones de la rama `scrum-1505-ya-esta-en-cabecera`, con las dos formas de checkout, y
+`node --test tests/scrum804-la-rama-viva.test.mjs` dentro de cada uno:
+
+    forma del clon                                    resultado
+    ─────────────────────────────────────────────────────────────────────────────
+    `--depth 1 --single-branch` (el checkout de antes)  1 fail · 0 pass · `fatal: malformed object name null`
+    historia entera, UNA ref + `origin/main` (ahora)    11/11 pass
+
+Y los 28 ficheros de `tests/` que leen `ci.yml`: 291/291 en verde con el cambio.
+
+## Lo que falta medir, y dónde
+
+En CI: que en el job `trinquete · ningún test nuevo mide la zona de la máquina` `scrum804` se mida
+de verdad, y que la línea `SIN INFORME ENTERO` dé 0 en las dos zonas. Esa línea es de 1335d y **no
+está en `main`**: hasta que entre, el log de este job no la imprime y el control queda a medias. Lo
+mira S5 en la primera pasada con las dos cosas dentro.
