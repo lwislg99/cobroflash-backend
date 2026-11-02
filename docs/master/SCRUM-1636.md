@@ -145,3 +145,25 @@ del 10 entero. Sin el cambio de `quotesView.js`: cae con «IVA 7,5 % · Dto. 12.
 | `scrum598` intacto | la llamada a `resumenAjustes` no cambia; 598 verde entre los vecinos |
 | Re-anclaje de 594 declarado | este tramo y el mensaje del commit |
 | Visto en yaqu.app | pendiente hasta que entre en `main`: editor, una línea con Dto. 12,5 y otra con 10 |
+
+## SCRUM-1636 ① (c) · el rojo de #3003: este registro lo crearon las dos ramas (2-nov-2026, misma rama `scrum-1636b-iva-con-coma`)
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T19:41:01Z
+
+A9: comprobación → `tests/scrum1572-registro-creado-por-dos-ramas.test.mjs`
+
+Error propio del puesto: tras meter `main` (merge `498af1cec`) no se corrió `scrum1572`, y este registro lo
+habían creado las dos ramas (#2996 en `main`, y esta). El guard lo cazó en el obligatorio de #3003, el
+29-oct a las 19:27Z. El rojo NO era el del jueves (la línea «A9:»): ése ya estaba arreglado.
+
+**Unión revisada a mano.** El merge dejó exactamente lo que da `git merge-file --union`. Lo comprobé blob a blob:
+- las 44 líneas de `main` (`f394bb6fc`) son un PREFIJO exacto de las de la rama (`3cfbd4e51`), y no hay nada
+  entrelazado;
+- la única diferencia entre la rama y el merge (`c5a17fe41`) es el salto de línea del final del fichero.
+
+El contenido estaba bien, y no se mueve ninguna línea: este tramo es la revisión que pide el guard. El guard no
+se ha tocado.
+
+**Main metido otra vez:** `70eefc40c` (12 merges desde el 29-oct, sin conflictos). Ningún commit de esos 12
+toca este registro (`git log 8dcf26913..origin/main -- docs/master/SCRUM-1636.md` da vacío). Lo que la rama
+cambia respecto a `main` siguen siendo sus 8 ficheros.
