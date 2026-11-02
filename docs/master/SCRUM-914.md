@@ -266,3 +266,31 @@ No he leído ninguna base.
 
 **La verificación de punta a punta es la del CI** («build + tests (con banco desechable)»): si los cinco
 rojos de #2621 (scrum192, 314, 914×2, 244) no salen verdes ahí, la medida del 20-oct ya no describe las bases.
+
+## 2-nov-2026 · S1 · los seis rojos de #3014, y los cinco de control EN VERDE
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T19:37:02Z
+
+A9: comprobación → `tests/scrum1291-fusion-mueve-direcciones-de-obra.test.mjs`
+
+**El control que pedía el orquestador SE CUMPLE.** Run 40938015332 (job 123673623367) sobre `f638d5453`: los
+cinco rojos de #2621 salen ✔ — `scrum192` (el orden no inventa modelos), `scrum244` contra Postgres,
+`scrum314` (control del demo) y `scrum914` ×2 contra Postgres. La medida del 20-oct sigue describiendo el
+esquema que el CI levanta. Cayeron otros SEIS (12.996 tests, 6 fail), todos consecuencia del modelo nuevo:
+
+| rojo | causa | arreglo |
+|---|---|---|
+| `scrum1291` ① y ③ | **defecto de verdad.** `equipments.customer_id` lleva FK `RESTRICT` a `customers` (`docs/sql/scrum-914-equipos-del-cliente.sql`); `fusionarClientes` no movía los equipos, así que el `DELETE` del fusionado fallaba → 500 | `src/modules/system/domain/fusionClientes.ts`: `tx.equipment.updateMany` junto a `customerSite` (carril S1). `customerSiteId` sigue valiendo: las direcciones pasan al principal en la línea anterior con su mismo id |
+| `scrum302` | `Albaran.equipmentId` sin clasificar en `albaranDuplicado.ts` | al cubo que **VIAJA**: el parte de mañana es sobre el mismo aparato, como `jobId`; no afirma nada ocurrido. Decisión mía, de carril S1: si quien reparte la quiere al otro cubo, se mueve |
+| `scrum222`, `scrum461` ③, `scrum733` | `docs/sql/deriva-prod.sql` sin las 17 columnas nuevas | regenerado con su generador: 515 → **532** columnas, 33 → 34 tablas (las 17 de c.20085, ni una más) |
+
+⚠️ **Cómo se regeneró, declarado:** el `node_modules` de este árbol es el compartido (junction) y no se ha
+regenerado su cliente. Se generó un cliente APARTE, desde el `schema.prisma` de este árbol, en un temporal
+fuera del repo, y con su DMMF se llamó a las funciones exportadas del propio generador (`paresEsperados`,
+`motivoParaNoEncoger`, `generarSql`). La puerta de procedencia (`motivoParaNoEscribir`) no se cruzó: lo que
+vigila —cliente igual al schema— se cumple por construcción. Lo juzgan `scrum222`/`461`/`733` en el CI, con
+el cliente que el CI genera.
+
+**Local** (cliente compartido sin `Equipment`): `tsc` da UN error, `fusionClientes.ts` `tx.equipment` (el tipo
+no existe en ese cliente) y emite igual; en el CI el cliente sale del schema. `scrum1291` + `scrum302` +
+`scrum192` + `scrum314` + `scrum1057*`: 47 pass, 0 fail, 5 SKIP (base).
