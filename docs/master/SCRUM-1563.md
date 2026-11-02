@@ -391,3 +391,27 @@ A9: aviso → A10 «Cero no es «está limpio»: es «no he mirado».» — no s
 **El agujero, medido:** abiertos sin etiqueta de equipo = **45 de 180** (JQL `statusCategory != Done AND (labels is EMPTY OR labels not in (equipo-luis, equipo-javier))`, 20:2xZ, antes de etiquetar). Control positivo: 1561 y 1558 salían; control negativo: 1595 y 1506, que la llevan, no. Tras etiquetar 1438, 1451, 1558 y 1561 quedan **41** (deducido, no recontado; 1283 estaba cerrado y no contaba). **Cinco de los 41 llevan `area-sN` y son nuestros sin duda** (1215, 1298, 1356, 1439, 1444): no etiquetados, no estaban en el encargo.
 
 **NO medido:** de qué equipo es 1097 · si 1561 debe llevar también `equipo-javier` · el equipo real de 1297.
+
+## 2-nov-2026 · S0 · 1563m — los 41 sin equipo, etiquetados; 1595 partido
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T20:37:56Z-20:5xZ (`Date:` de GitHub). Jira con `fields` explícito y `labels` dentro.
+
+**Recuento de partida, RE-MEDIDO (no deducido):** misma JQL de 1563l → **41** (20:38Z). Ya no es una deducción.
+
+**Respuestas del orquestador aplicadas:** 1215, 1298, 1356, 1439, 1444 → + `equipo-luis` · 1561 → + `equipo-javier` · 1297 → `stop-fundador` y **nada más** (c.21348: el equipo se queda vacío a propósito, pregunta a Javier) · **1595 partido**: los 5 libres a **SCRUM-1650** (`area-s1`, `calidad`, `equipo-luis`, sin `stop-fundador`); 1595 + `stop-fundador`; c.21347 escribe el sobre de la firma como **DECIDIDO** (SCRUM-1576 c.20454, cita cotejada: 1 con «cliente», 0 con «proveedor»; guard `tests/scrum371-barrido-poblacion.test.mjs`, existe en `origin/main`).
+
+**Los 35 restantes:** clasificados por un lector de sólo lectura (descripción + comentarios + `docs/equipo/dos-equipos.md` §2.2/§3), **cotejado por S0** solo en parte: su informe decía «los 35 tienen `labels: []`», y eso es **falso** (328, 1097, 1100, 1525, 1529 y 1534 llevan etiquetas, según la lectura de las 20:38Z). Por eso **1100** pasa a no decidible aunque el lector lo daba como nuestro. Aplicado por dos escritores con lista cerrada y comprobación del «antes»: 37 de 37 coincidían, y 37 aplicados.
+| equipo | tickets |
+|---|---|
+| `equipo-luis` (7) | 678 (secretos de prod → S5, §3.3) · 836 · 994 («Carril: S5») · 1525 · 1535 · 1605 · 1606 («Área: S5») |
+| `equipo-javier` (17) | 276 · 280 · 322 · 323 (§2.2, J1) · 624 (`pdf.service.ts`) · 1097 (medido por J6; «GO explícito de Javier») · 1292 («PARA J2») · 1429 · 1436 («Son de J2… y de J1») · 1512 · 1513 · 1517 · 1518 · 1524 · 1532 · 1533 · 1547 |
+| los dos (7) | 41 · 328 · 1442 · 1445 («Carriles: J1 / S1 / J2») · 1522 · 1523 · 1529 |
+| **NO DECIDIBLE (4)**, sin tocar | **326** (E5 bancaria: no está en la lista J1 de §2.2 que sí lleva 280/322/323) · **936** (`scripts/_medidor-de-toque.mjs` no tiene fila en §3.3; lo abrió «S6») · **1100** (lo halló J4, el territorio es `meta-guard` S3/S5 y está En curso sin dueño escrito) · **1534** (`vigia-silencio-de-main.mjs`: §3.3 dice literal que «sigue sin fila hasta que lo hablen los dos orquestadores») |
+
+**Recuento final, medido** (20:5xZ, misma JQL): **5** → 326, 936, 1100, 1297, 1534. Control: SCRUM-1650 (nuevo, lleva `equipo-luis`) no sale.
+
+**Javier (parte G):** 1393 `updated` 20:19:05Z y 1586 `updated` 27-oct 17:33:10Z. **Ninguno se ha movido después de las preguntas**; un comentario habría cambiado el `updated`, y Jira firma a Javier con su propia cuenta (es el reporter de 1595). A las 20:48Z: 1393 ~29 min, 1586 **6 d 3 h**.
+
+**Censo de los 16 STOP de la parte F** (13 `stop-fundador` + 3 mixtas): **los 16 siguen abiertos**; lo único que se ha movido hoy son 1438, 1451 y 1558, las etiquetas de 1563l. El aviso «el gemelo» de 1558 **está en el ticket** (JQL `comment ~ "gemelo"` = 1; control `zanahoria` = 0).
+
+**MI LECTURA, sin cotejar con Javier:** en 1297, «(J5)» puede ser la **sección J5 del máster** y no el puesto J5: la descripción dice «toca J5 y la Parte L» y cita «J5 / A20.5, "siempre las tres salidas"». Si es así, no hay contradicción y es `equipo-luis`. **No lo aplico**: el orquestador decidió preguntar.
