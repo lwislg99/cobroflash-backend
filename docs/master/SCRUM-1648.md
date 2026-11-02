@@ -1,6 +1,7 @@
 # SCRUM-1648 · guard-dangerous falla hacia ABIERTO con las barras invertidas de PowerShell, con un `>` absoluto lanzado desde otro repo y con las rutas MSYS en la regla de junction
 
 **Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T20:30Z (cabecera `Date:` de GitHub)
+A9: sin fallo que generalice — tramo de sólo medida y documentos; los huecos medidos son del guard, y su comprobación va con el arreglo que decida el jefe (`decision-jefe`)
 
 Puesto: S5 (equipo de Luis). **Sólo medida, sin arreglo:** `.claude/hooks/**` es «SIN CERRADURA · un jefe»
 (`node scripts/carriles.mjs de .claude/hooks/guard-dangerous.mjs` → `dos-equipos.md:205`). El ticket lo abre S5
