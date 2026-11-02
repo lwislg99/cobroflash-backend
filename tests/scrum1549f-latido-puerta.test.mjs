@@ -77,7 +77,15 @@ function banco() {
   g('update-ref', 'refs/remotes/origin/main', 'HEAD');
   fs.writeFileSync(path.join(base, 'instalacion', 'config.json'), JSON.stringify({ repo: repo.replace(/\\/g, '/') }));
   const instalar = (bytes) => fs.writeFileSync(path.join(base, 'instalacion', 'sesion.mjs'), bytes);
-  return { base, repo, dir, c1, c2, instalar };
+  // Toda escritura del banco vive AQUÍ, colgando de `base` = `temporal()`: escrita desde fuera con `b.base`, el censo de
+  // SCRUM-824 no la puede trazar hasta el temporal (le llega por un objeto) y la cuenta como «sin probar».
+  const configurar = (texto) => fs.writeFileSync(path.join(base, 'instalacion', 'config.json'), texto);
+  const instalarDentroDelArbol = (config, bytes) => {
+    fs.mkdirSync(path.join(base, 'repo', 'instalacion'));
+    fs.writeFileSync(path.join(base, 'repo', 'instalacion', 'config.json'), config);
+    fs.writeFileSync(path.join(base, 'repo', 'instalacion', 'sesion.mjs'), bytes);
+  };
+  return { base, repo, dir, c1, c2, instalar, configurar, instalarDentroDelArbol };
 }
 
 test('SCRUM-1549f · AL DÍA: la copia idéntica a origin/main → verde, con tamaño y sha256, salida 0', () => {
@@ -133,9 +141,9 @@ test('SCRUM-1549f · 🔴 FAIL-CLOSED: sin instalación, sin config.json o sin p
   const b = banco();
   b.instalar(Buffer.from(V2));
   const sin = seccionPuerta(medirPuerta({ dir: path.join(b.base, 'no-existe') }));
-  fs.writeFileSync(path.join(b.base, 'instalacion', 'config.json'), '{roto');
+  b.configurar('{roto');
   const rota = seccionPuerta(medirPuerta({ dir: b.dir }));
-  fs.writeFileSync(path.join(b.base, 'instalacion', 'config.json'), JSON.stringify({ repo: path.join(b.base, 'no-es-repo').replace(/\\/g, '/') }));
+  b.configurar(JSON.stringify({ repo: path.join(b.base, 'no-es-repo').replace(/\\/g, '/') }));
   const sinMain = seccionPuerta(medirPuerta({ dir: b.dir }));
   for (const s of [sin, rota, sinMain, seccionPuerta(undefined)]) {
     assert.equal(s.pudo, false, s.motivo);
@@ -156,9 +164,7 @@ test('SCRUM-1549f · las TRES respuestas salen con TRES salidas distintas (0, 1,
 
 test('SCRUM-1549f · una instalación DENTRO de un árbol de git es puerta cerrada (DESDE-UN-ARBOL), no «al día»', () => {
   const b = banco();
-  fs.mkdirSync(path.join(b.base, 'repo', 'instalacion'));
-  fs.writeFileSync(path.join(b.base, 'repo', 'instalacion', 'config.json'), JSON.stringify({ repo: b.repo.replace(/\\/g, '/') }));
-  fs.writeFileSync(path.join(b.base, 'repo', 'instalacion', 'sesion.mjs'), V2);
+  b.instalarDentroDelArbol(JSON.stringify({ repo: b.repo.replace(/\\/g, '/') }), V2);
   const s = seccionPuerta(medirPuerta({ dir: path.join(b.base, 'repo', 'instalacion') }));
   assert.equal(s.alertas.length, 1);
   assert.match(s.alertas[0].linea, /DESDE-UN-ARBOL/);

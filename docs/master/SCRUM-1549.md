@@ -595,6 +595,13 @@ De paso: `tests/scrum723-guard-contra-su-base.test.mjs` cayó al nombrar `origin
 No se ablandó: la sección se DECLARA en su lista con su motivo (su sujeto es la referencia móvil, la que lee la puerta),
 y además se congela la referencia en un sha con UNA lectura, como `arranque.mjs`.
 
+2-nov-2026 · el CI de `9f73a7648` (run 41512506623) cayó en `scrum824` «el conjunto SIN PROBAR no crece»: entraba
+este test, por 5 escrituras hechas desde fuera con `b.base` (:136, :138, :159-161), que el censo no traza hasta
+`temporal()`. Arreglado en el TEST, no en la lista de 824: las escrituras pasan a `banco()` (`configurar`,
+`instalarDentroDelArbol`), colgando de `base` = `temporal()`. Control: el censo da 0 sin probar para este fichero
+(antes 5); `scrum824` + los 23 ficheros del latido, 235/235. El otro rojo de ese run (`scrum113`, plazo vencido el
+31-oct) no es de esta rama: SCRUM-1644, con el fundador.
+
 ## 4 · Lo que sigue (no en este PR)
 
 - La tarea de **sólo refresco** cada 15 min y la (B) `s<N>-<sufijo>` de `validarNombre`: el orquestador decide que
