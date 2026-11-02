@@ -11,7 +11,7 @@
 //
 // ── SCRUM-250 · POR QUÉ YA NO SE SONDEA LA TABLA ─────────────────────────────
 // Estos dos subtests esperaban la fila con un bucle de 30 × 100 ms. `recordWaMessage` se
-// llama SIN `await` (y así debe seguir: registrar telemetría no puede tumbar un envío), así
+// llamaba SIN `await` (la fila de un fallo se espera desde SCRUM-1631; la de lo que salió, no), así
 // que el INSERT podía aterrizar después de esos 3 s bajo contención del pool de staging —
 // el mismo retraso que deja huérfanas en SCRUM-194. Resultado: cayó en dos tandas y no cayó
 // en la tercera CON EL MISMO CÓDIGO. La variable era la latencia, no el diff.
