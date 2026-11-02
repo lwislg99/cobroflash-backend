@@ -800,6 +800,10 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     totalBase = T.baseImponibleCents / 100;
     totalIva = T.cuotaCents / 100;
   }
+  // SCRUM-1635 · el desglose se pinta SÓLO con descuento GLOBAL: el de línea ya va dentro del importe
+  // de cada fila, y ahí no queda nada sin explicar. El global, en cambio, no está en ninguna línea.
+  const desglose = window.quoteDescuentos.totalesConDescuento(lineasParaTotales, descuentoGlobal);
+  const pintaDesglose = desglose.descuentoGlobalCents > 0;
 
   // Totales (base/IVA secundarios, total destacado)
   const totalsWrap = document.createElement('div');
@@ -810,6 +814,30 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     <div style="font-size:13px;color:var(--muted)">IVA: <span class="amount-muted">${fmtQuoteMoney(totalIva, cur)}</span></div>
     <div style="font-size:16px;color:var(--ink);font-weight:700;margin-top:2px">Total: <span class="amount" style="font-size:18px">${fmtQuoteMoney(quote.total, cur)}</span></div>
   `;
+
+  // 🔴 SCRUM-1635 · EL DESCUENTO GLOBAL, EXPLICADO. Sin estas filas el profesional veía líneas por
+  // 1.075,00 € y un total de 967,50 € (#212 de QA, medido por S4 en yaqu.app): 100 € que no salían
+  // en ningún sitio de la ficha, mientras la vista previa del editor sí los pintaba.
+  //
+  // Mismas filas, mismas cifras (`T`, la cuenta del editor) y mismos rótulos que el pie del PDF
+  // (`pieDePresupuesto`, SCRUM-594, con los dos puntos, como el resto de este bloque), la página de
+  // firma y la vista previa (SCRUM-888 comentario 15788). No es texto nuevo.
+  if (pintaDesglose) {
+    const filaDesglose = (rotulo, cents, negativo) => {
+      const fila = document.createElement('div');
+      fila.className = 'quote-total-desglose';
+      fila.appendChild(document.createTextNode(rotulo + ': '));
+      const n = document.createElement('span');
+      n.className = 'amount-muted';
+      n.textContent = (negativo ? '−' : '') + fmtQuoteMoney(cents / 100, cur);
+      fila.appendChild(n);
+      return fila;
+    };
+    const filas = [filaDesglose('Suma de líneas', desglose.sumaSinDescuentoCents, false)];
+    if (desglose.descuentoLineasCents > 0) filas.push(filaDesglose('Descuento', desglose.descuentoLineasCents, true));
+    filas.push(filaDesglose('Descuento global', desglose.descuentoGlobalCents, true));
+    totalsWrap.prepend(...filas);
+  }
   concSec.appendChild(totalsWrap);
 
   // SCRUM-1206 · las Observaciones, debajo de los totales, como en el papel (ver arriba).

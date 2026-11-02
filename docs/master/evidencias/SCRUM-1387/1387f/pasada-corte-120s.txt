@@ -1,0 +1,33 @@
+# META_PRESUPUESTO_S=120 node scripts/meta-guard-mutaciones.mjs · rama scrum-1387f-rotulo-juzgados @ 904b483c3 · salida 2 (el corte provocado sale CIEGO, como debe)
+# líneas del log (sin las de cada guard caro); el log entero tiene 280 líneas
+censo · 239 ficheros DECLARANTES de 1566 ficheros de test (15 %) · 942 declaraciones (suelos 20 / 54)
+  subconjunto AUTODECLARADO · 172 ficheros se titulan GUARD en algún test · 37 de ésos declaran (22 %)
+presupuesto del paso: 120 s · META_PRESUPUESTO_S=120
+  ✔ restauracion-del-arbol-ejecutable.test.mjs · la restauración pide DOS piezas cuando el fichero se compila   (+1 test(s) más caídos)
+  ✔ restauracion-del-arbol-ejecutable.test.mjs · devuelve LOS DOS ficheros a sus bytes
+  ✔ restauracion-del-arbol-ejecutable.test.mjs · el censo distingue EJECUTAR dist/ de nombrarlo
+  ✔ scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs · SCRUM-1007 · 🔴 EL CASO MEDIDO: traspaso 14,4 s ANTES del turno de «traspaso listo» → RELEVAR   (+1 test(s) más caídos)
+  ✔ scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs · SCRUM-1011 · comprobarQueArranco: solo un pid > 0 cuenta como arrancada
+  ✔ scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs · SCRUM-1026 · sesionesBloqueadas: separa las bloqueadas, con motivo y el proxy de tiempo   (+1 test(s) más caídos)
+  ✔ scrum1063h-umbral-herramientas.test.mjs · SCRUM-1063h · el borde   (+3 test(s) más caídos)
+  ✔ scrum1063h-umbral-herramientas.test.mjs · SCRUM-1063h · la constante   (+3 test(s) más caídos)
+  ✔ scrum1063h-umbral-herramientas.test.mjs · SCRUM-1063h · el borde   (+4 test(s) más caídos)
+  ✔ scrum1063h-umbral-herramientas.test.mjs · SCRUM-1063h · por debajo del umbral   (+3 test(s) más caídos)
+  ✔ scrum1063j-casos-limite-303.test.mjs · SCRUM-1063j · R1 dentro del trimestre   (+3 test(s) más caídos)
+  ✔ scrum1063j-casos-limite-303.test.mjs · SCRUM-1063j · R1 de una factura de otro trimestre   (+3 test(s) más caídos)
+  ✔ scrum1063j-casos-limite-303.test.mjs · SCRUM-1063j · gasto con fecha de otro periodo   (+2 test(s) más caídos)
+  ✔ scrum1064c-rotulos-del-303.test.mjs · cada rótulo es el del impreso, con su columna y su página
+  ✔ scrum1064c-rotulos-del-303.test.mjs · ningún rótulo lleva la fórmula entre paréntesis   (+1 test(s) más caídos)
+  ✔ scrum1064c-rotulos-del-303.test.mjs · GET /admin/modelo-303 sirve los rótulos
+  ✔ scrum1064c-rotulos-del-303.test.mjs · hay uno por cada casilla que devuelve
+  ✔ scrum1064d-tipos-y-rotulos-del-303.test.mjs · fila del 21 %   (+2 test(s) más caídos)
+  ✔ scrum1064d-tipos-y-rotulos-del-303.test.mjs · fila del 4 %   (+1 test(s) más caídos)
+  ✔ scrum1064d-tipos-y-rotulos-del-303.test.mjs · dónde cae HOY cada tipo   (+1 test(s) más caídos)
+  ✔ scrum1065b-borrador-130.test.mjs · SCRUM-1065b · cifras a mano: un año con tres trimestres   (+5 test(s) más caídos)
+  ✔ scrum1065b-borrador-130.test.mjs · SCRUM-1065b · cifras a mano: un año con tres trimestres   (+1 test(s) más caídos)
+  ✔ scrum1065b-borrador-130.test.mjs · SCRUM-1065b · cambio de año   (+1 test(s) más caídos)
+árbol VIGILADO durante las 23 mediciones (tests, scripts, src, public, prisma, docs, dist)
+vivas 23 · mudas 0 · ciegas 1 · ficheros muertos 0 · sobre 23 juzgadas de 942 declaraciones, en 239 ficheros DECLARANTES de 1566 ficheros de test (15 %) · 7 juzgados de 239 declarantes (0 % de los 1566 ficheros de test)
+node : 🔴 CIEGO:
+    + CategoryInfo          : NotSpecified: (🔴 CIEGO::String) [], RemoteException
+   Juzgadas 23 de 942 mutaciones. SIN JUZGAR 919, en 233 guard(s):
