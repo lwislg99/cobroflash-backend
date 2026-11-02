@@ -133,6 +133,7 @@ el comando. Si alguien lo escribe, la siguiente pasada da el siguiente.
 ## 6 · 1505b · El arreglo, en la capa (S5, 2-nov-2026)
 
 **Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T20:45:33Z (hora de GitHub)
+A9: comprobación → `tests/scrum1424-ya-esta.test.mjs`
 
 Lo hace S5 (sesión fresca, encargo del orquestador: «superficie de conflicto cero»). Sólo toca
 `scripts/equipo/ya-esta.mjs`, `tests/scrum1424-ya-esta.test.mjs` y este registro. Los tres guiones de J4
