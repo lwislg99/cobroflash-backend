@@ -23,6 +23,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 import { censarFuente } from './_censo-filas-sin-teclado.mjs';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -191,7 +192,7 @@ test('SCRUM-1639 · 🔵 control del censo: caza una fila sin teclado, y no caza
 });
 
 test('SCRUM-1639 · el anillo de foco de styles.css sale del token, no escrito a mano', () => {
-  const css = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const css = soloCodigo(fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8'), 'styles.css');
   const a_mano = css.split('\n').map((l, i) => [i + 1, l]).filter(([, l]) => /box-shadow:\s*0 0 0 3px rgba\(34,\s*197,\s*94,\s*\.30\)/.test(l));
   assert.deepEqual(a_mano.map(([n]) => n), [], '🔴 un anillo escrito a mano en vez de `var(--ring)` (tokens.css:71)');
 });
