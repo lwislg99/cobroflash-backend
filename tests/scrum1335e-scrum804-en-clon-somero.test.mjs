@@ -123,3 +123,50 @@ test('SCRUM-1335e · 🔴 y los que miran el árbol vivo CAEN nombrando la causa
   }
   assert.match(salida, /fetch-depth: 0/, '🔴 el rojo no dice qué hay que arreglar');
 });
+
+// 🔴 LA MITAD QUE EL CLON NO VE: un caso que lee el árbol vivo y NO empieza por `exigirArbol()`
+// pasa EN VACÍO en un clon somero (el censo ciego trae `porTicket` vacío, y «no hay ramas falsas»
+// sobre cero ramas es verde). Los dos casos de arriba no lo cazan: sólo miran los que CAEN. Así que
+// se mira la fuente, por AST: qué casos nombran algo del árbol vivo, y si su primera sentencia es la
+// exigencia. Medido al escribirlo: quitarla de «SIN RASTRO» dejaba los otros tres casos en verde.
+const DEL_ARBOL_VIVO = new Set([
+  'censo',
+  'CRUDAS',
+  'CRUDAS_EN_MAIN',
+  'CRUDAS_VIVAS',
+  'NO_FIABLE',
+  'REFS_MOVIDAS',
+  'git',
+  'execFileSync',
+  'refsCrudasEnVivo',
+  'ramasDeLaHistoriaDeMerges',
+]);
+
+test('SCRUM-1335e · 🔴 todo caso de scrum804 que lee el árbol vivo EMPIEZA por exigirArbol()', async () => {
+  const { default: ts } = await import('typescript');
+  const fuente = fs.readFileSync(SUJETO, 'utf8');
+  const sf = ts.createSourceFile(SUJETO, fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const casos = [];
+  for (const st of sf.statements) {
+    if (!ts.isExpressionStatement(st) || !ts.isCallExpression(st.expression)) continue;
+    const c = st.expression;
+    if (!ts.isIdentifier(c.expression) || c.expression.text !== 'test') continue;
+    const [nombre, fn] = c.arguments;
+    if (!nombre || !fn || !ts.isStringLiteralLike(nombre) || !(ts.isArrowFunction(fn) || ts.isFunctionExpression(fn))) continue;
+    const nombres = new Set();
+    const visitar = (n) => { if (ts.isIdentifier(n)) nombres.add(n.text); ts.forEachChild(n, visitar); };
+    visitar(fn.body);
+    const primera = ts.isBlock(fn.body) ? fn.body.statements[0] : null;
+    const empiezaExigiendo = !!primera && ts.isExpressionStatement(primera)
+      && ts.isCallExpression(primera.expression) && ts.isIdentifier(primera.expression.expression)
+      && primera.expression.expression.text === 'exigirArbol';
+    casos.push({ nombre: nombre.text, vivo: [...nombres].some((x) => DEL_ARBOL_VIVO.has(x)), empiezaExigiendo });
+  }
+  // Suelo: si el recorrido no encuentra casos, o ninguno vivo y ninguno puro, no ha mirado nada.
+  assert.ok(casos.some((x) => x.vivo), '🔴 CIEGO: el AST no encuentra ningún caso que lea el árbol vivo en scrum804');
+  assert.ok(casos.some((x) => !x.vivo), '🔴 CIEGO: el AST no encuentra ningún caso puro en scrum804');
+  const sinExigir = casos.filter((x) => x.vivo && !x.empiezaExigiendo).map((x) => x.nombre);
+  assert.deepEqual(sinExigir, [],
+    '🔴 estos casos leen el árbol vivo y NO empiezan por `exigirArbol()`: en un clon somero pasan en vacío:\n   · '
+    + sinExigir.join('\n   · '));
+});
