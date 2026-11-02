@@ -264,3 +264,66 @@ Las 22 mutaciones tumban su caso en local, con base verde antes y después y el 
     node docs/master/evidencias/SCRUM-1335b/banco-sembrado.mjs
     node docs/master/evidencias/SCRUM-1335b/mutar-813.mjs .
     node --test tests/scrum813-trinquete-de-zona.test.mjs
+
+# SCRUM-1335e · `scrum804` moría al cargar en un clon somero, y el trinquete de zona no lo veía
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T21:56:41Z
+**Puesto:** S3 (instrumentos) · encargado por el orquestador el 2-nov-2026 («la ②»).
+A9: comprobación → `tests/scrum1335e-scrum804-en-clon-somero.test.mjs`
+⚠️ Los tramos 1335c y 1335d viven en sus ramas, todavía sin mergear. Si al fusionar chocan los
+anexos al final de este fichero, **se conservan todos**.
+
+## Lo que lo destapó
+
+La primera pasada de CI de la línea `SIN INFORME ENTERO` (1335d: PR #3029, job 125562740856, 2-nov
+21:45Z) dio **1 de 1.576 sin informe en LAS DOS zonas**: `tests/scrum804-la-rama-viva.test.mjs`.
+En Windows, 0. ⚠️ **Es una sola muestra de CI, no una serie.** Aquí no hace falta más, porque la
+causa está **reproducida**, no deducida:
+
+- El job de zona hace `actions/checkout` sin `fetch-depth: 0` (el de la tanda sí lo lleva). En ese
+  clon no está la punta de `main`, la instantánea de SCRUM-753 sale `incapaz` sin sha, y
+  `refsCrudasEnVivo(--merged=${censo.inst.sha})` se ejecutaba EN EL NIVEL SUPERIOR como
+  `--merged=null` → `fatal: malformed object name null`.
+- Reproducido con `run()` de `node:test` (el camino del hijo del trinquete) en un clon `--depth 1`
+  de la rama: 1 `test:fail`, `test:summary` sin `file`, 0 pass. Control: el mismo fichero con la
+  historia entera da 11/11 y su `test:summary` con `file`.
+- Moría igual en las dos zonas, así que el comparador lo daba por «comparado e igual». Según el
+  historial del fichero, eso viene de SCRUM-925 (17-sep): el trinquete no lo ha medido nunca desde
+  entonces. Lo de las seis semanas sale de leer el historial, no de medir pasadas viejas: el job de
+  zona no sube artefactos y en sus logs no queda nada que contar.
+
+## Lo que cambia
+
+- `scrum804`: nada que pueda lanzar al cargar (como `scrum804b`, SCRUM-1331/1541). `motivoDeCiego()`
+  mira si el clon es somero y si la instantánea es `incapaz`; con cualquiera de las dos, no se lee
+  ninguna ref, y los **seis** casos que leen el árbol vivo empiezan por `exigirArbol()`, que CAE con
+  `🔴 CIEGO · CLON SOMERO · …`. El mensaje nombra el remedio: `fetch-depth: 0` en `ci.yml`. Los
+  **cinco** puros corren. Con la historia entera, nada cambia: 11/11.
+- `SCRUM804_GIT_EN`: si está, dice a `scrum804` en qué repositorio preguntar a git. **Ningún job lo
+  pone**; existe sólo para que el test nuevo pueda correrlo contra un clon sintético.
+- **No toca `ci.yml`** (es de S5) ni el trinquete. En el job de zona, `scrum804` pasa de «sin
+  informe» a «6 fail con motivo · 5 pass» en las dos zonas: entrega su informe, y la línea de 1335d
+  vuelve a dar 0. Los seis casos del árbol vivo **siguen sin medirse en zona** mientras ese checkout
+  no traiga historia. Eso ahora se ve en el motivo, en vez de leerse como un éxito.
+
+## Rojo primero y mutaciones
+
+- Rojo: `4d753fbba9023d76827accc2030fcff6537ece37` (sólo el `SCRUM804_GIT_EN` + el test). El test
+  nuevo daba 1/3 con `fatal: malformed object name null`, la forma exacta del CI.
+- Verde: `713d3d5fc07715deef4cec19556047710a694e11`. Con un clon real `--depth 1` de esta rama
+  (`sonda-informe.mjs`): `test:summary` con `file`, 5 pass y 6 fail, los seis con `CIEGO · CLON SOMERO`.
+- Mutaciones (`mutar.mjs`, base sin mutar primero: 4/4 verde) sobre `ceaabf083d1612c49b0c6786e95c0d19209bb57d`:
+
+  | mutación | resultado |
+  |---|---|
+  | `exigirArbol()` muda | MUERTA |
+  | `CIEGO = null` (vuelve a morir al cargar) | MUERTA |
+  | el mensaje sin `fetch-depth: 0` | MUERTA |
+  | «SIN RASTRO» sin `exigirArbol()` (pasa en vacío) | MUERTA — **VIVA** antes del caso AST, que se añadió por eso |
+
+## Reproducir
+
+    node --test tests/scrum1335e-scrum804-en-clon-somero.test.mjs
+    node docs/master/evidencias/SCRUM-1335e/mutar.mjs .
+    git clone --depth 1 --branch <rama> file:///<repo> <dir dentro del worktree, para resolver node_modules>
+    node docs/master/evidencias/SCRUM-1335e/sonda-informe.mjs <ese dir> tests/scrum804-la-rama-viva.test.mjs
