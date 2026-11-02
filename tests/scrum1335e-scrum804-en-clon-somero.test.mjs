@@ -127,10 +127,11 @@ test('SCRUM-1335e · CONTROL: el banco tiene la forma del job de zona (somero y 
   const g = (...args) => spawnSync('git', args, { cwd: somero, encoding: 'utf8' });
   assert.equal(g('rev-parse', '--is-shallow-repository').stdout.trim(), 'true',
     '🔴 el clon de profundidad 1 no es somero: el banco no monta el caso que dice medir');
-  assert.notEqual(g('rev-parse', '--verify', '-q', 'refs/remotes/origin/main').status, 0,
-    '🔴 el clon trae la punta de `main`: no es la forma del checkout del job de zona');
-  assert.equal(g('rev-parse', '--verify', '-q', 'refs/remotes/origin/scrum-8-viva').status, 0,
-    '🔴 el clon no trae ni la rama que se pidió: el banco está roto, no el sujeto');
+  // Las refs remotas del clon son EXACTAMENTE la rama pedida: eso dice a la vez que la trae y que no
+  // trae ninguna otra —tampoco la punta de `main`— sin nombrar esa referencia (lo vigila SCRUM-723).
+  const remotas = g('for-each-ref', '--format=%(refname)', 'refs/remotes/').stdout.split('\n').filter(Boolean);
+  assert.deepEqual(remotas, ['refs/remotes/origin/scrum-8-viva'],
+    '🔴 el clon no trae sólo la rama pedida: o el banco está roto, o trae la punta de `main` y no es la forma del job de zona');
 });
 
 test('SCRUM-1335e · 🔴 scrum804 en un clon somero NO muere al cargar: declara sus casos', () => {
