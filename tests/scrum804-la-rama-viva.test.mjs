@@ -58,8 +58,14 @@ import { RASTRO, rastroDeLosTickets, rastroDe, motivosParaNoFiarse, esCiego } fr
 
 const RAIZ = path.join(import.meta.dirname, '..');
 const YO = path.join(import.meta.dirname, 'scrum804-la-rama-viva.test.mjs');
+/**
+ * 🔴 SCRUM-1335e · DÓNDE SE PREGUNTA A GIT. Por defecto, el repositorio de este fichero, como
+ * siempre. `SCRUM804_GIT_EN` sólo existe para que `tests/scrum1335e-…` pueda correr ESTE fichero
+ * contra un clon SOMERO sintético y comprobar que cae diciendo por qué; ningún job lo pone.
+ */
+const RAIZ_GIT = process.env.SCRUM804_GIT_EN || RAIZ;
 const git = (...args) => execFileSync('git', args,
-  { cwd: RAIZ, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
+  { cwd: RAIZ_GIT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // 🔴 SCRUM-925 · POR QUÉ ESTE FICHERO SE PONÍA ROJO SOLO, Y NO ERA POR LOS WORKTREES
 //
@@ -96,7 +102,7 @@ const git = (...args) => execFileSync('git', args,
 /** La tienda de refs, como una clave por ref: si algo entra, sale o cambia de sha, se nota. */
 const claveDeRefs = (filas) => filas.map((f) => `${f.nombre}\t${f.sha}`).sort();
 
-const censo = rastroDeLosTickets({ raiz: RAIZ, traer: false });
+const censo = rastroDeLosTickets({ raiz: RAIZ_GIT, traer: false });
 
 /**
  * LA POBLACIÓN, DECLARADA Y ÚNICA: las TRES lecturas de `refs/remotes/origin/` se toman aquí,
@@ -343,7 +349,7 @@ test('SCRUM-804 · 🔴 EL ÁRBITRO: población permanente y coherencia con la a
   const esAncestro = (objeto) => {
     try {
       execFileSync('git', ['merge-base', '--is-ancestor', objeto, sha],
-        { cwd: RAIZ, stdio: ['ignore', 'ignore', 'ignore'] });
+        { cwd: RAIZ_GIT, stdio: ['ignore', 'ignore', 'ignore'] });
       return true;
     } catch { return false; }
   };
