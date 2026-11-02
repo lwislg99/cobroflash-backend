@@ -27,6 +27,38 @@ import { temporalDeFixtureGit, gitDeFixture } from './_censo-fixture.mjs';
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const SUJETO = path.join(RAIZ, 'tests', 'scrum804-la-rama-viva.test.mjs');
 
+/** Las mutaciones de este guard, en el catálogo del meta-guard (SCRUM-1387: nada de banco con lista propia). */
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // La exigencia, muda: en el clon somero los casos del árbol vivo caen por un TypeError sin motivo.
+    fichero: 'tests/scrum804-la-rama-viva.test.mjs',
+    de: '  if (CIEGO) assert.fail(CIEGO);',
+    a: '  if (CIEGO) { /* mudo */ }',
+    cae: 'y los que miran el árbol vivo CAEN nombrando la causa',
+  },
+  {
+    // Nunca ciego: vuelve el `--merged=null` en el nivel superior, la forma exacta de SCRUM-1335d.
+    fichero: 'tests/scrum804-la-rama-viva.test.mjs',
+    de: 'const CIEGO = motivoDeCiego();',
+    a: 'const CIEGO = null;',
+    cae: 'scrum804 en un clon somero NO muere al cargar',
+  },
+  {
+    // El rojo sin remedio: cae, pero no dice qué hay que arreglar.
+    fichero: 'tests/scrum804-la-rama-viva.test.mjs',
+    de: "'verde. Si esto es un job de CI, su `actions/checkout` necesita `fetch-depth: 0` y la punta de '",
+    a: "'verde. Si esto es un job de CI, revisa el checkout y la punta de '",
+    cae: 'y los que miran el árbol vivo CAEN nombrando la causa',
+  },
+  {
+    // Un caso del árbol vivo sin la exigencia: en el clon somero pasaría EN VACÍO.
+    fichero: 'tests/scrum804-la-rama-viva.test.mjs',
+    de: "test('SCRUM-804 · ✅ SIN RASTRO es un veredicto, no un hueco', () => {\n  exigirArbol();",
+    a: "test('SCRUM-804 · ✅ SIN RASTRO es un veredicto, no un hueco', () => {",
+    cae: 'todo caso de scrum804 que lee el árbol vivo EMPIEZA por exigirArbol()',
+  },
+];
+
 /** El remoto y el clon con la forma del job de zona: profundidad 1, UNA rama, sin `main`. */
 let banco = null;
 function montar() {
