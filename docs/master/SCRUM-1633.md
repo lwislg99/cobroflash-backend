@@ -2,7 +2,7 @@
 
 ## S0 · SCRUM-1633 · una ruta que no existe sale NO-PUDE-MIRAR, sin nombrar puesto
 
-**Medido contra:** `origin/main` = `eafca9fe1` · 2026-10-29T17:34:19Z (hora de GitHub, cabecera `Date:`; S0, por encargo del orquestador de Luis)
+**Medido contra:** `origin/main` = `eafca9fe154c26d38b05a748ca816ba098943724` · 2026-10-29T17:34:19Z (hora de GitHub, cabecera `Date:`; S0, por encargo del orquestador de Luis)
 A9: comprobación → `tests/scrum1633-de-dice-si-la-ruta-no-existe.test.mjs`
 
 **El defecto, reproducido antes de tocar nada** (los dos primeros los midió S3 a las ~10:25Z; S0 los repitió a las 17:3xZ):
@@ -66,3 +66,14 @@ que comparten es la familia: los dos contestaban algo con salida 0 donde no sab�
 
 - `dos-equipos.md` §3.3 («Cómo nace la fila de un fichero de scripts/») no nombra `--nueva`. No lo toco aquí: el propio
   mensaje de `de` lo dice en el momento en que se pregunta, que es el camino por defecto.
+
+## S0 · SCRUM-1633b · el rojo de #2993 era el ancla de este registro, no el código
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T19:42:48Z (hora de GitHub, cabecera `Date:`; S0, por encargo del orquestador de Luis)
+A9: comprobación → `tests/scrum267-ancla-de-medicion.test.mjs`
+
+**Lo que me salió mal (S0):** el ancla del tramo de arriba llevaba el SHA en 9 posiciones (`eafca9fe1`) y el guard de SCRUM-267 exige las 40. Lo empujé así el 29-oct sin correr ese guard sobre mi propio registro; el guard ya existía y lo cazó en el CI, que es la comprobación de arriba.
+
+- **Causa de HOY, no la del jueves:** rama fusionada con `origin/main` de hoy (12 merges más) y corridos los cuatro ficheros que tocan esto (`scrum267`, `scrum1633`, `scrum1628`, `scrum1480e`): **32 tests, 29 pass, 3 fail**, los tres de `scrum267-ancla-de-medicion.test.mjs`, y por la misma entrada. El log del CI del 29-oct (run `40924498886`) daba lo mismo: 16 fallos, todos esos tres casos repetidos en las particiones.
+- **Arreglo:** el SHA completo (`eafca9fe154c26d38b05a748ca816ba098943724`, `git rev-parse`) en la línea 5. **El guard no se toca** (regla 41).
+- El código de 1633 (`--nueva`, la marca «RUTA NUEVA (hoy no existe)») y los dos tests re-anclados de 1628 y 1480e **no cambian**.
