@@ -212,13 +212,23 @@ test('SCRUM-302 · el duplicado se construye SUMANDO, no copiando y borrando', (
 const moduloPrisma = await import(DIST + 'core/db/prisma.js');
 const routerDe = (mod) => mod.default?.default ?? mod.default;
 
-/** Invoca POST /:id/duplicar de verdad y devuelve {salida, creado, numeroDentroDeTx}. */
-async function invocarDuplicar(origen) {
+/**
+ * Invoca POST /:id/duplicar de verdad y devuelve {salida, creado, numeroDentroDeTx, dondeBusca}.
+ *
+ * `merchantIdDeLaSesion` es el comercio de quien llama. El doble de `findFirst` se comporta como la
+ * base: sólo devuelve el origen si el `where` lo pide con SU `merchantId`. Antes devolvía el origen
+ * a cualquier `where`, y con eso un `findAlbaran` sin filtro de comercio pasaba igual.
+ */
+async function invocarDuplicar(origen, { merchantIdDeLaSesion = 7 } = {}) {
   let creado = null;
   let numeroPedidoDentroDeTx = false;
+  let dondeBusca = null;
 
   moduloPrisma.prisma.albaran = {
-    findFirst: async () => origen,
+    findFirst: async ({ where } = {}) => {
+      dondeBusca = where;
+      return where?.merchantId === origen.merchantId ? origen : null;
+    },
     findUnique: async () => origen,
     create: async ({ data }) => { creado = data; return { id: 99, ...data }; },
   };
@@ -256,9 +266,10 @@ async function invocarDuplicar(origen) {
     // SCRUM-849 · `userRole` anadido: `findAlbaran` comprueba ahora la pertenencia del Trabajo,
     // y sin rol el allowlist deja al llamante del lado restringido (fail-closed). No cambia lo que
     // este test mide —que el duplicado no hereda la firma—, arregla un doble que no era realista.
-    { params: { id: '7' }, body: {}, merchantId: 7, userRole: 'admin', query: {}, headers: {} }, res, () => {},
+    { params: { id: '7' }, body: {}, merchantId: merchantIdDeLaSesion, userRole: 'admin', query: {}, headers: {} },
+    res, () => {},
   );
-  return { salida, creado, numeroPedidoDentroDeTx };
+  return { salida, creado, numeroPedidoDentroDeTx, dondeBusca };
 }
 
 const ALBARAN_FIRMADO = {
@@ -305,4 +316,28 @@ test('SCRUM-302 · 🔴 el número se reserva DENTRO de la transacción', async 
   assert.ok(numeroPedidoDentroDeTx,
     '🔴 la reserva del número NO ocurrió dentro de `$transaction`. Dos duplicados a la vez se ' +
     'llevarían el mismo número, y eso no se arregla desde la pantalla.');
+});
+
+test('SCRUM-914 · el EQUIPO viaja con el duplicado, y el duplicado no sale del comercio', async () => {
+  // DECIDIDO A PROPÓSITO (SCRUM-914c, 2-nov-2026): `equipmentId` está en CAMPOS_QUE_VIAJAN. El
+  // parte de mañana es sobre la MISMA caldera, igual que `jobId` es el MISMO trabajo. Copiar un id
+  // de otra tabla sólo sería una fuga si el duplicado pudiera cambiar de comercio, y no puede:
+  // `findAlbaran` busca con el `merchantId` de la sesión, y el duplicado hereda el del origen.
+  // Este test es el testigo de las dos mitades; si alguien mueve `equipmentId` al otro cubo, o
+  // re-mapea el comercio, cae aquí y tiene que explicar por qué.
+  const CON_EQUIPO = { ...ALBARAN_FIRMADO, equipmentId: 5 };
+
+  const { salida, creado, dondeBusca } = await invocarDuplicar(CON_EQUIPO);
+  assert.equal(salida?.code, 201, `🔴 no se creó el duplicado: ${JSON.stringify(salida)}`);
+  assert.equal(dondeBusca?.merchantId, 7,
+    '🔴 `findAlbaran` no busca el original con el `merchantId` de la sesión (regla 2)');
+  assert.equal(creado.merchantId, 7, '🔴 el duplicado no es del mismo comercio que el original');
+  assert.equal(creado.equipmentId, 5,
+    '🔴 el duplicado ha perdido el equipo del cliente: el parte nuevo ya no dice sobre qué aparato es');
+
+  // La otra mitad: desde OTRO comercio, el original no se encuentra y no se crea nada. Sin esto,
+  // «hereda el merchantId» podría ser heredar el de un inquilino ajeno.
+  const ajeno = await invocarDuplicar(CON_EQUIPO, { merchantIdDeLaSesion: 8 });
+  assert.equal(ajeno.salida?.code, 404, `🔴 otro comercio duplica un albarán ajeno: ${JSON.stringify(ajeno.salida)}`);
+  assert.equal(ajeno.creado, null, '🔴 se creó un albarán desde un comercio que no es el suyo');
 });

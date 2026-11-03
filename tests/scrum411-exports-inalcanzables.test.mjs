@@ -661,13 +661,15 @@ test('SCRUM-411 · 🔴 lo que un test CORRE no es código muerto, y se cuenta p
   const total = usos.reduce((a, u) => a + u.llamadas, 0);
   // SCRUM-1307: de 7 a 13 porque entra un guard nuevo que lo CORRE (la negativa con envíos a la
   // AEAT, 6 llamadas). Sube, no baja: es especificación ejecutable añadida, no retirada.
-  assert.equal(total, 13,
-    '🔴 `borrarMerchant` ya no se ejerce 13 veces desde los tests.\n' +
+  // SCRUM-914: de 13 a 14 — un comercio con equipos del cliente, borrado contra Postgres.
+  assert.equal(total, 14,
+    '🔴 `borrarMerchant` ya no se ejerce 14 veces desde los tests.\n' +
     `   medido ahora: ${usos.map((u) => `${u.fichero}=${u.llamadas}`).join(' · ') || '(ninguna)'}\n` +
     '   Si BAJA, alguien está retirando la especificación ejecutable del orden de borrado seguro.');
   assert.deepEqual(usos.map((u) => u.fichero), [
     'tests/scrum1307-negarse-con-envios.test.mjs',
     'tests/scrum192-borrado-merchant.test.mjs',
     'tests/scrum244-colgados-de-otro-modelo.test.mjs',
+    'tests/scrum914-equipos-borrado-y-anonimizado.test.mjs',
   ], '🔴 han cambiado los guards que lo CORREN. Son ellos los que hacen que no se pueda borrar.');
 });

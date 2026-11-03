@@ -189,6 +189,11 @@ export async function fusionarClientes(
     // final falla y la fusión da 500 en cada reintento. Sin índice único: una dirección repetida
     // en los dos clientes no choca, el principal se queda con las dos (deduplicar sería borrar).
     await tx.customerSite.updateMany({ where: { merchantId, customerId: fusionadoId }, data: { customerId: principalId } });
+    // SCRUM-914 · los equipos del cliente. La misma FK RESTRICT a `customers` que las direcciones
+    // de obra: sin moverlos, el `DELETE` del fusionado falla y la fusión da 500. Su
+    // `customerSiteId` sigue valiendo: las direcciones acaban de pasar al principal en la línea
+    // de arriba, con su mismo id.
+    await tx.equipment.updateMany({ where: { merchantId, customerId: fusionadoId }, data: { customerId: principalId } });
 
     await tx.customer.updateMany({ where: { id: principalId, merchantId }, data: { tags: tagsUnidas } });
 

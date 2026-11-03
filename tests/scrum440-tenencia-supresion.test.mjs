@@ -123,6 +123,8 @@ test('SCRUM-440 · CONTROL POSITIVO: el merchant PROPIO sí puede pedir su supre
     'customerSite.updateMany': async () => ({ count: 0 }),
     // SCRUM-529: y el número al que se mandó cada WhatsApp (la fila se conserva).
     'whatsAppMessage.updateMany': async () => ({ count: 0 }),
+    // SCRUM-914: y el nombre y el número de serie de cada equipo del cliente (la fila se conserva).
+    'equipment.updateMany': async () => ({ count: 0 }),
   });
   try {
     const res = resFalso();
