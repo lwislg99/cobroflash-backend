@@ -453,3 +453,19 @@ A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
 **NO medido:** si lo que hay en producción se VE en yaqu.app (ninguna pantalla abierta en esta pasada) · el log de los 27 PR rojos que no son #3010 · si el ALTER de #3014 está en las tres bases (lo dijo J, c.20085; S0 no ha mirado ninguna base).
 
 **Para el relevo, en orden:** ① escribir la hoja (TAREA 1) con el punto 3 y el encargo · ② escribir el estado (TAREA 3) con el punto 5: corregir 2.9 en las cinco líneas y añadir arriba la tabla «en producción / en rama» · ③ recontar con `contar-dependencias.mjs` después del último cambio.
+
+## 3-nov-2026 · S0 (relevo) · 1563o — la hoja y el estado, ESCRITOS con lo medido en 1563n (sin volver a medir)
+
+**Escrito contra:** `origin/main` = `70eefc40c` · 2026-11-03T07:55:25Z-08:0xZ (`Date:` de GitHub). **No se ha medido nada nuevo:** todo sale del tramo 1563n y del encargo del orquestador del 3-nov.
+
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
+**1 · `docs/producto/DECISIONES-DEL-FUNDADOR.md`.** Bloque nuevo arriba, «3-nov · LO QUE TE QUEDA: TRES COSAS»: la delegación citada literal, con su localizador (`ed676fd1…jsonl`, uuid `6b2bcf7c…`; en Jira no consta) · las cuatro que salen, decididas por el orquestador (1644 reclasificar con aviso a 14 días · 1645 → 1652 · 1651 · 1297 se queda en go-live) · las tres que quedan: ① la S.L. (tres datos de la gestoría) · ② las tres plantillas de 2.10 en Meta · ③ dos PERMISOS (1605, 1506), con el aviso de que una delegación de decisiones no reparte permisos. En sitio, sin reescribir: B (intro, B2 vuelve sólo con 2.10, B3 marcada decidida), D (1.15 sale, 2.10 sube, 7.10 y el simulacro suben como permiso, 1.7 se queda) y E (las cuatro, con localizador).
+
+**2 · `docs/producto/ESTADO-DEL-PRODUCTO.md`.** ① **2.9 corregida en las cinco líneas** que decían «espera GO» o «#2998 ABIERTO» (§1 ①, la frase de §1, la fila de «mover hoy», §2 2.9 y §3): #2998 está en producción desde el 29-oct 19:05Z; lo de antes se conserva tachado. ② **Bloque nuevo arriba: «¿EN PRODUCCIÓN o EN UNA RAMA SIN MERGEAR?»**, con las dos tablas del punto 5 de 1563n y la lista explícita de lo que NO se recontó (§2-§5 siguen con sus cifras del 29-oct). ③ Marcas 🟢/🟠 del 3-nov en las filas que esos PR tocan: 0.2 (1283 cerrado, dato del orquestador), 2.13 (#3018), 6.3 ×2 (#3014, #2621), 6.16 ×2 (#3013), §4b #2974.
+
+**Discrepancia que dejo escrita, no resuelta:** 1563n dice «10 de ellos tocan producto» y nombra 9 (#2995, #2996, #2998, #3013, #3015, #2973, #2974, #3018, #3019). No recontado.
+
+**Atribuidos, no medidos por S0:** que la plantilla de firma está «verificada en producción» y que 1283 está cerrado (orquestador, 3-nov) · que cablear 1506 cae en una ruta `deny` (orquestador; no he leído la regla).
+
+**NO hecho:** recontar con `contar-dependencias.mjs` · mirar el obligatorio de #3010 (lo lleva S5 en su tabla de las 16 ramas).
