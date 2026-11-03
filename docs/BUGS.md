@@ -613,6 +613,7 @@
 ### [x] P2-1 · Acciones sobre presupuestos rechazados
 - **Mejora:** mostrar el motivo del cliente (depende de P1-3) y hacer visible **"Duplicar"** (o "Duplicar y editar") para revisar y reenviar. NO construir versionado/reapertura todavía — Duplicar es suficiente para el MVP.
 - **CERRADO (9 jun):** ya implementado — el detalle muestra "Motivo de rechazo" + "Comentario" (correctos desde P1-3) y el botón "⎘ Duplicar" está siempre visible en la cabecera (carga las líneas/tiers en un presupuesto nuevo, `duplicateQuote`). Sin código nuevo; lo desbloqueaba P1-3.
+- **CORREGIDO (2-nov-2026, SCRUM-1651): «/tiers» era FALSO.** `duplicateQuote` (`quotesDetailView.js`) mete `tiers` en la plantilla, pero el editor que la recibe (`renderQuotesView`, `quotesView.js`) no tiene opciones y sólo carga `lines` —su propio comentario: «`tiers` y `currency` viajan en la plantilla y NO se restauran aquí»—. Y en un presupuesto de 3 opciones `lines` son las de la recomendada (`quotes.routes.ts`, «líneas del tier recomendado como referencia»). Duplicar uno así abre el editor con UNA opción y pierde las otras dos sin avisar. El defecto vive en SCRUM-1651; esta línea no se borra para que se vea qué afirmaba.
 
 ### [x] P2-2 · Feedback al enviar presupuesto
 - **Mejora:** el aviso "Presupuesto enviado por WhatsApp" es muy discreto. Tras enviar, redirigir al detalle del presupuesto (muestra SENT + timeline) o mostrar un toast claro con enlace "Ver presupuesto".
