@@ -308,3 +308,98 @@ En CI: que en el job `trinquete · ningún test nuevo mide la zona de la máquin
 de verdad, y que la línea `SIN INFORME ENTERO` dé 0 en las dos zonas. Esa línea es de 1335d y **no
 está en `main`**: hasta que entre, el log de este job no la imprime y el control queda a medias. Lo
 mira S5 en la primera pasada con las dos cosas dentro.
+# SCRUM-1335e · `scrum804` moría al cargar en un clon somero, y el trinquete de zona no lo veía
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T21:56:41Z
+**Puesto:** S3 (instrumentos) · encargado por el orquestador el 2-nov-2026 («la ②»).
+A9: comprobación → `tests/scrum1335e-scrum804-en-clon-somero.test.mjs`
+⚠️ Los tramos 1335c y 1335d viven en sus ramas, todavía sin mergear. Si al fusionar chocan los
+anexos al final de este fichero, **se conservan todos**.
+
+## Lo que lo destapó
+
+La primera pasada de CI de la línea `SIN INFORME ENTERO` (1335d: PR #3029, job 125562740856, 2-nov
+21:45Z) dio **1 de 1.576 sin informe en LAS DOS zonas**: `tests/scrum804-la-rama-viva.test.mjs`.
+En Windows, 0. ⚠️ **Es una sola muestra de CI, no una serie.** Aquí no hace falta más, porque la
+causa está **reproducida**, no deducida:
+
+- El job de zona hace `actions/checkout` sin `fetch-depth: 0` (el de la tanda sí lo lleva). En ese
+  clon no está la punta de `main`, la instantánea de SCRUM-753 sale `incapaz` sin sha, y
+  `refsCrudasEnVivo(--merged=${censo.inst.sha})` se ejecutaba EN EL NIVEL SUPERIOR como
+  `--merged=null` → `fatal: malformed object name null`.
+- Reproducido con `run()` de `node:test` (el camino del hijo del trinquete) en un clon `--depth 1`
+  de la rama: 1 `test:fail`, `test:summary` sin `file`, 0 pass. Control: el mismo fichero con la
+  historia entera da 11/11 y su `test:summary` con `file`.
+- Moría igual en las dos zonas, así que el comparador lo daba por «comparado e igual». Según el
+  historial del fichero, eso viene de SCRUM-925 (17-sep): el trinquete no lo ha medido nunca desde
+  entonces. Lo de las seis semanas sale de leer el historial, no de medir pasadas viejas: el job de
+  zona no sube artefactos y en sus logs no queda nada que contar.
+
+## Lo que cambia
+
+- `scrum804`: nada que pueda lanzar al cargar (como `scrum804b`, SCRUM-1331/1541). `motivoDeCiego()`
+  mira si el clon es somero y si la instantánea es `incapaz`; con cualquiera de las dos, no se lee
+  ninguna ref, y los **seis** casos que leen el árbol vivo empiezan por `exigirArbol()`, que CAE con
+  `🔴 CIEGO · CLON SOMERO · …`. El mensaje nombra el remedio: `fetch-depth: 0` en `ci.yml`. Los
+  **cinco** puros corren. Con la historia entera, nada cambia: 11/11.
+- `SCRUM804_GIT_EN`: si está, dice a `scrum804` en qué repositorio preguntar a git. **Ningún job lo
+  pone**; existe sólo para que el test nuevo pueda correrlo contra un clon sintético.
+- **No toca `ci.yml`** (es de S5) ni el trinquete. En el job de zona, `scrum804` pasa de «sin
+  informe» a «6 fail con motivo · 5 pass» en las dos zonas: entrega su informe, y la línea de 1335d
+  vuelve a dar 0. Los seis casos del árbol vivo **siguen sin medirse en zona** mientras ese checkout
+  no traiga historia. Eso ahora se ve en el motivo, en vez de leerse como un éxito.
+
+## Rojo primero y mutaciones
+
+- Rojo: `4d753fbba9023d76827accc2030fcff6537ece37` (sólo el `SCRUM804_GIT_EN` + el test). El test
+  nuevo daba 1/3 con `fatal: malformed object name null`, la forma exacta del CI.
+- Verde: `713d3d5fc07715deef4cec19556047710a694e11`. Con un clon real `--depth 1` de esta rama
+  (`sonda-informe.mjs`): `test:summary` con `file`, 5 pass y 6 fail, los seis con `CIEGO · CLON SOMERO`.
+- Mutaciones: van en el CATÁLOGO del meta-guard (`MUTACIONES_QUE_ME_TUMBAN` del test nuevo), no en
+  un banco con lista propia. Lo exige `scrum1387`, y me lo cazó a mí: mi primer `mutar.mjs` en
+  evidencias caía ahí, así que se retiró. Juzgadas con la maquinaria del meta-guard
+  (`docs/master/evidencias/SCRUM-1620/juzgar-guards.mjs`, limpia primero) sobre
+  `9074a1dd8511c556162c16b0da1cca779d310b80`: **4 de 4 caen como declaran**.
+
+  | mutación | resultado |
+  |---|---|
+  | `exigirArbol()` muda | cae «…CAEN nombrando la causa» |
+  | `CIEGO = null` (vuelve a morir al cargar) | cae «…NO muere al cargar» |
+  | el mensaje sin `fetch-depth: 0` | cae «…CAEN nombrando la causa» |
+  | «SIN RASTRO» sin `exigirArbol()` (pasa en vacío) | cae el caso AST. Antes de ese caso quedaba **VIVA**, y el caso se añadió por eso |
+
+- `scrum723` cayó dos veces sobre MI test nuevo (`tests/scrum1335e-scrum804-en-clon-somero.test.mjs`),
+  no sobre código de producto. Lo que cambió en el test, y por qué:
+  | Commit | Dónde | Antes | Después |
+  |---|---|---|---|
+  | `192bccd6e` | el caso CONTROL | dos `rev-parse --verify` sobre `refs/remotes/origin/<la rama principal>` y sobre la rama pedida, y la rama principal nombrada en el título y en un mensaje | UN `for-each-ref refs/remotes/` con `deepEqual` contra `['refs/remotes/origin/scrum-8-viva']`: dice a la vez que trae la rama pedida y que no trae ninguna otra, sin nombrar la referencia móvil; el comentario del caso lo explica |
+  | `9074a1dd8` | `montar()` y el mensaje del control nuevo | `gitDeFixture(['init', …, '-b', <la principal>, remoto])` (`scrum723` no reconoce esa forma como llamada a git y casa la palabra), y el mensaje del `deepEqual` aún la nombraba | `g(dir, 'init', …)`, el mismo envoltorio que usa el resto de `montar()`, y el mensaje dice «la rama principal» |
+  **Por qué NO va en `HALLAZGOS_DECLARADOS` ni en `INDIRECTAS_DECLARADAS` de `scrum723`:** esas listas
+  son de quien COMPARA de verdad contra una referencia móvil; mi test no compara contra ella, sólo la
+  nombraba en prosa y en un fixture. Tras el arreglo `scrum723` ya no lo encuentra, y su propio
+  `deepEqual` hace caer una lista que declara de más. El guard no se tocó (regla 41).
+- Tanda: la tanda local ENTERA no terminó. Claude Code la paró por falta de memoria de la máquina
+  cuando llevaba 4.351 casos de primer nivel, con 3 caídas: `scrum113` (la de todos los PR),
+  `scrum1321` (la del temporal C:/D: en Windows) y `scrum1387` (la mía, ya arreglada). Después, la
+  tanda dirigida a lo que toco (19 ficheros: este test, `scrum804`, `scrum804b`, `scrum1541`,
+  `scrum723`, `scrum1387`, los de catálogo y suelos del meta-guard, `scrum267`, `scrum1294`,
+  `scrum710b`, `scrum850`): **164 de 164**. El veredicto entero es el del CI.
+
+## Lo que cuesta la otra vía (para S5): el checkout con historia en el job de zona
+
+Medido en la MISMA pasada (run 41528620408, una muestra por job), con las marcas en milisegundos de
+los logs:
+
+| job | checkout | traer `main` | total |
+|---|---|---|---|
+| zona (superficial, hoy) | 5,96 s | — | 5,96 s |
+| tanda (`fetch-depth: 0`) | 7,03 s | 0,27 s | 7,30 s |
+
+Diferencia: **~1,3 s** en un job de ~16,8 min (0,13 %). No se ha relanzado nada para medirlo.
+
+## Reproducir
+
+    node --test tests/scrum1335e-scrum804-en-clon-somero.test.mjs
+    node docs/master/evidencias/SCRUM-1620/juzgar-guards.mjs scrum1335e-scrum804-en-clon-somero.test.mjs
+    git clone --depth 1 --branch <rama> file:///<repo> <dir dentro del worktree, para resolver node_modules>
+    node docs/master/evidencias/SCRUM-1335e/sonda-informe.mjs <ese dir> tests/scrum804-la-rama-viva.test.mjs
