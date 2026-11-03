@@ -31,10 +31,10 @@
 // siguiente refactor cambia sin enterarse. Hay un test que invierte el array y comprueba que la
 // clasificación cambia — si no cambiara, el orden no significaría nada.
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import ts from 'typescript';
 import { grafoInterno } from './_huerfanos-en-modulos-vivos.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 export const SUBCATEGORIA = 'EXPORTADO_SOLO_PARA_EL_TEST';
 
@@ -236,7 +236,7 @@ const FUENTE = {
 };
 
 export function escribirFuenteSintetica() {
-  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum494-'));
+  const raiz = temporal('scrum494-');
   for (const [r, c] of Object.entries(FUENTE)) {
     const destino = path.join(raiz, r);
     fs.mkdirSync(path.dirname(destino), { recursive: true });
@@ -275,6 +275,6 @@ export function autoprueba() {
       consejoDelMotor: consejoPara(canon('ESPERANDO')),
     };
   } finally {
-    fs.rmSync(raiz, { recursive: true, force: true });
+    borrarTemporal(raiz);
   }
 }

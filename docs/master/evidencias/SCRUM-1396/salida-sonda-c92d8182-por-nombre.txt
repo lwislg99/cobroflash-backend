@@ -1,0 +1,30 @@
+A · LAS TRES FUENTES DEL TICKET
+  ① b() crea `dir` y no lo borra
+      línea  2 · dir → SIN_LIMPIEZA
+  ② lo mismo, y OTRA función a() borra SU `dir` en un finally
+      línea  2 · dir → GARANTIZADA (borrado que se le atribuye: línea 3)
+      línea  6 · dir → GARANTIZADA (borrado que se le atribuye: línea 3)
+  ③ control: la de a() se llama distinto
+      línea  2 · otro → GARANTIZADA (borrado que se le atribuye: línea 3)
+      línea  6 · dir → SIN_LIMPIEZA
+
+B · EL ROJO RARO: cuatro fugas que se llaman `dir`, y se arregla sólo la primera
+  antes · 4 funciones que fugan
+      línea  2 · dir → SIN_LIMPIEZA
+      línea  6 · dir → SIN_LIMPIEZA
+      línea 10 · dir → SIN_LIMPIEZA
+      línea 14 · dir → SIN_LIMPIEZA
+  después · arreglada SÓLO uno()
+      línea  2 · dir → GARANTIZADA (borrado que se le atribuye: línea 3)
+      línea  6 · dir → GARANTIZADA (borrado que se le atribuye: línea 3)
+      línea 10 · dir → GARANTIZADA (borrado que se le atribuye: línea 3)
+      línea 14 · dir → GARANTIZADA (borrado que se le atribuye: línea 3)
+
+RESUMEN
+  población: 13 llamadas clasificadas en 5 fuentes
+  A① b() sola ............................ SIN_LIMPIEZA
+  A② b() con a() homónima ................ GARANTIZADA
+  A③ b() con a() de otro nombre (control)  SIN_LIMPIEZA
+  B antes ................................ 4 de 4 acusadas
+  B después de arreglar 1 ................ 0 de 3 fugas vivas acusadas · 4 de 4 salen GARANTIZADA
+  fugas vivas que el censo da por buenas . 3 de 3

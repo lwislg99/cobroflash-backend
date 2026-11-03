@@ -33,7 +33,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
 import { execFileSync, execFile } from 'node:child_process';
@@ -41,6 +40,7 @@ import { promisify } from 'node:util';
 
 const ejecutar = promisify(execFile);
 import { fileURLToPath } from 'node:url';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CLI = path.join(RAIZ, 'scripts/vigilante-de-despliegue.mjs');
@@ -221,7 +221,7 @@ test('SCRUM-716c · 🔴 TODO job que le da `VIGIA_ESTADO` al vigía tiene su ca
  * que ya no hay nada que esquivar. La constancia de la retirada, en el bloque de aquí arriba.
  */
 function repoDePrueba() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum716c-'));
+  const dir = temporal('scrum716c-');
   const g = (...a) => String(execFileSync('git', a, { cwd: dir, encoding: 'utf8' })).trim();
   g('init', '-q');
   g('config', 'user.email', 'v@test.local');
@@ -319,7 +319,7 @@ test('SCRUM-716c · 🔴 EL CONTROL: con dos lecturas y producción MOVIÉNDOSE 
       '🔴 el historial no ha crecido a DOS renglones: el vigía no está anotando cada pasada.');
   } finally {
     await srv.cierra();
-    fs.rmSync(dir, { recursive: true, force: true });
+    borrarTemporal(dir);
   }
 });
 
@@ -342,7 +342,7 @@ test('SCRUM-716c · 🔴 EL CONTROL, el otro sentido: producción QUIETA pasado 
       + 'retraso cualquiera.');
   } finally {
     await srv.cierra();
-    fs.rmSync(dir, { recursive: true, force: true });
+    borrarTemporal(dir);
   }
 });
 
@@ -365,7 +365,7 @@ test('SCRUM-716c · ✅ POSITIVO: la PRIMERA pasada de todas SIGUE diciendo NO S
       '🔴 sale con 2 pero sin explicar que no lo sabe.');
   } finally {
     await srv.cierra();
-    fs.rmSync(dir, { recursive: true, force: true });
+    borrarTemporal(dir);
   }
 });
 
@@ -392,7 +392,7 @@ test('SCRUM-716c · 🔴 SUELO: si no logra leer `/version` es NO SE SABE, nunca
     assert.doesNotMatch(renglon, / · al-dia · /,
       '🔴 el vigía ha anotado «al día» sin haber podido mirar. No saber no es estar al día.');
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    borrarTemporal(dir);
   }
 });
 
@@ -482,6 +482,6 @@ test('SCRUM-824b · 🔴 EL NEGATIVO: si la lectura anterior no publica un sha l
       + 'DIAGNOSTICAR esto; sin él, SCRUM-824 habría sido otra semana de hipótesis.\n' + p.salida);
   } finally {
     await srv.cierra();
-    fs.rmSync(dir, { recursive: true, force: true });
+    borrarTemporal(dir);
   }
 });
