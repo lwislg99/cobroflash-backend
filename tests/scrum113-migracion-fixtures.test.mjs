@@ -122,6 +122,10 @@ export const CENSO_MIN = 26; // 25 -> 26 al entrar scrum51 en el censo (migrado,
  *
  * ESTAS DOS LÍNEAS son la ÚNICA excepción: censo, asserts y fecha los sigue tocando quien
  * escribió el ratchet (carril B, SCRUM-113).
+ * (SCRUM-1644, 3-nov-2026: los asserts y la fecha los tocó el puesto S3 del equipo de Luis por
+ * encargo de su orquestador, con la decisión delegada por el fundador que consta junto a
+ * `MIGRAR_ANTES_DE`. «Carril B» ya no existe como tal: el dueño de este fichero se lee en
+ * `docs/equipo/dos-equipos.md`, y quien lo cambie avisa al otro equipo en Jira.)
  *
  * ── SCRUM-124 · CONVENCIÓN ACEPTADA ─────────────────────────────────────────────────────
  * Ese reparto de propiedad no tiene mecanismo, y no puede tenerlo: un test no sabe quién
@@ -158,14 +162,49 @@ export const CENSO_MIN = 26; // 25 -> 26 al entrar scrum51 en el censo (migrado,
 //  · Contar sitios obliga a pasar el detector de booleano a contador de matches, y `createMany`
 //    (1 llamada / N merchants), los bucles y las factories NO casan → reintroduce la CEGUERA que
 //    este fichero existe para evitar (SCRUM-103). Campaña cerrada: payoff cero, downside real.
+//
+// ── SCRUM-1644 (3-nov-2026) · DE TRES PENDIENTES A UNO: los otros dos NO eran «pendientes» ──────
+// Hasta el 31-oct la lista tenía tres, y el plazo los medía a los tres. Dos de ellos no podían
+// migrar NUNCA por su propio motivo, escrito aquí mismo desde julio: `scrum74` (migrarlo borra la
+// evidencia de SCRUM-79) y `webhooks-idempotencia` (espera a SCRUM-63). Contarlos como deuda con
+// fecha garantizaba que el plazo caducara, y caducó: desde el 1-nov el obligatorio cayó en TODOS
+// los PR de los dos equipos. Salen de aquí a `FUERA_DEL_PLAZO`, más abajo, CON su motivo y con su
+// propio trinquete. Siguen contados, siguen vigilados: lo único que cambia es que una fecha no
+// puede vencer por algo que no depende de nadie que pueda cumplirla.
 export const MIGRACION_PENDIENTE = [
-  // Los tres que quedan NO son del carril B:
   'scrum17-recapitulativa.test.mjs',   // consolidación fiscal — con su dueño
-  'scrum74-recibo-token.test.mjs',     // carril A: su throw en el finally es la evidencia
-                                       // que sostiene la hipótesis de SCRUM-79. Migrarlo
-                                       // haría desaparecer el síntoma sin arreglar la causa.
-  'webhooks-idempotencia.test.mjs',    // depende del seed demo (SCRUM-63), sin resolver
 ];
+
+/**
+ * FUERA DEL PLAZO — crean merchants a mano A SABIENDAS, y el plazo de la migración NO les aplica.
+ * SCRUM-1644. Tiene las MISMAS dos mitades que `MIGRACION_PENDIENTE` (un trinquete necesita las
+ * dos): igualdad exacta con `FUERA_DEL_PLAZO_MAX`, y una entrada que deje de crear a mano tiene
+ * que salir. Sin eso, reclasificar habría abierto una segunda puerta para aparcar ficheros, y el
+ * trinquete se habría vuelto un colador.
+ *
+ * Dos clases, y no hay más:
+ *  · EXCEPCION_PERMANENTE — no se migra NUNCA, y el motivo es una decisión tomada, no una deuda.
+ *  · BLOQUEADA — se migra cuando se cierre `ticket`; su plazo cuelga de ese ticket, no de una fecha.
+ */
+export const FUERA_DEL_PLAZO = [
+  {
+    fichero: 'scrum74-recibo-token.test.mjs',
+    clase: 'EXCEPCION_PERMANENTE',
+    motivo: 'su throw en el finally es la evidencia que sostiene la hipótesis de SCRUM-79; '
+      + 'migrarlo haría desaparecer el síntoma sin arreglar la causa',
+  },
+  {
+    fichero: 'webhooks-idempotencia.test.mjs',
+    clase: 'BLOQUEADA',
+    ticket: 'SCRUM-63',
+    motivo: 'depende del seed demo, sin resolver: se migra cuando se cierre SCRUM-63',
+  },
+];
+
+/** Tope de `FUERA_DEL_PLAZO`. Igualdad exacta, como `MIGRACION_MAX`: sólo mengua. */
+export const FUERA_DEL_PLAZO_MAX = 2;
+
+const CLASES_FUERA_DEL_PLAZO = ['EXCEPCION_PERMANENTE', 'BLOQUEADA'];
 
 /**
  * Tope del ratchet. VA SIEMPRE AL LÍMITE EXACTO, sin holgura: es eso lo que hace que
@@ -174,6 +213,7 @@ export const MIGRACION_PENDIENTE = [
  * de SCRUM-103 (el ratchet de rutas se dejó en 25 con 24 entradas).
  */
 // 24 → 23 (t1) → 22 (t2) → 19 (t3) → 13 (t4 + scrum94 sesión 1) → 11 (t5) → 3 (t7)
+//   → 1 (SCRUM-1644: no se migró ninguno; scrum74 y webhooks-idempotencia pasaron a FUERA_DEL_PLAZO)
 //
 // El número salió de CONTAR la lista fusionada, no de elegir rama. Este rebase trajo tres
 // conflictos seguidos en esta línea (16 de la sesión 1 sacando scrum94, contra 15 y 14 del
@@ -181,14 +221,77 @@ export const MIGRACION_PENDIENTE = [
 // una de las dos ramas. Es el escenario exacto que el assert de IGUALDAD EXACTA vino a
 // hacer ruidoso: con `<=` cualquiera de esos números habría pasado en verde, dejando
 // huecos libres.
-export const MIGRACION_MAX = 3;
+export const MIGRACION_MAX = 1;
 
 /**
  * Fecha límite. Pasada, el test falla mientras queden pendientes.
  * DECIDIDA por el fundador el 23-jul-2026, en coherencia con el 30-sep de SCRUM-55.
  * Moverla vuelve a requerir su OK: es una decisión, no un despiste, y queda en el diff.
+ *
+ * SCRUM-1644 · '2026-10-31' → '2026-12-15', y la decisión tiene dueño y localizador:
+ *  · el fundador DELEGÓ sus decisiones el 3-nov-2026, literal: «todo lo que tenia que decididr yo
+ *    decidelo tu si puedes» (turno type:user `6b2bcf7c-aa53-4a8d-9d10-ab31e3faa10b`, ts
+ *    2026-11-03T07:38:24.106Z, transcripción `ed676fd1-feb4-4658-bda2-01f4bf9fb3fc.jsonl`);
+ *  · con esa delegación, el orquestador del equipo de Luis decidió la opción ② de SCRUM-1644
+ *    (reclasificar, no sólo mover la fecha) y eligió el 15-dic: seis semanas, para que el dueño de
+ *    la consolidación fiscal pueda coger `scrum17`. La fecha es SUYA, no de quien escribe esto.
  */
-export const MIGRAR_ANTES_DE = '2026-10-31';
+export const MIGRAR_ANTES_DE = '2026-12-15';
+
+/**
+ * SCRUM-1644 · EL AVISO ANTES DE CADUCAR. Hasta el 31-oct este guard sólo hablaba el día DESPUÉS,
+ * y ese día bloqueó a los dos equipos de golpe: la información existía, pero llegaba tarde. A
+ * `DIAS_DE_AVISO` días o menos del plazo sale un aviso VISIBLE que NO bloquea (diagnóstico y
+ * anotación `::warning` en el log del CI); pasada la fecha, sigue fallando exactamente como antes.
+ * Es apretar el guard, no aflojarlo: el rojo no se mueve ni un día, se le añade un preaviso.
+ */
+export const DIAS_DE_AVISO = 14;
+
+const DIA_MS = 24 * 60 * 60 * 1000;
+const FECHA = /^\d{4}-\d{2}-\d{2}$/;
+const comoDia = (s) => {
+  const ms = FECHA.test(String(s)) ? Date.parse(`${s}T00:00:00Z`) : NaN;
+  // Fail-closed: una fecha que no sé leer NO es «en plazo». «No pude mirar» y «no hay nada» no
+  // pueden salir iguales.
+  if (!Number.isFinite(ms)) throw new Error(`🔴 SCRUM-113: no sé leer la fecha «${s}» (se espera AAAA-MM-DD)`);
+  return ms;
+};
+
+/**
+ * Veredicto PURO del plazo: no lee el reloj ni el entorno, así sus casos se prueban con un `hoy`
+ * fijo en cualquier máquina. Estados: `completo` (no queda nada) · `en-plazo` · `aviso` (faltan
+ * `diasDeAviso` días o menos, el propio día del plazo incluido) · `caducado` (hoy > plazo).
+ */
+export function veredictoDelPlazo({ hoy, plazo, pendientes, diasDeAviso = DIAS_DE_AVISO }) {
+  const dias = Math.round((comoDia(plazo) - comoDia(hoy)) / DIA_MS);
+  if (pendientes === 0) return { estado: 'completo', dias };
+  if (dias < 0) return { estado: 'caducado', dias };
+  if (dias <= diasDeAviso) return { estado: 'aviso', dias };
+  return { estado: 'en-plazo', dias };
+}
+
+/**
+ * Aplica el veredicto: `caducado` LANZA (el rojo de siempre, con su mensaje de siempre); `aviso`
+ * llama a `avisar(mensaje)` y NO lanza; el resto calla. Devuelve el veredicto.
+ */
+export function comprobarPlazo({ hoy, plazo, pendientes, avisar = () => {}, diasDeAviso = DIAS_DE_AVISO }) {
+  const v = veredictoDelPlazo({ hoy, plazo, pendientes, diasDeAviso });
+  assert.ok(
+    v.estado !== 'caducado',
+    `\n\n🔴 CADUCÓ el plazo para migrar los tests a withMerchant.\n` +
+      `   Hoy ${hoy} · plazo ${plazo} · quedan ${pendientes}.\n\n` +
+      `No es un fallo del código: es la señal de que "se migra por tandas" se volvió "nunca".\n` +
+      `Migra o mueve la fecha con el OK del fundador — pero que sea una decisión.\n`,
+  );
+  if (v.estado === 'aviso') {
+    avisar(
+      `⚠️ SCRUM-113: el plazo para migrar a withMerchant vence el ${plazo} y faltan ${v.dias} día(s); ` +
+        `quedan ${pendientes} pendiente(s). Hoy NO bloquea; el día ${plazo} pasado, el obligatorio cae ` +
+        `en TODOS los PR. Migra, o que alguien con la decisión mueva la fecha, ANTES.`,
+    );
+  }
+  return v;
+}
 
 const ficheros = fs.readdirSync(DIR).filter((f) => f.endsWith('.test.mjs'));
 const leer = (f) => fs.readFileSync(path.join(DIR, f), 'utf8');
@@ -237,7 +340,8 @@ test('SCRUM-113: el detector NO está ciego (guarda de calibración)', (t) => {
 
 test('SCRUM-113: ningún fichero NUEVO nace con el patrón viejo', () => {
   const aMano = ficheros.filter((f) => clasificar(f).manual);
-  const nuevos = aMano.filter((f) => !MIGRACION_PENDIENTE.includes(f));
+  const declarados = new Set([...MIGRACION_PENDIENTE, ...FUERA_DEL_PLAZO.map((e) => e.fichero)]);
+  const nuevos = aMano.filter((f) => !declarados.has(f));
 
   assert.equal(
     nuevos.length, 0,
@@ -287,16 +391,147 @@ test('SCRUM-113: la lista de pendientes solo mengua (ratchet + caducidad)', (t) 
   );
 
   const hoy = new Date().toISOString().slice(0, 10);
-  if (MIGRACION_PENDIENTE.length > 0) {
-    assert.ok(
-      hoy <= MIGRAR_ANTES_DE,
-      `\n\n🔴 CADUCÓ el plazo para migrar los tests a withMerchant.\n` +
-        `   Hoy ${hoy} · plazo ${MIGRAR_ANTES_DE} · quedan ${MIGRACION_PENDIENTE.length}.\n\n` +
-        `No es un fallo del código: es la señal de que "se migra por tandas" se volvió "nunca".\n` +
-        `Migra o mueve la fecha con el OK del fundador — pero que sea una decisión.\n`,
-    );
-    t.diagnostic(`pendientes de migrar: ${MIGRACION_PENDIENTE.length}/${MIGRACION_MAX} · plazo ${MIGRAR_ANTES_DE}`);
-  } else {
+  const v = comprobarPlazo({
+    hoy,
+    plazo: MIGRAR_ANTES_DE,
+    pendientes: MIGRACION_PENDIENTE.length,
+    avisar: (m) => {
+      t.diagnostic(m);
+      // Una línea que EMPIEZA por `::warning` la convierte GitHub en anotación del run. Fuera del
+      // CI es una línea de texto más: no hace falta (ni conviene, scrum702) leer el entorno.
+      console.log(`::warning title=SCRUM-113 plazo a ${DIAS_DE_AVISO} días o menos::${m}`);
+    },
+  });
+  if (v.estado === 'completo') {
     t.diagnostic('migración completa: ningún test crea merchants a mano 🎉');
+  } else {
+    t.diagnostic(`pendientes de migrar: ${MIGRACION_PENDIENTE.length}/${MIGRACION_MAX} · plazo ${MIGRAR_ANTES_DE} · faltan ${v.dias} día(s)`);
   }
 });
+
+test('SCRUM-1644: FUERA_DEL_PLAZO también sólo mengua, y cada entrada lleva su motivo', () => {
+  // Las dos mitades del trinquete, igual que MIGRACION_PENDIENTE. Sin ellas, reclasificar abre una
+  // segunda puerta para aparcar ficheros sin que caiga nada.
+  assert.equal(
+    FUERA_DEL_PLAZO.length, FUERA_DEL_PLAZO_MAX,
+    FUERA_DEL_PLAZO.length > FUERA_DEL_PLAZO_MAX
+      ? `\n\n🔴 FUERA_DEL_PLAZO ha CRECIDO: ${FUERA_DEL_PLAZO.length} > ${FUERA_DEL_PLAZO_MAX}.\n` +
+        `Sólo puede menguar. Sacar un fichero del plazo no es la forma de aparcarlo: un test nuevo se\n` +
+        `escribe con withMerchant.\n`
+      : `\n\n🔴 HOLGURA en FUERA_DEL_PLAZO: ${FUERA_DEL_PLAZO.length} entradas con el tope en ${FUERA_DEL_PLAZO_MAX}.\n` +
+        `Baja FUERA_DEL_PLAZO_MAX a ${FUERA_DEL_PLAZO.length} en el mismo commit.\n`,
+  );
+
+  const malDeclaradas = FUERA_DEL_PLAZO.filter((e) =>
+    !CLASES_FUERA_DEL_PLAZO.includes(e.clase)
+    || !(typeof e.motivo === 'string' && e.motivo.trim().length >= 20)
+    || (e.clase === 'BLOQUEADA' && !/^SCRUM-\d+$/.test(String(e.ticket))));
+  assert.deepEqual(
+    malDeclaradas.map((e) => e.fichero), [],
+    `\n\n🔴 Entradas de FUERA_DEL_PLAZO sin clase válida (${CLASES_FUERA_DEL_PLAZO.join(' | ')}), sin\n` +
+      `motivo escrito, o BLOQUEADA sin el ticket del que cuelga. Una excepción sin su porqué es una\n` +
+      `deuda escondida.\n`,
+  );
+
+  const enLasDos = FUERA_DEL_PLAZO.filter((e) => MIGRACION_PENDIENTE.includes(e.fichero));
+  assert.deepEqual(enLasDos.map((e) => e.fichero), [], '🔴 un fichero no puede estar pendiente Y fuera del plazo a la vez');
+
+  const yaNoCreanAMano = FUERA_DEL_PLAZO
+    .filter((e) => fs.existsSync(path.join(DIR, e.fichero)))
+    .filter((e) => !clasificar(e.fichero).manual);
+  assert.deepEqual(
+    yaNoCreanAMano.map((e) => e.fichero), [],
+    `\n\n🔴 Estas entradas de FUERA_DEL_PLAZO ya NO crean merchants a mano: sácalas y baja\n` +
+      `FUERA_DEL_PLAZO_MAX en el mismo commit (si es BLOQUEADA, mira si su ticket se cerró).\n`,
+  );
+});
+
+test('SCRUM-1644: el plazo AVISA a 14 días o menos, sin bloquear, y cae al pasar la fecha', async (t) => {
+  const plazo = '2026-12-15';
+  const restar = (dias) => new Date(Date.parse(`${plazo}T00:00:00Z`) - dias * DIA_MS).toISOString().slice(0, 10);
+  const probar = (hoy, pendientes = 1) => {
+    const avisos = [];
+    const v = comprobarPlazo({ hoy, plazo, pendientes, avisar: (m) => avisos.push(m) });
+    return { v, avisos };
+  };
+
+  await t.test('a 10 días: SALE el aviso y NO falla', () => {
+    const { v, avisos } = probar(restar(10));
+    assert.equal(v.estado, 'aviso');
+    assert.equal(avisos.length, 1);
+    assert.match(avisos[0], /faltan 10 día/);
+  });
+
+  await t.test('a 30 días: NO sale nada', () => {
+    const { v, avisos } = probar(restar(30));
+    assert.equal(v.estado, 'en-plazo');
+    assert.deepEqual(avisos, []);
+  });
+
+  await t.test('con la fecha pasada: FALLA, como antes de SCRUM-1644', () => {
+    assert.throws(() => probar(restar(-1)), /CADUCÓ el plazo/);
+  });
+
+  await t.test('los bordes: el día 14 avisa, el 15 calla, el propio día del plazo avisa y no cae', () => {
+    assert.equal(probar(restar(14)).avisos.length, 1);
+    assert.equal(probar(restar(15)).avisos.length, 0);
+    const delDia = probar(plazo);
+    assert.equal(delDia.v.estado, 'aviso');
+    assert.match(delDia.avisos[0], /faltan 0 día/);
+  });
+
+  await t.test('sin pendientes no avisa ni cae, aunque la fecha haya pasado', () => {
+    const { v, avisos } = probar(restar(-30), 0);
+    assert.equal(v.estado, 'completo');
+    assert.deepEqual(avisos, []);
+  });
+
+  await t.test('una fecha que no sé leer NO cuenta como «en plazo»', () => {
+    assert.throws(() => comprobarPlazo({ hoy: restar(30), plazo: '15-12-2026', pendientes: 1 }), /no sé leer la fecha/);
+    assert.throws(() => comprobarPlazo({ hoy: 'hoy', plazo, pendientes: 1 }), /no sé leer la fecha/);
+  });
+});
+
+// SCRUM-1644 · las mutaciones que el meta-guard (scripts/meta-guard-mutaciones.mjs) aplica en el CI.
+// Son el control ③ del encargo puesto en el camino por defecto: si un día reclasificar convierte
+// este trinquete en un colador, alguna de estas deja de tumbarlo y el meta-guard lo dice MUDO.
+// Las anclas acaban en salto de línea real, que en el literal de abajo es `\n`: así la declaración
+// no se cita a sí misma. Y `prisma.merchant\x2ecreate` va escapado para que ESTE fichero no case
+// con CREA_A_MANO (se leería «crea a mano» y caería él solo).
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // Un cuarto fichero aparcado en la lista de pendientes, sin tocar el tope.
+    fichero: 'tests/scrum113-migracion-fixtures.test.mjs',
+    de: "  'scrum17-recapitulativa.test.mjs',   // consolidación fiscal — con su dueño\n];\n",
+    a: "  'scrum17-recapitulativa.test.mjs',   // consolidación fiscal — con su dueño\n  'scrum22-operario-readpath.test.mjs',\n];\n",
+    cae: 'SCRUM-113: la lista de pendientes solo mengua (ratchet + caducidad)',
+  },
+  {
+    // Un fichero aparcado en FUERA_DEL_PLAZO, sin tocar su tope: la segunda puerta, cerrada.
+    fichero: 'tests/scrum113-migracion-fixtures.test.mjs',
+    de: "    motivo: 'depende del seed demo, sin resolver: se migra cuando se cierre SCRUM-63',\n  },\n];\n",
+    a: "    motivo: 'depende del seed demo, sin resolver: se migra cuando se cierre SCRUM-63',\n  },\n  { fichero: 'scrum22-operario-readpath.test.mjs', clase: 'EXCEPCION_PERMANENTE', motivo: 'aparcado para que el test pase en verde' },\n];\n",
+    cae: 'SCRUM-1644: FUERA_DEL_PLAZO también sólo mengua, y cada entrada lleva su motivo',
+  },
+  {
+    // Un fichero que vuelve a crear merchants a mano sin estar en ninguna lista.
+    fichero: 'tests/scrum22-operario-readpath.test.mjs',
+    de: "import test from 'node:test';\n",
+    a: "import test from 'node:test';\n// prisma.merchant\x2ecreate({ data: {} })\n",
+    cae: 'SCRUM-113: ningún fichero NUEVO nace con el patrón viejo',
+  },
+  {
+    // El aviso que deja de salir: el preaviso de SCRUM-1644, desactivado.
+    fichero: 'tests/scrum113-migracion-fixtures.test.mjs',
+    de: '  if (dias <= diasDeAviso) return { estado: \'aviso\', dias };\n',
+    a: '',
+    cae: 'SCRUM-1644: el plazo AVISA a 14 días o menos, sin bloquear, y cae al pasar la fecha',
+  },
+  {
+    // El rojo del día después, aflojado a un aviso: lo que NO se puede hacer nunca.
+    fichero: 'tests/scrum113-migracion-fixtures.test.mjs',
+    de: '  if (dias < 0) return { estado: \'caducado\', dias };\n',
+    a: '  if (dias < 0) return { estado: \'aviso\', dias };\n',
+    cae: 'SCRUM-1644: el plazo AVISA a 14 días o menos, sin bloquear, y cae al pasar la fecha',
+  },
+];
