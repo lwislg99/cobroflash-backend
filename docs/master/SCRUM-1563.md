@@ -335,3 +335,137 @@ A9: aviso → A10 «Cero no es «está limpio»: es «no he mirado».» — no s
 `yaqu-fase-b/SKILL.md` no repite la regla (0 coincidencias de `URL` o `{{1}}`): no hace falta tocarla.
 
 **4 · Lo que quedó sin medir, cerrado** (`ESTADO-DEL-PRODUCTO.md`): `/version` = `main` · §1 ③: 175 abiertos (178 − 9 + 6, exacto), Javier 59 → **64 sin crear ninguno** (cinco re-etiquetados, NO medido cuáles) · §4: salen cinco Finalizadas (1589, 1594, 1608, 1623, 1626); 1518 ya tiene el chip en `main` · §4b: **13** en conflicto de 25 abiertos (entra #2738, de un ticket Finalizado). **§2 no se ha recontado.**
+
+---
+
+## SCRUM-1563j · las 27 sin clase, la nota de claves de BD de `CLAUDE.md` y §2 recontado
+
+**Medido:** 29-oct-2026, 18:30Z-18:55Z (`Date:` de GitHub) · `origin/main` = `53d9834d9` · rama `scrum-1563j-clases-hoja-y-claves`, **encima de 1563i** (PR #3005, abierto) para no chocar en la misma hoja · S0.
+
+**1 · Las 27 filas sin etiqueta de clase** (`DECISIONES-DEL-FUNDADOR.md`, parte F nueva). El ÚLTIMO comentario de cada ticket, leído por dos lectores de sólo lectura con `fields` explícito; **la cita que saca una fila de la lista (1629), cotejada por S0 en Jira.** Resultado: `stop-fundador` 13 · `fundador` 5 · `fundador`+`stop-fundador` 3 · `fundador`+nuestro 1 · `equipo-javier` 1 · nuestro 3 · sin decidir 1 (1545, se queda en D) = 27; **10 de ellas sólo por título** (0 comentarios con la decisión).
+- **Salen a la parte A tres filas:** 3.2 (870) y 6.4 (1056), por decisión del orquestador; **6.16 (1629) por lo medido**: el fundador DELEGÓ la elección del texto («weligue tu lo que me pides», c.21194, 27-oct). La hoja la tenía como `stop-fundador` (MI LECTURA de 1563i): **estaba mal**. Recuento: A 6 · B 2 · C 10 · D 30 = 48.
+- **913 resuelto:** J aplica el ALTER (título), construye `equipo-luis`.
+- **`decision-jefe` no es `fundador`:** dice QUIÉN (un jefe, Luis o Javier: `dos-equipos.md:28`), no QUÉ. En 1182 y 1210 (`equipo-luis`) deja los dos tickets **fuera de las dos colas**: la nuestra no busca esa etiqueta y la de Javier exige `equipo-javier`. Propuesta al orquestador: sustituirla por la clase medida. **Jira no se ha tocado.**
+
+**2 · `CLAUDE.md`, regla 3, re-fechada** (sólo el registro medido que el propio fichero pide re-fechar; nada más). Instrumentos: `node scripts/claves-bd-de-todos-los-arboles.mjs` (la población de la frase) y `node scripts/comprobar-claves-bd.mjs` en los dos árboles con fichero, ambos de `main`. **313 árboles · 311 sin fichero de entorno · 2 con `.env.local`** (compartido y `s1-960`) · ninguno con `_STAGING`/`_DEV`/`_TESTS` · `DATABASE_URL` → `localhost/yaqu_dev` en los dos · nadie en el 5432. 🔴 **El censo sale 2 («no supe medir») y NO da la frase «ninguna apunta a producción»**: `localhost/yaqu_dev` no está declarado en `DESTINOS_ESPERADOS` (SCRUM-1526). Declararlo es una decisión sobre un guard: **no se ha tocado**; se le pasa al orquestador. Ningún valor de clave en ningún sitio.
+
+**3 · §2 de `ESTADO-DEL-PRODUCTO.md`, recontado.** 66 filas, 74 tickets, una consulta (`key, status`) filtrada a «Finalizada o tocado desde las 06:00Z» = 21. Los 11 Finalizada ya estaban reflejados. Movido: **2.14 → §8** (#2935 y #2958 MERGEADOS, comprobado en GitHub; ticket 1622 abierto) · **6.16 → movible hoy (S2)** · 3.2 y 6.4 sin FUNDADOR · 2.4, 2.13, 6.17 con su último comentario (6.17 resulta de J3). Control: `contar-dependencias.mjs` da FUNDADOR **48 → 45** y filas **71 → 70**, que es exactamente lo movido. **No leído:** el último comentario de los 53 abiertos sin movimiento desde las 06:00Z.
+
+**Para el orquestador:** ① declarar o no `localhost/yaqu_dev` (sin eso, la frase de la regla 3 no se puede escribir) · ② `decision-jefe` en 1182 y 1210 · ③ 1545: ¿espera aún al fundador el «encargo de diseño»? (un lector dice que no; NO cotejado).
+
+## 2-nov-2026 · S0 · 1563k — la hoja, corregida con el último comentario de los 64
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T19:53:04Z-20:05Z (`Date:` de GitHub). Producción en el mismo commit (`/version`, leído por el orquestador a las 19:30Z).
+
+A9: aviso → cicatriz S0 «Puse la hora a ojo en tres mensajes seguidos (17:20Z, 17:25Z y 17:30Z cuando GitHub decía 17:17Z): la hora se lee de `gh api -i zen` justo antes de CADA escritura, también en un mensaje a otra sesión.» — no se pudo comprobar: la hora que se escribe dentro de un comentario de Jira no la cruza ningún test con la que Jira le pone (añadida el 3-nov por el relevo de S0: faltaba y tumbaba `scrum1294` y `scrum976 ④` en #3010)
+
+**Qué cambia en `docs/producto/DECISIONES-DEL-FUNDADOR.md`** (tabla completa al principio de la hoja, «Re-medido el 2-nov»):
+- 🔴 **3.14 sale de lo que se le pide**: la credencial de sólo lectura existe desde el 23-sep (SCRUM-1097 c.16655, cotejado). Falta correrla (SCRUM-1109, `equipo-javier`). 1.1 se queda en D sólo por el GO de las 2 líneas.
+- **B2 baja a D**: se cumplió la condición que ella misma ponía (1632c en producción). **B queda en 1 (0.1).**
+- **1545 cotejado por S0**: un solo comentario (c.20042) y nada para el fundador; lo suyo son los textos (punto 4, regla 39). Se queda en D con ese motivo.
+- 1586 (ratificación de Javier, c.21159) · 1612 (diseño firmado, c.21141): **sin cotejar**, se quedan en D con la nota.
+- Entran **3.21** (SCRUM-1566, D, candidata a B) y **3.16** (SCRUM-1041, C), las dos fuera de las 48.
+- **Parte G nueva**: 1393 (incompleta), 523 y 1566, para que el fundador tenga una lista y no dos.
+- `ESTADO-DEL-PRODUCTO.md` §2b, fila 2.4 (1518): iba por detrás; las dos mitades están en producción.
+
+**Error del encargo, cotejado:** decía «la D1 de 1264 la contestó el fundador en 665 c.16647». **El autor de c.16647 es Javier** (lo dice `docs/legal/PREGUNTAS_ASESOR.md:1121`: «RESPONDIDA POR JAVIER… no es dictamen»). La hoja lo dice así.
+
+**Error mío:** las horas de los comentarios de 1631 y 1562 (c.21316, c.21317) dicen «~20:05Z»; Jira los fechó a las 19:57Z. Puse la hora a ojo, sin pedirla.
+
+**NO medido:** las citas de 1393, 523, 1566, 1586 y 1612 (de un lector, sin cotejar) · qué GO pide el `stop-fundador` de 1109 · quién corre la consulta de 1490 con la credencial.
+
+## 2-nov-2026 · S0 · 1563l — la hoja con todo lo de hoy, y las etiquetas que faltaban
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` (= producción) · 2026-11-02T20:27:57Z-20:45Z (`Date:` de GitHub). Jira con `fields` explícito y `labels` dentro.
+
+A9: sin fallo que generalice — tramo de documento y etiquetas por encargo; lo único que quedó sin medir va escrito abajo como NO medido (añadida el 3-nov por el relevo de S0)
+
+**Qué cambia en `docs/producto/DECISIONES-DEL-FUNDADOR.md`** (tabla completa en la hoja, «Re-medido el 2-nov-2026 a las 20:27Z»):
+- **0.2 se queda sólo con la cesión**: SCRUM-1283 Finalizada (LICENSE + `UNLICENSED` en `main`); la cesión a la S.L. cuelga de SCRUM-1561.
+- **3.19 sale a la parte E**: SCRUM-1612 c.21141 cotejado (firma de Javier; vale un jefe, `dos-equipos.md:28`).
+- **B3 nueva, `scrum113` (SCRUM-1644)**: bloquea hoy a los dos equipos; opciones ① mover la fecha · ② reclasificar los dos que no pueden migrar (② cotejada).
+- **1.15 nueva en D (SCRUM-1645)**: un sí o un no sobre las aprobaciones del rol asesor de agosto; cierra 9 claves de Cobros + `diasEnTabla` + 2 de `paidVia` (c.21325, cotejado).
+- **7.10 nueva en D (SCRUM-1506)**: la cerradura de carril, `decision-jefe`, los dos equipos (c.21330). Candidata a B.
+- **Parte G**: 1393 (c.21328) y 1586 (c.21159) **sin respuesta de Javier** a las 20:30Z; entra la fila de 1586.
+- Tabla «donde la etiqueta y lo medido NO casan»: + 1097 (sin equipo), 1612 (firmado), 1297 (equipo en discrepancia: título «(J5)», autoría y ficheros de S1/S2).
+- 1629 Finalizada en Jira (ya estaba en A). 3.14, B2 y 1041 ya los había movido 1563k: sin cambios.
+
+**Jira tocado (por encargo del orquestador, sólo en tickets del equipo de Luis):** etiquetas en 1438, 1451, 1558 (+ `stop-fundador`), 1561 (+ `equipo-luis`, `fundador`) y 1283 (+ `equipo-luis`); detalle en la parte F de la hoja. Comentarios: **SCRUM-1558 c.21334** ((a) hecha `d76989122`, (b) viva con el literal pendiente de firma, y que la rama `espera/scrum-1558b-…` es el gemelo del enlace de acceso, no el (b)) · **SCRUM-1595 c.21335** (STOP sólo en el sobre de firma; propuesta de partirlo).
+
+**El agujero, medido:** abiertos sin etiqueta de equipo = **45 de 180** (JQL `statusCategory != Done AND (labels is EMPTY OR labels not in (equipo-luis, equipo-javier))`, 20:2xZ, antes de etiquetar). Control positivo: 1561 y 1558 salían; control negativo: 1595 y 1506, que la llevan, no. Tras etiquetar 1438, 1451, 1558 y 1561 quedan **41** (deducido, no recontado; 1283 estaba cerrado y no contaba). **Cinco de los 41 llevan `area-sN` y son nuestros sin duda** (1215, 1298, 1356, 1439, 1444): no etiquetados, no estaban en el encargo.
+
+**NO medido:** de qué equipo es 1097 · si 1561 debe llevar también `equipo-javier` · el equipo real de 1297.
+
+## 2-nov-2026 · S0 · 1563m — los 41 sin equipo, etiquetados; 1595 partido
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T20:37:56Z-20:5xZ (`Date:` de GitHub). Jira con `fields` explícito y `labels` dentro.
+
+A9: sin fallo que generalice — el informe falso del lector («los 35 tienen `labels: []`») lo cazó el cotejo antes de aplicar nada, y la regla de cotejar al agente ya existe (añadida el 3-nov por el relevo de S0)
+
+**Recuento de partida, RE-MEDIDO (no deducido):** misma JQL de 1563l → **41** (20:38Z). Ya no es una deducción.
+
+**Respuestas del orquestador aplicadas:** 1215, 1298, 1356, 1439, 1444 → + `equipo-luis` · 1561 → + `equipo-javier` · 1297 → `stop-fundador` y **nada más** (c.21348: el equipo se queda vacío a propósito, pregunta a Javier) · **1595 partido**: los 5 libres a **SCRUM-1650** (`area-s1`, `calidad`, `equipo-luis`, sin `stop-fundador`); 1595 + `stop-fundador`; c.21347 escribe el sobre de la firma como **DECIDIDO** (SCRUM-1576 c.20454, cita cotejada: 1 con «cliente», 0 con «proveedor»; guard `tests/scrum371-barrido-poblacion.test.mjs`, existe en `origin/main`).
+
+**Los 35 restantes:** clasificados por un lector de sólo lectura (descripción + comentarios + `docs/equipo/dos-equipos.md` §2.2/§3), **cotejado por S0** solo en parte: su informe decía «los 35 tienen `labels: []`», y eso es **falso** (328, 1097, 1100, 1525, 1529 y 1534 llevan etiquetas, según la lectura de las 20:38Z). Por eso **1100** pasa a no decidible aunque el lector lo daba como nuestro. Aplicado por dos escritores con lista cerrada y comprobación del «antes»: 37 de 37 coincidían, y 37 aplicados.
+| equipo | tickets |
+|---|---|
+| `equipo-luis` (7) | 678 (secretos de prod → S5, §3.3) · 836 · 994 («Carril: S5») · 1525 · 1535 · 1605 · 1606 («Área: S5») |
+| `equipo-javier` (17) | 276 · 280 · 322 · 323 (§2.2, J1) · 624 (`pdf.service.ts`) · 1097 (medido por J6; «GO explícito de Javier») · 1292 («PARA J2») · 1429 · 1436 («Son de J2… y de J1») · 1512 · 1513 · 1517 · 1518 · 1524 · 1532 · 1533 · 1547 |
+| los dos (7) | 41 · 328 · 1442 · 1445 («Carriles: J1 / S1 / J2») · 1522 · 1523 · 1529 |
+| **NO DECIDIBLE (4)**, sin tocar | **326** (E5 bancaria: no está en la lista J1 de §2.2 que sí lleva 280/322/323) · **936** (`scripts/_medidor-de-toque.mjs` no tiene fila en §3.3; lo abrió «S6») · **1100** (lo halló J4, el territorio es `meta-guard` S3/S5 y está En curso sin dueño escrito) · **1534** (`vigia-silencio-de-main.mjs`: §3.3 dice literal que «sigue sin fila hasta que lo hablen los dos orquestadores») |
+
+**Recuento final, medido** (20:5xZ, misma JQL): **5** → 326, 936, 1100, 1297, 1534. Control: SCRUM-1650 (nuevo, lleva `equipo-luis`) no sale.
+
+**Javier (parte G):** 1393 `updated` 20:19:05Z y 1586 `updated` 27-oct 17:33:10Z. **Ninguno se ha movido después de las preguntas**; un comentario habría cambiado el `updated`, y Jira firma a Javier con su propia cuenta (es el reporter de 1595). A las 20:48Z: 1393 ~29 min, 1586 **6 d 3 h**.
+
+**Censo de los 16 STOP de la parte F** (13 `stop-fundador` + 3 mixtas): **los 16 siguen abiertos**; lo único que se ha movido hoy son 1438, 1451 y 1558, las etiquetas de 1563l. El aviso «el gemelo» de 1558 **está en el ticket** (JQL `comment ~ "gemelo"` = 1; control `zanahoria` = 0).
+
+**MI LECTURA, sin cotejar con Javier:** en 1297, «(J5)» puede ser la **sección J5 del máster** y no el puesto J5: la descripción dice «toca J5 y la Parte L» y cita «J5 / A20.5, "siempre las tres salidas"». Si es así, no hay contradicción y es `equipo-luis`. **No lo aplico**: el orquestador decidió preguntar.
+
+## 3-nov-2026 · S0 (relevo) · 1563n — los dos rojos propios de #3010, y lo medido para la hoja y el estado (sin escribirlos: crucé 200k)
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-03T07:41:45Z-07:50:22Z (`Date:` de GitHub). Producción: `yaqu.app/version` = el mismo `70eefc40c…`, leído a las 07:46Z.
+
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
+**1 · Los rojos de #3010, leídos en SU log** (job `125543119093`, 2.284.606 bytes con `--allow-escape-sequences`; head `03cb980c7`): 13.025 tests · 13.013 pasan · **3 fallan**, no uno. ① `scrum113`: la fecha caducada (SCRUM-1644; lo construye S3, no es de esta rama). ② `scrum1294` y ③ `scrum976 ④`: **son míos**: los tramos 1563k, 1563l y 1563m no tenían su línea `A9:`, y ④ cae porque `guards:entrada` corre ese mismo guard. **Arreglado en este commit** (una línea `A9:` en cada uno). Corrido en local: `scrum1294` 4 de 4.
+
+**2 · La delegación, cotejada en su origen.** La frase «todo lo que tenia que decididr yo decidelo tu si puedes. si hace falta algo mio dimelo» es un turno `type:user` escrito por una persona (no un mensaje entre sesiones) en la transcripción del orquestador `ed676fd1-feb4-4658-bda2-01f4bf9fb3fc.jsonl`, uuid `6b2bcf7c-aa53-4a8d-9d10-ab31e3faa10b`, sello 2026-11-03T07:38:24Z **del reloj de la máquina** (va adelantado unos minutos; no es hora de GitHub). Población: 331 transcripciones, 70 líneas con la frase, 8 turnos `user`, **1 humano**. **En Jira no está**: 1644 se tocó a las 07:37Z y su último comentario sigue siendo c.21326, del 2-nov.
+
+**3 · TAREA 1, lo medido para escribir la hoja** (`DECISIONES-DEL-FUNDADOR.md`; **NO escrita**, la escribe el relevo). Etiquetas leídas a las 07:4xZ: 1644 `fundador`+los dos equipos, En curso · 1645 Por hacer · 1649 En curso · 1651 En curso (último cambio 07:45Z) · 1297 sólo `stop-fundador` · 1561 `fundador`+los dos equipos · 1605 sólo `equipo-luis` · 1506 `decision-jefe`+los dos equipos. **Ninguna etiqueta choca con las decisiones del encargo**: decidir no es construir, y 1297 baja a go-live sin construir nada.
+
+**4 · TAREA 2 — Javier, a las 07:50:22Z.** Consulta `updated >= "2026-11-02 22:00"` (hora de Madrid) sobre los cuatro y, de control, 1651 y 1644: **salen sólo los dos de control**. El `updated` de cada uno es la hora de la pregunta, así que no hay nada después.
+
+| ticket | pregunta | hecha a las | lleva |
+|---|---|---|---|
+| 1393 | c.21328 | 2-nov 20:19:05Z | **11 h 31 min** |
+| 1502 | c.21340 («el fundador» ¿es Luis o Javier?) | 2-nov 20:43:03Z | **11 h 07 min** |
+| 1506 | c.21351 (los 4 sin dueño) | 2-nov 20:50:39Z | **11 h 00 min** |
+| 1586 | c.21159 | 27-oct 17:33:10Z | **6 d 14 h 17 min** |
+
+**5 · TAREA 3 — producción contra rama, lo medido** (para `ESTADO-DEL-PRODUCTO.md`; **NO escrito**).
+- **Producción = `main` = `70eefc40c`. Último merge: 30-oct 18:44:09Z (#3019).** Desde el 29-oct 18:25Z entraron 20 merges, y **10 de ellos tocan `src/`, `public/` o `prisma/`** (lo demás es docs o CI): #2995 1635 (ficha del descuento global) · #2996 1636 (**sólo `styles.css`**: el IVA con coma NO está en producción, ver abajo) · #2998 1632c (**la firma tolera la URL sucia: EN PRODUCCIÓN desde el 29-oct 19:05Z**) · #3013 1629 (el periodo del Paquete) · #3015 1624b (portal del cliente) · #2973 1618 (fecha de cobro, facturas) · #2974 1051d (factura suelta) · #3018 1631 (fallo de WhatsApp) · #3019 1640 (lista de facturas).
+- 🔴 **El estado vigente está MAL en 2.9:** §1 ① (L31, L37), la fila de L76, §2 2.9 (L176) y L279 dicen que el arreglo (b) «espera un GO» o que «#2998 sigue ABIERTO». **#2998 está MERGEADO desde el 29-oct 19:05Z y en producción.** Instrumento: cada `#NNNN` del documento contra GitHub (3.026 PR leídos, 66 citados); control: #2604 sale ABIERTO, que es lo que dice el documento.
+- **33 PR abiertos; 7 llevan producto, y NINGUNO de los 7 está en producción:** #3003 y #3011 (1636: el IVA con coma en el panel y en la página que firma el cliente) · #3009 (1639: filas con teclado) · #3014 (914: equipos del cliente; **lleva `prisma/schema.prisma`**) · #3022 (1637: CSP en modo informe, `src/app.ts`) · #3023 (1233j: los avisos de la ficha del trabajo) · #2621 (914, la versión de J3, en CONFLICTO). Los otros 26 son docs, tests o CI.
+- **De los 33, el obligatorio está en rojo en 28, en verde en 3 (#3017, #2841, #2392: los tres en conflicto) y no existe en 1 (#2690).** Rojo no es «roto»: en los leídos, el fallo común es `scrum113` (SCRUM-1644).
+- **De quién son, por la etiqueta del ticket:** `equipo-luis` 21 · `equipo-javier` 9 (#3017, #3001 —1549 lleva `equipo-javier`—, #2969, #2965, #2949, #2940, #2881, #2841, y #3024 los dos) · tickets Finalizada sin equipo 4 (#2738, #2690, #2616, #2392). **MERGEABLE y del 29-oct o del 2-nov, nuestros: 19.** El «16» del encargo no lo reproduzco con este instrumento: no sé con cuál se contó.
+
+**NO medido:** si lo que hay en producción se VE en yaqu.app (ninguna pantalla abierta en esta pasada) · el log de los 27 PR rojos que no son #3010 · si el ALTER de #3014 está en las tres bases (lo dijo J, c.20085; S0 no ha mirado ninguna base).
+
+**Para el relevo, en orden:** ① escribir la hoja (TAREA 1) con el punto 3 y el encargo · ② escribir el estado (TAREA 3) con el punto 5: corregir 2.9 en las cinco líneas y añadir arriba la tabla «en producción / en rama» · ③ recontar con `contar-dependencias.mjs` después del último cambio.
+
+## 3-nov-2026 · S0 (relevo) · 1563o — la hoja y el estado, ESCRITOS con lo medido en 1563n (sin volver a medir)
+
+**Escrito contra:** `origin/main` = `70eefc40c` · 2026-11-03T07:55:25Z-08:0xZ (`Date:` de GitHub). **No se ha medido nada nuevo:** todo sale del tramo 1563n y del encargo del orquestador del 3-nov.
+
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
+**1 · `docs/producto/DECISIONES-DEL-FUNDADOR.md`.** Bloque nuevo arriba, «3-nov · LO QUE TE QUEDA: TRES COSAS»: la delegación citada literal, con su localizador (`ed676fd1…jsonl`, uuid `6b2bcf7c…`; en Jira no consta) · las cuatro que salen, decididas por el orquestador (1644 reclasificar con aviso a 14 días · 1645 → 1652 · 1651 · 1297 se queda en go-live) · las tres que quedan: ① la S.L. (tres datos de la gestoría) · ② las tres plantillas de 2.10 en Meta · ③ dos PERMISOS (1605, 1506), con el aviso de que una delegación de decisiones no reparte permisos. En sitio, sin reescribir: B (intro, B2 vuelve sólo con 2.10, B3 marcada decidida), D (1.15 sale, 2.10 sube, 7.10 y el simulacro suben como permiso, 1.7 se queda) y E (las cuatro, con localizador).
+
+**2 · `docs/producto/ESTADO-DEL-PRODUCTO.md`.** ① **2.9 corregida en las cinco líneas** que decían «espera GO» o «#2998 ABIERTO» (§1 ①, la frase de §1, la fila de «mover hoy», §2 2.9 y §3): #2998 está en producción desde el 29-oct 19:05Z; lo de antes se conserva tachado. ② **Bloque nuevo arriba: «¿EN PRODUCCIÓN o EN UNA RAMA SIN MERGEAR?»**, con las dos tablas del punto 5 de 1563n y la lista explícita de lo que NO se recontó (§2-§5 siguen con sus cifras del 29-oct). ③ Marcas 🟢/🟠 del 3-nov en las filas que esos PR tocan: 0.2 (1283 cerrado, dato del orquestador), 2.13 (#3018), 6.3 ×2 (#3014, #2621), 6.16 ×2 (#3013), §4b #2974.
+
+**Discrepancia que dejo escrita, no resuelta:** 1563n dice «10 de ellos tocan producto» y nombra 9 (#2995, #2996, #2998, #3013, #3015, #2973, #2974, #3018, #3019). No recontado.
+
+**Atribuidos, no medidos por S0:** que la plantilla de firma está «verificada en producción» y que 1283 está cerrado (orquestador, 3-nov) · que cablear 1506 cae en una ruta `deny` (orquestador; no he leído la regla).
+
+**NO hecho:** recontar con `contar-dependencias.mjs` · mirar el obligatorio de #3010 (lo lleva S5 en su tabla de las 16 ramas).
