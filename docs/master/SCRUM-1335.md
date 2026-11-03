@@ -332,6 +332,92 @@ y árbol restaurado con `git restore --source=HEAD` (porcelain vacío):
 
     node --test tests/scrum1335d-sin-informe-por-zona.test.mjs
     node scripts/trinquete-de-zona.mjs     # con el árbol QUIETO; leer la línea «SIN INFORME ENTERO»
+# SCRUM-1335c · La serie del «después» y el ciego de la pérdida en las DOS zonas
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T19:37:12Z
+
+A9: sin fallo que generalice — entrega de sólo medida; el ancla que olvidé al empujar la cazó `scrum267` en el CI de su PR, que es justo el guard que existe para eso
+
+S3 · 2-nov-2026 · hora de GitHub 19:37:12Z al arrancar · medido sobre `origin/main`
+`70eefc40cba2eb9636992b733223bf1555c1755f`. **Sólo medida: no cambia ningún guion, test, guard
+ni workflow.** Jira c.21309 (lo coge).
+
+## ① La serie, desde 1335b hasta hoy
+
+1.880 corridas de `CI` creadas desde el 6-oct 17:30Z (la más antigua vista, 17:33:44Z: la ventana
+está entera), 1.403 jobs del trinquete de zona. Tramo por la hora de creación de la corrida (CI
+prueba el merge con `main` de ese momento: es una aproximación, y se dice).
+
+| | A · tras 1335b | B · tras 1494c (574e53806, 16-oct 11:18Z) | C · tras la tubería bloqueante (#2964, 29-oct 10:12Z) |
+|---|---|---|---|
+| jobs | 531 | 793 | 79 |
+| cancelados por sustitución / por techo / ilegibles | 67 / 20 / 0 | 89 / 1 / 1 | 8 / 0 / 0 |
+| **leídos** | 464 | 703 | 71 |
+| rojos | 16 (todos «EL TRINQUETE HABLA») | 31 + 1 sin veredicto (cayó a los 52 s) | **0** |
+| **jobs con resultados perdidos en la tanda (P>0)** | 266 (57 %) | 472 (67 %) | **0** |
+| suma de P · suma de «siguen sin comparar» | 6.938 · 1.311 | 15.836 · 3.933 | 0 · 0 |
+| totales distintos entre las dos pasadas | 265 | 468 | 0 |
+| pasada mediana | 506 s | 591 s | 693 s |
+
+**Control positivo del lector, ANTES de las cifras, los dos exactos:** job `112403767133`
+(10.656 · 10.606 · 367 s · en la tanda 52 · comparadas 52 · siguen 0 · cambian 1) y el de la
+corrida `37511945736` (siguen sin comparar 6). Y una fila del tramo C cotejada a mano contra su
+log (job `125508870065`, #3003, 2-nov 20:21Z): 12.947 y 12.947 pruebas, «en la tanda 0», verde.
+
+**Las filas que buscan la causa donde NO está:**
+- Con la tubería bloqueante y resultados perdidos: **0 de 71.** Con la tasa de B (67 %), 0 de 71 por
+  azar sale con probabilidad 0,33^71 ≈ 10^-34. **No es el «0 en 119» de SCRUM-1527: aquí la tasa
+  de antes es alta y la muestra basta.**
+- Sin ella y sin pérdida: 198 de 464 en A y 231 de 703 en B. La pérdida era intermitente; esa fila
+  no contradice: la causa candidata no producía la pérdida SIEMPRE, la permitía.
+- 5 de los 79 jobs de C son de ramas SIN `f962943af`; CI corre el merge con `main`, que ya lo
+  llevaba, así que **no son un contraejemplo: son la misma población.** Se dice para que nadie los
+  lea como «sin el arreglo».
+
+**Lectura (MÍA, S3):** la pérdida de resultados que daba el «recuento inestable» de este ticket
+cesó con `--import=tuberia-bloqueante.mjs` en el hijo de zona (SCRUM-1621 pieza 1, salida C de
+SCRUM-1405). Es la causa con más evidencia que ha tenido el ticket; **no está demostrada por
+experimento** (nadie ha quitado la tubería en una rama para ver volver la pérdida).
+
+## ② El control que faltaba: «faltan 19» frente a «faltan 19 y otros 11 que no vio»
+
+**El instrumento NO lo distingue, y el tramo C hereda ese límite.** Sonda sobre el guion real de
+`main` (`evidencias/SCRUM-1335c/sonda.mjs`, ficheros sembrados FUERA del árbol, Windows, Node
+24.8.0; salida literal en `salida.txt`):
+
+| fichero sembrado | pruebas en el fuente | vistas Kiritimati / Midway | en alguna lista del instrumento |
+|---|---|---|---|
+| normal | 3 | 3 / 3 | 0 (correcto) |
+| enmudece en Midway | 3 | 3 / 0 | 4 — **lo ve** (control positivo) |
+| enmudece en las DOS | 3 | 0 / 0 | **0** |
+| enmudece a mitad, en las DOS | 5 | 0 / 0 | **0** |
+
+Y es peor que «no lo ve»: cuando un fichero no entrega su informe, `run()` pone en su lugar UNA
+entrada con la ruta del fichero por nombre y veredicto `pass`. En las dos zonas sale `pass` y
+`pass`: **el instrumento lo cuenta como comparada e igual.** «En la tanda 0 · siguen 0» se imprime
+igual sobre un fichero cuyas pruebas no ha visto.
+
+**La señal para cerrarlo existe** (`eventos.txt`): `run()` emite un `test:summary` con `file`
+por cada fichero cuyo informe llega entero, y ninguno para los enmudecidos. Un fichero sin su
+`test:summary` en una zona es un informe incompleto, se vea o no la diferencia entre zonas.
+
+⚠️ **Límite declarado del tramo C:** sus «0 perdidos» son 0 pérdidas en UNA zona. Una pérdida en
+las dos a la vez no habría salido en ninguna cifra. Que sea rara si la de una zona es 0 es
+razonable, no está medido.
+
+## Lo que queda, sin construir
+
+- Contar los ficheros sin `test:summary` por zona y sacarlos de «comparada e igual» (carril S3 por
+  c.18387). Es una línea más de informe y **no cambia cuándo sale rojo**; que un informe incompleto
+  ponga el job en CIEGO sí lo cambia, y eso lo decide el fundador (como en c.18387).
+- El experimento que demostraría la causa: rama desechable con el hijo SIN la tubería. Toca CI:
+  pide GO.
+
+## Reproducir
+
+    node docs/master/evidencias/SCRUM-1335c/sonda.mjs scripts/_trinquete-de-zona.mjs <dir temporal FUERA del árbol>
+    node docs/master/evidencias/SCRUM-1335c/eventos.mjs <ficheros sembrados>
+    # la serie: parse-log.mjs + aggregate.mjs sobre los logs de los jobs (los logs no van al repo)
 # SCRUM-1335e · `scrum804` moría al cargar en un clon somero, y el trinquete de zona no lo veía
 
 **Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T21:56:41Z
