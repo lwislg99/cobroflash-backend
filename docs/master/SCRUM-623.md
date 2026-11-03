@@ -311,3 +311,60 @@ la cadena.
   construya el IGIC tendrá que resolver el TERRITORIO, y hoy no hay dato para eso.
 * **`fmtImporte` está copiado en SEIS sitios más** del árbol — lo declara el propio fichero en su
   cabecera y sigue igual.
+
+---
+
+## 🔴 TRAMO (19-oct-2026, S3) · RE-ENCUADRE: NO es «el documento no cuadra consigo mismo» — ES «el documento y el REGISTRO FISCAL declaran una cuota distinta»
+
+**Encargo:** medir, SIN TOCAR el camino de emisión (regla 38), si el par factura-PDF (`vatMap`,
+`pdf.service.ts`) frente al XML de VeriFactu (`calcVatBreakdown`, `vat.service.ts`) son dos
+cálculos distintos. Sólo lectura/ejecución del camino ya existente (`generateInvoicePdf`,
+`calcVatBreakdown` — los dos ya exportados, nada que modificar para medir).
+
+**SÍ, son dos cálculos distintos — confirmado HOY generando la factura de verdad, no leyendo el
+código**, con el mismo ejemplo que ya citaba el apartado 🛑 de arriba:
+
+```
+líneas: [{qty:3,price:33.33,tax:0.21},{qty:7,price:1.11,tax:0.1}]
+PAPEL impreso hoy (vatMap):        filas 21%→21,00 + 10%→0,78 · TOTAL 129,53
+calcVatBreakdown (= lo que declara el XML): base 107,76 · cuota 21,78 · total 129,54
+```
+
+**El mecanismo, verificado leyendo las dos fuentes (no deducido):**
+
+* Las **filas por tipo** del PDF y las entradas de `calcVatBreakdown` hacen la MISMA operación
+  (sumar las líneas de ese tipo, redondear UNA vez) → por eso **21,00 y 0,78 SÍ coinciden fila a
+  fila**, y el `DetalleDesglose` del XML —que sale LITERALMENTE de esas entradas,
+  `registro.builder.ts:315-316` (`entrada.base.toFixed(2)` / `entrada.cuota.toFixed(2)`)— coincide
+  con el papel fila a fila.
+* Donde se rompe es la **CUOTA/TOTAL GLOBAL**: el PDF suma los floats de TODAS las líneas SIN
+  redondear por tipo y redondea UNA sola vez al final («suma-y-redondea»: 20,9979+0,777=21,7749→
+  oculto dentro de TOTAL 129,53). `calcVatBreakdown` redondea POR TIPO y SUMA los ya redondeados
+  («redondea-y-suma»: 21,00+0,78=21,78). Es el mismo par de convenciones que el apartado 🛑 ya
+  medía — **lo nuevo es el nombre**: uno de los dos lados es exactamente lo que alimenta el XML que
+  se remite a la AEAT (`calcVatCuotaTotal` en `verifactu.service.ts` para `CuotaTotal`), así que
+  esto deja de ser «el papel se contradice consigo mismo» y pasa a ser **«el documento que ve el
+  cliente y el registro fiscal que ve Hacienda declaran cuotas distintas»**.
+* **Por qué es arreglable sin tocar el desglose**: las filas (lo que SÍ se ve, lo fiscalmente
+  granular) ya coinciden. Lo que divergiría es sólo el total agregado — un cambio más estrecho que
+  «recalcular el PDF entero con `calcVatBreakdown`».
+* **Sigue vivo sin cambios desde el 2-sep-2026**: `git log` de `vat.service.ts` y del bloque
+  `vatMap` de `pdf.service.ts` no tiene commits desde esta misma fecha. El 13,7 % (547/4.006) que
+  midió el apartado 🛑 sigue siendo la cifra vigente para este par.
+* **Lo que NO es de este tramo:** si `ImporteTotal`/`CuotaTotal` del XML usan encima el
+  `invoice.total` GUARDADO en vez de recalcular desde `lines` — eso es SCRUM-624 (guardado vs
+  impreso), medido por separado. Mezclar las dos daría una cifra que no es de nadie.
+
+**NO SE TOCA AQUÍ.** Es sólo la medida pedida; el STOP de la regla 38 no se cruza (no hizo falta
+exportar ni modificar nada: `generateInvoicePdf` y `calcVatBreakdown` ya eran públicos). Corregir
+el total agregado del PDF es decisión del fundador — cambiaría una cifra ya impresa en documentos
+reales.
+
+**PENDIENTE, declarado para quien siga:** el trinquete de las DOS MITADES (el defecto + la salud
+del propio instrumento, con mutaciones, para que una bajada en la cifra de discrepancias no se
+pueda confundir con «se arregló») queda SIN CONSTRUIR. Hace falta porque sin la mitad que vigila al
+censo, el día que alguien lo rompa (o lo arregle de verdad) nadie podría distinguir las dos cosas —
+y porque el mismo patrón («dos caminos calculan la misma cifra con convenciones distintas») apareció
+HOY, por separado, en el presupuesto (pantalla vs PDF, `pieDePresupuesto`) y en el portal (suma de
+líneas vs total). Primera acción de quien lo coja: construir ese trinquete sobre esta medida ya
+hecha, no desde cero.
