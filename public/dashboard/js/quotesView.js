@@ -120,6 +120,19 @@ function renderQuotesView(container, template, documentoSuelto) {
   alertBox.style.display = "none";
   leftCard.appendChild(alertBox);
 
+  // SCRUM-1651 · DUPLICAR UN PRESUPUESTO CON VARIAS OPCIONES COPIA SÓLO UNA, Y AQUÍ SE DICE. Este
+  // editor no tiene opciones: de las tres sólo recibe las líneas de la recomendada (`better`), y
+  // el profesional creía tener una copia de todo. Va en su PROPIO nodo y no en `alertBox`, porque
+  // `setAlert(null, "")` vacía el aviso de «Plantilla cargada» en cuanto llegan los datos: un
+  // aviso que se borra solo a los pocos milisegundos no lo lee nadie. Sólo lo enciende la copia
+  // que viene de «Duplicar» con más de una opción (`soloLaRecomendada`, en `duplicateQuote`).
+  const avisoSoloLaRecomendada = document.createElement("div");
+  avisoSoloLaRecomendada.className = "alert warning quotes-aviso-duplicado";
+  avisoSoloLaRecomendada.setAttribute("role", "status");
+  avisoSoloLaRecomendada.hidden = true;
+  avisoSoloLaRecomendada.textContent = "Se duplica sólo la opción recomendada."; // APROBADO por el orquestador por delegación del fundador, 3-nov-2026 (SCRUM-1651 comentario 21372)
+  leftCard.appendChild(avisoSoloLaRecomendada);
+
   function setAlert(type, msg) {
     alertBox.textContent = msg || "";
     alertBox.className = "alert";
@@ -5111,6 +5124,8 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
         ponerTextosDelDocumento(template);
         // SCRUM-1180 · y las cláusulas quitadas. Una plantilla del catálogo no las trae.
         ponerClausulasExcluidas(template.clausulasExcluidas);
+        // SCRUM-1651 · y si la copia venía de varias opciones, se dice que sólo ha llegado una.
+        if (template.soloLaRecomendada === true) avisoSoloLaRecomendada.hidden = false;
         // `tiers` y `currency` viajan en la plantilla y NO se restauran aquí, y está medido:
         // el editor no tiene tramos (esta vista no nombra `tiers` ni una vez) ni selector de
         // moneda (usa la del merchant). No se inventa un campo para meterlos.
