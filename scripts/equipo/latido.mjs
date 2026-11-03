@@ -80,6 +80,10 @@
 //  15 · TANDA GATEADA → (SCRUM-1621, SCRUM-1599 diseño A) cuántos días lleva cada fichero gateado sin verde,
 //                  juntando el recibo de TODOS los árboles. 🔴 Sin umbral decidido (SCRUM-1599 c.20713 ④): se
 //                  enseña con ⚪ y no avisa. Sin ningún recibo con desglose, «no pude mirar».
+//  16 · PUERTA   → (SCRUM-1549f) ¿la copia INSTALADA de `sesion.mjs` es idéntica a `origin/main`? Tres respuestas:
+//                  AL DÍA · CERRADA (atrasada: qué versión es y el merge que la cerró; o ajena: si es main con BOM o
+//                  UTF-16, lo dice), con la orden de refresco para `cmd`, nunca PowerShell · NO PUDE MIRAR. El
+//                  29-oct-2026 estuvo cerrada 6 h 38 min y la puerta daba el mismo código 2 a «alterada» y a «no sé».
 //
 // ⚠️ LO QUE ESTO NO ARREGLA: el latido corre cuando ALGUIEN lo corre. Si nadie corre nada en tres días,
 // no dice nada. El único que corre sin sesión es `vigia-atascados` (workflow), y escribe en GitHub.
@@ -124,6 +128,8 @@ import { seccionCierres, leerGuardado, NOTA_SIN_CORRER } from './cierre-sin-clic
 import { UMBRAL_HORAS_DE_CRON } from '../vigia-silencio-de-main.mjs';
 // (SCRUM-1621) La edad de cada fichero gateado la calcula el dueño del recibo; aquí sólo se lee y se junta.
 import { RUTA_RECIBO, diasSinVerde } from '../_evidencia-tanda.mjs';
+// (SCRUM-1549f) La puerta del lanzador: se comparan los BYTES de la copia instalada; nunca se importa.
+import { seccionPuerta, medirPuerta } from './puerta.mjs';
 
 export const SALIDA_OK = 0;
 export const SALIDA_AVISO = 1;
@@ -1609,9 +1615,13 @@ async function todo() {
   });
   const sTG = seccionTandaGateada({ recibos, arboles: arbolesDeLaMaquina && arbolesDeLaMaquina.length, ahora });
   tramo('tanda gateada');
+  // 16 · puerta (SCRUM-1549f). DESPUÉS del `fetch` de experimentos: compara contra el `origin/main` que va a ver la
+  // puerta. Sólo lee los bytes de la copia instalada; no la importa ni la ejecuta.
+  const sPue = seccionPuerta(intentar(() => medirPuerta()));
+  tramo('puerta');
   const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx, sExp, sVig, sQA, sDis, sArr];
   if (cie.seccion) secciones.push(cie.seccion);
-  secciones.push(sVM, sTG);
+  secciones.push(sVM, sTG, sPue);
   console.log(informe(secciones, { ahora, fallosDe: (n) => fallos.get(n), notas: [...NOTAS_FIJAS, ...cie.notas] }));
   console.log(tiempos(tramos));
   return salidaDe(secciones);
