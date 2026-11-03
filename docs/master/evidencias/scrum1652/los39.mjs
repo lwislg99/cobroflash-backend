@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+const strip=(s)=>s.replace(/^\uFEFF/,'');
+const g = JSON.parse(strip(fs.readFileSync(process.argv[2],'utf8')));
+const c = JSON.parse(strip(fs.readFileSync(process.argv[3],'utf8')));
+const verano = (f) => /-(jul|ago)-/i.test(f || '');
+const v = g.filter(r=>verano(r.fecha));
+const sin = v.filter(r=>!r.grupo.startsWith('1'));
+console.log('total',g.length,'verano',v.length,'sin-fundador',sin.length);
+const byG={}; for(const r of sin){byG[r.grupo]=(byG[r.grupo]||0)+1} console.log(byG);
+const byDonde = new Map(c.map(r=>[r.donde,r]));
+const out = sin.map(r=>({donde:r.donde,grupo:r.grupo,fecha:r.fecha,tickets:r.tickets,pares:r.pares,frase:(byDonde.get(r.donde)||{}).frase}));
+fs.writeFileSync(process.argv[4], JSON.stringify(out,null,1));
+for(const r of out) console.log(r.donde,'|',r.grupo,'|',r.fecha,'|',(r.tickets||[]).join(','));
+console.log('claves clase:',Object.keys(c[0]).join(','));
