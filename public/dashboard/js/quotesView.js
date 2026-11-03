@@ -2853,13 +2853,15 @@ descWrapper.appendChild(descLabel);
         // deja aquel contrato intacto y cumple lo que F4 pedía del disparador: que DIGA lo que
         // esconde. Sin esto, un descuento escrito viviría dentro de una hoja cerrada — un dato
         // invisible que nadie corrige, que es justo lo que CONT-01 ② prohíbe.
+        // SCRUM-1636 ① · el descuento con COMA decimal («Dto. 12,5 %»), como el IVA de al lado;
+        // `fmtNumeroEs` (api.js) deja un entero igual («Dto. 10 %»), sin «,0».
         const dtoDeEsta = window.quoteDescuentos.dtoDeLinea(line.dtoInput && line.dtoInput.value);
         const esSuplido = !!(line.suplidoCheck && line.suplidoCheck.checked);
         line.ajustesBtn.textContent = resumenAjustes(
           esSuplido,
           safeVat,
           0,
-        ) + (dtoDeEsta > 0 ? ` · Dto. ${dtoDeEsta} %` : '');
+        ) + (dtoDeEsta > 0 ? ` · Dto. ${fmtNumeroEs(dtoDeEsta)} %` : '');
         // 🔴 SCRUM-915h · LA FICHA SÓLO SI LA LÍNEA NO VA CON LO DE SIEMPRE (v3: «otro IVA,
         // descuento, suplido»). «Lo de siempre» es el IVA por defecto del documento, sin descuento
         // y sin suplido: una ficha «IVA 21 %» repetida en cada línea no dice nada que no diga ya el
@@ -5339,7 +5341,8 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     // dice «presupuesto».
     if (esDocumentoSuelto) {
       const ivaPorDefecto = fieldVatDefault.input.value;
-      ajustesSueltoValor.textContent = "IVA por defecto" + (ivaPorDefecto === "" ? "" : " " + ivaPorDefecto + " %");
+      // SCRUM-1636 ① · el valor del selector es «7.5»: se pinta «7,5» (`fmtTipoIvaEs`, SCRUM-1608).
+      ajustesSueltoValor.textContent = "IVA por defecto" + (ivaPorDefecto === "" ? "" : " " + fmtTipoIvaEs(Number(ivaPorDefecto) / 100) + " %");
     } else {
       filaCobroValor.textContent = textoDeCobro();
       const pagos = pmDefs.filter(function (d) { return pmChecks[d.key].checked; })

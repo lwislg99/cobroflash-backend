@@ -381,7 +381,9 @@ test('SCRUM-594 · el editor tiene el campo, y el chip DICE el descuento', () =>
     + 'un `dto: 0` a todas sus líneas');
   assert.match(vista, /quoteDescuentos\.totalesConDescuento/,
     '🔴 la pantalla vuelve a sumar por su cuenta en vez de usar la pieza probada contra `calcTotal`');
-  assert.match(vista, /Dto\. \$\{dtoDeEsta\} %/,
+  // Re-anclado en SCRUM-1636 ①: era `Dto. ${dtoDeEsta} %` y es `Dto. ${fmtNumeroEs(dtoDeEsta)} %`
+  // (coma decimal). Lo que exige no cambia: el chip compone el descuento DE ESTA LÍNEA.
+  assert.match(vista, /Dto\. \$\{fmtNumeroEs\(dtoDeEsta\)\} %/,
     '🔴 el chip de ajustes no dice el descuento. La hoja se abre cerrada: un descuento escrito '
     + 'quedaría invisible, y un dato invisible es un dato que nadie corrige (CONT-01 ②).');
   // Y el fichero tiene que estar CARGADO, no sólo existir.
