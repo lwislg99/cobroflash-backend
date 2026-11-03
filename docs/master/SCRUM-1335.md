@@ -265,6 +265,73 @@ Las 22 mutaciones tumban su caso en local, con base verde antes y después y el 
     node docs/master/evidencias/SCRUM-1335b/mutar-813.mjs .
     node --test tests/scrum813-trinquete-de-zona.test.mjs
 
+# SCRUM-1335d · El recuento de los ficheros sin informe, por zona («en una» frente a «en las DOS»)
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T20:56:47Z
+**Puesto:** S3 (instrumentos) · autorizado por el orquestador como línea de informe.
+A9: comprobación → `tests/scrum1335d-sin-informe-por-zona.test.mjs`
+⚠️ El tramo 1335c (la serie y el ciego que motiva esto) vive en la rama
+`scrum-1335c-perdida-en-las-dos-zonas`, todavía sin mergear: este tramo va en rama propia (A17) y,
+si al fusionar chocan los dos anexos al final de este fichero, **se conservan los dos**.
+
+## Lo que hace
+
+- El hijo (`scripts/_trinquete-de-zona-hijo.mjs`) apunta los ficheros que emiten `test:summary`
+  con `file`, es decir, los que entregaron su informe ENTERO (`conInforme` en la medida).
+- `sinInformePorZona(medidas, ficheros)` en `scripts/_trinquete-de-zona.mjs` cuenta, sobre la
+  población que recibe, los que faltan en cada zona y los separa en **en UNA zona sola** (esos ya
+  los veía el comparador) y **en LAS DOS** (el caso invisible: el comparador los daba por
+  «comparados e iguales»). Si una pasada no midió o el hijo no dijo `conInforme`, sale
+  `medible: false` con el motivo y **sin cifras**: «no pude contar» no es cero.
+- El guion imprime SIEMPRE, también con ceros:
+  `SIN INFORME ENTERO · de N ficheros de la tanda: faltan en <zona> a · faltan en <zona> b · en UNA zona sola x · en LAS DOS y`,
+  y debajo los ficheros con su nombre (hasta 30 de cada clase).
+- 🔴 **No cambia el veredicto ni el código de salida.** Que un informe incompleto ponga el job en
+  CIEGO es decisión del fundador; lo fija el caso ⑤ del test.
+
+## Rojo, verde y mutaciones
+
+`tests/scrum1335d-sin-informe-por-zona.test.mjs`, 5 casos. Rojo antes del código (no existía la
+función), 5/5 después. El caso ④ es la sonda de 1335c por el camino real: tres ficheros sembrados
+fuera del árbol (normal · enmudece en Midway · enmudece en las dos), medidos por el hijo en las dos
+zonas: el normal informa en las dos (control positivo), el de Midway sale **en una**, y el que
+enmudece en las dos sale **en las DOS, con su nombre**.
+
+Mutaciones, con commit previo (`6d1e26eac`, luego `b5644e9b8`), `git diff --numstat` 1/1 en cada una
+y árbol restaurado con `git restore --source=HEAD` (porcelain vacío):
+
+| mutación | resultado |
+|---|---|
+| a · el hijo no apunta `test:summary` | muerta (1 caso cae) |
+| b · «en las dos» se cuenta como «en una» | muerta (3) |
+| c · sin `conInforme` se lee como conjunto vacío (cero falso) | **viva en el primer intento** → se extrae `leerConInforme` y se fija → muerta (1) |
+| d · `medirEnZona` deja de leer `conInforme` | muerta (1) |
+
+`tests/scrum813-trinquete-de-zona.test.mjs` sigue 45/45.
+
+## La cifra (lo que pidió el orquestador antes de llevarle la pregunta al fundador)
+
+| dónde | población | sin informe en Kiritimati | en Midway | en UNA zona | **en las DOS** |
+|---|---|---|---|---|---|
+| Windows, Node 24.8.0, tanda entera, 2-nov ~21:0xZ | 1.576 ficheros | 0 | 0 | 0 | **0** |
+| CI (Linux) | — | **sin medir todavía**: sale en el log del job del trinquete de zona de este PR, línea `SIN INFORME ENTERO` | | | |
+
+- Pasadas de 522 s y 476 s, 12.957 pruebas en cada zona. **Esa corrida salió CIEGO por mi culpa:**
+  edité dos comentarios (hijo y test) con la medición en marcha y el trinquete lo cazó («el árbol se
+  movió»). El recuento se imprime igual y no depende de esas líneas, pero el veredicto de esa corrida
+  no vale; se dice.
+- **Lectura (MÍA, S3):** en el árbol de hoy **no hay ningún fichero que no entregue su informe por
+  construcción** (un `process.exit` a mitad, un fichero que no termina): si los hubiera, saldrían en
+  las DOS zonas en cualquier máquina, y en ésta son 0 de 1.576. Así que el miedo de «cientos de
+  ficheros ciegos siempre» no se da aquí. Lo que queda abierto es la pérdida intermitente de Linux,
+  que sólo se ve en CI.
+- ⚠️ Un cero en una sola corrida es un cero de esa corrida. El control positivo de que la línea ve es
+  el caso ④ (mismo código, misma máquina, mismo commit), no un sembrado dentro de esta corrida.
+
+## Reproducir
+
+    node --test tests/scrum1335d-sin-informe-por-zona.test.mjs
+    node scripts/trinquete-de-zona.mjs     # con el árbol QUIETO; leer la línea «SIN INFORME ENTERO»
 # SCRUM-1335c · La serie del «después» y el ciego de la pérdida en las DOS zonas
 
 **Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T19:37:12Z
