@@ -1539,6 +1539,9 @@ async function duplicateQuote(quoteId) {
     currency: detail.currency,
     lines: detail.lines || [],
     tiers: detail.tiers || null,
+    // SCRUM-1651 · el editor no tiene opciones: de un presupuesto con varias sólo le llegan las
+    // líneas de la recomendada. Esta marca hace que lo DIGA (`quotesView.js`, aviso propio).
+    soloLaRecomendada: Array.isArray(detail.tiers) && detail.tiers.length > 1,
     paymentTerms: detail.paymentTerms || null,
     // SCRUM-926 · EL DESCUENTO GLOBAL VIAJA EN LA COPIA. Sin esta línea, duplicar un presupuesto
     // con descuento abría el editor SIN él: el profesional creía estar copiando lo pactado y

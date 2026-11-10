@@ -1,0 +1,9 @@
+﻿  1  (sin file) · test:plan · nivel 0 count=5
+  1  (sin file) · test:summary · nivel undefined tests=5 passed=5
+  1  mudo-a-mitad-en-las-dos.test.mjs · test:complete · nivel 0
+  1  mudo-a-mitad-en-las-dos.test.mjs · test:pass · nivel 0
+  1  mudo-en-las-dos.test.mjs · test:complete · nivel 0
+  1  mudo-en-las-dos.test.mjs · test:pass · nivel 0
+  4  normal.test.mjs · test:complete · nivel 0
+  3  normal.test.mjs · test:pass · nivel 0
+  1  normal.test.mjs · test:summary · nivel undefined tests=3 passed=3
