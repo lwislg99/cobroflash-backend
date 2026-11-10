@@ -94,3 +94,22 @@ en `dos-equipos.md:196`. **Control negativo en la misma orden:** `docs/master/ev
 
 **Consecuencia:** con fila, la cerradura (`.claude/hooks/carril.mjs`) deja de permitir que edite estos tres
 ficheros quien no sea J6. `scrum765` lo editó 1610b como «cruce declarado» porque no tenía fila; ya no hace falta.
+
+## S3 · SCRUM-1610d · el MODO CENSO del meta-guard sale cuando su centinela ya se ha escrito (pieza ① de c.20951 que c.21007 pone en la lista de Luis)
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-03T07:47:28Z
+
+A9: comprobación → `tests/scrum1610d-meta-guard-censo-sale-vaciado.test.mjs`
+
+Lo escribe S3 (equipo de Luis). `scripts/meta-guard-mutaciones.mjs` es de S3 (`carriles.mjs de` → S3, `dos-equipos.md:177`). Sólo esta pieza: el ticket lleva `equipo-javier` y `area-j6`, y la medida en el runner (punto 3, workflow) es de S5.
+
+**Qué cambia.** En el bloque `if (soloCenso)`, `console.log(centinela)` seguido de `process.exit(0)` pasa a ser `await new Promise(() => process.stdout.write(centinela, () => process.exit(0)))`. Es el mismo contrato que `fin` en `tests/_censo-frontera.mjs` (1610b). El texto de la centinela no cambia, así que el lector de `scrum765` la sigue encontrando como última línea.
+
+| control | resultado |
+|---|---|
+| rojo primero: el guard nuevo contra el meta-guard de `origin/main` | `tests 1 · fail 1` · «en el callback de la centinela: NO» |
+| verde con el cambio | `pass 1` · «process.exit( 1 · en el callback de la centinela: sí» |
+| la mutación declarada (vuelve la forma de antes), aplicada y restaurada byte a byte | cae |
+| de punta a punta: `scrum765` (corre el meta-guard real con `--solo-censo`) + `scrum1610b` | `tests 12 · pass 12 · fail 0` |
+
+**Lo que NO prueba.** Que esto evite el corte en el runner de Linux. En Windows la tubería es bloqueante y el corte no se reproduce (0 de 300, c.20951). Medirlo allí necesita un workflow (punto 3 de c.20952), que es de S5. **Tampoco cubre las otras 12 salidas del meta-guard** (13 `process.exit(` de código, medidas en el fuente sin comentarios): el encargo era la del MODO CENSO, la única cuya cola es la centinela que lee un test.
