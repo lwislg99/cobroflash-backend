@@ -50,6 +50,8 @@ Fichero nuevo: en `origin/main` no existía `docs/master/SCRUM-1656.md`, ni en n
 3. **«Se añade a Done: …sin ninguna fila escrita por nosotros en su nombre» (c.21395)** no dice a cuál de
    los dos «Done» va. Lo pongo en el «Done:» de U1.1b, que es el que lleva esa etiqueta y el que viene en
    c.21395 justo después de la P1-0. Si iba a la columna «Done» de la fila 1c, se mueve sin firma nueva.
+   **DECIDIDO por el orquestador** (mensaje a S0 del 10-nov-2026, ~17:58Z, tras revisar el PR #3045): se queda
+   en el «Done:» de U1.1b, «es donde protege: el piloto solo vale como prueba real si sus datos son suyos».
 4. **Formato:** las citas de Jira (`>`) se quitan; las viñetas «·» del bloque del flag pasan a lista `-`; la
    negrita de «Alcance (regla 24, medido en SCRUM-1657 sobre `d7fb55ea1`):», partida en la exportación de
    Jira, se cierra después de los dos puntos. Ninguna palabra cambia.
