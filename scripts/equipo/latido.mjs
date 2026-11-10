@@ -596,9 +596,70 @@ export function commitsDeCorridas(corridas, jobsDe, obligatorio = OBLIGATORIO_PO
     const cancelada = c.status === 'completed' && c.conclusion === 'cancelled';
     const checkRuns = cancelada ? [] : jobsDe(c);
     commits.push({ sha: c.head_sha, checkRuns, cancelada });
-    if (Array.isArray(checkRuns) && checkRuns.some((r) => String(r.name || '').startsWith(obligatorio) && r.status === 'completed' && /^(success|failure)$/.test(r.conclusion))) break;
+    // (SCRUM-1684) Se para en el primer VERDE, no en el primer veredicto: con main en rojo, la alarma de
+    // `alarmaSinVerde` necesita la edad del último verde, que está DETRÁS de los rojos. Cuesta una lectura
+    // de jobs más por cada rojo seguido (≤ COMMITS_DE_MAIN); `seccionMain` sigue parándose en el primero.
+    if (Array.isArray(checkRuns) && checkRuns.some((r) => String(r.name || '').startsWith(obligatorio) && r.status === 'completed' && r.conclusion === 'success')) break;
   }
   return commits;
+}
+
+/** (SCRUM-1684) Sin un verde del obligatorio sobre main en más de esto, el latido da la alarma. Decisión del orquestador, 10-nov-2026. */
+export const HORAS_SIN_VERDE_DE_MAIN = 48;
+const ALARMA_SIN_VERDE = `ALARMA · main sin verde del obligatorio en más de ${HORAS_SIN_VERDE_DE_MAIN} h`;
+
+const jobObligatorio = (c, obligatorio) => c.checkRuns.filter((r) => String(r.name || '').startsWith(obligatorio))
+  .sort((a, b) => String(b.started_at || '').localeCompare(String(a.started_at || '')))[0];
+
+/**
+ * SCRUM-1684 · ¿cuánto hace del último VERDE del job obligatorio sobre main? Main estuvo 7 días congelada sin
+ * que nada avisara. Reusa la lectura de la §4 (`commitsDeCorridas`), sin una segunda consulta.
+ *
+ * La edad es la del CIERRE del job obligatorio (`completed_at`): desde entonces es lo último que se sabe de main
+ * en verde. El verde es el del JOB, no la conclusión de la corrida (un job informativo la pone en rojo).
+ *
+ * Tres casos, y cada uno lo DICE (letra del orquestador, SCRUM-1684):
+ *  ① hubo corridas y están en rojo → nombra el PRIMER rojo (el más viejo de los que van detrás del verde);
+ *  ② no hubo ninguna corrida → o las que hubo no terminaron (canceladas o en curso: «hubo N y ninguna
+ *     terminó», decidido por el orquestador el 10-nov), o directamente no hubo ninguna;
+ *  ③ no pude leer → la lista no llegó, los jobs de una corrida no se dejaron leer, o la página vino LLENA
+ *     sin un verde dentro: entonces NO SÉ de cuándo es el último verde, y eso NUNCA se lee como ②.
+ *
+ * @param {{commits:object[]|undefined, obligatorio?:string, ahora:number, leidasTodas:boolean}} e
+ *   `leidasTodas`: la API devolvió menos corridas que las pedidas (no hay más detrás). Sin un `true`
+ *   explícito, el historial se da por cortado.
+ * @returns {{caso:0|1|2|3, linea:string}}  `caso 0` = hay un verde de menos de HORAS_SIN_VERDE_DE_MAIN.
+ */
+export function alarmaSinVerde({ commits, obligatorio = OBLIGATORIO_POR_DEFECTO, ahora, leidasTodas }) {
+  const H = HORAS_SIN_VERDE_DE_MAIN;
+  const no = (por) => ({ caso: 3, linea: `${ALARMA_SIN_VERDE}? · caso ③ NO PUDE LEER: ${por}. NO SÉ de cuándo es el último verde; esto NO es «no hubo corridas»` });
+  if (!Number.isFinite(ahora)) return no('no sé qué hora es');
+  if (!Array.isArray(commits)) return no('la lista de corridas del CI sobre main (push) no llegó');
+  const rojos = []; let sinTerminar = 0;
+  const detras = () => `${rojos.length ? `${rojos.length} en ROJO, el PRIMER rojo: ${rojos[rojos.length - 1]}` : ''}${rojos.length && sinTerminar ? ' · ' : ''}${sinTerminar ? `${sinTerminar} sin terminar (canceladas o en curso)` : ''}`;
+  for (const c of commits) {
+    const sha = String(c.sha || '?').slice(0, 8);
+    if (!Array.isArray(c.checkRuns)) return no(`los jobs de la corrida de ${sha} no se dejaron leer, y el último verde puede ser ése o estar detrás`);
+    const job = jobObligatorio(c, obligatorio);
+    const v = job && job.status === 'completed' ? job.conclusion : null;
+    if (v === 'success') {
+      const t = Date.parse(job.completed_at);
+      if (!Number.isFinite(t)) return no(`el último verde (${sha}) no trae la hora de cierre del job: no sé su edad`);
+      const h = (ahora - t) / 36e5;
+      const edad = `${h >= 48 ? `${(h / 24).toFixed(1)} días (${Math.floor(h)} h)` : `${h.toFixed(1)} h`}`;
+      const verde = `el último verde es ${sha} (${String(job.completed_at).slice(0, 16)}Z, hace ${edad})`;
+      if (h < H) return { caso: 0, linea: `${verde}, dentro de las ${H} h` };
+      if (rojos.length) return { caso: 1, linea: `${ALARMA_SIN_VERDE} · caso ① EN ROJO: ${verde}; detrás: ${detras()}` };
+      if (sinTerminar) return { caso: 2, linea: `${ALARMA_SIN_VERDE} · caso ② SIN CORRIDAS QUE TERMINEN: ${verde}; detrás hubo ${sinTerminar} y NINGUNA terminó (canceladas o en curso)` };
+      return { caso: 2, linea: `${ALARMA_SIN_VERDE} · caso ② SIN CORRIDAS: ${verde} y desde entonces no hubo NINGUNA corrida sobre main (main parada o el equipo parado)` };
+    }
+    if (v === 'failure') rojos.push(sha); else sinTerminar++;
+  }
+  // Ningún verde en lo leído.
+  if (leidasTodas !== true) return no(`en las ${commits.length} corridas leídas (la página vino LLENA, per_page=${COMMITS_DE_MAIN}) no hay ningún verde${commits.length ? ` (${detras()})` : ''}, y el último puede estar detrás`);
+  if (rojos.length) return { caso: 1, linea: `${ALARMA_SIN_VERDE} · caso ① EN ROJO: no hay NINGÚN verde en todo el historial leído (${commits.length} corridas, la API no tiene más); ${detras()}` };
+  if (commits.length) return { caso: 2, linea: `${ALARMA_SIN_VERDE} · caso ② SIN CORRIDAS QUE TERMINEN: hubo ${commits.length} corridas sobre main y NINGUNA terminó (canceladas o en curso), sin ningún verde detrás` };
+  return { caso: 2, linea: `${ALARMA_SIN_VERDE} · caso ② SIN CORRIDAS: la API no tiene NINGUNA corrida del CI sobre main por push` };
 }
 
 /**
@@ -619,7 +680,19 @@ export function edadDelUltimoMerge(ultimo, ahora) {
  * @param {{commits:{sha:string, checkRuns:object[]|undefined, cancelada?:boolean}[], obligatorio?:string, ultimoMerge?:{sha:string,fecha:string}|null, ahora?:number}} e
  *   commits de main, del más NUEVO al más viejo · `ultimoMerge`: `undefined` = no se pregunta · `null` = se preguntó y no se pudo leer.
  */
-export function seccionMain({ commits, obligatorio = OBLIGATORIO_POR_DEFECTO, ultimoMerge, ahora }) {
+export function seccionMain({ commits, obligatorio = OBLIGATORIO_POR_DEFECTO, ultimoMerge, ahora, leidasTodas }) {
+  // (SCRUM-1684) `leidasTodas`: `undefined` = no se pregunta por la alarma de 48 h · `true`/`false` = se juzga.
+  // ③ sale CIEGA (salida 2) con lo que sí se leyó; ① y ② salen como aviso, delante de los demás.
+  if (leidasTodas !== undefined) {
+    const a = alarmaSinVerde({ commits, obligatorio, ahora, leidasTodas });
+    if (a.caso === 2 && Array.isArray(commits) && commits.length === 0) {
+      return { nombre: 'MAIN', pudo: true, alertas: [{ linea: a.linea }], poblacion: `0 ${POBLACION_DE_MAIN} (la API no tiene ninguna)` };
+    }
+    const s = seccionMain({ commits, obligatorio, ultimoMerge, ahora });
+    if (a.caso === 3) return { nombre: 'MAIN', pudo: false, motivo: s.pudo ? `${a.linea} · lo que SÍ se leyó: ${s.poblacion}` : `${a.linea} · Y ADEMÁS: ${s.motivo}`, alertas: s.alertas, poblacion: null };
+    if (a.caso === 0) return s.pudo ? { ...s, poblacion: `${s.poblacion} · ${a.linea}` } : s;
+    return { ...s, alertas: [{ linea: a.linea }, ...s.alertas] };
+  }
   if (!Array.isArray(commits) || commits.length === 0) return ciega('MAIN', 'no llegaron corridas del CI sobre main (push)');
   if (ultimoMerge !== undefined) {
     const edad = edadDelUltimoMerge(ultimoMerge, ahora);
@@ -1499,7 +1572,9 @@ async function todo() {
   // La punta de main, con su fecha: `null` si no se deja leer (y entonces la sección lo dice, no lo calla).
   const punta = intentar(() => ghJson(['api', `repos/${REPO}/commits/main`]));
   const ultimoMerge = punta && punta.sha && punta.commit && punta.commit.committer ? { sha: punta.sha, fecha: punta.commit.committer.date } : null;
-  const sMain = seccionMain({ commits, ultimoMerge, ahora });
+  // (SCRUM-1684) Una página llena puede tener el último verde detrás: eso es «no sé», no «no hubo».
+  const leidasTodas = Array.isArray(corridas) && corridas.length < COMMITS_DE_MAIN;
+  const sMain = seccionMain({ commits, ultimoMerge, ahora, leidasTodas });
   tramo('main');
   // 5 · despliegue
   const ds = intentar(() => ghJson(['api', `repos/${REPO}/deployments?per_page=5`]));
