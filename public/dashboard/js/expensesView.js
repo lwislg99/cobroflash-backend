@@ -455,9 +455,18 @@ function filaDeGasto(e) {
   mas.appendChild(overflowMenu(opciones, { label: 'Más acciones de ' + e.concept }));
 
   fila.append(que, meta, celdaTrabajo(e), imp, mas);
+  const abrirGasto = () => renderAppView('expenses-detail', { expenseId: e.id });
   fila.addEventListener('click', (ev) => {
     if (ev.target.closest('a, button')) return;
-    renderAppView('expenses-detail', { expenseId: e.id });
+    abrirGasto();
+  });
+  // SCRUM-1639 · con teclado: la fila sigue siendo `listitem` (su lista lo exige) y lleva dentro el
+  // enlace del trabajo y el «⋯», así que no puede ser ella el botón (un botón no contiene controles).
+  // El activable es el bloque del concepto, que no contiene ninguno; su nombre es su propio texto.
+  que.setAttribute('role', 'button');
+  que.setAttribute('tabindex', '0');
+  que.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); abrirGasto(); }
   });
   return fila;
 }
