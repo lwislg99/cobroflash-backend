@@ -1,0 +1,38 @@
+URL https://yaqu.app/dashboard/#partes-oficina
+--- TEXTO
+Partes por valorar
+P
+Partes por valorar
+
+Los partes que tu equipo ya ha firmado y todavía no tienen precios.
+
+PT-2026-005
+Calle Mayor 14, 3º B, 28801 Alcalá de Henares
+6 ⚬
+--- PULSABLES
+button[submit] «Menú» 36x36 @12,12
+button[button] «PT-2026-005 Calle Mayor 14, 3º B, 28801 Alcalá de Henares 6 » 366x69 @12,206
+--- DESBORDES
+--- <44px
+button «Inicio» 228x34
+button «Solicitudes» 228x34
+button «Trabajos» 228x34
+button «Presupuestos» 228x34
+button «Albaranes» 228x34
+button «Partes por valorar» 228x34
+button «Facturas» 228x34
+button «Cobros» 228x34
+button «Clientes» 228x34
+button «Productos» 228x34
+button «Proveedores» 228x34
+button «Gastos» 228x34
+button «Informes» 228x34
+button «Libro de registro» 228x34
+button «Facturas recibidas» 228x34
+button «Equipo» 228x34
+button «Planes» 228x34
+button «Configuración» 228x34
+button «Salir» 39x22
+button «Menú» 36x36
+--- LOG
+[warning] Service Worker registration blocked by Playwright
