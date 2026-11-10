@@ -136,9 +136,10 @@ SCRUM-1585 c.21397.
 - Dirigida (`tests-que-cubren --lanzar`, 4 tramos sobre `5986d520a` + la rama): 530 de 1.581 ficheros,
   4.931 casos, 4.896 pasan, 3 caen. Los 3 son `scrum1298b` (2) y `scrum351` (1), y caen igual en un árbol
   limpio de `origin/main` @ `5986d520a` en esta máquina (15 casos, 12 pasan, 3 caen): no son de la rama.
-- Sueltos tras el segundo merge: `scrum237`, `scrum976`, `scrum1387`, `scrum1295`, `scrum267`, `scrum273`,
-  `scrum1294`, `scrum1572`, `scrum719`, `scrum622`, `scrum113`, `scrum523d`, `scrum974` y `scrum1585`:
-  14 ficheros, 148 casos, 147 pasan, 0 caen, 1 saltado (`scrum974`, sin `LIBRO_PG_URL`).
+- Sueltos sobre el segundo merge, con este tramo ya commiteado: `scrum237`, `scrum976`, `scrum1387`,
+  `scrum1295`, `scrum267`, `scrum273`, `scrum1294`, `scrum1572`, `scrum719`, `scrum622`, `scrum113`,
+  `scrum523d`, `scrum974`, `scrum1585`, `scrum921c`, `scrum811c` y `scrum1659`: 17 ficheros, 196 casos,
+  195 pasan, 0 caen, 1 saltado (`scrum974`, sin `LIBRO_PG_URL`).
 - Sin medir: ninguna base; `scrum974` y los 11 de 1585c NO se han corrido en local (piden el banco de CI);
   la suite entera local: NO CORRIDA; el CI, hasta leer el obligatorio de este empujón.
 
