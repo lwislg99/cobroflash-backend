@@ -1,0 +1,115 @@
+URL https://yaqu.app/dashboard/#parte-detail/13
+--- TEXTO
+YQ
+YaQu
+Inicio
+Solicitudes
+Trabajos
+VENTA
+Presupuestos
+Albaranes
+Partes por valorar
+Facturas
+Cobros
+NEGOCIO
+Clientes
+Productos
+Proveedores
+Gastos
+Informes
+Libro de registro
+Facturas recibidas
+CUENTA
+Equipo
+Planes
+Configuración
+P
+PruebaQA
+Plan Pro
+Salir
+Parte de trabajo
+P
+PT-2026-005
+
+Marta Prieto (PILOTO-1 QA)
+
+Horas y desplazamiento
+Entrada
+09:10
+Salida
+11:40
+Tiempo en la obra
+2 h 30 min
+Desplazamiento
+20
+Kilómetros
+12 km
+Mano de obra
+UNDS	Descripción
+1	Cambio de latiguillos del lavabo y llave de escuadra
+1	Revisión de sifón
+2.5	Horas de trabajo
+Materiales
+UNDS	Descripción
+2	Latiguillos de 40 centímetros
+1	Llave de escuadra de media pulgada
+1	Rollo de teflón
+Firmas
+Firmar aquí mismo
+
+Falta la firma del cliente.
+
+Firmado por el técnico Jorge Operario (QA)
+
+DATOS DEL PARTE
+Obra y referencia
+Calle Mayor 14, 3º B, 28801 Alcalá de Henares
+Tipo de intervención
+Reparación / asistencia
+Técnicos
+Jorge Operario (QA)
+Notas
+Sin notas
+?
+--- PULSABLES
+button[submit] «Inicio» 228x34 @-238,85
+button[submit] «Solicitudes» 228x34 @-238,121
+button[submit] «Trabajos» 228x34 @-238,157
+button[button] «Presupuestos» 228x34 @-238,227
+button[submit] «Albaranes» 228x34 @-238,263
+button[submit] «Partes por valorar» 228x34 @-238,299
+button[submit] «Facturas» 228x34 @-238,335
+button[submit] «Cobros» 228x34 @-238,371
+button[submit] «Clientes» 228x34 @-238,440
+button[submit] «Productos» 228x34 @-238,476
+button[submit] «Proveedores» 228x34 @-238,512
+button[submit] «Gastos» 228x34 @-238,548
+button[submit] «Informes» 228x34 @-238,584
+button[submit] «Libro de registro» 228x34 @-238,620
+button[submit] «Facturas recibidas» 228x34 @-238,656
+button[submit] «Equipo» 228x34 @-238,726
+button[submit] «Planes» 228x34 @-238,762
+button[submit] «Configuración» 228x34 @-238,798
+button[submit] «Salir» 39x22 @-61,867
+button[submit] «Menú» 36x36 @12,12
+button[button] «Firmar aquí mismo» 340x44 @25,373
+summary «Obra y referencia Calle Mayor 14, 3º B, 28801 Alcalá de Hena» 366x48 @12,560
+summary «Tipo de intervención Reparación / asistencia» 366x48 @12,609
+input[radio] «reparacion_asistencia» 13x13 @29,677 DISABLED
+input[radio] «mantenimiento» 13x13 @29,733 DISABLED
+input[radio] «instalacion» 13x13 @190,733 DISABLED
+summary «Técnicos Jorge Operario (QA)» 366x48 @12,658
+summary «Notas Sin notas» 366x48 @12,707
+button[submit] «?» 48x48 @322,776
+--- DESBORDES
+--- <44px
+button «Menú» 36x36
+input «reparacion_asistencia» 13x13
+input «mantenimiento» 13x13
+input «instalacion» 13x13
+--- LOG
+[warning] Service Worker registration blocked by Playwright
+--- NOTAS
+campos: 
+botones: 
+confirmo con: «Confirmar firma» disabled=false
