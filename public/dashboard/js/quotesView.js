@@ -5130,7 +5130,9 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
         // `tiers` y `currency` viajan en la plantilla y NO se restauran aquí, y está medido:
         // el editor no tiene tramos (esta vista no nombra `tiers` ni una vez) ni selector de
         // moneda (usa la del merchant). No se inventa un campo para meterlos.
-        setAlert('success', `Plantilla "${template.name}" cargada — completa los datos del cliente y genera el presupuesto.`);
+        // SCRUM-1654 · aquí se pintaba un aviso de plantilla aplicada que NADIE vio nunca: el
+        // vaciado del aviso al final de esta carga (el que quita el de carga en curso) lo borraba
+        // a los ~110 ms, medido en yaqu.app. Se retiró porque no era visible; ese vaciado se queda.
       }
 
       const merchantPromise = getMerchantProfile();

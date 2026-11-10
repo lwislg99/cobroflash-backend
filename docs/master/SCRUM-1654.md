@@ -55,3 +55,26 @@ orquestador.
 
 Fuera de este ticket, sin tocar: el aviso de `cargarPlantilla` (`:4744`, botón del editor) sí queda en pantalla,
 porque esa puerta no pasa por `loadInitialData`.
+
+## SCRUM-1654 ② · S2, 10-nov-2026 ~17:30Z (Date: GitHub): se RETIRA el aviso que no era visible
+
+**Skill UI:** no cargada · se borra una línea que no pintaba nada que se viera; ni tokens, ni clases, ni maquetación.
+
+Decisiones del orquestador (encargo a S2, 10-nov-2026, sesión de relevo): ① NO se construye (población cero; el
+mapa de las tres puertas queda como requisito de aceptación de SCRUM-1545, c.21406) y ② se retira el aviso.
+
+**Antes de tocar, medido qué limpia el vaciado de `:5205`** (`if (!draftRestored) setAlert(null, "")`): dentro de
+`loadInitialData` (`:5097`) los `setAlert` son `:5099` «Cargando datos…» (se pinta al empezar), `:5133` el de la
+plantilla, `:5202` el del borrador restaurado (y entonces `:5205` no corre) y `:5218` el error (en el `catch`,
+después). O sea: `:5205` es el que QUITA «Cargando datos…» cuando no hay borrador. Sirve a más cosas → **se queda**.
+Lo único que se retira es `:5133`, la línea que pintaba el aviso; no la alimentaba nada más (`template.name` sólo
+se usaba ahí; `templatePending` sigue haciendo falta en `:5193`).
+
+| qué | dónde |
+|---|---|
+| aviso retirado | `public/dashboard/js/quotesView.js` (antes `:5133`), con comentario de por qué en su sitio |
+| censo de ranuras de SCRUM-600 | `tests/scrum600-un-solo-front-documento.test.mjs`: sale su fila de `RANURAS_A`; 31 → 30 posiciones, 29 → 28 textos, con la línea de historia |
+| visible en producción | **nada cambia**: el aviso vivía ~110 ms y quedaba vacío (medido en yaqu.app, tramo de arriba). Por eso no pide firma |
+
+Se retira **porque no era visible**, no porque sobrara: si algún día se quiere avisar de que una plantilla se
+aplicó, será un texto nuevo con su firma (regla 39) y un sitio donde no lo borre la carga.
