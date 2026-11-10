@@ -48,3 +48,77 @@ Instrumento: `gasto-arranque.mjs` (`sesiones`, `resultados`, `arranque`) y dos s
 Añade la sección A25 «Eficiencia y gasto» a docs/equipo/00-normas-comunes.md, la incluye en 
 orma.mjs --arranque (ahora 14 secciones + índice de 11), baja el relevo de A19 de 300k a 200k (decisión del orquestador; también en orquestador.md, orquestador-autonomo.md, 	raspaso.md) y UMBRAL_CONTEXTO de sesion.mjs (autorización escrita del fundador; la copia de AppData la refresca el orquestador). Tests: scrum996-suelo-de-arranque (14) y scrum899c-relevar-y-contexto (200_001/199_999).
 Base medida: origin/main tras el merge de #1618, 0252a54dd0f7495aec24de6d8cb41691c5520a62 (antes del commit de registro).
+
+## 1070c · La palanca 7, medida de verdad: `yaqu-ruta` funciona y casi nadie lo usa (19-oct-2026)
+
+Pedido DIRECTO del fundador (por el orquestador): ¿el mod que manda tareas fáciles a un modelo más
+barato «está funcionando de verdad»? La palanca 7 de arriba decía «no medible: no hay coste por
+modelo en los jsonl» — eso seguía siendo cierto, pero SÍ se puede medir si el mod se usa y si sabe
+hacer su trabajo cuando se le pide. S5, sin tocar `.claude/`, sin modelos de sesiones vivas, sin
+construir el arreglo (lo pidió así el orquestador: medir primero, cambiar el mecanismo después).
+
+### Qué copia carga
+`mods-yaqu/yaqu-ruta/hooks/register.js` (marketplace `directory`), confirmado por evidencia directa
+y no por analogía con el caso de `yaqu-sala` (SCRUM-1357h): el formato de
+`C:\Users\Admin\.claude\yaqu-ruta-bitacora.txt` (campos `turno=`, `enFirme=`, `claves=…`) sólo existe
+en ese fichero (12.865 B); la copia de `…\plugins\cache\yaqu\yaqu-ruta\0.1.0\…` (6.145 B) no tiene
+ni `BITACORA` ni `apuntarDecision` — es imposible que haya escrito esas líneas.
+
+### Control positivo: el mod SABE registrar un `pedido` no nulo
+`claude plugin test .` en `mods-yaqu/yaqu-ruta` → **8/8 verde**. Y, aparte de los tests del propio
+plugin, llamada directa a la función exportada:
+```
+leerRuta("ERES LA SESION 1. Arregla esto.")       → {"modelo":null, "motivo":"el encargo no lleva línea RUTA:"}
+leerRuta("RUTA: haiku\n\nCuenta ficheros.")        → {"modelo":"claude-haiku-4-5-20251001", "corto":"haiku", ...}
+leerRuta("RUTA: sonnet\n\nAlgo mediano.")          → {"modelo":"claude-sonnet-5", "corto":"sonnet", ...}
+leerRuta("RUTA: opus\n\nAlgo dificil.")            → {"modelo":"claude-opus-5-5", "corto":"opus", ...}
+```
+**Nunca null cuando la línea existe.** Los `null` de la bitácora son por NO USO del mod, no por un
+fallo de escritura: el diagnóstico del fundador se sostiene.
+
+### Por qué «1066 líneas, todas null» no es la foto de hoy
+`yaqu-ruta-bitacora.txt` ROTA por diseño (el propio código: pasa 200.000 caracteres → se recorta a
+los últimos 100.000). Medido a las ~13:00Z del 19-oct: 577 líneas, y **333 (58 %) llevan
+`pedido="claude-sonnet-5"`**, concentradas en 16 de 33 encargos distintos (por `turno=0`), todas
+entre las 11:26Z y las 12:03Z de hoy — una ráfaga de `RUTA: sonnet` escrita HOY, no la foto
+histórica. Un fichero que se recorta solo no sirve para medir un histórico.
+
+### La fuente que SÍ persiste, y la cifra pedida
+`~/.claude/jobs/*/state.json`, campo `intent` (el encargo literal de cada sesión lanzada, con
+`createdAt`). 506 carpetas, 502 con `intent` legible, del 17-sep-2026 a hoy:
+
+| medida | cifra |
+| --- | --- |
+| encargos reales con línea `RUTA:` | **8 de 502 (1,6 %)** — 7 pedían `sonnet`, 1 `haiku`, 0 `opus` |
+| encargos con `RUTA-AGENTES:` | 0 |
+
+**1,6 % es el SUELO del ahorro si "aplicarla por defecto" significara automatizar exactamente esto
+(que el modelo pedido se use sin que nadie escriba la línea): es el mínimo seguro, porque son los
+únicos casos con una señal explícita y verificada de que ese encargo cabía en un modelo más barato.**
+No es la cifra de cuántos PODRÍAN haberlo hecho: eso exige clasificar el texto de los otros 494
+encargos, y no hay ninguna señal de dificultad grabada hoy fuera de la propia línea `RUTA:` — `effort`
+no se guarda en ningún `state.json` (comprobado sobre los 506). Clasificar por contenido es diseñar
+un clasificador nuevo, que es cambiar el mecanismo: queda para la sesión que lo construya, con esta
+cifra ya en la mano.
+
+### El dato que de verdad manda sobre el gasto hoy: el lanzador, no el mod
+Aparte de `yaqu-ruta`, el `--model` con el que se LANZA cada job (`respawnFlags`, mecanismo DISTINTO,
+decidido por quien lanza antes de que la sesión arranque) ya reparte los 506 jobs así:
+
+| modelo de lanzamiento | encargos | % |
+| --- | --- | --- |
+| opus | 322 | 63,6 % |
+| sonnet | 117 | 23,1 % |
+| sin `--model` (hereda el de por defecto) | 61 | 12,1 % |
+| `opus[1m]` | 4 | 0,8 % |
+| haiku | 2 | 0,4 % |
+
+El 23,1 % que ya corre en sonnet **no es un ahorro que arreglar `yaqu-ruta` pueda sumar**: ya está
+pasando, por el lanzador. La palanca real sobre el gasto está en el 63,6 % que se lanza en opus, y
+saber cuántos de ésos eran mecánicos exige la misma lectura de intención que el párrafo de arriba
+— no hecha aquí.
+
+### Lo que NO se ha hecho (a propósito)
+No se tocó `.claude/hooks/`, `.claude/settings.json`, ningún modelo de sesión viva, ni la bitácora.
+No se clasificó ningún encargo por dificultad. No se cambió el camino por defecto de `yaqu-ruta`.
+Eso queda para la próxima sesión de S5, con esta cifra ya medida.

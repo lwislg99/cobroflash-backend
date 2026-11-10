@@ -29,11 +29,20 @@ import { resolverNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
 import { baseDeLaRama } from '../tests/_base-de-la-rama.mjs';
 import { temporal } from '../tests/_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
+import { enlacesDelPanel, ESPERAR_FUENTES, TIPOS_DE_FUENTE } from './_hojas-del-panel.mjs'; // SCRUM-1603
 
 const TIPOS = {
   '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/html',
   '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.json': 'application/json',
+  ...TIPOS_DE_FUENTE,
 };
+
+/**
+ * SCRUM-1603 · LO QUE SE COPIA AL «ANTES». Con las letras: el banco enlaza `/fonts/inter.css`, y un
+ * «antes» sin sus `.woff2` mediría con la fuente de reserva y el «después» con Inter — cada guard que
+ * compara los dos árboles diría «HA CAMBIADO» sobre una rama que no ha tocado nada.
+ */
+export const EXTENSIONES_DEL_ARBOL = /\.(html|css|js|woff2)$/;
 
 /** Los `<script src>` del índice, EN SU ORDEN. Se derivan del fichero: una lista a mano caduca. */
 export function scriptsDelIndice(publico) {
@@ -72,12 +81,15 @@ function modoDeclarado(ruta) {
  * 🔴 SIN ÉL LOS ANCHOS SALEN INFLADOS. `.main { margin-left: var(--sidebar-w) }` descuenta los
  * 248 px de la barra lateral; medir dentro de un `<div>` suelto daría 248 px de más y el
  * veredicto sobre el ancho sería el de otra pantalla.
+ *
+ * SCRUM-1603 · Y LAS HOJAS, LAS DEL ÍNDICE: con `/fonts/inter.css`, que faltaba. Sin ella el banco
+ * medía con Segoe UI y producción con Inter, ~1 px de diferencia en etiquetas y campos (SCRUM-962g).
  */
 function documento(publico, fnVista, reglasDatos, args, modo) {
   const scripts = scriptsDelIndice(publico).map((s) => `<script src="${s}"></script>`).join('\n');
   return `<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/dashboard/css/styles.css">
+${enlacesDelPanel(publico)}
 </head><body>
 <aside class="sidebar"><div class="sidebar-logo"><div class="sidebar-logo-mark">YQ</div><div class="sidebar-logo-text">YaQu</div></div><nav class="sidebar-nav"></nav></aside>
 <main class="main"><section id="view-container" class="view-container"></section></main>
@@ -149,6 +161,13 @@ window.__listo = false;
     await new Promise((r) => setTimeout(r, 5));
     quietas = window.__enVuelo === 0 ? quietas + 1 : 0;
   }
+  // SCRUM-1603 · LA FUENTE, ESPERADA. font-display: swap pinta con la de reserva hasta que llega
+  // Inter: sin esperarla, unas veces se mide una y otras la otra. El recuento queda en la página.
+  try {
+    window.__fuentes = await ${ESPERAR_FUENTES};
+    const f = window.__fuentes;
+    if (f.hojasSinCargar.length || f.fallidas > 0 || (f.declaradas > 0 && f.cargadas === 0)) window.__errores.push('fuente: ' + JSON.stringify(f));
+  } catch (e) { window.__errores.push('fuente: ' + e.message); }
   requestAnimationFrame(() => requestAnimationFrame(() => { window.__listo = true; }));
 })();
 </script>
@@ -222,7 +241,7 @@ export function arbolDePartida(raiz, etiqueta = 'antes') {
 
   const tmp = temporal(`yaqu-816-${etiqueta}-`);
   const ficheros = execFileSync('git', ['ls-tree', '-r', '--name-only', base.sha, 'public'], { cwd: raiz, encoding: 'utf8' })
-    .split('\n').map((s) => s.trim()).filter((s) => /\.(html|css|js)$/.test(s));
+    .split('\n').map((s) => s.trim()).filter((s) => EXTENSIONES_DEL_ARBOL.test(s));
   for (const f of ficheros) {
     const destino = path.join(tmp, f);
     fs.mkdirSync(path.dirname(destino), { recursive: true });
@@ -278,5 +297,5 @@ export async function abrirVista(browser, puerto, ruta, ancho, alto = 900) {
   await page.setViewport({ width: ancho, height: alto });
   await page.goto(`http://127.0.0.1:${puerto}${ruta}`, { waitUntil: 'load' });
   await page.waitForFunction('window.__listo === true', { timeout: 20000 });
-  return { page, errores: await page.evaluate('window.__errores') };
+  return { page, errores: await page.evaluate('window.__errores'), fuentes: await page.evaluate('window.__fuentes') };
 }

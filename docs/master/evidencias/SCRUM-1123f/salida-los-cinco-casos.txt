@@ -1,0 +1,20 @@
+── tipo-a-21oct · exit 0 · tipo=railway-no-lo-vio
+@lwislg99 · este aviso es para ti: producción no se está actualizando.
+🔴 **Railway NO HA VISTO estos 5 commits** de `main`: ni un estado de Railway en ninguno. No hay logs de arranque que mirar: el despliegue ni ha empezado. **Primer sitio donde mirar: la conexión del servicio con GitHub en Railway** (el servicio → *Settings* → *Source*, y su registro de actividad). Es la avería de tipo A, y ha pasado tres veces: 4-5 de junio, 29-sep y 21-22 de octubre (SCRUM-1123e).
+
+── tipo-b-24sep · exit 0 · tipo=fallo-el-despliegue
+@lwislg99 · este aviso es para ti: producción no se está actualizando.
+🔴 **Railway vio `db7714316` y el despliegue FALLÓ** (`cobroflash-backend`: «Deployment failed»). Primer sitio donde mirar: los logs de arranque de ese despliegue en Railway. Si dicen `[schema] DERIVA`, falta un `ALTER` en producción — mirar `docs/sql/` en `main` por SQL pendiente. Es la avería de tipo B (24/25-sep, SCRUM-1122).
+
+── tipo-b-23oct · exit 0 · tipo=fallo-el-despliegue
+@lwislg99 · este aviso es para ti: producción no se está actualizando.
+🔴 **Railway vio `3c255d98a` y el despliegue FALLÓ** (`cobroflash-backend`: «Deployment failed»). Primer sitio donde mirar: los logs de arranque de ese despliegue en Railway. Si dicen `[schema] DERIVA`, falta un `ALTER` en producción — mirar `docs/sql/` en `main` por SQL pendiente. Es la avería de tipo B (24/25-sep, SCRUM-1122).
+
+── sano-falla-otro-servicio · exit 0 · tipo=no-se-sabe
+@lwislg99 · este aviso es para ti: producción no se está actualizando.
+⚠️ **No he podido saber qué avería es:** Railway sí ha visto estos commits y no dice que `cobroflash-backend` fallara; si dice `success`, es producción la que no sirve lo desplegado (mirar `/version` y el dominio). Hay dos que dan este mismo síntoma y se miran en sitios distintos: **A** · Railway no ha visto el commit (ni un estado de Railway en GitHub) → la conexión del servicio con GitHub en Railway; **B** · lo vio y falló (estado `failure` de `cobroflash-backend`) → los logs de arranque y el `ALTER` que falte.
+
+── sano-hoy · exit 0 · tipo=no-se-sabe
+@lwislg99 · este aviso es para ti: producción no se está actualizando.
+⚠️ **No he podido saber qué avería es:** Railway sí ha visto estos commits y no dice que `cobroflash-backend` fallara; si dice `success`, es producción la que no sirve lo desplegado (mirar `/version` y el dominio). Hay dos que dan este mismo síntoma y se miran en sitios distintos: **A** · Railway no ha visto el commit (ni un estado de Railway en GitHub) → la conexión del servicio con GitHub en Railway; **B** · lo vio y falló (estado `failure` de `cobroflash-backend`) → los logs de arranque y el `ALTER` que falte.
+

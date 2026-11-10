@@ -1,0 +1,7 @@
+censo: 227 guards con declaración
+guard=scrum560-patron-fetch-servidor.test.mjs · declaraciones=2 · incompletas=0
+ancla «const UMBRAL_SUELTOS = 1;» → ambigüedad: null
+ancla «  if (sueltos >= UMBRAL_SUELTOS)» → ambigüedad: null
+limpia: pasados=4 caidos=0 movidos=0
+VIVA · const UMBRAL_SUELTOS = 1; → const UMBRAL_SUELTOS = 3; · cae «SCRUM-560 · ningún fichero NUEVO pide con `fetch`» · colaterales=2
+VIVA ·   if (sueltos >= UMBRAL_SUELTOS) →   if (sueltos > UMBRAL_SUELTOS) · cae «SCRUM-560 · AUTOPRUEBA» · colaterales=2

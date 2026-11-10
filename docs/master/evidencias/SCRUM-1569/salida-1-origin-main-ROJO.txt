@@ -1,0 +1,16 @@
+POBLACION: 33 modelos · customerSite→customer_sites.contact_name
+ANTES   A: {"name":"Piso 3B","address":"Calle Mayor 7","city":"Zamora","postal_code":"49001","province":"Zamora","country":"ES","contact_name":"Luis el portero","phone":"+34644001570"}
+dist: <tmp>/dist-main  (tsc --noCheck de origin/main e0c32fb5)
+suprimir: ok=true redactados=merchant:1 customer:1 emailMessage:0 customerSite:1 whatsAppMessage:0
+updateMany pedidos: merchant:name,email,legalName,taxId,address,whatsappPhone | customer:name,phone,email,legalName,taxId,notes | emailMessage:toEmail | customerSite:phone | whatsAppMessage:toPhone
+DESPUES A: {"name":"Piso 3B","address":"Calle Mayor 7","city":"Zamora","postal_code":"49001","province":"Zamora","country":"ES","contact_name":"Luis el portero","phone":"[borrado a petición del interesado]"}
+DESPUES B: {"name":"Piso 3B","address":"Calle Mayor 7","city":"Zamora","postal_code":"49001","province":"Zamora","country":"ES","contact_name":"Luis el portero","phone":"+34644001570"}
+  name         A: EN CLARO  · B: intacto
+  address      A: EN CLARO  · B: intacto
+  city         A: EN CLARO  · B: intacto
+  postal_code  A: EN CLARO  · B: intacto
+  province     A: EN CLARO  · B: intacto
+  country      A: EN CLARO  · B: intacto
+  contact_name A: EN CLARO  · B: intacto
+  phone        A: redactado  · B: intacto
+TESTIGO: el banco corrio entero · EXIT=0

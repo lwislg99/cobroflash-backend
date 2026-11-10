@@ -1,0 +1,73 @@
+SCRUM-1390c · el bloque de actividad de Inicio, pintado en C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe · 96 scripts de index.html
+POBLACION: 2 roles × 10 escenarios = 20 celdas
+tecnico  vacio              pide /admin/metrics/inicio,/admin/metrics/actividad-equipo · renderHomeView volvió (105 ms)
+         bloque: «ACTIVIDAD RECIENTE Sin actividad reciente» · error false · reintentar false · esqueletos 0
+tecnico  con-datos          pide /admin/metrics/inicio,/admin/metrics/actividad-equipo · renderHomeView volvió (19 ms)
+         bloque: «ACTIVIDAD RECIENTE C CLIENTE-SEMBRADO-1390C Cotización #9 · 20 oct 100,00 € ● Enviado» · error false · reintentar false · esqueletos 0
+tecnico  sin-la-clave       pide /admin/metrics/inicio,/admin/metrics/actividad-equipo · renderHomeView volvió (3 ms)
+         bloque: «ACTIVIDAD RECIENTE Sin actividad reciente» · error false · reintentar false · esqueletos 0
+tecnico  http-500           pide /admin/metrics/inicio · renderHomeView volvió (3 ms)
+         bloque: «ACTIVIDAD RECIENTE ⚠️ No pudimos cargar tus métricas. Revisa tu conexión. Reintentar» · error true · reintentar true · esqueletos 0
+tecnico  http-502-sin-json  pide /admin/metrics/inicio · renderHomeView volvió (0 ms)
+         bloque: «ACTIVIDAD RECIENTE ⚠️ No pudimos cargar tus métricas. Revisa tu conexión. Reintentar» · error true · reintentar true · esqueletos 0
+tecnico  http-401           pide /admin/metrics/inicio · renderHomeView volvió (3 ms)
+         bloque: «ACTIVIDAD RECIENTE ⚠️ No pudimos cargar tus métricas. Revisa tu conexión. Reintentar» · error true · reintentar true · esqueletos 0
+tecnico  http-403           pide /admin/metrics/inicio · renderHomeView volvió (3 ms)
+         bloque: «ACTIVIDAD RECIENTE ⚠️ No pudimos cargar tus métricas. Revisa tu conexión. Reintentar» · error true · reintentar true · esqueletos 0
+tecnico  sin-red            pide /admin/metrics/inicio · renderHomeView volvió (2 ms)
+         bloque: «ACTIVIDAD RECIENTE ⚠️ No pudimos cargar tus métricas. Revisa tu conexión. Reintentar» · error true · reintentar true · esqueletos 0
+tecnico  se-cuelga          pide /admin/metrics/inicio · renderHomeView NO volvió en 6 s (6004 ms)
+         bloque: «ACTIVIDAD RECIENTE» · error false · reintentar false · esqueletos 4
+tecnico  200-no-json        pide /admin/metrics/inicio · renderHomeView volvió (0 ms)
+         bloque: «ACTIVIDAD RECIENTE ⚠️ No pudimos cargar tus métricas. Revisa tu conexión. Reintentar» · error true · reintentar true · esqueletos 0
+admin    vacio              pide /admin/metrics/home,/admin/metrics/team · renderHomeView volvió (19 ms)
+         bloque: «ACTIVIDAD RECIENTE Sin actividad reciente» · error false · reintentar false · esqueletos 0
+         #kpi-grid: «COTIZACIONES SIN RESPUESTA undefined esperando decisión COBRADO ESTE MES 0,00 €»
+admin    con-datos          pide /admin/metrics/home,/admin/metrics/team · renderHomeView volvió (5 ms)
+         bloque: «ACTIVIDAD RECIENTE C CLIENTE-SEMBRADO-1390C Cotización #9 · 20 oct 100,00 € ● Enviado» · error false · reintentar false · esqueletos 0
+         #kpi-grid: «COTIZACIONES SIN RESPUESTA undefined esperando decisión COBRADO ESTE MES 0,00 €»
+admin    sin-la-clave       pide /admin/metrics/home,/admin/metrics/team · renderHomeView volvió (4 ms)
+         bloque: «ACTIVIDAD RECIENTE Sin actividad reciente» · error false · reintentar false · esqueletos 0
+         #kpi-grid: «COTIZACIONES SIN RESPUESTA undefined esperando decisión COBRADO ESTE MES 0,00 €»
+admin    http-500           pide /admin/metrics/home · renderHomeView volvió (3 ms)
+         bloque: «ACTIVIDAD RECIENTE» · error false · reintentar false · esqueletos 0
+         #kpi-grid: «⚠️ No pudimos cargar tus métricas. Revisa tu conexión. Reintentar»
+admin    http-502-sin-json  pide /admin/metrics/home · renderHomeView volvió (0 ms)
+         bloque: «ACTIVIDAD RECIENTE» · error false · reintentar false · esqueletos 0
+         #kpi-grid: «⚠️ No pudimos cargar tus métricas. Revisa tu conexión. Reintentar»
+admin    http-401           pide /admin/metrics/home · renderHomeView volvió (3 ms)
+         bloque: «ACTIVIDAD RECIENTE» · error false · reintentar false · esqueletos 0
+         #kpi-grid: «⚠️ No pudimos cargar tus métricas. Revisa tu conexión. Reintentar»
+admin    http-403           pide /admin/metrics/home · renderHomeView volvió (3 ms)
+         bloque: «ACTIVIDAD RECIENTE» · error false · reintentar false · esqueletos 0
+         #kpi-grid: «⚠️ No pudimos cargar tus métricas. Revisa tu conexión. Reintentar»
+admin    sin-red            pide /admin/metrics/home · renderHomeView volvió (1 ms)
+         bloque: «ACTIVIDAD RECIENTE» · error false · reintentar false · esqueletos 0
+         #kpi-grid: «⚠️ No pudimos cargar tus métricas. Revisa tu conexión. Reintentar»
+admin    se-cuelga          pide /admin/metrics/home · renderHomeView NO volvió en 6 s (6005 ms)
+         bloque: «ACTIVIDAD RECIENTE» · error false · reintentar false · esqueletos 4
+         #kpi-grid: «»
+admin    200-no-json        pide /admin/metrics/home · renderHomeView volvió (1 ms)
+         bloque: «ACTIVIDAD RECIENTE» · error false · reintentar false · esqueletos 0
+         #kpi-grid: «⚠️ No pudimos cargar tus métricas. Revisa tu conexión. Reintentar»
+CONTROL tecnico: el sembrado sale en con-datos true · vacío y con-datos dan textos distintos true
+CONTROL admin: el sembrado sale en con-datos true · vacío y con-datos dan textos distintos true
+
+── ¿El fallo cae en el MISMO sitio que el vacío?
+  tecnico  sin-la-clave       🔴 IGUAL QUE EL VACÍO
+  tecnico  http-500           distinto del vacío (estado de error)
+  tecnico  http-502-sin-json  distinto del vacío (estado de error)
+  tecnico  http-401           distinto del vacío (estado de error)
+  tecnico  http-403           distinto del vacío (estado de error)
+  tecnico  sin-red            distinto del vacío (estado de error)
+  tecnico  se-cuelga          distinto del vacío
+  tecnico  200-no-json        distinto del vacío (estado de error)
+  admin    sin-la-clave       🔴 IGUAL QUE EL VACÍO
+  admin    http-500           distinto del vacío
+  admin    http-502-sin-json  distinto del vacío
+  admin    http-401           distinto del vacío
+  admin    http-403           distinto del vacío
+  admin    sin-red            distinto del vacío
+  admin    se-cuelga          distinto del vacío
+  admin    200-no-json        distinto del vacío
+EXIT=0

@@ -226,7 +226,23 @@ const R = analizar(RAIZ);
 // **Baja el commit del segundo PR de SCRUM-1404 que lo cablee desde la tarea programada de
 // `src/core/cron/cron.ts`** (la línea es de S1 y está pedida en SCRUM-1507), EN EL MISMO COMMIT que
 // cablea. Sus tres piezas están además declaradas en `scripts/_sin-consumir-declarados.json`.
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 6;
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// ✅ 22-oct-2026 · VUELVE A 5 (SCRUM-1507, el PR-2 de SCRUM-1404).
+//
+// La tarea «reintento de sellado (cada minuto)» de `src/core/cron/cron.ts` importa
+// `reintentoSellado.ts` (bloque de S1, SCRUM-1507 c.19344 §3; entrega decidida en c.20220), así
+// que sale de la lista. Baja en el mismo commit que cablea, y sus tres piezas pasan a `retiradas`.
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// ✅ 24-oct-2026 · BAJA A 4 (SCRUM-1063c, el 303 aparta los suplidos).
+//
+// `libroRegistro.ts` importa `partirPorSuplido` de `invoicing/domain/suplidos.ts`, así que sale de
+// la lista sin tocar el camino de emisión: el libro es DOCUMENTO en `scrum389-censo-vat`, y la base
+// que se sella sigue sin llamar a `desgloseConSuplidos` (decisión del fundador, SCRUM-1063 c.20717).
+// Al pasar a vivo, sus exports entran en la segunda población: `desgloseConSuplidos` y
+// `totalSuplidos` se declaran (MOTOR_EN_ESPERA), y `MARCA_SUPLIDO`, `leerMarcaSuplido` e
+// `importeSuplido` pierden el `export` (su consumidor está dentro; los tests miden por la
+// superficie pública).
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 4;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 

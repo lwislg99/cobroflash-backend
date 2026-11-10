@@ -1,0 +1,15 @@
+pdfs {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":4,"nResp":3}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum221-export-fiscal-cero-bytes {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":1,"nResp":6}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum74-recibo-token {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":1,"nResp":7}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum82-zip-verifactu {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":1,"nResp":5}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum25-export-zip {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":1,"nResp":5}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum25-exports {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":1,"nResp":19}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum148-filtro-por-miembro {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":2,"nResp":6}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+POBLACION=7 ficheros · malos=0 · EXIT=0

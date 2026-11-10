@@ -1,0 +1,9 @@
+﻿#47 AB260002 · estado firmado · firmadoAt 2026-10-14T07:50:59.626Z · fecha 2026-10-14T07:50:47.812Z
+  GET pdf → 200 · 3351 B · Date Fri, 23 Oct 2026 12:31:34 GMT · 32 líneas · control «AB260002»: SÍ
+  · Emitido: 14/10/2026 · Entrega/ejecución: 14/10/2026
+  · Firmado el 14 de octubre de 2026
+  · Sello temporal
+  · 14/10/2026, 07:50:59 (hora del servidor)
+#46 AB260001 · estado emitido · firmadoAt null · fecha 2026-09-29T10:56:05.078Z
+  GET pdf → 200 · 2107 B · Date Fri, 23 Oct 2026 12:31:34 GMT · 17 líneas · control «AB260001»: SÍ
+  · Emitido: 29/09/2026 · Entrega/ejecución: 29/09/2026

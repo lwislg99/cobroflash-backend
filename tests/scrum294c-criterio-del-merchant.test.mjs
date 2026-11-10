@@ -177,6 +177,7 @@ test('SCRUM-294c · 🔴 la pantalla ofrece TRES opciones, no una casilla', asyn
   // 17-ago-2026 · APROBADO por el fundador. El motivo por el que llevaba marcador sigue escrito
   // porque sigue siendo cierto: explicarle a un profesional si le CONVIENE el RECC es asesorarle.
   // Lo aprobado es el rótulo del campo y su terna, que solo PREGUNTAN — no aconsejan.
+  // Consta en: SCRUM-1502 comentario 20834.
   assert.match(vista, /criterioLabel\.textContent = "Criterio de caja"/,
     '🔴 el rótulo del criterio de caja ya no es el aprobado («Criterio de caja»).');
   for (const t of ['No consta', 'Sí, estoy acogido', 'No estoy acogido']) {

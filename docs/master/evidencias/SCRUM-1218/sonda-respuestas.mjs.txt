@@ -1,0 +1,19 @@
+// sonda-respuestas.mjs — SCRUM-1218c. Se precarga con --import en el proceso del test: anota, del lado
+// del SERVIDOR, cada respuesta (método, ruta, status). El cliente cambia (fetch → node:http) y el servidor
+// no, así que la lista tiene que salir igual antes y después; una redirección que fetch seguía saldría
+// como una petición de más en el ANTES.
+import http from 'node:http';
+import fs from 'node:fs';
+
+const destino = process.env.SONDA_RESPUESTAS;
+if (destino) {
+  const end = http.ServerResponse.prototype.end;
+  http.ServerResponse.prototype.end = function (...a) {
+    if (!this.__sonda1218c) {
+      this.__sonda1218c = true;
+      const req = this.req || {};
+      fs.appendFileSync(destino, `${req.method} ${req.originalUrl ?? req.url} ${this.statusCode}\n`);
+    }
+    return end.apply(this, a);
+  };
+}

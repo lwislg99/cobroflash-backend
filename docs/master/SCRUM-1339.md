@@ -2315,3 +2315,620 @@ empujados tal cual, sin re-correr nada ni cambiar una cifra. Lo único añadido 
 Antes de empujar se cotejó el texto contra las ocho salidas `q-*` (30/50, 644 casos en 55 bloques
 y 19 ficheros, 47 de 50 TAP con `# fail 0`) y casan. La atribución del criterio del 5 % ya iba al
 orquestador 5b, no al fundador (④): no hubo que corregirla.
+
+## SCRUM-1339 · S5 · el paso de la señal deja de llevar `continue-on-error` (22-oct-2026)
+
+**Medido contra:** `origin/main` = `9839aa6c2baee741f6a38de4e99c7fc29a3fe807` · hora real 2026-10-22T09:32:43Z
+(cabecera `Date:` de GitHub) · S5, equipo de Luis · rama `scrum-1339-senal-bloquea`.
+
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
+**Error propio:** empujé esta sección sin su línea A9. Mi propio traspaso lo dejaba escrito («un registro nuevo
+pasa scrum1294 y scrum267 ANTES de empujar») y no lo corrí. Lo cazó `build + tests` del PR #2663 (run 39757281615,
+2 fallos: `scrum1294` y `scrum976` ④, que corre `guards:entrada`, y éste a su vez `scrum1294`).
+
+**Encargo** (orquestador de Luis, que trae la decisión de Javier, c.20228): la señal bloquea con UN
+solo nombre perdido. A S5 le toca `ci.yml`: quitar el `continue-on-error: true` del paso. El guion
+(`scripts/senal-de-nombres.mjs`) y `tests/scrum1339d-…` los cambia el equipo de Javier en su PR.
+⚠️ Jira no se leyó en esta sesión (conector caído): c.20228 se cita como lo trae el orquestador.
+
+**Qué cambia:** en el job `build + tests`, el paso «¿Faltan casos declarados en el TAP?» pierde el
+`continue-on-error: true`, cambia «avisa, no bloquea» por «bloquea» en su nombre y su cabecera, y
+los comentarios dicen ahora quién decide el código de salida. Nada más en `ci.yml`: ni jobs, ni `if`,
+ni el `run:`.
+
+**① ¿Da 0 la señal hoy?** Medido en el log del CI, no en la medida de los 71:
+
+| run | sha | resultado del paso |
+|---|---|---|
+| 39628953329 (`push` a main, el último que acabó) | `75884928b` | `ausentes=0` · declarados 11998 · `tap_fail=0` · «Los 11998 nombres literales … están en el TAP» |
+| 39754396513 (`push` a main, la punta) | `9839aa6c2` | **NO PUDE MIRAR**: el run estaba `pending` a las 09:3xZ |
+
+**② En rojo, y lo que dice:**
+
+| caso | montaje | salida |
+|---|---|---|
+| nombres perdidos con el guion de HOY | TAP de 1 test contra 12003 declarados | `ausentes=12003` · **EXIT 0** |
+| el guion no está | `node scripts/no-existe-senal.mjs` | **EXIT 1** |
+
+🔴 **Con el guion de hoy, quitar el `continue-on-error` NO hace que un nombre perdido tumbe el check:**
+el guion sale 0 siempre (`scripts/senal-de-nombres.mjs:42` y `:112`, a propósito, c.17935). Lo que
+bloquea hoy es sólo que el guion no llegue a correr. El bloqueo de verdad llega con el PR del equipo
+de Javier, el que cambia el código de salida, y **su rojo por efecto se mira cuando estén los dos
+en main**, no antes.
+
+**Orden entre los dos PR**, deducido de lo de arriba y NO probado en GitHub: este PR solo no cambia
+ningún veredicto mientras el guion salga 0 siempre. El de ellos solo, con el `continue-on-error`
+todavía puesto, deja una ✗ dentro de un job verde. El riesgo real está en el momento en que
+coincidan los dos: si entonces la señal no da 0, `build + tests` cae para todo el mundo.
+
+**Tests que leen `ci.yml`** (los 32 `tests/*.test.mjs` que lo nombran), sobre esta rama: 305 · 299 pass
+· 1 fail · 5 skip. El fallo es `scrum687-constancia-del-alter` por `ERR_MODULE_NOT_FOUND` de
+`dist/…/constanciaDelAlter.js`: el worktree nace sin `dist`, así que ese test queda **sin mirar**.
+Los 5 skip: banco desechable (4) y el ④ de 1405c, que se salta solo cuando no hay medida.
+
+# SCRUM-1339r · 2b: el vigía de `main` recoge el CIEGO del meta-guard (su 2 y su corte a 30 min); 2a, PARADA: bloquear pide tocar `ci.yml`, y la cifra de 1405d es de otra población
+
+**Medido contra:** `origin/main` = `75884928b170ec0ec02e35921426e5bd711cbb0f` · 2026-10-22T09:09:03Z
+
+A9: comprobación → `tests/scrum1339r-vigia-ciego-del-metaguard.test.mjs`
+
+J6 (`jv-j6v`, equipo de Javier), por encargo del orquestador `cobroflash-backend-5f`. Decisión: SCRUM-1339
+c.20219 (22-oct, tres «Ok tu recomendación» del fundador, copiadas por el orquestador de su documento).
+Carril: J6. `.github/workflows/vigia-de-main.yml` es de J6 por la excepción de SCRUM-1393 c.20147
+(`dos-equipos.md` §3.4), y c.20219 la ensancha a esto. `scripts/vigia-silencio-de-main.mjs` no tiene fila
+(SCRUM-1324, J6). Hook de arranque: «SIN IDENTIDAD» (SCRUM-1498); seguí, como dice la ficha.
+
+## En corto
+
+| pieza | estado | dónde se ve |
+|---|---|---|
+| 2b · el 2 del meta-guard es CIEGO, no ROJO | hecho | `scripts/vigia-silencio-de-main.mjs` (`ciegoDelMetaGuard`), `tests/scrum1339r-…` |
+| 2b · el corte a 30 min (`cancelled`) es CIEGO del meta-guard aunque otro job esté en rojo | hecho | lo mismo |
+| 2b · simulación en seco contra el Issue #2641 | hecho, sólo lectura | `evidencias/SCRUM-1339/r-seco-2641-*.txt` |
+| 2a · la señal de nombres BLOQUEA si empeora | **NO HECHO, parado**: pide `ci.yml` (S5 y fundador) | abajo, «2a» |
+| 2c · las tres copias del flag | no es de este tramo (S3/S5, lo pasa el orquestador) | — |
+
+## 2b · Lo que medí antes de escribir la regla
+
+`r-meta-guard-de-main.mjs` (sólo lectura): los últimos **60** runs del CI por `push` a `main`, del
+19-oct al 21-oct. **37** con 0 jobs (sustituidos). De los **23** con el job del meta-guard: **15**
+`cancelled` cortados en el techo (30,3 min; anotación «The job has exceeded the maximum execution time
+of 30m0s»), **3** `failure` con «Process completed with exit code 2.» en el paso de las mutaciones,
+**5** `success` y **0** con salida 1. 15 + 3 + 5 = 23.
+
+🔴 **Lo que cambió el diseño:** los 18 que no son verdes llevaban **«guards de navegador» en rojo** al
+lado. El vigía miraba los rojos ANTES que los cancelados, así que los 18 salían ROJO: el corte del
+meta-guard no se nombraba nunca, y su 2 se leía como un rojo más, que un verde posterior absuelve. Por
+eso el CIEGO del meta-guard **manda aunque haya otro job en rojo**, y ese rojo va nombrado en el motivo.
+
+## 2b · La regla
+
+- Meta-guard `cancelled` o `timed_out` **con algún otro job del run que no se canceló** → CIEGO, causa
+  `meta-guard`, «cortado o cancelado: no llegó a su resumen». Si se cancelaron TODOS los jobs, el CIEGO
+  es del run (lo de siempre, sin causa): eso lo exige `scrum1393e`, que me cayó con mi primera versión.
+- Meta-guard `failure` con UN solo paso caído, el de las mutaciones, y código **2** leído de su
+  anotación → CIEGO del meta-guard. El código se ata a la `SALIDA_CIEGO` del instrumento en el test.
+  Con 2 en otro paso (`tsc` también sale con 2) o con 1 (un guard MUDO) → ROJO, como antes.
+- Si la anotación no se puede leer → ROJO, con «el código de salida del meta-guard no se pudo leer:
+  puede ser su CIEGO (2)». No se calla ni pasa a verde.
+- Ese CIEGO **no se absuelve** (no es «sustituido») y cuenta como «con run» para 1393f.
+- El workflow pide `checks: read`, porque la anotación sale de `check-runs/<id>/annotations`.
+- El suelo del modo por commit pasa de 6 a 8 cebos: el 2 con un rojo al lado es CIEGO, y el 1 es ROJO.
+
+## 2b · Simulación en seco contra el Issue #2641
+
+Los mismos pasos del workflow, con el `previos` real del Issue (cuerpo y 16 comentarios), la línea de
+primer padre de la punta `75884928b` y la red de 34 h. Motor de `main` contra el mío
+(`r-seco-2641-antes.txt` / `-despues.txt`):
+
+| | antes | después |
+|---|---|---|
+| commits mirados | 24 | 24 |
+| ROJO | 8 | **1** |
+| CIEGO | 16 | **23** (7 del meta-guard · 14 sustituidos · 2 sin causa) |
+| la punta `75884928b170` | ROJO | CIEGO del meta-guard (cortado), con el navegador en rojo nombrado |
+| acción sobre el Issue | comentar, no cierra | comentar, no cierra |
+
+Cambian **7 de 24**: 5 cortados y 2 que salieron con 2 (`aa68b01afb68`, `321ce160b0d5`). Control de cero: el
+único que sigue ROJO, `7b1765142558`, tiene el meta-guard en `success` y sólo el navegador en rojo.
+Positivo: los dos con 2 son los dos que el Issue ya listaba con el meta-guard en rojo.
+
+**Lo que esto trae, y no es mío decidirlo:** esos 7 commits quedan **pendientes para siempre** en el
+Issue (un CIEGO sólo lo quita volver a juzgar ESE commit en verde), y la primera pasada los vuelve a avisar
+una vez, ahora como CIEGO (la marca es por commit y estado). Hoy el Issue tampoco cerraba: la punta lleva
+el navegador en rojo. Con un meta-guard que se corta en casi cada run desde el 16-oct (935c), el Issue
+queda abierto hasta que se arregle el techo (propuestas A–D de SCRUM-935c).
+
+## 2b · Rojo sembrado y mutación
+
+- 7 casos en `tests/scrum1339r-…`, con las anotaciones literales de dos jobs reales (115146037750, que
+  salió con 2, y el meta-guard de 75884928b, cortado). Se siembran el 2 con el navegador en rojo, el corte
+  con el navegador en rojo, el run entero cancelado, el 1, el 2 de `tsc` y el código sin leer. El suelo
+  con el juez de antes (el 2 como ROJO) sale «NO reconoce».
+- Dos mutaciones declaradas (`MUTACIONES_QUE_ME_TUMBAN`), pasadas con `correr` y `aplicarUna` del
+  instrumento de la casa (`r-mutar.mjs`, `r-salida-mutar.txt`): las dos **VIVAS**. Como control positivo,
+  sobre `scrum1405c` en la misma pasada: 7 de 7 vivas. Árbol limpio después (`git status` vacío).
+- En local: los 7 míos y los de 1393c/d/e/f y 1324, 48 de 48. Con los guards de registro, de suite y
+  los 5 de árbol entero de SCRUM-1560 (30 ficheros), 291 de 291, con `dist/` de `tsc --noCheck`.
+- De paso: el trinquete de `scrum812` cayó con «LA COBERTURA HA SUBIDO a 31», porque mis casos nombran
+  al «meta-guard». Subo `SUELO_GUARD_QUE_DECLARAN` de 30 a 31, con su entrada y su mutación ④ movida a la
+  vez (como hizo SCRUM-1257e). Es subir lo que pide el propio trinquete, no aflojarlo. Las 5 mutaciones
+  de `scrum812`, VIVAS después del cambio.
+- ⚠️ Coste: dos mutaciones más para un meta-guard que ya muere en su techo. El fichero carga en
+  milisegundos (son funciones puras), pero no lo he medido en CI.
+
+## 2a · Por qué paro
+
+1. **Con el script no basta.** El paso de la señal en `ci.yml` lleva `continue-on-error: true` (es el
+   de «¿Faltan casos declarados en el TAP?»), así que el job no cae aunque el script salga 1. Bloquear
+   pide quitar eso o poner otro paso: `ci.yml`, de S5 y del fundador. Además `scrum1339d` vigila que el
+   script salga siempre 0.
+2. **La cifra de 1405d no es de esta población.** «≤15 por pasada y ≤2 de 4» mide la COBAYA del caso ④
+   de `scrum1405c` (320 casos × 4 pasadas). La señal mide la tanda entera (11.998 declarados en 1.436
+   ficheros, del último run). Usar 15 como umbral de la señal sería ELEGIR un número.
+3. **Lo que da hoy la señal** (`r-senal-en-los-obligatorios.mjs`, de las anotaciones del check): de los
+   últimos 100 runs del CI (19-oct 11:28Z a 21-oct 15:48Z), **71** obligatorios juzgados (59 success y 12
+   failure), y en los 71 **ausentes=0**. Positivo, con el mismo lector: el job 113113442033 (#2303) da
+   ausentes=18. Desde 1405c la línea base de la tanda es 0, y «empeorar» sería «cualquier ausente».
+
+Se lo pasé al orquestador con tres salidas: (a) S5 quita el `continue-on-error` y el script sale 1 con
+ausentes > 0 (umbral 0, derivado de los 71); (b) lo mismo con otra cifra, que tendría que firmar el
+fundador; (c) dejar que avise. No elijo.
+
+## Lo que NO he medido
+
+- Que `checks: read` deje leer la anotación con el `GITHUB_TOKEN` del workflow. Lo leí con mi cuenta. Si
+  no deja, cada 2 sale ROJO con «no se pudo leer»: avisa igual, pero no queda pendiente. Hasta su primera
+  pasada en GitHub, CIEGO.
+- El coste de las dos mutaciones en CI. Nada en Linux.
+- La tanda completa: no corrida (sólo los ficheros del vigía y los guards de registro).
+
+## Mis errores
+
+1. Mi primera regla daba «CIEGO del meta-guard» también cuando se cancela el run ENTERO, que es el caso de
+   1393e. Lo cazó `scrum1393e`, y arreglé el código, no el test.
+2. Empecé a diseñar 2b pensando que el corte a 30 min «ya salía CIEGO», porque `cancelled` es CIEGO en el
+   motor. Era verdad sólo con todo lo demás en verde, y en `main` no pasaba nunca. Lo destapó la
+   simulación, no el código.
+
+# SCRUM-1339t · 2a, la parte de J6: la señal de nombres sale 1 con UN ausente medido; «no pude medir» sigue en 0
+
+**Medido contra:** `origin/main` = `f02e48be2c66ae2e0dae8701401c8fcbc4fff14b` · 2026-10-22T09:53:05Z
+
+A9: comprobación → `.claude/hooks/guard-dangerous.sh`
+
+Carril J6, sesión jv-j6w, rama `scrum-1339t-senal-sale-1-con-ausentes` (el sufijo `s` ya lo tenía la rama
+de S5 `scrum-1339s-tuberia-bloqueante-en-el-metaguard`). Decisión: c.20228, opción (a), literal «La A»,
+leída en Jira y no en la ficha. El `continue-on-error` de `ci.yml` es de S5: PR #2663
+(`scrum-1339-senal-bloquea`), abierto al escribir esto. Este PR no toca `ci.yml` ni ningún workflow.
+
+**Qué cambia.** `scripts/senal-de-nombres.mjs` sale **1** cuando la tanda se MIDIÓ y `ausentes > 0`. Sale
+**0** cuando se midió completa, cuando **no pudo medir**, y siempre con `--tasa`.
+
+⚠️ **Premisa del encargo que no se cumplía:** el encargo decía «que siga saliendo 2/CIEGO cuando no pueda
+medir». Hoy, en `main`, «NO PUDE MEDIR» sale **0**, no 2 (c.17954: «Salida 0 siempre», y lo exige el ④ de
+`scrum1339d`). c.20228 sólo decide sobre los ausentes. Por eso lo dejo en 0, que es lo firmado, y no lo subo a 2.
+Subirlo, con #2663 en main, pondría `build + tests` en rojo cada vez que la señal no pueda medir: es otra
+decisión, y la tiene que tomar el fundador.
+
+**Rojo primero** (commit `1bfacb9484b21fba487a9160acff7b31c7c27d7a`, sólo el test): 18 casos, 16 pass y 2 fail.
+Los dos caen por el código de salida (`actual: 0`), no por la siembra: «EL GUION, de punta a punta… sale 1» y
+el nuevo «SCRUM-1339t · UN SOLO nombre ausente basta…». La siembra es un TAP de 5 de los 6 tests del fabricado,
+y la línea de registro dice `ausentes=1`. **Arreglo** (`ed3c54233aab51ea8a7165c6be49ea42b5d8cf8c`): 18 de 18.
+
+**Mutación** (declarada en `MUTACIONES_QUE_ME_TUMBAN`, la sexta): `ausentes > 0` → `ausentes > 1`. Con ella,
+17 pass y 1 fail, y el que cae es justo el que nombra su `cae`. Se deshizo con el `sed` inverso: `git status`
+quedó vacío. `meta-guard-mutaciones.mjs --solo-censo` sale 0 y cuenta 633 declaraciones. No medí la cifra
+de `main` para ver el +1.
+
+**¿Habría salido 1 algún obligatorio reciente?** No. Medido sobre los logs: `t-barrido-senal.mjs` y su salida,
+`t-barrido-senal.txt`, en `docs/master/evidencias/SCRUM-1339/`. La población son los 90 runs de `ci.yml` que
+habían acabado entre los 100 últimos (19-oct 12:05Z → 22-oct 09:44Z):
+
+| runs | qué |
+|---|---|
+| 64 | job «build + tests» con log y línea de la señal: **64 con `medible=si ausentes=0`** (55 success, 9 failure) |
+| 22 | sin job «build + tests» |
+| 4 | job cancelado: CIEGO, no cuentan |
+
+Ningún log medido trae «NO PUDE MEDIR». Los logs pesan entre 1.868.356 y 1.930.024 B: completos (④ de las
+cicatrices). **Control positivo:** el mismo lector, sobre el job 113113442033 de #2303, da
+`medible=si ausentes=18`, la cifra que cita c.20228.
+
+**Tests corridos, en el worktree:** `scrum1339d` (18/18) y los de suite y vecinos `scrum237`, `scrum976`,
+`scrum812`, `scrum1177`, `scrum1415` y `scrum1294`: 38/38. No corrí la tanda completa.
+
+**Error propio.** Encadené el `git restore` que deshacía la mutación en la misma orden que el commit del arreglo
+y que la mutación. El hook `guard-dangerous` paró la orden entera antes de que corriera nada: el arreglo
+todavía no estaba commiteado. Lo comiteé en una orden aparte, y deshice la mutación con un `sed` inverso.
+# SCRUM-1339s · La salida C de 1405 llega al meta-guard: el hijo de `correr()` carga la tubería bloqueante
+
+**Medido contra:** `origin/main` = `8ad167195af03cf4153337ccc1bf1b80d04c10f8` · 2026-10-22T09:42:38Z
+**S3** · Windows, node v24.8.0 · la rama nació en `9839aa6c2baee741f6a38de4e99c7fc29a3fe807` y trajo `main` con merge antes de empujar.
+
+**El encargo:** extender la salida C de SCRUM-1405 (c.19584) a las tres copias del flag que la S3 señaló en c.18373,
+aprobado por Javier en c.20219. **Se hace UNA de las tres.** Carril medido con `node scripts/carriles.mjs de` sobre
+`9839aa6c`, una por una:
+
+| fichero | flag (línea real) | dueño | qué se hace |
+|---|---|---|---|
+| `scripts/meta-guard-mutaciones.mjs` | `:945`, `run()` de `correr()` | **S3** (fila propia) | este tramo |
+| `scripts/_trinquete-de-zona-hijo.mjs` | `:119` | sin dueño (sólo la fila general de `scripts/`) | NO se toca: el orquestador pide a la S0 que le declare dueño |
+| `scripts/censo-guards-gateados.mjs` | `:71` | sin dueño (fila general) | ídem |
+
+Los números de línea del encargo (`:841`, `:53`) eran de una nota anterior; los de la tabla son los del árbol.
+
+**Qué cambia:** `correr()` pasa a `run()` `execArgv: ['--import=<URL de scripts/tuberia-bloqueante.mjs>']`. Por URL
+(`pathToFileURL`) y no por ruta: en Windows `--import=D:\…` no es un especificador válido. Se conserva `forceExit`
+(la C no autoriza quitarlo). Medido antes que nada que `run({ execArgv })` existe y llega al hijo en node 24.8.
+
+**Guard:** `tests/scrum1339s-el-metaguard-hereda-la-tuberia.test.mjs`, por EFECTO: `correr()` lanza una cobaya de fuera
+del árbol que sólo pasa si `globalThis[Symbol.for('yaqu.scrum1405c.tuberiaBloqueante')]` existe en SU proceso; el
+control positivo lanza la MISMA cobaya con `run()` sin el `--import` y exige que caiga.
+
+**Rojo → arreglo → mutación:**
+* `0f271e024ff5bcf21efea8db8e9de1c5902344ef` — primer guard: ROJO, pero por el instrumento. `run()` llamado DENTRO de un
+  fichero de test no corre nada («run() is being called recursively within a test file. skipping running files»).
+  Lo cazó el propio suelo de población del guard («NO PUDE MIRAR: de la cobaya no llegó ningún test»).
+* `97b6ef56386b8946fadea9aeacd204f2bd5d81d8` — a un proceso aparte con `node -e`: los dos casos ROJOS y otra vez por el
+  instrumento. Con `--input-type=module -e` el hijo de `run()` hereda ese flag, no arranca sobre un fichero, y
+  node:test lo informa como **el FICHERO «pasado» con cero tests**: el control positivo habría salido verde sin
+  medir nada. Desde ahí el suelo exige que llegue el NOMBRE de la cobaya, no «algún test».
+* `b5debea3ff70343d7e6509b86059eec9aef2f57f` — guion aparte: el rojo BUENO. Caso 1 rojo («el hijo de correr() NO cargó
+  scripts/tuberia-bloqueante.mjs: … caídos ["cobaya 1339s: …"]»), control positivo verde.
+* `67fef8b27e260c494b6839b947017cef953a5f50` — el arreglo: 2 de 2 en verde.
+* Mutación declarada (`execArgv: [`--import=…`]` → `execArgv: []`), inyectada a mano, `git diff --numstat` = `1 1`: cae el
+  caso 1 y el control sigue verde. Restaurado con `git restore --source=HEAD`, `git status --porcelain` vacío. Ancla
+  única (1 ocurrencia, medido).
+* Los 33 ficheros de `tests/` que importan el meta-guard: 289 tests · 284 pass · 1 fail · 4 skip. El fail es
+  `scrum1321` «PUERTA 1b», que sale CIEGO por entorno («el temporal no se alcanza desde la raíz del repo (¿otra
+  unidad?)»): el repo está en `D:` y el temporal en `C:`. No depende de este cambio.
+
+**Lo que NO sé:**
+* Si en Linux deja de perderse la cola en el meta-guard. Lo que se sabe es que el módulo llega al hijo; que el
+  módulo arregla la pérdida es lo medido en SCRUM-1405 (0 de 12 tandas; 0 de 4 pasadas en el obligatorio de #2429).
+  Dónde mirarlo: las CIEGAS de `scrum859` en el job del meta-guard (36 en los 135 cortes del 15 al 21-oct,
+  SCRUM-935d). Si tras el merge siguen, esto no basta.
+* La suite completa no la he corrido en local (memoria libre 1.850 MB, por debajo del umbral de 2.200, y una pasada
+  del meta-guard en marcha): la corre el obligatorio.
+
+**De paso:** un hijo de `run()` que no arranca sale como el FICHERO «pasado» con cero tests (arriba). Queda dicho
+aquí; no es de este ticket arreglarlo en node:test.
+
+**Ficheros:** `scripts/meta-guard-mutaciones.mjs` (+7 −1), `tests/scrum1339s-el-metaguard-hereda-la-tuberia.test.mjs`,
+este apartado.
+
+**Mi error:** escribí el guard dos veces con un instrumento que no medía (el `run()` dentro del test, y el `-e`), y la
+segunda vez el control positivo daba por «pasado» un fichero que no había arrancado. Lo que lo frenó fue que el suelo
+contara la población; lo que impide que vuelva es que ahora exige el NOMBRE de la cobaya, no «algún test».
+
+A9: comprobación → `tests/scrum1339s-el-metaguard-hereda-la-tuberia.test.mjs`
+
+# SCRUM-1339u · El vigía de `main` recoge «la señal de nombres no pudo medir» como CIEGO; medido antes: en 400 runs del CI (15 al 22-oct) no ha pasado ninguna vez
+
+**Medido contra:** `origin/main` = `808af5b4466d2649a1006d4c554d1f22e7eba47c` · 2026-10-22T10:12:52Z
+
+A9: comprobación → `tests/scrum1339u-vigia-ciego-de-la-senal.test.mjs`
+
+J6 (`jv-j6x`, equipo de Javier), por encargo del orquestador `cobroflash-backend-5f`. Decisión: SCRUM-1339
+c.20240 («Ok la A» → (a)): cuando la señal no puede medir sigue sin bloquear, y el vigía de `main` lo avisa
+como CIEGO, nombrándolo. Carril: la excepción de J6 sobre el vigía (SCRUM-1393 c.20147, ensanchada en
+c.20219 y en c.20240 a este caso). No toco `ci.yml` ni el guion de la señal, y `vigia-de-main.yml` tampoco:
+el permiso que hace falta (`checks: read`) ya lo puso 1339r. Hook de arranque: «SIN IDENTIDAD» (SCRUM-1498); seguí.
+
+## En corto
+
+| pieza | estado | dónde se ve |
+|---|---|---|
+| «no pudo medir» → CIEGO de la señal, por el DATO (anotación del job), no por el texto del log | hecho | `scripts/vigia-silencio-de-main.mjs` (`lecturaDeLaSenal`, `ciegoDeLaSenal`), `tests/scrum1339u-…` |
+| ese CIEGO se nombra aunque otro job esté en rojo | hecho | el mismo test, caso «SIEMBRA» |
+| un verde de otro job no lo absuelve | hecho | el mismo test, caso «NO lo absuelve la punta VERDE» |
+| midió con 0 → nada; midió con > 0 → no es CIEGO (lo tumba el obligatorio, 1339t + #2663) | hecho | el mismo test, anotaciones reales de dos jobs |
+| medición previa en runs reales | hecho, sólo lectura | `evidencias/SCRUM-1339/u-salida-senal-en-los-runs.txt` |
+| mutaciones | 2 declaradas, VIVAS | `evidencias/SCRUM-1339/u-salida-mutar.txt` |
+| simulación en seco contra el Issue #2641 | hecho, sólo lectura | `evidencias/SCRUM-1339/u-seco-2641-antes.txt` / `-despues.txt` |
+
+## Lo que medí antes de escribir la regla — y la premisa que no se cumplía
+
+c.20240 dice que «no pude medir» pasa «en 26 de 90 runs». **No es así:** en el barrido de jv-j6w
+(`t-barrido-senal.txt`, en la rama de #2670) esos 26 son **22 runs sin el job** y **4 con el job
+cancelado**, y de los 64 que tenían el job acabado **ninguno** dice «NO PUDE MEDIR» (`nopude:false` en los 64).
+
+Lo volví a medir con otra sonda, por las anotaciones del job y con las mismas funciones que usa ahora el vigía
+(`u-senal-en-los-runs.mjs`): los últimos **400** runs del CI, todos los eventos, del 15-oct 17:40Z al 22-oct 09:56Z.
+
+| clase | todos | push a `main` |
+|---|---|---|
+| sin el job «build + tests» (0 jobs: sustituido en la cola) | 114 | 111 |
+| el job cancelado | 39 | 0 |
+| midió, con 0 ausentes | 247 | 49 |
+| **no pudo medir (CIEGO de la señal)** | **0** | **0** |
+| total | 400 | 160 |
+
+Segunda sonda, el título crudo de la anotación de la señal: 0 discrepancias con la primera. Positivo, con el
+mismo lector: el job 110501932336 (run 36901626137, el control ④ de SCRUM-1339d, que hizo fallar la señal a
+propósito) sale «no pudo medir» con sus dos formas; el 113113442033 sale «midió, 18».
+
+**Lo que esto quiere decir:** los runs sin el job y los cancelados ya salían CIEGO en el vigía (sustituido, o
+«sin probar»). Lo que añade este tramo es el caso que todavía no ha pasado: un job que acaba y en el que la
+señal no mide. Si pasa, el vigía lo dice; hoy, en `main`, no cambia ningún veredicto. La decisión de c.20240
+(no bloquear, avisar) no dependía de la frecuencia, así que no la reabro. La frase «casi uno de cada tres
+PR caerían sin culpa» de la opción (b), sí: con estos datos serían 0 de 247.
+
+## La regla
+
+- El dato es la anotación del job «build + tests» (`check-runs/<id>/annotations`, el mismo `checks: read` de
+  1339r). La `::notice` de la señal lleva siempre su línea de registro, que se lee con `registroDesdeLinea`
+  (la función de la casa, en `_senal-de-nombres.mjs`); el guion, cuando revienta antes, deja un `::warning`
+  titulado «señal de nombres · NO PUDE MEDIR».
+- **No pudo medir** → CIEGO, causa `señal de nombres`: el aviso existe, o la línea de registro dice `medible=no`.
+  Cualquiera de los dos basta (GitHub recorta anotaciones por paso y por job).
+- **Sin línea de registro** (0 o más de una) → CIEGO: el paso no corrió o el guion no está.
+- **No se pudieron leer las anotaciones** → CIEGO, diciéndolo.
+- **Midió** → nada. Con ausentes > 0 el job ya sale rojo por la señal (1339t, cuando entre #2663).
+- Un job cancelado o sin acabar no se mira aquí: ya es CIEGO por su cuenta, y no se le pega esta causa.
+- Manda aunque otro job esté en rojo (va nombrado) y **no se absuelve**: `conRun` la cuenta como «con run».
+  Con el meta-guard también CIEGO, se nombran los dos y la causa es la del meta-guard.
+- El suelo del modo por commit pasa de 8 a 10 cebos: la señal que no pudo medir con el navegador en rojo
+  (CIEGO) y la que midió 0 (VERDE). Un juez que no lee la señal no pasa el suelo.
+- La línea `  if (delMetaGuard) {` sigue igual a propósito: es el ancla de una mutación de 1339r. La primera
+  versión la fundía con la nueva condición y la habría dejado sin sitio donde aplicarse.
+
+## Rojo sembrado, mutación y simulación en seco
+
+- 9 casos en `tests/scrum1339u-…`, con las anotaciones literales de tres jobs reales (110501932336, 119327978951
+  y 113113442033), y uno que ata lo que ESCRIBE el módulo (`comandosDeAnotacion`) con lo que LEE el vigía.
+- Dos mutaciones (`MUTACIONES_QUE_ME_TUMBAN`), pasadas con `r-mutar.mjs` (el `correr`/`aplicarUna` de la casa):
+  las dos **VIVAS**, y las dos de 1339r, también VIVAS después de mi cambio (`u-salida-mutar.txt`). La primera
+  (sin el CIEGO de la señal) es el comportamiento de `main` en el caso sembrado: es el rojo primero.
+- En local: los 8 ficheros del vigía (1324, 1339r, 1339u, 1393c/d/e/f, 1458), **68 de 68**, y mis 9 casos en el TAP.
+- De paso, como en 1339r: el trinquete de `scrum812` cayó con «LA COBERTURA HA SUBIDO a 32», porque un caso mío
+  nombra al «meta-guard». Subo `SUELO_GUARD_QUE_DECLARAN` de 31 a 32 con su entrada y muevo su mutación ④: es
+  anotar lo que pide el trinquete, no aflojarlo. Las 5 mutaciones de `scrum812`, VIVAS después del cambio.
+- **Simulación en seco contra #2641** (el `previos` real con sus 17 comentarios, la línea de primer padre de
+  la punta `808af5b44` y la red de 34 h; 33 commits): motor de `main` contra el mío, **idénticos** (2 ROJO,
+  29 CIEGO, 2 CORRIENDO; sólo cambia el minuto de la punta que corría). Para que ese «idénticos» no fuera un
+  cero ciego, una copia temporal instrumentada (borrada; `git status` limpio) contó las lecturas de la señal:
+  **9** jobs leídos en esos 33 commits, los 9 «midió, 0» (`u-sonda-lectura-en-seco.txt`).
+
+## Lo que NO he medido
+
+- Que el `GITHUB_TOKEN` del workflow lea las anotaciones de este job: lo leí con mi cuenta. Si no puede, cada
+  commit con el job acabado saldrá CIEGO «no se pudieron leer»: ruidoso, no callado. Hasta su primera pasada en
+  GitHub, CIEGO.
+- Un caso REAL de «no pudo medir» en un push a `main`: no hay ninguno en los 400 runs. El positivo es un run de control.
+- La tanda completa: no corrida. El coste en CI de las dos mutaciones: no medido (funciones puras).
+
+## Mis errores
+
+1. Mi primera versión fundía la condición del meta-guard con la nueva (`if (delMetaGuard || deLaSenal)`), y
+   borraba la línea que usa como ancla una mutación de 1339r. Lo vi al escribir mis mutaciones, antes de correr
+   el meta-guard; separé las dos ramas y las cuatro mutaciones salen VIVAS.
+2. Mi segunda mutación nació MUDA: el módulo escribe siempre el aviso junto a `medible=no`, así que quitar la
+   rama de `medible=no` no cambiaba nada con lo que se escribe hoy. Le sembré su propio caso (la línea de
+   registro sin el aviso) antes de declararla.
+
+# SCRUM-1339v · La señal de nombres sale 2 cuando NO PUDO MEDIR; `--tasa` sigue en 0
+
+**Medido contra:** `origin/main` = `a593817dd933b3dcc36224ff8594fdedff3d8b96` · 2026-10-22T10:38:35Z
+
+A9: aviso → A10 «Un prefijo no es un nombre, y una subcadena tampoco.» — no se pudo comprobar: la sonda de este tramo ya sale CIEGO si no encuentra el job, pero la siguiente sonda que busque un job por nombre no lo hereda
+
+Carril J6, sesión jv-j6y, rama `scrum-1339v-no-pudo-medir-sale-2`. Decisión: c.20282, opción (b), literal «Ok la b»,
+leída en Jira; con la corrección c.20284. **Este PR no toca `ci.yml` ni ningún workflow.**
+
+**Qué cambia.** `scripts/senal-de-nombres.mjs` sale **2** cuando NO PUDO MEDIR, por los dos caminos que lo dicen: el
+del guion (`noPudeMedir`: sin TAP, TAP ilegible, módulo ausente, el guion revienta) y el del módulo (TAP vacío o
+cortado, `medible !== true`, que antes no pasaba por `noPudeMedir` y habría seguido en 0). Medido completo, 0; con
+ausentes, 1 (1339t, sin cambio). `--tasa` sale **siempre 0**, también cuando no puede leer sus registros: lo decide
+`process.argv` antes de leer nada más, para que un fallo al leer los argumentos no la ponga en 2.
+
+**Por qué 2 y no 1.** Es el vocabulario de la casa: `SALIDA_NO_SUPE_MEDIR = 2` en `scripts/_hallazgos-y-ciegos.mjs`
+(SCRUM-1320), «un ciego no es un verde», y tampoco es «faltan nombres», que es el 1. El guion no lo importa porque no
+tiene ni un `import` estático (es lo que le permite decir «no pude medir» cuando falta un módulo); el test sí lo
+importa y exige que el guion salga con ESE valor.
+
+**El ④ de `scrum1339d` cambia con la decisión.** Exigía 0 al no medir (c.17954, «Salida 0 siempre»); ahora exige 2
+en los seis casos del guion y 0 en los cuatro de `--tasa` (uno nuevo: `--tasa` con el módulo ausente). Su título
+pasa de «SCRUM-1339d · ④ … sale 0 … nunca tumba el job» a «SCRUM-1339v · ④ … sale 2 … con --tasa sale 0: nunca
+calla», y la mutación ⑤ (el catch que se calla) se re-ancla a ese título.
+
+⚠️ **Lo que NO bloquea todavía.** El paso de la señal en `ci.yml` sigue con `continue-on-error: true`: lo quita S5
+en el **#2663**, OPEN al escribir esto. Hasta que entre, ni el 1 de 1339t ni el 2 de este tramo tumban el
+obligatorio; cuando entre, los dos bloquean. El comentario de ese paso en `ci.yml` («el guion sale 0 hasta cuando
+revienta») queda desfasado con este PR: es de S5 y no lo toco; se lo digo al orquestador.
+
+**Rojo primero.** Commit `f0bfca192f42f417f5559782e24cc9c615d7b1bb`, sólo el test, contra el guion de main:
+18 = 17 pass + 1 fail, «sin argumentos tiene que salir 2 y salió 0». Con el arreglo: 18 de 18.
+
+**Mutaciones.** Tres nuevas en `MUTACIONES_QUE_ME_TUMBAN` (el ciego vuelve a 0 · el ciego del módulo vuelve a 0 ·
+la tasa sale 2); con el driver de 1339r copiado (`evidencias/SCRUM-1339/v-mutar.mjs`): **9 de 9 VIVAS**, base
+limpia 18 pasados · 0 caídos · 0 saltados, y el árbol sin cambios después (`v-salida-mutar.txt`).
+
+**¿Habría caído algún obligatorio reciente?** No. Sonda propia, sin el vigía de 1339u (que no está en main):
+`evidencias/SCRUM-1339/v-salida-en-los-runs.mjs`, que lee las anotaciones del job «build + tests (con banco
+desechable)» y deduce la salida por dos caminos (título y línea de registro). Sobre los últimos **400** runs acabados
+del CI (16-oct 11:08Z → 22-oct 10:28Z): `saldria-0` 246 · `saldria-2` **0** · sin anotación 0 · sin el job 110 ·
+job cancelado 44 · suma 400. Las dos sondas, 0 discrepancias. Control positivo con el mismo lector: el job
+110501932336 ve el 2 por los dos caminos (`titulo=1+2 linea=1+2`: corrió el guion tres veces). Coincide con lo de
+jv-j6x en c.20280 (247 midieron, 0 «no pudo», sobre otra ventana de 400).
+
+**Mis errores.** ① La primera pasada de la sonda buscaba el job por «build + tests», un prefijo, y dio **400 de 400
+«sin-job»**: un cero que no miraba nada. Lo vi por la clase, no por el resultado; está guardada como
+`v-salida-en-los-runs-CIEGA-prefijo.txt`, y la sonda ahora sale CIEGO si ningún run tiene el job. ② Su primera
+versión tomaba la ÚLTIMA anotación del job, y el control positivo salió 1 en vez de 2 porque ese job mezcla tres
+pasadas; ahora cada sonda da el conjunto de salidas, y un run con más de una sale como `mezcla`. ③ Intenté crear
+la rama con cambios sin commitear y el hook me paró; commiteé el rojo en el HEAD desacoplado y la creé con el
+árbol limpio.
+
+**En local:** los ficheros de la señal, de registro y de suite (abajo, en la entrega). **No he corrido la tanda
+completa.**
+
+**Ficheros:** `scripts/senal-de-nombres.mjs`, `tests/scrum1339d-senal-de-nombres.test.mjs`,
+`docs/master/evidencias/SCRUM-1339/v-*`, este apartado.
+
+---
+
+# SCRUM-1339w · Respuesta a S5 (c.20506): la señal sale 1 y 2 en main, y su paso tumba «build + tests» por efecto
+
+**Medido contra:** `origin/main` = `28098fe4b1a160303526f5a4002d52556d2c5b22` · 2026-10-23T19:11:16Z
+
+A9: aviso → A10 «Un prefijo no es un nombre, y una subcadena tampoco.» — no se pudo comprobar: busqué el job por el nombre «build + tests» y la consulta salió vacía (el nombre real lleva «(con banco desechable)»); lo cazó listar los nombres, y la siguiente consulta a mano no lo hereda
+
+Lo hizo la sesión jv-j6av (J6). En Jira: c.20631 (medición y respuesta) y c.20637 (el PR desechable).
+
+**① «El guion sale 0 siempre» (S5).** Las dos líneas que cita S5, `:42` y `:112`, son `process.exitCode = 0;` en
+`8ad16719`, un árbol que no contiene 1339t (`c1e874b36`). En main están 1339t (#2670) y 1339v (#2696, merge
+`1ad1968523fed7c2ffb833d5a3feafe4dd1c79f8`). Lo medí por ejecución con el guion de main y TAP fabricados, sobre un
+árbol sembrado fuera del repo y pasado con `--raiz`:
+- TAP sano → **0**;
+- TAP entero con un declarado ausente → **1**;
+- TAP de 1 test contra el árbol real → **1** (`ausentes=12321`);
+- TAP vacío, cortado, inexistente o sin argumentos → **2**;
+- `--tasa` ilegible → **0**.
+
+No lo corrí con el guion viejo: importa `typescript` y fuera del árbol no resuelve.
+
+**② ¿`scrum1339d` comprueba `ci.yml`?** No. No nombra `ci.yml`, `workflows`, `.github` ni `continue-on-error`.
+Su única lectura de fichero es la `:580`, el resumen que fabrica el propio test. Como control positivo, la misma
+búsqueda sí encuentra `scrum1339r:22` y `scrum1339u:24`. `scrum1339u:72` sólo exige que el paso exista. **Hueco:**
+ningún test de los 11 que nombran `continue-on-error` vigila el paso de la señal. Si alguien vuelve a ponerlo, no cae
+nada. Se lo paso al orquestador; no lo arreglo aquí.
+
+**③ Punta.** El job «build + tests (con banco desechable)» de `28098fe4b` da `medible=si ausentes=0 declarados=12321`,
+la misma cifra que da en local el mismo árbol.
+
+**④ Rojo por efecto (propuesta de S5).** PR borrador #2764, rama `desechable-1339w-rojo-por-efecto` @
+`ce0d3660c996af31d3eb3bf41805d17028e37936`. La rama no lleva el prefijo `scrum-`, así que no hubo auto-merge, y no se
+tocó ningún workflow. Lleva un `test()` con nombre literal dentro de un `if` que nunca se cumple. Job 120609811354,
+log completo de 2.056.851 B:
+- el paso «señal de nombres · bloquea» sale **failure**, con `medible=si ausentes=1 declarados=12322`;
+- también caen el suelo (fichero sin tests) y `scrum854` ②, que pide registro y la rama desechable no lo trae.
+
+Cerrado sin mergear; la rama se queda. Limitación: el job habría caído igual por los otros dos pasos. Que la señal
+bloquea por sí sola se lee en que su paso concluye `failure`.
+
+**No medido:** la tanda completa en local (este tramo no toca código).
+
+# SCRUM-1339x · El paso de la señal no puede volver a llevar `continue-on-error` sin que caiga 1339u
+
+**Medido contra:** `origin/main` = `6e336715359500c41fb252371934101b46498267` · 2026-10-23T19:46:36Z
+
+A9: comprobación → `tests/scrum1339u-vigia-ciego-de-la-senal.test.mjs`
+
+Escribe jv-j6aw (J6). GO del orquestador J: SCRUM-1339 c.20638, sobre el hueco que dejó jv-j6av en c.20631 §2:
+la señal bloquea desde #2663 + #2696 (rojo por efecto en el PR desechable #2764, c.20637), pero ningún test
+vigilaba que su paso siguiera SIN `continue-on-error`. Si volvía, la señal dejaba de bloquear sin que cayera nada.
+
+## Lo que hay
+
+Un caso nuevo en `tests/scrum1339u-vigia-ciego-de-la-senal.test.mjs`, «SCRUM-1339x · el paso de la señal NO lleva
+continue-on-error: su rojo tumba el obligatorio». Sólo LEE `ci.yml`; no se toca ningún workflow.
+
+* **Por identidad:** busca los pasos cuyo `run` empieza por `node scripts/senal-de-nombres.mjs ` (con `name:` delante
+  o en la forma `- run:`), no por nombre, posición ni línea. Exige que haya **exactamente uno**: cero o dos no pasan
+  por limpio.
+* **Sin comentarios:** quita las líneas `#` antes de leer. El propio paso lleva hoy uno que cita
+  `continue-on-error` (`ci.yml`, el que empieza «🔴 SIN `continue-on-error`»), y no lo hace caer.
+* **Sólo las claves propias del paso**, a su sangría: un `continue-on-error` en el paso de antes o en el de después
+  no lo activa ni lo calla. En el `ci.yml` real hay otras 6 claves (`grep -cE '^\s*continue-on-error:'`), todas en otros
+  pasos o jobs.
+* Cualquier valor de `continue-on-error` cae, no sólo `true`: una expresión `${{ … }}` también lo apagaría.
+
+## Rojo primero
+
+Sembrado dentro del propio caso (no tomado del árbol): el `ci.yml` real con `continue-on-error: true` delante de la
+línea del `run` → cae; la forma `- run:` con la clave → cae; un YAML con la clave en el paso vecino, en el de después
+y en un comentario del paso → pasa; el `ci.yml` sin el paso → cae con «UNA vez».
+
+Mutación declarada en `MUTACIONES_QUE_ME_TUMBAN` (fichero `.github/workflows/ci.yml`). Aplicada a mano en local sobre
+el commit `e2503fa859c526de5c5957555d6456ce0dc9b407`: `git diff --numstat` = `1 0 .github/workflows/ci.yml`; 1339u
+da **10 = 9 pass + 1 fail**, y el que cae es el 1339x con «🔴 el paso de la señal lleva `continue-on-error`». Los
+otros nueve no la ven: sin este caso, la mutación vivía. Revertida con el inverso exacto; `git status --porcelain`
+vacío después. Sin mutar: **10 de 10**.
+
+## Guards
+
+237, 976, 824, 836, 419, 702, 700, 719, 1415, 745, 757, 765 y 1339u en una pasada: **148 = 147 pass + 1 fail**. El
+fail era 836 por `scrum608` anclado a `dist/`, y este árbol anidado no traía `dist/`. Con `tsc --noCheck`, 836:
+**17 de 17**. Los de registro y el obligatorio: en la entrega.
+
+## Lo que NO he medido
+
+* Si un `continue-on-error` a nivel de **job** («build + tests») apagaría el check obligatorio: no lo he medido, y
+  este caso no lo mira.
+* La tanda completa en local.
+
+## Mis errores
+
+1. Corrí los guards de suite antes de compilar `dist/` y me salió un rojo ajeno (836). Es la nota de memoria
+   «dist viejo da rojos ajenos»: la tenía y no la apliqué hasta ver el rojo.
+2. Para revertir la mutación encadené `git restore` en el mismo comando que el test; el hook lo paró entero. Revertí
+   con el inverso exacto de la mutación, sin la llave de un uso.
+3. De los 54 comentarios de SCRUM-1339 leí enteros c.20371, c.20506, c.20631, c.20637 y c.20638; los otros no.
+4. `node scripts/carriles.mjs de` dice del test «sin fila en §3: nadie lo reclama». Lo trato como J6 porque nació en
+   1339u con «carril J6» en su commit (`0a66ee4f8`); no hay fila que lo diga.
+
+**Ficheros:** `tests/scrum1339u-vigia-ciego-de-la-senal.test.mjs`, este apartado.
+
+# SCRUM-1339y · Qué queda vivo: el reproductor de c.17951, que nunca se hizo, y `forceExit` en 2 ficheros de S5
+
+**Medido contra:** `origin/main` = `9eb740a4286ee02faedd071dddfab55ddae0d515` · 2026-10-24T15:56:00Z
+
+A9: aviso → cicatriz J6 «Cité en Jira la línea de un fuente con el número de línea de mi propio volcado de salida, y di por caducada una cita que era correcta» — no se pudo comprobar: ningún instrumento separa el número de línea de un volcado del número de línea del fichero
+
+Escribe jv-j6ca (J6), por encargo del orquestador `cobroflash-backend-95`. **Sólo medir y preguntar: no se ha construido
+nada.** Comentario de entrega: SCRUM-1339 c.20842.
+
+## Hecho en main, por efecto
+
+* ① medido: el obligatorio perdía casos (#2066 y tramos b–q).
+* La causa, medida y arreglada fuera de este ticket: la salida C de SCRUM-1405. `package.json:13` carga
+  `--import=./scripts/tuberia-bloqueante.mjs`, con su test `tests/scrum1405c-tuberia-bloqueante.test.mjs`.
+* ② el recuento es una señal que bloquea. Sale 1 con ausentes (#2670, 1339t) y 2 si no pudo medir (#2696, 1339v). Su paso
+  ya no lleva `continue-on-error` (#2663, S5). Si alguien se lo vuelve a poner, cae 1339x (#2771, `b6dd5d1a8`). El rojo
+  por efecto se vio en el PR desechable #2764.
+* La salida C también está en `scripts/meta-guard-mutaciones.mjs:1067` + `:1072` (S3).
+* PASO 0: 0 ramas `scrum-1339*` en el remoto y 0 PR abiertos con 1339. Control positivo: #2771 sale MERGED.
+
+## Lo que sigue vivo
+
+* **El reproductor de c.17951 no existe.** Ninguno de los 9 workflows de main nombra «reproductor» ni «1339f», y no hay
+  rama ni commit 1339f. Su última mención es c.18021: «NO HECHO → lo hace el relevo de J3».
+* **`forceExit: true` sin tubería bloqueante** en `scripts/_trinquete-de-zona-hijo.mjs:119` y en
+  `scripts/censo-guards-gateados.mjs:71`. Según `carriles.mjs de`, son de **S5** (`docs/equipo/dos-equipos.md:189`, decisión
+  de Javier del 24-oct-2026). La decisión de extender la salida C ya está tomada (c.20219 2c), así que falta el traspaso a
+  Luis, no una pregunta al fundador. Sin medir: si hoy pierden casos. Ninguno de los dos es obligatorio.
+
+## Lo que el ticket da por cierto y ya no lo es
+
+* c.20506 dice que esos dos ficheros «no tienen fila de carril». Desde hoy son de S5.
+* El enunciado dice que «nadie compara el recuento». Hoy lo compara la señal en cada obligatorio.
+
+## La pregunta para el fundador
+
+**P1 · ¿Se construye el reproductor de c.17951?**
+
+* ✅ Lo construye J6, como workflow aparte y no obligatorio: un experimento repetible a cambio de un workflow más.
+* ❌ Se abandona la autorización. La señal y la carga de `tuberia-bloqueante.mjs`, que falla si falta su pieza, ya
+  vigilan que no vuelva.
+* **Recomiendo ❌.** Lo que iba a contestar («¿no se ejecutó, o no informó?») ya lo contestó SCRUM-1405: se ejecuta y
+  no informa.
+
+Si P1 sale ❌ y lo de S5 queda pasado a Luis, el orquestador puede cerrar 1339 (A13).
+
+## Lo que NO he hecho
+
+* El ticket no lo he leído entero: el detalle está en c.20842. Hoy no he barrido runs. Las cifras de `ausentes=0` son
+  de c.20228, c.20239 y c.20296 (21 y 22-oct).
+* No he compilado ni corrido la tanda. Guards de registro: los del obligatorio.
+
+## Mis errores
+
+1. Publiqué en c.20842 que `censo-guards-gateados.mjs:71` «ya no es esa línea» y que estaba en la `:105`. El 105 era
+   la línea de mi volcado de salida, no la del fuente. Lo corregí editando el comentario a los 2 min, después de volver
+   a medirlo con `grep -n` sobre el fuente. Va a la cicatriz de J6.
+2. El lanzador me dejó en la rama `scrum-1339-medida-24oct-tarde`, sin letra. La renombré a
+   `scrum-1339y-reproductor-y-forceexit` antes del primer push.
+3. Crucé los 200k a mitad de la medición. Lo avisé en el cruce (200.260), no al final.

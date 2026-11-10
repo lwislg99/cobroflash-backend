@@ -20,6 +20,8 @@ import {
 } from './librosAeat';
 import { criterioDelMerchantParaElLibro } from '../../invoicing/domain/criterioDelMerchant'; // SCRUM-294 fase C
 import { nombreParaDocumento } from '../../../core/documentos/nombreParaDocumento'; // SCRUM-577
+import { clienteDelDocumento } from '../../invoicing/domain/clienteCongelado'; // SCRUM-1058c
+import type { AsientoLibro } from '../../invoicing/domain/libroRegistro';
 
 export interface ClienteDeLibros extends ClienteDelLibro {
   customer: { findMany(args: any): Promise<any[]> };
@@ -53,18 +55,27 @@ export async function leerLibroExpedidasDelTrimestre(
     where: { merchantId, id: { in: ids } },
     select: { id: true, name: true, legalName: true, taxId: true },
   });
+  const fichas = new Map<number, any>(clientes.map((c: any) => [c.id, c]));
 
-  const destinatarios = new Map<number, DatosDestinatario>(
-    clientes.map((c: any) => [c.id, {
-      // La razón social manda sobre el nombre comercial: en un libro identifica a quien factura.
-      // SCRUM-577: el criterio sale del SITIO UNICO. Mismo resultado que antes; el respaldo
-      // sigue siendo `null`, que es lo que este libro esperaba.
-      nombre: nombreParaDocumento(c, null),
-      nif: c.taxId || null,
-    }]),
-  );
+  // 🔴 SCRUM-1058c · EL DESTINATARIO ES EL QUE SE CONGELÓ EN LA FACTURA, no el de la ficha de hoy.
+  // Hasta aquí este libro resolvía `clienteId` contra la ficha VIVA: corregir el NIF de un cliente
+  // reescribía el libro de sus facturas pasadas mientras el PDF y el XML conservaban el congelado.
+  // El congelado lo trae A6 en cada asiento (`clienteCongelado`): este módulo no lee facturas por
+  // su cuenta (R5 de SCRUM-325). Se resuelve con `clienteDelDocumento`, como los otros lectores.
+  const destinatario = (a: AsientoLibro): DatosDestinatario | null => {
+    const viva = a.clienteId != null ? fichas.get(a.clienteId) : null;
+    const doc = a.clienteCongelado
+      ? { customerName: a.clienteCongelado.name, customerLegalName: a.clienteCongelado.legalName, customerTaxId: a.clienteCongelado.taxId }
+      : {};
+    // Sin congelado y sin ficha: VACÍO, como antes. Nunca inventado.
+    if (!a.clienteCongelado && !viva) return null;
+    const c = clienteDelDocumento(doc, viva);
+    // La razón social manda sobre el nombre comercial: en un libro identifica a quien factura.
+    // SCRUM-577: el criterio sale del SITIO UNICO; el respaldo sigue siendo `null`.
+    return { nombre: nombreParaDocumento(c, null), nif: c.taxId || null };
+  };
 
-  return { filas: filasLibroExpedidas(libro, destinatarios), miradas: libro.miradas, desde, hasta };
+  return { filas: filasLibroExpedidas(libro, destinatario), miradas: libro.miradas, desde, hasta };
 }
 
 /**

@@ -1,0 +1,129 @@
+SIM=[] · árbol 06ad4f1bd53d
+TECHOS 887 entero: SIN=18/18 · A_uno=18/18 · A_mixto=14/14
+TECHOS 887b      : entero=23/23 · 50/50=31/31 · 30/70=43/43
+3 TRAMOS 30/30/40: B=35 · SIN=27
+SIN GLOBAL 50/50: mismas líneas de B=30 · SIN=36 · A_uno=28 · A_mixto=37 (de 2.000 cada una)
+SIN GLOBAL 30/70: mismas líneas de B=40 · SIN=29 · A_uno=48 · A_mixto=30 (de 2.000 cada una)
+DIAG B 50/50: {"poblacion":2000,"distintos":31,"sumaObjetivosRota":0,"ventanaLoImpedia":7,"firmadoEsCanonico":29,"firmadoNoEsCanonico":2,"cae":{"tramo1":14,"ultimo":6,"ambos":11},"porTipo":{"4%":26,"21%":5},"sinReconciliar":1081,"maxDesv":2,"parejaD":{"1":31},"sinPareja":0,"derivaSplitMax":7.275957614183426e-12}
+DIAG mismas líneas SIN global 50/50: {"poblacion":2000,"distintos":30,"sumaObjetivosRota":0,"ventanaLoImpedia":6,"firmadoEsCanonico":30,"firmadoNoEsCanonico":0,"cae":{"tramo1":6,"ultimo":12,"ambos":12},"porTipo":{"4%":25,"21%":5},"sinReconciliar":1066,"maxDesv":2,"parejaD":{"1":30},"sinPareja":0,"derivaSplitMax":7.275957614183426e-12}
+CONJUNTOS 50/50: con global 31 · sin global 30 · en los dos 21
+DIAG B 30/70: {"poblacion":2000,"distintos":43,"sumaObjetivosRota":0,"ventanaLoImpedia":6,"firmadoEsCanonico":32,"firmadoNoEsCanonico":11,"cae":{"tramo1":22,"ultimo":18,"ambos":3},"porTipo":{"4%":37,"21%":6},"sinReconciliar":663,"maxDesv":2,"parejaD":{"1":43},"sinPareja":0,"derivaSplitMax":7.275957614183426e-12}
+DIAG mismas líneas SIN global 30/70: {"poblacion":2000,"distintos":40,"sumaObjetivosRota":0,"ventanaLoImpedia":9,"firmadoEsCanonico":34,"firmadoNoEsCanonico":6,"cae":{"tramo1":19,"ultimo":16,"ambos":5},"porTipo":{"4%":31,"21%":9},"sinReconciliar":682,"maxDesv":2,"parejaD":{"1":40},"sinPareja":0,"derivaSplitMax":7.275957614183426e-12}
+CONJUNTOS 30/70: con global 43 · sin global 40 · en los dos 27
+SEMBRADO 4 %, bruto de 0 a 0,30 €: inalcanzables (cént.) 13 · vistos 31
+ESCALÓN 0-12 €: 21 % 0 huecos en 1453 · 10 % 0 huecos en 1321 · 4 % 48 huecos en 1249 · 0 % 0 huecos en 1201
+SIM=[C] · árbol 06ad4f1bd53d
+TECHOS 887 entero: SIN=20/18 · A_uno=19/18 · A_mixto=13/14
+TECHOS 887b      : entero=25/23 · 50/50=33/31 · 30/70=47/43
+3 TRAMOS 30/30/40: B=37 · SIN=28
+SIN GLOBAL 50/50: mismas líneas de B=30 · SIN=34 · A_uno=29 · A_mixto=37 (de 2.000 cada una)
+SIN GLOBAL 30/70: mismas líneas de B=41 · SIN=30 · A_uno=50 · A_mixto=30 (de 2.000 cada una)
+SIM=[D] · árbol 06ad4f1bd53d
+SIM=[C,D] · árbol 06ad4f1bd53d
+TECHOS 887 entero: SIN=0/18 · A_uno=0/18 · A_mixto=0/14
+TECHOS 887b      : entero=0/23 · 50/50=37/31 · 30/70=45/43
+3 TRAMOS 30/30/40: B=45 · SIN=31
+SIN GLOBAL 50/50: mismas líneas de B=33 · SIN=36 · A_uno=32 · A_mixto=36 (de 2.000 cada una)
+SIN GLOBAL 30/70: mismas líneas de B=43 · SIN=34 · A_uno=56 · A_mixto=31 (de 2.000 cada una)
+SIM=[E1] · árbol 06ad4f1bd53d
+TECHOS 887 entero: SIN=18/18 · A_uno=18/18 · A_mixto=14/14
+TECHOS 887b      : entero=23/23 · 50/50=324/31 · 30/70=329/43
+3 TRAMOS 30/30/40: B=318 · SIN=296
+SIN GLOBAL 50/50: mismas líneas de B=327 · SIN=309 · A_uno=368 · A_mixto=678 (de 2.000 cada una)
+SIN GLOBAL 30/70: mismas líneas de B=327 · SIN=295 · A_uno=367 · A_mixto=668 (de 2.000 cada una)
+SIM=[E2] · árbol 06ad4f1bd53d
+TECHOS 887 entero: SIN=18/18 · A_uno=18/18 · A_mixto=14/14
+TECHOS 887b      : entero=23/23 · 50/50=310/31 · 30/70=310/43
+3 TRAMOS 30/30/40: B=310 · SIN=290
+SIN GLOBAL 50/50: mismas líneas de B=312 · SIN=290 · A_uno=353 · A_mixto=667 (de 2.000 cada una)
+SIN GLOBAL 30/70: mismas líneas de B=312 · SIN=290 · A_uno=353 · A_mixto=667 (de 2.000 cada una)
+SIM=[C,E2] · árbol 06ad4f1bd53d
+TECHOS 887 entero: SIN=20/18 · A_uno=19/18 · A_mixto=13/14
+TECHOS 887b      : entero=25/23 · 50/50=302/31 · 30/70=302/43
+3 TRAMOS 30/30/40: B=302 · SIN=293
+SIN GLOBAL 50/50: mismas líneas de B=307 · SIN=293 · A_uno=361 · A_mixto=678 (de 2.000 cada una)
+SIN GLOBAL 30/70: mismas líneas de B=307 · SIN=293 · A_uno=361 · A_mixto=678 (de 2.000 cada una)
+SIM=[D,E1] · árbol 06ad4f1bd53d
+SIM=[D,E2] · árbol 06ad4f1bd53d
+SIM=[C,D,E1] · árbol 06ad4f1bd53d
+TECHOS 887 entero: SIN=0/18 · A_uno=0/18 · A_mixto=0/14
+TECHOS 887b      : entero=0/23 · 50/50=68/31 · 30/70=67/43
+3 TRAMOS 30/30/40: B=62 · SIN=16
+SIN GLOBAL 50/50: mismas líneas de B=21 · SIN=20 · A_uno=22 · A_mixto=20 (de 2.000 cada una)
+SIN GLOBAL 30/70: mismas líneas de B=20 · SIN=22 · A_uno=36 · A_mixto=15 (de 2.000 cada una)
+SIM=[C,D,E2] · árbol 06ad4f1bd53d
+TECHOS 887 entero: SIN=0/18 · A_uno=0/18 · A_mixto=0/14
+TECHOS 887b      : entero=0/23 · 50/50=44/31 · 30/70=44/43
+3 TRAMOS 30/30/40: B=44 · SIN=0
+SIN GLOBAL 50/50: mismas líneas de B=0 · SIN=0 · A_uno=0 · A_mixto=0 (de 2.000 cada una)
+SIN GLOBAL 30/70: mismas líneas de B=0 · SIN=0 · A_uno=0 · A_mixto=0 (de 2.000 cada una)
+SIM=[D] · árbol 06ad4f1bd53d
+TECHOS 887 entero: SIN=0/18 · A_uno=0/18 · A_mixto=0/14
+TECHOS 887b      : entero=0/23 · 50/50=35/31 · 30/70=41/43
+3 TRAMOS 30/30/40: B=40 · SIN=33
+SIN GLOBAL 50/50: mismas líneas de B=33 · SIN=37 · A_uno=31 · A_mixto=37 (de 2.000 cada una)
+SIN GLOBAL 30/70: mismas líneas de B=42 · SIN=34 · A_uno=54 · A_mixto=31 (de 2.000 cada una)
+SIM=[D,E2] · árbol 06ad4f1bd53d
+TECHOS 887 entero: SIN=0/18 · A_uno=0/18 · A_mixto=0/14
+TECHOS 887b      : entero=0/23 · 50/50=58/31 · 30/70=58/43
+3 TRAMOS 30/30/40: B=58 · SIN=0
+SIN GLOBAL 50/50: mismas líneas de B=0 · SIN=0 · A_uno=0 · A_mixto=0 (de 2.000 cada una)
+SIN GLOBAL 30/70: mismas líneas de B=0 · SIN=0 · A_uno=0 · A_mixto=0 (de 2.000 cada una)
+SIM=[D2] · árbol 06ad4f1bd53d
+TECHOS 887 entero: SIN=0/18 · A_uno=0/18 · A_mixto=0/14
+TECHOS 887b      : entero=0/23 · 50/50=35/31 · 30/70=41/43
+3 TRAMOS 30/30/40: B=41 · SIN=33
+SIN GLOBAL 50/50: mismas líneas de B=33 · SIN=37 · A_uno=31 · A_mixto=37 (de 2.000 cada una)
+SIN GLOBAL 30/70: mismas líneas de B=42 · SIN=34 · A_uno=54 · A_mixto=31 (de 2.000 cada una)
+SIM=[D2,E2] · árbol 06ad4f1bd53d
+TECHOS 887 entero: SIN=0/18 · A_uno=0/18 · A_mixto=0/14
+TECHOS 887b      : entero=0/23 · 50/50=0/31 · 30/70=0/43
+3 TRAMOS 30/30/40: B=0 · SIN=0
+SIN GLOBAL 50/50: mismas líneas de B=0 · SIN=0 · A_uno=0 · A_mixto=0 (de 2.000 cada una)
+SIN GLOBAL 30/70: mismas líneas de B=0 · SIN=0 · A_uno=0 · A_mixto=0 (de 2.000 cada una)
+SIM=[C,D2] · árbol 06ad4f1bd53d
+TECHOS 887 entero: SIN=0/18 · A_uno=0/18 · A_mixto=0/14
+TECHOS 887b      : entero=0/23 · 50/50=37/31 · 30/70=45/43
+3 TRAMOS 30/30/40: B=45 · SIN=31
+SIN GLOBAL 50/50: mismas líneas de B=33 · SIN=36 · A_uno=32 · A_mixto=36 (de 2.000 cada una)
+SIN GLOBAL 30/70: mismas líneas de B=43 · SIN=34 · A_uno=56 · A_mixto=31 (de 2.000 cada una)
+DIAG B 50/50: {"poblacion":2000,"distintos":37,"sumaObjetivosRota":0,"ventanaLoImpedia":13,"firmadoEsCanonico":37,"firmadoNoEsCanonico":0,"cae":{"tramo1":17,"ultimo":7,"ambos":13},"porTipo":{"4%":28,"21%":9},"sinReconciliar":1134,"maxDesv":2,"parejaD":{"1":37},"sinPareja":0,"derivaSplitMax":7.275957614183426e-12}
+DIAG mismas líneas SIN global 50/50: {"poblacion":2000,"distintos":33,"sumaObjetivosRota":0,"ventanaLoImpedia":9,"firmadoEsCanonico":33,"firmadoNoEsCanonico":0,"cae":{"tramo1":9,"ultimo":12,"ambos":12},"porTipo":{"4%":25,"21%":8},"sinReconciliar":1113,"maxDesv":2,"parejaD":{"1":33},"sinPareja":0,"derivaSplitMax":7.275957614183426e-12}
+CONJUNTOS 50/50: con global 37 · sin global 33 · en los dos 27
+DIAG B 30/70: {"poblacion":2000,"distintos":45,"sumaObjetivosRota":0,"ventanaLoImpedia":7,"firmadoEsCanonico":45,"firmadoNoEsCanonico":0,"cae":{"tramo1":24,"ultimo":18,"ambos":3},"porTipo":{"4%":38,"21%":7},"sinReconciliar":662,"maxDesv":2,"parejaD":{"1":45},"sinPareja":0,"derivaSplitMax":7.275957614183426e-12}
+DIAG mismas líneas SIN global 30/70: {"poblacion":2000,"distintos":43,"sumaObjetivosRota":0,"ventanaLoImpedia":9,"firmadoEsCanonico":43,"firmadoNoEsCanonico":0,"cae":{"tramo1":21,"ultimo":17,"ambos":5},"porTipo":{"4%":34,"21%":9},"sinReconciliar":723,"maxDesv":2,"parejaD":{"1":43},"sinPareja":0,"derivaSplitMax":7.275957614183426e-12}
+CONJUNTOS 30/70: con global 45 · sin global 43 · en los dos 28
+SEMBRADO 4 %, bruto de 0 a 0,30 €: inalcanzables (cént.) 13 · vistos 31
+ESCALÓN 0-12 €: 21 % 0 huecos en 1453 · 10 % 0 huecos en 1321 · 4 % 48 huecos en 1249 · 0 % 0 huecos en 1201
+SIM=[C,D2,E1] · árbol 06ad4f1bd53d
+TECHOS 887 entero: SIN=0/18 · A_uno=0/18 · A_mixto=0/14
+TECHOS 887b      : entero=0/23 · 50/50=24/31 · 30/70=23/43
+3 TRAMOS 30/30/40: B=18 · SIN=16
+SIN GLOBAL 50/50: mismas líneas de B=21 · SIN=20 · A_uno=22 · A_mixto=20 (de 2.000 cada una)
+SIN GLOBAL 30/70: mismas líneas de B=20 · SIN=22 · A_uno=36 · A_mixto=15 (de 2.000 cada una)
+SIM=[C,D2,E2] · árbol 06ad4f1bd53d
+TECHOS 887 entero: SIN=0/18 · A_uno=0/18 · A_mixto=0/14
+TECHOS 887b      : entero=0/23 · 50/50=0/31 · 30/70=0/43
+3 TRAMOS 30/30/40: B=0 · SIN=0
+SIN GLOBAL 50/50: mismas líneas de B=0 · SIN=0 · A_uno=0 · A_mixto=0 (de 2.000 cada una)
+SIN GLOBAL 30/70: mismas líneas de B=0 · SIN=0 · A_uno=0 · A_mixto=0 (de 2.000 cada una)
+C: SEMBRADO 4 %, bruto de 0 a 0,30 €: inalcanzables (cént.) 13 · vistos 31
+C: ESCALÓN 0-12 €: 21 % 0 huecos en 1453 · 10 % 0 huecos en 1321 · 4 % 48 huecos en 1249 · 0 % 0 huecos en 1201
+SIM=[F] · árbol 06ad4f1bd53d
+TECHOS 887 entero: SIN=18/18 · A_uno=16/18 · A_mixto=6/14
+TECHOS 887b      : entero=14/23 · 50/50=26/31 · 30/70=34/43
+3 TRAMOS 30/30/40: B=27 · SIN=19
+SIN GLOBAL 50/50: mismas líneas de B=24 · SIN=29 · A_uno=25 · A_mixto=16 (de 2.000 cada una)
+SIN GLOBAL 30/70: mismas líneas de B=30 · SIN=18 · A_uno=35 · A_mixto=16 (de 2.000 cada una)
+SIM=[C,D2,F] · árbol 06ad4f1bd53d
+TECHOS 887 entero: SIN=0/18 · A_uno=0/18 · A_mixto=0/14
+TECHOS 887b      : entero=0/23 · 50/50=28/31 · 30/70=38/43
+3 TRAMOS 30/30/40: B=36 · SIN=26
+SIN GLOBAL 50/50: mismas líneas de B=25 · SIN=33 · A_uno=27 · A_mixto=15 (de 2.000 cada una)
+SIN GLOBAL 30/70: mismas líneas de B=34 · SIN=26 · A_uno=47 · A_mixto=13 (de 2.000 cada una)
+SIM=[C,D2,E2,F] · árbol 06ad4f1bd53d
+TECHOS 887 entero: SIN=0/18 · A_uno=0/18 · A_mixto=0/14
+TECHOS 887b      : entero=0/23 · 50/50=0/31 · 30/70=0/43
+3 TRAMOS 30/30/40: B=0 · SIN=0
+SIN GLOBAL 50/50: mismas líneas de B=0 · SIN=0 · A_uno=0 · A_mixto=0 (de 2.000 cada una)
+SIN GLOBAL 30/70: mismas líneas de B=0 · SIN=0 · A_uno=0 · A_mixto=0 (de 2.000 cada una)

@@ -44,7 +44,7 @@ async function getCreatorTeamMemberId(req: any): Promise<number | null> {
 import { generateQuotePdf } from '../../../../lib/pdf';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
-import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { allocateInvoiceNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { getEmissionMode } from '../../../invoicing/domain/emission.service'; // SCRUM-1027
 import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
 import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
@@ -660,7 +660,7 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
             customerId: quote.customerId,
             quoteId: quote.id,
             number: invoiceNumber,
-            type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0
+            type: 'F1',
             total: invoiceAmount.toFixed(2),
             stageLabel: isCustomPlan ? stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
             currency: quote.currency,

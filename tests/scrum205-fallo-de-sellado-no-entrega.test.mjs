@@ -1,6 +1,7 @@
 // SCRUM-205 · RE-ANCLAJE del guard de SCRUM-206 (sin gate; AST y texto sobre `src/`).
 //
-// LA PROPIEDAD, que es la que se vigila y no el mecanismo:
+// LA PROPIEDAD que este fichero PERSIGUE —no la que demuestra: lo que mide de ella, y lo que no,
+// va abajo, en «LO QUE MIDE Y LO QUE NO» (SCRUM-1510c)—:
 //
 //     UN FALLO DE SELLADO NO PUEDE ACABAR EN UN DOCUMENTO ENTREGADO.
 //
@@ -32,6 +33,34 @@
 //   ① un `sellado_fallido` que no devuelva estado bloqueante → el fallo se pierde;
 //   ② un estado bloqueante que el portón no bloquee → el estado es decorativo;
 //   ③ un llamador que descarte el resultado y entregue → el estado nunca se consulta.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// LO QUE MIDE Y LO QUE NO (SCRUM-1510c · «medido» = sembrado en un espejo y visto MUDO; las
+// mutaciones y sus salidas, en `docs/master/evidencias/SCRUM-1510/`)
+//
+// Mide señales en el TEXTO de `src/`: sin compilar, sin base y sin seguir quién llama a quién.
+// Que las tres pasen no demuestra la propiedad: dice que no aparece ninguna de estas formas.
+//
+//   ① MIDE: todo objeto con `action: 'sellado_fallido'` escrito como literal tiene, en algún
+//      bloque que lo envuelve, la palabra `throw` o un `return` seguido a ≤200 caracteres del
+//      texto `SELLADO_PENDIENTE`; y hay al menos uno en `src/`.
+//      NO VE: un `return` de otro estado con ese nombre en un comentario (medido); un `throw` en
+//      OTRA rama del bloque, que no se ejecuta (medido). Lee la forma, no el valor: el valor que
+//      devuelve un sellado que falla lo exige `tests/scrum1296-emitir-encola.test.mjs`.
+//   ② MIDE: el predicado de `selladoEstado.ts`, sacado por AST y EJECUTADO, niega `pendiente` y
+//      deja pasar `sellado` y `no_aplica`.
+//      NO VE: si alguien le pregunta (medido: sin esa pregunta en `lib/invoicing.ts`, verde). Eso
+//      lo exige, por destino, `tests/scrum1510b-pendiente-que-el-porton-dejaria-pasar.test.mjs`.
+//   ③ MIDE: las llamadas a `sellarTrasEmision` POR ESE NOMBRE (identificador o `.nombre`), con
+//      un suelo de 8 LLAMADAS —no de caminos—; que ninguna que sea sentencia suelta (con o sin
+//      `await`) tenga, en las funciones que la envuelven, una llamada a un productor de
+//      `PRODUCE_BYTES` y ninguna a un portero de `PORTEROS`; y un tope: ≤2 sentencias sueltas
+//      sin productor alrededor.
+//      NO VE: una llamada por alias (medido); recoger el valor y no leerlo (medido); un portero
+//      llamado DESPUÉS de entregar, o sin leer su respuesta (medido: cuenta que aparezca, no el
+//      orden). Un productor con otro nombre, o entregar desde quien llama a la función que sella,
+//      no los ve la regla: los caza el TOPE (medido). Y el tope cuenta, no compara: si a la vez
+//      uno de los dos descartes de hoy deja de serlo, no cae (medido).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

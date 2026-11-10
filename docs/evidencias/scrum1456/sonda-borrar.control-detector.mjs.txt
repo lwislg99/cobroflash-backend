@@ -1,0 +1,12 @@
+// Control positivo del detector de sonda-borrar.mjs: la MISMA expresión sobre un dist arreglado y uno sin arreglar.
+import fs from 'node:fs';
+const detecta = (ruta) => {
+  const s = fs.readFileSync(ruta, 'utf8');
+  const i = s.indexOf("router.delete('/:id'");
+  const trozo = s.slice(i, i + 400);
+  return /cabeEnColumnaInt\)?\(id\)/.test(trozo) && !/Number\.isNaN\(id\)/.test(trozo) ? 'ARREGLADO' : 'SIN ARREGLO';
+};
+const [fabricado, real] = process.argv.slice(2);
+const a = detecta(fabricado), b = detecta(real);
+console.log(`fabricado → ${a} · real → ${b}`);
+process.exit(a === 'ARREGLADO' && b === 'SIN ARREGLO' ? 0 : 1);

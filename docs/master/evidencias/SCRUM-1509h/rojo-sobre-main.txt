@@ -1,0 +1,156 @@
+Rojo sobre main: dist de la ruta emitido desde origin/main:src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts y sin limiteDeEntrantes.js; test en su versión final.
+
+✖ SCRUM-1509h · el límite existe y es el FIRMADO: 20 por número y hora (c.20141) (7.9368ms)
+✔ SCRUM-1509h · POSITIVO: un cliente con albarán escribe UNA vez → 1 aviso al profesional, 0 descartes (95.7926ms)
+✖ SCRUM-1509h · EL ROJO DE 1509f: 120 textos del mismo número, uno por petición → pasan 20; 100 se descartan EN SILENCIO y se cuentan (7724.1391ms)
+✖ SCRUM-1509h · EL LOTE: una sola petición con 120 mensajes dentro → pasan 20 (la unidad es el mensaje, no la petición) (116.0986ms)
+✖ SCRUM-1509h · EL BORDE: pasa el mensaje N y se descarta el N+1; la entrega REPETIDA de Meta no gasta cupo (3442.9945ms)
+✔ SCRUM-1509h · POR NÚMERO: con un número ya en su límite, OTRO cliente del mismo comercio sigue entrando (154.2067ms)
+✔ SCRUM-1509h · LA FIRMA MALA no gasta cupo: 120 peticiones sin firmar y el cliente sigue entrando (190.7431ms)
+✖ SCRUM-1509h · LA HORA ES DESLIZANTE: un minuto antes de cumplirse sigue fuera; cumplida, vuelve a entrar (170.3973ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 3
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12782.2631
+
+✖ failing tests:
+
+test at tests\scrum1509h-veinte-entrantes-por-hora.test.mjs:225:1
+✖ SCRUM-1509h · el límite existe y es el FIRMADO: 20 por número y hora (c.20141) (7.9368ms)
+  AssertionError [ERR_ASSERTION]: no hay módulo del límite en dist/modules/whatsappBot/domain/limiteDeEntrantes.js
+      at TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/j2n-1509h/tests/scrum1509h-veinte-entrantes-por-hora.test.mjs:226:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\scrum1509h-veinte-entrantes-por-hora.test.mjs:238:1
+✖ SCRUM-1509h · EL ROJO DE 1509f: 120 textos del mismo número, uno por petición → pasan 20; 100 se descartan EN SILENCIO y se cuentan (7724.1391ms)
+  AssertionError [ERR_ASSERTION]: hoy (sin límite) 1509f midió 120 avisos; salió {"avisos":120,"alProfesional":120,"entrantesRegistrados":120,"descartes":0,"trazasDeDescarte":0,"erroresDeManejador":0}
+  + actual - expected
+  
+    {
+  +   alProfesional: 120,
+  +   avisos: 120,
+  +   descartes: 0,
+  +   entrantesRegistrados: 120,
+  -   alProfesional: 20,
+  -   avisos: 20,
+  -   descartes: 100,
+  -   entrantesRegistrados: 20,
+      erroresDeManejador: 0,
+  +   trazasDeDescarte: 0
+  -   trazasDeDescarte: 100
+    }
+  
+      at TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/j2n-1509h/tests/scrum1509h-veinte-entrantes-por-hora.test.mjs:245:10)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { avisos: 120, alProfesional: 120, entrantesRegistrados: 120, descartes: 0, trazasDeDescarte: 0, erroresDeManejador: 0 },
+    expected: { avisos: 20, alProfesional: 20, entrantesRegistrados: 20, descartes: 100, trazasDeDescarte: 100, erroresDeManejador: 0 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scrum1509h-veinte-entrantes-por-hora.test.mjs:252:1
+✖ SCRUM-1509h · EL LOTE: una sola petición con 120 mensajes dentro → pasan 20 (la unidad es el mensaje, no la petición) (116.0986ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   alProfesional: 120,
+  +   avisos: 120,
+  +   descartes: 0,
+  +   entrantesRegistrados: 120,
+  -   alProfesional: 20,
+  -   avisos: 20,
+  -   descartes: 100,
+  -   entrantesRegistrados: 20,
+      erroresDeManejador: 0,
+  +   trazasDeDescarte: 0
+  -   trazasDeDescarte: 100
+    }
+  
+      at TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/j2n-1509h/tests/scrum1509h-veinte-entrantes-por-hora.test.mjs:256:10)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { avisos: 120, alProfesional: 120, entrantesRegistrados: 120, descartes: 0, trazasDeDescarte: 0, erroresDeManejador: 0 },
+    expected: { avisos: 20, alProfesional: 20, entrantesRegistrados: 20, descartes: 100, trazasDeDescarte: 100, erroresDeManejador: 0 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scrum1509h-veinte-entrantes-por-hora.test.mjs:259:1
+✖ SCRUM-1509h · EL BORDE: pasa el mensaje N y se descarta el N+1; la entrega REPETIDA de Meta no gasta cupo (3442.9945ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   alProfesional: 1,
+  +   avisos: 1,
+  +   descartes: 0,
+  +   entrantesRegistrados: 1,
+  -   alProfesional: 0,
+  -   avisos: 0,
+  -   descartes: 1,
+  -   entrantesRegistrados: 0,
+      erroresDeManejador: 0,
+  +   trazasDeDescarte: 0
+  -   trazasDeDescarte: 1
+    }
+  
+      at TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/j2n-1509h/tests/scrum1509h-veinte-entrantes-por-hora.test.mjs:272:10)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { avisos: 1, alProfesional: 1, entrantesRegistrados: 1, descartes: 0, trazasDeDescarte: 0, erroresDeManejador: 0 },
+    expected: { avisos: 0, alProfesional: 0, entrantesRegistrados: 0, descartes: 1, trazasDeDescarte: 1, erroresDeManejador: 0 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scrum1509h-veinte-entrantes-por-hora.test.mjs:295:1
+✖ SCRUM-1509h · LA HORA ES DESLIZANTE: un minuto antes de cumplirse sigue fuera; cumplida, vuelve a entrar (170.3973ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   alProfesional: 1,
+  +   avisos: 1,
+  +   descartes: 0,
+  +   entrantesRegistrados: 1,
+  -   alProfesional: 0,
+  -   avisos: 0,
+  -   descartes: 1,
+  -   entrantesRegistrados: 0,
+      erroresDeManejador: 0,
+  +   trazasDeDescarte: 0
+  -   trazasDeDescarte: 1
+    }
+  
+      at TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/j2n-1509h/tests/scrum1509h-veinte-entrantes-por-hora.test.mjs:303:12)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { avisos: 1, alProfesional: 1, entrantesRegistrados: 1, descartes: 0, trazasDeDescarte: 0, erroresDeManejador: 0 },
+    expected: { avisos: 0, alProfesional: 0, entrantesRegistrados: 0, descartes: 1, trazasDeDescarte: 1, erroresDeManejador: 0 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

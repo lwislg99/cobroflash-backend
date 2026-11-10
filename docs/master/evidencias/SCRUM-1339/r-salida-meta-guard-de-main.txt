@@ -1,0 +1,67 @@
+{"sha":"75884928b170","run":39628953329,"status":"completed","concl":"failure","njobs":6,"mg":"cancelled","min":30.3,"pasoCaido":"Cada guard cae con la mutación que declara:cancelled","anot":"The job has exceeded the maximum execution time of 30m0s | The operation was canceled.","otrosRojos":"guards de navegador (fuera de la tanda)"}
+{"sha":"4d6752d1eaaf","run":39627522518,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"f53289026390","run":39626791828,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"c47288f7e82f","run":39626520827,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"2ab577501431","run":39626458516,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"e155c60fd1d0","run":39625990144,"status":"completed","concl":"failure","njobs":6,"mg":"cancelled","min":30.3,"pasoCaido":"Cada guard cae con la mutación que declara:cancelled","anot":"The job has exceeded the maximum execution time of 30m0s | The operation was canceled.","otrosRojos":"guards de navegador (fuera de la tanda)"}
+{"sha":"ed2878e43653","run":39625581602,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"7b1765142558","run":39620781606,"status":"completed","concl":"failure","njobs":6,"mg":"success","min":26.4,"pasoCaido":"","otrosRojos":"guards de navegador (fuera de la tanda)"}
+{"sha":"5dcc9fe1e7b9","run":39620044675,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"aa68b01afb68","run":39617471945,"status":"completed","concl":"failure","njobs":6,"mg":"failure","min":25.3,"pasoCaido":"Cada guard cae con la mutación que declara:failure","anot":"Process completed with exit code 2.","otrosRojos":"guards de navegador (fuera de la tanda)"}
+{"sha":"9415ff9df6a0","run":39617448928,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"6964d489bcd0","run":39614164838,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"0adcc1b2ff90","run":39613708786,"status":"completed","concl":"failure","njobs":6,"mg":"cancelled","min":30.3,"pasoCaido":"Cada guard cae con la mutación que declara:cancelled","anot":"The job has exceeded the maximum execution time of 30m0s | The operation was canceled.","otrosRojos":"guards de navegador (fuera de la tanda)"}
+{"sha":"cf25030c8e94","run":39610512525,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"99654a927d3b","run":39608197965,"status":"completed","concl":"failure","njobs":6,"mg":"cancelled","min":30.3,"pasoCaido":"Cada guard cae con la mutación que declara:cancelled","anot":"The job has exceeded the maximum execution time of 30m0s | The operation was canceled.","otrosRojos":"guards de navegador (fuera de la tanda)"}
+{"sha":"b10c9b6ca79e","run":39606876542,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"3c60a7fd0147","run":39606147410,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"321ce160b0d5","run":39605731375,"status":"completed","concl":"failure","njobs":6,"mg":"failure","min":25,"pasoCaido":"Cada guard cae con la mutación que declara:failure","anot":"Process completed with exit code 2.","otrosRojos":"guards de navegador (fuera de la tanda)"}
+{"sha":"67dde0caf421","run":39602691820,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"b26de3f68dbb","run":39602027416,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"1e00b1b9d9ed","run":39601941821,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"e2cd370cc227","run":39601605945,"status":"completed","concl":"failure","njobs":6,"mg":"cancelled","min":30.3,"pasoCaido":"Cada guard cae con la mutación que declara:cancelled","anot":"The job has exceeded the maximum execution time of 30m0s | The operation was canceled.","otrosRojos":"guards de navegador (fuera de la tanda)"}
+{"sha":"fe65a8b7fca8","run":39449841582,"status":"completed","concl":"failure","njobs":6,"mg":"cancelled","min":30.3,"pasoCaido":"Cada guard cae con la mutación que declara:cancelled","anot":"The job has exceeded the maximum execution time of 30m0s | The operation was canceled.","otrosRojos":"guards de navegador (fuera de la tanda)"}
+{"sha":"f4cac4820bf6","run":39415687417,"status":"completed","concl":"failure","njobs":6,"mg":"cancelled","min":30.3,"pasoCaido":"Cada guard cae con la mutación que declara:cancelled","anot":"The job has exceeded the maximum execution time of 30m0s | The operation was canceled.","otrosRojos":"guards de navegador (fuera de la tanda)"}
+{"sha":"523ccd90fe37","run":39412199759,"status":"completed","concl":"failure","njobs":6,"mg":"cancelled","min":30.3,"pasoCaido":"Cada guard cae con la mutación que declara:cancelled","anot":"The job has exceeded the maximum execution time of 30m0s | The operation was canceled.","otrosRojos":"guards de navegador (fuera de la tanda)"}
+{"sha":"f8ebae4e8bc9","run":39411575703,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"3fadf8eba46b","run":39409183666,"status":"completed","concl":"failure","njobs":6,"mg":"success","min":25.4,"pasoCaido":"","otrosRojos":"guards de navegador (fuera de la tanda)"}
+{"sha":"139c5b34c5e2","run":39408540158,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"e0c32fb5297e","run":39403614651,"status":"completed","concl":"failure","njobs":6,"mg":"cancelled","min":30.3,"pasoCaido":"Cada guard cae con la mutación que declara:cancelled","anot":"The job has exceeded the maximum execution time of 30m0s | The operation was canceled.","otrosRojos":"guards de navegador (fuera de la tanda)"}
+{"sha":"47a78ef439ab","run":39403263745,"status":"completed","concl":"failure","njobs":6,"mg":"cancelled","min":30.3,"pasoCaido":"Cada guard cae con la mutación que declara:cancelled","anot":"The job has exceeded the maximum execution time of 30m0s | The operation was canceled.","otrosRojos":"guards de navegador (fuera de la tanda)"}
+{"sha":"dc1b2b4db78e","run":39252337299,"status":"completed","concl":"failure","njobs":6,"mg":"success","min":29.5,"pasoCaido":"","otrosRojos":"guards de navegador (fuera de la tanda)"}
+{"sha":"e489c676fbbb","run":39252104227,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"a60e12bf637b","run":39251559428,"status":"completed","concl":"failure","njobs":6,"mg":"cancelled","min":30.3,"pasoCaido":"Cada guard cae con la mutación que declara:cancelled","anot":"The job has exceeded the maximum execution time of 30m0s | The operation was canceled.","otrosRojos":"guards de navegador (fuera de la tanda)"}
+{"sha":"c0e429c6aaae","run":39250954079,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"1974fbe7104a","run":39250430951,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"5b0e571bc537","run":39250346972,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"eee7d2b4bcea","run":39247970340,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"3a9233eb90c3","run":39247384947,"status":"completed","concl":"failure","njobs":6,"mg":"cancelled","min":30.3,"pasoCaido":"Cada guard cae con la mutación que declara:cancelled","anot":"The job has exceeded the maximum execution time of 30m0s | The operation was canceled.","otrosRojos":"guards de navegador (fuera de la tanda)"}
+{"sha":"5aa7e87fb02e","run":39247346622,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"2bb11dc7cc68","run":39245814380,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"afc677a2e89d","run":39245623641,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"c0745ecccc0f","run":39244453533,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"1cdccf36c5dd","run":39243970370,"status":"completed","concl":"failure","njobs":6,"mg":"cancelled","min":30.3,"pasoCaido":"Cada guard cae con la mutación que declara:cancelled","anot":"The job has exceeded the maximum execution time of 30m0s | The operation was canceled.","otrosRojos":"guards de navegador (fuera de la tanda)"}
+{"sha":"ea8dece1df90","run":39218813067,"status":"completed","concl":"failure","njobs":6,"mg":"success","min":28.7,"pasoCaido":"","otrosRojos":"guards de navegador (fuera de la tanda)"}
+{"sha":"fee32c7d0a4b","run":39218463552,"status":"completed","concl":"failure","njobs":6,"mg":"failure","min":29,"pasoCaido":"Cada guard cae con la mutación que declara:failure","anot":"Process completed with exit code 2.","otrosRojos":"guards de navegador (fuera de la tanda)"}
+{"sha":"256abbb143a2","run":39218230428,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"774c32b51791","run":39216649859,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"35db4084ef75","run":39216467646,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"1edb5ce43cc9","run":39215457419,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"5b14238041a9","run":39215138019,"status":"completed","concl":"failure","njobs":6,"mg":"cancelled","min":30.3,"pasoCaido":"Cada guard cae con la mutación que declara:cancelled","anot":"The job has exceeded the maximum execution time of 30m0s | The operation was canceled.","otrosRojos":"build + tests (con banco desechable), guards de navegador (fuera de la tanda)"}
+{"sha":"8ff423895024","run":39214659759,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"a54fd9834604","run":39214627298,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"dc5aaae1368c","run":39214159906,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"75c6bd3661f0","run":39213980006,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"397c772b4702","run":39212944864,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"fc4186483266","run":39212101431,"status":"completed","concl":"failure","njobs":6,"mg":"cancelled","min":30.3,"pasoCaido":"Cada guard cae con la mutación que declara:cancelled","anot":"The job has exceeded the maximum execution time of 30m0s | The operation was canceled.","otrosRojos":"guards de navegador (fuera de la tanda)"}
+{"sha":"cd85e34b1e5b","run":39159620511,"status":"completed","concl":"failure","njobs":6,"mg":"success","min":28.7,"pasoCaido":"","otrosRojos":"build + tests (con banco desechable), guards de navegador (fuera de la tanda)"}
+{"sha":"3dbf79d23c41","run":39159407436,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"e591cc53a9fb","run":39159293250,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+{"sha":"a25f032e5276","run":39158881946,"status":"completed","concl":"cancelled","njobs":0,"mg":"ausente"}
+POBLACION runs=60
+{
+ "cancelled · The job has exceeded the maximum execution time of 30m0s | The operation was canceled.": 15,
+ "ausente": 37,
+ "success": 5,
+ "failure · Process completed with exit code 2.": 3
+}

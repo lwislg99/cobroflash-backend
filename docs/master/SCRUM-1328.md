@@ -143,3 +143,60 @@ espacios>` y las órdenes que lleva en su cabecera.
    el guard. Lo que corrí antes de empujar fueron 185 ficheros de guards elegidos por `grep` (los
    que nombran `docs/master`, evidencias, cicatrices o el árbol): 1.839 casos, ese único rojo.
    **No es la tanda: el CI es la primera pasada entera de este PR.**
+
+## SCRUM-1328b · El caso ④: los `# SKIP` con su motivo siguen leyéndose en el TAP de una tanda roja
+
+**Medido contra:** `origin/main` = `00179a513a5fb11ca12d61fe25b1b2dec26b51ca` · 2026-10-23T09:27:48Z
+(J3an del equipo de Javier, encargo del orquestador `cobroflash-backend-62`; Windows 11, node v24)
+
+A9: comprobación → `tests/scrum1328-skips-con-motivo-en-el-tap.test.mjs`
+
+**PASO 0.** `git log origin/main --grep=1328` da el PR #2070 (sólo medición) y nada del caso ④; ninguna rama
+`scrum-1328*` en el remoto. Los arreglos de SCRUM-1289 (#1990, `ba930e80`) y 1289b (`tanda-con-veredicto.mjs`
+con los reporters como argumentos) están en `main`. Sus bancos (`tests/scrum1289b-…`, `tests/scrum1289-…`)
+miden una tanda VERDE y sin saltos: ③ del enunciado estaba cubierto; ④ no.
+
+**Lo que se reúsa.** El instrumento que lee hoy los saltos es la receta de `CLAUDE.md` (`grep "# SKIP"` sobre
+el TAP). La integridad es la de `integridadTap` (`scripts/equipo/por-que-cayo.mjs`, S5). El banco es la forma
+de 1289b (tanda de juguete, reporters en `NODE_OPTIONS`, nieto sucio), con un tercer fichero que trae un test
+que CAE, un salto con motivo, uno con `skip: true` y uno que pasa con «# SKIP» en el nombre. No se toca ningún
+script ni workflow: el fichero nuevo es un test.
+
+**Lo que mide, con su población** (el resumen del propio TAP: 26 tests de la tanda de juguete; pass + fail +
+skipped + cancelled + todo tienen que dar `# tests`, y los saltos leídos, `# skipped`):
+
+| caso | qué tiene que salir |
+|---|---|
+| con el envoltorio | salida 1 (el rojo sigue rojo) · TAP íntegro · el fallo por su nombre y sólo él · el motivo LITERAL · el salto sin motivo SEÑALADO · 0 perdidos |
+| control sembrado: sin el envoltorio | CIEGO (NUL o dos resúmenes), nunca «0 saltos» |
+| TAP fabricado que declara 2 y enseña 1 | 1 perdido |
+| `\# SKIP` en un nombre y salto de un subtest sangrado | no cuentan |
+| NUL, dos resúmenes, vacío | CIEGO |
+
+**Los rojos, vistos** (commit `78a8fb440c16ed3847c1f79653222ea4880ba060` antes de inyectar; `git diff --numstat`
+1/1 en cada una; restaurado con `git restore --source=HEAD` y `git status --porcelain` vacío):
+- quitar el arreglo de 1289b en `scripts/tanda-con-veredicto.mjs` → cae el caso del envoltorio: «el TAP tiene
+  3111 bytes NUL de 4826 (64.5 %)». 4 pass · 1 fail de 5.
+- quitar la puerta de integridad del lector → caen el control sembrado y el de NUL. 3 pass · 2 fail de 5.
+Las dos van en `MUTACIONES_QUE_ME_TUMBAN`. `meta-guard-mutaciones.mjs --solo-censo` las lee (174 ficheros
+declarantes, salida 0); el meta-guard entero NO lo he corrido.
+
+**De paso (sin ticket, no es de mi carril):** la receta de `CLAUDE.md` casa también con un NOMBRE que lleve
+«# SKIP», y dos veces: su `ok` y su cabecera `# Subtest:`. En `main` hay al menos uno
+(`tests/scrum1339d-senal-de-nombres.test.mjs:392`, regex sobre el fuente, 1 fichero), así que en cada tanda
+entera ese `grep` enseña dos líneas que no son saltos. El lector del test se ancla al caso y cuadra con el
+resumen; la receta de `CLAUDE.md` es derivada del máster y no la he tocado.
+
+**Mis errores.** ① Escribí que el nombre trampa daba UNA línea más en el `grep` y dio dos (la cabecera
+`# Subtest:`): lo cazó el primer verde que no salió; corregí la expectativa, no el lector. ② Medí mi contexto
+al acabar el arranque en la misma tanda de órdenes que la lectura de Jira, así que no tengo la segunda cifra
+separada. ③ El primer obligatorio (`49d47d05`, run 39934257078) cayó por 1 de 12.213: el ancla `de` de mi
+segunda mutación casaba también con su propia declaración (`tests/scrum836-ancla-de-mutacion-viva.test.mjs`,
+caso de SCRUM-1321). Ese guard estaba en mi primera mini-tanda de 416 ficheros, que paré a los 10 min por
+larga, y no en la de 21 que corrí después, elegida por nombre. Alargada el ancla con la línea de antes
+(1 ocurrencia, y la mutación sigue tumbando los 2 casos que debe); el guard no se ha tocado. Eso costó un
+segundo empujón.
+
+**Lo que NO está medido.** Nada en Linux (el CI es la primera pasada allí). Ninguna tanda completa en local:
+lo corrido está en la entrega. Si un TAP real del CI trae saltos sin motivo hoy, no lo he mirado (lo vigila
+en el fuente `tests/scrum419-…`, que es otro instrumento).

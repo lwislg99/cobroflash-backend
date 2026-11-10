@@ -1,0 +1,16 @@
+===== desde origin/main 6a38e5a2 → schema-main2
+{"ok":true,"clase":"sin_cambios","tablasControl":33,"error":null}
+SQL:
+-- This is an empty migration.
+destructivas: 0
+===== desde origin/main 6a38e5a2 → s2-prop
+{"ok":true,"clase":"sin_cambios","tablasControl":33,"error":null}
+SQL:
+-- This is an empty migration.
+destructivas: 0
+===== desde origin/main 6a38e5a2 → s2-sem
+{"ok":true,"clase":"con_cambios","tablasControl":33,"error":null}
+SQL:
+-- AlterTable
+ALTER TABLE "whatsapp_messages" ADD COLUMN     "semilla1499c" TEXT;
+destructivas: 0

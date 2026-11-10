@@ -1,0 +1,22 @@
+# salida de d-contar-887.mjs y d-cuantos-cambian.cjs · S1 · 29-oct-2026 · origin/main 5a247020e5608fd2b21fad04bcf585694494397a
+D=0 CUENTA scrum887-el-cobro-es-lo-firmado.test.mjs SIN 18 techo 18
+D=0 CUENTA scrum887-el-cobro-es-lo-firmado.test.mjs A_uno 18 techo 18
+D=0 CUENTA scrum887-el-cobro-es-lo-firmado.test.mjs A_mixto 14 techo 14
+D=1 CUENTA scrum887-el-cobro-es-lo-firmado.test.mjs SIN 0 techo 18
+D=1 CUENTA scrum887-el-cobro-es-lo-firmado.test.mjs A_uno 0 techo 18
+D=1 CUENTA scrum887-el-cobro-es-lo-firmado.test.mjs A_mixto 0 techo 14
+D=2 CUENTA scrum887-el-cobro-es-lo-firmado.test.mjs SIN 0 techo 18
+D=2 CUENTA scrum887-el-cobro-es-lo-firmado.test.mjs A_uno 0 techo 18
+D=2 CUENTA scrum887-el-cobro-es-lo-firmado.test.mjs A_mixto 0 techo 14
+D=0 CUENTA scrum887b-descuento-global.test.mjs entero 23 techo 23
+D=0 CUENTA scrum887b-descuento-global.test.mjs 50/50 31 techo 31
+D=0 CUENTA scrum887b-descuento-global.test.mjs 30/70 43 techo 43
+D=1 CUENTA scrum887b-descuento-global.test.mjs entero 0 techo 23
+D=1 CUENTA scrum887b-descuento-global.test.mjs 50/50 35 techo 31
+D=1 CUENTA scrum887b-descuento-global.test.mjs 30/70 41 techo 43
+D=2 CUENTA scrum887b-descuento-global.test.mjs entero 0 techo 23
+D=2 CUENTA scrum887b-descuento-global.test.mjs 50/50 35 techo 31
+D=2 CUENTA scrum887b-descuento-global.test.mjs 30/70 41 techo 43
+un tipo, sin global      : 10000 presupuestos · cambia el total firmado en 1489 (14.9 %) · sube 897 · baja 592 · máx 1 cént.
+tipos mezclados, sin glob: 10000 presupuestos · cambia el total firmado en 3285 (32.9 %) · sube 2245 · baja 1040 · máx 2 cént.
+un tipo, con global      : 8366 presupuestos · cambia el total firmado en 1622 (19.4 %) · sube 878 · baja 744 · máx 1 cént.

@@ -1,0 +1,9 @@
+[factura] 400 invalid_id     → {"inicial":"Cobrar por Bizum","alertas":["alert error: No se pudo confirmar. Inténtalo de nuevo."],"toasts":[],"boton":{"texto":"📲 Confirmar Bizum recibido","desactivado":false},"posts":1,"postsTrasReintento":2}
+[factura] 500 internal_error → {"inicial":"Cobrar por Bizum","alertas":["alert error: No se pudo confirmar. Inténtalo de nuevo."],"toasts":[],"boton":{"texto":"📲 Confirmar Bizum recibido","desactivado":false},"posts":1,"postsTrasReintento":2}
+[factura] 409 charge_not_pending → {"inicial":"Cobrar por Bizum","alertas":["alert error: Este cobro ya no está pendiente."],"toasts":[],"boton":{"texto":"📲 Confirmar Bizum recibido","desactivado":false},"posts":1,"postsTrasReintento":2} (control: tiene que salir DISTINTO del 500)
+[factura] midió de verdad (un POST, un aviso pintado y el 409 distinto) = true · 400 y 500 reaccionan IGUAL = true
+[trabajo] 400 invalid_id     → {"inicial":"📲 Confirmar Bizum recibido","alertas":["alert error: No se pudo confirmar el Bizum."],"toasts":[],"boton":{"texto":"📲 Confirmar Bizum recibido","desactivado":false},"posts":1,"postsTrasReintento":2}
+[trabajo] 500 internal_error → {"inicial":"📲 Confirmar Bizum recibido","alertas":["alert error: No se pudo confirmar el Bizum."],"toasts":[],"boton":{"texto":"📲 Confirmar Bizum recibido","desactivado":false},"posts":1,"postsTrasReintento":2}
+[trabajo] 409 charge_not_pending → {"inicial":"📲 Confirmar Bizum recibido","alertas":["alert error: Este cobro ya no está pendiente."],"toasts":[],"boton":{"texto":"📲 Confirmar Bizum recibido","desactivado":false},"posts":1,"postsTrasReintento":2} (control: tiene que salir DISTINTO del 500)
+[trabajo] midió de verdad (un POST, un aviso pintado y el 409 distinto) = true · 400 y 500 reaccionan IGUAL = true
+POBLACION=2 pantallas × 3 respuestas · IGUAL en las dos

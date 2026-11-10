@@ -1,0 +1,17 @@
+﻿POBLACIÓN: 72 identidades fichero::nombre en tests/ y scripts/ · 62 distintas · sin su nombre en el fichero hoy: 16
+tests/scrum1093h-censo-fecha-sin-zona.test.mjs:255 | src/serie.ts::anioDeLaSerie | fichero NO existe
+tests/scrum332-comparativa-anclas.test.mjs:114 | src/existe.ts::simboloQueExiste | fichero NO existe
+tests/scrum332-comparativa-anclas.test.mjs:118 | src/no-existe.ts::loQueSea | fichero NO existe
+tests/scrum332-comparativa-anclas.test.mjs:120 | src/existe.ts::simboloInventado | fichero NO existe
+tests/scrum551-anclas-bloque-f.test.mjs:169 | src/modules/quotes/app/routes/quotes.routes.ts::estoNoExisteEnNingunSitio | fichero existe
+tests/scrum551-anclas-bloque-f.test.mjs:173 | src/no/existe.ts::loQueSea | fichero NO existe
+tests/scrum564-afirmaciones-publicadas.test.mjs:102 | src/no/existe.ts::nada | fichero NO existe
+tests/scrum564-afirmaciones-publicadas.test.mjs:104 | src/core/flags.ts::estoNoEstaAhi | fichero existe
+tests/scrum858c-el-cierre-con-indice.test.mjs:73 | src/a.ts::A | fichero NO existe
+tests/scrum858c-el-cierre-con-indice.test.mjs:74 | src/a.ts::B | fichero NO existe
+tests/scrum858c-el-cierre-con-indice.test.mjs:75 | src/a.ts::C | fichero NO existe
+tests/scrum858c-el-cierre-con-indice.test.mjs:92 | src/a.ts::R | fichero NO existe
+tests/scrum858c-el-cierre-con-indice.test.mjs:110 | src/a.ts::Z | fichero NO existe
+tests/_huerfanos-en-modulos-vivos.mjs:214 | src/modules/x/domain/motor.ts::SEMILLA | fichero NO existe
+tests/_huerfanos-en-modulos-vivos.mjs:215 | src/modules/x/domain/motor.ts::motorHuerfano | fichero NO existe
+tests/_huerfanos-en-modulos-vivos.mjs:225 | src/modules/x/domain/motor.ts::motorVivo | fichero NO existe

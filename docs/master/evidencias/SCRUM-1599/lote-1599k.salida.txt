@@ -1,0 +1,105 @@
+SCRUM-1599k · salida del cuarto lote · banco desechable LOCAL: PGlite 0.5.8 + pglite-socket 0.2.11 (maxConnections 64) en loopback, base yaqu_libro_test, esquema de prisma migrate diff --from-empty (33 CREATE TABLE = 33 model), PGlite nuevo por fichero (banco-1599h.mjs.txt, sin cambios)
+codigo: rama scrum-1599k-lote-4-banco sobre origin/main 289ca894656c7c3686a0469d34785512b960e0b3 · dist/ con tsc --noCheck · sin QA_DB_TEST · Date: Mon, 26 Oct 2026 15:26:45 GMT
+
+## banderas (banderas-1599h.mjs sobre los 28 de SOLO_STAGING, commit 289ca8946)
+C	8099	···C·	scrum767-cura-concurrencia.test.mjs
+C	10113	···C·	scrum793-la-carrera-del-token.test.mjs
+E	5933	··E··	scrum76-email-adjunto.test.mjs
+E	10058	··E··	scrum207-emision-auditada.test.mjs
+EC	8727	··EC·	scrum592-concurrencia-serie.test.mjs
+EC	9377	··EC·	scrum234-carrera-serie.gated.test.mjs
+EC	15345	··EC·	scrum173-cadena-verifactu-serializada.test.mjs
+EC	20699	··EC·	scrum781-concurrencia-de-la-factura.test.mjs
+HC	11602	·H·C·	scrum127-paywall-bloquea.test.mjs
+HE	6591	·HE··	scrum73-verifactu-gate.test.mjs
+HE	10192	·HE··	scrum221-export-fiscal-cero-bytes.test.mjs
+HE	11008	·HE··	scrum171a-consolidar-cliente.test.mjs
+HE	12061	·HE··	scrum25-exports.test.mjs
+HE	13699	·HE··	scrum82-zip-verifactu.test.mjs
+HE	14643	·HE··	scrum170-facturacion-parcial.test.mjs
+HE	14951	·HE··	scrum25-export-zip.test.mjs
+HE	18943	·HE··	tenancy-permisos.test.mjs
+HEC	9867	·HEC·	scrum92-login-operario.test.mjs
+HEC	17977	·HEC·	scrum178-emision-manual.test.mjs
+HEC	21335	·HEC·	scrum814-carrera-del-tramo.gated.test.mjs
+MC	6281	M··C·	scrum115-wa-fallo-registrado.test.mjs
+sencillo	9842	·····	scrum116-recordatorio-candado.test.mjs
+sencillo	18624	·····	scrum574-mismo-cliente-tras-migracion.test.mjs
+solo-H	10238	·H···	scrum85-pay-routes-token.test.mjs
+solo-H	10318	·H···	scrum74-recibo-token.test.mjs
+solo-H	10868	·H···	scrum94-register-teammember.test.mjs
+solo-H	14584	·H···	scrum17-recapitulativa.test.mjs
+solo-H	20385	·H···	scrum222-deriva-arranque.test.mjs
+# poblacion 28 de 28 pedidos · commit 289ca8946 · grupos {"C":2,"E":2,"EC":4,"HC":1,"HE":8,"HEC":3,"MC":1,"sencillo":2,"solo-H":5}
+
+## ANTES (los 6 de main, con LIBRO_PG_URL)
+scrum74-recibo-token.test.mjs · exit=0 · 2206 ms · casos=1 (ok=0 not_ok=0 skip=1) · declarados=1 · SUMA
+   skip · SCRUM-74: /recibo/:token cierra el IDOR — numérico 404 sin fuga, token 200, PDF y feedback solo con token
+scrum94-register-teammember.test.mjs · exit=0 · 1475 ms · casos=1 (ok=0 not_ok=0 skip=1) · declarados=1 · SUMA
+   skip · SCRUM-94: /auth/register rechaza el email de un operario (sin merchant fantasma ni fuga de empresa)
+scrum17-recapitulativa.test.mjs · exit=0 · 1951 ms · casos=12 (ok=11 not_ok=0 skip=1) · declarados=12 · SUMA
+   skip · SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, tenancy
+scrum222-deriva-arranque.test.mjs · exit=0 · 1735 ms · casos=23 (ok=21 not_ok=0 skip=2) · declarados=23 · SUMA
+   skip · GATEADO · contra la BD de staging el arranque da en-sync de verdad
+   skip · GATEADO · contra la BD de staging, una deriva de verdad se ve y NO arrancaría
+scrum76-email-adjunto.test.mjs · exit=0 · 1209 ms · casos=1 (ok=0 not_ok=0 skip=1) · declarados=1 · SUMA
+   skip · SCRUM-76: el email adjunta el PDF en TODAS las ramas (outbox .eml materializado + fallback de presupuesto)
+scrum207-emision-auditada.test.mjs · exit=0 · 1465 ms · casos=5 (ok=3 not_ok=0 skip=2) · declarados=5 · SUMA
+   skip · SCRUM-207 · GATEADO: si el registro falla, la EMISIÓN NO OCURRE (rollback real)
+   skip · SCRUM-207 · GATEADO: camino feliz — la factura y su registro se confirman JUNTOS
+POBLACION=6 ficheros · EXIT=0
+
+## DESPUES (los 6 migrados)
+scrum74-recibo-token.test.mjs · exit=0 · 8264 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+scrum94-register-teammember.test.mjs · exit=0 · 4401 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+scrum17-recapitulativa.test.mjs · exit=0 · 6655 ms · casos=12 (ok=12 not_ok=0 skip=0) · declarados=12 · SUMA
+scrum222-deriva-arranque.test.mjs · exit=0 · 4323 ms · casos=23 (ok=23 not_ok=0 skip=0) · declarados=23 · SUMA
+scrum76-email-adjunto.test.mjs · exit=0 · 5241 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+scrum207-emision-auditada.test.mjs · exit=0 · 5380 ms · casos=5 (ok=5 not_ok=0 skip=0) · declarados=5 · SUMA
+POBLACION=6 ficheros · EXIT=0
+
+## MUTACIONES (mutar-1599i.mjs sobre los 6; la primera version de M2 mutaba auth.service.ts y VIVIO, ver el registro)
+== tests/scrum74-recibo-token.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/billing/app/routes/receipt.routes.ts · «let charge = await prisma.charge.findUnique({
+    where: { r» → «let charge = await prisma.charge.findUnique({
+    » · 1 de 1 caen · su caso («SCRUM-74: /recibo/:token cierra el IDOR») cae
+    · SCRUM-74: /recibo/:token cierra el IDOR — numérico 404 sin fuga, token 200, PDF y feedback solo con token
+      error: GET /recibo/<id numérico> debe ser 404 y fue 200
+== tests/scrum94-register-teammember.test.mjs · limpia: 1 ok de 1
+MUERE · M2 · src/modules/auth/app/routes/auth.routes.ts · «router.post('/register', (_req, res) => {
+  return res.statu» → «router.post('/register', (_req, res) => {
+  return» · 1 de 1 caen · su caso («SCRUM-94: /auth/register rechaza el email de un operario») cae
+    · SCRUM-94: /auth/register rechaza el email de un operario (sin merchant fantasma ni fuga de empresa)
+      error: registrar el email de un operario ACTIVO debe dar 409 y fue 201
+== tests/scrum17-recapitulativa.test.mjs · limpia: 12 ok de 12
+MUERE · M3 · src/modules/jobs/app/routes/jobs.routes.ts · «const grupos = groupByRotura(consolidables);» → «const grupos = groupByRotura(consolidables).slice(» · 1 de 12 caen · su caso («SCRUM-17: consolidar → rotura por mes») cae
+    · SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, tenancy
+      error: rotura → 2 facturas (marzo + abril)
+== tests/scrum222-deriva-arranque.test.mjs · limpia: 23 ok de 23
+MUERE · M4 · src/core/db/schemaDrift.ts · «WHERE table_schema = current_schema()» → «WHERE table_schema = 'esquema_que_no_existe'» · 2 de 23 caen · su caso («GATEADO · contra la BD de staging el arranque da en-sync de verdad») cae
+    · GATEADO · contra la BD de staging el arranque da en-sync de verdad
+    · GATEADO · contra la BD de staging, una deriva de verdad se ve y NO arrancaría
+      error: staging debería estar en sync; salió no-pude-comprobar (el catálogo no devolvió NINGUNA columna. O la conexión apunta a un esquema que no es el de la app
+== tests/scrum76-email-adjunto.test.mjs · limpia: 1 ok de 1
+MUERE · M5 · src/modules/messaging/domain/email.service.ts · «attachments: [{ filename: `${inv.number}.pdf`, content: Buff» → «attachments: [],» · 1 de 1 caen · su caso («SCRUM-76: el email adjunta el PDF») cae
+    · SCRUM-76: el email adjunta el PDF en TODAS las ramas (outbox .eml materializado + fallback de presupuesto)
+      error: 'el .eml de FACTURA CONTIENE el PDF adjunto (única vía tras SCRUM-72)'
+== tests/scrum207-emision-auditada.test.mjs · limpia: 5 ok de 5
+MUERE · M6 · src/modules/invoicing/domain/invoiceNumber.service.ts · «numero,
+            esJustificante,» → «numero: 'NO-' + numero,
+            esJustificante» · 2 de 5 caen · su caso («SCRUM-207 · GATEADO: camino feliz») cae
+    · SCRUM-207 · camino feliz: emitir escribe UNA fila factura_emitida con su sobre
+    · SCRUM-207 · GATEADO: camino feliz — la factura y su registro se confirman JUNTOS
+      error: el número queda CONGELADO en el registro
+POBLACION=6 mutaciones en 6 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## TRINQUETE con los 6 migrados y la lista sin tocar (rc=1)
+    ENTRAN (gateados sólo de staging sin declarar): —
+    SALEN (declarados que ya no lo son): scrum17-recapitulativa.test.mjs, scrum207-emision-auditada.test.mjs, scrum222-deriva-arranque.test.mjs, scrum74-recibo-token.test.mjs, scrum76-email-adjunto.test.mjs, scrum94-register-teammember.test.mjs
+
+## GUARDS (24 ficheros, TAP)
+# tests 234
+# pass 234
+# fail 0
+# cancelled 0
+# skipped 0

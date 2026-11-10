@@ -1,0 +1,74 @@
+﻿CONTROL · PDF de factura real: 580 facturas, la réplica da la MISMA base, filas de IVA y TOTAL en las 580
+CONTROL · 1 × 22,50 € al 21 %: hoy cuota 4,72 (empate mal resuelto) · redondeo decimal 4,73 · el comparador lo ve
+
+## factura única · entera · 21 % · 4000 presupuestos · 4000 facturas
+escenario | ①1566 página≠PDF presup. (IVA) | ②623 PDF factura≠XML | ③624 total impreso≠guardado | página presup. no cuadra consigo | PDF presup. no cuadra consigo | PDF factura no cuadra consigo | XML no cuadra consigo | presup.≠factura (IVA, única)
+hoy | 0,0 % | 1,2 % | 0,7 % | 0,4 % | 0,4 % | 1,2 % | 0,0 % | 0,5 %
+sólo A (PDF factura ← canónica) | 0,0 % | 0,0 % | 0,0 % | 0,4 % | 0,4 % | 0,0 % | 0,0 % | 0,4 %
+sólo B (pie presup. ← canónica) | 0,0 % | 1,2 % | 0,7 % | 0,4 % | 0,4 % | 1,2 % | 0,0 % | 0,5 %
+sólo C (empate, en el motor) | 0,0 % | 2,1 % | 2,1 % | 0,0 % | 0,0 % | 1,2 % | 0,0 % | 0,0 %
+A + B | 0,0 % | 0,0 % | 0,0 % | 0,4 % | 0,4 % | 0,0 % | 0,0 % | 0,4 %
+A + B + C | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 %
+A + B + C + D (total firmado ← canónica) | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 %
+
+## factura única · entera · 10 % · 4000 presupuestos · 4000 facturas
+escenario | ①1566 página≠PDF presup. (IVA) | ②623 PDF factura≠XML | ③624 total impreso≠guardado | página presup. no cuadra consigo | PDF presup. no cuadra consigo | PDF factura no cuadra consigo | XML no cuadra consigo | presup.≠factura (IVA, única)
+hoy | 0,9 % | 1,2 % | 0,7 % | 0,9 % | 0,0 % | 1,2 % | 0,0 % | 0,0 %
+sólo A (PDF factura ← canónica) | 0,9 % | 0,0 % | 0,0 % | 0,9 % | 0,0 % | 0,0 % | 0,0 % | 0,0 %
+sólo B (pie presup. ← canónica) | 0,0 % | 1,2 % | 0,7 % | 0,9 % | 0,9 % | 1,2 % | 0,0 % | 0,9 %
+sólo C (empate, en el motor) | 0,0 % | 2,8 % | 2,8 % | 0,0 % | 0,0 % | 1,2 % | 0,0 % | 0,0 %
+A + B | 0,0 % | 0,0 % | 0,0 % | 0,9 % | 0,9 % | 0,0 % | 0,0 % | 0,9 %
+A + B + C | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 %
+A + B + C + D (total firmado ← canónica) | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 %
+
+## factura única · decimal · 21 % · 4000 presupuestos · 4000 facturas
+escenario | ①1566 página≠PDF presup. (IVA) | ②623 PDF factura≠XML | ③624 total impreso≠guardado | página presup. no cuadra consigo | PDF presup. no cuadra consigo | PDF factura no cuadra consigo | XML no cuadra consigo | presup.≠factura (IVA, única)
+hoy | 4,4 % | 1,6 % | 1,6 % | 25,4 % | 29,8 % | 1,6 % | 0,0 % | 7,6 %
+sólo A (PDF factura ← canónica) | 4,4 % | 0,0 % | 0,0 % | 25,4 % | 29,8 % | 0,0 % | 0,0 % | 7,6 %
+sólo B (pie presup. ← canónica) | 0,0 % | 1,6 % | 1,6 % | 25,4 % | 25,4 % | 1,6 % | 0,0 % | 3,1 %
+sólo C (empate, en el motor) | 4,4 % | 1,6 % | 1,6 % | 25,4 % | 29,8 % | 1,6 % | 0,0 % | 7,6 %
+A + B | 0,0 % | 0,0 % | 0,0 % | 25,4 % | 25,4 % | 0,0 % | 0,0 % | 3,1 %
+A + B + C | 0,0 % | 0,0 % | 0,0 % | 25,4 % | 25,4 % | 0,0 % | 0,0 % | 3,1 %
+A + B + C + D (total firmado ← canónica) | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 %
+
+## factura única · decimal · 10 % · 4000 presupuestos · 4000 facturas
+escenario | ①1566 página≠PDF presup. (IVA) | ②623 PDF factura≠XML | ③624 total impreso≠guardado | página presup. no cuadra consigo | PDF presup. no cuadra consigo | PDF factura no cuadra consigo | XML no cuadra consigo | presup.≠factura (IVA, única)
+hoy | 6,4 % | 0,0 % | 0,0 % | 21,5 % | 27,8 % | 0,0 % | 0,0 % | 6,4 %
+sólo A (PDF factura ← canónica) | 6,4 % | 0,0 % | 0,0 % | 21,5 % | 27,8 % | 0,0 % | 0,0 % | 6,4 %
+sólo B (pie presup. ← canónica) | 0,0 % | 0,0 % | 0,0 % | 21,5 % | 21,5 % | 0,0 % | 0,0 % | 0,0 %
+sólo C (empate, en el motor) | 6,4 % | 0,0 % | 0,0 % | 21,5 % | 27,8 % | 0,0 % | 0,0 % | 6,4 %
+A + B | 0,0 % | 0,0 % | 0,0 % | 21,5 % | 21,5 % | 0,0 % | 0,0 % | 0,0 %
+A + B + C | 0,0 % | 0,0 % | 0,0 % | 21,5 % | 21,5 % | 0,0 % | 0,0 % | 0,0 %
+A + B + C + D (total firmado ← canónica) | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 %
+
+## factura única · decimal · 21/10/4 % · 4000 presupuestos · 4000 facturas
+escenario | ①1566 página≠PDF presup. (IVA) | ②623 PDF factura≠XML | ③624 total impreso≠guardado | página presup. no cuadra consigo | PDF presup. no cuadra consigo | PDF factura no cuadra consigo | XML no cuadra consigo | presup.≠factura (IVA, única)
+hoy | 7,7 % | 28,8 % | 11,6 % | 42,4 % | 46,5 % | 27,6 % | 0,0 % | 9,9 %
+sólo A (PDF factura ← canónica) | 7,7 % | 0,0 % | 0,0 % | 42,4 % | 46,5 % | 0,0 % | 0,0 % | 9,9 %
+sólo B (pie presup. ← canónica) | 0,0 % | 28,8 % | 11,6 % | 42,4 % | 42,4 % | 27,6 % | 0,0 % | 3,1 %
+sólo C (empate, en el motor) | 8,1 % | 29,0 % | 11,8 % | 42,8 % | 47,4 % | 27,6 % | 0,0 % | 10,3 %
+A + B | 0,0 % | 0,0 % | 0,0 % | 42,4 % | 42,4 % | 0,0 % | 0,0 % | 3,1 %
+A + B + C | 0,0 % | 0,0 % | 0,0 % | 42,8 % | 42,8 % | 0,0 % | 0,0 % | 3,1 %
+A + B + C + D (total firmado ← canónica) | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 %
+
+## tramos 50/50 · entera · 21 % · 4000 presupuestos · 8000 facturas
+escenario | ①1566 página≠PDF presup. (IVA) | ②623 PDF factura≠XML | ③624 total impreso≠guardado | página presup. no cuadra consigo | PDF presup. no cuadra consigo | PDF factura no cuadra consigo | XML no cuadra consigo | presup.≠factura (IVA, única)
+hoy | 0,0 % | 12,4 % | 11,8 % | 0,0 % | 0,0 % | 11,9 % | 0,0 % | —
+sólo A (PDF factura ← canónica) | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | —
+sólo B (pie presup. ← canónica) | 0,0 % | 12,4 % | 11,8 % | 0,0 % | 0,0 % | 11,9 % | 0,0 % | —
+sólo C (empate, en el motor) | 0,0 % | 15,2 % | 13,9 % | 0,0 % | 0,0 % | 11,9 % | 0,0 % | —
+A + B | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | —
+A + B + C | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | —
+A + B + C + D (total firmado ← canónica) | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | —
+
+## tramos 30/40/30 · decimal · 21/10/4 % · 4000 presupuestos · 12000 facturas
+escenario | ①1566 página≠PDF presup. (IVA) | ②623 PDF factura≠XML | ③624 total impreso≠guardado | página presup. no cuadra consigo | PDF presup. no cuadra consigo | PDF factura no cuadra consigo | XML no cuadra consigo | presup.≠factura (IVA, única)
+hoy | 10,3 % | 40,0 % | 19,9 % | 48,1 % | 46,8 % | 34,9 % | 0,0 % | —
+sólo A (PDF factura ← canónica) | 10,3 % | 0,0 % | 0,0 % | 48,1 % | 46,8 % | 0,0 % | 0,0 % | —
+sólo B (pie presup. ← canónica) | 0,0 % | 40,0 % | 19,9 % | 48,1 % | 48,1 % | 34,9 % | 0,0 % | —
+sólo C (empate, en el motor) | 10,3 % | 40,0 % | 19,8 % | 48,1 % | 46,8 % | 34,9 % | 0,0 % | —
+A + B | 0,0 % | 0,0 % | 0,0 % | 48,1 % | 48,1 % | 0,0 % | 0,0 % | —
+A + B + C | 0,0 % | 0,0 % | 0,0 % | 48,1 % | 48,1 % | 0,0 % | 0,0 % | —
+A + B + C + D (total firmado ← canónica) | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | —
+
+CONTROL · réplicas comprobadas contra las funciones reales en 1700 presupuestos (y sus facturas)

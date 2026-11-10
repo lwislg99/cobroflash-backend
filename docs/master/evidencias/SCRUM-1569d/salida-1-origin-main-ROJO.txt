@@ -1,0 +1,24 @@
+# SCRUM-1569d · banco-cinco.mjs contra el dist de origin/main = fe65a8b7f (tsc --noCheck), ANTES del arreglo. Se espera ROJO: las cinco EN CLARO.
+POBLACION: 33 modelos · merchant→merchants · customer→customers · customerSite→customer_sites
+dist: <arbol>/dist
+suprimir: ok=true redactados=merchant:1 customer:1 emailMessage:0 customerSite:1 whatsAppMessage:0
+updateMany pedidos: merchant:name,email,legalName,taxId,address,whatsappPhone | customer:name,phone,email,legalName,taxId,notes | emailMessage:toEmail | customerSite:phone,contactName | whatsAppMessage:toPhone
+  CINCO       merchants.iban               A: EN CLARO  · B: intacto
+  CINCO       merchants.clabe              A: EN CLARO  · B: intacto
+  CINCO       merchants.bizum_phone        A: EN CLARO  · B: intacto
+  CINCO       customers.mobile             A: EN CLARO  · B: intacto
+  CINCO       customer_sites.name          A: EN CLARO  · B: intacto
+  YA_ESTABAN  merchants.name               A: redactado · B: intacto
+  YA_ESTABAN  merchants.whatsapp_phone     A: redactado · B: intacto
+  YA_ESTABAN  customers.name               A: redactado · B: intacto
+  YA_ESTABAN  customers.phone              A: redactado · B: intacto
+  YA_ESTABAN  customer_sites.contact_name  A: redactado · B: intacto
+  YA_ESTABAN  customer_sites.phone         A: redactado · B: intacto
+  SIN_DECIDIR merchants.country            A: EN CLARO  · B: intacto
+  SIN_DECIDIR customer_sites.address       A: EN CLARO  · B: intacto
+  SIN_DECIDIR customer_sites.city          A: EN CLARO  · B: intacto
+  SIN_DECIDIR customer_sites.postal_code   A: EN CLARO  · B: intacto
+  SIN_DECIDIR customer_sites.province      A: EN CLARO  · B: intacto
+  SIN_DECIDIR customer_sites.country       A: EN CLARO  · B: intacto
+RECUENTO: de las 5 de c.20142, 5 EN CLARO · control positivo 6/6 redactados · control negativo 0/6 tocados · vecino 0 tocados
+TESTIGO: el banco corrio entero · EXIT=0

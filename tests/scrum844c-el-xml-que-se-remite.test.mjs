@@ -40,6 +40,9 @@ const { MAX_REGISTROS_POR_ENVIO } =
   await import('../dist/modules/fiscal/verifactu/registro.builder.js');
 const { PRODUCTOR_VERIFACTU } =
   await import('../dist/modules/fiscal/verifactu/productor.js');
+// SCRUM-524g: el quinto campo de la guarda (`numInstalacion`) ya no es constante del productor.
+const { numeroInstalacion } =
+  await import('../dist/modules/fiscal/verifactu/instalacion.js');
 
 // ── El banco: el mismo patrón que `scrum145`, un doble que distingue las dos consultas ─────────
 const MERCHANT = {
@@ -270,7 +273,15 @@ test('SCRUM-844c · 🔴 EL ENLACE: la guarda es inalcanzable PORQUE ninguna con
     `🔴 ${vacias.join(', ')} está vacía. La guarda fail-closed de `
     + '`buildVerifactuRegistrosXml` ha dejado de ser inalcanzable: a partir de ahora ESTE '
     + 'merchant no puede emitir su registro. Es un STOP, no un fallo de test.');
-  assert.equal(Object.keys(PRODUCTOR_VERIFACTU).length, CAMPOS_DEL_PRODUCTOR.length,
-    '🔴 el productor ya no tiene cinco datos: la guarda de arriba está mirando una lista que ya '
-    + 'no es la del fichero, y este enlace dejó de medir lo que dice medir');
+  // SCRUM-524g: los cinco campos de la guarda son CUATRO constantes del productor + UNO del
+  // comercio (`numeroInstalacion(merchant.id)`, que salió de `productor.ts`). Ese quinto tampoco
+  // puede llegar vacío: se comprueba aquí, con el demo (id=1) y un comercio cualquiera.
+  assert.equal(Object.keys(PRODUCTOR_VERIFACTU).length + 1, CAMPOS_DEL_PRODUCTOR.length,
+    '🔴 el productor ya no tiene cuatro datos (+ el número de instalación del comercio = cinco): la '
+    + 'guarda de arriba está mirando una lista que ya no es la del fichero, y este enlace dejó de '
+    + 'medir lo que dice medir');
+  const sinNumero = [1, 7].filter((id) => !String(numeroInstalacion(id) ?? '').trim());
+  assert.deepEqual(sinNumero, [],
+    `🔴 numeroInstalacion() sale vacío para el comercio ${sinNumero.join(', ')}: la guarda fail-closed `
+    + 'de `buildVerifactuRegistrosXml` ha dejado de ser inalcanzable y ese comercio no puede emitir.');
 });

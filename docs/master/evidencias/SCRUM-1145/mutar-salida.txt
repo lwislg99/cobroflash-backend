@@ -1,0 +1,13 @@
+POBLACION · 9 mutaciones declaradas · node v24.18.0
+BASE sin mutar · exit 0 · 13 = 12 pass + 0 fail + 1 skip
+origin/main (sin la pestaña) · MUERE · caen 12 de 13
+MUERE · public/dashboard/js/customerDetailView.js · cae «la lista se pide AL ABRIRLA» · caídas 3 de 13
+MUERE · public/dashboard/js/customerDetailView.js · cae «la PRIMERA fila es la dirección fiscal» · caídas 7 de 13
+MUERE · public/dashboard/js/customerDetailView.js · cae «SIN preguntar» · caídas 1 de 13
+MUERE · public/dashboard/js/customerDetailView.js · cae «ALTA:» · caídas 2 de 13
+MUERE · public/dashboard/js/customerDetailView.js · cae ««Cómo llegar» en cada sitio CON dirección» · caídas 1 de 13
+MUERE · public/dashboard/js/customerDetailView.js · cae «si la lista no carga» · caídas 1 de 13
+MUERE · public/dashboard/js/customerDetailView.js · cae «EDICIÓN:» · caídas 1 de 13
+MUERE · public/dashboard/js/customerDetailView.js · cae «PARTE LÍNEA» · caídas 1 de 13
+MUERE · public/dashboard/css/styles.css · cae «PARTE LÍNEA» · caídas 1 de 13
+todas MUEREN por su caso

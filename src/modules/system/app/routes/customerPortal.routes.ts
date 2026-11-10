@@ -1,7 +1,8 @@
 // src/modules/system/app/routes/customerPortal.routes.ts
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
-import { formatMoneyEs, formatImporteEs } from '../../../../core/utils/utils'; // A22.1: dinero es-ES con símbolo
+import { formatMoneyEs, formatImporteEs, calcTotal, type QuoteLine } from '../../../../core/utils/utils'; // A22.1: dinero es-ES con símbolo
+import { lineasQueSuman } from '../../../quotes/domain/apartados'; // SCRUM-1568
 import { getLocale } from '../../../../core/i18n/locales';
 import { esc } from '../../../../core/utils/utils';
 import { BASE_URL } from '../../../../core/config/env';
@@ -11,7 +12,8 @@ import { recordCustomerEvent } from '../../customerEvents.service';
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { ensureQuoteDecisionToken } from '../../../quotes/domain/quoteToken.service'; // SCRUM-95
 import { cardChargeMode } from '../../../billing/domain/cardCharge'; // SCRUM-893
-import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1018
+import { comercioSuprimido } from '../../../billing/domain/comercioSuprimido'; // SCRUM-1573b
+import { zonaDelMerchant, diaNaturalEn } from '../../../../core/zonaDelMerchant'; // SCRUM-1018 · 1471b
 
 const router = Router();
 
@@ -48,13 +50,15 @@ function dateShort(d: Date | string, zona: string) {
   return new Date(d).toLocaleDateString('es', { timeZone: zona, day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-// SCRUM-1471 · 🔴 LA FECHA DE LA FACTURA SIGUE CON EL RELOJ DEL PROCESO, Y NO ES UN OLVIDO. Su gemelo
-// es la «Fecha:» del PDF de esa factura (`dateStr`, en `pdf.service.ts`), que se pinta igual, y esa
-// fecha es fiscal: qué día imprime la decide el fundador (SCRUM-1470, aceptación 2). El papel y su
-// gemelo cambian juntos o no cambian; el día que se decida, esta función desaparece y la tarjeta
-// entera usa `dateShort`.
-function fechaDeLaFactura(d: Date | string) {
-  return new Date(d).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' });
+// SCRUM-1471b · LA FECHA DE LA FACTURA ES EL DÍA NATURAL DE SU REGISTRO. Decisión del fundador
+// (SCRUM-1470 c.20530, «Sí, el mismo día»): su gemelo, la «Fecha:» del PDF de la factura (`dateStr`,
+// SCRUM-1470c), y la `FechaExpedicionFactura` del registro salen de `diaNaturalEn(createdAt, zona)`.
+// El día se pide a ESA función, no a `toLocaleDateString` con zona: así el portal no puede decir otro
+// día que el registro aunque las dos formas de calcularlo divergieran. Sólo se le pone la forma corta.
+// Sin zona declarada, `zonaDelMerchant` da UTC y la tarjeta dice lo que decía.
+function fechaDeLaFactura(d: Date | string, zona: string) {
+  const dia = new Date(`${diaNaturalEn(new Date(d), zona)}T00:00:00Z`);
+  return dia.toLocaleDateString('es', { timeZone: 'UTC', day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 function css() {
@@ -230,6 +234,42 @@ ${body}
 </html>`;
 }
 
+/**
+ * SCRUM-1568 · el importe de UNA línea del presupuesto, con su descuento de línea y su IVA.
+ *
+ * Aquí ponía `qty||1 × price||0 × (1+tax)`: sin el `dto`, mientras el total de la tarjeta sí lo
+ * lleva. Con 2 × 100 € al 21 % y un 10 % de descuento, la línea decía 242,00 € y el total 217,80 €,
+ * y el portal no tiene pie que explique la resta. Decisión del fundador (c.21043): la línea va CON
+ * el descuento, sin fila nueva. Por eso no hay cuenta propia: es `calcTotal` sobre la línea sola,
+ * el MISMO término (`precioConDto` × IVA) con el que se guardó el total.
+ *
+ * Una cabecera de apartado es un título y sale VACÍA, como en la página de firma y en el PDF
+ * (c.21043, punto 2); antes salía «0,00 €». Se reconoce por su marca, con `lineasQueSuman`.
+ */
+function importeDeLineaDelPresupuesto(l: QuoteLine, currency: string): string {
+  if (lineasQueSuman([l]).length === 0) return '';
+  const importe = calcTotal([l]);
+  return Number.isFinite(importe) ? formatMoneyEs(importe, currency) : '';
+}
+
+/**
+ * SCRUM-1624b · la fila «Descuento global» de la tarjeta del presupuesto, o `null` si no hay.
+ *
+ * Con SCRUM-1568 cada línea lleva su descuento de LÍNEA, pero el global sólo lo restaba el total:
+ * con 20 € de global, las filas sumaban 278,30 € y el total decía 254,10 €. Firma del fundador
+ * (SCRUM-1624 c.21094): una fila más, la PRIMERA, con el rótulo de la tarjeta de factura, en
+ * negativo y CON IVA, y su importe es la diferencia entre dos `calcTotal` —la función que guardó
+ * el total—, sin cuenta propia. El rótulo es el de `invoiceLines.service.ts`, que no se exporta
+ * porque es camino de emisión (regla 38); scrum1624b comprueba que los dos dicen lo mismo.
+ */
+function filaDescuentoGlobalDelPresupuesto(lineas: QuoteLine[], global: unknown): { concepto: string; importe: number } | null {
+  if (global == null || global === '') return null;
+  const sinGlobal = calcTotal(lineas);
+  const conGlobal = calcTotal(lineas, String(global));
+  if (!(conGlobal < sinGlobal)) return null;
+  return { concepto: 'Descuento global', importe: Math.round((conGlobal - sinGlobal) * 100) / 100 };
+}
+
 // ── GET /cliente/:token ──────────────────────────────────────────────────
 router.get('/:token', async (req, res) => {
   const { token } = req.params;
@@ -323,7 +363,8 @@ router.get('/:token', async (req, res) => {
   // SCRUM-893: una sola vez para toda la página. Si se preguntara dentro del bucle de facturas,
   // dos filas del mismo merchant podrían acabar contestando distinto el día que alguien toque el
   // criterio — y el portal enseñaría el botón en una factura y no en la de al lado.
-  const puedeTarjeta = cardChargeMode(m) !== 'refuse';
+  // SCRUM-1573b · un comercio suprimido no ofrece ninguna vía de cobro (c.21057): el portal sigue abierto.
+  const puedeTarjeta = !comercioSuprimido(m) && cardChargeMode(m) !== 'refuse';
   const mName      = esc(m.legalName || m.name || 'Tu proveedor');
   const initial    = esc((m.name || m.legalName || 'Y').trim().charAt(0).toUpperCase());
   const logoHtml   = m.logoUrl
@@ -338,18 +379,25 @@ router.get('/:token', async (req, res) => {
   // ── Cotizaciones ────────────────────────────────────────────────────────
   const quotesHtml = quotes.length
     ? quotes.map((q) => {
-        const hasLines = Array.isArray(q.lines) && (q.lines as any[]).length > 0;
+        const lineasDelPresupuesto = Array.isArray(q.lines) ? q.lines as any[] : [];
+        const hasLines = lineasDelPresupuesto.length > 0;
+        // SCRUM-1624b · P3 la fila va la primera; P4 no se cuenta en «Ver detalles (N líneas)».
+        const filaDescuentoGlobal = hasLines ? filaDescuentoGlobalDelPresupuesto(lineasDelPresupuesto, q.discountGlobalAmount) : null;
+        const nLineas = lineasDelPresupuesto.length;
         const linesHtml = hasLines
           ? `<div class="pf-lines">
               <button class="pf-lines-toggle">
-                <span class="pf-chevron">▼</span> Ver detalles (${(q.lines as any[]).length} línea${(q.lines as any[]).length !== 1 ? 's' : ''})
+                <span class="pf-chevron">▼</span> Ver detalles (${nLineas} línea${nLineas !== 1 ? 's' : ''})
               </button>
               <div class="pf-lines-body">
-                ${(q.lines as any[]).map((l: any) => {
-                  const total = Number(l.qty||1) * Number(l.price||0) * (1 + Number(l.tax||0));
+                ${filaDescuentoGlobal ? `<div class="pf-line-row">
+                    <span class="pf-line-concept">${esc(filaDescuentoGlobal.concepto)}</span>
+                    <span class="pf-line-amount">${formatMoneyEs(filaDescuentoGlobal.importe, q.currency)}</span>
+                  </div>` : ''}
+                ${lineasDelPresupuesto.map((l: any) => {
                   return `<div class="pf-line-row">
                     <span class="pf-line-concept">${esc(l.concept||'')}</span>
-                    <span class="pf-line-amount">${formatMoneyEs(total, q.currency)}</span>
+                    <span class="pf-line-amount">${importeDeLineaDelPresupuesto(l, q.currency)}</span>
                   </div>`;
                 }).join('')}
               </div>
@@ -423,7 +471,7 @@ router.get('/:token', async (req, res) => {
               <div class="pf-card-row">
                 <div>
                   <div class="pf-card-title">Factura ${esc(inv.number)}</div>
-                  <div class="pf-card-meta">${fechaDeLaFactura(inv.createdAt)}${inv.paidAt ? ' · Pagada ' + dateShort(inv.paidAt, zonaDelNegocio) : ''}</div>
+                  <div class="pf-card-meta">${fechaDeLaFactura(inv.createdAt, zonaDelNegocio)}${inv.paidAt ? ' · Pagada ' + dateShort(inv.paidAt, zonaDelNegocio) : ''}</div>
                 </div>
                 <div>
                   <div class="pf-card-amount">${formatMoneyEs(Number(inv.total), inv.currency)}</div>

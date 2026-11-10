@@ -1,0 +1,105 @@
+dia	run	evento	rama	conclusion_job	paso_seg_api	estado_log	log_bytes	N_lineas	vivas	ciegas	muertos	guards	fase_seg	seg_por_mutacion
+2026-09-20	35537122940	push	main	success	698	COMPLETO	88140	310	310	0	0	93	698	2.25
+2026-09-20	35535041423	pull_request	scrum-804h-la-fase-con-corte	cancelled	389	sin-log								
+2026-09-20	35533229669	pull_request	scrum-906g-propuestas-holded	success	577	COMPLETO	90189	310	310	0	0	93	577	1.86
+2026-09-20	35515050350	pull_request	scrum-906f-firma-holded-medida	cancelled	581	sin-log								
+2026-09-21	35641697674	push	main	success	707	COMPLETO	89127	314	314	0	0	94	707	2.25
+2026-09-21	35634652593	pull_request	scrum-1012b-contabilidad-competencia	cancelled	204	sin-log								
+2026-09-21	35628355238	push	main	cancelled	507	sin-log								
+2026-09-21	35617157403	push	main	success	556	COMPLETO	89091	314	314	0	0	94	556	1.77
+2026-09-22	35799922861	push	main	success	718	COMPLETO	90506	320	320	0	0	96	718	2.24
+2026-09-22	35792965236	pull_request	scrum-1085-pregunta-rectificativa-emisor	success	723	COMPLETO	91725	320	320	0	0	96	722	2.26
+2026-09-22	35714946845	pull_request	scrum-977-veto-erp-crm-constancia	failure	669	sin-log								
+2026-09-22	35710082875	push	main	SIN-JOB		sin-log								
+2026-09-23	35909106341	push	main	success	794	COMPLETO	88992	320	320	0	0	96	793	2.48
+2026-09-23	35898902553	pull_request	scrum-1106-volcado-qc1-a-qc7-asesor	failure	610	COMPLETO	90371	320	319	0	0	96	610	1.91
+2026-09-23	35888097894	pull_request	scrum-1039b-ordenes-modelos-casillas	failure	723	sin-log								
+2026-09-23	35851650090	pull_request	scrum-1092-lanzador-cwd-por-sesion	success	790	sin-log								
+2026-09-24	36028511500	push	main	success	688	COMPLETO	88509	320	320	0	0	96	687	2.15
+2026-09-24	36026115894	pull_request	scrum-804b-el-barrido-de-la-42	success	801	COMPLETO	89569	320	320	0	0	96	801	2.50
+2026-09-24	36024245098	pull_request	scrum-1042-ajuste-foto-tecnico	success	830	sin-log								
+2026-09-24	36011346585	push	main	failure	799	sin-log								
+2026-09-25	36183751800	push	main	success	685	COMPLETO	89196	320	320	0	0	96	684	2.14
+2026-09-25	36175082418	pull_request	scrum-1049-resumen-trimestre-pantalla	success	795	COMPLETO	90869	320	320	0	0	96	795	2.48
+2026-09-25	36170110502	pull_request	scrum-1116c-firma-digest	failure	807	sin-log								
+2026-09-25	36162620570	pull_request	scrum-1108c-firma-microcopy	success	799	sin-log								
+2026-09-26	36246236356	push	main	success	682	COMPLETO	89222	322	322	0	0	96	682	2.12
+2026-09-26	36243789625	pull_request	scrum-1091-guard-cwd-posix	success	704	COMPLETO	90303	322	322	0	0	96	704	2.19
+2026-09-26	36242329649	pull_request	scrum-904-checklist-completar-honesto	success	646	sin-log								
+2026-09-26	36225327292	pull_request	scrum-786-checkbox-export-44px	success	706	sin-log								
+2026-09-27	36340047517	push	main	success	816	COMPLETO	89026	324	324	0	0	96	816	2.52
+2026-09-27	36337141231	pull_request	scrum-1174-textos-del-presupuesto	failure	628	COMPLETO	90709	324	323	1	0	96	628	1.94
+2026-09-27	36334654923	pull_request	scrum-1176-s0-abre-no-cierra	failure	811	sin-log								
+2026-09-27	36332269136	push	main	SIN-JOB		sin-log								
+2026-09-28	36497716616	push	main	success	749	COMPLETO	90253	326	326	0	0	97	749	2.30
+2026-09-28	36488991981	pull_request	scrum-1257-vacio-facturas-segun-modo	success	847	COMPLETO	91380	326	326	0	0	97	847	2.60
+2026-09-28	36479006050	push	main	SIN-JOB		sin-log								
+2026-09-28	36457081043	push	main	SIN-JOB		sin-log								
+2026-09-29	36611573227	push	main	failure	770	COMPLETO	97461	357	354	1	0	107	770	2.16
+2026-09-29	36605012714	push	main	SIN-JOB		sin-log								
+2026-09-29	36598960917	pull_request	scrum-1276-decision-solo-sobre-sent	failure	851	COMPLETO	95621	345	343	0	0	104	851	2.47
+2026-09-29	36587888906	pull_request	scrum-1209-aplicados-en-las-tres	failure	739	sin-log								
+2026-09-30	36792374547	push	main	failure	863	COMPLETO	96800	357	355	0	0	107	863	2.42
+2026-09-30	36787589644	push	main	SIN-JOB		sin-log								
+2026-09-30	36782547832	push	main	SIN-JOB		sin-log								
+2026-09-30	36778365482	pull_request	scrum-1196-cloudflare-l3	failure	877	COMPLETO	98113	357	355	0	0	107	877	2.46
+2026-10-01	36911463721	push	main	success	1146	COMPLETO	105255	418	418	0	0	122	1146	2.74
+2026-10-01	36881969807	push	main	SIN-JOB		sin-log								
+2026-10-01	36872791738	pull_request	scrum-1231-logo-solo-imagen-subida	cancelled		sin-log								
+2026-10-01	36868152641	pull_request	scrum-1356-latido-enganchado	cancelled		sin-log								
+2026-10-02	37047049994	push	main	failure	1197	COMPLETO	110381	446	444	2	0	128	1188	2.66
+2026-10-02	37039552194	push	main	SIN-JOB		sin-log								
+2026-10-02	37032255635	pull_request	scrum-1431-rechazo-escapado	failure	1208	COMPLETO	111817	443	442	0	1	127	1208	2.73
+2026-10-02	37015285708	pull_request	scrum-1418-sesiones-que-no-volvieron	failure	929	sin-log								
+2026-10-06	37526058657	push	main	success	1338	COMPLETO	121260	510	510	0	0	136	1337	2.62
+2026-10-06	37509258392	pull_request	scrum-1480c-fila-de-s3-siete-no-nueve	success	1279	COMPLETO	119740	493	493	0	0	134	1280	2.60
+2026-10-06	37473924238	pull_request	scrum-1456-ids-que-no-caben-en-la-columna	success	1219	sin-log								
+2026-10-06	37469648084	pull_request	scrum-1474-latido-relevo	failure	1055	sin-log								
+2026-10-07	37704733412	pull_request	scrum-1503b-la-dirigida-y-los-guards-de-arbol	failure	1146	COMPLETO	125201	520	519	1	0	139	1146	2.20
+2026-10-07	37659841425	push	main	SIN-JOB		sin-log								
+2026-10-07	37653376075	pull_request	scrum-1436c-los-dos-literales-del-aviso-de-disputa	success	1144	COMPLETO	124039	520	520	0	0	139	1144	2.20
+2026-10-07	37646176498	pull_request	scrum-1484c-la-a19-dice-que-el-latido-avisa	failure	1333	sin-log								
+2026-10-08	37764283834	push	main	failure	983	COMPLETO	123978	520	519	1	0	139	983	1.89
+2026-10-08	37748430877	pull_request	scrum-1513b-donde-va-el-cerrojo	cancelled	59	sin-log								
+2026-10-08	37718019828	push	main	SIN-JOB		sin-log								
+2026-10-08	37713984150	pull_request	scrum-1509c-los-topes-de-plantillas	failure	1344	COMPLETO	125243	520	519	1	0	139	1344	2.58
+2026-10-09	37927852725	push	main	failure	1167	COMPLETO	124409	520	519	1	0	139	1167	2.24
+2026-10-09	37925072703	pull_request	scrum-876g-t4-albaran-y-firma-al-banco	cancelled	1028	sin-log								
+2026-10-09	37918922460	push	main	failure	949	COMPLETO	124163	520	519	1	0	139	949	1.82
+2026-10-09	37917131681	pull_request	scrum-1150-un-codigo-por-causa	cancelled	204	sin-log								
+2026-10-13	38426733925	push	main	failure	1045	COMPLETO	126747	534	533	1	0	142	1045	1.96
+2026-10-13	38414620072	push	main	success	1002	COMPLETO	124301	524	524	0	0	140	1002	1.91
+2026-10-13	38401555087	pull_request	scrum-1538b-el-registro	success	1405	sin-log								
+2026-10-13	38391533994	push	main	SIN-JOB		sin-log								
+2026-10-14	38612195748	push	main	failure	1612	COMPLETO	137478	589	588	1	0	156	1602	2.72
+2026-10-14	38603749371	pull_request	scrum-1302s-dos-firmas-del-parte-a-la-vez	failure	1166	COMPLETO	137272	580	578	2	0	154	1165	2.01
+2026-10-14	38594721326	pull_request	scrum-1273-archivar-presupuestos	cancelled	730	sin-log								
+2026-10-14	38539197545	pull_request	scrum-1254-reaper-segundo-plano	failure	1572	sin-log								
+2026-10-15	38786809083	push	main	failure	1597	COMPLETO	138621	593	592	1	0	158	1597	2.69
+2026-10-15	38778828390	push	main	success	1635	COMPLETO	138869	593	593	0	0	158	1634	2.76
+2026-10-15	38771461239	pull_request	scrum-1190-el-adicional-ya-suma	success	1479	sin-log								
+2026-10-15	38767940212	pull_request	scrum-999c-queda-uso-medido	success	1662	sin-log								
+2026-10-16	38910338111	push	main	cancelled	1769	sin-log								
+2026-10-16	38902679498	pull_request	scrum-1559c-dos-botones-vuestros-a-31px	cancelled	1777	sin-log								
+2026-10-16	38898984257	pull_request	scrum-951f-blocked-no-es-atasco	cancelled	1779	sin-log								
+2026-10-16	38894701681	push	main	SIN-JOB		sin-log								
+2026-10-17	39080979137	pull_request	scrum-1519d-la-revision-ata-el-cliente	success	1569	COMPLETO	140617	604	604	0	0	158	1570	2.60
+2026-10-17	39073059050	pull_request	scrum-1357f-pregunta-sin-proceso	success	1682	COMPLETO	140729	604	604	0	0	158	1682	2.78
+2026-10-17	39068044781	pull_request	scrum-1560-datos-de-muestra-con-forma-del-servidor	cancelled	1627	sin-log								
+2026-10-17	39064999853	push	main	SIN-JOB		sin-log								
+2026-10-18	39159620511	push	main	success	1687	COMPLETO	141132	615	615	0	0	161	1687	2.74
+2026-10-18	39155963324	push	main	SIN-JOB		sin-log								
+2026-10-18	39152597462	pull_request	scrum-1011b-lanzar-dice-por-que	cancelled	1777	sin-log								
+2026-10-18	39148623762	pull_request	scrum-1559h-el-arreglo-de-1405c-no-llega-a-cero	cancelled	1778	sin-log								
+2026-10-19	39252337299	push	main	success	1732	COMPLETO	141312	615	615	0	0	161	1732	2.82
+2026-10-19	39247363850	pull_request	scrum-1444d-importes-pantalla-y-papel	cancelled	126	sin-log								
+2026-10-19	39242614393	pull_request	scrum-49e-copiar-enlace-de-firma	success	1451	COMPLETO	142221	615	615	0	0	161	1451	2.36
+2026-10-19	39214659759	push	main	SIN-JOB		sin-log								
+2026-10-20	39449841582	push	main	cancelled	1777	sin-log								
+2026-10-20	39412199759	push	main	cancelled	1779	sin-log								
+2026-10-20	39409183666	push	main	success	1492	COMPLETO	141875	615	615	0	0	161	1491	2.42
+2026-10-20	39405741620	pull_request	scrum-1456b-borrar-y-fusionar-con-id-que-cabe	cancelled	739	sin-log								
+2026-10-21	39610512525	push	main	SIN-JOB		sin-log								
+2026-10-21	39606876542	push	main	SIN-JOB		sin-log								
+2026-10-21	39605052252	pull_request	scrum-1574-la-sonda-no-decide-el-salto	success	1646	COMPLETO	144204	622	622	0	0	162	1646	2.65
+2026-10-21	39601941821	push	main	SIN-JOB		sin-log								

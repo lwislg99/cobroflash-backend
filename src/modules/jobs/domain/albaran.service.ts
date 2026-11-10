@@ -792,7 +792,8 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
   const [merchant, job] = await Promise.all([
     prisma.merchant.findUnique({
       where: { id: albaran.merchantId },
-      select: { name: true, legalName: true, taxId: true, address: true, logoUrl: true, whatsappPhone: true },
+      // SCRUM-1445: `timezone`, para que el papel imprima sus fechas en el día del negocio.
+      select: { name: true, legalName: true, taxId: true, address: true, logoUrl: true, whatsappPhone: true, timezone: true },
     }),
     prisma.job.findUnique({ where: { id: albaran.jobId } }),
   ]);
@@ -831,7 +832,7 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
     // es correcto: el sello no los nombra, así que no puede contradecir al papel. Queda declarado
     // en `docs/master/SCRUM-452.md`. ⚠️ `logoUrl` no tiene arreglo posible por esta vía ni en un
     // v:4: congelar la URL no congela la imagen que hay detrás de ella.
-    merchant: merchant ?? { address: null, logoUrl: null, whatsappPhone: null },
+    merchant: merchant ?? { address: null, logoUrl: null, whatsappPhone: null, timezone: null },
     customer: { taxId: customer?.taxId ?? null },
     // ── SCRUM-300 + SCRUM-438 · EL PDF IMPRIME LO QUE SE SELLÓ, Y AHORA SON LOS CINCO ────────
     //

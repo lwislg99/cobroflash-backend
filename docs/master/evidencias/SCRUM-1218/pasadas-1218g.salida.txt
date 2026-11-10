@@ -1,0 +1,62 @@
+# SCRUM-1218g · banco-1218e, turno de yaqu_dev_javier (tomado 21:02:42Z, soltado 21:13:00Z), 3 pasadas por fichero
+## ANTES (los 7 ficheros restaurados desde 506281b13^, sin migrar)
+pdfs.test.mjs · pasada 0 · exit=0 · firma=false · casos=4 (ok=4 not_ok=0 skip=0) · # tests 4 · respuestas=3
+pdfs.test.mjs · pasada 1 · exit=0 · firma=false · casos=4 (ok=4 not_ok=0 skip=0) · # tests 4 · respuestas=3
+pdfs.test.mjs · pasada 2 · exit=0 · firma=false · casos=4 (ok=4 not_ok=0 skip=0) · # tests 4 · respuestas=3
+POBLACION=3 pasadas · EXIT=0
+scrum221-export-fiscal-cero-bytes.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=6
+scrum221-export-fiscal-cero-bytes.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=6
+scrum221-export-fiscal-cero-bytes.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=6
+POBLACION=3 pasadas · EXIT=0
+scrum74-recibo-token.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=7
+scrum74-recibo-token.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=7
+scrum74-recibo-token.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=7
+POBLACION=3 pasadas · EXIT=0
+scrum148-filtro-por-miembro.test.mjs · pasada 0 · exit=0 · firma=false · casos=2 (ok=2 not_ok=0 skip=0) · # tests 2 · respuestas=6
+scrum148-filtro-por-miembro.test.mjs · pasada 1 · exit=0 · firma=false · casos=2 (ok=2 not_ok=0 skip=0) · # tests 2 · respuestas=6
+scrum148-filtro-por-miembro.test.mjs · pasada 2 · exit=0 · firma=false · casos=2 (ok=2 not_ok=0 skip=0) · # tests 2 · respuestas=6
+POBLACION=3 pasadas · EXIT=0
+scrum82-zip-verifactu.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+scrum82-zip-verifactu.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+scrum82-zip-verifactu.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+POBLACION=3 pasadas · EXIT=0
+scrum25-export-zip.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+scrum25-export-zip.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+scrum25-export-zip.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+POBLACION=3 pasadas · EXIT=0
+scrum25-exports.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=19
+scrum25-exports.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=19
+scrum25-exports.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=19
+POBLACION=3 pasadas · EXIT=0
+## DESPUES (506281b13)
+pdfs.test.mjs · pasada 0 · exit=0 · firma=false · casos=4 (ok=4 not_ok=0 skip=0) · # tests 4 · respuestas=3
+pdfs.test.mjs · pasada 1 · exit=0 · firma=false · casos=4 (ok=4 not_ok=0 skip=0) · # tests 4 · respuestas=3
+pdfs.test.mjs · pasada 2 · exit=0 · firma=false · casos=4 (ok=4 not_ok=0 skip=0) · # tests 4 · respuestas=3
+POBLACION=3 pasadas · EXIT=0
+scrum221-export-fiscal-cero-bytes.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=6
+scrum221-export-fiscal-cero-bytes.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=6
+scrum221-export-fiscal-cero-bytes.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=6
+POBLACION=3 pasadas · EXIT=0
+scrum74-recibo-token.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=7
+scrum74-recibo-token.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=7
+scrum74-recibo-token.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=7
+POBLACION=3 pasadas · EXIT=0
+scrum148-filtro-por-miembro.test.mjs · pasada 0 · exit=0 · firma=false · casos=2 (ok=2 not_ok=0 skip=0) · # tests 2 · respuestas=6
+scrum148-filtro-por-miembro.test.mjs · pasada 1 · exit=0 · firma=false · casos=2 (ok=2 not_ok=0 skip=0) · # tests 2 · respuestas=6
+scrum148-filtro-por-miembro.test.mjs · pasada 2 · exit=0 · firma=false · casos=2 (ok=2 not_ok=0 skip=0) · # tests 2 · respuestas=6
+POBLACION=3 pasadas · EXIT=0
+scrum82-zip-verifactu.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+scrum82-zip-verifactu.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+scrum82-zip-verifactu.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+POBLACION=3 pasadas · EXIT=0
+scrum25-export-zip.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+scrum25-export-zip.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+scrum25-export-zip.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+POBLACION=3 pasadas · EXIT=0
+scrum25-exports.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=19
+scrum25-exports.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=19
+scrum25-exports.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=19
+POBLACION=3 pasadas · EXIT=0
+## MUTACION: en pdfs, arrayBuffer() devuelve new ArrayBuffer(0)
+pdfs.test.mjs · pasada 0 · exit=1 · firma=false · casos=4 (ok=3 not_ok=1 skip=0) · # tests 4 · respuestas=2
+POBLACION=1 pasadas · EXIT=0

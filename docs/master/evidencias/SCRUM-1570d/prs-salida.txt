@@ -1,0 +1,14 @@
+== #2447 head=scrum-1016m-titular-y-h1-firmados merged=2026-10-14T09:09:51Z merge=7f5e1dd22
+  1dd5c960c run=38537485984 ev=pull_request 2026-10-14T08:46:17Z nav=failure job=115763804780
+     DEFECTOS (salida 1) · 1 guard(s) midieron y encontraron algo :: 36 verdes · 0 CIEGOS · 1 rojo. Han medido y hay hallazgos: guard:cls-barra-anuncio.
+== #2445 head=scrum-1302p-el-enlace-de-una-revision-antigua merged=2026-10-14T08:53:45Z merge=ebe2b932c
+  171eeb1ce run=38536273903 ev=pull_request 2026-10-14T08:36:11Z nav=failure job=115759803364
+     DEFECTOS (salida 1) · 1 guard(s) midieron y encontraron algo :: 36 verdes · 0 CIEGOS · 1 rojo. Han medido y hay hallazgos: guard:firma-con-tramos.
+== #2439 head=scrum-1257e-modo-en-ajustes-navegador merged=2026-10-14T08:53:09Z merge=4f487bb17
+  52595646c run=38534078867 ev=pull_request 2026-10-14T08:17:36Z nav=success job=115752609605
+  22117c0a1 run=38536165459 ev=pull_request 2026-10-14T08:35:16Z nav=success job=115760005431
+== #2434 head=scrum-1295b-de-con-varias-rutas merged=2026-10-14T09:10:44Z merge=79531cf84
+  e53cb8012 run=38532278982 ev=pull_request 2026-10-14T08:01:54Z nav=success job=115765793748
+== #2436 head=scrum-1463c-cierres-en-el-latido merged=2026-10-14T09:18:43Z merge=78100767b
+  72999f73d run=38532594102 ev=pull_request 2026-10-14T08:04:39Z nav=success job=115747743986
+  691d70240 run=38538100111 ev=pull_request 2026-10-14T08:51:22Z nav=success job=115765842923

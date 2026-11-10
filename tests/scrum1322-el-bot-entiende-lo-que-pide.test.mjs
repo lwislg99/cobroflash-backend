@@ -218,21 +218,21 @@ const SECRETO = 'secreto-de-prueba-scrum1322';
 let serie = 0;
 
 /** Un cliente con UN presupuesto en `sent` escribe `texto`. Devuelve lo que pasó de verdad. */
-async function escribe(texto, { botEncendido = false } = {}) {
+async function escribe(texto, { botEncendido = false, deBaja = false, negocio = 'Fontanería Ruiz' } = {}) {
   const cambios = [];      // lo que se escribe en el presupuesto
   const envios = [];       // lo que sale por WhatsApp
   const alBot = [];        // lo que se le pasa al menú del bot
   delete require_.cache[R_RUTA];
   poner(R('core/db/prisma.js'), { prisma: {
     customer: {
-      findMany: async () => [{ id: 3, merchantId: 42, name: 'Ana' }],
+      findMany: async () => [{ id: 3, merchantId: 42, name: 'Ana', waOptOut: deBaja }],
       findUnique: async () => ({ name: 'Ana' }),
     },
     quote: {
       findMany: async () => [{ id: 11, merchantId: 42, customerId: 3, status: 'sent', quoteNumber: 'P-0011', total: 250, currency: 'EUR' }],
       update: async (a) => { cambios.push(a.data.status); return {}; },
     },
-    merchant: { findUnique: async () => ({ id: 42, name: 'Fontanería Ruiz', email: null, whatsappPhone: PRO,
+    merchant: { findUnique: async () => ({ id: 42, name: negocio, email: null, whatsappPhone: PRO,
       notifyEmailOnQuoteAccepted: false, country: 'ES', flags: null }) },
     whatsAppMessage: { findFirst: async () => null },
   } });
@@ -328,4 +328,65 @@ test('SCRUM-1322 · por efecto, con el bot encendido: lo que no es decisión va 
   const si = await escribe(acepta, { botEncendido: true });
   assert.deepEqual(si.cambios, ['accepted'], `🔴 con el bot encendido, «${acepta}» no acepta`);
   assert.deepEqual(si.alBot, [], 'una decisión no se le pasa al menú del bot');
+});
+
+// ── 6 · SCRUM-1322c: lo que se le contesta al que acepta ───────────────────────────────────────
+// Literal firmado por el fundador en SCRUM-1322 comentario 20957 (opción A): «{Negocio} ya tiene
+// tu confirmación.» sustituye a «Te avisaremos con los siguientes pasos.», que prometía un aviso
+// que nadie manda y que al cliente dado de baja ni siquiera le podría llegar. {Negocio} es el
+// `name` del comercio del doble de arriba. Por efecto: el webhook real, no la lectura del fichero.
+const NEGOCIO = 'Fontanería Ruiz';
+const RESPUESTA_FIRMADA =
+  `✅ ¡Perfecto! Hemos registrado tu aceptación del presupuesto #P-0011. ${NEGOCIO} ya tiene tu confirmación.`;
+
+// La frase que se retira, tal como estaba en main hasta SCRUM-1322c. Sólo sirve de control: el
+// negativo de abajo tiene que cazarla, o no estaría mirando nada.
+const LA_PROMESA_RETIRADA =
+  '✅ ¡Perfecto! Hemos registrado tu aceptación del presupuesto #P-0011. Te avisaremos con los siguientes pasos.';
+
+async function aceptaYRecibe(deBaja) {
+  const { acepta } = loQuePideElBot()[0];
+  const r = await escribe(acepta, { deBaja });
+  assert.deepEqual(r.cambios, ['accepted'], `CIEGO: «${acepta}» no aceptó; la respuesta de abajo no sería la de aceptar`);
+  assert.doesNotMatch(r.alCliente.join('\n'), /Te avisaremos/i, '🔴 ha vuelto «Te avisaremos», la promesa que nadie cumple');
+  assert.deepEqual(r.alCliente, [RESPUESTA_FIRMADA], '🔴 la respuesta al aceptar no es el literal firmado');
+}
+
+test('SCRUM-1322c · control: el negativo caza la frase retirada', () => {
+  assert.match(LA_PROMESA_RETIRADA, /Te avisaremos/i);
+  assert.doesNotMatch(RESPUESTA_FIRMADA, /Te avisaremos/i);
+});
+
+test('🔴 SCRUM-1322c · el cliente normal que acepta recibe el literal firmado, exacto', async () => {
+  await aceptaYRecibe(false);
+});
+
+test('🔴 SCRUM-1322c · el cliente DADO DE BAJA que acepta recibe el literal firmado, exacto', async () => {
+  await aceptaYRecibe(true);
+});
+
+// ── 7 · SCRUM-1322d: el comercio sin nombre ────────────────────────────────────────────────────
+// Literal de reserva firmado por el fundador en SCRUM-1322 comentario 20977: si `merchant.name`
+// llega vacío o solo con espacios, «Tu profesional ya tiene tu confirmación.». Con nombre, sigue
+// el de c.20957. Antes de 1322d, un nombre vacío daba « ya tiene tu confirmación.».
+const RESPUESTA_SIN_NOMBRE =
+  '✅ ¡Perfecto! Hemos registrado tu aceptación del presupuesto #P-0011. Tu profesional ya tiene tu confirmación.';
+
+async function aceptaConNegocio(negocio) {
+  const { acepta } = loQuePideElBot()[0];
+  const r = await escribe(acepta, { negocio });
+  assert.deepEqual(r.cambios, ['accepted'], `CIEGO: «${acepta}» no aceptó; la respuesta de abajo no sería la de aceptar`);
+  return r.alCliente;
+}
+
+test('🔴 SCRUM-1322d · comercio con el nombre VACÍO: el cliente recibe el literal de reserva, exacto', async () => {
+  assert.deepEqual(await aceptaConNegocio(''), [RESPUESTA_SIN_NOMBRE], '🔴 nombre vacío: no sale «Tu profesional…»');
+});
+
+test('🔴 SCRUM-1322d · comercio con el nombre SOLO CON ESPACIOS: el cliente recibe el literal de reserva, exacto', async () => {
+  assert.deepEqual(await aceptaConNegocio('   '), [RESPUESTA_SIN_NOMBRE], '🔴 nombre de espacios: no sale «Tu profesional…»');
+});
+
+test('SCRUM-1322d · comercio CON nombre: sigue saliendo el nombre, no la reserva', async () => {
+  assert.deepEqual(await aceptaConNegocio(NEGOCIO), [RESPUESTA_FIRMADA], '🔴 con nombre ya no sale «{Negocio} ya tiene…»');
 });

@@ -1,0 +1,24 @@
+# node docs/master/evidencias/SCRUM-1498/1498d-simula-por-job.mjs <1498c-datos-2026-10-17..10-24.json de 19eb5b933a5979a5e39c2479e3c703662f1dced7> 500
+# motor: scripts/vigia-silencio-de-main.mjs de la rama scrum-1498d-vigia-absuelve-verde (con c.20795 y c.20802)
+POBLACION commits=280 (2026-10-17T19:39:28Z → 2026-10-24T11:48:09Z) · con run=278 · réplicas=500 · pool por job: build=81 guards=81 meta-guard=81 trinquete=81 vigía=81 constancia=81
+
+(A) conclusiones reales · mediana [IC90] de commits por clase, sobre 280:
+    75 [65-82]   26.8 %  absuelto por el siguiente obligatorio en verde (c.20802)
+    67 [59-75]   23.9 %  CIEGO · otro (meta-guard)
+    46 [38-53]   16.4 %  absuelto por su obligatorio (c.20795)
+    31 [24-39]   11.1 %  CIEGO · obligatorio sustituido, sin la forma de (b): meta-guard
+    29 [25-33]   10.4 %  ROJO de otro job (obligatorio en verde)
+    12 [7-16]    4.3 %  CIEGO · otro (meta-guard, obligatorio en rojo)
+     9 [8-12]    3.2 %  VERDE
+     7 [2-13]    2.5 %  CIEGO · obligatorio sustituido, el siguiente salió ROJO
+     3 [2-4]    1.1 %  ROJO del obligatorio
+     2 [2-2]    0.7 %  absuelto por un verde posterior (1393e/f)
+  (suma de medianas: 281; no tiene por qué dar 280)
+
+(B) todo en success · mediana [IC90] de commits por clase, sobre 280:
+   119 [116-121]   42.5 %  absuelto por el siguiente obligatorio en verde (c.20802)
+   105 [100-108]   37.5 %  absuelto por su obligatorio (c.20795)
+    55 [51-58]   19.6 %  VERDE
+     2 [2-2]    0.7 %  absuelto por un verde posterior (1393e/f)
+  (suma de medianas: 281; no tiene por qué dar 280)
+EXIT=0

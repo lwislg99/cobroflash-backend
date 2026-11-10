@@ -1,0 +1,123 @@
+[destino] DATABASE_URL_DEV → acela.proxy.rlwy.net/yaqu_dev_javier (DESARROLLO) ✅
+[producción] DATABASE_URL_DEV → acela.proxy.rlwy.net/yaqu_dev_javier (declarado como no-producción) ✅
+control positivo: 33 CREATE TABLE (schema entero contra vacío)
+clase: con_cambios · bytes del diff: 3235
+──────── SQL (DEV → schema de origin/main) ────────
+-- DropForeignKey
+ALTER TABLE "public"."equipments" DROP CONSTRAINT "equipments_customer_id_fkey";
+
+-- DropForeignKey
+ALTER TABLE "public"."equipments" DROP CONSTRAINT "equipments_merchant_id_fkey";
+
+-- DropIndex
+DROP INDEX "public"."albaranes_equipment_id_idx";
+
+-- DropIndex
+DROP INDEX "public"."customers_merchant_id_callback_on_idx";
+
+-- DropIndex
+DROP INDEX "public"."jobs_equipment_id_idx";
+
+-- DropIndex
+DROP INDEX "public"."maintenance_plans_equipment_id_idx";
+
+-- DropIndex
+DROP INDEX "public"."partes_trabajo_equipment_id_idx";
+
+-- AlterTable
+ALTER TABLE "albaranes" DROP COLUMN "equipment_id",
+DROP COLUMN "firmado_en_dispositivo_at",
+DROP COLUMN "ventana_suelo_at",
+DROP COLUMN "ventana_suelo_fuente";
+
+-- AlterTable
+ALTER TABLE "customers" DROP COLUMN "callback_note",
+DROP COLUMN "callback_on",
+DROP COLUMN "pay_methods_por_defecto";
+
+-- AlterTable
+ALTER TABLE "invoices" DROP COLUMN "retencion_irpf_importe";
+
+-- AlterTable
+ALTER TABLE "jobs" DROP COLUMN "equipment_id";
+
+-- AlterTable
+ALTER TABLE "maintenance_plans" DROP COLUMN "equipment_id";
+
+-- AlterTable
+ALTER TABLE "partes_trabajo" DROP COLUMN "equipment_id";
+
+-- AlterTable
+ALTER TABLE "products" ADD COLUMN     "sku" TEXT,
+ADD COLUMN     "supplier_ref" TEXT,
+ADD COLUMN     "unit" TEXT;
+
+-- AlterTable
+ALTER TABLE "quote_templates" DROP COLUMN "discount_global_amount";
+
+-- DropTable
+DROP TABLE "public"."equipments";
+
+-- CreateTable
+CREATE TABLE "customer_sites" (
+    "id" SERIAL NOT NULL,
+    "merchant_id" INTEGER NOT NULL,
+    "customer_id" INTEGER NOT NULL,
+    "name" TEXT NOT NULL,
+    "address" TEXT,
+    "city" TEXT,
+    "postal_code" TEXT,
+    "province" TEXT,
+    "country" TEXT,
+    "contact_name" TEXT,
+    "phone" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "customer_sites_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE INDEX "customer_sites_merchant_id_idx" ON "customer_sites"("merchant_id");
+
+-- CreateIndex
+CREATE INDEX "customer_sites_customer_id_idx" ON "customer_sites"("customer_id");
+
+-- AddForeignKey
+ALTER TABLE "customer_sites" ADD CONSTRAINT "customer_sites_merchant_id_fkey" FOREIGN KEY ("merchant_id") REFERENCES "merchants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "customer_sites" ADD CONSTRAINT "customer_sites_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "quote_assignees" ADD CONSTRAINT "quote_assignees_quote_id_fkey" FOREIGN KEY ("quote_id") REFERENCES "quotes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "quote_assignees" ADD CONSTRAINT "quote_assignees_team_member_id_fkey" FOREIGN KEY ("team_member_id") REFERENCES "team_members"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "invoice_assignees" ADD CONSTRAINT "invoice_assignees_invoice_id_fkey" FOREIGN KEY ("invoice_id") REFERENCES "invoices"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "invoice_assignees" ADD CONSTRAINT "invoice_assignees_team_member_id_fkey" FOREIGN KEY ("team_member_id") REFERENCES "team_members"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+──────── destructivas: 20
+   ALTER TABLE "public"."equipments" DROP CONSTRAINT "equipments_customer_id_fkey";
+   ALTER TABLE "public"."equipments" DROP CONSTRAINT "equipments_merchant_id_fkey";
+   DROP INDEX "public"."albaranes_equipment_id_idx";
+   DROP INDEX "public"."customers_merchant_id_callback_on_idx";
+   DROP INDEX "public"."jobs_equipment_id_idx";
+   DROP INDEX "public"."maintenance_plans_equipment_id_idx";
+   DROP INDEX "public"."partes_trabajo_equipment_id_idx";
+   ALTER TABLE "albaranes" DROP COLUMN "equipment_id",
+   DROP COLUMN "firmado_en_dispositivo_at",
+   DROP COLUMN "ventana_suelo_at",
+   DROP COLUMN "ventana_suelo_fuente";
+   ALTER TABLE "customers" DROP COLUMN "callback_note",
+   DROP COLUMN "callback_on",
+   DROP COLUMN "pay_methods_por_defecto";
+   ALTER TABLE "invoices" DROP COLUMN "retencion_irpf_importe";
+   ALTER TABLE "jobs" DROP COLUMN "equipment_id";
+   ALTER TABLE "maintenance_plans" DROP COLUMN "equipment_id";
+   ALTER TABLE "partes_trabajo" DROP COLUMN "equipment_id";
+   ALTER TABLE "quote_templates" DROP COLUMN "discount_global_amount";
+   DROP TABLE "public"."equipments";

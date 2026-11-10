@@ -838,7 +838,7 @@ la factura, o cuando pida su borrado?
 
 # Q-C1…Q-C9 · Contabilidad para un autónomo de oficio (bloquea CON-08/09, `docs/producto/CONTABILIDAD.md` §4)
 
-> **Propuesta de S0, 22-sep-2026 (SCRUM-1039/CON-03) — dueño J4: pendiente de tu visto bueno.**
+> **Propuesta de S0, 22-sep-2026 (SCRUM-1039/CON-03) — dueño J4: visto bueno de J4 (sesión jv-j4an, 26-oct-2026, SCRUM-1039e) a la formulación y a las marcas de Q-C1…Q-C9, tras aplicar los arreglos 1, 3 y 4 de `docs/master/SCRUM-1039.md` §1039d; comprobado: las citas LIVA de Q-C2 y Q-C9 contra el consolidado del BOE de hoy, por script con control negativo (`docs/master/evidencias/scrum1039/scrum1039e-cotejo-liva.mjs`). No es la respuesta del asesor ni la firma del fundador: ninguna respuesta de este bloque está confirmada.**
 > Nacen de `docs/producto/CONTABILIDAD.md` §1 y §3: el diseño del bloque de Contabilidad leyó el
 > código y dedujo qué hace falta, y cada regla fiscal que usa lleva su cita oficial comprobada por
 > script (`docs/verificacion/comprobar-citas-contabilidad.mjs`, 26/26 citas literales, control
@@ -886,8 +886,8 @@ se baja con `curl`, nunca con WebFetch.
 🔴 **El alcance se estrecha mucho.** Tres condiciones ACUMULATIVAS, y en un oficio fallan a menudo:
 1. destinatario **empresario o profesional** actuando como tal — un particular nunca es promotor;
 2. la obra global tiene que ser **construcción o rehabilitación** en el sentido del art.
-   20.Uno.22º.B LIVA (**NO VERIFICADO** ⚠: >50 % del coste en estructura/fachadas/cubiertas, y coste
-   >25 % del valor). **Una reforma de baño, por grande que sea, NO es rehabilitación → NO hay ISP
+   20.Uno.22.º.B LIVA, **cita comprobada por script** contra el consolidado del 26-oct-2026 (SCRUM-1039e, `docs/master/evidencias/scrum1039/scrum1039e-cotejo-liva.mjs`, con control negativo): 1.º *«Que su objeto principal sea la reconstrucción de las mismas, entendiéndose cumplido este requisito cuando más del 50 por ciento del coste total del proyecto de rehabilitación se corresponda con obras de consolidación o tratamiento de elementos estructurales, fachadas o cubiertas o con obras análogas o conexas a las de rehabilitación.»* — la coletilla «o con obras análogas o conexas a las de rehabilitación» es la que decide el ejemplo del baño de abajo, y el mismo apartado B dice después qué obras son análogas y cuáles conexas (no transcrito aquí);
+   2.º *«Que el coste total de las obras a que se refiera el proyecto exceda del 25 por ciento del precio de adquisición de la edificación si se hubiese efectuado aquélla durante los dos años inmediatamente anteriores al inicio de las obras de rehabilitación o, en otro caso, del valor de mercado que tuviera la edificación o parte de la misma en el momento de dicho inicio.»* (y descuenta la parte del suelo). **Una reforma de baño, por grande que sea, NO es rehabilitación → NO hay ISP
    aunque el cliente sea una empresa**;
 3. el destinatario debe **comunicarlo expresa y fehacientemente** (art. 24 *quater* RIVA, **NO
    VERIFICADO** ⚠). Con esa comunicación el emisor queda protegido; sin ella responde quien se
@@ -975,8 +975,8 @@ ningún 303 (sin llamadores).
 porque hay facturas históricas que los usan. Textual: _«a un oficio no le aplican nunca; en el
 código pueden quedar como valores admitidos pero NO OFRECIDOS»_.
 
-**Q-C8.** Plazos trimestrales · ⚠️ **RESPUESTA DE IA (23-sep-2026), SIN REVISIÓN PROFESIONAL (SCRUM-1261, c.17638), pendiente de tu
-confirmación.** Perfil consultado: autónomo de oficio, estimación directa, régimen general de IVA,
+**Q-C8.** Plazos trimestrales · ⚠️ **RESPUESTA DE IA (23-sep-2026), SIN REVISIÓN PROFESIONAL (SCRUM-1261, c.17638); visto bueno de J4 (26-oct-2026, SCRUM-1039e) a esta marca, no a la respuesta:
+la respuesta sigue sin confirmar y va al asesor.** Perfil consultado: autónomo de oficio, estimación directa, régimen general de IVA,
 clientes particulares y empresas. **El asesor marcó él mismo con ⚠ lo que citó de memoria** — por la
 regla de oro de `docs/producto/CONTABILIDAD.md` §0, ninguna cita ⚠ entra aquí como cita comprobada:
 va marcada **NO VERIFICADO** hasta que alguien la coteje contra el BOE consolidado (pendiente,
@@ -1027,15 +1027,15 @@ de las facturas.»* Es una propuesta de producto, no un texto de pantalla: sin f
 citan de su propia orden ministerial (las seis ya localizadas en SCRUM-1039b), no de memoria del
 asesor.
 
-**Q-C9.** ✅ **RESPONDIDA por cita, pendiente de tu confirmación.** Se revisó LIVA art. 7 completo
-(los 12 supuestos de no sujeción: transmisión de negocio, muestras gratuitas, relación laboral,
-Administraciones Públicas, cesiones de dinero…) y art. 20.Uno, encabezado + los 5 primeros apartados
-de una lista más larga (postal universal, sanidad, profesiones médicas/sanitarias). **Ninguno de los
-revisados aplica** a la venta ordinaria de un servicio de reforma/instalación de un oficio. No se
-transcribió el resto de 20.Uno (~30 apartados más: educación, financiero, seguros, alquiler de
-vivienda…) por no ser candidatos plausibles. **Pregunta:** ¿conoces algún supuesto real de un oficio
+**Q-C9.** ✅ **RESPONDIDA por cita sólo en lo que mira (LIVA arts. 7 y 20.Uno); no cubre el art. 3 ni los arts. 21 a 25 y 68 a 70.** Conclusión escrita por una sesión de IA (S0, 22-sep-2026), no por un asesor; la cita, comprobada por script y recotejada por J4 el 26-oct-2026 contra la última versión consolidada (art. 7, vigente desde el 21-dic-2022; art. 20, versión publicada el 7-oct-2026). Visto bueno de J4 (SCRUM-1039e) a esta marca; la respuesta sigue sin confirmar.
+Se revisó LIVA art. 7 completo (los 12 supuestos de no sujeción: transmisión de negocio, muestras
+gratuitas, relación laboral, Administraciones Públicas, cesiones de dinero…) y el art. 20.Uno, que
+tiene los números 1.º a 28.º, con el 21.º y el 27.º suprimidos: se cita el encabezado y el 1.º (postal
+universal) y se leyó el comienzo de los 28 (sanidad, educación, financiero, seguros, entregas de edificaciones, alquiler de vivienda…). **Ninguno de los
+leídos aplica** a la venta ordinaria de un servicio de reforma/instalación de un oficio. **Fuera de los arts. 7 y 20 sí hay casos, y la pregunta no los miraba.** Art. 3 (cita comprobada por script, SCRUM-1039e): *«El ámbito espacial de aplicación del impuesto es el territorio español, determinado según las previsiones del apartado siguiente»*, y ese apartado (Dos.1.º) excluye del «interior del país» *«en el Reino de España, Ceuta y Melilla»* (letra a) y *«En el Reino de España, Canarias»* (letra b): una obra allí queda fuera del ámbito de este impuesto. **NO VERIFICADO** (de memoria, no bajados): las exenciones de los arts. 21 a 25 (exportaciones, entregas intracomunitarias) y las reglas de lugar de realización de los arts. 68 a 70 (un servicio sobre un inmueble situado fuera de España).
+**Pregunta:** ¿conoces algún supuesto real de un oficio
 de YaQu (electricista, fontanero, reformista, pintor, cerrajero, climatización) que caiga en una
-exención o no sujeción del resto de la lista? Si la respuesta es «ninguno», Exento/No sujeto puede
+exención o no sujeción del resto de la lista? ¿Y fuera de los arts. 7 y 20: Canarias, Ceuta y Melilla, o una obra en un inmueble fuera de España? Si la respuesta es «ninguno» a las dos, Exento/No sujeto puede
 quedar fuera del selector de tipos de IVA en vez de construirse sin caso de uso.
 
 **Fuentes citadas arriba, con SHA-256 de la descarga y método de comprobación:**
@@ -1117,9 +1117,9 @@ todas las versiones").
 
 # P20. 🔴 La huella sella el REGISTRO — ¿también tiene que ser inmutable el PDF entregado?
 
-> **Formulada por J4 (SCRUM-1087). Del enunciado de SCRUM-665, sin preguntar desde el 2-sep-2026 —
-> hoy bloquea una decisión de diseño, y por eso es la más urgente de las dos preguntas de esta
-> entrada.**
+> **Formulada por J4 (SCRUM-1087). Del enunciado de SCRUM-665, sin preguntar desde el 2-sep-2026.**
+> **Nota de estado (SCRUM-665c, 27-oct-2026) · RESPONDIDA POR JAVIER el 23-sep-2026, con fuente oficial, en SCRUM-665 comentario 16647 — no es dictamen de un profesional, y Javier lo dice él mismo.** Lo que responde: el RRSIF sólo sella el REGISTRO; el ROF exige además conservar la copia «con su contenido original» (art. 19.2) y legible «en el formato original en el que se hayan recibido o remitido» (art. 21.1), y la FAQ de conservación de la AEAT (NOTA 1) dice que factura y registro «son productos diferentes». Una regeneración que cambie cualquier mención ya no es la copia expedida. Vía que recomienda Javier: **(a)**, archivar el fichero y servir siempre ése. Con eso, las preguntas 1), 2) y 3) de abajo quedan contestadas por él y ya no bloquean el diseño.
+> **Lo que SIGUE ABIERTO para el asesor, y sólo esto:** (i) confirmar como profesional lo que Javier respondió con la norma delante; (ii) el reparto de la custodia del art. 19.3 ROF —YaQu como tercero que conserva «en nombre y por cuenta» del merchant—, que la vía (a) convierte en real. Lo que bloquea hoy la vía (a) no es esta pregunta: es el GO de coste del fundador (almacenamiento nuevo, SCRUM-665c). En SCRUM-1264 esta pregunta es la **D1** y figura «SIN RESPUESTA»: está desfasado.
 
 **Medido hoy, no supuesto:** el PDF de una factura emitida se **regenera** con el código actual cada
 vez que falta en disco. `ensureInvoicePdf` (`src/lib/invoicing.ts`) comprueba
@@ -1156,6 +1156,140 @@ momento de la emisión (aunque el disco donde vive hoy sea efímero), o hace fal
 
 **Bloquea:** decisión de diseño sobre `ensureInvoicePdf` (`src/lib/invoicing.ts`) y
 `generateInvoicePdf` (`src/modules/invoicing/infra/pdf/pdf.service.ts`).
+
+---
+
+# P22. `1242` «No existe el sistema informático»: ¿hay que dar de ALTA el sistema ante la AEAT? (bloquea el tratamiento de la respuesta en la remisión, S1-D)
+
+> **Origen: SCRUM-524c.** Redactada por J5 (21-oct-2026) en `docs/master/SCRUM-524.md`, tramo
+> «SCRUM-524c», a partir de SCRUM-524 ④.1; pasada a este documento por J4 (SCRUM-524d) sin cambiar
+> el contenido. **P22 a P25 son las cuatro de ese tramo.** Se salta el 21 porque `§21` ya es la
+> pregunta de los cinco avisos del Libro registro, citada así desde otros registros.
+>
+> **Fuente común de los literales AEAT de P22 a P25:** `docs/legal/fuentes/aeat-errores.properties`. Es el
+> `errores.properties` oficial bajado el **29-jul-2026** de
+> `prewww2.aeat.es/…/tikeV1.0/cont/ws/errores.properties` (`docs/legal/SEMAFORO_CALIBRACION.md` §0).
+> Su SHA-256 es `152fec33…`, el mismo hoy en el repo. ⚠️ El de **producción** (`www2.agenciatributaria.gob.es`,
+> bajado el 28-sep-2026, SCRUM-1211 A2) tiene **otro** SHA-256 (`06519ceb…`). **No he comparado si cambian
+> estos cuatro códigos entre las dos copias.**
+
+**Literal AEAT (1xxx, rechaza la factura):** «No existe el sistema informático.» Su vecino, `1241`, es
+«Error técnico al obtener el SistemaInformatico».
+
+**La discrepancia, dentro de nuestra propia documentación:**
+- `docs/legal/SEMAFORO_CALIBRACION.md` (29-jul-2026), en la fila de `1242` del bloque
+  `SistemaInformatico`, dice que salta **«hasta que el SIF esté dado de alta»**.
+- La skill `verifactu` §6 (actualizada el 19-ago-2026) dice que la declaración responsable **«NO se
+  presenta ante la AEAT»**: es un requisito del propio programa (art. 13 RRSIF + art. 15 de la Orden).
+- SCRUM-524 ④.1 lo planteó como «¿se refiere a la consulta y no al alta?».
+
+Las dos premisas no pueden ser ciertas a la vez **si «alta» significa presentar algo antes del primer
+envío**.
+
+**1)** ¿Existe algún trámite (alta, comunicación o registro del sistema informático) que el productor o
+el obligado tengan que hacer ante la AEAT **antes** de remitir el primer registro? Si existe, ¿cuál y
+quién lo hace?
+
+**2)** Si no existe: ¿cómo «conoce» la AEAT el sistema para poder responder `1242`? ¿Lo da de alta el
+primer envío correcto con ese `NIF` + `IdSistemaInformatico` + `Version`? ¿Y un cambio de `Version` o
+de productor (P19) puede hacer saltar `1242` en el siguiente envío?
+
+**3)** Ante un `1242`, ¿se reintenta igual el mismo registro, o se para la remisión de ese sistema
+hasta corregir algo? ¿Y qué se corrige?
+
+**Lo que NO sabemos:** de dónde sacó «dado de alta» `SEMAFORO_CALIBRACION.md`. La fila no cita
+artículo, y no lo he rastreado. **El articulado no está en el repositorio**: `PREGUNTAS_ASESOR.md` (E)
+dice que en `docs/legal/fuentes/` no hay copia ni del RD 1007/2023 ni de la Orden HAC/1177/2024.
+
+---
+
+# P23. `4141` suspensión temporal de acceso: ¿cómo se degrada sin perder registros? (bloquea el diseño de la cola de remisión, S1-D / ROAD-29)
+
+> **Origen: SCRUM-524c** (J5, a partir de SCRUM-524 ④.2). Fuente de los literales AEAT: la de P22.
+
+**Literal AEAT (4xxx, rechaza el ENVÍO COMPLETO):** «Le informamos que su acceso al sistema VERIFACTU
+ha sido suspendido temporalmente para realizar cualquier solicitud. Para resolver este inconveniente,
+le solicitamos que se ponga en contacto con nuestro equipo de soporte a través del buzón de correo
+electrónico verifactu@correo.aeat.es, donde le atenderán con la mayor brevedad posible.»
+
+**Por qué no basta la cola de reintentos:** según SCRUM-524 ④.2, el reintento periódico que pide la
+norma ante una **caída del servicio** (art. 16.4, «≥ 1/hora»; cita de 524, **no releída por mí en el
+BOE**) no resuelve una **suspensión**. El literal no promete fecha de fin y manda escribir a un buzón,
+así que reintentar a ciegas contra ella puede agravarla.
+
+**1)** Una suspensión, ¿a quién afecta: al **certificado** que remite (el de YaQu como colaborador
+social o apoderado, apartado A de `PREGUNTAS_ASESOR.md`), al **obligado** o al **sistema** (`IdSistemaInformatico`)? Si es
+al certificado de YaQu, una sola suspensión para la remisión de **todos** los comercios.
+
+**2)** Mientras dura, ¿cuenta como la imposibilidad de remitir por causas ajenas que contempla la
+norma? ¿O el obligado incumple por cada registro que no llega? ¿Hay plazo máximo para remitir lo
+acumulado?
+
+**3)** ¿Hay que avisar a algún sitio, además del buzón? ¿Y debe enterarse el **obligado** (el
+profesional), dado que la responsabilidad del cumplimiento sigue siendo suya (art. 6 RRSIF, citado en
+la respuesta A de `PREGUNTAS_ASESOR.md`)?
+
+**Lo que NO sabemos:** qué provoca una suspensión. El literal no lo dice y no hay otra fuente en el
+repositorio. Tampoco cuánto puede durar.
+
+---
+
+# P24. `1287` y el escape XML: ¿la AEAT valida el texto escapado o el desescapado? (bloquea si hace falta sanear en la ENTRADA los campos de texto libre)
+
+> **Origen: SCRUM-524c** (J5, a partir de SCRUM-524 ③ y ④.3). Fuente de los literales AEAT: la de P22.
+
+**Literal AEAT (1xxx, rechaza la factura):** «El valor del campo %s contiene carácteres no validos (<,
+>, ", ', =).» (sic). El `%s` dice que se aplica **a cualquier campo**, no sólo a la serie.
+
+**Lo que hace hoy el código, leído (no modificado):** el texto que escribe el profesional
+(`concept`) llega a `<sum1:DescripcionOperacion>`, y el nombre del cliente a `<sum1:NombreRazon>`
+del destinatario, pasados por `xmlEscape` (`src/modules/invoicing/domain/verifactu.service.ts`). Esa
+función sustituye `& < > " '` por `&amp; &lt; &gt; &quot; &apos;`. **El `=` no se escapa: no hace
+falta en XML.** Sólo `NumSerieFactura` se sanea en la entrada (`fiscalInput.ts`, `PROHIBIDOS_SERIE`).
+
+Ejemplos reales del oficio: «Cambio de llave 1/2"», un cliente «D'Ors», «potencia >= 3 kW».
+
+**1)** El validador de la AEAT, ¿aplica `1287` al valor **después** de interpretar el XML (con lo que
+`&quot;` vuelve a ser `"` y se rechaza) o al texto tal cual llega?
+
+**2)** Si es lo primero: ¿qué hacemos con lo que escribe el profesional? ¿Sustituir los caracteres
+(¿por cuáles?), quitarlos o rechazar la línea al crearla? ¿Y el **nombre de un cliente** que lleva un
+apóstrofo, que es su nombre legal?
+
+**3)** El `=` no lo toca nadie hoy en estos dos campos. ¿Confirmas que también provoca `1287` en
+`DescripcionOperacion`?
+
+**Lo que NO sabemos:** la respuesta se podría **medir** contra el entorno de pruebas de la AEAT, y hoy no
+tenemos remisión ni certificado para hacerlo (SCRUM-524 ④.3). **Una factura emitida no se edita**
+(regla 29): si la respuesta es «se desescapa», el arreglo es en la entrada, antes de emitir.
+
+---
+
+# P25. Dos valores del bloque `SistemaInformatico` en un SaaS con muchos obligados — **RESPONDIDA por fuente oficial y DECIDIDA; no es respuesta del asesor ni va a la cita** (Orden HAC/1177/2024, anexo 2.6, y FAQ de desarrolladores de la AEAT v1.3: SCRUM-524e · opción B y GO del fundador: SCRUM-524 c.20291 y c.20295 · en `main` desde #2695)
+
+> **Origen: SCRUM-524c** (J5, a partir de SCRUM-524 ④.4). ✅ **Respondida por fuente oficial, sin asesor** (SCRUM-524e, 22-oct-2026, por OK del fundador en SCRUM-524 c.20209): Orden HAC/1177/2024, anexo 2.6 «SistemaInformatico» (API de legislación consolidada del BOE: versión única, vigente desde 2024-10-29, sin modificar) y AEAT, «Aclaraciones a dudas de los desarrolladores», versión 1.3, 4-dic-2025, apartado 4 (**criterio publicado de la AEAT, no norma**). **1)** `NumeroInstalacion`: no vale un «1» para todos; cada facturación lleva un número propio, que no se repite nunca. **2)** `TipoUsoPosibleMultiOT` = `S` es correcto; `IndicadorMultiplesOT` se calcula por usuario del SaaS: `N` si sólo tiene una facturación.
+> **Decidida:** el fundador eligió la opción B —el número se deriva del id del comercio, sin ALTER; «usuario» = la cuenta— (SCRUM-524 c.20291) y dio el GO de la regla 40 (c.20295: los 2 NIF repetidos de producción son cuentas de prueba). Aplicada en `main` por #2695 (SCRUM-524g). **No va al asesor** (SCRUM-524 c.20974). Quién es el productor sigue en P19. El texto de debajo es la pregunta tal como se redactó el 21-oct, antes de leer la Orden: se conserva como estaba y no es la respuesta.
+> **Cotejo de estas citas (SCRUM-524i, 26-oct-2026):** la Orden, en la API consolidada del BOE (40 bloques, todos de 2024-10-28; el anexo, una sola versión con vigencia 2024-10-29 y el apartado 2.6 en las imágenes `22138_14945631_1.png` y `_2.png`). La FAQ no tiene copia en el repositorio: la sede sirve hoy el mismo fichero que leyó 524e (691.549 B, `last-modified` 10-dic-2025, «Versión 1.3», 4 de diciembre de 2025) y trae literales «por cada usuario del SIF SaaS», «no a nivel global del SIF SaaS» y «no puede repetirse nunca». **NO VERIFICADO:** el texto de las dos imágenes del anexo 2.6, y que esos literales estén en el apartado 4, págs. 9-10.
+
+Lo que va en cada registro hoy, **leído en el código**: `NumeroInstalacion` = `"1"`
+(`VERIFACTU_NUM_INSTALACION`, `productor.ts`), y `TipoUsoPosibleMultiOT` = `S` e
+`IndicadorMultiplesOT` = `S`, fijos en los dos generadores (`registro.builder.ts` los comenta como
+«SaaS multi-tenant → 'S'»; `verifactu.service.ts` los escribe literales). XSD vendorizado
+(`SuministroInformacion.xsd`, `SistemaInformaticoType`): `NumeroInstalacion` es texto de hasta 100
+caracteres; los otros dos, `S`/`N`.
+
+**1)** `NumeroInstalacion`: en un SaaS en el que **un** sistema emite para **muchos** obligados, ¿es una
+sola instalación (`"1"` para todos) o hay que numerar una por obligado, o por comercio? Si es por
+obligado, ¿quién asigna el número y debe ser estable en el tiempo?
+
+**2)** `IndicadorMultiplesOT` = `S`: ¿describe el **sistema** (YaQu atiende a varios obligados) o la
+**instalación** desde la que se remite (este obligado usa el sistema con otros)? Si es lo segundo, un
+comercio que sólo factura para sí mismo, ¿debería llevar `N`?
+
+**Lo que NO sabemos:** el significado normativo de los dos campos. **No hay copia de la Orden en el
+repositorio y no la he leído.** Por eso la pregunta va marcada como candidata: puede que la Orden la
+conteste sin asesor. Los códigos de error de estos campos (`1212`, `1213` y `1226` en SCRUM-524
+②/524b) sólo comprueban que el valor sea `S` o `N`, no que sea el **correcto**.
 
 ---
 

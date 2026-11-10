@@ -114,14 +114,21 @@ test('SCRUM-1522e · la tabla tiene las 52 provincias: dos con la hora de Canari
     '🔴 la península y Canarias no están en días distintos a las 22:30Z de un día de verano');
 });
 
+// SCRUM-1536d: un alta de España contesta además las dos preguntas del domicilio fiscal (Jira
+// SCRUM-1536 c.20225). Con «no» y «no» la zona sigue saliendo de la provincia, como aquí se mide.
+const NO_NO = { 'domicilio-foral': 'no', 'domicilio-canarias': 'no' };
+
 test('SCRUM-1522e · un alta de España guarda la zona de su provincia, y la consola dice cuál', async () => {
-  // Las dos que cambian, escritas como las teclea alguien: espacios, mayúsculas y sin tildes.
-  assert.deepEqual(await naceEn({ provincia: '  las PALMAS ' }), { guardada: CANARIAS, dicha: CANARIAS, pais: 'ES' });
-  assert.deepEqual(await naceEn({ provincia: 'Santa Cruz de Tenerife', country: 'ES' }), { guardada: CANARIAS, dicha: CANARIAS, pais: 'ES' });
+  // 🔵 SCRUM-1536d (decisión del fundador, Jira SCRUM-1536 c.20225 ①: Canarias fuera también por
+  // dónde se trabaja): las dos de la hora de Canarias YA NO NACEN. Hasta el 22-oct este caso decía
+  // que nacían con esa zona; ahora se comprueba que no crean nada, y por qué. Que la tabla les siga
+  // dando la hora de Canarias lo mide el primer test de este fichero, y es lo que las deja fuera.
+  await noNace({ provincia: '  las PALMAS ', ...NO_NO }, 'territorio_excluido');
+  await noNace({ provincia: 'Santa Cruz de Tenerife', country: 'ES', ...NO_NO }, 'territorio_excluido');
   // Y de las otras cincuenta: una corriente, una con tilde tecleada sin ella y Ceuta.
-  assert.deepEqual(await naceEn({ provincia: 'Madrid' }), { guardada: PENINSULA, dicha: PENINSULA, pais: 'ES' });
-  assert.deepEqual(await naceEn({ provincia: 'a coruna' }), { guardada: PENINSULA, dicha: PENINSULA, pais: 'ES' });
-  assert.deepEqual(await naceEn({ provincia: 'Ceuta' }), { guardada: PENINSULA, dicha: PENINSULA, pais: 'ES' });
+  assert.deepEqual(await naceEn({ provincia: 'Madrid', ...NO_NO }), { guardada: PENINSULA, dicha: PENINSULA, pais: 'ES' });
+  assert.deepEqual(await naceEn({ provincia: 'a coruna', ...NO_NO }), { guardada: PENINSULA, dicha: PENINSULA, pais: 'ES' });
+  assert.deepEqual(await naceEn({ provincia: 'Ceuta', ...NO_NO }), { guardada: PENINSULA, dicha: PENINSULA, pais: 'ES' });
 });
 
 test('SCRUM-1522e · un comercio de España sin provincia no se crea: ni a NULL ni de ninguna manera', async () => {
@@ -130,7 +137,7 @@ test('SCRUM-1522e · un comercio de España sin provincia no se crea: ni a NULL 
   await noNace({ provincia: '   ' }, 'provincia_required');
   await noNace({ provincia: 'Lisboa' }, 'provincia_desconocida');
   // El positivo de esas mismas negaciones: con la provincia, ese país en minúsculas SÍ crea.
-  assert.deepEqual(await naceEn({ country: 'es', provincia: 'Lugo' }), { guardada: PENINSULA, dicha: PENINSULA, pais: 'es' });
+  assert.deepEqual(await naceEn({ country: 'es', provincia: 'Lugo', ...NO_NO }), { guardada: PENINSULA, dicha: PENINSULA, pais: 'es' });
 });
 
 test('SCRUM-1522e · fuera de España el comercio nace sin zona, como hasta hoy: no hay tabla de otros países', async () => {
@@ -150,10 +157,13 @@ test('SCRUM-1522e · el origen mismo: `registerMerchant` no deja crear un comerc
   await assert.rejects(registerMerchant({ name: 'Provincia rara', email: 'origen-2-1522e@test.local', country: 'ES', provincia: 'Lisboa' }), { code: 'provincia_desconocida' });
   assert.equal(altas.length, 0, `🔴 un alta rechazada llegó a pedir un \`merchant.create\`: ${JSON.stringify(altas)}`);
 
-  await registerMerchant({ name: 'Con provincia', email: 'origen-3-1522e@test.local', provincia: 'Santa Cruz de Tenerife' });
+  // SCRUM-1536d: con la provincia, las dos respuestas del domicilio; y una de Canarias ya no nace
+  // (Jira SCRUM-1536 c.20225), así que la que nace con zona es peninsular.
+  await assert.rejects(registerMerchant({ name: 'En Canarias', email: 'origen-5-1522e@test.local', provincia: 'Santa Cruz de Tenerife', domicilio: { foral: false, canarias: false } }), { code: 'territorio_excluido' });
+  await registerMerchant({ name: 'Con provincia', email: 'origen-3-1522e@test.local', provincia: 'Valencia', domicilio: { foral: false, canarias: false } });
   await registerMerchant({ name: 'De fuera', email: 'origen-4-1522e@test.local', country: 'MX' });
   assert.deepEqual(altas.map((a) => [a.email, a.country, a.timezone]), [
-    ['origen-3-1522e@test.local', 'ES', CANARIAS],
+    ['origen-3-1522e@test.local', 'ES', PENINSULA],
     ['origen-4-1522e@test.local', 'MX', null],
   ]);
   // Lo que no puede volver a pasar, dicho sobre TODO lo que se pidió crear: ninguno de España sin zona.

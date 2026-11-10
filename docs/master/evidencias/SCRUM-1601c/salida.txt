@@ -1,0 +1,31 @@
+ficheros leídos: 334 · llamadas censadas: 25 · SQL crudo que escribe la tabla: 0
+src\integrations\whatsapp.ts:340 · recordWaMessage · status='failed' · waMessageId=false
+src\integrations\whatsapp.ts:439 · resolverReservaDePlantilla · status=(ausente) · waMessageId=shorthand
+src\integrations\whatsapp.ts:447 · recordWaMessage · status='sent' · waMessageId=shorthand
+src\integrations\whatsapp.ts:501 · resolverReservaDePlantilla · status=(ausente) · waMessageId=false
+src\integrations\whatsapp.ts:504 · resolverReservaDePlantilla · status=(ausente) · waMessageId=false
+src\integrations\whatsapp.ts:544 · recordWaMessage · status='failed' · waMessageId=false
+src\integrations\whatsapp.ts:578 · recordWaMessage · status='sent' · waMessageId=extractWaMessageId((text as any).data)
+src\integrations\whatsapp.ts:685 · recordWaMessage · status='failed' · waMessageId=false
+src\integrations\whatsapp.ts:771 · recordWaMessage · status='failed' · waMessageId=false
+src\integrations\whatsapp.ts:784 · recordWaMessage · status='sent' · waMessageId=shorthand
+src\integrations\whatsapp.ts:876 · recordWaMessage · status='failed' · waMessageId=false
+src\integrations\whatsapp.ts:889 · recordWaMessage · status='sent' · waMessageId=shorthand
+src\integrations\whatsapp.ts:990 · recordWaMessage · status='failed' · waMessageId=false
+src\integrations\whatsapp.ts:1003 · recordWaMessage · status='sent' · waMessageId=shorthand
+src\integrations\whatsapp.ts:1082 · recordWaMessage · status='failed' · waMessageId=false
+src\integrations\whatsapp.ts:1095 · recordWaMessage · status='sent' · waMessageId=shorthand
+src\integrations\whatsapp.ts:1167 · recordWaMessage · status='failed' · waMessageId=false
+src\integrations\whatsapp.ts:1180 · recordWaMessage · status='sent' · waMessageId=shorthand
+src\modules\messaging\domain\whatsappLog.service.ts:42 · whatsAppMessage.create · status=input.status ?? 'sent' · waMessageId=input.waMessageId ?? null
+src\modules\messaging\domain\whatsappLog.service.ts:182 · whatsAppMessage.create · status='queued' · waMessageId=false
+src\modules\messaging\domain\whatsappLog.service.ts:220 · whatsAppMessage.update · status=(ausente) · waMessageId=false
+src\modules\messaging\domain\whatsappLog.service.ts:223 · whatsAppMessage.update · status=(ausente) · waMessageId=false · spreads=[(desenlace.como === 'enviada' ? { status: 'sent', waMessageId: desenlace.waMessageId } : { status: 'failed', error: desenlace.error })]
+src\modules\messaging\domain\whatsappLog.service.ts:261 · whatsAppMessage.createMany · status=(no literal) · waMessageId=? · arg={ data: customers.map((c) => ({ merchantId: c.merchantId, customerId: c.id, type: 'inbound', status: 'received', costEstimate: 0, })), }
+src\modules\messaging\domain\whatsappLog.service.ts:331 · whatsAppMessage.update · status=status · waMessageId=false
+src\modules\system\domain\fusionClientes.ts:183 · whatsAppMessage.updateMany · status=(ausente) · waMessageId=false
+queued CON waMessageId en la misma escritura: 0
+--- con el positivo sembrado:
+queued CON waMessageId en la misma escritura: 2
+positivo-sembrado.ts:4
+positivo-sembrado.ts:5

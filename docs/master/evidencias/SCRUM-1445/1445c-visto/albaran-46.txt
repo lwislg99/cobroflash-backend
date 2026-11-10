@@ -1,0 +1,17 @@
+ALBARÁN / PARTE DE TRABAJO
+Albarán AB260001 · Versión 1
+Emitido: 29/09/2026 · Entrega/ejecución: 29/09/2026
+Emisor: 
+PruebaQA
+Receptor: 
+Cliente de pruebas QA
+Referencia: 
+Trabajo de pruebas QA
+CONCEPTO
+CANTIDAD
+UNIDAD
+Sin líneas.
+Observaciones
+Albarán de pruebas QA (SCRUM-1268).
+Documento sin validez fiscal. No es una factura.
+Generado con YaQu · yaqu.app

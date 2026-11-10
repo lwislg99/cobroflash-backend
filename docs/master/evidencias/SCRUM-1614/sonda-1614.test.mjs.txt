@@ -1,0 +1,47 @@
+// SCRUM-1614 · SONDA, NO SE COMITEA COMO TEST (va en .txt). Para correrla: copiarla a tests/zz1614-sonda.test.mjs.
+// Copia de A12.2c que dice, en la limpieza, cuántas filas de customer_events había ANTES del deleteMany, y si el
+// customer.deleteMany cae, cuándo nació la fila que lo tumba respecto al deleteMany (reloj de la base para las marcas).
+import './_staging-db.mjs';
+import { URL_BANCO } from './_banco-libro.mjs';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+test('SONDA1614', { skip: URL_BANCO === '' && 'sin LIBRO_PG_URL' }, async (t) => {
+  const { prisma } = await import('../dist/core/db/prisma.js');
+  const { app } = await import('../dist/app.js');
+  const { internalHeaders } = await import('../dist/core/http/internalAuth.js');
+  const server = app.listen(0);
+  await new Promise((r) => server.once('listening', r));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const ahora = async () => (await prisma.$queryRawUnsafe('SELECT clock_timestamp() AS t'))[0].t;
+  const stamp = Date.now();
+  const merchant = await prisma.merchant.create({ data: { name: 'SONDA1614', country: 'ES', email: `sonda1614-${stamp}@test.local`, onboardingCompleted: true } });
+  const customer = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'SONDA1614', phone: `34603${stamp % 1000000}` } });
+  const charge = await prisma.charge.create({ data: { merchantId: merchant.id, customerId: customer.id, concept: 'SONDA1614', amount: '10.00', currency: 'EUR', method: 'card', status: 'pending' } });
+  const payload = { event: 'payment.confirmed', charge_id: charge.id, method: 'card', bank_ref: 'pi_s1614_' + stamp, amount: 10, currency: 'EUR', ts: new Date().toISOString() };
+  const post = () => fetch(`${base}/webhooks/psp`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...internalHeaders() }, body: JSON.stringify(payload) });
+  const r1 = await post(); const tR1 = await ahora();
+  assert.ok(r1.ok);
+  const r2 = await post(); const tR2 = await ahora();
+  assert.ok(r2.ok);
+  const antes = await prisma.customerEvent.count({ where: { merchantId: merchant.id } });
+  const tDel = await ahora();
+  await prisma.event.deleteMany({ where: { chargeId: charge.id } });
+  await prisma.reconciliation.deleteMany({ where: { chargeId: charge.id } }).catch(() => {});
+  await prisma.invoice.deleteMany({ where: { merchantId: merchant.id } });
+  const borradas = (await prisma.customerEvent.deleteMany({ where: { merchantId: merchant.id } })).count;
+  await prisma.charge.delete({ where: { id: charge.id } });
+  let cayo = 'no';
+  try { await prisma.customer.deleteMany({ where: { merchantId: merchant.id } }); }
+  catch (e) {
+    cayo = String(e.message).includes('customer_events_customer_id_fkey') ? 'FK customer_events' : 'otro: ' + String(e.message).slice(-120);
+    const filas = await prisma.customerEvent.findMany({ where: { merchantId: merchant.id }, select: { type: true, createdAt: true } });
+    t.diagnostic(`SONDA1614 tardias=${JSON.stringify(filas.map((f) => [f.type, f.createdAt.toISOString()]))}`);
+    await prisma.customerEvent.deleteMany({ where: { merchantId: merchant.id } });
+    await prisma.customer.deleteMany({ where: { merchantId: merchant.id } });
+  }
+  await prisma.merchant.delete({ where: { id: merchant.id } });
+  t.diagnostic(`SONDA1614 antes=${antes} borradas=${borradas} cayo=${cayo} r1=${tR1.toISOString()} r2=${tR2.toISOString()} del=${tDel.toISOString()}`);
+  server.close();
+  await prisma.$disconnect();
+});

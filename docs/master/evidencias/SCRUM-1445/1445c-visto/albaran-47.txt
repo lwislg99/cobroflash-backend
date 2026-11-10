@@ -1,0 +1,32 @@
+ALBARÁN / PARTE DE TRABAJO
+Albarán AB260002 · Versión 1
+Emitido: 14/10/2026 · Entrega/ejecución: 14/10/2026
+Emisor: 
+PruebaQA
+Receptor: 
+Cliente de pruebas QA
+Referencia: 
+Trabajo de pruebas QA
+CONCEPTO
+CANTIDAD
+UNIDAD
+Sin líneas.
+Observaciones
+[QA S1 14-oct] Dos firmas en obra a la vez (SCRUM-1302k). No es un cliente real.
+Conformidad del cliente:
+Firmado por: 
+QA PRUEBA Blas (S1 14-oct)
+Firmado el 14 de octubre de 2026
+Certificado de evidencias de la firma
+Firmante
+QA PRUEBA Blas (S1 14-oct)
+Sello temporal
+14/10/2026, 07:50:59 (hora del servidor)
+Canal
+Firma presencial (in situ)
+Integridad
+SHA-256: 1fbe956f20acf689affb6dbeb6709ee1cbcbd56e5ba4c09f2cbb5bb826057f87
+El hash certifica la integridad del contenido firmado (no del archivo PDF). YaQu conserva evidencias técnicas adicionales asociadas a esta firma, disponibles a 
+requerimiento legal. La valoración de su fuerza probatoria corresponde a la autoridad competente.
+Documento sin validez fiscal. No es una factura.
+Generado con YaQu · yaqu.app

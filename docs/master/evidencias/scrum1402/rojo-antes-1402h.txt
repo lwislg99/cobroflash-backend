@@ -1,0 +1,139 @@
+✖ SCRUM-1402h · 🔴 un impago SIN plan SE MARCA: escribe `past_due` y nada más, sin tocar el plan, y avisa (37.0107ms)
+✖ SCRUM-1402h · 🔴 una cancelación SIN plan SE APLICA: la misma escritura que con plan (`trial`, `canceled`, sin suscripción) (17.366ms)
+✖ SCRUM-1402h · ✅ control · activar y renovar SIN plan siguen sin escribir nada, y lo dicen en el log (2.9724ms)
+✔ SCRUM-1402h · ✅ control · con un plan legítimo, igual que hoy en activar, impago y cancelación, sin un aviso (15.4352ms)
+✔ SCRUM-1402h · ✅ control · sin `merchant_id` y sin plan no se escribe nada en ningún estado (5.7697ms)
+✖ SCRUM-1402h · ✅ control · regla 2: la cancelación y el impago sin plan tocan SOLO al merchant del evento (1.9475ms)
+✔ SCRUM-1402h · ✅ control · la respuesta a Stripe no cambia: 200, el mismo cuerpo que con plan, y el evento queda PROCESADO (7.8274ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 3
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 392.8769
+
+✖ failing tests:
+
+test at tests\scrum1402h-sin-plan-como-plan-desconocido.test.mjs:127:1
+✖ SCRUM-1402h · 🔴 un impago SIN plan SE MARCA: escribe `past_due` y nada más, sin tocar el plan, y avisa (37.0107ms)
+  AssertionError [ERR_ASSERTION]: 
+  🔴 EL IMPAGO DE UNA SUSCRIPCIÓN SIN PLAN NO SE HA MARCADO COMO `past_due` (o ha tocado algo más). 8 de 8:
+     · customer.subscription.updated (past_due) sin la clave → []
+     · customer.subscription.updated (past_due) plan vacío → []
+     · customer.subscription.updated (unpaid) sin la clave → []
+     · customer.subscription.updated (unpaid) plan vacío → []
+     · customer.subscription.created (past_due) sin la clave → []
+     · customer.subscription.created (past_due) plan vacío → []
+     · customer.subscription.created (unpaid) sin la clave → []
+     · customer.subscription.created (unpaid) plan vacío → []
+  Decisión del fundador (SCRUM-1402, comentario 20681, «B · Como plan desconocido»).
+  
+  + actual - expected
+  
+  + [
+  +   'customer.subscription.updated (past_due) sin la clave → []',
+  +   'customer.subscription.updated (past_due) plan vacío → []',
+  +   'customer.subscription.updated (unpaid) sin la clave → []',
+  +   'customer.subscription.updated (unpaid) plan vacío → []',
+  +   'customer.subscription.created (past_due) sin la clave → []',
+  +   'customer.subscription.created (past_due) plan vacío → []',
+  +   'customer.subscription.created (unpaid) sin la clave → []',
+  +   'customer.subscription.created (unpaid) plan vacío → []'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/jv-j3ay/tests/scrum1402h-sin-plan-como-plan-desconocido.test.mjs:145:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'customer.subscription.updated (past_due) sin la clave → []', 'customer.subscription.updated (past_due) plan vacío → []', 'customer.subscription.updated (unpaid) sin la clave → []', 'customer.subscription.updated (unpaid) plan vacío → []', 'customer.subscription.created (past_due) sin la clave → []', 'customer.subscription.created (past_due) plan vacío → []', 'customer.subscription.created (unpaid) sin la clave → []', 'customer.subscription.created (unpaid) plan vacío → []' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scrum1402h-sin-plan-como-plan-desconocido.test.mjs:151:1
+✖ SCRUM-1402h · 🔴 una cancelación SIN plan SE APLICA: la misma escritura que con plan (`trial`, `canceled`, sin suscripción) (17.366ms)
+  AssertionError [ERR_ASSERTION]: 
+  🔴 LA CANCELACIÓN DE UNA SUSCRIPCIÓN SIN PLAN NO SE HA APLICADO: YaQu seguiría dando lo que ya no se paga. 8 de 8:
+     · customer.subscription.updated (canceled) sin la clave → []
+     · customer.subscription.updated (canceled) plan vacío → []
+     · customer.subscription.updated (incomplete_expired) sin la clave → []
+     · customer.subscription.updated (incomplete_expired) plan vacío → []
+     · customer.subscription.created (canceled) sin la clave → []
+     · customer.subscription.created (canceled) plan vacío → []
+     · customer.subscription.created (incomplete_expired) sin la clave → []
+     · customer.subscription.created (incomplete_expired) plan vacío → []
+  Decisión del fundador (SCRUM-1402, comentario 20681, «B · Como plan desconocido»).
+  
+  + actual - expected
+  
+  + [
+  +   'customer.subscription.updated (canceled) sin la clave → []',
+  +   'customer.subscription.updated (canceled) plan vacío → []',
+  +   'customer.subscription.updated (incomplete_expired) sin la clave → []',
+  +   'customer.subscription.updated (incomplete_expired) plan vacío → []',
+  +   'customer.subscription.created (canceled) sin la clave → []',
+  +   'customer.subscription.created (canceled) plan vacío → []',
+  +   'customer.subscription.created (incomplete_expired) sin la clave → []',
+  +   'customer.subscription.created (incomplete_expired) plan vacío → []'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/jv-j3ay/tests/scrum1402h-sin-plan-como-plan-desconocido.test.mjs:166:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'customer.subscription.updated (canceled) sin la clave → []', 'customer.subscription.updated (canceled) plan vacío → []', 'customer.subscription.updated (incomplete_expired) sin la clave → []', 'customer.subscription.updated (incomplete_expired) plan vacío → []', 'customer.subscription.created (canceled) sin la clave → []', 'customer.subscription.created (canceled) plan vacío → []', 'customer.subscription.created (incomplete_expired) sin la clave → []', 'customer.subscription.created (incomplete_expired) plan vacío → []' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scrum1402h-sin-plan-como-plan-desconocido.test.mjs:174:1
+✖ SCRUM-1402h · ✅ control · activar y renovar SIN plan siguen sin escribir nada, y lo dicen en el log (2.9724ms)
+  AssertionError [ERR_ASSERTION]: customer.subscription.updated (active) sin la clave: su línea en el log
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/jv-j3ay/tests/scrum1402h-sin-plan-como-plan-desconocido.test.mjs:182:16)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scrum1402h-sin-plan-como-plan-desconocido.test.mjs:223:1
+✖ SCRUM-1402h · ✅ control · regla 2: la cancelación y el impago sin plan tocan SOLO al merchant del evento (1.9475ms)
+  AssertionError [ERR_ASSERTION]: sólo el merchant 14029: []
+  + actual - expected
+  
+  + []
+  - [
+  -   {
+  -     id: 14029
+  -   }
+  - ]
+  
+      at TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/jv-j3ay/tests/scrum1402h-sin-plan-como-plan-desconocido.test.mjs:226:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ { id: 14029 } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

@@ -1,0 +1,44 @@
+{
+ "db": "yaqu_dev_javier",
+ "fks": [
+  {
+   "tabla": "invoices",
+   "fks": 5
+  },
+  {
+   "tabla": "quotes",
+   "fks": 3
+  }
+ ],
+ "filas": [
+  {
+   "t": "quote_assignees",
+   "n": 0
+  },
+  {
+   "t": "invoice_assignees",
+   "n": 0
+  }
+ ],
+ "huerfanos": [
+  {
+   "col": "qa.quote_id",
+   "n": 0
+  },
+  {
+   "col": "qa.team_member_id",
+   "n": 0
+  },
+  {
+   "col": "ia.invoice_id",
+   "n": 0
+  },
+  {
+   "col": "ia.team_member_id",
+   "n": 0
+  }
+ ],
+ "tablas_public": 33,
+ "existe_customer_sites": null,
+ "existe_equipments": "equipments"
+}

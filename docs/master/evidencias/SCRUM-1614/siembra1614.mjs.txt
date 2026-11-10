@@ -1,0 +1,23 @@
+// SCRUM-1614 · SIEMBRA en la base DESECHABLE (no toca el árbol ni dist/): reproduce, de forma determinista,
+// lo medido con la sonda — el INSERT de customer_events que la ruta lanza sin await llega DESPUÉS de las dos
+// respuestas, y cae entre el customerEvent.deleteMany y el customer.deleteMany de la limpieza.
+//   · BEFORE INSERT ON customer_events → pg_sleep(0.15): la escritura del historial va tarde
+//   · BEFORE DELETE ON charges         → pg_sleep(0.30): ensancha la ventana entre los dos borrados
+// Uso: node siembra1614.mjs <puerto> poner|quitar|ver   (sólo loopback y base *_test)
+import pg from 'pg';
+const [puerto, orden] = process.argv.slice(2);
+const c = new pg.Client({ host: '127.0.0.1', port: Number(puerto), user: 'postgres', database: 'yaqu_libro_test' });
+await c.connect();
+try {
+  if (orden === 'poner') {
+    await c.query(`CREATE OR REPLACE FUNCTION s1614_tarde() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM pg_sleep(0.15); RETURN NEW; END $$`);
+    await c.query(`CREATE OR REPLACE FUNCTION s1614_ventana() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM pg_sleep(0.30); RETURN OLD; END $$`);
+    await c.query(`CREATE TRIGGER s1614_tarde BEFORE INSERT ON customer_events FOR EACH ROW EXECUTE FUNCTION s1614_tarde()`);
+    await c.query(`CREATE TRIGGER s1614_ventana BEFORE DELETE ON charges FOR EACH ROW EXECUTE FUNCTION s1614_ventana()`);
+  } else if (orden === 'quitar') {
+    await c.query(`DROP TRIGGER IF EXISTS s1614_tarde ON customer_events`);
+    await c.query(`DROP TRIGGER IF EXISTS s1614_ventana ON charges`);
+  }
+  const r = await c.query(`SELECT tgname FROM pg_trigger WHERE tgname LIKE 's1614_%' ORDER BY 1`);
+  console.log(`SIEMBRA1614 ${orden} · disparadores=${r.rows.map((x) => x.tgname).join(',') || 'ninguno'}`);
+} finally { await c.end(); }

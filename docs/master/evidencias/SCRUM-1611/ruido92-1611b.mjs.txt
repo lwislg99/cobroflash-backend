@@ -1,0 +1,32 @@
+// SCRUM-1611b · RUIDO para scrum92: otro «test» que escribe auth_sessions a la vez, como en el régimen T de §1599s.
+// Crea (una vez por base) un comercio AJENO, y le inserta una sesión cada RUIDO_MS ms mientras viva.
+// Sobrevive al DROP ... WITH (FORCE) de cada pasada: reconecta y vuelve a crear su comercio.
+// Uso: node ruido92.mjs <puerto> <segundos> <fichero de recuento>   → escribe cuántas sesiones insertó.
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+import pg from 'pg';
+
+const [puerto, segundos, salida] = process.argv.slice(2);
+const RUIDO_MS = Number(process.env.RUIDO_MS || 10);
+const fin = Date.now() + Number(segundos) * 1000;
+let insertadas = 0; let errores = 0; let comercios = 0;
+const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
+while (Date.now() < fin) {
+  const c = new pg.Client({ host: '127.0.0.1', port: Number(puerto), user: 'postgres', database: 'yaqu_libro_test' });
+  try {
+    await c.connect();
+    c.on('error', () => {});
+    let id = (await c.query("SELECT id FROM merchants WHERE email = 'ruido-1611b@test.local'")).rows[0]?.id;
+    if (!id) {
+      id = (await c.query("INSERT INTO merchants (name, country, email, updated_at) VALUES ('ruido 1611b', 'ES', 'ruido-1611b@test.local', now()) RETURNING id")).rows[0].id;
+      comercios++;
+    }
+    while (Date.now() < fin) {
+      await c.query('INSERT INTO auth_sessions (merchant_id, token, type, expires_at) VALUES ($1, $2, $3, now() + interval \'1 hour\')',
+        [id, 'ruido-' + crypto.randomBytes(8).toString('hex'), 'session']);
+      insertadas++;
+      await dormir(RUIDO_MS);
+    }
+  } catch { errores++; await dormir(5); } finally { try { await c.end(); } catch {} }
+}
+fs.writeFileSync(salida, JSON.stringify({ insertadas, errores, comercios, RUIDO_MS }));

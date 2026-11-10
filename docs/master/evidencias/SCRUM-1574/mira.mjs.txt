@@ -1,0 +1,21 @@
+// Para cada log: estado de ④, imagen del runner, versión de node, CPU y la línea de ④.
+import fs from 'node:fs';
+import path from 'node:path';
+const dir = process.argv[2];
+const listas = { saltado: fs.readFileSync(path.join(dir, 'saltados.txt'), 'utf8').trim().split(/\s+/), control: fs.readFileSync(path.join(dir, 'control.txt'), 'utf8').trim().split(/\s+/) };
+const sinAnsi = (s) => s.replace(/\x1b\[[0-9;]*m/g, '');
+for (const [grupo, ids] of Object.entries(listas)) {
+  for (const id of ids) {
+    const txt = sinAnsi(fs.readFileSync(path.join(dir, id + '.log'), 'utf8'));
+    const lineas = txt.split('\n');
+    const img = (/Image: (\S+)/.exec(txt) || [])[1];
+    const ver = (/Version: (\d{8}\.\d+)/.exec(txt) || [])[1];
+    const node = (/node v?(\d+\.\d+\.\d+)/i.exec(txt) || [])[1];
+    const runner = (/Runner name: '([^']+)'/.exec(txt) || /Machine name: '([^']+)'/.exec(txt) || [])[1];
+    const l4 = lineas.filter((l) => /SCRUM-1405c · ④/.test(l)).map((l) => l.slice(29, 260));
+    const marca = lineas.filter((l) => /SCRUM-1405c · ③ 🔴 ALARMA/.test(l)).map((l) => l.slice(29, 120));
+    console.log(`${grupo}\t${id}\t${img}\t${ver}\tnode ${node}\t${runner}`);
+    for (const l of l4) console.log('   ④ ' + l);
+    for (const l of marca.slice(0, 1)) console.log('   ③ ' + l);
+  }
+}

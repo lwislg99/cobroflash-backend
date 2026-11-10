@@ -1,0 +1,7 @@
+scrum1346-el-tecnico-ve-documentos-ajenos {"pasadas":"20/20","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":5,"nResp":46}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO → VIVO
+scrum1397-el-tecnico-ve-sus-facturas {"pasadas":"20/20","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":5,"nResp":106}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO → VIVO
+scrum1403-el-tecnico-y-las-otras-puertas {"pasadas":"20/20","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":6,"nResp":67}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO → VIVO
+POBLACION=3 ficheros · malos=0 · EXIT=0

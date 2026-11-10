@@ -1,0 +1,7 @@
+POBLACIÓN · 4 mutaciones declaradas en tests/scrum1405c-tuberia-bloqueante.test.mjs
+BASE (sin mutar) · salida 0 · tests 9 pass 8 fail 0 skipped 1 · «SCRUM-1405d · ④ el juez» ✔
+M1 · "  if (pierden > CON_MAX_PASADAS_QUE_PIERDEN) motivos.push" → "  if (false) motivos.push" · salida 1 · tests 9 pass 7 fail 1 skipped 1 · «SCRUM-1405d · ④ el juez» ✖
+M2 · "  if (peor > CON_MAX_POR_PASADA) motivos" → "  if (peor > 52) motivos" · salida 1 · tests 9 pass 7 fail 1 skipped 1 · «SCRUM-1405d · ④ el juez» ✖
+M3 · "  const pierden = faltan.filter((x) => x > 0).length;" → "  const pierden = faltan.filter((x) => x > 0).length * (CON · salida 1 · tests 9 pass 7 fail 1 skipped 1 · «SCRUM-1405d · ④ el juez» ✖
+M4 · "  return motivos;\n}" → "  return [];\n}" · salida 1 · tests 9 pass 7 fail 1 skipped 1 · «SCRUM-1405d · ④ el juez» ✖
+restaurado byte a byte: true · EXIT=0

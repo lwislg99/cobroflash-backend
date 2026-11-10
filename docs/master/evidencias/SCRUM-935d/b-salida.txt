@@ -1,0 +1,4 @@
+﻿control OK  · cortado con 3
+control OK  · completo
+control OK  · vacío es ciego
+POBLACIÓN · jobs con paso de mutación 313 · leídos COMPLETO 124 · CORTADO 189 · CIEGO (log no bajado/vacío) 0

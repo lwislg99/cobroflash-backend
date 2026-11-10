@@ -1,0 +1,13 @@
+    return 0;
+
+  case UV_CREATE_PIPE:
+    assert(container->data.stream != NULL);
+    if (container->data.stream->type != UV_NAMED_PIPE)
+      return UV_EINVAL;
+    else {
+      ret = uv_socketpair(SOCK_STREAM, 0, fds, 0, 0);
+
+      if (ret == 0)
+        for (i = 0; i < 2; i++) {
+          setsockopt(fds[i], SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
+          setsockopt(fds[i], SOL_SOCKET, SO_SNDBUF, &size, sizeof(size));

@@ -1,0 +1,6 @@
+sana: status=0 pass=undefined fail=undefined
+Merchant.email sin @unique: status=1 pass=undefined fail=undefined
+taxId lista: status=1 pass=undefined fail=undefined
+TeamMember.merchantId lista: status=1 pass=undefined fail=undefined
+TeamMember con dos relaciones a Merchant: status=1 pass=undefined fail=undefined
+TeamMember.email sin @unique: status=1 pass=undefined fail=undefined

@@ -1,0 +1,8 @@
+base    · hoy · sin=20 · {"negada":13,"citada":1,"rastreable":167,"anclado":36,"documental":12,"sin-respaldo":20}
+base    · A   · sin=25 · {"negada":13,"citada":1,"rastreable":167,"anclado":36,"documental":7,"sin-respaldo":25}
+siembra · hoy · sin=20 · {"negada":13,"citada":1,"rastreable":167,"anclado":36,"documental":13,"sin-respaldo":20}
+siembra · A   · sin=26 · {"negada":13,"citada":1,"rastreable":167,"anclado":36,"documental":7,"sin-respaldo":26}
+base: entran en sin-respaldo con la regla A → ["public/dashboard/js/jobDetailView.js:401","public/dashboard/js/jobDetailView.js:484","public/dashboard/js/productsView.js:1178","public/dashboard/js/productsView.js:1214","src/modules/jobs/domain/albaranFirmante.ts:246"]
+base: salen de sin-respaldo con la regla A → []
+siembra: entran con la regla A → ["public/dashboard/js/jobDetailView.js:401","public/dashboard/js/jobDetailView.js:484","public/dashboard/js/productsView.js:1178","public/dashboard/js/productsView.js:1214","src/modules/jobs/domain/albaranFirmante.ts:246","tests/zz-sembrada-1502n.test.mjs:1"]
+siembra·hoy contiene la sembrada en sin-respaldo: false

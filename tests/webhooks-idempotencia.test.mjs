@@ -8,11 +8,40 @@
 //    payment.confirmed duplicado NO re-paga — paidAt no cambia y el evento
 //    queda registrado como duplicate (integración real, gateada).
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599h: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import http from 'node:http';
 
-const DB = process.env.QA_DB_TEST === '1';
+// `node:http` sin agente y no `fetch` (SCRUM-1218i): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, ok, headers.get, text, json, arrayBuffer) y, como el `redirect: 'manual'` de antes, no sigue
+// redirecciones. El cuerpo se guarda en bytes: `text()` lo decodifica como `fetch` (TextDecoder).
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    const trozos = [];
+    r.on('data', (t) => { trozos.push(t); });
+    r.on('end', () => {
+      const buf = Buffer.concat(trozos);
+      ok({
+        status: r.statusCode,
+        ok: r.statusCode >= 200 && r.statusCode < 300,
+        headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+        text: async () => new TextDecoder().decode(buf),
+        json: async () => JSON.parse(new TextDecoder().decode(buf)),
+        arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+      });
+    });
+  });
+  req.on('error', mal);
+  req.end(body);
+});
+
+const DB = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
 test('A12.2a: dedupe por event.id de Stripe (pagos y Connect comparten helper)', async () => {
   const { isDuplicateStripeEvent } = await import('../dist/modules/billing/app/routes/stripe.routes.js');
@@ -31,7 +60,7 @@ test('A12.2b: dedupe por wamid de Meta (reintentos del webhook entrante)', async
   assert.equal(isDuplicateWamid(''), false, 'sin id no bloquea');
 });
 
-test('A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integración)', { skip: !DB && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integración)', { skip: !DB && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const { internalHeaders } = await import('../dist/core/http/internalAuth.js'); // P0-SEC-1: /webhooks/psp exige el secreto interno
@@ -57,12 +86,29 @@ test('A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integrac
     },
   });
 
+  // SCRUM-1614 · la ruta escribe el «Pago recibido» del historial (ENT-3) SIN await: la fila llega DESPUÉS
+  // de las dos respuestas (medido: 8 de 20 pasadas a solas). Si cae entre los borrados de la limpieza, el
+  // customer.deleteMany tropieza con customer_events_customer_id_fkey; si cae después, la ruta se traga el
+  // FK y el proceso aborta al salir. Se espera a ESA fila, por su condición, antes de limpiar. El tope no
+  // sincroniza nada: sólo convierte «no llegó nunca» en un rojo con nombre en vez de un test colgado.
+  let pagado = false;
+  let historial = null;
+  const esperarHistorial = () => (historial ??= (async () => {
+    const tope = Date.now() + 15_000;
+    for (;;) {
+      const n = await prisma.customerEvent.count({ where: { customerId: customer.id, type: 'payment_received' } });
+      if (n > 0) return n;
+      if (Date.now() > tope) throw new Error('el «Pago recibido» del historial no llegó en 15 s');
+      await new Promise((r) => setTimeout(r, 20));
+    }
+  })());
+
   try {
     const payload = {
       event: 'payment.confirmed', charge_id: charge.id, method: 'card',
       bank_ref: 'pi_qa_' + Date.now(), amount: 10, currency: 'EUR', ts: new Date().toISOString(),
     };
-    const post = () => fetch(`${base}/webhooks/psp`, {
+    const post = () => pedirSinAgente(`${base}/webhooks/psp`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', ...internalHeaders() }, body: JSON.stringify(payload),
     });
 
@@ -70,6 +116,7 @@ test('A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integrac
     assert.ok(r1.ok, `primer confirm falló: ${r1.status}`);
     const paid1 = await prisma.charge.findUnique({ where: { id: charge.id }, select: { status: true } });
     assert.equal(paid1.status, 'paid', 'el primer evento debe pagar');
+    pagado = true;
     const events1 = await prisma.event.count({ where: { chargeId: charge.id, type: 'paid' } });
 
     const r2 = await post();
@@ -83,8 +130,10 @@ test('A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integrac
     const events2 = await prisma.event.count({ where: { chargeId: charge.id, type: 'paid' } });
     assert.equal(events2, events1 + 1, 'el duplicado queda REGISTRADO (no silencioso)');
     assert.equal((dupMarked.payload ?? {}).duplicate, true, 'y marcado como duplicate');
+    assert.equal(await esperarHistorial(), 1, 'el historial lleva UN «Pago recibido»: el duplicado no añade otro');
     t.diagnostic('duplicado ACK + marcado duplicate, un solo efecto de pago ✓');
   } finally {
+    if (pagado) await esperarHistorial().catch(() => {}); // si el try cayó antes, su error es el que se lee
     await prisma.event.deleteMany({ where: { chargeId: charge.id } });
     await prisma.reconciliation.deleteMany({ where: { chargeId: charge.id } }).catch(() => {});
     // por merchantId (no solo chargeId): ensureInvoiceForCharge puede dejar la factura
@@ -98,3 +147,11 @@ test('A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integrac
     await prisma.$disconnect();
   }
 });
+
+// SCRUM-1599h (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599i.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/billing/app/routes/psp.routes.ts", de: "if (charge.status === 'paid' && body.event === 'payment.confirmed') {", a: "if (false) {", cae: "A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga" },
+];

@@ -4,14 +4,14 @@
 //
 // Política LAZY de PDF/QR (PENDING_PDF/PENDING_QR): VeriFactu + PDF se rellenan bajo demanda
 // en `ensureInvoicePdf` (lib/invoicing.ts:54), igual que hoy hacen collect-rest / quoteAdmin /
-// quotes.routes. Los justificantes (J-) NUNCA entran en VeriFactu: `allocateInvoiceNumber`
-// decide la serie según `getEmissionMode`, y `isReceiptNumber` marca el tipo JUST (V0-0, regla 26).
+// quotes.routes. Aquí ya no nace ningún justificante (J-): `allocateInvoiceNumber` lanza en modo
+// `receipt` (SCRUM-1027), y este emisor dejó de escribir el tipo JUST (SCRUM-1260b).
 //
 // ⚠️ NO migra los 4 call-sites duplicados en este PR: dos de ellos (quotesAdmin.routes:192,
 // invoicesAdmin R1) aplican VeriFactu INLINE; unificarlos a lazy cambiaría su comportamiento
 // (regla 9 / decisión fundador). Se deja para un ticket aparte con su propia revisión.
 import { Prisma } from '@prisma/client';
-import { allocateInvoiceNumber, isReceiptNumber, type OrigenC7 } from './invoiceNumber.service';
+import { allocateInvoiceNumber, type OrigenC7 } from './invoiceNumber.service';
 import type { DeductRef } from './finalInvoice.service'; // SCRUM-16/142 (#2)
 import type { ActorAudit } from '../../system/audit.service'; // SCRUM-207
 import type { TipoDocumento } from './tipoDocumento'; // SCRUM-413: union CERRADA
@@ -38,7 +38,7 @@ export interface EmitInvoiceInput {
    * 'ANT' (anticipo) sigue RESERVADO en FISCAL-1 y no esta en la union: entra cuando P16.2 tenga
    * respuesta. Hasta entonces, escribirlo no compila -- antes se sellaba como F1 en silencio.
    */
-  type?: TipoDocumento;       // default 'F1' (se fuerza 'JUST' si la serie sale J-)
+  type?: TipoDocumento;       // default 'F1' (ya no se fuerza 'JUST': SCRUM-1260b)
   lines?: unknown;            // Invoice.lines Json — [{concept, qty, price, tax(fracción)}]
   albaranRefs?: AlbaranRef[]; // FISCAL-2: operaciones agrupadas
   /**
@@ -111,8 +111,8 @@ export async function emitInvoice(tx: Prisma.TransactionClient, input: EmitInvoi
     customerId: input.customerId,
     quoteId: input.quoteId ?? null,
     number,
-    // V0-0 (regla 26): si la serie salió J- (merchant real sin INVOICING_ES_ENABLED) → JUST.
-    type: isReceiptNumber(number) ? 'JUST' : (input.type ?? 'F1'),
+    // SCRUM-1260b: aquí se forzaba 'JUST' si la serie salía J-; nunca sale (receipt lanza, SCRUM-1027).
+    type: input.type ?? 'F1',
     total: input.total,
     currency: input.currency,
     lines: (input.lines as any) ?? undefined,

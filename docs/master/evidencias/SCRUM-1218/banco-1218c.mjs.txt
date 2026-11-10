@@ -1,0 +1,76 @@
+// banco-1218c.mjs — SCRUM-1218c (J6, 23-oct-2026). Corre UN fichero de test contra un Postgres
+// desechable (PGlite por socket en loopback, base «*_test») y devuelve sus casos y veredictos.
+// Uso: node banco-1218c.mjs <raiz del worktree> <ddl.sql> <tests/fichero.test.mjs> <pasadas> <salida.json>
+// Cada pasada: PGlite NUEVO, `node --test --test-force-exit` del fichero solo, TAP a fichero.
+// Por pasada guarda: código de salida, si la salida trae la firma del aborto (UV_HANDLE_CLOSING /
+// async.c / 0xC0000409) y el CONJUNTO de casos (nombre → ok/not ok/skip), anclado al inicio de línea.
+import fs from 'node:fs';
+import path from 'node:path';
+import net from 'node:net';
+import { spawnSync, spawn } from 'node:child_process';
+import { PGlite } from '@electric-sql/pglite';
+import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
+
+const [raiz, ddl, fichero, pasadasTxt, salidaRel] = process.argv.slice(2);
+const salida = salidaRel && path.resolve(salidaRel);
+if (!raiz || !ddl || !fichero || !pasadasTxt || !salida) { console.log('CIEGO: faltan argumentos'); process.exit(2); }
+const pasadas = Number(pasadasTxt);
+const sql = fs.readFileSync(ddl, 'utf8');
+
+const puertoLibre = () => new Promise((ok) => {
+  const s = net.createServer(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => ok(p)); });
+});
+
+const FIRMA = /UV_HANDLE_CLOSING|async\.c|0xC0000409|3221226505/;
+// El caso se ancla al INICIO de la línea (con su sangría de subtest): un «not ok» dentro del NOMBRE no cuenta.
+const CASO = /^(\s*)(ok|not ok) \d+ - (.*?)(?: # (SKIP|TODO)\b.*)?$/;
+
+const entorno = { ...process.env };
+for (const k of ['NODE_TEST_CONTEXT', 'NODE_OPTIONS', 'FORCE_COLOR']) delete entorno[k];
+
+const resultado = { fichero, pasadas: [] };
+for (let i = 0; i < pasadas; i++) {
+  const db = new PGlite();
+  await db.exec(sql);
+  const puerto = await puertoLibre();
+  const servidor = new PGLiteSocketServer({ db, port: puerto, host: '127.0.0.1' });
+  await servidor.start();
+  const tap = path.join(path.dirname(salida), `tap-${path.basename(fichero)}-${i}.tap`);
+  fs.rmSync(tap, { force: true });
+  const respuestas = path.join(path.dirname(salida), `resp-${path.basename(fichero)}-${i}.txt`);
+  fs.rmSync(respuestas, { force: true });
+  const sonda = new URL('./sonda-respuestas.mjs', import.meta.url).href;
+  const hijo = spawn(process.execPath, [
+    `--import=${sonda}`, '--test', '--test-force-exit', '--test-reporter=tap', `--test-reporter-destination=${tap}`, fichero,
+  ], {
+    cwd: raiz,
+    env: {
+      ...entorno,
+      LIBRO_PG_URL: `postgresql://postgres@127.0.0.1:${puerto}/yaqu_libro_test?connection_limit=1&pgbouncer=true`,
+      SONDA_RESPUESTAS: respuestas,
+      DISABLE_CRONS: 'true', WHATSAPP_DRY_RUN: '1', NODE_ENV: 'test',
+    },
+  });
+  let texto = '';
+  hijo.stdout.on('data', (d) => { texto += d; });
+  hijo.stderr.on('data', (d) => { texto += d; });
+  const codigo = await new Promise((ok) => hijo.on('close', (c, s) => ok(c ?? s)));
+  await servidor.stop();
+  await db.close();
+  const lineas = fs.existsSync(tap) ? fs.readFileSync(tap, 'utf8').split(/\r?\n/) : [];
+  const casos = {};
+  for (const l of lineas) {
+    const m = CASO.exec(l);
+    if (!m) continue;
+    casos[`${m[1].length / 4}|${m[3]}`] = m[4] ? m[4].toLowerCase() : m[2];
+  }
+  const total = lineas.find((l) => /^# tests \d+/.test(l));
+  const resp = fs.existsSync(respuestas) ? fs.readFileSync(respuestas, 'utf8').split('\n').filter(Boolean).sort() : [];
+  const p = { i, codigo, firma: FIRMA.test(texto), bytesTap: lineas.join('\n').length, total: total || null, casos, resp };
+  resultado.pasadas.push(p);
+  const v = Object.values(casos);
+  console.log(`${v.length === 0 ? 'CIEGO · ' : ''}${path.basename(fichero)} · pasada ${i} · exit=${codigo} · firma=${p.firma} · casos=${v.length} (ok=${v.filter((x) => x === 'ok').length} not_ok=${v.filter((x) => x === 'not ok').length} skip=${v.filter((x) => x === 'skip').length}) · ${total || 'SIN TOTAL'} · respuestas=${resp.length}`);
+  if (codigo !== 0 && i === 0) console.log(texto.slice(-3000));
+}
+fs.writeFileSync(salida, JSON.stringify(resultado, null, 1));
+console.log(`POBLACION=${resultado.pasadas.length} pasadas · EXIT=0`);

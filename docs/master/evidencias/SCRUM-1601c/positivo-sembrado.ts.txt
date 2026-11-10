@@ -1,0 +1,5 @@
+// Positivo sembrado para censo-wamid.cjs: tiene que salir como «queued CON waMessageId».
+declare const prisma: any;
+declare function recordWaMessage(x: any): void;
+prisma.whatsAppMessage.create({ data: { status: 'queued', waMessageId: 'wamid.SEMBRADO' } });
+recordWaMessage({ merchantId: 1, status: 'queued', waMessageId: 'wamid.SEMBRADO2' });

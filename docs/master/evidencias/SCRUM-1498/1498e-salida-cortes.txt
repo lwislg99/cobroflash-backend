@@ -1,0 +1,11 @@
+POBLACION jobs leídos=118 · con «CORTO YO»=91 · de ellos con línea «Juzgadas»=91 (tiene que ser igual)
+(1) SIN JUZGAR por el corte: min 11 · p50 136 · máx 189 de un total de 796-875 mutaciones · fracción p50 0.167 · máx 0.216
+(2) scrum1516c en cada job del meta-guard (failure y success):
+    6 · antes de 1610b · failure · scrum1516c CIEGO
+   54 · antes de 1610b · failure · scrum1516c sin línea (no juzgado antes del corte, o no declarado en esa rama)
+   23 · antes de 1610b · failure · scrum1516c vivo (✔)
+   14 · antes de 1610b · success · scrum1516c sin línea (no juzgado antes del corte, o no declarado en esa rama)
+    7 · antes de 1610b · success · scrum1516c vivo (✔)
+   12 · después de 1610b · failure · scrum1516c vivo (✔)
+    2 · después de 1610b · success · scrum1516c vivo (✔)
+(3) duración de los 23 success: min 1462 s · p50 1597 s · máx 1727 s (presupuesto del paso 1695 s, techo del job 1800 s)

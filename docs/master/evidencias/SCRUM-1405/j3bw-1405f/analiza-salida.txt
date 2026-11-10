@@ -1,0 +1,22 @@
+FILAS 479 (runs con el job obligatorio)
+ESTADO × EVENTO
+  corrió-pasa     440  {"pull_request":368,"push":72}
+  CANCELADO        36  {"pull_request":36}
+  CIEGO             1  {"pull_request":1}
+  EN-CURSO          2  {"pull_request":2}
+
+CON VEREDICTO DEL JOB: 441 · success 373 · failure 68
+bytes del log: mín 64576 · mediana 2061481 · máx 2250760 · < 1.000.000 B: 1
+resumen de la tanda: {"cuadra":439,"sin-resumen":2} · «TANDA SIN VEREDICTO»: 1 · ③ ALARMA presente: 440/441
+
+CORRIÓ ④: 440 · con las listas: 440 · brazo SIN pierde (decidirCuarto → «medir»): 440
+  sonda: {"0":27,"1048576":413}
+  sonda a 0 (antes de 1574 se habrían SALTADO): 27 · de ellos, brazo SIN pierde: 27 · por evento {"pull_request":25,"push":2}
+  brazo CON: 1760 pasadas · pierden 137 · máx por pasada 15 (tope 15) · pasadas que pierden por job {"0":317,"1":109,"2":14} (tope 2)
+
+SALTADO ④: 0 · motivo de decidirCuarto: 0 · otro motivo: 0
+
+SIN VEREDICTO DE ④: 1
+  CIEGO 2026-10-26T22:56:53Z job 121899227131 failure pull_request scrum-1446g-tramos-mayor-resto · 64576 B · log de 64576 B · tests  (sin-resumen) · SIN-VEREDICTO=false
+
+CUADRE: corrió 440 + saltado 0 + sin veredicto 1 = 441 de 441 ✅

@@ -1,0 +1,41 @@
+LEE EL VIVO	lista de albaranes · columna «cliente»	[S1]
+	GET /admin/albaranes · src/modules/jobs/app/routes/albaranes.routes.ts:154
+	ficha del día → 200 «Fusionado SL»
+	ficha de hoy  → 200 «Principal SA»
+LEE EL VIVO	ficha del albarán · customer.name	[S1]
+	GET /admin/albaranes/5 · src/modules/jobs/app/routes/albaranes.routes.ts:865
+	ficha del día → 200 «Fusionado»
+	ficha de hoy  → 200 «Principal»
+LEE EL VIVO	página pública de firma (emitido) · «Hola, X»	[S1]
+	GET /albaran/:token · src/modules/jobs/app/routes/albaranPublic.routes.ts:244
+	ficha del día → 200 «Fusionado»
+	ficha de hoy  → 200 «Principal»
+LEE EL VIVO	página pública (ya firmado v:3) · «Gracias, X»	[S1]
+	GET /albaran/:token · src/modules/jobs/app/routes/albaranPublic.routes.ts:244
+	ficha del día → 200 «Fusionado»
+	ficha de hoy  → 200 «Principal»
+LEE EL VIVO	PDF del albarán EMITIDO · línea «Receptor»	[S1]
+	GET /admin/albaranes/5/pdf · src/modules/jobs/domain/albaran.service.ts:800
+	ficha del día → 200 «Fusionado SL»
+	ficha de hoy  → 200 «Principal SA»
+LEE EL VIVO	PDF del albarán EMITIDO · NIF del cliente	[S1]
+	GET /admin/albaranes/5/pdf · src/modules/jobs/domain/albaran.service.ts:800
+	ficha del día → 200 «B11111111»
+	ficha de hoy  → 200 «B22222222»
+LEE LO GUARDADO	PDF del albarán FIRMADO v:3 · línea «Receptor» (control: debe leer lo guardado)	[S1]
+	GET /admin/albaranes/5/pdf · src/modules/jobs/domain/albaran.service.ts:800
+	ficha del día → 200 «Fusionado SL»
+	ficha de hoy  → 200 «Fusionado SL»
+LEE EL VIVO	precarga offline · clienteNombre	[S1]
+	GET /admin/precarga · src/modules/jobs/domain/precarga.service.ts:335
+	ficha del día → 200 «Fusionado»
+	ficha de hoy  → 200 «Principal»
+LEE EL VIVO	sobre de la firma (POST firmar) · contenidoCongelado.cliente sellado	[S1 · STOP (sellado, SCRUM-577)]
+	POST /albaran/:token/firmar · src/modules/jobs/domain/albaran.service.ts:642
+	ficha del día → 200 «Fusionado SL»
+	ficha de hoy  → 200 «Principal SA»
+LEE EL VIVO	buscador · nombre del cliente de una factura emitida	[S1]
+	GET /admin/search?q=F-2026 · src/modules/search/app/routes/search.routes.ts:86
+	ficha del día → 200 «Fusionado»
+	ficha de hoy  → 200 «Principal»
+POBLACIÓN: 10 casos · LEE EL VIVO 9 · LEE LO GUARDADO 1 · CIEGO 0

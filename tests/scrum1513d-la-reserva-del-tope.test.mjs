@@ -81,7 +81,7 @@ test('SCRUM-1513d · 🔴 la fila nace en cola y SIN documento: el paquete de di
 
 test('SCRUM-1513d · con el tope del comercio alcanzado no se apunta nada (y con uno menos, sí)', async () => {
   const lleno = base({ cuenta: () => 100 });
-  assert.deepEqual(await log.reservarPlantilla(lleno.db, { merchantId: COMERCIO, ...TOPES }), { ok: false, reason: 'daily_cap', cuenta: 100 });
+  assert.deepEqual(await log.reservarPlantilla(lleno.db, { merchantId: COMERCIO, ...TOPES }), { ok: false, reason: 'daily_cap', cuenta: 100, tope: 100 });
   assert.equal(lleno.orden().includes('create'), false);
   const borde = base({ cuenta: () => 99 });
   assert.equal((await log.reservarPlantilla(borde.db, { merchantId: COMERCIO, ...TOPES })).ok, true);
@@ -91,7 +91,7 @@ test('SCRUM-1513d · con el tope del comercio alcanzado no se apunta nada (y con
 test('SCRUM-1513d · el tope por cliente se pregunta bajo el MISMO cerrojo, y sólo si hay cliente', async () => {
   const b = base({ cuenta: (w) => (w.customerId ? 3 : 0) });
   const r = await log.reservarPlantilla(b.db, { merchantId: COMERCIO, customerId: CLIENTE, ...TOPES });
-  assert.deepEqual(r, { ok: false, reason: 'customer_daily_cap', cuenta: 3 });
+  assert.deepEqual(r, { ok: false, reason: 'customer_daily_cap', cuenta: 3, tope: 3 });
   assert.deepEqual(b.orden(), ['abre', 'comercio', 'sentencia', 'count', 'count', 'cierra']);
   assert.equal(b.pedido.filter((p) => p.op === 'count')[1].where.customerId, CLIENTE);
   const sinCliente = base({ cuenta: (w) => (w.customerId ? 3 : 0) });

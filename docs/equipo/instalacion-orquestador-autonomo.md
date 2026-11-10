@@ -201,16 +201,22 @@ Requiere la regla de UN SOLO USO `Bash(MSYS_NO_PATHCONV=1 schtasks /create /sc d
 
 **Orden:**
 ```
-MSYS_NO_PATHCONV=1 schtasks /create /sc daily /tn yaqu-equipo-0800 /st 08:00 /tr "C:\Users\Admin\AppData\Local\yaqu-equipo\arranque.cmd"
-MSYS_NO_PATHCONV=1 schtasks /create /sc daily /tn yaqu-equipo-1305 /st 13:05 /tr "C:\Users\Admin\AppData\Local\yaqu-equipo\arranque.cmd"
-MSYS_NO_PATHCONV=1 schtasks /create /sc daily /tn yaqu-equipo-1810 /st 18:10 /tr "C:\Users\Admin\AppData\Local\yaqu-equipo\arranque.cmd"
+MSYS_NO_PATHCONV=1 schtasks /create /sc daily /tn yaqu-equipo-0800 /st 08:00 /tr '"C:\Users\Admin\AppData\Local\yaqu-equipo\arranque.cmd"'
+MSYS_NO_PATHCONV=1 schtasks /create /sc daily /tn yaqu-equipo-1305 /st 13:05 /tr '"C:\Users\Admin\AppData\Local\yaqu-equipo\arranque.cmd"'
+MSYS_NO_PATHCONV=1 schtasks /create /sc daily /tn yaqu-equipo-1810 /st 18:10 /tr '"C:\Users\Admin\AppData\Local\yaqu-equipo\arranque.cmd"'
 ```
 
 ⚠️ **Sin `MSYS_NO_PATHCONV=1`, Git Bash convierte `/create` en una ruta y falla** (medido). Desde PowerShell lo frena el
 clasificador.
 
+⚠️ **El `/tr` lleva las comillas DOBLES DENTRO de las simples** (SCRUM-1549d). Bash se come las de fuera, y schtasks
+parte lo que recibe por el primer espacio: con un usuario con espacio (`C:\Users\Javier Pereira\…`) la tarea queda
+ejecutando `C:\Users\Javier` y cada tanda muere con `0x80070002` (medido en la máquina de Javier, 24-oct-2026). Con
+la ruta de arriba no se nota; por eso estas órdenes se COPIAN de la salida del instalador, no de aquí.
+
 **Comprobación:** `MSYS_NO_PATHCONV=1 schtasks /query /tn yaqu-equipo-0800` (y las otras dos) muestra la tarea con
-«Diariamente» y su hora.
+«Diariamente» y su hora, y `comprobar-instalacion.mjs` lee su acción (`/query /xml`): FALLA si la tarea no ejecuta
+`arranque.cmd` entero.
 
 **Deshacer:** `MSYS_NO_PATHCONV=1 schtasks /delete /tn yaqu-equipo-0800 /f` (y las otras dos). Comprobar con `/query` que
 dice «no puede encontrar».

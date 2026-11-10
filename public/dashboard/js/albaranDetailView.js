@@ -197,7 +197,7 @@ const ROTULOS_ALBARAN = {
   // Aprobados para ESTE ticket (nuevos en el árbol)
   btnFacturar: 'Facturar lo entregado', // APROBADO · SCRUM-1215 comentario 17496 (lote 3)
   // SCRUM-895 · APROBADO por el fundador el 17-sep-2026 (comentario 15699), por delegación de la
-  // elección entre tres alternativas. Va pegado a `btnFacturar` porque es de él de quien hay que
+  // elección entre tres alternativas. Consta en: SCRUM-895 comentario 15699. Va pegado a `btnFacturar` porque es de él de quien hay que
   // distinguirlo: son las DOS mitades excluyentes de la primaria de `firmado` —aquélla para el
   // albarán VALORADO, ésta para el SIN_VALORAR—, y lo único que las separa a ojos del profesional
   // es DE DÓNDE SALEN LOS PRECIOS. Por eso el rótulo los nombra: es lo que evita que se ponga a
@@ -290,6 +290,8 @@ async function albaranDesdePrecarga(albaranId) {
 }
 
 // LOS RÓTULOS DEL RAIL — APROBADOS por el fundador el 6-ago-2026 (regla 30). Una palabra cada uno.
+// Consta en: SCRUM-1502 comentario 20702 (P3, «firmo los rótulos del rail»: contesta a la pregunta
+// 3 de c.20701, que nombra este bloque, «Presupuesto» y «Fotos»). Hasta el 24-oct no citaba nada.
 //
 // `presupuesto` es «Presupuesto», NO «Presupuesto origen», y el motivo lleva un paso más allá el
 // del enlace: sale de `Job.quoteId`, así que es el presupuesto **DEL TRABAJO**. Llamarlo «origen»

@@ -1,0 +1,88 @@
+SCRUM-1390c · las NO-LLEGO del censo del ROL, con receta · admin vs técnico (id 11) · el ajeno es del compañero (id 12)
+POBLACION: 15 rutas leídas de la sección NO-LLEGO del censo (que declara 15) · con receta 15 (de 1514c 8, de 1390c 7) · modelos de documento: quote, invoice, albaran, parteTrabajo, job
+
+== NO-DISTINGUE · 5
+GET    /admin/me  [receta de 1514c]  · sin receta: NO-LLEGO (A adm 401 tec 401 · B adm 401 tec 401)
+         · con la cookie de una sesión del comercio 21 → NO-DISTINGUE [invoice=NO-DISTINGUE] · A adm 200 tec 200 · B adm 200 tec 200
+           al técnico, en B, le llega: ninguna marca del ajeno · contesta: {"merchantId":1,"name":"Negocio","merchantName":"Negocio","logoUrl":null,"locale":{"quote":"Presupuesto","quotePlural":"Presupuestos","quoteArticle":"el presupu…
+           consulta del técnico: invoice.findMany {"merchantId":1,"OR":[{"number":{"startsWith":"2026-"}},{"number":{"startsWith":"F26"}}]}
+           otros modelos: authSession.findUnique, merchant.findUnique
+POST   /admin/jobs  [receta de 1514c]  · sin receta: NO-LLEGO (A adm 400 tec 400 · B adm 400 tec 400)
+         · un trabajo para el cliente ajeno → NO-DISTINGUE [job=NO-DISTINGUE · quote=NO-DISTINGUE] · A adm 404 tec 404 · B adm 500 tec 500
+           al técnico, en B, le llega: ninguna marca del ajeno · contesta: {"error":"server_error"}
+           consulta del técnico: job.create null | quote.findUnique {"id":102} | quote.findMany {"jobId":77,"merchantId":1}
+           otros modelos: customer.findFirst, auditLog.create, customer.findUnique, jobAssignee.findMany, teamMember.findFirst
+         · un trabajo para un cliente propio → NO-DISTINGUE [job=NO-DISTINGUE · quote=NO-DISTINGUE] · A adm 404 tec 404 · B adm 500 tec 500
+           al técnico, en B, le llega: ninguna marca del ajeno · contesta: {"error":"server_error"}
+           consulta del técnico: job.create null | quote.findUnique {"id":102} | quote.findMany {"jobId":77,"merchantId":1}
+           otros modelos: customer.findFirst, auditLog.create, customer.findUnique, jobAssignee.findMany, teamMember.findFirst
+POST   /admin/ai/quote-message  [receta de 1514c]  · sin receta: NO-LLEGO (A adm 503 tec 503 · B adm 503 tec 503)
+         · el mensaje del presupuesto ajeno → NO-DISTINGUE [quote=NO-DISTINGUE] · A adm 404 tec 404 · B adm 502 tec 502
+           al técnico, en B, le llega: ninguna marca del ajeno · contesta: {"error":"ai_provider_error","message":"La IA no respondió bien. Inténtalo de nuevo en un momento."}
+           consulta del técnico: quote.findFirst {"id":102,"merchantId":1}
+         · sin presupuesto, con los datos en el cuerpo → NO-LLEGO · A adm 502 tec 502 · B adm 502 tec 502
+           al técnico, en B, le llega: ninguna marca del ajeno · contesta: {"error":"ai_provider_error","message":"La IA no respondió bien. Inténtalo de nuevo en un momento."}
+           otros modelos: merchant.findUnique
+POST   /admin/ai/suggest-albaran-lines  [receta de 1390c]  · sin receta: NO-LLEGO (A adm 404 tec 404 · B adm 404 tec 404)
+         · sugerir líneas para el albarán del compañero → NO-DISTINGUE [albaran=NO-DISTINGUE] · A adm 502 tec 502 · B adm 502 tec 502
+           al técnico, en B, le llega: ninguna marca del ajeno · contesta: {"error":"ai_provider_error","message":"La IA no respondió bien. Inténtalo de nuevo en un momento."}
+           consulta del técnico: albaran.findFirst {"id":102,"merchantId":1}
+           otros modelos: merchant.findUnique
+POST   /admin/expenses  [receta de 1390c]  · sin receta: NO-LLEGO (A adm 400 tec 400 · B adm 400 tec 400)
+         · un gasto imputado al presupuesto del compañero → NO-DISTINGUE [quote=NO-DISTINGUE] · A adm 400 tec 400 · B adm 201 tec 201
+           al técnico, en B, le llega: 🔴 cliente, concepto · contesta: {"ok":true,"item":{"id":102,"merchantId":1,"teamMemberId":11,"operarioId":12,"assignedUserId":12,"assignees":[{"teamMemberId":12}],"asignados":[],"status":"acce…
+           consulta del técnico: quote.findFirst {"id":102,"merchantId":1}
+           otros modelos: expense.create
+         · un gasto sin presupuesto → SIN-DOCUMENTO · A adm 201 tec 201 · B adm 201 tec 201
+           al técnico, en B, le llega: 🔴 cliente, concepto · contesta: {"ok":true,"item":{"id":102,"merchantId":1,"teamMemberId":11,"operarioId":12,"assignedUserId":12,"assignees":[{"teamMemberId":12}],"asignados":[],"status":"acce…
+           otros modelos: expense.create
+
+== NO-LLEGO · 2
+POST   /admin/ai/suggest-quote  [receta de 1514c]  · sin receta: NO-LLEGO (A adm 503 tec 503 · B adm 503 tec 503)
+         · con la IA «configurada» en memoria y la red cortada → NO-LLEGO · A adm 502 tec 502 · B adm 502 tec 502
+           al técnico, en B, le llega: ninguna marca del ajeno · contesta: {"error":"ai_provider_error","message":"La IA no respondió bien. Inténtalo de nuevo en un momento."}
+           otros modelos: merchant.findUnique, product.findMany
+POST   /admin/expenses/leer-ticket  [receta de 1514c]  · sin receta: NO-LLEGO (A adm 503 tec 503 · B adm 503 tec 503)
+         · con la IA «configurada» en memoria y la red cortada → NO-LLEGO · A adm 502 tec 502 · B adm 502 tec 502
+           al técnico, en B, le llega: ninguna marca del ajeno · contesta: {"ok":false,"error":"ai_provider_error"}
+
+== SIN-DOCUMENTO · 8
+POST   /admin/entorno  [receta de 1514c]  · sin receta: NO-LLEGO (A adm 400 tec 400 · B adm 400 tec 400)
+         · con la sesión que pone requireAuth (propia) → SIN-DOCUMENTO · A adm 200 tec 200 · B adm 200 tec 200
+           al técnico, en B, le llega: ninguna marca del ajeno · contesta: {"estado":"ESCRITO","valor":false}
+           otros modelos: authSession.findUnique, authSession.update
+POST   /admin/soporte  [receta de 1514c]  · sin receta: NO-LLEGO (A adm 400 tec 400 · B adm 400 tec 400)
+         · un mensaje de soporte → SIN-DOCUMENTO · A adm 200 tec 200 · B adm 200 tec 200
+           al técnico, en B, le llega: ninguna marca del ajeno · contesta: {"ok":true,"sent":false,"error":"email_send_failed","message":"No se pudo enviar el email. Puedes reintentarlo.","motivo":"sin_transporte"}
+           otros modelos: merchant.findUnique, authSession.findFirst, emailMessage.create
+POST   /admin/customers  [receta de 1390c]  · sin receta: NO-LLEGO (A adm 400 tec 400 · B adm 400 tec 400)
+         · alta de un cliente → SIN-DOCUMENTO · A adm 201 tec 201 · B adm 201 tec 201
+           al técnico, en B, le llega: 🔴 cliente, concepto · contesta: {"id":102,"merchantId":1,"teamMemberId":12,"operarioId":12,"assignedUserId":12,"assignees":[{"teamMemberId":12}],"asignados":[],"status":"accepted","estado":"em…
+           otros modelos: customer.create
+GET    /admin/customers/:id/portal-url  [receta de 1390c]  · sin receta: SIN-DOCUMENTO (A adm 404 tec 404 · B adm 200 tec 200)
+         · el enlace del portal de un cliente del negocio → SIN-DOCUMENTO · A adm 404 tec 404 · B adm 200 tec 200
+           al técnico, en B, le llega: ninguna marca del ajeno · contesta: {"portalUrl":"http://127.0.0.1:9/cliente/tok-portal-1390c","token":"tok-portal-1390c"}
+           otros modelos: customer.findFirst
+POST   /admin/customers/:id/sites  [receta de 1390c]  · sin receta: NO-LLEGO (A adm 400 tec 400 · B adm 400 tec 400)
+         · un sitio nuevo en un cliente del negocio → SIN-DOCUMENTO · A adm 404 tec 404 · B adm 201 tec 201
+           al técnico, en B, le llega: 🔴 cliente, concepto · contesta: {"sitio":{"id":102,"merchantId":1,"teamMemberId":12,"operarioId":12,"assignedUserId":12,"assignees":[{"teamMemberId":12}],"asignados":[],"status":"accepted","es…
+           otros modelos: customer.findFirst, customerSite.create
+DELETE /admin/customers/:id/sites/:siteId  [receta de 1390c]  · sin receta: SIN-DOCUMENTO (A adm 204 tec 204 · B adm 204 tec 204)
+         · borrar un sitio de un cliente del negocio → SIN-DOCUMENTO · A adm 204 tec 204 · B adm 204 tec 204
+           al técnico, en B, le llega: ninguna marca del ajeno · contesta: —
+           otros modelos: customerSite.deleteMany
+PATCH  /admin/quote-requests/:id  [receta de 1514c]  · sin receta: NO-LLEGO (A adm 400 tec 400 · B adm 400 tec 400)
+         · marcar como leída la solicitud ajena → SIN-DOCUMENTO · A adm 404 tec 404 · B adm 200 tec 200
+           al técnico, en B, le llega: 🔴 cliente, concepto · contesta: {"id":102,"merchantId":1,"teamMemberId":12,"operarioId":12,"assignedUserId":12,"assignees":[{"teamMemberId":12}],"asignados":[],"status":"accepted","estado":"em…
+           otros modelos: quoteRequest.findFirst, quoteRequest.update
+GET    /admin/attachments/:id  [receta de 1390c]  · sin receta: NO-LLEGO (A adm 404 tec 404 · B adm 404 tec 404)
+         · la foto de un albarán del Trabajo del compañero → SIN-DOCUMENTO · A adm 200 tec 200 · B adm 200 tec 200
+           al técnico, en B, le llega: 🔴 foto · contesta: FOTO-AJENA-1390C
+           otros modelos: attachment.findFirst
+
+== RECORTA · 0
+
+== SIN-RECETA · 0
+
+── LA CADENA DEL PORTAL (customers/:id/portal-url → GET /cliente/:token), pasada B, técnico
+  1 · el técnico pide el enlace → 200 · token recibido · consulta: customer.findFirst

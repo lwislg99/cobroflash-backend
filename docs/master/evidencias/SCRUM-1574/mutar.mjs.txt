@@ -1,0 +1,36 @@
+// Aplica cada mutación declarada como el meta-guard (replace(de, a)), corre el fichero y lo restaura.
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
+const raiz = process.argv[2];
+const rel = 'tests/scrum1405c-tuberia-bloqueante.test.mjs';
+const abs = path.join(raiz, rel);
+const { ambiguedadDelAncla } = await import(pathToFileURL(path.join(raiz, 'scripts/meta-guard-mutaciones.mjs')).href);
+const { MUTACIONES_QUE_ME_TUMBAN: muts } = await import(pathToFileURL(abs).href + '?x=' + Date.now());
+const original = fs.readFileSync(abs, 'utf8');
+const sha = (s) => crypto.createHash('sha256').update(s).digest('hex').slice(0, 12);
+const correr = () => {
+  const r = spawnSync(process.execPath, ['--test', '--test-force-exit', '--test-reporter=tap', rel], { cwd: raiz, encoding: 'utf8', maxBuffer: 1 << 26 });
+  const n = (k) => Number((new RegExp('^# ' + k + ' (\\d+)', 'm').exec(r.stdout) || [])[1]);
+  const caidos = (r.stdout.match(/^not ok \d+ - .*/gm) || []).map((l) => l.replace(/^not ok \d+ - /, ''));
+  return { codigo: r.status, tests: n('tests'), pass: n('pass'), fail: n('fail'), skipped: n('skipped'), caidos };
+};
+console.log('sha original', sha(original), '· mutaciones', muts.length);
+console.log('BASE', JSON.stringify(correr()));
+try {
+  for (const m of muts) {
+    const amb = ambiguedadDelAncla(original, m.de, { seCitaASiMismo: true });
+    const mutado = original.replace(m.de, m.a);
+    if (mutado === original) { console.log('NO SE APLICÓ', m.de); continue; }
+    fs.writeFileSync(abs, mutado);
+    const r = correr();
+    const cae = r.caidos.some((c) => c.includes(m.cae));
+    console.log(`${cae ? 'CAE ' : 'VIVE'} · ${m.cae} · ambigua=${JSON.stringify(amb)} · ${JSON.stringify(r)} · de=${JSON.stringify(m.de).slice(0, 70)}`);
+    fs.writeFileSync(abs, original);
+  }
+} finally {
+  fs.writeFileSync(abs, original);
+  console.log('restaurado', sha(fs.readFileSync(abs, 'utf8')) === sha(original));
+}

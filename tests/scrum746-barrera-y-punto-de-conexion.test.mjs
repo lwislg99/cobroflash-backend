@@ -93,6 +93,7 @@ export function censoDeConexiones(raiz = RAIZ) {
 const CERRADOS_EN_FASE_B = Object.freeze({
   'prisma/seed.ts': 'llama a `destinoSembrable`, como sus dos hermanos sembradores (SCRUM-746 fase B)',
   'scripts/backup-restore.mjs': 'llama a `destinoDesechable` ANTES de construir el cliente (SCRUM-746 fase B)',
+  'scripts/backfill-quote-numbers.mjs': 'llama a `comprobarCredencialDeProduccion` ANTES de construir el cliente (SCRUM-1575b); antes solo exigía `--apply`',
 });
 
 /** Ninguno: los dos que había los cerró la fase B. Si vuelve a haber uno, se apunta aquí. */
@@ -100,7 +101,6 @@ const EXPUESTOS_CONOCIDOS = Object.freeze({});
 const NO_SON_PROBLEMA = Object.freeze({
   'src/core/db/prisma.ts': 'es el cliente de la APP: su destino correcto ES produccion',
   'scripts/censo-vias-de-cobro.mjs': 'solo LEE (y ya tiene su suelo de «ciego»)',
-  'scripts/backfill-quote-numbers.mjs': 'escribe, pero exige `--apply` explicito (mitigacion, no guarda)',
   // SCRUM-927: no se conecta a NADA. Nombra `PrismaClient` y `DATABASE_URL` porque los BUSCA en el
   // AST de otros ficheros, para separar una medicion de una herramienta que toca la base.
   'scripts/_censo-de-censos.mjs': 'solo LEE y parsea: nombra esas claves porque las busca en el codigo ajeno',

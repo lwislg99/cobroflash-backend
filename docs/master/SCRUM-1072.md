@@ -50,3 +50,58 @@ A9: comprobación → `tests/scrum514-aprobado-y-aplicado.test.mjs`
 - **NO firmada y NO se escribe:** la ayuda de «No lo sé». Va a SCRUM-1264. La pantalla no la necesita.
 - `scrum514` (texto firmado = texto pintado) cayó con los tres que aún no se pintan. Se **aparcan** en `APARCADOS` con su motivo y quién los desbloquea (S2, al pintar la pregunta), que es la vía que el propio guard indica. «Profesional» no se aparca porque el cruce ya la encuentra en `src/modules/system/domain/publicProfile.service.ts:51`, que es OTRO texto (el nombre de respaldo del perfil público): eso no prueba que la pregunta esté pintada. Tests de microcopy (71 ficheros): primero 675 tests · 1 fail (`scrum514`, los tres textos); después, EXIT 0.
 - **Rojo MÍO en el CI** (run `38893115898`, punta `40805a91`, 11.646 tests · 3 fail): ① `scrum694` y `scrum700`: el caso ⑥ de mi test se fabricaba su propio filtro de comentarios por regex, y la casa tiene `soloCodigo` (`tests/_solo-codigo.mjs`). Lo cambié. ② `scrum525d`: las 6 líneas de `activityKind` desplazaron dos anclas de `docs/legal/AUDITORIA_CAMINO_EMISION.md` (`schema.prisma:925-926` → `931-932`, en dos sitios, y `:1803` → `:1809`); las llevé a donde está hoy su testigo, sin tocar la frase. Antes de calcularlas mergeé `origin/main`. Después, esos tres, mi test y `scrum514`: 64/64. Lección: antes de empujar, correr los guards de la casa sobre los tests NUEVOS (`scrum694`, `scrum700`) y sobre lo que mueve líneas de `schema.prisma` (`scrum525d`), no solo los vecinos del perfil.
+
+
+## SCRUM-1072d · la pregunta, pintada junto a «Retención de IRPF» (S2, 19-oct)
+
+**Medido contra:** `origin/main` = `eee7d2b4bcea348a05d0020a1e912db73a894cfe` · 2026-10-19T12:09:21Z
+
+A9: comprobación → `tests/scrum1072d-actividad-en-pantalla.test.mjs`
+> **Skill UI:** cargada · `yaqu-premium-ui`: un `<select>` con la misma caja (`form-group` + `input`) que la retención de al lado; cero tokens, cero componentes; textos sólo los cuatro firmados.
+
+Sesión S2 (`s2-19oct-d`). Cierra los puntos 1 y 5 de la tabla de arriba (la pregunta y sus textos, pintados). El 6
+sigue aparcado en `espera/scrum-1072c-…` hasta Q-C5, y la ayuda de «No lo sé» sigue en SCRUM-1264.
+
+### 🔴 El carril, con el conflicto a la vista (decisión del orquestador, 19-oct)
+
+`settingsView.js` y `settingsSubmenus.js` son **contenedores de J3** (`dos-equipos.md:146`). Esto va como **bloque
+de S2 marcado `// S2:`**, por tres referencias que no dicen lo mismo:
+- `dos-equipos.md:95`: en un contenedor, el otro equipo añade **SOLO su bloque, marcado con su puesto, en un PR suyo**. Este caso es literalmente eso.
+- `docs/microcopy/2026-10-16-SCRUM-1072-tipo-de-actividad.md`, «Dónde se pinta»: «la pinta S2». Es posterior y es de este ticket.
+- ⚠️ **En contra:** `dos-equipos.md:56` dice que S2 «deja las pantallas de … configuración». Y `:146` pone la pestaña
+  «Facturación» (datos fiscales) en el área de J1.
+Si J1 o J3 objetan, el PR es el sitio, y se revierte sin coste: es un bloque y una clave del mapa.
+
+### Lo que hace
+
+- `settingsView.js`: un `<select name="activityKind">` justo después de la retención, en la misma pestaña. Las
+  opciones son `""` → «no consta», `profesional`, `empresarial` y `no_lo_se`. Al cargar, un valor fuera de la
+  lista se pinta como «no consta». Al guardar, «no consta» viaja como `null`, igual que los otros estados fiscales.
+- **«No consta» es la opción VACÍA, sin texto**, porque un rótulo para ella no está firmado (la firma es «estos cuatro
+  literales y nada más»). Propuesta pendiente de firma: reutilizar «No consta», el que ya llevan los tres selectores de
+  estado fiscal de esa pestaña. Cambiarlo es una línea.
+- `settingsSubmenus.js`: `activityKind: 'facturacion'`.
+- `scrum514`: fuera las tres líneas de `APARCADOS` de 1072, como pedía su motivo («lo desbloquea S2 al pintar la
+  pregunta: entonces estas tres líneas se QUITAN»). `scrum1227` y `scrum1269`: `activityKind` en su `GUARDADO`, como
+  pedían sus mensajes («añádelos a GUARDADO»). No se tocó ninguna aserción.
+
+### Medido
+
+**yaqu.app** (build `eee7d2b4b`, cuenta QA, sirviendo los dos ficheros de la rama; el PUT lo contesta la sonda y nada
+sale; `sondas-s2/actividad-1072d.mjs [árbol]`):
+
+| | prod | rama 1280 | rama 390 |
+|---|---|---|---|
+| el campo | no existe | justo después de la retención, mismo panel | igual |
+| opciones | — | ∅ · Profesional · Empresarial · No lo sé | igual |
+| QA (sin respuesta guardada) | — | se pinta ∅ | igual |
+| elegir «Empresarial» y guardar | — | el PUT lleva `activityKind: "empresarial"` y la retención sin tocar | igual |
+
+**Test** `tests/scrum1072d-actividad-en-pantalla.test.mjs` (Configuración montada en el banco, como 1102f): los
+cuatro estados ida y vuelta, el valor fuera de la lista, que elegir no mueva la retención, los textos firmados y el
+sitio. **Antes de escribirlo**, los tests que ya existían (`scrum514`, `scrum1227`, `scrum1269`) cazaban **1 de 4**
+mutaciones: sólo el texto cambiado. **Con él, 6 de 6**: sin el campo, sin la línea del envío, un texto cambiado, la
+opción vacía con texto, `null` colapsado en `no_lo_se`, y sin la clave del mapa. Base verde.
+
+**Visto de paso, no tocado** (contenedor de J3, y ya estaba así en prod): a 390 el rótulo «Retención de IRPF» va en
+línea con su selector y «Añadir condición» sale sin estilo de botón. Los selectores de esa pestaña miden 36 px de alto.

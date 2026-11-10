@@ -1,0 +1,5 @@
+400 invalid_id    → {"aviso":"No se ha podido completar la acción. Vuelve a intentarlo.","modalAbierto":true,"confirmarDesactivado":false,"toasts":0,"posts":1,"postsTrasReintento":2}
+500 internal_error → {"aviso":"No se ha podido completar la acción. Vuelve a intentarlo.","modalAbierto":true,"confirmarDesactivado":false,"toasts":0,"posts":1,"postsTrasReintento":2}
+409 mismo_cliente  → {"aviso":"Elige un cliente distinto.","modalAbierto":true,"confirmarDesactivado":true,"toasts":0,"posts":1,"postsTrasReintento":1} (control: tiene que salir DISTINTO del 500)
+POBLACION=3 respuestas · midió de verdad (un POST, un aviso pintado y el 409 distinto) = true · 400 y 500 reaccionan IGUAL = true
+exit=0

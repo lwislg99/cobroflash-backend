@@ -1,0 +1,37 @@
+runs=239 jobs=179 {"null":3,"success":123,"failure":33,"cancelled":20}
+119801393046 2026-10-22T11:37:14Z scrum-1575b-censo-conexiones-sin-guard pull_request B=1943896   | SCRUM-1415 · 🔴 EL ÁRBOL: las llamadas de nombre construido  ; SCRUM-1480f · NO SUBE: ningún script sin fila que no estuvie
+119788291492 2026-10-22T11:06:02Z scrum-962f-editor-cuatro-44 pull_request B=1935829   | SCRUM-1321 · 🔴 NINGUNA mutación declarada tiene el ancla am
+119788688141 2026-10-22T11:04:39Z scrum-935d-metaguard-pasada-filtrada pull_request B=1941464   | SCRUM-702 · 🔴 no entra NINGUNA dependencia del entorno nuev ; SCRUM-708 · 🔴 NINGÚN fichero registra tests fuera de lo que
+119784074990 2026-10-22T10:55:57Z scrum-962e-censo-tactil-cuatro-averias pull_request B=1938123   | SCRUM-553 · 🔴 el número de etiquetas con el `>` pegado NO S
+119776178613 2026-10-22T10:36:50Z scrum-1536f-pais-en-ajustes pull_request B=1932339   | SCRUM-643 · 🔴 la DECISIÓN de qué zona usar vive en UN sitio
+119769715166 2026-10-22T10:21:15Z scrum-962c-editor-presupuestos-44 pull_request B=1357234 COLGADA  | 
+119769351019 2026-10-22T10:20:22Z scrum-1566-expediente-tres-centimos pull_request B=1937430   | SCRUM-864c · 🔴 ③ NINGÚN temporal nuevo nace sin borrarse: l
+119764489826 2026-10-22T10:08:53Z scrum-935d-metaguard-pasada-filtrada pull_request B=1939212   | SCRUM-702 · 🔴 no entra NINGUNA dependencia del entorno nuev ; SCRUM-708 · 🔴 NINGÚN fichero registra tests fuera de lo que
+119758521318 2026-10-22T09:55:05Z scrum-1507c-el-cron-del-reintento pull_request B=1930467   | SCRUM-1093h · 🔴 RATCHET: toda fila del censo real tiene una
+119754022906 2026-10-22T09:44:35Z scrum-1289c-registro-pegado pull_request B=1934981   | SCRUM-864c · 🔴 ③ NINGÚN temporal nuevo nace sin borrarse: l
+119752967615 2026-10-22T09:40:48Z scrum-1339-senal-bloquea pull_request B=1936998   | SCRUM-1294 · todo registro desde el corte lleva su línea A9, ; SCRUM-976 ④ mitad POSITIVA: el comando de verdad sale 0 y ej
+119254697995 2026-10-21T13:37:24Z scrum-1393d-cierre-con-verde pull_request B=1930024   | SCRUM-1349 · 🔴 los que prestan el entorno son EXACTAMENTE l ; SCRUM-1349 · 🔴 CONTROL POSITIVO DEL TRINQUETE: un acusado d
+119243885281 2026-10-21T13:16:01Z scrum-1571-borrar-ajeno-contesta-404 pull_request B=1884334   | SCRUM-1344 · ⑤ un arnés NUEVO no declara el rol a mano: usa 
+119232825723 2026-10-21T12:53:23Z scrum-1570b-marcadores-ficha-gasto pull_request B=1880887   | SCRUM-694 · 🔴 no entra NINGÚN filtro de comentarios nuevo
+119222039233 2026-10-21T12:29:59Z scrum-1509h-veinte-por-hora pull_request B=1912881   | A8.4: suite completa del bot (webhook + dry-run)
+119219732718 2026-10-21T12:24:54Z scrum-1393c-vigia-main-por-commit pull_request B=1876196  1405c④ | SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya 
+118717000197 2026-10-20T15:27:33Z scrum-1527e-cero-tras-2429-y-e-descartad pull_request B=1876628  1405c④ | SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya 
+118713672524 2026-10-20T15:21:27Z scrum-1455b-factura-decimal-medida pull_request B=1900738   | SCRUM-1455b · PUT /admin/invoices /:id/status · 🔴 un id dec ; SCRUM-1455b · POST /admin/invoices /:id/pay · 🔴 un id decim ; SCRUM-1455b · POST /admin/invoices /:id/unpay · 🔴 un id dec
+118584283039 2026-10-20T10:39:59Z scrum-1569-la-linea-contactname pull_request B=1875053  1405c④ | SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya 
+118571104501 2026-10-20T10:08:01Z scrum-1456b-borrar-y-fusionar-con-id-que pull_request B=1880788   | SCRUM-1456 · DELETE customers /:id · `id` (params) · 🔴 un i ; SCRUM-1456 · POST customers /:id/fusionar · `id` (params) ·  ; SCRUM-1456 · POST customers /:id/fusionar · `con` (body) · �
+118569736644 2026-10-20T10:04:39Z scrum-1565b-sin-victima-hoy pull_request B=1874186  1405c④ | SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya 
+118566805303 2026-10-20T09:57:17Z scrum-914-j3-borrado-y-anonimizado-equip pull_request B=1886410   | SCRUM-192 · el orden no inventa modelos que el schema no tie ; SCRUM-244 · CONTRA POSTGRES: se anonimiza, la ANOTACIÓN sobr ; SCRUM-314 · CONTROL: ningún borrado sale sin filtro del demo
+118048389058 2026-10-19T12:03:51Z scrum-623b-xml-y-papel-discrepan pull_request B=1870158  1405c④ | SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya 
+118042513814 2026-10-19T11:49:05Z scrum-1559k-albaranes-769-899 pull_request B=1871529  1405c④ | SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya 
+118041690357 2026-10-19T11:47:02Z scrum-1516b-frontera-al-obligatorio pull_request B=1871062   | SCRUM-1516b · 🔴 eje del ROL: lo que un Técnico recibe igual
+118034283914 2026-10-19T11:28:27Z scrum-1559j-productos-44px pull_request B=1869943  1405c④ | SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya 
+118033018003 2026-10-19T11:25:13Z scrum-1554b-los-57-por-tipo pull_request B=1867172  1405c④ | SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya 
+118030597866 2026-10-19T11:18:15Z scrum-1529-censo-equipo-javier-27 pull_request B=1866622  1405c④ | SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya 
+117945663279 2026-10-19T07:43:14Z scrum-1563d-estado-19oct-tarde pull_request B=1866025  1405c④ | SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya 
+117946018721 2026-10-19T07:42:21Z scrum-1554c-puerta-go-live-en-fichero pull_request B=1868489   | SCRUM-1480f · NO SUBE: ningún script sin fila que no estuvie
+117939636590 2026-10-19T07:25:50Z scrum-1516b-frontera-al-obligatorio pull_request B=1892855   | SCRUM-124 (r28): ninguna llamada a graph.facebook.com fuera  ; SCRUM-262 · todo teléfono sembrado está en el rango imposibl ; SCRUM-409 · ningún fixture usa el merchant DEMO salvo donde 
+117937381146 2026-10-19T07:18:26Z main push B=1862630  1405c④ | SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya 
+117928139586 2026-10-19T06:50:48Z scrum-1357h-sala-carga-mods-yaqu pull_request B=1871903   | SCRUM-1294 · todo registro desde el corte lleva su línea A9, ; SCRUM-976 ④ mitad POSITIVA: el comando de verdad sale 0 y ej
+POSITIVO (118717000197 en población y marcado): true
+CERO (verde 120208755966 ) marcado: false
+rojos con 1405c④: 11 de 33 · colgadas: 1

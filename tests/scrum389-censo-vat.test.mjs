@@ -97,6 +97,11 @@ const CENSO = {
   // EXCLUYE y se cuenta (`revenueSinDesglose`), nunca se sustituye por el total. Mismo veredicto
   // que `libroRegistro.ts`.
   'src/modules/reports/domain/beneficioBaseImponible.ts': { veredicto: 'DOCUMENTO', nota: 'desglosa la base de CADA factura del periodo, una llamada por factura; sin líneas desglosables se excluye y se declara, nunca se sustituye por el total (SCRUM-1047)' },
+  // SCRUM-624e · VUELVE `pdf.service.ts`, ahora por la FACTURA y no por el presupuesto: el bloque
+  // de totales de UNA factura F1 imprime el desglose del registro (GO del fundador, SCRUM-624
+  // c.20817). ⚠️ La R1 y el justificante siguen agrupando a mano: esa aritmética NO la cubre este
+  // veredicto, y está declarada como REIMPLEMENTACION en scrum627b-censo-declara-reimplementaciones.test.mjs.
+  'src/modules/invoicing/infra/pdf/pdf.service.ts': { veredicto: 'DOCUMENTO', nota: 'el bloque de totales de UNA factura F1: imprime el desglose de su registro y su total guardado (SCRUM-624e)' },
 };
 
 test('SCRUM-389 · SUELO: el extractor ENCUENTRA llamadores', () => {

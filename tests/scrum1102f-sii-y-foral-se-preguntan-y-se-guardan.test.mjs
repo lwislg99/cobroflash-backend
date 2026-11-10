@@ -102,13 +102,21 @@ test('🔴 SCRUM-1102f · ② los TRES estados de cada respuesta entran por el P
     for (const e of ESTADOS) {
       // La fila empieza con OTRO valor: uno igual aprobaría aunque no se escribiera nada.
       const fila = baseQueRecuerda({ [c.clave]: e.guardado === true ? false : true });
+      // 🔵 SCRUM-1536d (decisión del fundador, Jira SCRUM-1536 c.20218): el domicilio foral NO entra
+      // en YaQu por ahora, así que su «Sí» ya no se guarda: se rechaza entero y la fila no cambia.
+      // Hasta el 22-oct este caso pedía que se guardara; el rechazo y su texto los mide scrum1536d.
+      if (c.clave === 'domicilioFiscalForal' && e.guardado === true) {
+        await assert.rejects(putComoApp({ [c.clave]: e.guardado }), { code: 'territorio_excluido' }, '🔴 el «Sí» foral se ha guardado');
+        assert.equal(fila[c.clave], false, '🔴 el «Sí» foral rechazado ha escrito en la fila');
+        continue;
+      }
       assert.equal((await putComoApp({ [c.clave]: e.guardado })).status, 200);
       assert.equal(fila[c.clave], e.guardado, `🔴 ${c.clave}: mando ${e.guardado} y en la base queda ${fila[c.clave]}`);
       const perfil = await getMerchantProfile(7);
       assert.ok(c.clave in perfil, `🔴 ${c.clave} se guarda y no vuelve: el siguiente guardado lo borraría`);
       vueltas.push(perfil[c.clave]);
     }
-    assert.deepEqual(vueltas, [null, true, false], `🔴 ${c.clave}: los tres estados no vuelven distintos`);
+    assert.deepEqual(vueltas, c.clave === 'domicilioFiscalForal' ? [null, false] : [null, true, false], `🔴 ${c.clave}: los estados que se guardan no vuelven distintos`);
   }
 });
 

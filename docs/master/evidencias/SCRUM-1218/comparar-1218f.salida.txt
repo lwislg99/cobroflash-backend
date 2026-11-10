@@ -1,0 +1,13 @@
+scrum127-paywall-bloquea {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":1,"nResp":12}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum170-facturacion-parcial {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":7,"nResp":7}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum171a-consolidar-cliente {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":1,"nResp":8}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum73-verifactu-gate {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":1,"nResp":5}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum90-pay-bank-mp-token {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":1,"nResp":6}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+tenancy-permisos {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":2,"nResp":97}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+POBLACION=6 ficheros · malos=0 · EXIT=0

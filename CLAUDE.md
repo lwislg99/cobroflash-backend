@@ -86,14 +86,17 @@ desde él (este mismo CLAUDE.md incluido) puede ser una versión antigua. *(17-s
    `docs/equipo/00-normas-comunes.md`). El DDL sale de `node scripts/preview-migracion.mjs`.
    `migrate dev` está PROHIBIDO (el hook lo bloquea). *(Corregido el 17-sep-2026: decía «siempre db push
    con preview antes de tocar prod», contra la regla 3.)* **Claves de BD — REGISTRO MEDIDO el
-   14-oct-2026 a las 08:15Z (S0, SCRUM-418b), no afirmación de estado; dice lo que HABÍA ese día:** de
-   los 113 árboles git de esta máquina (los de `git worktree list` y las carpetas de `D:\MILLONARIO\cobroFlash`),
-   **ninguno llevaba `DATABASE_URL_STAGING`, `_DEV` ni `_TESTS`** (ni en un `.env*` ni en el entorno de
-   usuario o de máquina), y **ninguna clave apuntaba a producción**. Dos árboles —el checkout compartido y
-   `s1-960`— tenían un `.env.local` con `DATABASE_URL` → `localhost/yaqu_dev`, y no había ningún Postgres
-   escuchando en el 5432. **Consecuencia: ese día ninguna sesión podía medir dev ni staging desde un árbol.**
-   El registro anterior (10-ago-2026: «los cuatro worktrees llevan las tres; no existe ningún
-   `.env.local`») ya no describía la máquina. Quien lo vuelva a medir, que lo re-feche aquí:
+   29-oct-2026 a las 18:30Z (S0, SCRUM-1563j), no afirmación de estado; dice lo que HABÍA ese día:** de
+   los 313 árboles de `git worktree list` (población de `node scripts/claves-bd-de-todos-los-arboles.mjs`:
+   sólo la raíz, sólo `.env` y `.env.<algo>`), **311 no tenían fichero de entorno** y **ninguno llevaba
+   `DATABASE_URL_STAGING`, `_DEV` ni `_TESTS`** (tampoco en el entorno de usuario o de máquina). Los dos
+   de siempre —el checkout compartido y `s1-960`— tenían un `.env.local` con `DATABASE_URL` →
+   `localhost/yaqu_dev` (destino según `comprobar-claves-bd.mjs`), y no había ningún Postgres escuchando
+   en el 5432. 🔴 **«Ninguna apunta a producción» NO se puede escribir hoy:** el censo sale 2 («no supe
+   medir») porque `localhost/yaqu_dev` no está declarado en `DESTINOS_ESPERADOS` (SCRUM-1526: sólo pasa
+   lo declarado), y se niega a dar la frase. Declararlo es una decisión, no un re-fechado. Registro
+   anterior (14-oct-2026, SCRUM-418b, 113 árboles): lo mismo, y entonces sí decía «ninguna clave apuntaba
+   a producción». Quien lo vuelva a medir, que lo re-feche aquí:
    `node scripts/comprobar-claves-bd.mjs` (mapa y guard en `scripts/_clave-vs-destino.mjs`; en un
    árbol de trabajo NO vive producción, y desde SCRUM-418 el guard lo hace cumplir por DESTINO).
    `loadEnv.ts` sigue dando prioridad a `.env.local` **si aparece**.
@@ -133,6 +136,8 @@ Si no puedes abrir el master, no estás en condiciones de tocar ninguno de los t
 ```bash
 npm run dev              # hot reload; carga .env.local con prioridad (BD local + DISABLE_CRONS=true)
 npm run build            # tsc → dist/
+# La tanda de pruebas (`npm test`) se corre desde Git Bash. Desde cmd o PowerShell, si `bash` no está en el PATH,
+# los tests que lanzan `bash` salen en rojo sin serlo: 51 el 23-oct-2026 (SCRUM-1244).
 npm test                 # compila + node --test (tests/*.test.mjs contra dist/)
 # ⚠️ `npm test` NO LO CORRE TODO, y su «0 fallos» no incluye lo que saltó (SCRUM-419/456).
 # Los saltos DECLARAN su motivo: búscalos con el reporter TAP, porque `spec` NO lo imprime.
@@ -146,6 +151,11 @@ rm -f "${TMPDIR:-/tmp}/yaqu-tanda.tap"
 node --test --test-force-exit --test-reporter=spec --test-reporter-destination=stdout \
      --test-reporter=tap --test-reporter-destination="${TMPDIR:-/tmp}/yaqu-tanda.tap" 'tests/*.test.mjs'
 grep "# SKIP" "${TMPDIR:-/tmp}/yaqu-tanda.tap"
+# Con el equipo trabajando, la tanda entera NO cabe en un comando (2.020 s el 23-oct-2026, SCRUM-1244):
+# se corre por tramos, uno por comando en primer plano, y vale el veredicto del resumen.
+node scripts/tanda-entera-por-tramos.mjs --plan
+node scripts/tanda-entera-por-tramos.mjs --tramo 1/13    # … hasta 13/13
+node scripts/tanda-entera-por-tramos.mjs --resumen 13    # 0 verde · 1 rojo · 2 CIEGO (falta un tramo o uno no terminó)
 npm run test:staging:gated   # los gateados por QA_DB_TEST / A55_DB_TEST / BOT_SUITE_TEST.
                              # Toma el TURNO de staging y lo suelta (detalle en RUNBOOKS y en
                              # docs/QA/SUITE_REGRESION.md). NO lo lances con `| tail`.

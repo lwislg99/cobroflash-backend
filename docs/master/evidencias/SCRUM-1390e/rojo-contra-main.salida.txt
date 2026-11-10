@@ -1,0 +1,12 @@
+medido sobre origin/main 37311b671db107cc48a31fc359104fe36525ad2e (src de main transpilado a dist/, y restaurado byte a byte)
+scrum1390e-el-portal-solo-lo-suyo.test.mjs · pasada 0 · exit=1 · firma=false · casos=6 (ok=4 not_ok=2 skip=0) · # tests 6 · respuestas=27
+POBLACION=1 pasadas · EXIT=0
+not ok 1 - SCRUM-1390e · 🔴 el Técnico NO se lleva el portal de un cliente con un presupuesto o una factura de otro, y no se le escribe token
+      → 🔴 la Técnica se lleva el portal de un cliente con un(a) presupuesto de Blas (status 200)
+ok 2 - SCRUM-1390e · ✅ el Técnico SIGUE llevándose el portal cuando todo lo que enseña es suyo (autor · asignado al documento · sin documentos), y abre
+ok 3 - SCRUM-1390e · ✅ la administradora y la dueña, SIN CAMBIOS: se llevan el portal de cualquier cliente, también con documentos de otros
+not ok 4 - SCRUM-1390e · 🔴 de paso: la ficha del cliente no le sirve EN CRUDO al Técnico el enlace que portal-url le niega
+      → 🔴 la ficha de «QA1390E presupuesto ajeno» le da a la Técnica el enlace del portal
+ok 5 - SCRUM-1390e · portal-url pregunta ANTES de escribir el token, y la ficha pregunta lo mismo
+ok 6 - SCRUM-1390e · la pregunta no es un criterio nuevo: pide sus recortes a las dos puertas de SCRUM-1403
+POBLACION=6 casos · ok=4 · not ok=2 · EXIT=0

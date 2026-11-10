@@ -270,8 +270,10 @@ export const ANCLAS_564 = {
     // `sent` sin decisión (src/core/cron/cron.ts la llama para todo merchant, sin flag).
   },
   'faq/div#1': {
-    texto: 'Exacto — por eso esto ES WhatsApp. La diferencia: el tuyo no firma ni lleva el seguimiento solo. Y aquí además llevas clientes, gastos y facturas en el mismo sitio.',
+    texto: 'Exacto — por eso esto ES WhatsApp. La diferencia: el tuyo no firma ni lleva el seguimiento solo. Y aquí además llevas clientes, gastos y albaranes en el mismo sitio.',
     anclas: [FIRMA, RECORDATORIO_FIRMA],
+    // SCRUM-1551d (22-oct-2026): «facturas» → «albaranes» es L1, firmado en SCRUM-1551 c.20256
+    // (propuesta de c.20249 y del tramo 1551c). Mismas anclas: la firma y su seguimiento.
   },
 
   // ── condiciones comerciales ───────────────────────────────────────────────────────────
@@ -283,8 +285,10 @@ export const ANCLAS_564 = {
     // Era `precios/p#6`: SCRUM-1086 quitó el fee-note que iba delante y el índice bajó a #2.
   },
   'faq/div#4': {
-    texto: 'Sin permanencia. Tus datos son tuyos: clientes, presupuestos, facturas, cobros, trabajos y gastos se exportan en CSV cuando quieras.',
+    texto: 'Sin permanencia. Tus datos son tuyos: clientes, presupuestos, trabajos y gastos se exportan en CSV cuando quieras.',
     anclas: [CSV],
+    // SCRUM-1551e (23-oct-2026): fuera «facturas, cobros» es C1, firmado en SCRUM-1551 c.20437
+    // (propuesta de c.20377). Misma ancla: los CSV de exportación siguen existiendo.
   },
 
   // ── identidad ─────────────────────────────────────────────────────────────────────────

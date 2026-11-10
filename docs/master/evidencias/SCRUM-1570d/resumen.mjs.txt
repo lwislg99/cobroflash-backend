@@ -1,0 +1,10 @@
+import { readFileSync } from 'node:fs';
+const filas = JSON.parse(readFileSync(process.argv[2], 'utf8')).sort((a, b) => a.created.localeCompare(b.created));
+const pat = process.argv.slice(3);
+for (const f of filas) {
+  const marcas = pat.map((p) => {
+    const hits = f.anot.filter((a) => a.includes(p));
+    return `${p}:${hits.length ? hits.map((h) => h.split('|')[0][0]).join('') : '-'}`;
+  }).join(' ');
+  console.log(`${f.created} ${f.sha.slice(0, 9)} run=${f.run} jobs=${f.jobsTotal} nav=${f.jobConcl ?? 'SIN-JOB'} anot=${f.anot.length} ${marcas}`);
+}

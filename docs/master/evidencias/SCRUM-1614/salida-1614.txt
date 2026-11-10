@@ -1,0 +1,79 @@
+SCRUM-1614 · salidas del banco (Postgres 16.14 de pgbanco.mjs, puerto 55614, base rehecha antes de cada pasada; dist/ con tsc --noCheck sobre origin/main efe736f3f)
+== 1. sonda en el régimen en paralelo (57 ficheros de banco + sonda), test VIEJO
+ficheros=57 + sonda
+par-1 rc=1 s=21 casos=194 decl=194 A12.2c=[ok 192] fk=1 SONDA1614 antes=0 borradas=0 cayo=no r1=2026-10-27T13:12:17.176Z r2=2026-10-27T13:12:17.201Z del=2026-10-27T13:12:17.204Z 
+par-2 rc=1 s=22 casos=193 decl=193 A12.2c=[ok 192] fk=0 SONDA1614 antes=1 borradas=1 cayo=no r1=2026-10-27T13:12:40.993Z r2=2026-10-27T13:12:41.030Z del=2026-10-27T13:12:41.035Z 
+par-3 rc=1 s=22 casos=193 decl=193 A12.2c=[ok 192] fk=0 SONDA1614 antes=0 borradas=1 cayo=no r1=2026-10-27T13:13:05.544Z r2=2026-10-27T13:13:05.555Z del=2026-10-27T13:13:05.562Z 
+par-4 rc=1 s=21 casos=193 decl=193 A12.2c=[ok 192] fk=0 SONDA1614 tardias=[["payment_received","2026-10-27T13:13:27.068Z"]] SONDA1614 antes=0 borradas=0 cayo=FK customer_events r1=2026-10-27T13:13:27.078Z r2=2026-10-27T13:13:27.090Z del=2026-10-27T13:13:27.095Z 
+par-5 rc=1 s=20 casos=195 decl=195 A12.2c=[ok 192] fk=1 SONDA1614 antes=0 borradas=0 cayo=no r1=2026-10-27T13:13:47.426Z r2=2026-10-27T13:13:47.433Z del=2026-10-27T13:13:47.438Z 
+par-6 rc=1 s=20 casos=193 decl=193 A12.2c=[ok 192] fk=0 SONDA1614 tardias=[["payment_received","2026-10-27T13:14:07.655Z"]] SONDA1614 antes=0 borradas=0 cayo=FK customer_events r1=2026-10-27T13:14:07.665Z r2=2026-10-27T13:14:07.677Z del=2026-10-27T13:14:07.682Z 
+par-7 rc=1 s=21 casos=193 decl=193 A12.2c=[ok 192] fk=0 SONDA1614 antes=0 borradas=1 cayo=no r1=2026-10-27T13:14:30.331Z r2=2026-10-27T13:14:30.350Z del=2026-10-27T13:14:30.359Z 
+par-8 rc=1 s=23 casos=193 decl=193 A12.2c=[ok 192] fk=0 SONDA1614 antes=0 borradas=1 cayo=no r1=2026-10-27T13:14:54.252Z r2=2026-10-27T13:14:54.269Z del=2026-10-27T13:14:54.273Z 
+== 2. test VIEJO, a solas, 20 pasadas (a=A12.2c cae · f=el fichero cae · uv=aborto libuv · cust/merch=FK de customer_events)
+viejo-solo-1 a=0 f=1 uv=1 cust=0 merch=1 ok=3
+viejo-solo-2 a=1 f=0 uv=1 cust=1 merch=0 ok=2
+viejo-solo-3 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+viejo-solo-4 a=1 f=0 uv=1 cust=1 merch=0 ok=2
+viejo-solo-5 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+viejo-solo-6 a=0 f=1 uv=1 cust=1 merch=0 ok=3
+viejo-solo-7 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+viejo-solo-8 a=0 f=1 uv=1 cust=1 merch=0 ok=3
+viejo-solo-9 a=1 f=0 uv=1 cust=1 merch=0 ok=2
+viejo-solo-10 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+viejo-solo-11 a=0 f=1 uv=1 cust=1 merch=0 ok=3
+viejo-solo-12 a=0 f=1 uv=1 cust=0 merch=1 ok=3
+viejo-solo-13 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+viejo-solo-14 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+viejo-solo-15 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+viejo-solo-16 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+viejo-solo-17 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+viejo-solo-18 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+viejo-solo-19 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+viejo-solo-20 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+== 3. test NUEVO, a solas, 20 pasadas
+nuevo-solo-1 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+nuevo-solo-2 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+nuevo-solo-3 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+nuevo-solo-4 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+nuevo-solo-5 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+nuevo-solo-6 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+nuevo-solo-7 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+nuevo-solo-8 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+nuevo-solo-9 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+nuevo-solo-10 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+nuevo-solo-11 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+nuevo-solo-12 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+nuevo-solo-13 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+nuevo-solo-14 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+nuevo-solo-15 a=0 f=1 uv=1 cust=0 merch=0 ok=3
+nuevo-solo-16 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+nuevo-solo-17 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+nuevo-solo-18 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+nuevo-solo-19 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+nuevo-solo-20 a=0 f=0 uv=0 cust=0 merch=0 ok=3
+== 4. siembra (siembra1614.mjs) · viejo y nuevo
+viejo-con-1 A12.2c=[not ok] fk=1
+viejo-con-2 A12.2c=[not ok] fk=1
+viejo-con-3 A12.2c=[not ok] fk=1
+viejo-sin-1 A12.2c=[ok 3 -] fk=0
+viejo-sin-2 A12.2c=[not ok] fk=1
+nuevo-con-1 A12.2c=[ok 3 -] fk=0
+nuevo-con-2 A12.2c=[ok 3 -] fk=0
+nuevo-con-3 A12.2c=[ok 3 -] fk=0
+== 5. test NUEVO en el régimen en paralelo, 8 pasadas
+ficheros=57 + sonda
+npar-1 rc=1 s=20 casos=193 decl=193 A12.2c=[ok 192] fk=0 SONDA1614 antes=0 borradas=1 cayo=no r1=2026-10-27T13:20:52.729Z r2=2026-10-27T13:20:52.749Z del=2026-10-27T13:20:52.754Z 
+npar-2 rc=1 s=20 casos=193 decl=193 A12.2c=[ok 192] fk=1 SONDA1614 antes=0 borradas=0 cayo=no r1=2026-10-27T13:21:11.452Z r2=2026-10-27T13:21:11.466Z del=2026-10-27T13:21:11.471Z 
+npar-3 rc=1 s=21 casos=193 decl=193 A12.2c=[ok 192] fk=0 SONDA1614 antes=0 borradas=1 cayo=no r1=2026-10-27T13:21:35.264Z r2=2026-10-27T13:21:35.280Z del=2026-10-27T13:21:35.285Z 
+npar-4 rc=1 s=21 casos=193 decl=193 A12.2c=[ok 192] fk=0 SONDA1614 antes=0 borradas=0 cayo=no r1=2026-10-27T13:21:58.371Z r2=2026-10-27T13:21:58.388Z del=2026-10-27T13:21:58.393Z 
+npar-5 rc=1 s=26 casos=193 decl=193 A12.2c=[ok 192] fk=0 SONDA1614 antes=1 borradas=1 cayo=no r1=2026-10-27T13:22:20.022Z r2=2026-10-27T13:22:20.129Z del=2026-10-27T13:22:20.167Z 
+npar-6 rc=1 s=21 casos=193 decl=193 A12.2c=[ok 192] fk=0 SONDA1614 antes=0 borradas=1 cayo=no r1=2026-10-27T13:22:46.840Z r2=2026-10-27T13:22:46.855Z del=2026-10-27T13:22:46.861Z 
+npar-7 rc=1 s=28 casos=193 decl=193 A12.2c=[ok 192] fk=0 SONDA1614 antes=1 borradas=1 cayo=no r1=2026-10-27T13:23:14.665Z r2=2026-10-27T13:23:14.693Z del=2026-10-27T13:23:14.701Z 
+npar-8 rc=1 s=21 casos=193 decl=193 A12.2c=[ok 192] fk=0 SONDA1614 tardias=[["payment_received","2026-10-27T13:23:35.059Z"]] SONDA1614 antes=0 borradas=0 cayo=FK customer_events r1=2026-10-27T13:23:35.068Z r2=2026-10-27T13:23:35.079Z del=2026-10-27T13:23:35.083Z 
+== 6. mutación de la casa (mutar-1599i.mjs, MUTACIONES_CON_BASE)
+== tests/webhooks-idempotencia.test.mjs · limpia: 3 ok de 3
+MUERE · M1 · src/modules/billing/app/routes/psp.routes.ts · «if (charge.status === 'paid' && body.event === 'payment.conf» → «if (false) {» · 1 de 3 caen · su caso («A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga») cae
+    · A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integración)
+      error: y marcado como duplicate
+POBLACION=1 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+EXIT=0

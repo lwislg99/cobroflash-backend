@@ -32,22 +32,149 @@ export const AVISO_DE_SIMULACRO = '🧪 **SIMULACRO — PRODUCCIÓN NO ESTÁ CON
 export const TITULO_DEL_AVISO = '🔴 Producción congelada — el vigía del despliegue está en rojo';
 export const TITULO_DEL_SIMULACRO = '🧪 SIMULACRO (no es real) · ' + TITULO_DEL_AVISO;
 
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-1123f · ¿QUÉ AVERÍA ES? DOS DAN EL MISMO SÍNTOMA, Y SE MIRAN EN SITIOS DISTINTOS
+//
+// Del 21-oct 12:41Z al 22-oct 12:35Z entraron 55 commits en `main` y Railway NO VIO NINGUNO: cero
+// despliegues y cero estados de Railway en los tres servicios (medido por S0, SCRUM-1123e). El
+// vigía cantó 8 veces, con razón, y su aviso decía «primer sitio donde mirar: los logs de
+// arranque… falta un `ALTER`», que es la causa del 24/25-sep. Con un commit que Railway no ha
+// visto no hay logs de arranque que mirar: el aviso acertaba el síntoma y mandaba al sitio
+// equivocado.
+//
+//   · TIPO A · Railway no ve el commit → en GitHub, el commit no tiene NI UN estado de Railway.
+//     Tres veces: 4-5 de junio (33 commits), 29-sep (8) y 21-22 de octubre (55).
+//   · TIPO B · Railway lo ve y el despliegue falla → estado `failure` del servicio de producción.
+//     El 24/25-sep (SCRUM-1122) y dos el 23-oct que se curaron con el merge siguiente.
+//
+// Los estados los lee el paso de aviso del YAML (`GET /repos/:r/commits/:sha/status`, con el
+// `GITHUB_TOKEN` que ya tiene) y los trae aquí; esto sólo DECIDE, sin red.
+//
+// 🔴 MANDA EL SERVICIO DE PRODUCCIÓN, NO EL ESTADO COMBINADO DEL COMMIT. `guard-acreditacion` sale
+// en `failure` en commits que están en producción y sirviendo (`655f1252e`, 23-oct 13:25Z): con el
+// combinado, un despliegue sano saldría «tipo B».
+//
+// 🔴 «NO PUDE LEER» NO ES «CERO ESTADOS». Si la API no contestó para un commit, no se sabe qué
+// avería es; decir «Railway no lo ha visto» sería convertir un fallo de lectura en un diagnóstico,
+// que es la avería de la casa. Entonces el aviso dice que no lo sabe y nombra las dos.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+/** Los servicios del proyecto de Railway, tal como salen en el `context` del estado («<proyecto> - <servicio>»). Medido el 23-oct-2026. */
+export const SERVICIOS_DE_RAILWAY = Object.freeze(['cobroflash-backend', 'yaqu-staging', 'guard-acreditacion']);
+/** El que sirve `yaqu.app` (su estado de éxito dice «Success - yaqu.app»). */
+export const SERVICIO_DE_PRODUCCION = 'cobroflash-backend';
+
+export const TIPO_A = 'railway-no-lo-vio';
+export const TIPO_B = 'fallo-el-despliegue';
+export const EN_CURSO = 'desplegando';
+export const NO_SE_SABE = 'no-se-sabe';
+
+const corto = (sha) => String(sha || '?').slice(0, 9);
+
+/** El servicio de Railway de un estado, o `null` si el estado no es de Railway. */
+export function servicioDeRailway(context) {
+  const m = / - ([\w.-]+)$/.exec(String(context || ''));
+  return m && SERVICIOS_DE_RAILWAY.includes(m[1]) ? m[1] : null;
+}
+
 /**
- * El cuerpo del aviso, EXACTO al que componía el `printf` del YAML — misma prosa, mismo orden.
- * @param {{renglon:string, runUrl:string, marca:string, simulacro?:boolean}} e
+ * Qué avería es, a partir de los estados de los commits de `main` que producción no tiene.
+ *
+ * @param {{sha:string, leido:boolean, estados?:{context:string,state:string,description?:string}[]}[]} commits
+ *        del más nuevo al más viejo (el orden de `git rev-list`)
+ * @returns {{tipo:string, sha?:string, descripcion?:string, motivo?:string, filas:object[]}}
  */
-export function componerCuerpo({ renglon, runUrl, marca, simulacro = false }) {
+export function tipoDeAveria(commits) {
+  const filas = [];
+  if (!Array.isArray(commits) || commits.length === 0) {
+    return { tipo: NO_SE_SABE, motivo: 'no llegó ningún commit sin desplegar que mirar', filas };
+  }
+  for (const c of commits) {
+    if (!c || c.leido !== true || !Array.isArray(c.estados)) {
+      return {
+        tipo: NO_SE_SABE,
+        motivo: `no se pudieron leer los estados de \`${corto(c && c.sha)}\` en GitHub («no pude leer» no es «cero estados»)`,
+        filas,
+      };
+    }
+    const deRailway = c.estados.filter((e) => e && servicioDeRailway(e.context));
+    const prod = deRailway.find((e) => servicioDeRailway(e.context) === SERVICIO_DE_PRODUCCION);
+    filas.push({
+      sha: c.sha, railway: deRailway.length,
+      produccion: prod ? prod.state : null, descripcion: prod ? (prod.description || '') : '',
+    });
+  }
+  const fallo = filas.find((f) => f.produccion === 'failure' || f.produccion === 'error');
+  if (fallo) return { tipo: TIPO_B, sha: fallo.sha, descripcion: fallo.descripcion, filas };
+  if (filas.every((f) => f.railway === 0)) return { tipo: TIPO_A, filas };
+  const enCurso = filas.find((f) => f.produccion === 'pending');
+  if (enCurso) return { tipo: EN_CURSO, sha: enCurso.sha, filas };
+  return {
+    tipo: NO_SE_SABE,
+    motivo: 'Railway sí ha visto estos commits y no dice que `' + SERVICIO_DE_PRODUCCION
+      + '` fallara; si dice `success`, es producción la que no sirve lo desplegado (mirar `/version` y el dominio)',
+    filas,
+  };
+}
+
+/** El párrafo de «dónde mirar», según la avería. Sin diagnóstico, el de no saberlo. */
+export function dondeMirar(diagnostico) {
+  const d = diagnostico || { tipo: NO_SE_SABE, motivo: 'el paso de aviso no trajo los estados de Railway', filas: [] };
+  const filas = d.filas || [];
+  const tabla = filas.length
+    ? '\n\n| commit | estados de Railway | `' + SERVICIO_DE_PRODUCCION + '` |\n|---|---|---|\n'
+      + filas.map((f) => `| \`${corto(f.sha)}\` | ${f.railway} | ${f.produccion || '—'} |`).join('\n')
+    : '';
+  if (d.tipo === TIPO_A) {
+    return '🔴 **Railway NO HA VISTO ' + (filas.length === 1 ? 'este commit' : `estos ${filas.length} commits`)
+      + '** de `main`: ni un estado de Railway en ninguno. No hay logs de arranque que mirar: el '
+      + 'despliegue ni ha empezado. **Primer sitio donde mirar: la conexión del servicio con GitHub en '
+      + 'Railway** (el servicio → *Settings* → *Source*, y su registro de actividad). Es la avería de '
+      + 'tipo A, y ha pasado tres veces: 4-5 de junio, 29-sep y 21-22 de octubre (SCRUM-1123e).' + tabla;
+  }
+  if (d.tipo === TIPO_B) {
+    return `🔴 **Railway vio \`${corto(d.sha)}\` y el despliegue FALLÓ** (\`${SERVICIO_DE_PRODUCCION}\`: `
+      + `«${d.descripcion || 'failure'}»). Primer sitio donde mirar: los logs de arranque de ese `
+      + 'despliegue en Railway. Si dicen `[schema] DERIVA`, falta un `ALTER` en producción — mirar '
+      + '`docs/sql/` en `main` por SQL pendiente. Es la avería de tipo B (24/25-sep, SCRUM-1122).' + tabla;
+  }
+  if (d.tipo === EN_CURSO) {
+    return `Railway tiene un despliegue EN CURSO de \`${corto(d.sha)}\`. Si en la próxima lectura `
+      + 'sigue igual, mirar ese despliegue en Railway.' + tabla;
+  }
+  return `⚠️ **No he podido saber qué avería es:** ${d.motivo || 'sin motivo'}. Hay dos que dan este `
+    + 'mismo síntoma y se miran en sitios distintos: **A** · Railway no ha visto el commit (ni un '
+    + 'estado de Railway en GitHub) → la conexión del servicio con GitHub en Railway; **B** · lo vio y '
+    + `falló (estado \`failure\` de \`${SERVICIO_DE_PRODUCCION}\`) → los logs de arranque y el \`ALTER\` `
+    + 'que falte.' + tabla;
+}
+
+/** La mención: sólo un `@usuario` de GitHub bien formado. Cualquier otra cosa es «sin mención». */
+export function mencionValida(m) {
+  const s = String(m || '').trim();
+  return /^@[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/.test(s) ? s : null;
+}
+
+/**
+ * El cuerpo del aviso.
+ * @param {{renglon:string, runUrl:string, marca:string, simulacro?:boolean, diagnostico?:object, mencion?:string}} e
+ */
+export function componerCuerpo({ renglon, runUrl, marca, simulacro = false, diagnostico, mencion }) {
   const r = renglon || '(sin constancia: no se pudo leer .vigia/constancias.log)';
+  // SCRUM-1123f · un aviso que no nombra a nadie no le llega a nadie: el #2455 acumuló 9
+  // comentarios del bot con 0 menciones. Va lo primero, para que salga en la notificación.
+  const quien = mencionValida(mencion);
   return (simulacro ? AVISO_DE_SIMULACRO : '')
+    + (quien ? `${quien} · este aviso es para ti: producción no se está actualizando.\n\n`
+      : '⚠️ Este aviso no menciona a nadie (no llegó una mención válida): sólo lo verá quien abra el Issue.\n\n')
     + 'El vigía del despliegue (`vigia-despliegue.yml`) ha cantado: producción no está al día '
     + 'con `main` y no se está cerrando solo.\n\n'
+    + dondeMirar(diagnostico) + '\n\n'
     // SCRUM-1542 · aquí decía «tardó 8 días en verse». Eran las «193 h» del log de entonces, y
     // esa cifra era la fecha de escritura de un commit viejo, no el tiempo parado: medido, fueron
     // 24,5 h sin un despliegue bueno (24-sep 16:12Z → 25-sep 16:40Z). El motivo no cambia.
     + 'El 24/25-sep-2026 producción pasó 24,5 h sin un despliegue bueno (SCRUM-1122) y no se '
     + 'enteró nadie, porque el único aviso era el job en rojo y nadie miraba Actions.\n\n'
-    + 'Primer sitio donde mirar: los logs de arranque en Railway. Si dicen `[schema] DERIVA`, '
-    + 'falta un `ALTER` en producción — mirar `docs/sql/` en `main` por SQL pendiente.\n\n'
     + `\`\`\`\n${r}\n\`\`\`\n\n`
     + `Ejecución: ${runUrl}\n\n${marca}\n`;
 }
@@ -83,17 +210,106 @@ export function elegirIssueExistente(issues, marca) {
  * misma dedupe, mismo cuerpo con un párrafo delante y otro título. Un simulacro con su propio
  * camino comprobaría su propio camino, no el del aviso.
  *
- * @param {{issues:object[], marca:string, renglon:string, runUrl:string, simulacro?:boolean}} e
- * @returns {{accion:'crear'|'comentar', numero?:number, cuerpo:string, titulo:string}|{accion:'no-se-sabe', motivo:string}}
+ * SCRUM-1123f · `diagnostico` (de `tipoDeAveria`) y `mencion` van al cuerpo; el `tipo` sale
+ * también suelto, para que el YAML lo deje en el resumen del job sin parsear prosa.
+ *
+ * @param {{issues:object[], marca:string, renglon:string, runUrl:string, simulacro?:boolean, diagnostico?:object, mencion?:string}} e
+ * @returns {{accion:'crear'|'comentar', numero?:number, cuerpo:string, titulo:string, tipo:string}|{accion:'no-se-sabe', motivo:string}}
  */
-export function decidirAviso({ issues, marca, renglon, runUrl, simulacro = false } = {}) {
+export function decidirAviso({ issues, marca, renglon, runUrl, simulacro = false, diagnostico, mencion } = {}) {
   if (!marca) return { accion: 'no-se-sabe', motivo: 'sin marca no se puede deduplicar: no se decide nada' };
-  const cuerpo = componerCuerpo({ renglon, runUrl, marca, simulacro });
+  const cuerpo = componerCuerpo({ renglon, runUrl, marca, simulacro, diagnostico, mencion });
   const titulo = simulacro ? TITULO_DEL_SIMULACRO : TITULO_DEL_AVISO;
+  const tipo = (diagnostico && diagnostico.tipo) || NO_SE_SABE;
   const existente = elegirIssueExistente(issues, marca);
   return existente !== null
-    ? { accion: 'comentar', numero: existente, cuerpo, titulo }
-    : { accion: 'crear', cuerpo, titulo };
+    ? { accion: 'comentar', numero: existente, cuerpo, titulo, tipo }
+    : { accion: 'crear', cuerpo, titulo, tipo };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-1605 · EL AVISO SE CIERRA SOLO CUANDO PRODUCCIÓN VUELVE A ESTAR AL DÍA
+//
+// Hasta aquí el vigía abría y comentaba, pero no cerraba NUNCA: el #2455 se abrió el 14-oct, la
+// congelación de verdad del 21-23 oct comentó en él, y desde el 23-oct 22:42Z el vigía salió verde
+// 17 pasadas seguidas con el Issue abierto (medido el 27-oct). Un rojo que no se apaga deja de
+// avisar, y la siguiente congelación habría comentado en un Issue que ya nadie miraba.
+//
+// Se cierra SÓLO con una lectura `al-dia` del propio vigía (no con «retrasado pero desplegando»,
+// cuyo renglón dice `atrasado` aunque la salida sea 0), y nunca en un simulacro (su producción es
+// fabricada). Cerrado el Issue, la siguiente congelación abre uno NUEVO con su fecha en el cuerpo.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+/** Lo que el vigía escribe como veredicto cuando producción está al día (`AL_DIA` de `_vigilante-de-despliegue.mjs`). */
+export const VEREDICTO_AL_DIA = 'al-dia';
+
+/** `vigía · <cuando> · <veredicto> · prod=… · main=… · …` → `{ cuando, veredicto }`, o `null` si no es un renglón. */
+export function leerRenglon(renglon) {
+  const p = String(renglon || '').trim().split(' · ');
+  if (p[0] !== 'vigía' || p.length < 3) return null;
+  return { cuando: p[1], veredicto: p[2] };
+}
+
+/**
+ * Desde cuándo lleva el vigía leyendo `al-dia` sin interrupción, contando desde el final del historial.
+ * `completo` dice si se vio la lectura anterior que NO era `al-dia`: sin ella, «desde» es sólo «al menos desde».
+ */
+export function desdeCuandoSana(historial) {
+  const lecturas = String(historial || '').split('\n').map(leerRenglon).filter(Boolean);
+  let desde = null;
+  let n = 0;
+  for (let i = lecturas.length - 1; i >= 0; i--) {
+    if (lecturas[i].veredicto !== VEREDICTO_AL_DIA) return { desde, lecturas: n, completo: true, antes: lecturas[i] };
+    desde = lecturas[i].cuando;
+    n++;
+  }
+  return { desde, lecturas: n, completo: false, antes: null };
+}
+
+/**
+ * ¿Se cierra el aviso abierto? FALLA CERRADO: sin marca, sin lista de Issues o sin renglón legible no se decide nada.
+ *
+ * @param {{issues:object[], marca:string, renglon:string, historial?:string, runUrl?:string, simulacro?:boolean}} e
+ * @returns {{accion:'cerrar', numero:number, comentario:string}|{accion:'nada', motivo:string}|{accion:'no-se-sabe', motivo:string}}
+ */
+export function decidirCierre({ issues, marca, renglon, historial, runUrl, simulacro = false } = {}) {
+  if (simulacro) return { accion: 'nada', motivo: 'un simulacro lee una producción fabricada: no cierra avisos de verdad' };
+  if (!marca) return { accion: 'no-se-sabe', motivo: 'sin marca no se sabe qué Issue es el aviso: no se cierra nada' };
+  if (!Array.isArray(issues)) return { accion: 'no-se-sabe', motivo: 'no llegó la lista de Issues abiertos' };
+  const r = leerRenglon(renglon);
+  if (!r) return { accion: 'no-se-sabe', motivo: 'sin renglón legible del vigía (.vigia/constancias.log): no se sabe si está al día' };
+  if (r.veredicto !== VEREDICTO_AL_DIA) return { accion: 'nada', motivo: `la lectura es \`${r.veredicto}\`, no \`${VEREDICTO_AL_DIA}\`: no se cierra nada` };
+  const numero = elegirIssueExistente(issues, marca);
+  if (numero === null) return { accion: 'nada', motivo: 'producción al día y ningún aviso abierto' };
+  const s = desdeCuandoSana(historial || renglon);
+  const plural = s.lecturas === 1 ? 'lectura seguida' : 'lecturas seguidas';
+  const desde = s.desde
+    ? `${s.completo ? 'desde' : 'al menos desde'} **${s.desde}** (${s.lecturas} ${plural} al día`
+      + (s.completo ? `; la anterior, ${s.antes.cuando}, decía \`${s.antes.veredicto}\`)` : '; el historial del vigía no llega más atrás)')
+    : 'desde esta lectura';
+  return {
+    accion: 'cerrar',
+    numero,
+    comentario: `✅ **Producción vuelve a estar al día** ${desde}. Este aviso se cierra solo (SCRUM-1605).\n\n`
+      + 'Si producción se vuelve a congelar, el vigía abrirá un Issue NUEVO con la fecha de esa congelación: '
+      + 'no comentará en éste.\n\n'
+      + `\`\`\`\n${String(renglon).trim()}\n\`\`\`\n\n`
+      + (runUrl ? `Ejecución: ${runUrl}\n` : ''),
+  };
+}
+
+/**
+ * `VIGIA_ESTADOS_JSON` → diagnóstico. Vacío o ilegible NO tumba el aviso: el aviso tiene que salir
+ * igual, diciendo que no sabe qué avería es. Callar el aviso porque no se pudo diagnosticar sería
+ * peor que avisar sin diagnóstico.
+ */
+export function diagnosticoDelEntorno(texto) {
+  if (!texto) return tipoDeAveria(null);
+  let commits;
+  try { commits = JSON.parse(texto); } catch {
+    return { tipo: NO_SE_SABE, motivo: 'los estados de Railway llegaron ilegibles (no son JSON)', filas: [] };
+  }
+  return tipoDeAveria(commits);
 }
 
 // ── CLI ────────────────────────────────────────────────────────────────────────────────────────
@@ -108,6 +324,20 @@ import { pathToFileURL } from 'node:url';
 const esCli = process.argv[1]
   && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url;
 if (esCli) {
+  // SCRUM-1605 · `… vigia-despliegue-aviso.mjs cerrar`: la decisión de cierre, con las mismas variables más
+  // `VIGIA_HISTORIAL` (las últimas líneas de `.vigia/constancias.log`). Aquí una lista de Issues que no llegó
+  // NO es «[]»: con «[]» saldría «ningún aviso abierto», que es «no pude mirar» con cara de «no hay».
+  if (process.argv[2] === 'cerrar') {
+    let lista = null;
+    try { lista = process.env.VIGIA_ISSUES_JSON ? JSON.parse(process.env.VIGIA_ISSUES_JSON) : null; } catch { lista = null; }
+    const c = decidirCierre({
+      issues: lista, marca: process.env.VIGIA_MARCA, renglon: process.env.VIGIA_RENGLON,
+      historial: process.env.VIGIA_HISTORIAL, runUrl: process.env.VIGIA_RUN_URL,
+      simulacro: process.env.VIGIA_SIMULACRO === 'true',
+    });
+    console.log(JSON.stringify(c));
+    process.exit(c.accion === 'no-se-sabe' ? 1 : 0);
+  }
   let issues;
   try {
     issues = JSON.parse(process.env.VIGIA_ISSUES_JSON || '[]');
@@ -124,6 +354,9 @@ if (esCli) {
     // Sólo el literal `true`, que es lo que da `${{ inputs.simulacro }}`: cualquier otra cosa
     // (vacío en el programado, `false`) es un aviso de verdad.
     simulacro: process.env.VIGIA_SIMULACRO === 'true',
+    // SCRUM-1123f · los estados de Railway de los commits sin desplegar, y a quién llamar.
+    diagnostico: diagnosticoDelEntorno(process.env.VIGIA_ESTADOS_JSON),
+    mencion: process.env.VIGIA_MENCION,
   });
   console.log(JSON.stringify(r));
   process.exit(r.accion === 'no-se-sabe' ? 1 : 0);

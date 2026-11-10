@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // POR QUÉ CONSTANTES DEL REPO Y NO VARIABLES DE ENTORNO
 //
-// Estos cinco datos identifican a YaQu como PRODUCTOR del sistema informático de facturación
+// Estos cuatro datos (eran cinco hasta SCRUM-524g: ver abajo) identifican a YaQu como PRODUCTOR del sistema informático de facturación
 // ante la Agencia Tributaria. Viajan dentro de cada registro VeriFactu que se emite.
 //
 // Cambiar el NIF del productor **es un hecho fiscal, no una configuración**. Como constante
@@ -47,14 +47,15 @@ export const VERIFACTU_ID_SISTEMA = "01";
 /** Versión declarada del SIF. */
 export const VERIFACTU_VERSION = "1.0.0";
 
-/** Número de instalación del sistema. */
-export const VERIFACTU_NUM_INSTALACION = "1";
+// SCRUM-524g · AQUÍ HABÍA UNA QUINTA, `VERIFACTU_NUM_INSTALACION = "1"`, y no era del productor:
+// el número de instalación es de CADA facturación (cada comercio), y uno para todos hacía de todo
+// YaQu una sola instalación ante la AEAT (SCRUM-524e). Sale del `id` del comercio, en
+// `instalacion.ts`. Las cuatro de arriba sí describen al productor.
 
-/** Las cinco juntas, para quien necesite recorrerlas (el guard de no-vacías, por ejemplo). */
+/** Las cuatro juntas, para quien necesite recorrerlas (el guard de no-vacías, por ejemplo). */
 export const PRODUCTOR_VERIFACTU = {
   VERIFACTU_PRODUCTOR_NOMBRE,
   VERIFACTU_PRODUCTOR_NIF,
   VERIFACTU_ID_SISTEMA,
   VERIFACTU_VERSION,
-  VERIFACTU_NUM_INSTALACION,
 } as const;

@@ -199,3 +199,211 @@ De `jv-j3m`, al escribir este registro: van en la entrega de Jira, que se escrib
 ## De paso
 
 Nada arreglado de paso. El rojo ① cae en un fichero de otro carril: se reporta y no se toca.
+
+## SCRUM-1538c · las dos causas «sin dueño»: A8.4 ya tenía dueño y arreglo, y las colgadas se fueron solas el 14-oct
+
+**Medido contra:** `origin/main` = `0adcc1b2ff90af4aa0f0d43ef710da4c8d65a163` · 2026-10-21T13:59:17Z
+
+A9: aviso → A10 «Un carácter que no se ve no lo caza una revisión: lo caza un recuento.» — no se pudo comprobar: mi primer control de retornos de carro sobre las salidas fue `od -c | grep`, contó 741 y eran 0 por bytes; es cómo leo una salida en mi consola, no algo del árbol que un test pueda mirar (el CR comiteado ya lo vigila `tests/scrum480-fin-de-linea.test.mjs`)
+
+Sesión `jv-j3u`, puesto J3 (CI e instrumentos), por encargo del orquestador `cobroflash-backend-5f`, que
+asignó a J3 las dos filas «NO HECHO → sin dueño» de arriba. Jira no respondía (el conector daba
+`CONNECT_TIMEOUT`): **no he leído el ticket ni sus comentarios**; todo sale del repo y de la API de GitHub.
+El hook de inicio dijo «SIN IDENTIDAD» (SCRUM-1498): se siguió con la orden escrita del orquestador.
+La rama es `scrum-1538c-…` y no `1538b`: el sufijo `b` ya lo usó #2384 (`scrum-1538b-el-registro`).
+
+**Sólo medición.** No toca `tests/`, `scripts/`, `src/` ni ningún workflow. Los guiones y sus salidas, en
+`docs/master/evidencias/SCRUM-1538c/` (los 356 logs, unos 230 MB, se quedan fuera: se rehacen con
+`e-listar.mjs` y `f-bajar.mjs`).
+
+### La población
+
+Ventana **2026-10-06T13:43:02Z → 2026-10-21T13:59:17Z**: la de arriba, alargada hasta hoy, y **con los PR**
+(arriba sólo se midió `main`). **1.029 runs del workflow CI** (61 tramos de 6 h, declarados = traídos en los
+61). De los 806 que no son un verde limpio de un solo intento se leyeron sus 3.456 ejecuciones de job; se
+bajaron 356 logs, **0 por debajo de 1.000 B** (`e-salida-listar.txt`, `f-salida-bajar.txt`). Los lectores
+pasan antes por 6 casos sembrados (6 de 6; sin ellos salen CIEGO), y en los 175 rojos con resumen la suma
+pass + fail + skipped + cancelled + todo da el total declarado en 175 de 175 (`g-salida.txt`).
+
+### La tabla
+
+| causa | ocurrencias | evidencia | dueño propuesto | ¿sin tocar workflows? |
+|---|---|---|---|---|
+| ① A8.4 cae con `'menu' !== 'handoff'`: el bot guardaba `handoff` DESPUÉS de enviar, y el paso 9 leía la sesión antes del UPDATE | **4**, todas el 13-oct: 07:37Z (`main`, job 115185474035, el rojo ② de arriba), 11:24Z (PR, job 115271284880), 13:57Z (PR, job 115337104180), 15:42Z (`main`, job 115391241077) | `g-salida.txt` ②. La causa no es mía: la halló `jv-j3d` (SCRUM-1543 c.19551) y la arregló J2 en SCRUM-1543, #2426, merge `b010b6a71` del 14-oct 07:19:47Z (`docs/master/SCRUM-1543.md`) | **J2, ya hecho.** Nada que repartir | sí (fue bot + test) |
+| ①bis A8.4 cae con `NoMedido` (la espera de 26 mensajes vence) | 1: 21-oct 12:29Z, PR `scrum-1509h-veinte-por-hora`, job 119222039233 | `g-salida.txt` ② | SCRUM-1509i, ya en `main`. **Posterior a la ventana de 1538: no explica sus rojos** | sí |
+| ② trinquete de zona cortado por su techo (45 min) | **23**: 5 en `main` (los cinco de arriba) + 18 en PR, del 6-oct 14:02Z al 14-oct 08:57Z | `g-salida.txt` ③: 10 colgadas en la 1.ª zona y 13 en la 2.ª; las 23 dejan 3 procesos node huérfanos | **S5, ya hecho:** SCRUM-1494c (#2486, `574e53806`, 16-oct 11:18Z) corta por test y por pared, y NOMBRA lo cortado | sí (fue el hijo y su test) |
+| ③ la tanda de `build + tests` sin veredicto (`TANDA SIN VEREDICTO`, 905 s callada) | **10**, todas en PR, del 6-oct 18:31Z al 14-oct 07:29Z | `g-salida.txt` ①. El fichero sin acabar es el siguiente al último que llegó, y son **cuatro distintos**: `scrum446-cabecera-modal` 4 · `scrum447-byte-invisible-en-patrones` 3 · `scrum615-plazo-con-null` 2 · `scrum616-que-guarda-la-factura` 1 | **nadie: 0 desde el 14-oct** (abajo). Si vuelve, J3 | — |
+| ④ **NUEVA, fuera de la ventana de 1538:** el meta-guard agota su techo de 30 min | **128** cortes a ≥ 29 min, del 15-oct 17:50Z a hoy; 26 en `main`. **0 de los 128 llegan a su resumen** | `g-salida.txt` ④, `i-salida.txt` | **J6** (el meta-guard y sus mutaciones), con S5, que amplió el test que pesa: **cruza de equipo** | **sí, en principio:** el tiempo lo ponen el catálogo de mutaciones y el test, no el techo |
+
+### ① A8.4: lo que añade esta medición al arreglo de 1543
+
+- **Antes:** 4 caídas de esta firma, las 4 el 13-oct (1543 contaba 4 en 65 logs).
+- **Después del merge de 1543:** **0** caídas de esta firma en los 100 rojos de `build + tests` posteriores
+  (población: los 185 rojos de la ventana, todos leídos), sobre **333** `build + tests` con veredicto desde
+  el 14-oct 09:00Z. Y A8.4 **corrió y pasó en 15 de 15** de los últimos verdes posteriores al arreglo: no
+  saltó, y un verde con A8.4 saltado no diría nada de A8.4 (`h-salida.txt` ②).
+- **Sin medir:** por qué las 4 caen el mismo día y ninguna antes en la ventana (6 al 12-oct).
+
+### ② y ③ las colgadas: qué estaba corriendo, y en qué coinciden
+
+- **El trinquete no deja dicho qué fichero se colgó:** su hijo sólo imprime una línea por zona. Lo que dice
+  el log: en qué zona (10 en la 1.ª, sin ninguna acabada; 13 en la 2.ª, con la 1.ª acabada en 300-523 s,
+  cuando una zona entera tarda 464-564 s en los verdes de control) y que al cortar quedan 3 node vivos.
+  **Qué fichero, no lo dice ninguno de los 23.** Es lo que arregla 1494c, que todavía no ha visto un cuelgue
+  de verdad (lo dice su registro).
+- **La tanda sí nombra lo último que llegó**, y el que no acaba es el siguiente en orden (los cuatro
+  «últimos» son el último `test(` de su fichero). Que sean **cuatro ficheros distintos**, uno de ellos un
+  guard estático de un modal, dice que **no es un test concreto que se cuelgue**.
+- **En qué coinciden las dos familias: en cuándo se acaban.** La última colgada de la tanda es de las
+  07:29:56Z del 14-oct y la última del trinquete, de las 08:57:18Z. Desde las 09:00Z: **0 de 315**
+  trinquetes acabados y **0 de 333** `build + tests` con veredicto (`h-salida.txt` ①). 1494c entró dos días
+  DESPUÉS, así que **no es lo que las quitó**. Esa mañana entraron, entre otros, #2426 (1543, 07:19:47Z) y
+  #2429 (SCRUM-1405c, tubería bloqueante, 07:47:56Z); **ninguno está medido como causa**, y el último
+  trinquete colgado es de un PR cuya mezcla ya llevaba 1405c. **La causa de las colgadas sigue SIN MEDIR**;
+  lo medido es que llevan 7 días sin aparecer en 648 ejecuciones.
+
+### ④ el meta-guard: medido por qué
+
+- **Cuándo empieza:** los dos primeros cortes son de la **propia rama de SCRUM-1494** (15-oct 17:50Z y
+  16-oct 11:07Z); el tercero, el push de su merge a `main` (16-oct 11:18:52Z); después, casi todo run.
+- **Dónde está el tiempo** (`i-salida.txt`, los 10 primeros verdes del 6-7 oct contra los 10 últimos del
+  19-21 oct): el paso de mutaciones pasa de **1.233 s** de media a **1.595 s** (+362).
+  `scrum813-trinquete-de-zona` pasa de **29 s a 284 s** (+254): de 11 líneas de veredicto a 26, y de ~2,6 s
+  a ~11 s cada una (cada mutación vuelve a correr el fichero, que desde 1494c lleva casos con pared de
+  segundos). Los 24 ficheros que entran suman +205 s; el resto, −97.
+- **Por qué no se ve:** sólo `build + tests` es obligatorio (ruleset de `main`, leído hoy), así que estos
+  128 cortes no bloquean nada. En la mayoría de sus runs desde el 16-oct, el meta-guard no dice si los guards
+  caen cuando deben.
+- **No he arreglado nada:** no es un test de mi carril ni un arreglo de una línea.
+
+### De paso, sin número
+
+El rojo más repetido de la ventana es `scrum1405c` caso ④ (**63** caídas, 13 en `main`, del 14-oct
+07:47:59Z al 21-oct 12:24:54Z). No era el encargo; lo atiende SCRUM-1405d (#2634, `1e00b1b9d`, 21-oct
+12:43:49Z), de J3. No he mirado si ha vuelto a caer después.
+
+### Aceptación → dónde se ve
+
+| lo que pide el encargo | dónde se ve |
+|---|---|
+| Por qué cae A8.4 (fila «NO HECHO» de arriba) | `docs/master/SCRUM-1543.md` (la causa y el arreglo) y `docs/master/evidencias/SCRUM-1538c/g-salida.txt` ② + `h-salida.txt` ② (que no ha vuelto) |
+| Por qué se colgó el trinquete cinco veces | NO HECHO → el log no lo dice; lo que se ve está en `docs/master/evidencias/SCRUM-1538c/g-salida.txt` ③ y `h-salida.txt` ①. Si vuelve, lo nombra 1494c |
+| Tabla causa → ocurrencias → evidencia, con dueño y si se arregla sin workflows | la tabla de este tramo |
+
+### Lo que NO se ha medido
+
+- **Nada ejecutado:** lectura de la API de GitHub y de 356 logs.
+- Los 223 runs verdes limpios van por la conclusión de GitHub: de ellos no se bajó ningún log.
+- Las 4 caídas de A8.4 del 13-oct no se han reproducido; su causa es la de 1543, que también dice que no
+  pudo ver en CI que fuera esa carrera.
+- Qué colgaba la tanda y el trinquete, y qué lo quitó el 14-oct.
+- El meta-guard por mutación: sólo por fichero. Ni cuánto bajaría con cada arreglo posible.
+- Los workflows que no son CI. Jira, entero.
+
+### Mis errores
+
+- El control de CR de la línea A9. Y medí mi contexto al acabar el arranque (118.971), pero **no** al acabar
+  de leer Jira, porque Jira no respondió: esa segunda cifra no existe.
+
+## SCRUM-1538d · qué dejó de colgar las tandas el 14-oct: la tanda, con #2429 (1405c) dentro de la base; el trinquete, nada de lo que cambió ese día
+
+**Medido contra:** `origin/main` = `7b176514255877d4b3e85029b8a3a4ad1bcd881f` · 2026-10-21T14:48:36Z
+
+A9: aviso → cicatriz J3 «Medí mi contexto a 184.389 sin haberlo medido al acabar el arranque, que era la orden escrita del prompt.» — no se pudo comprobar: cuándo se mide una sesión es orden del prompt y ningún test del árbol la ve
+
+Sesión `jv-j3v`, puesto J3, por encargo del orquestador `cobroflash-backend-5f`. Jira no respondía (el
+conector de Atlassian dio `CONNECT_TIMEOUT`): **no he leído el ticket**; todo sale del repo y de la API de
+GitHub. El hook de inicio dijo «SIN IDENTIDAD» (SCRUM-1498): seguí con la orden escrita. La rama nació de
+la de #2648 (`fbd51095a`) y, cuando #2648 entró (14:41:28Z), se puso al día con `git merge origin/main`.
+
+**Sólo medición.** No toca `tests/`, `scripts/`, `src/` ni workflows. Guiones y salidas en
+`docs/master/evidencias/SCRUM-1538d/`: `a-cabeceras.mjs` (baja los primeros 64 KB del log de cada job, con
+`Range`, y saca runner, imagen, node, acciones y la BASE de `main` que se probó — el `Merge <rama> into
+<base>` del checkout en un PR, el propio sha en un push) y `b-tasas.mjs` (tasas, rachas y los commits de
+`main` que entraron alrededor del corte). Los dos llevan siembra: con `--sin-siembra` salen CIEGO (exit 4),
+comprobado. Población: el listado de `e-listar.mjs` de 1538c, re-ejecutado (1.029 runs del 6-oct 13:43Z al
+21-oct 13:59Z; una llamada falló, run 39244881162 del 19-oct, fuera de la ventana que decide) + los jobs
+de los 211 runs limpios hasta las 11:18Z del 16-oct (entrada de 1494c). **984 jobs juzgados, 984 cabeceras
+leídas, 0 sin base identificable, las 33 colgadas encontradas** (`a-salida.txt`, `a-jobs-con-cabecera.tsv`).
+
+### Qué NO cambió (descartado para las dos familias)
+
+| | valor en las 33 colgadas | valor después del corte | veredicto |
+|---|---|---|---|
+| runner | `2.337.0` | `2.337.0` (todos los 984) | no cambió |
+| node | `24.21.0` | `24.21.0` (todos) | no cambió |
+| `actions/checkout`, `actions/setup-node` | `11d5960a…`, `49933ea5…` | los mismos (todos) | no cambiaron |
+| imagen `ubuntu-24.04` | `20260927.320.1` (6 trinquete, 2 tanda) y `20261004.327.1` (17 y 8) | `20261004.327.1` hasta el 15-oct 16:46Z; `20261012.334.1` **desde el 14-oct 16:00Z** | **no explica el corte:** la imagen nueva llega 7 h después de las 09:00Z, y en esas horas, con la MISMA imagen de las colgadas, 0 de 38 trinquetes y 0 de 55 tandas colgaron. Débil por tamaño (con la tasa de esa imagen, ver 0 tiene p ≈ 0,13 y 0,27), pero la hora no casa |
+| `ci.yml`, `scripts/trinquete-de-zona.mjs`, `_trinquete-de-zona*.mjs`, `tanda-con-veredicto.mjs` | — | ningún commit de `main` les toca del 5 al 16-oct salvo `package.json` | ver abajo |
+| los cuatro tests donde paraba la tanda (`scrum446`, `447`, `615`, `616`) | — | ningún commit desde el 5-oct | descartados como «se arregló el test» |
+
+`package.json` sí cambió cinco veces en la ventana; cuatro son líneas de scripts sueltos (`e2e:critico`,
+`parados`, `guard:modo-en-ajustes`, un comentario). **La única que cambia cómo corre algo de CI es #2429**.
+
+### La tanda (`build + tests`): #2429 es el primer commit de `main` tras la última base que colgó
+
+- Última colgada: 14-oct 07:29:56Z, base `6c5b3ad61` (#2761 en primer padre). El commit **siguiente** de
+  `main` es `e2be1c9fd` = merge de #2429 (07:47:56Z), que añade `--import=./scripts/tuberia-bloqueante.mjs`
+  al `test` de `package.json`: lo carga la tanda de CI (`npm test`) y cada hijo de `node --test`.
+- Por base, en la ventana: **sin #2429, 10 colgadas de 369; con #2429, 0 de 138** (y 0 de 333 hasta el
+  21-oct según `h-salida.txt` de 1538c). Con la tasa de antes (2,5 %), ver 0 en 331 tiene p ≈ 2,2·10⁻⁴;
+  con la de 13-oct→corte (3,7 %), 4,3·10⁻⁶ (`b-salida.txt`). La racha limpia más larga antes del corte fue
+  de 78 jobs; después, 331 y sigue.
+- 06:00-09:00Z del 14-oct: 2 colgadas y 12 limpias **sin** #2429 en la base; 0 colgadas y 28 limpias **con** él.
+- 🔴 **Lo que no se puede separar con estos datos:** contenido y hora van juntos. Desde las 07:48Z toda tanda
+  lleva #2429 (un PR se mezcla con el `main` del momento), y ningún job posterior probó una base anterior.
+  Así que «lo quitó #2429» y «lo quitó algo del mundo a esa hora» dan la misma tabla. Lo que sí se mide: el
+  módulo **sigue en `main`** (leído hoy en `package.json`), así que tampoco hay una retirada que lo refute.
+  **El mecanismo (cómo una tubería no bloqueante deja a `node --test` callado 905 s) NO está medido**;
+  1405c midió nombres perdidos, no cuelgues. Separarlo pide repetir la tanda sin el `--import` sobre una base
+  vieja muchas veces (a ~3 % por tanda, decenas): **no lo he hecho**, es una carrera de CI y no era el encargo.
+
+### El trinquete: #2429 no le llega y su última colgada ya lo llevaba
+
+- El trinquete corre `node scripts/trinquete-de-zona.mjs`, que lanza `_trinquete-de-zona-hijo.mjs` con
+  `spawnSync(process.execPath, [HIJO, …])` y éste usa `run({ forceExit: true })`: **no pasa por `npm test`
+  y no lleva el `--import`** (leído en `e2be1c9fd`). Y la última colgada (14-oct 08:57:18Z, job
+  115768210763) probó la base `ebe2b932c` (#2769), que **contiene** #2429 (`git merge-base --is-ancestor`).
+  #2429 queda descartado para esta familia, por código y por contraejemplo; #2426 (1543) también, por base.
+- **El trinquete no se apagó el 14-oct: ya se había apagado casi del todo el 13.** Por día: 6-oct 7 de 36,
+  7-oct 7 de 75, 8-oct 6 de 56, 9-oct 0 de 25; **del 10 al 12 no hubo CI**; 13-oct 2 de 116 (las dos antes
+  de las 07:30Z), 14-oct 1 de 114. Antes del corte la racha limpia más larga es **149, del 13-oct 07:30Z al
+  14-oct 08:57Z**: la colgada de las 08:57Z es la única en 150 jobs. La tasa cae del 12 % (6-8 oct) al 1,6 %
+  (13-oct→corte) **sin ningún cambio en sus scripts, en `ci.yml`, en el runner, en node ni en la imagen**.
+  Con el 1,6 %, ver 0 en 313 tiene p ≈ 6,2·10⁻³: el silencio de después sí es un cambio, pero el grande fue
+  entre el 8 y el 13, sobre el que la base sólo dice que las de esos días son anteriores a #2676-#2693.
+- «Las dos familias paran a la vez» (tramo 1538c) **es cierto por la última colgada y engañoso por la
+  tasa**: la tanda pasa de 3,7 % a 0 en la mañana del 14; el trinquete pasa de 12 % a 1,6 % entre el 8 y el
+  13, y tiene un rezagado el 14 a las 08:57. **No hay ninguna causa medida que explique las dos.**
+
+### Respuesta al encargo
+
+| candidato | ¿tanda? | ¿trinquete? |
+|---|---|---|
+| #2429 (1405c, `--import` de la tubería bloqueante) | **compatible:** primer commit tras la última base colgada; 10/369 sin él, 0/138 con él; mecanismo y separación de la hora SIN MEDIR | **descartado:** no llega a sus procesos, y su última colgada lo llevaba |
+| #2426 (1543) y todo `main` hasta #2761 | descartado (bases con colgada) | descartado (hasta #2769) |
+| imagen del runner `20261012.334.1` | no casa con la hora (llega a las 16:00Z) | ídem |
+| runner, node, acciones, `ci.yml`, scripts del trinquete y de la tanda, los 4 tests | no cambiaron | no cambiaron |
+| algo del 8 al 13-oct | — | **SIN MEDIR**: es donde cae el trinquete, y ningún cambio de entorno ni de sus scripts lo explica |
+
+**¿Volverán?** La tanda: si la causa es #2429, sólo si alguien lo quita; eso no está medido. El trinquete:
+no sé qué lo quitó, así que no sé si vuelve; desde 1494c (16-oct) si cuelga, nombra el fichero.
+
+### Lo que NO se ha medido
+
+- Nada ejecutado fuera de lectura: API de GitHub (cabeceras de 984 logs, 64 KB cada una) y git local.
+- Las 10 colgadas de la tanda no se re-derivan aquí: son las 10 `COLGADA` de `g-clasificar.mjs` de 1538c
+  (los 10 logs de `build-failure` de menos de 1,3 MB de su `f-bajados.tsv`); sus ids van copiados en los
+  guiones. Las de después del corte se dan por 0 sobre la medición de 1538c (`h-salida.txt`), no re-leída.
+- La carga de GitHub, la hora del día, la máquina física y el contenido de los ~1.000 ficheros de test.
+- Por qué el trinquete cae entre el 8 y el 13-oct. Jira, entero.
+
+### Mis errores
+
+- **No me medí al acabar la lectura de arranque**, que era la orden. La primera cifra es de ya entrado el
+  trabajo: 184.389 (usage del último turno del jsonl). Está en la línea A9 de arriba.
+- Mi primera pasada de `b-tasas.mjs` ordenaba los jobs por su hora de ARRANQUE y los runs limpios por la de
+  CREACIÓN: la colgada de las 08:57:18Z arrancó a las 09:08Z y salía «1 colgada después del corte». Ahora
+  todo va por la hora de creación del run, como en 1538c. Y la primera ventana de `a-cabeceras.mjs` empezaba
+  el 12-oct: la imagen vieja (`320.1`) salía con «6 colgadas de 6», un 100 % que era sólo que no había bajado
+  sus limpias; con la ventana entera son 6 de 91.

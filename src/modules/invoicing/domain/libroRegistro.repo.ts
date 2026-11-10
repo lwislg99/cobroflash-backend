@@ -110,6 +110,10 @@ const CAMPOS_FACTURA = {
   currency: true,
   status: true,
   customerId: true,
+  // SCRUM-1058c: el destinatario CONGELADO al emitir. Es el que declara el libro de expedidas.
+  customerName: true,
+  customerLegalName: true,
+  customerTaxId: true,
   quoteId: true,
   chargeId: true,
   albaranRefs: true,

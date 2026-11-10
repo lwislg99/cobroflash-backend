@@ -1,0 +1,31 @@
+// SCRUM-1218i · ANTES y DESPUÉS por NOMBRE: para cada fichero, el conjunto de «veredicto + nombre» de los
+// casos (subtests y tests de primer nivel con nombre de caso) en TODAS las pasadas de cada lado, sin la
+// línea del fichero (la que lleva la ruta). Control sembrado: un veredicto cambiado en una copia del
+// DESPUÉS tiene que salir DISTINTO; si no, CIEGO.
+// Uso: node comparar-1218i.mjs <dir out> <prefijoAntes>:<prefijoDespues> ...
+import fs from 'node:fs';
+import path from 'node:path';
+const [dir, ...pares] = process.argv.slice(2);
+const casos = (pref) => {
+  const fs_ = fs.readdirSync(dir).filter((f) => f.startsWith(pref + '-') && f.endsWith('.tap') && /^\d+$/.test(f.slice(pref.length + 1, -4)));
+  const s = new Set();
+  for (const f of fs_) for (const l of fs.readFileSync(path.join(dir, f), 'utf8').split('\n')) {
+    const m = l.match(/^\s*(not ok|ok) \d+ - (.*)$/);
+    if (m && !/\.test\.mjs$/.test(m[2])) s.add(`${m[1]} | ${m[2].trim()}`);
+  }
+  return { n: fs_.length, s };
+};
+const igual = (a, b) => a.size === b.size && [...a].every((x) => b.has(x));
+let malos = 0;
+for (const p of pares) {
+  const [a, d] = p.split(':');
+  const A = casos(a), D = casos(d);
+  const sembrado = new Set([...D.s].map((x, i) => (i === 0 ? x.replace(/^ok/, 'not ok') : x)));
+  const ok = A.n > 0 && D.n > 0 && A.s.size > 0 && igual(A.s, D.s);
+  const vivo = !igual(A.s, sembrado);
+  console.log(`${a}(${A.n} pasadas, ${A.s.size} casos) vs ${d}(${D.n} pasadas, ${D.s.size} casos): ${ok ? 'IGUAL' : 'DISTINTO'} · control sembrado: ${vivo ? 'VIVO' : 'CIEGO'}`);
+  if (!ok || !vivo) { malos++; for (const x of A.s) if (!D.s.has(x)) console.log('  solo antes: ' + x); for (const x of D.s) if (!A.s.has(x)) console.log('  solo después: ' + x); }
+  else for (const x of A.s) console.log('  ' + x);
+}
+console.log(`POBLACION=${pares.length} pares · malos=${malos} · EXIT=${malos ? 1 : 0}`);
+process.exit(malos ? 1 : 0);

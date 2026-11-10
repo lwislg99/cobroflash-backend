@@ -291,3 +291,193 @@ lo que dice medir.
 - El censo táctil sigue declarando Partes de oficina en «NO MEDIDAS», con 12 nodos. Es el umbral de
   20 nodos del censo (`if (nodos < 20)` en `scripts/censo-objetivo-tactil-panel.mjs`), no la vista:
   dicho, no tocado.
+
+## 22-oct-2026 · S4 · 1562f — «Ver detalle» sale de `.jobs-acciones` (el guard de la escalera, en verde)
+
+**Skill UI:** cargada (`yaqu-premium-ui`) antes de tocar `jobsView.js` y `styles.css`. Cero texto, cero
+tokens, cero componentes: el mismo `<button>` con la misma clase, y una caja flex con las reglas de
+`.jobs-acciones`.
+
+**Medido contra:** `origin/main` = `595884b20b8baa3fad91151879214554b9f6e2e2` · 2026-10-22T09:37:09Z
+
+Ancla de `node scripts/equipo/ancla.mjs`. Las medidas se hicieron sobre `9839aa6c2baee741f6a38de4e99c7fc29a3fe807`;
+los dos commits de `main` que entraron entre medias sólo tocan `docs/master/SCRUM-1536.md`.
+
+A9: comprobación → `tests/scrum1562f-ver-detalle-fuera-de-acciones.test.mjs`
+
+**El defecto, y es de este puesto.** 1562d (#2561) metió «Ver detalle» DENTRO de `.jobs-acciones`.
+`guard:escalera-por-estado` lee esa caja (`.jobs-acciones > button`) como «la acción de la fila» y la
+compara con la del detalle. En un Trabajo CERRADO, «Ver detalle» era el único botón de la caja: la lista
+«proponía» «Ver detalle» y el detalle nada → **2 hallazgos** en el job de navegador de `main`, durante
+días (SCRUM-1570 c.20159). Se rompió la población que medía otro guard sin censar quién la medía (A12).
+El test nuevo lleva esa pregunta DENTRO de la tanda obligatoria: el guard corre en un job informativo y
+su rojo no lo miraba nadie.
+
+**Lo que se decidió (no yo):** opción (a) del fundador, SCRUM-1570 c.20161 («Ok seguimos tu
+recomedación»): «Ver detalle» sale de `.jobs-acciones` y **el guard no se toca**.
+`git diff origin/main -- scripts/guard-escalera-por-estado.mjs` → vacío.
+
+**Lo que se ha hecho.** La celda `td.cell-actions` lleva ahora `div.jobs-celda-acciones` con DOS
+hermanos: «Ver detalle» (mirar) y `.jobs-acciones` (actuar: la escalera y el «⋯»). Es el mismo
+`<button>` nativo, con `btn-ghost btn-sm` y su `stopPropagation`, en la misma celda. Va DELANTE, como
+en Presupuestos (`quotesListView.js:342`), para que el «⋯» siga cerrando la fila. **No** se ha quitado
+el botón ni se le ha dado `tabindex`/`role` a la fila: un `<tr role=button>` deja de ser una fila para
+un lector de pantalla (1562d), y quitarlo deja la fila sin teclado (ver M2).
+`styles.css` (contenedor de S2): un bloque de una regla, marcado `S4 · SCRUM-1562f`.
+
+**El guard, rojo primero y SIN TOCAR** (Edge, Windows, banco `scripts/_banco-lista.mjs`):
+
+| árbol | `cerrado`: lista / detalle | ③ lista cerrada | veredicto |
+|---|---|---|---|
+| base `9839aa6c` | «Ver detalle» / (ninguna) 🔴 | propone «Ver detalle» 🔴 | **2 hallazgos · 0 ciegos → salida 1** (los mismos 2 que en el CI) |
+| con el arreglo | (ninguna) / (ninguna) | sin acción principal (72 nodos) | **salida 0** · suelo: 4 rótulos distintos en 5 estados |
+
+**El teclado, medido** con `docs/master/evidencias/SCRUM-1562/sonda-1562f-teclado.mjs`: Edge real, los
+5 estados × 1280 y 390, ANTES (el `public/` del punto de partida) y DESPUÉS. Tab REAL desde la página
+cargada hasta «Ver detalle», Intro real, Espacio real (página nueva) y clic real sobre el nombre del
+cliente. Control positivo: en el ANTES el botón TIENE que estar dentro de `.jobs-acciones`.
+
+| | en `.jobs-acciones` | misma línea que la acción | alto de fila (1280 / 390) | Tab hasta él | anillo | Intro | Espacio | ratón |
+|---|---|---|---|---|---|---|---|---|
+| ANTES (10 casos) | sí ×10 | sí ×10 | 91 / 148-167 | 11 (cerrado 10) | ✅ ×10 | ✅ ×10 | ✅ ×10 | ✅ ×10 |
+| DESPUÉS (10 casos) | **no ×10** | sí ×10 | **91 / 148-167, igual** | 10 | ✅ ×10 | ✅ ×10 | ✅ ×10 | ✅ ×10 |
+
+Intro, Espacio y ratón = exactamente UNA navegación a `jobs-detail {jobId: 1}`. La parada de Tab baja
+en uno porque ahora «Ver detalle» va antes que la acción de la escalera. Salida de la sonda: **0**.
+
+**Mutaciones** (sobre el commit `c63229da5efa6b1826ae99e588a7c5ef0951eea7`, árbol limpio después de cada una):
+
+| mutante | guard escalera | `scrum1562f` (3) | `scrum1562d` (6) | sonda |
+|---|---|---|---|---|
+| M1 · «Ver detalle» otra vez dentro de `.jobs-acciones` (el defecto) | **1** (2 hallazgos) | **2 fail** | 6 pass | **1** |
+| M2 · quitar el botón (el arreglo que la condición prohíbe) | **0 — VERDE** | 3 fail | **4 fail** | **1** |
+
+M2 es la razón de la condición del encargo: **el guard se pone verde quitando el botón y la fila se
+queda sin teclado.** Sólo lo cazan los tests y la sonda.
+
+**Otros instrumentos sobre la misma fila (A12), con el arreglo:** `guard:lista-trabajos` salida 0 (16
+filas) · `guard:lista-trabajos-917` salida 0 (50 comprobaciones, 1280 y 390) · `guard:objetivo-tactil`
+0 hallazgos · 0 ciegos. Los 102 ficheros de test que nombran `jobsView`, `renderJobsView` o
+`styles.css`: **951 tests · 951 pass · 0 fail · 0 skip**.
+
+**Lo que NO está medido, con su motivo:**
+- **yaqu.app: no.** Producción está congelada en `fe65a8b7` (orquestador, 22-oct 09:12Z): nada de esto
+  se puede ver ahí hasta que despliegue. Todo lo de arriba es «medido con la rama servida» en local.
+- **La tanda entera: no.** Memoria libre 2.127 MB (umbral 2.200) y sin turno pedido: la corre el
+  obligatorio del PR.
+- **`npm run build` en este worktree sale 2** por `Merchant.activityKind`, que falta en el cliente de
+  Prisma COMPARTIDO (lo dice el guard del cliente). No es de este cambio, que no toca TypeScript. No se
+  ha regenerado (A1). `tsc` emitió `dist/` igual, y los tests de arriba corren contra él.
+- Lector de pantalla: no.
+
+**Errores míos, cazados por los controles de la sonda:**
+1. La primera versión pulsaba el centro de `td.cell-client`, caía en el desplegable de técnicos
+   (`[data-fila-no-navega]`) y daba «ratón 🔴» en el ANTES y en el DESPUÉS por igual. Delató a la sonda
+   que fallaran los dos lados. Ahora pulsa `.jobs-fila-cliente`.
+2. Con M2, la sonda decía «NO SUPE MIRAR» (salida 2): en el DESPUÉS, una fila sin «Ver detalle» no es
+   ceguera, es el defecto. Corregida (`2d75bccf1468e6add9aae8df53bb403d7f7d9f7a`) y re-medida con M2 → salida 1.
+
+## 27-oct-2026 · J1 · 1562g — Facturas, sin teclado: MEDIDO y PARADO (el rótulo no está firmado)
+
+**Medido contra:** `origin/main` = `32f9ded17429e020a0cabd7ef84e46fcf2040a79` · 2026-10-27T16:19:07Z
+
+Sesión `jv-j1dc` (puesto J1, equipo de Javier) · rama `scrum-1562g-facturas-con-teclado`. Carril:
+`node scripts/carriles.mjs de public/dashboard/js/invoicesView.js` → J1 (`dos-equipos.md:143`).
+**Sólo docs: no se ha tocado `public/`.** Ni un texto, ni una línea de código.
+
+A9: aviso → A10 «Un rojo sin población no es un hallazgo: es un instrumento que no llegó a arrancar.» — no se pudo comprobar: la sonda es de S3 (evidencias) y no lleva suelo de arranque; ver «Error mío»
+
+### El defecto existe HOY (A2), corriendo la sonda de 1562
+
+`node docs/master/evidencias/SCRUM-1562/sonda-div-clicables.mjs`, con `dist/` emitido por `tsc --noCheck`:
+salida 0, **29 vistas · 29 montadas · 12 elementos no nativos con clic**. Control positivo: Inicio,
+`DIV.activity-item`, sale con `tabindex=0`, `role=button` y `keydown`.
+
+| vista | elemento | tabindex | role | teclas (propias o arriba) | nativos dentro |
+|---|---|---|---|---|---|
+| Facturas | `TR` (F-2026-0022, pendiente) | — | — | — | `INPUT` (la casilla del lote) |
+| Facturas | `TR` (F-2026-0021) | — | — | — | ninguno |
+
+El clic es `invoicesView.js:702` (`tr.addEventListener('click', …)`, con la guarda `e.target === cb`
+para la casilla). Con teclado, la lista de Facturas no abre ninguna factura.
+
+### Por qué paro: el patrón de Trabajos pide un rótulo que nadie ha firmado
+
+- **Trabajos (1562d/1562f)** resolvió con un `<button class="btn-ghost btn-sm">` «Ver detalle» en cada
+  fila, con `stopPropagation`, el clic de la fila intacto, y desde 1562f fuera de `.jobs-acciones`.
+  **Partes (1562c)** convirtió la fila en un `<button>`: no aplica a un `<tr>`. **No hay helper ni
+  componente compartido**: son dos soluciones escritas en línea en cada vista.
+- **«Ver detalle» no está firmado.** `grep -i "ver detalle"` en `docs/microcopy/` y `docs/YAQU_MASTER.md`:
+  **0**. Control positivo de la misma búsqueda: `docs/microcopy/` sí tiene registros con «Aprobado por».
+  El rótulo existe en Presupuestos (`quotesListView.js`) desde el 26-nov-2025, antes de la regla 39;
+  1562d lo reutilizó por estar «en la lista hermana». SCRUM-1570 c.20161 decide DÓNDE va en Trabajos
+  (opción (a)), no el texto. A7: «Que un texto exista en otra pantalla NO acredita que nadie lo firmara».
+- La descripción de 1562 dice: «⛔ Sin texto nuevo: donde haga falta un rótulo, se reutiliza el que ya
+  existe en esa fila». En la fila de Facturas no hay ninguno.
+
+### Lo que se lleva al fundador (✅/❌), en SCRUM-1562 c.21124
+
+1. **(A) «Ver detalle» en Facturas**, el mismo `<button class="btn-ghost btn-sm">` de Trabajos y
+   Presupuestos, en una celda propia al final de la fila; el clic de la fila y la casilla no cambian.
+   Literal: `Ver detalle`. ✅/❌ — **recomendación: ✅**, por coherencia con las dos listas hermanas.
+2. **(B) si ❌: sin texto nuevo.** El número de factura (`F-2026-0022`) pasa a ser un `<button>` nativo
+   que abre el detalle. El rótulo es el dato que ya se ve. Es una forma distinta de la de Trabajos.
+
+### Error mío
+
+La primera pasada de la sonda salió con **1** y 1.188 B: `MODULE_NOT_FOUND` de `dist/` (el árbol anidado
+no lo trae). Era un instrumento que no arrancó, no un hallazgo; lo cacé leyendo la salida antes de
+contarla, no por un suelo de la sonda. Con `dist/` emitido: salida 0 y 8.930 B.
+
+### NO medido
+
+- Ningún test ni mutación: no hay arreglo que fijar hasta la decisión.
+- yaqu.app: no mirado (no hay nada nuevo que ver).
+- La tanda entera: no corrida (sólo cambia este registro).
+
+## 27-oct-2026 · J1 · 1562g — Facturas con teclado: «Ver detalle» en cada fila (firma c.21125)
+
+**Medido contra:** `origin/main` = `8f115f4ab0d876c8a182fb82f9a604d213ce4cca` · 2026-10-27T16:42:21Z
+
+A9: comprobación → `tests/scrum1562g-facturas-con-teclado.test.mjs`
+
+Arreglo: en `public/dashboard/js/invoicesView.js` cada fila lleva una celda `td.cell-actions` con un
+`<button class="btn-ghost btn-sm">` «Ver detalle» (rótulo firmado en SCRUM-1562 c.21125) que abre
+`invoice-detail` con `stopPropagation`; la cabecera gana un `<th></th>` vacío. El clic en la fila y
+la casilla del lote no cambian, y la fila no lleva `role`. Sonda de navegador real:
+`docs/master/evidencias/SCRUM-1562/sonda-1562g-teclado.mjs` (antes 4/4 sin teclado; después 4/4
+con Tab, Intro y Espacio; ratón 8/8; la casilla marca y no navega).
+
+- **Test de banco** (6 casos): rojo primero sobre `2f7adc4d5^` en una copia fuera del árbol: 3 caen
+  (los de «Ver detalle») y 3 pasan (suelo, casilla, cabeceras); con el arreglo, 6/6.
+- **Mutaciones** (`MUTACIONES_QUE_ME_TUMBAN`, 5) por `correr` + `aplicarUna` de
+  `scripts/meta-guard-mutaciones.mjs`: 5 vivas de 5, árbol restaurado (`git status` limpio).
+- **Error mío:** el rojo primero salió dos veces CIEGO (a la copia le faltaban `typescript` y
+  `dist/`): 6 de 6 caídos en ~1 ms, el SUELO incluido. Lo cazó que cayera el suelo, que con el
+  código viejo tenía que pasar. Y probé `guards-visuales.mjs --help` para leer su uso: calentó
+  Edge y salió con 0 sin correr ningún guard. Al principio lo di por la tanda de navegador; lo
+  vi al leer la salida (838 B, ni un veredicto).
+- **Dirigida** (81 ficheros: los que nombran `invoicesView`, los de microcopy, 1562/1275 y scrum237,
+  976, 1387, 622, 267, 273, 1294): 639 casos · 638 pass · 0 fail · 1 saltado (`LIBRO_PG_URL`).
+- **Guards de navegador** (`guards-visuales.mjs`, Edge): 39 · 37 verdes · 1 CIEGO · 1 rojo.
+  - `objetivo-tactil` CIEGO: 3 de 41 caras de fuente no se bajaron (red); no mide la lista de Facturas.
+  - 🔴 **`lista-trabajos` ⑥ ROJO por este arreglo**: «Facturas HA CAMBIADO · db722b0b41705aa5 (3300)
+    ≠ fa5717d165487c49 (3318)». El ⑥ exige que las hermanas de Trabajos salgan idénticas a la base;
+    Facturas cambia a propósito. Lo que se ha hecho con Albaranes (SCRUM-831) y Clientes (SCRUM-979,
+    1043a c.20547) es declarar el cambio en el guard. Eso es tocar un guard (regla 41): **PARADO sin
+    empujar**, a la espera de la decisión.
+- **NO medido:** yaqu.app (no está desplegado); la tanda entera; el tamaño táctil de «Ver detalle» en
+  Facturas (ningún guard lo mide).
+- **⑥ declarado** (relevo `jv-j1dd`, 27-oct 17:20Z, rama al día con `origin/main` = `efe2cc598`; decisión
+  del fundador c.21143): Facturas sale del hash y, como Clientes, quitadas `PIEZAS_1562g` (el `<th>` vacío
+  y el `colspan` del vacío, que se deshace sólo si iguala el número de `<th>`) sale idéntica a la base:
+  verde. 4 mutaciones a mano, 4 vivas, árbol limpio (`evidencias/SCRUM-1562/mutaciones-1562g-lista-trabajos.txt`):
+  Presupuestos sin declarar → «HA CAMBIADO»; atributo en el `<th>` y `colspan` desajustado → «MÁS de lo
+  declarado»; sin el `<th>` → «NO trae lo declarado». El catálogo (`aplicarUna`) no sirve aquí: su `cae`
+  es un test de `node --test`, no un guard de navegador. Guards de navegador: 39 · 38 verdes · 1 CIEGO
+  (`objetivo-tactil`, 3 de 41 caras de fuente sin bajar; no mide Facturas); `lista-trabajos` re-corrido
+  verde tras el arreglo de abajo. Dirigida (1562g, 237, 976, 1387, 1387d, 553, 843, 1480e, 622, 267, 273,
+  1294, 812, 921c, 723): 126 · 126 pass. **Error mío:** escribí `<div class="empty-state">` con el `>`
+  pegado y lo cazó scrum553 (21 sobre tope 20); se le dio hueco y sin huecos. Las filas con botón no salen
+  en este banco (sin facturas): las mide el test de 1562g.
+A9: comprobación → `tests/scrum553-etiquetas-pegadas.test.mjs`

@@ -223,11 +223,16 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // ⚠️ 917e y 965 entraron a la vez y los DOS AÑADEN: se conservan los dos comentarios y los dos
   // guards. La lista queda en UN ELEMENTO POR LÍNEA —que es justo lo que evita la próxima—, y su
   // contenido y su ORDEN se vuelven a MEDIR corriendo este test sobre el árbol ya fusionado.
+  // SCRUM-1132 · entra `guard:notas-en-la-ficha`, por lo mismo que `portal-en-la-ficha`: sirve su
+  // página desde un servidor propio en un puerto EFÍMERO y navega a `base + '/'`, con la base en una
+  // variable. MEDIDO: esa página la fabrica él (la ficha 360 con las `/notes` del router real) y no
+  // la comparte con ningún otro guard. El orden de la lista es el de package.json, y se midió.
   assert.deepEqual(s.noResueltos, [
     'guard:contraste',
     'guard:caja-semaforo',
     'guard:caja-documento-suelto',
     'guard:portal-en-la-ficha',
+    'guard:notas-en-la-ficha',
     'guard:caja-datos-del-cliente',
     'guard:arranque-sin-red',
     'guard:un-solo-presupuesto',

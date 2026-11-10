@@ -67,6 +67,7 @@
 import { prisma } from '../../../core/db/prisma';
 import { cuboDeCobro, metodoDeUnCobro } from './metodoDeCobro';
 import { CLASES_DE_CORREO } from '../../messaging/domain/registroDeEnvios';
+import { clienteDelDocumento, type DocumentoConClienteCongelado } from '../../invoicing/domain/clienteCongelado'; // SCRUM-1576
 
 /**
  * La clave derivada, para que las dos poblaciones pasen por el MISMO sitio.
@@ -193,7 +194,7 @@ export type InvoiceParaCobro = {
    */
   paidVia?: string | null;
   customer?: { name: string | null } | null;
-};
+} & DocumentoConClienteCongelado;
 
 /** Estados que cuentan como DEUDA: dinero pedido o facturado que todavía no ha entrado. */
 export const ESTADOS_DEUDA = ['pending'] as const;
@@ -299,7 +300,12 @@ export function fundirCobros(entrada: {
     origen: 'invoice',
     id: inv.id,
     fecha: inv.createdAt.toISOString(),
-    cliente: inv.customer?.name ?? null,
+    // SCRUM-1576 · una factura emitida se nombra con el cliente que se CONGELÓ al emitirla, como su
+    // PDF, su XML y los libros (SCRUM-729/1058c). La ficha viva sólo para las anteriores al escritor.
+    // La consulta ya trae las columnas: `include` devuelve todos los escalares de la factura.
+    cliente: inv.customerName != null || inv.customer?.name
+      ? clienteDelDocumento(inv, inv.customer?.name ? { name: inv.customer.name } : null).name
+      : null,
     concepto: null,
     importe: String(inv.total),
     moneda: inv.currency,

@@ -42,14 +42,42 @@
 // `dist/modules/**` para reimplementar la decisión. Un banco que se escribe su propia copia de
 // la lógica mide su copia, no el camino.
 import './_staging-db.mjs'; // PRIMERO: fija la BD de pruebas del carril. Código de seguridad (SCRUM-118).
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599p: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import http from 'node:http';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+// `node:http` sin agente y no `fetch` (SCRUM-1218g): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json, arrayBuffer) y, como el `redirect: 'manual'` de antes, no sigue
+// redirecciones. El cuerpo se guarda en bytes: `text()` lo decodifica como `fetch` (TextDecoder).
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    const trozos = [];
+    r.on('data', (t) => { trozos.push(t); });
+    r.on('end', () => {
+      const buf = Buffer.concat(trozos);
+      ok({
+        status: r.statusCode,
+        headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+        text: async () => new TextDecoder().decode(buf),
+        json: async () => JSON.parse(new TextDecoder().decode(buf)),
+        arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+      });
+    });
+  });
+  req.on('error', mal);
+  req.end(body);
+});
+
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 // 🔴 EL MOTIVO DEL SALTO VA LITERAL EN CADA `skip`, y no en una constante: SCRUM-456 lo lee
 // por AST, y de un identificador no puede sacar el texto — el salto sale MUDO y su tanda roja.
 // Cazado por el guard al primer intento, que es exactamente para lo que está.
@@ -67,6 +95,12 @@ const TOTAL = '1210.00';
 
 const PLAN_50_50 = [{ percentage: 0.5, label: 'Anticipo' }, { percentage: 0.5, label: 'Final' }];
 const PLAN_30_70 = [{ percentage: 0.3, label: 'Anticipo' }, { percentage: 0.7, label: 'Final' }];
+
+// SCRUM-1599b (decisión del fundador, SCRUM-1599 c.20650): desde SCRUM-1027 (regla 24), un merchant
+// ES con el interruptor OFF no emite NINGÚN documento por `/:id/invoice`: 409 en las cinco
+// peticiones, y la carrera se mediría sobre cero facturas. Se enciende POR MERCHANT, como en el
+// hermano `scrum814-carrera-de-tramos-postgres`; el caso con el interruptor apagado lo mide aquél.
+const FISCAL_ON = { flags: { INVOICING_ES_ENABLED: true } };
 
 /** Lanza el cliente en su PROPIO proceso y devuelve lo que imprimió. */
 function lanzarCliente(base, cookie, quoteId, t0) {
@@ -120,6 +154,65 @@ async function dosALaVez(t, base, cookie, quoteId) {
   return { a, b, desfase };
 }
 
+/** Cuánto espera la barrera a ver a las dos peticiones paradas: el margen de arranque de los hijos y 5 s más. */
+const ESPERA_BARRERA_MS = MARGEN_ARRANQUE_MS + 5000;
+
+/**
+ * SCRUM-1611b · LA BARRERA EN LA BASE. El suelo de `dosALaVez` mide la salida de los CLIENTES, no
+ * el solape en la base: medido en el banco (SCRUM-1611 c.20978), con 0 ms de desfase en 7 de 7
+ * pasadas las dos transacciones no se solaparon NI UNA vez — el servidor las escalona ~30 ms y A
+ * commitea antes de que B abra la suya —, y sin `tomarCerrojoDeSerie` el caso seguía VERDE 6 de 6.
+ *
+ * Esta transacción toma el MISMO cerrojo de serie (`pg_advisory_xact_lock(SERIE_LOCK_NS, merchant)`)
+ * desde una tercera conexión antes de que salgan las peticiones, y no lo suelta hasta que
+ * `pg_locks` muestra a las DOS esperándolo. Con `tomarCerrojoDeSerie`, las dos esperan ANTES del
+ * recuento y salen en serie: «Anticipo» y «Final». Sin él, las dos cuentan 0 y esperan en el de
+ * `allocateInvoiceNumber`: dos «Anticipo». Si las dos no llegan a esperar, no hubo carrera y el
+ * caso FALLA diciendo que no se concluye (ERRORES_ASESOR #12).
+ *
+ * De `dist/modules/**` sólo se importa la CONSTANTE del cerrojo, para no copiar el número: la
+ * decisión del tramo se sigue midiendo por la ruta HTTP.
+ */
+async function conBarreraDeSerie(t, prisma, merchantId, lanzar) {
+  const { SERIE_LOCK_NS } = await import('../dist/modules/invoicing/domain/invoiceNumber.service.js');
+  let soltar;
+  let avisarTomada;
+  const soltada = new Promise((r) => { soltar = r; });
+  const tomada = new Promise((r) => { avisarTomada = r; });
+  const barrera = prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LOCK_NS}::int, ${merchantId}::int)`;
+    avisarTomada();
+    await soltada;
+  }, { timeout: 30_000, maxWait: 30_000 });
+  await Promise.race([tomada, barrera]);
+
+  const enCurso = lanzar();
+  enCurso.catch(() => {}); // se espera más abajo; aquí sólo se evita el «unhandled» mientras se sondea
+  let esperando = 0;
+  const limite = Date.now() + ESPERA_BARRERA_MS;
+  try {
+    while (Date.now() < limite) {
+      const [{ n }] = await prisma.$queryRaw`
+        SELECT count(*)::int AS n FROM pg_locks
+         WHERE locktype = 'advisory' AND NOT granted AND objsubid = 2
+           AND database = (SELECT oid FROM pg_database WHERE datname = current_database())
+           AND classid = ${SERIE_LOCK_NS}::int::oid AND objid = ${merchantId}::int::oid`;
+      esperando = n;
+      if (esperando >= 2) break;
+      await new Promise((r) => setTimeout(r, 20));
+    }
+  } finally {
+    soltar();
+    await barrera;
+  }
+  assert.equal(esperando, 2,
+    `🔴 NO SE CONCLUYE NADA: en ${ESPERA_BARRERA_MS} ms sólo ${esperando} de las 2 peticiones llegaron ` +
+    'a esperar el cerrojo de serie. Sin las dos paradas en la base no hubo carrera, y un verde aquí no ' +
+    'diría que está cerrada.');
+  t.diagnostic(`barrera de serie: ${esperando} peticiones esperando el cerrojo antes de soltarlo`);
+  return enCurso;
+}
+
 /** Las facturas del presupuesto, en el orden en que nacieron. */
 async function facturasDe(prisma, quoteId) {
   return prisma.invoice.findMany({
@@ -135,20 +228,20 @@ async function sesionAdmin(prisma, base, merchantId) {
   await prisma.authSession.create({
     data: { merchantId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
   });
-  const verify = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+  const verify = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
   const cookie = (verify.headers.get('set-cookie') || '').split(';')[0];
   assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
   return cookie;
 }
 
-const emitir = (base, cookie, quoteId) => fetch(`${base}/admin/quotes/${quoteId}/invoice`, {
+const emitir = (base, cookie, quoteId) => pedirSinAgente(`${base}/admin/quotes/${quoteId}/invoice`, {
   method: 'POST', headers: { cookie, 'Content-Type': 'application/json' },
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // ① LA CARRERA — el rojo que este ticket existe para apagar
 // ═════════════════════════════════════════════════════════════════════════════════════════════
-test('SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 
@@ -159,7 +252,7 @@ test('SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo',
   try {
     await withMerchant(
       prisma,
-      { name: 'QA S814 carrera', email: `qa-s814-${Date.now()}@test.local`, country: 'ES', taxId: 'B12345678' },
+      { name: 'QA S814 carrera', email: `qa-s814-${Date.now()}@test.local`, country: 'ES', taxId: 'B12345678', ...FISCAL_ON },
       async (merchant) => {
         const customer = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente S814' } });
         const quote = await prisma.quote.create({
@@ -170,7 +263,7 @@ test('SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo',
         });
         const cookie = await sesionAdmin(prisma, base, merchant.id);
 
-        const { a, b } = await dosALaVez(t, base, cookie, quote.id);
+        const { a, b } = await conBarreraDeSerie(t, prisma, merchant.id, () => dosALaVez(t, base, cookie, quote.id));
         const facturas = await facturasDe(prisma, quote.id);
         const etiquetas = facturas.map((f) => f.stageLabel);
 
@@ -210,7 +303,7 @@ test('SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo',
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // ② EL DINERO — 30/70, que es donde el defecto se cobra
 // ═════════════════════════════════════════════════════════════════════════════════════════════
-test('SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const { motivoSinTramo } = await import('../dist/modules/quotes/domain/billingPlan.js');
@@ -222,7 +315,7 @@ test('SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del pres
   try {
     await withMerchant(
       prisma,
-      { name: 'QA S814 dinero', email: `qa-s814d-${Date.now()}@test.local`, country: 'ES', taxId: 'B12345678' },
+      { name: 'QA S814 dinero', email: `qa-s814d-${Date.now()}@test.local`, country: 'ES', taxId: 'B12345678', ...FISCAL_ON },
       async (merchant) => {
         const customer = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente S814 dinero' } });
         const quote = await prisma.quote.create({
@@ -233,7 +326,7 @@ test('SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del pres
         });
         const cookie = await sesionAdmin(prisma, base, merchant.id);
 
-        await dosALaVez(t, base, cookie, quote.id);
+        await conBarreraDeSerie(t, prisma, merchant.id, () => dosALaVez(t, base, cookie, quote.id));
         const facturas = await facturasDe(prisma, quote.id);
 
         assert.equal(facturas.length, 2, `se esperaban 2 facturas y hay ${facturas.length}`);
@@ -273,7 +366,7 @@ test('SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del pres
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // ③ POSITIVO ENUMERADO — que cerrar la carrera no haya roto el camino normal
 // ═════════════════════════════════════════════════════════════════════════════════════════════
-test('SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y luego «Final»', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y luego «Final»', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 
@@ -284,7 +377,7 @@ test('SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y l
   try {
     await withMerchant(
       prisma,
-      { name: 'QA S814 secuencial', email: `qa-s814s-${Date.now()}@test.local`, country: 'ES', taxId: 'B12345678' },
+      { name: 'QA S814 secuencial', email: `qa-s814s-${Date.now()}@test.local`, country: 'ES', taxId: 'B12345678', ...FISCAL_ON },
       async (merchant) => {
         const customer = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente S814 sec' } });
         const quote = await prisma.quote.create({
@@ -325,3 +418,12 @@ test('SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y l
     await prisma.$disconnect();
   }
 });
+
+// SCRUM-1599p (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599p.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/system/app/routes/quotesAdmin.routes.ts", de: "      const tramo = tramoTrasEmitidas(emitidas);", a: "      const tramo = tramoTrasEmitidas(0);", cae: "SCRUM-814 · dos peticiones SECUENCIALES" },
+  { fichero: "src/modules/system/app/routes/quotesAdmin.routes.ts", de: "      await tomarCerrojoDeSerie(tx, quote.merchantId);", a: "      /* SCRUM-1611b: sin el cerrojo del recuento */", cae: "SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo" },
+];

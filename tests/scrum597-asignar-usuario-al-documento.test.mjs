@@ -249,7 +249,7 @@ test('SCRUM-597 · ✅ NEGATIVO: estar asignado no deja al técnico emitir, ni c
   {
     const prohibidas = [
       ['emitir factura desde el presupuesto', 'POST', '/admin/quotes/501/invoice'],
-      ['marcar la factura pagada', 'POST', '/admin/invoices/900/pay'],
+      ['marcar la factura pagada en lote', 'POST', '/admin/invoices/bulk-paid'], // SCRUM-1250b: `/pay` ya no existe
       ['cambiar el estado de la factura', 'PUT', '/admin/invoices/900/status'],
       ['rectificar la factura', 'POST', '/admin/invoices/900/rectify'],
       ['asignar el presupuesto', 'PATCH', '/admin/quotes/501/asignados'],

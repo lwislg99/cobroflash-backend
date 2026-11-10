@@ -39,6 +39,7 @@ const GUARDADO = {
   whatsappPhone: '34000000027', // rango imposible (SCRUM-262)
   defaultCurrency: 'EUR', invoiceSeriesPrefix: 'CF',
   retencionIrpfDeclarada: true, retencionIrpfTipo: 15, logoUrl: null, googleReviewUrl: null,
+  activityKind: 'empresarial', // SCRUM-1072d: la pregunta de la actividad, que la pantalla ya manda
   country: 'ES', iban: null, clabe: null, bizumPhone: null,
   notifyEmailOnPaid: true, notifyEmailOnQuoteAccepted: false, notifyEmailWeeklyDigest: true,
   homePrefs: { showTechPhotoToClient: true, bloqueCobros: false },

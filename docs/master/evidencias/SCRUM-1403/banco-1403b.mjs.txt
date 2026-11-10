@@ -1,0 +1,40 @@
+// banco.mjs — jv-j2w, SCRUM-1403b. Derivado de docs/master/evidencias/SCRUM-1218/banco-1218c.mjs.txt.
+// Uso: node banco.mjs <raiz> <ddl.sql> <tap de salida> <fichero.test.mjs>...
+// UN PGlite nuevo, `node --test --test-force-exit` de los ficheros, TAP a fichero, recuento anclado.
+import fs from 'node:fs';
+import net from 'node:net';
+import { spawn } from 'node:child_process';
+import { PGlite } from '@electric-sql/pglite';
+import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
+
+const [raiz, ddl, tap, ...ficheros] = process.argv.slice(2);
+if (!raiz || !ddl || !tap || ficheros.length === 0) { console.log('CIEGO: faltan argumentos'); process.exit(2); }
+
+const puerto = await new Promise((ok) => { const s = net.createServer(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => ok(p)); }); });
+const db = new PGlite();
+await db.exec(fs.readFileSync(ddl, 'utf8'));
+const servidor = new PGLiteSocketServer({ db, port: puerto, host: '127.0.0.1' });
+await servidor.start();
+
+const entorno = { ...process.env };
+for (const k of ['NODE_TEST_CONTEXT', 'NODE_OPTIONS', 'FORCE_COLOR']) delete entorno[k];
+fs.rmSync(tap, { force: true });
+const hijo = spawn(process.execPath, ['--test', '--test-force-exit', '--test-concurrency=1', '--test-reporter=tap', `--test-reporter-destination=${tap}`, ...ficheros], {
+  cwd: raiz,
+  env: { ...entorno, LIBRO_PG_URL: `postgresql://postgres@127.0.0.1:${puerto}/yaqu_libro_test?connection_limit=1&pgbouncer=true&sslmode=disable`, DISABLE_CRONS: 'true', WHATSAPP_DRY_RUN: '1', NODE_ENV: 'test' },
+});
+let texto = '';
+hijo.stdout.on('data', (d) => { texto += d; });
+hijo.stderr.on('data', (d) => { texto += d; });
+const codigo = await new Promise((ok) => hijo.on('close', (c, s) => ok(c ?? s)));
+await servidor.stop();
+await db.close();
+
+const lineas = fs.existsSync(tap) ? fs.readFileSync(tap, 'utf8').split(/\r?\n/) : [];
+const CASO = /^(\s*)(ok|not ok) \d+ - (.*?)(?: # (SKIP|TODO)\b.*)?$/;
+const casos = [];
+for (const l of lineas) { const m = CASO.exec(l); if (m && m[1].length === 0) casos.push({ v: m[4] ? m[4].toLowerCase() : m[2], n: m[3] }); }
+const decl = (k) => (lineas.find((l) => l.startsWith(`# ${k} `)) || '').split(' ')[2];
+for (const c of casos) console.log(`${c.v.padEnd(6)} ${c.n}`);
+console.log(`exit=${codigo} · bytesTap=${lineas.join('\n').length} · casos=${casos.length} (ok=${casos.filter((c) => c.v === 'ok').length} not_ok=${casos.filter((c) => c.v === 'not ok').length} skip=${casos.filter((c) => c.v === 'skip').length}) · declarado: tests=${decl('tests')} pass=${decl('pass')} fail=${decl('fail')} skipped=${decl('skipped')}${casos.length === 0 ? ' · CIEGO' : ''}`);
+if (codigo !== 0) console.log(texto.slice(-4000));

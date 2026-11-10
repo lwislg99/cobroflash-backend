@@ -171,6 +171,7 @@ const F = {
   exports: 'src/modules/exports/app/routes/exports.routes.ts',
   servicio: 'src/modules/invoicing/domain/verifactu.service.ts',
   builder: 'src/modules/fiscal/verifactu/registro.builder.ts',
+  instalacion: 'src/modules/fiscal/verifactu/instalacion.ts',
   env: 'src/core/config/env.ts',
   arranque: 'src/index.ts',
 };
@@ -232,8 +233,10 @@ const MUTACIONES = [
   { que: '1213 · ídem', fichero: F.servicio, apariciones: 2,
     de: '<sum1:TipoUsoPosibleMultiOT>S</sum1:TipoUsoPosibleMultiOT>',
     a: '<sum1:TipoUsoPosibleMultiOT>${productor.multiOT}</sum1:TipoUsoPosibleMultiOT>', caen: ['1213'] },
-  { que: '1226 · ídem', fichero: F.servicio, apariciones: 2,
-    de: '<sum1:IndicadorMultiplesOT>S</sum1:IndicadorMultiplesOT>',
+  // SCRUM-524g: `IndicadorMultiplesOT` ya no es `S` fijo sino calculado (`instalacion.ts`); la
+  // cobaya es ahora el valor calculado, y la mutación la misma: una plantilla lo pierde.
+  { que: '1226 · UNA de las dos apariciones deja de llevar el valor calculado', fichero: F.servicio, apariciones: 2,
+    de: '<sum1:IndicadorMultiplesOT>${productor.indicadorMultiplesOT}</sum1:IndicadorMultiplesOT>',
     a: '<sum1:IndicadorMultiplesOT>${productor.multiplesOT}</sum1:IndicadorMultiplesOT>', caen: ['1226'] },
   { que: '1223 · el emisor deja de exigir el NIF del productor', fichero: F.servicio,
     de: '!productor.nif || ', a: '', caen: ['1223'] },
@@ -264,6 +267,13 @@ const MUTACIONES = [
   { que: 'AUSENCIA · alguien empieza a escribir `OperacionExenta`', fichero: F.builder,
     de: '<sum1:Impuesto>01</sum1:Impuesto>', a: '<sum1:Impuesto>01</sum1:Impuesto><sum1:OperacionExenta>E1</sum1:OperacionExenta>',
     caen: [], ausenciasCaen: ['1196'] },
+  // SCRUM-524g: las otras tres anclas de 1226, cada una con su mutación, y su negativo.
+  { que: '1226 · el cálculo deja de dar sólo S o N', fichero: F.instalacion,
+    de: "return facturacionesDelUsuario > 1 ? 'S' : 'N';", a: 'return String(facturacionesDelUsuario) as never;', caen: ['1226'] },
+  { que: '1226 · la exportación deja de calcularlo', fichero: F.servicio, apariciones: 2,
+    de: 'indicadorMultiplesOT: indicadorMultiplesOT(FACTURACIONES_POR_CUENTA),', a: "indicadorMultiplesOT: 'S' as const,", caen: ['1226'] },
+  { que: 'NEGATIVO · espacios dentro de la expresión de 1226 no la quitan', fichero: F.servicio, apariciones: 2,
+    de: '${productor.indicadorMultiplesOT}</sum1', a: '${ productor.indicadorMultiplesOT }</sum1', caen: [] },
 ];
 
 const laQueDecide = casosEscritos(MUTACIONES, (m) => `SCRUM-524b · 🔴 EL QUE DECIDE · ${m.que} → cae ${m.caen.length ? m.caen.join(', ') : 'NADA'}`, (m) => {
@@ -302,7 +312,7 @@ test('SCRUM-524b · 🔴 EL QUE DECIDE · 1177 · el arranque deja de comprobar 
 test('SCRUM-524b · 🔴 EL QUE DECIDE · 1177 · el validador deja de exigir 2 posiciones → cae 1177', laQueDecide(15));
 test('SCRUM-524b · 🔴 EL QUE DECIDE · 1212 · UNA de las dos apariciones deja de ser fija → cae 1212', laQueDecide(16));
 test('SCRUM-524b · 🔴 EL QUE DECIDE · 1213 · ídem → cae 1213', laQueDecide(17));
-test('SCRUM-524b · 🔴 EL QUE DECIDE · 1226 · ídem → cae 1226', laQueDecide(18));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1226 · UNA de las dos apariciones deja de llevar el valor calculado → cae 1226', laQueDecide(18));
 test('SCRUM-524b · 🔴 EL QUE DECIDE · 1223 · el emisor deja de exigir el NIF del productor → cae 1223', laQueDecide(19));
 test('SCRUM-524b · 🔴 EL QUE DECIDE · 1124 · el esquema deja de validar el tipo de IVA → cae 1124', laQueDecide(20));
 test('SCRUM-524b · 🔴 EL QUE DECIDE · 1124 · entra un tipo de IVA que no existe (15 %) → cae 1124', laQueDecide(21));
@@ -314,6 +324,9 @@ test('SCRUM-524b · 🔴 EL QUE DECIDE · tope · la constante deja de ser la de
 test('SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un reformateo no es quitar una comprobación → cae NADA', laQueDecide(27));
 test('SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un comentario que nombra `OperacionExenta` no la escribe → cae NADA', laQueDecide(28));
 test('SCRUM-524b · 🔴 EL QUE DECIDE · AUSENCIA · alguien empieza a escribir `OperacionExenta` → cae NADA', laQueDecide(29));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1226 · el cálculo deja de dar sólo S o N → cae 1226', laQueDecide(30));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1226 · la exportación deja de calcularlo → cae 1226', laQueDecide(31));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · espacios dentro de la expresión de 1226 no la quitan → cae NADA', laQueDecide(32));
 laQueDecide.todos();
 
 // ── DE PUNTA A PUNTA: una COPIA en disco, por el CLI, con su código de salida ─────────────────

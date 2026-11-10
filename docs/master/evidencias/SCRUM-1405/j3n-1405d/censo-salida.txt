@@ -1,0 +1,13 @@
+CONTROLES · 4 de 4 en su sitio (pasa, cae, sin-lista, ausente)
+… 50/497
+… 100/497
+… 150/497
+… 200/497
+… 250/497
+… 300/497
+… 350/497
+… 400/497
+… 450/497
+POBLACIÓN {"runs":497,"sinObligatorio":134,"enCurso":0,"cancelado":47,"otro":0,"medibles":316,"logNo":0}
+ventana 2026-10-14T07:59:03Z → 2026-10-20T15:35:34Z
+ESTADOS {"pasa":264,"cae":38,"saltado":14}

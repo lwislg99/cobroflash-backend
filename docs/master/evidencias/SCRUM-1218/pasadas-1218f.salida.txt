@@ -1,0 +1,84 @@
+# SCRUM-1218f · banco-1218e, turno de yaqu_dev_javier, 3 pasadas por fichero (19:03:41Z-19:28:21Z)
+## ANTES (10 candidatos)
+scrum127-paywall-bloquea.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=12
+scrum127-paywall-bloquea.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=12
+scrum127-paywall-bloquea.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=12
+POBLACION=3 pasadas · EXIT=0
+scrum170-facturacion-parcial.test.mjs · pasada 0 · exit=0 · firma=false · casos=7 (ok=7 not_ok=0 skip=0) · # tests 7 · respuestas=7
+scrum170-facturacion-parcial.test.mjs · pasada 1 · exit=0 · firma=false · casos=7 (ok=7 not_ok=0 skip=0) · # tests 7 · respuestas=7
+scrum170-facturacion-parcial.test.mjs · pasada 2 · exit=0 · firma=false · casos=7 (ok=7 not_ok=0 skip=0) · # tests 7 · respuestas=7
+POBLACION=3 pasadas · EXIT=0
+scrum171a-consolidar-cliente.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=8
+scrum171a-consolidar-cliente.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=8
+scrum171a-consolidar-cliente.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=8
+POBLACION=3 pasadas · EXIT=0
+scrum178-emision-manual.test.mjs · pasada 0 · exit=1 · firma=false · casos=2 (ok=1 not_ok=1 skip=0) · # tests 2 · respuestas=2
+scrum178-emision-manual.test.mjs · pasada 1 · exit=1 · firma=false · casos=2 (ok=1 not_ok=1 skip=0) · # tests 2 · respuestas=2
+scrum178-emision-manual.test.mjs · pasada 2 · exit=1 · firma=false · casos=2 (ok=1 not_ok=1 skip=0) · # tests 2 · respuestas=2
+POBLACION=3 pasadas · EXIT=0
+scrum73-verifactu-gate.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+scrum73-verifactu-gate.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+scrum73-verifactu-gate.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+POBLACION=3 pasadas · EXIT=0
+scrum85-pay-routes-token.test.mjs · pasada 0 · exit=1 · firma=false · casos=1 (ok=0 not_ok=1 skip=0) · # tests 1 · respuestas=2
+scrum85-pay-routes-token.test.mjs · pasada 1 · exit=1 · firma=false · casos=1 (ok=0 not_ok=1 skip=0) · # tests 1 · respuestas=2
+scrum85-pay-routes-token.test.mjs · pasada 2 · exit=1 · firma=false · casos=1 (ok=0 not_ok=1 skip=0) · # tests 1 · respuestas=2
+POBLACION=3 pasadas · EXIT=0
+scrum90-pay-bank-mp-token.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=6
+scrum90-pay-bank-mp-token.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=6
+scrum90-pay-bank-mp-token.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=6
+POBLACION=3 pasadas · EXIT=0
+tenancy-permisos.test.mjs · pasada 0 · exit=0 · firma=false · casos=2 (ok=2 not_ok=0 skip=0) · # tests 2 · respuestas=97
+tenancy-permisos.test.mjs · pasada 1 · exit=0 · firma=false · casos=2 (ok=2 not_ok=0 skip=0) · # tests 2 · respuestas=97
+tenancy-permisos.test.mjs · pasada 2 · exit=0 · firma=false · casos=2 (ok=2 not_ok=0 skip=0) · # tests 2 · respuestas=97
+POBLACION=3 pasadas · EXIT=0
+scrum17-recapitulativa.test.mjs · pasada 0 · exit=1 · firma=false · casos=12 (ok=11 not_ok=1 skip=0) · # tests 12 · respuestas=2
+scrum17-recapitulativa.test.mjs · pasada 1 · exit=1 · firma=false · casos=12 (ok=11 not_ok=1 skip=0) · # tests 12 · respuestas=2
+scrum17-recapitulativa.test.mjs · pasada 2 · exit=1 · firma=false · casos=12 (ok=11 not_ok=1 skip=0) · # tests 12 · respuestas=2
+POBLACION=3 pasadas · EXIT=0
+scrum814-carrera-del-tramo.gated.test.mjs · pasada 0 · exit=1 · firma=false · casos=3 (ok=0 not_ok=3 skip=0) · # tests 3 · respuestas=8
+scrum814-carrera-del-tramo.gated.test.mjs · pasada 1 · exit=1 · firma=false · casos=3 (ok=0 not_ok=3 skip=0) · # tests 3 · respuestas=8
+scrum814-carrera-del-tramo.gated.test.mjs · pasada 2 · exit=1 · firma=false · casos=3 (ok=0 not_ok=3 skip=0) · # tests 3 · respuestas=8
+POBLACION=3 pasadas · EXIT=0
+## DESPUES (los 6 migrados)
+scrum127-paywall-bloquea.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=12
+scrum127-paywall-bloquea.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=12
+scrum127-paywall-bloquea.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=12
+POBLACION=3 pasadas · EXIT=0
+scrum170-facturacion-parcial.test.mjs · pasada 0 · exit=0 · firma=false · casos=7 (ok=7 not_ok=0 skip=0) · # tests 7 · respuestas=7
+scrum170-facturacion-parcial.test.mjs · pasada 1 · exit=0 · firma=false · casos=7 (ok=7 not_ok=0 skip=0) · # tests 7 · respuestas=7
+scrum170-facturacion-parcial.test.mjs · pasada 2 · exit=0 · firma=false · casos=7 (ok=7 not_ok=0 skip=0) · # tests 7 · respuestas=7
+POBLACION=3 pasadas · EXIT=0
+scrum171a-consolidar-cliente.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=8
+scrum171a-consolidar-cliente.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=8
+scrum171a-consolidar-cliente.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=8
+POBLACION=3 pasadas · EXIT=0
+scrum73-verifactu-gate.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+scrum73-verifactu-gate.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+scrum73-verifactu-gate.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+POBLACION=3 pasadas · EXIT=0
+scrum90-pay-bank-mp-token.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=6
+scrum90-pay-bank-mp-token.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=6
+scrum90-pay-bank-mp-token.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=6
+POBLACION=3 pasadas · EXIT=0
+tenancy-permisos.test.mjs · pasada 0 · exit=0 · firma=false · casos=2 (ok=2 not_ok=0 skip=0) · # tests 2 · respuestas=97
+tenancy-permisos.test.mjs · pasada 1 · exit=0 · firma=false · casos=2 (ok=2 not_ok=0 skip=0) · # tests 2 · respuestas=97
+tenancy-permisos.test.mjs · pasada 2 · exit=0 · firma=false · casos=2 (ok=2 not_ok=0 skip=0) · # tests 2 · respuestas=97
+POBLACION=3 pasadas · EXIT=0
+## SONDEO: los 7 que quedan, 1 pasada ANTES, sin migrar
+pdfs.test.mjs · pasada 0 · exit=0 · firma=false · casos=4 (ok=4 not_ok=0 skip=0) · # tests 4 · respuestas=3
+POBLACION=1 pasadas · EXIT=0
+scrum221-export-fiscal-cero-bytes.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=6
+POBLACION=1 pasadas · EXIT=0
+scrum74-recibo-token.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=7
+POBLACION=1 pasadas · EXIT=0
+scrum82-zip-verifactu.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+POBLACION=1 pasadas · EXIT=0
+scrum25-export-zip.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+POBLACION=1 pasadas · EXIT=0
+scrum25-exports.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=19
+POBLACION=1 pasadas · EXIT=0
+scrum148-filtro-por-miembro.test.mjs · pasada 0 · exit=0 · firma=false · casos=2 (ok=2 not_ok=0 skip=0) · # tests 2 · respuestas=6
+POBLACION=1 pasadas · EXIT=0
+## MUTACION: scrum90 con status 599 en pedirSinAgente
+scrum90-pay-bank-mp-token.test.mjs · pasada 0 · exit=1 · casos=1 (ok=0 not_ok=1) · respuestas=1

@@ -1,0 +1,63 @@
+# SCRUM-1599q · scrum234-carrera-serie.gated y scrum781 contra Postgres 16.14 desechable (loopback, yaqu_libro_test,
+# DDL de `migrate diff --from-empty`: 33 CREATE TABLE = 33 model). Medido sobre origin/main 268eb55dd · 26-oct-2026.
+# Instrumentos: arrancar-pg-1599q.mjs.txt · adaptar-1599q.mjs.txt (copias zz1599q-*.mjs, los tests versionados NO se tocan)
+# · correr-1599q.mjs.txt (casos anclados, suman el `# tests` declarado; sin casos o sin marca de reloj → CIEGO)
+# · reloj-1599q.mjs.txt (UNA variable: la fecha del proceso, por --import; deja una marca por proceso).
+# Formato: etiqueta · veredicto · ms · pasan/caen/saltan (declarados, suman) · reloj · fichero.
+#
+# ── PASADA 2 (la de abajo, entera tal cual salió) ──
+adaptados=2 sin_casar=0
+HOY · ROJO  · 1009 ms · 7/1/0 (decl 8, suman true) · sin-reloj · zz1599q-781.mjs · CAEN: SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1
+    error: '🔴 el número no tiene la forma de la serie fiscal: F260001. Si sale un J-, el merchant se ha ido por el camino del justificante y no hay carrera que medir.'
+    expected:
+    actual: 'F260001'
+HOY · ROJO  · 5612 ms · 0/1/0 (decl 1, suman true) · sin-reloj · zz1599q-234.mjs · CAEN: SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+    error: |-
+    expected: 1
+    actual: NaN
+RELOJ-0901 · VERDE · 1580 ms · 8/0/0 (decl 8, suman true) · reloj-cargado×1 (2026-09-01T12:00:00.006Z) · zz1599q-781.mjs
+RELOJ-0901 · VERDE · 5351 ms · 1/0/0 (decl 1, suman true) · reloj-cargado×1 (2026-09-01T12:00:00.005Z) · zz1599q-234.mjs
+RELOJ-1027 · ROJO  · 1419 ms · 7/1/0 (decl 8, suman true) · reloj-cargado×1 (2026-10-27T12:00:00.007Z) · zz1599q-781.mjs · CAEN: SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1
+    error: '🔴 el número no tiene la forma de la serie fiscal: F260001. Si sale un J-, el merchant se ha ido por el camino del justificante y no hay carrera que medir.'
+    expected:
+    actual: 'F260001'
+RELOJ-1027 · ROJO  · 5350 ms · 0/1/0 (decl 1, suman true) · reloj-cargado×1 (2026-10-27T12:00:00.006Z) · zz1599q-234.mjs · CAEN: SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+    error: |-
+    expected: 1
+    actual: NaN
+BORDE-0906-2359 · VERDE · 1019 ms · 8/0/0 (decl 8, suman true) · reloj-cargado×1 (2026-09-06T23:59:00.005Z) · zz1599q-781.mjs
+BORDE-0906-2359 · VERDE · 5332 ms · 1/0/0 (decl 1, suman true) · reloj-cargado×1 (2026-09-06T23:59:00.005Z) · zz1599q-234.mjs
+BORDE-0907-0001 · ROJO  · 1036 ms · 7/1/0 (decl 8, suman true) · reloj-cargado×1 (2026-09-07T00:01:00.007Z) · zz1599q-781.mjs · CAEN: SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1
+    error: '🔴 el número no tiene la forma de la serie fiscal: F260001. Si sale un J-, el merchant se ha ido por el camino del justificante y no hay carrera que medir.'
+    expected:
+    actual: 'F260001'
+BORDE-0907-0001 · ROJO  · 5360 ms · 0/1/0 (decl 1, suman true) · reloj-cargado×1 (2026-09-07T00:01:00.005Z) · zz1599q-234.mjs · CAEN: SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+    error: |-
+    expected: 1
+    actual: NaN
+# wt-p @ 9c989bf0ef2faa3db33d00cd06601c1664aa54fe · CORTE_FORMATO_F en dist: 0
+BISECT-p · VERDE · 922 ms · 8/0/0 (decl 8, suman true) · sin-reloj · zz1599q-781.mjs
+BISECT-p · VERDE · 5339 ms · 1/0/0 (decl 1, suman true) · sin-reloj · zz1599q-234.mjs
+# wt-c @ ba1cd2d5546765a79f816955a3ee088d372cb01d · CORTE_FORMATO_F en dist: 4
+BISECT-c · ROJO  · 1143 ms · 7/1/0 (decl 8, suman true) · sin-reloj · zz1599q-781.mjs · CAEN: SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1
+    error: '🔴 el número no tiene la forma de la serie fiscal: F260001. Si sale un J-, el merchant se ha ido por el camino del justificante y no hay carrera que medir.'
+    expected:
+    actual: 'F260001'
+BISECT-c · ROJO  · 5328 ms · 0/1/0 (decl 1, suman true) · sin-reloj · zz1599q-234.mjs · CAEN: SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+    error: |-
+    expected: 1
+    actual: NaN
+#
+# ── PASADA 1 · LA PROPUESTA, SÓLO COMO SONDA (n=1; en las copias zz, NO en los tests versionados) ──
+# 781 :130  /^\d{4}-QA-\d{3}$/  →  /^F\d{6}$/
+# 234 :144 (versionado; :145 en la copia zz, que lleva un import más)  seq = split('-').pop()  →  assert.match(n, /^F\d{6}$/) en los dos números + seq = slice(-4)
+PROP-HOY · VERDE · 943 ms · 8/0/0 (decl 8, suman true) · sin-reloj · zz1599q-781.mjs
+PROP-HOY · VERDE · 5280 ms · 1/0/0 (decl 1, suman true) · sin-reloj · zz1599q-234.mjs
+PROP-01SEP · ROJO  · 873 ms · 7/1/0 (decl 8, suman true) · reloj-cargado×1 (2026-09-01T12:00:00.004Z) · zz1599q-781.mjs · CAEN: SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1
+    error: '🔴 el número no tiene la forma de la serie fiscal: 2026-QA-001. Si sale un J-, el merchant se ha ido por el camino del justificante y no hay carrera que medir.'
+    expected:
+    actual: '2026-QA-001'
+PROP-01SEP · ROJO  · 5265 ms · 0/1/0 (decl 1, suman true) · reloj-cargado×1 (2026-09-01T12:00:00.004Z) · zz1599q-234.mjs · CAEN: SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+    error: 'PROPUESTA 1599q: 2026-CF-001 no es F<AA><NNNN>'
+    expected:
+    actual: '2026-CF-001'

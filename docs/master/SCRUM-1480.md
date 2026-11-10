@@ -513,3 +513,123 @@ Y la del ticket, releída contra `main`:
   que es lo primero que verá una sesión suya; el texto para su orquestador va en la entrega de Jira.
 - **Los 225 siguen sin puesto.** El trinquete no reparte nada: impide que la cuenta crezca callada.
 - **No he corrido la suite completa** (memoria de la máquina): la dirigida sobre lo tocado y `guards:entrada`.
+
+---
+
+## SCRUM-1480g · Dos de `scripts/` sin dueño, escritos como PREGUNTA en §7 (no como fila)
+
+**Medido contra:** `origin/main` = `9839aa6c2baee741f6a38de4e99c7fc29a3fe807` · 2026-10-22T09:26:26Z
+A9: sin fallo que generalice — sólo docs: una pregunta añadida a §7 y el generado regenerado
+
+S0 (`cobroflash-backend-s0`), por encargo del orquestador (22-oct): declarar con fila propia
+`scripts/_trinquete-de-zona-hijo.mjs` y `scripts/censo-guards-gateados.mjs`, que S3 necesita tocar. La
+inferencia de dueño es de S3, y el encargo pide escribirla como lo que es: una propuesta.
+
+**No los he declarado en §3, y el motivo es medido.** Una fila de §3 la aplica la cerradura
+(`.claude/hooks/carril.mjs`): no hay forma de escribir ahí una propuesta. Y el criterio de §3.3 para un
+fichero de `scripts/` («el área del ticket que creó cada uno», filas 180-187) no decide nada aquí:
+
+| fichero | lo creó | etiqueta de área del ticket | quién lo usa | propuesta (S3) | lo que añado |
+|---|---|---|---|---|---|
+| `scripts/_trinquete-de-zona-hijo.mjs` | SCRUM-813 (`45294b31d`, 7-sep) | ninguna | sólo `scripts/_trinquete-de-zona.mjs` y `tests/scrum813-…` | S5, por SCRUM-1494c (`area-s5`) | 1494c lo CAMBIÓ, no lo creó. Su padre tampoco tiene fila: declarar el hijo solo deja el hueco un fichero más arriba |
+| `scripts/censo-guards-gateados.mjs` | SCRUM-754c (`b751f88c0`, 8-sep) | ninguna (SCRUM-754) | `npm run censo:gateados` y dos tests que importan `veredictoDelCenso` (`scrum754`, `scrum846b`) | S0, por ser un censo | no es sólo de consulta: lo importan dos tests |
+
+**Quién los escribió** (pedido por el orquestador después del primer commit de esta rama): SCRUM-813 y
+SCRUM-754 los abrió en Jira la cuenta de Javier (creador y responsable, 7-sep y 5-sep), y los commits que crean
+los dos ficheros son suyos (`45294b31d` y `b751f88c0`, autor `javier.pereirafe@gmail.com`, ramas
+`scrum-813-…` y `scrum-754-…`). Fue antes del 18-sep, cuando aún no había dos equipos, así que eso no dice de
+qué equipo son hoy: sólo que la pregunta es de los dos jefes y no la cierra el criterio de la casa. El hijo de
+zona lo cambió después nuestro equipo (SCRUM-1494c, S5).
+
+Comandos: `node scripts/carriles.mjs de <ruta>` (los tres ficheros, incluido el padre: «sólo lo cubre la
+fila general») · Jira `key in (SCRUM-813, SCRUM-754, SCRUM-1494)` → 813 y 754 sin etiquetas, 1494 `area-s5` ·
+`git log --format="%h %ad %s" -- <ruta>` · `git grep -n censo-guards-gateados -- tests package.json`.
+
+Lo que se cambia: `docs/equipo/dos-equipos.md` §7 punto 4, una viñeta con la pregunta, y
+`.claude/carriles.json` regenerado (sólo cambia el sha de la tabla: `comprobar` → IGUAL; las mismas 189
+reglas y 71 filas). Corridos: `scrum1295`, `1408`, `1480e`, `1480f`, `514` en verde.
+
+⚠️ Esta rama y la de SCRUM-1507d (#2660) cambian las dos la línea `sha` de `carriles.json`: la segunda que
+entre lo hace después de traer `main` y regenerar (A4: una cifra derivada se regenera, no se elige).
+
+---
+
+## SCRUM-1480h · Seis filas de carril ya decididas: el utillaje de antes de la división (S5) y lo que dejó el equipo J (J6)
+
+**Medido contra:** `origin/main` = `927bda7ab44b604d81bca8c453663e7fc6f6cda9` · 2026-10-24T12:28:57Z
+A9: comprobación → `tests/scrum1480f-un-script-nuevo-no-entra-sin-fila.test.mjs`
+
+S0, por encargo del orquestador de Luis (24-oct): escribir en §3.3 las filas que Javier y el equipo J han
+dejado decididas, en UN PR, bajar el suelo y regenerar una vez. Cada fila lleva su fuente; ninguna sale de
+leer el nombre del fichero.
+
+| ficheros | dueño | fuente (literal en la fila) |
+|---|---|---|
+| `scripts/_trinquete-de-zona.mjs`, `_trinquete-de-zona-hijo.mjs`, `censo-guards-gateados.mjs` | S5 | decisión de Javier en la nota de su orquestador «Para Luis · lo que el equipo J deja en tus carriles», que el fundador pasó al orquestador de Luis el 24-oct hacia las 12:24Z. Contesta §7.4 (1480g), que se queda como historia con su ✅ |
+| `scripts/_senal-de-nombres.mjs` | J6 | SCRUM-1389 c.20720 (fundador); J6 quitó su propia fila de 1389c porque la tabla es de la S0 (c.20736) |
+| `scripts/staging-gated.mjs`, `_evidencia-tanda.mjs` | J6 | SCRUM-1599 c.20715 (salida A, «Lo hace J6»), con la fila «área J6» escrita en la salida elegida (c.20713) |
+| `tests/_respaldo-de-firma.mjs`, `scrum921c-…`, `_pares-leidos-en-jira.mjs` | J6 | SCRUM-1511 c.20748 (fundador): «Lo construye J6 […] La fila de carril de esos ficheros va a S0» |
+
+**El suelo: 223 → 217, no 222.** La nota del equipo J (y el encargo) decían 223 → 222, que es lo que pide
+SÓLO la fila de 1389c. Seis de los nueve ficheros son de `scripts/` y están en la foto del 9-oct
+(`_senal-de-nombres` y los otros cinco): cada fila baja uno. Medido después, no deducido:
+`node scripts/carriles.mjs sin-fila` → «320 ficheros en scripts/ · 95 con fila propia · 225 sólo con la fila
+general» (antes: 89 y 231), y `scrum1480f` exige `quedan` = los de la foto que siguen sin fila.
+
+**El generado, preguntado fichero a fichero** (`node scripts/carriles.mjs de …`): los nueve contestan el dueño
+y la línea que se acaban de escribir (S5 en la 188; J6 en la 191, 192 y 193), `_pares-leidos-en-jira.mjs`
+incluido aunque todavía no existe en `main` (lo crea #2828; la ruta va completa, que es lo que `_carriles.mjs`
+admite para un fichero anunciado). Control negativo en la misma orden: `trinquete-de-zona.mjs`,
+`verificar-evidencia-tanda.mjs` y `senal-de-nombres.mjs` siguen «SIN CERRADURA». `carriles.mjs comprobar` →
+IGUAL a la tabla (77 filas, 201 reglas).
+
+**De paso, en mi carril (SCRUM-1556):** la nota de la fila J3 decía que la fila del cotejo «la decide el
+orquestador de Javier»; ya la tenía, de J5, en la fila siguiente desde el 23-oct (lo avisaron c.20486 y
+c.20562). Corregida, con lo que decía antes al lado.
+
+**Lo que NO entra, porque ninguna decisión lo nombra** (se queda en la fila general, dicho en cada fila):
+`scripts/trinquete-de-zona.mjs`, la línea de órdenes que importa `_trinquete-de-zona.mjs` (el mismo hueco «un
+fichero más arriba» que 1480g señaló del hijo); `scripts/verificar-evidencia-tanda.mjs`, que importa
+`_evidencia-tanda.mjs`; y el guion `senal-de-nombres.mjs`. Los tres van al orquestador como pregunta.
+
+**Consecuencias que van al orquestador, no decididas aquí:** con fila, la cerradura deja de dejar editar estos
+ficheros a quien no sea su puesto. `scrum921c` lo tocaban por el NÚMERO, con permiso, otros carriles de SCRUM-1502
+(`25dd9ae2e`, `3e0997efd`, `d9e00c360`); y `staging-gated.mjs` lo nombra `.github/CODEOWNERS`. #2822 (J6, abierto) añade un declarado
+dos líneas por debajo de `quedan` en `_sin-fila-declarados.json`: el segundo que entre trae `main` y regenera.
+
+Corridos: los de carriles y del trinquete (`scrum1295`, `1408`, `1480e`, `1480f`, `514`) y los de registro
+(`scrum1294`, `267`), en la entrega con su cifra.
+
+## SCRUM-1480i · La fila del censo de frontera (`tests/_censo-frontera.mjs` y `scrum1516c`) → J6
+
+**Medido contra:** `origin/main` = `77ce98573b1b5e090dfcf7754c4e7960bc63b85a` · 2026-10-27T15:34:26Z
+A9: comprobación → `tests/scrum1295-carriles.test.mjs`
+
+S0, por encargo del orquestador de Luis (27-oct), con el pedido de Javier que trae: los dos ficheros contestaban
+«sin fila en §3: nadie lo reclama». Una fila en §3.3, debajo de la de `tests/` de J6 que puso 1480h, y el
+generado regenerado una vez.
+
+**De dónde sale el dueño, y no del nombre del fichero:** SCRUM-1516 c.20861 (decisión del fundador, 26-oct)
+dice que lo rehace J6 «que se queda como dueño del ticket» y que la fila «nace en su PR o va a S0». J6 lo
+rehizo en 1516c (#2884) y en c.20891 nombra los dos ficheros: «No toco `dos-equipos.md`: la fila va a S0». Los
+volvió a tocar en 1610b (`00c83fb88`, «carril J6»). En c.21000 el orquestador J lo deja en la lista para Luis.
+Es el mismo patrón que `_senal-de-nombres.mjs` (1480h): el puesto que lo construye es el dueño, y la S0 escribe
+la fila porque la tabla es suya.
+
+**`quedan` no se mueve (217):** `sin-fila` cuenta sólo `scripts/` («322 ficheros en scripts/ · 96 con fila
+propia · 226 sólo con la fila general», igual antes y después), y estos dos están en `tests/`.
+
+**El generado, preguntado fichero a fichero:** `node scripts/carriles.mjs de` → los dos contestan J6 en
+`dos-equipos.md:195`. Control negativo en la misma orden: `tests/_censo-frontera-NOEXISTE.mjs` y
+`tests/_salida-entera.mjs` siguen sin fila. `carriles.mjs comprobar` → IGUAL a la tabla (79 filas, 204
+reglas), con exit 0.
+
+**Lo que NO entra, porque ninguna decisión lo nombra:** `tests/_salida-entera.mjs` y
+`tests/scrum1610b-salida-cortada-sale-ciega.test.mjs`, de 1610b (J6, el mismo commit que se declara «carril
+J6»), y `tests/scrum765-la-puerta-y-el-suelo.test.mjs`, que el propio 1610b declara «sin fila en §3». Los tres
+siguen sin fila, y van al orquestador como pregunta.
+
+**Consecuencia:** con fila, la cerradura (`.claude/hooks/carril.mjs`) deja de permitir que edite estos dos
+ficheros quien no sea J6.
+
+A9: sin fallo que generalice — una fila nueva con su decisión citada; las cifras salen de los comandos que van escritos al lado

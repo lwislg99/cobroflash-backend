@@ -98,10 +98,12 @@ async function whereDeLaPasada(desde) {
 // ───────────────────────────────── ① INERTE ─────────────────────────────────────────────────
 
 test('SCRUM-1404 · ① sin fecha de corte la pasada no lee ni escribe NADA, y lo dice', async () => {
-  assert.equal(R.REINTENTO_ACTIVO_DESDE, null, 'la fecha la pone el PR de activación, no éste');
+  // SCRUM-1507 (PR-2): con la fecha ya escrita (SCRUM-1404 c.20923) esto no cambia: SIN fecha, la
+  // pasada no toca nada. Por eso se le pasa el `null` explícito. Que la constante esté ENCENDIDA lo
+  // sujeta `tests/scrum1507-el-cron-del-reintento.test.mjs` ④.
   const base = baseDe(POBLACION);
   const sellados = [];
-  const parte = await R.reintentarSelladosPendientes({ ahora: AHORA, prisma: base, sellar: async (f) => { sellados.push(f.id); return { estado: 'sellado' }; } });
+  const parte = await R.reintentarSelladosPendientes({ ahora: AHORA, corte: R.fechaDeCorte(null), prisma: base, sellar: async (f) => { sellados.push(f.id); return { estado: 'sellado' }; } });
   assert.equal(parte.activo, false);
   assert.match(parte.motivo, /sin fecha de corte/);
   assert.equal(base.llamadas.length, 0, 'ni una consulta');
@@ -114,7 +116,7 @@ test('SCRUM-1404 · ① sin fecha de corte la pasada no lee ni escribe NADA, y l
   assert.ok(activa.llamadas.length > 0);
 });
 
-test('SCRUM-1404 · ① nadie en src/ llama todavía al reintento: se activa en su PR, con su línea de cron', () => {
+test('SCRUM-1404 · ① en src/ sólo la tarea programada llama al reintento (PR-2, SCRUM-1507)', () => {
   const ficheros = [];
   const andar = (dir) => {
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -130,8 +132,9 @@ test('SCRUM-1404 · ① nadie en src/ llama todavía al reintento: se activa en 
     .map((f) => path.relative(RAIZ, f).split(path.sep).join('/'));
   // Control: el mismo barrido ve a quien importa el módulo de al lado.
   assert.ok(importan('selladoEstado').length >= 5, 'el barrido ve importadores de selladoEstado');
-  // 🔴 El día que esto cambie es el PR de activación: fecha + cron + respuesta, los tres a la vez.
-  assert.deepEqual(importan('reintentoSellado'), []);
+  // 🔴 Hasta el PR-2 esto exigía `[]`. Desde SCRUM-1507 lo importa la tarea de cron.ts y NADIE
+  // más: un segundo importador sería un segundo camino al sellado que nadie ha decidido.
+  assert.deepEqual(importan('reintentoSellado'), ['src/core/cron/cron.ts']);
 });
 
 test('SCRUM-1404 · ① la excepción está DECLARADA y sigue montada: el módulo existe, este test lo carga y sus tres piezas constan', () => {
@@ -162,20 +165,20 @@ test('SCRUM-1404 · ① la excepción está DECLARADA y sigue montada: el módul
   assert.ok(cargas.length >= 2, `población: ${cargas.length} módulos cargados por este test`);
   assert.ok(cargas.includes('../dist/modules/invoicing/domain/reintentoSellado.js'), `este test carga el módulo: ${cargas.join(', ')}`);
 
+  // SCRUM-1507 (PR-2): la excepción se RETIRA. Las tres claves salen de `declaradas` y quedan en
+  // `retiradas` con su motivo; si alguien desconectara la tarea, `scrum1185` ③ lo cazaría.
   const DECL = JSON.parse(fs.readFileSync(path.join(RAIZ, 'scripts/_sin-consumir-declarados.json'), 'utf8'));
   assert.ok(DECL.declaradas.length > 50, `población: ${DECL.declaradas.length} piezas declaradas`);
-  const mias = DECL.declaradas.filter((d) => d.clave.startsWith(`export · ${MODULO}::`));
-  const nombres = mias.map((d) => d.clave.split('::')[1]).sort();
-  assert.deepEqual(nombres, ['conclusionDelReintento', 'reintentarSelladosPendientes', 'resumenDelReintento']);
-  for (const d of mias) {
+  assert.ok(DECL.retiradas.length > 30, `población: ${DECL.retiradas.length} piezas retiradas`);
+  const deEste = (l) => l.filter((d) => d.clave.startsWith(`export · ${MODULO}::`));
+  assert.deepEqual(deEste(DECL.declaradas), [], 'ya tiene consumidor: no sigue declarada sin consumir');
+  const retiradas = deEste(DECL.retiradas);
+  assert.deepEqual(retiradas.map((d) => d.clave.split('::')[1]).sort(), ['conclusionDelReintento', 'reintentarSelladosPendientes', 'resumenDelReintento']);
+  for (const d of retiradas) {
     assert.ok(exportadas.has(d.clave.split('::')[1]), `${d.clave} nombra una función que el módulo exporta`);
-    assert.equal(d.ticket, 'SCRUM-1404');
-    assert.equal(d.carril, 'J1');
-    assert.match(d.motivo ?? '', /SIN CONSUMIDOR A PROPOSITO/);
+    assert.match(d.motivo ?? '', /SCRUM-1507/);
+    assert.match(d.motivo ?? '', /src\/core\/cron\/cron\.ts/);
   }
-  const principal = mias.find((d) => d.clave.endsWith('::reintentarSelladosPendientes'));
-  assert.match(principal.motivo, /QUIEN LA RETIRA: el PR-2 de SCRUM-1404/);
-  assert.match(principal.motivo, /src\/core\/cron\/cron\.ts/);
 });
 
 test('SCRUM-1404 · ④ la acción que el reintento CUENTA es la que el sellado ESCRIBE: leída por AST de selladoEstado.ts', () => {
@@ -200,7 +203,9 @@ test('SCRUM-1404 · ② la fecha de corte: sólo un instante completo y no anter
   const tSuelo = new Date(suelo).getTime();
   assert.ok(Number.isFinite(tSuelo));
   assert.equal(R.fechaDeCorte(null).desde, null);
-  assert.equal(R.fechaDeCorte().desde, null, 'la constante de hoy');
+  // Encendido (SCRUM-1404 c.20923): la constante de hoy es una fecha de corte válida.
+  assert.equal(R.fechaDeCorte().motivo, null, 'la constante de hoy');
+  assert.equal(R.fechaDeCorte().desde.getTime(), new Date(R.REINTENTO_ACTIVO_DESDE).getTime());
   // Exactamente el suelo vale; un milisegundo antes, no.
   assert.equal(R.fechaDeCorte(suelo).desde.getTime(), tSuelo);
   const antes = new Date(tSuelo - 1).toISOString();

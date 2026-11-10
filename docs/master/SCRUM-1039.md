@@ -205,3 +205,168 @@ que exista en el origen. No se ha podido reproducir la ambigüedad bajando la fu
   revisión de SCRUM-1106): esto es evidencia para que la incorpore, no una cita propagada por mí.
 - Sin STOP: solo lectura de una fuente pública externa; ningún fichero de código tocado, ningún
   texto de usuario propuesto ni firmado.
+
+## SCRUM-1039d · Revisión de J4 de las Q-C1…Q-C9 en `PREGUNTAS_ASESOR.md` (jv-j4ak, 26-oct-2026)
+
+**Medido contra:** `origin/main` = `31d0bbae3ff7da9fafb76ffac0ec32a7fb856786` · 2026-10-26T22:59:36Z
+
+A9: sin fallo que generalice — revisión de una propuesta ajena, solo docs; lo que no está bien es de la propuesta y va abajo como arreglo propuesto, sin aplicar.
+
+**Veredicto: NO doy el visto bueno todavía.** Las dos líneas `docs/legal/PREGUNTAS_ASESOR.md:841`
+(«pendiente de tu visto bueno») y `:1030` (Q-C9 «pendiente de tu confirmación») **se quedan como
+están**. La cita de Q-C9 sí se sostiene contra el BOE de hoy; lo que no se sostiene es la conclusión
+que saca de ella, y el bloque tiene tres defectos más. Los cuatro, con su arreglo, abajo. J4 revisa y
+propone; no firma por el fundador, y ninguna respuesta de asesor se da por buena: las de Q-C1…Q-C5,
+Q-C7 y Q-C8 son de una herramienta (SCRUM-1261 c.17638, según `PREGUNTAS_ASESOR.md:846` y el
+encargo; **el comentario c.17638 no lo he leído yo**).
+
+### 1 · Las nueve, una a una
+
+| Q | ¿Bien formulada? | Su cita oficial | ¿En SCRUM-1264? |
+|---|---|---|---|
+| Q-C1 · 10 % reformas | es una respuesta de IA, no una pregunta; la pregunta va implícita | AEAT con enlace; LIVA 91.Uno.3.1.º, 87.Uno y 170.Dos.2.º marcadas NO VERIFICADO, bien marcadas | sí, B3 (3) |
+| Q-C2 · ISP | ídem | ROF 6.1.m y 6.2.b comprobadas por script (SCRUM-1039c). LIVA 20.Uno.22.º.B marcada NO VERIFICADO: **la he leído hoy en el consolidado** y casa en lo esencial, pero el texto dice además «o con obras análogas o conexas a las de rehabilitación» y mide el 25 % sobre el precio de adquisición (si fue en los dos años anteriores) o el valor de mercado, descontando el suelo. Esa coletilla es justo lo que decide si «una reforma de baño, por grande que sea, NO es rehabilitación» | sí, B3 (1) |
+| Q-C3 · suplidos | respuesta de IA | FAQ AEAT con enlace; nada del BOE | sí, B4 |
+| Q-C4 · recargo | respuesta de IA | LIVA 148-149, 161, 163.Uno, 170.Dos.3.º y RIVA 61, todas NO VERIFICADO, bien marcadas | sí, B5 |
+| Q-C5 · retenciones | respuesta de IA + la parcial del 22-sep por cita | RIRPF 95.1 y 95.4-6 comprobadas por script el 22-sep (**no recotejadas hoy**); 2 %, art. 76 RIRPF y 107 LCSP NO VERIFICADO | **NO**. Ninguna de las 28 pregunta por la retención en factura emitida. E4 nombra el 111/190, que es otra cosa |
+| Q-C6 · criterio de caja | sí, es la única formulada como pregunta abierta y sin respuesta | sin cita (no la necesita para preguntar) | sí, B6 (1) |
+| Q-C7 · tipos 2/5/7,5 % | respuesta de IA | RDL 4/2024 y fechas NO VERIFICADO | sí, E5 |
+| Q-C8 · modelos y plazos | respuesta de IA; **también dice «pendiente de tu confirmación»** (`:978`), y el auditor no la citó | todo el cuadro NO VERIFICADO salvo los enlaces AEAT; las órdenes, localizadas en SCRUM-1039b | en parte: E4 (condicional) pregunta los modelos; los plazos no se preguntan a propósito |
+| Q-C9 · exento / no sujeto | sí, termina en una pregunta al asesor | LIVA 7 y 20.Uno: **verificada hoy por mí, se sostiene** (§2) | sí, B3 (2), rotulada «IA · 22-sep» |
+
+### 2 · Q-C9 contra el consolidado de hoy
+
+Fuente: API de legislación consolidada del BOE, `BOE-A-1992-28740`, bloques `a7`, `a20` y `a3`
+(`curl`, no WebFetch), 200 OK a las 22:57:59-22:58:04Z del 26-oct-2026 según la cabecera `Date:`.
+Última versión de cada bloque: **art. 7**, vigente desde el 21-dic-2022 (Ley 26/2022, que solo toca
+el 8.º F d´); **art. 20**, versión publicada el 7-oct-2026, que modifica el 1.23.º e´) (RDL 26/2026 y
+RDL 29/2026, con efectos de 1-dic-2026: arrendamientos, nada de oficios); **art. 3**, desde el
+6-feb-2020.
+
+- Las dos citas de `docs/producto/CONTABILIDAD.md:100-101` **casan literal** con la última versión:
+  2 de 2, y la misma cita con una palabra cambiada no casa en ninguna de las dos (control negativo
+  sembrado). Instrumento: `docs/master/evidencias/scrum1039/scrum1039d-cotejo-liva.mjs`.
+- **Art. 7: doce números, 1.º a 12.º.** Correcto lo de «los 12». Leído el comienzo de cada uno:
+  ninguno es la venta de un servicio de reforma o instalación.
+- **Art. 20.Uno: números 1.º a 28.º, con el 21.º y el 27.º suprimidos.** No son «los 5 primeros de
+  ~35» (`:1032-1035` y `CONTABILIDAD.md:108`). Leído el comienzo de los 28: ninguno exime un servicio
+  de reforma o instalación de un oficio.
+
+**La cita se sostiene. La conclusión, no.** `:1038-1039` dice que, si la respuesta es «ninguno»,
+«Exento/No sujeto puede quedar fuera del selector». Eso no se deduce de mirar sólo los arts. 7 y 20:
+- **Art. 3.Dos.1.º** (leído hoy): Canarias, Ceuta y Melilla quedan fuera del «territorio de
+  aplicación del impuesto». Un oficio que trabaja allí no repercute IVA. Es una no sujeción por
+  territorio que la pregunta no mira.
+- **De memoria, NO VERIFICADO:** las exenciones de los arts. 21 a 25 (exportaciones, entregas
+  intracomunitarias) y las reglas de lugar de realización de los arts. 68 a 70 (un servicio sobre un
+  inmueble situado fuera de España). No las he bajado. Con un oficio son raras, pero son «no sujeta»
+  o «exenta» con 0 % en la línea.
+
+Es el caso de la frase de la casa «Lo que se deduce de NO haber visto algo no vale si algo no se
+pudo mirar: se queda sin juzgar.» (SCRUM-1336).
+
+### 3 · Lo que propongo, SIN aplicarlo
+
+1. **`:1030`** — cambiar «✅ RESPONDIDA por cita, pendiente de tu confirmación» por una marca que diga
+   lo que es: respuesta de IA (S0, 22-sep) con cita comprobada (arts. 7 y 20.Uno, recotejados el
+   26-oct contra la versión del 7-oct-2026), que **no cubre** el art. 3 ni los arts. 21-25 y 68-70.
+   Y añadir a la pregunta al asesor: «¿y fuera de los arts. 7 y 20: Canarias, Ceuta y Melilla, o una
+   obra en un inmueble fuera de España?». Corregir «los 5 primeros… ~30 apartados más» por «1.º a
+   28.º, con el 21.º y el 27.º suprimidos». Lo mismo en `CONTABILIDAD.md:108` y `:132`.
+2. **Q-C5 a SCRUM-1264**: falta en el sitio único. Propuesta de pregunta nueva para el bloque B
+   (subir el contador de 28 a 29): ¿un oficio en estimación directa que factura a una empresa
+   practica retención en la factura emitida, o sólo se da en estimación objetiva (art. 95.6 RIRPF)?
+   Es la que decide SCRUM-1053. Editar 1264 lo hace su dueño (el orquestador), no esta sesión.
+3. **Q-C2**: llevar a la pregunta B3 (1) la coletilla literal del 20.Uno.22.º.B 1.º («o con obras
+   análogas o conexas a las de rehabilitación»), que es la que decide el ejemplo del baño. Y pasar
+   esa cita de NO VERIFICADO a comprobada por script, con su control negativo.
+4. **`:978`** (Q-C8) — tiene el mismo «pendiente de tu confirmación» y nadie lo ha pedido. Propongo
+   que entre en el mismo visto bueno de J4 cuando se aplique 1-3, no por separado.
+
+Con 1 a 4 aplicados (por J4, en otra tanda, con el GO del orquestador), las dos líneas pasan a
+visto bueno. Hoy no.
+
+### Suelo
+
+- Población: las 9 entradas Q-C de `PREGUNTAS_ASESOR.md:839-1045`, leídas enteras (17.212 B); las 28
+  preguntas de SCRUM-1264 (descripción entera); SCRUM-1039 entera (4 comentarios) y SCRUM-1106 sin
+  comentarios. **No leído:** SCRUM-1261 c.17638 (lo cito por `PREGUNTAS_ASESOR.md:846`), los
+  comentarios de SCRUM-1264 ni el del auditor jv-j3bp (no está en SCRUM-1039).
+- No he vuelto a correr `docs/verificacion/comprobar-citas-contabilidad.mjs`: sus HTML no están en
+  git. El cotejo de hoy cubre sólo las dos citas de Q-C9.
+- Solo docs. Ni `src/`, ni esquema, ni texto de usuario, ni `PREGUNTAS_ASESOR.md`.
+
+## SCRUM-1039e · J4 aplica los arreglos 1, 3 y 4 de §1039d y da su visto bueno (jv-j4an, 26-oct-2026)
+
+**Medido contra:** `origin/main` = `a765791d77c7882aef7a829cc00b4cc53609f3c2` · 2026-10-26T23:20:04Z
+
+A9: comprobación → `docs/master/evidencias/scrum1039/scrum1039e-cotejo-liva.mjs`
+
+El fallo que cubre: mi primera versión del control negativo mutaba con un patrón que no casaba en la cita del art. 3.Uno («español», no «España»): la mutada salía igual a la cita y el negativo no podía fallar; el script exige `mutada !== cita` y lo dio por no válido en la primera pasada, antes de que lo mirase yo.
+
+**Base:** el PR #2904 (`scrum-1039d-visto-bueno-j4`) **no ha entrado en main** (abierto, `BLOCKED`). Esta rama sale de su punta, `7b2c9a03f808cfa529f3091d87cafc1c42eae7a5`, y la lleva dentro. GO del orquestador a los arreglos 1, 3 y 4; el 2 (Q-C5 a SCRUM-1264) ya lo hizo su dueño (pregunta 29, c.20959, según el encargo; **c.20959 no lo he leído**).
+
+**Fuente:** API de legislación consolidada del BOE, `BOE-A-1992-28740`, bloques `a3`, `a7` y `a20`, con `curl`, 200 OK a las 23:16:06-23:16:09Z del 26-oct-2026 (cabecera `Date:`). Última versión: art. 3, vigente desde el 6-feb-2020; art. 7, desde el 21-dic-2022; art. 20, publicada el 7-oct-2026. Las mismas que leyó §1039d.
+
+### Lo aplicado, uno a uno (ediciones en sitio: ningún número de línea se mueve)
+
+| arreglo | dónde | qué |
+|---|---|---|
+| 1 | `PREGUNTAS_ASESOR.md:1030-1039` | Q-C9: la marca dice que es respuesta por cita **sólo de los arts. 7 y 20.Uno**, escrita por una sesión de IA (S0, 22-sep), y que no cubre el art. 3 ni los 21-25 y 68-70. Art. 3.Uno y Dos.1.º a) y b), citados literal. Arts. 21-25 y 68-70, **NO VERIFICADO**. La pregunta añade Canarias, Ceuta y Melilla y la obra fuera de España. «~30 apartados más» → «1.º a 28.º, con el 21.º y el 27.º suprimidos» |
+| 1 | `CONTABILIDAD.md:108` y `:132` | el mismo recuento; en `:132`, además, que no cubre el art. 3 ni los 21-25 y 68-70 |
+| 3 | `PREGUNTAS_ASESOR.md:889-890` | Q-C2: el 20.Uno.22.º.B 1.º y 2.º, de NO VERIFICADO a cita literal comprobada por script; la coletilla «o con obras análogas o conexas a las de rehabilitación», señalada como la que decide el ejemplo del baño |
+| 4 | `PREGUNTAS_ASESOR.md:978-979` | Q-C8: «pendiente de tu confirmación» → visto bueno de J4 a la marca, no a la respuesta |
+| visto bueno | `PREGUNTAS_ASESOR.md:841` y `:1030` | visto bueno de J4 con fecha y lo comprobado. No confirma ninguna respuesta |
+
+**Comprobado:** `scrum1039e-cotejo-liva.mjs` sobre `PREGUNTAS_ASESOR.md`: **5 de 5** citas literales en el BOE y en el documento, cada una con negativo sembrado que no casa; art. 20.Uno: **28 números, suprimidos el 21 y el 27**; salida 0. Rojo antes de editar (0/5, salida 1) y **CIEGO** sin fuentes (salida 2). El de §1039d sobre `CONTABILIDAD.md`, otra vez hoy: 2/2, salida 0. Art. 7: 12 números, contados.
+
+### Lo que NO hice, y una corrección a §1039d
+
+- **El arreglo 3 dice también «llevar a la pregunta B3 (1)»**: B3 vive en la descripción de SCRUM-1264, que edita su dueño (el orquestador), no esta sesión. Le mando el literal.
+- **Corrección a §1039d:** el art. 3.Dos.1.º no dice «fuera del territorio de aplicación»: excluye a Ceuta y Melilla y a Canarias del **«interior del país»**, y el 3.Uno define el ámbito espacial «según las previsiones del apartado siguiente». La consecuencia es la misma; la cita ahora dice lo que dice el texto.
+- **Hallazgo, sin aplicar:** el mismo 22.º.B llama «obras conexas» a las de albañilería, fontanería y carpintería y a las de instalaciones eléctricas, agua y climatización, cuando cuestan menos que las estructurales y están vinculadas a ellas. Son los oficios de YaQu: lo que decide el ISP de un subcontratista es la obra global, no su parte. No lo transcribo: es para la pregunta al asesor.
+- `docs/verificacion/comprobar-citas-contabilidad.mjs` no se ha corrido (sus HTML no están en git). RIRPF 95 (Q-C5) **no recotejado**. Suite entera local: **NO CORRIDA**.
+- Guards, en local sobre esta rama: 1294, 267, 273, 1572, 1106, 1117, 1541, 1041, 292, 296-pantalla, 302-rótulos, 324-aviso, 402, 413, 710b, 905, 921c y 324-cadena: 0 fallos. Saltados, 2 (los de `LIBRO_PG_URL` de 324-cadena: **no corridos**). Con un enlace temporal a `node_modules` (ya quitado) y `dist/` de `tsc --noCheck`. La primera pasada dio un rojo mío en 1294 (la línea `A9:` llevaba texto detrás de la ruta); arreglado en el registro, no en el guard.
+- Solo docs. Ni `src/`, ni esquema, ni texto de usuario.
+
+## SCRUM-1039f · J4 vuelve a pasar el comprobador de citas sobre main: aceptación 2 (jv-j4ap, 27-oct-2026)
+
+**Medido contra:** `origin/main` = `e19665301fc1a3949b6556eee383060a8f793ab3` · 2026-10-27T11:52:40Z
+
+A9: aviso → A10 «Escrito no es corriendo, ni propagado, ni entregado: un mecanismo cuenta desde que deja rastro de haber corrido.» — no se pudo comprobar: el comprobador necesita seis HTML del BOE que no están en git y CI no baja de la red, así que nada lo corre solo; pasó un mes desde la última pasada sin que nadie lo notara.
+
+La pasada se corrió sobre `5078f80c3`; de ahí a `e19665301` no cambia `docs/producto/CONTABILIDAD.md`, ni `docs/verificacion/`, ni este registro (`git diff --stat`, vacío). Salida entera, controles y fuentes: `docs/master/evidencias/scrum1039/scrum1039f-pasada.txt`.
+
+**Corrección al encargo:** la última pasada no era la de 26/26 del 22-sep. El 25-sep-2026 a las 15:09Z, SCRUM-1117 fijó las anclas con `--fijar`, que solo escribe si aparecen todas: **31 de 31** (`docs/verificacion/anclas-citas-contabilidad.json`, campo `fijado`). Desde entonces no se había vuelto a correr.
+
+**Fuentes:** las seis de §8, con GET público, 200 OK, hacia las 11:47Z (`Date:` del BOE). Bytes y SHA-256 en la evidencia.
+
+### Resultado: salida 2 (NORMA CAMBIADA). Las 31 citas siguen literales
+
+| | |
+|---|---|
+| población | **31 citas**: todas las « » de 25 caracteres o más de `CONTABILIDAD.md`, 30 en §3 y 1 en §4. Por fuente: LIVA 14 · RIRPF 9 · RFACT 6 · ORDEN303 1 · RIVA 1 · LIRPF 0 |
+| fuera de la población | las 15 « » de menos de 25 caracteres del documento, leídas una a una. Las 5 de §3-§4 (`:78` «(por confirmar)», `:89` «Tres», `:107` «15 por ciento», `:110` y `:145` «m)») son prosa del documento, no citas |
+| encontradas | **31 / 31** · no encontradas 0 |
+| control negativo propio | OK (21 → 1021 por ciento no aparece; la original sí) |
+| control negativo sembrado | `:82`, art. 90.Uno, «21» → «22» (1 byte, `cmp -l` = 1): **salida 1**, `NO ENCONTRADA` justo esa cita, 30/31 |
+| CIEGO | carpeta sin `ORDEN303.html`: **salida 3**, «FUENTE ILEGIBLE — no se ha comprobado nada» |
+| control del ancla | OK · anclas 31 · sin ancla 0 · huérfanas 0 |
+| **norma cambiada** | **5**: 4 en LIVA art. 91 (`a91@20241221` → `a91@20261007`) y 1 en art. 20 (`a20@20180704` → `a20@20261007`) |
+
+### Las 5 de NORMA CAMBIADA, releídas contra la norma nueva
+
+Con `scrum1039f-diferencia-versiones.mjs`, sobre la API de consolidada (bloques `a91` y `a20` de `BOE-A-1992-28740`): párrafos que salen y entran entre la versión anclada y la del 7-oct-2026. **Las 5 citas aparecen literales en las dos versiones.**
+
+- **Art. 20:** solo cambia el 23.º e'), arrendamientos de viviendas amuebladas (RDL 29/2026, con efectos de 1 de diciembre de 2026). La cita es el encabezado y el 1.º-5.º. Sigue valiendo.
+- **Art. 91:** cambian el Uno.2.2.º, el Uno.2.10.º y el Dos.1.6.º (RDL 29/2026, art. 7.2 a 4, **con efectos de 1 de diciembre de 2026**). Lo que toca a los oficios es el 10.º, el de las citas de `:86` y `:87`. Hay dos párrafos nuevos. Uno amplía el 10 % a las obras en «viviendas destinadas a su arrendamiento como vivienda habitual». El otro dice: «La aplicación del tipo reducido queda condicionada a que el importe de la contraprestación de las ejecuciones de obras haya sido satisfecho mediante tarjeta de crédito o débito, transferencia bancaria, cheque nominativo o ingreso en cuentas en entidades de crédito a favor de los sujetos pasivos que las realicen.» Las citas de las letras b) y c) siguen valiendo, pero desde el 1-dic-2026 **dejan de ser todas las condiciones**.
+- Eso ya lo lleva SCRUM-1316 (1316b, 1316e, 1316f: el RDL 29/2026 sin convalidar a 26-oct). `CONTABILIDAD.md:86` lo avisa, `:87` («ídem») no. Si está convalidado hoy, 27-oct: **NO lo he medido**.
+
+### Lo que NO hice
+
+- **No he corrido `--fijar`.** Reescribe las 31 anclas de golpe y apagaría también la alarma del art. 91, que hasta el 1-dic-2026 o la convalidación dice algo cierto. `docs/verificacion/` y `docs/producto/` no tienen dueño en `carriles.mjs` («nadie lo reclama») y no son documentación de J4. Se lo llevo al orquestador.
+- **Fuera de este comprobador:** las citas de `docs/legal/PREGUNTAS_ASESOR.md` (Q-C2 22.º.B, Q-C9 art. 3) son del cotejo de §1039e, que hoy no he vuelto a correr. Q-C5 en SCRUM-1264 (c.20959) y B3 (1) ampliada (c.20971) son comentarios de Jira que no he leído. Lo que sí entra: la cita de Q-C5 en `CONTABILIDAD.md` §3, RIRPF art. 95, **9 de 9 literales hoy y sin cambio de redacción** (`a95@20230125`).
+- Error mío, sin efecto en el resultado: mi primer contador de la siembra dio 28.660 diferencias por un byte cambiado. Comparaba puntos de código con unidades UTF-16. `diff` y `cmp -l` dieron 1.
+- Suite entera local: **NO CORRIDA**. Solo docs. Ni `src/`, ni esquema, ni texto de usuario.
+
+**Veredicto de la aceptación 2** («El comprobador cubre el 100 % de las citas de §3 y §4 y mantiene su control negativo (falla si se altera una cita)»): **cumplida el 27-oct-2026 sobre `e19665301`**. Cubre 31 de 31, y con una cita alterada a propósito cae (salida 1). La salida 2 de la pasada no es un fallo de la aceptación. Es la alarma de SCRUM-1117 (la norma cambió) y queda abierta, para decidir.

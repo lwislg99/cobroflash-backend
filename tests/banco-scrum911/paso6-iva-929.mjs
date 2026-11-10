@@ -16,7 +16,7 @@
 //   YAQU_ENV_FILE=<secreto> node tests/banco-scrum911/paso6-iva-929.mjs     (con el TURNO tomado)
 import fs from 'node:fs';
 import puppeteer from 'puppeteer-core';
-import { cargarSecretos, imp, sesionQA, BASE, WT } from './_entorno.mjs';
+import { cargarSecretos, exigirStaging, imp, sesionQA, BASE, WT } from './_entorno.mjs';
 
 const DIR = `${WT}/tests/banco-scrum911`;
 const BORRADOR_17SEP = 1889; // el que creó el ciclo el 17-sep, con el defecto de 929 dentro
@@ -27,9 +27,8 @@ process.env.DATABASE_URL = secretos.DATABASE_URL_STAGING;
 delete process.env.WHATSAPP_PHONE_NUMBER_ID;
 delete process.env.WHATSAPP_TOKEN;
 
-const { parseBDSegura, STAGING_HOST } = await imp('scripts/_db-guard.mjs');
-const p = parseBDSegura(process.env.DATABASE_URL);
-if (!p || p.host !== STAGING_HOST) throw new Error(`NO ES STAGING (host=${p?.host ?? 'ilegible'})`);
+// SCRUM-1575d · por DESTINO (host Y base), no sólo por host: desarrollo comparte el host de staging.
+const p = exigirStaging(process.env.DATABASE_URL);
 
 const { config } = await imp('dist/core/config/env.js');
 const creds = { id: !!config.WHATSAPP_PHONE_NUMBER_ID, token: !!config.WHATSAPP_TOKEN };

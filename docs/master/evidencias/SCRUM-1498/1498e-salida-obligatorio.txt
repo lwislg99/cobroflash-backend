@@ -1,0 +1,51 @@
+POBLACION clase C = 9
+
+## run 40421886988 · scrum-1599t-los-dos-ultimos · meta-guard 121918078209 · guard(s) sin base: scrum1516c-frontera-en-el-obligatorio.test.mjs · test(s): «eje del COMERCIO»
+   obligatorio 121918078151: completed/success
+   log del obligatorio: 2202262 B · 18887 líneas · centinela de veredicto: sí
+   «eje del COMERCIO» en el obligatorio: 1 línea(s) · empiezan por ✔ 1 · por ✖ 0
+
+## run 40420273862 · scrum-1039e-arreglos-j4 · meta-guard 121912689671 · guard(s) sin base: scrum1516c-frontera-en-el-obligatorio.test.mjs · test(s): «eje del COMERCIO»
+   obligatorio 121912689588: completed/success
+   log del obligatorio: 2200615 B · 18839 líneas · centinela de veredicto: sí
+   «eje del COMERCIO» en el obligatorio: 1 línea(s) · empiezan por ✔ 1 · por ✖ 0
+
+## run 40418322142 · scrum-1446g-tramos-mayor-resto · meta-guard 121906106635 · guard(s) sin base: scrum1516c-frontera-en-el-obligatorio.test.mjs · test(s): «eje del COMERCIO»
+   obligatorio 121906106207: completed/success
+   log del obligatorio: 2199399 B · 18839 líneas · centinela de veredicto: sí
+   «eje del COMERCIO» en el obligatorio: 1 línea(s) · empiezan por ✔ 1 · por ✖ 0
+
+## run 40417857388 · scrum-1347b-filas-3-4 · meta-guard 121904552817 · guard(s) sin base: scrum1516c-frontera-en-el-obligatorio.test.mjs · test(s): «eje del COMERCIO»
+   obligatorio 121904552941: completed/success
+   log del obligatorio: 2199995 B · 18839 líneas · centinela de veredicto: sí
+   «eje del COMERCIO» en el obligatorio: 1 línea(s) · empiezan por ✔ 1 · por ✖ 0
+
+## run 40417580884 · scrum-1599q-bisect-serie-f · meta-guard 121904037789 · guard(s) sin base: scrum1516c-frontera-en-el-obligatorio.test.mjs · test(s): «eje del ROL»
+   obligatorio 121904037578: completed/success
+   log del obligatorio: 2199245 B · 18837 líneas · centinela de veredicto: sí
+   «eje del ROL» en el obligatorio: 1 línea(s) · empiezan por ✔ 1 · por ✖ 0
+
+## run 40365586002 · scrum-1404g-pr2-respuesta-409 · meta-guard 121722267224 · guard(s) sin base: scrum812-el-rotulo-declara-su-poblacion.test.mjs · test(s): «SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA»
+   obligatorio 121722267138: completed/failure
+   log del obligatorio: 2205550 B · 18924 líneas · centinela de veredicto: sí
+   «SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA» en el obligatorio: 3 línea(s) · empiezan por ✔ 0 · por ✖ 2
+
+## run 40361845587 · scrum-1446e-columna-sin-iva · meta-guard 121709090513 · guard(s) sin base: scrum1516c-frontera-en-el-obligatorio.test.mjs · test(s): «eje del COMERCIO»
+   obligatorio 121709090540: completed/success
+   log del obligatorio: 2185695 B · 18724 líneas · centinela de veredicto: sí
+   «eje del COMERCIO» en el obligatorio: 1 línea(s) · empiezan por ✔ 1 · por ✖ 0
+
+## run 40100515089 · scrum-1324c-vigia-sin-paquetes · meta-guard 120891543300 · guard(s) sin base: scrum1339d-senal-de-nombres.test.mjs, scrum1389c-senal-tres-clases.test.mjs · test(s): «SCRUM-1339d · ② 🔴 EL POSITIVO: un TAP completo no lleva NINGÚN aviso, y la línea de registro sale igual», «SCRUM-1339d · MULTIPLICIDAD: el mismo nombre en dos ficheros con UNA sola línea en el TAP no cuenta como presente», «SCRUM-1339d · un TAP que NO está entero no se mide: vacío, con NUL, sin resumen, con dos resúmenes, o con menos líneas que su resumen», «SCRUM-1339v · ④ 🔴 EL GUION ROTO A PROPÓSITO sale 2 y DICE que no pudo medir; con --tasa sale 0: nunca calla», «SCRUM-1339t · UN SOLO nombre ausente basta para que el guion salga 1; con cero sale 0», «SCRUM-1389c · ① EL POSITIVO SEMBRADO: los nueve casos del banco salen cada uno con su clase y su recuento», «SCRUM-1389c · ② EL VERDE CON CEROS: la línea sale también cuando no hay ninguna entrada de fichero»
+   obligatorio 120891543259: completed/failure
+   log del obligatorio: 2149954 B · 18034 líneas · centinela de veredicto: sí
+   «SCRUM-1339d · ② 🔴 EL POSITIVO: un TAP completo no lleva NINGÚN aviso, y la línea de registro sale igual» en el obligatorio: 3 línea(s) · empiezan por ✔ 0 · por ✖ 2
+   «SCRUM-1339d · MULTIPLICIDAD: el mismo nombre en dos ficheros con UNA sola línea en el TAP no cuenta como presente» en el obligatorio: 3 línea(s) · empiezan por ✔ 0 · por ✖ 2
+   «SCRUM-1339d · un TAP que NO está entero no se mide: vacío, con NUL, sin resumen, con dos resúmenes, o con menos líneas que su resumen» en el obligatorio: 3 línea(s) · empiezan por ✔ 0 · por ✖ 2
+   «SCRUM-1339v · ④ 🔴 EL GUION ROTO A PROPÓSITO sale 2 y DICE que no pudo medir; con --tasa sale 0: nunca calla» en el obligatorio: 3 línea(s) · empiezan por ✔ 0 · por ✖ 2
+   «SCRUM-1339t · UN SOLO nombre ausente basta para que el guion salga 1; con cero sale 0» en el obligatorio: 3 línea(s) · empiezan por ✔ 0 · por ✖ 2
+   «SCRUM-1389c · ① EL POSITIVO SEMBRADO: los nueve casos del banco salen cada uno con su clase y su recuento» en el obligatorio: 3 línea(s) · empiezan por ✔ 0 · por ✖ 2
+   «SCRUM-1389c · ② EL VERDE CON CEROS: la línea sale también cuando no hay ninguna entrada de fichero» en el obligatorio: 3 línea(s) · empiezan por ✔ 0 · por ✖ 2
+
+## run 40099813341 · scrum-1603b-banco-inter · meta-guard 120889463993 · guard(s) sin base: scrum1603-el-banco-mide-con-la-fuente-del-panel.test.mjs · test(s): (sin nombre de test)
+   obligatorio 120889463925: completed/failure
+   log del obligatorio: 2087644 B · 17337 líneas · centinela de veredicto: sí

@@ -1,0 +1,44 @@
+✔ SCRUM-113: el detector NO está ciego (guarda de calibración) (60.945ms)
+ℹ censo 26 · migrados 23 · pendientes 3
+✖ SCRUM-113: ningún fichero NUEVO nace con el patrón viejo (4286.0463ms)
+✔ SCRUM-113: la lista de pendientes solo mengua (ratchet + caducidad) (10.0267ms)
+ℹ pendientes de migrar: 3/3 · plazo 2026-10-31
+ℹ tests 3
+ℹ suites 0
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4832.2846
+
+✖ failing tests:
+
+test at tests\scrum113-migracion-fixtures.test.mjs:238:1
+✖ SCRUM-113: ningún fichero NUEVO nace con el patrón viejo (4286.0463ms)
+  AssertionError [ERR_ASSERTION]: 
+  
+  🔴 Fichero(s) de test creando merchants A MANO sin estar en la lista de pendientes:
+     · scrum1515-nuestra-puerta-de-alta.test.mjs
+  
+  Un test nuevo NO se aparca: usa withMerchant de tests/_merchant-fixture.mjs.
+  Crear el merchant fuera del try deja huérfanos en staging en cuanto algo falle, y
+  la lista de pendientes SOLO MENGUA — no es donde se mete lo que se escribe hoy.
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/j3al-1579/tests/scrum113-migracion-fixtures.test.mjs:242:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+      at Test.postRun (node:internal/test_runner/test:1465:19)
+      at Test.run (node:internal/test_runner/test:1390:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

@@ -14,16 +14,39 @@
 // levanta la app in-process en un puerto efímero. Gateado:
 //   QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm run test:staging
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599m: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 import { diagnosticarAusencia } from './_tenancy-diag.mjs'; // SCRUM-259: (a)filtro/(b)borrado/(c)no-comprobable
 import { exigirTodas } from './_evidencia.mjs'; // SCRUM-270: las dos preguntas, en la misma corrida
+import http from 'node:http';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json) y, como el `redirect: 'manual'` de antes, no sigue redirecciones.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
-test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
+
+test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const { ADMIN_ONLY_ROUTES } = await import('../dist/core/http/adminOnlyRoutes.js');
@@ -95,7 +118,7 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
     await prisma.authSession.create({
       data: { merchantId: merchantB.id, teamMemberId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
     });
-    const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+    const res = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
     const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
     assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
     return cookie;
@@ -114,9 +137,9 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
     await prisma.authSession.create({
       data: { merchantId: merchantA.id, token: tokenA, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
     });
-    const cookieAdminA = ((await fetch(`${base}/auth/verify?token=${tokenA}`, { redirect: 'manual' }))
+    const cookieAdminA = ((await pedirSinAgente(`${base}/auth/verify?token=${tokenA}`, { redirect: 'manual' }))
       .headers.get('set-cookie') || '').split(';')[0];
-    const propioTxt = await (await fetch(`${base}/admin/quotes/${quoteA.id}`, { headers: { cookie: cookieAdminA } })).text();
+    const propioTxt = await (await pedirSinAgente(`${base}/admin/quotes/${quoteA.id}`, { headers: { cookie: cookieAdminA } })).text();
     assert.ok(
       propioTxt.includes(CANARIO_A),
       `🔴 CANARIO ROTO (no es un pase): "${CANARIO_A}" no aparece ni cuando lo pide su propio\n` +
@@ -144,7 +167,7 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
     ];
 
     for (const [method, path, body] of tenancyTargets) {
-      const res = await fetch(base + path, {
+      const res = await pedirSinAgente(base + path, {
         method,
         headers: { cookie: cookieAdminB, 'Content-Type': 'application/json' },
         body: body ? JSON.stringify(body) : undefined,
@@ -189,7 +212,7 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
         `comprobar permisos de verdad y el guard se queda flojo sin avisar.`,
       );
 
-      const res = await fetch(base + path, {
+      const res = await pedirSinAgente(base + path, {
         method: r.method,
         headers: { cookie: cookieTecnicoB, 'Content-Type': 'application/json' },
         body: r.body ? JSON.stringify(r.body) : undefined,
@@ -213,7 +236,7 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
 // ve/accede los Trabajos que originó (operarioId), el admin/owner ve todos. Dimensión que
 // A12.1 (cross-merchant) y A12.4 (rutas admin-only) NO cubren.
 // Datos EFÍMEROS propios (nada del seed demo — lección de SCRUM-63) y limpieza en el finally.
-test('SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo merchant)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo merchant)', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 
@@ -249,7 +272,7 @@ test('SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo mercha
     await prisma.authSession.create({
       data: { merchantId: merchant.id, teamMemberId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
     });
-    const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+    const res = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
     const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
     assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
     return cookie;
@@ -257,7 +280,7 @@ test('SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo mercha
 
     const cookieTecA = await mkCookie(tecA.id);
     const cookieAdmin = await mkCookie(null); // owner = admin implícito
-    const get = (path, cookie) => fetch(`${base}${path}`, { headers: { cookie } });
+    const get = (path, cookie) => pedirSinAgente(`${base}${path}`, { headers: { cookie } });
 
     // (a) la LISTA del técnico A solo trae los suyos
     const listA = await (await get('/admin/jobs', cookieTecA)).json();
@@ -318,3 +341,11 @@ test('SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo mercha
     await prisma.$disconnect();
   }
 });
+
+// SCRUM-1599m (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599m.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/jobs/app/routes/jobs.routes.ts", de: "    // URL el Trabajo de otro → 404 (mismo patrón que la tenancy: no filtra existencia).\n    // SCRUM-147: por capacidad (ver el comentario de GET /admin/jobs y roleCapabilities.ts).\n    if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {", a: "    // URL el Trabajo de otro → 404 (mismo patrón que la tenancy: no filtra existencia).\n    // SCRUM-147: por capacidad (ver el comentario de GET /admin/jobs y roleCapabilities.ts).\n    if (false) {", cae: "SCRUM-23: el técnico solo ve" },
+];

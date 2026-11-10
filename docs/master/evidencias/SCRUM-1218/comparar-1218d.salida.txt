@@ -1,0 +1,17 @@
+albaran {"pasadas":"20/20","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":17,"nResp":29}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+bot-suite {"pasadas":"20/20","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":1,"nResp":27}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum47-enviar-albaran-wa {"pasadas":"20/20","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":1,"nResp":8}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum49-firma-remota {"pasadas":"20/20","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":1,"nResp":10}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum50-bot-albaranes {"pasadas":"20/20","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":1,"nResp":3}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum68-evidencias-firma {"pasadas":"20/20","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":5,"nResp":5}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum72-pdfs-privados {"pasadas":"20/20","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":2,"nResp":10}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum992-partes-recortan-por-rol {"pasadas":"20/20","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":6,"nResp":34}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+POBLACION=8 ficheros · malos=0 · EXIT=0

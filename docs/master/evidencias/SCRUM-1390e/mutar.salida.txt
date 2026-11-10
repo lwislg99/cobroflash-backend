@@ -1,0 +1,17 @@
+MUERE · M1 (meta-guard) · «if (!(await puedeLlevarseElPortal(req, id))) return res.status(404).js» → «» · 1 de 6 caen · con base muere; su caso AST («SCRUM-1390e · portal-url pregunta ANTES de escribir el token») lo mide el meta-guard
+    · SCRUM-1390e · 🔴 el Técnico NO se lleva el portal de un cliente con un presupuesto o una factura de otro, y no
+MUERE · M2 (meta-guard) · «if (customer.portalToken && !(await puedeLlevarseElPortal(req, id))) c» → «» · 1 de 6 caen · con base muere; su caso AST («SCRUM-1390e · portal-url pregunta ANTES de escribir el token») lo mide el meta-guard
+    · SCRUM-1390e · 🔴 de paso: la ficha del cliente no le sirve EN CRUDO al Técnico el enlace que portal-url le nie
+MUERE · M3 (meta-guard) · «const recorteFacturas = await whereFacturasVisibles(quien);» → «const recorteFacturas = null;» · 2 de 6 caen · con base muere; su caso AST («SCRUM-1390e · la pregunta no es un criterio nuevo») lo mide el meta-guard
+    · SCRUM-1390e · 🔴 el Técnico NO se lleva el portal de un cliente con un presupuesto o una factura de otro, y no
+    · SCRUM-1390e · 🔴 de paso: la ficha del cliente no le sirve EN CRUDO al Técnico el enlace que portal-url le nie
+MUERE · M4 (meta-guard) · «const recortePresupuestos = await wherePresupuestosVisibles(quien);» → «const recortePresupuestos = null;» · 2 de 6 caen · con base muere; su caso AST («SCRUM-1390e · la pregunta no es un criterio nuevo») lo mide el meta-guard
+    · SCRUM-1390e · 🔴 el Técnico NO se lleva el portal de un cliente con un presupuesto o una factura de otro, y no
+    · SCRUM-1390e · 🔴 de paso: la ficha del cliente no le sirve EN CRUDO al Técnico el enlace que portal-url le nie
+MUERE · M5 (con base) · «return presupuestos === suyos && facturas === suyas;» → «return presupuestos === suyos;» · 2 de 6 caen · su caso («SCRUM-1390e · 🔴 el Técnico NO se lleva el portal») cae
+    · SCRUM-1390e · 🔴 el Técnico NO se lleva el portal de un cliente con un presupuesto o una factura de otro, y no
+    · SCRUM-1390e · 🔴 de paso: la ficha del cliente no le sirve EN CRUDO al Técnico el enlace que portal-url le nie
+MUERE · M6 (con base) · «return presupuestos === suyos && facturas === suyas;» → «return facturas === suyas;» · 2 de 6 caen · su caso («SCRUM-1390e · 🔴 el Técnico NO se lleva el portal») cae
+    · SCRUM-1390e · 🔴 el Técnico NO se lleva el portal de un cliente con un presupuesto o una factura de otro, y no
+    · SCRUM-1390e · 🔴 de paso: la ficha del cliente no le sirve EN CRUDO al Técnico el enlace que portal-url le nie
+POBLACION=6 mutaciones · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0

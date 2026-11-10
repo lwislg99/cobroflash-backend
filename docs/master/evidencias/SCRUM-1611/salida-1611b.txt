@@ -1,0 +1,540 @@
+# SCRUM-1611b · salidas del banco (Postgres 16.14, server_encoding UTF8), jv-j6db, 27-oct-2026 ~00:00Z
+# runner: docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs (banco = banco-1599p + pgbanco-1599p)
+
+## mut234-1.txt
+== tests/scrum234-carrera-serie.gated.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/invoicing/domain/invoiceNumber.service.ts · «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 1)» → «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, s» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 el contador no cuadra con los números emitidos: o se avanzó de más (hueco futuro) o de menos (la próxima emisión choca).
+MUERE · M2 · src/modules/invoicing/domain/invoiceNumber.service.ts · «await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LO» → «/* SCRUM-1611b: sin cerrojo de serie */» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes NO coli
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 UNA DE LAS DOS EMISIONES CONCURRENTES FALLÓ. Si el código es `P2002`, es exactamente la carrera de SCRUM-234: las dos reservas leyeron el mismo `nextI
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## mut234-2.txt
+== tests/scrum234-carrera-serie.gated.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/invoicing/domain/invoiceNumber.service.ts · «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 1)» → «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, s» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 el contador no cuadra con los números emitidos: o se avanzó de más (hueco futuro) o de menos (la próxima emisión choca).
+MUERE · M2 · src/modules/invoicing/domain/invoiceNumber.service.ts · «await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LO» → «/* SCRUM-1611b: sin cerrojo de serie */» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes NO coli
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 UNA DE LAS DOS EMISIONES CONCURRENTES FALLÓ. Si el código es `P2002`, es exactamente la carrera de SCRUM-234: las dos reservas leyeron el mismo `nextI
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## mut234-3.txt
+== tests/scrum234-carrera-serie.gated.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/invoicing/domain/invoiceNumber.service.ts · «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 1)» → «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, s» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 el contador no cuadra con los números emitidos: o se avanzó de más (hueco futuro) o de menos (la próxima emisión choca).
+MUERE · M2 · src/modules/invoicing/domain/invoiceNumber.service.ts · «await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LO» → «/* SCRUM-1611b: sin cerrojo de serie */» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes NO coli
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 UNA DE LAS DOS EMISIONES CONCURRENTES FALLÓ. Si el código es `P2002`, es exactamente la carrera de SCRUM-234: las dos reservas leyeron el mismo `nextI
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## mut234-4.txt
+== tests/scrum234-carrera-serie.gated.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/invoicing/domain/invoiceNumber.service.ts · «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 1)» → «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, s» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 el contador no cuadra con los números emitidos: o se avanzó de más (hueco futuro) o de menos (la próxima emisión choca).
+MUERE · M2 · src/modules/invoicing/domain/invoiceNumber.service.ts · «await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LO» → «/* SCRUM-1611b: sin cerrojo de serie */» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes NO coli
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 UNA DE LAS DOS EMISIONES CONCURRENTES FALLÓ. Si el código es `P2002`, es exactamente la carrera de SCRUM-234: las dos reservas leyeron el mismo `nextI
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## mut234-5.txt
+== tests/scrum234-carrera-serie.gated.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/invoicing/domain/invoiceNumber.service.ts · «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 1)» → «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, s» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 el contador no cuadra con los números emitidos: o se avanzó de más (hueco futuro) o de menos (la próxima emisión choca).
+MUERE · M2 · src/modules/invoicing/domain/invoiceNumber.service.ts · «await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LO» → «/* SCRUM-1611b: sin cerrojo de serie */» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes NO coli
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 UNA DE LAS DOS EMISIONES CONCURRENTES FALLÓ. Si el código es `P2002`, es exactamente la carrera de SCRUM-234: las dos reservas leyeron el mismo `nextI
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## mut234-6.txt
+== tests/scrum234-carrera-serie.gated.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/invoicing/domain/invoiceNumber.service.ts · «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 1)» → «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, s» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 el contador no cuadra con los números emitidos: o se avanzó de más (hueco futuro) o de menos (la próxima emisión choca).
+MUERE · M2 · src/modules/invoicing/domain/invoiceNumber.service.ts · «await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LO» → «/* SCRUM-1611b: sin cerrojo de serie */» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes NO coli
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 UNA DE LAS DOS EMISIONES CONCURRENTES FALLÓ. Si el código es `P2002`, es exactamente la carrera de SCRUM-234: las dos reservas leyeron el mismo `nextI
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## viejo234-1.txt
+== tests/zz1611-234-viejo.gated.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/invoicing/domain/invoiceNumber.service.ts · «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 1)» → «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, s» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 el contador no cuadra con los números emitidos: o se avanzó de más (hueco futuro) o de menos (la próxima emisión choca).
+MUERE · M2 · src/modules/invoicing/domain/invoiceNumber.service.ts · «await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LO» → «/* sin cerrojo */» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes NO colisionan») cae
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 UNA DE LAS DOS EMISIONES CONCURRENTES FALLÓ. Si el código es `P2002`, es exactamente la carrera de SCRUM-234: las dos reservas leyeron el mismo `nextI
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## viejo234-2.txt
+== tests/zz1611-234-viejo.gated.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/invoicing/domain/invoiceNumber.service.ts · «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 1)» → «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, s» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 el contador no cuadra con los números emitidos: o se avanzó de más (hueco futuro) o de menos (la próxima emisión choca).
+MUERE · M2 · src/modules/invoicing/domain/invoiceNumber.service.ts · «await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LO» → «/* sin cerrojo */» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes NO colisionan») cae
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 UNA DE LAS DOS EMISIONES CONCURRENTES FALLÓ. Si el código es `P2002`, es exactamente la carrera de SCRUM-234: las dos reservas leyeron el mismo `nextI
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## viejo234-3.txt
+== tests/zz1611-234-viejo.gated.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/invoicing/domain/invoiceNumber.service.ts · «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 1)» → «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, s» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 el contador no cuadra con los números emitidos: o se avanzó de más (hueco futuro) o de menos (la próxima emisión choca).
+MUERE · M2 · src/modules/invoicing/domain/invoiceNumber.service.ts · «await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LO» → «/* sin cerrojo */» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes NO colisionan») cae
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 UNA DE LAS DOS EMISIONES CONCURRENTES FALLÓ. Si el código es `P2002`, es exactamente la carrera de SCRUM-234: las dos reservas leyeron el mismo `nextI
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## viejo234-4.txt
+== tests/zz1611-234-viejo.gated.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/invoicing/domain/invoiceNumber.service.ts · «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 1)» → «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, s» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 el contador no cuadra con los números emitidos: o se avanzó de más (hueco futuro) o de menos (la próxima emisión choca).
+MUERE · M2 · src/modules/invoicing/domain/invoiceNumber.service.ts · «await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LO» → «/* sin cerrojo */» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes NO colisionan») cae
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 UNA DE LAS DOS EMISIONES CONCURRENTES FALLÓ. Si el código es `P2002`, es exactamente la carrera de SCRUM-234: las dos reservas leyeron el mismo `nextI
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## viejo234-5.txt
+== tests/zz1611-234-viejo.gated.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/invoicing/domain/invoiceNumber.service.ts · «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 1)» → «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, s» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 el contador no cuadra con los números emitidos: o se avanzó de más (hueco futuro) o de menos (la próxima emisión choca).
+MUERE · M2 · src/modules/invoicing/domain/invoiceNumber.service.ts · «await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LO» → «/* sin cerrojo */» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes NO colisionan») cae
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 UNA DE LAS DOS EMISIONES CONCURRENTES FALLÓ. Si el código es `P2002`, es exactamente la carrera de SCRUM-234: las dos reservas leyeron el mismo `nextI
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## viejo234-6.txt
+== tests/zz1611-234-viejo.gated.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/invoicing/domain/invoiceNumber.service.ts · «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 1)» → «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, s» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 el contador no cuadra con los números emitidos: o se avanzó de más (hueco futuro) o de menos (la próxima emisión choca).
+MUERE · M2 · src/modules/invoicing/domain/invoiceNumber.service.ts · «await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LO» → «/* sin cerrojo */» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes NO colisionan») cae
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 UNA DE LAS DOS EMISIONES CONCURRENTES FALLÓ. Si el código es `P2002`, es exactamente la carrera de SCRUM-234: las dos reservas leyeron el mismo `nextI
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## viejo234-7.txt
+== tests/zz1611-234-viejo.gated.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/invoicing/domain/invoiceNumber.service.ts · «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 1)» → «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, s» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 el contador no cuadra con los números emitidos: o se avanzó de más (hueco futuro) o de menos (la próxima emisión choca).
+MUERE · M2 · src/modules/invoicing/domain/invoiceNumber.service.ts · «await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LO» → «/* sin cerrojo */» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes NO colisionan») cae
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 UNA DE LAS DOS EMISIONES CONCURRENTES FALLÓ. Si el código es `P2002`, es exactamente la carrera de SCRUM-234: las dos reservas leyeron el mismo `nextI
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## viejo234-8.txt
+== tests/zz1611-234-viejo.gated.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/invoicing/domain/invoiceNumber.service.ts · «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 1)» → «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, s» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 el contador no cuadra con los números emitidos: o se avanzó de más (hueco futuro) o de menos (la próxima emisión choca).
+MUERE · M2 · src/modules/invoicing/domain/invoiceNumber.service.ts · «await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LO» → «/* sin cerrojo */» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes NO colisionan») cae
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 UNA DE LAS DOS EMISIONES CONCURRENTES FALLÓ. Si el código es `P2002`, es exactamente la carrera de SCRUM-234: las dos reservas leyeron el mismo `nextI
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## mut814-1.txt
+== tests/scrum814-carrera-del-tramo.gated.test.mjs · limpia: 3 ok de 3
+MUERE · M1 · src/modules/system/app/routes/quotesAdmin.routes.ts · «const tramo = tramoTrasEmitidas(emitidas);» → «const tramo = tramoTrasEmitidas(0);» · 3 de 3 caen · su caso («SCRUM-814 · dos peticiones SECUENCIALES») cae
+    · SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo
+    · SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto
+    · SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y luego «Final»
+      error: 🔴 DOS FACTURAS DEL MISMO TRAMO. Las dos peticiones decidieron su tramo con el recuento que leyeron ANTES de abrir la transacción, y las dos leyeron lo m
+MUERE · M2 · src/modules/system/app/routes/quotesAdmin.routes.ts · «await tomarCerrojoDeSerie(tx, quote.merchantId);» → «/* SCRUM-1611b: sin el cerrojo del recuento */» · 2 de 3 caen · su caso («SCRUM-814 · dos peticiones simultáneas NO pueden em
+    · SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo
+    · SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto
+      error: 🔴 DOS FACTURAS DEL MISMO TRAMO. Las dos peticiones decidieron su tramo con el recuento que leyeron ANTES de abrir la transacción, y las dos leyeron lo m
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## mut814-2.txt
+== tests/scrum814-carrera-del-tramo.gated.test.mjs · limpia: 3 ok de 3
+MUERE · M1 · src/modules/system/app/routes/quotesAdmin.routes.ts · «const tramo = tramoTrasEmitidas(emitidas);» → «const tramo = tramoTrasEmitidas(0);» · 3 de 3 caen · su caso («SCRUM-814 · dos peticiones SECUENCIALES») cae
+    · SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo
+    · SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto
+    · SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y luego «Final»
+      error: 🔴 DOS FACTURAS DEL MISMO TRAMO. Las dos peticiones decidieron su tramo con el recuento que leyeron ANTES de abrir la transacción, y las dos leyeron lo m
+MUERE · M2 · src/modules/system/app/routes/quotesAdmin.routes.ts · «await tomarCerrojoDeSerie(tx, quote.merchantId);» → «/* SCRUM-1611b: sin el cerrojo del recuento */» · 2 de 3 caen · su caso («SCRUM-814 · dos peticiones simultáneas NO pueden em
+    · SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo
+    · SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto
+      error: 🔴 DOS FACTURAS DEL MISMO TRAMO. Las dos peticiones decidieron su tramo con el recuento que leyeron ANTES de abrir la transacción, y las dos leyeron lo m
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## mut814-3.txt
+== tests/scrum814-carrera-del-tramo.gated.test.mjs · limpia: 3 ok de 3
+MUERE · M1 · src/modules/system/app/routes/quotesAdmin.routes.ts · «const tramo = tramoTrasEmitidas(emitidas);» → «const tramo = tramoTrasEmitidas(0);» · 3 de 3 caen · su caso («SCRUM-814 · dos peticiones SECUENCIALES») cae
+    · SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo
+    · SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto
+    · SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y luego «Final»
+      error: 🔴 DOS FACTURAS DEL MISMO TRAMO. Las dos peticiones decidieron su tramo con el recuento que leyeron ANTES de abrir la transacción, y las dos leyeron lo m
+MUERE · M2 · src/modules/system/app/routes/quotesAdmin.routes.ts · «await tomarCerrojoDeSerie(tx, quote.merchantId);» → «/* SCRUM-1611b: sin el cerrojo del recuento */» · 2 de 3 caen · su caso («SCRUM-814 · dos peticiones simultáneas NO pueden em
+    · SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo
+    · SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto
+      error: 🔴 DOS FACTURAS DEL MISMO TRAMO. Las dos peticiones decidieron su tramo con el recuento que leyeron ANTES de abrir la transacción, y las dos leyeron lo m
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## mut814-4.txt
+== tests/scrum814-carrera-del-tramo.gated.test.mjs · limpia: 3 ok de 3
+MUERE · M1 · src/modules/system/app/routes/quotesAdmin.routes.ts · «const tramo = tramoTrasEmitidas(emitidas);» → «const tramo = tramoTrasEmitidas(0);» · 3 de 3 caen · su caso («SCRUM-814 · dos peticiones SECUENCIALES») cae
+    · SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo
+    · SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto
+    · SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y luego «Final»
+      error: 🔴 DOS FACTURAS DEL MISMO TRAMO. Las dos peticiones decidieron su tramo con el recuento que leyeron ANTES de abrir la transacción, y las dos leyeron lo m
+MUERE · M2 · src/modules/system/app/routes/quotesAdmin.routes.ts · «await tomarCerrojoDeSerie(tx, quote.merchantId);» → «/* SCRUM-1611b: sin el cerrojo del recuento */» · 2 de 3 caen · su caso («SCRUM-814 · dos peticiones simultáneas NO pueden em
+    · SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo
+    · SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto
+      error: 🔴 DOS FACTURAS DEL MISMO TRAMO. Las dos peticiones decidieron su tramo con el recuento que leyeron ANTES de abrir la transacción, y las dos leyeron lo m
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## mut814-5.txt
+== tests/scrum814-carrera-del-tramo.gated.test.mjs · limpia: 3 ok de 3
+MUERE · M1 · src/modules/system/app/routes/quotesAdmin.routes.ts · «const tramo = tramoTrasEmitidas(emitidas);» → «const tramo = tramoTrasEmitidas(0);» · 3 de 3 caen · su caso («SCRUM-814 · dos peticiones SECUENCIALES») cae
+    · SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo
+    · SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto
+    · SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y luego «Final»
+      error: 🔴 DOS FACTURAS DEL MISMO TRAMO. Las dos peticiones decidieron su tramo con el recuento que leyeron ANTES de abrir la transacción, y las dos leyeron lo m
+MUERE · M2 · src/modules/system/app/routes/quotesAdmin.routes.ts · «await tomarCerrojoDeSerie(tx, quote.merchantId);» → «/* SCRUM-1611b: sin el cerrojo del recuento */» · 2 de 3 caen · su caso («SCRUM-814 · dos peticiones simultáneas NO pueden em
+    · SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo
+    · SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto
+      error: 🔴 DOS FACTURAS DEL MISMO TRAMO. Las dos peticiones decidieron su tramo con el recuento que leyeron ANTES de abrir la transacción, y las dos leyeron lo m
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## viejo814-1.txt
+== tests/zz1611-814-viejo.gated.test.mjs · limpia: 3 ok de 3
+MUERE · M1 · src/modules/system/app/routes/quotesAdmin.routes.ts · «const tramo = tramoTrasEmitidas(emitidas);» → «const tramo = tramoTrasEmitidas(0);» · 3 de 3 caen · su caso («SCRUM-814 · dos peticiones SECUENCIALES») cae
+    · SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo
+    · SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto
+    · SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y luego «Final»
+      error: 🔴 DOS FACTURAS DEL MISMO TRAMO. Las dos peticiones decidieron su tramo con el recuento que leyeron ANTES de abrir la transacción, y las dos leyeron lo m
+🔴 VIVE · M2 · src/modules/system/app/routes/quotesAdmin.routes.ts · «await tomarCerrojoDeSerie(tx, quote.merchantId);» → «/* sin cerrojo */» · 0 de 3 caen · su caso («SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo») NO
+POBLACION=2 mutaciones en 1 ficheros · vivas=1 · ciegas=0 · dist restaurado byte a byte · EXIT=2
+
+## viejo814-2.txt
+== tests/zz1611-814-viejo.gated.test.mjs · limpia: 3 ok de 3
+MUERE · M1 · src/modules/system/app/routes/quotesAdmin.routes.ts · «const tramo = tramoTrasEmitidas(emitidas);» → «const tramo = tramoTrasEmitidas(0);» · 3 de 3 caen · su caso («SCRUM-814 · dos peticiones SECUENCIALES») cae
+    · SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo
+    · SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto
+    · SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y luego «Final»
+      error: 🔴 DOS FACTURAS DEL MISMO TRAMO. Las dos peticiones decidieron su tramo con el recuento que leyeron ANTES de abrir la transacción, y las dos leyeron lo m
+🔴 VIVE · M2 · src/modules/system/app/routes/quotesAdmin.routes.ts · «await tomarCerrojoDeSerie(tx, quote.merchantId);» → «/* sin cerrojo */» · 0 de 3 caen · su caso («SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo») NO
+POBLACION=2 mutaciones en 1 ficheros · vivas=1 · ciegas=0 · dist restaurado byte a byte · EXIT=2
+
+## viejo814-3.txt
+== tests/zz1611-814-viejo.gated.test.mjs · limpia: 3 ok de 3
+MUERE · M1 · src/modules/system/app/routes/quotesAdmin.routes.ts · «const tramo = tramoTrasEmitidas(emitidas);» → «const tramo = tramoTrasEmitidas(0);» · 3 de 3 caen · su caso («SCRUM-814 · dos peticiones SECUENCIALES») cae
+    · SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo
+    · SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto
+    · SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y luego «Final»
+      error: 🔴 DOS FACTURAS DEL MISMO TRAMO. Las dos peticiones decidieron su tramo con el recuento que leyeron ANTES de abrir la transacción, y las dos leyeron lo m
+🔴 VIVE · M2 · src/modules/system/app/routes/quotesAdmin.routes.ts · «await tomarCerrojoDeSerie(tx, quote.merchantId);» → «/* sin cerrojo */» · 0 de 3 caen · su caso («SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo») NO
+POBLACION=2 mutaciones en 1 ficheros · vivas=1 · ciegas=0 · dist restaurado byte a byte · EXIT=2
+
+## viejo814-4.txt
+== tests/zz1611-814-viejo.gated.test.mjs · limpia: 3 ok de 3
+MUERE · M1 · src/modules/system/app/routes/quotesAdmin.routes.ts · «const tramo = tramoTrasEmitidas(emitidas);» → «const tramo = tramoTrasEmitidas(0);» · 3 de 3 caen · su caso («SCRUM-814 · dos peticiones SECUENCIALES») cae
+    · SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo
+    · SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto
+    · SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y luego «Final»
+      error: 🔴 DOS FACTURAS DEL MISMO TRAMO. Las dos peticiones decidieron su tramo con el recuento que leyeron ANTES de abrir la transacción, y las dos leyeron lo m
+🔴 VIVE · M2 · src/modules/system/app/routes/quotesAdmin.routes.ts · «await tomarCerrojoDeSerie(tx, quote.merchantId);» → «/* sin cerrojo */» · 0 de 3 caen · su caso («SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo») NO
+POBLACION=2 mutaciones en 1 ficheros · vivas=1 · ciegas=0 · dist restaurado byte a byte · EXIT=2
+
+## viejo814-5.txt
+== tests/zz1611-814-viejo.gated.test.mjs · limpia: 3 ok de 3
+MUERE · M1 · src/modules/system/app/routes/quotesAdmin.routes.ts · «const tramo = tramoTrasEmitidas(emitidas);» → «const tramo = tramoTrasEmitidas(0);» · 3 de 3 caen · su caso («SCRUM-814 · dos peticiones SECUENCIALES») cae
+    · SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo
+    · SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto
+    · SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y luego «Final»
+      error: 🔴 DOS FACTURAS DEL MISMO TRAMO. Las dos peticiones decidieron su tramo con el recuento que leyeron ANTES de abrir la transacción, y las dos leyeron lo m
+🔴 VIVE · M2 · src/modules/system/app/routes/quotesAdmin.routes.ts · «await tomarCerrojoDeSerie(tx, quote.merchantId);» → «/* sin cerrojo */» · 0 de 3 caen · su caso («SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo») NO
+POBLACION=2 mutaciones en 1 ficheros · vivas=1 · ciegas=0 · dist restaurado byte a byte · EXIT=2
+
+## nuevo92-1.json
+[
+ {
+  "fichero": "tests/scrum92-login-operario.test.mjs",
+  "codigo": 0,
+  "ms": 1765,
+  "declarados": 1,
+  "casos": {
+   "SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios": "ok"
+  },
+  "ciego": false
+ }
+]
+
+## nuevo92-2.json
+[
+ {
+  "fichero": "tests/scrum92-login-operario.test.mjs",
+  "codigo": 0,
+  "ms": 1759,
+  "declarados": 1,
+  "casos": {
+   "SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios": "ok"
+  },
+  "ciego": false
+ }
+]
+
+## nuevo92-3.json
+[
+ {
+  "fichero": "tests/scrum92-login-operario.test.mjs",
+  "codigo": 0,
+  "ms": 1770,
+  "declarados": 1,
+  "casos": {
+   "SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios": "ok"
+  },
+  "ciego": false
+ }
+]
+
+## nuevo92-4.json
+[
+ {
+  "fichero": "tests/scrum92-login-operario.test.mjs",
+  "codigo": 0,
+  "ms": 1746,
+  "declarados": 1,
+  "casos": {
+   "SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios": "ok"
+  },
+  "ciego": false
+ }
+]
+
+## nuevo92-5.json
+[
+ {
+  "fichero": "tests/scrum92-login-operario.test.mjs",
+  "codigo": 0,
+  "ms": 1834,
+  "declarados": 1,
+  "casos": {
+   "SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios": "ok"
+  },
+  "ciego": false
+ }
+]
+
+## nuevo92-6.json
+[
+ {
+  "fichero": "tests/scrum92-login-operario.test.mjs",
+  "codigo": 0,
+  "ms": 1781,
+  "declarados": 1,
+  "casos": {
+   "SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios": "ok"
+  },
+  "ciego": false
+ }
+]
+
+## viejo92-1.json
+[
+ {
+  "fichero": "tests/zz1611-92-viejo.test.mjs",
+  "codigo": 1,
+  "ms": 1764,
+  "declarados": 1,
+  "casos": {
+   "SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios": "not ok"
+  },
+  "ciego": false
+ }
+]
+
+## viejo92-2.json
+[
+ {
+  "fichero": "tests/zz1611-92-viejo.test.mjs",
+  "codigo": 0,
+  "ms": 1734,
+  "declarados": 1,
+  "casos": {
+   "SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios": "ok"
+  },
+  "ciego": false
+ }
+]
+
+## viejo92-3.json
+[
+ {
+  "fichero": "tests/zz1611-92-viejo.test.mjs",
+  "codigo": 0,
+  "ms": 1711,
+  "declarados": 1,
+  "casos": {
+   "SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios": "ok"
+  },
+  "ciego": false
+ }
+]
+
+## viejo92-4.json
+[
+ {
+  "fichero": "tests/zz1611-92-viejo.test.mjs",
+  "codigo": 0,
+  "ms": 1702,
+  "declarados": 1,
+  "casos": {
+   "SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios": "ok"
+  },
+  "ciego": false
+ }
+]
+
+## viejo92-5.json
+[
+ {
+  "fichero": "tests/zz1611-92-viejo.test.mjs",
+  "codigo": 0,
+  "ms": 1670,
+  "declarados": 1,
+  "casos": {
+   "SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios": "ok"
+  },
+  "ciego": false
+ }
+]
+
+## viejo92b-1.json
+[
+ {
+  "fichero": "tests/zz1611-92-viejo.test.mjs",
+  "codigo": 0,
+  "ms": 1754,
+  "declarados": 1,
+  "casos": {
+   "SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios": "ok"
+  },
+  "ciego": false
+ }
+]
+
+## viejo92b-2.json
+[
+ {
+  "fichero": "tests/zz1611-92-viejo.test.mjs",
+  "codigo": 0,
+  "ms": 1733,
+  "declarados": 1,
+  "casos": {
+   "SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios": "ok"
+  },
+  "ciego": false
+ }
+]
+
+## viejo92b-3.json
+[
+ {
+  "fichero": "tests/zz1611-92-viejo.test.mjs",
+  "codigo": 0,
+  "ms": 1803,
+  "declarados": 1,
+  "casos": {
+   "SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios": "ok"
+  },
+  "ciego": false
+ }
+]
+
+## viejo92b-4.json
+[
+ {
+  "fichero": "tests/zz1611-92-viejo.test.mjs",
+  "codigo": 1,
+  "ms": 1804,
+  "declarados": 1,
+  "casos": {
+   "SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios": "not ok"
+  },
+  "ciego": false
+ }
+]
+
+## viejo92b-5.json
+[
+ {
+  "fichero": "tests/zz1611-92-viejo.test.mjs",
+  "codigo": 0,
+  "ms": 1718,
+  "declarados": 1,
+  "casos": {
+   "SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios": "ok"
+  },
+  "ciego": false
+ }
+]
+
+## viejo92b-6.json
+[
+ {
+  "fichero": "tests/zz1611-92-viejo.test.mjs",
+  "codigo": 0,
+  "ms": 1706,
+  "declarados": 1,
+  "casos": {
+   "SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios": "ok"
+  },
+  "ciego": false
+ }
+]
+
+## mut92-1.txt
+== tests/scrum92-login-operario.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/auth/domain/auth.service.ts · «teamMemberId: teamMember.id,» → «teamMemberId: null,» · 1 de 1 caen · su caso («SCRUM-92: operario puede volver a entrar») cae
+    · SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin camb
+      error: un operario ACTIVO debe generar un AuthSession magic_link nuevo (el bug: hoy no se crea ninguno)
+MUERE · M2 · src/modules/auth/domain/auth.service.ts · «console.log(`[magic-link] intento de login con email no regi» → «{ const cualquiera = await prisma.merchant.findFir» · 1 de 1 caen · su caso («SCRUM-92: operario puede volver a entrar») cae
+    · SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin camb
+      error: un email que no existe en NINGUNA tabla creó un AuthSession en el comercio de este test
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## mut92r-1.txt
+== tests/scrum92-login-operario.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/auth/domain/auth.service.ts · «teamMemberId: teamMember.id,» → «teamMemberId: null,» · 1 de 1 caen · su caso («SCRUM-92: operario puede volver a entrar») cae
+    · SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin camb
+      error: un operario ACTIVO debe generar un AuthSession magic_link nuevo (el bug: hoy no se crea ninguno)
+MUERE · M2 · src/modules/auth/domain/auth.service.ts · «console.log(`[magic-link] intento de login con email no regi» → «{ const cualquiera = await prisma.merchant.findFir» · 1 de 1 caen · su caso («SCRUM-92: operario puede volver a entrar») cae
+    · SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin camb
+      error: 'un email que no existe en NINGUNA tabla no debe crear ningún AuthSession: en las 5 ventanas nacieron sesiones (56→m1 | 57→m1 58→m1 | 59→m1 | 60→m1 | 61→
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## mut92r-2.txt
+== tests/scrum92-login-operario.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/auth/domain/auth.service.ts · «teamMemberId: teamMember.id,» → «teamMemberId: null,» · 1 de 1 caen · su caso («SCRUM-92: operario puede volver a entrar») cae
+    · SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin camb
+      error: un operario ACTIVO debe generar un AuthSession magic_link nuevo (el bug: hoy no se crea ninguno)
+MUERE · M2 · src/modules/auth/domain/auth.service.ts · «console.log(`[magic-link] intento de login con email no regi» → «{ const cualquiera = await prisma.merchant.findFir» · 1 de 1 caen · su caso («SCRUM-92: operario puede volver a entrar») cae
+    · SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin camb
+      error: 'un email que no existe en NINGUNA tabla no debe crear ningún AuthSession: en las 5 ventanas nacieron sesiones (58→m1 | 59→m1 | 60→m1 61→m1 | 62→m1 | 63→
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## mut92r-3.txt
+== tests/scrum92-login-operario.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/auth/domain/auth.service.ts · «teamMemberId: teamMember.id,» → «teamMemberId: null,» · 1 de 1 caen · su caso («SCRUM-92: operario puede volver a entrar») cae
+    · SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin camb
+      error: un operario ACTIVO debe generar un AuthSession magic_link nuevo (el bug: hoy no se crea ninguno)
+MUERE · M2 · src/modules/auth/domain/auth.service.ts · «console.log(`[magic-link] intento de login con email no regi» → «{ const cualquiera = await prisma.merchant.findFir» · 1 de 1 caen · su caso («SCRUM-92: operario puede volver a entrar») cae
+    · SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin camb
+      error: 'un email que no existe en NINGUNA tabla no debe crear ningún AuthSession: en las 5 ventanas nacieron sesiones (65→m1 | 66→m1 67→m1 | 68→m1 | 69→m1 | 70→
+POBLACION=2 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## ruido
+ruido-nuevo.json: {"insertadas":4168,"errores":234,"comercios":15,"RUIDO_MS":2}
+ruido-viejo.json: {"insertadas":3632,"errores":79,"comercios":6,"RUIDO_MS":10}
+ruido-viejo2.json: {"insertadas":1348,"errores":96,"comercios":6,"RUIDO_MS":2}

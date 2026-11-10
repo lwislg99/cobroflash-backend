@@ -1,0 +1,67 @@
+// condicion2-panel.mjs — SCRUM-1456b (J2, 20-oct). La condición ② del fundador (c.18731), EJECUTADA:
+// «que nada reaccione distinto a un 400 que a un 500». Monta la ficha 360 REAL del panel con el banco de
+// la casa (`tests/_banco-vistas.mjs`, el mismo de scrum1126), pulsa «Fusionar» con la red doblada y
+// compara, entre un 400 `invalid_id` (lo que contesta ahora un id que no cabe) y un 500 `internal_error`
+// (lo que contestaba antes): el aviso, el estado de los botones, si el modal sigue abierto y si se puede
+// volver a pulsar. El DELETE no se mide aquí: ningún `method: 'DELETE'` de `public/` apunta a él.
+// Uso: node condicion2-panel.mjs <raiz del árbol>
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const RAIZ = path.resolve(process.argv[2] || '.');
+const { cargarDashboard, pintarVista, todos } = await import(pathToFileURL(path.join(RAIZ, 'tests', '_banco-vistas.mjs')).href);
+const espera = () => new Promise((r) => setTimeout(r, 30));
+const cliente = (id, name) => ({ id, name, phone: null, mobile: null, email: null, notes: null, portalToken: null,
+  createdAt: '2026-01-10T00:00:00.000Z', waOptOut: false, taxId: null, tags: null });
+const ANA = cliente(14560, 'Ana 1456');
+const DUP = cliente(14561, 'Ana dup 1456');
+const json = (status, cuerpo) => ({ ok: status >= 200 && status < 300, status, statusText: '',
+  headers: { get: () => 'application/json' }, json: async () => cuerpo, text: async () => JSON.stringify(cuerpo) });
+
+async function medir(respuesta) {
+  let posts = 0;
+  const red = { fetch: async (url, opts = {}) => {
+    const u = String(url);
+    if (/\/fusionar$/.test(u)) { posts += 1; return json(respuesta.status, { error: respuesta.error }); }
+    if (/\/fusion-preview\?con=/.test(u)) return json(200, { bloqueada: null,
+      principal: { id: ANA.id, name: ANA.name, taxId: null, tags: null }, fusionado: { id: DUP.id, name: DUP.name, taxId: null, tags: null },
+      quotesAMover: 0, jobsAMover: 0, notasAMover: 0, etiquetasResultantes: [], nifDistintos: false });
+    if (/\/detail$/.test(u)) return json(200, { customer: ANA, quotes: [], invoices: [], events: [],
+      stats: { totalQuotes: 0, acceptedQuotes: 0, totalBilled: 0, totalPaid: 0, totalExpenses: 0, profit: 0 } });
+    if (/\/historial/.test(u)) return json(200, { trabajos: [], partesSueltos: [] });
+    if (/\/whatsapp/.test(u)) return json(200, { waOptOut: false, mensajes: [] });
+    if (/\/admin\/customers(\?.*)?$/.test(u)) return json(200, [ANA, DUP]);
+    return json(200, []);
+  } };
+  const banco = cargarDashboard(RAIZ, { rol: 'admin', red });
+  if (banco.fallos.length) throw new Error('CIEGA: un script del panel no cargó: ' + JSON.stringify(banco.fallos));
+  const toasts = []; banco.ctx.showToast = (m) => toasts.push(m);
+  const r = await pintarVista(banco, 'renderCustomer360View', ANA.id);
+  if (r.error) throw new Error('CIEGA: la ficha no montó: ' + r.error.message);
+  await espera();
+  const cuerpo = banco.ctx.document.body;
+  const porId = (id) => todos(cuerpo).find((n) => n.id === id) || null;
+  const modal = () => todos(cuerpo).find((n) => String(n.className || '').split(' ')[0] === 'modal-overlay') || null;
+  await porId('btn-fusionar-360').disparar('click'); await espera();
+  const cand = todos(modal()).find((n) => n.tagName === 'BUTTON' && String(n.className).split(' ').includes('fusion-candidato') && n.dataset.id === String(DUP.id));
+  await cand.disparar('click'); await espera();
+  await porId('fusion-confirmar').disparar('click'); await espera();
+  const tras1 = { aviso: porId('fusion-alert')?.textContent ?? null, modalAbierto: !!modal(),
+    confirmarDesactivado: porId('fusion-confirmar')?.disabled ?? null, toasts: toasts.length, posts };
+  await porId('fusion-confirmar').disparar('click'); await espera(); // ¿se puede volver a intentar?
+  return { ...tras1, postsTrasReintento: posts };
+}
+
+const r400 = await medir({ status: 400, error: 'invalid_id' });
+const r500 = await medir({ status: 500, error: 'internal_error' });
+console.log('400 invalid_id    →', JSON.stringify(r400));
+console.log('500 internal_error →', JSON.stringify(r500));
+// CONTROL POSITIVO del comparador: un 409 con motivo firmado SÍ cambia la pantalla (otro aviso, y no se
+// vuelve a ofrecer). Si este par saliera «igual», el comparador estaría ciego y el «igual» de arriba no valdría.
+const r409 = await medir({ status: 409, error: 'mismo_cliente' });
+console.log('409 mismo_cliente  →', JSON.stringify(r409), '(control: tiene que salir DISTINTO del 500)');
+const iguales = JSON.stringify(r400) === JSON.stringify(r500);
+const distingue = JSON.stringify(r409) !== JSON.stringify(r500);
+const midio = r500.posts === 1 && typeof r500.aviso === 'string' && r500.aviso.length > 0 && distingue;
+console.log(`POBLACION=3 respuestas · midió de verdad (un POST, un aviso pintado y el 409 distinto) = ${midio} · 400 y 500 reaccionan IGUAL = ${iguales}`);
+process.exit(midio ? (iguales ? 0 : 1) : 2);

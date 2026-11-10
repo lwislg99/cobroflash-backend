@@ -1,0 +1,46 @@
+veredictos 708 · guards 179 · total 1692 s · desde la marca 1692 s
+  1  135.5 s ·   6 mut ·  22.6 s/mut · acum 8% · scrum710b-anclaje-por-identidad.test.mjs
+  2   56.8 s ·   7 mut ·   8.1 s/mut · acum 11% · scrum1194d-trinquete-vocabulario-ofrecido.test.mjs
+  3   50.8 s ·   3 mut ·  16.9 s/mut · acum 14% · scrum775-suelo-que-no-dispara.test.mjs
+  4   49.6 s ·  24 mut ·   2.1 s/mut · acum 17% · scrum813-trinquete-de-zona.test.mjs
+  5   42.6 s ·   4 mut ·  10.7 s/mut · acum 20% · scrum1509h-veinte-entrantes-por-hora.test.mjs
+  6   40.6 s ·   3 mut ·  13.5 s/mut · acum 22% · scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs
+  7   39.6 s ·   9 mut ·   4.4 s/mut · acum 25% · scrum1339d-senal-de-nombres.test.mjs
+  8   39.4 s ·   5 mut ·   7.9 s/mut · acum 27% · scrum765-la-puerta-y-el-suelo.test.mjs
+  9   30.3 s ·   2 mut ·  15.2 s/mut · acum 29% · scrum1494-cortados-de-zona.test.mjs
+ 10   29.5 s ·   5 mut ·   5.9 s/mut · acum 30% · scrum1503c-el-lector-ve-el-caminante.test.mjs
+ 11   29.4 s ·   4 mut ·   7.4 s/mut · acum 32% · scrum750-los-dos-calendarios.test.mjs
+ 12   28.5 s ·   2 mut ·  14.3 s/mut · acum 34% · scrum1363-tests-que-cubren.test.mjs
+ 13   28.3 s ·   4 mut ·   7.1 s/mut · acum 36% · scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs
+ 14   27.6 s ·   5 mut ·   5.5 s/mut · acum 37% · scrum753-censo-de-alcanzabilidad.test.mjs
+ 15   27.3 s ·   4 mut ·   6.8 s/mut · acum 39% · scrum810b-los-suelos-derivados.test.mjs
+ 16   27.1 s ·   4 mut ·   6.8 s/mut · acum 40% · scrum745-comparar-por-identidad.test.mjs
+ 17   26.3 s ·   7 mut ·   3.8 s/mut · acum 42% · scrum754-el-juez-que-oscila.test.mjs
+ 18   23.8 s ·   7 mut ·   3.4 s/mut · acum 43% · scrum1405c-tuberia-bloqueante.test.mjs
+ 19   23.1 s ·   9 mut ·   2.6 s/mut · acum 45% · scrum1446e-la-columna-sin-iva.test.mjs
+ 20   19.4 s ·   3 mut ·   6.5 s/mut · acum 46% · scrum1349-entorno-prestado-solo-baja.test.mjs
+ 21   19.0 s ·   4 mut ·   4.7 s/mut · acum 47% · scrum757-la-declaracion-que-nadie-lee.test.mjs
+ 22   18.9 s ·   4 mut ·   4.7 s/mut · acum 48% · scrum808-el-arbol-que-queda-mutado.test.mjs
+ 23   18.7 s ·   9 mut ·   2.1 s/mut · acum 49% · scrum1145-pestana-sitios.test.mjs
+ 24   17.6 s ·   5 mut ·   3.5 s/mut · acum 50% · scrum784-el-cuarto-veredicto.test.mjs
+ 25   16.9 s ·   1 mut ·  16.9 s/mut · acum 51% · scrum1349-no-se-empuja-con-una-mutacion-puesta.test.mjs
+ 26   16.8 s ·   3 mut ·   5.6 s/mut · acum 52% · scrum810-el-suelo-a-la-primera.test.mjs
+ 27   16.6 s ·  17 mut ·   1.0 s/mut · acum 53% · scrum1343-un-hijo-que-no-arranca-es-ciego.test.mjs
+ 28   16.5 s ·   3 mut ·   5.5 s/mut · acum 54% · scrum1331-sin-red-se-dice.test.mjs
+ 29   16.2 s ·   4 mut ·   4.1 s/mut · acum 55% · scrum1485-censo-rutas-de-maquina.test.mjs
+ 30   15.7 s ·   5 mut ·   3.1 s/mut · acum 56% · scrum1399-el-anterior-de-una-anulacion.test.mjs
+ 31   15.6 s ·   5 mut ·   3.1 s/mut · acum 57% · scrum812-el-rotulo-declara-su-poblacion.test.mjs
+ 32   14.3 s ·   3 mut ·   4.8 s/mut · acum 58% · scrum797-el-dueno-se-escribe.test.mjs
+ 33   14.1 s ·  13 mut ·   1.1 s/mut · acum 59% · scrum1486-insertbefore-del-banco.test.mjs
+ 34   13.5 s ·   5 mut ·   2.7 s/mut · acum 59% · scrum475-schema-vs-sql.test.mjs
+ 35   13.3 s ·   3 mut ·   4.4 s/mut · acum 60% · restauracion-del-arbol-ejecutable.test.mjs
+ 36   12.8 s ·   1 mut ·  12.8 s/mut · acum 61% · scrum768-listas-sin-atajo.test.mjs
+ 37   12.6 s ·   5 mut ·   2.5 s/mut · acum 62% · scrum1516c-frontera-en-el-obligatorio.test.mjs
+ 38   12.2 s ·   1 mut ·  12.2 s/mut · acum 62% · scrum736-el-suelo-que-no-avisa.test.mjs
+ 39   11.8 s ·   2 mut ·   5.9 s/mut · acum 63% · scrum763-restaurar-el-arbol.test.mjs
+ 40   11.4 s ·   2 mut ·   5.7 s/mut · acum 64% · scrum751-clave-duplicada-en-silencio.test.mjs
+[0,5) s: 97 guards, 290 s
+[5,10) s: 37 guards, 268 s
+[10,20) s: 26 guards, 377 s
+[20,40) s: 13 guards, 380 s
+[40,∞) s: 6 guards, 376 s

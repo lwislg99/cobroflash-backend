@@ -29,12 +29,16 @@ var SUBMENUS = [
   'publica', 'marca', 'datos', 'cumplimiento', 'equipo',
 ];
 
-// Marcador de regla 30. YA NO lo usan los rótulos de los diez (ver `ROTULOS`), pero sí los textos
+// Marcador de regla 30. YA NO lo usan los rótulos de los nueve (ver `ROTULOS`), pero sí los textos
 // del estado vacío, que son redacción nueva y NO están aprobados.
 var MARCA_MICROCOPY_SUBMENU = '[PENDIENTE microcopy oficial]';
 
 /**
- * LOS DIEZ RÓTULOS — APROBADOS por el fundador (5-ago-2026, regla 30).
+ * LOS NUEVE RÓTULOS — APROBADOS por el fundador (5-ago-2026, regla 30).
+ * Consta en: SCRUM-1502 comentario 20514.
+ *
+ * Eran diez: el décimo, «Numeración», lo quitó SCRUM-483 el 12-ago (commit `af263005e`; su ajuste
+ * pasó a «Facturación»). Lo que sigue es la historia de cuando eran diez.
  *
  * No es redacción nueva y por eso se aprobaron de una vez: **los nueve primeros están escritos en la
  * descripción del ticket** y el décimo es el nombre que usó el fundador al colocar
@@ -139,6 +143,8 @@ var ASIGNACION_SUBMENU = {
   // SCRUM-293 (③a) · la retención vive donde el prefijo: son las dos reglas de emisión que
   // el profesional configura una vez y no vuelve a mirar.
   retencionIrpfTipo: 'facturacion',
+  // S2: SCRUM-1072d · la actividad va JUNTO a la retención (lo pide el ticket).
+  activityKind: 'facturacion',
   // ── cobro ──
   iban: 'cobro',
   bizumPhone: 'cobro',

@@ -26,8 +26,11 @@
 // original, así que su año de `createdAt` es exacto con la salvedad de abajo.
 //
 // ⚠️ Si un negocio declara su zona DESPUÉS de numerar, el año de sus filas viejas sin rellenar se
-// leería con la zona nueva. Hoy nadie escribe `Merchant.timezone`; la pantalla que lo permita no
-// debe salir antes del relleno (SCRUM-1490, «Con qué se cruza»).
+// leería con la zona nueva. Quién escribe `Merchant.timezone` (medido el 22-oct-2026, SCRUM-1445):
+// SÓLO el alta, en el mismo `create` que crea el negocio (`zonaDeAlta`, `auth.service.ts`), desde
+// `409e05317` (13-oct-2026, SCRUM-1522e) — o sea ANTES de su primer número, y ahí no hay salvedad.
+// Los negocios anteriores siguen a NULL y nada más la cambia; la pantalla que lo permita no debe
+// salir antes del relleno (SCRUM-1490, «Con qué se cruza»).
 import type { Prisma } from '@prisma/client';
 import { zonaDelMerchant, diaNaturalEn, inicioDelDiaEn } from '../zonaDelMerchant';
 

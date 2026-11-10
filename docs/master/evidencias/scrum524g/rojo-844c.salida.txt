@@ -1,0 +1,3 @@
+sana: status=0 pass=1 fail=0 
+numeroInstalacion devuelve vacío para el id 7: status=1 pass=0 fail=1 🔴 numeroInstalacion() sale vacío para el comercio 7: la guarda fail-closed de `buildVerifactuRegistrosXml` ha dejado de ser inalcanzable y ese comercio no puede emitir. + actual - expected
+CAMPOS_DEL_PRODUCTOR sin version: status=1 pass=0 fail=1 🔴 el productor ya no tiene cuatro datos (+ el número de instalación del comercio = cinco): la guarda de arriba está mirando una lista que ya no es la del fichero, y este enlace dejó de medir lo que dice medir 5 !== 4

@@ -179,6 +179,7 @@ test('SCRUM-586 · 🔴 EL QUE CIERRA LA DECISIÓN: aplicar NO se alcanza fuera 
   // una llamada cómoda no parece nada en el diff, y convierte el ticket en lo contrario de lo que
   // el fundador decidió. Se mide por ALCANZABILIDAD y no por la presencia de una llamada directa:
   // meter la aplicación detrás de una función intermedia caería igual.
+  // Consta en: SCRUM-1502 comentario 20629.
   const sf = astDelEditor('aceptarPropuestaDeFormaDePago');
   const refs = referenciasA(sf, 'aceptarPropuestaDeFormaDePago');
 
@@ -390,6 +391,7 @@ test('SCRUM-586 · 🔴 EL CONTROL DE PUNTA A PUNTA: se elige cliente, se PROPON
     '🔴 la tira ofrece tarjeta y el cliente no la tiene pactada: está proponiendo otra cosa.');
 
   // 🔴 Y NO SE HA APLICADO SOLA. Ésta es la mitad que el fundador decidió el 5-sep-2026.
+  // Consta en: SCRUM-1502 comentario 20629.
   assert.deepEqual(cajas.map((x) => x.checked), [true, true, true],
     '🔴 LAS CASILLAS YA HAN CAMBIADO SIN QUE NADIE PULSE NADA. Se está aplicando en silencio, y '
     + 'aplicar RESTA opciones de cobro: el profesional enviaría el documento sin enterarse de que '

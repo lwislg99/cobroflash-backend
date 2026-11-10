@@ -1,0 +1,138 @@
+V	src/integrations/whatsapp.ts:167	customer.findMany	sin documento en la función
+R	src/lib/invoicing.ts:40	invoice.findUnique	include.customer
+R	src/lib/invoicing.ts:182	charge.findUnique	include.customer
+S	src/lib/invoicing.ts:264	customer.findUnique	tras invoice:243,invoice:304,invoice:309
+R	src/modules/ai/app/routes/ai.routes.ts:164	quote.findFirst	include.customer
+R	src/modules/billing/app/routes/charges.routes.ts:53	charge.create	include.customer
+R	src/modules/billing/app/routes/chargesAdmin.routes.ts:43	charge.findFirst	select.customer
+R	src/modules/billing/app/routes/chargesAdmin.routes.ts:220	charge.findFirst	select.customer
+R	src/modules/billing/app/routes/mpWebhook.routes.ts:108	charge.update	include.customer
+R	src/modules/billing/app/routes/payBizum.routes.ts:122	charge.findUnique	include.customer
+R	src/modules/billing/app/routes/payCard.routes.ts:19	charge.findUnique	include.customer
+R	src/modules/billing/app/routes/payMp.routes.ts:20	charge.findUnique	include.customer
+R	src/modules/billing/app/routes/psp.routes.ts:137	charge.update	include.customer
+S	src/modules/billing/app/routes/psp.routes.ts:79	customer.findUnique	tras charge:42,charge:137,quote:165,invoice:169,invoice:195,invoice:259,invoice:291,invoice:358,charge:391
+R	src/modules/billing/app/routes/receipt.routes.ts:31	charge.findUnique	include.customer
+R	src/modules/billing/app/routes/receipt.routes.ts:75	charge.findUnique	include.customer
+R	src/modules/billing/app/routes/receipt.routes.ts:522	charge.findUnique	include.customer
+R	src/modules/billing/domain/cobros.service.ts:220	charge.findMany	include.customer
+R	src/modules/billing/domain/cobros.service.ts:225	invoice.findMany	include.customer
+R	src/modules/billing/domain/invoiceReminder.service.ts:40	invoice.findMany	where.customer
+R	src/modules/billing/domain/invoiceReminder.service.ts:40	invoice.findMany	include.customer
+R	src/modules/billing/domain/invoiceReminder.service.ts:63	invoice.findMany	where.customer
+R	src/modules/billing/domain/invoiceReminder.service.ts:63	invoice.findMany	include.customer
+R	src/modules/billing/domain/invoiceWhatsApp.service.ts:42	invoice.findUnique	include.customer
+V	src/modules/expenses/app/routes/expenses.routes.ts:229	provider.findFirst	sin documento en la función
+V	src/modules/expenses/app/routes/expenses.routes.ts:347	provider.findFirst	sin documento en la función
+R	src/modules/expenses/domain/expenses.service.ts:122	expense.findMany	select.provider
+R	src/modules/expenses/domain/expenses.service.ts:149	expense.findFirst	select.provider
+S	src/modules/expenses/domain/expenses.service.ts:248	customer.findMany	tras job:237,quote:243
+S	src/modules/expenses/domain/expenses.service.ts:371	provider.findFirst	tras quote:364
+V	src/modules/expenses/domain/lecturaTicket.ts:330	provider.findMany	sin documento en la función
+R	src/modules/exports/domain/exportData.ts:200	invoice.findMany	include.customer
+R	src/modules/exports/domain/exportData.ts:232	charge.findMany	include.customer
+R	src/modules/exports/domain/exportData.ts:333	expense.findMany	include.provider
+R	src/modules/exports/domain/exportData.ts:361	quote.findMany	include.customer
+V	src/modules/exports/domain/exportData.ts:161	customer.findMany	sin documento en la función
+V	src/modules/exports/domain/exportData.ts:186	customer.findMany	sin documento en la función
+S	src/modules/exports/domain/exportData.ts:279	customer.findMany	tras job:273
+S	src/modules/fiscal/evidencias/paquete.repo.ts:85	customer.findMany	tras albaran:49,job:78
+V	src/modules/fiscal/librosAeat/librosAeat.repo.ts:54	customer.findMany	sin documento en la función
+V	src/modules/fiscal/librosAeat/librosAeat.repo.ts:105	provider.findMany	sin documento en la función
+R	src/modules/invoicing/app/routes/invoice.routes.ts:68	invoice.findUnique	include.quote.include.customer
+R	src/modules/invoicing/app/routes/invoice.routes.ts:108	invoice.update	include.quote.include.customer
+V	src/modules/invoicing/domain/clienteCongelado.ts:165	customer.findFirst	sin documento en la función
+R	src/modules/invoicing/domain/verifactu.service.ts:673	invoice.findMany	include.customer
+R	src/modules/invoicing/domain/verifactu.service.ts:1195	invoice.findUnique	include.customer
+V	src/modules/jobs/app/routes/albaranes.routes.ts:154	customer.findMany	sin documento en la función
+S	src/modules/jobs/app/routes/albaranes.routes.ts:357	customer.findFirst	tras job:365,albaran:372
+S	src/modules/jobs/app/routes/albaranes.routes.ts:456	customer.findFirst	tras albaran:479,job:485
+S	src/modules/jobs/app/routes/albaranes.routes.ts:865	customer.findFirst	tras albaran:831,job:834,quote:890
+S	src/modules/jobs/app/routes/albaranPublic.routes.ts:244	customer.findUnique	tras albaran:238,job:242
+S	src/modules/jobs/app/routes/jobs.routes.ts:228	customer.findMany	tras quote:216,quote:222,albaran:254
+S	src/modules/jobs/app/routes/jobs.routes.ts:383	customer.findUnique	tras albaran:429
+S	src/modules/jobs/app/routes/jobs.routes.ts:589	customer.findUnique	tras albaran:633,quote:694,charge:735
+S	src/modules/jobs/app/routes/jobs.routes.ts:890	customer.findFirst	tras job:896
+V	src/modules/jobs/app/routes/partes.routes.ts:116	customer.findFirst	sin documento en la función
+S	src/modules/jobs/domain/albaran.service.ts:642	customer.findUnique	tras job:636
+S	src/modules/jobs/domain/albaran.service.ts:800	customer.findUnique	tras albaran:779,job:797,quote:810,albaran:901
+V	src/modules/jobs/domain/albaranBarrido.ts:181	customer.findMany	sin documento en la función
+S	src/modules/jobs/domain/albaranWhatsApp.service.ts:51	customer.findFirst	tras albaran:35,job:46
+S	src/modules/jobs/domain/albaranWhatsApp.service.ts:122	customer.findFirst	tras albaran:107,job:118,albaran:133
+R	src/modules/jobs/domain/job.service.ts:45	quote.findUnique	select.customer
+S	src/modules/jobs/domain/pendientesFacturar.service.ts:322	customer.findMany	tras job:291,albaran:298
+S	src/modules/jobs/domain/precarga.service.ts:335	customer.findMany	tras job:305,albaran:326
+S	src/modules/maintenance/app/routes/maintenance.routes.ts:42	customer.findFirst	tras quote:48,maintenancePlan:54,maintenancePlan:60
+S	src/modules/maintenance/domain/maintenance.service.ts:211	customer.findMany	tras maintenancePlan:218,maintenancePlan:225
+S	src/modules/maintenance/domain/maintenance.service.ts:310	customer.findUnique	tras maintenancePlan:369,quote:379,maintenancePlan:451
+R	src/modules/messaging/domain/email.service.ts:179	quote.findUnique	include.customer
+V	src/modules/messaging/domain/whatsappLog.service.ts:219	customer.findMany	sin documento en la función
+R	src/modules/metrics/domain/metrics.service.ts:30	quote.findMany	include.customer
+R	src/modules/metrics/domain/metrics.service.ts:221	quote.findMany	include.customer
+S	src/modules/metrics/domain/metrics.service.ts:66	customer.findMany	tras quote:30,quote:46,quote:97,quote:98
+R	src/modules/payments/disputes.service.ts:137	charge.findFirst	include.customer
+V	src/modules/providers/domain/providers.service.ts:16	provider.findFirst	sin documento en la función
+V	src/modules/providers/domain/providers.service.ts:26	provider.findMany	sin documento en la función
+V	src/modules/providers/domain/providers.service.ts:58	provider.findFirst	sin documento en la función
+V	src/modules/providers/domain/providers.service.ts:71	provider.findFirst	sin documento en la función
+R	src/modules/quotes/app/routes/quotes.routes.ts:370	quote.findUnique	include.customer
+S	src/modules/quotes/app/routes/quotes.routes.ts:127	customer.findFirst	tras job:176,quote:269
+R	src/modules/quotes/domain/reminder.service.ts:13	quote.findMany	include.customer
+R	src/modules/quotes/domain/sendQuote.service.ts:37	quote.findUnique	include.customer
+R	src/modules/search/app/routes/search.routes.ts:67	quote.findMany	select.customer
+R	src/modules/search/app/routes/search.routes.ts:86	invoice.findMany	select.customer
+S	src/modules/search/app/routes/search.routes.ts:50	customer.findMany	tras quote:67,invoice:86
+S	src/modules/system/app/routes/customerPortal.routes.ts:237	customer.findUnique	tras quote:260,invoice:265,job:276
+V	src/modules/system/app/routes/customerPortal.routes.ts:528	customer.findUnique	sin documento en la función
+V	src/modules/system/app/routes/customersAdmin.routes.ts:92	customer.findMany	sin documento en la función
+S	src/modules/system/app/routes/customersAdmin.routes.ts:509	customer.findFirst	tras quote:556,invoice:562
+R	src/modules/system/app/routes/dev.routes.ts:73	charge.findUnique	include.customer
+R	src/modules/system/app/routes/invoicesAdmin.routes.ts:289	charge.findFirst	select.customer
+R	src/modules/system/app/routes/invoicesAdmin.routes.ts:351	invoice.findFirst	include.customer
+R	src/modules/system/app/routes/invoicesAdmin.routes.ts:702	invoice.findFirst	include.customer
+R	src/modules/system/app/routes/invoicesAdmin.routes.ts:738	invoice.findFirst	include.customer
+R	src/modules/system/app/routes/invoicesAdmin.routes.ts:1192	invoice.findFirst	include.customer
+V	src/modules/system/app/routes/invoicesAdmin.routes.ts:150	customer.findFirst	sin documento en la función
+R	src/modules/system/app/routes/quoteDecisionLanding.routes.ts:298	quote.findUnique	include.customer
+R	src/modules/system/app/routes/quoteDecisionLanding.routes.ts:1063	quote.findUnique	include.customer
+R	src/modules/system/app/routes/quotesAdmin.routes.ts:239	quote.findFirst	include.customer
+R	src/modules/system/app/routes/quotesAdmin.routes.ts:568	quote.findFirst	include.customer
+R	src/modules/system/app/routes/quotesAdmin.routes.ts:780	quote.findFirst	include.customer
+R	src/modules/system/app/routes/quotesAdmin.routes.ts:820	quote.findFirst	select.customer
+R	src/modules/system/app/routes/quotesAdmin.routes.ts:875	quote.findFirst	select.customer
+V	src/modules/system/customerAdmin.ts:110	customer.findMany	sin documento en la función
+V	src/modules/system/customerAdmin.ts:161	customer.findFirst	sin documento en la función
+V	src/modules/system/customerAdmin.ts:288	customer.findFirst	sin documento en la función
+V	src/modules/system/customerAdmin.ts:344	customer.findFirst	sin documento en la función
+V	src/modules/system/customerAdmin.ts:363	customer.findFirst	sin documento en la función
+V	src/modules/system/domain/etiquetadoMasivo.ts:123	customer.findMany	sin documento en la función
+V	src/modules/system/domain/fusionClientes.ts:106	customer.findFirst	sin documento en la función
+V	src/modules/system/domain/fusionClientes.ts:107	customer.findFirst	sin documento en la función
+V	src/modules/system/domain/fusionClientes.ts:157	customer.findFirst	sin documento en la función
+V	src/modules/system/domain/fusionClientes.ts:158	customer.findFirst	sin documento en la función
+S	src/modules/system/domain/historialDelCliente.ts:37	customer.findFirst	tras job:44,quote:58,parteTrabajo:61,albaran:73,job:81
+V	src/modules/system/domain/historialWhatsAppDelCliente.ts:29	customer.findFirst	sin documento en la función
+V	src/modules/system/domain/notasDelCliente.ts:85	customer.findFirst	sin documento en la función
+V	src/modules/system/domain/notasDelCliente.ts:107	customer.findFirst	sin documento en la función
+V	src/modules/system/domain/sitiosDelCliente.ts:25	customer.findFirst	sin documento en la función
+V	src/modules/system/domain/sitiosDelCliente.ts:44	customer.findFirst	sin documento en la función
+R	src/modules/system/invoiceAdmin.ts:73	invoice.findMany	include.customer
+R	src/modules/system/invoiceAdmin.ts:119	invoice.findFirst	include.customer
+R	src/modules/system/quoteAdmin.ts:90	quote.findMany	include.customer
+R	src/modules/system/quoteAdmin.ts:199	quote.findFirst	include.customer
+R	src/modules/system/quoteAdmin.ts:619	quote.findFirst	where.customer
+R	src/modules/system/quoteAdmin.ts:658	quote.findFirst	where.customer
+V	src/modules/whatsappBot/app/routes/botAdmin.routes.ts:23	customer.findMany	sin documento en la función
+V	src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:280	customer.findMany	sin documento en la función
+V	src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:327	customer.findMany	sin documento en la función
+S	src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:346	customer.findMany	tras quote:351
+S	src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:371	customer.findMany	tras quote:386,quote:491,quote:560
+S	src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:520	customer.findUnique	tras quote:386,quote:491,quote:560
+S	src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:580	customer.findUnique	tras quote:386,quote:491,quote:560
+V	src/modules/whatsappBot/domain/botFlow.service.ts:194	customer.findMany	sin documento en la función
+V	src/modules/whatsappBot/domain/botFlow.service.ts:263	customer.findFirst	sin documento en la función
+S	src/modules/whatsappBot/domain/botFlow.service.ts:318	customer.findMany	tras quote:530,charge:572
+POBLACIÓN: 328 ficheros .ts de src/ · hallazgos 134 (R 60, S 34, V 40) · ficheros con hallazgo 62
+TESTIGO del árbol (recibidas → provider.findMany): visto
+SEMILLA: puesta · positivo R visto · positivo S visto · control cero 0 (debe ser 0)
+VEREDICTO: MIDE

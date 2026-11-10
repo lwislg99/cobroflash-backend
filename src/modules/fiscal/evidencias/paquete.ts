@@ -308,6 +308,10 @@ export function construirPaqueteEvidencias(params: {
         // Lo que NO está en ninguna casilla se declara AQUÍ, no se calla: si no, el CSV parecería
         // cuadrar por el simple hecho de no mencionarlo.
         ...params.modelo303.sinClasificar.map((o) => ['', '', '', `SIN_CLASIFICAR ${o.motivo} ${o.numero}`, eur(o.base), eur(o.cuota)]),
+        // SCRUM-1063f · la 122 (S2 del emisor) no es una tripleta ni está sin clasificar: va con su
+        // casilla y su factura, una fila por operación, para que cada euro siga teniendo de dónde sale.
+        ...params.modelo303.informacionAdicional.inversionSujetoPasivo.operaciones.map((o) => [
+          params.modelo303.informacionAdicional.inversionSujetoPasivo.casilla, '', '', `INVERSION_SUJETO_PASIVO ${o.numero}`, eur(o.base), '']),
       ],
     ),
   });

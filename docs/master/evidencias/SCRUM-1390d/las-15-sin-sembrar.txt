@@ -1,0 +1,2 @@
+CIEGO: 2 de 2 rutas sembradas no están montadas (--sin-sembrar): sin ellas no puedo demostrar que distingo
+EXIT=2

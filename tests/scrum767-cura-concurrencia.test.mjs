@@ -33,6 +33,8 @@
 // ⛔ SÓLO `yaqu_dev_javier`: se niega a arrancar si la clave apunta a otro sitio. Este fichero
 //    ESCRIBE — crea merchants y clientes de usar y tirar, y los borra.
 // ═════════════════════════════════════════════════════════════════════════════════════════
+import './_staging-db.mjs'; // SCRUM-1599p: el guard de staging va delante del segundo destino (scrum876e)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599p: segundo destino (LIBRO_PG_URL); su guard exige loopback y «*_test»
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -41,18 +43,22 @@ import { pathToFileURL, fileURLToPath } from 'node:url'; // NUNCA `.pathname`: n
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-const GATE = process.env.QA_DB_TEST === '1';
+const GATE = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
 let prismaDev = null;
 let cliente = null;
 if (GATE) {
   const { PrismaClient } = await import(pathToFileURL(RAIZ + '/node_modules/@prisma/client/default.js').href);
   const { parseBDSegura } = await import(pathToFileURL(RAIZ + '/scripts/_db-guard.mjs').href);
-  const linea = fs.readFileSync(path.join(RAIZ, '.env'), 'utf8').split('\n').find((l) => l.startsWith('DATABASE_URL_DEV='));
-  const url = linea?.slice('DATABASE_URL_DEV='.length).trim().replace(/^["']|["']$/g, '');
-  const info = url ? parseBDSegura(url) : null;
-  assert.ok(info && info.base === 'yaqu_dev_javier',
-    '🔴 PARO: este test ESCRIBE y la clave de desarrollo no apunta a `yaqu_dev_javier`.');
+  // SCRUM-1599p: o el banco desechable, cuya URL ya ha pasado el guard de `_banco-libro.mjs`.
+  let url = URL_BANCO;
+  if (!url) {
+    const linea = fs.readFileSync(path.join(RAIZ, '.env'), 'utf8').split('\n').find((l) => l.startsWith('DATABASE_URL_DEV='));
+    url = linea?.slice('DATABASE_URL_DEV='.length).trim().replace(/^["']|["']$/g, '');
+    const info = url ? parseBDSegura(url) : null;
+    assert.ok(info && info.base === 'yaqu_dev_javier',
+      '🔴 PARO: este test ESCRIBE y la clave de desarrollo no apunta a `yaqu_dev_javier`.');
+  }
   prismaDev = new PrismaClient({ datasources: { db: { url } } });
   // 🔴 El doble va por `global.prisma` ANTES de importar el módulo: `customerAdmin` usa el
   // singleton de `core/db/prisma`, que resuelve `DATABASE_URL` — una variable que en este árbol
@@ -83,7 +89,7 @@ async function conClienteSinToken(fn) {
 const tokenEnBase = (id) => prismaDev.customer
   .findUnique({ where: { id }, select: { portalToken: true } }).then((x) => x?.portalToken ?? null);
 
-test('SCRUM-767 · SUELO: un cliente creado a pelo NACE sin token', { skip: !GATE && 'sin QA_DB_TEST=1 · necesita Postgres real: escribe clientes y provoca concurrencia' }, async () => {
+test('SCRUM-767 · SUELO: un cliente creado a pelo NACE sin token', { skip: !GATE && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL ·necesita Postgres real: escribe clientes y provoca concurrencia' }, async () => {
   await conClienteSinToken(async (m, c) => {
     assert.equal(c.portalToken, null,
       '🔴 el cliente a pelo ya trae token: entonces no hay hueco que curar y todo lo de abajo '
@@ -91,7 +97,7 @@ test('SCRUM-767 · SUELO: un cliente creado a pelo NACE sin token', { skip: !GAT
   });
 });
 
-test('SCRUM-767 · ✅ CONTROL POSITIVO: dos llamadas SEGUIDAS dan el MISMO token', { skip: !GATE && 'sin QA_DB_TEST=1 · necesita Postgres real: escribe clientes y provoca concurrencia' }, async () => {
+test('SCRUM-767 · ✅ CONTROL POSITIVO: dos llamadas SEGUIDAS dan el MISMO token', { skip: !GATE && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL ·necesita Postgres real: escribe clientes y provoca concurrencia' }, async () => {
   await conClienteSinToken(async (m, c) => {
     const a = await cliente.ensurePortalToken(m.id, c.id);
     const b = await cliente.ensurePortalToken(m.id, c.id);
@@ -101,7 +107,7 @@ test('SCRUM-767 · ✅ CONTROL POSITIVO: dos llamadas SEGUIDAS dan el MISMO toke
   });
 });
 
-test('SCRUM-767 · la base termina con UN token, pase lo que pase con la carrera', { skip: !GATE && 'sin QA_DB_TEST=1 · necesita Postgres real: escribe clientes y provoca concurrencia' }, async () => {
+test('SCRUM-767 · la base termina con UN token, pase lo que pase con la carrera', { skip: !GATE && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL ·necesita Postgres real: escribe clientes y provoca concurrencia' }, async () => {
   await conClienteSinToken(async (m, c) => {
     const ts = await Promise.all(Array.from({ length: 10 }, () => cliente.ensurePortalToken(m.id, c.id)));
     const final = await tokenEnBase(c.id);
@@ -116,7 +122,7 @@ test('SCRUM-767 · la base termina con UN token, pase lo que pase con la carrera
   });
 });
 
-test('SCRUM-767 · ✅ CONTROL NEGATIVO: editar el cliente NO mueve su token', { skip: !GATE && 'sin QA_DB_TEST=1 · necesita Postgres real: escribe clientes y provoca concurrencia' }, async () => {
+test('SCRUM-767 · ✅ CONTROL NEGATIVO: editar el cliente NO mueve su token', { skip: !GATE && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL ·necesita Postgres real: escribe clientes y provoca concurrencia' }, async () => {
   // Sin esto, «un solo token» no distingue «la cura es estable» de «mi doble no escribe nada».
   await conClienteSinToken(async (m, c) => {
     const t0 = await cliente.ensurePortalToken(m.id, c.id);
@@ -128,3 +134,11 @@ test('SCRUM-767 · ✅ CONTROL NEGATIVO: editar el cliente NO mueve su token', {
 });
 
 test.after(async () => { if (prismaDev) await prismaDev.$disconnect(); });
+
+// SCRUM-1599p (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599p.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/system/customerAdmin.ts", de: "  if (customer.portalToken) return customer.portalToken;", a: "  if (customer.portalToken) return generatePortalToken();", cae: "dos llamadas SEGUIDAS dan el MISMO token" },
+];

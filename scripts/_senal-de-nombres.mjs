@@ -34,10 +34,10 @@
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import ts from 'typescript';
 import { testsDeclarados } from '../tests/_poblacion-de-tests.mjs';
-
-/** Versión del formato de la línea de registro. Si cambia el formato, cambia esto. */
-export const VERSION = 1;
-export const TITULO = 'señal de nombres';
+// La línea de registro vive sin paquetes en su propio módulo (SCRUM-1324c): el vigía de main la lee
+// en un workflow sin `npm ci`. Se re-exporta para que quien la importaba de aquí no cambie.
+import { VERSION, TITULO, lineaDeRegistro } from './_senal-de-nombres-linea.mjs';
+export { VERSION, TITULO, lineaDeRegistro, registroDesdeLinea } from './_senal-de-nombres-linea.mjs';
 
 /** Lo decidido en SCRUM-1339 c.17935: la señal AVISA, y se vuelve a decidir con estos tres datos. */
 export const UMBRAL_DE_BLOQUEO = 0.05;
@@ -121,6 +121,27 @@ export function declaradosDelArbol(fuentes) {
 }
 
 /**
+ * Las claves de PRIMER nivel del bloque YAML que sigue a la línea `i` (la de un caso de nivel 0):
+ * dos espacios y nada más. Las de una causa anidada van más hondas y no se confunden.
+ */
+function camposDelBloque(lineas, i, tope = 400) {
+  const campos = new Map();
+  if (lineas[i + 1] !== '  ---') return campos;
+  for (let j = i + 2; j < lineas.length && j < i + tope; j++) {
+    if (lineas[j] === '  ...') break;
+    const m = /^ {2}([A-Za-z]+): (.*)$/.exec(lineas[j]);
+    if (m && !campos.has(m[1])) campos.set(m[1], m[2]);
+  }
+  return campos;
+}
+
+/** `~` → null · `'texto'` → texto · lo demás, tal cual. */
+function valorYaml(v) {
+  if (v === undefined || v === '~') return null;
+  return /^'.*'$/.test(v) ? v.slice(1, -1) : v;
+}
+
+/**
  * Lee un TAP de `node --test`. Devuelve cuántas veces se registró cada nombre (tal como está
  * escrito en el TAP, sin la directiva `# SKIP` / `# TODO`), y si el TAP está ENTERO.
  *
@@ -156,7 +177,13 @@ export function leerTap(texto) {
     const nombre = m[3].replace(/ # (?:SKIP|TODO)(?: .*)?$/, '');
     nombres.set(nombre, (nombres.get(nombre) ?? 0) + 1);
     if (m[1] === '' && /\.test\.mjs$/.test(nombre)) {
-      entradasDeFichero.push({ fichero: nombre.split(/[\\/]/).pop(), caida: Boolean(m[2]) });
+      // SCRUM-1389c: el bloque dice si el proceso del fichero se creó (`exitCode:`) o no (`spawn …`)
+      const b = camposDelBloque(lineas, i);
+      entradasDeFichero.push({
+        fichero: nombre.split(/[\\/]/).pop(), caida: Boolean(m[2]),
+        conExitCode: b.has('exitCode'), exitCode: valorYaml(b.get('exitCode')), signal: valorYaml(b.get('signal')),
+        spawn: /^'spawn /.test(b.get('error') ?? ''), code: valorYaml(b.get('code')),
+      });
     }
   }
   const cifras = (clave) => lineas.filter((l) => new RegExp(`^# ${clave} \\d+\\s*$`).test(l)).map((l) => Number(/\d+/.exec(l)[0]));
@@ -174,6 +201,52 @@ export function leerTap(texto) {
     pass: ultima('pass'), fail: ultima('fail'), cancelled: ultima('cancelled'), skipped: ultima('skipped'),
     lineasDeTest, lineasDeSuite, nombres, entradasDeFichero, entero: motivo === null, motivo,
   };
+}
+
+/**
+ * LAS ENTRADAS DE FICHERO DEL TAP, EN SUS CLASES (SCRUM-1389c, salida B; decisión del fundador en
+ * SCRUM-1389 c.20720). Con `--test-isolation=process`, un fichero cuyo proceso cae deja en el TAP
+ * UNA línea de nivel 0 con su nombre, y `node --test` la cuenta como un test que falla. Esas líneas
+ * se separan así (medido en los nueve casos del banco de SCRUM-1389, node 24):
+ *   · murieron ..... el proceso se creó y salió: el bloque lleva `exitCode:` (con `~` y `signal:` si
+ *                    lo mató una señal). Un import roto, un `throw` y un `exit(1)` mudo dan los tres
+ *                    `exitCode: 1`: aquí no se distinguen, y no se intenta.
+ *   · no creadas ... el proceso NO existió: sin `exitCode:` y con `error: 'spawn … ENOENT'`. Es lo que
+ *                    la tanda cuenta como un fallo sin que haya fichero que arreglar.
+ *   · otras ........ cualquier otra entrada de fichero (sin las dos marcas). Se cuenta, no se clasifica.
+ * Sólo AVISA: nada de esto entra en `ausentes` ni en el código de salida del guion. Y un TAP que no
+ * está entero no se cuenta (lo que sale de un proceso matado no se cuenta): todo sale `?`, no 0.
+ */
+export function procesosDelTap(texto) {
+  return procesosDe(leerTap(texto));
+}
+
+function procesosDe(t) {
+  if (!t.entero) return { medible: false, motivo: t.motivo, entradas: null, noCreadas: null, murieron: null, otras: null, codigos: null };
+  const murieron = new Map();
+  let noCreadas = 0;
+  let otras = 0;
+  for (const e of t.entradasDeFichero) {
+    const exitCode = e.conExitCode ? (e.exitCode ?? e.signal ?? '?') : null;
+    const spawn = e.spawn;
+    if (exitCode !== null) murieron.set(exitCode, (murieron.get(exitCode) ?? 0) + 1);
+    else if (spawn) noCreadas++;
+    else otras++;
+  }
+  const codigos = [...murieron].sort(([a], [b]) => String(a).localeCompare(String(b), 'en', { numeric: true }));
+  return {
+    medible: true, motivo: null, entradas: t.entradasDeFichero.length, noCreadas,
+    murieron: codigos.reduce((s, [, n]) => s + n, 0), otras, codigos,
+  };
+}
+
+/** Sale SIEMPRE, también con 0; si el TAP no se pudo contar, `?` en cada cifra. `codigos`: código:veces. */
+export function lineaDeProcesos(p) {
+  const n = (v) => (p?.medible === true ? String(v) : '?');
+  const codigos = p?.medible !== true ? '?' : p.codigos.length ? p.codigos.map(([c, k]) => `${c}:${k}`).join(',') : '-';
+  return `[${TITULO} · procesos v${VERSION}] medible=${p?.medible === true ? 'si' : 'no'}`
+    + ` entradas_de_fichero=${n(p?.entradas)} no_creadas=${n(p?.noCreadas)} murieron=${n(p?.murieron)}`
+    + ` codigos=${codigos} otras=${n(p?.otras)}`;
 }
 
 /** 'entero' · 'cola' · 'cabeza' · 'medio', sobre los estados P(resente) A(usente) D(udoso) N(o comparable). */
@@ -261,13 +334,15 @@ export function senalDeNombres({ fuentes, tap, censoDelArbol = null }) {
   };
   const { nombres: registrados, ...resumenDelTap } = t;
   resumenDelTap.nombresDistintos = registrados.size;
+  // SCRUM-1389c: se cuenta aunque los nombres no se puedan medir (el censo puede discrepar con el TAP entero)
+  const procesos = procesosDe(t);
 
   let motivo = null;
   if (d.ficheros.length === 0 || d.llamadas === 0) motivo = 'el árbol no declara ningún test: no se leyó `tests/*.test.mjs`';
   else if (!d.control.coincide) motivo = `mi recuento de llamadas (${d.llamadas}) no casa con el del censo de SCRUM-708 (${d.control.censo}): ${d.control.discrepan.slice(0, 3).join(' · ')}`;
   else if (!t.entero) motivo = t.motivo;
   if (motivo) {
-    return { medible: false, motivo, poblacion, control: d.control, tap: resumenDelTap, ausentes: null, dudosos: null, bloques: [], dudas: [] };
+    return { medible: false, motivo, poblacion, control: d.control, tap: resumenDelTap, procesos, ausentes: null, dudosos: null, bloques: [], dudas: [] };
   }
 
   // estado de cada aparición declarada
@@ -297,7 +372,7 @@ export function senalDeNombres({ fuentes, tap, censoDelArbol = null }) {
       conEntradaDeFichero: t.entradasDeFichero.some((e) => e.fichero === f.fichero.split(/[\\/]/).pop()),
     });
   }
-  return { medible: true, motivo: null, poblacion, control: d.control, tap: resumenDelTap, ausentes, dudosos, bloques, dudas };
+  return { medible: true, motivo: null, poblacion, control: d.control, tap: resumenDelTap, procesos, ausentes, dudosos, bloques, dudas };
 }
 
 // ── lo que se imprime ─────────────────────────────────────────────────────────────────────
@@ -313,38 +388,19 @@ export function describirBloque(b) {
     + (b.conEntradaDeFichero ? ' · el fichero sale en el TAP como UNA línea: corrió y no informó de sus casos' : '');
 }
 
+// `lineaDeRegistro` y `registroDesdeLinea` viven en `_senal-de-nombres-linea.mjs` (SCRUM-1324c).
+
 /**
- * LA LÍNEA DE REGISTRO: sale SIEMPRE, también con 0 y también cuando no se pudo medir, con su
- * población al lado. Es lo que lee `registroDesdeLinea` desde fuera, para la tasa.
+ * El informe entero, para el log. La primera línea es la de registro; la segunda, SIEMPRE, la de
+ * las entradas de fichero del TAP (SCRUM-1389c).
  */
-export function lineaDeRegistro(r) {
-  const p = r.poblacion;
-  const t = r.tap;
-  const n = (v) => (v === null || v === undefined ? '?' : String(v));
-  return `[${TITULO} v${VERSION}] medible=${r.medible ? 'si' : 'no'}`
-    + ` ausentes=${n(r.ausentes)} ficheros_con_ausentes=${r.medible ? r.bloques.length : '?'} dudosos=${n(r.dudosos)}`
-    + ` declarados=${p.llamadas} literales=${p.literales} no_comparables=${p.noComparables}`
-    + ` ficheros=${p.ficheros} tap_tests=${n(t.tests)} tap_fail=${n(t.fail)}`;
-}
-
-/** La vuelta: de una línea de registro a un registro. `null` si la línea no es una de éstas. */
-export function registroDesdeLinea(texto) {
-  const m = new RegExp(`\\[${TITULO} v(\\d+)\\] (.*)$`, 'm').exec(String(texto ?? ''));
-  if (!m) return null;
-  const campos = Object.fromEntries(m[2].trim().split(/\s+/).map((par) => par.split('=')).filter((par) => par.length === 2));
-  const num = (v) => (v === undefined || v === '?' ? null : Number(v));
-  return {
-    version: Number(m[1]), medible: campos.medible === 'si',
-    ausentes: num(campos.ausentes), ficherosConAusentes: num(campos.ficheros_con_ausentes), dudosos: num(campos.dudosos),
-    declarados: num(campos.declarados), literales: num(campos.literales), noComparables: num(campos.no_comparables),
-    ficheros: num(campos.ficheros), tapTests: num(campos.tap_tests), tapFail: num(campos.tap_fail),
-  };
-}
-
-/** El informe entero, para el log. La primera línea es la de registro. */
 export function informe(r) {
   const p = r.poblacion;
-  const L = [lineaDeRegistro(r)];
+  const L = [lineaDeRegistro(r), lineaDeProcesos(r.procesos)];
+  if (r.procesos?.noCreadas > 0) {
+    L.push(`  ⚠️ ${r.procesos.noCreadas} entrada(s) de fichero son procesos que NO SE CREARON (\`spawn …\`, sin \`exitCode\`):`
+      + ' la tanda las cuenta como tests que fallan, y no hay fichero que arreglar.');
+  }
   L.push(`  POBLACIÓN: ${p.ficheros} ficheros de tests/ · ${p.llamadas} llamadas test()/it()`
     + ` (censo de SCRUM-708: ${r.control.censo}${r.control.coincide ? ', coincide' : ', NO COINCIDE'})`
     + ` · ${p.literales} con nombre literal (${p.nombresDistintos} distintos)`);

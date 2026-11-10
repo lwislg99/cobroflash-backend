@@ -468,10 +468,10 @@ test('🔴 rutaDelTraspaso: sesion-N → project_sN, cualquier otro puesto → p
 test('las órdenes de schtasks salen de las tandas del config, con el prefijo en el nombre de la tarea', () => {
   const destino = 'C:/Users/X/AppData/Local/yaqu-equipo';
   assert.deepEqual(instalar.ordenesSchtasks({ destino, tandas: ['07:30'], prefijo: 'jv-' }), [
-    'MSYS_NO_PATHCONV=1 schtasks /create /sc daily /tn yaqu-equipo-jv-0730 /st 07:30 /tr "C:\\Users\\X\\AppData\\Local\\yaqu-equipo\\arranque.cmd"',
+    'MSYS_NO_PATHCONV=1 schtasks /create /sc daily /tn yaqu-equipo-jv-0730 /st 07:30 /tr \'"C:\\Users\\X\\AppData\\Local\\yaqu-equipo\\arranque.cmd"\'',
   ]);
   assert.deepEqual(instalar.ordenesSchtasks({ destino, tandas: ['08:00'], prefijo: '' }), [
-    'MSYS_NO_PATHCONV=1 schtasks /create /sc daily /tn yaqu-equipo-0800 /st 08:00 /tr "C:\\Users\\X\\AppData\\Local\\yaqu-equipo\\arranque.cmd"',
+    'MSYS_NO_PATHCONV=1 schtasks /create /sc daily /tn yaqu-equipo-0800 /st 08:00 /tr \'"C:\\Users\\X\\AppData\\Local\\yaqu-equipo\\arranque.cmd"\'',
   ], 'el equipo de Luis conserva los nombres de tarea de la guía');
 });
 

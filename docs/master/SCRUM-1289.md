@@ -86,6 +86,9 @@ TAP con su porcentaje y su byte.
   porque el resumen del padre queda al final, detrás del tramo de NUL: ha acertado **por suerte**. El
   paso informativo nuevo va justo antes y dice si ese TAP se puede leer, pero el suelo debería
   negarse a contar sobre un TAP ilegible (`integridadTap` está exportada en `por-que-cayo.mjs`).
+
+---
+
 # SCRUM-1289b · El TAP de la tanda, arreglado de raíz: los reporters salen de `NODE_OPTIONS`
 
 **Rama:** `scrum-1289b-reporters-como-argumentos` · **Carril:** S3 · instrumentos (s3-29e) · **Fecha:** 29-sep-2026
@@ -124,3 +127,45 @@ bajar. **Abren la cola del 30-sep**, para repartir por dueño (decisión del orq
 `scrum672`/`702`/`736` (suelo) · `scrum858b`/`858c`/`899b`/`928`/`928b`/`161`/`265`/`522`/`1245b`
 (envoltorio y tanda) 90/90 + 1 skip. NO se corrió `npm test` entero (SCRUM-1244: en esta máquina
 revienta por memoria): el veredicto completo es el del CI.
+
+---
+
+## SCRUM-1289c · Este registro, despegado: la unión de git lo dejó como dos registros sin separar
+
+**Medido contra:** `origin/main` = `8ad167195af03cf4153337ccc1bf1b80d04c10f8` · 2026-10-22T09:40:36Z
+A9: aviso → cicatriz S0 «Juzgué una unión de git reconstruyéndola con `git merge-file` en modo normal, que parte cada conflicto por las líneas que los dos lados comparten, igual que hace la unión: mi instrumento cometía el defecto que medía, dio SCRUM-964 por intacto, y se lo mandé así al orquestador. Lo cazó un control positivo puesto DESPUÉS (SCRUM-1569, roto conocido, también salía idéntico). Un medidor con la misma forma de fallo que lo medido siempre dice que no hay fallo: el caso roto conocido va delante del primer veredicto, no detrás.» — no se pudo comprobar: el instrumento es una evidencia de docs/master, no un test de la tanda
+
+S0 (`cobroflash-backend-s0`), por encargo del orquestador. El detector de SCRUM-1572 (J6) dio este fichero
+como roto por el merge `4c3bddde8` (yaqu-bot, «Merge main (bdebd30e) en el PR #1990»), y nadie lo había vuelto
+a tocar. Las dos mitades son del equipo de Luis: SCRUM-1289, de S5 (rama `scrum-1289-tap-del-obligatorio`), y
+SCRUM-1289b, de S3 (rama `scrum-1289b-reporters-como-argumentos`).
+
+**El daño, reconstruido desde los padres y no a ojo.** Los dos registros nacieron por separado: el fichero
+no existe en la base del merge, y `131ff7cf4` (S5) y `bdebd30ee` (S3) lo crean cada uno. Lo correcto es uno
+detrás de otro, y eso es exactamente lo que dejó la unión: el blob del merge es, byte a byte, el de S5 seguido
+del de S3 (89 + 39 líneas → 127). No falta ni sobra ninguna línea. Lo único roto es la costura: la última
+línea de 1289 («…`por-que-cayo.mjs`).») va pegada al `# SCRUM-1289b` sin separación. Se repone como en
+`SCRUM-244.md`, el precedente de dos registros en un fichero: una línea en blanco, `---` y otra en blanco. No
+se ha cambiado ni una línea de S5 ni de S3.
+
+**El instrumento**, en `docs/master/evidencias/SCRUM-1289c/reconstruye-desde-los-padres.mjs`. Es de solo
+lectura: hace una fusión de tres vías de los dos padres con `git merge-file --diff3` y conserva los dos lados de
+cada conflicto, primero el del padre 1. Después compara con el blob del merge.
+
+| caso | base | conflictos | cada mitad entera y en orden | idéntica al merge |
+|---|---|---|---|---|
+| `4c3bddde8` · SCRUM-1289 | vacía | 1 | sí | **sí**: el daño es sólo la costura |
+| `18c3e3686` · SCRUM-964 | `afd2655bd`, el primer commit del ticket, presente en los dos padres | 1 | sí | **no**: falta una línea en blanco (SCRUM-964d) |
+| `fa1897e48` · SCRUM-1569 (CONTROL: el caso roto de SCRUM-1572) | vacía | 1 | sí | **no**: 193 líneas contra 188 |
+| ruta que no existe (CONTROL ciego) | — | — | — | sale 2, «NO PUDE MIRAR» |
+
+Comando: `node docs/master/evidencias/SCRUM-1289c/reconstruye-desde-los-padres.mjs <merge> <ruta> [<base>] [--salida=<fichero>]`.
+
+🔴 **Mi primera versión no llevaba `--diff3`, y mentía.** En modo normal, git refina cada conflicto
+partiéndolo por las líneas que los dos lados tienen en común, que es lo que hace la unión. Así que la
+reconstrucción repetía el entrelazado que tenía que juzgar: daba «idéntica» en 964 y en 1569, que está roto.
+Con esa versión le dije al orquestador que 964 estaba intacto. Lo cazó el control de 1569, puesto después, y
+lo corregí antes de que lo pasara al fundador. Con `--diff3`, git no refina: cada conflicto es un bloque
+entero. Cicatriz en `docs/equipo/cicatrices/S0.md`.
+
+Corrido: `scrum267`, `scrum273` y `scrum1294` en verde sobre esta rama. La tanda completa no la he corrido.

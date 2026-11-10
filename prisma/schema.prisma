@@ -984,7 +984,7 @@ model Expense {
   concept               String
   amount                Decimal   @db.Decimal(12, 2)
   currency              String    @default("EUR") @db.VarChar(3)
-  category              String    @default("otros") // materiales|desplazamiento|herramientas|subcontrata|otros
+  category              String    @default("otros") // materiales|desplazamiento|herramientas|subcontrata|alquiler|otros
   date                  DateTime  @default(now())
   notes                 String?
   receiptData           String?   @map("receipt_data") @db.Text
@@ -1281,11 +1281,11 @@ model WhatsAppMessage {
   merchantId Int  @map("merchant_id")
   customerId Int? @map("customer_id")
 
-  type         String // 'template' | 'service'
+  type         String // valores CERRADOS (regla 27): los fija el máster, Parte L («WhatsAppMessage»)
   templateName String? @map("template_name")
   waMessageId  String? @unique @map("wa_message_id") // id que devuelve Meta (wamid.*)
   toPhone      String? @map("to_phone") // SCRUM-529: el número al que se mandó, tal cual se le dio a Meta. NULL = anterior a la columna, o entrante. Va en esta línea, que estaba en blanco, para no mover las de debajo: hay documentos que las citan por número.
-  status String  @default("queued") // queued → sent → delivered → read | failed
+  status String  @default("queued") // estados CERRADOS (regla 27): los fija el máster, Parte L («WhatsAppMessage»)
   error  String?
 
   // Documento relacionado para el chip de entrega. Los valores: WaRelatedType (src/modules/messaging/domain/whatsappLog.service.ts).
@@ -1574,7 +1574,7 @@ model EmailMessage {
   merchantId Int  @map("merchant_id")
   customerId Int? @map("customer_id")
 
-  kind       String // invoice | quote | magic_link | digest | ...
+  kind       String // CLASES_DE_CORREO (src/modules/messaging/domain/registroDeEnvios.ts): lista cerrada, una por emisor
   toEmail    String  @map("to_email")
   providerId String? @unique @map("provider_id") // id de Resend; NULL = no consta
 
@@ -1582,7 +1582,7 @@ model EmailMessage {
   status String  @default("aceptado_sin_identificador")
   error  String?
 
-  relatedType String? @map("related_type") // invoice | quote | charge
+  relatedType String? @map("related_type") // documento relacionado; nulo si el emisor no lo sabe. Hoy sólo lo escribe email.service.ts (factura y presupuesto).
   relatedId   Int?    @map("related_id")
 
   createdAt DateTime @default(now()) @map("created_at")

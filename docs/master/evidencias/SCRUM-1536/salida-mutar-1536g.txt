@@ -1,0 +1,5 @@
+DECLARADAS 2 ["src/modules/system/merchantAdmin.ts","src/app.ts"]
+BASE 0 {"status":0,"caidos":[],"pasan":3}
+VIVA (la tumba) src/modules/system/merchantAdmin.ts tsc=0 {"status":1,"caidos":["✖ SCRUM-1536g · la RUTA: un país distinto del guardado da 409 con el texto firmado y no guarda nada; el mismo país sí se guarda"],"pasan":2}
+VIVA (la tumba) src/app.ts tsc=0 {"status":1,"caidos":["✖ SCRUM-1536g · la RUTA: un país distinto del guardado da 409 con el texto firmado y no guarda nada; el mismo país sí se guarda"],"pasan":2}
+RESTAURADO 0 {"status":0,"caidos":[],"pasan":3}

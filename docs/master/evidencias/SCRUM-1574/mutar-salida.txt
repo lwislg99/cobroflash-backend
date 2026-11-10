@@ -1,0 +1,28 @@
+sha original 071e895bd011 · mutaciones 7
+BASE {"codigo":0,"tests":10,"pass":9,"fail":0,"skipped":1,"caidos":[]}
+CAE  · SCRUM-1405d · ④ el juez · ambigua=null · {"codigo":1,"tests":10,"pass":8,"fail":1,"skipped":1,"caidos":["SCRUM-1405d · ④ el juez: lo peor medido CON el módulo pasa; el brazo SIN módulo (el módulo roto) cae"]} · de="  if (pierden > CON_MAX_PASADAS_QUE_PIERDEN) motivos.push"
+CAE  · SCRUM-1405d · ④ el juez · ambigua=null · {"codigo":1,"tests":10,"pass":8,"fail":1,"skipped":1,"caidos":["SCRUM-1405d · ④ el juez: lo peor medido CON el módulo pasa; el brazo SIN módulo (el módulo roto) cae"]} · de="  if (peor > CON_MAX_POR_PASADA) motivos"
+CAE  · SCRUM-1405d · ④ el juez · ambigua=null · {"codigo":1,"tests":10,"pass":8,"fail":1,"skipped":1,"caidos":["SCRUM-1405d · ④ el juez: lo peor medido CON el módulo pasa; el brazo SIN módulo (el módulo roto) cae"]} · de="  const pierden = faltan.filter((x) => x > 0).length;"
+CAE  · SCRUM-1405d · ④ el juez · ambigua=null · {"codigo":1,"tests":10,"pass":8,"fail":1,"skipped":1,"caidos":["SCRUM-1405d · ④ el juez: lo peor medido CON el módulo pasa; el brazo SIN módulo (el módulo roto) cae"]} · de="  return motivos;\n}"
+CAE  · SCRUM-1574 · ④ la decisión · ambigua=null · {"codigo":1,"tests":10,"pass":8,"fail":1,"skipped":1,"caidos":["SCRUM-1574 · ④ la decisión: una sonda a 0 no salta si el brazo SIN módulo pierde; un salto dice NO MEDIDO"]} · de="  if (sinPierde) return { estado: 'medir'"
+CAE  · SCRUM-1574 · ④ la decisión · ambigua=null · {"codigo":1,"tests":10,"pass":8,"fail":1,"skipped":1,"caidos":["SCRUM-1574 · ④ la decisión: una sonda a 0 no salta si el brazo SIN módulo pierde; un salto dice NO MEDIDO"]} · de="  return { estado: 'no-medido', motivo: `NO MEDIDO: sin el módulo"
+CAE  · SCRUM-1574 · ④ la decisión · ambigua=null · {"codigo":1,"tests":10,"pass":8,"fail":1,"skipped":1,"caidos":["SCRUM-1574 · ④ la decisión: una sonda a 0 no salta si el brazo SIN módulo pierde; un salto dice NO MEDIDO"]} · de="  if (pendiente > 0) return { estado: 'ciego'"
+restaurado true
+✔ SCRUM-1405c · ① `npm test` conserva --test-force-exit y carga el módulo de la tubería (1.5503ms)
+✔ SCRUM-1405c · ② lo carga el hijo de cada fichero (y su salida queda bloqueante); NO lo carga lo que ese test lance (154.6639ms)
+✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (44.9766ms)
+✔ SCRUM-1405c · ③ sembrado: SIN la pieza interna, el módulo GRITA y el proceso no arranca (56.4817ms)
+✔ SCRUM-1405c · ③ sembrado: sin `_handle` (la pieza renombrada), el módulo GRITA (46.1077ms)
+✔ SCRUM-1405c · ③ sembrado: si setBlocking devuelve error, el módulo GRITA (41.5034ms)
+✔ SCRUM-1405c · ③ control negativo: con la salida a FICHERO no hace nada, aunque falte la pieza (42.543ms)
+﹣ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, no más de lo medido (SCRUM-1405d) (773.8571ms) # NO MEDIDO: sin el módulo la cobaya no pierde en 4 pasadas (faltan 0,0,0,0) y la sonda dejó 0 bytes pendientes tras 1 MiB: en este node no hay rojo que ver. Pasa en Windows (J3f: 0 de 30 pasadas de cobaya pierden). Se mide en el CI de Linux.
+✔ SCRUM-1405d · ④ el juez: lo peor medido CON el módulo pasa; el brazo SIN módulo (el módulo roto) cae (0.6482ms)
+✔ SCRUM-1574 · ④ la decisión: una sonda a 0 no salta si el brazo SIN módulo pierde; un salto dice NO MEDIDO (0.3701ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 12976.0979

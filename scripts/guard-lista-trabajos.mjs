@@ -85,9 +85,13 @@ const RUTAS = [
 // hash cambia. No se retira del control: se le exige que su diferencia con la base sea EXACTAMENTE
 // la declarada — quitadas esas tres piezas, el HTML tiene que salir IDÉNTICO al de la base. Es más
 // fuerte que el hash de antes: dice «cambió solo en lo que dijo».
+// ── SCRUM-1562g · FACTURAS TAMPOCO, por el mismo motivo ──────────────────────────────────────
+//
+// 1562g le da A PROPÓSITO a cada fila un botón «Ver detalle» en su propia columna (firma del fundador
+// en SCRUM-1562 c.21125; declaración autorizada en c.21143), así que su hash cambia. Sale de aquí y
+// se le exige lo de Clientes: quitadas sus piezas, IDÉNTICO a la base. Presupuestos sigue por hash.
 const HERMANAS = [
   { ruta: '/presupuestos', rotulo: 'Presupuestos' },
-  { ruta: '/facturas', rotulo: 'Facturas' },
 ];
 
 const { srv, puerto } = await servirListas(PUBLICO, RUTAS);
@@ -521,7 +525,35 @@ titulo('⑥ las hermanas: TRES idénticas por hash · Albaranes trae LO DECLARAD
         1,
         (todo, caja, campo, anadir, quitar) => (sinHuecos(caja, campo, anadir, quitar) ? '' : todo)],
     ];
-    const PIEZAS_DECLARADAS = [...PIEZAS_979, ...PIEZAS_1032, ...PIEZAS_1135];
+    // ── SCRUM-1043a · Clientes: «quién me debe» (filtro, orden, columna «Pendiente de cobro») ──────────
+    // Declaración autorizada por el orquestador en SCRUM-1043 c.20547, sobre los textos que firmó el
+    // fundador en c.20536. Las cinco piezas, con la forma y el recuento MEDIDOS en el HTML que pinta este
+    // banco (admin, filas sin deuda): el botón de alternar en su propia barra, la opción de orden, la
+    // casilla en «Columnas», el <th> y la celda de cada fila, VACÍA porque ningún cliente del banco debe.
+    // Una cifra en la celda, un atributo de más o un texto distinto dejan la pieza sin casar y el guard cae.
+    const PIEZAS_1043a = [
+      ['la barra del filtro «Con cobro pendiente»',
+        /<div class="customers-tabs"([^>]*)><button type="button" class="customers-tab" data-filtro="conDeuda" aria-pressed="false"([^>]*)>Con cobro pendiente<\/button><\/div>/g,
+        1,
+        (todo, barra, boton) => (sinHuecos(barra, boton) ? '' : todo)],
+      ['la opción de orden «Más pendiente de cobro»',
+        /<option value="SALDO"([^>]*)>Más pendiente de cobro<\/option>/g,
+        1,
+        (todo, op) => (sinHuecos(op) ? '' : todo)],
+      ['su casilla en «Columnas»',
+        /<label class="columnas-opcion"([^>]*)><input type="checkbox" data-columna="pendiente"([^>]*)><span([^>]*)>Pendiente de cobro<\/span><\/label>/g,
+        1,
+        (todo, caja, casilla, rotulo) => (sinHuecos(caja, casilla, rotulo) ? '' : todo)],
+      ['el <th> de «Pendiente de cobro»',
+        /<th data-columna="pendiente" class=""([^>]*)>Pendiente de cobro<\/th>/g,
+        1,
+        (todo, th) => (sinHuecos(th) ? '' : todo)],
+      ['la celda vacía de cada fila',
+        /<td class="cell-pendiente"([^>]*)><\/td>/g,
+        filasDeDatos,
+        (todo, td) => (sinHuecos(td) ? '' : todo)],
+    ];
+    const PIEZAS_DECLARADAS = [...PIEZAS_979, ...PIEZAS_1032, ...PIEZAS_1135, ...PIEZAS_1043a];
     const cuentas = PIEZAS_DECLARADAS.map(([nombre, re, esperadas]) => [nombre, (cB._html.match(re) || []).length, esperadas]);
     // 🔴 SE DESHACEN LAS MISMAS PIEZAS EN LOS DOS LADOS. Antes sólo se quitaban de HOY y se comparaba con
     // la base «tal cual», y eso valía mientras la base NO trajera lo declarado. Desde que SCRUM-979 está
@@ -537,15 +569,54 @@ titulo('⑥ las hermanas: TRES idénticas por hash · Albaranes trae LO DECLARAD
     if (filasCli < 2 || filasDeDatos < 1) {
       nosupe(`   🔴 NO SUPE MIRAR · Clientes: la base pintó ${filasCli} <tr> y hoy ${filasDeDatos} filas de cliente.`);
     } else if (cuentas.some(([, n, esperadas]) => n !== esperadas)) {
-      mal('   🔴 Clientes NO trae lo declarado por SCRUM-979, SCRUM-1032 y SCRUM-1135 · '
+      mal('   🔴 Clientes NO trae lo declarado por SCRUM-979, SCRUM-1032, SCRUM-1135 y SCRUM-1043a · '
         + cuentas.map(([nombre, n, esperadas]) => `${nombre}: ${n} de ${esperadas}`).join(' · '));
     } else if (cA.sha === cB.sha) {
       // La base ya trae 979 y 1032: entonces lo que se exige es lo de siempre, que no haya cambiado nada.
-      di(`   ✅ Clientes · ${cA.sha} · idéntico a la base (que ya trae SCRUM-979, SCRUM-1032 y SCRUM-1135)`);
+      di(`   ✅ Clientes · ${cA.sha} · idéntico a la base (que ya trae SCRUM-979, SCRUM-1032, SCRUM-1135 y SCRUM-1043a)`);
     } else if (shaSin !== shaBaseSin) {
-      mal(`   🔴 Clientes ha cambiado MÁS de lo declarado por SCRUM-979, SCRUM-1032 y SCRUM-1135 · base sin lo declarado ${shaBaseSin} ≠ hoy sin lo declarado ${shaSin}`);
+      mal(`   🔴 Clientes ha cambiado MÁS de lo declarado por SCRUM-979, SCRUM-1032, SCRUM-1135 y SCRUM-1043a · base sin lo declarado ${shaBaseSin} ≠ hoy sin lo declarado ${shaSin}`);
     } else {
-      di(`   ✅ Clientes trae LO DECLARADO (SCRUM-979, SCRUM-1032 y SCRUM-1135) y nada más · sin esas piezas (${filasDeDatos} celdas de cada fila), idéntico a la base sin ellas ${shaBaseSin}`);
+      di(`   ✅ Clientes trae LO DECLARADO (SCRUM-979, SCRUM-1032, SCRUM-1135 y SCRUM-1043a) y nada más · sin esas piezas (${filasDeDatos} celdas de cada fila), idéntico a la base sin ellas ${shaBaseSin}`);
+    }
+
+    // ── SCRUM-1562g · Facturas: su diferencia con la base es EXACTAMENTE la declarada ──────────
+    // Declaración autorizada por el fundador en SCRUM-1562 c.21143, sobre el texto que firmó en c.21125.
+    // Las piezas, MEDIDAS en el HTML que pinta este banco (1280 px, sin facturas: la lista sale con su
+    // vacío): el `<th>` sin texto de la columna nueva (1), y el `colspan` del vacío, que la vista DERIVA
+    // del número de columnas y por eso pasa de 7 a 8 (1). El colspan no se borra: se deshace SÓLO si es
+    // igual al número de `<th>` de esa misma pantalla, así que un colspan desajustado se queda y cae.
+    // Va ANTES que el `<th>`, porque se cuenta con él puesto. Las filas con «Ver detalle» no salen en
+    // este banco (no hay facturas): las mide `tests/scrum1562g-facturas-con-teclado.test.mjs`.
+    const fA = await huella(puertoMain, '/facturas');
+    const fB = await huella(puerto, '/facturas');
+    const filasFac = (fA._html.match(/<tr[\s>]/g) || []).length;
+    const columnas = (html) => (html.match(/<th[\s>]/g) || []).length;
+    const PIEZAS_1562g = [
+      ['el colspan del vacío, igual al número de columnas',
+        /<td colspan="(\d+)"([^>]*)><div class="empty-state"([^>]*)>/g,
+        1,
+        (todo, n, td, caja, _pos, html) => (sinHuecos(td, caja) && Number(n) === columnas(html) ? '<td colspan="=columnas"><div class="empty-state">' : todo)],
+      ['el <th> sin texto de la columna «Ver detalle»',
+        /\n[ \t]*<th([^>]*)><\/th>/g,
+        1,
+        (todo, th) => (sinHuecos(th) ? '' : todo)],
+    ];
+    const cuentasFac = PIEZAS_1562g.map(([nombre, re, esperadas]) => [nombre, (fB._html.match(re) || []).length, esperadas]);
+    const deshacerFac = (html) => PIEZAS_1562g.reduce((h, [, re, , sustituto]) => h.replace(re, sustituto), html);
+    const shaFacSin = sha(deshacerFac(fB._html));
+    const shaFacBaseSin = sha(deshacerFac(fA._html));
+    if (filasFac < 2) {
+      nosupe(`   🔴 NO SUPE MIRAR · Facturas: la pantalla de la base pintó ${filasFac} <tr> (${fA.largo} caracteres).`);
+    } else if (cuentasFac.some(([, n, esperadas]) => n !== esperadas)) {
+      mal('   🔴 Facturas NO trae lo declarado por SCRUM-1562g · '
+        + cuentasFac.map(([nombre, n, esperadas]) => `${nombre}: ${n} de ${esperadas}`).join(' · '));
+    } else if (fA.sha === fB.sha) {
+      di(`   ✅ Facturas · ${fA.sha} · idéntico a la base (que ya trae SCRUM-1562g)`);
+    } else if (shaFacSin !== shaFacBaseSin) {
+      mal(`   🔴 Facturas ha cambiado MÁS de lo declarado por SCRUM-1562g · base sin lo declarado ${shaFacBaseSin} ≠ hoy sin lo declarado ${shaFacSin}`);
+    } else {
+      di(`   ✅ Facturas trae LO DECLARADO (SCRUM-1562g) y nada más · sin esas piezas, idéntico a la base sin ellas ${shaFacBaseSin}`);
     }
     srvMain.close();
   }

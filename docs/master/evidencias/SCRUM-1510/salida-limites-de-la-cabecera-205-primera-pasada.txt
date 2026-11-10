@@ -1,0 +1,27 @@
+ESPEJO: 3 ficheros cotejados por sha256 con el árbol · distintos 0
+BASE · tests/scrum205-fallo-de-sellado-no-entrega.test.mjs · tests 3 · pass 3 · fail 0
+
+POBLACION=6 mutaciones declaradas (2 siembras positivas + 4 límites)
+ACIERTA  · S1 · SIEMBRA POSITIVA de L1: el fallo devuelve «sellado» (= A1 de SCRUM-1404)
+           esperaba: que caiga «① un `sellado_fallido` registrado» nombrando «selladoEstado.ts:», y sólo ése
+           visto (3 casos · pass 2 · fail 1): caen 1: SCRUM-205 · ① un `sellado_fallido` registrado va atado a un estado que bloquea
+ACIERTA  · S2 · SIEMBRA POSITIVA de L2 y L4: el reintento sella, tira el resultado y entrega (= C1)
+           esperaba: que caiga «③ ningún llamador descarta» nombrando «ALGUIEN SELLA», y sólo ése
+           visto (3 casos · pass 2 · fail 1): caen 1: SCRUM-205 · ③ ningún llamador descarta el resultado del sellado y entrega bytes
+ACIERTA  · L1 · LÍMITE: como S1, con un `throw` en OTRA rama que nunca se ejecuta
+           esperaba: MUDA
+           visto (3 casos · pass 3 · fail 0): MUDA: no cae nada
+ACIERTA  · L2 · LÍMITE: como S2, preguntando al portero DESPUÉS de entregar y sin leer su respuesta
+           esperaba: MUDA
+           visto (3 casos · pass 3 · fail 0): MUDA: no cae nada
+SORPRESA · L3 · LÍMITE: como S2, entregando con un productor que no está en la lista de tres nombres
+           esperaba: MUDA
+           visto (3 casos · pass 2 · fail 1): caen 1: SCRUM-205 · ③ ningún llamador descarta el resultado del sellado y entrega bytes
+ACIERTA  · L4 · UN PISO MÁS ARRIBA: un ayudante sella y tira; quien lo llama entrega. Lo caza el TOPE, no la regla
+           esperaba: que caiga «③ ningún llamador descarta» nombrando «RATCHET» y NO «ALGUIEN SELLA», y sólo ése
+           visto (3 casos · pass 2 · fail 1): caen 1: SCRUM-205 · ③ ningún llamador descarta el resultado del sellado y entrega bytes
+
+espejo restaurado tras las mutaciones: sí
+ÁRBOL DE VERDAD: 3 ficheros con sha256 antes y después · movidos 0 · espejo borrado: sí
+sorpresas 1 · ciegas 0
+EXIT=1

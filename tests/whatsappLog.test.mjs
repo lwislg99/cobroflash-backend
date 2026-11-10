@@ -19,9 +19,22 @@ test('shouldApplyStatus: avanza pero nunca retrocede', () => {
   assert.equal(shouldApplyStatus('sent', 'sent'), false);
 });
 
-test('shouldApplyStatus: failed siempre se aplica (aunque ya esté read)', () => {
-  assert.equal(shouldApplyStatus('read', 'failed'), true);
+// SCRUM-1601: aquí decía «failed siempre se aplica (aunque ya esté read)», y la Parte L solo fija
+// `queued|sent → failed`. La medición por el webhook, en tests/scrum1601-transiciones-del-webhook-wa.test.mjs.
+test('shouldApplyStatus: failed solo desde queued o sent, y de failed no se sale', () => {
   assert.equal(shouldApplyStatus('queued', 'failed'), true);
+  assert.equal(shouldApplyStatus('sent', 'failed'), true);
+  assert.equal(shouldApplyStatus('read', 'failed'), false);
+  assert.equal(shouldApplyStatus('delivered', 'failed'), false);
+  assert.equal(shouldApplyStatus('failed', 'sent'), false);
+});
+
+// SCRUM-1601c (decisión c.20709): el único salto firmado es `sent → read` (c.20673). Desde
+// `queued` sólo se va a `sent` o a `failed`.
+test('shouldApplyStatus: sent → read sí; queued no salta a delivered ni a read', () => {
+  assert.equal(shouldApplyStatus('sent', 'read'), true);
+  assert.equal(shouldApplyStatus('queued', 'delivered'), false);
+  assert.equal(shouldApplyStatus('queued', 'read'), false);
 });
 
 test('shouldApplyStatus: estado desconocido no degrada uno conocido', () => {

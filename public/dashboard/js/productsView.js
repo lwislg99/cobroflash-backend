@@ -178,7 +178,8 @@ function renderProductsView(container) {
     container.innerHTML = "";
   
     const wrap = document.createElement("div");
-    wrap.className = "data-card";
+    // SCRUM-1559j · `catalogo-productos` es el enganche de las reglas de 44 px de styles.css.
+    wrap.className = "data-card catalogo-productos";
     container.appendChild(wrap);
 
     const header = document.createElement("div");
@@ -817,7 +818,7 @@ function renderProductsView(container) {
   
         const vatPct = (it.vat === null || typeof it.vat === "undefined")
           ? "—"
-          : (Number(it.vat) * 100).toFixed(0) + " %";
+          : fmtTipoIvaEs(it.vat) + " %";
         const activePill = it.isActive
           ? '<span class="status-pill status-pill-accepted">ACTIVO</span>'
           : '<span class="status-pill status-pill-draft">INACTIVO</span>';

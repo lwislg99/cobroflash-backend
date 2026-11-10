@@ -1,0 +1,22 @@
+﻿BASE sin mutar: status 0 · caídos 0
+#1 CAE · numstat «1	1	scripts/meta-guard-mutaciones.mjs» · status 1 · caídos: SCRUM-935d · 🔴 con el presupuesto agotado, CORTA; con margen, no
+#2 CAE · numstat «1	1	scripts/meta-guard-mutaciones.mjs» · status 1 · caídos: SCRUM-935d · lo pendiente empieza en la mutación del corte, no en la primera del guard
+#3 CAE · numstat «1	1	scripts/meta-guard-mutaciones.mjs» · status 1 · caídos: SCRUM-935d · si DOS jobs corren el instrumento, no sé de cuál soy: sin techo
+#4 CAE · numstat «1	1	scripts/meta-guard-mutaciones.mjs» · status 1 · caídos: SCRUM-935d · 🔴 EL BUCLE: mira el presupuesto antes de cada pasada, y el corte sale como CIEGA
+restaurado: «»
+✔ SCRUM-935d · el techo se LEE de ci.yml: el job que corre `npm run meta:mutaciones` (2.4751ms)
+✔ SCRUM-935d · si DOS jobs corren el instrumento, no sé de cuál soy: sin techo (0.313ms)
+✔ SCRUM-935d · el presupuesto: forzado, fuera de CI, y en CI desde ci.yml (1.626ms)
+✔ SCRUM-935d · 🔴 con el presupuesto agotado, CORTA; con margen, no (0.2383ms)
+✔ SCRUM-935d · lo pendiente empieza en la mutación del corte, no en la primera del guard (0.6503ms)
+✔ SCRUM-935d · el mensaje del corte nombra CADA guard sin juzgar y cuántas le faltan (0.269ms)
+✔ SCRUM-935d · el coste por guard nombra a los que pasan de 60 s, con la población (0.3242ms)
+✔ SCRUM-935d · 🔴 EL BUCLE: mira el presupuesto antes de cada pasada, y el corte sale como CIEGA (68.4097ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3181.398

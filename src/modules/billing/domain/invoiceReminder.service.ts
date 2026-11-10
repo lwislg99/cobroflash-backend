@@ -82,23 +82,53 @@ export async function sendInvoicePaymentReminders(): Promise<void> {
 
   console.log(`[invoiceReminder] ${total7} recordatorio(s) 7d, ${total14} recordatorio(s) 14d`);
 
-  // SCRUM-116: el candado se cierra SOLO si el envío salió. Si falla, la factura sigue con
-  // su `reminderXSentAt` a null y vuelve a entrar mañana. Antes se marcaba siempre, así que
-  // un fallo la sacaba de este `where` PARA SIEMPRE y esa factura no se reclamaba nunca más.
-  for (const inv of toRemind7) {
-    if (!(await sendReminderWA(inv, 7))) continue;
-    await prisma.invoice.update({
-      where: { id: inv.id },
-      data: { reminder7SentAt: new Date() },
-    }).catch((e) => console.error(`[invoiceReminder] error 7d inv #${inv.id}:`, e?.message));
+  // SCRUM-1509j (fundador, «A + E», SCRUM-1508 c.20470): el candado se RESERVA ANTES de enviar.
+  // Antes se escribía DESPUÉS, con el error tragado: si esa escritura fallaba, la factura seguía
+  // «sin recordar» y el cron la volvía a mandar cada día (60 plantillas en 30 días, SCRUM-1509b).
+  // Si no se puede anotar, no se envía. Y SCRUM-116 sigue: si el envío falla, la reserva se
+  // libera y la factura vuelve a entrar mañana.
+  for (const [lote, campo, day] of [[toRemind7, 'reminder7SentAt', 7], [toRemind14, 'reminder14SentAt', 14]] as const) {
+    for (const inv of lote) {
+      if (!(await reservarCandado(inv.id, campo))) continue;
+      if (await sendReminderWA(inv, day)) continue;
+      await liberarCandado(inv.id, campo);
+    }
   }
+}
 
-  for (const inv of toRemind14) {
-    if (!(await sendReminderWA(inv, 14))) continue;
-    await prisma.invoice.update({
-      where: { id: inv.id },
-      data: { reminder14SentAt: new Date() },
-    }).catch((e) => console.error(`[invoiceReminder] error 14d inv #${inv.id}:`, e?.message));
+type Candado = 'reminder7SentAt' | 'reminder14SentAt';
+
+/**
+ * Pone el candado SI sigue libre, y dice si lo ha puesto. `false` = no se envía: o no se pudo
+ * escribir (la base falla) o ya lo había puesto otra pasada (dos instancias del cron).
+ */
+async function reservarCandado(id: number, campo: Candado): Promise<boolean> {
+  try {
+    // Cada candado con su nombre LITERAL: el censo de la regla 29 (scrum878) no clasifica un `[campo]`.
+    const { count } = campo === 'reminder7SentAt'
+      ? await prisma.invoice.updateMany({ where: { id, reminder7SentAt: null }, data: { reminder7SentAt: new Date() } })
+      : await prisma.invoice.updateMany({ where: { id, reminder14SentAt: null }, data: { reminder14SentAt: new Date() } });
+    return count === 1;
+  } catch (e: any) {
+    console.error(`[invoiceReminder] no se pudo reservar ${campo} de inv #${id}; NO se envía (SCRUM-1509j):`, e?.message);
+    return false; // sin anotar no se envía
+  }
+}
+
+/**
+ * El envío falló: devuelve el candado a null para que mañana se reintente (SCRUM-116). Si
+ * tampoco se puede escribir eso, el candado se queda puesto y ese aviso NO se reenvía: es el
+ * lado seguro de «si no puede anotar, se para» (SCRUM-1509j), y se dice aquí.
+ */
+async function liberarCandado(id: number, campo: Candado): Promise<void> {
+  try {
+    if (campo === 'reminder7SentAt') {
+      await prisma.invoice.updateMany({ where: { id, reminder7SentAt: { not: null } }, data: { reminder7SentAt: null } });
+    } else {
+      await prisma.invoice.updateMany({ where: { id, reminder14SentAt: { not: null } }, data: { reminder14SentAt: null } });
+    }
+  } catch (e: any) {
+    console.error(`[invoiceReminder] no se pudo liberar ${campo} de inv #${id}; ese aviso NO se reintentará (SCRUM-1509j):`, e?.message);
   }
 }
 

@@ -1,0 +1,3 @@
+✔ control positivo: la herramienta responde (33 tablas).
+✔ sin cambios pendientes — y el vacío está COMPROBADO, no supuesto: la propia
+  herramienta lo ha escrito, y antes ha demostrado que sabe contestar.

@@ -208,6 +208,10 @@ test('SCRUM-815 · 📌 el censo de EFECTOS del manejador no crece sin decirlo',
     // manejador. El reparto de reversibles no cambia; lo que cambia es que un rechazo SALTA la
     // escritura, la recompensa y el correo, y el evento se cierra igual como procesado.
     planQueExiste: 3,                // sin BD y sin salida: pregunta y avisa
+    // ── SCRUM-1565, 20-oct-2026: el fin del periodo, leído del payload (raíz o items). No es un
+    // efecto: no escribe en BD ni sale del proceso. Sin fecha, la escritura de plan sigue saliendo
+    // —la MISMA, sin tocar `planExpiresAt`—, así que el reparto de reversibles no cambia.
+    finDePeriodo: 1,                 // sin BD y sin salida: lee el payload
   },'🔴 HA CAMBIADO LO QUE HACE EL MANEJADOR. La decisión de SCRUM-815 se tomó sobre estos '
     + 'efectos: tres salidas fuera del proceso, cinco escrituras de plan, una recompensa y un '
     + 'correo. Si la lista cambia, la propuesta de columnas hay que releerla antes de aplicarla.');

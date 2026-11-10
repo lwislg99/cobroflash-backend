@@ -1,0 +1,20 @@
+Guards que mencionan el filtro de comentarios: 121
+A medir: 1 de 121 (el resto, 120, tiene ficha al día en `tests/_veredicto-mudez.json`)
+
+① Pasada limpia e instrumentada — cuántos tests corre cada uno, y si llama al filtro
+   llaman al filtro de verdad: 0 · sólo lo mencionan: 1
+
+② Pasada mutada — `soloEjecutable` devuelve la cadena vacía
+
+════════ VEREDICTO · de los 1 medidos ahora, sobre 121 ════════
+  VIVO       0
+  MUDO       0
+  CIEGO      1
+  NO APLICA  0
+  YA ROJO    0
+
+⚠️ CIEGOS — no ejecutaron ni un test. Verde por no mirar:
+    scrum888b-descuento-redibuja.test.mjs
+
+✓ `tests/_guard-texto.mjs` comprobado idéntico al original.
+✎ `tests/_veredicto-mudez.json`: 121 fichas (1 medidas ahora · filtro 08264861770a1dd6 de `tests/_guard-texto.mjs`).

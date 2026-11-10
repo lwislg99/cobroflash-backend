@@ -129,6 +129,7 @@ test('SCRUM-716 · 🔴 el sha ABREVIADO es el mismo commit, y el prefijo va dec
 // retira A MANO, como estaba escrito que había que hacerlo: **el fundador autorizó tocar
 // `vigilante-de-despliegue.mjs` el 7-sep-2026, con las palabras «Sí autorizo»**. En su lugar entra
 // el de abajo, que ya no vigila que NADIE la llame sino que la llame QUIEN DEBE.
+// Consta en: SCRUM-1502 comentario 20629.
 
 test('SCRUM-716 · 🔴 el vigía SÍ la llama ahora, y por AST', () => {
   // El reverso del que se retiró. Si un merge desconectara la pieza, el vigía volvería a pintar

@@ -10,6 +10,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
+import { comercioSuprimido } from '../../domain/comercioSuprimido'; // SCRUM-1573b
 import { esc, formatImporteEs, formatMoneyEs } from '../../../../core/utils/utils';
 import { isFlagEnabled } from '../../../../core/flags';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
@@ -134,6 +135,7 @@ router.get('/bizum/:token', async (req, res) => {
 
   const charge = await loadBizumCharge(token);
   if (!charge) return res.status(404).send(documentNotFoundHtml());
+  if (comercioSuprimido(charge.merchant)) return res.status(404).send(documentNotFoundHtml()); // SCRUM-1573b
   const id = charge.id;
   if (charge.status === 'paid' || charge.status === 'expired') {
     return res.redirect(303, `/recibo/${token}`);
@@ -180,6 +182,7 @@ router.post('/bizum/:token/claimed', async (req, res) => {
 
   const charge = await loadBizumCharge(token);
   if (!charge) return res.status(404).send(documentNotFoundHtml());
+  if (comercioSuprimido(charge.merchant)) return res.status(404).send(documentNotFoundHtml()); // SCRUM-1573b
   const id = charge.id;
   if (charge.status !== 'pending') {
     return res.redirect(303, `/recibo/${token}`);

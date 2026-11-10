@@ -1,0 +1,81 @@
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+SCRUM-1570c · banco (a) · Edge de Windows, 4G emulada · 2 repeticiones por fila · anchos 360,390
+reserva  versión  fuente  caso      ancho · CLS (cada repetición) · sub primer pintado→final · familias cargadas · saltos de la 1ª
+sistema  antes    ok     vendidas   360 · CLS 0.025 / 0.025 · sub 132→132 · Inter
+        0.025@1366 SECTION.hero 160→181 | NAV.nav-links 107→107 | ::after 47→69 | SPAN 60→82 | A 59→81
+sistema  antes    ok     vendidas   390 · CLS 0.004 / 0.004 · sub 106→106 · Inter
+        0.004@1332 #text 274→275 | NAV.nav-links 86→86 | SPAN 60→60 | SPAN.dot 655→654
+sistema  antes    ok     cero       360 · CLS 0.025 / 0.025 · sub 132→132 · Inter
+        0.025@1307 SECTION.hero 160→181 | NAV.nav-links 107→107 | ::after 47→69 | A 59→81
+sistema  antes    ok     cero       390 · CLS 0.004 / 0.004 · sub 106→106 · Inter
+        0.004@1329 #text 274→275 | NAV.nav-links 86→86 | SPAN.dot 655→654
+sistema  antes    ok     roto       360 · CLS 0.023 / 0.023 · sub 132→132 · Inter
+        0.023@1336 SECTION.hero 160→181 | NAV.nav-links 107→107
+sistema  antes    ok     roto       390 · CLS 0.004 / 0.004 · sub 106→106 · Inter
+        0.004@1351 #text 274→275 | NAV.nav-links 86→86 | SPAN.dot 655→654
+sistema  antes    rota   vendidas   360 · CLS 0 / 0 · sub 132→132 · 
+sistema  antes    rota   vendidas   390 · CLS 0 / 0 · sub 106→106 · 
+sistema  despues  ok     vendidas   360 · CLS 0 / 0 · sub 132→132 · Inter,YaQu Reserva Arial
+        0@1391 ::after 58→69 | SPAN 71→82 | A 70→81
+sistema  despues  ok     vendidas   390 · CLS 0 / 0 · sub 106→106 · Inter,YaQu Reserva Arial
+sistema  despues  ok     cero       360 · CLS 0 / 0 · sub 132→132 · Inter,YaQu Reserva Arial
+        0@1393 ::after 58→69 | A 70→81
+sistema  despues  ok     cero       390 · CLS 0 / 0 · sub 106→106 · Inter,YaQu Reserva Arial
+sistema  despues  ok     roto       360 · CLS 0 / 0 · sub 132→132 · Inter,YaQu Reserva Arial
+sistema  despues  ok     roto       390 · CLS 0 / 0 · sub 106→106 · Inter,YaQu Reserva Arial
+sistema  despues  rota   vendidas   360 · CLS 0 / 0 · sub 132→132 · YaQu Reserva Arial
+sistema  despues  rota   vendidas   390 · CLS 0 / 0 · sub 106→106 · YaQu Reserva Arial
+arial    antes    ok     vendidas   360 · CLS 0.023 / 0.023 · sub 132→132 · Inter
+        0.023@1287 SECTION.hero 160→181 | ::after 47→69 | SPAN 60→82 | A 59→81
+arial    antes    ok     vendidas   390 · CLS 0.011 / 0.011 · sub 106→106 · Inter
+        0.011@1296 DIV.cta-row 495→483 | H1 248→239 | P.sub 377→365 | DIV.stage 693→681 | DIV.win 711→699
+arial    antes    ok     cero       360 · CLS 0.023 / 0.023 · sub 132→132 · Inter
+        0.023@1264 SECTION.hero 160→181 | ::after 47→69 | A 59→81
+arial    antes    ok     cero       390 · CLS 0.011 / 0.011 · sub 106→106 · Inter
+        0.011@1307 DIV.cta-row 495→483 | H1 248→239 | P.sub 377→365 | DIV.stage 693→681 | DIV.win 711→699
+arial    antes    ok     roto       360 · CLS 0.022 / 0.022 · sub 132→132 · Inter
+        0.022@1341 SECTION.hero 160→181
+arial    antes    ok     roto       390 · CLS 0.011 / 0.011 · sub 106→106 · Inter
+        0.011@1306 DIV.cta-row 495→483 | H1 248→239 | P.sub 377→365 | DIV.stage 693→681 | DIV.win 711→699
+arial    antes    rota   vendidas   360 · CLS 0 / 0 · sub 132→132 · 
+arial    antes    rota   vendidas   390 · CLS 0 / 0 · sub 106→106 · 
+arial    despues  ok     vendidas   360 · CLS 0 / 0 · sub 132→132 · Inter,YaQu Reserva Arial
+        0@1400 ::after 58→69 | SPAN 71→82 | A 70→81
+arial    despues  ok     vendidas   390 · CLS 0 / 0 · sub 106→106 · Inter,YaQu Reserva Arial
+arial    despues  ok     cero       360 · CLS 0 / 0 · sub 132→132 · Inter,YaQu Reserva Arial
+        0@1432 ::after 58→69 | A 70→81
+arial    despues  ok     cero       390 · CLS 0 / 0 · sub 106→106 · Inter,YaQu Reserva Arial
+arial    despues  ok     roto       360 · CLS 0 / 0 · sub 132→132 · Inter,YaQu Reserva Arial
+arial    despues  ok     roto       390 · CLS 0 / 0 · sub 106→106 · Inter,YaQu Reserva Arial
+arial    despues  rota   vendidas   360 · CLS 0 / 0 · sub 132→132 · YaQu Reserva Arial
+arial    despues  rota   vendidas   390 · CLS 0 / 0 · sub 106→106 · YaQu Reserva Arial
+dejavu   antes    ok     vendidas   360 · CLS 0.005 / 0.005 · sub 132→132 · Inter,SondaDV
+        0.005@1405 NAV.nav-links 107→107 | DIV.stage 770→741 | DIV.win 0→759 | SPAN.lbls 0→762 | SPAN 82→82
+dejavu   antes    ok     vendidas   390 · CLS 0.043 / 0.043 · sub 132→106 · Inter,SondaDV
+        0.043@1409 ::before 181→160 | NAV.nav-links 86→86 | ::after 69→47 | SPAN 82→60 | A 81→59
+dejavu   antes    ok     cero       360 · CLS 0.005 / 0.005 · sub 132→132 · Inter,SondaDV
+        0.005@1386 NAV.nav-links 107→107 | DIV.stage 770→741 | DIV.win 0→759 | ::after 69→69 | A 81→81
+dejavu   antes    ok     cero       390 · CLS 0.043 / 0.043 · sub 132→106 · Inter,SondaDV
+        0.043@1401 ::before 181→160 | NAV.nav-links 86→86 | ::after 69→47 | A 81→59
+dejavu   antes    ok     roto       360 · CLS 0.005 / 0.005 · sub 132→132 · Inter,SondaDV
+        0.005@1365 NAV.nav-links 107→107 | DIV.stage 770→741 | DIV.win 0→759 | ::after 0→764 | SPAN.dot 714→714
+dejavu   antes    ok     roto       390 · CLS 0.042 / 0.042 · sub 132→106 · Inter,SondaDV
+        0.042@1399 ::before 181→160 | NAV.nav-links 86→86
+dejavu   antes    rota   vendidas   360 · CLS 0 / 0 · sub 132→132 · SondaDV
+dejavu   antes    rota   vendidas   390 · CLS 0 / 0 · sub 132→132 · SondaDV
+        descriptores SondaDV: {"weight":"100 500","sizeAdjust":"94.16%","ascentOverride":"102.89%","descentOverride":"25.62%","lineGapOverride":"0%","unicodeRange":"U+0000-02BA,U+02BB-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2000-206F,U+20A0-20C0,U+2113,U+2191,U+2193,U+2212,U+2215,U+2C60-2C7F,U+A720-A7FF,U+FEFF,U+FFFD"} {"weight":"600 700","sizeAdjust":"86.26%","ascentOverride":"112.31%","descentOverride":"27.96%","lineGapOverride":"0%","unicodeRange":"U+0000-02BA,U+02BB-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2000-206F,U+20A0-20C0,U+2113,U+2191,U+2193,U+2212,U+2215,U+2C60-2C7F,U+A720-A7FF,U+FEFF,U+FFFD"} {"weight":"800 900","sizeAdjust":"87.72%","ascentOverride":"110.44%","descentOverride":"27.50%","lineGapOverride":"0%","unicodeRange":"U+0000-02BA,U+02BB-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2000-206F,U+20A0-20C0,U+2113,U+2191,U+2193,U+2212,U+2215,U+2C60-2C7F,U+A720-A7FF,U+FEFF,U+FFFD"}
+dejavu   despues  ok     vendidas   360 · CLS 0.015 / 0.015 · sub 132→132 · Inter,SondaDV
+        0.015@1421 DIV.cta-row 531→543 | P.sub 387→399 | H1 261→273 | DIV.stage 729→741 | SPAN.eyebrow 227→219
+dejavu   despues  ok     vendidas   390 · CLS 0.002 / 0.002 · sub 106→106 · Inter,SondaDV
+        0.002@1399 #text 275→275 | SPAN.dot 654→654 | SPAN.dot 654→654
+dejavu   despues  ok     cero       360 · CLS 0.015 / 0.015 · sub 132→132 · Inter,SondaDV
+        0.015@1410 DIV.cta-row 531→543 | P.sub 387→399 | H1 261→273 | DIV.stage 729→741 | SPAN.eyebrow 227→219
+dejavu   despues  ok     cero       390 · CLS 0.002 / 0.002 · sub 106→106 · Inter,SondaDV
+        0.002@1380 #text 275→275 | SPAN.dot 654→654 | SPAN.dot 654→654
+dejavu   despues  ok     roto       360 · CLS 0.015 / 0.015 · sub 132→132 · Inter,SondaDV
+        0.015@1404 DIV.cta-row 531→543 | P.sub 387→399 | H1 261→273 | DIV.stage 729→741 | SPAN.eyebrow 227→219
+dejavu   despues  ok     roto       390 · CLS 0.002 / 0.002 · sub 106→106 · Inter,SondaDV
+        0.002@1418 #text 275→275 | SPAN.dot 654→654 | SPAN.dot 654→654
+dejavu   despues  rota   vendidas   360 · CLS 0 / 0 · sub 132→132 · SondaDV
+dejavu   despues  rota   vendidas   390 · CLS 0 / 0 · sub 106→106 · SondaDV
+todas las filas con inyección, observador y la reserva esperada cargada

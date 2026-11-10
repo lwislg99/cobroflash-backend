@@ -1,0 +1,18 @@
+═══ ① BASE · sin logo, tres pasadas (el 16-sep: 5209 · 5209 · 5209) ═══
+   5216 · 5216 · 5216 bytes · imágenes en el PDF: 2
+   ¿tamaño estable? ✅ sí
+
+   suelo del peor caso: PNG de ruido 1049476 B sobre 1048576 B en crudo (100.1 %)
+
+═══ ② CON LOGO · bytes del PDF y cuánto añade sobre la base ═══
+      13491 B PDF · logo    10219 B · data URI    13650 car. · imágenes 4 · embebido · icon-192.png del repo (192×192)
+      31889 B PDF · logo    51740 B · data URI    69010 car. · imágenes 4 · embebido · icon-512.png del repo (512×512, el tope del reescalado)
+    1054567 B PDF · logo  1049476 B · data URI  1399326 car. · imágenes 4 · embebido · PEOR CASO fabricado: PNG RGBA 512×512 de ruido
+
+═══ ③ CONTROL SEMBRADO · logo con base64 BASURA → tiene que salir «NO embebido» ═══
+   5216 B · imágenes 2 · ✅ NO embebido
+
+═══ LECTURA ═══
+   población: 1 fixture × (3 base + 3 logos + 1 basura) = 7 PDF generados con dist/.
+   techo medido: 1054567 B (1029.9 KiB) por PDF con el peor logo que el producto deja subir.
+   ¿cabe el peor caso en el límite del esquema (1.500.000 car.)? sí

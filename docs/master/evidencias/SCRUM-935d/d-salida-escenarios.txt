@@ -1,0 +1,14 @@
+﻿0 · CONTROL: main sin tocar (HEAD=M, main=M)
+   status 0 · tests 15 · pass 15 · fail 0
+1 · CONTROL POSITIVO: S5 sin la línea, como PR (HEAD=D, main=M)
+   status 1 · tests 15 · pass 14 · fail 1
+   caen: ✅ CONTROL POSITIVO: con el árbol tal cual, el suelo CALLA
+2 · sólo la línea, como PR (HEAD=E, main=M)
+   status 0 · tests 15 · pass 15 · fail 0
+3 · línea YA en main, luego S5 sin línea: merge de CI (HEAD=E+D, main=E)
+   status 1 · tests 15 · pass 14 · fail 1
+   caen: ✅ CONTROL POSITIVO: con el árbol tal cual, el suelo CALLA
+4 · JUNTAS en un PR (HEAD=DE, main=M)
+   status 0 · tests 15 · pass 15 · fail 0
+5 · juntas YA en main, el PR siguiente (HEAD=DE, main=DE)
+   status 0 · tests 15 · pass 15 · fail 0

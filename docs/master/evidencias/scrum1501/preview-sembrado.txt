@@ -1,0 +1,13 @@
+✔ control positivo: la herramienta responde (33 tablas).
+
+──────── SQL QUE SE APLICARÍA ────────
+-- AlterTable
+ALTER TABLE "whatsapp_messages" DROP COLUMN "sembrado";
+
+-- AlterTable
+ALTER TABLE "email_messages" DROP COLUMN "sembrado";
+
+──────── VEREDICTO ────────
+🔴 2 sentencia(s) DESTRUCTIVA(S) — esto no es aditivo:
+   ALTER TABLE "whatsapp_messages" DROP COLUMN "sembrado";
+   ALTER TABLE "email_messages" DROP COLUMN "sembrado";

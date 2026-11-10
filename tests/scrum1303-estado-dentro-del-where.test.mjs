@@ -31,6 +31,24 @@ const RAIZ = path.resolve(import.meta.dirname, '..');
 const requiere = createRequire(import.meta.url);
 const rutaDe = (r) => requiere.resolve(path.join(RAIZ, r));
 
+// SCRUM-1314b: las dos piezas del arreglo, cada una con el caso que la sujeta (medidas sobre `dist/`).
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // Sellar sin `pending` en el `where`: el cobro de en medio ya no impide la huella.
+    fichero: 'src/modules/invoicing/domain/verifactu.service.ts',
+    de: "        where: { id: invoice.id, status: 'pending' },",
+    a: '        where: { id: invoice.id },',
+    cae: 'SCRUM-1314b · 🔴 tras B′ NO queda eslabón de anulación',
+  },
+  {
+    // Quitar la guarda de P2: una factura con `vfAnulHash` se vuelve a sellar y la huella se pisa.
+    fichero: 'src/modules/invoicing/domain/verifactu.service.ts',
+    de: 'if (yaAnulada?.vfAnulHash) {',
+    a: 'if (false) {',
+    cae: 'SCRUM-1314b · 🔴 P2 una factura que ya tiene `vfAnulHash` NO se vuelve a sellar',
+  },
+];
+
 const M = 4303;
 const FACTURA = 1303;
 const COBRO = 2303;
@@ -52,7 +70,11 @@ function casa(fila, where = {}) {
   });
 }
 
-const estado = { fila: null, cobro: null, escrituras: [], liberaciones: 0, enElCerrojo: null, alEscribir: null };
+const estado = {
+  fila: null, cobro: null, escrituras: [], liberaciones: 0, enElCerrojo: null, alEscribir: null,
+  // SCRUM-1314b: el 500 de en medio y la vuelta atrás de la transacción (ver el doble, abajo).
+  fallarAlLiberar: false, deshacerAlFallar: false,
+};
 
 function nuevaFila(status = 'pending') {
   estado.fila = {
@@ -70,9 +92,11 @@ function nuevaFila(status = 'pending') {
   estado.liberaciones = 0;
   estado.enElCerrojo = null;
   estado.alEscribir = null;
+  estado.fallarAlLiberar = false;
+  estado.deshacerAlFallar = false;
 }
 
-const doble = dobleDeLaBase({
+const base = dobleDeLaBase({
   'invoice.findFirst': (a) => (casa(estado.fila, a?.where) ? { ...estado.fila } : null),
   'invoice.findUnique': (a) => (casa(estado.fila, a?.where) ? { ...estado.fila } : null),
   'invoice.update': async (a) => {
@@ -87,13 +111,32 @@ const doble = dobleDeLaBase({
     Object.assign(estado.fila, a.data);
     return { ...estado.fila };
   },
-  'albaran.updateMany': () => { estado.liberaciones++; return { count: 0 }; },
+  'albaran.updateMany': () => {
+    if (estado.fallarAlLiberar) { estado.fallarAlLiberar = false; throw new Error('SCRUM-1314b: la base se cae al liberar (un 500)'); }
+    estado.liberaciones++;
+    return { count: 0 };
+  },
   'albaranLineaFacturada.deleteMany': () => ({ count: 0 }),
   'merchant.findUnique': () => ({ id: M, taxId: 'B12345678', country: 'ES', timezone: 'Europe/Madrid' }),
   'charge.findUnique': () => ({ ...estado.cobro }),
   'charge.update': (a) => { Object.assign(estado.cobro, a?.data ?? {}); return { ...estado.cobro }; },
   // El cerrojo del sellado de la anulación: aquí está el hueco ANCHO de ①.
   '$executeRaw': async () => { const g = estado.enElCerrojo; estado.enElCerrojo = null; if (g) await g(); return 1; },
+});
+
+// SCRUM-1314b · LA VUELTA ATRÁS DE UNA TRANSACCIÓN QUE LANZA. El doble de la casa llama al callback
+// y nada más: lo escrito dentro se queda escrito aunque la transacción lance, y eso haría pasar por
+// «eslabón huérfano» lo que en Postgres se deshace. Sólo se activa en el caso que lo pide, porque
+// restaurar la foto entera borraría también lo que otra petición escribió en medio (el cobro de ①).
+const doble = new Proxy(base, {
+  get: (_t, p) => {
+    if (p !== '$transaction') return base[p];
+    return async (arg) => {
+      if (typeof arg !== 'function' || !estado.deshacerAlFallar) return base.$transaction(arg);
+      const foto = { ...estado.fila };
+      try { return await base.$transaction(arg); } catch (e) { estado.fila = foto; throw e; }
+    };
+  },
 });
 
 const fPrisma = rutaDe('dist/core/db/prisma.js');
@@ -164,17 +207,55 @@ test('SCRUM-1303 · 🔴 ① B′ el cobro entra DURANTE el sellado de la anulac
   assert.equal(estado.liberaciones, 0, '🔴 se liberaron albaranes de una factura que NO se anuló');
 });
 
-test('SCRUM-1303 · ⚠️ RESIDUAL CONOCIDO (docs/BUGS.md P1-1303): tras B′ la factura queda `paid` CON su eslabón de anulación', async () => {
-  // Esto NO es el comportamiento deseado: es el que hay, y está declarado. El sellado corre antes y
-  // en su propia transacción; cerrarlo exige tocarlo (STOP, reglas 5 y 40). Si este caso cae porque
-  // alguien lo ha cambiado, que sea por una decisión del fundador y actualizando P1-1303.
+// SCRUM-1314b · AQUÍ HABÍA UN «RESIDUAL CONOCIDO» (P1-1303) que fijaba `paid` + `vfAnulHash` como
+// comportamiento declarado: el sellado corría antes y en su propia transacción. Con el GO del fundador
+// (SCRUM-1314 c.20754) sellado y estado son UNA escritura condicionada, y el caso pasa a afirmar lo
+// contrario. Se endurece, no se relaja (regla 41): antes toleraba el eslabón, ahora lo prohíbe.
+test('SCRUM-1314b · 🔴 tras B′ NO queda eslabón de anulación: la factura cobrada sigue sin `vfAnulHash`', async () => {
   nuevaFila('pending');
   estado.enElCerrojo = async () => { await marcarCobrada(); };
   await anular();
   assert.equal(estado.fila.status, 'paid');
-  assert.ok(estado.fila.vfAnulHash,
-    '⚠️ el eslabón de anulación ya NO queda sellado tras perder la carrera. Si es a propósito, '
-    + 'actualiza docs/BUGS.md P1-1303 y este caso en el mismo commit: el residual ha cambiado.');
+  assert.equal(estado.fila.vfAnulHash, null,
+    '🔴 HA QUEDADO UN ESLABÓN DE ANULACIÓN SELLADO SOBRE UNA FACTURA COBRADA. El sellado y el paso a '
+    + '`annulled` tienen que ser la MISMA escritura, con `pending` en el `where`: si el cobro gana, no se sella.');
+  assert.equal(estado.fila.vfAnulPrevHash, null, '🔴 y la cadena tampoco se ha extendido');
+  assert.equal(estado.escrituras.filter((w) => 'vfAnulHash' in (w.data ?? {})).length, 0,
+    '🔴 se escribió la huella de anulación aunque la factura ya no estaba pendiente');
+});
+
+test('SCRUM-1314b · 🔴 P2 una factura que ya tiene `vfAnulHash` NO se vuelve a sellar: se anula conservando su huella', async () => {
+  // Es la fila que dejaba el código anterior tras un 500 en el paso del estado: huella escrita y
+  // `pending`. Reintentar la anulación volvía a sellar y PISABA `vfAnulHash`; el eslabón siguiente
+  // de la cadena quedaba apuntando a una huella que ya no existía (c.20751, defecto hermano).
+  nuevaFila('pending');
+  const previa = 'D'.repeat(64);
+  Object.assign(estado.fila, { vfAnulHash: previa, vfAnulPrevHash: 'A'.repeat(64), vfAnulTimestamp: new Date('2026-10-24T09:00:00Z') });
+  const r = await anular();
+  assert.equal(r.statusCode, 200, JSON.stringify(r.cuerpo));
+  assert.equal(estado.fila.vfAnulHash, previa,
+    '🔴 SE HA PISADO LA HUELLA DE ANULACIÓN. Una factura que ya tiene su eslabón no se vuelve a sellar.');
+  assert.equal(estado.fila.vfAnulPrevHash, 'A'.repeat(64), '🔴 y su eslabón anterior tampoco cambia');
+  assert.equal(estado.fila.status, 'annulled', 'el estado sí se pone al día');
+  assert.equal(estado.escrituras.filter((w) => 'vfAnulHash' in (w.data ?? {})).length, 0,
+    '🔴 se escribió una huella de anulación nueva');
+});
+
+test('SCRUM-1314b · 🔴 un 500 al liberar no deja eslabón suelto, y el reintento sella UNA vez', async () => {
+  nuevaFila('pending');
+  estado.deshacerAlFallar = true;
+  estado.fallarAlLiberar = true;
+  const r1 = await anular().catch((e) => ({ statusCode: 500, cuerpo: String(e?.message || e) }));
+  assert.notEqual(r1.statusCode, 200, `precondición: el primer intento falló (${JSON.stringify(r1.cuerpo)})`);
+  assert.equal(estado.fila.status, 'pending', 'no se anuló nada');
+  assert.equal(estado.fila.vfAnulHash, null,
+    '🔴 TRAS EL 500 QUEDA UNA HUELLA DE ANULACIÓN SIN ANULACIÓN. Sellado, estado y liberación van en la '
+    + 'misma transacción: si una parte cae, no queda ninguna.');
+  const r2 = await anular();
+  assert.equal(r2.statusCode, 200, JSON.stringify(r2.cuerpo));
+  assert.equal(estado.fila.status, 'annulled');
+  assert.ok(estado.fila.vfAnulHash, 'y lleva su eslabón');
+  assert.equal(estado.liberaciones, 1);
 });
 
 // ── ② COBRAR A MANO MIENTRAS SE ANULA ─────────────────────────────────────────────────────

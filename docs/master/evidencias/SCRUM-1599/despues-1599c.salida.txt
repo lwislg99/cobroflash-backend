@@ -1,0 +1,59 @@
+# SCRUM-1599c · base del carril yaqu_dev_javier (DATABASE_URL_TESTS) · turno tomado 20:56:13Z y soltado ~21:00Z · QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 · arbol jv-j2ay · main 2c45bf589aeae007eb12ed388b3e0f4d2d8d98ed · dist/ con tsc --noCheck
+# DESPUES: el fichero de la rama (merchant A con Connect activo), 3 pasadas
+## pasada 1
+TAP version 13
+# Subtest: SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numérico 404 sin fuga, token funciona
+ok 1 - SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numérico 404 sin fuga, token funciona
+  ---
+  duration_ms: 11776.7971
+  type: 'test'
+  ...
+# ⚠️ SCRUM-119: Stripe ausente — IDOR de /pay/card verificado (numérico 404 ≠ token 501); el redirect a Stripe Checkout (303) NO se ejerció aquí.
+# SCRUM-85: /pay/invoice, /pay/card y /pay/bizum — numérico 404 sin fuga, token propio 200/redirect correcto, sin cruce entre cobros ✓
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13023.6793
+## pasada 2
+TAP version 13
+# Subtest: SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numérico 404 sin fuga, token funciona
+ok 1 - SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numérico 404 sin fuga, token funciona
+  ---
+  duration_ms: 12832.1464
+  type: 'test'
+  ...
+# ⚠️ SCRUM-119: Stripe ausente — IDOR de /pay/card verificado (numérico 404 ≠ token 501); el redirect a Stripe Checkout (303) NO se ejerció aquí.
+# SCRUM-85: /pay/invoice, /pay/card y /pay/bizum — numérico 404 sin fuga, token propio 200/redirect correcto, sin cruce entre cobros ✓
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14044.4932
+## pasada 3
+TAP version 13
+# Subtest: SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numérico 404 sin fuga, token funciona
+ok 1 - SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numérico 404 sin fuga, token funciona
+  ---
+  duration_ms: 20553.504
+  type: 'test'
+  ...
+# ⚠️ SCRUM-119: Stripe ausente — IDOR de /pay/card verificado (numérico 404 ≠ token 501); el redirect a Stripe Checkout (303) NO se ejerció aquí.
+# SCRUM-85: /pay/invoice, /pay/card y /pay/bizum — numérico 404 sin fuga, token propio 200/redirect correcto, sin cruce entre cobros ✓
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 21652.8801

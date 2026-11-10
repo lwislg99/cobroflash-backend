@@ -311,3 +311,190 @@ El paso ② (arreglar las que haya) está vacío: la lista ya está a cero.
 **Lo que esto NO sabe.** Una vista que no pide nada y pinta 20 nodos o más (un estado vacío
 grande) no se marca: su caso es otro, y no hay ninguna hoy. El umbral de 20 nodos sigue
 confundiendo una vista pequeña con una vacía (Partes de oficina).
+
+## 23-oct-2026 · S3 · 1560f — quién usa los datos del censo sin comprobar que el estado PINTA algo (sólo lectura)
+
+Medido sobre `origin/main` = `6c8706daef7399513e69e6872068aa7bed25b760`, 23-oct-2026 ~12:30-13:00Z
+(hora de la cabecera `Date:` de GitHub), en un worktree fijado a esa punta. Ningún fichero del producto
+ni de los tests cambia: lo que se muta en `c-*` y `d-*` se restaura y `public/` queda limpio (lo
+comprueban los propios instrumentos al acabar).
+
+La pregunta: con los datos de muestra, «Tu página pública» y «Cumplimiento» se abren y no pintan
+nada. Un medidor que no compruebe que el estado pintó algo los da por limpios: «nada corto» y «nada que
+mirar» salen iguales. ¿Le pasa sólo al censo táctil, o a todos los que comparten estos datos?
+
+### ① La población, y cómo se elige (`evidencias/SCRUM-1560f/a-poblacion.mjs`, `a-salida.txt`)
+
+Universo: los **2.911** ficheros de código que sigue git, leídos con el compilador de TypeScript
+(no con `grep`). Consume quien tiene un `import`/`export … from`/`import()` que resuelve a
+`scripts/_datos-del-censo.mjs`, incluidos `new URL(…, import.meta.url)` y los ayudantes `imp('scripts/…')`.
+Control positivo: 6/6 fuentes sintéticas bien clasificadas (las de comentario y cadena NO cuentan) y
+encuentra `scripts/censo-objetivo-tactil-panel.mjs`.
+
+| | ficheros |
+|---|---|
+| importan el módulo | **16** |
+| … con `datosDelCenso` (sirven datos a una vista) | **14**: 1 censo + 7 tests vivos + 6 sondas de evidencias |
+| … sólo `CONTRATOS` | 2 (`evidencias/SCRUM-1159/medir.mjs`, `SCRUM-1583/medir.mjs`) |
+| lo nombran sin importarlo | 0 |
+
+⚠️ La primera versión del clasificador sólo seguía el literal del `import()` y dio 10 importadores
+y «6 que lo nombran sin importarlo». Los 6 lo importaban con una ruta construida (`new URL`, `imp(...)`).
+Lo cazó declarar el residuo frente a `grep` en vez de callarlo. Es la trampa de la ficha de S3:
+casar el literal en vez de seguir la ruta.
+
+Frontera: `guard-objetivo-tactil.mjs` usa los fixtures de `_pagina-panel.mjs` y no `datosDelCenso`, así que queda
+fuera de esta población.
+
+### ② Qué estados no pintan nada con los datos de muestra (`b-estados.mjs`, `b-salida.txt`)
+
+Las 29 `render*View` del banco, montadas como las montan sus consumidores, y los 9 paneles
+(`data-submenu`) de Configuración. Es el mini-DOM, sin píxeles: «0 nodos» quiere decir «no pintó nada».
+
+* Vistas: todas pintan; la menor, Partes de oficina, con 11 nodos (es así de pequeña).
+* Paneles de Configuración: **`publica` 0 nodos · `cumplimiento` 0 nodos**; los otros 7, de 2 a 39.
+* **Por qué:** `/admin/merchant` da `{ id, name }` (su contrato dice «claves completas SIN medir»), y
+  `settingsView.js:1504` hace `if (m.slug === undefined) return;`. Ése es el perfil reducido del
+  Operario, y lo mismo pasa con la lista de primeros pasos (`:1346`). **El banco no mide un estado vacío: mide a OTRA persona.**
+  Con estos datos, cualquier medidor ve Configuración como la ve un Operario, no como la ve el dueño.
+
+### ③ ¿Distingue cada consumidor «nada corto» de «nada que mirar»? Por MUTACIÓN, no por lectura (`c-salida.txt`; el guion, ver ⑤)
+
+Por cada par (consumidor, vista que monta) se vacía la vista (un `return;` al principio de su función,
+localizada por AST) y se corre el consumidor. Si sigue verde, da por buena una pantalla que no pintó nada.
+
+Controles, todos pasados: ① con la mutación el banco cuenta 0 nodos en cada vista mutada (sin ella, de 11 a 186);
+② las líneas base, todas en verde; ③ dos consumidores **sintéticos** sobre Cobros: «mira-primero» (exige
+nodos > 0) sale **DISTINGUE** y «no-mira» sale **NO DISTINGUE**. Si el instrumento no los separara, no daría veredictos.
+
+| consumidor | vista vaciada | veredicto | lo que cae |
+|---|---|---|---|
+| `scrum1583` | Cobros | DISTINGUE | 1 de 2 |
+| `scrum1562d` | Trabajos | DISTINGUE | 1 de 6 (su SUELO) |
+| `scrum1562f` | Trabajos | DISTINGUE | 3 de 3 |
+| `scrum1562c` | Partes de oficina | DISTINGUE | 2 de 3 |
+| `scrum1559j` | Productos | DISTINGUE | 1 de 4 |
+| `scrum1559g` | Inicio · ficha del presupuesto · Solicitudes · Albaranes | DISTINGUE ×4 | 1 de 6 en cada una |
+| **`scrum1560`** (recorre las 29) | Trabajos · Configuración · Cobros | **NO DISTINGUE ×3** | 0 de 12 |
+
+**Los tests de una sola vista buscan su objetivo por nombre y salen CIEGO si no está: los 6 distinguen.**
+El que no distingue es el que recorre todas: `tests/scrum1560-datos-de-muestra-con-forma.test.mjs`,
+caso «en el banco: ninguna vista pide una ruta sin contrato, ni con NaN/undefined, ni pinta
+«undefined»». Una vista que no pinta nada no pinta «undefined», y pasa. Sus suelos (`vistas ≥ 25`,
+`servidas ≥ 40`) son de la tanda entera, y una vista vacía no los mueve.
+
+### ④ El censo táctil, en navegador (`d-salida.txt`; el guion, ver ⑤)
+
+| pasada | resultado |
+|---|---|
+| A · `main` tal cual (153 s) | **ninguna línea nombra `publica` ni `cumplimiento`** (la única que casa con «publica» es el verbo: «vistas que publica el banco»). Configuración sale medida y limpia de esos dos paneles sin decirlo. Cobros sale medida (7 controles), que es el control para B |
+| B · Cobros vaciada (148 s) | Cobros pasa a «NO medidas» y a «no pidió nada… le faltan sus argumentos» |
+
+**El censo distingue una VISTA vacía (suelo de 20 nodos), pero no un PANEL vacío dentro de una vista
+que sí pinta.** Y la vista vacía la diagnostica mal: el aviso de 1560e da por hecho que «no pidió nada»
+quiere decir «le faltan argumentos», y aquí la causa era otra. La receta que imprime («añade `renderCobrosView: [<id>]`») no la arreglaría.
+(En #2690, abierto, el censo abre las 9 pestañas y declara los paneles VACÍOS: es el arreglo de este
+hueco para el censo, y aún no está en `main`.)
+
+### Las 6 sondas de evidencias: por LECTURA, no mutadas (son de un solo uso)
+
+`scrum962b/censo-ampliado.mjs` lleva el mismo suelo por vista que el censo, y por tanto el mismo hueco por panel.
+`SCRUM-1562/sonda-div-clicables.mjs` no tiene suelo. `scrum1560/sonda-vistas.mjs` sólo imprime nodos (no da veredicto),
+`sonda-undefined.mjs` es el antecedente del caso de `scrum1560`, y las de 1451 y 1518 montan una
+ficha concreta para reproducir un importe. No se volvieron a correr: lo que dijeron en su día no se reverifica aquí.
+
+### La respuesta
+
+* **No es de todos. Tampoco es sólo mío.** De 8 consumidores vivos: 6 distinguen (medido), y **2 no**,
+  cada uno con su tamaño de hueco:
+  1. `scrum1560` («ningún undefined/NaN»): no distingue ni una vista entera vacía. Sale verde con
+     Trabajos, Configuración o Cobros sin pintar.
+  2. El censo táctil de `main`: distingue la vista vacía y no el panel vacío. `publica` y `cumplimiento` no constan en ningún sitio.
+* **Las pantallas que hoy se dan por limpias sin haberlas visto:** los paneles `publica` y `cumplimiento`
+  de Configuración, en los dos. Y la causa no es de ningún consumidor: es el dato. `/admin/merchant` no trae
+  `slug` y el banco pinta al Operario.
+* **Lo que esto NO arregla, ni propone tocar aquí:** completar el contrato de `/admin/merchant` (para eso hay que abrir
+  `getMerchantProfile`, y cambia lo que miden los 14 consumidores, censo incluido), y exigir nodos > 0 por vista
+  en el caso de `scrum1560`. Son dos tickets, y el segundo sale de este mismo registro. Los decide el orquestador.
+
+A9: sin fallo que generalice — el error propio (seguir el literal del import en vez de la ruta) ya es la trampa escrita en la ficha de S3; lo hallado se entrega como medida, y los dos arreglos son tickets que decide el orquestador
+
+### ⑤ Por qué los guiones de ③ y ④ NO están en el repo
+
+Estaban en el primer push de #2732 y el obligatorio los tumbó: `scrum1387` (y `scrum976` ④ por `guards:entrada`) por
+`c-mutar.mjs`; `scrum864c` por un temporal de `d-censo-tactil.mjs` que no se borraba. Los dos mutan el producto con una
+lista PROPIA, y la regla de SCRUM-1387 (comentario 18016, del fundador) dice que un banco de mutación nuevo toma sus
+mutaciones del catálogo (`MUTACIONES_QUE_ME_TUMBAN`). No pueden: auditan tests de otros, que no declaran nada. A
+`d-censo-tactil.mjs` el guard no lo veía, porque su nombre no lleva «mut», pero muta igual, así que sale igual.
+Renombrarlos habría sido esquivar el guard por la forma. Decidido por el orquestador el 23-oct (opción A).
+
+* Lo que queda: las salidas (`c-salida.txt`, `d-salida.txt`) y el método de ③ y ④, como medida FECHADA que no se puede volver a correr.
+* Lo que vigila el hallazgo de forma permanente es SCRUM-1560g (#2735): sus dos mutaciones van en el catálogo, y el meta-guard las corre en cada pasada.
+* El camino para tener otra vez ejecutables los bancos que auditan consumidores sería una excepción del fundador a 1387. NO se ha pedido:
+  es una regla firmada (STOP), y su cola de respuestas lleva dos días parada.
+* El censo de ① lo hace ahora sobre 17 importadores: al comitear, `b-estados.mjs` (que importa `datosDelCenso` y sólo describe, sin veredicto) se cuenta a sí mismo. Los 16 de la tabla son de antes de comitear.
+
+**Ficheros:** `docs/master/evidencias/SCRUM-1560f/` (`a-poblacion.mjs`, `b-estados.mjs` y las cuatro `*-salida.txt`), este apartado.
+## 23-oct-2026 · S3 · 1560g — el caso del banco exige que cada vista y cada panel PINTE
+
+Rama desde `origin/main` = `7d13cdd85`. Es la (b) de SCRUM-1560f (#2732), decidida por el orquestador el 23-oct.
+1560f midió por mutación que el caso «🔴 en el banco: … ni pinta «undefined»» seguía 12/12 en verde con
+Trabajos, Configuración o Cobros sin pintar nada: una pantalla vacía no pinta «undefined».
+
+### Lo que cambia (sólo `tests/scrum1560-datos-de-muestra-con-forma.test.mjs`)
+
+* Cada una de las 29 vistas tiene que pintar al menos un nodo.
+* Cada panel `data-submenu` de Configuración también, salvo los de `PANELES_SIN_PINTAR_DECLARADOS`,
+  cada uno con su motivo. Si uno empieza a pintar, su línea CADUCA y el caso cae hasta que se quite.
+  Con menos de 5 paneles vistos, CIEGO.
+* ⚠️ Corrección a la instrucción que llegó: `publica` y `cumplimiento` no son vistas, son paneles de
+  `renderSettingsView`, que pinta 186 nodos. «Nodos > 0 por vista» a secas no se habría puesto rojo nunca.
+
+| declarado | por qué no puede pintar con el banco de hoy | lo cerraría |
+|---|---|---|
+| `publica` | `/admin/merchant` de muestra = `{ id, name }`; `settingsView.js` corta con `if (m.slug === undefined) return` | completar ese contrato: la (a) de 1560f, sin decidir |
+| `cumplimiento` | sólo pinta `if (window.appModoEmision)`; ese global lo pone `app.js:52` desde `/auth/me` al ARRANCAR, y el banco no arranca la app | que el banco dé la sesión: la (a′), abajo |
+
+### Rojos (A23), sobre `202779fe4` con el árbol entero comiteado
+
+| inyección | numstat | cae |
+|---|---|---|
+| R1 · `return;` al principio de `renderJobsView` | 1/1 `jobsView.js` | «vistas que no pintan NADA» |
+| R2 · `publica` fuera de la declaración | 0/1 el test | «paneles … que no pintan NADA y no están en PANELES_SIN_PINTAR_DECLARADOS» |
+| R3 · el merchant de muestra con `slug` | 1/1 `_datos-del-censo.mjs` | «declarados sin pintar que YA pintan: quita su línea»: con `slug`, `publica` pinta (la (a) cerraría ese panel y NO el otro) |
+| R4 · el selector de paneles no ve ninguno | 1/1 el test | CIEGO «Configuración da 0 panel(es)» |
+
+Restaurado con `git restore --source=HEAD` tras cada uno, y el árbol limpio al acabar. El guion de estas cuatro
+no se comitea: es un banco con lista propia, y SCRUM-1387 no lo admite. Lo permanente es el catálogo:
+
+**`MUTACIONES_QUE_ME_TUMBAN` (2, del PRODUCTO):** ① `renderJobsView` no pinta; ② el panel `datos` se queda vacío
+(deja de colocarse su única tarjeta) sin estar declarado. Corridas con las funciones del meta-guard
+(`evidencias/SCRUM-935d/e-uno-guard.mjs`): **con este test, 2 VIVAS** (limpia 3,3 s, ~3 s cada una); **con el test de
+`main` y las mismas dos declaraciones, 2 MUDAS**. Coste en el meta-guard: unos 9-10 s por pasada en local. El job
+de hoy acaba a 1.608 s de un corte de 1.650.
+
+### 🔴 La (a′) · «EL BANCO DA LA SESIÓN» — escrita, NO empezada (decisión del orquestador, 23-oct)
+
+El banco monta las vistas sin pasar por el arranque de `app.js`, que es quien pone los globales de la sesión
+desde `/auth/me`. El más gordo es `window.appModoEmision`: en el banco vale `undefined` («no se sabe»), un estado que
+**en producción no existe**, porque ningún usuario real tiene la app sin modo de emisión. Todo lo que se haya medido en estas
+vistas con el banco puede estar midiendo una pantalla que nadie ve. Lo leen 11 ficheros de `public/dashboard/js/`
+(contados a 23-oct sobre `7d13cdd85`, lecturas sin la asignación):
+`albaranAccion.js` (2) · `homeView.js` (2) · `invoicesView.js` (1) · `jobDetailView.js` (2) · `onboardingView.js` (2) ·
+`plansView.js` (2) · `puertaSerie.js` (2) · `reportsView.js` (1) · `rotulosDelDocumento.js` (2) · `settingsView.js` (8) · `tutorial.js` (1).
+Y `app.js` pone más globales en ese mismo arranque (`appBizumSinTelefono`, el modo del documento suelto…), sin censar.
+Es un cambio de arnés con onda sobre todo lo que mide el banco: se decide aparte.
+
+### Por qué `c-mutar.mjs` y `d-censo-tactil.mjs` salen de #2732 (1560f)
+
+Los dos mutan el producto con una lista PROPIA (12 pares consumidor × vista; Cobros vaciada), y la regla de SCRUM-1387
+(comentario 18016, del fundador) dice que un banco nuevo toma las mutaciones del catálogo. No pueden: auditan tests de
+otros, que no declaran nada. El obligatorio de #2732 tumbó el primero; el segundo no lo veía, porque su nombre no lleva
+«mut», y sale igual. Renombrarlos habría sido esquivar el guard por la forma. Sus salidas y el método se quedan en el
+registro de 1560f, como medida fechada. El camino para volver a tenerlos ejecutables sería una excepción del fundador a 1387 para
+los bancos que auditan consumidores; **NO se ha pedido** (es una regla firmada: STOP, y su cola lleva dos días sin moverse).
+Lo que vigila el hallazgo de forma permanente es esta 1560g.
+
+A9: comprobación → `tests/scrum1560-datos-de-muestra-con-forma.test.mjs`
+
+**Ficheros:** `tests/scrum1560-datos-de-muestra-con-forma.test.mjs`, este apartado.

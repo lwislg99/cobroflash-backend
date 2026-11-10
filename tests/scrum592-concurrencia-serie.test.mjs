@@ -22,13 +22,15 @@
 // Sin `QA_DB_TEST=1` esto SE SALTA, y el salto dice por qué (SCRUM-419/456): un `# SKIP` mudo es
 // cobertura que nadie sabe que falta. Se corre con `npm run test:staging:gated`.
 // ═════════════════════════════════════════════════════════════════════════════════════════
+import './_staging-db.mjs'; // SCRUM-1599p: el guard de staging va delante del segundo destino (scrum876e)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599p: segundo destino (LIBRO_PG_URL); su guard exige loopback y «*_test»
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { withMerchant } from './_merchant-fixture.mjs';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
 const RAIZ = process.cwd();
 let prisma = null;
@@ -40,11 +42,15 @@ if (ENABLED) {
   Q = await import('../dist/modules/quotes/domain/quoteNumber.service.js');
   // 🔴 SÓLO DESARROLLO. Este test ESCRIBE (crea un merchant de prueba y mueve su contador), así
   // que se niega a arrancar contra cualquier otra base en vez de fiarse de quién lo lance.
-  const linea = fs.readFileSync('.env', 'utf8').split('\n').find((l) => l.startsWith('DATABASE_URL_DEV='));
-  const url = linea?.slice('DATABASE_URL_DEV='.length).trim().replace(/^["']|["']$/g, '');
-  const info = url ? parseBDSegura(url) : null;
-  assert.ok(info && info.base === 'yaqu_dev_javier',
-    '🔴 PARO: este test escribe y la clave de desarrollo no apunta a `yaqu_dev_javier`.');
+  // SCRUM-1599p: o el banco desechable, cuya URL ya ha pasado el guard de `_banco-libro.mjs`.
+  let url = URL_BANCO;
+  if (!url) {
+    const linea = fs.readFileSync('.env', 'utf8').split('\n').find((l) => l.startsWith('DATABASE_URL_DEV='));
+    url = linea?.slice('DATABASE_URL_DEV='.length).trim().replace(/^["']|["']$/g, '');
+    const info = url ? parseBDSegura(url) : null;
+    assert.ok(info && info.base === 'yaqu_dev_javier',
+      '🔴 PARO: este test escribe y la clave de desarrollo no apunta a `yaqu_dev_javier`.');
+  }
   prisma = new PrismaClient({ datasources: { db: { url } } });
 }
 
@@ -64,7 +70,7 @@ async function conMerchant(fn) {
   }, fn);
 }
 
-test('SCRUM-592 · 🔴 DOS reservas SIMULTÁNEAS no cogen el mismo número', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated (necesita Postgres real: el cerrojo que se prueba es pg_advisory_xact_lock)' }, async () => {
+test('SCRUM-592 · 🔴 DOS reservas SIMULTÁNEAS no cogen el mismo número', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL ·npm run test:staging:gated (necesita Postgres real: el cerrojo que se prueba es pg_advisory_xact_lock)' }, async () => {
   await conMerchant(async (m) => {
     // El caso peor a propósito: serie SIN ESTRENAR. Ahí las dos transacciones leen «no hay año»
     // y, sin cerrojo, las dos concluyen que les toca el 1.
@@ -80,7 +86,7 @@ test('SCRUM-592 · 🔴 DOS reservas SIMULTÁNEAS no cogen el mismo número', { 
   });
 });
 
-test('SCRUM-592 · 🔴 y con DIEZ a la vez tampoco: ni un duplicado ni un salto', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated (necesita Postgres real: el cerrojo que se prueba es pg_advisory_xact_lock)' }, async () => {
+test('SCRUM-592 · 🔴 y con DIEZ a la vez tampoco: ni un duplicado ni un salto', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL ·npm run test:staging:gated (necesita Postgres real: el cerrojo que se prueba es pg_advisory_xact_lock)' }, async () => {
   // Dos podrían pasar por suerte. Diez, no.
   //
   // 🔴 EL `timeout` NO ES PARA QUE PASE: ES PARA QUE MIDA LO QUE DICE. Con el de Prisma por
@@ -103,7 +109,7 @@ test('SCRUM-592 · 🔴 y con DIEZ a la vez tampoco: ni un duplicado ni un salto
   });
 });
 
-test('SCRUM-592 · el reinicio anual, CONTRA LA BASE y con la fecha fijada', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated (necesita Postgres real: el cerrojo que se prueba es pg_advisory_xact_lock)' }, async () => {
+test('SCRUM-592 · el reinicio anual, CONTRA LA BASE y con la fecha fijada', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL ·npm run test:staging:gated (necesita Postgres real: el cerrojo que se prueba es pg_advisory_xact_lock)' }, async () => {
   await conMerchant(async (m) => {
     const a = await prisma.$transaction((tx) => Q.allocateQuoteNumber(tx, m.id, new Date('2026-12-31')));
     const b = await prisma.$transaction((tx) => Q.allocateQuoteNumber(tx, m.id, new Date('2027-01-01')));
@@ -118,7 +124,7 @@ test('SCRUM-592 · el reinicio anual, CONTRA LA BASE y con la fecha fijada', { s
   });
 });
 
-test('SCRUM-592 · 🔴 CONTROL NEGATIVO: crear un CLIENTE no mueve ningún contador', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated (necesita Postgres real: el cerrojo que se prueba es pg_advisory_xact_lock)' }, async () => {
+test('SCRUM-592 · 🔴 CONTROL NEGATIVO: crear un CLIENTE no mueve ningún contador', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL ·npm run test:staging:gated (necesita Postgres real: el cerrojo que se prueba es pg_advisory_xact_lock)' }, async () => {
   await conMerchant(async (m) => {
     const antes = await prisma.merchant.findUnique({
       where: { id: m.id }, select: { nextQuoteNumber: true, quoteSeriesYear: true, nextAlbaranNumber: true },
@@ -137,3 +143,11 @@ test('SCRUM-592 · 🔴 CONTROL NEGATIVO: crear un CLIENTE no mueve ningún cont
 });
 
 test.after(async () => { if (prisma) await prisma.$disconnect(); });
+
+// SCRUM-1599p (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599p.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/quotes/domain/quoteNumber.service.ts", de: "  await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LOCK_NS}::int, ${merchantId}::int)`;", a: "  // sin cerrojo", cae: "y con DIEZ a la vez tampoco" },
+];

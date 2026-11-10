@@ -268,12 +268,15 @@ test('SCRUM-1402 · 🔴 customer.subscription.updated y .created (active, trial
     `\n🔴 LA SUSCRIPCIÓN HA ESCRITO UN PLAN QUE NO EXISTE. ${escritos.length} de ${n}:\n` + escritos.map((e) => `   · ${e}`).join('\n') + '\n');
 });
 
+// SCRUM-1402e (comentario 20651, «Marcar el impago»): el impago SÍ escribe ahora `past_due`; lo que sigue
+// sin escribirse es el PLAN. Que el impago se marque lo mide `scrum1402e-impago-con-plan-desconocido`.
 test('SCRUM-1402 · 🔴 un impago (past_due, unpaid) con un plan que NO existe tampoco lo escribe, y avisa', async () => {
   const escritos = [];
   for (const status of ['past_due', 'unpaid']) {
     for (const plan of INVENTADOS) {
       const r = await emitir('customer.subscription.updated', suscripcion(plan, status));
-      if (r.escrituras.length) { escritos.push(`${status} ${JSON.stringify(plan)} → ${JSON.stringify(r.escrituras[0].data)}`); continue; }
+      const conPlan = r.escrituras.filter((e) => 'plan' in (e.data ?? {}));
+      if (conPlan.length) { escritos.push(`${status} ${JSON.stringify(plan)} → ${JSON.stringify(conPlan[0].data)}`); continue; }
       exigeAvisoCompleto(r, plan, `customer.subscription.updated (${status})`);
     }
   }
@@ -312,20 +315,21 @@ test('SCRUM-1402 · 📌 una CANCELACIÓN se aplica igual venga el plan que veng
   }
 });
 
-test('SCRUM-1402 · 📌 SIN `metadata.plan` sigue como estaba: ni escribe ni avisa (y la escucha oye). No es de este ticket, y no está decidido', async () => {
-  // ⚠️ Esto NO es un visto bueno: una suscripción pagada que llega sin `metadata.plan` tampoco activa
-  // nada y hoy no lo dice nadie. La decisión del fundador habla del plan que NO EXISTE, no del que NO
-  // VIENE; queda reportado en `docs/master/SCRUM-1402.md` y aquí solo se fija que este ticket no lo mueve.
-  for (const [tipo, objeto] of [
-    ['checkout.session.completed', checkout(undefined)],
-    ['checkout.session.completed', checkout('')],
-    ['customer.subscription.updated', suscripcion(undefined, 'active')],
-    ['customer.subscription.updated', suscripcion('', 'active')],
+test('SCRUM-1402 · 📌 SIN `metadata.plan` no se ACTIVA nada: ni el checkout ni la suscripción activa escriben (y la escucha oye)', async () => {
+  // SCRUM-1402h (comentario 20681, «B · Como plan desconocido»): la suscripción sin plan se trata como un
+  // plan que no existe. Activarla sigue sin escribir, y ahora deja su línea en el log; el impago y la
+  // cancelación sin plan se miden en `scrum1402h-sin-plan-como-plan-desconocido`. El checkout sin plan
+  // no lo mueve 1402h: sigue sin escribir y sin avisar.
+  for (const [tipo, objeto, avisos] of [
+    ['checkout.session.completed', checkout(undefined), 0],
+    ['checkout.session.completed', checkout(''), 0],
+    ['customer.subscription.updated', suscripcion(undefined, 'active'), 1],
+    ['customer.subscription.updated', suscripcion('', 'active'), 1],
   ]) {
     const r = await emitir(tipo, objeto);
     assert.equal(r.res.status, 200);
     assert.deepEqual(r.escrituras, [], `${tipo} sin plan: no escribe`);
-    assert.deepEqual(r.avisos, [], `${tipo} sin plan: no avisa`);
+    assert.equal(r.avisos.length, avisos, `${tipo} sin plan: ${avisos} avisos: ${JSON.stringify(r.avisos)}`);
   }
   const control = await emitir('checkout.session.completed', checkout('empresa'));
   assert.equal(control.avisos.length, 1, 'control positivo: la misma escucha oye el aviso del plan que no existe');
@@ -382,17 +386,19 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'checkout.session.completed con un plan que NO existe',
   },
   {
-    // Puerta 2: la suscripción activa.
+    // Puerta 2: la suscripción activa. (SCRUM-1565: la pregunta abre ahora un bloque, porque dentro se
+    // lee el fin de periodo antes de escribir; la mutación sigue siendo la misma: quitar la pregunta.)
     fichero: 'src/modules/billing/app/routes/stripe.routes.ts',
-    de: "        if (st === 'active' || st === 'trialing') {\n          if (planQueExiste(planId, merchantId, event)) await prisma.merchant.update({",
-    a: "        if (st === 'active' || st === 'trialing') {\n          await prisma.merchant.update({",
+    de: "        if (st === 'active' || st === 'trialing') {\n          if (planQueExiste(planId, merchantId, event)) {",
+    a: "        if (st === 'active' || st === 'trialing') {\n          if (true) {",
     cae: '(active, trialing) con un plan que NO existe',
   },
   {
-    // Puerta 3: el impago.
+    // Puerta 3: el impago. (SCRUM-1402e: el impago con plan desconocido escribe ahora `past_due`; la
+    // mutación sigue siendo la del defecto: que con ese plan se escriba también el plan.)
     fichero: 'src/modules/billing/app/routes/stripe.routes.ts',
-    de: "        } else if (st === 'past_due' || st === 'unpaid') {\n          if (planQueExiste(planId, merchantId, event)) await prisma.merchant.update({",
-    a: "        } else if (st === 'past_due' || st === 'unpaid') {\n          await prisma.merchant.update({",
+    de: "              : { subscriptionStatus: 'past_due' },",
+    a: "              : { plan: planId, subscriptionStatus: 'past_due', stripeSubscriptionId: sub.id },",
     cae: 'un impago (past_due, unpaid) con un plan que NO existe',
   },
   {

@@ -1,0 +1,305 @@
+# SCRUM-1599s · lote 6b al banco (scrum234-carrera-serie.gated y scrum781) · Postgres 16.14 desechable (@embedded-postgres/windows-x64 16.14.0-beta.17, loopback, yaqu_libro_test, plantilla con el DDL de migrate diff --from-empty: 33 tablas = 33 model)
+# rama scrum-1599s-lote-6b-serie-f sobre origin/scrum-1599r-tests-serie-f 0c1f287619d6e30db07b71afdd86c2c17d36c6a3 + origin/scrum-1599p-lote-6a-banco 34df32198f184163efed00c7018038466511ba4e; origin/main 6d5bf76c5bf02142e762ca2ddd3d2ae2b92f9a3e · 26-oct-2026 · árbol jv-j6cw · instrumentos: pgbanco-1599p.mjs.txt, banco-1599p.mjs.txt, mutar-1599i.mjs, pasada-1599o.mjs.txt (sin cambiar)
+
+## ANTES (ficheros de la base, sin migrar)
+scrum234-carrera-serie.gated.test.mjs · exit=0 · 1120 ms · casos=1 (ok=0 not_ok=0 skip=1) · declarados=1 · SUMA
+   skip · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+scrum234-censo-reserva-serie.test.mjs · exit=0 · 3394 ms · casos=4 (ok=4 not_ok=0 skip=0) · declarados=4 · SUMA
+scrum781-concurrencia-de-la-factura.test.mjs · exit=0 · 1698 ms · casos=8 (ok=4 not_ok=0 skip=4) · declarados=8 · SUMA
+   skip · SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1
+   skip · SCRUM-781 · 🔴 DOS emisiones SIMULTÁNEAS no cogen el mismo número
+   skip · SCRUM-781 · 🔴 y con DIEZ a la vez tampoco: ni un duplicado ni un salto
+   skip · SCRUM-781 · 🔴 CONTROL NEGATIVO: crear un CLIENTE no mueve ningún contador
+POBLACION=3 ficheros · EXIT=0
+
+## DESPUÉS
+scrum234-carrera-serie.gated.test.mjs · exit=0 · 12267 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+scrum234-censo-reserva-serie.test.mjs · exit=0 · 5938 ms · casos=4 (ok=4 not_ok=0 skip=0) · declarados=4 · SUMA
+scrum781-concurrencia-de-la-factura.test.mjs · exit=0 · 3021 ms · casos=8 (ok=8 not_ok=0 skip=0) · declarados=8 · SUMA
+POBLACION=3 ficheros · EXIT=0
+
+## MUTACIÓN DESCARTADA · 234 sin pg_advisory_xact_lock (aplicada a mano en dist/, mismo transpilador; dist restaurado, sha256 66f09cfce7bc0ac5 antes y después) · 3 pasadas
+== tests/scrum234-carrera-serie.gated.test.mjs · limpia: 1 ok de 1
+🔴 VIVE · M1 · src/modules/invoicing/domain/invoiceNumber.service.ts · «await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LO» → «// sin cerrojo» · 0 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes NO colisionan») NO cae
+scrum234-carrera-serie.gated.test.mjs · exit=0 · 6239 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+scrum234-carrera-serie.gated.test.mjs · exit=0 · 6193 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+scrum234-carrera-serie.gated.test.mjs · exit=0 · 6222 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+
+## MUTACIONES_CON_BASE (mutar-1599i.mjs)
+== tests/scrum234-carrera-serie.gated.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/invoicing/domain/invoiceNumber.service.ts · «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 1)» → «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, s» · 1 de 1 caen · su caso («SCRUM-234 · dos reservas concurrentes NO colisionan») cae
+    · SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+      error: 🔴 el contador no cuadra con los números emitidos: o se avanzó de más (hueco futuro) o de menos (la próxima emisión choca).
+== tests/scrum781-concurrencia-de-la-factura.test.mjs · limpia: 8 ok de 8
+MUERE · M2 · src/modules/invoicing/domain/invoiceNumber.service.ts · «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 1)» → «nextInvoiceNumber: Math.max(m.nextInvoiceNumber, s» · 1 de 8 caen · su caso («SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1») cae
+    · SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1
+      error: 🔴 el contador no avanzó de 1 a 2 (quedó en 3). Si el contador no se mueve, cualquier «no hay duplicados» de este fichero mide una base quieta.
+POBLACION=2 mutaciones en 2 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## RÉGIMEN T1 · 86 ficheros (los de LIBRO_PG_URL según scrum419), N=11, base nueva · memoria_libre_MB=2284
+T1 · VERDE   ·    4514 ms · 1/0/0 (decl 1, suman true) · a55-window-quote.test.mjs
+T1 · VERDE   ·   14235 ms · 17/0/0 (decl 17, suman true) · albaran.test.mjs
+T1 · VERDE   ·   28436 ms · 1/0/0 (decl 1, suman true) · bot-suite.test.mjs
+T1 · VERDE   ·    4003 ms · 4/0/0 (decl 4, suman true) · pdfs.test.mjs
+T1 · VERDE   ·    2987 ms · 1/0/0 (decl 1, suman true) · scrum1014-sitios-del-cliente.test.mjs
+T1 · VERDE   ·    3173 ms · 1/0/0 (decl 1, suman true) · scrum1036-notas-del-cliente.test.mjs
+T1 · VERDE   ·    2244 ms · 1/0/0 (decl 1, suman true) · scrum104-clientes-referenciados.test.mjs
+T1 · VERDE   ·    8439 ms · 5/0/0 (decl 5, suman true) · scrum1057b-fusion-clientes-postgres.test.mjs
+T1 · VERDE   ·    2519 ms · 1/0/0 (decl 1, suman true) · scrum1059b-etiquetado-masivo-postgres.test.mjs
+T1 · VERDE   ·    1773 ms · 2/0/0 (decl 2, suman true) · scrum106-trabajos-fecha.test.mjs
+T1 · VERDE   ·    3470 ms · 1/0/0 (decl 1, suman true) · scrum1062-historial-whatsapp-cliente.test.mjs
+T1 · VERDE   ·    2176 ms · 2/0/0 (decl 2, suman true) · scrum109-expense-teammember.test.mjs
+T1 · VERDE   ·    3991 ms · 8/0/0 (decl 8, suman true) · scrum1103-retencion-practicada-en-gastos.test.mjs
+T1 · VERDE   ·   18735 ms · 13/0/0 (decl 13, suman true) · scrum1145-pestana-sitios.test.mjs
+T1 · VERDE   ·    2486 ms · 2/0/0 (decl 2, suman true) · scrum115-wa-fallo-registrado.test.mjs
+T1 · VERDE   ·    3425 ms · 2/0/0 (decl 2, suman true) · scrum1150c-carrera-de-la-revision-postgres.test.mjs
+T1 · VERDE   ·    3338 ms · 3/0/0 (decl 3, suman true) · scrum1188d-la-revision-hereda-el-vacio.test.mjs
+T1 · VERDE   ·    5623 ms · 4/0/0 (decl 4, suman true) · scrum1188d-tiers-tambien-se-vacia.test.mjs
+T1 · VERDE   ·    3506 ms · 1/0/0 (decl 1, suman true) · scrum120-patch-job-roles.test.mjs
+T1 · VERDE   ·    4744 ms · 1/0/0 (decl 1, suman true) · scrum127-paywall-bloquea.test.mjs
+T1 · VERDE   ·    3856 ms · 1/0/0 (decl 1, suman true) · scrum13-cobrado.test.mjs
+T1 · VERDE   ·    3522 ms · 1/0/0 (decl 1, suman true) · scrum131-resend-honesto.test.mjs
+T1 · VERDE   ·    4153 ms · 3/0/0 (decl 3, suman true) · scrum1333-carrera-del-encolado-postgres.test.mjs
+T1 · VERDE   ·    9620 ms · 5/0/0 (decl 5, suman true) · scrum1346-el-tecnico-ve-documentos-ajenos.test.mjs
+T1 · VERDE   ·    2908 ms · 4/0/0 (decl 4, suman true) · scrum135-gasto-tenencia.test.mjs
+T1 · VERDE   ·    3968 ms · 3/0/0 (decl 3, suman true) · scrum136-hub-equipo.test.mjs
+T1 · VERDE   ·    8575 ms · 6/0/0 (decl 6, suman true) · scrum1390e-el-portal-solo-lo-suyo.test.mjs
+T1 · VERDE   ·   14264 ms · 5/0/0 (decl 5, suman true) · scrum1397-el-tecnico-ve-sus-facturas.test.mjs
+T1 · VERDE   ·   16684 ms · 9/0/0 (decl 9, suman true) · scrum1403-el-tecnico-y-las-otras-puertas.test.mjs
+T1 · VERDE   ·    4083 ms · 2/0/0 (decl 2, suman true) · scrum148-filtro-por-miembro.test.mjs
+T1 · VERDE   ·    4761 ms · 10/0/0 (decl 10, suman true) · scrum1489-la-busqueda-recorta-al-tecnico.test.mjs
+T1 · VERDE   ·   15253 ms · 1/0/0 (decl 1, suman true) · scrum1515-nuestra-puerta-de-alta.test.mjs
+T1 · VERDE   ·    2814 ms · 1/0/0 (decl 1, suman true) · scrum1518b-la-ficha-no-ensena-entrantes.test.mjs
+T1 · VERDE   ·    3441 ms · 12/0/0 (decl 12, suman true) · scrum17-recapitulativa.test.mjs
+T1 · VERDE   ·    4863 ms · 7/0/0 (decl 7, suman true) · scrum170-facturacion-parcial.test.mjs
+T1 · VERDE   ·    5172 ms · 1/0/0 (decl 1, suman true) · scrum171a-consolidar-cliente.test.mjs
+T1 · SALTA   ·    3245 ms · 6/0/1 (decl 7, suman true) · scrum173-cadena-verifactu-serializada.test.mjs
+T1 · VERDE   ·    3897 ms · 3/0/0 (decl 3, suman true) · scrum178-emision-manual.test.mjs
+T1 · VERDE   ·    2080 ms · 5/0/0 (decl 5, suman true) · scrum207-emision-auditada.test.mjs
+T1 · VERDE   ·    3894 ms · 1/0/0 (decl 1, suman true) · scrum22-operario-readpath.test.mjs
+T1 · VERDE   ·    4325 ms · 1/0/0 (decl 1, suman true) · scrum221-export-fiscal-cero-bytes.test.mjs
+T1 · VERDE   ·    1680 ms · 23/0/0 (decl 23, suman true) · scrum222-deriva-arranque.test.mjs
+T1 · VERDE   ·    5864 ms · 1/0/0 (decl 1, suman true) · scrum234-carrera-serie.gated.test.mjs
+T1 · VERDE   ·    4145 ms · 1/0/0 (decl 1, suman true) · scrum24-operarios-metrics.test.mjs
+T1 · VERDE   ·    2900 ms · 10/0/0 (decl 10, suman true) · scrum244-supresion-y-anonimizado.test.mjs
+T1 · VERDE   ·    4616 ms · 1/0/0 (decl 1, suman true) · scrum25-export-zip.test.mjs
+T1 · VERDE   ·    4526 ms · 1/0/0 (decl 1, suman true) · scrum25-exports.test.mjs
+T1 · VERDE   ·    2601 ms · 1/0/0 (decl 1, suman true) · scrum295-modelo-303-postgres.test.mjs
+T1 · VERDE   ·    3451 ms · 1/0/0 (decl 1, suman true) · scrum296-libro-postgres.test.mjs
+T1 · VERDE   ·    5955 ms · 2/0/0 (decl 2, suman true) · scrum297-evidencias-postgres.test.mjs
+T1 · VERDE   ·    4908 ms · 6/0/0 (decl 6, suman true) · scrum324-cadena-hasta-el-libro.test.mjs
+T1 · VERDE   ·    3905 ms · 2/0/0 (decl 2, suman true) · scrum389-un-solo-iva.test.mjs
+T1 · VERDE   ·   10532 ms · 1/0/0 (decl 1, suman true) · scrum47-enviar-albaran-wa.test.mjs
+T1 · VERDE   ·   10090 ms · 1/0/0 (decl 1, suman true) · scrum49-firma-remota.test.mjs
+T1 · VERDE   ·   11242 ms · 1/0/0 (decl 1, suman true) · scrum50-bot-albaranes.test.mjs
+T1 · VERDE   ·    3743 ms · 1/0/0 (decl 1, suman true) · scrum51-job-sin-quote.test.mjs
+T1 · VERDE   ·    3591 ms · 1/0/0 (decl 1, suman true) · scrum52-operario.test.mjs
+T1 · VERDE   ·    3527 ms · 1/0/0 (decl 1, suman true) · scrum57-operario-propagacion.test.mjs
+T1 · VERDE   ·    4386 ms · 1/0/0 (decl 1, suman true) · scrum58-jobs-n1.test.mjs
+T1 · VERDE   ·    2215 ms · 4/0/0 (decl 4, suman true) · scrum592-concurrencia-serie.test.mjs
+T1 · VERDE   ·    2045 ms · 4/0/0 (decl 4, suman true) · scrum593d-viaje-completo-del-texto.test.mjs
+T1 · VERDE   ·    3918 ms · 2/0/0 (decl 2, suman true) · scrum66-tipo-operacion.test.mjs
+T1 · VERDE   ·    8410 ms · 5/0/0 (decl 5, suman true) · scrum68-evidencias-firma.test.mjs
+T1 · VERDE   ·    2732 ms · 1/0/0 (decl 1, suman true) · scrum692-guardado-parcial-en-base.test.mjs
+T1 · VERDE   ·   11737 ms · 2/0/0 (decl 2, suman true) · scrum72-pdfs-privados.test.mjs
+T1 · ROJO    ·   17582 ms · 3/1/0 (decl 4, suman true) · scrum728d-ms-en-loopback.test.mjs · CAEN: SCRUM-728d · SUELO: el banco es desechable, y el RTT en loopback es ~0
+T1 · VERDE   ·    3808 ms · 1/0/0 (decl 1, suman true) · scrum73-verifactu-gate.test.mjs
+T1 · VERDE   ·    3549 ms · 1/0/0 (decl 1, suman true) · scrum74-recibo-token.test.mjs
+T1 · VERDE   ·    2685 ms · 1/0/0 (decl 1, suman true) · scrum76-email-adjunto.test.mjs
+T1 · VERDE   ·    1608 ms · 4/0/0 (decl 4, suman true) · scrum767-cura-concurrencia.test.mjs
+T1 · VERDE   ·    2712 ms · 8/0/0 (decl 8, suman true) · scrum781-concurrencia-de-la-factura.test.mjs
+T1 · VERDE   ·    2068 ms · 6/0/0 (decl 6, suman true) · scrum793-la-carrera-del-token.test.mjs
+T1 · VERDE   ·   26495 ms · 7/0/0 (decl 7, suman true) · scrum809-paywall-tras-cancelar.test.mjs
+T1 · VERDE   ·    9004 ms · 3/0/0 (decl 3, suman true) · scrum814-carrera-del-tramo.gated.test.mjs
+T1 · VERDE   ·    4807 ms · 1/0/0 (decl 1, suman true) · scrum82-zip-verifactu.test.mjs
+T1 · VERDE   ·    3771 ms · 2/0/0 (decl 2, suman true) · scrum85-pay-routes-token.test.mjs
+T1 · VERDE   ·    3463 ms · 1/0/0 (decl 1, suman true) · scrum90-pay-bank-mp-token.test.mjs
+T1 · ROJO    ·    3270 ms · 0/1/0 (decl 1, suman true) · scrum92-login-operario.test.mjs · CAEN: SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios
+T1 · VERDE   ·    3758 ms · 1/0/0 (decl 1, suman true) · scrum94-register-teammember.test.mjs
+T1 · VERDE   ·    6198 ms · 1/0/0 (decl 1, suman true) · scrum967b-el-portal-en-el-envio.test.mjs
+T1 · VERDE   ·    7084 ms · 1/0/0 (decl 1, suman true) · scrum974-firmado-sin-facturar-en-el-lunes.test.mjs
+T1 · VERDE   ·    2791 ms · 7/0/0 (decl 7, suman true) · scrum979-ultima-visita.test.mjs
+T1 · VERDE   ·    3450 ms · 1/0/0 (decl 1, suman true) · scrum980-historial-del-cliente.test.mjs
+T1 · VERDE   ·   17342 ms · 6/0/0 (decl 6, suman true) · scrum992-partes-recortan-por-rol.test.mjs
+T1 · VERDE   ·    6394 ms · 2/0/0 (decl 2, suman true) · tenancy-permisos.test.mjs
+T1 · VERDE   ·    2659 ms · 3/0/0 (decl 3, suman true) · webhooks-idempotencia.test.mjs
+T1 · N=11 · ficheros=86 · VERDE=83 ROJO=2 SALTA=1 CIEGO=0 COLGADO=0 · pared 51790 ms
+
+## RÉGIMEN T2 · 86 ficheros (los de LIBRO_PG_URL según scrum419), N=11, base nueva · memoria_libre_MB=4741
+T2 · VERDE   ·    1471 ms · 1/0/0 (decl 1, suman true) · a55-window-quote.test.mjs
+T2 · VERDE   ·    3355 ms · 17/0/0 (decl 17, suman true) · albaran.test.mjs
+T2 · VERDE   ·   21114 ms · 1/0/0 (decl 1, suman true) · bot-suite.test.mjs
+T2 · VERDE   ·    2930 ms · 4/0/0 (decl 4, suman true) · pdfs.test.mjs
+T2 · VERDE   ·     986 ms · 1/0/0 (decl 1, suman true) · scrum1014-sitios-del-cliente.test.mjs
+T2 · VERDE   ·    1118 ms · 1/0/0 (decl 1, suman true) · scrum1036-notas-del-cliente.test.mjs
+T2 · VERDE   ·    1140 ms · 1/0/0 (decl 1, suman true) · scrum104-clientes-referenciados.test.mjs
+T2 · VERDE   ·    3284 ms · 5/0/0 (decl 5, suman true) · scrum1057b-fusion-clientes-postgres.test.mjs
+T2 · VERDE   ·    1184 ms · 1/0/0 (decl 1, suman true) · scrum1059b-etiquetado-masivo-postgres.test.mjs
+T2 · VERDE   ·    1115 ms · 2/0/0 (decl 2, suman true) · scrum106-trabajos-fecha.test.mjs
+T2 · VERDE   ·    1167 ms · 1/0/0 (decl 1, suman true) · scrum1062-historial-whatsapp-cliente.test.mjs
+T2 · VERDE   ·     830 ms · 2/0/0 (decl 2, suman true) · scrum109-expense-teammember.test.mjs
+T2 · VERDE   ·    1403 ms · 8/0/0 (decl 8, suman true) · scrum1103-retencion-practicada-en-gastos.test.mjs
+T2 · VERDE   ·   10154 ms · 13/0/0 (decl 13, suman true) · scrum1145-pestana-sitios.test.mjs
+T2 · VERDE   ·    1809 ms · 2/0/0 (decl 2, suman true) · scrum115-wa-fallo-registrado.test.mjs
+T2 · VERDE   ·    1966 ms · 2/0/0 (decl 2, suman true) · scrum1150c-carrera-de-la-revision-postgres.test.mjs
+T2 · VERDE   ·     908 ms · 3/0/0 (decl 3, suman true) · scrum1188d-la-revision-hereda-el-vacio.test.mjs
+T2 · VERDE   ·    2830 ms · 4/0/0 (decl 4, suman true) · scrum1188d-tiers-tambien-se-vacia.test.mjs
+T2 · VERDE   ·    2379 ms · 1/0/0 (decl 1, suman true) · scrum120-patch-job-roles.test.mjs
+T2 · VERDE   ·    3424 ms · 1/0/0 (decl 1, suman true) · scrum127-paywall-bloquea.test.mjs
+T2 · VERDE   ·    1378 ms · 1/0/0 (decl 1, suman true) · scrum13-cobrado.test.mjs
+T2 · VERDE   ·    2178 ms · 1/0/0 (decl 1, suman true) · scrum131-resend-honesto.test.mjs
+T2 · VERDE   ·    1747 ms · 3/0/0 (decl 3, suman true) · scrum1333-carrera-del-encolado-postgres.test.mjs
+T2 · VERDE   ·    4928 ms · 5/0/0 (decl 5, suman true) · scrum1346-el-tecnico-ve-documentos-ajenos.test.mjs
+T2 · VERDE   ·     872 ms · 4/0/0 (decl 4, suman true) · scrum135-gasto-tenencia.test.mjs
+T2 · VERDE   ·    2492 ms · 3/0/0 (decl 3, suman true) · scrum136-hub-equipo.test.mjs
+T2 · VERDE   ·    4377 ms · 6/0/0 (decl 6, suman true) · scrum1390e-el-portal-solo-lo-suyo.test.mjs
+T2 · VERDE   ·    7514 ms · 5/0/0 (decl 5, suman true) · scrum1397-el-tecnico-ve-sus-facturas.test.mjs
+T2 · VERDE   ·    9334 ms · 9/0/0 (decl 9, suman true) · scrum1403-el-tecnico-y-las-otras-puertas.test.mjs
+T2 · VERDE   ·    2984 ms · 2/0/0 (decl 2, suman true) · scrum148-filtro-por-miembro.test.mjs
+T2 · VERDE   ·    2863 ms · 10/0/0 (decl 10, suman true) · scrum1489-la-busqueda-recorta-al-tecnico.test.mjs
+T2 · VERDE   ·   10015 ms · 1/0/0 (decl 1, suman true) · scrum1515-nuestra-puerta-de-alta.test.mjs
+T2 · VERDE   ·    1063 ms · 1/0/0 (decl 1, suman true) · scrum1518b-la-ficha-no-ensena-entrantes.test.mjs
+T2 · VERDE   ·    2511 ms · 12/0/0 (decl 12, suman true) · scrum17-recapitulativa.test.mjs
+T2 · VERDE   ·    3874 ms · 7/0/0 (decl 7, suman true) · scrum170-facturacion-parcial.test.mjs
+T2 · VERDE   ·    3895 ms · 1/0/0 (decl 1, suman true) · scrum171a-consolidar-cliente.test.mjs
+T2 · SALTA   ·    2003 ms · 6/0/1 (decl 7, suman true) · scrum173-cadena-verifactu-serializada.test.mjs
+T2 · VERDE   ·    2880 ms · 3/0/0 (decl 3, suman true) · scrum178-emision-manual.test.mjs
+T2 · VERDE   ·    1176 ms · 5/0/0 (decl 5, suman true) · scrum207-emision-auditada.test.mjs
+T2 · VERDE   ·    2393 ms · 1/0/0 (decl 1, suman true) · scrum22-operario-readpath.test.mjs
+T2 · VERDE   ·    3481 ms · 1/0/0 (decl 1, suman true) · scrum221-export-fiscal-cero-bytes.test.mjs
+T2 · VERDE   ·    1550 ms · 23/0/0 (decl 23, suman true) · scrum222-deriva-arranque.test.mjs
+T2 · VERDE   ·    5682 ms · 1/0/0 (decl 1, suman true) · scrum234-carrera-serie.gated.test.mjs
+T2 · VERDE   ·    2973 ms · 1/0/0 (decl 1, suman true) · scrum24-operarios-metrics.test.mjs
+T2 · VERDE   ·    1241 ms · 10/0/0 (decl 10, suman true) · scrum244-supresion-y-anonimizado.test.mjs
+T2 · VERDE   ·    3222 ms · 1/0/0 (decl 1, suman true) · scrum25-export-zip.test.mjs
+T2 · VERDE   ·    3862 ms · 1/0/0 (decl 1, suman true) · scrum25-exports.test.mjs
+T2 · VERDE   ·    1174 ms · 1/0/0 (decl 1, suman true) · scrum295-modelo-303-postgres.test.mjs
+T2 · VERDE   ·    1199 ms · 1/0/0 (decl 1, suman true) · scrum296-libro-postgres.test.mjs
+T2 · VERDE   ·    2165 ms · 2/0/0 (decl 2, suman true) · scrum297-evidencias-postgres.test.mjs
+T2 · VERDE   ·    1969 ms · 6/0/0 (decl 6, suman true) · scrum324-cadena-hasta-el-libro.test.mjs
+T2 · VERDE   ·    1964 ms · 2/0/0 (decl 2, suman true) · scrum389-un-solo-iva.test.mjs
+T2 · VERDE   ·    2915 ms · 1/0/0 (decl 1, suman true) · scrum47-enviar-albaran-wa.test.mjs
+T2 · VERDE   ·    3014 ms · 1/0/0 (decl 1, suman true) · scrum49-firma-remota.test.mjs
+T2 · VERDE   ·    5784 ms · 1/0/0 (decl 1, suman true) · scrum50-bot-albaranes.test.mjs
+T2 · VERDE   ·    2180 ms · 1/0/0 (decl 1, suman true) · scrum51-job-sin-quote.test.mjs
+T2 · VERDE   ·    1396 ms · 1/0/0 (decl 1, suman true) · scrum52-operario.test.mjs
+T2 · VERDE   ·    2380 ms · 1/0/0 (decl 1, suman true) · scrum57-operario-propagacion.test.mjs
+T2 · VERDE   ·    3231 ms · 1/0/0 (decl 1, suman true) · scrum58-jobs-n1.test.mjs
+T2 · VERDE   ·    1863 ms · 4/0/0 (decl 4, suman true) · scrum592-concurrencia-serie.test.mjs
+T2 · VERDE   ·    1281 ms · 4/0/0 (decl 4, suman true) · scrum593d-viaje-completo-del-texto.test.mjs
+T2 · VERDE   ·    2872 ms · 2/0/0 (decl 2, suman true) · scrum66-tipo-operacion.test.mjs
+T2 · VERDE   ·    2678 ms · 5/0/0 (decl 5, suman true) · scrum68-evidencias-firma.test.mjs
+T2 · VERDE   ·    1282 ms · 1/0/0 (decl 1, suman true) · scrum692-guardado-parcial-en-base.test.mjs
+T2 · VERDE   ·    3143 ms · 2/0/0 (decl 2, suman true) · scrum72-pdfs-privados.test.mjs
+T2 · VERDE   ·    5465 ms · 4/0/0 (decl 4, suman true) · scrum728d-ms-en-loopback.test.mjs
+T2 · VERDE   ·    3262 ms · 1/0/0 (decl 1, suman true) · scrum73-verifactu-gate.test.mjs
+T2 · VERDE   ·    2795 ms · 1/0/0 (decl 1, suman true) · scrum74-recibo-token.test.mjs
+T2 · VERDE   ·    2072 ms · 1/0/0 (decl 1, suman true) · scrum76-email-adjunto.test.mjs
+T2 · VERDE   ·    1146 ms · 4/0/0 (decl 4, suman true) · scrum767-cura-concurrencia.test.mjs
+T2 · VERDE   ·    1816 ms · 8/0/0 (decl 8, suman true) · scrum781-concurrencia-de-la-factura.test.mjs
+T2 · VERDE   ·    1378 ms · 6/0/0 (decl 6, suman true) · scrum793-la-carrera-del-token.test.mjs
+T2 · VERDE   ·   12915 ms · 7/0/0 (decl 7, suman true) · scrum809-paywall-tras-cancelar.test.mjs
+T2 · VERDE   ·    8695 ms · 3/0/0 (decl 3, suman true) · scrum814-carrera-del-tramo.gated.test.mjs
+T2 · VERDE   ·    3485 ms · 1/0/0 (decl 1, suman true) · scrum82-zip-verifactu.test.mjs
+T2 · VERDE   ·    3610 ms · 2/0/0 (decl 2, suman true) · scrum85-pay-routes-token.test.mjs
+T2 · VERDE   ·    2255 ms · 1/0/0 (decl 1, suman true) · scrum90-pay-bank-mp-token.test.mjs
+T2 · VERDE   ·    2336 ms · 1/0/0 (decl 1, suman true) · scrum92-login-operario.test.mjs
+T2 · VERDE   ·    2749 ms · 1/0/0 (decl 1, suman true) · scrum94-register-teammember.test.mjs
+T2 · VERDE   ·    2627 ms · 1/0/0 (decl 1, suman true) · scrum967b-el-portal-en-el-envio.test.mjs
+T2 · VERDE   ·    2375 ms · 1/0/0 (decl 1, suman true) · scrum974-firmado-sin-facturar-en-el-lunes.test.mjs
+T2 · VERDE   ·    1065 ms · 7/0/0 (decl 7, suman true) · scrum979-ultima-visita.test.mjs
+T2 · VERDE   ·    1152 ms · 1/0/0 (decl 1, suman true) · scrum980-historial-del-cliente.test.mjs
+T2 · VERDE   ·    3781 ms · 6/0/0 (decl 6, suman true) · scrum992-partes-recortan-por-rol.test.mjs
+T2 · VERDE   ·    5101 ms · 2/0/0 (decl 2, suman true) · tenancy-permisos.test.mjs
+T2 · VERDE   ·    1976 ms · 3/0/0 (decl 3, suman true) · webhooks-idempotencia.test.mjs
+T2 · N=11 · ficheros=86 · VERDE=85 ROJO=0 SALTA=1 CIEGO=0 COLGADO=0 · pared 30421 ms
+
+## RÉGIMEN T3 · 86 ficheros (los de LIBRO_PG_URL según scrum419), N=11, base nueva · memoria_libre_MB=5046
+T3 · VERDE   ·    1454 ms · 1/0/0 (decl 1, suman true) · a55-window-quote.test.mjs
+T3 · VERDE   ·    3192 ms · 17/0/0 (decl 17, suman true) · albaran.test.mjs
+T3 · VERDE   ·   20321 ms · 1/0/0 (decl 1, suman true) · bot-suite.test.mjs
+T3 · VERDE   ·    2667 ms · 4/0/0 (decl 4, suman true) · pdfs.test.mjs
+T3 · VERDE   ·     807 ms · 1/0/0 (decl 1, suman true) · scrum1014-sitios-del-cliente.test.mjs
+T3 · VERDE   ·     783 ms · 1/0/0 (decl 1, suman true) · scrum1036-notas-del-cliente.test.mjs
+T3 · VERDE   ·     872 ms · 1/0/0 (decl 1, suman true) · scrum104-clientes-referenciados.test.mjs
+T3 · VERDE   ·    2661 ms · 5/0/0 (decl 5, suman true) · scrum1057b-fusion-clientes-postgres.test.mjs
+T3 · VERDE   ·    1028 ms · 1/0/0 (decl 1, suman true) · scrum1059b-etiquetado-masivo-postgres.test.mjs
+T3 · VERDE   ·     948 ms · 2/0/0 (decl 2, suman true) · scrum106-trabajos-fecha.test.mjs
+T3 · VERDE   ·     962 ms · 1/0/0 (decl 1, suman true) · scrum1062-historial-whatsapp-cliente.test.mjs
+T3 · VERDE   ·     873 ms · 2/0/0 (decl 2, suman true) · scrum109-expense-teammember.test.mjs
+T3 · VERDE   ·    1082 ms · 8/0/0 (decl 8, suman true) · scrum1103-retencion-practicada-en-gastos.test.mjs
+T3 · VERDE   ·    9452 ms · 13/0/0 (decl 13, suman true) · scrum1145-pestana-sitios.test.mjs
+T3 · VERDE   ·    1268 ms · 2/0/0 (decl 2, suman true) · scrum115-wa-fallo-registrado.test.mjs
+T3 · VERDE   ·    1565 ms · 2/0/0 (decl 2, suman true) · scrum1150c-carrera-de-la-revision-postgres.test.mjs
+T3 · VERDE   ·     948 ms · 3/0/0 (decl 3, suman true) · scrum1188d-la-revision-hereda-el-vacio.test.mjs
+T3 · VERDE   ·    2192 ms · 4/0/0 (decl 4, suman true) · scrum1188d-tiers-tambien-se-vacia.test.mjs
+T3 · VERDE   ·    2915 ms · 1/0/0 (decl 1, suman true) · scrum120-patch-job-roles.test.mjs
+T3 · VERDE   ·    3593 ms · 1/0/0 (decl 1, suman true) · scrum127-paywall-bloquea.test.mjs
+T3 · VERDE   ·    1730 ms · 1/0/0 (decl 1, suman true) · scrum13-cobrado.test.mjs
+T3 · VERDE   ·    2104 ms · 1/0/0 (decl 1, suman true) · scrum131-resend-honesto.test.mjs
+T3 · VERDE   ·    1629 ms · 3/0/0 (decl 3, suman true) · scrum1333-carrera-del-encolado-postgres.test.mjs
+T3 · VERDE   ·    3892 ms · 5/0/0 (decl 5, suman true) · scrum1346-el-tecnico-ve-documentos-ajenos.test.mjs
+T3 · VERDE   ·     732 ms · 4/0/0 (decl 4, suman true) · scrum135-gasto-tenencia.test.mjs
+T3 · VERDE   ·    2861 ms · 3/0/0 (decl 3, suman true) · scrum136-hub-equipo.test.mjs
+T3 · VERDE   ·    4155 ms · 6/0/0 (decl 6, suman true) · scrum1390e-el-portal-solo-lo-suyo.test.mjs
+T3 · VERDE   ·    5951 ms · 5/0/0 (decl 5, suman true) · scrum1397-el-tecnico-ve-sus-facturas.test.mjs
+T3 · VERDE   ·    8446 ms · 9/0/0 (decl 9, suman true) · scrum1403-el-tecnico-y-las-otras-puertas.test.mjs
+T3 · VERDE   ·    2438 ms · 2/0/0 (decl 2, suman true) · scrum148-filtro-por-miembro.test.mjs
+T3 · VERDE   ·    2277 ms · 10/0/0 (decl 10, suman true) · scrum1489-la-busqueda-recorta-al-tecnico.test.mjs
+T3 · VERDE   ·    9970 ms · 1/0/0 (decl 1, suman true) · scrum1515-nuestra-puerta-de-alta.test.mjs
+T3 · VERDE   ·     815 ms · 1/0/0 (decl 1, suman true) · scrum1518b-la-ficha-no-ensena-entrantes.test.mjs
+T3 · VERDE   ·    2226 ms · 12/0/0 (decl 12, suman true) · scrum17-recapitulativa.test.mjs
+T3 · VERDE   ·    3090 ms · 7/0/0 (decl 7, suman true) · scrum170-facturacion-parcial.test.mjs
+T3 · VERDE   ·    3350 ms · 1/0/0 (decl 1, suman true) · scrum171a-consolidar-cliente.test.mjs
+T3 · SALTA   ·    1945 ms · 6/0/1 (decl 7, suman true) · scrum173-cadena-verifactu-serializada.test.mjs
+T3 · VERDE   ·    3254 ms · 3/0/0 (decl 3, suman true) · scrum178-emision-manual.test.mjs
+T3 · VERDE   ·    1030 ms · 5/0/0 (decl 5, suman true) · scrum207-emision-auditada.test.mjs
+T3 · VERDE   ·    2781 ms · 1/0/0 (decl 1, suman true) · scrum22-operario-readpath.test.mjs
+T3 · VERDE   ·    2686 ms · 1/0/0 (decl 1, suman true) · scrum221-export-fiscal-cero-bytes.test.mjs
+T3 · VERDE   ·    1167 ms · 23/0/0 (decl 23, suman true) · scrum222-deriva-arranque.test.mjs
+T3 · VERDE   ·    5718 ms · 1/0/0 (decl 1, suman true) · scrum234-carrera-serie.gated.test.mjs
+T3 · VERDE   ·    2686 ms · 1/0/0 (decl 1, suman true) · scrum24-operarios-metrics.test.mjs
+T3 · VERDE   ·    1496 ms · 10/0/0 (decl 10, suman true) · scrum244-supresion-y-anonimizado.test.mjs
+T3 · VERDE   ·    2807 ms · 1/0/0 (decl 1, suman true) · scrum25-export-zip.test.mjs
+T3 · VERDE   ·    3004 ms · 1/0/0 (decl 1, suman true) · scrum25-exports.test.mjs
+T3 · VERDE   ·    1448 ms · 1/0/0 (decl 1, suman true) · scrum295-modelo-303-postgres.test.mjs
+T3 · VERDE   ·    1625 ms · 1/0/0 (decl 1, suman true) · scrum296-libro-postgres.test.mjs
+T3 · VERDE   ·    2560 ms · 2/0/0 (decl 2, suman true) · scrum297-evidencias-postgres.test.mjs
+T3 · VERDE   ·    2393 ms · 6/0/0 (decl 6, suman true) · scrum324-cadena-hasta-el-libro.test.mjs
+T3 · VERDE   ·    2461 ms · 2/0/0 (decl 2, suman true) · scrum389-un-solo-iva.test.mjs
+T3 · VERDE   ·    2853 ms · 1/0/0 (decl 1, suman true) · scrum47-enviar-albaran-wa.test.mjs
+T3 · VERDE   ·    2675 ms · 1/0/0 (decl 1, suman true) · scrum49-firma-remota.test.mjs
+T3 · VERDE   ·    5336 ms · 1/0/0 (decl 1, suman true) · scrum50-bot-albaranes.test.mjs
+T3 · VERDE   ·    2405 ms · 1/0/0 (decl 1, suman true) · scrum51-job-sin-quote.test.mjs
+T3 · VERDE   ·    1584 ms · 1/0/0 (decl 1, suman true) · scrum52-operario.test.mjs
+T3 · VERDE   ·    2659 ms · 1/0/0 (decl 1, suman true) · scrum57-operario-propagacion.test.mjs
+T3 · VERDE   ·    3559 ms · 1/0/0 (decl 1, suman true) · scrum58-jobs-n1.test.mjs
+T3 · VERDE   ·    1965 ms · 4/0/0 (decl 4, suman true) · scrum592-concurrencia-serie.test.mjs
+T3 · VERDE   ·    1075 ms · 4/0/0 (decl 4, suman true) · scrum593d-viaje-completo-del-texto.test.mjs
+T3 · VERDE   ·    2682 ms · 2/0/0 (decl 2, suman true) · scrum66-tipo-operacion.test.mjs
+T3 · VERDE   ·    2492 ms · 5/0/0 (decl 5, suman true) · scrum68-evidencias-firma.test.mjs
+T3 · VERDE   ·    1469 ms · 1/0/0 (decl 1, suman true) · scrum692-guardado-parcial-en-base.test.mjs
+T3 · VERDE   ·    3031 ms · 2/0/0 (decl 2, suman true) · scrum72-pdfs-privados.test.mjs
+T3 · VERDE   ·    4968 ms · 4/0/0 (decl 4, suman true) · scrum728d-ms-en-loopback.test.mjs
+T3 · VERDE   ·    2569 ms · 1/0/0 (decl 1, suman true) · scrum73-verifactu-gate.test.mjs
+T3 · VERDE   ·    2343 ms · 1/0/0 (decl 1, suman true) · scrum74-recibo-token.test.mjs
+T3 · VERDE   ·    1673 ms · 1/0/0 (decl 1, suman true) · scrum76-email-adjunto.test.mjs
+T3 · VERDE   ·    1041 ms · 4/0/0 (decl 4, suman true) · scrum767-cura-concurrencia.test.mjs
+T3 · VERDE   ·    2119 ms · 8/0/0 (decl 8, suman true) · scrum781-concurrencia-de-la-factura.test.mjs
+T3 · VERDE   ·    1377 ms · 6/0/0 (decl 6, suman true) · scrum793-la-carrera-del-token.test.mjs
+T3 · VERDE   ·   13091 ms · 7/0/0 (decl 7, suman true) · scrum809-paywall-tras-cancelar.test.mjs
+T3 · VERDE   ·    8630 ms · 3/0/0 (decl 3, suman true) · scrum814-carrera-del-tramo.gated.test.mjs
+T3 · VERDE   ·    3072 ms · 1/0/0 (decl 1, suman true) · scrum82-zip-verifactu.test.mjs
+T3 · VERDE   ·    2519 ms · 2/0/0 (decl 2, suman true) · scrum85-pay-routes-token.test.mjs
+T3 · VERDE   ·    2610 ms · 1/0/0 (decl 1, suman true) · scrum90-pay-bank-mp-token.test.mjs
+T3 · VERDE   ·    2526 ms · 1/0/0 (decl 1, suman true) · scrum92-login-operario.test.mjs
+T3 · VERDE   ·    2562 ms · 1/0/0 (decl 1, suman true) · scrum94-register-teammember.test.mjs
+T3 · VERDE   ·    2438 ms · 1/0/0 (decl 1, suman true) · scrum967b-el-portal-en-el-envio.test.mjs
+T3 · VERDE   ·    2350 ms · 1/0/0 (decl 1, suman true) · scrum974-firmado-sin-facturar-en-el-lunes.test.mjs
+T3 · VERDE   ·    1585 ms · 7/0/0 (decl 7, suman true) · scrum979-ultima-visita.test.mjs
+T3 · VERDE   ·    1452 ms · 1/0/0 (decl 1, suman true) · scrum980-historial-del-cliente.test.mjs
+T3 · VERDE   ·    4188 ms · 6/0/0 (decl 6, suman true) · scrum992-partes-recortan-por-rol.test.mjs
+T3 · VERDE   ·    4533 ms · 2/0/0 (decl 2, suman true) · tenancy-permisos.test.mjs
+T3 · VERDE   ·    2130 ms · 3/0/0 (decl 3, suman true) · webhooks-idempotencia.test.mjs
+T3 · N=11 · ficheros=86 · VERDE=85 ROJO=0 SALTA=1 CIEGO=0 COLGADO=0 · pared 29001 ms
+

@@ -1,0 +1,7 @@
+cobroflash-backend-2e | interactive | transcript sí | nombre-transcript «null» | carpeta null | porNombre null | puesto null | con --exigir-identidad: CAERÍA
+jv-j3g | background | transcript sí | nombre-transcript «jv-j3g» | carpeta null | porNombre null | puesto null | con --exigir-identidad: CAERÍA
+jv-j3i | background | transcript sí | nombre-transcript «jv-j3i» | carpeta J3 | porNombre J3 | puesto J3 | con --exigir-identidad: pasa
+jv-j4g | background | transcript sí | nombre-transcript «jv-j4g» | carpeta J4 | porNombre J4 | puesto J4 | con --exigir-identidad: pasa
+jv-j2l | background | transcript sí | nombre-transcript «jv-j2l» | carpeta J2 | porNombre J2 | puesto J2 | con --exigir-identidad: pasa
+jv-j1l | background | transcript sí | nombre-transcript «jv-j1l» | carpeta J1 | porNombre J1 | puesto J1 | con --exigir-identidad: pasa
+jv-j6k | background | transcript sí | nombre-transcript «jv-j6k» | carpeta J6 | porNombre J6 | puesto J6 | con --exigir-identidad: pasa

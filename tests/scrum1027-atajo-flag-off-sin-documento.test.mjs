@@ -185,10 +185,16 @@ test('SCRUM-1027 · control negativo: C1 sigue emitiendo si el modo NO es receip
 
 test('SCRUM-1027 · NEGATIVO: el tipo JUST y su infraestructura siguen intactos (eso es SCRUM-825, firmado)', () => {
   const emisor = leer('src/modules/invoicing/domain/invoicing.service.ts');
-  assert.match(emisor, /type:\s*isReceiptNumber\(number\)\s*\?\s*'JUST'/,
-    '🔴 emitInvoice ya no fuerza type: JUST cuando la serie sale J-. Retirar el tipo JUST es ' +
-    'SCRUM-825 (regla 27, va firmado antes) — este ticket NO lo toca, solo cierra la puerta por ' +
-    'la que se llegaba a pedir una serie J-.');
+  // SCRUM-1260b: hasta aquí este suelo EXIGÍA que emitInvoice siguiera forzando `JUST`, porque
+  // retirarlo era camino de emisión y necesitaba firma. La firma existe (SCRUM-1260, comentarios
+  // 19616 y 20143) y el suelo se da la vuelta EN EL MISMO PR que retira la rama, como ya se hizo
+  // abajo con el generador (regla 41: el guard cambia con la decisión, no para que pase).
+  assert.doesNotMatch(emisor, /type:\s*isReceiptNumber\(number\)\s*\?\s*'JUST'/,
+    '🔴 emitInvoice vuelve a forzar type: JUST cuando la serie sale J-. Se retiró con firma del ' +
+    'fundador (SCRUM-1260, comentarios 19616 y 20143): devolverlo necesita otra (regla 27).');
+  assert.match(emisor, /type:\s*input\.type\s*\?\?\s*'F1'/,
+    '🔴 no encuentro el `type` de emitInvoice: sin esto, el negativo de arriba pasaría también si ' +
+    'alguien vaciara el fichero.');
 
   const numService = leer('src/modules/invoicing/domain/invoiceNumber.service.ts');
   // SCRUM-825 (D1 y D2, FIRMADAS por el fundador: «1-Sí a las 3», SCRUM-825 comentario 17446).

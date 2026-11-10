@@ -263,6 +263,7 @@ test('SCRUM-394 · R5: un plan en opt-out cuyo cliente VUELVE se propone al día
 test('SCRUM-394 · la microcopy es la APROBADA, palabra por palabra', () => {
   // Aprobada por el fundador el 7-ago-2026. Cambiar una coma exige aprobación nueva (regla 30):
   // este texto le dice a un profesional por qué su plan no se ha propuesto.
+  // Consta en: SCRUM-1502 comentario 20702.
   assert.ok(FUENTE.includes("const TITULO_SIN_CANAL = 'Mantenimiento no propuesto';"),
     '🔴 el título ha cambiado y no consta aprobación nueva');
   assert.ok(FUENTE.includes('Este cliente no recibe mensajes de WhatsApp. El mantenimiento sigue vivo: si quieres '),

@@ -1,0 +1,33 @@
+sin(20 pasadas, 3 casos) vs dsin(80 pasadas, 3 casos): IGUAL · control sembrado: VIVO
+  ok | A12.2a: dedupe por event.id de Stripe (pagos y Connect comparten helper)
+  ok | A12.2b: dedupe por wamid de Meta (reintentos del webhook entrante)
+  ok | A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integración)
+sinc(40 pasadas, 3 casos) vs dsin(80 pasadas, 3 casos): IGUAL · control sembrado: VIVO
+  ok | A12.2a: dedupe por event.id de Stripe (pagos y Connect comparten helper)
+  ok | A12.2b: dedupe por wamid de Meta (reintentos del webhook entrante)
+  ok | A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integración)
+con(40 pasadas, 3 casos) vs dcon(20 pasadas, 3 casos): IGUAL · control sembrado: VIVO
+  ok | A12.2a: dedupe por event.id de Stripe (pagos y Connect comparten helper)
+  ok | A12.2b: dedupe por wamid de Meta (reintentos del webhook entrante)
+  ok | A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integración)
+a131(20 pasadas, 1 casos) vs d131(20 pasadas, 1 casos): IGUAL · control sembrado: VIVO
+  ok | SCRUM-131: reenviar invitación informa si el email NO salió (sent:false), sin perder la invitación
+a136(20 pasadas, 3 casos) vs d136(20 pasadas, 3 casos): IGUAL · control sembrado: VIVO
+  ok | SCRUM-136: el hub de Equipo es admin-only — un operario no ve el pendiente de sus compañeros
+  ok | SCRUM-136: el resumen NO homogeneiza las ventanas — presupuestos del mes, trabajos del histórico
+  ok | SCRUM-136: el propietario sale en el hub aunque no sea TeamMember, con sus propios números
+a876f(20 pasadas, 3 casos) vs d876f(20 pasadas, 3 casos): IGUAL · control sembrado: VIVO
+  ok | SCRUM-876f · el corte de salida ve un POST de axios y un fetch, y los corta
+  ok | SCRUM-876f · lo de esta máquina pasa el corte y no se apunta
+  ok | SCRUM-876f · la bandera puesta DESPUÉS de cargar el sender surte efecto, y quitarla también
+a131(20 pasadas, 1 casos) vs c131(20 pasadas, 1 casos): IGUAL · control sembrado: VIVO
+  ok | SCRUM-131: reenviar invitación informa si el email NO salió (sent:false), sin perder la invitación
+a136(20 pasadas, 3 casos) vs c136(20 pasadas, 3 casos): IGUAL · control sembrado: VIVO
+  ok | SCRUM-136: el hub de Equipo es admin-only — un operario no ve el pendiente de sus compañeros
+  ok | SCRUM-136: el resumen NO homogeneiza las ventanas — presupuestos del mes, trabajos del histórico
+  ok | SCRUM-136: el propietario sale en el hub aunque no sea TeamMember, con sus propios números
+a876f(20 pasadas, 3 casos) vs c876f(20 pasadas, 3 casos): IGUAL · control sembrado: VIVO
+  ok | SCRUM-876f · el corte de salida ve un POST de axios y un fetch, y los corta
+  ok | SCRUM-876f · lo de esta máquina pasa el corte y no se apunta
+  ok | SCRUM-876f · la bandera puesta DESPUÉS de cargar el sender surte efecto, y quitarla también
+POBLACION=9 pares · malos=0 · EXIT=0

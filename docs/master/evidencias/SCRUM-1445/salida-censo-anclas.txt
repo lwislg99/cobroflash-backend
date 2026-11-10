@@ -1,0 +1,109 @@
+﻿POBLACIÓN: 1591 ficheros de tests/ · A: 935 anclas a texto con fichero resuelto · B: 3 anclas a línea
+A por presencia: {"SÍ":838,"NO":95,"FICHERO-NO-EXISTE":2}
+A AUSENTES por uso: {"NEGATIVO":85,"OTRO":8,"ASSERT":3,"GUARDADO-EN-VARIABLE":1}
+
+## A · ausentes (no NEGATIVO)
+scrum1215f-la-firma-no-se-reparte-por-posicion.test.mjs:32 | public/dashboard/js/parteDetailView.js | includes | "\r\n" | NO | OTRO
+scrum132-iva-unidad.test.mjs:49 | public/dashboard/js/quotesView.js | match | "/String\\(\\s*[\\w.]+\\s*\\*\\s*100\\s*\\)/g" | NO | OTRO
+scrum132-iva-unidad.test.mjs:59 | public/dashboard/js/quotesView.js | match | "/tax:\\s*\\(?\\s*\\w+\\.tax\\s*\\|\\|\\s*0\\s*\\)?/g" | NO | OTRO
+scrum286-bloques-orden.test.mjs:28 | public/dashboard/js/quotesView.js | includes | "\r\n" | NO | OTRO
+scrum301-albaranes-seccion.test.mjs:219 | public/dashboard/js/albaranesView.js | assert.match | "/return (?!.*if)[^;]+;\\s*}$/s" | NO | OTRO
+scrum350-modal-footer-envuelve.test.mjs:170 | public/dashboard/css/styles.css | includes | ".modal-footer { flex-wrap: wrap; }" | NO | ASSERT
+scrum378-carga-por-pagina.test.mjs:97 | public/login.html | assert.match | "/class=\"btn-primary\"/" | NO | OTRO
+scrum405-microcopy-descarga.test.mjs:75 | public/dashboard/js/api.js | test | "/'[^']*\\[PENDIENTE microcopy oficial[^']*'/" | NO | GUARDADO-EN-VARIABLE
+scrum445-cobros-duplicados.test.mjs:151 | src/lib/invoicing.ts | assert.match | "/(?:tx\\.invoice\\.create\\(\\{|crearFacturaEmitida\\()[\\s\\S]{0,600}?charge" | NO | OTRO
+scrum734-una-sola-carga.test.mjs:250 | src/modules/quotes/app/routes/quotes.routes.ts | assert.match | "/\\{\\s*\\[K in keyof T\\]-\\?\\s*:\\s*T\\[K\\]\\s*\\}/" | NO | OTRO
+scrum778-la-lista-cableada.test.mjs:200 | src/modules/x/rutas.ts | includes | "exigirLineasFacturables" | FICHERO-NO-EXISTE | ASSERT
+scrum895b-literales-firmados.test.mjs:311 | public/dashboard/js/jobDetailView.js | includes | "|| primaria.id" | NO | ASSERT
+
+## A · ausentes NEGATIVO (probablemente a propósito)
+scrum1040-facturas-recibidas-servidor.test.mjs:140 | src/modules/fiscal/librosAeat/librosAeat.routes.ts | "/\\.create\\(|\\.update\\(|\\.delete\\(|allocateInvoiceNumber|applyVeriFactu"
+scrum1155-alta-rediseno.test.mjs:52 | public/dashboard/js/expensesView.js | "[21, 10, 4, 0]"
+scrum1155-alta-rediseno.test.mjs:125 | public/dashboard/js/expensesView.js | "/\\.innerHTML\\s*=.*proveedorNombre/"
+scrum1212b-correo-aceptado-sin-firma.test.mjs:78 | src/modules/messaging/domain/merchantNotifications.ts | "firmado digitalmente"
+scrum1212c-ajuste-correo-aceptado-desde-whatsapp.test.mjs:56 | public/dashboard/js/settingsView.js | "desde su portal"
+scrum1212c-ajuste-correo-aceptado-desde-whatsapp.test.mjs:57 | public/dashboard/js/settingsView.js | "firma y acepta"
+scrum153d-ui-anular.test.mjs:75 | public/dashboard/js/invoiceDetailView.js | "/actions\\.appendChild\\(btnAnular\\)/"
+scrum244-menu-portabilidad.test.mjs:203 | public/dashboard/js/exportView.js | "/btnPort\\.textContent\\s*=\\s*[^;]*\\+/"
+scrum291-series-huecos.test.mjs:111 | src/modules/system/merchantAdmin.ts | "/PENDIENTE microcopy/"
+scrum291-series-huecos.test.mjs:225 | src/modules/invoicing/domain/huecosSerie.ts | "/padStart|\\\\d\\{3\\}|match\\(|\\.split\\('-'\\)/"
+scrum293-retencion-irpf.test.mjs:137 | src/modules/invoicing/domain/retencionIrpf.ts | "/^import /m"
+scrum296-libro-registro.test.mjs:210 | src/modules/invoicing/domain/libroRegistro.ts | "/allocateInvoiceNumber|formatInvoiceNumber|prisma\\.|\\.update\\(|\\.creat"
+scrum3-bizum-auto.test.mjs:119 | src/modules/billing/app/routes/payCard.routes.ts | "/payment_method_types/"
+scrum301-albaranes-seccion.test.mjs:508 | public/dashboard/js/albaranesView.js | "facturación: todas"
+scrum301-albaranes-seccion.test.mjs:590 | public/dashboard/js/albaranesView.js | "/en total(es|\\(es\\)|s)/"
+scrum313-pantalla-numeracion.test.mjs:86 | public/dashboard/js/onboardingView.js | "/padStart\\(\\s*3|['\"`]-CF-|\\$\\{a[nñ]o\\}-/"
+scrum313-pantalla-numeracion.test.mjs:96 | src/modules/invoicing/domain/vistaPreviaSerie.ts | "/padStart|invoiceSeriesYear === |\\?\\s*.*:\\s*1/"
+scrum325-libros-por-periodo.test.mjs:185 | src/modules/fiscal/librosAeat/librosAeat.repo.ts | "/new Date\\(\\s*año/"
+scrum325-libros-por-periodo.test.mjs:273 | src/modules/fiscal/librosAeat/librosAeat.repo.ts | "/invoice\\.findMany|calcVatBreakdown/"
+scrum360-desalojo.test.mjs:246 | public/dashboard/js/resistenciaAlmacen.js | "/PENDIENTE microcopy/"
+scrum37-plan-front-vs-back.test.mjs:147 | public/dashboard/js/quotesView.js | "/sumCents !== 100/"
+scrum37-plan-front-vs-back.test.mjs:163 | public/dashboard/js/quotesDetailView.js | "/filter\\(\\(t\\) => !t\\.emitido\\)/"
+scrum373-avisos-facturas.test.mjs:214 | public/dashboard/js/invoicesView.js | "/\\berr\\.message\\b|\\be\\.message\\b/"
+scrum380-primaria-tactil.test.mjs:67 | public/dashboard/css/styles.css | "/\\.btn-primary\\.btn-sm\\s*\\{[^}]*min-height:\\s*44px/"
+scrum400-conformidad-landing.test.mjs:162 | public/index.html | "/VeriFactu en certificaci/i"
+scrum400-conformidad-landing.test.mjs:163 | public/index.html | "/declaraci[oó]n responsable/i"
+scrum400-conformidad-landing.test.mjs:164 | public/index.html | "/como fabricante/i"
+scrum412-primaria-nunca-es-sm.test.mjs:195 | public/dashboard/js/invoiceDetailView.js | "/btnBizum\\.className\\s*=\\s*'btn-primary btn-sm'/"
+scrum412-primaria-nunca-es-sm.test.mjs:197 | public/dashboard/js/invoicesView.js | "/nuevaFacturaBtn\\.className\\s*=\\s*'btn-primary btn-sm'/"
+scrum412-primaria-nunca-es-sm.test.mjs:206 | public/dashboard/css/styles.css | "/\\.btn-primary\\.btn-sm\\s*\\{[^}]*min-height:\\s*44px/"
+scrum421-registro-presupuesto.test.mjs:222 | public/dashboard/js/quoteActionsRegistry.js | "/\\bbtnBorrar\\b/"
+scrum421-registro-presupuesto.test.mjs:227 | public/dashboard/js/quoteActionsRegistry.js | "/PENDIENTE microcopy oficial/"
+scrum438-atestiguar.test.mjs:208 | src/modules/fiscal/evidencias/atestiguamiento.ts | "/from '.*core\\/db\\/prisma'/"
+scrum441-cobros-leen-paid-via.test.mjs:111 | src/modules/billing/domain/cobros.service.ts | "/function metodoDeclarado\\b/"
+scrum441-cobros-leen-paid-via.test.mjs:116 | src/modules/billing/domain/cobros.service.ts | "/\\*\\*`Invoice` NO guarda método de cobro\\*\\*/"
+scrum442-facturas-sin-justificantes.test.mjs:69 | src/modules/billing/domain/cobros.service.ts | "/type:\\s*\\{\\s*not:\\s*'JUST'\\s*\\}/"
+scrum444-avisos-no-se-pisan.test.mjs:144 | public/dashboard/js/api.js | "/function showToast\\([^)]*\\)\\s*\\{\\s*\\r?\\n\\s*document\\.getElementById\\("
+scrum448-cobros-estado-de-carga.test.mjs:215 | public/dashboard/js/cobrosView.js | "/COBROS_PLAZO_MS/"
+scrum448-cobros-estado-de-carga.test.mjs:219 | public/dashboard/js/cobrosView.js | "/\\bsetTimeout\\b/"
+scrum448-cobros-estado-de-carga.test.mjs:222 | public/dashboard/js/cobrosView.js | "/\\b1[05]000\\b/"
+scrum452-pdf-lo-que-se-sello.test.mjs:367 | src/modules/jobs/domain/albaranWhatsApp.service.ts | "/generateAlbaranPdf/"
+scrum464-precarga-del-tecnico.test.mjs:249 | src/modules/jobs/app/routes/precargaAdmin.routes.ts | "/requireRole\\(/"
+scrum475-constancia-correo.test.mjs:90 | src/modules/messaging/domain/merchantNotifications.ts | "api.resend.com"
+scrum475-constancia-correo.test.mjs:254 | src/integrations/enviarCorreo.ts | "/constancia\\?:/"
+scrum475-constancia-correo.test.mjs:266 | src/modules/messaging/domain/whatsappLog.service.ts | "/constanciaCorreo/"
+scrum496-anulada-no-vuelve-en-lote.test.mjs:91 | src/modules/system/app/routes/invoicesAdmin.routes.ts | "status: { not: 'paid' }"
+scrum499-el-registro-tiene-sitio.test.mjs:256 | src/modules/system/app/routes/invoicesAdmin.routes.ts | "/charge\\?\\.method \\?\\? 'manual'/"
+scrum503-desconocido-no-es-error.test.mjs:193 | src/modules/system/app/routes/invoicesAdmin.routes.ts | "/etiquetaMetodoCobro|Método sin especificar/"
+scrum506-cobros-distingue-el-desconocido.test.mjs:272 | src/modules/system/app/routes/invoicesAdmin.routes.ts | "/COBROS_DESCONOCIDO|Método sin especificar/"
+scrum530-la-alerta-que-no-puede-pronunciarse.test.mjs:142 | public/dashboard/js/reportsView.js | "/\\bsample\\s*<\\s*10\\b/"
+scrum530-la-alerta-que-no-puede-pronunciarse.test.mjs:142 | public/dashboard/js/reportsView.js | "/\\b>=\\s*10\\b/"
+scrum576-persona-vinculada-a-empresa.test.mjs:269 | src/modules/system/customerAdmin.ts | "/^\\s*(company|people):\\s*true,/m"
+scrum578-duplicados-identificador.test.mjs:120 | src/modules/system/domain/identificadoresDuplicados.ts | "/campo:\\s*'name'/"
+scrum580-tags-por-contacto.test.mjs:374 | public/dashboard/js/customersView.js | "/TEXTOS_ETIQUETAS\\.columna/"
+scrum580-tags-por-contacto.test.mjs:379 | public/dashboard/js/customersView.js | "/\"Todas las etiquetas\"|\"comunidad, administrador/"
+scrum582-seleccion-multiple-clientes.test.mjs:266 | public/dashboard/js/customersView.js | "/[\"'`]Seleccionar todos[\"'`]/"
+scrum584-selector-de-columnas.test.mjs:205 | public/dashboard/js/customersView.js | "/\\{ t: \"ID\" \\}/"
+scrum584-selector-de-columnas.test.mjs:207 | public/dashboard/js/customersView.js | "/\"col-hide-mobile\"/"
+scrum590b-el-campo-en-la-pantalla.test.mjs:278 | public/dashboard/js/customersView.js | "/params\\.set\\(\\s*[\"']mobile[\"']/"
+scrum593-cabecera-y-pie-del-documento.test.mjs:162 | src/modules/jobs/infra/albaranPdf.service.ts | "/text\\('Notas:'\\)/"
+scrum593-cabecera-y-pie-del-documento.test.mjs:165 | src/modules/jobs/infra/albaranPdf.service.ts | "/docFooterText/"
+scrum593c-todas-las-puertas-del-documento.test.mjs:166 | src/lib/invoicing.ts | "/docHeaderText|docFooterText/"
+scrum593e-el-albaran-si-es-alcanzable.test.mjs:246 | public/dashboard/js/quotesView.js | "/textoDelDocumentoMontar\\(textoDocWrap, \\{\\}, \\[/"
+scrum598-el-margen-sale-del-documento.test.mjs:174 | public/dashboard/js/quotesView.js | "/markup:\\s*l\\.markupInput/"
+scrum611-tipo-iva-elegible.test.mjs:106 | public/dashboard/js/quotesView.js | "/vatInput\\.value\\s*=/"
+scrum631-la-unicidad-tiene-vigilante.test.mjs:253 | public/dashboard/js/productsView.js | "PV_MARCADOR_MICROCOPY + ' Ya tienes otro producto activo"
+scrum632-la-descripcion-de-la-linea.test.mjs:115 | public/dashboard/js/quotesView.js | "/it\\.description\\s*=/"
+scrum643-huso-del-sello-fiscal.test.mjs:132 | src/modules/invoicing/domain/invoiceNumber.service.ts | "/now\\.getFullYear\\(\\)/"
+scrum71-voz-albaran.test.mjs:155 | src/modules/ai/app/routes/ai.routes.ts | "/modoValoracion.*req\\.body|req\\.body.*modoValoracion/"
+scrum714-cada-numero-con-su-unidad.test.mjs:194 | public/dashboard/js/exportView.js | "/Microcopy PROPUESTA, sin aprobar/"
+scrum714-cada-numero-con-su-unidad.test.mjs:200 | public/dashboard/js/exportView.js | "No hay facturas emitidas en ese periodo"
+scrum792-barra-alcanzable-en-movil.test.mjs:136 | public/dashboard/js/customersView.js | "/barraSeleccion\\.style\\.display/"
+scrum794-un-solo-anadir-linea.test.mjs:143 | public/dashboard/js/quotesView.js | "/const addLineBtn\\b/"
+scrum827-el-trinquete-mira-el-valor.test.mjs:175 | src/algunServicio.ts | "/defaultVat/"
+scrum83-render-paralelo.test.mjs:124 | src/modules/exports/app/routes/exports.routes.ts | "/for \\(const inv of invoices\\)/"
+scrum845-la-lista-pregunta-lo-que-el-servidor-contesta.test.mjs:129 | public/dashboard/js/invoicesView.js | "/typeof\\s+window\\.sePuedeMarcarPagadaEnLote/"
+scrum845-la-lista-pregunta-lo-que-el-servidor-contesta.test.mjs:146 | public/dashboard/js/invoiceDetailView.js | "/'bizum-no-disponible'\\s*:/"
+scrum856-canje-una-sola-vez.test.mjs:268 | src/modules/auth/domain/referral.service.ts | "/Idempotente por crédito\\./"
+scrum894-falta-en-otra-pestana.test.mjs:65 | public/dashboard/js/settingsView.js | "/noValidate|novalidate|removeAttribute\\(\\s*[\"']required/"
+scrum903-marcador-no-se-imprime.test.mjs:227 | src/modules/jobs/infra/albaranPdf.service.ts | "/doc\\.text\\(\\s*textoParaDocumento\\(String\\(etiquetaCalidad/"
+scrum910-admin-sin-enlaces-undefined.test.mjs:45 | public/admin.html | "/fetch\\(\\s*`\\/quote\\/\\$\\{[^}]+\\}\\/accept`/"
+scrum984-del-presupuesto-al-albaran.test.mjs:287 | src/modules/jobs/domain/albaranOrigenDelPresupuesto.ts | "/\\.quote\\b/"
+scrum984-del-presupuesto-al-albaran.test.mjs:524 | public/dashboard/js/quotesDetailView.js | "/Nuevo albar[aá]n/"
+scrum986-chip-whatsapp-en-la-lista.test.mjs:228 | public/dashboard/js/quotesListView.js | "/table--presupuestos/"
+scrum986-chip-whatsapp-en-la-lista.test.mjs:231 | public/dashboard/css/styles.css | "/\\.table--cards-mobile\\s+td\\.cell-(id|amount|date)\\s*\\{[^}]*white-spac"
+
+## B · anclas a número de línea
+scrum1093h-censo-fecha-sin-zona.test.mjs:132 | — | f.linea >= 132
+scrum1093h-censo-fecha-sin-zona.test.mjs:132 | — | f.linea <= 134
+_huerfanos-en-modulos-vivos.mjs:223 | — | fila('motorHuerfano')?.linea === 4

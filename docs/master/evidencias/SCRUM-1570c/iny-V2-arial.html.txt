@@ -1,0 +1,1 @@
+<style>:root{--font:"Inter","Arial"}</style><style>@media(max-width:600px){.announce-in{min-height:116.4px;align-content:center}}</style>

@@ -1,0 +1,18 @@
+scrum131-resend-honesto: fetch( 2 → 0 · llamadas a pedirSinAgente( 2 · imports hasta la línea 20
+scrum136-hub-equipo: fetch( 1 → 0 · llamadas a pedirSinAgente( 1 · imports hasta la línea 19
+scrum876f-el-seco-se-decide-al-enviar: fetch( 1 → 0 · llamadas a pedirSinAgente( 1 · imports hasta la línea 22 · node:http ya importado
+webhooks-idempotencia: fetch( 1 → 0 · llamadas a pedirSinAgente( 1 · imports hasta la línea 14
+POBLACION=4 ficheros · malos=0 · EXIT=0
+# diff-idem-1218f:
+quitadas=5 · puestas=116 · faltan=0 · quitadas sin fetch(=0
+control sembrado: VIVO
+EXIT=0
+# mutación 1: _sin-salida.mjs sin la excepción de loopback → scrum876f migrado:
+ok 1 - SCRUM-876f · el corte de salida ve un POST de axios y un fetch, y los corta
+not ok 2 - SCRUM-876f · lo de esta máquina pasa el corte y no se apunta
+not ok 3 - SCRUM-876f · la bandera puesta DESPUÉS de cargar el sender surte efecto, y quitarla también
+# mutación 2: ok: false en el ayudante de webhooks-idempotencia:
+ok 1 - A12.2a: dedupe por event.id de Stripe (pagos y Connect comparten helper)
+ok 2 - A12.2b: dedupe por wamid de Meta (reintentos del webhook entrante)
+not ok 3 - A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integración)
+# los dos ficheros restaurados: git diff vacío / cmp idéntico

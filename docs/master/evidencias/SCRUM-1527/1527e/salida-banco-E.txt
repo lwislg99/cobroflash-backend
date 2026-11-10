@@ -1,0 +1,14 @@
+SCRUM-1527e · variante E de docs/master/evidencias/SCRUM-1520/la-cola-que-cae.mjs con dos binarios oficiales de node (sha256 cotejado con SHASUMS256.txt de nodejs.org), Windows 11, 20-oct-2026
+banco-24.21.0 | E ROJO (1) · sólo se ve que cae el FICHERO cae el 22 · el corte parte en dos el mensaje del fallo | El banco midió: 7 controles de 7
+banco-24.21.0-2 | E ROJO (1) · sólo se ve que cae el FICHERO cae el 22 · el corte parte en dos el mensaje del fallo | El banco midió: 7 controles de 7
+banco-24.21.0-3 | E ROJO (1) · sólo se ve que cae el FICHERO cae el 22 · el corte parte en dos el mensaje del fallo | El banco midió: 7 controles de 7
+banco-24.21.0-4 | E ROJO (1) · sólo se ve que cae el FICHERO cae el 22 · el corte parte en dos el mensaje del fallo | El banco midió: 7 controles de 7
+banco-24.21.0-5 | E ROJO (1) · sólo se ve que cae el FICHERO cae el 22 · el corte parte en dos el mensaje del fallo | El banco midió: 7 controles de 7
+banco-24.21.0-6 | E ROJO (1) · sólo se ve que cae el FICHERO cae el 22 · el corte parte en dos el mensaje del fallo | El banco midió: 7 controles de 7
+banco-24.8.0 | E ROJO (null) · NO se ve nada cae el 22 · el corte parte en dos el mensaje del fallo | El banco midió: 7 controles de 7
+banco-24.8.0-2 | E ROJO (null) · NO se ve nada cae el 22 · el corte parte en dos el mensaje del fallo | El banco midió: 7 controles de 7
+banco-24.8.0-3 | E ROJO (null) · NO se ve nada cae el 22 · el corte parte en dos el mensaje del fallo | El banco midió: 7 controles de 7
+
+salida de la cadena en E, pasada 1 de cada versión:
+   salida de la cadena: 1
+   salida de la cadena: null señal SIGTERM · NO SE LANZÓ: spawnSync <tmp>\nodes\node-v24.8.0-win-x64\node.exe ETIMEDOUT

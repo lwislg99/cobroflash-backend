@@ -3,7 +3,9 @@ import { prisma } from '../../../core/db/prisma';
 // no la reescribe ni la adapta.
 import { tituloDeTrabajo } from '../../jobs/domain/trabajoDirecto';
 
-export const EXPENSE_CATEGORIES = ['materiales', 'desplazamiento', 'herramientas', 'subcontrata', 'otros'] as const;
+// SCRUM-1588 · `alquiler` (decidido en SCRUM-1066 c.20479): sin ella la ruta la rechaza y el borrador
+// del modelo 115 (SCRUM-1066e) no tiene nada que leer. El rótulo lo pone la pantalla.
+export const EXPENSE_CATEGORIES = ['materiales', 'desplazamiento', 'herramientas', 'subcontrata', 'alquiler', 'otros'] as const;
 export type ExpenseCategory = typeof EXPENSE_CATEGORIES[number];
 
 export interface CreateExpenseInput {

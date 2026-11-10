@@ -1,0 +1,10 @@
+limpia scrum1339r-vigia-ciego-del-metaguard.test.mjs: pasados=7 caidos=0 saltados=0
+VIVA · SCRUM-1339r · SIEMBRA: el meta-guard con su 2 y «guards de navegador» en rojo es CIEGO del meta-guard
+VIVA · SCRUM-1339r · SIEMBRA: el meta-guard cortado a los 30 min con otro rojo al lado es CIEGO
+limpia scrum812-el-rotulo-declara-su-poblacion.test.mjs: pasados=6 caidos=0 saltados=0
+VIVA · SCRUM-812 · 🔴 GUARD del rótulo: dice DECLARANTES y publica su DENOMINADOR
+VIVA · SCRUM-812 · 🔴 EL QUE DECIDE: el subconjunto auto-declarado lleva su LÍMITE PEGADO
+VIVA · SCRUM-812 · 🔴 SUELO del GUARD: sobre población CERO se declara CIEGO, no cero
+VIVA · SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA
+VIVA · SCRUM-812d · 🔴 el título se cuenta por PALABRA: «guarda» y «guardado» no son un guard
+POBLACION guards=2 de 2 pedidos · vivas=7 · no vivas=0

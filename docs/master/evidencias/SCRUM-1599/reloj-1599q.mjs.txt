@@ -1,0 +1,19 @@
+// SCRUM-1599q · SONDA DEL RELOJ: una sola variable, la fecha. Se carga con `--import` y mueve el reloj del
+// proceso a RELOJ_1599Q (ISO) conservando el paso del tiempo. No toca `src/` ni `dist/`.
+// Imprime una línea a stderr para que la pasada demuestre que se cargó (sin ella, la sonda es CIEGA).
+const destino = process.env.RELOJ_1599Q;
+if (destino) {
+  const Real = Date;
+  const desfase = new Real(destino).getTime() - Real.now();
+  if (Number.isNaN(desfase)) throw new Error('RELOJ_1599Q no es una fecha');
+  class Falso extends Real {
+    constructor(...a) { if (a.length === 0) super(Real.now() + desfase); else super(...a); }
+    static now() { return Real.now() + desfase; }
+  }
+  globalThis.Date = Falso;
+  process.stderr.write(`RELOJ_1599Q cargado: ahora=${new Date().toISOString()}\n`);
+  if (process.env.RELOJ_1599Q_MARCA) {
+    const { appendFileSync } = await import('node:fs');
+    appendFileSync(process.env.RELOJ_1599Q_MARCA, `pid=${process.pid} ahora=${new Date().toISOString()}\n`);
+  }
+}

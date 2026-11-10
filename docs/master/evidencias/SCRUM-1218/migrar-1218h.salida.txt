@@ -1,0 +1,5 @@
+scrum178-emision-manual: fetch( 6 → 0 · llamadas a pedirSinAgente( 6 · imports hasta la línea 17
+scrum85-pay-routes-token: fetch( 7 → 0 · llamadas a pedirSinAgente( 7 · imports hasta la línea 16
+scrum17-recapitulativa: fetch( 2 → 0 · llamadas a pedirSinAgente( 2 · imports hasta la línea 18
+scrum814-carrera-del-tramo.gated: fetch( 2 → 0 · llamadas a pedirSinAgente( 2 · imports hasta la línea 50
+POBLACION=4 ficheros · malos=0 · EXIT=0

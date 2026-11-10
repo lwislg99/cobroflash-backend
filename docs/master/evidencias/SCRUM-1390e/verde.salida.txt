@@ -1,0 +1,11 @@
+# SCRUM-1390e · VERDE: el test con el arreglo, banco PGlite de SCRUM-1218c, 2 pasadas
+scrum1390e-el-portal-solo-lo-suyo.test.mjs · pasada 0 · exit=0 · firma=false · casos=6 (ok=6 not_ok=0 skip=0) · # tests 6 · respuestas=31
+scrum1390e-el-portal-solo-lo-suyo.test.mjs · pasada 1 · exit=0 · firma=false · casos=6 (ok=6 not_ok=0 skip=0) · # tests 6 · respuestas=31
+POBLACION=2 pasadas · EXIT=0
+# casos de la pasada 1:
+ok 1 - SCRUM-1390e · 🔴 el Técnico NO se lleva el portal de un cliente con un presupuesto o una factura de otro, y no se le escribe token
+ok 2 - SCRUM-1390e · ✅ el Técnico SIGUE llevándose el portal cuando todo lo que enseña es suyo (autor · asignado al documento · sin documentos), y abre
+ok 3 - SCRUM-1390e · ✅ la administradora y la dueña, SIN CAMBIOS: se llevan el portal de cualquier cliente, también con documentos de otros
+ok 4 - SCRUM-1390e · 🔴 de paso: la ficha del cliente no le sirve EN CRUDO al Técnico el enlace que portal-url le niega
+ok 5 - SCRUM-1390e · portal-url pregunta ANTES de escribir el token, y la ficha pregunta lo mismo
+ok 6 - SCRUM-1390e · la pregunta no es un criterio nuevo: pide sus recortes a las dos puertas de SCRUM-1403

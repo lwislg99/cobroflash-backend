@@ -24,7 +24,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  camposPersonalesDelSchema, repartir, leerSchema, VOCABULARIO_PERSONAL,
+  camposPersonalesDelSchema, repartir, leerSchema, VOCABULARIO_PERSONAL, nucleoDe,
 } from './_censo-datos-personales.mjs';
 import { CAMPOS_PERSONALES, REDACTADO, redaccionesPara } from '../dist/modules/system/domain/anonimizarMerchant.js';
 import { suprimirMerchant } from '../dist/modules/system/domain/supresionMerchant.service.js';
@@ -38,10 +38,18 @@ const SCHEMA = leerSchema();
 const FUERA_DE_ANONIMIZADO = Object.freeze({
   'product.name': 'el nombre de un SERVICIO del catálogo («Desatasco»), no el de una persona',
   'quoteTemplate.name': 'el nombre de una PLANTILLA de presupuesto, no el de una persona',
-  // SCRUM-1014: la etiqueta que el profesional le pone al SITIO («Piso 3ºB», «Nave del
-  // polígono»), no el nombre de una persona — mismo caso que las dos de arriba.
-  'customerSite.name': 'el nombre del SITIO que el profesional elige («Piso 3ºB»), no el de una persona',
+  // SCRUM-1569d · `customerSite.name` estuvo aquí desde SCRUM-1014 con el motivo «el nombre del SITIO
+  // que el profesional elige («Piso 3ºB»), no el de una persona». El fundador decidió lo contrario
+  // («ok decidimos que sí», SCRUM-1569 c.20142): «Piso 3ºB» es media dirección. Sale y se anonimiza.
+  // SCRUM-1569: lo hace visible el censo por núcleo («…Name»). Es el nombre de la plantilla de Meta
+  // con que se mandó el mensaje: el hecho, no la persona (lo dice ya `anonimizarMerchant.ts`).
+  'whatsAppMessage.templateName': 'el nombre de la PLANTILLA de Meta con que se mandó el mensaje, no el de una persona',
 });
+
+// SCRUM-1569 · la misma pregunta para las 17 copias de la factura y el albarán. Se escribe una vez:
+// diecisiete frases iguales a mano son diecisiete sitios donde una diverge.
+const EN_DOCUMENTO_SELLABLE = (que) => `${que}, copiada dentro de un documento que puede estar SELLADO: `
+  + '¿la conserva el 17.3.b o se redacta? Roza la regla 29 y espera al asesor fiscal (SCRUM-1264)';
 
 /**
  * 🔴 EL TRINQUETE · datos personales que HOY NO se anonimizan, y nadie ha decidido si deben.
@@ -62,8 +70,8 @@ const SIN_DECIDIR = Object.freeze({
   'provider.legalName': '¿la razón social del proveedor es dato personal si es autónomo?',
   'provider.taxId': '¿el NIF del proveedor va en las facturas recibidas que el 17.3.b conserva?',
   'provider.notes': 'texto libre del profesional sobre su proveedor: ¿se anonimiza o se conserva?',
-  'merchant.iban': '¿es dato personal o parte del registro de cobros que el 17.3.b conserva?',
-  'merchant.bizumPhone': 'teléfono del profesional usado como medio de cobro: misma pregunta que el IBAN',
+  // SCRUM-1569d · `merchant.iban` y `merchant.bizumPhone` estuvieron aquí hasta el 21-oct-2026: el
+  // fundador decidió que se anonimizan (SCRUM-1569 c.20142, «Ok tu recomendación»). Salen.
   'job.direccion': 'la dirección DONDE se trabajó — casi siempre el domicilio del cliente',
   'job.notes': 'texto libre del profesional sobre el trabajo y su cliente',
   'quote.internalNotes': 'texto libre, y va dentro de un documento que puede estar sellado (regla 29)',
@@ -72,6 +80,41 @@ const SIN_DECIDIR = Object.freeze({
   // SCRUM-1014: la dirección DEL SITIO — casi siempre una obra del propio cliente, misma
   // pregunta que `job.direccion` justo arriba.
   'customerSite.address': 'la dirección del sitio — casi siempre una obra del propio cliente, misma pregunta que job.direccion',
+  // ── SCRUM-1569 · las diecinueve que el censo NO VEÍA. ────────────────────────────────────
+  // No se han decidido HOY: estaban igual de en claro antes, y el censo por nombre exacto no sabía
+  // leerlas. Entran aquí con su pregunta porque eso es lo único honesto que se puede hacer sin
+  // decidir: que dejen de ser invisibles. ⛔ Ninguna pasa a `CAMPOS_PERSONALES` en este ticket.
+  'customer.billingAddress': 'la dirección de facturación del cliente: ¿se redacta con su nombre, que ya se redacta?',
+  'quote.shippingAddress': 'la dirección de envío del cliente, dentro de un presupuesto que puede estar sellado (regla 29)',
+  'invoice.customerName': EN_DOCUMENTO_SELLABLE('el nombre del cliente'),
+  'invoice.customerLegalName': EN_DOCUMENTO_SELLABLE('la razón social del cliente'),
+  'invoice.customerTaxId': EN_DOCUMENTO_SELLABLE('el NIF del cliente'),
+  'invoice.customerEmail': EN_DOCUMENTO_SELLABLE('el correo del cliente'),
+  'invoice.customerPhone': EN_DOCUMENTO_SELLABLE('el teléfono del cliente'),
+  'invoice.merchantName': EN_DOCUMENTO_SELLABLE('el nombre del profesional'),
+  'invoice.merchantLegalName': EN_DOCUMENTO_SELLABLE('la razón social del profesional'),
+  'invoice.merchantTaxId': EN_DOCUMENTO_SELLABLE('el NIF del profesional'),
+  'invoice.merchantAddress': EN_DOCUMENTO_SELLABLE('la dirección del profesional'),
+  'invoice.merchantPhone': EN_DOCUMENTO_SELLABLE('el teléfono del profesional'),
+  'invoice.merchantEmail': EN_DOCUMENTO_SELLABLE('el correo del profesional'),
+  'invoice.shippingAddress': EN_DOCUMENTO_SELLABLE('la dirección de envío del cliente'),
+  'albaran.customerName': EN_DOCUMENTO_SELLABLE('el nombre del cliente'),
+  'albaran.customerLegalName': EN_DOCUMENTO_SELLABLE('la razón social del cliente'),
+  'albaran.customerTaxId': EN_DOCUMENTO_SELLABLE('el NIF del cliente'),
+  'albaran.customerEmail': EN_DOCUMENTO_SELLABLE('el correo del cliente'),
+  'albaran.customerPhone': EN_DOCUMENTO_SELLABLE('el teléfono del cliente'),
+  // ── SCRUM-1569 · EL DOMICILIO EN TROZOS: los nueve que ninguna palabra del vocabulario leía. ──
+  'customerSite.city': 'la ciudad del sitio: con `address`, el domicilio del cliente. Misma pregunta que customerSite.address',
+  'customerSite.postalCode': 'el código postal del sitio: misma pregunta que customerSite.address',
+  'customerSite.province': 'la provincia del sitio: misma pregunta que customerSite.address',
+  'customerSite.country': 'el país del sitio: ¿identifica algo sin el resto de la dirección? Misma familia que customerSite.address',
+  'customer.billingCity': 'la ciudad de facturación del cliente: misma pregunta que customer.billingAddress',
+  'customer.billingPostalCode': 'el código postal de facturación del cliente: misma pregunta que customer.billingAddress',
+  'customer.billingProvince': 'la provincia de facturación del cliente: misma pregunta que customer.billingAddress',
+  'customer.billingCountry': 'el país de facturación del cliente: misma pregunta que customer.billingAddress',
+  'merchant.country': 'el país del profesional: decide su régimen (ES o no); ¿se redacta con su dirección o es configuración?',
+  // SCRUM-1569 · `customerSite.contactName` estuvo aquí como «DECIDIDO, falta la línea» hasta que J3
+  // la metió en `anonimizarMerchant.ts` (20-oct-2026): ahora está cubierto y sale de esta lista.
 });
 
 // ── 0 · 🔴 SUELO Y AUTOPRUEBA · antes de creerse ningún reparto ─────────────────────────────
@@ -129,7 +172,7 @@ model Encuesta {
 }
 `;
   const reparto = repartir(sintetico, { merchant: ['name'] }, {}, {});
-  assert.deepEqual(reparto.sinClasificar, ['encuesta.phone'],
+  assert.ok(reparto.sinClasificar.includes('encuesta.phone'),
     '🔴 EL GUARD NO ESTÁ ATADO AL HECHO.\n\n'
     + '  Se le ha dado un modelo que NO existe en el repo, con un teléfono dentro, y no lo ha\n'
     + `  señalado: dice ${JSON.stringify(reparto.sinClasificar)}.\n\n`
@@ -137,11 +180,13 @@ model Encuesta {
     + '  personal dentro pasará en verde — que es exactamente cómo `email_messages` entró con la\n'
     + '  dirección de los clientes y la supresión siguió sin tocarla.');
 
-  // ⚠️ `respondentEmail` NO sale, y es correcto: el vocabulario es DECLARADO y ese nombre no está.
-  // Se dice aquí para que el límite del guard se vea en vez de descubrirse el día que falle.
-  assert.ok(!reparto.sinClasificar.includes('encuesta.respondentEmail'),
-    '🔴 ha cambiado el criterio del vocabulario: si ahora casa por subcadena, revisa los falsos '
-    + 'positivos (`templateName`, `nameSearch`) antes de darlo por bueno.');
+  // SCRUM-1569 · `respondentEmail` SÍ sale, y es el cambio de criterio: casa por NÚCLEO («…Email»).
+  // Hasta SCRUM-1569 este aserto decía lo contrario y avisaba de revisar los falsos positivos
+  // (`templateName`, `nameSearch`) antes de dar el cambio por bueno. Están revisados en
+  // «SCRUM-1569 · CONTROL NEGATIVO del núcleo», abajo: no es una subcadena.
+  assert.deepEqual([...reparto.sinClasificar].sort(), ['encuesta.phone', 'encuesta.respondentEmail'],
+    '🔴 el censo por núcleo no ve `respondentEmail`: un correo con cualquier prefijo vuelve a ser '
+    + `invisible. Dice ${JSON.stringify(reparto.sinClasificar)}.`);
 
   // CONTROL NEGATIVO: un modelo sintético SIN datos personales no pone nada en rojo.
   const limpio = repartir('model Factura {\n  numero String\n  total Decimal\n}', {}, {}, {});
@@ -184,7 +229,7 @@ test('SCRUM-497 · 🔴 ninguna columna personal del esquema queda SIN CLASIFICA
     + 'el camino, así que ninguno de sus números significa nada.');
 });
 
-test('SCRUM-497 · 🔴 TRINQUETE: dieciséis datos personales siguen sin decidir, y van NOMBRADOS', () => {
+test('SCRUM-497 · 🔴 TRINQUETE: cuarenta y dos datos personales siguen sin anonimizar, y van NOMBRADOS', () => {
   const reparto = repartir(SCHEMA, CAMPOS_PERSONALES, FUERA_DE_ANONIMIZADO, SIN_DECIDIR);
 
   // 🔴 EL SUELO VA PRIMERO: cero no es mejor que dieciséis. Si baja, lo primero que hay que
@@ -195,8 +240,11 @@ test('SCRUM-497 · 🔴 TRINQUETE: dieciséis datos personales siguen sin decidi
     + '  o a `FUERA_DE_ANONIMIZADO` y baja este número a mano, en el mismo commit.\n'
     + '  Si no, el censo ha dejado de verlos y «cero pendientes» significa «no supe mirar».');
 
-  assert.equal(reparto.sinDecidir.length, 16,
-    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 16 (SCRUM-1014 sumó ` +
+  assert.equal(reparto.sinDecidir.length, 42,
+    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 42 (SCRUM-1569d restó \`merchant.iban\` ` +
+    'y `merchant.bizumPhone` el 21-oct-2026, decididos por el fundador en c.20142; SCRUM-1569 sumó, el 20-oct-2026 ' +
+    'y sobre 16, las 19 que el censo por nombre exacto no veía, los 9 trozos de domicilio y ' +
+    '`customerSite.contactName`, que bajó a 44 el mismo día al entrar su línea en J3; SCRUM-1014 sumó ' +
     `\`customerSite.address\` el 25-sep-2026, sobre 15 medidos el 12-ago-2026).\n`
     + `    ${reparto.sinDecidir.join('\n    ')}\n\n`
     + '  Si SUBE, ha nacido un dato personal que nadie anonimiza: nómbralo o cúbrelo.\n'
@@ -355,14 +403,189 @@ test('SCRUM-529 · 🔴 tras suprimir, el número de cada WhatsApp se redacta y 
 test('SCRUM-497 · CONTROL: la supresión sigue cubriendo merchant y customer, no solo el correo', () => {
   // Un cambio en esta lista podría haberse llevado por delante lo que ya cubría. Se comprueba que
   // los doce campos de antes siguen, no solo el nuevo.
+  // SCRUM-1569d suma `bizumPhone`, `iban` y `clabe` a `merchant` y `mobile` a `customer` (c.20142).
   assert.deepEqual([...CAMPOS_PERSONALES.merchant],
-    ['name', 'email', 'legalName', 'taxId', 'address', 'whatsappPhone'],
+    ['name', 'email', 'legalName', 'taxId', 'address', 'whatsappPhone', 'bizumPhone', 'iban', 'clabe'],
     '🔴 han cambiado los campos personales de `merchant`.');
   assert.deepEqual([...CAMPOS_PERSONALES.customer],
-    ['name', 'phone', 'email', 'legalName', 'taxId', 'notes'],
+    ['name', 'phone', 'email', 'legalName', 'taxId', 'notes', 'mobile'],
     '🔴 han cambiado los campos personales de `customer`.');
   assert.deepEqual([...CAMPOS_PERSONALES.emailMessage], ['toEmail'],
     '🔴 han cambiado los campos personales de `emailMessage`.');
   assert.deepEqual([...CAMPOS_PERSONALES.whatsAppMessage], ['toPhone'],
     '🔴 han cambiado los campos personales de `whatsAppMessage`.');
+});
+
+// ── 5 · 🔴 SCRUM-1569 · EL NOMBRE DE UNA PERSONA QUE EL CENSO NO SABÍA LEER ─────────────────
+//
+// `customerSite.contactName` es el contacto en obra (el portero, el inquilino). Se quedaba en claro
+// después de suprimir, y el guard estaba en verde porque casaba por NOMBRE EXACTO: `name` sí,
+// `contactName` no. Ahora casa también por NÚCLEO (`NUCLEOS_PERSONALES`, en el censo).
+//
+// Los casos van SEMBRADOS, con un esquema sintético, por lo mismo que los de SCRUM-529.
+
+test('SCRUM-1569 · 🔴 SIEMBRA: un anonimizado que deja `contactName` en claro pone el guard EN ROJO', () => {
+  const conElSitio = `
+model CustomerSite {
+  merchantId  Int     @map("merchant_id")
+  name        String
+  contactName String? @map("contact_name")
+  phone       String? @map("phone")
+}
+`;
+  // ① El censo VE la columna. Antes de SCRUM-1569 no la veía: lo de abajo salía verde por eso.
+  assert.ok(camposPersonalesDelSchema(conElSitio).some((p) => p.clave === 'customerSite.contactName'),
+    '🔴 el censo NO VE `customerSite.contactName`: el nombre de una persona vuelve a ser invisible '
+    + 'porque no se llama exactamente `name`. Mira `nucleoDe` en `tests/_censo-datos-personales.mjs`.');
+
+  // ② LA SIEMBRA: la lista de verdad, con `customerSite` sin `contactName`. (`name` se queda dentro
+  //    desde SCRUM-1569d para que la siembra aísle a `contactName`; `name` tiene su siembra abajo.)
+  const seLoDeja = { ...CAMPOS_PERSONALES, customerSite: ['phone', 'name'] };
+  const fuera = {};
+  assert.deepEqual(repartir(conElSitio, seLoDeja, fuera, {}).sinClasificar, ['customerSite.contactName'],
+    '🔴 un anonimizado que NO toca `contactName` pasa el guard: se redactaría el teléfono del contacto '
+    + 'en obra y su nombre quedaría en claro al lado.');
+
+  // ③ Y con `contactName` en la lista, cubierto. Sin esto, ② podría caer porque el guard cae siempre.
+  //    La lista es FABRICADA a propósito: la real no lo lleva hasta que J3 meta su línea (ver
+  //    `SIN_DECIDIR`), y este caso tiene que valer antes y después de ese commit.
+  const conLaLinea = { ...CAMPOS_PERSONALES, customerSite: ['phone', 'contactName', 'name'] };
+  const cubierto = repartir(conElSitio, conLaLinea, fuera, {});
+  assert.deepEqual(cubierto.sinClasificar, [],
+    `🔴 con \`contactName\` en la lista, el guard sigue sin darlo por cubierto: ${JSON.stringify(cubierto.sinClasificar)}`);
+  assert.deepEqual(cubierto.cubiertos, ['customerSite.name', 'customerSite.contactName', 'customerSite.phone']);
+});
+
+test('SCRUM-1569 · 🔴 CONTROL POSITIVO del domicilio: los trozos sin palabra del vocabulario SALEN', () => {
+  // Ninguno de estos cuatro contiene una de las 14 palabras: eran el cero que c.20092 declaró sin
+  // medir. Si dejan de salir, el censo ha vuelto a no ver el domicilio de una persona.
+  const reales = new Set(camposPersonalesDelSchema(SCHEMA).map((p) => p.clave));
+  for (const clave of ['customerSite.city', 'customerSite.postalCode', 'customerSite.province', 'customerSite.country']) {
+    assert.ok(reales.has(clave), `🔴 «${clave}» no sale en el censo: el domicilio del cliente vuelve a ser invisible.`);
+  }
+  assert.ok(reales.has('customerSite.contactName'), '🔴 «customerSite.contactName» no sale en el censo.');
+});
+
+test('SCRUM-1569 · 🔴 CONTROL NEGATIVO del núcleo: ensanchar no es abrir', () => {
+  // Si el núcleo se convirtiera en una subcadena, estos entrarían como «datos personales» y el
+  // trinquete se llenaría de ruido. Son los tres falsos positivos medidos el 20-oct-2026 en c.20092.
+  for (const campo of ['nameSearch', 'shippingAddressMode', 'emailVerified', 'countryCode', 'notesCount', 'filename']) {
+    assert.equal(nucleoDe(campo), null, `🔴 «${campo}» casa como dato personal: el núcleo se ha vuelto una subcadena.`);
+  }
+  // ⚠️ LÍMITE DECLARADO, no un caso correcto: `surname`, `nif`, `dni`, `city` o `postalCode` tampoco
+  // casan, y algunos SÍ son personales. El núcleo sólo ve las familias que ya conoce; las columnas que
+  // ninguna familia lee están contadas y listadas en `docs/master/SCRUM-1569.md`, sin clasificar.
+  assert.equal(nucleoDe('surname'), null,
+    '🟢 ha cambiado el límite: `surname` ya casa. Quita este aserto y comprueba qué más entró.');
+  // Y los que SÍ tienen que casar, para que el cero de arriba no sea un detector apagado.
+  for (const [campo, n] of [['contactName', 'name'], ['customerTaxId', 'taxId'], ['billingAddress', 'address'],
+    ['respondentEmail', 'email'], ['toPhone', 'phone'], ['internalNotes', 'notes'], ['name', 'name']]) {
+    assert.equal(nucleoDe(campo), n, `🔴 «${campo}» no casa con el núcleo «${n}».`);
+  }
+  // Sobre el ESQUEMA REAL: los tres falsos positivos siguen fuera de la población.
+  const reales = new Set(camposPersonalesDelSchema(SCHEMA).map((p) => p.clave));
+  for (const clave of ['product.nameSearch', 'quote.shippingAddressMode', 'invoice.shippingAddressMode']) {
+    assert.ok(!reales.has(clave), `🔴 «${clave}» entra en el censo como dato personal y no lo es.`);
+  }
+  // Y lo que el núcleo abrió y NO es personal está declarado fuera, CON motivo. No se cuela callado.
+  assert.ok(reales.has('whatsAppMessage.templateName') && FUERA_DE_ANONIMIZADO['whatsAppMessage.templateName'],
+    '🔴 `templateName` tiene que estar en la población Y declarado fuera con su motivo.');
+});
+
+test('SCRUM-1569 · 🔴 tras suprimir, el sitio pierde lo declarado y NADA MÁS', async () => {
+  const pedidos = [];
+  const db = new Proxy({}, {
+    get(_d, modelo) {
+      if (modelo === 'auditLog') return { create: async () => ({ id: 1 }) };
+      return {
+        updateMany: async (args) => { pedidos.push({ modelo, op: 'updateMany', args }); return { count: 1 }; },
+        deleteMany: async (args) => { pedidos.push({ modelo, op: 'deleteMany', args }); return { count: 1 }; },
+      };
+    },
+  });
+  const r = await suprimirMerchant({ merchantId: 77, actor: { tipo: 'merchant', teamMemberId: null }, db, auditar: async () => ({ id: 1 }) });
+  assert.ok(r.ok, `🔴 la supresión ha fallado: ${r.motivo}`);
+
+  const delSitio = pedidos.filter((p) => p.modelo === 'customerSite');
+  assert.equal(delSitio.length, 1, '🔴 la supresión no toca `customerSite`.');
+  assert.equal(delSitio[0].op, 'updateMany', '🔴 a `customerSite` se le pide un borrado: la fila se conserva.');
+  assert.deepEqual(delSitio[0].args.where, { merchantId: 77 }, '🔴 la redacción del sitio no va filtrada por merchant.');
+
+  // 🔴 CONTROL NEGATIVO: lo que no se ha declarado personal NO se toca — los trozos del domicilio
+  // esperan decisión. Anonimizar de más también es un fallo: es el que nadie mira. (`name` estuvo en
+  // esta lista hasta SCRUM-1569d: el fundador decidió en c.20142 que se anonimiza.)
+  const tocados = Object.keys(delSitio[0].args.data);
+  for (const intacto of ['address', 'city', 'postalCode', 'province', 'country', 'merchantId', 'customerId']) {
+    assert.ok(!tocados.includes(intacto), `🔴 la supresión redacta \`customerSite.${intacto}\` y nadie lo ha decidido: ${JSON.stringify(delSitio[0].args.data)}`);
+  }
+  assert.deepEqual([...tocados].sort(), [...CAMPOS_PERSONALES.customerSite].sort(),
+    `🔴 se redacta del sitio algo distinto de lo que dice \`CAMPOS_PERSONALES\`: ${JSON.stringify(delSitio[0].args.data)}`);
+  assert.equal(delSitio[0].args.data.phone, REDACTADO, '🔴 el teléfono del contacto en obra no se redacta.');
+  assert.equal(delSitio[0].args.data.name, REDACTADO,
+    '🔴 el nombre del sitio («Piso 3ºB») no se redacta, y el fundador decidió que sí (SCRUM-1569 c.20142).');
+});
+
+// ── 6 · 🔴 SCRUM-1569d · LOS CINCO QUE DECIDIÓ EL FUNDADOR (SCRUM-1569 c.20142) ─────────────────
+//
+// ① «Ok tu recomendación»: `customer.mobile`, `merchant.iban`, `merchant.clabe` y `merchant.bizumPhone`.
+// ② «ok decidimos que sí»: `customerSite.name`.
+// Producción tenía víctimas el 21-oct-2026: 1 cliente con móvil, 4 comercios con IBAN, 2 con Bizum.
+// Ejecutado en PGlite, antes y después: `docs/master/evidencias/SCRUM-1569d/`.
+
+const LOS_CINCO = Object.freeze([
+  ['merchant', 'iban'], ['merchant', 'clabe'], ['merchant', 'bizumPhone'],
+  ['customer', 'mobile'], ['customerSite', 'name'],
+]);
+
+test('SCRUM-1569d · 🔴 tras suprimir, los cinco de c.20142 se redactan y las filas SIGUEN', async () => {
+  const pedidos = [];
+  const db = new Proxy({}, {
+    get(_d, modelo) {
+      if (modelo === 'auditLog') return { create: async () => ({ id: 1 }) };
+      return {
+        updateMany: async (args) => { pedidos.push({ modelo, op: 'updateMany', args }); return { count: 1 }; },
+        deleteMany: async (args) => { pedidos.push({ modelo, op: 'deleteMany', args }); return { count: 1 }; },
+      };
+    },
+  });
+  const r = await suprimirMerchant({ merchantId: 77, actor: { tipo: 'merchant', teamMemberId: null }, db, auditar: async () => ({ id: 1 }) });
+  assert.ok(r.ok, `🔴 la supresión ha fallado: ${r.motivo}`);
+  assert.ok(!pedidos.some((p) => p.op === 'deleteMany'), '🔴 la supresión está BORRANDO filas.');
+
+  const sinRedactar = LOS_CINCO.filter(([modelo, campo]) => {
+    const p = pedidos.find((x) => x.modelo === modelo);
+    return !p || p.args.data[campo] !== REDACTADO;
+  }).map(([m, c]) => `${m}.${c}`);
+  assert.deepEqual(sinRedactar, [],
+    `🔴 la supresión deja EN CLARO ${sinRedactar.join(', ')}, y el fundador decidió que se anonimizan `
+    + '(SCRUM-1569 c.20142). Añádelos a `CAMPOS_PERSONALES` en `anonimizarMerchant.ts`.');
+
+  // CONTROL NEGATIVO: el país del profesional sigue SIN DECIDIR, y no se toca de paso.
+  const delComercio = pedidos.find((x) => x.modelo === 'merchant');
+  assert.ok(!('country' in delComercio.args.data), '🔴 la supresión redacta `merchant.country` y nadie lo ha decidido.');
+});
+
+test('SCRUM-1569d · 🔴 SIEMBRA: el censo VE `mobile` y `clabe`, y una lista que los suelta cae', () => {
+  // Sin esto, quitar `mobile` o `clabe` de la lista no lo vería nadie: ninguna familia del censo los leía
+  // (estaban en las 157 de SCRUM-1569). Esquema sintético, por lo mismo que las siembras de arriba.
+  const sintetico = `
+model Merchant {
+  name  String
+  iban  String?
+  clabe String?
+}
+model Customer {
+  phone  String?
+  mobile String? @map("mobile")
+}
+`;
+  const ve = camposPersonalesDelSchema(sintetico).map((p) => p.clave);
+  for (const clave of ['merchant.clabe', 'customer.mobile']) {
+    assert.ok(ve.includes(clave), `🔴 el censo NO VE «${clave}»: vuelve a ser invisible y nadie se enterará si sale de la lista.`);
+  }
+  const seLosDeja = { merchant: ['name', 'iban'], customer: ['phone'] };
+  assert.deepEqual(repartir(sintetico, seLosDeja, {}, {}).sinClasificar, ['merchant.clabe', 'customer.mobile'],
+    '🔴 una lista sin `clabe` ni `mobile` pasa el guard.');
+  assert.deepEqual(repartir(sintetico, CAMPOS_PERSONALES, {}, {}).sinClasificar, [],
+    '🔴 la lista REAL no cubre los cuatro del esquema sintético.');
 });

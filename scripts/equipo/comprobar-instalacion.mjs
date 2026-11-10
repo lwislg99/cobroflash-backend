@@ -26,7 +26,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { validarEquipo } from './sesion.mjs';
-import { copias, arranqueCmd } from './instalar.mjs';
+import { copias, arranqueCmd, rutaArranqueCmd } from './instalar.mjs';
 
 const GH_POR_DEFECTO = 'C:\\Program Files\\GitHub CLI\\gh.exe';
 
@@ -79,6 +79,33 @@ export function juzgarUso({ status, vu, destino, plataforma = process.platform }
     return ['AVISO', `sin lectura vigente (${vu.motivo})${donde}: falta el statusLine o un turno en una sesión interactiva`];
   }
   return ['FALLA', `uso.mjs salió con ${status} y veredicto ${vu?.veredicto ?? '(ninguno)'}: no cuadran`];
+}
+
+/**
+ * SCRUM-1549d · ¿la tarea ejecuta `arranque.cmd`, o un trozo de su ruta? Mira la acción del XML de
+ * `schtasks /query /xml` (el XML no va traducido; la salida de `/v` sí). Antes esta comprobación sólo
+ * preguntaba si la tarea existía, y en la máquina de Javier dio OK con las tres tareas guardadas como
+ * Command `C:\Users\Javier` + Arguments `Pereira\…\arranque.cmd`, que no arrancaron nunca.
+ */
+export function juzgarAccionTarea({ xml, esperado, plataforma = 'win32' }) {
+  const texto = String(xml || '');
+  const deEtiqueta = (nombre) => {
+    const m = texto.match(new RegExp(`<${nombre}>([\\s\\S]*?)</${nombre}>`));
+    if (!m) return null;
+    return m[1].trim().replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&');
+  };
+  if (!/<Exec>/.test(texto)) return ['NO-PUDE-MIRAR', 'el XML de la tarea no trae ninguna acción <Exec>'];
+  const command = deEtiqueta('Command');
+  if (command === null) return ['NO-PUDE-MIRAR', 'el XML de la tarea no trae <Command>'];
+  const sinComillas = command.replace(/^"(.*)"$/, '$1');
+  const args = deEtiqueta('Arguments') || '';
+  if (rutaComparable(sinComillas, plataforma) === rutaComparable(esperado, plataforma) && args === '') {
+    return ['OK', `ejecuta ${esperado}`];
+  }
+  return ['FALLA', `ejecuta «${command}»${args ? ` con argumentos «${args}»` : ''}, no «${esperado}»: `
+    + 'si la ruta lleva un espacio, la tarea se creó sin comillas dentro del /tr. Bórrala y créala otra vez con la '
+    + 'orden que imprime hoy el instalador'];
 }
 
 /** Lee un JSON que puede no existir. `undefined` = no existe; `null` = existe pero no se entiende. */
@@ -212,10 +239,11 @@ export function comprobar({ destino, plataforma = process.platform, casa = os.ho
   else {
     for (const hora of config.tandas) {
       const tn = `yaqu-equipo-${e.equipo.prefijo}${String(hora).replace(':', '')}`;
-      const q = ejecutar('schtasks', ['/query', '/tn', tn]);
+      const q = ejecutar('schtasks', ['/query', '/tn', tn, '/xml']);
       // Sin proceso (status null) no se ha preguntado nada: no es «no está creada».
       if (q.status === null) poner(`tarea ${tn}`, 'NO-PUDE-MIRAR', `schtasks no arrancó${q.error ? ` (${q.error.code})` : ''}`);
-      else poner(`tarea ${tn}`, q.status === 0 ? 'OK' : 'AVISO', q.status === 0 ? 'creada' : 'no está creada (paso de las tareas de la guía)');
+      else if (q.status !== 0) poner(`tarea ${tn}`, 'AVISO', 'no está creada (paso de las tareas de la guía)');
+      else poner(`tarea ${tn}`, ...juzgarAccionTarea({ xml: q.stdout, esperado: rutaArranqueCmd(destino), plataforma }));
     }
   }
 

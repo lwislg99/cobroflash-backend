@@ -1,0 +1,31 @@
+// SCRUM-1611c · ¿llega el evento 'query' de Prisma DESPUÉS de que se resuelve la promesa de la consulta?
+// Uso: QA_QUERY_LOG=1 DATABASE_URL=<banco> node retraso.mjs <raiz> <n>
+// Por iteración: await de UNA escritura; al resolverse se marca «después» y se cuenta cuántos eventos de ESA
+// consulta llegan ya marcados (sin espera, y tras un setImmediate). Control positivo: el total de eventos > 0.
+const [raiz, nTxt] = process.argv.slice(2);
+const n = Number(nTxt || 200);
+const { prisma } = await import(`file:///${raiz.replace(/\\/g, '/')}/dist/core/db/prisma.js`);
+let fase = 'antes';
+let total = 0;
+const tarde = [];
+prisma.$on('query', (e) => { total++; if (fase !== 'antes') tarde.push(`${fase} ${String(e.query).slice(0, 60)}`); });
+const m = await prisma.merchant.create({ data: { name: 'QA 1611c', email: `qa-1611c-${Date.now()}@test.local`, country: 'ES' } });
+let iterConTarde = 0;
+for (let i = 0; i < n; i++) {
+  fase = 'antes';
+  const antes = tarde.length;
+  await prisma.customer.create({ data: { merchantId: m.id, name: `c${i}` } });
+  fase = 'resuelta';
+  await new Promise((r) => setImmediate(r));
+  fase = 'tick';
+  await new Promise((r) => setTimeout(r, 5));
+  if (tarde.length > antes) iterConTarde++;
+}
+fase = 'antes';
+await prisma.customer.deleteMany({ where: { merchantId: m.id } });
+await prisma.merchant.delete({ where: { id: m.id } });
+console.log(`RETRASO n=${n} eventos=${total} iteraciones_con_evento_tardío=${iterConTarde}`);
+const porFase = {};
+for (const t of tarde) { const k = t.split(' ')[0]; porFase[k] = (porFase[k] || 0) + 1; }
+console.log('por fase:', JSON.stringify(porFase), '· muestra:', tarde.slice(0, 3).join(' | '));
+await prisma.$disconnect();

@@ -1,0 +1,136 @@
+✔ SCRUM-1402e · ✅ SUELO: ninguno de los inventados es un plan, y los legítimos son los de entitlements (5.366ms)
+✖ SCRUM-1402e · 🔴 un impago (past_due, unpaid) con un plan que NO existe SE MARCA: escribe `past_due` y nada más, sin tocar el plan, y avisa del plan (179.6966ms)
+✔ SCRUM-1402e · ✅ control · un impago con un plan legítimo, igual que hoy: plan, `past_due` y la suscripción, sin un aviso (35.6027ms)
+✔ SCRUM-1402e · ✅ control · un plan que NO existe SIN impago (active, trialing) sigue sin escribir nada: el plan no cambia (67.2931ms)
+✖ SCRUM-1402e · ✅ control · regla 2: el impago marca SOLO al merchant del evento; el otro no recibe nada (2.139ms)
+✔ SCRUM-1402e · ✅ control · la respuesta a Stripe no cambia: 200 y el mismo cuerpo que con un plan legítimo, y el evento queda PROCESADO (5.9678ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 4
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5766.8031
+
+✖ failing tests:
+
+test at tests\scrum1402e-impago-con-plan-desconocido.test.mjs:140:1
+✖ SCRUM-1402e · 🔴 un impago (past_due, unpaid) con un plan que NO existe SE MARCA: escribe `past_due` y nada más, sin tocar el plan, y avisa del plan (179.6966ms)
+  AssertionError [ERR_ASSERTION]: 
+  🔴 EL IMPAGO DE UNA SUSCRIPCIÓN CON UN PLAN QUE NO EXISTE NO SE HA MARCADO COMO `past_due` (o ha tocado algo más). 36 de 36:
+     · customer.subscription.updated (past_due) "empresa" → []
+     · customer.subscription.updated (past_due) "basic" → []
+     · customer.subscription.updated (past_due) "Equipo" → []
+     · customer.subscription.updated (past_due) "equipo " → []
+     · customer.subscription.updated (past_due) "PRO" → []
+     · customer.subscription.updated (past_due) " pro" → []
+     · customer.subscription.updated (past_due) "constructor" → []
+     · customer.subscription.updated (past_due) "toString" → []
+     · customer.subscription.updated (past_due) "__proto__" → []
+     · customer.subscription.updated (unpaid) "empresa" → []
+     · customer.subscription.updated (unpaid) "basic" → []
+     · customer.subscription.updated (unpaid) "Equipo" → []
+     · customer.subscription.updated (unpaid) "equipo " → []
+     · customer.subscription.updated (unpaid) "PRO" → []
+     · customer.subscription.updated (unpaid) " pro" → []
+     · customer.subscription.updated (unpaid) "constructor" → []
+     · customer.subscription.updated (unpaid) "toString" → []
+     · customer.subscription.updated (unpaid) "__proto__" → []
+     · customer.subscription.created (past_due) "empresa" → []
+     · customer.subscription.created (past_due) "basic" → []
+     · customer.subscription.created (past_due) "Equipo" → []
+     · customer.subscription.created (past_due) "equipo " → []
+     · customer.subscription.created (past_due) "PRO" → []
+     · customer.subscription.created (past_due) " pro" → []
+     · customer.subscription.created (past_due) "constructor" → []
+     · customer.subscription.created (past_due) "toString" → []
+     · customer.subscription.created (past_due) "__proto__" → []
+     · customer.subscription.created (unpaid) "empresa" → []
+     · customer.subscription.created (unpaid) "basic" → []
+     · customer.subscription.created (unpaid) "Equipo" → []
+     · customer.subscription.created (unpaid) "equipo " → []
+     · customer.subscription.created (unpaid) "PRO" → []
+     · customer.subscription.created (unpaid) " pro" → []
+     · customer.subscription.created (unpaid) "constructor" → []
+     · customer.subscription.created (unpaid) "toString" → []
+     · customer.subscription.created (unpaid) "__proto__" → []
+  Decisión del fundador (SCRUM-1402, comentario 20651, «Marcar el impago»): se marca, y el plan no se toca.
+  
+  + actual - expected
+  
+  + [
+  +   'customer.subscription.updated (past_due) "empresa" → []',
+  +   'customer.subscription.updated (past_due) "basic" → []',
+  +   'customer.subscription.updated (past_due) "Equipo" → []',
+  +   'customer.subscription.updated (past_due) "equipo " → []',
+  +   'customer.subscription.updated (past_due) "PRO" → []',
+  +   'customer.subscription.updated (past_due) " pro" → []',
+  +   'customer.subscription.updated (past_due) "constructor" → []',
+  +   'customer.subscription.updated (past_due) "toString" → []',
+  +   'customer.subscription.updated (past_due) "__proto__" → []',
+  +   'customer.subscription.updated (unpaid) "empresa" → []',
+  +   'customer.subscription.updated (unpaid) "basic" → []',
+  +   'customer.subscription.updated (unpaid) "Equipo" → []',
+  +   'customer.subscription.updated (unpaid) "equipo " → []',
+  +   'customer.subscription.updated (unpaid) "PRO" → []',
+  +   'customer.subscription.updated (unpaid) " pro" → []',
+  +   'customer.subscription.updated (unpaid) "constructor" → []',
+  +   'customer.subscription.updated (unpaid) "toString" → []',
+  +   'customer.subscription.updated (unpaid) "__proto__" → []',
+  +   'customer.subscription.created (past_due) "empresa" → []',
+  +   'customer.subscription.created (past_due) "basic" → []',
+  +   'customer.subscription.created (past_due) "Equipo" → []',
+  +   'customer.subscription.created (past_due) "equipo " → []',
+  +   'customer.subscription.created (past_due) "PRO" → []',
+  +   'customer.subscription.created (past_due) " pro" → []',
+  +   'customer.subscription.created (past_due) "constructor" → []',
+  +   'customer.subscription.created (past_due) "toString" → []',
+  +   'customer.subscription.created (past_due) "__proto__" → []',
+  +   'customer.subscription.created (unpaid) "empresa" → []',
+  +   'customer.subscription.created (unpaid) "basic" → []',
+  +   'customer.subscription.created (unpaid) "Equipo" → []',
+  +   'customer.subscription.created (unpaid) "equipo " → []',
+  +   'customer.subscription.created (unpaid) "PRO" → []',
+  +   'customer.subscription.created (unpaid) " pro" → []',
+  +   'customer.subscription.created (unpaid) "constructor" → []',
+  +   'customer.subscription.created (unpaid) "toString" → []',
+  +   'customer.subscription.created (unpaid) "__proto__" → []'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/jv-j3av/tests/scrum1402e-impago-con-plan-desconocido.test.mjs:158:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'customer.subscription.updated (past_due) "empresa" → []', 'customer.subscription.updated (past_due) "basic" → []', 'customer.subscription.updated (past_due) "Equipo" → []', 'customer.subscription.updated (past_due) "equipo " → []', 'customer.subscription.updated (past_due) "PRO" → []', 'customer.subscription.updated (past_due) " pro" → []', 'customer.subscription.updated (past_due) "constructor" → []', 'customer.subscription.updated (past_due) "toString" → []', 'customer.subscription.updated (past_due) "__proto__" → []', 'customer.subscription.updated (unpaid) "empresa" → []', 'customer.subscription.updated (unpaid) "basic" → []', 'customer.subscription.updated (unpaid) "Equipo" → []', 'customer.subscription.updated (unpaid) "equipo " → []', 'customer.subscription.updated (unpaid) "PRO" → []', 'customer.subscription.updated (unpaid) " pro" → []', 'customer.subscription.updated (unpaid) "constructor" → []', 'customer.subscription.updated (unpaid) "toString" → []', 'customer.subscription.updated (unpaid) "__proto__" → []', 'customer.subscription.created (past_due) "empresa" → []', 'customer.subscription.created (past_due) "basic" → []', 'customer.subscription.created (past_due) "Equipo" → []', 'customer.subscription.created (past_due) "equipo " → []', 'customer.subscription.created (past_due) "PRO" → []', 'customer.subscription.created (past_due) " pro" → []', 'customer.subscription.created (past_due) "constructor" → []', 'customer.subscription.created (past_due) "toString" → []', 'customer.subscription.created (past_due) "__proto__" → []', 'customer.subscription.created (unpaid) "empresa" → []', 'customer.subscription.created (unpaid) "basic" → []', 'customer.subscription.created (unpaid) "Equipo" → []', 'customer.subscription.created (unpaid) "equipo " → []', 'customer.subscription.created (unpaid) "PRO" → []', 'customer.subscription.created (unpaid) " pro" → []', 'customer.subscription.created (unpaid) "constructor" → []', 'customer.subscription.created (unpaid) "toString" → []', 'customer.subscription.created (unpaid) "__proto__" → []' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scrum1402e-impago-con-plan-desconocido.test.mjs:202:1
+✖ SCRUM-1402e · ✅ control · regla 2: el impago marca SOLO al merchant del evento; el otro no recibe nada (2.139ms)
+  AssertionError [ERR_ASSERTION]: sólo el merchant 14026: []
+  + actual - expected
+  
+  + []
+  - [
+  -   {
+  -     id: 14026
+  -   }
+  - ]
+  
+      at TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/jv-j3av/tests/scrum1402e-impago-con-plan-desconocido.test.mjs:204:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ { id: 14026 } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

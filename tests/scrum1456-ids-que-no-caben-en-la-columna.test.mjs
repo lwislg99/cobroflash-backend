@@ -8,9 +8,9 @@
 // SCRUM-1379). Los dos tickets, y SCRUM-1457, la usan tal cual; aquí no se escribe otra.
 //
 // ── QUÉ CUBRE Y QUÉ NO ────────────────────────────────────────────────────────────────────
-// Las lecturas de id que NO son dinero, emisión ni borrado: 19 de clientes y 7 de facturas. Las
-// que esperan el GO de un jefe (cobro, anular, rectificar, borrar, fusionar, webhooks) NO están en
-// este fichero: están nombradas, una a una, en `docs/master/SCRUM-1456.md`.
+// Las lecturas de id que NO son dinero ni emisión: 22 de clientes y 7 de facturas. El borrado y la
+// fusión de clientes entraron con SCRUM-1456b (GO del fundador, c.18731). Las de cobro, anular,
+// rectificar y webhooks NO están en este fichero: nombradas, una a una, en `docs/master/SCRUM-1456.md`.
 // Tampoco está `POST invoices /:id/send-email`: con un id que no cabe contesta HOY 200 con
 // `sent: false` (su `catch` convierte cualquier fallo en «el correo no salió»), no 500. Pasarlo a
 // 400 cambia lo que la pantalla hace con la respuesta, así que es una decisión y no este arreglo.
@@ -94,12 +94,18 @@ const LECTURAS = [
   [FACTURAS, 'patch', '/:id/asignados', 'params', 'id', 'llegan'],
   [FACTURAS, 'post', '/:id/resend-whatsapp', 'params', 'id', 'llegan'],
   [FACTURAS, 'post', '/:id/send-reminder', 'params', 'id', 'llegan'],
+  // SCRUM-1456b (J3, 20-oct; GO del fundador c.18731): el borrado y la fusión, al final para no mover
+  // los índices de las 26 de arriba. El DELETE validaba con `Number.isNaN`: un `1.5` LLEGABA a la base y,
+  // medido por la ruta real sobre Postgres, BORRABA EL CLIENTE 1 (docs/master/SCRUM-1456.md, tramo J3).
+  [CLIENTES, 'delete', '/:id', 'params', 'id', 'llegan'],
+  [CLIENTES, 'post', '/:id/fusionar', 'params', 'id', 'rechaza'],
+  [CLIENTES, 'post', '/:id/fusionar', 'body', 'con', 'rechaza'],
 ];
 
 // Un cuerpo que pasa las validaciones de forma de cada ruta, para que lo único que decida sea el id.
 const CUERPO = { name: 'Nombre', texto: 'una nota', tags: [], assignedUserIds: [] };
 // El otro id de las rutas que leen dos: uno que cabe, y distinto del que se prueba.
-const BUENOS = { params: { id: '7', siteId: '8' }, query: { con: '9' } };
+const BUENOS = { params: { id: '7', siteId: '8' }, query: { con: '9' }, body: { con: '9' } };
 
 function pedidor([modulo, verbo, ruta, donde, cual]) {
   const router = moduloDeDist(modulo).default;
@@ -120,11 +126,13 @@ function pedidor([modulo, verbo, ruta, donde, cual]) {
     });
     const params = { ...BUENOS.params };
     const query = ruta === '/:id/fusion-preview' ? { ...BUENOS.query } : {};
-    (donde === 'params' ? params : query)[cual] = valor;
+    // `fusionar` lee `con` del CUERPO (SCRUM-1456b); el resto, el cuerpo de forma de siempre.
+    const body = ruta === '/:id/fusionar' ? { ...CUERPO, ...BUENOS.body } : { ...CUERPO };
+    ({ params, query, body })[donde][cual] = valor;
     const callar = console.error; console.error = () => {};
     try {
       await h(reqDeSesion({
-        rol: 'admin', merchantId: MERCHANT, method: verbo.toUpperCase(), params, query, body: { ...CUERPO },
+        rol: 'admin', merchantId: MERCHANT, method: verbo.toUpperCase(), params, query, body,
         teamMemberId: null,
       }), res);
     } finally { console.error = callar; filas = {}; }
@@ -135,10 +143,10 @@ function pedidor([modulo, verbo, ruta, donde, cual]) {
 const nombreDe = ([modulo, verbo, ruta, donde, cual]) =>
   `${verbo.toUpperCase()} ${modulo.includes('customers') ? 'customers' : 'invoices'} ${ruta} · \`${cual}\` (${donde})`;
 
-test('SCRUM-1456 · el censo de este fichero: 26 lecturas (19 de clientes, 7 de facturas), ninguna repetida', () => {
-  assert.equal(LECTURAS.length, 26);
-  assert.equal(new Set(LECTURAS.map((l) => l.slice(0, 5).join(' '))).size, 26);
-  assert.equal(LECTURAS.filter((l) => l[0] === CLIENTES).length, 19);
+test('SCRUM-1456 · el censo de este fichero: 29 lecturas (22 de clientes, 7 de facturas), ninguna repetida', () => {
+  assert.equal(LECTURAS.length, 29);
+  assert.equal(new Set(LECTURAS.map((l) => l.slice(0, 5).join(' '))).size, 29);
+  assert.equal(LECTURAS.filter((l) => l[0] === CLIENTES).length, 22);
   assert.equal(LECTURAS.filter((l) => l[0] === FACTURAS).length, 7);
 });
 
@@ -229,8 +237,26 @@ test('SCRUM-1456 · POST invoices /:id/resend-whatsapp · `id` (params) · SUELO
 test('SCRUM-1456 · POST invoices /:id/resend-whatsapp · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base', caso(24));
 test('SCRUM-1456 · POST invoices /:id/send-reminder · `id` (params) · SUELO: un id que cabe LLEGA a la base, y `-1` y `0` contestan lo de antes', suelo(25));
 test('SCRUM-1456 · POST invoices /:id/send-reminder · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base', caso(25));
+test('SCRUM-1456 · DELETE customers /:id · `id` (params) · SUELO: un id que cabe LLEGA a la base, y `-1` y `0` contestan lo de antes', suelo(26));
+test('SCRUM-1456 · DELETE customers /:id · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base', caso(26));
+test('SCRUM-1456 · POST customers /:id/fusionar · `id` (params) · SUELO: un id que cabe LLEGA a la base, y `-1` y `0` contestan lo de antes', suelo(27));
+test('SCRUM-1456 · POST customers /:id/fusionar · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base', caso(27));
+test('SCRUM-1456 · POST customers /:id/fusionar · `con` (body) · SUELO: un id que cabe LLEGA a la base, y `-1` y `0` contestan lo de antes', suelo(28));
+test('SCRUM-1456 · POST customers /:id/fusionar · `con` (body) · 🔴 un id que no cabe en la columna → 400, sin tocar la base', caso(28));
 suelo.todos();
 caso.todos();
+
+// ── SCRUM-1456b · CONTROL NEGATIVO del borrado: un id correcto SIGUE BORRANDO ───────────────────
+// Un arreglo que empezara a rechazar ids válidos sería peor que el defecto: el profesional no podría
+// borrar a su cliente. El 1.5 de arriba no llega a la base; el 7 sí, y la ruta contesta 204.
+test('SCRUM-1456 · DELETE customers /:id · un id CORRECTO sigue llegando al borrado y contesta 204', async () => {
+  const pedir = pedidor(LECTURAS[26]);
+  // SCRUM-1571: el 7 EXISTE (el borrado toca una fila). Con la base vacía, el 204 era el defecto de
+  // 1571 —«borrado» sin borrar nada—, y ahora esa ruta contesta 404: `scrum1571-…` lo mide.
+  const r = await pedir('7', { 'customer.deleteMany': { count: 1 } });
+  assert.ok(r.consultas > 0, '🔴 con un id correcto el borrado no ha llegado a la base');
+  assert.equal(r.status, 204, `🔴 un id correcto ya no borra: la ruta contesta ${r.status}`);
+});
 
 // ── «Un id que existe, 200» (aceptación 2 de los dos tickets) ────────────────────────────────
 // Sin esto, todo lo de arriba pasaría igual si la ruta contestara «no existe» a cualquier id.

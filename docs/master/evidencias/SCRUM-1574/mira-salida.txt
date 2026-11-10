@@ -1,0 +1,63 @@
+saltado	115957093071	ubuntu-24.04	20261002.596	node undefined	undefined
+   ④ ﹣ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno (0.149378ms) # este node ya escribe BLOQUEANTE en una tubería sin el módulo (medido: 0 bytes pendientes tras 1 MiB): no hay rojo que ver. P
+   ③ ✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (4
+saltado	116975370165	ubuntu-24.04	20261012.601	node undefined	undefined
+   ④ ﹣ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno (0.119695ms) # este node ya escribe BLOQUEANTE en una tubería sin el módulo (medido: 0 bytes pendientes tras 1 MiB): no hay rojo que ver. P
+   ③ ✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (5
+saltado	116978502215	ubuntu-24.04	20261012.601	node undefined	undefined
+   ④ ﹣ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno (0.195557ms) # este node ya escribe BLOQUEANTE en una tubería sin el módulo (medido: 0 bytes pendientes tras 1 MiB): no hay rojo que ver. P
+   ③ ✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (3
+saltado	116979034089	ubuntu-24.04	20261012.601	node undefined	undefined
+   ④ ﹣ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno (0.175496ms) # este node ya escribe BLOQUEANTE en una tubería sin el módulo (medido: 0 bytes pendientes tras 1 MiB): no hay rojo que ver. P
+   ③ ✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (4
+saltado	116979062803	ubuntu-24.04	20261012.601	node undefined	undefined
+   ④ ﹣ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno (0.200044ms) # este node ya escribe BLOQUEANTE en una tubería sin el módulo (medido: 0 bytes pendientes tras 1 MiB): no hay rojo que ver. P
+   ③ ✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (4
+saltado	116989528790	ubuntu-24.04	20261012.601	node undefined	undefined
+   ④ ﹣ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno (0.218548ms) # este node ya escribe BLOQUEANTE en una tubería sin el módulo (medido: 0 bytes pendientes tras 1 MiB): no hay rojo que ver. P
+   ③ ✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (3
+saltado	117487006249	ubuntu-24.04	20261012.601	node undefined	undefined
+   ④ ﹣ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno (0.169177ms) # este node ya escribe BLOQUEANTE en una tubería sin el módulo (medido: 0 bytes pendientes tras 1 MiB): no hay rojo que ver. P
+   ③ ✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (4
+saltado	117526062359	ubuntu-24.04	20261012.601	node undefined	undefined
+   ④ ﹣ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno (0.12249ms) # este node ya escribe BLOQUEANTE en una tubería sin el módulo (medido: 0 bytes pendientes tras 1 MiB): no hay rojo que ver. Pa
+   ③ ✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (4
+saltado	117536342000	ubuntu-24.04	20261012.601	node undefined	undefined
+   ④ ﹣ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno (0.2259ms) # este node ya escribe BLOQUEANTE en una tubería sin el módulo (medido: 0 bytes pendientes tras 1 MiB): no hay rojo que ver. Pas
+   ③ ✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (5
+saltado	117735486221	ubuntu-24.04	20261012.601	node undefined	undefined
+   ④ ﹣ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno (0.161731ms) # este node ya escribe BLOQUEANTE en una tubería sin el módulo (medido: 0 bytes pendientes tras 1 MiB): no hay rojo que ver. P
+   ③ ✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (7
+saltado	117740948580	ubuntu-24.04	20261012.601	node undefined	undefined
+   ④ ﹣ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno (0.161373ms) # este node ya escribe BLOQUEANTE en una tubería sin el módulo (medido: 0 bytes pendientes tras 1 MiB): no hay rojo que ver. P
+   ③ ✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (4
+saltado	117746439485	ubuntu-24.04	20261012.601	node undefined	undefined
+   ④ ﹣ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno (0.1829ms) # este node ya escribe BLOQUEANTE en una tubería sin el módulo (medido: 0 bytes pendientes tras 1 MiB): no hay rojo que ver. Pas
+   ③ ✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (5
+saltado	117929895274	ubuntu-24.04	20261012.601	node undefined	undefined
+   ④ ﹣ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno (0.144169ms) # este node ya escribe BLOQUEANTE en una tubería sin el módulo (medido: 0 bytes pendientes tras 1 MiB): no hay rojo que ver. P
+   ③ ✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (3
+saltado	118057482966	ubuntu-24.04	20261012.601	node undefined	undefined
+   ④ ﹣ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno (0.164839ms) # este node ya escribe BLOQUEANTE en una tubería sin el módulo (medido: 0 bytes pendientes tras 1 MiB): no hay rojo que ver. P
+   ③ ✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (3
+control	115745643294	ubuntu-24.04	20261002.596	node undefined	undefined
+   ④ ✔ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno (3580.701553ms)
+   ③ ✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (4
+control	115976947363	ubuntu-24.04	20261002.596	node undefined	undefined
+   ④ ✔ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno (3771.459494ms)
+   ③ ✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (3
+control	116574833707	ubuntu-24.04	20261012.601	node undefined	undefined
+   ④ ✔ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno (3750.393908ms)
+   ③ ✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (6
+control	116958440903	ubuntu-24.04	20261012.601	node undefined	undefined
+   ④ ✔ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno (3753.365261ms)
+   ③ ✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (3
+control	117516276504	ubuntu-24.04	20261012.601	node undefined	undefined
+   ④ ✔ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno (2470.079646ms)
+   ③ ✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (3
+control	117755788628	ubuntu-24.04	20261012.601	node undefined	undefined
+   ④ ✔ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno (2030.694554ms)
+   ③ ✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (2
+control	118043325233	ubuntu-24.04	20261012.601	node undefined	undefined
+   ④ ✔ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno (2989.900883ms)
+   ③ ✔ SCRUM-1405c · ③ 🔴 ALARMA: en ESTE node la salida en tubería se puede poner bloqueante (4

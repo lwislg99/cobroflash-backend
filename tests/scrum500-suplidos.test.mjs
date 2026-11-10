@@ -23,10 +23,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
 import { fileURLToPath } from 'node:url';
+// SCRUM-1063c: `MARCA_SUPLIDO`, `leerMarcaSuplido` e `importeSuplido` ya no se exportan (scrum411:
+// su único consumidor está dentro del módulo). Se prueban por la SUPERFICIE PÚBLICA —
+// `partirPorSuplido` y `totalSuplidos` pasan por ellas—, y la clave se escribe aquí A MANO: es el
+// contrato con las líneas guardadas, y si el dominio la renombra, estos casos caen.
 import {
-  MARCA_SUPLIDO,
-  leerMarcaSuplido,
-  importeSuplido,
   totalSuplidos,
   partirPorSuplido,
   desgloseConSuplidos,
@@ -36,6 +37,8 @@ import { grossOfLines } from '../dist/modules/invoicing/domain/invoiceLines.serv
 import { bloqueRetencion, calcularRetencion } from '../dist/modules/invoicing/domain/retencionIrpf.js';
 import { CreateQuoteSchema } from '../dist/core/validation/schemas.js';
 import { soloCodigo } from './_solo-codigo.mjs';
+
+const MARCA_SUPLIDO = 'suplido';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (p) => fs.readFileSync(path.join(RAIZ, p), 'utf8');
@@ -55,7 +58,7 @@ const eur = (n) => n.toFixed(2).replace('.', ',') + ' €';
 test('SCRUM-500 · suelo: las piezas existen y se pueden ejecutar', () => {
   for (const [nombre, fn] of [
     ['desgloseConSuplidos', desgloseConSuplidos], ['totalSuplidos', totalSuplidos],
-    ['leerMarcaSuplido', leerMarcaSuplido], ['bloqueRetencion', bloqueRetencion],
+    ['partirPorSuplido', partirPorSuplido], ['bloqueRetencion', bloqueRetencion],
     ['front.lineaParaPayload', front.lineaParaPayload], ['front.esSuplido', front.esSuplido],
   ]) {
     assert.equal(typeof fn, 'function', `🔴 no se pudo cargar \`${nombre}\`: los asserts de abajo `
@@ -266,7 +269,7 @@ test('SCRUM-500 · 🔴 SUELO: una marca ilegible NO pasa por «no es suplido»'
   // degradar, porque un fallo de lectura produce el resultado que se ve normal y nadie lo nota.
   for (const basura of ['sí', 'true', 'false', 1, 0, null, {}, []]) {
     const l = { qty: 1, price: 50, tax: 0, [MARCA_SUPLIDO]: basura };
-    const lectura = leerMarcaSuplido(l);
+    const lectura = partirPorSuplido([l]);
     assert.equal(lectura.ok, false,
       `🔴 la marca ${JSON.stringify(basura)} se ha interpretado en vez de declararse ilegible. `
       + 'Alguien escribió algo ahí; si no se entiende, no se adivina.');
@@ -289,10 +292,14 @@ test('SCRUM-500 · 🔴 SUELO: una marca ilegible NO pasa por «no es suplido»'
 test('SCRUM-500 · la marca AUSENTE sí es un «no» legítimo, y la explícita se respeta', () => {
   // La ausencia es lo que tienen todas las líneas de siempre: si eso fallara, no se podría
   // facturar nada. Es la frontera exacta entre «no consta» y «no se entiende».
-  assert.deepEqual(leerMarcaSuplido({ qty: 1, price: 10 }), { ok: true, suplido: false });
-  assert.deepEqual(leerMarcaSuplido({ [MARCA_SUPLIDO]: false }), { ok: true, suplido: false });
-  assert.deepEqual(leerMarcaSuplido({ [MARCA_SUPLIDO]: true }), { ok: true, suplido: true });
-  assert.equal(leerMarcaSuplido(null).ok, false, '🔴 una línea nula no es una línea normal');
+  const cuantos = (l) => {
+    const p = partirPorSuplido([l]);
+    return p.ok ? { ok: true, sujetas: p.sujetas.length, suplidos: p.suplidos.length } : { ok: false };
+  };
+  assert.deepEqual(cuantos({ qty: 1, price: 10 }), { ok: true, sujetas: 1, suplidos: 0 });
+  assert.deepEqual(cuantos({ [MARCA_SUPLIDO]: false }), { ok: true, sujetas: 1, suplidos: 0 });
+  assert.deepEqual(cuantos({ [MARCA_SUPLIDO]: true }), { ok: true, sujetas: 0, suplidos: 1 });
+  assert.equal(cuantos(null).ok, false, '🔴 una línea nula no es una línea normal');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -316,7 +323,7 @@ test('SCRUM-500 · el valor de la columna sale de las líneas y suma varios supl
     + 'la columna solo lleva el total.');
 
   // Un suplido NO lleva margen: su importe es cantidad × precio y nada más.
-  assert.equal(importeSuplido(lineas[2]), 65.00);
+  assert.equal(totalSuplidos([lineas[2]]).total, 65.00);
 
   // Y el desglose los saca a los dos de la base: 800,00 · 168,00 · 115,00 · 1.083,00
   const d = desgloseConSuplidos(lineas);
@@ -415,11 +422,16 @@ test('SCRUM-500 · 🔴 la casilla y el cálculo usan LA MISMA clave', () => {
   // Dos literales `'suplido'` en dos ficheros son dos cosas que pueden separarse el día que una
   // se renombre — y entonces la casilla marca algo que el dominio no lee. Silencioso: la factura
   // sale, sin suplidos, y con IVA sobre la tasa.
-  assert.equal(front.MARCA_SUPLIDO, MARCA_SUPLIDO,
-    `🔴 el front marca con «${front.MARCA_SUPLIDO}» y el dominio lee «${MARCA_SUPLIDO}».`);
-  // Suelo: si las dos fueran `undefined`, la igualdad de arriba pasaría sin significar nada.
-  assert.equal(typeof MARCA_SUPLIDO, 'string');
-  assert.ok(MARCA_SUPLIDO.length > 0);
+  // SCRUM-1063c: la clave del dominio ya no se exporta, así que se mide por COMPORTAMIENTO: una
+  // línea marcada con la clave del FRONT tiene que salir apartada por el dominio.
+  assert.equal(typeof front.MARCA_SUPLIDO, 'string');
+  assert.ok(front.MARCA_SUPLIDO.length > 0);
+  const p = partirPorSuplido([{ qty: 1, price: 50, tax: 0, [front.MARCA_SUPLIDO]: true }]);
+  assert.equal(p.ok && p.suplidos.length, 1,
+    `🔴 el front marca con «${front.MARCA_SUPLIDO}» y el dominio no la lee como suplido.`);
+  // Control negativo: con otra clave el dominio NO la aparta. Sin esto, «todo es suplido» pasaría.
+  const otra = partirPorSuplido([{ qty: 1, price: 50, tax: 0, [front.MARCA_SUPLIDO + '_x']: true }]);
+  assert.equal(otra.ok && otra.suplidos.length, 0);
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════

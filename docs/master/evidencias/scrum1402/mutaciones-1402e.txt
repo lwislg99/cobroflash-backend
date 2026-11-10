@@ -1,0 +1,7 @@
+POBLACION: 3 mutaciones declaradas en tests/scrum1402e-impago-con-plan-desconocido.test.mjs
+BASE sin mutar: 6 casos, 0 caen
+1. VIVA (caen 2 de 6) · «con un plan que NO existe SE MARCA» · a: "          if (planConocido) await prisma.merchant.update({\n           "
+2. VIVA (caen 1 de 6) · «con un plan que NO existe SE MARCA» · a: "              : { subscriptionStatus: 'past_due', stripeSubscriptionId"
+3. VIVA (caen 1 de 6) · «un impago con un plan legítimo, igual que hoy» · a: "              ? { subscriptionStatus: 'past_due' }"
+RESULTADO: 3 vivas · 0 mudas · 0 ciegas, de 3 · dist/ re-emitido sin mutar (0)
+EXIT=0

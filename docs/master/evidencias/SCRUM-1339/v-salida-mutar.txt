@@ -1,0 +1,11 @@
+limpia scrum1339d-senal-de-nombres.test.mjs: pasados=18 caidos=0 saltados=0
+VIVA · SCRUM-1339d · ② 🔴 EL POSITIVO: un TAP completo no lleva NINGÚN aviso, y la línea de registro sale igual
+VIVA · SCRUM-1339d · MULTIPLICIDAD: el mismo nombre en dos ficheros con UNA sola línea en el TAP no cuenta como presente
+VIVA · SCRUM-1339d · un TAP que NO está entero no se mide: vacío, con NUL, sin resumen, con dos resúmenes, o con menos líneas que su resumen
+VIVA · SCRUM-1339d · LA TASA es pura y sale SIEMPRE con su población: lo que no se midió no cuenta como limpio
+VIVA · SCRUM-1339v · ④ 🔴 EL GUION ROTO A PROPÓSITO sale 2 y DICE que no pudo medir; con --tasa sale 0: nunca calla
+VIVA · SCRUM-1339t · UN SOLO nombre ausente basta para que el guion salga 1; con cero sale 0
+VIVA · SCRUM-1339v · ④ 🔴 EL GUION ROTO A PROPÓSITO sale 2 y DICE que no pudo medir; con --tasa sale 0: nunca calla
+VIVA · SCRUM-1339v · ④ 🔴 EL GUION ROTO A PROPÓSITO sale 2 y DICE que no pudo medir; con --tasa sale 0: nunca calla
+VIVA · SCRUM-1339v · ④ 🔴 EL GUION ROTO A PROPÓSITO sale 2 y DICE que no pudo medir; con --tasa sale 0: nunca calla
+POBLACION guards=1 de 1 pedidos · vivas=9 · no vivas=0

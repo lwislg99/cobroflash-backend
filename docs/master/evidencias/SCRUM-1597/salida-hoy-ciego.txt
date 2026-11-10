@@ -1,0 +1,4 @@
+== CENSO POR AST · población: 2415 ficheros (src, tests, scripts, public) ==
+cuadra S0 SUELO de población  {"porEncimaDelSuelo":true}
+ROJO   C0 SEMBRADO: 1 llamada, 1 lectura; el prefijo y el comentario no cuentan  {"llamadas":0,"lecturas":0,"total":0}  <<< llamadas: esperado 1, salió 0 | lecturas: esperado 1, salió 0 | total: esperado 2, salió 0
+CIEGO: el censo no ve el fichero sembrado.

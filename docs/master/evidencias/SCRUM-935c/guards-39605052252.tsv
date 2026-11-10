@@ -1,0 +1,165 @@
+# SCRUM-935c · coste por guard del meta-guard · run 39605052252 · 2026-10-21T13:06:09Z · pull_request · scrum-1574-la-sonda-no-decide-el-salto
+# fase 1646 s · 622 mutaciones · 162 guards
+guard	mutaciones	seg_total	seg_por_mutacion_mediana	limpia_aprox_seg
+scrum813-trinquete-de-zona.test.mjs	26	285.7	11.15	11.0
+scrum976-guards-entrada-con-techo.test.mjs	6	106.5	16.19	14.1
+scrum710b-anclaje-por-identidad.test.mjs	5	98.3	16.45	16.2
+scrum853c-el-vigia-no-se-cree-un-error.test.mjs	3	51.8	12.97	12.9
+scrum775-suelo-que-no-dispara.test.mjs	3	40.1	10.13	9.8
+scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs	3	39.9	9.99	9.9
+scrum951a-equipo-configurable.test.mjs	13	39.1	2.68	4.0
+scrum858b-la-tanda-sin-veredicto.test.mjs	3	35.5	9.02	8.5
+scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	2	34.6	8.80	17.0
+scrum765-la-puerta-y-el-suelo.test.mjs	5	29.4	4.65	7.3
+scrum753-censo-de-alcanzabilidad.test.mjs	5	24.5	4.01	4.3
+scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs	4	21.4	4.29	4.3
+scrum1503c-el-lector-ve-el-caminante.test.mjs	5	21.3	3.56	3.6
+scrum754-el-juez-que-oscila.test.mjs	7	21.0	2.62	2.6
+scrum1363-tests-que-cubren.test.mjs	2	20.8	6.92	7.0
+scrum750-los-dos-calendarios.test.mjs	4	20.5	4.52	2.4
+scrum810b-los-suelos-derivados.test.mjs	4	20.2	4.06	4.0
+scrum745-comparar-por-identidad.test.mjs	4	19.4	4.08	4.1
+scrum1339d-senal-de-nombres.test.mjs	5	18.6	3.56	3.1
+scrum1405c-tuberia-bloqueante.test.mjs	7	18.3	2.28	2.3
+scrum1331-sin-red-se-dice.test.mjs	3	15.5	4.11	4.0
+scrum839e-solo-pr-armados.test.mjs	8	15.1	1.67	1.9
+scrum808-el-arbol-que-queda-mutado.test.mjs	4	14.1	2.83	2.8
+scrum1349-entorno-prestado-solo-baja.test.mjs	3	13.8	3.46	3.4
+scrum757-la-declaracion-que-nadie-lee.test.mjs	4	13.7	2.95	2.9
+scrum1343-un-hijo-que-no-arranca-es-ciego.test.mjs	17	13.2	0.75	0.8
+scrum1349-no-se-empuja-con-una-mutacion-puesta.test.mjs	1	13.1		
+scrum1399-el-anterior-de-una-anulacion.test.mjs	5	13.0	2.18	2.2
+scrum836-ancla-de-mutacion-viva.test.mjs	1	12.9		
+restauracion-del-arbol-ejecutable.test.mjs	3	12.9	2.59	5.3
+scrum784-el-cuarto-veredicto.test.mjs	5	12.9	2.15	2.2
+scrum899b-arranque-de-la-tanda.test.mjs	6	12.7	1.81	1.9
+scrum810-el-suelo-a-la-primera.test.mjs	3	12.2	3.11	3.0
+scrum1485-censo-rutas-de-maquina.test.mjs	4	11.8	2.36	2.3
+scrum812-el-rotulo-declara-su-poblacion.test.mjs	5	11.7	1.93	2.0
+scrum1486-insertbefore-del-banco.test.mjs	13	10.9	0.78	0.8
+scrum797-el-dueno-se-escribe.test.mjs	3	10.6	2.68	2.6
+scrum768-listas-sin-atajo.test.mjs	1	10.4		
+scrum949-el-suelo-como-cociente.test.mjs	6	9.9	1.39	1.5
+scrum1330-una-sellada-no-se-resella.test.mjs	1	8.8		
+scrum736-el-suelo-que-no-avisa.test.mjs	1	8.8		
+scrum1257e-modo-en-ajustes-tres-modos.test.mjs	4	8.8	1.76	1.8
+scrum763-restaurar-el-arbol.test.mjs	2	8.8	2.01	4.7
+scrum1536b-los-tres-estados-de-los-guiones.test.mjs	5	8.6	1.46	1.4
+scrum778-la-lista-cableada.test.mjs	3	8.6	2.16	2.2
+scrum751-clave-duplicada-en-silencio.test.mjs	2	8.4	2.82	2.7
+scrum586-forma-de-pago-por-cliente.test.mjs	6	8.0	1.13	1.1
+scrum771-el-emisor-no-valida-el-tipo.test.mjs	3	8.0	2.09	1.9
+scrum839d-union-solo-en-el-registro.test.mjs	6	8.0	1.06	1.5
+scrum1542c-el-hueco-se-fecha-por-entrada.test.mjs	6	7.4	1.09	1.0
+scrum1402-plan-inexistente-no-se-escribe.test.mjs	8	7.4	0.82	0.8
+scrum760-iva-de-voz-rechazado.test.mjs	5	7.4	1.23	1.2
+scrum1540-borrables-por-la-punta-viva.test.mjs	3	7.3	1.93	1.8
+scrum1298b-latido-arbol-de-arranque.test.mjs	4	6.9	1.49	1.1
+scrum600d-el-envio-tras-emitir.test.mjs	3	6.7	1.71	1.6
+scrum1336-un-ciego-no-se-pinta-de-hallazgo.test.mjs	8	6.6	0.74	0.7
+scrum783-seleccion-sobrevive-navegacion.test.mjs	2	6.6	2.21	2.2
+scrum1367-sembrar-casos.test.mjs	13	6.5	0.46	0.5
+scrum850-la-poblacion-del-instrumento.test.mjs	3	6.4	2.44	0.2
+scrum853-lecturas-que-fallan-cerrado.test.mjs	5	6.3	1.05	1.1
+scrum1302p-el-aviso-antes-de-crear-la-revision.test.mjs	3	6.2	1.62	1.4
+scrum850b-las-formas-que-mienten.test.mjs	1	6.2		
+scrum740-carrera-por-el-arbol.test.mjs	2	5.9	1.96	2.0
+scrum1458-vigia-main-parado.test.mjs	6	5.8	0.86	0.6
+scrum801-el-respaldo-de-la-n.test.mjs	3	5.7	1.45	1.4
+scrum899d-aviso-de-uso.test.mjs	8	5.6	0.61	0.6
+scrum899-sesion-lista-blanca.test.mjs	7	5.3	0.66	0.7
+scrum1302m-el-total-y-la-leyenda.test.mjs	5	5.2	0.84	0.8
+scrum716-ritmo-de-despliegue.test.mjs	8	4.9	0.55	0.6
+scrum756-el-rechazo-se-ve.test.mjs	3	4.6	1.17	1.1
+scrum766-el-grep-que-cuenta-lineas.test.mjs	2	4.3	1.44	1.4
+scrum859-identidad-y-motivo-cerrado.test.mjs	2	4.3	1.41	1.5
+scrum755-el-contador-que-cuadro-solo.test.mjs	2	4.2	1.42	1.4
+scrum1387-banco-nuevo-va-al-catalogo.test.mjs	5	4.2	0.71	0.7
+scrum764-margen-negativo.test.mjs	6	4.2	0.60	0.6
+scrum877-la-novena-a-pelo.test.mjs	2	4.2	1.40	1.3
+scrum1398-la-sonda-de-colision.test.mjs	3	4.1	1.03	1.0
+scrum853-avisador-solo-obligatorio.test.mjs	9	3.9	0.39	0.4
+scrum599-navegacion-documentos-y-atajo.test.mjs	3	3.7	0.94	0.9
+scrum777-el-modal-escondido-no-mata-la-n.test.mjs	2	3.7	1.24	1.2
+scrum805-que-firmo-el-cliente.test.mjs	3	3.6	0.92	0.8
+scrum1263-gancho-pre-push.test.mjs	2	3.5	1.00	1.5
+scrum1473-latido-disco-y-barrido.test.mjs	8	3.5	0.38	0.4
+scrum758-cabecera-no-miente.test.mjs	5	3.4	0.57	0.6
+vigia-atascados.test.mjs	8	3.4	0.37	0.4
+scrum1412-tanda-por-tramos.test.mjs	5	3.4	0.54	0.7
+scrum1298-mesa-por-puesto.test.mjs	2	3.3	1.12	1.1
+scrum832-atras-vuelve-a-la-lista.test.mjs	3	3.3	0.83	0.8
+scrum608-tipo-de-documento-en-la-cabecera.test.mjs	3	3.3	0.83	0.8
+scrum769-el-motivo-de-las-dos-que-no.test.mjs	3	3.3	0.83	0.8
+scrum864c-el-temporal-no-vuelve.test.mjs	2	3.3	1.10	1.1
+scrum1342-plan-desconocido-no-calla.test.mjs	6	3.2	0.46	0.4
+scrum899c-relevar-y-contexto.test.mjs	8	3.2	0.35	0.3
+scrum839c-la-pasada-se-ejecuta.test.mjs	3	3.1	0.81	0.7
+scrum649-el-ancla-que-no-apunta.test.mjs	1	3.1		
+scrum1268-sembrar-qa.test.mjs	6	3.1	0.44	0.4
+scrum880-el-empate-del-sello.test.mjs	2	3.1	1.03	1.0
+scrum1332-la-caida-no-tapa-lo-de-despues.test.mjs	1	3.1		
+scrum1367b-sembrar-albaranes.test.mjs	5	3.0	0.51	0.5
+scrum938-la-lista-como-fixture.test.mjs	2	3.0	1.06	0.9
+scrum1474-latido-relevo.test.mjs	7	2.9	0.36	0.4
+scrum939b-trinquete-de-las-skills.test.mjs	5	2.9	0.47	0.5
+scrum738-el-tablero-contra-el-arbol.test.mjs	2	2.8	0.95	0.9
+scrum1289-por-que-cayo.test.mjs	6	2.8	0.41	0.4
+scrum1434-zona-roja-gh-caido.test.mjs	4	2.8	0.56	0.6
+scrum954-vivo-no-es-listado.test.mjs	3	2.8	0.70	0.7
+scrum767-portal-token.test.mjs	3	2.8	0.70	0.7
+scrum1463b-cierre-sin-clic.test.mjs	4	2.7	0.55	0.5
+scrum853d-cortacircuitos.test.mjs	4	2.7	0.54	0.5
+scrum785-productos-y-proveedores-descuelgan.test.mjs	2	2.7	0.90	0.9
+scrum748-no-lo-se-no-es-al-dia.test.mjs	2	2.6	0.87	0.9
+scrum809b-paywall-sin-banco.test.mjs	3	2.5	0.66	0.6
+scrum951d-ensayo-instalacion.test.mjs	6	2.5	0.35	0.4
+scrum928b-el-veredicto-que-el-color-tapa.test.mjs	2	2.5	0.76	1.0
+scrum793-condicion-en-el-where.test.mjs	3	2.4	0.60	0.6
+scrum554-el-censo-no-confunde-el-numero.test.mjs	1	2.4		
+scrum596-la-nota-interna-no-sale.test.mjs	2	2.3	0.81	0.7
+scrum781-concurrencia-de-la-factura.test.mjs	3	2.3	0.59	0.6
+scrum1258-el-tipo-del-registro-es-el-de-la-huella.test.mjs	2	2.3	0.72	0.9
+scrum804-el-guard-no-es-el-numero.test.mjs	3	2.3	0.57	0.6
+scrum794-un-solo-anadir-linea.test.mjs	2	2.3	0.76	0.7
+scrum1302p-la-pagina-de-una-revision-antigua.test.mjs	3	2.2	0.55	0.6
+scrum1367c-albaran-de-cliente-sin-movil.test.mjs	3	2.2	0.55	0.5
+scrum876e-el-segundo-destino.test.mjs	4	2.2	0.44	0.4
+scrum1302r-el-post-rechaza-la-version-vieja.test.mjs	1	2.2		
+scrum1286-intermitente-1281.test.mjs	5	2.1	0.35	0.4
+scrum1284-minutos-actions.test.mjs	5	2.1	0.35	0.3
+scrum792-barra-alcanzable-en-movil.test.mjs	2	2.0	0.66	0.7
+scrum743-tercera-forma.test.mjs	2	2.0	0.66	0.6
+scrum1302s-dos-firmas-del-parte-a-la-vez.test.mjs	2	1.9	0.64	0.6
+scrum739-informes-al-sitio-unico.test.mjs	2	1.9	0.62	0.6
+scrum641-nombre-cogido-sin-500.test.mjs	2	1.9	0.61	0.6
+scrum443-toast-legible.test.mjs	2	1.9	0.62	0.6
+scrum1245b-patron-de-la-tanda-entre-comillas.test.mjs	2	1.8	0.63	0.5
+scrum795-el-portal-en-la-ficha.test.mjs	2	1.7	0.58	0.6
+scrum631-la-unicidad-tiene-vigilante.test.mjs	2	1.7	0.57	0.6
+scrum1302t-el-5xx-de-la-aceptacion.test.mjs	2	1.7	0.57	0.5
+scrum1100d-el-rojo-dice-lo-que-sabe.test.mjs	2	1.6	0.54	0.5
+scrum858c-el-cierre-con-indice.test.mjs	2	1.6	0.55	0.5
+scrum908-la-muda-se-explica.test.mjs	2	1.6	0.54	0.5
+scrum534d-extractores-a-mano.test.mjs	2	1.6	0.53	0.5
+scrum829b-la-ref-rancia-se-poda.test.mjs	2	1.6	0.52	0.5
+scrum1270-pr-mudo-avisado-en-el-pr.test.mjs	3	1.5	0.38	0.4
+scrum1293-cargador-de-marcadores.test.mjs	3	1.4	0.36	0.4
+scrum876f-el-seco-se-decide-al-enviar.test.mjs	2	1.4	0.46	0.5
+scrum1321-el-resumen-no-prueba-el-final.test.mjs	1	1.4		
+scrum1179c-censo-clics-informativo.test.mjs	3	1.4	0.34	0.3
+scrum1179c-censo-accion-informativo.test.mjs	3	1.4	0.34	0.3
+scrum996d-a1-no-regenera-a-ciegas.test.mjs	2	1.4	0.48	0.4
+scrum547-el-documento-que-nadie-mira.test.mjs	2	1.3	0.44	0.4
+scrum1463c-latido-cierres-sin-clic.test.mjs	2	1.2	0.39	0.4
+scrum749-la-primitiva-que-normaliza.test.mjs	1	1.2		
+scrum834-puerta-avisador-rojo.test.mjs	2	1.1	0.38	0.4
+scrum691-contraste-de-tokens.test.mjs	2	1.1	0.37	0.4
+scrum1466-sembrar-qa-compara-sin-orden.test.mjs	2	1.1	0.36	0.4
+scrum1282-contexto-nombres-de-hoy.test.mjs	2	1.0	0.35	0.3
+scrum1557-contexto-aparta-los-restos.test.mjs	2	1.0	0.35	0.3
+scrum1484c-la-a19-dice-lo-que-dice-el-latido.test.mjs	2	1.0	0.35	0.3
+scrum900-push-de-claude-con-la-app.test.mjs	1	0.9		
+utils.test.mjs	1	0.8		
+scrum881-el-detector-sin-fecha.test.mjs	1	0.8		
+scrum1179c-censo-tactil-informativo.test.mjs	1	0.7		

@@ -1,0 +1,19 @@
+⟦arranque⟧ 0.5 s COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+vendidas   360 retraso  rota · CLS 0 · obs 0 · barra 95 · inter false
+vendidas   390 retraso  rota · CLS 0 · obs 0 · barra 95 · inter false
+vendidas   360 retraso   600 · CLS 0.023 · obs 1 · barra 116 · inter true
+      0.023@687 SECTION.hero 160→181 h620→599 | ::after 47→69 h47→47 | SPAN#ann-plazas 60→82 h22→22 | A 59→81 h24→24
+vendidas   390 retraso   600 · CLS 0.011 · obs 1 · barra 95 · inter true
+      0.011@692 DIV.cta-row 495→483 h148→148 | H1#reg-hero 248→239 h118→112 | P.sub 377→365 h106→106 | DIV.stage 693→681 h87→99 | DIV.win 711→699 h69→81
+cero       360 retraso  rota · CLS 0 · obs 0 · barra 95 · inter false
+cero       390 retraso  rota · CLS 0 · obs 0 · barra 95 · inter false
+cero       360 retraso   600 · CLS 0.023 · obs 1 · barra 116 · inter true
+      0.023@819 SECTION.hero 160→181 h620→599 | ::after 47→69 h47→47 | A 59→81 h24→24
+cero       390 retraso   600 · CLS 0.011 · obs 1 · barra 95 · inter true
+      0.011@875 DIV.cta-row 495→483 h148→148 | H1#reg-hero 248→239 h118→112 | P.sub 377→365 h106→106 | DIV.stage 693→681 h87→99 | DIV.win 711→699 h69→81
+roto       360 retraso  rota · CLS 0 · obs 0 · barra 95 · inter false
+roto       390 retraso  rota · CLS 0 · obs 0 · barra 95 · inter false
+roto       360 retraso   600 · CLS 0.022 · obs 1 · barra 116 · inter true
+      0.022@830 SECTION.hero 160→181 h620→599
+roto       390 retraso   600 · CLS 0.013 · obs 1 · barra 95 · inter true
+      0.013@1237 DIV.cta-row 495→483 h148→148 | H1#reg-hero 248→239 h118→112 | P.sub 377→365 h106→106 | DIV.stage 693→681 h87→99 | DIV.win 711→699 h69→81

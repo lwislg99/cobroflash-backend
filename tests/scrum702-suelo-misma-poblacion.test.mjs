@@ -267,7 +267,23 @@ test('SCRUM-702 · CONTROL NEGATIVO: por encima del suelo y sin mudos, no dice n
 // que no cambia con el entorno: un guard en rojo cae en los dos sitios. La señal se lee por
 // PRESENCIA (existe la variable, valga lo que valga), y el caso imprime SIEMPRE «presupuesto juzgado:
 // SÍ / NO», también cuando juzga, para que el modo de cada pasada conste.
-const TOPE_LEEN_EL_ENTORNO = 20;
+// SCRUM-935d (23-oct-2026, S3) · 20 → 22, las dos del mismo cambio, y una SÍ cambia el comportamiento:
+//   · `scripts/meta-guard-mutaciones.mjs` lee `GITHUB_ACTIONS` en `presupuestoDelPaso` para saber si
+//     corre dentro del job de CI, cuyo `timeout-minutes` lo mata sin dejarle decir nada. En CI deja de
+//     EMPEZAR guards cuando se acerca a ese techo y sale CIEGO nombrando lo que no juzgó; fuera de CI
+//     no hay techo y lo recorre entero. Lo que NO cambia con el entorno: lo que juzga lo juzga igual
+//     en los dos sitios, y un corte nunca sale verde (va a `ciegos`, salida ≠ 0). Con `META_PRESUPUESTO_S` el corte se provoca a mano
+//     en local, que es como se midió (registro de SCRUM-935d).
+//   · `tests/scrum935d-el-corte-dice-lo-que-deja.test.mjs` no lee el entorno: le PASA a esa función
+//     pura un `env` escrito a mano con y sin `GITHUB_ACTIONS`, para probar las dos ramas en cualquier
+//     máquina. Es la decisión de `scrum727` y `scrum716c`: fijarlo, no heredarlo.
+// SCRUM-1620 (29-oct-2026, S3) · 22 → 23, y la nueva NO lee el entorno: es el caso de `scrum935d`.
+//   · `tests/scrum1620-el-censo-por-partes.test.mjs` le PASA a `avisoDeNoCabe` (función pura del
+//     meta-guard) un `env` escrito a mano con `GITHUB_ACTIONS: 'true'`, para probar el aviso
+//     `::warning … NO CABE` en cualquier máquina; y lo nombra en el `de:` de la mutación que declara
+//     sobre esa línea del script. Ningún aserto depende de dónde corre. La lectura de verdad sigue
+//     siendo la de `scripts/meta-guard-mutaciones.mjs`, ya contada en 935d.
+const TOPE_LEEN_EL_ENTORNO = 23;
 
 /**
  * 🔴 PARTIDAS A PROPÓSITO, para que el censo NO SE CACE A SÍ MISMO. Escritas enteras, este

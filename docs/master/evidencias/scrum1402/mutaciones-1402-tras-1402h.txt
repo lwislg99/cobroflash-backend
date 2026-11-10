@@ -1,0 +1,12 @@
+
+tests/scrum1402-plan-inexistente-no-se-escribe.test.mjs · BASE sin mutar: 12 pasan, 0 caen (exit 0)
+  VIVA (cae) · cae «checkout.session.completed con un plan que NO existe» · caen 2: SCRUM-1402 · 🔴 checkout.session.completed con un plan que N | SCRUM-1402 · 📌 SIN `metadata.plan` no se ACTIVA nada: ni el
+  VIVA (cae) · cae «(active, trialing) con un plan que NO existe» · caen 3: SCRUM-1402 · 🔴 customer.subscription.updated y .created (ac | SCRUM-1402 · ✅ el rechazo NO es un fallo de entrega: el even | SCRUM-1402 · 📌 SIN `metadata.plan` no se ACTIVA nada: ni el
+  VIVA (cae) · cae «un impago (past_due, unpaid) con un plan que NO existe» · caen 1: SCRUM-1402 · 🔴 un impago (past_due, unpaid) con un plan que
+  VIVA (cae) · cae «checkout.session.completed con un plan que NO existe» · caen 4: SCRUM-1402 · 🔴 checkout.session.completed con un plan que N | SCRUM-1402 · 🔴 customer.subscription.updated y .created (ac | SCRUM-1402 · 🔴 un impago (past_due, unpaid) con un plan que | SCRUM-1402 · 📌 SIN `metadata.plan` no se ACTIVA nada: ni el
+  VIVA (cae) · cae «checkout.session.completed con un plan legítimo» · caen 5: SCRUM-1402 · ✅ EL QUE MANDA · checkout.session.completed con | SCRUM-1402 · ✅ EL QUE MANDA · customer.subscription.updated  | SCRUM-1402 · ✅ EL QUE MANDA · un impago (past_due, unpaid) c | SCRUM-1402 · ✅ el rechazo NO es un fallo de entrega: el even | SCRUM-1402 · 📌 la idempotencia por `event.id` no se ha toca
+  VIVA (cae) · cae «checkout.session.completed con un plan que NO existe» · caen 3: SCRUM-1402 · 🔴 checkout.session.completed con un plan que N | SCRUM-1402 · 🔴 customer.subscription.updated y .created (ac | SCRUM-1402 · 🔴 un impago (past_due, unpaid) con un plan que
+  VIVA (cae) · cae «(active, trialing) con un plan que NO existe» · caen 3: SCRUM-1402 · 🔴 checkout.session.completed con un plan que N | SCRUM-1402 · 🔴 customer.subscription.updated y .created (ac | SCRUM-1402 · 🔴 un impago (past_due, unpaid) con un plan que
+  VIVA (cae) · cae «no lleva su PROPIA lista de planes» · caen 1: SCRUM-1402 · 🔒 el webhook no lleva su PROPIA lista de plane
+
+mutaciones ejecutadas: 8 · dist reconstruido limpio

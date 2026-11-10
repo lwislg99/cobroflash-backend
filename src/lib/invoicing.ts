@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import { PrismaClient } from '@prisma/client';
-import { allocateInvoiceNumber, isReceiptNumber } from '../modules/invoicing/domain/invoiceNumber.service';
+import { allocateInvoiceNumber } from '../modules/invoicing/domain/invoiceNumber.service';
 import { recordAudit, sobreFiscal, flagsFiscalesDe, type ActorAudit } from '../modules/system/audit.service'; // SCRUM-207
 import { isDemoMerchant, DEMO_WATERMARK } from '../modules/invoicing/domain/emission.service';
 import { generateInvoicePdf } from './pdf';
@@ -141,6 +141,7 @@ export async function ensureInvoicePdf(
       rectifiesNumber: inv.rectifies?.number ?? null,
       watermark: isDemoMerchant(inv.merchant) ? DEMO_WATERMARK : null,
       stageLabel: inv.stageLabel, // SCRUM-33
+      zona: inv.merchant.timezone, // SCRUM-1470c: el día de la «Fecha:», el de su registro
     });
     await prisma.invoice.update({ where: { id: invoiceId }, data: { pdfUrl: publicUrlPath, qrData } });
   }
@@ -299,6 +300,7 @@ export async function ensureInvoiceForCharge(
         type: inv.type,
         watermark: merchant && isDemoMerchant(merchant) ? DEMO_WATERMARK : null,
         stageLabel: inv.stageLabel ?? null, // SCRUM-33
+        zona: merchant.timezone, // SCRUM-1470c: el día de la «Fecha:», el de su registro
       });
 
       updated = await prisma.invoice.update({
@@ -429,7 +431,7 @@ export async function ensureInvoiceForCharge(
       customerId: ch.customerId ?? (() => { throw new Error('missing_customer_in_charge'); })(),
       quoteId: quote?.id ?? null,
       number,
-      type: isReceiptNumber(number) ? 'JUST' : 'F1', // V0-0: justificante si ES real sin flag
+      type: 'F1',
       total: ch.amount.toString(),
       currency: ch.currency.toUpperCase(),
       lines: invoiceLines,

@@ -1,0 +1,4 @@
+0 al arrancar: (ninguna)
+1 tras loadEnv (dotenv doblado): (ninguna)
+2 tras prisma.js: DATABASE_URL_DEV,DATABASE_URL_STAGING,DATABASE_URL_TESTS
+3 tras app.js: DATABASE_URL_DEV,DATABASE_URL_STAGING,DATABASE_URL_TESTS

@@ -3,10 +3,10 @@
 // Uso:  npm run guard:pasos-del-editor
 //
 // ── QUÉ SE MIDE ──────────────────────────────────────────────────────────────────────────────
-// La v3 del editor (aprobada por el fundador; `docs/prototipos/SCRUM-915/`) parte el formulario en
+// La v3 del editor (aprobada por el fundador: SCRUM-1511 comentario 18924) parte el formulario en
 // pasos —Cliente → Conceptos → Condiciones → Revisar y enviar— con SÓLO EL ACTUAL ABIERTO. Hoy los
 // cuatro bloques se ven a la vez: es el «mucha información en pantalla, muchas opciones de golpe» que
-// el fundador señaló en SCRUM-915 comentario 15790.
+// el fundador señaló, sobre la v1, en SCRUM-915 comentario 15790 (`docs/prototipos/SCRUM-915/`).
 //
 // 🔴 SE MIDE EL ESTADO DESPUÉS DE PULSAR, NO LA CAPTURA. Una captura bonita no prueba que el botón
 // funcione. Por eso cada paso se recorre con clics de verdad y lo que se juzga es QUÉ SE VE después:

@@ -39,10 +39,12 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'el guardado sigue mandando: se le resta su IVA, no se recalcula',
   },
   {
-    // M2 · el importe de la línea vuelve a llevar el IVA.
+    // M2 · el importe de la línea vuelve a llevar el IVA. SCRUM-1446e: la línea de la tabla va sin
+    // IVA en los dos modos (SCRUM-1446 c.20917, P4), así que el ancla es la línea entera de hoy;
+    // antes era `(1 + (ivaFueraDelPapel ? 0 : l.tax))`.
     fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
-    de: '(1 + (ivaFueraDelPapel ? 0 : l.tax))',
-    a: '(1 + l.tax)',
+    de: 'const lineTotal = l.qty * l.price;',
+    a: 'const lineTotal = l.qty * l.price * (1 + l.tax);',
     cae: 'el total que se lee NO lleva el IVA dentro',
   },
   {

@@ -55,10 +55,16 @@ const telefonosPorMerchant = new Map();
  * no en cada suite). `34600…` = cliente entrante · `34601…` = PRO (whatsappPhone del merchant).
  * Derivados de `merchant.id` (no del reloj) → únicos por construcción, sin colisión entre suites.
  * `padStart(6)`: 11 dígitos hasta id 999999; por encima crece a 12 y sigue único.
+ *
+ * SCRUM-1509i: `34605…` y `34606…` = dos clientes entrantes MÁS del mismo merchant. El webhook admite
+ * 20 entrantes por número y hora (SCRUM-1509h), y una suite que simula varias conversaciones las
+ * escribe cada una desde su cliente, como haría una persona real. Van aquí y no en la suite para que
+ * el barrido de `botSession` por phone los alcance (los recorre `Object.values` de este objeto).
+ * 34602/34603/34604 no: otras suites ya los usan con un sufijo del reloj.
  */
 export function telefonosDe(merchantId) {
   const sufijo = String(merchantId).padStart(6, '0');
-  return { cliente: `34600${sufijo}`, pro: `34601${sufijo}` };
+  return { cliente: `34600${sufijo}`, pro: `34601${sufijo}`, segundoCliente: `34605${sufijo}`, tercerCliente: `34606${sufijo}` };
 }
 
 /**

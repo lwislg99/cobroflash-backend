@@ -16,6 +16,7 @@ import { recordCustomerEvent, existeEventoDePlan } from '../../system/customerEv
 import { normalizePhone, formatMoneyEs, maskPhone, calcTotal } from '../../../core/utils/utils';
 import { allocateQuoteNumber } from '../../quotes/domain/quoteNumber.service';
 import { sinTildes } from '../../../core/texto/sinTildes';
+import { zonaDelMerchant } from '../../../core/zonaDelMerchant';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PROPOSAL_COOLDOWN_DAYS = 90; // 1 propuesta/cliente/90d (spec literal)
@@ -100,12 +101,22 @@ export function suggestMaintenance(
 }
 
 // Horas tranquilas (anti-spam de la spec): el ciclo solo propone entre 9 y 21h
-// (hora española). El cron corre a las 10h; esto protege ejecuciones manuales.
-export function isQuietHoursMadrid(now: Date = new Date()): boolean {
+// HORA DEL COMERCIO (máster, J6: «automatismos 09:00-21:00 hora del merchant»). El cron corre a
+// las 10h; esto protege ejecuciones manuales. SCRUM-1622: decía `Europe/Madrid` a mano. La zona
+// se resuelve con `zonaDelMerchant`; sin ella se rechaza, porque `Intl` sin `timeZone` cae al
+// reloj del PROCESO.
+export function isQuietHours(now: Date, zona: string): boolean {
+  if (typeof zona !== 'string' || zona === '') throw new Error('zona_requerida');
   const hour = Number(
-    new Intl.DateTimeFormat('es-ES', { hour: 'numeric', hour12: false, timeZone: 'Europe/Madrid' }).format(now),
-  );
+    new Intl.DateTimeFormat('es-ES', { hour: 'numeric', hour12: false, timeZone: zona }).format(now),
+  ) % 24;
   return hour < 9 || hour >= 21;
+}
+
+/** ¿Es hora tranquila para ESTE comercio? Una lectura de su zona, y nada más. */
+async function horaTranquilaDe(db: any, merchantId: number, now: Date): Promise<boolean> {
+  const m = await db.merchant.findUnique({ where: { id: merchantId }, select: { timezone: true } });
+  return isQuietHours(now, zonaDelMerchant(m));
 }
 
 // 2) Ciclo del cron — diario 10h. Devuelve un resumen para logs/tests.
@@ -281,15 +292,18 @@ export async function runMaintenanceProposals(
   const db = deps.prisma ?? prisma;
   const registrarEvento = deps.recordCustomerEvent ?? recordCustomerEvent;
   const skipped: string[] = [];
-  if (isQuietHoursMadrid(now)) {
-    return { due: 0, proposed: 0, skipped: ['quiet_hours'] };
-  }
-
+  // SCRUM-1622 · LAS HORAS TRANQUILAS SON DE CADA COMERCIO, así que ya no cortan el ciclo entero
+  // de una vez: se miran plan a plan, con la zona de su comercio. Un plan en hora tranquila no se
+  // toca —ni aviso ni propuesta— y sigue vencido para el siguiente ciclo, igual que antes.
   const { aProponer, sinCanalVencidos } = await seleccionarLotes(now, { prisma: db });
 
   // Los MUDOS primero, y en su propio recorrido: no se proponen, pero se les avisa. Éste es el
   // sitio que SCRUM-394 necesita y que un filtro a secas habría borrado.
   for (const plan of sinCanalVencidos) {
+    if (await horaTranquilaDe(db, plan.merchantId, now)) {
+      skipped.push(`plan ${plan.id}: quiet_hours`);
+      continue;
+    }
     await avisarPlanSinCanal(plan, plan.customerId);
     skipped.push(`plan ${plan.id}: wa_opt_out`);
   }
@@ -300,8 +314,12 @@ export async function runMaintenanceProposals(
   for (const plan of due) {
     const merchant = await db.merchant.findUnique({
       where: { id: plan.merchantId },
-      select: { id: true, name: true, country: true, flags: true, whatsappPhone: true, trade: true },
+      select: { id: true, name: true, country: true, flags: true, whatsappPhone: true, trade: true, timezone: true },
     });
+    if (merchant && isQuietHours(now, zonaDelMerchant(merchant))) {
+      skipped.push(`plan ${plan.id}: quiet_hours`);
+      continue;
+    }
     if (!merchant || !isFlagEnabled('MAINTENANCE_ENABLED', { merchant })) {
       skipped.push(`plan ${plan.id}: flag_off`);
       continue;

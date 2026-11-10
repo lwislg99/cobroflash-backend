@@ -31,8 +31,18 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { run } from 'node:test';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const [, , listaJson, destino, raiz, limiteArg, paredArg] = process.argv;
+
+/**
+ * 🔴 SCRUM-1621 (pieza 1) · la salida C de SCRUM-1405 (c.19584), extendida a los `run()` por SCRUM-1339
+ * c.20219, como ya la lleva `meta-guard-mutaciones.mjs` (1339s). Con `forceExit` cada hijo sale con la
+ * cola de su informe sin escribir, y en Linux se pierde: un caso que corrió y no llega es, aquí, un
+ * veredicto que falta en UNA zona y no en la otra. Se resuelve desde ESTE fichero y no desde `raiz`: el
+ * módulo es del instrumento, no del árbol que se mide. Por URL: en Windows `--import=D:\…` no vale.
+ */
+const TUBERIA_BLOQUEANTE = pathToFileURL(path.join(path.dirname(fileURLToPath(import.meta.url)), 'tuberia-bloqueante.mjs')).href;
 
 const ficheros = JSON.parse(fs.readFileSync(listaJson, 'utf8'));
 
@@ -117,8 +127,19 @@ const CONCURRENCIA = Math.max(1, os.availableParallelism() - 1);
 const pared = AbortSignal.timeout(PARED_MS);
 const flujo = run({
   files: ficheros, cwd: raiz, forceExit: true, concurrency: CONCURRENCIA,
+  execArgv: [`--import=${TUBERIA_BLOQUEANTE}`],
   timeout: LIMITE_TEST_MS, signal: pared,
 });
+
+/**
+ * 🔴 SCRUM-1335d · QUÉ FICHEROS ENTREGARON SU INFORME ENTERO. `run()` emite un `test:summary` con
+ * `file` por cada fichero cuyo informe llegó hasta el final, y NINGUNO para el que enmudece
+ * (medido en SCRUM-1335c; lo repite el caso ④ de `tests/scrum1335d-…`). Sin esto, un fichero que pierde el informe en las DOS
+ * zonas deja en cada una la entrada `pass` con su ruta por nombre, y el comparador lo cuenta como
+ * «comparado e igual». Aquí sólo se APUNTA; quien cuenta es `sinInformePorZona`.
+ */
+const conInforme = new Set();
+const relativa = (fichero) => (path.isAbsolute(fichero) ? path.relative(raiz, fichero) : fichero).split(path.sep).join('/');
 
 for await (const ev of flujo) {
   // 🔴 Un fichero que MUERE AL CARGAR emite UN solo `test:fail` y su `name` es la RUTA del
@@ -126,6 +147,7 @@ for await (const ev of flujo) {
   // fichero muere en una zona y vive en la otra, ESO es una dependencia de zona de las gordas.
   // El que se CUELGA al cargar llega igual, por la pared, pero como `cortada` (SCRUM-1494).
   if (ev.type === 'test:pass' || ev.type === 'test:fail') anotar(ev.data.file, ev.data.name, resolver(ev));
+  else if (ev.type === 'test:summary' && ev.data.file) conInforme.add(relativa(ev.data.file));
 }
 
 fs.writeFileSync(destino, JSON.stringify({
@@ -135,4 +157,5 @@ fs.writeFileSync(destino, JSON.stringify({
   ficheros: ficheros.length,
   topes: { limiteTestMs: LIMITE_TEST_MS, paredMs: PARED_MS, saltoLaPared: pared.aborted },
   veredictos: [...veredictos],
+  conInforme: [...conInforme].sort(),
 }));

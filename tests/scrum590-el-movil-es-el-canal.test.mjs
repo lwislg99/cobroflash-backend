@@ -72,14 +72,19 @@ function dobleDeLaBase(respuestas) {
       },
     });
   const cache = new Map();
-  return new Proxy({}, {
+  const cliente = new Proxy({}, {
     get: (_t, prop) => {
       const nombre = String(prop);
-      if (nombre.startsWith('$')) return async () => undefined; // $disconnect, $transaction…
+      // SCRUM-1509g · la reserva del tope (SCRUM-1513) abre una transacción. Devolver `undefined`
+      // la hacía lanzar, y el tope —que antes dejaba salir si fallaba— lo tapaba: este banco no
+      // ejercitaba el tope. Ahora que el tope bloquea al fallar, el doble hace lo que hace Prisma.
+      if (nombre === '$transaction') return async (arg) => (typeof arg === 'function' ? arg(cliente) : Promise.all(arg));
+      if (nombre.startsWith('$')) return async () => undefined; // $disconnect, el cerrojo…
       if (!cache.has(nombre)) cache.set(nombre, modelo(nombre));
       return cache.get(nombre);
     },
   });
+  return cliente;
 }
 
 /**

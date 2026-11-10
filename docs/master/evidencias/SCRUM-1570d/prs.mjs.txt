@@ -1,0 +1,21 @@
+// Por cada PR: sus runs de CI (pull_request), el job de navegador, sus anotaciones y la base del merge probado.
+import { execFileSync } from 'node:child_process';
+const gh = (a) => execFileSync('gh', a, { encoding: 'utf8', maxBuffer: 1 << 28 });
+const R = 'repos/lwislg99/cobroflash-backend';
+for (const n of process.argv.slice(2)) {
+  const pr = JSON.parse(gh(['api', `${R}/pulls/${n}`]));
+  console.log(`== #${n} head=${pr.head.ref} merged=${pr.merged_at} merge=${(pr.merge_commit_sha || '').slice(0, 9)}`);
+  const commits = JSON.parse(gh(['api', `${R}/pulls/${n}/commits?per_page=100`])).map((c) => c.sha);
+  for (const sha of commits) {
+    const runs = JSON.parse(gh(['api', `${R}/actions/workflows/ci.yml/runs?head_sha=${sha}&per_page=20`])).workflow_runs;
+    for (const run of runs) {
+      const jobs = JSON.parse(gh(['api', `${R}/actions/runs/${run.id}/jobs?per_page=100`])).jobs;
+      const j = jobs.find((x) => x.name === 'guards de navegador (fuera de la tanda)');
+      let an = [];
+      if (j) an = JSON.parse(gh(['api', `${R}/check-runs/${j.check_run_url.split('/').pop()}/annotations?per_page=100`]))
+        .filter((a) => /guard|CIEGO|DEFECTO|verde|NO se han/i.test(`${a.title} ${a.message}`)).map((a) => `${a.title} :: ${a.message}`.slice(0, 300));
+      console.log(`  ${sha.slice(0, 9)} run=${run.id} ev=${run.event} ${run.created_at} nav=${j ? j.conclusion : 'SIN-JOB'} job=${j ? j.id : '-'}`);
+      for (const a of an) console.log(`     ${a}`);
+    }
+  }
+}
