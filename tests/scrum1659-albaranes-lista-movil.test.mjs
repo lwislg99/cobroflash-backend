@@ -17,9 +17,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const CSS = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+// Sin comentarios por el escáner compartido (SCRUM-694/962g: sobre styles.css también vale).
+const CSS = soloCodigo(fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8'), 'styles.css');
 const VISTA = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/albaranesView.js'), 'utf8');
 const MOVIL = '(max-width: 640px)';
 
@@ -45,9 +47,6 @@ function reglas(css) {
 }
 const REGLAS = reglas(CSS);
 const en = (media, sel, decl) => REGLAS.some((r) => r.media === media && r.sel.includes(sel) && decl.test(r.cuerpo));
-
-/** El código sin comentarios, partido por líneas (no `.*$`: el repo tiene CRLF). */
-const soloCodigo = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').split(/\r?\n/).map((l) => l.replace(/(^|[^:'"\\])\/\/.*$/, '$1')).join('\n');
 
 function red(datos) {
   const resp = (data) => ({
@@ -107,6 +106,6 @@ test('SCRUM-1659 · la vista pinta las clases que las reglas nombran y no escrib
   assert.ok(toolbar, '🔴 no encuentro la barra del buscador');
   const inputs = toolbar.hijos.filter((h) => conClase(h, 'input')).map((h) => h.tagName);
   assert.deepEqual(inputs, ['INPUT', 'SELECT'], '🔴 el buscador y el filtro ya no son hijos directos `.input` de la barra: `> .input` no los alcanza');
-  const n = (soloCodigo(VISTA).match(/\.style\.cssText\s*=/g) || []).length;
+  const n = (soloCodigo(VISTA, 'albaranesView.js').match(/\.style\.cssText\s*=/g) || []).length;
   assert.equal(n, 0, `🔴 albaranesView.js vuelve a escribir ${n} \`style.cssText\` (regla 4: ni un estilo en línea)`);
 });
