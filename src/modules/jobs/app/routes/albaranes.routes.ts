@@ -65,7 +65,7 @@ import {
 } from '../../domain/albaranFacturacion';
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service';
 import { lineasParaFacturar, tieneDescuentoGlobal } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-887
-import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
+import { congelarCliente, clienteDelDocumento } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729 · SCRUM-1650b (lector de GET /:id)
 import { congelarEmisorDesdeFicha } from '../../../invoicing/domain/emisorCongelado'; // SCRUM-665
 import { datosDeAlbaranEmitido } from '../../domain/albaranEmision'; // SCRUM-841
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
@@ -883,7 +883,7 @@ router.get('/:id', async (req, res) => {
     // `customer_missing_phone` en los dos envíos (`albaranWhatsApp.service.ts`): sin canal, esos
     // botones sólo saben fallar y la pantalla no los ofrece. Viaja resuelto, sin el número.
     const customer = cliente
-      ? { id: cliente.id, name: cliente.name, puedeRecibirWhatsApp: !!canalDeWhatsApp(cliente) }
+      ? { id: cliente.id, name: clienteDelDocumento(albaran, cliente).name, puedeRecibirWhatsApp: !!canalDeWhatsApp(cliente) } // SCRUM-1650b · el nombre que quedó ESCRITO al emitir (sugerencia del firmante, albaranDetailView.js)
       : null;
 
     // SCRUM-302 · EL PRESUPUESTO DE ORIGEN, Y ES DEL DOCUMENTO — NO DE LAS LÍNEAS.
