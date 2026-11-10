@@ -4521,11 +4521,14 @@ textarea.parte-linea-desc {
      Cambiar de área no puede encoger un objetivo táctil: eso sería pagar el arreglo con un dedo. */
   .table--albaranes td.cell-trabajo a { display: inline-flex; align-items: center; min-height: 44px; }
   /* SCRUM-1659 (PILOTO-1) · MEDIDO en yaqu.app a 390: la fila de pestañas pedía 447 px en 364 y no
-     desplazaba, así que la tarjeta recortaba «Firmados» (x 353-460 con la tarjeta acabando en 377) y
-     no había forma de pulsarla. Ahora la fila desplaza en horizontal y cada pestaña conserva su ancho;
-     la que asoma cortada al borde es la pista de que hay más. ACOTADO a `.alb-lista`: la regla
-     compartida `.data-card-tabs` sigue igual, porque Facturas, Presupuestos y Clientes no están medidas. */
-  .alb-lista .data-card-tabs { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+     desplazaba, así que la tarjeta recortaba «Firmados» (x 353-460 con la tarjeta acabando en 378):
+     asomaban 24 px —«Fir», sin su contador— y no había manera de traerla entera. Ahora la fila
+     desplaza en horizontal y cada pestaña conserva su ancho; la que asoma cortada al borde es la pista
+     de que hay más. `overflow-y: hidden` porque, al desplazar en X, el eje Y pasa a `auto` y el
+     `margin-bottom: -1px` del subrayado dejaba 1 px de desplazamiento vertical (52 en 51, medido).
+     ACOTADO a `.alb-lista`: la regla compartida `.data-card-tabs` sigue igual, porque Facturas,
+     Presupuestos y Clientes no están medidas. */
+  .alb-lista .data-card-tabs { overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; }
   .alb-lista .data-card-tabs::-webkit-scrollbar { display: none; }
   .alb-lista .data-card-tab { flex-shrink: 0; white-space: nowrap; }
   /* Y el buscador (34 px) y el filtro de facturación (36 px), a los 44 de AB6. */

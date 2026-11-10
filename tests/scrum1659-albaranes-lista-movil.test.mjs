@@ -3,9 +3,9 @@
 // Sin gate: lee styles.css y albaranesView.js, y monta la lista en el banco. Ni BD, ni red, ni navegador.
 //
 // Medido en yaqu.app el 10-nov-2026 (cuenta QA, build d7fb55ea1), a 390 px:
-//   · la cuarta pestaña, «Firmados», acababa en x=460 con la tarjeta en 377: la fila de pestañas pedía
-//     447 px en 364 y NO desplazaba (`overflow-x: visible`), así que la tarjeta la recortaba y no había
-//     forma de pulsarla con el dedo;
+//   · la cuarta pestaña, «Firmados», acababa en x=460 con la tarjeta en 378: la fila de pestañas pedía
+//     447 px en 364 y NO desplazaba (`overflow-x: visible`), así que la tarjeta la recortaba y sólo
+//     asomaban 24 px («Fir», sin su contador), sin forma de traerla entera;
 //   · el buscador medía 34 px de alto y el filtro de facturación 36 (AB6 pide ≥44 en móvil);
 //   · la vista escribía seis `style.cssText` (título, subtítulo, buscador, filtro, aviso y su detalle).
 // Los píxeles se miden en navegador (registro en docs/master/SCRUM-1659.md, con capturas antes/después);
@@ -74,7 +74,9 @@ test('SCRUM-1659 · CONTROL: el lector de reglas ve la fila de pestañas compart
 
 test('SCRUM-1659 · a ≤640 px las pestañas de ESTA lista desplazan en vez de cortarse, y ninguna se encoge', () => {
   assert.ok(en(MOVIL, '.alb-lista .data-card-tabs', /overflow-x:\s*auto/),
-    '🔴 sin `overflow-x: auto` la cuarta pestaña («Firmados») queda recortada por la tarjeta a 390 px y no se puede pulsar');
+    '🔴 sin `overflow-x: auto` la cuarta pestaña («Firmados») queda recortada por la tarjeta a 390 px: asoman 24 px y no hay forma de traerla entera');
+  assert.ok(en(MOVIL, '.alb-lista .data-card-tabs', /overflow-y:\s*hidden/),
+    '🔴 sin `overflow-y: hidden` el subrayado (margin-bottom: -1px) deja 1 px de desplazamiento vertical en la fila');
   assert.ok(en(MOVIL, '.alb-lista .data-card-tab', /flex-shrink:\s*0/),
     '🔴 sin `flex-shrink: 0` las pestañas se estrujan y parten «Borradores 2» en dos líneas en vez de desplazar');
   assert.ok(en(MOVIL, '.alb-lista .data-card-tab', /white-space:\s*nowrap/), '🔴 una pestaña se parte en dos líneas');
