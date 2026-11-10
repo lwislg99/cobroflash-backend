@@ -1,0 +1,30 @@
+// SCRUM-1631 · ¿Sobrevive la fila a que el proceso muera justo después de devolver el envío?
+// Uso: node muerte-1631.mjs <raiz-del-arbol> <muerte-exit|muerte-sigterm> <N>
+// Cada pasada es un proceso hijo nuevo: envía (not_configured) y muere. Luego se cuenta la fila.
+import { createRequire } from 'node:module';
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const [raiz, modo, nTxt] = process.argv.slice(2);
+const N = Number(nTxt);
+const req = createRequire(path.join(raiz, 'package.json'));
+const { prisma } = req('./dist/core/db/prisma.js');
+const sonda = path.join(path.dirname(fileURLToPath(import.meta.url)), 'sonda-1631.mjs');
+const sello = Date.now();
+let merchant = await prisma.merchant.create({ data: { name: `S1631m ${sello}`, email: `s1631m-${sello}@test.local`, country: 'ES' } });
+if (merchant.id === 1) merchant = await prisma.merchant.create({ data: { name: `S1631mb ${sello}`, email: `s1631mb-${sello}@test.local`, country: 'ES' } }); // el 1 es el demo
+let hijosVivos = 0;
+const salidas = {};
+for (let i = 1; i <= N; i++) {
+  const r = spawnSync(process.execPath, [sonda, raiz, modo, '1'], { env: { ...process.env, SONDA_MERCHANT: String(merchant.id), SONDA_RELATED: String(i) }, encoding: 'utf8' });
+  const k = String(r.status ?? r.signal);
+  salidas[k] = (salidas[k] ?? 0) + 1;
+  hijosVivos++;
+}
+await new Promise((r) => setTimeout(r, 1000));
+const filas = await prisma.whatsAppMessage.count({ where: { merchantId: merchant.id, status: 'failed' } });
+console.log(JSON.stringify({ modo, N, hijos: hijosVivos, salidas, filasEscritas: filas, perdidas: N - filas }));
+await prisma.whatsAppMessage.deleteMany({ where: { merchantId: merchant.id } });
+await prisma.merchant.delete({ where: { id: merchant.id } });
+await prisma.$disconnect();

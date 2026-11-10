@@ -36,7 +36,7 @@ export interface RecordWaMessageInput {
   costEstimate?: number | null;
 }
 
-/** Registra un mensaje enviado (o fallido). Fire-and-forget: nunca lanza. */
+/** Registra un mensaje enviado (o fallido). Nunca lanza. El fallo se espera (SCRUM-1631); lo que salió, no. */
 export async function recordWaMessage(input: RecordWaMessageInput): Promise<void> {
   try {
     await prisma.whatsAppMessage.create({
