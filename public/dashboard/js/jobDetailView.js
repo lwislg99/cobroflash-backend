@@ -630,6 +630,11 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   const sub = document.createElement('p');
   sub.className = 'detail-sub';
   headLeft.appendChild(sub);
+  // SCRUM-1672: la CITA, en su propia línea de la cabecera. Antes la ficha no pintaba `scheduledAt`
+  // en ningún sitio, y el único día visible (la fecha de alta) se leía como si fuera la cita.
+  const cita = document.createElement('p');
+  cita.className = 'detail-sub detail-cita';
+  headLeft.appendChild(cita);
   // ── SCRUM-316 (G1) · los DOS chips, en la cabecera y juntos ──────────────────────────
   // Estado del TRABAJO y estado de COBRO. Bajaban del bloque de resumen; aquí están donde el
   // patrón los pide, al lado del título.
@@ -737,9 +742,25 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   const refPresupuesto = job.quote?.number != null ? `Presupuesto #${job.quote.number}` : '';
 
   h2.textContent = nombreTrabajo || nombreCliente || 'Trabajo';
-  sub.textContent = unirCon(' · ', nombreCliente, fechaCorta(job.createdAt), refPresupuesto);
+  // SCRUM-1672 · textos firmados en SCRUM-1656 c.21408 (tanda c.21405, entradas 1 y 2): la fecha
+  // de alta lleva su rótulo («Abierto el 10 nov») para no leerse como la cita.
+  const alta = fechaCorta(job.createdAt);
+  sub.textContent = unirCon(' · ', nombreCliente, alta ? `Abierto el ${alta}` : '', refPresupuesto);
   // Un subtítulo vacío no deja un párrafo en blanco empujando la pantalla.
   sub.style.display = sub.textContent ? '' : 'none';
+  // «Cita: jue 12 nov, 09:00». Mismo dato y misma zona horaria (la del navegador) que la columna
+  // de la lista (jobsView.js `jobRow`); el literal firmado no lleva la coma tras el día de la semana.
+  const fechaCita = (v) => {
+    if (!v) return '';
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return '';
+    const dia = d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/,/g, '');
+    const hora = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    return `${dia}, ${hora}`;
+  };
+  const cuandoCita = fechaCita(job.scheduledAt);
+  cita.textContent = cuandoCita ? `Cita: ${cuandoCita}` : '';
+  cita.style.display = cuandoCita ? '' : 'none';
 
   // SCRUM-57: "Responsable" en la cabecera = autoría del operario (job.operario, ya en el
   // serializer tras SCRUM-22). Si el Trabajo es del propietario (operario null), el nombre del
