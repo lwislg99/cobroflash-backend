@@ -115,10 +115,8 @@
   function renderAlbaranesView(container) {
     container.innerHTML = '';
 
-    // SCRUM-1659 · `alb-lista` ACOTA las reglas de móvil de esta pantalla (pestañas que desplazan,
-    // buscador y filtro a 44 px) sin tocar `.data-card-tabs`, que comparten las listas hermanas.
     const card = document.createElement('div');
-    card.className = 'data-card alb-lista';
+    card.className = 'data-card';
     container.appendChild(card);
 
     const header = document.createElement('div');
@@ -128,11 +126,11 @@
     const left = document.createElement('div');
     const title = document.createElement('h2');
     title.textContent = 'Albaranes'; // APROBADO 5-ago-2026 (nombre del documento, precedente C2)
-    title.className = 'alb-titulo'; // SCRUM-1659: a la hoja, era style.cssText
+    title.style.cssText = 'margin:0;font-size:18px';
     left.appendChild(title);
     const subtitle = document.createElement('p');
     subtitle.textContent = 'Cargando…';
-    subtitle.className = 'alb-subtitulo';
+    subtitle.style.cssText = 'margin:2px 0 0;font-size:13px;color:var(--muted)';
     left.appendChild(subtitle);
     header.appendChild(left);
 
@@ -193,7 +191,7 @@
       // sería justo el fallo que este bloque existe para evitar. Lección de SCRUM-303/350.
       const aviso = document.createElement('div');
       aviso.className = 'alert error';
-      aviso.classList.add('alb-aviso'); // SCRUM-1659: el margen a la hoja; el tono se queda en su literal
+      aviso.style.cssText = 'margin:16px';
       aviso.textContent = 'No se han podido cargar los albaranes. Vuelve a intentarlo.';
       body.appendChild(aviso);
       // SCRUM-1233 · aquí se pintaba `err.message`: «API 500: internal_error» o «Failed to fetch»
@@ -202,7 +200,7 @@
       const motivo = mensajeParaPersona(err, '');
       if (motivo) {
         const detalle = document.createElement('p');
-        detalle.className = 'alb-aviso-detalle';
+        detalle.style.cssText = 'margin:0 16px 16px;font-size:12px;color:var(--muted)';
         detalle.textContent = motivo;
         body.appendChild(detalle);
       }
@@ -244,13 +242,7 @@
         badge.dataset.contador = d.valor;
         badge.textContent = String(d.n);
         b.appendChild(badge);
-        b.addEventListener('click', () => {
-          estadoActivo = d.valor;
-          activar();
-          // SCRUM-1659 · a 390 px la fila de pestañas DESPLAZA: la que se toca medio asomada al
-          // borde se trae entera a la vista. `nearest` no mueve nada si ya se veía.
-          if (typeof b.scrollIntoView === 'function') b.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-        });
+        b.addEventListener('click', () => { estadoActivo = d.valor; activar(); });
         tabs.appendChild(b);
         return b;
       });
@@ -261,15 +253,17 @@
       body.appendChild(toolbar);
 
       const buscador = document.createElement('input');
-      buscador.className = 'input alb-buscador'; // SCRUM-1659: el tamaño, a la hoja
+      buscador.className = 'input';
       buscador.type = 'search';
       buscador.placeholder = 'Buscar por nº, cliente o trabajo';
       buscador.setAttribute('aria-label', 'Buscar albaranes');
+      buscador.style.cssText = 'min-width:180px;flex:1';
       buscador.addEventListener('input', () => { busqueda = buscador.value; activar(); });
       toolbar.appendChild(buscador);
 
       const selCobro = document.createElement('select');
-      selCobro.className = 'input alb-sel-cobro';
+      selCobro.className = 'input';
+      selCobro.style.cssText = 'width:auto';
       selCobro.setAttribute('aria-label', 'Facturación'); // APROBADO
       // El eje derivado vive en su propio control, con sus contadores: es OTRA pregunta, no una
       // pestaña más. Aplanarlo perdería el `parcial`.
