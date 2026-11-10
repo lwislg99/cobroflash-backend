@@ -33,7 +33,8 @@ test('V0-0: demo ES → demo (factura con watermark)', () => {
 
 test('V0-0: ES real con flag ON (post SIF-1) → fiscal', () => {
   process.env.INVOICING_ES_ENABLED = 'true';
-  assert.equal(getEmissionMode({ id: 5, country: 'ES', email: 'real@negocio.es' }), 'fiscal');
+  // SCRUM-1585: y el SII en «No»; con «Sí» o «No consta» el modo es `receipt`.
+  assert.equal(getEmissionMode({ id: 5, country: 'ES', email: 'real@negocio.es', llevaLibrosPorSii: false }), 'fiscal');
   delete process.env.INVOICING_ES_ENABLED;
 });
 

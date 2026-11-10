@@ -86,7 +86,7 @@ async function invocar(req) {
 }
 
 // ⚠️ Merchant con `id` REAL: `isDemoMerchant` es `id === 1`, y con el demo todo corre en otro modo.
-const MERCHANT = { id: 7, email: 'pro@fontaneria.es', country: 'ES', flags: { INVOICING_ES_ENABLED: true }, defaultCurrency: 'EUR' };
+const MERCHANT = { id: 7, email: 'pro@fontaneria.es', country: 'ES', flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false, defaultCurrency: 'EUR' };
 
 function montar(status, { yaRectificada = null } = {}) {
   const cap = { emitida: null };

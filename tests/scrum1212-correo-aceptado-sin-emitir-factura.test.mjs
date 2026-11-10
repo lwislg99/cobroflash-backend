@@ -64,7 +64,7 @@ test('🔴 SCRUM-1212 · modo desconocido (sin merchant) → tampoco sale: falla
 });
 
 test('SCRUM-1212 · con el flag en ON (modo fiscal) la frase SIGUE — control positivo del criterio', async () => {
-  const merchant = { id: 7, email: 'pro@example.invalid', country: 'ES', flags: { INVOICING_ES_ENABLED: true } };
+  const merchant = { id: 7, email: 'pro@example.invalid', country: 'ES', flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false };
   assert.equal(modoEmisionVisible(merchant), 'fiscal');
   assert.ok((await correoPara(merchant)).includes(FRASE), '🔴 se ha borrado la frase también donde es cierta');
 });
