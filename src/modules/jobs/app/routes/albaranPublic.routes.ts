@@ -33,6 +33,7 @@ import { sendAlbaranFirmadoWhatsApp } from '../../domain/albaranWhatsApp.service
 import { requestIp } from '../../../system/audit.service';
 import { getLocale } from '../../../../core/i18n/locales'; // SCRUM-967b
 import { portalUrlDelCliente } from '../../../system/customerAdmin'; // SCRUM-967b
+import { clienteDelDocumento } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-1650b
 // SCRUM-1646 (CSP paso 2): el guion de la página, fuera del HTML.
 import { ALBARAN_FIRMA_JS, ID_DATOS_FIRMA, SRC_FIRMA_JS, cacheDelGuion, datosParaLaPagina } from './albaranFirmaNavegador';
 
@@ -227,10 +228,16 @@ router.get('/:token', async (req: Request, res: Response) => {
   if (!ctx) return res.status(404).setHeader('Content-Type', 'text/html; charset=utf-8').send(documentNotFoundHtml());
   const { albaran, merchant, job, customer } = ctx;
   const hero = merchantHero(merchant);
+  // SCRUM-1650b · el nombre es el que quedó ESCRITO en el albarán al emitirlo, no el de la ficha de
+  // hoy. Es también la SUGERENCIA del firmante (`firmanteCamposHtml`), que acaba sellada en «Firmado
+  // por»: editar la ficha después de emitir no puede cambiar lo que se propone firmar. GO del
+  // fundador del 10-nov-2026 (registro en docs/master/SCRUM-1650.md). Un albarán anterior al
+  // escritor (columnas a NULL) cae a la ficha: la regla es la de `clienteDelDocumento`, no una copia.
+  const nombreDelDocumento = albaran.customerName != null || customer ? clienteDelDocumento(albaran, customer).name : '';
   // SCRUM-1646 · el nombre SIN escapar va a los datos del guion («Gracias, …», por `textContent`); el
   // escapado, al HTML. Salen de la MISMA línea a propósito: saludo y «Gracias» no pueden decir dos
-  // nombres (SCRUM-1650b cambia de dónde sale; se cambia AQUÍ y vale para los dos).
-  const nombreCliente = customer?.name || 'Cliente'; const customerName = esc(nombreCliente);
+  // nombres.
+  const nombreCliente = nombreDelDocumento || 'Cliente'; const customerName = esc(nombreCliente);
   const obra = esc((job?.direccion || job?.titulo || '').trim());
 
   if (albaran.estado === 'firmado') {

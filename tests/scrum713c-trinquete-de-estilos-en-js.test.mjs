@@ -122,7 +122,12 @@ function censo() {
 // se nombra aquí por el mismo motivo de arriba (está en `docs/master/SCRUM-1536.md`, tramo 1536g).
 // Contado con ESTE contador sobre `origin/main` (0077bd1d) + la rama de 1536d + este cambio: 334;
 // lo dijo el propio guard («HAN BAJADO … 334 frente al techo 335»). 335 sin el cambio NO recontado.
-const TECHO = 334;
+// 334 → 328 · 10-nov-2026 (SCRUM-1659, PILOTO-1). La lista global de albaranes pasa sus seis
+// `style.cssText` (título, subtítulo, buscador, filtro de facturación, aviso de error y su detalle) a
+// clases `.alb-*` de `styles.css`, tal cual. El fichero no se nombra aquí (está en
+// `docs/master/SCRUM-1659.md`). Contado con ESTE contador sobre `origin/main` (d7fb55ea) + este
+// cambio: 328; lo dijo el propio guard («HAN BAJADO … 328 frente al techo 334»).
+const TECHO = 328;
 
 test('SCRUM-713c · SUELO: el contador VE lo que tiene que ver, y NO se caza a sí mismo', () => {
   // 🔴 El suelo que no caduca: se prueba contra cadenas fabricadas aquí, así que sigue probando

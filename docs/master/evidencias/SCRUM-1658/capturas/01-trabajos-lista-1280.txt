@@ -1,0 +1,94 @@
+URL https://yaqu.app/dashboard/#jobs
+--- TEXTO
+Trabajos
+P
+PruebaQA
+Trabajos
+Nuevo trabajo
+N
+Partes por valorar
+PARA HOY
+0 trabajos
+Nada para hoy.
+POR COBRAR
+1,21 €
+en 1 trabajo sin cerrar · 2 sin importe de referencia, no entran
+Todos · 3
+Pendiente · 1
+Parcial · 0
+Pagado · 0
+CLIENTE	IMPORTE	FECHA	ACCIONES
+⏳ SIN AGENDAR · 2
+
+Cliente de pruebas QA
+	
+1,21 €
+de 1,21 €
+		
+Ver detalle
+Agendar
+⋯
+
+
+Cliente de pruebas QA
+Trabajo de pruebas QA
+	
+Sin importe
+no hay presupuesto aceptado
+		
+Ver detalle
+Agendar
+⋯
+
+🗓 MÁS ADELANTE · 1
+
+Cliente de pruebas QA
+[QA-1183] agendado
+	
+Sin importe
+no hay presupuesto aceptado
+	vie, 20 nov, 10:00	
+Ver detalle
+▶ Empezar
+⋯
+--- PULSABLES
+input[text] «Buscar… (o pulsa /)» 340x32 @568,14
+button[submit] «Nuevo trabajo N» 196x44 @272,170
+button[submit] «Partes por valorar» 134x44 @476,170
+button[submit] «Todos · 3» 81x44 @272,343
+button[submit] «Pendiente · 1» 100x44 @361,343
+button[submit] «Parcial · 0» 83x44 @470,343
+button[submit] «Pagado · 0» 88x44 @561,343
+button[submit] «Ver detalle» 89x44 @933,492
+button[submit] «Agendar» 78x44 @1030,492
+button[button] «⋯» 44x44 @1116,492
+button[submit] «Ver detalle» 89x44 @933,561
+button[submit] «Agendar» 78x44 @1030,561
+button[button] «⋯» 44x44 @1116,561
+button[submit] «Ver detalle» 89x44 @933,667
+button[submit] «▶ Empezar» 93x44 @1030,667
+button[button] «⋯» 44x44 @1131,667
+--- DESBORDES
+--- <44px
+button «Inicio» 228x34
+button «Solicitudes» 228x34
+button «Trabajos» 228x34
+button «Presupuestos» 228x34
+button «Albaranes» 228x34
+button «Partes por valorar» 228x34
+button «Facturas» 228x34
+button «Cobros» 228x34
+button «Clientes» 228x34
+button «Productos» 228x34
+button «Proveedores» 228x34
+button «Gastos» 228x34
+button «Informes» 228x34
+button «Libro de registro» 228x34
+button «Facturas recibidas» 228x34
+button «Equipo» 228x34
+button «Planes» 228x34
+button «Configuración» 228x34
+button «Salir» 39x22
+input «» 340x32
+--- LOG
+[warning] Service Worker registration blocked by Playwright

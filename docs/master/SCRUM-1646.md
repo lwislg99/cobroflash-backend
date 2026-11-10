@@ -37,8 +37,9 @@ Con `script-src 'self'` aplicada (paso 3) nada de eso corre: el cliente no podr�
   copy). Única diferencia de forma: «Gracias, {nombre}.» entra por `textContent` con el nombre SIN
   escapar (antes, escapado por `innerHTML`): lo que se lee en pantalla es igual.
 - El nombre del cliente sale de UNA línea para el saludo y para «Gracias» (`nombreCliente` /
-  `customerName`). ⚠️ **SCRUM-1650b (#3041) reescribe esa misma línea**: el que entre segundo tendrá
-  conflicto y se resuelve con `const nombreCliente = nombreDelDocumento || 'Cliente'; const customerName = esc(nombreCliente);`.
+  `customerName`). SCRUM-1650b (#3041, en main a las 17:44:44Z) reescribía esa misma línea: el
+  conflicto se resolvió en la fusión con `nombreCliente = nombreDelDocumento || 'Cliente'`, así que
+  «Gracias, …» dice también el nombre CONGELADO (`tests/scrum1650b-…` verde tras la fusión).
 - Los `style=` no entran (style-src es otro tramo). Nada del POST de firma cambia.
 
 ### ③ Pruebas

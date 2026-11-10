@@ -25,6 +25,7 @@
 // módulo **solo decide QUÉ FILAS SE PINTAN**. El modo no cambia ni un céntimo: cambia lo que el
 // documento enseña. Si un día hiciera falta otra aritmética, se amplía la primitiva en su sitio.
 import { calcVatBreakdown, type VatLine } from '../../invoicing/domain/vat.service';
+import { rotuloDeTipo } from '../../../core/utils/utils';
 
 /**
  * Los dos modos, CERRADOS (regla 27). Un modo libre deja meter un `'sin_iva'` que nadie pinta y
@@ -178,7 +179,9 @@ export function pieDePresupuesto(params: {
     // La cuota de este tipo, sobre su base YA descontada de la parte de global que le tocó.
     const cuota = redondear2((e.base - quitaDelTipo[i]) * (e.rate / 100));
     if (cuota === 0) return;
-    filas.push({ etiqueta: `${params.nombreImpuesto} ${e.rate}%:`, importe: cuota });
+    // SCRUM-1636 · el tipo con el rótulo de la casa (`rotuloDeTipo`): «7,5», no «7.5». Un entero
+    // sale igual que antes («21»). El tipo ya llega sin redondear a entero (SCRUM-1446/1608).
+    filas.push({ etiqueta: `${params.nombreImpuesto} ${rotuloDeTipo(e.rate)}%:`, importe: cuota });
   });
   return { filas, leyenda: null };
 }
