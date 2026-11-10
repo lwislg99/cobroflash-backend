@@ -54,20 +54,40 @@ export function ultimaAncla(texto) {
  * 6-oct-2026, `ya-esta 1434` decía YA ESTÁ por `da3798df SCRUM-1123c: … y el ticket abierto
  * (SCRUM-1434)`, un commit de 1123 que ABRE 1434. La casa pone el ticket delante (`SCRUM-N: …`), y un
  * merge lo lleva en el nombre de su rama; la convención vieja `feat(x): … (SCRUM-N)` sólo nombra uno,
- * así que también es el primero. Con dos tickets en el asunto, el segundo es una referencia.
- * Se equivoca hacia «falta trabajo», nunca hacia «ya está».
+ * así que también es el primero. Es el dueño que se ENSEÑA cuando un commit sólo cita el ticket; de quién
+ * más es el commit lo dice `ticketsDelAsunto` (SCRUM-1505).
  */
 export function duenoDelAsunto(asunto) {
   const m = /SCRUM-0*(\d+)(?![0-9])/i.exec(String(asunto || ''));
   return m ? Number(m[1]) : null;
 }
 
+/**
+ * SCRUM-1505 · TODOS los tickets de los que es un commit: los que su asunto lleva EN CABEZA como lista
+ * —`SCRUM-A · SCRUM-B: …`, `SCRUM-A + SCRUM-B …`, con `·`, `,`, `+`, `&`, `/`, «y» o «e» entre ellos—.
+ * La lista se corta en lo primero que no sea un número de ticket o un conector, y lo de después es cita:
+ * `SCRUM-1123c: … y el ticket abierto (SCRUM-1434)` sigue siendo sólo de 1123. Sin cabecera (un merge, la
+ * convención vieja `feat(x): … (SCRUM-N)`), el primero, como `duenoDelAsunto`. `[]` si no nombra ninguno.
+ *
+ * Medido el 2-nov-2026: con sólo el primero, `79479b9af SCRUM-380 + SCRUM-377: …` le salía a 377 en
+ * «lo citan … (suele ser el commit que lo ABRE)», y lo entrega; 377 decía YA ESTÁ sólo por su registro.
+ * El criterio es el de J4 (`enCabecera`, `docs/master/evidencias/scrum1505/censo.mjs`): sobre los 224
+ * tickets que algún asunto nombra en posición no primera no convirtió ningún NO ESTÁ en YA ESTÁ.
+ */
+export function ticketsDelAsunto(asunto) {
+  const s = String(asunto || '');
+  const m = /^\s*SCRUM-0*\d+[a-z]?(?:\s*(?:[·,+&/]|y|e)\s*SCRUM-0*\d+[a-z]?)*/i.exec(s);
+  if (m) return [...new Set([...m[0].matchAll(/SCRUM-0*(\d+)/gi)].map((x) => Number(x[1])))];
+  const d = duenoDelAsunto(s);
+  return d === null ? [] : [d];
+}
+
 /** Pura. Los commits que NOMBRAN el ticket, separados: los suyos y los de otro ticket que lo citan. */
 export function repartirCommits(num, commits) {
   const propios = []; const ajenos = [];
   for (const c of commits || []) {
-    const dueno = duenoDelAsunto(c.asunto);
-    if (dueno === null || dueno === Number(num)) propios.push(c); else ajenos.push({ ...c, dueno });
+    const suyos = ticketsDelAsunto(c.asunto);
+    if (suyos.length === 0 || suyos.includes(Number(num))) propios.push(c); else ajenos.push({ ...c, dueno: duenoDelAsunto(c.asunto) });
   }
   return { propios, ajenos };
 }
@@ -119,7 +139,7 @@ export function informe(num, h, v, { main, ms } = {}) {
     const orden = [...h.commits].sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
     out.push(`   commits    · ${h.commits.length} en main lo nombran en su asunto · del ${orden[0].fecha} al ${orden[orden.length - 1].fecha}`);
     for (const c of orden.slice(-3)) out.push(`                ${c.sha} ${c.fecha} ${String(c.asunto).slice(0, 100)}`);
-  } else out.push('   commits    · ninguno de main es suyo (ninguno lleva su número por delante en el asunto)');
+  } else out.push('   commits    · ninguno de main es suyo (ninguno lo lleva en la cabecera de su asunto)');
   const ajenos = h.commitsAjenos || [];
   if (ajenos.length) {
     out.push(`   🟠 lo citan · ${ajenos.length} commit(s) de OTRO ticket lo citan en su asunto — NO cuentan como trabajo suyo (suele ser el commit que lo ABRE):`);
@@ -191,7 +211,7 @@ export async function mirar(num, { raiz, ref = 'origin/main', traer = true, cieg
   if (censo) {
     if (censo.veredicto === 'NO_MEDIBLE') ciegos.push(`el censo no puede atribuirle nada: ${censo.porque || 'sin motivo declarado'}`);
     for (const nm of censo.noMedibles || []) if (nm.fuente !== 'docs/master') ciegos.push(`el censo no pudo medir «${nm.fuente}»: ${nm.motivo}`);
-    // SCRUM-1454 · el censo da los que lo NOMBRAN; suyos son sólo los que lo llevan por delante.
+    // SCRUM-1454 · el censo da los que lo NOMBRAN; suyos son sólo los que lo llevan en la cabecera (SCRUM-1505).
     const reparto = repartirCommits(num, censo.commits || []);
     h.commits = reparto.propios; h.commitsAjenos = reparto.ajenos;
   }
