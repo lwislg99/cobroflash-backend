@@ -190,3 +190,42 @@ Los 15 ficheros `*latido*` dan 161/161; `scrum1599g` + `scrum1424`, 21/21. La ra
 probando, con `umbralDias: null` explícito.
 
 A9: comprobación → `tests/scrum1621-latido-vigia-de-main-y-tanda.test.mjs`
+## SCRUM-1621g · cierre de la pieza 5 (2-nov, S5)
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T20:08:53Z (hora de GitHub)
+
+A9: sin fallo que generalice — tramo sólo de registro, copia un comentario de Jira ya escrito
+
+Este tramo no trae código. Lleva al registro lo que ya está en Jira: la pieza 5 (C2, `scrum116` a una base propia)
+la **cerró el orquestador el 2-nov-2026** en el comentario c.21322 de SCRUM-1621, con esta redacción, copiada tal
+cual:
+
+> «La causa la arregló J2 en SCRUM-1631, medida por ellos (9/25 → 0/25) y mergeada en `main` (`3ad36dad4`). En
+> nuestra rama de base propia, `116` sale 10/10 **con y sin** el arreglo: **nuestro control NO reproduce la
+> carrera, así que nuestro 10/10 no es evidencia de nada.** Lo que sí está medido por nosotros es que el arreglo no
+> rompe nada (20 de 20). ⚠️ Y J2 declara literalmente que no probó nuestra rama (`SCRUM-1631.md:62`).»
+
+🔴 **Cómo NO se lee el 10/10.** Un control que sale verde con el arreglo y también sin él no distingue nada: no
+reproduce la carrera que el arreglo cura. Nuestro 10/10 no prueba que `116` esté curado en una base propia. La
+prueba de la causa es la de J2 (9/25 → 0/25, en su rama), y lo único que esta medida nuestra aporta es que el
+arreglo no rompe nada (20 de 20).
+
+Comprobado al escribir este tramo, sobre el `origin/main` de la cabecera:
+
+| afirmación de c.21322 | dónde se ve |
+|---|---|
+| el arreglo de J2 está en `main` | `git merge-base --is-ancestor 3ad36dad4 origin/main` → 0 |
+| J2 no probó la rama de S5 | `docs/master/SCRUM-1631.md:62`: «No he probado la rama de S5.» |
+| el borrador sigue sin PR | `borrador-s5-1621e-116-base-propia` existe en el remoto (`4e0e58e16`); el merge local `5f4b21304` de `wt-s5-1384` no se empujó |
+
+El banco de esa medida (de c.21322): Postgres 16.4 loopback propio, esquema con `migrate diff --from-empty`, guard
+de Prisma ✔ sin `generate`.
+
+### Lo que le queda a SCRUM-1621
+
+**Sólo la pieza 4**: el umbral de «días sin verde» de la sección TANDA GATEADA. `UMBRAL_DIAS_SIN_VERDE = null`, y
+**lo decide el fundador** (SCRUM-1599 c.20713 ④). Este tramo no propone número: el test fija que la constante es
+`null`, y quien ponga uno tiene que citar el comentario del fundador.
+
+La pieza 6 (fugas de temporales) tampoco es de este tramo: según el traspaso de S5, el orquestador la pasó a J6.
+No lo he vuelto a medir aquí.
