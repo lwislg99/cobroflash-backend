@@ -107,6 +107,14 @@ const CLAVES_LOCALES = [
       + 'un aviso de «vuelve a firmar» de otra sesión sería un aviso sobre algo que ya no es suyo.',
   },
   {
+    // SCRUM-1675 (S4) · lo dictado en un parte y su propuesta sin añadir, por parte, para que una
+    // recarga en la obra no se lo lleve (`parteDetailView.js`).
+    patron: /^yaqu_parte_dictado_/, almacen: 'localStorage', purga: true,
+    motivo: 'SE PURGA: es lo que el operario dictó en la obra —qué se hizo, en casa de qué cliente, '
+      + 'y a veces su nombre o los detalles de su instalación—. Se guardó para que lo recupere ESTE '
+      + 'profesional tras una recarga, no para que lo lea quien coja el móvil después de cerrar sesión.',
+  },
+  {
     patron: /^yaqu_sesion_sin_cobertura$/, almacen: 'localStorage', purga: true,
     motivo: 'SCRUM-918 · SE PURGA: es la copia de la última respuesta de /admin/me —nombre, negocio, '
       + 'rol— para poder arrancar la app SIN RED. Tras cerrar sesión no debe arrancar nada: quien '

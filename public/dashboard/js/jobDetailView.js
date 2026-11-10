@@ -31,6 +31,24 @@ function jobDetAlbEstado(e) {
   return e === 'firmado' ? 'Firmado' : e === 'emitido' ? 'Emitido' : 'Borrador';
 }
 /**
+ * SCRUM-1233j · UN SOLO SITIO que compone «<rótulo>: <mensaje>» para los cuatro avisos de esta
+ * pantalla que pintaban `(e?.data?.message || e.message)` crudo: con un 500 sin `data.message`
+ * eso enseñaba «No se pudo crear el albarán: API 500: internal_error» — la tripa del sistema,
+ * detrás de dos puntos, delante de un profesional.
+ *
+ * Mismo patrón que `avisoDeFallo` (jobsView.js:397): el detalle sale de `mensajeParaPersona`
+ * (api.js), que SOLO deja pasar la frase que el servidor escribió para una persona. Sin ella, el
+ * rótulo se pinta SOLO, sin los dos puntos — prefijo exacto de lo que ya se pintaba antes.
+ *
+ * @param {string} rotulo el texto aprobado que ya pintaba cada sitio (regla 30: no se estrena).
+ * @param {any} err el error capturado.
+ * @returns {string}
+ */
+function mensajeDeFallo(rotulo, err) {
+  const detalle = mensajeParaPersona(err, '');
+  return detalle ? rotulo + ': ' + detalle : rotulo;
+}
+/**
  * SCRUM-318 (G3) · pinta UN bloque del rail a partir de los datos que devuelve su constructor.
  *
  * Aquí no se decide NADA: si un bloque llega, se pinta entero. Toda la lógica de «¿hay dato?» vive
@@ -919,7 +937,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     // agendado): los dos entran por aquí, así que el número no sube. El texto es el que ya había.
     // SCRUM-1160 · el 409 sin firmar de `collect-rest` pinta el texto firmado (`albaranAccion.js`).
     const falloDelCta = (err) => setStatus('error', (window.errorDeFacturarSinFirmar && window.errorDeFacturarSinFirmar(err?.data))
-      || 'No se pudo completar la acción: ' + (err?.data?.message || err.message));
+      || mensajeDeFallo('No se pudo completar la acción', err));
     const cta = document.createElement('button');
     // 🔴 SCRUM-380 · SIN `btn-sm`, y el arreglo va POR AQUÍ y no por el CSS.
     //
@@ -1326,7 +1344,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
         tipoActual = prev;
         paintTipoCards();
         TIPO_CARDS.forEach((x) => tipoCardEls[x.value].setAttribute('aria-pressed', String(x.value === tipoActual)));
-        setStatus('error', 'No se pudo guardar el tipo de trabajo: ' + (e?.data?.message || e.message));
+        setStatus('error', mensajeDeFallo('No se pudo guardar el tipo de trabajo', e));
       }
     });
     tipoCardEls[c.value] = card;
@@ -1801,7 +1819,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
       await abrirAltaAlbaran(modoValoracion);
       newAlbBtn.disabled = false;
     } catch (e) {
-      setStatus('error', 'No se pudo crear el albarán: ' + (e?.data?.message || e.message));
+      setStatus('error', mensajeDeFallo('No se pudo crear el albarán', e));
       newAlbBtn.disabled = false;
     }
   });
@@ -2240,7 +2258,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
             await apiRequest(`/admin/invoices/${inv.id}/status`, { method: 'PUT', body: JSON.stringify({ status: 'paid' }) });
             refresh(); // el semáforo/barra/timeline actualizados = feedback (como invoice-detail)
           } catch (e) {
-            setStatus('error', 'Error actualizando estado: ' + (e?.data?.message || e?.data?.error || e.message));
+            setStatus('error', mensajeDeFallo('Error actualizando estado', e));
           }
         });
 
