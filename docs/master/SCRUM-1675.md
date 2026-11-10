@@ -1,6 +1,10 @@
 # SCRUM-1675 · PARTES · P0 · Lo dictado se pierde al recargar (PILOTO-1)
 
-**S4 · 10-nov-2026 · rama `scrum-1675-dictado-sobrevive-recarga` · medido sobre `origin/main` = `5986d520a77dc7076ad86ea656e1550ee75c7215`** (hora de GitHub al medir en pantalla: 17:45Z).
+**Medido contra:** `origin/main` = `5986d520a77dc7076ad86ea656e1550ee75c7215` · 2026-11-10T17:45:52Z
+
+A9: comprobación → `tests/scrum1675-dictado-sobrevive-a-la-recarga.test.mjs`
+
+S4 · rama `scrum-1675-dictado-sobrevive-recarga` (la hora es la cabecera `Date:` de GitHub al medir en pantalla; `ancla.mjs` anclaría a la punta de main, no a donde se midió).
 
 **Skill UI:** no cargada · cambio de CONDUCTA sin cambio visual: ninguna clase, estilo, rótulo ni texto nuevo; la pantalla recuperada se pinta con el mismo código que la recién dictada (capturas `despues-1` y `despues-2` idénticas).
 
