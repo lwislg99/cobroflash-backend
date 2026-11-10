@@ -1,5 +1,7 @@
 # SCRUM-1658 · PILOTO-1 · Recorrido medido de TRABAJOS y PARTES (390 y 1280)
 
+**Medido contra:** `origin/main` = `d7fb55ea19b825a26f89bf5b4765c2557eeb3a71` · 2026-11-10T16:46:13Z (cabecera `Date` del servidor de yaqu.app en el login QA, menos 24 h de su caducidad) · árbol `.claude/worktrees/scrum-1658-recorrido-trabajos-partes`
+
 **Puesto:** S4 · **Fecha:** 10-nov-2026, de 16:46Z a ~17:20Z (hora del servidor, cabecera `Date` del login QA) ·
 **Base:** `origin/main` = `d7fb55ea19b825a26f89bf5b4765c2557eeb3a71` (producción = main; no hay merges desde el 3-nov) ·
 **Skill UI:** no cargada · sólo se mide y se abren tickets: no se toca `public/` en esta rama.
@@ -105,6 +107,8 @@ cuenta QA. El envío dio 409 porque el cliente #86 no tiene teléfono: no salió
 queda como está (no se toca más) y es la prueba de SCRUM-1673. **Causa:** escribí un bucle que pulsa «lo que
 toque» en vez de una lista cerrada de botones esperados. **Lo que lo habría evitado:** que el bucle comprobara el
 rótulo contra la lista de lo que quería pulsar y parara en cualquier otro.
+
+A9: aviso → cicatriz S4 «mi banco de QA pulsaba la acción primaria en bucle para avanzar un trabajo y encadenó crear y EMITIR un albarán vacío (AB260007, cuenta QA)» — no se pudo comprobar: el banco vive fuera de la tanda de tests
 
 ## Evidencias
 
