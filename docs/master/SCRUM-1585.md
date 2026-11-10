@@ -113,3 +113,32 @@ Sesión `jv-j1dl` (puesto J1), con la decisión del fundador en SCRUM-1585 c.212
   esta rama (`scrum411`, `scrum1415`, `scrum189`) y ya pasan; `scrum1298b` y `scrum351` no los toca y
   siguen en rojo aquí: sin mirar en `main`.
 - Sin medir: ninguna base; esos 12 tests NO se han corrido en local; la suite entera local; el CI.
+
+## SCRUM-1585d · al día con main, la excepción de scrum974 declarada, un empujón
+
+**Medido contra:** `origin/main` = `c8e590cb0dff46a8d5a58da13426ed7739d3771b` · 2026-11-10T17:30:02Z (cabecera `Date:` de GitHub)
+
+A9: aviso → cicatriz J1 «Imprimí `EXIT=$?` detrás de `git merge … | tail`, y salió 0 con el merge en conflicto: era el código del `tail`; lo vi por el texto CONFLICT, no por el código» — no se pudo comprobar: lo impediría un hook sobre la orden, y los hooks no son de este puesto
+
+Sesión `jv-j1dl` (puesto J1), relevo del 10-nov, con la excepción de carril firmada por el fundador en
+SCRUM-1585 c.21397.
+
+- Dos merges de `main` (`5986d520a` y `c8e590cb0`), sin rebase ni force. Único conflicto:
+  `docs/equipo/cicatrices/J1.md`, resuelto sin perder líneas (33 = 29 comunes + 2 de la rama + 2 de main;
+  0 marcadores; cada línea de las dos puntas está en el resultado).
+- Lo que entró desde el 30-oct y toca esta zona: `facturaSuelta.ts` (SCRUM-1051d, no llama al modo) y
+  `scrum113` (SCRUM-1644). Ni `emission.service.ts`, ni `invoiceNumber.service.ts`, ni `productor.ts`, ni
+  `scrum523d`, ni `scrum974`. Las dos huellas de c.21290 siguen cuadrando: no se recongela nada.
+- Excepción de c.21397: fila nueva en `docs/equipo/dos-equipos.md` §3.4 (ruta, J1, motivo, SCRUM-1585) y
+  `.claude/carriles.json` regenerado. La línea 60 de `scrum974` ya iba en la rama desde 1585c; es lo único
+  que la rama cambia de ese fichero.
+- Build con tipos (`tsc -p .`): salida 0. Cliente de Prisma: coincide con el esquema.
+- Dirigida (`tests-que-cubren --lanzar`, 4 tramos sobre `5986d520a` + la rama): 530 de 1.581 ficheros,
+  4.931 casos, 4.896 pasan, 3 caen. Los 3 son `scrum1298b` (2) y `scrum351` (1), y caen igual en un árbol
+  limpio de `origin/main` @ `5986d520a` en esta máquina (15 casos, 12 pasan, 3 caen): no son de la rama.
+- Sueltos tras el segundo merge: `scrum237`, `scrum976`, `scrum1387`, `scrum1295`, `scrum267`, `scrum273`,
+  `scrum1294`, `scrum1572`, `scrum719`, `scrum622`, `scrum113`, `scrum523d`, `scrum974` y `scrum1585`:
+  14 ficheros, 148 casos, 147 pasan, 0 caen, 1 saltado (`scrum974`, sin `LIBRO_PG_URL`).
+- Sin medir: ninguna base; `scrum974` y los 11 de 1585c NO se han corrido en local (piden el banco de CI);
+  la suite entera local: NO CORRIDA; el CI, hasta leer el obligatorio de este empujón.
+
