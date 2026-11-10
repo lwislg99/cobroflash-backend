@@ -983,7 +983,25 @@ jobs:
           --health-retries 10
 
     steps:
+      # ── SCRUM-1335f · ESTE JOB CORRE LA TANDA ENTERA, Y NECESITA EL MISMO ÁRBOL QUE LA TANDA ──
+      #
+      # 🔴 Aquí había un `checkout` DESNUDO (superficial, una sola ref) mientras el job de la tanda
+      # lleva `fetch-depth: 0` + la punta de `main` desde SCRUM-388/948. Sin `origin/main`,
+      # `tests/scrum804-la-rama-viva.test.mjs` MORÍA AL CARGAR (`for-each-ref --merged=null` →
+      # `fatal: malformed object name null`). Moría igual en las dos zonas, así que el comparador
+      # lo daba por «comparado e igual»: el trinquete NO lo ha medido nunca desde el 17-sep.
+      # Lo cazó la línea `SIN INFORME ENTERO` de SCRUM-1335d en su primera pasada (job 125562740856).
+      #
+      # Hacen falta LAS DOS líneas, por el mismo motivo medido que en `meta-mutaciones` (SCRUM-765):
+      # en un `pull_request`, `fetch-depth: 0` trae UNA ref y `origin/main` no resuelve.
+      # Coste medido por S3 el 2-nov-2026: superficial 5,96 s · historia entera 7,03 s + 0,27 s de
+      # traer `main` = ~1,3 s en un job de ~16,8 min (0,13 %).
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Traer `main` (scrum804 y el censo de tickets la consultan)
+        run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
 
       - uses: actions/setup-node@v4
         with:
