@@ -3881,6 +3881,18 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 }
 [data-parte-firmar]:hover:not(:disabled) { background: var(--green-700, var(--brand-700)); color: #fff; }
 
+/* ── S4 · SCRUM-1676 ── Con el parte VACÍO (cero líneas, la misma pregunta que `puedeFirmarse`),
+   firmar NO es la acción principal: es irreversible y el servidor la rechaza. Vuelve al aspecto
+   secundario de la regla común de arriba (y el hover de `.btn-secondary`) hasta que haya una línea;
+   la vista pone la marca (`parteDetailView.js`, `pintarLasDosFirmas`). */
+[data-parte-firmar][data-parte-firma-en-espera] {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--border);
+  box-shadow: none;
+}
+[data-parte-firmar][data-parte-firma-en-espera]:hover:not(:disabled) { background: var(--bg); color: var(--ink); border-color: var(--neutral-300); }
+
 /* SCRUM-1175 (916a, PR-B) · las firmas en su paso, una caja por firma. Contorno y fondo de la
    tarjeta de contenido de DESIGN.md (plano por defecto: borde de 1 px, sin sombra). */
 .parte-firmas { margin-top: 12px; }
