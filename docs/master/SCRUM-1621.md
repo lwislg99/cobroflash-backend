@@ -146,3 +146,47 @@ commit, y pide la entrada de todos. Reescribir el asunto obligaría a empujar co
 que se escribe la entrada que pide.
 
 A9: comprobación → `tests/scrum854-todo-merge-deja-entrada.test.mjs`
+
+## SCRUM-1621h · el umbral de «días sin verde» = 1 (pieza 4, 10-nov, S5)
+
+**Medido contra:** `origin/main` = `5986d520a77dc7076ad86ea656e1550ee75c7215` · 2026-11-10T17:10:04Z
+
+**Quién decide:** el ORQUESTADOR del equipo de Luis (`cobroflash-backend-84`), por mensaje a S5 el
+10-nov-2026, con la delegación vigente del fundador del 3-nov: «todo lo que tenia que decididr yo decidelo tu si
+puedes. si hace falta algo mio dimelo». La cita está en la transcripción del orquestador
+`ed676fd1-feb4-4658-bda2-01f4bf9fb3fc.jsonl`. Es un umbral de un vigía interno: no toca regla 39/40 ni dinero.
+**Si el fundador dice otra cosa, se revierte.** Con esto se contesta la pregunta ④ de SCRUM-1599 c.20713.
+
+**Qué cambia:** `UMBRAL_DIAS_SIN_VERDE` pasa de `null` a `1` en `scripts/equipo/latido.mjs`.
+
+**Qué significa «1» de verdad (el grano de `diasSinVerde`, `scripts/_evidencia-tanda.mjs`):**
+- avisa si `floor(horas desde el último verde / 24) > 1`, o sea **desde las 48 h justas** (a las 47:59 no);
+- lo juzga **por fichero gateado**, sea cual sea su último veredicto: un fichero que salió verde hace 3 días y
+  cuya tanda no ha vuelto a correr también avisa. Avisan siempre el que nunca fue verde y el CIEGO;
+- la fuente son los recibos LOCALES (`.claude/evidencia-tanda.json`) de la tanda gateada contra staging
+  (`npm run test:staging:gated`) de los árboles de esta máquina. **No mira `main` ni el CI.**
+
+⚠️ **Nadie debe leer esto como el vigía del parón de `main`.** Ése es otro ticket, con su sección en §14. Y la
+fuente está casi vacía: el 27-oct-2026 había 1 recibo en 269 árboles, del 30-jul y sin desglose por fichero, y
+eso sale «no pude mirar». Un umbral sobre una fuente casi vacía es mejor que `null`, pero no sustituye a la tanda.
+
+**Corrección de una lectura mía.** Antes de construir le escribí al orquestador que «un fichero cuyo último
+veredicto es verde NO avisa nunca» y que «sin tanda no dice nada». Las dos cosas son FALSAS. Lo cazó el test
+nuevo: `avisa` mira la edad del último verde y no el veredicto. El orquestador decidió la opción (b) sobre esa
+lectura, y la corrección se le manda con esta entrega.
+
+**Defecto de paso, arreglado aquí:** el fichero que avisa por verde viejo se pintaba «CIEGO», que quiere decir
+«no pude mirar». Ahora dice «N días desde su último verde (fecha): la tanda no ha vuelto a correr».
+
+**Control positivo por los dos lados** (`tests/scrum1621-latido-vigia-de-main-y-tanda.test.mjs`):
+
+| árbol | resultado |
+| --- | --- |
+| con el arreglo | 14/14 |
+| constante en `null` | caen 2 (el valor y el borde de 48 h) |
+| etiqueta vieja («CIEGO») | cae 1 |
+
+Los 15 ficheros `*latido*` dan 161/161; `scrum1599g` + `scrum1424`, 21/21. La rama «sin umbral» se sigue
+probando, con `umbralDias: null` explícito.
+
+A9: comprobación → `tests/scrum1621-latido-vigia-de-main-y-tanda.test.mjs`
