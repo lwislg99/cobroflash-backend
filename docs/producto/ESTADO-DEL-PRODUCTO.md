@@ -29,7 +29,7 @@
 | #3018 | 1631 | el fallo de WhatsApp | 2.13 |
 | #3019 | 1640 | lista de facturas | — |
 
-*(El registro 1563n dice «10 de ellos tocan producto» y nombra estos 9; no se ha recontado cuál falta.)*
+*(~~El registro 1563n dice «10 de ellos tocan producto» y nombra estos 9; no se ha recontado cuál falta.~~ **Recontado el 10-nov-2026 (1563p): son 9, estos 9. El «10» fue un error de cuenta y no falta ninguno.**)*
 
 | 🟠 EN RAMA, SIN MERGEAR (NO está en producción) | ticket | qué | ojo |
 |---|---|---|---|

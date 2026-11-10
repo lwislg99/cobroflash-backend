@@ -444,7 +444,7 @@ A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
 | 1586 | c.21159 | 27-oct 17:33:10Z | **6 d 14 h 17 min** |
 
 **5 · TAREA 3 — producción contra rama, lo medido** (para `ESTADO-DEL-PRODUCTO.md`; **NO escrito**).
-- **Producción = `main` = `70eefc40c`. Último merge: 30-oct 18:44:09Z (#3019).** Desde el 29-oct 18:25Z entraron 20 merges, y **10 de ellos tocan `src/`, `public/` o `prisma/`** (lo demás es docs o CI): #2995 1635 (ficha del descuento global) · #2996 1636 (**sólo `styles.css`**: el IVA con coma NO está en producción, ver abajo) · #2998 1632c (**la firma tolera la URL sucia: EN PRODUCCIÓN desde el 29-oct 19:05Z**) · #3013 1629 (el periodo del Paquete) · #3015 1624b (portal del cliente) · #2973 1618 (fecha de cobro, facturas) · #2974 1051d (factura suelta) · #3018 1631 (fallo de WhatsApp) · #3019 1640 (lista de facturas).
+- **Producción = `main` = `70eefc40c`. Último merge: 30-oct 18:44:09Z (#3019).** Desde el 29-oct 18:25Z entraron 20 merges, y **~~10~~ 9 de ellos tocan `src/`, `public/` o `prisma/`** *(corregido el 10-nov-2026, ver 1563p)* (lo demás es docs o CI): #2995 1635 (ficha del descuento global) · #2996 1636 (**sólo `styles.css`**: el IVA con coma NO está en producción, ver abajo) · #2998 1632c (**la firma tolera la URL sucia: EN PRODUCCIÓN desde el 29-oct 19:05Z**) · #3013 1629 (el periodo del Paquete) · #3015 1624b (portal del cliente) · #2973 1618 (fecha de cobro, facturas) · #2974 1051d (factura suelta) · #3018 1631 (fallo de WhatsApp) · #3019 1640 (lista de facturas).
 - 🔴 **El estado vigente está MAL en 2.9:** §1 ① (L31, L37), la fila de L76, §2 2.9 (L176) y L279 dicen que el arreglo (b) «espera un GO» o que «#2998 sigue ABIERTO». **#2998 está MERGEADO desde el 29-oct 19:05Z y en producción.** Instrumento: cada `#NNNN` del documento contra GitHub (3.026 PR leídos, 66 citados); control: #2604 sale ABIERTO, que es lo que dice el documento.
 - **33 PR abiertos; 7 llevan producto, y NINGUNO de los 7 está en producción:** #3003 y #3011 (1636: el IVA con coma en el panel y en la página que firma el cliente) · #3009 (1639: filas con teclado) · #3014 (914: equipos del cliente; **lleva `prisma/schema.prisma`**) · #3022 (1637: CSP en modo informe, `src/app.ts`) · #3023 (1233j: los avisos de la ficha del trabajo) · #2621 (914, la versión de J3, en CONFLICTO). Los otros 26 son docs, tests o CI.
 - **De los 33, el obligatorio está en rojo en 28, en verde en 3 (#3017, #2841, #2392: los tres en conflicto) y no existe en 1 (#2690).** Rojo no es «roto»: en los leídos, el fallo común es `scrum113` (SCRUM-1644).
@@ -469,3 +469,14 @@ A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
 **Atribuidos, no medidos por S0:** que la plantilla de firma está «verificada en producción» y que 1283 está cerrado (orquestador, 3-nov) · que cablear 1506 cae en una ruta `deny` (orquestador; no he leído la regla).
 
 **NO hecho:** recontar con `contar-dependencias.mjs` · mirar el obligatorio de #3010 (lo lleva S5 en su tabla de las 16 ramas).
+
+## 10-nov-2026 · S0 · 1563p — la discrepancia de 1563n, recontada: eran 9
+
+**Medido contra:** `70eefc40c` (el `main` de 1563n), por encargo del orquestador (auditoría de SCRUM-1656 c.21386). Rama puesta al día con `origin/main` = `d7fb55ea1` en este mismo empuje.
+
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
+- **Instrumento:** `git log 70eefc40c --first-parent --merges --since=2026-10-29T18:25:00Z` y, para cada merge, `git diff --name-only <merge>^1 <merge>` filtrado por `^(src|public|prisma)/`.
+- **Resultado:** **20 merges**, el mismo número que 1563n (control). **9 tocan producto**, exactamente los 9 que nombraba: #2995 · #2996 · #2998 · #3013 · #3015 · #2973 · #2974 · #3018 · #3019. Los otros 11 (#2999 #3000 #3002 #3004 #3005 #3006 #3007 #3008 #3012 #2975 #3016) solo tocan `docs/`, `scripts/`, `tests/` o `.github/`.
+- **Frontera:** los 4 merges inmediatamente anteriores (29-oct 17:00-18:25Z: #2997, #2994, #2991, #2992) tocan 0 ficheros de producto. Moverla no da 10.
+- **Veredicto: eran 9. El «10» fue un error de cuenta mío y no falta ninguno.** Corregido en sitio, tachado y no borrado: `:447` de este registro y la nota de `docs/producto/ESTADO-DEL-PRODUCTO.md` que lo arrastraba. La «discrepancia que dejo escrita» de 1563o queda resuelta aquí.
