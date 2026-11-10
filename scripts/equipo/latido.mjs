@@ -78,8 +78,10 @@
 //                  y si sigue corriendo. Del 22 al 23-oct-2026 escribió 123 «SIN veredicto» que nadie leyó; y su
 //                  propio silencio no lo vigila nadie más (SCRUM-1324 c.17719).
 //  15 · TANDA GATEADA → (SCRUM-1621, SCRUM-1599 diseño A) cuántos días lleva cada fichero gateado sin verde,
-//                  juntando el recibo de TODOS los árboles. 🔴 Sin umbral decidido (SCRUM-1599 c.20713 ④): se
-//                  enseña con ⚪ y no avisa. Sin ningún recibo con desglose, «no pude mirar».
+//                  juntando el recibo de TODOS los árboles. Umbral 1 (SCRUM-1621h): avisa cuando el último verde
+//                  de un fichero tiene 48 h o más (también si su último veredicto fue verde y la tanda no ha
+//                  vuelto a correr). ⚠️ NO es el vigía del parón de main (mira staging en local, no el CI).
+//                  Sin ningún recibo con desglose, «no pude mirar».
 //
 // ⚠️ LO QUE ESTO NO ARREGLA: el latido corre cuando ALGUIEN lo corre. Si nadie corre nada en tres días,
 // no dice nada. El único que corre sin sesión es `vigia-atascados` (workflow), y escribe en GitHub.
@@ -1065,11 +1067,16 @@ export function seccionVigiaDeMain({ issue, ultimo, corridas, ahora }) {
 
 /**
  * (SCRUM-1621, pieza 4 · SCRUM-1599, diseño A, decisión del fundador c.20715 ②: «el latido dice N días sin
- * verde».) 🔴 EL UMBRAL NO ESTÁ DECIDIDO: es la pregunta ④ de SCRUM-1599 c.20713 y la decide el fundador.
- * Mientras sea `null`, la sección ENSEÑA la edad de cada fichero y NINGUNA avisa: sale con ⚪, no con ✅,
- * para que nadie lea «sin umbral» como «todo bien». Decidirlo es cambiar ESTE número, y nada más.
+ * verde».) UMBRAL = 1 (SCRUM-1621h, 10-nov-2026): lo decidió el ORQUESTADOR bajo la delegación del fundador
+ * del 3-nov, y es reversible si el fundador dice otra cosa (registro en docs/master/SCRUM-1621.md).
+ * El grano: `diasSinVerde` avisa si floor(horas desde el último verde / 24) > umbral, o sea desde las 48 h, sea
+ * cual sea el último veredicto: un fichero verde hace 3 días y sin tanda desde entonces también avisa. Avisan
+ * siempre el que nunca fue verde y el CIEGO.
+ * ⚠️ Lo que NO ve: mira la tanda gateada contra staging, desde los recibos LOCALES de los árboles de esta
+ * máquina; no mira main ni el CI (eso es §14). Sin ningún recibo con desglose sale «no pude mirar» (medido el
+ * 27-oct-2026: 1 recibo en 269 árboles, del 30-jul, sin desglose). Con `null`, enseña la edad con ⚪ y no avisa.
  */
-export const UMBRAL_DIAS_SIN_VERDE = null;
+export const UMBRAL_DIAS_SIN_VERDE = 1;
 
 /**
  * Los recibos de TODOS los árboles, en uno. El recibo vive en `.claude/evidencia-tanda.json` del árbol que
@@ -1118,6 +1125,7 @@ export function seccionTandaGateada({ recibos, arboles, ahora, umbralDias = UMBR
   const malos = d.ficheros.filter((x) => x.estado !== 'verde')
     .sort((a, b) => (b.dias ?? Infinity) - (a.dias ?? Infinity) || a.fichero.localeCompare(b.fichero));
   const linea = (x) => `${x.fichero} · ${x.estado === 'sin-verde' ? `${x.dias} días sin verde (último verde ${String(x.ultimoVerdeEn).slice(0, 10)}, último veredicto ${x.veredicto})`
+    : x.estado === 'verde' ? `${x.dias} días desde su último verde (${String(x.ultimoVerdeEn).slice(0, 10)}): la tanda no ha vuelto a correr`
     : x.estado === 'nunca-verde' ? 'NUNCA verde en ningún recibo (último veredicto rojo)' : x.estado === 'saltado' ? 'saltado: la tanda no lo mide' : 'CIEGO'}`;
   const poblacion = `${deDonde} · ${ultimaTanda} · ${d.poblacion} ficheros: ${de('verde')} verdes, ${de('sin-verde')} sin verde, ${de('nunca-verde')} nunca verdes, ${de('saltado')} saltados`;
   if (!conUmbral) {
