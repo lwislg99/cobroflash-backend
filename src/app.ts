@@ -4,6 +4,7 @@ import fs from 'fs'; // SCRUM-224b: leer UNA vez el HTML del dashboard para sell
 
 import { outboxDir } from './core/storage/dirs'; // SCRUM-72: invoicesDir ya no se sirve como estático
 import { jsonError } from './core/http/jsonError';
+import { cspSoloInforme } from './core/http/csp';
 import { notFoundPageHtml } from './core/http/publicNotFound';
 import { isFlagEnabled } from './core/flags';
 import { decidirAvisoBizum } from './modules/billing/domain/avisoBizumSinTelefono'; // SCRUM-328
@@ -137,6 +138,9 @@ app.use((_req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   next();
 });
+// SCRUM-1637 (paso 1): CSP en modo INFORME, global y antes de cualquier ruta. No bloquea nada:
+// el porqué, y por qué no lleva 'unsafe-inline', en core/http/csp.ts.
+app.use(cspSoloInforme);
 
 // Landings públicas (antes del JSON parser)
 app.use('/pay', quoteDecisionLandingRouter);
