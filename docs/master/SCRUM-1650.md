@@ -98,3 +98,60 @@ camino de sellado.
 - Vecinos (77 ficheros que nombran estos tres ficheros, `clienteCongelado` o 1650): 638 tests,
   636 ok, 0 fallos, 2 saltos declarados (scrum127 y scrum49, sin `QA_DB_TEST` ni `LIBRO_PG_URL`:
   corren en el obligatorio del CI; scrum49 es la firma remota de punta a punta).
+
+
+---
+
+## Tramo c · PDF y WhatsApp del albarán leen lo congelado — S1, 10-nov-2026
+
+**Rama:** `scrum-1650c-pdf-y-whatsapp-leen-lo-congelado` · base `origin/main` @ `d4ecb38a8`.
+
+### ⓪ La firma, leída en la transcripción (no en el resumen)
+
+- **Sí del fundador**, LITERAL: «si firmo todo dale que mas falta que te diga». Transcripción del
+  orquestador `ed676fd1-feb4-4658-bda2-01f4bf9fb3fc.jsonl`, línea 54744, `2026-11-10T17:31:49.539Z`,
+  uuid `5e195baf-b306-4147-8967-b6dd11aea3ea`, `origin.kind: "human"`, `humanTurn: true`.
+- **Mensaje al que responde** (línea 54716, `17:29:38.750Z`, uuid `cf45697e…`), su pie, literal:
+  «① extender tu «sí» de hoy al PDF y al WhatsApp del albarán (mismo arreglo, dos sitios más)».
+- Registro de la firma: SCRUM-1656 c.21408 punto ⑤. La rectificación c.21411 anula el máster y el
+  flag, **no** este punto (lo dice ella misma: el mensaje contestado SÍ contenía las tres pendientes).
+
+### ① Lo construido (sólo la FUENTE del nombre; plantilla de Meta, canal y texto intactos)
+
+| # | sitio | qué cambia |
+|---|---|---|
+| 1 | `albaran.service.ts` `ensureAlbaranPdf` (lectura de `:801`, uso en el `contenidoSegunVersion`) | **sin firmar** (`evidenciaFirma.v` ausente): el cliente del papel sale de `clienteDelDocumento` (`legalName \|\| name` del albarán). **Firmado**: manda el sobre, como antes — v:3 su bloque congelado, v:1/v:2 las fuentes vivas con que se sellaron (su hash se recalcula con ellas) |
+| 2 | `albaranWhatsApp.service.ts` `sendAlbaranFirmadoWhatsApp` (`:51`) | `select` pide `customerName`; «Hola {{1}}» sale de `clienteDelDocumento(...).name` |
+| 3 | `albaranWhatsApp.service.ts` `sendAlbaranParaFirmarWhatsApp` (`:122`) | igual, para la plantilla **y** para el texto de ventana (`nombreCliente`, misma función: dos nombres en el mismo envío serían el defecto otra vez) |
+
+- Columnas a NULL (anterior al escritor) → ficha de hoy: la excepción DECLARADA de
+  `clienteCongelado.ts`, llamada, no copiada. El fallback `'cliente'` de siempre, sin tocar.
+- El **número** sigue saliendo de la ficha (`canalDeWhatsApp`): el GO es el nombre.
+- Sin esquema, sin ALTER, sin texto nuevo, sin tocar `whatsappTemplates.ts` (J2) ni `whatsapp.ts` (J2).
+
+### ② Lo que NO se ha tocado, y por qué — 🔴 premisa del encargo corregida
+
+| sitio | por qué no |
+|---|---|
+| `albaran.service.ts:642` (`buildFirmaEvidencia`) | **No es el PDF: es el contenido SELLADO de la firma** (`cliente` del bloque congelado v:3 y del hash). Su comentario (SCRUM-577) y `scrum371` lo sujetan al barrido (`albaranBarrido.ts`) con el MISMO texto, y `scrum577` fija que sigue sin unificar. La firma cubre «PDF y WhatsApp»; el sello es otro asunto y otra decisión |
+| `taxId` del cliente en el PDF (`customer: { taxId }`) | el GO es el nombre; SCRUM-452 lo declara vivo a propósito (el sello no lo nombra) |
+
+**Consecuencia que hay que saber** (la deja abierta el `:642`): si se renombra la ficha ENTRE la
+emisión y la firma, el PDF sin firmar, la página pública (1650b) y los dos WhatsApp dicen el
+nombre del albarán; al firmar, el sello v:3 congela el nombre de la ficha de ESE momento y el PDF
+firmado imprime ése. Cerrarlo es cambiar la fuente del sellador (y el barrido a la vez): pide su
+propio GO.
+
+### ③ Pruebas
+
+- Test nuevo `tests/scrum1650c-pdf-y-whatsapp-del-albaran-leen-lo-congelado.test.mjs`: el servicio
+  REAL de `dist/` con la base doblada (`_envio-doblado.mjs`, `select` proyectado) y Meta en dry-run.
+  Se mira lo que de verdad se pasa al emisor (`sendWhatsAppTemplate` / `sendWhatsAppWindowFirst`,
+  envueltos y llamados de verdad: los guards corren) y el TEXTO del PDF real (`_pdf-texto.mjs`).
+  Seis casos: 2 WA congelado, 2 WA/PDF anterior al escritor, PDF sin firmar congelado, y PDF de un
+  firmado v:1 (sigue imprimiendo lo vivo).
+- **Control positivo (rojo primero):** con `src/` como en `origin/main`, **3 rojos** por su motivo
+  (los tres enseñan la ficha de hoy); los 3 controles, verdes. Con el arreglo, 6/6.
+- **Mutantes en `dist`** (con BASE sin mutar en verde, 6/6): `select` sin `customerName` → caen los
+  2 WA · PDF congelado también firmado → cae el v:1 · PDF sin el arreglo → cae el sin firmar.
+- Tanda completa: la mató la MEMORIA de la máquina a 4.656 ok / 68 saltos. 8 `not ok`: 5 a nivel de FICHERO (1571c, 1589, 1596b, 1598, 1599g), los cinco VERDES aislados después (procesos muertos por la memoria, no fallos); y 3 ajenos, ninguno importa lo tocado: `scrum1266b` (vista del parte en vm, `partes.routes` no importa `albaran.service` ni `albaranWhatsApp`; NUEVO, no es de los conocidos de SCRUM-1655), `scrum1321` 1b (SCRUM-1655) y `scrum1540` (clon de git sin fetch, entorno). Vecinos aislados, verdes: scrum577 9/9 · scrum371 16/16 · scrum1650b 5/5 · scrum1632c 8/8. El resto lo mira el obligatorio del CI.
