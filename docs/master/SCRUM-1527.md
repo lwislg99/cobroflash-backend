@@ -834,3 +834,89 @@ en cola y no corrieron.
     # los logs, con el instrumento de la casa (corte ANTES de --de-cache). OJO: sobre la lista entera baja
     # los 263 de 600 s o más (~500 MB); para los sospechosos, una lista con sólo los de 900 s o más:
     node docs/master/evidencias/SCRUM-1527/s3-reproduce-hoy.mjs 2026-10-22T00:00:00Z <carpeta> 2026-10-26T23:50:23Z --de-cache
+
+# SCRUM-1527h · El instrumento ya no da 0 sin positivo; y desde el 27-oct, 0 colgadas en 104 jobs, que tampoco prueba nada
+
+**Medido contra:** `origin/main` = `c93f26a765313ce7834ecf276ddc3c09673527cc` · 2026-10-29T18:22:44Z
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1527/1527h/interroga.mjs`
+
+Escribe S3 (equipo de Luis), por encargo del orquestador. El ticket es de J6 (`area-j6`,
+`equipo-javier`): toco sólo **mi instrumento** (`s3-reproduce-hoy.mjs`, que 1527g señaló y no tocó)
+y hago **medidas de lectura** de CI. Nada de `src/`, `tests/`, `scripts/` ni workflows, y el vigía
+`scripts/tanda-con-veredicto.mjs` sigue sin tocar.
+
+## En corto
+
+- **`s3-reproduce-hoy.mjs` lee el corte por NOMBRE** (`--corte <ISO>`). Un tercer argumento
+  posicional, el «Cómo se repite» viejo, ahora **sale 2 y lo dice**, en vez de partir la cuenta por la
+  fecha «--de-cache» como le pasó a 1527g. Una fecha que no lo es también sale 2.
+- **Sin colgado conocido en la ventana, sale CIEGO (salida 2), nunca 0.** Los positivos son una lista
+  con su fecha: 115134364145 (13-oct) y 119769715166 (22-oct). Cada uno que caiga en la ventana POR
+  FECHA tiene que salir con su aviso, y si no cae ninguno el instrumento no ha visto nunca lo que
+  busca. Antes salía 0 con «fuera de la ventana». **Rojo primero:** el interrogatorio da **0 de 8**
+  contra la versión de `c93f26a76` y **8 de 8** contra esta. El mutante sin la línea nueva da 7 de 8,
+  y cae justo el caso de la ventana sin positivo.
+- **`--umbral <s>`, 600 por defecto.** Desde #2429 una tanda sana pasa de 600 s (1527g), y el filtro
+  de 600 bajaba ~500 MB de logs. Con `--umbral 900`, el silencio que espera el vigía para escribir el
+  aviso, sólo baja los sospechosos.
+- **El recuento, desde el 27-oct a las 13:09Z hasta la lectura del 29-oct a las 18:20:44Z:** 164
+  ejecuciones de `ci.yml` (las que declara GitHub), 114 jobs obligatorios, **104 con paso «Tests»**
+  (78 `success`, 25 `failure`, 1 `cancelled`). **Colgadas: 0.** Ningún paso llega a 900 s; el más largo
+  es de 807 s (`success`). El cancelado con el paso empezado más largo de toda la población llega a
+  651 s de paso y 716 s de job, lejos del techo de 1.500 s: **ninguna colgada cortada sin aviso**.
+- **Desde #2905 (26-oct, 23:50:23Z): 119 jobs con paso «Tests», 0 colgadas.**
+
+## Lo que hay que declarar con esa cifra
+
+- **🔴 «0 en 119 tras #2905» no prueba nada.** A la tasa que hay desde #2429 (1 de 422, 1527g), sacar
+  0 en 119 pasa el **75 %** de las veces por azar; 0 en 104 desde el 27-oct, el 78 %. Para que el 0
+  bajara del 5 % harían falta **~1.260 jobs** después de #2905: faltan ~1.140. Al ritmo de esta
+  ventana (~47 jobs con paso al día, la mitad que la semana de 1527g: el equipo estuvo caído 6 h 38 min
+  el 29-oct, SCRUM-1549e) son **unas tres semanas y media**.
+  Lo único que esta ventana sí descarta es volver a la tasa de antes de #2429 (5 de 160, 1527d): con
+  ella, 0 en 119 saldría el 2,3 % de las veces. Eso ya lo decía 1527e con 372 jobs.
+- **🔴 La cifra de casos crece con el árbol, y no se compara entre fechas.** Los «~5.930» del título
+  eran el árbol de entonces; la colgada del 14-oct pasaba 8.390, un verde del 27-oct 12.786, y **los
+  dos verdes más recientes de hoy** (123630531075 en `main` y 123631359698, a las 17:54-17:55Z)
+  **12.970**. «Se cuelga a los N casos» es una foto de un árbol, no un umbral.
+
+## Controles
+
+- **El positivo está dentro, y por fecha.** La lista nueva no trae ningún colgado conocido, así que se
+  JUNTA con la de 1527g (`1527h/juntar.mjs`, por id de job; 0 en las dos), que trae el 119769715166.
+  Con las dos, `recuento.mjs` y `s3-reproduce-hoy.mjs` salen 0 y el positivo sale: de 900 s o más en el
+  primero, **con su aviso, 8.390 casos y su caso** (`scrum615-pedir-tipo-destinatario`) en el segundo,
+  tras bajar su log (1.409.303 B).
+- **Sin el positivo, CIEGO:** el instrumento sobre la ventana nueva sola (desde las 13:09Z) **sale 2**
+  y dice que ningún colgado conocido cae dentro. Es el caso exacto que antes salía 0.
+- **Dos sondas, una diferencia explicada:** antes del corte, `recuento.mjs` cuenta 437 con paso y
+  `s3-reproduce-hoy.mjs` 438. Es el job con el paso `skipped` que 1527g ya nombró: el primero lo deja
+  fuera y el segundo lo cuenta. Después del corte, las dos dicen 104.
+- **Población declarada:** `jobs.mjs` leyó las 164 ejecuciones que declara GitHub, con 0 fallos. Hay
+  **10 jobs CIEGO** en la ventana nueva: 5 en curso y 3 en cola al leer, y 2 cancelados sin paso. Los 2
+  «en curso» de la lista de 1527g siguen con el estado que tenían el 27-oct: son de antes del corte, y
+  no los he releído.
+
+## Lo que no he medido
+
+- **La causa.** Esto cuenta; no explica. Lo que falta de 1527e §⑥ sigue igual.
+- **Los 104 logs uno por uno.** Igual que en 1527g, el veredicto descansa en la duración del paso y en
+  el tope del vigía; bajé el del positivo y los de los dos verdes de hoy.
+
+## Errores míos en este tramo
+
+- Para la copia de la versión vieja usé `Out-File -Encoding ascii`, que estropea los «» de las
+  expresiones regulares: el primer rojo no valía. La rehice byte a byte desde `git show` y comprobé
+  que era idéntica antes de correrla.
+- En el primer verde, un caso esperaba «1 job después del corte» y la lista sembrada tenía 2. El
+  instrumento tenía razón; corregí el caso, no el instrumento.
+
+## Cómo se repite
+
+    node docs/master/evidencias/SCRUM-1527/1527h/interroga.mjs docs/master/evidencias/SCRUM-1527/s3-reproduce-hoy.mjs
+    node docs/master/evidencias/SCRUM-1527/1527g/jobs.mjs 2026-10-27T13:09:00Z <carpeta>
+    node docs/master/evidencias/SCRUM-1527/1527h/juntar.mjs <carpeta>/juntas.json docs/master/evidencias/SCRUM-1527/1527g/jobs.json <carpeta>/jobs.json
+    node docs/master/evidencias/SCRUM-1527/1527g/recuento.mjs <carpeta>/juntas.json 2026-10-27T13:09:00Z
+    # el instrumento de la casa, sobre una carpeta con juntas.json copiado como jobs.json:
+    node docs/master/evidencias/SCRUM-1527/s3-reproduce-hoy.mjs 2026-10-22T00:00:00Z <carpeta2> --corte 2026-10-27T13:09:00Z --umbral 900 --de-cache

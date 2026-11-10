@@ -53,6 +53,7 @@ import { resolverFechaDeCobro } from '../../../billing/domain/fechaDeCobro'; // 
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1093 (bulk-paid)
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
+import { exigirCausaLineaEmitible } from '../../../../core/validation/causaLineaEmitible'; // SCRUM-1051d
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-289 (C7)
 import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
 import {
@@ -164,6 +165,9 @@ router.post('/', requireRole('admin'), async (req, res) => {
     // arriba: ANTES de pedir número, nunca después. Deriva de `invalidTipoIva`; aquí no
     // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
     exigirTiposDeIvaEmitibles(val.lineas);
+    // SCRUM-1051d · y que la CAUSA (si la línea trae una) esté en la lista activa: el mismo portón
+    // que la boca de cobro (`lib/invoicing.ts`), en el mismo sitio y ANTES de pedir número.
+    exigirCausaLineaEmitible(val.lineas);
 
     const emisorCongelado = congelarEmisorDesdeFicha(merchant); // SCRUM-665 · sin viaje extra
 
