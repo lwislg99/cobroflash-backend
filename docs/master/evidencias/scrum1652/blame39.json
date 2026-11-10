@@ -1,0 +1,548 @@
+[
+ {
+  "donde": "src/core/http/adminRouteDeclarations.ts:213",
+  "lineaMarca": 238,
+  "sha": "3c34b8afc0adb1740cfeab24928b42336de5a28a",
+  "autor": "Javier Pereira Fernández",
+  "fecha": "2026-08-24",
+  "asunto": "SCRUM-614: el catalogo se cierra a escritura - guard INVERTIDO, no borrado",
+  "coautor": true,
+  "fundEnMsg": [
+   "  se toca: coste y margen los ven todos los roles (decision del fundador).",
+   "  isActive, y eso vive en prisma/schema.prisma, que es de los fundadores.",
+   "5 CONFIRMADO Y NO ARREGLADO: exportProductsCsv sigue con select sin `cost`."
+  ]
+ },
+ {
+  "donde": "src/core/http/publicNotFound.ts:70",
+  "lineaMarca": 71,
+  "sha": "58d6d136d34274782f20c3ed1cebcdb5902a902b",
+  "autor": "Luis",
+  "fecha": "2026-07-30",
+  "asunto": "SCRUM-206: sin huella no salen bytes -- un solo porton para los cuatro caminos",
+  "coautor": true,
+  "fundEnMsg": [
+   "Publico: 409 con el copy aprobado, que no nombra sellado, huella ni VeriFactu (reglas 26/30)."
+  ]
+ },
+ {
+  "donde": "src/modules/invoicing/domain/lineasFacturables.ts:42",
+  "lineaMarca": 44,
+  "sha": "acc28cc9ae81553500ff3461b4486f3821024733",
+  "autor": "Luis",
+  "fecha": "2026-08-03",
+  "asunto": "feat(microcopy): textos oficiales sin lineas + el copy llega a la pantalla (SCRUM-264)",
+  "coautor": true,
+  "fundEnMsg": [
+   "Microcopy aprobado por el fundador el 3-ago-2026 (regla 30). El del pro adopta",
+   "   \"factura_sin_lineas\" en rojo bajo la firma que acababa de dibujar. El copy",
+   "   viajaba en `message` y nadie lo leia: aprobar el texto no lo arreglaba. Es"
+  ]
+ },
+ {
+  "donde": "src/modules/invoicing/domain/lineasFacturables.ts:58",
+  "lineaMarca": 60,
+  "sha": "acc28cc9ae81553500ff3461b4486f3821024733",
+  "autor": "Luis",
+  "fecha": "2026-08-03",
+  "asunto": "feat(microcopy): textos oficiales sin lineas + el copy llega a la pantalla (SCRUM-264)",
+  "coautor": true,
+  "fundEnMsg": [
+   "Microcopy aprobado por el fundador el 3-ago-2026 (regla 30). El del pro adopta",
+   "   \"factura_sin_lineas\" en rojo bajo la firma que acababa de dibujar. El copy",
+   "   viajaba en `message` y nadie lo leia: aprobar el texto no lo arreglaba. Es"
+  ]
+ },
+ {
+  "donde": "src/modules/invoicing/domain/portonDocumento.ts:46",
+  "lineaMarca": 47,
+  "sha": "58d6d136d34274782f20c3ed1cebcdb5902a902b",
+  "autor": "Luis",
+  "fecha": "2026-07-30",
+  "asunto": "SCRUM-206: sin huella no salen bytes -- un solo porton para los cuatro caminos",
+  "coautor": true,
+  "fundEnMsg": [
+   "Publico: 409 con el copy aprobado, que no nombra sellado, huella ni VeriFactu (reglas 26/30)."
+  ]
+ },
+ {
+  "donde": "src/modules/jobs/domain/albaranFirmante.ts:1",
+  "lineaMarca": 28,
+  "sha": "2b6c4ab625d10fa1abeaeabb8ed4be6cab02186b",
+  "autor": "Javier Pereira Fernández",
+  "fecha": "2026-08-05",
+  "asunto": "copy(SCRUM-300): microcopy APROBADA, y «representante» fuera del vocabulario",
+  "coautor": true,
+  "fundEnMsg": [
+   "copy(SCRUM-300): microcopy APROBADA, y «representante» fuera del vocabulario",
+   "Los seis textos que el fundador aprobo el 6-ago-2026, literales, y el rotulo",
+   "«¿En calidad de que firma?».",
+   "verificar eso: le hariamos afirmar mas de lo que sostiene, con nuestro sello encima.",
+   "cinco) y «en nombre del cliente» describe el hecho observado sin afirmar la figura.",
+   "(exigirNombreFirmante) para las DOS rutas que firman. «Otro» exige su texto, y el"
+  ]
+ },
+ {
+  "donde": "src/modules/jobs/domain/albaranFirmante.ts:87",
+  "lineaMarca": 90,
+  "sha": "3897b13a0026e830957179c6891f3ee37d2000d6",
+  "autor": "Javier Pereira Fernández",
+  "fecha": "2026-08-06",
+  "asunto": "copy(SCRUM-300): la aprobacion dice DONDE consta, y el id derogado queda anotado",
+  "coautor": true,
+  "fundEnMsg": [
+   "copy(SCRUM-300): la aprobacion dice DONDE consta, y el id derogado queda anotado",
+   "SCRUM-387 paro esta rama con razon: la marca decia «APROBADAS por el fundador el",
+   "6-ago-2026» sin decir donde constaba. Ahora lleva la referencia exacta -- aprobadas por el",
+   "asesor y validadas por el fundador, y consta en SCRUM-300, comentario «Microcopy de",
+   "FIRMADO POR — FIRMADA».",
+   "No es formalismo: en ESTE ticket ya paso una vez. La rama `scrum-300-firmado-por` traia"
+  ]
+ },
+ {
+  "donde": "src/modules/jobs/domain/albaranFirmante.ts:126",
+  "lineaMarca": 132,
+  "sha": "642be0e3c556b630669e774258edec81d8c612dc",
+  "autor": "Javier Pereira Fernández",
+  "fecha": "2026-08-05",
+  "asunto": "feat(SCRUM-300): C5 fundido -- las dos ramas paralelas en una, y el v:2 con verificador",
+  "coautor": true,
+  "fundEnMsg": [
+   "Funde `scrum-300-campos-albaran` (A) y `scrum-300-firmado-por` (B) segun los diez",
+   "  · Los seis textos de la microcopy NO EXISTEN: el comentario del asesor los remite",
+   "    [PENDIENTE microcopy oficial] y se retira la afirmacion falsa de \"aprobado tal"
+  ]
+ },
+ {
+  "donde": "src/modules/jobs/domain/albaranWhatsApp.service.ts:142",
+  "lineaMarca": 154,
+  "sha": "1ee4b275704b49d20c186d6737a6a22a71e7ae4b",
+  "autor": "Luis",
+  "fecha": "2026-07-27",
+  "asunto": "feat(SCRUM-62): el albaran \"para firmar\" deja de pagar plantilla con la ventana abierta",
+  "coautor": true,
+  "fundEnMsg": [
+   "feat(SCRUM-62): el albaran \"para firmar\" deja de pagar plantilla con la ventana abierta",
+   "QUE CAMBIA. sendAlbaranParaFirmarWhatsApp mandaba SIEMPRE plantilla (~0,023 EUR",
+   "TEXTO K1 OFICIAL, aprobado por el fundador (regla 30, 27-jul-2026):",
+   "   📄 Albarán {numero}\"   [boton] Ver y firmar",
+   "plantilla ya aprobada en Meta, sin anadir informacion que la plantilla no diga.",
+   "FUERA DE ALCANCE, a proposito: el envio del albaran FIRMADO (documento/PDF)."
+  ]
+ },
+ {
+  "donde": "src/modules/maintenance/domain/maintenance.service.ts:26",
+  "lineaMarca": 28,
+  "sha": "64ed1394b806284d1e63253c4d60d521a601b41e",
+  "autor": "Javier Pereira Fernández",
+  "fecha": "2026-08-07",
+  "asunto": "fix(mantenimiento): el plan en opt-out ya no se para en silencio (SCRUM-394)",
+  "coautor": true,
+  "fundEnMsg": []
+ },
+ {
+  "donde": "src/modules/products/app/routes/products.routes.ts:282",
+  "lineaMarca": 292,
+  "sha": "3c34b8afc0adb1740cfeab24928b42336de5a28a",
+  "autor": "Javier Pereira Fernández",
+  "fecha": "2026-08-24",
+  "asunto": "SCRUM-614: el catalogo se cierra a escritura - guard INVERTIDO, no borrado",
+  "coautor": true,
+  "fundEnMsg": [
+   "  se toca: coste y margen los ven todos los roles (decision del fundador).",
+   "  isActive, y eso vive en prisma/schema.prisma, que es de los fundadores.",
+   "5 CONFIRMADO Y NO ARREGLADO: exportProductsCsv sigue con select sin `cost`."
+  ]
+ },
+ {
+  "donde": "src/modules/reports/domain/desgloseEmpleado.ts:48",
+  "lineaMarca": 48,
+  "sha": "ed96e935763147f908503465f7d58161ddc716cb",
+  "autor": "Luis",
+  "fecha": "2026-07-29",
+  "asunto": "SCRUM-228: microcopy oficial aprobado -- fuera la marca de pendiente",
+  "coautor": true,
+  "fundEnMsg": [
+   "SCRUM-228: microcopy oficial aprobado -- fuera la marca de pendiente",
+   "\"Sin asignar\" y los textos del bloque los aprueba el fundador el 29-jul-2026 (regla 30)."
+  ]
+ },
+ {
+  "donde": "src/modules/system/merchantAdmin.ts:98",
+  "lineaMarca": 98,
+  "sha": "0c231f099dfaffd46adb8f4d574c3f0cb08fa66e",
+  "autor": "Luis",
+  "fecha": "2026-08-05",
+  "asunto": "copy(series): microcopy aprobada, y la variante se MIDIO en vez de elegirse",
+  "coautor": true,
+  "fundEnMsg": [
+   "copy(series): microcopy aprobada, y la variante se MIDIO en vez de elegirse",
+   "PASO 0. Se retiran las dos marcas [PENDIENTE microcopy] con los textos aprobados por el fundador",
+   "Bloqueo de serie: la aprobada traia DOS variantes y cual aplica dependia de un hecho del",
+   "sustituye por dos: uno que fija los textos aprobados literales y otro que vigila el HECHO del que"
+  ]
+ },
+ {
+  "donde": "src/modules/whatsappBot/domain/botFlow.service.ts:129",
+  "lineaMarca": 129,
+  "sha": "46962e69204ebafff7b0525bf809dff139c90bd0",
+  "autor": "Luis",
+  "fecha": "2026-07-05",
+  "asunto": "feat(bot): copy v2 - claro, calido y honesto (cambio de master K1 aprobado)",
+  "coautor": true,
+  "fundEnMsg": [
+   "feat(bot): copy v2 - claro, calido y honesto (cambio de master K1 aprobado)",
+   "Revision integral de los textos del bot pedida por el fundador tras el",
+   "- Confirmacion de solicitud, listas de presupuestos/pagos con negritas,",
+   "  \"Ver y firmar\" / \"Pagar seguro\" + metodos disponibles.",
+   "del bot son oficiales del master; cambio aprobado por el fundador 5-jul)."
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:215",
+  "lineaMarca": 215,
+  "sha": "f5bfcd3c7d6418efdb9bcefd5270c2e9a8b088dd",
+  "autor": "Javier Pereira Fernández",
+  "fecha": "2026-08-05",
+  "asunto": "copy(SCRUM-302): rotulo «Duplicar» FIRMADO + el agujero de metodo del rojo que no se inyecto",
+  "coautor": true,
+  "fundEnMsg": [
+   "copy(SCRUM-302): rotulo «Duplicar» FIRMADO + el agujero de metodo del rojo que no se inyecto",
+   "MICROCOPY APROBADA, una ranura: «Duplicar», tal cual. Es la palabra del ticket, la que"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:221",
+  "lineaMarca": 221,
+  "sha": "2ab294f88ff4fd7855500f631a09e05f629d7a75",
+  "autor": "Luis",
+  "fecha": "2026-08-06",
+  "asunto": "fix(albaran): «Descargar PDF» — y seis rotulos que se habian perdido camino de main",
+  "coautor": true,
+  "fundEnMsg": [
+   "El encargo era una palabra: btnPdf «PDF» -> «Descargar PDF», aprobado. Verbo,",
+   "estaba en main. Perdidos: btnEmitir, btnEnviarFirmar, btnPdf, btnWhatsApp,",
+   "perdido un rotulo» en «esta accion todavia no tiene rotulo aprobado», que es una"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:234",
+  "lineaMarca": 234,
+  "sha": "34a494fc8fab70c332162fb591b64ebbcf4eeeb0",
+  "autor": "Javier Pereira Fernández",
+  "fecha": "2026-08-05",
+  "asunto": "copy(SCRUM-302): la linea del aterrizaje del duplicado, FIRMADA",
+  "coautor": true,
+  "fundEnMsg": [
+   "copy(SCRUM-302): la linea del aterrizaje del duplicado, FIRMADA",
+   "\"Duplicado creado. Trae las lineas y las notas del original; la firma y las fotos no",
+   "Y QUEDA DICHO QUE ES UN PARCHE, NO LA SOLUCION: la firma no se ve NUNCA en esta",
+   "FIRMADO POR, y es SCRUM-300 (C5). Que nadie lea esto dentro de dos meses y crea que",
+   "Retirados los marcadores de las dos ranuras firmadas."
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:332",
+  "lineaMarca": 335,
+  "sha": "1efdd32c37afbf862798af9f48de8ed1c48c761b",
+  "autor": "Javier Pereira Fernández",
+  "fecha": "2026-08-05",
+  "asunto": "fix(SCRUM-379): la recarga se espera y su fallo se dice -- el silencio hacia repetir la accion",
+  "coautor": true,
+  "fundEnMsg": [
+   "  · firmar  -> 409 y no sobrescribe la firma, pero repetir hace que el CLIENTE FIRME DOS VECES",
+   "               delante del pro para acabar leyendo «ya esta firmado». Inocuo en datos no es inocuo."
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/exportView.js:363",
+  "lineaMarca": 363,
+  "sha": "b949b9a5327412e4e60e3bd205c2cb08a1dbab7b",
+  "autor": "Javier Pereira Fernández",
+  "fecha": "2026-09-04",
+  "asunto": "SCRUM-714: cada numero con su unidad — y el ticket me mordio mientras lo cerraba",
+  "coautor": true,
+  "fundEnMsg": [
+   "panel · 56 marcas de «aprobado» · 13 citas. Siete poblaciones, cero errores.",
+   "LA VICTIMA, cerrada: `exportView.js` declaraba «sin aprobar» un texto que el",
+   "fundador firmo el 17-ago, y encima citaba OTRO que no existe en el arbol. Quien"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/jobDetailView.js:401",
+  "lineaMarca": 405,
+  "sha": "ca98395692d8a2c679fc1ad31d6802bc0d53559b",
+  "autor": "Luis",
+  "fecha": "2026-08-13",
+  "asunto": "chore(SCRUM-480): renormalizar a LF diez ficheros — SOLO fin de linea",
+  "coautor": true,
+  "fundEnMsg": [
+   "firma de una doble conversion. El filtro de git NO tiene punto fijo sobre"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/jobDetailView.js:484",
+  "lineaMarca": 484,
+  "sha": "ca98395692d8a2c679fc1ad31d6802bc0d53559b",
+  "autor": "Luis",
+  "fecha": "2026-08-13",
+  "asunto": "chore(SCRUM-480): renormalizar a LF diez ficheros — SOLO fin de linea",
+  "coautor": true,
+  "fundEnMsg": [
+   "firma de una doble conversion. El filtro de git NO tiene punto fijo sobre"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/jobsCierreTrabajo.js:37",
+  "lineaMarca": 37,
+  "sha": "ef29ad0510596324d59826c8016f66f27eb055d1",
+  "autor": "Javier Pereira Fernández",
+  "fecha": "2026-08-05",
+  "asunto": "SCRUM-344: cerrar un Trabajo con saldo pendiente AVISA de lo que mata",
+  "coautor": true,
+  "fundEnMsg": [
+   "SE AVISA, NO SE IMPIDE (decision del fundador): cerrar con saldo puede ser",
+   "confirmacion. No hay un texto que pueda avisar a quien no debe porque en ese",
+   "MICROCOPY APROBADA por el fundador (regla 30), cinco ranuras, fijadas caracter a"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/onboardingView.js:48",
+  "lineaMarca": 51,
+  "sha": "b330922b6addec70461520a1de26b4770d7d87ab",
+  "autor": "Luis",
+  "fecha": "2026-08-10",
+  "asunto": "feat(onboarding): microcopy aprobada del catalogo que no carga (SCRUM-338)",
+  "coautor": false,
+  "fundEnMsg": [
+   "feat(onboarding): microcopy aprobada del catalogo que no carga (SCRUM-338)"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/productsView.js:1178",
+  "lineaMarca": 1178,
+  "sha": "ca98395692d8a2c679fc1ad31d6802bc0d53559b",
+  "autor": "Luis",
+  "fecha": "2026-08-13",
+  "asunto": "chore(SCRUM-480): renormalizar a LF diez ficheros — SOLO fin de linea",
+  "coautor": true,
+  "fundEnMsg": [
+   "firma de una doble conversion. El filtro de git NO tiene punto fijo sobre"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/productsView.js:1214",
+  "lineaMarca": 1214,
+  "sha": "ca98395692d8a2c679fc1ad31d6802bc0d53559b",
+  "autor": "Luis",
+  "fecha": "2026-08-13",
+  "asunto": "chore(SCRUM-480): renormalizar a LF diez ficheros — SOLO fin de linea",
+  "coautor": true,
+  "fundEnMsg": [
+   "firma de una doble conversion. El filtro de git NO tiene punto fijo sobre"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/quotesView.js:405",
+  "lineaMarca": 426,
+  "sha": "df4bc5d5711a3f0b2efd1c43bcc848a235ca1133",
+  "autor": "Luis",
+  "fecha": "2026-08-19",
+  "asunto": "microcopy tanda B: nueve pantallas aplicadas — 41 textos aprobados",
+  "coautor": false,
+  "fundEnMsg": [
+   "microcopy tanda B: nueve pantallas aplicadas — 41 textos aprobados",
+   "quedo sin aprobar y ahora lo esta).",
+   "Copiados LITERALES del fichero aprobado. El aplicador comprueba la linea vieja ANTES de",
+   "aprobado, asi que un renombre sigue cayendo: scrum402 (cada bajada anotada, entradas",
+   "su cliente es ASESORARLE—. Ese motivo sigue vivo, asi que ahora prohibe que el campo",
+   "ACONSEJE («te conviene», «deberias»...). Lo aprobado solo PREGUNTA."
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/settingsView.js:3",
+  "lineaMarca": 5,
+  "sha": "683c689870a9ec5819e2b6a633773166fb561884",
+  "autor": "Luis",
+  "fecha": "2026-08-12",
+  "asunto": "SCRUM-294 (fase C): el campo, la casilla y la persistencia — ticket cerrado",
+  "coautor": true,
+  "fundEnMsg": [
+   "Diff confirmado por el fundador y aplicado TAL CUAL:",
+   "en model Merchant, tras asesorPrograma, sin @default. `prisma validate` rc=0",
+   "MICROCOPY con marcador (regla 30): explicar si conviene el RECC es asesorar,",
+   "y eso lo dictamina el asesor. El censo de SCRUM-402 sube de 1 a 5 A"
+  ]
+ },
+ {
+  "donde": "tests/scrum1041-facturas-emitidas-sin-marcador.test.mjs:1",
+  "lineaMarca": 3,
+  "sha": "80b60238e51dd5e7dc64a2150fe0b7a3975246d1",
+  "autor": "Luis",
+  "fecha": "2026-09-22",
+  "asunto": "SCRUM-1041: quitar el marcador de los 4 textos de \"Facturas emitidas\" (bloque A)",
+  "coautor": false,
+  "fundEnMsg": [
+   "[PENDIENTE microcopy oficial] / [PENDIENTE] por el texto firmado (com. 16306 de",
+   "SCRUM-1041, delegacion del fundador en microcopy no legal): la linea descriptiva,",
+   "avisoAjenas, avisoSinNumero, trazaNoSellado) NO se tocan: docs/legal/PREGUNTAS_ASESOR.md",
+   "parrafo 21 los registra como dictamen fiscal, separados por el fundador el 19-ago-2026 de",
+   "los 16 que si aprobo ese dia. No son microcopy de producto y esperan al asesor, no al",
+   "  con el regex del trinquete. Arreglarlo de verdad pide texto firmado (regla 30) y"
+  ]
+ },
+ {
+  "donde": "tests/scrum151-motivo-sin-tramo.test.mjs:1",
+  "lineaMarca": 20,
+  "sha": "36e4ac16f765dba7a143f72122b7bc7bbde49d2e",
+  "autor": "Luis",
+  "fecha": "2026-07-27",
+  "asunto": "fix(SCRUM-151): el rechazo se explica y con codigo propio + cambio de N5 aprobado",
+  "coautor": true,
+  "fundEnMsg": [
+   "fix(SCRUM-151): el rechazo se explica y con codigo propio + cambio de N5 aprobado",
+   "DECISION DEL FUNDADOR (27-jul-2026): un Trabajo con condiciones",
+   "CAMBIO DE N5 (regla 30), aprobado por el fundador con su motivo: \"el texto",
+   "dos causas, y con la frase que el fundador declaro falsa. Ademas su `message` NO"
+  ]
+ },
+ {
+  "donde": "tests/scrum1609-fecha-de-cobro-de-una-en-una.test.mjs:1",
+  "lineaMarca": 5,
+  "sha": "74fea43199afcb43b7ca99e24744aa03fe796cf5",
+  "autor": "Javier Pereira Fernández",
+  "fecha": "2026-10-26",
+  "asunto": "[carril J1] SCRUM-1609: «marcar pagada» de una en una acepta la fecha de cobro declarada, como el lote",
+  "coautor": true,
+  "fundEnMsg": [
+   "la sesión, igual que `bulk-paid` (SCRUM-397, criterio firmado el 10-ago-2026). Sin `paidAt` en el"
+  ]
+ },
+ {
+  "donde": "tests/scrum284-configuracion-submenus.test.mjs:131",
+  "lineaMarca": 136,
+  "sha": "33289c5ee26bd5c26b16264d743eaa7c2ca8ae0e",
+  "autor": "Luis",
+  "fecha": "2026-08-12",
+  "asunto": "SCRUM-483 (A1, guards): diez pasan a nueve — INCOMPLETO, faltan 3",
+  "coautor": true,
+  "fundEnMsg": [
+   "APROBACIÓN», que es la fuente soberana.",
+   "  factual, no un cambio de número — y toca la superficie que el fundador"
+  ]
+ },
+ {
+  "donde": "tests/scrum300-firmante-ids-y-microcopy.test.mjs:1",
+  "lineaMarca": 9,
+  "sha": "17f9fe8a982c0c97e3603fd13d7a8b30784bd5c7",
+  "autor": "Javier Pereira Fernández",
+  "fecha": "2026-08-05",
+  "asunto": "copy(SCRUM-300): los tres textos de error, APROBADOS -- y el matiz del precargado",
+  "coautor": true,
+  "fundEnMsg": [
+   "copy(SCRUM-300): los tres textos de error, APROBADOS -- y el matiz del precargado",
+   "Aprobados por el fundador el 6-ago-2026, literales y con guard propio:",
+   "  · «Falta el nombre de quien firma.»",
+   "  · «Si eliges «Otro», escribe en calidad de qué firma.»",
+   "Los dos ultimos venian de la rama scrum-300-firmado-por como literales que nadie",
+   "habia aprobado -- la misma clase de texto que las cinco ranuras retiradas. El"
+  ]
+ },
+ {
+  "donde": "tests/scrum404-trazo-no-se-pierde.test.mjs:106",
+  "lineaMarca": 107,
+  "sha": "f75f8a075e3b4035388b0be9820682c1007e123a",
+  "autor": "Javier Pereira Fernández",
+  "fecha": "2026-08-07",
+  "asunto": "fix(SCRUM-404): escritos los dos microcopys aprobados, y el CI vuelve a verde",
+  "coautor": true,
+  "fundEnMsg": [
+   "fix(SCRUM-404): escritos los dos microcopys aprobados, y el CI vuelve a verde",
+   "un profesional. Si el texto ya esta aprobado, escribelo». Mis cuatro marcadores",
+   "fundador aprobo.",
+   " - sin conexion → «No se ha podido conectar. La firma sigue en pantalla:",
+   "   cobertura» afirmaba una causa que NO sabemos -- puede ser un portal cautivo o",
+   " - trazo no capturado → «No se ha recogido el trazo. Pidele que firme otra vez"
+  ]
+ },
+ {
+  "donde": "tests/scrum411-exports-inalcanzables.test.mjs:68",
+  "lineaMarca": 68,
+  "sha": "dd0862f5a0761033a390bfcf027ea1c43c951eb2",
+  "autor": "Luis",
+  "fecha": "2026-08-12",
+  "asunto": "feat(SCRUM-294 f2): con criterio de caja, el IVA devenga cuando se COBRA",
+  "coautor": true,
+  "fundEnMsg": []
+ },
+ {
+  "donde": "tests/scrum557-alcance-por-identidad.test.mjs:1",
+  "lineaMarca": 13,
+  "sha": "5db4a518570767e35004e0d9820ea27e24364424",
+  "autor": "Javier Pereira Fernández",
+  "fecha": "2026-08-20",
+  "asunto": "SCRUM-557: el alcance del censo sale de la IDENTIDAD de las secciones, no de su marcador",
+  "coautor": false,
+  "fundEnMsg": [
+   "defecto de fondo intacto, esperando a la aprobacion.",
+   "EL DEFECTO, ENUNCIADO: `data-microcopy=\"PENDIENTE_FUNDADOR\"` hacia DOS trabajos a la vez —",
+   "marcar que un texto no esta aprobado, y definir el alcance del censo. Con eso, **el dia que se",
+   "aprueba un texto y se retira el marcador, ese texto SALE DEL CENSO**: aprobar apagaba la",
+   "vigilancia sobre lo aprobado, justo cuando pasa a ser publicable. No es hipotetico: registrar",
+   "la aprobacion del 20-ago consiste en retirar los 17 marcadores de #heroe-f4 y #gremios, y con"
+  ]
+ },
+ {
+  "donde": "tests/scrum574-mismo-cliente-tras-migracion.test.mjs:1",
+  "lineaMarca": 10,
+  "sha": "b47e8341e696fee3f46cf6ac95335356baf99d28",
+  "autor": "Javier Pereira Fernández",
+  "fecha": "2026-08-24",
+  "asunto": "SCRUM-574: el switch Empresa/Persona, en los dos formularios, con su columna",
+  "coautor": true,
+  "fundEnMsg": [
+   "Autorizacion puntual del fundador (24-ago-2026) para aplicar yo la migracion. NO es",
+   "regla nueva: prisma/schema.prisma sigue siendo de los fundadores y cualquier otro"
+  ]
+ },
+ {
+  "donde": "tests/scrum627b-censo-declara-reimplementaciones.test.mjs:1",
+  "lineaMarca": 9,
+  "sha": "a0857c6e562ffdf2432eefdde19c86496aaf1f20",
+  "autor": "Javier Pereira Fernández",
+  "fecha": "2026-09-01",
+  "asunto": "SCRUM-627 (opcion A): el censo hermano, con los diez veredictos escritos",
+  "coautor": true,
+  "fundEnMsg": []
+ },
+ {
+  "donde": "scripts/censo-anclas-bloque-f.mjs:67",
+  "lineaMarca": 76,
+  "sha": "5db4a518570767e35004e0d9820ea27e24364424",
+  "autor": "Javier Pereira Fernández",
+  "fecha": "2026-08-20",
+  "asunto": "SCRUM-557: el alcance del censo sale de la IDENTIDAD de las secciones, no de su marcador",
+  "coautor": false,
+  "fundEnMsg": [
+   "defecto de fondo intacto, esperando a la aprobacion.",
+   "EL DEFECTO, ENUNCIADO: `data-microcopy=\"PENDIENTE_FUNDADOR\"` hacia DOS trabajos a la vez —",
+   "marcar que un texto no esta aprobado, y definir el alcance del censo. Con eso, **el dia que se",
+   "aprueba un texto y se retira el marcador, ese texto SALE DEL CENSO**: aprobar apagaba la",
+   "vigilancia sobre lo aprobado, justo cuando pasa a ser publicable. No es hipotetico: registrar",
+   "la aprobacion del 20-ago consiste en retirar los 17 marcadores de #heroe-f4 y #gremios, y con"
+  ]
+ },
+ {
+  "donde": "scripts/voice-eval.mjs:1",
+  "lineaMarca": 2,
+  "sha": "d77778f0fae5e7f078216a22d66f85aab8fd0e22",
+  "autor": "Luis",
+  "fecha": "2026-07-05",
+  "asunto": "A7.2 (parte 1): VZ-2 pipe dictado→lineas — prompt coloquial + eval con gate duro",
+  "coautor": true,
+  "fundEnMsg": [
+   "- SUGGEST_SYSTEM ampliado con el bloque de DICTADO aprobado: muletillas fuera,",
+   "- scripts/voice-eval.mjs: las 10 transcripciones fijas aprobadas (fundador,"
+  ]
+ }
+]
