@@ -6,6 +6,43 @@
 
 **🔵 §2 RECONTADO a las 18:30Z-18:55Z del 29-oct** (`Date:` de GitHub; S0, SCRUM-1563j) · `origin/main` = `53d9834d9`. **Población:** las 66 filas numeradas de §2 y sus **74** tickets, en UNA consulta de Jira (`fields: key, status`) filtrada a «Finalizada **o** tocado desde las 06:00Z»: **21** tickets. ① Los **11 Finalizada** (534, 1016, 1101, 1110, 1252, 1296, 1404, 1507, 1536, 1576, 1594) **ya estaban reflejados** en su fila o en §8: ninguno mueve nada. ② De los **10 abiertos tocados hoy**, se leyó el último comentario de los que la fila daba por «no leído» (1518, 1622, 1630, 1631) y se miraron en GitHub sus PR. **Mueve:** **2.14 pasa a §8** (sus dos piezas MERGEADAS: #2935 y #2958) · **6.16 pasa a «movible hoy»** (el fundador delegó el texto, c.21194) · **3.2 y 6.4 pierden FUNDADOR** (decisión del orquestador; `DECISIONES-DEL-FUNDADOR.md` parte A) · 2.4, 2.13 y 6.17 con su último comentario. ⚠️ **No leído:** el último comentario de los 53 tickets abiertos que NO se tocaron desde las 06:00Z (su fila sigue con la fuente que cita). **PR #2998 (2.9 b) sigue ABIERTO a las 18:4xZ.**
 
+## 🔴🔴 11-nov-2026 · PILOTO-1: la foto de la semana — leer esto PRIMERO
+
+**Medido el 11-nov-2026 a las 18:3xZ-18:50Z** (`Date:` de GitHub) por S0 (SCRUM-1563q) · `origin/main` = `4d8043854` · **producción (`/version`) = `4d8043854`, el mismo, leído a las 18:44:48Z**. Jira leído en UNA consulta (`fields: key, summary, status, labels`) a las 18:3xZ: los tickets creados desde el 10-nov + 1656, 1657, 1678, 1685, 1686.
+
+**Objetivo de la semana (fundador, 11-nov):** que PILOTO-1 use trabajos, partes y albaranes de verdad antes del viernes. Factura y cobro siguen cerrados para él (regla 24) hasta SIF-1.
+
+🔴 **Qué se recontó hoy y qué NO:** sólo esta foto. **§1-§8 NO se han re-medido** y siguen con su fecha. Desde la mañana (`8a1acbac5`) entraron **34 merges; 24 tocan `src/` o `public/`, ninguno `prisma/`** (instrumento de 1563p).
+
+| bloque | estado medido | fuente |
+|---|---|---|
+| **Alta del piloto** | ✅ **cerrada**: la puerta pública solo deja entrar a los correos de una lista; formulario con provincia y domicilio. **Falta UN paso del fundador:** poner el correo del piloto en `REGISTRATION_INVITED_EMAILS` (Railway). **No medido** si ya está puesto. | SCRUM-1685 c.21519 (Finalizada) · #3055, #3058, #3073, #3056 |
+| **Plazas del equipo** | ✅ el aviso sale antes del formulario (#3071, visto en prod). **Falta la parte del fundador:** el plan Equipo en la cuenta del piloto (UPDATE en Railway, P1-1 del plan). Sin él, 1 plaza: ningún operario. | SCRUM-1678 c.21518, c.21520 (Acción del fundador) |
+| **Esquema M1** (`albaranes.parte_id`) | ✅ aplicado y comprobado en **staging y producción** por el fundador. 🟠 **Falta la base dev del equipo J**; corte: 12-nov a mediodía, y si no, la aplica el fundador. | SCRUM-1686 c.21531 |
+| **Máster M2 + M1b** («la visita ES su parte») | ✅ en `main` | #3066 (`073c67ade`) |
+| **Textos N1-N13** | ✅ firmados enteros («si firmo») | SCRUM-1686 c.21471 |
+| **Flujo nuevo: X1-X4** (1690-1693) | ✅ los cuatro Finalizada | Jira |
+| **T3 · T5 · T6 · T8** (1696, 1698, 1699, 1701) | ✅ Finalizada | Jira |
+| **T1** (1694, sección Partes) · **T4** (1697, «Visita n de m») · **T7** (1700, «Abrir parte») | 🟠 **PR abiertos**: #3086 · #3085 · #3069 | GitHub |
+| **T2** (1695, «Hacer albarán con este parte») | ⏸ se puede preparar; **su PR no se mergea** hasta que la base dev tenga M1 | SCRUM-1686 c.21531 |
+| **El día del operario** (encargo ④, S4) | 🟠 PR #3087 abierto | SCRUM-1686 c.21524 |
+| **P0 del recorrido del 10-nov** | 🟢 **en main con el ticket abierto:** 1671 (#3074, #3083) · 1674 (#3081) · 1676 (#3050) · 1677 (#3049): se cierran cuando su dueño los verifique. 🔴 **sin rama:** 1661, 1662, 1670, 1673 | `git log` + `ls-remote` |
+
+**🔴 Lo que vio el fundador haciendo de operario (11-nov por la tarde):**
+- **SCRUM-1706 · P0** · el operario ve su trabajo en la lista y, al abrirlo, sale «No pudimos cargar el trabajo». **El flujo del operario se para en el paso 1.** Sin rama ni comentarios a las 18:4xZ.
+- **SCRUM-1707 · P1** · el operario ve el dinero del negocio en su lista de Trabajos («POR COBRAR», importes y pestañas de cobro). Sin rama.
+
+**Lo que falta para que el piloto arranque, EXACTAMENTE** (medido a las 18:4xZ):
+1. **Fundador:** el correo del piloto en `REGISTRATION_INVITED_EMAILS` (Railway).
+2. **El piloto:** se da de alta él solo en `yaqu.app/register.html`.
+3. **Fundador:** el plan Equipo en esa cuenta (P1-1 / 1678 b). Va después del paso 2, porque la cuenta tiene que existir.
+4. **S1:** SCRUM-1706 arreglado y comprobado con la cuenta del operario QA en yaqu.app.
+5. **El piloto:** invita a sus operarios desde Equipo (el enlace llega por correo).
+
+**No bloquea el arranque, en MI LECTURA (S0):** 1707 (lo decide el fundador), T1/T4/T7 (mejoran el flujo, pero sin ellos se puede trabajar) y T2 (hasta que entre, el albarán se hace como hoy, desde el trabajo). **No medido:** si 1662 (lo que hay que hacer acaba en «Notas internas», y el operario no lo ve) sigue pasando después de #3081 (1674). Si sigue, **bloquea** igual que 1706.
+
+---
+
 ## 🔴 3-nov-2026 · ¿EN PRODUCCIÓN o EN UNA RAMA SIN MERGEAR? — leer esto antes que §2
 
 **Escrito el 3-nov-2026 ~08:00Z** por S0 (SCRUM-1563o) con lo **medido en el tramo 1563n** de `docs/master/SCRUM-1563.md` (07:41Z-07:50Z, `Date:` de GitHub) · `origin/main` = `70eefc40c` · **producción (`/version`) = el mismo `70eefc40c`, leído a las 07:46Z**.
