@@ -53,10 +53,23 @@ const JOB_PATRON_LEY = { primarias: 1, secundarias: 2 };
 // ⚠️ SALEN DOS FILAS, NO TRES: la ley permite hasta DOS secundarias y la medición da UNA. El hueco
 // se queda vacío. Rellenarlo habría exigido promover un control que no es una acción o invadir G4,
 // y las dos cosas son peores que una cabecera con una secundaria.
+//
+// ── SCRUM-1680 (PILOTO-1) · TERMINAR Y CERRAR, TAMBIÉN DESDE LA FICHA ─────────────────────────
+// Medido en yaqu.app el 10-nov-2026 (SCRUM-1658): «Marcar terminado» y «Cerrar trabajo» sólo
+// existían en el «⋯» de la LISTA. Quien estaba en la ficha no podía acabar el trabajo. Las dos
+// actúan sobre el Trabajo entero, así que entran por la regla de arriba, con los literales y la
+// petición de la lista (`jobsView.js`, su «⋯»):
+//   · `btnTerminar` → SECUNDARIA: la segunda de la ley, que estaba libre. Reversible y del día a día.
+//   · `btnCerrar`   → «⋯»: es el único acto irreversible de la FSM, y SCRUM-344 lo deja fuera de la
+//                     vista; al pulsarlo abre el modal con su explicación ENTERA (`jobCierreSection`).
+// La primaria NO cambia: la escalera (`jobNextAction`) no se toca —un `kind` nuevo obligaría a
+// tocar también la lista (guard de SCRUM-823)—.
 const JOB_ACTION_REGISTRY = [
-  // id           destino        acciones sobre el Trabajo entero
-  { id: 'cta',      destino: 'primaria', fuente: 'jobNextAction' },
-  { id: 'btnGasto', destino: 'secundaria' },
+  // id              destino        acciones sobre el Trabajo entero
+  { id: 'cta',         destino: 'primaria', fuente: 'jobNextAction' },
+  { id: 'btnGasto',    destino: 'secundaria' },
+  { id: 'btnTerminar', destino: 'secundaria' },
+  { id: 'btnCerrar',   destino: 'overflow' },
 ];
 
 // LOS BLOQUES DEL RAIL DERECHO — **estructura, no contenido**.
