@@ -98,3 +98,60 @@ SCRUM-1669 c.21486 (`emisionAt: null` + la raya que ya existe) y el orquestador 
 - La columna del importe (aceptación 3) es de S2: el campo es `total`.
 - Verlo en yaqu.app después del merge: en `GET /admin/albaranes`, AB260003 con `emisionAt: null`, y la
   lista enseñando «—» en «Emisión» para esa fila, a 390 y a 1280 px.
+
+---
+
+## Mitad S2 · tramo 2 — la banda 900-1023 y el guard de SCRUM-1559k re-anclado (11-nov-2026, tarde)
+
+Rama `scrum-1669c-importe-en-la-lista` (con `origin/main` fusionado, que ya trae el tramo b de S1). Carril S2.
+
+A9: comprobación → `tests/scrum1559k-albaranes-769-899.test.mjs`
+
+**Skill UI:** cargada (`yaqu-premium-ui`, antes de tocar `styles.css`; el cambio no añade tokens, componentes ni textos: oculta una columna que ya existe en una banda más)
+
+**La decisión.** El tramo 1 de arriba dejó fuera, como pregunta, el desborde de 70 px a 929 que trae «Importe»
+(pregunta de S2 en SCRUM-1669 c.21494). Respuesta del orquestador, en su encargo al relevo de S2 (11-nov, tarde): «SÍ a su arreglo
+probado: con la columna «Importe», «Entrega» se oculta TAMBIÉN en la banda 900-1023 (deja el desborde en 0)»,
+y que el guard de SCRUM-1559k «se RE-ANCLA al diseño nuevo EN EL MISMO PR».
+
+**Por qué no es tocar un guard en rojo (regla 41).** El guard de 1559k fijaba el diseño de 1559k: «Entrega»
+oculta SÓLO en 769-899. Ese diseño cambia con una columna FIRMADA: «Importe», texto n.º 17 de SCRUM-1656
+c.21405, firma c.21408 ① («Entradas 1-23: aprobadas TAL CUAL están escritas en c.21405»). El guard no se afloja:
+sigue fijando lo mismo, con la banda nueva, y gana un aserto (el suelo y «Entrega» se acotan por separado).
+
+| | antes (1559k) | ahora |
+|---|---|---|
+| «Entrega» oculta (cabecera y `td.cell-date`) | 769-899 | **769-1023** |
+| suelo `.table-scroll .table--albaranes { min-width: 0 }` | 769-899 | 769-899 (sin cambio: desde 900 el carril pasa de 520) |
+| «Entrega» oculta fuera de su banda | prohibido | prohibido (aserto propio) |
+| suelo anulado fuera de 769-899 | prohibido | prohibido (aserto propio) |
+
+**Rojo y verde del guard** (espejo de `HEAD` en un temporal FUERA del árbol, cruzando guard × CSS; el 4.º test,
+el del banco, falla en el espejo por falta de `dist`, y en el worktree pasa: 4/4):
+
+| guard | CSS | los 3 asertos de reglas |
+|---|---|---|
+| viejo | viejo | 3 ✔ |
+| viejo | nuevo | **2 ✖** (el viejo ve «Entrega» oculta fuera de 769-899) |
+| nuevo | viejo | **2 ✖** (no la ve oculta en 769-1023) |
+| nuevo | nuevo | 3 ✔ |
+
+Bancos de la lista (301, 304, 719, 831, 1450, 1559g/i/k, 1659, 713c, 1669c), antes de fusionar main: 112 ✔ / 0 ✖.
+
+**Medido en yaqu.app** (cuenta QA, sólo GET, `sondas-s2/lista-1669.mjs local <rama> testigo` con
+`TESTIGO_CSS=c.21494`: el JS y el CSS servidos son los de la rama). Desborde DENTRO de `.table-scroll`; la
+página da 0 en todos:
+
+| ancho | tramo 1 (con «Importe») | ahora | columnas visibles |
+|---|---|---|---|
+| 390 | 0 | 0 | tarjeta |
+| 769 · 800 | 138 · 107 | 138 · 107 | Nº, Cliente, Trabajo, Importe, Estado, Acciones (sin cambio: banda de 1559k) |
+| 899 | — | 8 | ídem |
+| 900 · 905 | — | **7 · 2** | ídem |
+| 910 · 929 · 1000 · 1023 | 70 a 929 | **0** | ídem |
+| 1024 | 0 | 0 | + Entrega |
+| 1280 | 0 | 0 | + Emisión, Entrega |
+
+⚠️ **Declarado:** el «0» de la decisión vale desde 910. Entre 900 y 909 quedan 2-7 px de scroll dentro de su
+carril (el patrón del design system, el mismo que 769-899 ya tenía). No lo he estrujado más: sería tocar
+rellenos o columnas fuera de lo decidido.

@@ -11,8 +11,8 @@
 // ÚNICA celda con `cell-date` (si otra la llevara, la regla la escondería también).
 //
 // RE-ANCLADO por SCRUM-1669 (11-nov-2026). La columna «Importe» (texto firmado n.º 17, SCRUM-1656
-// c.21405, firma c.21408 ①) pide ~77 px más, y a 929 la tabla desbordaba 70. El orquestador decidió
-// (SCRUM-1669 c.21494) ocultar «Entrega» TAMBIÉN en 900-1023. No es aflojar el guard (regla 41): es que
+// c.21405, firma c.21408 ①) pide ~77 px más, y a 929 la tabla desbordaba 70. A la pregunta de SCRUM-1669
+// c.21494, el orquestador respondió que sí: ocultar «Entrega» TAMBIÉN en 900-1023. No es aflojar el guard (regla 41): es que
 // el diseño que fijaba CAMBIÓ con una columna firmada. Sigue fijando lo mismo con la banda nueva:
 // «Entrega» oculta en 769-1023 y en ningún otro sitio; el suelo anulado en 769-899 y en ningún otro.
 import test from 'node:test';
