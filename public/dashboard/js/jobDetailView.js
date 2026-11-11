@@ -166,8 +166,15 @@ function enModoJustificante() {
 // `weeklyDigest.service.ts` ya calla el «sin facturar» en este modo.
 const HUECOS_SOLO_SI_FACTURA = new Set(['sin-facturar', 'sin-facturar-nada', 'sin-cobrar']);
 
+// SCRUM-1680 (PILOTO-1) · un Trabajo CERRADO no pide «Hacer presupuesto»: se cerró sin él y ya no
+// se va a hacer. Medido en yaqu.app el 10-nov-2026 (captura `23-detalle-cerrado-390.png`).
+// «Enviar para firmar» del albarán NO se toca: cerrar no vuelve infirmable un albarán emitido
+// (decisión de producto, 11-nov-2026, docs/master/SCRUM-1680.md).
+const HUECOS_FUERA_SI_CERRADO = new Set(['sin-presupuesto']);
+
 function huecosVisibles(job) {
-  const huecos = huecosDeCobro(job);
+  let huecos = huecosDeCobro(job);
+  if (job && job.status === 'cerrado') huecos = huecos.filter((h) => !HUECOS_FUERA_SI_CERRADO.has(h.id));
   return enModoJustificante() ? huecos.filter((h) => !HUECOS_SOLO_SI_FACTURA.has(h.id)) : huecos;
 }
 
@@ -1058,6 +1065,51 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
       }
     });
     enCabecera('cta', cta);
+  }
+
+  // ── SCRUM-1680 (PILOTO-1) · TERMINAR Y CERRAR DESDE LA FICHA ────────────────────────────────
+  //
+  // Hasta aquí, sólo el «⋯» de la LISTA sabía terminar y cerrar: la ficha de un trabajo en curso no
+  // tenía forma de acabarlo. Mismos literales, misma petición y misma condición que la lista
+  // (`jobsView.js`, su «⋯»; regla 30: ni una palabra nueva). Dónde va cada una lo dice el registro
+  // (`jobActionsRegistry.js`): terminar, secundaria; cerrar, «⋯» con su explicación entera
+  // (SCRUM-344). El fallo pasa por `mensajeDeFallo`, como el resto de acciones de esta pantalla.
+  const patchTrabajo = async (cuerpo, ok) => {
+    try {
+      await apiRequest(`/admin/jobs/${job.id}`, { method: 'PATCH', body: JSON.stringify(cuerpo) });
+      if (ok) showToast(ok);
+      refresh();
+    } catch (e) {
+      setStatus('error', mensajeDeFallo('No se pudo completar la acción', e));
+    }
+  };
+  if (job.status === 'en_curso') {
+    const terminarBtn = document.createElement('button');
+    terminarBtn.type = 'button';
+    terminarBtn.className = 'btn-secondary btn-sm job-toolbar-btn-44'; // SCRUM-962 (AB6), como «+ Añadir gasto»
+    terminarBtn.textContent = '✅ Marcar terminado';
+    terminarBtn.addEventListener('click', () => patchTrabajo({ status: 'terminado' }, '✅ Trabajo terminado'));
+    enCabecera('btnTerminar', terminarBtn);
+  }
+  if (typeof puedeCerrarTrabajo === 'function' && puedeCerrarTrabajo(job)
+      && typeof jobCierreSection === 'function' && typeof jobsModal === 'function') {
+    const cerrarBtn = document.createElement('button');
+    cerrarBtn.type = 'button';
+    cerrarBtn.className = 'btn-ghost btn-sm job-toolbar-btn-44';
+    cerrarBtn.textContent = 'Cerrar trabajo';
+    cerrarBtn.addEventListener('click', () => {
+      const cuerpoModal = document.createElement('div');
+      cuerpoModal.className = 'jobs-modal-cuerpo';
+      let cerrarModal = null;
+      // El modal se cierra ANTES de pedir: la ficha se repinta debajo y no puede quedar un modal
+      // de un trabajo que ya está cerrado.
+      cuerpoModal.appendChild(jobCierreSection(job, (cuerpo, ok) => {
+        if (cerrarModal) cerrarModal();
+        return patchTrabajo(cuerpo, ok);
+      }));
+      cerrarModal = jobsModal('Cerrar trabajo', cuerpoModal, () => {});
+    });
+    enCabecera('btnCerrar', cerrarBtn);
   }
 
   // ── Datos: cliente, dirección, presupuesto origen (link por quoteNumber) ──

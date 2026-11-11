@@ -194,6 +194,11 @@
     // Cierto porque `puedeEditarContenido` solo abre en `borrador` (`parteTrabajo.ts`), y el PATCH
     // y el dictado lo aplican. No habla de precios a propósito: siguen abiertos hasta facturar.
     conLaPrimeraFirmaQuedaFijo: 'Con la primera firma, lo apuntado queda fijo.', // APROBADO por delegación del fundador · SCRUM-653 comentario 17354
+    // SCRUM-1676 · el parte VACÍO: firmar deja de ser la acción principal y se dice qué va antes. Ocupa
+    // el sitio de «queda fijo» (dice lo mismo y además qué hacer), solo mientras no hay ni una línea.
+    // Tanda de PILOTO-1 (SCRUM-1656 c.21405, entrada 7); la rectificación c.21411 no toca las 1-23.
+    // Consta en `docs/microcopy/2026-11-10-SCRUM-1676-apunta-primero.md`.
+    apuntaPrimero: 'Apunta primero lo que has hecho: al firmar ya no se puede cambiar.', // APROBADO por el fundador el 10-nov-2026 · SCRUM-1656 comentario 21408
 
     // SCRUM-890 · por qué no se firma un parte vacío y qué hacer. FIRMADO el 16-sep-2026 por
     // delegación del fundador (SCRUM-890, comentario 15623). Consta en
@@ -250,6 +255,12 @@
     pistaTecnicos: 'Quién ha estado en la obra',
     sinNotas: 'Sin notas',
     pistaNotas: 'Lo que haya que dejar dicho.',
+
+    // ── SCRUM-1677 · LA SALIDA DEL PARTE HACIA SU TRABAJO ─────────────────────────────────
+    // Tanda de PILOTO-1 (SCRUM-1656 c.21405, entradas 5 y 6); la rectificación c.21411 no toca las
+    // 1-23. Consta en `docs/microcopy/2026-11-10-SCRUM-1677-salida-al-trabajo.md`.
+    trabajoDelCliente: '← Trabajo: {cliente}', // APROBADO por el fundador el 10-nov-2026 · SCRUM-1656 comentario 21408
+    volverAlTrabajo: 'Volver al trabajo', // APROBADO por el fundador el 10-nov-2026 · SCRUM-1656 comentario 21408
   };
 
   // El vocabulario CERRADO del dominio (`parteTrabajo.ts`). No se inventa aquí ni se amplía:
@@ -738,6 +749,7 @@
 
     contenedor.innerHTML =
       '<header style="margin-bottom:14px">' +
+      pintarMigaDelTrabajo(parte) +
       '<h3 style="margin:0;font-size:1.05rem;font-weight:700;color:var(--ink)">' +
       esc(parte.numero) + '</h3>' +
       '<p style="margin:2px 0 0;font-size:13px;color:var(--muted)">' +
@@ -753,9 +765,58 @@
       pintarBloque('mano_obra', lineas, editable) +
       pintarBloque('materiales', lineas, editable) +
       pintarLasDosFirmas(parte) +
+      pintarVolverAlTrabajo(parte, editable) +
       pintarDatosDelParte(parte, editable);
 
     return true;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  // 🔴 SCRUM-1677 · UN PARTE FIRMADO NO ES UN CALLEJÓN SIN SALIDA.
+  //
+  // Medido en yaqu.app (SCRUM-1658): tras las dos firmas la página no tenía ni un botón, y la
+  // cabecera no enlazaba al trabajo en NINGÚN estado. Dos salidas, las dos al mismo sitio
+  // (`jobs-detail`, el mismo camino que `albaranDetailView.js` usa para su trabajo):
+  //   · la miga de la cabecera, en TODOS los estados;
+  //   · «Volver al trabajo» como acción, en cuanto el parte deja de ser editable (firmado/facturado).
+  //
+  // Sin `jobId` no hay a dónde volver y no se pinta nada (un parte puede no colgar de un trabajo).
+  // Sin nombre de cliente la miga no se pinta: el literal firmado lleva el cliente, y recortarlo a
+  // «← Trabajo» sería un texto que nadie ha firmado. «Volver al trabajo» sí sale (no lo nombra).
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  function tieneTrabajo(parte) {
+    return parte && parte.jobId !== null && parte.jobId !== undefined && parte.jobId !== '';
+  }
+
+  function pintarMigaDelTrabajo(parte) {
+    if (!tieneTrabajo(parte) || !parte.clienteNombre) return '';
+    return '<nav class="detail-migas"><button type="button" class="detail-miga-link" data-parte-al-trabajo="1">' +
+      esc(TEXTOS.trabajoDelCliente.replace('{cliente}', parte.clienteNombre)) + '</button></nav>';
+  }
+
+  function pintarVolverAlTrabajo(parte, editable) {
+    if (editable || !tieneTrabajo(parte)) return '';
+    // Primaria SOLO si ya no queda ninguna firma por dar: con una pendiente, su botón sigue ahí y no
+    // se le pone otro verde al lado (y la firma del cliente es verde: SCRUM-1676).
+    var nadaPendiente = !!(parte.firmoElCliente && parte.firmoElTecnico);
+    // SCRUM-352: la clase se escribe COMPLETA en cada rama (censo del front por AST/texto; una
+    // variante partida a mitad de atributo no se reconoce como clase de botón).
+    var boton = nadaPendiente
+      ? '<button type="button" class="btn btn-primary" data-parte-volver-al-trabajo="1" style="width:100%">' + esc(TEXTOS.volverAlTrabajo) + '</button>'
+      : '<button type="button" class="btn btn-secondary" data-parte-volver-al-trabajo="1" style="width:100%">' + esc(TEXTOS.volverAlTrabajo) + '</button>';
+    return '<div data-parte-salida="1" style="margin:12px 0">' + boton + '</div>';
+  }
+
+  /** Las dos salidas, atadas. `o.irAlTrabajo` es la costura del test; en el panel es `renderAppView`. */
+  function atarSalidasAlTrabajo(contenedor, parte, o) {
+    if (!contenedor.querySelectorAll || !tieneTrabajo(parte)) return;
+    var ir = typeof o.irAlTrabajo === 'function'
+      ? o.irAlTrabajo
+      : function (jobId) { if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: jobId }); };
+    var botones = contenedor.querySelectorAll('[data-parte-al-trabajo],[data-parte-volver-al-trabajo]');
+    for (var i = 0; i < botones.length; i++) {
+      botones[i].addEventListener('click', function () { ir(parte.jobId); });
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
@@ -1249,11 +1310,19 @@
    * exige** (`ordenDeFirmaExigido()` en el dominio): en la obra firma quien esté libre primero.
    */
   function pintarLasDosFirmas(parte) {
+    // 🔴 SCRUM-1676 · UN PARTE VACÍO NO TIENE LA FIRMA COMO ACCIÓN PRINCIPAL. «Vacío» es la MISMA
+    // pregunta que hace el servidor (`puedeFirmarse` en `parteTrabajo.ts`: cero líneas), no otra: con
+    // horas pero sin líneas el servidor rechaza la firma igual (409 `parte_vacio`), así que pintarla
+    // como siguiente paso sería mandar al operario contra un rechazo. Con una línea vuelve a serlo.
+    // El botón SIGUE ahí y con su mismo camino (SCRUM-890 ya no abre el pad y dice por qué): solo
+    // pierde el verde, que es lo que se pulsa sin leer (canon de SCRUM-823).
+    var enEspera = !Array.isArray(parte.lineas) || parte.lineas.length === 0;
     var recuadro = function (firmado, marca, rotulo, hecho, quien) {
       return firmado
         ? '<p data-parte-' + marca + '-hecha="1" style="margin:0;font-size:14px;color:var(--muted)">' +
           esc(hecho) + (quien ? ' ' + esc(quien) : '') + '</p>'
-        : '<button type="button" data-parte-' + marca + '="1" style="width:100%">' +
+        : '<button type="button" data-parte-' + marca + '="1"' +
+          (enEspera ? ' data-parte-firma-en-espera="1"' : '') + ' style="width:100%">' +
           esc(rotulo) + '</button>';
     };
     // SCRUM-1175 (PR-B) · UN PASO PROPIO Y UNA CAJA POR FIRMA. Cada aviso «falta» vive DENTRO de la
@@ -1264,9 +1333,13 @@
       '<section data-parte-firmas="1" class="parte-firmas">' +
       '<h4 class="parte-firmas-titulo">' + esc(TEXTOS.firmasTitulo) + '</h4>' +
       // SCRUM-653 c.17354 · el paso irreversible se enseña ANTES de darlo, y solo entonces.
+      // SCRUM-1676 · con el parte vacío, en su sitio, el que dice además qué va antes de firmar.
       (!parte.firmoElCliente && !parte.firmoElTecnico
-        ? '<p data-parte-primera-firma-fija="1" style="margin:0 0 8px;font-size:13px;color:var(--muted)">' +
-          esc(TEXTOS.conLaPrimeraFirmaQuedaFijo) + '</p>'
+        ? (enEspera
+          ? '<p data-parte-apunta-primero="1" style="margin:0 0 8px;font-size:13px;color:var(--muted)">' +
+            esc(TEXTOS.apuntaPrimero) + '</p>'
+          : '<p data-parte-primera-firma-fija="1" style="margin:0 0 8px;font-size:13px;color:var(--muted)">' +
+            esc(TEXTOS.conLaPrimeraFirmaQuedaFijo) + '</p>')
         : '') +
       '<div class="parte-firma-caja" data-parte-caja-firma="cliente">' +
       recuadro(parte.firmoElCliente, 'firmar', TEXTOS.firmar, TEXTOS.yaFirmoElCliente, parte.firmadoPorNombre) +
@@ -1630,6 +1703,7 @@
       contenedor.innerHTML = '<div data-parte-error="1">' + esc(TEXTOS.noSePudoCargar) + '</div>';
       return false;
     }
+    atarSalidasAlTrabajo(contenedor, parte, o);
     // SCRUM-1675 · un parte que ya no se puede tocar (firmado) no tiene dictado que recuperar: lo
     // que quedara en este móvil se borra, y no se queda guardado un texto con datos de la obra.
     if (!(parte.puedeEditarContenido && parte.puedeEditarContenido.ok)) borrarBorradorDelDictado(parteId);
