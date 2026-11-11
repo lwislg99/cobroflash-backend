@@ -172,6 +172,17 @@ Leído en el log del job `130467504736` (run `43004200827`). Las causas, y el ar
   una constante, que el guard lee como mudo.
 - Medido: esos 9 ficheros, sin banco, 95 ✔ + 5 saltos declarados + 0 ✖; los tres de 1685 con banco, 14/14.
 
+### ⑤ El obligatorio de #3058 en rojo tras el merge del bot: 2 ✖ (11-nov-2026 ~11:25Z GitHub, relevo S1)
+
+Run 43008809070 sobre `953787c5c` (merge de main `db202031` hecho por yaqu-bot): 13171 tests · 2 ✖.
+
+| ✖ | causa | arreglo |
+|---|---|---|
+| `scrum1572` · EL ÁRBOL | el merge entrelazó este registro, que crean las dos ramas (#3056 con el apéndice de S0 y ésta) | se reescribe como tramo de S1 + apéndice de S0 al final, que es lo que pide el apéndice; el test acepta «reparado en un commit posterior» |
+| `scrum553` · `>` pegado | 4 extractores de `scrum1685-formulario-de-alta.test.mjs` (`<label for>` ×3, `<script>`): 24, tope 20 | despegados (`[^>]*>`); el de `<script>` excluye los que llevan `src`, que no son «en línea» |
+
+Local, tras el arreglo: 1572 + 553 + 1685-formulario = 27 ✔ / 0 ✖. No se toca ningún guard (regla 41).
+
 ## SCRUM-1685b · S0 · cruce de carril de `public/register.html` declarado en §3.4 — 11-nov-2026 ~10:40Z (reloj de GitHub)
 
 > Apéndice de la S0. Si este fichero ya existe en `main` con el registro de S1 (tramo a, PR #3055,
