@@ -9,6 +9,12 @@
 // miden en navegador (registro en docs/master/SCRUM-1559.md); este test vigila lo que los sostiene: las
 // reglas EN SU @media, el suelo global intacto, y que la 3.ª columna siga siendo «Entrega» y sea la
 // ÚNICA celda con `cell-date` (si otra la llevara, la regla la escondería también).
+//
+// RE-ANCLADO por SCRUM-1669 (11-nov-2026). La columna «Importe» (texto firmado n.º 17, SCRUM-1656
+// c.21405, firma c.21408 ①) pide ~77 px más, y a 929 la tabla desbordaba 70. El orquestador decidió
+// (SCRUM-1669 c.21494) ocultar «Entrega» TAMBIÉN en 900-1023. No es aflojar el guard (regla 41): es que
+// el diseño que fijaba CAMBIÓ con una columna firmada. Sigue fijando lo mismo con la banda nueva:
+// «Entrega» oculta en 769-1023 y en ningún otro sitio; el suelo anulado en 769-899 y en ningún otro.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -42,26 +48,30 @@ function reglas(css) {
 }
 const REGLAS = reglas(CSS);
 const en = (media, sel, decl) => REGLAS.some((r) => r.media === media && r.sel.includes(sel) && decl.test(r.cuerpo));
-const BANDA = '(min-width: 769px) and (max-width: 899px)';
+const BANDA = '(min-width: 769px) and (max-width: 899px)'; // donde se anula el suelo (SCRUM-1559k)
+const BANDA_ENTREGA = '(min-width: 769px) and (max-width: 1023px)'; // donde se oculta «Entrega» (1559k + SCRUM-1669)
 
 test('SCRUM-1559k · CONTROL: el lector de reglas ve el suelo global de 520 px, fuera de toda @media', () => {
   assert.ok(en(null, '.table-scroll .table', /min-width:\s*520px/),
     '🔴 NO PUDE MIRAR: no encuentro `.table-scroll .table { min-width: 520px }` — o el lector falla o el suelo cambió, y lo de abajo no probaría nada');
 });
 
-test('SCRUM-1559k · en 769-899 se oculta «Entrega» y el suelo se anula sólo para esta tabla', () => {
-  assert.ok(en(BANDA, '.table--albaranes th:nth-child(3)', /display:\s*none/), `🔴 la cabecera de «Entrega» no se oculta en @media ${BANDA}`);
-  assert.ok(en(BANDA, '.table--albaranes td.cell-date', /display:\s*none/), `🔴 la celda de «Entrega» no se oculta en @media ${BANDA}`);
+test('SCRUM-1559k/1669 · en 769-1023 se oculta «Entrega», y en 769-899 el suelo se anula sólo para esta tabla', () => {
+  assert.ok(en(BANDA_ENTREGA, '.table--albaranes th:nth-child(3)', /display:\s*none/), `🔴 la cabecera de «Entrega» no se oculta en @media ${BANDA_ENTREGA}`);
+  assert.ok(en(BANDA_ENTREGA, '.table--albaranes td.cell-date', /display:\s*none/),
+    `🔴 la celda de «Entrega» no se oculta en @media ${BANDA_ENTREGA}: con «Importe» la tabla desborda 70 px a 929 (SCRUM-1669)`);
   assert.ok(en(BANDA, '.table-scroll .table--albaranes', /min-width:\s*0\b/),
     `🔴 sin \`.table-scroll .table--albaranes { min-width: 0 }\` en @media ${BANDA} la tabla vuelve a desbordar 49 px a 769`);
 });
 
-test('SCRUM-1559k · lo ACOTADO: el suelo global sigue en 520, y nada fuera de la banda lo anula ni esconde «Entrega»', () => {
+test('SCRUM-1559k/1669 · lo ACOTADO: el suelo global sigue en 520; «Entrega» no se esconde fuera de 769-1023 ni el suelo se anula fuera de 769-899', () => {
   assert.ok(!REGLAS.some((r) => r.sel.includes('.table-scroll .table') && !/min-width:\s*520px/.test(r.cuerpo) && /min-width/.test(r.cuerpo)),
     '🔴 alguien cambió el suelo GLOBAL de `.table-scroll .table`: eso mueve todas las tablas con scroll, y no están medidas');
-  const fuera = REGLAS.filter((r) => r.media !== BANDA && (r.sel.includes('.table--albaranes td.cell-date') || r.sel.includes('.table-scroll .table--albaranes'))
-    && (/display:\s*none/.test(r.cuerpo) || /min-width:\s*0\b/.test(r.cuerpo)));
-  assert.deepEqual(fuera.map((r) => r.media), [], '🔴 «Entrega» se oculta o el suelo se anula FUERA de 769-899: la ficha la conserva, pero la lista la pierde donde sí cabía');
+  const entregaFuera = REGLAS.filter((r) => r.media !== BANDA_ENTREGA
+    && (r.sel.includes('.table--albaranes td.cell-date') || r.sel.includes('.table--albaranes th:nth-child(3)')) && /display:\s*none/.test(r.cuerpo));
+  assert.deepEqual(entregaFuera.map((r) => r.media), [], '🔴 «Entrega» se oculta FUERA de 769-1023: la ficha la conserva, pero la lista la pierde donde sí cabía');
+  const sueloFuera = REGLAS.filter((r) => r.media !== BANDA && r.sel.includes('.table-scroll .table--albaranes') && /min-width:\s*0\b/.test(r.cuerpo));
+  assert.deepEqual(sueloFuera.map((r) => r.media), [], '🔴 el suelo de la tabla se anula FUERA de 769-899, donde no está medido');
 });
 
 test('SCRUM-1559k · la vista pinta lo que las reglas nombran: 3.ª columna «Entrega», y es la ÚNICA celda con `cell-date`', async () => {

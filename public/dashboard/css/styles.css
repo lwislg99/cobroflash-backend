@@ -4503,9 +4503,15 @@ textarea.parte-linea-desc {
    ① se oculta «Entrega» en la lista, como B hizo con «Emisión»; la ficha la conserva.
    ② el suelo se anula SÓLO para esta tabla y sólo en esta banda; el global no se toca.
    Medido en yaqu.app: desborda 13 a 769 (dentro de su `.table-scroll`, que scrollea; la página +0)
-   y 0 desde 800; «Enviar para firmar» sigue en una línea. Antes: 106 / 75 / 25. */
-@media (min-width: 769px) and (max-width: 899px) {
+   y 0 desde 800; «Enviar para firmar» sigue en una línea. Antes: 106 / 75 / 25.
+   SCRUM-1669 · la columna «Importe» (firmado n.º 17, SCRUM-1656 c.21408 ①) pide ~77 px más, y a 929
+   la tabla volvía a desbordar 70 con «Enviar para firmar» medio fuera. Decidido por el orquestador
+   (SCRUM-1669 c.21494): «Entrega» se oculta TAMBIÉN en 900-1023. El suelo sigue anulado sólo en
+   769-899: desde 900 el carril ya pasa de 520 y no lo necesita. */
+@media (min-width: 769px) and (max-width: 1023px) {
   .table--albaranes th:nth-child(3), .table--albaranes td.cell-date { display: none; }
+}
+@media (min-width: 769px) and (max-width: 899px) {
   .table-scroll .table--albaranes { min-width: 0; }
 }
 
