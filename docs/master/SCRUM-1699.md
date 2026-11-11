@@ -76,3 +76,8 @@ su lado. Si entra antes, la cifra **se regenera** al fusionar con el contador, n
   (testigo: 0 apariciones de `SCRUM-1699` en el fichero del espejo). Caen **3/3**, cada uno por su aserción:
   «1 ⚬» en lugar de «1 línea», 0 cabeceras de bloque y la regla `#po-detalle .po-col-*` ausente.
 - **Verde:** 1699 + 1692 + 1562c, 9/9, y 713c con el techo nuevo.
+- **Tanda completa** (TAP a fichero, 13 211 tests): 13 028 ✔ · 14 ✖ · 169 saltados. 13 de los ✖ son los
+  conocidos de un worktree fresco (1199, 1321, 245, 385, 471, 475, 476; los mismos que declara
+  `docs/master/SCRUM-1696.md`). El que quedaba era mío: **710b** ②, porque el array `[clase, ancho]` del test
+  llevaba los tres pares en una línea. Lo arreglé en el TEST, con un elemento por línea, no en el guard.
+  Después volví a escribir la ficha de mudez (`censo:mudez --escribir`). 710b + 1395 + 1699: 15/15.

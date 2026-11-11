@@ -91,7 +91,12 @@ test('SCRUM-1699 · N11: cada bloque rotula «Cant. · Precio ud. · Importe» y
 
 test('SCRUM-1699 · la hoja: las columnas de números no encogen y el móvil va DETRÁS de la regla base', () => {
   const css = ejecutableDe(fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8'), { ancla: '#po-detalle', almohadillaEsComentario: false });
-  for (const [c, ancho] of [['po-col-cant', 60], ['po-col-precio', 110], ['po-col-importe', 100]]) {
+  // Un elemento por línea (SCRUM-710b): dos pares en la misma línea chocan al subir números.
+  for (const [c, ancho] of [
+    ['po-col-cant', 60],
+    ['po-col-precio', 110],
+    ['po-col-importe', 100],
+  ]) {
     const re = new RegExp(`#po-detalle \\.${c}\\s*\\{([^}]*)\\}`);
     const m = re.exec(css);
     assert.ok(m, `🔴 no hay regla \`#po-detalle .${c}\`.`);
