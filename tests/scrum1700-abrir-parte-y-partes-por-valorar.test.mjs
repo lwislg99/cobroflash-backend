@@ -41,7 +41,7 @@ async function montar({ partes = [], creado = { id: 77 } } = {}) {
   const pedidas = [];
   const navegado = [];
   const datos = (url, opts) => {
-    const p = String(url).replace(/^https?:\/\/[^/]+/, '').replace(/[?#].*$/, '');
+    const p = new URL(String(url), 'https://yaqu.app').pathname;
     const metodo = (opts && opts.method) || 'GET';
     pedidas.push(`${metodo} ${p}${opts && opts.body ? ' ' + opts.body : ''}`);
     if (p === '/admin/jobs') {

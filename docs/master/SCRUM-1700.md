@@ -47,6 +47,13 @@ Sin texto nuevo fuera de N1 y N2. Sin cambios de servidor ni de esquema.
 - **Rojo primero** sobre `412ddc20d`: 5 de 7 casos en rojo por el motivo esperado (0 «Abrir parte»,
   sigue `#jobs-partes-valorar`, `app.js` no publica `contarPartesPorValorar`).
 - **Verde:** 7/7 tras el cambio.
+- **Tanda completa** (13 195 tests): 16 fallos; 13 son los conocidos de un worktree fresco (1199,
+  1321, 245, 385, 471, 475, 476) y salen igual en `origin/main`. Los tres míos, arreglados:
+  - `scrum412` (una `btn-primary btn-sm` nueva se declara): `jobsView.js:bParte` entra en
+    `DECLARADAS` como FILA, con su motivo, igual que `cobrarBtn` (lo que el guard pide).
+  - `scrum601` (ancla por número de línea en `app.js`): 388 → 391, medido con su `grep`.
+  - `scrum700` (filtros propios): mi test limpiaba la URL con una regex `https?:\/\/`, que el censo
+    cuenta como filtro; ahora usa `new URL(...).pathname`.
 - **En yaqu.app, cuenta QA, 390 px**, con `jobsView.js` y `app.js` servidos desde el árbol y todo
   lo demás de producción (banco `evidencias/SCRUM-1700/capturar.mjs`; aborta toda petición que no sea
   GET, salvo `POST /admin/partes` en el modo «clic»):
