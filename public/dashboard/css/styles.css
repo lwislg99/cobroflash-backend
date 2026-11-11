@@ -4332,8 +4332,12 @@ textarea.parte-linea-desc {
 .jobs-vacio-filtro { text-align: center; color: var(--muted); font-size: 13px; padding: 18px; }
 
 /* El modal de la casa, con su cuerpo. `.modal-overlay`/`.modal` ya existen: esto solo viste lo
-   de dentro. */
-.jobs-modal { max-width: 420px; }
+   de dentro.
+   SCRUM-1681: `jobsModal()` mete título, cuerpo y pie DIRECTAMENTE en `.modal`, sin
+   `.modal-header`/`.modal-body`, que son los que ponen el relleno en el resto del panel. Sin esto
+   los tres modales de Trabajos («Agendar», «Cerrar trabajo», «Técnicos») iban a 0 px del borde
+   (medido en yaqu.app, 390 y 1280). 24 px = el de «Trabajo nuevo» (`.modal-body`). */
+.jobs-modal { max-width: 420px; padding: 24px; }
 .jobs-modal-titulo { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 12px; }
 .jobs-modal-cuerpo { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
 .jobs-modal-label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
