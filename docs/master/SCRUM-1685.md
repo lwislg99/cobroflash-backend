@@ -219,3 +219,52 @@ pegarla:
 
 El ticket lleva `area-j3`, `equipo-javier` y `aviso-a-javier`: el cambio en un fichero de J3 se avisa al
 otro equipo por Jira (§5). Esa nota va en el ticket con esta entrega.
+
+## 2026-11-11 · ② «campo a campo» — la ruta del invitado y el guion dan la MISMA fila (S1)
+
+**Medido contra:** `origin/main` = `83dc0af8806c58a3e3b325fb610f9c82febcbf45` · 2026-11-11T15:21:42Z
+(cabecera `Date:` de `api.github.com/zen`). Rama `scrum-1685-campo-a-campo`. **Cero código de producto
+y cero textos:** sólo tests.
+
+A9: comprobación → `tests/scrum1685-ruta-y-guion-campo-a-campo.test.mjs`
+
+### ① Qué
+`tests/scrum1685-ruta-y-guion-campo-a-campo.test.mjs` (patrón `porLaRuta`/`porElGuion` de scrum1515).
+Al mismo cuerpo, sucio a propósito (espacios, mayúsculas, `country: ' ES '`, `ref` con espacios y de
+un padrino de verdad, `source` de 230 y `provincia: '  madrid '`, `domicilio-foral: ' No '`), le
+dan de alta dos puertas: `POST /auth/register` con el correo en `REGISTRATION_INVITED_EMAILS`, y el
+guion `altaDeMerchant` en otro proceso, con su entorno escrito a mano. Después se comparan:
+- la fila de `Merchant`, **campo a campo** (≥ 50 campos; `deepEqual` de la lista de distintos),
+  sin `id`, `email`, `createdAt`, `updatedAt`, `planExpiresAt` ni `referralCode`. Esos dos se miran
+  por su forma: la prueba dura 14 días, y el código del guion EMPIEZA por el de la ruta (los dos
+  llevan el mismo nombre, así que el segundo choca y se lleva un sufijo);
+- las filas que cuelgan del merchant (todas las tablas con `merchantId`, sacadas del esquema), las
+  sesiones y los asuntos de los correos (bienvenida + enlace).
+Controles CIEGO: el nombre llega limpio, `referredBy` = id del padrino, `acquisitionSource` mide
+200 y `domicilioFiscalForal` = false. Sin ellos la igualdad no diría nada.
+
+### ② Medido (banco desechable propio: Postgres 16 portable, `127.0.0.1:55686`, `yaqu_s1685c_test`, esquema por `migrate diff --from-empty`, 33 tablas = 33 modelos)
+- **Verde:** 1/1.
+- **Mutaciones sobre `dist/modules/auth/app/routes/auth.routes.js`** (sólo la copia de la ruta; el
+  guion intacto). Se aplica cada una por separado y se restaura byte a byte:
+
+  | mutación | resultado |
+  |---|---|
+  | `source` recortado a 199 en vez de 200 | ✖ cae (control `acquisitionSource` = 200) |
+  | `country` sin `trim` | ✖ cae: «EL INVITADO DE LA RUTA NO NACE IGUAL QUE EL DEL GUION» |
+  | `ref` sin `trim` | sobrevive: es **equivalente**. `resolveReferrer` (`referral.service.ts`) vuelve a hacer `trim` y `toUpperCase`, así que desde fuera no se ve |
+
+- **Vecinos** (1685 ×4, 1515, 1528, 275, 334 ×2, 113): **43/43, 0 saltados**, en 3 tandas seguidas.
+
+### ③ Defecto de paso, arreglado en el momento: rojo intermitente entre dos tests de 1685
+En la primera tanda de vecinos cayó `scrum1685-formulario-de-alta` («Error al crear la cuenta.» en
+vez de «cuenta creada»; 1 de 5 tandas), y solo pasaba 7/7. **Mecanismo (MI LECTURA, leída en el código,
+no reproducida a propósito):** `buildCandidate` hace el código de referido con las 8 primeras letras
+del nombre + el año. «Reformas D 1685» (`alta-con-invitacion`) y «Reformas F 1685» (`formulario`)
+dan los dos `REFORMAS26`. `generateUniqueReferralCode` mira y luego crea, sin reintentar ante un
+P2002, y los dos ficheros corren en paralelo contra el mismo banco: a uno le toca un 500.
+**Arreglo:** el nombre del formulario pasa a «F1685 Reformas» (`F1685REF26`). Ningún test afirmaba
+ese nombre. Después, 3 tandas en verde.
+**En producto** es la misma carrera: dos altas SIMULTÁNEAS cuyos nombres empiecen por las mismas 8
+letras darían un 500 a una de ellas. Hoy entran por invitación y de una en una, así que no muerde al
+piloto. Queda anotado, sin ticket.
