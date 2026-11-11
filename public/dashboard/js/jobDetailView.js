@@ -1727,10 +1727,8 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   }
 
   docsSec.appendChild(newAlbRow);
-  const valoradoHint = document.createElement('p');
-  valoradoHint.style.cssText = 'margin:4px 0 10px;color:var(--muted);font-size:12px';
-  valoradoHint.textContent = 'El parte sigue sin ser una factura.';
-  docsSec.appendChild(valoradoHint);
+  // SCRUM-1696 (N8, firmado SCRUM-1686 c.21470/c.21471): se QUITA «El parte sigue sin ser una
+  // factura.» de aquí. Hablaba del albarán con el nombre del parte; la frase firmada n.º 3 ya lo explica.
 
   // ── SCRUM-17 (FISCAL-2): consolidar albaranes en factura recapitulativa ──────
   // Botón visible solo si el Trabajo agrupa operaciones sueltas (SCRUM-66) y hay partes
@@ -2734,12 +2732,10 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
       syncOcultarRow(); // SCRUM-607: sin precios no hay nada que ocultar
     });
     lbl.appendChild(chk);
-    lbl.appendChild(document.createTextNode('Incluir precios en el parte'));
+    // SCRUM-1696 · N12 (firmado SCRUM-1686 c.21470/c.21471): la casilla nombra al documento que es.
+    lbl.appendChild(document.createTextNode('Incluir precios en el albarán'));
     modoRow.appendChild(lbl);
-    const hint = document.createElement('p');
-    hint.style.cssText = 'margin:2px 0 0;color:var(--muted);font-size:12px';
-    hint.textContent = 'El parte sigue sin ser una factura.';
-    modoRow.appendChild(hint);
+    // SCRUM-1696 · N8: «El parte sigue sin ser una factura.» se quita también de la hoja de alta.
   } else {
     const p = document.createElement('p');
     p.style.cssText = 'margin:0;font-size:12px;color:var(--muted)';

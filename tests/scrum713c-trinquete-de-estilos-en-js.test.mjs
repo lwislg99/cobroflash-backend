@@ -127,7 +127,11 @@ function censo() {
 // clases `.alb-*` de `styles.css`, tal cual. El fichero no se nombra aquí (está en
 // `docs/master/SCRUM-1659.md`). Contado con ESTE contador sobre `origin/main` (d7fb55ea) + este
 // cambio: 328; lo dijo el propio guard («HAN BAJADO … 328 frente al techo 334»).
-const TECHO = 328;
+// 328 → 326 · 11-nov-2026 (SCRUM-1696, PILOTO-1). Se van los dos `style.cssText` de los dos <p> que
+// llevaban «El parte sigue sin ser una factura.»: N8 (firmado SCRUM-1686 c.21471) QUITA la frase y, con
+// ella, el párrafo entero. Contado con ESTE contador sobre `origin/main` (573579309) + este cambio: 326;
+// lo dijo el propio guard («HAN BAJADO … 326 frente al techo 328»).
+const TECHO = 326;
 
 test('SCRUM-713c · SUELO: el contador VE lo que tiene que ver, y NO se caza a sí mismo', () => {
   // 🔴 El suelo que no caduca: se prueba contra cadenas fabricadas aquí, así que sigue probando

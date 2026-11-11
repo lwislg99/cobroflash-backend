@@ -261,7 +261,12 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // FUSIONADO (origin/main 5deff8b3b + la rama), no deducido: main da { flag: 7, tipo: 11, aPelo: 162 }
 // y la rama { flag: 8, tipo: 11, aPelo: 162 }; la única fila nueva de ① es ésa. («1 factura» de
 // `exportView.js` sólo cambia de línea, 179 → 205, y sigue en ③.)
-const VEREDICTO_AL_MEDIR = { flag: 8, tipo: 11, aPelo: 162 };
+// aPelo 162 → 160 · 11-nov-2026 (SCRUM-1696, PILOTO-1) · CUÁLES SALIERON: las dos
+// «El parte sigue sin ser una factura.» de `jobDetailView.js` (ficha del trabajo y hoja de alta del
+// albarán). Se QUITAN por N8, firmado (SCRUM-1686 c.21470, «si firmo» c.21471): hablaban del albarán con
+// el nombre del parte. No hay movimiento a ①/②: los dos literales desaparecen. Contado por ESTE censo
+// sobre origin/main 573579309 + la rama; el propio test lo dijo (actual 160, esperado 162).
+const VEREDICTO_AL_MEDIR = { flag: 8, tipo: 11, aPelo: 160 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
