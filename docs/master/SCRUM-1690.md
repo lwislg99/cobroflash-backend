@@ -2,6 +2,8 @@
 
 **Medido contra:** `origin/main` = `db202031a449ba21c3cccf32d74afc8ecbda4a33` · 2026-11-11T11:06:04Z (cabecera `Date:` de `gh api -i zen`) · **Rama:** `scrum-1690-titulo-del-trabajo-es-el-cliente` · **Carril:** S1 · trabajos.
 
+A9: comprobación → `tests/scrum1690-titulo-es-el-cliente.test.mjs`
+
 > Puesto S1 (servidor). Origen: SCRUM-1686 c.21459 (X1). Rama `scrum-1690-titulo-del-trabajo-es-el-cliente`,
 > desde `origin/main` = `db202031a` (11-nov-2026 ~11:00Z).
 
@@ -59,7 +61,11 @@ Tanda de los afectados (1690, 651, 944b, 980, 917d, 317): **52 ✔ / 0 ✖ / 1 s
 
 Sin estos dos ajustes: 13155 tests · 20 ✖. 1452, 267 (×4 copias), 1395b y 854 eran de esta rama y se arreglan
 aquí. 1321 («el temporal no se alcanza desde la raíz»: el TAP está en C: y el repo en D:) y 804 (refs locales
-de la máquina) son de entorno.
+de la máquina) son de entorno. Tras el commit, `guards:entrada` (976) cayó por SCRUM-1294: a este registro
+le faltaba la línea `A9:`. Añadida.
+
+Cruce de carril declarado: `scripts/` es de S3, pero la entrada que se toca lleva `retira: 'S1'` y es el
+ajuste que el propio trinquete pide; el hook de carril no lo bloquea.
 
 ## Pendiente de verificar
 
