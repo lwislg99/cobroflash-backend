@@ -501,7 +501,7 @@ async function serializeJob(job: Job, refs?: JobRefs) {
     // 🔴 SCRUM-651 · el CRITERIO del titulo vive en `tituloDeTrabajo`, no aqui: en linea solo se
     // podia vigilar comparando texto, y un guard asi pasa en verde en cuanto alguien reescribe la
     // expresion sin cambiar el defecto. Medido en su tanda de rojos.
-    titulo: tituloDeTrabajo({ titulo: job.titulo, quote, customer, jobId: job.id }),
+    titulo: tituloDeTrabajo({ titulo: job.titulo, customer, jobId: job.id }),
     // SCRUM-917d · aditivo: el nombre que puso el profesional, sin derivar (null si no hay). La
     // lista ya pinta el cliente aparte y con `titulo` a secas lo repetía.
     tituloPropio: tituloPropioDeTrabajo(job),
