@@ -230,6 +230,10 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // de verdad, con un cliente que SÍ tiene facturación y sitio guardado para que el veto tenga algo
   // que vetar. Sólo el desechable: crea y borra un merchant.
   'scrum1674-parte-hereda-obra-y-tipo.test.mjs': 1,
+  // SCRUM-1706: el operario abre el trabajo que le ASIGNARON. Necesita banco porque entra por la RUTA
+  // real con una sesión de técnico guardada en la base, y lo que mide es la pertenencia por los tres
+  // ejes (campo, tabla `assignees`, autoría) que contesta Postgres. Sólo el desechable: crea y borra un merchant.
+  'scrum1706-operario-abre-su-trabajo.test.mjs': 1,
   // SCRUM-1403: los TRES que ejercitan el recorte de presupuestos del Tecnico y la pestana de
   // documentos de la ficha de cliente contra Prisma de verdad. Necesitan banco por el mismo motivo
   // que los de SCRUM-1397: lo que vigilan es el WHERE (el recorte en AND con la busqueda y con el
