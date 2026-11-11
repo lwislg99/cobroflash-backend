@@ -66,9 +66,12 @@ la cuenta de arriba.
 
 ## Trinquete
 
-`tests/scrum713c-…` `TECHO`: **328 → 324**. Salen cuatro `style.cssText` de la vista. Lo dijo el propio guard
-sobre `80954a901` + la rama («HAN BAJADO … 324 frente al techo 328»). ⚠️ #3075 (SCRUM-1696) lo baja a 326 por
-su lado. Si entra antes, la cifra **se regenera** al fusionar con el contador, no se suma de memoria.
+`tests/scrum713c-…` `TECHO`: salen cuatro `style.cssText` de la vista. Sobre `80954a901` + la rama, el guard dio
+324 (antes 328). #3075 (SCRUM-1696) entró mientras tanto (16:01Z) y bajó main a 326 por su lado. Al fusionar
+`origin/main` = `65f4361b4`, el conflicto en esa línea se resolvió **recontando** sobre el árbol ya fusionado:
+**326 → 322** («HAN BAJADO … 322 frente al techo 326»), no restando de memoria. En `_veredicto-mudez.json`
+se quedan las dos fichas (1696 y 1699); `censo:mudez --escribir` confirma 130 fichas y 0 re-medidas. Tras el
+merge, 713c + 1395 + 1699 + 1696 + 1692 + 1562c + 710b + 601 + 811c: 61/61.
 
 ## Pruebas
 
