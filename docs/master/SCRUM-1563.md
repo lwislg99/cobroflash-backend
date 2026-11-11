@@ -480,3 +480,14 @@ A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
 - **Resultado:** **20 merges**, el mismo número que 1563n (control). **9 tocan producto**, exactamente los 9 que nombraba: #2995 · #2996 · #2998 · #3013 · #3015 · #2973 · #2974 · #3018 · #3019. Los otros 11 (#2999 #3000 #3002 #3004 #3005 #3006 #3007 #3008 #3012 #2975 #3016) solo tocan `docs/`, `scripts/`, `tests/` o `.github/`.
 - **Frontera:** los 4 merges inmediatamente anteriores (29-oct 17:00-18:25Z: #2997, #2994, #2991, #2992) tocan 0 ficheros de producto. Moverla no da 10.
 - **Veredicto: eran 9. El «10» fue un error de cuenta mío y no falta ninguno.** Corregido en sitio, tachado y no borrado: `:447` de este registro y la nota de `docs/producto/ESTADO-DEL-PRODUCTO.md` que lo arrastraba. La «discrepancia que dejo escrita» de 1563o queda resuelta aquí.
+
+## 11-nov-2026 · S0 · 1563q — tramo nuevo «PILOTO-1: la foto de la semana»
+
+**Medido contra:** `origin/main` = `4d8043854` · producción (`/version`) = `4d8043854`, leído a las 2026-11-11T18:44:48Z (`Date:` de GitHub). Encargo del orquestador (cabecera del 11-nov, tarea ②).
+
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
+- **Qué cambia:** en `docs/producto/ESTADO-DEL-PRODUCTO.md` entra un bloque NUEVO arriba del todo, encima del del 3-nov: «🔴🔴 11-nov-2026 · PILOTO-1: la foto de la semana». **Es solo una inserción.** No se ha reescrito ni re-medido ninguna fila de §1-§8, y el bloque lo dice.
+- **Instrumentos:** ① Jira, UNA consulta (`fields: key, summary, status, labels`) de los tickets creados desde el 10-nov + 1656, 1657, 1678, 1685, 1686, y el último comentario de 1678, 1685, 1686, 1706 y 1707 · ② `git log 8a1acbac5..origin/main --first-parent --merges` + `git diff --name-only <merge>^1 <merge>` filtrado por `^(src|public|prisma)/` (el de 1563p): **34 merges, 24 tocan producto y 0 tocan `prisma/`** · ③ `git ls-remote --heads` y `gh pr list --state open` para las ramas de T1-T8, de los P0 y de 1706/1707.
+- **Control:** los P0 que el bloque da «en main con el ticket abierto» (1671, 1674, 1676, 1677) salen como merge en `git log origin/main` (#3074, #3083, #3081, #3050, #3049) y su estado en Jira sigue siendo «Tareas por hacer». Los cuatro «sin rama» (1661, 1662, 1670, 1673) no tienen ni rama remota ni commit en los últimos 400 de main.
+- **Mi lectura, marcada en el bloque:** qué bloquea el arranque y qué no. **No medido:** si `REGISTRATION_INVITED_EMAILS` ya está puesta, y si 1662 sigue pasando después de #3081.

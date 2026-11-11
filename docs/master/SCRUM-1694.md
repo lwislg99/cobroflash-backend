@@ -84,3 +84,24 @@ estado que no sea `borrador` ni `firmado` sale **sin pill**, en vez de con una p
   La tanda completa la corre el check obligatorio del PR.
 - En yaqu.app, tras el merge: capturas a 390 y 1280 de la ficha con 0 partes y con 2, y «+ Nuevo parte»
   sobre un trabajo con y sin borrador de hoy.
+
+## Apéndice · cierre (11-nov-2026 ~19:00Z, GitHub)
+
+**La zona del «hoy», FIRMADA.** El fundador fijó la zona del merchant (SCRUM-1686 comentario 21524), y eso
+cierra la pregunta de c.21488. Lo construido (`borradorDeHoy` con `Merchant.timezone`) ya era así: el código
+no cambia. Lo de «⚠️ La zona del “hoy”, DECLARADA» de arriba queda como historia.
+
+**Medido en yaqu.app.** #3086 se mergeó a las 18:52Z (`461b2492c`). La build servida, `00290779e`, lo
+contiene (`git merge-base --is-ancestor`). Lo medí con la sonda de la cuenta QA, que sólo hace GET y corta
+todo lo demás con control positivo previo. El testigo era `SCRUM-1694` en el JS servido. A 390 y a 1280:
+
+| caso | resultado (igual a 390 y a 1280) |
+|---|---|
+| orden de secciones | Lo que falta · **Partes** · **Albaranes** · El trabajo… |
+| trabajo de prueba con 0 partes | «Aún no hay partes.» y «Aún no hay albaranes.» (N7) · «+ Nuevo parte» (N9) |
+| «+ Nuevo parte» sin borrador de hoy | intenta `POST /admin/partes {jobId}`, y la sonda lo corta |
+| «+ Nuevo parte» con borrador de hoy (fixture de QA, PT-2026-009) | abre ESE parte sin ningún POST |
+| trabajo con un borrador de otro día y un firmado | lista los dos; el borrador de otro día no cuenta como «de hoy» |
+| errores de página | 0 |
+
+Cierre en SCRUM-1694 comentario 21543.
