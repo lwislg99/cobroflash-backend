@@ -55,6 +55,11 @@ de memoria.
   y 713c). Con la vista de la rama, 30/30 en verde.
 - **Vecinos:** los 84 ficheros de `tests/` que leen `jobDetailView.js`: 784 tests, 781 pasan, 1 se salta.
   Los 2 que fallaban eran las dos cifras de arriba; ya están apretadas.
+- **Tanda completa** (13 210 tests). Fallan sólo los conocidos de un worktree fresco (1199, 1321, 245, 385,
+  471, 475, 476) y tres más que eran míos: 1395 ② y 1395b ①, porque el test nuevo llamaba a
+  `soloEjecutable` sin suelo y sin ficha de mudez, y 854 ②, porque el registro aún no estaba en un commit.
+  Arreglado el TEST, no el guard: `ejecutableDe` con ancla (`function buildAlbEditor` / `SIN_VALORAR`) y
+  `censo:mudez --escribir`. Después, `scrum719` + `scrum854` + `scrum589`: 50/50.
 - El guard de navegador `guard-detalle-trabajo-917.mjs` no lo he corrido en local. Lo corre el CI
   («guards de navegador»).
 
