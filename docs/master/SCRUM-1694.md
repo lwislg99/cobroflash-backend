@@ -65,13 +65,22 @@ estado que no sea `borrador` ni `firmado` sale **sin pill**, en vez de con una p
 
 - `tests/_composicion-detalle.mjs` + `docs/diseno/bloque-g.md` §4: **enmienda ⑦** — la sección «Partes»
   se declara con su motivo (D2/M2) y su cita, que es el mecanismo previsto para una sección posterior al §4.
-- `public/dashboard/js/jobDetailView.js`: el bloque nuevo va DETRÁS de `ALB_TABLA_COPY`, no entre su cabecera
-  y el objeto (el censo de SCRUM-1157 lee la cabecera que gobierna cada objeto); y cada clave de
-  `ROTULOS_PARTES` lleva su marca APROBADO en su línea, con la firma.
+- `public/dashboard/js/jobDetailView.js`: el bloque nuevo (`ROTULOS_PARTES` + `parrafoVacioDeSeccion`) va
+  detrás de `decidirAperturaAlbaran`, lejos de las cabeceras de `ALB_TABLA_COPY`/`ALB_CREAR_COPY`: el censo
+  de SCRUM-1157 lee la cabecera que gobierna cada objeto, y SCRUM-921c busca el respaldo de una marca en los
+  literales de las 18 líneas siguientes (meterlo justo detrás dejaba sin respaldo la marca de 5-ago de
+  `ALB_TABLA_COPY`: medido, 12 contra un techo de 11). Cada clave de `ROTULOS_PARTES` lleva su marca
+  APROBADO en su línea con la forma `SCRUM-1686 comentario 21471`.
 
 ## Verificación
 
 - Rojo primero: 11 de 12 en rojo contra `main` (el verde era el control: abrir el borrador más reciente
   ya funcionaba). Verde tras el cambio, 12/12.
+- Los 109 ficheros que leen la ficha del trabajo (`jobDetailView`, `jobDocsReparto`, `data-abrir-parte`, los
+  vacíos) + SCRUM-921c: **989 ✔ / 0 ✖ / 1 saltado**.
+- **La tanda ENTERA no terminó en local:** Claude Code la paró por falta de memoria en la máquina. Hasta
+  donde llegó (12 774 ✔), los 15 ✖ eran de entorno (este árbol no tiene `express` ni el CLI de Prisma en
+  `node_modules`, y el temporal cae en otra unidad) salvo el de SCRUM-921c, que era mío y está arreglado.
+  La tanda completa la corre el check obligatorio del PR.
 - En yaqu.app, tras el merge: capturas a 390 y 1280 de la ficha con 0 partes y con 2, y «+ Nuevo parte»
   sobre un trabajo con y sin borrador de hoy.
