@@ -12,10 +12,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 import { mesaDelLanzamiento, prepararMesa } from '../scripts/equipo/sesion.mjs';
 
 // El rojo, declarado: lo ejecuta `npm run meta:mutaciones`. Es el comportamiento de antes de 1298d.
@@ -43,7 +43,10 @@ const GENERADOR = [
 ].join('\n');
 
 function banco() {
-  const dir = temporal(`yaqu-1298d-${process.pid}-`);
+  // SCRUM-824 · el temporal cuelga de `os.tmpdir()` A LA VISTA (el censo no atraviesa `temporal()`), y se
+  // borra al salir aunque el test caiga (lo mismo que SCRUM-864, sin esconder la raíz).
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-1298d-${process.pid}-`));
+  process.on('exit', () => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* limpieza */ } });
   const origen = path.join(dir, 'origen.git');
   const semilla = path.join(dir, 'semilla');
   const repo = path.join(dir, 'repo');
@@ -94,7 +97,8 @@ function banco() {
     return { status: p.status, v, crudo: `${p.stdout}\n${p.stderr}` };
   };
   const cwdDelBg = () => (fs.existsSync(path.join(dir, 'cwd-del-bg.txt')) ? fs.readFileSync(path.join(dir, 'cwd-del-bg.txt'), 'utf8') : null);
-  return { dir, repo, mesas, config, lanzar, cwdDelBg, mesa: path.join(mesas, 'mesa-s1') };
+  const ensuciar = () => fs.writeFileSync(path.join(mesas, 'mesa-s1', 'medicion.txt'), 'trabajo de alguien\n');
+  return { dir, repo, mesas, config, lanzar, cwdDelBg, ensuciar, mesa: path.join(mesas, 'mesa-s1') };
 }
 
 const misma = (a, b) => fs.realpathSync.native(a) === fs.realpathSync.native(b);
@@ -128,7 +132,7 @@ test('SCRUM-1298d · una mesa SUCIA no se toca, y la sesión se lanza en el repo
   const b = banco();
   const p = prepararMesa({ config: b.config, nombre: 'sesion-1', equipo: EQUIPO });
   assert.equal(p.ok, true, JSON.stringify(p));
-  fs.writeFileSync(path.join(b.mesa, 'medicion.txt'), 'trabajo de alguien\n');
+  b.ensuciar();
   const { status, v, crudo } = b.lanzar();
   assert.equal(status, 0, `🔴 una mesa sucia impidió lanzar: ${crudo}`);
   assert.equal(v.mesa.veredicto, 'MESA-FALLIDA');
