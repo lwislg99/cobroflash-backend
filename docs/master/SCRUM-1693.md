@@ -43,3 +43,15 @@ Ticket abierto por el orquestador desde el borrador de S4.
 - Visto en la captura, no tocado: entre la última línea plegada («Notas») y «Horas y desplazamiento»
   queda poco aire. Lo daría `margin-bottom` en `.parte-datos-del-parte`, que vive en `styles.css`
   (contenedor de S2); no lo meto en esta pieza.
+
+## Verificado en yaqu.app (regla 42) · 2026-11-11T14:40Z
+
+- `main` = `412ddc20d0233162159567d4e7705bf845f71404` (merge #3060 = `c1fbaddae`). El
+  `parteDetailView.js` SERVIDO por yaqu.app contiene la marca `SCRUM-1693` (128 855 bytes).
+- Cuenta QA, 390 px, JS de producción, orden medido en el DOM (no leído del código):
+  - **PT-2026-005 (id 13, firmado por cliente y técnico):** `cabecera → datos → horas → mano_obra →
+    materiales → firmas → volver` · `prod-11nov/firmado-pt005-390.png`
+  - **Control, PT-2026-003 (id 11, borrador):** `cabecera → horas → mano_obra → materiales →
+    firmas → datos` (sin cambio, como debe) · `prod-11nov/borrador-pt003-390.png`
+- Resultado: aceptación cumplida. Lo del aire entre «Notas» y «Horas y desplazamiento» sigue
+  igual (CSS de S2, fuera de esta pieza).
