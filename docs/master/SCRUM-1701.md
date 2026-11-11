@@ -74,7 +74,9 @@ entradas** a la vista, incluidas `invoices`, `cobros`, `libro-registro` y `factu
 
 **Skill UI:** cargada (`yaqu-premium-ui`; AB6: sin componente, token ni texto nuevos. Se quita un botón ya existente; la rejilla de acciones rápidas pasa a dos columnas cuando quedan menos de tres, sólo por encima de 640px)
 
-A9: comprobación → `tests/scrum1701-menu-del-piloto-por-modo.test.mjs` (casos `1701b`)
+A9: comprobación → `tests/scrum1701-menu-del-piloto-por-modo.test.mjs`
+
+Los casos de este tramo llevan el prefijo `1701b` en ese mismo fichero.
 
 **Decisión del orquestador, coherencia con D3 firmada, reversible** (SCRUM-1701 c.21511, hallazgo (b); decisión
 en el encargo de la S2 de relevo, 11-nov). La acción rápida de Inicio «Pendientes de cobro · facturas abiertas»
@@ -96,4 +98,8 @@ literal (regla 39 no aplica: sólo se quita uno).
   9 1, todo por encima; mismo `grep -n`). El veredicto `{ flag: 8, tipo: 11, aPelo: 160 }` y las 38
   construcciones que no lee, sin cambios.
 - **Tandas:** tests que leen `homeView.js` o son de 1701: 486 ✔ · 0 ✖. Tests que leen `styles.css`: 826 ✔ ·
-  0 ✖ · 1 saltado (lo declara su fichero).
+  0 ✖ · 1 saltado (lo declara su fichero). Tests que leen `docs/master` (326 ficheros): 2551 ✔ · 6 ✖ · 106
+  saltados; 1 era mío (SCRUM-1294, la línea A9 llevaba una coletilla; arreglado: 45/45 ✔ con 1701 y 811c) y
+  5 son los de entorno ya declarados arriba (475 ×3 · 476 · 976).
+- **(a) de c.21511:** la frase de la auditoría «el front NO filtra el menú por rol» queda corregida en el
+  propio `docs/master/SCRUM-1686.md` (D3), con la cita a `aplicarRolALaBarra`, sin borrar la original.
