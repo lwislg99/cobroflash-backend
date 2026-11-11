@@ -53,6 +53,7 @@
 import { ALBARAN_ESTADOS } from './albaran.service';
 import { ESTADOS_COBRO, estadoCobroAlbaran, facturadoPorLinea } from './albaranFacturacion';
 import type { EstadoCobro, LineaAlbaran } from './albaranFacturacion';
+import { clienteDelDocumento } from '../../invoicing/domain/clienteCongelado'; // SCRUM-1650
 
 /** Los dos ejes, derivados de su fuente. El navegador los recibe; no los sabe de memoria. */
 export const EJES_ALBARAN = Object.freeze({
@@ -158,6 +159,10 @@ export interface LectorListado {
     // SCRUM-831 · columna del propio albarán: sin ella la fila no sabe si su siguiente paso es
     // facturar lo entregado o convertirlo en factura contra el presupuesto.
     modoValoracion: string;
+    // SCRUM-1650 · el cliente CONGELADO al emitir (`albaranEmision.ts`). Obligatorio en el tipo a
+    // propósito: un lector que no lo pida no compila, en vez de caer a la ficha viva en silencio.
+    customerName: string | null;
+    customerLegalName: string | null;
   }>>;
   // SCRUM-831 · `quoteId` viaja con el Trabajo, que este listado ya carga en lote: cero consultas
   // nuevas. Decide si un albarán SIN precios tiene contra qué facturarse.
@@ -202,6 +207,12 @@ export async function listarAlbaranesDelMerchant(
   const filas: FilaAlbaranListado[] = albaranes.map((a) => {
     const job = jobs.get(a.jobId) ?? null;
     const customer = job ? customers.get(job.customerId) ?? null : null;
+    // SCRUM-1650 · el nombre del albarán es el que quedó escrito al EMITIRLO, no el de la ficha de
+    // hoy: renombrar al cliente no reescribe los partes que ya firmó. La regla es la de
+    // `clienteDelDocumento` (un borrador lleva las columnas a NULL y cae a la ficha), no una copia.
+    const delDocumento = a.customerName != null || customer
+      ? clienteDelDocumento(a, customer ? { name: customer.name ?? '', legalName: customer.legalName } : null)
+      : null;
     const lineas = (Array.isArray(a.lineas) ? a.lineas : []) as LineaAlbaran[];
     const facturado = facturadoPorLinea(libroPorAlbaran.get(a.id) ?? []);
     return {
@@ -231,7 +242,7 @@ export async function listarAlbaranesDelMerchant(
       // dos pantallas vuelven a separarse. Aquí sólo hace falta SI EXISTE, así que viaja el id.
       quote: job?.quoteId != null ? { id: job.quoteId } : null,
       clienteId: customer?.id ?? null,
-      cliente: customer?.legalName || customer?.name || null,
+      cliente: delDocumento?.legalName || delDocumento?.name || null,
       jobId: a.jobId,
       trabajo: job?.titulo || null,
     };

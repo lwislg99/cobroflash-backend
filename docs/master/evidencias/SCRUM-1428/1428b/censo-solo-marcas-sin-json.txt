@@ -1,0 +1,52 @@
+población: 100 ficheros .js en public/ · 219 comentarios de convención (95 en objetos del censo, 124 FUERA DE ALCANCE) · 53 objetos · 353 hojas de texto
+APROBADO 335 · PENDIENTE 6 · SIN_COMENTARIO 12
+  SIN_COMENTARIO  public/dashboard/js/cobrosView.js · COBROS_COPY.cabeceras
+  SIN_COMENTARIO  public/dashboard/js/cobrosView.js · COBROS_COPY.diasEnTabla
+  SIN_COMENTARIO  public/dashboard/js/cobrosView.js · COBROS_COPY.diasSinCobrar
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.avisoAjenas
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.avisoIlegibles
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.avisoSinNumero
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.cargando
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.descuadre
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.menu
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.trazaNoSellado
+  SIN_COMENTARIO  public/dashboard/js/paidViaEtiquetas.js · ETIQUETAS_HEREDADAS.card:stripe
+  SIN_COMENTARIO  public/dashboard/js/paidViaEtiquetas.js · ETIQUETAS_HEREDADAS.manual
+  PENDIENTE       public/dashboard/js/settingsView.js · QR_COPY.color
+  PENDIENTE       public/dashboard/js/settingsView.js · QR_COPY.colorMarca
+  PENDIENTE       public/dashboard/js/settingsView.js · QR_COPY.colorNegro
+  PENDIENTE       public/dashboard/js/settingsView.js · QR_COPY.descargar
+  PENDIENTE       public/dashboard/js/settingsView.js · QR_COPY.formato
+  PENDIENTE       public/dashboard/js/settingsView.js · QR_COPY.tamano
+de las APROBADO, por firma de GRUPO (no en su línea): 176
+SOBRA  public/dashboard/js/libroRegistroView.js · COPY.colBase
+       ya no sale acusado (se firmó o se borró): muévelo de «acusadas» a «retiradas» en scripts/_censo-convenio-microcopy-declarados.json, con el motivo y la referencia de la firma. No se borra sin más: la bajada se declara.
+SOBRA  public/dashboard/js/libroRegistroView.js · COPY.colCuota
+       ya no sale acusado (se firmó o se borró): muévelo de «acusadas» a «retiradas» en scripts/_censo-convenio-microcopy-declarados.json, con el motivo y la referencia de la firma. No se borra sin más: la bajada se declara.
+SOBRA  public/dashboard/js/libroRegistroView.js · COPY.colEstado
+       ya no sale acusado (se firmó o se borró): muévelo de «acusadas» a «retiradas» en scripts/_censo-convenio-microcopy-declarados.json, con el motivo y la referencia de la firma. No se borra sin más: la bajada se declara.
+SOBRA  public/dashboard/js/libroRegistroView.js · COPY.colFecha
+       ya no sale acusado (se firmó o se borró): muévelo de «acusadas» a «retiradas» en scripts/_censo-convenio-microcopy-declarados.json, con el motivo y la referencia de la firma. No se borra sin más: la bajada se declara.
+SOBRA  public/dashboard/js/libroRegistroView.js · COPY.colNumero
+       ya no sale acusado (se firmó o se borró): muévelo de «acusadas» a «retiradas» en scripts/_censo-convenio-microcopy-declarados.json, con el motivo y la referencia de la firma. No se borra sin más: la bajada se declara.
+SOBRA  public/dashboard/js/libroRegistroView.js · COPY.colTipo
+       ya no sale acusado (se firmó o se borró): muévelo de «acusadas» a «retiradas» en scripts/_censo-convenio-microcopy-declarados.json, con el motivo y la referencia de la firma. No se borra sin más: la bajada se declara.
+SOBRA  public/dashboard/js/libroRegistroView.js · COPY.colTotal
+       ya no sale acusado (se firmó o se borró): muévelo de «acusadas» a «retiradas» en scripts/_censo-convenio-microcopy-declarados.json, con el motivo y la referencia de la firma. No se borra sin más: la bajada se declara.
+SOBRA  public/dashboard/js/libroRegistroView.js · COPY.error
+       ya no sale acusado (se firmó o se borró): muévelo de «acusadas» a «retiradas» en scripts/_censo-convenio-microcopy-declarados.json, con el motivo y la referencia de la firma. No se borra sin más: la bajada se declara.
+SOBRA  public/dashboard/js/libroRegistroView.js · COPY.recuento
+       ya no sale acusado (se firmó o se borró): muévelo de «acusadas» a «retiradas» en scripts/_censo-convenio-microcopy-declarados.json, con el motivo y la referencia de la firma. No se borra sin más: la bajada se declara.
+SOBRA  public/dashboard/js/libroRegistroView.js · COPY.titulo
+       ya no sale acusado (se firmó o se borró): muévelo de «acusadas» a «retiradas» en scripts/_censo-convenio-microcopy-declarados.json, con el motivo y la referencia de la firma. No se borra sin más: la bajada se declara.
+SOBRA  public/dashboard/js/libroRegistroView.js · COPY.trazaAlbaran
+       ya no sale acusado (se firmó o se borró): muévelo de «acusadas» a «retiradas» en scripts/_censo-convenio-microcopy-declarados.json, con el motivo y la referencia de la firma. No se borra sin más: la bajada se declara.
+SOBRA  public/dashboard/js/libroRegistroView.js · COPY.trazaCobro
+       ya no sale acusado (se firmó o se borró): muévelo de «acusadas» a «retiradas» en scripts/_censo-convenio-microcopy-declarados.json, con el motivo y la referencia de la firma. No se borra sin más: la bajada se declara.
+SOBRA  public/dashboard/js/libroRegistroView.js · COPY.trazaPresupuestoFirmado
+       ya no sale acusado (se firmó o se borró): muévelo de «acusadas» a «retiradas» en scripts/_censo-convenio-microcopy-declarados.json, con el motivo y la referencia de la firma. No se borra sin más: la bajada se declara.
+SOBRA  public/dashboard/js/libroRegistroView.js · COPY.trazaPresupuestoSinFirmar
+       ya no sale acusado (se firmó o se borró): muévelo de «acusadas» a «retiradas» en scripts/_censo-convenio-microcopy-declarados.json, con el motivo y la referencia de la firma. No se borra sin más: la bajada se declara.
+SOBRA  public/dashboard/js/libroRegistroView.js · COPY.vacioDeVerdad
+       ya no sale acusado (se firmó o se borró): muévelo de «acusadas» a «retiradas» en scripts/_censo-convenio-microcopy-declarados.json, con el motivo y la referencia de la firma. No se borra sin más: la bajada se declara.
+trinquete: 0 nuevas · 15 que sobran · 18 acusadas · 176 aprobadas por grupo

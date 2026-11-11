@@ -57,7 +57,7 @@ test('SCRUM-974 · el lunes nombra lo firmado y sin facturar, solo con la factur
   const stamp = Date.now();
   const datos = (tag, flags) => ({
     name: `QA 974 ${tag}`, email: `qa-974-${tag}-${stamp}@test.local`, country: 'ES',
-    status: 'active', notifyEmailWeeklyDigest: true, ...(flags ? { flags } : {}),
+    status: 'active', notifyEmailWeeklyDigest: true, ...(flags ? { flags, llevaLibrosPorSii: false } : {}),
   });
   /** `n` partes firmados, valorados y sin facturar, repartidos entre `clientes` clientes. */
   async function partes(merchantId, n, clientes) {

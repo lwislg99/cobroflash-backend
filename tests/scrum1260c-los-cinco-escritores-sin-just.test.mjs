@@ -124,7 +124,7 @@ test('SCRUM-1260c · ① en los cinco, el número es un `const` del reservador, 
 
 const ACTOR = { tipo: 'pro_propietario', teamMemberId: null };
 const COMERCIOS = [
-  { nombre: 'ES con el flag ON', modo: 'fiscal', m: { id: 7, country: 'ES', flags: { INVOICING_ES_ENABLED: true } } },
+  { nombre: 'ES con el flag ON', modo: 'fiscal', m: { id: 7, country: 'ES', flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false } },
   { nombre: 'fuera de España', modo: 'fiscal', m: { id: 8, country: 'PT', flags: {} } },
   { nombre: 'demo', modo: 'demo', m: { id: 1, country: 'ES', flags: {} } },
   { nombre: 'ES con el flag OFF', modo: 'receipt', m: { id: 9, country: 'ES', flags: {} } },

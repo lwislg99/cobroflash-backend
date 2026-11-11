@@ -1,0 +1,155 @@
+URL https://yaqu.app/dashboard/#customers
+--- TEXTO
+YQ
+YaQu
+Inicio
+Solicitudes
+Trabajos
+VENTA
+Presupuestos
+Albaranes
+Partes por valorar
+Facturas
+Cobros
+NEGOCIO
+Clientes
+Productos
+Proveedores
+Gastos
+Informes
+Libro de registro
+Facturas recibidas
+CUENTA
+Equipo
+Planes
+Configuración
+P
+PruebaQA
+Plan Pro
+Salir
+Clientes
+P
+Clientes
+
+4 clientes
+
+⬆ Importar clientes
+⬇ Clientes CSV
+Nuevo cliente
+Todos
+Empresas
+Personas
+Con cobro pendiente
+Más recientes
+Nombre A-Z
+Más pendiente de cobro
+Columnas
+#86
+Marta Prieto (PILOTO-1 QA)
+sin teléfono
+Editar
+Portal
+📊 Historial
+#85
+luis
+34629965893
+💬
+Editar
+Portal
+📊 Historial
+#84
+QA 1198 cliente de prueba sin teléfono
+sin teléfono
+Editar
+Portal
+📊 Historial
+#83
+Cliente de pruebas QA
+34629965893
+💬
+Editar
+Portal
+📊 Historial
+Seleccionar todos
+?
+--- PULSABLES
+button[submit] «Inicio» 228x34 @-238,85
+button[submit] «Solicitudes» 228x34 @-238,121
+button[submit] «Trabajos» 228x34 @-238,157
+button[button] «Presupuestos» 228x34 @-238,227
+button[submit] «Albaranes» 228x34 @-238,263
+button[submit] «Partes por valorar» 228x34 @-238,299
+button[submit] «Facturas» 228x34 @-238,335
+button[submit] «Cobros» 228x34 @-238,371
+button[submit] «Clientes» 228x34 @-238,440
+button[submit] «Productos» 228x34 @-238,476
+button[submit] «Proveedores» 228x34 @-238,512
+button[submit] «Gastos» 228x34 @-238,548
+button[submit] «Informes» 228x34 @-238,584
+button[submit] «Libro de registro» 228x34 @-238,620
+button[submit] «Facturas recibidas» 228x34 @-238,656
+button[submit] «Equipo» 228x34 @-238,726
+button[submit] «Planes» 228x34 @-238,762
+button[submit] «Configuración» 228x34 @-238,798
+button[submit] «Salir» 39x22 @-61,867
+button[submit] «Menú» 36x36 @12,12
+button[submit] «⬆ Importar clientes» 138x44 @33,155
+a «⬇ Clientes CSV» 115x44 @179,155
+button[submit] «Nuevo cliente» 324x44 @33,207
+input[text] «Buscar por nombre, teléfono, email o referencia…» 324x44 @33,278
+button[button] «Todos» 72x44 @38,337
+button[button] «Empresas» 97x44 @114,337
+button[button] «Personas» 93x44 @214,337
+button[button] «Con cobro pendiente» 172x44 @38,401
+select[select-one] «Más recientes Nombre A-Z Más pendiente de cobro» 202x44 @33,460
+summary «Columnas» 90x44 @245,460
+input[checkbox] «on» 18x18 @150,528
+input[checkbox] «on» 18x18 @150,572
+input[checkbox] «on» 18x18 @150,616
+input[checkbox] «on» 18x18 @150,660
+input[checkbox] «on» 18x18 @150,704
+input[checkbox] «on» 18x18 @150,748
+input[checkbox] «on» 18x18 @150,792
+input[checkbox] «on» 18x18 @150,836
+input[checkbox] «on» 18x18 @40,538
+button[button] «Editar» 61x44 @40,624
+button[button] «Portal» 62x44 @107,624
+button[button] «📊 Historial» 94x44 @175,624
+input[checkbox] «on» 18x18 @40,704
+a «34629965893» 88x44 @40,756
+a «💬» 44x44 @140,756
+button[button] «Editar» 61x44 @40,813
+button[button] «Portal» 62x44 @107,813
+button[button] «📊 Historial» 94x44 @175,813
+input[checkbox] «on» 18x18 @40,893
+button[button] «Editar» 61x44 @40,978
+button[button] «Portal» 62x44 @107,978
+button[button] «📊 Historial» 94x44 @175,978
+input[checkbox] «on» 18x18 @40,1058
+a «34629965893» 88x44 @40,1111
+a «💬» 44x44 @140,1111
+button[button] «Editar» 61x44 @40,1168
+button[button] «Portal» 62x44 @107,1168
+button[button] «📊 Historial» 94x44 @175,1168
+input[checkbox] «on» 18x18 @27,1247
+button[submit] «?» 48x48 @322,776
+--- DESBORDES
+--- <44px
+button «Menú» 36x36
+input «on» 18x18
+input «on» 18x18
+input «on» 18x18
+input «on» 18x18
+input «on» 18x18
+input «on» 18x18
+input «on» 18x18
+input «on» 18x18
+input «Marta Prieto (PILOTO-1 QA)» 18x18
+input «luis» 18x18
+input «QA 1198 cliente de prueba sin » 18x18
+input «Cliente de pruebas QA» 18x18
+input «Seleccionar todos» 18x18
+--- LOG
+[warning] Service Worker registration blocked by Playwright
+--- NOTAS
+botón guardar: Guardar

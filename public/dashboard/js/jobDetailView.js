@@ -31,6 +31,24 @@ function jobDetAlbEstado(e) {
   return e === 'firmado' ? 'Firmado' : e === 'emitido' ? 'Emitido' : 'Borrador';
 }
 /**
+ * SCRUM-1233j · UN SOLO SITIO que compone «<rótulo>: <mensaje>» para los cuatro avisos de esta
+ * pantalla que pintaban `(e?.data?.message || e.message)` crudo: con un 500 sin `data.message`
+ * eso enseñaba «No se pudo crear el albarán: API 500: internal_error» — la tripa del sistema,
+ * detrás de dos puntos, delante de un profesional.
+ *
+ * Mismo patrón que `avisoDeFallo` (jobsView.js:397): el detalle sale de `mensajeParaPersona`
+ * (api.js), que SOLO deja pasar la frase que el servidor escribió para una persona. Sin ella, el
+ * rótulo se pinta SOLO, sin los dos puntos — prefijo exacto de lo que ya se pintaba antes.
+ *
+ * @param {string} rotulo el texto aprobado que ya pintaba cada sitio (regla 30: no se estrena).
+ * @param {any} err el error capturado.
+ * @returns {string}
+ */
+function mensajeDeFallo(rotulo, err) {
+  const detalle = mensajeParaPersona(err, '');
+  return detalle ? rotulo + ': ' + detalle : rotulo;
+}
+/**
  * SCRUM-318 (G3) · pinta UN bloque del rail a partir de los datos que devuelve su constructor.
  *
  * Aquí no se decide NADA: si un bloque llega, se pinta entero. Toda la lógica de «¿hay dato?» vive
@@ -612,6 +630,11 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   const sub = document.createElement('p');
   sub.className = 'detail-sub';
   headLeft.appendChild(sub);
+  // SCRUM-1672: la CITA, en su propia línea de la cabecera. Antes la ficha no pintaba `scheduledAt`
+  // en ningún sitio, y el único día visible (la fecha de alta) se leía como si fuera la cita.
+  const cita = document.createElement('p');
+  cita.className = 'detail-sub detail-cita';
+  headLeft.appendChild(cita);
   // ── SCRUM-316 (G1) · los DOS chips, en la cabecera y juntos ──────────────────────────
   // Estado del TRABAJO y estado de COBRO. Bajaban del bloque de resumen; aquí están donde el
   // patrón los pide, al lado del título.
@@ -719,9 +742,25 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   const refPresupuesto = job.quote?.number != null ? `Presupuesto #${job.quote.number}` : '';
 
   h2.textContent = nombreTrabajo || nombreCliente || 'Trabajo';
-  sub.textContent = unirCon(' · ', nombreCliente, fechaCorta(job.createdAt), refPresupuesto);
+  // SCRUM-1672 · textos firmados en SCRUM-1656 c.21408 (tanda c.21405, entradas 1 y 2): la fecha
+  // de alta lleva su rótulo («Abierto el 10 nov») para no leerse como la cita.
+  const alta = fechaCorta(job.createdAt);
+  sub.textContent = unirCon(' · ', nombreCliente, alta ? `Abierto el ${alta}` : '', refPresupuesto);
   // Un subtítulo vacío no deja un párrafo en blanco empujando la pantalla.
   sub.style.display = sub.textContent ? '' : 'none';
+  // «Cita: jue 12 nov, 09:00». Mismo dato y misma zona horaria (la del navegador) que la columna
+  // de la lista (jobsView.js `jobRow`); el literal firmado no lleva la coma tras el día de la semana.
+  const fechaCita = (v) => {
+    if (!v) return '';
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return '';
+    const dia = d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/,/g, '');
+    const hora = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    return `${dia}, ${hora}`;
+  };
+  const cuandoCita = fechaCita(job.scheduledAt);
+  cita.textContent = cuandoCita ? `Cita: ${cuandoCita}` : '';
+  cita.style.display = cuandoCita ? '' : 'none';
 
   // SCRUM-57: "Responsable" en la cabecera = autoría del operario (job.operario, ya en el
   // serializer tras SCRUM-22). Si el Trabajo es del propietario (operario null), el nombre del
@@ -919,7 +958,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     // agendado): los dos entran por aquí, así que el número no sube. El texto es el que ya había.
     // SCRUM-1160 · el 409 sin firmar de `collect-rest` pinta el texto firmado (`albaranAccion.js`).
     const falloDelCta = (err) => setStatus('error', (window.errorDeFacturarSinFirmar && window.errorDeFacturarSinFirmar(err?.data))
-      || 'No se pudo completar la acción: ' + (err?.data?.message || err.message));
+      || mensajeDeFallo('No se pudo completar la acción', err));
     const cta = document.createElement('button');
     // 🔴 SCRUM-380 · SIN `btn-sm`, y el arreglo va POR AQUÍ y no por el CSS.
     //
@@ -1326,7 +1365,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
         tipoActual = prev;
         paintTipoCards();
         TIPO_CARDS.forEach((x) => tipoCardEls[x.value].setAttribute('aria-pressed', String(x.value === tipoActual)));
-        setStatus('error', 'No se pudo guardar el tipo de trabajo: ' + (e?.data?.message || e.message));
+        setStatus('error', mensajeDeFallo('No se pudo guardar el tipo de trabajo', e));
       }
     });
     tipoCardEls[c.value] = card;
@@ -1801,7 +1840,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
       await abrirAltaAlbaran(modoValoracion);
       newAlbBtn.disabled = false;
     } catch (e) {
-      setStatus('error', 'No se pudo crear el albarán: ' + (e?.data?.message || e.message));
+      setStatus('error', mensajeDeFallo('No se pudo crear el albarán', e));
       newAlbBtn.disabled = false;
     }
   });
@@ -2240,7 +2279,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
             await apiRequest(`/admin/invoices/${inv.id}/status`, { method: 'PUT', body: JSON.stringify({ status: 'paid' }) });
             refresh(); // el semáforo/barra/timeline actualizados = feedback (como invoice-detail)
           } catch (e) {
-            setStatus('error', 'Error actualizando estado: ' + (e?.data?.message || e?.data?.error || e.message));
+            setStatus('error', mensajeDeFallo('Error actualizando estado', e));
           }
         });
 
