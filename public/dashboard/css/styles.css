@@ -4494,6 +4494,8 @@ textarea.parte-linea-desc {
 @media (min-width: 641px) {
   .table--albaranes td { word-break: normal; overflow-wrap: break-word; }
   .table--albaranes td.cell-date, .table--albaranes td.col-hide-mobile { white-space: nowrap; }
+  /* SCRUM-1669 · el importe, a la derecha y en una línea, como en Presupuestos. */
+  .table--albaranes th:nth-child(6), .table--albaranes td.cell-amount { text-align: right; white-space: nowrap; }
 }
 @media (min-width: 641px) and (max-width: 1279px) {
   .table--albaranes th:nth-child(2), .table--albaranes td.col-hide-mobile { display: none; }
@@ -4508,9 +4510,15 @@ textarea.parte-linea-desc {
    ① se oculta «Entrega» en la lista, como B hizo con «Emisión»; la ficha la conserva.
    ② el suelo se anula SÓLO para esta tabla y sólo en esta banda; el global no se toca.
    Medido en yaqu.app: desborda 13 a 769 (dentro de su `.table-scroll`, que scrollea; la página +0)
-   y 0 desde 800; «Enviar para firmar» sigue en una línea. Antes: 106 / 75 / 25. */
-@media (min-width: 769px) and (max-width: 899px) {
+   y 0 desde 800; «Enviar para firmar» sigue en una línea. Antes: 106 / 75 / 25.
+   SCRUM-1669 · la columna «Importe» (firmado n.º 17, SCRUM-1656 c.21408 ①) pide ~77 px más, y a 929
+   la tabla volvía a desbordar 70 con «Enviar para firmar» medio fuera. A la pregunta de SCRUM-1669
+   c.21494, el orquestador respondió que sí: «Entrega» se oculta TAMBIÉN en 900-1023. El suelo sigue anulado sólo en
+   769-899: desde 900 el carril ya pasa de 520 y no lo necesita. */
+@media (min-width: 769px) and (max-width: 1023px) {
   .table--albaranes th:nth-child(3), .table--albaranes td.cell-date { display: none; }
+}
+@media (min-width: 769px) and (max-width: 899px) {
   .table-scroll .table--albaranes { min-width: 0; }
 }
 
@@ -4530,14 +4538,18 @@ textarea.parte-linea-desc {
 
      El Trabajo se queda a ANCHO COMPLETO, que es lo que pedía su comentario original: un título de
      obra no cabe en media tarjeta. */
+  /* SCRUM-1669 · el importe entra en la tarjeta en la línea de la fecha, a la derecha: arriba a la
+     derecha ya está el estado (SCRUM-1450), y el importe en su propia línea a ancho completo
+     separaría el dinero del albarán al que pertenece. */
   .table--albaranes tbody tr {
     grid-template-areas:
       "id       status"
       "client   client"
-      "date     date"
+      "date     amount"
       "trabajo  trabajo"
       "actions  actions";
   }
+  .table--albaranes td.cell-amount { align-self: center; white-space: nowrap; }
   /* SCRUM-1462 · y el título del Trabajo también envuelve: es texto libre a ancho completo. */
   .table--albaranes td.cell-trabajo { grid-area: trabajo; font-size: 12.5px; white-space: normal; overflow-wrap: anywhere; }
   /* AB6 · el enlace del Trabajo CONSERVA el objetivo de 44 px que tenía por vivir en `actions`.

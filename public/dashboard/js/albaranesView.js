@@ -306,7 +306,8 @@
       // `jobsView.js` y `quotesListView.js` para esta misma columna. Se copia tal cual en vez de
       // estrenar un sinónimo (regla 30). Las otras seis no se tocan.
       thead.innerHTML = '<tr>' +
-        ['Nº', 'Emisión', 'Entrega', 'Cliente', 'Trabajo', 'Estado', 'Acciones']
+        // SCRUM-1669 · «Importe» = texto firmado n.º 17 (SCRUM-1656 c.21405, firma c.21408).
+        ['Nº', 'Emisión', 'Entrega', 'Cliente', 'Trabajo', 'Importe', 'Estado', 'Acciones']
           .map((c) => '<th>' + esc(c) + '</th>').join('') + // APROBADAS tal cual
         '</tr>';
       tabla.appendChild(thead);
@@ -382,6 +383,8 @@
         // en movil (el patron de la casa para lo que no cabe) y sigue en la tabla de escritorio.
         const tdEmision = document.createElement('td');
         tdEmision.className = 'col-hide-mobile';
+        // SCRUM-1669 · la «Emisión» de un borrador la decide el SERVIDOR (`emisionAt: null`, rama de
+        // S1 `scrum-1669b-emision-vacia-en-borrador`), y `fechaCorta(null)` ya pinta «—».
         tdEmision.textContent = fechaCorta(f.emisionAt);
         tr.appendChild(tdEmision);
 
@@ -435,6 +438,19 @@
           tdTrabajo.textContent = '—';
         }
         tr.appendChild(tdTrabajo);
+
+        // SCRUM-1669 (PILOTO-1) · EL DINERO DE LA FILA. `total` lo manda el servidor desde #3064:
+        // número en euros con IVA si el albarán es VALORADO, `null` si es SIN_VALORAR. Un `null`
+        // pinta «—» y NUNCA «0,00 €»: un parte sin precios no vale cero, es que no lleva precio.
+        // `.amount` = Tinta 700 tabular (Regla del Importe, AB4); `cell-amount` = su área en la
+        // tarjeta de móvil, la de la rejilla compartida.
+        const tdImporte = document.createElement('td');
+        tdImporte.className = 'cell-amount';   // UNA clase de área por celda (lo lee el guard de SCRUM-301)
+        tdImporte.classList.add('amount');
+        tdImporte.textContent = typeof f.total === 'number' && Number.isFinite(f.total) && typeof fmtMoneyEs === 'function'
+          ? fmtMoneyEs(f.total, 'EUR')
+          : '—';
+        tr.appendChild(tdImporte);
 
         const tdEstado = document.createElement('td');
         tdEstado.className = 'cell-status';
