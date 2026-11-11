@@ -31,3 +31,21 @@ A9: comprobación → `tests/scrum1678-plazas-antes-del-formulario.test.mjs`
 
 - No toca el plan de nadie. La aceptación (b), que el PILOTO-1 tenga su plan decidido, es del fundador (c.21456 ①).
 - No cambia «Reactivar» (`teamView.js:200`), que abre el mismo formulario y también gasta una plaza. Ahí manda el 409 de siempre. Queda fuera del cruce declarado.
+
+## 2026-11-11 · En yaqu.app tras el merge de #3071 (S1, relevo)
+
+**Medido contra:** `origin/main` = `76b285e6f` · #3071 mergeado 2026-11-11T16:05:05Z (cabeza `3585a3c25`) · prod medido ~17:24Z (hora del servidor)
+
+A9: comprobación → `tests/scrum1678-plazas-antes-del-formulario.test.mjs`
+
+Cuenta QA (`+qa`, plan Equipo, 5 plazas), con `node scripts/qa/sesion-panel.mjs` (solo GET):
+
+| qué | resultado |
+|---|---|
+| `GET /admin/team/plazas` | 200 · `{"plazas":5,"usadas":2,"lleno":false,"mensaje":null}` · es el CONTROL: con plazas libres el formulario se abre como antes |
+| `GET /admin/team` | 200 · sigue siendo el array de miembros (2), la forma no cambió |
+| `GET /dashboard/js/teamView.js` | prod sirve el panel nuevo: `btn-invite-member` → `abrirAltaSiCabe`, que pide `/admin/team/plazas` |
+
+- **El caso lleno no se ve en prod**: ninguna cuenta de QA tiene 1 plaza. Lo fija el test (9/9 en el CI obligatorio de #3071).
+- **Sin captura**: no he abierto navegador. Lo medido es la respuesta de la ruta y el script que sirve prod.
+- **La aceptación (b) sigue abierta**: el plan del PILOTO-1 lo decide el fundador (c.21456 ①). Este tramo no la toca.
