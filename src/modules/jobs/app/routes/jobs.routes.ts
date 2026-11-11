@@ -10,6 +10,7 @@ import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 
 import { canalDeWhatsApp } from '../../../../core/contacto/canalDeWhatsApp'; // SCRUM-1171
 import { seesOnlyOwnJobs, seesAllJobs, adminOnlyJobField } from '../../../../core/http/roleCapabilities'; // SCRUM-147 / SCRUM-164
 import { listExpenses } from '../../../expenses/domain/expenses.service'; // SCRUM-370: los gastos de ESTE Trabajo
+import { esSuyoElTrabajo, SELECT_DUENOS } from '../../domain/accesoAlTrabajo'; // SCRUM-1706: los tres ejes, también en `/:id`
 import { canTransition, estadoCobroFor, importeDeReferencia, JOB_TIPOS_OPERACION } from '../../domain/job.service';
 import { recordAudit, actorDeRequest, sobreFiscal, flagsFiscalesDe } from '../../../system/audit.service'; // SCRUM-66 · SCRUM-207 · SCRUM-206b
 import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo } from '../../../quotes/domain/billingPlan';
@@ -926,6 +927,19 @@ router.post('/', async (req, res) => {
   }
 });
 
+// SCRUM-1706 (PILOTO-1) · ¿SE LO ASIGNARON? La segunda mitad de la pertenencia en `/:id`.
+// La LISTA filtra por los tres ejes (autoría, `assignedUserId` y la tabla `assignees`; SCRUM-467 +
+// SCRUM-650) y las puertas de `/:id` miraban solo la autoría: el operario veía en la lista el trabajo
+// que le asignaban y al abrirlo recibía 404 («No pudimos cargar el trabajo»). Se pregunta DENTRO del
+// `if` de autoría —solo cuando no es el autor— con `esSuyoElTrabajo` (los tres ejes, UNA fuente), así
+// la lectura y la escritura de este recurso siguen mirando lo mismo que la lista.
+// La decisión se toma AQUÍ, en código, sobre los dueños leídos — no se delega en un `where`: un
+// `where` mal formado (o un doble que no lo interpreta, SCRUM-1390b) devolvería la fila y abriría.
+async function asignadoAlTecnico(merchantId: number, jobId: number, teamMemberId: number | null | undefined): Promise<boolean> {
+  const duenos = await prisma.job.findFirst({ where: { id: jobId, merchantId }, select: SELECT_DUENOS });
+  return esSuyoElTrabajo(duenos, teamMemberId);
+}
+
 router.get('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -936,7 +950,9 @@ router.get('/:id', async (req, res) => {
     // URL el Trabajo de otro → 404 (mismo patrón que la tenancy: no filtra existencia).
     // SCRUM-147: por capacidad (ver el comentario de GET /admin/jobs y roleCapabilities.ts).
     if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
-      return res.status(404).json({ error: 'not_found' });
+      if (!(await asignadoAlTecnico(req.merchantId!, job.id, req.teamMemberId))) { // SCRUM-1706
+        return res.status(404).json({ error: 'not_found' });
+      }
     }
     return res.json(await serializeJobDetail(job));
   } catch (err: any) {
@@ -978,7 +994,9 @@ router.get('/:id/gastos', async (req, res) => {
     const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!job) return res.status(404).json({ error: 'not_found' });
     if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
-      return res.status(404).json({ error: 'not_found' });
+      if (!(await asignadoAlTecnico(req.merchantId!, job.id, req.teamMemberId))) { // SCRUM-1706
+        return res.status(404).json({ error: 'not_found' });
+      }
     }
     // Un Trabajo sin cotización no puede tener gastos vinculados: el gasto se ata por `quoteId`.
     // Lista VACÍA, no 404: «no tiene gastos» es una respuesta, no un error.
@@ -1000,10 +1018,12 @@ router.patch('/:id', async (req, res) => {
     if (!job) return res.status(404).json({ error: 'not_found' });
     // 🔴 SCRUM-849 · LA MISMA COMPROBACION QUE `GET /:id`, QUE AQUI NO ESTABA.
     // Sin esto, un tecnico no podia ABRIR el Trabajo de otro (404 desde SCRUM-23) y si podia
-    // ESCRIBIR en el. Un eje y no tres, porque es el que aplica la lectura de ESTE recurso:
-    // subir aqui a los tres ejes de albaranes dejaria la escritura mas abierta que su lectura.
+    // ESCRIBIR en el. Los MISMOS ejes que la lectura de ESTE recurso (`GET /:id`), nunca mas: desde
+    // SCRUM-1706 la lectura mira los tres (autor dentro del `if`, asignado en `asignadoAlTecnico`).
     if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
-      return res.status(404).json({ error: 'not_found' });
+      if (!(await asignadoAlTecnico(req.merchantId!, job.id, req.teamMemberId))) { // SCRUM-1706
+        return res.status(404).json({ error: 'not_found' });
+      }
     }
 
     // SCRUM-120: gate por CAMPO (no por ruta — status/scheduledAt/notes del día a día son del operario).
@@ -1168,7 +1188,9 @@ router.get('/:id/ics', async (req, res) => {
     // SCRUM-1390b: la misma comprobación que `GET /:id` (SCRUM-23). Sin ella, un técnico que no
     // puede abrir el Trabajo de otro se bajaba su cita, con el cliente y las notas dentro.
     if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
-      return res.status(404).json({ error: 'not_found' });
+      if (!(await asignadoAlTecnico(req.merchantId!, job.id, req.teamMemberId))) { // SCRUM-1706
+        return res.status(404).json({ error: 'not_found' });
+      }
     }
     if (!job.scheduledAt) return res.status(409).json({ error: 'not_scheduled' });
 
@@ -1212,10 +1234,12 @@ router.post('/:id/albaranes', async (req, res) => {
     if (!job) return res.status(404).json({ error: 'not_found' });
     // 🔴 SCRUM-849 · LA MISMA COMPROBACION QUE `GET /:id`, QUE AQUI NO ESTABA.
     // Sin esto, un tecnico no podia ABRIR el Trabajo de otro (404 desde SCRUM-23) y si podia
-    // ESCRIBIR en el. Un eje y no tres, porque es el que aplica la lectura de ESTE recurso:
-    // subir aqui a los tres ejes de albaranes dejaria la escritura mas abierta que su lectura.
+    // ESCRIBIR en el. Los MISMOS ejes que la lectura de ESTE recurso (`GET /:id`), nunca mas: desde
+    // SCRUM-1706 la lectura mira los tres (autor dentro del `if`, asignado en `asignadoAlTecnico`).
     if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
-      return res.status(404).json({ error: 'not_found' });
+      if (!(await asignadoAlTecnico(req.merchantId!, job.id, req.teamMemberId))) { // SCRUM-1706
+        return res.status(404).json({ error: 'not_found' });
+      }
     }
 
     // SCRUM-257 · UN ALBARÁN NACE DE UN PRESUPUESTO (decisión 1 del fundador, 2-ago-2026).
