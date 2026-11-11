@@ -47,3 +47,15 @@ ni desplazamiento, y en el firmado el hueco salía «—», que no distingue «n
   vacío. Hoy ninguno lo tiene (PT-2026-005 lo lleva todo apuntado), así que habrá que crear uno.
 - Lo otro de la anomalía e queda fuera de esta pieza: que se pueda firmar sin horas (`puedeFirmarse`) es
   del servidor (S1) y es una decisión de producto.
+
+## Apéndice · 11-nov-2026 · VERIFICADO en yaqu.app (regla 42)
+
+- En main por **#3072** (`573579309`); prod sirve `parteDetailView.js` con «Sin apuntar».
+- Cuenta QA (QA en producción autorizado): el borrador **PT-2026-006 (id 14)**, del trabajo #77, se
+  rellena con una línea de mano de obra, km = 0 y SIN entrada, salida ni desplazamiento, y se firma
+  («Cliente QA»). Banco: `docs/master/evidencias/SCRUM-1698/prod/verificar.mjs` (escribe sólo en la
+  cuenta QA).
+- Medido a 390 en el parte firmado: **Entrada «Sin apuntar» · Salida «Sin apuntar» · Desplazamiento
+  «Sin apuntar» · Kilómetros «0 km»**: el cero sigue siendo «0» (N3 firmado, SCRUM-1686 c.21470).
+  Captura: `evidencias/SCRUM-1698/prod/firmado-pt006-390.png`.
+- El ticket se puede cerrar.
