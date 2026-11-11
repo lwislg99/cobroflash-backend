@@ -285,3 +285,104 @@ Medido sobre `origin/main` = `412ddc20d0233162159567d4e7705bf845f71404`. Rama `s
 **M1 (esquema):** NO se toca `prisma/schema.prisma` en esta rama. El DDL va como paquete para el fundador en un comentario de este ticket; T2 (SCRUM-1695) sigue bloqueado hasta que las tres bases tengan el ALTER (c.21479 ③).
 
 **Efecto:** cuando este PR entre en `main`, se desbloquean T4 (SCRUM-1697) y la parte multi-visita de T1 (SCRUM-1694) (c.21479 ④).
+
+## APÉNDICE · SCRUM-1686 ④ · EL DÍA DEL OPERARIO, pantalla a pantalla · S4 · 11-nov-2026 (noche)
+
+**Medido sobre:** `origin/main` = `4d8043854` (código leído, nada tocado en `src/` ni `public/`). **Encargo:** c.21524
+(literal del fundador, transmitido por el orquestador). **Material:** las tres capturas del fundador como operario
+(miembro 30 «Operario QA», merchant QA 46, 11-nov ~19:30), SCRUM-1706 y SCRUM-1707 (descripciones íntegras, sin
+comentarios), los patrones P1-P4 del benchmark (c.21407) y la Parte S1 del máster (qué puede HACER y qué VE el
+Técnico). Carriles sacados con `node scripts/carriles.mjs de <ruta>`. **Límite:** Parte L (regla 5); lo que pide un
+estado, una pantalla o un texto nuevo va como propuesta, no se construye.
+
+**El rol, en una línea:** en el código el operario es `tecnico` (`src/core/http/roleCapabilities.ts:30`); lo que ve
+lo decide `seesOnlyOwnJobs` (`:56`) y, para la pertenencia a un Trabajo, `esSuyoElTrabajo` con TRES ejes
+—creador `operarioId`, `assignedUserId` y la tabla `assignees`— (`src/modules/jobs/domain/accesoAlTrabajo.ts:66-96`).
+
+### 0 · Llegar (Inicio) — EXISTE, con dos cosas que no son suyas
+- Menú: `aplicarRolALaBarra` (`public/dashboard/js/app.js:1185`) esconde las 10 entradas con `data-rol="admin"`
+  (`public/dashboard/index.html`). Queda justo lo de la captura ①: Inicio, Solicitudes, Trabajos, Presupuestos,
+  Albaranes, Facturas, Clientes, Productos. **Facturas** es correcto por el máster (S1: ve sólo las suyas) y para
+  PILOTO-1 la esconde ya el modo `receipt` (SCRUM-1701, #3077): la cuenta QA 46 enseña Facturas porque **no** está en
+  ese modo (MI LECTURA, sin medir el modo de la 46).
+- «Esto es lo que pasa hoy en **tu negocio**.» (`homeView.js:18`) sale igual a los dos roles: para el operario el
+  negocio no es suyo. → **H4** (texto, firma).
+- Héroe «Nuevo presupuesto · en 30 segundos · tecla N» (`homeView.js:68-71`): **no es un fallo**: S1 le deja crear
+  presupuestos. Lo que falta es que el primer bloque de SU Inicio sea SU trabajo de hoy (P2). → **H4**.
+- «Actividad del equipo · este mes» sin importes: **es lo firmado** (SCRUM-1337 c.17795, construido en SCRUM-1341).
+- «No hay nada que llevarte…» es la precarga offline (`estadoFirma.js:181`, SCRUM-460). La captura ① parece anterior
+  a la asignación al #77: **re-medir** tras asignar antes de llamarlo fallo.
+
+### 1 · Ver SU trabajo (lista) — EXISTE, enseña el dinero → SCRUM-1707
+- El servidor filtra bien: `GET /admin/jobs` aplica los tres ejes (`jobs.routes.ts:827-842`). El #77 le sale.
+- **El dinero sale entero**, sin condición de rol en ningún sitio: `serializeJob` (`jobs.routes.ts:373-558`) manda
+  `totalAceptado`, `totalCobrado`, `remaining`… a cualquier rol; `jobsView.js` pinta la tarjeta «Por cobrar»
+  (`:349-373`), la columna «x de y» (`:920-967`) y los filtros Pendiente/Parcial/Pagado (`:136-147`) sin mirar el
+  rol. El único botón de dinero con rol es «💰 Cobrar el resto», que al técnico le sale BLOQUEADO (`:1145`) —
+  pintado, pero bloqueado.
+- El máster no lo decide para ESTA pantalla: S1 le deja ver sus presupuestos y facturas CON importe, y le quita
+  «lo que le deben» del Inicio. Son dos lecturas posibles → **pregunta Q1** (no se ejecuta sin firma).
+- «Abrir parte» (SCRUM-1700, #3069) no depende del rol: al operario también le sale en su trabajo en curso.
+
+### 2 · Abrir el trabajo (ficha) — ROTO → SCRUM-1706 (P0), CAUSA MEDIDA
+- `jobDetailView.js:698` pide `GET /admin/jobs/:id`; si esa petición falla, y SÓLO esa, pinta «No pudimos cargar
+  el trabajo.» (`:699-702`).
+- **Lo niega el servidor:** `jobs.routes.ts:938` → `if (seesOnlyOwnJobs(rol) && job.operarioId !== req.teamMemberId)
+  return 404`. Mira **un eje** (el creador). El operario 30 está en el #77 sólo por ASIGNACIÓN → la lista le da
+  200 y la ficha le da 404. No es el front.
+- **El mismo eje único está en cuatro sitios más del mismo fichero:** líneas 980, 1005, 1170 y 1217 (esta última es
+  `POST /:id/albaranes`, y su comentario de SCRUM-849 dice que copia a propósito el eje de `GET /:id`). Partes
+  (`partes.routes.ts:92-99`, `:407`) y albaranes (`albaranes.routes.ts:865-873`) ya usan los tres.
+- El máster ya lo decide (S1, nota «Autor o asignado»: ve «los que tiene asignados como trabajo»), así que el
+  arreglo no pide firma: pasar los cinco sitios a `esSuyoElTrabajo`, con un test por rol en rojo primero. → **H1**.
+- Con 1706 roto, el operario PUEDE llegar a su parte (el «Abrir parte» de la lista crea/abre por `/admin/partes`,
+  que mira los tres ejes), pero no a la ficha: cualquier enlace del parte «← Trabajo» acaba en la banda roja.
+- Qué verá en la ficha cuando abra («LO QUE FALTA … Hacer presupuesto», importes, notas, «+ Nuevo albarán», que con
+  D1=A firmado en c.21461 no le toca ofrecer): **sin medir**, se mide en cuanto 1706 entre. → **H5**.
+
+### 3 · Parte → apuntar → firmar — EXISTE
+- `parteDetailView.js`: carga `GET /admin/partes/:id` (`:1705`), guarda con `PATCH` (`:1742`), firma el operario
+  (`POST …/firmar-tecnico`) y firma el cliente (`POST …/firmar`) (`:1393-1394`). Sin precios en ningún punto: el
+  servidor los recorta (`lineasParaElTecnico`; `precios` es campo sólo de admin, `roleCapabilities.ts:112-115`).
+  Es el Job Sheet de Tradify del benchmark: el parte ya cumple «los precios se quitan por permiso».
+- Verificado en prod el 11-nov (SCRUM-1698, PT-2026-006, con la cuenta QA de ADMIN). **Falta hacerlo con la cuenta
+  del operario**, y depende de H1 sólo para la ficha, no para el parte.
+
+### 4 · Segunda visita — EXISTE SIN DECIRLO
+- No hay «+ Nuevo parte». El mecanismo es implícito: «Abrir parte» busca un borrador del trabajo; si el de la
+  visita 1 ya está firmado, crea otro (`jobsView.js:1233-1237`, `jobDetailView.js:1655-1661`). Cumple M2 («la visita
+  ES su parte»). No hay tope de partes por trabajo (`partes.routes.ts`, sólo numeración).
+- Falta que la pantalla diga qué visita es: «Visita n de m» = SCRUM-1697, esperando el campo que calcula S1 en el
+  GET del parte. Y el hueco 2 de M2 («borrador de HOY», zona horaria) sigue en el fundador: hoy se reabre CUALQUIER
+  borrador, aunque sea de ayer.
+
+### 5 · Qué ve la oficina — EXISTE
+- «Partes por valorar · N» (`parteOficinaView.js:50`, `GET /admin/partes/oficina/pendientes`, `requireRole('admin')`,
+  `partes.routes.ts:338`); el parte con precios para la oficina (`:367-378`). El número del menú se pone al día al
+  entrar, al recargar o a los 5 min (anotado en SCRUM-1700). Parte → albarán (M1) espera el ALTER (T2, SCRUM-1695).
+
+### Lo que encontré de paso (no es del flujo, va a la lista)
+- **Albarán: la API manda `precioUnitario` al técnico** (`src/modules/jobs/domain/albaran.service.ts:732`,
+  `serializeAlbaran`: las `lineas` salen enteras, con `totales` en VALORADO, y la función no recibe el rol;
+  `ocultarPreciosEnDocumento` sólo gobierna el papel del cliente). No he mirado si alguna ruta recorta DESPUÉS
+  del serializador: es lo primero que mide quien lo coja. El parte y el presupuesto
+  (`sinCosteEnDocumento`) sí recortan. Choca con «los precios se quitan por permiso». → **Q2**.
+
+### LISTA PARA EL ORQUESTADOR (propuestas, NINGÚN ticket abierto)
+| | Qué | Carril | ¿Pide firma? |
+|---|---|---|---|
+| H1 | 1706: los 5 sitios de `jobs.routes.ts` (938, 980, 1005, 1170, 1217) a `esSuyoElTrabajo`; test por rol en rojo primero; verificar con la cuenta del operario en yaqu.app | S1 | No (S1 del máster ya lo decide) |
+| H1b | Guard de CLASE: ninguna comprobación de pertenencia al Trabajo fuera de `accesoAlTrabajo.ts` (la lección de SCRUM-147, que convirtió una denylist en clase) | S3 | No |
+| H2 | 1707: dinero de la lista para el técnico — servidor (`serializeJob`) + pantalla (tarjeta, columna, filtros, botón bloqueado) | S1 + S4 | **Sí → Q1** |
+| H3 | Precios del albarán en la API del técnico | S1 | **Sí → Q2** |
+| H4 | Inicio del técnico: «tu negocio» por rol y, como primer bloque, «tu trabajo de hoy» (P2) | S2 | **Sí → Q3** (texto + cambio de la tabla de S1, que fija qué ve en Inicio) |
+| H5 | Ficha del trabajo vista por el técnico: medir tras H1 y quitar lo que D1=A no le deja (`+ Nuevo albarán`) | S2 | Ya firmado (D1=A); lo nuevo, a firma |
+| H6 | Verificar el día entero con la cuenta del operario tras #3069 + H1 (lista → Abrir parte → apuntar → dos firmas → segunda visita → la oficina lo ve) | S4 | No |
+
+**Preguntas para el fundador (una línea cada una):**
+- **Q1** · En su lista de Trabajos, el operario: (a) no ve dinero ninguno; (b) ve el importe de SUS trabajos (como
+  ya ve sus presupuestos y facturas) pero no «Por cobrar» ni los filtros de cobro; (c) como hoy.
+- **Q2** · ¿El operario debe recibir los precios del albarán? Hoy sí, aunque los del parte no.
+- **Q3** · Texto para el Inicio del operario en vez de «tu negocio» (propuesta mía, SIN firmar: «Esto es lo que
+  tienes hoy.»), y si su primer bloque pasa a ser su trabajo de hoy.
+- (sigue abierta, de S0) el «hoy» del borrador de parte: zona del merchant o Madrid.
