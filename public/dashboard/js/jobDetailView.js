@@ -542,6 +542,28 @@ function decidirAperturaAlbaran({ modoValoracion, tieneQuote, quoteLeido, lineas
   return { lineas, descartadas: origen.length - lineas.length, motivo: null };
 }
 
+// SCRUM-1694 · los textos de la sección Partes. Tanda N1-N13 de SCRUM-1686 c.21470, con la firma
+// literal del fundador «si firmo» en c.21471 (~12:05 local, 11-nov-2026); cada clave lleva su marca.
+//   N7 los dos vacíos (sustituyen a «Aún no hay documentos. Crea un albarán…») · N9 el botón
+//   (sustituye a «Parte de trabajo»). N6, el rótulo «Partes», va literal en su `<h3>` (ver allí).
+const ROTULOS_PARTES = {
+  vacio: 'Aún no hay partes.', // N7 · APROBADO por el fundador el 11-nov-2026 (SCRUM-1686 comentario 21471)
+  vacioAlbaranes: 'Aún no hay albaranes.', // N7 · APROBADO por el fundador el 11-nov-2026 (SCRUM-1686 comentario 21471)
+  nuevo: '+ Nuevo parte', // N9 · APROBADO por el fundador el 11-nov-2026 (SCRUM-1686 comentario 21471)
+};
+
+/**
+ * SCRUM-1694 · el párrafo de «aún no hay…» de una sección de documentos (Partes y Albaranes).
+ * Un solo sitio para el aspecto que ya tenía el vacío de los albaranes: dos copias del mismo estilo
+ * en línea divergirían, y el trinquete de SCRUM-713c cuenta cada una.
+ */
+function parrafoVacioDeSeccion(texto) {
+  const p = document.createElement('p');
+  p.style.cssText = 'margin:6px 0 0;color:var(--muted);font-size:13px';
+  p.textContent = texto;
+  return p;
+}
+
 // ── SCRUM-257 · las líneas del presupuesto, convertidas en líneas de albarán ──────────────────
 //
 // SIN PRECIOS, y no es una preferencia estética: el albarán es COMPROBANTE DE ENTREGA (decisión
@@ -1458,6 +1480,23 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // bloque. El rótulo ya existía en el producto: no es microcopy nueva.
   docsSec.innerHTML = '<h3 class="detail-section-title">Albaranes</h3>';
 
+  // ── SCRUM-1694 · PARTES — su propia sección, con TODOS los partes del trabajo ─────────────────
+  //
+  // Antes el parte no tenía sección: era un botón en la barra de los albaranes que abría el más
+  // reciente, y la ficha no listaba ninguno — el segundo parte de un trabajo era inalcanzable
+  // desde él (SCRUM-1686 c.21447 ③). D2 firmada (c.21461) y M2 en el máster: un parte por visita,
+  // listados dentro del trabajo. La lista viene en el propio GET del trabajo (`partes`, SCRUM-1671).
+  //
+  // Va ANTES de «Albaranes»: el parte es lo que se rellena en la obra; el albarán sale después.
+  const partesDelTrabajo = Array.isArray(job.partes) ? job.partes : [];
+  const partesSec = document.createElement('div');
+  partesSec.className = 'detail-section';
+  partesSec.dataset.seccion = 'partes';
+  // El rótulo va LITERAL, como el de «Albaranes»: `tests/_composicion-detalle.mjs` enumera las
+  // secciones de la ficha leyendo estos `<h3>`, y ésta está declarada en el diseño (enmienda ⑦ de
+  // `docs/diseno/bloque-g.md`). N6, firmado en SCRUM-1686 c.21470/c.21471.
+  partesSec.innerHTML = '<h3 class="detail-section-title">Partes</h3>';
+
   // ── SCRUM-370 · GASTOS DE ESTE TRABAJO ──────────────────────────────────────
   //
   // 🔴 EL DEFECTO NO ERA ESTÉTICO: «+ Añadir gasto» se construyó para el TÉCNICO (SCRUM-135, el
@@ -1540,6 +1579,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   lineaQuien.cuerpo.appendChild(quienSec);
   pintarNotasInternas(lineaNotas.cuerpo, job);
   lineaGastos.cuerpo.appendChild(gastosSec);
+  body.appendChild(partesSec); // SCRUM-1694: partes, y después albaranes
   body.appendChild(docsSec);
   body.appendChild(construirBloqueElTrabajo(document, [lineaTipo, lineaDatos, lineaQuien, lineaNotas, lineaGastos]));
 
@@ -1638,27 +1678,41 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // apariciones y una cita en un comentario le sube el recuento. Ya me costó un rojo.
   // No se renombra la casilla: no es este carril.
   //
-  // ABRE EL QUE HAYA, Y SI NO HAY, LO CREA. Un botón que siempre crea dejaría un parte nuevo cada
-  // vez que el técnico entra a mirar, y al final del día tendría seis partes vacíos del mismo
-  // trabajo sin saber cuál es el suyo.
+  // ── SCRUM-1694 · «+ NUEVO PARTE» (N9): CREA, SALVO QUE HAYA UN BORRADOR DE HOY ─────────────────
   //
-  // Se filtra por `jobId` en el cliente a propósito: `GET /admin/partes` ya devuelve `jobId` en
-  // cada fila, así que **no hace falta tocar `partes.routes.ts`** —que lo está editando otra
-  // sesión ahora mismo— para abrir esta puerta.
+  // Antes decía «Parte de trabajo», vivía en la barra de los albaranes y abría el más reciente
+  // aunque fuera de otra visita, ya firmado. Ahora, D2 (SCRUM-1686 c.21461): un parte por visita.
+  // Si el trabajo tiene un `borrador` de HOY, abre ése —entrar a mirar no deja partes vacíos—; si
+  // no, crea uno nuevo. La regla vive en `borradorDeHoy` (jobDocsReparto.js), con «hoy» contado en
+  // la zona del MERCHANT, que es la que usa el alta del parte para su número.
+  //
+  // 🔴 SIN ZONA NO SE DECIDE: si `/admin/merchant` no contesta, no se sabe qué día es «hoy» para el
+  // negocio, y crear a ciegas podría duplicar la visita. Sale el aviso que ya existía y no se crea.
+  //
+  // La lista se pide FRESCA (`GET /admin/partes`, filtrada por `jobId` en el cliente como antes):
+  // la del detalle puede ser de hace un rato si el técnico creó uno desde otra pestaña.
+  //
+  // El gancho `data-abrir-parte` se conserva: es la identidad de esta acción para SCRUM-652d y el
+  // inventario de SCRUM-817 — cambia el rótulo, no la función.
+  const partesRow = document.createElement('div');
+  partesRow.className = 'job-doc-toolbar';
+  // Misma regla que la barra de los albaranes (SCRUM-823): en un trabajo CERRADO no se ofrece dar
+  // de alta nada; la sección sigue listando sus partes, que es lo que hay que poder consultar.
+  if (job.status === 'cerrado') partesRow.hidden = true;
   const parteBtn = document.createElement('button');
   parteBtn.className = 'btn-secondary btn-sm job-toolbar-btn-44'; // SCRUM-962 (AB6)
   parteBtn.setAttribute('data-abrir-parte', '1');
-  parteBtn.textContent = 'Parte de trabajo';
+  parteBtn.textContent = ROTULOS_PARTES.nuevo;
   parteBtn.addEventListener('click', async () => {
     parteBtn.disabled = true;
     try {
-      const lista = await apiRequest('/admin/partes');
+      const [lista, merchant] = await Promise.all([apiRequest('/admin/partes'), apiRequest('/admin/merchant')]);
+      if (!merchant || typeof merchant !== 'object') throw new Error('merchant_sin_zona');
       const suyos = (lista && Array.isArray(lista.partes) ? lista.partes : [])
         .filter((p) => p && p.jobId === job.id);
-      // El más reciente: `GET /admin/partes` ya viene ordenado por fecha descendente.
-      const parte = suyos.length
-        ? suyos[0]
-        : await apiRequest('/admin/partes', { method: 'POST', body: JSON.stringify({ jobId: job.id }) });
+      const deHoy = borradorDeHoy(suyos, merchant, new Date(), window.quoteCaducidad);
+      const parte = deHoy
+        || await apiRequest('/admin/partes', { method: 'POST', body: JSON.stringify({ jobId: job.id }) });
       if (window.renderAppView) window.renderAppView('parte-detail', { parteId: parte.id });
     } catch (e) {
       if (typeof showToast === 'function') showToast('No se ha podido abrir el parte. Vuelve a intentarlo.', 'warn');
@@ -1666,7 +1720,62 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
       parteBtn.disabled = false;
     }
   });
-  newAlbRow.appendChild(parteBtn);
+  partesRow.appendChild(parteBtn);
+  partesSec.appendChild(partesRow);
+
+  // La lista: la MISMA tabla que los albaranes de esta ficha (`.table--cards-mobile`, que en móvil
+  // la recompone en cards; SCRUM-304) con las cabeceras ya aprobadas de `ALB_TABLA_COPY` y el pill
+  // del inventario AB3. Ni componente ni token nuevos. El rótulo del estado es el canónico de la
+  // casa para esas dos palabras (`jobDetAlbEstado`, SCRUM-14); un estado que no sea `borrador` o
+  // `firmado` sale SIN pill en vez de con una palabra que nadie ha firmado (regla 39).
+  if (!partesDelTrabajo.length) {
+    partesSec.appendChild(parrafoVacioDeSeccion(ROTULOS_PARTES.vacio));
+  } else {
+    const wrapP = document.createElement('div');
+    wrapP.className = 'table-scroll';
+    const tablaP = document.createElement('table');
+    tablaP.className = 'table table--cards-mobile';
+    tablaP.innerHTML =
+      `<thead><tr>` +
+        `<th>${esc(ALB_TABLA_COPY.colNumero)}</th>` +
+        `<th>${esc(ALB_TABLA_COPY.colFecha)}</th>` +
+        `<th>${esc(ALB_TABLA_COPY.colEstado)}</th>` +
+      `</tr></thead>`;
+    const tbodyP = document.createElement('tbody');
+    // La fila se monta por DOM, con el NÚMERO en `cell-id` (la convención de `invoicesView.js` y
+    // `quotesListView.js`, SCRUM-304) y entero: el profesional lo dicta tal cual.
+    partesDelTrabajo.forEach((p) => {
+      const tr = document.createElement('tr');
+      const tdNumero = document.createElement('td');
+      tdNumero.className = 'cell-id';
+      const abrir = document.createElement('button');
+      abrir.type = 'button';
+      abrir.className = 'detail-miga-link'; // 44 px de toque (SCRUM-962)
+      abrir.textContent = p.numero;
+      abrir.addEventListener('click', () => {
+        if (window.renderAppView) window.renderAppView('parte-detail', { parteId: p.id });
+      });
+      tdNumero.appendChild(abrir);
+      const tdFecha = document.createElement('td');
+      tdFecha.className = 'cell-date';
+      tdFecha.textContent = albFechaCorta(p.fecha);
+      const tdEstado = document.createElement('td');
+      tdEstado.className = 'cell-status';
+      if (p.estado === 'borrador' || p.estado === 'firmado') {
+        const pill = document.createElement('span');
+        pill.className = `status-pill ${JOBDET_ALB_PILL[p.estado]}`;
+        pill.textContent = jobDetAlbEstado(p.estado);
+        tdEstado.appendChild(pill);
+      }
+      tr.appendChild(tdNumero);
+      tr.appendChild(tdFecha);
+      tr.appendChild(tdEstado);
+      tbodyP.appendChild(tr);
+    });
+    tablaP.appendChild(tbodyP);
+    wrapP.appendChild(tablaP);
+    partesSec.appendChild(wrapP);
+  }
 
   // ── SCRUM-1190 · UN PRESUPUESTO MÁS SOBRE ESTE TRABAJO (el imprevisto, la ampliación) ────────
   //
@@ -2489,9 +2598,9 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   //
   // El estado vacío NO se toca: ya existía y sigue siendo el mismo. Una tabla con cabecera y nada
   // debajo es justo lo que el ticket pide evitar, así que la cabecera solo se monta si hay filas.
-  const vacioAlb = document.createElement('p');
-  vacioAlb.style.cssText = 'margin:6px 0 0;color:var(--muted);font-size:13px';
-  vacioAlb.textContent = 'Aún no hay documentos. Crea un albarán por cada visita o entrega.';
+  // SCRUM-1694 · N7 (firmado SCRUM-1686 c.21470/c.21471) sustituye al vacío viejo, que salía
+  // aunque el trabajo tuviera un parte firmado: ahora los partes tienen su sección y su vacío.
+  const vacioAlb = parrafoVacioDeSeccion(ROTULOS_PARTES.vacioAlbaranes);
   if (!reparto.albaranes.length) {
     docsSec.appendChild(vacioAlb);
   } else {
