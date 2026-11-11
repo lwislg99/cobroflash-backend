@@ -93,6 +93,32 @@ function abrirModalTrabajoNuevo(alCrear) {
   var VALOR_ALTA = '__alta_cliente__';
   var lista = [];
   var previo = '';
+
+  // SCRUM-1702 · «Elegir un sitio guardado» bajo la dirección de la obra: el MISMO control que el
+  // editor de presupuestos y la ficha del Trabajo (`sitiosGuardados.montarSelector`, SCRUM-1144).
+  // Camino 1 de la decisión del orquestador (SCRUM-1702 c.21501): el profesional ELIGE la dirección
+  // con una pulsación y nada se copia solo, porque manda DOC-12 (SCRUM-602, 24-ago-2026: la dirección
+  // de la obra nunca se prerrellena). El rótulo es el que el control ya pinta: aquí no entra texto.
+  // Sin cliente elegido no hay sitios que ofrecer y no se enseña, como en la ficha del Trabajo; al
+  // cambiar de cliente se cierra la lista, que era la del anterior.
+  var clienteElegido = function () { return sel.value && sel.value !== VALOR_ALTA ? sel.value : ''; };
+  var selectorDeSitios = null;
+  var campoDireccion = overlay.querySelector('#tn-direccion');
+  if (window.sitiosGuardados && campoDireccion && campoDireccion.parentNode) {
+    selectorDeSitios = window.sitiosGuardados.montarSelector({
+      idLista: 'tn-sitios-guardados',
+      idCliente: clienteElegido,
+      campo: campoDireccion,
+    });
+    selectorDeSitios.boton.hidden = true;
+    campoDireccion.parentNode.appendChild(selectorDeSitios.boton);
+    campoDireccion.parentNode.appendChild(selectorDeSitios.lista);
+  }
+  var sitiosDelCliente = function () {
+    if (!selectorDeSitios) return;
+    selectorDeSitios.cerrar();
+    selectorDeSitios.boton.hidden = !clienteElegido();
+  };
   var pintarClientes = function (elegido) {
     sel.innerHTML =
       '<option value="">' + escHtml('Selecciona un cliente…') + '</option>' +
@@ -102,9 +128,10 @@ function abrirModalTrabajoNuevo(alCrear) {
       }).join('');
     sel.value = elegido ? String(elegido) : '';
     previo = sel.value;
+    sitiosDelCliente();
   };
   sel.addEventListener('change', function () {
-    if (sel.value !== VALOR_ALTA) { previo = sel.value; return; }
+    if (sel.value !== VALOR_ALTA) { previo = sel.value; sitiosDelCliente(); return; }
     // La entrada de alta es una ACCIÓN, no un cliente: el selector vuelve a lo que tenía, y si el
     // alta se cancela no queda «+ Nuevo cliente» marcado como si fuera alguien.
     sel.value = previo;
