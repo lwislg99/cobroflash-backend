@@ -54,6 +54,7 @@ import {
   type TipoParte,
 } from '../../domain/parteTrabajo';
 import { tipoParteDesdeIntervencion } from '../../domain/tipoParteDelTrabajo'; // SCRUM-1674
+import { visitaDelParte, type VisitaDelParte } from '../../domain/visitaDelParte'; // SCRUM-1697 (b)
 import { siguienteNumeroParte } from '../../domain/parteNumero';
 import { zonaDelMerchant, diaNaturalEn } from '../../../../core/zonaDelMerchant'; // SCRUM-1093
 import { AVISOS_DEL_DICTADO, sanearDictadoDelParte } from '../../domain/parteDictado';
@@ -497,7 +498,33 @@ router.get('/:id', async (req: any, res) => {
     if (!found.ok) {
       return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
     }
-    return res.json(serializeParteParaElTecnico(found.parte));
+    // SCRUM-1697 (b) · «Visita {n} de {m}» (M2 del máster) sale de AQUÍ, para que la pantalla del parte
+    // no tenga que leer la ficha del trabajo (guard de SCRUM-366). Se cuentan TODOS los partes del
+    // trabajo —también los borradores y los que el técnico no ve en su lista—, y SOLO los de este
+    // merchant: `jobId` es una columna suelta, sin relación con `Job`, y sin el filtro un parte de otra
+    // cuenta con el mismo número de trabajo sumaría aquí. El orden y el recuento, en `visitaDelParte`.
+    //
+    // 🔴 Y esta lectura lleva SU PROPIA puerta por rol (SCRUM-992): el técnico sólo cuenta partes de un
+    // trabajo que es suyo. Hoy `findParte` ya lo ha comprobado, pero el recuento no se apoya en eso: si
+    // `findParte` cambia, esto no puede quedarse contando los partes de un trabajo ajeno. La pertenencia
+    // se decide en CÓDIGO (`esSuyoElTrabajo`), como en `findParte`, no en un `where` con `OR`.
+    let visita: VisitaDelParte = { visitaN: null, visitaM: null };
+    let puedeContar = found.parte.jobId !== null && found.parte.jobId !== undefined;
+    if (puedeContar && seesOnlyOwnJobs(req.userRole)) {
+      const trabajo = await prisma.job.findFirst({
+        where: { id: found.parte.jobId, merchantId: req.merchantId },
+        select: SELECT_DUENOS,
+      });
+      puedeContar = esSuyoElTrabajo(trabajo, req.teamMemberId);
+    }
+    if (puedeContar) {
+      const delTrabajo = await prisma.parteTrabajo.findMany({
+        where: { merchantId: req.merchantId, jobId: found.parte.jobId },
+        select: { id: true, fecha: true, numero: true },
+      });
+      visita = visitaDelParte(found.parte.id, delTrabajo);
+    }
+    return res.json({ ...serializeParteParaElTecnico(found.parte), ...visita });
   } catch (err: any) {
     console.error('[GET /admin/partes/:id]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
