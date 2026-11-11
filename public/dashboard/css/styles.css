@@ -3238,6 +3238,22 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
    la barra de acciones: 16 px, el `spacing.md` de DESIGN.md. Venía de un estilo en línea de
    `albaranDetailView.js`; la medida no cambia. */
 .albaran-caja-firma { margin: 0 0 16px; }
+/* S4 · SCRUM-1661 · las líneas del albarán en su ficha. La tabla es `.preview-lines-table` (la del
+   documento del presupuesto, inventario AB3); aquí sólo lo propio: separación de la barra (16 px,
+   `spacing.md`), cifras a la derecha y tabulares, el concepto que parte palabras largas en vez de
+   desbordar a 390 px, y el total con la Regla del Importe (DESIGN.md:150: Tinta, ≥700, tabular). */
+.albaran-lineas { margin: 16px 0 0; }
+.albaran-lineas__tabla td, .albaran-lineas__tabla th { font-size: 13px; vertical-align: top; }
+.albaran-lineas__tabla th { text-align: left; }
+.albaran-lineas__tabla .albaran-lineas__num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.albaran-lineas__concepto { overflow-wrap: anywhere; }
+.albaran-lineas__importe { color: var(--ink, #0f1c17); font-weight: 700; }
+.albaran-lineas__vacio { margin: 0; font-size: 13px; color: var(--muted); }
+.albaran-lineas__totales { margin-top: 8px; text-align: right; }
+.albaran-lineas__totales p { margin: 2px 0; }
+.albaran-lineas__base { font-size: 14px; color: var(--ink, #0f1c17); font-weight: 700; font-variant-numeric: tabular-nums; }
+.albaran-lineas__total { font-size: 18px; color: var(--ink, #0f1c17); font-weight: 800; font-variant-numeric: tabular-nums; }
+.albaran-lineas__leyenda { font-size: 12px; color: var(--muted); line-height: 1.45; margin-top: 6px; }
 .job-asignados-alta { min-height: 44px; margin-top: 8px; }
 /* Sin nada que abrir (no se pudo leer el equipo): la línea dice su valor y deja de ser un control. */
 .detail-plega--fija > .detail-plega-cab { cursor: default; }
