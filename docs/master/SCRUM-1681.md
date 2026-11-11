@@ -10,7 +10,7 @@ hasta que las tres estén en `main` y verificadas en yaqu.app (regla 42).
 | punto | rama | estado |
 |---|---|---|
 | ① relleno 0 en los modales de Trabajos | `scrum-1681-modales-trabajo-relleno` | esta entrega |
-| ② «Cerrar trabajo» no avisa del albarán emitido sin firmar | — | espera al merge de SCRUM-1680 (mueve el modal de cierre a la ficha) |
+| ② «Cerrar trabajo» no avisa del albarán emitido sin firmar | `scrum-1681b-aviso-albaran-sin-firmar` (lleva fusionada la de ①+③, para compartir este registro sin choque) | entregado en rama (apéndice ② abajo) |
 | ③ «Trabajo nuevo» sin alta de cliente | `scrum-1681-modales-trabajo-relleno` (la misma: ① salió con dos defectos de guard, A9 y filtro propio, y se arreglan en el mismo empuje) | entregado en rama |
 
 ## ① Relleno de los modales de Trabajos
@@ -104,3 +104,22 @@ código de main (stash del fichero), verde 5/5 con el arreglo.
   No es aceptación; es un cambio de conducta con su propia pregunta (¿dirección fiscal o sitio
   guardado? SCRUM-1144 ya tiene el selector de sitios en el presupuesto).
 - P2 del ticket (Agendar sin fecha propuesta; «?»/«×» < 44 px): fuera de esta rama.
+
+## ② «Cerrar trabajo» avisa del albarán emitido sin firmar · 2026-11-11T11:17Z (GitHub) · `origin/main` = `db202031a449ba21c3cccf32d74afc8ecbda4a33`
+
+A9: comprobación → `tests/scrum1681b-cierre-avisa-albaran-sin-firmar.test.mjs`
+
+**Textos:** firmados. N.º 4 (SCRUM-1656 c.21405): «Este trabajo tiene {n} albarán sin firmar. Si lo cierras, se queda así.»
+y su plural (SCRUM-1656 c.21408 ②c): «Este trabajo tiene {n} albaranes sin firmar. Si lo cierras, se quedan así.» Cero textos nuevos.
+
+- `jobsCierreTrabajo.js`: `albaranesEmitidosSinFirmar(job)` (cuenta sólo `estado === 'emitido'`: un borrador no se ha enviado
+  y un firmado ya está) y `textoAvisoSinFirmar(n)`. APARTE de `CIERRE_TEXTOS`: aquella tabla es la del saldo, fijada en
+  `scrum344` contra su propia firma (SCRUM-1502); ésta se fija carácter a carácter en el test nuevo.
+- `jobDetailView.js` (el modal de cierre de la ficha, desde SCRUM-1680): `p.alert` con `role="note"` ANTES de
+  `jobCierreSection`. Avisa y NO bloquea: cerrar sigue siendo el mismo PATCH. La sección de cierre de la LISTA vive en
+  `jobsView.js` (S4) y no se toca.
+- Rojo sin el arreglo: 3 de 5 (literales, singular, plural). Verde 5/5 + vecinos (`scrum344`, `scrum1680`, `scrum402`, `scrum628`) 51/51.
+
+**Medida en yaqu.app:** PENDIENTE. La cuenta QA no tiene ningún trabajo `terminado` (inventario 11:15Z: #79 cerrado,
+#78 agendado, #77 y #76 pendiente_agendar; #76 lleva los albaranes 46/50/51 emitidos). Se mide en el recorrido real de
+SCRUM-1680: llevar #76 a `terminado` por la UI y abrir el modal (sonda `sondas-s2/prod-1681b.mjs`, sólo GET, no pulsa cerrar).

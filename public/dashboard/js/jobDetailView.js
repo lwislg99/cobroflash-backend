@@ -1101,6 +1101,16 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
       const cuerpoModal = document.createElement('div');
       cuerpoModal.className = 'jobs-modal-cuerpo';
       let cerrarModal = null;
+      // SCRUM-1681 ② · con albaranes emitidos sin firmar, el modal lo dice ANTES de la sección del
+      // cierre (texto firmado n.º 4 y su plural, en `jobsCierreTrabajo.js`). Avisa, no bloquea.
+      const sinFirmar = typeof albaranesEmitidosSinFirmar === 'function' ? albaranesEmitidosSinFirmar(job) : 0;
+      if (sinFirmar > 0 && typeof textoAvisoSinFirmar === 'function') {
+        const aviso = document.createElement('p');
+        aviso.className = 'alert';
+        aviso.setAttribute('role', 'note');
+        aviso.textContent = textoAvisoSinFirmar(sinFirmar);
+        cuerpoModal.appendChild(aviso);
+      }
       // El modal se cierra ANTES de pedir: la ficha se repinta debajo y no puede quedar un modal
       // de un trabajo que ya está cerrado.
       cuerpoModal.appendChild(jobCierreSection(job, (cuerpo, ok) => {
