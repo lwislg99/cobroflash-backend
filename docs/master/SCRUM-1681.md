@@ -123,3 +123,18 @@ y su plural (SCRUM-1656 c.21408 ②c): «Este trabajo tiene {n} albaranes sin fi
 **Medida en yaqu.app:** PENDIENTE. La cuenta QA no tiene ningún trabajo `terminado` (inventario 11:15Z: #79 cerrado,
 #78 agendado, #77 y #76 pendiente_agendar; #76 lleva los albaranes 46/50/51 emitidos). Se mide en el recorrido real de
 SCRUM-1680: llevar #76 a `terminado` por la UI y abrir el modal (sonda `sondas-s2/prod-1681b.mjs`, sólo GET, no pulsa cerrar).
+
+## SCRUM-1681c · el aviso de ② NO SE VEÍA en prod (11-nov-2026 ~15:20Z, GitHub · base origin/main 7c470d06a)
+
+**Medido en yaqu.app** (cuenta QA, trabajo #76 real `terminado` con albaranes 46/50/51 emitidos sin firmar, modal de
+cierre abierto y NO cerrado, sonda `sondas-s2/recorrido-1680.mjs`): el nodo del aviso existía con el texto firmado
+n.º 4 en plural («Este trabajo tiene 3 albaranes sin firmar. Si lo cierras, se quedan así.»), pero con
+`display: none`, caja 0×0. Causa: `aviso.className = 'alert'` a secas, y `styles.css` oculta todo `.alert` sin
+modificador de color (`.alert:not(.success):not(.ok):not(.error):not(.info):not(.warning) { display: none }`).
+Los tests de ② miraban el TEXTO en el DOM, no que se pudiera leer: un doble que reproduce, no que guarda la puerta.
+
+**Arreglo:** `'alert warning'`, el mismo modificador que el aviso de saldo de `jobCierreSection`. Cero texto nuevo.
+**Test:** `scrum1681b-…` gana «el aviso lleva un modificador de color que la hoja NO oculta», con los modificadores
+DERIVADOS de esa regla de `styles.css` (y suelo si no la encuentra). Rojo sobre main por el motivo exacto («lleva
+«alert»: styles.css lo pinta con display:none»), verde con el arreglo; con 1680, 713c y 719: 50 ✔ / 0 ✖.
+Pendiente: medirlo en yaqu.app tras el merge (misma sonda, #76) y entonces cerrar SCRUM-1681.

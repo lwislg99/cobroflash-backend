@@ -10,6 +10,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 import regla from '../public/dashboard/js/jobsCierreTrabajo.js';
@@ -71,6 +72,24 @@ test('SCRUM-1681 ② · los dos literales son los FIRMADOS, carácter a carácte
 test('SCRUM-1681 ② · 🔴 con UN albarán emitido sin firmar, el modal del cierre lo avisa (singular)', async () => {
   const f = await abrirCierre(trabajo([alb('emitido', 1), alb('firmado', 2), alb('borrador', 3)]));
   assert.ok(textos(f.dentro).includes(FIRMADO_UNO), `🔴 el modal no avisa. Textos: ${JSON.stringify(textos(f.dentro).filter(Boolean).slice(0, 8))}`);
+});
+
+// SCRUM-1681c · MEDIDO en yaqu.app el 11-nov-2026 (build 073c67ade, trabajo #76 con 3 emitidos): el aviso
+// estaba en el DOM con su texto firmado y NO SE VEÍA — `p.alert` a secas, y styles.css oculta todo `.alert`
+// sin modificador de color (`display: none`). Los tests de arriba miraban el texto, no que se pudiera leer.
+// El conjunto de modificadores que lo hacen visible se DERIVA de la hoja, no se escribe aquí.
+test('SCRUM-1681 ② · 🔴 el aviso lleva un modificador de color que la hoja NO oculta (se VE, no sólo está)', async () => {
+  const hoja = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8');
+  const m = hoja.match(/\.alert((?::not\(\.[a-z-]+\))+)\s*\{\s*display:\s*none/);
+  assert.ok(m, '🔴 NO PUDE MIRAR: no encuentro la regla `.alert:not(…){display:none}` en styles.css; sin ella este test no prueba nada');
+  const visibles = [...m[1].matchAll(/:not\(\.([a-z-]+)\)/g)].map((x) => x[1]);
+  assert.ok(visibles.length >= 3, `🔴 NO PUDE MIRAR: leo ${visibles.length} modificadores en la regla`);
+  const f = await abrirCierre(trabajo([alb('emitido', 1)]));
+  const aviso = f.dentro.find((x) => String(x.textContent || '').trim() === FIRMADO_UNO);
+  assert.ok(aviso, '🔴 SUELO: no encuentro el nodo del aviso');
+  const clases = String(aviso.className || '').split(/\s+/);
+  assert.ok(clases.includes('alert') && clases.some((c) => visibles.includes(c)),
+    `🔴 el aviso lleva «${aviso.className}»: styles.css lo pinta con display:none. Le falta uno de: ${visibles.join(', ')}`);
 });
 
 test('SCRUM-1681 ② · 🔴 con DOS emitidos sin firmar, el plural firmado', async () => {

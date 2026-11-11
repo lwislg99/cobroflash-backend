@@ -1106,7 +1106,9 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
       const sinFirmar = typeof albaranesEmitidosSinFirmar === 'function' ? albaranesEmitidosSinFirmar(job) : 0;
       if (sinFirmar > 0 && typeof textoAvisoSinFirmar === 'function') {
         const aviso = document.createElement('p');
-        aviso.className = 'alert';
+        // SCRUM-1681c · `warning`, como el aviso de saldo de `jobCierreSection`: `.alert` a secas lo
+        // oculta styles.css (display:none sin modificador de color) — medido en yaqu.app, no se veía.
+        aviso.className = 'alert warning';
         aviso.setAttribute('role', 'note');
         aviso.textContent = textoAvisoSinFirmar(sinFirmar);
         cuerpoModal.appendChild(aviso);
