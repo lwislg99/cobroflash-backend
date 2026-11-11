@@ -216,6 +216,11 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // compara la FILA campo a campo, con sus valores por defecto, y lo que el alta deja colgando
   // (sesiones, correos). Solo el desechable: da de alta y borra merchants por el guion.
   'scrum1515-nuestra-puerta-de-alta.test.mjs': 1,
+  // SCRUM-1685: el alta con invitación. Los casos del INVITADO crean (y borran) un merchant de
+  // verdad por la ruta y el formulario: sólo en el banco desechable. Los del no invitado no
+  // necesitan base (la puerta los para antes) y corren siempre.
+  'scrum1685-alta-con-invitacion.test.mjs': 3,
+  'scrum1685-formulario-de-alta.test.mjs': 2,
   // SCRUM-1403: los TRES que ejercitan el recorte de presupuestos del Tecnico y la pestana de
   // documentos de la ficha de cliente contra Prisma de verdad. Necesitan banco por el mismo motivo
   // que los de SCRUM-1397: lo que vigilan es el WHERE (el recorte en AND con la busqueda y con el
