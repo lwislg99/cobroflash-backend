@@ -65,3 +65,35 @@ entradas** a la vista, incluidas `invoices`, `cobros`, `libro-registro` y `factu
 - **Otras puertas a las cuatro vistas, fuera de la barra.** En Inicio sigue a la vista la acción rápida
   «Pendientes de cobro · facturas abiertas» (captura de arriba). Que una vista tecleada (`#invoices`) siga
   abriendo NO está medido: `vistaVedadaPorRol` sólo veta por rol, así que es lo esperable. D3 habla del MENÚ: se dice aquí y se propone aparte, no se arregla de paso.
+
+---
+
+## Tramo b — el atajo de Inicio a Facturas (S2, 11-nov-2026)
+
+**Medido contra:** `origin/main` = `81f5795355200112e4d79feb4ec472b252ea243b` · 2026-11-11T16:38:23Z (cabecera `Date:` de `gh api -i zen`) · **Rama:** `scrum-1701-menu-piloto-modo-emision` (la misma: #3077 aún no había entrado) · **Carril:** S2.
+
+**Skill UI:** cargada (`yaqu-premium-ui`; AB6: sin componente, token ni texto nuevos. Se quita un botón ya existente; la rejilla de acciones rápidas pasa a dos columnas cuando quedan menos de tres, sólo por encima de 640px)
+
+A9: comprobación → `tests/scrum1701-menu-del-piloto-por-modo.test.mjs` (casos `1701b`)
+
+**Decisión del orquestador, coherencia con D3 firmada, reversible** (SCRUM-1701 c.21511, hallazgo (b); decisión
+en el encargo de la S2 de relevo, 11-nov). La acción rápida de Inicio «Pendientes de cobro · facturas abiertas»
+lleva a Facturas; con `receipt`, D3 (SCRUM-1686 c.21461) saca Facturas de la barra. Un atajo a una sección
+escondida es un callejón roto, no un texto nuevo: **lee el mismo interruptor** (`window.appModoEmision`, sin
+recalcularlo) y no se pinta. `fiscal`, `demo` y `null` lo dejan como estaba. No se escribe ni cambia ningún
+literal (regla 39 no aplica: sólo se quita uno).
+
+- **Cómo:** `homeView.js` pinta la plantilla igual que antes y, si el modo es `receipt`, quita
+  `#btn-view-pending` después. NO va con un ternario dentro de la plantilla, a propósito: así el literal no se
+  mueve y el censo de SCRUM-601 lo sigue leyendo igual. Probado y descartado: anidado en la plantilla, el censo
+  lo cuenta como construcción que no sabe leer (38 → 39) y como un flag más (8 → 9).
+- **CSS** (`styles.css`, bloque S2): `.home-quick-actions:not(:has(> :nth-child(3)))` a dos columnas con
+  `min-width: 641px`. Sin esto, las dos acciones dejaban un hueco a la derecha en la rejilla de tres.
+- **Tests:** la Inicio se PINTA en el banco (`pintarVista`, control positivo `#btn-add-customer`) con los cuatro
+  modos: `receipt` sin el botón; `fiscal`/`demo`/`null` con él.
+- **Rojo por mutación:** condición forzada a falso → `1701b · con receipt…` en rojo (1/1). Restaurado.
+- **SCRUM-601 re-anclado:** la nota de condiciones de `homeView.js` baja de la 898 a la 906 (`git diff --numstat`:
+  9 1, todo por encima; mismo `grep -n`). El veredicto `{ flag: 8, tipo: 11, aPelo: 160 }` y las 38
+  construcciones que no lee, sin cambios.
+- **Tandas:** tests que leen `homeView.js` o son de 1701: 486 ✔ · 0 ✖. Tests que leen `styles.css`: 826 ✔ ·
+  0 ✖ · 1 saltado (lo declara su fichero).

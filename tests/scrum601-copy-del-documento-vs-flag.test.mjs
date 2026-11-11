@@ -335,7 +335,10 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   // SCRUM-1390y (27-oct-2026) · 894 → 898: el error de una respuesta sin lista se queda en su bloque
   // en vez de lanzarse; contra origin/main 77ce98573, `git diff --numstat` de `homeView.js` da 18 5,
   // todo POR ENCIMA de la nota. Medido con el mismo `grep -n`, en la rama: 898; en main: 885.
-  const boton = en('public/dashboard/js/homeView.js', 898);
+  // SCRUM-1701 (b) (11-nov-2026) · 898 → 906: quitar el atajo «Pendientes de cobro» en `receipt`
+  // mete 9 líneas y quita 1 POR ENCIMA de la nota (`git diff --numstat` de `homeView.js`: 9 1).
+  // Medido con el mismo `grep -n`, en la rama: 906; en origin/main 81f579535: 898.
+  const boton = en('public/dashboard/js/homeView.js', 906);
   assert.equal(boton.length, 1, 'no se encuentra la nota de condiciones de homeView donde se midió');
   assert.match(boton[0].texto, /100% al aceptar/);
   assert.equal(boton[0].dependeDelFlag, true,

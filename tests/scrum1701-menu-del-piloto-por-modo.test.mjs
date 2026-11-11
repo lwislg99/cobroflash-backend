@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { cargarDashboard } from './_banco-vistas.mjs';
+import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const HTML = fs.readFileSync(path.join(RAIZ, 'public/dashboard/index.html'), 'utf8');
@@ -110,6 +110,31 @@ test('1701 · la declaración vive en index.html y sólo la llevan las cuatro', 
   const declaradas = [...nav.matchAll(/<button\b[^>]*\bdata-oculta-en-modo="receipt"[^>]*>/g)]
     .map((m) => (/data-view="([^"]+)"/.exec(m[0]) || [])[1]);
   assert.deepEqual([...declaradas].sort(), [...CERRADAS_POR_D3].sort());
+});
+
+// (b) · decisión del orquestador (coherencia con D3, reversible): el atajo de Inicio a Facturas
+// «Pendientes de cobro» lee el MISMO interruptor. Se PINTA la Inicio en el banco y se busca el botón.
+async function atajoACobroEnInicio(modo) {
+  const b = cargarDashboard(RAIZ);
+  b.ctx.appModoEmision = modo;
+  const r = await pintarVista(b, 'renderHomeView');
+  assert.equal(r.error, null, `🔴 NO PUDE MIRAR: renderHomeView no monta (${r.error})`);
+  const nodos = todos(r.contenedor);
+  assert.ok(nodos.some((n) => n._id === 'btn-add-customer'), '🔴 NO PUDE MIRAR: la Inicio no pinta sus acciones rápidas');
+  return nodos.some((n) => n._id === 'btn-view-pending');
+}
+
+test('1701b · con receipt, la Inicio NO enseña el atajo «Pendientes de cobro»', async () => {
+  assert.equal(await atajoACobroEnInicio('receipt'), false);
+});
+test('1701b · con fiscal, el atajo sigue', async () => {
+  assert.equal(await atajoACobroEnInicio('fiscal'), true);
+});
+test('1701b · con demo, el atajo sigue', async () => {
+  assert.equal(await atajoACobroEnInicio('demo'), true);
+});
+test('1701b · con null (no se sabe), el atajo sigue', async () => {
+  assert.equal(await atajoACobroEnInicio(null), true);
 });
 
 test('1701 · initApp aplica el modo a la barra, y DESPUÉS del rol', () => {
