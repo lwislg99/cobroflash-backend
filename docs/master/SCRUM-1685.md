@@ -268,3 +268,13 @@ ese nombre. Después, 3 tandas en verde.
 **En producto** es la misma carrera: dos altas SIMULTÁNEAS cuyos nombres empiecen por las mismas 8
 letras darían un 500 a una de ellas. Hoy entran por invitación y de una en una, así que no muerde al
 piloto. Queda anotado, sin ticket.
+
+### ④ Los dos rojos del CI de #3073 (11-nov, relevo de S1), arreglados en el código y no en el guard
+- **SCRUM-742** (`dmmf: 17 > 16`): el test nuevo leía `Prisma.dmmf` para listar las tablas con
+  `merchantId`. Pasa a `modelosConMerchant(RAIZ)` de `tests/_tenencia-lectura.mjs`, que lo lee del
+  texto de `prisma/schema.prisma`. Mismo conjunto (los modelos con campo escalar `merchantId`; `Merchant`
+  no lo tiene). El tope de 742 no se toca.
+- **SCRUM-419** (inventario de lo que no corre): el test es gateado por `LIBRO_PG_URL` y no estaba
+  declarado. Se declara con su motivo en `GATEADOS_DECLARADOS` (1 test).
+- Sin banco aquí: 419 y 742 en verde y el de ② saltado con su motivo. **El cambio de `colgadas` lo
+  ejercita el CI** con su banco desechable; no lo he corrido contra Postgres en local.

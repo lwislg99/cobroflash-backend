@@ -16,6 +16,7 @@
 // `_test`; receta en docs/RUNBOOKS.md), con un buzón SMTP de laboratorio: ningún correo sale de aquí.
 import './_staging-db.mjs';
 import { URL_BANCO } from './_banco-libro.mjs';
+import { modelosConMerchant } from './_tenencia-lectura.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -87,7 +88,6 @@ test('SCRUM-1685 ② · el invitado que entra por POST /auth/register nace igual
   process.env.SMTP_URL = `smtp://127.0.0.1:${buzon.puerto}`;
 
   const { prisma } = await import('../dist/core/db/prisma.js');
-  const { Prisma } = await import('@prisma/client');
   const { limpiarMerchant } = await import('./_merchant-fixture.mjs');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);
@@ -132,9 +132,9 @@ test('SCRUM-1685 ② · el invitado que entra por POST /auth/register nace igual
     return { status: r.status, cuerpo: JSON.parse(r.texto) };
   };
 
-  const colgadas = Prisma.dmmf.datamodel.models
-    .filter((m) => m.name !== 'Merchant' && m.fields.some((f) => f.name === 'merchantId' && f.kind === 'scalar'))
-    .map((m) => m.name[0].toLowerCase() + m.name.slice(1));
+  // Las tablas con `merchantId`, leídas del ESQUEMA (`_tenencia-lectura.mjs`) y no del DMMF: un
+  // interno de Prisma más es superficie que SCRUM-742 cuenta, y aquí basta con el texto del esquema.
+  const colgadas = [...modelosConMerchant(RAIZ)];
   assert.ok(colgadas.length >= 10 && colgadas.includes('authSession'), `🔴 CIEGO: sólo veo ${colgadas.length} tablas con merchantId`);
 
   const cartasDe = (correo) => buzon.cartas.filter((c) => c.para === correo).map((c) => c.asunto).sort();
