@@ -131,7 +131,13 @@ function censo() {
 // llevaban «El parte sigue sin ser una factura.»: N8 (firmado SCRUM-1686 c.21471) QUITA la frase y, con
 // ella, el párrafo entero. Contado con ESTE contador sobre `origin/main` (573579309) + este cambio: 326;
 // lo dijo el propio guard («HAN BAJADO … 326 frente al techo 328»).
-const TECHO = 326;
+// 326 → 322 · 11-nov-2026 (SCRUM-1699, PILOTO-1). El detalle de «Partes por valorar» pasa a clases
+// `.po-*` de `styles.css` las cuatro asignaciones de su línea (rótulo del bloque, fila, casilla de
+// precio e importe): cabecera y línea tienen que compartir la MISMA clase de columna para alinearse.
+// El fichero no se nombra aquí (está en `docs/master/SCRUM-1699.md`). Contado con ESTE contador
+// sobre el árbol YA FUSIONADO con `origin/main` (65f4361b4, que trae el 326 de SCRUM-1696): 322; lo
+// dijo el propio guard («HAN BAJADO … 322 frente al techo 326»). No restado de memoria.
+const TECHO = 322;
 
 test('SCRUM-713c · SUELO: el contador VE lo que tiene que ver, y NO se caza a sí mismo', () => {
   // 🔴 El suelo que no caduca: se prueba contra cadenas fabricadas aquí, así que sigue probando
