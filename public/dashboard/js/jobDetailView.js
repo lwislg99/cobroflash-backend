@@ -441,28 +441,6 @@ const ALB_TABLA_COPY = {
   colAccion: 'Acción',
 };
 
-// SCRUM-1694 · los textos de la sección Partes. Tanda N1-N13 de SCRUM-1686 c.21470, con la firma
-// literal del fundador «si firmo» en c.21471 (~12:05 local, 11-nov-2026); cada clave lleva su marca.
-//   N7 los dos vacíos (sustituyen a «Aún no hay documentos. Crea un albarán…») · N9 el botón
-//   (sustituye a «Parte de trabajo»). N6, el rótulo «Partes», va literal en su `<h3>` (ver allí).
-const ROTULOS_PARTES = {
-  vacio: 'Aún no hay partes.', // N7 · APROBADO por el fundador el 11-nov-2026 (SCRUM-1686 c.21471)
-  vacioAlbaranes: 'Aún no hay albaranes.', // N7 · APROBADO por el fundador el 11-nov-2026 (SCRUM-1686 c.21471)
-  nuevo: '+ Nuevo parte', // N9 · APROBADO por el fundador el 11-nov-2026 (SCRUM-1686 c.21471)
-};
-
-/**
- * SCRUM-1694 · el párrafo de «aún no hay…» de una sección de documentos (Partes y Albaranes).
- * Un solo sitio para el aspecto que ya tenía el vacío de los albaranes: dos copias del mismo estilo
- * en línea divergirían, y el trinquete de SCRUM-713c cuenta cada una.
- */
-function parrafoVacioDeSeccion(texto) {
-  const p = document.createElement('p');
-  p.style.cssText = 'margin:6px 0 0;color:var(--muted);font-size:13px';
-  p.textContent = texto;
-  return p;
-}
-
 // ── SCRUM-303 (C4) · QUÉ SE ABRE AL PULSAR «NUEVO ALBARÁN», Y POR QUÉ ─────────────────────────
 //
 // LA MITAD DEL TICKET QUE YA ESTABA HECHA: «se crea vacío y luego se rellena» dejó de ser cierto
@@ -562,6 +540,28 @@ function decidirAperturaAlbaran({ modoValoracion, tieneQuote, quoteLeido, lineas
   // Las descartadas se CUENTAN y se avisan: omitir en silencio en un documento que se firma es el
   // defecto de SCRUM-271, y aquí sigue vigente igual que en SCRUM-257.
   return { lineas, descartadas: origen.length - lineas.length, motivo: null };
+}
+
+// SCRUM-1694 · los textos de la sección Partes. Tanda N1-N13 de SCRUM-1686 c.21470, con la firma
+// literal del fundador «si firmo» en c.21471 (~12:05 local, 11-nov-2026); cada clave lleva su marca.
+//   N7 los dos vacíos (sustituyen a «Aún no hay documentos. Crea un albarán…») · N9 el botón
+//   (sustituye a «Parte de trabajo»). N6, el rótulo «Partes», va literal en su `<h3>` (ver allí).
+const ROTULOS_PARTES = {
+  vacio: 'Aún no hay partes.', // N7 · APROBADO por el fundador el 11-nov-2026 (SCRUM-1686 comentario 21471)
+  vacioAlbaranes: 'Aún no hay albaranes.', // N7 · APROBADO por el fundador el 11-nov-2026 (SCRUM-1686 comentario 21471)
+  nuevo: '+ Nuevo parte', // N9 · APROBADO por el fundador el 11-nov-2026 (SCRUM-1686 comentario 21471)
+};
+
+/**
+ * SCRUM-1694 · el párrafo de «aún no hay…» de una sección de documentos (Partes y Albaranes).
+ * Un solo sitio para el aspecto que ya tenía el vacío de los albaranes: dos copias del mismo estilo
+ * en línea divergirían, y el trinquete de SCRUM-713c cuenta cada una.
+ */
+function parrafoVacioDeSeccion(texto) {
+  const p = document.createElement('p');
+  p.style.cssText = 'margin:6px 0 0;color:var(--muted);font-size:13px';
+  p.textContent = texto;
+  return p;
 }
 
 // ── SCRUM-257 · las líneas del presupuesto, convertidas en líneas de albarán ──────────────────
