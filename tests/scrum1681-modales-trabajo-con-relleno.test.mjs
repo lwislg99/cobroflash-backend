@@ -18,7 +18,8 @@ import { fileURLToPath } from 'node:url';
 // El filtro de comentarios es el COMPARTIDO (SCRUM-700): sobre la hoja CSS quita los `/* */` y deja
 // las dos reglas que esto mira. Medido al escribirlo: 3 833 de 3 853 declaraciones sobreviven; las
 // 20 que no son líneas con `//` (`url(https://…)`), ninguna de `.jobs-modal` ni de `.modal`.
-import { soloEjecutable } from './_guard-texto.mjs';
+// Con SUELO (SCRUM-1395): el ancla es la regla que este test mira; si el filtro la borrara, lo dice.
+import { ejecutableDe } from './_guard-texto.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
@@ -27,7 +28,7 @@ const AYUDANTE = leer('public/dashboard/js/jobAgendar.js');
 
 /** Cada regla de la hoja (sin comentarios) como { selectores[], cuerpo }. Entra también en @media. */
 function reglas(css) {
-  const limpio = soloEjecutable(css);
+  const limpio = ejecutableDe(css, { ancla: '.jobs-modal' });
   const out = [];
   const re = /([^{}]+)\{([^{}]*)\}/g;
   let m;
