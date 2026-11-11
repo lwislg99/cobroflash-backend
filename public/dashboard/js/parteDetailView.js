@@ -265,6 +265,9 @@
     // 1-23. Consta en `docs/microcopy/2026-11-10-SCRUM-1677-salida-al-trabajo.md`.
     trabajoDelCliente: '← Trabajo: {cliente}', // APROBADO por el fundador el 10-nov-2026 · SCRUM-1656 comentario 21408
     volverAlTrabajo: 'Volver al trabajo', // APROBADO por el fundador el 10-nov-2026 · SCRUM-1656 comentario 21408
+    // FIRMADO: N4 de la tanda N1-N13 de SCRUM-1686 (c.21471) · cabecera del parte, con varios en el
+    // trabajo. Cómo se cuenta: M2 del máster (073c67ade). SCRUM-1697.
+    visitaDeLas: 'Visita {n} de {m}',
   };
 
   // El vocabulario CERRADO del dominio (`parteTrabajo.ts`). No se inventa aquí ni se amplía:
@@ -743,6 +746,38 @@
     );
   }
 
+  // ── 🔴 SCRUM-1697 · «VISITA {n} DE {m}» (N4; M2 del máster, 073c67ade) ──────────────────────
+  // Un trabajo tiene varios partes, uno por visita, y la visita ES su parte. Se cuentan los partes
+  // del trabajo por `fecha` y, a igual fecha, por `numero`; `m` = todos, también los borradores.
+  // Con uno solo no se dice nada: N4 es «con varios en el trabajo».
+  function visitaDelParte(parteId, partes) {
+    if (!Array.isArray(partes) || partes.length < 2) return null;
+    var ordenados = partes.slice().sort(function (a, b) {
+      var fa = Date.parse(a && a.fecha), fb = Date.parse(b && b.fecha);
+      if (fa !== fb) return (isNaN(fa) ? Infinity : fa) - (isNaN(fb) ? Infinity : fb);
+      return String((a && a.numero) || '').localeCompare(String((b && b.numero) || ''), 'es', { numeric: true });
+    });
+    for (var i = 0; i < ordenados.length; i++) {
+      if (ordenados[i] && String(ordenados[i].id) === String(parteId)) return { n: i + 1, m: ordenados.length };
+    }
+    return null;
+  }
+
+  // Lee el trabajo (GET /admin/jobs/:id trae `partes`, SCRUM-1671) y pone «· Visita n de m» tras el
+  // número. FALLA CERRADO: sin trabajo, sin lista o con la lectura caída, la cabecera se queda sin
+  // número — un número equivocado en un papel firmado es peor que ninguno.
+  async function pintarVisita(contenedor, parte, pedir) {
+    if (!contenedor || !parte || parte.jobId === null || parte.jobId === undefined || parte.jobId === '') return;
+    if (typeof pedir !== 'function') return;
+    var trabajo;
+    try { trabajo = await pedir('/admin/jobs/' + parte.jobId); } catch (_e) { return; }
+    var v = visitaDelParte(parte.id, trabajo && trabajo.partes);
+    if (!v) return;
+    var hueco = contenedor.querySelector('[data-parte-visita="1"]');
+    if (!hueco) return;
+    hueco.textContent = '· ' + TEXTOS.visitaDeLas.replace('{n}', String(v.n)).replace('{m}', String(v.m));
+  }
+
   /**
    * Pinta el parte entero dentro de `contenedor`.
    *
@@ -758,7 +793,8 @@
       '<header style="margin-bottom:14px">' +
       pintarMigaDelTrabajo(parte) +
       '<h3 style="margin:0;font-size:1.05rem;font-weight:700;color:var(--ink)">' +
-      esc(parte.numero) + '</h3>' +
+      // SCRUM-1697 · «· Visita n de m» llega DESPUÉS, cuando se ha leído el trabajo (`pintarVisita`).
+      esc(parte.numero) + ' <span data-parte-visita="1"></span></h3>' +
       '<p style="margin:2px 0 0;font-size:13px;color:var(--muted)">' +
       esc(parte.clienteNombre || '') + '</p></header>' +
       // 🔴 SCRUM-1693 · FIRMADO = EL ORDEN DE UN PAPEL: los datos del documento arriba y las
@@ -1715,6 +1751,8 @@
       return false;
     }
     atarSalidasAlTrabajo(contenedor, parte, o);
+    // SCRUM-1697 · no se espera: el parte se usa ya; el número de visita llega cuando llegue.
+    pintarVisita(contenedor, parte, pedir);
     // SCRUM-1675 · un parte que ya no se puede tocar (firmado) no tiene dictado que recuperar: lo
     // que quedara en este móvil se borra, y no se queda guardado un texto con datos de la obra.
     if (!(parte.puedeEditarContenido && parte.puedeEditarContenido.ok)) borrarBorradorDelDictado(parteId);
@@ -2322,6 +2360,8 @@
   window.parteLineasConfirmadas = lineasConfirmadas;
   window.firmarParte = firmarParte;
   window.PARTE_TEXTOS = TEXTOS;
+  window.parteVisitaDelParte = visitaDelParte;
+  window.partePintarVisita = pintarVisita;
   window.parteLineasOCeguera = lineasOCeguera;
   window.parteCuerpoDeCampo = cuerpoDeCampo;
 })();
