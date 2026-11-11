@@ -48,3 +48,11 @@ camino 2, que pide el SÍ del fundador contra DOC-12.
   2116 ✔ · 2 ✖ · 5 saltados. Los dos ✖ son SCRUM-1199, los mismos dos que el registro de SCRUM-1701
   declara de entorno en este equipo (no tocan nada de este ticket; su causa no la he medido aquí).
 - **En yaqu.app:** pendiente del merge (390 y 1280, cuenta QA, un cliente con sitio y uno sin).
+
+## Apéndice · 11-nov-2026 · S1 (SCRUM-1674): el alcance de DOC-12, acotado al registro
+
+La frase de «Origen y decisión» («la dirección de la obra nunca se prerrellena sola») era paráfrasis del
+orquestador, más ancha que el registro. **El registro manda** (encargo del orquestador a S1, 11-nov-2026):
+DOC-12 (`SCRUM-602.md`, «El suelo, adoptado literal») veta DOS cosas — prerrellenar con la dirección de
+FACTURACIÓN y rellenar lo vacío (la sugerencia, sólo como placeholder). Copiar `Job.direccion` (la de OBRA)
+al parte no es ninguna de las dos: lo construye SCRUM-1674, igual que ya hace el albarán.

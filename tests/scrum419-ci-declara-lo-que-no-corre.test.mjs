@@ -225,6 +225,11 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // fila, campo a campo, y dejan colgando lo mismo. Necesita banco por el motivo de SCRUM-1515: crea
   // y borra merchants de verdad y compara la fila con sus valores por defecto. Sólo el desechable.
   'scrum1685-ruta-y-guion-campo-a-campo.test.mjs': 1,
+  // SCRUM-1674: el parte nace con la obra y el tipo del TRABAJO y nunca con la dirección de
+  // facturación (DOC-12). Necesita banco porque lo que mide es la FILA que crea `POST /admin/partes`
+  // de verdad, con un cliente que SÍ tiene facturación y sitio guardado para que el veto tenga algo
+  // que vetar. Sólo el desechable: crea y borra un merchant.
+  'scrum1674-parte-hereda-obra-y-tipo.test.mjs': 1,
   // SCRUM-1403: los TRES que ejercitan el recorte de presupuestos del Tecnico y la pestana de
   // documentos de la ficha de cliente contra Prisma de verdad. Necesitan banco por el mismo motivo
   // que los de SCRUM-1397: lo que vigilan es el WHERE (el recorte en AND con la busqueda y con el
