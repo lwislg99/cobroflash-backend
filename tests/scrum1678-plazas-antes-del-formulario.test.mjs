@@ -94,7 +94,15 @@ test('SCRUM-1678 · ✅ con plan equipo y 4 miembros activos, LLENO con el liter
 });
 
 test('SCRUM-1678 · 🔴 UNA SOLA REGLA: para cada estado, /plazas y el POST dicen lo MISMO (lleno ⇔ 409, y la misma frase)', async () => {
-  const casos = [['pro', 0], ['founding', 0], ['trial', 0], ['equipo', 0], ['equipo', 3], ['equipo', 4], ['equipo', 7]];
+  const casos = [
+    ['pro', 0],
+    ['founding', 0],
+    ['trial', 0],
+    ['equipo', 0],
+    ['equipo', 3],
+    ['equipo', 4],
+    ['equipo', 7],
+  ];
   for (const [plan, activos] of casos) {
     const p = (await plazas(plan, activos)).cuerpo;
     const i = await invitar(plan, activos);
