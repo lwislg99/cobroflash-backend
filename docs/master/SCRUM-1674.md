@@ -51,3 +51,32 @@ tal y como lo dio:
 - Declarado en `GATEADOS_DECLARADOS` (SCRUM-419): corre en el CI con banco.
 - **En yaqu.app:** pendiente del merge (abrir un parte desde un trabajo con dirección y tipo, cuenta QA, y
   uno sin dirección).
+
+## Apéndice · 11-nov-2026 · VERIFICADO en yaqu.app (regla 42)
+
+- En main por **#3081** (`4d8043854`). Cuenta QA (merchant 46, QA en producción autorizado). Banco:
+  `docs/master/evidencias/SCRUM-1674/prod/verificar.mjs` (escribe sólo en la cuenta QA, a 390).
+- Se crean dos trabajos de prueba del cliente 86, que **sí tiene dirección de facturación**
+  (`Calle Mayor 14, 3º B`): es el cebo de DOC-12. Los dos partes se abren con el botón real de la ficha del
+  trabajo (`[data-abrir-parte]`), no con un POST a mano.
+  - **A · trabajo #81** `[QA-1674] con obra y tipo`, dirección `"  Calle Obra QA 1674, 5º A  "` y tipo
+    `MANTENIMIENTO` → **PT-2026-007 (id 15)**, borrador: `obra = "Calle Obra QA 1674, 5º A"` (recortada) y
+    `tipo = "mantenimiento"`. La pantalla del parte enseña «Obra y referencia · Calle Obra QA 1674, 5º A» y
+    «Tipo de intervención · Mantenimiento». Captura `parte-a-con-obra-y-tipo-390.png`.
+  - **B · trabajo #82** `[QA-1674] sin obra ni tipo` → **PT-2026-008 (id 16)**, borrador: `obra = null`,
+    `tipo = null`; en pantalla, los dos rótulos sin valor. Captura `parte-b-vacio-390.png`.
+  - En ninguna de las dos respuestas aparece la dirección de facturación del cliente: **lo vacío se queda
+    vacío y facturación no entra** (DOC-12).
+- La aceptación de esta rama (obra y tipo) se cumple. El ticket **sigue sin cerrarse** por lo que ya decía el
+  registro: «lo que hay que hacer» depende de SCRUM-1662.
+
+### Medido de paso en el mismo recorrido (no es de esta rama)
+
+- **SCRUM-1662 sigue pasando.** La descripción del trabajo A («QA SCRUM-1662: cambiar el termo…») no aparece
+  en la ficha a la vista: está en el `textarea#job-notas-internas`, dentro de la línea plegada «Notas
+  internas · Solo tú las ves» (`notas1662.mjs`, sólo lectura; capturas `ficha-trabajo-a-390.png` y
+  `ficha-a-notas-internas-390.png`). El lado del operario **no se ha medido en pantalla** (`test-login` sólo
+  abre cuentas de merchant); por el código, `GET /admin/jobs/:id` devuelve `notes` y `jobDetailView.js`
+  pinta la MISMA línea con el mismo «Solo tú las ves» también para el técnico.
+- **SCRUM-1670 sigue pasando.** En la ficha del trabajo A, «Tipo de trabajo» dice «Una obra o reforma de
+  varios días» (el `tipoOperacion`), y el «Mantenimiento» elegido sólo se ve en el parte.
