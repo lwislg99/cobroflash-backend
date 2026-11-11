@@ -754,6 +754,10 @@
       esc(parte.numero) + '</h3>' +
       '<p style="margin:2px 0 0;font-size:13px;color:var(--muted)">' +
       esc(parte.clienteNombre || '') + '</p></header>' +
+      // 🔴 SCRUM-1693 · FIRMADO = EL ORDEN DE UN PAPEL: los datos del documento arriba y las
+      // firmas que lo cierran al final. El BORRADOR no cambia (SCRUM-1175 PR-C: allí manda lo que
+      // se apunta, y los datos van plegados al final). Lo fija `tests/scrum1693-…`.
+      (editable ? '' : pintarDatosDelParte(parte, editable)) +
       // 🔴 SCRUM-818 · LOS SIETE SON CAMPOS DE VERDAD, medidos campo a campo en el PASO 0
       // ejecutando `permisoDeCampos`. Entrada, salida, desplazamiento y kilómetros viven en su
       // paso (SCRUM-1175 PR-A); obra, REF, técnicos, tipo y notas, plegados al final (PR-C).
@@ -766,7 +770,7 @@
       pintarBloque('materiales', lineas, editable) +
       pintarLasDosFirmas(parte) +
       pintarVolverAlTrabajo(parte, editable) +
-      pintarDatosDelParte(parte, editable);
+      (editable ? pintarDatosDelParte(parte, editable) : '');
 
     return true;
   }
