@@ -178,6 +178,9 @@ async function initApp() {
   updateRequestsBadge();
   // Refrescar el badge cada 5 minutos
   setInterval(updateRequestsBadge, 5 * 60 * 1000);
+  // ── S4 · SCRUM-1700 (N2) · el menú dice cuántos partes esperan precio. Mismo ritmo que el badge.
+  contarPartesPorValorar(document, apiRequest, window.appUserRole);
+  setInterval(() => contarPartesPorValorar(document, apiRequest, window.appUserRole), 5 * 60 * 1000);
 
   // 2. Inyectar usuario en sidebar
   const initials = (me.name || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -424,6 +427,8 @@ async function initApp() {
       // `parteDetailView.js`, medido en la certificación del sprint.
       case 'partes-oficina':
         viewTitle.textContent = 'Partes por valorar';
+        // S4 · SCRUM-1700 · al entrar a la cola, el número del menú se pone al día.
+        contarPartesPorValorar(document, apiRequest, window.appUserRole);
         if (typeof window.renderPartesOficinaView === 'function') {
           // 🔴 SCRUM-720b · era `opts`, y el parametro de `renderView` se llama `options`.
           // `ReferenceError: opts is not defined` en cada pulsacion: el titulo YA se habia
@@ -1191,6 +1196,33 @@ function aplicarRolALaBarra(documento, rol) {
     else visibles += 1;
   });
   cerrarSeccion();
+}
+
+// ══ S4 · SCRUM-1700 (T7 de SCRUM-1686) · «PARTES POR VALORAR · {n}» EN EL MENÚ ═══════════════
+// Texto FIRMADO: N2 de la tanda N1-N13 (SCRUM-1686, c.21470) — «Partes por valorar · 2», el
+// número es el de partes firmados esperando precio. La oficina ve cuánto le espera sin abrir nada.
+//
+// FALLA HACIA EL RÓTULO A SECAS: cero, una respuesta con otra forma o un fallo de red dejan
+// «Partes por valorar», nunca un número viejo ni uno inventado. Y sólo lo pide el admin: la ruta
+// es `requireRole('admin')` y la entrada ya está oculta al operario (`data-rol="admin"`).
+// A nivel superior, como `aplicarRolALaBarra`, para que el banco la EJECUTE (`tests/scrum1700-…`).
+function rotuloDePartesPorValorar(n) {
+  return Number.isInteger(n) && n > 0 ? 'Partes por valorar · ' + n : 'Partes por valorar';
+}
+
+async function contarPartesPorValorar(documento, pedir, rol) {
+  if (rol !== 'admin') return null;
+  const etiqueta = documento.getElementById('nav-partes-oficina-label');
+  if (!etiqueta) return null;
+  let n = null;
+  try {
+    const r = await pedir('/admin/partes/oficina/pendientes');
+    n = r && Array.isArray(r.pendientes) ? r.pendientes.length : null;
+  } catch (_e) {
+    n = null;
+  }
+  etiqueta.textContent = rotuloDePartesPorValorar(n);
+  return n;
 }
 
 /** ¿Esta vista tiene entrada en la barra y esa entrada es sólo del admin? Sin entrada, no veta. */
