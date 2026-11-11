@@ -264,3 +264,22 @@ Sólo D3 y **[①bis]**. Nada que construir antes de medir.
 | N13 | Hoja de alta del albarán, origen de las líneas | «Desde el parte {PT-…}» | con D1=A, el albarán se rellena del parte |
 
 **Choques que veo (no elijo yo):** N5 y N13 sólo existen con D1=A · N4 y N9 sólo con D2 · N8 quita una frase que hoy está en DOS sitios: firmarla vale para los dos.
+
+---
+
+## APÉNDICE · SCRUM-1686 M1b + M2 aplicados al máster · S0 · 11-nov-2026 ~14:45Z (GitHub)
+
+Medido sobre `origin/main` = `412ddc20d0233162159567d4e7705bf845f71404`. Rama `scrum-1686-maestro-m2-m1b`.
+
+**Autorización:** GO del fundador, SCRUM-1686 **c.21479** («Sí, GO a todo (Recomendado)», AskUserQuestion «GO esquema», transcripción del orquestador `ed676fd1-feb4-4658-bda2-01f4bf9fb3fc`, 11-nov ~12:15 local). Textos: los borradores de S0 en **c.21472**, copiados del comentario.
+
+**Qué cambia:** `docs/YAQU_MASTER.md:403` (Parte L, línea de `ParteTrabajo.estado`), AL FINAL de la línea y sin añadir ninguna, para no mover ninguna cita `YAQU_MASTER.md:<n>` (mismo método que SCRUM-1529c):
+1. **M1b** · vocabulario DERIVADO `sin_albaran | en_albaran` (no es estado; no amplía `borrador | firmado`). Literal de c.21472.
+2. **M2** · «un trabajo, varios partes: uno por visita; la visita ES su parte». Literal de c.21472.
+3. **Hueco 1 de M2 (orden de «Visita {n} de {m}»)** · dentro, como una frase más de M2: c.21479 ③ lo cubre («orden de visitas»).
+
+**Lo que NO he metido, y por qué — hueco 2 («borrador de hoy», zona horaria):** la pregunta del GO lo nombró «“hoy” en hora de Madrid»; mi borrador c.21472 decía «la del merchant, la que guarda el alta». No son lo mismo, y el código ya tiene decidido lo contrario de «Madrid fija»: `prisma/schema.prisma:111-124` (`Merchant.timezone`, opción A) prohíbe derivar la zona del país o fijarla a la península, y `core/zonaDelMerchant.ts` hace caer NULL a UTC, «nunca a Madrid». Escribir cualquiera de las dos en el máster sería elegir yo entre la pregunta y su objeto. Queda FUERA hasta que el fundador diga cuál (una línea); mientras, T1/T4 lo miden y vuelve como propuesta (c.21472, fallback ya escrito). Para PILOTO-1 en la península, las dos lecturas dan el mismo día si su `timezone` es `Europe/Madrid`.
+
+**M1 (esquema):** NO se toca `prisma/schema.prisma` en esta rama. El DDL va como paquete para el fundador en un comentario de este ticket; T2 (SCRUM-1695) sigue bloqueado hasta que las tres bases tengan el ALTER (c.21479 ③).
+
+**Efecto:** cuando este PR entre en `main`, se desbloquean T4 (SCRUM-1697) y la parte multi-visita de T1 (SCRUM-1694) (c.21479 ④).
