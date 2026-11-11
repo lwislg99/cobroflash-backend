@@ -137,6 +137,9 @@ el del banco, falla en el espejo por falta de `dist`, y en el worktree pasa: 4/4
 | nuevo | nuevo | 3 ✔ |
 
 Bancos de la lista (301, 304, 719, 831, 1450, 1559g/i/k, 1659, 713c, 1669c), antes de fusionar main: 112 ✔ / 0 ✖.
+Tanda completa con main fusionado (TAP a fichero fuera del árbol): 13 202 tests · 13 029 ✔ · **2 ✖** · 171 saltados
+(gateados). Los 2 ✖ eran uno: este registro no declaraba `**Skill UI:**` (SCRUM-1340, y por eso `guards:entrada`
+salía 1 en SCRUM-976). Declarada arriba → los dos ficheros, 38/38.
 
 **Medido en yaqu.app** (cuenta QA, sólo GET, `sondas-s2/lista-1669.mjs local <rama> testigo` con
 `TESTIGO_CSS=c.21494`: el JS y el CSS servidos son los de la rama). Desborde DENTRO de `.table-scroll`; la
