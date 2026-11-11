@@ -4487,6 +4487,8 @@ textarea.parte-linea-desc {
 @media (min-width: 641px) {
   .table--albaranes td { word-break: normal; overflow-wrap: break-word; }
   .table--albaranes td.cell-date, .table--albaranes td.col-hide-mobile { white-space: nowrap; }
+  /* SCRUM-1669 · el importe, a la derecha y en una línea, como en Presupuestos. */
+  .table--albaranes th:nth-child(6), .table--albaranes td.cell-amount { text-align: right; white-space: nowrap; }
 }
 @media (min-width: 641px) and (max-width: 1279px) {
   .table--albaranes th:nth-child(2), .table--albaranes td.col-hide-mobile { display: none; }
@@ -4523,14 +4525,18 @@ textarea.parte-linea-desc {
 
      El Trabajo se queda a ANCHO COMPLETO, que es lo que pedía su comentario original: un título de
      obra no cabe en media tarjeta. */
+  /* SCRUM-1669 · el importe entra en la tarjeta en la línea de la fecha, a la derecha: arriba a la
+     derecha ya está el estado (SCRUM-1450), y el importe en su propia línea a ancho completo
+     separaría el dinero del albarán al que pertenece. */
   .table--albaranes tbody tr {
     grid-template-areas:
       "id       status"
       "client   client"
-      "date     date"
+      "date     amount"
       "trabajo  trabajo"
       "actions  actions";
   }
+  .table--albaranes td.cell-amount { align-self: center; white-space: nowrap; }
   /* SCRUM-1462 · y el título del Trabajo también envuelve: es texto libre a ancho completo. */
   .table--albaranes td.cell-trabajo { grid-area: trabajo; font-size: 12.5px; white-space: normal; overflow-wrap: anywhere; }
   /* AB6 · el enlace del Trabajo CONSERVA el objetivo de 44 px que tenía por vivir en `actions`.
