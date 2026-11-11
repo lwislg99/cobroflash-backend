@@ -139,6 +139,7 @@ const SHELL = [
   // que hay que ir a buscar a la red no esta cuando hace falta.
   '/dashboard/js/parteDetailView.js',
   '/dashboard/js/parteOficinaView.js',
+  '/dashboard/js/parteVisita.js', // SCRUM-1697 · «Visita n de m» de la cabecera del parte
   '/dashboard/js/resistenciaAlmacen.js',
   // SCRUM-918 · lo usa `app.js` justo cuando NO hay red: si hubiera que ir a buscarlo, no estaría.
   '/dashboard/js/arranqueSinCobertura.js',

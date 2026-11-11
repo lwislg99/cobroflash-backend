@@ -265,6 +265,9 @@
     // 1-23. Consta en `docs/microcopy/2026-11-10-SCRUM-1677-salida-al-trabajo.md`.
     trabajoDelCliente: '← Trabajo: {cliente}', // APROBADO por el fundador el 10-nov-2026 · SCRUM-1656 comentario 21408
     volverAlTrabajo: 'Volver al trabajo', // APROBADO por el fundador el 10-nov-2026 · SCRUM-1656 comentario 21408
+    // FIRMADO: N4 de la tanda N1-N13 de SCRUM-1686 (c.21471) · cabecera del parte, con varios en el
+    // trabajo. Cómo se cuenta: M2 del máster (073c67ade). SCRUM-1697.
+    visitaDeLas: 'Visita {n} de {m}',
   };
 
   // El vocabulario CERRADO del dominio (`parteTrabajo.ts`). No se inventa aquí ni se amplía:
@@ -758,7 +761,8 @@
       '<header style="margin-bottom:14px">' +
       pintarMigaDelTrabajo(parte) +
       '<h3 style="margin:0;font-size:1.05rem;font-weight:700;color:var(--ink)">' +
-      esc(parte.numero) + '</h3>' +
+      // SCRUM-1697 · «· Visita n de m» llega DESPUÉS, cuando se ha leído el trabajo (`pintarVisita`).
+      esc(parte.numero) + ' <span data-parte-visita="1"></span></h3>' +
       '<p style="margin:2px 0 0;font-size:13px;color:var(--muted)">' +
       esc(parte.clienteNombre || '') + '</p></header>' +
       // 🔴 SCRUM-1693 · FIRMADO = EL ORDEN DE UN PAPEL: los datos del documento arriba y las
@@ -1715,6 +1719,10 @@
       return false;
     }
     atarSalidasAlTrabajo(contenedor, parte, o);
+    // SCRUM-1697 · no se espera: el parte se usa ya; el número de visita llega cuando llegue.
+    // (vive en `parteVisita.js`: lee el trabajo, y este fichero no puede hablar con /admin/jobs/
+    // sin entrar en el guard de SCRUM-366, que es de superficies que deciden la acción del trabajo)
+    if (typeof window.partePintarVisita === 'function') window.partePintarVisita(contenedor, parte, pedir);
     // SCRUM-1675 · un parte que ya no se puede tocar (firmado) no tiene dictado que recuperar: lo
     // que quedara en este móvil se borra, y no se queda guardado un texto con datos de la obra.
     if (!(parte.puedeEditarContenido && parte.puedeEditarContenido.ok)) borrarBorradorDelDictado(parteId);
