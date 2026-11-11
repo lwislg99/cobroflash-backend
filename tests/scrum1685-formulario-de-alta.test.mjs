@@ -265,7 +265,11 @@ test('SCRUM-1685b · invitado con provincia normal, por el formulario → cuenta
   const correo = 'invitado-f-1685@test.local';
   const p = montarPagina();
   // b2: con una de las 4 formas dobles, que es lo que ahora manda el desplegable.
-  await rellenar(p, { name: 'Reformas F 1685', email: correo, provincia: 'Valencia/València', 'domicilio-foral': 'no', 'domicilio-canarias': 'no' });
+  // El nombre NO empieza por «Reformas»: el código de referido sale de sus 8 primeras letras, y
+  // «Reformas D 1685» (scrum1685-alta-con-invitacion) daba el MISMO `REFORMAS26`. Corriendo los dos
+  // ficheros a la vez, `generateUniqueReferralCode` (mira y luego crea, sin reintento ante P2002)
+  // dejaba a uno con un 500: «Error al crear la cuenta.» (1 de 5 tandas, SCRUM-1685 ②).
+  await rellenar(p, { name: 'F1685 Reformas', email: correo, provincia: 'Valencia/València', 'domicilio-foral': 'no', 'domicilio-canarias': 'no' });
   await p.enviar();
   assert.equal(p.alerta(), PINTA_CREADA, `🔴 el invitado bueno no ve «cuenta creada»: ${p.alerta()}`);
   const fila = await prisma.merchant.findUnique({ where: { email: correo } });
