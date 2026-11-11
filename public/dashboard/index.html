@@ -108,7 +108,12 @@
           <span id="nav-partes-oficina-label">Partes por valorar</span>
         </button>
 
-        <button class="nav-item" data-view="invoices">
+        <!-- SCRUM-1701 (D3, firmada por el fundador en SCRUM-1686 c.21461): `data-oculta-en-modo`
+             dice en qué modo de emisión NO se enseña la entrada. Con `INVOICING_ES_ENABLED` en OFF
+             el servidor manda `modoEmision: 'receipt'` y, por la regla 24, ni factura ni cobro:
+             Facturas, Cobros, Libro de registro y Facturas recibidas salen de la barra. Lo aplica
+             `aplicarModoALaBarra` (app.js), que LEE `window.appModoEmision`; no hay flag nuevo. -->
+        <button class="nav-item" data-view="invoices" data-oculta-en-modo="receipt">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
           <span>Facturas</span>
           <span id="nav-invoices-badge" class="nav-badge" style="display:none">0</span>
@@ -117,7 +122,7 @@
         <!-- SCRUM-285 (B4): «Cobros», separado de Facturas. El diseno §B1 lo pone aqui, cerrando
              el ciclo: Presupuestos -> Albaranes -> Facturas -> Cobros. La entrada entra en el
              MISMO commit que su pantalla: el menu crece cuando existe el destino, nunca antes. -->
-        <button class="nav-item" data-view="cobros" id="nav-cobros" data-rol="admin">
+        <button class="nav-item" data-view="cobros" id="nav-cobros" data-rol="admin" data-oculta-en-modo="receipt">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
           <span>Cobros</span>
         </button>
@@ -155,7 +160,7 @@
              del guion H2. Va en NEGOCIO y no en VENTA porque un libro registro no es un paso del
              ciclo (Presupuestos → Albaranes → Facturas → Cobros): es un registro del negocio, y
              vive con Informes. -->
-        <button class="nav-item" data-view="libro-registro" id="nav-libro-registro" data-rol="admin">
+        <button class="nav-item" data-view="libro-registro" id="nav-libro-registro" data-rol="admin" data-oculta-en-modo="receipt">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><path d="M9 7h7M9 11h7"/></svg>
           <span id="nav-libro-registro-label">Libro de registro</span>
         </button>
@@ -166,7 +171,7 @@
              que sigue sin firmar es la copy DE DENTRO de la pantalla (título, estados, avisos),
              que sí lleva marcador — ver `facturasRecibidasView.js`. El rótulo es literal del
              propio ticket («Facturas recibidas») y de `LIBROS_DISPONIBLES` en el servidor. -->
-        <button class="nav-item" data-view="facturas-recibidas" id="nav-facturas-recibidas" data-rol="admin">
+        <button class="nav-item" data-view="facturas-recibidas" id="nav-facturas-recibidas" data-rol="admin" data-oculta-en-modo="receipt">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><path d="M9 7h7"/><path d="M9 11h4"/></svg>
           <span id="nav-facturas-recibidas-label">Facturas recibidas</span>
         </button>

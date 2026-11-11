@@ -2820,6 +2820,12 @@ html, body { overflow-x: clip; }
 @media (max-width: 640px) {
   .home-quick-actions { grid-template-columns: 1fr; }
 }
+/* S2 · SCRUM-1701 (b): con `receipt` la Inicio quita «Pendientes de cobro» y quedan DOS acciones.
+   En la rejilla de tres dejarían un hueco a la derecha: con menos de tres, dos columnas. Sólo por
+   encima de 640px, para no pisar la columna única del móvil. */
+@media (min-width: 641px) {
+  .home-quick-actions:not(:has(> :nth-child(3))) { grid-template-columns: repeat(2, 1fr); }
+}
 
 /* ── Formulario de cotización (FRONT1-4) ─────────────────────── */
 .quote-status-empty { font-size: 12.5px; color: var(--muted); padding: 10px 2px; line-height: 1.5; }
