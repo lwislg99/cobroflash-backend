@@ -5,6 +5,8 @@
 **Medido contra:** `origin/main` = `813cfd512622f382395f464503add8c94f59c921` · 2026-11-11T15:28:36Z (rama con `main` fusionado; re-corridos ahí `scrum1678` 9/9, `scrum1342` y `scrum710b`: 34/34. Los 441 vecinos de «Medido» se corrieron sobre `412ddc20d`)
 **Skill UI:** no cargada · el cambio de `teamView.js` es de comportamiento (una consulta antes de abrir el formulario) y reusa la alerta `setAlert` que la vista ya tenía: ni marcado, ni estilo, ni texto nuevo
 
+A9: comprobación → `tests/scrum1678-plazas-antes-del-formulario.test.mjs`
+
 ## Qué cambia
 
 | dónde | qué |
