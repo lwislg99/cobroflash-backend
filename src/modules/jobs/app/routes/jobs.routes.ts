@@ -668,6 +668,18 @@ async function serializeJobDetail(job: any) {
     };
   });
 
+  // SCRUM-1671 (PILOTO-1) · LOS PARTES DEL TRABAJO. Medido el 10-nov en yaqu.app: el parte
+  // PT-2026-005 firmado con `jobId: 79` y la ficha del trabajo #79 diciendo «Aún no hay
+  // documentos», porque este detalle no los pedía. Como los albaranes, son del Trabajo (`jobId`)
+  // y no del presupuesto: se cargan SIEMPRE y viajan por las DOS salidas. Lo que viaja es lo mismo
+  // que pinta la ficha del cliente (`historialDelCliente.ts`): id, número, fecha y estado — el
+  // contenido del parte se lee en su propia ruta. 🔴 Regla 2: merchant Y trabajo en el `where`.
+  const partes = await prisma.parteTrabajo.findMany({
+    where: { merchantId: job.merchantId, jobId: job.id },
+    orderBy: [{ fecha: 'desc' }, { id: 'desc' }],
+    select: { id: true, numero: true, fecha: true, estado: true },
+  });
+
   // invoices[] y charge SÍ dependen de los presupuestos (tramos/cobro): un Job sin ninguno no
   // tiene → []/null.
   //
@@ -686,7 +698,7 @@ async function serializeJobDetail(job: any) {
       // presupuesto es la AVERÍA —el caso más frecuente del primer cliente real, y el que más se
       // reparte entre varios—: dejarlo fuera de aquí habría hecho que el selector saliera vacío
       // justo donde más falta hace, sin ningún error.
-      ...base, customer, invoices: [], charge: null, albaranes, asignados,
+      ...base, customer, invoices: [], charge: null, albaranes, partes, asignados,
       entregaPendiente: entregaParaVista(entregaDelTrabajo([], albaranesRaw)),
     };
   }
@@ -787,7 +799,7 @@ async function serializeJobDetail(job: any) {
   // entregar». El criterio es el de `dineroDelTrabajo.ts`, aplicado en `presupuestosQueSeEntregan`.
   const entrega = entregaParaVista(entregaDelTrabajo(presupuestosQueSeEntregan(quotesDelTrabajo), albaranesRaw));
 
-  return { ...base, customer, invoices, charge, albaranes, asignados, entregaPendiente: entrega };
+  return { ...base, customer, invoices, charge, albaranes, partes, asignados, entregaPendiente: entrega };
 }
 
 // GET /admin/jobs — lista para la vista "Esta semana" (simple, por fecha)
