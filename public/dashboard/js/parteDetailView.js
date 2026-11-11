@@ -194,6 +194,11 @@
     // Cierto porque `puedeEditarContenido` solo abre en `borrador` (`parteTrabajo.ts`), y el PATCH
     // y el dictado lo aplican. No habla de precios a propósito: siguen abiertos hasta facturar.
     conLaPrimeraFirmaQuedaFijo: 'Con la primera firma, lo apuntado queda fijo.', // APROBADO por delegación del fundador · SCRUM-653 comentario 17354
+    // SCRUM-1676 · el parte VACÍO: firmar deja de ser la acción principal y se dice qué va antes. Ocupa
+    // el sitio de «queda fijo» (dice lo mismo y además qué hacer), solo mientras no hay ni una línea.
+    // Tanda de PILOTO-1 (SCRUM-1656 c.21405, entrada 7); la rectificación c.21411 no toca las 1-23.
+    // Consta en `docs/microcopy/2026-11-10-SCRUM-1676-apunta-primero.md`.
+    apuntaPrimero: 'Apunta primero lo que has hecho: al firmar ya no se puede cambiar.', // APROBADO por el fundador el 10-nov-2026 · SCRUM-1656 comentario 21408
 
     // SCRUM-890 · por qué no se firma un parte vacío y qué hacer. FIRMADO el 16-sep-2026 por
     // delegación del fundador (SCRUM-890, comentario 15623). Consta en
@@ -1249,11 +1254,19 @@
    * exige** (`ordenDeFirmaExigido()` en el dominio): en la obra firma quien esté libre primero.
    */
   function pintarLasDosFirmas(parte) {
+    // 🔴 SCRUM-1676 · UN PARTE VACÍO NO TIENE LA FIRMA COMO ACCIÓN PRINCIPAL. «Vacío» es la MISMA
+    // pregunta que hace el servidor (`puedeFirmarse` en `parteTrabajo.ts`: cero líneas), no otra: con
+    // horas pero sin líneas el servidor rechaza la firma igual (409 `parte_vacio`), así que pintarla
+    // como siguiente paso sería mandar al operario contra un rechazo. Con una línea vuelve a serlo.
+    // El botón SIGUE ahí y con su mismo camino (SCRUM-890 ya no abre el pad y dice por qué): solo
+    // pierde el verde, que es lo que se pulsa sin leer (canon de SCRUM-823).
+    var enEspera = !Array.isArray(parte.lineas) || parte.lineas.length === 0;
     var recuadro = function (firmado, marca, rotulo, hecho, quien) {
       return firmado
         ? '<p data-parte-' + marca + '-hecha="1" style="margin:0;font-size:14px;color:var(--muted)">' +
           esc(hecho) + (quien ? ' ' + esc(quien) : '') + '</p>'
-        : '<button type="button" data-parte-' + marca + '="1" style="width:100%">' +
+        : '<button type="button" data-parte-' + marca + '="1"' +
+          (enEspera ? ' data-parte-firma-en-espera="1"' : '') + ' style="width:100%">' +
           esc(rotulo) + '</button>';
     };
     // SCRUM-1175 (PR-B) · UN PASO PROPIO Y UNA CAJA POR FIRMA. Cada aviso «falta» vive DENTRO de la
@@ -1264,9 +1277,13 @@
       '<section data-parte-firmas="1" class="parte-firmas">' +
       '<h4 class="parte-firmas-titulo">' + esc(TEXTOS.firmasTitulo) + '</h4>' +
       // SCRUM-653 c.17354 · el paso irreversible se enseña ANTES de darlo, y solo entonces.
+      // SCRUM-1676 · con el parte vacío, en su sitio, el que dice además qué va antes de firmar.
       (!parte.firmoElCliente && !parte.firmoElTecnico
-        ? '<p data-parte-primera-firma-fija="1" style="margin:0 0 8px;font-size:13px;color:var(--muted)">' +
-          esc(TEXTOS.conLaPrimeraFirmaQuedaFijo) + '</p>'
+        ? (enEspera
+          ? '<p data-parte-apunta-primero="1" style="margin:0 0 8px;font-size:13px;color:var(--muted)">' +
+            esc(TEXTOS.apuntaPrimero) + '</p>'
+          : '<p data-parte-primera-firma-fija="1" style="margin:0 0 8px;font-size:13px;color:var(--muted)">' +
+            esc(TEXTOS.conLaPrimeraFirmaQuedaFijo) + '</p>')
         : '') +
       '<div class="parte-firma-caja" data-parte-caja-firma="cliente">' +
       recuadro(parte.firmoElCliente, 'firmar', TEXTOS.firmar, TEXTOS.yaFirmoElCliente, parte.firmadoPorNombre) +
