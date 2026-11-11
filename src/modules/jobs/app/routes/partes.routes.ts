@@ -121,6 +121,20 @@ async function nombreDelCliente(merchantId: number, customerId: number | null): 
 }
 
 /**
+ * SCRUM-1691 · `nombreDelCliente` para una LISTA: el mismo criterio (id + merchantId, `null` si no hay
+ * o si el cliente no es de este merchant), en UNA consulta para todas las filas, no una por parte.
+ */
+async function nombresDeClientes(merchantId: number, customerIds: Array<number | null | undefined>): Promise<Map<number, string>> {
+  const ids = [...new Set(customerIds.filter((id): id is number => id !== null && id !== undefined))];
+  if (!ids.length) return new Map();
+  const clientes = await prisma.customer.findMany({
+    where: { id: { in: ids }, merchantId },
+    select: { id: true, name: true },
+  });
+  return new Map(clientes.filter((c) => c.name).map((c) => [c.id, c.name as string]));
+}
+
+/**
  * 🔴 LO QUE VIAJA AL MÓVIL DEL TÉCNICO. Escrito ENTERO, campo a campo.
  *
  * No es un objeto extendido menos dos claves, y no es estilo: extendiendo la fila, el día que la
@@ -328,7 +342,13 @@ router.get('/oficina/pendientes', requireRole('admin'), async (req: any, res) =>
       orderBy: [{ firmadoAt: 'desc' }, { id: 'desc' }],
       take: 200,
     });
-    const vistos = partes.map(serializeParteParaLaOficina);
+    // SCRUM-1691 · la fila trae el cliente, como al abrir el parte (`findParte`): sin esto llegaba `null`
+    // y la pantalla pintaba «—».
+    const nombres = await nombresDeClientes(req.merchantId, partes.map((p) => p.customerId));
+    const vistos = partes.map((p) => serializeParteParaLaOficina({
+      ...p,
+      clienteNombre: p.customerId === null || p.customerId === undefined ? null : nombres.get(p.customerId) ?? null,
+    }));
     const pendientes = vistos.filter((p) => p.sinValorar);
     // 🔴 EL SUELO VIAJA CON EL DATO: un `0` no dice si no hay ninguno o si no se supo leer. Con
     // `firmadosLeidos` al lado, «0 de 12» y «0 de 0» dejan de ser el mismo número.
