@@ -221,6 +221,10 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // necesitan base (la puerta los para antes) y corren siempre.
   'scrum1685-alta-con-invitacion.test.mjs': 3,
   'scrum1685-formulario-de-alta.test.mjs': 2,
+  // SCRUM-1685 ②: el invitado que entra por la RUTA y el que da de alta el GUION nacen con la misma
+  // fila, campo a campo, y dejan colgando lo mismo. Necesita banco por el motivo de SCRUM-1515: crea
+  // y borra merchants de verdad y compara la fila con sus valores por defecto. Sólo el desechable.
+  'scrum1685-ruta-y-guion-campo-a-campo.test.mjs': 1,
   // SCRUM-1403: los TRES que ejercitan el recorte de presupuestos del Tecnico y la pestana de
   // documentos de la ficha de cliente contra Prisma de verdad. Necesitan banco por el mismo motivo
   // que los de SCRUM-1397: lo que vigilan es el WHERE (el recorte en AND con la busqueda y con el

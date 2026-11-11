@@ -66,8 +66,11 @@ export interface FilaAlbaranListado {
   numero: string;
   /** Fecha de ENTREGA/visita (editable en borrador). */
   fecha: Date | string;
-  /** Fecha de EMISIÓN — `createdAt`. Son distintas a propósito (SCRUM-67). */
-  emisionAt: Date | string;
+  /**
+   * Fecha de EMISIÓN — `createdAt`. Son distintas a propósito (SCRUM-67). SCRUM-1669b: `null` para un
+   * BORRADOR, que todavía no se ha emitido; la lista pinta la raya de un dato ausente.
+   */
+  emisionAt: Date | string | null;
   estado: string;
   /**
    * SCRUM-372 · UN DATO, UN NOMBRE. Este derivado —`sin_facturar` · `parcial` · `facturado`, salido
@@ -225,7 +228,7 @@ export async function listarAlbaranesDelMerchant(
       id: a.id,
       numero: a.numero,
       fecha: a.fecha,
-      emisionAt: a.createdAt,
+      emisionAt: a.estado === 'borrador' ? null : a.createdAt,
       estado: a.estado,
       estadoFacturacion: estadoCobroAlbaran(lineas, facturado, !!a.invoiceId),
       // ── SCRUM-831 · LOS DOS DATOS QUE LE FALTABAN A LA LISTA PARA SABER QUÉ TOCA ────────────

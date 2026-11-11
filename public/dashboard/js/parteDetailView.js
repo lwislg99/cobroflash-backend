@@ -254,6 +254,10 @@
     sinTecnicos: 'Sin técnicos',
     pistaTecnicos: 'Quién ha estado en la obra',
     sinNotas: 'Sin notas',
+    // SCRUM-1698 (T5 de SCRUM-1686) · N3, FIRMADO por el fundador en la tanda N1-N13, SCRUM-1686
+    // comentario 21470: parte FIRMADO, campo de horas o de desplazamiento que se quedó vacío. Sustituye
+    // a «—», que no distinguía «no se apuntó» de «cero». Sólo en `pintarHoras` (alcance de la firma).
+    sinApuntar: 'Sin apuntar',
     pistaNotas: 'Lo que haya que dejar dicho.',
 
     // ── SCRUM-1677 · LA SALIDA DEL PARTE HACIA SU TRABAJO ─────────────────────────────────
@@ -543,15 +547,17 @@
    * @param {'number'} [modo]   abre el teclado numérico del móvil.
    * @param {string}  [unidad]  se pinta al lado del número (SCRUM-1175: «km»).
    * @param {string}  [pista]   el marcador del campo vacío (SCRUM-1175, PR-C). Sólo al editar.
+   * @param {string}  [vacio]   lo que dice el campo vacío SIN casilla (SCRUM-1698: «Sin apuntar»).
+   *                            Sin él, «—» como siempre. Un `0` no es vacío: se pinta el número.
    */
-  function campo(rotulo, valor, nombre, editable, modo, unidad, pista) {
+  function campo(rotulo, valor, nombre, editable, modo, unidad, pista, vacio) {
     var v = valor === null || valor === undefined ? '' : String(valor);
     if (!editable) {
       return (
         '<div class="parte-campo">' +
         '<span class="parte-campo-rotulo">' + esc(rotulo) + '</span>' +
         '<span class="parte-campo-dato" data-parte-dato="' + esc(nombre || '') + '">' +
-        esc(v ? v + (unidad ? ' ' + unidad : '') : '—') + '</span></div>'
+        esc(v ? v + (unidad ? ' ' + unidad : '') : (vacio || '—')) + '</span></div>'
       );
     }
     // SCRUM-1491 · Desplazamiento es un ENTERO: `numeric` pide el teclado sin coma. Con `decimal`
@@ -632,7 +638,8 @@
 
   /** Entrada o salida: selector con «Ahora» si el valor cabe; si no, el campo de siempre. */
   function campoHora(rotulo, valor, nombre, editable) {
-    if (!editable || !cabeEnSelector(valor)) return campo(rotulo, valor, nombre, editable);
+    // SCRUM-1698 · en el firmado, la hora vacía dice «Sin apuntar» (N3).
+    if (!editable || !cabeEnSelector(valor)) return campo(rotulo, valor, nombre, editable, null, null, null, TEXTOS.sinApuntar);
     var v = valor === null || valor === undefined ? '' : String(valor);
     return (
       '<div class="parte-campo">' +
@@ -658,8 +665,8 @@
       '<div data-parte-duracion="1" aria-live="polite">' +
       pintarDuracion(parte.entrada, parte.salida, editable) + '</div>' +
       '<div class="parte-horas-par">' +
-      campo(TEXTOS.desplazamiento, parte.desplazamientos, 'desplazamientos', editable, 'number') +
-      campo(TEXTOS.kilometros, parte.kilometros, 'kilometros', editable, 'number', TEXTOS.km) +
+      campo(TEXTOS.desplazamiento, parte.desplazamientos, 'desplazamientos', editable, 'number', null, null, TEXTOS.sinApuntar) +
+      campo(TEXTOS.kilometros, parte.kilometros, 'kilometros', editable, 'number', TEXTOS.km, null, TEXTOS.sinApuntar) +
       '</div>' +
       '</section>'
     );
