@@ -746,38 +746,6 @@
     );
   }
 
-  // ── 🔴 SCRUM-1697 · «VISITA {n} DE {m}» (N4; M2 del máster, 073c67ade) ──────────────────────
-  // Un trabajo tiene varios partes, uno por visita, y la visita ES su parte. Se cuentan los partes
-  // del trabajo por `fecha` y, a igual fecha, por `numero`; `m` = todos, también los borradores.
-  // Con uno solo no se dice nada: N4 es «con varios en el trabajo».
-  function visitaDelParte(parteId, partes) {
-    if (!Array.isArray(partes) || partes.length < 2) return null;
-    var ordenados = partes.slice().sort(function (a, b) {
-      var fa = Date.parse(a && a.fecha), fb = Date.parse(b && b.fecha);
-      if (fa !== fb) return (isNaN(fa) ? Infinity : fa) - (isNaN(fb) ? Infinity : fb);
-      return String((a && a.numero) || '').localeCompare(String((b && b.numero) || ''), 'es', { numeric: true });
-    });
-    for (var i = 0; i < ordenados.length; i++) {
-      if (ordenados[i] && String(ordenados[i].id) === String(parteId)) return { n: i + 1, m: ordenados.length };
-    }
-    return null;
-  }
-
-  // Lee el trabajo (GET /admin/jobs/:id trae `partes`, SCRUM-1671) y pone «· Visita n de m» tras el
-  // número. FALLA CERRADO: sin trabajo, sin lista o con la lectura caída, la cabecera se queda sin
-  // número — un número equivocado en un papel firmado es peor que ninguno.
-  async function pintarVisita(contenedor, parte, pedir) {
-    if (!contenedor || !parte || parte.jobId === null || parte.jobId === undefined || parte.jobId === '') return;
-    if (typeof pedir !== 'function') return;
-    var trabajo;
-    try { trabajo = await pedir('/admin/jobs/' + parte.jobId); } catch (_e) { return; }
-    var v = visitaDelParte(parte.id, trabajo && trabajo.partes);
-    if (!v) return;
-    var hueco = contenedor.querySelector('[data-parte-visita="1"]');
-    if (!hueco) return;
-    hueco.textContent = '· ' + TEXTOS.visitaDeLas.replace('{n}', String(v.n)).replace('{m}', String(v.m));
-  }
-
   /**
    * Pinta el parte entero dentro de `contenedor`.
    *
@@ -1752,7 +1720,9 @@
     }
     atarSalidasAlTrabajo(contenedor, parte, o);
     // SCRUM-1697 · no se espera: el parte se usa ya; el número de visita llega cuando llegue.
-    pintarVisita(contenedor, parte, pedir);
+    // (vive en `parteVisita.js`: lee el trabajo, y este fichero no puede hablar con /admin/jobs/
+    // sin entrar en el guard de SCRUM-366, que es de superficies que deciden la acción del trabajo)
+    if (typeof window.partePintarVisita === 'function') window.partePintarVisita(contenedor, parte, pedir);
     // SCRUM-1675 · un parte que ya no se puede tocar (firmado) no tiene dictado que recuperar: lo
     // que quedara en este móvil se borra, y no se queda guardado un texto con datos de la obra.
     if (!(parte.puedeEditarContenido && parte.puedeEditarContenido.ok)) borrarBorradorDelDictado(parteId);
@@ -2360,8 +2330,6 @@
   window.parteLineasConfirmadas = lineasConfirmadas;
   window.firmarParte = firmarParte;
   window.PARTE_TEXTOS = TEXTOS;
-  window.parteVisitaDelParte = visitaDelParte;
-  window.partePintarVisita = pintarVisita;
   window.parteLineasOCeguera = lineasOCeguera;
   window.parteCuerpoDeCampo = cuerpoDeCampo;
 })();
