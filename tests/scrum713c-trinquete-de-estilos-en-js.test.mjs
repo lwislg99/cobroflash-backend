@@ -127,7 +127,13 @@ function censo() {
 // clases `.alb-*` de `styles.css`, tal cual. El fichero no se nombra aquí (está en
 // `docs/master/SCRUM-1659.md`). Contado con ESTE contador sobre `origin/main` (d7fb55ea) + este
 // cambio: 328; lo dijo el propio guard («HAN BAJADO … 328 frente al techo 334»).
-const TECHO = 328;
+// 328 → 324 · 11-nov-2026 (SCRUM-1699, PILOTO-1). El detalle de «Partes por valorar» pasa a clases
+// `.po-*` de `styles.css` las cuatro asignaciones de su línea (rótulo del bloque, fila, casilla de
+// precio e importe): cabecera y línea tienen que compartir la MISMA clase de columna para alinearse.
+// El fichero no se nombra aquí (está en `docs/master/SCRUM-1699.md`). Contado con ESTE contador
+// sobre `origin/main` (80954a901) + este cambio: 324; lo dijo el propio guard («HAN BAJADO … 324
+// frente al techo 328»).
+const TECHO = 324;
 
 test('SCRUM-713c · SUELO: el contador VE lo que tiene que ver, y NO se caza a sí mismo', () => {
   // 🔴 El suelo que no caduca: se prueba contra cadenas fabricadas aquí, así que sigue probando
