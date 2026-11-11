@@ -12,12 +12,13 @@
 import type { TipoParte } from './parteTrabajo';
 import { esTipoIntervencion, type TipoIntervencion } from './tipoIntervencion';
 
-const TIPO_PARTE_DE_INTERVENCION: Record<TipoIntervencion, TipoParte> = {
-  REPARACION_ASISTENCIA: 'reparacion_asistencia',
-  MANTENIMIENTO: 'mantenimiento',
-  INSTALACION: 'instalacion',
-};
+// SCRUM-651: UNA sola fuente del vocabulario. No se copia la lista de tres valores: se DERIVA del
+// Trabajo, y el compilador comprueba en los DOS sentidos que el resultado es exactamente `TipoParte`
+// (si alguien añade un tipo a un lado y no al otro, esto deja de compilar).
+type Igual<A, B> = [A] extends [B] ? ([B] extends [A] ? true : never) : never;
+const _mismoVocabulario: Igual<Lowercase<TipoIntervencion>, TipoParte> = true;
+void _mismoVocabulario;
 
 export function tipoParteDesdeIntervencion(bruto: unknown): TipoParte | null {
-  return esTipoIntervencion(bruto) ? TIPO_PARTE_DE_INTERVENCION[bruto] : null;
+  return esTipoIntervencion(bruto) ? (bruto.toLowerCase() as Lowercase<TipoIntervencion>) : null;
 }

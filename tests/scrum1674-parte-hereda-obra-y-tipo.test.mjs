@@ -68,10 +68,13 @@ test('SCRUM-1674 · 🔴 el parte copia la obra y el tipo del TRABAJO; vacío se
         const job = (extra) => prisma.job.create({
           data: { merchantId: m.id, customerId: cliente.id, status: 'en_curso', titulo: 'Trabajo 1674', ...extra },
         });
-        const conTodo = await job({ direccion: OBRA, tipoIntervencion: 'MANTENIMIENTO' });
+        // SCRUM-651: el test no re-lista el vocabulario del Trabajo; lo escribe en la ortografía del parte
+        // y lo pasa a la del Trabajo (mayúsculas), que es la relación que mide.
+        const delTrabajo = (tipoParte) => tipoParte.toUpperCase();
+        const conTodo = await job({ direccion: OBRA, tipoIntervencion: delTrabajo('mantenimiento') });
         const sinNada = await job({});
-        const enBlanco = await job({ direccion: '   ', tipoIntervencion: 'INSTALACION' });
-        const conTipo = await job({ direccion: OBRA, tipoIntervencion: 'REPARACION_ASISTENCIA' });
+        const enBlanco = await job({ direccion: '   ', tipoIntervencion: delTrabajo('instalacion') });
+        const conTipo = await job({ direccion: OBRA, tipoIntervencion: delTrabajo('reparacion_asistencia') });
 
         const token = 'qa1674-' + crypto.randomBytes(12).toString('hex');
         await prisma.authSession.create({
@@ -101,7 +104,7 @@ test('SCRUM-1674 · 🔴 el parte copia la obra y el tipo del TRABAJO; vacío se
         const a = await abrir({ jobId: conTodo.id });
         blando(() => assert.equal(a.fila.obra, OBRA, '🔴 ① con obra en el trabajo: el parte debe nacer con ESA obra'));
         blando(() => assert.equal(a.json.obra, OBRA, '🔴 ① la respuesta debe traer la obra copiada'));
-        blando(() => assert.equal(a.fila.tipo, 'mantenimiento', '🔴 ① el tipo del trabajo (MANTENIMIENTO) debe llegar como «mantenimiento»'));
+        blando(() => assert.equal(a.fila.tipo, 'mantenimiento', '🔴 ① el tipo del trabajo (mantenimiento) debe llegar como «mantenimiento»'));
         nuncaFacturacion('①', a);
 
         // ② Trabajo SIN obra ni tipo → el parte nace vacío. Ni la facturación ni el sitio rellenan el hueco.
@@ -113,7 +116,7 @@ test('SCRUM-1674 · 🔴 el parte copia la obra y el tipo del TRABAJO; vacío se
         // ③ Obra en BLANCO → vacío (un espacio no es una dirección). El tipo sí viaja.
         const c = await abrir({ jobId: enBlanco.id });
         blando(() => assert.equal(c.fila.obra, null, '🔴 ③ una obra de solo espacios es vacía: el parte nace sin obra'));
-        blando(() => assert.equal(c.fila.tipo, 'instalacion', '🔴 ③ INSTALACION debe llegar como «instalacion»'));
+        blando(() => assert.equal(c.fila.tipo, 'instalacion', '🔴 ③ instalacion debe llegar como «instalacion»'));
         nuncaFacturacion('③', c);
 
         // ④ Un tipo ELEGIDO al abrir manda sobre el del trabajo: es la decisión de quien lo abre.
@@ -121,7 +124,7 @@ test('SCRUM-1674 · 🔴 el parte copia la obra y el tipo del TRABAJO; vacío se
         blando(() => assert.equal(d.fila.tipo, 'mantenimiento', '🔴 ④ el tipo elegido al abrir no se pisa con el del trabajo'));
         blando(() => assert.equal(d.fila.obra, OBRA, '🔴 ④ y la obra se copia igual'));
         const d2 = await abrir({ jobId: conTipo.id });
-        blando(() => assert.equal(d2.fila.tipo, 'reparacion_asistencia', '🔴 ④ REPARACION_ASISTENCIA debe llegar como «reparacion_asistencia»'));
+        blando(() => assert.equal(d2.fila.tipo, 'reparacion_asistencia', '🔴 ④ reparacion_asistencia debe llegar como «reparacion_asistencia»'));
 
         // ⑤ Parte SUELTO (sin trabajo) → nada que heredar.
         const e = await abrir({});
