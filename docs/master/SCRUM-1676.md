@@ -1,6 +1,9 @@
 # SCRUM-1676 · PARTES · la firma deja de ser la acción principal de un parte VACÍO (PILOTO-1)
 
 **Medido contra:** `origin/main` = `09212d6fbdb3373b96f1cd89b10707e1418bdd73` · 2026-11-10T18:12:00Z
+
+A9: sin fallo que generalice — arreglo verificado contra la vista y el CSS reales (banco), sin tropiezo propio que generalizar
+
 **Puesto:** S4 · **Rama:** `scrum-1676-firma-no-primaria-parte-vacio` (sale de ese `main`; fusionada después con `main` tras entrar SCRUM-1675, #3047)
 **Skill UI:** cargada (`yaqu-premium-ui`; tokens existentes de `.btn-secondary`, ninguno nuevo)
 
