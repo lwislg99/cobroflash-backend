@@ -103,3 +103,21 @@ nuevo; se deshabilita mientras pide (sin doble alta); error con aviso ya existen
   guard tiene razón. No lo toco ni bajo el botón por mi cuenta: el automerge de #3069 queda QUITADO
   hasta que se decida (a) «Abrir parte» secundaria (manda 917c) o (b) N1 manda y C.1 admite las
   «Abrir parte» de los trabajos en curso además de la del dinero.
+
+## Apéndice · 11-nov-2026 (noche) · DECIDIDO (b): C.1 re-anclada a la regla firmada
+
+- **La firma:** el fundador eligió **(b)** en SCRUM-1700 **c.21526**: «cada fila con su primaria y
+  nunca dos verdes en la MISMA fila» (texto tal como lo transmite el orquestador en el encargo de S4
+  del 11-nov; esta sesión no tiene lectura directa de Jira). Manda N1; 917c queda sustituida en lo
+  que dice «una sola primaria en la lista».
+- **Rojo con el anclaje viejo, medido antes de tocar:** `node scripts/guard-lista-trabajos-917.mjs`
+  → `🔴 C.1 primarias en las filas: 2 ["Abrir parte","💰 Cobrar el resto (740,00 €)"]`, exit 1.
+- **Anclaje nuevo** (`scripts/guard-lista-trabajos-917.mjs`, C.1): se mide FILA A FILA; rojo si una
+  fila tiene más de una `.btn-primary`, si falta la del dinero o si falta «Abrir parte» en el en
+  curso. Verde: `C.1 11 filas, ninguna con dos primarias`, 49/49, exit 0.
+- **Control positivo:** mutante en `jobsView.js` que duplica «Abrir parte» en la misma celda →
+  `🔴 C.1 dos primarias en la MISMA fila: [["Abrir parte","Abrir parte"]]`, exit 1. Mutante revertido.
+- **Lo que NO mide (lectura mía):** «cada fila CON su primaria» no se exige a todas las filas —hoy
+  pendientes y agendados no llevan verde, y exigirlo sería construir lo que no se ha pedido—; se
+  exige el «nunca dos». Si el fundador lo quiere literal, es otra pieza.
+- Automerge de #3069 REARMADO tras el push. Pendiente: verlo en yaqu.app tras el merge (regla 42).

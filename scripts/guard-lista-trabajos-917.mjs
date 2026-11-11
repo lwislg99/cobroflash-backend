@@ -342,13 +342,24 @@ titulo('B · columnas (B.1) · técnico en la línea del cliente (B.2) · sin p�
 }
 
 // ═══ C · LAS ACCIONES, PULSADAS ═════════════════════════════════════════════════════════════
-titulo('C · una sola primaria y es la del dinero (C.1) · el «⋯» entero (C.2) · la fila navega (C.3) · grupos (C.4-C.5) · sin cobro en modo justificante (C.6)');
+titulo('C · nunca dos primarias en la misma fila (C.1, SCRUM-1700) · el «⋯» entero (C.2) · la fila navega (C.3) · grupos (C.4-C.5) · sin cobro en modo justificante (C.6)');
 {
   const { page } = await abrirVista(browser, puerto, '/t', 1280);
-  const primarias = await page.evaluate((sel) => [...document.querySelectorAll(sel + ' .btn-primary')].map((b) => b.textContent.trim()), SEL_FILA);
+  // SCRUM-1700 · RE-ANCLADO a la regla FIRMADA por el fundador (SCRUM-1700 c.21526, opción (b) «N1»):
+  // «cada fila con su primaria y nunca dos verdes en la MISMA fila». El anclaje viejo (917c: UNA sola
+  // primaria en TODA la lista, la del dinero) se midió en ROJO contra el código de 1700:
+  // 2 ["Abrir parte","💰 Cobrar el resto (740,00 €)"] — dos primarias, en DOS filas distintas, que es
+  // justo lo que la regla nueva permite. Lo que se exige ahora: ninguna fila con más de UNA `.btn-primary`,
+  // la del dinero sigue en su fila, y la del en curso es «Abrir parte».
+  const porFila = await page.evaluate((sel) => [...document.querySelectorAll(sel)].map((f) => [...f.querySelectorAll('.btn-primary')].map((b) => b.textContent.trim())), SEL_FILA);
   const esperadaPrim = '💰 Cobrar el resto (' + await page.evaluate(() => window.fmtMoneyEs(740, 'EUR')) + ')';
-  if (primarias.length === 1 && primarias[0] === esperadaPrim) bien(`C.1 una sola primaria en la lista: «${primarias[0]}»`);
-  else mal(`C.1 primarias en las filas: ${primarias.length} ${JSON.stringify(primarias)} (esperaba solo «${esperadaPrim}»)`);
+  const dobles = porFila.filter((p) => p.length > 1);
+  const primarias = porFila.flat();
+  if (!porFila.length) mal('C.1 no hay filas que medir en /t');
+  else if (dobles.length) mal(`C.1 dos primarias en la MISMA fila: ${JSON.stringify(dobles)}`);
+  else if (!primarias.includes(esperadaPrim)) mal(`C.1 falta la primaria del dinero «${esperadaPrim}»: ${JSON.stringify(primarias)}`);
+  else if (!primarias.includes('Abrir parte')) mal(`C.1 falta la primaria «Abrir parte» del en curso: ${JSON.stringify(primarias)}`);
+  else bien(`C.1 ${porFila.length} filas, ninguna con dos primarias · primarias: ${JSON.stringify(primarias)}`);
 
   // C.1 · «Agendar» sigue, en secundaria, y ABRE el modal de agendar sin navegar
   {
