@@ -11,6 +11,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { inyectarBase, moduloDeDist, MERCHANT } from './_envio-doblado.mjs';
+import { reqDeSesion } from './_arnes-de-router.mjs';
 
 const RUTAS = '../dist/modules/jobs/app/routes/partes.routes.js';
 const copia = (x) => JSON.parse(JSON.stringify(x));
@@ -52,7 +53,7 @@ function banco(partes) {
     async pendientes() {
       const r = { status: 200, data: undefined };
       const res = { status(s) { r.status = s; return res; }, json(j) { r.data = copia(j); return res; } };
-      await h({ merchantId: MERCHANT, userRole: 'admin', query: {}, params: {} }, res);
+      await h(reqDeSesion({ rol: 'admin', merchantId: MERCHANT, query: {}, params: {} }), res);
       return r;
     },
   };
