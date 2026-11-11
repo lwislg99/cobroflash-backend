@@ -102,7 +102,8 @@ function fetchReal(ruta, opciones) {
 // ── La página, leída como HTML ────────────────────────────────────────────────────────────────────
 /** El <select> de `id`, con su <label for> y sus opciones (valor + texto visible). */
 function selectDe(id) {
-  const rotulo = (HTML.match(new RegExp(`<label for="${id}">([^<]*)</label>`)) || [])[1];
+  // SCRUM-553 · sin el `>` pegado: un `class` o un `aria-*` más en la etiqueta no la vuelve invisible.
+  const rotulo = (HTML.match(new RegExp(`<label for="${id}"[^>]*>([^<]*)</label>`)) || [])[1];
   const m = HTML.match(new RegExp(`<select id="${id}"([^>]*)>([\\s\\S]*?)</select>`));
   if (!m) return { rotulo, atributos: null, opciones: null };
   const opciones = [...m[2].matchAll(/<option value="([^"]*)"[^>]*>([^<]*)<\/option>/g)].map((o) => ({ valor: o[1], texto: o[2].trim() }));
@@ -128,7 +129,8 @@ function montarPagina({ fetchDePagina = fetchReal } = {}) {
     }
     els.set(id, el);
   }
-  const scripts = [...HTML.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+  // SCRUM-553 · sin el `>` pegado; los que llevan `src` no son «en línea» y no cuentan.
+  const scripts = [...HTML.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
   assert.equal(scripts.length, 1, '🔴 register.html tiene que tener UN script en línea (el banco ejecuta ése)');
   const document = { getElementById: (id) => els.get(id) || null };
   const enviados = [];
@@ -176,7 +178,7 @@ test.after(async () => {
 });
 
 test('SCRUM-1685b · la página pide provincia y domicilio con los literales FIRMADOS, y nada más', () => {
-  assert.match(HTML, /<label for="provincia">Provincia<\/label>/, `🔴 falta el campo con el rótulo «${ROTULO_PROVINCIA}»`);
+  assert.match(HTML, /<label for="provincia"[^>]*>Provincia<\/label>/, `🔴 falta el campo con el rótulo «${ROTULO_PROVINCIA}»`);
   for (const [id, pregunta] of [['domicilio-foral', PREGUNTA_FORAL], ['domicilio-canarias', PREGUNTA_CANARIAS]]) {
     const s = selectDe(id);
     assert.equal(s.rotulo, pregunta, `🔴 #${id} no lleva el enunciado firmado, LITERAL`);

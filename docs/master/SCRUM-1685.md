@@ -171,6 +171,7 @@ Leído en el log del job `130467504736` (run `43004200827`). Las causas, y el ar
 - `scrum456`: el `skip` lleva su texto en línea (`!ENABLED && 'sin LIBRO_PG_URL …'`) y no a través de
   una constante, que el guard lee como mudo.
 - Medido: esos 9 ficheros, sin banco, 95 ✔ + 5 saltos declarados + 0 ✖; los tres de 1685 con banco, 14/14.
+
 ## SCRUM-1685b · S0 · cruce de carril de `public/register.html` declarado en §3.4 — 11-nov-2026 ~10:40Z (reloj de GitHub)
 
 > Apéndice de la S0. Si este fichero ya existe en `main` con el registro de S1 (tramo a, PR #3055,
