@@ -210,7 +210,26 @@ async function renderTeamView(container) {
 
   await loadMembers();
 
-  document.getElementById('btn-invite-member').onclick = () => showInviteModal(loadMembers, setAlert);
+  document.getElementById('btn-invite-member').onclick = () => abrirAltaSiCabe(loadMembers, setAlert);
+}
+
+// SCRUM-1678 (S1; cruce J3 declarado en docs/equipo/dos-equipos.md §3.4) · EL LÍMITE, ANTES DEL
+// FORMULARIO. Antes el admin rellenaba nombre y correo y sólo al enviar le salía «Tu plan incluye 1
+// usuario». Ahora el clic pregunta al servidor cuántas plazas quedan y, si no queda ninguna, enseña
+// SU mensaje —el mismo literal del 409 `user_limit`, cero textos nuevos— sin abrir el formulario.
+// Si la consulta falla, se abre como antes: el 409 del POST sigue siendo la red.
+async function abrirAltaSiCabe(onSuccess, setAlert) {
+  let plazas = null;
+  try {
+    plazas = await apiRequest('/admin/team/plazas');
+  } catch {
+    plazas = null;
+  }
+  if (plazas && plazas.lleno === true && typeof plazas.mensaje === 'string' && plazas.mensaje.trim()) {
+    setAlert('error', plazas.mensaje);
+    return;
+  }
+  showInviteModal(onSuccess, setAlert);
 }
 
 function showInviteModal(onSuccess, setAlert, prefill = null) {
