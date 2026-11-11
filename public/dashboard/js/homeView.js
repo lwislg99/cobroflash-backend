@@ -9,13 +9,6 @@ async function renderHomeView(container) {
   // y el rótulo del bloque de actividad. Rótulo y ruta salen de la MISMA pregunta: así el título
   // nunca promete otra cosa que lo que la ruta trae (c.20438, punto 4).
   const veNegocio = window.appUserRole === 'admin';
-  // SCRUM-1701 (b) · decisión del orquestador, por coherencia con D3 (firmada en SCRUM-1686
-  // c.21461), reversible: la acción rápida «Pendientes de cobro» lleva a Facturas, y con `receipt`
-  // D3 saca Facturas de la barra. Un atajo a una sección escondida es un callejón roto, así que
-  // lee el MISMO interruptor (`window.appModoEmision`, sin recalcularlo) y no se pinta. No hay
-  // texto nuevo: sólo se quita uno. `null` (no se sabe) no esconde nada, igual que la barra.
-  // Se QUITA después de pintar (abajo) y no con un ternario en la plantilla: así el literal no se
-  // mueve y el censo de SCRUM-601 sigue leyéndolo donde y como lo leía.
   container.innerHTML = `
     <div>
       <!-- Saludo (foco + calidez) + A6.7 Personalizar -->
@@ -124,6 +117,13 @@ async function renderHomeView(container) {
 
   document.getElementById("btn-quick-quote").addEventListener("click", openQuickQuoteModal);
   document.getElementById("btn-add-customer").addEventListener("click", () => window.renderAppView && renderAppView('customers'));
+  // SCRUM-1701 (b) · decisión del orquestador, por coherencia con D3 (firmada en SCRUM-1686
+  // c.21461), reversible: la acción rápida «Pendientes de cobro» lleva a Facturas, y con `receipt`
+  // D3 saca Facturas de la barra. Un atajo a una sección escondida es un callejón roto, así que
+  // lee el MISMO interruptor (`window.appModoEmision`, sin recalcularlo) y no se pinta. No hay
+  // texto nuevo: sólo se quita uno. `null` (no se sabe) no esconde nada, igual que la barra.
+  // Se QUITA tras pintar, no con un ternario: el literal no se mueve para el censo de SCRUM-601.
+  // Va AQUÍ y no bajo `veNegocio`, donde partía el ancla de la mutación de 1390y (scrum836, #3077).
   if (window.appModoEmision === 'receipt') document.getElementById("btn-view-pending").remove();
   document.getElementById("btn-view-pending")?.addEventListener("click", () => window.renderAppView && renderAppView('invoices'));
   document.getElementById("btn-home-prefs")?.addEventListener("click", openHomePrefsPanel);

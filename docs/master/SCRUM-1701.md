@@ -103,3 +103,21 @@ literal (regla 39 no aplica: sólo se quita uno).
   5 son los de entorno ya declarados arriba (475 ×3 · 476 · 976).
 - **(a) de c.21511:** la frase de la auditoría «el front NO filtra el menú por rol» queda corregida en el
   propio `docs/master/SCRUM-1686.md` (D3), con la cita a `aplicarRolALaBarra`, sin borrar la original.
+## Tramo c — el rojo de #3077 (S2, 11-nov-2026)
+
+**Medido contra:** `origin/main` = `d7c2006b274be4e3ac1d306e6d5fe6ee647f40b8` · 2026-11-11T17:08:09Z (cabecera `Date:` de `gh api -i zen`) · **Rama:** `scrum-1701-menu-piloto-modo-emision` (la misma) · **Carril:** S2.
+
+El check obligatorio de #3077 salió en rojo por dos tests, y ambos los causaba esta rama (no son de entorno):
+
+- **scrum836** (y los dos meta-guards, por lo mismo): el comentario de (b) iba entre `const veNegocio = …;` y
+  `container.innerHTML = …`, y partía en dos el ancla de la cuarta mutación de `scrum1390y-inicio-por-rol`. La
+  mutación no se podía aplicar, así que el guard quedaba ciego. **Arreglo:** el comentario baja al lado del
+  `if` que quita `#btn-view-pending`, que es la línea que explica. Código idéntico, mismo número de líneas:
+  la nota de 601 sigue en la 906 (`git diff --numstat` 9 1, como dice el re-anclaje). No se tocó la
+  declaración de 1390y: su ancla vuelve a casar porque el texto vuelve a ser el de antes.
+- **scrum719 / 1395b:** el veredicto de mudez no recogía el cambio en `scrum601-copy-del-documento-vs-flag.test.mjs`
+  (el re-anclaje 898 → 906). **Arreglo:** `npm run censo:mudez -- --escribir`; `tests/_veredicto-mudez.json` va
+  en el commit, sin tocarlo a mano.
+- **Tanda local:** 836 · 719 · 601 · 1390y · 1701 → 78 ✔ · 0 ✖ · 0 saltados.
+
+A9: comprobación → `tests/scrum1701-menu-del-piloto-por-modo.test.mjs`
