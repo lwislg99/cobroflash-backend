@@ -255,6 +255,12 @@
     pistaTecnicos: 'Quién ha estado en la obra',
     sinNotas: 'Sin notas',
     pistaNotas: 'Lo que haya que dejar dicho.',
+
+    // ── SCRUM-1677 · LA SALIDA DEL PARTE HACIA SU TRABAJO ─────────────────────────────────
+    // Tanda de PILOTO-1 (SCRUM-1656 c.21405, entradas 5 y 6); la rectificación c.21411 no toca las
+    // 1-23. Consta en `docs/microcopy/2026-11-10-SCRUM-1677-salida-al-trabajo.md`.
+    trabajoDelCliente: '← Trabajo: {cliente}', // APROBADO por el fundador el 10-nov-2026 · SCRUM-1656 comentario 21408
+    volverAlTrabajo: 'Volver al trabajo', // APROBADO por el fundador el 10-nov-2026 · SCRUM-1656 comentario 21408
   };
 
   // El vocabulario CERRADO del dominio (`parteTrabajo.ts`). No se inventa aquí ni se amplía:
@@ -743,6 +749,7 @@
 
     contenedor.innerHTML =
       '<header style="margin-bottom:14px">' +
+      pintarMigaDelTrabajo(parte) +
       '<h3 style="margin:0;font-size:1.05rem;font-weight:700;color:var(--ink)">' +
       esc(parte.numero) + '</h3>' +
       '<p style="margin:2px 0 0;font-size:13px;color:var(--muted)">' +
@@ -758,9 +765,58 @@
       pintarBloque('mano_obra', lineas, editable) +
       pintarBloque('materiales', lineas, editable) +
       pintarLasDosFirmas(parte) +
+      pintarVolverAlTrabajo(parte, editable) +
       pintarDatosDelParte(parte, editable);
 
     return true;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  // 🔴 SCRUM-1677 · UN PARTE FIRMADO NO ES UN CALLEJÓN SIN SALIDA.
+  //
+  // Medido en yaqu.app (SCRUM-1658): tras las dos firmas la página no tenía ni un botón, y la
+  // cabecera no enlazaba al trabajo en NINGÚN estado. Dos salidas, las dos al mismo sitio
+  // (`jobs-detail`, el mismo camino que `albaranDetailView.js` usa para su trabajo):
+  //   · la miga de la cabecera, en TODOS los estados;
+  //   · «Volver al trabajo» como acción, en cuanto el parte deja de ser editable (firmado/facturado).
+  //
+  // Sin `jobId` no hay a dónde volver y no se pinta nada (un parte puede no colgar de un trabajo).
+  // Sin nombre de cliente la miga no se pinta: el literal firmado lleva el cliente, y recortarlo a
+  // «← Trabajo» sería un texto que nadie ha firmado. «Volver al trabajo» sí sale (no lo nombra).
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  function tieneTrabajo(parte) {
+    return parte && parte.jobId !== null && parte.jobId !== undefined && parte.jobId !== '';
+  }
+
+  function pintarMigaDelTrabajo(parte) {
+    if (!tieneTrabajo(parte) || !parte.clienteNombre) return '';
+    return '<nav class="detail-migas"><button type="button" class="detail-miga-link" data-parte-al-trabajo="1">' +
+      esc(TEXTOS.trabajoDelCliente.replace('{cliente}', parte.clienteNombre)) + '</button></nav>';
+  }
+
+  function pintarVolverAlTrabajo(parte, editable) {
+    if (editable || !tieneTrabajo(parte)) return '';
+    // Primaria SOLO si ya no queda ninguna firma por dar: con una pendiente, su botón sigue ahí y no
+    // se le pone otro verde al lado (y la firma del cliente es verde: SCRUM-1676).
+    var nadaPendiente = !!(parte.firmoElCliente && parte.firmoElTecnico);
+    // SCRUM-352: la clase se escribe COMPLETA en cada rama (censo del front por AST/texto; una
+    // variante partida a mitad de atributo no se reconoce como clase de botón).
+    var boton = nadaPendiente
+      ? '<button type="button" class="btn btn-primary" data-parte-volver-al-trabajo="1" style="width:100%">' + esc(TEXTOS.volverAlTrabajo) + '</button>'
+      : '<button type="button" class="btn btn-secondary" data-parte-volver-al-trabajo="1" style="width:100%">' + esc(TEXTOS.volverAlTrabajo) + '</button>';
+    return '<div data-parte-salida="1" style="margin:12px 0">' + boton + '</div>';
+  }
+
+  /** Las dos salidas, atadas. `o.irAlTrabajo` es la costura del test; en el panel es `renderAppView`. */
+  function atarSalidasAlTrabajo(contenedor, parte, o) {
+    if (!contenedor.querySelectorAll || !tieneTrabajo(parte)) return;
+    var ir = typeof o.irAlTrabajo === 'function'
+      ? o.irAlTrabajo
+      : function (jobId) { if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: jobId }); };
+    var botones = contenedor.querySelectorAll('[data-parte-al-trabajo],[data-parte-volver-al-trabajo]');
+    for (var i = 0; i < botones.length; i++) {
+      botones[i].addEventListener('click', function () { ir(parte.jobId); });
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
@@ -1647,6 +1703,7 @@
       contenedor.innerHTML = '<div data-parte-error="1">' + esc(TEXTOS.noSePudoCargar) + '</div>';
       return false;
     }
+    atarSalidasAlTrabajo(contenedor, parte, o);
     // SCRUM-1675 · un parte que ya no se puede tocar (firmado) no tiene dictado que recuperar: lo
     // que quedara en este móvil se borra, y no se queda guardado un texto con datos de la obra.
     if (!(parte.puedeEditarContenido && parte.puedeEditarContenido.ok)) borrarBorradorDelDictado(parteId);
