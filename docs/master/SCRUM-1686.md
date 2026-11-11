@@ -115,6 +115,8 @@ Con A, la frase firmada nº 3 («Parte: lo que se ha hecho, para tu oficina. Alb
 
 **D3 · el menú del piloto.** Para PILOTO-1 están cerradas por la regla 24 Facturas, Cobros, Libro de registro y Facturas recibidas, y el menú las enseña (18 entradas; `17-lista-menu-390.txt`). ¿Se ocultan para un merchant con `INVOICING_ES_ENABLED` en OFF? Es una pregunta, no una propuesta de texto. **[①bis]** además: leído en código, el front NO filtra el menú por rol (0 coincidencias de `role`/`tecnico` en `app.js` e `index.html`); hipótesis a medir: el operario ve las 18 y choca con un 403 en las de la oficina.
 
+> **CORRECCIÓN (S2, 11-nov-2026, al construir D3 en SCRUM-1701 c.21511):** «el front NO filtra el menú por rol» es **falso**. `aplicarRolALaBarra` (SCRUM-1338; `public/dashboard/js/app.js:1180`, llamada en `app.js:162` con `window.appUserRole`) oculta al operario las 10 entradas `data-rol="admin"` de `index.html`, Cobros, Libro y Recibidas entre ellas; la búsqueda de arriba no la vio porque buscaba `role` y el código dice `Rol`/`appUserRole`/`data-rol`. Lo que la ①bis tiene que medir es lo que queda a la vista del operario, no si hay filtro.
+
 ### Orden: cuántas veces al día lo pisa un oficio
 
 | # | pantalla | quién | veces al día | fichero → carril |

@@ -53,6 +53,7 @@ import {
   type LineaParte,
   type TipoParte,
 } from '../../domain/parteTrabajo';
+import { tipoParteDesdeIntervencion } from '../../domain/tipoParteDelTrabajo'; // SCRUM-1674
 import { siguienteNumeroParte } from '../../domain/parteNumero';
 import { zonaDelMerchant, diaNaturalEn } from '../../../../core/zonaDelMerchant'; // SCRUM-1093
 import { AVISOS_DEL_DICTADO, sanearDictadoDelParte } from '../../domain/parteDictado';
@@ -394,6 +395,15 @@ router.post('/', async (req: any, res) => {
       return res.status(400).json({ error: 'job_required' });
     }
     let customerId: number | null = null;
+    // 🔴 SCRUM-1674 · LA OBRA Y EL TIPO VIENEN DEL TRABAJO, COMO LOS TÉCNICOS (SCRUM-818) Y COMO EL
+    // ALBARÁN (`jobDireccion` → `obra`). Se copian UNA vez, al crear; después son campos del parte.
+    //
+    // ⚠️ DOC-12 (SCRUM-602, «El suelo, adoptado literal») veta DOS cosas y esto no hace ninguna:
+    //   · la fuente es `Job.direccion`, la dirección de OBRA que tecleó el jefe — NUNCA la de
+    //     facturación del cliente ni un sitio guardado;
+    //   · si el trabajo no tiene obra, el parte nace SIN obra: no se busca otra con que rellenar.
+    let obraDelTrabajo: string | null = null;
+    let tipoDelTrabajo: TipoParte | null = null;
     if (jobId !== null) {
       // Tenancy también para el trabajo del que cuelga: un parte no puede nacer colgado de un
       // trabajo de otro merchant.
@@ -408,9 +418,13 @@ router.post('/', async (req: any, res) => {
         return res.status(404).json({ error: 'job_not_found' });
       }
       customerId = job.customerId ?? null;
+      obraDelTrabajo = (job.direccion ?? '').trim() || null;
+      tipoDelTrabajo = tipoParteDesdeIntervencion(job.tipoIntervencion);
     }
 
-    const tipo = req.body?.tipo === undefined || req.body?.tipo === null ? null : String(req.body.tipo);
+    // El tipo elegido al abrir manda; si no se elige, el del trabajo (SCRUM-1674).
+    const tipo =
+      req.body?.tipo === undefined || req.body?.tipo === null ? tipoDelTrabajo : String(req.body.tipo);
     if (tipo !== null && !(TIPOS_PARTE as readonly string[]).includes(tipo)) {
       return res
         .status(400)
@@ -461,6 +475,7 @@ router.post('/', async (req: any, res) => {
           customerId,
           numero,
           fecha,
+          obra: obraDelTrabajo,
           tipo,
           lineas: [],
           tecnicos: tecnicosDelTrabajo,

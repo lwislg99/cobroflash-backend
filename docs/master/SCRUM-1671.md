@@ -31,3 +31,22 @@ A9: comprobación → `tests/scrum1671-partes-en-el-detalle-del-trabajo.test.mjs
   → 681 tests, 668 ok, 13 saltados, 0 fallos.
 - **En yaqu.app:** pendiente del merge. Se mide `GET /admin/jobs/79` con la cuenta QA (el parte #13) y se
   apunta aquí en un apéndice.
+
+## 2026-11-11 · En yaqu.app tras el merge de #3074 (S1, relevo)
+
+**Medido contra:** `origin/main` = `ba6fe36b6` · #3074 mergeado 2026-11-11T17:45:56Z (cabeza `022c60f59`) · prod sirve `ba6fe36b6` (`GET /version`) · medido ~17:55Z (hora del servidor)
+
+A9: comprobación → `tests/scrum1671-partes-en-el-detalle-del-trabajo.test.mjs`
+
+El rojo anterior de #3074 era «TANDA SIN VEREDICTO», por un cuelgue ajeno. El rerun del job (run 43050337612, intento 2) acabó verde a las 17:45:31Z y el bot lo mergeó solo.
+
+Cuenta QA (`+qa`), con `node scripts/qa/sesion-panel.mjs` (solo GET):
+
+| qué | `partes` |
+|---|---|
+| `GET /admin/jobs/79` (el caso del ticket) | `[{"id":13,"numero":"PT-2026-005","estado":"firmado"}]` |
+| `GET /admin/jobs/77` | dos, el más reciente primero: PT-2026-006 (borrador), PT-2026-004 (firmado) |
+| `GET /admin/jobs/80` (CONTROL: sin partes) | `[]`: el campo está, vacío, no ausente |
+
+- **Sin captura**: lo medido es la respuesta de la ruta, no una pantalla.
+- **No cierra el ticket**: la segunda línea de la aceptación («la ficha del trabajo #79 enseña "PT-2026-005 · firmado"») es de S2 (`jobDetailView.js`). El dato ya llega. SCRUM-1671 c.21523.

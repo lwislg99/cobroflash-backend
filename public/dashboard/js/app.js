@@ -160,6 +160,9 @@ async function initApp() {
   // Ocultar el nav es UX; la seguridad real la da el `requireRole('admin')` del servidor.
   // La función vive al final del fichero, a nivel superior, para que el banco de vistas la EJECUTE.
   aplicarRolALaBarra(document, window.appUserRole);
+  // SCRUM-1701 (D3, SCRUM-1686 c.21461): y lo que no es de este MODO DE EMISIÓN. Va DESPUÉS del
+  // rol porque cierra los rótulos contando lo que quedó a la vista tras los dos filtros.
+  aplicarModoALaBarra(document, window.appModoEmision);
 
   // Badge de solicitudes pendientes
   function updateRequestsBadge() {
@@ -1223,6 +1226,36 @@ async function contarPartesPorValorar(documento, pedir, rol) {
   }
   etiqueta.textContent = rotuloDePartesPorValorar(n);
   return n;
+}
+
+/**
+ * SCRUM-1701 · D3 (firmada por el fundador en SCRUM-1686 c.21461): «¿esconder del menú del piloto
+ * Facturas/Cobros/Libro/Recibidas mientras el interruptor esté en OFF?» → «Sí, esconder».
+ *
+ * Quita de la barra las entradas que declaran `data-oculta-en-modo` igual al modo que mandó el
+ * servidor (`window.appModoEmision`, sin recalcularlo: es el mismo veredicto que leen Planes, el
+ * tutorial y Ajustes). Con OFF el modo es `'receipt'`, y por la regla 24 ni factura ni cobro.
+ *
+ * `null` (no se sabe) NO esconde nada: aquí no se adivina el modo de nadie, y con él la barra queda
+ * como estaba antes de este ticket. Ocultar es UX; lo que no se puede hacer lo cierra el servidor.
+ *
+ * Cierra el rótulo de la sección que se quede sin NINGUNA entrada a la vista, contando lo que
+ * hayan quitado los dos filtros (rol y modo), no sólo éste.
+ */
+function aplicarModoALaBarra(documento, modo) {
+  if (!modo) return;
+  const nav = documento.querySelector('.sidebar-nav');
+  if (!nav) return;
+  let rotulo = null;
+  let visibles = 0;
+  const cerrarSeccion = () => { if (rotulo && visibles === 0) rotulo.style.display = 'none'; };
+  Array.from(nav.children).forEach((el) => {
+    if (el.classList.contains('nav-section-label')) { cerrarSeccion(); rotulo = el; visibles = 0; return; }
+    if (!el.classList.contains('nav-item')) return;
+    if (el.dataset.ocultaEnModo === modo) el.style.display = 'none';
+    else if (el.style.display !== 'none') visibles += 1;
+  });
+  cerrarSeccion();
 }
 
 /** ¿Esta vista tiene entrada en la barra y esa entrada es sólo del admin? Sin entrada, no veta. */
