@@ -1,7 +1,7 @@
 // Captura SCRUM-1700: yaqu.app con la sesión QA, pero jobsView.js y app.js servidos desde el árbol.
 // Sólo lectura: toda petición que no sea GET se aborta (no se pulsa nada que escriba).
 import fs from 'node:fs';
-import { abrir, ir, foto } from 'file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s4-11nov-t7/docs/master/evidencias/SCRUM-1658/banco/lib.mjs';
+import { abrir, ir, foto } from '../SCRUM-1658/banco/lib.mjs';
 const ARBOL = 'D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s4-11nov-t7/public/dashboard/js/';
 const lado = process.argv[2] || 'despues';
 const ancho = Number(process.argv[3] || 390);
