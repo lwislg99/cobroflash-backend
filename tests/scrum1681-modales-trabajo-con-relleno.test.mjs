@@ -15,6 +15,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+// El filtro de comentarios es el COMPARTIDO (SCRUM-700): sobre la hoja CSS quita los `/* */` y deja
+// las dos reglas que esto mira. Medido al escribirlo: 3 833 de 3 853 declaraciones sobreviven; las
+// 20 que no son líneas con `//` (`url(https://…)`), ninguna de `.jobs-modal` ni de `.modal`.
+import { soloEjecutable } from './_guard-texto.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
@@ -23,7 +27,7 @@ const AYUDANTE = leer('public/dashboard/js/jobAgendar.js');
 
 /** Cada regla de la hoja (sin comentarios) como { selectores[], cuerpo }. Entra también en @media. */
 function reglas(css) {
-  const limpio = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  const limpio = soloEjecutable(css);
   const out = [];
   const re = /([^{}]+)\{([^{}]*)\}/g;
   let m;
