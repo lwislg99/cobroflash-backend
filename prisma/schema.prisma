@@ -1360,6 +1360,12 @@ model Job {
   // ninguno de los valores del vocabulario.
   tipoIntervencion String? @map("tipo_intervencion")
 
+  // SCRUM-1662 (PILOTO-1, firmado por el fundador en SCRUM-1662 c.21548): «Qué hay que hacer», la tarea
+  // del trabajo, que el operario SÍ ve. Campo PROPIO, separado de `notes` (las «Notas internas · Solo tú
+  // las ves», que siguen privadas del jefe). Aditiva, nullable y sin @default: los trabajos anteriores
+  // no la tienen, y «no consta» no se rellena con nada.
+  queHayQueHacer   String? @map("que_hay_que_hacer")
+
   // SCRUM-650 (T1) · los empleados asignados a EJECUTAR este trabajo. Relacion virtual: no crea
   // ninguna columna en `jobs`. Destino final (paso C): esta tabla es la UNICA fuente y
   // `assignedUserId` desaparece — dos sitios diciendo quien ejecuta acaban discrepando.
