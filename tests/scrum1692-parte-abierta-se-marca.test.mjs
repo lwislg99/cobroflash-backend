@@ -17,6 +17,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { datosDelCenso, ARGUMENTOS_DEL_CENSO } from '../scripts/_datos-del-censo.mjs';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { ejecutableDe } from './_guard-texto.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FN = 'renderPartesOficinaView';
@@ -66,7 +67,8 @@ test('SCRUM-1692 · la fila abierta lleva `aria-current="true"`, sólo ella, y l
 });
 
 test('SCRUM-1692 · la hoja pinta la fila marcada con el MISMO marcado de selección que ya existe', () => {
-  const css = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  // Filtro COMPARTIDO con suelo (SCRUM-700/1395): el ancla es la regla que este test mira.
+  const css = ejecutableDe(fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8'), { ancla: '#po-lista', almohadillaEsComentario: false });
   const regla = /#po-lista\s*>\s*button\.customers-card\[aria-current="true"\]\s*\{([^}]*)\}/.exec(css);
   assert.ok(regla, '🔴 no hay `#po-lista > button.customers-card[aria-current="true"]`: la fila abierta no se ve.');
   assert.match(regla[1], /border-color:\s*var\(--brand\)/, '🔴 sin el borde de marca.');
