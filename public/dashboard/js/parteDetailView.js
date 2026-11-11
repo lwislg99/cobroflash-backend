@@ -794,9 +794,12 @@
     // Primaria SOLO si ya no queda ninguna firma por dar: con una pendiente, su botón sigue ahí y no
     // se le pone otro verde al lado (y la firma del cliente es verde: SCRUM-1676).
     var nadaPendiente = !!(parte.firmoElCliente && parte.firmoElTecnico);
-    return '<div data-parte-salida="1" style="margin:12px 0">' +
-      '<button type="button" class="btn ' + (nadaPendiente ? 'btn-primary' : 'btn-secondary') +
-      '" data-parte-volver-al-trabajo="1" style="width:100%">' + esc(TEXTOS.volverAlTrabajo) + '</button></div>';
+    // SCRUM-352: la clase se escribe COMPLETA en cada rama (censo del front por AST/texto; una
+    // variante partida a mitad de atributo no se reconoce como clase de botón).
+    var boton = nadaPendiente
+      ? '<button type="button" class="btn btn-primary" data-parte-volver-al-trabajo="1" style="width:100%">' + esc(TEXTOS.volverAlTrabajo) + '</button>'
+      : '<button type="button" class="btn btn-secondary" data-parte-volver-al-trabajo="1" style="width:100%">' + esc(TEXTOS.volverAlTrabajo) + '</button>';
+    return '<div data-parte-salida="1" style="margin:12px 0">' + boton + '</div>';
   }
 
   /** Las dos salidas, atadas. `o.irAlTrabajo` es la costura del test; en el panel es `renderAppView`. */

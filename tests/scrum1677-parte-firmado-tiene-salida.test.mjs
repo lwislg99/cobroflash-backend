@@ -89,7 +89,10 @@ test('SCRUM-1677 ④ las dos salidas llevan a `jobs-detail` con el jobId del par
   const r = await pintar({ ...BASE, ...FIRMADO_LOS_DOS });
   assert.ok(r.miga.click() > 0, '🔴 la miga no tiene a nadie escuchando');
   assert.ok(r.volver.click() > 0, '🔴 «Volver al trabajo» no tiene a nadie escuchando');
-  assert.deepEqual(r.navegaciones.map((n) => [n.vista, n.datos && n.datos.jobId]), [['jobs-detail', 79], ['jobs-detail', 79]],
+  assert.deepEqual(r.navegaciones.map((n) => [n.vista, n.datos && n.datos.jobId]), [
+    ['jobs-detail', 79],
+    ['jobs-detail', 79],
+  ],
     `🔴 no navegan al trabajo del parte: ${JSON.stringify(r.navegaciones)}`);
 });
 

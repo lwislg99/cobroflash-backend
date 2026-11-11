@@ -1,6 +1,10 @@
 # SCRUM-1677 · PARTES · un parte firmado deja de ser un callejón sin salida (PILOTO-1)
 
 **Medido contra:** `origin/main` = `9ff55cb3d9fe56669f956814451435027fda67fb` · 2026-11-10T18:21:57Z
+
+A9: comprobación → `tests/scrum352-target-tactil-variantes.test.mjs`
+A9: comprobación → `tests/scrum710b-anclaje-por-identidad.test.mjs`
+
 **Puesto:** S4 · **Rama:** `scrum-1677-parte-firmado-salida-al-trabajo` (sale de `275bc626371e63231556c04de6e9db44cff2629e`; fusionada con `main` tras entrar SCRUM-1675, #3047)
 **Skill UI:** cargada (`yaqu-premium-ui`; componentes existentes `.detail-migas`/`.detail-miga-link` y `.btn-primary`/`.btn-secondary`, ningún token nuevo)
 
