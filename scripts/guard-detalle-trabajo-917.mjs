@@ -418,7 +418,7 @@ for (const ancho of ANCHOS) {
       });
       const titulosSueltos = [...c.querySelectorAll('.detail-section-title')].map((e) => norm(e.textContent))
         .filter((t) => ['Tipo de trabajo', 'Datos', 'Gastos de este trabajo', 'Notas internas'].includes(t));
-      const preciosEn = (raiz) => [...raiz.querySelectorAll('label')].filter((l) => /Incluir precios en el parte/.test(l.textContent)).length;
+      const preciosEn = (raiz) => [...raiz.querySelectorAll('label')].filter((l) => /Incluir precios en el (parte|albarán)/.test(l.textContent)).length;
       const barra = c.querySelector('.job-doc-toolbar');
       return {
         tarjetas: tarjetas.length,
@@ -584,7 +584,7 @@ for (const ancho of ANCHOS) {
       const r = await page.evaluate(async () => {
         const c = document.getElementById('view');
         const norm = (s) => String(s).replace(/\s+/g, ' ').trim();
-        const cuenta = (raiz) => [...raiz.querySelectorAll('label')].filter((l) => /Incluir precios en el parte/.test(l.textContent));
+        const cuenta = (raiz) => [...raiz.querySelectorAll('label')].filter((l) => /Incluir precios en el (parte|albarán)/.test(l.textContent));
         const barra = c.querySelector('.job-doc-toolbar');
         if (!barra) return { sinBoton: true, antes: { barra: -1, pantalla: cuenta(document).length } };
         const antes = { barra: cuenta(barra).length, pantalla: cuenta(document).length };
