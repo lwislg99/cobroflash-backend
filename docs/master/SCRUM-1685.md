@@ -6,13 +6,17 @@ provincia y domicilio»). Reasignado a S1 por el fundador en c.21436. Partición
 orquestador: **tramo a** = la puerta del servidor (sin un solo texto nuevo) · **tramo b** = el
 formulario de `public/register.html`.
 
+**Skill UI:** cargada — tarde: el tramo b tocó `public/register.html` sin cargarla; se cargó en el b2,
+antes de empujarlo, y su revisión AB6 está en el tramo b2 (abajo).
+
 ## 2026-11-11 · Tramo a — la puerta del servidor
 
 **Medido contra:** `origin/main` = `59540a52a3e783c4ec9f45cea35430afdec5e775` · 2026-11-11T10:28:51Z
 (cabecera `Date:` de `api.github.com/zen`). Rama sobre `8a1acbac5`; los 4 commits de `main` desde
 entonces no tocan ninguno de estos ficheros (`git diff --stat` vacío).
 
-A9: comprobación → `tests/scrum1685-alta-sin-invitados.test.mjs` + `tests/scrum1685-alta-con-invitacion.test.mjs`
+A9: comprobación → `tests/scrum1685-alta-sin-invitados.test.mjs`
+A9: comprobación → `tests/scrum1685-alta-con-invitacion.test.mjs`
 
 ### ① Qué se ha construido
 
@@ -105,3 +109,50 @@ El cuerpo que espera la ruta: `provincia`, `domicilio-foral`, `domicilio-canaria
 - **Mutación:** quitar los campos del cuerpo del `fetch` → caen 3 (los tres que cruzan la puerta).
 - **A la vista** (375 px, `public/` servido en local): España enseña los tres campos con los estilos
   de `auth.css`, sin tocarlo; México los oculta.
+
+---
+
+## Tramo b2 — la provincia, desplegable con las 52 firmadas (S1, 11-nov-2026)
+
+**Medido contra:** `origin/main` = `c99774ff83f473b9f369f5bad138ed91ec88bd7b` · 2026-11-11T10:48:55Z
+(cabecera `Date:` de `api.github.com/zen`). La rama sigue sobre `8a1acbac5`; sólo toca `register.html`,
+este test y este registro.
+
+A9: comprobación → `tests/scrum1685-formulario-de-alta.test.mjs`
+
+### ① La duda del relevo, resuelta en la firma
+
+- **SCRUM-1616 c.21066** (leído en Jira, firma del fundador sobre las 7 preguntas de c.21062):
+  ① ✅ las 48 tal cual, con el artículo delante · ② ✅ **las 4 bilingües con la forma doble del INE**
+  (Araba/Álava · Alicante/Alacant · Castellón/Castelló · Valencia/València) · ③ ✅ Ceuta y Melilla ·
+  ⑥ ✅ con otro país el campo no se enseña. Nada lo decido yo: la lista se copia de la tabla INE de
+  `docs/master/SCRUM-1616.md` (columna «Código hoy» para las ✅, «Forma oficial» para las 4 ❌).
+- c.21066 decía «las pantallas no se tocan hasta que se reabra el registro»: el registro se reabre,
+  con invitación, en el tramo a de este ticket.
+- **Orden:** el del código INE, que es el orden de la tabla firmada. Alfabético no está decidido
+  (1616, «Lo que NO he medido»): no lo decido; si el fundador lo prefiere, es mover líneas.
+- **Ningún texto nuevo:** la opción vacía no lleva texto (como las de Sí/No del tramo b). «Elige tu
+  provincia» está firmado (c.19338, texto 2) pero no lo pide este tramo: no se pone.
+
+### ② Lo construido
+
+- `public/register.html`: `#provincia` pasa de `<input type="text">` a `<select required>` con una
+  opción vacía + las 52; `value` = la grafía tal cual (`zonaDeAlta` acepta las 4 formas dobles desde
+  SCRUM-1616b, #2942). El resto del tramo b (ocultar y desactivar con otro país) no cambia.
+- **Defecto de paso arreglado aquí** (orden del fundador del 6-oct): la línea `A9:` del tramo a juntaba
+  dos rutas en una («… + …») y `scrum1294` la rechazaba (ninguno de los cuatro formatos) → el
+  obligatorio de #3055 iba a salir rojo. Partida en dos líneas `A9:`, una por test.
+
+### ③ Medido
+
+- Test `tests/scrum1685-formulario-de-alta.test.mjs`, dos casos nuevos: (1) desplegable obligatorio,
+  sin `<input>` para la provincia, opción vacía + **las 52 del registro, en su orden**, valor = texto, y
+  **cada valor lo acepta `zonaDeAlta`** (la función que llama `registerMerchant`); (2) el DOM de pega
+  imita al navegador (un `<select>` sólo toma uno de sus valores): «Madriz» lo deja vacío. Además el
+  caso del invitado bueno se rellena ahora con «Valencia/València» → cuenta creada con `Europe/Madrid`.
+- **Rojo primero:** con el `register.html` del tramo b, 2 ✖ (los dos nuevos) + 5 ✔. **Verde:** 7/7 con
+  banco desechable propio (`127.0.0.1:55685`, `yaqu_s1685_test`, esquema por `migrate diff --from-empty`).
+- **Mutación:** «Valencia/València» → «Valencia» en la página: caen los 2 nuevos.
+- **A la vista + AB6** (375 px, `public/` servido en local; captura `.playwright-mcp/scrum1685-b2-375.png`, fuera de git): el desplegable usa el `select` de `auth.css` (sin estilo nuevo ni inline), 47 px de alto (≥44), anillo de foco de `auth.css`, rótulo `<label for>`; ancho del documento 360 ≤ 375, sin scroll lateral; «Valencia/València» cabe entera. Sin estados nuevos (no carga nada). Sin medir: Android/iPhone reales.
+- Junto con los que leen la página, la ruta o el registro (1685×2, 514, 1515, 264, 334, 336, 94, 329,
+  333, 701, 846b, 1234, 275, 1294, 267, 273, 1572, 237, 1616, 1522e, 921c): **206 de 206, 0 saltados**, con banco. Y los guards de skill UI y registro (825, 816, 811c, 1633 + los de registro): **120 de 120**. La tanda entera, sin correr en local: la mide el obligatorio.

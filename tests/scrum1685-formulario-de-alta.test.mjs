@@ -119,8 +119,15 @@ function montarPagina({ fetchDePagina = fetchReal } = {}) {
     const sel = HTML.match(new RegExp(`<select id="${id}"[^>]*>([\\s\\S]*?)</select>`));
     const elegida = sel && (sel[1].match(/<option value="([^"]*)"[^>]*\bselected\b/) || [])[1];
     const primera = sel && (sel[1].match(/<option value="([^"]*)"/) || [])[1];
-    els.set(id, { id, value: elegida ?? primera ?? '', style: {}, textContent: '', className: '', hidden: false, disabled: false,
-      escuchas: {}, addEventListener(tipo, fn) { (this.escuchas[tipo] ||= []).push(fn); } });
+    const el = { id, value: elegida ?? primera ?? '', style: {}, textContent: '', className: '', hidden: false, disabled: false,
+      escuchas: {}, addEventListener(tipo, fn) { (this.escuchas[tipo] ||= []).push(fn); } };
+    if (sel) {
+      // Como el navegador: un <select> sólo toma un valor que sea una de sus opciones; si no, queda vacío.
+      const validos = new Set([...sel[1].matchAll(/<option value="([^"]*)"/g)].map((o) => o[1]));
+      let actual = el.value;
+      Object.defineProperty(el, 'value', { get: () => actual, set: (v) => { actual = validos.has(String(v)) ? String(v) : ''; } });
+    }
+    els.set(id, el);
   }
   const scripts = [...HTML.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
   assert.equal(scripts.length, 1, '🔴 register.html tiene que tener UN script en línea (el banco ejecuta ése)');
@@ -171,7 +178,6 @@ test.after(async () => {
 
 test('SCRUM-1685b · la página pide provincia y domicilio con los literales FIRMADOS, y nada más', () => {
   assert.match(HTML, /<label for="provincia">Provincia<\/label>/, `🔴 falta el campo con el rótulo «${ROTULO_PROVINCIA}»`);
-  assert.match(HTML, /<input type="text" id="provincia"[^>]*\brequired\b/, '🔴 la provincia no es un texto obligatorio');
   for (const [id, pregunta] of [['domicilio-foral', PREGUNTA_FORAL], ['domicilio-canarias', PREGUNTA_CANARIAS]]) {
     const s = selectDe(id);
     assert.equal(s.rotulo, pregunta, `🔴 #${id} no lleva el enunciado firmado, LITERAL`);
@@ -180,6 +186,38 @@ test('SCRUM-1685b · la página pide provincia y domicilio con los literales FIR
     assert.deepEqual(s.opciones, [{ valor: '', texto: '' }, { valor: 'si', texto: 'Sí' }, { valor: 'no', texto: 'No' }],
       `🔴 #${id} no ofrece exactamente «Sí»/«No» (valores si/no) tras una opción vacía`);
   }
+});
+
+// ── b2: la provincia, DESPLEGABLE con las 52 firmadas ─────────────────────────────────────────────
+// La lista esperada sale del REGISTRO firmado (docs/master/SCRUM-1616.md, tabla INE), no de la página:
+// firma SCRUM-1616 c.21066 ① las 48 ✅ con la grafía de la columna «Código hoy» (artículo delante),
+// ② las 4 ❌ con la forma doble del INE, ③ Ceuta y Melilla. Orden: el del código INE, el de la tabla.
+const REGISTRO_1616 = fs.readFileSync(new URL('../docs/master/SCRUM-1616.md', import.meta.url), 'utf8');
+const FIRMADAS = [...REGISTRO_1616.matchAll(/^\| (\d{2}) \| ([^|]+?) \| ([^|]+?) \| (✅|❌)[^|]*\|/gm)]
+  .map((m) => (m[4] === '❌' ? m[3] : m[2]).trim());
+
+test('SCRUM-1685 b2 · la provincia es un desplegable obligatorio con EXACTAMENTE las 52 firmadas, y cada una entra', async () => {
+  assert.equal(FIRMADAS.length, 52, `🔴 el registro de 1616 ya no da 52 filas (${FIRMADAS.length}): la fuente ha cambiado`);
+  assert.ok(FIRMADAS.includes('Valencia/València') && FIRMADAS.includes('A Coruña'), '🔴 el cotejo del registro no ha leído la columna que toca');
+  const s = selectDe('provincia');
+  assert.equal(s.rotulo, ROTULO_PROVINCIA, `🔴 falta el campo con el rótulo «${ROTULO_PROVINCIA}»`);
+  assert.ok(s.atributos && /\brequired\b/.test(s.atributos), '🔴 la provincia no es un desplegable obligatorio');
+  assert.doesNotMatch(HTML, /<input[^>]*id="provincia"/, '🔴 la provincia se sigue pudiendo teclear');
+  assert.deepEqual(s.opciones[0], { valor: '', texto: '' }, '🔴 falta la opción vacía (sin texto) que obliga a elegir');
+  const resto = s.opciones.slice(1);
+  assert.deepEqual(resto.map((o) => o.texto), FIRMADAS, '🔴 el desplegable no pinta las 52 firmadas, en su orden');
+  for (const o of resto) assert.equal(o.valor, o.texto, `🔴 «${o.texto}» manda otro valor (${o.valor})`);
+  // Cada valor que el desplegable puede mandar, el servidor lo acepta (la misma función que usa registerMerchant).
+  const { zonaDeAlta } = await import('../dist/modules/auth/domain/zonaDeLaProvincia.js');
+  for (const o of resto) assert.doesNotThrow(() => zonaDeAlta('ES', o.valor), `🔴 el servidor rechaza «${o.valor}»`);
+});
+
+test('SCRUM-1685 b2 · un valor raro no se puede poner: el desplegable queda vacío', async () => {
+  const p = montarPagina({ fetchDePagina: async () => ({ ok: true, status: 200, json: async () => ({ ok: true }) }) });
+  p.el('provincia').value = 'Madriz';
+  assert.equal(p.el('provincia').value, '', '🔴 el desplegable ha aceptado un valor que no es de la lista');
+  p.el('provincia').value = 'Valencia/València';
+  assert.equal(p.el('provincia').value, 'Valencia/València');
 });
 
 test('SCRUM-1685b · con España se piden y se mandan; con otro país ni se ven ni viajan', async () => {
@@ -225,7 +263,8 @@ test('SCRUM-1685b · invitado con domicilio foral, por el formulario → ve la e
 test('SCRUM-1685b · invitado con provincia normal, por el formulario → cuenta creada y bienvenida en el buzón', { skip: SIN_BANCO }, async () => {
   const correo = 'invitado-f-1685@test.local';
   const p = montarPagina();
-  await rellenar(p, { name: 'Reformas F 1685', email: correo, provincia: 'Madrid', 'domicilio-foral': 'no', 'domicilio-canarias': 'no' });
+  // b2: con una de las 4 formas dobles, que es lo que ahora manda el desplegable.
+  await rellenar(p, { name: 'Reformas F 1685', email: correo, provincia: 'Valencia/València', 'domicilio-foral': 'no', 'domicilio-canarias': 'no' });
   await p.enviar();
   assert.equal(p.alerta(), PINTA_CREADA, `🔴 el invitado bueno no ve «cuenta creada»: ${p.alerta()}`);
   const fila = await prisma.merchant.findUnique({ where: { email: correo } });
