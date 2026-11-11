@@ -87,7 +87,14 @@ async function renderPartesOficinaView(container, opts) {
       + '<span style="display:block;font-size:12.5px;color:var(--muted)">'
       + escHtml([p.clienteNombre, p.obra].filter(Boolean).join(' · ') || '—') + '</span></span>'
       + '<span style="font-size:12.5px;color:var(--muted)">' + escHtml(String(p.lineas.length)) + ' ⚬</span>';
-    fila.addEventListener('click', function () { pintarParte(p.id, detalle, container, opts); });
+    // SCRUM-1692 · la fila ABIERTA se marca: sin esto el detalle de abajo parecía un duplicado de una
+    // fila cualquiera. `aria-current` lo anuncia el lector de pantalla; el estilo cuelga de ese mismo
+    // atributo en la hoja (no de una clase: el banco de SCRUM-1285 exige `className` exacto).
+    fila.addEventListener('click', function () {
+      Array.prototype.forEach.call(lista.children, function (otra) { otra.removeAttribute('aria-current'); });
+      fila.setAttribute('aria-current', 'true');
+      pintarParte(p.id, detalle, container, opts);
+    });
     lista.appendChild(fila);
   });
 }
