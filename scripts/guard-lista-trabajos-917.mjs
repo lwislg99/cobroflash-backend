@@ -156,6 +156,9 @@ titulo('A · arriba: título y botones (A.1) · las DOS cifras (A.2) · filtros 
     return {
       h2: (document.querySelector('.jobs-cabecera h2') || {}).textContent || null,
       nuevo: !!document.getElementById('jobs-nuevo-btn'),
+      // SCRUM-1700 (T7 de SCRUM-1686, D1=A c.21461; N2 c.21470): la puerta provisional de la
+      // cabecera se RETIRA; «Partes por valorar» vive en el menú (#nav-partes-oficina), que este
+      // banco no monta: el número del menú lo mide tests/scrum1700-abrir-parte-y-partes-por-valorar.
       valorar: !!document.getElementById('jobs-partes-valorar'),
       filtros: [...document.querySelectorAll('#jobs-filter > button')].map((b) => b.textContent.trim()),
       tecnico: !!document.getElementById('jobs-filtro-tecnico-select'),
@@ -163,8 +166,8 @@ titulo('A · arriba: título y botones (A.1) · las DOS cifras (A.2) · filtros 
     };
   });
   // A.1 · igual
-  if (arriba.h2 === 'Trabajos' && arriba.nuevo && arriba.valorar) bien('A.1 «Trabajos» + «Nuevo trabajo» + «Partes por valorar» siguen');
-  else mal(`A.1 falta algo de arriba: ${JSON.stringify({ h2: arriba.h2, nuevo: arriba.nuevo, valorar: arriba.valorar })}`);
+  if (arriba.h2 === 'Trabajos' && arriba.nuevo && !arriba.valorar) bien('A.1 «Trabajos» + «Nuevo trabajo» arriba; la puerta provisional «Partes por valorar» ya no está en la cabecera');
+  else mal(`A.1 arriba no es lo firmado (SCRUM-1700): ${JSON.stringify({ h2: arriba.h2, nuevo: arriba.nuevo, valorarEnCabecera: arriba.valorar })}`);
 
   // A.2 · los filtros por cobro, en cuentas: igual
   const cuentas = { Pendiente: 0, Parcial: 0, Pagado: 0 };
@@ -210,13 +213,8 @@ titulo('A · arriba: título y botones (A.1) · las DOS cifras (A.2) · filtros 
     else bien('A.2 con el filtro puesto, «Por cobrar» sigue siendo el total');
   }
 
-  // A.1 · y los dos botones de arriba HACEN lo suyo.
-  const antes = await estado(page);
-  await pulsar(await page.$('#jobs-partes-valorar'));
+  // A.1 · y el botón de arriba HACE lo suyo. («Partes por valorar» ya no está aquí: SCRUM-1700.)
   const trasValorar = await estado(page);
-  const nav = trasValorar.navegaciones.slice(antes.navegaciones.length);
-  if (nav.length === 1 && nav[0].vista === 'partes-oficina') bien('A.1 «Partes por valorar» lleva a partes-oficina');
-  else mal(`A.1 «Partes por valorar» no navegó bien: ${JSON.stringify(nav)}`);
   await pulsar(await page.$('#jobs-nuevo-btn'));
   await espera(150);
   const trasNuevo = await estado(page);

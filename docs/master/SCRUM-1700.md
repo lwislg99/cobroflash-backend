@@ -86,3 +86,20 @@ nuevo; se deshabilita mientras pide (sin doble alta); error con aviso ya existen
   necesitaría una llamada desde `parteOficinaView.js` (S2); hoy se pone al día al volver a entrar a
   la cola, al recargar o a los 5 min.
 - Pendiente: verlo en yaqu.app tras el merge (regla 42).
+
+## Apéndice · 11-nov-2026 (tarde) · obligatorio de #3069 en rojo, arreglado · C.1 a decisión
+
+- **Rojos del obligatorio, los dos míos:** `scrum1233g` (el `capturar.mjs` importaba el banco por una
+  ruta absoluta a mi worktree; ahora `../SCRUM-1658/banco/lib.mjs`) y `scrum719`/1395b (el veredicto de
+  mudez caducó al tocar `scrum601`; regenerado con `npm run censo:mudez -- --escribir`). Local: 6
+  ficheros, 63/63.
+- **`guard:lista-trabajos-917` (fuera de la tanda), A.1:** pulsaba `#jobs-partes-valorar`, la puerta
+  provisional que esta pieza retira (D1=A c.21461; N2 c.21470). Se cambia la aserción al contrato
+  firmado: la cabecera lleva «Trabajos» + «Nuevo trabajo» y la puerta YA NO está. No se afloja: un
+  regreso del botón lo pone rojo. El número del menú lo mide `tests/scrum1700-…` (este banco no
+  monta el menú).
+- **C.1 SIGUE EN ROJO, A PROPÓSITO (regla 41):** «una sola primaria en la lista y es la del dinero»
+  (917c) contra N1 «botón principal · Abrir parte». Son dos decisiones del fundador que chocan, y el
+  guard tiene razón. No lo toco ni bajo el botón por mi cuenta: el automerge de #3069 queda QUITADO
+  hasta que se decida (a) «Abrir parte» secundaria (manda 917c) o (b) N1 manda y C.1 admite las
+  «Abrir parte» de los trabajos en curso además de la del dinero.
