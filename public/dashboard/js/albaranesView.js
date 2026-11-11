@@ -217,9 +217,6 @@
         pintarError(new Error('respuesta_incompleta'));
         return;
       }
-      // SCRUM-1669 · el estado en el que un albarán AÚN NO se ha emitido: el primero del ciclo del
-      // documento (`ALBARAN_ESTADOS[0]`; un test ata ese orden). Sin literal, como las pestañas.
-      const estadoInicial = Array.isArray(ejes.estado) ? ejes.estado[0] : undefined;
 
       subtitle.textContent = contadores.total + ' en total';
       body.innerHTML = '';
@@ -386,12 +383,9 @@
         // en movil (el patron de la casa para lo que no cabe) y sigue en la tabla de escritorio.
         const tdEmision = document.createElement('td');
         tdEmision.className = 'col-hide-mobile';
-        // SCRUM-1669 · un BORRADOR no se ha emitido: su «Emisión» es «—», el mismo signo de dato
-        // ausente de esta tabla. El servidor manda `emisionAt` = `createdAt` también para él
-        // (SCRUM-67), así que la fecha NO se puede leer como emisión. Decidido en SCRUM-1669.
-        // El estado se compara con el PRIMERO del eje que manda el servidor (`ALBARAN_ESTADOS`
-        // empieza por el borrador), no con un literal escrito aquí: ver la cabecera del fichero.
-        tdEmision.textContent = f.estado === estadoInicial ? '—' : fechaCorta(f.emisionAt);
+        // SCRUM-1669 · la «Emisión» de un borrador la decide el SERVIDOR (`emisionAt: null`, rama de
+        // S1 `scrum-1669b-emision-vacia-en-borrador`), y `fechaCorta(null)` ya pinta «—».
+        tdEmision.textContent = fechaCorta(f.emisionAt);
         tr.appendChild(tdEmision);
 
         const tdEntrega = document.createElement('td');

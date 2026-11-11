@@ -1,4 +1,4 @@
-// tests/scrum1669b-importe-en-la-lista-de-albaranes.test.mjs — SCRUM-1669, mitad S2 (PILOTO-1)
+// tests/scrum1669c-importe-en-la-lista-de-albaranes.test.mjs — SCRUM-1669, mitad S2 (PILOTO-1)
 //
 // Sin gate: monta la lista en el banco y lee styles.css. Ni BD, ni red, ni navegador.
 //
@@ -35,7 +35,7 @@ const LISTADO = {
   filas: [
     fila({ id: 1, numero: 'AB260006', estado: 'emitido', modoValoracion: 'VALORADO', total: 242.36 }),
     fila({ id: 2, numero: 'AB260005', estado: 'emitido', modoValoracion: 'SIN_VALORAR', total: null }),
-    fila({ id: 3, numero: 'AB260003', estado: 'borrador', modoValoracion: 'VALORADO', total: 9999.99, emisionAt: '2026-10-16T12:41:22Z' }),
+    fila({ id: 3, numero: 'AB260003', estado: 'borrador', modoValoracion: 'VALORADO', total: 9999.99, emisionAt: null }),
   ],
   ejes: { estado: [...ALBARAN_ESTADOS], cobro: ['sin_facturar', 'parcial', 'facturado'] },
   contadores: { total: 3, porEstado: { borrador: 1, emitido: 2 }, porCobro: { sin_facturar: 3 } },
@@ -58,11 +58,6 @@ async function filasPintadas() {
   return porNumero;
 }
 
-test('SCRUM-1669 · el ciclo del documento empieza por el borrador (la «Emisión» «—» se ata a ese orden)', () => {
-  assert.equal(ALBARAN_ESTADOS[0], 'borrador',
-    '🔴 `ALBARAN_ESTADOS` cambió de orden: la lista pinta «—» en la «Emisión» del PRIMER estado, que ya no es el borrador');
-});
-
 test('SCRUM-1669 · cada fila lleva su importe en Tinta 700 tabular (`.amount`), y una SIN_VALORAR «—», nunca 0', async () => {
   const f = await filasPintadas();
   const importe = (tr) => tr.hijos.find((h) => conClase(h, 'cell-amount'));
@@ -75,11 +70,13 @@ test('SCRUM-1669 · cada fila lleva su importe en Tinta 700 tabular (`.amount`),
   assert.equal(texto(importe(f.AB260005)), '—', '🔴 un albarán SIN_VALORAR (total null) tiene que decir «—», no «0,00 €»');
 });
 
-test('SCRUM-1669 · la «Emisión» de un borrador es «—»; la de un emitido, su fecha', async () => {
+test('SCRUM-1669 · la columna nueva no desplaza a «Emisión»: sigue siendo la 2.ª celda y pinta lo que manda el servidor', async () => {
+  // La «Emisión» de un borrador la decide el servidor (S1, `emisionAt: null`): aquí sólo se vigila que
+  // «Importe» no la haya movido de sitio, porque `th:nth-child(2)` la oculta por POSICIÓN.
   const f = await filasPintadas();
   const emision = (tr) => texto(tr.hijos[1]);
-  assert.equal(emision(f.AB260003), '—', '🔴 el borrador sigue enseñando fecha de «Emisión» y no se ha emitido');
-  assert.equal(emision(f.AB260006), '10/11/2026', '🔴 un albarán emitido perdió su fecha de emisión');
+  assert.equal(emision(f.AB260006), '10/11/2026', '🔴 la 2.ª celda ya no es la «Emisión»');
+  assert.equal(emision(f.AB260003), '—', '🔴 con `emisionAt: null` la «Emisión» tiene que decir «—»');
 });
 
 test('SCRUM-1669 · en la tarjeta de móvil el importe tiene su área, en la línea de la fecha', () => {

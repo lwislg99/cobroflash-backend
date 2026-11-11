@@ -28,25 +28,27 @@ Junto a los otros bancos del listado (`scrum301`, `scrum831*`, `scrum304`): 44 �
 
 ## Mitad S2 · la columna en pantalla (11-nov-2026 ~14:55Z, GitHub · base `origin/main` 412ddc20d)
 
-Rama `scrum-1669b-importe-en-la-lista`. Carril S2 (`albaranesView.js`, `styles.css`).
+Rama `scrum-1669c-importe-en-la-lista`. Carril S2 (`albaranesView.js`, `styles.css`).
 
 | aceptación | qué se hace |
 |---|---|
 | la lista pinta el total de cada albarán valorado, Tinta ≥700 tabular | columna **«Importe»** detrás de «Trabajo»; celda `cell-amount` + `.amount` (Tinta 700, `tabular-nums`); `fmtMoneyEs(f.total, 'EUR')`. `total: null` (SIN_VALORAR) pinta «—», nunca «0,00 €» |
-| «Emisión» de un borrador | **«—»** (decisión del orquestador en el encargo de S2 de hoy). Se compara con el PRIMER estado del eje que manda el servidor (`ALBARAN_ESTADOS[0]`), sin literal, como las pestañas; un test ata ese orden |
+| «Emisión» de un borrador | **«—»**, y lo decide el SERVIDOR: rama de S1 `scrum-1669b-emision-vacia-en-borrador` (`emisionAt: null`). La vista ya pintaba «—» para un `null` (`fechaCorta`), así que aquí no se escribe nada propio: lo probé en el front y lo quité al ver la rama de S1, para no tener la regla en dos sitios. El test de S2 sólo vigila que «Importe» no mueva a «Emisión» de la 2.ª posición (la oculta `th:nth-child(2)`) |
 | tarjeta de móvil | área `amount` en la línea de la fecha (`"date amount"`), sólo en `.table--albaranes`; la rejilla compartida no se toca |
 
 **Texto:** «Importe» = texto firmado **n.º 17** de SCRUM-1656 c.21405 («Rótulo de la columna del importe · «Importe»»),
 firma c.21408 ① «Entradas 1-23: aprobadas TAL CUAL están escritas en c.21405.» (alcance c.21411). Ningún otro texto nuevo.
 
-**Tests:** nuevo `tests/scrum1669b-importe-en-la-lista-de-albaranes.test.mjs` (banco de vistas): sobre los ficheros
-de `origin/main` da **3 ✖ / 1 ✔** (el ✔ es el ancla del orden de `ALBARAN_ESTADOS`), con el arreglo 4/4. Las dos
-fijaciones de cabecera (`scrum301` COPY_APROBADA y `scrum831`) pasan de 7 a 8 columnas citando la firma: más
-estrictas, no más flojas. Con los bancos de la lista (301, 304, 831, 1450, 1559g/i/k, 1659, 713c): 73 ✔ / 0 ✖.
+**Tests:** nuevo `tests/scrum1669c-importe-en-la-lista-de-albaranes.test.mjs` (banco de vistas). Sobre los ficheros
+de `origin/main`, los dos de importe (celda `.amount` con «242,36 €» / «—» para `null`, y el área `amount` de la
+tarjeta) dan ✖ por el motivo esperado; con el arreglo, 3/3. Las dos fijaciones de cabecera (`scrum301` COPY_APROBADA
+y `scrum831`) pasan de 7 a 8 columnas citando la firma: más estrictas, no más flojas. Ficha de mudez renovada
+(`npm run censo:mudez -- --escribir`: 1 medido, VIVO). Con los bancos de la lista (301, 304, 719, 831, 1450,
+1559g/i/k, 1659, 713c): 109 ✔ / 0 ✖.
 
 **Medido en yaqu.app** (cuenta QA, sólo GET, `sondas-s2/lista-1669.mjs`, JS y CSS de la rama servidos sobre prod,
-testigo `SCRUM-1669` en el JS servido): AB260006 = **242,36 €**; las 6 SIN_VALORAR «—»; AB260003 (borrador) Emisión
-«—»; peso 700, `tabular-nums`. Página sin desborde horizontal en 320 · 390 · 641 · 769 · 800 · 929 · 1024 · 1280.
+testigo `SCRUM-1669` en el JS servido): AB260006 = **242,36 €**; las 6 SIN_VALORAR «—» (esa medida llevaba aún el «—» del borrador
+en el front, ya retirado: la «Emisión» se mide con la rama de S1 en prod); peso 700, `tabular-nums`. Página sin desborde horizontal en 320 · 390 · 641 · 769 · 800 · 929 · 1024 · 1280.
 
 ⚠️ **Lo que empeora, declarado:** la tabla pide ~77 px más. Scroll DENTRO de su `.table-scroll` (la página, 0):
 
