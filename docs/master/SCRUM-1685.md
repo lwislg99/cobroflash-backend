@@ -156,3 +156,18 @@ A9: comprobación → `tests/scrum1685-formulario-de-alta.test.mjs`
 - **A la vista + AB6** (375 px, `public/` servido en local; captura `.playwright-mcp/scrum1685-b2-375.png`, fuera de git): el desplegable usa el `select` de `auth.css` (sin estilo nuevo ni inline), 47 px de alto (≥44), anillo de foco de `auth.css`, rótulo `<label for>`; ancho del documento 360 ≤ 375, sin scroll lateral; «Valencia/València» cabe entera. Sin estados nuevos (no carga nada). Sin medir: Android/iPhone reales.
 - Junto con los que leen la página, la ruta o el registro (1685×2, 514, 1515, 264, 334, 336, 94, 329,
   333, 701, 846b, 1234, 275, 1294, 267, 273, 1572, 237, 1616, 1522e, 921c): **206 de 206, 0 saltados**, con banco. Y los guards de skill UI y registro (825, 816, 811c, 1633 + los de registro): **120 de 120**. La tanda entera, sin correr en local: la mide el obligatorio.
+### ④ El obligatorio de #3055 en rojo: 8 ✖, todos del tramo a (y uno repetido en el b)
+
+Leído en el log del job `130467504736` (run `43004200827`). Las causas, y el arreglo, van en esta rama
+(#3058 contiene el tramo a: cuando entre, #3055 queda dentro de `main`):
+
+- `scrum1294` y `scrum976 ④` (que corre `guards:entrada`): la `A9:` con dos rutas → partida (arriba).
+- `scrum1185` y `scrum411` ×2: `registerMerchant` vuelve a tener llamador (`auth.routes.ts:47`), y su
+  declaración de huérfano lo decía: «sale de aquí el día que el alta vuelva a tener llamador en el
+  servidor». Sale de `tests/_huerfanos-declarados.mjs` y pasa a `retiradas` en
+  `scripts/_sin-consumir-declarados.json` con su motivo.
+- `scrum419`: el inventario de lo que no corre declara `scrum1685-alta-con-invitacion` (3) y
+  `scrum1685-formulario-de-alta` (2), con por qué necesitan banco.
+- `scrum456`: el `skip` lleva su texto en línea (`!ENABLED && 'sin LIBRO_PG_URL …'`) y no a través de
+  una constante, que el guard lee como mudo.
+- Medido: esos 9 ficheros, sin banco, 95 ✔ + 5 saltos declarados + 0 ✖; los tres de 1685 con banco, 14/14.

@@ -17,7 +17,6 @@ import http from 'node:http';
 import net from 'node:net';
 
 const ENABLED = URL_BANCO !== '';
-const SIN_BANCO = !ENABLED && 'sin LIBRO_PG_URL (banco desechable) · receta en docs/RUNBOOKS.md';
 
 // SUCIA a propósito: mayúsculas, espacios y un hueco entre comas.
 process.env.REGISTRATION_INVITED_EMAILS = ' Invitado-A-1685@Test.Local , invitado-b-1685@test.local,, invitado-c-1685@test.local ,INVITADO-D-1685@test.local ';
@@ -149,7 +148,7 @@ test('SCRUM-1685 · con lista, el NO invitado recibe la ruta cerrada byte a byte
   if (ENABLED) assert.equal(await merchantsDe('intruso-1685@test.local'), 0, '🔴 EL NO INVITADO TIENE CUENTA');
 });
 
-test('SCRUM-1685 · el invitado PASA la puerta y llega hasta donde el servicio exige la provincia', { skip: SIN_BANCO }, async () => {
+test('SCRUM-1685 · el invitado PASA la puerta y llega hasta donde el servicio exige la provincia', { skip: !ENABLED && 'sin LIBRO_PG_URL (banco desechable) · receta en docs/RUNBOOKS.md' }, async () => {
   // El correo, sucio: la puerta lo normaliza igual que la lista.
   const r = await alta({ name: '  Invitado A 1685 ', email: '  INVITADO-A-1685@test.LOCAL ', 'domicilio-foral': 'no', 'domicilio-canarias': 'no' });
   assert.notEqual(r.texto, CUERPO_CERRADA, '🔴 el invitado se ha quedado en la puerta: recibe la ruta cerrada');
@@ -159,7 +158,7 @@ test('SCRUM-1685 · el invitado PASA la puerta y llega hasta donde el servicio e
   assert.equal(cartasDe('invitado-a-1685@test.local').length, 0, '🔴 sin provincia se ha mandado un correo');
 });
 
-test('SCRUM-1685 · invitado con domicilio foral o en Canarias → exclusión con el texto FIRMADO, sin crear nada', { skip: SIN_BANCO }, async () => {
+test('SCRUM-1685 · invitado con domicilio foral o en Canarias → exclusión con el texto FIRMADO, sin crear nada', { skip: !ENABLED && 'sin LIBRO_PG_URL (banco desechable) · receta en docs/RUNBOOKS.md' }, async () => {
   const foral = await alta({ name: 'Invitado B 1685', email: 'invitado-b-1685@test.local', provincia: 'Burgos',
     'domicilio-foral': 'sí', 'domicilio-canarias': 'no' });
   assert.equal(foral.status, 409, `🔴 foral: ${foral.status} ${foral.texto}`);
@@ -176,7 +175,7 @@ test('SCRUM-1685 · invitado con domicilio foral o en Canarias → exclusión co
   }
 });
 
-test('SCRUM-1685 · invitado con provincia normal → cuenta creada, bienvenida + enlace, y el enlace le abre el panel', { skip: SIN_BANCO }, async () => {
+test('SCRUM-1685 · invitado con provincia normal → cuenta creada, bienvenida + enlace, y el enlace le abre el panel', { skip: !ENABLED && 'sin LIBRO_PG_URL (banco desechable) · receta en docs/RUNBOOKS.md' }, async () => {
   const correo = 'invitado-d-1685@test.local';
   const r = await alta({ name: ' Reformas D 1685 ', email: ' Invitado-D-1685@TEST.local ', provincia: '  madrid ',
     'domicilio-foral': ' No ', 'domicilio-canarias': 'no' });

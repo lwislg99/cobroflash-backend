@@ -21,7 +21,6 @@ import http from 'node:http';
 import net from 'node:net';
 
 const ENABLED = URL_BANCO !== '';
-const SIN_BANCO = !ENABLED && 'sin LIBRO_PG_URL (banco desechable) · receta en docs/RUNBOOKS.md';
 
 process.env.REGISTRATION_INVITED_EMAILS = 'invitado-e-1685@test.local,invitado-f-1685@test.local';
 process.env.DISABLE_CRONS = 'true';
@@ -252,7 +251,7 @@ test('SCRUM-1685b · el NO invitado, rellenando bien el formulario, ve la frase 
   if (ENABLED) assert.equal(await merchantsDe('intruso-f-1685@test.local'), 0, '🔴 EL NO INVITADO TIENE CUENTA');
 });
 
-test('SCRUM-1685b · invitado con domicilio foral, por el formulario → ve la exclusión firmada y no se crea nada', { skip: SIN_BANCO }, async () => {
+test('SCRUM-1685b · invitado con domicilio foral, por el formulario → ve la exclusión firmada y no se crea nada', { skip: !ENABLED && 'sin LIBRO_PG_URL (banco desechable) · receta en docs/RUNBOOKS.md' }, async () => {
   const p = montarPagina();
   await rellenar(p, { name: 'Invitado E 1685', email: 'invitado-e-1685@test.local', provincia: 'Burgos', 'domicilio-foral': 'si', 'domicilio-canarias': 'no' });
   await p.enviar();
@@ -260,7 +259,7 @@ test('SCRUM-1685b · invitado con domicilio foral, por el formulario → ve la e
   assert.equal(await merchantsDe('invitado-e-1685@test.local'), 0, '🔴 el foral tiene cuenta');
 });
 
-test('SCRUM-1685b · invitado con provincia normal, por el formulario → cuenta creada y bienvenida en el buzón', { skip: SIN_BANCO }, async () => {
+test('SCRUM-1685b · invitado con provincia normal, por el formulario → cuenta creada y bienvenida en el buzón', { skip: !ENABLED && 'sin LIBRO_PG_URL (banco desechable) · receta en docs/RUNBOOKS.md' }, async () => {
   const correo = 'invitado-f-1685@test.local';
   const p = montarPagina();
   // b2: con una de las 4 formas dobles, que es lo que ahora manda el desplegable.
