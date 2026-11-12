@@ -240,6 +240,12 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // El segundo (c.21555): las notas internas no le llegan al operario por lista, detalle, PATCH ni `.ics`
   // — por comportamiento, con dos sesiones de verdad (jefe y operario) y la fila leída de la base.
   'scrum1662-que-hay-que-hacer.test.mjs': 2,
+  // SCRUM-1707: el operario sin el cobro de su trabajo ni los precios del albarán (c.21547). Necesita
+  // banco porque lo que mide son las RESPUESTAS de las ocho puertas JSON (lista y detalle del trabajo;
+  // listado, detalle, PATCH, emitir, duplicar, firmar y alta del albarán; «pendientes de facturar») con
+  // dos sesiones de verdad, jefe de control. Sólo el desechable: crea y borra un merchant. Las dos
+  // proyecciones puras van en el mismo fichero y corren sin banco.
+  'scrum1707-operario-sin-dinero.test.mjs': 1,
   // SCRUM-1697 (b): «Visita n de m» sale del GET del parte. Necesita banco porque lo que mide es la
   // RUTA contando filas de verdad: con borradores, sin los partes de OTRO merchant que comparten el
   // número de trabajo (columna suelta) y con la sesión del técnico asignado. Sólo el desechable: crea y
