@@ -86,3 +86,27 @@ por el fundador). ❌ = se retira y la Parte L deja de decirlo. Recomendación: 
 - La tanda completa en local: no corrida (10 sesiones a la vez). Hace de tanda el obligatorio.
 - Nada visto en yaqu.app: haría falta una disputa real de Stripe sobre un cobro sin factura.
 - H5: ni una línea de código. Mercado Pago (repetición) y el tope de 3/día, sin medir.
+
+## SCRUM-1727 · 1727-ci: el obligatorio de #3131 cayó en scrum709 (una ficha nombraba a otra)
+
+> Lo escribe la sesión jv-j2c4 (puesto J2, equipo de Javier), no el fundador. Carril J2; los dos
+> ficheros que toca este tramo salen SIN CERRADURA en `node scripts/carriles.mjs de <ruta>`.
+
+**Medido contra:** `origin/main` = `420ee00b709e461b70f1c0e99766a5a1de834986` · 2026-11-12T18:07:55Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum709-microcopy-por-fichero.test.mjs`
+
+**Qué cayó.** Job 131344846557 (log de 2.316.058 B): 1 «not ok», el 10780, `SCRUM-709 · 🔴 NO hay un
+índice que toda sesión tenga que editar`. La ficha `docs/microcopy/2026-11-12-SCRUM-1656-disputa-sin-factura.md`
+escribía el nombre de fichero de la ficha de SCRUM-1436, y el guard lee eso como un índice a mano.
+
+**Arreglo (sin tocar el guard).** La línea dice ahora «cuya ficha está en este mismo directorio», sin
+el nombre del fichero. Ningún texto que ve el usuario cambia: es la ficha, no el aviso.
+
+**Rojo primero.** Con la ficha de la punta anterior (`11a82b855`), `scrum709` en local: 8 casos, 7
+pasan y cae 1, el mismo de CI. Con el arreglo: 8 de 8.
+
+**Al día con main.** La rama iba 22 commits por detrás: `git merge origin/main` (sin rebase) contra
+el sha de arriba, sin conflictos.
+
+**NO medido:** la tanda entera en local (10 sesiones a la vez; hace de tanda el obligatorio).

@@ -24,7 +24,7 @@ recibe el profesional (`freeText` de `notifyMerchantAlert`). Si el aviso cae a l
 ## En qué caso
 
 Sólo cuando el cobro disputado NO tiene factura. Con factura, el aviso es el de siempre (y los dos
-firmados en SCRUM-1436, ficha `2026-10-07-SCRUM-1436-aviso-de-disputa.md`).
+firmados en SCRUM-1436, cuya ficha está en este mismo directorio).
 
 ## Qué cambió
 
