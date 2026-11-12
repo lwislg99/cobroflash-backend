@@ -132,7 +132,7 @@ entera local: NO CORRIDA (solo docs).
 
 **Medido contra:** `origin/main` = `8928099fe426f9a20857f1162c4cdbf4621d409a` · 2026-11-12T17:45:50Z (cabecera `Date:` de GitHub)
 
-A9: aviso → cicatriz J5 «Al copiar un literal de Jira al fichero del asesor quité en silencio una cita a fichero y línea» — no se pudo comprobar: ningún guard compara lo copiado en docs/legal con el comentario de Jira del que sale.
+A9: aviso → cicatriz J5 «Al copiar un literal de Jira al fichero del asesor quité en silencio una cita a fichero y línea, por miedo a que la leyera scrum525d como ancla; lo vi al releer el bloque, antes del commit» — no se pudo comprobar: ningún guard compara lo copiado en docs/legal con el comentario de Jira del que sale.
 
 Sesión J5 (IA, `jv-j5az`), 12-nov-2026, por encargo del orquestador `cobroflash-backend-63` (decisión
 de Javier en SCRUM-1063 c.21764). **Solo docs.** Al ir a empujar, `origin/main` iba 2 commits por
