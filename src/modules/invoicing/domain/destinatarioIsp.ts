@@ -8,8 +8,8 @@
 //   ② el cliente no está declarado como empresario (`Customer.tipoDestinatario = 'EMPRESARIO'`).
 //      NULL («no declarado») no es empresario.
 //
-// Textos: sólo ① tiene texto firmado (P4, c.21750). El de ② NO está firmado: se rechaza con su
-// código y SIN `message`, hasta que el fundador firme uno (regla 39). No se inventa aquí.
+// Textos, los dos firmados: ① P4 (c.21750) y ② P5 (c.21761, SCRUM-1051h; hasta entonces ② iba
+// con su código y SIN `message`).
 //
 // Se llama **antes** de `allocateInvoiceNumber`, como los otros portones (SCRUM-246/771/1051d):
 // rechazar después obligaría a deshacer una factura ya numerada.
@@ -29,6 +29,8 @@ export const COPY_ISP_VALOR_SI = 'Sí';
 
 /** P4 · firmado por el fundador (SCRUM-1051 c.21750, punto 3). Literal; no se parafrasea. */
 export const COPY_ISP_SIN_NIF = 'Para facturar con inversión del sujeto pasivo, el cliente necesita NIF.';
+/** P5 · firmado por Javier (SCRUM-1051 c.21761): el cliente tiene NIF pero no es EMPRESARIO. Literal. */
+export const COPY_ISP_NO_EMPRESARIO = 'Para facturar con inversión del sujeto pasivo, el cliente tiene que ser empresario o profesional.';
 
 /** Lo único que este portón mira de una línea. */
 export interface LineaConCausaIsp {
@@ -43,7 +45,7 @@ export interface ClienteParaIsp {
 
 export interface RechazoIsp {
   code: typeof ERROR_ISP_CLIENTE_SIN_NIF | typeof ERROR_ISP_CLIENTE_NO_EMPRESARIO;
-  /** Sólo cuando hay texto firmado. Sin firma, `undefined` (regla 39). */
+  /** El texto firmado (P4 o P5). Un caso nuevo sin firma iría sin él (regla 39). */
   message?: string;
 }
 
@@ -76,7 +78,7 @@ export function destinatarioIspNoValido(
     return { code: ERROR_ISP_CLIENTE_SIN_NIF, message: COPY_ISP_SIN_NIF };
   }
   if (cliente?.tipoDestinatario !== 'EMPRESARIO') {
-    return { code: ERROR_ISP_CLIENTE_NO_EMPRESARIO };
+    return { code: ERROR_ISP_CLIENTE_NO_EMPRESARIO, message: COPY_ISP_NO_EMPRESARIO };
   }
   return null;
 }

@@ -70,6 +70,10 @@
     colTipo: 'Tipo',
     colBase: 'Base',
     colCuota: 'IVA',
+    // SCRUM-1051h · P3, FIRMADA (SCRUM-1051 c.21750 punto 5): la columna y su valor, literales; los
+    // mismos de `COPY_ISP_COLUMNA` / `COPY_ISP_VALOR_SI` del servidor. Para «no» no hay texto: vacía.
+    colIsp: 'ISP',
+    valorIsp: 'Sí',
     colTotal: 'Total',
     colEstado: 'Estado',
     // 19-ago-2026 · APROBADA con su frase larga, y el criterio se anota porque alguien lo
@@ -275,7 +279,7 @@
       const thead = document.createElement('thead');
       const trh = document.createElement('tr');
       for (const c of [COPY.colNumero, COPY.colFecha, COPY.colTipo, COPY.colBase, COPY.colCuota,
-        COPY.colTotal, COPY.colEstado, COPY.colTrazas]) {
+        COPY.colIsp, COPY.colTotal, COPY.colEstado, COPY.colTrazas]) {
         const th = document.createElement('th');
         th.textContent = c;
         // SIN `nowrap`: los rótulos van con el marcador de 29 caracteres delante, y forzarlos a
@@ -315,6 +319,8 @@
         celda(a.tipo || '—');
         celda(euros(a.base, a.moneda), 'white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums');
         celda(euros(a.cuota, a.moneda), 'white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums');
+        // SCRUM-1051h · «Sí» si alguna parte del desglose es inversión del sujeto pasivo (S2).
+        celda(Array.isArray(a.porTipo) && a.porTipo.some((t) => t && t.causa === 'S2') ? COPY.valorIsp : '');
         const tdTotal = celda(euros(a.total, a.moneda),
           'white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums;font-weight:600');
         if (a.importeIlegible) {
