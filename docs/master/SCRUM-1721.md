@@ -49,3 +49,17 @@ Resultado final de la tanda acoplada: 745 tests · 734 pasan · 10 saltos declar
 
 - ④ → SCRUM-1721b (cuando J1 re-ancle `scrum1103:81`).
 - Recorrido en **yaqu.app** tras el merge: un gasto con tipo 15 y su importe sale en el 111 (07-09); uno de «Alquiler de local» con 19 sale en el 115. Por API hasta que S2 ponga la pantalla.
+
+## CI rojo de #3157 (12-nov, noche) y su arreglo
+
+Cayó UN test: `scrum836d` — «ninguna mutación declarada nombra un test que no existe». Tres `cae` de
+`MUTACIONES_QUE_ME_TUMBAN` eran rótulos inventados (`③ validación` ×2, `⑦ montaje`), no nombres de test.
+Se decidieron MIDIENDO (cada mutación aplicada, mirado qué cae, restaurado byte a byte):
+
+| mutación | caen | `cae` nuevo |
+|---|---|---|
+| tipo: `includes(tipo)` → `Number.isFinite(tipo)` | ③ «un tipo fuera de 15/7/19…» y ② «PUT · la misma validación…» | `SCRUM-1721 · ③ un tipo fuera de 15/7/19` |
+| cuota: quitar `cuota < 0 ||` | sólo ③ «un importe negativo…» | `SCRUM-1721 · ③ un importe negativo` |
+| montaje sin `requireRole('admin')` (sobre `src/app.ts`: el test lo lee por AST) | sólo ⑦ | ``SCRUM-1721 · ⑦ `GET /admin/retenciones` está montado`` |
+
+Base: 836d rojo en CI con esas 3. Con el arreglo: 836 + 1721 → **30/30**.

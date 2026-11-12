@@ -50,17 +50,17 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'SCRUM-1721 · ② PUT' },
   { fichero: 'src/modules/expenses/domain/retencionPracticadaEntrada.ts',
     de: 'if (!TIPOS_RETENCION_PRACTICADA_VALIDOS.includes(tipo))', a: 'if (!Number.isFinite(tipo))',
-    cae: 'SCRUM-1721 · ③ validación' },
+    cae: 'SCRUM-1721 · ③ un tipo fuera de 15/7/19' }, // MEDIDO: caen éste y «② PUT · la misma validación»
   { fichero: 'src/modules/expenses/domain/retencionPracticadaEntrada.ts',
     de: 'cuota < 0 ||', a: '',
-    cae: 'SCRUM-1721 · ③ validación' },
+    cae: 'SCRUM-1721 · ③ un importe negativo' }, // MEDIDO: cae sólo éste
   { fichero: 'src/modules/expenses/domain/retencionPracticadaEntrada.ts',
     de: 'campos.retencionPracticadaTipo = tipo;', a: 'campos.retencionPracticadaTipo = tipo + 1;',
     cae: 'SCRUM-1721 · ① POST' },
   { fichero: 'src/app.ts',
     de: "mountAdmin(app, '/admin/retenciones', requireRole('admin'), retencionesRouter);",
     a: "mountAdmin(app, '/admin/retenciones', retencionesRouter);",
-    cae: 'SCRUM-1721 · ⑦ montaje' },
+    cae: 'SCRUM-1721 · ⑦ `GET /admin/retenciones` está montado' }, // MEDIDO sobre src (el test lee app.ts por AST)
 ];
 
 const PROV_SUB = 801;    // una subcontrata (111)
