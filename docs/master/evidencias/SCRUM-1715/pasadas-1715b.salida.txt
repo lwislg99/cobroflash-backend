@@ -1,0 +1,238 @@
+﻿scrum1489 antes 1/40 rc=0 casos=10
+scrum1489 antes 2/40 rc=0 casos=10
+scrum1489 antes 3/40 rc=0 casos=10
+scrum1489 antes 4/40 rc=0 casos=10
+scrum1489 antes 5/40 rc=0 casos=10
+scrum1489 antes 6/40 rc=0 casos=10
+scrum1489 antes 7/40 rc=0 casos=10
+scrum1489 antes 8/40 rc=0 casos=10
+scrum1489 antes 9/40 rc=0 casos=10
+scrum1489 antes 10/40 rc=0 casos=10
+scrum1489 antes 11/40 rc=0 casos=10
+scrum1489 antes 12/40 rc=0 casos=10
+scrum1489 antes 13/40 rc=0 casos=10
+scrum1489 antes 14/40 rc=0 casos=10
+scrum1489 antes 15/40 rc=0 casos=10
+scrum1489 antes 16/40 rc=0 casos=10
+scrum1489 antes 17/40 rc=0 casos=10
+scrum1489 antes 18/40 rc=0 casos=10
+scrum1489 antes 19/40 rc=0 casos=10
+scrum1489 antes 20/40 rc=0 casos=10
+scrum1489 antes 21/40 rc=0 casos=10
+scrum1489 antes 22/40 rc=0 casos=10
+scrum1489 antes 23/40 rc=0 casos=10
+scrum1489 antes 24/40 rc=0 casos=10
+scrum1489 antes 25/40 rc=0 casos=10
+scrum1489 antes 26/40 rc=0 casos=10
+scrum1489 antes 27/40 rc=0 casos=10
+scrum1489 antes 28/40 rc=0 casos=10
+scrum1489 antes 29/40 rc=0 casos=10
+scrum1489 antes 30/40 rc=0 casos=10
+scrum1489 antes 31/40 rc=0 casos=10
+scrum1489 antes 32/40 rc=0 casos=10
+scrum1489 antes 33/40 rc=0 casos=10
+scrum1489 antes 34/40 rc=0 casos=10
+scrum1489 antes 35/40 rc=0 casos=10
+scrum1489 antes 36/40 rc=0 casos=10
+scrum1489 antes 37/40 rc=0 casos=10
+scrum1489 antes 38/40 rc=0 casos=10
+scrum1489 antes 39/40 rc=0 casos=10
+scrum1489 antes 40/40 rc=0 casos=10
+scrum1489 despues 1/40 rc=0 casos=10
+scrum1489 despues 2/40 rc=0 casos=10
+scrum1489 despues 3/40 rc=0 casos=10
+scrum1489 despues 4/40 rc=0 casos=10
+scrum1489 despues 5/40 rc=0 casos=10
+scrum1489 despues 6/40 rc=0 casos=10
+scrum1489 despues 7/40 rc=0 casos=10
+scrum1489 despues 8/40 rc=0 casos=10
+scrum1489 despues 9/40 rc=0 casos=10
+scrum1489 despues 10/40 rc=0 casos=10
+scrum1489 despues 11/40 rc=0 casos=10
+scrum1489 despues 12/40 rc=0 casos=10
+scrum1489 despues 13/40 rc=0 casos=10
+scrum1489 despues 14/40 rc=0 casos=10
+scrum1489 despues 15/40 rc=0 casos=10
+scrum1489 despues 16/40 rc=0 casos=10
+scrum1489 despues 17/40 rc=0 casos=10
+scrum1489 despues 18/40 rc=0 casos=10
+scrum1489 despues 19/40 rc=0 casos=10
+scrum1489 despues 20/40 rc=0 casos=10
+scrum1489 despues 21/40 rc=0 casos=10
+scrum1489 despues 22/40 rc=0 casos=10
+scrum1489 despues 23/40 rc=0 casos=10
+scrum1489 despues 24/40 rc=0 casos=10
+scrum1489 despues 25/40 rc=0 casos=10
+scrum1489 despues 26/40 rc=0 casos=10
+scrum1489 despues 27/40 rc=0 casos=10
+scrum1489 despues 28/40 rc=0 casos=10
+scrum1489 despues 29/40 rc=0 casos=10
+scrum1489 despues 30/40 rc=0 casos=10
+scrum1489 despues 31/40 rc=0 casos=10
+scrum1489 despues 32/40 rc=0 casos=10
+scrum1489 despues 33/40 rc=0 casos=10
+scrum1489 despues 34/40 rc=0 casos=10
+scrum1489 despues 35/40 rc=0 casos=10
+scrum1489 despues 36/40 rc=0 casos=10
+scrum1489 despues 37/40 rc=0 casos=10
+scrum1489 despues 38/40 rc=0 casos=10
+scrum1489 despues 39/40 rc=0 casos=10
+scrum1489 despues 40/40 rc=0 casos=10
+
+== scrum1489 · bandera --no-wasm-dynamic-tiering: NO · N=40 por lado
+antes: pasadas=40 · abortos con la firma=0 · rc≠0=0 · pasadas con SKIP=0
+  ×40: ok · SCRUM-1489 · CONTROL del doble: evalúa relaciones, `in`, `some` y `AND`, y lanza con lo que no conoce
+        ok · SCRUM-1489 · el admin no añade NADA a sus consultas, y la del negocio sigue en las tres (regla 2)
+        ok · SCRUM-1489 · los CLIENTES no se recortan: la Técnica encuentra la cartera entera, como en su lista (SCRUM-979)
+        ok · SCRUM-1489 · ✅ aceptación 3: la Técnica SIGUE encontrando cada presupuesto suyo, por cada camino
+        ok · SCRUM-1489 · ✅ aceptación 3: y cada factura suya — autora, asignada, Trabajo, albarán (entero y por líneas) y rectificativa
+        ok · SCRUM-1489 · 🔴 CON BASE: por HTTP, el Técnico encuentra sus documentos y ninguno de su compañero; el admin, todos
+        ok · SCRUM-1489 · 🔴 aceptación 1: la Técnica NO encuentra un presupuesto ajeno, ni por el nombre del cliente ni por su número
+        ok · SCRUM-1489 · 🔴 aceptación 2: tampoco una factura ajena, ni por su número ni por el nombre del cliente
+        ok · SCRUM-1489 · 🔴 aceptación 4: el recorte SALE de las dos puertas — lo que ellas contesten es lo que la consulta lleva
+        ok · SCRUM-1489 · 🔴 sin identidad no hay nada suyo: una sesión de Técnico sin `teamMemberId` no encuentra ningún documento
+despues: pasadas=40 · abortos con la firma=0 · rc≠0=0 · pasadas con SKIP=0
+  ×40: ok · SCRUM-1489 · CONTROL del doble: evalúa relaciones, `in`, `some` y `AND`, y lanza con lo que no conoce
+        ok · SCRUM-1489 · el admin no añade NADA a sus consultas, y la del negocio sigue en las tres (regla 2)
+        ok · SCRUM-1489 · los CLIENTES no se recortan: la Técnica encuentra la cartera entera, como en su lista (SCRUM-979)
+        ok · SCRUM-1489 · ✅ aceptación 3: la Técnica SIGUE encontrando cada presupuesto suyo, por cada camino
+        ok · SCRUM-1489 · ✅ aceptación 3: y cada factura suya — autora, asignada, Trabajo, albarán (entero y por líneas) y rectificativa
+        ok · SCRUM-1489 · 🔴 CON BASE: por HTTP, el Técnico encuentra sus documentos y ninguno de su compañero; el admin, todos
+        ok · SCRUM-1489 · 🔴 aceptación 1: la Técnica NO encuentra un presupuesto ajeno, ni por el nombre del cliente ni por su número
+        ok · SCRUM-1489 · 🔴 aceptación 2: tampoco una factura ajena, ni por su número ni por el nombre del cliente
+        ok · SCRUM-1489 · 🔴 aceptación 4: el recorte SALE de las dos puertas — lo que ellas contesten es lo que la consulta lleva
+        ok · SCRUM-1489 · 🔴 sin identidad no hay nada suyo: una sesión de Técnico sin `teamMemberId` no encuentra ningún documento
+CASOS POR NOMBRE (scrum1489): IGUAL
+control sembrado (scrum1489, un veredicto cambiado): VIVO
+suelo (scrum1489): cada pasada de después con casos y ninguno «not ok»: SÍ
+scrum912 antes 1/40 rc=0 casos=21
+scrum912 antes 2/40 rc=0 casos=21
+scrum912 antes 3/40 rc=0 casos=21
+scrum912 antes 4/40 rc=0 casos=21
+scrum912 antes 5/40 rc=0 casos=21
+scrum912 antes 6/40 rc=0 casos=21
+scrum912 antes 7/40 rc=0 casos=21
+scrum912 antes 8/40 rc=0 casos=21
+scrum912 antes 9/40 rc=0 casos=21
+scrum912 antes 10/40 rc=0 casos=21
+scrum912 antes 11/40 rc=0 casos=21
+scrum912 antes 12/40 rc=0 casos=21
+scrum912 antes 13/40 rc=0 casos=21
+scrum912 antes 14/40 rc=0 casos=21
+scrum912 antes 15/40 rc=0 casos=21
+scrum912 antes 16/40 rc=0 casos=21
+scrum912 antes 17/40 rc=0 casos=21
+scrum912 antes 18/40 rc=0 casos=21
+scrum912 antes 19/40 rc=0 casos=21
+scrum912 antes 20/40 rc=0 casos=21
+scrum912 antes 21/40 rc=0 casos=21
+scrum912 antes 22/40 rc=0 casos=21
+scrum912 antes 23/40 rc=0 casos=21
+scrum912 antes 24/40 rc=0 casos=21
+scrum912 antes 25/40 rc=0 casos=21
+scrum912 antes 26/40 rc=0 casos=21
+scrum912 antes 27/40 rc=0 casos=21
+scrum912 antes 28/40 rc=0 casos=21
+scrum912 antes 29/40 rc=0 casos=21
+scrum912 antes 30/40 rc=0 casos=21
+scrum912 antes 31/40 rc=0 casos=21
+scrum912 antes 32/40 rc=0 casos=21
+scrum912 antes 33/40 rc=0 casos=21
+scrum912 antes 34/40 rc=0 casos=21
+scrum912 antes 35/40 rc=0 casos=21
+scrum912 antes 36/40 rc=0 casos=21
+scrum912 antes 37/40 rc=0 casos=21
+scrum912 antes 38/40 rc=0 casos=21
+scrum912 antes 39/40 rc=0 casos=21
+scrum912 antes 40/40 rc=0 casos=21
+scrum912 despues 1/40 rc=0 casos=21
+scrum912 despues 2/40 rc=0 casos=21
+scrum912 despues 3/40 rc=0 casos=21
+scrum912 despues 4/40 rc=0 casos=21
+scrum912 despues 5/40 rc=0 casos=21
+scrum912 despues 6/40 rc=0 casos=21
+scrum912 despues 7/40 rc=0 casos=21
+scrum912 despues 8/40 rc=0 casos=21
+scrum912 despues 9/40 rc=0 casos=21
+scrum912 despues 10/40 rc=0 casos=21
+scrum912 despues 11/40 rc=0 casos=21
+scrum912 despues 12/40 rc=0 casos=21
+scrum912 despues 13/40 rc=0 casos=21
+scrum912 despues 14/40 rc=0 casos=21
+scrum912 despues 15/40 rc=0 casos=21
+scrum912 despues 16/40 rc=0 casos=21
+scrum912 despues 17/40 rc=0 casos=21
+scrum912 despues 18/40 rc=0 casos=21
+scrum912 despues 19/40 rc=0 casos=21
+scrum912 despues 20/40 rc=0 casos=21
+scrum912 despues 21/40 rc=0 casos=21
+scrum912 despues 22/40 rc=0 casos=21
+scrum912 despues 23/40 rc=0 casos=21
+scrum912 despues 24/40 rc=0 casos=21
+scrum912 despues 25/40 rc=0 casos=21
+scrum912 despues 26/40 rc=0 casos=21
+scrum912 despues 27/40 rc=0 casos=21
+scrum912 despues 28/40 rc=0 casos=21
+scrum912 despues 29/40 rc=0 casos=21
+scrum912 despues 30/40 rc=0 casos=21
+scrum912 despues 31/40 rc=0 casos=21
+scrum912 despues 32/40 rc=0 casos=21
+scrum912 despues 33/40 rc=0 casos=21
+scrum912 despues 34/40 rc=0 casos=21
+scrum912 despues 35/40 rc=0 casos=21
+scrum912 despues 36/40 rc=0 casos=21
+scrum912 despues 37/40 rc=0 casos=21
+scrum912 despues 38/40 rc=0 casos=21
+scrum912 despues 39/40 rc=0 casos=21
+scrum912 despues 40/40 rc=0 casos=21
+
+== scrum912 · bandera --no-wasm-dynamic-tiering: NO · N=40 por lado
+antes: pasadas=40 · abortos con la firma=0 · rc≠0=0 · pasadas con SKIP=0
+  ×40: ok · SCRUM-912 · con `models`, un 404 pasa al siguiente de ESA lista, y se dice cuál contestó
+        ok · SCRUM-912 · el 429 de Google: la diaria manda sobre la del minuto, y sin quotaId no se adivina
+        ok · SCRUM-912 · el NIF se propone normalizado, y el «hoy» es el de Madrid, no el de UTC
+        ok · SCRUM-912 · el céntimo de tolerancia de justificante.ts vale también aquí; dos céntimos, no
+        ok · SCRUM-912 · el proveedor se propone solo si su NIF casa con UNA ficha del merchant
+        ok · SCRUM-912 · errores de Google → códigos (429, 502, 422), nunca un 500 ni una frase
+        ok · SCRUM-912 · la foto sale hacia Gemini como inline_data, con el esquema y a temperatura 0
+        ok · SCRUM-912 · la ruta: foto mala → 400 con código, y no se llama a Google
+        ok · SCRUM-912 · lectura completa → propuesta con los nombres del POST y nada descartado
+        ok · SCRUM-912 · lo aditivo: sin `models`, geminiComplete sigue usando GEMINI_MODEL (presupuestos)
+        ok · SCRUM-912 · lo que devuelve el modelo sin ser JSON es ai_invalid_json
+        ok · SCRUM-912 · lo que no es un objeto no es una lectura
+        ok · SCRUM-912 · null es «no se leyó», NO un descarte; y el 0 % es un dato
+        ok · SCRUM-912 · parsearImagen: solo data-URL de imagen admitida, con base64
+        ok · SCRUM-912 · sin imágenes, el turno del usuario es UNA parte de texto (lo de siempre)
+        ok · SCRUM-912 · 🔴 el tope diario corta en LECTURAS_TICKET_POR_DIA + 1, y es por merchant
+        ok · SCRUM-912 · 🔴 la IA NUNCA da un ticket por deducible: como mucho, «falta confirmar»
+        ok · SCRUM-912 · 🔴 la lectura NUNCA cae a gemini-2.5-flash (las 20 diarias son de los presupuestos)
+        ok · SCRUM-912 · 🔴 lo que no cuadra se DESCARTA y se dice, no se arregla
+        ok · SCRUM-912 · 🔴 ni la foto ni lo leído acaban en el log
+        ok · SCRUM-912 · 🔴 sin clave de Gemini y CON clave de Anthropic: 503 y NI UNA petición fuera
+despues: pasadas=40 · abortos con la firma=0 · rc≠0=0 · pasadas con SKIP=0
+  ×40: ok · SCRUM-912 · con `models`, un 404 pasa al siguiente de ESA lista, y se dice cuál contestó
+        ok · SCRUM-912 · el 429 de Google: la diaria manda sobre la del minuto, y sin quotaId no se adivina
+        ok · SCRUM-912 · el NIF se propone normalizado, y el «hoy» es el de Madrid, no el de UTC
+        ok · SCRUM-912 · el céntimo de tolerancia de justificante.ts vale también aquí; dos céntimos, no
+        ok · SCRUM-912 · el proveedor se propone solo si su NIF casa con UNA ficha del merchant
+        ok · SCRUM-912 · errores de Google → códigos (429, 502, 422), nunca un 500 ni una frase
+        ok · SCRUM-912 · la foto sale hacia Gemini como inline_data, con el esquema y a temperatura 0
+        ok · SCRUM-912 · la ruta: foto mala → 400 con código, y no se llama a Google
+        ok · SCRUM-912 · lectura completa → propuesta con los nombres del POST y nada descartado
+        ok · SCRUM-912 · lo aditivo: sin `models`, geminiComplete sigue usando GEMINI_MODEL (presupuestos)
+        ok · SCRUM-912 · lo que devuelve el modelo sin ser JSON es ai_invalid_json
+        ok · SCRUM-912 · lo que no es un objeto no es una lectura
+        ok · SCRUM-912 · null es «no se leyó», NO un descarte; y el 0 % es un dato
+        ok · SCRUM-912 · parsearImagen: solo data-URL de imagen admitida, con base64
+        ok · SCRUM-912 · sin imágenes, el turno del usuario es UNA parte de texto (lo de siempre)
+        ok · SCRUM-912 · 🔴 el tope diario corta en LECTURAS_TICKET_POR_DIA + 1, y es por merchant
+        ok · SCRUM-912 · 🔴 la IA NUNCA da un ticket por deducible: como mucho, «falta confirmar»
+        ok · SCRUM-912 · 🔴 la lectura NUNCA cae a gemini-2.5-flash (las 20 diarias son de los presupuestos)
+        ok · SCRUM-912 · 🔴 lo que no cuadra se DESCARTA y se dice, no se arregla
+        ok · SCRUM-912 · 🔴 ni la foto ni lo leído acaban en el log
+        ok · SCRUM-912 · 🔴 sin clave de Gemini y CON clave de Anthropic: 503 y NI UNA petición fuera
+CASOS POR NOMBRE (scrum912): IGUAL
+control sembrado (scrum912, un veredicto cambiado): VIVO
+suelo (scrum912): cada pasada de después con casos y ninguno «not ok»: SÍ
+
+RESUMEN: casos por nombre IGUAL en los dos · control VIVO en los dos

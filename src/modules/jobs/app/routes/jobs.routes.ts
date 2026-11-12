@@ -8,7 +8,7 @@ import type { Prisma } from '@prisma/client'; // SCRUM-717b: los tipos SALEN del
 import type { Job } from '@prisma/client'; // SCRUM-717d: sin `select`, la consulta devuelve el MODELO
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: dinero = admin)
 import { canalDeWhatsApp } from '../../../../core/contacto/canalDeWhatsApp'; // SCRUM-1171
-import { seesOnlyOwnJobs, seesAllJobs, adminOnlyJobField } from '../../../../core/http/roleCapabilities'; // SCRUM-147 / SCRUM-164
+import { seesOnlyOwnJobs, seesAllJobs, adminOnlyJobField, adminOnlyAlbaranField } from '../../../../core/http/roleCapabilities'; // SCRUM-147 / SCRUM-164 / SCRUM-1712
 import { trabajoParaElRol, descripcionDelCalendario } from '../../domain/trabajoParaElRol'; // SCRUM-1662 (c.21555)
 import { listExpenses } from '../../../expenses/domain/expenses.service'; // SCRUM-370: los gastos de ESTE Trabajo
 import { esSuyoElTrabajo, SELECT_DUENOS } from '../../domain/accesoAlTrabajo'; // SCRUM-1706: los tres ejes, también en `/:id`
@@ -1254,6 +1254,15 @@ router.post('/:id/albaranes', async (req, res) => {
     if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
       if (!(await asignadoAlTecnico(req.merchantId!, job.id, req.teamMemberId))) { // SCRUM-1706
         return res.status(404).json({ error: 'not_found' });
+      }
+    }
+
+    // SCRUM-1712: valorar el albarán es del admin. Después de la pertenencia (lo ajeno sigue en 404)
+    // y antes de validar nada: con un solo campo de precio, la petición ENTERA se rechaza.
+    if (!seesAllJobs(req.userRole)) {
+      const campoAdmin = adminOnlyAlbaranField({ modoValoracion: req.body?.modoValoracion, lineas: req.body?.lineas });
+      if (campoAdmin) {
+        return res.status(403).json({ error: 'forbidden', required_role: 'admin', field: campoAdmin });
       }
     }
 

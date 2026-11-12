@@ -75,9 +75,12 @@ const CON_EL_PATRON_YA = [
   // 25-export-zip y 25-exports) y scrum148, con el ayudante que también da `arrayBuffer`: de 14 a 7.
   // SCRUM-1218h (24-oct-2026): los cuatro de J que SCRUM-1599b/c pusieron al día (scrum178, 85, 17 y
   // 814…gated), con el mismo ayudante, medidos con un banco PGlite local: de 7 a 3, los de Luis.
-  'scrum1188d-tiers-tambien-se-vacia.test.mjs',
-  'scrum1489-la-busqueda-recorta-al-tecnico.test.mjs',
-  'scrum912-leer-ticket-gasto.test.mjs',
+  // SCRUM-1715 (12-nov-2026, S2): `scrum1188d-tiers-tambien-se-vacia` migrado con `migrar-1218i` sin
+  // cambiarlo (1 llamada), medido con un Postgres desechable: de 3 a 2. Evidencia en
+  // `docs/master/SCRUM-1715.md`.
+  // SCRUM-1715b (12-nov-2026, S1): `scrum1489-la-busqueda-recorta-al-tecnico` y `scrum912-leer-ticket-gasto`
+  // migrados con `migrar-1218i` sin cambiarlo (1 llamada cada uno): de 2 a 0. La lista queda VACÍA y el
+  // trinquete sigue: un fichero que vuelva al patrón cae en «ningún NUEVO». Evidencia en el mismo registro.
 ];
 
 /** La salida, que va en todos los mensajes: un guard que no la dice acaba en una lista de excepciones. */

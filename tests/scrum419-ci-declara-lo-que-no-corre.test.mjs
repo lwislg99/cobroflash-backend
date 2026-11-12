@@ -240,6 +240,16 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // El segundo (c.21555): las notas internas no le llegan al operario por lista, detalle, PATCH ni `.ics`
   // — por comportamiento, con dos sesiones de verdad (jefe y operario) y la fila leída de la base.
   'scrum1662-que-hay-que-hacer.test.mjs': 2,
+  // SCRUM-1712: el operario no escribe precios en un albarán (POST del alta y PATCH). Necesita banco
+  // porque entra por la RUTA real con sesiones de técnico y de admin guardadas en la base y mira la
+  // FILA del albarán (modo, precio, versión) tras cada intento. Sólo el desechable: crea y borra un
+  // merchant. La regla pura y el cableado por AST van en el mismo fichero y corren sin banco.
+  'scrum1712-precios-del-albaran-solo-admin.test.mjs': 1,
+  // SCRUM-1714: verifactu.xml y datos.zip miran el SII como el modo de emisión. Necesita banco porque
+  // entra por las dos RUTAS reales de exportación con merchants guardados en la base (con el flag
+  // encendido y el SII contestado de distintas formas) y mira lo que sirven. Sólo el desechable: crea
+  // y borra merchants.
+  'scrum1714-exports-miran-el-sii.test.mjs': 1,
   // SCRUM-1697 (b): «Visita n de m» sale del GET del parte. Necesita banco porque lo que mide es la
   // RUTA contando filas de verdad: con borradores, sin los partes de OTRO merchant que comparten el
   // número de trabajo (columna suelta) y con la sesión del técnico asignado. Sólo el desechable: crea y
