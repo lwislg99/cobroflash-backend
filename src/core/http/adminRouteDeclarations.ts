@@ -422,4 +422,16 @@ export const FIELD_LEVEL_ROLE_GATES: ReadonlyArray<{ method: string; path: strin
     campos: ['precios'],
     why: 'SCRUM-1078: los importes de un parte son del admin; el técnico no los escribe. Regla en roleCapabilities.adminOnlyParteField.',
   },
+  {
+    method: 'POST',
+    path: '/admin/jobs/:id/albaranes',
+    campos: ['modoValoracion', 'precioUnitario', 'tipoIva'],
+    why: 'SCRUM-1712: el técnico crea su albarán en la obra, pero VALORARLO es del admin (como los importes del parte, SCRUM-1078). Regla en roleCapabilities.adminOnlyAlbaranField.',
+  },
+  {
+    method: 'PATCH',
+    path: '/admin/albaranes/:id',
+    campos: ['modoValoracion', 'precioUnitario', 'tipoIva'],
+    why: 'SCRUM-1712: el técnico rellena su albarán, pero ni lo valora, ni cambia el precio de la oficina, ni lo desvalora. Regla en roleCapabilities.adminOnlyAlbaranField.',
+  },
 ];

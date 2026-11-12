@@ -1,0 +1,15 @@
+﻿✔ SCRUM-1712 · la regla: valorar es del admin, y basta un campo para contaminar la petición (0.7614ms)
+✔ SCRUM-1712 · la regla: DESVALORAR también es valorar (borraría los precios de la oficina) (0.1415ms)
+✔ SCRUM-1712 · el día a día del técnico sigue libre (lo que manda su pantalla al crear y editar sin precios) (0.1746ms)
+✔ SCRUM-1712 · control positivo de la frontera: el admin pasa por `seesAllJobs`, el técnico no (0.1159ms)
+✔ SCRUM-1712 · la regla está DECLARADA como gate por campo en las dos puertas (0.6368ms)
+✔ SCRUM-1712 · el CABLEADO: las dos puertas aplican la regla, con 403, a quien no ve todo (AST) (325.4059ms)
+✔ SCRUM-1712 · 🔴 CON BASE: el técnico no escribe precios por ninguna de las dos puertas; el admin sí; su albarán sin precios sigue (1320.9359ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1738.2227

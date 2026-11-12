@@ -234,6 +234,11 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // real con una sesión de técnico guardada en la base, y lo que mide es la pertenencia por los tres
   // ejes (campo, tabla `assignees`, autoría) que contesta Postgres. Sólo el desechable: crea y borra un merchant.
   'scrum1706-operario-abre-su-trabajo.test.mjs': 1,
+  // SCRUM-1712: el operario no escribe precios en un albarán (POST del alta y PATCH). Necesita banco
+  // porque entra por la RUTA real con sesiones de técnico y de admin guardadas en la base y mira la
+  // FILA del albarán (modo, precio, versión) tras cada intento. Sólo el desechable: crea y borra un
+  // merchant. La regla pura y el cableado por AST van en el mismo fichero y corren sin banco.
+  'scrum1712-precios-del-albaran-solo-admin.test.mjs': 1,
   // SCRUM-1714: verifactu.xml y datos.zip miran el SII como el modo de emisión. Necesita banco porque
   // entra por las dos RUTAS reales de exportación con merchants guardados en la base (con el flag
   // encendido y el SII contestado de distintas formas) y mira lo que sirven. Sólo el desechable: crea

@@ -113,3 +113,42 @@ export function adminOnlyParteField(body: any): string | null {
   if (!body || typeof body !== 'object') return null;
   return body.precios !== undefined ? 'precios' : null;
 }
+
+/**
+ * SCRUM-1712 · VALORAR UN ALBARÁN es del admin (gate por CAMPO, hermano de `adminOnlyParteField`).
+ *
+ * Lo que escribe un importe en un albarán desde el cuerpo de `POST /admin/jobs/:id/albaranes` o
+ * `PATCH /admin/albaranes/:id` son tres cosas, y las tres quedan para quien `seesAllJobs`:
+ *   · `modoValoracion` que NO sea quedarse en SIN_VALORAR. Pasar a VALORADO es valorar; y pasar un
+ *     VALORADO a SIN_VALORAR también lo es, porque con líneas sin precio BORRA la valoración de la
+ *     oficina. Por eso se mira contra `modoActual` (el del albarán; en el alta, SIN_VALORAR).
+ *   · `lineas[].precioUnitario` y `lineas[].tipoIva` presentes (misma noción de «presente» que
+ *     `validarLineas`: ni `undefined`, ni `null`, ni `''`; un 0 SÍ es un precio).
+ *
+ * Lo que NO entra, a propósito: `ocultarPreciosEnDocumento` (qué imprime el papel, no cuánto vale)
+ * y `POST /:id/duplicar` (copia lo que la oficina ya puso; no recibe precios del cuerpo).
+ *
+ * Va POR VALOR y no por presencia porque la pantalla del técnico manda `modoValoracion:'SIN_VALORAR'`
+ * en su alta y su edición de siempre: rechazar el campo por venir le cerraría el día a día.
+ * FAIL-CLOSED y de una pieza, como SCRUM-164 y SCRUM-1078: un modo raro, aunque sea inválido, no lo
+ * decide el técnico, y basta UN campo para rechazar la petición entera.
+ *
+ * Los handlers le pasan SÓLO `{ modoValoracion, lineas }` del cuerpo, no el cuerpo entero: así el
+ * censo de lo que lee cada ruta (SCRUM-1185) sigue viendo sus campos.
+ */
+export function adminOnlyAlbaranField(body: any, modoActual: string = 'SIN_VALORAR'): string | null {
+  if (!body || typeof body !== 'object') return null;
+  if (body.modoValoracion !== undefined
+    && (String(body.modoValoracion) !== 'SIN_VALORAR' || modoActual !== 'SIN_VALORAR')) {
+    return 'modoValoracion';
+  }
+  if (Array.isArray(body.lineas)) {
+    const presente = (v: unknown) => v !== undefined && v !== null && v !== '';
+    for (const l of body.lineas) {
+      if (!l || typeof l !== 'object') continue;
+      if (presente((l as any).precioUnitario)) return 'precioUnitario';
+      if (presente((l as any).tipoIva)) return 'tipoIva';
+    }
+  }
+  return null;
+}
