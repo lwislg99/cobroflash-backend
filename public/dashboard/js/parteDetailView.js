@@ -1719,10 +1719,9 @@
       return false;
     }
     atarSalidasAlTrabajo(contenedor, parte, o);
-    // SCRUM-1697 · no se espera: el parte se usa ya; el número de visita llega cuando llegue.
-    // (vive en `parteVisita.js`: lee el trabajo, y este fichero no puede hablar con /admin/jobs/
-    // sin entrar en el guard de SCRUM-366, que es de superficies que deciden la acción del trabajo)
-    if (typeof window.partePintarVisita === 'function') window.partePintarVisita(contenedor, parte, pedir);
+    // SCRUM-1697 · «Visita n de m»: el parte ya trae `visitaN`/`visitaM` del servidor (SCRUM-1697 (b));
+    // `parteVisita.js` solo los comprueba y los pinta, sin leer el trabajo.
+    if (typeof window.partePintarVisita === 'function') window.partePintarVisita(contenedor, parte);
     // SCRUM-1675 · un parte que ya no se puede tocar (firmado) no tiene dictado que recuperar: lo
     // que quedara en este móvil se borra, y no se queda guardado un texto con datos de la obra.
     if (!(parte.puedeEditarContenido && parte.puedeEditarContenido.ok)) borrarBorradorDelDictado(parteId);
