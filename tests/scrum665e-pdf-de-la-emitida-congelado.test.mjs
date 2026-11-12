@@ -18,6 +18,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
@@ -145,8 +146,7 @@ test('SCRUM-665e · ⑥ dos primeras peticiones a la vez generan UNA sola vez (c
 
 test('SCRUM-665e · ⑦ la ruta `regenerate-pdf` ya no se monta (c.21182 punto 3)', () => {
   const rel = 'src/modules/system/app/routes/invoicesAdmin.routes.ts';
-  const codigo = fs.readFileSync(path.join(RAIZ, rel), 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  const codigo = soloCodigo(fs.readFileSync(path.join(RAIZ, rel), 'utf8'), rel);
   const rutas = [...codigo.matchAll(/router\.(get|post|put|patch|delete)\(\s*'([^']+)'/g)].map((m) => `${m[1]} ${m[2]}`);
   // Control positivo: el escáner ve las rutas del fichero, y entre ellas la que sirve el PDF.
   assert.ok(rutas.includes('get /:id/pdf'), `🔴 ESCÁNER CIEGO: no veo \`get /:id/pdf\` en ${rel} (${rutas.length} rutas leídas)`);
