@@ -964,6 +964,15 @@ router.post('/:id/emitir', async (req, res) => {
     if (!canTransitionAlbaran(albaran.estado, 'emitido')) {
       return res.status(409).json({ error: 'invalid_transition', from: albaran.estado, to: 'emitido' });
     }
+    // SCRUM-1673 · UN ALBARÁN SIN LÍNEAS NO SE EMITE. Medido en yaqu.app (SCRUM-1658): un borrador
+    // con `lineas: []` salía numerado y emitido, listo para firmar sin decir qué se hizo. El
+    // borrador vacío SÍ se puede crear (es un documento a medias); lo que no puede es salir.
+    // Fail-closed: un `lineas` que no es lista cuenta como vacío. DESPUÉS de la salida idempotente
+    // —un emitido viejo se devuelve tal cual, no se reescribe— y ANTES de congelar nada. Solo el
+    // código: no hay texto firmado para este caso (regla 39); la pantalla lo traduce (SCRUM-1659).
+    if (!Array.isArray(albaran.lineas) || albaran.lineas.length === 0) {
+      return res.status(409).json({ error: 'albaran_sin_lineas' });
+    }
 
     // ── SCRUM-841 · EL CLIENTE SE CONGELA AQUÍ, AL EMITIR ──────────────────────────────────
     //
