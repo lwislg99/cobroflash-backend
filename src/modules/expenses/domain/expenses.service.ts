@@ -198,7 +198,7 @@ async function completarFilas<T extends { id: number; quoteId: number | null }>(
   // SCRUM-944 (punto 2) · `job.titulo` ya no es el campo crudo de la base: es el NOMBRE con el que
   // Trabajos presenta ese mismo Trabajo. Con `Job.titulo` a secas, los Trabajos sin título (10 de 13
   // en staging) llegaban a `null` y la pantalla los llamaba «Trabajo», mientras Trabajos decía
-  // «Presupuesto #5 · María López»: dos nombres para lo mismo.
+  // otro nombre: dos nombres para lo mismo. (Desde SCRUM-1690 ese nombre es el del cliente.)
   const nombres = await nombresDeTrabajos(merchantId, [...porQuote.values()]);
   return items.map((e) => {
     const j = e.quoteId != null ? porQuote.get(e.quoteId) : null;
@@ -212,13 +212,12 @@ async function completarFilas<T extends { id: number; quoteId: number | null }>(
  * SCRUM-944 (punto 2) · el nombre de cada Trabajo, EL MISMO que le da la pantalla de Trabajos.
  *
  * NO decide nada: llama a `tituloDeTrabajo` (`jobs/domain/trabajoDirecto.ts`), que es quien decide, con
- * las mismas entradas que le da `serializeJob` — el título propio, el presupuesto ORIGINAL del Trabajo
- * (el de `Job.quoteId`; a falta de éste, el primero por id de los que tienen `Quote.jobId`) y su cliente.
- * Ojo: es el original y no el presupuesto al que se imputó el gasto; un gasto de un adicional se
- * presenta con el nombre del Trabajo, no con el número del adicional.
+ * las mismas entradas que le da `serializeJob` — el título propio y el cliente. Desde SCRUM-1690 el
+ * presupuesto no entra en el nombre, así que un gasto de un adicional se presenta, como cualquier otro,
+ * con el nombre del Trabajo.
  *
  * Los Trabajos CON título no cuestan nada: `tituloDeTrabajo` devuelve ese título y no se consulta.
- * Para el resto, tres consultas por página —Trabajos, presupuestos y clientes—, nunca una por gasto
+ * Para el resto, dos consultas por página —Trabajos y clientes—, nunca una por gasto
  * (el coste constante que fijó SCRUM-135). No se exporta: nadie de fuera la usa (`listExpenses` la llama
  * y su test entra por `listExpenses`), y un `export` sin consumidor lo caza `scrum411`.
  */
@@ -238,28 +237,18 @@ async function nombresDeTrabajos(
 
   const jobs = await prismaClient.job.findMany({
     where: { merchantId, id: { in: sinTitulo } },   // regla 2
-    select: { id: true, customerId: true, quoteId: true },
+    select: { id: true, customerId: true },
   });
-  const quoteIds = jobs.map((j) => j.quoteId).filter((id): id is number => id != null);
-  const [quotes, clientes] = await Promise.all([
-    prismaClient.quote.findMany({
-      where: { merchantId, OR: [{ id: { in: quoteIds } }, { jobId: { in: sinTitulo } }] },
-      select: { id: true, jobId: true, quoteNumber: true },
-      orderBy: { id: 'asc' },
-    }),
-    prismaClient.customer.findMany({
-      where: { merchantId, id: { in: [...new Set(jobs.map((j) => j.customerId))] } },
-      select: { id: true, name: true },
-    }),
-  ]);
+  // SCRUM-1690 · ya no se piden los presupuestos: sólo servían para titular «Presupuesto #N · cliente»,
+  // y el título cae al cliente (`tituloDeTrabajo`).
+  const clientes = await prismaClient.customer.findMany({
+    where: { merchantId, id: { in: [...new Set(jobs.map((j) => j.customerId))] } },
+    select: { id: true, name: true },
+  });
   const cliente = new Map(clientes.map((c) => [c.id, c]));
   for (const j of jobs) {
-    const original =
-      (j.quoteId != null ? quotes.find((q) => q.id === j.quoteId) : undefined)
-      ?? quotes.find((q) => q.jobId === j.id);
     nombres.set(j.id, tituloDeTrabajo({
       titulo: null,
-      quote: original ? { id: original.id, quoteNumber: original.quoteNumber } : null,
       customer: cliente.get(j.customerId) ?? null,
       jobId: j.id,
     }));

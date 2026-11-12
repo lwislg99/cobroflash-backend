@@ -8,14 +8,19 @@
 // no?». Dentro del listener eso no se puede provocar sin un navegador; aquí sí, y el test lo
 // hace con las tres combinaciones.
 //
-// Los tres tonos son distintos A PROPÓSITO: `error` es que NO se marcó, `warning` es que SÍ se
-// marcó y la lista puede estar vieja, `success` es que todo fue bien. Un `.alert` sin tono está
-// OCULTO por CSS (styles.css:1667), así que el tono no es decoración.
+// Los tres tonos son distintos A PROPÓSITO: `error` es que la escritura FALLÓ, `warning` es que
+// la escritura fue bien pero hay algo que mirar —la lista puede estar vieja, o no se marcó ninguna
+// porque ya estaban pagadas o anuladas (SCRUM-1640)—, `success` es que todo fue bien. Un `.alert`
+// sin tono está OCULTO por CSS (styles.css:1667), así que el tono no es decoración.
 const COPY_BULK_PAGADAS = {
   // FIRMADO por el asesor en SCRUM-373. Solo se dice cuando la ESCRITURA falló.
   escrituraFallida: 'No se han podido marcar como pagadas. Vuelve a intentarlo.',
-  // SIN APROBAR (regla 30): microcopy nueva de SCRUM-375, va con marcador hasta que se firme.
+  // FIRMADO por el fundador en SCRUM-1640 comentario 21292.
   recargaFallida: 'Se han marcado como pagadas, pero la lista no se ha podido actualizar. Recárgala para verla al día.',
+  // FIRMADO por el fundador en SCRUM-1640 comentario 21292.
+  ningunaMarcada: 'No se ha marcado ninguna: ya estaban pagadas o anuladas.',
+  // FIRMADO por el fundador en SCRUM-1640 comentario 21292.
+  ningunaMarcadaRecargaFallida: 'No se ha marcado ninguna: ya estaban pagadas o anuladas. La lista no se ha podido actualizar. Recárgala para verla al día.',
 };
 
 /** El plural de verdad, sin `(s)`: cambia el sustantivo y el participio. */
@@ -27,16 +32,93 @@ function textoMarcadas(n) {
  * Qué se le dice al profesional según lo que pasó. PURO: no toca DOM ni red.
  *
  * La regla que codifica, y es la del ticket: **un fallo de lectura no se presenta como un fallo de
- * escritura**. Si `escrituraOk`, el mensaje dice que se marcaron — pase lo que pase con la recarga.
+ * escritura**. Si `escrituraOk`, el mensaje dice cuántas se marcaron — pase lo que pase con la
+ * recarga. Y cero es un recuento, no un éxito: el servidor se salta las ya pagadas o anuladas, y
+ * entonces no se puede decir que se marcaron (SCRUM-1640).
  */
 function resultadoMarcadoEnBloque({ escrituraOk, recargaOk, marcadas }) {
   if (!escrituraOk) return { tono: 'error', texto: COPY_BULK_PAGADAS.escrituraFallida, seMarcaron: false };
+  if (marcadas === 0) {
+    return { tono: 'warning', texto: recargaOk ? COPY_BULK_PAGADAS.ningunaMarcada : COPY_BULK_PAGADAS.ningunaMarcadaRecargaFallida, seMarcaron: false };
+  }
   if (!recargaOk) return { tono: 'warning', texto: COPY_BULK_PAGADAS.recargaFallida, seMarcaron: true };
   return { tono: 'success', texto: textoMarcadas(marcadas), seMarcaron: true };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-1618 · CUÁNDO SE COBRÓ, DICHO POR QUIEN MARCA LA FACTURA
+//
+// El servidor ya acepta `paidAt` en los dos caminos (lote: SCRUM-397; una en una: SCRUM-1609) y
+// ninguna pantalla lo mandaba: el cobro del 31 de marzo conciliado el 2 de abril quedaba en abril.
+// Esta pieza la usan el lote (aquí abajo) y la ficha (`invoiceDetailView.js`, que carga después).
+//
+// 🔴 CAMPO VACÍO = CUERPO DE SIEMPRE. Sin fecha, `paidAt` NO viaja y el servidor pone el instante
+// del marcado, como antes de existir el campo. Por eso no viene relleno con hoy: relleno, el campo
+// mandaría siempre una fecha que el profesional no ha dicho.
+//
+// Qué fechas valen lo decide el SERVIDOR (`resolverFechaDeCobro`: ni futura ni ilegible, sin
+// límite hacia atrás). Aquí no se repite la regla. Su 400 cae en el aviso firmado de siempre
+// (SCRUM-373 prohíbe a esta vista pintar el mensaje de la excepción); la ficha sí lo enseña.
+const COPY_FECHA_DE_COBRO = {
+  rotuloUna: '¿Cuándo lo has cobrado?', // APROBADO por Javier el 27-oct-2026 (SCRUM-1618 comentario 21183; Trabajo y Presupuesto, SCRUM-1618 comentario 21221)
+  rotuloLote: '¿Cuándo las has cobrado?', // APROBADO por Javier el 27-oct-2026 (SCRUM-1618 comentario 21183)
+  ayuda: 'Si lo dejas vacío, se guarda la fecha de hoy.', // APROBADO por Javier el 27-oct-2026 (SCRUM-1618 comentario 21183; Trabajo y Presupuesto, SCRUM-1618 comentario 21221)
+};
+
+/** La fecha escrita en el campo, o `null` si está vacío (señal de NO mandar `paidAt`). */
+function fechaDeCobroElegida(input) {
+  if (!input || typeof input.value !== 'string') return null;
+  const v = input.value.trim();
+  return v === '' ? null : v;
+}
+
+/** El cuerpo de la petición, con `paidAt` SOLO si el profesional escribió una fecha. PURO. */
+function cuerpoConFechaDeCobro(base, input) {
+  const cuerpo = Object.assign({}, base || {});
+  const f = fechaDeCobroElegida(input);
+  if (f) cuerpo.paidAt = f;
+  return cuerpo;
+}
+
+/** Pinta rótulo + campo de fecha + ayuda dentro de `contenedor` y devuelve el `<input>`. */
+function pintarFechaDeCobro(contenedor, opts) {
+  if (!contenedor || typeof document === 'undefined') return null;
+  const o = opts || {};
+  const id = o.id || 'fecha-cobro';
+
+  const envoltorio = document.createElement('div');
+  envoltorio.className = 'form-group';
+
+  const etiqueta = document.createElement('label');
+  etiqueta.htmlFor = id;
+  etiqueta.textContent = o.rotulo || COPY_FECHA_DE_COBRO.rotuloUna;
+  envoltorio.appendChild(etiqueta);
+
+  const input = document.createElement('input');
+  input.type = 'date';
+  input.id = id;
+  input.className = 'input';
+  input.dataset.fechaDeCobro = '1';
+  input.setAttribute('aria-describedby', id + '-ayuda');
+  envoltorio.appendChild(input);
+
+  const ayuda = document.createElement('small');
+  ayuda.id = id + '-ayuda';
+  ayuda.textContent = COPY_FECHA_DE_COBRO.ayuda;
+  // En su propia línea: suelta, en la barra del lote se partía al lado del campo.
+  const lineaAyuda = document.createElement('div');
+  lineaAyuda.appendChild(ayuda);
+  envoltorio.appendChild(lineaAyuda);
+
+  contenedor.appendChild(envoltorio);
+  return input;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { COPY_BULK_PAGADAS, resultadoMarcadoEnBloque, textoMarcadas };
+  module.exports = {
+    COPY_BULK_PAGADAS, resultadoMarcadoEnBloque, textoMarcadas,
+    COPY_FECHA_DE_COBRO, fechaDeCobroElegida, cuerpoConFechaDeCobro,
+  };
 }
 
 async function fetchInvoices(options = {}) {
@@ -434,6 +516,9 @@ async function fetchInvoices(options = {}) {
       <button id="bulk-paid-btn" class="btn-primary btn-sm">✓ Marcar como pagadas</button>
       <button id="bulk-cancel-btn" class="btn-ghost btn-sm" style="color:rgba(255,255,255,.7)">Cancelar</button>
     `;
+    // SCRUM-1618 · la fecha de cobro del lote: nace en `updateBulkBar`, con la primera selección, para
+    // que la lista sin seleccionar pinte lo mismo que antes del campo. Vacía = cuerpo de siempre.
+    let bulkFechaCobro = null;
     panelEmitidas.appendChild(bulkBar);
 
     let currentStatus = 'all';
@@ -451,6 +536,10 @@ async function fetchInvoices(options = {}) {
     function updateBulkBar() {
       const n = selectedIds.size;
       if (n > 0) {
+        if (!bulkFechaCobro) {
+          bulkFechaCobro = pintarFechaDeCobro(bulkBar, { id: 'bulk-fecha-cobro', rotulo: COPY_FECHA_DE_COBRO.rotuloLote });
+          if (bulkFechaCobro) bulkBar.insertBefore(bulkFechaCobro.parentNode, bulkBar.querySelector('#bulk-paid-btn'));
+        }
         bulkBar.style.display = 'flex';
         bulkBar.querySelector('#bulk-count').textContent = n + ' factura' + (n !== 1 ? 's' : '') + ' seleccionada' + (n !== 1 ? 's' : '');
       } else {
@@ -486,9 +575,10 @@ async function fetchInvoices(options = {}) {
       try {
         data = await apiRequest('/admin/invoices/bulk-paid', {
           method: 'POST',
-          body: JSON.stringify({ ids }),
+          body: JSON.stringify(cuerpoConFechaDeCobro({ ids }, bulkFechaCobro)),
         });
         selectedIds.clear();
+        if (bulkFechaCobro) bulkFechaCobro.value = '';
       } catch {
         btn.disabled = false;
         btn.textContent = '✓ Marcar como pagadas';
@@ -499,9 +589,10 @@ async function fetchInvoices(options = {}) {
       }
 
       // A partir de aquí LA ESCRITURA YA OCURRIÓ. Pase lo que pase con la recarga, el mensaje
-      // tiene que decir que se marcaron.
-      let recargaOk = true;
-      try { await reload(); } catch { recargaOk = false; }
+      // tiene que decir cuántas se marcaron. `reload()` no lanza si falla la red: lo DEVUELVE
+      // (SCRUM-1640), y el `catch` queda para lo que reviente antes de su `try`.
+      let recargaOk = false;
+      try { recargaOk = await reload(); } catch { recargaOk = false; }
 
       const r = resultadoMarcadoEnBloque({ escrituraOk: true, recargaOk, marcadas: data.updated });
       statusBox.textContent = r.texto;
@@ -521,6 +612,8 @@ async function fetchInvoices(options = {}) {
       updateBulkBar();
     });
 
+    // Devuelve si la lista se ha podido leer: el marcado en bloque lo necesita para no decir ✓
+    // sobre una lista que no se ha actualizado (SCRUM-1640).
     async function reload() {
       setCount('Cargando…');
       statusBox.style.display = 'none';
@@ -570,7 +663,7 @@ async function fetchInvoices(options = {}) {
             if (window.renderAppView) renderAppView('quotes-new');
           });
           setCount('0 facturas');
-          return;
+          return true;
         }
 
         setCount(invoices.length + ' factura' + (invoices.length !== 1 ? 's' : ''));
@@ -729,11 +822,13 @@ async function fetchInvoices(options = {}) {
         });
 
         statusBox.style.display = 'none';
+        return true;
       } catch (err) {
         console.error('[renderInvoicesView] error', err);
         statusBox.textContent = 'No se han podido cargar las facturas. Vuelve a intentarlo.';
         statusBox.className = 'alert error';
         statusBox.style.display = 'block';
+        return false;
       }
     }
 

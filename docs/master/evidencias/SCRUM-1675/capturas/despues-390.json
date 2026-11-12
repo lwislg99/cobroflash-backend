@@ -1,0 +1,24 @@
+{
+  "modo": "despues",
+  "ancho": 390,
+  "parte": 11,
+  "servidasDesdeElArbol": [
+    "almacenLocal.js",
+    "parteDetailView.js"
+  ],
+  "antesDeRecargar": {
+    "dictado": "He cambiado el grifo de la cocina por uno monomando y he revisado la llave de paso. Una hora de trabajo.",
+    "lineasPropuestas": 3,
+    "ordenarTardo_s": 3,
+    "claveEnElMovil": true
+  },
+  "trasRecargar": {
+    "dictado": "He cambiado el grifo de la cocina por uno monomando y he revisado la llave de paso. Una hora de trabajo.",
+    "lineasPropuestas": 3,
+    "anadirAlParte": 1,
+    "anadirApagado": true
+  },
+  "dictadoIgual": true,
+  "escriturasAbortadas": [],
+  "log": []
+}

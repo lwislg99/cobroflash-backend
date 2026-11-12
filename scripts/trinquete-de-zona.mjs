@@ -29,7 +29,7 @@ import { temporal } from '../tests/_temporal.mjs';
 import {
   AUSENTE, CANARIOS, CENSADAS, ESCRITURAS_DE_LA_TANDA, RAIZ, SALIDA_CIEGO, ZONAS,
   arbolQuieto, compararZonas, escribirCanarios, ficherosDeLaTanda, juzgarCanarios,
-  marcaDelArbol, medirEnZona, repescar, resolverRepesca, sondaDeZona, veredicto,
+  marcaDelArbol, medirEnZona, repescar, resolverRepesca, sinInformePorZona, sondaDeZona, veredicto,
 } from './_trinquete-de-zona.mjs';
 
 const AQUI = fileURLToPath(import.meta.url);
@@ -257,6 +257,35 @@ if (!soloCanarios && sinCompararEnElArbol.length) {
       .filter(([, n]) => n > 0)
       .map(([z, n]) => `faltan ${n} en ${z}`);
     console.log(`   · ${fichero}   ${lista.length} prueba(s) · ${faltan.join(' · ')}`);
+  }
+}
+
+// ── ⑤ter LOS FICHEROS SIN INFORME ENTERO · por zona, y «en UNA» frente a «en las DOS» ────────
+//
+// 🔴 SCRUM-1335d. Un fichero que pierde el informe en las DOS zonas no sale arriba en ninguna
+// lista: el comparador lo cuenta como «comparado e igual» (medido en SCRUM-1335c). Esta línea lo
+// cuenta por el `test:summary` que no llegó. Se imprime SIEMPRE, también con ceros, y si no se pudo
+// contar lo dice en vez de dar un cero. Sobre los ficheros de la TANDA (sin los canarios).
+//
+// ⚠️ NO CAMBIA EL VEREDICTO NI EL CÓDIGO DE SALIDA. Si debe poner el job en CIEGO lo decide el
+// fundador con esta cifra delante.
+if (!soloCanarios) {
+  const s = sinInformePorZona(medidas, deLaTanda, RAIZ);
+  if (!s.medible) {
+    console.log(`\nSIN INFORME ENTERO · NO PUDE CONTAR: ${s.porque} (esto NO es un cero)`);
+  } else {
+    console.log(`\nSIN INFORME ENTERO · de ${s.poblacion} ficheros de la tanda: `
+      + s.porZona.map((z) => `faltan en ${z.zona} ${z.sinInforme}`).join(' · ')
+      + ` · en UNA zona sola ${s.enUna.length} · en LAS DOS ${s.enTodas.length}`);
+    const TOPE = 30;
+    if (s.enTodas.length) {
+      console.log('   En las DOS: el comparador los da por «comparados e iguales» y NO lo son —de esas');
+      console.log('   pruebas no ha llegado ningún resultado—. No cambia el veredicto (SCRUM-1335d).');
+      for (const f of s.enTodas.slice(0, TOPE)) console.log(`   · ${f}`);
+      if (s.enTodas.length > TOPE) console.log(`   … y ${s.enTodas.length - TOPE} más`);
+    }
+    for (const f of s.enUna.slice(0, TOPE)) console.log(`   · (en una) ${f}`);
+    if (s.enUna.length > TOPE) console.log(`   … y ${s.enUna.length - TOPE} más en una zona`);
   }
 }
 

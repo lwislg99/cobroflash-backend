@@ -42,6 +42,8 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   // de scrum55-admin-fail-closed.test.mjs.
   { method: 'GET', path: '/admin/billing/plans' },
   { method: 'GET', path: '/admin/team' },
+  // SCRUM-1678: las plazas del plan las consulta el botón «+ Añadir miembro», que es de admin.
+  { method: 'GET', path: '/admin/team/plazas' },
   { method: 'POST', path: '/admin/connect/onboard' },
   // SCRUM-597 (DOC-07) · asignar usuarios a un documento es REPARTO DE TRABAJO, y S1 dice que
   // el reparto es del Admin — mismo criterio que el selector de asignados de los Trabajos. Las

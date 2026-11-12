@@ -705,6 +705,11 @@ export function cuerpoDelAviso({ veredictos, ahora, origen, urlDelRun, callados 
 // commit, y se sirvió igual. Un ROJO sí: un rojo se arregla con otro commit, y ése es el verde.
 // Si después vuelve un ROJO o un CIEGO con el Issue cerrado, se REABRE el mismo (no otro).
 //
+// SCRUM-1393g · LOS CIEGO YA NO BLOQUEAN EL CIERRE (decisión del fundador del 27-oct, c.21059): se
+// cierra con la punta VERDE y 0 pendientes, y el cierre DECLARA los CIEGO de la pasada (cuántos, de
+// cuántos commits mirados, y cuáles). Un CIEGO que esta pasada vuelve a juzgar deja de ser pendiente;
+// pendiente es el que no ha vuelto a juzgar, o que vuelve SIN-LEER. Un SIN-LEER sigue bloqueando.
+//
 // SCRUM-1393e · LA ÚNICA EXCEPCIÓN (decisión del fundador del 21-oct, opción (a)): un CIEGO con
 // `causa` «sustituido» (run cancelado con 0 jobs) se ABSUELVE si en la pasada hay un VERDE que lo
 // CONTIENE: un descendiente suyo en la línea de primer padre de la punta (`linea`, la lista de
@@ -801,18 +806,24 @@ export function accionDelIssue({ veredictos: leidos, ahora, origen, urlDelRun, p
   const callados = new Set([...absueltos.keys(), ...enEspera, ...veredictos.filter((v) => v.contexto).map((v) => v.sha)]);
   const aviso = cuerpoDelAviso({ veredictos, ahora, origen, urlDelRun, callados }, previos);
   const deLaPunta = veredictos.find((v) => v.sha === punta);
-  const juzgados = new Set(veredictos.filter((v) => v.estado === 'VERDE' || v.estado === 'ROJO').map((v) => v.sha));
+  // SCRUM-1393g (decisión del fundador, c.21059): un CIEGO que esta pasada ha vuelto a juzgar ya no
+  // es pendiente; se DECLARA en el cierre. Pendiente es lo que la pasada no ha podido volver a mirar.
+  const juzgados = new Set(veredictos.filter((v) => v.estado === 'VERDE' || v.estado === 'ROJO' || v.estado === 'CIEGO').map((v) => v.sha));
   const pendientes = pendientesDelIssue(`${previos}\n${aviso}`).filter((s) => !juzgados.has(s) && !callados.has(s));
-  const ciegos = veredictos.filter((v) => (v.estado === 'CIEGO' || v.estado === 'SIN-LEER') && !callados.has(v.sha));
+  const ciegos = veredictos.filter((v) => v.estado === 'CIEGO' && !callados.has(v.sha));
+  const sinLeer = veredictos.filter((v) => v.estado === 'SIN-LEER' && !callados.has(v.sha));
+  const ciegosNuevos = ciegos.filter((v) => aviso.includes(marcaDeAviso(v)));
   const espera = (enEspera.size ? ` · ${enEspera.size} CIEGO «sustituido» en espera de su sustituto: ${[...enEspera].map((s) => s.slice(0, 12)).join(', ')}` : '')
     + (absueltos.size ? ` · ${absueltos.size} CIEGO «sustituido» absuelto(s): ${[...absueltos].map(([s, por]) => `${s.slice(0, 12)} por ${por.slice(0, 12)}`).join(', ')}` : '');
   let motivo = null;
   if (!punta) motivo = 'no sé cuál es la punta de main';
   else if (!deLaPunta) motivo = `la punta ${punta.slice(0, 12)} no está en esta pasada`;
   else if (deLaPunta.estado !== 'VERDE') motivo = `la punta ${punta.slice(0, 12)} sale ${deLaPunta.estado}`;
-  else if (ciegos.length) motivo = `${ciegos.length} commit(s) CIEGO o SIN-LEER en esta pasada`;
+  else if (sinLeer.length) motivo = `${sinLeer.length} commit(s) SIN-LEER en esta pasada`;
   else if (pendientes.length) motivo = `${pendientes.length} CIEGO pendiente(s) en el Issue: ${pendientes.map((s) => s.slice(0, 12)).join(', ')}`;
   else if (enEspera.size) motivo = 'hay CIEGO «sustituido» en espera';
+  // SCRUM-1393g: con el Issue cerrado (o sin Issue), un CIEGO nuevo sigue reabriendo (o creando), como en 1393d.
+  if (!motivo && estado !== 'abierto' && ciegosNuevos.length) motivo = `${ciegosNuevos.length} CIEGO nuevo(s) con el Issue ${estado === 'cerrado' ? 'cerrado' : 'sin abrir'}`;
 
   if (!motivo) {
     if (estado !== 'abierto') return { pasos: [], cuerpo: '', motivo: 'main verificado y ningún Issue abierto: nada que decir' };
@@ -821,15 +832,20 @@ export function accionDelIssue({ veredictos: leidos, ahora, origen, urlDelRun, p
     const lista = [...absueltos].map(([s, por]) => (s === por
       ? `- \`${s.slice(0, 12)}\` — sin meta-guard (sustituido en la cola de su job), absuelto por su propio «${JOB_OBLIGATORIO}» en verde`
       : `- \`${s.slice(0, 12)}\` — no verificado, absuelto por el verde de \`${por.slice(0, 12)}\`${sinRun.has(s) ? ' · SIN run: el siguiente commit le quitó el sitio en la cola' : ''}`));
+    // SCRUM-1393g: los CIEGO no bloquean, pero se dicen: cuántos, de cuántos, y cuáles.
+    const declarados = ciegos.length
+      ? ['', `${ciegos.length} CIEGO sin absolver de ${veredictos.length} commits mirados en esta pasada: no bloquean el cierre (decisión del fundador, SCRUM-1393 c.21059), y NO son verdes: ${ciegos.map((v) => `\`${v.sha.slice(0, 12)}\``).join(', ')}.`]
+      : [];
     const cierre = [
       `**Vigía de main · CERRADO** · ${ahora} · ${origen}`, '',
-      `La punta de \`main\`, \`${punta.slice(0, 12)}\`, sale **VERDE** (${deLaPunta.motivo}), sin ningún CIEGO pendiente.`,
+      `La punta de \`main\`, \`${punta.slice(0, 12)}\`, sale **VERDE** (${deLaPunta.motivo}), sin ningún pendiente en el Issue.`,
+      ...declarados,
       ...(lista.length ? ['', `${lista.length} CIEGO «sustituido» (run cancelado con 0 jobs, sin run porque el siguiente le quitó el sitio en la cola, o con jobs que el siguiente dejó sin arrancar) absueltos por el verde de un commit posterior que los contiene, o por su propio obligatorio en verde:`, ...lista, ''] : []),
       `Población de esta pasada: ${recuento}.`, `Pasada: ${urlDelRun} ${marcaDeCierre(punta)}`,
     ].join('\n');
     const cuerpo = aviso ? `${aviso}\n\n---\n\n${cierre}` : cierre;
     if (/@claude/i.test(cuerpo)) throw new Error('el cierre del vigía de main contiene la mención que despierta a Claude');
-    return { pasos: ['comentar', 'cerrar'], cuerpo, motivo: `se cierra: punta ${punta.slice(0, 12)} VERDE${absueltos.size ? ` · ${absueltos.size} absuelto(s)` : ''}` };
+    return { pasos: ['comentar', 'cerrar'], cuerpo, motivo: `se cierra: punta ${punta.slice(0, 12)} VERDE${absueltos.size ? ` · ${absueltos.size} absuelto(s)` : ''}${ciegos.length ? ` · ${ciegos.length} CIEGO declarados` : ''}` };
   }
   if (!aviso) return { pasos: [], cuerpo: '', motivo: `sin nada nuevo que avisar; no se cierra: ${motivo}${espera}` };
   const pasos = { ninguno: ['crear'], cerrado: ['reabrir', 'comentar'], abierto: ['comentar'] }[estado];

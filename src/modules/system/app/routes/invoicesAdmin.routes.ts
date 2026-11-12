@@ -28,7 +28,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { applyVeriFactu, applyVeriFactuAnulacion } from '../../../invoicing/domain/verifactu.service'; // SCRUM-153
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
-import { isDemoMerchant, DEMO_WATERMARK } from '../../../invoicing/domain/emission.service';
+import { isDemoMerchant, DEMO_WATERMARK, motivoSiiSinEmision } from '../../../invoicing/domain/emission.service';
 import { getDeliveryStatus } from '../../../messaging/domain/whatsappLog.service';
 import { envioDelDocumento } from '../../../billing/domain/envioDelDocumento'; // SCRUM-885b
 // SCRUM-499 · la MISMA lectura del método que Cobros e Informes, y el rótulo del «no consta» que
@@ -53,6 +53,7 @@ import { resolverFechaDeCobro } from '../../../billing/domain/fechaDeCobro'; // 
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1093 (bulk-paid)
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
+import { exigirCausaLineaEmitible } from '../../../../core/validation/causaLineaEmitible'; // SCRUM-1051d
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-289 (C7)
 import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
 import {
@@ -119,6 +120,8 @@ router.post('/', requireRole('admin'), async (req, res) => {
       // congelado sale a coste cero, porque el viaje ya se hacía.
       select: {
         id: true, email: true, country: true, flags: true, defaultCurrency: true,
+        // SCRUM-1585: el modo mira el SII; obligatorio en `MerchantLike`.
+        llevaLibrosPorSii: true,
         name: true, legalName: true, taxId: true, address: true, logoUrl: true, whatsappPhone: true,
       },
     });
@@ -133,7 +136,9 @@ router.post('/', requireRole('admin'), async (req, res) => {
     const modoSuelto = modoDocumentoSuelto(merchant);
     if (modoSuelto === 'no') {
       return res.status(409).json({
-        error: ERROR_MODO_SIN_FACTURA,
+        // SCRUM-1713 (c.21583, punto 2): si lo que lo deja sin emitir es su respuesta del SII, el
+        // código lo dice (`sii_declarado` / `sii_no_consta`); con el flag apagado, el de siempre.
+        error: motivoSiiSinEmision(merchant) ?? ERROR_MODO_SIN_FACTURA,
         message: 'En este modo no se emiten facturas.',
       });
     }
@@ -164,6 +169,9 @@ router.post('/', requireRole('admin'), async (req, res) => {
     // arriba: ANTES de pedir número, nunca después. Deriva de `invalidTipoIva`; aquí no
     // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
     exigirTiposDeIvaEmitibles(val.lineas);
+    // SCRUM-1051d · y que la CAUSA (si la línea trae una) esté en la lista activa: el mismo portón
+    // que la boca de cobro (`lib/invoicing.ts`), en el mismo sitio y ANTES de pedir número.
+    exigirCausaLineaEmitible(val.lineas);
 
     const emisorCongelado = congelarEmisorDesdeFicha(merchant); // SCRUM-665 · sin viaje extra
 
@@ -1047,6 +1055,15 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
     // sin INVOICING_ES_ENABLED no puede emitir R1 (allocate lanzaría invoicing_es_disabled).
     if (isReceiptNumber(original.number)) {
       return res.status(409).json({ error: 'cannot_rectify_receipt' });
+    }
+
+    // SCRUM-1713 (c.21583, punto 2): con el flag puesto y el SII en «Sí» o «No consta», el embudo
+    // rechaza la R1 con `sii_*` y el `catch` de abajo lo convertía en un 500 mudo. Se pregunta a la
+    // MISMA función que usa el embudo, antes de pedir número, y se contesta su código. El embudo
+    // sigue siendo la puerta que manda: esto sólo pone nombre al rechazo.
+    const motivoSii = motivoSiiSinEmision(original.merchant);
+    if (motivoSii) {
+      return res.status(409).json({ error: motivoSii });
     }
 
     // SCRUM-246 · ANTES de pedir número, igual que el resto. Aquí las líneas van NEGADAS

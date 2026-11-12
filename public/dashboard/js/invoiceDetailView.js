@@ -447,6 +447,8 @@ async function fetchInvoiceDetail(id) {
     // acciones ya montada: el manejador de mas abajo lo captura por cierre. `null` mientras no se
     // pinte, y `cuerpoConMetodo` con `null` devuelve el cuerpo de siempre.
     let selMetodo = null;
+    // SCRUM-1618 · la fecha de cobro, igual: `null` mientras no se pinte, y vacía no viaja.
+    let inpFechaCobro = null;
     const btnTogglePaid = document.createElement('button');
     btnTogglePaid.className = 'btn-secondary btn-sm';
     btnTogglePaid.textContent = 'Marcar como cobrada';
@@ -491,16 +493,18 @@ async function fetchInvoiceDetail(id) {
       btnTogglePaid.textContent = 'Actualizando…';
 
       try {
+        // SCRUM-441 · el metodo viaja SOLO si el profesional lo eligio, y solo al marcar cobrada.
+        // Con «sin especificar» el cuerpo sale identico al de siempre y la columna no se toca.
+        // SCRUM-1618 · la fecha de cobro, con la misma regla: SOLO si se escribió una.
+        let cuerpo = { status: targetStatus };
+        if (targetStatus === 'paid') {
+          if (typeof window.cuerpoConMetodo === 'function') cuerpo = window.cuerpoConMetodo(cuerpo, selMetodo);
+          if (typeof window.cuerpoConFechaDeCobro === 'function') cuerpo = window.cuerpoConFechaDeCobro(cuerpo, inpFechaCobro);
+        }
         const res = await fetch(`/admin/invoices/${invoice.id}/status`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          // SCRUM-441 · el metodo viaja SOLO si el profesional lo eligio, y solo al marcar cobrada.
-          // Con «sin especificar» el cuerpo sale identico al de siempre y la columna no se toca.
-          body: JSON.stringify(
-            targetStatus === 'paid' && typeof window.cuerpoConMetodo === 'function'
-              ? window.cuerpoConMetodo({ status: targetStatus }, selMetodo)
-              : { status: targetStatus },
-          ),
+          body: JSON.stringify(cuerpo),
         });
 
         const data = await res.json();
@@ -767,6 +771,10 @@ async function fetchInvoiceDetail(id) {
     // pantalla se comporta exactamente como antes de existir el selector.
     if (estadoFactura === 'pending' && typeof window.pintarSelectorMetodo === 'function') {
       selMetodo = window.pintarSelectorMetodo(actions, { id: 'metodo-cobro-factura' });
+    }
+    // SCRUM-1618 · «¿Cuándo lo has cobrado?», con la misma condición: solo si el gesto es MARCAR COBRADA.
+    if (estadoFactura === 'pending' && typeof window.pintarFechaDeCobro === 'function') {
+      inpFechaCobro = window.pintarFechaDeCobro(actions, { id: 'fecha-cobro-factura' });
     }
     // 🔴 Al fusionar SCRUM-707 con main, esta línea seguía pasando `REGISTRO_ACC`: una constante
     // local que SCRUM-845 retiró al sacar el resolutor a `invoiceAccion.js`. Git lo fusionó SIN

@@ -115,8 +115,10 @@
   function renderAlbaranesView(container) {
     container.innerHTML = '';
 
+    // SCRUM-1659 · `alb-lista` ACOTA las reglas de móvil de esta pantalla (pestañas que desplazan,
+    // buscador y filtro a 44 px) sin tocar `.data-card-tabs`, que comparten las listas hermanas.
     const card = document.createElement('div');
-    card.className = 'data-card';
+    card.className = 'data-card alb-lista';
     container.appendChild(card);
 
     const header = document.createElement('div');
@@ -126,11 +128,11 @@
     const left = document.createElement('div');
     const title = document.createElement('h2');
     title.textContent = 'Albaranes'; // APROBADO 5-ago-2026 (nombre del documento, precedente C2)
-    title.style.cssText = 'margin:0;font-size:18px';
+    title.className = 'alb-titulo'; // SCRUM-1659: a la hoja, era style.cssText
     left.appendChild(title);
     const subtitle = document.createElement('p');
     subtitle.textContent = 'Cargando…';
-    subtitle.style.cssText = 'margin:2px 0 0;font-size:13px;color:var(--muted)';
+    subtitle.className = 'alb-subtitulo';
     left.appendChild(subtitle);
     header.appendChild(left);
 
@@ -191,7 +193,7 @@
       // sería justo el fallo que este bloque existe para evitar. Lección de SCRUM-303/350.
       const aviso = document.createElement('div');
       aviso.className = 'alert error';
-      aviso.style.cssText = 'margin:16px';
+      aviso.classList.add('alb-aviso'); // SCRUM-1659: el margen a la hoja; el tono se queda en su literal
       aviso.textContent = 'No se han podido cargar los albaranes. Vuelve a intentarlo.';
       body.appendChild(aviso);
       // SCRUM-1233 · aquí se pintaba `err.message`: «API 500: internal_error» o «Failed to fetch»
@@ -200,7 +202,7 @@
       const motivo = mensajeParaPersona(err, '');
       if (motivo) {
         const detalle = document.createElement('p');
-        detalle.style.cssText = 'margin:0 16px 16px;font-size:12px;color:var(--muted)';
+        detalle.className = 'alb-aviso-detalle';
         detalle.textContent = motivo;
         body.appendChild(detalle);
       }
@@ -242,7 +244,13 @@
         badge.dataset.contador = d.valor;
         badge.textContent = String(d.n);
         b.appendChild(badge);
-        b.addEventListener('click', () => { estadoActivo = d.valor; activar(); });
+        b.addEventListener('click', () => {
+          estadoActivo = d.valor;
+          activar();
+          // SCRUM-1659 · a 390 px la fila de pestañas DESPLAZA: la que se toca medio asomada al
+          // borde se trae entera a la vista. `nearest` no mueve nada si ya se veía.
+          if (typeof b.scrollIntoView === 'function') b.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        });
         tabs.appendChild(b);
         return b;
       });
@@ -253,17 +261,15 @@
       body.appendChild(toolbar);
 
       const buscador = document.createElement('input');
-      buscador.className = 'input';
+      buscador.className = 'input alb-buscador'; // SCRUM-1659: el tamaño, a la hoja
       buscador.type = 'search';
       buscador.placeholder = 'Buscar por nº, cliente o trabajo';
       buscador.setAttribute('aria-label', 'Buscar albaranes');
-      buscador.style.cssText = 'min-width:180px;flex:1';
       buscador.addEventListener('input', () => { busqueda = buscador.value; activar(); });
       toolbar.appendChild(buscador);
 
       const selCobro = document.createElement('select');
-      selCobro.className = 'input';
-      selCobro.style.cssText = 'width:auto';
+      selCobro.className = 'input alb-sel-cobro';
       selCobro.setAttribute('aria-label', 'Facturación'); // APROBADO
       // El eje derivado vive en su propio control, con sus contadores: es OTRA pregunta, no una
       // pestaña más. Aplanarlo perdería el `parcial`.
@@ -300,7 +306,8 @@
       // `jobsView.js` y `quotesListView.js` para esta misma columna. Se copia tal cual en vez de
       // estrenar un sinónimo (regla 30). Las otras seis no se tocan.
       thead.innerHTML = '<tr>' +
-        ['Nº', 'Emisión', 'Entrega', 'Cliente', 'Trabajo', 'Estado', 'Acciones']
+        // SCRUM-1669 · «Importe» = texto firmado n.º 17 (SCRUM-1656 c.21405, firma c.21408).
+        ['Nº', 'Emisión', 'Entrega', 'Cliente', 'Trabajo', 'Importe', 'Estado', 'Acciones']
           .map((c) => '<th>' + esc(c) + '</th>').join('') + // APROBADAS tal cual
         '</tr>';
       tabla.appendChild(thead);
@@ -376,6 +383,8 @@
         // en movil (el patron de la casa para lo que no cabe) y sigue en la tabla de escritorio.
         const tdEmision = document.createElement('td');
         tdEmision.className = 'col-hide-mobile';
+        // SCRUM-1669 · la «Emisión» de un borrador la decide el SERVIDOR (`emisionAt: null`, rama de
+        // S1 `scrum-1669b-emision-vacia-en-borrador`), y `fechaCorta(null)` ya pinta «—».
         tdEmision.textContent = fechaCorta(f.emisionAt);
         tr.appendChild(tdEmision);
 
@@ -429,6 +438,19 @@
           tdTrabajo.textContent = '—';
         }
         tr.appendChild(tdTrabajo);
+
+        // SCRUM-1669 (PILOTO-1) · EL DINERO DE LA FILA. `total` lo manda el servidor desde #3064:
+        // número en euros con IVA si el albarán es VALORADO, `null` si es SIN_VALORAR. Un `null`
+        // pinta «—» y NUNCA «0,00 €»: un parte sin precios no vale cero, es que no lleva precio.
+        // `.amount` = Tinta 700 tabular (Regla del Importe, AB4); `cell-amount` = su área en la
+        // tarjeta de móvil, la de la rejilla compartida.
+        const tdImporte = document.createElement('td');
+        tdImporte.className = 'cell-amount';   // UNA clase de área por celda (lo lee el guard de SCRUM-301)
+        tdImporte.classList.add('amount');
+        tdImporte.textContent = typeof f.total === 'number' && Number.isFinite(f.total) && typeof fmtMoneyEs === 'function'
+          ? fmtMoneyEs(f.total, 'EUR')
+          : '—';
+        tr.appendChild(tdImporte);
 
         const tdEstado = document.createElement('td');
         tdEstado.className = 'cell-status';

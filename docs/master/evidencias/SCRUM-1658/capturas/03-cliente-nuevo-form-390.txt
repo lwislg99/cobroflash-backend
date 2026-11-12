@@ -1,0 +1,454 @@
+URL https://yaqu.app/dashboard/#customers
+--- TEXTO
+YQ
+YaQu
+Inicio
+Solicitudes
+Trabajos
+VENTA
+Presupuestos
+Albaranes
+Partes por valorar
+Facturas
+Cobros
+NEGOCIO
+Clientes
+Productos
+Proveedores
+Gastos
+Informes
+Libro de registro
+Facturas recibidas
+CUENTA
+Equipo
+Planes
+Configuración
+P
+PruebaQA
+Plan Pro
+Salir
+Clientes
+P
+Clientes
+
+3 clientes
+
+⬆ Importar clientes
+⬇ Clientes CSV
+Nuevo cliente
+Todos
+Empresas
+Personas
+Con cobro pendiente
+Más recientes
+Nombre A-Z
+Más pendiente de cobro
+Columnas
+#85
+luis
+34629965893
+💬
+Editar
+Portal
+📊 Historial
+#84
+QA 1198 cliente de prueba sin teléfono
+sin teléfono
+Editar
+Portal
+📊 Historial
+#83
+Cliente de pruebas QA
+34629965893
+💬
+Editar
+Portal
+📊 Historial
+Seleccionar todos
+Nuevo cliente
+?
+×
+Etiquetas
+Este contacto es
+Empresa
+Persona
+Nombre
+Teléfono
+🇪🇸 España +34
+🇦🇫 Afganistán +93
+🇦🇱 Albania +355
+🇩🇪 Alemania +49
+🇦🇩 Andorra +376
+🇦🇴 Angola +244
+🇦🇮 Anguila +1
+🇦🇬 Antigua y Barbuda +1
+🇸🇦 Arabia Saudí +966
+🇩🇿 Argelia +213
+🇦🇷 Argentina +54
+🇦🇲 Armenia +374
+🇦🇼 Aruba +297
+🇦🇺 Australia +61
+🇦🇹 Austria +43
+🇦🇿 Azerbaiyán +994
+🇧🇸 Bahamas +1
+🇧🇩 Bangladés +880
+🇧🇧 Barbados +1
+🇧🇭 Baréin +973
+🇧🇪 Bélgica +32
+🇧🇿 Belice +501
+🇧🇯 Benín +229
+🇧🇲 Bermudas +1
+🇧🇾 Bielorrusia +375
+🇧🇴 Bolivia +591
+🇧🇦 Bosnia y Herzegovina +387
+🇧🇼 Botsuana +267
+🇧🇷 Brasil +55
+🇧🇳 Brunéi +673
+🇧🇬 Bulgaria +359
+🇧🇫 Burkina Faso +226
+🇧🇮 Burundi +257
+🇧🇹 Bután +975
+🇨🇻 Cabo Verde +238
+🇰🇭 Camboya +855
+🇨🇲 Camerún +237
+🇨🇦 Canadá +1
+🇶🇦 Catar +974
+🇹🇩 Chad +235
+🇨🇿 Chequia +420
+🇨🇱 Chile +56
+🇨🇳 China +86
+🇨🇾 Chipre +357
+🇻🇦 Ciudad del Vaticano +39
+🇨🇴 Colombia +57
+🇰🇲 Comoras +269
+🇨🇬 Congo +242
+🇰🇵 Corea del Norte +850
+🇰🇷 Corea del Sur +82
+🇨🇷 Costa Rica +506
+🇨🇮 Côte d’Ivoire +225
+🇭🇷 Croacia +385
+🇨🇺 Cuba +53
+🇨🇼 Curazao +599
+🇩🇰 Dinamarca +45
+🇩🇲 Dominica +1
+🇪🇨 Ecuador +593
+🇪🇬 Egipto +20
+🇸🇻 El Salvador +503
+🇦🇪 Emiratos Árabes Unidos +971
+🇪🇷 Eritrea +291
+🇸🇰 Eslovaquia +421
+🇸🇮 Eslovenia +386
+🇺🇸 Estados Unidos +1
+🇪🇪 Estonia +372
+🇸🇿 Esuatini +268
+🇪🇹 Etiopía +251
+🇵🇭 Filipinas +63
+🇫🇮 Finlandia +358
+🇫🇯 Fiyi +679
+🇫🇷 Francia +33
+🇬🇦 Gabón +241
+🇬🇲 Gambia +220
+🇬🇪 Georgia +995
+🇬🇭 Ghana +233
+🇬🇮 Gibraltar +350
+🇬🇩 Granada +1
+🇬🇷 Grecia +30
+🇬🇱 Groenlandia +299
+🇬🇵 Guadalupe +590
+🇬🇺 Guam +1
+🇬🇹 Guatemala +502
+🇬🇫 Guayana Francesa +594
+🇬🇳 Guinea +224
+🇬🇶 Guinea Ecuatorial +240
+🇬🇼 Guinea-Bisáu +245
+🇬🇾 Guyana +592
+🇭🇹 Haití +509
+🇭🇳 Honduras +504
+🇭🇰 Hong Kong +852
+🇭🇺 Hungría +36
+🇮🇳 India +91
+🇮🇩 Indonesia +62
+🇮🇶 Irak +964
+🇮🇷 Irán +98
+🇮🇪 Irlanda +353
+🇮🇸 Islandia +354
+🇰🇾 Islas Caimán +1
+🇨🇰 Islas Cook +682
+🇫🇴 Islas Feroe +298
+🇫🇰 Islas Malvinas (Islas Falkland) +500
+🇲🇭 Islas Marshall +692
+🇸🇧 Islas Salomón +677
+🇻🇬 Islas Vírgenes Británicas +1
+🇻🇮 Islas Vírgenes de EE. UU. +1
+🇮🇱 Israel +972
+🇮🇹 Italia +39
+🇯🇲 Jamaica +1
+🇯🇵 Japón +81
+🇯🇴 Jordania +962
+🇰🇿 Kazajistán +7
+🇰🇪 Kenia +254
+🇰🇬 Kirguistán +996
+🇰🇮 Kiribati +686
+🇽🇰 Kosovo +383
+🇰🇼 Kuwait +965
+🇱🇦 Laos +856
+🇱🇸 Lesoto +266
+🇱🇻 Letonia +371
+🇱🇧 Líbano +961
+🇱🇷 Liberia +231
+🇱🇾 Libia +218
+🇱🇮 Liechtenstein +423
+🇱🇹 Lituania +370
+🇱🇺 Luxemburgo +352
+🇲🇴 Macao +853
+🇲🇰 Macedonia del Norte +389
+🇲🇬 Madagascar +261
+🇲🇾 Malasia +60
+🇲🇼 Malaui +265
+🇲🇻 Maldivas +960
+🇲🇱 Mali +223
+🇲🇹 Malta +356
+🇲🇦 Marruecos +212
+🇲🇶 Martinica +596
+🇲🇺 Mauricio +230
+🇲🇷 Mauritania +222
+🇲🇽 México +52
+🇫🇲 Micronesia +691
+🇲🇩 Moldavia +373
+🇲🇨 Mónaco +377
+🇲🇳 Mongolia +976
+🇲🇪 Montenegro +382
+🇲🇿 Mozambique +258
+🇲🇲 Myanmar (Birmania) +95
+🇳🇦 Namibia +264
+🇳🇷 Nauru +674
+🇳🇵 Nepal +977
+🇳🇮 Nicaragua +505
+🇳🇪 Níger +227
+🇳🇬 Nigeria +234
+🇳🇺 Niue +683
+🇳🇴 Noruega +47
+🇳🇨 Nueva Caledonia +687
+🇳🇿 Nueva Zelanda +64
+🇴🇲 Omán +968
+🇳🇱 Países Bajos +31
+🇵🇰 Pakistán +92
+🇵🇼 Palaos +680
+🇵🇸 Palestina +970
+🇵🇦 Panamá +507
+🇵🇬 Papúa Nueva Guinea +675
+🇵🇾 Paraguay +595
+🇵🇪 Perú +51
+🇵🇫 Polinesia Francesa +689
+🇵🇱 Polonia +48
+🇵🇹 Portugal +351
+🇵🇷 Puerto Rico +1
+🇬🇧 Reino Unido +44
+🇨🇫 República Centroafricana +236
+🇨🇩 República Democrática del Congo +243
+🇩🇴 República Dominicana +1
+🇷🇪 Reunión +262
+🇷🇼 Ruanda +250
+🇷🇴 Rumanía +40
+🇷🇺 Rusia +7
+🇼🇸 Samoa +685
+🇦🇸 Samoa Americana +1
+🇰🇳 San Cristóbal y Nieves +1
+🇸🇲 San Marino +378
+🇵🇲 San Pedro y Miquelón +508
+🇻🇨 San Vicente y las Granadinas +1
+🇱🇨 Santa Lucía +1
+🇸🇹 Santo Tomé y Príncipe +239
+🇸🇳 Senegal +221
+🇷🇸 Serbia +381
+🇸🇨 Seychelles +248
+🇸🇱 Sierra Leona +232
+🇸🇬 Singapur +65
+🇸🇾 Siria +963
+🇸🇴 Somalia +252
+🇱🇰 Sri Lanka +94
+🇿🇦 Sudáfrica +27
+🇸🇩 Sudán +249
+🇸🇸 Sudán del Sur +211
+🇸🇪 Suecia +46
+🇨🇭 Suiza +41
+🇸🇷 Surinam +597
+🇹🇭 Tailandia +66
+🇹🇼 Taiwán +886
+🇹🇿 Tanzania +255
+🇹🇯 Tayikistán +992
+🇹🇱 Timor-Leste +670
+🇹🇬 Togo +228
+🇹🇴 Tonga +676
+🇹🇹 Trinidad y Tobago +1
+🇹🇳 Túnez +216
+🇹🇲 Turkmenistán +993
+🇹🇷 Turquía +90
+🇹🇻 Tuvalu +688
+🇺🇦 Ucrania +380
+🇺🇬 Uganda +256
+🇺🇾 Uruguay +598
+🇺🇿 Uzbekistán +998
+🇻🇺 Vanuatu +678
+🇻🇪 Venezuela +58
+🇻🇳 Vietnam +84
+🇾🇪 Yemen +967
+🇩🇯 Yibuti +253
+🇿🇲 Zambia +260
+🇿🇼 Zimbabue +263
+Móvil (WhatsApp)
+🇪🇸 España +34
+🇦🇫 Afganistán +93
+🇦🇱 Albania +355
+🇩🇪 Alemania +49
+🇦🇩 Andorra +376
+🇦🇴 Angola +244
+🇦🇮 Anguila +1
+🇦🇬 Antigua y Barbuda +1
+🇸🇦 Arabia Saudí +966
+🇩🇿 Argelia +213
+🇦🇷 Argentina +54
+🇦🇲 Armenia +374
+🇦🇼 Aruba +297
+🇦🇺 Australia +61
+🇦🇹 Austria +43
+🇦🇿 Azerbaiyán +994
+🇧🇸 Bahamas +1
+🇧🇩 Bangladés +880
+🇧🇧 Barbados +1
+🇧🇭 Baréin +973
+🇧🇪 Bélgica +32
+🇧🇿 Belice +501
+🇧🇯 Benín +229
+🇧🇲 Bermudas +1
+🇧🇾 Bielorrusia +375
+🇧🇴 Bolivia +591
+🇧🇦 Bosnia y Herzegovina +387
+🇧🇼 Botsuana +267
+🇧🇷 Brasil +55
+🇧🇳 Brunéi +673
+🇧🇬 Bulgaria +359
+🇧🇫 Burkina Faso +226
+🇧🇮 Burundi +257
+🇧🇹 Bután +975
+🇨🇻 Cabo Verde +238
+🇰🇭 Camboya +855
+🇨🇲 Camerún +237
+🇨🇦 Canadá +1
+🇶🇦 Catar +974
+🇹🇩 Chad +235
+🇨🇿 Chequia +420
+🇨🇱 Chile +56
+🇨🇳 China +86
+🇨🇾 Chipre +357
+🇻🇦 Ciudad del Vaticano +39
+🇨🇴 Colombia +57
+🇰🇲 Comoras +269
+🇨🇬 Congo +242
+🇰🇵 Corea del Norte +8
+--- PULSABLES
+button[submit] «Inicio» 228x34 @-238,85
+button[submit] «Solicitudes» 228x34 @-238,121
+button[submit] «Trabajos» 228x34 @-238,157
+button[button] «Presupuestos» 228x34 @-238,227
+button[submit] «Albaranes» 228x34 @-238,263
+button[submit] «Partes por valorar» 228x34 @-238,299
+button[submit] «Facturas» 228x34 @-238,335
+button[submit] «Cobros» 228x34 @-238,371
+button[submit] «Clientes» 228x34 @-238,440
+button[submit] «Productos» 228x34 @-238,476
+button[submit] «Proveedores» 228x34 @-238,512
+button[submit] «Gastos» 228x34 @-238,548
+button[submit] «Informes» 228x34 @-238,584
+button[submit] «Libro de registro» 228x34 @-238,620
+button[submit] «Facturas recibidas» 228x34 @-238,656
+button[submit] «Equipo» 228x34 @-238,726
+button[submit] «Planes» 228x34 @-238,762
+button[submit] «Configuración» 228x34 @-238,798
+button[submit] «Salir» 39x22 @-61,867
+button[submit] «Menú» 36x36 @12,12
+button[submit] «⬆ Importar clientes» 138x44 @33,155
+a «⬇ Clientes CSV» 115x44 @179,155
+button[submit] «Nuevo cliente» 324x44 @33,207
+input[text] «Buscar por nombre, teléfono, email o referencia…» 324x44 @33,278
+button[button] «Todos» 72x44 @38,337
+button[button] «Empresas» 97x44 @114,337
+button[button] «Personas» 93x44 @214,337
+button[button] «Con cobro pendiente» 172x44 @38,401
+select[select-one] «Más recientes Nombre A-Z Más pendiente de cobro» 202x44 @33,460
+summary «Columnas» 90x44 @245,460
+input[checkbox] «on» 18x18 @150,528
+input[checkbox] «on» 18x18 @150,572
+input[checkbox] «on» 18x18 @150,616
+input[checkbox] «on» 18x18 @150,660
+input[checkbox] «on» 18x18 @150,704
+input[checkbox] «on» 18x18 @150,748
+input[checkbox] «on» 18x18 @150,792
+input[checkbox] «on» 18x18 @150,836
+input[checkbox] «on» 18x18 @40,538
+a «34629965893» 88x44 @40,590
+a «💬» 44x44 @140,590
+button[button] «Editar» 61x44 @40,647
+button[button] «Portal» 62x44 @107,647
+button[button] «📊 Historial» 94x44 @175,647
+input[checkbox] «on» 18x18 @40,727
+button[button] «Editar» 61x44 @40,813
+button[button] «Portal» 62x44 @107,813
+button[button] «📊 Historial» 94x44 @175,813
+input[checkbox] «on» 18x18 @40,893
+a «34629965893» 88x44 @40,945
+a «💬» 44x44 @140,945
+button[button] «Editar» 61x44 @40,1002
+button[button] «Portal» 62x44 @107,1002
+button[button] «📊 Historial» 94x44 @175,1002
+input[checkbox] «on» 18x18 @27,1082
+button[button] «?» 29x26 @307,106
+button[button] «×» 30x30 @336,104
+input[text] «comunidad, administrador, urgencias…» 342x45 @24,175
+input[radio] «EMPRESA» 16x16 @72,277
+input[radio] «PERSONA» 16x16 @242,277
+input[text] «name» 342x45 @24,350
+select[select-one] «🇪🇸 España +34 🇦🇫 Afganistán +93 🇦🇱 Albania +355 🇩🇪 A» 150x45 @24,433
+input[text] «phone» 184x45 @182,433
+select[select-one] «🇪🇸 España +34 🇦🇫 Afganistán +93 🇦🇱 Albania +355 🇩🇪 A» 150x45 @24,516
+input[text] «mobile» 184x45 @182,516
+input[email] «email» 342x45 @24,599
+input[text] «legalName» 342x45 @24,682
+input[text] «taxId» 342x45 @24,764
+select[select-one] «Sin empresa» 342x45 @24,847
+input[text] «billingAddress» 342x45 @24,930
+input[text] «billingCity» 342x45 @24,1013
+input[text] «billingPostalCode» 342x45 @24,1096
+input[text] «billingProvince» 342x45 @24,1179
+select[select-one] «— España Afganistán Albania Alemania Andorra Angola Anguila » 342x45 @24,1262
+select[select-one] «Sin clasificar Particular Empresa / profesional» 342x45 @24,1345
+select[select-one] «No consta Sí, está en recargo No está en recargo» 342x45 @24,1427
+input[text] «Nº de expediente, finca, código…» 342x45 @24,1510
+input[number] «dtoPorDefecto» 342x45 @24,1593
+textarea[textarea] «notes» 342x67 @24,1676
+input[checkbox] «on» 13x13 @24,1775
+button[button] «Cancelar» 92x44 @160,1817
+button[submit] «Guardar» 106x44 @260,1817
+--- DESBORDES
+--- <44px
+button «Menú» 36x36
+input «on» 18x18
+input «on» 18x18
+input «on» 18x18
+input «on» 18x18
+input «on» 18x18
+input «on» 18x18
+input «on» 18x18
+input «on» 18x18
+input «luis» 18x18
+input «QA 1198 cliente de prueba sin » 18x18
+input «Cliente de pruebas QA» 18x18
+input «Seleccionar todos» 18x18
+button «?» 29x26
+button «×» 30x30
+input «EMPRESA» 16x16
+input «PERSONA» 16x16
+input «on» 13x13
+--- LOG
+[warning] Service Worker registration blocked by Playwright
+--- NOTAS

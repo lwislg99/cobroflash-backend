@@ -120,7 +120,35 @@ function clavesRepartidas(reparto) {
     .map((it) => it.clave);
 }
 
+// ── SCRUM-1694 · ¿HAY UN BORRADOR DE HOY EN ESTE TRABAJO? ─────────────────────────────────────
+//
+// D2 (SCRUM-1686 c.21461) y M2 en el máster: un parte por visita. «+ Nuevo parte» CREA, salvo que
+// el trabajo ya tenga un parte en `borrador` de HOY: entonces abre ése, para que entrar a mirar no
+// deje partes vacíos. Un parte `firmado` hoy NO cuenta (esa visita ya se cerró) y un borrador de
+// ayer tampoco (es otra visita).
+//
+// «HOY» ES EL DÍA NATURAL EN LA ZONA DEL MERCHANT (`Merchant.timezone`, regla de `zonaDelMerchant`:
+// sin zona → UTC). Es la misma con la que el alta del parte le pone el año al número
+// (`partes.routes.ts`, POST): contar «hoy» en la zona del navegador haría que un móvil con la hora
+// de otro sitio abriera o creara lo que no toca.
+//
+// `cal` es `window.quoteCaducidad` (SCRUM-633), que ya sabe el día natural en una zona; se pasa
+// como argumento para no atar esta pieza a un orden de carga y poder probarla en Node.
+// `partes` llega ordenada por fecha DESC (la ordena el servidor): el primero que case es el más
+// reciente.
+function borradorDeHoy(partes, merchant, ahora, cal) {
+  if (!Array.isArray(partes) || !partes.length || !cal) return null;
+  const zona = cal.zonaDelMerchant(merchant);
+  const hoy = cal.diaNaturalEn(ahora instanceof Date ? ahora : new Date(), zona);
+  for (const p of partes) {
+    if (!p || p.estado !== 'borrador' || !p.fecha) continue;
+    if (cal.diaNaturalEn(p.fecha, zona) === hoy) return p;
+  }
+  return null;
+}
+
 if (typeof window !== 'undefined') {
+  window.borradorDeHoy = borradorDeHoy;
   window.tipoDeFactura = tipoDeFactura;
   window.repartirDocumentos = repartirDocumentos;
   window.DESTINO_POR_TIPO = DESTINO_POR_TIPO;
@@ -128,5 +156,5 @@ if (typeof window !== 'undefined') {
   window.SECCIONES_CUERPO = SECCIONES_CUERPO;
 }
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { tipoDeFactura, repartirDocumentos, clavesRepartidas, DESTINO_POR_TIPO, DESTINOS_DOCUMENTO, SECCIONES_CUERPO };
+  module.exports = { borradorDeHoy, tipoDeFactura, repartirDocumentos, clavesRepartidas, DESTINO_POR_TIPO, DESTINOS_DOCUMENTO, SECCIONES_CUERPO };
 }
