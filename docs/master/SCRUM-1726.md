@@ -21,3 +21,21 @@ rojo primero en las cuatro piezas, 5/5 mutaciones vivas con `aplicarUna`, `tsc -
 NO medido: yaqu.app, la zona del proceso en Railway y la suite entera en local.
 
 A9: aviso → cicatriz J1 «Crucé los 200k (277.528) al acabar el arnés de mutaciones: me medí al acabar el arranque y Jira, y no tras la tanda dirigida, el mismo fallo de SCRUM-1063k» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
+
+## SCRUM-1726-ci · el obligatorio de #3136 en rojo por un export sin llamador (jv-j1ei, 12-nov-2026)
+
+**Medido contra:** `origin/main` = `29e862090a7bf0e0def63827244a49d7abe183e5` · 2026-11-12T18:14:11Z
+
+Job 131357943241: 13.479 tests, 2 caen, los dos de `tests/scrum411-exports-inalcanzables.test.mjs`
+(«CONTROL POSITIVO: los 190 de hoy…» y «las categorías SUMAN el total»: 245 declarados contra 246
+medidos). El huérfano es `ZONA_PENINSULAR`, exportada por `invoicing/domain/selloTemporal.ts` y leída
+sólo dentro de ese fichero. No era `isQuietHours` (la pista del encargo): ningún huérfano declarado ganó
+lector. Arreglo de código, no de lista: la constante pierde el `export`. Rojo en local antes (25 tests,
+2 caen, los mismos) y verde después (25/25).
+
+Por qué la dirigida no lo vio: según c.21754 fue `scrum1470` + `scrum1093h` + `scrum1726` (45 casos), y
+`scrum411` no estaba: barre todos los exports de `src/` sin nombrar ningún fichero, el mismo hueco que
+`scrum622` en SCRUM-1336 (cicatriz J1 del 2026-10-01). Que `tests:que-cubren` lo liste o no: NO medido.
+El defecto, en cambio, sí tiene quien lo pare antes de `main`, y lo paró:
+
+A9: comprobación → `tests/scrum411-exports-inalcanzables.test.mjs`
