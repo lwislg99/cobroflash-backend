@@ -1864,7 +1864,12 @@ html, body { overflow-x: clip; }
   text-transform: uppercase; color: var(--muted, #6b756f);
 }
 
-.quote-line input {
+/* S2: SCRUM-1716 · el campo del DESCUENTO GLOBAL comparte esta regla. Cuelga de `.quote-dto-global`,
+   S2: FUERA de `.quote-line`, y desde SCRUM-594 salía con el estilo del navegador (medido en yaqu.app
+   S2: el 12-nov a 390 y 1280: borde 2px inset, radio 0, padding 0, 13,33 px, texto negro). Es el campo
+   S2: de DESIGN.md §Inputs, el mismo que el de las líneas de al lado: un selector más, no otra regla. */
+.quote-line input,
+.quote-dto-global__campo input {
   width: 100%;
   min-height: 44px;                 /* target al pulgar (AB6) — antes 7px de padding */
   padding: 10px 12px;
@@ -1875,7 +1880,8 @@ html, body { overflow-x: clip; }
   background: var(--surface, #fff);
   transition: border-color .12s, box-shadow .12s;
 }
-.quote-line input:focus {
+.quote-line input:focus,
+.quote-dto-global__campo input:focus {
   outline: none;
   border-color: var(--green-600, #16a34a);
   box-shadow: var(--ring);   /* anillo Foco (DESIGN.md §4) */
