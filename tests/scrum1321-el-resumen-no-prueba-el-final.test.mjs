@@ -204,30 +204,29 @@ const unidad = (p) => path.parse(path.resolve(p)).root.toUpperCase();
  *   ① el temporal del sistema, si está en la unidad del repo (el CI, y casi todas las máquinas);
  *   ② si no, junto al árbol: en su carpeta madre, en la MISMA unidad y FUERA del árbol (un temporal
  *      DENTRO del repo es el rojo intermitente de SCRUM-824);
- *   ③ si tampoco se puede crear allí, entrega el motivo a `alFallar` y no devuelve nada: el test
- *      sale como SALTO declarado.
- *
- * 🔴 La FORMA es parte del arreglo (SCRUM-1655b): `const` flecha con UN solo `return`, y las dos ramas
- * pasando por `temporal()` de la casa. Así `scrum824` ve de dónde cuelga el temporal (las dos ramas
- * salen TMP). Con una `function`, tres `return` y el `dir` sacado por desestructuración, el censo no
- * podía probarlo y el fichero entraba en su conjunto SIN PROBAR (obligatorio de #3099).
+ *   ③ si tampoco se puede crear allí, `null` con el motivo, y el test sale como SALTO declarado.
  */
-const temporalEnLaUnidadDelRepo = (prefijo, alFallar) => {
+const mismaUnidad = () => unidad(os.tmpdir()) === unidad(RAIZ);
+/** `undefined` = el temporal del sistema (misma unidad); si no, la carpeta madre del árbol. */
+const baseDelTemporal = () => (mismaUnidad() ? undefined : path.dirname(RAIZ));
+/** Por qué la puerta no se puede medir aquí, o `null` si se puede. */
+function motivoDeSalto() {
+  if (mismaUnidad()) return null;
   const madre = path.dirname(RAIZ);
-  try {
-    // `temporal` de la casa: lo borra aunque el test caiga a mitad, y LANZA si `madre` cae en el árbol.
-    return unidad(os.tmpdir()) === unidad(RAIZ) ? temporal(prefijo) : temporal(prefijo, { dentroDe: madre });
-  } catch (e) {
-    alFallar(`otra unidad: el temporal del sistema está en ${unidad(os.tmpdir())} y el repo en ${unidad(RAIZ)}, `
-      + `y en ${madre} no se pudo crear uno (${e.code || e.message}). PUERTA 1b NO MEDIDA.`);
+  try { fs.accessSync(madre, fs.constants.W_OK); return null; } catch (e) {
+    return `otra unidad: el temporal del sistema está en ${unidad(os.tmpdir())} y el repo en ${unidad(RAIZ)}, `
+      + `y en ${madre} no se puede crear uno (${e.code || e.message}). PUERTA 1b NO MEDIDA.`;
   }
-};
+}
 
 test('SCRUM-1321 · 🔴 PUERTA 1b: un ancla que casa DOS veces sale CIEGA nombrando las líneas, y NO se muta nada', async (t) => {
   // El fichero vigilado y el guard viven FUERA del árbol: si la puerta no parase, lo que se
   // mutaría es este temporal y no un fichero del repositorio.
-  const dir = temporalEnLaUnidadDelRepo('scrum1321-puerta-', (motivo) => t.skip(motivo));
-  if (!dir) return;
+  const motivo = motivoDeSalto();
+  if (motivo) { t.skip(motivo); return; }
+  // `temporal` de la casa: lo borra aunque el test caiga, y LANZA si `dentroDe` cae en el árbol.
+  // Se llama AQUÍ, a pelo, para que el censo de SCRUM-824 vea de dónde cuelga `dir`.
+  const dir = temporal('scrum1321-puerta-', { dentroDe: baseDelTemporal() });
   assert.ok(!caeEnElArbol(dir, RAIZ),
     `🔴 el temporal ha nacido DENTRO del árbol (${dir}): es el rojo intermitente de SCRUM-824.`);
   try {

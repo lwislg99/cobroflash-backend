@@ -82,27 +82,39 @@ A9: comprobación → `tests/scrum824-temporales-fuera-del-arbol.test.mjs`
 y esa función era una `function` con tres `return`. El censo (`scripts/_temporales-en-el-arbol.mjs`) solo sigue un `const` con un único
 `return`, y no atraviesa una desestructuración. Sus dos `writeFileSync` salían `DESCONOCIDO`. `guards:entrada` no lleva `scrum824`, así que en local no se vio.
 
-**Arreglado en el test, no en el censo (regla 41), y sin tocar `SIN_PROBAR_CONOCIDOS`.** `temporalEnLaUnidadDelRepo` pasa a ser
-un `const` flecha con UN `return`: `unidad(os.tmpdir()) === unidad(RAIZ) ? temporal(prefijo) : temporal(prefijo, { dentroDe: madre })`.
-Las dos ramas pasan por `temporal()` de la casa, que el censo reconoce como TMP. El salto declarado se mantiene: el `catch` entrega el
-motivo a `alFallar` (el test pasa `t.skip`) y el test sale si no hay `dir`. El comportamiento en los tres caminos no cambia.
+**El arreglo que entra lo escribió `claude[bot]`, no esta sesión:** commit `f4c2c14b9`, empujado a esta rama el 2026-11-12T11:00:36Z.
+Mientras tanto, jv-j3ca seguía viva y trabajando en la rama. Es el caso de SCRUM-1410: un bot que empuja en una rama con una sesión viva.
+Lo vi al ir a empujar: el remoto ya no estaba en `9bd677d82`. El orquestador eligió quedarse con la versión del bot, que ya tenía CI.
+Esta rama la mergea (`git merge f4c2c14b9`) y su test queda byte a byte igual que el del bot (`git hash-object` = `482015c54`).
 
-| control | qué | resultado |
+**Qué hace la versión del bot.** El arreglo va en el test, no en el censo (regla 41), y no toca `SIN_PROBAR_CONOCIDOS`.
+`dir` se crea en el propio test, a pelo: `temporal('scrum1321-puerta-', { dentroDe: baseDelTemporal() })`.
+`baseDelTemporal()` da `undefined` (el temporal del sistema) si está en la unidad del repo, y si no, la carpeta madre del árbol.
+El salto lo decide antes `motivoDeSalto()`, con `fs.accessSync(madre, W_OK)`, y nombra las dos unidades.
+⚠️ Diferencia con la mía: si la madre se puede escribir pero `temporal()` lanza igualmente, la del bot FALLA en vez de saltar.
+No lo he medido; lo leo del código.
+
+**Mi versión era equivalente y NO entra** (commit `4203f1a7b`, nunca empujado). Era un `const` flecha con un `return` y las dos ramas por `temporal()`.
+Las mismas sondas daban lo mismo: censo 5 de 5 TMP, el negativo cazado y 2 de 2 mutaciones vivas en las dos unidades.
+
+| control (versión del bot salvo donde se dice) | qué | resultado |
 | --- | --- | --- |
-| censo sobre la versión de la rama (`9bd677d82`) | `clasificaFuente` | 5 sitios: 3 TMP + **2 DESCONOCIDO** (`:235`, `:237`) |
-| censo sobre la versión nueva | `clasificaFuente` | 5 sitios, **los 5 TMP** |
-| negativo: la rama ② cambiada a `fs.mkdtempSync(path.join(RAIZ, "tmp-"))` | `clasificaFuente` | 6 sitios, **3 ARBOL**: el censo sigue cazando |
-| `sinProbar(censar(RAIZ))` | conjunto | sólo `scrum951d`, que ya estaba en la lista: `scrum1321` sale |
+| censo sobre la versión de `9bd677d82` | `clasificaFuente` | 5 sitios: 3 TMP + **2 DESCONOCIDO** (`:235`, `:237`) |
+| censo sobre la versión del bot | `clasificaFuente` | 5 sitios, **los 5 TMP** |
+| negativo (sobre mi versión): la rama ② cambiada a `fs.mkdtempSync(path.join(RAIZ, "tmp-"))` | `clasificaFuente` | 6 sitios, **3 ARBOL**: el censo sigue cazando |
+| `sinProbar(censar(RAIZ))` con el test del bot en el árbol | conjunto | sólo `scrum951d`, que ya estaba en la lista: `scrum1321` sale |
 
-**Tests (todos tras el cambio):**
+**Tests de la versión del bot:**
 · `scrum824` + `scrum1321`, TEMP en `C:`: **14 · 14 pass · 0 skipped**, salida 0.
-· `scrum1321` con TEMP en `Y:` (`subst`): **5 · 5 pass · 0 skipped**, salida 0. Control rojo, la versión de `main` (`75d487862`) con TEMP en `Y:`: 5 · 4 pass · **1 fail**, salida 1.
+· `scrum1321` con TEMP en `Y:` (`subst`): **5 · 5 pass · 0 skipped**, salida 0.
+· Control rojo: la versión de `main` (`75d487862`) con TEMP en `Y:` da 5 · 4 pass · **1 fail**, salida 1.
 · Mutaciones del catálogo de `scrum1321`, con `censoDeDeclaraciones` + `correr` + `aplicarUna` de la casa (driver en el tmp del trabajo, no comiteado):
-**2 de 2 VIVAS con TEMP en `C:` y 2 de 2 con TEMP en `Y:`** (las dos: «EL CASO MEDIDO» y «PUERTA 1b»), y `scripts/` + `src/` quedaron en HEAD.
-· `scrum824`, `scrum1321`, `scrum237`, `scrum976`, `scrum1387`, `scrum1387d`, `scrum1387f`, `scrum836`, `scrum267`, `scrum273`, `scrum1294`: **90 · 90 pass · 0 fail · 0 skipped**, salida 0.
-· `guards:entrada`: **15 guards, 170 · 170 pass · 0 skipped**, salida 0. Los 5 de árbol entero que pide a mano (`scrum195`, `scrum414`, `scrum694`, `scrum710b`, `scrum737`): **38 · 38 pass · 0 skipped**, salida 0.
-· El camino ③ (el salto) sigue **sin ejercitar**, como en el tramo de arriba.
-· **Suite entera local: NO CORRIDA.**
+**2 de 2 VIVAS con TEMP en `C:` y 2 de 2 con TEMP en `Y:`** («EL CASO MEDIDO» y «PUERTA 1b»). `scripts/` y `src/` quedaron en HEAD.
+· Repetidos sobre el árbol ya mergeado (el test del bot y este tramo en su versión de antes de esta línea):
+  · `scrum824`, `scrum1321`, `scrum237`, `scrum976`, `scrum1387`, `scrum1387d`, `scrum1387f`, `scrum836`, `scrum267`, `scrum273`, `scrum1294`: **90 · 90 pass · 0 skipped**, salida 0;
+  · `guards:entrada`: **15 guards, 170 · 170 pass**, salida 0;
+  · sus 5 de árbol entero: **38 · 38 pass · 0 skipped**, salida 0.
+· El camino del salto sigue **sin ejercitar**. · **Suite entera local: NO CORRIDA.**
 
 **Mis errores.**
 · Lancé `node scripts/meta-guard-mutaciones.mjs --help` para ver sus opciones. No tiene `--help`: arrancó la pasada entera, que muta el árbol.
