@@ -30,6 +30,7 @@ import { fileURLToPath } from 'node:url';
 import {
   diagnosticoDeCorte, ausentesRespectoALaLimpia, aplicarUna,
 } from '../scripts/meta-guard-mutaciones.mjs';
+import { temporal, caeEnElArbol } from './_temporal.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -40,6 +41,14 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: '  return NOMBRES_DE(limpia).filter((n) => !vistos.has(n));',
     a: '  return []; // SCRUM-1321: no falta nunca nada, a proposito',
     cae: 'SCRUM-1321 · 🔴 EL CASO MEDIDO: 20 en la limpia y 16 en la mutada',
+  },
+  {
+    // SCRUM-1655 · la PUERTA 1b deja de parar un ancla ambigua. Con el temporal movido a la unidad
+    // del repo, el test tiene que seguir cayendo por ESTO: si no cayera, el arreglo la habría apagado.
+    fichero: 'scripts/meta-guard-mutaciones.mjs',
+    de: '  if (ambigua) {',
+    a: '  if (false && ambigua) { // SCRUM-1655: la puerta 1b no para nunca, a proposito',
+    cae: 'SCRUM-1321 · 🔴 PUERTA 1b: un ancla que casa DOS veces sale CIEGA',
   },
 ];
 
@@ -184,10 +193,42 @@ test('SCRUM-1321 · sin la pasada limpia no afirma NADA: ni corte ni renombrado'
 
 // ═══ ③ LA PUERTA DE `aplicarUna` ═════════════════════════════════════════════════════════════
 
-test('SCRUM-1321 · 🔴 PUERTA 1b: un ancla que casa DOS veces sale CIEGA nombrando las líneas, y NO se muta nada', async () => {
+/** La unidad de una ruta («C:\\», «/»). En Windows no distingue mayúsculas: `c:\` y `C:\` son la misma. */
+const unidad = (p) => path.parse(path.resolve(p)).root.toUpperCase();
+
+/**
+ * SCRUM-1655 · dónde nace el temporal de la PUERTA 1b. `aplicarUna` recibe el fichero RELATIVO a la
+ * raíz del repo, y entre dos unidades de Windows `path.relative` devuelve la ruta ABSOLUTA: con el
+ * temporal del sistema en C: y el árbol en D: la puerta no se alcanzaba y el test FALLABA sin haber
+ * medido nada (tres sesiones lo descartaron a mano). Por orden:
+ *   ① el temporal del sistema, si está en la unidad del repo (el CI, y casi todas las máquinas);
+ *   ② si no, junto al árbol: en su carpeta madre, en la MISMA unidad y FUERA del árbol (un temporal
+ *      DENTRO del repo es el rojo intermitente de SCRUM-824);
+ *   ③ si tampoco se puede crear allí, `null` con el motivo, y el test sale como SALTO declarado.
+ */
+function temporalEnLaUnidadDelRepo(prefijo) {
+  const sistema = os.tmpdir();
+  if (unidad(sistema) === unidad(RAIZ)) return { dir: temporal(prefijo) };
+  const madre = path.dirname(RAIZ);
+  try {
+    // `temporal` de la casa: lo borra aunque el test caiga a mitad, y LANZA si `madre` cae en el árbol.
+    return { dir: temporal(prefijo, { dentroDe: madre }) };
+  } catch (e) {
+    return {
+      dir: null,
+      motivo: `otra unidad: el temporal del sistema está en ${unidad(sistema)} y el repo en ${unidad(RAIZ)}, `
+        + `y en ${madre} no se pudo crear uno (${e.code || e.message}). PUERTA 1b NO MEDIDA.`,
+    };
+  }
+}
+
+test('SCRUM-1321 · 🔴 PUERTA 1b: un ancla que casa DOS veces sale CIEGA nombrando las líneas, y NO se muta nada', async (t) => {
   // El fichero vigilado y el guard viven FUERA del árbol: si la puerta no parase, lo que se
   // mutaría es este temporal y no un fichero del repositorio.
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1321-puerta-'));
+  const { dir, motivo } = temporalEnLaUnidadDelRepo('scrum1321-puerta-');
+  if (!dir) { t.skip(motivo); return; }
+  assert.ok(!caeEnElArbol(dir, RAIZ),
+    `🔴 el temporal ha nacido DENTRO del árbol (${dir}): es el rojo intermitente de SCRUM-824.`);
   try {
     const vigilado = path.join(dir, 'vigilado.yml');
     const ORIGINAL = "        if: a == 'si' && b == 'true'\n        id: accion\n        if: a == 'si'\n";
