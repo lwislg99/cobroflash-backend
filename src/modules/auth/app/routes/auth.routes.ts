@@ -6,6 +6,7 @@ import { rateLimit } from '../../../../core/http/rateLimit'; // A11.2 (S3)
 import { prisma } from '../../../../core/db/prisma';
 import { isInvitedEmail } from '../../../../core/config/env';
 import { LOGIN_JS, RUTA_LOGIN_JS } from './loginNavegador'; // SCRUM-1647c
+import { ALTA_JS, RUTA_ALTA_JS } from './altaNavegador'; // SCRUM-1647d
 
 const router = Router();
 
@@ -202,6 +203,14 @@ router.get(RUTA_LOGIN_JS, (_req, res) => {
   res.setHeader('Content-Type', 'text/javascript; charset=utf-8');
   res.setHeader('Cache-Control', 'no-cache');
   res.send(LOGIN_JS);
+});
+
+// GET /auth/js/alta.js — SCRUM-1647d (J3): el guion de `public/register.html` (incluido el alta con
+// invitación de SCRUM-1685), fuera del HTML por el mismo motivo. Cadena constante, `no-cache`.
+router.get(RUTA_ALTA_JS, (_req, res) => {
+  res.setHeader('Content-Type', 'text/javascript; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.send(ALTA_JS);
 });
 
 export default router;
