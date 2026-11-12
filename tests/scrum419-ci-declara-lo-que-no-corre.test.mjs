@@ -234,6 +234,10 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // real con una sesión de técnico guardada en la base, y lo que mide es la pertenencia por los tres
   // ejes (campo, tabla `assignees`, autoría) que contesta Postgres. Sólo el desechable: crea y borra un merchant.
   'scrum1706-operario-abre-su-trabajo.test.mjs': 1,
+  // SCRUM-1662: «Qué hay que hacer» en su columna propia. Necesita banco porque lo que mide es la FILA
+  // que escriben `POST` y `PATCH /admin/jobs` de verdad (`que_hay_que_hacer` lleno, `notes` intacto) y
+  // la lectura del operario con su sesión guardada en la base. Sólo el desechable: crea y borra un merchant.
+  'scrum1662-que-hay-que-hacer.test.mjs': 1,
   // SCRUM-1403: los TRES que ejercitan el recorte de presupuestos del Tecnico y la pestana de
   // documentos de la ficha de cliente contra Prisma de verdad. Necesitan banco por el mismo motivo
   // que los de SCRUM-1397: lo que vigilan es el WHERE (el recorte en AND con la busqueda y con el

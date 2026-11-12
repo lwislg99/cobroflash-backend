@@ -496,6 +496,9 @@ async function serializeJob(job: Job, refs?: JobRefs) {
     scheduledAt: job.scheduledAt,
     assignedUserId: job.assignedUserId,
     notes: job.notes,
+    // SCRUM-1662 · «Qué hay que hacer»: la tarea del trabajo, que el operario SÍ ve (no es `notes`).
+    // `null` en los trabajos anteriores: no se copia nada de `notes`, que se escribieron como privadas.
+    queHayQueHacer: job.queHayQueHacer ?? null,
     createdAt: job.createdAt,
     // SCRUM-10: campos del contenedor "Trabajo". Fallback a derivado para Jobs
     // anteriores (titulo/totalAceptado null) → sin cambiar el comportamiento visible.
@@ -1009,7 +1012,7 @@ router.get('/:id/gastos', async (req, res) => {
   }
 });
 
-// PATCH /admin/jobs/:id — { status?, scheduledAt?, notes?, assignedUserId? }
+// PATCH /admin/jobs/:id — { status?, scheduledAt?, notes?, queHayQueHacer?, assignedUserId? }
 router.patch('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -1065,6 +1068,12 @@ router.patch('/:id', async (req, res) => {
       data.scheduledAt = d;
     }
     if (req.body?.notes !== undefined) data.notes = String(req.body.notes || '').slice(0, 2000) || null;
+    // SCRUM-1662 · «Qué hay que hacer» se edita aquí. NO es admin-only (regla de SCRUM-120/164: lo
+    // reservado al admin es lo que toca dinero o fiscal; la tarea es operativa, como `titulo`).
+    // Mismo tope que en el alta (2.000, `datosDeTrabajoDirecto`); vacío → `null`, un solo «no consta».
+    if (req.body?.queHayQueHacer !== undefined) {
+      data.queHayQueHacer = String(req.body.queHayQueHacer || '').trim().slice(0, 2000) || null;
+    }
     // ── SCRUM-317 (G2) · el pro pone NOMBRE al Trabajo ──────────────────────────────────
     //
     // `titulo` existía en el modelo desde SCRUM-10 y NINGUNA ruta lo escribía: se rellenaba solo
