@@ -1,0 +1,671 @@
+{
+  "navegador": {
+    "ok": true,
+    "ruta": "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+    "quien": "Edge (Windows)"
+  },
+  "escenarios": {
+    "A-main-sin": {
+      "paginas": {
+        "transferencia": {
+          "capturas": {
+            "390": {
+              "fichero": "A-main-sin-transferencia-390.png",
+              "sha256": "d4775edca87cb21c06b21b6bde7efe8b2033d43fe276bfcd8be72f97c87fc483"
+            },
+            "1280": {
+              "fichero": "A-main-sin-transferencia-1280.png",
+              "sha256": "ad7fdb9d91d888f9251fc9c7efb5a0152bf634b15c8c2ad915069c324a73f3cc"
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "copiar": [
+            {
+              "boton": "Copiar IBAN",
+              "portapapeles": "ES9121000418450200051332",
+              "copio": true,
+              "rotuloTras": "¡Copiado!",
+              "claseCopied": true
+            },
+            {
+              "boton": "Copiar referencia",
+              "portapapeles": "REF-1647E",
+              "copio": true,
+              "rotuloTras": "¡Copiado!",
+              "claseCopied": true
+            }
+          ],
+          "csp": {
+            "eventos": 0,
+            "scriptSrc": 0,
+            "porDirectiva": {},
+            "lineasDeConsola": 0
+          }
+        },
+        "bizum": {
+          "capturas": {
+            "390": {
+              "fichero": "A-main-sin-bizum-390.png",
+              "sha256": "9fb658de76887360717693dcf98a286863b523be42413ad8a28ab9cce360b257"
+            },
+            "1280": {
+              "fichero": "A-main-sin-bizum-1280.png",
+              "sha256": "a75e4cc6c183c4ff7b56bd065dce2c682ec56323370ee0b8849e71439f38f099"
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "logo": {
+            "existe": true,
+            "cargo": false,
+            "display": "none"
+          },
+          "copiar": [
+            {
+              "boton": "Copiar móvil",
+              "portapapeles": "600111222",
+              "copio": true,
+              "rotuloTras": "¡Copiado!",
+              "claseCopied": false
+            },
+            {
+              "boton": "Copiar importe",
+              "portapapeles": "250,00",
+              "copio": true,
+              "rotuloTras": "¡Copiado!",
+              "claseCopied": false
+            },
+            {
+              "boton": "Copiar concepto",
+              "portapapeles": "Reparación de bajante",
+              "copio": true,
+              "rotuloTras": "¡Copiado!",
+              "claseCopied": false
+            }
+          ],
+          "csp": {
+            "eventos": 0,
+            "scriptSrc": 0,
+            "porDirectiva": {},
+            "lineasDeConsola": 0
+          }
+        },
+        "factura": {
+          "capturas": {
+            "390": {
+              "fichero": "A-main-sin-factura-390.png",
+              "sha256": "2187ae5d1e1c4183edd7bf23296fbfa42ba9bbf03f0bd9b4456b1632128b9eaa"
+            },
+            "1280": {
+              "fichero": "A-main-sin-factura-1280.png",
+              "sha256": "d5b23c1441b505be4aba5272124b5caeace57ead3148620c88b3ab5a5e240d33"
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "logo": {
+            "existe": true,
+            "cargo": false,
+            "display": "none"
+          },
+          "copiar": [],
+          "csp": {
+            "eventos": 0,
+            "scriptSrc": 0,
+            "porDirectiva": {},
+            "lineasDeConsola": 0
+          }
+        }
+      },
+      "sembrado": {
+        "politica": "sin",
+        "corrio": {
+          "script": true,
+          "onerror": true
+        },
+        "eventos": 0,
+        "scriptSrc": 0,
+        "porDirectiva": {},
+        "lineasDeConsola": 0
+      }
+    },
+    "B-main-aplicada": {
+      "paginas": {
+        "transferencia": {
+          "capturas": {
+            "390": {
+              "fichero": "B-main-aplicada-transferencia-390.png",
+              "sha256": "0bb9f59230b08e003943f32ee8d4c495efb2a9954549258eee5f6bd79bbb8f42"
+            },
+            "1280": {
+              "fichero": "B-main-aplicada-transferencia-1280.png",
+              "sha256": "d3356915250785ea0263f5550479e9f57ffce55382cc038750a242a6a8e0f496"
+            }
+          },
+          "status": 200,
+          "politica": "Content-Security-Policy",
+          "copiar": [
+            {
+              "boton": "Copiar IBAN",
+              "portapapeles": "ES9121000418450200051332",
+              "copio": true,
+              "rotuloTras": "¡Copiado!",
+              "claseCopied": true
+            },
+            {
+              "boton": "Copiar referencia",
+              "portapapeles": "REF-1647E",
+              "copio": true,
+              "rotuloTras": "¡Copiado!",
+              "claseCopied": true
+            }
+          ],
+          "csp": {
+            "eventos": 3,
+            "scriptSrc": 0,
+            "porDirectiva": {
+              "style-src-elem": 1,
+              "style-src-attr": 2
+            },
+            "lineasDeConsola": 3
+          }
+        },
+        "bizum": {
+          "capturas": {
+            "390": {
+              "fichero": "B-main-aplicada-bizum-390.png",
+              "sha256": "54ae37f7048b16d2ad3b1190b16066a5ca26388d955db78c77dadbe4ea0f268f"
+            },
+            "1280": {
+              "fichero": "B-main-aplicada-bizum-1280.png",
+              "sha256": "9910447f7ca975e7b96ba0f23a7665f986262169a10a931d98a0bcbbce405693"
+            }
+          },
+          "status": 200,
+          "politica": "Content-Security-Policy",
+          "logo": {
+            "existe": true,
+            "cargo": false,
+            "display": "none"
+          },
+          "copiar": [
+            {
+              "boton": "Copiar móvil",
+              "portapapeles": "600111222",
+              "copio": true,
+              "rotuloTras": "¡Copiado!",
+              "claseCopied": false
+            },
+            {
+              "boton": "Copiar importe",
+              "portapapeles": "250,00",
+              "copio": true,
+              "rotuloTras": "¡Copiado!",
+              "claseCopied": false
+            },
+            {
+              "boton": "Copiar concepto",
+              "portapapeles": "Reparación de bajante",
+              "copio": true,
+              "rotuloTras": "¡Copiado!",
+              "claseCopied": false
+            }
+          ],
+          "csp": {
+            "eventos": 2,
+            "scriptSrc": 0,
+            "porDirectiva": {
+              "style-src-elem": 1,
+              "style-src-attr": 1
+            },
+            "lineasDeConsola": 2
+          }
+        },
+        "factura": {
+          "capturas": {
+            "390": {
+              "fichero": "B-main-aplicada-factura-390.png",
+              "sha256": "e661e1eef75a86bf76c8c1190db9d1f2ac803b161265e80aa5330a569162c477"
+            },
+            "1280": {
+              "fichero": "B-main-aplicada-factura-1280.png",
+              "sha256": "fa46082deb619a47d410bb7dff20eb7f0066ee59290c48f9a9a3e9db2594dc10"
+            }
+          },
+          "status": 200,
+          "politica": "Content-Security-Policy",
+          "logo": {
+            "existe": true,
+            "cargo": false,
+            "display": "none"
+          },
+          "copiar": [],
+          "csp": {
+            "eventos": 1,
+            "scriptSrc": 0,
+            "porDirectiva": {
+              "style-src-elem": 1
+            },
+            "lineasDeConsola": 1
+          }
+        }
+      },
+      "sembrado": {
+        "politica": "aplicada",
+        "corrio": {
+          "script": false,
+          "onerror": false
+        },
+        "eventos": 2,
+        "scriptSrc": 2,
+        "porDirectiva": {
+          "script-src-elem": 1,
+          "script-src-attr": 1
+        },
+        "lineasDeConsola": 2
+      }
+    },
+    "C-rama-aplicada": {
+      "paginas": {
+        "transferencia": {
+          "capturas": {
+            "390": {
+              "fichero": "C-rama-aplicada-transferencia-390.png",
+              "sha256": "d4775edca87cb21c06b21b6bde7efe8b2033d43fe276bfcd8be72f97c87fc483"
+            },
+            "1280": {
+              "fichero": "C-rama-aplicada-transferencia-1280.png",
+              "sha256": "ad7fdb9d91d888f9251fc9c7efb5a0152bf634b15c8c2ad915069c324a73f3cc"
+            }
+          },
+          "status": 200,
+          "politica": "Content-Security-Policy",
+          "copiar": [
+            {
+              "boton": "Copiar IBAN",
+              "portapapeles": "ES9121000418450200051332",
+              "copio": true,
+              "rotuloTras": "¡Copiado!",
+              "claseCopied": true
+            },
+            {
+              "boton": "Copiar referencia",
+              "portapapeles": "REF-1647E",
+              "copio": true,
+              "rotuloTras": "¡Copiado!",
+              "claseCopied": true
+            }
+          ],
+          "csp": {
+            "eventos": 0,
+            "scriptSrc": 0,
+            "porDirectiva": {},
+            "lineasDeConsola": 0
+          }
+        },
+        "bizum": {
+          "capturas": {
+            "390": {
+              "fichero": "C-rama-aplicada-bizum-390.png",
+              "sha256": "9fb658de76887360717693dcf98a286863b523be42413ad8a28ab9cce360b257"
+            },
+            "1280": {
+              "fichero": "C-rama-aplicada-bizum-1280.png",
+              "sha256": "a75e4cc6c183c4ff7b56bd065dce2c682ec56323370ee0b8849e71439f38f099"
+            }
+          },
+          "status": 200,
+          "politica": "Content-Security-Policy",
+          "logo": {
+            "existe": true,
+            "cargo": false,
+            "display": "none"
+          },
+          "copiar": [
+            {
+              "boton": "Copiar móvil",
+              "portapapeles": "600111222",
+              "copio": true,
+              "rotuloTras": "¡Copiado!",
+              "claseCopied": false
+            },
+            {
+              "boton": "Copiar importe",
+              "portapapeles": "250,00",
+              "copio": true,
+              "rotuloTras": "¡Copiado!",
+              "claseCopied": false
+            },
+            {
+              "boton": "Copiar concepto",
+              "portapapeles": "Reparación de bajante",
+              "copio": true,
+              "rotuloTras": "¡Copiado!",
+              "claseCopied": false
+            }
+          ],
+          "csp": {
+            "eventos": 0,
+            "scriptSrc": 0,
+            "porDirectiva": {},
+            "lineasDeConsola": 0
+          }
+        },
+        "factura": {
+          "capturas": {
+            "390": {
+              "fichero": "C-rama-aplicada-factura-390.png",
+              "sha256": "2187ae5d1e1c4183edd7bf23296fbfa42ba9bbf03f0bd9b4456b1632128b9eaa"
+            },
+            "1280": {
+              "fichero": "C-rama-aplicada-factura-1280.png",
+              "sha256": "d5b23c1441b505be4aba5272124b5caeace57ead3148620c88b3ab5a5e240d33"
+            }
+          },
+          "status": 200,
+          "politica": "Content-Security-Policy",
+          "logo": {
+            "existe": true,
+            "cargo": false,
+            "display": "none"
+          },
+          "copiar": [],
+          "csp": {
+            "eventos": 0,
+            "scriptSrc": 0,
+            "porDirectiva": {},
+            "lineasDeConsola": 0
+          }
+        }
+      },
+      "sembrado": {
+        "politica": "aplicada",
+        "corrio": {
+          "script": false,
+          "onerror": false
+        },
+        "eventos": 2,
+        "scriptSrc": 2,
+        "porDirectiva": {
+          "script-src-elem": 1,
+          "script-src-attr": 1
+        },
+        "lineasDeConsola": 2
+      }
+    },
+    "D-rama-sin": {
+      "paginas": {
+        "transferencia": {
+          "capturas": {
+            "390": {
+              "fichero": "D-rama-sin-transferencia-390.png",
+              "sha256": "d4775edca87cb21c06b21b6bde7efe8b2033d43fe276bfcd8be72f97c87fc483"
+            },
+            "1280": {
+              "fichero": "D-rama-sin-transferencia-1280.png",
+              "sha256": "ad7fdb9d91d888f9251fc9c7efb5a0152bf634b15c8c2ad915069c324a73f3cc"
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "copiar": [
+            {
+              "boton": "Copiar IBAN",
+              "portapapeles": "ES9121000418450200051332",
+              "copio": true,
+              "rotuloTras": "¡Copiado!",
+              "claseCopied": true
+            },
+            {
+              "boton": "Copiar referencia",
+              "portapapeles": "REF-1647E",
+              "copio": true,
+              "rotuloTras": "¡Copiado!",
+              "claseCopied": true
+            }
+          ],
+          "csp": {
+            "eventos": 0,
+            "scriptSrc": 0,
+            "porDirectiva": {},
+            "lineasDeConsola": 0
+          }
+        },
+        "bizum": {
+          "capturas": {
+            "390": {
+              "fichero": "D-rama-sin-bizum-390.png",
+              "sha256": "9fb658de76887360717693dcf98a286863b523be42413ad8a28ab9cce360b257"
+            },
+            "1280": {
+              "fichero": "D-rama-sin-bizum-1280.png",
+              "sha256": "a75e4cc6c183c4ff7b56bd065dce2c682ec56323370ee0b8849e71439f38f099"
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "logo": {
+            "existe": true,
+            "cargo": false,
+            "display": "none"
+          },
+          "copiar": [
+            {
+              "boton": "Copiar móvil",
+              "portapapeles": "600111222",
+              "copio": true,
+              "rotuloTras": "¡Copiado!",
+              "claseCopied": false
+            },
+            {
+              "boton": "Copiar importe",
+              "portapapeles": "250,00",
+              "copio": true,
+              "rotuloTras": "¡Copiado!",
+              "claseCopied": false
+            },
+            {
+              "boton": "Copiar concepto",
+              "portapapeles": "Reparación de bajante",
+              "copio": true,
+              "rotuloTras": "¡Copiado!",
+              "claseCopied": false
+            }
+          ],
+          "csp": {
+            "eventos": 0,
+            "scriptSrc": 0,
+            "porDirectiva": {},
+            "lineasDeConsola": 0
+          }
+        },
+        "factura": {
+          "capturas": {
+            "390": {
+              "fichero": "D-rama-sin-factura-390.png",
+              "sha256": "2187ae5d1e1c4183edd7bf23296fbfa42ba9bbf03f0bd9b4456b1632128b9eaa"
+            },
+            "1280": {
+              "fichero": "D-rama-sin-factura-1280.png",
+              "sha256": "d5b23c1441b505be4aba5272124b5caeace57ead3148620c88b3ab5a5e240d33"
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "logo": {
+            "existe": true,
+            "cargo": false,
+            "display": "none"
+          },
+          "copiar": [],
+          "csp": {
+            "eventos": 0,
+            "scriptSrc": 0,
+            "porDirectiva": {},
+            "lineasDeConsola": 0
+          }
+        }
+      },
+      "sembrado": {
+        "politica": "sin",
+        "corrio": {
+          "script": true,
+          "onerror": true
+        },
+        "eventos": 0,
+        "scriptSrc": 0,
+        "porDirectiva": {},
+        "lineasDeConsola": 0
+      }
+    }
+  },
+  "version": "Edg/157.0.4341.46",
+  "comparacionVisual": [
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "pagina": "transferencia",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "pagina": "transferencia",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "pagina": "bizum",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "pagina": "bizum",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "pagina": "factura",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "pagina": "factura",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "pagina": "transferencia",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "pagina": "transferencia",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "pagina": "bizum",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "pagina": "bizum",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "pagina": "factura",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "pagina": "factura",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "D-rama-sin → C-rama-aplicada",
+      "pagina": "transferencia",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "D-rama-sin → C-rama-aplicada",
+      "pagina": "transferencia",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "D-rama-sin → C-rama-aplicada",
+      "pagina": "bizum",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "D-rama-sin → C-rama-aplicada",
+      "pagina": "bizum",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "D-rama-sin → C-rama-aplicada",
+      "pagina": "factura",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "D-rama-sin → C-rama-aplicada",
+      "pagina": "factura",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "B-main-aplicada → C-rama-aplicada",
+      "pagina": "transferencia",
+      "ancho": 390,
+      "identicas": false
+    },
+    {
+      "par": "B-main-aplicada → C-rama-aplicada",
+      "pagina": "transferencia",
+      "ancho": 1280,
+      "identicas": false
+    },
+    {
+      "par": "B-main-aplicada → C-rama-aplicada",
+      "pagina": "bizum",
+      "ancho": 390,
+      "identicas": false
+    },
+    {
+      "par": "B-main-aplicada → C-rama-aplicada",
+      "pagina": "bizum",
+      "ancho": 1280,
+      "identicas": false
+    },
+    {
+      "par": "B-main-aplicada → C-rama-aplicada",
+      "pagina": "factura",
+      "ancho": 390,
+      "identicas": false
+    },
+    {
+      "par": "B-main-aplicada → C-rama-aplicada",
+      "pagina": "factura",
+      "ancho": 1280,
+      "identicas": false
+    }
+  ],
+  "recursosQueFaltan": []
+}

@@ -1,7 +1,7 @@
 {
-  "_": "GENERADO por scripts/carriles.mjs desde docs/equipo/dos-equipos.md (sha256 a2e119a7a167). NO se edita a mano: se cambia la tabla y se regenera.",
+  "_": "GENERADO por scripts/carriles.mjs desde docs/equipo/dos-equipos.md (sha256 bbe8d647efc5). NO se edita a mano: se cambia la tabla y se regenera.",
   "fuente": "docs/equipo/dos-equipos.md",
-  "sha": "a2e119a7a167",
+  "sha": "bbe8d647efc5",
   "areas": {
     "S0": "consultoría y auditoría: «¿esto existe hoy?», filtro de las afirmaciones de SU orquestador, dueña de `00-normas-comunes.md`, `dos-equipos.md` y `trampas-del-entorno.md`",
     "S1": "servidor: importes, presupuestos, gastos, mantenimientos, y el servidor de todo lo que no sea de J1-J3",
@@ -1561,8 +1561,8 @@
       "quien": [
         "J2"
       ],
-      "motivo": "sólo UNA línea: la declaración de `GET /pay/js/pago.js` (`no-sensitive-resource`), el guion de las páginas de pago que SCRUM-1647 saca del HTML (CSP paso 2). Excepción firmada por el fundador en SCRUM-1647 c.21631 («Sí, una línea»); el resto del fichero sigue siendo de S1",
-      "ticket": "SCRUM-1647",
+      "motivo": "sólo DOS líneas: la declaración de `GET /pay/js/pago.js` (`no-sensitive-resource`), el guion de las páginas de pago que SCRUM-1647 saca del HTML (CSP paso 2), firmada por el fundador en SCRUM-1647 c.21631 («Sí, una línea»); y la de `GET /pay/css/pago.css` (`no-sensitive-resource`), el CSS que SCRUM-1723 saca del HTML (`style-src`), firmada en SCRUM-1723 c.21719 («Sí, y las 5 páginas»); el resto del fichero sigue siendo de S1",
+      "ticket": "SCRUM-1647, SCRUM-1723",
       "linea": 262
     }
   ]
