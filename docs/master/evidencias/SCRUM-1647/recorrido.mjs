@@ -80,6 +80,12 @@ async function abrir(nav, origen, ruta, ancho) {
   await ctx.overridePermissions(origen, ['clipboard-read', 'clipboard-write', 'clipboard-sanitized-write']);
   const p = await ctx.newPage();
   const consola = [];
+  // A9 de SCRUM-1647e: un recurso propio que falta (p. ej. `/fonts/inter.css` en un `dist/` sin
+  // `public/`) cambia la captura y se lee como «diferencia visual». Todo 4xx/5xx que no sea el logo
+  // roto a propósito deja el recorrido CIEGO.
+  p.on('response', (r) => {
+    if (r.status() >= 400 && !r.url().includes('/no-existe/')) recursosQueFaltan.push(`${r.status()} ${r.url()}`);
+  });
   p.on('console', (m) => { if (/Content Security Policy/i.test(m.text())) consola.push(m.text().slice(0, 200)); });
   await p.evaluateOnNewDocument(VIGIA);
   await p.setViewport({ width: ancho, height: 900, deviceScaleFactor: 1 });
@@ -94,6 +100,7 @@ function resumenCsp(eventos, consola) {
   return { eventos: eventos.length, scriptSrc, porDirectiva, lineasDeConsola: consola.length };
 }
 
+const recursosQueFaltan = [];
 const informe = { navegador: resolverNavegador(), escenarios: {} };
 const sha = (f) => crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
 
@@ -173,5 +180,10 @@ try {
   if (nav) await nav.close().catch(() => {});
   for (const h of hijos) h.kill();
 }
+informe.recursosQueFaltan = recursosQueFaltan;
 fs.writeFileSync(path.join(salida, 'resultado.json'), JSON.stringify(informe, null, 2) + '\n');
 console.log(JSON.stringify(informe, null, 2));
+if (recursosQueFaltan.length) {
+  console.error(`🔴 CIEGO: ${recursosQueFaltan.length} recurso(s) propio(s) no cargaron; las capturas no comparan lo mismo:\n  ${[...new Set(recursosQueFaltan)].join('\n  ')}`);
+  process.exit(2);
+}

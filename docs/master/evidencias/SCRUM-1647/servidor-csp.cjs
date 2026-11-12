@@ -57,7 +57,7 @@ const servidor = http.createServer((req, res) => {
     const { POLITICA_CSP } = require(path.join(DIST, 'core/http/csp.js'));
     if (modo === 'aplicada') res.setHeader('Content-Security-Policy', POLITICA_CSP);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.end('<!doctype html><html><head><script>window.__sembrado=1</script></head><body>'
+    res.end('<!doctype html><html><head><link rel="icon" href="data:,"><script>window.__sembrado=1</script></head><body>'
       + '<img src="/no-existe/s.png" onerror="window.__sembrado2=1"></body></html>');
     return;
   }
