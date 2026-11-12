@@ -1311,3 +1311,72 @@ mirado; nada cambia en pantalla.
 
 - `:129`: sin ancla, a propósito (arriba).
 - La 9, 11 y 12 de c.20834 (S1/S2) no son de este carril.
+
+## SCRUM-1502r · Tramo 17 (J4, 12-nov-2026): lo que queda tras 1502q — 11 sin respaldo, 8 con firma en Jira y carril de Luis, 3 que no afirman firma; ninguna para anclar desde J, ninguna pregunta nueva
+
+**Medido contra:** `origin/main` = `deab373d6a379fcbfc7ec1fce0428111156f49d3` · 2026-11-12T17:26:45Z (hora de GitHub)
+A9: sin fallo que generalice — sólo medición; el positivo se sembró con la semilla de 1502n, que ya nace sin referencia (la trampa de 1502n, evitada al reusarla en vez de escribir otra)
+**Skill UI:** no cargada · sólo docs: este tramo
+
+Entrega en Jira: SCRUM-1502, el comentario de entrega de 1502r. Ningún literal se copia aquí: van por fichero:línea
+(tramo 1, §4; un literal en `docs/master/` lo absolvería en `scrum921c`).
+
+### El instrumento, la población y los dos controles
+
+`node docs/master/evidencias/scrum1502j/niveles.mjs . <salida.json>` (el de 1502j, 1502p y 1502q; no hay otro),
+sobre este árbol con `HEAD` = `origin/main` (`rev-list --count` 0).
+
+| `porNivel()` | negada | citada | rastreable | anclado | documental | sin respaldo | total |
+|---|---|---|---|---|---|---|---|
+| 1502q (27-oct) | 13 | 1 | 176 | 50 | 12 | 11 | 263 |
+| hoy | 13 | 1 | 189 | 54 | 12 | **11** | 280 |
+
+- **Positivo sembrado:** `docs/master/evidencias/scrum1502n/semilla-marca.mjs.txt` copiada a `tests/zz-sembrada-1502r.test.mjs`:
+  sin respaldo 11 → **12**, `congeladas()` la nombra, `--compara` da `ENTRA … (sin-respaldo)` y `cambios=1`. Quitada,
+  vuelve a 11 y `git status` limpio.
+- **Cero derivado:** entre la foto sin siembra y `SIN_RESPALDO = 11` del trinquete (`tests/scrum921c…:146`), diferencia 0.
+- Sube de 263 a 280 lo que no es «sin respaldo» (marcas nuevas desde el 27-oct). **Las 189 rastreables y las 54 ancladas
+  NO se han releído contra su cita**: el guard sólo mira la forma. Ver «Anclas que no dicen lo que la marca» abajo.
+
+### Las 11 de `congeladas()`, una a una
+
+Carril por `node scripts/carriles.mjs de <ruta>`. «Lo ve» = texto que ve un usuario (regla 39).
+
+| marca | carril | lo ve | firma en Jira | ancla |
+|---|---|---|---|---|
+| `src/modules/system/app/routes/quotesAdmin.routes.ts:408` | S1 | sí, el profesional | c.20514 fila 1 | Luis (SCRUM-1591) |
+| `public/dashboard/js/reportsView.js:1204` | S2 | sí | c.20514 fila 2 | Luis (SCRUM-1590) |
+| `public/dashboard/js/jobRailBlocks.js:19` | S2 | sí | c.20514 fila 3 | Luis (SCRUM-1590) |
+| `public/dashboard/js/homeView.js:838` (era `:779`) | S2 | sí | c.20834 P11 | Luis |
+| `public/dashboard/js/quoteMargen.js:64` | S2 | sí | c.20834 P12 | Luis |
+| `public/dashboard/js/quoteActionsRegistry.js:68` | S2 | sí | c.20853 P13 | Luis |
+| `src/modules/jobs/domain/parteDictado.ts:138` | S1 | sí | c.20853 P14 | Luis |
+| `src/modules/jobs/domain/parteDictado.ts:401` | S1 | no (instrucción al modelo; decide lo que sale) | c.20629 fila 1 (P15) | Luis |
+| `public/dashboard/js/customersView.js:1063` | J2 | no | — no afirma firma | — |
+| `tests/scrum715-consta-por-identidad.test.mjs:147` | el puesto de SCRUM-715 | no | — no afirma firma | — |
+| `scripts/seed-video.mjs:1` | sin dueño decidido | no | — no afirma firma | — |
+
+- **8 tienen firma en Jira y les falta sólo el ancla, y las 8 son de S1/S2.** El equipo de Luis dejó escrito que no
+  ancla nada más hasta que el fundador conteste la pregunta de política de c.21333 (qué cuenta como firma suya, a/b/c/d), y las 8 se apoyan en transcripciones de una sesión (c.20514, c.20834, c.20853, c.20629): es
+  justo la clase (c) de esa pregunta.
+- **Las 3 que no afirman firma** hablan del concepto de firma, o de quién decide la base del guion, y no de un texto.
+  No hay nada que preguntar: sólo saldrían reescribiendo su comentario (tramo 4), y ninguna es de J4.
+- **De J4: 0. Anclables desde J1/J2 con su cita: 0.** No se ancla nada, no se toca ningún trinquete y no hay rojo que
+  enseñar primero.
+- **Preguntas ✅/❌ nuevas: 0.** Ninguna de las 11 afirma una firma que no esté ya contestada en Jira.
+
+### Anclas que no dicen lo que la marca (c.21333), medido hoy
+
+`public/dashboard/js/settingsSubmenus.js:38` (J3) y `tests/scrum291-series-huecos.test.mjs:102` están en `anclado`
+con `Consta en: SCRUM-1502 comentario 20514.`, y la marca de encima de cada una dice «5-ago-2026». El cuerpo de
+c.20514 es del **23-oct** y lo escribe el orquestador del equipo de Javier transcribiendo el sí de Javier. El guard
+los da por buenos porque la forma es correcta. No es de J4 (J3 y el puesto de SCRUM-291) y no lo toco: queda
+para quien conteste c.21333 / SCRUM-1652.
+
+### Lo que no se hizo
+
+- Las 8 anclas de S1/S2: de Luis, y paradas por su lado hasta la respuesta de c.21333.
+- Releer las 189 rastreables y las 54 ancladas contra lo que citan: no hecho (es lo que mide SCRUM-1652 para el
+  equipo de Luis).
+- yaqu.app: no abierto; nada cambia en pantalla. Suite entera en local: NO CORRIDA. Ninguna marca, guard ni número
+  tocado.
