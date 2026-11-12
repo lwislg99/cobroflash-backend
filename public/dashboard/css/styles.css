@@ -4270,6 +4270,186 @@ textarea.parte-linea-desc {
   white-space: nowrap;
 }
 .parte-plegable .parte-tipo { margin: 0 !important; }
+
+/* ══ S4 · SCRUM-1722 · EL PARTE DEL OPERARIO: QUE SE VEA QUÉ SE PULSA, QUÉ SE ESCRIBE Y DÓNDE SE FIRMA ══
+   Orden del fundador (12-nov), medida a 390 en yaqu.app como operario sobre PT-2026-010:
+     ① «Ordenar en líneas», «Firmar aquí mismo» y «Firma del técnico» eran pastillas blancas con borde
+       fino, iguales que las casillas → parecían campos vacíos;
+     ② los títulos de paso (14 px) casi no se distinguían de los rótulos (12,5 px);
+     ③ la firma era una caja con otra pastilla dentro, no una zona de firmar;
+     ④ horas, dictado y firmas flotaban sobre el fondo, sin tarjeta ni ritmo, y a 1280 se estiraban.
+   La regla de lectura que sale de aquí: **contorno blanco = se escribe · relleno = se pulsa ·
+   recuadro con raya = se firma**. Sin texto nuevo (regla 39) y sólo con tokens de DESIGN.md. Va
+   DESPUÉS de las reglas del parte a propósito: gana por orden sin subir especificidad. */
+
+/* ④ Una columna de tarjetas. A 1280 no se estira más que una hoja: el parte es un papel. */
+*:has(> header.parte-cabecera) { max-width: 720px; margin-inline: auto; }
+.parte-cabecera { margin: 4px 0 20px; }
+.parte-cabecera-numero {
+  margin: 8px 0 0;
+  font-size: 1.375rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.parte-cabecera-numero [data-parte-visita] { font-weight: 600; color: var(--muted); }
+.parte-cabecera-cliente { margin: 2px 0 0; font-size: 0.9375rem; color: var(--body); }
+
+.parte-horas,
+.parte-dictado,
+.parte-bloque,
+.parte-firmas,
+.parte-datos-del-parte {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+  margin: 0 0 16px;
+}
+@media (min-width: 560px) {
+  .parte-horas, .parte-dictado, .parte-bloque, .parte-firmas, .parte-datos-del-parte { padding: 20px; }
+}
+
+/* ② Título de paso: Tinta, 18 px, 700. El rótulo de campo sigue en 12,5 px y Apagado: dos escalones claros. */
+.parte-paso-titulo,
+.parte-horas-titulo,
+.parte-firmas-titulo,
+.parte-datos-del-parte-titulo {
+  display: block;
+  margin: 0 0 12px;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--ink);
+}
+:is(.parte-paso-titulo, .parte-horas-titulo, .parte-firmas-titulo):has(+ .parte-pista, + .parte-horas-guia) { margin-bottom: 4px; }
+.parte-pista,
+.parte-horas-guia { margin: 0 0 14px; font-size: 13.5px; line-height: 1.45; color: var(--muted); }
+.parte-dictado .parte-pista { margin: 6px 0 12px; }
+.parte-dictado textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 96px;
+  font-size: 16px;              /* 16 evita el zoom automático de iOS al enfocar */
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+}
+
+/* ① Las acciones que no son la principal: RELLENO neutro, sin contorno. Una casilla es blanca con
+   contorno; esto no se confunde con ella. Sin verde: la única voz verde sigue siendo la firma. */
+.parte-dictado [data-dictado-ordenar],
+.parte-bloque .parte-anadir,
+.parte-horas .parte-ahora {
+  background: var(--neutral-100);
+  border: 1px solid transparent;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: none;
+}
+.parte-dictado [data-dictado-ordenar]:hover:not(:disabled),
+.parte-bloque .parte-anadir:hover:not(:disabled),
+.parte-horas .parte-ahora:hover:not(:disabled) { background: var(--neutral-200); }
+.parte-dictado [data-dictado-ordenar]:focus-visible,
+.parte-bloque .parte-anadir:focus-visible,
+.parte-horas .parte-ahora:focus-visible,
+.parte-firma-caja :is([data-parte-firmar], [data-parte-firmar-tecnico]):focus-visible { outline: none; box-shadow: var(--ring); }
+.parte-dictado [data-dictado-ordenar] { width: 100%; min-height: 48px; }
+.parte-bloque .parte-anadir { margin-top: 12px; padding-left: 14px; }
+.parte-horas .parte-ahora { display: inline-flex; align-items: center; gap: 6px; }
+
+/* El dibujo de cada acción (mismo trazo que el texto, `currentColor`). No es texto: no lee nada nuevo. */
+.parte-dictado [data-dictado-ordenar]::before,
+.parte-bloque .parte-anadir::before,
+.parte-horas .parte-ahora::before,
+.parte-firma-caja :is([data-parte-firmar], [data-parte-firmar-tecnico])::before,
+.parte-firma-hecha::before {
+  content: "";
+  flex: none;
+  width: 18px;
+  height: 18px;
+  background: currentColor;
+  -webkit-mask: var(--parte-icono) center / contain no-repeat;
+  mask: var(--parte-icono) center / contain no-repeat;
+}
+.parte-dictado [data-dictado-ordenar] { --parte-icono: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01'/%3E%3C/svg%3E"); }
+.parte-bloque .parte-anadir { --parte-icono: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E"); }
+.parte-horas .parte-ahora { --parte-icono: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E"); }
+.parte-firma-caja :is([data-parte-firmar], [data-parte-firmar-tecnico]) { --parte-icono: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z'/%3E%3C/svg%3E"); }
+.parte-firma-hecha { --parte-icono: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E"); }
+
+/* ③ La firma, como firma: un recuadro alto con su raya, y debajo de la raya qué se pulsa. El aviso de
+   quién falta va ENCIMA, como el rótulo del recuadro en el papel («FIRMA CLIENTE»). */
+.parte-firma-caja {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.parte-firma-caja:last-child { margin-bottom: 0; }
+.parte-firma-caja .parte-firma-falta { order: -1; margin: 0; font-size: 14px; font-weight: 600; color: var(--ink); }
+.parte-firma-caja :is([data-parte-firmar], [data-parte-firmar-tecnico]) {
+  position: relative;
+  width: 100%;
+  min-height: 112px;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 20px 14px;
+  border-radius: var(--r-md);
+  font-size: 15px;
+  font-weight: 700;
+}
+.parte-firma-caja :is([data-parte-firmar], [data-parte-firmar-tecnico])::after {
+  content: "";
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 44px;
+  border-top: 1.5px dashed currentColor;
+  opacity: .35;
+}
+/* La del técnico, y la del cliente con el parte vacío (SCRUM-1676): recuadro blanco de raya discontinua. */
+.parte-firma-caja [data-parte-firmar-tecnico],
+.parte-firma-caja [data-parte-firmar][data-parte-firma-en-espera] {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1.5px dashed var(--neutral-300);
+  box-shadow: none;
+}
+.parte-firma-caja [data-parte-firmar-tecnico]:hover:not(:disabled),
+.parte-firma-caja [data-parte-firmar][data-parte-firma-en-espera]:hover:not(:disabled) { background: var(--bg); border-color: var(--muted); }
+/* Firmado: constancia en Verde Tinte con su marca, no un gris que parece pendiente. */
+.parte-firma-hecha {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background: var(--ok-bg);
+  color: var(--ok-ink);
+  font-size: 15px;
+  font-weight: 600;
+}
+.parte-datos-del-parte .parte-plegable:last-child { border-bottom: 0; }
+.parte-datos-del-parte .parte-plegable-titulo { font-size: 15px; }
+@media (prefers-reduced-motion: reduce) {
+  .parte-firma-caja :is([data-parte-firmar], [data-parte-firmar-tecnico]),
+  .parte-dictado [data-dictado-ordenar],
+  .parte-bloque .parte-anadir,
+  .parte-horas .parte-ahora { transition: none; }
+}
+/* ══ fin S4 · SCRUM-1722 ══ */
 /* Las tres fichas del tipo: 48 px de alto y la ficha entera recibe el toque. */
 .parte-tipo .parte-tipo-ficha {
   display: inline-flex;
