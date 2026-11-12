@@ -18,7 +18,8 @@
 // presupuesto firmado), no `generateInvoicePdf`. Medido por AST en SCRUM-1726.
 import { zonaDelMerchant } from '../../../core/zonaDelMerchant';
 
-export const ZONA_PENINSULAR = 'Europe/Madrid';
+// Sin `export`: nadie fuera de este fichero la lee, y un export sin llamador lo tumba scrum411.
+const ZONA_PENINSULAR = 'Europe/Madrid';
 
 const FORMA: Intl.DateTimeFormatOptions = {
   day: '2-digit', month: '2-digit', year: 'numeric',
