@@ -237,7 +237,9 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // SCRUM-1662: «Qué hay que hacer» en su columna propia. Necesita banco porque lo que mide es la FILA
   // que escriben `POST` y `PATCH /admin/jobs` de verdad (`que_hay_que_hacer` lleno, `notes` intacto) y
   // la lectura del operario con su sesión guardada en la base. Sólo el desechable: crea y borra un merchant.
-  'scrum1662-que-hay-que-hacer.test.mjs': 1,
+  // El segundo (c.21555): las notas internas no le llegan al operario por lista, detalle, PATCH ni `.ics`
+  // — por comportamiento, con dos sesiones de verdad (jefe y operario) y la fila leída de la base.
+  'scrum1662-que-hay-que-hacer.test.mjs': 2,
   // SCRUM-1403: los TRES que ejercitan el recorte de presupuestos del Tecnico y la pestana de
   // documentos de la ficha de cliente contra Prisma de verdad. Necesitan banco por el mismo motivo
   // que los de SCRUM-1397: lo que vigilan es el WHERE (el recorte en AND con la busqueda y con el

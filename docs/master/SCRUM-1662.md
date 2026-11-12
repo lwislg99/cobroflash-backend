@@ -43,7 +43,7 @@ A9: comprobación → `tests/scrum1662-que-hay-que-hacer.test.mjs`
 - **En yaqu.app:** tras el merge, un alta con descripción en la cuenta QA y `GET /admin/jobs/:id` con
   `queHayQueHacer` lleno y `notes` vacío (regla 42).
 
-## Hallazgo para decidir (NO hecho aquí)
+## Hallazgo (11-nov) — decidido el 12-nov, ver el apéndice
 
 `notes` («Notas internas · Solo tú las ves») **le llega hoy al operario**: `serializeJob` la devuelve a todos
 los roles, el `PATCH` se la deja editar (es justo lo que SCRUM-120 escribió el 23-jul: «Técnico ✅: status,
@@ -51,3 +51,54 @@ scheduledAt, notes», y lo fija `tests/scrum120-patch-job-roles.test.mjs`), y va
 El rótulo «Solo tú las ves» llegó DESPUÉS (SCRUM-427/917g, reutilizado de Presupuestos), sin revisar esa
 regla. La firma de c.21548 dice que las notas internas siguen privadas. Propuesta enviada al orquestador; no
 se cambia sin decisión, porque cambia la regla de SCRUM-120 y su test.
+
+## Apéndice (12-nov) · las notas internas, SOLO del jefe
+
+**FIRMADO** por el fundador (SCRUM-1662 **c.21555**, literal de la opción elegida): «Ocultarlas al operario — Las
+notas pasan a ser SOLO del jefe, como promete el rótulo: el operario deja de verlas y de poder editarlas, y
+tampoco van en el archivo de calendario. La tarea del operario vive en "Qué hay que hacer". Sin textos nuevos.»
+Supera la regla de SCRUM-120 (23-jul: «Técnico ✅: status, scheduledAt, notes»), anterior al rótulo «Solo tú las ves».
+Va en esta misma rama y con el mismo gate de la 3.ª base (c.21555).
+
+### Qué cambia
+
+- **(a) Lectura** · `src/modules/jobs/domain/trabajoParaElRol.ts` (nuevo): `trabajoParaElRol(s, rol)` deja
+  `notes: null` para quien `seesOnlyOwnJobs` (la clave se conserva: misma forma para todos). Se aplica en las
+  CINCO respuestas de `jobs.routes.ts` que llevan el Trabajo: lista, detalle, POST, PATCH y (por su campo) el
+  `.ics`. **Por qué una proyección y no un parámetro de `serializeJob`:** las firmas y las llamadas de
+  `serializeJob`/`serializeJobDetail` las fijan por texto los guards de SCRUM-58, 363 y 816; meterles el rol
+  los ponía en rojo sin que su garantía cambiara (regla 41).
+- **(b) Escritura** · `adminOnlyJobField` añade `notes` → **403** `{field:'notes'}`, fail-closed (mezclado con un
+  campo legítimo se rechaza entero; con un campo de dinero mezclado el 403 sigue nombrando el de dinero, por eso
+  va el último). `ADMIN_ONLY_JOB_FIELDS` y `FIELD_LEVEL_ROLE_GATES` (`adminRouteDeclarations.ts`) lo llevan,
+  con su motivo; el comentario SCRUM-164 de `roleCapabilities.ts` cita la firma.
+- **(c) Calendario** · `descripcionDelCalendario(job, rol)`: el `DESCRIPTION:` del `.ics` lleva `notes` para el
+  jefe (como hasta hoy) y `queHayQueHacer` para el operario.
+- **(d) Máster** · la tabla `## S1. Roles` (Parte S) **no nombra `notes`** para el técnico (medido en
+  `origin/main` `6cf6a8176`): no hay nada que actualizar ahí. La única frase que lo dice es la entrada
+  histórica «✅ SCRUM-120» (Parte V, «Técnico ✅: `status`, `scheduledAt`, `notes`»): es historia, no se
+  reescribe aquí (SCRUM-273); queda señalada al orquestador por si quiere anotarla.
+
+### Re-anclaje por regla nueva firmada (precedente 917c/C.1)
+
+Con el código nuevo y los tests VIEJOS, cayeron justo las dos anclas de la regla vieja, y nada más:
+- `tests/scrum120-patch-job-roles.test.mjs:105` — esperado 200, recibido **403** (técnico `{notes}`).
+- `tests/scrum164-gate-por-campo.test.mjs:34` — esperado `null`, recibido **`'notes'`**.
+
+Re-anclados a c.21555, citada en los dos ficheros: el técnico `{notes}` → 403 con `field:'notes'` y la fila
+intacta; su día a día pasa a ser `{queHayQueHacer}` → 200; test puro nuevo «las notas internas son SOLO del jefe».
+
+### Comprobación
+
+- **Rojo primero** (código de `bdf1ad57b` en `dist`, test ③ nuevo): **11/11 causas** en rojo — detalle y lista
+  dan las notas al operario, el PATCH las deja editar (200), la mezcla aplica, el `.ics` las lleva y no lleva la tarea.
+- **Verde:** ③ con banco, con CONTROL en cada puerta (el jefe SÍ las ve en lista, detalle y `.ics`, y las edita).
+- Tanda completa con banco: ver la cifra en el comentario del ticket.
+
+### Queda FUERA (otro carril) — la pantalla
+
+`public/dashboard/js/jobDetailView.js:1580` pinta la línea «Notas internas» y su editor a TODOS los roles
+(`pintarNotasInternas`, PATCH `{notes}` en :3737). Con este servidor, el operario la vería vacía y, si escribe,
+recibiría 403. La norma tras SCRUM-89 (máster, entrada SCRUM-120) pide el front en el MISMO PR; el fichero es
+de S2. Pedido al orquestador: S2 oculta esa línea para el técnico (sin textos nuevos, c.21555) en esta rama o
+en un PR que entre a la vez.

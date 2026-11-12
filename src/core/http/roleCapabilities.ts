@@ -69,12 +69,16 @@ export function isFieldMember(role: string | null | undefined): boolean {
 /**
  * SCRUM-164 · CAMPOS DE UN TRABAJO RESERVADOS AL ADMIN (gate por CAMPO, no por ruta).
  *
- * `PATCH /admin/jobs/:id` NO es admin-only y no debe serlo: status, scheduledAt y notes son el
- * día a día del operario (SCRUM-120). Lo que está reservado al admin son tres campos que tocan
- * FACTURACIÓN o DINERO:
+ * `PATCH /admin/jobs/:id` NO es admin-only y no debe serlo: status y scheduledAt son el día a día
+ * del operario (SCRUM-120). Lo que está reservado al admin son tres campos que tocan FACTURACIÓN o
+ * DINERO, y uno que es PRIVADO del jefe:
  *   · `tipoOperacion`   — bandera fiscal (recapitulativa mensual vs. facturar al concluir)
  *   · `assignedUserId`  — reparto del equipo (S1)
  *   · `status: 'cerrado'` — única transición IRREVERSIBLE de la FSM, y mata la vía de "Cobrar el resto"
+ *   · `notes`           — «Notas internas · Solo tú las ves». SCRUM-120 (23-jul) se las daba al
+ *     operario; el rótulo llegó después (SCRUM-427/917g) y la regla no se revisó. La cambia la firma
+ *     del fundador de SCRUM-1662 c.21555: «el operario deja de verlas y de poder editarlas […] La
+ *     tarea del operario vive en "Qué hay que hacer"». La LECTURA la recorta `trabajoParaElRol`.
  *
  * POR QUÉ VIVE AQUÍ Y NO EN LA RUTA. Estaba escrito como un `if` suelto dentro del handler: el
  * único gate de rol de todo `src/` que no pasaba por `requireRole`. Eso lo hacía **invisible por
@@ -87,7 +91,7 @@ export function isFieldMember(role: string | null | undefined): boolean {
  * SCRUM-120 construyó. La regla es por campo; lo que había que arreglar es que fuera visible y
  * comprobable, no convertirla en otra cosa.
  */
-export const ADMIN_ONLY_JOB_FIELDS = ['tipoOperacion', 'assignedUserId', "status:'cerrado'"] as const;
+export const ADMIN_ONLY_JOB_FIELDS = ['tipoOperacion', 'assignedUserId', "status:'cerrado'", 'notes'] as const;
 
 /**
  * Devuelve el PRIMER campo reservado al admin que trae el cuerpo, o null si no hay ninguno.
@@ -101,6 +105,9 @@ export function adminOnlyJobField(body: any): string | null {
   if (body.tipoOperacion !== undefined) return 'tipoOperacion';
   if (body.assignedUserId !== undefined) return 'assignedUserId';
   if (body.status !== undefined && String(body.status) === 'cerrado') return "status:'cerrado'";
+  // SCRUM-1662 (c.21555) · el último a propósito: con un campo de dinero mezclado, el 403 sigue
+  // nombrando ése, que es el que más importa ver.
+  if (body.notes !== undefined) return 'notes';
   return null;
 }
 
