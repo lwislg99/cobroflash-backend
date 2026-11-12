@@ -2,7 +2,10 @@
 
 **Puesto:** S4 · **Rama:** `scrum-1722-parte-del-operario-bonito` · 12-nov-2026
 **Skill UI:** cargada (`yaqu-premium-ui`; DESIGN.md única fuente de tokens)
-**Medido contra:** yaqu.app (main `591e85cfd`), como operario con rol `tecnico` simulado en el front sobre la cuenta QA (merchant 46), partes 18 (PT-2026-010, borrador vacío: el que miró el fundador), 14 y 12 (firmados) y el 18 con dos líneas inyectadas sólo en la respuesta GET. Sonda sólo-GET con control positivo: `D:\MILLONARIO\cobroFlash\evidencias-s4-12nov-1722\sonda-parte.mjs`; el «después» sirve el JS y el CSS de esta rama sobre yaqu.app.
+**Medido contra:** `origin/main` = `591e85cfd08376c077c8522a67c9cc874b844ead` · 2026-11-12T12:20:00Z
+A9: comprobación → `tests/scrum902-botones-del-parte-con-estilo.test.mjs`
+
+**Dónde y cómo:** yaqu.app, como operario con rol `tecnico` simulado en el front sobre la cuenta QA (merchant 46), partes 18 (PT-2026-010, borrador vacío: el que miró el fundador), 14 y 12 (firmados) y el 18 con dos líneas inyectadas sólo en la respuesta GET. Sonda sólo-GET con control positivo: `D:\MILLONARIO\cobroFlash\evidencias-s4-12nov-1722\sonda-parte.mjs`; el «después» sirve el JS y el CSS de esta rama sobre yaqu.app.
 
 ## Orden (literal del fundador, en la descripción del ticket)
 «esto sigue feísimo parece algo técnico y debería ser bonito y casual que se entienda … no ves que está super feo y difícil de entender?»
