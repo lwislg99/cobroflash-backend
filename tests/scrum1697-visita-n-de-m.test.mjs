@@ -61,6 +61,22 @@ test('SCRUM-1697 ① la cabecera dice «· Visita n de m» con lo que trae el pa
   assert.deepEqual(pedidas, [], '🔴 la pantalla no pide nada: ni /admin/jobs/:id (guard de SCRUM-366) ni otra cosa');
 });
 
+test('SCRUM-1697 ①bis la FICHA entera, al abrirse, solo pide el parte y pinta la visita que trae', async () => {
+  const b = cargarDashboard(RAIZ);
+  const c = b.mk('div');
+  const pedidas = [];
+  const apiRequest = async (ruta, o = {}) => {
+    pedidas.push(`${(o.method || 'GET').toUpperCase()} ${ruta}`);
+    if (ruta === '/admin/partes/17' && !o.method) return { ...BASE };
+    throw new Error('ruta no esperada: ' + ruta);
+  };
+  assert.equal(await b.ctx.renderParteDetailView(c, 17, { apiRequest }), true, '🔴 SUELO: la ficha no se pintó');
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(visitaEn(c), '· Visita 3 de 4');
+  assert.deepEqual(pedidas.filter((p) => p.startsWith('GET ')), ['GET /admin/partes/17'],
+    '🔴 la ficha del parte no lee el trabajo: la visita viene en su propio GET (contrato de SCRUM-1697 (b))');
+});
+
 test('SCRUM-1697 ② con un solo parte en el trabajo no se dice «Visita 1 de 1»', async () => {
   assert.equal((await cabecera({ ...BASE, visitaN: 1, visitaM: 1 })).visita, '');
   assert.equal((await cabecera({ ...BASE, visitaN: 1, visitaM: 2 })).visita, '· Visita 1 de 2', '🔴 SUELO: con dos, sí');
