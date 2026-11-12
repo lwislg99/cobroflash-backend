@@ -28,7 +28,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { applyVeriFactu, applyVeriFactuAnulacion } from '../../../invoicing/domain/verifactu.service'; // SCRUM-153
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
-import { isDemoMerchant, DEMO_WATERMARK } from '../../../invoicing/domain/emission.service';
+import { isDemoMerchant, DEMO_WATERMARK, motivoSiiSinEmision } from '../../../invoicing/domain/emission.service';
 import { getDeliveryStatus } from '../../../messaging/domain/whatsappLog.service';
 import { envioDelDocumento } from '../../../billing/domain/envioDelDocumento'; // SCRUM-885b
 // SCRUM-499 · la MISMA lectura del método que Cobros e Informes, y el rótulo del «no consta» que
@@ -136,7 +136,9 @@ router.post('/', requireRole('admin'), async (req, res) => {
     const modoSuelto = modoDocumentoSuelto(merchant);
     if (modoSuelto === 'no') {
       return res.status(409).json({
-        error: ERROR_MODO_SIN_FACTURA,
+        // SCRUM-1713 (c.21583, punto 2): si lo que lo deja sin emitir es su respuesta del SII, el
+        // código lo dice (`sii_declarado` / `sii_no_consta`); con el flag apagado, el de siempre.
+        error: motivoSiiSinEmision(merchant) ?? ERROR_MODO_SIN_FACTURA,
         message: 'En este modo no se emiten facturas.',
       });
     }
@@ -341,6 +343,28 @@ router.post('/:id/payment-anomaly', requireRole('admin'), async (req, res) => {
   }
 });
 
+// SCRUM-1647f (CSP paso 2, tramo J1) · el botón «Imprimir / PDF» del paquete de disputa llevaba un
+// `onclick="window.print()"`: con `script-src 'self'` aplicada (SCRUM-1637, paso 3) dejaría de imprimir.
+// El guion es una cadena CONSTANTE, sin datos de la petición (un nonce no protegería nada que viajara
+// dentro), servida desde 'self' por ESTE router y con el MISMO `requireRole('admin')` que la página.
+// Vive aquí y no en un fichero aparte porque un fichero nuevo en este directorio es carril S1, y
+// `public/**` es S2. Dos tramos de ruta: ni `/:id` ni `/:id/<algo>` la pisan. Sin huella (`?v=`):
+// `private, no-cache`, porque es un recurso de sesión y Cloudflare guarda los `.js` por defecto.
+export const IMPRIMIR_JS = String.raw`(function(){
+'use strict';
+document.addEventListener('click',function(e){
+  var b=e.target&&e.target.closest?e.target.closest('[data-accion="imprimir"]'):null;
+  if(b)window.print();
+});
+})();
+`;
+export const RUTA_IMPRIMIR_JS = '/js/imprimir.js';
+router.get(RUTA_IMPRIMIR_JS, requireRole('admin'), (_req, res) => {
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  res.setHeader('Cache-Control', 'private, no-cache');
+  return res.send(IMPRIMIR_JS);
+});
+
 /**
  * GET /admin/invoices/:id/dispute-package — A21.1 (R14)
  * Paquete de evidencia de disputa en 1 clic: HTML imprimible (→ PDF con el
@@ -398,8 +422,9 @@ router.get('/:id/dispute-package', requireRole('admin'), async (req, res) => {
   .badge{display:inline-block;background:#ecfdf5;color:#166534;font-weight:700;border-radius:999px;padding:3px 12px;font-size:12px}
   .print{position:fixed;top:16px;right:16px;background:#16a34a;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-weight:700;cursor:pointer}
   @media print{.print{display:none} body{padding:0}}
-</style></head><body>
-<button class="print" onclick="window.print()">🖨 Imprimir / PDF</button>
+</style>
+<script src="/admin/invoices${RUTA_IMPRIMIR_JS}"></script></head><body>
+<button class="print" data-accion="imprimir">🖨 Imprimir / PDF</button>
 <h1>Paquete de evidencia de disputa</h1>
 <p class="sub">${esc(invoice.merchant?.legalName || invoice.merchant?.name)} · generado el ${fD(new Date())} · documento ${esc(invoice.number)}</p>
 
@@ -1053,6 +1078,15 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
     // sin INVOICING_ES_ENABLED no puede emitir R1 (allocate lanzaría invoicing_es_disabled).
     if (isReceiptNumber(original.number)) {
       return res.status(409).json({ error: 'cannot_rectify_receipt' });
+    }
+
+    // SCRUM-1713 (c.21583, punto 2): con el flag puesto y el SII en «Sí» o «No consta», el embudo
+    // rechaza la R1 con `sii_*` y el `catch` de abajo lo convertía en un 500 mudo. Se pregunta a la
+    // MISMA función que usa el embudo, antes de pedir número, y se contesta su código. El embudo
+    // sigue siendo la puerta que manda: esto sólo pone nombre al rechazo.
+    const motivoSii = motivoSiiSinEmision(original.merchant);
+    if (motivoSii) {
+      return res.status(409).json({ error: motivoSii });
     }
 
     // SCRUM-246 · ANTES de pedir número, igual que el resto. Aquí las líneas van NEGADAS

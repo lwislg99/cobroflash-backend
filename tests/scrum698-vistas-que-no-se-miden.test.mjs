@@ -425,7 +425,11 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // sobran `div.state-error` + `div.state-error-ico` + `div.state-error-msg` +
   // `button.state-error-retry` = 4 dentro de `#activity-feed`, y falta el `div` de «Sin actividad
   // reciente» = 1. +4 − 1 = +3, todo el delta. «Completa tu configuración» sigue entera (scrum901).
-  for (const [vista, nodos] of [['renderQuotesView', 258], ['renderProductsView', 176],
+  // SCRUM-1716b · 12-nov-2026 · `renderQuotesView` 258 → 267, y las otras tres intactas. Lo mueve la
+  // VISTA, POR IDENTIDAD dentro de `div.quote-dto-global`: `div.segmented` + 2 × (`label.segmented-option`
+  // · `input` radio · `span` «€»/«%») + `p.quote-dto-global__equivale` + `p.aviso-falta-campo`, los tres
+  // ocultos hasta pulsar «+ Añadir descuento». 9 = todo el delta. Rótulos firmados en SCRUM-1716 c.21704.
+  for (const [vista, nodos] of [['renderQuotesView', 267], ['renderProductsView', 176],
     ['renderCustomersView', 89], ['renderHomeView', 148]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
@@ -496,7 +500,9 @@ test('SCRUM-698 · CONTROL NEGATIVO: el fixture NO se impone a quien ya pasaba l
   // SCRUM-1180 (28-sep-2026): +1, el envoltorio de las cláusulas, oculto y vacío en los dos montajes. Los dos dan 256.
   // SCRUM-1144 (15-oct-2026): +2, el botón y la lista cerrada de los sitios guardados; no dependen de
   // los datos, así que los pintan los dos montajes. Los dos dan 258.
-  assert.equal(todos(desnuda.contenedor).length, 258,
+  // SCRUM-1716b (12-nov-2026): +9, el selector €/% con su pista y su error, ocultos y sin datos;
+  // los pintan los dos montajes. Los dos dan 267.
+  assert.equal(todos(desnuda.contenedor).length, 267,
     '🔴 montar sin `datos` ya no da lo de siempre: el fixture se ha colado como valor por '
     + 'defecto y está moviendo lo que miden otros.');
 });

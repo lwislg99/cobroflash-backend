@@ -35,7 +35,7 @@ import { datosDuplicado } from '../../domain/albaranDuplicado'; // SCRUM-302: qu
 import { ERROR_ALBARAN_CAMBIADO, exigirNombreFirmante, normalizarLugarEntrega, resolverCalidadFirmante } from '../../domain/albaranFirmante';
 // SCRUM-361 (H6 · fase 2): dos editores a la vez dejaban de existir el uno para el otro.
 import { ERROR_ALBARAN_CAMBIADO_AL_EDITAR, puedeEditarEstaVersion } from '../../domain/albaranEdicion';
-import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-467
+import { seesOnlyOwnJobs, seesAllJobs, adminOnlyAlbaranField } from '../../../../core/http/roleCapabilities'; // SCRUM-467 / SCRUM-1712
 // SCRUM-1707 (c.21547 Q2) · cada respuesta JSON del albarán pasa por aquí: el operario, sin precios.
 // El PDF (`/:id/pdf`) NO: lo gobierna `ocultarPreciosEnDocumento`, no el rol (c.21556 ②).
 import { albaranParaElRol, filaDeAlbaranParaElRol, grupoPendienteParaElRol } from '../../domain/albaranParaElRol';
@@ -635,6 +635,17 @@ router.patch('/:id', async (req, res) => {
     const found = await findAlbaran(req);
     if (!found.ok) return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
     const { albaran } = found;
+    // SCRUM-1712: valorar es del admin — ni valorar, ni cambiar el precio de la oficina, ni
+    // desvalorar (por eso va contra el modo ACTUAL). Antes de nada más: la petición ENTERA.
+    if (!seesAllJobs(req.userRole)) {
+      const campoAdmin = adminOnlyAlbaranField(
+        { modoValoracion: req.body?.modoValoracion, lineas: req.body?.lineas },
+        albaran.modoValoracion === 'VALORADO' ? 'VALORADO' : 'SIN_VALORAR',
+      );
+      if (campoAdmin) {
+        return res.status(403).json({ error: 'forbidden', required_role: 'admin', field: campoAdmin });
+      }
+    }
     if (albaran.estado === 'firmado') {
       return res.status(409).json({ error: 'albaran_locked', message: 'Un albarán firmado está congelado: no se puede editar.' });
     }
@@ -972,6 +983,15 @@ router.post('/:id/emitir', async (req, res) => {
     if (albaran.estado === 'emitido') return res.json(albaranParaElRol(serializeAlbaran(albaran), req.userRole)); // idempotente · SCRUM-1707
     if (!canTransitionAlbaran(albaran.estado, 'emitido')) {
       return res.status(409).json({ error: 'invalid_transition', from: albaran.estado, to: 'emitido' });
+    }
+    // SCRUM-1673 · UN ALBARÁN SIN LÍNEAS NO SE EMITE. Medido en yaqu.app (SCRUM-1658): un borrador
+    // con `lineas: []` salía numerado y emitido, listo para firmar sin decir qué se hizo. El
+    // borrador vacío SÍ se puede crear (es un documento a medias); lo que no puede es salir.
+    // Fail-closed: un `lineas` que no es lista cuenta como vacío. DESPUÉS de la salida idempotente
+    // —un emitido viejo se devuelve tal cual, no se reescribe— y ANTES de congelar nada. Solo el
+    // código: no hay texto firmado para este caso (regla 39); la pantalla lo traduce (SCRUM-1659).
+    if (!Array.isArray(albaran.lineas) || albaran.lineas.length === 0) {
+      return res.status(409).json({ error: 'albaran_sin_lineas' });
     }
 
     // ── SCRUM-841 · EL CLIENTE SE CONGELA AQUÍ, AL EMITIR ──────────────────────────────────

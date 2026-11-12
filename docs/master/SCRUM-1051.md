@@ -403,6 +403,58 @@ corrigió antes de empujar. Un prefijo no es un nombre: «S1» casa con dos cosa
 - Suite entera local: NO CORRIDA (encargo: 10 sesiones a la vez). Corridos los guards dirigidos
   que dice la entrega.
 
+## SCRUM-1051e · la prueba S2 lista para subir a mano (J1, jv-j1do, 30-oct-2026)
+
+**Medido contra:** `origin/main` = `3527028a3388de64c5e2429cb0d19d665e768473` · 2026-10-30T17:31:23Z (hora de la cabecera `Date:` de GitHub)
+
+A9: comprobación → `tests/scrum1051e-sobre-s2.test.mjs`
+
+Prepara el punto 2 de c.21180. No se ha enviado nada a la AEAT, ni se ha tocado `src/`, ningún
+certificado ni ninguna base. El GO de `registro.builder.ts:311` sigue sin darse. Los comandos, la
+tabla de respuestas y la de combinaciones están en Jira, SCRUM-1051 c.21295: aquí no se copian.
+
+### Qué cambia en `scripts/sobre-soap-prueba-aeat.mjs`
+
+- `--calificacion S2 --variante omitir|cero`, sólo en altas. `omitir` es lo que devuelve hoy
+  `clasificarDetalleDesglose`; `cero` añade `TipoImpositivo 0` y `CuotaRepercutida 0.00` en el guion.
+- Cifras: base 100.00, `CuotaTotal` 0.00, `ImporteTotal` 100.00. La huella es la fórmula de siempre.
+- Cada variante escribe su fichero: `tmp/sobre-s2-omitir.xml` y `tmp/sobre-s2-cero.xml`.
+- **De paso:** generar movía la cadena aunque el sobre no llegara a subirse. En S2 queda un candidato
+  y el puntero sólo avanza con `--confirmar-s2`, que falla si la cadena se ha movido. En S1, R1 y
+  anulación no cambia nada.
+- **El destinatario de una S2 ha de ser otro contribuyente.** El 1193 está en la lista de los códigos
+  que rechazan la factura y pide un NIF distinto del obligado. La R1 del 28-sep llevaba el del emisor,
+  y si el entorno de pruebas aplica el 1193 no consta. El guion aborta sin `--dest-nif` y
+  `--dest-nombre`, o con el NIF del emisor.
+
+El guion no tiene dueño en carriles y no se ha creado aquí, así que no ha pedido fila (§3.3).
+
+### La cadena
+
+Último registro con aceptación probada: la sonda B de SCRUM-1398 (`A-ALQ5VMP5QV7QLQ`). Después se
+generaron un alta y una R1 sin rastro de envío, y la R1 es a la que apuntan los punteros del 28-sep.
+**No se puede asegurar cuál fue el último registro aceptado.** Copiados a este árbol sin tocar el
+origen (hash igual antes y después), el guion los acepta y da `primerRegistro: false`.
+
+### Corrido
+
+- Rojo: 11 de 14 caen sobre el guion sin tocar. Después, 14 de 14.
+- Mutaciones de `MUTACIONES_QUE_ME_TUMBAN` con `aplicarUna`: 5 de 5 tumban el test, árbol limpio.
+- Dirigida de 17 ficheros: 128 de 128, 0 saltos. `tsc -p .` no aplica: no se toca `src/`.
+- Prueba en seco con NIF de ejemplo, desde PowerShell: los dos sobres generados, salida 0; sin
+  destinatario, salida 1. Esos sobres y sus candidatos se han borrado.
+
+### Error propio
+
+Crucé los 200k de contexto y avisé a 257.589: no me medí entre Jira y el final de las mutaciones, y
+dos lecturas sin recortar me comieron el margen.
+
+### Riesgo residual, dicho
+
+- No medido: ninguna respuesta de la AEAT, si el entorno de pruebas aplica el 1193, qué hace con un
+  anterior que no vio, y producción.
+- La cadena que deje la prueba vive sólo en el `tmp/` de este árbol, que git ignora.
+- Suite entera local: NO CORRIDA (encargo: 10 sesiones a la vez).
 ## SCRUM-1051d · la factura SUELTA conserva la causa de cada línea (J1, jv-j1dj, 27-oct-2026)
 
 **Medido contra:** `origin/main` = `95016f26f5b0d31dcb542467cbdb2a9249a71366` · 2026-10-27T18:08:06Z (hora de la cabecera `Date:` de GitHub)
@@ -451,3 +503,29 @@ scrum622 y los de registro scrum267/273/854/1294): 737 casos = 731 pass + 6 skip
 **Puesta al día (relevo, jv-j1dj, 30-oct-2026, sobre `3527028a3388de64c5e2429cb0d19d665e768473`, 149 commits):** `git merge` sin conflictos y sin recongelar nada: `facturaSuelta.ts` y `invoicesAdmin.routes.ts` no están en la lista de `scrum523d`, que pasa con sus 7 casos. `tsc -p .`: salida 0. Dirigida de 76 ficheros: 763 casos = 757 pass + 6 skip (sin `LIBRO_PG_URL`), 0 fail. Suite entera local: NO CORRIDA.
 
 A9: sin fallo que generalice — poner la rama al día no cambió los dos ficheros de `src/` de este tramo respecto a lo entregado el 27-oct, y lo que podía caer lo mide `scrum523d`.
+
+## SCRUM-1051e · puesta al día con main (J1, jv-j1do, relevo, 12-nov-2026)
+
+**Medido contra:** `origin/main` = `52cc5603cc94f71ef1dc7a0c6d59bd551ef2a793` · 2026-11-12T11:29:52Z (hora de la cabecera `Date:` de GitHub)
+
+`git merge origin/main` sobre `8add898bf`: un conflicto, en `docs/equipo/cicatrices/J1.md`, resuelto conservando las dos partes (35 líneas de main + 1 de la rama = 36). Este fichero entró sin conflicto, y sus tramos 1051c, 1051d y 1051e salen idénticos a su origen. `scripts/` y `src/modules/fiscal/verifactu/` no cambiaron en main: los comandos de c.21295 siguen igual. En seco, con NIF de ejemplo y sin enviar nada: `omitir` y `cero` generados (salida 0) y válidos contra el XSD, sin destinatario o con el del emisor salida 1, y los punteros con el mismo hash antes y después.
+
+A9: sin fallo que generalice — el único conflicto fue de dos listas que crecían por el final, y el recuento de líneas de cada lado comprueba que no se perdió ninguna.
+
+## SCRUM-1051f · lo que falta de la aceptación (1, 3, 4 y 6): medición y propuesta (J1, jv-j1ea, 12-nov-2026)
+
+**Medido contra:** `origin/main` = `deab373d6a379fcbfc7ec1fce0428111156f49d3` · 2026-11-12T17:05:08Z (hora de la cabecera `Date:` de GitHub)
+
+Sólo lectura y sólo docs: nada en `src/` ni `public/`, ninguna base, nada a la AEAT. Leído con `grep -n`, NO ejecutado (este árbol no tiene `dist/`). La tabla entera y las preguntas, en Jira SCRUM-1051 c.21748.
+
+- **1 · marcar ISP:** no hay pantalla. El cuerpo de `POST /admin/invoices` sólo lleva `concept, qty, price, tax` (`public/dashboard/js/cuerpoDelDocumentoSuelto.js:50-54`); «S2» en `public/`: 0. Tampoco hay ajuste «lo activa» (sería flag → máster, o campo → ALTER). Ficheros de S2 (equipo de Luis). Necesita firma (rótulo).
+- **3 · leyenda:** el PDF no la imprime y funde la S2 con su tipo (`src/modules/invoicing/infra/pdf/pdf.service.ts:646-653`). J1; GO (regla 40) y firma (regla 39). Fuente cotejada hoy en el BOE consolidado (`BOE-A-2012-14696`, bloque `a6`): ROF art. 6.1.m), «la mención «inversión del sujeto pasivo»». Propuesta: ese literal, sin cita del artículo.
+- **4 · libro:** el 303 (casilla 122) y el 390 (125) ya la llevan (SCRUM-1063f). El libro guarda `causa` (`libroRegistro.ts:91`) pero ni la descarga (`librosAeat.ts:323-329`) ni la pantalla (`libroRegistroView.js`) la enseñan. J1; firma, sin GO.
+- **6 · NIF en servidor:** no se rechaza. El portón de la causa no mira el NIF, y sin NIF el builder excluye la factura del registro pero «se emite, se envía y se cobra igual» (`src/modules/fiscal/verifactu/registro.builder.ts:260`). Haría falta un portón antes de emitir (`invoicesAdmin.routes.ts`, `src/lib/invoicing.ts`, J1): GO de regla 40 y es identidad fiscal, fuera de c.16594.
+- `docs/master/SCRUM-1264.md`: 0 «sujeto pasivo»/«ISP»/«Q-C2» (control: «asesor», 3). El índice de 45 de Jira NO leído.
+
+**Skill UI:** no cargada · no se toca `public/`: sólo se lee con `grep -n` para citar fichero:línea; el tramo es documentación.
+
+**Corrido:** nada de tests (sólo docs). Suite entera: NO CORRIDA.
+
+A9: sin fallo que generalice — es una medición de sólo lectura; cada fichero:línea citado sale de un `grep -n` de esta tanda, y lo que no se ejecutó lo dice el propio tramo.

@@ -1577,11 +1577,17 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   lineaTipo.cuerpo.appendChild(tipoSec);
   lineaDatos.cuerpo.appendChild(infoSec);
   lineaQuien.cuerpo.appendChild(quienSec);
-  pintarNotasInternas(lineaNotas.cuerpo, job);
+  // SCRUM-1662 · las notas internas son del ADMIN: el servidor ya no se las da al operario y su
+  // `PATCH {notes}` le devuelve 403. Al que no es admin no se le pinta ni la línea ni el editor
+  // (lista blanca, como `veNegocio` del Inicio: un rol desconocido cae al lado seguro, SCRUM-147).
+  // La línea se quita DESPUÉS de componer el bloque, para no tocar el orden de SCRUM-817.
+  const veNotas = window.appUserRole === 'admin';
+  if (veNotas) pintarNotasInternas(lineaNotas.cuerpo, job);
   lineaGastos.cuerpo.appendChild(gastosSec);
   body.appendChild(partesSec); // SCRUM-1694: partes, y después albaranes
   body.appendChild(docsSec);
   body.appendChild(construirBloqueElTrabajo(document, [lineaTipo, lineaDatos, lineaQuien, lineaNotas, lineaGastos]));
+  if (!veNotas) lineaNotas.elemento.remove();
 
   const docs = []; // { when, el } — se ordena ascendente y se vuelca al final en la lista.
   // Formato de fecha ÚNICO de la lista: día + mes + año + hora. Conserva la HORA (que solo tenía el

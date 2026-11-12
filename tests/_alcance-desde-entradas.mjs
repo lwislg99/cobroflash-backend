@@ -47,10 +47,10 @@
 // fabricaría un defecto que no consta — que es exactamente el error que este ticket viene a evitar.
 import ts from 'typescript';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { ENTRADAS, entradasDeComando, importsDe, exportsDe, ficherosTs } from './_alcance-dominio.mjs';
 import { grafoInterno, alcanceInterno, lineasDeDeclaracion, clave } from './_huerfanos-en-modulos-vivos.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 export const ALCANZABLE = 'ALCANZABLE';
 export const NO_ALCANZABLE = 'NO_ALCANZABLE';
@@ -382,7 +382,7 @@ const FUENTE = {
 };
 
 export function escribirFuenteSintetica() {
-  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum411-alcance-'));
+  const raiz = temporal('scrum411-alcance-');
   for (const [r, c] of Object.entries(FUENTE)) {
     const destino = path.join(raiz, r);
     fs.mkdirSync(path.dirname(destino), { recursive: true });
@@ -407,6 +407,6 @@ export function autoprueba() {
       visto: Object.fromEntries([...c.veredictos.values()].map((v) => [clave(v.modulo, v.nombre), v.estado])),
     };
   } finally {
-    fs.rmSync(raiz, { recursive: true, force: true });
+    borrarTemporal(raiz);
   }
 }
