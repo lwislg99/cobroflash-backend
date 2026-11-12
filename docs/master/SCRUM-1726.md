@@ -20,4 +20,4 @@ con el botón del automático byte a byte). El censo de fechas sin zona pasa `ge
 rojo primero en las cuatro piezas, 5/5 mutaciones vivas con `aplicarUna`, `tsc -p .` con tipos en 0.
 NO medido: yaqu.app, la zona del proceso en Railway y la suite entera en local.
 
-A9: aviso → cicatriz J1 «Crucé los 200k (277.528) al acabar el arnés de mutaciones» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
+A9: aviso → cicatriz J1 «Crucé los 200k (277.528) al acabar el arnés de mutaciones: me medí al acabar el arranque y Jira, y no tras la tanda dirigida, el mismo fallo de SCRUM-1063k» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto

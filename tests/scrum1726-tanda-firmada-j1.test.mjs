@@ -168,9 +168,9 @@ test('SCRUM-1726 · 6 · CONTROL: un `J-` antiguo sigue diciendo «del justifica
 test('SCRUM-1726 · D1 · 🔴 las fechas de la hoja van en la zona del negocio (las 00:30 de Madrid son el 3-oct, no el 2)', async () => {
   programar({ mensajes: [{ createdAt: INSTANTE, type: 'template', templateName: 'payment_request_es', relatedType: 'invoice', relatedId: 1, status: 'read' }] });
   const r = await paquete(1);
-  const emitido = r.texto.match(/<th>Emitido<\/th><td>([^<]*)<\/td>/)?.[1];
-  const pagado = r.texto.match(/<th>Pagado el<\/th><td>([^<]*)<\/td>/)?.[1];
-  const delMensaje = r.texto.match(/<tr>\s*<td>([^<]*)<\/td><td>template<\/td>/)?.[1];
+  const emitido = r.texto.match(/<th[^>]*>Emitido<\/th>\s*<td[^>]*>([^<]*)<\/td>/)?.[1];
+  const pagado = r.texto.match(/<th[^>]*>Pagado el<\/th>\s*<td[^>]*>([^<]*)<\/td>/)?.[1];
+  const delMensaje = r.texto.match(/<tr[^>]*>\s*<td[^>]*>([^<]*)<\/td>\s*<td[^>]*>template<\/td>/)?.[1];
   assert.equal(emitido, EN_MADRID, `🔴 «Emitido» dice ${emitido}: es el reloj del proceso, no el del negocio`);
   assert.equal(pagado, EN_MADRID, `🔴 «Pagado el» dice ${pagado}`);
   assert.equal(delMensaje, EN_MADRID, `🔴 la fecha del mensaje dice ${delMensaje}`);
@@ -179,7 +179,7 @@ test('SCRUM-1726 · D1 · 🔴 las fechas de la hoja van en la zona del negocio 
 test('SCRUM-1726 · D1 · CONTROL: un negocio sin zona guardada sale en UTC (la decisión A de `zonaDelMerchant`)', async () => {
   programar();
   const r = await paquete(3);
-  assert.equal(r.texto.match(/<th>Emitido<\/th><td>([^<]*)<\/td>/)?.[1], EN_UTC);
+  assert.equal(r.texto.match(/<th[^>]*>Emitido<\/th>\s*<td[^>]*>([^<]*)<\/td>/)?.[1], EN_UTC);
 });
 
 test('SCRUM-1726 · D3 · 🔴 con la ventana de 24 h ABIERTA, el recordatorio manual sale como BOTÓN, no como plantilla', async () => {
