@@ -1,0 +1,3 @@
+﻿scrum1489-la-busqueda-recorta-al-tecnico: fetch( 1 → 0 · llamadas a pedirSinAgente( 1 · imports hasta la línea 33 · node:http ya importado
+scrum912-leer-ticket-gasto: fetch( 1 → 0 · llamadas a pedirSinAgente( 1 · imports hasta la línea 13
+POBLACION=2 ficheros · malos=0 · EXIT=0

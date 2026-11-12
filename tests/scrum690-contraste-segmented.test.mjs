@@ -35,10 +35,13 @@ import { hojasDelDashboard } from './_banco-vistas.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Los DOS consumidores del componente, censados el 2-sep-2026 sobre `main`. */
+/** Los consumidores del componente: dos censados el 2-sep-2026 sobre `main`, y un tercero de SCRUM-1716b. */
 const CONSUMIDORES = [
   'public/dashboard/js/switchTipoArticulo.js',   // Producto | Servicio (catálogo)
   'public/dashboard/js/switchFormaJuridica.js',  // Empresa | Persona (cliente)
+  // SCRUM-1716b (12-nov-2026): € | % del descuento global del editor. Su pantalla SÍ se midió en
+  // navegador (390 y 1280, opciones de 44 px, sin desborde): `docs/master/SCRUM-1716.md`, §1716b.
+  'public/dashboard/js/quotesView.js',
 ];
 
 function cssDelDashboard() {

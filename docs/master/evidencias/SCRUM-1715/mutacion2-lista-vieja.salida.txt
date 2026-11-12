@@ -1,0 +1,42 @@
+﻿✔ SCRUM-560 · SUELO: el censo VE los ficheros que levantan servidor propio (1428.8983ms)
+✔ SCRUM-560 · AUTOPRUEBA: el detector caza el patrón y NO acusa a `node:http` (15.1514ms)
+✔ SCRUM-560 · ningún fichero NUEVO pide con `fetch` a su propio `app.listen(0)` (4771.8344ms)
+✖ SCRUM-560 · la lista de los que ya estaban no puede quedarse vieja (5495.6999ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12841.5382
+
+✖ failing tests:
+
+test at tests\scrum560-patron-fetch-servidor.test.mjs:319:1
+✖ SCRUM-560 · la lista de los que ya estaban no puede quedarse vieja (5495.6999ms)
+  AssertionError [ERR_ASSERTION]: ✅ ESTOS YA NO USAN `fetch` SOBRE SU SERVIDOR: scrum1188d-tiers-tambien-se-vacia.test.mjs
+  
+    Es una buena noticia y hay que ANOTARLA: quítalos de `CON_EL_PATRON_YA` en este mismo commit.
+    Una lista que sobrevive a su causa deja de ser una fecha y pasa a ser un permiso.
+  + actual - expected
+  
+  + [
+  +   'scrum1188d-tiers-tambien-se-vacia.test.mjs'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s2-12nov-1715/tests/scrum560-patron-fetch-servidor.test.mjs:322:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'scrum1188d-tiers-tambien-se-vacia.test.mjs' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

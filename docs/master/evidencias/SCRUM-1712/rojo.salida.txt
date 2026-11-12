@@ -1,0 +1,111 @@
+﻿✖ SCRUM-1712 · la regla: valorar es del admin, y basta un campo para contaminar la petición (0.7156ms)
+✖ SCRUM-1712 · la regla: DESVALORAR también es valorar (borraría los precios de la oficina) (0.128ms)
+✖ SCRUM-1712 · el día a día del técnico sigue libre (lo que manda su pantalla al crear y editar sin precios) (0.1573ms)
+✔ SCRUM-1712 · control positivo de la frontera: el admin pasa por `seesAllJobs`, el técnico no (0.1769ms)
+✖ SCRUM-1712 · la regla está DECLARADA como gate por campo en las dos puertas (0.4637ms)
+✖ SCRUM-1712 · 🔴 CON BASE: el técnico no escribe precios por ninguna de las dos puertas; el admin sí; su albarán sin precios sigue (1388.7255ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 1
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1480.954
+
+✖ failing tests:
+
+test at tests\scrum1712-precios-del-albaran-solo-admin.test.mjs:63:1
+✖ SCRUM-1712 · la regla: valorar es del admin, y basta un campo para contaminar la petición (0.7156ms)
+  TypeError [Error]: adminOnlyAlbaranField is not a function
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1712/tests/scrum1712-precios-del-albaran-solo-admin.test.mjs:64:16)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17)
+
+test at tests\scrum1712-precios-del-albaran-solo-admin.test.mjs:74:1
+✖ SCRUM-1712 · la regla: DESVALORAR también es valorar (borraría los precios de la oficina) (0.128ms)
+  TypeError [Error]: adminOnlyAlbaranField is not a function
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1712/tests/scrum1712-precios-del-albaran-solo-admin.test.mjs:75:16)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3)
+
+test at tests\scrum1712-precios-del-albaran-solo-admin.test.mjs:79:1
+✖ SCRUM-1712 · el día a día del técnico sigue libre (lo que manda su pantalla al crear y editar sin precios) (0.1573ms)
+  TypeError [Error]: adminOnlyAlbaranField is not a function
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1712/tests/scrum1712-precios-del-albaran-solo-admin.test.mjs:80:16)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at tests\scrum1712-precios-del-albaran-solo-admin.test.mjs:94:1
+✖ SCRUM-1712 · la regla está DECLARADA como gate por campo en las dos puertas (0.4637ms)
+  AssertionError [ERR_ASSERTION]: falta la declaración de POST /admin/jobs/:id/albaranes
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1712/tests/scrum1712-precios-del-albaran-solo-admin.test.mjs:97:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\scrum1712-precios-del-albaran-solo-admin.test.mjs:106:1
+✖ SCRUM-1712 · 🔴 CON BASE: el técnico no escribe precios por ninguna de las dos puertas; el admin sí; su albarán sin precios sigue (1388.7255ms)
+  AssertionError [ERR_ASSERTION]: 
+    🔴 POST VALORADO con precios: 201 {"id":7,"jobId":2,"numero":"AB260003","fecha":"2026-11-12T13:06:15.020Z","modoValoracion":"VALORADO","lineas":[{"unidad":"ud","tipoIva":21,"cantidad":1,"concept
+    🔴 POST con una línea con precio: 400 {"error":"lineas_invalidas","message":"línea 1: este albarán es SIN_VALORAR — no puede llevar precio ni IVA"}
+    🔴 el técnico creó 1 albarán(es) con precio
+    🔴 PATCH valorar un SIN_VALORAR: 200 {"id":6,"jobId":2,"numero":"AB260002","fecha":"2026-11-12T13:06:15.005Z","modoValoracion":"VALORADO","lineas":[{"unidad":"ud","tipoIva":21,"cantidad":1,"concept
+    🔴 el técnico VALORÓ el albarán
+    🔴 PATCH cambiar el precio de un VALORADO: 200 {"id":5,"jobId":2,"numero":"AB260001","fecha":"2026-11-12T13:06:14.993Z","modoValoracion":"VALORADO","lineas":[{"unidad":"ud","tipoIva":21,"cantidad":1,"concept
+    🔴 el precio de la oficina cambió a 1
+    🔴 PATCH desvalorar un VALORADO: 200 {"id":5,"jobId":2,"numero":"AB260001","fecha":"2026-11-12T13:06:14.993Z","modoValoracion":"SIN_VALORAR","lineas":[{"unidad":"ud","cantidad":1,"concepto":"Cambio
+    🔴 el técnico DESVALORÓ el albarán de la oficina
+    🔴 el VALORADO cambió de versión: algo se escribió
+    🔴 control: la jefa ya no puede cambiar el precio (400)
+    control: el precio de la jefa se guardó
+  + actual - expected
+  
+  + [
+  +   '🔴 POST VALORADO con precios: 201 {"id":7,"jobId":2,"numero":"AB260003","fecha":"2026-11-12T13:06:15.020Z","modoValoracion":"VALORADO","lineas":[{"unidad":"ud","tipoIva":21,"cantidad":1,"concept',
+  +   '🔴 POST con una línea con precio: 400 {"error":"lineas_invalidas","message":"línea 1: este albarán es SIN_VALORAR — no puede llevar precio ni IVA"}',
+  +   '🔴 el técnico creó 1 albarán(es) con precio',
+  +   '🔴 PATCH valorar un SIN_VALORAR: 200 {"id":6,"jobId":2,"numero":"AB260002","fecha":"2026-11-12T13:06:15.005Z","modoValoracion":"VALORADO","lineas":[{"unidad":"ud","tipoIva":21,"cantidad":1,"concept',
+  +   '🔴 el técnico VALORÓ el albarán',
+  +   '🔴 PATCH cambiar el precio de un VALORADO: 200 {"id":5,"jobId":2,"numero":"AB260001","fecha":"2026-11-12T13:06:14.993Z","modoValoracion":"VALORADO","lineas":[{"unidad":"ud","tipoIva":21,"cantidad":1,"concept',
+  +   '🔴 el precio de la oficina cambió a 1',
+  +   '🔴 PATCH desvalorar un VALORADO: 200 {"id":5,"jobId":2,"numero":"AB260001","fecha":"2026-11-12T13:06:14.993Z","modoValoracion":"SIN_VALORAR","lineas":[{"unidad":"ud","cantidad":1,"concepto":"Cambio',
+  +   '🔴 el técnico DESVALORÓ el albarán de la oficina',
+  +   '🔴 el VALORADO cambió de versión: algo se escribió',
+  +   '🔴 control: la jefa ya no puede cambiar el precio (400)',
+  +   'control: el precio de la jefa se guardó'
+  + ]
+  - []
+  
+      at file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1712/tests/scrum1712-precios-del-albaran-solo-admin.test.mjs:210:16
+      at async withMerchant (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1712/tests/_merchant-fixture.mjs:296:12)
+      at async TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1712/tests/scrum1712-precios-del-albaran-solo-admin.test.mjs:115:7)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ '🔴 POST VALORADO con precios: 201 {"id":7,"jobId":2,"numero":"AB260003","fecha":"2026-11-12T13:06:15.020Z","modoValoracion":"VALORADO","lineas":[{"unidad":"ud","tipoIva":21,"cantidad":1,"concept', '🔴 POST con una línea con precio: 400 {"error":"lineas_invalidas","message":"línea 1: este albarán es SIN_VALORAR — no puede llevar precio ni IVA"}', '🔴 el técnico creó 1 albarán(es) con precio', '🔴 PATCH valorar un SIN_VALORAR: 200 {"id":6,"jobId":2,"numero":"AB260002","fecha":"2026-11-12T13:06:15.005Z","modoValoracion":"VALORADO","lineas":[{"unidad":"ud","tipoIva":21,"cantidad":1,"concept', '🔴 el técnico VALORÓ el albarán', '🔴 PATCH cambiar el precio de un VALORADO: 200 {"id":5,"jobId":2,"numero":"AB260001","fecha":"2026-11-12T13:06:14.993Z","modoValoracion":"VALORADO","lineas":[{"unidad":"ud","tipoIva":21,"cantidad":1,"concept', '🔴 el precio de la oficina cambió a 1', '🔴 PATCH desvalorar un VALORADO: 200 {"id":5,"jobId":2,"numero":"AB260001","fecha":"2026-11-12T13:06:14.993Z","modoValoracion":"SIN_VALORAR","lineas":[{"unidad":"ud","cantidad":1,"concepto":"Cambio', '🔴 el técnico DESVALORÓ el albarán de la oficina', '🔴 el VALORADO cambió de versión: algo se escribió', '🔴 control: la jefa ya no puede cambiar el precio (400)', 'control: el precio de la jefa se guardó' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
