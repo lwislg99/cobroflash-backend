@@ -31,6 +31,7 @@ const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const MARCADOR = 'ejemplo o marcador de sitio en la explicación de una API: no promete ninguna red';
 const RETIRADO_773 = 'retirado en SCRUM-773 (PR #1484) y nombrado como historia, no como red';
+const RETIRADO_1718 = 'lista de SCRUM-1396c y su test, retirados a cero en SCRUM-1718 y nombrados como historia, no como red';
 
 /** `fichero citante` → `cita` → motivo. Una entrada por par, no por línea: las líneas se mueven. */
 export const DECLARADAS = [
@@ -47,6 +48,10 @@ export const DECLARADAS = [
   ['scripts/_suelo-contra-main.mjs', 'tests/scrum650c-backfill-equivalencia.test.mjs', RETIRADO_773],
   ['scripts/censo-migraciones.mjs', 'scripts/backfill-job-assignees.mjs', RETIRADO_773],
   ['tests/scrum765-la-puerta-y-el-suelo.test.mjs', 'scripts/backfill-job-assignees.mjs', RETIRADO_773],
+  ['scripts/_censo-mkdtemp.mjs', 'scripts/_mkdtemp-declarados.json', RETIRADO_1718],
+  ['scripts/_suelo-contra-main.mjs', 'tests/scrum1396c-los-declarados-solo-bajan.test.mjs', RETIRADO_1718],
+  ['scripts/_suelo-contra-main.mjs', 'scripts/_mkdtemp-declarados.json', RETIRADO_1718],
+  ['tests/scrum864c-el-temporal-no-vuelve.test.mjs', 'scripts/_mkdtemp-declarados.json', RETIRADO_1718],
 ];
 
 const RUTA = /`((?:scripts|tests)\/[\w./-]+\.(?:mjs|js|cjs|ts|json))`/g;

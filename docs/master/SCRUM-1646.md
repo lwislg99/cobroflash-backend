@@ -232,3 +232,18 @@ Los cinco acoplados que el cambio puso en rojo, uno por uno:
 
 `guard:firma-con-tramos` necesita el arreglo de #3159 (sirve `/pay/quote/(js|css)/`): hasta que mergee, el check
 de navegador de esta rama sale CIEGO como en todo PR sobre main.
+## SCRUM-1646c · 2026-11-12 (noche) · el guard de navegador `firma-con-tramos` quedó CIEGO en main
+
+A9: comprobación → `scripts/guard-firma-con-tramos.mjs`
+
+- **Qué pasó:** desde #3152 (1646c) la página de firma pide su guion a `GET /pay/quote/js/firma.js`. El
+  servidor de este guard sólo devolvía las dos páginas, así que el guion daba 404, nada dibujaba ni
+  enviaba y el guard salía **CIEGO** (5 ciegos, salida 2). Medido en #3128 (run 43285819918, base
+  `2e546434f` = main tras #3152); en #3153, con base anterior a #3152, el mismo guard salió verde. Todo PR
+  sobre main caía ahí.
+- **Arreglo (del arnés, no de lo que exige — regla 41):** las subrutas que pide la página
+  (`/pay/quote/js/…` y `/pay/quote/css/…`, ésta para 1646d) las contesta el **router real** montado en
+  `/pay`, como en producción; no una copia del guion. Lo que el guard juzga no cambia.
+- **Rojo/verde en local, mismo árbol (main `acaaddd9a`):** guard de main → CIEGO, salida 2 («NO LLEGÓ A
+  ENVIAR» en el control). Con el arreglo → 4/4 con trazo (normal y tramos, densidad 1 y 3), 0 hallazgos ·
+  0 ciegos, salida 0. Tests que leen el guard (522, 1327, 1343, 548, 892): **74/74**.

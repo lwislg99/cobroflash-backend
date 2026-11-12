@@ -21,19 +21,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 
 import {
   aprobacionesDeMicrocopy, constaAprobado, literalesAprobados, pendientesDeFirma, firmanteDe,
 } from './_microcopy-aprobada.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 const TEXTO_DEL_FUNDADOR = 'Texto que sí firmó el fundador';
 const TEXTO_DE_OTRO = 'Texto que firmó otra persona';
 
 /** Un directorio de registros de mentira: dos aprobaciones, dos firmantes distintos. */
 function registrosDePrueba() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum726-'));
+  const dir = temporal('scrum726-');
   fs.writeFileSync(path.join(dir, '2026-09-04-SCRUM-111-del-fundador.md'),
     '# Uno\n\n**Aprobado por el fundador** el 4-sep-2026, en **SCRUM-111**.\n\n'
     + '| Qué es | Texto aprobado |\n|---|---|\n| Ranura | ' + TEXTO_DEL_FUNDADOR + ' |\n');
@@ -67,7 +67,7 @@ test('SCRUM-726 · 🔴 un registro firmado por OTRO no cuenta como aprobación'
     assert.deepEqual(constaAprobado(TEXTO_DEL_FUNDADOR, o), ['docs/microcopy/2026-09-04-SCRUM-111-del-fundador.md'],
       '🔴 se ha caído la aprobación LEGÍTIMA: apretar el guard no puede tirar las buenas.');
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    borrarTemporal(dir);
   }
 });
 
@@ -86,7 +86,7 @@ test('SCRUM-726 · 🔴 Y CAE CON EL MECANISMO VIEJO: hoy ese mismo fichero daba
     assert.equal(constaAprobado(TEXTO_DE_OTRO, o).length, 0,
       '🔴 y con el nuevo tiene que salir NO aprobado. Ahí está la diferencia entera.');
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    borrarTemporal(dir);
   }
 });
 
@@ -166,6 +166,6 @@ test('SCRUM-726 · lo que queda pendiente de firma se puede LISTAR, no se borra'
     assert.ok(pendientes[0].literales.includes(TEXTO_DE_OTRO),
       '🔴 el listado no trae el LITERAL, que es lo que el fundador necesita para firmarlo.');
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    borrarTemporal(dir);
   }
 });
