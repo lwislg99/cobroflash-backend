@@ -28,6 +28,7 @@ import http from 'node:http';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { scriptsDeLaPagina, sinComentarios } from './_scripts-de-la-pagina.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
@@ -99,13 +100,14 @@ test('SCRUM-1647c · A0 · CONTROL SEMBRADO: el contador ve un on*= y un <script
   assert.equal(scriptsDeLaPagina(fabricada).inline, 1, '🔴 CIEGO: el extractor de la casa no ve el <script> en línea fabricado');
 });
 
-for (const pagina of PAGINAS) {
-  test(`SCRUM-1647c · A1 · ${pagina}: 0 manejadores on*=`, () => {
-    const html = leer(pagina);
-    assert.ok(html.length > 1000, `🔴 CIEGO: ${pagina} pesa ${html.length} B`);
-    assert.deepEqual(manejadores(html), [], `🔴 ${pagina} lleva manejadores en línea: con script-src 'self' no corren`);
-  });
-}
+const sinManejadores = casosEscritos(PAGINAS, (pagina) => `SCRUM-1647c · A1 · ${pagina}: 0 manejadores on*=`, (pagina) => {
+  const html = leer(pagina);
+  assert.ok(html.length > 1000, `🔴 CIEGO: ${pagina} pesa ${html.length} B`);
+  assert.deepEqual(manejadores(html), [], `🔴 ${pagina} lleva manejadores en línea: con script-src 'self' no corren`);
+});
+test('SCRUM-1647c · A1 · public/login.html: 0 manejadores on*=', sinManejadores(0));
+test('SCRUM-1647c · A1 · public/register.html: 0 manejadores on*=', sinManejadores(1));
+sinManejadores.todos();
 
 test('SCRUM-1647c · A2 · login.html: 0 <script> sin src, y carga el guion desde /auth/js/login.js', () => {
   const s = scriptsDeLaPagina(leer('public', 'login.html'));
@@ -197,9 +199,8 @@ function banco({ search = '', loginResponde = { ok: true, status: 200, cuerpo: {
     document: {
       getElementById: (id) => {
         if (id === 'countdown') {
-          // `[^>]*>` y no el `>` pegado: lo exige scrum553 (de paso, SCRUM-1647d).
-          const m = nodos['resend-row']._html.match(/<strong id="countdown"[^>]*>([^<]*)<\/strong>/);
-          return m ? { set textContent(v) { nodos['resend-row']._html = nodos['resend-row']._html.replace(/(<strong id="countdown"[^>]*>)[^<]*/, `$1${v}`); } } : null;
+          const m = nodos['resend-row']._html.match(/(id="countdown"[^>]*>)([^<]*)/);
+          return m ? { set textContent(v) { nodos['resend-row']._html = nodos['resend-row']._html.replace(/(id="countdown"[^>]*>)[^<]*/, `$1${v}`); } } : null;
         }
         return nodos[id] || null;
       },

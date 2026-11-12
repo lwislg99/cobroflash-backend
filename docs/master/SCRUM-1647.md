@@ -57,6 +57,14 @@ Ticket sin comentarios al empezar.
 **NO medido:** la tanda entera en local (orden del orquestador: la hace el obligatorio de CI); el
 alta con invitación por navegador (no toco `register.html`, `auth.routes.ts` sólo gana una ruta GET;
 su test por ruta, scrum1515, salta sin banco desechable); yaqu.app tras el despliegue.
+
+---
+
+*Unión de los dos tramos revisada a mano tras el merge `bc9de86d6` (SCRUM-1572): las dos ramas crearon
+este registro y git lo unió contra una base vacía. Arriba, el tramo J3 (SCRUM-1647c); abajo, el J2.*
+
+---
+
 # SCRUM-1647 · CSP paso 2, mitad del equipo de Javier · tramo J2: las tres páginas de pago sin código en línea
 
 **Medido contra:** `origin/main` = `31858144e08886024d72808c5da1479a5122219a` · 2026-11-12T11:34:50Z (cabecera `Date` de GitHub; la rama lleva ese main mergeado y ninguno de sus commits toca los ficheros de este tramo)

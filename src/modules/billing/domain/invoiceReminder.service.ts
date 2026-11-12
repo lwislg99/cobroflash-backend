@@ -169,6 +169,10 @@ async function sendReminderWA(
   const chargeId      = inv.chargeId ?? inv.charge?.id ?? null;
   // Regla 24/26: un J-… es un JUSTIFICANTE — el copy propio nunca dice "factura" pre-SIF
   const docLabel      = isReceiptNumber(inv.number) ? 'justificante' : 'factura';
+  // SCRUM-1436j · texto firmado en SCRUM-1436 c.18287 (cuenta de Luis; vale por c.18734): el
+  // artículo va DENTRO de la etiqueta. «el pago del ${docLabel}» daba «el pago del factura».
+  // Misma forma que el recordatorio manual (`invoicesAdmin.routes.ts`, SCRUM-1436b).
+  const pagoDe        = isReceiptNumber(inv.number) ? 'del justificante' : 'de la factura';
   const urgency       = day === 14 ? '\nPor favor, complétalo a la mayor brevedad posible.' : '';
 
   try {
@@ -183,7 +187,7 @@ async function sendReminderWA(
         customerId: inv.customerId,
         windowText:
           `Hola ${customerName} 👋\n` +
-          `Te recordamos que tienes pendiente el pago del ${docLabel} ${appendStageLabel(inv.number, inv.stageLabel)} ` +
+          `Te recordamos que tienes pendiente el pago ${pagoDe} ${appendStageLabel(inv.number, inv.stageLabel)} ` +
           `por ${importe} de parte de ${merchantName}.${urgency}\n` +
           `Paga de forma segura desde aquí 👇\n` +
           `${BASE_URL}/pay/invoice/${payToken}\n` +
@@ -192,7 +196,7 @@ async function sendReminderWA(
         windowCta: {
           bodyText:
             `Hola ${customerName} 👋\n` +
-            `Te recordamos el pago pendiente del ${docLabel} ${appendStageLabel(inv.number, inv.stageLabel)} por *${importe}* de parte de *${merchantName}*.${urgency}\n` +
+            `Te recordamos el pago pendiente ${pagoDe} ${appendStageLabel(inv.number, inv.stageLabel)} por *${importe}* de parte de *${merchantName}*.${urgency}\n` +
             `Si ya lo has pagado, ignora este mensaje. ¡Gracias!`,
           buttonText: 'Pagar ahora',
           url: `${BASE_URL}/pay/invoice/${payToken}`,
@@ -231,7 +235,7 @@ async function sendReminderWA(
       const result = await sendWhatsAppText({
         to: phone,
         merchantId: inv.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
-        text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago del ${docLabel} *${inv.number}* por *${importe}* de parte de *${merchantName}*.\n${urgency}\nSi ya has realizado el pago, por favor ignora este mensaje. ¡Gracias!`,
+        text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago ${pagoDe} *${inv.number}* por *${importe}* de parte de *${merchantName}*.\n${urgency}\nSi ya has realizado el pago, por favor ignora este mensaje. ¡Gracias!`,
       });
       if (result?.ok) {
         console.log(`[invoiceReminder] ✓ texto ${day}d → inv #${inv.number}`); // SCRUM-101: sin nombre del cliente

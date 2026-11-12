@@ -123,7 +123,12 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
     reason: 'triple cerradura: flag E2E_TEST_LOGIN_ENABLED + secreto timing-safe + allowlist de emails',
   },
   { method: 'POST', path: '/auth/logout', kind: 'no-sensitive-resource', reason: 'revoca solo la cookie propia del llamante' },
-  { method: 'GET', path: '/auth/js/login.js', kind: 'no-sensitive-resource', reason: 'guion constante de /login.html, sin datos (SCRUM-1647c; línea de J3 por excepción firmada en c.21658)' },
+  {
+    method: 'GET',
+    path: '/auth/js/login.js',
+    kind: 'no-sensitive-resource',
+    reason: 'guion estático de /login.html (SCRUM-1647c): cadena constante, sin datos de la petición ni de ningún merchant; no hay :id en la URL',
+  },
   { method: 'GET', path: '/auth/js/alta.js', kind: 'no-sensitive-resource', reason: 'guion constante de /register.html, sin datos (SCRUM-1647d; línea de J3 por excepción firmada en c.21658)' },
 
   // ── /quote — única ruta pública con sesión real (el resto del router, ver PENDING) ──
@@ -161,6 +166,8 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
   { method: 'GET', path: '/pay/mp/:token', kind: 'token', reason: 'Charge.receiptToken' },
   { method: 'GET', path: '/pay/mp/:token/result', kind: 'token', reason: 'Charge.receiptToken' },
   { method: 'GET', path: '/pay/js/pago.js', kind: 'no-sensitive-resource', reason: 'guion constante de las páginas de pago, sin datos (SCRUM-1647; línea de J2 por excepción firmada en c.21631)' },
+  { method: 'GET', path: '/albaran/js/firma.js', kind: 'no-sensitive-resource', reason: 'guion constante de la página pública de firma del parte, sin datos ni token: los datos van en el HTML que autoriza el token (SCRUM-1646)' },
+  { method: 'GET', path: '/albaran/css/firma.css', kind: 'no-sensitive-resource', reason: 'CSS constante de la página pública de firma del parte, sin datos (SCRUM-1723)' },
 
   // ── /pay/quote y /quote — decisión del cliente (SCRUM-95). Quote.decisionToken,
   // mismo patrón que Charge.receiptToken/Albaran.firmaToken. Antes Quote.id crudo —
