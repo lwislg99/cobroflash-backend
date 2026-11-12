@@ -32,8 +32,8 @@ del fundador en SCRUM-1713 c.21583 (el aviso en Inicio o en la barra); líneas e
   SII, fuera de España → `null`.
 - Mutaciones sobre `dist/app.js` (bytes restaurados, hash comprobado): el campo a `null` → caen 2; quitar
   `llevaLibrosPorSii` del `select` → caen 2.
-- Los 166 ficheros de `tests/` que nombran `/admin/me`, `app.ts` o `motivoSiiSinEmision`: ver abajo la cifra
-  final (con el banco desechable para los gateados).
+- Los 166 ficheros de `tests/` que nombran `/admin/me`, `app.ts` o `motivoSiiSinEmision`, con un banco
+  Postgres desechable propio (`LIBRO_PG_URL`, loopback, `*_test`) para los gateados: 1232/1232, 0 saltados.
 
 ## Sin medir
 
