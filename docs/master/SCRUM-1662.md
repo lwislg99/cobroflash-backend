@@ -118,3 +118,19 @@ los contaba como «base de la antecesora»; no lo eran: en `main` no existe la c
 - El campo del PATCH se DECLARA en `scripts/_sin-consumir-declarados.json` (carril S2, este ticket): el alta ya
   lo consume y el editor de la ficha es de S2. Si su commit en este PR lo conecta, la entrada pasa a `retiradas`.
 Los cuatro, en verde tras esto (62/62 con `scrum480`/`scrum533` de EOL).
+
+### 12-nov (S2) · la pantalla: «Notas internas» sólo para el admin
+
+Lo que pedía «Queda FUERA (otro carril)», en este mismo PR (norma tras SCRUM-89). Firma: **c.21555**, ya
+citada arriba («el operario deja de verlas y de poder editarlas … Sin textos nuevos»). **Cero textos nuevos.**
+- `public/dashboard/js/jobDetailView.js` · `pintarNotasInternas` sólo se llama si
+  `window.appUserRole === 'admin'` (LISTA BLANCA, como `veNegocio` del Inicio: un rol desconocido cae al lado
+  seguro, SCRUM-147). Al que no es admin se le QUITA la línea entera del bloque «El trabajo» después de
+  componerlo, para no mover el orden de SCRUM-817.
+- `tests/scrum1662-notas-solo-admin.test.mjs` (nuevo, sin gate): monta la ficha en el banco de vistas con la
+  red doblada; el admin ve la línea y la nota, el técnico y un rol desconocido no ven ni la línea ni el texto.
+  **3/3 en verde** sobre la punta de S1 (`dca552b55` + este cherry-pick).
+- Commit original `adadf10f6` (rama `s2-1662-front-notas`), traído aquí por cherry-pick sin conflicto.
+
+**Skill UI:** no cargada · esta entrada QUITA una línea ya existente para un rol, sin componente nuevo, sin
+estilo y sin texto: no hay nada que diseñar.
