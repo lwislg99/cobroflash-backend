@@ -56,7 +56,7 @@ La cabecera de `src/modules/invoicing/domain/emission.service.ts:3-6` y la defin
 **Medido contra:** `origin/main` = `75d4878628254b3e6b72c1dfe69f2d8575b978ef` · 2026-11-12T10:20:49Z (cabecera `Date` de GitHub)
 
 A9: comprobación → `tests/scrum1567b-portal-sin-facturas-en-receipt.test.mjs`
-A9: aviso → cicatriz J2 «otra vez la muestra local de guards elegida a mano: no llevaba scrum553» — no se pudo comprobar: qué guards entran en la muestra local lo decide la sesión
+A9: aviso → cicatriz J2 «otra vez la muestra local de guards elegida a mano: no llevaba scrum553, y un control de mi test con el `>` pegado tumbó el obligatorio de #3098» — no se pudo comprobar: qué guards entran en la muestra local lo decide la sesión
 
 Lo construye J2 con la firma del fundador sobre la propuesta de arriba (SCRUM-1567 c.21121, puntos 3 y 4). Los literales se copiaron de Jira. Se construyó el 27-oct contra `922fddaab477767cbf9b9e0f789d39a48e85cd2e` y se quedó sin empujar, a la espera de #2937 (1573b) y del PR de 1624b, que tocan el mismo fichero; el 12-nov el relevo (jv-j2bp) lo puso al día con `git merge origin/main` y lo volvió a medir entero. Lo de abajo es la medición del 12-nov.
 
