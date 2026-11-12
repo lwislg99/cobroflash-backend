@@ -1,0 +1,104 @@
+// Escribe src/modules/system/app/routes/quoteDecisionEstilo.ts con el CSS copiado VERBATIM del fuente.
+import { readFileSync, writeFileSync } from 'node:fs';
+const [, , fuente, destino] = process.argv;
+const l = readFileSync(fuente, 'utf8').split('\n');
+if (!l[91].trim().startsWith('<style>') || !l[224].trim().startsWith('</style>')) throw new Error('base: marcas movidas');
+if (!l[365].startsWith('const TIER_CSS = `') || l[381] !== '`;') throw new Error('tier: marcas movidas');
+const base = l.slice(92, 224).join('\n');
+const tier = l.slice(366, 381).join('\n');
+const marca = l.slice(45, 51).join('\n'); // las seis reglas de brandOverrideCss, con ${brandColor}
+if (!l[44].includes('return `<style>') || !l[51].includes('</style>`;')) throw new Error('marca: marcas movidas');
+for (const t of [base, tier]) if (t.includes('`') || t.includes('${') || t.includes('\\')) throw new Error('no cabe en plantilla');
+if ((marca.match(/\$\{brandColor\}/g) || []).length !== 6) throw new Error('marca: se esperaban 6 sustituciones');
+
+const ts = `// src/modules/system/app/routes/quoteDecisionEstilo.ts — SCRUM-1646d (CSP paso 2, \`style-src 'self'\`)
+//
+// EL CSS DE LA PÁGINA PÚBLICA DE FIRMA DEL PRESUPUESTO, FUERA DEL HTML.
+//
+// Hasta SCRUM-1646d la página llevaba TRES \`<style>\` en línea —el de \`renderPage\`, el de las opciones
+// (\`TIER_CSS\`, en el cuerpo) y el del color de marca (\`brandOverrideCss\`)— y una veintena de \`style=\`
+// en el marcado de sus seis caras. Con \`style-src 'self'\` APLICADA (SCRUM-1637, paso 3) el navegador no
+// pinta ninguno y la página del cliente sale desnuda (lo midió SCRUM-1723 en las de pago).
+//
+// ⚠️ CERO CAMBIOS VISIBLES (superficie pública, la del piloto): las reglas son las MISMAS, copiadas por
+// programa del fuente anterior, y las hojas van en el MISMO orden de la cascada (base → marca →
+// opciones). Lo único nuevo son las reglas del final de la base: los \`style=\` que llevaba el marcado,
+// copiados tal cual, cada uno a una regla por id o por una clase que sólo casa ese elemento.
+//
+// LA HOJA DE MARCA ES DINÁMICA: lleva el color del negocio. No se interpola en el HTML ni en una hoja
+// constante: la sirve una ruta (\`/pay/quote/css/marca/<rrggbb>\`) que valida el color con el MISMO filtro
+// de antes (\`^#[0-9a-fA-F]{6}$\`). Un color que no pasa no pinta enlace (como antes, no pintaba \`<style>\`)
+// y la ruta contesta 404 sin cuerpo: nada que no sean seis hexadecimales llega nunca al CSS.
+//
+// Lo que el guion cambia con \`el.style.x = …\` (CSSOM) NO lo bloquea \`style-src\`: eso sigue igual
+// (\`quoteDecisionNavegador.ts\` ya enseña con \`'block'\`, no con \`''\`).
+//
+// Huella \`?v=\` = sha1 del contenido (SCRUM-274): \`immutable\` sólo con la huella buena; si no, \`no-cache\`.
+import { huellaDeContenido, CACHE_CON_HUELLA } from '../../../../core/http/huellaEstaticos';
+
+/** La hoja de \`renderPage\` (todas las caras), tal cual, más los \`style=\` del marcado al final. */
+export const PRESUPUESTO_FIRMA_CSS = \`
+${base}
+    /* SCRUM-1646d · los \\\`style=\\\` que llevaba el marcado, copiados tal cual. Por id o por una clase que
+       sólo lleva ese elemento. El guion los enseña con \\\`el.style.display = 'block'\\\` (CSSOM). */
+    #tier-cards { display:flex;flex-direction:column;gap:12px;margin-bottom:20px }
+    #tier-confirm { display:none }
+    #tier-confirm p { font-size:14px;color:#333c37;margin-bottom:12px }
+    #btn-accept-wrapper.oculto-hasta-elegir { display:none }
+    #sig-error { color:#dc2626;font-size:13px;margin-top:8px;display:none }
+    .centrado { text-align:center }
+    .condiciones-wrap { text-align:center;margin-bottom:4px }
+    .btn-pedir-nuevo { display:inline-block;margin-top:14px;background:#16a34a;color:#fff;font-weight:700;padding:12px 22px;border-radius:999px;text-decoration:none }
+    .enlace-rechazar { display:block;text-align:center;margin-top:16px;font-size:13.5px;color:#6b756f;text-decoration:underline }
+    .rechazo-titulo { font-size:16px;font-weight:700;color:#0f1c17;margin:0 0 4px;text-align:center }
+    .rechazo-sub { font-size:13px;color:#6b756f;margin:0 0 16px;text-align:center }
+    .rechazo-label { font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px }
+    .enlace-volver { display:block;text-align:center;margin-top:16px;font-size:13.5px;color:#15803d;font-weight:600;text-decoration:none }
+\`;
+
+/** La hoja de las opciones (\`TIER_CSS\`), tal cual. Sólo la enlaza la cara de firmar. */
+export const PRESUPUESTO_OPCIONES_CSS = \`
+${tier}
+\`;
+
+/** El filtro de antes, en un sitio: el color de marca se usa sólo si es \`#rrggbb\`. */
+export const COLOR_DE_MARCA_VALIDO = /^#[0-9a-fA-F]{6}$/;
+
+/**
+ * La hoja de marca para un color YA VALIDADO. Las reglas son las de \`brandOverrideCss\`, tal cual:
+ * el color del negocio va en ACENTOS, NUNCA en el botón primario (P1-1).
+ */
+export function cssDeMarca(brandColor: string): string {
+  return \`
+${marca}
+\`;
+}
+
+export const HUELLA_PRESUPUESTO_FIRMA_CSS = huellaDeContenido(PRESUPUESTO_FIRMA_CSS);
+export const HUELLA_PRESUPUESTO_OPCIONES_CSS = huellaDeContenido(PRESUPUESTO_OPCIONES_CSS);
+/** La huella de la hoja de marca es la de su PLANTILLA: el color ya va en la ruta. */
+export const HUELLA_PRESUPUESTO_MARCA_CSS = huellaDeContenido(cssDeMarca('#000000'));
+
+/** Los \`href\` que pinta la página. Relativos al propio servidor: \`style-src 'self'\`. */
+export const HREF_PRESUPUESTO_FIRMA_CSS = \`/pay/quote/css/firma.css?v=\${HUELLA_PRESUPUESTO_FIRMA_CSS}\`;
+export const HREF_PRESUPUESTO_OPCIONES_CSS = \`/pay/quote/css/opciones.css?v=\${HUELLA_PRESUPUESTO_OPCIONES_CSS}\`;
+
+/** El \`href\` de la hoja de marca, o \`null\` si el color no pasa el filtro (entonces no hay enlace). */
+export function hrefDeLaHojaDeMarca(brandColor?: string | null): string | null {
+  if (!brandColor || !COLOR_DE_MARCA_VALIDO.test(brandColor)) return null;
+  return \`/pay/quote/css/marca/\${brandColor.slice(1)}?v=\${HUELLA_PRESUPUESTO_MARCA_CSS}\`;
+}
+
+/** El color de la ruta (\`rrggbb\`, sin \`#\`) → \`#rrggbb\`, o \`null\` si no pasa el MISMO filtro. */
+export function colorDeLaRuta(enLaRuta: unknown): string | null {
+  const color = typeof enLaRuta === 'string' ? \`#\${enLaRuta}\` : '';
+  return COLOR_DE_MARCA_VALIDO.test(color) ? color : null;
+}
+
+/** \`Cache-Control\` según la huella pedida: \`immutable\` sólo si cuadra; si no, revalidar siempre. */
+export function cacheDeLaHoja(pedida: unknown, buena: string): string {
+  return pedida === buena ? CACHE_CON_HUELLA : 'no-cache';
+}
+`;
+writeFileSync(destino, ts);
+console.log('escrito', destino, ts.length);
