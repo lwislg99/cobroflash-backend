@@ -156,7 +156,10 @@ tarjeta y de este carril; no se arreglan aquí porque el GO las deja fuera. Se n
 
 **Medido contra:** `origin/main` = `ff2af3368930614c693353c144e521d3c50e8bc5` · 2026-11-12T16:30:29Z
 
-A9: comprobación → `tests/scrum942-bytes-de-control-en-el-arbol.test.mjs` — empujé las `.txt` de evidencias con el 0x05 crudo de la ★ sin correr scrum942; ahora el guion las escribe como `\x05` visible.
+A9: comprobación → `tests/scrum942-bytes-de-control-en-el-arbol.test.mjs`
+
+El fallo propio: empujé las `.txt` de evidencias con el 0x05 crudo de la ★ sin correr scrum942; ahora
+el guion las escribe como `\x05` visible.
 
 **El rojo de #3112** (obligatorio de `d7df83e6`, 13.381 = 13.371 + 1 fail + 9 skip): sólo `scrum942`,
 por un byte 0x05 en las cuatro `.txt` de evidencias de arriba. Era la mitad de la ★: U+2605 no está en
