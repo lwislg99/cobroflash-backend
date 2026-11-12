@@ -713,3 +713,43 @@ Mutaciones (`migrar-1218i.salida.txt`), las dos restauradas después:
 `CON_EL_PATRON_YA` no cambia (3): ninguno de los cuatro estaba en ella.
 
 **Sin medir:** Linux/CI con pasadas; staging (los cuatro se encienden con el banco y no se han corrido con `QA_DB_TEST`); los procesos hijos, imports y métodos, que el detector no ve. **Suite entera local: NO CORRIDA.**
+
+## J6 · SCRUM-1218j · `scrum560` acusa desde UN `fetch` a su propio `listen(0)`
+
+**Medido contra:** `origin/main` = `1e513d684da91f26226ce6f13e1468a4afb45fde` · 2026-10-27T16:42:42Z (hora de GitHub al acabar el rojo, el verde y las mutaciones; sesión J6 `jv-j6dr`, por encargo del orquestador `cobroflash-backend-8b`, decisión c.21091)
+
+A9: comprobación → `tests/scrum836-ancla-de-mutacion-viva.test.mjs`
+
+(Lo que me salió mal: escribí las dos mutaciones con el umbral a pelo en la línea, `  if (sueltos >= 1) return`, y una ancla era prefijo de la otra: habría salido tres veces y la criba de la casa la habría dado por ambigua. Lo cacé leyendo `ambiguedadDelAncla` antes de correrlas; el umbral pasó a la constante `UMBRAL_SUELTOS` y cada ancla sale dos veces, la línea de verdad primero.)
+
+### ① El cambio
+
+- `enPatronPeligroso` acusa con `sueltos >= UMBRAL_SUELTOS`, y `UMBRAL_SUELTOS = 1` (era 3). Un `fetch` en bucle sigue acusando como antes.
+- **Segunda siembra** en `censar()`: `siembra-scrum1218j-un-fetch-suelto.mjs`, con un `app.listen(0)` y UN `fetch` suelto. Si el umbral vuelve a subir, el censo sale CIEGO en vez de verde.
+- AUTOPRUEBA: `dosSueltos` y `unaLlamadaSuelta` pasan a acusar (ahora hacen falta), sale `unoSuelto` (acusa) y `llamadaSinFetch` (no acusa). La fixture `recursiva` pierde el `fetch` suelto que llevaba: con el umbral en uno, ese `fetch` solo ya acusaba, y el caso dejaba de medir que la recursión se corta sin contar.
+- `CON_EL_PATRON_YA` sigue con los 3 de Luis, con su motivo de siempre (scrum1188d, scrum1489, scrum912). **El umbral nuevo no destapa ninguno más:** con main, el trinquete («ningún fichero NUEVO») y su otra mitad («la lista no puede quedarse vieja») salen en verde, así que el censo es exactamente esos 3. Población: los `tests/*.test.mjs` de main más las dos siembras.
+
+### ② Rojo primero, en una copia fuera del árbol
+
+La copia es `tests/` de main (`git archive`) con los 4 ficheros sacados de `77ce98573`, el main de antes de 1218i, y `typescript` copiado, sin junction. Se corren el guard viejo y el nuevo sobre esa misma copia:
+
+| guard | sobre la copia (los 4 con `fetch`) | dónde se ve |
+| --- | --- | --- |
+| viejo (umbral 3) | 4 pass · 0 fail: no ve a ninguno | `evidencias/SCRUM-1218/rojo-1218j-guard-viejo.salida.txt` |
+| nuevo (umbral 1) | 3 pass · 1 fail: el trinquete nombra **exactamente** scrum131 (2), scrum136 (2), scrum876f (1) y webhooks-idempotencia (2) | `rojo-1218j-guard-nuevo.salida.txt` |
+| nuevo, sobre main | 4 pass · 0 fail | `verde-1218j-main.salida.txt` |
+
+1218i contó 1 `fetch` en scrum136; el detector cuenta 2, porque cuenta también las llamadas a una función del fichero. A los dos lados el fichero acusa.
+
+### ③ Mutaciones, con las piezas de la casa
+
+Declaradas en `MUTACIONES_QUE_ME_TUMBAN` del propio guard. Las corre `mutar-1218j.mjs.txt` con `censoDeDeclaraciones`, `correr` y `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, sin el meta-guard entero. Censo de la casa: 227 guards con declaración, y scrum560 sale con 2 y 0 incompletas. Pasada limpia: 4 pasados · 0 caídos · 0 movidos.
+
+- `UMBRAL_SUELTOS = 1` → `3`: **VIVA**, cae el trinquete (la siembra de uno no sale) y 2 colaterales.
+- `sueltos >= UMBRAL_SUELTOS` → `sueltos > UMBRAL_SUELTOS`: **VIVA**, cae la AUTOPRUEBA, con 2 colaterales.
+- Control del instrumento: una mutación inocua (una tilde en un comentario) sale **MUDA**, rc 1 (`mutaciones-1218j-control-mudo.salida.txt`).
+- `ambiguedadDelAncla(…, { seCitaASiMismo: true })` = `null` en las dos. `git status` limpio después de cada pasada.
+
+**Sin medir:** Linux/CI; el meta-guard entero (`npm run meta:mutaciones`), que no corrí; los procesos hijos, imports y métodos, que el detector sigue sin ver. **Suite entera local: NO CORRIDA.**
+
+**Guards** (237, 976, 1387, 560, 836, 812, 745, 267, 273, 1294, 921c, 1572 y 850, con este tramo dentro): **117 = 116 pass + 1 fail + 0 skip**. El fail es `scrum836`, que nombra anclas de scrum608 y scrum624e en `dist/`: este árbol no traía `dist/`. Compilado con `tsc --noCheck` (sin tocar `src/`), `scrum836` da 17/17.

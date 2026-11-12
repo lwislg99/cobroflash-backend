@@ -66,11 +66,12 @@ const rutaPortal = require_('./dist/modules/system/app/routes/customerPortal.rou
 const { getEmissionMode } = require_('./dist/modules/invoicing/domain/emission.service.js');
 const express = require_('express');
 
-/** Un comercio ES real (no el demo: id ≠ 1 y otro email), con el flag fijado en su fila. */
-const comercio = (flagOn) => ({
+/** Un comercio ES real (no el demo: id ≠ 1 y otro email), con el flag fijado en su fila.
+ *  `sii` es su respuesta al SII: desde SCRUM-1585, con el flag en ON sólo «No» (`false`) emite. */
+const comercio = (flagOn, sii = false) => ({
   id: 1567, name: 'Taller', legalName: 'Taller SL', email: 'taller1567@test.local', logoUrl: null, address: null,
   country: 'ES', brandColor: null, brandAccentColor: null, whatsappPhone: null,
-  flags: { INVOICING_ES_ENABLED: flagOn },
+  flags: { INVOICING_ES_ENABLED: flagOn }, llevaLibrosPorSii: sii,
   connectStatus: 'none', stripeAccountId: null, timezone: 'Europe/Madrid',
 });
 
@@ -125,6 +126,14 @@ test('SCRUM-1567b · ✅ CONTROL: los dos comercios del banco están en el modo 
   // Si esto cae, el resto mide otro modo: el banco no prueba lo que dice.
   assert.equal(getEmissionMode(comercio(false)), 'receipt');
   assert.equal(getEmissionMode(comercio(true)), 'fiscal');
+  assert.equal(getEmissionMode(comercio(true, null)), 'receipt');
+});
+
+test('SCRUM-1567b · flag en ON y SII «No consta» (SCRUM-1585): tampoco emite, y su portal no habla de facturas', async () => {
+  const html = await portal(comercio(true, null), []);
+  assert.ok(titulos(html).includes('Presupuestos'), `el lector no ve el apartado de presupuestos: ${JSON.stringify(titulos(html))}`);
+  assert.equal(saludo(html), 'Aquí tienes tus presupuestos.');
+  assert.ok(!titulos(html).includes('Facturas'), 'el apartado «Facturas» sigue en el portal de un comercio que no puede emitir');
 });
 
 test('SCRUM-1567b · comercio en receipt sin documentos: ni saludo con facturas, ni apartado «Facturas», ni «No hay facturas aún.»', async () => {

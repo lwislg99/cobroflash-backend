@@ -25,6 +25,12 @@
 // `scrum334` tenía UN `fetch` en el código, dentro de un bucle sobre 6 rutas: seis peticiones.
 // Un censo por número de llamadas lo habría clasificado «riesgo bajo» — al único fichero que
 // estaba abortando. Cuenta como peligroso un `fetch` DENTRO DE UN BUCLE, o 3 o más sueltos.
+//
+// ── SCRUM-1218j (27-oct-2026): EL UMBRAL BAJA A UNO ──────────────────────────────────────────
+// SCRUM-1218i midió `webhooks-idempotencia`, con DOS `fetch` sueltos, abortando 5 de 80 pasadas
+// con la firma de SCRUM-1204; con `--no-wasm-dynamic-tiering`, 0 de 120. El umbral de 3 lo dejaba
+// fuera, igual que a otros tres con uno o dos (scrum131, scrum136, scrum876f). Desde aquí basta UN
+// `fetch` a su propio `listen(0)`: decisión del orquestador del equipo J en SCRUM-1218 c.21091.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -103,6 +109,10 @@ const LA_SALIDA =
 // con nombre DEL PROPIO FICHERO cuenta los `fetch` de esa función en el sitio desde el que se llama.
 // ⚠️ Sigue CIEGO a: funciones importadas de otro fichero, métodos (`obj.pedir()`), `fetch` por otro
 // nombre (`globalThis.fetch`, `const f = fetch`) y procesos hijos.
+
+/** Cuántos `fetch` sueltos a su propio servidor bastan: UNO (SCRUM-1218j, c.21091). Era 3. */
+const UMBRAL_SUELTOS = 1;
+
 export function enPatronPeligroso(fuente, nombre = 'anonimo.mjs') {
   const sf = ts.createSourceFile(nombre, fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
 
@@ -147,9 +157,21 @@ export function enPatronPeligroso(fuente, nombre = 'anonimo.mjs') {
   for (const f of definiciones) if (!alcanzadas.has(f)) recorre(f, false, [f]);
 
   if (enBucle > 0) return { peligroso: true, motivo: `${enBucle} \`fetch\` DENTRO DE UN BUCLE (cuenta por muchas peticiones, no por una)` };
-  if (sueltos >= 3) return { peligroso: true, motivo: `${sueltos} \`fetch\` sobre su propio servidor (el umbral de SCRUM-100 son 3)` };
-  return { peligroso: false, motivo: `${sueltos} \`fetch\`: por debajo del patrón` };
+  if (sueltos >= UMBRAL_SUELTOS) return { peligroso: true, motivo: `${sueltos} \`fetch\` sobre su propio servidor (basta ${UMBRAL_SUELTOS}: SCRUM-1218j)` };
+  return { peligroso: false, motivo: 'ningún `fetch` sobre su propio servidor' };
 }
+
+/**
+ * Lo que este test tiene que tumbar (SCRUM-1387: la red de la casa, `npm run meta:mutaciones`).
+ * Cada ancla aparece DOS veces —la línea de verdad, más arriba, y su cita aquí— y ninguna es prefijo
+ * de la otra: con el umbral a pelo en una sola línea, las dos se solapaban y salían ambiguas.
+ */
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  { fichero: 'tests/scrum560-patron-fetch-servidor.test.mjs', de: 'const UMBRAL_SUELTOS = 1;',
+    a: 'const UMBRAL_SUELTOS = 3;', cae: 'SCRUM-560 · ningún fichero NUEVO pide con `fetch`' },
+  { fichero: 'tests/scrum560-patron-fetch-servidor.test.mjs', de: '  if (sueltos >= UMBRAL_SUELTOS)',
+    a: '  if (sueltos > UMBRAL_SUELTOS)', cae: 'SCRUM-560 · AUTOPRUEBA' },
+];
 
 /**
  * LA SIEMBRA (SCRUM-1218b): la forma de SCRUM-1456c, fabricada aquí y escrita a un temporal FUERA del
@@ -167,24 +189,39 @@ const FUENTE_SIEMBRA = [
   'for (const estado of [400, 500, 200]) { await emitir(); }',
 ].join('\n');
 
-/** Los ficheros de `tests/` que hoy caen en el patrón, con la siembra leída al lado. */
+/**
+ * LA SEGUNDA SIEMBRA (SCRUM-1218j): UN solo `fetch` suelto a su propio `app.listen(0)`, la forma más
+ * pequeña que el umbral nuevo tiene que ver. Si el umbral vuelve a subir, el censo sale CIEGO.
+ */
+const SIEMBRA_UNO = 'siembra-scrum1218j-un-fetch-suelto.mjs';
+const FUENTE_SIEMBRA_UNO = [
+  'const srv = app.listen(0);',
+  "const r = await fetch(`http://127.0.0.1:${srv.address().port}/webhooks/stripe`, { method: 'POST' });",
+].join('\n');
+
+/** Los ficheros de `tests/` que hoy caen en el patrón, con las dos siembras leídas al lado. */
 function censar() {
   const dirSiembra = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1218b-'));
   fs.writeFileSync(path.join(dirSiembra, SIEMBRA), FUENTE_SIEMBRA);
+  fs.writeFileSync(path.join(dirSiembra, SIEMBRA_UNO), FUENTE_SIEMBRA_UNO);
   try {
     const out = [];
-    let vioLaSiembra = false;
+    const vistas = new Set();
     const leer = (dir, filtro) => fs.readdirSync(dir).filter(filtro).map((f) => [dir, f]);
     for (const [dir, f] of [...leer(DIR, (x) => x.endsWith('.test.mjs')), ...leer(dirSiembra, () => true)]) {
       const r = enPatronPeligroso(fs.readFileSync(path.join(dir, f), 'utf8'), f);
       if (!r.peligroso) continue;
-      if (dir === dirSiembra && f === SIEMBRA) vioLaSiembra = true;
+      if (dir === dirSiembra) vistas.add(f);
       else out.push({ f, motivo: r.motivo });
     }
-    assert.ok(vioLaSiembra,
+    assert.ok(vistas.has(SIEMBRA),
       `🔴 CIEGO: la siembra \`${SIEMBRA}\` (la forma de SCRUM-1456c: \`fetch\` en una función con nombre `
       + 'a la que llama un bucle, y `listen(0, host, cb)`) no sale en el censo. Sin ella, «ningún fichero '
       + 'nuevo» no significa que no los haya: significa que el censo no los ve.');
+    assert.ok(vistas.has(SIEMBRA_UNO),
+      `🔴 CIEGO: la siembra \`${SIEMBRA_UNO}\` (UN \`fetch\` suelto a su propio \`app.listen(0)\`) no sale `
+      + 'en el censo: el umbral ha vuelto a subir, y un fichero con uno o dos `fetch` —como '
+      + '`webhooks-idempotencia`, que abortaba 5 de 80 (SCRUM-1218i)— entraría sin que nadie lo viera.');
     return out;
   } finally {
     fs.rmSync(dirSiembra, { recursive: true, force: true });
@@ -215,10 +252,13 @@ test('SCRUM-560 · AUTOPRUEBA: el detector caza el patrón y NO acusa a `node:ht
   const tresSueltos = 'const server = app.listen(0);\nawait fetch(a); await fetch(b); await fetch(c);';
   assert.equal(enPatronPeligroso(tresSueltos).peligroso, true, '🔴 no caza 3 `fetch` sueltos');
 
+  // SCRUM-1218j · el umbral es UNO: `webhooks-idempotencia` abortaba con dos (SCRUM-1218i).
   const dosSueltos = 'const server = app.listen(0);\nawait fetch(a); await fetch(b);';
-  assert.equal(enPatronPeligroso(dosSueltos).peligroso, false,
-    '🔴 acusa con 2 peticiones: el umbral medido de SCRUM-100 son 3, y un guard que acusa de más '
-    + 'se acaba desactivando igual que uno que no acusa.');
+  assert.equal(enPatronPeligroso(dosSueltos).peligroso, true,
+    '🔴 no caza 2 `fetch` sueltos: `webhooks-idempotencia` abortaba así 5 de 80 pasadas (SCRUM-1218i).');
+  const unoSuelto = 'const server = app.listen(0);\nawait fetch(a);';
+  assert.equal(enPatronPeligroso(unoSuelto).peligroso, true,
+    '🔴 no caza UN `fetch` suelto: el umbral es uno desde SCRUM-1218j (c.21091).');
 
   const conNodeHttp = 'const server = app.listen(0);\nfor (const r of rutas) { http.request({ agent: false }); }';
   assert.equal(enPatronPeligroso(conNodeHttp).peligroso, false,
@@ -246,13 +286,18 @@ test('SCRUM-560 · AUTOPRUEBA: el detector caza el patrón y NO acusa a `node:ht
   assert.equal(enPatronPeligroso(porLaDeclaracion).peligroso, true,
     '🔴 ve la función de flecha y no la `function` declarada: es la misma forma.');
   const unaLlamadaSuelta = 'const s = app.listen(0);\nconst emitir = async () => { await fetch(BASE); };\nawait emitir();';
-  assert.equal(enPatronPeligroso(unaLlamadaSuelta).peligroso, false,
-    '🔴 acusa a una función con UN `fetch` llamada UNA vez fuera de un bucle: es una petición.');
+  assert.equal(enPatronPeligroso(unaLlamadaSuelta).peligroso, true,
+    '🔴 no ve UN `fetch` a través de una llamada suelta: con el umbral en uno (SCRUM-1218j), es una petición y basta.');
+  const llamadaSinFetch = 'const s = app.listen(0);\nconst emitir = async () => { await pedir(BASE); };\nawait emitir();';
+  assert.equal(enPatronPeligroso(llamadaSinFetch).peligroso, false,
+    '🔴 acusa a una función SIN `fetch`: lo que cuenta es el `fetch`, no la llamada.');
   const tresLlamadasSueltas = 'const s = app.listen(0);\nconst emitir = async () => { await fetch(BASE); };\n'
     + 'await emitir(); await emitir(); await emitir();';
   assert.equal(enPatronPeligroso(tresLlamadasSueltas).peligroso, true,
     '🔴 no cuenta las llamadas: tres llamadas a una función con un `fetch` son tres peticiones.');
-  const recursiva = 'const s = app.listen(0);\nfunction otra(n) { if (n) otra(n - 1); }\nawait fetch(a);';
+  // SCRUM-1218j · sin el `fetch` suelto que llevaba: con el umbral en uno, ese solo ya acusaba, y el
+  // caso dejaba de medir la recursión.
+  const recursiva = 'const s = app.listen(0);\nfunction otra(n) { if (n) otra(n - 1); }\nawait otra(3);';
   assert.equal(enPatronPeligroso(recursiva).peligroso, false,
     '🔴 una función recursiva sin `fetch` dispara el detector: la recursión tiene que cortarse sin contar.');
 });

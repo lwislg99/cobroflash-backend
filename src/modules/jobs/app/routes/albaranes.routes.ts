@@ -65,7 +65,7 @@ import {
 } from '../../domain/albaranFacturacion';
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service';
 import { lineasParaFacturar, tieneDescuentoGlobal } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-887
-import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
+import { congelarCliente, clienteDelDocumento } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729 · SCRUM-1650b (lector de GET /:id)
 import { congelarEmisorDesdeFicha } from '../../../invoicing/domain/emisorCongelado'; // SCRUM-665
 import { datosDeAlbaranEmitido } from '../../domain/albaranEmision'; // SCRUM-841
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
@@ -132,7 +132,7 @@ const lectorAcotado = (jobIds: number[]): LectorListado => ({
     select: {
       id: true, merchantId: true, jobId: true, numero: true, fecha: true,
       createdAt: true, estado: true, lineas: true, invoiceId: true,
-      modoValoracion: true,
+      modoValoracion: true, customerName: true, customerLegalName: true, // SCRUM-1650 · cliente congelado al emitir
     },
   }),
 });
@@ -144,7 +144,7 @@ const lectorPrismaListado: LectorListado = {
     select: {
       id: true, merchantId: true, jobId: true, numero: true, fecha: true,
       createdAt: true, estado: true, lineas: true, invoiceId: true,
-      modoValoracion: true,
+      modoValoracion: true, customerName: true, customerLegalName: true, // SCRUM-1650 · cliente congelado al emitir
     },
   }),
   jobs: ({ merchantId, ids }) => prisma.job.findMany({
@@ -477,7 +477,8 @@ router.post('/consolidar', requireRole('admin'), async (req, res) => {
 
     const merchant = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
-      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true },
+      // SCRUM-1594: `llevaLibrosPorSii` lo exige `MerchantLike` cuando entre SCRUM-1585.
+      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true, llevaLibrosPorSii: true },
     });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
     if (getEmissionMode(merchant) === 'receipt') {
@@ -882,7 +883,7 @@ router.get('/:id', async (req, res) => {
     // `customer_missing_phone` en los dos envíos (`albaranWhatsApp.service.ts`): sin canal, esos
     // botones sólo saben fallar y la pantalla no los ofrece. Viaja resuelto, sin el número.
     const customer = cliente
-      ? { id: cliente.id, name: cliente.name, puedeRecibirWhatsApp: !!canalDeWhatsApp(cliente) }
+      ? { id: cliente.id, name: clienteDelDocumento(albaran, cliente).name, puedeRecibirWhatsApp: !!canalDeWhatsApp(cliente) } // SCRUM-1650b · el nombre que quedó ESCRITO al emitir (sugerencia del firmante, albaranDetailView.js)
       : null;
 
     // SCRUM-302 · EL PRESUPUESTO DE ORIGEN, Y ES DEL DOCUMENTO — NO DE LAS LÍNEAS.
@@ -1331,9 +1332,11 @@ router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
       // SCRUM-665 · se ensancha a los siete del emisor congelado (name/legalName/address/
       // logoUrl/whatsappPhone; email y taxId ya estaban). Esta lectura alimenta getEmissionMode
       // más abajo — es camino de emisión, y el congelado sale a coste cero: el viaje ya se hacía.
+      // SCRUM-1594: `llevaLibrosPorSii` lo exige `MerchantLike` cuando entre SCRUM-1585.
       select: {
         id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true,
         name: true, legalName: true, address: true, logoUrl: true, whatsappPhone: true,
+        llevaLibrosPorSii: true,
       },
     });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
@@ -1531,9 +1534,11 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
     const merchant = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
       // SCRUM-665 · idem que `facturar-parcial`: se ensancha a los siete del emisor congelado.
+      // SCRUM-1594: `llevaLibrosPorSii` lo exige `MerchantLike` cuando entre SCRUM-1585.
       select: {
         id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true,
         name: true, legalName: true, address: true, logoUrl: true, whatsappPhone: true,
+        llevaLibrosPorSii: true,
       },
     });
     if (!merchant) return res.status(404).json({ error: 'not_found' });

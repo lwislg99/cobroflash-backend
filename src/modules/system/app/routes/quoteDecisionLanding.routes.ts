@@ -2,7 +2,7 @@ import express, { Router, Request, Response } from 'express';
 import path from 'path'; // SCRUM-822 · `root` de `res.sendFile`
 import fetch from 'node-fetch';
 import { prisma } from '../../../../core/db/prisma';
-import { esc, parseToken, formatMoneyEs } from '../../../../core/utils/utils';
+import { esc, parseToken, formatMoneyEs, rotuloDeTipo } from '../../../../core/utils/utils';
 import { getLocale } from '../../../../core/i18n/locales';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { isQuoteExpired } from '../../../quotes/domain/expire.service';
@@ -304,7 +304,8 @@ async function loadQuote(token: string) {
       // SCRUM-1001 · `id`, `email` y `flags`: `getEmissionMode` reconoce al demo y el interruptor por negocio con ellos.
       // SCRUM-1279 · `clausulasPresupuesto`: las cláusulas de cierre que el PDF imprime; sin ella la
       // página no puede enseñar lo que el cliente firma.
-      merchant: { select: { id: true, email: true, flags: true, name: true, legalName: true, logoUrl: true, address: true, country: true, brandColor: true, brandAccentColor: true, whatsappPhone: true, timezone: true, clausulasPresupuesto: true } },
+      // SCRUM-1594 · `llevaLibrosPorSii`: lo exige `MerchantLike` cuando entre SCRUM-1585 (el modo mira el SII).
+      merchant: { select: { id: true, email: true, flags: true, name: true, legalName: true, logoUrl: true, address: true, country: true, brandColor: true, brandAccentColor: true, whatsappPhone: true, timezone: true, clausulasPresupuesto: true, llevaLibrosPorSii: true } },
       customer: { select: { name: true } },
     },
   });
@@ -482,7 +483,8 @@ function renderQuoteDetail(
   });
   const conDescuento = pie.filas.some((f) => f.etiqueta === 'Suma de líneas:');
   const rotuloEnLaPagina = (etiqueta: string) => {
-    const iva = /^IVA (\d+)%:$/.exec(etiqueta);
+    // SCRUM-1636 · el pie ya trae el tipo con coma («IVA 7,5%:»); sin `,\d+` caía al rótulo crudo.
+    const iva = /^IVA (\d+(?:,\d+)?)%:$/.exec(etiqueta);
     return iva ? `IVA (${iva[1]}%)` : etiqueta.replace(/:$/, '');
   };
   const vatHtml = conDescuento
@@ -494,7 +496,7 @@ function renderQuoteDetail(
     ? `<div class="totals-block">
         <div class="totals-row"><span>Base imponible</span><span>${money(vat.base)}</span></div>
         ${vat.entries.filter((e) => e.rate > 0).map((e) => `
-        <div class="totals-row"><span>IVA (${e.rate}%)</span><span>${money(e.cuota)}</span></div>`).join('')}
+        <div class="totals-row"><span>IVA (${rotuloDeTipo(e.rate)}%)</span><span>${money(e.cuota)}</span></div>`).join('')}
       </div>`
     : '';
 
@@ -762,7 +764,9 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
   const shareTextEnc = encodeURIComponent(`✅ He aceptado mi ${locale.quoteVerb} con ${shareName}. ¡Gracias!`);
   // SCRUM-1001 · sin cobro por YaQu (modo `receipt`: ES real con INVOICING_ES_ENABLED OFF) la página no
   // ofrece pagar, así que tras aceptar dice quién se ocupa. Literal FIRMADO por Javier el 21-sep-2026.
-  const sinBotonDePago = getEmissionMode((loadedQuote as any).merchant ?? {}) === 'receipt';
+  // SCRUM-1594 · sin `as any`: con él el compilador no exigía los campos de `MerchantLike`, y un
+  // campo que faltara en el `select` de `loadQuote` cambiaría el modo EN SILENCIO en esta página.
+  const sinBotonDePago = getEmissionMode(loadedQuote.merchant) === 'receipt';
 
   // PC-A (N1): botón "💬 Tengo una duda" → WhatsApp del PRO. Mismo patrón que el estado
   // rejected. Si el negocio no tiene whatsappPhone, no se muestra (degradación digna).

@@ -18,6 +18,7 @@ paths:
   - "scripts/tests-que-cubren.mjs"
   - "scripts/_arbol-quieto.mjs"
   - "scripts/frontera-dist.mjs"
+  - "tests/banco-scrum911/**"
   - "scripts/_suelo-*"
   - "tests/_banco-*"
   - "tests/_suelo-*"

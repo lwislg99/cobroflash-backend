@@ -120,6 +120,22 @@ function renderQuotesView(container, template, documentoSuelto) {
   alertBox.style.display = "none";
   leftCard.appendChild(alertBox);
 
+  // SCRUM-1651 · DUPLICAR UN PRESUPUESTO CON VARIAS OPCIONES COPIA SÓLO UNA, Y AQUÍ SE DICE. Este
+  // editor no tiene opciones: de las tres sólo recibe las líneas de la recomendada (`better`), y
+  // el profesional creía tener una copia de todo. Va en su PROPIO nodo y no en `alertBox`, porque
+  // `setAlert(null, "")` vacía el aviso de «Plantilla cargada» en cuanto llegan los datos: un
+  // aviso que se borra solo a los pocos milisegundos no lo lee nadie. Sólo lo enciende la copia
+  // que viene de «Duplicar» con más de una opción (`soloLaRecomendada`, en `duplicateQuote`).
+  // El nodo NACE sólo en esa copia: una vista que no lo necesita no lo monta ni oculto (los guards
+  // de SCRUM-697/698 cuentan nodos, y un `hidden` sigue siendo un nodo más).
+  if (template && template.soloLaRecomendada === true) {
+    const avisoSoloLaRecomendada = document.createElement("div");
+    avisoSoloLaRecomendada.className = "alert warning quotes-aviso-duplicado";
+    avisoSoloLaRecomendada.setAttribute("role", "status");
+    avisoSoloLaRecomendada.textContent = "Se duplica sólo la opción recomendada."; // APROBADO por el orquestador por delegación del fundador, 3-nov-2026 (SCRUM-1651 comentario 21372)
+    leftCard.appendChild(avisoSoloLaRecomendada);
+  }
+
   function setAlert(type, msg) {
     alertBox.textContent = msg || "";
     alertBox.className = "alert";
@@ -2853,13 +2869,15 @@ descWrapper.appendChild(descLabel);
         // deja aquel contrato intacto y cumple lo que F4 pedía del disparador: que DIGA lo que
         // esconde. Sin esto, un descuento escrito viviría dentro de una hoja cerrada — un dato
         // invisible que nadie corrige, que es justo lo que CONT-01 ② prohíbe.
+        // SCRUM-1636 ① · el descuento con COMA decimal («Dto. 12,5 %»), como el IVA de al lado;
+        // `fmtNumeroEs` (api.js) deja un entero igual («Dto. 10 %»), sin «,0».
         const dtoDeEsta = window.quoteDescuentos.dtoDeLinea(line.dtoInput && line.dtoInput.value);
         const esSuplido = !!(line.suplidoCheck && line.suplidoCheck.checked);
         line.ajustesBtn.textContent = resumenAjustes(
           esSuplido,
           safeVat,
           0,
-        ) + (dtoDeEsta > 0 ? ` · Dto. ${dtoDeEsta} %` : '');
+        ) + (dtoDeEsta > 0 ? ` · Dto. ${fmtNumeroEs(dtoDeEsta)} %` : '');
         // 🔴 SCRUM-915h · LA FICHA SÓLO SI LA LÍNEA NO VA CON LO DE SIEMPRE (v3: «otro IVA,
         // descuento, suplido»). «Lo de siempre» es el IVA por defecto del documento, sin descuento
         // y sin suplido: una ficha «IVA 21 %» repetida en cada línea no dice nada que no diga ya el
@@ -5114,7 +5132,9 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
         // `tiers` y `currency` viajan en la plantilla y NO se restauran aquí, y está medido:
         // el editor no tiene tramos (esta vista no nombra `tiers` ni una vez) ni selector de
         // moneda (usa la del merchant). No se inventa un campo para meterlos.
-        setAlert('success', `Plantilla "${template.name}" cargada — completa los datos del cliente y genera el presupuesto.`);
+        // SCRUM-1654 · aquí se pintaba un aviso de plantilla aplicada que NADIE vio nunca: el
+        // vaciado del aviso al final de esta carga (el que quita el de carga en curso) lo borraba
+        // a los ~110 ms, medido en yaqu.app. Se retiró porque no era visible; ese vaciado se queda.
       }
 
       const merchantPromise = getMerchantProfile();
@@ -5339,7 +5359,8 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     // dice «presupuesto».
     if (esDocumentoSuelto) {
       const ivaPorDefecto = fieldVatDefault.input.value;
-      ajustesSueltoValor.textContent = "IVA por defecto" + (ivaPorDefecto === "" ? "" : " " + ivaPorDefecto + " %");
+      // SCRUM-1636 ① · el valor del selector es «7.5»: se pinta «7,5» (`fmtTipoIvaEs`, SCRUM-1608).
+      ajustesSueltoValor.textContent = "IVA por defecto" + (ivaPorDefecto === "" ? "" : " " + fmtTipoIvaEs(Number(ivaPorDefecto) / 100) + " %");
     } else {
       filaCobroValor.textContent = textoDeCobro();
       const pagos = pmDefs.filter(function (d) { return pmChecks[d.key].checked; })

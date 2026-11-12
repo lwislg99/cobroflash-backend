@@ -160,6 +160,9 @@ async function initApp() {
   // Ocultar el nav es UX; la seguridad real la da el `requireRole('admin')` del servidor.
   // La función vive al final del fichero, a nivel superior, para que el banco de vistas la EJECUTE.
   aplicarRolALaBarra(document, window.appUserRole);
+  // SCRUM-1701 (D3, SCRUM-1686 c.21461): y lo que no es de este MODO DE EMISIÓN. Va DESPUÉS del
+  // rol porque cierra los rótulos contando lo que quedó a la vista tras los dos filtros.
+  aplicarModoALaBarra(document, window.appModoEmision);
 
   // Badge de solicitudes pendientes
   function updateRequestsBadge() {
@@ -178,10 +181,13 @@ async function initApp() {
   updateRequestsBadge();
   // Refrescar el badge cada 5 minutos
   setInterval(updateRequestsBadge, 5 * 60 * 1000);
+  // ── S4 · SCRUM-1700 (N2) · el menú dice cuántos partes esperan precio. Mismo ritmo que el badge.
+  contarPartesPorValorar(document, apiRequest, window.appUserRole);
+  setInterval(() => contarPartesPorValorar(document, apiRequest, window.appUserRole), 5 * 60 * 1000);
 
   // 2. Inyectar usuario en sidebar
   const initials = (me.name || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-  const planLabels = { trial: 'Trial gratuito', basic: 'Plan Básico', pro: 'Plan Pro', empresa: 'Plan Empresa' };
+  const planLabels = { trial: 'Trial gratuito', basic: 'Plan Básico', pro: 'Plan Pro', empresa: 'Plan Empresa', equipo: 'Plan Equipo', founding: 'Plan Fundador' }; // SCRUM-1623: «Plan Equipo» = T2, firmado en SCRUM-1402 c.20845 (regla 39) · SCRUM-1626: «Plan Fundador», firmado en SCRUM-1626 c.21169 (regla 39)
   const roleLabels = { admin: 'Admin', tecnico: 'Operario' }; // A20.3: etiqueta 'Operario' (fundador); el valor interno no se migra
 
   const sidebarSubtitle = me.isOwner
@@ -424,6 +430,8 @@ async function initApp() {
       // `parteDetailView.js`, medido en la certificación del sprint.
       case 'partes-oficina':
         viewTitle.textContent = 'Partes por valorar';
+        // S4 · SCRUM-1700 · al entrar a la cola, el número del menú se pone al día.
+        contarPartesPorValorar(document, apiRequest, window.appUserRole);
         if (typeof window.renderPartesOficinaView === 'function') {
           // 🔴 SCRUM-720b · era `opts`, y el parametro de `renderView` se llama `options`.
           // `ReferenceError: opts is not defined` en cada pulsacion: el titulo YA se habia
@@ -1189,6 +1197,63 @@ function aplicarRolALaBarra(documento, rol) {
     if (!el.classList.contains('nav-item')) return;
     if (el.dataset.rol === 'admin') el.style.display = 'none';
     else visibles += 1;
+  });
+  cerrarSeccion();
+}
+
+// ══ S4 · SCRUM-1700 (T7 de SCRUM-1686) · «PARTES POR VALORAR · {n}» EN EL MENÚ ═══════════════
+// Texto FIRMADO: N2 de la tanda N1-N13 (SCRUM-1686, c.21470) — «Partes por valorar · 2», el
+// número es el de partes firmados esperando precio. La oficina ve cuánto le espera sin abrir nada.
+//
+// FALLA HACIA EL RÓTULO A SECAS: cero, una respuesta con otra forma o un fallo de red dejan
+// «Partes por valorar», nunca un número viejo ni uno inventado. Y sólo lo pide el admin: la ruta
+// es `requireRole('admin')` y la entrada ya está oculta al operario (`data-rol="admin"`).
+// A nivel superior, como `aplicarRolALaBarra`, para que el banco la EJECUTE (`tests/scrum1700-…`).
+function rotuloDePartesPorValorar(n) {
+  return Number.isInteger(n) && n > 0 ? 'Partes por valorar · ' + n : 'Partes por valorar';
+}
+
+async function contarPartesPorValorar(documento, pedir, rol) {
+  if (rol !== 'admin') return null;
+  const etiqueta = documento.getElementById('nav-partes-oficina-label');
+  if (!etiqueta) return null;
+  let n = null;
+  try {
+    const r = await pedir('/admin/partes/oficina/pendientes');
+    n = r && Array.isArray(r.pendientes) ? r.pendientes.length : null;
+  } catch (_e) {
+    n = null;
+  }
+  etiqueta.textContent = rotuloDePartesPorValorar(n);
+  return n;
+}
+
+/**
+ * SCRUM-1701 · D3 (firmada por el fundador en SCRUM-1686 c.21461): «¿esconder del menú del piloto
+ * Facturas/Cobros/Libro/Recibidas mientras el interruptor esté en OFF?» → «Sí, esconder».
+ *
+ * Quita de la barra las entradas que declaran `data-oculta-en-modo` igual al modo que mandó el
+ * servidor (`window.appModoEmision`, sin recalcularlo: es el mismo veredicto que leen Planes, el
+ * tutorial y Ajustes). Con OFF el modo es `'receipt'`, y por la regla 24 ni factura ni cobro.
+ *
+ * `null` (no se sabe) NO esconde nada: aquí no se adivina el modo de nadie, y con él la barra queda
+ * como estaba antes de este ticket. Ocultar es UX; lo que no se puede hacer lo cierra el servidor.
+ *
+ * Cierra el rótulo de la sección que se quede sin NINGUNA entrada a la vista, contando lo que
+ * hayan quitado los dos filtros (rol y modo), no sólo éste.
+ */
+function aplicarModoALaBarra(documento, modo) {
+  if (!modo) return;
+  const nav = documento.querySelector('.sidebar-nav');
+  if (!nav) return;
+  let rotulo = null;
+  let visibles = 0;
+  const cerrarSeccion = () => { if (rotulo && visibles === 0) rotulo.style.display = 'none'; };
+  Array.from(nav.children).forEach((el) => {
+    if (el.classList.contains('nav-section-label')) { cerrarSeccion(); rotulo = el; visibles = 0; return; }
+    if (!el.classList.contains('nav-item')) return;
+    if (el.dataset.ocultaEnModo === modo) el.style.display = 'none';
+    else if (el.style.display !== 'none') visibles += 1;
   });
   cerrarSeccion();
 }

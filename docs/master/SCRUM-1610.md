@@ -69,3 +69,47 @@ Sin sembrar: 1516c da 4 de 4 con la población de c.20951 (rol 78 · RECORTA 44 
 - 719: ese filtro iba sin suelo y sin ficha de mudez. Pasa a usar `leerFuente` con su ancla, y la ficha se regenera con `npm run censo:mudez -- --escribir`.
 
 Suite entera local: NO CORRIDA (orden del encargo). Hacen de tanda los guards dirigidos y el obligatorio de CI.
+
+## S0 · SCRUM-1610c · la fila de carril de los tres ficheros de la tanda → J6
+
+**Medido contra:** `origin/main` = `0fc4e30b8ff8c2ed2ed688fc16bb8d6f4e957cfb` · 2026-10-27T18:20:22Z (hora de GitHub, cabecera `Date:`; S0, por encargo del orquestador de Luis)
+A9: comprobación → `tests/scrum1295-carriles.test.mjs`
+
+**De dónde sale el dueño:** SCRUM-1610 c.21189 (27-oct-2026), decisión del fundador Javier por cuestionario de su
+orquestador: «Son de J6: `tests/_salida-entera.mjs`; los dos ficheros de 1610b;
+`tests/scrum765-la-puerta-y-el-suelo.test.mjs` […] La fila en `docs/equipo/dos-equipos.md` (§3) la pone S0,
+dueña de la tabla, con esta cita». Leído en Jira antes de escribir la fila.
+
+**«Los dos ficheros de 1610b», medidos y no supuestos:** el merge de 1610b (#2905, `b353c2ad4`) CREA en `tests/`
+exactamente dos ficheros, `_salida-entera.mjs` y `scrum1610b-salida-cortada-sale-ciega.test.mjs` (los demás que
+toca, como `_censo-frontera.mjs` o `scrum1516c`, ya existían y ya tenían fila en `:195`). La decisión nombra
+`_salida-entera.mjs` dos veces, así que cubre tres ficheros: los mismos tres que 1480i dejó sin fila como pregunta.
+
+**La fila:** `dos-equipos.md` §3.3:196, debajo de la de 1480i, y el generado regenerado una vez
+(`.claude/carriles.json`, `.claude/rules/carril-j6.md`). `node scripts/carriles.mjs de` → los tres contestan J6
+en `dos-equipos.md:196`. **Control negativo en la misma orden:** `docs/master/evidencias/SCRUM-1610/1610b/sembrar-corte.mjs`,
+`docs/master/evidencias/SCRUM-1610/sonda-salida-cortada.mjs` (de J6, pero la decisión no las nombra),
+`tests/_veredicto-mudez.json` y un `tests/_salida-entera-NOEXISTE.mjs` siguen «sin fila». `carriles.mjs comprobar`
+→ IGUAL a la tabla (80 filas, 207 reglas), con exit 0.
+
+**Consecuencia:** con fila, la cerradura (`.claude/hooks/carril.mjs`) deja de permitir que edite estos tres
+ficheros quien no sea J6. `scrum765` lo editó 1610b como «cruce declarado» porque no tenía fila; ya no hace falta.
+
+## S3 · SCRUM-1610d · el MODO CENSO del meta-guard sale cuando su centinela ya se ha escrito (pieza ① de c.20951 que c.21007 pone en la lista de Luis)
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-03T07:47:28Z
+
+A9: comprobación → `tests/scrum1610d-meta-guard-censo-sale-vaciado.test.mjs`
+
+Lo escribe S3 (equipo de Luis). `scripts/meta-guard-mutaciones.mjs` es de S3 (`carriles.mjs de` → S3, `dos-equipos.md:177`). Sólo esta pieza: el ticket lleva `equipo-javier` y `area-j6`, y la medida en el runner (punto 3, workflow) es de S5.
+
+**Qué cambia.** En el bloque `if (soloCenso)`, `console.log(centinela)` seguido de `process.exit(0)` pasa a ser `await new Promise(() => process.stdout.write(centinela, () => process.exit(0)))`. Es el mismo contrato que `fin` en `tests/_censo-frontera.mjs` (1610b). El texto de la centinela no cambia, así que el lector de `scrum765` la sigue encontrando como última línea.
+
+| control | resultado |
+|---|---|
+| rojo primero: el guard nuevo contra el meta-guard de `origin/main` | `tests 1 · fail 1` · «en el callback de la centinela: NO» |
+| verde con el cambio | `pass 1` · «process.exit( 1 · en el callback de la centinela: sí» |
+| la mutación declarada (vuelve la forma de antes), aplicada y restaurada byte a byte | cae |
+| de punta a punta: `scrum765` (corre el meta-guard real con `--solo-censo`) + `scrum1610b` | `tests 12 · pass 12 · fail 0` |
+
+**Lo que NO prueba.** Que esto evite el corte en el runner de Linux. En Windows la tubería es bloqueante y el corte no se reproduce (0 de 300, c.20951). Medirlo allí necesita un workflow (punto 3 de c.20952), que es de S5. **Tampoco cubre las otras 12 salidas del meta-guard** (13 `process.exit(` de código, medidas en el fuente sin comentarios): el encargo era la del MODO CENSO, la única cuya cola es la centinela que lee un test.

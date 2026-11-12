@@ -13,7 +13,7 @@
 // A18 (7-jul, cambio de master K1 aprobado por el fundador): la captación de
 // "pedir presupuesto" ahora (1) VALIDA cada respuesta (no guarda saludos ni
 // basura tipo "Zona: Hola"), (2) CONFIRMA con botones [✅ Enviar]/[✏️ Reescribir]
-// antes de crear la solicitud, y (3) admite "cancelar" en cualquier paso.
+// antes de crear la solicitud, y (3) admite "cancelar" en cualquier paso. Consta en: SCRUM-1502 comentario 20834.
 import { prisma } from '../../../core/db/prisma';
 import { BASE_URL } from '../../../core/config/env';
 import { normalizePhone, formatMoneyEs } from '../../../core/utils/utils';

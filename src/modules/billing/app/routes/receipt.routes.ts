@@ -14,6 +14,7 @@ import { ensureInvoicePdf } from '../../../../lib/invoicing';
 import { fechaDeCobroDeCharge } from '../../domain/instanteDeCobro'; // SCRUM-397
 import { cardChargeMode } from '../../domain/cardCharge'; // SCRUM-893
 import { transferenciaDisponible } from '../../domain/transferenciaDisponible'; // SCRUM-910
+import { comercioSuprimido } from '../../domain/comercioSuprimido'; // SCRUM-1573b
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1471
 import { clienteDelDocumento } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-1576
 
@@ -129,8 +130,10 @@ router.get('/:token', async (req, res) => {
   // sin IBAN (o con CLABE y país que no es MX) no puede enseñar ninguna cuenta. Cerrar la puerta
   // de la tarjeta y dejar ésta abierta no habría reducido el defecto: habría reducido su
   // visibilidad, dejando a la clienta con un solo botón que no lleva a ninguna parte.
-  const puedeTarjeta = cardChargeMode(ch.merchant) !== 'refuse';
-  const puedeTransferencia = transferenciaDisponible(ch.merchant);
+  // SCRUM-1573b · un comercio suprimido no ofrece ninguna vía de cobro (c.21057): el recibo se sigue
+  // sirviendo, porque el cliente conserva sus documentos, pero sin botones de pago.
+  const puedeTarjeta = !comercioSuprimido(ch.merchant) && cardChargeMode(ch.merchant) !== 'refuse';
+  const puedeTransferencia = !comercioSuprimido(ch.merchant) && transferenciaDisponible(ch.merchant);
   const payBtns =
     ch.status === 'pending'
       ? [

@@ -332,3 +332,90 @@ Los 78 ficheros que leen `api.js` o la barra (726 tests), con la rama y con el `
 nuevo; el único de la base es el caso ① de 1233i. (`tsc` con el error conocido de `activityKind`; sin `prisma generate`.)
 
 A9: comprobación → `tests/scrum1233h-copiar-enlace-sin-enlace.test.mjs`
+
+## SCRUM-1233j — cuatro avisos de `jobDetailView.js` pintaban el sufijo técnico del servidor (S2, s2-2nov-1233j)
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T20:15:12Z
+
+**Skill UI:** no cargada · sin tokens, clases ni texto nuevo: sólo deja de pintarse un sufijo técnico
+
+**El defecto, medido antes de tocar nada.** Cuatro avisos de `jobDetailView.js` componían
+`'<rótulo>: ' + (e?.data?.message || e.message)` a mano: `falloDelCta` (CTA de cabecera, :939,
+«No se pudo completar la acción»), cambiar el tipo de trabajo (:1337, «No se pudo guardar el tipo
+de trabajo»), crear albarán (:1812, «No se pudo crear el albarán») y marcar factura como pagada
+(:2251, «Error actualizando estado», que además llevaba un tercer respaldo, `e?.data?.error`).
+`e.message` lo fabrica `apiRequest` (api.js:299) con `data?.message || \`API ${res.status}: ${data?.error
+|| res.statusText}\``: un 500 sin `data.message` enseñaba «No se pudo crear el albarán: API 500:
+internal_error» a un fontanero.
+
+**El arreglo.** `mensajeDeFallo(rotulo, err)`, una función local nueva (jobDetailView.js, junto a
+`jobDetAlbEstado`): `mensajeParaPersona(err, '') ? rotulo + ': ' + detalle : rotulo`. Mismo patrón que
+`avisoDeFallo` (jobsView.js:397, SCRUM-1233e) y el mismo helper ya existente (`mensajeParaPersona`,
+api.js:333). Con una frase para personas, igual que antes: «rótulo: frase». Sin ella, el rótulo SOLO,
+sin los dos puntos — un PREFIJO EXACTO de lo que ya se pintaba, no microcopy nuevo.
+
+**Decidido por el orquestador** (2-nov-2026, mensaje a S2): el rótulo solo es un prefijo exacto del
+texto que ya se pinta; quitar el sufijo no es texto nuevo.
+
+**Ninguno de los cuatro `try` tenía un `throw new Error(...)` LOCAL dentro.** Los tres primeros solo
+relanzan lo que tira `apiRequest` (o `abrirAltaAlbaran`/`abrirAgendarTrabajo`, que tampoco lanzan en
+local); el cuarto solo espera el `PUT /admin/invoices/:id/status`. No hay ningún texto aprobado local
+(`errorParaPersona`) que este cambio pudiera pisar: antes y después, un error LOCAL no se da en ninguno
+de los cuatro sitios.
+
+**El censo de SCRUM-644/1233 ya cazaba la forma, medido ANTES de tocar nada.** El encargo pedía
+comprobar si `crudosDe`/`crudosOcultosDe` (`tests/_censo-mensaje-crudo.mjs`) cazan
+`(e?.data?.message || e.message)` y `err?.data?.message || err.message` con `?.`, y ampliarlos si no.
+Medido con AST en vivo, en las tres formas (directa al pintor, concatenada con prefijo, y mediada por
+variable/asignación) y con `?.` en cada nivel: el censo YA las veía, antes de esta rama. No se toca
+`tests/_censo-mensaje-crudo.mjs`: no hay nada que afianzar, y aflojar un instrumento que ya mide bien
+sin que nadie lo decida es justo el riesgo que SCRUM-645 señala. Lo que se añade es el caso SEMBRADO
+que lo deja fijado como control permanente (`tests/scrum1233j-cuatro-sin-sufijo-crudo.test.mjs`), con
+su control negativo (`mensajeParaPersona(e, '')` no es un hallazgo, en las dos vías).
+
+**El techo del censo heredado BAJA** (`tests/scrum644-trinquete-mensaje-crudo.test.mjs`,
+`CENSO_HEREDADO`): `jobDetailView.js` 9 → 5 (los cuatro sitios de arriba pasan por `mensajeDeFallo`,
+que entra en `TRADUCTORES`), y el total de la tabla 53 → 49. Recalculado corriendo `censo(RAIZ)` sobre
+el árbol tras el cambio, no a mano.
+
+**Aviso: los dos de J3 no se tocan.** `settingsView.js:992` (`setAlert("error", "..." + err.message)`)
+y `:1862` (`salida.textContent = 'No se pudo eliminar: ' + (e?.data?.message || e.message)`) son de
+otro carril y siguen en su techo (3 en `CENSO_HEREDADO` el primero; en `TECHO` de
+`scrum1233-mensaje-para-persona.test.mjs` el segundo no está declarado — entra por `crudosOcultosDe`
+como «asignación» y ese fichero tampoco figura en esa tabla hoy). Ninguno de los dos cambia con esta
+rama.
+
+**Deuda declarada (familia SCRUM-1502):** los cuatro rótulos («No se pudo completar la acción», etc.)
+no tienen firma localizable desde ANTES de este cambio — son literales que ya pintaba la pantalla, sin
+referencia a un documento de microcopy aprobado. Este cambio no la crea ni la empeora: el texto
+pintado, con frase del servidor, es carácter por carácter el mismo que antes; lo único que cambia es
+qué se pinta cuando NO hay frase (antes: la tripa del sistema; ahora: el rótulo solo, que ya se pintaba
+como prefijo).
+
+**Test** `tests/scrum1233j-cuatro-sin-sufijo-crudo.test.mjs`: ① `mensajeDeFallo` con el `apiRequest`
+REAL contra un 500 sin `data.message` (ROJO PRIMERO: ni «API 500» ni «internal_error», exactamente el
+rótulo) y contra un 409 con `data.message` (CONTROL POSITIVO: «rótulo: El cliente no tiene teléfono») y
+sin red (`Failed to fetch`, rótulo solo). ② el tercer respaldo (`e?.data?.error`) del cuarto sitio ya no
+sale. ③ los cuatro sitios cubiertos: cada uno llama a `mensajeDeFallo` con su rótulo exacto (sobre el
+fuente sin comentarios, `soloCodigo`), la forma cruda vieja no vuelve, y el censo de SCRUM-644 ya no los
+acusa. ④ los dos sembrados del censo (directo y por variable, con `?.`) y el control de
+`mensajeParaPersona`.
+
+**Rojo probado:** las 7 aserciones de ①-③ caen contra `jobDetailView.js` tal como está en
+`origin/main` (restaurado con `git show origin/main:public/dashboard/js/jobDetailView.js`, corrido, y
+devuelto a esta rama; `git diff --stat` limpio después). Las de ④ ya pasaban antes de tocar nada, porque
+miden el instrumento, no el código de esta rama.
+
+| aceptación | dónde se ve |
+|---|---|
+| con frase del servidor: «rótulo: frase», igual que antes | `mensajeDeFallo`; test CONTROL POSITIVO |
+| sin frase: el rótulo solo, sin los dos puntos | `mensajeDeFallo`; test ROJO PRIMERO |
+| mismo patrón que `avisoDeFallo`/`mensajeParaPersona` | `mensajeDeFallo` llama a `mensajeParaPersona` (api.js:333) |
+| los cuatro sitios migrados, ninguno con forma cruda | los 4 `setStatus(...)` de jobDetailView.js; test ③ |
+| el censo de SCRUM-644 no sube | `CENSO_HEREDADO['jobDetailView.js']` 9 → 5, total 53 → 49 |
+| settingsView.js (J3) no se toca | sin diff en ese fichero; declarado arriba |
+
+A9: sin fallo que generalice — el cambio es mecánico (crudo → `mensajeDeFallo`), sin tocar camino de
+emisión ni esquema; el único riesgo —perder la frase buena del servidor— lo cubre el control positivo
+del test nuevo, y el supuesto hueco del censo que traía el encargo se verificó FALSO con AST antes de
+tocar el instrumento, así que no hubo que ampliarlo ni aflojarlo.

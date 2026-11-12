@@ -984,7 +984,7 @@ model Expense {
   concept               String
   amount                Decimal   @db.Decimal(12, 2)
   currency              String    @default("EUR") @db.VarChar(3)
-  category              String    @default("otros") // materiales|desplazamiento|herramientas|subcontrata|otros
+  category              String    @default("otros") // materiales|desplazamiento|herramientas|subcontrata|alquiler|otros
   date                  DateTime  @default(now())
   notes                 String?
   receiptData           String?   @map("receipt_data") @db.Text

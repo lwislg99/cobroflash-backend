@@ -88,19 +88,6 @@ export const CATEGORIAS = {
  * `módulo::export`, no la longitud: por eso da igual cómo se agrupen las líneas.
  */
 export const DECLARADOS = [
-  // ── SCRUM-1515 · el alta de merchants, cuando la ruta pública se cerró ─────────────────
-  {
-    modulo: 'src/modules/auth/domain/auth.service.ts',
-    cat: 'FALSO_POSITIVO_MEDIDO', desde: '2026-10-08',
-    motivo: '🔴 NO es huérfano: es la ÚNICA puerta de alta que queda. `POST /auth/register` se cerró '
-      + 'por orden del fundador (SCRUM-1515) y ya no lo llama; lo llama el guion '
-      + '`src/modules/auth/app/cli/altaDeMerchant.ts`, que se lanza a mano con `node dist/…` y por '
-      + 'eso no cuelga de ninguna entrada viva (`src/index.ts`, `src/app.ts`, los scripts de '
-      + '`package.json`): el censo no lo ve. Que el guion lo llama y que el merchant nace bien lo '
-      + 'EJECUTA `tests/scrum1515-nuestra-puerta-de-alta.test.mjs`. Sale de aquí el día que el '
-      + 'guion sea una entrada del censo o el alta vuelva a tener llamador en el servidor.',
-    exports: ['registerMerchant'],
-  },
   // ── SCRUM-805 · el sello del PRESUPUESTO, y por qué sus cuatro exports son distintos ───
   //
   // Nacen en el mismo módulo y NO son el mismo caso, así que van en tres categorías. El guard
@@ -750,7 +737,7 @@ export const DECLARADOS = [
   { modulo: 'src/modules/maintenance/domain/maintenance.service.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
-    exports: ['avisarPlanSinCanal', 'isQuietHoursMadrid', 'seleccionarLotes'] },
+    exports: ['avisarPlanSinCanal', 'isQuietHours', 'seleccionarLotes'] },
   { modulo: 'src/modules/maintenance/domain/maintenance.service.ts',
     cat: 'SIN_LECTOR_NI_TEST', desde: '2026-08-12',
     motivo: '🔴 Ni código vivo, ni test, ni documento lo mencionan en todo el repo. Es el único del censo del que no consta ni para qué se escribió.',
@@ -819,7 +806,7 @@ export const DECLARADOS = [
   { modulo: 'src/modules/system/domain/anonimizarMerchant.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
-    exports: ['INTOCABLES', 'REDACTADO'] },
+    exports: ['INTOCABLES'] },
   { modulo: 'src/modules/system/domain/avisoPuerta.service.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',

@@ -104,3 +104,52 @@ desechable. Queda declarado en `tests/scrum419-ci-declara-lo-que-no-corre.test.m
 **Lo que no se toca:** que el chip no diga «Enviado» de un estado que no conoce es de S2 (`api.js:1448`).
 Enseñar los entrantes con su propio rótulo cambia lo firmado en SCRUM-1133, y eso es decisión del fundador.
 **No verificado en yaqu.app:** producción está congelada.
+
+## 29-oct-2026 · S2 · 1518c — el chip no dice «Enviado» de un estado que no conoce
+
+**Medido contra:** `origin/main` = `fd24ce099696acca6b2dc3652dfb511bdca9694f` · 2026-10-29T10:32:47Z
+
+A9: comprobación → `tests/scrum1518c-el-chip-no-dice-enviado-de-lo-que-no-conoce.test.mjs`
+
+**Skill UI:** cargada (`yaqu-premium-ui`; el cambio es lógica del chip, sin CSS ni token nuevo).
+
+Rama `scrum-1518c-chip-mensaje-del-cliente`, sobre `503f0d86ac8dceb9dbce6ecc57e049a46092a70c`; entre esa base y el
+ancla de arriba, ningún commit de `main` toca los tres ficheros de aquí. Carril: `api.js` → **S2**
+(`node scripts/carriles.mjs de public/dashboard/js/api.js`, patrón con nombre propio en `dos-equipos.md:150`;
+la ruta existe, comprobado antes de preguntar). La pestaña (`customerDetailView.js`, J2) no se toca.
+
+**Paso 0, medido antes de tocar nada.** La sonda de S4 (`docs/master/evidencias/SCRUM-1518/sonda-1518-punta-a-punta.mjs`,
+con el doble que entiende `not` de 1518b) contra `dist` de `503f0d86a` sale **1 · NO REPRODUCIDO**: la pestaña dice
+«WhatsApp (1)» y el entrante no aparece; el control positivo (el envío sale «✓✓ WhatsApp: Entregado») en pie.
+**De punta a punta, el defecto ya no lo ve un profesional desde #2688.** Lo que seguía vivo es la mitad que el
+tramo de S4 dejó a S2: `waDeliveryChip` hacía `map[status] || map.sent`, y ejecutado sobre `api.js` de `main`,
+`{ status: 'received' }` devuelve «✓ WhatsApp: Enviado».
+
+**Cuántos estados caían en el saco (pregunta 2 del ticket), derivado del código que pinta:** todos los que no son
+una de las cinco claves (`queued`, `sent`, `delivered`, `read`, `failed`), y además `toString`, `constructor` y
+`__proto__`, que `map[status]` encuentra en el prototipo y pintaban un chip con `undefined`. Alcanzable hoy,
+leído en los escritores (`whatsappLog.service.ts`, `whatsapp.ts`) y en `shouldApplyStatus`: sólo `received`.
+Filas viejas de producción con otros valores: **no medido** (la base sólo la ve el fundador).
+
+**El cambio:** si el estado no es una clave PROPIA del mapa (`hasOwnProperty`), el chip devuelve `''`. Es su
+respuesta de siempre para «no hay envío», y los cuatro llamadores ya la tratan (`quotesListView.js:290`,
+`quotesDetailView.js:319` e `invoiceDetailView.js:153` no pintan nada; la pestaña de la ficha deja la celda de
+Estado vacía). **Ningún texto nuevo:** no hay rótulo para «no lo sé», y proponerlo sería terreno de firma
+(regla 39). Es el criterio de 1518b, no uno segundo: lo que no es un envío no se enseña como envío.
+
+| caso | `main` (`503f0d86a`) | con el cambio |
+|---|---|---|
+| control: los 5 conocidos, con y sin fecha | ✔ cada uno su rótulo | ✔ igual |
+| `received` (lo que escribe el cliente) | ✖ «WhatsApp: Enviado» | ✔ `''` |
+| 7 desconocidos (`warning`, `toString`…) | ✖ | ✔ `''` |
+| sin envío (`null`, estado vacío) | ✔ `''` | ✔ `''` |
+
+**Trinquete `scrum748` (respaldos que afirman un estado):** `api.js` baja de **2 a 1**, recalculado corriéndolo
+(cae con «declaraba 2 y ahora tiene 1»), y es justo el que ese test llamaba «el más grave de los que quedan».
+Queda `api.js:1267 → M.pendiente_agendar`; su comentario decía `:1135`, corregido.
+
+**Población corrida:** los 100 ficheros de `tests/` que nombran el chip, `api.js` o la pestaña: 892 tests,
+889 ✔ · 2 saltados · 1 ✖ (el 748 de arriba, ya bajado; después, 11/11 en los dos ficheros). Censo `scrum553`: 20.
+
+**No verificado en yaqu.app:** el caso `received` ya no llega a ninguna pantalla desde #2688, así que en producción
+no hay nada distinto que mirar; lo que se ve allí es que los chips de presupuestos (cuenta QA) siguen saliendo.

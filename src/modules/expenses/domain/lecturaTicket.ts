@@ -24,6 +24,7 @@
 import { geminiCompleteConModelo, type GeminiParams } from '../../../integrations/gemini';
 import { prisma } from '../../../core/db/prisma';
 import { normalizarNif, validarNifEspanol } from '../../../core/validation/nifEspanol';
+import { diaNaturalEn } from '../../../core/zonaDelMerchant';
 // La aritmética del IVA de un gasto (tipo admitido, base + cuota = total) vive en `justificante.ts`
 // y aquí solo se pregunta: una segunda copia de esa regla es lo que vigila el censo de SCRUM-627.
 import {
@@ -31,7 +32,7 @@ import {
 } from './justificante';
 
 /**
- * Lecturas por merchant y día natural (Europe/Madrid). La cuota gratis de Google es UNA para todo
+ * Lecturas por merchant y día natural DEL COMERCIO (su zona). La cuota gratis de Google es UNA para todo
  * el proyecto (y por modelo): sin tope, un solo merchant podría dejar sin lectura a los demás.
  * **El número lo decide el fundador**; 5 es provisional (orquestador, 18-sep-2026, tras ver que
  * gemini-2.5-flash tiene 20 peticiones/día para TODO el proyecto).
@@ -162,9 +163,15 @@ export interface LecturaSaneada {
 
 const IMPORTE_MAXIMO = 1_000_000;
 
-/** AAAA-MM-DD de hoy en Madrid: el «futuro» se mide en el calendario del profesional. */
-export function hoyEnMadrid(ahora: Date): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(ahora);
+/**
+ * AAAA-MM-DD de hoy en el calendario del comercio: el «futuro» se mide en el del profesional.
+ * SCRUM-1622: decía `Europe/Madrid` a mano, y un canario vivía con el reloj de la península. La
+ * zona la resuelve quien llama con `zonaDelMerchant`; sin ella se rechaza, porque `Intl` sin
+ * `timeZone` cae al reloj del PROCESO, que es el defecto que `zonaDelMerchant` existe para cerrar.
+ */
+export function hoyDelComercio(ahora: Date, zona: string): string {
+  if (typeof zona !== 'string' || zona === '') throw new Error('zona_requerida');
+  return diaNaturalEn(ahora, zona);
 }
 
 /**
@@ -172,7 +179,7 @@ export function hoyEnMadrid(ahora: Date): string {
  *
  * ⚠️ FAMILIA SCRUM-271: ni un `||`. Un tipo 0 % o una cuota 0 son datos, no «no se sabe».
  */
-export function sanearLectura(bruto: unknown, ahora: Date): LecturaSaneada {
+export function sanearLectura(bruto: unknown, ahora: Date, zona: string): LecturaSaneada {
   if (bruto === null || typeof bruto !== 'object' || Array.isArray(bruto)) {
     throw new Error('ai_invalid_format');
   }
@@ -229,7 +236,7 @@ export function sanearLectura(bruto: unknown, ahora: Date): LecturaSaneada {
       const dt = new Date(Date.UTC(a, m - 1, d));
       const existe = dt.getUTCFullYear() === a && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
       if (!existe || a < 2000) descarta('date', 'fecha_invalida');
-      else if (s > hoyEnMadrid(ahora)) descarta('date', 'fecha_futura');
+      else if (s > hoyDelComercio(ahora, zona)) descarta('date', 'fecha_futura');
       else fecha = s;
     }
   }
@@ -296,7 +303,7 @@ export interface ResultadoLectura extends LecturaSaneada {
 type ClienteProveedores = { provider: { findMany: (args: any) => Promise<Array<{ id: number; taxId: string | null }>> } };
 
 export async function leerTicket(
-  p: { merchantId: number; imagen: { mimeType: string; data: string }; ahora?: Date },
+  p: { merchantId: number; imagen: { mimeType: string; data: string }; zona: string; ahora?: Date },
   deps: {
     completar?: (params: GeminiParams) => Promise<{ texto: string; modelo: string }>;
     cliente?: ClienteProveedores;
@@ -322,7 +329,7 @@ export async function leerTicket(
   } catch {
     throw new Error('ai_invalid_json');
   }
-  const { propuesta, descartados } = sanearLectura(bruto, p.ahora ?? new Date());
+  const { propuesta, descartados } = sanearLectura(bruto, p.ahora ?? new Date(), p.zona);
 
   // El proveedor se propone SOLO por NIF y solo si casa con UNO: por nombre, «Leroy» y «Leroy
   // Merlin Alcobendas» serían el mismo o no según quién mire. Multi-tenant por `merchantId`.

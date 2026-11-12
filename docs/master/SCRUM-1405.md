@@ -566,3 +566,50 @@ Por día, las pasadas CON que pierden van del 1,4 % al 4,2 % con 18 a 71 jobs po
 ## Reproducir
 
 `E=docs/master/evidencias/SCRUM-1405/j3n-1405d` · `node $E/censo-4.mjs 2026-10-14T07:48:00Z <carpeta de logs FUERA del árbol> censo.tsv` (con `gh` autenticado; antes corre sus 4 controles fabricados y se para si uno falla; calibrado contra el log del job `117734088229`, que da `14,10,27,31` / `0,0,11,0` como la §24) · `node $E/analiza-4.mjs $E/censo.tsv` · las mutaciones, con `npm run meta:mutaciones`.
+
+# APÉNDICE · 27-oct-2026 · SCRUM-1405f · ¿Se ha vuelto a saltar ④ desde que entró SCRUM-1574? (J3, solo medir)
+
+**Medido contra:** `origin/main` = `ce1111a68d00d2063bc6bb369ce71d2124c3547f` · 2026-10-27T15:38:52Z (sesión `jv-j3bw`, equipo de Javier, por encargo del orquestador `cobroflash-backend-8b`. La ventana medida va del merge de #2638, `b10c9b6ca`, 21-oct 13:18:39Z, al último run listado, 27-oct 15:27:49Z; el censo corrió de 15:30:19Z a 15:38:17Z. `decidirCuarto` y el caso ④ no cambian en `main` en toda la ventana.)
+
+A9: sin fallo que generalice — el único tropiezo fue un 502 de GitHub que tumbó la primera pasada del censo; salió con código 1 y sin tabla, no con un verde, y el guion ya reintenta.
+
+**Decisión que lo pide:** SCRUM-1405 c.21058, el fundador, 27-oct: se ratifica `decidirCuarto` (SCRUM-1574) y, antes de cerrar, se mide en cuántos obligatorios desde `b10c9b6ca` ha corrido ④ y en cuántos se ha saltado, con el motivo literal. «Si no se salta sin motivo, 1405 se cierra.»
+
+## La medición
+
+Población: los **687** runs de `ci.yml` creados en la ventana (409 `pull_request`, 278 `push`). 208 no tienen el job obligatorio, 36 lo tienen cancelado, 2 seguían en curso al listar, **441 con veredicto** (373 success, 68 failure). Se bajaron los 441 logs, verdes incluidos (de 64.576 a 2.250.760 B; mediana 2.061.481). Tabla por job: `evidencias/SCRUM-1405/j3bw-1405f/censo.tsv`.
+
+| ④ en el job obligatorio | jobs | push | PR |
+|---|---|---|---|
+| **corrió y pasó** | **440** | 72 | 368 |
+| corrió y cayó | 0 | | |
+| **se saltó** | **0** | | |
+| sin veredicto de ④ (CIEGO) | 1 | | 1 |
+| **total** | **441 de 441** | | |
+
+- **Saltos: 0.** Ni con el motivo de `decidirCuarto` («NO MEDIDO: …») ni con otro, ni sin motivo. El motivo viejo de antes de 1574 tampoco aparece.
+- **El CIEGO** es el job `121899227131` (`scrum-1446g-tramos-mayor-resto`, 26-oct 22:56Z): log de 64.576 B, la tanda no llegó a correr porque `tsc` no compiló (`error TS2345` en `pdf.service.ts`). No dice nada de ④.
+- **Lo que 1574 cambió, visto en el CI:** en **27** de los 440 la sonda dejó **0 bytes** pendientes — antes de 1574 esos 27 se habrían saltado como los 14 de 1405d —; en los 27 el brazo SIN módulo perdió, así que `decidirCuarto` dio «medir» y ④ juzgó el brazo CON. En los otros 413 la sonda dejó 1.048.576 B.
+- **Resumen de la tanda:** en 439 de los 441 `tests = pass + fail + skipped + cancelled + todo` cuadra. Los dos que no tienen resumen: el CIEGO de arriba y el job `119769715166` (`scrum-962c-editor-presupuestos-44`, 22-oct), una tanda con «TANDA SIN VEREDICTO» y 1.409.303 B — colgada —, en la que ④ sí corrió y pasó antes del corte.
+- **El brazo SIN módulo perdió en los 440** (la condición de «medir» se cumple en todos).
+
+## De paso, sin tocar: el brazo CON pierde más que cuando se midió la cifra
+
+Sobre los 440, el brazo CON módulo da **1.760 pasadas, 137 pierden (7,8 %)**; en 1405d eran 41 de 1.208 (3,4 %). El máximo por pasada es **15**, justo el tope (`CON_MAX_POR_PASADA`); pierden 2 pasadas en **14** jobs (en 1405d, 3 de 302), y nunca 3. Ninguna pasada pasó de los topes, así que ④ no cayó ni una vez. ⚠️ **Sin medir por qué** ha subido; no es lo que pide c.21058 y no lo he tocado. Si la tendencia sigue, ④ va a empezar a caer por el tope de pasadas, y la regla 41 dice que entonces se mide otra vez, no se ensancha.
+
+## El instrumento, interrogado
+
+- **No reusé `j3n-1405d/censo-4.mjs` tal cual:** su `leer` busca el mensaje de rojo de 1405c («SIGUE perdiendo casos»), que 1405d cambió; no copia el motivo de un salto; y un log vacío le sale «ausente». `censo-f.mjs` copia su forma (población, bajar también los verdes) y cambia el lector.
+- **Anclado al inicio del caso** (`✔`/`✖`/`﹣` tras la hora del runner y el nombre exacto de ④): el símbolo dentro del nombre de otro test no cuenta (control ⑤).
+- **Siete controles fabricados** que tienen que salir antes de bajar nada: pasa · salto con el motivo literal de `decidirCuarto` · salto con un motivo viejo · cae por CIEGO · el símbolo dentro de otro nombre · **log vacío → CIEGO** · resumen que no suma.
+- **El motivo literal se deriva del test, no se teclea:** se sacó `decidirCuarto` del fichero real (sin tocarlo) y su motivo casa con la expresión del censo; el de CIEGO no casa (control negativo).
+- **Positivo en cada log:** el caso «③ ALARMA», del mismo fichero y anterior a ④, tiene que estar. Quitado a mano de un log real, el lector dice CIEGO, no «corrió». Estuvo en 440 de 441 (el que falta es el CIEGO).
+- ⚠️ **Lo que lee es el `spec` del log del job, no el TAP:** el TAP del obligatorio va a un fichero del runner que no sale en el log. El `spec` imprime el `# motivo` de cada salto, que es lo que se pide.
+
+## 1405 cerrable
+
+**1405 cerrable: sí, porque** en los 441 obligatorios con veredicto desde `b10c9b6ca` ④ se saltó **0 veces** (ni sin motivo ni con un motivo que `decidirCuarto` no produce), corrió en 440, y el único sin veredicto es un job cuyo build no compiló. Queda abierto, para quien cierre, el aviso de arriba: el brazo CON pierde el doble que el 21-oct y roza los dos topes.
+
+## Reproducir
+
+`E=docs/master/evidencias/SCRUM-1405/j3bw-1405f` · `node $E/censo-f.mjs 2026-10-21T13:18:39Z <carpeta de logs FUERA del árbol> censo.tsv` (con `gh` autenticado; corre antes sus 7 controles y se para si uno falla; sólo conserva los logs que no son un ④ en verde) · `node $E/analiza-f.mjs $E/censo.tsv` (salida en `analiza-salida.txt`).

@@ -282,10 +282,11 @@ test('🔴 arranque.cmd copia desde origin/main los scripts y el prompt, y lanza
 
 test('las órdenes de schtasks: tres tareas diarias, a las horas decididas, sobre arranque.cmd', () => {
   // SCRUM-951a: las horas ya no viven en el código; éstas son las del equipo de Luis, que da la guía.
+  // SCRUM-1549d: el /tr lleva las comillas DENTRO (tests/scrum1549d-… mide por qué, con una ruta con espacio).
   const ordenes = instalar.ordenesSchtasks({ destino: 'C:/Users/X/AppData/Local/yaqu-equipo', tandas: ['08:00', '13:05', '18:10'], prefijo: '' });
   assert.deepEqual(ordenes, [
-    'MSYS_NO_PATHCONV=1 schtasks /create /sc daily /tn yaqu-equipo-0800 /st 08:00 /tr "C:\\Users\\X\\AppData\\Local\\yaqu-equipo\\arranque.cmd"',
-    'MSYS_NO_PATHCONV=1 schtasks /create /sc daily /tn yaqu-equipo-1305 /st 13:05 /tr "C:\\Users\\X\\AppData\\Local\\yaqu-equipo\\arranque.cmd"',
-    'MSYS_NO_PATHCONV=1 schtasks /create /sc daily /tn yaqu-equipo-1810 /st 18:10 /tr "C:\\Users\\X\\AppData\\Local\\yaqu-equipo\\arranque.cmd"',
+    'MSYS_NO_PATHCONV=1 schtasks /create /sc daily /tn yaqu-equipo-0800 /st 08:00 /tr \'"C:\\Users\\X\\AppData\\Local\\yaqu-equipo\\arranque.cmd"\'',
+    'MSYS_NO_PATHCONV=1 schtasks /create /sc daily /tn yaqu-equipo-1305 /st 13:05 /tr \'"C:\\Users\\X\\AppData\\Local\\yaqu-equipo\\arranque.cmd"\'',
+    'MSYS_NO_PATHCONV=1 schtasks /create /sc daily /tn yaqu-equipo-1810 /st 18:10 /tr \'"C:\\Users\\X\\AppData\\Local\\yaqu-equipo\\arranque.cmd"\'',
   ]);
 });

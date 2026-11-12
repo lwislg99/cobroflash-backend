@@ -41,3 +41,33 @@ Decisión que lo abre: F3 del fundador en c.20983 (el 2001 se avisa ANTES de emi
 **De paso:** la hoja de facturar parcial bloquea hoy un NIF mal tecleado con «No hemos podido guardar el NIF…» (`jobDetailView.js:3429`), un mensaje que no dice el motivo. Es de S2: va como G4, no se ha tocado.
 
 **NO medido:** ninguna base; los 9 escritores de `customer` uno a uno; si `POST /admin/albaranes/:id/emitir` emite factura; el guard que enumera `REVISION_ESTADOS`; el servicio de NIF de la AEAT. Suite entera local: NO CORRIDA.
+
+## J1 · SCRUM-1612c · lo que decidió el fundador sobre 1612 y 1612b (solo docs)
+
+**Medido contra:** `origin/main` = `1608087e64aaa4b08c2877ee3119cc2fad97e02e` · 2026-10-27T16:49:20Z
+
+A9: sin fallo que generalice — es la transcripción al registro de dos comentarios de Jira; no hay código ni medición nueva
+
+Sesión J1 `jv-j1de`, por encargo del orquestador `cobroflash-backend-8b`. Pone al día este registro con las decisiones que están en Jira y que los tramos de arriba no recogen. **No cambia nada de lo escrito arriba**: lo que queda sustituido se dice aquí.
+
+**① Decisiones sobre F1-F6 (SCRUM-1612 c.20983, transcritas por el orquestador, no por el fundador):**
+- **F4:** se construye DESPUÉS, cuando la remisión a la AEAT corra (hoy `procesarObligado` tiene 0 llamadas) y haya certificado para probar. Los dos NO VERIFICADO del ② de arriba se cierran en el entorno de pruebas.
+- **F1:** implícita en el diseño (alta nueva con `Subsanacion=S`/`RechazoPrevio=N`, fila nueva, sin tocar la factura ni el envío original); se confirma al construir.
+- **F2 ✅:** los errores del sistema (2000, 2002, 2003 y 2005-2008) los subsana YaQu sin pedir nada al profesional, tras arreglar el defecto y con revisión de una persona del equipo.
+- **F3:** sustituida por c.20988 (②).
+- **F5:** L1 firmado, con «facturas» (③).
+- **F6:** el GO de las tres piezas STOP de ③ (`encolarRemision`, el builder y la cadena) se pide cuando toque, con el diff delante.
+
+**② F3 rectificada (c.20988): el aviso del 2001 ANTES de emitir NO se construye.** Lo que midió 1612b: antes de emitir el programa sólo ve la forma del NIF, no el censo, y la ficha del cliente ya rechaza un NIF mal formado. El 2001 se avisa cuando la AEAT lo marca en su respuesta, con la remisión ya en marcha (F4), y su texto se trae para firma entonces. Quedan sin usar los literales N1-N3 y las preguntas G1-G4 del tramo 1612b: su «⑤ Para el fundador» ya no espera respuesta.
+
+**③ L1 del aviso del art. 16.4, firmado (c.20983, F5).** Literal copiado del texto de c.20983 tal como lo devolvió Jira a esta sesión (no de una ficha):
+
+> «No hemos podido enviar 3 facturas a la Agencia Tributaria por una incidencia. Lo reintentamos cada hora y te avisamos cuando estén todas enviadas.»
+
+El singular **no lo firmó el fundador**: lo adaptó el orquestador desde L1, y el comentario dice que el fundador lo puede cambiar allí:
+
+> «No hemos podido enviar 1 factura a la Agencia Tributaria por una incidencia. Lo reintentamos cada hora y te avisamos cuando esté enviada.»
+
+Nada de esto se ha escrito en `src/` ni en `public/`: el aviso sólo existe con la remisión encendida (regla 7), y construirlo es F4. Cuando se construya, el literal se copia de c.20983 y se registra en `docs/microcopy/` (A7).
+
+**Estado:** el ticket sigue abierto, a la espera de la remisión (SCRUM-1296, fase 2). Construir: NO HECHO.

@@ -110,46 +110,41 @@ test('SCRUM-944b · POSITIVO: un gasto SIN trabajo sigue con `job: null`', async
 // EL ROJO — el nombre que hoy se pierde
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-944b · 🔴 EL DEFECTO: un Trabajo SIN título se llama «Presupuesto #5 · María López», no `null`', async () => {
+// SCRUM-1690 · desde que el título cae al CLIENTE (también con presupuesto), «el nombre de Trabajos»
+// es «María López», no «Presupuesto #5 · María López». Lo que este fichero vigila no cambia: Gastos y
+// Trabajos dicen LO MISMO, porque llaman a la misma función.
+
+test('SCRUM-944b · 🔴 EL DEFECTO: un Trabajo SIN título se llama como en Trabajos (su cliente), no `null`', async () => {
   const b = banco({ trabajos: [SIN_TITULO], quotes: [Q_ORIGINAL], clientes: [MARIA], gastos: [GASTO] });
   const [item] = await b.lista();
-  assert.equal(item.job.titulo, 'Presupuesto #5 · María López',
-    `🔴 Gastos llama a este Trabajo ${JSON.stringify(item.job.titulo)} y Trabajos «Presupuesto #5 · María López»`);
+  assert.equal(item.job.titulo, 'María López',
+    `🔴 Gastos llama a este Trabajo ${JSON.stringify(item.job.titulo)} y Trabajos «María López»`);
 });
 
 test('SCRUM-944b · 🔴 el nombre es el de Trabajos: MISMA función, mismas entradas → mismo texto', async () => {
   const { tituloDeTrabajo } = moduloDeDist(TRABAJOS);
-  const enTrabajos = tituloDeTrabajo({ titulo: null, quote: { id: 1, quoteNumber: 5 }, customer: { name: MARIA.name }, jobId: 500 });
+  const enTrabajos = tituloDeTrabajo({ titulo: null, customer: { name: MARIA.name }, jobId: 500 });
   const b = banco({ trabajos: [SIN_TITULO], quotes: [Q_ORIGINAL], clientes: [MARIA], gastos: [GASTO] });
   const [item] = await b.lista();
   assert.equal(item.job.titulo, enTrabajos);
-  assert.equal(enTrabajos, 'Presupuesto #5 · María López', 'la función de Trabajos no se ha tocado: éste es su literal de siempre');
+  assert.equal(enTrabajos, 'María López');
 });
 
-test('SCRUM-944b · 🔴 un gasto imputado a un ADICIONAL lleva el nombre del TRABAJO (el presupuesto original), no el del adicional', async () => {
+test('SCRUM-944b · 🔴 un gasto imputado a un ADICIONAL lleva el nombre del TRABAJO, no el número del adicional', async () => {
   const b = banco({
     trabajos: [SIN_TITULO], quotes: [Q_ORIGINAL, Q_ADICIONAL], clientes: [MARIA],
     gastos: [{ ...GASTO, quoteId: 2 }],
   });
   const [item] = await b.lista();
   assert.equal(item.job.id, 500, 'el gasto del adicional encuentra su Trabajo');
-  assert.equal(item.job.titulo, 'Presupuesto #5 · María López',
-    `🔴 serializeJob titula con el ORIGINAL (#5); esto dice ${JSON.stringify(item.job.titulo)}`);
+  assert.equal(item.job.titulo, 'María López',
+    `🔴 el nombre del Trabajo no depende del presupuesto imputado; esto dice ${JSON.stringify(item.job.titulo)}`);
 });
 
-test('SCRUM-944b · sin `Job.quoteId` (sólo un adicional con jobId) toma el primero por id, como el original de serializeJob', async () => {
-  const b = banco({
-    trabajos: [{ ...SIN_TITULO, quoteId: null }], quotes: [Q_ADICIONAL], clientes: [MARIA],
-    gastos: [{ ...GASTO, quoteId: 2 }],
-  });
-  const [item] = await b.lista();
-  assert.equal(item.job.titulo, 'Presupuesto #8 · María López');
-});
-
-test('SCRUM-944b · sin número de presupuesto ni cliente, el respaldo es el de tituloDeTrabajo («Presupuesto #<id>»), sin inventar nada', async () => {
+test('SCRUM-944b · sin cliente, el respaldo es el de tituloDeTrabajo («#<id del Trabajo>»), sin inventar un presupuesto', async () => {
   const b = banco({ trabajos: [{ ...SIN_TITULO, quoteId: null }], quotes: [{ id: 1, jobId: 500, quoteNumber: null }], clientes: [], gastos: [GASTO] });
   const [item] = await b.lista();
-  assert.equal(item.job.titulo, 'Presupuesto #1');
+  assert.equal(item.job.titulo, '#500');
 });
 
 test('SCRUM-944b · un gasto cuyo presupuesto no pertenece a ningún Trabajo sigue suelto (job: null)', async () => {
@@ -168,7 +163,7 @@ test('SCRUM-944b · un gasto cuyo presupuesto no pertenece a ningún Trabajo sig
 test('SCRUM-944b · 🔴 un gasto CON foto y CON Trabajo lleva las dos cosas: `tieneFoto: true` y el nombre de Trabajos', async () => {
   const b = banco({ trabajos: [SIN_TITULO], quotes: [Q_ORIGINAL], clientes: [MARIA], gastos: [{ ...GASTO, conFoto: true }] });
   const [item] = await b.lista();
-  assert.equal(item.job.titulo, 'Presupuesto #5 · María López');
+  assert.equal(item.job.titulo, 'María López');
   assert.equal(item.tieneFoto, true, '🔴 el gasto tiene foto y su fila, con Trabajo, no lo dice');
 });
 
@@ -188,14 +183,16 @@ test('SCRUM-944b · SUELO de `tieneFoto`: el mismo Trabajo, un gasto SIN foto �
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-944b · NEGATIVO: coste CONSTANTE (una consulta de cada por página, no una por gasto) y con merchantId', async () => {
-  const trabajos = [500, 501, 502].map((id) => ({ id, titulo: null, customerId: MARIA.id, quoteId: id - 499 }));
+  const PEPE = { id: 8, name: 'Pepe Ruiz' };
+  const trabajos = [500, 501, 502].map((id) => ({ id, titulo: null, customerId: id === 501 ? PEPE.id : MARIA.id, quoteId: id - 499 }));
   const quotes = [500, 501, 502].map((id) => ({ id: id - 499, jobId: id, quoteNumber: id - 495 }));
   const gastos = [1, 2, 3].map((n) => ({ ...GASTO, id: n, quoteId: n }));
-  const b = banco({ trabajos, quotes, clientes: [MARIA], gastos });
+  const b = banco({ trabajos, quotes, clientes: [MARIA, PEPE], gastos });
   const items = await b.lista();
-  assert.deepEqual(items.map((i) => i.job.titulo), ['Presupuesto #5 · María López', 'Presupuesto #6 · María López', 'Presupuesto #7 · María López']);
+  assert.deepEqual(items.map((i) => i.job.titulo), ['María López', 'Pepe Ruiz', 'María López']);
   assert.equal(b.consultas.jobsCompletos.length, 1, 'una sola consulta de Trabajos para toda la página');
-  assert.equal(b.consultas.quotesCompletos.length, 1, 'una sola consulta de presupuestos para toda la página');
+  // SCRUM-1690 · el nombre ya no lleva el presupuesto: no se piden presupuestos para nombrar.
+  assert.equal(b.consultas.quotesCompletos.length, 0, 'el nombre no depende del presupuesto: no hay consulta de presupuestos');
   assert.equal(b.consultas.clientes.length, 1, 'una sola consulta de clientes para toda la página');
   for (const q of [...b.consultas.jobsCompletos, ...b.consultas.quotesCompletos, ...b.consultas.clientes]) {
     assert.equal(q.where.merchantId, MERCHANT, 'regla 2: toda consulta va acotada al merchant');

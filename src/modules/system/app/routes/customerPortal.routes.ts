@@ -12,6 +12,7 @@ import { recordCustomerEvent } from '../../customerEvents.service';
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { ensureQuoteDecisionToken } from '../../../quotes/domain/quoteToken.service'; // SCRUM-95
 import { cardChargeMode } from '../../../billing/domain/cardCharge'; // SCRUM-893
+import { comercioSuprimido } from '../../../billing/domain/comercioSuprimido'; // SCRUM-1573b
 import { zonaDelMerchant, diaNaturalEn } from '../../../../core/zonaDelMerchant'; // SCRUM-1018 · 1471b
 import { getEmissionMode } from '../../../invoicing/domain/emission.service'; // SCRUM-1567b
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service'; // SCRUM-1567b
@@ -253,6 +254,24 @@ function importeDeLineaDelPresupuesto(l: QuoteLine, currency: string): string {
   return Number.isFinite(importe) ? formatMoneyEs(importe, currency) : '';
 }
 
+/**
+ * SCRUM-1624b · la fila «Descuento global» de la tarjeta del presupuesto, o `null` si no hay.
+ *
+ * Con SCRUM-1568 cada línea lleva su descuento de LÍNEA, pero el global sólo lo restaba el total:
+ * con 20 € de global, las filas sumaban 278,30 € y el total decía 254,10 €. Firma del fundador
+ * (SCRUM-1624 c.21094): una fila más, la PRIMERA, con el rótulo de la tarjeta de factura, en
+ * negativo y CON IVA, y su importe es la diferencia entre dos `calcTotal` —la función que guardó
+ * el total—, sin cuenta propia. El rótulo es el de `invoiceLines.service.ts`, que no se exporta
+ * porque es camino de emisión (regla 38); scrum1624b comprueba que los dos dicen lo mismo.
+ */
+function filaDescuentoGlobalDelPresupuesto(lineas: QuoteLine[], global: unknown): { concepto: string; importe: number } | null {
+  if (global == null || global === '') return null;
+  const sinGlobal = calcTotal(lineas);
+  const conGlobal = calcTotal(lineas, String(global));
+  if (!(conGlobal < sinGlobal)) return null;
+  return { concepto: 'Descuento global', importe: Math.round((conGlobal - sinGlobal) * 100) / 100 };
+}
+
 // ── GET /cliente/:token ──────────────────────────────────────────────────
 router.get('/:token', async (req, res) => {
   const { token } = req.params;
@@ -266,7 +285,10 @@ router.get('/:token', async (req, res) => {
         // por eso el botón «Pagar ahora» se pintaba sin mirar nada. Es lectura de tres columnas
         // más: ni esquema, ni camino de cobro.
         select: { id: true, email: true, name: true, legalName: true, logoUrl: true, whatsappPhone: true, country: true,
-          connectStatus: true, stripeAccountId: true, flags: true, timezone: true },
+          connectStatus: true, stripeAccountId: true, flags: true, timezone: true,
+          // SCRUM-1567b · `getEmissionMode` lo pide (SCRUM-1585): con el flag en ON, un SII en «Sí»
+          // o «No consta» también es `receipt`, y su portal tampoco habla de facturas.
+          llevaLibrosPorSii: true },
       },
     },
   });
@@ -346,7 +368,8 @@ router.get('/:token', async (req, res) => {
   // SCRUM-893: una sola vez para toda la página. Si se preguntara dentro del bucle de facturas,
   // dos filas del mismo merchant podrían acabar contestando distinto el día que alguien toque el
   // criterio — y el portal enseñaría el botón en una factura y no en la de al lado.
-  const puedeTarjeta = cardChargeMode(m) !== 'refuse';
+  // SCRUM-1573b · un comercio suprimido no ofrece ninguna vía de cobro (c.21057): el portal sigue abierto.
+  const puedeTarjeta = !comercioSuprimido(m) && cardChargeMode(m) !== 'refuse';
   // SCRUM-1567b · un comercio en `receipt` no emite ningún documento (SCRUM-1027): su portal no
   // habla de facturas. Firmado en SCRUM-1567 c.21121; con el flag en ON el portal sigue como estaba.
   const sinFacturas = getEmissionMode(m) === 'receipt';
@@ -364,14 +387,22 @@ router.get('/:token', async (req, res) => {
   // ── Cotizaciones ────────────────────────────────────────────────────────
   const quotesHtml = quotes.length
     ? quotes.map((q) => {
-        const hasLines = Array.isArray(q.lines) && (q.lines as any[]).length > 0;
+        const lineasDelPresupuesto = Array.isArray(q.lines) ? q.lines as any[] : [];
+        const hasLines = lineasDelPresupuesto.length > 0;
+        // SCRUM-1624b · P3 la fila va la primera; P4 no se cuenta en «Ver detalles (N líneas)».
+        const filaDescuentoGlobal = hasLines ? filaDescuentoGlobalDelPresupuesto(lineasDelPresupuesto, q.discountGlobalAmount) : null;
+        const nLineas = lineasDelPresupuesto.length;
         const linesHtml = hasLines
           ? `<div class="pf-lines">
               <button class="pf-lines-toggle">
-                <span class="pf-chevron">▼</span> Ver detalles (${(q.lines as any[]).length} línea${(q.lines as any[]).length !== 1 ? 's' : ''})
+                <span class="pf-chevron">▼</span> Ver detalles (${nLineas} línea${nLineas !== 1 ? 's' : ''})
               </button>
               <div class="pf-lines-body">
-                ${(q.lines as any[]).map((l: any) => {
+                ${filaDescuentoGlobal ? `<div class="pf-line-row">
+                    <span class="pf-line-concept">${esc(filaDescuentoGlobal.concepto)}</span>
+                    <span class="pf-line-amount">${formatMoneyEs(filaDescuentoGlobal.importe, q.currency)}</span>
+                  </div>` : ''}
+                ${lineasDelPresupuesto.map((l: any) => {
                   return `<div class="pf-line-row">
                     <span class="pf-line-concept">${esc(l.concept||'')}</span>
                     <span class="pf-line-amount">${importeDeLineaDelPresupuesto(l, q.currency)}</span>

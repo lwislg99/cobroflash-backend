@@ -53,11 +53,17 @@ La cabecera de `src/modules/invoicing/domain/emission.service.ts:3-6` y la defin
 
 ## SCRUM-1567b · El portal del cliente no habla de facturas a un comercio que no puede emitir (J2, jv-j2bp, 27-oct-2026)
 
-**Medido contra:** `origin/main` = `922fddaab477767cbf9b9e0f789d39a48e85cd2e` · 2026-10-27T16:21:47Z (cabecera `Date` de GitHub)
+**Medido contra:** `origin/main` = `75d4878628254b3e6b72c1dfe69f2d8575b978ef` · 2026-11-12T10:20:49Z (cabecera `Date` de GitHub)
 
 A9: comprobación → `tests/scrum1567b-portal-sin-facturas-en-receipt.test.mjs`
 
-Lo construye J2 con la firma del fundador sobre la propuesta de arriba (SCRUM-1567 c.21121, puntos 3 y 4). Los literales se copiaron de Jira.
+Lo construye J2 con la firma del fundador sobre la propuesta de arriba (SCRUM-1567 c.21121, puntos 3 y 4). Los literales se copiaron de Jira. Se construyó el 27-oct contra `922fddaab477767cbf9b9e0f789d39a48e85cd2e` y se quedó sin empujar, a la espera de #2937 (1573b) y del PR de 1624b, que tocan el mismo fichero; el 12-nov el relevo (jv-j2bp) lo puso al día con `git merge origin/main` y lo volvió a medir entero. Lo de abajo es la medición del 12-nov.
+
+### Lo que trajo main, y lo que obligó a cambiar
+
+- **Conflicto en `customerPortal.routes.ts`**, en la línea de `puedeTarjeta`: 1573b la cambió a `!comercioSuprimido(m) && cardChargeMode(m) !== 'refuse'`. Se conservan las dos: la de 1573b tal cual y, debajo, `sinFacturas`. El resto del fichero (la fila de 1624b incluida) entró sin conflicto. El registro no se entrelazó: el tramo de J4 queda intacto encima de éste.
+- **SCRUM-1585 hizo obligatorio `llevaLibrosPorSii` en `MerchantLike`.** Con la consulta del 27-oct, `tsc -p .` daba `TS2345` en la llamada a `getEmissionMode`. La consulta del comercio lee ahora también esa columna (lectura, ni esquema ni camino de emisión). Consecuencia que sale sola de mirar `getEmissionMode`, como pide el punto 4 de la firma: con el flag en ON y el SII en «Sí» o «No consta», el comercio es `receipt` (no emite) y su portal tampoco habla de facturas. No es texto nuevo: son los mismos tres literales del punto 3. Tiene caso propio en el test.
+- El banco del test fija `llevaLibrosPorSii` en «No» para el comercio `fiscal`; sin eso, el control ① sale rojo, que es lo que tiene que hacer.
 
 ### Qué se ha cambiado
 
@@ -71,15 +77,18 @@ Con el flag en ON (`fiscal`) el portal sale como estaba (medido); en el comercio
 
 ### El rojo, antes del cambio
 
-Con el `src/` de main y el test nuevo: 4 casos, **2 caen** (los dos de `receipt`: el saludo decía «Aquí tienes tus presupuestos, facturas y pagos.») y **2 pasan** (los dos controles: el modo del banco y el portal con el flag en ON). Después del cambio, 4 de 4. El control del flag en ON pasó ANTES y DESPUÉS: el portal de un comercio `fiscal` no ha cambiado ni en el saludo, ni en el apartado, ni en «Factura J-…».
+Re-medido el 12-nov sobre la base nueva: el `customerPortal.routes.ts` de `origin/main` (`75d48786…`) compilado con el test de esta rama: 5 casos, **3 caen** (los tres de `receipt`, los tres con el saludo «Aquí tienes tus presupuestos, facturas y pagos.») y **2 pasan** (los dos controles: el modo del banco y el portal con el flag en ON). Con la rama, 5 de 5. El control del flag en ON pasó ANTES y DESPUÉS: el portal de un comercio `fiscal` no ha cambiado ni en el saludo, ni en el apartado, ni en «Factura J-…». (El 27-oct eran 4 casos y caían 2; el quinto es el del SII.)
 
-Mutaciones: las dos de `MUTACIONES_QUE_ME_TUMBAN`, corridas con `correr` y `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`: **2 de 2 tumban su caso**, árbol restaurado.
+Mutaciones: las dos de `MUTACIONES_QUE_ME_TUMBAN`, corridas con `correr` y `aplicarUna` de `scripts/meta-guard-mutaciones.mjs` (línea base limpia: 5 pasan, 0 caen, 0 saltan): **2 de 2 tumban su caso**. La de `sinFacturas` tumba además 2 colaterales (el caso del SII y el del `J-`, que dependen de la misma constante). Árbol y `dist/` restaurados, comprobado después con `git status` y leyendo las dos líneas en el fuente y en el compilado.
+
+Build con tipos (`tsc -p .`, sin `--noCheck`): salida 0. Tests dirigidos, 18 ficheros (el nuevo, 1568, 1573b, 1624b, scrum237, 976, 1387, 411, 737, 1415, 812, 1204, 910, 745, 1177, 747, 700, 719): 160 casos, 160 pasan, 0 caen, 0 saltan.
 
 ### No cubierto por la firma, sin texto nuevo
 
-Un comercio en `receipt` con un `J-` antiguo: la firma quita el apartado «Facturas» y a la vez pide «Justificante J-…», así que la tarjeta tiene que salir en algún sitio. Sale en su propio bloque **sin título**, debajo de los presupuestos. El orquestador J (`cobroflash-backend-8b`) lo dio por bueno como consecuencia mecánica de quitar «Facturas». No hay texto nuevo; si el fundador quiere un título para ese bloque, es otra firma. Hoy hay 2 `J-` en producción, del comercio 18, de prueba (SCRUM-1448 c.21012).
+Un comercio en `receipt` con un `J-` antiguo: la firma quita el apartado «Facturas» y a la vez pide «Justificante J-…», así que la tarjeta tiene que salir en algún sitio. Sale en su propio bloque **sin título**, debajo de los presupuestos. El orquestador J (`cobroflash-backend-8b`) lo dio por bueno como consecuencia mecánica de quitar «Facturas». No hay texto nuevo; si el fundador quiere un título para ese bloque, es otra firma. El 27-oct había 2 `J-` en producción, del comercio 18, de prueba (dato de SCRUM-1448 c.21012; no re-medido el 12-nov).
 
 ### No medido, y se dice
 
 - La suite entera en local: NO CORRIDA (encargo: hoy la cola se satura). La hace el obligatorio de CI.
-- Ninguna pantalla en navegador ni en yaqu.app: el test pide la ruta real con un Prisma de mentira.
+- Ninguna pantalla en navegador ni en yaqu.app: el test pide la ruta real con un Prisma de mentira. Se verá en yaqu.app tras el despliegue del merge.
+- El modo `demo` y el SII en «Sí» (frente a «No consta») no tienen caso propio en el portal: se leen del código de `getEmissionMode`.

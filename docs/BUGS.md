@@ -613,6 +613,7 @@
 ### [x] P2-1 · Acciones sobre presupuestos rechazados
 - **Mejora:** mostrar el motivo del cliente (depende de P1-3) y hacer visible **"Duplicar"** (o "Duplicar y editar") para revisar y reenviar. NO construir versionado/reapertura todavía — Duplicar es suficiente para el MVP.
 - **CERRADO (9 jun):** ya implementado — el detalle muestra "Motivo de rechazo" + "Comentario" (correctos desde P1-3) y el botón "⎘ Duplicar" está siempre visible en la cabecera (carga las líneas/tiers en un presupuesto nuevo, `duplicateQuote`). Sin código nuevo; lo desbloqueaba P1-3.
+- **CORREGIDO (2-nov-2026, SCRUM-1651): «/tiers» era FALSO.** `duplicateQuote` (`quotesDetailView.js`) mete `tiers` en la plantilla, pero el editor que la recibe (`renderQuotesView`, `quotesView.js`) no tiene opciones y sólo carga `lines` —su propio comentario: «`tiers` y `currency` viajan en la plantilla y NO se restauran aquí»—. Y en un presupuesto de 3 opciones `lines` son las de la recomendada (`quotes.routes.ts`, «líneas del tier recomendado como referencia»). Duplicar uno así abre el editor con UNA opción y pierde las otras dos sin avisar. El defecto vive en SCRUM-1651; esta línea no se borra para que se vea qué afirmaba.
 
 ### [x] P2-2 · Feedback al enviar presupuesto
 - **Mejora:** el aviso "Presupuesto enviado por WhatsApp" es muy discreto. Tras enviar, redirigir al detalle del presupuesto (muestra SENT + timeline) o mostrar un toast claro con enlace "Ver presupuesto".
@@ -1180,6 +1181,16 @@
   - **El log NO sirve para auditar esto:** `WhatsAppMessage` (`schema.prisma:504-528`) guarda `templateName`/`status`/`waMessageId`, **no el cuerpo ni la URL**.
   - **Duda abierta:** en ese caso el sufijo resuelto era `0` (`{{1}}0` → `parseNumericId` → `0`) y **no existe ningún `Charge` con id 0** (autoincrement empieza en 1) → ese enlace concreto no abriría. Falta confirmar si fue **truncamiento al copiar la URL** (lo más probable) o un `chargeId` inválido colándose en algún call-site. Si fuese lo segundo, es bug aparte.
   - **Seguimiento:** **SCRUM-77**.
+- **⚠️ 29-oct-2026 (SCRUM-1632) · el «arreglo de raíz» de arriba puede ser la causa.** Escribe la
+  base CON `{{1}}` (`…/pay/quote/{{1}}`), igual que nuestras guías hasta ese día. En el editor de
+  WhatsApp Manager el campo va **sin** `{{1}}` (`https://yaqu.app/pay/quote/`): según guías de
+  terceros (no Meta), el editor lo añade solo al elegir «Dinámico», y uno escrito a mano queda
+  literal delante del sufijo, que es justo el síntoma de esta entrada. Y en :1178, «URL estática
+  con el literal `{{1}}` y Meta le concatena detrás el parámetro» no cuadra: a un botón estático
+  Meta no le pega ningún parámetro, así que el botón ERA dinámico y lo que sobraba era el `{{1}}`
+  literal. Es lectura, no está verificado contra el panel. Regla corregida, motivo y la prueba
+  que vale (copiar el enlace del botón en el móvil; abrir el panel NO vale):
+  `docs/WHATSAPP_TEMPLATES.md`, «Reglas comunes». Ha vuelto con el albarán (SCRUM-1236, 18-oct).
 
 ### [x] P3-2 · Manejo de error en el envío de WhatsApp
 - **Mejora:** que `/admin/quotes/:id/send-whatsapp` devuelva un mensaje claro cuando Meta rechaza, nunca un 502. (Verificar si ya está resuelto; el error de Meta ya se loguea.)

@@ -756,7 +756,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       `<td class="quote-line-cel"></td>` +
       `<td>${qty}</td>` +
       `<td>${fmtQuoteMoney(price, cur)}</td>` +
-      `<td>${(tax * 100).toFixed(0)} %</td>` +
+      `<td>${fmtTipoIvaEs(tax)} %</td>` +
       `<td style="text-align:right" class="amount">${fmtQuoteMoney(total, cur)}</td>`;
 
     // 🔴 EL CONCEPTO SE CONSTRUYE COMO NODOS, no como cadena de HTML. La descripción larga viaja
@@ -800,6 +800,10 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     totalBase = T.baseImponibleCents / 100;
     totalIva = T.cuotaCents / 100;
   }
+  // SCRUM-1635 · el desglose se pinta SÓLO con descuento GLOBAL: el de línea ya va dentro del importe
+  // de cada fila, y ahí no queda nada sin explicar. El global, en cambio, no está en ninguna línea.
+  const desglose = window.quoteDescuentos.totalesConDescuento(lineasParaTotales, descuentoGlobal);
+  const pintaDesglose = desglose.descuentoGlobalCents > 0;
 
   // Totales (base/IVA secundarios, total destacado)
   const totalsWrap = document.createElement('div');
@@ -810,6 +814,30 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     <div style="font-size:13px;color:var(--muted)">IVA: <span class="amount-muted">${fmtQuoteMoney(totalIva, cur)}</span></div>
     <div style="font-size:16px;color:var(--ink);font-weight:700;margin-top:2px">Total: <span class="amount" style="font-size:18px">${fmtQuoteMoney(quote.total, cur)}</span></div>
   `;
+
+  // 🔴 SCRUM-1635 · EL DESCUENTO GLOBAL, EXPLICADO. Sin estas filas el profesional veía líneas por
+  // 1.075,00 € y un total de 967,50 € (#212 de QA, medido por S4 en yaqu.app): 100 € que no salían
+  // en ningún sitio de la ficha, mientras la vista previa del editor sí los pintaba.
+  //
+  // Mismas filas, mismas cifras (`T`, la cuenta del editor) y mismos rótulos que el pie del PDF
+  // (`pieDePresupuesto`, SCRUM-594, con los dos puntos, como el resto de este bloque), la página de
+  // firma y la vista previa (SCRUM-888 comentario 15788). No es texto nuevo.
+  if (pintaDesglose) {
+    const filaDesglose = (rotulo, cents, negativo) => {
+      const fila = document.createElement('div');
+      fila.className = 'quote-total-desglose';
+      fila.appendChild(document.createTextNode(rotulo + ': '));
+      const n = document.createElement('span');
+      n.className = 'amount-muted';
+      n.textContent = (negativo ? '−' : '') + fmtQuoteMoney(cents / 100, cur);
+      fila.appendChild(n);
+      return fila;
+    };
+    const filas = [filaDesglose('Suma de líneas', desglose.sumaSinDescuentoCents, false)];
+    if (desglose.descuentoLineasCents > 0) filas.push(filaDesglose('Descuento', desglose.descuentoLineasCents, true));
+    filas.push(filaDesglose('Descuento global', desglose.descuentoGlobalCents, true));
+    totalsWrap.prepend(...filas);
+  }
   concSec.appendChild(totalsWrap);
 
   // SCRUM-1206 · las Observaciones, debajo de los totales, como en el papel (ver arriba).
@@ -1044,12 +1072,23 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       const div = document.createElement('div');
       div.className = 'invoice-item';
       div.style.cursor = 'pointer';
-      div.innerHTML =
-        `<p style="margin:0"><strong>${escHtml(inv.number)}</strong><br>` +
+      const resumen = document.createElement('p');
+      resumen.style.margin = '0';
+      resumen.innerHTML =
+        `<strong>${escHtml(inv.number)}</strong><br>` +
         `Total: <span class="amount-muted">${fmtQuoteMoney(inv.total, inv.currency || cur)}</span><br>` +
-        `Creada: ${inv.createdAt ? new Date(inv.createdAt).toLocaleString('es-ES') : '—'}</p>`;
-      div.addEventListener('click', () => {
+        `Creada: ${inv.createdAt ? new Date(inv.createdAt).toLocaleString('es-ES') : '—'}`;
+      div.appendChild(resumen);
+      const abrirFactura = () => {
         if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: inv.id });
+      };
+      div.addEventListener('click', abrirFactura);
+      // SCRUM-1639 · con teclado: la tarjeta puede llevar «Marcar como pagada» y su selector, y un botón
+      // no contiene controles; el activable es el resumen de la factura, cuyo nombre es su propio texto.
+      resumen.setAttribute('role', 'button');
+      resumen.setAttribute('tabindex', '0');
+      resumen.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirFactura(); }
       });
 
       if (inv.status === 'pending') {
@@ -1500,6 +1539,9 @@ async function duplicateQuote(quoteId) {
     currency: detail.currency,
     lines: detail.lines || [],
     tiers: detail.tiers || null,
+    // SCRUM-1651 · el editor no tiene opciones: de un presupuesto con varias sólo le llegan las
+    // líneas de la recomendada. Esta marca hace que lo DIGA (`quotesView.js`, aviso propio).
+    soloLaRecomendada: Array.isArray(detail.tiers) && detail.tiers.length > 1,
     paymentTerms: detail.paymentTerms || null,
     // SCRUM-926 · EL DESCUENTO GLOBAL VIAJA EN LA COPIA. Sin esta línea, duplicar un presupuesto
     // con descuento abría el editor SIN él: el profesional creía estar copiando lo pactado y

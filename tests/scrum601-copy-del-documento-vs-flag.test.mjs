@@ -252,7 +252,21 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // REGENERADO con el propio censo sobre el árbol YA FUSIONADO (origin/main f6a311967 + la rama), no
 // deducido: { flag: 7, tipo: 11, aPelo: 162 }, y el único literal del censo en `subscriptions.routes.ts`
 // es ése.
-const VEREDICTO_AL_MEDIR = { flag: 7, tipo: 11, aPelo: 162 };
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// flag 7 → 8 · 29-oct-2026 (SCRUM-1602) · CUÁL ENTRÓ Y POR QUÉ NO ES REGRESIÓN: la tarjeta
+// «Paquete del trimestre» (`TARJETA_PAQUETE_TRIMESTRE`, `exportView.js:43`), textos FIRMADOS en
+// SCRUM-1251 comentario 20675. Cae en ① porque SÓLO se pinta con `window.appModoEmision === 'fiscal'`
+// (`conPaquete`): es la categoría correcta, la de un texto que el modo de emisión calla (reglas 7/24).
+// Tampoco va a `PENDIENTES_DE_FIRMA`: está firmado. REGENERADO con el propio censo sobre el árbol YA
+// FUSIONADO (origin/main 5deff8b3b + la rama), no deducido: main da { flag: 7, tipo: 11, aPelo: 162 }
+// y la rama { flag: 8, tipo: 11, aPelo: 162 }; la única fila nueva de ① es ésa. («1 factura» de
+// `exportView.js` sólo cambia de línea, 179 → 205, y sigue en ③.)
+// aPelo 162 → 160 · 11-nov-2026 (SCRUM-1696, PILOTO-1) · CUÁLES SALIERON: las dos
+// «El parte sigue sin ser una factura.» de `jobDetailView.js` (ficha del trabajo y hoja de alta del
+// albarán). Se QUITAN por N8, firmado (SCRUM-1686 c.21470, «si firmo» c.21471): hablaban del albarán con
+// el nombre del parte. No hay movimiento a ①/②: los dos literales desaparecen. Contado por ESTE censo
+// sobre origin/main 573579309 + la rama; el propio test lo dijo (actual 160, esperado 162).
+const VEREDICTO_AL_MEDIR = { flag: 8, tipo: 11, aPelo: 160 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
@@ -321,7 +335,13 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   // SCRUM-1390y (27-oct-2026) · 894 → 898: el error de una respuesta sin lista se queda en su bloque
   // en vez de lanzarse; contra origin/main 77ce98573, `git diff --numstat` de `homeView.js` da 18 5,
   // todo POR ENCIMA de la nota. Medido con el mismo `grep -n`, en la rama: 898; en main: 885.
-  const boton = en('public/dashboard/js/homeView.js', 898);
+  // SCRUM-1701 (b) (11-nov-2026) · 898 → 906: quitar el atajo «Pendientes de cobro» en `receipt`
+  // mete 9 líneas y quita 1 POR ENCIMA de la nota (`git diff --numstat` de `homeView.js`: 9 1).
+  // Medido con el mismo `grep -n`, en la rama: 906; en origin/main 81f579535: 898.
+  // SCRUM-1686 H4 (12-nov-2026) · 906 → 944: el bloque «Para hoy» del Inicio del operario y el
+  // saludo por rol meten 39 líneas y quitan 1 POR ENCIMA de la nota (`git diff --numstat` de
+  // `homeView.js`: 39 1). Medido con el mismo `grep -n`, en la rama: 944; en origin/main acac25dba: 906.
+  const boton = en('public/dashboard/js/homeView.js', 944);
   assert.equal(boton.length, 1, 'no se encuentra la nota de condiciones de homeView donde se midió');
   assert.match(boton[0].texto, /100% al aceptar/);
   assert.equal(boton[0].dependeDelFlag, true,
@@ -344,7 +364,13 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   // `grep -n "textContent = 'Facturas'" public/dashboard/js/app.js` da una sola línea, y es ésta.
   // SCRUM-1156c · 386 → 388: `app.js` gana por encima el menú activo de `expenses-detail` y su
   // `state.expenseId`. Medido, no deducido: el mismo `grep` da una sola línea, la 388.
-  const menu = en('public/dashboard/js/app.js', 388);
+  // SCRUM-1700 · 388 → 391: `app.js` gana por encima las 3 líneas que cuentan los partes por valorar
+  // al arrancar (bloque S4). Medido con el mismo `grep`: una sola línea, la 391.
+  // SCRUM-1701 · 388 → 391: `initApp` gana por encima la llamada a `aplicarModoALaBarra` (tres líneas,
+  // con su comentario). El mismo `grep -n`: en la rama 391, en origin/main a4a2ffc4a 388.
+  // SCRUM-1700 + SCRUM-1701 juntas (merge de main en la rama de 1700) · 391 → 394: las dos suman sus tres
+  // líneas por encima. Medido, no sumado: el mismo `grep -n` da una sola línea, la 394.
+  const menu = en('public/dashboard/js/app.js', 394);
   assert.equal(menu.length, 1, 'no se encuentra el rótulo del menú donde se midió');
   assert.equal(menu[0].texto, 'Facturas');
   assert.equal(menu[0].dependeDelFlag, false);
@@ -414,7 +440,12 @@ test('SCRUM-601 · EL VEREDICTO: las tres categorías, ancladas, y SUMAN', () =>
 // (`TEXTO_SUSCRIPCION_EXISTE`, `subscriptions.routes.ts:47`) y llega al `json` por referencia. No se
 // pega en línea para bajar el número: el motivo de 31→32. Medido con el censo sobre origin/main
 // f6a311967 + la rama: es la única construcción no legible de ese fichero.
-const NO_LEGIBLES_AL_MEDIR = 37;
+// 29-oct-2026 · 37 → 38, MEDIDO (SCRUM-1602). Es el mismo literal que sube `flag` 7 → 8: la tarjeta
+// firmada del paquete vive en SU ÚNICA constante (`TARJETA_PAQUETE_TRIMESTRE`) y llega al `innerHTML`
+// por `${conPaquete ? TARJETA_PAQUETE_TRIMESTRE : ''}`. No se pega en línea para bajar el número: el
+// motivo de 31→32. Medido con el censo sobre origin/main 5deff8b3b (37) + la rama (38): la única
+// construcción no legible nueva es `exportView.js:43`.
+const NO_LEGIBLES_AL_MEDIR = 38;
 
 test('SCRUM-601 · el censo DECLARA lo que no sabe leer, y esa lista no crece sola', () => {
   const n = censo.noLegibles.length;

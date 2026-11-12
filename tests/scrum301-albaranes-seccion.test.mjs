@@ -391,7 +391,10 @@ const COPY_APROBADA = {
   //
   // ⚠️ QUEDA DICHO PARA QUE SE PUEDA VETAR EN UNA LÍNEA: es nueva EN ESTA PANTALLA. Si el fundador
   // prefiere otra palabra aquí, se cambia en este renglón y en la cabecera de la vista.
-  columnas: ['Nº', 'Emisión', 'Entrega', 'Cliente', 'Trabajo', 'Estado', 'Acciones'],
+  // SCRUM-1669 · entra «Importe», texto firmado n.º 17 (SCRUM-1656 c.21405; firma c.21408 ①
+  // «Entradas 1-23: aprobadas TAL CUAL»). Va detrás de «Trabajo»: las dos ocultaciones por
+  // posición (`th:nth-child(2)` Emisión, `th:nth-child(3)` Entrega) no se mueven.
+  columnas: ['Nº', 'Emisión', 'Entrega', 'Cliente', 'Trabajo', 'Importe', 'Estado', 'Acciones'],
   filtroTodos: 'Facturación: todos',
   // SCRUM-1450 · ESTA RANURA CAMBIÓ DE DECISIÓN, no de implementación. Hasta el 2-oct-2026 decía
   // `sin facturar` · `parcial` · `facturado` (aprobado el 5-ago-2026). El 2-oct se firmaron para el

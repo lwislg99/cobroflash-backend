@@ -1,0 +1,5 @@
+M1 Presupuestos cambia sin declarar: salida 1 · VIVA · 🔴 Presupuestos HA CAMBIADO · origin/main 9effdf2085cb5f27 (3508) ≠ hoy 41a4b05cfbe97727 (3509) · árbol limpio: true
+M2 el <th> de Facturas con un atributo: salida 1 · VIVA · 🔴 Facturas ha cambiado MÁS de lo declarado por SCRUM-1562g · base sin lo declarado 4b53575331062095 ≠ hoy sin lo declarado 80ad4cd1cc195a4b · árbol limpio: true
+M3 colspan desajustado: salida 1 · VIVA · 🔴 Facturas ha cambiado MÁS de lo declarado por SCRUM-1562g · base sin lo declarado 4b53575331062095 ≠ hoy sin lo declarado 6e50c283eaa9c9d8 · árbol limpio: true
+M4 sin el <th> nuevo: salida 1 · VIVA · 🔴 Facturas NO trae lo declarado por SCRUM-1562g · el colspan del vacío, igual al número de columnas: 1 de 1 · el <th> sin texto de la columna «Ver detalle»: 0 de 1 · árbol limpio: true
+4 vivas de 4

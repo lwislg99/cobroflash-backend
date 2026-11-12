@@ -1,0 +1,8 @@
+procesos trazados 41 · los que tocan documentación 0
+subprocesos distintos lanzados: 118
+…
+subprocesos: git show <sha>:public/… · git ls-tree -r --name-only <sha> public · git merge-base HEAD origin/main · node scripts/guard-*.mjs · el navegador. Ninguno nombra docs/.
+
+npm run guards:visuales con la traza puesta (NODE_OPTIONS=--import): exit 2 · 588 s
+guard:firma-con-tramos: CAÍDO ANTES DE MEDIR (Error: request for 'node:http' is from a module not been linked)
+  → lo tumba el hook de carga de MI traza (module.registerHooks); ese guard queda SIN MEDIR aquí.
