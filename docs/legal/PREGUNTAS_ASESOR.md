@@ -1542,3 +1542,306 @@ Otras exigencias de la misma norma madrileña que afectan a presupuesto y factur
 - Comunidad de Madrid · Reformas del hogar — https://www.comunidad.madrid/consumo/reformas-hogar
 - Comunidad de Madrid · Normativa reformas del hogar — https://www.comunidad.madrid/consumo/normativa-reformas-hogar
 - SCRUM-143 (Jira, correos AEAT jul-2026 y comentarios 21-sep-2026)
+
+---
+
+# Al día con SCRUM-1264 el 12-nov-2026
+
+> **Va al FINAL, no arriba,** porque otros documentos citan este fichero por número de línea
+> (`docs/master/SCRUM-1023.md`, `SCRUM-1039.md`, `docs/legal/INVENTARIO_AFIRMACIONES_*.md`,
+> `ENVIO_ASESOR_2026-09-28.md`): nada de lo que hay encima de esta sección se ha movido.
+>
+> **La versión viva es SCRUM-1264** (índice de 45 entradas en su descripción). Aquí se añaden,
+> copiadas por script de lo que devuelve Jira, las entradas de ese índice cuyo CONTENIDO no estaba
+> en este fichero (medido el 12-nov-2026 buscando por palabras clave de cada entrada, con un
+> control positivo sembrado y uno negativo; registro en `docs/master/SCRUM-1264.md`). El número de
+> cada encabezado es su fila en el índice de SCRUM-1264. Las de la descripción (D3, C1, F5) llevan
+> su fila en la línea de origen; las demás vienen del comentario c.21741 de SCRUM-1264.
+>
+> **Única desviación del literal:** en la fila 14 (ampliación de B3), la cita «fichero:línea» a
+> este mismo fichero se ha cambiado por una nota entre corchetes. Las secuencias `\[`, `\*` son
+> el escape que trae el Markdown que devuelve Jira, y se han dejado tal cual.
+>
+> **No se añaden:** las que ya estaban con otra numeración (P11-P20, P22-P24, Q-C1…Q-C9, bloques
+> A-G del principio); **A5** (fila 7) y **G4** (fila 45), que **no tienen texto en Jira** (c.17682
+> solo las nombra) y hay que redactar antes de enviarlas; y **Q-C5** (fila 31), que ya está aquí
+> como Q-C5.
+
+### 5 · Q-nueva-A · ¿Qué es una «variación» del SIF?
+
+_Origen: c.20879 (SCRUM-523). Texto literal._
+
+**Q-nueva-A · ¿Qué es una «variación» del SIF a efectos de la declaración responsable (art. 13.3 RRSIF)?** YaQu despliega muchas veces por semana (323 merges en 7 días, medido en SCRUM-523 c.20876), y la mayoría no tocan la facturación. El fundador entiende que solo cuenta como versión nueva un cambio de lo que el sistema hace con los registros de facturación. ¿Es correcto? ¿Un despliegue que no toca el SIF obliga a una declaración nueva?
+
+---
+
+### 6 · Q-nueva-B · Firma electrónica de la declaración responsable
+
+_Origen: c.20879 (SCRUM-870). Texto literal._
+
+**Q-nueva-B · ¿Puede ser electrónica la firma de la declaración responsable?** La SL tiene dos administradores mancomunados (SCRUM-870 c.20864), así que firman los dos. ¿Vale una firma electrónica, y de qué tipo?
+
+---
+
+### 8 · 30 · Error AEAT 1242 (con el contexto común de 30-32)
+
+_Origen: c.20973 (SCRUM-524). Texto literal._
+
+**Contexto común:** los tres códigos son literales del catálogo de errores de VERI\*FACTU de la AEAT (`errores.properties` de pre-producción, bajado el 29-jul-2026; la copia de producción no se ha comparado). Hoy no remitimos nada: el cliente de envío está escrito, pero no conectado.
+
+#### 30 · «1242 · No existe el sistema informático»: ¿cuándo salta, si no hay alta?
+
+La AEAT puede rechazar un registro con el error 1242, «No existe el sistema informático», y con el 1241, «Error técnico al obtener el SistemaInformatico». Entendemos que no hay un alta del sistema ante la AEAT: lo que hay es remitir como colaborador social (ver A2) y la declaración responsable del sistema (ver A4).
+
+1. ¿Puede saltar el 1242 mientras no somos colaborador social, o mientras el obligado no nos ha dado su representación?
+2. Si no, ¿cómo «conoce» la AEAT el sistema? ¿Por el primer envío correcto con ese NIF, IdSistemaInformatico y Version? ¿Un cambio de versión o de productor puede provocarlo en el siguiente envío?
+3. Ante un 1242, ¿se reintenta el mismo registro, o se para la remisión de ese sistema hasta corregir algo? ¿Qué se corrige?
+
+_Por qué:_ el envío tiene que saber qué hacer con cada respuesta, y este error nos señala a nosotros (el productor), no al profesional. _Normas:_ catálogo de errores de la AEAT, 1241 y 1242. NO VERIFICADO por nosotros: art. 13 RD 1007/2023 y art. 15 de la Orden HAC/1177/2024. _Lo que ya tenemos:_ el fundador entiende que no hay alta, sino colaborador social más declaración responsable (SCRUM-524 c.20209). Sin respuesta profesional.
+
+---
+
+### 9 · 31 · Error AEAT 4141
+
+_Origen: c.20973 (SCRUM-524). Texto literal._
+
+#### 31 · «4141 · Acceso suspendido»: ¿cuenta como incidencia técnica del art. 16.4?
+
+El 4141 rechaza el envío completo: «Le informamos que su acceso al sistema VERIFACTU ha sido suspendido temporalmente para realizar cualquier solicitud. Para resolver este inconveniente, le solicitamos que se ponga en contacto con nuestro equipo de soporte a través del buzón de correo electrónico verifactu@correo.aeat.es…».
+
+1. ¿A quién afecta una suspensión: al certificado que remite, al obligado o al sistema? Si es nuestro certificado de colaborador social, cortaría a todos los profesionales a la vez.
+2. ¿Es una «incidencia técnica» del art. 16.4 de la Orden (remitir en cuanto sea posible, en orden, reintentar al menos una vez cada hora y avisar de cuántos faltan), o el obligado incumple con cada registro que no llega? ¿Hay un plazo máximo para remitir lo acumulado?
+3. ¿Hay que avisar a algún sitio además del buzón? ¿Debe enterarse el profesional?
+
+_Por qué:_ reintentar cada hora contra una suspensión puede agravarla, y la cola de remisión se diseña con esta respuesta. _Norma:_ art. 16.4 de la Orden HAC/1177/2024 (BOE-A-2024-22138, consolidado leído el 26-oct-2026): «En caso de que alguna incidencia técnica impida la remisión voluntaria en las condiciones indicadas se deberá proceder a la remisión de los registros de facturación en cuanto sea posible, respetando el orden temporal de generación de los registros de facturación. \[…\] El sistema informático deberá reintentar periódicamente, al menos una vez cada hora, el envío de los registros de facturación pendientes de remitir. Asimismo, el sistema informático deberá avisar de que se ha producido una incidencia que ha impedido la remisión de todos los registros de facturación generados, indicando cuántos faltan por remitir.» _Lo que ya tenemos:_ sin respuesta.
+
+---
+
+### 10 · 32 · Error AEAT 1287
+
+_Origen: c.20973 (SCRUM-524). Texto literal._
+
+#### 32 · «1287 · Caracteres no válidos»: ¿valida el texto escapado o el que lee?
+
+El 1287 dice: «El valor del campo %s contiene carácteres no validos (<, >, ", ', =).» (sic). Lo que escribe el profesional va a DescripcionOperacion, y el nombre del cliente a NombreRazon. En el XML, «< > " '» van escapados (`&lt; &gt; &quot; &apos;`); el «=» no, porque XML no lo pide. Ejemplos reales: «Cambio de llave 1/2"», un cliente «D'Ors», «potencia >= 3 kW».
+
+1. ¿El 1287 se aplica al valor ya interpretado (y entonces `&quot;` vuelve a ser `"` y se rechaza) o al texto tal como llega?
+2. Si es lo primero, ¿sustituimos los caracteres (¿por cuáles?), los quitamos o rechazamos el texto al escribirlo? ¿Y un nombre legal con apóstrofo?
+3. ¿El «=» también lo provoca en DescripcionOperacion?
+
+_Por qué:_ una factura emitida no se edita; si hay que limpiar, es al escribir, antes de emitir. _Norma:_ catálogo de errores de la AEAT, 1287. _Lo que ya tenemos:_ sin respuesta. Relacionado: SCRUM-870b, un guard sobre esos caracteres en el productor.
+
+---
+
+### 11 · R-1…R-4 + Q-redondeo · El redondeo
+
+_Origen: c.20330 y c.20774 (SCRUM-1566/624/623); R-3 corregida por c.21585 (hasta 2 céntimos). Texto literal._
+
+**Contexto común:** YaQu calcula el IVA de una factura agrupando las líneas por tipo. Por cada tipo suma las bases y las cuotas (base × tipo) sin redondear, redondea al céntimo la base y la cuota del tipo, y el total es la suma de esas cifras ya redondeadas. Eso es lo que va al registro VeriFactu (BaseImponible, CuotaRepercutida por tipo, CuotaTotal, ImporteTotal).
+
+**R-1 · El medio céntimo.** Cuando la cuota de un tipo cae exactamente en medio céntimo (1 × 22,50 € al 21 % = 4,725 €), hoy se declara **4,72**. ¿Debe ser **4,73** (el medio céntimo hacia arriba)? ¿O es admisible cualquiera de los dos? Y si la AEAT comprueba que CuotaRepercutida = BaseImponible × TipoImpositivo (su error 1142), ¿qué margen admite: ninguno, un céntimo, otro?
+
+**R-2 · Por tipo o por línea.** Con varias líneas al mismo tipo, ¿es correcto calcular la cuota sobre la suma de las bases (redondeando una vez por tipo), o la norma exige redondear la cuota de cada línea y sumar? (Ejemplo medido en SCRUM-624: 3 líneas de 9,99 € al 21 % dan 36,27 € por línea y 36,26 € por tipo. La frecuencia general no está medida.)
+
+**R-3 · El total que firma el cliente en el presupuesto.** Hoy sale de sumar los importes con IVA de todas las líneas y redondear una vez; la factura suma base y cuota ya redondeadas por tipo, así que puede diferir del presupuesto firmado en un céntimo. ¿Puede el presupuesto mostrar el total calculado igual que la factura (aunque cambie en un céntimo el importe que firma el cliente)? ¿O el presupuesto, que no es factura, puede seguir su propio cálculo?
+
+**R-4 · Descuento global con varios tipos de IVA** (bloqueado desde SCRUM-887). Un descuento en euros sobre líneas al 21 % y al 10 %: ¿cómo se reparte entre los tipos (¿en proporción a la base?), y a qué tipo va el céntimo que sobra? ⚠️ Puede estar ya en esta lista con otra redacción: quien la consolide, que la una con la existente en vez de duplicarla.
+
+**Q-nueva · ¿Qué redondeo gobierna el total de la factura?** (SCRUM-624 / SCRUM-623)
+
+* Hoy conviven dos convenciones: redondear línea a línea y sumar, o sumar sin redondear y redondear al final. Con la segunda salen descuadres de céntimos, por ejemplo 36,27 guardado contra 36,26 impreso (SCRUM-624), y 15,13 + 15,13 = 30,26 frente a un TOTAL de 30,25 (SCRUM-1446).
+* La pregunta: ¿qué exige la normativa (RD 1619/2012 y el reglamento VERI\*FACTU) para la cuota y el total? ¿Por línea, por tipo impositivo o por factura? ¿Y qué hace el XML de VeriFactu (`CuotaTotal`, `ImporteTotal`) si el PDF y el registro difieren en un céntimo?
+* Por qué importa: el arreglo A de SCRUM-624 (que el PDF lea `calcVatBreakdown` y el total guardado) quita el descuadre PDF-contra-XML sin elegir convención. Pero la convención correcta la sigue decidiendo el asesor.
+
+---
+
+### 14 · B3 · ampliación (la pregunta B3 está en la descripción)
+
+_Origen: c.20971 (SCRUM-1039). Texto literal._
+
+**El literal de la ley, comprobado por script contra el consolidado del BOE del 26-oct-2026, con control negativo.** Es el art. 20.Uno.22.º.B 1.º LIVA, copiado de `docs/legal/PREGUNTAS_ASESOR.md` [aquí: Q-C2, más arriba en este fichero; en Jira la cita lleva el número de línea, quitado al copiar porque scrum525d lo lee como ancla] (rama `scrum-1039e-arreglos-j4`):
+
+> _«Que su objeto principal sea la reconstrucción de las mismas, entendiéndose cumplido este requisito cuando más del 50 por ciento del coste total del proyecto de rehabilitación se corresponda con obras de consolidación o tratamiento de elementos estructurales, fachadas o cubiertas o con obras análogas o conexas a las de rehabilitación.»_
+
+**Lo que se le añade a la pregunta:**
+
+* La coletilla «o con obras análogas o conexas a las de rehabilitación» decide el ejemplo del baño: ¿una reforma de baño puede llegar a «rehabilitación» por esa vía?
+* El mismo apartado B llama **«obras conexas»** a la albañilería, la fontanería, la carpintería y las instalaciones eléctricas, de agua y de climatización, cuando cuestan menos que las estructurales y van ligadas a ellas. **Son justo los oficios de YaQu.** ¿Cómo debe tratar el producto una factura de esos oficios a una empresa dentro de una rehabilitación: ISP o IVA normal? ¿Qué tiene que pedir o guardar el profesional para saberlo?
+
+El art. 24 _quater_ RIVA (la comunicación fehaciente del destinatario) sigue **NO VERIFICADO**.
+
+---
+
+### 18 · D1 · ahora es una confirmación (la pregunta D1 está en la descripción)
+
+_Origen: c.21184 (SCRUM-665). Texto literal._
+
+La pregunta D1 («¿El PDF que se entrega también tiene que ser inmutable?», la P20) **la contestó el fundador el 23-sep-2026, en SCRUM-665 c.16647**, y hoy se ha decidido construir la opción A: el PDF se guarda al emitir y se sirve siempre ése (SCRUM-665, decisión de hoy). El texto propuesto para la D1 está en SCRUM-665 c.21175 §5.
+
+**Clase de respuesta:** «del fundador, con fuente», que la leyenda de este ticket aún no tiene. Para el asesor, D1 pasa a ser una **confirmación**: «hemos decidido archivar el PDF tal como se entregó y su huella; ¿es suficiente para el art. 19 ROF?».
+
+---
+
+_Fila 20 del índice de SCRUM-1264 · origen: su descripción. Texto literal._
+
+### D3 · ¿El fichero que exportamos es «el registro de facturación» para una asesoría?
+
+**La pregunta.** Exportamos un ZIP con las facturas, los registros de VeriFactu y sus justificantes. Para una asesoría o una inspección, ¿es ése **el registro de facturación** que hay que entregar, o se espera otra cosa?
+**Normas que ya hemos localizado.** RD 1007/2023, art. 8; Orden HAC/1177/2024.
+**Qué haremos.** Ajustar la exportación.
+**Lo que ya tenemos:** SIN RESPUESTA.
+
+---
+
+_Fila 21 del índice de SCRUM-1264 · origen: su descripción. Texto literal._
+
+### C1 · ¿Cuándo tiene que estar emitida la factura de la señal?
+
+**La pregunta.** Un particular paga hoy una **señal** por una obra en su casa. (1) ¿La factura del anticipo tiene que emitirse **en el mismo momento del cobro**, o hay margen, y cuánto? (2) Si el cliente es **empresario**, ¿basta con emitirla antes del día 16 del mes siguiente al cobro? (3) ¿Qué consecuencia tiene emitirla **tarde pero emitirla**?
+**Por qué.** Cuando se active la emisión, cada cobro de señal por la aplicación debe llevar su factura, y necesitamos saber cuándo.
+**Normas que ya hemos localizado.** ROF: art. 2.1, párrafo segundo (factura por los pagos recibidos antes de la operación), art. 11.1 (plazo de expedición), art. 18 (remisión) y art. 6.1.i) (fecha del pago anticipado); LIVA, art. 75.Dos (devengo del anticipo); LGT, art. 201.1. Texto consolidado del BOE.
+**Qué haremos.** Emitir y enviar la factura del anticipo en el plazo que indique.
+**Lo que ya tenemos:** SIN RESPUESTA.
+
+---
+
+### 23 · 34 (E6) + A1–A6 · El 10 % de obras y el medio de pago ⏰ A6: 18/19-nov (cálculo) · A1–A5: 1-dic
+
+_Origen: c.20892 y c.21663 (SCRUM-1316). Texto literal._
+
+Es copia LITERAL de la pregunta 34 de su documento del escritorio, «CORREO al asesor - las 31 preguntas.md», sección «I · LA QUE TIENE FECHA».
+
+⚠️ **El texto está escrito el 7-oct:** donde dice «hoy», es el 7-oct. Lo medido después está en SCRUM-1316: c.20597 del 23-oct (las Cortes están disueltas y lo vota la Diputación Permanente) y c.20884 del 26-oct (sigue sin convalidar; el plazo se calcula entre el 5 y el 19-nov).
+
+Las preguntas A1–A6 de c.20884 completan esta, y P2 de c.20890 se une a A4: ¿es obligatorio declarar el medio de cobro?
+
+---
+
+**34. ¿Qué tiene que poder acreditar el profesional sobre CÓMO le pagaron?**
+
+**Lo que hemos medido hoy en el BOE** (API de legislación consolidada, descargado el 7-oct a las 15:44Z):
+
+* El **RDL 26/2026** (`BOE-A-2026-20266`), que condicionaba el tipo reducido al medio de pago, **fue DEROGADO por el Congreso el 2-oct** (`BOE-A-2026-20526`, art. 86.2 CE). **Vivió tres días**, y no se tramitó como proyecto de ley: se derogó.
+* **Hoy, 7-oct, el BOE publica el RDL 29/2026** (`BOE-A-2026-20823`), en vigor el 8-oct, cuyo **art. 7.Tres vuelve a modificar el art. 91.Uno.2.10.º LIVA «con efectos desde el 1 de diciembre de 2026»**. Comparados párrafo a párrafo, **el del medio de pago es IDÉNTICO** al derogado:
+
+> _«La aplicación del tipo reducido queda condicionada a que el importe de la contraprestación de las ejecuciones de obras haya sido satisfecho mediante tarjeta de crédito o débito, transferencia bancaria, cheque nominativo o ingreso en cuentas en entidades de crédito a favor de los sujetos pasivos que las realicen.»_
+
+* **El RDL 29/2026 NO está convalidado.** Se publicó hoy. O sea: **el 1-dic sigue en pie, pero colgado de una votación que un texto idéntico en este punto PERDIÓ hace cinco días.**
+
+**Lo que el texto NO dice, y es lo que nos bloquea** (leído entero, 1.205 párrafos):
+
+1. **No hay régimen transitorio.** Ninguna de sus dos disposiciones transitorias es de IVA. **¿Qué pasa con una obra empezada antes del 1-dic, o cobrada en parte antes y en parte después?**
+2. **«Bizum» no aparece ni una vez**, y «medio de pago» tampoco. La lista es cerrada y no define «transferencia bancaria». **¿Entra Bizum?** Es como cobra media España en este oficio.
+3. **No hay ninguna obligación de acreditar ni de conservar justificante del medio de pago**, ni habilitación reglamentaria específica. **Entonces, ¿qué tiene que poder enseñar el profesional si se lo piden, y durante cuánto tiempo?**
+4. **Y la que decide si construimos algo este mes o no:** ¿nos recomiendas preparar el producto **antes** de que el Congreso lo vote, o esperar? _(Dinos sólo qué es prudente; la decisión de negocio es nuestra.)_
+
+**Y el contexto de nuestro lado, que acota la pregunta:** el programa **no elige nunca el 10 %** —de 36 sitios del código que escriben un tipo de IVA, ninguno pone una constante—: **lo elige el profesional en un desplegable**. Guardamos el medio de cobro, **pero declararlo es opcional cuando marca una factura como cobrada a mano**. Y el tipo se fija **al emitir**, es decir **antes de saber cómo se cobrará**.
+
+**34 (E6), completada: las A1–A6 de** `SCRUM-1316.md` §ⓓ, copiadas aquí (solo valen si el RDL 29/2026 se convalida, salvo A6):    
+A1 · Obra en vivienda cobrada en efectivo desde el 1-dic: ¿pierde el 10 %? · A2 · ¿Bizum cuenta como «transferencia bancaria»? · A3 · Obra empezada, o señal cobrada, antes del 1-dic: ¿qué tipo lleva cada parte? · A4 · ¿Qué tiene que poder acreditar el profesional sobre el medio de pago, y qué guardaría el programa? · A5 · Un programa que ofrece el 10 % en un desplegable sin avisar de la condición, ¿tiene responsabilidad como productor? · **A6 · Si el 29/2026 no se vota en plazo, ¿decae y el 1-dic deja de existir?** (y cómo se computan los 30 días del art. 86.2 CE). Estado medido hoy (c.21629): ni convalidado ni derogado a 12-nov 11:22Z; quedan las variantes de cómputo del **18 y 19-nov** (cálculo, no dato publicado).
+
+---
+
+### 27 · 35 (E7) · Cuatro casos del borrador del 303
+
+_Origen: c.21140 (SCRUM-1063). Texto literal._
+
+#### E7 · Cuatro casos del borrador del modelo 303 que nadie ha decidido
+
+**La pregunta.** El borrador del 303 que prepara la aplicación (marcado «borrador para tu asesor»; no se presenta nada) hace hoy lo siguiente en cuatro casos. Para cada uno, ¿es correcto, o qué debería hacer?
+
+1. **Rectificativas.** Una factura rectificativa (R1) del trimestre resta en las casillas de IVA devengado del trimestre en que se emite la rectificativa, aunque la factura original sea de otro trimestre. El 303 **no avisa** de que hay rectificativas dentro (el borrador del 390 sí lo hace). ¿Hay que avisar, o separarlas?
+2. **Casilla 27 negativa.** Si en un trimestre las rectificativas superan a lo facturado, la cuota devengada (27) sale **negativa** y no lleva ningún aviso. ¿Es posible en la práctica, y qué debe decir el borrador?
+3. **Anulación completa.** Si una rectificativa anula la única factura del trimestre, todo queda a 0 y salta el aviso «todas las casillas a cero», que está pensado para detectar un error del cálculo. ¿Hay que distinguir ese caso?
+4. **Fecha del gasto.** Un gasto entra en el trimestre por la **fecha en que el profesional lo apunta**, no por la **fecha de la factura del proveedor**. ¿Cuál manda para deducir el IVA soportado en el 303?
+
+**Por qué.** El comportamiento actual está fijado por un test (SCRUM-1063j, c.21137) como «comportamiento actual, sin criterio del asesor». No se cambia hasta tener su respuesta.
+**Normas que ya hemos localizado.** LIVA, arts. 89 y 99 (rectificación y ejercicio del derecho a deducir); RIVA, art. 71; ROF, art. 15. No cotejadas aún en el BOE consolidado.
+**Qué haremos.** Ajustar el borrador y sus avisos como indique.
+**Lo que ya tenemos:** SIN RESPUESTA.
+
+---
+
+### 28 · (e)(f)(g) + turismos · Bienes de inversión
+
+_Origen: c.20927 (SCRUM-1063). Texto literal._
+
+* **(e)** Un autónomo de oficios que solo hace operaciones con derecho a deducir, ¿practica alguna regularización del art. 107 LIVA? Y si no la practica, ¿tiene que llevar el libro del art. 65 RIVA? Nuestra lectura es que no, salvo que venda el bien (art. 110) o cambie su afectación (art. 95.Tres.3.ª). Pero eso no lo decide el producto.
+* **(f)** Furgonetas: ¿basta con que el profesional diga que es un «vehículo mixto utilizado en el transporte de mercancías» para presumir el 100 % (art. 95.Tres.2.ª a)? ¿O hay que guardar algo más, como la clasificación de la ficha técnica?
+* **(g)** Si se vende un bien dentro del periodo de regularización, ¿YaQu tiene que calcular la regularización única del art. 110, o le basta con avisar?
+* Y una que decide trabajo nuestro (c.20926): **¿hay turismos entre los vehículos de un oficio típico?** Si los hay, se construye el porcentaje de afectación, porque la ley presume el 50 %.
+
+---
+
+### 29 · 38 (E10) · Umbral del 108.Dos.5.º
+
+_Origen: c.21663 (SCRUM-1063 c.20863). Texto literal._
+
+**38 · E10 · Bienes de inversión: cómo se mide el umbral** (SCRUM-1063, c.20863 (a) y (b))
+_Contexto._ El borrador del 303 aparta hoy entera la categoría «herramientas» por si es bien de inversión, y deja vacías las casillas 30/31. Se propuso (c.20863, alternativa A) mandar a la 28/29 las que no lleguen al umbral del art. 108.Dos.5.º LIVA, «quinientas mil pesetas» en el texto consolidado (3.005,06 € es conversión nuestra, no texto de la norma).
+_La pregunta._ (a) ¿El «valor de adquisición» se mide con el IVA deducible o sin él? (b) ¿El umbral se aplica por unidad? Un gasto de 5 taladros de 800 € suma 4.000 €, y ninguno por separado llega.
+_Qué decide._ La alternativa A (umbral sin cambio de esquema) no depende de (a); la C (columna «bien de inversión» en el gasto) sí. (b) decide si el umbral se compara con el gasto o con cada bien.
+_Lo que ya tenemos:_ SIN RESPUESTA.
+
+---
+
+### 32 · 36 (E8) · Excepciones del 115
+
+_Origen: c.21181 (SCRUM-1066). Texto literal._
+
+#### E8 · Las excepciones de retener en el alquiler del local (modelo 115)
+
+**La pregunta.** El RIRPF, art. 75.3.g (texto consolidado, cotejado en el BOE el 27-oct-2026), exceptúa de retener en dos casos que queremos aplicar en el borrador del 115:
+
+1. **Rentas que no superan 900 € anuales al mismo arrendador** (75.3.g 2.º). El 115 es **trimestral**: ¿cómo se aplica un tope anual a mitad de año? ¿Se retiene hasta saber que no se superará, se mira el contrato, o se regulariza después?
+2. **Arrendador del grupo 861 del IAE cuyo valor catastral no da cuota** (75.3.g 3.º). La cifra que nos dieron fue «601.012 € de valor catastral». En la tarifa del IAE (RDLeg 1175/1990, agrupación 86) lo que hay es «cuotas inferiores a 100.000 pesetas (601,01 €) tributarán por cuota cero», con cuota = 0,10 % del valor catastral. De ahí sale **601.010 €**, y alrededor de **580.686 €** si se aplica la subida del 3,5 % de las cuotas (RDL 12/1995). ¿Cuál es el umbral correcto?
+3. **¿Qué tiene que acreditar el arrendador**, y con qué documento, para que el profesional pueda no retener por el 2.º?
+
+**Por qué.** Sin esto no se construyen las excepciones: la aplicación seguiría proponiendo retener en esos casos. Hoy no guardamos el epígrafe del arrendador ni su valor catastral (SCRUM-1066 c.21170).
+**Normas que ya hemos localizado.** RIRPF, art. 75.3.g; RDLeg 1175/1990 (tarifas del IAE, agrupación 86); RDL 12/1995.
+**Qué haremos.** Construir las dos excepciones y pedir al profesional el dato que haga falta.
+**Lo que ya tenemos:** «ASESOR» · 23-sep (respuesta a Q-C8 citada en SCRUM-1103, de autoría no declarada, con las cifras de memoria). La cifra no casa con la norma.
+
+---
+
+### 33 · 37 (E9) · ¿Impresos del 111 y 115 vigentes?
+
+_Origen: c.21663 (SCRUM-1066). Texto literal._
+
+**37 · E9 · ¿Siguen vigentes los impresos del 111 y del 115 que hemos copiado?** (SCRUM-1066)
+_Contexto._ La aplicación prepara un borrador de los modelos 111 y 115 (retenciones que practica el autónomo), marcado «borrador para tu asesor»; no presenta nada. Cada importe lleva la casilla del impreso, transcrita del anexo de la orden ministerial publicada en el BOE (`docs/master/evidencias/scrum1066/casillas-111-115.md`).
+_La pregunta._ ¿Esas casillas son las del formulario que la AEAT usa hoy, o ha habido una orden posterior que las cambie? Si las ha cambiado, ¿cuál es la vigente?
+_Qué decide._ Si el borrador numera bien las casillas o hay que rehacer la transcripción antes de enseñárselo a nadie.
+_Nota honesta:_ en parte es comprobable por nosotros bajando el diseño actual de la AEAT; no lo hemos hecho.
+_Lo que ya tenemos:_ SIN RESPUESTA.
+
+---
+
+### 34 · 347 · suplidos
+
+_Origen: c.20887 (SCRUM-1067). Texto literal._
+
+* **347 · suplidos.** Los suplidos son gastos pagados en nombre y por cuenta del cliente; YaQu los deja fuera de la base imponible. ¿Se suman en el importe anual por cliente del modelo 347, o quedan fuera?
+* Hoy el borrador del 347 los deja fuera.
+
+---
+
+_Fila 40 del índice de SCRUM-1264 · origen: su descripción. Texto literal._
+
+### F5 · Lo que recibe el cliente final al pagar
+
+**La pregunta.** (1) Un profesional cobra una señal **fuera de la aplicación** (en efectivo o por Bizum) y aún no ha emitido la factura. **Aparte de la factura**, ¿tiene alguna obligación civil, de consumo o fiscal de entregar algo al cliente en ese momento? ¿Tiene el cliente derecho a exigir un recibo? (2) La copia del **presupuesto firmado** por el cliente, con precio y condiciones, ¿cumple la confirmación documental del art. 63.1 del texto refundido de consumidores?
+**Normas que ya hemos localizado.** Código Civil, art. 1110; RDLeg 1/2007, art. 63; ROF, art. 2.1. Texto consolidado del BOE.
+**Lo que ya tenemos:** SIN RESPUESTA.
+
+---
+
+### 44 · 39 (G5) · El alojamiento (Railway)
+
+_Origen: c.21663 (SCRUM-1533). Texto literal._
+
+**39 · G5 · El alojamiento de la aplicación y la base de datos** (SCRUM-1533)
+_Contexto._ La aplicación y su base de datos se alojan en un proveedor de nube (Railway). Durante un tiempo estuvieron en EE. UU. (California); hoy, según el ticket de traslado, en la UE. La política de privacidad publicada nombra a este proveedor sin la marca «transferencia internacional», que sí lleva para Meta, Resend, Cloudflare y Google. No tenemos localizado ni guardado el contrato de encargo de tratamiento (DPA) de este proveedor.
+_La pregunta._ (1) ¿Basta con que los datos estén guardados en la UE para que no haya transferencia internacional con este proveedor, si su sede, su personal o su plano de control están fuera? (2) ¿Qué tenemos que tener firmado o guardado de él (DPA, cláusulas tipo)? (3) Mientras la base estuvo en EE. UU. sin esa marca en la política, ¿hay algo que corregir o documentar ahora? (4) ¿Debe decir la política dónde se alojan los datos?
+_Qué decide._ Si la política publicada y el registro de actividades necesitan cambiar, y qué contrato hay que buscar antes de tener clientes reales. G3 (4) cubre los otros cuatro proveedores; ésta solo el alojamiento.
+_Lo que ya tenemos:_ SIN RESPUESTA.

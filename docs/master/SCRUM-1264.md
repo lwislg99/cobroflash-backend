@@ -56,3 +56,72 @@ c.21663 §3.
    de SCRUM-1264.
 3. El encargo situaba el DPA de Railway en 1533 c.21593. Lo comprobé leyendo el comentario literal antes
    de clasificar: no estaba ahí, y lo tomé del registro de 1533.
+
+---
+
+# SCRUM-1264r · `docs/legal/PREGUNTAS_ASESOR.md` al día con el índice de 45: 19 bloques añadidos al final
+
+**Medido contra:** `origin/main` = `deab373d6a379fcbfc7ec1fce0428111156f49d3` · 2026-11-12T17:10:53Z (cabecera `Date:` de GitHub)
+
+A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
+
+Sesión J5 (IA, `jv-j5aw`), 12-nov-2026, por encargo del orquestador `cobroflash-backend-63`. **Solo
+docs.** Fuente: SCRUM-1264, descripción (índice de 45) y c.21741 (texto de las añadidas), leídos en
+Markdown por la herramienta de Jira; c.21743 decía que al fichero le faltaban «~12».
+
+## Ⓐ Medición: qué faltaba, por contenido
+
+Script con 1-5 palabras clave por entrada sobre `git show origin/main:docs/legal/PREGUNTAS_ASESOR.md`
+(1.544 líneas, 128.351 B). Control positivo **sembrado** (una línea fabricada añadida a una copia: sale
+1, y en el original 0) y uno negativo (cadena inventada: 0). El fichero no usa la numeración de 1264
+(P11-P25, Q-C1…Q-C9, bloques A-G), así que «está» quiere decir que su CONTENIDO está.
+
+- **Estaban (26):** A1 (P14), A2, A3, A4 (P19), 30-32 (P22-P24), B1 (P11), B2 (P16), B3 (bloque F),
+  B4 (P12), B5 (P13), B6 (Q-C6), D1 (P20), D2 (P18), C2 (bloque C.8), E1 (P15), E2 (21.1-21.5), E3
+  (SCRUM-324), E4 (Q-C8), Q-C5, E5 (Q-C7), F1, F2, F3 (bloque C), F4 (bloque G), G1 (bloque E), G2
+  (P17), G3 (bloque C.9).
+- **Faltaban con texto en Jira (19), añadidas:** Q-nueva-A, Q-nueva-B, R-1…R-4 + Q-redondeo, la
+  ampliación de B3 (las «obras conexas»), la confirmación de D1, **D3, C1 y F5 (tres de las 28
+  originales)**, 34 (E6) + A1-A6, E7, (e)(f)(g) + turismos, E10, E8, E9, 347-suplidos y G5.
+- **Faltan y no se pueden añadir:** A5 y G4 — Jira no tiene su texto (c.17682 solo las nombra).
+
+c.21743 decía ~12 porque miró solo las del comentario; las tres originales que faltaban (D3, C1, F5)
+no las buscó.
+
+## Ⓑ Cómo se añadió
+
+- **Al final**, bajo «# Al día con SCRUM-1264 el 12-nov-2026». No arriba: `SCRUM-1023.md`,
+  `SCRUM-1039.md`, los dos `INVENTARIO_AFIRMACIONES_*.md` y `ENVIO_ASESOR_2026-09-28.md` citan este
+  fichero por número de línea. Comprobado por bytes: las 1.544 líneas de antes son idénticas.
+- Texto cortado **por script** del Markdown que devuelve Jira, no tecleado. Control: los 16 bloques de
+  c.21741 que se añaden están ENTEROS en el fichero, y D3, C1 y F5 de la descripción también; los 3 que
+  no se añaden (A5, Q-C5, G4) y B2 (negativo) no están.
+- **Única desviación del literal:** la ampliación de B3 cita «este fichero:889». Copiada tal cual,
+  scrum525d sale ROJO (tomó el nombre de rama de la misma frase como testigo, y ese nombre está en la
+  línea nueva, no en la 889). Se cambió la coordenada por una nota entre corchetes, y se dice en la
+  cabecera del bloque. El guard no se tocó.
+
+## Ⓒ Guards
+
+Locales, por TAP: scrum525d, 267, 273, 1294, 737, 921c, 1106 y 1041 → antes del arreglo 64/65 (el
+rojo de scrum525d de arriba); tras él y con este registro escrito, los ocho otra vez: 65/65, 0 saltados. No hay test con «1524» en el nombre:
+el congelado de 1524 es `scripts/_anclas-sin-testigo.congelado.mjs`, y lo lee scrum525d. Suite
+entera local: NO CORRIDA (solo docs).
+
+## Ⓓ Lo que NO está medido
+
+- Solo he comparado CONTENIDO por palabras clave: una entrada que «está» puede estar con otra
+  redacción o con otra respuesta. No he cotejado la redacción de las 26 que ya estaban con la de Jira.
+- No he tocado la descripción de SCRUM-1264 ni la parte de arriba del fichero (P14 sigue diciendo que
+  es la más urgente, «al final del documento»; ahora hay algo más debajo).
+- Q-C5 cuenta como presente, pero c.20959 le añade 4 confirmaciones (a)-(d) que aquí no están escritas
+  como preguntas.
+
+## Ⓔ Lo que me salió mal
+
+1. Mi primer troceo de c.21741 cortaba por `---` y **se comió el final del bloque 23** (E6: el texto de
+   la 34 y las A1-A6), porque ese bloque lleva un `---` dentro. Lo cazó el recuento por palabra clave
+   («Bizum» no subía). Rehecho uniendo los trozos sin encabezado al anterior.
+2. Copié una cita «fichero:línea» sin pensar que este repositorio las lee como anclas: lo cazó
+   scrum525d (es la línea `A9:` de este tramo).
+3. No me medí justo al acabar de leer Jira: lo hice después de medir el fichero (~152k).
