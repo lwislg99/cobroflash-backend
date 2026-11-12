@@ -1930,3 +1930,22 @@ A9: comprobación → `docs/master/evidencias/scrum665c/tamano-con-logo.mjs`
 **NO hecho:** generar AL EMITIR en los otros caminos (11 llamadas a `sellarTrasEmision(`; hoy sólo el de cobro congela al emitir, el resto al primer pedido); mutaciones con `MUTACIONES_QUE_ME_TUMBAN`; guards de navegador de la vista; `tsc -p .` con tipos (el cliente de Prisma compartido no tiene `pdfSha256`: 4 errores, todos de eso, medidos por la sesión anterior); las líneas de S1 (`dirs.ts`, `adminOnlyRoutes.ts:137`, Jira c.21564). `node scripts/equipo/norma.mjs --arranque` NO se leyó (contexto: 116k sólo con arranque y Jira; lo aceptó el orquestador J). Suite entera local: NO CORRIDA.
 
 A9: comprobación → `tests/scrum665e-pdf-de-la-emitida-congelado.test.mjs`
+
+# APÉNDICE (G) · SCRUM-665e · 12-nov-2026 · J1 (jv-j1dk, relevo 3) · Congelar AL EMITIR: hecho en el punto único; tres guards piden una decisión. SIN EMPUJAR
+
+**Medido contra:** `origin/main` = `75d4878628254b3e6b72c1dfe69f2d8575b978ef` · 2026-11-12T10:31:27Z
+
+Base de la rama: `75d48786` (mergeado). `origin/main` está ya en `4eea7720` y NO lo he mergeado.
+
+1. **Suelos bajados, revisados uno a uno contra lo que la rama quita** (1 botón, 1 ruta): registro de acciones de factura 9 → 8 entradas (`{ id:` contadas en main y en la rama), y el suelo de `scrum707` baja 9 → 8; `annulled` ofrecía `btnPdf`+`btnRegen` y ofrece `btnPdf`: 2 → 1; el router de facturas monta 16 → 15 rutas y la única que falta es `post /:id/regenerate-pdf`: `scrum1455b` 14 → 13. Ninguno baja más de lo que se retira. `scrum514`: el aparcado es el texto del botón retirado; `scrum283` cambia de cobaya (`btnPdf`, `btnRectify`), con el mismo destino que tenía `btnRegen`.
+2. **Al emitir:** las 11 llamadas a `sellarTrasEmision(` de `src/` pasan por esa función, así que el congelado va en ella (`selladoEstado.ts`), tras sellar o `no_aplica`, y no en once sitios. Pide el PDF a `ensureInvoicePdf` con import diferido (`lib/invoicing` importa `selladoEstado`). No lanza: un fallo deja `pdf_sha256` NULL y se congela al primer pedido (c.21191). Una factura que se queda pendiente no congela nada. No toca el registro, el XML ni la huella del registro.
+3. **Test:** casos ⑧–⑪ en `tests/scrum665e-pdf-de-la-emitida-congelado.test.mjs`: 11/11 en la rama; con el `selladoEstado` de main transpilado en `dist/` caen ⑧ y ⑨ (9 + 2 = 11). El ⑩ salió primero CIEGO: su rotura no llegaba al sellado, porque `$transaction` le pasa el cliente original; lo dijo su propio control.
+4. **`tsc` con tipos: salida 0**, con un cliente de Prisma generado FUERA del árbol (`--schema` con `output` en el tmp del trabajo) y `paths` apuntando `@prisma/client` a él. La huella de `node_modules/.prisma/client/index.d.ts` compartido es la misma antes y después. Control: el mismo `tsc` contra el cliente compartido da los 4 errores de `pdfSha256`.
+5. **Dirigida** (20 ficheros, 166 casos): 161 pasan y caen 5.
+   - `scrum523d`: nombra un fichero, `src/modules/invoicing/domain/selladoEstado.ts`. Se recongela según c.21290.
+   - `scrum1404g` G y X, y `scrum1510` POSITIVO: caen POR ESTE CAMBIO (con el `selladoEstado` de main pasan). Dan por hecho que el PDF se genera al pedirlo. G: un documento emitido `no_aplica` (comercio sin NIF) al que después se le pone NIF: antes el portón daba 409 y ahora se sirve el congelado. X: el emisor pierde el nombre DESPUÉS de emitir: antes, 500 al regenerar, y ahora se sirve el congelado. 1510: la escritura de `pdfUrl` ocurre al emitir y no en la petición. **No los he tocado (regla 41).** Decide el orquestador si es la decisión c.21182 cambiando su premisa, como pasó con `btnRegen`, o un defecto.
+   - `scrum1330` ④f: cae TAMBIÉN sin este cambio. Viene del commit `55613c8b` (`ensureInvoiceForCharge` por `ensureInvoicePdf`): el `pdfUrl` se queda en `PENDING_PDF` en su doble. Causa SIN MEDIR.
+
+**NO hecho:** mutaciones (`MUTACIONES_QUE_ME_TUMBAN`), guards de navegador de la vista, `guards:entrada`, `yaqu-premium-ui` (no cargada), mergear `origin/main`. Suite entera local: NO CORRIDA. `norma.mjs --arranque`: NO leída.
+
+A9: comprobación → `tests/scrum665e-pdf-de-la-emitida-congelado.test.mjs`
