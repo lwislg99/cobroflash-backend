@@ -28,7 +28,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { applyVeriFactu, applyVeriFactuAnulacion } from '../../../invoicing/domain/verifactu.service'; // SCRUM-153
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
-import { isDemoMerchant, DEMO_WATERMARK } from '../../../invoicing/domain/emission.service';
+import { isDemoMerchant, DEMO_WATERMARK, motivoSiiSinEmision } from '../../../invoicing/domain/emission.service';
 import { getDeliveryStatus } from '../../../messaging/domain/whatsappLog.service';
 import { envioDelDocumento } from '../../../billing/domain/envioDelDocumento'; // SCRUM-885b
 // SCRUM-499 · la MISMA lectura del método que Cobros e Informes, y el rótulo del «no consta» que
@@ -136,7 +136,9 @@ router.post('/', requireRole('admin'), async (req, res) => {
     const modoSuelto = modoDocumentoSuelto(merchant);
     if (modoSuelto === 'no') {
       return res.status(409).json({
-        error: ERROR_MODO_SIN_FACTURA,
+        // SCRUM-1713 (c.21583, punto 2): si lo que lo deja sin emitir es su respuesta del SII, el
+        // código lo dice (`sii_declarado` / `sii_no_consta`); con el flag apagado, el de siempre.
+        error: motivoSiiSinEmision(merchant) ?? ERROR_MODO_SIN_FACTURA,
         message: 'En este modo no se emiten facturas.',
       });
     }
@@ -1053,6 +1055,15 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
     // sin INVOICING_ES_ENABLED no puede emitir R1 (allocate lanzaría invoicing_es_disabled).
     if (isReceiptNumber(original.number)) {
       return res.status(409).json({ error: 'cannot_rectify_receipt' });
+    }
+
+    // SCRUM-1713 (c.21583, punto 2): con el flag puesto y el SII en «Sí» o «No consta», el embudo
+    // rechaza la R1 con `sii_*` y el `catch` de abajo lo convertía en un 500 mudo. Se pregunta a la
+    // MISMA función que usa el embudo, antes de pedir número, y se contesta su código. El embudo
+    // sigue siendo la puerta que manda: esto sólo pone nombre al rechazo.
+    const motivoSii = motivoSiiSinEmision(original.merchant);
+    if (motivoSii) {
+      return res.status(409).json({ error: motivoSii });
     }
 
     // SCRUM-246 · ANTES de pedir número, igual que el resto. Aquí las líneas van NEGADAS
