@@ -19,6 +19,15 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { dobleDeLaBase } from './_envio-doblado.mjs';
 
+// Catálogo del meta-guard: quitar cualquiera de las dos puertas, o el uso de su resultado en una
+// de las dos rutas, tiene que tumbar un caso con nombre. Cada campo, LITERAL.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  { fichero: 'src/modules/billing/app/routes/psp.routes.ts', de: 'if (reviewPhone && !sinResena) {', a: 'if (reviewPhone) {', cae: 'PSP · ventana cerrada → NO sale la reseña' },
+  { fichero: 'src/modules/billing/app/routes/mpWebhook.routes.ts', de: 'if (phone && !sinResena) {', a: 'if (phone) {', cae: 'MP · ventana cerrada → NO sale la reseña' },
+  { fichero: 'src/modules/billing/domain/resenaTrasElPago.ts', de: "if (isQuietHours(ahora, zonaDelMerchant(p.merchant))) return 'fuera_de_franja';", a: "if (!isQuietHours(ahora, zonaDelMerchant(p.merchant))) return null;", cae: 'PSP · fuera de franja (22:30 del negocio) → NO sale la reseña' },
+  { fichero: 'src/modules/billing/domain/resenaTrasElPago.ts', de: "if (!(await isServiceWindowOpen(p.merchantId, p.customerId, ahora))) return 'ventana_cerrada';", a: "if (!(await isServiceWindowOpen(p.merchantId, p.customerId, ahora))) return null;", cae: 'MP · ventana cerrada → NO sale la reseña' },
+];
+
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const requiere = createRequire(import.meta.url);
 const rutaDe = (r) => requiere.resolve(path.join(RAIZ, r));
