@@ -90,7 +90,7 @@ function fila(extra = {}, brandColor = null) {
     tiers: null, discountGlobalAmount: null, acceptedAt: null, rejectedAt: null, rejectionReason: null, jobId: null,
     createdAt: FIJA, updatedAt: FIJA, signatureUrl: null,
     merchant: { id: MERCHANT, name: 'Fontanería 1646', legalName: null, taxId: null, country: 'ES', email: null,
-      whatsappPhone: '+34600000000', defaultCurrency: 'EUR', flags: null, timezone: 'Europe/Madrid', brandColor,
+      whatsappPhone: '+34000000000', defaultCurrency: 'EUR', flags: null, timezone: 'Europe/Madrid', brandColor,
       brandAccentColor: null, logoUrl: null, address: null, clausulasPresupuesto: null },
     customer: { id: CLIENTE, name: 'Cliente 1646' },
     Invoice: [],
@@ -182,8 +182,13 @@ test('SCRUM-1646d · las siete caras, con y sin marca: 0 <style>, 0 style= y sus
 test('SCRUM-1646d · lo que el guion enseña sigue oculto por la hoja, y sólo con opciones se oculta la firma', async () => {
   const uno = await htmlDe(CARAS[0], null);
   const tres = await htmlDe(CARAS[1], null);
-  assert.ok(uno.includes('<div id="btn-accept-wrapper">'), 'sin opciones la firma se ve de entrada');
-  assert.ok(tres.includes('<div id="btn-accept-wrapper" class="oculto-hasta-elegir">'), 'con opciones la firma espera a que se elija');
+  // La etiqueta se lee con hueco para atributos (SCRUM-553) y se juzga lo que lleva: ni style= ni otra clase.
+  const envoltura = (h) => {
+    const m = h.match(/<div id="btn-accept-wrapper"([^>]*)>/);
+    return m ? m[1].trim() : null;
+  };
+  assert.equal(envoltura(uno), '', 'sin opciones la firma se ve de entrada (sin clase ni style=)');
+  assert.equal(envoltura(tres), 'class="oculto-hasta-elegir"', 'con opciones la firma espera a que se elija');
   for (const regla of ['#tier-confirm { display:none }', '#sig-error { color:#dc2626;font-size:13px;margin-top:8px;display:none }',
     '#btn-accept-wrapper.oculto-hasta-elegir { display:none }', '#tier-cards { display:flex;flex-direction:column;gap:12px;margin-bottom:20px }']) {
     assert.ok(PRESUPUESTO_FIRMA_CSS.includes(regla), `falta en la hoja: ${regla}`);

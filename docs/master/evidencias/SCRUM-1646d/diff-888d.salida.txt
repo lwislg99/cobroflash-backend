@@ -1,4 +1,4 @@
-﻿control del instrumento: 4/4 (caza texto, atributo y clase sin style)
+control del instrumento: 4/4 (caza texto, atributo y clase sin style)
 ≈ C1 · todo 21 %, con el céntimo del punto 4: distinta SOLO por style= → clase/id
 ≈ C2 · IVA mixto 10 % y 21 %, 50/50: distinta SOLO por style= → clase/id
 ≈ C4 · plan propio Señal 30 % / Resto 70 %: distinta SOLO por style= → clase/id

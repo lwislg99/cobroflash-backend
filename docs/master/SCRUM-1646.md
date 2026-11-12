@@ -206,3 +206,29 @@ A9: comprobación → `tests/scrum1646c-presupuesto-sin-script-en-linea.test.mjs
   ese test (8/9). Un primer mutante con `esc()` NO discriminaba (en el JS compilado `esc` no está en el
   ámbito: ReferenceError, caían 6) y se descartó.
 - Rama re-fusionada con `origin/main` (merge sin conflictos) antes del push.
+
+## 12-nov (noche) · SCRUM-1646d — el estilo de la firma del presupuesto desde 'self'
+
+Rama `scrum-1646d-estilo-firma-presupuesto`. `quoteDecisionEstilo.ts` sirve la hoja base, la de opciones y la de
+marca (`/pay/quote/css/marca/:color`, color filtrado, 404 sin cuerpo); ~20 `style=` pasan a id/clase. **Vara:**
+56/56 capturas IGUALES byte a byte con la POLITICA_CSP entera (style-src 'self'), 390 y 1280, 14 caras, texto y
+POST iguales, 0 informes; control (main + CSP) distinto 56/56. Evidencias e instrumentos en
+`docs/master/evidencias/SCRUM-1646d/`. Nota: en main la hoja de opciones vivía dentro de la tarjeta y moría al
+pintar el éxito; ahora va en `head` (sin efecto visible: capturas iguales).
+
+Los cinco acoplados que el cambio puso en rojo, uno por uno:
+- **scrum1325 ×3** — la expresión del color de marca (`/^#[0-9a-fA-F]{6}$/`) se MUDÓ de
+  `quoteDecisionLanding.routes.ts` a `quoteDecisionEstilo.ts`; el catálogo `tests/_expresiones-de-texto.json`
+  declara por identidad (fichero + fuente), así que se muda su declaración (misma clase `maquina`). Se edita a
+  mano: no hay generador (precedente `c03d5cf75`). 19/19.
+- **1646c CONDUCTA · elegir una opción** — su CONTROL leía `attrs.style === 'display:none'` del bloque de firma.
+  Ahora nace oculto por clase: se exigen las dos mitades (sin `style=` en el HTML, clase `oculto-hasta-elegir`, y
+  la regla `display:none` en la hoja servida). Mutante (quitar la clase del dist) → rojo en ese CONTROL. 9/9.
+- **888d huella** (8 páginas sin descuento, byte a byte) — re-anclada de `4eaf5218…` a `bd247521…` DEMOSTRANDO
+  que la única diferencia es style→clase: `diff-888d.mjs.txt` trocea etiquetas y texto, exige texto idéntico pieza
+  a pieza y que cada etiqueta distinta sólo cambie `style=` por clase/id. Control del instrumento 4/4; el árbol
+  «antes» reproduce `4eaf5218…`. Resultado: 8/8 explicadas, por DOS etiquetas (`text-align:center` → `centrado`,
+  `text-align:center;margin-bottom:4px` → `condiciones-wrap`). Salida en `diff-888d.salida.txt`.
+
+`guard:firma-con-tramos` necesita el arreglo de #3159 (sirve `/pay/quote/(js|css)/`): hasta que mergee, el check
+de navegador de esta rama sale CIEGO como en todo PR sobre main.
