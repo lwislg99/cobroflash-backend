@@ -1895,6 +1895,13 @@ descWrapper.appendChild(descLabel);
   //
   // NO LLEVA FLAG de «mostrar» (regla 27): si el importe está vacío, el descuento no existe y no
   // se pinta. El dato ES el flag.
+  //
+  // SCRUM-1716b (12-nov-2026) · SE PUEDE ESCRIBIR EN %, Y LO QUE SE GUARDA SIGUE SIENDO EL €.
+  // Decisión del fundador del equipo J («El descuento global sí que se pueda elegir euros o %»).
+  // Lo de arriba sigue en pie: el % es una forma de ESCRIBIRLO, no un dato. Se convierte a euros al
+  // escribirlo (`quoteDescuentos.descuentoGlobalDesdePorcentaje`), y `discountGlobalAmount`, el
+  // PDF, el portal y la firma no se enteran (E1-E5 en `docs/master/SCRUM-1716.md` §1716b). Rótulos
+  // R1-R5 firmados por el fundador: SCRUM-1716 c.21704.
   const dtoGlobalWrap = document.createElement("div");
   dtoGlobalWrap.className = "quote-dto-global";
 
@@ -1917,8 +1924,95 @@ descWrapper.appendChild(descLabel);
   dtoGlobalCampo.appendChild(dtoGlobalLab);
   dtoGlobalCampo.appendChild(descuentoGlobalInput);
 
+  // SCRUM-1716b · LA UNIDAD. Radios de verdad dentro del control segmentado del sistema
+  // (`.segmented`, SCRUM-574): exclusividad y teclado nativos, cero componente nuevo. El grupo se
+  // nombra con la MISMA etiqueta del campo («Descuento global»), sin texto nuevo. R1 «€», R2 «%» y
+  // R3 «En euros» / «En porcentaje» — firmados, SCRUM-1716 c.21704. Abre en € (E4).
+  let unidadDescuentoGlobal = "eur";
+  // El € que de verdad se resta: lo fija `recalcTotals` en cada recorrido (E2) y lo leen el
+  // envío y la pista. En € es lo tecleado; en %, lo convertido.
+  let descuentoGlobalEurosVigente = null;
+  let descuentoGlobalFueraDeRango = false;
+  dtoGlobalLab.id = "quote-dto-global-etiqueta";
+  const dtoGlobalUnidad = document.createElement("div");
+  dtoGlobalUnidad.className = "segmented quote-dto-global__unidad";
+  dtoGlobalUnidad.setAttribute("role", "radiogroup");
+  dtoGlobalUnidad.setAttribute("aria-labelledby", dtoGlobalLab.id);
+  dtoGlobalUnidad.hidden = true;
+  const radiosUnidad = {};
+  [["eur", "€", "En euros"], ["pct", "%", "En porcentaje"]].forEach(function (u) {
+    const opcion = document.createElement("label");
+    opcion.className = "segmented-option";
+    const radio = document.createElement("input");
+    radio.type = "radio";
+    radio.name = "quote-dto-global-unidad";
+    radio.value = u[0];
+    radio.className = "segmented-input";
+    radio.setAttribute("aria-label", u[2]);
+    radio.checked = u[0] === "eur";
+    const rotulo = document.createElement("span");
+    rotulo.textContent = u[1];
+    rotulo.setAttribute("aria-hidden", "true");
+    opcion.appendChild(radio);
+    opcion.appendChild(rotulo);
+    dtoGlobalUnidad.appendChild(opcion);
+    radiosUnidad[u[0]] = radio;
+    radio.addEventListener("change", function () {
+      if (!radio.checked) return;
+      ponerUnidadDescuentoGlobal(u[0]);
+      recalcTotals();
+      renderPreview();
+      scheduleDraftSave();
+    });
+  });
+  // R4 «Equivale a 24,50 €» (con el importe calculado) y R5, bajo el campo. `aria-live` para que
+  // el lector oiga el importe al teclear el %.
+  const dtoGlobalEquivale = document.createElement("p");
+  dtoGlobalEquivale.className = "quote-dto-global__equivale";
+  dtoGlobalEquivale.setAttribute("aria-live", "polite");
+  dtoGlobalEquivale.hidden = true;
+  const dtoGlobalError = document.createElement("p");
+  dtoGlobalError.className = "aviso-falta-campo";
+  dtoGlobalError.setAttribute("role", "alert");
+  dtoGlobalError.hidden = true;
+  const TEXTO_DTO_GLOBAL_MAS_DE_100 = "El porcentaje no puede pasar de 100.";
+
+  function ponerUnidadDescuentoGlobal(unidad) {
+    unidadDescuentoGlobal = unidad === "pct" ? "pct" : "eur";
+    radiosUnidad.eur.checked = unidadDescuentoGlobal === "eur";
+    radiosUnidad.pct.checked = unidadDescuentoGlobal === "pct";
+    // En % el campo no pasa de 100; en € es un importe, sin tope aquí (como hoy).
+    if (unidadDescuentoGlobal === "pct") descuentoGlobalInput.max = "100";
+    else descuentoGlobalInput.removeAttribute("max");
+  }
+  // Lo llama `recalcTotals` con las líneas del MISMO recorrido. Devuelve el € a restar.
+  function descuentoGlobalEnEuros(lineasParaTotales) {
+    let euros = null;
+    descuentoGlobalFueraDeRango = false;
+    if (unidadDescuentoGlobal === "pct") {
+      const r = window.quoteDescuentos.descuentoGlobalDesdePorcentaje(lineasParaTotales, descuentoGlobalInput.value);
+      euros = r.euros;
+      descuentoGlobalFueraDeRango = r.fueraDeRango;
+    } else {
+      const v = parseFloat(String(descuentoGlobalInput.value || "").replace(",", "."));
+      euros = Number.isFinite(v) && v > 0 ? v : null;
+    }
+    descuentoGlobalEurosVigente = euros;
+    dtoGlobalError.textContent = TEXTO_DTO_GLOBAL_MAS_DE_100;
+    dtoGlobalError.hidden = !descuentoGlobalFueraDeRango;
+    descuentoGlobalInput.classList.toggle("input-error", descuentoGlobalFueraDeRango);
+    if (descuentoGlobalFueraDeRango) descuentoGlobalInput.setAttribute("aria-invalid", "true");
+    else descuentoGlobalInput.removeAttribute("aria-invalid");
+    const cur = (currentMerchant && currentMerchant.defaultCurrency) || "EUR";
+    const verEquivale = unidadDescuentoGlobal === "pct" && euros != null;
+    dtoGlobalEquivale.textContent = verEquivale ? "Equivale a " + fmtMoneyEs(euros, cur) : "";
+    dtoGlobalEquivale.hidden = !verEquivale;
+    return euros;
+  }
+
   dtoGlobalBtn.addEventListener("click", function () {
     dtoGlobalCampo.hidden = false;
+    dtoGlobalUnidad.hidden = false;
     dtoGlobalBtn.hidden = true;
     try { descuentoGlobalInput.focus({ preventScroll: true }); } catch (_e) {}
   });
@@ -1933,6 +2027,9 @@ descWrapper.appendChild(descLabel);
 
   dtoGlobalWrap.appendChild(dtoGlobalBtn);
   dtoGlobalWrap.appendChild(dtoGlobalCampo);
+  dtoGlobalWrap.appendChild(dtoGlobalUnidad);
+  dtoGlobalWrap.appendChild(dtoGlobalEquivale);
+  dtoGlobalWrap.appendChild(dtoGlobalError);
   // SCRUM-600 · el DESCUENTO GLOBAL viaja en `discountGlobalAmount`, una clave del cuerpo del
   // presupuesto que el cuerpo del documento suelto no tiene. Mismo criterio que el descuento de
   // línea: no se pide lo que el emisor no puede guardar.
@@ -2691,6 +2788,8 @@ descWrapper.appendChild(descLabel);
       })),
       // SCRUM-888c: y el descuento global, por lo mismo.
       descuentoGlobal: descuentoGlobalInput.value || "",
+      // SCRUM-1716b · E3 · el borrador (localStorage, no la BD) sí guarda la unidad de lo tecleado.
+      descuentoGlobalUnidad: unidadDescuentoGlobal,
       // SCRUM-1186 · y los dos textos del documento (SCRUM-1174), por lo mismo. Con el lector del
       // componente: si los campos no están montados, no se guarda nada en vez de guardar vacío.
       textosDelDocumento: (function () {
@@ -2758,7 +2857,10 @@ descWrapper.appendChild(descLabel);
       // y no se inventa nada. Los totales y la vista previa los recalcula quien llama a esto.
       if (d.descuentoGlobal != null && String(d.descuentoGlobal).trim() !== "") {
         descuentoGlobalInput.value = d.descuentoGlobal;
+        // SCRUM-1716b · E3 · con su unidad. Un borrador de antes no la trae: era €.
+        ponerUnidadDescuentoGlobal(d.descuentoGlobalUnidad);
         dtoGlobalCampo.hidden = false;
+        dtoGlobalUnidad.hidden = false;
         dtoGlobalBtn.hidden = true;
       }
       // SCRUM-1186 · los dos textos del documento vuelven con el borrador. Uno viejo no los trae.
@@ -2926,9 +3028,11 @@ descWrapper.appendChild(descLabel);
     // 🔴 UN SOLO RECORRIDO, y no es estilo: es la disciplina de SCRUM-228/229 que un guard
     // sujeta. `lineasParaTotales` se llena DENTRO del bucle de arriba, no con un `map` aparte —
     // dos recorridos distintos sobre las mismas líneas acaban dando dos cifras distintas.
+    // SCRUM-1716b · E2 · el global entra SIEMPRE en euros. En % se reconvierte aquí, con estas
+    // mismas líneas, así que el 10 % sigue siendo 10 % cuando cambian.
     const T = window.quoteDescuentos.totalesConDescuento(
       lineasParaTotales,
-      descuentoGlobalInput ? descuentoGlobalInput.value : null,
+      descuentoGlobalInput ? descuentoGlobalEnEuros(lineasParaTotales) : null,
     );
     base = T.baseImponibleCents / 100;
     vatTotal = T.cuotaCents / 100;
@@ -5118,7 +5222,10 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
         // porque un descuento detrás de un botón cerrado es un descuento que nadie ve.
         if (template.discountGlobalAmount != null && String(template.discountGlobalAmount).trim() !== '') {
           descuentoGlobalInput.value = template.discountGlobalAmount;
+          // SCRUM-1716b · E3 · lo guardado es un importe: se reabre en €.
+          ponerUnidadDescuentoGlobal("eur");
           dtoGlobalCampo.hidden = false;
+          dtoGlobalUnidad.hidden = false;
           dtoGlobalBtn.hidden = true;
         }
         // Las condiciones de pago: el editor NACE en `FULL_UPFRONT`, así que no restaurarlas no
@@ -5795,10 +5902,14 @@ payloadLines.push(lineaParaPayload({
 
     // SCRUM-887 · A1 · un descuento global con varios tipos de IVA no se guarda (comentario 15697):
     // la factura no sabe repartirlo sin la asesoría. El servidor lo rechaza igual con el mismo texto.
-    const descuentoGlobalElegido = (function () {
-      const v = parseFloat(String(descuentoGlobalInput.value || "").replace(",", "."));
-      return Number.isFinite(v) && v > 0 ? v : null;
-    }());
+    // SCRUM-1716b · E4 · viaja el € (en %, el convertido). Se recalcula ANTES de leerlo, para que
+    // sea el del momento de guardar (E2), y un % por encima de 100 no se guarda (E5).
+    recalcTotals();
+    if (descuentoGlobalFueraDeRango) {
+      setAlert("error", TEXTO_DTO_GLOBAL_MAS_DE_100);
+      return;
+    }
+    const descuentoGlobalElegido = descuentoGlobalEurosVigente;
     if (window.quoteDescuentos.descuentoGlobalConVariosIva(payloadLines, descuentoGlobalElegido)) {
       setAlert("error", window.quoteDescuentos.TEXTO_DESCUENTO_GLOBAL_VARIOS_IVA);
       return;
