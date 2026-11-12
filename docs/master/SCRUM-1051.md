@@ -524,6 +524,8 @@ Sólo lectura y sólo docs: nada en `src/` ni `public/`, ninguna base, nada a la
 - **6 · NIF en servidor:** no se rechaza. El portón de la causa no mira el NIF, y sin NIF el builder excluye la factura del registro pero «se emite, se envía y se cobra igual» (`src/modules/fiscal/verifactu/registro.builder.ts:260`). Haría falta un portón antes de emitir (`invoicesAdmin.routes.ts`, `src/lib/invoicing.ts`, J1): GO de regla 40 y es identidad fiscal, fuera de c.16594.
 - `docs/master/SCRUM-1264.md`: 0 «sujeto pasivo»/«ISP»/«Q-C2» (control: «asesor», 3). El índice de 45 de Jira NO leído.
 
+**Skill UI:** no cargada · no se toca `public/`: sólo se lee con `grep -n` para citar fichero:línea; el tramo es documentación.
+
 **Corrido:** nada de tests (sólo docs). Suite entera: NO CORRIDA.
 
 A9: sin fallo que generalice — es una medición de sólo lectura; cada fichero:línea citado sale de un `grep -n` de esta tanda, y lo que no se ejecutó lo dice el propio tramo.
