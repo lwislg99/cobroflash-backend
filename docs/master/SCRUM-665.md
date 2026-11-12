@@ -1985,3 +1985,19 @@ A9: aviso → cicatriz J1 «Lancé `scripts/censo-guards-navegador.mjs --help` s
   5. `scrum577`: en `src/lib/invoicing.ts`, 1 de 2 caminos pasa el cliente por `clienteDelDocumento`.
   6. `scrum762-el-pdf-emitido-se-rehace`: el fichero entero sale `not ok` (su premisa es la que el GO c.21182 cambia).
 - **NO hecho:** los 7 rojos de arriba; `guards:entrada`; suite entera local (NO CORRIDA); las líneas de S1 (c.21564); generar AL EMITIR en los otros caminos. `yaqu-premium-ui` no cargada: esta tanda no toca la vista.
+
+# APÉNDICE (J) · SCRUM-665e · 12-nov-2026 · J1 (jv-j1dk, relevos 6 y 7) · 206, 283, 1142, 577 y 762 en verde; 525d sin hacer. SIN EMPUJAR
+
+**Medido contra:** `origin/main` = `d8c441b9402cb21ea892afdf72f07b006294ba88` · 2026-11-12T11:11:00Z (la rama está mergeada con `4eea7720`; main NO re-mergeado)
+
+Aplica las decisiones del orquestador J de SCRUM-665 c.21592 y c.21608. Ningún guard relajado (regla 41): cada número que se mueve es derivado y se recalcula con lo medido en la rama.
+
+- **Relevo 6 (c.21606):** `scrum206` (b) declara `selladoEstado.ts` en `CONSUMIDORES` con «PDF NO congelado al emitir» + caso ⑫ en `tests/scrum665e-pdf-de-la-emitida-congelado.test.mjs` (portón real rechaza → sellado intacto, 0 `pdfSha256`, 1 aviso con id y motivo). `scrum283-censo` 9 → 8: la diferencia, contada en `4eea7720` y en la rama, es exactamente `btnRegen`. `scrum762`: casos de comportamiento invertidos (una emitida congelada no se rehace).
+- **`scrum1142` (c.21608 a):** el cliente del fixture lleva `phone`, así el hermano de la rectificativa en el «⋯» de `pending` es `btnReminder`. 5/5. **Observación de pantalla (no la arregla este PR):** sin móvil, el «⋯» de una factura pendiente se queda hoy con UNA sola opción.
+- **`scrum577` (c.21608 b):** la población baja de 3 a 1 porque la rama junta los generadores: medido con `git grep`, en `4eea7720` hay 3 `generateInvoicePdf(` y 3 `customer: clienteDelDocumento(` (2 en `invoicing.ts`, 1 en `invoicesAdmin.routes.ts`); en la rama, 1 y 1 (`ensureInvoiceForCharge` delega en `ensureInvoicePdf`; la ruta «regenerar PDF» se retira, GO c.21182). Lista recalculada a `[invoicing 1, invoicesAdmin 0]`, y además cada fichero exige tantos usos del lector como llamadas al generador. Mutación declarada en `MUTACIONES_QUE_ME_TUMBAN` (quitar `clienteDelDocumento` del generador único): arnés `docs/master/evidencias/SCRUM-1123f/arnes-mutaciones.mjs` → limpia 9/0, **1 de 1 viva**, árbol limpio.
+- **`scrum762` (c.21608):** re-medido y reescrito su tramo en `docs/master/SCRUM-762.md`. 10/10.
+- **`scrum525d`: NO hecho.** `node scripts/carriles.mjs de docs/legal/AUDITORIA_CAMINO_EMISION.md` → «J4 propone» (`dos-equipos.md:204`). Paré; el orquestador J firmó como jefe reapuntar las 3 anclas en sitio (mensaje a jv-j1dk; en Jira, comentario siguiente a c.21606). No me cupo en contexto: queda para el relevo 8.
+- **NO corrido:** la dirigida de 73, `tsc -p .` con tipos, `guards:entrada`, 237/976/1387, mutaciones salvo la de 577, suite entera local. Sólo se corrieron 1142, 577 y 762 sueltos y los de registro (abajo).
+
+A9: aviso → cicatriz J1 «Escribí un test reemplazando texto con un script node cuyo literal llevaba `
+` dentro de una plantilla: salieron saltos de línea reales y el fichero no cargó; lo cazó el recuento (1 test en vez de 10)» — no se pudo comprobar: lo impediría un hook sobre la orden, y los hooks no son de este puesto
