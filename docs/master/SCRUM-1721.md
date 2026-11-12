@@ -1,6 +1,6 @@
 # SCRUM-1721 (mitad S1) · la ruta de gastos recoge la retención de IRPF practicada, y el borrador 111/115 se monta
 
-**Medido contra:** `origin/main` = `9bf51c10e` (base de la rama; el ancla de `scripts/equipo/ancla.mjs` al cerrar daba `124043f23b4b4ce333fc1ededc7ed4697a1656f2` · 2026-11-12T19:07:37Z, y la rama se une con ese main antes de empujar) · sesión S1, por encargo del orquestador `cobroflash-backend-5f`.
+**Medido contra:** `origin/main` = `124043f23b4b4ce333fc1ededc7ed4697a1656f2` · 2026-11-12T19:07:37Z (hora de GitHub, de `scripts/equipo/ancla.mjs`; sesión S1, por encargo del orquestador `cobroflash-backend-5f`. La rama nació de `9bf51c10e`, que es donde se midió el rojo, y se unió con este main antes de la tanda final)
 
 A9: sin fallo que generalice.
 
