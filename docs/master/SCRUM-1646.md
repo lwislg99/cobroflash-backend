@@ -190,3 +190,19 @@ firma, trazo, elegir opción, éxito con y sin firma), aceptado, rechazado, rech
   arregla de paso (el dato viaja en JSON): firma, POST y éxito con el nombre tal cual. **Es un cambio de
   conducta** → no se empuja sin el OK del orquestador (BUGS.md pendiente de registrar).
 - Pendiente: recorrido en yaqu.app tras el merge.
+
+### ⑦ El cambio de conducta, declarado como ARREGLO (12-nov, noche · OK del orquestador para empujar)
+
+A9: comprobación → `tests/scrum1646c-presupuesto-sin-script-en-linea.test.mjs`
+
+- **Es un ARREGLO, no un cambio de diseño:** la única conducta que cambia es la de un defecto de `main` —con
+  un `'` en el nombre del negocio el botón no firmaba—. **Prueba compilada** (no razonada): el HTML de main
+  pasado por `vm.Script` da `#3 SyntaxError: Unexpected identifier 'Pepe'` en las dos caras
+  (`capturas.salida.txt`, instrumento `compilar-en-linea.mjs.txt`). Registrado en `docs/BUGS.md` como
+  **P1-1646c** con su población (nombres con apóstrofo; las comillas dobles no se midieron en main).
+- **Guard nuevo (9.º test del fichero):** nombre `Fontanería & Hijos <Sur> 'Pepe' "el Rápido"` → sin script
+  en línea, POST `accept`, éxito con el nombre tal cual y enlace de compartir correcto. Base 9/9.
+  **M5** (en `dist`, restaurado byte a byte): entidad-escapar el `'` del texto de confirmación → cae SÓLO
+  ese test (8/9). Un primer mutante con `esc()` NO discriminaba (en el JS compilado `esc` no está en el
+  ámbito: ReferenceError, caían 6) y se descartó.
+- Rama re-fusionada con `origin/main` (merge sin conflictos) antes del push.

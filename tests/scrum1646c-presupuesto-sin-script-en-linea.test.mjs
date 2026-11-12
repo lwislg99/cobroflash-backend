@@ -143,6 +143,28 @@ test('🔴 SCRUM-1646c · los datos no abren HTML: un «</script>» en el nombre
   assert.equal(datosDeLaFirma(html).datos.textos.confirmacion, 'Taller </script><script>alert(1)</script> ya tiene tu confirmación.');
 });
 
+// ARREGLO DE CONDUCTA (docs/BUGS.md P1-1646c): en main, con un `'` en el nombre del negocio, el tercer
+// `<script>` en línea era `SyntaxError: Unexpected identifier` (el enlace de compartir iba con
+// `encodeURIComponent`, que no escapa `'`, dentro de un literal JS de comilla simple) y «Firmar y
+// aceptar» no hacía nada. Prueba compilada en docs/master/evidencias/SCRUM-1646c/capturas.salida.txt.
+// Aquí se fija que con el nombre en JSON la firma sale, el POST va y el éxito lleva el nombre tal cual.
+test('🔴 SCRUM-1646c · ARREGLO · un nombre de negocio con «\'», «&», «<>» y «"» firma, envía y pinta el éxito', async () => {
+  const nombre = 'Fontanería & Hijos <Sur> \'Pepe\' "el Rápido"';
+  const html = await pagina({}, { name: nombre });
+  assert.deepEqual(enLinea(html), [], 'el nombre no abre script en línea');
+  let enviado = null;
+  const nav = navegadorDeLaFirma(html, PRESUPUESTO_FIRMA_JS, async (url, init) => { enviado = { url, cuerpo: JSON.parse(init.body) }; return respuesta(200, { ok: true }); },
+    { firma: 'data:image/png;base64,AAAA' });
+  await nav.aceptar();
+  assert.ok(enviado, '🔴 con un apóstrofo en el nombre el botón no ha enviado nada (el defecto de main)');
+  assert.equal(enviado.cuerpo.decision, 'accept');
+  const caja = nav.card().children[0];
+  assert.ok(caja, '🔴 el éxito no se ha pintado');
+  assert.equal(textoDe(caja.children[2]), `${nombre} ya tiene tu confirmación.`);
+  const a = caja.children.find((c) => c.className === 'btn-share');
+  assert.equal(a.href, `https://wa.me/?text=${encodeURIComponent(`✅ He aceptado mi presupuesto con ${nombre}. ¡Gracias!`)}`);
+});
+
 test('🔴 SCRUM-1646c · CONDUCTA · elegir una opción hace lo que hacía el onclick, y la aceptación lleva esa opción', async () => {
   const html = await pagina({ tiers: TRES });
   let enviado = null;
