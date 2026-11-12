@@ -5,6 +5,7 @@ import { setCookie, clearCookie } from '../../../../core/http/authMiddleware';
 import { rateLimit } from '../../../../core/http/rateLimit'; // A11.2 (S3)
 import { prisma } from '../../../../core/db/prisma';
 import { isInvitedEmail } from '../../../../core/config/env';
+import { LOGIN_JS, RUTA_LOGIN_JS } from './loginNavegador'; // SCRUM-1647c
 
 const router = Router();
 
@@ -192,6 +193,15 @@ router.post('/logout', async (req, res) => {
   }
   clearCookie(res);
   return res.json({ ok: true });
+});
+
+// GET /auth/js/login.js — SCRUM-1647c (J3): el guion de `public/login.html`, fuera del HTML para que
+// la CSP (`script-src 'self'`, SCRUM-1637) se pueda aplicar. Cadena constante, sin datos de la
+// petición. `no-cache`: la página es estática y no lleva huella, así que se revalida siempre.
+router.get(RUTA_LOGIN_JS, (_req, res) => {
+  res.setHeader('Content-Type', 'text/javascript; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.send(LOGIN_JS);
 });
 
 export default router;
