@@ -68,7 +68,7 @@ var T=D.textos||{};
   if(nom&&nom.value)nom.dataset.deSugerencia='1';
   if(nom)nom.addEventListener('input',function(){delete nom.dataset.deSugerencia;});
   sel.addEventListener('change',function(){
-    wrap.style.display=sel.value===D.calidadLibre?'':'none';
+    wrap.style.display=sel.value===D.calidadLibre?'block':'none';
     if(sel.value===D.calidadLibre){var o=document.getElementById('firmante-otro');if(o)o.focus();}
     if(nom&&nom.dataset.deSugerencia==='1'&&sel.value&&sel.value!==D.calidadPropia){
       nom.value='';delete nom.dataset.deSugerencia;nom.focus();

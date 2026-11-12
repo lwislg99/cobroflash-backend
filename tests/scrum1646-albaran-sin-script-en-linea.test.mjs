@@ -172,7 +172,9 @@ test('SCRUM-1646 · el firmante: «Otro» abre su campo y cambiar de calidad bor
   const nom = nav.el('firmante-nombre');
   assert.equal(nom.value, CLIENTE_DEL_PARTE, 'CIEGO: el nombre no viene precargado');
   sel.value = 'otro'; await sel.disparar('change');
-  assert.equal(nav.el('firmante-otro-wrap').style.display, '');
+  // SCRUM-1723: el campo nace oculto por el CSS servido (ya no por un `style=`), así que abrirlo es
+  // ponerle `block` —lo que el div ya era—, no quitarle el `display` en línea.
+  assert.equal(nav.el('firmante-otro-wrap').style.display, 'block');
   assert.equal(nom.value, '', '🔴 SCRUM-300: el nombre precargado sigue ahí declarando a otra persona');
   // Lo tecleado a mano NO se toca.
   nom.value = 'Juan Vecino'; await nom.disparar('input');
@@ -210,4 +212,53 @@ test('🔴 SCRUM-1646 · un nombre de cliente con «</script>» se queda en los 
   const nav = navegadorDelParte(cuerpo, js, async () => ({ ok: true, json: async () => ({}) }));
   await nav.trazar(); await nav.firmar();
   assert.equal(textoDe(nav.card().children[0].children.find((n) => n.className === 'meta')), `Gracias, ${HOSTIL}.`);
+});
+
+// ── 5 · SCRUM-1723 · `style-src 'self'`: ni `<style>` ni `style=` en el marcado, y el CSS desde 'self' ──
+/** Lo que `style-src 'self'` bloquearía en un HTML: cada `<style>` y cada atributo `style=`. */
+function censoDeEstilos(html) {
+  const els = elementosDe(html);
+  return {
+    bloques: els.filter((e) => e.tag === 'style').length,
+    atributos: els.filter((e) => e.attr('style') !== undefined).map((e) => `<${e.tag}${e.attr('id') ? '#' + e.attr('id') : ''} style>`),
+    hojas: els.filter((e) => e.tag === 'link' && (e.attr('rel') || '').toLowerCase() === 'stylesheet').map((e) => e.attr('href')),
+  };
+}
+test('SCRUM-1723 · control · el censo de estilos ve el <style> y los style= que la CSP bloquearía', () => {
+  const sucio = `<html><head><style>body{}</style><link rel="stylesheet" href="/a.css"/></head>
+    <body><!-- <style>no</style> --><div id="x" style="display:none"></div><p style='color:red'>t</p></body></html>`;
+  assert.deepEqual(censoDeEstilos(sucio), { bloques: 1, atributos: ['<div#x style>', '<p style>'], hojas: ['/a.css'] });
+});
+async function caraSinEstilosEnLinea(estado, señal) {
+  const { cuerpo } = await bancoDelParte({ estado }).pagina();
+  assert.ok(cuerpo.includes(señal), `CIEGO: no es la página «${señal}»`);
+  const c = censoDeEstilos(cuerpo);
+  assert.deepEqual({ bloques: c.bloques, atributos: c.atributos }, { bloques: 0, atributos: [] },
+    `🔴 con style-src 'self' aplicada, esto se pintaría sin CSS:\n${JSON.stringify(c, null, 2)}`);
+  for (const h of c.hojas) assert.match(h, /^\/(?!\/)/, `🔴 hoja de estilo fuera de 'self': ${h}`);
+  assert.ok(c.hojas.some((h) => h.startsWith('/albaran/css/firma.css?v=')), 'CIEGO: la página no carga su CSS');
+}
+test('🔴 SCRUM-1723 · «para firmar» sin <style> ni style= (y su CSS desde \'self\')',
+  () => caraSinEstilosEnLinea('emitido', 'Firmar el parte de trabajo'));
+test('🔴 SCRUM-1723 · «ya firmado» sin <style> ni style=',
+  () => caraSinEstilosEnLinea('firmado', 'Este parte de trabajo ya está firmado.'));
+test('🔴 SCRUM-1723 · «aún no listo» sin <style> ni style=',
+  () => caraSinEstilosEnLinea('borrador', 'aún no está listo para firmar'));
+test('SCRUM-1723 · el CSS se sirve con huella, y los dos style= que había viven en él', async () => {
+  const { cuerpo } = await bancoDelParte().pagina();
+  const href = censoDeEstilos(cuerpo).hojas.find((h) => h.startsWith('/albaran/css/firma.css'));
+  const v = new URL(href, 'https://yaqu.app').searchParams.get('v');
+  assert.match(v || '', /^[0-9a-f]{10}$/, 'el href lleva la huella del contenido');
+  const r = await pedirAlRouter('/css/firma.css', { v });
+  assert.equal(r.status, 200);
+  assert.match(r.cabeceras['content-type'] || '', /text\/css/);
+  assert.match(r.cabeceras['cache-control'] || '', /immutable/);
+  for (const q of [{}, { v: '0000000000' }]) {
+    const s = await pedirAlRouter('/css/firma.css', q);
+    assert.equal(s.cuerpo, r.cuerpo);
+    assert.doesNotMatch(s.cabeceras['cache-control'] || '', /immutable|max-age=[1-9]/, `sin la huella buena no se cachea (${JSON.stringify(q)})`);
+  }
+  assert.match(r.cuerpo, /#firmante-otro-wrap\{display:none\}/, '🔴 el campo «Otro» nacería visible');
+  assert.match(r.cuerpo, /#sig-error\{color:#dc2626;font-size:13px;margin-top:8px;display:none\}/, '🔴 el aviso de error cambiaría de cara');
+  assert.ok(!r.cuerpo.includes(TOKEN_PARTE) && !r.cuerpo.includes(CLIENTE_DEL_PARTE), '🔴 el CSS lleva datos del parte');
 });

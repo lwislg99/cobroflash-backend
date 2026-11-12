@@ -79,3 +79,50 @@ La parte del presupuesto de `scrum1302d` no se toca (su tramo es el siguiente).
   añade `Content-Security-Policy: script-src 'self'` a la respuesta del documento), que es más
   estricto que el Report-Only.
 - Tramo de la firma del presupuesto (`quoteDecisionLanding.routes.ts`), mismo patrón.
+
+## 2026-11-12 · Re-medida sobre main + SCRUM-1723 (`style-src 'self'`) en el albarán público
+
+**Medido contra:** `origin/main` = `03645d4e46cae5e035db5fd51612ecce61377658` · 2026-11-12T14:59:31Z (hora de GitHub, `gh api -i zen`)
+
+A9: comprobación → `tests/scrum1646-albaran-sin-script-en-linea.test.mjs`
+
+### ① Por qué el PR #3048 estaba en rojo (los «✖ failing tests» del run 42871116416)
+
+| test | causa | arreglo |
+|---|---|---|
+| `scrum98` · ruta pública sin declarar | `GET /albaran/js/firma.js` (la ruta nueva de este tramo) no estaba en `PUBLIC_ACCESS_DECLARED` | declarada `no-sensitive-resource`: guion constante, sin datos ni token (lo comprueba el bloque 2 del test) |
+| `scrum49` · «la página pública le da al cliente la versión» | el test buscaba `version:N,` DENTRO de un `<script>` en línea, que es justo lo que este tramo quita | re-anclado: lee `version` del bloque `application/json` `#albaran-firma-datos`, que es de donde la coge el guion. Exige lo mismo (entero presente, 409 sin ella, 200 con ella) |
+| `scrum719` · veredicto de mudez | `scrum361` cambió y su ficha caducó | `npm run censo:mudez -- --escribir` (no a mano) |
+
+Antes, `main` metido en la rama (356 commits; merge limpio, sin rebase).
+
+### ② SCRUM-1723: lo que `style-src 'self'` bloquearía, y qué se hizo
+
+SCRUM-1723 midió que, con la CSP **aplicada**, las páginas de pago se pintan sin CSS por el `<style>` en línea. Aquí había lo mismo: **1 `<style>`** en `renderPage` (las tres caras) y **2 `style=`** en el marcado (`#firmante-otro-wrap`, `#sig-error`).
+
+- El `<style>` pasa **tal cual** (mismas reglas, mismo orden, mismo sitio de la cascada, detrás de `/fonts/inter.css`) a `albaranFirmaEstilo.ts`, servido en `GET /albaran/css/firma.css?v=<huella>`, igual que el guion (`immutable` sólo con la huella buena). Ruta declarada `no-sensitive-resource`.
+- Los dos `style=` pasan a dos reglas por id al final de ese CSS, copiadas tal cual.
+- Guion: `wrap.style.display` pasa de `''` a `'block'` al abrir «Otro», porque ahora lo oculta el CSS y no un `style=`. El div ya era `block`. Lo que el guion cambia por CSSOM (`el.style.x = …`) no lo bloquea `style-src`.
+- **Ningún texto tocado** (regla 39).
+
+### ③ Rojo primero, y el instrumento
+
+- Tests nuevos (bloque 5): control (el censo ve un `<style>` y dos `style=` sembrados; ignora el comentario) · las tres caras sin `<style>` ni `style=` y con las hojas desde `'self'` · el CSS con huella, sin datos y con las dos reglas migradas.
+- **Rojo visto:** con el router anterior (HEAD) caen **4 de 15**; con el cambio, **15/15**.
+- Relacionados: 1646, 98, 1302d, 361, 1302t y 264 → **59/59**. Guards de entrada y los 5 de árbol entero, abajo.
+
+### ④ Cero cambios visibles: capturas con la CSP APLICADA (aceptación de SCRUM-1723)
+
+Chromium (Playwright). **Antes** = HTML del router sin este cambio, **sin** cabecera CSP. **Después** = HTML con el cambio y `Content-Security-Policy` (la `POLITICA_CSP` entera de `csp.ts`) **aplicada**. Mismo guion, misma fuente. Caras: para firmar, con «Otro» abierto, con el aviso «sin firma», ya firmado y aún no listo, a 390 y 1280 px.
+
+- **10 de 10 capturas IGUALES byte a byte.**
+- **0 informes de CSP** en las de después.
+- **Control positivo:** la página de antes con la CSP aplicada sale **DISTINTA** (desnuda) y con 3 informes, así que el instrumento ve.
+
+Salida y scripts en `docs/master/evidencias/SCRUM-1723/`. ⚠️ Esto es la página pintada con el doble del banco de `tests/_banco-firma-del-parte.mjs`, NO un recorrido en yaqu.app: eso sigue pendiente tras el merge (aceptación 2 de 1646).
+
+### ⑤ Lo que falta
+
+- Recorrido en yaqu.app tras el merge, con la CSP aplicada por Playwright.
+- Tramo de la firma del presupuesto (`quoteDecisionLanding.routes.ts`): script **y** estilo, mismo patrón.
+- `documentNotFoundHtml` (`src/core/http/publicNotFound.ts`, el 404 del token) no se ha medido aquí.

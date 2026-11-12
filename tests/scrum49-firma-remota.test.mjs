@@ -174,9 +174,13 @@ test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, a
     // SCRUM-876g · el cliente firma LA VERSIÓN QUE VIO (SCRUM-361), y la que vio es la que la
     // página le dio: se lee del HTML servido, no de la base. Sin ella la ruta contesta 409, y así
     // llevaba cayendo este test desde que entró aquella regla.
-    const mVersion = html.match(/version:(\d+),/);
-    assert.ok(mVersion, 'la página pública le da al cliente la versión del albarán que está viendo');
-    const version = Number(mVersion[1]);
+    // SCRUM-1646 (CSP paso 2): la versión ya no viaja dentro de un <script> en línea, sino en el
+    // bloque de DATOS `application/json` que lee el guion servido desde 'self'. Se lee de ahí.
+    const mDatos = html.match(/<script type="application\/json" id="albaran-firma-datos">([\s\S]*?)<\/script>/);
+    let mVersion = null;
+    try { mVersion = mDatos ? JSON.parse(mDatos[1]).version : null; } catch { mVersion = null; }
+    assert.ok(Number.isInteger(mVersion), 'la página pública le da al cliente la versión del albarán que está viendo');
+    const version = mVersion;
     const rSinVersion = await pedirSinAgente(`${base}/albaran/${token}/firmar`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ signatureData: SIG, firmadoPorNombre: 'Ana Pérez' }) });
     assert.equal(rSinVersion.status, 409, `firmar sin decir qué versión se vio → 409 (fue ${rSinVersion.status})`);
     row = await prisma.albaran.findUnique({ where: { id: albaran.id }, select: { estado: true, signatureUrl: true } });
