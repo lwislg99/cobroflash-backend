@@ -1,0 +1,67 @@
+// SCRUM-1646d · sirve las caras volcadas para las capturas.
+// /antes/<cara>   = HTML de main SIN cabecera CSP
+// /despues/<cara> = HTML de la rama CON Content-Security-Policy APLICADA (la POLITICA_CSP ENTERA:
+//                   `style-src 'self'` sin 'unsafe-inline') + report-uri para contar violaciones
+// /control/<cara> = HTML de main CON la misma CSP (control positivo: debe salir distinta y con informes)
+// Las hojas /pay/quote/css/* las contesta EL ROUTER DE LA RAMA (dist), no una copia: se mide su salida.
+// uso: node servidor-1646d.mjs <ARBOL_RAMA> <TEMPORAL>
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { createRequire } from 'node:module';
+const [ARBOL, TMP] = process.argv.slice(2);
+const require = createRequire(path.join(ARBOL, 'dist', 'x.js'));
+const { POLITICA_CSP } = require(path.join(ARBOL, 'dist/core/http/csp.js'));
+if (!POLITICA_CSP.includes("style-src 'self';") || POLITICA_CSP.includes('unsafe-inline')) throw new Error('CIEGO: la CSP no es la estricta');
+const CSP = POLITICA_CSP + '; report-uri /informes';
+process.env.WHATSAPP_DRY_RUN = '1';
+const { quoteDecisionLandingRouter } = require(path.join(ARBOL, 'dist/modules/system/app/routes/quoteDecisionLanding.routes.js'));
+const capa = (ruta) => quoteDecisionLandingRouter.stack.find((l) => l.route && [].concat(l.route.path).includes(ruta) && l.route.methods.get);
+const RUTAS = ['/quote/js/firma.js', '/quote/css/firma.css', '/quote/css/opciones.css', '/quote/css/marca/:color'];
+for (const r of RUTAS) if (!capa(r)) throw new Error('CIEGO: el router no tiene ' + r);
+const servidas = [];
+async function delRouter(ruta, params, query, res) {
+  let st = 200; const h = {};
+  const r = { status(s) { st = s; return r; }, setHeader(k, v) { h[k.toLowerCase()] = v; return r; }, end() { res.statusCode = st; res.end(); return r; },
+    send(b) { res.statusCode = st; for (const [k, v] of Object.entries(h)) res.setHeader(k, v); res.end(String(b)); return r; } };
+  await capa(ruta).route.stack.at(-1).handle({ params, query, headers: {} }, r);
+  servidas.push(`${ruta} ${JSON.stringify(params)} → ${st} ${h['content-type'] || ''} · ${h['cache-control'] || ''}`);
+}
+const informes = [];
+const decisiones = [];
+http.createServer((req, res) => {
+  const u = new URL(req.url, 'http://x');
+  const p = u.pathname;
+  const q = Object.fromEntries(u.searchParams);
+  let cuerpo = '';
+  req.on('data', (c) => { cuerpo += c; });
+  req.on('end', async () => {
+    if (p === '/informes' && req.method === 'POST') { informes.push({ ref: req.headers.referer || '', cuerpo }); res.end(); return; }
+    if (p === '/informes') { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify(informes)); return; }
+    if (p === '/decisiones') { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify(decisiones)); return; }
+    if (p === '/servidas') { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify(servidas)); return; }
+    if (p === '/reset') { informes.length = 0; decisiones.length = 0; res.end('ok'); return; }
+    if (p === '/pay/quote/js/firma.js') return delRouter('/quote/js/firma.js', {}, q, res);
+    if (p === '/pay/quote/css/firma.css') return delRouter('/quote/css/firma.css', {}, q, res);
+    if (p === '/pay/quote/css/opciones.css') return delRouter('/quote/css/opciones.css', {}, q, res);
+    const mm = /^\/pay\/quote\/css\/marca\/([^/]+)$/.exec(p);
+    if (mm) return delRouter('/quote/css/marca/:color', { color: decodeURIComponent(mm[1]) }, q, res);
+    if (/^\/quote\/c{32}\/decision$/.test(p) && req.method === 'POST') {
+      const b = JSON.parse(cuerpo || '{}');
+      decisiones.push({ decision: b.decision, tierId: b.tierId, conFirma: !!b.signatureData, comment: b.comment });
+      res.setHeader('content-type', 'application/json'); res.end('{"ok":true}'); return;
+    }
+    if (p === '/favicon.svg' || p.startsWith('/fonts/')) {
+      const f = path.join(ARBOL, 'public', p);
+      if (fs.existsSync(f)) { res.setHeader('content-type', p.endsWith('.css') ? 'text/css' : p.endsWith('.svg') ? 'image/svg+xml' : 'font/woff2'); res.end(fs.readFileSync(f)); return; }
+    }
+    const m = /^\/(antes|despues|control)\/([\w-]+)$/.exec(p);
+    if (m) {
+      if (m[1] !== 'antes') res.setHeader('Content-Security-Policy', CSP);
+      res.setHeader('content-type', 'text/html; charset=utf-8');
+      res.end(fs.readFileSync(path.join(TMP, m[1] === 'despues' ? 'despues' : 'antes', m[2] + '.html')));
+      return;
+    }
+    res.statusCode = 404; res.end('no');
+  });
+}).listen(58125, '127.0.0.1', () => console.log('ok 58125 · CSP: ' + CSP));
