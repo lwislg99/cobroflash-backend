@@ -53,7 +53,7 @@ Después: **7/7** (`evidencias/SCRUM-1712/verde.salida.txt`), `tsc --noEmit` lim
 | M2 · el PATCH sin el modo actual | **sólo** desvalorar |
 | M3 · la regla por presencia de `modoValoracion` | **los dos controles positivos del técnico** (alta y edición sin precios → 403) |
 
-El POST sin puerta es el rojo de ①. **Meta-guard completo** (`node scripts/meta-guard-mutaciones.mjs`, local): las 6 de 1712, ✔ las 6.
+El POST sin puerta es el rojo de ①. **Meta-guard** (`node scripts/meta-guard-mutaciones.mjs`, local, Windows, ~70 min): las 6 de 1712 caen, **✔ las 6**. El veredicto GLOBAL de esa pasada **no vale**: salió CIEGO porque escribí este registro mientras medía (el árbol no estuvo quieto; fallo mío), y nombra MUDO a `scrum858b-la-tanda-sin-veredicto`, que no es de esta rama (su caso de señales POSIX se salta en Windows). No la repetí: el veredicto que cuenta es el del meta-guard del CI (Linux, en 3 partes).
 
 **Tanda entera, con el banco** (`node --test --test-force-exit "tests/*.test.mjs"` con `LIBRO_PG_URL`; TAP a fichero fuera del árbol): 13.386 casos, 13.373 ok, 8 SKIP (ninguno de 1712), **5 rojos, los 5 de esta rama**, arreglados en el código y vueltos a pasar (56/56 en el repaso, con banco):
 - `scrum1185` · `ADMIN_ONLY_ALBARAN_FIELDS` exportado y sin consumir → quitado; y los dos handlers pasaban `req.body` ENTERO a la regla, que deja ciego el censo de lo que lee cada ruta → se le pasan sólo `{ modoValoracion, lineas }`.
@@ -64,6 +64,6 @@ El POST sin puerta es el rojo de ①. **Meta-guard completo** (`node scripts/met
 ## ④ Avisos
 
 - **A S4 (pantalla, radar del ticket):** el editor del albarán **le ofrece hoy al técnico** la casilla «Con precios» y los campos de precio en borrador (`jobDetailView.js:2826` en adelante, sin rol). Con esto, si la marca, el servidor responde 403 y la pantalla cae a su texto genérico. El editor no debería ofrecérsela (como `isTecnico` en `jobDetailView.js:814` para las acciones de dinero). Texto nuevo = firma del fundador (regla 39).
-- **Con SCRUM-1707 (sin empujar, `s1-1707`):** toca los mismos tres ficheros de `src/` y `scrum164`. Esta rama nace de `main` y no las toca; el choque al fundir se mide y se declara en el apéndice.
+- **Con SCRUM-1707 (sin empujar, `s1-1707`, punta `965e56963`, que lleva debajo 1662):** medido con `git merge-tree --write-tree 9613bb864 965e56963`, sin tocar esa rama. **3 choques, los tres de UNIÓN**: la línea de `import … from roleCapabilities` en `albaranes.routes.ts` y en `jobs.routes.ts` (las dos ramas la amplían; se juntan los nombres y se quedan los `import` de 1707 debajo), y dos entradas contiguas del inventario de `scrum419` (se quedan las tres: 1662, 1707 y 1712). `roleCapabilities.ts` y `adminRouteDeclarations.ts` funden solos. Ninguno toca la lógica de la otra rama. Quien entre segundo resuelve uniendo y vuelve a pasar `scrum1712`, `scrum1707` y `scrum419`.
 
 **Sin medir:** Linux/CI (lo corre el check obligatorio con su banco desechable); en producción no se ha probado (el arreglo sólo existe en esta rama).
