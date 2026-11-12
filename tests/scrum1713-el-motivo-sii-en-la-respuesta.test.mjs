@@ -93,22 +93,30 @@ async function pedir(ruta, cuerpo) {
 const SUELTA = '/admin/invoices';
 const RECTIFICAR = '/admin/invoices/10/rectify';
 
-for (const [sii, codigo] of [[true, 'sii_declarado'], [null, 'sii_no_consta']]) {
-  test(`SCRUM-1713 · factura suelta con el flag puesto y el SII en ${JSON.stringify(sii)} → 409 «${codigo}»`, async () => {
-    merchant = merchantCon({ flag: true, sii });
-    const r = await pedir(SUELTA, {});
-    assert.equal(r.code, 409);
-    assert.equal(r.body.error, codigo, `🔴 la ruta no dice el motivo: contestó «${r.body.error}»`);
-  });
-
-  test(`SCRUM-1713 · rectificar con el flag puesto y el SII en ${JSON.stringify(sii)} → 409 «${codigo}», no 500`, async () => {
-    merchant = merchantCon({ flag: true, sii });
-    const r = await pedir(RECTIFICAR, {});
-    assert.notEqual(r.code, 500, '🔴 el motivo del SII sale como un 500 mudo');
-    assert.equal(r.code, 409);
-    assert.equal(r.body.error, codigo);
-  });
+// Los nombres van LITERALES (SCRUM-1415: un nombre construido no lo puede echar en falta la señal
+// por nombres). Cada caso lleva su dato escrito al lado de su nombre.
+async function sueltaDiceElMotivo(sii, codigo) {
+  merchant = merchantCon({ flag: true, sii });
+  const r = await pedir(SUELTA, {});
+  assert.equal(r.code, 409);
+  assert.equal(r.body.error, codigo, `🔴 la ruta no dice el motivo: contestó «${r.body.error}»`);
 }
+async function rectificarDiceElMotivo(sii, codigo) {
+  merchant = merchantCon({ flag: true, sii });
+  const r = await pedir(RECTIFICAR, {});
+  assert.notEqual(r.code, 500, '🔴 el motivo del SII sale como un 500 mudo');
+  assert.equal(r.code, 409);
+  assert.equal(r.body.error, codigo);
+}
+
+test('SCRUM-1713 · factura suelta con el flag puesto y el SII en true → 409 «sii_declarado»',
+  () => sueltaDiceElMotivo(true, 'sii_declarado'));
+test('SCRUM-1713 · rectificar con el flag puesto y el SII en true → 409 «sii_declarado», no 500',
+  () => rectificarDiceElMotivo(true, 'sii_declarado'));
+test('SCRUM-1713 · factura suelta con el flag puesto y el SII en null → 409 «sii_no_consta»',
+  () => sueltaDiceElMotivo(null, 'sii_no_consta'));
+test('SCRUM-1713 · rectificar con el flag puesto y el SII en null → 409 «sii_no_consta», no 500',
+  () => rectificarDiceElMotivo(null, 'sii_no_consta'));
 
 test('SCRUM-1713 · CONTROL: con el flag APAGADO la factura suelta sigue con su código de siempre', async () => {
   // El motivo es del SII sólo con el flag puesto: con OFF, `motivoSiiSinEmision` da null y el

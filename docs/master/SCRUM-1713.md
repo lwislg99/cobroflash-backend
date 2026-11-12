@@ -36,3 +36,20 @@ cinturón de J1, sí, dentro del GO de SCRUM-1585 c.20531 y sin texto nuevo.
 - Mutaciones: 3 declaradas en `MUTACIONES_QUE_ME_TUMBAN`. Mi driver con `aplicarUna` salió **CIEGO**
   en las 3 (la pasada limpia no le devolvió nombres): NO CORRIDAS. Las corre el meta-guard.
 - Sin medir: ninguna base, nada en yaqu.app, la suite entera.
+
+## SCRUM-1713b · los nombres de los casos, literales; y las 3 mutaciones, corridas
+
+**Medido contra:** `origin/main` = `4eea7720bae9c2584a2d2312358d0566f779f1a5` · 2026-11-12T10:56:18Z (cabecera `Date:` de GitHub)
+
+A9: comprobación → `tests/scrum1415-nombres-construidos.test.mjs`
+
+El obligatorio del PR #3100 (job 131127938626) cayó en 1 caso, `scrum1415`: el test de este ticket
+escribía 4 casos con dos `test()` de nombre CONSTRUIDO dentro de un bucle. Ahora son 4 `test()` con
+el nombre literal, los mismos 4 nombres y en el mismo orden; el cuerpo, en dos funciones. 7 casos,
+como antes. Arreglado en el test, no en el guard (regla 41). Sin cambios en `src/`.
+
+Las 3 mutaciones de `MUTACIONES_QUE_ME_TUMBAN` (§③ de arriba las daba por NO CORRIDAS), con
+`correr` + `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`: pasada limpia 7 pasan, 0 caen,
+0 saltados; las 3 salen `ok: true` (VIVAS), cada una con 7 casos en su pasada y 2 caídos.
+La tercera tumba también un caso de la R1 con el SII en «No consta» (colateral esperado: fuerza
+`sii_declarado`).
