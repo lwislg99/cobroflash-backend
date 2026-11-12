@@ -61,3 +61,22 @@ de 1662 sin su ALTER confirmado y saltaría A5. Cuando 1662 entre: `git merge or
 - Tras el cambio: 4 fugas seguían en los dos detalles → `pendientePorLinea` lleva `precioUnitario`/`tipoIva`;
   se añadió `pendienteDeLineaParaElOperario`. Con eso, `scrum1707` 3/3 y `scrum1662` 3/3, 0 saltados.
 - `scrum419` declara `scrum1707-operario-sin-dinero.test.mjs: 1`.
+
+## 12-nov (S1 relevo) · re-anclaje del guard `detalle-trabajo-917` en la vista del TÉCNICO (c.21555)
+
+El CI de #3153 dio rojo REAL en «guards de navegador»: `guard:detalle-trabajo-917`, 8 hallazgos, TODOS del caso
+`TÉCNICO · sólo lectura` (F.1/F.2/F.3/F.7 × 1280 y 390): esperaban la línea «Notas internas», que el commit de S2
+de esta misma rama (SCRUM-1662, `jobDetailView.js`, `veNotas` = sólo admin) quita al operario. Reproducido en local
+sobre `f899f2cf9`: salida 1, los mismos 8.
+
+**Regla nueva firmada, no código roto:** SCRUM-1662 **c.21555** (cita literal en `docs/master/SCRUM-1662.md`,
+apéndice del 12-nov): «Las notas pasan a ser SOLO del jefe, como promete el rótulo: el operario deja de verlas y de
+poder editarlas». Re-anclaje con el precedente 917c/C.1, camino pre-autorizado por el orquestador.
+
+- `scripts/guard-detalle-trabajo-917.mjs`: el caso del técnico declara `sinLineas: ['notas']` (cita c.21555 en el
+  comentario); F.1/F.2/F.3/F.7 recorren las líneas DE ESE CASO (4). Nuevo **F.1b**: la ficha del técnico no lleva
+  `#job-notas-internas` en ninguna parte. **Los cuatro casos del admin no cambian**: siguen exigiendo las cinco.
+- Verde: salida 0, **244/244**.
+- **Control por mutación, las dos direcciones** (en `public/dashboard/js/jobDetailView.js`, restaurado después):
+  `veNotas = true` (notas para todos) → 6 hallazgos, todos del técnico (F.1, F.1b, F.2 × 2 anchos);
+  `veNotas = false` (notas para nadie) → 32 hallazgos, todos de los casos del admin, el técnico en verde.
