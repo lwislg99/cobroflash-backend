@@ -19,6 +19,38 @@ import {
   veredictoDeCommit, jobsInformativosDelCI, sueloPorCommit, JOBS_DEL_CI, JOB_OBLIGATORIO, JOB_META_GUARD,
 } from '../scripts/vigia-silencio-de-main.mjs';
 
+// Lo que tiene que tumbar a este fichero (las corre el meta-guard con `aplicarUna`).
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // El defecto del ticket: el informativo sin veredicto vuelve a contar como «sin probar».
+    fichero: 'scripts/vigia-silencio-de-main.mjs',
+    de: "j.conclusion !== 'success') && !informativosApartados.includes(j));",
+    a: "j.conclusion !== 'success'));",
+    cae: 'con los informativos de ci.yml, el run real sale VERDE y lo dice',
+  },
+  {
+    // Un obligatorio o un meta-guard con `continue-on-error` dejaría de decidir.
+    fichero: 'scripts/vigia-silencio-de-main.mjs',
+    de: '  && j.name !== JOB_OBLIGATORIO && j.name !== JOB_META_GUARD\n',
+    a: '',
+    cae: 'CONTROL: un informativo no decide; uno obligatorio sí',
+  },
+  {
+    // Un lector sin sangría coge el `continue-on-error` de un PASO y hace informativo al obligatorio.
+    fichero: 'scripts/vigia-silencio-de-main.mjs',
+    de: 'if (/^ {4}continue-on-error:',
+    a: 'if (/^\\s+continue-on-error:',
+    cae: 'los informativos se LEEN de ci.yml',
+  },
+  {
+    // Cualquier run `cancelled` cuadraría, aunque no se cancelara ningún informativo.
+    fichero: 'scripts/vigia-silencio-de-main.mjs',
+    de: "(run.conclusion === 'cancelled' && informativosApartados.some((j) => j.conclusion === 'cancelled'));",
+    a: "run.conclusion === 'cancelled';",
+    cae: 'CONTROL: un informativo no decide; uno obligatorio sí',
+  },
+];
+
 const raiz = (p) => fileURLToPath(new URL(`../${p}`, import.meta.url));
 const REAL = JSON.parse(readFileSync(raiz('docs/master/evidencias/SCRUM-1643/run-41099403956.json'), 'utf8'));
 const CI_YML = readFileSync(raiz('.github/workflows/ci.yml'), 'utf8');
