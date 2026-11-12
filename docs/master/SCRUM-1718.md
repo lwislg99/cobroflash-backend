@@ -1,7 +1,10 @@
 # SCRUM-1718 · Los 11 temporales declarados de SCRUM-1621 → `temporal()`, y la lista de 1396c se retira a cero
 
-**Puesto:** S3 (tests y bancos), equipo de Luis · **Fecha:** 12-nov-2026 · **Rama:** `scrum-1718-temporales-de-1621`
-**Medido contra:** merge de `origin/main` = `02aa1a42d` en la rama.
+**Fecha:** 12-nov-2026 · **Carril:** A (S3, tests y bancos) · **Gate:** sin gate · **Rama:** `scrum-1718-temporales-de-1621`
+**Medido contra:** `origin/main` = `02aa1a42d537959e00944efd9fd2d7824d4fa1bb` · 2026-11-12T19:31:14Z
+A9: comprobación → `tests/scrum864c-el-temporal-no-vuelve.test.mjs`
+**Tanda:** ver «Pruebas» abajo
+**Skill UI:** no cargada · no cambia ningún fichero de `public/`
 
 ## Qué pasaba
 
@@ -14,14 +17,16 @@ Finalizada con esa pieza sin hacer (abrió el orquestador del equipo de Javier, 
    anterior de S3): `scrum1263`, `scrum1289b`, `scrum1424`, `scrum252`, `scrum454`, `scrum709`, `scrum726`, `scrum811c`,
    `scrum839d`, `scrum839e`, `scrum899`. Los 11 ficheros: mismos nombres de test y en verde antes y después.
 2. **La lista queda vacía y se retira con su test** — decisión del orquestador del equipo de Luis, opción (a). Lo manda el
-   propio diseño del guard, `tests/scrum1396c-los-declarados-solo-bajan.test.mjs` línea 85 (①):
+   propio diseño del guard, `scrum1396c-los-declarados-solo-bajan` (el test retirado), línea 85 (①):
 
        `🔴 la lista de ${RUTA_SITIOS_DECLARADOS} está vacía: se arreglaron todos. Retira este test y la lista con ella.`
 
    **Excepción de carril DECLARADA (regla 37):** 1396c es instrumento del equipo J (SCRUM-1396, carril J6). Va en este
    mismo PR porque el cambio de 1718 lo haría caer. Aviso previo al push en SCRUM-1718 c.21810, con referencia a 1396.
    Se retiran:
-   - `scripts/_mkdtemp-declarados.json` y `tests/scrum1396c-los-declarados-solo-bajan.test.mjs` (4 test(), 3 mutaciones);
+   - `scripts/_mkdtemp-declarados.json` y el test `scrum1396c-los-declarados-solo-bajan` (4 test(), 3 mutaciones);
+   - en `docs/master/SCRUM-1396.md`, las 5 rutas de ese test pasan a su nombre corto con «(retirado en SCRUM-1718)»: lo
+     exige `tests/scrum391-guards-declarados-presentes.test.mjs` («lo que se corrige es la entrada»);
    - de `scripts/_censo-mkdtemp.mjs`, lo que sólo servía a la lista: `RUTA_SITIOS_DECLARADOS`, `MOTIVOS_DE_SITIO`,
      `QUIEN_RETIRA`, `leerSitiosDeclarados`, `contraSitiosDeclarados`, `subeRespectoA` y el import de `contraDeclarados`
      (queda un comentario que dice qué vivía ahí y por qué se fue);
