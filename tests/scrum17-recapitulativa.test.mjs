@@ -155,7 +155,7 @@ test('SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, t
       data: {
         name: `QA S17 ${tag}`, country: 'ES', email: `qa-s17-${tag}-${stamp}@test.local`,
         onboardingCompleted: true, planExpiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000),
-        ...(fiscal ? { flags: { INVOICING_ES_ENABLED: true } } : {}),
+        ...(fiscal ? { flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false } : {}),
       },
     });
   const mA = await mkMerchant('A', true);   // fiscal (ES + override de flag)

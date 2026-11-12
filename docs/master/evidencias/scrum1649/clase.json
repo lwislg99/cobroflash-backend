@@ -1,0 +1,3928 @@
+[
+ {
+  "donde": "src/core/documentos/asignacionDeDocumento.ts:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-02",
+  "fechaReclamada": "2-oct-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1397",
+   "1390"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// 🔵 2-oct-2026 (SCRUM-1397) · ALGUIEN LO DECIDIÓ, Y SÓLO PARA **VER**. El fundador firmó el"
+ },
+ {
+  "donde": "src/core/http/adminRouteDeclarations.ts:213",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-24",
+  "fechaReclamada": "24-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "614",
+   "55",
+   "365"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// ⚠️ LA LECTURA SE QUEDA ABIERTA A PROPÓSITO. El fundador decidió el mismo día que coste y"
+ },
+ {
+  "donde": "src/core/http/publicNotFound.ts:70",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-07-30",
+  "fechaReclamada": "30-jul-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "206"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Copy OFICIAL aprobado por el fundador el 30-jul-2026 (regla 30). El texto vive en"
+ },
+ {
+  "donde": "src/core/validation/schemas.ts:54",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-04",
+  "fechaReclamada": "4-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "594"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* Un PORCENTAJE (SCRUM-594, aprobado por el fundador el 4-sep-2026)."
+ },
+ {
+  "donde": "src/core/validation/schemas.ts:136",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-04",
+  "fechaReclamada": "4-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "712"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* 🔴 Y DOS DECIMALES, aprobado por el fundador el 4-sep-2026 como TERCER tipo junto al precio"
+ },
+ {
+  "donde": "src/integrations/whatsappTemplates.ts:270",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-07-16",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "49"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Copy EXACTO aprobado en Meta (confirmado por el fundador 16-jul; las 3 vars en orden):"
+ },
+ {
+  "donde": "src/lib/sendOutcome.ts:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-07-23",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "126"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// CONTRATO (los 4 niveles — recon de SCRUM-126, aprobado por el fundador):"
+ },
+ {
+  "donde": "src/modules/auth/app/routes/auth.routes.ts:31",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-08",
+  "fechaReclamada": "8-oct-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1515",
+   "94"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// La frase es la FIRMADA por el fundador en SCRUM-1515 c.18971 (regla 39) y se copia exacta."
+ },
+ {
+  "donde": "src/modules/auth/domain/territorioDeAlta.ts:21",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-22",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1536"
+  ],
+  "microcopy": [
+   "F-LOC:2026-10-22-SCRUM-1536-exclusion-territorial.md",
+   "F-LOC:2026-10-22-SCRUM-1536-pais-no-se-cambia.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "* Los textos FIRMADOS por el fundador en SCRUM-1536 c.20225 («Ok firmo todas»), copiados de"
+ },
+ {
+  "donde": "src/modules/auth/domain/zonaDeLaProvincia.ts:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-13",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1522",
+   "1616"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// bilingües con forma doble oficial. El fundador firmó las 52 en c.21066, y además que se acepten"
+ },
+ {
+  "donde": "src/modules/billing/app/routes/payMp.routes.ts:14",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-23",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1449"
+  ],
+  "microcopy": [
+   "F-LOC:2026-10-06-SCRUM-1449-pago-mercado-pago.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-1449 · textos firmados por el fundador en Jira (c.18285). Los lee el CLIENTE FINAL: ni"
+ },
+ {
+  "donde": "src/modules/billing/app/routes/stripe.routes.ts:225",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-07",
+  "fechaReclamada": "7-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "809"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-809 · `planExpiresAt` NO se borra: el fundador firmó (7-sep-2026) que «el que"
+ },
+ {
+  "donde": "src/modules/billing/app/routes/subscriptions.routes.ts:45",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-26",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1402"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// T3 de SCRUM-1402, FIRMADO por el fundador en c.20866 (regla 39). La pantalla le antepone"
+ },
+ {
+  "donde": "src/modules/billing/domain/comercioSuprimido.ts:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-27",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1573"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Señal A, firmada por el fundador en SCRUM-1573 c.21057: la supresión (`suprimirMerchant`,"
+ },
+ {
+  "donde": "src/modules/billing/domain/instanteDeCobro.ts:45",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-11",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "397"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* son las de `fechaDeCobro.ts`, aprobadas por el fundador para las facturas en el bloque B de"
+ },
+ {
+  "donde": "src/modules/fiscal/evidencias/paquete.ts:174",
+  "nivel": "anclado",
+  "fechaLinea": "2026-10-02",
+  "fechaReclamada": "1-oct-2026",
+  "asesorBloque": false,
+  "pares": [
+   "1252c17726"
+  ],
+  "tickets": [
+   "1252"
+  ],
+  "microcopy": [
+   "F-LOC:2026-10-01-SCRUM-1252-libro-solo-facturas.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// **Firmado por el fundador el 1-oct-2026** (SCRUM-1252, comentario 17726; regla 39)."
+ },
+ {
+  "donde": "src/modules/fiscal/librosAeat/librosAeat.ts:183",
+  "nivel": "anclado",
+  "fechaLinea": "2026-08-10",
+  "fechaReclamada": "10-ago-2026",
+  "asesorBloque": false,
+  "pares": [
+   "1502c20702"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* ✅ MICROCOPY APROBADA por el fundador el 10-ago-2026, los tres textos tal cual se propusieron."
+ },
+ {
+  "donde": "src/modules/fiscal/modelo303/modelo303.ts:444",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-24",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1063"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-1063f · literales firmados por el fundador (SCRUM-1063 c.20797, regla 39; sustituyen al"
+ },
+ {
+  "donde": "src/modules/fiscal/modelo303/modelo303.ts:452",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-24",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1063"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-1063d · literales firmados por el fundador (SCRUM-1063 c.20797, regla 39; sustituyen a"
+ },
+ {
+  "donde": "src/modules/fiscal/verifactu/registro.builder.ts:629",
+  "nivel": "anclado",
+  "fechaLinea": "2026-10-01",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "1258c17713"
+  ],
+  "tickets": [
+   "1258"
+  ],
+  "microcopy": [
+   "F-LOC:2026-10-01-SCRUM-1258-tipo-distinto-del-sellado.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "* El texto es el firmado por el fundador en SCRUM-1258, comentario 17713"
+ },
+ {
+  "donde": "src/modules/invoicing/domain/cerrojoSaturado.ts:50",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-08",
+  "fechaReclamada": "8-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "728"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-08-SCRUM-728-serie-ocupada.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "* MICROCOPY OFICIAL — **aprobada por el fundador el 8-sep-2026, en SCRUM-728**, sin cambios."
+ },
+ {
+  "donde": "src/modules/invoicing/domain/invoiceNumber.service.ts:92",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-07",
+  "fechaReclamada": "7-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "780",
+   "291",
+   "313"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Firmada por el fundador el 7-sep-2026. Vive en `CORTE_FORMATO_F` y en ningún otro sitio: quien"
+ },
+ {
+  "donde": "src/modules/invoicing/domain/invoiceNumber.service.ts:193",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-07",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "780",
+   "234",
+   "291"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* El fundador firmó que `F26xxxx` es una serie **NUEVA que empieza en 0001 y es correlativa"
+ },
+ {
+  "donde": "src/modules/invoicing/domain/lineasFacturables.ts:42",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-03",
+  "fechaReclamada": "3-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "264"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* ✅ TEXTO OFICIAL — aprobado por el fundador el 3-ago-2026 (SCRUM-264, regla 30). No se toca"
+ },
+ {
+  "donde": "src/modules/invoicing/domain/lineasFacturables.ts:58",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-03",
+  "fechaReclamada": "3-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "264"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* ✅ TEXTO OFICIAL — aprobado por el fundador el 3-ago-2026 (SCRUM-264, regla 30)."
+ },
+ {
+  "donde": "src/modules/invoicing/domain/portonDocumento.ts:46",
+  "nivel": "documental",
+  "fechaLinea": "2026-07-30",
+  "fechaReclamada": "30-jul-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [],
+  "docRespaldo": "docs/YAQU_MASTER.md",
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* Copy OFICIAL para el cliente final, aprobado por el fundador el 30-jul-2026 (regla 30)."
+ },
+ {
+  "donde": "src/modules/invoicing/infra/pdf/pdf.service.ts:23",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-02",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "604",
+   "636",
+   "436",
+   "625"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* corriente de un trabajo— y el fundador decidió la convención española en LOS CINCO sitios."
+ },
+ {
+  "donde": "src/modules/invoicing/infra/pdf/pdf.service.ts:54",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-02",
+  "fechaReclamada": "2-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "593"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* ✅ APROBADO por el fundador el 2-sep-2026: «Observaciones», literal y sin variantes, en los tres"
+ },
+ {
+  "donde": "src/modules/invoicing/infra/pdf/pdf.service.ts:546",
+  "nivel": "anclado",
+  "fechaLinea": "2026-10-26",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "1446c20917"
+  ],
+  "tickets": [
+   "1446"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// La cabecera de esa columna, «IMPORTE», es literal firmado por el fundador en SCRUM-1446"
+ },
+ {
+  "donde": "src/modules/jobs/app/routes/albaranes.routes.ts:1515",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-17",
+  "fechaReclamada": "17-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "895"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-895 · APROBADO por el fundador el 17-sep-2026 (comentario 15699). LITERAL."
+ },
+ {
+  "donde": "src/modules/jobs/app/routes/albaranes.routes.ts:1524",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-17",
+  "fechaReclamada": "17-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "895"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-895 · APROBADO por el fundador el 17-sep-2026 (comentario 15699). LITERAL."
+ },
+ {
+  "donde": "src/modules/jobs/domain/albaranFirmante.ts:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-05",
+  "fechaReclamada": "6-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "300",
+   "289"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// LA MICROCOPY DE «¿EN CALIDAD DE QUÉ FIRMA?» — APROBADA POR EL FUNDADOR (6-ago-2026)"
+ },
+ {
+  "donde": "src/modules/jobs/domain/albaranFirmante.ts:87",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-06",
+  "fechaReclamada": "6-ago-2026",
+  "asesorBloque": true,
+  "pares": [],
+  "tickets": [
+   "300"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* **Aprobadas por el asesor y validadas por el fundador el 6-ago-2026.**"
+ },
+ {
+  "donde": "src/modules/jobs/domain/albaranFirmante.ts:126",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-05",
+  "fechaReclamada": "5-ago-2026",
+  "asesorBloque": true,
+  "pares": [],
+  "tickets": [
+   "300"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "*  · `fechaEntrega` — **APROBADO por el fundador el 5-ago-2026**: describe lo que el campo es, no"
+ },
+ {
+  "donde": "src/modules/jobs/domain/albaranFirmante.ts:246",
+  "nivel": "documental",
+  "fechaLinea": "2026-08-05",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [],
+  "docRespaldo": "docs/master/SCRUM-300.md",
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// El fundador aprobó CUATRO columnas, y el schema es territorio suyo. La ranura libre necesita"
+ },
+ {
+  "donde": "src/modules/jobs/domain/albaranWhatsApp.service.ts:142",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-07-27",
+  "fechaReclamada": "27-jul-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "62"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* El texto de ventana es K1 OFICIAL, aprobado por el fundador el 27-jul-2026 (regla 30):"
+ },
+ {
+  "donde": "src/modules/jobs/domain/parteDictado.ts:98",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-02",
+  "fechaReclamada": "2-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* ✅ MICROCOPY APROBADA por el fundador el 2-sep-2026 (regla 30). LITERAL: raya larga `—` de un"
+ },
+ {
+  "donde": "src/modules/jobs/domain/parteDictado.ts:126",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-07",
+  "fechaReclamada": "7-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "725"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-07-SCRUM-725-dato-no-dicho.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// ✅ APROBADA por el fundador el 7-sep-2026 (regla 30), registrada en"
+ },
+ {
+  "donde": "src/modules/jobs/domain/parteDictado.ts:138",
+  "nivel": "sin-respaldo",
+  "grupo": "3"
+ },
+ {
+  "donde": "src/modules/jobs/domain/parteDictado.ts:401",
+  "nivel": "sin-respaldo",
+  "grupo": "3"
+ },
+ {
+  "donde": "src/modules/jobs/domain/tipoIntervencion.ts:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-02",
+  "fechaReclamada": "2-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "651",
+   "652"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Vocabulario CERRADO, aprobado por el fundador el 2-sep-2026 (regla 27). Lo que no está en esta"
+ },
+ {
+  "donde": "src/modules/maintenance/domain/maintenance.service.ts:26",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-07",
+  "fechaReclamada": "7-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "394"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// **APROBADO por el fundador el 7-ago-2026**, con la condición de verificar cada afirmación contra"
+ },
+ {
+  "donde": "src/modules/metrics/domain/actividadEquipo.ts:1",
+  "nivel": "anclado",
+  "fechaLinea": "2026-10-01",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "1341c17825"
+  ],
+  "tickets": [
+   "1337"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// El fundador firmó dos cosas el mismo día: «el operario ve la actividad de sus compañeros»"
+ },
+ {
+  "donde": "src/modules/products/app/routes/products.routes.ts:282",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-24",
+  "fechaReclamada": "22-jul-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "614"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// ⚠️ LA LECTURA NO SE TOCA, y no es un olvido: el fundador decidió el 24-ago que coste y margen"
+ },
+ {
+  "donde": "src/modules/quotes/domain/decisionDelCliente.ts:29",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-29",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "275"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* (`quoteDecisionLanding.routes.ts`, «Ya aceptaste…» / «Rechazaste…», firmado por el fundador el"
+ },
+ {
+  "donde": "src/modules/reports/domain/desgloseEmpleado.ts:48",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-07-29",
+  "fechaReclamada": "29-jul-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "236"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Microcopy OFICIAL: aprobado por el fundador el 29-jul-2026 (regla 30). SCRUM-236 reutiliza"
+ },
+ {
+  "donde": "src/modules/system/app/routes/invoicesAdmin.routes.ts:1284",
+  "nivel": "anclado",
+  "fechaLinea": "2026-07-30",
+  "fechaReclamada": "30-jul-2026",
+  "asesorBloque": false,
+  "pares": [
+   "1502c18835"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Microcopy OFICIAL: aprobado por el fundador el 30-jul-2026 (regla 30). Lo ve el"
+ },
+ {
+  "donde": "src/modules/system/app/routes/invoicesAdmin.routes.ts:1294",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-02",
+  "fechaReclamada": "2-oct-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1400",
+   "1390"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* 🔵 2-oct-2026 (SCRUM-1400) · ESA FRASE YA NO CUBRE **VER**. El fundador firmó el 1-oct-2026"
+ },
+ {
+  "donde": "src/modules/system/app/routes/quotesAdmin.routes.ts:408",
+  "nivel": "sin-respaldo",
+  "grupo": "3"
+ },
+ {
+  "donde": "src/modules/system/app/routes/quotesAdmin.routes.ts:1134",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-02",
+  "fechaReclamada": "2-oct-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1400",
+   "1390"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* 🔵 2-oct-2026 (SCRUM-1400) · ESA FRASE YA NO CUBRE **VER**. El fundador firmó el 1-oct-2026"
+ },
+ {
+  "donde": "src/modules/system/domain/anonimizarMerchant.ts:57",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-21",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1569"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// al SITIO, no el nombre de una persona». El fundador decidió lo contrario («ok decidimos que sí»,"
+ },
+ {
+  "donde": "src/modules/system/merchantAdmin.ts:98",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-05",
+  "fechaReclamada": "5-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "338"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Microcopy APROBADA por el fundador (5-ago-2026), literal."
+ },
+ {
+  "donde": "src/modules/system/quoteAdmin.ts:493",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-16",
+  "fechaReclamada": "15-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "688",
+   "655"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-16-SCRUM-688-crear-revision.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// Aprobado por el fundador el 15-sep-2026: se crea desde la pantalla de revisiones, sobre la"
+ },
+ {
+  "donde": "src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:519",
+  "nivel": "anclado",
+  "fechaLinea": "2026-10-26",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "1322c20957",
+   "1322c20977"
+  ],
+  "tickets": [
+   "1322"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-1322c · literal firmado por el fundador en SCRUM-1322 comentario 20957 (opción A):"
+ },
+ {
+  "donde": "src/modules/whatsappBot/domain/botFlow.service.ts:1",
+  "nivel": "anclado",
+  "fechaLinea": "2026-07-07",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "1502c20834"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// A18 (7-jul, cambio de master K1 aprobado por el fundador): la captación de"
+ },
+ {
+  "donde": "src/modules/whatsappBot/domain/botFlow.service.ts:129",
+  "nivel": "documental",
+  "fechaLinea": "2026-07-05",
+  "fechaReclamada": "5-jul-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [],
+  "docRespaldo": "docs/YAQU_MASTER.md",
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "/** Menú oficial K1 (lista) — copy v2 aprobado por el fundador (5-jul-2026). */"
+ },
+ {
+  "donde": "public/dashboard/js/aiQuoteAssistant.js:112",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-13",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "507"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// MICROCOPY OFICIAL, aprobada por el fundador en SCRUM-507 · consta en"
+ },
+ {
+  "donde": "public/dashboard/js/aiQuoteAssistant.js:132",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-13",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "507"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// MICROCOPY OFICIAL, aprobada por el fundador en SCRUM-507 · consta en"
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:199",
+  "nivel": "anclado",
+  "fechaLinea": "2026-09-17",
+  "fechaReclamada": "17-sep-2026",
+  "asesorBloque": false,
+  "pares": [
+   "895c15699"
+  ],
+  "tickets": [
+   "895"
+  ],
+  "microcopy": [],
+  "delegacionBloque": true,
+  "frase": "// SCRUM-895 · APROBADO por el fundador el 17-sep-2026 (comentario 15699), por delegación de la"
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:215",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-05",
+  "fechaReclamada": "5-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "302"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-302 · APROBADO por el fundador el 5-ago-2026: es la palabra del ticket y la que usa"
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:221",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-06",
+  "fechaReclamada": "6-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "302"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-302 · APROBADO por el fundador el 6-ago-2026: VERBO, como sus dos vecinos de la barra."
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:234",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-05",
+  "fechaReclamada": "5-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "302"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-302 · APROBADO por el fundador el 5-ago-2026. Dice lo que SÍ trae ANTES de lo que no: el"
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:292",
+  "nivel": "anclado",
+  "fechaLinea": "2026-08-05",
+  "fechaReclamada": "6-ago-2026",
+  "asesorBloque": false,
+  "pares": [
+   "1502c20702"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// LOS RÓTULOS DEL RAIL — APROBADOS por el fundador el 6-ago-2026 (regla 30). Una palabra cada uno."
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:332",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-05",
+  "fechaReclamada": "6-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "379",
+   "375"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// FIRMADO por el fundador el 6-ago-2026. Dice las dos cosas y EN ESTE ORDEN: primero que la"
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:923",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-08",
+  "fechaReclamada": "8-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "707"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-08-SCRUM-707-estado-no-reconocido.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "* ✅ Texto APROBADO por el fundador el 8-sep-2026 (regla 30), en"
+ },
+ {
+  "donde": "public/dashboard/js/api.js:1435",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-07-29",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "69",
+   "210"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Copy aprobado por el fundador (23-jul, docs/Sprint Scrum/SESION_ACTUAL_SCRUM-69.md) — NO reformular."
+ },
+ {
+  "donde": "public/dashboard/js/atajoNuevo.js:30",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-04",
+  "fechaReclamada": "4-sep-2026",
+  "asesorBloque": true,
+  "pares": [],
+  "tickets": [
+   "599"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-04-SCRUM-599-atajo-nuevo.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// ✅ MICROCOPY FIRMADA POR EL FUNDADOR el 4-sep-2026 (regla 30). El asesor la había aprobado el"
+ },
+ {
+  "donde": "public/dashboard/js/atajoNuevo.js:40",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-07",
+  "fechaReclamada": "7-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "722",
+   "606"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-07-SCRUM-722-nuevo-albaran.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// ✅ SCRUM-722 · FIRMADO POR EL FUNDADOR el 7-sep-2026. Entró con marcador en SCRUM-606 y este"
+ },
+ {
+  "donde": "public/dashboard/js/atajoNuevo.js:62",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-03",
+  "fechaReclamada": "4-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "402",
+   "606",
+   "722"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-03-SCRUM-402-abrir-parte-fallo.md",
+   "F-TICKET:2026-09-07-SCRUM-722-nuevo-albaran.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// 🔴 BAJA DE 3 A 0 el 4-sep-2026: el fundador firmó los tres rótulos. **NO se borra la"
+ },
+ {
+  "donde": "public/dashboard/js/buscadorDeClientes.js:82",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-08",
+  "fechaReclamada": "7-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "713"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-07-SCRUM-713-buscador-cliente.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// ✅ SCRUM-713c · FIRMADO POR EL FUNDADOR el 7-sep-2026 PARA ESTA RANURA, y registrado en"
+ },
+ {
+  "donde": "public/dashboard/js/csvImport.js:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-05",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "312",
+   "339"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Microcopy: la aprobada por el fundador (regla 30). NO reformular."
+ },
+ {
+  "donde": "public/dashboard/js/customerDetailView.js:255",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-23",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1132"
+  ],
+  "microcopy": [
+   "F-LOC:2026-10-14-SCRUM-1132-notas-del-cliente.md",
+   "F-LOC:2026-10-23-SCRUM-1132-notas-respaldo.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "* ✅ TEXTOS FIRMADOS por el fundador: los cuatro de SCRUM-1132 c.19617 (registro en"
+ },
+ {
+  "donde": "public/dashboard/js/customersView.js:1063",
+  "nivel": "sin-respaldo",
+  "grupo": "3"
+ },
+ {
+  "donde": "public/dashboard/js/customersView.js:1104",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-07",
+  "fechaReclamada": "7-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "590",
+   "575"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* ✅ **FIRMADO POR EL FUNDADOR** el 7-sep-2026. Literal exacto, y va SIN marcador porque está"
+ },
+ {
+  "donde": "public/dashboard/js/documentoAsignados.js:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-08",
+  "fechaReclamada": "8-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "597",
+   "650",
+   "229",
+   "709",
+   "402",
+   "755"
+  ],
+  "microcopy": [
+   "F-LOC:2026-09-08-SCRUM-597-quien-lleva-el-documento.md",
+   "F-TICKET:2026-09-03-SCRUM-402-abrir-parte-fallo.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// ✅ MICROCOPY FIRMADA POR EL FUNDADOR — 8-sep-2026: «me parecen genial los rótulos»."
+ },
+ {
+  "donde": "public/dashboard/js/expensesView.js:167",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-06",
+  "fechaReclamada": "6-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "769"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-06-SCRUM-769-las-cinco-pantallas.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-769 · el rótulo del botón de arriba está FIRMADO por el fundador el 6-sep-2026: se"
+ },
+ {
+  "donde": "public/dashboard/js/exportView.js:30",
+  "nivel": "anclado",
+  "fechaLinea": "2026-10-27",
+  "fechaReclamada": null,
+  "asesorBloque": true,
+  "pares": [
+   "1251c20675"
+  ],
+  "tickets": [
+   "1251"
+  ],
+  "microcopy": [],
+  "delegacionBloque": true,
+  "frase": "// Decisiones y TEXTOS FIRMADOS por el fundador: SCRUM-1251 comentario 20675 (T1–T7 y el aviso de"
+ },
+ {
+  "donde": "public/dashboard/js/exportView.js:363",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-04",
+  "fechaReclamada": "17-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "714"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// ✅ MICROCOPY APROBADA POR EL FUNDADOR el 17-ago-2026 (regla 30), y APLICADA. Consta en"
+ },
+ {
+  "donde": "public/dashboard/js/filtroClientes.js:97",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-23",
+  "fechaReclamada": "23-oct-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1043"
+  ],
+  "microcopy": [
+   "F-LOC:2026-10-23-SCRUM-1043-quien-me-debe.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "* ✅ FIRMADOS por el fundador el 23-oct-2026 (SCRUM-1043 c.20536, todas las A de la propuesta"
+ },
+ {
+  "donde": "public/dashboard/js/filtroClientes.js:192",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-02",
+  "fechaReclamada": "2-sep-2026",
+  "asesorBloque": true,
+  "pares": [],
+  "tickets": [
+   "580"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* significa que estén firmados por el fundador: eso lo dice `SIN_APROBAR`, arriba."
+ },
+ {
+  "donde": "public/dashboard/js/filtroClientes.js:276",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-02",
+  "fechaReclamada": "2-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "581"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* ✅ APROBADO por el fundador el 2-sep-2026. PROCEDENCIA: consta en `docs/master/SCRUM-581.md`"
+ },
+ {
+  "donde": "public/dashboard/js/homeView.js:394",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-25",
+  "fechaReclamada": "25-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1075"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// ✅ Texto FIRMADO por el fundador (regla 39; SCRUM-1075, comentario de firma 25-sep-2026)."
+ },
+ {
+  "donde": "public/dashboard/js/homeView.js:792",
+  "nivel": "sin-respaldo",
+  "grupo": "3"
+ },
+ {
+  "donde": "public/dashboard/js/invoiceDetailView.js:315",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-08",
+  "fechaReclamada": "8-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "707"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-08-SCRUM-707-estado-no-reconocido.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "* ✅ Texto APROBADO por el fundador el 8-sep-2026 (regla 30), en"
+ },
+ {
+  "donde": "public/dashboard/js/invoicesView.js:18",
+  "nivel": "anclado",
+  "fechaLinea": "2026-10-30",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "1640c21292"
+  ],
+  "tickets": [
+   "1640"
+  ],
+  "microcopy": [
+   "F-LOC:2026-10-30-SCRUM-1640-lote-marca-cero.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// FIRMADO por el fundador en SCRUM-1640 comentario 21292."
+ },
+ {
+  "donde": "public/dashboard/js/invoicesView.js:20",
+  "nivel": "anclado",
+  "fechaLinea": "2026-10-30",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "1640c21292"
+  ],
+  "tickets": [
+   "1640"
+  ],
+  "microcopy": [
+   "F-LOC:2026-10-30-SCRUM-1640-lote-marca-cero.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// FIRMADO por el fundador en SCRUM-1640 comentario 21292."
+ },
+ {
+  "donde": "public/dashboard/js/invoicesView.js:22",
+  "nivel": "anclado",
+  "fechaLinea": "2026-10-30",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "1640c21292"
+  ],
+  "tickets": [
+   "1640"
+  ],
+  "microcopy": [
+   "F-LOC:2026-10-30-SCRUM-1640-lote-marca-cero.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// FIRMADO por el fundador en SCRUM-1640 comentario 21292."
+ },
+ {
+  "donde": "public/dashboard/js/invoicesView.js:291",
+  "nivel": "anclado",
+  "fechaLinea": "2026-08-06",
+  "fechaReclamada": "6-ago-2026",
+  "asesorBloque": false,
+  "pares": [
+   "825c17446"
+  ],
+  "tickets": [
+   "346"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// lo que de verdad va a crear. «+ Nuevo justificante» está APROBADO por el fundador"
+ },
+ {
+  "donde": "public/dashboard/js/invoicesView.js:795",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-27",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1562"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// celda, con el rótulo «Ver detalle» que el fundador firmó para las tres listas"
+ },
+ {
+  "donde": "public/dashboard/js/invoicesView.js:879",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-05",
+  "fechaReclamada": "5-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "648"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// ✅ RÓTULO FIRMADO POR EL FUNDADOR (5-sep-2026): «No hemos podido comprobar el plazo.», 35"
+ },
+ {
+  "donde": "public/dashboard/js/jobDetailView.js:401",
+  "nivel": "documental",
+  "fechaLinea": "2026-08-13",
+  "fechaReclamada": "5-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [],
+  "docRespaldo": "docs/master/SCRUM-607.md",
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// MICROCOPY APROBADA por el fundador el 5-ago-2026 (regla 30), los cinco tal cual. Ya no llevan"
+ },
+ {
+  "donde": "public/dashboard/js/jobDetailView.js:484",
+  "nivel": "documental",
+  "fechaLinea": "2026-08-13",
+  "fechaReclamada": "5-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [],
+  "docRespaldo": "docs/master/SCRUM-303.md",
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// MICROCOPY APROBADA por el fundador el 5-ago-2026 (regla 30). Ya NO lleva el marcador"
+ },
+ {
+  "donde": "public/dashboard/js/jobDetailView.js:2124",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-13",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "366"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// cuando el ejecutor vive allí: es el precedente que el fundador aprobó en SCRUM-366 para la"
+ },
+ {
+  "donde": "public/dashboard/js/jobNextAction.js:54",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-05",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "31"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-31 (F4): resolver de la SIGUIENTE acción del héroe (escalera aprobada por el fundador)."
+ },
+ {
+  "donde": "public/dashboard/js/jobNuevoModal.js:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-03",
+  "fechaReclamada": "3-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "651"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// ✅ MICROCOPY APROBADA AL COMPLETO (regla 30): el fundador firmó los diez textos que quedaban"
+ },
+ {
+  "donde": "public/dashboard/js/jobRailBlocks.js:19",
+  "nivel": "sin-respaldo",
+  "grupo": "3"
+ },
+ {
+  "donde": "public/dashboard/js/jobsCierreTrabajo.js:37",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-05",
+  "fechaReclamada": "5-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "299"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// ── LAS CINCO RANURAS DE TEXTO · MICROCOPY APROBADA POR EL FUNDADOR (regla 30, 5-ago-2026) ──"
+ },
+ {
+  "donde": "public/dashboard/js/jobsView.js:63",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-02",
+  "fechaReclamada": "2-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "651"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// tiene al lado. Se reporto y el fundador firmo los dos textos el 2-sep-2026 (regla 30)."
+ },
+ {
+  "donde": "public/dashboard/js/jobsView.js:79",
+  "nivel": "anclado",
+  "fechaLinea": "2026-09-06",
+  "fechaReclamada": "6-sep-2026",
+  "asesorBloque": false,
+  "pares": [
+   "769c14580"
+  ],
+  "tickets": [
+   "769"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-06-SCRUM-769-las-cinco-pantallas.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-769 · rótulo FIRMADO por el fundador el 6-sep-2026: «Trabajo nuevo» → «Nuevo trabajo»,"
+ },
+ {
+  "donde": "public/dashboard/js/jobTrabajoPlegable.js:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-21",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "915",
+   "917"
+  ],
+  "microcopy": [
+   "DELEGADA:2026-09-18-SCRUM-915-pasos-del-editor.md",
+   "DELEGADA:2026-09-20-SCRUM-915-documento-vivo.md",
+   "DELEGADA:2026-09-20-SCRUM-915-ver-documento.md",
+   "DELEGADA:2026-09-21-SCRUM-915-ajustes-del-justificante.md",
+   "DELEGADA:2026-09-21-SCRUM-915-cabecera-del-editor.md",
+   "DELEGADA:2026-09-21-SCRUM-915-conceptos-limpios.md",
+   "DELEGADA:2026-09-21-SCRUM-915-marcadores-firmados.md",
+   "DELEGADA:2026-09-18-SCRUM-917-lista-de-trabajos.md",
+   "DELEGADA:2026-09-18-SCRUM-917-lista-singulares.md",
+   "DELEGADA:2026-09-20-SCRUM-917-franja-del-dinero.md",
+   "DELEGADA:2026-09-21-SCRUM-917-el-trabajo-plegable.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// haga falta abrirlas para saber qué hay dentro. Es el mismo patrón que el fundador aprobó en el"
+ },
+ {
+  "donde": "public/dashboard/js/onboardingView.js:48",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-10",
+  "fechaReclamada": "9-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "338"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-338 · el aviso de que el catálogo no se cargó. Microcopy APROBADA por el fundador"
+ },
+ {
+  "donde": "public/dashboard/js/parteDetailView.js:40",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-07",
+  "fechaReclamada": "4-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "720"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-04-SCRUM-720-los-diez-que-faltaban.md",
+   "F-TICKET:2026-09-04-SCRUM-720-rotulos-del-parte.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// APROBADO por el fundador el 4-sep-2026 (SCRUM-720c,"
+ },
+ {
+  "donde": "public/dashboard/js/parteDetailView.js:57",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-07",
+  "fechaReclamada": "4-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "720"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-04-SCRUM-720-los-diez-que-faltaban.md",
+   "F-TICKET:2026-09-04-SCRUM-720-rotulos-del-parte.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// APROBADO por el fundador el 4-sep-2026 (SCRUM-720,"
+ },
+ {
+  "donde": "public/dashboard/js/parteDetailView.js:67",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-07",
+  "fechaReclamada": "7-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "818"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-07-SCRUM-818-cabecera-de-la-descripcion.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// La segunda cabecera de las líneas. FIRMADA por el fundador el 7-sep-2026 (SCRUM-818): es la"
+ },
+ {
+  "donde": "public/dashboard/js/parteDetailView.js:162",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-07",
+  "fechaReclamada": "4-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "720"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-04-SCRUM-720-los-diez-que-faltaban.md",
+   "F-TICKET:2026-09-04-SCRUM-720-rotulos-del-parte.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// APROBADO por el fundador el 4-sep-2026 (SCRUM-720c,"
+ },
+ {
+  "donde": "public/dashboard/js/productsView.js:1178",
+  "nivel": "documental",
+  "fechaLinea": "2026-08-13",
+  "fechaReclamada": "5-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [],
+  "docRespaldo": "docs/master/SCRUM-313.md",
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Microcopy APROBADA por el fundador (5-ago-2026), literal."
+ },
+ {
+  "donde": "public/dashboard/js/productsView.js:1214",
+  "nivel": "documental",
+  "fechaLinea": "2026-08-13",
+  "fechaReclamada": "5-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [],
+  "docRespaldo": "docs/master/SCRUM-364.md",
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Microcopy APROBADA por el fundador (5-ago-2026). Va ANTES de cargar, no después: dice lo"
+ },
+ {
+  "donde": "public/dashboard/js/quoteActionsRegistry.js:68",
+  "nivel": "sin-respaldo",
+  "grupo": "3"
+ },
+ {
+  "donde": "public/dashboard/js/quoteMargen.js:64",
+  "nivel": "sin-respaldo",
+  "grupo": "3"
+ },
+ {
+  "donde": "public/dashboard/js/quoteRevisiones.js:34",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-28",
+  "fechaReclamada": "3-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "688",
+   "1215",
+   "1157",
+   "402"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-16-SCRUM-688-crear-revision.md",
+   "DELEGADA:2026-09-28-SCRUM-1215-anadir-al-parte.md",
+   "DELEGADA:2026-10-02-SCRUM-1215-pista-del-tecnico.md",
+   "DELEGADA:2026-10-06-SCRUM-1215-anadir-foto-del-albaran.md",
+   "DELEGADA:2026-10-06-SCRUM-1215-hoja-facturar-lo-entregado.md",
+   "DELEGADA:2026-10-09-SCRUM-1215-direccion-de-la-obra.md",
+   "DELEGADA:2026-10-09-SCRUM-1215-proveedores-dos-fallos.md",
+   "F-TICKET:2026-09-03-SCRUM-402-abrir-parte-fallo.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// ✅ Los OCHO rótulos están APROBADOS por el fundador (regla 30), en dos actos:"
+ },
+ {
+  "donde": "public/dashboard/js/quoteRevisiones.js:178",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-16",
+  "fechaReclamada": "15-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "688"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-16-SCRUM-688-crear-revision.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "* El POST está aprobado por el fundador (15-sep-2026) y lo atiende"
+ },
+ {
+  "donde": "public/dashboard/js/quotesView.js:405",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-12",
+  "fechaReclamada": "17-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "284"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// `TITULO_PENDIENTE` se BORRA el 17-ago-2026: el fundador aprobó los cuatro títulos de bloque y"
+ },
+ {
+  "donde": "public/dashboard/js/quotesView.js:429",
+  "nivel": "anclado",
+  "fechaLinea": "2026-09-18",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "915c15868"
+  ],
+  "tickets": [
+   "915"
+  ],
+  "microcopy": [
+   "DELEGADA:2026-09-18-SCRUM-915-pasos-del-editor.md",
+   "DELEGADA:2026-09-20-SCRUM-915-documento-vivo.md",
+   "DELEGADA:2026-09-20-SCRUM-915-ver-documento.md",
+   "DELEGADA:2026-09-21-SCRUM-915-ajustes-del-justificante.md",
+   "DELEGADA:2026-09-21-SCRUM-915-cabecera-del-editor.md",
+   "DELEGADA:2026-09-21-SCRUM-915-conceptos-limpios.md",
+   "DELEGADA:2026-09-21-SCRUM-915-marcadores-firmados.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// SÓLO EL ACTUAL ABIERTO (v3 del prototipo, aprobada por el fundador: `docs/prototipos/SCRUM-915/`)."
+ },
+ {
+  "donde": "public/dashboard/js/quotesView.js:1299",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-06",
+  "fechaReclamada": "4-sep-2026",
+  "asesorBloque": true,
+  "pares": [],
+  "tickets": [
+   "591",
+   "402",
+   "586",
+   "726"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-03-SCRUM-402-abrir-parte-fallo.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "* de una ya firmada**. El fundador aprobó «Descuento pactado (%)» el 4-sep-2026 en el modal de"
+ },
+ {
+  "donde": "public/dashboard/js/quotesView.js:1337",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-21",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "915",
+   "586"
+  ],
+  "microcopy": [
+   "DELEGADA:2026-09-18-SCRUM-915-pasos-del-editor.md",
+   "DELEGADA:2026-09-20-SCRUM-915-documento-vivo.md",
+   "DELEGADA:2026-09-20-SCRUM-915-ver-documento.md",
+   "DELEGADA:2026-09-21-SCRUM-915-ajustes-del-justificante.md",
+   "DELEGADA:2026-09-21-SCRUM-915-cabecera-del-editor.md",
+   "DELEGADA:2026-09-21-SCRUM-915-conceptos-limpios.md",
+   "DELEGADA:2026-09-21-SCRUM-915-marcadores-firmados.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// propuesta»—, y el fundador firmó un rótulo para cada uno: «Aplicar» aquí, donde lo que se"
+ },
+ {
+  "donde": "public/dashboard/js/quotesView.js:1695",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-06",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "794"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// abajo, a ancho completo pegado a la última línea. El fundador firmó quedarse con el de abajo."
+ },
+ {
+  "donde": "public/dashboard/js/reportsView.js:629",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-25",
+  "fechaReclamada": null,
+  "asesorBloque": true,
+  "pares": [],
+  "tickets": [
+   "1049"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// ✅ Texto APROBADO por el fundador (Jira SCRUM-1049, comentario de firma; corrige la"
+ },
+ {
+  "donde": "public/dashboard/js/reportsView.js:1204",
+  "nivel": "sin-respaldo",
+  "grupo": "3"
+ },
+ {
+  "donde": "public/dashboard/js/rotulosDelDocumento.js:69",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-16",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "867"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// el modal viejo, retirado en SCRUM-867, y el fundador decidió retirarlo: una página no es un"
+ },
+ {
+  "donde": "public/dashboard/js/semaforoFiscal.js:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-07-29",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "210"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Microcopy: regla 30 — aprobado por el fundador antes de programar. NO se reformula aquí."
+ },
+ {
+  "donde": "public/dashboard/js/settingsSubmenus.js:36",
+  "nivel": "anclado",
+  "fechaLinea": "2026-10-23",
+  "fechaReclamada": "5-ago-2026",
+  "asesorBloque": false,
+  "pares": [
+   "1502c20514"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* LOS NUEVE RÓTULOS — APROBADOS por el fundador (5-ago-2026, regla 30)."
+ },
+ {
+  "donde": "public/dashboard/js/settingsView.js:3",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-12",
+  "fechaReclamada": "7-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "298"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// **Aprobados por el fundador el 7-ago-2026**, con la condición de verificar cada afirmación"
+ },
+ {
+  "donde": "public/dashboard/js/settingsView.js:311",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-01",
+  "fechaReclamada": "1-oct-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1102"
+  ],
+  "microcopy": [
+   "F-LOC:2026-10-01-SCRUM-1102-opciones-si-y-no.md",
+   "F-LOC:2026-10-01-SCRUM-1102-sii-y-domicilio-foral.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// MICROCOPY (regla 39): los dos enunciados, aprobados por el fundador el 1-oct-2026 en"
+ },
+ {
+  "donde": "public/dashboard/js/settingsView.js:998",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-03",
+  "fechaReclamada": "3-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "656",
+   "402"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-03-SCRUM-402-abrir-parte-fallo.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// ✅ MICROCOPY APROBADA por el fundador el 3-sep-2026 (regla 30). LITERAL, sin marcador."
+ },
+ {
+  "donde": "public/dashboard/js/settingsView.js:1787",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-12",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "314"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Los cuatro textos son los APROBADOS por el fundador (regla 30) y van literales."
+ },
+ {
+  "donde": "public/dashboard/js/textoDelDocumento.js:27",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-02",
+  "fechaReclamada": "2-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "593",
+   "387"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* ✅ El rótulo del campo de CABECERA · APROBADO por el fundador el 2-sep-2026."
+ },
+ {
+  "donde": "public/dashboard/js/textoDelDocumento.js:41",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-02",
+  "fechaReclamada": "2-sep-2026",
+  "asesorBloque": true,
+  "pares": [],
+  "tickets": [
+   "593",
+   "387"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* ✅ El rótulo del bloque FINAL · APROBADO por el fundador el 2-sep-2026."
+ },
+ {
+  "donde": "public/dashboard/js/tipoDestinatarioPendiente.js:55",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-24",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "615"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// `customerDetailView.js:312-316`. Si algún día el fundador los aprueba de nuevo, se cambian en"
+ },
+ {
+  "donde": "public/dashboard/js/voiceInput.js:45",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-02",
+  "fechaReclamada": "2-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "674"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-674 (2-sep-2026) · TEXTO APROBADO por el fundador (regla 30). Sale ya sin marca; queda"
+ },
+ {
+  "donde": "tests/scrum1016o-aria-label-firmado.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-24",
+  "fechaReclamada": "24-oct-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1016"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// FIRMA (regla 39): SCRUM-1016 c.20778, P4, 24-oct-2026 — el fundador firma el literal propuesto por"
+ },
+ {
+  "donde": "tests/scrum1022-importa-xlsx-real.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-23",
+  "fechaReclamada": "21-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1022"
+  ],
+  "microcopy": [
+   "DELEGADA:2026-09-25-SCRUM-1022-importar-boton-y-titulo.md",
+   "DELEGADA:2026-09-25-SCRUM-1022-importar-xlsx.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// El fundador autorizó `read-excel-file` (regla 36, comentario 16597 de SCRUM-1022). Esta tanda la"
+ },
+ {
+  "donde": "tests/scrum1027-atajo-flag-off-sin-documento.test.mjs:200",
+  "nivel": "anclado",
+  "fechaLinea": "2026-09-28",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "825c17446"
+  ],
+  "tickets": [
+   "825"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-825 (D1 y D2, FIRMADAS por el fundador: «1-Sí a las 3», SCRUM-825 comentario 17446)."
+ },
+ {
+  "donde": "tests/scrum1027-atajo-flag-off-sin-documento.test.mjs:223",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-22",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "895"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// frase que el fundador aprobó explícitamente para no nombrar el justificante retirado sigue."
+ },
+ {
+  "donde": "tests/scrum1041-facturas-emitidas-sin-marcador.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-22",
+  "fechaReclamada": "19-ago-2026",
+  "asesorBloque": true,
+  "pares": [],
+  "tickets": [
+   "1041"
+  ],
+  "microcopy": [
+   "DELEGADA:2026-09-22-SCRUM-1041-facturas-emitidas.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// LOS 4 TEXTOS DE LA CARD «FACTURAS EMITIDAS» (exportView.js), FIRMADOS POR EL FUNDADOR"
+ },
+ {
+  "donde": "tests/scrum1043a-quien-me-debe-pantalla.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-23",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1043"
+  ],
+  "microcopy": [
+   "F-LOC:2026-10-23-SCRUM-1043-quien-me-debe.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// Lo que se construye, con los textos FIRMADOS por el fundador en SCRUM-1043 c.20536 (las A de c.20533):"
+ },
+ {
+  "donde": "tests/scrum1065c-marca-borrador.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-24",
+  "fechaReclamada": "24-oct-2026",
+  "asesorBloque": true,
+  "pares": [],
+  "tickets": [
+   "1064",
+   "1065"
+  ],
+  "microcopy": [
+   "F-LOC:2026-10-24-SCRUM-1065-marca-borrador.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// El fundador firmó «Borrador para tu asesor» (SCRUM-1064 c.20780, T2) como marca de los"
+ },
+ {
+  "donde": "tests/scrum1128-envio-construido.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-25",
+  "fechaReclamada": "25-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1127"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// (medido en SCRUM-1127). El criterio nuevo, aprobado por el fundador el 25-sep-2026, exige LAS"
+ },
+ {
+  "donde": "tests/scrum1132-notas-en-la-ficha.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-23",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1132"
+  ],
+  "microcopy": [
+   "F-LOC:2026-10-14-SCRUM-1132-notas-del-cliente.md",
+   "F-LOC:2026-10-23-SCRUM-1132-notas-respaldo.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// Textos firmados por el fundador: docs/microcopy/2026-10-14-SCRUM-1132-notas-del-cliente.md y"
+ },
+ {
+  "donde": "tests/scrum1145-pestana-sitios.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-23",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1145"
+  ],
+  "microcopy": [
+   "F-LOC:2026-10-23-SCRUM-1145-sitios-del-cliente.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// Textos firmados por el fundador en SCRUM-1145 c.20592 y c.20598"
+ },
+ {
+  "donde": "tests/scrum1250b-pay-unpay-desmontadas.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-24",
+  "fechaReclamada": "24-oct-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1250"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// ninguna pantalla llamaba (medido en SCRUM-1250 c.20742). El fundador firmó desmontarlas"
+ },
+ {
+  "donde": "tests/scrum1251b-el-zip-dice-cuantas-facturas.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-23",
+  "fechaReclamada": "23-oct-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1602"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// pantalla puede decir honestamente que el periodo está vacío. El fundador decidió «Avisar» (c.20675,"
+ },
+ {
+  "donde": "tests/scrum1260b-el-emisor-ya-no-escribe-just.test.mjs:1",
+  "nivel": "anclado",
+  "fechaLinea": "2026-10-21",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "1260c19616"
+  ],
+  "tickets": [
+   "1260"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// El fundador decidió retirarla: «si lo de JUST es por los justificantes tumbalo ya. No hay"
+ },
+ {
+  "donde": "tests/scrum1322-el-bot-entiende-lo-que-pide.test.mjs:106",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-01",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1326"
+  ],
+  "microcopy": [
+   "F-LOC:2026-10-01-SCRUM-1326-vale-pregunta-una-vez.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-1326 (firmado por el fundador, comentarios 17692 y 17802): estas ocho, sueltas, YA NO aceptan: el"
+ },
+ {
+  "donde": "tests/scrum1322-el-bot-entiende-lo-que-pide.test.mjs:333",
+  "nivel": "anclado",
+  "fechaLinea": "2026-10-26",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "1322c20957"
+  ],
+  "tickets": [
+   "1322"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Literal firmado por el fundador en SCRUM-1322 comentario 20957 (opción A): «{Negocio} ya tiene"
+ },
+ {
+  "donde": "tests/scrum1322-el-bot-entiende-lo-que-pide.test.mjs:368",
+  "nivel": "anclado",
+  "fechaLinea": "2026-10-26",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "1322c20977"
+  ],
+  "tickets": [
+   "1322"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Literal de reserva firmado por el fundador en SCRUM-1322 comentario 20977: si `merchant.name`"
+ },
+ {
+  "donde": "tests/scrum1326-vale-pregunta-una-vez.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-01",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1326"
+  ],
+  "microcopy": [
+   "F-LOC:2026-10-01-SCRUM-1326-vale-pregunta-una-vez.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// «recibido». El fundador firmó (SCRUM-1326, comentarios 17692 y 17802) que ocho palabras —`vale`,"
+ },
+ {
+  "donde": "tests/scrum1341-actividad-del-equipo-sin-importes.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-01",
+  "fechaReclamada": "1-oct-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1337"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// El fundador firmó dos cosas el 1-oct-2026: «el operario ve la actividad de sus compañeros»"
+ },
+ {
+  "donde": "tests/scrum1342-plan-desconocido-no-calla.test.mjs:102",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-02",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1342"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Lo que el fundador firmó en `docs/YAQU_MASTER.md`, Parte W (SCRUM-1342): W3, 1 usuario Pro y 5"
+ },
+ {
+  "donde": "tests/scrum139-cuadernillo.test.mjs:22",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-21",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "915"
+  ],
+  "microcopy": [
+   "DELEGADA:2026-09-18-SCRUM-915-pasos-del-editor.md",
+   "DELEGADA:2026-09-20-SCRUM-915-documento-vivo.md",
+   "DELEGADA:2026-09-20-SCRUM-915-ver-documento.md",
+   "DELEGADA:2026-09-21-SCRUM-915-ajustes-del-justificante.md",
+   "DELEGADA:2026-09-21-SCRUM-915-cabecera-del-editor.md",
+   "DELEGADA:2026-09-21-SCRUM-915-conceptos-limpios.md",
+   "DELEGADA:2026-09-21-SCRUM-915-marcadores-firmados.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// («varias líneas son una invitación»). La v3 del editor, APROBADA por el fundador"
+ },
+ {
+  "donde": "tests/scrum1449b-la-pagina-de-mercado-pago.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-23",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1449"
+  ],
+  "microcopy": [
+   "F-LOC:2026-10-06-SCRUM-1449-pago-mercado-pago.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// (medido en SCRUM-1449, registro de J1). El fundador firmó los tres textos en Jira, c.18285."
+ },
+ {
+  "donde": "tests/scrum151-motivo-sin-tramo.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-07-27",
+  "fechaReclamada": "27-jul-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "151"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// de pago\". El fundador decidió después que un Trabajo MANUAL/SIN_CONDICIONES **sí debe poder"
+ },
+ {
+  "donde": "tests/scrum151-motivo-sin-tramo.test.mjs:53",
+  "nivel": "anclado",
+  "fechaLinea": "2026-07-27",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "1502c20834"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Y no puede sonar a \"aquí no se factura\": el fundador decidió que MANUAL sí debe poder"
+ },
+ {
+  "donde": "tests/scrum1546c-la-firma-del-fundador-sin-comprobar.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-14",
+  "fechaReclamada": "14-oct-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1546"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Una ficha con «**Aprobado por el fundador** … en **SCRUM-999999**» —un ticket que Jira da 404—"
+ },
+ {
+  "donde": "tests/scrum1562g-facturas-con-teclado.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-27",
+  "fechaReclamada": "27-oct-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1562"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// su propia celda, con el rótulo que el fundador firmó para las tres listas (SCRUM-1562 c.21125)."
+ },
+ {
+  "donde": "tests/scrum1565-fin-de-periodo-clover.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-20",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "809"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// 🔵 LA RECETA ES LA DE S1 (SCRUM-809c), AUTORIZADA por el fundador (uuid 1c5a7185-…, 18-oct 18:35:52Z):"
+ },
+ {
+  "donde": "tests/scrum1588-alquiler-en-las-categorias.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-29",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1066"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// El fundador decidió añadir la categoría de alquiler (SCRUM-1066 c.20479) y J1 ya enseñó al"
+ },
+ {
+  "donde": "tests/scrum1609-fecha-de-cobro-de-una-en-una.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-26",
+  "fechaReclamada": "10-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "397"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-397 (criterio firmado por el fundador el 10-ago-2026: no futura, sin límite hacia atrás). Su hermano"
+ },
+ {
+  "donde": "tests/scrum1616b-provincias-bilingues.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-27",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1616"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Firmado por el fundador (Jira SCRUM-1616 c.21066, sobre la medición de c.21062): la tabla de"
+ },
+ {
+  "donde": "tests/scrum244-menu-portabilidad.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-04",
+  "fechaReclamada": "4-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "244",
+   "264"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// había textos aprobados. **El 4-ago-2026 el fundador aprobó los ocho y el guard se dio la"
+ },
+ {
+  "donde": "tests/scrum244-menu-portabilidad.test.mjs:43",
+  "nivel": "anclado",
+  "fechaLinea": "2026-08-04",
+  "fechaReclamada": "4-ago-2026",
+  "asesorBloque": false,
+  "pares": [
+   "1502c20702"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// LOS OCHO TEXTOS APROBADOS POR EL FUNDADOR (4-ago-2026). LITERALES."
+ },
+ {
+  "donde": "tests/scrum257-albaran-desde-presupuesto.test.mjs:26",
+  "nivel": "anclado",
+  "fechaLinea": "2026-10-23",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "1502c20702"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "/** El texto oficial del rechazo (regla 30, aprobado por el fundador en el ticket)."
+ },
+ {
+  "donde": "tests/scrum257-albaran-desde-presupuesto.test.mjs:145",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-04",
+  "fechaReclamada": "4-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "651"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// El fundador decidió que una AVERÍA abierta como trabajo directo (SCRUM-651) SÍ puede entregar"
+ },
+ {
+  "donde": "tests/scrum267-ancla-de-medicion.test.mjs:394",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-19",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "243",
+   "273",
+   "244",
+   "516"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// 226 ficheros · 317 entradas · 286 con ancla · 31 sin ella. **El fundador decidió qué hacer con"
+ },
+ {
+  "donde": "tests/scrum283-censo-acciones-factura.test.mjs:118",
+  "nivel": "anclado",
+  "fechaLinea": "2026-08-17",
+  "fechaReclamada": "17-ago-2026",
+  "asesorBloque": false,
+  "pares": [
+   "1502c20834"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// 17-ago-2026 · el rótulo ya no es el marcador: el fundador aprobó «Marcar como cobrada». Lo que"
+ },
+ {
+  "donde": "tests/scrum284-configuracion-submenus.test.mjs:131",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-12",
+  "fechaReclamada": "5-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "483",
+   "277",
+   "344"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Los rótulos están APROBADOS por el fundador (5-ago-2026). No eran redacción nueva: los nueve"
+ },
+ {
+  "donde": "tests/scrum291-series-huecos.test.mjs:99",
+  "nivel": "anclado",
+  "fechaLinea": "2026-08-05",
+  "fechaReclamada": "5-ago-2026",
+  "asesorBloque": false,
+  "pares": [
+   "1502c20514"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Aprobado por el fundador el 5-ago-2026. Sustituye al assert de «va marcado como pendiente»,"
+ },
+ {
+  "donde": "tests/scrum294c-criterio-del-merchant.test.mjs:175",
+  "nivel": "anclado",
+  "fechaLinea": "2026-08-19",
+  "fechaReclamada": "17-ago-2026",
+  "asesorBloque": true,
+  "pares": [
+   "1502c20834"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// 17-ago-2026 · APROBADO por el fundador. El motivo por el que llevaba marcador sigue escrito"
+ },
+ {
+  "donde": "tests/scrum298-modo-visible.test.mjs:229",
+  "nivel": "documental",
+  "fechaLinea": "2026-08-07",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [],
+  "docRespaldo": "docs/master/SCRUM-1257.md",
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* mecanismo se verificó. Las dos cosas, y la segunda no es adorno: el fundador aprobó estos textos"
+ },
+ {
+  "donde": "tests/scrum299-copy-factura-publico.test.mjs:27",
+  "nivel": "anclado",
+  "fechaLinea": "2026-08-04",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "299c12188"
+  ],
+  "tickets": [
+   "299"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// APROBADOS por el fundador (reglas 26/30) — :380 «Recibe el enlace de pago» · :424 «Ya puedes"
+ },
+ {
+  "donde": "tests/scrum300-firmante-ids-y-microcopy.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-05",
+  "fechaReclamada": "6-ago-2026",
+  "asesorBloque": true,
+  "pares": [],
+  "tickets": [
+   "300"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "//   · Las seis etiquetas son PANTALLA. **APROBADAS por el fundador el 6-ago-2026**, literales."
+ },
+ {
+  "donde": "tests/scrum303-albaran-una-pantalla.test.mjs:203",
+  "nivel": "documental",
+  "fechaLinea": "2026-08-05",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [],
+  "docRespaldo": "docs/YAQU_MASTER.md",
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Antes este guard exigía el marcador de pendiente. Ahora que el fundador aprobó los siete"
+ },
+ {
+  "donde": "tests/scrum317-trabajo-por-su-nombre.test.mjs:278",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-21",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "917"
+  ],
+  "microcopy": [
+   "DELEGADA:2026-09-18-SCRUM-917-lista-de-trabajos.md",
+   "DELEGADA:2026-09-18-SCRUM-917-lista-singulares.md",
+   "DELEGADA:2026-09-20-SCRUM-917-franja-del-dinero.md",
+   "DELEGADA:2026-09-21-SCRUM-917-el-trabajo-plegable.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// MARCADOR: el fundador firmó otro (SCRUM-917, com. 15881, `docs/prototipos/SCRUM-917/textos-"
+ },
+ {
+  "donde": "tests/scrum320-que-falta-para-cobrar.test.mjs:36",
+  "nivel": "anclado",
+  "fechaLinea": "2026-10-23",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "1502c20629"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "/** El ejemplo aprobado por el fundador, con sus números exactos."
+ },
+ {
+  "donde": "tests/scrum320-que-falta-para-cobrar.test.mjs:253",
+  "nivel": "anclado",
+  "fechaLinea": "2026-08-06",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "1502c20834"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// que no se quedara en una nota que nadie relee. El fundador decidió el cuarto hueco y esa"
+ },
+ {
+  "donde": "tests/scrum331-heroe.test.mjs:197",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-14",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1016"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Firmado por el fundador: SCRUM-1016 c.16564, ratificado en c.19607 («Ok firmamos»)."
+ },
+ {
+  "donde": "tests/scrum338-carga-de-catalogo-no-muda.test.mjs:109",
+  "nivel": "anclado",
+  "fechaLinea": "2026-08-10",
+  "fechaReclamada": "9-ago-2026",
+  "asesorBloque": false,
+  "pares": [
+   "1502c20702"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Microcopy aprobada por el fundador el 9-ago-2026. El guard compara contra la CONSTANTE que"
+ },
+ {
+  "donde": "tests/scrum344-cierre-con-saldo.test.mjs:30",
+  "nivel": "anclado",
+  "fechaLinea": "2026-08-05",
+  "fechaReclamada": "5-ago-2026",
+  "asesorBloque": false,
+  "pares": [
+   "1502c20702"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Aprobada por el fundador el 5-ago-2026. Este bloque es la COPIA CANÓNICA y el módulo tiene que"
+ },
+ {
+  "donde": "tests/scrum364-cambiar-gremio.test.mjs:138",
+  "nivel": "anclado",
+  "fechaLinea": "2026-08-05",
+  "fechaReclamada": "5-ago-2026",
+  "asesorBloque": false,
+  "pares": [
+   "1502c20702"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Aprobada por el fundador el 5-ago-2026. Va ANTES de cargar: el servidor NUNCA sustituye el"
+ },
+ {
+  "donde": "tests/scrum377-plural-de-programador.test.mjs:72",
+  "nivel": "anclado",
+  "fechaLinea": "2026-08-10",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "1502c20853"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// 9-ago: 26. 10-ago: 6, tras aplicar la microcopy aprobada por el fundador."
+ },
+ {
+  "donde": "tests/scrum394-plan-mudo.test.mjs:264",
+  "nivel": "anclado",
+  "fechaLinea": "2026-08-07",
+  "fechaReclamada": "7-ago-2026",
+  "asesorBloque": false,
+  "pares": [
+   "1502c20702"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Aprobada por el fundador el 7-ago-2026. Cambiar una coma exige aprobación nueva (regla 30):"
+ },
+ {
+  "donde": "tests/scrum404-trazo-no-se-pierde.test.mjs:106",
+  "nivel": "documental",
+  "fechaLinea": "2026-08-07",
+  "fechaReclamada": "7-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [],
+  "docRespaldo": "docs/MICROCOPY_APROBADA_SIN_APLICAR.md",
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Esta parte cambió el 7-ago-2026 porque el FUNDADOR APROBÓ el texto de «sin conexión», no"
+ },
+ {
+  "donde": "tests/scrum411-exports-inalcanzables.test.mjs:68",
+  "nivel": "anclado",
+  "fechaLinea": "2026-08-12",
+  "fechaReclamada": "12-ago-2026",
+  "asesorBloque": false,
+  "pares": [
+   "1404c18840"
+  ],
+  "tickets": [
+   "294"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// llamador. No es deuda ni olvido: el fundador decidió que el reintento sólo alcance facturas nacidas"
+ },
+ {
+  "donde": "tests/scrum427-notas-internas-detalle.test.mjs:183",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-21",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "917"
+  ],
+  "microcopy": [
+   "DELEGADA:2026-09-18-SCRUM-917-lista-de-trabajos.md",
+   "DELEGADA:2026-09-18-SCRUM-917-lista-singulares.md",
+   "DELEGADA:2026-09-20-SCRUM-917-franja-del-dinero.md",
+   "DELEGADA:2026-09-21-SCRUM-917-el-trabajo-plegable.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "//   · EL PLACEHOLDER ya NO es el de Presupuestos, A PROPÓSITO: el fundador firmó otro para esta"
+ },
+ {
+  "donde": "tests/scrum428-terminado-sin-cobrar.test.mjs:120",
+  "nivel": "anclado",
+  "fechaLinea": "2026-08-10",
+  "fechaReclamada": "10-ago-2026",
+  "asesorBloque": false,
+  "pares": [
+   "1502c20702"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* El texto aprobado por el fundador (10-ago-2026), LITERAL y con su `{N}` sustituido."
+ },
+ {
+  "donde": "tests/scrum497-dato-personal-no-sobrevive.test.mjs:41",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-21",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1569"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// que el profesional elige («Piso 3ºB»), no el de una persona». El fundador decidió lo contrario"
+ },
+ {
+  "donde": "tests/scrum497-dato-personal-no-sobrevive.test.mjs:514",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-21",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1569"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// esta lista hasta SCRUM-1569d: el fundador decidió en c.20142 que se anonimiza.)"
+ },
+ {
+  "donde": "tests/scrum505-dato-personal-en-contenido.test.mjs:130",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-21",
+  "fechaReclamada": "21-oct-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1569"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-1569d · el inventario se re-midió el 21-oct-2026: el fundador decidió que estos dos se"
+ },
+ {
+  "donde": "tests/scrum514-aprobado-y-aplicado.test.mjs:235",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-01",
+  "fechaReclamada": "1-oct-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1329"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* que a una frase larga que el fundador firmó y que SÍ está en la pantalla. Y las frases legales y"
+ },
+ {
+  "donde": "tests/scrum514-aprobado-y-aplicado.test.mjs:963",
+  "nivel": "anclado",
+  "fechaLinea": "2026-10-01",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "1258c17713"
+  ],
+  "tickets": [
+   "1258"
+  ],
+  "microcopy": [
+   "F-LOC:2026-10-01-SCRUM-1258-tipo-distinto-del-sellado.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "/** El literal que el fundador firmó en SCRUM-1258 comentario 17713, en UNA línea. */"
+ },
+ {
+  "donde": "tests/scrum534r-el-p1-se-ve-entero.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-14",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "534"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// readLegalDoc real sobre main 11ca1e05f: versión 17275d59e185). El fundador autorizó reparar"
+ },
+ {
+  "donde": "tests/scrum557-alcance-por-identidad.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-20",
+  "fechaReclamada": "20-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "557",
+   "551"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// No es hipotético. El fundador aprobó los 37 textos el 20-ago-2026, y registrar esa aprobación"
+ },
+ {
+  "donde": "tests/scrum568-promesa-con-mecanismo.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-20",
+  "fechaReclamada": "20-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "564"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// El fundador decidió el 20-ago-2026, después de leer la medición de SCRUM-564: **no se"
+ },
+ {
+  "donde": "tests/scrum574-mismo-cliente-tras-migracion.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-24",
+  "fechaReclamada": "24-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "574"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// el diff (`docs/sql/SCRUM-574-opcion-B.diff`) esperaba su GO. El fundador lo autorizó el"
+ },
+ {
+  "donde": "tests/scrum581-pestanas-y-orden-clientes.test.mjs:137",
+  "nivel": "documental",
+  "fechaLinea": "2026-09-02",
+  "fechaReclamada": "2-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [],
+  "docRespaldo": "docs/master/SCRUM-581.md",
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// ✅ MICROCOPY APROBADA POR EL FUNDADOR EL 2-sep-2026 · Y FIJADA CON `===`"
+ },
+ {
+  "donde": "tests/scrum582-seleccion-multiple-clientes.test.mjs:187",
+  "nivel": "anclado",
+  "fechaLinea": "2026-09-04",
+  "fechaReclamada": "29-sep-2026",
+  "asesorBloque": false,
+  "pares": [
+   "1135c17449"
+  ],
+  "tickets": [
+   "1135"
+  ],
+  "microcopy": [
+   "DELEGADA:2026-09-28-SCRUM-1135-etiquetar-seleccion.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// 🔴 SCRUM-1135 · EL FUNDADOR DECIDIÓ DOS, y sólo dos: «1-Ok, sí» (SCRUM-1135 comentario 17449,"
+ },
+ {
+  "donde": "tests/scrum586-forma-de-pago-por-cliente.test.mjs:178",
+  "nivel": "anclado",
+  "fechaLinea": "2026-09-06",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "1502c20629"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// el fundador decidió. Se mide por ALCANZABILIDAD y no por la presencia de una llamada directa:"
+ },
+ {
+  "donde": "tests/scrum586-forma-de-pago-por-cliente.test.mjs:393",
+  "nivel": "anclado",
+  "fechaLinea": "2026-09-06",
+  "fechaReclamada": "5-sep-2026",
+  "asesorBloque": false,
+  "pares": [
+   "1502c20629"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// 🔴 Y NO SE HA APLICADO SOLA. Ésta es la mitad que el fundador decidió el 5-sep-2026."
+ },
+ {
+  "donde": "tests/scrum586-forma-de-pago-por-cliente.test.mjs:491",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-06",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "726"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Distingue «sin marcador» de «firmado por el fundador» (SCRUM-726). Si mañana entra un tercer"
+ },
+ {
+  "donde": "tests/scrum587-descuento-por-defecto.test.mjs:221",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-04",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "726"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Es lo que distingue «sin marcador en pantalla» de «firmado por el fundador» — la avería que"
+ },
+ {
+  "donde": "tests/scrum590b-el-campo-en-la-pantalla.test.mjs:47",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-08",
+  "fechaReclamada": "7-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "575"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* 🔴 EL RÓTULO FIRMADO POR EL FUNDADOR el 7-sep-2026, y se fija con `===`."
+ },
+ {
+  "donde": "tests/scrum591-alta-desde-el-documento.test.mjs:249",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-04",
+  "fechaReclamada": "4-sep-2026",
+  "asesorBloque": true,
+  "pares": [],
+  "tickets": [
+   "606",
+   "722"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-07-SCRUM-722-nuevo-albaran.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// 🔴 4-sep-2026 · 3 → 0: el fundador firmó los tres rótulos del atajo, y con ellos «Nuevo"
+ },
+ {
+  "donde": "tests/scrum593-cabecera-y-pie-del-documento.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-02",
+  "fechaReclamada": "2-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "655"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// (rótulo APROBADO por el fundador el 2-sep-2026; el de la cabecera sigue sin firmar y sale con"
+ },
+ {
+  "donde": "tests/scrum593b-superficie-texto-del-documento.test.mjs:21",
+  "nivel": "anclado",
+  "fechaLinea": "2026-09-02",
+  "fechaReclamada": "2-sep-2026",
+  "asesorBloque": false,
+  "pares": [
+   "593c14262",
+   "1502c20702"
+  ],
+  "tickets": [
+   "593"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Los DOS rótulos del FORMULARIO, firmados por el fundador el 2-sep-2026."
+ },
+ {
+  "donde": "tests/scrum593b-superficie-texto-del-documento.test.mjs:91",
+  "nivel": "anclado",
+  "fechaLinea": "2026-09-02",
+  "fechaReclamada": "2-sep-2026",
+  "asesorBloque": false,
+  "pares": [
+   "593c14262"
+  ],
+  "tickets": [
+   "593"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// MARCADOR, porque no estaba firmado. Ese mismo día el fundador lo firmó: «Añadir texto en el"
+ },
+ {
+  "donde": "tests/scrum594-descuentos-presupuesto.test.mjs:238",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-04",
+  "fechaReclamada": "4-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "712"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Aprobado por el fundador el 4-sep-2026: el porcentaje es un TERCER tipo junto al precio"
+ },
+ {
+  "donde": "tests/scrum599-navegacion-documentos-y-atajo.test.mjs:275",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-06",
+  "fechaReclamada": "6-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "769"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-06-SCRUM-769-las-cinco-pantallas.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// 🔴 SCRUM-769 · FIRMADOS POR EL FUNDADOR el 6-sep-2026. Firmó CINCO y sólo estos dos se han"
+ },
+ {
+  "donde": "tests/scrum599-navegacion-documentos-y-atajo.test.mjs:302",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-04",
+  "fechaReclamada": "4-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "599"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-04-SCRUM-599-atajo-nuevo.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// 🔴 4-sep-2026 · 3 → 0: EL FUNDADOR FIRMÓ LOS TRES RÓTULOS. El registro de la aprobación está"
+ },
+ {
+  "donde": "tests/scrum601-copy-del-documento-vs-flag.test.mjs:75",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-07",
+  "fechaReclamada": "7-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "67"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// (SCRUM-67), copiada byte a byte del PDF del albarán y refirmada por el fundador para este uso."
+ },
+ {
+  "donde": "tests/scrum601-copy-del-documento-vs-flag.test.mjs:87",
+  "nivel": "anclado",
+  "fechaLinea": "2026-09-17",
+  "fechaReclamada": "16-sep-2026",
+  "asesorBloque": true,
+  "pares": [
+   "887c15675",
+   "895c15699",
+   "920c15992",
+   "1216c17347",
+   "1257c17444",
+   "1402c20866",
+   "1251c20675"
+  ],
+  "tickets": [
+   "867",
+   "887",
+   "895",
+   "915",
+   "1040",
+   "426",
+   "1049",
+   "776",
+   "515",
+   "1155",
+   "920",
+   "1160",
+   "1164",
+   "1216",
+   "1257",
+   "825",
+   "1027",
+   "1232",
+   "1402",
+   "1602",
+   "1251"
+  ],
+  "microcopy": [
+   "DELEGADA:2026-09-17-SCRUM-887-albaran-con-descuento-global.md",
+   "DELEGADA:2026-09-17-SCRUM-887-cobrado-de-mas.md",
+   "DELEGADA:2026-09-17-SCRUM-887-descuento-global-varios-iva-editor.md",
+   "DELEGADA:2026-09-17-SCRUM-887-descuento-global-varios-iva-facturar.md",
+   "DELEGADA:2026-09-18-SCRUM-915-pasos-del-editor.md",
+   "DELEGADA:2026-09-20-SCRUM-915-documento-vivo.md",
+   "DELEGADA:2026-09-20-SCRUM-915-ver-documento.md",
+   "DELEGADA:2026-09-21-SCRUM-915-ajustes-del-justificante.md",
+   "DELEGADA:2026-09-21-SCRUM-915-cabecera-del-editor.md",
+   "DELEGADA:2026-09-21-SCRUM-915-conceptos-limpios.md",
+   "DELEGADA:2026-09-21-SCRUM-915-marcadores-firmados.md",
+   "DELEGADA:2026-09-26-SCRUM-1155-alta-rediseno.md",
+   "DELEGADA:2026-09-28-SCRUM-1257-vacio-facturas.md",
+   "DELEGADA:2026-10-01-SCRUM-1257-detalle-modo-receipt.md",
+   "DELEGADA:2026-09-28-SCRUM-1232-recuento-libro.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// El fundador firmó «parte», así que se aplica «parte»; unificarlo es de otro carril y necesita su"
+ },
+ {
+  "donde": "tests/scrum607-precios-fuera-del-albaran.test.mjs:355",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-04",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "726"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// 🔴 Y EL CONTADOR, que es lo que distingue «sin marcador» de «firmado por el fundador» — la"
+ },
+ {
+  "donde": "tests/scrum609b-switch-tipo-articulo.test.mjs:75",
+  "nivel": "anclado",
+  "fechaLinea": "2026-09-02",
+  "fechaReclamada": "2-sep-2026",
+  "asesorBloque": false,
+  "pares": [
+   "1502c20834"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// El fundador aprobó los tres textos TAL CUAL el 2-sep-2026 y se retiró el prefijo. El texto no"
+ },
+ {
+  "donde": "tests/scrum615-plazo-con-null.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-24",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "615"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// nunca** (15 filas, 15 en NULL). Mientras el fundador decide qué hacer con ese NULL, lo que no"
+ },
+ {
+  "donde": "tests/scrum616-que-guarda-la-factura.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-24",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "616",
+   "600"
+  ],
+  "microcopy": [
+   "DELEGADA:2026-09-15-SCRUM-600-plantillas-en-el-documento-suelto.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "//   (b) CAMBIO LA DECISION. El fundador decidio que la factura guarde otra cosa —por ejemplo,"
+ },
+ {
+  "donde": "tests/scrum627b-censo-declara-reimplementaciones.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-01",
+  "fechaReclamada": "25-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "627",
+   "389",
+   "604"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// el fundador aprobó el 25-ago-2026."
+ },
+ {
+  "donde": "tests/scrum636-sitio-unico-dinero.test.mjs:222",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-02",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "623"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// El fundador decidió la convención española en LOS CINCO sitios. El test se retira porque su"
+ },
+ {
+  "donde": "tests/scrum641-nombre-cogido-sin-500.test.mjs:182",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-04",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "726"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// ② EL CONTADOR, que es lo que distingue «sin marcador» de «firmado por el fundador» — la"
+ },
+ {
+  "donde": "tests/scrum647-presupuesto-tambien-neutral.test.mjs:61",
+  "nivel": "anclado",
+  "fechaLinea": "2026-10-26",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "1446c20939"
+  ],
+  "tickets": [
+   "1446"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// (literal firmado por el fundador en SCRUM-1446 comentario 20939), `indexOf('Total')` se iba al"
+ },
+ {
+  "donde": "tests/scrum647-presupuesto-tambien-neutral.test.mjs:97",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-26",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1446"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// cabecera dice «IMPORTE» desde SCRUM-1446f: literal firmado por el fundador en SCRUM-1446"
+ },
+ {
+  "donde": "tests/scrum651-trabajo-sin-presupuesto.test.mjs:332",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-03",
+  "fechaReclamada": "3-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "703"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// literales sueltos. El fundador firmó los diez textos que quedaban y `MARCA_651` se retiró"
+ },
+ {
+  "donde": "tests/scrum651-trabajo-sin-presupuesto.test.mjs:381",
+  "nivel": "anclado",
+  "fechaLinea": "2026-09-02",
+  "fechaReclamada": "2-sep-2026",
+  "asesorBloque": false,
+  "pares": [
+   "1502c20834"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Aprobado por el fundador el 2-sep-2026 (regla 27). Ni uno mas, ni uno menos, ni reordenado:"
+ },
+ {
+  "donde": "tests/scrum651-trabajo-sin-presupuesto.test.mjs:529",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-07",
+  "fechaReclamada": "7-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "816"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// textos aprobados diciendo lo mismo en la misma caja. El fundador firmo el borrado."
+ },
+ {
+  "donde": "tests/scrum655c-pantalla-revisiones.test.mjs:175",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-16",
+  "fechaReclamada": "15-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "688"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-16-SCRUM-688-crear-revision.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// cierto al escribirlo. El fundador aprobó el POST el 15-sep-2026 y lo atiende"
+ },
+ {
+  "donde": "tests/scrum660-iva-defecto-del-documento.test.mjs:91",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-18",
+  "fechaReclamada": "18-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "915"
+  ],
+  "microcopy": [
+   "DELEGADA:2026-09-18-SCRUM-915-pasos-del-editor.md",
+   "DELEGADA:2026-09-20-SCRUM-915-documento-vivo.md",
+   "DELEGADA:2026-09-20-SCRUM-915-ver-documento.md",
+   "DELEGADA:2026-09-21-SCRUM-915-ajustes-del-justificante.md",
+   "DELEGADA:2026-09-21-SCRUM-915-cabecera-del-editor.md",
+   "DELEGADA:2026-09-21-SCRUM-915-conceptos-limpios.md",
+   "DELEGADA:2026-09-21-SCRUM-915-marcadores-firmados.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// ENTONCES se ve». Lo cambia la v3 del editor, APROBADA por el fundador (docs/prototipos/SCRUM-915/):"
+ },
+ {
+  "donde": "tests/scrum683-parte-dictado.test.mjs:85",
+  "nivel": "anclado",
+  "fechaLinea": "2026-09-02",
+  "fechaReclamada": "2-ago-2026",
+  "asesorBloque": false,
+  "pares": [
+   "1502c20629"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// presupuesto el fundador decidió justo esto el 2-ago-2026. Es la decisión que aquí se invierte."
+ },
+ {
+  "donde": "tests/scrum683-parte-dictado.test.mjs:253",
+  "nivel": "documental",
+  "fechaLinea": "2026-09-02",
+  "fechaReclamada": "2-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [],
+  "docRespaldo": "docs/MICROCOPY_APROBADA_SIN_APLICAR.md",
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Aprobados por el fundador el 2-sep-2026. Se comparan con `===` y carácter a carácter: un"
+ },
+ {
+  "donde": "tests/scrum688-crear-revision.test.mjs:348",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-16",
+  "fechaReclamada": "15-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "688"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-16-SCRUM-688-crear-revision.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "//     «si el fundador ya aprobó ese texto, se mueve a `TEXTOS`»"
+ },
+ {
+  "donde": "tests/scrum709-microcopy-por-fichero.test.mjs:210",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-04",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "718",
+   "387",
+   "264"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* de «aprobado por el fundador» y **12 de las 13** citas. Una cita invisible es una cita que este"
+ },
+ {
+  "donde": "tests/scrum713-buscar-al-cliente-donde-ya-se-busca.test.mjs:364",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-09",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "713"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-07-SCRUM-713-buscador-cliente.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// Esa premisa CADUCÓ esa misma tarde: el fundador firmó dos de los tres EXPRESAMENTE para esta"
+ },
+ {
+  "donde": "tests/scrum715-consta-por-identidad.test.mjs:147",
+  "nivel": "sin-respaldo",
+  "grupo": "3"
+ },
+ {
+  "donde": "tests/scrum716-ritmo-de-despliegue.test.mjs:127",
+  "nivel": "anclado",
+  "fechaLinea": "2026-09-07",
+  "fechaReclamada": "7-sep-2026",
+  "asesorBloque": false,
+  "pares": [
+   "1502c20629"
+  ],
+  "tickets": [
+   "1502"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// retira A MANO, como estaba escrito que había que hacerlo: **el fundador autorizó tocar"
+ },
+ {
+  "donde": "tests/scrum718-escaner-contra-parser.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-04",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "718"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// De los tres guards que usaban el escáner a pelo, dos buscan la marca «aprobado por el fundador»"
+ },
+ {
+  "donde": "tests/scrum725b-el-aviso-se-pinta.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-07",
+  "fechaReclamada": "7-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "725"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-07-SCRUM-725-dato-no-dicho.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// ✅ Texto APROBADO por el fundador el 7-sep-2026 (regla 30), registrado en"
+ },
+ {
+  "donde": "tests/scrum751-clave-duplicada-en-silencio.test.mjs:153",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-26",
+  "fechaReclamada": "26-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1124"
+  ],
+  "microcopy": [
+   "DELEGADA:2026-09-25-SCRUM-1124-acciones-albaran-detalle.md",
+   "DELEGADA:2026-09-25-SCRUM-1124-buscador-albaran-presupuesto.md",
+   "DELEGADA:2026-09-25-SCRUM-1124-direccion-albaran-firmado.md",
+   "DELEGADA:2026-09-25-SCRUM-1124-estado-cobro-sin-mapear.md",
+   "DELEGADA:2026-09-25-SCRUM-1124-muestra-insuficiente-whatsapp.md",
+   "DELEGADA:2026-09-25-SCRUM-1124-proveedor-duplicado.md",
+   "DELEGADA:2026-09-25-SCRUM-1124-referencia-presupuesto-albaran.md",
+   "DELEGADA:2026-09-25-SCRUM-1124-switch-forma-juridica.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// del censo (el fundador firmó el texto, SCRUM-1124). El meta-guard la declaró CIEGA: «la"
+ },
+ {
+  "donde": "tests/scrum755-el-contador-que-cuadro-solo.test.mjs:63",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-25",
+  "fechaReclamada": "8-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1124"
+  ],
+  "microcopy": [
+   "DELEGADA:2026-09-25-SCRUM-1124-acciones-albaran-detalle.md",
+   "DELEGADA:2026-09-25-SCRUM-1124-buscador-albaran-presupuesto.md",
+   "DELEGADA:2026-09-25-SCRUM-1124-direccion-albaran-firmado.md",
+   "DELEGADA:2026-09-25-SCRUM-1124-estado-cobro-sin-mapear.md",
+   "DELEGADA:2026-09-25-SCRUM-1124-muestra-insuficiente-whatsapp.md",
+   "DELEGADA:2026-09-25-SCRUM-1124-proveedor-duplicado.md",
+   "DELEGADA:2026-09-25-SCRUM-1124-referencia-presupuesto-albaran.md",
+   "DELEGADA:2026-09-25-SCRUM-1124-switch-forma-juridica.md",
+   "F-LOC:2026-09-08-SCRUM-597-quien-lleva-el-documento.md",
+   "F-TICKET:2026-10-01-SCRUM-1388-facturas-recibidas.md"
+  ],
+  "delegacionBloque": true,
+  "frase": "// 🔴 SCRUM-597 · 8-sep-2026 · `documentoAsignados.js` SALE: el fundador firmó los cinco"
+ },
+ {
+  "donde": "tests/scrum755-el-contador-que-cuadro-solo.test.mjs:113",
+  "nivel": "anclado",
+  "fechaLinea": "2026-09-21",
+  "fechaReclamada": "21-sep-2026",
+  "asesorBloque": false,
+  "pares": [
+   "915c15868"
+  ],
+  "tickets": [
+   "915"
+  ],
+  "microcopy": [
+   "DELEGADA:2026-09-18-SCRUM-915-pasos-del-editor.md",
+   "DELEGADA:2026-09-20-SCRUM-915-documento-vivo.md",
+   "DELEGADA:2026-09-20-SCRUM-915-ver-documento.md",
+   "DELEGADA:2026-09-21-SCRUM-915-ajustes-del-justificante.md",
+   "DELEGADA:2026-09-21-SCRUM-915-cabecera-del-editor.md",
+   "DELEGADA:2026-09-21-SCRUM-915-conceptos-limpios.md",
+   "DELEGADA:2026-09-21-SCRUM-915-marcadores-firmados.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// 🔴 SCRUM-915k · 21-sep-2026 · `quotesView.js` SALE: el fundador firmó sus cuatro textos"
+ },
+ {
+  "donde": "tests/scrum768-listas-sin-atajo.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-06",
+  "fechaReclamada": "6-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "768",
+   "599",
+   "606"
+  ],
+  "microcopy": [
+   "F-TICKET:2026-09-04-SCRUM-599-atajo-nuevo.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "//    tres que el fundador firmó el 4-sep, así que unificarlos es COPY NUEVO y lo firma él"
+ },
+ {
+  "donde": "tests/scrum776-una-sola-voz.test.mjs:79",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-16",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "875"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* se declaró aquí en vez de taparlo. El fundador decidió en SCRUM-875: SE RETIRA. Una página no es"
+ },
+ {
+  "donde": "tests/scrum794-un-solo-anadir-linea.test.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-06",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "794",
+   "792"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// línea. El fundador firmó quedarse con el de abajo."
+ },
+ {
+  "donde": "tests/scrum878-poblacion-del-guard-29.test.mjs:284",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-17",
+  "fechaReclamada": "17-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "878"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// escribió aquí «el fundador decide que sí se pone». **Eso era falso.** SCRUM-878 tiene CERO"
+ },
+ {
+  "donde": "tests/scrum895b-literales-firmados.test.mjs:1",
+  "nivel": "anclado",
+  "fechaLinea": "2026-09-17",
+  "fechaReclamada": "17-sep-2026",
+  "asesorBloque": false,
+  "pares": [
+   "895c15699"
+  ],
+  "tickets": [
+   "895"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// El fundador firmó tres el 17-sep-2026 (SCRUM-895, comentario 15699) y PARÓ el cuarto. Este"
+ },
+ {
+  "donde": "tests/scrum899c-relevar-y-contexto.test.mjs:168",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-06",
+  "fechaReclamada": "6-oct-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1479"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "//   · desde el 6-oct-2026 (SCRUM-1479): 300k, autorizado por el fundador con su coste. Medido ese día sobre 43"
+ },
+ {
+  "donde": "tests/scrum985-el-aviso-de-importar-no-promete-excel.test.mjs:98",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-23",
+  "fechaReclamada": "23-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1022"
+  ],
+  "microcopy": [
+   "DELEGADA:2026-09-25-SCRUM-1022-importar-boton-y-titulo.md",
+   "DELEGADA:2026-09-25-SCRUM-1022-importar-xlsx.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-1022 (23-sep-2026, comentario 16597): el fundador autorizó `read-excel-file` (regla 36)"
+ },
+ {
+  "donde": "tests/_asignacion-bloques-presupuesto.mjs:30",
+  "nivel": "anclado",
+  "fechaLinea": "2026-09-18",
+  "fechaReclamada": "18-sep-2026",
+  "asesorBloque": false,
+  "pares": [
+   "915c15868"
+  ],
+  "tickets": [
+   "915"
+  ],
+  "microcopy": [
+   "DELEGADA:2026-09-18-SCRUM-915-pasos-del-editor.md",
+   "DELEGADA:2026-09-20-SCRUM-915-documento-vivo.md",
+   "DELEGADA:2026-09-20-SCRUM-915-ver-documento.md",
+   "DELEGADA:2026-09-21-SCRUM-915-ajustes-del-justificante.md",
+   "DELEGADA:2026-09-21-SCRUM-915-cabecera-del-editor.md",
+   "DELEGADA:2026-09-21-SCRUM-915-conceptos-limpios.md",
+   "DELEGADA:2026-09-21-SCRUM-915-marcadores-firmados.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// la v3 del editor (APROBADA por el fundador, `docs/prototipos/SCRUM-915/`) convierte los bloques en"
+ },
+ {
+  "donde": "tests/_cambios-autorizados-de-la-factura.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-23",
+  "fechaReclamada": "23-oct-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1446"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// c.18895 y c.18901). El fundador decidió abrir una vía (SCRUM-1446 c.20473, «Sí, abrir la vía»)."
+ },
+ {
+  "donde": "tests/_composicion-detalle.mjs:193",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-21",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "917"
+  ],
+  "microcopy": [
+   "DELEGADA:2026-09-18-SCRUM-917-lista-de-trabajos.md",
+   "DELEGADA:2026-09-18-SCRUM-917-lista-singulares.md",
+   "DELEGADA:2026-09-20-SCRUM-917-franja-del-dinero.md",
+   "DELEGADA:2026-09-21-SCRUM-917-el-trabajo-plegable.md"
+  ],
+  "delegacionBloque": false,
+  "frase": "// RE-ANCLAJE (SCRUM-917g): esta enmienda se llamaba `datos`. El fundador firmó otro rótulo para"
+ },
+ {
+  "donde": "tests/_huerfanos-declarados.mjs:875",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-08",
+  "fechaReclamada": "8-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "340"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// El fundador firmó el 8-sep-2026 que «la plaza se queda con él; si se retrasa en un pago tiene"
+ },
+ {
+  "donde": "tests/_negacion-respaldo.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-07-30",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "237"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// LAS TRES FORMAS DE RESPALDO VÁLIDAS (aprobadas por el fundador), en orden de fuerza:"
+ },
+ {
+  "donde": "scripts/censo-anclas-bloque-f.mjs:67",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-20",
+  "fechaReclamada": "20-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "557"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "* No es hipotetico: el fundador aprobo los 37 textos el 20-ago-2026, y registrar esa aprobacion"
+ },
+ {
+  "donde": "scripts/equipo/gasto-arranque.mjs:643",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-06",
+  "fechaReclamada": "21-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1070",
+   "1479"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// constantes con el mismo número puestas a mano. Desde ese día vale 300k (autorizado por el fundador, coste"
+ },
+ {
+  "donde": "scripts/guard-lista-trabajos.mjs:583",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-27",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1562"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Declaración autorizada por el fundador en SCRUM-1562 c.21143, sobre el texto que firmó en c.21125."
+ },
+ {
+  "donde": "scripts/guard-objetivo-tactil.mjs:718",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-10-20",
+  "fechaReclamada": "20-oct-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1149",
+   "786"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-1149 (J2, 20-oct-2026) · VACÍA. El fundador decidió el 21-sep (SCRUM-786 c.16266) la opción ③:"
+ },
+ {
+  "donde": "scripts/guard-pasos-del-editor.mjs:1",
+  "nivel": "anclado",
+  "fechaLinea": "2026-10-24",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [
+   "1511c18924",
+   "915c15790"
+  ],
+  "tickets": [
+   "1511"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// La v3 del editor (aprobada por el fundador: SCRUM-1511 comentario 18924) parte el formulario en"
+ },
+ {
+  "donde": "scripts/medir-hueco-condicion.mjs:2",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-20",
+  "fechaReclamada": null,
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "564",
+   "562"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// El fundador decidió DOCUMENTAR LA CONDICIÓN en vez de retirar el copy. Para elegir la frase"
+ },
+ {
+  "donde": "scripts/qa/sembrar-qa.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-29",
+  "fechaReclamada": "29-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1268"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// Autorizado por el fundador (29-sep-2026) para QA en producción en la cuenta QA, incluida la"
+ },
+ {
+  "donde": "scripts/seed-video.mjs:1",
+  "nivel": "sin-respaldo",
+  "grupo": "3"
+ },
+ {
+  "donde": "scripts/voice-eval.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-07-05",
+  "fechaReclamada": "5-jul-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// 10 transcripciones FIJAS (aprobadas por el fundador, 5-jul-2026) contra el catálogo"
+ },
+ {
+  "donde": "scripts/_guard-afirmacion-fiscal.mjs:229",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-09-25",
+  "fechaReclamada": "25-sep-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "1128"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// SCRUM-1128 · EL CRITERIO NUEVO, APROBADO POR EL FUNDADOR EL 25-sep-2026"
+ },
+ {
+  "donde": "scripts/_hueco-condicion.mjs:1",
+  "nivel": "rastreable",
+  "fechaLinea": "2026-08-20",
+  "fechaReclamada": "20-ago-2026",
+  "asesorBloque": false,
+  "pares": [],
+  "tickets": [
+   "564",
+   "568"
+  ],
+  "microcopy": [],
+  "delegacionBloque": false,
+  "frase": "// el fundador decidió **no documentar la condición**: los tres medios se quedan enunciados como"
+ }
+]

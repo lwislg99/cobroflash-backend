@@ -1,0 +1,35 @@
+③ · ¿Puede un PR de sólo docs cambiar el veredicto del trinquete de zona? Medido ejecutando, 23-oct-2026,
+sobre origin/main 6c8706dae, con la maquinaria del propio trinquete (`medirEnZona` + `compararZonas`
+de scripts/_trinquete-de-zona.mjs, zonas Pacific/Kiritimati y Pacific/Midway) sobre UN fichero:
+tests/scrum1336-un-ciego-no-se-pinta-de-hallazgo.test.mjs, que importa
+docs/master/evidencias/scrum1336/linea.mjs.
+
+── A · árbol limpio (control)
+  Pacific/Kiritimati ok=true pruebas=12
+  Pacific/Midway ok=true pruebas=12
+CAMBIAN DE VEREDICTO: 0 · sin comparar: 0
+
+── el cambio (SÓLO docs/master/evidencias/scrum1336/linea.mjs; un defecto de zona típico):
+  const dia = new Date(Date.UTC(2026, 0, 1)).getDate();
+  return (dia === 1 ? '' : '[' + dia + '] ') + n + …
+
+── lo que diría el CI de ese diff (scripts/equipo/solo-docs.mjs):
+1 fichero(s) cambiados · solo documentación: SÍ
+solo_docs=true
+
+── B · con el cambio
+  Pacific/Kiritimati ok=true pruebas=12
+  Pacific/Midway ok=true pruebas=12
+CAMBIAN DE VEREDICTO: 2 · sin comparar: 0
+  🔴 SCRUM-1336 · E2 · la línea agregada del banco sale SIEMPRE, también con ceros, y suma el total
+     Pacific/Kiritimati → pass  ·  Pacific/Midway → fail
+  🔴 SCRUM-1336 · la evidencia con navegador dice lo que el registro afirma: en ciego, antes 1 y después 2; con hallazgo, 1; limpio, 0
+     Pacific/Kiritimati → pass  ·  Pacific/Midway → fail
+
+El cambio se deshizo después; `git status` sin cambios en docs/.
+
+POR QUÉ PASA: `docs/` no es sólo prosa. En la tanda entera trazada (e-tanda-entera-trazada.txt) se
+CARGAN 6 módulos que viven bajo docs/: 4 ficheros de test los importan directamente (scrum1336, scrum1500,
+scrum1536b, scrum1537) y 23 procesos hijo los ejecutan. Y solo-docs.mjs clasifica todo `docs/**`
+como documentación. Un PR «de sólo docs» puede cambiar código que corre la tanda.
+(Un `grep` de rutas `docs/…mjs` en tests/ da 49 ficheros: casa también comentarios; no es la cifra.)

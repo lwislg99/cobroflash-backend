@@ -193,7 +193,10 @@ function respaldosQueAfirman(codigo, nombre = 'x.js') {
  * recibió o no su mensaje.
  */
 const CENSO_RESPALDOS = Object.freeze({
-  'api.js': 2,                 // :1135 → M.pendiente_agendar · :1285 → map.sent
+  // 🔻 SCRUM-1518c · BAJA DE 2 A 1. Se va el «más grave» de arriba, `map[…] || map.sent` de
+  // `waDeliveryChip`: lo que escribe el cliente (`received`) salía «WhatsApp: Enviado». Ahora pregunta
+  // por el HECHO (`hasOwnProperty`) y, si no lo conoce, no pinta chip. Queda M.pendiente_agendar.
+  'api.js': 1,                 // :1267 → M.pendiente_agendar
   // 🔻 SCRUM-920c / SCRUM-944 · BAJA DE 1 A 0. Era `CATEGORY_LABELS[category] || CATEGORY_LABELS.otros`:
   // una categoría desconocida se pintaba como «Otros», y el KPI «Mayor categoría» ni eso — caía a la
   // clave cruda («materials»). Ahora UNA función (`categoriaDe`) decide para la píldora y para el KPI, y

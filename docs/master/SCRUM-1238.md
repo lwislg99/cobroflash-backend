@@ -253,3 +253,43 @@ ser `borrarTemporal`. El guard no se ha tocado.
   no es la misma línea); M2 (`proceso > 0 || espera(s)`) tumba 5, entre ellos el del reinicio; M3 (la lista se
   lee antes del bucle) tumba 1, el del orden.
 - Suite entera local: NO CORRIDA.
+
+## S5 · SCRUM-1238c · el arreglo ④ aplicado en `sesion.mjs`, y la pregunta se DICE
+
+**Medido contra:** `origin/main` = `5deff8b3b7b0f8a8d3cd037baabbca454ea7aa29` · 2026-10-29T10:03:44Z (hora de GitHub; sesión S5 `4b1ea111`, worktree `wt-s5-1005`, encargo del orquestador del 29-oct, que lo traía como pieza de SCRUM-1621 medida por Javier)
+
+A9: comprobación → `tests/scrum1238c-espera-no-es-fin.test.mjs`
+
+### Lo medido antes de tocar
+- **`firstTerminalAt` es «terminó ALGÚN turno», no «está terminada».** Sobre los 44 `state.json` de la máquina
+  (29-oct): 31 `done`, 7 `stopped` y 6 `working`. En **16 de los 38** terminales `firstTerminalAt` es anterior a
+  `lastTerminalAt`: la sesión volvió a trabajar después de su primer final y el campo siguió puesto.
+- Hoy **ninguno** lleva `needs` ni `state: blocked`. La forma que esperaba es la de ③ de arriba (28-sep) y la de
+  J2 `4d9f556d` (`blocked` + `firstTerminalAt` + `needs` como cadena).
+- `claude agents --json`: 8 entradas, **las 8 con `pid`**. Una sesión que acaba su turno preguntando no sale en
+  la lista, así que `estado` sólo la puede ver leyendo la carpeta de trabajos.
+- **Las dos copias de `sesion.mjs`:** la del repo y `AppData/Local/yaqu-equipo/sesion.mjs` son DOS ficheros, no
+  un enlace. Hoy son idénticas (77.695 B, mismo SHA-256). La de AppData la reescribe `arranque.cmd`, cuya última
+  pasada fue el 27-oct a las 12:05Z, y las tres tareas `yaqu-equipo-*` están **deshabilitadas**.
+  `puertaDeIntegridad` da **ALTERADO** si difieren, así que cuando esto entre, el lanzador se niega hasta que
+  alguien refresque la copia. No se ha tocado AppData.
+
+### Lo que cambia
+- `leerJob(j)` (exportada, pura): `terminal` sale del `state` de AHORA y **nunca si espera** (`blocked` en
+  `state`/`tempo`, o algo en `needs`, el mismo criterio que `espera()` de `latido.mjs`, copiado porque la copia
+  instalada corre sin el resto de `scripts/`). Devuelve también `espera`, `pregunta` y `huella`, y `cuando` es el
+  ÚLTIMO final.
+- `clasificarAgente`: sin `pid` y esperando → **`ESPERA`**, con la pregunta. Sólo `MUERTA` es un resto, así que
+  `lanzar`, `relevar` y `olvidar` la tratan como viva, igual que antes a `NO-PUDE-MIRAR`.
+- `sesion.mjs estado` lleva `esperando` (`esperandoEnJobs`): las que preguntan según la CARPETA de trabajos,
+  tengan proceso o no, con su población y sus ilegibles. Sin carpeta legible → `leido: false`, nunca una lista vacía.
+- **La decisión ⑤ sigue abierta y no se toca:** una `done` sin pregunta sigue siendo terminal.
+
+### Cómo se comprobó
+- `tests/scrum1238c-espera-no-es-fin.test.mjs` · 5 casos. El control de la que espera y el de la que acabó van
+  juntos: con uno solo, el arreglo podía ser «ninguna termina». Junto a 954, 959b, 1238b y 1000: 44 tests, 44 pass.
+- Mutaciones (base en verde, restauradas y árbol limpio): **M1** la línea vieja → caen ①, ③ y ⑤ · **M2** sin el
+  `ESPERA` de `clasificarAgente` → cae ② · **M3** `esperandoEnJobs` sin filtrar → cae ④.
+- Contra la máquina, sólo leyendo: de 44 `state.json`, 38 terminales con la línea vieja y 38 con la nueva, y 0
+  esperando. **Hoy el cambio es neutro en la máquina**, porque no hay ninguna sesión que espere. La diferencia sólo
+  la prueban las formas medidas en los fixtures.

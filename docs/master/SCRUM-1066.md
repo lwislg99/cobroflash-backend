@@ -432,3 +432,70 @@ La parte 1 del encargo (la categoría en `EXPENSE_CATEGORIES`, su etiqueta y su 
 
 - La ruta `GET /admin/expenses/categories` del ticket SCRUM-1588 la escribí antes de leer dónde se monta; la leí después (`app.ts:583` + `expenses.routes.ts:81`) y es cierta. Va a mi cicatriz.
 - Mi primera línea `A9:` citaba sólo un trozo de la cicatriz y `scrum1294` la tumbó: lo vi en local, antes de empujar.
+
+# SCRUM-1066f · Lo que recibe de 1103: MIGRATIONS_PENDING, el cotejo en el BOE y el 190/180
+
+**Medido contra:** `origin/main` = `63550e45e6e65f8461e80e4f7e8aa413d5483093` · 2026-10-27T17:41:01Z
+**Rama:** `scrum-1066f-excepciones-115` · **Puesto:** J1 (sesión `jv-j1dh`) · **Encargo:** orquestador `cobroflash-backend-8b`, 27-oct-2026 · **De:** SCRUM-1103 c.21160, SCRUM-1066 c.21162 · **Jira:** c.21170
+
+A9: aviso → A10 «La fecha de vigencia de un texto consolidado no es la fecha desde la que se aplica: se lee la nota, no el atributo.» — no se pudo comprobar: el cotejo contra el BOE se hace en la consola, y ningún guard del repositorio compara versiones de un bloque
+
+## PASO 0
+
+- `git log origin/main -i --grep=SCRUM-1066f`: 0 commits. `git ls-remote origin 'refs/heads/scrum-1066*'`: ninguna rama. `gh pr list --state all --search 1066f`: `[]`. Control positivo de la misma búsqueda con `1066`: salen #2703 (1066c) y #1746 (1066b), MERGED.
+- Etiquetas de 1066: `equipo-javier`, `area-j1`. `carriles.mjs de`: `src/modules/fiscal/retenciones/` → J1; `docs/MIGRATIONS_PENDING.md` → sin fila, nadie lo reclama.
+
+## 1 · `docs/MIGRATIONS_PENDING.md`
+
+Entrada nueva al final, «SCRUM-1103 · tres columnas en `expenses`», con el formato de SCRUM-1490: DDL, de dónde sale y estado por base. Antes había **0** líneas con `retencion_practicada` o `1103` en ese fichero. El estado por base lo copio del tramo 1103b de `docs/master/SCRUM-1103.md`, y en cada una digo quién lo midió. **J1 no ha medido ninguna base**: este árbol no tiene claves.
+
+## 2 · El cotejo en el BOE consolidado
+
+Fuente: `https://www.boe.es/datosabiertos/api/legislacion-consolidada/id/<id>/texto`, bajada con GET público el 27-oct-2026 (cabecera `Date:` del BOE: 17:38:40Z y 17:38:45Z). Los ficheros no están en git: RIRPF 1.707.941 B, 215 bloques · IAE 3.249.061 B, 166 bloques.
+
+**La premisa del encargo no casa con la norma.** Las dos excepciones NO están en el art. 100 RIRPF. Ese artículo (bloque `a100`, 3 versiones, vigente desde el 23-dic-2018, RD 1461/2018) sólo fija el tipo: «será el resultado de aplicar el porcentaje del 19 por ciento sobre todos los conceptos que se satisfagan al arrendador, excluido el Impuesto sobre el Valor Añadido». Las excepciones están en el **art. 75.3.g)**, como ya midió 1066b. Lo dijo el asesor «de memoria» (SCRUM-1103), y la referencia viajó hasta el encargo.
+
+**RIRPF (BOE-A-2007-6820), art. 75.3.g).** Bloque `a75`, 10 versiones; la última es la de vigencia 08-oct-2026 (RDL 29/2026, BOE-A-2026-20823), que modifica los apartados 3 y 4. **La letra g) es idéntica en las 10**: mismo SHA-256 (`b2cd4fa309ba`, 1.074 caracteres) desde la redacción original de 2007. Literal:
+
+> «g) Los rendimientos procedentes del arrendamiento o subarrendamiento de inmuebles urbanos en los siguientes supuestos: 1.º Cuando se trate de arrendamiento de vivienda por empresas para sus empleados. 2.º Cuando las rentas satisfechas por el arrendatario a un mismo arrendador no superen los 900 euros anuales. 3.º Cuando la actividad del arrendador esté clasificada en alguno de los epígrafes del grupo 861 de la Sección Primera de las Tarifas del Impuesto sobre Actividades Económicas, aprobadas por el Real Decreto Legislativo 1175/1990, de 28 de septiembre, o en algún otro epígrafe que faculte para la actividad de arrendamiento o subarrendamiento de bienes inmuebles urbanos, y aplicando al valor catastral de los inmuebles destinados al arrendamiento o subarrendamiento las reglas para determinar la cuota establecida en los epígrafes del citado grupo 861, no hubiese resultado cuota cero. A estos efectos, el arrendador deberá acreditar frente al arrendatario el cumplimiento del citado requisito, en los términos que establezca el Ministro de Economía y Hacienda.»
+
+⚠️ En la fuente, «Legislativo» lleva un guion blando invisible (U+00AD) entre «Legisla» y «tivo». Aquí está quitado: una búsqueda literal de esta cita contra el texto crudo no casa por ese carácter.
+
+**Tarifas del IAE (RDLeg 1175/1990, BOE-A-1990-23930), Agrupación 86 de la Sección Primera.** Bloque `agrupacion86`, 4 versiones, vigente desde el 01-01-1996 (RDL 12/1995). Epígrafes 861.1 y 861.2: «Cuota nacional de: 0,10 por 100 del valor catastral», y nota 2.ª de los dos: «Los sujetos pasivos cuyas cuotas por esta actividad sean inferiores a 100.000 pesetas (601,01 euros) tributarán por cuota cero». En las notas del bloque: «Se incrementan en un 3,5 por 100 las cuotas, por el art. 26.1.a) del Real Decreto Ley 12/1995».
+
+🔴 **La cifra del asesor NO casa.** Dijo «valor catastral > 601.012 € acreditado por certificado» (SCRUM-1103). El BOE no pone el umbral en el valor catastral: lo pone en la **cuota**, en 601,01 €. El 601.012 no aparece en el texto: es 100 millones de pesetas en euros. Lo derivo yo, y no es norma: con cuota = 0,10 % del valor catastral, la cuota cero acaba en 601.010 € de valor catastral. Si el +3,5 % de 1995 se aplica a esa cuota, acaba en unos 580.686 €. Cuál de las dos lecturas vale lo decide el asesor: **NO VERIFICADO**.
+
+Controles del cotejo: buscar `601.01` en el IAE da 0 bloques, y `601012` da 5, todos en la Regla 14 (un coeficiente por m², ajeno). `Grupo 861` sale en dos bloques: `agrupacion86`, la de los alquileres, y `agrupacion86-2`, que es OTRA agrupación 86 («Profesiones liberales, artísticas…», grupo 861 = pintores y escultores; de qué sección es no lo he medido). El número de grupo no basta para saber cuál es.
+
+## 3 · Por qué NO se construyen las excepciones
+
+El encargo decía «sólo si las dos quedan citadas». Quedan citadas, pero ninguna se puede construir sin inventar algo:
+
+- **3.º, epígrafe 861:** hace falta el epígrafe del arrendador y que el arrendador lo acredite. En `prisma/schema.prisma` hay **0** líneas con `epigrafe`, `epígrafe`, `iae` o `catastral`, y `Provider` sólo tiene `name`, `legalName` y `taxId` como datos fiscales. No lo invento: queda declarado. Construirla pide esquema, y eso es una decisión del fundador (A5).
+- **2.º, hasta 900 €:** el dato sí existe (categoría `alquiler`, `providerId` y `baseAmount`). Pero el límite es **anual** y el 115 es **trimestral**. Qué hacer a mitad de año, cuando aún no se sabe si se pasará de 900 €, es un criterio y no un dato. Pregunta para el asesor: «¿se retiene desde el primer pago si se prevé superar los 900 €, o sólo desde que se superan?». Construirlo antes de que conteste sería inventar la regla.
+- Mientras tanto, el borrador no cambia: un alquiler sin retención anotada ya cuenta en `sinRetencion` y deja el 115 a cero (1066e).
+
+## 4 · Los resúmenes 190 y 180: qué haría falta (medido, no construido)
+
+- Las cifras salen del mismo dato que el 111 y el 115, sumado por año y por perceptor (`providerId`). No hace falta captura nueva para los importes.
+- Lo que el esquema NO tiene (medido en `Provider`): la provincia del perceptor; y, para el 180, la referencia catastral y la dirección del inmueble alquilado. El NIF (`taxId`) y la razón social (`legalName`) existen, pero son nullable.
+- ⚠️ La lista de campos de los dos impresos la doy de memoria y **no la he cotejado con sus órdenes ministeriales: NO VERIFICADO**. Antes de diseñar nada hay que bajar esas órdenes y sus anexos, como hizo 1066c con el 111 y el 115.
+
+## Aceptación → dónde se ve
+
+| encargo | dónde se ve |
+|---|---|
+| la entrada de MIGRATIONS_PENDING del ALTER de `schema.prisma:1027-1029` | `docs/MIGRATIONS_PENDING.md`, sección «SCRUM-1103 · tres columnas en `expenses`» |
+| el cotejo en el BOE consolidado, literal y con su vigencia | este tramo, §2 |
+| decir si la cifra no casa con la del asesor | §2: no casa |
+| las excepciones construidas | NO HECHO: la del 861 no tiene dato y la de 900 € espera el criterio del asesor (§3) |
+| 190/180: medir qué haría falta | §4, sin construir |
+
+## Lo que se corrió
+
+No hay código en el diff, así que no hay rojo primero ni mutación. Los guards de registro y de suite se corren en local antes de empujar, y sus cifras van en la entrega. **La suite entera en local: NO CORRIDA.**
+
+## Mis errores
+
+- La primera sonda que comparaba las versiones de la letra g) partía por `<version ` en TODO el XML del RIRPF, no sólo en el bloque `a75`, y salió «SIN g)» en todas las versiones. Lo cacé leyendo la salida, antes de afirmar nada, y la rehíce acotada al bloque.
+- El primer comando de la tanda usó `$CLAUDE_JOB_DIR`, que en esta consola no está definido: el `git rev-parse` salió con 128 y no llegó a correr nada. Lo repetí con la ruta escrita.

@@ -115,7 +115,7 @@ test('SCRUM-1027 · el gate es el MODO, no el flag: receipt vuelve a NO (regla 2
   assert.equal(modoDocumentoSuelto({ id: 1, email: 'demo@yaqu.app', country: 'ES', flags: null }), 'factura',
     '🔴 el merchant demo emite FACTURA completa con marca de agua: entra.');
   // 'fiscal' por flag de merchant — ES con el flag ON (post SIF-1).
-  assert.equal(modoDocumentoSuelto({ id: 9, email: 'pro@x.es', country: 'ES', flags: { INVOICING_ES_ENABLED: true } }), 'factura');
+  assert.equal(modoDocumentoSuelto({ id: 9, email: 'pro@x.es', country: 'ES', flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false }), 'factura');
   // Sin merchant no se adivina.
   assert.equal(modoDocumentoSuelto(null), 'no', '🔴 sin merchant hay que fallar cerrado.');
 });
@@ -128,7 +128,7 @@ test('SCRUM-1027 · REGLA 24: el interruptor en OFF sigue sin encender la factur
   assert.notEqual(modoDocumentoSuelto(esReal), 'factura',
     '🔴 un merchant ES real sin `INVOICING_ES_ENABLED` NO emite facturas (regla 24).');
   // Y con el flag ON —post SIF-1— sí, para que la negación de arriba no sea verde por accidente.
-  assert.equal(modoDocumentoSuelto({ ...esReal, flags: { INVOICING_ES_ENABLED: true } }), 'factura');
+  assert.equal(modoDocumentoSuelto({ ...esReal, flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false }), 'factura');
 });
 
 test('SCRUM-289b · ROJO POR EL MECANISMO: con el gate cerrado la ruta responde 4xx NOMBRADO', () => {

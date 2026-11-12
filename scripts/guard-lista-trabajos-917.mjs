@@ -156,6 +156,9 @@ titulo('A · arriba: título y botones (A.1) · las DOS cifras (A.2) · filtros 
     return {
       h2: (document.querySelector('.jobs-cabecera h2') || {}).textContent || null,
       nuevo: !!document.getElementById('jobs-nuevo-btn'),
+      // SCRUM-1700 (T7 de SCRUM-1686, D1=A c.21461; N2 c.21470): la puerta provisional de la
+      // cabecera se RETIRA; «Partes por valorar» vive en el menú (#nav-partes-oficina), que este
+      // banco no monta: el número del menú lo mide tests/scrum1700-abrir-parte-y-partes-por-valorar.
       valorar: !!document.getElementById('jobs-partes-valorar'),
       filtros: [...document.querySelectorAll('#jobs-filter > button')].map((b) => b.textContent.trim()),
       tecnico: !!document.getElementById('jobs-filtro-tecnico-select'),
@@ -163,8 +166,8 @@ titulo('A · arriba: título y botones (A.1) · las DOS cifras (A.2) · filtros 
     };
   });
   // A.1 · igual
-  if (arriba.h2 === 'Trabajos' && arriba.nuevo && arriba.valorar) bien('A.1 «Trabajos» + «Nuevo trabajo» + «Partes por valorar» siguen');
-  else mal(`A.1 falta algo de arriba: ${JSON.stringify({ h2: arriba.h2, nuevo: arriba.nuevo, valorar: arriba.valorar })}`);
+  if (arriba.h2 === 'Trabajos' && arriba.nuevo && !arriba.valorar) bien('A.1 «Trabajos» + «Nuevo trabajo» arriba; la puerta provisional «Partes por valorar» ya no está en la cabecera');
+  else mal(`A.1 arriba no es lo firmado (SCRUM-1700): ${JSON.stringify({ h2: arriba.h2, nuevo: arriba.nuevo, valorarEnCabecera: arriba.valorar })}`);
 
   // A.2 · los filtros por cobro, en cuentas: igual
   const cuentas = { Pendiente: 0, Parcial: 0, Pagado: 0 };
@@ -210,13 +213,8 @@ titulo('A · arriba: título y botones (A.1) · las DOS cifras (A.2) · filtros 
     else bien('A.2 con el filtro puesto, «Por cobrar» sigue siendo el total');
   }
 
-  // A.1 · y los dos botones de arriba HACEN lo suyo.
-  const antes = await estado(page);
-  await pulsar(await page.$('#jobs-partes-valorar'));
+  // A.1 · y el botón de arriba HACE lo suyo. («Partes por valorar» ya no está aquí: SCRUM-1700.)
   const trasValorar = await estado(page);
-  const nav = trasValorar.navegaciones.slice(antes.navegaciones.length);
-  if (nav.length === 1 && nav[0].vista === 'partes-oficina') bien('A.1 «Partes por valorar» lleva a partes-oficina');
-  else mal(`A.1 «Partes por valorar» no navegó bien: ${JSON.stringify(nav)}`);
   await pulsar(await page.$('#jobs-nuevo-btn'));
   await espera(150);
   const trasNuevo = await estado(page);
@@ -344,13 +342,24 @@ titulo('B · columnas (B.1) · técnico en la línea del cliente (B.2) · sin p�
 }
 
 // ═══ C · LAS ACCIONES, PULSADAS ═════════════════════════════════════════════════════════════
-titulo('C · una sola primaria y es la del dinero (C.1) · el «⋯» entero (C.2) · la fila navega (C.3) · grupos (C.4-C.5) · sin cobro en modo justificante (C.6)');
+titulo('C · nunca dos primarias en la misma fila (C.1, SCRUM-1700) · el «⋯» entero (C.2) · la fila navega (C.3) · grupos (C.4-C.5) · sin cobro en modo justificante (C.6)');
 {
   const { page } = await abrirVista(browser, puerto, '/t', 1280);
-  const primarias = await page.evaluate((sel) => [...document.querySelectorAll(sel + ' .btn-primary')].map((b) => b.textContent.trim()), SEL_FILA);
+  // SCRUM-1700 · RE-ANCLADO a la regla FIRMADA por el fundador (SCRUM-1700 c.21526, opción (b) «N1»):
+  // «cada fila con su primaria y nunca dos verdes en la MISMA fila». El anclaje viejo (917c: UNA sola
+  // primaria en TODA la lista, la del dinero) se midió en ROJO contra el código de 1700:
+  // 2 ["Abrir parte","💰 Cobrar el resto (740,00 €)"] — dos primarias, en DOS filas distintas, que es
+  // justo lo que la regla nueva permite. Lo que se exige ahora: ninguna fila con más de UNA `.btn-primary`,
+  // la del dinero sigue en su fila, y la del en curso es «Abrir parte».
+  const porFila = await page.evaluate((sel) => [...document.querySelectorAll(sel)].map((f) => [...f.querySelectorAll('.btn-primary')].map((b) => b.textContent.trim())), SEL_FILA);
   const esperadaPrim = '💰 Cobrar el resto (' + await page.evaluate(() => window.fmtMoneyEs(740, 'EUR')) + ')';
-  if (primarias.length === 1 && primarias[0] === esperadaPrim) bien(`C.1 una sola primaria en la lista: «${primarias[0]}»`);
-  else mal(`C.1 primarias en las filas: ${primarias.length} ${JSON.stringify(primarias)} (esperaba solo «${esperadaPrim}»)`);
+  const dobles = porFila.filter((p) => p.length > 1);
+  const primarias = porFila.flat();
+  if (!porFila.length) mal('C.1 no hay filas que medir en /t');
+  else if (dobles.length) mal(`C.1 dos primarias en la MISMA fila: ${JSON.stringify(dobles)}`);
+  else if (!primarias.includes(esperadaPrim)) mal(`C.1 falta la primaria del dinero «${esperadaPrim}»: ${JSON.stringify(primarias)}`);
+  else if (!primarias.includes('Abrir parte')) mal(`C.1 falta la primaria «Abrir parte» del en curso: ${JSON.stringify(primarias)}`);
+  else bien(`C.1 ${porFila.length} filas, ninguna con dos primarias · primarias: ${JSON.stringify(primarias)}`);
 
   // C.1 · «Agendar» sigue, en secundaria, y ABRE el modal de agendar sin navegar
   {

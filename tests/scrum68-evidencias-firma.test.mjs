@@ -155,7 +155,10 @@ test('SCRUM-68: sella evidencias (remoto + in situ) y NUNCA expone ip/ua/hash', 
   const customer = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente 68', phone: `34602${stamp % 1000000}`, email: `cli-s68-${stamp}@test.local` } });
   const job = await prisma.job.create({ data: { merchantId: merchant.id, customerId: customer.id, status: 'terminado', titulo: 'C/ Sol 3', direccion: 'C/ Sol 3' } });
 
-  const firmaToken = 'tok68-' + crypto.randomBytes(16).toString('hex');
+  // SCRUM-1632c: hex puro, la única forma que existe en producción (el único escritor,
+  // albaranWhatsApp.service.ts, hace randomBytes(16).toString('hex')). El prefijo 'tok68-' que
+  // llevaba era una forma imposible: parseToken lo limpia y la ruta buscaba otro token.
+  const firmaToken = crypto.randomBytes(16).toString('hex');
   const albRemoto = await prisma.albaran.create({
     data: { merchantId: merchant.id, jobId: job.id, numero: `ALB-QA68R-${stamp}`, lineas: [{ concepto: 'Mano de obra', cantidad: 2, unidad: 'h' }], estado: 'emitido', firmaToken },
   });

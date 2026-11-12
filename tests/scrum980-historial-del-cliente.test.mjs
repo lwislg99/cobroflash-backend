@@ -70,7 +70,9 @@ test('SCRUM-980 · historialDelCliente: tenencia, técnico, fotos, próxima visi
         // SUELO: vienen los cuatro de Ana; así un «no está» de abajo es del dato, no del lector.
         assert.equal(h.trabajos.length, 4, `SUELO: el admin debía ver 4 trabajos y ve ${h.trabajos.length}: ${titulos}`);
         assert.ok(!titulos.includes('INTRUSO'), '🔴 se cuela un trabajo de OTRO merchant');
-        assert.ok(titulos.includes('Presupuesto #77 · Ana 980'), `🔴 el título no sale de tituloDeTrabajo: ${titulos}`);
+        // SCRUM-1690 · el trabajo con presupuesto #77 y sin título se titula con el cliente, no «Presupuesto #77 · …».
+        assert.ok(titulos.includes('Ana 980'), `🔴 el título no sale de tituloDeTrabajo: ${titulos}`);
+        assert.ok(!titulos.some((t) => /Presupuesto #/.test(t)), `🔴 un trabajo se titula con el presupuesto: ${titulos}`);
         const caldera = h.trabajos.find((t) => t.id === jDelTecnico.id);
         assert.equal(caldera.albaranes.length, 1);
         assert.equal(caldera.albaranes[0].fotos, 5, '🔴 el albarán no cuenta sus fotos');

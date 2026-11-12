@@ -26,7 +26,7 @@ const PENDIENTE = '[PENDIENTE microcopy oficial]';
 // ⚠️ Fixtures con `id` REAL. `isDemoMerchant` es `id === 1` o `demo@yaqu.app`: un fixture con
 // `id: 1` pone todos los casos en modo demo y las otras dos ramas no se ejercitan en ninguno.
 const ES_REAL = { id: 7, email: 'pro@fontaneria.es', country: 'ES', flags: null };
-const ES_CON_FLAG = { ...ES_REAL, flags: { INVOICING_ES_ENABLED: true } };
+const ES_CON_FLAG = { ...ES_REAL, flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false };
 const NO_ES = { id: 8, email: 'pro@plomberie.fr', country: 'FR', flags: null };
 const DEMO = { id: 1, email: 'demo@yaqu.app', country: 'ES', flags: null };
 

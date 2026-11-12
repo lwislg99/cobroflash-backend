@@ -7,7 +7,7 @@
 // (página + canvas de firma) + el token opaco de customerPortal. Tenancy = el token.
 import { Router, Request, Response } from 'express';
 import { prisma } from '../../../../core/db/prisma';
-import { esc } from '../../../../core/utils/utils';
+import { esc, parseToken } from '../../../../core/utils/utils';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { rateLimit } from '../../../../core/http/rateLimit';
 import { buildFirmaEvidencia, canTransitionAlbaran, ensureAlbaranPdf } from '../../domain/albaran.service';
@@ -32,6 +32,7 @@ import { sendAlbaranFirmadoWhatsApp } from '../../domain/albaranWhatsApp.service
 import { requestIp } from '../../../system/audit.service';
 import { getLocale } from '../../../../core/i18n/locales'; // SCRUM-967b
 import { portalUrlDelCliente } from '../../../system/customerAdmin'; // SCRUM-967b
+import { clienteDelDocumento } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-1650b
 
 const router = Router();
 // Superficie pública → rate-limit (patrón decisionLimiter del presupuesto).
@@ -248,11 +249,17 @@ async function loadContext(token: string) {
 // GET /albaran/:token — revisar + firmar (o estado "ya firmado" / no encontrado).
 router.get('/:token', async (req: Request, res: Response) => {
   const html = (t: string, b: string) => res.setHeader('Content-Type', 'text/html; charset=utf-8').send(renderPage(t, b));
-  const ctx = await loadContext(req.params.token).catch(() => null);
+  const ctx = await loadContext(parseToken(req.params.token)).catch(() => null); // tolera URLs sucias ('{{1}}abc...' → 'abc...')
   if (!ctx) return res.status(404).setHeader('Content-Type', 'text/html; charset=utf-8').send(documentNotFoundHtml());
   const { albaran, merchant, job, customer } = ctx;
   const hero = merchantHero(merchant);
-  const customerName = esc(customer?.name || 'Cliente');
+  // SCRUM-1650b · el nombre es el que quedó ESCRITO en el albarán al emitirlo, no el de la ficha de
+  // hoy. Es también la SUGERENCIA del firmante (`firmanteCamposHtml`), que acaba sellada en «Firmado
+  // por»: editar la ficha después de emitir no puede cambiar lo que se propone firmar. GO del
+  // fundador del 10-nov-2026 (registro en docs/master/SCRUM-1650.md). Un albarán anterior al
+  // escritor (columnas a NULL) cae a la ficha: la regla es la de `clienteDelDocumento`, no una copia.
+  const nombreDelDocumento = albaran.customerName != null || customer ? clienteDelDocumento(albaran, customer).name : '';
+  const customerName = esc(nombreDelDocumento || 'Cliente');
   const obra = esc((job?.direccion || job?.titulo || '').trim());
 
   if (albaran.estado === 'firmado') {
@@ -325,7 +332,7 @@ router.get('/:token', async (req: Request, res: Response) => {
           // SCRUM-300: los dos datos de FIRMADO POR viajan CON la firma, para que entren en el
           // contenido ANTES de sellarlo. Pegarlos después rompería el hash.
           const cal=document.getElementById('firmante-calidad');
-          const r=await fetch(${JSON.stringify(`/albaran/${req.params.token}/firmar`)},{
+          const r=await fetch(${JSON.stringify(`/albaran/${parseToken(req.params.token)}/firmar`)},{
             method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
               signatureData:sig,
               // SCRUM-361 (H6): la versión que ESTA PÁGINA pintó. El servidor la compara con la de
@@ -378,7 +385,7 @@ router.get('/:token', async (req: Request, res: Response) => {
 // POST /albaran/:token/firmar — emitido → firmado + auto-envío de la copia firmada (best-effort).
 router.post('/:token/firmar', firmaLimiter, async (req: Request, res: Response) => {
   try {
-    const albaran = await prisma.albaran.findUnique({ where: { firmaToken: req.params.token } });
+    const albaran = await prisma.albaran.findUnique({ where: { firmaToken: parseToken(req.params.token) } }); // tolera URLs sucias
     if (!albaran) return res.status(404).json({ error: 'not_found', message: 'Este enlace no es válido.' });
     if (albaran.estado === 'firmado') return res.json({ ok: true, already: true }); // idempotente
     if (!canTransitionAlbaran(albaran.estado, 'firmado')) {

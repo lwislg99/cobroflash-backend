@@ -240,3 +240,42 @@ Lo decide quien lleve el máster.
 
 **Nada de esto cambia el suelo del ticket:** es STOP de regla 40 para el builder, y de regla 39 para
 el texto de la factura. Lo que aquí queda es **qué** hay que construir, con la fuente al lado.
+
+## J6 · SCRUM-1240b · trinquete de solo lectura del defecto conocido de `ClaveRegimen`
+
+**Medido contra:** `origin/main` = `2cc189a05d9e5b4d11cd17546d796fadf47200f9` · 2026-10-27T17:44:01Z (hora de GitHub; sesión J6 `jv-j6dv`, por encargo del orquestador `cobroflash-backend-8b`. Rama `scrum-1240b-trinquete-clave-regimen`, que sale de `63550e45e`; entre los dos, `origin/main` no toca el builder, este registro ni el test)
+
+A9: comprobación → `scripts/meta-guard-mutaciones.mjs`
+
+**Qué es.** `tests/scrum1240b-clave-regimen-defecto-declarado.test.mjs` deja escrito, como DEFECTO
+CONOCIDO y declarado (`DEFECTO_CONOCIDO`, con SCRUM-1240 y SCRUM-1129), que la clave de régimen no
+depende hoy de `criterioCaja` ni del régimen del comercio. Lee `src/` por AST (TypeScript); no importa
+ni toca el camino de emisión (reglas 38 y 40). No bendice el `01`: es un trinquete del defecto.
+
+| estado medido | declaración puesta | declaración retirada |
+|---|---|---|
+| defecto (sitios = `CLAVE_REGIMEN_GENERAL`, constante `'01'`, `criterioCaja` ×0) | verde, «no es conformidad» | ROJO: retirarla no es arreglarlo |
+| la clave cambió (otro valor, otra expresión u otro escritor en `src/`) | ROJO: tocada sin cerrar 1240/1129 | verde: el test del arreglo es de quien lo construya |
+| nada que medir (0 escrituras o sin la constante) | CIEGO = rojo | CIEGO = rojo |
+
+Lo que tiene que hacer el arreglo lo dicen 1240 y 1129, no este test.
+
+**Medido sobre el árbol real:** población 1 fichero de `src/` con `claveRegimen` · 2 escrituras
+(`registro.builder.ts:313` y `:328`, las dos `CLAVE_REGIMEN_GENERAL`) · constante `'01'` · `criterioCaja` ×0
+en el builder · estado DEFECTO.
+
+**Rojo primero, con `correr` + `aplicarUna` de la casa** (las tres declaraciones del fichero, leídas por
+AST, sobre `dist/` compilado con `--noCheck` y árbol limpio en `ad1c25ff`): base 6 pasados · 0 caídos ·
+0 saltados; las tres VIVAS (el test nombrado cae): la clave pasa a depender de `criterioCaja`; la
+constante pasa a `'07'`; la declaración se retira sin arreglar. Negativo: un comentario con
+`criterioCaja` sembrado en el builder deja el test en verde (6 pasados). `git status` limpio y `dist/`
+sin `'07'` después de cada pasada. Los controles sembrados del propio test (defecto, cambiado, CIEGO y
+las cuatro casillas del juicio) no dependen del árbol: no se jubilan el día del arreglo.
+
+**Guards corridos:** scrum237, scrum976, scrum1387, scrum1387d, `registroBuilder` y el nuevo: 43 de 43
+(43 `ok` + 0 `not ok`, ninguno saltado). `meta-guard-mutaciones --solo-censo`: salida 0, con las
+declaraciones de este fichero dentro. Suite entera local: NO CORRIDA (encargo).
+
+**Error mío:** escribí las declaraciones de mutación con `fichero: BUILDER` (un identificador), y el
+meta-guard sólo evalúa literales: mi primer driver leyó 0 declaraciones, y en CI habría salido CIEGO
+(«declaración que no se puede evaluar», el suelo de SCRUM-757). Corregido a literal antes de medir.

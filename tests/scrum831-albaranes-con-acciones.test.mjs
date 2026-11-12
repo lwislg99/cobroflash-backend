@@ -163,8 +163,9 @@ test('SCRUM-831 · `.cell-actions` es de las acciones; el Trabajo tiene su propi
     '🔴 la columna de acciones no usa `cell-actions`, que es la ranura que la rejilla reconoce.',
   );
   assert.ok(
-    /'Nº', 'Emisión', 'Entrega', 'Cliente', 'Trabajo', 'Estado', 'Acciones'/.test(codigo),
-    '🔴 la cabecera no declara las siete columnas. «Acciones» no es rótulo nuevo: es el que ya\n' +
+    // SCRUM-1669 · entra «Importe» (texto firmado n.º 17, SCRUM-1656 c.21405 / firma c.21408).
+    /'Nº', 'Emisión', 'Entrega', 'Cliente', 'Trabajo', 'Importe', 'Estado', 'Acciones'/.test(codigo),
+    '🔴 la cabecera no declara las ocho columnas. «Acciones» no es rótulo nuevo: es el que ya\n' +
     '  usan `jobsView.js` y `quotesListView.js` para esta misma columna.',
   );
   // La rejilla de móvil le da su área, y SOLO a esta tabla: tocar la compartida movería a las

@@ -318,6 +318,16 @@ export async function uploadWhatsAppMedia(params: {
   }
 }
 
+// SCRUM-1631: la fila de un envío que no salió se ESPERA antes de devolver. Lanzada sin `await`,
+// la función volvía antes de que existiera (174 de 200 envíos, Postgres 16) y un proceso que moría
+// en ese momento la perdía entera (30 de 30): es lo mismo que «el fallo no se registra» de SCRUM-115.
+// Esperar no cambia lo que se devuelve ni detiene nada: el envío ya no va a salir, y
+// `recordWaMessage` y `resolverReservaDePlantilla` no lanzan. Este `.catch` no debería correr
+// nunca; si corre, lo dice en el log, y el resultado del envío sigue sin depender de la fila.
+function filaDelFalloPerdida(err: any): void {
+  console.error('[WA-0b] la fila del fallo no se escribió:', err?.message || err);
+}
+
 export async function sendWhatsAppTemplate(params: {
   to: string;
   templateName: string;
@@ -335,9 +345,9 @@ export async function sendWhatsAppTemplate(params: {
   // sin rastro — WA-0b registraba SOLO el camino de éxito, así que un fallo no dejaba
   // fila que consultar (el ticket "el fallo no se registra en ningún sitio"). No cuenta
   // para los topes A3.2/J6 porque esas queries filtran por waMessageId (no lo tiene).
-  const logFailure = (reason: string) => {
+  const logFailure = async (reason: string): Promise<void> => {
     if (!params.merchantId) return;
-    recordWaMessage({
+    await recordWaMessage({
       merchantId: params.merchantId,
       toPhone: params.to,
       customerId: params.log?.customerId ?? null,
@@ -347,7 +357,7 @@ export async function sendWhatsAppTemplate(params: {
       error: reason,
       relatedType: params.log?.relatedType ?? null,
       relatedId: params.log?.relatedId ?? null,
-    }).catch(() => {});
+    }).catch(filaDelFalloPerdida);
   };
 
   // SCRUM-227 (extiende WA-0b de SCRUM-115): sin merchantId ningún log dejará rastro — avisar (sin romper el envío).
@@ -355,21 +365,21 @@ export async function sendWhatsAppTemplate(params: {
 
   if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, mensaje omitido');
-    logFailure('not_configured');
+    await logFailure('not_configured');
     return { ok: false, reason: 'not_configured' };
   }
 
   // V0-2: modo demo seguro — el demo solo envía a DEMO_SAFE_NUMBERS
   if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
     console.warn(`[WhatsApp] V0-2: envío desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO (no está en DEMO_SAFE_NUMBERS)`);
-    logFailure('demo_safe_numbers');
+    await logFailure('demo_safe_numbers');
     return { ok: false, reason: 'demo_safe_numbers' };
   }
 
   // J3: baja del canal — bloqueo de plantillas a ese número para ese merchant
   const corte = await corteDeLaBaja({ via: 'sendWhatsAppTemplate', to: params.to, merchantId: params.merchantId });
   if (corte) {
-    logFailure(corte);
+    await logFailure(corte);
     return { ok: false, reason: corte };
   }
 
@@ -379,7 +389,7 @@ export async function sendWhatsAppTemplate(params: {
   const invalid = validateTemplateComponents(params.templateName, params.components);
   if (invalid) {
     console.error('[WhatsApp] Plantilla inválida, envío abortado:', invalid);
-    logFailure(`template_invalid: ${invalid}`);
+    await logFailure(`template_invalid: ${invalid}`);
     return { ok: false, error: `template_invalid: ${invalid}` };
   }
 
@@ -407,7 +417,7 @@ export async function sendWhatsAppTemplate(params: {
           `[WhatsApp][ALERTA] merchant ${params.merchantId} alcanzó el tope diario de plantillas ` +
           `(${reserva.cuenta}/${reserva.tope}); envío BLOQUEADO (A3.2)`,
         );
-        logFailure('daily_cap');
+        await logFailure('daily_cap');
         return { ok: false, reason: 'daily_cap' };
       }
       if (!reserva.ok) {
@@ -416,7 +426,7 @@ export async function sendWhatsAppTemplate(params: {
           `[WhatsApp] J6: cliente ${customerId} ya recibió ${reserva.cuenta} plantillas hoy ` +
           `del merchant ${params.merchantId}; envío BLOQUEADO`,
         );
-        logFailure('customer_daily_cap');
+        await logFailure('customer_daily_cap');
         return { ok: false, reason: 'customer_daily_cap' };
       }
       reservaId = reserva.id;
@@ -426,7 +436,7 @@ export async function sendWhatsAppTemplate(params: {
           'envío BLOQUEADO (fail-closed, SCRUM-1509g):',
         err?.message || err,
       );
-      logFailure(MOTIVO_TOPE_NO_COMPROBABLE);
+      await logFailure(MOTIVO_TOPE_NO_COMPROBABLE);
       return { ok: false, reason: MOTIVO_TOPE_NO_COMPROBABLE };
     }
   }
@@ -495,18 +505,18 @@ export async function sendWhatsAppTemplate(params: {
     console.error('[WhatsApp] Error enviando mensaje:', err?.response?.data || err?.message);
     const errMsg = err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error');
     if (reservaId === null) {
-      logFailure(errMsg);
+      await logFailure(errMsg);
     } else if (desenlaceDeMeta(err) === 'sin_respuesta') {
       // P2: no se sabe si salió. La reserva se queda como está y sigue ocupando su hueco.
-      resolverReservaDePlantilla(prisma, reservaId, { como: 'sin_respuesta', error: errMsg }).catch(() => {});
+      await resolverReservaDePlantilla(prisma, reservaId, { como: 'sin_respuesta', error: errMsg }).catch(filaDelFalloPerdida);
     } else {
       // P1: Meta dijo que no, o la petición no llegó a salir. Devuelve el hueco.
-      resolverReservaDePlantilla(prisma, reservaId, {
+      await resolverReservaDePlantilla(prisma, reservaId, {
         como: 'rechazada',
         error: errMsg,
         relatedType: params.log?.relatedType ?? null,
         relatedId: params.log?.relatedId ?? null,
-      }).catch(() => {});
+      }).catch(filaDelFalloPerdida);
     }
     return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
@@ -541,7 +551,7 @@ export async function sendWhatsAppWindowFirst(params: {
     // a sendWhatsAppTemplate, que sí lo hace desde SCRUM-115). El único llamador fire-and-
     // forget de esta función (el auto-envío tras decisión de presupuesto, quotes.routes.ts)
     // no tiene NINGÚN otro sitio donde ver este fallo si no queda aquí.
-    recordWaMessage({
+    await recordWaMessage({
       merchantId: params.merchantId,
       toPhone: params.to,
       customerId,
@@ -551,7 +561,7 @@ export async function sendWhatsAppWindowFirst(params: {
       error: corte,
       relatedType: params.log?.relatedType ?? null,
       relatedId: params.log?.relatedId ?? null,
-    }).catch(() => {});
+    }).catch(filaDelFalloPerdida);
     return { ok: false, via: 'none', reason: corte };
   }
   // SCRUM-1436: lo que devolvió el envío por ventana cuando la ventana estaba ABIERTA y aun así
@@ -680,9 +690,9 @@ export async function sendWhatsAppText(params: {
   // SCRUM-115: esta función nunca registraba nada en WA-0b, ni éxito ni fallo. Aquí solo
   // se añade el registro de FALLO (ver comentario del param `log`), que es lo que el
   // ticket pedía: que un envío que no salió deje rastro consultable.
-  const logFailure = (reason: string) => {
+  const logFailure = async (reason: string): Promise<void> => {
     if (!params.merchantId) return;
-    recordWaMessage({
+    await recordWaMessage({
       merchantId: params.merchantId,
       toPhone: params.to,
       customerId: params.log?.customerId ?? null,
@@ -691,7 +701,7 @@ export async function sendWhatsAppText(params: {
       error: reason,
       relatedType: params.log?.relatedType ?? null,
       relatedId: params.log?.relatedId ?? null,
-    }).catch(() => {});
+    }).catch(filaDelFalloPerdida);
   };
 
   // SCRUM-227 (extiende WA-0b de SCRUM-115): sin merchantId ningún log dejará rastro — avisar (sin romper el envío).
@@ -699,20 +709,20 @@ export async function sendWhatsAppText(params: {
 
   if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, mensaje omitido');
-    logFailure('not_configured');
+    await logFailure('not_configured');
     return { ok: false, reason: 'not_configured' };
   }
 
   // V0-2: modo demo seguro (los textos libres además solo entregan en ventana 24h — J2)
   if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS, params.exentoDelDemo)) {
     console.warn(`[WhatsApp] V0-2: texto desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO (no está en DEMO_SAFE_NUMBERS)`);
-    logFailure('demo_safe_numbers');
+    await logFailure('demo_safe_numbers');
     return { ok: false, reason: 'demo_safe_numbers' };
   }
   // SCRUM-1262 (J3): la baja del canal corta TAMBIÉN esta vía, y falla cerrado.
   const corte = await corteDeLaBaja({ via: 'sendWhatsAppText', to: params.to, merchantId: params.merchantId, exentoDeLaBaja: params.exentoDeLaBaja });
   if (corte) {
-    logFailure(corte);
+    await logFailure(corte);
     return { ok: false, reason: corte };
   }
 
@@ -741,7 +751,7 @@ export async function sendWhatsAppText(params: {
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando texto:', err?.response?.data || err?.message);
     const errMsg = err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error');
-    logFailure(errMsg);
+    await logFailure(errMsg);
     return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
 }
@@ -766,9 +776,9 @@ export async function sendWhatsAppButtons(params: {
 
   // SCRUM-227: toda vía deja rastro (forma de sendWhatsAppTemplate). Estos botones van AL PRO,
   // así que `customerId` suele ir null — WhatsAppMessage.customerId es opcional, cabe sin schema.
-  const logFailure = (reason: string) => {
+  const logFailure = async (reason: string): Promise<void> => {
     if (!params.merchantId) return;
-    recordWaMessage({
+    await recordWaMessage({
       merchantId: params.merchantId,
       toPhone: params.to,
       customerId: params.log?.customerId ?? null,
@@ -777,7 +787,7 @@ export async function sendWhatsAppButtons(params: {
       error: reason,
       relatedType: params.log?.relatedType ?? null,
       relatedId: params.log?.relatedId ?? null,
-    }).catch(() => {});
+    }).catch(filaDelFalloPerdida);
   };
   const logSent = (waMessageId: string | null) => {
     if (!params.merchantId) return;
@@ -798,18 +808,18 @@ export async function sendWhatsAppButtons(params: {
 
   if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, botones omitidos');
-    logFailure('not_configured');
+    await logFailure('not_configured');
     return { ok: false, reason: 'not_configured' };
   }
   if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
     console.warn(`[WhatsApp] V0-2: botones desde el merchant demo a ${maskPhone(params.to)} BLOQUEADOS`);
-    logFailure('demo_safe_numbers');
+    await logFailure('demo_safe_numbers');
     return { ok: false, reason: 'demo_safe_numbers' };
   }
   // SCRUM-1262 (J3): la baja del canal corta TAMBIÉN esta vía, y falla cerrado.
   const corte = await corteDeLaBaja({ via: 'sendWhatsAppButtons', to: params.to, merchantId: params.merchantId, exentoDeLaBaja: params.exentoDeLaBaja });
   if (corte) {
-    logFailure(corte);
+    await logFailure(corte);
     return { ok: false, reason: corte };
   }
 
@@ -848,7 +858,7 @@ export async function sendWhatsAppButtons(params: {
     return { ok: true, data: response.data };
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando botones:', err?.response?.data || err?.message);
-    logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
+    await logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
     return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
 }
@@ -871,9 +881,9 @@ export async function sendWhatsAppList(params: {
   const token = config.WHATSAPP_ACCESS_TOKEN;
 
   // SCRUM-227: toda vía de envío deja rastro (misma forma que sendWhatsAppTemplate).
-  const logFailure = (reason: string) => {
+  const logFailure = async (reason: string): Promise<void> => {
     if (!params.merchantId) return;
-    recordWaMessage({
+    await recordWaMessage({
       merchantId: params.merchantId,
       toPhone: params.to,
       customerId: params.log?.customerId ?? null,
@@ -882,7 +892,7 @@ export async function sendWhatsAppList(params: {
       error: reason,
       relatedType: params.log?.relatedType ?? null,
       relatedId: params.log?.relatedId ?? null,
-    }).catch(() => {});
+    }).catch(filaDelFalloPerdida);
   };
   const logSent = (waMessageId: string | null) => {
     if (!params.merchantId) return;
@@ -903,18 +913,18 @@ export async function sendWhatsAppList(params: {
 
   if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, lista omitida');
-    logFailure('not_configured');
+    await logFailure('not_configured');
     return { ok: false, reason: 'not_configured' };
   }
   if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
     console.warn(`[WhatsApp] V0-2: lista desde el merchant demo a ${maskPhone(params.to)} BLOQUEADA`);
-    logFailure('demo_safe_numbers');
+    await logFailure('demo_safe_numbers');
     return { ok: false, reason: 'demo_safe_numbers' };
   }
   // SCRUM-1262 (J3): la baja del canal corta TAMBIÉN esta vía, y falla cerrado.
   const corte = await corteDeLaBaja({ via: 'sendWhatsAppList', to: params.to, merchantId: params.merchantId, exentoDeLaBaja: params.exentoDeLaBaja });
   if (corte) {
-    logFailure(corte);
+    await logFailure(corte);
     return { ok: false, reason: corte };
   }
 
@@ -959,7 +969,7 @@ export async function sendWhatsAppList(params: {
     return { ok: true, data: response.data };
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando lista:', err?.response?.data || err?.message);
-    logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
+    await logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
     return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
 }
@@ -985,9 +995,9 @@ export async function sendWhatsAppCtaUrl(params: {
 
   // SCRUM-227: toda vía de envío deja rastro (misma forma que sendWhatsAppTemplate). Era la vía
   // de la reseña Google, que se enviaba sin dejar constancia consultable.
-  const logFailure = (reason: string) => {
+  const logFailure = async (reason: string): Promise<void> => {
     if (!params.merchantId) return;
-    recordWaMessage({
+    await recordWaMessage({
       merchantId: params.merchantId,
       toPhone: params.to,
       customerId: params.log?.customerId ?? null,
@@ -996,7 +1006,7 @@ export async function sendWhatsAppCtaUrl(params: {
       error: reason,
       relatedType: params.log?.relatedType ?? null,
       relatedId: params.log?.relatedId ?? null,
-    }).catch(() => {});
+    }).catch(filaDelFalloPerdida);
   };
   const logSent = (waMessageId: string | null) => {
     if (!params.merchantId) return;
@@ -1017,18 +1027,18 @@ export async function sendWhatsAppCtaUrl(params: {
 
   if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, cta_url omitido');
-    logFailure('not_configured');
+    await logFailure('not_configured');
     return { ok: false, reason: 'not_configured' };
   }
   if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
     console.warn(`[WhatsApp] V0-2: cta_url desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO`);
-    logFailure('demo_safe_numbers');
+    await logFailure('demo_safe_numbers');
     return { ok: false, reason: 'demo_safe_numbers' };
   }
   // SCRUM-1262 (J3): la baja del canal corta TAMBIÉN esta vía, y falla cerrado.
   const corte = await corteDeLaBaja({ via: 'sendWhatsAppCtaUrl', to: params.to, merchantId: params.merchantId, exentoDeLaBaja: params.exentoDeLaBaja });
   if (corte) {
-    logFailure(corte);
+    await logFailure(corte);
     return { ok: false, reason: corte };
   }
   if (isDryRun()) {
@@ -1054,7 +1064,7 @@ export async function sendWhatsAppCtaUrl(params: {
     return { ok: true, data: response.data };
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando cta_url:', err?.response?.data || err?.message);
-    logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
+    await logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
     return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
 }
@@ -1077,9 +1087,9 @@ export async function sendWhatsAppDocument(params: {
   // SCRUM-227: toda vía de envío deja rastro. Misma forma que sendWhatsAppTemplate: FALLO en
   // cada rama que no llega a Meta y en el catch; ÉXITO con el wamid tras el POST. `service`
   // (documento en ventana, coste 0). Todo `.catch(()=>{})`: el log JAMÁS rompe el envío.
-  const logFailure = (reason: string) => {
+  const logFailure = async (reason: string): Promise<void> => {
     if (!params.merchantId) return;
-    recordWaMessage({
+    await recordWaMessage({
       merchantId: params.merchantId,
       toPhone: params.to,
       customerId: params.log?.customerId ?? null,
@@ -1088,7 +1098,7 @@ export async function sendWhatsAppDocument(params: {
       error: reason,
       relatedType: params.log?.relatedType ?? null,
       relatedId: params.log?.relatedId ?? null,
-    }).catch(() => {});
+    }).catch(filaDelFalloPerdida);
   };
   const logSent = (waMessageId: string | null) => {
     if (!params.merchantId) return;
@@ -1109,18 +1119,18 @@ export async function sendWhatsAppDocument(params: {
 
   if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, documento omitido');
-    logFailure('not_configured');
+    await logFailure('not_configured');
     return { ok: false, reason: 'not_configured' };
   }
   if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
     console.warn(`[WhatsApp] V0-2: documento desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO`);
-    logFailure('demo_safe_numbers');
+    await logFailure('demo_safe_numbers');
     return { ok: false, reason: 'demo_safe_numbers' };
   }
   // SCRUM-1262 (J3): la baja del canal corta TAMBIÉN esta vía, y falla cerrado.
   const corte = await corteDeLaBaja({ via: 'sendWhatsAppDocument', to: params.to, merchantId: params.merchantId });
   if (corte) {
-    logFailure(corte);
+    await logFailure(corte);
     return { ok: false, reason: corte };
   }
   if (isDryRun()) {
@@ -1142,7 +1152,7 @@ export async function sendWhatsAppDocument(params: {
     return { ok: true, data: response.data };
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando documento:', err?.response?.data || err?.message);
-    logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
+    await logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
     return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
 }
@@ -1162,9 +1172,9 @@ export async function sendWhatsAppLocationRequest(params: {
   const token = config.WHATSAPP_ACCESS_TOKEN;
 
   // SCRUM-227: toda vía de envío deja rastro (misma forma que sendWhatsAppTemplate).
-  const logFailure = (reason: string) => {
+  const logFailure = async (reason: string): Promise<void> => {
     if (!params.merchantId) return;
-    recordWaMessage({
+    await recordWaMessage({
       merchantId: params.merchantId,
       toPhone: params.to,
       customerId: params.log?.customerId ?? null,
@@ -1173,7 +1183,7 @@ export async function sendWhatsAppLocationRequest(params: {
       error: reason,
       relatedType: params.log?.relatedType ?? null,
       relatedId: params.log?.relatedId ?? null,
-    }).catch(() => {});
+    }).catch(filaDelFalloPerdida);
   };
   const logSent = (waMessageId: string | null) => {
     if (!params.merchantId) return;
@@ -1194,18 +1204,18 @@ export async function sendWhatsAppLocationRequest(params: {
 
   if ((!phoneNumberId || !token) && !isDryRun()) {
     console.warn('[WhatsApp] Credenciales no configuradas, location_request omitido');
-    logFailure('not_configured');
+    await logFailure('not_configured');
     return { ok: false, reason: 'not_configured' };
   }
   if (demoSendBlocked(params.merchantId, params.to, config.DEMO_SAFE_NUMBERS)) {
     console.warn(`[WhatsApp] V0-2: location_request desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO`);
-    logFailure('demo_safe_numbers');
+    await logFailure('demo_safe_numbers');
     return { ok: false, reason: 'demo_safe_numbers' };
   }
   // SCRUM-1262 (J3): la baja del canal corta TAMBIÉN esta vía, y falla cerrado.
   const corte = await corteDeLaBaja({ via: 'sendWhatsAppLocationRequest', to: params.to, merchantId: params.merchantId, exentoDeLaBaja: params.exentoDeLaBaja });
   if (corte) {
-    logFailure(corte);
+    await logFailure(corte);
     return { ok: false, reason: corte };
   }
   if (isDryRun()) {
@@ -1229,7 +1239,7 @@ export async function sendWhatsAppLocationRequest(params: {
     return { ok: true, data: response.data };
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando location_request:', err?.response?.data || err?.message);
-    logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
+    await logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
     return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
 }

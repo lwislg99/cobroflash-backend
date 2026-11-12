@@ -1,12 +1,15 @@
 // public/dashboard/js/expensesView.js
 
-// Los cinco colores de la píldora viven en `styles.css` (`.gasto-cat--<clave>`), no aquí: eran un
+// Los colores de la píldora viven en `styles.css` (`.gasto-cat--<clave>`), no aquí: eran un
 // `style=` en línea por fila (SCRUM-920c, norma A7). Son los de siempre; el profesional ya los reconoce.
 const CATEGORY_LABELS = {
   materiales:     { label: 'Materiales' },
   desplazamiento: { label: 'Desplazamiento' },
   herramientas:   { label: 'Herramientas' },
   subcontrata:    { label: 'Subcontrata' },
+  alquiler:       { // SCRUM-1588 · la firma va en la línea de `label`: es la hoja que ve el profesional
+    label: 'Alquiler de local', // APROBADO por Javier el 23-oct-2026 (SCRUM-1066 c.20497, opción A)
+  },
   otros:          { label: 'Otros' },
 };
 
@@ -452,9 +455,18 @@ function filaDeGasto(e) {
   mas.appendChild(overflowMenu(opciones, { label: 'Más acciones de ' + e.concept }));
 
   fila.append(que, meta, celdaTrabajo(e), imp, mas);
+  const abrirGasto = () => renderAppView('expenses-detail', { expenseId: e.id });
   fila.addEventListener('click', (ev) => {
     if (ev.target.closest('a, button')) return;
-    renderAppView('expenses-detail', { expenseId: e.id });
+    abrirGasto();
+  });
+  // SCRUM-1639 · con teclado: la fila sigue siendo `listitem` (su lista lo exige) y lleva dentro el
+  // enlace del trabajo y el «⋯», así que no puede ser ella el botón (un botón no contiene controles).
+  // El activable es el bloque del concepto, que no contiene ninguno; su nombre es su propio texto.
+  que.setAttribute('role', 'button');
+  que.setAttribute('tabindex', '0');
+  que.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); abrirGasto(); }
   });
   return fila;
 }
@@ -624,7 +636,7 @@ async function renderExpenseDetailView(container, expenseId) {
     ['Nº de factura del proveedor', String(e.providerInvoiceNumber || '').trim() || null],
     ['Fecha de la factura', fechaFactura],
     ['Base imponible', e.baseAmount != null ? fmtEuro(Number(e.baseAmount)) : null],
-    ['Tipo de IVA', e.vatRate != null ? Number(e.vatRate) + '%' : null],
+    ['Tipo de IVA', e.vatRate != null ? fmtTipoIvaEs(Number(e.vatRate) / 100) + '%' : null],
     ['Cuota de IVA', e.vatAmount != null ? fmtEuro(Number(e.vatAmount)) : null],
   ].filter(([, v]) => v != null && v !== '');
   if (datos.length) {

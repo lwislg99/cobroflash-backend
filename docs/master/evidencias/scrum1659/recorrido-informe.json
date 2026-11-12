@@ -1,0 +1,468 @@
+{
+ "lista-1280": {
+  "build": "d7fb55ea19b825a26f89bf5b4765c2557eeb3a71",
+  "ancho": 1280,
+  "scrollW": 1280,
+  "desbordaX": false,
+  "altoDoc": 900,
+  "fuente": "Inter, system-ui, -apple-system, sans-se",
+  "nControles": 23,
+  "cortos": [
+   {
+    "el": "button.btn.btn-primary",
+    "t": "Nuevo albarán N",
+    "w": 200.4,
+    "h": 36
+   },
+   {
+    "el": "input.input",
+    "t": "Buscar albaranes",
+    "w": 742,
+    "h": 34
+   },
+   {
+    "el": "select.input",
+    "t": "Facturación: todos (6) Sin facturar (6) ",
+    "w": 190,
+    "h": 36
+   },
+   {
+    "el": "a.alb-enlace",
+    "t": "Trabajo de pruebas QA",
+    "w": 147,
+    "h": 16
+   },
+   {
+    "el": "a.alb-enlace",
+    "t": "Trabajo de pruebas QA",
+    "w": 147,
+    "h": 16
+   },
+   {
+    "el": "a.alb-enlace",
+    "t": "Trabajo de pruebas QA",
+    "w": 147,
+    "h": 16
+   },
+   {
+    "el": "a.alb-enlace",
+    "t": "Trabajo de pruebas QA",
+    "w": 147,
+    "h": 16
+   },
+   {
+    "el": "a.alb-enlace",
+    "t": "Trabajo de pruebas QA",
+    "w": 147,
+    "h": 16
+   },
+   {
+    "el": "a.alb-enlace",
+    "t": "Trabajo de pruebas QA",
+    "w": 147,
+    "h": 16
+   }
+  ],
+  "conStyle": [
+   "h2:margin: 0px; font-size: 18px;",
+   "p:margin: 2px 0px 0px; font-size: 13px; color: var(--muted);",
+   "input:min-width: 180px; flex: 1 1 0%;",
+   "select:width: auto;",
+   "div:display: none;"
+  ],
+  "pills": [
+   {
+    "t": "6",
+    "tt": "none",
+    "fs": "11.5px",
+    "fw": "600",
+    "col": "rgb(75, 85, 79)",
+    "bg": "rgb(241, 242, 238)"
+   },
+   {
+    "t": "2",
+    "tt": "none",
+    "fs": "11.5px",
+    "fw": "600",
+    "col": "rgb(75, 85, 79)",
+    "bg": "rgb(241, 242, 238)"
+   },
+   {
+    "t": "2",
+    "tt": "none",
+    "fs": "11.5px",
+    "fw": "600",
+    "col": "rgb(75, 85, 79)",
+    "bg": "rgb(241, 242, 238)"
+   },
+   {
+    "t": "2",
+    "tt": "none",
+    "fs": "11.5px",
+    "fw": "600",
+    "col": "rgb(75, 85, 79)",
+    "bg": "rgb(241, 242, 238)"
+   },
+   {
+    "t": "BORRADOR",
+    "tt": "uppercase",
+    "fs": "11.5px",
+    "fw": "700",
+    "col": "rgb(107, 117, 111)",
+    "bg": "rgb(241, 242, 238)"
+   },
+   {
+    "t": "EMITIDO",
+    "tt": "uppercase",
+    "fs": "11.5px",
+    "fw": "700",
+    "col": "rgb(146, 64, 14)",
+    "bg": "rgb(255, 251, 235)"
+   },
+   {
+    "t": "FIRMADO",
+    "tt": "uppercase",
+    "fs": "11.5px",
+    "fw": "700",
+    "col": "rgb(21, 128, 61)",
+    "bg": "rgb(220, 252, 231)"
+   },
+   {
+    "t": "BORRADOR",
+    "tt": "uppercase",
+    "fs": "11.5px",
+    "fw": "700",
+    "col": "rgb(107, 117, 111)",
+    "bg": "rgb(241, 242, 238)"
+   },
+   {
+    "t": "FIRMADO",
+    "tt": "uppercase",
+    "fs": "11.5px",
+    "fw": "700",
+    "col": "rgb(21, 128, 61)",
+    "bg": "rgb(220, 252, 231)"
+   },
+   {
+    "t": "EMITIDO",
+    "tt": "uppercase",
+    "fs": "11.5px",
+    "fw": "700",
+    "col": "rgb(146, 64, 14)",
+    "bg": "rgb(255, 251, 235)"
+   }
+  ],
+  "dinero": [],
+  "titulos": [
+   {
+    "tag": "H2",
+    "t": "Albaranes",
+    "fs": "18px",
+    "fw": "700",
+    "ls": "-0.18px"
+   }
+  ],
+  "verdesPrimarios": [
+   "Nuevo albarán N"
+  ],
+  "vacio": false,
+  "noGet": [],
+  "errores": []
+ },
+ "ficha-1280": {
+  "build": "d7fb55ea19b825a26f89bf5b4765c2557eeb3a71",
+  "ancho": 1280,
+  "scrollW": 1280,
+  "desbordaX": false,
+  "altoDoc": 900,
+  "fuente": "Inter, system-ui, -apple-system, sans-se",
+  "nControles": 4,
+  "cortos": [],
+  "conStyle": [
+   "h2:margin:2px 0 0",
+   "div:display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0px 1",
+   "div:margin-top: 18px; display: grid; grid-template-columns: repe",
+   "div:grid-column: 1 / -1;"
+  ],
+  "pills": [
+   {
+    "t": "BORRADOR",
+    "tt": "uppercase",
+    "fs": "11.5px",
+    "fw": "700",
+    "col": "rgb(63, 74, 69)",
+    "bg": "rgba(0, 0, 0, 0)"
+   }
+  ],
+  "dinero": [],
+  "titulos": [
+   {
+    "tag": "H2",
+    "t": "AB260006",
+    "fs": "18px",
+    "fw": "700",
+    "ls": "-0.18px"
+   }
+  ],
+  "verdesPrimarios": [],
+  "vacio": false,
+  "noGet": [],
+  "errores": []
+ },
+ "publica-1280": {
+  "build": "d7fb55ea19b825a26f89bf5b4765c2557eeb3a71",
+  "ancho": 1280,
+  "scrollW": 1280,
+  "desbordaX": false,
+  "altoDoc": 995,
+  "fuente": "Inter, system-ui, -apple-system, sans-se",
+  "nControles": 5,
+  "cortos": [
+   {
+    "el": "button.btn-clear",
+    "t": "Borrar",
+    "w": 62.1,
+    "h": 29
+   },
+   {
+    "el": "a",
+    "t": "política de privacidad",
+    "w": 402.8,
+    "h": 30.5
+   }
+  ],
+  "conStyle": [
+   "div:display:none",
+   "div:color:#dc2626;font-size:13px;margin-top:8px;display:none"
+  ],
+  "pills": [],
+  "dinero": [],
+  "titulos": [
+   {
+    "tag": "H1",
+    "t": "Hola, Cliente de pruebas QA 👋",
+    "fs": "19px",
+    "fw": "700",
+    "ls": "normal"
+   }
+  ],
+  "verdesPrimarios": [
+   "Firmar el parte de trabajo"
+  ],
+  "vacio": false,
+  "noGet": [],
+  "errores": []
+ },
+ "lista-390": {
+  "build": "d7fb55ea19b825a26f89bf5b4765c2557eeb3a71",
+  "ancho": 390,
+  "scrollW": 390,
+  "desbordaX": false,
+  "altoDoc": 1700,
+  "fuente": "Inter, system-ui, -apple-system, sans-se",
+  "nControles": 23,
+  "cortos": [
+   {
+    "el": "input.input",
+    "t": "Buscar albaranes",
+    "w": 324,
+    "h": 34
+   },
+   {
+    "el": "select.input",
+    "t": "Facturación: todos (6) Sin facturar (6) ",
+    "w": 190,
+    "h": 36
+   }
+  ],
+  "conStyle": [
+   "h2:margin: 0px; font-size: 18px;",
+   "p:margin: 2px 0px 0px; font-size: 13px; color: var(--muted);",
+   "input:min-width: 180px; flex: 1 1 0%;",
+   "select:width: auto;",
+   "div:display: none;"
+  ],
+  "pills": [
+   {
+    "t": "6",
+    "tt": "none",
+    "fs": "11.5px",
+    "fw": "600",
+    "col": "rgb(75, 85, 79)",
+    "bg": "rgb(241, 242, 238)"
+   },
+   {
+    "t": "2",
+    "tt": "none",
+    "fs": "11.5px",
+    "fw": "600",
+    "col": "rgb(75, 85, 79)",
+    "bg": "rgb(241, 242, 238)"
+   },
+   {
+    "t": "2",
+    "tt": "none",
+    "fs": "11.5px",
+    "fw": "600",
+    "col": "rgb(75, 85, 79)",
+    "bg": "rgb(241, 242, 238)"
+   },
+   {
+    "t": "2",
+    "tt": "none",
+    "fs": "11.5px",
+    "fw": "600",
+    "col": "rgb(75, 85, 79)",
+    "bg": "rgb(241, 242, 238)"
+   },
+   {
+    "t": "BORRADOR",
+    "tt": "uppercase",
+    "fs": "11.5px",
+    "fw": "700",
+    "col": "rgb(107, 117, 111)",
+    "bg": "rgb(241, 242, 238)"
+   },
+   {
+    "t": "EMITIDO",
+    "tt": "uppercase",
+    "fs": "11.5px",
+    "fw": "700",
+    "col": "rgb(146, 64, 14)",
+    "bg": "rgb(255, 251, 235)"
+   },
+   {
+    "t": "FIRMADO",
+    "tt": "uppercase",
+    "fs": "11.5px",
+    "fw": "700",
+    "col": "rgb(21, 128, 61)",
+    "bg": "rgb(220, 252, 231)"
+   },
+   {
+    "t": "BORRADOR",
+    "tt": "uppercase",
+    "fs": "11.5px",
+    "fw": "700",
+    "col": "rgb(107, 117, 111)",
+    "bg": "rgb(241, 242, 238)"
+   },
+   {
+    "t": "FIRMADO",
+    "tt": "uppercase",
+    "fs": "11.5px",
+    "fw": "700",
+    "col": "rgb(21, 128, 61)",
+    "bg": "rgb(220, 252, 231)"
+   },
+   {
+    "t": "EMITIDO",
+    "tt": "uppercase",
+    "fs": "11.5px",
+    "fw": "700",
+    "col": "rgb(146, 64, 14)",
+    "bg": "rgb(255, 251, 235)"
+   }
+  ],
+  "dinero": [],
+  "titulos": [
+   {
+    "tag": "H2",
+    "t": "Albaranes",
+    "fs": "18px",
+    "fw": "700",
+    "ls": "-0.18px"
+   }
+  ],
+  "verdesPrimarios": [
+   "Nuevo albarán"
+  ],
+  "vacio": false,
+  "noGet": [],
+  "errores": []
+ },
+ "ficha-390": {
+  "build": "d7fb55ea19b825a26f89bf5b4765c2557eeb3a71",
+  "ancho": 390,
+  "scrollW": 390,
+  "desbordaX": false,
+  "altoDoc": 903,
+  "fuente": "Inter, system-ui, -apple-system, sans-se",
+  "nControles": 4,
+  "cortos": [],
+  "conStyle": [
+   "h2:margin:2px 0 0",
+   "div:display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0px 1",
+   "div:margin-top: 18px; display: grid; grid-template-columns: repe",
+   "div:grid-column: 1 / -1;"
+  ],
+  "pills": [
+   {
+    "t": "BORRADOR",
+    "tt": "uppercase",
+    "fs": "11.5px",
+    "fw": "700",
+    "col": "rgb(63, 74, 69)",
+    "bg": "rgba(0, 0, 0, 0)"
+   }
+  ],
+  "dinero": [],
+  "titulos": [
+   {
+    "tag": "H2",
+    "t": "AB260006",
+    "fs": "18px",
+    "fw": "700",
+    "ls": "-0.18px"
+   }
+  ],
+  "verdesPrimarios": [],
+  "vacio": false,
+  "noGet": [],
+  "errores": []
+ },
+ "publica-390": {
+  "build": "d7fb55ea19b825a26f89bf5b4765c2557eeb3a71",
+  "ancho": 390,
+  "scrollW": 390,
+  "desbordaX": false,
+  "altoDoc": 1044,
+  "fuente": "Inter, system-ui, -apple-system, sans-se",
+  "nControles": 5,
+  "cortos": [
+   {
+    "el": "button.btn-clear",
+    "t": "Borrar",
+    "w": 62.1,
+    "h": 29
+   },
+   {
+    "el": "a",
+    "t": "política de privacidad",
+    "w": 111.4,
+    "h": 14
+   }
+  ],
+  "conStyle": [
+   "div:display:none",
+   "div:color:#dc2626;font-size:13px;margin-top:8px;display:none"
+  ],
+  "pills": [],
+  "dinero": [],
+  "titulos": [
+   {
+    "tag": "H1",
+    "t": "Hola, Cliente de pruebas QA 👋",
+    "fs": "19px",
+    "fw": "700",
+    "ls": "normal"
+   }
+  ],
+  "verdesPrimarios": [
+   "Firmar el parte de trabajo"
+  ],
+  "vacio": false,
+  "noGet": [],
+  "errores": []
+ }
+}

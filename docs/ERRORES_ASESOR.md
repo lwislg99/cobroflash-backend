@@ -154,6 +154,15 @@ Apareció **en el mejor hallazgo de la jornada, cometido por la sesión que mejo
 **Coste:** una tarea manual falsa en la cola del fundador durante horas, presentada como urgente.
 **Regla derivada:** R1, R4.
 
+> ⚠️ **Revisado el 29-oct-2026 (SCRUM-1632): la lección de esta entrada puede ser la contraria.**
+> El enlace del móvil (`%7B%7B1%7D%7D0`) probablemente era la prueba buena. El panel se vio
+> «dinámico y correcto» comparándolo con nuestra guía, que entonces mandaba escribir la base
+> CON `{{1}}`. Según guías de terceros, el editor añade él ese `{{1}}`, así que uno escrito a mano
+> queda literal delante del sufijo. El mismo síntoma volvió con el albarán
+> (`/albaran/{{1}}<token>`, SCRUM-1236, 18-oct). Es lectura, no está verificado contra el panel.
+> Lo que sí queda: **para un botón de WhatsApp, la prueba es el enlace copiado del botón en el
+> móvil, no el panel.** Regla y motivo: `docs/WHATSAPP_TEMPLATES.md`, «Reglas comunes».
+
 ### 2026-07-22 · #4 — Afirmé que no existía política de privacidad, y existía (SCRUM-93)
 **Qué pasó:** abrí ticket **Highest** diciendo "no existe política de privacidad publicada". Existe desde junio en `public/privacidad.html`, publicada en `yaqu.app/privacidad`.
 **Por qué:** no comprobé el repo ni la web. Asumí la ausencia porque no había aparecido en ninguna conversación.

@@ -28,6 +28,14 @@ import { VERIFACTU_ID_SISTEMA } from '../../modules/fiscal/verifactu/productor';
  */
 export const MODELOS_PRESUPUESTOS_POR_DEFECTO = 'gemini-2.5-flash,gemini-2.5-flash-lite,gemini-flash-latest';
 
+/** SCRUM-1685 · «a@x.es, B@y.es» → ['a@x.es', 'b@y.es']. Sin espacios, en minúsculas, sin huecos. */
+export function listaDeCorreos(crudo?: string | null): string[] {
+  return String(crudo || '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+}
+
 export const config = {
     NODE_ENV: process.env.NODE_ENV || 'development',
     PORT: Number(process.env.PORT || 3000),
@@ -114,6 +122,12 @@ export const config = {
       .map((e) => e.trim().toLowerCase())
       .filter(Boolean),
 
+    // SCRUM-1685 · el ALTA CON INVITACIÓN (PILOTO-1; flag firmado en SCRUM-1656 c.21411, fila de la
+    // Parte P del máster). Correos separados por comas, normalizados igual que OWNER_EMAILS. Sólo
+    // esos pasan de la puerta de `POST /auth/register`. VACÍA O AUSENTE = la ruta sigue cerrada para
+    // todos, byte a byte como desde SCRUM-1515 (fail-closed). No es un flag de `FLAG_DEFAULTS`.
+    REGISTRATION_INVITED_EMAILS: listaDeCorreos(process.env.REGISTRATION_INVITED_EMAILS),
+
     // A3.2 (PV-WA-CAPS) · Topes anti-abuso del número compartido de WhatsApp:
     // máximo de PLANTILLAS iniciadas por negocio al día por merchant, y tope
     // duro J6 de mensajes-iniciados-por-negocio por cliente y día.
@@ -128,6 +142,13 @@ export const config = {
       .map((n) => n.trim())
       .filter(Boolean),
   } as const;
+
+  // SCRUM-1685 · ¿el correo está en la lista de invitados al alta? Comparación EXACTA tras normalizar:
+  // un trozo de un correo invitado no es un correo invitado. Lista vacía → nadie.
+  export function isInvitedEmail(email?: string | null): boolean {
+    if (!email) return false;
+    return config.REGISTRATION_INVITED_EMAILS.includes(email.trim().toLowerCase());
+  }
 
   // ¿El email pertenece a una cuenta owner exenta del paywall de prueba?
   export function isOwnerEmail(email?: string | null): boolean {

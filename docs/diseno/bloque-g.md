@@ -272,6 +272,21 @@ composición.
 **La lista enmendada:** LO QUE FALTA · ALBARANES · FACTURAS · y, dentro de «El trabajo», TIPO DE
 TRABAJO · NOMBRE Y DIRECCIÓN · QUIÉN LO EJECUTA · NOTAS INTERNAS · GASTOS.
 
+### ⑦ ENMIENDA DE SCRUM-1694 · entra la sección PARTES, antes de ALBARANES
+
+Decisión **D2** del fundador (SCRUM-1686 c.21461) y **M2** en el máster: un trabajo tiene varios
+partes, **uno por visita**, y se listan dentro de él («la visita ES su parte»). Hasta ahora el parte
+no tenía sección: era un botón en la barra de los albaranes que abría el más reciente, y el segundo
+parte de un trabajo no se alcanzaba desde la ficha (medido en SCRUM-1686 c.21447 ③).
+
+- **Rótulo «Partes»** (N6), **vacío «Aún no hay partes.»** (N7) y **botón «+ Nuevo parte»** (N9):
+  firmados en SCRUM-1686 c.21470/c.21471. El vacío de ALBARANES pasa a «Aún no hay albaranes.» (N7).
+- **Va antes de ALBARANES:** el parte es lo que se rellena en la obra; el albarán sale después.
+- **Es la misma tabla que la de albaranes** (`.table--cards-mobile`, C3): ni componente ni token nuevos.
+
+**La lista enmendada:** LO QUE FALTA · PARTES · ALBARANES · FACTURAS · y «El trabajo» con sus cinco
+líneas. Detalle en `docs/master/SCRUM-1694.md`.
+
 ### ④ La regla del hueco vale para LEER, no para ESCRIBIR
 
 «O está el dato, o no está la sección» (G3/G4/G5) se escribió para bloques de **LECTURA**: una

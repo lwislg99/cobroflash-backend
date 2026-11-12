@@ -46,17 +46,15 @@ export async function historialDelCliente(merchantId: number, customerId: number
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: TRABAJOS_POR_PAGINA + 1, // uno de más para saber si hay página siguiente, sin contar
     ...(op.despuesDe ? { cursor: { id: op.despuesDe }, skip: 1 } : {}),
-    select: { id: true, titulo: true, status: true, scheduledAt: true, createdAt: true, quoteId: true },
+    select: { id: true, titulo: true, status: true, scheduledAt: true, createdAt: true },
   });
   const hayMas = pagina.length > TRABAJOS_POR_PAGINA;
   const trabajos = pagina.slice(0, TRABAJOS_POR_PAGINA);
   const jobIds = trabajos.map((t) => t.id);
-  const quoteIds = trabajos.map((t) => t.quoteId).filter((q): q is number => q !== null);
 
-  const [quotes, partes, albaranes, proxima] = await Promise.all([
-    quoteIds.length
-      ? prisma.quote.findMany({ where: { merchantId, id: { in: quoteIds } }, select: { id: true, quoteNumber: true } })
-      : Promise.resolve([]),
+  // SCRUM-1690 · ya no se piden los presupuestos: sólo servían para titular «Presupuesto #N · cliente»,
+  // y el título cae al cliente (`tituloDeTrabajo`).
+  const [partes, albaranes, proxima] = await Promise.all([
     // Los de SUS trabajos y —sin recorte— los sueltos del cliente (`jobId` nulo, `customerId` suyo).
     prisma.parteTrabajo.findMany({
       where: {
@@ -102,7 +100,6 @@ export async function historialDelCliente(merchantId: number, customerId: number
     lista.push(f.id);
     fotosPorAlbaran.set(f.entityId, lista);
   }
-  const quotePorId = new Map(quotes.map((q) => [q.id, q]));
 
   return {
     // Ausente no es cero: sin próxima visita la clave NO viaja.
@@ -111,7 +108,6 @@ export async function historialDelCliente(merchantId: number, customerId: number
       id: t.id,
       titulo: tituloDeTrabajo({
         titulo: t.titulo,
-        quote: t.quoteId !== null ? quotePorId.get(t.quoteId) ?? null : null,
         customer: { name: cliente.name },
         jobId: t.id,
       }),

@@ -249,13 +249,16 @@ test('SCRUM-334 · 🔴 ninguna ruta guarda un correo sin consentimiento', () =>
 // RATCHET · quien lee un correo en la superficie publica, y con que base
 // ═════════════════════════════════════════════════════════════════════════════════════════
 //
-// Las dos de hoy, medidas, con su base declarada (eran tres: `/auth/register` se cerro el
-// 8-oct-2026, SCRUM-1515, y ya no lee nada de lo que le mandan; su linea se quito con ella). No es decoracion: el dia que aparezca una
+// Las tres de hoy, medidas, con su base declarada (`/auth/register` se cerro el 8-oct-2026,
+// SCRUM-1515, y su linea se quito con ella; volvio el 11-nov-2026, SCRUM-1685, solo para invitados). No es decoracion: el dia que aparezca una
 // cuarta, alguien tiene que venir aqui a escribir por que puede leer un correo — y esa frase
 // es la que hace pensar. Sin el ratchet, la cuarta entra en silencio si ademas no persiste.
 
 const LECTORES_DECLARADOS = {
   '/auth/login': 'ejecucion del contrato (6.1.b): manda el enlace de acceso a una cuenta que ya existe; no persiste correo nuevo',
+  // SCRUM-1685: vuelve, SOLO para los correos de REGISTRATION_INVITED_EMAILS; a los demas les contesta
+  // la ruta cerrada de SCRUM-1515 sin persistir nada (`tests/scrum1685-alta-con-invitacion.test.mjs`).
+  '/auth/register': 'ejecucion del contrato (6.1.b): el INVITADO pide la cuenta; el correo ES el servicio. Sin invitacion no persiste nada',
   '/auth/test-login': 'interno, triple cerradura (flag + secreto + allowlist); no es superficie de captacion',
 };
 

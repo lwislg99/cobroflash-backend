@@ -60,3 +60,32 @@ Me paré antes de tocar `quoteDescuentos.js`, como pedía el encargo. **GO del o
 ### Lo que NO hace
 
 - `presentacionIva.ts:181` y `quoteDecisionLanding.routes.ts:497` (S1) imprimen «7.5%», con punto. El ticket lo deja a título informativo: es otra decisión, y de S1.
+
+## SCRUM-1608 · VISTO en yaqu.app (S4, 29-oct-2026)
+
+Medido sobre `origin/main` `bf2549a4fb7caf6b97f9a557e169ab5861552342`; producción en `e9888aa23` (`/version`), que
+contiene el merge de #2943 (`97c6910dd`, comprobado con `merge-base --is-ancestor`). En la página cargada,
+`window.fmtTipoIvaEs` existe (el `api.js` nuevo). Horas de GitHub.
+
+**Datos creados en la cuenta QA (merchant 46), todos marcados `[QA-1608]`, nada enviado:**
+- productos #237 «Tipo de IVA 7,5 %» (`vat` 0.075) y #238 «Control al 21 %» (`vat` 0.21), por `POST /admin/products`
+  (10:52Z): la pantalla de Productos ya no escribe el IVA (SCRUM-609), sólo lo pinta;
+- presupuestos en BORRADOR #212 (10 × 100 € al 7,5 %, descuento global 100 €) y #213 (lo mismo al 21 %), del cliente
+  #84, que no tiene teléfono, por `POST /quote/create` (11:00Z).
+
+| aceptación (c.21096) | dónde se ve |
+|---|---|
+| ① asistente de IA: 7,5 % → «7,5 %», y 21 % sigue «21 %» | editor → «Sugerir con IA»: Gemini devolvió `tax` 0.075 en las 2 líneas → «IVA: 7,5%»; control → `tax` 0.21 en 4 → «IVA: 21%» (`1608-asistente-ia.png`, `1608-asistente-ia-control21.png`) |
+| ① Productos | #237 «7,5 %» y #238 «21 %» (`1608-productos-tabla.png`) |
+| ① ficha del presupuesto | #212 fila «7,5 %», #213 «21 %» (`1608-ficha-212.png`, `1608-ficha-213.png`) |
+| ② con 7,5 % y global, total de pantalla = `calcTotal` | editor con #237 × 10 y global 100: «Total presupuesto 967,50 €» (antes 967,00), vista previa «Descuento global −100,00 €» (`1608-editor-total.png`); ficha #212 «Total: 967,50 €»; control #213 1.089,00 € |
+| ③ lo guardado, igual | `POST /quote/create` devolvió `total` 967.5 (#212) y 1089 (#213): los de la tabla de este registro |
+
+Capturas en `evidencias/SCRUM-1608/1608-visto/`. El veredicto lo recogió el orquestador por SendMessage (29-oct).
+
+**Visto de paso, sin tocar** (los reparte el orquestador): el chip de la línea del editor pinta «IVA 7.5 %» con
+punto (`quotesView.js`, no está entre los cuatro del ticket); la ficha del presupuesto no pinta la fila del
+descuento global (línea 1.075,00 €, total 967,50 € sin explicar); en Productos a 1280 px el ID y la píldora
+«ACTIVO» se parten en dos líneas.
+
+A9: sin fallo que generalice — sólo medir en producción; ningún código cambiado

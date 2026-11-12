@@ -1,0 +1,81 @@
+URL https://yaqu.app/dashboard/#parte-detail/13
+--- TEXTO
+Parte de trabajo
+P
+PruebaQA
+PT-2026-005
+
+Marta Prieto (PILOTO-1 QA)
+
+Horas y desplazamiento
+Entrada
+09:10
+Salida
+11:40
+Tiempo en la obra
+2 h 30 min
+Desplazamiento
+20
+Kilómetros
+12 km
+Mano de obra
+UNDS	Descripción
+1	Cambio de latiguillos del lavabo y llave de escuadra
+1	Revisión de sifón
+2.5	Horas de trabajo
+Materiales
+UNDS	Descripción
+2	Latiguillos de 40 centímetros
+1	Llave de escuadra de media pulgada
+1	Rollo de teflón
+Firmas
+
+Firmado por el cliente Marta Prieto (PILOTO-1 QA)
+
+Firmado por el técnico Jorge Operario (QA)
+
+DATOS DEL PARTE
+Obra y referencia
+Calle Mayor 14, 3º B, 28801 Alcalá de Henares
+Tipo de intervención
+Reparación / asistencia
+Técnicos
+Jorge Operario (QA)
+Notas
+Sin notas
+--- PULSABLES
+input[text] «Buscar… (o pulsa /)» 340x32 @596,14
+summary «Obra y referencia Calle Mayor 14, 3º B, 28801 Alcalá de Hena» 984x48 @272,974
+summary «Tipo de intervención Reparación / asistencia» 984x48 @272,1023
+input[radio] «reparacion_asistencia» 13x13 @289,1090 DISABLED
+input[radio] «mantenimiento» 13x13 @509,1090 DISABLED
+input[radio] «instalacion» 13x13 @670,1090 DISABLED
+summary «Técnicos Jorge Operario (QA)» 984x48 @272,1072
+summary «Notas Sin notas» 984x48 @272,1121
+--- DESBORDES
+--- <44px
+button «Inicio» 228x34
+button «Solicitudes» 228x34
+button «Trabajos» 228x34
+button «Presupuestos» 228x34
+button «Albaranes» 228x34
+button «Partes por valorar» 228x34
+button «Facturas» 228x34
+button «Cobros» 228x34
+button «Clientes» 228x34
+button «Productos» 228x34
+button «Proveedores» 228x34
+button «Gastos» 228x34
+button «Informes» 228x34
+button «Libro de registro» 228x34
+button «Facturas recibidas» 228x34
+button «Equipo» 228x34
+button «Planes» 228x34
+button «Configuración» 228x34
+button «Salir» 39x22
+input «» 340x32
+input «reparacion_asistencia» 13x13
+input «mantenimiento» 13x13
+input «instalacion» 13x13
+--- LOG
+[warning] Service Worker registration blocked by Playwright

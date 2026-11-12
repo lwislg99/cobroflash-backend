@@ -214,15 +214,11 @@ test('SCRUM-651 · 🔴 un Trabajo sin presupuesto NO se llama «Presupuesto #N�
   // Sin cliente tampoco se inventa un documento: queda el id del Trabajo, que si es suyo.
   assert.equal(tituloDeTrabajo({ titulo: null, quote: null, customer: null, jobId: 12 }), '#12');
 
-  // CONTROL POSITIVO: con presupuesto, el titulo es EXACTAMENTE el de siempre.
+  // SCRUM-1690 · con presupuesto TAMBIEN se titula con el cliente (antes, aqui se fijaba
+  // «Presupuesto #34 · Bar Paco»; lo fija ahora tests/scrum1690-titulo-es-el-cliente.test.mjs).
   assert.equal(
     tituloDeTrabajo({ titulo: null, quote: { quoteNumber: 34, id: 9 }, customer: { name: 'Bar Paco' }, jobId: 12 }),
-    'Presupuesto #34 · Bar Paco',
-    '🔴 el titulo del Trabajo que viene de un presupuesto ha cambiado: el camino de siempre no se toca.');
-  assert.equal(
-    tituloDeTrabajo({ titulo: null, quote: { quoteNumber: null, id: 9 }, customer: null, jobId: 12 }),
-    'Presupuesto #9',
-    '🔴 sin numero de presupuesto se cae a su id, como siempre.');
+    'Bar Paco');
 
   // Y el nombre que puso el profesional manda sobre todo lo demas.
   assert.equal(tituloDeTrabajo({ titulo: 'Averia cocina', quote: null, customer: { name: 'Bar Paco' }, jobId: 12 }), 'Averia cocina');

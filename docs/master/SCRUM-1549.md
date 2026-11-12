@@ -403,3 +403,206 @@ NO-PUDE-MIRAR).
 - Recrear = `schtasks /delete /tn yaqu-equipo-jv-HHMM /f` de cada una, y después las órdenes que imprima
   `instalar.mjs` de main. **Reinstalar con `instalar.mjs` reescribe `config.json` y `arranque.cmd`** (c.20816 §1). Lo
   hace quien manda en esa máquina.
+
+
+---
+
+# SCRUM-1549e · El apagón del 29-oct, medido: la puerta estuvo cerrada 6 h 38 min, y desde el 27-oct nada la reabre sola
+
+**S5 (equipo de Luis)** · 29-oct-2026 · SÓLO MEDIR: ni `scripts/equipo/sesion.mjs` ni la copia instalada se tocan.
+
+**Medido contra:** `origin/main` = `eafca9fe154c26d38b05a748ca816ba098943724` · 2026-10-29T17:42:01Z
+
+A9: sin fallo que generalice — mi único tropiezo (un `git show … | git hash-object --stdin` en PowerShell dio un blob
+distinto, `ad99456…`, para dos ficheros idénticos) lo cazó la segunda sonda en el mismo turno, y la trampa ya está
+escrita: PowerShell recodifica lo que pasa por su tubería (`trampas-del-entorno.md` §2). Va en §3 como dato, porque
+es justo el camino por el que un refresco a mano deja la puerta cerrada para siempre.
+
+Instrumentos y salidas: `docs/master/evidencias/SCRUM-1549e/` (cada `.mjs` declara su población).
+
+## 0 · La respuesta corta
+
+- **Hoy:** el merge de #2981 (`8f4d7e863`, 10:53:28Z) cambió `sesion.mjs`; la primera sesión que recibió `ALTERADO`
+  fue el orquestador a las 11:05:25Z; la copia se refrescó a las 17:31:43Z (fecha del fichero, reloj de la máquina,
+  que va adelantado: desfase de hoy sin medir). **6 h 38 min cerrada.** Tras el refresco, copia y `origin/main` son
+  idénticas: 81.772 B, sha256 `e96077461a593230283e4f35ea76d595d2924aa5563ec885bb2d0ffdb64e621b` (`comparar.txt`).
+- **No es la primera vez: es la 13.ª desde la instalación (21-sep), y suman 99 h cerradas.** Las 12 anteriores se
+  curaron solas en la siguiente pasada de `arranque.cmd` (de 2,8 a 16,8 h). **Ésta no podía curarse: las tareas
+  programadas que corren `arranque.cmd` están desactivadas desde el 27-oct** (última línea de `arranque.log`:
+  2026-10-27T12:05:04Z). El refresco vivía DENTRO del arranque automático; al apagar el arranque por su coste, se
+  apagó también, sin que nadie lo dijera, el único refresco que había.
+- **Desde el 27-oct, cada merge que toque `sesion.mjs` cierra la puerta SIN FECHA DE APERTURA**, hasta que una mano
+  copie el fichero. Ritmo medido: 20 merges a ese fichero en 42 días (uno cada ~2 días).
+- **La puerta ya distingue `ALTERADO` de `NO-PUDE-MIRAR`** (`sesion.mjs:893-911`, veredictos distintos), pero los dos
+  salen con código 2 y `ALTERADO` no dice desde cuándo, qué versión es la copia ni cómo se arregla.
+
+## 1 · Lo que costó, medido (actividad de los `.jsonl` y merges a `main`)
+
+| hora (Z) | 29-oct: sesiones · turnos | qué pasaba |
+|---|---|---|
+| 09 | 7 · 565 | |
+| 10 | 14 · 1.790 | 16 merges entre las 10:00 y las 12:20:37Z |
+| 11 | 7 · 601 | 11:05 y 11:16: `ALTERADO` al orquestador (`alterados.txt`) |
+| 12 | 1 · 24 | 12:20:37Z, último merge del día (#2984) |
+| 13 | 1 · 6 | |
+| 14-16 | **0** | nadie trabaja |
+| 17 | 7 · 348 | tras el refresco de las 17:31 |
+
+Población: 40 `.jsonl` de `~/.claude/projects` (sin subagentes) modificados desde el 27-oct (`actividad.txt`).
+**Lo que no se ha hecho por eso — ESTIMACIÓN, no medida:** a ritmo de la mañana (16 merges en 2 h 20 min) son
+~5 h × ~7 merges/h; digamos **del orden de 25-35 merges**. *Lectura mía, no medida:* la parada tiene dos causas que se
+pisan: la puerta cerrada impedía relanzar, y había sesiones esperando respuesta en su `needs` (dos de ellas
+preguntaban, según el orquestador, justo por refrescar `sesion.mjs`). Separar cuánto es de cada una no se puede con
+estos datos.
+
+## 2 · ¿Cuántas veces ha pasado? (`ventanas.txt`)
+
+Cada merge a `main` que toca `scripts/equipo/sesion.mjs` deja la copia distinta de `origin/main` hasta la siguiente
+pasada de `arranque.cmd` (la copia va antes de la línea que escribe en `arranque.log`). Desde la instalación
+(21-sep, 07:11Z): **13 cierres** (16 merges; tres pares cayeron en la misma ventana), **99 h** en total; 12 se curaron
+solos, el de hoy no. Sesiones que de verdad RECIBIERON `ALTERADO` al ejecutar la copia instalada, en 575 `.jsonl`
+(433.055 líneas, 78 ejecuciones reconocidas de la puerta, `alterados.txt`): **3** (1-oct 12:10Z, tras #2002; 29-oct
+11:05Z y 11:16Z). Control positivo del mismo instrumento: ve 9 `ESTADO`, 20 `LANZADA` y 12 `RELEVADA`. Los otros
+cierres cayeron de noche o sin nadie lanzando, y se curaron antes de que se notaran: por eso no constaba.
+
+## 3 · ¿Qué dice la puerta cuando está ALTERADO, y se distingue de «no pude comprobar»?
+
+Recibido hoy, literal: `{"ok":false,"veredicto":"ALTERADO","motivo":"esta copia no es idéntica a origin/main:scripts/equipo/sesion.mjs"}`, código 2.
+`NO-PUDE-MIRAR` (sin `config.json`, sin `repo`, sin `traspasos`, sin leer `origin/main`) también sale con código 2,
+pero con otro veredicto: **se distinguen por el veredicto, no por el código.** Lo que `ALTERADO` no dice:
+- si la copia es una versión VIEJA de `main` (lo de hoy: se arregla copiando) o no es ninguna (corrupta: BOM, CRLF,
+  editada a mano);
+- desde qué merge está cerrada;
+- cómo se reabre. Y el camino obvio, PowerShell, la estropea: medido hoy, `git show origin/main:… | git hash-object
+  --stdin` en PowerShell da `ad99456…`, y el mismo contenido leído del fichero da `547e8dd…` (el blob real). Un
+  refresco con `>` o `|` de PowerShell deja la puerta en `ALTERADO` aunque se haga en el momento.
+
+⚠️ Mejorar ese mensaje DENTRO de la puerta exige tocar `sesion.mjs`, y cada cambio a ese fichero es un cierre más.
+Por eso el diagnóstico debe vivir FUERA de ella (§4, punto 1).
+
+## 4 · ¿Se puede detectar antes, y refrescar sin una mano y sin debilitar la puerta?
+
+1. **Detectar: sí, sin ejecutar la puerta.** El latido (punto 4 de c.20777, de S5) puede comparar los bytes de la
+   copia instalada con `origin/main` (sólo lectura) y decir `VIVA` / `CERRADA · atrasada desde el merge X, hace N min`
+   / `CERRADA · no es ninguna versión de main` / `NO PUDE MIRAR`, con la orden exacta del refresco. Y en el PR que toca
+   `sesion.mjs`, avisar antes del merge de que, al entrar, la puerta se cierra hasta el refresco. **Ninguna de las dos
+   toca la puerta ni la ruta instalada.** No construido en esta tanda (§6).
+2. **Refrescar sin una mano en cada merge: sí, separando el refresco del arranque.** Un `refrescar.cmd` con sólo las
+   líneas de `git fetch` y de copia que ya tiene `arranque.cmd` (sin la última, la que lanza el orquestador), corrido
+   por una tarea programada cada 15 min. **No debilita la puerta:** la fuente es la misma `origin/main` (rama
+   protegida, con el obligatorio) contra la que la puerta compara; la puerta sigue fallando cerrado entre el merge y
+   la siguiente pasada (≤ 15 min). Coste en tokens: cero; no lanza nada. **Pero escribe en la carpeta instalada:
+   necesita la decisión del fundador y que él cree la tarea UNA vez.** Una sesión no puede (regla `deny` sobre
+   `yaqu-equipo/**`, y no programamos nada).
+3. **Descartados, y por qué:** que `sesion.mjs` se reescriba sola al ver `ALTERADO`, o que `uso.mjs` (la barra de
+   estado, que ya corre desde la carpeta instalada) copie el fichero. Las dos son código de una sesión escribiendo
+   en la ruta que la regla `deny` prohíbe: el mismo rodeo con otra forma.
+
+## 5 · La lista blanca (encargo añadido el 29-oct: «más puestos»)
+
+- La lista NO está en el código: `validarNombre` (`sesion.mjs:182-183`) la saca de `config.json` → `puestos` de la
+  instalación, hoy `orquestador, sesion-0 … sesion-5`. **Añadir un nombre ahí no toca `sesion.mjs` y no cierra la
+  puerta**; pero el fichero está bajo la misma regla `deny`: lo edita el fundador.
+- Una `sesion-6` arrancaría SIN IDENTIDAD: `_carriles.mjs:224` sólo reconoce `sesion-[0-5]` y `s[0-5]-<algo>`, y no
+  hay carril S6 en `dos-equipos.md` §3.
+- **Mi recomendación:** refuerzo = una segunda sesión de un puesto que existe, con nombre `s<N>-<sufijo>` (p. ej.
+  `s2-b`), que el hook ya reconoce como S<N>. Es la (B) que el fundador firmó el 14-oct (c.19615) y el punto 5 de
+  c.20777. Exige cambiar `validarNombre` → cerrar la puerta al mergear → **que vaya en el mismo PR que el refresco
+  del punto 4.2, después de que la tarea exista.** Si lo que se quiere son carriles NUEVOS (S6…), es una decisión de
+  organización (`dos-equipos.md`, `sesion-6.md`, los `S[0-5]` de `_carriles.mjs`), no de la lista blanca.
+
+## 6 · Lo que NO se ha hecho ni medido
+
+- No construido: la sección del latido (4.1), `refrescar.cmd` (4.2) ni la (B) (§5). Esperan la decisión del fundador
+  sobre 4.2; 4.1 no la necesita y es lo siguiente de S5.
+- El desfase del reloj de la máquina hoy: las horas del `.jsonl` y de los ficheros son del reloj local.
+- Cuántos minutos tardó cada cierre anterior en notarse: sólo hay 3 `ALTERADO` recibidos.
+
+---
+
+# SCRUM-1549f · El latido dice si la PUERTA del lanzador deja lanzar (p.4 de c.20777)
+
+**Medido contra:** `origin/main` = `142b4579bb965e5d1a74d3937cbb7b9f3f1127aa` · 2026-10-29T18:10:11Z
+
+A9: comprobación → `tests/scrum1549f-latido-puerta.test.mjs`
+
+S5, 29-oct-2026. Viene de SCRUM-1549e (PR #2994): la puerta de `sesion.mjs` estuvo cerrada 6 h 38 min
+(10:53:28Z → 17:31:43Z) y nada lo dijo. La puerta da el mismo código 2 a `ALTERADO` y a «no pude comprobar».
+
+## 0 · Qué hace
+
+Sección **16 · PUERTA** del latido, en `scripts/equipo/puerta.mjs`. Compara los BYTES de
+`%LOCALAPPDATA%\yaqu-equipo\sesion.mjs` contra `origin/main:scripts/equipo/sesion.mjs` del `config.repo`, que es lo
+mismo que compara la puerta. **No importa ni ejecuta la copia instalada y no escribe en la instalación** (es `deny`).
+Tres respuestas con tres salidas:
+
+| la copia | sale | qué dice |
+|---|---|---|
+| idéntica | ✅ · 0 | tamaño y sha256 |
+| ATRASADA (es una versión vieja de main) | 🔴 · 1 | qué versión es (commit y fecha) y **el merge que la cerró** (el siguiente que cambió el fichero en el primer padre de main) · la orden de refresco |
+| AJENA (no es ninguna versión de main) | 🔴 · 1 | si es main con UTF-16+BOM, BOM UTF-8 o CRLF, lo nombra · cuándo se escribió · la orden de refresco |
+| sin instalación, sin `config.json`, main ilegible | 🔴 NO PUDE MIRAR · 2 | el motivo |
+
+La orden de refresco son las dos líneas de `arranque.cmd` (`fetch` y `show … >`), y la sección dice **«desde cmd,
+NUNCA desde PowerShell»**: el `>` de PowerShell 5.1 reescribe la codificación (medido en SCRUM-1549e). Una instalación
+dentro de un árbol de git sale como puerta cerrada (`DESDE-UN-ARBOL`), igual que la contesta la puerta.
+
+Lo que NO mira: la validación de equipo y de modelo que la puerta hace después de los bytes. Lo dice su población.
+Y sólo mira `sesion.mjs`: `orquestador-arranque.mjs` y `uso.mjs` sólo los usa la tarea programada (desactivada desde el 27-oct).
+
+## 1 · El control positivo, con datos de verdad (no del banco)
+
+Contra la instalación de esta máquina, a las 29-oct-2026 ~18:00Z, sobre `origin/main` = `7acb753a1` del checkout compartido:
+
+- `sesion.mjs` instalada: **81.772 B · sha256 `e96077461a593230283e4f35ea76d595d2924aa5563ec885bb2d0ffdb64e621b`**
+  · blob `547e8dd62d…`, igual que main → la sección: **✅ AL DÍA**. **Si la puerta se vuelve a cerrar, se compara con esto.**
+- Lo de hoy, reconstruido: la versión anterior (`75c6bd366`, 19-oct) puesta en una instalación de mentira → **«ATRASADA 1
+  versión: es la de 75c6bd366 (2026-10-19T07:07:32Z) · CERRADA desde el merge 8f4d7e863 (2026-10-29T10:53:28Z)»**. Es la
+  hora del cierre que midió SCRUM-1549e por otro camino.
+- Main escrita en UTF-16 con BOM → «AJENA … es main ESTROPEADA: UTF-16 con BOM (el `>` de PowerShell)».
+- `config.json` roto → NO PUDE MIRAR.
+
+**Re-medido el 2-nov-2026, con la matriz de SCRUM-1620 ya en main** (`origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f`,
+el mismo commit que servía `yaqu.app/version`):
+
+- 19:30Z, medido por el orquestador: la copia instalada **sigue AL DÍA** — 81.772 B, sha256 `e96077461a593230…`.
+- 19:4xZ (`Date:` de GitHub: 19:37:14Z al empezar la tanda), medido por la S5 con `medirPuerta()` de esta rama contra la
+  instalación real: **81.772 B · sha256 `e96077461a593230283e4f35ea76d595d2924aa5563ec885bb2d0ffdb64e621b`** · escrita
+  el 2026-10-29T17:31:43Z · contra `origin/main` `70eefc40c` → **✅ AL DÍA, idéntica byte a byte**. Es la misma copia que
+  midió el control del 29-oct, y la hora de escritura es la de la reapertura que midió SCRUM-1549e (17:31:43Z): ningún
+  merge ha tocado `sesion.mjs` desde entonces.
+
+## 2 · Cómo se mide (`tests/scrum1549f-latido-puerta.test.mjs`, 8 tests)
+
+Banco sintético en un temporal: un repositorio con dos versiones del lanzador y una instalación al lado. Las
+mutaciones declaradas en `MUTACIONES_QUE_ME_TUMBAN` (§3) cubren: toda copia «al día», «desde cuándo» apuntando a la
+versión de la copia, la copia en UTF-16 sin reconocer, y «no pude» con `pudo: true`.
+
+## 3 · Rojos vistos
+
+Con TODO comiteado (`1788d413b7457d273791badd9f783379696dd763`), cada mutación inyectada sola, comprobada con
+`git diff --numstat` (1 1 `scripts/equipo/puerta.mjs` en las cuatro), el test corrido y el fichero restaurado con
+`git restore --source=HEAD`; `git status --porcelain` vacío al acabar. Base sin mutar: 8/8.
+
+| mutación | caen | la declarada |
+|---|---|---|
+| toda copia «al día» | 4 | cae |
+| «desde cuándo» = la versión de la copia | 1 | cae |
+| la copia UTF-16 sin reconocer | 1 | cae |
+| «no pude» con `pudo: true` | 2 | cae |
+
+De paso: `tests/scrum723-guard-contra-su-base.test.mjs` cayó al nombrar `origin/main` fuera de los argumentos de git.
+No se ablandó: la sección se DECLARA en su lista con su motivo (su sujeto es la referencia móvil, la que lee la puerta),
+y además se congela la referencia en un sha con UNA lectura, como `arranque.mjs`.
+
+2-nov-2026 · el CI de `9f73a7648` (run 41512506623) cayó en `scrum824` «el conjunto SIN PROBAR no crece»: entraba
+este test, por 5 escrituras hechas desde fuera con `b.base` (:136, :138, :159-161), que el censo no traza hasta
+`temporal()`. Arreglado en el TEST, no en la lista de 824: las escrituras pasan a `banco()` (`configurar`,
+`instalarDentroDelArbol`), colgando de `base` = `temporal()`. Control: el censo da 0 sin probar para este fichero
+(antes 5); `scrum824` + los 23 ficheros del latido, 235/235. El otro rojo de ese run (`scrum113`, plazo vencido el
+31-oct) no es de esta rama: SCRUM-1644, con el fundador.
+
+## 4 · Lo que sigue (no en este PR)
+
+- La tarea de **sólo refresco** cada 15 min y la (B) `s<N>-<sufijo>` de `validarNombre`: el orquestador decide que
+  vayan en UN PR, DESPUÉS de que el fundador cree la tarea (escribe en la ruta `deny`). Sin su sí, no se construye.

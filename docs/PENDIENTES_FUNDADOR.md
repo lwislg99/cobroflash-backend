@@ -91,6 +91,10 @@ flags OFF (nada cambia hasta que actives). Para encenderlo, EN ESTE ORDEN:
    categoría **Utility**, copy neutro "tu documento de cobro", y botones como **"URL dinámica"**
    (`https://yaqu.app/pay/quote/{{1}}`, `/pay/invoice/{{1}}`, `/recibo/{{1}}`). Mismos nombres → cero
    cambios de código. Aprobación: minutos-48h.
+   ⚠️ **Corregido el 29-oct-2026 (SCRUM-1632):** en el editor el campo URL se escribe **SIN**
+   `{{1}}` (`https://yaqu.app/pay/quote/`, `/pay/invoice/`, `/recibo/`, `/albaran/`); al terminar
+   debe quedar UN solo `{{1}}`, al final. Lo de arriba es como se escribía antes. Motivo y cómo
+   comprobarlo: `docs/WHATSAPP_TEMPLATES.md`, «Reglas comunes».
    **➕ Ola 5 (A5.1/A5.2, tu descubrimiento de los quick replies):** al recrearlas añade además un botón
    **quick reply** a `quote_decision_es` (p. ej. «👍 Lo miro ahora») y otro a `payment_request_es`
    (p. ej. «✅ Voy a pagarlo»). Un botón URL NO abre la ventana de 24 h; un quick reply SÍ — y el código
@@ -226,6 +230,8 @@ la cita). Resumen de lo que hay que cerrar allí:
   ⚠️ **Quedaron en categoría Marketing** → P3-3 las recategoriza a Utility (mejor coste/entrega).
 - [ ] **P3-1:** botón URL dinámica en `quote_decision_es` (`…/pay/quote/{{1}}`) + re-aprobar
   (el workaround del código sigue vivo; al hacerlo se puede retirar).
+  ⚠️ 29-oct-2026: el campo va **sin** `{{1}}` (`https://yaqu.app/pay/quote/`); ver
+  `docs/WHATSAPP_TEMPLATES.md`, «Reglas comunes».
 - [ ] **P3-3:** recrear las 3 plantillas originales como categoría **Utility** (mejor coste/entrega).
 
 ## ✅ Resuelto 14-jun

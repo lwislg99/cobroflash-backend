@@ -554,3 +554,47 @@ por hash tras cada mutante.
 - La verificación en yaqu.app: producción no tiene `INVOICING_ES_ENABLED` en ON, y una factura nueva
   no se emite sólo para ver un correo (regla 24). Lo que se ve es el test sobre el HTML real.
 - Ningún otro texto del correo.
+
+## Anexo SCRUM-1252h · anclar la cita de la firma del correo: parado, la fila sola no ancla
+
+**Medido contra:** `origin/main` = `95016f26f5b0d31dcb542467cbdb2a9249a71366` · 2026-10-27T18:08:39Z (hora de GitHub, `gh api -i zen`)
+
+A9: aviso → cicatriz J6 «Escribí una sonda de node con un heredoc de bash y se comió una barra invertida de una regex» — no se pudo comprobar: lo cazó node al no compilar, y ningún hook de este árbol para un heredoc que lleva barras invertidas
+
+Lo hace jv-j6dx (puesto J6, equipo de Javier), por encargo de su orquestador y a petición de S1 (c.21098 ②).
+Medición y preguntas en c.21192. **No se ha cambiado ningún fichero de código ni de test.**
+
+### ① Lo que se pidió y por qué no basta
+
+El encargo: añadir el par (1252, 20683) a `tests/_pares-leidos-en-jira.mjs` para que la cita de
+`src/modules/messaging/domain/email.service.ts:95` pase de rastreable a anclada. Pero el par sólo
+cuenta si la cita tiene la forma del ancla, y ésta no la tiene. `RE_ANCLA_JIRA`
+(`tests/_respaldo-de-firma.mjs:60`) exige la palabra «comentario», y la línea 95 dice `c.20683`.
+S1 la bajó a esa forma a propósito (anexo 1252g, §②).
+
+### ② La sonda
+
+`respaldoDe()` de la casa sobre el bloque real (líneas 94-96), con la lista de main y con la lista
+más (1252, 20683). Control positivo sembrado: el mismo bloque con `comentario 20683`.
+
+| bloque | lista | veredicto |
+|---|---|---|
+| real (`c.20683`) | main | `rastreable` |
+| real (`c.20683`) | main + par | `rastreable` |
+| sembrado (`comentario 20683`) | main | `rastreable`, motivo «par no leído» |
+| sembrado (`comentario 20683`) | main + par | `anclado` |
+
+El control cambia con la lista; el bloque real, no. Para anclarla hay que tocar los dos lados: la
+línea 95, de S1 (`carriles.mjs de` → `dos-equipos.md:136`), y la lista, de J6 (`dos-equipos.md:194`).
+La cabecera de la lista pide además que la fila vaya «en el mismo PR que la marca que lo cita».
+
+### ③ Lo que el encargo daba por hecho y no existe
+
+Que el guard compruebe el literal: los pares no llevan literal (`ticket`, `comentario`, `leido`,
+`por`), y la lista declara que «No caza el CONTENIDO». Comprobarlo sería un mecanismo nuevo.
+
+### ④ Pendiente de decisión (c.21192)
+
+Un PR con los dos lados (cruce declarado), dos PR con la fila huérfana mientras tanto, o un ticket
+de J6 para el mecanismo de contenido. La lectura de c.20683 para la fila está hecha (27-oct, por
+`getJiraIssue`): existe, es de SCRUM-1252, y su punto ② dice «Sí: «Tu factura está lista»».

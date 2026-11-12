@@ -1,0 +1,32 @@
+{
+ "poblacion": {
+  "ficheros": 575,
+  "lineas": 433055
+ },
+ "ejecuciones": 78,
+ "porVeredicto": {
+  "ACCION-DESCONOCIDA": 4,
+  "NOMBRE-NO-PERMITIDO": 4,
+  "ALTERADO": 3,
+  "CONTEXTO": 1,
+  "ESTADO": 9,
+  "LANZADA": 20,
+  "BLOQUEADA": 5,
+  "NO-PUDE-MIRAR": 3,
+  "SIN-CUOTA": 1,
+  "SIN-MESA": 1,
+  "YA-VIVA": 1,
+  "RELEVADA": 12,
+  "SIN-TRASPASO": 1,
+  "PARADA": 6,
+  "NO-ARRANCO": 1,
+  "ESTA-VIVA": 1,
+  "OCUPADA": 5
+ }
+}
+2026-10-01T12:10:25.615Z 3e1e8977 ALTERADO esta copia no es idéntica a origin/main:scripts/equipo/sesion.mjs
+2026-10-18T17:50:38.621Z ed676fd1 NO-PUDE-MIRAR claude no confirmó la sesión de fondo
+2026-10-18T17:52:38.661Z ed676fd1 NO-PUDE-MIRAR claude no confirmó la sesión de fondo
+undefined ed676fd1 NO-PUDE-MIRAR claude no confirmó la sesión de fondo
+2026-10-29T11:05:25.083Z ed676fd1 ALTERADO esta copia no es idéntica a origin/main:scripts/equipo/sesion.mjs
+2026-10-29T11:16:06.378Z ed676fd1 ALTERADO esta copia no es idéntica a origin/main:scripts/equipo/sesion.mjs

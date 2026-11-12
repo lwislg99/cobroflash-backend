@@ -516,7 +516,7 @@ export const DECLARADOS = new Map([
   [`NUMERO|${M}system/app/routes/invoicesAdmin.routes.ts::GET /:id/dispute-package`, { n: 1, clase: DEUDA, retira: 'J1', motivo: 'número del presupuesto en el paquete de disputa, sin displayQuoteNumber (SCRUM-1444)' }],
   // ── NUMERO · DEUDA · presupuestos y trabajos (S1) ─────────────────────────────────────────────
   [`NUMERO|${M}jobs/app/routes/jobs.routes.ts::GET /:id/ics`, { n: 1, clase: DEUDA, retira: 'S1', motivo: 'número del presupuesto en la cita de calendario; el censo por texto no lo veía' }],
-  [`NUMERO|${M}jobs/domain/trabajoDirecto.ts::tituloDeTrabajo`, { n: 2, clase: DEUDA, retira: 'S1', motivo: 'título del trabajo: número del presupuesto por una variable (no visto por texto) y el id del trabajo (SCRUM-1444)' }],
+  [`NUMERO|${M}jobs/domain/trabajoDirecto.ts::tituloDeTrabajo`, { n: 1, clase: DEUDA, retira: 'S1', motivo: 'título del trabajo: el id del trabajo (SCRUM-1444); el número del presupuesto salió del título en SCRUM-1690' }],
   [`NUMERO|${M}maintenance/domain/maintenance.service.ts::runMaintenanceProposals`, { n: 1, clase: DEUDA, retira: 'S1', motivo: 'número del presupuesto en el aviso de mantenimiento (SCRUM-1444)' }],
   [`NUMERO|${M}maintenance/domain/maintenance.service.ts::handleMaintenanceButton`, { n: 1, clase: DEUDA, retira: 'S1', motivo: 'número del presupuesto en la respuesta al profesional (SCRUM-1444)' }],
   [`NUMERO|${M}messaging/domain/email.service.ts::sendQuoteEmail`, { n: 1, clase: DEUDA, retira: 'S1', motivo: 'número del presupuesto en el correo al cliente, sin displayQuoteNumber (SCRUM-1444)' }],

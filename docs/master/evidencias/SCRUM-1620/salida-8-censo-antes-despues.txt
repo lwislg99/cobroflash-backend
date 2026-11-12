@@ -1,0 +1,5 @@
+población: HEAD 1542 ficheros · árbol 1543
+declarantes: HEAD 227 · árbol 228
+declaraciones: HEAD 901 · árbol 906
+  ⬆ sube scrum1620-el-censo-por-partes.test.mjs: 0 → 5
+1 fichero(s) cambian

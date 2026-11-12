@@ -1,0 +1,90 @@
+// SCRUM-1631 · Censo por AST de src/integrations/whatsapp.ts y de quien llama a sus envíos.
+// Uso: node censo-1631.cjs <raiz>
+// ① cada declaración y llamada de `logFailure`: en qué función, si es async, si su valor se usa y si
+//    va seguida de `return`. ② cada escritura del log (recordWaMessage / resolverReservaDePlantilla):
+//    estado que escribe y si se espera. ③ qué llamadores de los envíos están DENTRO de un `$transaction`.
+// Control: ③ corre también sobre un fuente SEMBRADO; sin esa siembra el censo dice CIEGO, no verde.
+const path = require('path');
+const fs = require('fs');
+const raiz = process.argv[2];
+const ts = require(path.join(raiz, 'node_modules/typescript'));
+
+const parse = (f, txt) => ts.createSourceFile(f, txt ?? fs.readFileSync(f, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+const fn = (n) => { for (let p = n.parent; p; p = p.parent) if (ts.isFunctionLike(p)) return p; return null; };
+const nombreFn = (f) => {
+  if (!f) return '(módulo)';
+  if (f.name) return f.name.getText();
+  if (f.parent && ts.isVariableDeclaration(f.parent)) return f.parent.name.getText();
+  return '(anónima)';
+};
+const esAsync = (f) => !!f && (ts.getCombinedModifierFlags(f) & ts.ModifierFlags.Async) !== 0;
+const linea = (sf, n) => sf.getLineAndCharacterOfPosition(n.getStart()).line + 1;
+const raizCall = (e) => { while (ts.isCallExpression(e) && ts.isPropertyAccessExpression(e.expression)) e = e.expression.expression; return e; };
+
+const wa = path.join(raiz, 'src/integrations/whatsapp.ts');
+const sf = parse(wa);
+const decl = [], llamadas = [], escrituras = [];
+(function ver(n) {
+  if (ts.isVariableDeclaration(n) && n.name.getText() === 'logFailure') decl.push({ l: linea(sf, n), en: nombreFn(fn(n)), asyncDecl: esAsync(n.initializer) });
+  if (ts.isCallExpression(n) && n.expression.getText() === 'logFailure') {
+    const f = fn(n);
+    const padre = n.parent;
+    const stmt = ts.isAwaitExpression(padre) ? padre.parent : padre;
+    const bloque = stmt.parent;
+    let sigue = '(fin)';
+    if (ts.isBlock(bloque)) { const i = bloque.statements.indexOf(stmt); const s = bloque.statements[i + 1]; if (s) sigue = ts.SyntaxKind[s.kind]; }
+    llamadas.push({ l: linea(sf, n), en: nombreFn(f), fnAsync: esAsync(f), espera: ts.isAwaitExpression(padre), valorUsado: !ts.isExpressionStatement(stmt), sigue });
+  }
+  if (ts.isCallExpression(n)) {
+    const t = n.expression.getText();
+    if (t === 'recordWaMessage' || t === 'resolverReservaDePlantilla') {
+      let e = n, p = n.parent;
+      while ((ts.isPropertyAccessExpression(p) || ts.isCallExpression(p))) { e = p; p = p.parent; }
+      const txt = n.getText();
+      const est = t === 'recordWaMessage' ? (/status: '(\w+)'/.exec(txt)?.[1] ?? '?') : (/como: '(\w+)'/.exec(txt)?.[1] ?? '?');
+      escrituras.push({ l: linea(sf, n), boca: t, est, en: nombreFn(fn(n)), espera: ts.isAwaitExpression(p) });
+    }
+  }
+  ts.forEachChild(n, ver);
+})(sf);
+
+// Los envíos que exporta el fichero
+const exportados = new Set();
+sf.forEachChild((n) => { if (ts.isFunctionDeclaration(n) && n.name && n.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword) && /^send/.test(n.name.text)) exportados.add(n.name.text); });
+
+function dentroDeTx(sfx, rel, out) {
+  (function ver(n) {
+    if (ts.isCallExpression(n)) {
+      const t = n.expression.getText().replace(/^.*\./, '');
+      if (exportados.has(t)) {
+        for (let p = n.parent; p; p = p.parent) {
+          if (ts.isCallExpression(p) && /\$transaction$/.test(p.expression.getText())) { out.push(`${rel}:${linea(sfx, n)} ${t}`); break; }
+        }
+      }
+    }
+    ts.forEachChild(n, ver);
+  })(sfx);
+}
+const ficheros = [];
+(function bajar(d) { for (const e of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, e.name); if (e.isDirectory()) bajar(p); else if (e.name.endsWith('.ts')) ficheros.push(p); } })(path.join(raiz, 'src'));
+const enTx = [];
+let llamadoresTotales = 0;
+for (const f of ficheros) {
+  const s = parse(f);
+  (function c(n) { if (ts.isCallExpression(n) && exportados.has(n.expression.getText().replace(/^.*\./, ''))) llamadoresTotales++; ts.forEachChild(n, c); })(s);
+  dentroDeTx(s, path.relative(raiz, f).replace(/\\/g, '/'), enTx);
+}
+const sembrado = [];
+if (!process.env.SIN_SIEMBRA) dentroDeTx(parse('siembra.ts', "await prisma.$transaction(async (tx) => { await sendWhatsAppText({ to: 'x', text: 'y' }); });"), 'SIEMBRA', sembrado);
+
+console.log(`logFailure: ${decl.length} declaraciones · ${llamadas.length} llamadas · ${ficheros.length} ficheros de src/`);
+for (const d of decl) console.log(`  decl ${d.l} en ${d.en} asyncDecl=${d.asyncDecl}`);
+const por = {};
+for (const c of llamadas) { const k = `fnAsync=${c.fnAsync} espera=${c.espera} valorUsado=${c.valorUsado} sigue=${c.sigue}`; (por[k] ??= []).push(c.l); }
+for (const [k, v] of Object.entries(por)) console.log(`  ${k}: ${v.length} · líneas ${v.join(',')}`);
+console.log(`escrituras del log: ${escrituras.length}`);
+for (const e of escrituras) console.log(`  ${e.l} ${e.boca} ${e.est} en ${e.en} espera=${e.espera}`);
+console.log(`envíos exportados: ${exportados.size} (${[...exportados].join(', ')}) · llamadas a ellos en src/: ${llamadoresTotales}`);
+if (!sembrado.length) { console.log('CIEGO: la siembra de $transaction no se vio'); process.exit(2); }
+console.log(`siembra vista: ${sembrado.length} · llamadas DENTRO de $transaction: ${enTx.length}`);
+for (const e of enTx) console.log(`  ${e}`);

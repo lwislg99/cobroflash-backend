@@ -1608,7 +1608,7 @@ html, body { overflow-x: clip; }
   max-width: 100%;
 }
 .quote-plantilla-chip:hover { background: var(--bg, #f6f7f5); }
-.quote-plantilla-chip:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(34,197,94,.30); }
+.quote-plantilla-chip:focus-visible { outline: none; box-shadow: var(--ring); }
 .quote-plantilla-chip__nombre {
   font-size: 14px; font-weight: 600; max-width: 100%;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -1756,6 +1756,15 @@ html, body { overflow-x: clip; }
    izquierda; menos los 14 + 14 de relleno del `td`. Con la tabla llena no cambia nada. */
 .catalogo-productos .table-scroll { container-type: inline-size; }
 .catalogo-productos .empty-state { position: sticky; left: 0; box-sizing: border-box; width: calc(100cqi - 28px); }
+/* SCRUM-1636 ② · a 1280 px el ID salía «23/8» y la píldora «ACTIV/O» (medido en yaqu.app: 5 de 5
+   filas, 2 líneas cada uno). Es la regla global `.table td { word-break: break-word }`, que deja el
+   ancho mínimo de una celda en UNA letra; la misma causa y el mismo arreglo que Albaranes (SCRUM-1559i
+   A): en esta tabla se parte por PALABRAS, nunca dentro de una. Un nombre largo sigue partiéndose
+   entre palabras, y una palabra que no cabe sola, también (`overflow-wrap`). Desde 641, como allí: por
+   debajo la tabla va en bloque con su scroll y no se partía. */
+@media (min-width: 641px) {
+  .catalogo-productos .table td { word-break: normal; overflow-wrap: break-word; }
+}
 
 /* ── SCRUM-1144 · «Elegir un sitio guardado», bajo el campo de la dirección de la obra ───────
    Lo montan el editor de presupuestos y la ficha del Trabajo (`sitiosGuardados.montarSelector`).
@@ -1869,7 +1878,7 @@ html, body { overflow-x: clip; }
 .quote-line input:focus {
   outline: none;
   border-color: var(--green-600, #16a34a);
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, .30);   /* anillo Foco (DESIGN.md §4) */
+  box-shadow: var(--ring);   /* anillo Foco (DESIGN.md §4) */
 }
 
 /* Regla del Importe (DESIGN.md §3): el dinero en Tinta, ≥700, tabular. Nunca en gris. */
@@ -1930,7 +1939,7 @@ html, body { overflow-x: clip; }
    ahí se queda el hueco, invisible y fuera del orden de tabulación (`visibility`). La hoja se abre
    siempre desde «Ajustes» del menú ⋯. */
 .quote-line__ajustes.is-de-siempre { display: none; }
-.quote-line__ajustes:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(34,197,94,.30); }
+.quote-line__ajustes:focus-visible { outline: none; box-shadow: var(--ring); }
 
 /* La hoja: los dos campos apilados y a lo ancho — es su pantalla, no una columna estrecha. */
 .quote-ajustes-modal { max-width: 420px; }
@@ -1950,7 +1959,7 @@ html, body { overflow-x: clip; }
 .quote-ajustes-campos select:focus, /* S2: SCRUM-962f */
 .quote-ajustes-campos input:focus {
   outline: none; border-color: var(--green-600, #16a34a);
-  box-shadow: 0 0 0 3px rgba(34,197,94,.30);
+  box-shadow: var(--ring);
 }
 
 /* SCRUM-500 · la casilla de SUPLIDO dentro de la hoja de ajustes.
@@ -2564,6 +2573,43 @@ html, body { overflow-x: clip; }
    Va por `#po-lista` y no por una clase propia: la fila conserva la clase exacta `customers-card`. */
 #po-lista > button.customers-card { width: 100%; text-align: left; font: inherit; color: inherit; }
 #po-lista > button.customers-card:focus-visible { outline: none; box-shadow: var(--ring); }
+/* SCRUM-1692 · la fila ABIERTA: el mismo marcado de selección que `.quote-cliente-opcion[aria-pressed]`
+   (borde de marca + un píxel por dentro + fondo suave), sin tokens nuevos ni sólo color (WCAG 1.4.1). */
+#po-lista > button.customers-card[aria-current="true"] {
+  border-color: var(--brand); background: var(--brand-tint);
+  box-shadow: inset 0 0 0 1px var(--brand);
+}
+#po-lista > button.customers-card[aria-current="true"]:focus-visible { box-shadow: inset 0 0 0 1px var(--brand), var(--ring); }
+/* SCRUM-1699 · el detalle de «Partes por valorar»: columnas con rótulo (N11). La cabecera del bloque
+   y cada línea usan LAS MISMAS clases de columna, así que no se pueden desalinear. Anchuras y letra,
+   las que ya pintaban esas celdas en línea; van por `#po-detalle` para ganar al `input` global. */
+#po-detalle .po-bloque-cab {
+  display: flex; align-items: baseline; gap: 10px; margin: 14px 0 6px;
+  font-size: 11.5px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+}
+/* Las columnas de números NO encogen: si encogieran, cada línea las pondría a una altura distinta
+   (pasaba ya a 390, según la palabra más larga de la descripción) y la cabecera no casaría con
+   ninguna. Encoge la descripción, que parte palabras si hace falta. */
+#po-detalle .po-col-desc { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; }
+#po-detalle .po-col-cant { flex: 0 0 60px; text-align: right; }
+#po-detalle .po-col-precio { flex: 0 0 110px; width: 110px; min-width: 0; text-align: right; }
+#po-detalle .po-col-importe { flex: 0 0 100px; text-align: right; }
+#po-detalle .po-linea {
+  display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--neutral-200);
+  font-size: 13px; color: var(--ink);
+}
+#po-detalle .po-linea > .po-col-cant { color: var(--muted); }
+#po-detalle .po-linea > .po-col-importe { font-weight: 600; }
+/* El `@media` va DETRÁS de las reglas base: con la misma especificidad gana la última (ya mordió:
+   el `gap` de la línea pisaba el del móvil y descuadraba 4 px). */
+@media (max-width: 480px) {
+  /* Móvil: con 60+110+100 a la descripción le quedaban ~25 px. Las compactas caben «CANT.»,
+     «PRECIO UD.» y un importe de 9.999,99 €. */
+  #po-detalle .po-bloque-cab, #po-detalle .po-linea { gap: 8px; }
+  #po-detalle .po-col-cant { flex-basis: 40px; } /* «CANT.» mide ~39 px: con menos, el rótulo se ensancha y descuadra */
+  #po-detalle .po-col-precio { flex-basis: 80px; width: 80px; }
+  #po-detalle .po-col-importe { flex-basis: 76px; }
+}
 /* Solo clipa las cards que envuelven tablas */
 .data-card { overflow: hidden; }
 
@@ -2774,6 +2820,12 @@ html, body { overflow-x: clip; }
 @media (max-width: 640px) {
   .home-quick-actions { grid-template-columns: 1fr; }
 }
+/* S2 · SCRUM-1701 (b): con `receipt` la Inicio quita «Pendientes de cobro» y quedan DOS acciones.
+   En la rejilla de tres dejarían un hueco a la derecha: con menos de tres, dos columnas. Sólo por
+   encima de 640px, para no pisar la columna única del móvil. */
+@media (min-width: 641px) {
+  .home-quick-actions:not(:has(> :nth-child(3))) { grid-template-columns: repeat(2, 1fr); }
+}
 
 /* ── Formulario de cotización (FRONT1-4) ─────────────────────── */
 .quote-status-empty { font-size: 12.5px; color: var(--muted); padding: 10px 2px; line-height: 1.5; }
@@ -2881,6 +2933,9 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 /* Importe: Regla del Importe (tinta, peso 700, tabular) */
 .amount { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
 .amount-muted { color: var(--body); font-variant-numeric: tabular-nums; }
+/* SCRUM-1635 · las filas del descuento en los totales de la ficha: el mismo tono que «Base imponible»
+   e «IVA», que van en línea en `quotesDetailView.js`; aquí como clase, no como `style=`. */
+.quote-total-desglose { font-size: 13px; color: var(--muted); }
 
 /* Pill de "pendiente de aprobación" (ámbar) como clase, no inline */
 .status-pill-approval { background: #fff7ed; color: #9a3412; }
@@ -3183,6 +3238,22 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
    la barra de acciones: 16 px, el `spacing.md` de DESIGN.md. Venía de un estilo en línea de
    `albaranDetailView.js`; la medida no cambia. */
 .albaran-caja-firma { margin: 0 0 16px; }
+/* S4 · SCRUM-1661 · las líneas del albarán en su ficha. La tabla es `.preview-lines-table` (la del
+   documento del presupuesto, inventario AB3); aquí sólo lo propio: separación de la barra (16 px,
+   `spacing.md`), cifras a la derecha y tabulares, el concepto que parte palabras largas en vez de
+   desbordar a 390 px, y el total con la Regla del Importe (DESIGN.md:150: Tinta, ≥700, tabular). */
+.albaran-lineas { margin: 16px 0 0; }
+.albaran-lineas__tabla td, .albaran-lineas__tabla th { font-size: 13px; vertical-align: top; }
+.albaran-lineas__tabla th { text-align: left; }
+.albaran-lineas__tabla .albaran-lineas__num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.albaran-lineas__concepto { overflow-wrap: anywhere; }
+.albaran-lineas__importe { color: var(--ink, #0f1c17); font-weight: 700; }
+.albaran-lineas__vacio { margin: 0; font-size: 13px; color: var(--muted); }
+.albaran-lineas__totales { margin-top: 8px; text-align: right; }
+.albaran-lineas__totales p { margin: 2px 0; }
+.albaran-lineas__base { font-size: 14px; color: var(--ink, #0f1c17); font-weight: 700; font-variant-numeric: tabular-nums; }
+.albaran-lineas__total { font-size: 18px; color: var(--ink, #0f1c17); font-weight: 800; font-variant-numeric: tabular-nums; }
+.albaran-lineas__leyenda { font-size: 12px; color: var(--muted); line-height: 1.45; margin-top: 6px; }
 .job-asignados-alta { min-height: 44px; margin-top: 8px; }
 /* Sin nada que abrir (no se pudo leer el equipo): la línea dice su valor y deja de ser un control. */
 .detail-plega--fija > .detail-plega-cab { cursor: default; }
@@ -3869,6 +3940,18 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 }
 [data-parte-firmar]:hover:not(:disabled) { background: var(--green-700, var(--brand-700)); color: #fff; }
 
+/* ── S4 · SCRUM-1676 ── Con el parte VACÍO (cero líneas, la misma pregunta que `puedeFirmarse`),
+   firmar NO es la acción principal: es irreversible y el servidor la rechaza. Vuelve al aspecto
+   secundario de la regla común de arriba (y el hover de `.btn-secondary`) hasta que haya una línea;
+   la vista pone la marca (`parteDetailView.js`, `pintarLasDosFirmas`). */
+[data-parte-firmar][data-parte-firma-en-espera] {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--border);
+  box-shadow: none;
+}
+[data-parte-firmar][data-parte-firma-en-espera]:hover:not(:disabled) { background: var(--bg); color: var(--ink); border-color: var(--neutral-300); }
+
 /* SCRUM-1175 (916a, PR-B) · las firmas en su paso, una caja por firma. Contorno y fondo de la
    tarjeta de contenido de DESIGN.md (plano por defecto: borde de 1 px, sin sombra). */
 .parte-firmas { margin-top: 12px; }
@@ -4308,8 +4391,12 @@ textarea.parte-linea-desc {
 .jobs-vacio-filtro { text-align: center; color: var(--muted); font-size: 13px; padding: 18px; }
 
 /* El modal de la casa, con su cuerpo. `.modal-overlay`/`.modal` ya existen: esto solo viste lo
-   de dentro. */
-.jobs-modal { max-width: 420px; }
+   de dentro.
+   SCRUM-1681: `jobsModal()` mete título, cuerpo y pie DIRECTAMENTE en `.modal`, sin
+   `.modal-header`/`.modal-body`, que son los que ponen el relleno en el resto del panel. Sin esto
+   los tres modales de Trabajos («Agendar», «Cerrar trabajo», «Técnicos») iban a 0 px del borde
+   (medido en yaqu.app, 390 y 1280). 24 px = el de «Trabajo nuevo» (`.modal-body`). */
+.jobs-modal { max-width: 420px; padding: 24px; }
 .jobs-modal-titulo { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 12px; }
 .jobs-modal-cuerpo { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
 .jobs-modal-label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
@@ -4428,6 +4515,13 @@ textarea.parte-linea-desc {
 .alb-enlace { color: var(--green-700); }
 .alb-numero { font-weight: 600; color: var(--green-700); }
 .alb-chip-cobro { margin-left: 6px; white-space: nowrap; } /* SCRUM-1450: «Facturado en parte» no se parte en dos */
+/* SCRUM-1659 · lo que albaranesView.js escribía con `style.cssText`, tal cual, a la hoja (regla 4). */
+.alb-titulo { margin: 0; font-size: 18px; }
+.alb-subtitulo { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+.alb-aviso { margin: 16px; }
+.alb-aviso-detalle { margin: 0 16px 16px; font-size: 12px; color: var(--muted); }
+.alb-buscador { min-width: 180px; flex: 1; }
+.alb-sel-cobro { width: auto; }
 
 /* SCRUM-1559g · EL NÚMERO DEL ALBARÁN, A 44 px DE TOQUE. A 390 medía 17 de alto (S3): sólo su
    línea. Y a 929 (medido en yaqu.app), partido letra a letra en una columna de 45 px, era un
@@ -4452,6 +4546,8 @@ textarea.parte-linea-desc {
 @media (min-width: 641px) {
   .table--albaranes td { word-break: normal; overflow-wrap: break-word; }
   .table--albaranes td.cell-date, .table--albaranes td.col-hide-mobile { white-space: nowrap; }
+  /* SCRUM-1669 · el importe, a la derecha y en una línea, como en Presupuestos. */
+  .table--albaranes th:nth-child(6), .table--albaranes td.cell-amount { text-align: right; white-space: nowrap; }
 }
 @media (min-width: 641px) and (max-width: 1279px) {
   .table--albaranes th:nth-child(2), .table--albaranes td.col-hide-mobile { display: none; }
@@ -4466,9 +4562,15 @@ textarea.parte-linea-desc {
    ① se oculta «Entrega» en la lista, como B hizo con «Emisión»; la ficha la conserva.
    ② el suelo se anula SÓLO para esta tabla y sólo en esta banda; el global no se toca.
    Medido en yaqu.app: desborda 13 a 769 (dentro de su `.table-scroll`, que scrollea; la página +0)
-   y 0 desde 800; «Enviar para firmar» sigue en una línea. Antes: 106 / 75 / 25. */
-@media (min-width: 769px) and (max-width: 899px) {
+   y 0 desde 800; «Enviar para firmar» sigue en una línea. Antes: 106 / 75 / 25.
+   SCRUM-1669 · la columna «Importe» (firmado n.º 17, SCRUM-1656 c.21408 ①) pide ~77 px más, y a 929
+   la tabla volvía a desbordar 70 con «Enviar para firmar» medio fuera. A la pregunta de SCRUM-1669
+   c.21494, el orquestador respondió que sí: «Entrega» se oculta TAMBIÉN en 900-1023. El suelo sigue anulado sólo en
+   769-899: desde 900 el carril ya pasa de 520 y no lo necesita. */
+@media (min-width: 769px) and (max-width: 1023px) {
   .table--albaranes th:nth-child(3), .table--albaranes td.cell-date { display: none; }
+}
+@media (min-width: 769px) and (max-width: 899px) {
   .table-scroll .table--albaranes { min-width: 0; }
 }
 
@@ -4488,19 +4590,36 @@ textarea.parte-linea-desc {
 
      El Trabajo se queda a ANCHO COMPLETO, que es lo que pedía su comentario original: un título de
      obra no cabe en media tarjeta. */
+  /* SCRUM-1669 · el importe entra en la tarjeta en la línea de la fecha, a la derecha: arriba a la
+     derecha ya está el estado (SCRUM-1450), y el importe en su propia línea a ancho completo
+     separaría el dinero del albarán al que pertenece. */
   .table--albaranes tbody tr {
     grid-template-areas:
       "id       status"
       "client   client"
-      "date     date"
+      "date     amount"
       "trabajo  trabajo"
       "actions  actions";
   }
+  .table--albaranes td.cell-amount { align-self: center; white-space: nowrap; }
   /* SCRUM-1462 · y el título del Trabajo también envuelve: es texto libre a ancho completo. */
   .table--albaranes td.cell-trabajo { grid-area: trabajo; font-size: 12.5px; white-space: normal; overflow-wrap: anywhere; }
   /* AB6 · el enlace del Trabajo CONSERVA el objetivo de 44 px que tenía por vivir en `actions`.
      Cambiar de área no puede encoger un objetivo táctil: eso sería pagar el arreglo con un dedo. */
   .table--albaranes td.cell-trabajo a { display: inline-flex; align-items: center; min-height: 44px; }
+  /* SCRUM-1659 (PILOTO-1) · MEDIDO en yaqu.app a 390: la fila de pestañas pedía 447 px en 364 y no
+     desplazaba, así que la tarjeta recortaba «Firmados» (x 353-460 con la tarjeta acabando en 378):
+     asomaban 24 px —«Fir», sin su contador— y no había manera de traerla entera. Ahora la fila
+     desplaza en horizontal y cada pestaña conserva su ancho; la que asoma cortada al borde es la pista
+     de que hay más. `overflow-y: hidden` porque, al desplazar en X, el eje Y pasa a `auto` y el
+     `margin-bottom: -1px` del subrayado dejaba 1 px de desplazamiento vertical (52 en 51, medido).
+     ACOTADO a `.alb-lista`: la regla compartida `.data-card-tabs` sigue igual, porque Facturas,
+     Presupuestos y Clientes no están medidas. */
+  .alb-lista .data-card-tabs { overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; }
+  .alb-lista .data-card-tabs::-webkit-scrollbar { display: none; }
+  .alb-lista .data-card-tab { flex-shrink: 0; white-space: nowrap; }
+  /* Y el buscador (34 px) y el filtro de facturación (36 px), a los 44 de AB6. */
+  .alb-lista .data-card-toolbar > .input { min-height: 44px; }
 }
 
 /* SCRUM-713b/c · el buscador de cliente del presupuesto.
@@ -4680,6 +4799,8 @@ textarea.parte-linea-desc {
 .gasto-cat--desplazamiento { background: #fef3c7; color: #92400e; }
 .gasto-cat--herramientas { background: #ede9fe; color: #6d28d9; }
 .gasto-cat--subcontrata { background: #fee2e2; color: #b91c1c; }
+/* SCRUM-1588 · alquiler de local: el par de tokens de badge de `tokens.css` (#047857 sobre #ecfdf5, AA). */
+.gasto-cat--alquiler { background: var(--brand-tint); color: var(--brand-tint-ink); }
 .gasto-cat--otros { background: var(--neutral-100); color: var(--neutral-600); }
 
 /* SCRUM-920d · la foto del ticket en la fila: un HECHO sobre el archivo que guardamos («Foto guardada» /
@@ -4938,3 +5059,17 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
    aviso crece a 44. Sin margen negativo A PROPÓSITO: el blanco de toque montaría sobre el texto del
    renglón de encima, y un toque en «activa» abriría la página. */
 .pp-enlace { display: inline-flex; align-items: center; min-height: 44px; }
+
+/* ── S2 · SCRUM-1602 ── Descargar datos → «Paquete del trimestre» (exportView.js). Hermana de
+   «Facturas emitidas», que va justo encima: mismas medidas que su `style=` en línea, pero en clases,
+   porque el trinquete de SCRUM-713c no deja escribir estilos nuevos desde JS. El título es el estilo
+   Label de DESIGN.md §3 (12 px, 600, MAYÚSCULAS, Apagado). La ayuda va en `--muted` y no en
+   `--neutral-400` como la nota de «Qué incluir»: a 12 px, #949b92 sobre blanco no llega a AA. */
+.paquete-trimestre { margin-top: 16px; }
+.paquete-trimestre__titulo {
+  margin: 0 0 10px; font-size: 12px; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--muted);
+}
+.paquete-trimestre__texto { margin: 0 0 4px; font-size: 13px; color: var(--muted); }
+.paquete-trimestre__ayuda { margin: 0 0 12px; font-size: 12px; color: var(--muted); }
+.paquete-trimestre__info { margin: 12px 0 0; font-size: 12px; color: var(--muted); }

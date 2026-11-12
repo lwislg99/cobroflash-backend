@@ -673,6 +673,17 @@ const INDIRECTAS_DECLARADAS = [
   // repositorio SINTÉTICO en el temporal con su propio remoto desnudo, cuyo `main` no es el de nadie.
   // Lo retira quien borre el test.
   'tests/scrum1298b-latido-arbol-de-arranque.test.mjs',
+  // SCRUM-1549f · la sección PUERTA del latido. Su sujeto es la referencia móvil POR DISEÑO: dice si la puerta de
+  // `sesion.mjs` deja lanzar, y la puerta compara contra `origin/main` del `config.repo` (ver la entrada de
+  // `sesion.mjs`); contra la base de una rama contestaría otra pregunta. Lo que hace para no reintroducir el defecto
+  // que este guard vigila: lee la referencia UNA vez (`rev-parse --verify`), la congela en un sha y hace el `show` y
+  // el `log` contra ESE objeto. Fuera de los argumentos la nombra en la orden de refresco que da y en su prosa.
+  // Herramienta de mano del orquestador; no corre en CI. Lo retira quien retire la sección.
+  'scripts/equipo/puerta.mjs',
+  // SCRUM-1549f · su test: mismo caso que 1298b — un repositorio SINTÉTICO en el temporal con su propio
+  // `refs/remotes/origin/main`, que no es el de nadie; el resto son los nombres de sus tests y sus aserciones.
+  // Lo retira quien borre el test.
+  'tests/scrum1549f-latido-puerta.test.mjs',
   // SCRUM-1542 · el simulacro del aviso del vigía del despliegue. Su ÚNICA lectura de la punta es el
   // `[log]` declarado arriba; lo que sale aquí es la prosa de sus mensajes, que nombra `main` para
   // decir qué ha fabricado y sobre qué («entró en `main` hace N h», «entradas de `main` miradas»).

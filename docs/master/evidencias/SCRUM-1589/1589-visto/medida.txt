@@ -1,0 +1,13 @@
+﻿#49 AB260004 · estado firmado · firmadoAt 2026-10-29T11:14:35.841Z · GET pdf 200 · 5005 B · Date Thu, 29 Oct 2026 11:16:05 GMT · CreationDate undefined · alto página 841.89
+  control «AB260004» en el texto: SÍ · 35 bloques de texto · 1 imágenes
+  imagen /I1: 173.16 × 70.00 pt · x 50.00 · de arriba 299.01 a abajo 369.01
+  «Firmado por: » · 9 pt · base a 379.47 · techo de la línea a 373.01
+  HUECO entre el pie de la imagen y el techo de «Firmado por»: 4.00 pt → NO SE PISAN
+#50 AB260005 · estado emitido · firmadoAt null · GET pdf 200 · 2208 B · Date Thu, 29 Oct 2026 11:16:06 GMT · CreationDate undefined · alto página 841.89
+  control «AB260005» en el texto: SÍ · 18 bloques de texto · 0 imágenes
+  sin «Firmado por:» en el texto
+#47 AB260002 · estado firmado · firmadoAt 2026-10-14T07:50:59.626Z · GET pdf 200 · 3350 B · Date Thu, 29 Oct 2026 11:16:06 GMT · CreationDate undefined · alto página 841.89
+  control «AB260002» en el texto: SÍ · 32 bloques de texto · 1 imágenes
+  imagen /I1: 70.00 × 70.00 pt · x 50.00 · de arriba 273.58 a abajo 343.58
+  «Firmado por: » · 9 pt · base a 354.04 · techo de la línea a 347.58
+  HUECO entre el pie de la imagen y el techo de «Firmado por»: 4.00 pt → NO SE PISAN

@@ -1,0 +1,159 @@
+URL https://yaqu.app/dashboard/#parte-detail/13
+--- TEXTO
+YQ
+YaQu
+Inicio
+Solicitudes
+Trabajos
+VENTA
+Presupuestos
+Albaranes
+Partes por valorar
+Facturas
+Cobros
+NEGOCIO
+Clientes
+Productos
+Proveedores
+Gastos
+Informes
+Libro de registro
+Facturas recibidas
+CUENTA
+Equipo
+Planes
+Configuración
+P
+PruebaQA
+Plan Pro
+Salir
+Parte de trabajo
+P
+PT-2026-005
+
+Marta Prieto (PILOTO-1 QA)
+
+Horas y desplazamiento
+
+La hora se elige, no se escribe.
+
+Entrada
+Ahora
+Salida
+Ahora
+Tiempo en la obra
+2 h 30 min
+Desplazamiento
+Kilómetros
+km
+Dicta lo que has hecho
+
+Usa el micrófono de tu teclado. Luego lo ordenamos.
+
+Ordenar en líneas
+Mano de obra
+Falta la cantidad — ponla tú
+Falta la cantidad — ponla tú
+Falta la cantidad — ponla tú
+Materiales
+Falta la cantidad — ponla tú
+Falta la cantidad — ponla tú
+Añadir al parte
+Mano de obra
+UNDS	Descripción	
+Todavía no has apuntado nada.
+Añadir línea
+Materiales
+UNDS	Descripción	
+Todavía no has apuntado nada.
+Añadir línea
+Firmas
+
+Con la primera firma, lo apuntado queda fijo.
+
+Firmar aquí mismo
+
+Falta la firma del cliente.
+
+Firma del técnico
+
+Falta la firma del técnico.
+
+DATOS DEL PARTE
+Obra y referencia
+Sin dirección ni referencia
+Tipo de intervención
+Sin elegir
+Técnicos
+Sin técnicos
+Notas
+Sin notas
+?
+--- PULSABLES
+button[submit] «Inicio» 228x34 @-238,85
+button[submit] «Solicitudes» 228x34 @-238,121
+button[submit] «Trabajos» 228x34 @-238,157
+button[button] «Presupuestos» 228x34 @-238,227
+button[submit] «Albaranes» 228x34 @-238,263
+button[submit] «Partes por valorar» 228x34 @-238,299
+button[submit] «Facturas» 228x34 @-238,335
+button[submit] «Cobros» 228x34 @-238,371
+button[submit] «Clientes» 228x34 @-238,440
+button[submit] «Productos» 228x34 @-238,476
+button[submit] «Proveedores» 228x34 @-238,512
+button[submit] «Gastos» 228x34 @-238,548
+button[submit] «Informes» 228x34 @-238,584
+button[submit] «Libro de registro» 228x34 @-238,620
+button[submit] «Facturas recibidas» 228x34 @-238,656
+button[submit] «Equipo» 228x34 @-238,726
+button[submit] «Planes» 228x34 @-238,762
+button[submit] «Configuración» 228x34 @-238,798
+button[submit] «Salir» 39x22 @-61,867
+button[submit] «Menú» 36x36 @12,12
+input[time] «09:10» 178x45 @12,214
+button[button] «Ahora» 71x44 @12,265
+input[time] «11:40» 178x45 @200,214
+button[button] «Ahora» 71x44 @200,265
+input[number] «20» 178x44 @12,401
+input[number] «12» 150x44 @200,401
+textarea[textarea] «He cambiado los dos latiguillos del lavabo y la llave de esc» 366x88 @12,483
+button[button] «Ordenar en líneas» 366x44 @12,606
+input[number] «UNDS» 72x44 @12,692
+input[text] «Cambio de latiguillos del lavabo y llave de escuadra» 286x44 @92,692
+input[number] «UNDS» 72x44 @12,775
+input[text] «Revisión de sifón» 286x44 @92,775
+input[number] «UNDS» 72x44 @12,857
+input[text] «Horas de trabajo» 286x44 @92,857
+input[number] «2» 72x44 @12,976
+input[text] «Latiguillos de 40 centímetros» 286x44 @92,976
+input[number] «UNDS» 72x44 @12,1032
+input[text] «Llave de escuadra de media pulgada» 286x44 @92,1032
+input[number] «UNDS» 72x44 @12,1114
+input[text] «Rollo de teflón» 286x44 @92,1114
+button[button] «Añadir al parte» 366x44 @12,1201
+button[button] «Añadir línea» 109x44 @29,1366
+button[button] «Añadir línea» 109x44 @29,1554
+button[button] «Firmar aquí mismo» 340x44 @25,1703
+button[button] «Firma del técnico» 340x44 @25,1812
+summary «Obra y referencia Sin dirección ni referencia» 366x48 @12,1941
+input[text] «Dónde se ha hecho el trabajo» 366x44 @12,2013
+input[text] «Tu referencia interna, si usas alguna» 366x44 @12,2090
+summary «Tipo de intervención Sin elegir» 366x48 @12,1990
+input[radio] «reparacion_asistencia» 13x13 @29,2058
+input[radio] «mantenimiento» 13x13 @29,2114
+input[radio] «instalacion» 13x13 @190,2114
+summary «Técnicos Sin técnicos» 366x48 @12,2039
+input[text] «Quién ha estado en la obra» 366x44 @12,2111
+summary «Notas Sin notas» 366x48 @12,2088
+input[text] «Lo que haya que dejar dicho.» 366x44 @12,2160
+button[submit] «?» 48x48 @322,776
+--- DESBORDES
+--- <44px
+button «Menú» 36x36
+input «reparacion_asistencia» 13x13
+input «mantenimiento» 13x13
+input «instalacion» 13x13
+--- LOG
+[warning] Service Worker registration blocked by Playwright
+--- NOTAS
+Ordenar en líneas tardó ~20 s

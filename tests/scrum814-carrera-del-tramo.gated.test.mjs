@@ -100,7 +100,7 @@ const PLAN_30_70 = [{ percentage: 0.3, label: 'Anticipo' }, { percentage: 0.7, l
 // ES con el interruptor OFF no emite NINGÚN documento por `/:id/invoice`: 409 en las cinco
 // peticiones, y la carrera se mediría sobre cero facturas. Se enciende POR MERCHANT, como en el
 // hermano `scrum814-carrera-de-tramos-postgres`; el caso con el interruptor apagado lo mide aquél.
-const FISCAL_ON = { flags: { INVOICING_ES_ENABLED: true } };
+const FISCAL_ON = { flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false };
 
 /** Lanza el cliente en su PROPIO proceso y devuelve lo que imprimió. */
 function lanzarCliente(base, cookie, quoteId, t0) {

@@ -274,6 +274,83 @@ test('SCRUM-1454 · el COMANDO con VARIOS: una respuesta por ticket, un recuento
   assert.doesNotMatch(ciegos.stdout, /NO ESTÁ en origin/);
 });
 
+// ══ SCRUM-1505 · el commit que ENTREGA varios tickets a la vez ═══════════════════════════════════
+//
+// Medido el 2-nov-2026 contra `origin/main` = 70eefc40c: `ya-esta 377` decía «ninguno de main es suyo» y
+// metía en «lo citan … (suele ser el commit que lo ABRE)» a `79479b9af SCRUM-380 + SCRUM-377: …`, que lo
+// ENTREGA. Salía YA ESTÁ sólo por su registro; sin él, habría dicho NO ESTÁ. El criterio es el de J4
+// (`docs/master/SCRUM-1505.md` §3): son del commit los tickets que su asunto lleva EN CABEZA como lista;
+// lo que viene detrás es cita. Los asuntos son los de verdad, recortados.
+const ASUNTO_380_377 = 'SCRUM-380 + SCRUM-377: la primaria se pulsa con guantes, y el plural se escribe';
+const ASUNTO_TRES = 'SCRUM-1470 · SCRUM-1471 · SCRUM-1472: la fecha impresa es la del calendario del negocio, con UNA forma';
+
+test('SCRUM-1505 · un commit es de TODOS los tickets de la cabecera de su asunto, y de ninguno más', () => {
+  const c = (asunto) => ({ sha: 'abc1234', fecha: '2026-10-02', asunto });
+  const esSuyo = (num, asunto) => repartirCommits(num, [c(asunto)]).propios.length === 1;
+  const casos = [
+    // [asunto, los que SÍ son suyos, los que NO]
+    [ASUNTO_380_377, [380, 377], [37, 38]],
+    [ASUNTO_TRES, [1470, 1471, 1472], [147, 1473]],
+    ['SCRUM-1 y SCRUM-2: x', [1, 2], [3]],
+    ['SCRUM-8 e SCRUM-9, SCRUM-10 / SCRUM-11 & SCRUM-12: x', [8, 9, 10, 11, 12], []],
+    ['SCRUM-1470 · SCRUM-1471b: con letra de tramo', [1470, 1471], []],
+    // 🔴 lo que viene DESPUÉS de la cabecera sigue siendo cita: la distinción de SCRUM-1454 no se come.
+    [ASUNTO_AJENO, [1123], [1434]],
+    ['SCRUM-12: arregla lo de SCRUM-13 y SCRUM-14', [12], [13, 14]],
+    ['SCRUM-5 y el ticket abierto SCRUM-6', [5], [6]],
+    // sin cabecera, manda el PRIMERO, como antes (merges y la convención vieja)
+    ['Merge pull request #2148 from lwislg99/scrum-1419-canceladas-de-pr', [1419], []],
+    ['feat(quotes): el recordatorio (SCRUM-7)', [7], []],
+  ];
+  for (const [asunto, si, no] of casos) {
+    for (const n of si) assert.ok(esSuyo(n, asunto), `SCRUM-${n} debería ser dueño de «${asunto}»`);
+    for (const n of no) assert.ok(!esSuyo(n, asunto), `SCRUM-${n} NO debería ser dueño de «${asunto}»`);
+  }
+  // Cuando lo cita, el dueño que se enseña sigue siendo el PRIMERO del asunto.
+  assert.deepEqual(repartirCommits(1434, [c(ASUNTO_AJENO)]).ajenos.map((x) => x.dueno), [1123]);
+});
+
+test('SCRUM-1505 · el caso VIVO: SCRUM-377 sin su registro pasa de NO ESTÁ a YA ESTÁ, y las dos líneas falsas desaparecen', () => {
+  const c = { sha: '79479b9af', fecha: '2026-08-10', asunto: ASUNTO_380_377 };
+  const r = repartirCommits(377, [c]);
+  const h = nada({ commits: r.propios, commitsAjenos: r.ajenos });
+  const v = veredictoDe(h);
+  assert.equal(v.respuesta, YA_ESTA);
+  assert.equal(v.desde, '2026-08-10');
+  const texto = informe(377, h, v, { main: SHA }).join('\n');
+  assert.doesNotMatch(texto, /ninguno de main es suyo/);
+  assert.doesNotMatch(texto, /lo citan/);
+  assert.match(texto, /commits {4}· 1 en main/);
+});
+
+test('SCRUM-1505 · el POSITIVO: un ticket que de verdad no está sigue diciendo NO ESTÁ (1434 sin lo suyo)', () => {
+  // `da3798df8` es de SCRUM-1123 y ABRE 1434 nombrándolo detrás. Sin sus commits propios ni su registro,
+  // 1434 no tiene nada en main: si el arreglo lo diese por hecho, sería peor que el defecto.
+  const r = repartirCommits(1434, [{ sha: 'da3798df8', fecha: '2026-10-02', asunto: ASUNTO_AJENO }]);
+  const h = nada({ commits: r.propios, commitsAjenos: r.ajenos });
+  assert.equal(veredictoDe(h).respuesta, NO_ESTA);
+  const texto = informe(1434, h, veredictoDe(h), { main: SHA }).join('\n');
+  assert.match(texto, /ninguno de main es suyo \(ninguno lo lleva en la cabecera de su asunto\)/);
+  assert.match(texto, /\(es de SCRUM-1123\)/);
+});
+
+test('SCRUM-1505 · el COMANDO: el segundo ticket de una cabecera SÍ está; el que sólo se cita detrás, NO', (t) => {
+  const j = jugueteConAjeno(); t.after(() => fs.rmSync(j.base, { recursive: true, force: true }));
+  const g = (...a) => execFileSync('git', ['-C', j.clon, '-c', 'user.name=prueba', '-c', 'user.email=prueba@example.invalid', '-c', 'commit.gpgsign=false', ...a], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  // Commit VACÍO, como el de arriba: lo que se prueba es el asunto (SCRUM-824).
+  g('commit', '--quiet', '--allow-empty', '-m', 'SCRUM-60 + SCRUM-61: los dos a la vez');
+  g('push', '--quiet', 'origin', 'main'); g('fetch', '--quiet', 'origin');
+  const segundo = lanzar(j.clon, '61');
+  assert.equal(segundo.status, SALIDA_MIRADO, segundo.stdout + segundo.stderr);
+  assert.match(segundo.stdout.split('\n')[0], /SCRUM-61 · YA ESTÁ en origin\/main/);
+  assert.match(segundo.stdout, /commits {4}· 1 en main/);
+  assert.doesNotMatch(segundo.stdout, /ninguno de main es suyo|lo citan/);
+  // El positivo, en el mismo árbol: el que SCRUM-50c sólo nombra detrás sigue sin estar.
+  const citado = lanzar(j.clon, '51');
+  assert.match(citado.stdout.split('\n')[0], /SCRUM-51 · NO ESTÁ en origin\/main con ese número/);
+  assert.match(citado.stdout, /1 commit\(s\) de OTRO ticket lo citan/);
+});
+
 test('SCRUM-1454 · el COMANDO sin sus motores: lo dice por su SALIDA y sale 2 — con el stderr tirado sigue habiendo respuesta', (t) => {
   // Lo más cerca que se puede fabricar del 6-oct: el guion, solo, en un árbol donde no está lo que importa.
   const j = juguete(); t.after(() => fs.rmSync(j.base, { recursive: true, force: true }));

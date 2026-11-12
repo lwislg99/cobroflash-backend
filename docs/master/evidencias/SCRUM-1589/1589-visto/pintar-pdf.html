@@ -1,0 +1,19 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Pintar PDF</title>
+<style>body{margin:0;background:#fff}canvas{display:block}</style>
+<canvas id="c"></canvas>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+// SCRUM-1589 · pinta la página 1 del PDF que se le pase en window.PDF_B64 (sin red: lo carga el script).
+window.pintar = async (b64, escala) => {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const datos = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  const pdf = await pdfjsLib.getDocument({ data: datos }).promise;
+  const pag = await pdf.getPage(1);
+  const vp = pag.getViewport({ scale: escala });
+  const c = document.getElementById('c'); c.width = vp.width; c.height = vp.height;
+  await pag.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+  return { w: vp.width, h: vp.height };
+};
+</script>

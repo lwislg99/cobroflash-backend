@@ -49,13 +49,13 @@ test('SCRUM-81: ES sin override → modo receipt → invoicing_es_disabled, sin 
 });
 
 test('SCRUM-81: ES con INVOICING_ES_ENABLED por override de merchant → serie FISCAL (no J-)', async () => {
-  const n = await allocateInvoiceNumber(mkTx(merchant({ flags: { INVOICING_ES_ENABLED: true } })), 7, CTX, now);
+  const n = await allocateInvoiceNumber(mkTx(merchant({ flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false })), 7, CTX, now);
   assert.ok(!isReceiptNumber(n), `con el override debe ser fiscal, salió ${n}`);
   assert.match(n, /^2026-CF-001$/, 'serie fiscal 2026-CF-001');
 });
 
 test('SCRUM-81: rectificativa exige modo fiscal — con override emite serie R; sin override lanza', async () => {
-  const nR = await allocateInvoiceNumber(mkTx(merchant({ flags: { INVOICING_ES_ENABLED: true } })), 7, { ...CTX, rectifying: true }, now);
+  const nR = await allocateInvoiceNumber(mkTx(merchant({ flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false })), 7, { ...CTX, rectifying: true }, now);
   assert.match(nR, /^2026-CF-R-001$/, 'serie de rectificativas');
   await assert.rejects(
     () => allocateInvoiceNumber(mkTx(merchant()), 7, { ...CTX, rectifying: true }, now),

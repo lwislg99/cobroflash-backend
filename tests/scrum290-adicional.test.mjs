@@ -57,7 +57,7 @@ function montar(lineasAlbaran) {
   };
   // Merchant REAL con el flag, no el demo (`isDemoMerchant` es id === 1): si no, todo corre en
   // modo demo y la puerta de la regla 24 no se ejercita.
-  p.merchant = { findUnique: async () => ({ id: 7, email: 'pro@fontaneria.es', country: 'ES', flags: { INVOICING_ES_ENABLED: true }, defaultCurrency: 'EUR', taxId: 'B1' }) };
+  p.merchant = { findUnique: async () => ({ id: 7, email: 'pro@fontaneria.es', country: 'ES', flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false, defaultCurrency: 'EUR', taxId: 'B1' }) };
   p.quote = { findFirst: async () => ({ id: 7, quoteNumber: 'P-1', lines: PRESUPUESTO, discountGlobalAmount: null }) }; // SCRUM-887
   p.albaranLineaFacturada = { findMany: async () => [], createMany: async () => {} };
 
@@ -65,7 +65,7 @@ function montar(lineasAlbaran) {
     invoice: { findMany: async () => [], create: async ({ data }) => { cap.facturaEmitida = data; return { ...data, id: 33, total: { toString: () => data.total } }; } },
     albaranLineaFacturada: { createMany: async () => {} },
     merchant: {
-      findUnique: async () => ({ id: 7, country: 'ES', flags: { INVOICING_ES_ENABLED: true }, invoiceSeq: 0, quoteSeq: 0 }),
+      findUnique: async () => ({ id: 7, country: 'ES', flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false, invoiceSeq: 0, quoteSeq: 0 }),
       update: async () => ({ id: 7, invoiceSeq: 1, quoteSeq: 1 }),
     },
     // Lo que este test vigila: si se crea un presupuesto, se captura entero.

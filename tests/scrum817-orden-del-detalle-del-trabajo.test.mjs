@@ -251,9 +251,9 @@ test('SCRUM-817 · 📌 la casilla de precios vive SÓLO dentro de la hoja de al
     '🔴 SUELO: no encuentro «+ Nuevo albarán» en el árbol montado; sin él, «la barra ya no lleva la '
     + 'casilla» no mide nada.');
 
-  const conCasilla = nodos.filter((n) => /Incluir precios en el parte/.test(String(n.textContent || '')));
+  const conCasilla = nodos.filter((n) => /Incluir precios en el (parte|albarán)/.test(String(n.textContent || '')));
   assert.deepEqual(conCasilla.map((n) => n.tagName), [],
-    '🔴 ha vuelto la casilla «Incluir precios en el parte» a la pantalla del Trabajo (al cargar, sin abrir '
+    '🔴 ha vuelto la casilla de precios («Incluir precios en el albarán», antes «… en el parte») a la pantalla del Trabajo (al cargar, sin abrir '
     + 'la hoja de alta). SCRUM-917 com. 16142 la retiró de la barra: el modo con precios se elige SÓLO '
     + 'dentro de la hoja de alta del albarán.');
   for (const b of botones) {
@@ -268,10 +268,10 @@ test('SCRUM-817 · 📌 la casilla de precios vive SÓLO dentro de la hoja de al
   const src = leerFuente(path.join(RAIZ, 'public/dashboard/js/jobDetailView.js'),
     { ancla: 'buildAlbEditor' });
   const iEditor = src.indexOf('function buildAlbEditor');
-  const iCasilla = src.indexOf('Incluir precios en el parte');
+  const iCasilla = src.indexOf('Incluir precios en el albarán'); // SCRUM-1696: rótulo N12 (firmado SCRUM-1686 c.21471)
   assert.ok(iEditor >= 0 && iCasilla > iEditor,
     '🔴 la casilla ya no se pinta dentro de `buildAlbEditor` (la hoja de alta del albarán): o se ha '
     + 'movido al parte de trabajo —que no gobierna `modoValoracion`— o se ha perdido.');
-  assert.equal(src.indexOf('Incluir precios en el parte', iCasilla + 1), -1,
+  assert.equal(src.indexOf('Incluir precios en el albarán', iCasilla + 1), -1,
     '🔴 la casilla se pinta en MÁS de un sitio del código: el modo con precios se elegiría en dos lugares.');
 });

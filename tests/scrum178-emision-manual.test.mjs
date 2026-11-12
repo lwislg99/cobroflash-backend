@@ -52,7 +52,7 @@ const PLAN_MANUAL = [{ index: 0, percentage: 1, label: 'manual_total' }];
 // camino bueno y las cuatro puertas se miden con el interruptor encendido POR MERCHANT, como su
 // hermano `scrum814-carrera-de-tramos-postgres`; el OFF se mide aparte, con su propio caso. El OFF
 // va EXPLÍCITO en la columna (no «ausente»): así el caso no depende del env del entorno.
-const FISCAL_ON = { flags: { INVOICING_ES_ENABLED: true } };
+const FISCAL_ON = { flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false };
 const FISCAL_OFF = { flags: { INVOICING_ES_ENABLED: false } };
 
 test('SCRUM-178 (aritmética, sin BD): el tramo único al 100 % reproduce las líneas y el total EXACTOS', async () => {

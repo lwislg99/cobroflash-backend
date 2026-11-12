@@ -1,0 +1,23 @@
+﻿origin/main eafca9fe154c26d38b05a748ca816ba098943724 · 29-oct-2026 ~17:45Z (Date de GitHub 17:46:37Z)
+CLI del censo: población: 100 ficheros .js en public/ · 217 comentarios de convención (93 en objetos del censo, 124 FUERA DE ALCANCE) · 52 objetos · 348 hojas de texto
+estado OK poblacion {"ficheros":100,"comentariosConvenio":217,"comentariosEnObjetos":93,"objetos":52,"hojas":348,"comentariosFueraDeAlcance":124}
+hojas de expensesView: 1
+  APROBADO public/dashboard/js/expensesView.js · CATEGORY_LABELS.alquiler.label 
+
+--- control-positivo.mjs ---
+firmados: ciegos 0 · objetos 6 · hojas 6
+   APROBADO public/dashboard/js/expensesView.js · CATEGORY_LABELS.materiales.label
+   APROBADO public/dashboard/js/expensesView.js · CATEGORY_LABELS.desplazamiento.label
+   APROBADO public/dashboard/js/expensesView.js · CATEGORY_LABELS.herramientas.label
+   APROBADO public/dashboard/js/expensesView.js · CATEGORY_LABELS.subcontrata.label
+   APROBADO public/dashboard/js/expensesView.js · CATEGORY_LABELS.alquiler.label
+   APROBADO public/dashboard/js/expensesView.js · CATEGORY_LABELS.otros.label
+pendientes: ciegos 0 · objetos 6 · hojas 6
+   PENDIENTE public/dashboard/js/expensesView.js · CATEGORY_LABELS.materiales.label
+   PENDIENTE public/dashboard/js/expensesView.js · CATEGORY_LABELS.desplazamiento.label
+   PENDIENTE public/dashboard/js/expensesView.js · CATEGORY_LABELS.herramientas.label
+   PENDIENTE public/dashboard/js/expensesView.js · CATEGORY_LABELS.subcontrata.label
+   APROBADO public/dashboard/js/expensesView.js · CATEGORY_LABELS.alquiler.label
+   PENDIENTE public/dashboard/js/expensesView.js · CATEGORY_LABELS.otros.label
+hoy (sin tocar): objetos 1 · hojas 1
+   APROBADO public/dashboard/js/expensesView.js · CATEGORY_LABELS.alquiler.label

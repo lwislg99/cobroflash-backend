@@ -1,0 +1,17 @@
+navegador: Edge (Windows) · antes = 97c6910ddcded6381dee896073ae8263e9458230 (merge-base)
+
+── ANTES ──────────────────────────────────────────────────────────────────
+factura       ancho  botón  role  Tab→paradas  anillo  Intro  Espacio  ratón  casilla
+F-2026-0041   1280   NO     —     NO LLEGA     —       —      —        ✅      ✅
+F-2026-0041   390    NO     —     NO LLEGA     —       —      —        ✅      —
+F-2026-0042   1280   NO     —     NO LLEGA     —       —      —        ✅      —
+F-2026-0042   390    NO     —     NO LLEGA     —       —      —        ✅      —
+
+── DESPUÉS ──────────────────────────────────────────────────────────────────
+factura       ancho  botón  role  Tab→paradas  anillo  Intro  Espacio  ratón  casilla
+F-2026-0041   1280   sí     —     13           ✅       ✅      ✅        ✅      ✅
+F-2026-0041   390    sí     —     11           ✅       ✅      ✅        ✅      —
+F-2026-0042   1280   sí     —     14           ✅       ✅      ✅        ✅      —
+F-2026-0042   390    sí     —     12           ✅       ✅      ✅        ✅      —
+
+⟦veredicto⟧ 0 fallo(s) · 0 ciego(s) · 8 de 8 casos (2 árboles × 2 facturas × 2 anchos) → salida 0

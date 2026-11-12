@@ -1,0 +1,42 @@
+// SCRUM-1631 · scrum116 SOLO, un proceso por pasada, en los dos entornos que discrepan.
+// Uso: node correr-116-1631.mjs <raiz> <ci|dry> <N>
+// La copia tests/zz1631-116.mjs se genera aquí (sin staging, gate abierto) y se borra al acabar.
+// ci = sin WHATSAPP_* (como ci.yml, y como S5: su log dice not_configured) · dry = WHATSAPP_DRY_RUN=1 (como 1599t).
+import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const [raiz, modo, nTxt] = process.argv.slice(2);
+const N = Number(nTxt);
+const fuente = fs.readFileSync(path.join(raiz, 'tests/scrum116-recordatorio-candado.test.mjs'), 'utf8');
+const copia = path.join(raiz, 'tests/zz1631-116.mjs');
+const adaptada = fuente
+  .replace("import './_staging-db.mjs'; // SCRUM-60: fuerza staging (fail-closed anti-prod)\n", '')
+  .replace("const ENABLED = process.env.QA_DB_TEST === '1';", 'const ENABLED = true;');
+if (adaptada === fuente || adaptada.includes('_staging-db.mjs\'')) { console.log('CIEGO: no se adaptó la copia'); process.exit(2); }
+fs.writeFileSync(copia, adaptada);
+
+const env = { ...process.env };
+for (const k of ['NODE_TEST_CONTEXT', 'NODE_OPTIONS', 'FORCE_COLOR', 'WHATSAPP_PHONE_NUMBER_ID', 'WHATSAPP_ACCESS_TOKEN', 'WHATSAPP_DRY_RUN']) delete env[k];
+if (modo === 'dry') env.WHATSAPP_DRY_RUN = '1';
+
+const tally = { verde: 0, premisaRota: 0, otroRojo: 0, ciego: 0 };
+const motivos = {};
+try {
+  for (let i = 0; i < N; i++) {
+    const r = spawnSync(process.execPath, ['--test', '--test-force-exit', '--test-reporter=tap', copia], { cwd: raiz, env, encoding: 'utf8', timeout: 120000 });
+    const s = (r.stdout ?? '') + (r.stderr ?? '');
+    const m = s.match(/env[ií]o de A fallido por: ([^ ]+)/);
+    if (m) motivos[m[1]] = (motivos[m[1]] ?? 0) + 1;
+    const pasa = /^# pass (\d+)/m.exec(s)?.[1];
+    const cae = /^# fail (\d+)/m.exec(s)?.[1];
+    const total = /^# tests (\d+)/m.exec(s)?.[1];
+    if (total !== '1' || Number(pasa) + Number(cae) !== 1) tally.ciego++;
+    else if (pasa === '1') tally.verde++;
+    else if (s.includes('PREMISA ROTA')) tally.premisaRota++;
+    else { tally.otroRojo++; console.log(s.slice(-1500)); }
+  }
+} finally {
+  fs.rmSync(copia, { force: true });
+}
+console.log(JSON.stringify({ modo, N, ...tally, motivos }));

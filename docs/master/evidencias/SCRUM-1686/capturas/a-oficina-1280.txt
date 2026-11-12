@@ -1,0 +1,42 @@
+--- LISTA
+Partes por valorar
+P
+PruebaQA
+Partes por valorar
+
+Los partes que tu equipo ya ha firmado y todavía no tienen precios.
+
+PT-2026-004
+—
+4 ⚬
+--- TRAS PULSAR LA PRIMERA FILA
+Partes por valorar
+P
+PruebaQA
+Partes por valorar
+
+Los partes que tu equipo ya ha firmado y todavía no tienen precios.
+
+PT-2026-004
+—
+4 ⚬
+PT-2026-004
+Cliente de pruebas QA
+0,00 €
+MANO DE OBRA
+Espera al portero
+2
+—
+Tiempo en obra
+4
+—
+MATERIALES
+Cable
+2
+—
+Bombilla
+3
+—
+Guardar precios
+--- LOG
+[warning] Service Worker registration blocked by Playwright

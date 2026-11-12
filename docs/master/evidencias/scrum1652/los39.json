@@ -1,0 +1,387 @@
+[
+ {
+  "donde": "src/core/http/adminRouteDeclarations.ts:213",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "24-ago-2026",
+  "tickets": [
+   "614",
+   "55",
+   "365"
+  ],
+  "pares": [],
+  "frase": "// ⚠️ LA LECTURA SE QUEDA ABIERTA A PROPÓSITO. El fundador decidió el mismo día que coste y"
+ },
+ {
+  "donde": "src/core/http/publicNotFound.ts:70",
+  "grupo": "3b el ticket citado no dice nada",
+  "fecha": "30-jul-2026",
+  "tickets": [
+   "206"
+  ],
+  "pares": [],
+  "frase": "// Copy OFICIAL aprobado por el fundador el 30-jul-2026 (regla 30). El texto vive en"
+ },
+ {
+  "donde": "src/modules/invoicing/domain/lineasFacturables.ts:42",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": "3-ago-2026",
+  "tickets": [
+   "264"
+  ],
+  "pares": [],
+  "frase": "* ✅ TEXTO OFICIAL — aprobado por el fundador el 3-ago-2026 (SCRUM-264, regla 30). No se toca"
+ },
+ {
+  "donde": "src/modules/invoicing/domain/lineasFacturables.ts:58",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": "3-ago-2026",
+  "tickets": [
+   "264"
+  ],
+  "pares": [],
+  "frase": "* ✅ TEXTO OFICIAL — aprobado por el fundador el 3-ago-2026 (SCRUM-264, regla 30)."
+ },
+ {
+  "donde": "src/modules/invoicing/domain/portonDocumento.ts:46",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "30-jul-2026",
+  "tickets": [],
+  "pares": [],
+  "frase": "* Copy OFICIAL para el cliente final, aprobado por el fundador el 30-jul-2026 (regla 30)."
+ },
+ {
+  "donde": "src/modules/jobs/domain/albaranFirmante.ts:1",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": "6-ago-2026",
+  "tickets": [
+   "300",
+   "289"
+  ],
+  "pares": [],
+  "frase": "// LA MICROCOPY DE «¿EN CALIDAD DE QUÉ FIRMA?» — APROBADA POR EL FUNDADOR (6-ago-2026)"
+ },
+ {
+  "donde": "src/modules/jobs/domain/albaranFirmante.ts:87",
+  "grupo": "T2 asesor + fundador",
+  "fecha": "6-ago-2026",
+  "tickets": [
+   "300"
+  ],
+  "pares": [],
+  "frase": "* **Aprobadas por el asesor y validadas por el fundador el 6-ago-2026.**"
+ },
+ {
+  "donde": "src/modules/jobs/domain/albaranFirmante.ts:126",
+  "grupo": "2a asesor nombrado en la marca",
+  "fecha": "5-ago-2026",
+  "tickets": [
+   "300"
+  ],
+  "pares": [],
+  "frase": "*  · `fechaEntrega` — **APROBADO por el fundador el 5-ago-2026**: describe lo que el campo es, no"
+ },
+ {
+  "donde": "src/modules/jobs/domain/albaranWhatsApp.service.ts:142",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": "27-jul-2026",
+  "tickets": [
+   "62"
+  ],
+  "pares": [],
+  "frase": "* El texto de ventana es K1 OFICIAL, aprobado por el fundador el 27-jul-2026 (regla 30):"
+ },
+ {
+  "donde": "src/modules/maintenance/domain/maintenance.service.ts:26",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": "7-ago-2026",
+  "tickets": [
+   "394"
+  ],
+  "pares": [],
+  "frase": "// **APROBADO por el fundador el 7-ago-2026**, con la condición de verificar cada afirmación contra"
+ },
+ {
+  "donde": "src/modules/products/app/routes/products.routes.ts:282",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "22-jul-2026",
+  "tickets": [
+   "614"
+  ],
+  "pares": [],
+  "frase": "// ⚠️ LA LECTURA NO SE TOCA, y no es un olvido: el fundador decidió el 24-ago que coste y margen"
+ },
+ {
+  "donde": "src/modules/reports/domain/desgloseEmpleado.ts:48",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": "29-jul-2026",
+  "tickets": [
+   "236"
+  ],
+  "pares": [],
+  "frase": "// Microcopy OFICIAL: aprobado por el fundador el 29-jul-2026 (regla 30). SCRUM-236 reutiliza"
+ },
+ {
+  "donde": "src/modules/system/merchantAdmin.ts:98",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": "5-ago-2026",
+  "tickets": [
+   "338"
+  ],
+  "pares": [],
+  "frase": "// Microcopy APROBADA por el fundador (5-ago-2026), literal."
+ },
+ {
+  "donde": "src/modules/whatsappBot/domain/botFlow.service.ts:129",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "5-jul-2026",
+  "tickets": [],
+  "pares": [],
+  "frase": "/** Menú oficial K1 (lista) — copy v2 aprobado por el fundador (5-jul-2026). */"
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:215",
+  "grupo": "3b el ticket citado no dice nada",
+  "fecha": "5-ago-2026",
+  "tickets": [
+   "302"
+  ],
+  "pares": [],
+  "frase": "// SCRUM-302 · APROBADO por el fundador el 5-ago-2026: es la palabra del ticket y la que usa"
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:221",
+  "grupo": "3b el ticket citado no dice nada",
+  "fecha": "6-ago-2026",
+  "tickets": [
+   "302"
+  ],
+  "pares": [],
+  "frase": "// SCRUM-302 · APROBADO por el fundador el 6-ago-2026: VERBO, como sus dos vecinos de la barra."
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:234",
+  "grupo": "3b el ticket citado no dice nada",
+  "fecha": "5-ago-2026",
+  "tickets": [
+   "302"
+  ],
+  "pares": [],
+  "frase": "// SCRUM-302 · APROBADO por el fundador el 5-ago-2026. Dice lo que SÍ trae ANTES de lo que no: el"
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:332",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": "6-ago-2026",
+  "tickets": [
+   "379",
+   "375"
+  ],
+  "pares": [],
+  "frase": "// FIRMADO por el fundador el 6-ago-2026. Dice las dos cosas y EN ESTE ORDEN: primero que la"
+ },
+ {
+  "donde": "public/dashboard/js/exportView.js:363",
+  "grupo": "3b el ticket citado no dice nada",
+  "fecha": "17-ago-2026",
+  "tickets": [
+   "714"
+  ],
+  "pares": [],
+  "frase": "// ✅ MICROCOPY APROBADA POR EL FUNDADOR el 17-ago-2026 (regla 30), y APLICADA. Consta en"
+ },
+ {
+  "donde": "public/dashboard/js/jobDetailView.js:401",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "5-ago-2026",
+  "tickets": [],
+  "pares": [],
+  "frase": "// MICROCOPY APROBADA por el fundador el 5-ago-2026 (regla 30), los cinco tal cual. Ya no llevan"
+ },
+ {
+  "donde": "public/dashboard/js/jobDetailView.js:484",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "5-ago-2026",
+  "tickets": [],
+  "pares": [],
+  "frase": "// MICROCOPY APROBADA por el fundador el 5-ago-2026 (regla 30). Ya NO lleva el marcador"
+ },
+ {
+  "donde": "public/dashboard/js/jobsCierreTrabajo.js:37",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "5-ago-2026",
+  "tickets": [
+   "299"
+  ],
+  "pares": [],
+  "frase": "// ── LAS CINCO RANURAS DE TEXTO · MICROCOPY APROBADA POR EL FUNDADOR (regla 30, 5-ago-2026) ──"
+ },
+ {
+  "donde": "public/dashboard/js/onboardingView.js:48",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": "9-ago-2026",
+  "tickets": [
+   "338"
+  ],
+  "pares": [],
+  "frase": "// SCRUM-338 · el aviso de que el catálogo no se cargó. Microcopy APROBADA por el fundador"
+ },
+ {
+  "donde": "public/dashboard/js/productsView.js:1178",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "5-ago-2026",
+  "tickets": [],
+  "pares": [],
+  "frase": "// Microcopy APROBADA por el fundador (5-ago-2026), literal."
+ },
+ {
+  "donde": "public/dashboard/js/productsView.js:1214",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "5-ago-2026",
+  "tickets": [],
+  "pares": [],
+  "frase": "// Microcopy APROBADA por el fundador (5-ago-2026). Va ANTES de cargar, no después: dice lo"
+ },
+ {
+  "donde": "public/dashboard/js/quotesView.js:405",
+  "grupo": "3b el ticket citado no dice nada",
+  "fecha": "17-ago-2026",
+  "tickets": [
+   "284"
+  ],
+  "pares": [],
+  "frase": "// `TITULO_PENDIENTE` se BORRA el 17-ago-2026: el fundador aprobó los cuatro títulos de bloque y"
+ },
+ {
+  "donde": "public/dashboard/js/settingsView.js:3",
+  "grupo": "3b el ticket citado no dice nada",
+  "fecha": "7-ago-2026",
+  "tickets": [
+   "298"
+  ],
+  "pares": [],
+  "frase": "// **Aprobados por el fundador el 7-ago-2026**, con la condición de verificar cada afirmación"
+ },
+ {
+  "donde": "tests/scrum1041-facturas-emitidas-sin-marcador.test.mjs:1",
+  "grupo": "2a asesor nombrado en la marca",
+  "fecha": "19-ago-2026",
+  "tickets": [
+   "1041"
+  ],
+  "pares": [],
+  "frase": "// LOS 4 TEXTOS DE LA CARD «FACTURAS EMITIDAS» (exportView.js), FIRMADOS POR EL FUNDADOR"
+ },
+ {
+  "donde": "tests/scrum151-motivo-sin-tramo.test.mjs:1",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "27-jul-2026",
+  "tickets": [
+   "151"
+  ],
+  "pares": [],
+  "frase": "// de pago\". El fundador decidió después que un Trabajo MANUAL/SIN_CONDICIONES **sí debe poder"
+ },
+ {
+  "donde": "tests/scrum1609-fecha-de-cobro-de-una-en-una.test.mjs:1",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": "10-ago-2026",
+  "tickets": [
+   "397"
+  ],
+  "pares": [],
+  "frase": "// SCRUM-397 (criterio firmado por el fundador el 10-ago-2026: no futura, sin límite hacia atrás). Su hermano"
+ },
+ {
+  "donde": "tests/scrum284-configuracion-submenus.test.mjs:131",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "5-ago-2026",
+  "tickets": [
+   "483",
+   "277",
+   "344"
+  ],
+  "pares": [],
+  "frase": "// Los rótulos están APROBADOS por el fundador (5-ago-2026). No eran redacción nueva: los nueve"
+ },
+ {
+  "donde": "tests/scrum300-firmante-ids-y-microcopy.test.mjs:1",
+  "grupo": "2a asesor nombrado en la marca",
+  "fecha": "6-ago-2026",
+  "tickets": [
+   "300"
+  ],
+  "pares": [],
+  "frase": "//   · Las seis etiquetas son PANTALLA. **APROBADAS por el fundador el 6-ago-2026**, literales."
+ },
+ {
+  "donde": "tests/scrum404-trazo-no-se-pierde.test.mjs:106",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "7-ago-2026",
+  "tickets": [],
+  "pares": [],
+  "frase": "// Esta parte cambió el 7-ago-2026 porque el FUNDADOR APROBÓ el texto de «sin conexión», no"
+ },
+ {
+  "donde": "tests/scrum411-exports-inalcanzables.test.mjs:68",
+  "grupo": "2c sesion dice fundador, sin sus palabras",
+  "fecha": "12-ago-2026",
+  "tickets": [
+   "294"
+  ],
+  "pares": [
+   "1404c18840"
+  ],
+  "frase": "// llamador. No es deuda ni olvido: el fundador decidió que el reintento sólo alcance facturas nacidas"
+ },
+ {
+  "donde": "tests/scrum557-alcance-por-identidad.test.mjs:1",
+  "grupo": "3b el ticket citado no dice nada",
+  "fecha": "20-ago-2026",
+  "tickets": [
+   "557",
+   "551"
+  ],
+  "pares": [],
+  "frase": "// No es hipotético. El fundador aprobó los 37 textos el 20-ago-2026, y registrar esa aprobación"
+ },
+ {
+  "donde": "tests/scrum574-mismo-cliente-tras-migracion.test.mjs:1",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "24-ago-2026",
+  "tickets": [
+   "574"
+  ],
+  "pares": [],
+  "frase": "// el diff (`docs/sql/SCRUM-574-opcion-B.diff`) esperaba su GO. El fundador lo autorizó el"
+ },
+ {
+  "donde": "tests/scrum627b-censo-declara-reimplementaciones.test.mjs:1",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "25-ago-2026",
+  "tickets": [
+   "627",
+   "389",
+   "604"
+  ],
+  "pares": [],
+  "frase": "// el fundador aprobó el 25-ago-2026."
+ },
+ {
+  "donde": "scripts/censo-anclas-bloque-f.mjs:67",
+  "grupo": "3b el ticket citado no dice nada",
+  "fecha": "20-ago-2026",
+  "tickets": [
+   "557"
+  ],
+  "pares": [],
+  "frase": "* No es hipotetico: el fundador aprobo los 37 textos el 20-ago-2026, y registrar esa aprobacion"
+ },
+ {
+  "donde": "scripts/voice-eval.mjs:1",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "5-jul-2026",
+  "tickets": [],
+  "pares": [],
+  "frase": "// 10 transcripciones FIJAS (aprobadas por el fundador, 5-jul-2026) contra el catálogo"
+ }
+]

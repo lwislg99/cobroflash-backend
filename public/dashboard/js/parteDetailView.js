@@ -194,6 +194,11 @@
     // Cierto porque `puedeEditarContenido` solo abre en `borrador` (`parteTrabajo.ts`), y el PATCH
     // y el dictado lo aplican. No habla de precios a propósito: siguen abiertos hasta facturar.
     conLaPrimeraFirmaQuedaFijo: 'Con la primera firma, lo apuntado queda fijo.', // APROBADO por delegación del fundador · SCRUM-653 comentario 17354
+    // SCRUM-1676 · el parte VACÍO: firmar deja de ser la acción principal y se dice qué va antes. Ocupa
+    // el sitio de «queda fijo» (dice lo mismo y además qué hacer), solo mientras no hay ni una línea.
+    // Tanda de PILOTO-1 (SCRUM-1656 c.21405, entrada 7); la rectificación c.21411 no toca las 1-23.
+    // Consta en `docs/microcopy/2026-11-10-SCRUM-1676-apunta-primero.md`.
+    apuntaPrimero: 'Apunta primero lo que has hecho: al firmar ya no se puede cambiar.', // APROBADO por el fundador el 10-nov-2026 · SCRUM-1656 comentario 21408
 
     // SCRUM-890 · por qué no se firma un parte vacío y qué hacer. FIRMADO el 16-sep-2026 por
     // delegación del fundador (SCRUM-890, comentario 15623). Consta en
@@ -249,7 +254,20 @@
     sinTecnicos: 'Sin técnicos',
     pistaTecnicos: 'Quién ha estado en la obra',
     sinNotas: 'Sin notas',
+    // SCRUM-1698 (T5 de SCRUM-1686) · N3, FIRMADO por el fundador en la tanda N1-N13, SCRUM-1686
+    // comentario 21470: parte FIRMADO, campo de horas o de desplazamiento que se quedó vacío. Sustituye
+    // a «—», que no distinguía «no se apuntó» de «cero». Sólo en `pintarHoras` (alcance de la firma).
+    sinApuntar: 'Sin apuntar',
     pistaNotas: 'Lo que haya que dejar dicho.',
+
+    // ── SCRUM-1677 · LA SALIDA DEL PARTE HACIA SU TRABAJO ─────────────────────────────────
+    // Tanda de PILOTO-1 (SCRUM-1656 c.21405, entradas 5 y 6); la rectificación c.21411 no toca las
+    // 1-23. Consta en `docs/microcopy/2026-11-10-SCRUM-1677-salida-al-trabajo.md`.
+    trabajoDelCliente: '← Trabajo: {cliente}', // APROBADO por el fundador el 10-nov-2026 · SCRUM-1656 comentario 21408
+    volverAlTrabajo: 'Volver al trabajo', // APROBADO por el fundador el 10-nov-2026 · SCRUM-1656 comentario 21408
+    // FIRMADO: N4 de la tanda N1-N13 de SCRUM-1686 (c.21471) · cabecera del parte, con varios en el
+    // trabajo. Cómo se cuenta: M2 del máster (073c67ade). SCRUM-1697.
+    visitaDeLas: 'Visita {n} de {m}',
   };
 
   // El vocabulario CERRADO del dominio (`parteTrabajo.ts`). No se inventa aquí ni se amplía:
@@ -532,15 +550,17 @@
    * @param {'number'} [modo]   abre el teclado numérico del móvil.
    * @param {string}  [unidad]  se pinta al lado del número (SCRUM-1175: «km»).
    * @param {string}  [pista]   el marcador del campo vacío (SCRUM-1175, PR-C). Sólo al editar.
+   * @param {string}  [vacio]   lo que dice el campo vacío SIN casilla (SCRUM-1698: «Sin apuntar»).
+   *                            Sin él, «—» como siempre. Un `0` no es vacío: se pinta el número.
    */
-  function campo(rotulo, valor, nombre, editable, modo, unidad, pista) {
+  function campo(rotulo, valor, nombre, editable, modo, unidad, pista, vacio) {
     var v = valor === null || valor === undefined ? '' : String(valor);
     if (!editable) {
       return (
         '<div class="parte-campo">' +
         '<span class="parte-campo-rotulo">' + esc(rotulo) + '</span>' +
         '<span class="parte-campo-dato" data-parte-dato="' + esc(nombre || '') + '">' +
-        esc(v ? v + (unidad ? ' ' + unidad : '') : '—') + '</span></div>'
+        esc(v ? v + (unidad ? ' ' + unidad : '') : (vacio || '—')) + '</span></div>'
       );
     }
     // SCRUM-1491 · Desplazamiento es un ENTERO: `numeric` pide el teclado sin coma. Con `decimal`
@@ -621,7 +641,8 @@
 
   /** Entrada o salida: selector con «Ahora» si el valor cabe; si no, el campo de siempre. */
   function campoHora(rotulo, valor, nombre, editable) {
-    if (!editable || !cabeEnSelector(valor)) return campo(rotulo, valor, nombre, editable);
+    // SCRUM-1698 · en el firmado, la hora vacía dice «Sin apuntar» (N3).
+    if (!editable || !cabeEnSelector(valor)) return campo(rotulo, valor, nombre, editable, null, null, null, TEXTOS.sinApuntar);
     var v = valor === null || valor === undefined ? '' : String(valor);
     return (
       '<div class="parte-campo">' +
@@ -647,8 +668,8 @@
       '<div data-parte-duracion="1" aria-live="polite">' +
       pintarDuracion(parte.entrada, parte.salida, editable) + '</div>' +
       '<div class="parte-horas-par">' +
-      campo(TEXTOS.desplazamiento, parte.desplazamientos, 'desplazamientos', editable, 'number') +
-      campo(TEXTOS.kilometros, parte.kilometros, 'kilometros', editable, 'number', TEXTOS.km) +
+      campo(TEXTOS.desplazamiento, parte.desplazamientos, 'desplazamientos', editable, 'number', null, null, TEXTOS.sinApuntar) +
+      campo(TEXTOS.kilometros, parte.kilometros, 'kilometros', editable, 'number', TEXTOS.km, null, TEXTOS.sinApuntar) +
       '</div>' +
       '</section>'
     );
@@ -738,23 +759,79 @@
 
     contenedor.innerHTML =
       '<header style="margin-bottom:14px">' +
+      pintarMigaDelTrabajo(parte) +
       '<h3 style="margin:0;font-size:1.05rem;font-weight:700;color:var(--ink)">' +
-      esc(parte.numero) + '</h3>' +
+      // SCRUM-1697 · «· Visita n de m» llega DESPUÉS, cuando se ha leído el trabajo (`pintarVisita`).
+      esc(parte.numero) + ' <span data-parte-visita="1"></span></h3>' +
       '<p style="margin:2px 0 0;font-size:13px;color:var(--muted)">' +
       esc(parte.clienteNombre || '') + '</p></header>' +
+      // 🔴 SCRUM-1693 · FIRMADO = EL ORDEN DE UN PAPEL: los datos del documento arriba y las
+      // firmas que lo cierran al final. El BORRADOR no cambia (SCRUM-1175 PR-C: allí manda lo que
+      // se apunta, y los datos van plegados al final). Lo fija `tests/scrum1693-…`.
+      (editable ? '' : pintarDatosDelParte(parte, editable)) +
       // 🔴 SCRUM-818 · LOS SIETE SON CAMPOS DE VERDAD, medidos campo a campo en el PASO 0
       // ejecutando `permisoDeCampos`. Entrada, salida, desplazamiento y kilómetros viven en su
       // paso (SCRUM-1175 PR-A); obra, REF, técnicos, tipo y notas, plegados al final (PR-C).
       pintarHoras(parte, editable) +
       // El dictado solo tiene sentido mientras el contenido se pueda tocar: ofrecerlo en un parte
       // firmado sería enseñar un camino que el siguiente paso cierra con un 409.
-      (editable ? pintarDictado() : '') +
+      // SCRUM-1675 · con lo que quedó dictado en este móvil, si lo hay.
+      (editable ? pintarDictado((leerBorradorDelDictado(parte.id) || {}).texto) : '') +
       pintarBloque('mano_obra', lineas, editable) +
       pintarBloque('materiales', lineas, editable) +
       pintarLasDosFirmas(parte) +
-      pintarDatosDelParte(parte, editable);
+      pintarVolverAlTrabajo(parte, editable) +
+      (editable ? pintarDatosDelParte(parte, editable) : '');
 
     return true;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  // 🔴 SCRUM-1677 · UN PARTE FIRMADO NO ES UN CALLEJÓN SIN SALIDA.
+  //
+  // Medido en yaqu.app (SCRUM-1658): tras las dos firmas la página no tenía ni un botón, y la
+  // cabecera no enlazaba al trabajo en NINGÚN estado. Dos salidas, las dos al mismo sitio
+  // (`jobs-detail`, el mismo camino que `albaranDetailView.js` usa para su trabajo):
+  //   · la miga de la cabecera, en TODOS los estados;
+  //   · «Volver al trabajo» como acción, en cuanto el parte deja de ser editable (firmado/facturado).
+  //
+  // Sin `jobId` no hay a dónde volver y no se pinta nada (un parte puede no colgar de un trabajo).
+  // Sin nombre de cliente la miga no se pinta: el literal firmado lleva el cliente, y recortarlo a
+  // «← Trabajo» sería un texto que nadie ha firmado. «Volver al trabajo» sí sale (no lo nombra).
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  function tieneTrabajo(parte) {
+    return parte && parte.jobId !== null && parte.jobId !== undefined && parte.jobId !== '';
+  }
+
+  function pintarMigaDelTrabajo(parte) {
+    if (!tieneTrabajo(parte) || !parte.clienteNombre) return '';
+    return '<nav class="detail-migas"><button type="button" class="detail-miga-link" data-parte-al-trabajo="1">' +
+      esc(TEXTOS.trabajoDelCliente.replace('{cliente}', parte.clienteNombre)) + '</button></nav>';
+  }
+
+  function pintarVolverAlTrabajo(parte, editable) {
+    if (editable || !tieneTrabajo(parte)) return '';
+    // Primaria SOLO si ya no queda ninguna firma por dar: con una pendiente, su botón sigue ahí y no
+    // se le pone otro verde al lado (y la firma del cliente es verde: SCRUM-1676).
+    var nadaPendiente = !!(parte.firmoElCliente && parte.firmoElTecnico);
+    // SCRUM-352: la clase se escribe COMPLETA en cada rama (censo del front por AST/texto; una
+    // variante partida a mitad de atributo no se reconoce como clase de botón).
+    var boton = nadaPendiente
+      ? '<button type="button" class="btn btn-primary" data-parte-volver-al-trabajo="1" style="width:100%">' + esc(TEXTOS.volverAlTrabajo) + '</button>'
+      : '<button type="button" class="btn btn-secondary" data-parte-volver-al-trabajo="1" style="width:100%">' + esc(TEXTOS.volverAlTrabajo) + '</button>';
+    return '<div data-parte-salida="1" style="margin:12px 0">' + boton + '</div>';
+  }
+
+  /** Las dos salidas, atadas. `o.irAlTrabajo` es la costura del test; en el panel es `renderAppView`. */
+  function atarSalidasAlTrabajo(contenedor, parte, o) {
+    if (!contenedor.querySelectorAll || !tieneTrabajo(parte)) return;
+    var ir = typeof o.irAlTrabajo === 'function'
+      ? o.irAlTrabajo
+      : function (jobId) { if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: jobId }); };
+    var botones = contenedor.querySelectorAll('[data-parte-al-trabajo],[data-parte-volver-al-trabajo]');
+    for (var i = 0; i < botones.length; i++) {
+      botones[i].addEventListener('click', function () { ir(parte.jobId); });
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
@@ -778,12 +855,13 @@
    * El campo del dictado: un TEXTAREA NORMAL. Ver el bloque de arriba — el micrófono lo pone el
    * teclado del móvil, no nosotros, y por eso aquí no hay nada que arrancar ni permiso que pedir.
    */
-  function pintarDictado() {
+  function pintarDictado(textoGuardado) {
     return '' +
       '<div data-parte-dictado="1" style="margin:12px 0">' +
       '<label for="parte-dictado" style="display:block;font-size:13px;color:var(--muted)">' +
       esc(TEXTOS.dictado) + '</label>' +
-      '<textarea id="parte-dictado" data-dictado-texto="1" rows="3" style="width:100%"></textarea>' +
+      '<textarea id="parte-dictado" data-dictado-texto="1" rows="3" style="width:100%">' +
+      esc(textoGuardado || '') + '</textarea>' +
       '<p style="margin:4px 0 6px;font-size:12px;color:var(--muted)">' +
       esc(TEXTOS.pistaDictado) + '</p>' +
       '<button type="button" data-dictado-ordenar="1" style="width:100%">' +
@@ -792,6 +870,106 @@
       // hueco de la propuesta, para poder decirlo sin pintar encima de lo que el técnico corrigió.
       '<div data-dictado-aviso="1"></div>' +
       '<div data-dictado-propuesta="1"></div></div>';
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 SCRUM-1675 · LO DICTADO NO SE PIERDE AL RECARGAR.
+  //
+  // Medido en yaqu.app (SCRUM-1658, parte #13 a 390): dictar, «Ordenar en líneas», recargar antes
+  // de «Añadir al parte» → el cuadro volvía VACÍO y la propuesta desaparecía, sin aviso. En una obra
+  // recargar es lo normal (el móvil se bloquea, entra una llamada). Y no sólo al recargar: cualquier
+  // repintado del parte (un campo que no se guardó, quitar una línea) también se lo llevaba.
+  //
+  // Se guarda EN EL MÓVIL (localStorage), por parte, y NO en el servidor: la ruta del dictado no
+  // escribe a propósito (SCRUM-683b ④). Lo que se guarda es lo que ya está en pantalla: el texto,
+  // la propuesta que devolvió el servidor y lo que el técnico corrigió en ella. Se borra al
+  // «Añadir al parte», cuando el parte ya no se puede tocar (firmado) y a los 7 días.
+  //
+  // Sin texto nuevo (regla 39): lo recuperado se pinta igual que lo recién dictado.
+  // Si el almacén no está (ventana privada, bloqueado, lleno), todo sigue como antes: el dictado
+  // sigue en pantalla mientras no se recargue.
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  //
+  // 🔴 LA CLAVE SE ESCRIBE EN LA LLAMADA, CON `window.localStorage` A LA VISTA, y no a través de una
+  // variable. El censo de SCRUM-457 (`tests/_censo-almacenamiento-publico.mjs`) reconoce las
+  // escrituras por su receptor: un `a.setItem(k, …)` con `a = window.localStorage` no lo ve, y
+  // entonces el cierre de sesión dejaría lo dictado —cliente, obra— en el móvil sin que nadie lo
+  // supiera. Por eso la clave está registrada para purgarse en `almacenLocal.js`.
+  var VIDA_DEL_BORRADOR_MS = 7 * 24 * 60 * 60 * 1000;
+
+  /** Una clave por parte. Sin id válido, nada: no se mezclan dos partes en la misma clave. */
+  function idDelBorrador(parteId) {
+    var n = Number(parteId);
+    return Number.isInteger(n) && n > 0 ? n : null;
+  }
+
+  function leerBorradorDelDictado(parteId) {
+    var n = idDelBorrador(parteId);
+    if (n === null) return null;
+    try {
+      var b = JSON.parse(window.localStorage.getItem(`yaqu_parte_dictado_${n}`) || 'null');
+      if (!b || typeof b !== 'object') return null;
+      if (!(Number(b.guardadoEn) > Date.now() - VIDA_DEL_BORRADOR_MS)) {
+        window.localStorage.removeItem(`yaqu_parte_dictado_${n}`);
+        return null;
+      }
+      return b;
+    } catch (e) {
+      // Sin almacén (ventana privada, bloqueado): no hay nada que recuperar, y no se lanza.
+      return null;
+    }
+  }
+
+  function guardarBorradorDelDictado(parteId, cambios) {
+    var n = idDelBorrador(parteId);
+    if (n === null) return;
+    try {
+      var b = leerBorradorDelDictado(n) || {};
+      Object.keys(cambios || {}).forEach(function (p) { b[p] = cambios[p]; });
+      if (!String(b.texto || '').trim() && !b.respuesta) {
+        window.localStorage.removeItem(`yaqu_parte_dictado_${n}`);
+        return;
+      }
+      b.guardadoEn = Date.now();
+      window.localStorage.setItem(`yaqu_parte_dictado_${n}`, JSON.stringify(b));
+    } catch (e) {
+      // Lleno o bloqueado: no se lanza. Lo dictado sigue en pantalla, como antes de SCRUM-1675.
+    }
+  }
+
+  function borrarBorradorDelDictado(parteId) {
+    var n = idDelBorrador(parteId);
+    if (n === null) return;
+    try { window.localStorage.removeItem(`yaqu_parte_dictado_${n}`); } catch (e) { /* sin almacén, nada */ }
+  }
+
+  /** Lo que el técnico ha corregido en la propuesta, campo a campo y en el orden en que se pinta. */
+  function fotoDeLaPropuesta(caja) {
+    var todos = function (sel) {
+      return caja && caja.querySelectorAll ? Array.prototype.slice.call(caja.querySelectorAll(sel)) : [];
+    };
+    return {
+      desc: todos('[data-propuesta-desc="1"]').map(function (c) { return String(c.value == null ? '' : c.value); }),
+      unds: todos('[data-propuesta-unds="1"]').map(function (c) { return String(c.value == null ? '' : c.value); }),
+      colocar: todos('[data-colocar]').map(function (c) { return !!c.checked; }),
+    };
+  }
+
+  /**
+   * Devuelve a la propuesta recuperada lo que el técnico había corregido. Sólo si la propuesta
+   * pintada tiene los mismos campos que la foto: si no casan, se queda la propuesta tal cual vino
+   * antes que poner una cantidad en la línea que no es.
+   */
+  function aplicarFotoDeLaPropuesta(caja, foto) {
+    if (!caja || !caja.querySelectorAll || !foto) return;
+    var poner = function (sel, valores, prop) {
+      var campos = caja.querySelectorAll(sel);
+      if (!Array.isArray(valores) || campos.length !== valores.length) return;
+      for (var i = 0; i < campos.length; i++) campos[i][prop] = valores[i];
+    };
+    poner('[data-propuesta-desc="1"]', foto.desc, 'value');
+    poner('[data-propuesta-unds="1"]', foto.unds, 'value');
+    poner('[data-colocar]', foto.colocar, 'checked');
   }
 
   function avisoFaltaCantidad(texto) {
@@ -1096,7 +1274,15 @@
     }
     // Contestó: lo que hubiera que decir del intento anterior ya no es verdad.
     quitarAvisoDelDictado(contenedor);
-    return pintarPropuesta(destino, respuesta);
+    var pintada = pintarPropuesta(destino, respuesta);
+    // SCRUM-1675 · lo que queda en pantalla es lo que se guarda: una propuesta nueva sin corregir
+    // todavía, o ninguna si la que vino estaba vacía.
+    guardarBorradorDelDictado(parte.id, {
+      texto: String(campo.value || ''),
+      respuesta: pintada ? respuesta : null,
+      correcciones: null,
+    });
+    return pintada;
   }
 
   /** SCRUM-1493 · en el sitio del aviso del dictado hay UNO, el del último intento: se vacía entero. */
@@ -1139,11 +1325,19 @@
    * exige** (`ordenDeFirmaExigido()` en el dominio): en la obra firma quien esté libre primero.
    */
   function pintarLasDosFirmas(parte) {
+    // 🔴 SCRUM-1676 · UN PARTE VACÍO NO TIENE LA FIRMA COMO ACCIÓN PRINCIPAL. «Vacío» es la MISMA
+    // pregunta que hace el servidor (`puedeFirmarse` en `parteTrabajo.ts`: cero líneas), no otra: con
+    // horas pero sin líneas el servidor rechaza la firma igual (409 `parte_vacio`), así que pintarla
+    // como siguiente paso sería mandar al operario contra un rechazo. Con una línea vuelve a serlo.
+    // El botón SIGUE ahí y con su mismo camino (SCRUM-890 ya no abre el pad y dice por qué): solo
+    // pierde el verde, que es lo que se pulsa sin leer (canon de SCRUM-823).
+    var enEspera = !Array.isArray(parte.lineas) || parte.lineas.length === 0;
     var recuadro = function (firmado, marca, rotulo, hecho, quien) {
       return firmado
         ? '<p data-parte-' + marca + '-hecha="1" style="margin:0;font-size:14px;color:var(--muted)">' +
           esc(hecho) + (quien ? ' ' + esc(quien) : '') + '</p>'
-        : '<button type="button" data-parte-' + marca + '="1" style="width:100%">' +
+        : '<button type="button" data-parte-' + marca + '="1"' +
+          (enEspera ? ' data-parte-firma-en-espera="1"' : '') + ' style="width:100%">' +
           esc(rotulo) + '</button>';
     };
     // SCRUM-1175 (PR-B) · UN PASO PROPIO Y UNA CAJA POR FIRMA. Cada aviso «falta» vive DENTRO de la
@@ -1154,9 +1348,13 @@
       '<section data-parte-firmas="1" class="parte-firmas">' +
       '<h4 class="parte-firmas-titulo">' + esc(TEXTOS.firmasTitulo) + '</h4>' +
       // SCRUM-653 c.17354 · el paso irreversible se enseña ANTES de darlo, y solo entonces.
+      // SCRUM-1676 · con el parte vacío, en su sitio, el que dice además qué va antes de firmar.
       (!parte.firmoElCliente && !parte.firmoElTecnico
-        ? '<p data-parte-primera-firma-fija="1" style="margin:0 0 8px;font-size:13px;color:var(--muted)">' +
-          esc(TEXTOS.conLaPrimeraFirmaQuedaFijo) + '</p>'
+        ? (enEspera
+          ? '<p data-parte-apunta-primero="1" style="margin:0 0 8px;font-size:13px;color:var(--muted)">' +
+            esc(TEXTOS.apuntaPrimero) + '</p>'
+          : '<p data-parte-primera-firma-fija="1" style="margin:0 0 8px;font-size:13px;color:var(--muted)">' +
+            esc(TEXTOS.conLaPrimeraFirmaQuedaFijo) + '</p>')
         : '') +
       '<div class="parte-firma-caja" data-parte-caja-firma="cliente">' +
       recuadro(parte.firmoElCliente, 'firmar', TEXTOS.firmar, TEXTOS.yaFirmoElCliente, parte.firmadoPorNombre) +
@@ -1372,6 +1570,8 @@
       return false;
     }
 
+    // SCRUM-1675 · ya está en el parte: lo guardado en el móvil sobra, y recuperarlo lo añadiría dos veces.
+    borrarBorradorDelDictado(parteId);
     // Se vuelve a traer del servidor en vez de retocar la pantalla: lo que se enseña es lo que
     // quedó guardado, no lo que creemos que mandamos. Mismo criterio que tras firmar.
     await renderParteDetailView(contenedor, parteId, o);
@@ -1518,6 +1718,13 @@
       contenedor.innerHTML = '<div data-parte-error="1">' + esc(TEXTOS.noSePudoCargar) + '</div>';
       return false;
     }
+    atarSalidasAlTrabajo(contenedor, parte, o);
+    // SCRUM-1697 · «Visita n de m»: el parte ya trae `visitaN`/`visitaM` del servidor (SCRUM-1697 (b));
+    // `parteVisita.js` solo los comprueba y los pinta, sin leer el trabajo.
+    if (typeof window.partePintarVisita === 'function') window.partePintarVisita(contenedor, parte);
+    // SCRUM-1675 · un parte que ya no se puede tocar (firmado) no tiene dictado que recuperar: lo
+    // que quedara en este móvil se borra, y no se queda guardado un texto con datos de la obra.
+    if (!(parte.puedeEditarContenido && parte.puedeEditarContenido.ok)) borrarBorradorDelDictado(parteId);
 
     // ═══════════════════════════════════════════════════════════════════════════════════
     // SCRUM-818 · EL CABLE DE LOS SIETE CAMPOS Y DE LAS LÍNEAS.
@@ -1886,6 +2093,67 @@
     // pulsaba y no pasaba nada. Es el mismo hueco que SCRUM-652 fase D cerró para firmar, y por eso
     // esto se ata aquí, en la misma función y con la misma forma.
     // ═══════════════════════════════════════════════════════════════════════════════════
+    // ⚠️ El botón de confirmar NACE con la propuesta, así que se ata DESPUÉS de pintarla. Si se
+    // atara antes no existiría todavía, y volveríamos a tener un botón pintado y muerto — el
+    // defecto que SCRUM-706 vino a cerrar. SCRUM-1675: es una función porque la propuesta nace por
+    // dos caminos — al ordenar y al recuperarla del móvil — y los dos tienen que quedar atados igual.
+    var atarLaPropuesta = function () {
+      var confirmar = contenedor.querySelector('[data-propuesta-confirmar]');
+      if (!(confirmar && confirmar.addEventListener)) return;
+      confirmar.addEventListener('click', function () {
+        confirmarLoDictado(parte, parteId, contenedor, o);
+      });
+      // SCRUM-1230 · «Añadir al parte» espera a que cada línea «Sin colocar» tenga bloque.
+      // Sin texto nuevo: lo que falta lo dice el rótulo del grupo, que ahora sí se puede cumplir.
+      // Y con NINGUNA línea lista (todas sin cantidad) también se apaga: antes se pulsaba y no
+      // pasaba nada ni se decía nada (`confirmarLoDictado` no manda una petición vacía), y el
+      // técnico no sabía si había fallado él, la aplicación o la red. Lo que falta lo dice el
+      // aviso de cada línea, que ahora sigue a la cantidad que hay en pantalla.
+      var caja = contenedor.querySelector('[data-dictado-propuesta]');
+      var textoCantidad = confirmar.getAttribute ? confirmar.getAttribute('data-aviso-cantidad') : '';
+      var sincronizar = function () {
+        sincronizarAvisosDeCantidad(caja, textoCantidad);
+        sincronizarAvisosDeDatos(caja);
+        confirmar.disabled = lineasSinColocar(caja) > 0 || lineasConfirmadas(caja).lineas.length === 0;
+      };
+      // SCRUM-1675 · y lo corregido a mano también se guarda en el móvil, al corregirlo.
+      var alCorregir = function () {
+        sincronizar();
+        guardarBorradorDelDictado(parteId, { correcciones: fotoDeLaPropuesta(caja) });
+      };
+      // SCRUM-1266 · la descripción ahora se corrige aquí: el aviso del dato inventado la sigue.
+      var descripciones = caja && caja.querySelectorAll ? caja.querySelectorAll('[data-propuesta-desc="1"]') : [];
+      Array.prototype.forEach.call(descripciones, function (d) {
+        if (d.addEventListener) d.addEventListener('input', alCorregir);
+      });
+      var fichas = caja && caja.querySelectorAll ? caja.querySelectorAll('[data-colocar]') : [];
+      Array.prototype.forEach.call(fichas, function (f) {
+        if (f.addEventListener) f.addEventListener('change', alCorregir);
+      });
+      var cantidades = caja && caja.querySelectorAll ? caja.querySelectorAll('[data-propuesta-unds="1"]') : [];
+      Array.prototype.forEach.call(cantidades, function (c) {
+        if (c.addEventListener) c.addEventListener('input', alCorregir);
+      });
+      sincronizar();
+    };
+
+    // SCRUM-1675 · el texto del dictado se guarda en el móvil según se escribe (o se dicta).
+    var campoDictado = contenedor.querySelector && contenedor.querySelector('[data-dictado-texto]');
+    if (campoDictado && campoDictado.addEventListener) {
+      campoDictado.addEventListener('input', function () {
+        guardarBorradorDelDictado(parteId, { texto: String(campoDictado.value || '') });
+      });
+    }
+
+    // SCRUM-1675 · la propuesta que quedó sin añadir vuelve a su hueco, con lo corregido, y atada.
+    var huecoDeLaPropuesta = contenedor.querySelector && contenedor.querySelector('[data-dictado-propuesta]');
+    var borradorDelDictado = huecoDeLaPropuesta ? leerBorradorDelDictado(parteId) : null;
+    if (borradorDelDictado && borradorDelDictado.respuesta &&
+        pintarPropuesta(huecoDeLaPropuesta, borradorDelDictado.respuesta)) {
+      aplicarFotoDeLaPropuesta(huecoDeLaPropuesta, borradorDelDictado.correcciones);
+      atarLaPropuesta();
+    }
+
     var botonDictado = contenedor.querySelector && contenedor.querySelector('[data-dictado-ordenar]');
     if (botonDictado && botonDictado.addEventListener) {
       botonDictado.addEventListener('click', async function () {
@@ -1905,43 +2173,7 @@
         // en pantalla la propuesta de antes, su botón de añadir YA tiene escucha: atarle otra aquí
         // guardaría las líneas dos veces con un solo toque, en un documento que se firma.
         if (!hayPropuestaNueva) return;
-
-        // ⚠️ El botón de confirmar NACE con la propuesta, así que se ata DESPUÉS de pintarla. Si se
-        // atara antes no existiría todavía, y volveríamos a tener un botón pintado y muerto — el
-        // defecto que este ticket viene a cerrar.
-        var confirmar = contenedor.querySelector('[data-propuesta-confirmar]');
-        if (confirmar && confirmar.addEventListener) {
-          confirmar.addEventListener('click', function () {
-            confirmarLoDictado(parte, parteId, contenedor, o);
-          });
-          // SCRUM-1230 · «Añadir al parte» espera a que cada línea «Sin colocar» tenga bloque.
-          // Sin texto nuevo: lo que falta lo dice el rótulo del grupo, que ahora sí se puede cumplir.
-          // Y con NINGUNA línea lista (todas sin cantidad) también se apaga: antes se pulsaba y no
-          // pasaba nada ni se decía nada (`confirmarLoDictado` no manda una petición vacía), y el
-          // técnico no sabía si había fallado él, la aplicación o la red. Lo que falta lo dice el
-          // aviso de cada línea, que ahora sigue a la cantidad que hay en pantalla.
-          var caja = contenedor.querySelector('[data-dictado-propuesta]');
-          var textoCantidad = confirmar.getAttribute ? confirmar.getAttribute('data-aviso-cantidad') : '';
-          var sincronizar = function () {
-            sincronizarAvisosDeCantidad(caja, textoCantidad);
-            sincronizarAvisosDeDatos(caja);
-            confirmar.disabled = lineasSinColocar(caja) > 0 || lineasConfirmadas(caja).lineas.length === 0;
-          };
-          // SCRUM-1266 · la descripción ahora se corrige aquí: el aviso del dato inventado la sigue.
-          var descripciones = caja && caja.querySelectorAll ? caja.querySelectorAll('[data-propuesta-desc="1"]') : [];
-          Array.prototype.forEach.call(descripciones, function (d) {
-            if (d.addEventListener) d.addEventListener('input', sincronizar);
-          });
-          var fichas = caja && caja.querySelectorAll ? caja.querySelectorAll('[data-colocar]') : [];
-          Array.prototype.forEach.call(fichas, function (f) {
-            if (f.addEventListener) f.addEventListener('change', sincronizar);
-          });
-          var cantidades = caja && caja.querySelectorAll ? caja.querySelectorAll('[data-propuesta-unds="1"]') : [];
-          Array.prototype.forEach.call(cantidades, function (c) {
-            if (c.addEventListener) c.addEventListener('input', sincronizar);
-          });
-          sincronizar();
-        }
+        atarLaPropuesta();
       });
     }
 

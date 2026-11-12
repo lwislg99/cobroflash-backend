@@ -1,0 +1,29 @@
+// SCRUM-1631 · Dentro de cada `$transaction` de src/, qué llamadas parecen un envío (send*/notif*/avisar*/enviar*).
+// Criterio por NOMBRE: una función de nombre neutro que envíe por dentro no sale aquí.
+const path = require('path');
+const fs = require('fs');
+const raiz = process.argv[2];
+const ts = require(path.join(raiz, 'node_modules/typescript'));
+const fic = [];
+(function b(d) { for (const e of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, e.name); if (e.isDirectory()) b(p); else if (e.name.endsWith('.ts')) fic.push(p); } })(path.join(raiz, 'src'));
+const re = /^(send|notify|notificar|avisar|enviar)/i;
+const out = [];
+let tx = 0;
+for (const f of fic) {
+  const s = ts.createSourceFile(f, fs.readFileSync(f, 'utf8'), ts.ScriptTarget.Latest, true);
+  (function v(n) {
+    if (ts.isCallExpression(n) && /\$transaction$/.test(n.expression.getText())) {
+      tx++;
+      (function w(m) {
+        if (ts.isCallExpression(m)) {
+          const t = m.expression.getText().replace(/^.*\./, '');
+          if (re.test(t)) out.push(`${path.relative(raiz, f).replace(/\\/g, '/')}:${s.getLineAndCharacterOfPosition(m.getStart()).line + 1} ${t}`);
+        }
+        ts.forEachChild(m, w);
+      })(n);
+    }
+    ts.forEachChild(n, v);
+  })(s);
+}
+console.log(`$transaction en src/: ${tx} · llamadas send*/notif*/avisar*/enviar* dentro: ${out.length}`);
+for (const o of out) console.log(`  ${o}`);

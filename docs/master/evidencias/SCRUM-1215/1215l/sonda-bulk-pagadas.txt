@@ -1,0 +1,3 @@
+﻿{"escrituraOk":true,"recargaOk":false,"marcadas":0} -> {"tono":"warning","texto":"Se han marcado como pagadas, pero la lista no se ha podido actualizar. Recárgala para verla al día.","seMarcaron":true}
+{"escrituraOk":true,"recargaOk":false,"marcadas":3} -> {"tono":"warning","texto":"Se han marcado como pagadas, pero la lista no se ha podido actualizar. Recárgala para verla al día.","seMarcaron":true}
+{"escrituraOk":true,"recargaOk":true,"marcadas":0} -> {"tono":"success","texto":"✓ 0 facturas marcadas como pagadas.","seMarcaron":true}

@@ -29,6 +29,7 @@
 // UN sitio, no repartirlo en condiciones por medio producto.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import { prisma } from '../../../core/db/prisma';
+import { clienteDelDocumento } from '../../invoicing/domain/clienteCongelado'; // SCRUM-1650b
 
 /** Hoy y mañana: 1 día de horizonte por delante del día natural en curso. */
 export const PRECARGA_DIAS_AGENDA = 1;
@@ -328,6 +329,9 @@ export async function construirPaquetePrecarga(
       select: {
         id: true, numero: true, estado: true, fecha: true, fechaEntrega: true, lugarEntrega: true,
         modoValoracion: true, lineas: true, notas: true, jobId: true,
+        // SCRUM-1650b · el cliente que quedó ESCRITO al emitir: `clienteNombre` es la sugerencia del
+        // firmante (SCRUM-300) y acaba sellado en «Firmado por». La ficha de hoy no puede cambiarlo.
+        customerName: true, customerLegalName: true,
       },
     });
     if (!albaranes.length) return { estado: PRECARGA_LISTA, albaranes: [], trabajos };
@@ -344,7 +348,11 @@ export async function construirPaquetePrecarga(
       trabajos,
       albaranes: albaranes.map((a: any) => {
         const j = jobPorId.get(a.jobId);
-        return albaranParaFirmar(a, j?.titulo ?? null, nombrePorCliente.get(j?.customerId) ?? '');
+        // SCRUM-1650b · la regla es la de `clienteDelDocumento` (columnas a NULL = anterior al
+        // escritor → ficha de hoy), no una copia. Sin ninguna de las dos, la cadena vacía de siempre.
+        const deHoy = nombrePorCliente.get(j?.customerId);
+        const nombre = a.customerName != null || deHoy != null ? clienteDelDocumento(a, deHoy != null ? { name: deHoy } : null).name : '';
+        return albaranParaFirmar(a, j?.titulo ?? null, nombre);
       }),
     };
   } catch (e: any) {

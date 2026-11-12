@@ -61,7 +61,7 @@ function montar({ albaran, quote = { id: 7, quoteNumber: 'P-1', lines: PRESUPUES
   // la regla 24 no se ejercita nunca. La primera versión de este fichero tenía ese `id: 1` y por
   // eso el caso del justificante salía 201: el dato de prueba tapaba la comprobación, no el código.
   p.merchant = {
-    findUnique: async () => ({ id: 7, email: 'pro@fontaneria.es', country: 'ES', flags: { INVOICING_ES_ENABLED: true }, defaultCurrency: 'EUR', taxId: 'B1' }),
+    findUnique: async () => ({ id: 7, email: 'pro@fontaneria.es', country: 'ES', flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false, defaultCurrency: 'EUR', taxId: 'B1' }),
   };
   p.quote = { findFirst: async () => quote };
   p.albaranLineaFacturada = { findMany: async () => libro, createMany: async (a) => { capturado.libroEscrito = a.data; } };
@@ -76,7 +76,7 @@ function montar({ albaran, quote = { id: 7, quoteNumber: 'P-1', lines: PRESUPUES
     // `allocateInvoiceNumber` avanza el contador de serie con un `merchant.update`: si solo se
     // define `findUnique`, el Proxy no llega (la clave YA existe) y revienta dentro de la tx.
     merchant: {
-      findUnique: async () => ({ id: 1, country: 'ES', flags: { INVOICING_ES_ENABLED: true }, invoiceSeq: 0 }),
+      findUnique: async () => ({ id: 1, country: 'ES', flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false, invoiceSeq: 0 }),
       update: async () => ({ id: 1, invoiceSeq: 1 }),
     },
   };

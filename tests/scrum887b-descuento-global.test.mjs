@@ -252,7 +252,7 @@ async function convertirAlbaran(quote) {
   p.customer = { findFirst: async () => ({ name: 'Cliente QA', legalName: null, taxId: null, email: null, phone: null }) };
   // Merchant REAL (id 7) con facturación: el modo justificante devolvería 409 antes de llegar aquí.
   p.merchant = {
-    findUnique: async () => ({ id: 7, email: 'pro@electricidad.es', country: 'ES', flags: { INVOICING_ES_ENABLED: true }, defaultCurrency: 'EUR', taxId: 'B1' }),
+    findUnique: async () => ({ id: 7, email: 'pro@electricidad.es', country: 'ES', flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false, defaultCurrency: 'EUR', taxId: 'B1' }),
   };
   p.quote = { findFirst: async () => quote };
   p.albaranLineaFacturada = { findMany: async () => [], createMany: async () => { escrituras.push('albaranLineaFacturada.createMany'); } };

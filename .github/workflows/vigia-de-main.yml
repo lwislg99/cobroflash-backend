@@ -32,8 +32,16 @@
 # o salido con 2 en el paso de las mutaciones, es CIEGO con causa propia, no ROJO: no lo absuelve un
 # verde posterior, y manda aunque otro job del run esté en rojo (va nombrado en el motivo).
 #
-# ⚠️ Lo que NO se pudo probar fuera de GitHub, declarado en `docs/master/SCRUM-1393c.md`: que los
-# disparadores salten, que el cron llegue, y que el Issue se escriba. Hasta su primera pasada, CIEGO.
+# ⚠️ Lo que NO se pudo probar fuera de GitHub está declarado en `docs/master/SCRUM-1393.md`, tercer tramo
+# («SCRUM-1393c»), apartado «Lo que NO se puede saber hasta que corra en GitHub»: que los disparadores
+# salten, que el cron llegue, y que el Issue se escriba. Ya ha corrido (SCRUM-1621, medido el 27-oct-2026:
+# 300 pasadas, 6 del cron, llegando entre 5 y 7 h tarde, y el Issue #2641 con 214 comentarios).
+#
+# 🔴 ESTE VIGÍA ES UN CRON Y SU PROPIO SILENCIO NO LO VIGILA NADIE (decisión del fundador, SCRUM-1324
+# c.17719: «escrito, en el registro y en el propio workflow»). Si GitHub deja de dispararlo —un cron que no
+# llega, un `workflow_run` que no salta, el workflow desactivado— no sale ningún aviso: un Issue sin
+# comentarios nuevos se lee igual con `main` en verde que con el vigía parado. Lo único que lo enseña es el
+# latido del equipo (`scripts/equipo/latido.mjs`, sección VIGÍA DE MAIN), y sólo a quien lo corre.
 name: Vigía de main
 
 on:

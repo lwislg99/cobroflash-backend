@@ -1,0 +1,136 @@
+URL https://yaqu.app/dashboard/#parte-detail/13
+--- TEXTO
+YQ
+YaQu
+Inicio
+Solicitudes
+Trabajos
+VENTA
+Presupuestos
+Albaranes
+Partes por valorar
+Facturas
+Cobros
+NEGOCIO
+Clientes
+Productos
+Proveedores
+Gastos
+Informes
+Libro de registro
+Facturas recibidas
+CUENTA
+Equipo
+Planes
+Configuración
+P
+PruebaQA
+Plan Pro
+Salir
+Parte de trabajo
+P
+PT-2026-005
+
+Marta Prieto (PILOTO-1 QA)
+
+Horas y desplazamiento
+
+La hora se elige, no se escribe.
+
+Entrada
+Ahora
+Salida
+Ahora
+Desplazamiento
+Kilómetros
+km
+Dicta lo que has hecho
+
+Usa el micrófono de tu teclado. Luego lo ordenamos.
+
+Ordenar en líneas
+Mano de obra
+UNDS	Descripción	
+Todavía no has apuntado nada.
+Añadir línea
+Materiales
+UNDS	Descripción	
+Todavía no has apuntado nada.
+Añadir línea
+Firmas
+
+Con la primera firma, lo apuntado queda fijo.
+
+Firmar aquí mismo
+
+Falta la firma del cliente.
+
+Firma del técnico
+
+Falta la firma del técnico.
+
+DATOS DEL PARTE
+Obra y referencia
+Sin dirección ni referencia
+Tipo de intervención
+Sin elegir
+Técnicos
+Sin técnicos
+Notas
+Sin notas
+?
+--- PULSABLES
+button[submit] «Inicio» 228x34 @-238,85
+button[submit] «Solicitudes» 228x34 @-238,121
+button[submit] «Trabajos» 228x34 @-238,157
+button[button] «Presupuestos» 228x34 @-238,227
+button[submit] «Albaranes» 228x34 @-238,263
+button[submit] «Partes por valorar» 228x34 @-238,299
+button[submit] «Facturas» 228x34 @-238,335
+button[submit] «Cobros» 228x34 @-238,371
+button[submit] «Clientes» 228x34 @-238,440
+button[submit] «Productos» 228x34 @-238,476
+button[submit] «Proveedores» 228x34 @-238,512
+button[submit] «Gastos» 228x34 @-238,548
+button[submit] «Informes» 228x34 @-238,584
+button[submit] «Libro de registro» 228x34 @-238,620
+button[submit] «Facturas recibidas» 228x34 @-238,656
+button[submit] «Equipo» 228x34 @-238,726
+button[submit] «Planes» 228x34 @-238,762
+button[submit] «Configuración» 228x34 @-238,798
+button[submit] «Salir» 39x22 @-61,867
+button[submit] «Menú» 36x36 @12,12
+input[time] «» 178x45 @12,-513
+button[button] «Ahora» 71x44 @12,-462
+input[time] «» 178x45 @200,-513
+button[button] «Ahora» 71x44 @200,-462
+input[number] «» 178x44 @12,-385
+input[number] «» 150x44 @200,-385
+textarea[textarea] «» 366x88 @12,-303
+button[button] «Ordenar en líneas» 366x44 @12,-180
+button[button] «Añadir línea» 109x44 @29,-16
+button[button] «Añadir línea» 109x44 @29,172
+button[button] «Firmar aquí mismo» 340x44 @25,322
+button[button] «Firma del técnico» 340x44 @25,430
+summary «Obra y referencia Sin dirección ni referencia» 366x48 @12,560
+input[text] «Dónde se ha hecho el trabajo» 366x44 @12,632
+input[text] «Tu referencia interna, si usas alguna» 366x44 @12,708
+summary «Tipo de intervención Sin elegir» 366x48 @12,609
+input[radio] «reparacion_asistencia» 13x13 @29,676
+input[radio] «mantenimiento» 13x13 @29,732
+input[radio] «instalacion» 13x13 @190,732
+summary «Técnicos Sin técnicos» 366x48 @12,658
+input[text] «Quién ha estado en la obra» 366x44 @12,730
+summary «Notas Sin notas» 366x48 @12,707
+input[text] «Lo que haya que dejar dicho.» 366x44 @12,779
+button[submit] «?» 48x48 @322,776
+--- DESBORDES
+--- <44px
+button «Menú» 36x36
+input «reparacion_asistencia» 13x13
+input «mantenimiento» 13x13
+input «instalacion» 13x13
+--- LOG
+[warning] Service Worker registration blocked by Playwright
+--- NOTAS
+URL tras pulsar: https://yaqu.app/dashboard/#parte-detail/13

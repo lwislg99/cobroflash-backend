@@ -182,7 +182,7 @@ test('SCRUM-82: datos.zip incluye el XML VeriFactu por año, byte-idéntico al e
       assert.ok(leemeOff.includes('no incluye el XML'), 'flag OFF: el LEEME debe avisar de la ausencia');
 
       // ── FLAG ON (override por merchant, no toca el env global) ─────────────
-      await prisma.merchant.update({ where: { id: merchant.id }, data: { flags: { INVOICING_ES_ENABLED: true } } });
+      await prisma.merchant.update({ where: { id: merchant.id }, data: { flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false } });
 
       const rOn = await getZip();
       assert.equal(rOn.status, 200, 'flag ON: el ZIP debe generarse (200), no fallar');

@@ -144,6 +144,31 @@ export function reglaDe(rel, mapa) {
 }
 
 /**
+ * SCRUM-1628 · Las filas de §3 que son un directorio seguido de «:» y una DESCRIPCIÓN sin ninguna ruta detrás
+ * («`tests/`: el test de un ticket»). No dan regla, porque no hay nada que casar, pero dicen de quién es algo.
+ */
+export function filasSinRuta(texto) {
+  return leerTabla(texto).filas
+    .filter((f) => /^`[^`]+\/`\s*:/.test(f.ruta) && !rutasDeCelda(f.ruta).length)
+    .map((f) => ({ linea: f.linea, prefijo: /^`([^`]+\/)`/.exec(f.ruta)[1], que: f.ruta.replace(/^`[^`]+`\s*:\s*/, ''), dueno: f.dueno }));
+}
+
+/**
+ * SCRUM-1628 · Si `rel` es el test de un ticket (`tests/scrumNNN…`) y §3 tiene la fila «el test de un ticket»,
+ * el ticket y esa fila. Su dueño es el puesto que TRABAJA el ticket: la etiqueta `area-…` de Jira, que la tabla
+ * no tiene. Por eso no es una regla del mapa ni da cerradura; es lo que `de` dice en vez de «nadie lo reclama».
+ * Sin esa fila en la tabla, `null`: el instrumento no inventa una regla que la tabla ya no dice.
+ */
+export function testDeTicket(rel, texto) {
+  // SCRUM-1628b · también el banco de un ticket (`tests/banco-scrumNNN/…`): el número va en el DIRECTORIO.
+  // El banco compartido tiene fila de ruta, y en `de` gana la fila.
+  const m = /^tests\/(?:banco-)?scrum-?0*(\d+)/i.exec(rel);
+  if (!m) return null;
+  const fila = filasSinRuta(texto).find((f) => rel.startsWith(f.prefijo) && /\bel test de un ticket\b/.test(f.que));
+  return fila ? { ticket: `SCRUM-${m[1]}`, fila } : null;
+}
+
+/**
  * SCRUM-1480f · Los ficheros de `scripts/` que SÓLO cubre la fila general, la que no da dueño: nadie ha
  * decidido de quién son. Es la misma pregunta que contesta `carriles.mjs de <ruta>`, para toda la carpeta.
  */

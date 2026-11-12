@@ -97,7 +97,7 @@ const SALTO = String.fromCharCode(10);
 // el interruptor POR MERCHANT (columna `merchants.flags`, no el env global) para que sigan
 // midiendo el camino de emisión real; el caso con el interruptor apagado se mide aparte, con su
 // propia garantía — no «cero facturas por accidente», sino «cero facturas SIEMPRE, a propósito».
-const FISCAL_ON = { flags: { INVOICING_ES_ENABLED: true } };
+const FISCAL_ON = { flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false };
 
 let prisma;
 

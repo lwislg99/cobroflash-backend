@@ -98,7 +98,7 @@ test('SCRUM-73: verifactu.xml — técnico 403, flag OFF sin registros, flag ON 
     assert.doesNotMatch(bodyOff, new RegExp(invoice.number), 'con el flag OFF la factura real no debe filtrarse en ningún body');
 
     // 3) Admin, flag ON (override por merchant — no toca el env global) → genera el XML real.
-    await prisma.merchant.update({ where: { id: merchant.id }, data: { flags: { INVOICING_ES_ENABLED: true } } });
+    await prisma.merchant.update({ where: { id: merchant.id }, data: { flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false } });
     const rOn = await pedirSinAgente(url, { headers: { cookie: cookieAdmin } });
     assert.equal(rOn.status, 200, `admin con flag ON debería ser 200 y fue ${rOn.status}`);
     assert.match(rOn.headers.get('content-type') || '', /application\/xml/);
