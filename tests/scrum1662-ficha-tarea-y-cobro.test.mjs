@@ -80,13 +80,14 @@ test('SCRUM-1662 D1 · CONTROL: el admin conserva foco, Aceptado + Cobrado y la 
   assert.ok(a.barra, '🔴 el admin perdió la barra de cobro');
 });
 
-for (const rol of ['tecnico', 'oficina']) {
-  test(`SCRUM-1662 D1 · 🔴 «${rol}» ve el importe y NADA derivado de lo cobrado`, async () => {
-    // Lo que manda el servidor de 1707 a quien no ve el cobro: lo cobrado VACÍO.
-    const t = await ficha(rol, { totalCobrado: 0, estadoCobro: null });
-    assert.ok(!t.foco, `🔴 «${rol}» ve «Te falta por cobrar»: una cifra falsa con lo cobrado vacío`);
-    assert.ok(!t.barra, `🔴 «${rol}» ve la barra de cobro`);
-    assert.equal(t.lados.length, 1, `🔴 «${rol}» ve más que el importe: ${JSON.stringify(t.lados)}`);
-    assert.ok(/^Aceptado/.test(t.lados[0]), `🔴 «${rol}» perdió el IMPORTE (c.21547 Q1): ${JSON.stringify(t.lados)}`);
-  });
+// Nombres LITERALES, uno por rol (SCRUM-1415: la señal por nombres no ve un test de nombre construido).
+async function sinNadaDerivadoDelCobro(rol) {
+  // Lo que manda el servidor de 1707 a quien no ve el cobro: lo cobrado VACÍO.
+  const t = await ficha(rol, { totalCobrado: 0, estadoCobro: null });
+  assert.ok(!t.foco, `🔴 «${rol}» ve «Te falta por cobrar»: una cifra falsa con lo cobrado vacío`);
+  assert.ok(!t.barra, `🔴 «${rol}» ve la barra de cobro`);
+  assert.equal(t.lados.length, 1, `🔴 «${rol}» ve más que el importe: ${JSON.stringify(t.lados)}`);
+  assert.ok(/^Aceptado/.test(t.lados[0]), `🔴 «${rol}» perdió el IMPORTE (c.21547 Q1): ${JSON.stringify(t.lados)}`);
 }
+test('SCRUM-1662 D1 · 🔴 «tecnico» ve el importe y NADA derivado de lo cobrado', () => sinNadaDerivadoDelCobro('tecnico'));
+test('SCRUM-1662 D1 · 🔴 «oficina» ve el importe y NADA derivado de lo cobrado', () => sinNadaDerivadoDelCobro('oficina'));
