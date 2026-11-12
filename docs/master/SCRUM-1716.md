@@ -5,6 +5,21 @@ elegir euros o %», y defecto visto en su captura: la casilla «DESCUENTO GLOBAL
 Carril S2 (`quotesView.js`, `quoteDescuentos.js`, `styles.css`). Encargo del orquestador: c.21652
 (primero la casilla; el selector €/% espera a confirmar el enfoque y a la firma de sus rótulos).
 
+**Medido contra:** `origin/main` = `97a7a159ce45ae965fb75c0fa9876e7ff010f7c6` · 2026-11-12T13:56:20Z
+
+A9: comprobación → `tests/scrum267-ancla-de-medicion.test.mjs`
+
+**Skill UI:** cargada (`yaqu-premium-ui`, en la re-medición del ancla; la tanda que construyó 1716a no lo declaró. AB6 sobre el diff: un selector más en la regla del campo de línea y en su `:focus`, así que el anillo Foco es el mismo; sin componente, clase, token ni color nuevos; capturas antes/después a 390 y 1280 en `evidencias/scrum1716/`)
+
+Re-medición del ancla (12-nov, tarde; el PR #3115 cayó en SCRUM-267 porque el encabezado no la
+llevaba). Lo comprobado contra ese `main`, no supuesto: de los ficheros de esta rama, el único que
+`main` ha movido desde `ec7e19e64` es `styles.css` (+180 líneas), y TODAS sus reglas nuevas cuelgan de
+`.parte-*`; ninguna toca `.quote-line` ni `.quote-dto-global__campo`. `git merge-tree` con `main`: sin
+conflictos. La medición de yaqu.app de 1716a (abajo) es la de su hora y no se ha repetido.
+Error propio de S2: 1716a se empujó con «Medido sobre `ec7e19e64`» (sha corto, sin hora) y sin pasar
+`npm run guards:entrada`, que lo habría cazado en local; al poner el ancla salieron otros dos que la
+falta tapaba (la línea A9 y la declaración de la skill).
+
 ## 1716a · La casilla sin estilo · S2 · 12-nov-2026 · rama `scrum-1716-casilla-dto-global`
 
 Medido sobre `origin/main` = `ec7e19e64`.
