@@ -1965,4 +1965,4 @@ Rama `scrum-665e-pdf-persistente`, sólo local, con `origin/main` mergeado (`58f
 
 **Mi error (A9):** crucé los 200k de contexto (219.836) antes de acabar el encargo. Me medí al acabar el arranque (134k) y en Jira (142k), y no volví a mirar hasta acabar los tres tests.
 
-A9: aviso → cicatriz J1 «Crucé los 200k de contexto antes de acabar el encargo: me medí al acabar el arranque (134k) y Jira (142k) y no volví a mirar hasta acabar tres tests; avisé a 219.836 (SCRUM-665e)» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
+A9: aviso → cicatriz J1 «Crucé los 200k de contexto antes de acabar el encargo: me medí al acabar el arranque (134k) y Jira (142k) y no volví a mirar hasta acabar tres tests; avisé a 219.836» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
