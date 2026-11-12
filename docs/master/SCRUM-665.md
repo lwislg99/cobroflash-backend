@@ -1949,3 +1949,20 @@ Base de la rama: `75d48786` (mergeado). `origin/main` está ya en `4eea7720` y N
 **NO hecho:** mutaciones (`MUTACIONES_QUE_ME_TUMBAN`), guards de navegador de la vista, `guards:entrada`, `yaqu-premium-ui` (no cargada), mergear `origin/main`. Suite entera local: NO CORRIDA. `norma.mjs --arranque`: NO leída.
 
 A9: comprobación → `tests/scrum665e-pdf-de-la-emitida-congelado.test.mjs`
+
+# APÉNDICE (H) · SCRUM-665e · 12-nov-2026 · J1 (jv-j1dk, relevo 4) · Decisiones de c.21584 aplicadas en 1404g, 1510 y 1330. SIN EMPUJAR
+
+**Medido contra:** `origin/main` = `4eea7720bae9c2584a2d2312358d0566f779f1a5` · 2026-11-12T10:42:29Z
+
+Rama `scrum-665e-pdf-persistente`, sólo local, con `origin/main` mergeado (`58feb54d7`, sin conflictos: ninguno de los 50 ficheros que trae main es de esta rama).
+
+1. **1404g G y X (c.21584 punto 1).** Pasan a exigir que se sirva el PDF congelado AL EMITIR, byte a byte, por el recibo y por el panel, sin escribir en la factura. Los bytes se comparan crudos (petición propia con `http.request`, porque `app.pedir` del banco los devuelve como texto utf8). **La protección vieja se conserva en dos casos nuevos:** G0 y X0 son los mismos documentos emitidos SIN congelar (`sellarTrasEmision` con `congelarPdf` vacío: la emisión de antes de 665e), y siguen exigiendo exactamente lo de antes: G0, el 409 firmado; X0, el 500 con `pdf_generation_failed`, sin documento y sin escritura. Cada uno lleva un control CIEGO: si la emisión sí congeló, no es el documento de antes. 13/13. La mutación vieja de X apunta ahora a X0, y hay tres nuevas en su `MUTACIONES_QUE_ME_TUMBAN`.
+   - ⚠️ Lectura mía, que el orquestador puede corregir: «fallo cerrado, no 500 mudo» lo leo como lo que ya exigía X (500 con código `pdf_generation_failed`, sin documento). Cambiar esa respuesta sería texto o estado nuevos y no está decidido.
+2. **1510 POSITIVO.** Se parte en dos: el congelado (la emisión deja el fichero y su `pdf_sha256`, y pedirlo después escribe 0 veces y sirve los mismos bytes) y su gemelo «sin congelar» (`2026-CF-0004`), que exige lo de antes: una sola escritura de `pdfUrl` al pedirlo. 4/4. Lleva dos mutaciones declaradas.
+3. **1330 ④f (punto 2): era el doble, no el código.** Con el error a la vista (`missing_relations`) había dos huecos: `ensurePdfAndEvent` pasa ahora por `ensureInvoicePdf`, que relee la factura con `include: { merchant, customer }`, y `_banco-emision-con-estado.mjs` sólo resuelve `include` en `charge`; y su generador no escribe fichero, así que la huella da ENOENT. El banco es de S3 y no se toca: se envuelven los dos en el propio test (el PDF va a un temporal del sistema). 16/16, y ④f sigue exigiendo 0 pasos por `sellarTrasEmision` y 0 encolados.
+
+**NO hecho (relevo 5):** recongelar `scrum523d` sobre `selladoEstado.ts` (c.21584 punto 3, regla de c.21290); correr las mutaciones declaradas con el arnés (`docs/master/evidencias/SCRUM-1123f/arnes-mutaciones.mjs` sobre 1404g, 1510b y 1330); los guards de navegador de `invoiceDetailView.js`; `guards:entrada`; `tsc -p .` con tipos; scrum237, 976 y 1387. `yaqu-premium-ui`: no cargada (esta tanda no toca la vista). Líneas de S1 (c.21564): pendientes. Suite entera local: NO CORRIDA.
+
+**Mi error (A9):** crucé los 200k de contexto (219.836) antes de acabar el encargo. Me medí al acabar el arranque (134k) y en Jira (142k), y no volví a mirar hasta acabar los tres tests.
+
+A9: aviso → cicatriz J1 «Crucé los 200k de contexto antes de acabar el encargo» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto

@@ -26,7 +26,16 @@
 // La excepción declarada (c.20923 P5): el caso C —huella escrita, estado sin marcar— contesta 409
 // «se reintenta solo», y el reintento no lo recoge nunca. Se fija aquí para que deje de ser
 // excepción sólo con una decisión, no por accidente.
+//
+// 🔵 SCRUM-665e (decisión del orquestador J, SCRUM-665 c.21584 punto 1, sobre el GO c.21182 «se
+// sirve siempre ése»): desde que el PDF se congela AL EMITIR, G y X dejan de ser «se genera al
+// pedirlo». Un documento que ya tiene su PDF congelado se sirve TAL CUAL, byte a byte igual al de
+// la emisión, aunque después cambie el emisor (regla 29). La protección vieja no se pierde: G0 y
+// X0 son los mismos documentos emitidos SIN congelar (lo emitido antes de 665e, que se genera la
+// primera vez que se pide, c.21191), y siguen exigiendo lo de antes: 409 firmado y 500.
 import { test, after } from 'node:test';
+import crypto from 'node:crypto';
+import http from 'node:http';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -51,6 +60,30 @@ const K = require('../dist/modules/invoicing/domain/selladoEstado.js');
 const porton = require('../dist/modules/invoicing/domain/portonDocumento.js');
 const { documentoEnRegistroHtml } = require('../dist/core/http/publicNotFound.js');
 const { REINTENTO_ACTIVO_DESDE } = require('../dist/modules/invoicing/domain/reintentoSellado.js');
+const { invoicesDir } = require('../dist/core/storage/dirs.js');
+
+/** SCRUM-665e · los BYTES de la respuesta, no su texto: el PDF se compara byte a byte. */
+function pedir(ruta, { token } = {}) {
+  return new Promise((resolver, rechazar) => {
+    const p = http.request(`${app.base}${ruta}`, {
+      method: 'GET', agent: false, headers: token ? { cookie: `pf_session=${token}` } : {},
+    }, (res) => {
+      const trozos = [];
+      res.on('data', (t) => trozos.push(t));
+      res.on('error', rechazar);
+      res.on('end', () => {
+        const bytes = Buffer.concat(trozos);
+        const texto = bytes.toString('utf8');
+        let json = null;
+        try { json = JSON.parse(texto); } catch { /* no era JSON */ }
+        resolver({ status: res.statusCode, json, texto, bytes });
+      });
+    });
+    p.on('error', rechazar);
+    p.end();
+  });
+}
+const sha256 = (b) => crypto.createHash('sha256').update(b).digest('hex');
 
 /**
  * 🔴 EL `todo` DEL GUARD DE J5. A `null` desde que se escribió `REINTENTO_ACTIVO_DESDE`, en el MISMO
@@ -128,16 +161,24 @@ function servir(fila, args) {
 }
 
 /** Fabrica la fila por el camino real y la pide por las DOS rutas montadas. */
-async function pedirLasDos({ numero, merchant, falla = [], sinPuerta = false, despues }) {
+async function pedirLasDos({ numero, merchant, falla = [], sinPuerta = false, sinCongelar = false, despues }) {
   const d = fabricar({ numero, merchant, falla });
   bancoDePrisma().programar({ authSession: ses.tabla, merchant: { findUnique: async () => ({ ...d.fila.merchant }) } });
   if (!sinPuerta) {
     await K.sellarTrasEmision(
       { id: d.fila.id, number: d.fila.number, total: { toString: () => d.fila.total }, createdAt: d.fila.createdAt, merchantId: MIO, type: d.fila.type },
       merchant, d.cliente,
+      // SCRUM-665e · `sinCongelar`: la emisión de ANTES de 665e, que no congelaba nada.
+      sinCongelar ? { congelarPdf: async () => {} } : undefined,
     ).catch(() => { /* lo que deje escrito es la fila; el fallo es el que se fabrica */ });
     await new Promise((r) => setImmediate(r));
   }
+  // SCRUM-665e · lo que dejó la EMISIÓN, leído antes de que nadie pida nada.
+  const enDisco = path.join(invoicesDir, `${MIO}-${numero}.pdf`);
+  const alEmitir = {
+    huella: d.fila.pdfSha256 ?? null,
+    bytes: fs.existsSync(enDisco) ? fs.readFileSync(enDisco) : null,
+  };
   if (despues) despues(d.fila);
   bancoDePrisma().programar({
     authSession: ses.tabla,
@@ -155,10 +196,10 @@ async function pedirLasDos({ numero, merchant, falla = [], sinPuerta = false, de
   const errores = console.error;
   console.error = () => {}; // las rutas registran el error; aquí se mide la respuesta
   try {
-    const recibo = await app.pedir(`/recibo/${TOKEN}/pdf`);
-    const panel = await app.pedir(`/admin/invoices/${d.fila.id}/pdf`, { token: ses.PROPIETARIO });
+    const recibo = await pedir(`/recibo/${TOKEN}/pdf`);
+    const panel = await pedir(`/admin/invoices/${d.fila.id}/pdf`, { token: ses.PROPIETARIO });
     const escritasEnFactura = bancoDePrisma().escrituras.filter((e) => e.modelo === 'invoice').length;
-    return { fila: d.fila, recibo, panel, escritasEnFactura };
+    return { fila: d.fila, recibo, panel, escritasEnFactura, alEmitir };
   } finally { console.error = errores; }
 }
 
@@ -173,8 +214,10 @@ const CASOS = {
     falla: [{ clave: 'invoice.update', si: ESCRIBE_ESTADO(K.SELLADO_NO_APLICA), mensaje: 'la base no responde (no aplica)' }] },
   F: { numero: '2026-CF-0006', merchant: ES, sinPuerta: true },
   G: { numero: '2026-CF-0007', merchant: { ...ES, taxId: null }, despues: (fila) => { fila.merchant.taxId = NIF; } },
+  G0: { numero: '2026-CF-0009', merchant: { ...ES, taxId: null }, sinCongelar: true, despues: (fila) => { fila.merchant.taxId = NIF; } },
   SELLADA: { numero: '2026-CF-0001', merchant: ES },
   X: { numero: '2026-CF-0008', merchant: ES, despues: (fila) => { fila.merchant.name = null; } },
+  X0: { numero: '2026-CF-0010', merchant: ES, sinCongelar: true, despues: (fila) => { fila.merchant.name = null; } },
 };
 const R = {};
 for (const [id, c] of Object.entries(CASOS)) R[id] = await pedirLasDos(c);
@@ -197,6 +240,22 @@ function sigueEn500(r, donde) {
   assert.deepEqual(r.panel.json, { error: 'pdf_generation_failed' }, `${donde} · panel`);
   assert.equal(r.escritasEnFactura, 0, `${donde} · regla 29: pedir el documento escribió en la factura`);
 }
+/** SCRUM-665e · se sirve el PDF congelado AL EMITIR, byte a byte, por las dos rutas, sin escribir. */
+function sirveElCongelado(r, donde) {
+  assert.ok(r.alEmitir.bytes && r.alEmitir.huella, `🔴 CIEGO · ${donde}: la emisión no congeló ningún PDF`);
+  assert.equal(sha256(r.alEmitir.bytes), r.alEmitir.huella, `🔴 CIEGO · ${donde}: el fichero de la emisión no cuadra con su huella`);
+  for (const [via, resp] of [['recibo', r.recibo], ['panel', r.panel]]) {
+    assert.equal(resp.status, 200, `${donde} · ${via}: ${ver(resp)}`);
+    assert.ok(resp.bytes.equals(r.alEmitir.bytes),
+      `${donde} · ${via}: el PDF servido NO es, byte a byte, el congelado al emitir (regla 29)`);
+  }
+  assert.equal(r.escritasEnFactura, 0, `${donde} · regla 29: pedir el documento escribió en la factura`);
+}
+/** SCRUM-665e · el caso de ANTES: la emisión no dejó PDF congelado. */
+function sinCongeladoAlEmitir(r, donde) {
+  assert.equal(r.alEmitir.huella, null, `🔴 CIEGO · ${donde}: la emisión SÍ congeló; no es el documento de antes de 665e`);
+  assert.equal(r.alEmitir.bytes, null, `🔴 CIEGO · ${donde}: hay un PDF en disco tras emitir`);
+}
 
 test('SCRUM-1404g · suelo: el camino real deja las filas donde cada caso dice', () => {
   assert.equal(NACE, K.SELLADO_PENDIENTE, 'el @default del esquema no es SELLADO_PENDIENTE');
@@ -204,7 +263,7 @@ test('SCRUM-1404g · suelo: el camino real deja las filas donde cada caso dice',
   for (const id of pendientes) assert.equal(R[id].fila.vfEstado, K.SELLADO_PENDIENTE, `${id} no quedó pendiente`);
   assert.equal(R.P.fila.vfHash, null, 'P: sin huella');
   assert.ok(R.C.fila.vfHash, 'C: con la huella escrita');
-  for (const id of ['G', 'SELLADA', 'X']) assert.notEqual(R[id].fila.vfEstado, K.SELLADO_PENDIENTE, `${id} no debía quedar pendiente`);
+  for (const id of ['G', 'G0', 'SELLADA', 'X', 'X0']) assert.notEqual(R[id].fila.vfEstado, K.SELLADO_PENDIENTE, `${id} no debía quedar pendiente`);
   assert.equal(Object.keys(R).length, Object.keys(CASOS).length, 'población: corrieron todos los casos');
 });
 
@@ -212,14 +271,22 @@ test('SCRUM-1404g · P · factura ES pendiente de sellado → 409 firmado en las
 test('SCRUM-1404g · F · factura ES que no llegó a la puerta (pendiente) → 409 firmado en las dos rutas', () => es409Firmado(R.F, 'F'));
 test('SCRUM-1404g · D · justificante J- pendiente → SIGUE en 500 (c.20923 P4)', () => sigueEn500(R.D, 'D'));
 test('SCRUM-1404g · E · comercio no español pendiente → SIGUE en 500 (c.20923 P4)', () => sigueEn500(R.E, 'E'));
-test('SCRUM-1404g · G · el 409 del portón de la huella no cambia', () => es409Firmado(R.G, 'G'));
+test('SCRUM-1404g · G · emitido sin NIF y con su PDF congelado: tras ponerle NIF se sirve el congelado, byte a byte (665e, c.21584)', () => sirveElCongelado(R.G, 'G'));
+test('SCRUM-1404g · G0 · el mismo documento SIN PDF congelado (anterior a 665e): el 409 del portón de la huella no cambia', () => {
+  sinCongeladoAlEmitir(R.G0, 'G0');
+  es409Firmado(R.G0, 'G0');
+});
 test('SCRUM-1404g · una factura sellada → 200 con el PDF por las dos rutas', () => {
   assert.equal(R.SELLADA.recibo.status, 200, `recibo: ${ver(R.SELLADA.recibo)}`);
   assert.ok(esPdf(R.SELLADA.recibo), 'recibo: no es un PDF');
   assert.equal(R.SELLADA.panel.status, 200, `panel: ${ver(R.SELLADA.panel)}`);
   assert.ok(esPdf(R.SELLADA.panel), 'panel: no es un PDF');
 });
-test('SCRUM-1404g · X · la avería de verdad (emisor sin nombre) sigue en 500', () => sigueEn500(R.X, 'X'));
+test('SCRUM-1404g · X · el emisor pierde el nombre DESPUÉS de emitir: se sirve el congelado, byte a byte (665e, c.21584)', () => sirveElCongelado(R.X, 'X'));
+test('SCRUM-1404g · X0 · el mismo documento SIN PDF congelado (anterior a 665e): la avería de verdad sigue en 500 y no sale documento', () => {
+  sinCongeladoAlEmitir(R.X0, 'X0');
+  sigueEn500(R.X0, 'X0');
+});
 test('SCRUM-1404g · C · EXCEPCIÓN DECLARADA (c.20923 P5): huella escrita y estado sin marcar → 409, y el reintento no la recoge', () => {
   es409Firmado(R.C, 'C');
 });
@@ -256,7 +323,21 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   { fichero: 'src/modules/system/app/routes/invoicesAdmin.routes.ts',
     de: "return res.status(500).json({ error: 'pdf_generation_failed' });\n  }\n});\n\n/**\n * PATCH /admin/invoices/:id/asignados",
     a: "return res.status(409).json({ error: 'pdf_generation_failed' });\n  }\n});\n\n/**\n * PATCH /admin/invoices/:id/asignados",
-    cae: 'SCRUM-1404g · X · la avería de verdad (emisor sin nombre) sigue en 500' },
+    cae: 'SCRUM-1404g · X0 · el mismo documento SIN PDF congelado (anterior a 665e): la avería de verdad sigue en 500 y no sale documento' },
+  // SCRUM-665e (c.21584) · con huella, se regenera en vez de servir el congelado → caen G y X.
+  { fichero: 'src/lib/invoicing.ts',
+    de: 'if (congelado?.pdfSha256) {',
+    a: 'if (false) {',
+    cae: 'SCRUM-1404g · G · emitido sin NIF y con su PDF congelado: tras ponerle NIF se sirve el congelado, byte a byte (665e, c.21584)' },
+  { fichero: 'src/lib/invoicing.ts',
+    de: 'if (congelado?.pdfSha256) {',
+    a: 'if (false) {',
+    cae: 'SCRUM-1404g · X · el emisor pierde el nombre DESPUÉS de emitir: se sirve el congelado, byte a byte (665e, c.21584)' },
+  // SCRUM-665e · la emisión deja de admitir «sin congelar»: G0 ya no es el documento de antes de 665e.
+  { fichero: 'src/modules/invoicing/domain/selladoEstado.ts',
+    de: 'const congelarPdf = opciones.congelarPdf ?? congelarPdfDeLaCasa;',
+    a: 'const congelarPdf = congelarPdfDeLaCasa;',
+    cae: 'SCRUM-1404g · G0 · el mismo documento SIN PDF congelado (anterior a 665e): el 409 del portón de la huella no cambia' },
   // Encendido (c.20923): la fecha escrita vuelve a `null` con el 409 puesto → cae el guard de J5.
   { fichero: 'src/modules/invoicing/domain/reintentoSellado.ts',
     de: "export const REINTENTO_ACTIVO_DESDE: string | null = '2026-10-26T23:58:57Z';",
