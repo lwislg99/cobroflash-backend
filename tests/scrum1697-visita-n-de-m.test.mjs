@@ -6,12 +6,12 @@
 // Texto FIRMADO: N4 de la tanda N1-N13 de SCRUM-1686 (c.21471 según el máster) — «Visita {n} de {m}»,
 // cabecera del parte, con varios en el trabajo.
 //
-// Lo que se fija:
-//   ① el orden es fecha y, a igual fecha, número; m cuenta también los borradores;
-//   ② con un solo parte en el trabajo no se dice nada (N4 es «con varios»);
-//   ③ un parte que no está en la lista, o sin trabajo, no inventa un número;
-//   ④ la cabecera lo pinta con el texto firmado, tras el número del parte;
-//   ⑤ si el trabajo no se pudo leer, la cabecera se queda sin número (falla cerrado).
+// Desde SCRUM-1697 (b) el recuento lo hace el SERVIDOR (`visitaDelParte.ts`, fijado en
+// `scrum1697b-visita-en-el-servidor.test.mjs`): GET /admin/partes/:id trae `visitaN`/`visitaM`. La
+// pantalla ya no lee el trabajo. Lo que se fija AQUÍ es lo que queda en la pantalla:
+//   ① pinta lo que manda el servidor, con el texto firmado, tras el número del parte, y NO pide nada;
+//   ② con un solo parte en el trabajo no se dice nada (N4 es «con varios»): el servidor dice 1 de 1;
+//   ③ falla cerrado: sin los números, con uno que no es un entero positivo o con n > m, sin número.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
@@ -19,13 +19,6 @@ import { fileURLToPath } from 'node:url';
 import { cargarDashboard, todos } from './_banco-vistas.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-
-const PARTES = Object.freeze([
-  { id: 21, numero: 'PT-2026-012', fecha: '2026-11-12T08:00:00.000Z', estado: 'borrador' },
-  { id: 13, numero: 'PT-2026-005', fecha: '2026-11-10T08:00:00.000Z', estado: 'firmado' },
-  { id: 17, numero: 'PT-2026-009', fecha: '2026-11-11T08:00:00.000Z', estado: 'firmado' },
-  { id: 16, numero: 'PT-2026-008', fecha: '2026-11-11T08:00:00.000Z', estado: 'firmado' },
-]);
 
 const BASE = Object.freeze({
   id: 17, numero: 'PT-2026-009', clienteNombre: 'Cliente de pruebas', jobId: 77,
@@ -35,6 +28,7 @@ const BASE = Object.freeze({
   lineas: [{ bloque: 'mano_obra', unds: 1, descripcion: 'Revisión' }],
   notas: null, estado: 'firmado', firmoElCliente: true, firmoElTecnico: false,
   puedeEditarContenido: { ok: false, motivo: 'firmado' }, puedeEditarPrecios: { ok: true, motivo: null },
+  visitaN: 3, visitaM: 4,
 });
 
 const attr = (n, a) => (n.getAttribute ? n.getAttribute(a) : null);
@@ -44,53 +38,47 @@ const visitaEn = (c) => {
   return n ? texto(n) : null;
 };
 
+// Pinta el parte y la visita como lo hace la ficha; devuelve lo que dice la cabecera y lo que se pidió.
+async function cabecera(parte) {
+  const b = cargarDashboard(RAIZ);
+  const c = b.mk('div');
+  assert.equal(b.ctx.renderParte(c, parte), true, '🔴 SUELO: la vista se negó a pintar');
+  assert.equal(visitaEn(c), '', 'antes de pintar la visita la cabecera no lleva número');
+  const pedidas = [];
+  const pedir = async (ruta) => { pedidas.push(ruta); return {}; };
+  await b.ctx.partePintarVisita(c, parte, pedir);
+  return { visita: visitaEn(c), pedidas };
+}
+
 test('SCRUM-1697 · el texto es el firmado (N4), literal', () => {
   const b = cargarDashboard(RAIZ);
   assert.equal(b.ctx.PARTE_TEXTOS.visitaDeLas, 'Visita {n} de {m}');
 });
 
-test('SCRUM-1697 ① orden por fecha y, a igual fecha, por número; m cuenta los borradores', () => {
-  const { ctx } = cargarDashboard(RAIZ);
-  const v = ctx.parteVisitaDelParte;
-  assert.equal(typeof v, 'function', 'falta `parteVisitaDelParte`');
-  assert.deepEqual({ ...v(13, PARTES) }, { n: 1, m: 4 });
-  assert.deepEqual({ ...v(16, PARTES) }, { n: 2, m: 4 }, 'a igual fecha, PT-…-008 va antes que PT-…-009');
-  assert.deepEqual({ ...v(17, PARTES) }, { n: 3, m: 4 });
-  assert.deepEqual({ ...v(21, PARTES) }, { n: 4, m: 4 }, 'el borrador cuenta');
+test('SCRUM-1697 ① la cabecera dice «· Visita n de m» con lo que trae el parte, sin leer el trabajo', async () => {
+  const { visita, pedidas } = await cabecera(BASE);
+  assert.equal(visita, '· Visita 3 de 4');
+  assert.deepEqual(pedidas, [], '🔴 la pantalla no pide nada: ni /admin/jobs/:id (guard de SCRUM-366) ni otra cosa');
 });
 
-test('SCRUM-1697 ②③ con uno solo, fuera de la lista o sin lista: nada', () => {
-  const { ctx } = cargarDashboard(RAIZ);
-  const v = ctx.parteVisitaDelParte;
-  assert.equal(v(13, [PARTES[1]]), null, 'un solo parte en el trabajo: no se dice «Visita 1 de 1»');
-  assert.equal(v(99, PARTES), null, 'un parte que no está en la lista no inventa un número');
-  assert.equal(v(13, null), null);
-  assert.equal(v(13, []), null);
+test('SCRUM-1697 ② con un solo parte en el trabajo no se dice «Visita 1 de 1»', async () => {
+  assert.equal((await cabecera({ ...BASE, visitaN: 1, visitaM: 1 })).visita, '');
+  assert.equal((await cabecera({ ...BASE, visitaN: 1, visitaM: 2 })).visita, '· Visita 1 de 2', '🔴 SUELO: con dos, sí');
 });
 
-test('SCRUM-1697 ④ la cabecera dice «PT-… · Visita n de m» tras leer el trabajo', async () => {
-  const b = cargarDashboard(RAIZ);
-  const c = b.mk('div');
-  assert.equal(b.ctx.renderParte(c, BASE), true, '🔴 SUELO: la vista se negó a pintar');
-  assert.equal(visitaEn(c), '', 'antes de leer el trabajo la cabecera no lleva número');
-  const pedidas = [];
-  const pedir = async (ruta) => { pedidas.push(ruta); return { id: 77, partes: PARTES.map((p) => ({ ...p })) }; };
-  await b.ctx.partePintarVisita(c, BASE, pedir);
-  assert.deepEqual(pedidas, ['/admin/jobs/77']);
-  assert.equal(visitaEn(c), '· Visita 3 de 4');
-});
-
-test('SCRUM-1697 ⑤ falla cerrado: sin trabajo no pide; si la lectura falla, sin número', async () => {
-  const b = cargarDashboard(RAIZ);
-  const c = b.mk('div');
-  b.ctx.renderParte(c, { ...BASE, jobId: null });
-  let pidio = false;
-  await b.ctx.partePintarVisita(c, { ...BASE, jobId: null }, async () => { pidio = true; return {}; });
-  assert.equal(pidio, false, 'un parte sin trabajo no tiene visitas que contar');
-  assert.equal(visitaEn(c), '');
-
-  const c2 = b.mk('div');
-  b.ctx.renderParte(c2, BASE);
-  await b.ctx.partePintarVisita(c2, BASE, async () => { throw new Error('sin red'); });
-  assert.equal(visitaEn(c2), '', 'sin la lista no se pone un número');
+test('SCRUM-1697 ③ falla cerrado: sin los números, con basura o con n > m, la cabecera se queda sin número', async () => {
+  const casos = [
+    { visitaN: null, visitaM: null },           // el servidor no lo encontró en la lista, o el parte no tiene trabajo
+    { visitaN: undefined, visitaM: undefined }, // un servidor de antes de la (b)
+    { visitaN: 3, visitaM: null },
+    { visitaN: '3', visitaM: '4' },
+    { visitaN: 0, visitaM: 4 },
+    { visitaN: 2.5, visitaM: 4 },
+    { visitaN: 5, visitaM: 4 },
+  ];
+  for (const v of casos) {
+    const { visita, pedidas } = await cabecera({ ...BASE, ...v });
+    assert.equal(visita, '', `con ${JSON.stringify(v)} no se pone un número`);
+    assert.deepEqual(pedidas, []);
+  }
 });

@@ -98,3 +98,25 @@ también los borradores. (Mi traspaso decía «por creación»: mandaba el mást
 - Declarado en `GATEADOS_DECLARADOS` (SCRUM-419).
 - **En yaqu.app:** tras el merge, `GET /admin/partes/:id` de PT-2026-004 y PT-2026-006 (trabajo #77 de la
   cuenta QA, dos partes) con `node scripts/qa/sesion-panel.mjs get`.
+
+## Apéndice (c) · 12-nov-2026 · S4 · la pantalla lee la visita del parte y deja de pedir el trabajo
+
+**Medido contra:** `origin/main` = `6cf6a8176b985a1e5f9b39c5a74319665dec91f0` · 2026-11-12T08:22:13Z (fecha de commit de esa punta, el merge de #3094) · **Rama:** `scrum-1697c-pantalla-lee-visita-del-parte` · **Carril:** S4.
+
+A9: comprobación → `tests/scrum1697-visita-n-de-m.test.mjs`
+
+**Skill UI:** cargada (`yaqu-premium-ui`, 12-nov). No cambia nada que se vea: la cabecera dice lo mismo, con el mismo texto firmado (N4) y en el mismo hueco `[data-parte-visita]`.
+
+**Por qué.** Lo pide el contrato del apéndice (b): con `visitaN`/`visitaM` en `GET /admin/partes/:id`, `parteVisita.js` ya no necesita `GET /admin/jobs/:id`. Encargo del orquestador del 12-nov: «cuando #3094 entre, parteVisita.js pasa a leer parte.visitaN/visitaM y deja de pedir /admin/jobs/:id».
+
+### Qué cambia
+- `public/dashboard/js/parteVisita.js`: deja de contar en el cliente y de pedir el trabajo. `visitaDelParte(parte)` comprueba lo que manda el servidor y `pintarVisita(contenedor, parte)` lo pinta. Lo único que decide la pantalla es lo que el apéndice (b) le deja: con uno solo no se dice nada (N4 es «con varios»), porque el servidor dice el hecho, 1 de 1. Falla cerrado: sin los dos números, con uno que no sea un entero positivo o con n > m, la cabecera se queda sin número.
+- `public/dashboard/js/parteDetailView.js`: la llamada ya no pasa `pedir`, y el comentario dice de dónde sale el dato.
+- `tests/scrum1697-visita-n-de-m.test.mjs`: el orden por fecha y número se iba del cliente, así que sus casos salen de aquí; ese orden lo fija ahora `scrum1697b-visita-en-el-servidor.test.mjs`. Quedan ① se pinta «· Visita 3 de 4» y **no se pide nada**, ② 1 de 1 no se dice y 1 de 2 sí, ③ siete entradas basura sin número y sin peticiones.
+
+### Comprobación
+- **Rojo primero** con el `parteVisita.js` de la (b), es decir el de antes: 3 de 4 en rojo. ① pidió `/admin/jobs/77`, ② no pintó «1 de 2» y ③ hizo peticiones. Queda en verde el del texto literal, que no cambia.
+- **Verde:** 4/4.
+- **Vecinos:** los 60 ficheros que nombran `parteDetailView`/`parteVisita`/SCRUM-366, más `scrum1697b`, sobre `6cf6a8176`: **510 tests, 0 fallos y 1 salto**. El salto es el ② de 1697b, gateado por `QA_DB_TEST`/`LIBRO_PG_URL`.
+- **Dato de la máquina, no atribuido:** antes de traer main, `scrum1266b` («corregir y quitar OTRA línea con ×») salió en rojo 1 vez en la tanda de vecinos y 1-2 de 3 a mano, mientras la máquina corría otras cosas. El test enfrenta un `setTimeout` de 15 ms con un `dormir(80)`. Con la máquina en calma, **8/8 en verde sin mi cambio y 8/8 con él**. Se deja escrito por si vuelve a salir en el CI.
+- **Pendiente:** verlo en yaqu.app tras el merge, en PT-2026-004 y PT-2026-006 del trabajo #77 (dos partes → «Visita 1 de 2» y «Visita 2 de 2»), comprobando además que la ficha del parte ya no pide `/admin/jobs/77`.
