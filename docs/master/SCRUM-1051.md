@@ -549,7 +549,7 @@ Rojo primero: las cuatro mutaciones de ② y la de ① con `aplicarUna` del cat�
 
 **Medido contra:** `origin/main` = `9fabfbc087e20568633bf91d626c5ad414a99919` · 2026-11-12T18:11:58Z (hora de la cabecera `Date:` de GitHub)
 
-A9: aviso → cicatriz J1 «la dirigida no los lista, y ya me pasó con `scrum622` el 1-oct» — no se pudo comprobar: la lista de la dirigida es de SCRUM-1363, de otro carril
+A9: aviso → cicatriz J1 «Empujé 1051g con la dirigida en verde y el obligatorio cayó por seis casos de cinco guards que recorren el árbol entero sin nombrar mi fichero (411, 1185, 189, 615 y el veredicto de mudez de 719): la dirigida no los lista, y ya me pasó con `scrum622` el 1-oct» — no se pudo comprobar: la lista de la dirigida es de SCRUM-1363, de otro carril
 
 El obligatorio de #3140 (job 131364900599, sobre el head `d582f545`) cayó con 6 de 13.483 casos. Los seis, reproducidos en local sobre `d582f545` en un árbol desechable (98 casos en 6 ficheros: 92 pass + 6 fail, los mismos seis) y en verde en la rama (98 de 98). Se arregló el código y el veredicto derivado; ningún guard se relajó:
 
