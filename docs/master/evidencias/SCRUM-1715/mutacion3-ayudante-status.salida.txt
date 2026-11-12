@@ -1,0 +1,60 @@
+﻿✔ SCRUM-1188d Â· SUELO: la relectura por SQL DISTINGUE el JSON `null` del NULL de SQL (si no, lo de abajo no mide nada) (2086.8406ms)
+✖ SCRUM-1188d Â· ðŸ”´ el POST sin niveles deja la columna VACÃA (NULL de SQL), no el JSON `null` (159.6811ms)
+✖ SCRUM-1188d Â· ðŸ”´ el PUT con `tiers: null` VACÃA los niveles; sin la clave no los toca (25.6443ms)
+✔ SCRUM-1188d Â· `jsonAnulable` traduce SOLO el `null`: lo demÃ¡s pasa tal cual, y `undefined` sigue siendo Â«no toquesÂ» (0.597ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2368.1558
+
+✖ failing tests:
+
+test at tests1715\scrum1188d-mutado.test.mjs:146:1
+✖ SCRUM-1188d Â· ðŸ”´ el POST sin niveles deja la columna VACÃA (NULL de SQL), no el JSON `null` (159.6811ms)
+  AssertionError [ERR_ASSERTION]: ðŸ”´ CIEGO: el POST responde 500 ({"id":4,"merchantId":3,"name":"Reforma de baÃ±o","currency":"EUR","lines":[{"qty":1,"price":100,"concept":"Alicatado"}],"tiers":null,"paymentTerms":null,"createdAt":"2026-11-12T12:25:16.329Z","updatedAt":"2026-11-12T12:25:16.329Z"}), no hay plantilla que medir
+  
+  500 !== 201
+  
+      at alta (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s2-12nov-1715/tests1715/scrum1188d-mutado.test.mjs:120:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s2-12nov-1715/tests1715/scrum1188d-mutado.test.mjs:148:22
+      at async file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s2-12nov-1715/tests1715/scrum1188d-mutado.test.mjs:109:7
+      at async withMerchant (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s2-12nov-1715/tests1715/_merchant-fixture.mjs:296:12)
+      at async conPanel (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s2-12nov-1715/tests1715/scrum1188d-mutado.test.mjs:90:3)
+      at async TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s2-12nov-1715/tests1715/scrum1188d-mutado.test.mjs:147:3)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 201,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests1715\scrum1188d-mutado.test.mjs:161:1
+✖ SCRUM-1188d Â· ðŸ”´ el PUT con `tiers: null` VACÃA los niveles; sin la clave no los toca (25.6443ms)
+  AssertionError [ERR_ASSERTION]: ðŸ”´ CIEGO: el POST responde 500 ({"id":5,"merchantId":4,"name":"Reforma de baÃ±o","currency":"EUR","lines":[{"qty":1,"price":100,"concept":"Alicatado"}],"tiers":[{"id":"good","label":"BÃ¡sico","lines":[{"qty":1,"tax":0,"price":100,"concept":"Alicatado"}],"recommended":false},{"id":"better","label":"Completo","lines":[{"qty":1,"tax":0,"price":100,"concept":"Alicatado"}],"recommended":false},{"id":"best","label":"Premium","lines":[{"qty":1,"tax":0,"price":100,"concept":"Alicatado"}],"recommended":false}],"paymentTerms":"FIFTY_FIFTY","createdAt":"2026-11-12T12:25:16.376Z","updatedAt":"2026-11-12T12:25:16.376Z"}), no hay plantilla que medir
+  
+  500 !== 201
+  
+      at alta (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s2-12nov-1715/tests1715/scrum1188d-mutado.test.mjs:120:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s2-12nov-1715/tests1715/scrum1188d-mutado.test.mjs:163:16
+      at async file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s2-12nov-1715/tests1715/scrum1188d-mutado.test.mjs:109:7
+      at async withMerchant (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s2-12nov-1715/tests1715/_merchant-fixture.mjs:296:12)
+      at async conPanel (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s2-12nov-1715/tests1715/scrum1188d-mutado.test.mjs:90:3)
+      at async TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s2-12nov-1715/tests1715/scrum1188d-mutado.test.mjs:162:3)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 201,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
