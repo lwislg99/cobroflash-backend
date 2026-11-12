@@ -138,8 +138,8 @@ export function columnasDeTexto(schemaText) {
 // El motivo va por FAMILIA (una frase para todos los estados, otra para las monedas…); la CLAVE va
 // columna a columna. ⛔ Nunca un patrón por nombre en este lado: «todo lo que acabe en Status es no
 // personal» abre el mismo agujero que este ticket cierra, pero por el otro lado.
-// Las 114 son la medición de SCRUM-1547 c.21601 (224 columnas − 66 que ya veía el censo − 44 personales
-// o dudosas). El fundador decidió en c.21607 que esas 44 van a `SIN_DECIDIR`; éstas son el resto, menos
+// Las 114 son la medición del 12-nov-2026 (SCRUM-1547 c.21601: 224 columnas − 66 que ya veía el censo −
+// 44 personales o dudosas). El fundador decidió en c.21607 que esas 44 van a `SIN_DECIDIR`; éstas son el resto, menos
 // los 4 textos de error que sacó de aquí en c.21617 (un error de envío puede llevar el teléfono o el
 // correo del destinatario): quedan 110.
 // ⚠️ La clasificación es de UNA sesión y no la ha repetido nadie: si una de éstas te parece personal,

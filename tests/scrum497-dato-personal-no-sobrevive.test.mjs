@@ -351,7 +351,7 @@ test('SCRUM-497 · 🔴 TRINQUETE: noventa datos personales siguen sin anonimiza
 // El censo por nombre sólo ve lo que alguien escribió antes: `toPhone` pasó en VERDE con el guard
 // mirando (SCRUM-529), y medido el 12-nov-2026 había 21 columnas personales que ningún nombre dejaba
 // ver (`albaran.notas`, `legalAcceptance.ip`…). Decisión del fundador (c.21607): toda columna `String`
-// de los 33 modelos se declara personal o no personal, y esto sale ROJO hasta que se declare.
+// de TODOS los modelos se declara personal o no personal, y esto sale ROJO hasta que se declare.
 // El coste es ése, y es a propósito: ~1 columna `String` nueva al mes (medido del 12-oct al 12-nov).
 
 /** Siembra EN MEMORIA: mete columnas al principio de `model Customer` del esquema real. Nunca toca el fichero. */
