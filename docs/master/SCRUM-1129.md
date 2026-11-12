@@ -381,3 +381,33 @@ admite merchants en Canarias, Ceuta o Melilla: si los admite, el problema no es 
      **camino de emisión, regla 40, GO del fundador.**
    - Si YaQu admite actividades fuera de la división 5 (electrodomésticos, tiendas), hace falta saber la
      actividad **como epígrafe del IAE**, no como etiqueta de marketing. Eso es una decisión de producto.
+
+---
+
+# SCRUM-1129c · Dónde está y qué falta para el GO
+
+**Medido contra:** `origin/main` = `deab373d6a379fcbfc7ec1fce0428111156f49d3` · 2026-11-12T17:12:00Z (cabecera `Date:` de GitHub)
+
+A9: sin fallo que generalice — tramo de solo lectura y propuesta; nada de `src/` cambia, y lo medido lleva su control positivo sembrado
+
+Sesión `jv-j1eb` (puesto J1). Solo docs. El detalle, con la tabla y las seis preguntas, está en Jira, SCRUM-1129 c.21752.
+
+- **PASO 0:** no hay ninguna decisión del fundador escrita después de 1129b (SCRUM-1129, 4 comentarios; SCRUM-1240, 3).
+  El trinquete `tests/scrum1240b-clave-regimen-defecto-declarado.test.mjs` está en `main`: 6/6 en verde.
+- **El builder, ejecutado:** `registro.builder.ts` transpilado a un temporal (no importa nada), con tres merchants
+  FABRICADOS (`criterioCaja` true / false / null) por dos tramos (21 % y `S2`). Salen 6 de 6 con `ClaveRegimen` 01
+  en el XML. Control positivo: un detalle con `07` sale `07`. `clasificarDetalleDesglose(entrada, ref)` no recibe
+  el régimen.
+- **Tabla:** general `01` ✅ · caja + `S1` → `07`, hoy `01` ❌ (el dato ya existe: `Merchant.criterioCaja`) · caja +
+  `S2` → `01` ✅ · NULL → decisión · recargo `18`, simplificado `20` y REAGYP `19` → hoy `01`, sin columna en
+  `Merchant`, y según 1129b no aplican a la división 5 (la `18` sigue SIN DETERMINAR).
+- **Propuesta (STOP, regla 40):** un tercer parámetro en `clasificarDetalleDesglose`, y `criterioCaja` en el
+  `ContextoRegistro` de `construirRegistro`, rellenado en sus dos llamadores. **La huella NO cambia**: `ClaveRegimen`
+  no es campo de la huella (`verifactu.service.ts:147-153`). **El XML sí cambia.** En el mismo PR: retirar
+  `DEFECTO_CONOCIDO` de 1240b y añadir un test de cuatro casos.
+- **`scrum523d` cae** (el builder y el sellador son dos de sus `ANCLAS`). La regla de SCRUM-1585 c.21290 solo vale
+  sin subir la versión si no cambia cómo se crea el registro, o si el GO lo dice. Este cambio lo cambia → versión
+  nueva, salvo que el GO diga lo contrario.
+- **Asesor:** ya preguntado en SCRUM-1264, filas 16 (B5.4), 17 (B6.2-3) y 5 (Q-nueva-A). No se añade ninguna.
+- **Sin medir:** ninguna base de datos · el llamador de la cola (`registroParaRemision`) · si la primera declaración
+  está entregada · la suite entera en local · el CI.
