@@ -381,6 +381,75 @@ const PUENTES_A_LA_FILA = {
   btnEditarLineas: 'openAlbEditorSheet',
 };
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1661 · LA FICHA ENSEÑA LO MISMO QUE EL PAPEL
+//
+// Hasta el 11-nov-2026 la ficha no pintaba ni una línea ni un importe (medido en yaqu.app con el
+// AB260006: «Pendiente de facturar · 4 líneas» y nada más). El profesional tenía que abrir
+// «Editar líneas» o el PDF para saber qué había puesto.
+//
+// DECISIÓN (SCRUM-1661, 11-nov-2026, opción A): con `ocultarPreciosEnDocumento` encendido, líneas
+// sin precio, importe ni total, IGUAL QUE EL PDF Y EL ENLACE DE FIRMA — «si pantalla y papel no
+// coinciden, el interruptor deja de hacer su trabajo». El decisor es el de `albaranPrecios.ts`
+// (`documentoEnsenaPrecios`), y además hace falta que el servidor mande `totales`: lo que el
+// servidor no manda (1707: el operario no recibe precios) no se calcula aquí.
+//
+// ⚠️ NO es el pad de obra. Al pad sigue sin llegarle ni un importe (SCRUM-466/468): allí firma un
+// tercero. Esta ficha la mira el profesional.
+//
+// CERO TEXTO NUEVO (regla 39): cabeceras, «Base:», «Total:», la leyenda y «Sin líneas.» son, letra
+// por letra, los de `src/modules/jobs/app/routes/albaranPublicVista.ts` (`renderLineasAlbaran`).
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+const CABECERAS_LINEAS_ALBARAN = ['Concepto', 'Cant.', 'Unidad'];
+const CABECERAS_IMPORTES_ALBARAN = ['PRECIO UD.', 'IMPORTE'];
+const TEXTO_SIN_LINEAS_ALBARAN = 'Sin líneas.';
+const LEYENDA_IMPORTES_ALBARAN =
+  'Importes orientativos; el IVA y la factura se emitirán conforme a la normativa vigente.';
+
+function pintarLineasDelAlbaran(alb, esc) {
+  const caja = document.createElement('div');
+  caja.className = 'albaran-lineas';
+  const lineas = Array.isArray(alb.lineas) ? alb.lineas : [];
+  if (!lineas.length) {
+    caja.innerHTML = `<p class="albaran-lineas__vacio">${esc(TEXTO_SIN_LINEAS_ALBARAN)}</p>`;
+    return caja;
+  }
+  const t = alb.totales;
+  const conImportes = alb.modoValoracion === 'VALORADO' && alb.ocultarPreciosEnDocumento !== true
+    && !!t && Number.isFinite(Number(t.total));
+  const dinero = (n) => (typeof window.fmtMoneyEs === 'function' ? window.fmtMoneyEs(n) : Number(n).toFixed(2));
+  const cantidad = (v) => {
+    if (v === null || v === undefined || v === '') return '';
+    const n = Number(v);
+    return Number.isFinite(n) && typeof window.fmtNumeroEs === 'function' ? window.fmtNumeroEs(n) : String(v);
+  };
+  const num = 'albaran-lineas__num';
+  const cabecera = CABECERAS_LINEAS_ALBARAN.map((h, i) => `<th${i ? ` class="${num}"` : ''}>${esc(h)}</th>`).join('')
+    + (conImportes ? CABECERAS_IMPORTES_ALBARAN.map((h) => `<th class="${num}">${esc(h)}</th>`).join('') : '');
+  const fila = (l) => {
+    const base = `<td class="albaran-lineas__concepto">${esc(l && l.concepto)}</td>`
+      + `<td class="${num}">${esc(cantidad(l && l.cantidad))}</td><td class="${num}">${esc(l && l.unidad)}</td>`;
+    if (!conImportes) return `<tr>${base}</tr>`;
+    // Igual que el papel: una línea VALORADA sin precio deja las dos celdas VACÍAS. «0,00 €» sería
+    // afirmar que no cuesta nada.
+    if (l.precioUnitario === undefined || l.precioUnitario === null) return `<tr>${base}<td class="${num}"></td><td class="${num}"></td></tr>`;
+    const importe = Number(l.precioUnitario) * Number(l.cantidad);
+    return `<tr>${base}<td class="${num}">${esc(dinero(Number(l.precioUnitario)))}</td>`
+      + `<td class="${num} albaran-lineas__importe">${esc(dinero(importe))}</td></tr>`;
+  };
+  caja.innerHTML = `<table class="preview-lines-table albaran-lineas__tabla"><thead><tr>${cabecera}</tr></thead>`
+    + `<tbody>${lineas.map(fila).join('')}</tbody></table>`
+    // Base y Total, SIN cuota, como el papel; las cifras las da el servidor (`calcAlbaranTotales`).
+    + (conImportes
+      ? '<div class="albaran-lineas__totales">'
+        + `<p class="albaran-lineas__base">Base: ${esc(dinero(t.base))}</p>`
+        + `<p class="albaran-lineas__total">Total: ${esc(dinero(t.total))}</p>`
+        + `<p class="albaran-lineas__leyenda">${esc(LEYENDA_IMPORTES_ALBARAN)}</p>`
+        + '</div>'
+      : '');
+  return caja;
+}
+
 async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   if (dejarDeEscucharLaColaDelAlbaran) { dejarDeEscucharLaColaDelAlbaran(); dejarDeEscucharLaColaDelAlbaran = null; }
   container.innerHTML = '';
@@ -1020,6 +1089,11 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     window.appState.avisoDuplicado = false;
     setStatus('info', COPY_DUPLICADO_CREADO);
   }
+
+  // ── SCRUM-1661 · LAS LÍNEAS DEL ALBARÁN, Y SU TOTAL ─────────────────────────────────────
+  // Va FUERA del rail, a propósito: el enlace al presupuesto cuelga del rail y unas líneas pegadas a
+  // él se leerían como procedencia (`tests/scrum302-presupuesto-y-fotos.test.mjs`).
+  page.appendChild(pintarLineasDelAlbaran(alb, esc));
 
   // ── RAIL DE SOLO LECTURA ────────────────────────────────────────────────────────────────
   const rail = document.createElement('div');

@@ -51,7 +51,7 @@ async function invocar(req) {
  * en ninguno. Ya mordió una vez en A0.4 y no vuelve a morder aquí.
  */
 const ES_REAL = { id: 7, email: 'pro@fontaneria.es', country: 'ES', flags: null, defaultCurrency: 'EUR' };
-const ES_CON_FLAG = { ...ES_REAL, flags: { INVOICING_ES_ENABLED: true } };
+const ES_CON_FLAG = { ...ES_REAL, flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false };
 
 function montar(merchant, { customer = { id: 5 } } = {}) {
   const cap = { emitido: null, numeroPedido: false };

@@ -50,9 +50,10 @@
 // en una tienda falsa que aplica el filtro TAL Y COMO SE LO PASEN —igual que Postgres— y pregunta
 // como uno de ellos. Si el código olvidase el filtro, la tienda devolvería los del otro y el test
 // se pone rojo. Eso prueba el camino, no la prosa.
-import { ALBARAN_ESTADOS } from './albaran.service';
+import { ALBARAN_ESTADOS, calcAlbaranTotales, type AlbaranLinea } from './albaran.service';
 import { ESTADOS_COBRO, estadoCobroAlbaran, facturadoPorLinea } from './albaranFacturacion';
 import type { EstadoCobro, LineaAlbaran } from './albaranFacturacion';
+import { clienteDelDocumento } from '../../invoicing/domain/clienteCongelado'; // SCRUM-1650
 
 /** Los dos ejes, derivados de su fuente. El navegador los recibe; no los sabe de memoria. */
 export const EJES_ALBARAN = Object.freeze({
@@ -65,8 +66,11 @@ export interface FilaAlbaranListado {
   numero: string;
   /** Fecha de ENTREGA/visita (editable en borrador). */
   fecha: Date | string;
-  /** Fecha de EMISIÓN — `createdAt`. Son distintas a propósito (SCRUM-67). */
-  emisionAt: Date | string;
+  /**
+   * Fecha de EMISIÓN — `createdAt`. Son distintas a propósito (SCRUM-67). SCRUM-1669b: `null` para un
+   * BORRADOR, que todavía no se ha emitido; la lista pinta la raya de un dato ausente.
+   */
+  emisionAt: Date | string | null;
   estado: string;
   /**
    * SCRUM-372 · UN DATO, UN NOMBRE. Este derivado —`sin_facturar` · `parcial` · `facturado`, salido
@@ -88,6 +92,12 @@ export interface FilaAlbaranListado {
    * **por falta de dato**, que se pinta igual que «no hay nada que hacer» y significa lo contrario.
    */
   modoValoracion: 'VALORADO' | 'SIN_VALORAR';
+  /**
+   * SCRUM-1669 · el total del albarán (IVA incluido), con la regla del detalle: número para un
+   * VALORADO (`calcAlbaranTotales`, la misma aritmética por línea), `null` para un SIN_VALORAR —no
+   * un 0, que diría «vale cero» de algo que sólo no tiene precios—.
+   */
+  total: number | null;
   /** Misma forma que en el detalle. Aquí sólo importa SI EXISTE, así que viaja el id y nada más. */
   quote: { id: number } | null;
   clienteId: number | null;
@@ -158,6 +168,10 @@ export interface LectorListado {
     // SCRUM-831 · columna del propio albarán: sin ella la fila no sabe si su siguiente paso es
     // facturar lo entregado o convertirlo en factura contra el presupuesto.
     modoValoracion: string;
+    // SCRUM-1650 · el cliente CONGELADO al emitir (`albaranEmision.ts`). Obligatorio en el tipo a
+    // propósito: un lector que no lo pida no compila, en vez de caer a la ficha viva en silencio.
+    customerName: string | null;
+    customerLegalName: string | null;
   }>>;
   // SCRUM-831 · `quoteId` viaja con el Trabajo, que este listado ya carga en lote: cero consultas
   // nuevas. Decide si un albarán SIN precios tiene contra qué facturarse.
@@ -202,13 +216,19 @@ export async function listarAlbaranesDelMerchant(
   const filas: FilaAlbaranListado[] = albaranes.map((a) => {
     const job = jobs.get(a.jobId) ?? null;
     const customer = job ? customers.get(job.customerId) ?? null : null;
+    // SCRUM-1650 · el nombre del albarán es el que quedó escrito al EMITIRLO, no el de la ficha de
+    // hoy: renombrar al cliente no reescribe los partes que ya firmó. La regla es la de
+    // `clienteDelDocumento` (un borrador lleva las columnas a NULL y cae a la ficha), no una copia.
+    const delDocumento = a.customerName != null || customer
+      ? clienteDelDocumento(a, customer ? { name: customer.name ?? '', legalName: customer.legalName } : null)
+      : null;
     const lineas = (Array.isArray(a.lineas) ? a.lineas : []) as LineaAlbaran[];
     const facturado = facturadoPorLinea(libroPorAlbaran.get(a.id) ?? []);
     return {
       id: a.id,
       numero: a.numero,
       fecha: a.fecha,
-      emisionAt: a.createdAt,
+      emisionAt: a.estado === 'borrador' ? null : a.createdAt,
       estado: a.estado,
       estadoFacturacion: estadoCobroAlbaran(lineas, facturado, !!a.invoiceId),
       // ── SCRUM-831 · LOS DOS DATOS QUE LE FALTABAN A LA LISTA PARA SABER QUÉ TOCA ────────────
@@ -226,12 +246,14 @@ export async function listarAlbaranesDelMerchant(
       // Cero consultas nuevas: `modoValoracion` es columna del propio albarán y `quoteId` del
       // Trabajo, que este listado ya carga en lote.
       modoValoracion: a.modoValoracion === 'VALORADO' ? 'VALORADO' : 'SIN_VALORAR',
+      // SCRUM-1669 · el criterio del detalle (`albaran.service.ts`, `totales`), no uno propio.
+      total: a.modoValoracion === 'VALORADO' ? calcAlbaranTotales(lineas as unknown as AlbaranLinea[]).total : null,
       // La MISMA forma que manda el detalle (`quote: {id} | null`), para que el resolutor
       // compartido no tenga que traducir nada: una traducción sería el segundo sitio por donde
       // dos pantallas vuelven a separarse. Aquí sólo hace falta SI EXISTE, así que viaja el id.
       quote: job?.quoteId != null ? { id: job.quoteId } : null,
       clienteId: customer?.id ?? null,
-      cliente: customer?.legalName || customer?.name || null,
+      cliente: delDocumento?.legalName || delDocumento?.name || null,
       jobId: a.jobId,
       trabajo: job?.titulo || null,
     };

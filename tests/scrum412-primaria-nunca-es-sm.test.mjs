@@ -73,6 +73,11 @@ const DECLARADAS = {
   'jobsView.js:cobrarBtn':
     'FILA. El «Cobrar el resto» de cada trabajo terminado con saldo. Es el momento de dinero, '
     + 'pero va por fila: la pantalla no existe para cobrar UNO en concreto.',
+  // SCRUM-1700 · N1 FIRMADO (SCRUM-1686 c.21470): «Abrir parte», botón principal del trabajo EN
+  // CURSO. Mismo caso que `cobrarBtn`: la primaria de UNA fila, no la de la pantalla.
+  'jobsView.js:bParte':
+    'FILA. El «Abrir parte» de cada trabajo en curso: hay tantos como trabajos en obra, y la lista '
+    + 'tiene sentido completo sin él (su primaria de pantalla es «Nuevo trabajo»).',
   'signaturePad.js:okBtn':
     'MODAL de firma. ⚠️ DECLARADO CON DUDA, y se dice en vez de decidirlo solo: es un modal, pero '
     + 'lo pulsa el CLIENTE en una obra y es el momento más irrepetible del producto (SCRUM-404). '

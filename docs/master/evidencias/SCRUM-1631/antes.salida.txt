@@ -1,0 +1,42 @@
+## ANTES (06ad4f1bd, sin arreglo) · Postgres 16.14 loopback, UTF8, 33 tablas
+# sonda (el modo cap acabó en template_invalid: ver razones)
+{"modo":"not_configured","N":200,"razones":{"not_configured":200},"faltanAlVolver":174,"nuncaEn5s":0,"filasAlFinal":200,"retrasoMaxMs":24}
+{"modo":"cap","N":200,"razones":{"template_invalid: payment_request_es: body con 0 variables, Meta espera 4":200},"faltanAlVolver":164,"nuncaEn5s":0,"filasAlFinal":200,"retrasoMaxMs":26}
+# muerte del proceso al volver
+{"modo":"muerte-exit","N":30,"hijos":30,"salidas":{"0":30},"filasEscritas":0,"perdidas":30}
+{"modo":"muerte-sigterm","N":30,"hijos":30,"salidas":{"1":30},"filasEscritas":0,"perdidas":30}
+# scrum116 solo, un proceso por pasada
+{"modo":"ci","N":25,"verde":16,"premisaRota":9,"otroRojo":0,"ciego":0,"motivos":{"not_configured":16}}
+{"modo":"dry","N":25,"verde":24,"premisaRota":1,"otroRojo":0,"ciego":0,"motivos":{"customer_daily_cap":24}}
+# censo AST
+logFailure: 7 declaraciones · 32 llamadas · 341 ficheros de src/
+  decl 338 en sendWhatsAppTemplate asyncDecl=false
+  decl 683 en sendWhatsAppText asyncDecl=false
+  decl 769 en sendWhatsAppButtons asyncDecl=false
+  decl 874 en sendWhatsAppList asyncDecl=false
+  decl 988 en sendWhatsAppCtaUrl asyncDecl=false
+  decl 1080 en sendWhatsAppDocument asyncDecl=false
+  decl 1165 en sendWhatsAppLocationRequest asyncDecl=false
+  fnAsync=true espera=false valorUsado=false sigue=ReturnStatement: 31 · líneas 358,365,372,382,410,419,429,702,709,715,744,801,806,812,851,906,911,917,962,1020,1025,1031,1057,1112,1117,1123,1145,1197,1202,1208,1232
+  fnAsync=true espera=false valorUsado=false sigue=(fin): 1 · líneas 498
+escrituras del log: 18
+  340 recordWaMessage failed en logFailure espera=false
+  439 resolverReservaDePlantilla enviada en registrarEnviado espera=false
+  447 recordWaMessage sent en registrarEnviado espera=false
+  501 resolverReservaDePlantilla sin_respuesta en sendWhatsAppTemplate espera=false
+  504 resolverReservaDePlantilla rechazada en sendWhatsAppTemplate espera=false
+  544 recordWaMessage failed en sendWhatsAppWindowFirst espera=false
+  578 recordWaMessage sent en sendWhatsAppWindowFirst espera=false
+  685 recordWaMessage failed en logFailure espera=false
+  771 recordWaMessage failed en logFailure espera=false
+  784 recordWaMessage sent en logSent espera=false
+  876 recordWaMessage failed en logFailure espera=false
+  889 recordWaMessage sent en logSent espera=false
+  990 recordWaMessage failed en logFailure espera=false
+  1003 recordWaMessage sent en logSent espera=false
+  1082 recordWaMessage failed en logFailure espera=false
+  1095 recordWaMessage sent en logSent espera=false
+  1167 recordWaMessage failed en logFailure espera=false
+  1180 recordWaMessage sent en logSent espera=false
+envíos exportados: 8 (sendWhatsAppTemplate, sendWhatsAppWindowFirst, sendWhatsAppText, sendWhatsAppButtons, sendWhatsAppList, sendWhatsAppCtaUrl, sendWhatsAppDocument, sendWhatsAppLocationRequest) · llamadas a ellos en src/: 61
+siembra vista: 1 · llamadas DENTRO de $transaction: 0

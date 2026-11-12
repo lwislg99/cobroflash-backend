@@ -1,0 +1,74 @@
+POBLACION	casos=71	guard=D:\MILLONARIO\cobroFlash\wt-s5-2nov-medir\.claude\hooks\guard-dangerous.mjs	banco_intacto=true
+ok	herramienta	forma	familia	debe	visto	motivo
+ok 	PowerShell	D:/… (barra normal)	switch -c, arbol LIMPIO (legitimo)	deja	deja	
+ok 	PowerShell	D:/… (barra normal)	switch -c, arbol SUCIO	BLOQUEA	BLOQUEA	'git switch -c' CAMBIA la rama actual de un arbol que tiene cambios SI
+ok 	PowerShell	D:/… (barra normal)	reset --hard, arbol SUCIO	BLOQUEA	BLOQUEA	'git reset --hard' DESCARTA cambios sin commitear. Esto es lo que se p
+ok 	PowerShell	D:/… (barra normal)	> rastreado (relativa tras cd)	BLOQUEA	BLOQUEA	'> rastreado.txt' TRUNCA un fichero que ya existe y que git no ignora 
+MAL	PowerShell	D:/… (barra normal)	> rastreado (absoluta, sin cd)	BLOQUEA	deja	
+ok 	PowerShell	D:/… (barra normal)	worktree remove con junction (absoluta)	BLOQUEA	BLOQUEA	'<TMP>/banco-guard/conj' contiene u
+ok 	PowerShell	D:/… (barra normal)	rm -r con junction (absoluta)	BLOQUEA	BLOQUEA	'<TMP>/banco-guard/conj' contiene u
+MAL	PowerShell	D:\… (invertida, sin comillas)	switch -c, arbol LIMPIO (legitimo)	deja	BLOQUEA	'git switch -c' y NO se pudo comprobar el estado del arbol desde C:\Us
+ok 	PowerShell	D:\… (invertida, sin comillas)	switch -c, arbol SUCIO	BLOQUEA	BLOQUEA	'git switch -c' y NO se pudo comprobar el estado del arbol desde C:\Us
+ok 	PowerShell	D:\… (invertida, sin comillas)	reset --hard, arbol SUCIO	BLOQUEA	BLOQUEA	'git reset --hard' y NO se pudo comprobar el estado del arbol desde C:
+MAL	PowerShell	D:\… (invertida, sin comillas)	> rastreado (relativa tras cd)	BLOQUEA	deja	
+MAL	PowerShell	D:\… (invertida, sin comillas)	> rastreado (absoluta, sin cd)	BLOQUEA	deja	
+MAL	PowerShell	D:\… (invertida, sin comillas)	worktree remove con junction (absoluta)	BLOQUEA	deja	
+MAL	PowerShell	D:\… (invertida, sin comillas)	rm -r con junction (absoluta)	BLOQUEA	deja	
+ok 	PowerShell	"D:\…" (invertida, comillas dobles)	switch -c, arbol LIMPIO (legitimo)	deja	deja	
+ok 	PowerShell	"D:\…" (invertida, comillas dobles)	switch -c, arbol SUCIO	BLOQUEA	BLOQUEA	'git switch -c' CAMBIA la rama actual de un arbol que tiene cambios SI
+ok 	PowerShell	"D:\…" (invertida, comillas dobles)	reset --hard, arbol SUCIO	BLOQUEA	BLOQUEA	'git reset --hard' DESCARTA cambios sin commitear. Esto es lo que se p
+ok 	PowerShell	"D:\…" (invertida, comillas dobles)	> rastreado (relativa tras cd)	BLOQUEA	BLOQUEA	'> rastreado.txt' TRUNCA un fichero que ya existe y que git no ignora 
+MAL	PowerShell	"D:\…" (invertida, comillas dobles)	> rastreado (absoluta, sin cd)	BLOQUEA	deja	
+ok 	PowerShell	"D:\…" (invertida, comillas dobles)	worktree remove con junction (absoluta)	BLOQUEA	BLOQUEA	'<TMP>\banco-guard\conj' contiene u
+ok 	PowerShell	"D:\…" (invertida, comillas dobles)	rm -r con junction (absoluta)	BLOQUEA	BLOQUEA	'<TMP>\banco-guard\conj' contiene u
+ok 	PowerShell	'D:\…' (invertida, comillas simples)	switch -c, arbol LIMPIO (legitimo)	deja	deja	
+ok 	PowerShell	'D:\…' (invertida, comillas simples)	switch -c, arbol SUCIO	BLOQUEA	BLOQUEA	'git switch -c' CAMBIA la rama actual de un arbol que tiene cambios SI
+ok 	PowerShell	'D:\…' (invertida, comillas simples)	reset --hard, arbol SUCIO	BLOQUEA	BLOQUEA	'git reset --hard' DESCARTA cambios sin commitear. Esto es lo que se p
+ok 	PowerShell	'D:\…' (invertida, comillas simples)	> rastreado (relativa tras cd)	BLOQUEA	BLOQUEA	'> rastreado.txt' TRUNCA un fichero que ya existe y que git no ignora 
+MAL	PowerShell	'D:\…' (invertida, comillas simples)	> rastreado (absoluta, sin cd)	BLOQUEA	deja	
+ok 	PowerShell	'D:\…' (invertida, comillas simples)	worktree remove con junction (absoluta)	BLOQUEA	BLOQUEA	'<TMP>\banco-guard\conj' contiene u
+ok 	PowerShell	'D:\…' (invertida, comillas simples)	rm -r con junction (absoluta)	BLOQUEA	BLOQUEA	'<TMP>\banco-guard\conj' contiene u
+ok 	PowerShell	/d/… (MSYS)	switch -c, arbol LIMPIO (legitimo)	deja	deja	
+ok 	PowerShell	/d/… (MSYS)	switch -c, arbol SUCIO	BLOQUEA	BLOQUEA	'git switch -c' CAMBIA la rama actual de un arbol que tiene cambios SI
+ok 	PowerShell	/d/… (MSYS)	reset --hard, arbol SUCIO	BLOQUEA	BLOQUEA	'git reset --hard' DESCARTA cambios sin commitear. Esto es lo que se p
+ok 	PowerShell	/d/… (MSYS)	> rastreado (relativa tras cd)	BLOQUEA	BLOQUEA	'> rastreado.txt' TRUNCA un fichero que ya existe y que git no ignora 
+MAL	PowerShell	/d/… (MSYS)	> rastreado (absoluta, sin cd)	BLOQUEA	deja	
+MAL	PowerShell	/d/… (MSYS)	worktree remove con junction (absoluta)	BLOQUEA	deja	
+MAL	PowerShell	/d/… (MSYS)	rm -r con junction (absoluta)	BLOQUEA	deja	
+ok 	Bash	D:/… (barra normal)	switch -c, arbol LIMPIO (legitimo)	deja	deja	
+ok 	Bash	D:/… (barra normal)	switch -c, arbol SUCIO	BLOQUEA	BLOQUEA	'git switch -c' CAMBIA la rama actual de un arbol que tiene cambios SI
+ok 	Bash	D:/… (barra normal)	reset --hard, arbol SUCIO	BLOQUEA	BLOQUEA	'git reset --hard' DESCARTA cambios sin commitear. Esto es lo que se p
+ok 	Bash	D:/… (barra normal)	> rastreado (relativa tras cd)	BLOQUEA	BLOQUEA	'> rastreado.txt' TRUNCA un fichero que ya existe y que git no ignora 
+MAL	Bash	D:/… (barra normal)	> rastreado (absoluta, sin cd)	BLOQUEA	deja	
+ok 	Bash	D:/… (barra normal)	worktree remove con junction (absoluta)	BLOQUEA	BLOQUEA	'<TMP>/banco-guard/conj' contiene u
+ok 	Bash	D:/… (barra normal)	rm -r con junction (absoluta)	BLOQUEA	BLOQUEA	'<TMP>/banco-guard/conj' contiene u
+MAL	Bash	D:\… (invertida, sin comillas)	switch -c, arbol LIMPIO (legitimo)	deja	BLOQUEA	'git switch -c' y NO se pudo comprobar el estado del arbol desde C:\Us
+ok 	Bash	D:\… (invertida, sin comillas)	switch -c, arbol SUCIO	BLOQUEA	BLOQUEA	'git switch -c' y NO se pudo comprobar el estado del arbol desde C:\Us
+ok 	Bash	D:\… (invertida, sin comillas)	reset --hard, arbol SUCIO	BLOQUEA	BLOQUEA	'git reset --hard' y NO se pudo comprobar el estado del arbol desde C:
+MAL	Bash	D:\… (invertida, sin comillas)	> rastreado (relativa tras cd)	BLOQUEA	deja	
+MAL	Bash	D:\… (invertida, sin comillas)	> rastreado (absoluta, sin cd)	BLOQUEA	deja	
+MAL	Bash	D:\… (invertida, sin comillas)	worktree remove con junction (absoluta)	BLOQUEA	deja	
+MAL	Bash	D:\… (invertida, sin comillas)	rm -r con junction (absoluta)	BLOQUEA	deja	
+ok 	Bash	"D:\…" (invertida, comillas dobles)	switch -c, arbol LIMPIO (legitimo)	deja	deja	
+ok 	Bash	"D:\…" (invertida, comillas dobles)	switch -c, arbol SUCIO	BLOQUEA	BLOQUEA	'git switch -c' CAMBIA la rama actual de un arbol que tiene cambios SI
+ok 	Bash	"D:\…" (invertida, comillas dobles)	reset --hard, arbol SUCIO	BLOQUEA	BLOQUEA	'git reset --hard' DESCARTA cambios sin commitear. Esto es lo que se p
+ok 	Bash	"D:\…" (invertida, comillas dobles)	> rastreado (relativa tras cd)	BLOQUEA	BLOQUEA	'> rastreado.txt' TRUNCA un fichero que ya existe y que git no ignora 
+MAL	Bash	"D:\…" (invertida, comillas dobles)	> rastreado (absoluta, sin cd)	BLOQUEA	deja	
+ok 	Bash	"D:\…" (invertida, comillas dobles)	worktree remove con junction (absoluta)	BLOQUEA	BLOQUEA	'<TMP>\banco-guard\conj' contiene u
+ok 	Bash	"D:\…" (invertida, comillas dobles)	rm -r con junction (absoluta)	BLOQUEA	BLOQUEA	'<TMP>\banco-guard\conj' contiene u
+ok 	Bash	'D:\…' (invertida, comillas simples)	switch -c, arbol LIMPIO (legitimo)	deja	deja	
+ok 	Bash	'D:\…' (invertida, comillas simples)	switch -c, arbol SUCIO	BLOQUEA	BLOQUEA	'git switch -c' CAMBIA la rama actual de un arbol que tiene cambios SI
+ok 	Bash	'D:\…' (invertida, comillas simples)	reset --hard, arbol SUCIO	BLOQUEA	BLOQUEA	'git reset --hard' DESCARTA cambios sin commitear. Esto es lo que se p
+ok 	Bash	'D:\…' (invertida, comillas simples)	> rastreado (relativa tras cd)	BLOQUEA	BLOQUEA	'> rastreado.txt' TRUNCA un fichero que ya existe y que git no ignora 
+MAL	Bash	'D:\…' (invertida, comillas simples)	> rastreado (absoluta, sin cd)	BLOQUEA	deja	
+ok 	Bash	'D:\…' (invertida, comillas simples)	worktree remove con junction (absoluta)	BLOQUEA	BLOQUEA	'<TMP>\banco-guard\conj' contiene u
+ok 	Bash	'D:\…' (invertida, comillas simples)	rm -r con junction (absoluta)	BLOQUEA	BLOQUEA	'<TMP>\banco-guard\conj' contiene u
+ok 	Bash	/d/… (MSYS)	switch -c, arbol LIMPIO (legitimo)	deja	deja	
+ok 	Bash	/d/… (MSYS)	switch -c, arbol SUCIO	BLOQUEA	BLOQUEA	'git switch -c' CAMBIA la rama actual de un arbol que tiene cambios SI
+ok 	Bash	/d/… (MSYS)	reset --hard, arbol SUCIO	BLOQUEA	BLOQUEA	'git reset --hard' DESCARTA cambios sin commitear. Esto es lo que se p
+ok 	Bash	/d/… (MSYS)	> rastreado (relativa tras cd)	BLOQUEA	BLOQUEA	'> rastreado.txt' TRUNCA un fichero que ya existe y que git no ignora 
+MAL	Bash	/d/… (MSYS)	> rastreado (absoluta, sin cd)	BLOQUEA	deja	
+MAL	Bash	/d/… (MSYS)	worktree remove con junction (absoluta)	BLOQUEA	deja	
+MAL	Bash	/d/… (MSYS)	rm -r con junction (absoluta)	BLOQUEA	deja	
+MAL	PowerShell	D:/…	Remove-Item -Recurse con junction	BLOQUEA	deja	
+RECUENTO	casos=71	bien=48	mal=23

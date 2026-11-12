@@ -113,7 +113,7 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
     method: 'POST',
     path: '/auth/register',
     kind: 'no-sensitive-resource',
-    reason: 'alta cerrada (SCRUM-1515): responde siempre el mismo 409 registration_closed, sin leer la petición ni consultar ninguna cuenta; no hay :id en la URL',
+    reason: 'alta con invitación (SCRUM-1685): sólo los correos de REGISTRATION_INVITED_EMAILS crean SU propia cuenta; los demás (y todos con la lista vacía) reciben el mismo 409 registration_closed de SCRUM-1515 sin consultar ninguna cuenta; no hay :id en la URL',
   },
   { method: 'GET', path: '/auth/verify', kind: 'token', reason: 'AuthSession.token, 256 bits, un solo uso' },
   {

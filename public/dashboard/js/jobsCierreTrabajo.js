@@ -116,6 +116,22 @@ function avisoCierreTrabajo(job) {
   };
 }
 
+// ── SCRUM-1681 ② · ALBARÁN EMITIDO SIN FIRMAR ────────────────────────────────────────────────
+// Texto firmado n.º 4 (SCRUM-1656 c.21405) y su plural (SCRUM-1656 c.21408 ②c). Va APARTE de
+// CIERRE_TEXTOS a propósito: aquella tabla es la del saldo, fijada en scrum344 contra su propia firma
+// (SCRUM-1502); ésta se fija en scrum1681b contra la suya. Avisa y no bloquea: el albarán se queda
+// como está (se puede seguir enviando a firmar), y cerrar sigue siendo un clic.
+// Sólo cuenta `emitido`: un borrador no se ha enviado a nadie y un firmado ya está.
+function albaranesEmitidosSinFirmar(job) {
+  var lista = job && Array.isArray(job.albaranes) ? job.albaranes : [];
+  return lista.filter(function (a) { return a && a.estado === 'emitido'; }).length;
+}
+function textoAvisoSinFirmar(n) {
+  return n === 1
+    ? 'Este trabajo tiene ' + n + ' albarán sin firmar. Si lo cierras, se queda así.'
+    : 'Este trabajo tiene ' + n + ' albaranes sin firmar. Si lo cierras, se quedan así.';
+}
+
 // Doble vida: global para el <script> clásico del dashboard, y module.exports para que el guard
 // IMPORTE esta misma fuente en Node (una sola copia de la regla). `typeof` es seguro en ambos.
 if (typeof window !== 'undefined') {
@@ -124,6 +140,8 @@ if (typeof window !== 'undefined') {
   window.textoCierre = textoCierre;
   window.puedeCerrarTrabajo = puedeCerrarTrabajo;
   window.avisoCierreTrabajo = avisoCierreTrabajo;
+  window.albaranesEmitidosSinFirmar = albaranesEmitidosSinFirmar;
+  window.textoAvisoSinFirmar = textoAvisoSinFirmar;
 }
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -132,5 +150,7 @@ if (typeof module !== 'undefined' && module.exports) {
     textoCierre: textoCierre,
     puedeCerrarTrabajo: puedeCerrarTrabajo,
     avisoCierreTrabajo: avisoCierreTrabajo,
+    albaranesEmitidosSinFirmar: albaranesEmitidosSinFirmar,
+    textoAvisoSinFirmar: textoAvisoSinFirmar,
   };
 }

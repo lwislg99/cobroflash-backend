@@ -707,8 +707,12 @@ export function sesionesBloqueadas({ agentes, sinActividadMs }) {
 //     las mesas van ahí. Si alguien las mueve, el lanzamiento falla con esa frase y NO se rodea
 //     escribiendo la confianza a mano: la acepta el fundador.
 //
-// Sin `config.mesas` todo sigue como antes (hereda el `cwd`), pero el veredicto lo DICE: el interruptor
-// es añadir `mesas` a la instalación, y se da con el equipo parado.
+// Sin `config.mesas` la sesión arranca en `config.repo` (SCRUM-1298c), y el veredicto lo DICE: el
+// interruptor es añadir `mesas` a la instalación.
+//
+// SCRUM-1298d · con `mesas`, una mesa que no se puede preparar NO impide lanzar: la sesión arranca en
+// `config.repo`, COMO SIN MESAS, y el veredicto lo dice (`MESA-FALLIDA`, con el fallo y su motivo). Un
+// lanzador que no lanza es peor que una mesa vieja (orden del orquestador, 11-nov-2026).
 
 /**
  * Los dos ficheros que el generador de identidad de S0 (SCRUM-1295) escribe en la raíz de la mesa, sin
@@ -779,7 +783,8 @@ export function suciedadDeMesa(porcelana) {
 
 /**
  * Deja la mesa de `nombre` en `origin/main` recién traído, con su identidad escrita, y devuelve su
- * ruta. Cada paso que no se puede comprobar es un rechazo: el que llama NO lanza.
+ * ruta. Cada paso que no se puede comprobar es un rechazo: la mesa NO se da por buena (y desde
+ * SCRUM-1298d, `mesaDelLanzamiento` lanza entonces en `config.repo`, declarándolo).
  *
  *   1 · `git fetch origin main` en el repo      → sin eso, «actualizada» no significa nada
  *   2 · si no existe: `worktree add --detach`   → nace en origin/main
@@ -856,6 +861,11 @@ function nodeReal(cwd, args) {
  * dos veces porque `sesion.mjs` se corrió desde la carpeta de la instalación (`AppData/Local/yaqu-equipo`),
  * que no cuelga de ninguna carpeta de confianza, y `claude --bg` se niega ahí («Workspace not trusted»).
  * Sin `config.repo` no se lanza: no hay de dónde.
+ *
+ * SCRUM-1298d · FAIL-OPEN hacia lo de hoy: si `prepararMesa` no deja la mesa lista (fetch caído, mesa
+ * sucia, ajena, sin identidad, ruta no válida…), se lanza en `config.repo` y `mesa` lo DICE:
+ * `{ veredicto: 'MESA-FALLIDA', fallo, motivo, ruta }`. Sin `config.repo` tampoco hay a dónde caer, y
+ * se devuelve el fallo de la mesa tal cual (no se lanza).
  * @returns {{ok:true, cwd:string, mesa:object} | {ok:false, veredicto:string, motivo:string}}
  */
 export function mesaDelLanzamiento({ config, nombre, equipo, ...io }) {
@@ -866,7 +876,19 @@ export function mesaDelLanzamiento({ config, nombre, equipo, ...io }) {
     return { ok: true, cwd: config.repo, mesa: { veredicto: 'SIN-MESA', motivo: 'la instalación no declara `mesas`: la sesión arranca en el repositorio (`repo`), no en el cwd de quien la lanza (SCRUM-1298c)' } };
   }
   const p = prepararMesa({ config, nombre, equipo, ...io });
-  if (!p.ok) return p;
+  if (!p.ok) {
+    if (typeof config.repo !== 'string' || !config.repo) return p;
+    return {
+      ok: true,
+      cwd: config.repo,
+      mesa: {
+        veredicto: 'MESA-FALLIDA',
+        fallo: p.veredicto,
+        motivo: `la mesa no se pudo preparar (${p.veredicto}: ${p.motivo}): la sesión arranca en el repositorio (\`repo\`), como sin mesas (SCRUM-1298d)`,
+        ruta: p.mesa ?? null,
+      },
+    };
+  }
   return { ok: true, cwd: p.mesa, mesa: { veredicto: 'MESA', ruta: p.mesa, head: p.head, identidad: p.identidad } };
 }
 

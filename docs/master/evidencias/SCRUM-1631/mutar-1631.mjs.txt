@@ -1,0 +1,23 @@
+// SCRUM-1631 · Corre las mutaciones declaradas por el test con `aplicarUna` de la casa, sólo para este guard.
+// Se lanza desde la raíz del árbol, sin nada más escribiendo en él. Requiere dist/ al día.
+import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const raiz = process.cwd();
+const m = await import(pathToFileURL(path.join(raiz, 'scripts/meta-guard-mutaciones.mjs')).href);
+const guard = 'scrum1631-la-fila-del-fallo-se-espera.test.mjs';
+const codigo = fs.readFileSync(path.join(raiz, 'tests', guard), 'utf8');
+const muts = m.mutacionesDeclaradas(codigo, guard);
+console.log('exports', Object.keys(m).filter((k) => /correr|aplicar/i.test(k)).join(','), '· declaradas', muts.length);
+if (!muts.length) { console.log('CIEGO: 0 declaradas'); process.exit(2); }
+const limpia = await m.correr(guard);
+console.log('limpia', JSON.stringify({ pass: limpia.pass, fail: limpia.fail, code: limpia.code ?? limpia.status }).slice(0, 200));
+let vivas = 0, otras = 0;
+for (const mut of muts) {
+  const r = await m.aplicarUna(mut, guard, limpia);
+  console.log(`${r.ok ? 'MUERE' : 'NO-MUERE'} · ${mut.cae} · ${JSON.stringify(r).slice(0, 260)}`);
+  if (r.ok) vivas++; else otras++;
+}
+console.log(`declaradas ${muts.length} · cazadas ${vivas} · no cazadas ${otras}`);
+process.exit(otras ? 1 : 0);

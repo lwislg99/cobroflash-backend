@@ -156,6 +156,11 @@ export function filaDeTrabajoDirecto(
  * Sin presupuesto se titula con el CLIENTE, que es lo que SCRUM-317 ya dejo escrito como regla:
  * «mientras no lo ponga, la pantalla se titula con el cliente».
  *
+ * 🔴 SCRUM-1690 · y CON presupuesto, TAMBIEN con el cliente. Aqui seguia fabricandose
+ * «Presupuesto #N · cliente» para todo Trabajo con presupuesto, contra la misma regla de SCRUM-317
+ * (job.service.ts): el presupuesto es el documento de ORIGEN, no el nombre. Por eso la funcion ya no
+ * recibe el presupuesto: un nombre que no puede depender de el no tiene por que verlo.
+ *
  * ⚠️ Vive aqui y NO en linea dentro del serializador porque en linea solo se podia probar
  * leyendo el fuente — y un guard que compara texto pasa en verde en cuanto alguien reescribe la
  * expresion sin cambiar el defecto. Medido: la primera version de este guard hizo exactamente
@@ -163,17 +168,11 @@ export function filaDeTrabajoDirecto(
  */
 export function tituloDeTrabajo(entrada: {
   titulo?: string | null;
-  quote?: { quoteNumber?: number | string | null; id: number } | null;
   customer?: { name?: string | null } | null;
   jobId: number;
 }): string {
   if (entrada.titulo) return entrada.titulo;   // el que puso el profesional manda siempre
-  const cliente = entrada.customer?.name;
-  if (entrada.quote) {
-    const num = entrada.quote.quoteNumber ?? entrada.quote.id;
-    return `Presupuesto #${num}${cliente ? ` · ${cliente}` : ''}`;
-  }
-  return cliente || `#${entrada.jobId}`;
+  return entrada.customer?.name || `#${entrada.jobId}`;
 }
 
 /**

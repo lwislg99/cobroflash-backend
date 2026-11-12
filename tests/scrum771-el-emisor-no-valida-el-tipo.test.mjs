@@ -353,7 +353,7 @@ test('SCRUM-771 · el portón LANZA, y su error se distingue por código', () =>
 
 const MERCHANT_DOBLE = {
   id: 71, email: 'pro@ejemplo.invalid', country: 'ES',
-  flags: { INVOICING_ES_ENABLED: true }, defaultCurrency: 'EUR',
+  flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false, defaultCurrency: 'EUR',
   invoiceSeriesYear: 2026, nextInvoiceNumber: 7, invoiceSeriesPrefix: 'CF',
 };
 

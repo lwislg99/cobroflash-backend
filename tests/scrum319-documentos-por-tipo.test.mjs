@@ -257,7 +257,7 @@ test('SCRUM-319 · el rótulo y el reparto clasifican con la MISMA función', ()
 
 // ── LO QUE NO SE TOCA ───────────────────────────────────────────────────────────────────
 
-test('SCRUM-319 · «Incluir precios en el parte» sigue intacto: UNA casilla, dentro de la hoja de alta', () => {
+test('SCRUM-319 · la casilla de precios («Incluir precios en el albarán», N12 de SCRUM-1696) sigue intacta: UNA casilla, dentro de la hoja de alta', () => {
   // El ticket lo llamaba «Iniciar precio en el parte» y ese botón NO EXISTE: es una CASILLA, se
   // llama «Incluir precios en el parte» y escribe `modoValoracion` al crear el albarán. No se mueve
   // ni se renombra un control cuyo significado no está medido — esconder no es proteger.
@@ -278,10 +278,15 @@ test('SCRUM-319 · «Incluir precios en el parte» sigue intacto: UNA casilla, d
   // 🔒 «Dentro del parte» es esa hoja, NO el `ParteTrabajo` (com. 16142): llevar la casilla al
   // parte de verdad la ataría a un documento cuyo `modoValoracion` no gobierna. Si vuelve a
   // aparecer fuera de la hoja de alta, el recuento se pone en 2 y el test cae con su nombre.
-  const apariciones = (VISTA.match(/Incluir precios en el parte/g) || []).length;
+  //
+  // ── RE-ANCLAJE (SCRUM-1696) ────────────────────────────────────────────────────────────
+  // El rótulo pasa a «Incluir precios en el albarán» (N12, firmado SCRUM-1686 c.21470/c.21471).
+  // SCRUM-817 ya midió qué gobierna (el `modoValoracion` del ALBARÁN), que era la condición para
+  // renombrarlo. Cambia la palabra que se busca; la exigencia sigue igual: UNA, dentro de `buildAlbEditor`.
+  const apariciones = (VISTA.match(/Incluir precios en el albarán/g) || []).length;
   assert.equal(
     apariciones, 1,
-    `🔴 la casilla «Incluir precios en el parte» aparece ${apariciones} veces y es UNA, dentro de la ` +
+    `🔴 la casilla «Incluir precios en el albarán» aparece ${apariciones} veces y es UNA, dentro de la ` +
       'hoja de alta del albarán (`buildAlbEditor`). Si vuelve a haber otra —la barra de Documentos, el ' +
       'parte de trabajo— se está deshaciendo la decisión de SCRUM-917 com. 16142; y si desapareció, ' +
       'se perdió el único sitio donde el pro elige «con precios».',
@@ -298,7 +303,7 @@ test('SCRUM-319 · «Incluir precios en el parte» sigue intacto: UNA casilla, d
   assert.ok(editor, '🔴 ESCÁNER CIEGO: no encuentro `buildAlbEditor`; sin la función, «dentro de la hoja de alta» no significa nada.');
   const dentro = soloEjecutable(editor.getText(sf), { almohadillaEsComentario: false });
   assert.equal(
-    (dentro.match(/Incluir precios en el parte/g) || []).length, 1,
+    (dentro.match(/Incluir precios en el albarán/g) || []).length, 1,
     '🔴 la casilla ya no está DENTRO de la hoja de alta del albarán (`buildAlbEditor`). Es el único ' +
       'sitio que decidió SCRUM-917 com. 16142: fuera de ahí, el modo se elegiría en dos lugares.',
   );
