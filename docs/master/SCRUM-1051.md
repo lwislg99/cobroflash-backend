@@ -551,7 +551,7 @@ Rojo primero: las cuatro mutaciones de ② y la de ① con `aplicarUna` del cat�
 
 **Skill UI:** cargada (`yaqu-premium-ui`): una cabecera y una celda en la tabla que ya existe, con su mismo patrón; ningún token ni clase nueva.
 
-A9: aviso → cicatriz J1 «Crucé otra vez los 200k (223.865) sin medirme entre Jira (161.176) y la primera dirigida» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
+A9: aviso → cicatriz J1 «Crucé otra vez los 200k (223.865) sin medirme entre Jira (161.176) y la primera dirigida; lo avisé al medir, ya cruzados» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
 
 Rama `scrum-1051h-p5-y-libro`, hecha desde `scrum-1051g-isp-pdf-nif-libro` (`d582f545`, PR #3140, sin mergear al escribir esto): este PR lo contiene. Textos literales, copiados de Jira: P5 (c.21761) «Para facturar con inversión del sujeto pasivo, el cliente tiene que ser empresario o profesional.» · P3 (c.21750 punto 5) columna «ISP», valor «Sí». Registro de la firma: `docs/microcopy/2026-11-12-SCRUM-1051-isp.md`.
 
