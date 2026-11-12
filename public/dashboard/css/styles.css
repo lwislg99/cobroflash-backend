@@ -4455,6 +4455,37 @@ textarea.parte-linea-desc {
   .parte-bloque .parte-anadir,
   .parte-horas .parte-ahora { transition: none; }
 }
+
+/* SCRUM-1722b · ESCRITORIO (≥1024): el fundador, sobre lo desplegado, a 1280 — «se ve asi»: una hoja de
+   720 px centrada y dos márgenes vacíos más anchos que ella. El parte pasa a DOS COLUMNAS: a la izquierda
+   lo que se apunta, en su orden (datos, horas, dictado, mano de obra, materiales, volver); a la derecha,
+   las firmas, que cierran el parte y se quedan a la vista mientras se baja. Por debajo de 1024 no cambia
+   nada (móvil y tableta, una columna como hasta ahora). Sin texto nuevo, sin tocar el orden del DOM: el
+   tabulador recorre la izquierda y luego las firmas, que es el orden en que se lee.
+   La columna de firmas ocupa una sola casilla que ABARCA las filas de la izquierda (span 40): así las
+   tarjetas de la izquierda se apilan sin huecos, sea cual sea su número, y las filas que sobran miden 0.
+   Medido con la sonda (DOM ejecutado): a 1024 las dos columnas dejaban la izquierda en 344 px, y el parte
+   FIRMADO se encogía a su contenido (362 px a 1280, ya en prod) porque el contenedor no pedía ancho.
+   Por eso: de 1024 a 1199, UNA columna a todo el ancho; desde 1200, las dos. */
+@media (min-width: 1024px) {
+  *:has(> header.parte-cabecera) { width: 100%; max-width: 1120px; }
+}
+@media (min-width: 1200px) {
+  *:has(> header.parte-cabecera) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+    column-gap: 24px;
+    align-items: start;
+  }
+  *:has(> header.parte-cabecera) > * { grid-column: 1; min-width: 0; }
+  *:has(> header.parte-cabecera) > header.parte-cabecera { grid-column: 1 / -1; }
+  *:has(> header.parte-cabecera) > .parte-firmas {
+    grid-column: 2;
+    grid-row: 2 / span 40;
+    position: sticky;
+    top: calc(var(--topbar-h) + 16px);
+  }
+}
 /* ══ fin S4 · SCRUM-1722 ══ */
 /* Las tres fichas del tipo: 48 px de alto y la ficha entera recibe el toque. */
 .parte-tipo .parte-tipo-ficha {
