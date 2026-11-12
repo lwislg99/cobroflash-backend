@@ -191,6 +191,7 @@ nombre, email, provincia y las dos preguntas de domicilio, enviar, esperar la re
 - Fallos míos de esta tanda, en el banco y antes de dar cifras: un puerto fijo ya cogido por otra sesión
   (EADDRINUSE; ahora pide puertos libres al sistema) y un primer filtro de «recurso que falta» que contaba
   el 404 sembrado, el `favicon.ico` y el `401 /admin/me` del login: salió CIEGO, y lo acoté a recursos de pintado.
+- **Puesta al día (segundo relevo, 12-nov tarde, main `ff2af3368930614c693353c144e521d3c50e8bc5`):** #3106 entró en main, así que en el merge se quedan SU línea de `login.js` y SU `scrum1647c` (el «de paso» de ② cae) y esta rama sólo añade `alta.js`; el obligatorio de `2babe8ab8` cayó en `scrum1415` (el 1647c viejo; ya resuelto por main) y en `scrum1515`, test J3 gateado que no corrió aquí y leía el guion de `register.html`: ahora lee el HTML más el guion servido, sin tocar aserciones (sonda local: con el guion, la expresión pinta «Email inválido.»; sin él, CIEGO, que es el rojo de CI).
 
 # SCRUM-1647e · las tres páginas de pago en navegador real con la CSP de 1637 APLICADA (solo medición)
 
