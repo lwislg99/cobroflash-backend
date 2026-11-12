@@ -160,6 +160,7 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
   { method: 'POST', path: '/pay/bizum/:token/claimed', kind: 'token', reason: 'Charge.receiptToken' },
   { method: 'GET', path: '/pay/mp/:token', kind: 'token', reason: 'Charge.receiptToken' },
   { method: 'GET', path: '/pay/mp/:token/result', kind: 'token', reason: 'Charge.receiptToken' },
+  { method: 'GET', path: '/pay/js/pago.js', kind: 'no-sensitive-resource', reason: 'guion constante de las páginas de pago, sin datos (SCRUM-1647; línea de J2 por excepción firmada en c.21631)' },
 
   // ── /pay/quote y /quote — decisión del cliente (SCRUM-95). Quote.decisionToken,
   // mismo patrón que Charge.receiptToken/Albaran.firmaToken. Antes Quote.id crudo —
