@@ -1380,3 +1380,61 @@ para quien conteste c.21333 / SCRUM-1652.
   equipo de Luis).
 - yaqu.app: no abierto; nada cambia en pantalla. Suite entera en local: NO CORRIDA. Ninguna marca, guard ni número
   tocado.
+
+## SCRUM-1502s · Tramo 18 (J3, 12-nov-2026): las dos marcas ancladas a c.20514 dicen ya quién y cuándo — Javier, 23-oct
+
+**Medido contra:** `origin/main` = `2c52196fddfdee2f2875c38d51642785d2566812` · 2026-11-12T17:46:21Z (hora de GitHub)
+A9: aviso → cicatriz J3 «Volví a saltarme el punto fijo del arranque: entré directa a Jira y mi primera cifra (118.421) es la de después de leerlo, no la del arranque.» — no se pudo comprobar: cuándo se mide una sesión no deja rastro que un test del árbol lea
+
+### Qué dice c.20514 de verdad
+
+Leído hoy el ticket entero (37 comentarios de 37 declarados, descripción incluida). El CUERPO de c.20514 lo
+escribe una sesión («orquestador del equipo de Javier, cobroflash-backend-62 · 23-oct-2026 — transcribe las
+FIRMAS del fundador dadas en el chat») y dice «Javier **FIRMA LOS CINCO**»; la fila 4 son las nueve pestañas de
+`settingsSubmenus.js`. O sea: **quién = Javier; cuándo = 23-oct-2026; cómo = en el chat, transcrito por una
+sesión.** Las dos marcas que lo citaban (`settingsSubmenus.js:37` y `tests/scrum291-series-huecos.test.mjs:99`)
+decían otra persona y otra fecha (5-ago), que es lo que cazó c.21333 y volvió a medir c.21759.
+
+SCRUM-1652 no decide nada de estas dos (no están entre sus 39); de su registro se toma sólo la regla: la marca dice
+quién aprobó de verdad y el texto visible no cambia. Aquí sí consta quién, así que no va «no consta».
+
+### El cambio
+
+Sólo comentarios, mismas líneas (2 + 2, ninguna se mueve):
+
+| fichero:línea | ahora dice |
+|---|---|
+| `public/dashboard/js/settingsSubmenus.js:37-38` | aprobados por Javier el 23-oct-2026, en el chat; lo transcribió una sesión · consta en SCRUM-1502 c.20514 (orquestador `cobroflash-backend-62`) · marca corregida en SCRUM-1502s |
+| `tests/scrum291-series-huecos.test.mjs:99,102` | ídem |
+
+Control de «ni un carácter visible»: en `git diff -U0`, las líneas cambiadas que no empiezan por `*` o `//` son
+**0 de 8**.
+
+### Lo que mueve en el censo (`docs/master/evidencias/scrum1502j/niveles.mjs --compara`)
+
+Antes = árbol en `8928099fe`; después = esta rama con el cambio (la base avanzó luego a `2c52196fd`, que sólo trae
+el tramo 17 de este fichero).
+
+- guard `porNivel`: anclado **54 → 52**; negada 13, citada 1, rastreable 189, documental 12 y **sin-respaldo 11**
+  iguales. `congeladas` = 11, **idénticas como conjunto**.
+- marcas que afirman firma del fundador: 279 → 277. **SALEN exactamente las dos de arriba** (las dos estaban
+  `anclado`); `cambios=2`, ninguna otra cambia de nivel.
+- Por qué salen: dejan de atribuir la firma al fundador, que es lo que el censo busca. Eso es lo que la marca debe
+  decir (c.21333: «o la marca se corrige a "Javier, 23-oct", o se retira»); no se ha redactado para esquivar nada,
+  y ningún trinquete se mueve.
+
+### Verificación
+
+Antes del cambio, 6 ficheros (291, 921c, 1502h, 387×2, 1157): 67 de 67. Después: 67 de 67, 0 saltos, 0 caen (TAP
+a fichero, leído aparte). Con el registro escrito, 19 ficheros (237, 976, 1387×3, 267, 273, 1294, 1572, 525d, 291,
+921c, 921, 1502h, 387×2, 1157, 284×2): la primera pasada dio **180 de 182** — `scrum1294` y `scrum976` (que lo
+envuelve) cayeron porque mi `A9:` citaba sólo el principio de la cicatriz, y el guard exige la frase entera; se
+arregló la línea `A9:`, no el guard. Segunda pasada: **182 de 182**, 0 saltos. Build: `tsc --noCheck` sólo para tener `dist/`;
+en `src/` no cambia nada. Suite entera en local: NO CORRIDA. yaqu.app: no abierto, porque nada cambia en pantalla.
+
+### Lo que NO se ha hecho
+
+- `tests/scrum284-configuracion-submenus.test.mjs:136` lleva la gemela de esta marca sobre los mismos rótulos, con la
+  misma fecha de verano y sin localizador: es la 31 de SCRUM-1652 (clasificada ASESOR), que ese ticket corrige en su
+  tramo 2. No se toca aquí.
+- No se ha transicionado el ticket (A13).
