@@ -201,3 +201,30 @@ El ticket no trae lista de «Aceptación»; uso sus tres puntos de «Lo que se p
 | «Censar qué dice hoy `docs/legal/` sobre dónde viven los datos, dónde está alojado el producto, y qué transferencias internacionales declara. Por fichero y por línea.» | Este fichero, «El censo», tablas A a D. |
 | «Separar tres cosas» | Tablas A (cambia), B (sigue) y C (nunca se midió). Y una cuarta que el ticket no pedía: D (caducó por otra causa). |
 | «Proponer la redacción de las notas fechadas.» | Este fichero, «Las notas fechadas que propongo». **NO HECHO → aplicarlas:** espera la firma del fundador sobre los literales. |
+
+## SCRUM-1533b · Las cuatro notas fechadas, aplicadas con la firma del fundador (J5, jv-j5ar, 12-nov-2026)
+
+**Medido contra:** `origin/main` = `d8c441b9402cb21ea892afdf72f07b006294ba88` · 2026-11-12T11:04:11Z (cabecera `Date` de GitHub)
+
+A9: sin fallo que generalice — no me salió nada mal; el riesgo que vigilé (mover las citas a las líneas 49 y 201) lo medí a mano porque el par `AUDITLOG_FISCAL_CONTRATO.md # RGPD_TRATAMIENTO_DATOS.md` está congelado sin testigo en `scripts/_anclas-sin-testigo.congelado.mjs`, y ponerle testigo es trabajo de anclas, no de este ticket.
+
+Firma: SCRUM-1533 c.21593 (12-nov-2026), «Sí las firmo», sobre las cuatro notas de «Las notas fechadas que propongo». La quinta no se aplica. La fila «NO HECHO → aplicarlas» de la tabla de aceptación de arriba es del 13-oct y no se reescribe: este tramo es su respuesta.
+
+**Qué se hizo.** Las cuatro notas van al final de las líneas 73, 74, 86 y 320 de `docs/legal/RGPD_TRATAMIENTO_DATOS.md`; en 73 y 74, dentro de la última celda, antes del ` |` que la cierra. El texto no se tecleó: un script lo copió de las cuatro líneas `> **[Nota del 13-oct-2026, SCRUM-1533:**` de este registro, quitando sólo el `> ` inicial, y comprobó antes de escribir que cada línea destino terminaba con el texto que el registro describe. Las cuatro cuadraban; el fichero no se tocaba desde el 3-ago-2026 (`648ea1562`).
+
+**Comprobado, antes y después:**
+
+| Qué | Antes | Después |
+|---|---|---|
+| Líneas del fichero (`wc -l`) | 332 | 332 |
+| Bytes CR | 0 | 0 |
+| Líneas del diff | — | 4 cambiadas, 0 añadidas, 0 quitadas |
+| Línea 49 | `\| **ENCARGADO del tratamiento** (art. 28 RGPD) …` | la misma |
+| Línea 201 | `**[VALIDAR ASESOR antes de publicar]:** plazo de conservación exacto (§6) …` | la misma |
+| Notas del registro presentes byte a byte en el fichero | 0 de 4 | 4 de 4, en las líneas 73, 74, 86 y 320 |
+
+Positivo del recuento: el mismo filtro saca 4 notas del registro (si sacara otra cifra, el script se para con salida 2).
+
+**No tocado:** `public/privacidad.html`, el bloque de la política (97-199), la línea 204, `src/`, el máster.
+
+**No medido:** la tanda entera en local (con 10 sesiones a la vez, la hace el obligatorio de CI). Ningún test del repositorio cita SCRUM-1524: sus anclas viven en su evidencia, no en un guard, así que «el guard de 1524» del encargo no lo he corrido porque no existe como test.

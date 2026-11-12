@@ -9,6 +9,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { comercioSuprimido } from '../../domain/comercioSuprimido'; // SCRUM-1573b
 import { esc, formatMoneyEs } from '../../../../core/utils/utils';
+import { PAGO_JS, RUTA_PAGO_JS, cacheDelGuionDePago, etiquetaGuionDePago } from './pagoNavegador'; // SCRUM-1647 (CSP paso 2)
 import { isFlagEnabled } from '../../../../core/flags';
 import { bizumAutoDisponible } from '../../domain/bizumCharge'; // SCRUM-3
 import { cardChargeMode } from '../../domain/cardCharge'; // SCRUM-893
@@ -16,6 +17,14 @@ import { transferenciaDisponible } from '../../domain/transferenciaDisponible'; 
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 
 const router = Router();
+
+// SCRUM-1647 · el guion de las tres páginas de pago, servido desde 'self' (`script-src 'self'`). Dos
+// tramos de ruta: ningún `/<algo>/:token` de los routers de /pay lo pisa. `immutable` sólo con la huella buena.
+router.get(RUTA_PAGO_JS, (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  res.setHeader('Cache-Control', cacheDelGuionDePago(req.query?.v));
+  return res.send(PAGO_JS);
+});
 
 router.get('/invoice/:token', async (req, res) => {
   res.set('Cache-Control', 'no-store, must-revalidate');
@@ -161,9 +170,10 @@ router.get('/invoice/:token', async (req, res) => {
   // deja de pintarse donde no es cierto.
   const pasaPorStripe = ordered.some((mm) => mm.key === 'card' || mm.key === 'bizum_auto');
 
-  // Si el logo no carga (URL rota, file://…), se oculta y no rompe la landing
+  // Si el logo no carga (URL rota, file://…), se oculta y no rompe la landing: lo hace el guion de
+  // `pagoNavegador.ts` (SCRUM-1647), que escucha el `error` del `.logo-img` sin manejador en línea.
   const logoHtml = m?.logoUrl
-    ? `<img class="logo-img" src="${esc(m.logoUrl)}" alt="${business}" onerror="this.style.display='none'"/>`
+    ? `<img class="logo-img" src="${esc(m.logoUrl)}" alt="${business}"/>`
     : `<div class="logo-mark">${initial}</div>`;
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -176,6 +186,7 @@ router.get('/invoice/:token', async (req, res) => {
   <meta name="theme-color" content="#16a34a"/>
   <title>Pagar ${amount} — YaQu</title>
   <link rel="stylesheet" href="/fonts/inter.css"/>
+  ${etiquetaGuionDePago('factura')}
   <style>
     :root{--brand:#16a34a;--brand-bright:#22c55e;--brand-tint:#ecfdf5;--ink:#0f1c17;--body:#3f4a45;
       --muted:#6b756f;--bg:#f6f7f5;--surface:#fff;--border:#e7e9e5;--slate-50:#f7f8f6;}

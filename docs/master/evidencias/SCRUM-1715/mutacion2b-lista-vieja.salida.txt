@@ -1,0 +1,43 @@
+﻿✔ SCRUM-560 · SUELO: el censo VE los ficheros que levantan servidor propio (190.6166ms)
+✔ SCRUM-560 · AUTOPRUEBA: el detector caza el patrón y NO acusa a `node:http` (11.7567ms)
+✔ SCRUM-560 · ningún fichero NUEVO pide con `fetch` a su propio `app.listen(0)` (2074.499ms)
+✖ SCRUM-560 · la lista de los que ya estaban no puede quedarse vieja (1909.3862ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4584.1109
+
+✖ failing tests:
+
+test at tests\scrum560-patron-fetch-servidor.test.mjs:321:1
+✖ SCRUM-560 · la lista de los que ya estaban no puede quedarse vieja (1909.3862ms)
+  AssertionError [ERR_ASSERTION]: ✅ ESTOS YA NO USAN `fetch` SOBRE SU SERVIDOR: scrum1489-la-busqueda-recorta-al-tecnico.test.mjs, scrum912-leer-ticket-gasto.test.mjs
+  
+    Es una buena noticia y hay que ANOTARLA: quítalos de `CON_EL_PATRON_YA` en este mismo commit.
+    Una lista que sobrevive a su causa deja de ser una fecha y pasa a ser un permiso.
+  + actual - expected
+  
+  + [
+  +   'scrum1489-la-busqueda-recorta-al-tecnico.test.mjs',
+  +   'scrum912-leer-ticket-gasto.test.mjs'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests/scrum560-patron-fetch-servidor.test.mjs:324:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'scrum1489-la-busqueda-recorta-al-tecnico.test.mjs', 'scrum912-leer-ticket-gasto.test.mjs' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

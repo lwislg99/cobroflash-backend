@@ -552,3 +552,24 @@ El soportado sale del libro de recibidas del MISMO rango (tramo 1063b, líneas 1
 - Mutaciones en `MUTACIONES_QUE_ME_TUMBAN`, pasadas con `mutacionesDeclaradas`, `correr` y `aplicarUna` de `scripts/meta-guard-mutaciones.mjs` (el arnés de `docs/master/evidencias/SCRUM-1123f/arnes-mutaciones.mjs`): `Math.abs` en la base, `Math.abs` en la cuota y el filtro a `providerInvoiceDate`. Tumban las 3 su caso. `git status` después: sólo el fichero nuevo.
 - Dirigida, con los dos tramos de registro escritos: 52 ficheros (1063b-j, 1064c/d, 1077, 1077c, 1232, 1252/1252e/1252g, 295 ×2, 296 ×4, 297 ×4, 389 ×2, 411, 438 ×2, 377, 237, 976, 1387, 1294, 267, 273, 921, 921c, 387 ×2, 622, 719, 824, 824b ×2, 836, 419, 702, 700, 1415, 854). **467 casos, 461 pasan, 0 caen, 6 saltados** (`LIBRO_PG_URL`); suman. Los 7 de 1063j están en el TAP.
 - **Suite entera local: NO CORRIDA**: hace de tanda el obligatorio de CI. En yaqu.app no hay nada que ver (no hay pantalla del 303).
+
+## SCRUM-1063k · la aceptación 7, «documentos emitidos y libros intactos», fijada (solo test) (J1, jv-j1dt, 12-nov-2026)
+
+**Medido contra:** `origin/main` = `d8c441b9402cb21ea892afdf72f07b006294ba88` · 2026-11-12T11:01:46Z
+
+A9: comprobación → `tests/scrum1063k-303-emitidas-y-libros-intactos.test.mjs`
+
+**PASO 0.** Lo que pide el ticket, parte por parte, cruzado con main por contenido (Jira SCRUM-1063 c.21599, con la tabla entera). Construido: soportado y resultado (1063b), suplidos (1063c/d), 64 (1063c), S2 a la 122 (1063f), umbral de herramientas (1063h), R1 y gasto de otro periodo (1063j), marca «Borrador para tu asesor» (SCRUM-1065c). Bloqueado: 30/31 (N1, asesor, SCRUM-1264, c.20926); N2 condicionada; ❌ N3; la 99 fuera. Sin decidir: los cuatro comportamientos que 1063j dejó escritos y el aviso de recargo «no incluido» (texto nuevo, regla 39; hoy la emisión no calcula recargo: `recargoEquivalencia.ts` no tiene llamadores). Lo único construible sin decisión nueva era la aceptación 7: `grep` sobre los siete `tests/scrum1063*`, `scrum295-modelo-303*` y `scrum1077` no encontró ningún caso que mirara qué le hace el 303 a lo que lee.
+
+**Solo test.** `src/` no se toca. Cinco casos:
+- `leerModelo303` contra una base que APUNTA cada método pedido, de cualquier modelo y de la raíz: cero escrituras, con las lecturas de facturas y de gastos vistas como control positivo. La escritura se apunta y no se lanza, para que un `try/catch` del código no pueda tragarla.
+- Control sembrado del registrador: una `invoice.update` tragada en un `try/catch` y un `$executeRaw` se ven.
+- Las facturas emitidas y los gastos leídos salen iguales a una copia profunda tomada antes.
+- `construirModelo303` deja el libro y el de recibidas como entraron, sobre un trimestre con F1, R1, S2, suplido, herramienta apartada y gasto sin IVA.
+- Control sembrado de la comparación: un campo añadido y un orden cambiado se ven. Objetos congelados no: en el CommonJS de `dist/` sin `'use strict'` asignar a uno congelado se calla.
+
+### Medido
+
+- El test nuevo, 5 de 5 en verde: fija lo que el código hace hoy, y el rojo lo dan las mutaciones.
+- Mutaciones en `MUTACIONES_QUE_ME_TUMBAN`, con el arnés de `docs/master/evidencias/SCRUM-1123f/arnes-mutaciones.mjs`: una escritura en el lector, un campo añadido al libro en `construirModelo303` y `gastos.reverse()` en el lector de recibidas. Tumban las 3 su caso. `git status` después: sólo el fichero nuevo.
+- **Suite entera local: NO CORRIDA**: hace de tanda el obligatorio de CI. En yaqu.app no hay nada que ver (no hay pantalla del 303).

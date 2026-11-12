@@ -98,6 +98,10 @@
   /** Lo que el botón de ajustes dice cuando la línea es un suplido (en vez de «IVA 21 %»). */
   function resumenAjustes(marcada, ivaPerc, margenPerc) {
     if (marcada) return 'Suplido · sin IVA';
+    // SCRUM-1636 ① · el tipo con COMA decimal («IVA 7,5 %»), con el criterio de SCRUM-1608:
+    // `fmtTipoIvaEs` (api.js, que index.html carga antes que este fichero) recibe la fracción. Un
+    // entero sigue igual («IVA 21 %»). Sólo la suite, que carga este fichero suelto, no la tiene.
+    if (typeof fmtTipoIvaEs === 'function') ivaPerc = fmtTipoIvaEs(Number(ivaPerc) / 100);
     var partes = ['IVA ' + ivaPerc + ' %'];
     if (margenPerc > 0) partes.push('Margen ' + margenPerc + ' %');
     return partes.join(' · ');

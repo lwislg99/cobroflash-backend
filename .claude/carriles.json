@@ -1,7 +1,7 @@
 {
-  "_": "GENERADO por scripts/carriles.mjs desde docs/equipo/dos-equipos.md (sha256 a4d500f667ed). NO se edita a mano: se cambia la tabla y se regenera.",
+  "_": "GENERADO por scripts/carriles.mjs desde docs/equipo/dos-equipos.md (sha256 92a51b639323). NO se edita a mano: se cambia la tabla y se regenera.",
   "fuente": "docs/equipo/dos-equipos.md",
-  "sha": "a4d500f667ed",
+  "sha": "92a51b639323",
   "areas": {
     "S0": "consultoría y auditoría: «¿esto existe hoy?», filtro de las afirmaciones de SU orquestador, dueña de `00-normas-comunes.md`, `dos-equipos.md` y `trampas-del-entorno.md`",
     "S1": "servidor: importes, presupuestos, gastos, mantenimientos, y el servidor de todo lo que no sea de J1-J3",
@@ -1519,6 +1519,42 @@
       "motivo": "el `import` de `reintentoSellado.ts` y el bloque «reintento de sellado (cada minuto)», escritos por S1 (dueño) en SCRUM-1507 c.19344 §3, y sólo ese bloque (conformidad c.19344 §4); lo lleva el PR-2 de SCRUM-1404 del equipo de Javier por decisión del fundador (c.20220, opción 1). El resto del fichero sigue siendo de S1",
       "ticket": "SCRUM-1507",
       "linea": 257
+    },
+    {
+      "patron": "tests/scrum974-firmado-sin-facturar-en-el-lunes.test.mjs",
+      "quien": [
+        "J1"
+      ],
+      "motivo": "sólo la línea 60, el merchant de prueba con el flag encendido: `...(flags ? { flags } : {})` → `...(flags ? { flags, llevaLibrosPorSii: false } : {})`, sin tocar ninguna aserción, para que M (el SII en cada emisión) no lo deje sin emitir. Excepción firmada por el fundador en SCRUM-1585 c.21397, en el PR de 1585; el resto del fichero sigue siendo de S1",
+      "ticket": "SCRUM-1585",
+      "linea": 258
+    },
+    {
+      "patron": "public/register.html",
+      "quien": [
+        "S1"
+      ],
+      "motivo": "campos provincia + domicilio foral/Canarias del alta con invitación; reasignado por el fundador (SCRUM-1685 c.21436: «hagamos nosotros lo de javier»). Los literales, los ya firmados (SCRUM-1656 c.21408 ④); el resto del fichero sigue siendo de J3",
+      "ticket": "SCRUM-1685",
+      "linea": 259
+    },
+    {
+      "patron": "public/dashboard/js/teamView.js",
+      "quien": [
+        "S1"
+      ],
+      "motivo": "sólo el clic de «+ Añadir miembro»: consulta `GET /admin/team/plazas` y, con el plan lleno, enseña el mensaje del 409 `user_limit` (el literal ya servido, cero textos nuevos) en vez de abrir el formulario. Reasignado ENTERO al equipo de Luis por el fundador, pantalla incluida (SCRUM-1678 c.21462, camino A de c.21456); el resto del fichero sigue siendo de J3",
+      "ticket": "SCRUM-1678",
+      "linea": 260
+    },
+    {
+      "patron": "src/core/http/publicAccessDeclarations.ts",
+      "quien": [
+        "J2"
+      ],
+      "motivo": "sólo UNA línea: la declaración de `GET /pay/js/pago.js` (`no-sensitive-resource`), el guion de las páginas de pago que SCRUM-1647 saca del HTML (CSP paso 2). Excepción firmada por el fundador en SCRUM-1647 c.21631 («Sí, una línea»); el resto del fichero sigue siendo de S1",
+      "ticket": "SCRUM-1647",
+      "linea": 261
     }
   ]
 }

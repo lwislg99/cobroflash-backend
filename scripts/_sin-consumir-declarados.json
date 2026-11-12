@@ -135,7 +135,6 @@
     {"clave":"ruta · POST /admin/charges/:id/garantia","donde":"src/modules/billing/app/routes/chargesAdmin.routes.ts:114","carril":"J2","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /admin/charges/:id/garantia/liberar","donde":"src/modules/billing/app/routes/chargesAdmin.routes.ts:164","carril":"J2","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /admin/supresion/:merchantId","donde":"src/modules/system/app/routes/supresion.routes.ts:29","carril":"operación","ticket":"SCRUM-1185"},
-    {"clave":"export · src/modules/auth/domain/auth.service.ts::registerMerchant","donde":"src/modules/auth/domain/auth.service.ts:307","carril":"J3","ticket":"SCRUM-1515"},
     {"clave":"ruta · POST /auth/test-login","donde":"src/modules/auth/app/routes/auth.routes.ts:95","carril":"operación","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /schema-check","donde":"src/app.ts:328","carril":"operación","ticket":"SCRUM-1185"},
     {"clave":"ruta-inalcanzable · POST /admin/ai/quote-message","donde":"src/modules/ai/app/routes/ai.routes.ts:147","carril":"S2","ticket":"SCRUM-1182"},
@@ -219,6 +218,7 @@
     {"clave":"export · src/modules/invoicing/domain/reintentoSellado.ts::reintentarSelladosPendientes","motivo":"SCRUM-1507 (PR-2 de SCRUM-1404, J1): la importa la tarea programada «reintento de sellado (cada minuto)» de src/core/cron/cron.ts, bloque de S1 (SCRUM-1507 c.19344 §3)"},
     {"clave":"export · src/modules/invoicing/domain/reintentoSellado.ts::resumenDelReintento","motivo":"SCRUM-1507 (PR-2 de SCRUM-1404, J1): la importa la tarea programada «reintento de sellado (cada minuto)» de src/core/cron/cron.ts, bloque de S1 (SCRUM-1507 c.19344 §3)"},
     {"clave":"ruta · GET /admin/evidencias.zip","motivo":"SCRUM-1602: conectada en exportView.js (tarjeta «Paquete del trimestre», sólo en modo fiscal; año y trimestre de la tarjeta de emitidas)"},
-    {"clave":"cuerpo · POST /admin/invoices/bulk-paid::paidAt","motivo":"SCRUM-1618: conectada en invoicesView.js (el campo de fecha de la barra del lote, vía cuerpoConFechaDeCobro; solo viaja si se escribe una fecha)"}
+    {"clave":"cuerpo · POST /admin/invoices/bulk-paid::paidAt","motivo":"SCRUM-1618: conectada en invoicesView.js (el campo de fecha de la barra del lote, vía cuerpoConFechaDeCobro; solo viaja si se escribe una fecha)"},
+    {"clave":"export · src/modules/auth/domain/auth.service.ts::registerMerchant","motivo":"SCRUM-1685: conectada en auth.routes.ts (POST /auth/register vuelve a llamarla para los correos de REGISTRATION_INVITED_EMAILS; tramo a)"}
   ]
 }

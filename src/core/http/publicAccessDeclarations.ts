@@ -113,7 +113,7 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
     method: 'POST',
     path: '/auth/register',
     kind: 'no-sensitive-resource',
-    reason: 'alta cerrada (SCRUM-1515): responde siempre el mismo 409 registration_closed, sin leer la petición ni consultar ninguna cuenta; no hay :id en la URL',
+    reason: 'alta con invitación (SCRUM-1685): sólo los correos de REGISTRATION_INVITED_EMAILS crean SU propia cuenta; los demás (y todos con la lista vacía) reciben el mismo 409 registration_closed de SCRUM-1515 sin consultar ninguna cuenta; no hay :id en la URL',
   },
   { method: 'GET', path: '/auth/verify', kind: 'token', reason: 'AuthSession.token, 256 bits, un solo uso' },
   {
@@ -123,6 +123,12 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
     reason: 'triple cerradura: flag E2E_TEST_LOGIN_ENABLED + secreto timing-safe + allowlist de emails',
   },
   { method: 'POST', path: '/auth/logout', kind: 'no-sensitive-resource', reason: 'revoca solo la cookie propia del llamante' },
+  {
+    method: 'GET',
+    path: '/auth/js/login.js',
+    kind: 'no-sensitive-resource',
+    reason: 'guion estático de /login.html (SCRUM-1647c): cadena constante, sin datos de la petición ni de ningún merchant; no hay :id en la URL',
+  },
 
   // ── /quote — única ruta pública con sesión real (el resto del router, ver PENDING) ──
   {
@@ -158,6 +164,7 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
   { method: 'POST', path: '/pay/bizum/:token/claimed', kind: 'token', reason: 'Charge.receiptToken' },
   { method: 'GET', path: '/pay/mp/:token', kind: 'token', reason: 'Charge.receiptToken' },
   { method: 'GET', path: '/pay/mp/:token/result', kind: 'token', reason: 'Charge.receiptToken' },
+  { method: 'GET', path: '/pay/js/pago.js', kind: 'no-sensitive-resource', reason: 'guion constante de las páginas de pago, sin datos (SCRUM-1647; línea de J2 por excepción firmada en c.21631)' },
 
   // ── /pay/quote y /quote — decisión del cliente (SCRUM-95). Quote.decisionToken,
   // mismo patrón que Charge.receiptToken/Albaran.firmaToken. Antes Quote.id crudo —

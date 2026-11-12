@@ -15,6 +15,7 @@ import { sendWhatsAppTemplate, sendWhatsAppWindowFirst, uploadWhatsAppMedia } fr
 import { BASE_URL } from '../../../core/config/env'; // SCRUM-62
 import { buildAlbaranFirmado, buildAlbaranParaFirmar } from '../../../integrations/whatsappTemplates';
 import { ensureAlbaranPdf } from './albaran.service';
+import { clienteDelDocumento } from '../../invoicing/domain/clienteCongelado'; // SCRUM-1650c
 import { SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../lib/sendOutcome';
 
 // SCRUM-126: `status` distingue PRECONDICIÓN (nunca se intentó el envío — 404/409, el
@@ -34,7 +35,7 @@ export type AlbaranFirmadoSendResult =
 export async function sendAlbaranFirmadoWhatsApp(albaranId: number): Promise<AlbaranFirmadoSendResult> {
   const albaran = await prisma.albaran.findUnique({
     where: { id: albaranId },
-    select: { id: true, estado: true, jobId: true, merchantId: true },
+    select: { id: true, estado: true, jobId: true, merchantId: true, customerName: true }, // SCRUM-1650c: el nombre congelado
   });
   if (!albaran) return { ok: false, reason: 'not_found', message: 'Albarán no encontrado.', status: 404 };
   if (albaran.estado !== 'firmado') {
@@ -68,8 +69,13 @@ export async function sendAlbaranFirmadoWhatsApp(albaranId: number): Promise<Alb
   }
 
   const obra = (job.titulo || '').trim() || 'tu trabajo'; // {{3}} = Job.titulo (fallback no vacío: J7 rechaza var vacía)
+  // SCRUM-1650c · «Hola {{1}}» nombra al cliente que quedó ESCRITO en el albarán al emitirlo, no la
+  // ficha de hoy (regla de `clienteDelDocumento`: columnas a NULL = anterior al escritor → ficha).
+  // Sólo el NOMBRE: el número sigue saliendo de la ficha (`canalDeWhatsApp`, arriba). GO del
+  // fundador del 10-nov-2026 (docs/master/SCRUM-1650.md, tramo c).
+  const nombreDelDocumento = albaran.customerName != null || customer ? clienteDelDocumento(albaran, customer).name : '';
   const msg = buildAlbaranFirmado({
-    customerName: (customer?.name || '').trim() || 'cliente',
+    customerName: (nombreDelDocumento || '').trim() || 'cliente',
     albaranNumber: numero,
     obra,
     mediaId,
@@ -106,7 +112,7 @@ export async function sendAlbaranFirmadoWhatsApp(albaranId: number): Promise<Alb
 export async function sendAlbaranParaFirmarWhatsApp(albaranId: number): Promise<AlbaranFirmadoSendResult> {
   const albaran = await prisma.albaran.findUnique({
     where: { id: albaranId },
-    select: { id: true, estado: true, jobId: true, merchantId: true, numero: true, firmaToken: true },
+    select: { id: true, estado: true, jobId: true, merchantId: true, numero: true, firmaToken: true, customerName: true }, // SCRUM-1650c
   });
   if (!albaran) return { ok: false, reason: 'not_found', message: 'Albarán no encontrado.', status: 404 };
   if (albaran.estado !== 'emitido') {
@@ -133,8 +139,12 @@ export async function sendAlbaranParaFirmarWhatsApp(albaranId: number): Promise<
   await prisma.albaran.update({ where: { id: albaran.id }, data: { firmaToken: token, enviadoParaFirmaAt: new Date() } });
 
   const businessName = (merchant?.legalName || merchant?.name || '').trim() || 'Tu proveedor';
+  // SCRUM-1650c · el nombre del ALBARÁN (congelado al emitir), no el de la ficha de hoy: es el que
+  // saluda en la plantilla y en el texto de ventana, y el mismo que la página de firma propone
+  // firmar (SCRUM-1650b). Columnas a NULL = anterior al escritor → ficha. El número, de la ficha.
+  const nombreDelDocumento = albaran.customerName != null || customer ? clienteDelDocumento(albaran, customer).name : '';
   const msg = buildAlbaranParaFirmar({
-    customerName: (customer?.name || '').trim() || 'cliente',
+    customerName: (nombreDelDocumento || '').trim() || 'cliente',
     businessName,
     albaranNumber: albaran.numero,
     token,
@@ -156,7 +166,7 @@ export async function sendAlbaranParaFirmarWhatsApp(albaranId: number): Promise<
    * aprobada en Meta (cliente, empresa, número), sin añadir información que la plantilla no diga.
    */
   const enlaceFirma = `${BASE_URL}/albaran/${token}`;
-  const nombreCliente = (customer?.name || '').trim() || 'cliente';
+  const nombreCliente = (nombreDelDocumento || '').trim() || 'cliente'; // SCRUM-1650c
   const cuerpoVentana =
     `Hola ${nombreCliente} 👋
 ` +

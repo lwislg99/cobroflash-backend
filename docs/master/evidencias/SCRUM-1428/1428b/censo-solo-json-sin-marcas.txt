@@ -1,0 +1,67 @@
+población: 100 ficheros .js en public/ · 219 comentarios de convención (95 en objetos del censo, 124 FUERA DE ALCANCE) · 53 objetos · 353 hojas de texto
+APROBADO 320 · PENDIENTE 6 · SIN_COMENTARIO 27
+  SIN_COMENTARIO  public/dashboard/js/cobrosView.js · COBROS_COPY.cabeceras
+  SIN_COMENTARIO  public/dashboard/js/cobrosView.js · COBROS_COPY.diasEnTabla
+  SIN_COMENTARIO  public/dashboard/js/cobrosView.js · COBROS_COPY.diasSinCobrar
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.avisoAjenas
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.avisoIlegibles
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.avisoSinNumero
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.cargando
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.colBase
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.colCuota
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.colEstado
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.colFecha
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.colNumero
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.colTipo
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.colTotal
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.descuadre
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.error
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.menu
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.recuento
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.titulo
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.trazaAlbaran
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.trazaCobro
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.trazaNoSellado
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.trazaPresupuestoFirmado
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.trazaPresupuestoSinFirmar
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.vacioDeVerdad
+  SIN_COMENTARIO  public/dashboard/js/paidViaEtiquetas.js · ETIQUETAS_HEREDADAS.card:stripe
+  SIN_COMENTARIO  public/dashboard/js/paidViaEtiquetas.js · ETIQUETAS_HEREDADAS.manual
+  PENDIENTE       public/dashboard/js/settingsView.js · QR_COPY.color
+  PENDIENTE       public/dashboard/js/settingsView.js · QR_COPY.colorMarca
+  PENDIENTE       public/dashboard/js/settingsView.js · QR_COPY.colorNegro
+  PENDIENTE       public/dashboard/js/settingsView.js · QR_COPY.descargar
+  PENDIENTE       public/dashboard/js/settingsView.js · QR_COPY.formato
+  PENDIENTE       public/dashboard/js/settingsView.js · QR_COPY.tamano
+de las APROBADO, por firma de GRUPO (no en su línea): 176
+NUEVA  public/dashboard/js/libroRegistroView.js · COPY.colBase
+       texto del panel sin firma legible en el fuente. Mándalo a firmar (S4, regla 39) — y si YA está firmado, escribe encima `// APROBADO por <quién> el <fecha> (<referencia>)`, que es lo que lo saca de aquí. Sólo si de verdad queda pendiente, decláralo en «acusadas» de scripts/_censo-convenio-microcopy-declarados.json con su motivo.
+NUEVA  public/dashboard/js/libroRegistroView.js · COPY.colCuota
+       texto del panel sin firma legible en el fuente. Mándalo a firmar (S4, regla 39) — y si YA está firmado, escribe encima `// APROBADO por <quién> el <fecha> (<referencia>)`, que es lo que lo saca de aquí. Sólo si de verdad queda pendiente, decláralo en «acusadas» de scripts/_censo-convenio-microcopy-declarados.json con su motivo.
+NUEVA  public/dashboard/js/libroRegistroView.js · COPY.colEstado
+       texto del panel sin firma legible en el fuente. Mándalo a firmar (S4, regla 39) — y si YA está firmado, escribe encima `// APROBADO por <quién> el <fecha> (<referencia>)`, que es lo que lo saca de aquí. Sólo si de verdad queda pendiente, decláralo en «acusadas» de scripts/_censo-convenio-microcopy-declarados.json con su motivo.
+NUEVA  public/dashboard/js/libroRegistroView.js · COPY.colFecha
+       texto del panel sin firma legible en el fuente. Mándalo a firmar (S4, regla 39) — y si YA está firmado, escribe encima `// APROBADO por <quién> el <fecha> (<referencia>)`, que es lo que lo saca de aquí. Sólo si de verdad queda pendiente, decláralo en «acusadas» de scripts/_censo-convenio-microcopy-declarados.json con su motivo.
+NUEVA  public/dashboard/js/libroRegistroView.js · COPY.colNumero
+       texto del panel sin firma legible en el fuente. Mándalo a firmar (S4, regla 39) — y si YA está firmado, escribe encima `// APROBADO por <quién> el <fecha> (<referencia>)`, que es lo que lo saca de aquí. Sólo si de verdad queda pendiente, decláralo en «acusadas» de scripts/_censo-convenio-microcopy-declarados.json con su motivo.
+NUEVA  public/dashboard/js/libroRegistroView.js · COPY.colTipo
+       texto del panel sin firma legible en el fuente. Mándalo a firmar (S4, regla 39) — y si YA está firmado, escribe encima `// APROBADO por <quién> el <fecha> (<referencia>)`, que es lo que lo saca de aquí. Sólo si de verdad queda pendiente, decláralo en «acusadas» de scripts/_censo-convenio-microcopy-declarados.json con su motivo.
+NUEVA  public/dashboard/js/libroRegistroView.js · COPY.colTotal
+       texto del panel sin firma legible en el fuente. Mándalo a firmar (S4, regla 39) — y si YA está firmado, escribe encima `// APROBADO por <quién> el <fecha> (<referencia>)`, que es lo que lo saca de aquí. Sólo si de verdad queda pendiente, decláralo en «acusadas» de scripts/_censo-convenio-microcopy-declarados.json con su motivo.
+NUEVA  public/dashboard/js/libroRegistroView.js · COPY.error
+       texto del panel sin firma legible en el fuente. Mándalo a firmar (S4, regla 39) — y si YA está firmado, escribe encima `// APROBADO por <quién> el <fecha> (<referencia>)`, que es lo que lo saca de aquí. Sólo si de verdad queda pendiente, decláralo en «acusadas» de scripts/_censo-convenio-microcopy-declarados.json con su motivo.
+NUEVA  public/dashboard/js/libroRegistroView.js · COPY.recuento
+       texto del panel sin firma legible en el fuente. Mándalo a firmar (S4, regla 39) — y si YA está firmado, escribe encima `// APROBADO por <quién> el <fecha> (<referencia>)`, que es lo que lo saca de aquí. Sólo si de verdad queda pendiente, decláralo en «acusadas» de scripts/_censo-convenio-microcopy-declarados.json con su motivo.
+NUEVA  public/dashboard/js/libroRegistroView.js · COPY.titulo
+       texto del panel sin firma legible en el fuente. Mándalo a firmar (S4, regla 39) — y si YA está firmado, escribe encima `// APROBADO por <quién> el <fecha> (<referencia>)`, que es lo que lo saca de aquí. Sólo si de verdad queda pendiente, decláralo en «acusadas» de scripts/_censo-convenio-microcopy-declarados.json con su motivo.
+NUEVA  public/dashboard/js/libroRegistroView.js · COPY.trazaAlbaran
+       texto del panel sin firma legible en el fuente. Mándalo a firmar (S4, regla 39) — y si YA está firmado, escribe encima `// APROBADO por <quién> el <fecha> (<referencia>)`, que es lo que lo saca de aquí. Sólo si de verdad queda pendiente, decláralo en «acusadas» de scripts/_censo-convenio-microcopy-declarados.json con su motivo.
+NUEVA  public/dashboard/js/libroRegistroView.js · COPY.trazaCobro
+       texto del panel sin firma legible en el fuente. Mándalo a firmar (S4, regla 39) — y si YA está firmado, escribe encima `// APROBADO por <quién> el <fecha> (<referencia>)`, que es lo que lo saca de aquí. Sólo si de verdad queda pendiente, decláralo en «acusadas» de scripts/_censo-convenio-microcopy-declarados.json con su motivo.
+NUEVA  public/dashboard/js/libroRegistroView.js · COPY.trazaPresupuestoFirmado
+       texto del panel sin firma legible en el fuente. Mándalo a firmar (S4, regla 39) — y si YA está firmado, escribe encima `// APROBADO por <quién> el <fecha> (<referencia>)`, que es lo que lo saca de aquí. Sólo si de verdad queda pendiente, decláralo en «acusadas» de scripts/_censo-convenio-microcopy-declarados.json con su motivo.
+NUEVA  public/dashboard/js/libroRegistroView.js · COPY.trazaPresupuestoSinFirmar
+       texto del panel sin firma legible en el fuente. Mándalo a firmar (S4, regla 39) — y si YA está firmado, escribe encima `// APROBADO por <quién> el <fecha> (<referencia>)`, que es lo que lo saca de aquí. Sólo si de verdad queda pendiente, decláralo en «acusadas» de scripts/_censo-convenio-microcopy-declarados.json con su motivo.
+NUEVA  public/dashboard/js/libroRegistroView.js · COPY.vacioDeVerdad
+       texto del panel sin firma legible en el fuente. Mándalo a firmar (S4, regla 39) — y si YA está firmado, escribe encima `// APROBADO por <quién> el <fecha> (<referencia>)`, que es lo que lo saca de aquí. Sólo si de verdad queda pendiente, decláralo en «acusadas» de scripts/_censo-convenio-microcopy-declarados.json con su motivo.
+trinquete: 15 nuevas · 0 que sobran · 33 acusadas · 176 aprobadas por grupo

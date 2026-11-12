@@ -10,7 +10,7 @@
  * además colisionaban entre merchants al ser `number` único global.
  */
 import { Prisma } from '@prisma/client';
-import { getEmissionMode } from './emission.service';
+import { getEmissionMode, motivoSiiSinEmision } from './emission.service';
 import { isFlagEnabled } from '../../../core/flags';
 import { recordAuditOrThrow, sobreFiscal, type ActorAudit } from '../../system/audit.service';
 // SCRUM-780: el formato del número nuevo sale del sitio único, el mismo que compone P y AB.
@@ -383,6 +383,9 @@ export async function allocateInvoiceNumber(
       // fiscal con numeración de justificante, fuera de serie. Para merchants sin override (todos
       // hoy, flags null) el comportamiento es IDÉNTICO al previo.
       flags: true,
+      // SCRUM-1585: y por lo mismo el SII — con el flag ON y el SII en «Sí» o «No consta» el
+      // modo es `receipt`, y aquí se rechaza con SU código, no con `invoicing_es_disabled`.
+      llevaLibrosPorSii: true,
       // SCRUM-735: el AÑO de la serie sale de la zona de ESTE merchant (`zonaDelMerchant`), no
       // del reloj del proceso — ver el `year` de abajo.
       timezone: true,
@@ -446,7 +449,9 @@ export async function allocateInvoiceNumber(
   // y SCRUM-825 lo retiró después con firma del fundador (comentario 17446, D1). Esta rama no
   // cambió con esa retirada: sigue rechazando igual.
   if (getEmissionMode(m) === 'receipt') {
-    throw new Error('invoicing_es_disabled');
+    // SCRUM-1585: si lo que lo deja en `receipt` es el SII, el error lo dice (`sii_declarado` /
+    // `sii_no_consta`); con el flag apagado sigue siendo `invoicing_es_disabled`.
+    throw new Error(motivoSiiSinEmision(m) ?? 'invoicing_es_disabled');
   }
   const sameYear = m.invoiceSeriesYear === year;
 

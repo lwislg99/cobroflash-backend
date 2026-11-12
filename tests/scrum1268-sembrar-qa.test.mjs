@@ -107,12 +107,17 @@ function panel({ me = { merchantId: MERCHANT_QA, isOwner: true, merchantName: 'P
     if (r && m === 'POST') {
       const previo = s.albaranes.find((a) => a.clave === cuerpo.claveIdempotencia);
       if (previo) return resp(200, { ...previo, idempotencia: idempotencia || 'repetida' });
-      const a = { id: ++id, numero: `ALB-${id}`, jobId: Number(r[1]), estado: 'borrador', clave: cuerpo.claveIdempotencia };
+      const a = { id: ++id, numero: `ALB-${id}`, jobId: Number(r[1]), estado: 'borrador', clave: cuerpo.claveIdempotencia, lineas: cuerpo.lineas ?? [] };
       s.albaranes.push(a);
       return resp(201, { ...a, idempotencia: idempotencia || 'aplicada' });
     }
     r = u.pathname.match(/^\/admin\/albaranes\/(\d+)\/emitir$/);
-    if (r && m === 'POST') { const a = s.albaranes.find((x) => x.id === Number(r[1])); s.emisiones++; a.estado = 'emitido'; return resp(200, a); }
+    if (r && m === 'POST') {
+      const a = s.albaranes.find((x) => x.id === Number(r[1]));
+      // SCRUM-1673: como el servidor, un borrador SIN líneas no se emite (409 albaran_sin_lineas).
+      if (a.estado !== 'emitido' && (!Array.isArray(a.lineas) || a.lineas.length === 0)) return resp(409, { error: 'albaran_sin_lineas' });
+      s.emisiones++; a.estado = 'emitido'; return resp(200, a);
+    }
     if (clave === 'GET /admin/partes') return resp(200, { partes: s.partes });
     if (clave === 'POST /admin/partes') { const p = { id: ++id, numero: `PT-${id}`, jobId: cuerpo.jobId, estado: 'borrador' }; s.partes.push(p); return resp(201, p); }
     // Presupuestos (SCRUM-1268b): la lista NO trae cabecera ni pie, como la de verdad; el detalle sí.
