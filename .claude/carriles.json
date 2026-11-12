@@ -1,7 +1,7 @@
 {
-  "_": "GENERADO por scripts/carriles.mjs desde docs/equipo/dos-equipos.md (sha256 eb38eb33e176). NO se edita a mano: se cambia la tabla y se regenera.",
+  "_": "GENERADO por scripts/carriles.mjs desde docs/equipo/dos-equipos.md (sha256 9501f94d3b9e). NO se edita a mano: se cambia la tabla y se regenera.",
   "fuente": "docs/equipo/dos-equipos.md",
-  "sha": "eb38eb33e176",
+  "sha": "9501f94d3b9e",
   "areas": {
     "S0": "consultoría y auditoría: «¿esto existe hoy?», filtro de las afirmaciones de SU orquestador, dueña de `00-normas-comunes.md`, `dos-equipos.md` y `trampas-del-entorno.md`",
     "S1": "servidor: importes, presupuestos, gastos, mantenimientos, y el servidor de todo lo que no sea de J1-J3",
@@ -1539,13 +1539,22 @@
       "linea": 259
     },
     {
+      "patron": "src/core/http/publicAccessDeclarations.ts",
+      "quien": [
+        "J3"
+      ],
+      "motivo": "sólo DOS líneas: las declaraciones de `GET /auth/js/login.js` y `GET /auth/js/alta.js` (`no-sensitive-resource`), los guiones de `/login.html` y `/register.html` que SCRUM-1647c/d sacan del HTML (CSP paso 2). Con la misma firma, en `tests/scrum1685-formulario-de-alta.test.mjs`, `tests/scrum264-copy-que-llega-al-cliente.test.mjs` y `tests/scrum336-atribucion-sin-almacenamiento.test.mjs` sólo cambia DÓNDE leen el guion, ninguna aserción. Excepción firmada por el fundador en SCRUM-1647 c.21658 («Sí»); el resto del fichero sigue siendo de S1",
+      "ticket": "SCRUM-1647",
+      "linea": 260
+    },
+    {
       "patron": "public/dashboard/js/teamView.js",
       "quien": [
         "S1"
       ],
       "motivo": "sólo el clic de «+ Añadir miembro»: consulta `GET /admin/team/plazas` y, con el plan lleno, enseña el mensaje del 409 `user_limit` (el literal ya servido, cero textos nuevos) en vez de abrir el formulario. Reasignado ENTERO al equipo de Luis por el fundador, pantalla incluida (SCRUM-1678 c.21462, camino A de c.21456); el resto del fichero sigue siendo de J3",
       "ticket": "SCRUM-1678",
-      "linea": 260
+      "linea": 261
     }
   ]
 }

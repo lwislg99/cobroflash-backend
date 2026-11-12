@@ -197,8 +197,9 @@ function banco({ search = '', loginResponde = { ok: true, status: 200, cuerpo: {
     document: {
       getElementById: (id) => {
         if (id === 'countdown') {
-          const m = nodos['resend-row']._html.match(/<strong id="countdown">([^<]*)<\/strong>/);
-          return m ? { set textContent(v) { nodos['resend-row']._html = nodos['resend-row']._html.replace(/(<strong id="countdown">)[^<]*/, `$1${v}`); } } : null;
+          // `[^>]*>` y no el `>` pegado: lo exige scrum553 (de paso, SCRUM-1647d).
+          const m = nodos['resend-row']._html.match(/<strong id="countdown"[^>]*>([^<]*)<\/strong>/);
+          return m ? { set textContent(v) { nodos['resend-row']._html = nodos['resend-row']._html.replace(/(<strong id="countdown"[^>]*>)[^<]*/, `$1${v}`); } } : null;
         }
         return nodos[id] || null;
       },

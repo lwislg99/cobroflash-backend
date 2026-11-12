@@ -123,6 +123,8 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
     reason: 'triple cerradura: flag E2E_TEST_LOGIN_ENABLED + secreto timing-safe + allowlist de emails',
   },
   { method: 'POST', path: '/auth/logout', kind: 'no-sensitive-resource', reason: 'revoca solo la cookie propia del llamante' },
+  { method: 'GET', path: '/auth/js/login.js', kind: 'no-sensitive-resource', reason: 'guion constante de /login.html, sin datos (SCRUM-1647c; línea de J3 por excepción firmada en c.21658)' },
+  { method: 'GET', path: '/auth/js/alta.js', kind: 'no-sensitive-resource', reason: 'guion constante de /register.html, sin datos (SCRUM-1647d; línea de J3 por excepción firmada en c.21658)' },
 
   // ── /quote — única ruta pública con sesión real (el resto del router, ver PENDING) ──
   {
