@@ -1966,3 +1966,22 @@ Rama `scrum-665e-pdf-persistente`, sólo local, con `origin/main` mergeado (`58f
 **Mi error (A9):** crucé los 200k de contexto (219.836) antes de acabar el encargo. Me medí al acabar el arranque (134k) y en Jira (142k), y no volví a mirar hasta acabar los tres tests.
 
 A9: aviso → cicatriz J1 «Crucé los 200k de contexto antes de acabar el encargo: me medí al acabar el arranque (134k) y Jira (142k) y no volví a mirar hasta acabar tres tests; avisé a 219.836» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
+
+# APÉNDICE (I) · SCRUM-665e · 12-nov-2026 · J1 (jv-j1dk, relevo 5) · 523d recongelado, tipos y mutaciones en verde, 7 rojos en la dirigida. SIN EMPUJAR
+
+**Medido contra:** `origin/main` = `4eea7720bae9c2584a2d2312358d0566f779f1a5` · 2026-11-12T10:53:47Z
+
+A9: aviso → cicatriz J1 «Lancé `scripts/censo-guards-navegador.mjs --help` sin leerlo: no tiene ayuda, arrancó los 39 guards de navegador y lo paré pasados 120 s; un script de la casa se lee antes de lanzarlo» — no se pudo comprobar: lo impediría un hook sobre la orden, y los hooks no son de este puesto
+
+- **scrum523d:** se recongela `selladoEstado.ts` (`f08728ab84b81ba2` → `20d30195b1a909a2`, lo que imprime el guard), sin subir `VERIFACTU_VERSION`, por la vía de SCRUM-1585 c.21290 y la orden de SCRUM-665 c.21584 ③. El comentario del bloque congelado lo cita. Los demás 14 ficheros del camino no cambian. 7/7.
+- **`tsc -p .` con tipos: salida 0**, con el cliente de Prisma generado FUERA del árbol (en el tmp del trabajo) y `paths` apuntando `@prisma/client` a él. Control: el mismo `tsc` contra el cliente compartido da los 4 errores de `pdfSha256`. La huella de `node_modules/.prisma/client/index.d.ts` compartido es la misma antes y después (`1b3169375f8feadb`). La función de `dirs.ts` de S1 (c.21564) no hace falta para compilar.
+- **Mutaciones**, con `docs/master/evidencias/SCRUM-1123f/arnes-mutaciones.mjs` (`aplicarUna` de la casa), sobre `dist/` recompilado: `scrum1404g` 13 pasan limpia, 9 de 9 vivas; `scrum1510b` 4 limpia, 2 de 2; `scrum1330` 16 limpia, 1 de 1. Árbol limpio después de cada pasada.
+- **Guards de navegador de `invoiceDetailView.js`:** ninguno. `grep` de `invoiceDetailView` en `scripts/guard-*.mjs` da 0; el mismo `grep` sí la ve en `scripts/censo-decisiones-encerradas.mjs` (control).
+- **Dirigida:** 73 ficheros (los que nombran la vista, el registro de acciones, `regenerate-pdf`, `ensureInvoicePdf` o `selladoEstado`; los tests que cambia la rama; scrum237, 976, 1387, 1294, 267, 273, 622 y 811c), 628 casos: 615 pasan, **7 caen**, 6 saltan (`LIBRO_PG_URL`/`QA_DB_TEST`). Los 7 son de esta rama (leído en su mensaje; NO corridos contra `main`):
+  1. `scrum1142` SUELO: CIEGO, el «⋯» de la ficha en pending tiene un solo ítem (era `btnRegen` el hermano).
+  2. `scrum206` (b): consumidor nuevo de `ensureInvoicePdf` en `selladoEstado.ts`; el guard pide DECIDIR qué hace ese camino con el rechazo del portón.
+  3. `scrum283-censo-acciones-factura`: deriva 8 acciones y espera 9.
+  4. `scrum525d` (2 casos): 4 anclas `fichero:línea` resuelven pero apuntan a otra cosa; una es `docs/legal/AUDITORIA_CAMINO_EMISION.md:36` → `prisma/schema.prisma:931-932`.
+  5. `scrum577`: en `src/lib/invoicing.ts`, 1 de 2 caminos pasa el cliente por `clienteDelDocumento`.
+  6. `scrum762-el-pdf-emitido-se-rehace`: el fichero entero sale `not ok` (su premisa es la que el GO c.21182 cambia).
+- **NO hecho:** los 7 rojos de arriba; `guards:entrada`; suite entera local (NO CORRIDA); las líneas de S1 (c.21564); generar AL EMITIR en los otros caminos. `yaqu-premium-ui` no cargada: esta tanda no toca la vista.
