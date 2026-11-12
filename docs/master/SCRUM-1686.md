@@ -386,3 +386,22 @@ lo decide `seesOnlyOwnJobs` (`:56`) y, para la pertenencia a un Trabajo, `esSuyo
 - **Q3** · Texto para el Inicio del operario en vez de «tu negocio» (propuesta mía, SIN firmar: «Esto es lo que
   tienes hoy.»), y si su primer bloque pasa a ser su trabajo de hoy.
 - (sigue abierta, de S0) el «hoy» del borrador de parte: zona del merchant o Madrid.
+
+## APÉNDICE · SCRUM-1686 H4 · EL INICIO DEL OPERARIO, construido · S2 · 12-nov-2026
+
+**Medido contra:** `origin/main` = `acac25dbac0dbb870f6dbda9f240df3664326c2d` · 2026-11-12T08:08:34Z (cabecera `Date:` de `gh api -i zen`) · **Rama:** `scrum-1686h4-inicio-operario` · **Carril:** S2 (`homeView.js`); `jobsView.js` es de S4 y NO se toca: se LLAMA.
+
+**Autorización (regla 39), las dos firmas del fundador del 11-nov-2026 en este ticket, literales:**
+- **c.21549** (Q3 de arriba): «Sí a los dos — Firma el texto "Esto es lo que tienes hoy." y el primer bloque pasa a ser su trabajo de hoy.»
+- **c.21551**: «Sí, los mismos — "Para hoy" · "N trabajos"/"1 trabajo" · "Nada para hoy." se usan tal cual en el bloque del Inicio del operario. Mismo significado, misma palabra en las dos pantallas.» Extiende EXPRESAMENTE al Inicio los literales de SCRUM-917 c.15881.
+
+**Qué cambia:**
+1. `public/dashboard/js/homeView.js` — el saludo va por rol: quien no es admin (`veNegocio`) lee «Esto es lo que tienes hoy.»; el admin conserva «Esto es lo que pasa hoy en tu negocio.». Bloque nuevo `#home-hoy` DESPUÉS de los avisos de riesgo (se leen antes que una capacidad, SCRUM-357) y ANTES del héroe y de las acciones rápidas. Lo pinta `pintarCifrasDeLaLista` de `jobsView.js` con `GET /admin/jobs` (ya recortado a lo suyo, SCRUM-1706): misma función ⇒ mismo significado (en curso + agendado hoy) y mismas palabras. De esa zona se QUITA «Por cobrar»: es dinero, no su trabajo de hoy. Si la carga falla NO se pinta nada (un «Nada para hoy.» sobre una carga caída afirmaría que no tiene trabajo, y el fallo no tiene texto firmado); vacío no ocupa (`.jobs-cifras:empty`). El admin no pide `/admin/jobs` desde el Inicio.
+2. `docs/YAQU_MASTER.md` — fila nueva en la tabla «En la pantalla de Inicio | Admin | Técnico» (Parte S1) citando c.21549 y c.21551, en el MISMO PR que el código (lo pide c.21549).
+3. `tests/scrum1686h4-inicio-operario.test.mjs` — 7 casos en el banco de vistas (sin red ni BD). **Rojo primero:** contra el `homeView.js` de `main`, 5 ✖ / 2 ✔ (los dos verdes son las guardas ⑤ y ⑥, que en `main` se cumplen por ausencia); **mutación** de ⑤ (el `catch` pinta con lista vacía) ⇒ ⑤ ✖. Con el cambio, 7/7.
+
+**Ningún texto fuera de los firmados:** el pie de la cifra (nombres de cliente) es DATO, como en la lista (c.15881).
+
+**Lo que salió mal (A9):** el traspaso de la S2 anterior decía «H4 MEDIDO, SIN EMPEZAR A CONSTRUIR», y en otra worktree había un commit WIP sin empujar de después de escribirlo (`189d32aa9`). Lo vi sólo porque `git branch -m` chocó con el nombre; lo reaproveché (cherry-pick) en vez de hacerlo dos veces. Ese choque no es una comprobación. Lo que SÍ queda comprobado es el fallo que este bloque podía meter —afirmar «Nada para hoy.» con la carga caída—: el caso ⑤, cazado por mutación.
+
+A9: comprobación → `tests/scrum1686h4-inicio-operario.test.mjs`
