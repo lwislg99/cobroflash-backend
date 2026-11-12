@@ -41,6 +41,29 @@ catálogo tumban cada una SU test y ningún otro. Además, los 100 ficheros de t
 todos son de entorno, porque el worktree no tiene `node_modules` ni `dist`). Cero rojos nuevos. La
 tanda completa la corre el CI.
 
+## 1716b · Enfoque del selector €/% · DECISIÓN DE EJECUCIÓN DEL ORQUESTADOR · 12-nov-2026
+
+El ticket propone, para que lo confirme quien construya: «el % se convierte a euros al escribirlo, y
+se guarda y se firma el importe como hoy». S2 lo concretó en cinco puntos (MI LECTURA del código) y el
+orquestador (sesión `cobroflash-backend-5f`, mensaje a S2 del 12-nov) los CONFIRMÓ los cinco tal cual,
+como decisión de ejecución sobre la firma del ticket. No son textos ni cambian lo firmado:
+
+- **E1 · Base del %:** la suma de líneas ya con su Dto., sin IVA, que es exactamente sobre lo que hoy
+  se resta el € global (`quoteDescuentos.totalesConDescuento`, que lo reparte por tipos). Se redondea
+  al céntimo.
+- **E2 · Mientras el campo está en %, el € se RECALCULA** al cambiar las líneas (el 10 % sigue siendo
+  10 %). Se guarda y se firma el € del momento de guardar.
+- **E3 · Al reabrir** un presupuesto guardado o una plantilla, el campo está en € (el % no se guarda).
+  El borrador local (`localStorage`, no la BD) sí guarda la unidad y lo tecleado.
+- **E4 · No se tocan** ni el esquema, ni `calcTotal`, ni el payload (`discountGlobalAmount` sigue en
+  €), ni el PDF, el portal o la firma. El campo abre en €, como hoy.
+- **E5 ·** No se admite un % por encima de 100.
+
+**Rótulos R1-R5** (selector «€» / «%», sus nombres accesibles «En euros» / «En porcentaje»,
+«Equivale a 24,50 €», «El porcentaje no puede pasar de 100.»): el orquestador los ha subido a firma
+del fundador. **Ninguno está aplicado.** El selector no se construye hasta que llegue esa firma, con
+su literal y su localizador.
+
 **Pendiente en este ticket (1716b):** el selector €/%. No se construye hasta que el orquestador
 confirme el enfoque y estén firmados sus rótulos (regla 39). La nota de `quotesView.js:1885-1890`
 (SCRUM-594) se actualiza en ese PR, citando este ticket y sin borrar la historia.
