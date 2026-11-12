@@ -467,8 +467,9 @@
         esc(editable ? TEXTOS.sinLineas : TEXTOS.sinLineasCerrado) + '</td></tr>';
 
     return (
-      '<section class="parte-bloque" data-parte-bloque="' + esc(bloque) + '" style="margin-bottom:18px">' +
-      '<h4 style="margin:0 0 6px;font-size:14px;font-weight:700;color:var(--ink)">' +
+      // SCRUM-1722 · el título del bloque con la MISMA clase que el de los demás pasos (jerarquía en styles.css).
+      '<section class="parte-bloque" data-parte-bloque="' + esc(bloque) + '">' +
+      '<h4 class="parte-paso-titulo">' +
       esc(ETIQUETA_BLOQUE[bloque]) + '</h4>' +
       '<table style="width:100%;border-collapse:collapse;font-size:14px">' +
       // 🔴 DOS CABECERAS, no una. Con «UNDS» sola, la columna del texto no tenía nombre y el
@@ -479,8 +480,8 @@
       (editable ? '<th class="parte-col-quitar"></th>' : '') +
       '</tr></thead><tbody data-parte-filas="' + esc(bloque) + '">' + filas + '</tbody></table>' +
       (editable
-        ? '<button type="button" class="parte-anadir" data-bloque="' + esc(bloque) + '" ' +
-          'style="margin-top:6px;font-size:13px">' + esc(TEXTOS.anadirLinea) + '</button>'
+        ? '<button type="button" class="parte-anadir" data-bloque="' + esc(bloque) + '">' +
+          esc(TEXTOS.anadirLinea) + '</button>'
         : '') +
       '</section>'
     );
@@ -758,12 +759,13 @@
     var editable = !!(parte.puedeEditarContenido && parte.puedeEditarContenido.ok);
 
     contenedor.innerHTML =
-      '<header style="margin-bottom:14px">' +
+      // SCRUM-1722 · sin `style=`: la cabecera, las tarjetas y su ritmo viven en styles.css (bloque S4).
+      '<header class="parte-cabecera">' +
       pintarMigaDelTrabajo(parte) +
-      '<h3 style="margin:0;font-size:1.05rem;font-weight:700;color:var(--ink)">' +
+      '<h3 class="parte-cabecera-numero">' +
       // SCRUM-1697 · «· Visita n de m» llega DESPUÉS, cuando se ha leído el trabajo (`pintarVisita`).
       esc(parte.numero) + ' <span data-parte-visita="1"></span></h3>' +
-      '<p style="margin:2px 0 0;font-size:13px;color:var(--muted)">' +
+      '<p class="parte-cabecera-cliente">' +
       esc(parte.clienteNombre || '') + '</p></header>' +
       // 🔴 SCRUM-1693 · FIRMADO = EL ORDEN DE UN PAPEL: los datos del documento arriba y las
       // firmas que lo cierran al final. El BORRADOR no cambia (SCRUM-1175 PR-C: allí manda lo que
@@ -857,14 +859,15 @@
    */
   function pintarDictado(textoGuardado) {
     return '' +
-      '<div data-parte-dictado="1" style="margin:12px 0">' +
-      '<label for="parte-dictado" style="display:block;font-size:13px;color:var(--muted)">' +
+      // SCRUM-1722 · el dictado es un paso con su tarjeta: el rótulo del campo hace de título del paso.
+      '<div class="parte-dictado" data-parte-dictado="1">' +
+      '<label for="parte-dictado" class="parte-paso-titulo">' +
       esc(TEXTOS.dictado) + '</label>' +
-      '<textarea id="parte-dictado" data-dictado-texto="1" rows="3" style="width:100%">' +
+      '<textarea id="parte-dictado" data-dictado-texto="1" rows="3">' +
       esc(textoGuardado || '') + '</textarea>' +
-      '<p style="margin:4px 0 6px;font-size:12px;color:var(--muted)">' +
+      '<p class="parte-pista">' +
       esc(TEXTOS.pistaDictado) + '</p>' +
-      '<button type="button" data-dictado-ordenar="1" style="width:100%">' +
+      '<button type="button" data-dictado-ordenar="1">' +
       esc(TEXTOS.ordenarDictado) + '</button>' +
       // SCRUM-1302 (C) · el sitio del aviso de «no se ha podido ordenar»: bajo el botón y FUERA del
       // hueco de la propuesta, para poder decirlo sin pintar encima de lo que el técnico corrigió.
@@ -1334,10 +1337,12 @@
     var enEspera = !Array.isArray(parte.lineas) || parte.lineas.length === 0;
     var recuadro = function (firmado, marca, rotulo, hecho, quien) {
       return firmado
-        ? '<p data-parte-' + marca + '-hecha="1" style="margin:0;font-size:14px;color:var(--muted)">' +
+        // SCRUM-1722 · sin `style=`: el botón es la ZONA de firmar y lo firmado una constancia (styles.css).
+        ? '<p class="parte-firma-hecha" data-parte-' + marca + '-hecha="1">' +
           esc(hecho) + (quien ? ' ' + esc(quien) : '') + '</p>'
+        // (sin `class`: la zona se pinta por `data-*`, y SCRUM-902 usa este botón como su positivo).
         : '<button type="button" data-parte-' + marca + '="1"' +
-          (enEspera ? ' data-parte-firma-en-espera="1"' : '') + ' style="width:100%">' +
+          (enEspera ? ' data-parte-firma-en-espera="1"' : '') + '>' +
           esc(rotulo) + '</button>';
     };
     // SCRUM-1175 (PR-B) · UN PASO PROPIO Y UNA CAJA POR FIRMA. Cada aviso «falta» vive DENTRO de la
@@ -1351,9 +1356,9 @@
       // SCRUM-1676 · con el parte vacío, en su sitio, el que dice además qué va antes de firmar.
       (!parte.firmoElCliente && !parte.firmoElTecnico
         ? (enEspera
-          ? '<p data-parte-apunta-primero="1" style="margin:0 0 8px;font-size:13px;color:var(--muted)">' +
+          ? '<p class="parte-pista" data-parte-apunta-primero="1">' +
             esc(TEXTOS.apuntaPrimero) + '</p>'
-          : '<p data-parte-primera-firma-fija="1" style="margin:0 0 8px;font-size:13px;color:var(--muted)">' +
+          : '<p class="parte-pista" data-parte-primera-firma-fija="1">' +
             esc(TEXTOS.conLaPrimeraFirmaQuedaFijo) + '</p>')
         : '') +
       '<div class="parte-firma-caja" data-parte-caja-firma="cliente">' +
@@ -1361,14 +1366,14 @@
       // 🔴 EL AVISO NOMBRA LA QUE FALTA, y si faltan las dos se dicen las dos: fundir ambas en
       // «falta una firma» era exactamente el defecto — el técnico tendría que adivinar cuál.
       (!parte.firmoElCliente
-        ? '<p data-parte-falta-firma="cliente" style="margin:8px 0 0;font-size:13px;color:var(--muted)">' +
+        ? '<p class="parte-firma-falta" data-parte-falta-firma="cliente">' +
           esc(TEXTOS.faltaLaFirmaDelCliente) + '</p>'
         : '') +
       '</div>' +
       '<div class="parte-firma-caja" data-parte-caja-firma="tecnico">' +
       recuadro(parte.firmoElTecnico, 'firmar-tecnico', TEXTOS.firmarTecnico, TEXTOS.yaFirmoElTecnico, parte.firmadoTecnicoNombre) +
       (!parte.firmoElTecnico
-        ? '<p data-parte-falta-firma="tecnico" style="margin:8px 0 0;font-size:13px;color:var(--muted)">' +
+        ? '<p class="parte-firma-falta" data-parte-falta-firma="tecnico">' +
           esc(TEXTOS.faltaLaFirmaDelTecnico) + '</p>'
         : '') +
       '</div>' +
