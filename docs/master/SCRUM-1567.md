@@ -56,6 +56,7 @@ La cabecera de `src/modules/invoicing/domain/emission.service.ts:3-6` y la defin
 **Medido contra:** `origin/main` = `75d4878628254b3e6b72c1dfe69f2d8575b978ef` · 2026-11-12T10:20:49Z (cabecera `Date` de GitHub)
 
 A9: comprobación → `tests/scrum1567b-portal-sin-facturas-en-receipt.test.mjs`
+A9: aviso → cicatriz J2 «otra vez la muestra local de guards elegida a mano: no llevaba scrum553» — no se pudo comprobar: qué guards entran en la muestra local lo decide la sesión
 
 Lo construye J2 con la firma del fundador sobre la propuesta de arriba (SCRUM-1567 c.21121, puntos 3 y 4). Los literales se copiaron de Jira. Se construyó el 27-oct contra `922fddaab477767cbf9b9e0f789d39a48e85cd2e` y se quedó sin empujar, a la espera de #2937 (1573b) y del PR de 1624b, que tocan el mismo fichero; el 12-nov el relevo (jv-j2bp) lo puso al día con `git merge origin/main` y lo volvió a medir entero. Lo de abajo es la medición del 12-nov.
 
@@ -86,6 +87,10 @@ Build con tipos (`tsc -p .`, sin `--noCheck`): salida 0. Tests dirigidos, 18 fic
 ### No cubierto por la firma, sin texto nuevo
 
 Un comercio en `receipt` con un `J-` antiguo: la firma quita el apartado «Facturas» y a la vez pide «Justificante J-…», así que la tarjeta tiene que salir en algún sitio. Sale en su propio bloque **sin título**, debajo de los presupuestos. El orquestador J (`cobroflash-backend-8b`) lo dio por bueno como consecuencia mecánica de quitar «Facturas». No hay texto nuevo; si el fundador quiere un título para ese bloque, es otra firma. El 27-oct había 2 `J-` en producción, del comercio 18, de prueba (dato de SCRUM-1448 c.21012; no re-medido el 12-nov).
+
+### El obligatorio del primer empujón cayó, y era mío
+
+Empujado `76031fb1eb08b4b89383e64ce0a8dd3143ae7265` (PR #3098), el obligatorio salió rojo: 13.343 casos, 13.333 pasan, **1 cae** y 9 se saltan. El que cae es `scrum553`: «🔴 HAN APARECIDO EXTRACTORES NUEVOS CON EL `>` PEGADO: 21 (el tope es 20)», y el nuevo era mi control `vacio.includes('<p class="pf-empty">No hay facturas aún.</p>')` (línea 163 del test). Se arregla en el test, no en el guard: ahora es `/<p class="pf-empty"[^>]*>No hay facturas aún\.<\/p>/`. En local, `scrum553` + el test nuevo dan 21 de 21. `scrum553` no estaba en mi muestra de 18 ficheros: es la cicatriz de arriba.
 
 ### No medido, y se dice
 

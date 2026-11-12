@@ -160,7 +160,7 @@ test('SCRUM-1567b · CONTROL: con el flag en ON el portal sigue como hoy', async
   const vacio = await portal(comercio(true), []);
   assert.equal(saludo(vacio), 'Aquí tienes tus presupuestos, facturas y pagos.');
   assert.ok(titulos(vacio).includes('Facturas'), 'con el flag en ON ha desaparecido el apartado «Facturas»');
-  assert.ok(vacio.includes('<p class="pf-empty">No hay facturas aún.</p>'), 'con el flag en ON ha desaparecido «No hay facturas aún.»');
+  assert.ok(/<p class="pf-empty"[^>]*>No hay facturas aún\.<\/p>/.test(vacio),'con el flag en ON ha desaparecido «No hay facturas aún.»');
 
   const conJ = await portal(comercio(true), [documento('J-20260611-AB3C')]);
   assert.ok(tarjetas(conJ).includes('Factura J-20260611-AB3C'), `con el flag en ON el título de la tarjeta ha cambiado: ${JSON.stringify(tarjetas(conJ))}`);
