@@ -30,6 +30,18 @@ const {
 } = await import('../dist/modules/fiscal/librosAeat/librosAeat.js');
 const { csvLibroExpedidas } = await import('../dist/modules/fiscal/librosAeat/librosAeatCsv.js');
 
+// Por la SUPERFICIE PÚBLICA del portón (SCRUM-1051g-ci): el código, P4, P5 y la función pura son
+// internos del módulo; exportarlos sólo para el test los dejaba huérfanos para scrum411.
+const ERROR_ISP_CLIENTE_SIN_NIF = 'isp_cliente_sin_nif';
+const ERROR_ISP_CLIENTE_NO_EMPRESARIO = 'isp_cliente_no_empresario';
+function rechazo(lines, cliente) {
+  try { isp.exigirDestinatarioParaIsp(lines, cliente); } catch (e) {
+    assert.equal(isp.esErrorDestinatarioIsp(e), true, `el portón lanzó algo que no es su error: ${e}`);
+    return e.mensaje === undefined ? { code: e.code } : { code: e.code, message: e.mensaje };
+  }
+  return null;
+}
+
 const S2 = Object.freeze({ concept: 'Subcontrata de obra', qty: 1, price: 1000, tax: 0, causa: 'S2' });
 const NIF_OK = '12345678Z';
 
@@ -37,11 +49,10 @@ const NIF_OK = '12345678Z';
 
 test('1051h ① · S2 con NIF válido y cliente NO empresario se rechaza con P5, literal', () => {
   for (const tipoDestinatario of [null, undefined, 'PARTICULAR', 'empresario']) {
-    const r = isp.destinatarioIspNoValido([S2], { taxId: NIF_OK, tipoDestinatario });
-    assert.deepEqual(r, { code: isp.ERROR_ISP_CLIENTE_NO_EMPRESARIO, message: P5 },
+    const r = rechazo([S2], { taxId: NIF_OK, tipoDestinatario });
+    assert.deepEqual(r, { code: ERROR_ISP_CLIENTE_NO_EMPRESARIO, message: P5 },
       `tipoDestinatario=${tipoDestinatario}`);
   }
-  assert.equal(isp.COPY_ISP_NO_EMPRESARIO, P5);
 });
 
 test('1051h ① · el portón LANZA el error tipado con P5 (lo que leen la ruta y el cobro)', () => {
@@ -49,15 +60,15 @@ test('1051h ① · el portón LANZA el error tipado con P5 (lo que leen la ruta 
   try { isp.exigirDestinatarioParaIsp([S2], { taxId: NIF_OK, tipoDestinatario: 'PARTICULAR' }); } catch (e) { err = e; }
   assert.ok(err, 'el portón no lanzó con una S2 a un cliente no empresario');
   assert.equal(isp.esErrorDestinatarioIsp(err), true);
-  assert.equal(err.code, isp.ERROR_ISP_CLIENTE_NO_EMPRESARIO);
+  assert.equal(err.code, ERROR_ISP_CLIENTE_NO_EMPRESARIO);
   assert.equal(err.mensaje, P5);
 });
 
 test('1051h ① · CONTROL: P4 no cambia, y P4 y P5 son textos distintos', () => {
-  assert.deepEqual(isp.destinatarioIspNoValido([S2], { taxId: null, tipoDestinatario: 'PARTICULAR' }),
-    { code: isp.ERROR_ISP_CLIENTE_SIN_NIF, message: P4 });
+  assert.deepEqual(rechazo([S2], { taxId: null, tipoDestinatario: 'PARTICULAR' }),
+    { code: ERROR_ISP_CLIENTE_SIN_NIF, message: P4 });
   assert.notEqual(P4, P5);
-  assert.equal(isp.destinatarioIspNoValido([S2], { taxId: NIF_OK, tipoDestinatario: 'EMPRESARIO' }), null);
+  assert.equal(rechazo([S2], { taxId: NIF_OK, tipoDestinatario: 'EMPRESARIO' }), null);
 });
 
 test('1051h ① · la ruta pasa el `message` del error al 422 (P5 llega a la respuesta, no se queda en el error)', () => {

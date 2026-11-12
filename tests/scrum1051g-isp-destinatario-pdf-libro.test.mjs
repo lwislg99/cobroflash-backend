@@ -23,10 +23,24 @@ const sfDe = (r) => ts.createSourceFile(r, leer(r), ts.ScriptTarget.Latest, true
 
 const P4 = 'Para facturar con inversión del sujeto pasivo, el cliente necesita NIF.';
 
-const {
-  destinatarioIspNoValido, exigirDestinatarioParaIsp, esErrorDestinatarioIsp,
-  ERROR_ISP_CLIENTE_SIN_NIF, ERROR_ISP_CLIENTE_NO_EMPRESARIO, COPY_ISP_SIN_NIF,
-} = await import('../dist/modules/invoicing/domain/destinatarioIsp.js');
+// Sólo la SUPERFICIE PÚBLICA del portón (SCRUM-1051g-ci): el código, el texto y la función pura
+// son internos del módulo y se miden por lo que lanza `exigirDestinatarioParaIsp`, el patrón de
+// `tests/scrum441-metodo-declarado.test.mjs`. Exportarlos sólo para el test los dejaba huérfanos
+// para scrum411 y scrum1185.
+const { exigirDestinatarioParaIsp, esErrorDestinatarioIsp } =
+  await import('../dist/modules/invoicing/domain/destinatarioIsp.js');
+
+const ERROR_ISP_CLIENTE_SIN_NIF = 'isp_cliente_sin_nif';
+const ERROR_ISP_CLIENTE_NO_EMPRESARIO = 'isp_cliente_no_empresario';
+
+/** Lo que el portón rechaza, como `{ code, message }`, o `null` si deja pasar. */
+function rechazo(lines, cliente) {
+  try { exigirDestinatarioParaIsp(lines, cliente); } catch (e) {
+    assert.equal(esErrorDestinatarioIsp(e), true, `el portón lanzó algo que no es su error: ${e}`);
+    return e.mensaje === undefined ? { code: e.code } : { code: e.code, message: e.mensaje };
+  }
+  return null;
+}
 
 const S2 = Object.freeze({ concept: 'Subcontrata de obra', qty: 1, price: 1000, tax: 0, causa: 'S2' });
 const NORMAL = Object.freeze({ concept: 'Mano de obra', qty: 1, price: 100, tax: 0.21 });
@@ -34,18 +48,17 @@ const NORMAL = Object.freeze({ concept: 'Mano de obra', qty: 1, price: 100, tax:
 const NIF_OK = '12345678Z';
 const NIF_MAL = '12345678A';
 
-// ── ② la función pura ───────────────────────────────────────────────────────────────
+// ── ② el portón ─────────────────────────────────────────────────────────────────────
 
 test('1051g ② · S2 con cliente SIN NIF se rechaza con P4, literal', () => {
   for (const taxId of [null, undefined, '', '   ']) {
-    const r = destinatarioIspNoValido([S2], { taxId, tipoDestinatario: 'EMPRESARIO' });
+    const r = rechazo([S2], { taxId, tipoDestinatario: 'EMPRESARIO' });
     assert.deepEqual(r, { code: ERROR_ISP_CLIENTE_SIN_NIF, message: P4 }, `taxId=${JSON.stringify(taxId)}`);
   }
-  assert.equal(COPY_ISP_SIN_NIF, P4);
 });
 
 test('1051g ② · S2 con NIF de control falso se rechaza igual (válido, no sólo presente)', () => {
-  const r = destinatarioIspNoValido([NORMAL, S2], { taxId: NIF_MAL, tipoDestinatario: 'EMPRESARIO' });
+  const r = rechazo([NORMAL, S2], { taxId: NIF_MAL, tipoDestinatario: 'EMPRESARIO' });
   assert.equal(r?.code, ERROR_ISP_CLIENTE_SIN_NIF);
 });
 
@@ -54,7 +67,7 @@ test('1051g ② · S2 con NIF de control falso se rechaza igual (válido, no só
 // se fija en `tests/scrum1051h-isp-p5-y-libro.test.mjs`. Aquí queda el rechazo y que NO es P4.
 test('1051g ② · S2 con NIF válido y cliente NO empresario se rechaza, y no con P4 (P5, c.21761)', () => {
   for (const tipoDestinatario of [null, undefined, 'PARTICULAR', 'empresario']) {
-    const r = destinatarioIspNoValido([S2], { taxId: NIF_OK, tipoDestinatario });
+    const r = rechazo([S2], { taxId: NIF_OK, tipoDestinatario });
     assert.equal(r?.code, ERROR_ISP_CLIENTE_NO_EMPRESARIO, `tipoDestinatario=${tipoDestinatario}`);
     assert.notEqual(r.message, P4, 'el cliente sí tiene NIF: P4 no es su texto');
     assert.equal(typeof r.message, 'string', 'el caso «no es empresario» lleva P5 desde c.21761');
@@ -62,15 +75,15 @@ test('1051g ② · S2 con NIF válido y cliente NO empresario se rechaza, y no c
 });
 
 test('1051g ② · S2 con NIF válido y EMPRESARIO pasa', () => {
-  assert.equal(destinatarioIspNoValido([S2], { taxId: NIF_OK, tipoDestinatario: 'EMPRESARIO' }), null);
+  assert.equal(rechazo([S2], { taxId: NIF_OK, tipoDestinatario: 'EMPRESARIO' }), null);
   assert.doesNotThrow(() => exigirDestinatarioParaIsp([S2], { taxId: NIF_OK, tipoDestinatario: 'EMPRESARIO' }));
 });
 
 test('1051g ② · CONTROL: sin líneas S2 no mira al cliente (lo de siempre no cambia)', () => {
-  assert.equal(destinatarioIspNoValido([NORMAL], { taxId: null, tipoDestinatario: null }), null);
-  assert.equal(destinatarioIspNoValido([{ ...NORMAL, tax: 0 }], null), null);
-  assert.equal(destinatarioIspNoValido([], null), null);
-  assert.equal(destinatarioIspNoValido(null, null), null);
+  assert.equal(rechazo([NORMAL], { taxId: null, tipoDestinatario: null }), null);
+  assert.equal(rechazo([{ ...NORMAL, tax: 0 }], null), null);
+  assert.equal(rechazo([], null), null);
+  assert.equal(rechazo(null, null), null);
 });
 
 test('1051g ② · el portón LANZA el error tipado con el código y el texto', () => {

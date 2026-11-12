@@ -13,6 +13,7 @@ import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { comercioSuprimido } from '../../domain/comercioSuprimido'; // SCRUM-1573b
 import { esc, formatImporteEs, formatMoneyEs } from '../../../../core/utils/utils';
 import { etiquetaGuionDePago } from './pagoNavegador'; // SCRUM-1647 (CSP paso 2)
+import { etiquetaEstiloDePago } from './pagoEstilo'; // SCRUM-1723 (style-src 'self')
 import { isFlagEnabled } from '../../../../core/flags';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
 
@@ -38,40 +39,7 @@ function bizumPage(opts: {
   <title>Pagar ${amount} por Bizum — YaQu</title>
   <link rel="stylesheet" href="/fonts/inter.css"/>
   ${etiquetaGuionDePago('bizum')}
-  <style>
-    :root{--brand:#16a34a;--brand-tint:#ecfdf5;--ink:#0f1c17;--body:#3f4a45;--muted:#6b756f;
-      --bg:#f6f7f5;--surface:#fff;--border:#e7e9e5;}
-    *{box-sizing:border-box}
-    body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-feature-settings:"cv11","ss01";
-      margin:0;background:var(--bg);color:var(--body);min-height:100vh;display:flex;
-      align-items:center;justify-content:center;padding:1rem;-webkit-font-smoothing:antialiased}
-    .card{background:var(--surface);border:1px solid var(--border);border-radius:18px;
-      box-shadow:0 1px 2px rgba(16,24,40,.04),0 18px 40px -16px rgba(16,24,40,.16);
-      padding:1.75rem 1.5rem;max-width:420px;width:100%}
-    .biz{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.55rem;margin-bottom:1.1rem}
-    .logo-mark{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#22d3ee);
-      display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#052e16}
-    .logo-img{max-height:44px;max-width:130px;object-fit:contain}
-    .biz-name{font-size:.9rem;font-weight:600;color:var(--ink)}
-    h1{font-size:1.05rem;color:var(--ink);text-align:center;margin:0 0 1rem}
-    .row{display:flex;align-items:center;justify-content:space-between;gap:.6rem;
-      border:1px solid var(--border);border-radius:12px;padding:.8rem .9rem;margin-bottom:.6rem}
-    .row-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
-    .row-value{font-size:1rem;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;word-break:break-all}
-    .copy-btn{flex-shrink:0;border:1px solid var(--border);background:var(--surface);color:var(--ink);
-      font:inherit;font-size:.78rem;font-weight:600;border-radius:999px;padding:.45rem .8rem;cursor:pointer;min-height:36px}
-    .copy-btn:hover{background:var(--bg)}
-    .steps{font-size:.82rem;color:var(--body);line-height:1.6;margin:1rem 0;padding-left:1.2rem}
-    .cta{display:block;width:100%;border:0;border-radius:999px;background:var(--brand);color:#fff;
-      font:inherit;font-weight:700;font-size:1rem;padding:.95rem 1rem;cursor:pointer;min-height:52px}
-    .cta:hover{background:#15803d}
-    .cta[disabled]{opacity:.6;cursor:default}
-    .note{margin-top:.9rem;text-align:center;font-size:.78rem;color:var(--muted);line-height:1.5}
-    .claimed{background:var(--brand-tint);border:1px solid #bbf7d0;border-radius:12px;padding:1rem;
-      text-align:center;font-size:.9rem;color:#166534;font-weight:600;line-height:1.5}
-    .back{display:block;text-align:center;margin-top:14px;font-size:.82rem;color:var(--muted)}
-    :focus-visible{outline:none;box-shadow:0 0 0 3px rgba(34,197,94,.30)}
-  </style>
+  ${etiquetaEstiloDePago('bizum')}
 </head>
 <body>
   <div class="card">
@@ -88,7 +56,7 @@ function bizumPage(opts: {
     </div>
     ${concept ? `
     <div class="row">
-      <div><div class="row-label">Concepto</div><div class="row-value" style="font-size:.85rem">${concept}</div></div>
+      <div><div class="row-label">Concepto</div><div class="row-value row-value-concepto">${concept}</div></div>
       <button class="copy-btn" type="button" data-copy="${concept}" data-label="Copiar concepto">Copiar concepto</button>
     </div>` : ''}
 

@@ -581,3 +581,42 @@ Rama `scrum-1051h-p5-y-libro`, hecha desde `scrum-1051g-isp-pdf-nif-libro` (`d58
 Rojo primero: `tests/scrum1051h-isp-p5-y-libro.test.mjs` 6 de 8 caían antes del cambio (los 2 que pasaban son controles). Mutaciones del catálogo con `aplicarUna` de la casa: las 3 de 1051h y las 5 de 1051g tumban su test; árbol limpio después. (Error propio: el primer intento las dio CIEGAS porque mi driver pasaba el guard con `tests/` delante y `correr` ya lo pone; lo cazó el recuento de la limpia, «0 pasados · 1 caídos».) `tsc -p .` con tipos: salida 0. Dirigida de 61 ficheros (1051*, 553, 237, 976, 1387*, 523d, 525d, 601, 603b, 723, 622, 1294, 267, 273, 824*, 811c, 296, 325, 1058c, 405, 402, 1041, 514, 436, 1232, 1233, 406, 628, 755 y todo test que nombra `librosAeat`, `libroRegistroView` o `destinatarioIsp`): 580 casos = 575 pass + 4 fail + 1 skip; los 4 eran míos (601 ×2, arriba; 1340 por este `**Skill UI:**`, y 976, que lo arrastra). Suite entera local: NO CORRIDA (10 sesiones a la vez).
 
 **NO medido:** yaqu.app (ninguna pantalla manda todavía la causa S2: la casilla es de S2, equipo de Luis); el libro con una R1 de una S2; las ocho bocas de S1 (sigue el aviso de 1051g).
+## SCRUM-1051g-ci · los seis rojos del obligatorio de #3140 (J1, jv-j1eh, 12-nov-2026)
+
+**Medido contra:** `origin/main` = `9fabfbc087e20568633bf91d626c5ad414a99919` · 2026-11-12T18:11:58Z (hora de la cabecera `Date:` de GitHub)
+
+A9: aviso → cicatriz J1 «Empujé 1051g con la dirigida en verde y el obligatorio cayó por seis casos de cinco guards que recorren el árbol entero sin nombrar mi fichero (411, 1185, 189, 615 y el veredicto de mudez de 719): la dirigida no los lista, y ya me pasó con `scrum622` el 1-oct» — no se pudo comprobar: la lista de la dirigida es de SCRUM-1363, de otro carril
+
+El obligatorio de #3140 (job 131364900599, sobre el head `d582f545`) cayó con 6 de 13.483 casos. Los seis, reproducidos en local sobre `d582f545` en un árbol desechable (98 casos en 6 ficheros: 92 pass + 6 fail, los mismos seis) y en verde en la rama (98 de 98). Se arregló el código y el veredicto derivado; ningún guard se relajó:
+
+| guard (caso) | qué pedía | arreglo |
+|---|---|---|
+| `scrum1185` ① | `COPY_ISP_COLUMNA` y `COPY_ISP_VALOR_SI` construidas y sin consumir | se quitan de esta rama: son de la pieza ③ (P3), que cablea 1051h, y allí vuelven con su lector (`librosAeat.ts`) |
+| `scrum411` control positivo | 8 exports huérfanos en `destinatarioIsp.ts` | se les quita el `export` a los seis que sólo usaba el propio módulo (`ERROR_ISP_*`, `COPY_ISP_SIN_NIF`, `DestinatarioIspError`, `tieneLineasIsp`, `destinatarioIspNoValido`); los dos de P3, como arriba. El test de 1051g mide ahora por la superficie pública (`exigirDestinatarioParaIsp`), el patrón de `scrum441` |
+| `scrum411` las categorías suman | 245 declarados frente a 253 medidos | es el mismo hueco: sin los 8, vuelve a 245 |
+| `scrum189` | «regla 40 del» sin destino en `destinatarioIsp.ts:3` | dice «la regla 40 del máster» |
+| `scrum615` | `destinatarioIsp.ts` e `invoicesAdmin.routes.ts` leen `tipoDestinatario` | la lista fijada lleva los dos, con su motivo y el GO de SCRUM-1051 c.21750 punto 3, como hizo SCRUM-983: el portón decide (NULL se rechaza, no se resuelve a PARTICULAR: no es una segunda copia de esa regla) y la ruta sólo lo transporta |
+| `scrum719` (1395b ①) | `scrum601` cambió desde la medida de mudez | `npm run censo:mudez -- --escribir`: 1 de 130 medido, VIVO |
+
+**Por qué la dirigida no lo vio:** los cinco ficheros recorren `src/` entero sin nombrar `destinatarioIsp.ts`, así que la lista que da `tests:que-cubren` no los incluye; el de mudez se dispara por `scrum601`, que sí estaba, pero el que lo vigila (`scrum719`) no.
+
+**No cambia:** la huella ni el XML (no se tocó `registro.builder.ts`, `fiscal/verifactu/` ni `src/lib/invoicing.ts`). El comportamiento del portón es el mismo: sólo cambia qué se exporta.
+
+**Corrido:** `tsc -p .` con tipos, salida 0. Los 6 ficheros: base 92 + 6 fail, rama 98 de 98.
+## SCRUM-1051f · lo que falta de la aceptación (1, 3, 4 y 6): medición y propuesta (J1, jv-j1ea, 12-nov-2026)
+
+**Medido contra:** `origin/main` = `deab373d6a379fcbfc7ec1fce0428111156f49d3` · 2026-11-12T17:05:08Z (hora de la cabecera `Date:` de GitHub)
+
+Sólo lectura y sólo docs: nada en `src/` ni `public/`, ninguna base, nada a la AEAT. Leído con `grep -n`, NO ejecutado (este árbol no tiene `dist/`). La tabla entera y las preguntas, en Jira SCRUM-1051 c.21748.
+
+- **1 · marcar ISP:** no hay pantalla. El cuerpo de `POST /admin/invoices` sólo lleva `concept, qty, price, tax` (`public/dashboard/js/cuerpoDelDocumentoSuelto.js:50-54`); «S2» en `public/`: 0. Tampoco hay ajuste «lo activa» (sería flag → máster, o campo → ALTER). Ficheros de S2 (equipo de Luis). Necesita firma (rótulo).
+- **3 · leyenda:** el PDF no la imprime y funde la S2 con su tipo (`src/modules/invoicing/infra/pdf/pdf.service.ts:646-653`). J1; GO (regla 40) y firma (regla 39). Fuente cotejada hoy en el BOE consolidado (`BOE-A-2012-14696`, bloque `a6`): ROF art. 6.1.m), «la mención «inversión del sujeto pasivo»». Propuesta: ese literal, sin cita del artículo.
+- **4 · libro:** el 303 (casilla 122) y el 390 (125) ya la llevan (SCRUM-1063f). El libro guarda `causa` (`libroRegistro.ts:91`) pero ni la descarga (`librosAeat.ts:323-329`) ni la pantalla (`libroRegistroView.js`) la enseñan. J1; firma, sin GO.
+- **6 · NIF en servidor:** no se rechaza. El portón de la causa no mira el NIF, y sin NIF el builder excluye la factura del registro pero «se emite, se envía y se cobra igual» (`src/modules/fiscal/verifactu/registro.builder.ts:260`). Haría falta un portón antes de emitir (`invoicesAdmin.routes.ts`, `src/lib/invoicing.ts`, J1): GO de regla 40 y es identidad fiscal, fuera de c.16594.
+- `docs/master/SCRUM-1264.md`: 0 «sujeto pasivo»/«ISP»/«Q-C2» (control: «asesor», 3). El índice de 45 de Jira NO leído.
+
+**Skill UI:** no cargada · no se toca `public/`: sólo se lee con `grep -n` para citar fichero:línea; el tramo es documentación.
+
+**Corrido:** nada de tests (sólo docs). Suite entera: NO CORRIDA.
+
+A9: sin fallo que generalice — es una medición de sólo lectura; cada fichero:línea citado sale de un `grep -n` de esta tanda, y lo que no se ejecutó lo dice el propio tramo.
