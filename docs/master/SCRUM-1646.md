@@ -60,3 +60,7 @@ Scripts en `docs/master/evidencias/SCRUM-1646/`. ⚠️ Banco local, NO un recor
 
 - 1646c y 1646d (arriba), al relevo.
 - Recorrido en yaqu.app de los tres avisos tras el merge, con la CSP aplicada por Playwright.
+
+### ⑦ CI rojo de #3124 (12-nov, noche) y su arreglo
+
+Cayó UN test: `scrum676-hojas-del-indice` — «en `tests/` hay UNA sola regex que lee `<link>`»: el censo de `scrum1646-avisos-sin-estilo-en-linea` traía la suya (`/^<link\b/i`). Ahora deriva de `hojasDeLaPagina(html).locales` (`tests/_scripts-de-la-pagina.mjs`). 1646-avisos + 676 + 553: **40/40**.

@@ -8,6 +8,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { createRequire } from 'node:module';
+import { hojasDeLaPagina } from './_scripts-de-la-pagina.mjs';
 
 const require = createRequire(import.meta.url);
 const avisos = require('../dist/core/http/publicNotFound.js');
@@ -36,7 +37,8 @@ function censo(html) {
     style: etiquetas.filter((t) => /^<style\b/i.test(t)).length,
     atributoStyle: etiquetas.filter((t) => /\sstyle\s*=/i.test(t)).length,
     scriptEnLinea: etiquetas.filter((t) => /^<script\b/i.test(t) && !/\ssrc\s*=/i.test(t)).length,
-    hojas: etiquetas.filter((t) => /^<link\b/i.test(t) && /rel="stylesheet"/.test(t)).map((t) => /href="([^"]*)"/.exec(t)?.[1]),
+    // SCRUM-676: los `<link>` los lee UN extractor, `hojasDeLaPagina`; aquí no se duplica.
+    hojas: hojasDeLaPagina(html).locales,
   };
 }
 
