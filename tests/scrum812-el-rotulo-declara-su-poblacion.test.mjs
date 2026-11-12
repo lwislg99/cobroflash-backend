@@ -212,9 +212,14 @@ function tituladosQueDeclaran() {
  * «titulado GUARD». Medido en local con este mismo test sobre la rama `scrum-1620b-matriz-ci`, base
  * `origin/main` = `c93f26a765313ce7834ecf276ddc3c09673527cc`: «LA COBERTURA HA SUBIDO a 38 (el suelo
  * decía 37)», con el fichero nuevo en la lista.
+ *
+ * ⬆️ **39** (SCRUM-1643, 12-nov-2026): entra `scrum1643-informativo-cancelado-no-decide.test.mjs`, que
+ * declara mutaciones sobre el vigía de main y cuenta como «titulado GUARD». Medido en el job
+ * `meta-guard · parte 1 de 3` del run 43211175618 (merge de `b28a113831fa` con `ec7e19e64eab`):
+ * «LA COBERTURA HA SUBIDO a 39 (el suelo decía 38)», con el fichero nuevo en la lista.
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
-export const SUELO_GUARD_QUE_DECLARAN = 38;
+export const SUELO_GUARD_QUE_DECLARAN = 39;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // ① SUELO · ¿he mirado algo? Un cero de población no es «no hay»: es «no he mirado».
@@ -415,8 +420,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // ④ El trinquete se afloja una unidad: deja hueco para que la cobertura baje sin aviso.
     fichero: 'tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs',
-    de: 'export const SUELO_GUARD_QUE_DECLARAN = 38;',
-    a: 'export const SUELO_GUARD_QUE_DECLARAN = 37;',
+    de: 'export const SUELO_GUARD_QUE_DECLARAN = 39;',
+    a: 'export const SUELO_GUARD_QUE_DECLARAN = 38;',
     cae: 'SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA',
   },
   {

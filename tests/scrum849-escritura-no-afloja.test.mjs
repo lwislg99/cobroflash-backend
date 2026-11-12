@@ -219,7 +219,10 @@ test('SCRUM-849 · 🔴 ⑦ un técnico ajeno NO puede escribir el albarán de o
 
   const ALBARAN = {
     id: 7, merchantId: 7, jobId: 42, numero: 'ALB-2026-0003', fecha: new Date('2026-09-15T10:00:00Z'),
-    modoValoracion: 'SIN_VALORAR', lineas: [], estado: 'borrador', version: 1,
+    // SCRUM-1673: con UNA línea. Desde ese ticket un borrador vacío no se emite (409
+    // `albaran_sin_lineas`), así que `lineas: []` hacía caer el control del DUEÑO por esa otra
+    // puerta y no por la de pertenencia que este test mide. La aserción no cambia.
+    modoValoracion: 'SIN_VALORAR', lineas: [{ concepto: 'Cambio de grifo', cantidad: 1, unidad: 'ud' }], estado: 'borrador', version: 1,
     signatureUrl: null, firmadoAt: null, evidenciaFirma: null, notas: null, pdfUrl: null, invoiceId: null,
   };
   const DUENO = 11;

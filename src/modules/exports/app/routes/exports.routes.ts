@@ -25,6 +25,8 @@ import { ZipArchive } from 'archiver';
 import fs from 'fs';
 import { ensureInvoicePdf } from '../../../../lib/invoicing';
 import { buildVerifactuRegistrosXml } from '../../../invoicing/domain/verifactu.service'; // SCRUM-82
+// SCRUM-1714: el mismo criterio del SII que el modo de emisión (SCRUM-1585), sin copiarlo aquí.
+import { motivoSiiSinEmision } from '../../../invoicing/domain/emission.service';
 import { invalidAnioFiscal } from '../../../../core/validation/fiscalInput'; // SCRUM-217
 import { zonaDelMerchant, diaNaturalEn } from '../../../../core/zonaDelMerchant'; // SCRUM-735
 import {
@@ -152,8 +154,10 @@ router.get('/datos.zip', async (req, res) => {
     // El gate del XML se calcula ANTES y con el criterio de SIEMPRE (SCRUM-73: flag +
     // país + NIF). `resolverSeleccion` solo puede APAGARLO (si no pides facturas), nunca
     // encenderlo: pedir "facturas" no salta la regla 24.
+    // SCRUM-1714 (S1): y el SII, como el modo de emisión (SCRUM-1585): con el SII en «Sí» o «No
+    // consta» este merchant NO emite, así que el paquete sale como en `receipt`, sin XML.
     const xmlPermitido = isFlagEnabled('INVOICING_ES_ENABLED', { merchant })
-      && merchant.country === 'ES' && !!merchant.taxId;
+      && motivoSiiSinEmision(merchant) === null && merchant.country === 'ES' && !!merchant.taxId;
     const seleccion = resolverSeleccion(req.query.incluir, xmlPermitido);
 
     // Facturas del rango: solo ids + número (el PDF se genera después, de una en una).
@@ -548,10 +552,19 @@ router.get('/verifactu.xml', requireRole('admin'), async (req, res) => {
     // 409, huso para la zona) — no el merchant entero.
     const merchant = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
-      select: { country: true, taxId: true, flags: true, timezone: true },
+      // SCRUM-1714: `id`/`email` (quién es el demo) y `llevaLibrosPorSii` son lo que lee
+      // `motivoSiiSinEmision`, igual que en el modo de emisión.
+      select: { id: true, email: true, country: true, taxId: true, flags: true, timezone: true, llevaLibrosPorSii: true },
     });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
     if (!isFlagEnabled('INVOICING_ES_ENABLED', { merchant })) {
+      return res.status(404).json({ error: 'not_found' });
+    }
+    // SCRUM-1714 (S1): el flag solo no basta desde SCRUM-1585. Con el SII en «Sí» o «No consta»
+    // el merchant está en `receipt` y recibe lo mismo que con el flag apagado: el 404 neutro, sin
+    // tocar la BD de facturas. Va APARTE de la línea del flag a propósito: así cada lectura tiene su
+    // mutación y la de SCRUM-73 sigue cayendo sola (MUTACIONES_CON_BASE de scrum73 y scrum1714).
+    if (motivoSiiSinEmision(merchant) !== null) {
       return res.status(404).json({ error: 'not_found' });
     }
     if (merchant.country !== 'ES' || !merchant.taxId) {
