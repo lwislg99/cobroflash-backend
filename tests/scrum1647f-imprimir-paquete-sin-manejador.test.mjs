@@ -114,8 +114,9 @@ test('A · el paquete de disputa sale con 0 on*=, 0 <script> en línea y el guio
   assert.ok(html.includes('Paquete de evidencia de disputa'), 'SUELO: no es la página del paquete');
   assert.equal(manejadoresEnLinea(html), 0, 'el HTML servido no lleva ningún on*=');
   assert.equal(scriptsEnLinea(html), 0, 'el HTML servido no lleva <script> sin src');
-  assert.ok(html.includes(`<script src="/admin/invoices${RUTA_IMPRIMIR_JS}"></script>`), 'el guion de imprimir va enlazado');
-  assert.ok(html.includes('<button class="print" data-accion="imprimir">🖨 Imprimir / PDF</button>'),
+  assert.match(html, /<script\b[^>]*\ssrc="\/admin\/invoices\/js\/imprimir\.js"[^>]*>\s*<\/script>/,
+    'el guion de imprimir va enlazado');
+  assert.match(html, /<button\b(?=[^>]*\sclass="print")(?=[^>]*\sdata-accion="imprimir")[^>]*>🖨 Imprimir \/ PDF<\/button>/,
     'el botón conserva clase y rótulo, y lleva su acción');
 });
 
