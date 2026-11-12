@@ -35,7 +35,7 @@ import { datosDuplicado } from '../../domain/albaranDuplicado'; // SCRUM-302: qu
 import { ERROR_ALBARAN_CAMBIADO, exigirNombreFirmante, normalizarLugarEntrega, resolverCalidadFirmante } from '../../domain/albaranFirmante';
 // SCRUM-361 (H6 · fase 2): dos editores a la vez dejaban de existir el uno para el otro.
 import { ERROR_ALBARAN_CAMBIADO_AL_EDITAR, puedeEditarEstaVersion } from '../../domain/albaranEdicion';
-import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-467
+import { seesOnlyOwnJobs, seesAllJobs, adminOnlyAlbaranField } from '../../../../core/http/roleCapabilities'; // SCRUM-467 / SCRUM-1712
 import { esSuyoElTrabajo, SELECT_DUENOS } from '../../domain/accesoAlTrabajo'; // SCRUM-849
 import { quienPideDe } from '../../../../core/documentos/accesoALaFactura'; // SCRUM-1555
 import { wherePresupuestosVisibles } from '../../../../core/documentos/accesoAlPresupuesto'; // SCRUM-1555
@@ -628,6 +628,17 @@ router.patch('/:id', async (req, res) => {
     const found = await findAlbaran(req);
     if (!found.ok) return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
     const { albaran } = found;
+    // SCRUM-1712: valorar es del admin — ni valorar, ni cambiar el precio de la oficina, ni
+    // desvalorar (por eso va contra el modo ACTUAL). Antes de nada más: la petición ENTERA.
+    if (!seesAllJobs(req.userRole)) {
+      const campoAdmin = adminOnlyAlbaranField(
+        { modoValoracion: req.body?.modoValoracion, lineas: req.body?.lineas },
+        albaran.modoValoracion === 'VALORADO' ? 'VALORADO' : 'SIN_VALORAR',
+      );
+      if (campoAdmin) {
+        return res.status(403).json({ error: 'forbidden', required_role: 'admin', field: campoAdmin });
+      }
+    }
     if (albaran.estado === 'firmado') {
       return res.status(409).json({ error: 'albaran_locked', message: 'Un albarán firmado está congelado: no se puede editar.' });
     }
