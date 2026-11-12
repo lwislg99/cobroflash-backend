@@ -1,0 +1,15 @@
+// Compila cada <script> ejecutable en línea de una página con vm.Script: ¿cuál no es JS válido?
+// uso: node compilar-en-linea.mjs <fichero.html>...
+import fs from 'node:fs';
+import vm from 'node:vm';
+for (const f of process.argv.slice(2)) {
+  const html = fs.readFileSync(f, 'utf8');
+  const re = /<script(?![^>]*\bsrc=)(?![^>]*application\/json)[^>]*>([\s\S]*?)<\/script>/g;
+  let m, i = 0;
+  const res = [];
+  while ((m = re.exec(html))) {
+    i++;
+    try { new vm.Script(m[1]); res.push(`#${i} ok`); } catch (e) { res.push(`#${i} ${e.name}: ${e.message}`); }
+  }
+  console.log(f.split(/[\\/]/).slice(-2).join('/'), '→', i ? res.join(' · ') : 'sin scripts en línea');
+}

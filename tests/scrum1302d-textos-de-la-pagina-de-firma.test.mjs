@@ -21,10 +21,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { inyectarBase, moduloDeDist, MERCHANT, CLIENTE } from './_envio-doblado.mjs';
 import { bancoDelParte, TRAZO_1, TRAZO_2, CLIENTE_DEL_PARTE } from './_banco-firma-del-parte.mjs';
-import { navegadorDeLaFirma, respuesta } from './_navegador-de-la-firma-del-presupuesto.mjs';
+import { elementosDe, navegadorDelParte, textoDe } from './_navegador-del-parte.mjs'; // SCRUM-1646
+import { navegadorDeLaFirma, respuesta } from './_navegador-de-la-firma-del-presupuesto.mjs'; // SCRUM-1646c
 import { PRESUPUESTO_FIRMA_JS } from '../dist/modules/system/app/routes/quoteDecisionNavegador.js';
 
 const LANDING = '../dist/modules/system/app/routes/quoteDecisionLanding.routes.js';
+const RUTA_PARTE = '../dist/modules/jobs/app/routes/albaranPublic.routes.js';
 const TOKEN = 'd'.repeat(32);
 
 const TEXTO_A = 'Recomendada';
@@ -54,11 +56,6 @@ const textoSinRespuesta = (html) => {
 const textoDeReserva = (html) => {
   const m = html.match(/getElementById\('sig-error'\)\.textContent = (data\.[^;]+);/);
   return m ? new Function('data', `return ${m[1]};`)({}) : null;
-};
-/** El texto de reserva del PARTE: lo que recibe el aviso cuando el servidor contesta un error sin `message`. */
-const textoDeReservaDelParte = (html) => {
-  const m = html.match(/e\.textContent\s*=\s*d\.message\s*\|\|\s*'([^']*)'/);
-  return m ? m[1] : null;
 };
 /**
  * SCRUM-1646c · lo que lee el cliente del PRESUPUESTO bajo la firma, con la respuesta dada. Su guion
@@ -124,9 +121,8 @@ test('SCRUM-1302d · control · las sondas ven el texto viejo cuando está', () 
   assert.equal(textoSinRespuesta(vieja), 'Error de conexión.');
   assert.equal(textoDeReserva(vieja), 'Error al procesar.');
   assert.equal(promesasDeCopia(vieja).length, 1);
-  // La reserva del parte, con lo que el parte pintaba hasta el 13-oct: parecido a C y no igual.
-  const parteViejo = "if(!r.ok){ btn.disabled=false; const e=document.getElementById('sig-error'); e.textContent=d.message||'No se pudo firmar. Inténtalo de nuevo.'; e.style.display='block'; }";
-  assert.equal(textoDeReservaDelParte(parteViejo), 'No se pudo firmar. Inténtalo de nuevo.');
+  // (La reserva del parte, «No se pudo firmar…» hasta el 13-oct, tiene desde SCRUM-1646 su propio
+  // control más abajo: el guion del parte ya no vive en la página y se mira ejecutándolo.)
   // Y la del parte, que escribe el `catch` de otra manera.
   assert.equal(textoSinRespuesta("}catch(_){ btn.disabled=false; btn.textContent='Firmar el parte de trabajo';\n const e=document.getElementById('sig-error'); e.textContent='Error de conexión.'; e.style.display='block'; }"), 'Error de conexión.');
 });
@@ -159,28 +155,72 @@ test('SCRUM-1302d · B y C · presupuesto: lo que se lee si la respuesta no vuel
 });
 
 // ── B y D · parte ────────────────────────────────────────────────────────────────────────────────
-test('SCRUM-1302d · B · parte: lo que se lee si la respuesta de la firma no vuelve', async () => {
+//
+// ⚠️ RE-ANCLADO por SCRUM-1646 (10-nov-2026), y lo que exige NO cambia: los mismos tres textos (B, C
+// y el «Gracias, {nombre}.» de D) y la misma ausencia de promesas. Lo que cambió es DÓNDE vive el
+// texto: la CSP (`script-src 'self'`) saca el guion de la página a `GET /albaran/js/firma.js` y los
+// textos a un bloque `application/json`, así que ya no hay código en el HTML que leer. En vez de
+// leerlo, se EJECUTA el guion servido sobre el HTML generado (`_navegador-del-parte.mjs`) y se mira lo
+// que queda en pantalla en cada caso: la respuesta no vuelve · vuelve un error sin texto · vuelve bien.
+// Es más fuerte que la sonda de texto: ésa veía el literal aunque el `catch` no lo pintara.
+// Su control positivo, abajo, con el texto viejo DENTRO de la página: si el navegador no lo ve, ciego.
+async function parteEnVivo(responder) {
   const { cuerpo } = await bancoDelParte().pagina();
   assert.ok(cuerpo.includes('Firmar el parte de trabajo'), 'CIEGO: no es la página de firma del parte');
-  assert.equal(textoSinRespuesta(cuerpo), TEXTO_B);
+  return { cuerpo, ...(await ejecutarParte(cuerpo, responder)) };
+}
+async function ejecutarParte(cuerpo, responder) {
+  const srcs = elementosDe(cuerpo).filter((e) => e.tag === 'script' && e.attr('src')).map((e) => e.attr('src'));
+  assert.equal(srcs.length, 1, `CIEGO: la página del parte tendría que cargar UN guion y carga ${srcs.length}`);
+  const url = new URL(srcs[0], 'https://yaqu.app');
+  const router = moduloDeDist(RUTA_PARTE).default;
+  const capa = router.stack.find((l) => l.route && l.route.methods.get && `/albaran${l.route.path}` === url.pathname);
+  assert.ok(capa, `CIEGO: el router del parte no sirve ${url.pathname}`);
+  let js = '';
+  const res = { setHeader() { return res; }, status() { return res; }, send(b) { js = String(b); return res; } };
+  capa.route.stack.at(-1).handle({ query: Object.fromEntries(url.searchParams), params: {}, headers: {} }, res);
+  const nav = navegadorDelParte(cuerpo, js, responder);
+  await nav.trazar();
+  await nav.firmar();
+  return { nav, js, error: nav.el('sig-error').textContent, pantalla: nav.card().children[0] };
+}
+const NO_VUELVE = async () => { throw new TypeError('Failed to fetch'); };
+const ERROR_SIN_TEXTO = async () => ({ ok: false, json: async () => ({}) });
+const VUELVE_BIEN = async () => ({ ok: true, json: async () => ({ ok: true }) });
+
+test('SCRUM-1302d · control · el navegador del parte ve el texto viejo cuando está en la página', async () => {
+  const { cuerpo } = await bancoDelParte().pagina();
+  assert.ok(cuerpo.includes(TEXTO_B) && cuerpo.includes(TEXTO_C), 'CIEGO: la página ya no lleva los textos que este control cambia');
+  const vieja = cuerpo.replace(TEXTO_B, 'Error de conexión.').replace(TEXTO_C, 'No se pudo firmar. Inténtalo de nuevo.');
+  assert.equal((await ejecutarParte(vieja, NO_VUELVE)).error, 'Error de conexión.');
+  assert.equal((await ejecutarParte(vieja, ERROR_SIN_TEXTO)).error, 'No se pudo firmar. Inténtalo de nuevo.');
+});
+
+test('SCRUM-1302d · B · parte: lo que se lee si la respuesta de la firma no vuelve', async () => {
+  const { cuerpo, error } = await parteEnVivo(NO_VUELVE);
+  assert.equal(error, TEXTO_B);
   assert.deepEqual(viejosEn(cuerpo), []);
 });
 
 test('SCRUM-1302e · C · parte: si el servidor contesta un error sin texto, se lee lo mismo que en el presupuesto', async () => {
-  const { cuerpo } = await bancoDelParte().pagina();
-  assert.ok(cuerpo.includes('Firmar el parte de trabajo'), 'CIEGO: no es la página de firma del parte');
-  assert.equal(textoDeReservaDelParte(cuerpo), TEXTO_C);
-  assert.equal(textoDeReservaDelParte(cuerpo), await leeElPresupuesto(await paginaDelPresupuesto(), { status: 400, cuerpo: {} }), '🔴 parte y presupuesto ya no dicen lo mismo');
+  // SCRUM-1646 (main): el parte se EJECUTA. SCRUM-1646c: el presupuesto también (su guion ya no va en línea).
+  const { error } = await parteEnVivo(ERROR_SIN_TEXTO);
+  assert.equal(error, TEXTO_C);
+  assert.equal(error, await leeElPresupuesto(await paginaDelPresupuesto(), { status: 400, cuerpo: {} }), '🔴 parte y presupuesto ya no dicen lo mismo');
 });
 
 test('🔴 SCRUM-1302d · D · el parte firmado no promete ninguna copia: ni al acabar de firmar ni al volver al enlace', async () => {
   // Al acabar de firmar: lo que el guion de la página pone en lugar del formulario.
-  const { cuerpo: deFirma } = await bancoDelParte().pagina();
-  const exito = deFirma.match(/<h1[^>]*>¡Parte firmado!<\/h1><p class="meta"[^>]*>([^<]*)<\/p>/);
-  assert.ok(exito, 'CIEGO: no encuentro la pantalla «¡Parte firmado!» en la página de firma');
-  assert.equal(exito[1], `Gracias, ${CLIENTE_DEL_PARTE}.`);
+  const { cuerpo: deFirma, js, pantalla } = await parteEnVivo(VUELVE_BIEN);
+  const titulo = pantalla.children.find((n) => n.tagName === 'H1');
+  assert.ok(titulo && titulo.textContent === '¡Parte firmado!', 'CIEGO: no encuentro la pantalla «¡Parte firmado!» tras firmar');
+  assert.equal(pantalla.children.find((n) => n.tagName === 'P' && n.className === 'meta')?.textContent, `Gracias, ${CLIENTE_DEL_PARTE}.`);
+  assert.deepEqual(pantalla.children.map(textoDe).flatMap((t) => promesasDeCopia(t)), [], '🔴 la pantalla «¡Parte firmado!» habla de una copia');
   assert.deepEqual(promesasDeCopia(deFirma), [], '🔴 la página de firma del parte habla de una copia');
   assert.ok(!/whatsapp/i.test(deFirma.replace(/<style[\s\S]*?<\/style>/g, '')), '🔴 la página de firma del parte nombra WhatsApp');
+  // Y el guion servido, que desde SCRUM-1646 es parte de la página aunque viva aparte.
+  assert.deepEqual(promesasDeCopia(js), [], '🔴 el guion de la página de firma del parte habla de una copia');
+  assert.ok(!/whatsapp/i.test(js), '🔴 el guion de la página de firma del parte nombra WhatsApp');
 
   // Al volver al enlace de un parte ya firmado.
   const { cuerpo: yaFirmado } = await bancoDelParte({ estado: 'firmado' }).pagina();
