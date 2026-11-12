@@ -234,6 +234,11 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // real con una sesión de técnico guardada en la base, y lo que mide es la pertenencia por los tres
   // ejes (campo, tabla `assignees`, autoría) que contesta Postgres. Sólo el desechable: crea y borra un merchant.
   'scrum1706-operario-abre-su-trabajo.test.mjs': 1,
+  // SCRUM-1714: verifactu.xml y datos.zip miran el SII como el modo de emisión. Necesita banco porque
+  // entra por las dos RUTAS reales de exportación con merchants guardados en la base (con el flag
+  // encendido y el SII contestado de distintas formas) y mira lo que sirven. Sólo el desechable: crea
+  // y borra merchants.
+  'scrum1714-exports-miran-el-sii.test.mjs': 1,
   // SCRUM-1697 (b): «Visita n de m» sale del GET del parte. Necesita banco porque lo que mide es la
   // RUTA contando filas de verdad: con borradores, sin los partes de OTRO merchant que comparten el
   // número de trabajo (columna suelta) y con la sesión del técnico asignado. Sólo el desechable: crea y
