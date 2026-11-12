@@ -1,0 +1,431 @@
+{
+  "navegador": {
+    "ok": true,
+    "ruta": "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+    "quien": "Edge (Windows)"
+  },
+  "escenarios": {
+    "A-main-sin": {
+      "vistas": {
+        "con-invitacion": {
+          "capturas": {
+            "390": {
+              "fichero": "A-main-sin-con-invitacion-390.png",
+              "sha256": "76ebc0ae6a854bc4cc4eb2e79af4f3696eec09ff46c31b80d33e817d919e07e9"
+            },
+            "1280": {
+              "fichero": "A-main-sin-con-invitacion-1280.png",
+              "sha256": "3b5cdcbd6860389b7e42e59201fc36de3bd6abe4d6ac37f0c769691604a62a8f"
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "insigniaVisible": true,
+          "avisoVisible": false
+        },
+        "sin-invitacion": {
+          "capturas": {
+            "390": {
+              "fichero": "A-main-sin-sin-invitacion-390.png",
+              "sha256": "017c9f187da24e9df1ec2fc7264665c377a9bf7bef54ce4eec01ff9a12e657d1"
+            },
+            "1280": {
+              "fichero": "A-main-sin-sin-invitacion-1280.png",
+              "sha256": "316b9f36f4ee367909f41e7f1e22b8cd5f40b28c7afbef08d2dd8129563f51ed"
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "insigniaVisible": false,
+          "avisoVisible": false
+        }
+      },
+      "sembrado": {
+        "politica": "sin",
+        "corrio": {
+          "script": true,
+          "onerror": true
+        },
+        "eventos": 0,
+        "scriptSrc": 0,
+        "porDirectiva": {}
+      },
+      "alta": {
+        "insigniaVisible": true,
+        "camposEsOcultosConPT": true,
+        "camposEsVisiblesConES": true,
+        "trasEnviar": {
+          "url": "/register.html?ref=AMIGO1647D",
+          "aviso": "✉️ ¡Cuenta creada! Revisa tu email y haz clic en el enlace para acceder.",
+          "avisoVisible": true,
+          "boton": "Enlace enviado"
+        },
+        "urlFinal": "/login.html",
+        "altas": [
+          {
+            "name": "Fontanería Banco 1647d",
+            "email": "banco1647d@ejemplo.test",
+            "country": "ES",
+            "provincia": "Albacete",
+            "domicilio-foral": "no",
+            "domicilio-canarias": "no",
+            "ref": "AMIGO1647D",
+            "source": "ref:AMIGO1647D"
+          }
+        ],
+        "navegaciones": [
+          "GET /register.html?ref=AMIGO1647D",
+          "GET /login.html"
+        ],
+        "csp": {
+          "eventos": 0,
+          "scriptSrc": 0,
+          "porDirectiva": {}
+        },
+        "completa": true
+      },
+      "lecturasDelDoble": 0
+    },
+    "B-main-aplicada": {
+      "vistas": {
+        "con-invitacion": {
+          "capturas": {
+            "390": {
+              "fichero": "B-main-aplicada-con-invitacion-390.png",
+              "sha256": "b245c48f0e440e44159856f1729319b0b4853580ee5a20fa4fca66f7396d30c1"
+            },
+            "1280": {
+              "fichero": "B-main-aplicada-con-invitacion-1280.png",
+              "sha256": "7bb4527b26b9c91fc97babf692bdda1f6d03a0df12cef455ee7c59afeda01b93"
+            }
+          },
+          "status": 200,
+          "politica": "Content-Security-Policy",
+          "insigniaVisible": true,
+          "avisoVisible": true
+        },
+        "sin-invitacion": {
+          "capturas": {
+            "390": {
+              "fichero": "B-main-aplicada-sin-invitacion-390.png",
+              "sha256": "b245c48f0e440e44159856f1729319b0b4853580ee5a20fa4fca66f7396d30c1"
+            },
+            "1280": {
+              "fichero": "B-main-aplicada-sin-invitacion-1280.png",
+              "sha256": "7bb4527b26b9c91fc97babf692bdda1f6d03a0df12cef455ee7c59afeda01b93"
+            }
+          },
+          "status": 200,
+          "politica": "Content-Security-Policy",
+          "insigniaVisible": true,
+          "avisoVisible": true
+        }
+      },
+      "sembrado": {
+        "politica": "aplicada",
+        "corrio": {
+          "script": false,
+          "onerror": false
+        },
+        "eventos": 2,
+        "scriptSrc": 2,
+        "porDirectiva": {
+          "script-src-elem": 1,
+          "script-src-attr": 1
+        }
+      },
+      "alta": {
+        "insigniaVisible": true,
+        "camposEsOcultosConPT": false,
+        "camposEsVisiblesConES": true,
+        "trasEnviar": {
+          "url": "/register.html",
+          "aviso": "",
+          "avisoVisible": true,
+          "boton": "Crear cuenta y acceder"
+        },
+        "urlFinal": "/register.html",
+        "altas": [],
+        "navegaciones": [
+          "GET /register.html?ref=AMIGO1647D",
+          "GET /register.html?"
+        ],
+        "csp": {
+          "eventos": 6,
+          "scriptSrc": 2,
+          "porDirectiva": {
+            "style-src-attr": 4,
+            "script-src-elem": 2
+          }
+        },
+        "completa": false
+      },
+      "lecturasDelDoble": 0
+    },
+    "C-rama-aplicada": {
+      "vistas": {
+        "con-invitacion": {
+          "capturas": {
+            "390": {
+              "fichero": "C-rama-aplicada-con-invitacion-390.png",
+              "sha256": "76ebc0ae6a854bc4cc4eb2e79af4f3696eec09ff46c31b80d33e817d919e07e9"
+            },
+            "1280": {
+              "fichero": "C-rama-aplicada-con-invitacion-1280.png",
+              "sha256": "3b5cdcbd6860389b7e42e59201fc36de3bd6abe4d6ac37f0c769691604a62a8f"
+            }
+          },
+          "status": 200,
+          "politica": "Content-Security-Policy",
+          "insigniaVisible": true,
+          "avisoVisible": false
+        },
+        "sin-invitacion": {
+          "capturas": {
+            "390": {
+              "fichero": "C-rama-aplicada-sin-invitacion-390.png",
+              "sha256": "017c9f187da24e9df1ec2fc7264665c377a9bf7bef54ce4eec01ff9a12e657d1"
+            },
+            "1280": {
+              "fichero": "C-rama-aplicada-sin-invitacion-1280.png",
+              "sha256": "316b9f36f4ee367909f41e7f1e22b8cd5f40b28c7afbef08d2dd8129563f51ed"
+            }
+          },
+          "status": 200,
+          "politica": "Content-Security-Policy",
+          "insigniaVisible": false,
+          "avisoVisible": false
+        }
+      },
+      "sembrado": {
+        "politica": "aplicada",
+        "corrio": {
+          "script": false,
+          "onerror": false
+        },
+        "eventos": 2,
+        "scriptSrc": 2,
+        "porDirectiva": {
+          "script-src-elem": 1,
+          "script-src-attr": 1
+        }
+      },
+      "alta": {
+        "insigniaVisible": true,
+        "camposEsOcultosConPT": true,
+        "camposEsVisiblesConES": true,
+        "trasEnviar": {
+          "url": "/register.html?ref=AMIGO1647D",
+          "aviso": "✉️ ¡Cuenta creada! Revisa tu email y haz clic en el enlace para acceder.",
+          "avisoVisible": true,
+          "boton": "Enlace enviado"
+        },
+        "urlFinal": "/login.html",
+        "altas": [
+          {
+            "name": "Fontanería Banco 1647d",
+            "email": "banco1647d@ejemplo.test",
+            "country": "ES",
+            "provincia": "Albacete",
+            "domicilio-foral": "no",
+            "domicilio-canarias": "no",
+            "ref": "AMIGO1647D",
+            "source": "ref:AMIGO1647D"
+          }
+        ],
+        "navegaciones": [
+          "GET /register.html?ref=AMIGO1647D",
+          "GET /login.html"
+        ],
+        "csp": {
+          "eventos": 0,
+          "scriptSrc": 0,
+          "porDirectiva": {}
+        },
+        "completa": true
+      },
+      "lecturasDelDoble": 0
+    },
+    "D-rama-sin": {
+      "vistas": {
+        "con-invitacion": {
+          "capturas": {
+            "390": {
+              "fichero": "D-rama-sin-con-invitacion-390.png",
+              "sha256": "76ebc0ae6a854bc4cc4eb2e79af4f3696eec09ff46c31b80d33e817d919e07e9"
+            },
+            "1280": {
+              "fichero": "D-rama-sin-con-invitacion-1280.png",
+              "sha256": "3b5cdcbd6860389b7e42e59201fc36de3bd6abe4d6ac37f0c769691604a62a8f"
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "insigniaVisible": true,
+          "avisoVisible": false
+        },
+        "sin-invitacion": {
+          "capturas": {
+            "390": {
+              "fichero": "D-rama-sin-sin-invitacion-390.png",
+              "sha256": "017c9f187da24e9df1ec2fc7264665c377a9bf7bef54ce4eec01ff9a12e657d1"
+            },
+            "1280": {
+              "fichero": "D-rama-sin-sin-invitacion-1280.png",
+              "sha256": "316b9f36f4ee367909f41e7f1e22b8cd5f40b28c7afbef08d2dd8129563f51ed"
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "insigniaVisible": false,
+          "avisoVisible": false
+        }
+      },
+      "sembrado": {
+        "politica": "sin",
+        "corrio": {
+          "script": true,
+          "onerror": true
+        },
+        "eventos": 0,
+        "scriptSrc": 0,
+        "porDirectiva": {}
+      },
+      "alta": {
+        "insigniaVisible": true,
+        "camposEsOcultosConPT": true,
+        "camposEsVisiblesConES": true,
+        "trasEnviar": {
+          "url": "/register.html?ref=AMIGO1647D",
+          "aviso": "✉️ ¡Cuenta creada! Revisa tu email y haz clic en el enlace para acceder.",
+          "avisoVisible": true,
+          "boton": "Enlace enviado"
+        },
+        "urlFinal": "/login.html",
+        "altas": [
+          {
+            "name": "Fontanería Banco 1647d",
+            "email": "banco1647d@ejemplo.test",
+            "country": "ES",
+            "provincia": "Albacete",
+            "domicilio-foral": "no",
+            "domicilio-canarias": "no",
+            "ref": "AMIGO1647D",
+            "source": "ref:AMIGO1647D"
+          }
+        ],
+        "navegaciones": [
+          "GET /register.html?ref=AMIGO1647D",
+          "GET /login.html"
+        ],
+        "csp": {
+          "eventos": 0,
+          "scriptSrc": 0,
+          "porDirectiva": {}
+        },
+        "completa": true
+      },
+      "lecturasDelDoble": 0
+    }
+  },
+  "version": "Edg/157.0.4341.46",
+  "comparacionVisual": [
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "vista": "con-invitacion",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "vista": "con-invitacion",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "vista": "sin-invitacion",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "vista": "sin-invitacion",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "vista": "con-invitacion",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "vista": "con-invitacion",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "vista": "sin-invitacion",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "vista": "sin-invitacion",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "D-rama-sin → C-rama-aplicada",
+      "vista": "con-invitacion",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "D-rama-sin → C-rama-aplicada",
+      "vista": "con-invitacion",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "D-rama-sin → C-rama-aplicada",
+      "vista": "sin-invitacion",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "D-rama-sin → C-rama-aplicada",
+      "vista": "sin-invitacion",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → B-main-aplicada",
+      "vista": "con-invitacion",
+      "ancho": 390,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → B-main-aplicada",
+      "vista": "con-invitacion",
+      "ancho": 1280,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → B-main-aplicada",
+      "vista": "sin-invitacion",
+      "ancho": 390,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → B-main-aplicada",
+      "vista": "sin-invitacion",
+      "ancho": 1280,
+      "identicas": false
+    }
+  ],
+  "recursosQueFaltan": []
+}

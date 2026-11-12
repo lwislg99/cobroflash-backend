@@ -129,6 +129,7 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
     kind: 'no-sensitive-resource',
     reason: 'guion estático de /login.html (SCRUM-1647c): cadena constante, sin datos de la petición ni de ningún merchant; no hay :id en la URL',
   },
+  { method: 'GET', path: '/auth/js/alta.js', kind: 'no-sensitive-resource', reason: 'guion constante de /register.html, sin datos (SCRUM-1647d; línea de J3 por excepción firmada en c.21658)' },
 
   // ── /quote — única ruta pública con sesión real (el resto del router, ver PENDING) ──
   {
@@ -165,6 +166,7 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
   { method: 'GET', path: '/pay/mp/:token', kind: 'token', reason: 'Charge.receiptToken' },
   { method: 'GET', path: '/pay/mp/:token/result', kind: 'token', reason: 'Charge.receiptToken' },
   { method: 'GET', path: '/pay/js/pago.js', kind: 'no-sensitive-resource', reason: 'guion constante de las páginas de pago, sin datos (SCRUM-1647; línea de J2 por excepción firmada en c.21631)' },
+  { method: 'GET', path: '/pay/css/pago.css', kind: 'no-sensitive-resource', reason: 'CSS constante de las páginas de pago, sin datos (SCRUM-1723; línea de J2 por excepción firmada en c.21719)' },
   { method: 'GET', path: '/albaran/js/firma.js', kind: 'no-sensitive-resource', reason: 'guion constante de la página pública de firma del parte, sin datos ni token: los datos van en el HTML que autoriza el token (SCRUM-1646)' },
   { method: 'GET', path: '/albaran/css/firma.css', kind: 'no-sensitive-resource', reason: 'CSS constante de la página pública de firma del parte, sin datos (SCRUM-1723)' },
 

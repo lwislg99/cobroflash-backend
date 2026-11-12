@@ -106,7 +106,9 @@ const SUPERFICIES = [
   },
   {
     nombre: 'página de alta · /register.html (control positivo)',
-    fuente: () => leer('public', 'register.html'),
+    // SCRUM-1647d: el guion salió del HTML (CSP) y se sirve desde `GET /auth/js/alta.js`; la
+    // expresión se lee donde vive ahora. El patrón es el mismo, sin tocar (firma: SCRUM-1647 c.21658).
+    fuente: () => leer('dist', 'modules', 'auth', 'app', 'routes', 'altaNavegador.js'),
     patron: /showAlert\((.*'Error al crear la cuenta\.'), 'error'\)/,
     variables: ['data', 'msgs'],
     porDefecto: 'Error al crear la cuenta.',
