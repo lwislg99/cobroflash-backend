@@ -1,0 +1,85 @@
+REPOSITORIO 33e3d9d4e2544a02f14515186f7eff6e87d7b398 · v24.18.0 · MINGW64_NT-10.0-26200
+
+== CONTROLES DEL INSTRUMENTO (esperado: 0 · 1 · 0 · 1 creados que siguen vivos)
+control-1-pasa-y-borra · control · salida 0 · tests 2 · rojos 0 · creados 2 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+control-2-pasa-y-nadie-borra · control · salida 0 · tests 3 · rojos 0 · creados 3 · armados 0 · disparados 0 · en TEMP al final 1 · creados que siguen vivos 1 → control-del-espia.test.mjs:13
+control-3-falla-con-finally · control · salida 1 · tests 2 · rojos 1 · creados 2 · armados 1 · disparados 1 · en TEMP al final 0 · creados que siguen vivos 0
+control-4-falla-sin-finally · control · salida 1 · tests 2 · rojos 1 · creados 2 · armados 1 · disparados 1 · en TEMP al final 1 · creados que siguen vivos 1 → control-del-espia.test.mjs:12
+
+== LOS 18 FICHEROS DE TEST (20 de las 24 llamadas)
+feliz · scrum1263-gancho-pre-push · salida 0 · tests 4 · rojos 0 · creados 6 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum1263-gancho-pre-push · salida 1 · tests 4 · rojos 4 · creados 4 · armados 4 · disparados 4 · en TEMP al final 4 · creados que siguen vivos 4 → scrum1263-gancho-pre-push.test.mjs:52 scrum1263-gancho-pre-push.test.mjs:52 scrum1263-gancho-pre-push.test.mjs:52 scrum1263-gancho-pre-push.test.mjs:52
+feliz · scrum1289b-reporters-como-argumentos · salida 0 · tests 9 · rojos 0 · creados 2 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum1289b-reporters-como-argumentos · salida 1 · tests 9 · rojos 2 · creados 2 · armados 2 · disparados 2 · en TEMP al final 0 · creados que siguen vivos 0
+feliz · scrum1424-ya-esta · salida 0 · tests 12 · rojos 0 · creados 8 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum1424-ya-esta · salida 1 · tests 12 · rojos 6 · creados 7 · armados 6 · disparados 6 · en TEMP al final 0 · creados que siguen vivos 0
+feliz · scrum252-procedencia-cliente · salida 0 · tests 16 · rojos 0 · creados 5 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum252-procedencia-cliente · salida 1 · tests 16 · rojos 4 · creados 5 · armados 4 · disparados 4 · en TEMP al final 0 · creados que siguen vivos 0
+feliz · scrum454-destructivo-sin-comprobacion · salida 0 · tests 41 · rojos 0 · creados 5 · armados 0 · disparados 0 · en TEMP al final 1 · creados que siguen vivos 0
+fallo · scrum454-destructivo-sin-comprobacion · salida 1 · tests 1 · rojos 1 · creados 2 · armados 2 · disparados 1 · en TEMP al final 2 · creados que siguen vivos 2 → scrum454-destructivo-sin-comprobacion.test.mjs:157 scrum454-destructivo-sin-comprobacion.test.mjs:157
+feliz · scrum521-resolvedor-de-importadores · salida 0 · tests 6 · rojos 0 · creados 7 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum521-resolvedor-de-importadores · salida 1 · tests 6 · rojos 5 · creados 5 · armados 5 · disparados 5 · en TEMP al final 0 · creados que siguen vivos 0
+feliz · scrum709-microcopy-por-fichero · salida 0 · tests 8 · rojos 0 · creados 1 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum709-microcopy-por-fichero · salida 1 · tests 8 · rojos 1 · creados 1 · armados 1 · disparados 1 · en TEMP al final 0 · creados que siguen vivos 0
+feliz · scrum716c-la-memoria-del-vigia · salida 0 · tests 9 · rojos 0 · creados 5 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum716c-la-memoria-del-vigia · salida 1 · tests 9 · rojos 5 · creados 5 · armados 5 · disparados 5 · en TEMP al final 0 · creados que siguen vivos 0
+feliz · scrum726-quien-firma-la-microcopy · salida 0 · tests 6 · rojos 0 · creados 3 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum726-quien-firma-la-microcopy · salida 1 · tests 6 · rojos 3 · creados 3 · armados 3 · disparados 3 · en TEMP al final 0 · creados que siguen vivos 0
+feliz · scrum754-el-juez-que-oscila · salida 0 · tests 22 · rojos 0 · creados 12 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum754-el-juez-que-oscila · salida 1 · tests 22 · rojos 4 · creados 11 · armados 4 · disparados 4 · en TEMP al final 0 · creados que siguen vivos 0
+feliz · scrum757-la-declaracion-que-nadie-lee · salida 0 · tests 9 · rojos 0 · creados 12 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum757-la-declaracion-que-nadie-lee · salida 1 · tests 9 · rojos 6 · creados 8 · armados 6 · disparados 6 · en TEMP al final 0 · creados que siguen vivos 0
+feliz · scrum759-el-guard-ciego-fuera-de-su-fichero · salida 0 · tests 12 · rojos 0 · creados 6 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum759-el-guard-ciego-fuera-de-su-fichero · salida 1 · tests 12 · rojos 3 · creados 6 · armados 3 · disparados 3 · en TEMP al final 0 · creados que siguen vivos 0
+feliz · scrum811c-skill-ui-declarada · salida 0 · tests 27 · rojos 0 · creados 2 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum811c-skill-ui-declarada · salida 1 · tests 27 · rojos 1 · creados 1 · armados 1 · disparados 1 · en TEMP al final 0 · creados que siguen vivos 0
+feliz · scrum836-ancla-de-mutacion-viva · salida 1 · tests 17 · rojos 1 · creados 13 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum836-ancla-de-mutacion-viva · salida 1 · tests 17 · rojos 12 · creados 13 · armados 11 · disparados 11 · en TEMP al final 0 · creados que siguen vivos 0
+feliz · scrum839d-union-solo-en-el-registro · salida 0 · tests 15 · rojos 0 · creados 11 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum839d-union-solo-en-el-registro · salida 1 · tests 15 · rojos 11 · creados 11 · armados 11 · disparados 11 · en TEMP al final 0 · creados que siguen vivos 0
+feliz · scrum839e-solo-pr-armados · salida 0 · tests 13 · rojos 0 · creados 20 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum839e-solo-pr-armados · salida 1 · tests 13 · rojos 6 · creados 17 · armados 6 · disparados 6 · en TEMP al final 0 · creados que siguen vivos 0
+feliz · scrum850b-las-formas-que-mienten · salida 0 · tests 6 · rojos 0 · creados 2 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum850b-las-formas-que-mienten · salida 1 · tests 6 · rojos 2 · creados 2 · armados 2 · disparados 2 · en TEMP al final 0 · creados que siguen vivos 0
+feliz · scrum899-sesion-lista-blanca · salida 0 · tests 12 · rojos 0 · creados 5 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum899-sesion-lista-blanca · salida 1 · tests 12 · rojos 4 · creados 4 · armados 4 · disparados 4 · en TEMP al final 0 · creados que siguen vivos 0
+
+== LOS 4 AYUDANTES (las otras 4 llamadas), por los tests que los importan
+ayudantes-feliz · scrum411-exports-inalcanzables · salida 0 · tests 25 · rojos 0 · creados 2 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+ayudantes-fallo · scrum411-exports-inalcanzables · salida 1 · tests 25 · rojos 2 · creados 2 · armados 2 · disparados 2 · en TEMP al final 0 · creados que siguen vivos 0
+ayudantes-feliz · scrum493-dos-instrumentos · salida 0 · tests 8 · rojos 0 · creados 1 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+ayudantes-fallo · scrum493-dos-instrumentos · salida 1 · tests 8 · rojos 1 · creados 1 · armados 1 · disparados 1 · en TEMP al final 0 · creados que siguen vivos 0
+ayudantes-feliz · scrum494-export-que-sobra · salida 0 · tests 12 · rojos 0 · creados 2 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+ayudantes-fallo · scrum494-export-que-sobra · salida 1 · tests 12 · rojos 2 · creados 2 · armados 2 · disparados 2 · en TEMP al final 0 · creados que siguen vivos 0
+ayudantes-feliz · scrum521-resolvedor-de-importadores · salida 0 · tests 6 · rojos 0 · creados 7 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+ayudantes-fallo · scrum521-resolvedor-de-importadores · salida 0 · tests 6 · rojos 0 · creados 7 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+ayudantes-feliz · scrum631-la-unicidad-tiene-vigilante · salida 1 · tests 1 · rojos 1 · creados 0 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+ayudantes-fallo · scrum631-la-unicidad-tiene-vigilante · salida 1 · tests 1 · rojos 1 · creados 0 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+ayudantes-feliz · scrum824-temporales-fuera-del-arbol · salida 0 · tests 9 · rojos 0 · creados 0 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+ayudantes-fallo · scrum824-temporales-fuera-del-arbol · salida 0 · tests 9 · rojos 0 · creados 0 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+
+== POR LÍNEA ACUSADA, pasadas de fallo: fallos inyectados (F) y directorios suyos que quedan
+  _alcance-desde-entradas.mjs:385 · fallos inyectados 1 · quedan 0
+  _comparador-alcance.mjs:261 · fallos inyectados 1 · quedan 0
+  _export-que-sobra.mjs:239 · fallos inyectados 2 · quedan 0
+  _huerfanos-en-modulos-vivos.mjs:195 · fallos inyectados 1 · quedan 0
+  scrum1263-gancho-pre-push.test.mjs:52 · fallos inyectados 4 · quedan 4
+  scrum1289b-reporters-como-argumentos.test.mjs:80 · fallos inyectados 2 · quedan 0
+  scrum1424-ya-esta.test.mjs:114 · fallos inyectados 6 · quedan 0
+  scrum252-procedencia-cliente.test.mjs:60 · fallos inyectados 4 · quedan 0
+  scrum454-destructivo-sin-comprobacion.test.mjs:157 · fallos inyectados 1 · quedan 2
+  scrum521-resolvedor-de-importadores.test.mjs:52 · fallos inyectados 5 · quedan 0
+  scrum709-microcopy-por-fichero.test.mjs:84 · fallos inyectados 1 · quedan 0
+  scrum716c-la-memoria-del-vigia.test.mjs:224 · fallos inyectados 5 · quedan 0
+  scrum726-quien-firma-la-microcopy.test.mjs:36 · fallos inyectados 3 · quedan 0
+  scrum754-el-juez-que-oscila.test.mjs:345 · fallos inyectados 2 · quedan 0
+  scrum754-el-juez-que-oscila.test.mjs:703 · fallos inyectados 2 · quedan 0
+  scrum757-la-declaracion-que-nadie-lee.test.mjs:41 · fallos inyectados 6 · quedan 0
+  scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs:107 · fallos inyectados 3 · quedan 0
+  scrum811c-skill-ui-declarada.test.mjs:611 · fallos inyectados 1 · quedan 0
+  scrum836-ancla-de-mutacion-viva.test.mjs:491 · fallos inyectados 3 · quedan 0
+  scrum836-ancla-de-mutacion-viva.test.mjs:83 · fallos inyectados 8 · quedan 0
+  scrum839d-union-solo-en-el-registro.test.mjs:149 · fallos inyectados 11 · quedan 0
+  scrum839e-solo-pr-armados.test.mjs:116 · fallos inyectados 6 · quedan 0
+  scrum850b-las-formas-que-mienten.test.mjs:73 · fallos inyectados 2 · quedan 0
+  scrum899-sesion-lista-blanca.test.mjs:177 · fallos inyectados 4 · quedan 0

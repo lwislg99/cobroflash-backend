@@ -50,6 +50,11 @@
       "ticket": "SCRUM-1238",
       "equipo": "javier",
       "motivo": "Lo crea J6 (equipo de Javier) en SCRUM-1238b, que lleva area-j6 y no edita la tabla de §3.3; la S0 le da fila cuando su orquestador diga el puesto."
+    },
+    "scripts/_mkdtemp-declarados.json": {
+      "ticket": "SCRUM-1396",
+      "equipo": "javier",
+      "motivo": "Lo crea J6 (equipo de Javier) en SCRUM-1396c, que lleva area-j6 y no edita la tabla de §3.3: es la lista de los 28 sitios declarados por decisión del fundador (c.21095), al lado de su censo scripts/_censo-mkdtemp.mjs; la S0 le da fila cuando su orquestador diga el puesto."
     }
   }
 }

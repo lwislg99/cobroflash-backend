@@ -61,10 +61,12 @@ test('SCRUM-1393e · SIEMBRA: sustituido + verde posterior que lo contiene → C
   assert.match(pendiente.cuerpo, /absuelto por el verde/);
 });
 
-test('SCRUM-1393e · SIEMBRA: un cancelado CON jobs NO cierra, aunque la punta salga verde', () => {
+test('SCRUM-1393e · SIEMBRA: un cancelado CON jobs NO se absuelve, aunque la punta salga verde (1393g: se declara)', () => {
   const a = accionDelIssue(pasada([CANCELADO_CON_JOBS(V), VERDE(P)]), { estado: 'abierto' });
-  assert.deepEqual(a.pasos, ['comentar']);
+  // SCRUM-1393g (c.21059): ya no bloquea el cierre; sale declarado como CIEGO sin absolver
+  assert.deepEqual(a.pasos, ['comentar', 'cerrar']);
   assert.ok(a.cuerpo.includes(marcaDeAviso(CANCELADO_CON_JOBS(V))));
+  assert.match(a.cuerpo, /1 CIEGO sin absolver de 2 commits mirados/);
   assert.doesNotMatch(a.cuerpo, /absuelto/);
 });
 
@@ -78,15 +80,19 @@ test('SCRUM-1393e · SIEMBRA: un sustituido SIN verde posterior no cierra — y 
   assert.equal(absolucionDeSustituidos([VERDE(W), SUSTITUIDO(V)], LINEA).absueltos.size, 0);
 });
 
-test('SCRUM-1393e · SIEMBRA: un verde que NO lo contiene (otra rama) no lo absuelve, ni cierra', () => {
+test('SCRUM-1393e · SIEMBRA: un verde que NO lo contiene (otra rama) no lo absuelve (1393g: se declara)', () => {
   // la punta P está verde, pero en su línea no está V: V es de otra rama
   const otraRama = accionDelIssue(pasada([SUSTITUIDO(V), VERDE(P)], [P, W]), { estado: 'abierto' });
-  assert.deepEqual(otraRama.pasos, ['comentar']);
-  assert.match(otraRama.motivo, /CIEGO o SIN-LEER en esta pasada/);
+  // SCRUM-1393g (c.21059): cierra, pero V sale declarado como CIEGO sin absolver
+  assert.deepEqual(otraRama.pasos, ['comentar', 'cerrar']);
+  assert.match(otraRama.cuerpo, /1 CIEGO sin absolver de 2 commits mirados/);
+  assert.doesNotMatch(otraRama.cuerpo, /absuelto por el verde/);
   // un verde W que no está en la línea no absuelve a V, que sí está
   assert.equal(absolucionDeSustituidos([VERDE(W), SUSTITUIDO(V)], [P, V]).absueltos.size, 0);
   // sin línea, nada se absuelve (lo que hacía 1393d)
-  assert.deepEqual(accionDelIssue(pasada([SUSTITUIDO(V), VERDE(P)], null), { estado: 'abierto' }).pasos, ['comentar']);
+  const sinLinea = accionDelIssue(pasada([SUSTITUIDO(V), VERDE(P)], null), { estado: 'abierto' });
+  assert.match(sinLinea.cuerpo, /1 CIEGO sin absolver/);
+  assert.doesNotMatch(sinLinea.cuerpo, /absuelto por el verde/);
 });
 
 test('SCRUM-1393e · SIEMBRA: con el sustituto aún CORRIENDO, ESPERA — ni reabre ni comenta, y no cierra', () => {
@@ -157,7 +163,10 @@ test('SCRUM-1393e · consola: `--pendientes` lista los pendientes y `--accion-de
       '--punta', P, ...(linea ? ['--linea', f('l.txt', linea.join('\n'))] : []), '--estado-issue', 'abierto', '--previos', f('q.txt', ''), '--cuerpo', path.join(dir, 'c.md')], { env, encoding: 'utf8' });
     assert.match(accion(LINEA), /^PASOS=comentar,cerrar$/m);
     assert.match(fs.readFileSync(path.join(dir, 'c.md'), 'utf8'), /absuelto por el verde/);
-    assert.match(accion(null), /^PASOS=comentar$/m, 'sin línea no absuelve');
+    // SCRUM-1393g (c.21059): sin línea cierra igual, pero lo declara sin absolver
+    assert.match(accion(null), /^PASOS=comentar,cerrar$/m);
+    assert.doesNotMatch(fs.readFileSync(path.join(dir, 'c.md'), 'utf8'), /absuelto por el verde/, 'sin línea no absuelve');
+    assert.match(fs.readFileSync(path.join(dir, 'c.md'), 'utf8'), /1 CIEGO sin absolver/);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

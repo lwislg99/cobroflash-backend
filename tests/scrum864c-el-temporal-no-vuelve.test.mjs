@@ -58,7 +58,8 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  censar, clasificaFuente, motivosParaNoFiarse, sinCierre, sinDueno, comoLinea, DECLARADAS,
+  censar, clasificaFuente, motivosParaNoFiarse, comoLinea, DECLARADAS,
+  fugasDe, contraSitiosDeclarados, leerSitiosDeclarados, RUTA_SITIOS_DECLARADOS,
 } from '../scripts/_censo-mkdtemp.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -275,10 +276,20 @@ test('SCRUM-864c · ② SUELO: el censo VE el árbol y DISTINGUE, así que su ce
 // ═══ ③ EL TRINQUETE ══════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-864c · 🔴 ③ NINGÚN temporal nuevo nace sin borrarse: las cuatro categorías de fuga = 0', () => {
-  const fugas = [...sinCierre(CENSO), ...sinDueno(CENSO)];
-  assert.deepEqual(fugas.map(comoLinea), [], [
+  // SCRUM-1396c: los sitios que ya estaban en `main` el día que el censo pasó a emparejar por ámbito
+  // entran DECLARADOS (SCRUM-1396 c.21095), y aquí sólo cae lo que no está en esa lista.
+  const { nuevos, sobran } = contraSitiosDeclarados(CENSO, leerSitiosDeclarados(RAIZ));
+  const conNuevos = new Set(nuevos.map((n) => n.replace(/(:| \().*$/, '')));
+  const fugas = fugasDe(CENSO).filter((l) => conNuevos.has(l.fichero));
+  assert.deepEqual(sobran, [], [
     '',
-    `🔴 HAY ${fugas.length} LLAMADA(S) A \`mkdtempSync\` QUE NO BORRAN SU DIRECTORIO PASE LO QUE PASE:`,
+    `🔴 EL TRINQUETE PUEDE APRETAR Y NO SE HA APRETADO: ${sobran.join(' · ')}`,
+    `  Ya no se acusan. BORRA su entrada de \`${RUTA_SITIOS_DECLARADOS}\` (o baja \`llamadas\`) en este commit.`,
+    '  Si no has tocado ese fichero, el censo ha dejado de ver algo: eso no es una mejora, es un instrumento roto.',
+  ].join(NL));
+  assert.deepEqual(nuevos, [], [
+    '',
+    `🔴 HAY ${fugas.length} LLAMADA(S) A \`mkdtempSync\` QUE NO BORRAN SU DIRECTORIO PASE LO QUE PASE (${nuevos.join(' · ')}):`,
     '',
     ...fugas.map((f) => `      [${f.categoria}] ` + comoLinea(f)),
     '',
@@ -302,6 +313,7 @@ test('SCRUM-864c · 🔴 ③ NINGÚN temporal nuevo nace sin borrarse: las cuatr
     '  SI DE VERDAD HACE FALTA CONSERVARLO (para inspeccionar algo después)',
     '    Se DECLARA en `DECLARADAS` de `scripts/_censo-mkdtemp.mjs`, con el motivo al lado.',
     '    Un conservado sin declarar no es una decisión: es una fuga.',
+    `    ⛔ Y NO en \`${RUTA_SITIOS_DECLARADOS}\`: ésa es la lista de los que había el 27-oct-2026, y sólo baja.`,
     '',
     '  ⚠️ ESTE GUARD NO LO VE TODO: un SIGKILL no limpia nada, y sólo mira lo que se llama `mkdtemp*`.',
     '     Lo que no ve está escrito en la cabecera de este fichero.',
