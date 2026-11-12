@@ -227,3 +227,32 @@ test('SCRUM-665e · ⑪ si congelar falla, la emisión NO falla ni cambia su res
   assert.deepEqual(r, { estado: 'no_aplica' }, '🔴 un fallo al guardar el PDF cambió o tumbó la emisión');
   assert.equal(p.fila.vfEstado, 'no_aplica');
 });
+
+// Decisión del orquestador, SCRUM-665 c.21592 punto 1 (el consumidor nuevo que pedía SCRUM-206 (b)):
+// si el PORTÓN rechaza el PDF, el sellado no se deshace ni falla, no se congela nada y se avisa en
+// el log con el id y el motivo. El rechazo es el del portón DE VERDAD (`exigirDocumentoEmitible`
+// sobre un documento sin huella), no un error inventado.
+const { exigirDocumentoEmitible } = require('../dist/modules/invoicing/domain/portonDocumento.js');
+
+test('SCRUM-665e · ⑫ si el portón rechaza el PDF al emitir: sellado intacto, 0 PDF y aviso en el log', async (t) => {
+  const d = dobleQueSella();
+  const avisos = [];
+  t.mock.method(console, 'error', (...a) => { avisos.push(a.map(String).join(' ')); });
+  let motivo = null;
+  const r = await sellado.sellarTrasEmision({ ...d.fila, total: { toString: () => '121.00' } },
+    { country: 'ES', taxId: 'B12345678' }, d.cliente,
+    { congelarPdf: async () => {
+      try { exigirDocumentoEmitible({ number: d.fila.number, vfHash: null }, { country: 'ES', taxId: 'B12345678' }); } catch (e) { motivo = e.message; throw e; }
+      throw new Error('CIEGO: el portón no rechazó');
+    } });
+  assert.ok(motivo, '🔴 CIEGO: el portón real no rechazó el documento sin huella; el caso no prueba nada');
+  assert.deepEqual(r, { estado: 'sellado' }, `🔴 el rechazo del PDF cambió o tumbó el sellado: ${JSON.stringify(r)}`);
+  assert.equal(d.fila.vfEstado, 'sellado', '🔴 el rechazo del PDF deshizo el sellado (regla 29)');
+  assert.ok(d.fila.vfHash, '🔴 la factura perdió su huella tras el rechazo del PDF');
+  assert.equal(d.fila.pdfSha256, undefined, '🔴 se guardó huella de PDF tras un rechazo del portón');
+  assert.equal(d.orden.filter((o) => o.includes('pdfSha256')).length, 0, '🔴 se escribió `pdfSha256` tras el rechazo');
+  const aviso = avisos.filter((a) => a.includes('PDF NO congelado al emitir'));
+  assert.equal(aviso.length, 1, `🔴 el rechazo no se dijo en voz alta (avisos: ${JSON.stringify(avisos)})`);
+  assert.ok(aviso[0].includes(String(d.fila.id)) && aviso[0].includes(motivo),
+    `🔴 el aviso no lleva el id y el motivo: «${aviso[0]}»`);
+});
