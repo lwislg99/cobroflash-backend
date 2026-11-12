@@ -356,19 +356,13 @@ export const USO = new Map([
   //   · `dateStr` vive dentro de `generateInvoicePdf` y sólo pinta la «Fecha:» de la FACTURA (el PDF
   //     del presupuesto no imprime fecha de creación). Es fiscal: qué día imprime lo decide el
   //     fundador (aceptación 2 de SCRUM-1470). No se toca hasta entonces.
-  //   · `generateQuotePdf`: la fecha de la firma YA va en la zona del negocio. Lo que queda es el
-  //     sello, que dice de sí mismo «(hora del servidor)» —literal firmado, copiado del albarán y
-  //     atado por scrum805—. Pintarlo en la zona del negocio haría falso el literal; cambiar el
-  //     literal es firma del fundador (regla 39).
-  //   · `fD` (más abajo): el paquete de disputa. Su gemelo es ese sello —el banco recibe los dos
-  //     papeles— y cambian juntos o no cambian.
-  ['src/modules/invoicing/infra/pdf/pdf.service.ts::generateQuotePdf', { uso: IMPRIME, motivo: 'el sello de la evidencia, que se declara «(hora del servidor)»: literal firmado, no se mueve sin cambiar el literal (regla 39). La fecha de la firma ya va en la zona del negocio', ref: 'SCRUM-1470' }],
+  //   · `generateQuotePdf` y `fD` (el sello de la evidencia y el paquete de disputa) quedaban aquí
+  //     hasta SCRUM-1726, que los RETIRÓ con la firma del fundador: ver `RETIRADAS`.
   ['src/modules/jobs/infra/albaranPdf.service.ts::fmtDate', { uso: IMPRIME, motivo: 'fecha impresa en el PDF de albarán' }],
   ['src/modules/jobs/infra/albaranPdf.service.ts::generateAlbaranPdf', { uso: IMPRIME, motivo: 'fecha impresa en el PDF de albarán' }],
   ['src/modules/jobs/domain/recapitulativa.service.ts::emitirRecapitulativas', { uso: IMPRIME, motivo: 'fecha impresa en la recapitulativa' }],
   ['src/modules/jobs/app/routes/albaranes.routes.ts::POST /:id/facturar-parcial', { uso: IMPRIME, motivo: 'fecha impresa al facturar parcialmente' }],
   ['src/modules/jobs/app/routes/albaranes.routes.ts::POST /:id/convertir-en-factura', { uso: IMPRIME, motivo: 'fecha impresa al convertir en factura' }],
-  ['src/modules/system/app/routes/invoicesAdmin.routes.ts::fD', { uso: IMPRIME, motivo: 'las fechas del paquete de disputa: su gemelo es el sello «(hora del servidor)» del PDF firmado, que no se mueve sin cambiar su literal (regla 39)', ref: 'SCRUM-1470' }],
 
   // ── AGREGADO — bordes de ventana de informe/filtro/métrica: NO se acusan ──────────────────────
   ['src/integrations/whatsapp.ts::sendWhatsAppTemplate', { uso: AGREGADO }],
@@ -436,6 +430,14 @@ export const USO = new Map([
  *     SCRUM-1470 c.20530). La «Fecha:» del PDF de la FACTURA es el día natural de su registro:
  *     `diaNaturalEn(createdAt, zonaDelMerchant(...))`. Comparada contra `formatDateES` del registro,
  *     con el proceso en UTC, en `tests/scrum1470c-la-factura-imprime-el-dia-de-su-registro.test.mjs`.
+ *   · `src/modules/invoicing/infra/pdf/pdf.service.ts::generateQuotePdf` — SCRUM-1726 (firma del
+ *     fundador, SCRUM-1656 c.21724, texto 1). El sello de la evidencia sale de `selloTemporal`
+ *     (`invoicing/domain/selloTemporal.ts`): con zona peninsular, en ella y «(hora peninsular)»; sin
+ *     ella, la zona del proceso NOMBRADA y «(hora del servidor)». En el papel real, con el proceso
+ *     en UTC: `tests/scrum1470-la-fecha-impresa-es-la-del-negocio.test.mjs`.
+ *   · `src/modules/system/app/routes/invoicesAdmin.routes.ts::fD` — SCRUM-1726 (D1, misma firma).
+ *     Las fechas del paquete de disputa, con `timeZone: zonaDelMerchant(invoice.merchant)`. Por su
+ *     ruta, con el proceso en UTC: `tests/scrum1726-tanda-firmada-j1.test.mjs`.
  */
 export const RETIRADAS = new Set([
   'src/modules/messaging/domain/whatsappLog.service.ts::getWhatsAppMetrics',
@@ -452,6 +454,8 @@ export const RETIRADAS = new Set([
   'src/modules/jobs/infra/albaranPdf.service.ts::fmtDate',
   'src/modules/invoicing/infra/pdf/pdf.service.ts::dateStr',
   'src/modules/system/app/routes/customerPortal.routes.ts::fechaDeLaFactura',
+  'src/modules/invoicing/infra/pdf/pdf.service.ts::generateQuotePdf',
+  'src/modules/system/app/routes/invoicesAdmin.routes.ts::fD',
 ]);
 
 /** ¿Esta fila se acusa? Todo lo que no esté declarado AGREGADO — incluida una identidad NUEVA que
