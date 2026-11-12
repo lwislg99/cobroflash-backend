@@ -134,3 +134,39 @@ citada arriba («el operario deja de verlas y de poder editarlas … Sin textos 
 
 **Skill UI:** no cargada · esta entrada QUITA una línea ya existente para un rol, sin componente nuevo, sin
 estilo y sin texto: no hay nada que diseñar.
+
+### 12-nov (S2, 2.º push) · la ficha: «Qué hay que hacer» (d) y el dinero del operario (D1)
+
+**(d) «Qué hay que hacer»** — rótulo FIRMADO en **c.21548** (ya en el producto: el alta, `jobNuevoModal.js:57`).
+- `public/dashboard/js/jobTrabajoPlegable.js` · `ROTULO_TAREA`, FUERA de `TEXTOS_EL_TRABAJO`: ese objeto lo
+  fija entero la firma de SCRUM-917 (com. 15881/16142, `tests/scrum917g`) y su censo (`scrum1215i`) aprueba
+  el grupo por cuenta; meterle una clave de otra firma tumbaba los dos sin que su garantía cambiara (regla 41).
+- `public/dashboard/js/jobDetailView.js` · línea nueva `tarea` en «El trabajo», delante de las notas (donde
+  vivía la tarea cuando el alta la escribía en `notes`). La ven el jefe Y el operario. Va **abierta**, con el
+  texto en un párrafo (`.detail-tarea`, en `styles.css`, no en línea: `scrum713c`). **Sin tarea, sin línea**:
+  no se inventa un «Sin tarea».
+- **Sólo LECTURA.** Un editor necesita textos de guardado/error que no están firmados (regla 39): se PROPONE
+  aparte. Por eso `PATCH /admin/jobs/:id::queHayQueHacer` sigue en `scripts/_sin-consumir-declarados.json`.
+
+**D1 · el dinero del operario** (contexto SCRUM-1725 c.21713; firma c.21547 Q1: «ve el importe … pero SIN la
+tarjeta "Por cobrar"»). El servidor de 1707 le manda lo cobrado vacío y la ficha derivaba de ahí
+«Te falta por cobrar», «Cobrado» y la barra: con lo cobrado a 0, **cifras falsas**.
+- `veCobro` = `window.veEstadoDeCobro(rol)` (S4, SCRUM-1725 / #3127), la MISMA pregunta que la lista
+  (SCRUM-831). **Declarado:** #3127 no está en `main` al escribir esto, así que cae a su MISMA lista blanca
+  (`rol === 'admin'`; un rol desconocido NO ve, SCRUM-147).
+- Sin `veCobro`: ni foco, ni lado «Cobrado», ni barra, ni «Lo que falta» (la condición va DENTRO, para que la
+  sección se siga montando bajo su propio `if`, `scrum320`). **Se queda «Aceptado»** (el importe). Cero textos.
+
+### Comprobación (2.º push)
+
+- `tests/scrum1662-ficha-tarea-y-cobro.test.mjs` (nuevo, sin gate, banco de vistas): **rojo primero** contra
+  `39e2d63db` → 4/4 causas en rojo (admin y operario sin tarea; técnico y rol desconocido ven foco, barra y
+  «Cobrado»); el negativo «sin tarea no hay línea» y el control del admin, verdes en los dos. **Verde: 6/6.**
+- Vecinos (todo test que nombra la ficha, «El trabajo» o `styles.css`, + `scrum1395b`): **1611/1613, 0 fallos**,
+  2 saltos declarados (`sin LIBRO_PG_URL`, `sin QA_DB_TEST`).
+- En yaqu.app, tras el merge: ficha de un trabajo con tarea, como admin y como operario (regla 42).
+
+**Skill UI:** no cargada · la línea nueva REUTILIZA el componente plegable de SCRUM-917g y su tipografía; la
+única regla nueva de `styles.css` copia el cuerpo del valor de la línea (14 px, `--body`). Sin color ni
+componente nuevo. **Revisar a 390 px tras el merge.**
+A9: comprobación → `tests/scrum713c-trinquete-de-estilos-en-js.test.mjs`
