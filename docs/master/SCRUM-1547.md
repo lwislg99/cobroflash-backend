@@ -208,3 +208,5 @@ Sigo la clasificación de c.21601. Hay cuatro de las 114 que yo miraría otra ve
 o el correo al que no se pudo enviar: `whatsAppMessage.error`, `emailMessage.error`, `gatewayEvent.lastError` y
 `vfSubmission.lastError`. Siguen en `NO_PERSONALES`: moverlas a `SIN_DECIDIR` sube el trinquete, y eso le toca decidirlo al
 fundador. Las 30 columnas `Json` siguen fuera (c.21607: segundo paso).
+
+**Decidido después, en la misma rama (SCRUM-1547 c.21617, «Sí»):** las cuatro pasan de `NO_PERSONALES` a `SIN_DECIDIR`, cada una con su pregunta. Quedan 110 no personales, 114 personales, y el trinquete pasa de 86 a 90. El orquestador autorizó un segundo empujón.

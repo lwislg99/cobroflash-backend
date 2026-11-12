@@ -139,7 +139,9 @@ export function columnasDeTexto(schemaText) {
 // columna a columna. ⛔ Nunca un patrón por nombre en este lado: «todo lo que acabe en Status es no
 // personal» abre el mismo agujero que este ticket cierra, pero por el otro lado.
 // Las 114 son la medición de SCRUM-1547 c.21601 (224 columnas − 66 que ya veía el censo − 44 personales
-// o dudosas). El fundador decidió en c.21607 que esas 44 van a `SIN_DECIDIR`; éstas son el resto.
+// o dudosas). El fundador decidió en c.21607 que esas 44 van a `SIN_DECIDIR`; éstas son el resto, menos
+// los 4 textos de error que sacó de aquí en c.21617 (un error de envío puede llevar el teléfono o el
+// correo del destinatario): quedan 110.
 // ⚠️ La clasificación es de UNA sesión y no la ha repetido nadie: si una de éstas te parece personal,
 // sácala de aquí y llévala a `SIN_DECIDIR` con su pregunta. Eso no afloja nada: sube el trinquete.
 const ESTADO = 'un estado, tipo, clase o modo: dice en qué punto está la fila o de qué clase es, no de quién es';
@@ -150,7 +152,6 @@ const HUELLA = 'huella SHA-256 de un contenido: no se puede leer de vuelta';
 const NUMERO_DOC = 'número o serie de un documento, asignado por el sistema o el profesional: no nombra a nadie';
 const CONFIG = 'configuración del negocio (marca, oficio, plan, zona horaria…): describe la cuenta, no a una persona';
 const CATALOGO = 'dato del catálogo de servicios del profesional (lo que vende), no de un cliente';
-const ERROR_TECNICO = 'texto de error de un proveedor técnico o de la pasarela, para diagnosticar un envío';
 const CONDICIONES = 'condiciones del documento (forma de pago, tramo, modalidad): reglas del cobro, no de quién paga';
 const REGISTRO_LEGAL = 'qué texto legal se aceptó y en qué versión (clave y hash): el hecho, no quién';
 const AUDITORIA = 'qué acción y sobre qué tipo de entidad: el verbo del registro, no el actor';
@@ -245,7 +246,6 @@ export const NO_PERSONALES = Object.freeze({
   'whatsAppMessage.type': ESTADO,
   'whatsAppMessage.waMessageId': ID_EXTERNO,
   'whatsAppMessage.status': ESTADO,
-  'whatsAppMessage.error': ERROR_TECNICO,
   'whatsAppMessage.relatedType': ESTADO,
   // legalAcceptance
   'legalAcceptance.docKey': REGISTRO_LEGAL,
@@ -272,7 +272,6 @@ export const NO_PERSONALES = Object.freeze({
   'emailMessage.kind': ESTADO,
   'emailMessage.providerId': ID_EXTERNO,
   'emailMessage.status': ESTADO,
-  'emailMessage.error': ERROR_TECNICO,
   'emailMessage.relatedType': ESTADO,
   // parteTrabajo
   'parteTrabajo.numero': NUMERO_DOC,
@@ -286,10 +285,8 @@ export const NO_PERSONALES = Object.freeze({
   'gatewayEvent.provider': ESTADO,
   'gatewayEvent.eventId': ID_EXTERNO,
   'gatewayEvent.type': ESTADO,
-  'gatewayEvent.lastError': ERROR_TECNICO,
   // vfSubmission
   'vfSubmission.tipoOperacion': ESTADO,
-  'vfSubmission.lastError': ERROR_TECNICO,
   'vfSubmission.lastEnvioId': ID_EXTERNO,
   'vfSubmission.csv': 'el código seguro de verificación que devuelve la AEAT: identifica el envío, no a una persona',
   'vfSubmission.estadoRegistro': ESTADO,

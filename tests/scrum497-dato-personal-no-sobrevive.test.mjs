@@ -47,7 +47,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   { fichero: 'tests/_censo-datos-personales.mjs',
     de: 'const personales = personalesDe(schemaText, camposPersonales, fueraDeclarados, sinDecidir);',
     a: 'const personales = camposPersonalesDelSchema(schemaText);',
-    cae: 'SCRUM-497 · 🔴 TRINQUETE: ochenta y seis datos personales siguen sin anonimizar, y van NOMBRADOS' },
+    cae: 'SCRUM-497 · 🔴 TRINQUETE: noventa datos personales siguen sin anonimizar, y van NOMBRADOS' },
   // Una declaración de una columna que ya no existe deja de verse (la columna renombrada).
   { fichero: 'tests/_censo-datos-personales.mjs',
     de: 'for (const clave of no) if (!existe.has(clave)) out.fantasmas.push(clave);', a: '',
@@ -190,6 +190,11 @@ const SIN_DECIDIR = Object.freeze({
   'maintenancePlan.title': 'el título libre de un plan de mantenimiento: misma pregunta que job.titulo',
   'attachment.url': 'el adjunto de una solicitud o un albarán (fotos de obra, documentos): ¿se borra el fichero con la baja?',
   'parteTrabajo.referencia': 'la referencia libre del parte: ¿puede llevar el nombre del cliente o de la obra?',
+  // 🟡 Los 4 TEXTOS DE ERROR, que salieron de `NO_PERSONALES` por decisión del fundador (c.21617):
+  'whatsAppMessage.error': 'el error que devuelve Meta al enviar: puede citar el teléfono del destinatario, ¿se redacta con whatsAppMessage.toPhone?',
+  'emailMessage.error': 'el error que devuelve Resend al enviar: puede citar el correo del destinatario, ¿se redacta con emailMessage.toEmail?',
+  'gatewayEvent.lastError': 'el último error de la pasarela de pago: puede citar datos del pagador, ¿se redacta o es diagnóstico?',
+  'vfSubmission.lastError': 'el último error de la AEAT: puede citar el NIF o el nombre del obligado o del destinatario; camino fiscal, misma pregunta que vfSubmission.obligadoNif (SCRUM-1264)',
 });
 
 // ── 0 · 🔴 SUELO Y AUTOPRUEBA · antes de creerse ningún reparto ─────────────────────────────
@@ -304,7 +309,7 @@ test('SCRUM-497 · 🔴 ninguna columna personal del esquema queda SIN CLASIFICA
     + 'el camino, así que ninguno de sus números significa nada.');
 });
 
-test('SCRUM-497 · 🔴 TRINQUETE: ochenta y seis datos personales siguen sin anonimizar, y van NOMBRADOS', () => {
+test('SCRUM-497 · 🔴 TRINQUETE: noventa datos personales siguen sin anonimizar, y van NOMBRADOS', () => {
   const reparto = repartir(SCHEMA, CAMPOS_PERSONALES, FUERA_DE_ANONIMIZADO, SIN_DECIDIR);
 
   // 🔴 EL SUELO VA PRIMERO: cero no es mejor que dieciséis. Si baja, lo primero que hay que
@@ -315,8 +320,9 @@ test('SCRUM-497 · 🔴 TRINQUETE: ochenta y seis datos personales siguen sin an
     + '  o a `FUERA_DE_ANONIMIZADO` y baja este número a mano, en el mismo commit.\n'
     + '  Si no, el censo ha dejado de verlos y «cero pendientes» significa «no supe mirar».');
 
-  assert.equal(reparto.sinDecidir.length, 86,
-    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 86 (SCRUM-1547 sumó, el 12-nov-2026 y sobre 42, ` +
+  assert.equal(reparto.sinDecidir.length, 90,
+    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 90 (SCRUM-1547 sumó, el 12-nov-2026 y sobre 86, ` +
+    'los 4 textos de error de envío, decididos por el fundador en c.21617; antes, ese mismo día y sobre 42, ' +
     'las 44 que ningún nombre dejaba ver —21 personales y 23 dudosas—, decididas por el fundador en c.21607; ' +
     'SCRUM-1569d restó `merchant.iban` ' +
     'y `merchant.bizumPhone` el 21-oct-2026, decididos por el fundador en c.20142; SCRUM-1569 sumó, el 20-oct-2026 ' +
