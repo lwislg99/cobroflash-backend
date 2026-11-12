@@ -544,3 +544,26 @@ No me cabía en el contexto (avisé de 200k a 206.154). Lo medido en 1051f (c.21
 ### Corrido
 
 Rojo primero: las cuatro mutaciones de ② y la de ① con `aplicarUna` del catálogo de la casa, las cinco tumban el test y el árbol queda limpio. Test propio 13/13. `tsc -p .` con tipos: salida 0. Dirigida de 153 ficheros (los de 1051, 237, 553, 976, 1387, 523d, 622, 624e, 623, 604, 771, 246, 1294, 267, 273 y todo test que nombra la ruta de la suelta, `lib/invoicing`, `pdf.service` o `lib/pdf.js`): 1.351 casos = 1.328 pass + 16 skip + 7 fail. Los 7 eran míos: 601 ×2 y 603b/723 (arriba), 976 (los arrastraba) y 525d ×2, porque mi import en `lib/invoicing.ts` corría una línea las dos coordenadas que cita la auditoría (`:104` y `:262`); el import va ahora en la línea del de causa. Re-corridos en dos pasadas: 18 ficheros (525d, 601, 603b, 723, 976, 523d, 1446d, 709, 726, 861, 997d, 1546c, 1294, 267, 273, 237, 553, 1051g) → 145 casos = 143 pass + 2 fail (los de 525d); tras el arreglo del import, 7 ficheros (525d, 976, 1051g, 1387, 1387d, 1387f, 622) → 60 casos = 60 pass. (Error propio, cazado antes de empujar: en el primer borrador de esta línea sumé las dos pasadas a ojo y escribí «25 ficheros, 205 casos».) `scrum523d` (versión del SIF): verde, sin recongelar nada. Suite entera local: NO CORRIDA (10 sesiones a la vez).
+
+## SCRUM-1051g-ci · los seis rojos del obligatorio de #3140 (J1, jv-j1eh, 12-nov-2026)
+
+**Medido contra:** `origin/main` = `9fabfbc087e20568633bf91d626c5ad414a99919` · 2026-11-12T18:11:58Z (hora de la cabecera `Date:` de GitHub)
+
+A9: aviso → cicatriz J1 «la dirigida no los lista, y ya me pasó con `scrum622` el 1-oct» — no se pudo comprobar: la lista de la dirigida es de SCRUM-1363, de otro carril
+
+El obligatorio de #3140 (job 131364900599, sobre el head `d582f545`) cayó con 6 de 13.483 casos. Los seis, reproducidos en local sobre `d582f545` en un árbol desechable (98 casos en 6 ficheros: 92 pass + 6 fail, los mismos seis) y en verde en la rama (98 de 98). Se arregló el código y el veredicto derivado; ningún guard se relajó:
+
+| guard (caso) | qué pedía | arreglo |
+|---|---|---|
+| `scrum1185` ① | `COPY_ISP_COLUMNA` y `COPY_ISP_VALOR_SI` construidas y sin consumir | se quitan de esta rama: son de la pieza ③ (P3), que cablea 1051h, y allí vuelven con su lector (`librosAeat.ts`) |
+| `scrum411` control positivo | 8 exports huérfanos en `destinatarioIsp.ts` | se les quita el `export` a los seis que sólo usaba el propio módulo (`ERROR_ISP_*`, `COPY_ISP_SIN_NIF`, `DestinatarioIspError`, `tieneLineasIsp`, `destinatarioIspNoValido`); los dos de P3, como arriba. El test de 1051g mide ahora por la superficie pública (`exigirDestinatarioParaIsp`), el patrón de `scrum441` |
+| `scrum411` las categorías suman | 245 declarados frente a 253 medidos | es el mismo hueco: sin los 8, vuelve a 245 |
+| `scrum189` | «regla 40 del» sin destino en `destinatarioIsp.ts:3` | dice «la regla 40 del máster» |
+| `scrum615` | `destinatarioIsp.ts` e `invoicesAdmin.routes.ts` leen `tipoDestinatario` | la lista fijada lleva los dos, con su motivo y el GO de SCRUM-1051 c.21750 punto 3, como hizo SCRUM-983: el portón decide (NULL se rechaza, no se resuelve a PARTICULAR: no es una segunda copia de esa regla) y la ruta sólo lo transporta |
+| `scrum719` (1395b ①) | `scrum601` cambió desde la medida de mudez | `npm run censo:mudez -- --escribir`: 1 de 130 medido, VIVO |
+
+**Por qué la dirigida no lo vio:** los cinco ficheros recorren `src/` entero sin nombrar `destinatarioIsp.ts`, así que la lista que da `tests:que-cubren` no los incluye; el de mudez se dispara por `scrum601`, que sí estaba, pero el que lo vigila (`scrum719`) no.
+
+**No cambia:** la huella ni el XML (no se tocó `registro.builder.ts`, `fiscal/verifactu/` ni `src/lib/invoicing.ts`). El comportamiento del portón es el mismo: sólo cambia qué se exporta.
+
+**Corrido:** `tsc -p .` con tipos, salida 0. Los 6 ficheros: base 92 + 6 fail, rama 98 de 98.

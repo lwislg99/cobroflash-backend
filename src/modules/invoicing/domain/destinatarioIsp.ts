@@ -1,6 +1,6 @@
 // SCRUM-1051g · Portón del DESTINATARIO de una factura con inversión del sujeto pasivo (S2).
 //
-// GO de regla 40 del fundador (SCRUM-1051 c.21750, punto 3): una factura con alguna línea
+// GO del fundador por la regla 40 del máster (SCRUM-1051 c.21750, punto 3): una factura con alguna línea
 // `causa: 'S2'` se rechaza ANTES de emitir en dos casos:
 //   ① el cliente no tiene NIF válido. El ROF (RD 1619/2012, art. 6.1.d) exige el NIF del
 //      destinatario cuando él es el sujeto pasivo, y sin él el registro VERI*FACTU tampoco sale
@@ -18,17 +18,14 @@
 
 import { validarNifEspanol } from '../../../core/validation/nifEspanol';
 
-export const ERROR_ISP_CLIENTE_SIN_NIF = 'isp_cliente_sin_nif';
-export const ERROR_ISP_CLIENTE_NO_EMPRESARIO = 'isp_cliente_no_empresario';
+const ERROR_ISP_CLIENTE_SIN_NIF = 'isp_cliente_sin_nif';
+const ERROR_ISP_CLIENTE_NO_EMPRESARIO = 'isp_cliente_no_empresario';
 
 /** P1 · leyenda del PDF, firmada por el fundador (SCRUM-1051 c.21750, punto 1): literal del ROF art. 6.1.m. */
 export const COPY_ISP_LEYENDA = 'Inversión del sujeto pasivo';
-/** P3 · columna del libro registro y su valor, firmados (c.21750, punto 5). */
-export const COPY_ISP_COLUMNA = 'ISP';
-export const COPY_ISP_VALOR_SI = 'Sí';
 
 /** P4 · firmado por el fundador (SCRUM-1051 c.21750, punto 3). Literal; no se parafrasea. */
-export const COPY_ISP_SIN_NIF = 'Para facturar con inversión del sujeto pasivo, el cliente necesita NIF.';
+const COPY_ISP_SIN_NIF = 'Para facturar con inversión del sujeto pasivo, el cliente necesita NIF.';
 
 /** Lo único que este portón mira de una línea. */
 export interface LineaConCausaIsp {
@@ -47,7 +44,7 @@ export interface RechazoIsp {
   message?: string;
 }
 
-export class DestinatarioIspError extends Error {
+class DestinatarioIspError extends Error {
   readonly code: RechazoIsp['code'];
   readonly mensaje: string | undefined;
   constructor(r: RechazoIsp) {
@@ -59,12 +56,12 @@ export class DestinatarioIspError extends Error {
 }
 
 /** ¿Alguna línea lleva la causa S2? */
-export function tieneLineasIsp(lines: readonly LineaConCausaIsp[] | null | undefined): boolean {
+function tieneLineasIsp(lines: readonly LineaConCausaIsp[] | null | undefined): boolean {
   return Array.isArray(lines) && lines.some((l) => l?.causa === 'S2');
 }
 
 /** El rechazo, o `null` si no hay líneas S2 o el cliente las admite. PURO. */
-export function destinatarioIspNoValido(
+function destinatarioIspNoValido(
   lines: readonly LineaConCausaIsp[] | null | undefined,
   cliente: ClienteParaIsp | null | undefined,
 ): RechazoIsp | null {
