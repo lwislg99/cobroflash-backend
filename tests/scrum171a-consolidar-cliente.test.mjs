@@ -57,7 +57,7 @@ test('SCRUM-171a: consolidar por CLIENTE cruzando Trabajos, con rotura por mes',
       // rechazaría (correctamente). El override vive en el merchant EFÍMERO (Parte P).
       {
         name: 'QA S171a', email: `qa-s171a-${stamp}@test.local`, country: 'ES', taxId: 'B12345678',
-        flags: { INVOICING_ES_ENABLED: true },
+        flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false,
       },
       async (merchant) => {
         const customer = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente S171a' } });

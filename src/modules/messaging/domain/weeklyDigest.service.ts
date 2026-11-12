@@ -70,6 +70,8 @@ export async function sendWeeklyDigests(): Promise<ParteDeAvisos> {
     select: {
       // SCRUM-974: `country` y `flags` son lo que lee `getEmissionMode` (solo lectura).
       id: true, name: true, email: true, defaultCurrency: true, country: true, flags: true,
+      // SCRUM-1585 (carril J1, declarado): y el SII, que el modo también mira.
+      llevaLibrosPorSii: true,
       // SCRUM-1472: la zona del negocio, para pintar la semana del asunto.
       timezone: true,
     },
@@ -112,7 +114,7 @@ export async function sendWeeklyDigests(): Promise<ParteDeAvisos> {
  * Texto firmado: docs/microcopy/2026-09-21-SCRUM-974-firmado-sin-facturar.md.
  */
 async function bloqueFirmadoSinFacturar(
-  merchant: { id: number; email: string | null; country: string | null; flags: unknown },
+  merchant: { id: number; email: string | null; country: string | null; flags: unknown; llevaLibrosPorSii: boolean | null },
   currency: string,
 ): Promise<string> {
   if (getEmissionMode(merchant) === 'receipt') return '';
@@ -164,7 +166,7 @@ function diaEs(dia: string): string {
 }
 
 async function sendDigestForMerchant(
-  merchant: { id: number; name: string; email: string | null; defaultCurrency: string; country: string | null; flags: unknown; timezone: string | null },
+  merchant: { id: number; name: string; email: string | null; defaultCurrency: string; country: string | null; flags: unknown; llevaLibrosPorSii: boolean | null; timezone: string | null },
   from: Date,
   to: Date,
 ): Promise<ResultadoCorreo> {

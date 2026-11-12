@@ -43,7 +43,7 @@ async function anioDelEmisor(timezone, instante) {
     $executeRaw: async () => 0,
     merchant: {
       findUnique: async () => ({
-        id: MERCHANT_ID, email: 'pro@x.es', country: 'ES', flags: { INVOICING_ES_ENABLED: true },
+        id: MERCHANT_ID, email: 'pro@x.es', country: 'ES', flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false,
         timezone, invoiceSeriesPrefix: 'CF', nextInvoiceNumber: 7, nextRectInvoiceNumber: 1,
         invoiceSeriesYear: 2026,
       }),

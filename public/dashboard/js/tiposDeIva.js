@@ -76,7 +76,9 @@
     lista.forEach(function (t) {
       var op = document.createElement('option');
       op.value = String(t);
-      op.textContent = String(t); // número pelado: es exactamente lo que enseñaba el input
+      // SCRUM-1636 ① · el número que se LEE va con coma («7,5»), con el criterio de SCRUM-1608
+      // (`fmtTipoIvaEs`, de api.js, que carga antes); el `value` sigue con punto, que es lo que se guarda.
+      op.textContent = fmtTipoIvaEs(Number(t) / 100);
       select.appendChild(op);
     });
   }

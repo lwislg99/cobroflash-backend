@@ -79,18 +79,84 @@ function abrirModalTrabajoNuevo(alCrear) {
     alerta.style.display = msg ? 'block' : 'none';
   };
 
+  // SCRUM-1681 ③ · ALTA DE CLIENTE SIN SALIR. Con un cliente nuevo había que cerrar, ir a Clientes y
+  // volver (PILOTO-1: una avería es casi siempre de alguien que aún no está dado de alta). Es EL
+  // MISMO selector que el del presupuesto (SCRUM-591, `quotesView.js` `pintarOpcionesDeCliente`):
+  //   · «Selecciona un cliente…» vacío arriba — ya no se preselecciona el primero de la lista sin
+  //     que nadie lo elija (el «Elige un cliente.» de abajo lo para);
+  //   · «+ Nuevo cliente» JUSTO DETRÁS, nunca al final: con doscientos clientes el final de un
+  //     `<select>` nativo no existe (asesor, 3-sep-2026);
+  //   · y abre EL MISMO formulario de Clientes (`altaClienteModal.abrirNuevo`), con su NIF, su
+  //     switch Empresa/Persona y su aviso de duplicado; el creado queda elegido.
+  // Los tres textos son los que el selector del presupuesto ya pinta, palabra por palabra: aquí no
+  // entra ninguno nuevo (regla 39). «+ Nuevo cliente» se firmó precisamente para una `<option>`.
+  var VALOR_ALTA = '__alta_cliente__';
+  var lista = [];
+  var previo = '';
+
+  // SCRUM-1702 · «Elegir un sitio guardado» bajo la dirección de la obra: el MISMO control que el
+  // editor de presupuestos y la ficha del Trabajo (`sitiosGuardados.montarSelector`, SCRUM-1144).
+  // Camino 1 de la decisión del orquestador (SCRUM-1702 c.21501): el profesional ELIGE la dirección
+  // con una pulsación y nada se copia solo, porque manda DOC-12 (SCRUM-602, 24-ago-2026: la dirección
+  // de la obra nunca se prerrellena). El rótulo es el que el control ya pinta: aquí no entra texto.
+  // Sin cliente elegido no hay sitios que ofrecer y no se enseña, como en la ficha del Trabajo; al
+  // cambiar de cliente se cierra la lista, que era la del anterior.
+  var clienteElegido = function () { return sel.value && sel.value !== VALOR_ALTA ? sel.value : ''; };
+  var selectorDeSitios = null;
+  var campoDireccion = overlay.querySelector('#tn-direccion');
+  if (window.sitiosGuardados && campoDireccion && campoDireccion.parentNode) {
+    selectorDeSitios = window.sitiosGuardados.montarSelector({
+      idLista: 'tn-sitios-guardados',
+      idCliente: clienteElegido,
+      campo: campoDireccion,
+    });
+    selectorDeSitios.boton.hidden = true;
+    campoDireccion.parentNode.appendChild(selectorDeSitios.boton);
+    campoDireccion.parentNode.appendChild(selectorDeSitios.lista);
+  }
+  var sitiosDelCliente = function () {
+    if (!selectorDeSitios) return;
+    selectorDeSitios.cerrar();
+    selectorDeSitios.boton.hidden = !clienteElegido();
+  };
+  var pintarClientes = function (elegido) {
+    sel.innerHTML =
+      '<option value="">' + escHtml('Selecciona un cliente…') + '</option>' +
+      '<option value="' + VALOR_ALTA + '">' + escHtml('+ Nuevo cliente') + '</option>' +
+      lista.map(function (c) {
+        return '<option value="' + c.id + '">' + escHtml(c.name || ('#' + c.id)) + '</option>';
+      }).join('');
+    sel.value = elegido ? String(elegido) : '';
+    previo = sel.value;
+    sitiosDelCliente();
+  };
+  sel.addEventListener('change', function () {
+    if (sel.value !== VALOR_ALTA) { previo = sel.value; sitiosDelCliente(); return; }
+    // La entrada de alta es una ACCIÓN, no un cliente: el selector vuelve a lo que tenía, y si el
+    // alta se cancela no queda «+ Nuevo cliente» marcado como si fuera alguien.
+    sel.value = previo;
+    if (!window.altaClienteModal) { aviso('No se ha podido abrir el alta de cliente.'); return; }
+    window.altaClienteModal.abrirNuevo({
+      alGuardar: function (cliente) {
+        if (!cliente || !cliente.id) return;
+        lista.unshift(cliente);
+        pintarClientes(cliente.id);
+        btn.disabled = false;
+        aviso('');
+      },
+    });
+  });
+
   // El cliente es lo único obligatorio, así que si no hay ninguno el modal lo DICE en vez de
-  // dejar un desplegable vacío que no explica por qué no se puede seguir.
+  // dejar un desplegable vacío que no explica por qué no se puede seguir. Y desde SCRUM-1681 la
+  // salida está en el propio desplegable: «+ Nuevo cliente».
   apiRequest('/admin/customers').then(function (cs) {
-    var lista = Array.isArray(cs) ? cs : (cs && cs.items) || [];
+    lista = Array.isArray(cs) ? cs : (cs && cs.items) || [];
+    pintarClientes(null);
     if (!lista.length) {
       btn.disabled = true;
       aviso('Primero necesitas un cliente.');
-      return;
     }
-    sel.innerHTML = lista.map(function (c) {
-      return '<option value="' + c.id + '">' + escHtml(c.name || ('#' + c.id)) + '</option>';
-    }).join('');
   }).catch(function () {
     btn.disabled = true;
     aviso('No se han podido cargar tus clientes.');

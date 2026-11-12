@@ -1,0 +1,21 @@
+{
+  "modo": "antes",
+  "ancho": 390,
+  "parte": 11,
+  "servidasDesdeElArbol": [],
+  "antesDeRecargar": {
+    "dictado": "He cambiado el grifo de la cocina por uno monomando y he revisado la llave de paso. Una hora de trabajo.",
+    "lineasPropuestas": 4,
+    "ordenarTardo_s": 7,
+    "claveEnElMovil": false
+  },
+  "trasRecargar": {
+    "dictado": "",
+    "lineasPropuestas": 0,
+    "anadirAlParte": 0,
+    "anadirApagado": null
+  },
+  "dictadoIgual": false,
+  "escriturasAbortadas": [],
+  "log": []
+}

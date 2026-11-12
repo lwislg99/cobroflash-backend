@@ -202,6 +202,16 @@ export const ENMIENDAS = Object.freeze({
     fuente: 'docs/master/SCRUM-318.md',
     enmiendaEnDiseno: true,
   },
+  // SCRUM-1694 (S2): la sección «Partes», POSTERIOR al §4. Decisión D2 del fundador (SCRUM-1686
+  // c.21461) y M2 en el máster («la visita ES su parte»): los partes de un trabajo se listan dentro
+  // de él. Rótulo N6, firmado en SCRUM-1686 c.21470/c.21471. Enmienda ⑦ del diseño.
+  partes: {
+    motivo: 'D2 del fundador (SCRUM-1686 c.21461) y M2 del máster: un trabajo tiene varios partes, uno por '
+      + 'visita, y se listan dentro de él. Antes el parte no tenía sección y el segundo era inalcanzable '
+      + 'desde la ficha. Rótulo «Partes» (N6) firmado en SCRUM-1686 c.21471.',
+    fuente: 'docs/master/SCRUM-1694.md',
+    enmiendaEnDiseno: true,
+  },
   // SCRUM-917g: ésta no estaba en la lista porque el escáner de `<h3>` nunca la vio (su título se
   // escribía desde JS, en `jobAsignados.js`). Al leer las líneas de «El trabajo» aparece, y se
   // declara aquí con su decisión en vez de esconderla: es el selector de SCRUM-650, POSTERIOR al §4.

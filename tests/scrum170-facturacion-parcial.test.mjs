@@ -129,7 +129,7 @@ test('SCRUM-170: emitir parte, ver el pendiente, y que la consolidación NO se l
       // merchant EFÍMERO del test y muere con él; ningún merchant real se toca (regla 24 intacta).
       {
         name: 'QA S170', email: `qa-s170-${stamp}@test.local`, country: 'ES', taxId: 'B12345678',
-        flags: { INVOICING_ES_ENABLED: true },
+        flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false,
       },
       async (merchant) => {
         const customer = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente S170' } });
