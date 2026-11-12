@@ -146,7 +146,9 @@ estilo y sin texto: no hay nada que diseñar.
   texto en un párrafo (`.detail-tarea`, en `styles.css`, no en línea: `scrum713c`). **Sin tarea, sin línea**:
   no se inventa un «Sin tarea».
 - **Sólo LECTURA.** Un editor necesita textos de guardado/error que no están firmados (regla 39): se PROPONE
-  aparte. Por eso `PATCH /admin/jobs/:id::queHayQueHacer` sigue en `scripts/_sin-consumir-declarados.json`.
+  aparte. Aun así, `PATCH /admin/jobs/:id::queHayQueHacer` pasa a `retiradas` en
+  `scripts/_sin-consumir-declarados.json`: el censo de SCRUM-1185 es por NOMBRE y, con la ficha leyendo el campo,
+  lo da por consumido (`scrum1185` ② lo exige). El motivo de la entrada dice que el editor NO está hecho.
 
 **D1 · el dinero del operario** (contexto SCRUM-1725 c.21713; firma c.21547 Q1: «ve el importe … pero SIN la
 tarjeta "Por cobrar"»). El servidor de 1707 le manda lo cobrado vacío y la ficha derivaba de ahí

@@ -21,7 +21,6 @@
     {"clave":"ciega-ruta-generica · POST /admin/albaranes/consolidar","donde":"src/modules/jobs/app/routes/albaranes.routes.ts:421","carril":"S0","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · PATCH /admin/albaranes/:id::fecha","donde":"src/modules/jobs/app/routes/albaranes.routes.ts:587","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · PATCH /admin/jobs/:id::assignedUserId","donde":"src/modules/jobs/app/routes/jobs.routes.ts:934","carril":"S2","ticket":"SCRUM-1185","motivo":"⚠️ NO CONECTAR (S2, 29-sep): sustituido por el asignado MÚLTIPLE (jobAsignados.js → /asignados, job_assignees, SCRUM-650). Conectar este campo daría DOS fuentes de «quién ejecuta el Trabajo», y se contradirían en cuanto uno se edite sin el otro."},
-    {"clave":"cuerpo · PATCH /admin/jobs/:id::queHayQueHacer","donde":"src/modules/jobs/app/routes/jobs.routes.ts:1019","carril":"S2","ticket":"SCRUM-1662","motivo":"S1 (12-nov): el servidor acepta editar «Qué hay que hacer» (c.21548) y el alta ya lo consume (POST /admin/jobs, `descripcion`); el editor de la ficha (jobDetailView.js) es de S2. Si su commit en este PR lo conecta, esta entrada pasa a `retiradas`."},
     {"clave":"cuerpo · POST /admin/ai/quote-message::merchantName","donde":"src/modules/ai/app/routes/ai.routes.ts:147","carril":"S2","ticket":"SCRUM-1182"},
     {"clave":"cuerpo · POST /admin/ai/quote-message::quoteId","donde":"src/modules/ai/app/routes/ai.routes.ts:147","carril":"S2","ticket":"SCRUM-1182"},
     {"clave":"cuerpo · POST /admin/partes::tipo","donde":"src/modules/jobs/app/routes/partes.routes.ts:349","carril":"S4","ticket":"SCRUM-1185"},
@@ -171,6 +170,7 @@
     {"clave":"export · src/modules/fiscal/modelo390/casillas.ts::CASILLA_INVERSION_SUJETO_PASIVO_390","donde":"src/modules/fiscal/modelo390/casillas.ts:100","carril":"J1","ticket":"SCRUM-1077","motivo":"J1: SCRUM-1077c, la 125 (c.20833); solo la consume construirModelo390, sin ruta (arriba)"}
   ],
   "retiradas": [
+    {"clave":"cuerpo · PATCH /admin/jobs/:id::queHayQueHacer","motivo":"SCRUM-1662 (S2, 12-nov): el front ya nombra el campo —la ficha del Trabajo lo LEE y lo pinta (jobDetailView.js, línea «Qué hay que hacer»)— y el censo, que es por nombre, lo da por consumido. El EDITOR desde la ficha NO está hecho: pide textos de guardado sin firma (regla 39); se propone aparte."},
     {"clave":"ruta · POST /admin/invoices/:id/pay","motivo":"SCRUM-1250b: desmontada (firma del fundador en SCRUM-1250 c.20747; excepción de carril en c.20763), la ruta ya no existe"},
     {"clave":"ruta · POST /admin/invoices/:id/unpay","motivo":"SCRUM-1250b: desmontada (firma del fundador en SCRUM-1250 c.20747; excepción de carril en c.20763), la ruta ya no existe"},
     {"clave":"ruta · GET /admin/customers/:id/notes","motivo":"SCRUM-1132: conectada en customerDetailView.js (la pestaña «Notas» de la ficha del cliente, al abrirla; sólo admin)"},
