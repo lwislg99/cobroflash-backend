@@ -202,3 +202,43 @@ La segunda sonda (`s5-sonda-1011b`, `39682f8b`, haiku, con un prompt que no pide
 quedó bloqueada pidiendo aprobar un servidor MCP. A S5 se le DENEGÓ `claude stop`/`rm`, igual que el
 29-sep con `983223e8`. La paró el orquestador, que tiene ese permiso en su puesto, y S5 no se lo pidió.
 **Lección para la próxima sonda:** una sonda que puede ARRANCAR sólo la lanza quien puede pararla.
+
+## 11-nov-2026 · SCRUM-1298d · CAMBIO: una mesa que falla ya no impide lanzar (fail-open hacia lo de hoy)
+
+**Medido contra:** `origin/main` = `4d80438549d8dfb6b188331e71ee8e3613413718` · 2026-11-11T18:32:23Z
+
+A9: comprobación → `tests/scrum1298d-mesa-fallida-lanza-desde-el-repo.test.mjs`
+
+**Esto cambia lo que este registro dejó escrito arriba** («Cualquier paso que falla = no se lanza»). Lo de
+arriba se deja tal cual. **Orden del orquestador (11-nov):** «si la mesa no existe o falla su fetch, la sesión
+arranca COMO HOY (fail-open hacia el comportamiento actual, declarado) — un lanzador que no lanza es peor que
+una mesa vieja». Con el fallo cerrado, dar el interruptor (`mesas`) era jugarse el lanzador entero a que
+ninguna mesa saliera sucia, sin identidad o sin red: por eso seguía sin darse.
+
+### Lo que cambia (sólo `mesaDelLanzamiento` en `scripts/equipo/sesion.mjs`)
+- Con `mesas` y una mesa que `prepararMesa` no da por buena (fetch caído, `MESA-SUCIA`, `MESA-AJENA`,
+  `SIN-IDENTIDAD`, `MESA-NO-AL-DIA`, ruta no válida…): se lanza en `config.repo` —lo mismo que sin `mesas`— y
+  el veredicto lo DICE: `mesa: { veredicto: 'MESA-FALLIDA', fallo, motivo, ruta }`. La salida es `LANZADA`.
+- Con `mesas` y sin `repo`: no hay a dónde caer, y se devuelve el fallo de la mesa (no se lanza).
+- `prepararMesa` NO cambia: sigue sin dar por buena una mesa dudosa, y una mesa sucia sigue sin tocarse.
+  Sus cuatro títulos de `scrum1298` que decían «no se lanza» pasan a decir «no se da por buena».
+- **Una decisión tomada, y declarada:** con el fetch caído se cae al repo, NO a la mesa vieja que quizá esté
+  en disco, porque es lo que pide la orden («COMO HOY»). Si se prefiere la mesa vieja, es otro cambio.
+- La puerta de integridad sigue fallando CERRADO: tras el merge, la copia instalada deja de ser idéntica a
+  `main` y el lanzador no actúa hasta que se copie (instrucciones en el comentario del ticket).
+
+### Comprobado
+| corrida | resultado |
+|---|---|
+| test nuevo con la mutación declarada (el comportamiento de antes: `return p`) | 2/4: caen «sin poder traer origin, la sesión SE LANZA en el repo» y «una mesa SUCIA… se lanza en el repo» |
+| test nuevo con el cambio | 4/4. El primero es el CONTROL POSITIVO: con la mesa bien, `claude` arranca EN LA MESA |
+| los 25 ficheros de `tests/` que nombran `sesion.mjs` | 260/260, 0 saltados |
+
+### Medido hoy para el interruptor (no ejecutado)
+- Copia instalada `sesion.mjs` == `origin/main` antes de este PR (sha256 `E9607746…621B` las dos).
+  `config.json` instalado: sin `mesas`.
+- El checkout compartido sigue en `e4ea95e5a`, 5.284 commits por detrás de `main`.
+- `settings.local.json` del compartido: 71 reglas `allow` contra 51 de `main`; las mismas 20 de más que el 1-oct.
+- En disco: `mesa-s3` (`409860083`) y `mesa-s5` (`eebc104d9`), las dos worktrees de este repo y LIMPIAS, sin
+  `node_modules` ni `dist`. `mesa-control-s5` no es un repo (el resto del control del 29-sep).
+- SCRUM-1295 (`carriles.mjs mesa`) está en `main`.
