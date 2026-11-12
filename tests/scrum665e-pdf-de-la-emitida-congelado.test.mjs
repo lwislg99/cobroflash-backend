@@ -153,3 +153,77 @@ test('SCRUM-665e · ⑦ la ruta `regenerate-pdf` ya no se monta (c.21182 punto 3
   const vivas = rutas.filter((r) => /regenerate-pdf/.test(r));
   assert.deepEqual(vivas, [], `🔴 ${rel} sigue montando ${vivas.join(', ')}`);
 });
+
+// ═══ AL EMITIR (c.21182 punto 1) ════════════════════════════════════════════════════════════════
+// Las 11 llamadas a `sellarTrasEmision` de `src/` pasan por ella, así que el congelado vive ahí:
+// un punto, no once. Con el código anterior, emitir dejaba la huella del PDF a NULL hasta que
+// alguien lo abría (caen ⑧ y ⑨).
+const sellado = require('../dist/modules/invoicing/domain/selladoEstado.js');
+
+/** Doble de Prisma con el que el sellado ES de verdad llega a `sellado` (mismo banco que SCRUM-1296). */
+function dobleQueSella({ rompe = false } = {}) {
+  const fila = { id: 66599, number: '2026-CF-0665', total: '121.00', createdAt: new Date('2026-11-12T10:00:00Z'),
+    merchantId: 77, type: 'F1', vfHash: null, vfPrevHash: null, vfTimestamp: null, lines: [{ concept: 'Obra', qty: 1, price: 100, tax: 0.21 }],
+    customer: { name: 'Cliente', taxId: 'A11111111' }, rectifies: null };
+  const orden = [];
+  const respuestas = {
+    'invoice.findUnique': () => fila,
+    'invoice.findFirst': () => null,
+    'invoice.update': (a) => { orden.push(`update:${Object.keys(a?.data ?? {}).join(',')}`); Object.assign(fila, a?.data ?? {}); return fila; },
+    'merchant.findUnique': () => { if (rompe) throw new Error('cadena_caida'); return ({ id: 77, country: 'ES', taxId: 'B12345678', name: 'F', legalName: 'F S.L.', timezone: null }); },
+  };
+  const modelo = (m) => new Proxy({}, { get: (_, met) => async (a) => {
+    const r = respuestas[`${m}.${String(met)}`];
+    if (r) return r(a);
+    if (met === 'findMany') return [];
+    if (met === 'count') return 0;
+    return { id: 1, ...(a?.data ?? {}) };
+  } });
+  const cliente = new Proxy({}, { get: (_, k) => {
+    if (k === '$transaction') return async (fn) => fn(cliente);
+    if (k === '$executeRaw' || k === '$executeRawUnsafe') return async () => 1;
+    if (k === 'then' || typeof k === 'symbol') return undefined;
+    return modelo(String(k));
+  } });
+  return { cliente, fila, orden };
+}
+
+test('SCRUM-665e · ⑧ emitir una factura SELLADA congela su PDF, después del sellado', async () => {
+  const d = dobleQueSella();
+  const llamadas = [];
+  const r = await sellado.sellarTrasEmision({ ...d.fila, total: { toString: () => '121.00' } },
+    { country: 'ES', taxId: 'B12345678' }, d.cliente,
+    { congelarPdf: async (id) => { llamadas.push({ id, estadoAlCongelar: d.fila.vfEstado }); d.orden.push('congelar'); } });
+  assert.equal(r.estado, 'sellado', `🔴 CIEGO: el banco no llegó a sellar (${JSON.stringify(r)})`);
+  assert.deepEqual(llamadas, [{ id: d.fila.id, estadoAlCongelar: 'sellado' }],
+    '🔴 una factura sellada al emitir NO congeló su PDF (o lo hizo antes de quedar `sellado`)');
+  assert.equal(d.orden.at(-1), 'congelar', `🔴 el congelado no va al final: ${d.orden.join(' → ')}`);
+});
+
+test('SCRUM-665e · ⑨ emitir un documento `no_aplica` lo congela con el camino REAL (`ensureInvoicePdf`)', async (t) => {
+  const p = prismaConFila();
+  t.after(() => limpiar(p.fila));
+  const antes = generaciones;
+  const r = await sellado.sellarTrasEmision({ ...p.fila }, { country: 'PT', taxId: 'X1' }, p);
+  assert.equal(r.estado, 'no_aplica');
+  assert.equal(generaciones - antes, 1, '🔴 emitir no generó el PDF: se congelaría al primer pedido, no al emitir');
+  assert.equal(p.fila.pdfSha256, sha(rutaDe(p.fila)), '🔴 tras emitir, la huella guardada no es la del fichero');
+});
+
+test('SCRUM-665e · ⑩ una factura que se queda PENDIENTE de sellado no congela nada', async () => {
+  // El sellado revienta (`merchant.findUnique` lanza): la factura se queda donde nació.
+  const d = dobleQueSella({ rompe: true });
+  let congelados = 0;
+  const r = await sellado.sellarTrasEmision({ ...d.fila, total: { toString: () => '121.00' } },
+    { country: 'ES', taxId: 'B12345678' }, d.cliente, { congelarPdf: async () => { congelados += 1; } });
+  assert.equal(r.estado, 'pendiente_de_sellado', `🔴 CIEGO: el sellado no falló (${JSON.stringify(r)})`);
+  assert.equal(congelados, 0, '🔴 se pidió el PDF de una factura sin sellar');
+});
+
+test('SCRUM-665e · ⑪ si congelar falla, la emisión NO falla ni cambia su resultado', async () => {
+  const p = prismaConFila();
+  const r = await sellado.sellarTrasEmision({ ...p.fila }, { country: 'PT', taxId: 'X1' }, p,
+    { congelarPdf: async () => { throw new Error('volumen_lleno'); } });
+  assert.deepEqual(r, { estado: 'no_aplica' }, '🔴 un fallo al guardar el PDF cambió o tumbó la emisión');
+  assert.equal(p.fila.vfEstado, 'no_aplica');
+});
