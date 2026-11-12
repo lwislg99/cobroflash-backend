@@ -63,9 +63,17 @@ const DEL_MAPA = 'TEXTO DE LA TABLA DE LA PÁGINA';
 const SUPERFICIES = [
   {
     nombre: 'landing de presupuesto · ACEPTAR',
-    fuente: () => leer('dist', 'modules', 'system', 'app', 'routes', 'quoteDecisionLanding.routes.js'),
-    patron: /getElementById\('sig-error'\)\.textContent = ([^;]+);/,
+    // SCRUM-1646c: el guion salió del HTML (CSP) y se sirve desde `GET /pay/quote/js/firma.js`; la
+    // expresión se lee donde vive ahora. Su texto por defecto viaja en los DATOS de la página
+    // (`T.reserva`), así que se liga al literal que la ruta escribe en ellos, leído de su fuente.
+    fuente: () => leer('dist', 'modules', 'system', 'app', 'routes', 'quoteDecisionNavegador.js'),
+    patron: /getElementById\('sig-error'\)\.textContent=(data\.[^;]+);/,
     variables: ['data'],
+    ligaduras: () => {
+      const m = leer('dist', 'modules', 'system', 'app', 'routes', 'quoteDecisionLanding.routes.js').match(/\breserva: '([^']*)'/);
+      assert.ok(m, '🔴 no encuentro el texto por defecto (`reserva`) en los datos de la página de firma');
+      return { T: { reserva: m[1] } };
+    },
     porDefecto: 'No se ha podido firmar. Inténtalo de nuevo.', // SCRUM-1302d: firmado en SCRUM-1302 c.19428
     tieneMapa: false,
   },
@@ -118,6 +126,11 @@ function expresionDe(sup) {
     `🔴 no encuentro la expresión de error en «${sup.nombre}». Si cambió de forma, este guard ` +
       'dejaría de comprobar nada y pasaría en verde: por eso falla aquí en vez de seguir.',
   );
+  if (sup.ligaduras) {
+    const lig = sup.ligaduras();
+    const fn = new Function(...sup.variables, ...Object.keys(lig), `return ${m[1]};`);
+    return (...a) => fn(...sup.variables.map((_, i) => a[i]), ...Object.values(lig));
+  }
   return new Function(...sup.variables, `return ${m[1]};`);
 }
 
