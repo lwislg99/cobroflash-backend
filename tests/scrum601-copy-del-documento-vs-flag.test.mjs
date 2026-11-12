@@ -269,7 +269,10 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // 12-nov-2026 · aPelo 160 → 161, MEDIDO (SCRUM-1051g): el literal nuevo es P4, «Para facturar con
 // inversión del sujeto pasivo, el cliente necesita NIF.», firmado por el fundador en SCRUM-1051
 // c.21750 (punto 3); `src/modules/invoicing/domain/destinatarioIsp.ts`. Es el mismo que sube los no legibles 38 → 39.
-const VEREDICTO_AL_MEDIR = { flag: 8, tipo: 11, aPelo: 161 };
+// 12-nov-2026 · aPelo 161 → 162, MEDIDO (SCRUM-1051h): el literal nuevo es P5, «Para facturar con
+// inversión del sujeto pasivo, el cliente tiene que ser empresario o profesional.», firmado por Javier en
+// SCRUM-1051 c.21761; `destinatarioIsp.ts:33`. Es el mismo que sube los no legibles 39 → 40.
+const VEREDICTO_AL_MEDIR = { flag: 8, tipo: 11, aPelo: 162 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
@@ -449,7 +452,8 @@ test('SCRUM-601 · EL VEREDICTO: las tres categorías, ancladas, y SUMAN', () =>
 // motivo de 31→32. Medido con el censo sobre origin/main 5deff8b3b (37) + la rama (38): la única
 // construcción no legible nueva es `exportView.js:43`.
 // 12-nov-2026 · 38 → 39, MEDIDO (SCRUM-1051g): `destinatarioIsp.ts`, P4 (firmado, SCRUM-1051 c.21750).
-const NO_LEGIBLES_AL_MEDIR = 39;
+// 12-nov-2026 · 39 → 40, MEDIDO (SCRUM-1051h): `destinatarioIsp.ts:33`, P5 (firmado, SCRUM-1051 c.21761).
+const NO_LEGIBLES_AL_MEDIR = 40;
 
 test('SCRUM-601 · el censo DECLARA lo que no sabe leer, y esa lista no crece sola', () => {
   const n = censo.noLegibles.length;

@@ -242,8 +242,8 @@ router.post('/', requireRole('admin'), async (req, res) => {
     if (esErrorSinLineas(err)) {
       return res.status(409).json({ error: ERROR_SIN_LINEAS, message: COPY_ADMIN_SIN_LINEAS });
     }
-    // SCRUM-1051g · el rechazo del destinatario ISP. `message` sólo cuando hay texto firmado
-    // (P4, sin NIF); el caso «no es empresario» va con su código y sin texto (regla 39).
+    // SCRUM-1051g · el rechazo del destinatario ISP. `message` sólo cuando hay texto firmado:
+    // P4 (sin NIF) y, desde 1051h, P5 (no es empresario, c.21761).
     if (esErrorDestinatarioIsp(err)) {
       return res.status(422).json(err.mensaje ? { error: err.code, message: err.mensaje } : { error: err.code });
     }
