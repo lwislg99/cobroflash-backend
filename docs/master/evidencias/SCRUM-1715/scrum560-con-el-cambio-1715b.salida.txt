@@ -1,0 +1,9 @@
+﻿
+✔ SCRUM-560 · SUELO: el censo VE los ficheros que levantan servidor propio (378.253ms)
+✔ SCRUM-560 · AUTOPRUEBA: el detector caza el patrón y NO acusa a `node:http` (11.9951ms)
+✔ SCRUM-560 · ningún fichero NUEVO pide con `fetch` a su propio `app.listen(0)` (2063.8378ms)
+✔ SCRUM-560 · la lista de los que ya estaban no puede quedarse vieja (1924.7023ms)
+ℹ pass 4
+ℹ fail 0
+
+
