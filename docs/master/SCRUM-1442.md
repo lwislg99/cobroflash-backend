@@ -82,3 +82,78 @@ la tabla del presupuesto y cabecera en la tarjeta.
 
     npm run build
     node --test tests/scrum1442b-la-cabecera-no-pinta-nan.test.mjs
+
+## SCRUM-1442c · la tarjeta de opción del PDF del PRESUPUESTO ya no pinta «× undefined» ni «NaN» (J1, jv-j1dx, 12-nov-2026)
+
+**Medido contra:** `origin/main` = `ec7e19e64eab26361a3d5ebae929b60474ae08ba` · 2026-11-12T11:49:29Z
+
+A9: comprobación → `tests/scrum1442c-la-tarjeta-del-pdf-sin-nan.test.mjs`
+
+Escribe J1 (equipo de Javier), en su carril: `src/modules/invoicing/**` es de J1. Es la mitad que
+1442b dejó pendiente (Jira c.21643, de jv-j4az). **GO del fundador (regla 40) sólo para esta
+tarjeta: Jira c.21648** («Go»). Nada del PDF de factura, del registro, del XML ni de la huella.
+
+### Rojo primero, reproducido
+
+`docs/master/evidencias/SCRUM-1442/reproducir-tarjeta-pdf.mjs`: tres opciones; la recomendada lleva
+una cabecera de apartado. El cuerpo pasa por `CreateQuoteSchema` (lo guarda como
+`{"concept":"Fase 1","tax":0,"apartado":true}`), el total de cada opción por `calcTotal` y el PDF por
+`paramsDePresupuestoParaPdf` → `generateQuotePdf`, la cadena de las rutas.
+
+| PDF | «undefined» | «NaN» | «Fase 1» | «Revisión × 1» (positivo) |
+|---|---|---|---|---|
+| con cabecera, ANTES (`antes-con-cabecera.pdf`, `antes-tarjeta.png`) | 1 | 1 | 1 | 3 |
+| sin cabecera, control ANTES | 0 | 0 | 0 | 3 |
+| con cabecera, DESPUÉS (`despues-con-cabecera.pdf`, `despues-tarjeta.png`) | 0 | 0 | 1 | 3 |
+
+Antes salía `Fase 1 × undefined` / `NaN EUR`; después, `Fase 1` y el importe vacío. El texto del
+control sin cabecera sale **idéntico** antes y después (`diff` de `antes-sin-cabecera.txt` y
+`despues-sin-cabecera.txt`, quitando el número del documento).
+
+### La causa
+
+La tarjeta nació el 22-may-2026 (`2b059dba3`, Good/Better/Best) dando por hecho que toda línea trae
+`qty` y `price`. El 2-sep-2026 (`f834143c1`, SCRUM-655) la cabecera de apartado entró en
+`QuoteLineSchema`, que las opciones comparten, y se guarda sin `qty` ni `price`: desde ese día
+`l.qty * l.price` da `NaN`, `fmtImporte` lo escribe «NaN» y la plantilla escribe «× undefined». La
+tabla principal del PDF ya se protegía con `Number.isFinite`; su gemela, la tarjeta, no.
+
+### El arreglo
+
+En `generateQuotePdf`, sólo el bucle de las líneas de una opción: si el importe no es finito, se pinta
+el concepto sin «× cantidad» y no se pinta importe. Es la vía decidida el 18-oct-2026 y aplicada en la
+página (1442b): **sin texto nuevo**. Una línea normal sale byte a byte igual (el control). El ancla
+`(ivaFueraDelPapel ? 0 : (l.tax ?? 0))` de la M4 de `scrum1302m` se conserva.
+
+### Lo que se ha corrido
+
+- `tests/scrum1442c-la-tarjeta-del-pdf-sin-nan.test.mjs`: 3/3, salida 0, 0 saltados.
+- Mutaciones (catálogo de la casa, `aplicarUna`): **3/3 VIVAS**, base sin mutar con 0 caídos
+  (`evidencias/SCRUM-1442/mutaciones.txt`). Mi primera pasada salió **CIEGA** 3/3 por un error MÍO
+  en el guion: le pasé a `correr` la ruta `tests/…` y la resolvió como `tests/tests/…`. Lo dijo el
+  propio instrumento; corregido, y el árbol quedó restaurado (`git status` limpio en `src/`).
+- `tsc -p .` **con tipos**: salida 0.
+- `scrum523d`: verde, y `pdf.service.ts` **no** está en su población congelada: no hay nada que
+  recongelar (la vía de SCRUM-1585 c.21290 no hace falta).
+- La dirigida (abajo, en «Cómo se repite»), con el trabajo commiteado.
+
+### Lo que NO se ha medido
+
+- La suite entera en local: NO CORRIDA (diez sesiones a la vez; hace de tanda el obligatorio de CI).
+- yaqu.app: no se ha mirado. El PDF de un presupuesto con una cabecera dentro de una opción sólo se
+  alcanza por API (c.18216), y no hay cuenta con la que pedirlo sin tocar datos.
+- Filas guardadas con una cabecera dentro de una opción: sin acceso a la base, no se cuentan.
+
+### Visto de paso, sin tocar (fuera del GO, que es «solo esa parte»)
+
+En las dos capturas: las tres tarjetas salen **en escalera** (cada una empieza donde acabó la
+anterior, porque `yStart = doc.y` se lee después de pintar la previa) y la estrella de la recomendada
+sale como **«&»** (`★` no existe en la codificación WinAnsi de Helvetica). Las dos son de la misma
+tarjeta y de este carril; no se arreglan aquí porque el GO las deja fuera. Se nombran en la entrega.
+
+### Cómo se repite
+
+    npx tsc -p . --noCheck
+    node docs/master/evidencias/SCRUM-1442/reproducir-tarjeta-pdf.mjs despues
+    node --test tests/scrum1442c-la-tarjeta-del-pdf-sin-nan.test.mjs
+    node docs/master/evidencias/SCRUM-1442/mutaciones.mjs
