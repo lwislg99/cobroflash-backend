@@ -1801,6 +1801,10 @@ html, body { overflow-x: clip; }
    S2: recibe el dedo: medía 44,6 con la fuente de respaldo del banco y 43,6 con Inter en yaqu.app. Con
    S2: la fuente real se quedaba corta por 0,4 px; el suelo no depende de la fuente. */
 .quote-dto-global__campo { min-height: 44px; }
+/* S2: SCRUM-1716b · el selector €/% es el `.segmented` del sistema (SCRUM-574), al ancho del campo
+   S2: que acompaña; y «Equivale a …» en el gris de ayuda de los demás campos (`--muted`, AA). */
+.quote-dto-global__unidad { max-width: 200px; margin-top: 6px; }
+.quote-dto-global__equivale { margin: 4px 0 0; font-size: 12.5px; color: var(--muted); }
 
 /* SCRUM-139 F2 · RENGLÓN EN BLANCO DEL CUADERNILLO.
    El editor abre con varias líneas dibujadas (LINEAS_CUADERNILLO): son una INVITACIÓN, no

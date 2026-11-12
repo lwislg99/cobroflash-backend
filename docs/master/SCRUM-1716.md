@@ -82,3 +82,46 @@ su literal y su localizador.
 **Pendiente en este ticket (1716b):** el selector €/%. No se construye hasta que el orquestador
 confirme el enfoque y estén firmados sus rótulos (regla 39). La nota de `quotesView.js:1885-1890`
 (SCRUM-594) se actualiza en ese PR, citando este ticket y sin borrar la historia.
+
+---
+
+# SCRUM-1716b · el selector €/% del descuento global · S2 · 12-nov-2026 · rama `scrum-1716b-selector-euro-porcentaje`
+
+**Medido contra:** `origin/main` = `8f235725590f2c984b1709a5331ff26a53f25792` · 2026-11-12T15:14:08Z
+
+A9: comprobación → `tests/scrum1716b-descuento-global-en-porcentaje.test.mjs`
+
+**Skill UI:** cargada (`yaqu-premium-ui`. AB6: el selector es el `.segmented` del sistema (SCRUM-574), con radios de verdad, sin componente ni token ni color nuevos; dos reglas de maquetación con tokens existentes (`--muted`); el error usa `.aviso-falta-campo` + `.input-error`, que ya existían; 44 px medidos en las dos opciones; foco = el anillo del componente)
+
+**Firma de los textos:** SCRUM-1716 c.21704 (fundador, 12-nov ~16:10, «firmo lo que dices», con su localizador). Están byte a byte: R1 «€» · R2 «%» · R3 «En euros» / «En porcentaje» (nombres accesibles de los dos radios) · R4 «Equivale a 24,50 €» (con el importe calculado, por el formateador común `fmtMoneyEs`) · R5 «El porcentaje no puede pasar de 100.». El grupo se nombra con la etiqueta que ya había, «Descuento global» (`aria-labelledby`): ningún texto más.
+
+**Qué se construye, con E1-E5 tal como están en §1716b:**
+- `quoteDescuentos.descuentoGlobalDesdePorcentaje(lineas, %)`, una función pura. **E1:** la base es la `baseImponibleCents` de `totalesConDescuento` con el global nulo (líneas con su Dto., sin IVA y sin cabeceras de apartado), redondeada al céntimo. No es una cuenta aparte. **E5:** si pasa de 100, devuelve `fueraDeRango` y ningún €.
+- En `quotesView.js`, `recalcTotals` pasa a `totalesConDescuento` el € convertido. **E2:** se recalcula con cada recorrido. El envío vuelve a llamar a `recalcTotals` justo antes de leerlo, así que viaja el € del momento de guardar. Un % por encima de 100 para el envío con R5.
+- **E3:** el borrador guarda la unidad (`descuentoGlobalUnidad`). Una plantilla o un duplicado reabren en €. Un borrador de antes, sin unidad, se lee en €.
+- **E4:** no cambian `discountGlobalAmount` (sigue en €), el esquema, `calcTotal`, el PDF, el portal ni la firma. El campo abre en €.
+- La nota de SCRUM-594 en `quotesView.js` se AMPLÍA citando este ticket. No se borra nada de ella.
+
+**Medido en navegador** (sonda S2 `local-1716b-pct.mjs`: yaqu.app con los tres ficheros de la rama servidos en local, solo GET, con control positivo del corte; nada se guarda). Una línea de 2 × 50 € al 21 %:
+
+| paso | total | pista | error |
+|---|---|---|---|
+| sin descuento | 121,00 € | — | — |
+| 10 en € | 108,90 € | — | — |
+| 10 en % | 108,90 € | «Equivale a 10,00 €» | — |
+| precio a 100 (sigue en %) | 217,80 € | «Equivale a 20,00 €» | — |
+| 150 en % | 242,00 € (sin descuento) | — | «El porcentaje no puede pasar de 100.», `aria-invalid` |
+| 12.5 en %, borrador y reabrir | 211,75 € | «Equivale a 25,00 €», abre en % | — |
+
+Igual a 390 y a 1280. Las dos opciones miden 44 px de alto. Desborde horizontal 0. Sin errores de página.
+
+**Declarado:**
+- Sin cliente elegido, el paso de Conceptos sale cerrado y se vuelve a cerrar al recalcular. La sonda le quitó `is-cerrado` 15 veces por pasada.
+- «12,5» con coma no entra en un `type=number`, igual que en los demás campos del dinero del editor. Se midió con «12.5».
+- La vuelta de una plantilla en € no se ha recorrido en navegador: se lee en el código.
+
+**Tests:** `scrum1716b-descuento-global-en-porcentaje` da 6/6. Con los seis ficheros que miran el descuento o montan la vista, 42/42. `scrum697` y `scrum698` cuentan los nodos de la vista: 258 → 267, con una nota fechada que nombra los 9 nodos por identidad (`div.segmented`, 2 × `label`·`input`·`span`, y las dos `p`). Es todo el delta.
+
+**Error propio:** la primera versión metió el «abrir el campo» en una función, y el guard de SCRUM-888c («el global se restaura detrás de un botón cerrado») cayó porque busca ese gesto dentro de `loadDraft`. Se arregló el código, no el guard (regla 41): el gesto vuelve a estar en línea en los tres sitios.
+
+**Rojo del CI (SCRUM-690, mismo PR):** el censo de consumidores de `.segmented` vio a `quotesView.js` como tercero. Se declara en `CONSUMIDORES` con su medición en navegador (la de arriba), y el código escribe la clase `segmented` suelta para que siga valiendo «los consumidores usan el componente». No se tocó ninguna aserción del guard (regla 41). Sin ejecutar en local: no había permiso para correr `node --test`; lo dirá el CI.
