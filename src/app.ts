@@ -74,6 +74,7 @@ import soporteAdminRouter from './modules/system/app/routes/soporteAdmin.routes'
 import libroRegistroRouter from './modules/invoicing/app/routes/libroRegistro.routes'; // SCRUM-296 (A6): libro de registro, SOLO LECTURA
 import librosAeatRouter from './modules/fiscal/librosAeat/librosAeat.routes'; // SCRUM-325 (E4): el libro de A6, por periodo y en CSV. SOLO LECTURA
 import modelo303Router from './modules/fiscal/modelo303/modelo303.routes'; // SCRUM-295 (A5): modelo 303, SOLO LECTURA
+import retencionesRouter from './modules/fiscal/retenciones/retenciones.routes'; // SCRUM-1066h
 import evidenciasRouter from './modules/fiscal/evidencias/evidencias.routes'; // SCRUM-297 (A7): paquete de evidencias, SOLO LECTURA
 import supresionRouter from './modules/system/app/routes/supresion.routes'; // SCRUM-244 (RGPD-1): tras MERCHANT_DELETE_ENABLED
 import maintenanceRouter from './modules/maintenance/app/routes/maintenance.routes';
@@ -616,6 +617,9 @@ mountAdmin(app, '/admin/libros', requireRole('admin'), librosAeatRouter);
 // SCRUM-295 (A5): el 303 del trimestre. Admin-only por el mismo motivo que el libro: es la
 // declaración fiscal del negocio entero, no trabajo de campo del Operario.
 mountAdmin(app, '/admin/modelo-303', requireRole('admin'), modelo303Router);
+// SCRUM-1721 (pieza ⑦, contrato de J1 en SCRUM-1721 c.21660): el borrador del 111/115. Admin-only
+// como el 303: son las retenciones que el negocio entero ha practicado, no trabajo de campo.
+mountAdmin(app, '/admin/retenciones', requireRole('admin'), retencionesRouter);
 // SCRUM-297 (A7): el paquete que demuestra lo declarado. Admin-only: son las pruebas fiscales
 // del negocio entero, no trabajo de campo del Operario.
 mountAdmin(app, '/admin/evidencias.zip', requireRole('admin'), evidenciasRouter);
