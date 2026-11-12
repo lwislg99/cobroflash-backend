@@ -1913,3 +1913,20 @@ multiplicaba en coma flotante y no fabricaba ruido. El número era creíble. Lo 
 cuadraba, y el banco lleva ahora un suelo: con el generador viejo sale CIEGO (código 3), comprobado.
 
 A9: comprobación → `docs/master/evidencias/scrum665c/tamano-con-logo.mjs`
+
+# APÉNDICE (F) · SCRUM-665e · 12-nov-2026 · J1 (jv-j1dk, relevo 2) · El congelado, probado en local; sigue SIN EMPUJAR
+
+**Medido contra:** `origin/main` = `75d4878628254b3e6b72c1dfe69f2d8575b978ef` · 2026-11-12T10:17:04Z
+
+**Skill UI:** no cargada · esta tanda sólo quita un control (`btnRegen`) del registro de acciones y su botón de la vista, sin texto, estilo ni hueco nuevos; con el ⋮ vacío la vista no lo pinta (`invoiceDetailView.js`, `cubosAcc.overflow.length`). Quien empuje la carga antes.
+
+**Hecho (rama `scrum-665e-pdf-persistente`, sólo local):**
+
+1. **Rojo primero:** `tests/scrum665e-pdf-de-la-emitida-congelado.test.mjs`, 7 casos sobre `ensureInvoicePdf` entera desde `dist/` (generador sustituido por uno que escribe bytes distintos en cada llamada; Prisma falso con estado). Con la rama: 7/7. Con el `invoicing.ts` de `75d48786` transpilado dentro de `dist/` (sin tocar `src/`): caen ①, ③, ④ y ⑥ (no guarda huella; con el fichero borrado REGENERA; sirve un fichero alterado; dos peticiones a la vez generan dos veces). ② y ⑤ también pasan con main (no distinguen). El escáner de ⑦ caza `post /:id/regenerate-pdf` en el fichero de main (16 rutas, control `get /:id/pdf` visto).
+2. **`btnRegen` fuera** de `invoiceActionsRegistry.js` (decisión del fundador, c.21182 punto 3), y los tests que lo nombraban, uno a uno: `scrum283-tabla-patron-factura` (fila R1 con el ⋮ vacío; la mutación y el control negativo usan ahora `btnPdf` y `btnRectify`), `scrum283-microcopy-marcador` (fuera su rótulo aprobado), `scrum707` (conjuntos sin `btnRegen`; **dos números movidos por la decisión, no relajados:** suelo de acciones 9 → 8 y `annulled` 2 → 1, con el motivo escrito al lado), `scrum1455b` (fuera la ruta: 14 → 13 lecturas y sus dos casos). `scrum205` sólo lo cita en un comentario. 283 y 707 no tienen dueño escrito (Jira sin etiqueta); 1455 es `area-j1`.
+3. **ALTER en `yaqu_dev_javier`** con `scripts/aplicar-sql-dev.mjs --go` (`docs/sql/scrum-665e-pdf-sha256.sql`), destino DESARROLLO confirmado antes. Leído después del catálogo: `current_database()` = `yaqu_dev_javier`; `pdf_sha256` text NULL; controles `id` integer y `pdfUrl` text; una columna inventada no sale.
+4. Guards: scrum237, 976, 1387 (b, d, f), 523d, 1294, 267, 273, 622 → 77/78; el que cae es scrum976 ④ por scrum811c (faltaba esta declaración de la skill UI), re-corrido abajo.
+
+**NO hecho:** generar AL EMITIR en los otros caminos (11 llamadas a `sellarTrasEmision(`; hoy sólo el de cobro congela al emitir, el resto al primer pedido); mutaciones con `MUTACIONES_QUE_ME_TUMBAN`; guards de navegador de la vista; `tsc -p .` con tipos (el cliente de Prisma compartido no tiene `pdfSha256`: 4 errores, todos de eso, medidos por la sesión anterior); las líneas de S1 (`dirs.ts`, `adminOnlyRoutes.ts:137`, Jira c.21564). `node scripts/equipo/norma.mjs --arranque` NO se leyó (contexto: 116k sólo con arranque y Jira; lo aceptó el orquestador J). Suite entera local: NO CORRIDA.
+
+A9: comprobación → `tests/scrum665e-pdf-de-la-emitida-congelado.test.mjs`
