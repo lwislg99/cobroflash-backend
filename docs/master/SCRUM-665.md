@@ -2014,3 +2014,15 @@ A9: aviso → cicatriz J1 «Escribí un test reemplazando texto con un script no
 - **Para poder empujar falta:** ① el arreglo de `scrum694` (arriba); ② las dos líneas de S1 (Jira c.21564: `src/core/storage/dirs.ts` y `src/core/http/adminOnlyRoutes.ts:137`), en sus ficheros; ③ el ALTER de `pdf_sha256` confirmado en staging y producción (c.21562); ④ `git merge origin/main` y volver a medir (main va 12 por delante). Suite entera local: NO CORRIDA. Navegador: NO CORRIDO.
 
 A9: comprobación → `tests/scrum694-los-guards-migrados.test.mjs`
+
+# APÉNDICE (L) · SCRUM-665e · 12-nov-2026 · J1 (jv-j1dk, relevo 8) · scrum694 arreglado en el test, main mergeado, re-medido en verde. SIN EMPUJAR
+
+**Medido contra:** `origin/main` = `9cdf6a24d6831e16f4214b8c87cceaa286ebf303` · 2026-11-12T11:25:52Z (mergeado en la rama, sin rebase ni force)
+
+- Con el OK del orquestador J (mensaje del 12-nov; el tope no se toca): el caso ⑦ de `tests/scrum665e-pdf-de-la-emitida-congelado.test.mjs` usa `soloCodigo` de `tests/_solo-codigo.mjs` en vez del filtro a mano. scrum665e + scrum694: 19/19.
+- `git merge origin/main` (`9cdf6a24`): sin conflictos; `prisma/schema.prisma` no cambia. Main traía cambios en `invoicesAdmin.routes.ts`: `regenerate-pdf` sigue sólo en el comentario que explica su retirada (1 aparición, comentario), y el ⑦ lo confirma.
+- Re-medido sobre el merge: los 5 de árbol entero + 1294, 267, 273, 649, 525d y 665e: 11 ficheros, 100 casos, 0 caen. `guards:entrada`: 15 guards, 170 casos, 0 caen. `tsc` con tipos (cliente fuera del árbol): salida 0. La dirigida de 73 NO se repitió tras el merge.
+- El ALTER de `pdf_sha256` en staging y producción lo confirmó el fundador (c.21565, por boca del orquestador, que no vio la salida). La base dev: NO aplicada (c.21564 y c.21565 la dejan a este relevo; no la he tocado).
+- **Para poder empujar falta:** las dos líneas de S1 (c.21564: `src/core/storage/dirs.ts` y `src/core/http/adminOnlyRoutes.ts:137`). Suite entera local y navegador: NO CORRIDOS.
+
+A9: sin fallo que generalice — el rojo de este tramo era el del tramo K, ya con su comprobación (`scrum694`), y aquí sólo se arregla
