@@ -16,7 +16,7 @@ import { datosDeCobroPagado } from '../../domain/instanteDeCobro'; // SCRUM-397
 // SCRUM-502: la guarda de anulada se CONSUME de donde vive, no se reescribe aqui.
 import { puedeCobrarPorPasarela, ESTADO_ANULADA } from '../../../system/invoiceAdmin';
 // SCRUM-1315: «el `update` no encontró la fila de su `where`» se reconoce con la misma función que en `/webhooks/psp`.
-import { esFilaQueNoCasa } from '../../domain/estadoDelCobro';
+import { esFilaQueNoCasa, ESTADOS_QUE_UN_FALLO_PUEDE_PISAR } from '../../domain/estadoDelCobro'; // SCRUM-1720: la lista de SCRUM-1292
 import { motivoParaNoPedirResena } from '../../domain/resenaTrasElPago'; // SCRUM-1727b
 
 const router = Router();
@@ -261,13 +261,22 @@ router.post('/', async (req, res) => {
       // (suma desde cero) AÑADIDO al final, fire-and-forget; la cadena de arriba NO se toca.
       recalcJobCobradoForCharge(updated.id).catch((e) => console.error('[mpWebhook] SCRUM-13 recalc totalCobrado:', e?.message || e));
     } else if (['rejected', 'cancelled'].includes(mpStatus) && charge.status === 'pending') {
-      await prisma.charge.update({
-        where: { id: chargeId },
-        data: {
-          status: 'failed',
-          events: { create: { type: 'failed', payload: { mp_payment_id: mpPaymentId, mp_status: mpStatus } as any } },
-        },
-      });
+      // SCRUM-1720 · SEGUNDA BARRERA, la misma de `/webhooks/psp` (SCRUM-1292): la condición de estado
+      // VA EN LA ESCRITURA. El `if` de arriba lee `pending`; si alguien paga entre esa lectura y esta
+      // escritura, Prisma no encuentra la fila (P2025) y un cobro pagado no vuelve a `failed`.
+      try {
+        await prisma.charge.update({
+          where: { id: chargeId, status: { in: ESTADOS_QUE_UN_FALLO_PUEDE_PISAR } },
+          data: {
+            status: 'failed',
+            events: { create: { type: 'failed', payload: { mp_payment_id: mpPaymentId, mp_status: mpStatus } as any } },
+          },
+        });
+      } catch (e) {
+        if (!esFilaQueNoCasa(e)) throw e;
+        console.log(`[mpWebhook] SCRUM-1720 charge ${chargeId} cambió de estado entre la lectura y el fallo (MP status: ${mpStatus}): no se marca fallido`);
+        return;
+      }
       console.log(`[mpWebhook] Charge ${chargeId} marcado como fallido (MP status: ${mpStatus})`);
     } else {
       console.log(`[mpWebhook] Estado MP '${mpStatus}' para charge ${chargeId} (ya en '${charge.status}') — sin cambios`);

@@ -1,0 +1,4 @@
+raíz . · tests 1653 · declarantes 275 (17 %) · declaraciones 1090
+registros 1284 · afirman mutaciones 294 (criterio estricto: con veredicto)
+  A 128 · B 135 · C1 14 · C2 13 · C3 4 · fuera (B+C2+C3) 152
+  fuera, por lo que el árbol permite comprobar: guion 15 · salida 8 · texto 129

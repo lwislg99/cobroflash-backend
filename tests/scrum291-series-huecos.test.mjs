@@ -96,10 +96,10 @@ test('SCRUM-291 ④ · una serie de OTRO año no bloquea la del año en curso', 
 });
 
 test('SCRUM-291 ④ · el mensaje del bloqueo es el APROBADO, literal', () => {
-  // Aprobado por el fundador el 5-ago-2026. Sustituye al assert de «va marcado como pendiente»,
+  // Aprobado por Javier el 23-oct-2026, en el chat; lo transcribió una sesión. Sustituye al assert de «va marcado como pendiente»,
   // retirado EN EL MISMO COMMIT que quita la marca — que es lo que convierte «aprobado» en un
   // hecho comprobable y no en el recuerdo de alguien.
-  // Consta en: SCRUM-1502 comentario 20514.
+  // Consta en: SCRUM-1502 comentario 20514 (orquestador cobroflash-backend-62). Marca corregida en SCRUM-1502s.
   const src = fs.readFileSync(path.join(RAIZ, 'src/modules/system/merchantAdmin.ts'), 'utf8');
 
   assert.match(src, /TIT_SERIE_YA_EMITIDA = 'Esta serie ya tiene facturas emitidas'/,

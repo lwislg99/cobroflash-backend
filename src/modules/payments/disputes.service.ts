@@ -64,9 +64,11 @@ async function pruebaDelPresupuesto(
  *   comentario 18287 (cuenta de Luis) y, directamente por el fundador, en el comentario 18747.
  *   Copiados letra por letra; constan en
  *   `docs/microcopy/2026-10-07-SCRUM-1436-aviso-de-disputa.md`.
- * · SIN factura → el de siempre menos la oración de la firma. Los literales firmados llevan el
- *   número de la factura y aquí no hay ninguno: encajarlos sería cambiarlos, y no se ha hecho.
- *   ⚠️ Sigue mandando a «la factura» sin que exista: queda dicho en `docs/master/SCRUM-1436.md`.
+ * · SIN factura (SCRUM-1727) → el literal firmado en SCRUM-1656 (texto 3 del comentario 21722,
+ *   firma en el comentario 21724), en dos líneas. Ya no manda a «la factura»: no existe, y el
+ *   paquete de disputa sólo se genera desde una. Ficha:
+ *   `docs/microcopy/2026-11-12-SCRUM-1656-disputa-sin-factura.md`. Sin factura la prueba es siempre
+ *   `ninguna` (`pruebaDelPresupuesto`), así que este caso no afirma nada del presupuesto.
  */
 function avisoDeDisputa(p: {
   custName: string;
@@ -75,10 +77,13 @@ function avisoDeDisputa(p: {
   prueba: PruebaDelPresupuesto;
 }): string {
   const cabecera = `⚠️ El banco de ${p.custName} ha abierto una disputa por ${p.amountTxt}.`;
-  if (p.prueba === 'firmado' || p.numeroDeFactura === null) {
+  if (p.numeroDeFactura === null) {
     return `${cabecera}\n` +
-      `${p.prueba === 'firmado' ? 'Tranquilo: tienes el presupuesto FIRMADO. ' : ''}Entra en la factura` +
-      `${p.numeroDeFactura !== null ? ` ${p.numeroDeFactura}` : ''} y pulsa "Paquete de disputa" — ` +
+      `Este cobro no tiene factura, así que no hay "Paquete de disputa". Reúne el presupuesto y los mensajes con ${p.custName} para responder al banco.`;
+  }
+  if (p.prueba === 'firmado') {
+    return `${cabecera}\n` +
+      `Tranquilo: tienes el presupuesto FIRMADO. Entra en la factura ${p.numeroDeFactura} y pulsa "Paquete de disputa" — ` +
       `sale todo listo para responder al banco.`;
   }
   return `${cabecera} ` +
