@@ -171,6 +171,10 @@ async function renderHomeView(container) {
     container.querySelectorAll('[data-home-block="kpis"],[data-home-block="week"],[data-home-block="tops"]')
       .forEach((bloque) => bloque.remove());
     pintarTrabajoDeHoy(document.getElementById('home-hoy'));
+  } else {
+    // SCRUM-1686 H4 · el Inicio del admin no cambia ni en un nodo (scrum698 lo cuenta).
+    const hoy = document.getElementById('home-hoy');
+    if (hoy) hoy.remove();
   }
 
   // A6.7: aplicar preferencias cacheadas al instante (sin flash en re-renders)
