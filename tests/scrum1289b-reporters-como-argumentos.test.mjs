@@ -13,11 +13,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { separarReporters, reportersComoArgumentos } from '../scripts/_reporters-de-node-options.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 import { veredictoDelSuelo, integridadDelTap, SALIDA_NO_SUPE_MIRAR } from '../scripts/_suelo-de-la-tanda.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -77,7 +77,7 @@ const TOTAL = PRIMEROS + 1;
 
 /** Una tanda de juguete: `a-primero` (20 tests) y `b-lanza`, que lanza un `node --test` de `nieto`. */
 function banco() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-1289b-'));
+  const dir = temporal('yaqu-1289b-');
   fs.writeFileSync(path.join(dir, 'nieto.test.mjs'),
     "import test from 'node:test';\ntest('nieto', () => {});\n");
   fs.writeFileSync(path.join(dir, 'a-primero.test.mjs'),
@@ -131,7 +131,7 @@ test('1289b · 🔴 CONTROL POSITIVO: SIN el envoltorio, el nieto ROMPE el TAP (
     const v = veredictoDelSuelo(fs.readFileSync(path.join(dir, 'sin.tap'), 'utf8'), 1);
     assert.equal(v.salida, SALIDA_NO_SUPE_MIRAR,
       `🔴 el suelo CUENTA sobre un TAP roto (salida ${v.salida}, total ${v.total}): acertaría por suerte.`);
-  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  } finally { borrarTemporal(dir); }
 });
 
 test('1289b · 🔴 CON el envoltorio, el mismo nieto ya no toca el TAP: sin NUL y UN solo resumen', () => {
@@ -145,7 +145,7 @@ test('1289b · 🔴 CON el envoltorio, el mismo nieto ya no toca el TAP: sin NUL
     const v = veredictoDelSuelo(fs.readFileSync(path.join(dir, 'con.tap'), 'utf8'), 1);
     assert.equal(v.salida, 0, `🔴 el suelo se niega a contar un TAP sano: ${v.titulo}`);
     assert.equal(v.total, TOTAL);
-  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  } finally { borrarTemporal(dir); }
 });
 
 // ═══ EL SUELO QUE ACERTABA POR SUERTE ════════════════════════════════════════════════════
