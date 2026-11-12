@@ -126,3 +126,8 @@ Salida y scripts en `docs/master/evidencias/SCRUM-1723/`. ⚠️ Esto es la pág
 - Recorrido en yaqu.app tras el merge, con la CSP aplicada por Playwright.
 - Tramo de la firma del presupuesto (`quoteDecisionLanding.routes.ts`): script **y** estilo, mismo patrón.
 - `documentNotFoundHtml` (`src/core/http/publicNotFound.ts`, el 404 del token) no se ha medido aquí.
+### ⑥ CI rojo de #3048 (12-nov, noche) y su arreglo
+
+El «build + tests» de `0151e10c8` cayó en UN test: `scrum553-etiquetas-pegadas` — 21 extractores con el `>` pegado sobre un tope de 20. El nuevo era el de este mismo PR: `tests/scrum49-firma-remota.test.mjs:179`, que leía `<script type="application/json" id="albaran-firma-datos">` literal. Se deja hueco a los atributos (`/<script\b[^>]*\bid="albaran-firma-datos"[^>]*>…/`) y se vigila el `id`, que es lo que pinta `albaranPublic.routes.ts:278`.
+
+- Base sin el arreglo: 553 **rojo** (exit 1) nombrando esa línea. Con el arreglo: **16/16** verdes.

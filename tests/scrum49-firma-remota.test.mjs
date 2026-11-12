@@ -176,7 +176,8 @@ test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, a
     // llevaba cayendo este test desde que entró aquella regla.
     // SCRUM-1646 (CSP paso 2): la versión ya no viaja dentro de un <script> en línea, sino en el
     // bloque de DATOS `application/json` que lee el guion servido desde 'self'. Se lee de ahí.
-    const mDatos = html.match(/<script type="application\/json" id="albaran-firma-datos">([\s\S]*?)<\/script>/);
+    // (SCRUM-553: la etiqueta deja hueco a sus atributos; el `id` es lo que se vigila.)
+    const mDatos = html.match(/<script\b[^>]*\bid="albaran-firma-datos"[^>]*>([\s\S]*?)<\/script>/);
     let mVersion = null;
     try { mVersion = mDatos ? JSON.parse(mDatos[1]).version : null; } catch { mVersion = null; }
     assert.ok(Number.isInteger(mVersion), 'la página pública le da al cliente la versión del albarán que está viendo');
