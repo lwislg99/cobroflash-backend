@@ -25,6 +25,7 @@ import {
 } from '../dist/modules/system/app/routes/quoteDecisionNavegador.js';
 
 const LANDING = '../dist/modules/system/app/routes/quoteDecisionLanding.routes.js';
+const { PRESUPUESTO_FIRMA_CSS } = await import('../dist/modules/system/app/routes/quoteDecisionEstilo.js');
 const TOKEN = 'c'.repeat(32);
 
 let FILA = null;
@@ -170,7 +171,11 @@ test('🔴 SCRUM-1646c · CONDUCTA · elegir una opción hace lo que hacía el o
   let enviado = null;
   const nav = navegadorDeLaFirma(html, PRESUPUESTO_FIRMA_JS, async (url, init) => { enviado = { url, cuerpo: JSON.parse(init.body) }; return respuesta(200, { ok: true }); },
     { firma: 'data:image/png;base64,AAAA' });
-  assert.equal(nav.el('btn-accept-wrapper').attrs.style, 'display:none', 'CONTROL: con opciones la firma nace oculta');
+  // SCRUM-1646d: la firma nace oculta por la CLASE y la hoja servida desde 'self', no por un `style=` que
+  // la CSP (style-src 'self') bloquearía. Se exigen las dos mitades: la clase en el HTML y la regla en la hoja.
+  assert.equal(nav.el('btn-accept-wrapper').attrs.style, undefined, 'el bloque de firma no lleva style= en el HTML');
+  assert.ok(nav.el('btn-accept-wrapper').classList.contains('oculto-hasta-elegir'), 'CONTROL: con opciones la firma nace oculta (clase)');
+  assert.match(PRESUPUESTO_FIRMA_CSS, /#btn-accept-wrapper\.oculto-hasta-elegir\s*\{\s*display:\s*none\s*\}/, 'CONTROL: la hoja servida oculta esa clase');
   await nav.elegir('completa');
   const tarjeta = nav.opciones.find((o) => o.getAttribute('data-tier-id') === 'completa');
   assert.ok(tarjeta.classList.contains('selected'), 'la opción elegida queda marcada');

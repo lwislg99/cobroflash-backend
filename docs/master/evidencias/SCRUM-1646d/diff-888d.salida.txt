@@ -1,0 +1,17 @@
+﻿control del instrumento: 4/4 (caza texto, atributo y clase sin style)
+≈ C1 · todo 21 %, con el céntimo del punto 4: distinta SOLO por style= → clase/id
+≈ C2 · IVA mixto 10 % y 21 %, 50/50: distinta SOLO por style= → clase/id
+≈ C4 · plan propio Señal 30 % / Resto 70 %: distinta SOLO por style= → clase/id
+≈ dto 0 y global a cero en texto: NO son descuento: distinta SOLO por style= → clase/id
+≈ todo al 0 %: sin bloque de IVA: distinta SOLO por style= → clase/id
+≈ modo «IVA no incluido»: la página sigue en «sumar» (hueco declarado): distinta SOLO por style= → clase/id
+≈ con opciones a elegir (tiers): distinta SOLO por style= → clase/id
+≈ sin líneas: distinta SOLO por style= → clase/id
+
+etiquetas cambiadas (antes → ahora) × veces, sumando los 8 casos:
+  8× <div style="text-align:center">  →  <div class="centrado">
+  8× <div style="text-align:center;margin-bottom:4px">  →  <div class="condiciones-wrap">
+
+casos 8 · idénticas 0 · sólo style→clase 8 · otra diferencia 0
+huella antes 4eaf52182a7f1945309de9c0dcd3d5ca1bce20293cdafaee5135cd908d14ca9e
+huella ahora bd247521623bc4531999e1ba3a95eae69cdfed27f2c52fc73d5a1020a1d7834f
