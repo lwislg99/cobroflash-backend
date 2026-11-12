@@ -137,9 +137,10 @@ test('SCRUM-1063l · soportado al 7,5 %: no entra en la 29 y no se pierde — co
 });
 
 test('SCRUM-1063l · el 7,5 % es inalcanzable en un gasto porque `vat_rate` es entero en `model Expense`', () => {
-  // Lectura del esquema (regla 40: se LEE). Sin comentarios, partido por líneas (A23, casillas 2 y 3).
+  // Lectura del esquema (regla 40: se LEE), partido por líneas. Sin filtro de comentarios: cada
+  // comprobación ancla al INICIO de la línea, y una línea de comentario no empieza por el campo.
   const esquema = fs.readFileSync(new URL('../prisma/schema.prisma', import.meta.url), 'utf8');
-  const lineas = esquema.split(/\r?\n/).map((l) => l.replace(/\/\/.*$/, '').trim());
+  const lineas = esquema.split(/\r?\n/).map((l) => l.trim());
   const desde = lineas.indexOf('model Expense {');
   assert.ok(desde >= 0, '🔴 CIEGO: no encuentro `model Expense` en el esquema');
   const hasta = lineas.indexOf('}', desde);
