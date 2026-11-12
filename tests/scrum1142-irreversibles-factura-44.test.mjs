@@ -34,9 +34,13 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CLASE = 'accion-irreversible-btn-44';
 
 // `pending` es el estado con las tres: Anular sólo existe en pending, y Rectificar va al «⋯».
+// SCRUM-665e (decisión del orquestador J, SCRUM-665 c.21608 (a)): retirado «Regenerar PDF», el
+// hermano de la rectificativa en el «⋯» es el recordatorio, que sólo se pinta si el cliente tiene
+// teléfono (`invoiceDetailView.js`, `invoice.customer?.phone`). Por eso el cliente lleva móvil.
+// Sin móvil, el «⋯» de una pendiente se queda hoy con UNA opción: observación de pantalla, no de este test.
 const FACTURA = Object.freeze({
   id: 7, number: 'F-2026-0007', status: 'pending', type: 'F1', total: 121, currency: 'EUR',
-  createdAt: '2026-09-01T09:00:00.000Z', customer: { id: 1, name: 'ZZCLIENTE prueba' },
+  createdAt: '2026-09-01T09:00:00.000Z', customer: { id: 1, name: 'ZZCLIENTE prueba', phone: '+34600000000' },
   items: [], rectifiedBy: [],
 });
 
