@@ -125,3 +125,64 @@ entera local: NO CORRIDA (solo docs).
 2. Copié una cita «fichero:línea» sin pensar que este repositorio las lee como anclas: lo cazó
    scrum525d (es la línea `A9:` de este tramo).
 3. No me medí justo al acabar de leer Jira: lo hice después de medir el fichero (~152k).
+
+---
+
+# SCRUM-1264s · Las preguntas de la tarde del 12-nov (1063l y 1129): 2 nuevas al final, 2 grupos que ya estaban
+
+**Medido contra:** `origin/main` = `8928099fe426f9a20857f1162c4cdbf4621d409a` · 2026-11-12T17:45:50Z (cabecera `Date:` de GitHub)
+
+A9: aviso → cicatriz J5 «Al copiar un literal de Jira al fichero del asesor quité en silencio una cita a fichero y línea, por miedo a que la leyera scrum525d como ancla; lo vi al releer el bloque, antes del commit» — no se pudo comprobar: ningún guard compara lo copiado en docs/legal con el comentario de Jira del que sale.
+
+Sesión J5 (IA, `jv-j5az`), 12-nov-2026, por encargo del orquestador `cobroflash-backend-63` (decisión
+de Javier en SCRUM-1063 c.21764). **Solo docs.** Al ir a empujar, `origin/main` iba 2 commits por
+delante (`2c52196fddfdee2f2875c38d51642785d2566812`) sin tocar ninguno de mis tres ficheros.
+
+## Ⓐ Medición, por contenido
+
+Script de patrones por candidata sobre `git show origin/main:docs/legal/PREGUNTAS_ASESOR.md` (1.847
+líneas, 156.034 B). Control positivo del árbol: la (f) de las furgonetas (fila 28) sale en la 1770.
+Control negativo: una frase inventada da 0. Positivo **sembrado**: una línea fabricada con «2 % … 2024
+… 2026» añadida a una copia sale (1849), y en el original no. También se miró el índice de la
+descripción de SCRUM-1264 (45 filas).
+
+| candidata (c.21764) | veredicto | dónde |
+| --- | --- | --- |
+| 30/31 (N1) | **ya estaba** | fila 29 (E10: (a) y (b) de c.20863), línea 1782; la (c) de c.20863 es la (e) y la (d) quedó superada por la (f) y los turismos |
+| (e), (f), (g) de c.20922 | **ya estaba** | fila 28, líneas 1769-1772 (c.20927) |
+| los cuatro comportamientos de 1063j | **ya estaba** | fila 27 (E7, c.21140), líneas 1753-1756 |
+| gasto al 2 % de 2024 apuntado en 2026 | **faltaba** → fila 46 | Q-C7 y E5 hablan de lo que se factura, no del soportado |
+| R1 de una factura con criterio de caja (c.21756/c.21757) | **faltaba** → fila 47 | B6 (2)(3) y Q-nueva-A rozan, no la contestan |
+| **de paso:** G3.(7) de c.21749 (disputa) | **faltaba** → dentro de G3 | c.21749 pide contarla dentro de G3, no como entrada nueva |
+
+## Ⓑ Cómo se añadió
+
+- **Al final**, bajo «# Añadidas el 12-nov-2026 por la tarde (SCRUM-1264s)». Comprobado por bytes: los
+  156.034 B de `origin/main` son el prefijo exacto del fichero nuevo (`cmp`), 57 líneas añadidas y 0
+  quitadas, 0 bytes CR.
+- Texto copiado del Markdown que devuelve Jira. La fila 47 no tiene en Jira una redacción para el
+  asesor: va como los dos literales de «sin decidir» de c.21756 y c.21757, y el bloque lo dice.
+- **No se ha tocado la descripción de SCRUM-1264.** Mide 31.993 caracteres y su tope es 32.000
+  (c.21743), y la herramienta de Jira la da como no editable: las filas 46-47 y G3.(7) van en el
+  comentario de 1264s. Se cambia el **título** (45 → 47 entradas).
+
+## Ⓒ Guards
+
+Locales: scrum525d, 267, 273, 1294, 737, 921c, 1106 y 1041 (resultado en la entrega y en el comentario
+de Jira). Suite entera local: NO CORRIDA (solo docs).
+
+## Ⓓ Lo que NO está medido
+
+- Si la R1 con criterio de caja es pregunta para el asesor o decisión del fundador: c.21757 no lo dice.
+- Que el índice de la descripción recoja las filas 46-47: no cabe sin pasar el tope; lo decide el
+  orquestador.
+- La redacción de las «ya estaban» frente a Jira: solo su contenido.
+
+## Ⓔ Lo que me salió mal
+
+1. Al copiar el caso 2 de c.21763 quité la cita `modelo303.ts` + línea, temiendo a scrum525d, sin
+   declararlo. Lo vi al releer, antes del commit, y la repuse entera; scrum525d la cazó (coordenada
+   sin testigo), y entonces sí la cambié por una nota entre corchetes DECLARADA en la cabecera, como
+   1264r. Lo que falló fue quitarla en silencio, y eso no lo caza ningún guard (es la línea `A9:`).
+2. Leí la descripción entera de 1264 (32 KB) y los comentarios de 1264, 1063 y 1129: crucé de 94k a
+   186k sólo leyendo Jira, y avisé al orquestador en ese momento, antes de los 200k.

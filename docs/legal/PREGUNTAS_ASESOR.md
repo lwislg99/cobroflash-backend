@@ -1845,3 +1845,60 @@ _Contexto._ La aplicación y su base de datos se alojan en un proveedor de nube 
 _La pregunta._ (1) ¿Basta con que los datos estén guardados en la UE para que no haya transferencia internacional con este proveedor, si su sede, su personal o su plano de control están fuera? (2) ¿Qué tenemos que tener firmado o guardado de él (DPA, cláusulas tipo)? (3) Mientras la base estuvo en EE. UU. sin esa marca en la política, ¿hay algo que corregir o documentar ahora? (4) ¿Debe decir la política dónde se alojan los datos?
 _Qué decide._ Si la política publicada y el registro de actividades necesitan cambiar, y qué contrato hay que buscar antes de tener clientes reales. G3 (4) cubre los otros cuatro proveedores; ésta solo el alojamiento.
 _Lo que ya tenemos:_ SIN RESPUESTA.
+
+---
+
+# Añadidas el 12-nov-2026 por la tarde (SCRUM-1264s)
+
+> Mismo criterio que la sección anterior: **al final**, sin mover ninguna línea de encima, y el
+> texto copiado de Jira. Se buscaron por CONTENIDO las candidatas de SCRUM-1063 c.21763/c.21764 y
+> SCRUM-1129 c.21756/c.21757 (registro en `docs/master/SCRUM-1264.md`, tramo 1264s). **Ya estaban
+> y no se repiten:** las 30/31 (N1), que son la fila 29 (E10, (a) y (b) de c.20863) y la fila 28
+> ((e), (f), (g) y turismos de c.20922/c.20927); y los cuatro comportamientos de 1063j, que son la
+> fila 27 (E7, c.21140).
+>
+> **Única desviación del literal:** en la fila 46, la cita de c.21763 a una línea de `modelo303.ts`
+> va como nota entre corchetes: copiada tal cual, `tests/scrum525d-anclas-que-apuntan.test.mjs` sale
+> rojo (coordenada sin testigo), igual que le pasó a 1264r.
+>
+> Las filas 46 y 47 **todavía no están en el índice de la descripción de SCRUM-1264**: van en su
+> comentario de 1264s. La de G3.(7) no es una entrada nueva: va dentro de G3 (fila 43), como pide
+> c.21749.
+
+### 43 · G3.(7) · Ampliación de G3: el paquete de evidencias de una disputa
+
+_Origen: c.21749 (SCRUM-1264, orquestador, por decisión del fundador; medición de SCRUM-1726). Texto literal._
+
+> **G3.(7)** Cuando un cliente final abre una disputa con su banco por un cobro, ¿es correcto incluir en el paquete de evidencias que se envía al banco su email, su teléfono y la IP y el navegador desde los que firmó el presupuesto (interés legítimo de defensa ante una reclamación, art. 6.1.f RGPD)? ¿Sobra o falta algo?
+
+_Lo que ya tenemos:_ SIN RESPUESTA.
+
+---
+
+### 46 · Un gasto al 2 % de 2024 apuntado en 2026: ¿entra en la 28/29?
+
+_Origen: SCRUM-1063 c.21763 (J1, tramo 1063l), llevada aquí por c.21764. Texto literal._
+
+_La pregunta (c.21763, «Asesor (SCRUM-1264)»):_ «si un gasto al 2 % de 2024 apuntado en 2026 entra en la 28/29 (el caso 2 lo fija como está hoy)».
+
+_El caso 2 (c.21763), literal:_ «Soportado al 2 % (100 + 2) junto a uno al 21 % (300 + 63): 28 = 400, 29 = 65, 46 = 145. La 28/29 es una sola casilla para todos los tipos; el código sólo aparta el 0 o la falta de tipo [aquí c.21763 cita una línea de `modelo303.ts`; la coordenada no se copia, ver la cabecera de esta sección]. Comportamiento actual, sin criterio del asesor.»
+
+_Relacionadas, que no la contestan:_ Q-C7 (de qué son los tipos 2, 5 y 7,5 %, respuesta de IA) y E5 (si se quitan del selector) hablan de lo que se FACTURA; ésta, del IVA SOPORTADO en un gasto de otro año. La fecha que decide el trimestre de un gasto es la (4) de E7 (fila 27).
+
+_Lo que ya tenemos:_ SIN RESPUESTA.
+
+---
+
+### 47 · La R1 de una factura con criterio de caja: ¿qué régimen lleva?
+
+_Origen: SCRUM-1129 c.21756 (J5, tramo 1129d) y c.21757 (orquestador, con la aprobación del fundador). Texto literal. En Jira está escrita como algo «sin decidir» que «se trae como pregunta»; no hay una redacción para el asesor, y c.21757 no dice a quién va: la trae aquí el encargo del orquestador (1264s)._
+
+_Lo que está sin decidir (c.21756):_ «qué valor lleva una R1, si el suyo al sellarse o el de la factura que rectifica.»
+
+_Y la condición (c.21757):_ «Lo que lleva una R1 sigue abierto: se trae como pregunta, no se decide en el código.»
+
+_Contexto (c.21753 y c.21757), literal:_ «Se cablea `07` desde `Merchant.criterioCaja`, solo para `S1`; `S2` sigue en `01`.» · «Columna: `Invoice.merchantCriterioCaja Boolean? @map("merchant_criterio_caja")`. Las facturas antiguas quedan en NULL y se leen como `01`, que es lo que se selló.»
+
+_Relacionadas, que no la contestan:_ B6 (2) y (3) (si una clave de régimen equivocada es infracción, y si la AEAT cruza el 303 con los registros) y Q-nueva-A (fila 5, qué es una «variación» del SIF).
+
+_Lo que ya tenemos:_ SIN RESPUESTA.
