@@ -1,6 +1,7 @@
 # SCRUM-1673 — Un albarán sin líneas no se emite (PILOTO-1)
 
 **Medido contra:** `origin/main` = `ec7e19e64eab26361a3d5ebae929b60474ae08ba` · 2026-11-12T12:09:59Z
+A9: comprobación → `tests/scrum1673-albaran-vacio-no-se-emite.test.mjs`
 
 **Puesto:** S1 · **Rama:** `scrum-1673-albaran-vacio-no-se-emite` · **Fecha:** 12-nov-2026
 
