@@ -75,8 +75,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // Se retira la declaración de (ii) y el defecto sigue.
     fichero: 'tests/scrum1730-criterio-caja-huecos-declarados.test.mjs',
-    de: '  },\n  tope31dic: { declarado: true,',
-    a: '  },\n  tope31dic: { declarado: false,',
+    de: "la excluye)' },\n  tope31dic: { declarado: true,",
+    a: "la excluye)' },\n  tope31dic: { declarado: false,",
     cae: 'SCRUM-1730 · (ii) una factura sin cobro sigue sin devengar el 31-dic del año siguiente: defecto declarado',
   },
 ];
