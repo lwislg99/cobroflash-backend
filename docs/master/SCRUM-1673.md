@@ -49,10 +49,12 @@ un 404 de acceso).
 - **S2 (SCRUM-1659):** la pantalla. `jobDetailView.js` (`nextAct.kind === 'emitir'` y el
   «crear y emitir» de `crearAlbaran`) y `albaranDetailView.js` (`btnEmitir`) tienen que traducir
   `albaran_sin_lineas`. Aceptación 2 del ticket («dice por qué») depende de eso y de un texto firmado.
-- **S3:** `scripts/qa/sembrar-qa.mjs` crea el albarán de QA SIN líneas y lo emite. En un entorno
-  donde ya está emitido no cambia nada (no re-emite); en uno limpio, desde este cambio, daría 409.
-  Necesita mandar `lineas` al crear (como `sembrar-albaranes.mjs` con `LINEAS_QA`). Fichero de S3.
-
+- **S3 — hecho aquí con excepción de carril (regla 37):** `scripts/qa/sembrar-qa.mjs` creaba el albarán de QA
+  SIN líneas y lo emitía; con este portón, en un entorno limpio daba 409. Lo rompía ESTE cambio, así que
+  se arregla en el mismo PR: el sembrador manda una línea al crear. GO del orquestador (12-nov, respuesta
+  al aviso de S1; S3 avisado en el ticket, c.21675). El doble de `tests/scrum1268-sembrar-qa.test.mjs`
+  ahora rechaza como el servidor (409 sin líneas): con el sembrador viejo caen 6, con el nuevo 70/70 en
+  los cinco ficheros que lo usan. No se importa `LINEAS_QA` de `sembrar-albaranes.mjs` (circular).
 ## Texto propuesto (NO aplicado; para firma del fundador)
 
 «No se puede emitir un albarán sin líneas. Añade al menos una línea con lo que se ha hecho.»

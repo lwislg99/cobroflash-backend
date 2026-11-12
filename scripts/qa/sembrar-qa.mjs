@@ -193,8 +193,13 @@ export async function sembrar(fetchFn, cookie) {
   lineas.push(`trabajo   #${trabajo.id} «${TITULO_TRABAJO_QA}» · ${trabajoNuevo ? 'CREADO' : 'ya estaba'}`);
 
   // ③ albarán con clave fija; se emite SOLO si no lo está
+  // SCRUM-1673: con UNA línea. Desde ese ticket el servidor no emite un borrador vacío (409
+  // `albaran_sin_lineas`), y este albarán se emite justo abajo. No se importa `LINEAS_QA` de
+  // `sembrar-albaranes.mjs` porque ese fichero ya importa de éste (sería circular).
+  // Excepción de carril (S1 en fichero de S3) declarada en docs/master/SCRUM-1673.md, regla 37.
   let albaran = await escribir('POST', `/admin/jobs/${trabajo.id}/albaranes`, {
     claveIdempotencia: claveAlbaranQA(trabajo.id), notas: 'Albarán de pruebas QA (SCRUM-1268).',
+    lineas: [{ concepto: 'Revisión de pruebas QA', cantidad: 1, unidad: 'ud' }],
   });
   if (albaran.idempotencia !== 'aplicada' && albaran.idempotencia !== 'repetida') {
     throw new NoPude(`el servidor no aplicó la clave de idempotencia (idempotencia=${albaran.idempotencia}): no se emite nada.`);
