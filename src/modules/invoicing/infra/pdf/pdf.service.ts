@@ -1017,11 +1017,15 @@ export async function generateQuotePdf(params: ParamsPdfPresupuesto) {
         lineY += 12;
       }
       tier.lines.forEach((l: any) => {
-        const lineTotal = fmtImporte(l.qty * l.price * (1 + (ivaFueraDelPapel ? 0 : (l.tax ?? 0))));
-        const text = `${l.concept} × ${l.qty}`;
+        // SCRUM-1442c · una cabecera de apartado (SCRUM-655) llega sin `qty` ni `price`: pinta su
+        // concepto y el importe vacío, la vía decidida el 18-oct-2026 que ya aplica la página
+        // pública (1442b). Antes salía «Fase 1 × undefined» y «NaN EUR».
+        const importe = l.qty * l.price * (1 + (ivaFueraDelPapel ? 0 : (l.tax ?? 0)));
+        const conImporte = Number.isFinite(importe);
+        const text = conImporte ? `${l.concept} × ${l.qty}` : String(l.concept ?? '');
         doc.text(text, x + 4, lineY, { width: tierW - 8 });
         lineY += 10;
-        doc.text(`${lineTotal} ${params.currency}`, x + 4, lineY, { width: tierW - 8, align: 'right' });
+        if (conImporte) doc.text(`${fmtImporte(importe)} ${params.currency}`, x + 4, lineY, { width: tierW - 8, align: 'right' });
         lineY += 12;
       });
 
