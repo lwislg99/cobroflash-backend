@@ -70,8 +70,8 @@ de dos responsables + encargado, cambia el texto de (c) y (d).]**
 | Timestamp, IP, user-agent, hash del documento firmado (`evidenciaFirma`, `LegalAcceptance`) | Cliente final / profesional | YaQu = **encargado** por cuenta del profesional, con interés legítimo propio de acreditar la operación | 6.1.f (interés legítimo — poder probar la aceptación ante una disputa) apoyado en eIDAS 910/2014 + Ley 6/2020 (valor probatorio de firma electrónica simple reforzada con evidencias) | — | Dato ya aislado por diseño: `schema.prisma` marca IP/UA como "NUNCA se exponen" fuera de este registro — mantenerlo así en la política |
 | Mensajes WhatsApp (teléfono + contenido) | Cliente final / profesional | YaQu = encargado; **Meta = responsable independiente** para sus propios fines (política propia de Meta) | 6.1.b (envío es parte del servicio) | **Meta Platforms** (Irlanda/EE. UU.) | Transferencia internacional — SCC de Meta / marco vigente EU-US |
 | Emails transaccionales | Destinatario | YaQu = responsable; Resend = encargado | 6.1.b | **Resend** | Verificar región de procesamiento (histórico: infra en EE. UU.) → SCC |
-| Datos en reposo (BD + app) | Todos los anteriores | YaQu = responsable; Railway = encargado | — | **Railway** | Verificar región de datos (EU vs. US) y DPA de Railway |
-| Prompts a IA para redactar presupuestos | Contenido introducido por el profesional (puede incluir datos del cliente final) | YaQu = responsable; Anthropic = encargado | 6.1.b | **Anthropic** | Confirmar en el DPA/ToS vigente de Anthropic que no se usa para entrenar modelos (la política actual ya lo afirma; falta el papel que lo respalde) |
+| Datos en reposo (BD + app) | Todos los anteriores | YaQu = responsable; Railway = encargado | — | **Railway** | Verificar región de datos (EU vs. US) y DPA de Railway **[Nota del 13-oct-2026, SCRUM-1533:** la mitad «región» de esta pregunta tiene respuesta: ese día el fundador movió la base y la aplicación de US West (California) a EU West (Ámsterdam). Consta en el ticket; ninguna sesión ve el panel de Railway. La otra mitad, el DPA de Railway, sigue sin localizar. Dónde está el dato en reposo no contesta si hay transferencia: eso va al asesor.**]** |
+| Prompts a IA para redactar presupuestos | Contenido introducido por el profesional (puede incluir datos del cliente final) | YaQu = responsable; Anthropic = encargado | 6.1.b | **Anthropic** | Confirmar en el DPA/ToS vigente de Anthropic que no se usa para entrenar modelos (la política actual ya lo afirma; falta el papel que lo respalde) **[Nota del 13-oct-2026, SCRUM-1533:** esta fila es del 23-jul-2026. Desde el 30-sep-2026 la política publicada nombra a Google (Gemini) y no a Anthropic (SCRUM-1154), y el programa llama a Gemini si tiene su clave y a Anthropic sólo si no la tiene. Qué clave hay en producción no está medido.**]** |
 | Pagos (tarjeta/Bizum/MP) | Profesional (merchant-of-record) / cliente final pagador | Stripe / Mercado Pago = responsables independientes de los datos de pago; YaQu no almacena tarjetas | — | **Stripe**, **Mercado Pago** | Ya cubierto parcialmente en `ALCANCE_BETA.md` / Y3 (Stripe Connect) |
 
 **(b) Resumen — encargados de tratamiento que YaQu necesita tener formalizados:** Meta,
@@ -83,7 +83,7 @@ estándar de cada proveedor, aceptarlo formalmente (o descargar el ya vigente si
 al crear la cuenta) y anotar la fecha/versión en un registro simple (puede vivir en este
 mismo documento, sección de control de versiones). **[VALIDAR ASESOR: si con esto basta o
 si alguno (p. ej. Meta por volumen, o Anthropic por el contenido de los prompts) requiere
-un DPA negociado aparte.]**
+un DPA negociado aparte.]** **[Nota del 13-oct-2026, SCRUM-1533:** la lista de seis es del 23-jul-2026. La política publicada nombra además a Cloudflare y a Google (Gemini) desde el 30-sep-2026, y esta tabla no tiene fila para ninguno de los dos.**]**
 
 ## 3. (c) Texto de la política de privacidad — reemplazo propuesto para `public/privacidad.html`
 
@@ -317,7 +317,7 @@ una vez el asesor valide el §2. No lo he creado todavía para no duplicar antes
 4. ¿Hace falta nombrar un Delegado de Protección de Datos (DPO) al tamaño/actividad actual?
 5. Para las transferencias internacionales (Meta, Resend, Anthropic — todos con infraestructura
    parcial en EE. UU.): ¿los DPA estándar de cada proveedor son suficientes o hace falta algo
-   adicional (SCC firmadas aparte, evaluación de impacto de transferencia)?
+   adicional (SCC firmadas aparte, evaluación de impacto de transferencia)? **[Nota del 13-oct-2026, SCRUM-1533:** la lista del paréntesis es del 23-jul-2026. A día de hoy la política publicada marca como transferencia internacional a Meta, Resend, Cloudflare y Google (Gemini). Railway, que no estaba en esta lista, aloja desde hoy en EU West (Ámsterdam). La pregunta sigue abierta para los cuatro, y para Railway, Anthropic, Stripe y Mercado Pago no está medido si hace falta algo.**]**
 6. ¿Confirmas que el uso del IBAN del profesional (§2) es correcto tal y como está descrito, o
    hay un uso distinto en el producto que deba documentarse diferente?
 7. **Baja del profesional: qué se borra y qué se conserva** — supresión (art. 17) frente a

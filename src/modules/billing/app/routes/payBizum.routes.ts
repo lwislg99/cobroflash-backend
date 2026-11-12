@@ -12,6 +12,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { comercioSuprimido } from '../../domain/comercioSuprimido'; // SCRUM-1573b
 import { esc, formatImporteEs, formatMoneyEs } from '../../../../core/utils/utils';
+import { etiquetaGuionDePago } from './pagoNavegador'; // SCRUM-1647 (CSP paso 2)
 import { isFlagEnabled } from '../../../../core/flags';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
 
@@ -36,6 +37,7 @@ function bizumPage(opts: {
   <meta name="theme-color" content="#16a34a"/>
   <title>Pagar ${amount} por Bizum — YaQu</title>
   <link rel="stylesheet" href="/fonts/inter.css"/>
+  ${etiquetaGuionDePago('bizum')}
   <style>
     :root{--brand:#16a34a;--brand-tint:#ecfdf5;--ink:#0f1c17;--body:#3f4a45;--muted:#6b756f;
       --bg:#f6f7f5;--surface:#fff;--border:#e7e9e5;}
@@ -105,16 +107,6 @@ function bizumPage(opts: {
 
     <a class="back" href="/pay/invoice/${token}">← Otras formas de pago</a>
   </div>
-  <script>
-    document.querySelectorAll('.copy-btn').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        navigator.clipboard.writeText(btn.getAttribute('data-copy') || '').then(function(){
-          btn.textContent = '¡Copiado!';
-          setTimeout(function(){ btn.textContent = btn.getAttribute('data-label'); }, 1600);
-        });
-      });
-    });
-  </script>
 </body>
 </html>`;
 }
@@ -155,9 +147,10 @@ router.get('/bizum/:token', async (req, res) => {
 
   const business = esc(m?.legalName || m?.name || 'Tu proveedor');
   const initial = esc((m?.name || m?.legalName || 'Y').trim().charAt(0).toUpperCase());
-  // Si el logo no carga (URL rota, file://…), se oculta y no rompe la landing
+  // Si el logo no carga (URL rota, file://…), se oculta y no rompe la landing: lo hace el guion de
+  // `pagoNavegador.ts` (SCRUM-1647), que escucha el `error` del `.logo-img` sin manejador en línea.
   const logoHtml = m?.logoUrl
-    ? `<img class="logo-img" src="${esc(m.logoUrl)}" alt="${business}" onerror="this.style.display='none'"/>`
+    ? `<img class="logo-img" src="${esc(m.logoUrl)}" alt="${business}"/>`
     : `<div class="logo-mark">${initial}</div>`;
   const amount = esc(
     formatImporteEs(Number(charge.amount)) +
