@@ -8,6 +8,7 @@ import { comercioSuprimido } from '../../domain/comercioSuprimido'; // SCRUM-157
 import { config, BASE_URL } from '../../../../core/config/env';
 import { esc, formatMoneyEs } from '../../../../core/utils/utils';
 import { createMpPreference } from '../../../../integrations/mercadopago';
+import { etiquetaEstiloDePago, estiloDeResultadoMp } from './pagoEstilo'; // SCRUM-1723c (style-src 'self'): solo el marcado
 
 const router = Router();
 
@@ -29,14 +30,7 @@ function avisoMpHtml(msg: string): string {
   <meta name="robots" content="noindex"/>
   <title>${esc(msg)} — YaQu</title>
   <link rel="stylesheet" href="/fonts/inter.css"/>
-  <style>
-    :root{--ink:#0f1c17;--muted:#6b756f;--bg:#f6f7f5;--surface:#fff;--border:#e7e9e5}
-    *{box-sizing:border-box}
-    body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-feature-settings:"cv11","ss01";margin:0;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;-webkit-font-smoothing:antialiased}
-    .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 12px 32px -12px rgba(16,24,40,.12);padding:2.5rem 2rem;max-width:420px;width:100%;text-align:center}
-    .emoji{font-size:3rem;margin-bottom:1rem}
-    h1{margin:0;font-size:1.15rem;font-weight:600;line-height:1.45;color:var(--ink);text-wrap:balance}
-  </style>
+  ${etiquetaEstiloDePago('mp-aviso')}
 </head>
 <body>
   <div class="card">
@@ -153,18 +147,7 @@ router.get('/mp/:token/result', async (req, res) => {
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>${esc(s.title)} — YaQu</title>
   <link rel="stylesheet" href="/fonts/inter.css"/>
-  <style>
-    :root{--ink:#0f1c17;--muted:#6b756f;--bg:#f6f7f5;--surface:#fff;--border:#e7e9e5}
-    *{box-sizing:border-box}
-    body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-feature-settings:"cv11","ss01";margin:0;background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;-webkit-font-smoothing:antialiased}
-    .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 12px 32px -12px rgba(16,24,40,.12);padding:2.5rem 2rem;max-width:420px;width:100%;text-align:center}
-    .emoji{font-size:3rem;margin-bottom:1rem}
-    h1{margin:0 0 .5rem;font-size:1.4rem;font-weight:700;letter-spacing:-.01em;color:${esc(s.color)};text-wrap:balance}
-    p{color:var(--muted);margin:.5rem 0;line-height:1.5}
-    .amount{font-size:1.3rem;font-weight:800;color:var(--ink);letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin:1rem 0}
-    .badge{display:inline-block;padding:.25rem .75rem;border-radius:999px;font-size:.75rem;font-weight:700;letter-spacing:.04em;background:${esc(s.color)}1a;color:${esc(s.color)};margin-bottom:1rem}
-    .footer{margin-top:2rem;font-size:.75rem;color:var(--muted)}
-  </style>
+  ${etiquetaEstiloDePago(estiloDeResultadoMp(status))}
 </head>
 <body>
   <div class="card">
@@ -172,7 +155,7 @@ router.get('/mp/:token/result', async (req, res) => {
     <span class="badge">${esc(status.toUpperCase())}</span>
     <h1>${esc(s.title)}</h1>
     <p>${esc(s.msg)}</p>
-    ${concept ? `<div class="amount">${esc(amount)}<br/><span style="font-size:.85rem;font-weight:400;color:#6b756f">${esc(concept)}</span></div>` : ''}
+    ${concept ? `<div class="amount">${esc(amount)}<br/><span class="pago-mp-concepto">${esc(concept)}</span></div>` : ''}
     <div class="footer">YaQu · Pago gestionado con Mercado Pago</div>
   </div>
 </body>

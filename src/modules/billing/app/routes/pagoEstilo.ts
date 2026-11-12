@@ -1,6 +1,7 @@
 // src/modules/billing/app/routes/pagoEstilo.ts — SCRUM-1723 (CSP paso 3, `style-src 'self'`; parte J2)
 //
-// EL CSS DE LAS PÁGINAS DE PAGO (`/pay/bank`, `/pay/bizum`, `/pay/invoice`), FUERA DEL HTML.
+// EL CSS DE LAS PÁGINAS DE PAGO (`/pay/bank`, `/pay/bizum`, `/pay/invoice`, y desde SCRUM-1723c los
+// errores de `/pay/card` y las páginas de `/pay/mp`), FUERA DEL HTML.
 //
 // Hasta aquí vivía en un `<style>` en línea de cada página, más algún `style=` suelto en el marcado.
 // Con `style-src 'self'` APLICADA (SCRUM-1637) el navegador no pinta ninguno de los dos y las tres
@@ -19,9 +20,62 @@
 // router de pago (`public/**` es del carril S2), con huella (`?v=`, SCRUM-274).
 import { huellaDeContenido, CACHE_CON_HUELLA } from '../../../../core/http/huellaEstaticos';
 
-export type PaginaDePago = 'banco' | 'bizum' | 'factura';
+// SCRUM-1723c · tarjeta y Mercado Pago (las otras dos de las cinco firmadas en c.21719).
+//   · `tarjeta`: las dos páginas de error de `/pay/card/:token` no llevaban `<style>`, sólo 8 `style=`
+//     (4 por página, los mismos 4 en las dos); pasan a 4 clases con las mismas declaraciones.
+//   · `mp-aviso`: el `<style>` de `avisoMpHtml` (503 y 502 de `/pay/mp/:token`), tal cual.
+//   · `mp-<estado>`: el `<style>` del resultado de `/pay/mp/:token/result` llevaba `${esc(s.color)}`
+//     según el estado, de un conjunto CERRADO de cuatro (approved, rejected, pending, expired). Una
+//     hoja por estado, con el color ya escrito: la plantilla es la misma y sólo cambia el color.
+export type EstadoDeResultadoMp = 'approved' | 'rejected' | 'pending' | 'expired';
+
+export type PaginaDePago =
+  | 'banco' | 'bizum' | 'factura' | 'tarjeta' | 'mp-aviso' | `mp-${EstadoDeResultadoMp}`;
+
+// Los cuatro colores de `statusMap` en `payMp.routes.ts`, copiados de allí. Si allí cambia uno, el
+// test de SCRUM-1723 lo caza: pide que la hoja del estado lleve el color que la página pinta en su emoji.
+const COLOR_DE_RESULTADO_MP: Readonly<Record<EstadoDeResultadoMp, string>> = {
+  approved: '#16a34a',
+  rejected: '#dc2626',
+  pending: '#d97706',
+  expired: '#6b756f',
+};
+
+/** El `<style>` del resultado de Mercado Pago, tal cual, con `${esc(s.color)}` ya resuelto. */
+function cssDeResultadoMp(color: string): string {
+  return `    :root{--ink:#0f1c17;--muted:#6b756f;--bg:#f6f7f5;--surface:#fff;--border:#e7e9e5}
+    *{box-sizing:border-box}
+    body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-feature-settings:"cv11","ss01";margin:0;background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;-webkit-font-smoothing:antialiased}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 12px 32px -12px rgba(16,24,40,.12);padding:2.5rem 2rem;max-width:420px;width:100%;text-align:center}
+    .emoji{font-size:3rem;margin-bottom:1rem}
+    h1{margin:0 0 .5rem;font-size:1.4rem;font-weight:700;letter-spacing:-.01em;color:${color};text-wrap:balance}
+    p{color:var(--muted);margin:.5rem 0;line-height:1.5}
+    .amount{font-size:1.3rem;font-weight:800;color:var(--ink);letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin:1rem 0}
+    .badge{display:inline-block;padding:.25rem .75rem;border-radius:999px;font-size:.75rem;font-weight:700;letter-spacing:.04em;background:${color}1a;color:${color};margin-bottom:1rem}
+    .footer{margin-top:2rem;font-size:.75rem;color:var(--muted)}
+    /* SCRUM-1723 · los atributos style= que llevaba el marcado, copiados tal cual a una clase. */
+    .pago-mp-concepto{font-size:.85rem;font-weight:400;color:#6b756f}
+  `;
+}
 
 export const PAGO_CSS: Readonly<Record<PaginaDePago, string>> = {
+  tarjeta: `    /* SCRUM-1723 · los atributos style= que llevaban las dos páginas de error, copiados tal cual a una clase. */
+    .pago-tarjeta-cuerpo{font-family:system-ui,-apple-system,sans-serif;max-width:420px;margin:48px auto;padding:0 20px;text-align:center;color:#0f1c17}
+    .pago-tarjeta-titulo{font-size:20px;margin:0 0 8px}
+    .pago-tarjeta-texto{color:#6b756f;font-size:14px;line-height:1.5;margin:0 0 16px}
+    .pago-tarjeta-enlace{display:inline-block;color:#15803d;font-weight:600;text-decoration:none}
+  `,
+  'mp-aviso': `    :root{--ink:#0f1c17;--muted:#6b756f;--bg:#f6f7f5;--surface:#fff;--border:#e7e9e5}
+    *{box-sizing:border-box}
+    body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-feature-settings:"cv11","ss01";margin:0;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;-webkit-font-smoothing:antialiased}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 12px 32px -12px rgba(16,24,40,.12);padding:2.5rem 2rem;max-width:420px;width:100%;text-align:center}
+    .emoji{font-size:3rem;margin-bottom:1rem}
+    h1{margin:0;font-size:1.15rem;font-weight:600;line-height:1.45;color:var(--ink);text-wrap:balance}
+  `,
+  'mp-approved': cssDeResultadoMp(COLOR_DE_RESULTADO_MP.approved),
+  'mp-rejected': cssDeResultadoMp(COLOR_DE_RESULTADO_MP.rejected),
+  'mp-pending': cssDeResultadoMp(COLOR_DE_RESULTADO_MP.pending),
+  'mp-expired': cssDeResultadoMp(COLOR_DE_RESULTADO_MP.expired),
   banco: `    :root{
       --brand:#16a34a;--brand-tint:#ecfdf5;--ink:#0f1c17;--body:#3f4a45;--muted:#6b756f;
       --bg:#f6f7f5;--surface:#fff;--border:#e7e9e5;--slate-50:#f7f8f6;
@@ -162,11 +216,16 @@ export const PAGO_CSS: Readonly<Record<PaginaDePago, string>> = {
   `,
 };
 
-const HUELLAS: Readonly<Record<PaginaDePago, string>> = {
-  banco: huellaDeContenido(PAGO_CSS.banco),
-  bizum: huellaDeContenido(PAGO_CSS.bizum),
-  factura: huellaDeContenido(PAGO_CSS.factura),
-};
+const HUELLAS = Object.fromEntries(
+  (Object.keys(PAGO_CSS) as PaginaDePago[]).map((p) => [p, huellaDeContenido(PAGO_CSS[p])]),
+) as Readonly<Record<PaginaDePago, string>>;
+
+/** La hoja del resultado de Mercado Pago para un estado; uno fuera del conjunto cae a `pending`, como `statusMap`. */
+export function estiloDeResultadoMp(estado: string): PaginaDePago {
+  return Object.prototype.hasOwnProperty.call(COLOR_DE_RESULTADO_MP, estado)
+    ? (`mp-${estado}` as PaginaDePago)
+    : 'mp-pending';
+}
 
 /** Ruta de la hoja dentro del router montado en `/pay`. */
 export const RUTA_PAGO_CSS = '/css/pago.css';

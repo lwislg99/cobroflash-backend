@@ -61,6 +61,28 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: 'pedida in PAGO_CSS',
     cae: 'SCRUM-1723 · GET /pay/css/pago.css: una página fuera del conjunto es 404',
   },
+  // SCRUM-1723c · tarjeta y Mercado Pago.
+  {
+    // El título del 409 de tarjeta vuelve a su `style=` (ancla única: el 503 lleva otro texto).
+    fichero: 'src/modules/billing/app/routes/payCard.routes.ts',
+    de: '<h1 class="pago-tarjeta-titulo">El pago con tarjeta no está disponible',
+    a: '<h1 style="font-size:20px">El pago con tarjeta no está disponible',
+    cae: 'SCRUM-1723c · /pay/card sin Connect (409): 0 <style>, 0 style= y su hoja enlazada',
+  },
+  {
+    // El concepto del resultado de Mercado Pago vuelve a su `style=`.
+    fichero: 'src/modules/billing/app/routes/payMp.routes.ts',
+    de: '<span class="pago-mp-concepto">',
+    a: '<span style="font-size:.85rem">',
+    cae: 'SCRUM-1723c · /pay/mp/:token/result: cada estado enlaza la hoja de SU color',
+  },
+  {
+    // Todos los estados enlazan la hoja del aprobado: el color deja de seguir al estado.
+    fichero: 'src/modules/billing/app/routes/payMp.routes.ts',
+    de: 'etiquetaEstiloDePago(estiloDeResultadoMp(status))',
+    a: "etiquetaEstiloDePago('mp-approved')",
+    cae: 'SCRUM-1723c · /pay/mp/:token/result: cada estado enlaza la hoja de SU color',
+  },
 ];
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
@@ -180,7 +202,8 @@ test('SCRUM-1723 · GET /pay/css/pago.css: CSS de su página, immutable con la h
     assert.equal(sin.status, 200);
     assert.equal(sin.cabeceras['cache-control'], 'no-cache');
   }
-  assert.equal(Object.keys(PAGO_CSS).length, 3, 'suelo: la hoja tiene que servir las tres páginas');
+  // 3 de SCRUM-1723 + 6 de SCRUM-1723c (tarjeta, el aviso de MP y los cuatro estados del resultado de MP).
+  assert.equal(Object.keys(PAGO_CSS).length, 9, 'suelo: la hoja tiene que servir las nueve páginas');
 });
 
 test('SCRUM-1723 · GET /pay/css/pago.css: una página fuera del conjunto es 404', async () => {
@@ -190,4 +213,71 @@ test('SCRUM-1723 · GET /pay/css/pago.css: una página fuera del conjunto es 404
   }
   const control = await pedir('/pay/css/pago.css?p=banco');
   assert.equal(control.status, 200, 'control positivo: una página del conjunto SÍ se sirve');
+});
+
+// ── SCRUM-1723c · tarjeta y Mercado Pago ────────────────────────────────────────────────────────
+// Tarjeta: las dos páginas de error de `/pay/card/:token`. Para llegar a ellas hace falta un Stripe
+// presente: se pone un doble en el `stripe` exportado de `dist/integrations/stripe.js` (la ruta lo lee
+// en cada petición). Su `create` LANZA: el camino de dinero no se ejecuta, sólo su página de error.
+const stripeMod = require_('./dist/integrations/stripe.js');
+const stripeDoble = { checkout: { sessions: { create: async () => { throw new Error('doble de SCRUM-1723c'); } } } };
+
+async function respuesta(ruta, m, extra = {}) {
+  cobroActual = {
+    id: 7, receiptToken: 'tok1723', status: 'pending', amount: 250, currency: 'EUR',
+    concept: 'Reparación de bajante', reference: 'REF-1723', payMethods: null, createdAt: new Date(), intentId: null,
+    merchant: m, customer: { id: 3, name: 'Ana', email: null }, ...extra,
+  };
+  return pedir(ruta);
+}
+
+function sinEstiloEnLineaEn(cuerpo, clave, suelo) {
+  assert.ok(cuerpo.includes(suelo), `suelo: la página no pintó «${suelo}»`);
+  assert.deepEqual(estilosEnLinea(cuerpo), []);
+  assert.deepEqual(atributosStyle(cuerpo), []);
+  assert.ok(cuerpo.includes(etiquetaEstiloDePago(clave)), `la hoja «${clave}» no está enlazada`);
+  for (const c of clasesNuevas(cuerpo)) {
+    assert.ok(PAGO_CSS[clave].includes(`.${c}{`), `la clase ${c} del marcado no tiene regla en la hoja de «${clave}»`);
+  }
+}
+
+test('SCRUM-1723c · /pay/card sin Connect (409): 0 <style>, 0 style= y su hoja enlazada', async () => {
+  const antes = stripeMod.stripe;
+  stripeMod.stripe = stripeDoble;
+  try {
+    const r = await respuesta('/pay/card/tok1723', merchant());
+    assert.equal(r.status, 409, `contestó ${r.status}: no es la página de «no disponible»`);
+    sinEstiloEnLineaEn(r.cuerpo, 'tarjeta', 'pago-tarjeta-enlace');
+  } finally { stripeMod.stripe = antes; }
+});
+
+test('SCRUM-1723c · /pay/card con Stripe que falla (503): 0 <style>, 0 style= y su hoja enlazada', async () => {
+  const antes = stripeMod.stripe;
+  stripeMod.stripe = stripeDoble;
+  try {
+    // El comercio demo (id 1) cobra en plataforma: llega al `create` del doble, que lanza.
+    const r = await respuesta('/pay/card/tok1723', merchant({ id: 1 }));
+    assert.equal(r.status, 503, `contestó ${r.status}: no es la página de «no se pudo iniciar»`);
+    sinEstiloEnLineaEn(r.cuerpo, 'tarjeta', 'pago-tarjeta-enlace');
+  } finally { stripeMod.stripe = antes; }
+});
+
+test('SCRUM-1723c · /pay/mp sin credenciales (503): 0 <style>, 0 style= y su hoja enlazada', async () => {
+  const r = await respuesta('/pay/mp/tok1723', merchant({ mpAccessToken: null }));
+  assert.equal(r.status, 503, `contestó ${r.status}: no es el aviso de Mercado Pago`);
+  sinEstiloEnLineaEn(r.cuerpo, 'mp-aviso', 'class="emoji"');
+});
+
+test('SCRUM-1723c · /pay/mp/:token/result: cada estado enlaza la hoja de SU color', async () => {
+  // estado del cobro → estado del resultado → el color de su `statusMap`
+  const casos = [['paid', 'approved', '#16a34a'], ['failed', 'rejected', '#dc2626'], ['pending', 'pending', '#d97706'], ['expired', 'expired', '#6b756f']];
+  for (const [cobro, estado, color] of casos) {
+    const r = await respuesta('/pay/mp/tok1723/result', merchant(), { status: cobro });
+    assert.equal(r.status, 200, `${cobro}: contestó ${r.status}`);
+    assert.ok(r.cuerpo.includes(`>${estado.toUpperCase()}</span>`), `${cobro}: la página no pintó el estado ${estado}`);
+    sinEstiloEnLineaEn(r.cuerpo, `mp-${estado}`, 'pago-mp-concepto');
+    assert.ok(PAGO_CSS[`mp-${estado}`].includes(`color:${color};text-wrap`), `la hoja mp-${estado} no lleva el color ${color} en el h1`);
+  }
+  // Control: las cuatro hojas son distintas entre sí (si no, el color no sigue al estado).
+  assert.equal(new Set(casos.map(([, e]) => PAGO_CSS[`mp-${e}`])).size, 4);
 });

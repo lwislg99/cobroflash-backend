@@ -65,3 +65,48 @@ datos del banco. Sus dos clases las cubre el test (HTML servido sin `style=` y l
 Dos fallos míos antes de empujar, cazados los dos por máquina: un comentario con comillas graves dentro del literal
 del CSS (`tsc` no compiló) y casos con nombre construido en un bucle, que cazó `scrum1415`. Este último ya está
 en las cicatrices de J2 (13-oct): lo que lo impide es el guard, y esta vez estaba en la muestra local.
+
+## SCRUM-1723c · 12-nov: tarjeta y Mercado Pago sin CSS en línea (J2)
+
+**Medido contra:** `origin/main` = `fe9c3e7dacda63bed660cf7aaf5b9f7667de05ab` · 2026-11-12T16:54:11Z (hora de GitHub; sesión J2 `jv-j2by`, por encargo del orquestador `cobroflash-backend-63`)
+
+A9: comprobación → `scripts/meta-guard-mutaciones.mjs`
+
+Las dos páginas que quedaban de las cinco firmadas en c.21719. La rama lleva fusionada `scrum-1723b-css-pago`
+(`a1491650`, PR #3130, que no estaba en `main`): el tramo de arriba entra con éste.
+
+### Qué cambia
+
+- `pagoEstilo.ts`: seis hojas más en `PAGO_CSS`, en la MISMA ruta (`GET /pay/css/pago.css?p=…`). **Ninguna línea
+  nueva en `publicAccessDeclarations.ts`.**
+  - `tarjeta`: las dos páginas de error de `/pay/card/:token` (409 sin Connect y 503 si Stripe falla) no llevaban
+    `<style>`; sus 8 `style=` son los mismos 4 en las dos, y pasan a 4 clases `pago-tarjeta-*` con las mismas declaraciones.
+  - `mp-aviso`: el `<style>` de `avisoMpHtml` (503 y 502 de `/pay/mp/:token`), tal cual.
+  - `mp-approved|rejected|pending|expired`: el `<style>` del resultado llevaba `${esc(s.color)}` (3 veces); una hoja
+    por estado, del conjunto cerrado de cuatro, con el color escrito. `estiloDeResultadoMp` cae a `pending` como `statusMap`.
+    El `style=` del concepto pasa a `.pago-mp-concepto`.
+- `payCard.routes.ts`: **solo los dos literales HTML de error** (la `<link>` antes de `</head>` y las clases). Nada del
+  Stripe Checkout. `payMp.routes.ts`: la `<link>` ocupa el hueco de cada `<style>`; ni la preferencia ni el estado.
+- Textos que ve el usuario: ninguno nuevo ni cambiado.
+
+### Medido
+
+| qué | resultado |
+| --- | --- |
+| CSS servido frente al `<style>`/`style=` de antes (`evidencias/SCRUM-1723/j2c-css-igual.mjs.txt`, contra `42d6f4f09`) | `mp-aviso` y los 4 `mp-<estado>` **byte a byte iguales** (los colores, leídos del `statusMap` de antes); las 4 clases de tarjeta y la del concepto, iguales a su atributo. Control sembrado (un byte cambiado): DISTINTA |
+| Test `tests/scrum1723-pago-sin-estilo-en-linea.test.mjs` | 11/11 (7 de antes + 4 nuevos: 409 y 503 de tarjeta con un doble de Stripe cuyo `create` lanza, aviso 503 de MP, y los 4 estados del resultado). Suelo de hojas: 3 → 9 |
+| Mutaciones del catálogo con `correr` + `aplicarUna` de la casa (`evidencias/SCRUM-1723/j2c-mutar.mjs.txt`) | **8/8 cazadas** (5 de antes + 3 nuevas); control con una inocua: **MUDA** |
+| `tsc -p .` con tipos | salida 0 |
+
+### NO MEDIDO
+
+- **Navegador con la CSP aplicada (Edge, capturas frente a main sin política): NO MEDIDO** en tarjeta ni en MP. Lo
+  aparcó el orquestador por contexto (límite de 250k); lo deja hecho un relevo con `recorrido.mjs` y `servidor-csp.cjs`
+  de SCRUM-1647. Lo que hay es la igualdad del CSS byte a byte de la fila de arriba, que no es una captura.
+- Tanda entera local: NO CORRIDA (la hace el obligatorio). yaqu.app: no medido.
+
+### A9
+
+Dos fallos míos con el runner de mutaciones, y los dos los cazó él diciendo CIEGA en vez de un número: importé el
+test desde mi guion (lo ejecutó en mi proceso) y le pasé el guard con `tests/` delante (lo resuelve dentro de
+`tests/`). Y volví a pasar un guion a node por bash (`node -e`); esta vez casó, pero es la cicatriz de J2 del 1-oct.
