@@ -15,6 +15,8 @@ import { comercioSuprimido } from '../../domain/comercioSuprimido'; // SCRUM-157
 // fiscal ni los CSV, donde el punto decimal SÍ es obligatorio (nota de SCRUM-86/145).
 import { esc, formatMoneyEs } from '../../../../core/utils/utils';
 import { BASE_URL } from '../../../../core/config/env';
+// SCRUM-1647 (CSP paso 2): los botones de copiar ya no llevan `onclick` ni la página `<script>` en línea.
+import { etiquetaGuionDePago } from './pagoNavegador';
 
 const router = Router();
 
@@ -46,7 +48,7 @@ router.get('/bank/:token', async (req, res) => {
         <span class="account-label">CLABE interbancaria</span>
         <div class="account-value-row">
           <span class="account-value" id="account-num">${esc(clabe)}</span>
-          <button class="copy-btn" data-label="Copiar CLABE" onclick="copyText('${esc(clabe)}', this)">Copiar CLABE</button>
+          <button class="copy-btn" data-label="Copiar CLABE" data-copy="${esc(clabe)}">Copiar CLABE</button>
         </div>
       </div>`;
   } else if (iban) {
@@ -55,7 +57,7 @@ router.get('/bank/:token', async (req, res) => {
         <span class="account-label">IBAN</span>
         <div class="account-value-row">
           <span class="account-value" id="account-num">${esc(iban)}</span>
-          <button class="copy-btn" data-label="Copiar IBAN" onclick="copyText('${esc(iban)}', this)">Copiar IBAN</button>
+          <button class="copy-btn" data-label="Copiar IBAN" data-copy="${esc(iban)}">Copiar IBAN</button>
         </div>
       </div>`;
   } else {
@@ -77,6 +79,7 @@ router.get('/bank/:token', async (req, res) => {
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Pagar por transferencia — YaQu</title>
   <link rel="stylesheet" href="/fonts/inter.css"/>
+  ${etiquetaGuionDePago('banco')}
   <style>
     :root{
       --brand:#16a34a;--brand-tint:#ecfdf5;--ink:#0f1c17;--body:#3f4a45;--muted:#6b756f;
@@ -142,7 +145,7 @@ router.get('/bank/:token', async (req, res) => {
         <div class="ref-label">Pon este concepto exacto en tu transferencia</div>
         <div class="ref-value-row">
           <span class="ref-value" id="ref-num">${esc(reference)}</span>
-          <button class="copy-btn" data-label="Copiar referencia" onclick="copyText('${esc(reference)}', this)">Copiar referencia</button>
+          <button class="copy-btn" data-label="Copiar referencia" data-copy="${esc(reference)}">Copiar referencia</button>
         </div>
         <div class="warning">⚠️ Sin este concepto no podemos identificar tu pago.</div>
       </div>
@@ -169,26 +172,6 @@ router.get('/bank/:token', async (req, res) => {
     <div class="footer">YaQu · Pago seguro por transferencia bancaria</div>
   </div>
 
-  <script>
-    function copyText(text, btn) {
-      navigator.clipboard.writeText(text).then(() => {
-        btn.textContent = '¡Copiado!';
-        btn.classList.add('copied');
-        setTimeout(() => { btn.textContent = btn.dataset.label || 'Copiar'; btn.classList.remove('copied'); }, 2000);
-      }).catch(() => {
-        // fallback
-        const el = document.createElement('textarea');
-        el.value = text;
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand('copy');
-        document.body.removeChild(el);
-        btn.textContent = '¡Copiado!';
-        btn.classList.add('copied');
-        setTimeout(() => { btn.textContent = btn.dataset.label || 'Copiar'; btn.classList.remove('copied'); }, 2000);
-      });
-    }
-  </script>
 </body>
 </html>`);
 });

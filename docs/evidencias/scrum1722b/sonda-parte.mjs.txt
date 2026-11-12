@@ -1,0 +1,99 @@
+// SCRUM-1722 (y 1722b: anchos por SONDA_W=390,1024,1280) · el parte del operario en yaqu.app, a 390 y 1280. Sólo GET (todo no-GET se CORTA, con control positivo).
+//   node sonda-parte.mjs <carpeta> <etiqueta>
+// · Rol simulado en el FRONT: GET /admin/me se reescribe a userRole 'tecnico' (patrón de S2, prod-1686h4.mjs).
+//   Los datos son los del admin QA (merchant 46): mide el CAMINO del front, no el recorte de datos.
+// · Tres partes del trabajo #77: 18 (PT-2026-010, borrador vacío: el que miró el fundador), 14 y 12 (firmados).
+//   Y una cuarta pasada SIMULADA: el 18 con dos líneas inyectadas en la respuesta GET (borrador con trabajo
+//   apuntado → firmar pasa a primaria). El servidor no se entera; nada se guarda.
+// · Vista previa ANTES del merge: PARTE_JS=<ruta> y PARTE_CSS=<ruta> sirven los ficheros locales en vez de los de prod.
+import { createRequire } from 'node:module';
+import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+const require = createRequire('C:/Users/Admin/AppData/Local/npm-cache/_npx/9833c18b2d85bc59/node_modules/');
+const { chromium } = require('playwright-core');
+const [OUT, ETIQ = 'antes'] = process.argv.slice(2);
+mkdirSync(OUT, { recursive: true });
+const [nombre, ...resto] = readFileSync('C:/Users/Admin/.yaqu-qa-sesion.txt', 'utf8').trim().split('=');
+
+const CASOS = [
+  { id: 18, nombre: 'borrador-vacio' },
+  { id: 18, nombre: 'borrador-con-lineas-SIMULADO', inyectar: true },
+  { id: 14, nombre: 'firmado-PT006' },
+  { id: 12, nombre: 'firmado-PT004' },
+];
+
+async function pasada(w, caso) {
+  const browser = await chromium.launch({ executablePath: 'C:/Users/Admin/AppData/Local/ms-playwright/chromium_headless_shell-1223/chrome-headless-shell-win64/chrome-headless-shell.exe' });
+  const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: w, height: 844 }, deviceScaleFactor: 2 });
+  await context.addCookies([{ name: nombre, value: resto.join('='), domain: 'yaqu.app', path: '/', httpOnly: true, secure: true }]);
+  const page = await context.newPage();
+  const noGet = []; const errores = []; const servidosLocal = [];
+  page.on('pageerror', (e) => errores.push(String(e.message)));
+  await page.route('**/*', async (route) => {
+    const req = route.request(); const url = new URL(req.url());
+    if (req.method() !== 'GET') { noGet.push(`${req.method()} ${url.pathname}`); return route.abort(); }
+    if (process.env.PARTE_JS && url.pathname === '/dashboard/js/parteDetailView.js') {
+      servidosLocal.push(url.pathname);
+      return route.fulfill({ status: 200, contentType: 'application/javascript; charset=utf-8', body: readFileSync(process.env.PARTE_JS, 'utf8') });
+    }
+    if (process.env.PARTE_CSS && url.pathname === '/dashboard/css/styles.css') {
+      servidosLocal.push(url.pathname);
+      return route.fulfill({ status: 200, contentType: 'text/css; charset=utf-8', body: readFileSync(process.env.PARTE_CSS, 'utf8') });
+    }
+    if (url.pathname === '/admin/me') {
+      let r, j;
+      for (let k = 0; k < 4; k++) { r = await route.fetch(); try { j = await r.json(); break; } catch { await new Promise((s) => setTimeout(s, 1500)); } }
+      if (!j) throw new Error('/admin/me no devolvió JSON tras 4 intentos');
+      return route.fulfill({ response: r, json: { ...j, userRole: 'tecnico', isOwner: false } });
+    }
+    if (caso.inyectar && url.pathname === '/admin/partes/' + caso.id) {
+      const r = await route.fetch(); const j = await r.json();
+      const p = j.parte || j;
+      p.lineas = [
+        { id: 'sim-1', bloque: 'mano_obra', unds: 2, descripcion: 'Revisión de la caldera y purgado de radiadores' },
+        { id: 'sim-2', bloque: 'materiales', unds: 1, descripcion: 'Válvula de seguridad 3 bar' },
+      ];
+      return route.fulfill({ response: r, json: j });
+    }
+    return route.continue();
+  });
+  await page.goto('https://yaqu.app/dashboard/', { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => typeof window.renderAppView === 'function', null, { timeout: 20000 });
+  const control = await page.evaluate(async () => { try { await fetch('/admin/__sonda_control_positivo', { method: 'POST', body: '{}' }); return 'SALIÓ'; } catch { return 'cortado'; } });
+  if (control !== 'cortado') throw new Error('EL INTERCEPTOR NO CAZA');
+  await page.evaluate((id) => window.renderAppView('parte-detail', { parteId: id }), caso.id);
+  await page.waitForSelector('[data-parte-firmas]', { timeout: 20000 });
+  await page.waitForTimeout(1800);
+  const r = await page.evaluate(() => {
+    const vis = (n) => { const c = n.getBoundingClientRect(); return n.offsetParent !== null && c.height > 0; };
+    const botones = [...document.querySelectorAll('.view-container button, #view-container button, main button')]
+      .filter(vis).map((b) => {
+        const cs = getComputedStyle(b); const c = b.getBoundingClientRect();
+        return { t: b.innerText.trim().slice(0, 30), cls: b.className, h: Math.round(c.height), w: Math.round(c.width), bg: cs.backgroundColor, color: cs.color, borde: cs.borderTopColor + ' ' + cs.borderTopWidth };
+      });
+    const tit = [...document.querySelectorAll('[data-parte-firmas] h4, .parte-horas-titulo, .parte-datos-del-parte-titulo, .parte-bloque h4')]
+      .map((h) => { const cs = getComputedStyle(h); return { t: h.innerText.trim(), fs: cs.fontSize, fw: cs.fontWeight }; });
+    const rot = document.querySelector('.parte-campo-rotulo');
+    return {
+      rol: window.appUserRole,
+      testigoVisita: document.querySelector('[data-parte-visita]')?.innerText.trim() || null,
+      desbordeX: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      altoPagina: document.documentElement.scrollHeight,
+      titulos: tit,
+      rotuloCampo: rot ? { fs: getComputedStyle(rot).fontSize, fw: getComputedStyle(rot).fontWeight } : null,
+      botones,
+    };
+  });
+  // 1722b · la disposición MEDIDA en el DOM ejecutado: x/ancho de cada tarjeta, y la firma tras bajar 700 px.
+  r.cajas = await page.evaluate(() => [...document.querySelectorAll('.parte-cabecera, .parte-datos-del-parte, .parte-horas, .parte-dictado, .parte-bloque, .parte-firmas, [data-parte-salida]')]
+    .map((n) => { const c = n.getBoundingClientRect(); return { k: n.className || 'salida', x: Math.round(c.x), y: Math.round(c.y + scrollY), w: Math.round(c.width), h: Math.round(c.height) }; }));
+  r.firmaTrasBajar = await page.evaluate(async () => { scrollTo({ top: 700, behavior: 'instant' }); await new Promise((s) => setTimeout(s, 300)); const f = document.querySelector('.parte-firmas'); const top = Math.round(f.getBoundingClientRect().top); scrollTo({ top: 0, behavior: 'instant' }); await new Promise((s) => setTimeout(s, 200)); return { scrollY: 700, topEnVentana: top, position: getComputedStyle(f).position }; });
+  const png = `${ETIQ}-${caso.nombre}-${w}.png`;
+  await page.screenshot({ path: path.join(OUT, png), fullPage: true });
+  await browser.close();
+  return { w, caso: caso.nombre, png, servidosLocal: [...new Set(servidosLocal)], ...r, noGet, errores };
+}
+
+const salida = [];
+for (const w of (process.env.SONDA_W || '390,1280').split(',').map(Number)) for (const c of CASOS) { const r = await pasada(w, c); salida.push(r); console.log(JSON.stringify({ w: r.w, caso: r.caso, desbordeX: r.desbordeX, local: r.servidosLocal, noGet: r.noGet, errores: r.errores, visita: r.testigoVisita, rol: r.rol })); }
+writeFileSync(path.join(OUT, `${ETIQ}-medidas.json`), JSON.stringify(salida, null, 2));

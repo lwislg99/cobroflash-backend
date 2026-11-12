@@ -1,0 +1,76 @@
+// pasadas-1715b.mjs — SCRUM-1715b (S1, 12-nov-2026). Es `pasadas-1715.mjs` de S2 con DOS cambios:
+//   1. corre DOS ficheros (scrum1489 y scrum912), cada uno con su lado «antes» (el de origin/main) y
+//      «después» (migrado con migrar-1218i), y compara los casos por nombre DE CADA FICHERO;
+//   2. el filtro de casos no lleva el prefijo del ticket: toma toda línea TAP `ok N - …` / `not ok N - …`.
+// Rehace la base antes de CADA pasada (también la de scrum912, que no la toca: mismo entorno en los dos).
+// Uso: node pasadas-1715b.mjs <raiz-worktree> <N> [--bandera]
+import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const [raiz, nStr, ...resto] = process.argv.slice(2);
+const N = Number(nStr);
+const BANDERA = resto.includes('--bandera');
+const TMP = 'C:\\Users\\Admin\\.claude\\jobs\\552011ec\\tmp';
+const PSQL = 'D:\\MILLONARIO\\cobroFlash\\_banco-s3\\pgsql\\bin\\psql.exe';
+const DDL = path.join(TMP, 'ddl.sql');
+const BASE = 'yaqu_1715b_test';
+const PUERTO = '55716';
+const URL_BD = `postgresql://postgres@127.0.0.1:${PUERTO}/${BASE}?sslmode=disable`;
+fs.mkdirSync(path.join(TMP, 's1715b'), { recursive: true });
+
+function rehacer() {
+  const a = spawnSync(PSQL, ['-h', '127.0.0.1', '-p', PUERTO, '-U', 'postgres', '-d', 'postgres', '-q', '-c', `DROP DATABASE IF EXISTS ${BASE} WITH (FORCE)`, '-c', `CREATE DATABASE ${BASE}`], { encoding: 'utf8' });
+  if (a.status !== 0) throw new Error(`rehacer: ${a.stderr}`);
+  const b = spawnSync(PSQL, ['-h', '127.0.0.1', '-p', PUERTO, '-U', 'postgres', '-d', BASE, '-q', '-v', 'ON_ERROR_STOP=1', '-f', DDL], { encoding: 'utf8' });
+  if (b.status !== 0) throw new Error(`ddl: ${b.stderr}`);
+}
+
+const FICHEROS = {
+  scrum1489: { antes: 'tests1715b/scrum1489-antes.test.mjs', despues: 'tests1715b/scrum1489-despues.test.mjs' },
+  scrum912: { antes: 'tests1715b/scrum912-antes.test.mjs', despues: 'tests1715b/scrum912-despues.test.mjs' },
+};
+const env = { ...process.env, LIBRO_PG_URL: URL_BD };
+delete env.DATABASE_URL; delete env.DATABASE_URL_STAGING; delete env.DATABASE_URL_DEV; delete env.DATABASE_URL_TESTS;
+
+let todoIgual = true;
+let controlVivo = true;
+for (const [nombre, lados] of Object.entries(FICHEROS)) {
+  const res = {};
+  for (const [lado, fichero] of Object.entries(lados)) {
+    res[lado] = { pasadas: 0, abortos: 0, rcNoCero: 0, conjuntos: new Map(), skips: 0 };
+    for (let i = 0; i < N; i++) {
+      rehacer();
+      const args = [...(BANDERA ? ['--no-wasm-dynamic-tiering'] : []), '--test', '--test-force-exit', '--test-reporter=tap', fichero];
+      const r = spawnSync(process.execPath, args, { cwd: raiz, env, encoding: 'utf8', timeout: 180000 });
+      const salida = (r.stdout || '') + (r.stderr || '');
+      const casos = salida.split('\n').filter((l) => /^\s*(not )?ok \d+ - /.test(l))
+        .map((l) => l.trim().replace(/^(not ok|ok) \d+ - /, '$1 · ')).sort();
+      if (/# SKIP/.test(salida)) res[lado].skips++;
+      const firma = r.status === 3221226505 || /UV_HANDLE_CLOSING/.test(salida);
+      res[lado].pasadas++;
+      if (firma) res[lado].abortos++;
+      if (r.status !== 0) { res[lado].rcNoCero++; fs.writeFileSync(path.join(TMP, 's1715b', `fallo-${nombre}-${lado}-${i}.txt`), `rc=${r.status}\n${salida}`); }
+      const clave = casos.join(' | ');
+      res[lado].conjuntos.set(clave, (res[lado].conjuntos.get(clave) || 0) + 1);
+      process.stdout.write(`${nombre} ${lado} ${i + 1}/${N} rc=${r.status}${firma ? ' FIRMA-1204' : ''} casos=${casos.length}\n`);
+    }
+  }
+  console.log(`\n== ${nombre} · bandera --no-wasm-dynamic-tiering: ${BANDERA ? 'SÍ' : 'NO'} · N=${N} por lado`);
+  for (const [lado, x] of Object.entries(res)) {
+    console.log(`${lado}: pasadas=${x.pasadas} · abortos con la firma=${x.abortos} · rc≠0=${x.rcNoCero} · pasadas con SKIP=${x.skips}`);
+    for (const [k, v] of x.conjuntos) console.log(`  ×${v}: ${k.split(' | ').join('\n        ')}`);
+  }
+  const a = [...res.antes.conjuntos.keys()].sort().join('\n');
+  const d = [...res.despues.conjuntos.keys()].sort().join('\n');
+  const igual = a === d;
+  if (!igual) todoIgual = false;
+  console.log(`CASOS POR NOMBRE (${nombre}): ${igual ? 'IGUAL' : 'DISTINTO'}`);
+  const sembrado = a.replace(/^ok · /m, 'not ok · ');
+  const vivo = sembrado !== a && sembrado !== d;
+  if (!vivo) controlVivo = false;
+  console.log(`control sembrado (${nombre}, un veredicto cambiado): ${vivo ? 'VIVO' : 'MUERTO'}`);
+  const sinNotOk = [...res.despues.conjuntos.keys()].every((k) => k.length > 0 && !k.includes('not ok'));
+  console.log(`suelo (${nombre}): cada pasada de después con casos y ninguno «not ok»: ${sinNotOk ? 'SÍ' : 'NO'}`);
+}
+console.log(`\nRESUMEN: casos por nombre ${todoIgual ? 'IGUAL en los dos' : 'DISTINTO en alguno'} · control ${controlVivo ? 'VIVO en los dos' : 'MUERTO en alguno'}`);
