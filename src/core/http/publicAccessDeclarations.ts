@@ -129,6 +129,7 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
     kind: 'no-sensitive-resource',
     reason: 'guion estático de /login.html (SCRUM-1647c): cadena constante, sin datos de la petición ni de ningún merchant; no hay :id en la URL',
   },
+  { method: 'GET', path: '/auth/js/alta.js', kind: 'no-sensitive-resource', reason: 'guion constante de /register.html, sin datos (SCRUM-1647d; línea de J3 por excepción firmada en c.21658)' },
 
   // ── /quote — única ruta pública con sesión real (el resto del router, ver PENDING) ──
   {
