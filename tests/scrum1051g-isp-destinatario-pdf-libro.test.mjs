@@ -14,6 +14,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import { createRequire } from 'node:module';
+import { lineasDePdf } from './_texto-del-pdf.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (r) => fs.readFileSync(path.join(RAIZ, r), 'utf8');
@@ -157,8 +159,54 @@ test('1051g ② · el cobro (lib/invoicing) llama al portón ISP con sus líneas
   assert.ok(isp[0].pos > causa.pos && isp[0].pos < tx.pos, 'el portón ISP no va entre el de causa y la transacción');
 });
 
+// ── ① el PDF, generado DE VERDAD y leído (lector de la casa, SCRUM-604) ─────────────────
+
+const requireCjs = createRequire(import.meta.url);
+const { generateInvoicePdf } = requireCjs('../dist/lib/pdf.js');
+const P1 = 'Inversión del sujeto pasivo';
+let serie = 0;
+async function papel(total, lines, type = 'F1') {
+  serie += 1;
+  const { outPath } = await generateInvoicePdf({
+    number: `F-2026-QA1051G-${serie}`, invoiceId: 1, merchantId: 7,
+    merchant: { name: 'QA 1051g', legalName: 'QA 1051g SL', taxId: 'B00000000' },
+    customer: { name: 'Contratista QA' }, currency: 'EUR', total, qrData: 'x', type, lines, zona: null,
+  });
+  let r;
+  try { r = lineasDePdf(fs.readFileSync(outPath)); } finally { fs.rmSync(outPath, { force: true }); }
+  assert.equal(r.ok, true, `🔴 NO SUPE LEER EL PDF: ${r.motivo}`);
+  const t = r.lineas.map((l) => l.texto);
+  const i = t.findIndex((x) => x.startsWith('Base imponible:'));
+  const j = t.findIndex((x) => /^TOTAL( COBRADO)?:/.test(x));
+  assert.ok(i >= 0 && j > i, '🔴 CIEGO: no encuentro el bloque de totales en el papel.');
+  return { todo: t, bloque: t.slice(i, j + 1) };
+}
+
+test('1051g ① · una F1 sólo S2 imprime P1 en su propia fila, con la base y sin cuota', async () => {
+  const { bloque } = await papel('1000.00', [S2]);
+  assert.deepEqual(bloque, ['Base imponible:1.000,00 EUR', `${P1}:1.000,00 EUR`, 'TOTAL:1.000,00 EUR']);
+});
+
+test('1051g ① · una F1 mixta separa la fila S2 de la de su tipo: el 21 % ya cuadra desde el papel', async () => {
+  const { bloque } = await papel('1121.00', [{ ...S2, tax: 0.21 }, NORMAL]);
+  // Antes de 1051g: [Base 1.100, IVA 21 % 21,00, TOTAL]: 1.100 × 21 % no es 21,00.
+  assert.deepEqual(bloque, ['Base imponible:1.100,00 EUR', 'IVA 21%:21,00 EUR', `${P1}:1.000,00 EUR`, 'TOTAL:1.121,00 EUR']);
+});
+
+test('1051g ① · CONTROL: una F1 sin S2 sale como antes y P1 no aparece en ninguna parte del papel', async () => {
+  const { bloque, todo } = await papel('121.00', [NORMAL]);
+  assert.deepEqual(bloque, ['Base imponible:100,00 EUR', 'IVA 21%:21,00 EUR', 'TOTAL:121,00 EUR']);
+  assert.equal(todo.filter((x) => x.includes('sujeto pasivo')).length, 0);
+});
+
 // El catálogo de la casa (scripts/meta-guard-mutaciones.mjs → aplicarUna).
 export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
+    de: "        if (e.causa === 'S2') { baseIsp = (baseIsp ?? 0) + e.base; return; }\n",
+    a: '',
+    cae: '1051g ① · una F1 sólo S2 imprime P1 en su propia fila',
+  },
   {
     fichero: 'src/modules/invoicing/domain/destinatarioIsp.ts',
     de: "  if (cliente?.tipoDestinatario !== 'EMPRESARIO') {\n",

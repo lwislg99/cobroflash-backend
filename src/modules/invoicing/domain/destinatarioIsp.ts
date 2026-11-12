@@ -21,6 +21,12 @@ import { validarNifEspanol } from '../../../core/validation/nifEspanol';
 export const ERROR_ISP_CLIENTE_SIN_NIF = 'isp_cliente_sin_nif';
 export const ERROR_ISP_CLIENTE_NO_EMPRESARIO = 'isp_cliente_no_empresario';
 
+/** P1 · leyenda del PDF, firmada por el fundador (SCRUM-1051 c.21750, punto 1): literal del ROF art. 6.1.m. */
+export const COPY_ISP_LEYENDA = 'Inversión del sujeto pasivo';
+/** P3 · columna del libro registro y su valor, firmados (c.21750, punto 5). */
+export const COPY_ISP_COLUMNA = 'ISP';
+export const COPY_ISP_VALOR_SI = 'Sí';
+
 /** P4 · firmado por el fundador (SCRUM-1051 c.21750, punto 3). Literal; no se parafrasea. */
 export const COPY_ISP_SIN_NIF = 'Para facturar con inversión del sujeto pasivo, el cliente necesita NIF.';
 
