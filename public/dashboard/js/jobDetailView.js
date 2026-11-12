@@ -812,6 +812,16 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   const cobroCls = cobroPillClass(job.estadoCobro);
   const jobMeta = jobStatusMeta(job.status); // SCRUM-31 (F1): estado del Trabajo, hoy invisible en el detalle
   const isTecnico = window.appUserRole === 'tecnico'; // SCRUM-89: veta de acciones de dinero (admin-only, 403 backend)
+  // SCRUM-1662/1707 (D1, contexto SCRUM-1725 c.21713) · quien no ve el cobro no recibe lo cobrado:
+  // el servidor (`trabajoParaElRol`) le manda `totalCobrado`/`estadoCobro` vacíos, y esta ficha
+  // DERIVA de ahí «Te falta por cobrar», «Cobrado» y la barra — con lo cobrado a 0 diría que falta el
+  // importe entero: una cifra FALSA. Se queda el IMPORTE («Aceptado», firma c.21547 Q1).
+  // La pregunta es la MISMA que la lista (`window.veEstadoDeCobro`, S4, SCRUM-1725): una decisión de
+  // producto no vive en una vista (SCRUM-831). Si esa función aún no ha llegado (otro PR), cae a su
+  // misma lista blanca: sólo el admin; un rol desconocido NO ve (fail-closed, SCRUM-147).
+  const veCobro = typeof window.veEstadoDeCobro === 'function'
+    ? window.veEstadoDeCobro(window.appUserRole) === true
+    : window.appUserRole === 'admin';
 
   // ── SCRUM-320 (G5) · QUÉ FALTA PARA COBRAR ──────────────────────────────────────────
   //
@@ -825,11 +835,12 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   //
   // Si no hay ningún hueco, la sección NO SE PINTA: no falta nada, y preguntar qué falta cuando no
   // falta nada es ruido (misma regla del hueco que G3 y G4).
+  // SCRUM-1662/1707 (D1) · «Lo que falta» es cobro: sus huecos y su exceso salen de lo cobrado.
   if (typeof seccionCobroVisible === 'function' && seccionCobroVisible(job)) {
     // SCRUM-1164 · y en `receipt` cuenta con los huecos que QUEDAN tras ocultar los de facturar: si
     // sólo había ésos, la sección sería un título «Lo que falta» sobre una lista vacía. Va DENTRO de
     // su condición, no sumada a ella: la sección se sigue montando bajo su propio `if` (SCRUM-320).
-    if (huecosVisibles(job).length > 0 || importesDeCobro(job).cobradoDeMas > 0) {
+    if (veCobro && (huecosVisibles(job).length > 0 || importesDeCobro(job).cobradoDeMas > 0)) {
       const cobroSec = document.createElement('div');
       cobroSec.className = 'detail-section';
       body.appendChild(cobroSec);
@@ -916,7 +927,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     // todo»): es un DERIVADO del cobrado, y el cobrado por YaQu es 0 para siempre en este modo. Los
     // lados (Aceptado, Cobrado) son datos medidos y se siguen diciendo — mismo reparto que ya hace
     // el caso sin eje de justo arriba: se calla lo derivado, no el dato.
-    if (hayEje && !enModoJustificante()) {
+    if (veCobro && hayEje && !enModoJustificante()) {
       const rot = document.createElement('span');
       rot.className = 'detail-dinero__rotulo';
       // «Cobrado del todo» en vez de «Te falta por cobrar 0,00 €»: enseñar un cero donde se espera
@@ -932,7 +943,9 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     // competencia: por eso van juntos, pequeños, y NO se repiten en ningún otro sitio.
     const lat = document.createElement('div');
     lat.className = 'detail-dinero__lados';
-    for (const [etiqueta, valor] of [['Aceptado', aceptado], ['Cobrado', cobrado]]) {
+    // SCRUM-1662/1707 (D1) · sin `veCobro`, sólo el importe: «Cobrado» sería el 0 vacío del servidor.
+    const lados = veCobro ? [['Aceptado', aceptado], ['Cobrado', cobrado]] : [['Aceptado', aceptado]];
+    for (const [etiqueta, valor] of lados) {
       const l = document.createElement('div');
       l.className = 'detail-dinero__lado';
       const e = document.createElement('span');
@@ -956,7 +969,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     // todas. Aquí hace falta la barra sin su texto, así que se pinta la barra, no se toca la
     // función. El ancho es un DATO (el porcentaje cobrado), no un estilo: va por `.style.width`,
     // igual que hace `progressBar`, y es lo único que no puede vivir en la hoja.
-    if (aceptado > 0) {
+    if (veCobro && aceptado > 0) {
       const barra = document.createElement('div');
       barra.className = 'detail-dinero__barra';
       barra.setAttribute('role', 'progressbar');
@@ -1178,6 +1191,20 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     clave: 'quien', rotulo: textosTrabajo.rotuloQuien,
     valor: nombresAsignados || (isTecnico ? resumenDeQuien({ nombres: '' }) : ''),
   });
+  // SCRUM-1662 (c.21548) · «Qué hay que hacer»: la tarea, que ven el jefe Y el operario. Sólo de
+  // LECTURA aquí (se escribe en el alta): un editor pediría textos de guardado que no están firmados
+  // (regla 39). Sin tarea no hay línea — cero textos nuevos: no se inventa un «Sin tarea».
+  // Va ABIERTA y con el texto dentro, no como valor de la línea cerrada: es un párrafo, no un dato
+  // de una palabra, y a 390 px alineado a la derecha se leería roto.
+  const tarea = typeof job.queHayQueHacer === 'string' ? job.queHayQueHacer.trim() : '';
+  const lineaTarea = tarea ? construirLineaPlegable(document, { clave: 'tarea', rotulo: ROTULO_TAREA }) : null;
+  if (lineaTarea) {
+    const p = document.createElement('p');
+    p.className = 'detail-tarea'; // estilo en styles.css (regla 4: nada en línea, SCRUM-713c)
+    p.textContent = tarea;
+    lineaTarea.cuerpo.appendChild(p);
+    lineaTarea.elemento.open = true;
+  }
   const lineaNotas = construirLineaPlegable(document, {
     clave: 'notas', rotulo: textosTrabajo.rotuloNotas, valor: textosTrabajo.notasPrivadas,
   });
@@ -1578,11 +1605,19 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   lineaTipo.cuerpo.appendChild(tipoSec);
   lineaDatos.cuerpo.appendChild(infoSec);
   lineaQuien.cuerpo.appendChild(quienSec);
-  pintarNotasInternas(lineaNotas.cuerpo, job);
+  // SCRUM-1662 · las notas internas son del ADMIN: el servidor ya no se las da al operario y su
+  // `PATCH {notes}` le devuelve 403. Al que no es admin no se le pinta ni la línea ni el editor
+  // (lista blanca, como `veNegocio` del Inicio: un rol desconocido cae al lado seguro, SCRUM-147).
+  // La línea se quita DESPUÉS de componer el bloque, para no tocar el orden de SCRUM-817.
+  const veNotas = window.appUserRole === 'admin';
+  if (veNotas) pintarNotasInternas(lineaNotas.cuerpo, job);
   lineaGastos.cuerpo.appendChild(gastosSec);
   body.appendChild(partesSec); // SCRUM-1694: partes, y después albaranes
   body.appendChild(docsSec);
-  body.appendChild(construirBloqueElTrabajo(document, [lineaTipo, lineaDatos, lineaQuien, lineaNotas, lineaGastos]));
+  // SCRUM-1662 · la tarea va donde vivía antes (el alta la escribía en las notas), justo delante de
+  // ellas; `construirBloqueElTrabajo` se salta la que es `null`.
+  body.appendChild(construirBloqueElTrabajo(document, [lineaTipo, lineaDatos, lineaQuien, lineaTarea, lineaNotas, lineaGastos]));
+  if (!veNotas) lineaNotas.elemento.remove();
 
   const docs = []; // { when, el } — se ordena ascendente y se vuelca al final en la lista.
   // Formato de fecha ÚNICO de la lista: día + mes + año + hora. Conserva la HORA (que solo tenía el

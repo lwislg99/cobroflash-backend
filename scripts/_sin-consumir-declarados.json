@@ -166,6 +166,7 @@
     {"clave":"export · src/modules/fiscal/modelo390/casillas.ts::CASILLA_INVERSION_SUJETO_PASIVO_390","donde":"src/modules/fiscal/modelo390/casillas.ts:100","carril":"J1","ticket":"SCRUM-1077","motivo":"J1: SCRUM-1077c, la 125 (c.20833); solo la consume construirModelo390, sin ruta (arriba)"}
   ],
   "retiradas": [
+    {"clave":"cuerpo · PATCH /admin/jobs/:id::queHayQueHacer","motivo":"SCRUM-1662 (S2, 12-nov): el front ya nombra el campo —la ficha del Trabajo lo LEE y lo pinta (jobDetailView.js, línea «Qué hay que hacer»)— y el censo, que es por nombre, lo da por consumido. El EDITOR desde la ficha NO está hecho: pide textos de guardado sin firma (regla 39); se propone aparte."},
     {"clave":"ciega-router-sin-montar · src/modules/fiscal/retenciones/retenciones.routes.ts::router","motivo":"SCRUM-1721: conectada en src/app.ts (mountAdmin '/admin/retenciones' con requireRole('admin'), contrato de SCRUM-1721 c.21660)"},
     {"clave":"export · src/modules/fiscal/retenciones/retencionesPracticadas.repo.ts::leerHayRetencionAnotadaEnElAño","motivo":"SCRUM-1721: conectada vía retenciones.routes.ts, ya montado en src/app.ts"},
     {"clave":"export · src/modules/fiscal/retenciones/retencionesPracticadas.ts::TIPOS_RETENCION_PRACTICADA_VALIDOS","motivo":"SCRUM-1721: conectada en src/modules/expenses/domain/retencionPracticadaEntrada.ts (validación ③ de POST/PUT /admin/expenses)"},
