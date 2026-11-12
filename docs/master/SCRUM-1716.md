@@ -123,3 +123,5 @@ Igual a 390 y a 1280. Las dos opciones miden 44 px de alto. Desborde horizontal 
 **Tests:** `scrum1716b-descuento-global-en-porcentaje` da 6/6. Con los seis ficheros que miran el descuento o montan la vista, 42/42. `scrum697` y `scrum698` cuentan los nodos de la vista: 258 → 267, con una nota fechada que nombra los 9 nodos por identidad (`div.segmented`, 2 × `label`·`input`·`span`, y las dos `p`). Es todo el delta.
 
 **Error propio:** la primera versión metió el «abrir el campo» en una función, y el guard de SCRUM-888c («el global se restaura detrás de un botón cerrado») cayó porque busca ese gesto dentro de `loadDraft`. Se arregló el código, no el guard (regla 41): el gesto vuelve a estar en línea en los tres sitios.
+
+**Rojo del CI (SCRUM-690, mismo PR):** el censo de consumidores de `.segmented` vio a `quotesView.js` como tercero. Se declara en `CONSUMIDORES` con su medición en navegador (la de arriba), y el código escribe la clase `segmented` suelta para que siga valiendo «los consumidores usan el componente». No se tocó ninguna aserción del guard (regla 41). Sin ejecutar en local: no había permiso para correr `node --test`; lo dirá el CI.
