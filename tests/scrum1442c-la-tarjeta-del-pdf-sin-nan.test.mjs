@@ -18,7 +18,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
 import { fileURLToPath } from 'node:url';
-import { extraerTextoPdf } from './_texto-del-pdf.mjs';
+import zlib from 'node:zlib';
+import { extraerTextoPdf, lineasDePdf } from './_texto-del-pdf.mjs';
 
 const { generateQuotePdf } = await import('../dist/modules/invoicing/infra/pdf/pdf.service.js');
 const { paramsDePresupuestoParaPdf } = await import('../dist/modules/quotes/domain/presupuestoParaPdf.js');
@@ -47,16 +48,28 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: 'const conImporte = false;',
     cae: 'SCRUM-1442c · ② control',
   },
+  { // M4 · cada tarjeta vuelve a arrancar donde acabó la anterior (escalera).
+    fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
+    de: 'const yStart = yTarjetas;',
+    a: 'const yStart = doc.y;',
+    cae: 'SCRUM-1442c · ④ las tres tarjetas',
+  },
+  { // M5 · la recomendada deja de dibujar su estrella.
+    fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
+    de: "doc.polygon(...puntas).fill('#ffffff');",
+    a: 'void puntas;',
+    cae: 'SCRUM-1442c · ⑤ la opción recomendada',
+  },
 ];
 
 const linea = (concept, price) => ({ concept, qty: 1, price, tax: 0.21 });
 
-async function textoDelPdf(conCabecera) {
+async function bytesDelPdf(conCabecera, recomendada = true) {
   const v = CreateQuoteSchema.safeParse({
     merchant_id: 71, customer_id: 71, currency: 'EUR',
     tiers: [
       { id: 'good', label: 'Básica', lines: [linea('Revisión', 100)] },
-      { id: 'better', label: 'Completa', recommended: true,
+      { id: 'better', label: 'Completa', ...(recomendada ? { recommended: true } : {}),
         lines: [...(conCabecera ? [{ concept: 'Fase 1', apartado: true }] : []), linea('Revisión', 100), linea('Cambio de pieza', 80)] },
       { id: 'best', label: 'Integral', lines: [linea('Revisión', 100), linea('Cambio de pieza', 80), linea('Garantía', 50)] },
     ],
@@ -75,12 +88,40 @@ async function textoDelPdf(conCabecera) {
     customer: { name: 'Cliente' },
   };
   const { outPath } = await generateQuotePdf(paramsDePresupuestoParaPdf({ quote: q, merchant: q.merchant, customer: q.customer }));
-  try {
-    const r = extraerTextoPdf(fs.readFileSync(outPath));
-    assert.equal(r.ok, true, `🔴 NO SUPE LEER EL PDF: ${r.motivo}. Un vacío se leería como «no lo dice».`);
-    return r.texto;
-  } finally { fs.rmSync(outPath, { force: true }); }
+  try { return fs.readFileSync(outPath); } finally { fs.rmSync(outPath, { force: true }); }
 }
+
+async function textoDelPdf(conCabecera) {
+  const r = extraerTextoPdf(await bytesDelPdf(conCabecera));
+  assert.equal(r.ok, true, `🔴 NO SUPE LEER EL PDF: ${r.motivo}. Un vacío se leería como «no lo dice».`);
+  return r.texto;
+}
+
+/** Cuántos operadores de trazo `l` (lineTo) hay en los flujos de contenido, inflados. */
+function trazosL(buf) {
+  const s = buf.toString('latin1');
+  let n = 0;
+  let flujos = 0;
+  let i = 0;
+  while ((i = s.indexOf('stream', i)) !== -1) {
+    if (s.slice(i - 3, i) === 'end') { i += 6; continue; }
+    let ini = i + 6;
+    if (s[ini] === '\r') ini += 1;
+    if (s[ini] === '\n') ini += 1;
+    const fin = s.indexOf('endstream', ini);
+    if (fin === -1) break;
+    let plano;
+    try { plano = zlib.inflateSync(buf.subarray(ini, fin)).toString('latin1'); } catch { plano = s.slice(ini, fin); }
+    flujos += 1;
+    n += plano.split('\n').filter((ln) => / l$/.test(ln.trim())).length;
+    i = fin + 9;
+  }
+  assert.ok(flujos > 0, 'CIEGO: no he encontrado ni un flujo en el PDF');
+  return n;
+}
+
+/** Los bytes de control (todos menos TAB, LF y CR, más DEL) de un texto. */
+const bytesDeControl = (t) => [...t].filter((c) => { const k = c.charCodeAt(0); return (k < 32 && k !== 9 && k !== 10 && k !== 13) || k === 127; });
 
 test('SCRUM-1442c · ① una cabecera de apartado dentro de una opción pinta su concepto, sin «undefined» ni «NaN»', async () => {
   const pdf = await textoDelPdf(true);
@@ -114,4 +155,38 @@ test('SCRUM-1442c · ③ el arreglo vive en el PRESUPUESTO, no en la factura', (
   assert.ok((cuerpos.generateInvoicePdf || '').length > 2000, 'CIEGO: no encuentro el cuerpo de `generateInvoicePdf`');
   assert.ok((cuerpos.generateQuotePdf || '').includes('conImporte'), 'control: `conImporte` está en el presupuesto');
   assert.ok(!cuerpos.generateInvoicePdf.includes('conImporte'), '🔴 el arreglo de la tarjeta ha llegado a la factura');
+});
+
+// ── Segundo GO del fundador (SCRUM-1442 c.21717): las tarjetas en ESCALERA y la ★ que sale como «&».
+
+test('SCRUM-1442c · ④ las tres tarjetas empiezan a la MISMA altura, no en escalera', async () => {
+  const r = lineasDePdf(await bytesDelPdf(false));
+  assert.equal(r.ok, true, `🔴 NO SUPE LEER LAS LÍNEAS DEL PDF: ${r.motivo}`);
+  const cabeceras = r.lineas.filter((l) => /Básica|Completa|Integral/.test(l.texto) && !l.texto.includes('×'));
+  assert.ok(cabeceras.length > 0, `CIEGO: no encuentro ninguna cabecera de tarjeta:\n  ${r.lineas.map((l) => l.texto).join('\n  ')}`);
+  assert.equal(cabeceras.length, 1,
+    `🔴 las cabeceras de las tarjetas salen en ${cabeceras.length} alturas distintas (escalera):\n  `
+    + cabeceras.map((l) => `y=${l.y} · ${l.texto}`).join('\n  '));
+  for (const n of ['Básica', 'Completa', 'Integral']) assert.ok(cabeceras[0].texto.includes(n), `falta «${n}» en la fila de cabeceras: ${cabeceras[0].texto}`);
+  // Lo que va DETRÁS de las tarjetas no se monta encima de la más alta: la frase del pie va por
+  // debajo del último total.
+  const pie = r.lineas.find((l) => l.texto.startsWith('El cliente puede elegir'));
+  const totales = r.lineas.filter((l) => l.texto.includes('Total: '));
+  assert.ok(pie && totales.length > 0, 'CIEGO: no encuentro el pie o los totales de las tarjetas');
+  const yDelPie = r.lineas.indexOf(pie);
+  for (const t of totales) assert.ok(r.lineas.indexOf(t) < yDelPie, `🔴 el pie «${pie.texto}» se pinta antes que «${t.texto}»`);
+});
+
+test('SCRUM-1442c · ⑤ la opción recomendada lleva su estrella DIBUJADA, no un «&» ni un byte de control', async () => {
+  const conEstrella = await bytesDelPdf(false, true);
+  const sinEstrella = await bytesDelPdf(false, false);
+  const r = lineasDePdf(conEstrella);
+  assert.equal(r.ok, true, `🔴 NO SUPE LEER LAS LÍNEAS DEL PDF: ${r.motivo}`);
+  const cabecera = r.lineas.find((l) => l.texto.includes('Completa') && !l.texto.includes('×'));
+  assert.ok(cabecera, 'CIEGO: no encuentro la cabecera de la opción recomendada');
+  assert.ok(!cabecera.texto.includes('&'), `🔴 la ★ sale como «&»: ${JSON.stringify(cabecera.texto)}`);
+  assert.deepEqual(bytesDeControl(r.texto), [], `🔴 bytes de control en el texto del PDF: ${JSON.stringify(r.texto)}`);
+  // La estrella es un polígono de 10 puntas: un `m` y nueve `l` más que la misma tarjeta sin recomendar.
+  assert.equal(trazosL(conEstrella) - trazosL(sinEstrella), 9,
+    `🔴 la recomendada no dibuja su estrella: ${trazosL(conEstrella)} trazos contra ${trazosL(sinEstrella)}`);
 });

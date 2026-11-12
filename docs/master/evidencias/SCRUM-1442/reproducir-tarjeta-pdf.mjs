@@ -62,11 +62,15 @@ async function generar(conCabecera) {
   return { bytes, texto: r.texto, guardada: JSON.stringify(v.data.tiers[1].lines[0]) };
 }
 
+// Un byte de control del PDF (la ★ salía como «&» + 0x05) se escribe como `\xNN` visible, nunca
+// crudo: crudo no se ve en un diff y lo tumba scrum942 (A22).
+const visible = (t) => t.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, (c) => '\\x' + c.charCodeAt(0).toString(16).padStart(2, '0'));
+
 const con = await generar(true);
 const sin = await generar(false);
 fs.writeFileSync(path.join(OUT, `${etiqueta}-con-cabecera.pdf`), con.bytes);
-fs.writeFileSync(path.join(OUT, `${etiqueta}-con-cabecera.txt`), con.texto);
-fs.writeFileSync(path.join(OUT, `${etiqueta}-sin-cabecera.txt`), sin.texto);
+fs.writeFileSync(path.join(OUT, `${etiqueta}-con-cabecera.txt`), visible(con.texto));
+fs.writeFileSync(path.join(OUT, `${etiqueta}-sin-cabecera.txt`), visible(sin.texto));
 
 const cuenta = (s, x) => s.split(x).length - 1;
 console.log(`cabecera tal como la guarda el esquema: ${con.guardada}`);

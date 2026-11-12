@@ -150,6 +150,38 @@ En las dos capturas: las tres tarjetas salen **en escalera** (cada una empieza d
 anterior, porque `yStart = doc.y` se lee después de pintar la previa) y la estrella de la recomendada
 sale como **«&»** (`★` no existe en la codificación WinAnsi de Helvetica). Las dos son de la misma
 tarjeta y de este carril; no se arreglan aquí porque el GO las deja fuera. Se nombran en la entrega.
+*(Arreglados después con el segundo GO: ver abajo.)*
+
+### Segundo GO (Jira c.21717): la escalera, la ★ que salía «&», y el rojo de `scrum942`
+
+**Medido contra:** `origin/main` = `ff2af3368930614c693353c144e521d3c50e8bc5` · 2026-11-12T16:30:29Z
+
+A9: comprobación → `tests/scrum942-bytes-de-control-en-el-arbol.test.mjs` — empujé las `.txt` de evidencias con el 0x05 crudo de la ★ sin correr scrum942; ahora el guion las escribe como `\x05` visible.
+
+**El rojo de #3112** (obligatorio de `d7df83e6`, 13.381 = 13.371 + 1 fail + 9 skip): sólo `scrum942`,
+por un byte 0x05 en las cuatro `.txt` de evidencias de arriba. Era la mitad de la ★: U+2605 no está en
+WinAnsi y PDFKit la escribía como los dos bytes 0x26 («&») y 0x05. Se arregla en lo mío, no en el guard
+(regla 41): las cuatro `.txt` llevan ahora `\x05` como texto, y `reproducir-tarjeta-pdf.mjs` escapa así
+cualquier byte de control al escribir.
+
+**Rojo primero, con el PDF real** (`go2-antes-*`, el código de `d7df83e6` mergeado con main): los casos
+nuevos ④ y ⑤ cayeron, 5 = 3 pass + 2 fail, con «las cabeceras salen en 3 alturas distintas» y
+`"Completa &\u0005"`. Captura: `evidencias/SCRUM-1442/go2-antes-tarjeta.png`.
+
+**El arreglo** (sólo la tarjeta de opción de `generateQuotePdf`; ③ comprueba que no llega a la factura):
+- las tres tarjetas leen la misma `yTarjetas`, tomada una vez antes del bucle; lo que va detrás arranca
+  bajo la más alta y vuelve al margen (`doc.x` se quedaba en la última columna y el pie se centraba en
+  ella: se ve en la captura de antes);
+- la ★ se DIBUJA (polígono de diez puntas, blanco sobre el verde), centrada con la etiqueta. Ningún
+  texto nuevo: el texto del PDF sólo pierde `&\x05` (`go2-antes-sin-cabecera.txt` contra `go2-despues-…`).
+  Captura: `go2-despues-tarjeta.png`.
+
+**Corrido:** test 5/5 · mutaciones con `aplicarUna` de la casa **5/5 VIVAS**, base 0 caídos
+(`mutaciones.txt`) · `tsc -p .` con tipos, salida 0 · bytes de control en los ficheros de texto de la
+rama: 0 (positivo: las cuatro `.txt` daban 1 cada una antes de escaparlas).
+**NO medido:** la suite entera en local (la hace el obligatorio) · yaqu.app · una etiqueta tan larga que
+no quepa en una línea con la estrella (se recorta el ancho; no lo he pintado) · tarjetas que caigan al
+final de la página (el salto de página es el de antes; no lo he probado).
 
 ### Cómo se repite
 

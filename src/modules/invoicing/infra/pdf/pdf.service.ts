@@ -999,16 +999,39 @@ export async function generateQuotePdf(params: ParamsPdfPresupuesto) {
     const tierW = 155;
     const tierGap = 10;
     const startX = 50;
+    // SCRUM-1442c (2º GO, c.21717) · las tarjetas arrancan TODAS a la misma altura. Antes cada una
+    // leía `doc.y`, que la anterior había dejado en su total: salían en escalera.
+    const yTarjetas = doc.y;
+    let yFinTarjetas = yTarjetas;
 
     params.tiers.forEach((tier, idx) => {
       const x = startX + idx * (tierW + tierGap);
-      const yStart = doc.y;
+      const yStart = yTarjetas;
 
       // Caja del tier
       doc.rect(x, yStart, tierW, 14).fill(tier.recommended ? '#22c55e' : '#f3f4f6');
       doc.fillColor(tier.recommended ? '#ffffff' : '#374151')
-        .fontSize(9).font('Helvetica-Bold')
-        .text(tier.label + (tier.recommended ? ' ★' : ''), x + 4, yStart + 3, { width: tierW - 8, align: 'center' });
+        .fontSize(9).font('Helvetica-Bold');
+      if (tier.recommended) {
+        // La ★ (U+2605) no existe en WinAnsi, la codificación de Helvetica: PDFKit la partía en
+        // «&» + 0x05. Se DIBUJA, centrada con la etiqueta, como un polígono de diez puntas.
+        const lado = 7;
+        const hueco = 3;
+        const ancho = Math.min(doc.widthOfString(tier.label) + 1, tierW - 8 - hueco - lado);
+        const x0 = x + 4 + (tierW - 8 - ancho - hueco - lado) / 2;
+        doc.text(tier.label, x0, yStart + 3, { width: ancho, align: 'center' });
+        const cx = x0 + ancho + hueco + lado / 2;
+        const cy = yStart + 7;
+        const puntas: Array<[number, number]> = [];
+        for (let k = 0; k < 10; k++) {
+          const r = k % 2 === 0 ? lado / 2 : lado * 0.19;
+          const a = -Math.PI / 2 + (k * Math.PI) / 5;
+          puntas.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+        }
+        doc.polygon(...puntas).fill('#ffffff');
+      } else {
+        doc.text(tier.label, x + 4, yStart + 3, { width: tierW - 8, align: 'center' });
+      }
 
       doc.fillColor('black').font('Helvetica').fontSize(8);
       let lineY = yStart + 18;
@@ -1033,11 +1056,16 @@ export async function generateQuotePdf(params: ParamsPdfPresupuesto) {
       doc.rect(x, lineY, tierW, 14).fill(tier.recommended ? '#dcfce7' : '#e5e7eb');
       doc.fillColor('#111827').font('Helvetica-Bold').fontSize(9)
         .text(`Total: ${fmtImporte(ivaFueraDelPapel ? Number(tier.total) - ivaDentroDelImporte(tier.lines) : tier.total)} ${params.currency}`, x + 4, lineY + 3, { width: tierW - 8, align: 'center' });
+      yFinTarjetas = Math.max(yFinTarjetas, lineY + 14);
 
       doc.fillColor('black').font('Helvetica');
     });
 
-    doc.moveDown(14);
+    // Lo que sigue va debajo de la tarjeta MÁS ALTA y vuelve al margen izquierdo: `doc.x` se había
+    // quedado en la última tarjeta y el pie se centraba en su columna.
+    doc.x = startX;
+    doc.y = yFinTarjetas;
+    doc.moveDown(1);
     doc.fontSize(9).fillColor('#6b7280')
       .text('El cliente puede elegir la opción que mejor se adapte a sus necesidades.', { align: 'center' });
     doc.fillColor('black').moveDown(1);
