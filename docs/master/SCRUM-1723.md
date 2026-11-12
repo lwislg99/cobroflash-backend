@@ -100,9 +100,11 @@ Las dos páginas que quedaban de las cinco firmadas en c.21719. La rama lleva fu
 
 ### NO MEDIDO
 
-- **Navegador con la CSP aplicada (Edge, capturas frente a main sin política): NO MEDIDO** en tarjeta ni en MP. Lo
-  aparcó el orquestador por contexto (límite de 250k); lo deja hecho un relevo con `recorrido.mjs` y `servidor-csp.cjs`
-  de SCRUM-1647. Lo que hay es la igualdad del CSS byte a byte de la fila de arriba, que no es una captura.
+- **Navegador con la CSP aplicada (Edge, capturas frente a main sin política): NO MEDIDO** en tarjeta ni en MP. El
+  recorrido está escrito (`evidencias/SCRUM-1723/j2c-recorrido.mjs.txt` + `j2c-servidor-csp.cjs.txt`: 7 páginas × 390/1280,
+  escenarios A/B/C/D y un control sembrado de `style-src`), pero **no corrió**: `scripts/_navegador.mjs` no levantó Edge
+  en esta sesión (salida 3, «CORTADA EN proceso+ws» a 0,0 s, dos tandas de 3 intentos). Lo corre un relevo, con el `dist/`
+  de main en un worktree aparte. Lo que hay es la igualdad del CSS byte a byte de la fila de arriba, que no es una captura.
 - Tanda entera local: NO CORRIDA (la hace el obligatorio). yaqu.app: no medido.
 
 ### A9
