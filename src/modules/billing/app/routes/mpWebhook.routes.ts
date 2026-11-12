@@ -17,6 +17,7 @@ import { datosDeCobroPagado } from '../../domain/instanteDeCobro'; // SCRUM-397
 import { puedeCobrarPorPasarela, ESTADO_ANULADA } from '../../../system/invoiceAdmin';
 // SCRUM-1315: «el `update` no encontró la fila de su `where`» se reconoce con la misma función que en `/webhooks/psp`.
 import { esFilaQueNoCasa } from '../../domain/estadoDelCobro';
+import { motivoParaNoPedirResena } from '../../domain/resenaTrasElPago'; // SCRUM-1727b
 
 const router = Router();
 
@@ -220,7 +221,14 @@ router.post('/', async (req, res) => {
       // Notificaciones WhatsApp al merchant y reseña al cliente
       if (merchant?.googleReviewUrl && updated.customer && tieneNumeroDeContacto(updated.customer)) { // SCRUM-590 (CONT-19)
         const phone = canalDeWhatsApp(updated.customer);
-        if (phone) {
+        // SCRUM-1727b (decisión c.21744): SOLO con la ventana de 24 h abierta y entre las 09:00 y
+        // las 21:00 del negocio; si no, no se manda (ni cola ni plantilla). La baja la sigue
+        // cortando `sendWhatsAppCtaUrl`.
+        const sinResena = phone
+          ? await motivoParaNoPedirResena({ merchantId: updated.merchantId, customerId: updated.customer.id, merchant })
+          : null;
+        if (sinResena) console.info(`[review] SCRUM-1727b: no se pide la reseña del cobro ${updated.id} (${sinResena})`);
+        if (phone && !sinResena) {
           sendWhatsAppCtaUrl({
             to: phone,
             merchantId: updated.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
