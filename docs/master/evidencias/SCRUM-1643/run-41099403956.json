@@ -1,0 +1,792 @@
+{
+ "medido": "gh api repos/lwislg99/cobroflash-backend/actions/runs/41099403956 y /jobs?per_page=100&filter=latest, 2026-11-12",
+ "sha": "3527028a3388de64c5e2429cb0d19d665e768473",
+ "run": {
+  "id": 41099403956,
+  "event": "push",
+  "head_branch": "main",
+  "status": "completed",
+  "conclusion": "cancelled",
+  "created_at": "2026-10-30T17:30:24Z",
+  "html_url": "https://github.com/lwislg99/cobroflash-backend/actions/runs/41099403956"
+ },
+ "jobs": [
+  {
+   "name": "vigía del despliegue (informativo)",
+   "status": "completed",
+   "conclusion": "success",
+   "started_at": "2026-10-30T17:31:15Z",
+   "completed_at": "2026-10-30T17:32:18Z",
+   "steps": [
+    {
+     "name": "Set up job",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:31:16Z"
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:31:23Z"
+    },
+    {
+     "name": "Run actions/setup-node@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:31:24Z"
+    },
+    {
+     "name": "Traer `main` (el vigía compara contra él)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:31:24Z"
+    },
+    {
+     "name": "Recuperar la última constancia que dejó el vigía programado",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:31:25Z"
+    },
+    {
+     "name": "¿Está producción corriendo lo que hay en main?",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:31:26Z"
+    },
+    {
+     "name": "Post Run actions/setup-node@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:31:26Z"
+    },
+    {
+     "name": "Post Run actions/checkout@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:31:26Z"
+    },
+    {
+     "name": "Complete job",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:31:26Z"
+    }
+   ]
+  },
+  {
+   "name": "build + tests (con banco desechable)",
+   "status": "completed",
+   "conclusion": "success",
+   "started_at": "2026-10-30T17:32:44Z",
+   "completed_at": "2026-10-30T17:49:21Z",
+   "steps": [
+    {
+     "name": "Set up job",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:32:46Z"
+    },
+    {
+     "name": "Initialize containers",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:32:58Z"
+    },
+    {
+     "name": "Marca de arranque de la puerta",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:32:58Z"
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:33:05Z"
+    },
+    {
+     "name": "Traer `main` (el suelo derivado lo necesita para no saltarse)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:33:05Z"
+    },
+    {
+     "name": "Run actions/setup-node@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:33:05Z"
+    },
+    {
+     "name": "Run npm ci",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:33:25Z"
+    },
+    {
+     "name": "Generar cliente de Prisma",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:33:26Z"
+    },
+    {
+     "name": "Compilar (tsc)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:33:33Z"
+    },
+    {
+     "name": "Banco desechable para los tests de banco (libro · serie · tramos)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:33:36Z"
+    },
+    {
+     "name": "Tests (incluidos los de banco desechable)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:43:27Z"
+    },
+    {
+     "name": "Carrera de tramos, aislada (emite facturas y MIDE una carrera)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:44:50Z"
+    },
+    {
+     "name": "Por qué cayó (sólo si la tanda falla)",
+     "status": "completed",
+     "conclusion": "skipped",
+     "completed_at": "2026-10-30T17:44:50Z"
+    },
+    {
+     "name": "¿Se puede leer el TAP de la tanda? (informativo)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:44:50Z"
+    },
+    {
+     "name": "¿Ha perdido tests la tanda?",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:44:51Z"
+    },
+    {
+     "name": "Guardar el TAP completo",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:44:53Z"
+    },
+    {
+     "name": "¿Faltan casos declarados en el TAP? (señal de nombres · bloquea)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:44:57Z"
+    },
+    {
+     "name": "¿Cuánto ha tardado la puerta? (y aviso si se acerca al techo)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:44:57Z"
+    },
+    {
+     "name": "Post Run actions/setup-node@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:44:57Z"
+    },
+    {
+     "name": "Post Run actions/checkout@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:44:58Z"
+    },
+    {
+     "name": "Stop containers",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:44:58Z"
+    },
+    {
+     "name": "Complete job",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:44:58Z"
+    }
+   ]
+  },
+  {
+   "name": "guards de navegador (fuera de la tanda)",
+   "status": "completed",
+   "conclusion": "success",
+   "started_at": "2026-10-30T17:31:55Z",
+   "completed_at": "2026-10-30T17:44:28Z",
+   "steps": [
+    {
+     "name": "Set up job",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:31:56Z"
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:32:03Z"
+    },
+    {
+     "name": "Traer `main` (guard:lista-trabajos compara contra su punto de partida)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:32:04Z"
+    },
+    {
+     "name": "Run actions/setup-node@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:32:04Z"
+    },
+    {
+     "name": "¿Este PR toca solo documentación? (SCRUM-1284 · R1)",
+     "status": "completed",
+     "conclusion": "skipped",
+     "completed_at": "2026-10-30T17:32:04Z"
+    },
+    {
+     "name": "Run npm ci",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:32:20Z"
+    },
+    {
+     "name": "Compilar (tsc)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:32:27Z"
+    },
+    {
+     "name": "Qué navegador hay",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:32:27Z"
+    },
+    {
+     "name": "Guards de navegador",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:41:58Z"
+    },
+    {
+     "name": "censo:tactil-panel (informativo — NO bloquea)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:43:18Z"
+    },
+    {
+     "name": "censo:clics-del-80 (informativo — NO bloquea)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:43:24Z"
+    },
+    {
+     "name": "censo:accion-del-80 (informativo — NO bloquea)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:43:26Z"
+    },
+    {
+     "name": "Post Run actions/setup-node@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:43:26Z"
+    },
+    {
+     "name": "Post Run actions/checkout@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:43:26Z"
+    },
+    {
+     "name": "Complete job",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:43:26Z"
+    }
+   ]
+  },
+  {
+   "name": "meta-guard · parte 3 de 3",
+   "status": "completed",
+   "conclusion": "success",
+   "started_at": "2026-10-30T17:32:09Z",
+   "completed_at": "2026-10-30T17:45:38Z",
+   "steps": [
+    {
+     "name": "Set up job",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:32:11Z"
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:32:20Z"
+    },
+    {
+     "name": "Traer `main` (el censo de tickets lo consulta)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:32:20Z"
+    },
+    {
+     "name": "Run actions/setup-node@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:32:24Z"
+    },
+    {
+     "name": "Run npm ci",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:32:40Z"
+    },
+    {
+     "name": "Compilar (tsc)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:32:48Z"
+    },
+    {
+     "name": "Marca de arranque del trabajo de mutación",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:32:48Z"
+    },
+    {
+     "name": "Cada guard cae con la mutación que declara",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:44:48Z"
+    },
+    {
+     "name": "Guardar el resumen de la parte",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:44:50Z"
+    },
+    {
+     "name": "¿Cuánto ha tardado? (y aviso si se acerca al techo)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:44:50Z"
+    },
+    {
+     "name": "Post Run actions/setup-node@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:44:50Z"
+    },
+    {
+     "name": "Post Run actions/checkout@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:44:50Z"
+    },
+    {
+     "name": "Complete job",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:44:50Z"
+    }
+   ]
+  },
+  {
+   "name": "meta-guard · parte 2 de 3",
+   "status": "completed",
+   "conclusion": "success",
+   "started_at": "2026-10-30T17:33:03Z",
+   "completed_at": "2026-10-30T17:43:30Z",
+   "steps": [
+    {
+     "name": "Set up job",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:33:05Z"
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:33:12Z"
+    },
+    {
+     "name": "Traer `main` (el censo de tickets lo consulta)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:33:12Z"
+    },
+    {
+     "name": "Run actions/setup-node@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:33:13Z"
+    },
+    {
+     "name": "Run npm ci",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:33:28Z"
+    },
+    {
+     "name": "Compilar (tsc)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:33:35Z"
+    },
+    {
+     "name": "Marca de arranque del trabajo de mutación",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:33:35Z"
+    },
+    {
+     "name": "Cada guard cae con la mutación que declara",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:42:39Z"
+    },
+    {
+     "name": "Guardar el resumen de la parte",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:42:40Z"
+    },
+    {
+     "name": "¿Cuánto ha tardado? (y aviso si se acerca al techo)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:42:40Z"
+    },
+    {
+     "name": "Post Run actions/setup-node@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:42:40Z"
+    },
+    {
+     "name": "Post Run actions/checkout@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:42:40Z"
+    },
+    {
+     "name": "Complete job",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:42:40Z"
+    }
+   ]
+  },
+  {
+   "name": "trinquete · ningún test nuevo mide la zona de la máquina",
+   "status": "completed",
+   "conclusion": "success",
+   "started_at": "2026-10-30T17:34:09Z",
+   "completed_at": "2026-10-30T17:54:30Z",
+   "steps": [
+    {
+     "name": "Set up job",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:34:11Z"
+    },
+    {
+     "name": "Initialize containers",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:34:23Z"
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:34:29Z"
+    },
+    {
+     "name": "Run actions/setup-node@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:34:29Z"
+    },
+    {
+     "name": "Run npm ci",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:34:43Z"
+    },
+    {
+     "name": "Generar cliente de Prisma",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:34:45Z"
+    },
+    {
+     "name": "Compilar (tsc)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:34:52Z"
+    },
+    {
+     "name": "Banco desechable para los tests de libro",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:34:54Z"
+    },
+    {
+     "name": "La tanda entera en dos zonas extremas (+14 y −11)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:54:03Z"
+    },
+    {
+     "name": "Post Run actions/setup-node@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:54:03Z"
+    },
+    {
+     "name": "Post Run actions/checkout@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:54:04Z"
+    },
+    {
+     "name": "Stop containers",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:54:05Z"
+    },
+    {
+     "name": "Complete job",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:54:05Z"
+    }
+   ]
+  },
+  {
+   "name": "constancia del ALTER (informativo)",
+   "status": "completed",
+   "conclusion": "cancelled",
+   "started_at": "2026-10-30T17:38:54Z",
+   "completed_at": "2026-10-30T17:45:03Z",
+   "steps": [
+    {
+     "name": "Set up job",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:38:55Z"
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:39:02Z"
+    },
+    {
+     "name": "Run actions/setup-node@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:39:03Z"
+    },
+    {
+     "name": "Run npm ci",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:39:15Z"
+    },
+    {
+     "name": "Generar cliente de Prisma",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:39:16Z"
+    },
+    {
+     "name": "¿Tiene producción las columnas que este código va a nombrar?",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:39:17Z"
+    },
+    {
+     "name": "Post Run actions/setup-node@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:39:17Z"
+    },
+    {
+     "name": "Post Run actions/checkout@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:39:17Z"
+    },
+    {
+     "name": "Complete job",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:39:17Z"
+    }
+   ]
+  },
+  {
+   "name": "meta-guard · parte 1 de 3",
+   "status": "completed",
+   "conclusion": "success",
+   "started_at": "2026-10-30T17:43:38Z",
+   "completed_at": "2026-10-30T17:57:08Z",
+   "steps": [
+    {
+     "name": "Set up job",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:43:40Z"
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:43:47Z"
+    },
+    {
+     "name": "Traer `main` (el censo de tickets lo consulta)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:43:47Z"
+    },
+    {
+     "name": "Run actions/setup-node@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:43:48Z"
+    },
+    {
+     "name": "Run npm ci",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:44:06Z"
+    },
+    {
+     "name": "Compilar (tsc)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:44:15Z"
+    },
+    {
+     "name": "Marca de arranque del trabajo de mutación",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:44:15Z"
+    },
+    {
+     "name": "Cada guard cae con la mutación que declara",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:57:01Z"
+    },
+    {
+     "name": "Guardar el resumen de la parte",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:57:03Z"
+    },
+    {
+     "name": "¿Cuánto ha tardado? (y aviso si se acerca al techo)",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:57:03Z"
+    },
+    {
+     "name": "Post Run actions/setup-node@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:57:03Z"
+    },
+    {
+     "name": "Post Run actions/checkout@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:57:03Z"
+    },
+    {
+     "name": "Complete job",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:57:03Z"
+    }
+   ]
+  },
+  {
+   "name": "meta-guard · los guards caen cuando deben",
+   "status": "completed",
+   "conclusion": "success",
+   "started_at": "2026-10-30T17:57:26Z",
+   "completed_at": "2026-10-30T17:57:58Z",
+   "steps": [
+    {
+     "name": "Set up job",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:57:28Z"
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:57:39Z"
+    },
+    {
+     "name": "Run actions/setup-node@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:57:39Z"
+    },
+    {
+     "name": "Run npm ci --ignore-scripts",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:57:50Z"
+    },
+    {
+     "name": "Traer los resúmenes de las partes",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:57:51Z"
+    },
+    {
+     "name": "Cada guard cae con la mutación que declara",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:57:51Z"
+    },
+    {
+     "name": "Post Run actions/setup-node@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:57:51Z"
+    },
+    {
+     "name": "Post Run actions/checkout@v4",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:57:51Z"
+    },
+    {
+     "name": "Complete job",
+     "status": "completed",
+     "conclusion": "success",
+     "completed_at": "2026-10-30T17:57:51Z"
+    }
+   ]
+  }
+ ]
+}
