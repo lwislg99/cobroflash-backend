@@ -17,7 +17,9 @@ import { clausulasParaDocumento } from '../../../quotes/domain/clausulas';
 // SCRUM-688 · el número con su revisión lo forma el DOMINIO, no este documento.
 import { numeroConRevision } from '../../../quotes/domain/revision';
 import { zonaDelMerchant, diaNaturalEn } from '../../../../core/zonaDelMerchant'; // SCRUM-1470 · 1470c
+import { selloTemporal } from '../../domain/selloTemporal'; // SCRUM-1726 · pieza 1
 // SCRUM-602 (DOC-12) · el resolvedor de los tres modos y el rótulo, del dominio: la maqueta no decide.
+import { COPY_ISP_LEYENDA } from '../../domain/destinatarioIsp'; // SCRUM-1051g · P1
 import { resolverDireccionObra, ROTULO_DIRECCION_OBRA_PDF, type ClienteConFacturacion } from '../../../../core/documentos/direccionObra';
 
 /**
@@ -641,11 +643,16 @@ export async function generateInvoicePdf(params: {
     const vatMap: Record<string, VatGroup> = {};
     let subtotal = 0;
     let grandTotal = 0;
+    // SCRUM-1051g · la base de las líneas S2 (inversión del sujeto pasivo) va en su PROPIA fila,
+    // rotulada con P1 (firmado, c.21750), y no se funde con la fila de su tipo. `null` = no hay S2:
+    // entonces el papel sale exactamente como antes.
+    let baseIsp: number | null = null;
     if (leeElRegistro) {
       const desglose = calcVatBreakdown(lines);
-      // Una fila por TIPO, como hasta hoy: una línea con causa (S2) y otra sin ella al mismo tipo
-      // son dos entradas del desglose, y separarlas en el papel pediría un rótulo nuevo (regla 39).
+      // Una fila por TIPO, como hasta hoy. SCRUM-1051g: las entradas S2 salen de aquí y van a la
+      // fila de P1, abajo (GO de regla 40, c.21750 punto 2).
       desglose.entries.forEach((e) => {
+        if (e.causa === 'S2') { baseIsp = (baseIsp ?? 0) + e.base; return; }
         const key = `${rotuloDeTipo(e.rate)}%`;
         if (!vatMap[key]) vatMap[key] = { base: 0, vat: 0 };
         vatMap[key].base += e.base;
@@ -762,6 +769,16 @@ export async function generateInvoicePdf(params: {
             .text(fmt(g.vat) + ' ' + params.currency, totalsX + wTipo + wBase + 4 + wRot, vy, { width: wCuota, align: 'right' });
           doc.moveDown(0.4);
         });
+    }
+
+    // SCRUM-1051g · la fila S2, separada: P1 (la mención del ROF art. 6.1.m) y su base, sin cuota
+    // (la autorrepercute el destinatario). Sólo si hay líneas S2 y sólo en la F1 (la que lee el
+    // registro); la R1 y el justificante siguen como estaban.
+    if (baseIsp !== null) {
+      const iy = doc.y;
+      doc.text(`${COPY_ISP_LEYENDA}:`, totalsX, iy, { width: totalsW * 0.6 })
+        .text(fmt(baseIsp) + ' ' + params.currency, totalsX + totalsW * 0.6, iy, { width: totalsW * 0.4, align: 'right' });
+      doc.moveDown(0.4);
     }
 
     // Total final — el momento del dinero (Regla del Importe: Tinta, grande,
@@ -1336,7 +1353,7 @@ if (params.signatureData) {
 
 // ── SCRUM-805 · Certificado de evidencias (solo si hay firma SELLADA) ─────────────────
 //
-// Prueba QUIÉN firmó, CUÁNDO (reloj del servidor), por qué CANAL y sobre qué CONTENIDO (hash
+// Prueba QUIÉN firmó, CUÁNDO (hora peninsular, o la del servidor sin zona: SCRUM-1726), por qué CANAL y sobre qué CONTENIDO (hash
 // SHA-256 canónico, no del PDF). ⚠️ NUNCA se imprime ip/ua (dato personal): quedan solo en la BD
 // para requerimiento legal. La fuerza probatoria final la valora la autoridad competente.
 //
@@ -1356,16 +1373,12 @@ if (params.evidencia && params.evidencia.contentHash) {
   // `firmadoAt` viene del sobre, que es Json: si faltara, `new Date(undefined)` daría «Invalid
   // Date» impreso en el papel. Se cae al vacío y el resto del certificado se pinta igual — un
   // sello sin fecha es un hueco, no una razón para tirar la prueba de integridad.
-  const sello = ev.firmadoAt
-    ? new Date(ev.firmadoAt).toLocaleString('es-ES', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    })
-    : '—';
+  // SCRUM-1726 (pieza 1, firmada en SCRUM-1656 c.21724): con la zona peninsular, en ESA zona y
+  // «(hora peninsular)»; sin ella, «(hora del servidor)» como antes. La regla vive en `selloTemporal`.
   const canalTxt = ev.canal === 'remoto' ? 'Firma remota (enlace por WhatsApp)' : 'Firma presencial (in situ)';
   const rows: Array<[string, string]> = [
     ['Firmante', ev.firmante || 'Cliente'],
-    ['Sello temporal', `${sello} (hora del servidor)`],
+    ['Sello temporal', selloTemporal(ev.firmadoAt, params.zona)],
     ['Canal', canalTxt],
     ['Integridad', `SHA-256: ${ev.contentHash}`],
   ];

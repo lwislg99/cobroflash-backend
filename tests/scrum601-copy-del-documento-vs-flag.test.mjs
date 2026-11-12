@@ -266,7 +266,10 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // albarán). Se QUITAN por N8, firmado (SCRUM-1686 c.21470, «si firmo» c.21471): hablaban del albarán con
 // el nombre del parte. No hay movimiento a ①/②: los dos literales desaparecen. Contado por ESTE censo
 // sobre origin/main 573579309 + la rama; el propio test lo dijo (actual 160, esperado 162).
-const VEREDICTO_AL_MEDIR = { flag: 8, tipo: 11, aPelo: 160 };
+// 12-nov-2026 · aPelo 160 → 161, MEDIDO (SCRUM-1051g): el literal nuevo es P4, «Para facturar con
+// inversión del sujeto pasivo, el cliente necesita NIF.», firmado por el fundador en SCRUM-1051
+// c.21750 (punto 3); `src/modules/invoicing/domain/destinatarioIsp.ts`. Es el mismo que sube los no legibles 38 → 39.
+const VEREDICTO_AL_MEDIR = { flag: 8, tipo: 11, aPelo: 161 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
@@ -445,7 +448,8 @@ test('SCRUM-601 · EL VEREDICTO: las tres categorías, ancladas, y SUMAN', () =>
 // por `${conPaquete ? TARJETA_PAQUETE_TRIMESTRE : ''}`. No se pega en línea para bajar el número: el
 // motivo de 31→32. Medido con el censo sobre origin/main 5deff8b3b (37) + la rama (38): la única
 // construcción no legible nueva es `exportView.js:43`.
-const NO_LEGIBLES_AL_MEDIR = 38;
+// 12-nov-2026 · 38 → 39, MEDIDO (SCRUM-1051g): `destinatarioIsp.ts`, P4 (firmado, SCRUM-1051 c.21750).
+const NO_LEGIBLES_AL_MEDIR = 39;
 
 test('SCRUM-601 · el censo DECLARA lo que no sabe leer, y esa lista no crece sola', () => {
   const n = censo.noLegibles.length;

@@ -25,6 +25,10 @@ import { zonaDelMerchant } from '../../../../core/zonaDelMerchant';
 import { textoDeValidez } from '../../../quotes/domain/validez';
 import { numeroQueImprimeElPapel } from '../../../quotes/domain/revision'; // SCRUM-1444: el número de la página es el del papel
 import { sinTildes } from '../../../../core/texto/sinTildes';
+import { // SCRUM-1646c · el guion de la firma, servido desde 'self'
+  ID_DATOS_FIRMA_PRESUPUESTO, PRESUPUESTO_FIRMA_JS, SRC_PRESUPUESTO_FIRMA_JS,
+  cacheDelGuionDelPresupuesto, datosDeLaFirmaDelPresupuesto,
+} from './quoteDecisionNavegador';
 import { tieneVersionMasReciente, fraseDeLaVersionAntigua, ERROR_VERSION_NO_VIGENTE } from '../../../quotes/domain/versionMasReciente'; // SCRUM-1302
 
 type DecisionApiError = { message?: string; error?: string };
@@ -344,7 +348,7 @@ function renderTierCards(tiers: any[], token: string, locale: ReturnType<typeof 
           </div>
           <div class="tier-total">${formatMoneyEs(tier.total, tier.currency)}</div>
           ${calcVatBreakdown(tier.lines || []).cuota > 0 ? `<div class="tier-vat-note">IVA incluido</div>` : '' /* SCRUM-1431: la MISMA condición que SCRUM-212 puso al rótulo grande (`hasVat`): sin cuota no se afirma nada sobre el IVA */}
-          <button class="btn-tier" onclick="selectTier('${esc(tier.id)}', '${esc(token)}')">
+          <button class="btn-tier">
             Elegir este plan
           </button>
         </div>
@@ -377,41 +381,8 @@ const TIER_CSS = `
   .tier-card.selected { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.2); }
 `;
 
-const TIER_JS = (token: string) => `
-<script>
-let selectedTierId = null;
-function selectTier(tierId, qId) {
-  selectedTierId = tierId;
-  document.querySelectorAll('.tier-card').forEach(c => c.classList.remove('selected'));
-  const card = document.querySelector('[data-tier-id="' + tierId + '"]');
-  if (card) card.classList.add('selected');
-  const label = card ? card.querySelector('.tier-label').textContent : tierId;
-  const totalTxt = card ? card.querySelector('.tier-total').textContent : '';
-  document.getElementById('chosen-tier-label').textContent = label + (totalTxt ? ' · ' + totalTxt : '');
-  document.getElementById('tier-confirm').style.display = 'block';
-  // A20.1 FIX: mostrar el BLOQUE ENTERO de firma (canvas + checkbox + botón).
-  // Antes solo se "mostraba" el botón, que vive dentro de un wrapper oculto →
-  // no aparecía nada y el GBB parecía roto.
-  const wrap = document.getElementById('btn-accept-wrapper');
-  if (wrap) wrap.style.display = 'block';
-  // A20.1: el total del héroe y el botón REFLEJAN la elección (antes el héroe
-  // enseñaba el total del tier recomendado sin explicar de dónde salía)
-  const heroVal = document.querySelector('.amount-hero-value');
-  if (heroVal && totalTxt) heroVal.textContent = totalTxt;
-  const heroLabel = document.querySelector('.amount-hero-label');
-  // SCRUM-212: «IVA incluido» iba SIN condición, así que un presupuesto con tramos y cuota 0
-  // le afirmaba al cliente que el IVA estaba incluido cuando no había ninguno. El servidor solo
-  // pinta \`.totals-block\` cuando hay cuota, así que se reusa ESA condición en vez de repetirla
-  // aquí y arriesgarse a que las dos se separen. Sin cuota no se afirma nada sobre el IVA —
-  // que es justo lo que ya hacía la ruta sin tramos («Total del presupuesto»).
-  var conIva = !!document.querySelector('.totals-block');
-  if (heroLabel) heroLabel.textContent = 'Total · ' + label + (conIva ? ' · IVA incluido' : '');
-  const btn = document.getElementById('btn-accept');
-  if (btn && totalTxt) btn.textContent = 'Firmar y aceptar — ' + label + ' (' + totalTxt + ')';
-  // Llevar al cliente a la FIRMA (lo que toca hacer ahora), no a la tarjeta
-  document.getElementById('tier-confirm').scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-</script>`;
+// SCRUM-1646c · `TIER_JS` (la elección de opción) vive ahora en `quoteDecisionNavegador.ts`,
+// dentro del guion servido desde 'self'; el `onclick` de cada opción pasó a un listener.
 
 function lineIcon(concept: string): string {
   const c = sinTildes(String(concept || '')); // SCRUM-1325
@@ -556,89 +527,20 @@ function renderQuoteDetail(
   `;
 }
 
-const SIG_JS = `
-<script>
-(function() {
-  const canvas = document.getElementById('sig-canvas');
-  const wrapper = canvas ? canvas.parentElement : null;
-  const placeholder = document.getElementById('sig-placeholder');
-  if (!canvas) return;
+// SCRUM-1646c · `SIG_JS` (el lienzo de firma) vive ahora en `quoteDecisionNavegador.ts`.
 
-  const ctx = canvas.getContext('2d');
-  let drawing = false;
-  let hasSig = false;
+// SCRUM-1646c · el trazo del icono de WhatsApp del botón «Compartir» del éxito (el mismo `d` que
+// llevaba el innerHTML de antes). Viaja en los datos: el guion no lleva ni dibujos ni textos.
+const ICONO_COMPARTIR_WHATSAPP = 'M.06 24l1.69-6.16a11.87 11.87 0 01-1.59-5.95C.16 5.34 5.5 0 12.06 0a11.82 11.82 0 018.42 3.49 11.82 11.82 0 013.48 8.41c0 6.56-5.34 11.9-11.9 11.9a11.9 11.9 0 01-5.69-1.45L.06 24z';
 
-  // SCRUM-892 · con «3 opciones» este bloque nace OCULTO (display:none hasta elegir), y medir un
-  // lienzo oculto da 0×0: se quedaba así, la cliente dibujaba sin ver nada y se mandaba \`data:,\`.
-  // Oculto no se toca (conserva su tamaño); y en cuanto se muestra, el ResizeObserver de abajo lo
-  // dimensiona con esta MISMA función, la que ya usaba bien el modo normal al cargar.
-  function resize() {
-    const rect = canvas.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
-    const dpr = window.devicePixelRatio || 1;
-    const prev = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    canvas.width  = rect.width  * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
-    ctx.putImageData(prev, 0, 0);
-    ctx.strokeStyle = '#0f1c17';
-    ctx.lineWidth = 2.5;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-  }
-  resize();
-  window.addEventListener('resize', resize);
-  if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
-
-  function getPos(e) {
-    const rect = canvas.getBoundingClientRect();
-    const src = e.touches ? e.touches[0] : e;
-    return { x: src.clientX - rect.left, y: src.clientY - rect.top };
-  }
-
-  function start(e) {
-    e.preventDefault();
-    drawing = true;
-    const p = getPos(e);
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
-  }
-  function move(e) {
-    if (!drawing) return;
-    e.preventDefault();
-    const p = getPos(e);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
-    if (!hasSig) {
-      hasSig = true;
-      if (placeholder) placeholder.style.display = 'none';
-      if (wrapper) wrapper.classList.add('has-sig');
-    }
-  }
-  function end(e) { drawing = false; }
-
-  canvas.addEventListener('mousedown', start);
-  canvas.addEventListener('mousemove', move);
-  canvas.addEventListener('mouseup', end);
-  canvas.addEventListener('touchstart', start, { passive: false });
-  canvas.addEventListener('touchmove', move, { passive: false });
-  canvas.addEventListener('touchend', end);
-
-  document.getElementById('sig-clear')?.addEventListener('click', () => {
-    ctx.clearRect(0, 0, canvas.width / (window.devicePixelRatio||1), canvas.height / (window.devicePixelRatio||1));
-    hasSig = false;
-    if (placeholder) placeholder.style.display = '';
-    if (wrapper) wrapper.classList.remove('has-sig');
-  });
-
-  // Exponer para el submit
-  window.getSignatureData = function() {
-    if (!hasSig) return null;
-    return canvas.toDataURL('image/png');
-  };
-  window.sigIsEmpty = function() { return !hasSig; };
-})();
-</script>`;
+// GET /pay/quote/js/firma.js — SCRUM-1646c · el guion CONSTANTE de la página de firma, desde
+// 'self'. Sin token ni datos: los datos van en el HTML que autoriza el token. Va ANTES de
+// `/quote/:token` por claridad (tres segmentos: ninguna de las rutas con token lo casa).
+quoteDecisionLandingRouter.get('/quote/js/firma.js', (req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  res.setHeader('Cache-Control', cacheDelGuionDelPresupuesto(req.query?.v));
+  res.send(PRESUPUESTO_FIRMA_JS);
+});
 
 // GET /pay/quote/:token  (landing del botón "Ver presupuesto") y alias /quote/:token/accept
 // Muestra el detalle + firma/aceptar + enlace para rechazar.
@@ -785,7 +687,6 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
   const html = renderPage(`Aceptar ${locale.quoteVerb}`, `<style>${TIER_CSS}</style>
     ${quoteDetail}
     ${hasTiers ? tierCards : ''}
-    ${TIER_JS(token)}
     <div id="btn-accept-wrapper" style="${hasTiers ? 'display:none' : ''}">
     <label class="sig-label">Tu firma</label>
     <p class="sig-sub">Dibuja tu firma con el dedo o el ratón</p>
@@ -814,87 +715,35 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
     </div>
     ${dudaHtml}
     <a href="/pay/quote/${token}/reject" style="display:block;text-align:center;margin-top:16px;font-size:13.5px;color:#6b756f;text-decoration:underline">No me interesa · Rechazar ${locale.quoteVerb}</a>
-    ${SIG_JS}
-    <script>
-    function fireConfetti() {
-      // AB6: respetar prefers-reduced-motion — sin celebración con movimiento.
-      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      const colors = ['#22c55e','#16a34a','#22d3ee','#fbbf24','#f87171','#a78bfa'];
-      for (let i = 0; i < 80; i++) {
-        const p = document.createElement('div');
-        p.className = 'confetti-piece';
-        p.style.left = Math.random() * 100 + 'vw';
-        p.style.background = colors[i % colors.length];
-        p.style.animationDuration = (2 + Math.random() * 1.5) + 's';
-        p.style.animationDelay = (Math.random() * 0.4) + 's';
-        document.body.appendChild(p);
-        setTimeout(() => p.remove(), 4200);
-      }
-    }
-    document.getElementById('btn-accept').addEventListener('click', async () => {
-      const noSig = document.getElementById('no-sig-check').checked;
-      const sigData = window.getSignatureData ? window.getSignatureData() : null;
-      if (!sigData && !noSig) {
-        document.getElementById('sig-error').style.display = 'block';
-        return;
-      }
-      document.getElementById('sig-error').style.display = 'none';
-      const btn = document.getElementById('btn-accept');
-      btn.disabled = true; btn.textContent = 'Enviando…';
-      try {
-        const res = await fetch('/quote/${token}/decision', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            decision: 'accept',
-            comment: sigData ? 'Aceptado con firma digital' : 'Aceptado desde enlace WhatsApp',
-            signatureData: sigData,
-            tierId: (typeof selectedTierId !== 'undefined' ? selectedTierId : null),
-          }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (res.ok) {
-          fireConfetti();
-          document.querySelector('.card').innerHTML =
-            '<div style="text-align:center;padding:12px 0">' +
-              '<div class="success-check">✓</div>' +
-              '<h1 style="font-size:20px;margin:0 0 6px">¡${locale.quote} aceptad${qg}' + (sigData ? ' y firmad${qg}' : '') + '!</h1>' +
-              '<p style="color:#6b756f;font-size:14px;margin:0 0 18px">${esc(shareName)} ya tiene tu confirmación.</p>' +
-              ${sinBotonDePago ? `'<p class="sin-pago" style="color:#6b756f;font-size:14px;margin:0 0 18px">El profesional te enviará la factura y las instrucciones de pago por su cuenta.</p>' +` : ''}
-              '<a class="btn-share" target="_blank" rel="noopener" href="https://wa.me/?text=${shareTextEnc}">' +
-                '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M.06 24l1.69-6.16a11.87 11.87 0 01-1.59-5.95C.16 5.34 5.5 0 12.06 0a11.82 11.82 0 018.42 3.49 11.82 11.82 0 013.48 8.41c0 6.56-5.34 11.9-11.9 11.9a11.9 11.9 0 01-5.69-1.45L.06 24z"/></svg>' +
-                'Compartir por WhatsApp</a>' +
-            '</div>';
-        } else if (res.status === 409 && (data.error === '${ERROR_PRESUPUESTO_YA_DECIDIDO}' || data.error === '${ERROR_VERSION_NO_VIGENTE}')) {
-          // SCRUM-1276 · ya decidido en otra pestaña: se recarga y la página enseña el estado con
-          // su texto N3 firmado. Ningún texto nuevo aquí.
-          // SCRUM-1302r · igual si se creó una revisión mientras la página estaba abierta: al
-          // recargar sale el aviso de la versión antigua.
-          location.reload();
-        } else if (res.status >= 500) {
-          // SCRUM-1302t · un fallo NUESTRO no dice si la aceptación se guardó: puede haber caído
-          // después del commit. Ni el código crudo ni «inténtalo»: volver al enlace enseña el estado.
-          btn.disabled = false; btn.textContent = 'Firmar y aceptar ${locale.quoteVerb}';
-          const aviso = document.getElementById('sig-error');
-          aviso.textContent = '${COPY_RESPUESTA_SIN_CONFIRMAR}';
-          aviso.style.display = 'block';
-        } else {
-          btn.disabled = false; btn.textContent = 'Firmar y aceptar ${locale.quoteVerb}';
-          // SCRUM-264 · el MENSAJE HUMANO gana al código, igual que en api.js:35-37 (SCRUM-151).
-          // Leyendo \`error\` primero, el cliente veía «factura_sin_lineas» en rojo bajo la firma
-          // que acababa de dibujar. El código se conserva de reserva: para los endpoints que aún
-          // no mandan copy, un identificador es mejor que un mensaje genérico.
-          document.getElementById('sig-error').textContent = data.message || data.error || 'No se ha podido firmar. Inténtalo de nuevo.';
-          document.getElementById('sig-error').style.display = 'block';
-        }
-      } catch {
-        btn.disabled = false; btn.textContent = 'Firmar y aceptar ${locale.quoteVerb}';
-        // SCRUM-1302d: aquí no se sabe si la aceptación llegó. Si llegó, el reintento contesta que ya está, sin escribir (SCRUM-1276).
-        document.getElementById('sig-error').textContent = 'No hemos podido confirmar que tu firma haya llegado. Comprueba tu conexión y vuelve a intentarlo.';
-        document.getElementById('sig-error').style.display = 'block';
-      }
-    });
-    </script>
+    <script type="application/json" id="${ID_DATOS_FIRMA_PRESUPUESTO}">${datosDeLaFirmaDelPresupuesto({
+      // SCRUM-1646c · lo que antes iba interpolado dentro del <script>: la ruta, los códigos y los
+      // textos, CON SUS MISMOS LITERALES. El guion (`quoteDecisionNavegador.ts`) no escribe ninguno.
+      decisionUrl: `/quote/${token}/decision`,
+      erroresQueRecargan: [ERROR_PRESUPUESTO_YA_DECIDIDO, ERROR_VERSION_NO_VIGENTE],
+      comentarioConFirma: 'Aceptado con firma digital',
+      comentarioSinFirma: 'Aceptado desde enlace WhatsApp',
+      compartirUrl: `https://wa.me/?text=${shareTextEnc}`,
+      iconoCompartir: ICONO_COMPARTIR_WHATSAPP,
+      textos: {
+        separadorTotal: ' · ',
+        totalDeLaOpcion: 'Total · ',
+        ivaIncluido: ' · IVA incluido',
+        firmarOpcion: 'Firmar y aceptar — ',
+        enviando: 'Enviando…',
+        botonFirmar: `Firmar y aceptar ${locale.quoteVerb}`,
+        marca: '✓',
+        aceptado: `¡${locale.quote} aceptad${qg}`,
+        yFirmado: ` y firmad${qg}`,
+        cierreTitulo: '!',
+        confirmacion: `${shareName} ya tiene tu confirmación.`,
+        sinPago: sinBotonDePago ? 'El profesional te enviará la factura y las instrucciones de pago por su cuenta.' : null,
+        compartir: 'Compartir por WhatsApp',
+        sinConfirmar: COPY_RESPUESTA_SIN_CONFIRMAR,
+        reserva: 'No se ha podido firmar. Inténtalo de nuevo.',
+        sinRespuesta: 'No hemos podido confirmar que tu firma haya llegado. Comprueba tu conexión y vuelve a intentarlo.',
+      },
+    })}</script>
+    <script src="${SRC_PRESUPUESTO_FIRMA_JS}"></script>
   `, brandColor);
   res.setHeader('Content-Type', 'text/html; charset=utf-8').send(html);
 });
@@ -1088,8 +937,9 @@ quoteDecisionLandingRouter.get('/quote/:token/pdf', async (req: Request, res: Re
   }
 });
 
-// `renderQuoteDetail` y `TIER_JS` se exportan SOLO para que el guard de SCRUM-212 pueda mirar
+// `renderQuoteDetail` se exporta SOLO para que el guard de SCRUM-212 pueda mirar
 // el HTML que ve el cliente en vez de la fuente que lo genera. Un guard de texto sobre el
 // fichero se cazaría a sí mismo: los comentarios de arriba están llenos de la palabra que
 // vigila («exento»), escrita precisamente para explicar por qué no debe aparecer.
-export { quoteDecisionLandingRouter, renderQuoteDetail, TIER_JS };
+// (SCRUM-1646c: el JS de tramos que miraba como `TIER_JS` lo mira ahora en `quoteDecisionNavegador.ts`.)
+export { quoteDecisionLandingRouter, renderQuoteDetail };

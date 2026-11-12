@@ -131,3 +131,94 @@ Salida y scripts en `docs/master/evidencias/SCRUM-1723/`. ⚠️ Esto es la pág
 El «build + tests» de `0151e10c8` cayó en UN test: `scrum553-etiquetas-pegadas` — 21 extractores con el `>` pegado sobre un tope de 20. El nuevo era el de este mismo PR: `tests/scrum49-firma-remota.test.mjs:179`, que leía `<script type="application/json" id="albaran-firma-datos">` literal. Se deja hueco a los atributos (`/<script\b[^>]*\bid="albaran-firma-datos"[^>]*>…/`) y se vigila el `id`, que es lo que pinta `albaranPublic.routes.ts:278`.
 
 - Base sin el arreglo: 553 **rojo** (exit 1) nombrando esa línea. Con el arreglo: **16/16** verdes.
+
+## SCRUM-1646c · 2026-11-12 (noche) · script de la firma del PRESUPUESTO (`quoteDecisionLanding`)
+
+**Medido contra:** `origin/main` = `8f235725590f2c984b1709a5331ff26a53f25792` (2026-11-12T15:06:10Z).
+Punto de partida: sección ② de la rama `scrum-1646-csp-avisos-publicos` (3 `<script>` en línea + `onclick` por opción).
+
+### Qué cambia (cero textos, cero cambios de conducta)
+
+- Los tres scripts (`TIER_JS`, `SIG_JS` y el del botón) pasan a UNA cadena constante,
+  `PRESUPUESTO_FIRMA_JS`, en `src/modules/system/app/routes/quoteDecisionNavegador.ts` (`String.raw`
+  sin `${`), servida en `GET /pay/quote/js/firma.js?v=<sha1 10>` (`immutable` sólo con la huella buena,
+  si no `no-cache`). Declarada `no-sensitive-resource` en `publicAccessDeclarations.ts` (`/pay` ya era prefijo).
+- Lo que iba interpolado (ruta del POST con el token, códigos de recarga, TODOS los textos, nombre del
+  negocio, enlace de compartir, trazo del icono) viaja en `<script type="application/json"
+  id="presupuesto-firma-datos">`, con `<` → `<`. Los literales se quedan en la ruta, idénticos.
+- El `onclick="selectTier(…)"` de cada opción → listener sobre `.tier-card .btn-tier`, que lee el
+  `data-tier-id` que la tarjeta ya llevaba.
+- El éxito ya no se monta con `innerHTML`: `createElement`/`textContent`, mismo árbol
+  (div > div.success-check, h1, p, [p.sin-pago], a.btn-share > svg + texto) y mismos estilos vía CSSOM.
+- `TIER_JS` deja de exportarse (sólo lo leía SCRUM-212).
+
+### Tests
+
+- Censo de acoplados (36 ficheros, 284 tests): **10 caían**, en 4 ficheros que ejecutaban o leían el
+  script en línea → adaptados para EJECUTAR el guion servido sobre los datos de la página
+  (`tests/_navegador-de-la-firma-del-presupuesto.mjs`, nuevo): 1302t, 1302d (mitad presupuesto), 264
+  (fila ACEPTAR: expresión del guion + `T.reserva` ligado al literal de la ruta), 1001 (suelo). 212 mira
+  la condición del IVA en su forma nueva (`conIva?T.ivaIncluido:''`) además de la vieja.
+- 1302t: su `MUTACIONES_QUE_ME_TUMBAN` M1 apuntaba a la rama 5xx en el fuente viejo (quedaba CIEGA):
+  movida al guion; aplicada a mano cae SÓLO «un 5xx al aceptar…». Censo de las 3 declaraciones que mutan
+  la landing: ninguna ciega.
+- 888d: su huella es de `renderQuoteDetail`, que no se toca → sigue verde sin regenerar.
+- Nuevo `tests/scrum1646c-presupuesto-sin-script-en-linea.test.mjs` (8): control de sondas · las dos caras
+  (un precio, tres opciones) sin script en línea ni `on*=` y con UN guion `'self'` · guion constante · caché
+  por huella · un `</script>` en el nombre no abre HTML · elegir opción · éxito · 409 recarga.
+  **Mutantes (base 8/8):** M1 script en línea vuelve → caen 2 · M2 immutable siempre → 1 · M3 sin listener
+  de opción → 1 · M4 el 409 no recarga → 1.
+- Tanda de acoplados tras el cambio: **294 tests · 291 pass · 0 fail · 2 skip** (+553 arreglado: extractor
+  con hueco de atributos). `guards:entrada` 15 guards **170/170**; los 5 de árbol entero + 98 + 55: 133, 0 fail.
+
+### ⑥ La vara: capturas con la CSP APLICADA (12-nov, noche)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1646c/capturas.salida.txt`
+
+Rama con `origin/main` = `95265b07c` metido (merge, sin rebase; conflicto en `scrum1302d` resuelto por
+UNIÓN: el parte EJECUTADO de main + el presupuesto EJECUTADO de aquí). Scripts y salida en
+`docs/master/evidencias/SCRUM-1646c/`. CSP = `POLITICA_CSP` con `style-src 'self' 'unsafe-inline'` (el
+estilo en línea es 1646d). 13 caras/estados × 390 y 1280: un precio y tres opciones (inicial, aviso sin
+firma, trazo, elegir opción, éxito con y sin firma), aceptado, rechazado, rechazo (formulario y enviado).
+
+- **Pasada 1 (nombre normal): 26/26 IGUALES byte a byte**, mismo cuerpo de POST, 0 informes CSP.
+  Control (main + CSP): distinto en los 14 estados tras pulsar, 3-4 informes, ningún POST.
+- **Pasada 2 (negocio `Fontanería & Hijos <Sur> 'Pepe'`): 16/26 IGUALES, 10 DISTINTAS** — las 10 son
+  que en **MAIN el botón «Firmar y aceptar» no hace nada** si el nombre del negocio lleva `'`: el tercer
+  `<script>` en línea es `SyntaxError: Unexpected identifier 'Pepe'` (el enlace de compartir va con
+  `encodeURIComponent`, que no escapa `'`, dentro de un literal JS de comilla simple). Esta rama lo
+  arregla de paso (el dato viaja en JSON): firma, POST y éxito con el nombre tal cual. **Es un cambio de
+  conducta** → no se empuja sin el OK del orquestador (BUGS.md pendiente de registrar).
+- Pendiente: recorrido en yaqu.app tras el merge.
+
+### ⑦ El cambio de conducta, declarado como ARREGLO (12-nov, noche · OK del orquestador para empujar)
+
+A9: comprobación → `tests/scrum1646c-presupuesto-sin-script-en-linea.test.mjs`
+
+- **Es un ARREGLO, no un cambio de diseño:** la única conducta que cambia es la de un defecto de `main` —con
+  un `'` en el nombre del negocio el botón no firmaba—. **Prueba compilada** (no razonada): el HTML de main
+  pasado por `vm.Script` da `#3 SyntaxError: Unexpected identifier 'Pepe'` en las dos caras
+  (`capturas.salida.txt`, instrumento `compilar-en-linea.mjs.txt`). Registrado en `docs/BUGS.md` como
+  **P1-1646c** con su población (nombres con apóstrofo; las comillas dobles no se midieron en main).
+- **Guard nuevo (9.º test del fichero):** nombre `Fontanería & Hijos <Sur> 'Pepe' "el Rápido"` → sin script
+  en línea, POST `accept`, éxito con el nombre tal cual y enlace de compartir correcto. Base 9/9.
+  **M5** (en `dist`, restaurado byte a byte): entidad-escapar el `'` del texto de confirmación → cae SÓLO
+  ese test (8/9). Un primer mutante con `esc()` NO discriminaba (en el JS compilado `esc` no está en el
+  ámbito: ReferenceError, caían 6) y se descartó.
+- Rama re-fusionada con `origin/main` (merge sin conflictos) antes del push.
+
+## SCRUM-1646c · 2026-11-12 (noche) · el guard de navegador `firma-con-tramos` quedó CIEGO en main
+
+A9: comprobación → `scripts/guard-firma-con-tramos.mjs`
+
+- **Qué pasó:** desde #3152 (1646c) la página de firma pide su guion a `GET /pay/quote/js/firma.js`. El
+  servidor de este guard sólo devolvía las dos páginas, así que el guion daba 404, nada dibujaba ni
+  enviaba y el guard salía **CIEGO** (5 ciegos, salida 2). Medido en #3128 (run 43285819918, base
+  `2e546434f` = main tras #3152); en #3153, con base anterior a #3152, el mismo guard salió verde. Todo PR
+  sobre main caía ahí.
+- **Arreglo (del arnés, no de lo que exige — regla 41):** las subrutas que pide la página
+  (`/pay/quote/js/…` y `/pay/quote/css/…`, ésta para 1646d) las contesta el **router real** montado en
+  `/pay`, como en producción; no una copia del guion. Lo que el guard juzga no cambia.
+- **Rojo/verde en local, mismo árbol (main `acaaddd9a`):** guard de main → CIEGO, salida 2 («NO LLEGÓ A
+  ENVIAR» en el control). Con el arreglo → 4/4 con trazo (normal y tramos, densidad 1 y 3), 0 hallazgos ·
+  0 ciegos, salida 0. Tests que leen el guard (522, 1327, 1343, 548, 892): **74/74**.

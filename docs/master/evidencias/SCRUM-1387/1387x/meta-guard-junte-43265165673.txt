@@ -1,0 +1,6 @@
+parte 1 de 3: salió con 0 · juzgadas 373 de 373 · 1066 s
+parte 2 de 3: salió con 0 · juzgadas 356 de 356 · 553 s
+parte 3 de 3: salió con 0 · juzgadas 353 de 353 · 666 s
+censo por partes: juzgadas 1082 de 1082 declaraciones, en 3 partes
+guards con alguna mutación juzgada: 274 de 274 del censo
+margen de la parte más lenta: 629 s (parte 1, 1066 s de 1695)

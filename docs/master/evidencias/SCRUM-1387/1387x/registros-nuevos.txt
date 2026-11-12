@@ -1,0 +1,6 @@
+base 5a247020e5608fd2b21fad04bcf585694494397a · registros nuevos en docs/master 68 · de ellos afirman 17
+{"A/-":10,"C1/-":2,"B/texto":5}
+fuera y solo texto: 5 · 1671 1673 1684 1685 1717
+base 5a247020e5608fd2b21fad04bcf585694494397a · registros nuevos en docs/master 68 · de ellos afirman 39
+{"A/-":16,"C1/-":4,"B/texto":17,"C2/texto":2}
+fuera y solo texto: 19 · 1637 1646 1650 1654 1659 1671 1673 1684 1685 1686 1687 1700 1701 1702 1704 1705 1706 1714 1717
