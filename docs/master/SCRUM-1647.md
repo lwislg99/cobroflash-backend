@@ -44,3 +44,19 @@ Patrón de S1 en SCRUM-1646 (`albaranFirmaNavegador.ts`, PR #3048):
 - **El navegador de verdad.** El comportamiento se mide en un DOM doble, no en Edge ni Chrome. Que con la CSP puesta la consola de las tres páginas no dé informes de `script-src` (la aceptación del ticket) es un recorrido en yaqu.app tras el merge, y no lo he hecho.
 - **`style-src 'self'`**: las tres páginas siguen con `<style>` y `style=` en línea, y la política del paso 1 también los informa. El ticket pide sólo `script-src`; queda para el tramo de estilos, si lo hay.
 - `scrum85` y `scrum90` (las rutas de pago contra base) no han corrido en local: están gateados.
+
+# SCRUM-1647e · las tres páginas de pago en navegador real con la CSP de 1637 APLICADA (solo medición)
+
+**Medido contra:** `origin/main` = `ec7e19e64eab26361a3d5ebae929b60474ae08ba` · 2026-11-12T11:51:49Z (cabecera `Date` de GitHub; la rama lleva además `scrum-1647a-csp-pago` @ `f4e9be9cc`, que aún no estaba en main)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1647/recorrido.mjs`
+
+Lo escribe J2 (`jv-j2bu`). Jira: SCRUM-1647 c.21665. Sin cambios en `src/`: solo evidencias.
+
+- **Banco:** `servidor-csp.cjs` levanta la `app` real de un `dist/` con prisma doblado y datos fabricados (sin base, sin red, sin Stripe, ninguna `DATABASE_URL*` en el entorno). La cabecera `-Report-Only` de `cspSoloInforme` se reescribe desde fuera como `Content-Security-Policy`, con el mismo valor. `recorrido.mjs` usa el navegador de `scripts/_navegador.mjs` (Edge 157, Chromium). Cuatro escenarios: A main sin política, B main con política (control), C rama con política, D rama sin política.
+- **Comportamiento con la política aplicada (C):** «copiar» 5/5 (el portapapeles real tiene el valor exacto; antes de cada clic se escribe un centinela). Logo roto oculto en Bizum y en factura. **0 informes `script-src`**. El control B da copiar 0/5, logo visible y 3+2+1 informes `script-src`. El control sembrado `/__sembrado` da 2 con la política y 0 sin ella.
+- **Visual (390 y 1280 px, sha256 del PNG, iguales de una pasada a otra):** A↔D 6/6 idénticas byte a byte, es decir, el cambio de 1647a no se ve. A↔C 0/6.
+- 🔴 **El paso 3 (aplicar la CSP) queda BLOQUEADO:** con `style-src 'self'`, el `<style>` en línea y los `style=` de las tres páginas se bloquean, y **se pintan SIN CSS, también en main** (B↔C idénticas en transferencia). Se desbloquea sacando el CSS en línea a un fichero servido desde `'self'`. Fuera de la aceptación de este ticket (que es `script-src`); el orquestador abre el ticket de J2.
+- **El fallo propio, ya convertido en comprobación:** en la primera pasada A↔D salía distinto porque extraje el main sin `public/` y no cargaba `/fonts/inter.css`. Ahora `recorrido.mjs` sale 2 (CIEGO) si un recurso propio que no sea el logo roto a propósito da 4xx/5xx. Comprobado: sin `public/` sale 2 con 18 recursos; con `public/` sale 0 con 0.
+- **No medido:** yaqu.app (1647a no está desplegado); Firefox y Safari; `/pay/bank` con CLABE; el botón «Simular pago confirmado» (aparece por `NODE_ENV=test`; no se pulsó). Suite entera local: NO CORRIDA.
+- Cómo se repite: `node docs/master/evidencias/SCRUM-1647/recorrido.mjs <dist de main con public/ al lado> dist <salida>`.
