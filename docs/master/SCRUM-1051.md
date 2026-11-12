@@ -511,3 +511,19 @@ A9: sin fallo que generalice — poner la rama al día no cambió los dos ficher
 `git merge origin/main` sobre `8add898bf`: un conflicto, en `docs/equipo/cicatrices/J1.md`, resuelto conservando las dos partes (35 líneas de main + 1 de la rama = 36). Este fichero entró sin conflicto, y sus tramos 1051c, 1051d y 1051e salen idénticos a su origen. `scripts/` y `src/modules/fiscal/verifactu/` no cambiaron en main: los comandos de c.21295 siguen igual. En seco, con NIF de ejemplo y sin enviar nada: `omitir` y `cero` generados (salida 0) y válidos contra el XSD, sin destinatario o con el del emisor salida 1, y los punteros con el mismo hash antes y después.
 
 A9: sin fallo que generalice — el único conflicto fue de dos listas que crecían por el final, y el recuento de líneas de cada lado comprueba que no se perdió ninguna.
+
+## SCRUM-1051f · lo que falta de la aceptación (1, 3, 4 y 6): medición y propuesta (J1, jv-j1ea, 12-nov-2026)
+
+**Medido contra:** `origin/main` = `deab373d6a379fcbfc7ec1fce0428111156f49d3` · 2026-11-12T17:05:08Z (hora de la cabecera `Date:` de GitHub)
+
+Sólo lectura y sólo docs: nada en `src/` ni `public/`, ninguna base, nada a la AEAT. Leído con `grep -n`, NO ejecutado (este árbol no tiene `dist/`). La tabla entera y las preguntas, en Jira SCRUM-1051 c.21748.
+
+- **1 · marcar ISP:** no hay pantalla. El cuerpo de `POST /admin/invoices` sólo lleva `concept, qty, price, tax` (`public/dashboard/js/cuerpoDelDocumentoSuelto.js:50-54`); «S2» en `public/`: 0. Tampoco hay ajuste «lo activa» (sería flag → máster, o campo → ALTER). Ficheros de S2 (equipo de Luis). Necesita firma (rótulo).
+- **3 · leyenda:** el PDF no la imprime y funde la S2 con su tipo (`src/modules/invoicing/infra/pdf/pdf.service.ts:646-653`). J1; GO (regla 40) y firma (regla 39). Fuente cotejada hoy en el BOE consolidado (`BOE-A-2012-14696`, bloque `a6`): ROF art. 6.1.m), «la mención «inversión del sujeto pasivo»». Propuesta: ese literal, sin cita del artículo.
+- **4 · libro:** el 303 (casilla 122) y el 390 (125) ya la llevan (SCRUM-1063f). El libro guarda `causa` (`libroRegistro.ts:91`) pero ni la descarga (`librosAeat.ts:323-329`) ni la pantalla (`libroRegistroView.js`) la enseñan. J1; firma, sin GO.
+- **6 · NIF en servidor:** no se rechaza. El portón de la causa no mira el NIF, y sin NIF el builder excluye la factura del registro pero «se emite, se envía y se cobra igual» (`src/modules/fiscal/verifactu/registro.builder.ts:260`). Haría falta un portón antes de emitir (`invoicesAdmin.routes.ts`, `src/lib/invoicing.ts`, J1): GO de regla 40 y es identidad fiscal, fuera de c.16594.
+- `docs/master/SCRUM-1264.md`: 0 «sujeto pasivo»/«ISP»/«Q-C2» (control: «asesor», 3). El índice de 45 de Jira NO leído.
+
+**Corrido:** nada de tests (sólo docs). Suite entera: NO CORRIDA.
+
+A9: sin fallo que generalice — es una medición de sólo lectura; cada fichero:línea citado sale de un `grep -n` de esta tanda, y lo que no se ejecutó lo dice el propio tramo.
