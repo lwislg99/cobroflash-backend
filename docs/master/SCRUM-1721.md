@@ -2,7 +2,7 @@
 
 **Medido contra:** `origin/main` = `124043f23b4b4ce333fc1ededc7ed4697a1656f2` · 2026-11-12T19:07:37Z (hora de GitHub, de `scripts/equipo/ancla.mjs`; sesión S1, por encargo del orquestador `cobroflash-backend-5f`. La rama nació de `9bf51c10e`, que es donde se midió el rojo, y se unió con este main antes de la tanda final)
 
-A9: sin fallo que generalice.
+A9: sin fallo que generalice — el único tropiezo (escribir `declarada` en el alta contra la decisión que fija `scrum1103:81`) lo cazó la tanda acoplada antes de empujar, que es justo para lo que está.
 
 **Cero textos** (solo códigos de error: `retencion_tipo_invalido`, `retencion_cuota_invalida`; los textos firmados del ticket son de la pantalla, piezas ⑤⑧ de S2, y aquí no se pinta ninguno), **cero estados, cero flags, cero esquema** (las tres columnas existen desde SCRUM-1103).
 
