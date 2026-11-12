@@ -1,0 +1,19 @@
+// node preparar.cjs <arbol> <dir>: vuelca antes/despues/control de los tres avisos.
+const path = require('path');
+const fs = require('fs');
+const { execFileSync } = require('child_process');
+const [arbol, dir] = process.argv.slice(2);
+const ts = require(path.join(arbol, 'node_modules/typescript'));
+const viejoTs = execFileSync('git', ['show', 'origin/main:src/core/http/publicNotFound.ts'], { cwd: arbol, encoding: 'utf8' });
+fs.writeFileSync(path.join(dir, 'viejo.cjs'), ts.transpileModule(viejoTs, { compilerOptions: { module: 1, target: 7 } }).outputText);
+const viejo = require(path.join(dir, 'viejo.cjs'));
+const nuevo = require(path.join(arbol, 'dist/core/http/publicNotFound.js'));
+const caras = { documento: (m) => m.documentNotFoundHtml(), pagina: (m) => m.notFoundPageHtml(), registro: (m) => m.documentoEnRegistroHtml('Tu factura se está registrando. Vuelve a abrir el enlace en unos minutos.') };
+for (const lado of ['antes', 'despues']) fs.mkdirSync(path.join(dir, lado), { recursive: true });
+for (const [cara, f] of Object.entries(caras)) {
+  const a = f(viejo); const d = f(nuevo);
+  if (!/<style>/.test(a) || /<style/.test(d) || !/<link rel="stylesheet" href="\/avisos\/css\//.test(d)) throw new Error('CIEGO ' + cara);
+  fs.writeFileSync(path.join(dir, 'antes', cara + '.html'), a);
+  fs.writeFileSync(path.join(dir, 'despues', cara + '.html'), d);
+  console.log(cara, a.length, d.length);
+}
