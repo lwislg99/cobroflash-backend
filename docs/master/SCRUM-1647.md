@@ -111,6 +111,87 @@ Patrón de S1 en SCRUM-1646 (`albaranFirmaNavegador.ts`, PR #3048):
 - **El navegador de verdad.** El comportamiento se mide en un DOM doble, no en Edge ni Chrome. Que con la CSP puesta la consola de las tres páginas no dé informes de `script-src` (la aceptación del ticket) es un recorrido en yaqu.app tras el merge, y no lo he hecho.
 - **`style-src 'self'`**: las tres páginas siguen con `<style>` y `style=` en línea, y la política del paso 1 también los informa. El ticket pide sólo `script-src`; queda para el tramo de estilos, si lo hay.
 - `scrum85` y `scrum90` (las rutas de pago contra base) no han corrido en local: están gateados.
+# SCRUM-1647d · CSP paso 2, tramo de J3: la página de alta sin código en línea
+
+**Medido contra:** `origin/main` = `c8195b2608c32624f39d1145cf031c93091d9161` · 2026-11-12T12:07:59Z (cabecera `Date:` de GitHub)
+
+A9: aviso → cicatriz J3 «Sexta vez del mismo fallo con otra puerta: pasé código por `node -e` en bash y un `\n` de una cadena se convirtió en un salto de línea real; lo cacé al leer el fichero y lo corregí con Edit.» — no se pudo comprobar: cómo escribe una sesión en un fichero no deja rastro en el árbol
+
+Sesiones `jv-j3cc` (puesto J3), 12-nov-2026, por encargo del orquestador `cobroflash-backend-a0`: la
+primera escribió el cambio y paró por contexto (Jira c.21664); la de relevo hizo el merge, las
+mutaciones, el navegador y este tramo. Cabecera propia «SCRUM-1647d» por la misma razón que 1647c.
+
+**Skill UI:** cargada por la sesión de relevo antes de tocar nada; el cambio de `register.html` lo
+escribió la primera sesión, que no dejó dicho si la había cargado. El cambio no toca nada visible
+(capturas abajo).
+
+## ① PASO 0
+
+- `register.html` en main (`9cdf6a24d`, tabla de 1647c): 0 `on*=`, 1 `<script>` en línea, 2 `style=`. Lo dejó
+  pendiente el tramo 1647c: con la CSP aplicada, el alta se rompe.
+- Sin rama `scrum-1647d*` en el remoto ni commits en main. #3108 (pago, J2) entró a las 11:55:09Z; #3106
+  (login, 1647c) sigue OPEN y esta rama lo lleva dentro.
+- `publicAccessDeclarations.ts` y tres tests de S1: excepción de carril firmada en c.21658, declarada
+  en `dos-equipos.md` §3.4 junto a la de J2 (c.21631), carriles regenerados tras el merge (`comprobar`: IGUAL).
+
+## ② Qué cambia
+
+- `src/modules/auth/app/routes/altaNavegador.ts` (nuevo): el guion de `register.html` como cadena
+  CONSTANTE (`String.raw`), servido en `GET /auth/js/alta.js` desde `auth.routes.ts`. Es el de main
+  línea a línea, con el alta con invitación de S1 (SCRUM-1685, `pintarCamposEs`); sólo tres comentarios
+  pasan de acentos graves a «». Ningún oyente nuevo: la página no tenía manejadores en línea.
+- Los dos `style="display:none"` (insignia del amigo y caja de avisos) → `hidden`.
+- Dos líneas en `publicAccessDeclarations.ts`: `GET /auth/js/login.js` (la de 1647c, que sin ella deja
+  `scrum98` en rojo) y `GET /auth/js/alta.js`, las dos `no-sensitive-resource`.
+- `scrum1685-formulario-de-alta`, `scrum264` y `scrum336`: sólo cambia DÓNDE leen el guion. Ninguna aserción.
+- De paso: los dos extractores de `scrum1647c` con el `>` pegado, que `scrum553` cazaba.
+- Textos: NINGUNO nuevo ni cambiado (regla 39).
+
+## ③ Medido
+
+| qué | resultado |
+| --- | --- |
+| Rojo contra main | contadores del test sobre el `register.html` de main: 1 `<script>` en línea y 2 `style=` → rama: 0 y 0 |
+| Test nuevo | `tests/scrum1647d-alta-sin-script-en-linea.test.mjs`, 6 casos; control sembrado A0 |
+| Mutaciones (`MUTACIONES_QUE_ME_TUMBAN` + `correr`/`aplicarUna` de `scripts/meta-guard-mutaciones.mjs`) | línea base 6 pasan, 0 caen, 0 saltan, 0 movidos · **5 de 5 tumban su caso**, 0 colaterales. Control del instrumento: una mutación inocua (un espacio en el `<title>`) sale MUDA. `git status` limpio y `dist/` sin restos después |
+| Chromium (Edge 157.0.4341.46, el de `scripts/_navegador.mjs`) con la política de 1637 APLICADA | ver ④ |
+| Build con tipos | `tsc -p .` tras el merge de main: salida 0 |
+
+## ④ El alta en navegador, con la política aplicada
+
+Banco: `evidencias/SCRUM-1647/1647d/` (`servidor-alta.cjs`, `recorrido-alta.mjs`, `resultado.json`,
+`salida.txt`, 16 capturas). Método de 1647e (J2): la `app` real de dos `dist/` (main construido aparte con
+su `public/`; la rama, el de este árbol), prisma doblado (0 lecturas en los cuatro escenarios), y la cabecera
+`-Report-Only` de `cspSoloInforme` reescrita como `Content-Security-Policy` con el mismo valor. El
+`POST /auth/register` se intercepta en el navegador y contesta 200: se mide si el guion corre, no el alta del
+servidor (que no cambia). Recorrido: `/register.html?ref=AMIGO1647D`, país a Portugal y vuelta a España,
+nombre, email, provincia y las dos preguntas de domicilio, enviar, esperar la redirección.
+
+| escenario | alta completa | POST con `ref` y `source: ref:…` | informes `script-src` | insignia sin `?ref` | URL final |
+| --- | --- | --- | --- | --- | --- |
+| A · main sin política | sí | 1 | 0 | oculta | `/login.html` |
+| **B · main CON política (control)** | **no** | 0 | 2 (+4 `style-src-attr`) | **visible** | `/register.html?` (el formulario se envía como GET) |
+| **C · rama CON política** | **sí** | 1 | **0** (0 informes de ninguna directiva, también en `/login.html` tras la redirección) | oculta | `/login.html` |
+| D · rama sin política | sí | 1 | 0 | oculta | `/login.html` |
+
+- Controles: el sembrado (`/__sembrado`: `<script>` en línea + `onerror`) da 2 informes `script-src` con la
+  política y 0 sin ella. B no completa el alta y A sí: el banco aplica la política y sabe hacer el alta.
+- Visual (390 y 1280 px, con y sin invitación, sha256 del PNG): **A↔D 4/4 idénticas byte a byte** (el
+  cambio de código no cambia nada a la vista). A↔C también 4/4 y D↔C 4/4: `register.html` sólo carga CSS de
+  fichero, así que aquí `style-src` (c.21665, SCRUM-1723) no deja nada sin pintar. A↔B 0/4: en main con la
+  política se ve la insignia «Te ha invitado un amigo» a todo el que entra y la caja de avisos vacía.
+- El recorrido sale 2 (CIEGO) si falta una hoja de estilo, fuente, guion o imagen propios. Control: sin
+  `auth.css` en el main extraído salió 2 nombrando `auth.css`; con ella, 0.
+
+## No medido, y se dice
+
+- Tanda entera local: NO CORRIDA (día de cola; la hace el obligatorio). `scrum1515` (alta con invitación
+  contra base) salta sin `LIBRO_PG_URL`: no corrido.
+- Otros navegadores que Chromium. yaqu.app tras el despliegue.
+- Fallos míos de esta tanda, en el banco y antes de dar cifras: un puerto fijo ya cogido por otra sesión
+  (EADDRINUSE; ahora pide puertos libres al sistema) y un primer filtro de «recurso que falta» que contaba
+  el 404 sembrado, el `favicon.ico` y el `401 /admin/me` del login: salió CIEGO, y lo acoté a recursos de pintado.
+- **Puesta al día (segundo relevo, 12-nov tarde, main `ff2af3368930614c693353c144e521d3c50e8bc5`):** #3106 entró en main, así que en el merge se quedan SU línea de `login.js` y SU `scrum1647c` (el «de paso» de ② cae) y esta rama sólo añade `alta.js`; el obligatorio de `2babe8ab8` cayó en `scrum1415` (el 1647c viejo; ya resuelto por main) y en `scrum1515`, test J3 gateado que no corrió aquí y leía el guion de `register.html`: ahora lee el HTML más el guion servido, sin tocar aserciones (sonda local: con el guion, la expresión pinta «Email inválido.»; sin él, CIEGO, que es el rojo de CI).
 
 # SCRUM-1647e · las tres páginas de pago en navegador real con la CSP de 1637 APLICADA (solo medición)
 
