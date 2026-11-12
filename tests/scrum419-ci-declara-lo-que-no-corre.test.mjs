@@ -240,6 +240,11 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // El segundo (c.21555): las notas internas no le llegan al operario por lista, detalle, PATCH ni `.ics`
   // — por comportamiento, con dos sesiones de verdad (jefe y operario) y la fila leída de la base.
   'scrum1662-que-hay-que-hacer.test.mjs': 2,
+  // SCRUM-1697 (b): «Visita n de m» sale del GET del parte. Necesita banco porque lo que mide es la
+  // RUTA contando filas de verdad: con borradores, sin los partes de OTRO merchant que comparten el
+  // número de trabajo (columna suelta) y con la sesión del técnico asignado. Sólo el desechable: crea y
+  // borra dos merchants. La regla pura (orden y recuento) va en el mismo fichero y corre sin banco.
+  'scrum1697b-visita-en-el-servidor.test.mjs': 1,
   // SCRUM-1403: los TRES que ejercitan el recorte de presupuestos del Tecnico y la pestana de
   // documentos de la ficha de cliente contra Prisma de verdad. Necesitan banco por el mismo motivo
   // que los de SCRUM-1397: lo que vigilan es el WHERE (el recorte en AND con la busqueda y con el
