@@ -402,6 +402,6 @@ lo decide `seesOnlyOwnJobs` (`:56`) y, para la pertenencia a un Trabajo, `esSuyo
 
 **Ningún texto fuera de los firmados:** el pie de la cifra (nombres de cliente) es DATO, como en la lista (c.15881).
 
-**Lo que salió mal (A9):** el traspaso de la S2 anterior decía «H4 MEDIDO, SIN EMPEZAR A CONSTRUIR», y en otra worktree había un commit WIP sin empujar de después de escribirlo (`189d32aa9`). Lo vi sólo porque `git branch -m` chocó con el nombre; lo reaproveché (cherry-pick) en vez de hacerlo dos veces. Ese choque no es una comprobación. Lo que SÍ queda comprobado es el fallo que este bloque podía meter —afirmar «Nada para hoy.» con la carga caída—: el caso ⑤, cazado por mutación.
+**Lo que salió mal (A9):** el traspaso de la S2 anterior decía «H4 MEDIDO, SIN EMPEZAR A CONSTRUIR», y en otra worktree había un commit WIP sin empujar de después de escribirlo (`189d32aa9`). Lo vi sólo porque `git branch -m` chocó con el nombre; lo reaproveché (cherry-pick) en vez de hacerlo dos veces. Ese choque no es una comprobación. Lo que SÍ queda comprobado es el fallo que este bloque podía meter —afirmar «Nada para hoy.» con la carga caída—: el caso ⑤, cazado por mutación. Segundo fallo, mío: re-anclé `scrum601` y empujé sin `npm run censo:mudez -- --escribir`, aunque la trampa estaba escrita en mi traspaso desde SCRUM-1701; el CI de #3096 salió rojo en `scrum1395b` y se arregló en el commit siguiente. Ése sí lo caza un guard: el propio `scrum1395b`.
 
 A9: comprobación → `tests/scrum1686h4-inicio-operario.test.mjs`
