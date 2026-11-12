@@ -102,3 +102,7 @@ intacta; su día a día pasa a ser `{queHayQueHacer}` → 200; test puro nuevo �
 recibiría 403. La norma tras SCRUM-89 (máster, entrada SCRUM-120) pide el front en el MISMO PR; el fichero es
 de S2. Pedido al orquestador: S2 oculta esa línea para el técnico (sin textos nuevos, c.21555) en esta rama o
 en un PR que entre a la vez.
+
+### Ancla de otro documento movida por el esquema de esta rama
+
+Las 6 líneas de `Job.queHayQueHacer` en `prisma/schema.prisma` desplazan `model VfSubmission` de 1809 a 1815, y `tests/scrum525d-anclas-que-apuntan` lo cazó en `docs/legal/AUDITORIA_CAMINO_EMISION.md:40`. Se lleva la coordenada a donde está hoy (opción ① del propio guard; mismo precedente que SCRUM-1072, que movió esas anclas por `activityKind`). Solo el número de línea: el texto de la auditoría no cambia.
