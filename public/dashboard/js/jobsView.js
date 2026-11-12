@@ -91,19 +91,11 @@ async function renderJobsView(container) {
     }
     zonaNuevo.appendChild(bNuevo);
 
-    // Sprint Tecnosel · LA PUERTA A «PARTES POR VALORAR». No va en la barra lateral porque su
-    // rótulo no está aprobado y ahí no cabe un marcador (SCRUM-420): cuando el fundador lo firme,
-    // se mueve. Mientras, la pantalla es alcanzable — que es lo que la separa de un fichero.
-    const bValorar = document.createElement("button");
-    bValorar.className = "btn-secondary btn-sm";
-    bValorar.id = "jobs-partes-valorar";
-    // SCRUM-917c · el margen que iba aquí en línea (`style.marginLeft`) lo pone ahora el `gap` de
-    // `.jobs-nuevo` en la hoja: mismo hueco, sin estilo en línea.
-    bValorar.textContent = "Partes por valorar";
-    bValorar.addEventListener("click", () => {
-      if (window.renderAppView) window.renderAppView("partes-oficina");
-    });
-    zonaNuevo.appendChild(bValorar);
+    // 🔴 SCRUM-1700 (T7 de SCRUM-1686, N2 firmado) · AQUÍ IBA LA PUERTA A «PARTES POR VALORAR», y
+    // se retira. Era provisional («cuando el fundador lo firme, se mueve»): el rótulo se firmó el
+    // 3-sep-2026 y la entrada vive en el menú desde entonces (`index.html`, `data-rol="admin"`),
+    // que ahora además dice cuántos esperan (`contarPartesPorValorar`, `app.js`). Dos puertas a la
+    // misma cola, una de ellas en la pantalla del operario, sobraban.
   }
 
   uiSkeletonCards(list, 4);
@@ -1217,6 +1209,43 @@ function jobRow(j, container, equipo) {
   // SCRUM-1570 c.20161: sale de la caja y el guard no se toca. Sigue siendo el MISMO `<button>`
   // nativo en la misma celda —el teclado de SCRUM-1562 no cambia— y va DELANTE, como en
   // Presupuestos, para que el «⋯» siga cerrando la fila.
+  // ── 🔴 SCRUM-1700 · N1 «Abrir parte»: EN OBRA, EL DOCUMENTO ES EL PARTE ──────────────────────
+  // Texto FIRMADO (tanda N1-N13 de SCRUM-1686, c.21470): botón principal del Trabajo EN CURSO. Es
+  // lo primero que ve el operario del piloto (D1 de SCRUM-1686: en obra, un documento, el parte).
+  //
+  // FUERA de `.jobs-acciones`, como «Ver detalle» (SCRUM-1562f): esa caja es la ESCALERA
+  // (`jobNextAction`), compartida con el detalle y comparada por `guard:escalera-por-estado`.
+  // Esto no la cambia ni la sustituye: es la puerta directa al parte desde la lista.
+  //
+  // ABRE EL BORRADOR DE ESTE TRABAJO, Y SI NO HAY, CREA EL DE ESTA VISITA (D2: un parte por
+  // visita). Ni uno nuevo cada vez que se pulsa, ni abrir el FIRMADO de la visita anterior —que ya
+  // no se puede tocar— para apuntar lo de hoy.
+  if (j.status === 'en_curso') {
+    const bParte = document.createElement('button');
+    bParte.className = 'btn-primary btn-sm';
+    bParte.setAttribute('data-abrir-parte', '1');
+    bParte.dataset.filaNoNavega = '1';
+    bParte.textContent = 'Abrir parte';
+    bParte.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      bParte.disabled = true;
+      try {
+        const lista = await apiRequest('/admin/partes');
+        const borrador = (lista && Array.isArray(lista.partes) ? lista.partes : [])
+          .find((p) => p && p.jobId === j.id && p.estado === 'borrador');
+        const parte = borrador
+          || await apiRequest('/admin/partes', { method: 'POST', body: JSON.stringify({ jobId: j.id }) });
+        if (window.renderAppView) window.renderAppView('parte-detail', { parteId: parte.id });
+      } catch (_err) {
+        // El MISMO aviso, literal, que la puerta del detalle (`jobDetailView.js`, SCRUM-652).
+        if (typeof showToast === 'function') showToast('No se ha podido abrir el parte. Vuelve a intentarlo.', 'warn');
+      } finally {
+        bParte.disabled = false;
+      }
+    });
+    celda.appendChild(bParte);
+  }
+
   const bDetalle = document.createElement('button');
   bDetalle.className = 'btn-ghost btn-sm';
   bDetalle.textContent = 'Ver detalle';
