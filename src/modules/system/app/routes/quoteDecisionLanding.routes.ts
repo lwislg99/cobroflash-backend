@@ -29,6 +29,11 @@ import { // SCRUM-1646c · el guion de la firma, servido desde 'self'
   ID_DATOS_FIRMA_PRESUPUESTO, PRESUPUESTO_FIRMA_JS, SRC_PRESUPUESTO_FIRMA_JS,
   cacheDelGuionDelPresupuesto, datosDeLaFirmaDelPresupuesto,
 } from './quoteDecisionNavegador';
+import { // SCRUM-1646d · el estilo de la firma, servido desde 'self'
+  PRESUPUESTO_FIRMA_CSS, PRESUPUESTO_OPCIONES_CSS, HREF_PRESUPUESTO_FIRMA_CSS, HREF_PRESUPUESTO_OPCIONES_CSS,
+  HUELLA_PRESUPUESTO_FIRMA_CSS, HUELLA_PRESUPUESTO_OPCIONES_CSS, HUELLA_PRESUPUESTO_MARCA_CSS,
+  cacheDeLaHoja, colorDeLaRuta, cssDeMarca, hrefDeLaHojaDeMarca,
+} from './quoteDecisionEstilo';
 import { tieneVersionMasReciente, fraseDeLaVersionAntigua, ERROR_VERSION_NO_VIGENTE } from '../../../quotes/domain/versionMasReciente'; // SCRUM-1302
 
 type DecisionApiError = { message?: string; error?: string };
@@ -36,20 +41,15 @@ type DecisionApiError = { message?: string; error?: string };
 const quoteDecisionLandingRouter = Router();
 const BASE_API_URL = process.env.PUBLIC_BASE_URL || 'http://localhost:3000';
 
-function brandOverrideCss(brandColor?: string | null): string {
-  if (!brandColor || !/^#[0-9a-fA-F]{6}$/.test(brandColor)) return '';
+function enlaceDeLaHojaDeMarca(brandColor?: string | null): string {
   // El color de marca del negocio va en ACENTOS (avatar, bordes, badges, enlaces),
   // NUNCA en el botón primario de aceptar/firmar: ese es SIEMPRE el verde de marca
   // (P1-1: un brandColor rojo hacía que "Firmar y aceptar" saliera rojo). El rojo
   // se reserva para rechazar.
-  return `<style>
-    .merchant-avatar { background: ${brandColor} !important; color: #fff !important; }
-    .tier-recommended, .tier-card.selected { border-color: ${brandColor} !important; }
-    .tier-badge { background: ${brandColor} !important; color: #fff !important; }
-    .success-check { background: ${brandColor} !important; }
-    .total-row { border-top-color: ${brandColor} !important; }
-    a { color: ${brandColor}; }
-  </style>`;
+  // SCRUM-1646d · las reglas viven en `cssDeMarca` (quoteDecisionEstilo.ts) y las sirve
+  // `GET /pay/quote/css/marca/:color`; aquí sólo el enlace. Mismo filtro: sin color válido, nada.
+  const href = hrefDeLaHojaDeMarca(brandColor);
+  return href ? `<link rel="stylesheet" href="${href}"/>` : '';
 }
 
 /**
@@ -76,7 +76,9 @@ const CONSEJO_DE_REINTENTAR = 'Inténtalo más tarde.';
  */
 const COPY_RESPUESTA_SIN_CONFIRMAR = 'No hemos podido confirmar tu respuesta. Vuelve a abrir el enlace para ver si se ha guardado.'; // APROBADO · SCRUM-1302 comentario 19719
 
-function renderPage(title: string, body: string, brandColor?: string | null): string {
+// SCRUM-1646d · `conOpciones`: la cara de firmar enlaza también la hoja de las opciones, la última de
+// la cascada como lo era su `<style>` en el cuerpo (base → marca → opciones).
+function renderPage(title: string, body: string, brandColor?: string | null, conOpciones = false): string {
   return `<!doctype html>
 <html lang="es">
 <head>
@@ -89,141 +91,9 @@ function renderPage(title: string, body: string, brandColor?: string | null): st
        repo. Declarado aquí, el navegador usa este y deja de pedir el .ico. -->
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <link rel="stylesheet" href="/fonts/inter.css"/>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    body { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      -webkit-font-smoothing: antialiased; font-feature-settings: "cv11","ss01";
-      margin: 0; padding: 16px; background: #f6f7f5; color: #3f4a45; min-height: 100vh; }
-    .card { max-width: 460px; margin: 24px auto; background: #fff; border: 1px solid #e7e9e5; border-radius: 18px;
-      padding: 26px 24px; box-shadow: 0 1px 2px rgba(16,24,40,.04), 0 18px 40px -16px rgba(16,24,40,.16); }
-    .merchant-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-    .merchant-logo { max-height: 48px; max-width: 120px; object-fit: contain; border-radius: 8px; }
-    .merchant-name { font-weight: 700; font-size: 16px; color: #0f1c17; }
-    .merchant-sub { font-size: 13px; color: #6b756f; }
-    h1 { font-size: 19px; margin: 0 0 4px; color: #0f1c17; letter-spacing: -.01em; text-align: center; }
-    h1 + .quote-meta { text-align: center; }
-    .quote-meta { font-size: 13px; color: #6b756f; margin-bottom: 16px; }
-    /* Total como héroe (estilo Recibo de confianza) */
-    .amount-hero { text-align: center; padding: 16px 0 18px; margin: 16px 0;
-      border-top: 1px solid #e7e9e5; border-bottom: 1px solid #e7e9e5; }
-    .amount-hero-label { font-size: .72rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .07em; color: #6b756f; margin-bottom: .5rem; }
-    .amount-hero-value { font-size: 2.4rem; font-weight: 800; color: #0f1c17; line-height: 1;
-      letter-spacing: -.025em; font-variant-numeric: tabular-nums; }
-    /* Bloque de confianza */
-    .trust { margin-top: 14px; text-align: center; }
-    .trust-main { display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; font-weight: 600; color: #3f4a45; }
-    .trust .lock { width: 13px; height: 13px; vertical-align: -1px; }
-    /* P2-5: table-layout fixed + anchos para que el Total nunca se recorte en 390px */
-    .lines-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 14px; margin-bottom: 12px; }
-    .lines-table th { text-align: left; padding: 4px 6px; color: #6b756f; font-size: 12px;
-      border-bottom: 1px solid #e7e9e5; }
-    .lines-table td { padding: 6px 6px; border-bottom: 1px solid #f1f2ee; }
-    .lines-table td:first-child { overflow-wrap: break-word; }
-    .lines-table th:nth-child(2), .lines-table td:nth-child(2) { width: 44px; text-align: right; }
-    .lines-table th:nth-child(3), .lines-table td:nth-child(3) { width: 100px; text-align: right;
-      white-space: nowrap; font-variant-numeric: tabular-nums; }
-    @media (max-width: 420px) { .lines-table { font-size: 13px; }
-      .lines-table th:nth-child(3), .lines-table td:nth-child(3) { width: 92px; } }
-    .total-row { display: flex; justify-content: space-between; font-weight: 800; color: #0f1c17;
-      font-size: 20px; margin: 12px 0 20px; padding-top: 10px; border-top: 2px solid #e7e9e5;
-      font-variant-numeric: tabular-nums; }
-    /* PC-B: desglose de IVA (base + cuota por tipo) coherente con el Total */
-    .totals-block { margin: 4px 0 0; }
-    .totals-row { display: flex; justify-content: space-between; align-items: baseline;
-      font-size: 14px; color: #6b756f; padding: 3px 6px; font-variant-numeric: tabular-nums; }
-    .totals-row span:last-child { color: #3f4a45; font-weight: 600; }
-    .terms-badge { display: inline-block; font-size: 12px; padding: 3px 10px;
-      border-radius: 999px; background: #eff6ff; color: #1d4ed8; margin-bottom: 16px;
-      /* SCRUM-888g: la píldora lleva los nombres de tramo del profesional; uno sin espacios no desborda */
-      max-width: 100%; overflow-wrap: anywhere; }
-    /* V8/N1: política de señal junto a las condiciones (solo cuando hay señal 50/50) */
-    .senal-policy { text-align: center; font-size: 12px; color: #6b756f; margin: 0 0 12px; }
-    .divider { border: none; border-top: 1px solid #e7e9e5; margin: 16px 0; }
-    /* SCRUM-1279: los textos del documento, antes de la firma. El texto es del profesional: se
-       respetan sus saltos de línea y una palabra larga no desborda en 360 px. Las cláusulas van en
-       una caja con tope de alto: abiertas y legibles, pero sin alejar la firma una pantalla entera. */
-    .doc-texto { font-size: 13px; color: #3f4a45; white-space: pre-line; overflow-wrap: anywhere; margin: 0 0 12px; }
-    .doc-bloque { margin: 12px 0; }
-    .doc-titulo { font-size: 12px; font-weight: 700; color: #0f1c17; text-transform: uppercase;
-      letter-spacing: .04em; margin-bottom: 4px; overflow-wrap: anywhere; }
-    .doc-clausulas { max-height: 45vh; overflow-y: auto; margin: 12px 0 16px; padding: 12px;
-      border: 1px solid #e7e9e5; border-radius: 12px; background: #f6f7f5; }
-    .doc-clausula + .doc-clausula { margin-top: 10px; }
-    .doc-clausulas .doc-texto { margin: 0; font-size: 12px; }
-    /* Firma */
-    .sig-label { font-size: 13px; font-weight: 600; color: #333c37; margin-bottom: 6px; display: block; }
-    .sig-sub { font-size: 12px; color: #6b756f; margin-bottom: 8px; }
-    .sig-wrapper { border: 2px solid #cdd2cb; border-radius: 10px; background: #f7f8f6;
-      position: relative; overflow: hidden; margin-bottom: 8px; }
-    .sig-wrapper.has-sig { border-color: #22c55e; background: #fff; }
-    #sig-canvas { display: block; width: 100%; height: 150px; cursor: crosshair; touch-action: none; }
-    .sig-actions { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
-    .btn-clear { font-size: 13px; padding: 6px 12px; border-radius: 8px;
-      border: 1px solid #e7e9e5; background: #fff; cursor: pointer; color: #6b756f; }
-    .btn-clear:hover { background: #f1f2ee; }
-    .sig-placeholder { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
-      color: #cdd2cb; font-size: 14px; pointer-events: none; user-select: none; white-space: nowrap; }
-    .checkbox-fallback { display: flex; align-items: center; gap: 8px; font-size: 13px;
-      color: #6b756f; margin-bottom: 16px; }
-    /* Botones */
-    .btn-accept { width: 100%; padding: 15px; font-size: 16px; font-weight: 700;
-      background: #16a34a; color: #fff; border: none; border-radius: 14px; cursor: pointer;
-      min-height: 52px; margin-top: 4px; box-shadow: 0 4px 14px -2px rgba(22,163,74,.35);
-      transition: background .15s, transform .08s, box-shadow .15s; }
-    .btn-accept:hover { background: #15803d; }
-    .btn-accept:active { background: #15803d; transform: translateY(1px); }
-    .btn-accept:disabled { opacity: .5; cursor: default; }
-    .btn-reject { width: 100%; padding: 14px; font-size: 16px; font-weight: 700;
-      background: #dc2626; color: #fff; border: none; border-radius: 12px; cursor: pointer;
-      min-height: 52px; margin-top: 4px; }
-    .btn-reject:active { background: #b91c1c; }
-    .status-ok { background: #ecfdf5; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
-    .status-ok strong { color: #166534; }
-    .status-error { background: #fef2f2; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
-    .status-error strong { color: #991b1b; }
-    small { font-size: 12px; color: #6b756f; display: block; text-align: center; margin-top: 12px; }
-    select, textarea { width: 100%; font-size: 15px; padding: 10px 12px;
-      border-radius: 10px; border: 1px solid #cdd2cb; margin-bottom: 12px; }
-    textarea { min-height: 80px; resize: vertical; }
-    /* FRONT1-6 — landing cliente premium */
-    .merchant-hero { text-align: center; padding: 8px 0 18px; }
-    .merchant-hero .merchant-logo { max-height: 64px; max-width: 180px; margin-bottom: 10px; }
-    .merchant-hero .merchant-name { font-size: 22px; font-weight: 800; color: #0f1c17; }
-    .merchant-hero .merchant-sub { font-size: 13px; color: #6b756f; margin-top: 2px; }
-    .merchant-avatar { width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 10px;
-      background: linear-gradient(135deg,#22c55e,#22d3ee); color: #052e16; font-weight: 800;
-      font-size: 26px; display: flex; align-items: center; justify-content: center; }
-    .line-icon { display: inline-block; width: 22px; text-align: center; margin-right: 4px; }
-    .validity-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px;
-      background: #fffbeb; color: #b45309; padding: 4px 12px; border-radius: 999px; margin-bottom: 12px; }
-    .btn-share { display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-      width: 100%; padding: 12px; font-size: 15px; font-weight: 700; background: #25D366; color: #fff;
-      border: none; border-radius: 12px; cursor: pointer; text-decoration: none; margin-top: 10px; }
-    /* PC-A: "Tengo una duda" → WhatsApp del PRO. Secundario (no verde) para respetar la
-       Regla de Una Sola Voz: el unico CTA primario es "Firmar y aceptar". */
-    .btn-duda { display: flex; align-items: center; justify-content: center; gap: 8px;
-      width: 100%; min-height: 48px; padding: 12px; margin-top: 14px; font-size: 14px;
-      font-weight: 600; color: #0f1c17; background: #fff; border: 1px solid #e7e9e5;
-      border-radius: 12px; text-decoration: none; }
-    .btn-duda:hover { background: #f6f7f5; }
-    .success-check { width: 72px; height: 72px; border-radius: 50%; background: #16a34a; color: #fff;
-      font-size: 40px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;
-      animation: pop .4s cubic-bezier(.2,1.4,.4,1) both; }
-    @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
-    .confetti-piece { position: fixed; top: -12px; width: 9px; height: 9px; z-index: 9999;
-      border-radius: 1px; animation: confetti-fall linear forwards; }
-    @keyframes confetti-fall { to { transform: translateY(105vh) rotate(540deg); opacity: 1; } }
-    /* AB6: anillo de Foco accesible (DESIGN.md "Foco") en todo elemento enfocado por teclado */
-    :focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(34,197,94,.30); }
-    /* AB6: respetar prefers-reduced-motion — sin confeti, sin pop, sin transiciones */
-    @media (prefers-reduced-motion: reduce) {
-      .success-check { animation: none; }
-      .confetti-piece { display: none; animation: none; }
-      .btn-accept { transition: none; }
-    }
-  </style>
-  ${brandOverrideCss(brandColor)}
+  <link rel="stylesheet" href="${HREF_PRESUPUESTO_FIRMA_CSS}"/>
+  ${enlaceDeLaHojaDeMarca(brandColor)}${conOpciones ? `
+  <link rel="stylesheet" href="${HREF_PRESUPUESTO_OPCIONES_CSS}"/>` : ''}
 </head>
 <body><div class="card">${body}</div></body>
 </html>`;
@@ -292,7 +162,7 @@ function paginaDeVersionAntigua(
   brandColor: string | null,
 ): string {
   const negocio = quote.merchant?.legalName || quote.merchant?.name || 'el profesional';
-  return renderPage(locale.quoteUpdatedTitle, escapandoLoInterpolado`<div class="status-ok" style="text-align:center" data-version-antigua="1">
+  return renderPage(locale.quoteUpdatedTitle, escapandoLoInterpolado`<div class="status-ok centrado" data-version-antigua="1">
     <strong>${locale.quoteHasNewer}</strong><br/>
     ${fraseDeLaVersionAntigua(negocio)}
   </div>`, brandColor);
@@ -331,7 +201,7 @@ function importeDeLinea(l: any, fmt: (n: number) => string): string {
 
 function renderTierCards(tiers: any[], token: string, locale: ReturnType<typeof getLocale>): string {
   return `
-    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px" id="tier-cards">
+    <div id="tier-cards">
       ${tiers.map((tier) => `
         <div class="tier-card ${tier.recommended ? 'tier-recommended' : ''}" data-tier-id="${esc(tier.id)}">
           ${tier.recommended ? `<div class="tier-badge">Recomendada</div>` : '' /* SCRUM-1302d: dice lo que hay —el profesional la marcó—; «Más popular» afirmaba algo de otros clientes que nadie mide */}
@@ -354,32 +224,16 @@ function renderTierCards(tiers: any[], token: string, locale: ReturnType<typeof 
         </div>
       `).join('')}
     </div>
-    <div id="tier-confirm" style="display:none">
+    <div id="tier-confirm">
       <hr class="divider"/>
-      <p style="font-size:14px;color:#333c37;margin-bottom:12px">
+      <p>
         Has elegido: <strong id="chosen-tier-label"></strong>
       </p>
     </div>
   `;
 }
 
-const TIER_CSS = `
-  .tier-card { border: 2px solid #e7e9e5; border-radius: 14px; padding: 16px; position: relative; background: #fff; }
-  .tier-recommended { border-color: #22c55e; background: #f0fdf4; }
-  .tier-badge { position: absolute; top: -10px; left: 16px; background: #22c55e; color: #052e16;
-    font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 999px; }
-  .tier-header { margin-bottom: 10px; }
-  .tier-label { font-weight: 700; font-size: 16px; display: block; }
-  .tier-desc { font-size: 13px; color: #6b756f; }
-  .tier-lines { font-size: 13px; color: #333c37; margin-bottom: 10px; }
-  .tier-line { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #f1f2ee; }
-  .tier-total { font-size: 22px; font-weight: 800; color: #0f1c17; margin: 10px 0 0; }
-  .tier-vat-note { font-size: 11px; color: #6b756f; margin: 0 0 12px; }
-  .btn-tier { width: 100%; padding: 12px; font-size: 15px; font-weight: 700; border: none;
-    border-radius: 10px; cursor: pointer; background: #22c55e; color: #052e16; min-height: 48px; }
-  .tier-recommended .btn-tier { background: #16a34a; color: #fff; }
-  .tier-card.selected { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.2); }
-`;
+// SCRUM-1646d · `TIER_CSS` vive ahora en `quoteDecisionEstilo.ts` (`PRESUPUESTO_OPCIONES_CSS`), tal cual.
 
 // SCRUM-1646c · `TIER_JS` (la elección de opción) vive ahora en `quoteDecisionNavegador.ts`,
 // dentro del guion servido desde 'self'; el `onclick` de cada opción pasó a un listener.
@@ -516,14 +370,14 @@ function renderQuoteDetail(
     </div>
     <h1>Hola, ${customerName} 👋</h1>
     <div class="quote-meta">Presupuesto #${esc(numeroQueImprimeElPapel(quote))}</div>
-    ${validityHtml ? `<div style="text-align:center">${validityHtml}</div>` : ''}${cabeceraHtml /* SCRUM-1279: pegado, para que sin texto la página sea byte a byte la de antes (888d) */}
+    ${validityHtml ? `<div class="centrado">${validityHtml}</div>` : ''}${cabeceraHtml /* SCRUM-1279: pegado, para que sin texto la página sea byte a byte la de antes (888d) */}
     ${linesHtml}
     ${vatHtml}
     <div class="amount-hero">
       <div class="amount-hero-label">${tiersInfo ? 'Elige tu opción abajo 👇' : (hasVat ? 'Total · IVA incluido' : 'Total del presupuesto')}</div>
       <div class="amount-hero-value">${tiersInfo ? `Desde ${money(tiersInfo.min)}` : money(Number(quote.total))}</div>
     </div>
-    ${condiciones ? `<div style="text-align:center;margin-bottom:4px"><span class="terms-badge">${esc(condiciones)}</span></div>${terms === 'FIFTY_FIFTY' ? `<div class="senal-policy">🔒 La señal no es reembolsable.</div>` : ''}` : ''}${observacionesHtml}${clausulasHtml}
+    ${condiciones ? `<div class="condiciones-wrap"><span class="terms-badge">${esc(condiciones)}</span></div>${terms === 'FIFTY_FIFTY' ? `<div class="senal-policy">🔒 La señal no es reembolsable.</div>` : ''}` : ''}${observacionesHtml}${clausulasHtml}
   `;
 }
 
@@ -540,6 +394,30 @@ quoteDecisionLandingRouter.get('/quote/js/firma.js', (req: Request, res: Respons
   res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
   res.setHeader('Cache-Control', cacheDelGuionDelPresupuesto(req.query?.v));
   res.send(PRESUPUESTO_FIRMA_JS);
+});
+
+// GET /pay/quote/css/firma.css y /pay/quote/css/opciones.css — SCRUM-1646d · las hojas CONSTANTES de
+// la página de firma, desde 'self' (`style-src 'self'`). Sin token ni datos.
+quoteDecisionLandingRouter.get('/quote/css/firma.css', (req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'text/css; charset=utf-8');
+  res.setHeader('Cache-Control', cacheDeLaHoja(req.query?.v, HUELLA_PRESUPUESTO_FIRMA_CSS));
+  res.send(PRESUPUESTO_FIRMA_CSS);
+});
+quoteDecisionLandingRouter.get('/quote/css/opciones.css', (req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'text/css; charset=utf-8');
+  res.setHeader('Cache-Control', cacheDeLaHoja(req.query?.v, HUELLA_PRESUPUESTO_OPCIONES_CSS));
+  res.send(PRESUPUESTO_OPCIONES_CSS);
+});
+
+// GET /pay/quote/css/marca/:color — SCRUM-1646d · la hoja del COLOR DE MARCA. `:color` son seis
+// hexadecimales sin `#`, validados con el MISMO filtro que antes decidía si había `<style>`. Lo que no
+// pasa → 404 sin cuerpo: ningún otro carácter llega al CSS. El color no es un dato del cliente.
+quoteDecisionLandingRouter.get('/quote/css/marca/:color', (req: Request, res: Response) => {
+  const color = colorDeLaRuta(req.params.color);
+  if (!color) return res.status(404).end();
+  res.setHeader('Content-Type', 'text/css; charset=utf-8');
+  res.setHeader('Cache-Control', cacheDeLaHoja(req.query?.v, HUELLA_PRESUPUESTO_MARCA_CSS));
+  return res.send(cssDeMarca(color));
 });
 
 // GET /pay/quote/:token  (landing del botón "Ver presupuesto") y alias /quote/:token/accept
@@ -586,10 +464,10 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
           : '';
         const waBtnExp = proPhoneExp
           ? `<a href="https://wa.me/${proPhoneExp}?text=${encodeURIComponent(`Hola, el ${locale.quoteVerb} #${numeroQueImprimeElPapel(quote)} caducó, ¿me pasas uno actualizado?`)}"
-               style="display:inline-block;margin-top:14px;background:#16a34a;color:#fff;font-weight:700;padding:12px 22px;border-radius:999px;text-decoration:none">Pedir uno actualizado por WhatsApp</a>`
+               class="btn-pedir-nuevo">Pedir uno actualizado por WhatsApp</a>`
           : '';
         return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
-          renderPage(locale.quoteExpiredTitle, `<div class="status-ok" style="text-align:center">
+          renderPage(locale.quoteExpiredTitle, `<div class="status-ok centrado">
             <strong>Este ${locale.quoteVerb} caducó${fechaCad ? ` el ${fechaCad}` : ''}.</strong><br/>
             Pide uno actualizado 👇<br/>${waBtnExp}
           </div>`, brandColor)
@@ -624,7 +502,7 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
         return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
           // SCRUM-1476 · el título viene ENTERO del locale: `${locale.quote} ya aceptada` daba
           // «Presupuesto ya aceptada». Igual los de caducado (arriba) y rechazado (abajo).
-          renderPage(locale.quoteAcceptedTitle, `<div class="status-ok" style="text-align:center">
+          renderPage(locale.quoteAcceptedTitle, `<div class="status-ok centrado">
             <strong>Ya aceptaste este ${locale.quoteVerb}${fechaAcept ? ` el ${fechaAcept}` : ''}.</strong><br/>
             El profesional te informará de los siguientes pasos.
           </div>`, brandColor)
@@ -645,10 +523,10 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
         const merchName = esc(quote.merchant?.legalName || quote.merchant?.name || 'el profesional');
         const waBtn = proPhone
           ? `<a href="https://wa.me/${proPhone}?text=${encodeURIComponent(`Hola, sobre el ${locale.quoteVerb} #${numeroQueImprimeElPapel(quote)}: he cambiado de opinión, ¿me lo reenvías?`)}"
-               style="display:inline-block;margin-top:14px;background:#16a34a;color:#fff;font-weight:700;padding:12px 22px;border-radius:999px;text-decoration:none">Pedir uno nuevo por WhatsApp</a>`
+               class="btn-pedir-nuevo">Pedir uno nuevo por WhatsApp</a>`
           : '';
         return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
-          renderPage(locale.quoteRejectedTitle, `<div class="status-ok" style="text-align:center">
+          renderPage(locale.quoteRejectedTitle, `<div class="status-ok centrado">
             <strong>Rechazaste este ${locale.quoteVerb}${fechaRechazo ? ` el ${fechaRechazo}` : ''}.</strong><br/>
             ¿Has cambiado de opinión? Pídele uno nuevo a ${merchName} 👇<br/>${waBtn}
           </div>`, brandColor)
@@ -684,10 +562,10 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
   // para "aceptado/a y firmado/a" sin romper LATAM (P1-4).
   const qg = (locale.quote.endsWith('ón') || locale.quote.endsWith('a')) ? 'a' : 'o';
 
-  const html = renderPage(`Aceptar ${locale.quoteVerb}`, `<style>${TIER_CSS}</style>
+  const html = renderPage(`Aceptar ${locale.quoteVerb}`, `
     ${quoteDetail}
     ${hasTiers ? tierCards : ''}
-    <div id="btn-accept-wrapper" style="${hasTiers ? 'display:none' : ''}">
+    <div id="btn-accept-wrapper"${hasTiers ? ' class="oculto-hasta-elegir"' : ''}>
     <label class="sig-label">Tu firma</label>
     <p class="sig-sub">Dibuja tu firma con el dedo o el ratón</p>
     <div class="sig-wrapper" id="sig-wrapper">
@@ -708,13 +586,13 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
         Tu aceptación queda registrada de forma segura
       </span>
     </div>
-    <div id="sig-error" style="color:#dc2626;font-size:13px;margin-top:8px;display:none">
+    <div id="sig-error">
       Dibuja tu firma o marca "Acepto sin firmar".
     </div>
     <small>Si no solicitaste este ${locale.quoteVerb}, cierra esta página.</small>
     </div>
     ${dudaHtml}
-    <a href="/pay/quote/${token}/reject" style="display:block;text-align:center;margin-top:16px;font-size:13.5px;color:#6b756f;text-decoration:underline">No me interesa · Rechazar ${locale.quoteVerb}</a>
+    <a href="/pay/quote/${token}/reject" class="enlace-rechazar">No me interesa · Rechazar ${locale.quoteVerb}</a>
     <script type="application/json" id="${ID_DATOS_FIRMA_PRESUPUESTO}">${datosDeLaFirmaDelPresupuesto({
       // SCRUM-1646c · lo que antes iba interpolado dentro del <script>: la ruta, los códigos y los
       // textos, CON SUS MISMOS LITERALES. El guion (`quoteDecisionNavegador.ts`) no escribe ninguno.
@@ -744,7 +622,7 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
       },
     })}</script>
     <script src="${SRC_PRESUPUESTO_FIRMA_JS}"></script>
-  `, brandColor);
+  `, brandColor, true);
   res.setHeader('Content-Type', 'text/html; charset=utf-8').send(html);
 });
 
@@ -791,10 +669,10 @@ quoteDecisionLandingRouter.get('/quote/:token/reject', async (req: Request, res:
 
   const html = renderPage(`Rechazar ${locale.quoteVerb}`, `
     ${quoteDetail}
-    <h2 style="font-size:16px;font-weight:700;color:#0f1c17;margin:0 0 4px;text-align:center">¿Por qué lo rechazas?</h2>
-    <p style="font-size:13px;color:#6b756f;margin:0 0 16px;text-align:center">Tu respuesta ayuda al profesional a mejorar (opcional).</p>
+    <h2 class="rechazo-titulo">¿Por qué lo rechazas?</h2>
+    <p class="rechazo-sub">Tu respuesta ayuda al profesional a mejorar (opcional).</p>
     <form method="post">
-      <div><label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Motivo</label>
+      <div><label class="rechazo-label">Motivo</label>
         <select name="reason">
           <option value="">Selecciona una opción</option>
           <option value="price">El precio es demasiado alto</option>
@@ -803,12 +681,12 @@ quoteDecisionLandingRouter.get('/quote/:token/reject', async (req: Request, res:
           <option value="other">Otro motivo</option>
         </select>
       </div>
-      <div><label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Comentario (opcional)</label>
+      <div><label class="rechazo-label">Comentario (opcional)</label>
         <textarea name="comment" placeholder="Cuéntanos algo más si quieres..."></textarea>
       </div>
       <button class="btn-reject" type="submit">Enviar rechazo</button>
     </form>
-    <a href="/pay/quote/${esc(token)}" style="display:block;text-align:center;margin-top:16px;font-size:13.5px;color:#15803d;font-weight:600;text-decoration:none">← Volver y aceptar</a>
+    <a href="/pay/quote/${esc(token)}" class="enlace-volver">← Volver y aceptar</a>
     <small>Si no solicitaste este ${locale.quoteVerb}, cierra esta página.</small>
   `, brandColor);
   res.setHeader('Content-Type', 'text/html; charset=utf-8').send(html);
