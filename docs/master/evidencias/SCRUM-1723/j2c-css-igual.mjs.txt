@@ -1,0 +1,45 @@
+// SCRUM-1723c · ¿la hoja servida es, byte a byte, el <style> que había? (y los style= de tarjeta, sus clases)
+// Uso: node docs/master/evidencias/SCRUM-1723/j2c-css-igual.mjs.txt <sha-de-antes>   (desde la raíz, con dist/ compilado)
+// Lee el fuente de ANTES con `git show`, saca el contenido de cada <style> y lo compara con PAGO_CSS de dist/.
+// Control positivo sembrado: una hoja alterada en un byte TIENE que salir DISTINTA.
+import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+import path from 'node:path';
+const require_ = createRequire(path.resolve('package.json'));
+const antes = process.argv[2];
+if (!antes) { console.error('falta el sha de antes'); process.exit(2); }
+const { PAGO_CSS } = require_('./dist/modules/billing/app/routes/pagoEstilo.js');
+const leer = (f) => execFileSync('git', ['show', `${antes}:${f}`], { encoding: 'utf8' });
+const mp = leer('src/modules/billing/app/routes/payMp.routes.ts');
+const estilos = [...mp.matchAll(/<style>\n([\s\S]*?)<\/style>/g)].map((m) => m[1]);
+if (estilos.length !== 2) { console.error('CIEGO: esperaba 2 <style> en payMp, hay', estilos.length); process.exit(2); }
+const MARCA = '\n    /* SCRUM-1723 · los atributos style= que llevaba el marcado, copiados tal cual a una clase. */\n';
+const colores = { approved: '#16a34a', rejected: '#dc2626', pending: '#d97706', expired: '#6b756f' };
+// los colores, leídos del statusMap de ANTES (no de mi copia)
+for (const [k, c] of Object.entries(colores)) {
+  if (!new RegExp(`${k}:\\s*\\{[^}]*color: '${c}'`).test(mp)) { console.error('color de', k, 'no casa con statusMap de antes'); process.exit(1); }
+}
+let fallos = 0;
+const cmp = (nombre, esperado, real) => { const ok = esperado === real; if (!ok) fallos++; console.log(ok ? 'IGUAL   ' : 'DISTINTA', nombre, esperado.length, real.length); return ok; };
+cmp('mp-aviso', estilos[0], PAGO_CSS['mp-aviso']);
+for (const [k, c] of Object.entries(colores)) {
+  const esperado = estilos[1].split('${esc(s.color)}').join(c);
+  const real = PAGO_CSS[`mp-${k}`];
+  const corte = real.indexOf(MARCA);
+  cmp(`mp-${k} (hasta las reglas nuevas)`, esperado, real.slice(0, corte) + '\n  ');
+}
+// style= de tarjeta: las declaraciones de cada atributo de antes, una por clase.
+const card = leer('src/modules/billing/app/routes/payCard.routes.ts');
+const decl = [...card.matchAll(/<(\w+)[^<>]*\sstyle="([^"]*)"/g)].map((m) => `${m[1]}|${m[2]}`);
+const unicos = [...new Set(decl)];
+console.log('tarjeta: style= de antes', decl.length, '· distintos', unicos.length);
+const clase = { body: 'pago-tarjeta-cuerpo', h1: 'pago-tarjeta-titulo', p: 'pago-tarjeta-texto', a: 'pago-tarjeta-enlace' };
+for (const u of unicos) { const [et, d] = u.split('|'); cmp(`tarjeta .${clase[et]}`, `.${clase[et]}{${d}}`, (PAGO_CSS.tarjeta.match(new RegExp(`\\.${clase[et]}\\{[^}]*\\}`)) || [''])[0]); }
+const spanMp = (mp.match(/<span style="([^"]*)">/) || [])[1];
+cmp('mp .pago-mp-concepto', `.pago-mp-concepto{${spanMp}}`, (PAGO_CSS['mp-approved'].match(/\.pago-mp-concepto\{[^}]*\}/) || [''])[0]);
+// control positivo sembrado
+const sembrado = cmp('CONTROL (mp-aviso con un byte cambiado, TIENE que salir DISTINTA)', estilos[0], PAGO_CSS['mp-aviso'].replace('3rem', '3.1rem'));
+if (sembrado) { console.error('CIEGO: el comparador no ve un byte cambiado'); process.exit(2); }
+fallos--; // el control cuenta como fallo a propósito
+console.log(fallos === 0 ? 'VEREDICTO: IGUAL' : `VEREDICTO: ${fallos} DISTINTAS`);
+process.exit(fallos === 0 ? 0 : 1);
