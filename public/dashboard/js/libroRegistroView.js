@@ -73,6 +73,7 @@
     // SCRUM-1051h · P3, FIRMADA (SCRUM-1051 c.21750 punto 5): la columna y su valor, literales; los
     // mismos de `COPY_ISP_COLUMNA` / `COPY_ISP_VALOR_SI` del servidor. Para «no» no hay texto: vacía.
     colIsp: 'ISP',
+    // APROBADO por Javier (jefe J; vale como fundador según dos-equipos.md), 12-nov-2026, SCRUM-1051 c.21750 punto 5
     valorIsp: 'Sí',
     colTotal: 'Total',
     colEstado: 'Estado',
