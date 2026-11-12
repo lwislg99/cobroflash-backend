@@ -35,7 +35,6 @@ import { envioDelDocumento } from '../../../billing/domain/envioDelDocumento'; /
 // ya vive una sola vez (SCRUM-474, aprobado por el asesor el 10-ago-2026).
 import { metodoDeUnCobro, ROTULO_SIN_METODO } from '../../../billing/domain/metodoDeCobro';
 import { recordCustomerEvent } from '../../customerEvents.service';
-import { generateInvoicePdf } from '../../../../lib/pdf';
 
 import { sendWhatsAppTemplate, sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { buildPaymentRequest } from '../../../../integrations/whatsappTemplates';
@@ -1161,88 +1160,11 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
   }
 });
 
-/**
- * POST /admin/invoices/:id/regenerate-pdf
- * Regenera el PDF de una factura aplicando VeriFactu si corresponde.
- * Útil para facturas creadas antes del sprint VeriFactu.
- * SCRUM-55: reescribe el PDF de una factura EMITIDA (regla 29) → admin. Era la única
- * mutación sin gate entre 12 hermanas todas gateadas: se añadió después que ellas.
- */
-router.post('/:id/regenerate-pdf', requireRole('admin'), async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
-
-    const invoice = await prisma.invoice.findFirst({
-      where: { id, merchantId: req.merchantId },
-      include: { merchant: true, customer: true, rectifies: { select: { number: true } } },
-    });
-
-    if (!invoice) return res.status(404).json({ error: 'not_found' });
-    if (!invoice.merchant || !invoice.customer) {
-      return res.status(500).json({ error: 'missing_relations' });
-    }
-
-    const merchant  = invoice.merchant;
-    let qrData      = invoice.qrData;
-    let vfHash      = invoice.vfHash ?? null;
-
-    // (Re)aplicar VeriFactu si es merchant español con NIF (V0-0: nunca a justificantes)
-    // SCRUM-205: REGENERAR UN PDF NO ES EMITIR, así que aquí ya NO se sella. Era el mismo
-    // sellado perezoso de `ensureInvoicePdf` escondido en otra ruta: una factura entraba en la
-    // cadena porque alguien pidió regenerar su documento. Si no está sellada, no hay PDF que
-    // regenerar — se corta, igual que en `ensureInvoicePdf`.
-    if (!puedeProducirDocumento(invoice.vfEstado)) {
-      return res.status(409).json({ error: ERROR_PDF_SIN_SELLAR });
-    }
-
-    const invLines = invoice.lines && Array.isArray(invoice.lines)
-      ? invoice.lines as any[]
-      : [];
-
-    const pdf = await generateInvoicePdf({
-      number: invoice.number,
-      invoiceId: invoice.id,          // SCRUM-72
-      merchantId: invoice.merchantId, // SCRUM-72
-      merchant: {
-        name: merchant.name,
-        legalName: merchant.legalName,
-        taxId: merchant.taxId,
-        address: merchant.address,
-        logoUrl: merchant.logoUrl,
-      },
-      // SCRUM-729 · el cliente CONGELADO, igual que los otros dos generadores de PDF.
-      //
-      // 🔴 Y aquí faltaba `legalName`, que los otros dos SÍ pasan desde SCRUM-577: la misma
-      // factura salía distinta según por dónde se pidiera el PDF —«Abrir PDF» imprimía la
-      // denominación legal y este botón el nombre comercial—. Es el mismo defecto del ticket por
-      // otra puerta (un destinatario que depende de por dónde se mire), así que entra aquí y no
-      // en un ticket aparte.
-      customer: clienteDelDocumento(invoice, invoice.customer),
-      currency: invoice.currency,
-      total: invoice.total.toString(),
-      qrData,
-      vfHash,
-      createdAt: invoice.createdAt,
-      lines: invLines,
-      type: invoice.type,
-      rectifiesNumber: invoice.rectifies?.number ?? null,
-      watermark: isDemoMerchant(merchant) ? DEMO_WATERMARK : null,
-      stageLabel: invoice.stageLabel, // SCRUM-33
-      zona: merchant.timezone, // SCRUM-1470c: el día de la «Fecha:», el de su registro
-    });
-
-    await prisma.invoice.update({
-      where: { id },
-      data: { pdfUrl: pdf.publicUrlPath, qrData },
-    });
-
-    return res.json({ ok: true, pdfUrl: pdf.publicUrlPath, veriFactu: !!vfHash });
-  } catch (err) {
-    console.error('[POST /admin/invoices/:id/regenerate-pdf]', err);
-    return res.status(500).json({ error: 'internal_error' });
-  }
-});
+// SCRUM-665e · AQUÍ ESTABA `POST /:id/regenerate-pdf`, y se retira por decisión del fundador
+// (SCRUM-665 c.21182, punto 3). Reescribía el PDF de una factura EMITIDA con el código y la
+// plantilla de hoy: con el PDF congelado al emitir (`ensureInvoicePdf`), regenerarlo sería
+// fabricar otra copia y llamarla la expedida (regla 29; ROF 19.2 y 21.1, c.16647). Sin ruta, el
+// router contesta 404 como a cualquier otra que no existe. Su botón en el panel se fue con ella.
 
 /**
  * GET /admin/invoices/:id/pdf — abre el PDF de la factura.

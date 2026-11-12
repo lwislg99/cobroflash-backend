@@ -69,16 +69,32 @@ export async function ensureInvoicePdf(
   const diskPath = path.join(invoicesDir, fileName);
   const publicUrlPath = `/admin/invoices/${inv.id}/pdf`;
 
-  const needs =
-    !inv.pdfUrl ||
-    inv.pdfUrl === 'PENDING_PDF' ||
-    String(inv.pdfUrl).startsWith('PENDING') ||
-    // D4: `pdfUrl` legacy (estático `/invoices/...` o URL absoluta con BASE_URL) NO se
-    // considera válido — se regenera con el esquema nuevo en vez de confiar en el valor.
-    inv.pdfUrl !== publicUrlPath ||
-    !fs.existsSync(diskPath);
+  // ── SCRUM-665e · EL PDF DE UNA EMITIDA SE GENERA UNA VEZ Y SE SIRVE SIEMPRE ÉSE ──────────
+  //
+  // GO c.21182 (opción A) y c.21191. Antes se regeneraba con el código y la plantilla de HOY
+  // cada vez que el fichero no estaba en disco —casi siempre: el disco de Railway era efímero—,
+  // y la copia conservada dejaba de ser la expedida (ROF 19.2 y 21.1, c.16647).
+  //
+  // Ahora: la primera generación guarda el fichero en `invoicesDir` (el volumen) y su sha256 en
+  // `pdf_sha256`. Con huella, NUNCA se regenera: se comprueba el fichero contra ella y se sirve,
+  // o se falla cerrado y en voz alta si falta o no cuadra. Regenerar ahí sería fabricar otra
+  // copia y llamarla la original. Las emitidas antes de este cambio (huella NULL) se congelan
+  // la primera vez que se piden (c.21191).
+  return conCerrojoDePdf(inv.id, async () => {
+    const congelado = await prisma.invoice.findUnique({
+      where: { id: inv.id },
+      select: { pdfSha256: true },
+    });
+    if (congelado?.pdfSha256) {
+      exigirPdfCongelado(diskPath, congelado.pdfSha256);
+      return { diskPath, pdfUrl: publicUrlPath, number: inv.number };
+    }
+    await generarYCongelar();
+    return { diskPath, pdfUrl: publicUrlPath, number: inv.number };
+  });
 
-  if (needs) {
+  async function generarYCongelar(): Promise<void> {
+    if (!inv || !inv.merchant || !inv.customer) throw new Error('missing_relations');
     let qrData =
       inv.qrData && !String(inv.qrData).startsWith('PENDING')
         ? inv.qrData
@@ -143,10 +159,51 @@ export async function ensureInvoicePdf(
       stageLabel: inv.stageLabel, // SCRUM-33
       zona: inv.merchant.timezone, // SCRUM-1470c: el día de la «Fecha:», el de su registro
     });
-    await prisma.invoice.update({ where: { id: invoiceId }, data: { pdfUrl: publicUrlPath, qrData } });
+    // SCRUM-665e · la huella del fichero TAL COMO QUEDÓ EN DISCO, no la de un buffer: es lo
+    // que se servirá y lo que se comprobará en cada lectura.
+    const pdfSha256 = huellaDeFichero(diskPath);
+    await prisma.invoice.update({ where: { id: invoiceId }, data: { pdfUrl: publicUrlPath, qrData, pdfSha256 } });
   }
+}
 
-  return { diskPath, pdfUrl: publicUrlPath, number: inv.number };
+// ── SCRUM-665e · piezas del PDF congelado ───────────────────────────────────────────────
+
+/** El fichero congelado de una emitida no está en el volumen. Falla cerrado: no se regenera. */
+export const ERROR_PDF_CONGELADO_SIN_FICHERO = 'pdf_congelado_sin_fichero';
+/** El fichero está, pero su sha256 no es la huella guardada. Falla cerrado: no se sirve. */
+export const ERROR_PDF_CONGELADO_ALTERADO = 'pdf_congelado_alterado';
+
+export function huellaDeFichero(ruta: string): string {
+  return crypto.createHash('sha256').update(fs.readFileSync(ruta)).digest('hex');
+}
+
+/** Lanza si el fichero congelado falta o no cuadra con su huella. No genera nada. */
+export function exigirPdfCongelado(ruta: string, huella: string): void {
+  if (!fs.existsSync(ruta)) {
+    console.error(`[SCRUM-665e] PDF congelado SIN FICHERO: ${ruta}. No se regenera (regla 29).`);
+    throw new Error(ERROR_PDF_CONGELADO_SIN_FICHERO);
+  }
+  if (huellaDeFichero(ruta) !== huella) {
+    console.error(`[SCRUM-665e] PDF congelado ALTERADO: ${ruta} no cuadra con pdf_sha256.`);
+    throw new Error(ERROR_PDF_CONGELADO_ALTERADO);
+  }
+}
+
+// Dos primeras peticiones a la vez generarían dos veces el MISMO fichero y la segunda pisaría
+// los bytes de la primera después de guardada su huella. El cerrojo es del proceso, y basta:
+// un volumen de Railway no admite réplicas («Replicas cannot be used with volumes», c.21175),
+// así que con el PDF en el volumen sólo hay un proceso escribiendo.
+const cerrojosDePdf = new Map<number, Promise<unknown>>();
+async function conCerrojoDePdf<T>(invoiceId: number, fn: () => Promise<T>): Promise<T> {
+  const previo = cerrojosDePdf.get(invoiceId) ?? Promise.resolve();
+  const turno = previo.catch(() => undefined).then(fn);
+  const cola = turno.catch(() => undefined);
+  cerrojosDePdf.set(invoiceId, cola);
+  try {
+    return await turno;
+  } finally {
+    if (cerrojosDePdf.get(invoiceId) === cola) cerrojosDePdf.delete(invoiceId);
+  }
 }
 
 /**
@@ -262,51 +319,13 @@ export async function ensureInvoiceForCharge(
     exigirDocumentoEmitible({ number: inv.number, vfHash }, merchant);
 
     if (needsPdf) {
-      const customer = await prisma.customer.findUnique({ where: { id: inv.customerId } });
-      if (!merchant || !customer) throw new Error('missing_merchant_or_customer');
-
-      const invLines = inv.lines && Array.isArray(inv.lines) ? inv.lines as any[] : [];
-
-      // SCRUM-665 · idem que el otro generador: la columna manda, la ficha viva sólo si el
-      // documento es anterior al escritor.
-      const emisor = emisorDelDocumento(inv, {
-        name: merchant.name,
-        legalName: merchant.legalName,
-        taxId: merchant.taxId,
-        address: merchant.address,
-        logoUrl: merchant.logoUrl,
-        phone: merchant.whatsappPhone, // A2.4: emisor completo
-        email: merchant.email,
-      });
-      // `Merchant.name` es NOT NULL: si esto salta es una fila rota, y el PDF tiene que fallar,
-      // no imprimir un emisor en blanco (mismo criterio que `emisorDelDocumento` cuando no hay
-      // ni columna ni ficha).
-      if (emisor.name == null) throw new Error('emisor_sin_nombre_al_generar_pdf');
-
-      const pdf = await generateInvoicePdf({
-        number: inv.number,
-        invoiceId: inv.id,          // SCRUM-72
-        merchantId: inv.merchantId, // SCRUM-72
-        merchant: { ...emisor, name: emisor.name },
-        // SCRUM-577: idem — el segundo camino que arma la factura.
-        // SCRUM-729 · idem: la columna manda, la ficha viva sólo si el documento es anterior.
-        customer: clienteDelDocumento(inv, customer),
-        currency: inv.currency,
-        total: inv.total.toString(),
-        qrData,
-        vfHash,
-        createdAt: inv.createdAt,
-        lines: invLines,
-        type: inv.type,
-        watermark: merchant && isDemoMerchant(merchant) ? DEMO_WATERMARK : null,
-        stageLabel: inv.stageLabel ?? null, // SCRUM-33
-        zona: merchant.timezone, // SCRUM-1470c: el día de la «Fecha:», el de su registro
-      });
-
-      updated = await prisma.invoice.update({
-        where: { id: inv.id },
-        data: { pdfUrl: pdf.publicUrlPath, qrData },
-      });
+      // SCRUM-665e · este era el SEGUNDO generador (c.21175 §1): llamaba a `generateInvoicePdf`
+      // por su cuenta y no guardaba huella. Ahora pasa por el único que congela, así que la
+      // factura cobrada sale de aquí con su PDF en el volumen y su `pdf_sha256`, al emitir y no
+      // la primera vez que alguien lo abra. `ensureInvoicePdf` relee la fila (ya sellada) y
+      // escribe `pdfUrl` y `qrData` él mismo.
+      await ensureInvoicePdf(inv.id, prisma);
+      updated = (await prisma.invoice.findUnique({ where: { id: inv.id } })) ?? inv;
     } else if (qrData !== inv.qrData) {
       updated = await prisma.invoice.update({ where: { id: inv.id }, data: { qrData } });
     }
