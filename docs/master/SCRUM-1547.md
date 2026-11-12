@@ -140,3 +140,71 @@ es justo la que el ticket echó en falta.
 - El cabo ④ del ticket (el paquete de disputa de `invoicesAdmin.routes.ts` lee la fila sin `select`): **no lo he mirado.**
 - Suite entera local: NO CORRIDA (sólo docs). Las dos sondas de esta medición viven en el temporal del trabajo y no se suben:
   son lectura, y el trinquete propuesto es lo que las sustituye.
+
+# SCRUM-1547 · 1547b — el trinquete de clasificación TOTAL, construido
+
+**Medido contra:** `origin/main` = `0a843ce7e39555effe203549cb1c60c37472eabf` · 2026-11-12T11:13:49Z (hora de GitHub; la rama se puso al día con `git merge origin/main`, y entre `d8c441b94` y éste no cambia ninguno de los cinco ficheros de este tramo)
+A9: comprobación → `tests/scrum497-dato-personal-no-sobrevive.test.mjs`
+
+Puesto J6 (`jv-j6ea`) · rama `scrum-1547b-trinquete-clasificacion`. Encargo del orquestador (`cobroflash-backend-a0`), sobre las
+decisiones del fundador de c.21607: (b), los 33 modelos, las 44 a `SIN_DECIDIR` y el trinquete de 42 a 86. **No se anonimiza
+nada:** `anonimizarMerchant.ts` (J3) no se ha tocado, y `prisma/schema.prisma` sólo se ha leído (regla 40).
+
+## Qué hay
+
+| pieza | dónde |
+|---|---|
+| `columnasDeTexto(schema)`: las columnas `String`/`String?` de todos los modelos, sin filtrar por nombre. Es ahora el ÚNICO lector del esquema del censo: `camposPersonalesDelSchema` filtra sobre ella | `tests/_censo-datos-personales.mjs` |
+| `NO_PERSONALES`: 114 claves, **columna a columna**, con el motivo por familia (estado, moneda, secreto, id externo, huella…) | el mismo |
+| `clasificarTodas(…)`: personal o no personal; y tres listas que tienen que salir vacías: `sinDeclarar`, `enLasDos` y `fantasmas` (declaraciones de columnas que el esquema ya no tiene) | el mismo |
+| las 44 en `SIN_DECIDIR`, cada una con su pregunta; trinquete **86** | `tests/scrum497-dato-personal-no-sobrevive.test.mjs` |
+| tres casos nuevos: SIEMBRA, AUTOPRUEBA de `columnasDeTexto`, y «toda columna de texto está DECLARADA» | el mismo |
+
+**Población, medida con el propio instrumento:** 224 columnas de texto en 33 modelos = 110 personales (66 por nombre + 44
+declaradas) + 114 no personales. `sinDeclarar`, `enLasDos` y `fantasmas` salen vacíos. El caso tiene un suelo de 200: un esquema
+que no se lee da «0 sin declarar» igual que uno limpio.
+
+## 🔵 Un cambio sobre la propuesta de c.21601, dicho
+
+La propuesta pedía una lista `PERSONALES_DECLARADAS` aparte. **No la he hecho:** las 44 tenían que estar ya en `SIN_DECIDIR` con su
+pregunta, y una segunda lista con las mismas 44 claves son dos anclas para la misma comprobación (A10). Aquí, **estar en un cubo
+del reparto** (`CAMPOS_PERSONALES`, `FUERA_DE_ANONIMIZADO` o `SIN_DECIDIR`) **es** declararla personal. Para eso `repartir` cuenta
+también las declaradas en un cubo, y no sólo las que ve por nombre; si no, `albaran.notas` estaría en `SIN_DECIDIR` y no contaría
+en el trinquete. Lo prueba la mutación ③ de abajo.
+
+## Rojo primero, con SIEMBRA
+
+Cuatro columnas fabricadas EN MEMORIA dentro de `model Customer` (`recipientMsisdn`, `dni`, `contactoNombre`, `signerFullName`).
+Ninguna existe en el esquema, y el caso lo comprueba antes de sembrar (SCRUM-1537: el positivo no se toma prestado del árbol).
+- Las tres sin núcleo salen en `sinDeclarar`: rojo. `signerFullName` (núcleo «name») sale como personal y cae por la otra
+  puerta, «ninguna columna personal sin clasificar»: las dos no se pisan.
+- **Positivo:** declarada en `NO_PERSONALES` o en `SIN_DECIDIR`, la misma columna deja de caer.
+- Si no se encuentra `model Customer {` donde sembrar, el caso sale CIEGO con su mensaje, no verde.
+
+## Mutaciones — el catálogo de la casa
+
+Declaradas en `MUTACIONES_QUE_ME_TUMBAN` de scrum497 y pasadas por `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, con
+una pasada base sin mutar antes. **4 de 4 VIVAS**; el árbol, restaurado por la propia pieza (`git status` limpio de mutaciones):
+
+| mutación | cae |
+|---|---|
+| ① quitar `merchant.trade` de `NO_PERSONALES` | «toda columna de texto… DECLARADA» |
+| ② `columnasDeTexto` vuelve a filtrar por nombre (el defecto de este ticket) | SIEMBRA (+3 de rebote) |
+| ③ `repartir` deja de contar las declaradas en un cubo | TRINQUETE 86 |
+| ④ `fantasmas` deja de calcularse | SIEMBRA |
+
+## Corrido, y lo que no
+
+- `scrum497`: 19/19 en verde. Lo dicen los recuentos del TAP, 19 tests y 19 pass, no la salida.
+- Los guards de suite y de registro (`scrum237`, `scrum976`, `scrum1387`, `scrum1387d`, `scrum1387f`, `scrum267`, `scrum273`,
+  `scrum1294`): el resultado va en el comentario de Jira de este tramo, que se escribe después de correrlos.
+- `dist/` compilado con `tsc --noCheck`. No toco `src/`, así que no hacía falta compilar con tipos.
+- **Suite entera local: NO CORRIDA** (orden del encargo: hoy hay diez sesiones y la cola de CI está saturada). Hace de tanda el
+  check obligatorio.
+
+## Dudas mías, NO decididas y sin cambiar nada
+
+Sigo la clasificación de c.21601. Hay cuatro de las 114 que yo miraría otra vez, porque un texto de error puede citar el número
+o el correo al que no se pudo enviar: `whatsAppMessage.error`, `emailMessage.error`, `gatewayEvent.lastError` y
+`vfSubmission.lastError`. Siguen en `NO_PERSONALES`: moverlas a `SIN_DECIDIR` sube el trinquete, y eso le toca decidirlo al
+fundador. Las 30 columnas `Json` siguen fuera (c.21607: segundo paso).

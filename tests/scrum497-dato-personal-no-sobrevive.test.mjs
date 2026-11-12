@@ -25,11 +25,34 @@ import assert from 'node:assert/strict';
 
 import {
   camposPersonalesDelSchema, repartir, leerSchema, VOCABULARIO_PERSONAL, nucleoDe,
+  columnasDeTexto, clasificarTodas, NO_PERSONALES,
 } from './_censo-datos-personales.mjs';
 import { CAMPOS_PERSONALES, REDACTADO, redaccionesPara } from '../dist/modules/system/domain/anonimizarMerchant.js';
 import { suprimirMerchant } from '../dist/modules/system/domain/supresionMerchant.service.js';
 
 const SCHEMA = leerSchema();
+
+// SCRUM-1547 · las mutaciones que tienen que tumbar el trinquete de clasificación total
+// (`scripts/meta-guard-mutaciones.mjs`). Cada una imita un defecto que el caso promete cazar.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  // Una columna del esquema se queda sin declarar (la que nace mañana, o una que alguien quita).
+  { fichero: 'tests/_censo-datos-personales.mjs', de: "  'merchant.trade': CONFIG,\n", a: '',
+    cae: 'SCRUM-1547 · 🔴 toda columna de texto del esquema está DECLARADA, personal o no personal' },
+  // `columnasDeTexto` vuelve a filtrar por nombre: es exactamente el defecto de SCRUM-1547.
+  { fichero: 'tests/_censo-datos-personales.mjs',
+    de: '    if (!campo) continue;\n    out.push(',
+    a: '    if (!campo) continue;\n    if (!VOCABULARIO_PERSONAL.includes(campo[1]) && !nucleoDe(campo[1])) continue;\n    out.push(',
+    cae: 'SCRUM-1547 · 🔴 SIEMBRA: una columna de texto que nadie ha declarado pone el guard EN ROJO' },
+  // El reparto deja de contar las declaradas en un cubo: las 44 se caen del trinquete sin avisar.
+  { fichero: 'tests/_censo-datos-personales.mjs',
+    de: 'const personales = personalesDe(schemaText, camposPersonales, fueraDeclarados, sinDecidir);',
+    a: 'const personales = camposPersonalesDelSchema(schemaText);',
+    cae: 'SCRUM-497 · 🔴 TRINQUETE: ochenta y seis datos personales siguen sin anonimizar, y van NOMBRADOS' },
+  // Una declaración de una columna que ya no existe deja de verse (la columna renombrada).
+  { fichero: 'tests/_censo-datos-personales.mjs',
+    de: 'for (const clave of no) if (!existe.has(clave)) out.fantasmas.push(clave);', a: '',
+    cae: 'SCRUM-1547 · 🔴 SIEMBRA: una columna de texto que nadie ha declarado pone el guard EN ROJO' },
+];
 
 /**
  * Columnas personales que NO son de una persona. Falsos positivos del vocabulario, con su motivo.
@@ -115,6 +138,58 @@ const SIN_DECIDIR = Object.freeze({
   'merchant.country': 'el país del profesional: decide su régimen (ES o no); ¿se redacta con su dirección o es configuración?',
   // SCRUM-1569 · `customerSite.contactName` estuvo aquí como «DECIDIDO, falta la línea» hasta que J3
   // la metió en `anonimizarMerchant.ts` (20-oct-2026): ahora está cubierto y sale de esta lista.
+  //
+  // ── SCRUM-1547 · LAS 44 QUE NINGÚN NOMBRE DEJABA VER (c.21601; decisión del fundador, c.21607) ──
+  // Entran por la clasificación TOTAL: ya no se mira sólo lo que el vocabulario sabe leer, sino
+  // todas las columnas de texto. ⛔ Ninguna se anonimiza en este paso: quitar o anonimizar datos al
+  // borrar es otro GO del fundador (STOP AA1.4). Lo único que cambia es que dejan de ser invisibles.
+  //
+  // 🔴 Las 21 PERSONALES (identifican o localizan a una persona, o son texto libre sobre otra):
+  'albaran.firmadoPorNombre': 'el nombre de quien FIRMA el albarán (el cliente o su encargado): ¿se redacta como customer.name?',
+  'parteTrabajo.firmadoPorNombre': 'el nombre de quien FIRMA el parte de trabajo por el cliente: ¿se redacta como customer.name?',
+  'parteTrabajo.firmadoTecnicoNombre': 'el nombre del TÉCNICO que firma el parte: misma pregunta que teamMember.name',
+  'albaran.signatureUrl': 'la firma MANUSCRITA del cliente (data-URI): ¿la conserva la prueba de entrega o se borra con la baja?',
+  'parteTrabajo.signatureUrl': 'la firma MANUSCRITA del cliente en el parte: misma pregunta que albaran.signatureUrl',
+  'parteTrabajo.signatureTecnicoUrl': 'la firma MANUSCRITA del técnico: misma pregunta que albaran.signatureUrl y teamMember.name',
+  'quote.signatureUrl': 'la firma MANUSCRITA del cliente al aceptar, dentro de un presupuesto que puede estar sellado (regla 29)',
+  'albaran.lugarEntrega': 'el lugar de entrega — casi siempre el domicilio del cliente: misma pregunta que job.direccion',
+  'parteTrabajo.obra': 'la obra donde se trabajó — casi siempre el domicilio del cliente: misma pregunta que job.direccion',
+  'albaran.notas': 'texto libre del profesional en el albarán («notes» en español): misma pregunta que job.notes',
+  'parteTrabajo.notas': 'texto libre del profesional en el parte («notes» en español): misma pregunta que job.notes',
+  'quote.decisionComment': 'texto libre que escribe el CLIENTE al decidir un presupuesto: ¿se redacta o lo conserva el documento?',
+  'quote.rejectionReason': 'texto libre del CLIENTE al rechazar un presupuesto: misma pregunta que quote.decisionComment',
+  'invoice.clientComment': EN_DOCUMENTO_SELLABLE('el comentario libre del cliente'),
+  'quoteRequest.description': 'lo que cuenta quien PIDE presupuesto, antes de ser cliente: texto libre, ¿se redacta?',
+  'quoteRequest.zone': 'la zona donde está quien pide presupuesto: localiza a una persona, ¿se redacta?',
+  'legalAcceptance.ip': 'la IP desde la que se aceptó un texto legal (identificador en línea, cdo. 30 RGPD): ¿la conserva la prueba de aceptación?',
+  'legalAcceptance.userAgent': 'el navegador desde el que se aceptó (identificador en línea, cdo. 30 RGPD): misma pregunta que legalAcceptance.ip',
+  'auditLog.ip': 'la IP del actor de una acción auditada (identificador en línea): ¿la conserva el registro de auditoría?',
+  'vfSubmission.obligadoNif': 'el NIF del profesional en el envío a la AEAT («taxId» con otro nombre): camino fiscal, ¿lo conserva el 17.3.b? (SCRUM-1264)',
+  'vfFlujoObligado.obligadoNif': 'el NIF del profesional como clave del flujo con la AEAT: misma pregunta que vfSubmission.obligadoNif (SCRUM-1264)',
+  // 🟡 Las 23 DUDOSAS (pueden llevar un dato personal según cómo se usen):
+  'merchant.slug': 'la dirección pública del negocio, que suele salir de su nombre: ¿se redacta con merchant.name?',
+  'merchant.googleReviewUrl': 'el enlace a la ficha de Google del negocio: ¿localiza a un autónomo o es configuración pública?',
+  'merchant.stripeCustomerId': 'el id del profesional como cliente de Stripe: seudónimo en un tercero, ¿se desvincula con la baja?',
+  'customer.internalRef': 'la referencia interna que el profesional pone a su cliente: ¿puede llevar su nombre o su DNI?',
+  'charge.concept': 'el concepto libre de un cobro: ¿puede nombrar al cliente o su domicilio?',
+  'charge.reference': 'la referencia de una transferencia: suele llevar el nombre del ordenante, ¿se redacta?',
+  'reconciliation.bankRef': 'la referencia bancaria del movimiento conciliado: suele llevar el nombre del ordenante, ¿se redacta?',
+  'quote.docHeaderText': 'texto libre de cabecera del presupuesto, que puede estar sellado (regla 29): ¿puede llevar datos del cliente?',
+  'quote.docFooterText': 'texto libre de pie del presupuesto, que puede estar sellado (regla 29): misma pregunta que quote.docHeaderText',
+  'albaran.docHeaderText': 'texto libre de cabecera del albarán: misma pregunta que quote.docHeaderText',
+  'quote.pdfUrl': 'el PDF del presupuesto, que lleva los datos del cliente: ¿se borra el fichero o lo conserva el documento?',
+  'invoice.pdfUrl': EN_DOCUMENTO_SELLABLE('el PDF de la factura, con los datos del cliente dentro'),
+  'albaran.pdfUrl': 'el PDF del albarán, que lleva los datos del cliente: misma pregunta que quote.pdfUrl',
+  'invoice.qrData': EN_DOCUMENTO_SELLABLE('el QR VeriFactu, que lleva el NIF del emisor'),
+  'vfSubmission.registroXml': EN_DOCUMENTO_SELLABLE('el XML del registro enviado a la AEAT, con NIF y nombre de emisor y destinatario'),
+  'expense.concept': 'el concepto libre de un gasto: misma pregunta que expense.notes',
+  'expense.receiptData': 'la lectura del ticket de un gasto: puede llevar el NIF y el nombre del proveedor, misma pregunta que provider.taxId',
+  'customerEvent.title': 'el título de un evento de la ficha del cliente: ¿puede nombrarlo, o lo escribe siempre el sistema?',
+  'customerEvent.detail': 'el detalle de un evento de la ficha del cliente: misma pregunta que customerEvent.title',
+  'job.titulo': 'el título libre de un trabajo: ¿puede llevar el nombre o la calle del cliente?',
+  'maintenancePlan.title': 'el título libre de un plan de mantenimiento: misma pregunta que job.titulo',
+  'attachment.url': 'el adjunto de una solicitud o un albarán (fotos de obra, documentos): ¿se borra el fichero con la baja?',
+  'parteTrabajo.referencia': 'la referencia libre del parte: ¿puede llevar el nombre del cliente o de la obra?',
 });
 
 // ── 0 · 🔴 SUELO Y AUTOPRUEBA · antes de creerse ningún reparto ─────────────────────────────
@@ -229,7 +304,7 @@ test('SCRUM-497 · 🔴 ninguna columna personal del esquema queda SIN CLASIFICA
     + 'el camino, así que ninguno de sus números significa nada.');
 });
 
-test('SCRUM-497 · 🔴 TRINQUETE: cuarenta y dos datos personales siguen sin anonimizar, y van NOMBRADOS', () => {
+test('SCRUM-497 · 🔴 TRINQUETE: ochenta y seis datos personales siguen sin anonimizar, y van NOMBRADOS', () => {
   const reparto = repartir(SCHEMA, CAMPOS_PERSONALES, FUERA_DE_ANONIMIZADO, SIN_DECIDIR);
 
   // 🔴 EL SUELO VA PRIMERO: cero no es mejor que dieciséis. Si baja, lo primero que hay que
@@ -240,8 +315,10 @@ test('SCRUM-497 · 🔴 TRINQUETE: cuarenta y dos datos personales siguen sin an
     + '  o a `FUERA_DE_ANONIMIZADO` y baja este número a mano, en el mismo commit.\n'
     + '  Si no, el censo ha dejado de verlos y «cero pendientes» significa «no supe mirar».');
 
-  assert.equal(reparto.sinDecidir.length, 42,
-    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 42 (SCRUM-1569d restó \`merchant.iban\` ` +
+  assert.equal(reparto.sinDecidir.length, 86,
+    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 86 (SCRUM-1547 sumó, el 12-nov-2026 y sobre 42, ` +
+    'las 44 que ningún nombre dejaba ver —21 personales y 23 dudosas—, decididas por el fundador en c.21607; ' +
+    'SCRUM-1569d restó `merchant.iban` ' +
     'y `merchant.bizumPhone` el 21-oct-2026, decididos por el fundador en c.20142; SCRUM-1569 sumó, el 20-oct-2026 ' +
     'y sobre 16, las 19 que el censo por nombre exacto no veía, los 9 trozos de domicilio y ' +
     '`customerSite.contactName`, que bajó a 44 el mismo día al entrar su línea en J3; SCRUM-1014 sumó ' +
@@ -260,6 +337,113 @@ test('SCRUM-497 · 🔴 TRINQUETE: cuarenta y dos datos personales siguen sin an
   // Y las dos excepciones llevan motivo, por lo mismo.
   for (const [clave, motivo] of Object.entries(FUERA_DE_ANONIMIZADO)) {
     assert.ok(motivo.length >= 20, `🔴 «${clave}» está declarada fuera sin motivo escrito.`);
+  }
+});
+
+// ── 2bis · 🔴 SCRUM-1547 · CLASIFICACIÓN TOTAL: toda columna de texto, declarada ────────────────
+//
+// El censo por nombre sólo ve lo que alguien escribió antes: `toPhone` pasó en VERDE con el guard
+// mirando (SCRUM-529), y medido el 12-nov-2026 había 21 columnas personales que ningún nombre dejaba
+// ver (`albaran.notas`, `legalAcceptance.ip`…). Decisión del fundador (c.21607): toda columna `String`
+// de los 33 modelos se declara personal o no personal, y esto sale ROJO hasta que se declare.
+// El coste es ése, y es a propósito: ~1 columna `String` nueva al mes (medido del 12-oct al 12-nov).
+
+/** Siembra EN MEMORIA: mete columnas al principio de `model Customer` del esquema real. Nunca toca el fichero. */
+function sembrar(schema, lineas) {
+  const abre = /^model Customer \{[ \t]*\r?$/m;
+  assert.ok(abre.test(schema),
+    '🔴 SIEMBRA CIEGA: no encuentro `model Customer {` en el esquema, así que no he sembrado nada y '
+    + 'cualquier verde de abajo sería el de un instrumento que no llegó a sembrar.');
+  return schema.replace(abre, (m) => `${m}\n${lineas.map((l) => `  ${l}`).join('\n')}`);
+}
+
+// Las tres que el censo por nombre NO veía el 12-nov-2026 (un teléfono, un DNI, un nombre en español),
+// y una que sí ve por núcleo. Fabricadas aquí: ninguna existe en el esquema (SCRUM-1537, el positivo
+// prestado del árbol se queda mudo el día que alguien arregla el defecto que tomó prestado).
+const SEMBRADAS = Object.freeze(['recipientMsisdn String?', 'dni String?', 'contactoNombre String?', 'signerFullName String?']);
+
+test('SCRUM-1547 · 🔴 SIEMBRA: una columna de texto que nadie ha declarado pone el guard EN ROJO', () => {
+  const declarar = (schema) => clasificarTodas(schema, CAMPOS_PERSONALES, FUERA_DE_ANONIMIZADO, SIN_DECIDIR, NO_PERSONALES);
+
+  // Que la siembra no exista ya: si alguna se llama como una columna real, el caso mide el árbol.
+  const reales = new Set(columnasDeTexto(SCHEMA).map((c) => c.clave));
+  for (const l of SEMBRADAS) {
+    assert.ok(!reales.has(`customer.${l.split(' ')[0]}`), `🔴 la sembrada «${l}» ya existe en el esquema: elige otro nombre.`);
+  }
+
+  const sembrado = declarar(sembrar(SCHEMA, SEMBRADAS));
+  assert.deepEqual([...sembrado.sinDeclarar].sort(), ['customer.contactoNombre', 'customer.dni', 'customer.recipientMsisdn'],
+    '🔴 EL TRINQUETE NO VE UNA COLUMNA QUE NADIE HA DECLARADO.\n\n'
+    + '  Se han sembrado en memoria tres columnas de texto con nombres que el vocabulario no conoce, y\n'
+    + `  dice ${JSON.stringify(sembrado.sinDeclarar)}. Entonces vuelve a ser lo de antes de SCRUM-1547: un\n`
+    + '  dato personal con un nombre nuevo pasa en VERDE.');
+
+  // La cuarta la ve el censo por núcleo («…Name»): es PERSONAL sin declarar, así que no cae aquí,
+  // cae en «ninguna columna personal sin clasificar». Las dos puertas no se pisan.
+  assert.ok(sembrado.personales.includes('customer.signerFullName') && !sembrado.sinDeclarar.includes('customer.signerFullName'),
+    '🔴 `signerFullName` (núcleo «name») debería contar como personal y no como «sin declarar».');
+  assert.ok(repartir(sembrar(SCHEMA, SEMBRADAS), CAMPOS_PERSONALES, FUERA_DE_ANONIMIZADO, SIN_DECIDIR).sinClasificar.includes('customer.signerFullName'),
+    '🔴 `signerFullName` no cae en «sin clasificar»: una personal vista por núcleo y en ningún cubo pasaría.');
+
+  // CONTROL: declararla, en cualquiera de los dos lados, la saca del rojo. Si no, el caso cae siempre.
+  const comoNoPersonal = clasificarTodas(sembrar(SCHEMA, ['recipientMsisdn String?']), CAMPOS_PERSONALES,
+    FUERA_DE_ANONIMIZADO, SIN_DECIDIR, { ...NO_PERSONALES, 'customer.recipientMsisdn': 'motivo de prueba, sembrado en memoria' });
+  assert.deepEqual(comoNoPersonal.sinDeclarar, [], '🔴 una columna declarada NO personal sigue saliendo como sin declarar.');
+  const comoPendiente = clasificarTodas(sembrar(SCHEMA, ['recipientMsisdn String?']), CAMPOS_PERSONALES,
+    FUERA_DE_ANONIMIZADO, { ...SIN_DECIDIR, 'customer.recipientMsisdn': 'pregunta de prueba, sembrada en memoria' }, NO_PERSONALES);
+  assert.deepEqual(comoPendiente.sinDeclarar, [], '🔴 una columna declarada en `SIN_DECIDIR` sigue saliendo como sin declarar.');
+  assert.ok(comoPendiente.personales.includes('customer.recipientMsisdn'),
+    '🔴 una columna en `SIN_DECIDIR` que el vocabulario no conoce no cuenta como personal: no entraría en el trinquete.');
+
+  // Y las dos declaraciones a la vez son una contradicción, no un doble verde.
+  const contradiccion = clasificarTodas(SCHEMA, CAMPOS_PERSONALES, FUERA_DE_ANONIMIZADO, SIN_DECIDIR,
+    { ...NO_PERSONALES, 'albaran.notas': 'motivo de prueba, sembrado en memoria' });
+  assert.deepEqual(contradiccion.enLasDos, ['albaran.notas'],
+    '🔴 una columna declarada personal Y no personal no sale como contradicción.');
+  // Y una declaración de algo que no existe se ve (la columna renombrada que se queda sin mirar).
+  const fantasma = clasificarTodas(SCHEMA, CAMPOS_PERSONALES, FUERA_DE_ANONIMIZADO, SIN_DECIDIR,
+    { ...NO_PERSONALES, 'customer.columnaQueNoExiste': 'motivo de prueba, sembrado en memoria' });
+  assert.deepEqual(fantasma.fantasmas, ['customer.columnaQueNoExiste'],
+    '🔴 una declaración de una columna que el esquema no tiene no sale como fantasma.');
+});
+
+test('SCRUM-1547 · 🔴 AUTOPRUEBA: `columnasDeTexto` ve todo el texto y nada más', () => {
+  const ve = (fuente) => columnasDeTexto(fuente).map((c) => c.clave);
+  assert.deepEqual(ve('model Cosa {\n  notas String?\n  numero String @unique\n}'), ['cosa.notas', 'cosa.numero'],
+    '🔴 `columnasDeTexto` no ve una columna de texto por cómo se llama: entonces vuelve a filtrar por nombre.');
+  assert.deepEqual(ve('model Cosa {\n  activo Boolean\n  meta Json?\n  total Decimal\n}\nenum E {\n  notas\n}'), [],
+    '🔴 `columnasDeTexto` cuenta algo que no es una columna de texto de un modelo.');
+});
+
+test('SCRUM-1547 · 🔴 toda columna de texto del esquema está DECLARADA, personal o no personal', () => {
+  const c = clasificarTodas(SCHEMA, CAMPOS_PERSONALES, FUERA_DE_ANONIMIZADO, SIN_DECIDIR, NO_PERSONALES);
+
+  // 🔴 SUELO primero: un esquema que no se leyó da «0 sin declarar» igual que uno limpio.
+  assert.ok(c.total >= 200,
+    `🔴 INSTRUMENTO CIEGO: \`columnasDeTexto\` ve ${c.total} columnas de texto y eran 224 en 33 modelos `
+    + '(12-nov-2026). Con menos, «ninguna sin declarar» significa «no supe leer el esquema».');
+
+  assert.deepEqual(c.sinDeclarar, [],
+    '🔴 HAY COLUMNAS DE TEXTO QUE NADIE HA DECLARADO:\n    ' + c.sinDeclarar.join('\n    ') + '\n\n'
+    + '  El censo por nombre no las ve, y una columna personal que nadie mira sobrevive a la supresión del\n'
+    + '  art. 17 en VERDE: `toPhone` estuvo a un empujón de hacerlo (SCRUM-529).\n\n'
+    + '  Elige UNA, y ninguna es «no hacer nada»:\n'
+    + '    · no es de nadie → `NO_PERSONALES` en tests/_censo-datos-personales.mjs, CON MOTIVO, o\n'
+    + '    · es o puede ser de una persona → `SIN_DECIDIR` aquí, con su PREGUNTA (decide el fundador), o\n'
+    + '    · ya está decidido que se anonimiza → `CAMPOS_PERSONALES` en anonimizarMerchant.ts (carril J3).');
+
+  assert.deepEqual(c.enLasDos, [],
+    `🔴 declaradas a la vez personales y NO personales: ${c.enLasDos.join(', ')}. Una de las dos declaraciones miente.`);
+  assert.deepEqual(c.fantasmas, [],
+    `🔴 \`NO_PERSONALES\` declara columnas que el esquema ya no tiene: ${c.fantasmas.join(', ')}. Si se `
+    + 'renombraron, la columna nueva tiene que declararse otra vez: el motivo era de la vieja.');
+
+  // Las dos mitades suman el total: si no, la clasificación pierde columnas por el camino.
+  assert.equal(c.personales.length + c.noPersonales.length, c.total,
+    `🔴 personales (${c.personales.length}) + no personales (${c.noPersonales.length}) no suman el total (${c.total}).`);
+
+  for (const [clave, motivo] of Object.entries(NO_PERSONALES)) {
+    assert.ok(typeof motivo === 'string' && motivo.length >= 20, `🔴 «${clave}» está en \`NO_PERSONALES\` sin motivo escrito.`);
   }
 });
 
