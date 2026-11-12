@@ -476,8 +476,8 @@ window.pintarResumenTrimestreEnHome = pintarResumenTrimestreEnHome;
 // Configuración. Se INSERTA cuando hay motivo, en vez de dejar un hueco fijo en la plantilla: así el
 // Inicio sin motivo no cambia ni en un nodo (scrum697/698 los cuentan).
 const AVISO_SII_SIN_EMISION = {
-  sii_declarado: 'Has indicado en Configuración › Empresa que llevas los libros de IVA por el SII. Con esa respuesta, YaQu no emite facturas ni cobra por ti. Si no es así, cámbiala allí.',
-  sii_no_consta: 'Para emitir facturas, contesta en Configuración › Empresa si llevas los libros de IVA por el SII.',
+  sii_declarado: 'Has indicado en Configuración › Empresa que llevas los libros de IVA por el SII. Con esa respuesta, YaQu no emite facturas ni cobra por ti. Si no es así, cámbiala allí.', // APROBADO por el fundador el 12-nov-2026 (SCRUM-1717 comentario 21705)
+  sii_no_consta: 'Para emitir facturas, contesta en Configuración › Empresa si llevas los libros de IVA por el SII.', // APROBADO por el fundador el 12-nov-2026 (SCRUM-1717 comentario 21705)
 };
 
 function pintarAvisoSiiSinEmision(container) {

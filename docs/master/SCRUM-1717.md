@@ -87,3 +87,16 @@ Puesto S2 (equipo Luis), 12-nov-2026 (18.ª sesión). Rama `scrum-1717-aviso-sii
 - **yaqu.app:** con el flag apagado (hoy ningún merchant real lo tiene) no hay caso visible en
   producción. La verificación en prod será con rol/flag SIMULADO tras el merge (como H4), y se declara así;
   la aceptación entera («un merchant con el flag puesto…») espera a encender el flag (regla 24).
+### 12-nov (S2, 2.º push) · las marcas de firma van POR LÍNEA
+
+El CI de #3128 cayó en 4 casos REALES (no el heap): `scrum1157` ① y ③, `scrum1215g` (árbol real) y
+`scrum1215i` (trinquete). Causa: los dos literales de `AVISO_SII_SIN_EMISION` sólo tenían la firma en la
+CABECERA del objeto («Los DOS literales … FIRMADOS»), y el censo los aprobaba POR GRUPO sin nombrarlos — justo
+lo que SCRUM-1215g prohíbe: una firma de grupo no cubre a quien llega después.
+- Arreglo en el CÓDIGO, no en los guards (regla 41): cada literal lleva su marca al final de su misma línea,
+  `// APROBADO por el fundador el 12-nov-2026 (SCRUM-1717 comentario 21705)` (formato de SCRUM-1157b; precedente
+  `customerDetailView.js:110`). Ni un byte de los textos cambia.
+- Verde: los tres censos + `scrum1717` + `scrum601` → **38/38**. Las anclas de `scrum601` no se mueven (las
+  dos líneas se alargan, no se desplazan).
+
+A9: comprobación → `tests/scrum1215g-una-firma-de-grupo-no-cubre-a-quien-llega-despues.test.mjs`
