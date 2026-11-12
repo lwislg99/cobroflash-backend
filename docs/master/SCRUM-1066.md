@@ -499,3 +499,56 @@ No hay código en el diff, así que no hay rojo primero ni mutación. Los guards
 
 - La primera sonda que comparaba las versiones de la letra g) partía por `<version ` en TODO el XML del RIRPF, no sólo en el bloque `a75`, y salió «SIN g)» en todas las versiones. Lo cacé leyendo la salida, antes de afirmar nada, y la rehíce acotada al bloque.
 - El primer comando de la tanda usó `$CLAUDE_JOB_DIR`, que en esta consola no está definido: el `git rev-parse` salió con 128 y no llegó a correr nada. Lo repetí con la ruta escrita.
+
+# SCRUM-1066h · La ruta del borrador 111/115 (`GET /admin/retenciones`), sin montar y sin pantalla
+
+**Medido contra:** `origin/main` = `ec7e19e64eab26361a3d5ebae929b60474ae08ba` · 2026-11-12T11:44:39Z
+**Rama:** `scrum-1066h-ruta-borrador-retenciones` · **Puesto:** J1 (sesión `jv-j1dw`) · **Encargo:** orquestador `cobroflash-backend-a0`, 12-nov-2026 · **De:** SCRUM-1066 c.21634 (piezas ③, ⑥ y ⑨) y c.21636 (decisión del fundador) · **Para S1:** SCRUM-1721
+
+A9: aviso → A10 «Un rojo sin población no es un hallazgo: es un instrumento que no llegó a arrancar.» — no se pudo comprobar: mi primer rojo cayó a nivel de FICHERO (el `require.resolve` de la ruta ausente revienta antes del primer caso) y ningún guard distingue ese rojo del de los casos; lo cacé leyendo `# tests 1`
+
+## PASO 0
+
+- `git log origin/main -i --grep=SCRUM-1066h`: 0. `git ls-remote origin 'refs/heads/scrum-1066*'`: sólo `scrum-1066g-retencion-sin-entrada` (docs, sin mergear). `gh pr list --state all --search 1066h`: `[]`.
+- Etiquetas de 1066: `equipo-javier`, `area-j1`. `node scripts/carriles.mjs de --nueva src/modules/fiscal/retenciones/retenciones.routes.ts` → «RUTA NUEVA · J1 · patrón `src/modules/fiscal/**`».
+- La base de los tests fue `31858144e08886024d72808c5da1479a5122219a`; al anclar, `main` iba 2 commits por delante y su diff sólo toca `docs/master/SCRUM-1316.md`.
+
+## Qué hay
+
+- **`src/modules/fiscal/retenciones/retenciones.routes.ts` (nuevo):** `GET /` con `?año=&trimestre=`. Sin parámetros, el periodo EN CURSO en la zona del merchant (el criterio del 303). Mal formados (año que no son 4 cifras, trimestre fuera de 1-4, repetido) → **400 `periodo_invalido`**, sin consultar nada: el 303 los cambia por el periodo en curso en silencio, y aquí no se copia. El merchant sale de `req.merchantId` (regla 2). Devuelve el borrador entero más `hayRetencionAnotadaEnElAño`. Sólo códigos: el único texto es `avisoObligatorio`, que ya viajaba (firmado en SCRUM-1065 c.20820).
+- **Filtro ⑨** (`leerHayRetencionAnotadaEnElAño`, en el `.repo.ts`): un `findMany` del año por merchant, pasado por `construirBorradorRetenciones` —que no filtra fechas—, y «anotada» = `miradas − sinRetencion − sinDatoDeRetencion > 0`. No hay un segundo criterio escrito: es lo que acaba en el 111, en el 115 o en `sinClasificar`. Un tipo 0 o un «No» (`declarada=false`) no cuentan.
+- **Pieza ③:** `TIPOS_RETENCION_PRACTICADA_VALIDOS = [15, 7, 19]` (congelada) y `TIPO_ALQUILER = 19`, exportadas de `retencionesPracticadas.ts`, en el orden de las opciones firmadas. No se ha movido nada del camino de emisión (regla 40): el fichero es del borrador, que sólo lee.
+- **No toca:** `src/app.ts` (pieza ⑦, S1), esquema, emisión, `public/`.
+
+## Para S1 (pieza ⑦), escrito en SCRUM-1721
+
+- Import, junto al del 303 (`src/app.ts:76`): `import retencionesRouter from './modules/fiscal/retenciones/retenciones.routes'; // SCRUM-1066h`
+- Montaje, junto al del 303 (`src/app.ts:612`): `mountAdmin(app, '/admin/retenciones', requireRole('admin'), retencionesRouter);`
+- Censo de rutas y roles: el `grep` de `modelo-303` en `tests/` y `scripts/` da 7 ficheros y ninguno es un censo de rol de montajes; `scrum55` y `scrum1344` corren en verde con la ruta sin montar. **Qué guard se mueve al montarla: NO medido** (no puedo montarla: es de S1).
+
+## Aceptación → dónde se ve
+
+| encargo | dónde se ve |
+|---|---|
+| ruta `GET` con `?año=&trimestre=` que llama a `leerBorradorRetenciones` por `req.merchantId` | `src/modules/fiscal/retenciones/retenciones.routes.ts` · `tests/scrum1066h-ruta-borrador-retenciones.test.mjs` (por HTTP, router real en una app propia) |
+| JSON con códigos, sin frases | mismo test (`periodo_invalido`, `sinClasificar`, `motivosParaNoFiarse`) |
+| filtro ⑨: si hay alguna retención anotada en el año | mismo test: «no hay» con tipo 0, «No» y gastos de otros años; «hay» con una en otro trimestre y con una sin clasificar |
+| un merchant ajeno no se ve | mismo test, con control positivo: el mismo juego pedido por el ajeno sí sale |
+| lista de tipos válidos para S1 | `TIPOS_RETENCION_PRACTICADA_VALIDOS`, atada al borrador en el mismo test |
+| montaje en el contenedor | NO HECHO → S1, SCRUM-1721 (línea exacta arriba) |
+| en yaqu.app | NO HECHO: sin montaje no la sirve el proceso |
+
+## Lo que se corrió, con su población
+
+- **`tsc -p .` con tipos:** salida 0 (`node_modules` del árbol es junction a `cobroflash-jv-j1cg`: sin `prisma generate`; `_prisma-client-guard` dio ✔).
+- **Rojo primero:** `dist/` con el `.repo.js` y el `retencionesPracticadas.js` de `origin/main` (transpilados) y la ruta nueva puesta: **7 tests, 0 pass, 7 fail**. Restaurado después: los 4 `.js` idénticos por `cmp` a los del build.
+- **Verde:** 7 tests, 7 pass.
+- **Mutación:** las 7 declaraciones del test, con `aplicarUna` y `correr` de `scripts/meta-guard-mutaciones.mjs` desde un conductor temporal → **7 vivas, 0 mudas, 0 ciegas**; su control sembrado (cambiar un comentario de la ruta) salió **MUDA**, como debía. `npm run meta:mutaciones` entero: NO CORRIDO.
+- **Dirigida** (commit hecho antes, cicatriz SCRUM-1640): `scrum237`, `976`, `1387`, `1066c`, `1066e`, `1065c`, `1344`, `55`, `622`, `745` y el nuevo → **11 ficheros, 111 tests, 111 pass, 0 fail, 0 skipped** (TAP a fichero fuera del árbol, 123.614 B; 111 líneas `ok` ancladas al inicio).
+- **Suite entera en local: NO CORRIDA** (10 sesiones a la vez; la juzga el obligatorio).
+
+## Mis errores
+
+- El primer rojo fue CIEGO: quité también la ruta de `dist/` y el fichero cayó entero en el `require.resolve`, sin llegar a ningún caso (`# tests 1`). Lo repetí con la ruta puesta y sólo el repo y el servicio de `main`.
+- Repetí una ruta con espacio sin comillas en un bucle de `cmp` (la de `$CLAUDE_JOB_DIR`): salieron 4 «DIFF» falsos. Lo rehíce con comillas: 4 de 4 idénticos.
+- Crucé el aviso de 200k casi a la vez que lo medí (197.347 tras el arnés): lo mandé en ese momento.
