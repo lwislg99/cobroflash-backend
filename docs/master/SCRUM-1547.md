@@ -210,3 +210,5 @@ o el correo al que no se pudo enviar: `whatsAppMessage.error`, `emailMessage.err
 fundador. Las 30 columnas `Json` siguen fuera (c.21607: segundo paso).
 
 **Decidido después, en la misma rama (SCRUM-1547 c.21617, «Sí»):** las cuatro pasan de `NO_PERSONALES` a `SIN_DECIDIR`, cada una con su pregunta. Quedan 110 no personales, 114 personales, y el trinquete pasa de 86 a 90. El orquestador autorizó un segundo empujón.
+
+**Puesta al día (2026-11-12T11:59:07Z, hora de GitHub; relevo `jv-j6ea`):** el PR #3104 salía DIRTY. Hice `git merge origin/main` con `c8195b2608c32624f39d1145cf031c93091d9161` y no hubo conflictos: este fichero queda con la medición entera y, debajo, el tramo 1547b, sin entrelazar. `prisma/schema.prisma` es idéntico en los dos lados, así que no entra ninguna columna `String` nueva: siguen 224 y el trinquete se queda en 90. Corrido: `scrum497`, `scrum237`, `scrum976`, `scrum1387`, `1387d`, `1387f`, `scrum267`, `scrum273` y `scrum1294` dan **78 tests / 78 pass / 0 fail** (TAP). Están el positivo, los casos TRINQUETE, SIEMBRA y DECLARADA.
