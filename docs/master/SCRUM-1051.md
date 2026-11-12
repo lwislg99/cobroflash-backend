@@ -503,3 +503,11 @@ scrum622 y los de registro scrum267/273/854/1294): 737 casos = 731 pass + 6 skip
 **Puesta al día (relevo, jv-j1dj, 30-oct-2026, sobre `3527028a3388de64c5e2429cb0d19d665e768473`, 149 commits):** `git merge` sin conflictos y sin recongelar nada: `facturaSuelta.ts` y `invoicesAdmin.routes.ts` no están en la lista de `scrum523d`, que pasa con sus 7 casos. `tsc -p .`: salida 0. Dirigida de 76 ficheros: 763 casos = 757 pass + 6 skip (sin `LIBRO_PG_URL`), 0 fail. Suite entera local: NO CORRIDA.
 
 A9: sin fallo que generalice — poner la rama al día no cambió los dos ficheros de `src/` de este tramo respecto a lo entregado el 27-oct, y lo que podía caer lo mide `scrum523d`.
+
+## SCRUM-1051e · puesta al día con main (J1, jv-j1do, relevo, 12-nov-2026)
+
+**Medido contra:** `origin/main` = `52cc5603cc94f71ef1dc7a0c6d59bd551ef2a793` · 2026-11-12T11:29:52Z (hora de la cabecera `Date:` de GitHub)
+
+`git merge origin/main` sobre `8add898bf`: un conflicto, en `docs/equipo/cicatrices/J1.md`, resuelto conservando las dos partes (35 líneas de main + 1 de la rama = 36). Este fichero entró sin conflicto, y sus tramos 1051c, 1051d y 1051e salen idénticos a su origen. `scripts/` y `src/modules/fiscal/verifactu/` no cambiaron en main: los comandos de c.21295 siguen igual. En seco, con NIF de ejemplo y sin enviar nada: `omitir` y `cero` generados (salida 0) y válidos contra el XSD, sin destinatario o con el del emisor salida 1, y los punteros con el mismo hash antes y después.
+
+A9: sin fallo que generalice — el único conflicto fue de dos listas que crecían por el final, y el recuento de líneas de cada lado comprueba que no se perdió ninguna.
