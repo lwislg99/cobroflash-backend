@@ -1,5 +1,31 @@
 // public/dashboard/js/homeView.js
 
+/**
+ * SCRUM-1686 H4 · «Para hoy» en el Inicio del operario. Firmas del fundador, SCRUM-1686:
+ * c.21549 (el primer bloque es su trabajo de hoy) y c.21551 («Para hoy» · «N trabajos»/«1 trabajo»
+ * · «Nada para hoy.», «mismo significado, misma palabra en las dos pantallas»).
+ *
+ * «Mismo significado» se cumple LLAMANDO a la cifra de la lista de Trabajos (`pintarCifrasDeLaLista`,
+ * jobsView.js, de S4), no copiándola: cuenta lo mismo —en curso + agendado hoy— y dice lo mismo.
+ * De esa zona sólo se queda «Para hoy»: «Por cobrar» es dinero, no su trabajo de hoy, y se QUITA.
+ * `GET /admin/jobs` ya viene recortada a lo suyo (SCRUM-1706).
+ *
+ * 🔴 Si la lista no llega, NO se pinta nada: «Nada para hoy.» sobre una carga caída afirmaría que
+ * no tiene trabajo. El fallo no tiene texto firmado, así que el bloque se queda vacío (no ocupa).
+ */
+async function pintarTrabajoDeHoy(zona) {
+  if (!zona || typeof pintarCifrasDeLaLista !== 'function') return;
+  let jobs;
+  try {
+    jobs = await apiRequest('/admin/jobs');
+  } catch {
+    return;
+  }
+  if (!Array.isArray(jobs)) return;
+  pintarCifrasDeLaLista(zona, jobs);
+  zona.querySelectorAll('.jobs-cifra-dinero').forEach((cifra) => cifra.remove());
+}
+
 async function renderHomeView(container) {
   const qLabel = (window.appLocale && window.appLocale.quoteNew) || 'Nueva cotización';
   const firstName = String(window.appUserName || '').trim().split(/\s+/)[0] || '';
@@ -15,7 +41,7 @@ async function renderHomeView(container) {
       <header class="home-greeting" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
         <div>
           <h1>${greet}${firstName ? ', ' + esc(firstName) : ''} 👋</h1>
-          <p>Esto es lo que pasa hoy en tu negocio.</p>
+          <p>${veNegocio ? 'Esto es lo que pasa hoy en tu negocio.' : 'Esto es lo que tienes hoy.'}</p>
         </div>
         ${window.appUserRole === 'admin' ? '<button class="btn-ghost btn-sm" id="btn-home-prefs" title="Elige qué bloques ves en tu Home">⚙ Personalizar</button>' : ''}
       </header>
@@ -57,6 +83,13 @@ async function renderHomeView(container) {
            trimestre, SCRUM-1075 punto 5) y ese descarte no debe mezclarse con «Personalizar», que
            es un ajuste de qué bloques ver, no un acuse de que ya se ha leído éste. -->
       <div id="home-resumen-trimestre"></div>
+
+      <!-- SCRUM-1686 H4 · EL TRABAJO DE HOY DEL OPERARIO (firma del fundador c.21549: «el primer
+           bloque pasa a ser su trabajo de hoy»). Va DESPUÉS de los avisos de riesgo, que se leen antes
+           que una capacidad (SCRUM-357), y ANTES del héroe y de las acciones rápidas. Sólo lo pinta
+           quien no es admin; vacío no ocupa nada (.jobs-cifras:empty). Sin data-home-block:
+           «Personalizar» es del admin. -->
+      <div id="home-hoy" class="jobs-cifras"></div>
 
       <!-- Número héroe: lo que te deben (foco principal) -->
       <div id="home-hero" data-home-block="hero"></div>
@@ -137,6 +170,11 @@ async function renderHomeView(container) {
   if (!veNegocio) {
     container.querySelectorAll('[data-home-block="kpis"],[data-home-block="week"],[data-home-block="tops"]')
       .forEach((bloque) => bloque.remove());
+    pintarTrabajoDeHoy(document.getElementById('home-hoy'));
+  } else {
+    // SCRUM-1686 H4 · el Inicio del admin no cambia ni en un nodo (scrum698 lo cuenta).
+    const hoy = document.getElementById('home-hoy');
+    if (hoy) hoy.remove();
   }
 
   // A6.7: aplicar preferencias cacheadas al instante (sin flash en re-renders)
