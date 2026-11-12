@@ -511,3 +511,36 @@ A9: sin fallo que generalice — poner la rama al día no cambió los dos ficher
 `git merge origin/main` sobre `8add898bf`: un conflicto, en `docs/equipo/cicatrices/J1.md`, resuelto conservando las dos partes (35 líneas de main + 1 de la rama = 36). Este fichero entró sin conflicto, y sus tramos 1051c, 1051d y 1051e salen idénticos a su origen. `scripts/` y `src/modules/fiscal/verifactu/` no cambiaron en main: los comandos de c.21295 siguen igual. En seco, con NIF de ejemplo y sin enviar nada: `omitir` y `cero` generados (salida 0) y válidos contra el XSD, sin destinatario o con el del emisor salida 1, y los punteros con el mismo hash antes y después.
 
 A9: sin fallo que generalice — el único conflicto fue de dos listas que crecían por el final, y el recuento de líneas de cada lado comprueba que no se perdió ninguna.
+
+## SCRUM-1051g · ISP: rechazo sin NIF o sin empresario, y leyenda P1 en el PDF (J1, jv-j1ec, 12-nov-2026)
+
+**Medido contra:** `origin/main` = `deab373d6a379fcbfc7ec1fce0428111156f49d3` · 2026-11-12T17:26:53Z (hora de la cabecera `Date:` de GitHub)
+
+A9: comprobación → `tests/scrum1051g-isp-destinatario-pdf-libro.test.mjs`
+
+Con los GO de regla 40 y las firmas del fundador de SCRUM-1051 c.21750 (decisiones sobre la medición de 1051f, c.21748). Textos aplicados, literales: P1 «Inversión del sujeto pasivo», P4 «Para facturar con inversión del sujeto pasivo, el cliente necesita NIF.» Registro de la firma: `docs/microcopy/2026-11-12-SCRUM-1051-isp.md`.
+
+### ② Rechazo antes de emitir (c.21750, punto 3)
+
+- Portón nuevo `src/modules/invoicing/domain/destinatarioIsp.ts` (carril J1). Si alguna línea lleva `causa: 'S2'`: sin NIF válido (`validarNifEspanol`, exigiendo `motivo === 'ok'`, porque el vacío da `valido: true`) → `isp_cliente_sin_nif` con P4; con NIF pero `tipoDestinatario` distinto de `EMPRESARIO` (NULL incluido) → `isp_cliente_no_empresario` **sin texto**: no hay firma para ese caso, y P4 no vale porque el cliente sí tiene NIF. Propuesta para firma, NO escrita en el código: «Para facturar con inversión del sujeto pasivo, el cliente tiene que ser empresario o profesional.»
+- Se llama ANTES de pedir número en las dos bocas de J1: `POST /admin/invoices` (el `select` del cliente añade `tipoDestinatario`; el `catch` responde 422 con el código y, sólo si lo hay, el texto) y el cobro (`src/lib/invoicing.ts`, con `ch.customer`, que ya viene completo).
+- ⚠️ **Las otras ocho bocas de emisión son de S1** (albaranes ×2, jobs ×2, recapitulativa, `quotes.routes`, `quotesAdmin` ×3) y no llaman ni a `exigirCausaLineaEmitible` ni a este portón. Si hoy les llega una línea S2: NO medido. Cruza de equipo: lo decide el orquestador.
+
+### ① PDF (c.21750, punto 2): «el PDF imprime P1 y separa la fila S2 del desglose de IVA»
+
+- `pdf.service.ts`, sólo en la F1 (la que lee el registro, SCRUM-624e): las entradas S2 de `calcVatBreakdown` salen de la fila de su tipo y van a una fila propia, `Inversión del sujeto pasivo:` con su base. Sin S2, el papel no cambia. La R1 y el justificante, sin tocar (su suma propia cambiaría cifras: otro GO).
+- Medido leyendo el PDF generado (`_texto-del-pdf.mjs`), base frente a rama: sólo S2 `[Base 1.000,00 · TOTAL 1.000,00]` → `[Base 1.000,00 · Inversión del sujeto pasivo:1.000,00 · TOTAL 1.000,00]`; mixta S2 1.000 al 21 % + 100 al 21 % `[Base 1.100,00 · IVA 21% 21,00 · TOTAL 1.121,00]` → la misma con la fila P1 de 1.000,00 delante del total; sin S2, idéntico y P1 0 veces en el papel.
+- Vía de cambio autorizado de 603b/723 (SCRUM-1446 c.20473): entrada nueva en `tests/_cambios-autorizados-de-la-factura.mjs` con el par de huellas base → disco, firma `SCRUM-1051 c.21750`.
+- `tests/scrum601`: `aPelo` 160 → 161 y no legibles 38 → 39, medidos: el literal nuevo es P4 (firmado).
+
+### 🔴 Huella y XML, antes y después
+
+Con `buildVerifactuRegistrosXml` y `computeVeriFactuHash` de `dist/` de la base (`deab373d`) y de la rama, misma factura fabricada: sin ISP, XML de 3.344 B con el mismo sha256; con ISP, 3.227 B con el mismo sha256 (control positivo: «S2» aparece 1 vez en el XML con ISP y 0 en el otro); huella idéntica. **No cambian.** No se ha tocado `registro.builder.ts` ni `src/modules/fiscal/verifactu/`.
+
+### ③ Columna «ISP» del libro: NO HECHA
+
+No me cabía en el contexto (avisé de 200k a 206.154). Lo medido en 1051f (c.21748): `librosAeat.ts:323-329` y `libroRegistroView.js`. P3 firmada; las constantes `COPY_ISP_COLUMNA` y `COPY_ISP_VALOR_SI` ya están en `destinatarioIsp.ts`, sin uso. Queda para el relevo.
+
+### Corrido
+
+Rojo primero: las cuatro mutaciones de ② y la de ① con `aplicarUna` del catálogo de la casa, las cinco tumban el test y el árbol queda limpio. Test propio 13/13. `tsc -p .` con tipos: salida 0. Suite entera local: NO CORRIDA (10 sesiones a la vez).
