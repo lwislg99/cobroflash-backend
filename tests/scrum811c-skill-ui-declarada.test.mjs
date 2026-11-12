@@ -67,6 +67,7 @@ import { entradasTroceadas, entradasConClave } from './scrum267-ancla-de-medicio
 import {
   parsearNombres, parsearParches, leerUnidades, veredictoDeUnidad, agruparPorFichero,
 } from './_skill-ui-por-efecto.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 // El corte: entradas fechadas EN o ANTES de este día quedan exentas (formato vigente cuando
 // se escribieron no exigía el campo). A partir del día siguiente, se exige.
@@ -606,7 +607,7 @@ test('SCRUM-1340 · la línea de la cuenta sale SIEMPRE, también con cero, y di
 // que las dos llamadas a git y la lectura del disco devuelven lo que el juicio espera. Una
 // operación que no se ejecutó se lee igual que un éxito (A21), y aquí la operación es git.
 function repoDePrueba() {
-  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1340-'));
+  const raiz = temporal('scrum1340-');
   // Sin las `GIT_*` del proceso: dentro de un hook apuntarían al repositorio de verdad.
   const limpio = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith('GIT_')));
   const g = (args, fecha) => execFileSync('git', args, {
@@ -692,7 +693,7 @@ test('SCRUM-1340 · DE PUNTA A PUNTA: sobre un repositorio real ve los merges, l
       fs.rmSync(somero, { recursive: true, force: true });
     }
   } finally {
-    fs.rmSync(r.raiz, { recursive: true, force: true });
+    borrarTemporal(r.raiz);
   }
 });
 

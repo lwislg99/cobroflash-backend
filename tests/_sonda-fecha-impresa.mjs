@@ -149,7 +149,11 @@ async function papeles({ zona, instante }) {
   return {
     zona: zona || null, instante,
     pdfFirma: uno(pdf, /Firmado digitalmente por .*? el (\d{2} de \S+ de \d{4})/),
-    pdfSello: uno(pdf, /Sello temporal\s*(.*?)\s*\(hora del servidor\)/),
+    // SCRUM-1726 · la etiqueta va aparte: con zona peninsular el sello dice «(hora peninsular)»
+    // (firmado en SCRUM-1656 c.21724) y sin ella, «(hora del servidor)». Leer sólo una de las dos
+    // dejaría el hueco de la otra como «no encontrado», que el SUELO del test ya trata como CIEGO.
+    pdfSello: uno(pdf, /Sello temporal\s*(.*?)\s*\(hora (?:del servidor|peninsular)\)/),
+    pdfSelloEtiqueta: uno(pdf, /Sello temporal\s*.*?\s*\((hora (?:del servidor|peninsular))\)/),
     paginaEstado: pagina.status,
     pagina: uno(pagina.cuerpo, /Ya aceptaste este [^<]*? el (\d{2} de \S+ de \d{4})/),
     reciboEstado: recibo.status,
