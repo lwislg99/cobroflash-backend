@@ -1000,6 +1000,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     // agendado): los dos entran por aquí, así que el número no sube. El texto es el que ya había.
     // SCRUM-1160 · el 409 sin firmar de `collect-rest` pinta el texto firmado (`albaranAccion.js`).
     const falloDelCta = (err) => setStatus('error', (window.errorDeFacturarSinFirmar && window.errorDeFacturarSinFirmar(err?.data))
+      || (window.errorDeEmitirSinLineas && window.errorDeEmitirSinLineas(err?.data))
       || mensajeDeFallo('No se pudo completar la acción', err));
     const cta = document.createElement('button');
     // 🔴 SCRUM-380 · SIN `btn-sm`, y el arreglo va POR AQUÍ y no por el CSS.
@@ -2246,6 +2247,15 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
         const cuerpo = lineas.length ? { modoValoracion: modo, lineas, notas } : { modoValoracion: modo, notas };
         if (ocultarPreciosEnDocumento !== undefined) cuerpo.ocultarPreciosEnDocumento = ocultarPreciosEnDocumento;
         if (docHeaderText !== undefined) cuerpo.docHeaderText = docHeaderText;
+        // SCRUM-1673 · sin líneas, el `emitir` de abajo es un 409 `albaran_sin_lineas` SEGURO (#3117):
+        // crear antes dejaba un borrador vacío con su número reservado y un aviso que no decía qué
+        // faltaba. Se corta ANTES del alta con la forma de ese mismo 409, así que la hoja sigue
+        // abierta (el `catch` de `buildAlbEditor`) y pinta el texto firmado en c.21707.
+        if (!lineas.length) {
+          const sinLineas = new Error('albaran_sin_lineas');
+          sinLineas.data = { error: 'albaran_sin_lineas' };
+          throw sinLineas;
+        }
         const creado = await crearAlbaran(cuerpo);
         try {
           await apiRequest(`/admin/albaranes/${creado.id}/emitir`, { method: 'POST' });
@@ -2860,10 +2870,14 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
   // el backend devolvería 409 albaran_locked si se intentase cambiar después).
   const modoEditable = alb.estado === 'borrador';
   let modo = alb.modoValoracion === 'VALORADO' ? 'VALORADO' : 'SIN_VALORAR';
+  // SCRUM-1712 ① · el técnico no ve ni escribe precios (403 desde #3123): casilla, columnas,
+  // total, «ocultar» y dictado preguntan a `esTecnico`. Test: scrum1673b-albaran-remates-front.
+  const esTecnico = window.appUserRole === 'tecnico';
 
   const modoRow = document.createElement('div');
   modoRow.style.cssText = 'margin-bottom:10px';
-  if (modoEditable) {
+  // Técnico en borrador: ni casilla ni rótulo (el «modo congelado tras emitir» mentiría ahí).
+  if (modoEditable && !esTecnico) {
     const lbl = document.createElement('label');
     lbl.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);cursor:pointer';
     const chk = document.createElement('input');
@@ -2880,7 +2894,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
     lbl.appendChild(document.createTextNode('Incluir precios en el albarán'));
     modoRow.appendChild(lbl);
     // SCRUM-1696 · N8: «El parte sigue sin ser una factura.» se quita también de la hoja de alta.
-  } else {
+  } else if (!modoEditable) {
     const p = document.createElement('p');
     p.style.cssText = 'margin:0;font-size:12px;color:var(--muted)';
     p.textContent = modo === 'VALORADO' ? 'Con precios (modo congelado tras emitir).' : 'Sin precios (modo congelado tras emitir).';
@@ -2924,12 +2938,13 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
   // Se muestra u oculta con el modo, sin re-pintar nada: el pro marca «con precios» y aparece.
   function syncOcultarRow() { ocultarRow.style.display = modo === 'VALORADO' ? '' : 'none'; }
   syncOcultarRow();
-  box.appendChild(ocultarRow);
+  // SCRUM-1712 ① · al técnico no se le monta: su nota («Tú sigues viendo los precios…») le mentiría.
+  if (!esTecnico) box.appendChild(ocultarRow);
 
   const rows = document.createElement('div');
   // Muestra/oculta las columnas precio+IVA de una fila según el modo actual.
   function syncRowToModo(r) {
-    r.querySelectorAll('.alb-precio-field').forEach((el) => { el.style.display = modo === 'VALORADO' ? '' : 'none'; });
+    r.querySelectorAll('.alb-precio-field').forEach((el) => { el.style.display = modo === 'VALORADO' && !esTecnico ? '' : 'none'; });
   }
   const mkRow = (l) => {
     const r = document.createElement('div');
@@ -3113,7 +3128,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
           // garantiza (SCRUM-71 puntos 1-2), pero la pantalla no puede contradecirlo —
           // enseñar un precio que luego no se guarda sería peor que no enseñarlo.
           const detalle = `${l.cantidad} ${l.unidad}`
-            + (modo === 'VALORADO' && l.precioUnitario != null ? ` · ${l.precioUnitario} €/ud` : '');
+            + (modo === 'VALORADO' && l.precioUnitario != null && !esTecnico ? ` · ${l.precioUnitario} €/ud` : '');
           txt.innerHTML = `<div style="font-weight:600;color:var(--ink)">${escVoz(l.concepto)}</div>`
             + `<div style="color:var(--muted);font-size:13px">${escVoz(detalle)}</div>`;
 
@@ -3192,7 +3207,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
     });
   }
   function updateTotales() {
-    if (modo !== 'VALORADO') { totalesBox.textContent = ''; return; }
+    if (modo !== 'VALORADO' || esTecnico) { totalesBox.textContent = ''; return; }
     const t = albTotalesJS(readRowsForTotales());
     totalesBox.textContent = `Base: ${fmtMoneyEs(t.base, cur)} · Total orientativo: ${fmtMoneyEs(t.total, cur)}`;
   }
@@ -3448,7 +3463,8 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
         if (onClose) onClose();
         refresh();
       } catch (e) {
-        const msg = mensajeParaPersona(e, 'No se pudo completar la entrega.');
+        const msg = (window.errorDeEmitirSinLineas && window.errorDeEmitirSinLineas(e?.data)) // SCRUM-1673
+          || mensajeParaPersona(e, 'No se pudo completar la entrega.');
         if (onError) onError(msg); else setStatus('error', msg);
         confirmContinuar.disabled = false;
         confirmCancelar.disabled = false;

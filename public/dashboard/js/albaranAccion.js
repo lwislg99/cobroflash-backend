@@ -98,6 +98,21 @@ function textoDeErrorDeFacturar(data, porDefecto) {
   return errorDeFacturarSinFirmar(data) || msg || porDefecto;
 }
 
+/**
+ * SCRUM-1673 · EL TEXTO del 409 `albaran_sin_lineas` de `POST /admin/albaranes/:id/emitir`.
+ *
+ * El servidor (#3117) responde sin `message` a propósito (no había texto firmado, regla 39), así
+ * que hasta hoy la pantalla pintaba sólo su rótulo genérico, sin decir qué faltaba.
+ * FIRMADO por el fundador el 12-nov-2026: SCRUM-1673 c.21707 (contexto en c.21675). Vive aquí, y
+ * no en una pantalla, porque las tres superficies que emiten lo alcanzan por `window`.
+ */
+const COPY_ALBARAN_SIN_LINEAS = 'No se puede emitir un albarán sin líneas. Añade al menos una línea con lo que se ha hecho.';
+
+/** El texto firmado si el error es el 409 `albaran_sin_lineas`; `null` para cualquier otro. */
+function errorDeEmitirSinLineas(data) {
+  return data && data.error === 'albaran_sin_lineas' ? COPY_ALBARAN_SIN_LINEAS : null;
+}
+
 function ctxAlbaranDeFila(alb) {
   return {
     // SCRUM-905 · «Facturar lo entregado» lleva a la hoja de `facturar-parcial`: 409 en `receipt`.
@@ -143,4 +158,5 @@ if (typeof window !== 'undefined') {
   window.textoDeErrorDeFacturar = textoDeErrorDeFacturar;     // SCRUM-1160 · ficha del presupuesto
   window.errorDeFacturarSinFirmar = errorDeFacturarSinFirmar; // SCRUM-1160 · CTA de la ficha del Trabajo
   window.primariaDeAlbaran = primariaDeAlbaran;
+  window.errorDeEmitirSinLineas = errorDeEmitirSinLineas; // SCRUM-1673 · la ficha del Trabajo (y el detalle, S4)
 }
