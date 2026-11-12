@@ -1,0 +1,50 @@
+// SCRUM-1646c · sirve las caras volcadas para las capturas.
+// /antes/<cara>   = HTML de main (8f2357255) SIN cabecera CSP
+// /despues/<cara> = HTML de la rama CON Content-Security-Policy APLICADA
+// /control/<cara> = HTML de main CON la misma CSP (control positivo: debe salir distinta y con informes)
+// La CSP = POLITICA_CSP de src/core/http/csp.ts con style-src ampliado a 'unsafe-inline' (el estilo
+// en línea es el tramo 1646d) + report-uri para contar las violaciones.
+// uso: node servidor-presupuesto.mjs <ARBOL> <TEMPORAL>
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { createRequire } from 'node:module';
+const [ARBOL, TMP] = process.argv.slice(2);
+const require = createRequire(path.join(ARBOL, 'dist', 'x.js'));
+const { POLITICA_CSP } = require(path.join(ARBOL, 'dist/core/http/csp.js'));
+const CSP = POLITICA_CSP.replace("style-src 'self'", "style-src 'self' 'unsafe-inline'") + '; report-uri /informes';
+if (CSP === POLITICA_CSP || !CSP.includes("script-src 'self';")) throw new Error('CIEGO: la CSP no es la esperada');
+const FIRMA = fs.readFileSync(path.join(TMP, 'firma.js'));
+const informes = [];
+const decisiones = [];
+http.createServer((req, res) => {
+  const u = new URL(req.url, 'http://x');
+  const p = u.pathname;
+  let cuerpo = '';
+  req.on('data', (c) => { cuerpo += c; });
+  req.on('end', () => {
+    if (p === '/informes' && req.method === 'POST') { informes.push({ ref: req.headers.referer || '', cuerpo }); res.end(); return; }
+    if (p === '/informes') { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify(informes)); return; }
+    if (p === '/decisiones') { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify(decisiones)); return; }
+    if (p === '/reset') { informes.length = 0; decisiones.length = 0; res.end('ok'); return; }
+    if (p === '/csp') { res.end(CSP); return; }
+    if (p === '/pay/quote/js/firma.js') { res.setHeader('content-type', 'application/javascript'); res.end(FIRMA); return; }
+    if (/^\/quote\/c{32}\/decision$/.test(p) && req.method === 'POST') {
+      const b = JSON.parse(cuerpo || '{}');
+      decisiones.push({ decision: b.decision, tierId: b.tierId, conFirma: !!b.signatureData, comment: b.comment });
+      res.setHeader('content-type', 'application/json'); res.end('{"ok":true}'); return;
+    }
+    if (p === '/favicon.svg' || p.startsWith('/fonts/')) {
+      const f = path.join(ARBOL, 'public', p);
+      if (fs.existsSync(f)) { res.setHeader('content-type', p.endsWith('.css') ? 'text/css' : p.endsWith('.svg') ? 'image/svg+xml' : 'font/woff2'); res.end(fs.readFileSync(f)); return; }
+    }
+    const m = /^\/(antes|despues|control)\/([\w-]+)$/.exec(p);
+    if (m) {
+      if (m[1] !== 'antes') res.setHeader('Content-Security-Policy', CSP);
+      res.setHeader('content-type', 'text/html; charset=utf-8');
+      res.end(fs.readFileSync(path.join(TMP, m[1] === 'despues' ? 'despues' : 'antes', m[2] + '.html')));
+      return;
+    }
+    res.statusCode = 404; res.end('no');
+  });
+}).listen(58124, '127.0.0.1', () => console.log('ok 58124 · CSP: ' + CSP));
