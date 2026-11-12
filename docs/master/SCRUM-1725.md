@@ -21,3 +21,9 @@ Firmado en SCRUM-1707 c.21547 (Q1): el operario ve el importe de sus trabajos, �
 - Mutación: `veEstadoDeCobro` → `true` (el comportamiento de main) tumba los dos casos sin permiso (2 ✖); el positivo sigue verde.
 - Vecinos: los 33 ficheros `tests/*.test.mjs` que nombran `jobsView`/`renderJobsView`, más el nuevo: **334/334, 0 fallos, 0 saltos**.
 - En yaqu.app, tras el merge (regla 42): la sonda de la propuesta (`sonda-trabajos.mjs`, FIEL=1) sin nada local, a 390 y 1280.
+
+## Apéndice · 12-nov-2026 (noche): el rojo del CI y su arreglo
+El obligatorio «build + tests» de #3127 cayó a las 15:34Z con UN fallo: `tests/scrum1415-nombres-construidos.test.mjs` (el árbol). Los dos casos sin permiso salían de un bucle con el nombre construido (`rol «${rol}»`), y un test nuevo se escribe con nombre literal: la lista de SCRUM-1415 sólo baja.
+- Arreglo en el TEST, no en el guard (regla 41): el cuerpo pasa a `sinCobroParaElRol(rol)` y los dos `test(…)` llevan su nombre escrito. Los nombres que registra la tanda son los mismos de antes.
+- Por qué no se vio antes de empujar: se corrieron el test nuevo, la mutación y los 33 vecinos de `jobsView`; `scrum1415` no nombra `jobsView` y no entró en esa selección.
+- Medido tras el arreglo: `scrum1415` 6/6 y `scrum1725` 3/3 (9/9, 0 fallos, 0 saltos).

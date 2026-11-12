@@ -61,19 +61,22 @@ async function montar(rol) {
   };
 }
 
-for (const rol of ['tecnico', 'contable']) {
-  test(`SCRUM-1725 ①② · rol «${rol}»: sin «Por cobrar», sin filtros de cobro, sin «de X €»; el importe sí`, async () => {
-    const m = await montar(rol);
-    assert.doesNotMatch(m.todo, /Por cobrar/, '🔴 la tarjeta «Por cobrar» sigue (c.21547 la quita)');
-    assert.equal(m.filtrosCobro, 0, `🔴 ${m.filtrosCobro} filtros de cobro (Pendiente/Parcial/Pagado) a la vista`);
-    assert.equal(m.lineasDe, 0, `🔴 ${m.lineasDe} líneas «de X €»: es lo que falta por cobrar, no el importe`);
-    assert.doesNotMatch(m.cabeceraTerminados, /por cobrar/, `🔴 la cabecera de Terminados dice «${m.cabeceraTerminados}»`);
-    assert.equal(m.salvedad, 0, '🔴 la salvedad del total por cobrar sigue');
-    assert.ok(m.celdas.some((c) => /100,00/.test(c)) && m.celdas.some((c) => /50,00/.test(c)),
-      `🔴 el IMPORTE tiene que verse (c.21547): celdas = ${JSON.stringify(m.celdas)}`);
-    assert.ok(!m.celdas.some((c) => /60,00/.test(c)), `🔴 una celda dice lo que FALTA (60), no el importe: ${JSON.stringify(m.celdas)}`);
-  });
+// Los dos roles van con su nombre ESCRITO, no construido en un bucle (SCRUM-1415: la señal por nombres
+// no puede echar en falta un test cuyo nombre no está en el fuente).
+async function sinCobroParaElRol(rol) {
+  const m = await montar(rol);
+  assert.doesNotMatch(m.todo, /Por cobrar/, '🔴 la tarjeta «Por cobrar» sigue (c.21547 la quita)');
+  assert.equal(m.filtrosCobro, 0, `🔴 ${m.filtrosCobro} filtros de cobro (Pendiente/Parcial/Pagado) a la vista`);
+  assert.equal(m.lineasDe, 0, `🔴 ${m.lineasDe} líneas «de X €»: es lo que falta por cobrar, no el importe`);
+  assert.doesNotMatch(m.cabeceraTerminados, /por cobrar/, `🔴 la cabecera de Terminados dice «${m.cabeceraTerminados}»`);
+  assert.equal(m.salvedad, 0, '🔴 la salvedad del total por cobrar sigue');
+  assert.ok(m.celdas.some((c) => /100,00/.test(c)) && m.celdas.some((c) => /50,00/.test(c)),
+    `🔴 el IMPORTE tiene que verse (c.21547): celdas = ${JSON.stringify(m.celdas)}`);
+  assert.ok(!m.celdas.some((c) => /60,00/.test(c)), `🔴 una celda dice lo que FALTA (60), no el importe: ${JSON.stringify(m.celdas)}`);
 }
+
+test('SCRUM-1725 ①② · rol «tecnico»: sin «Por cobrar», sin filtros de cobro, sin «de X €»; el importe sí', () => sinCobroParaElRol('tecnico'));
+test('SCRUM-1725 ①② · rol «contable»: sin «Por cobrar», sin filtros de cobro, sin «de X €»; el importe sí', () => sinCobroParaElRol('contable'));
 
 test('SCRUM-1725 ③ · CONTROL POSITIVO: el admin sigue viendo «Por cobrar», los filtros y «de X €»', async () => {
   const m = await montar('admin');
