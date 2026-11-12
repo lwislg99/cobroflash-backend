@@ -10,6 +10,7 @@ import { BASE_URL, config } from '../../../../core/config/env';
 import { isFlagEnabled } from '../../../../core/flags';
 import { DEMO_MERCHANT_ID } from '../../../invoicing/domain/emission.service';
 import { cardChargeDecision } from '../../domain/cardCharge';
+import { etiquetaEstiloDePago } from './pagoEstilo'; // SCRUM-1723c (style-src 'self'): solo el marcado de los dos errores
 
 const router = Router();
 
@@ -67,11 +68,12 @@ router.get('/card/:token', async (req, res) => {
         .send(
           `<!doctype html><html lang="es"><head><meta charset="utf-8"/>` +
           `<meta name="viewport" content="width=device-width,initial-scale=1"/>` +
-          `<title>Pago con tarjeta no disponible</title></head>` +
-          `<body style="font-family:system-ui,-apple-system,sans-serif;max-width:420px;margin:48px auto;padding:0 20px;text-align:center;color:#0f1c17">` +
-          `<h1 style="font-size:20px;margin:0 0 8px">El pago con tarjeta no está disponible</h1>` +
-          `<p style="color:#6b756f;font-size:14px;line-height:1.5;margin:0 0 16px">Este negocio aún no ha activado los cobros con tarjeta. Puedes pagar por transferencia o Bizum.</p>` +
-          `<a href="/pay/invoice/${token}" style="display:inline-block;color:#15803d;font-weight:600;text-decoration:none">← Ver otras formas de pago</a>` +
+          `<title>Pago con tarjeta no disponible</title>` +
+          `${etiquetaEstiloDePago('tarjeta')}</head>` +
+          `<body class="pago-tarjeta-cuerpo">` +
+          `<h1 class="pago-tarjeta-titulo">El pago con tarjeta no está disponible</h1>` +
+          `<p class="pago-tarjeta-texto">Este negocio aún no ha activado los cobros con tarjeta. Puedes pagar por transferencia o Bizum.</p>` +
+          `<a href="/pay/invoice/${token}" class="pago-tarjeta-enlace">← Ver otras formas de pago</a>` +
           `</body></html>`,
         );
     }
@@ -126,11 +128,12 @@ router.get('/card/:token', async (req, res) => {
       .send(
         `<!doctype html><html lang="es"><head><meta charset="utf-8"/>` +
         `<meta name="viewport" content="width=device-width,initial-scale=1"/>` +
-        `<title>Pago no disponible</title></head>` +
-        `<body style="font-family:system-ui,-apple-system,sans-serif;max-width:420px;margin:48px auto;padding:0 20px;text-align:center;color:#0f1c17">` +
-        `<h1 style="font-size:20px;margin:0 0 8px">No se pudo iniciar el pago</h1>` +
-        `<p style="color:#6b756f;font-size:14px;line-height:1.5;margin:0 0 16px">Ha habido un problema al abrir el pago con tarjeta. Vuelve a intentarlo en unos minutos o contacta con el negocio que te envió el cobro.</p>` +
-        `<a href="/pay/invoice/${token}" style="display:inline-block;color:#15803d;font-weight:600;text-decoration:none">← Volver</a>` +
+        `<title>Pago no disponible</title>` +
+        `${etiquetaEstiloDePago('tarjeta')}</head>` +
+        `<body class="pago-tarjeta-cuerpo">` +
+        `<h1 class="pago-tarjeta-titulo">No se pudo iniciar el pago</h1>` +
+        `<p class="pago-tarjeta-texto">Ha habido un problema al abrir el pago con tarjeta. Vuelve a intentarlo en unos minutos o contacta con el negocio que te envió el cobro.</p>` +
+        `<a href="/pay/invoice/${token}" class="pago-tarjeta-enlace">← Volver</a>` +
         `</body></html>`,
       );
   }

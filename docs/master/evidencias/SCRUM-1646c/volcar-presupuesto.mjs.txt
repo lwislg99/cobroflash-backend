@@ -1,0 +1,82 @@
+﻿// SCRUM-1646c · vuelca el HTML de cada cara de la firma del presupuesto, con el router del árbol dado.
+// uso: node volcar-presupuesto.mjs <ARBOL> <SALIDA>
+// Nombres con tildes, «&», «<…>» y comilla: el éxito pasó de innerHTML (con esc) a textContent.
+process.env.WHATSAPP_DRY_RUN = '1';
+import fs from 'node:fs';
+import path from 'node:path';
+import http from 'node:http';
+import { pathToFileURL } from 'node:url';
+const [ARBOL, OUT] = process.argv.slice(2);
+// El POST de rechazo reenvía a la API (node-fetch a PUBLIC_BASE_URL): la contesta este servidor, 200.
+const api = http.createServer((q, r) => { r.setHeader('content-type', 'application/json'); r.end('{"ok":true}'); });
+await new Promise((ok) => api.listen(0, '127.0.0.1', ok));
+process.env.PUBLIC_BASE_URL = 'http://127.0.0.1:' + api.address().port;
+const T = (p) => pathToFileURL(path.join(ARBOL, p)).href;
+const { inyectarBase, moduloDeDist, MERCHANT, CLIENTE } = await import(T('tests/_envio-doblado.mjs'));
+const LANDING = '../dist/modules/system/app/routes/quoteDecisionLanding.routes.js';
+const TOKEN = 'c'.repeat(32);
+const FIJA = '2026-11-12T10:00:00.000Z';
+const NEGOCIO = "Fontanería & Hijos <Sur> 'Pepe'";
+const CLIENTE_NOMBRE = 'Cliente Ñoño & <b>1646</b>';
+let FILA = null;
+inyectarBase({
+  'quote.findUnique': ({ where }) => (where.decisionToken === TOKEN ? JSON.parse(JSON.stringify(FILA)) : null),
+  'quote.findFirst': ({ where }) => (where.decisionToken === TOKEN ? JSON.parse(JSON.stringify(FILA)) : null),
+  'quote.count': () => 0,
+}, [LANDING]);
+const { quoteDecisionLandingRouter } = moduloDeDist(LANDING);
+const opcion = (id, label, precio, recommended) => ({
+  id, label, description: '', recommended, total: (precio * 1.21).toFixed(2),
+  lines: [{ concept: `Trabajo ${label}`, qty: 1, price: precio, tax: 0.21 }],
+});
+const TRES = [opcion('basica', 'Básica', 100, false), opcion('completa', 'Completa & más', 200, true), opcion('total', 'Total', 300, false)];
+function fila(extra = {}) {
+  return {
+    id: 1646, merchantId: MERCHANT, customerId: CLIENTE, status: 'sent', total: '121.00', currency: 'EUR',
+    lines: [{ concept: 'Revisión de caldera', qty: 1, price: 100, tax: 0.21 }], quoteNumber: 1646, revision: 0, seriesYear: 2026,
+    decisionToken: TOKEN, validUntil: '2027-01-31T10:00:00.000Z', paymentTerms: 'FULL_UPFRONT',
+    tiers: null, discountGlobalAmount: null, acceptedAt: null, rejectedAt: null, rejectionReason: null, jobId: null,
+    createdAt: FIJA, updatedAt: FIJA, signatureUrl: null,
+    merchant: { id: MERCHANT, name: NEGOCIO, legalName: null, taxId: null, country: 'ES', email: null,
+      whatsappPhone: '+34600000000', defaultCurrency: 'EUR', flags: null, timezone: 'Europe/Madrid', brandColor: null,
+      brandAccentColor: null, logoUrl: null, address: null, clausulasPresupuesto: null },
+    customer: { id: CLIENTE, name: CLIENTE_NOMBRE },
+    Invoice: [],
+    ...extra,
+  };
+}
+const capaDe = (ruta, m) => quoteDecisionLandingRouter.stack.find((l) => l.route && [].concat(l.route.path).includes(ruta) && l.route.methods[m]);
+async function pedir(ruta, m, req) {
+  const capa = capaDe(ruta, m);
+  if (!capa) throw new Error('CIEGO: sin ruta ' + m + ' ' + ruta);
+  let cuerpo = '', st = 200;
+  const res = { status(s) { st = s; return res; }, setHeader() { return res; }, redirect(u) { cuerpo = 'REDIRECT ' + u; return res; }, send(b) { cuerpo = String(b); return res; } };
+  const req2 = { params: { token: TOKEN }, query: {}, headers: {}, ip: '127.0.0.1', socket: {}, body: {}, ...req };
+  await capa.route.stack.at(-1).handle(req2, res);
+  return { st, cuerpo };
+}
+const caras = {
+  uno: () => pedir('/quote/:token', 'get', {}),
+  tres: () => pedir('/quote/:token', 'get', {}),
+  aceptado: () => pedir('/quote/:token', 'get', {}),
+  rechazado: () => pedir('/quote/:token', 'get', {}),
+  'rechazo-form': () => pedir('/quote/:token/reject', 'get', {}),
+  'rechazo-enviado': () => pedir('/quote/:token/reject', 'post', { body: { reason: 'price', comment: 'Caro' } }),
+};
+const filas = {
+  uno: {}, tres: { tiers: TRES, total: '242.00' },
+  aceptado: { status: 'accepted', acceptedAt: FIJA }, rechazado: { status: 'rejected', rejectedAt: FIJA, rejectionReason: 'El precio es demasiado alto' },
+  'rechazo-form': {}, 'rechazo-enviado': {},
+};
+fs.mkdirSync(OUT, { recursive: true });
+for (const [n, f] of Object.entries(caras)) {
+  FILA = fila(filas[n]);
+  const { st, cuerpo } = await f();
+  if (st !== 200 || cuerpo.length < 500) throw new Error('CIEGO ' + n + ' ' + st + ' ' + cuerpo.slice(0, 80));
+  if (/Ã|Â/.test(cuerpo)) throw new Error('CIEGO: tildes rotas en ' + n);
+  if ((n === 'uno' || n === 'tres') && !cuerpo.includes('Fontanería')) throw new Error('CIEGO: sin el nombre del negocio en ' + n);
+  fs.writeFileSync(path.join(OUT, n + '.html'), cuerpo);
+  const enLinea = (cuerpo.match(/<script(?![^>]*\bsrc=)(?![^>]*application\/json)[^>]*>/g) || []).length;
+  console.log(n, cuerpo.length, 'bytes · <script> ejecutables en línea:', enLinea, '· on*=:', (cuerpo.match(/\son[a-z]+="/g) || []).length);
+}
+process.exit(0);

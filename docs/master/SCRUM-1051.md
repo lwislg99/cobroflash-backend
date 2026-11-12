@@ -511,3 +511,76 @@ A9: sin fallo que generalice — poner la rama al día no cambió los dos ficher
 `git merge origin/main` sobre `8add898bf`: un conflicto, en `docs/equipo/cicatrices/J1.md`, resuelto conservando las dos partes (35 líneas de main + 1 de la rama = 36). Este fichero entró sin conflicto, y sus tramos 1051c, 1051d y 1051e salen idénticos a su origen. `scripts/` y `src/modules/fiscal/verifactu/` no cambiaron en main: los comandos de c.21295 siguen igual. En seco, con NIF de ejemplo y sin enviar nada: `omitir` y `cero` generados (salida 0) y válidos contra el XSD, sin destinatario o con el del emisor salida 1, y los punteros con el mismo hash antes y después.
 
 A9: sin fallo que generalice — el único conflicto fue de dos listas que crecían por el final, y el recuento de líneas de cada lado comprueba que no se perdió ninguna.
+
+## SCRUM-1051g · ISP: rechazo sin NIF o sin empresario, y leyenda P1 en el PDF (J1, jv-j1ec, 12-nov-2026)
+
+**Medido contra:** `origin/main` = `deab373d6a379fcbfc7ec1fce0428111156f49d3` · 2026-11-12T17:26:53Z (hora de la cabecera `Date:` de GitHub)
+
+A9: comprobación → `tests/scrum1051g-isp-destinatario-pdf-libro.test.mjs`
+
+Con los GO de regla 40 y las firmas del fundador de SCRUM-1051 c.21750 (decisiones sobre la medición de 1051f, c.21748). Textos aplicados, literales: P1 «Inversión del sujeto pasivo», P4 «Para facturar con inversión del sujeto pasivo, el cliente necesita NIF.» Registro de la firma: `docs/microcopy/2026-11-12-SCRUM-1051-isp.md`.
+
+### ② Rechazo antes de emitir (c.21750, punto 3)
+
+- Portón nuevo `src/modules/invoicing/domain/destinatarioIsp.ts` (carril J1). Si alguna línea lleva `causa: 'S2'`: sin NIF válido (`validarNifEspanol`, exigiendo `motivo === 'ok'`, porque el vacío da `valido: true`) → `isp_cliente_sin_nif` con P4; con NIF pero `tipoDestinatario` distinto de `EMPRESARIO` (NULL incluido) → `isp_cliente_no_empresario` **sin texto**: no hay firma para ese caso, y P4 no vale porque el cliente sí tiene NIF. Propuesta para firma, NO escrita en el código: «Para facturar con inversión del sujeto pasivo, el cliente tiene que ser empresario o profesional.»
+- Se llama ANTES de pedir número en las dos bocas de J1: `POST /admin/invoices` (el `select` del cliente añade `tipoDestinatario`; el `catch` responde 422 con el código y, sólo si lo hay, el texto) y el cobro (`src/lib/invoicing.ts`, con `ch.customer`, que ya viene completo).
+- ⚠️ **Las otras ocho bocas de emisión son de S1** (albaranes ×2, jobs ×2, recapitulativa, `quotes.routes`, `quotesAdmin` ×3) y no llaman ni a `exigirCausaLineaEmitible` ni a este portón. Si hoy les llega una línea S2: NO medido. Cruza de equipo: lo decide el orquestador.
+
+### ① PDF (c.21750, punto 2): «el PDF imprime P1 y separa la fila S2 del desglose de IVA»
+
+- `pdf.service.ts`, sólo en la F1 (la que lee el registro, SCRUM-624e): las entradas S2 de `calcVatBreakdown` salen de la fila de su tipo y van a una fila propia, `Inversión del sujeto pasivo:` con su base. Sin S2, el papel no cambia. La R1 y el justificante, sin tocar (su suma propia cambiaría cifras: otro GO).
+- Medido leyendo el PDF generado (`_texto-del-pdf.mjs`), base frente a rama: sólo S2 `[Base 1.000,00 · TOTAL 1.000,00]` → `[Base 1.000,00 · Inversión del sujeto pasivo:1.000,00 · TOTAL 1.000,00]`; mixta S2 1.000 al 21 % + 100 al 21 % `[Base 1.100,00 · IVA 21% 21,00 · TOTAL 1.121,00]` → la misma con la fila P1 de 1.000,00 delante del total; sin S2, idéntico y P1 0 veces en el papel.
+- Vía de cambio autorizado de 603b/723 (SCRUM-1446 c.20473): entrada nueva en `tests/_cambios-autorizados-de-la-factura.mjs` con el par de huellas base → disco, firma `SCRUM-1051 c.21750`.
+- `tests/scrum601`: `aPelo` 160 → 161 y no legibles 38 → 39, medidos: el literal nuevo es P4 (firmado).
+
+### 🔴 Huella y XML, antes y después
+
+Con `buildVerifactuRegistrosXml` y `computeVeriFactuHash` de `dist/` de la base (`deab373d`) y de la rama, misma factura fabricada: sin ISP, XML de 3.344 B con el mismo sha256; con ISP, 3.227 B con el mismo sha256 (control positivo: «S2» aparece 1 vez en el XML con ISP y 0 en el otro); huella idéntica. **No cambian.** No se ha tocado `registro.builder.ts` ni `src/modules/fiscal/verifactu/`.
+
+### ③ Columna «ISP» del libro: NO HECHA
+
+No me cabía en el contexto (avisé de 200k a 206.154). Lo medido en 1051f (c.21748): `librosAeat.ts:323-329` y `libroRegistroView.js`. P3 firmada; las constantes `COPY_ISP_COLUMNA` y `COPY_ISP_VALOR_SI` ya están en `destinatarioIsp.ts`, sin uso. Queda para el relevo.
+
+### Corrido
+
+Rojo primero: las cuatro mutaciones de ② y la de ① con `aplicarUna` del catálogo de la casa, las cinco tumban el test y el árbol queda limpio. Test propio 13/13. `tsc -p .` con tipos: salida 0. Dirigida de 153 ficheros (los de 1051, 237, 553, 976, 1387, 523d, 622, 624e, 623, 604, 771, 246, 1294, 267, 273 y todo test que nombra la ruta de la suelta, `lib/invoicing`, `pdf.service` o `lib/pdf.js`): 1.351 casos = 1.328 pass + 16 skip + 7 fail. Los 7 eran míos: 601 ×2 y 603b/723 (arriba), 976 (los arrastraba) y 525d ×2, porque mi import en `lib/invoicing.ts` corría una línea las dos coordenadas que cita la auditoría (`:104` y `:262`); el import va ahora en la línea del de causa. Re-corridos en dos pasadas: 18 ficheros (525d, 601, 603b, 723, 976, 523d, 1446d, 709, 726, 861, 997d, 1546c, 1294, 267, 273, 237, 553, 1051g) → 145 casos = 143 pass + 2 fail (los de 525d); tras el arreglo del import, 7 ficheros (525d, 976, 1051g, 1387, 1387d, 1387f, 622) → 60 casos = 60 pass. (Error propio, cazado antes de empujar: en el primer borrador de esta línea sumé las dos pasadas a ojo y escribí «25 ficheros, 205 casos».) `scrum523d` (versión del SIF): verde, sin recongelar nada. Suite entera local: NO CORRIDA (10 sesiones a la vez).
+
+## SCRUM-1051g-ci · los seis rojos del obligatorio de #3140 (J1, jv-j1eh, 12-nov-2026)
+
+**Medido contra:** `origin/main` = `9fabfbc087e20568633bf91d626c5ad414a99919` · 2026-11-12T18:11:58Z (hora de la cabecera `Date:` de GitHub)
+
+A9: aviso → cicatriz J1 «Empujé 1051g con la dirigida en verde y el obligatorio cayó por seis casos de cinco guards que recorren el árbol entero sin nombrar mi fichero (411, 1185, 189, 615 y el veredicto de mudez de 719): la dirigida no los lista, y ya me pasó con `scrum622` el 1-oct» — no se pudo comprobar: la lista de la dirigida es de SCRUM-1363, de otro carril
+
+El obligatorio de #3140 (job 131364900599, sobre el head `d582f545`) cayó con 6 de 13.483 casos. Los seis, reproducidos en local sobre `d582f545` en un árbol desechable (98 casos en 6 ficheros: 92 pass + 6 fail, los mismos seis) y en verde en la rama (98 de 98). Se arregló el código y el veredicto derivado; ningún guard se relajó:
+
+| guard (caso) | qué pedía | arreglo |
+|---|---|---|
+| `scrum1185` ① | `COPY_ISP_COLUMNA` y `COPY_ISP_VALOR_SI` construidas y sin consumir | se quitan de esta rama: son de la pieza ③ (P3), que cablea 1051h, y allí vuelven con su lector (`librosAeat.ts`) |
+| `scrum411` control positivo | 8 exports huérfanos en `destinatarioIsp.ts` | se les quita el `export` a los seis que sólo usaba el propio módulo (`ERROR_ISP_*`, `COPY_ISP_SIN_NIF`, `DestinatarioIspError`, `tieneLineasIsp`, `destinatarioIspNoValido`); los dos de P3, como arriba. El test de 1051g mide ahora por la superficie pública (`exigirDestinatarioParaIsp`), el patrón de `scrum441` |
+| `scrum411` las categorías suman | 245 declarados frente a 253 medidos | es el mismo hueco: sin los 8, vuelve a 245 |
+| `scrum189` | «regla 40 del» sin destino en `destinatarioIsp.ts:3` | dice «la regla 40 del máster» |
+| `scrum615` | `destinatarioIsp.ts` e `invoicesAdmin.routes.ts` leen `tipoDestinatario` | la lista fijada lleva los dos, con su motivo y el GO de SCRUM-1051 c.21750 punto 3, como hizo SCRUM-983: el portón decide (NULL se rechaza, no se resuelve a PARTICULAR: no es una segunda copia de esa regla) y la ruta sólo lo transporta |
+| `scrum719` (1395b ①) | `scrum601` cambió desde la medida de mudez | `npm run censo:mudez -- --escribir`: 1 de 130 medido, VIVO |
+
+**Por qué la dirigida no lo vio:** los cinco ficheros recorren `src/` entero sin nombrar `destinatarioIsp.ts`, así que la lista que da `tests:que-cubren` no los incluye; el de mudez se dispara por `scrum601`, que sí estaba, pero el que lo vigila (`scrum719`) no.
+
+**No cambia:** la huella ni el XML (no se tocó `registro.builder.ts`, `fiscal/verifactu/` ni `src/lib/invoicing.ts`). El comportamiento del portón es el mismo: sólo cambia qué se exporta.
+
+**Corrido:** `tsc -p .` con tipos, salida 0. Los 6 ficheros: base 92 + 6 fail, rama 98 de 98.
+## SCRUM-1051f · lo que falta de la aceptación (1, 3, 4 y 6): medición y propuesta (J1, jv-j1ea, 12-nov-2026)
+
+**Medido contra:** `origin/main` = `deab373d6a379fcbfc7ec1fce0428111156f49d3` · 2026-11-12T17:05:08Z (hora de la cabecera `Date:` de GitHub)
+
+Sólo lectura y sólo docs: nada en `src/` ni `public/`, ninguna base, nada a la AEAT. Leído con `grep -n`, NO ejecutado (este árbol no tiene `dist/`). La tabla entera y las preguntas, en Jira SCRUM-1051 c.21748.
+
+- **1 · marcar ISP:** no hay pantalla. El cuerpo de `POST /admin/invoices` sólo lleva `concept, qty, price, tax` (`public/dashboard/js/cuerpoDelDocumentoSuelto.js:50-54`); «S2» en `public/`: 0. Tampoco hay ajuste «lo activa» (sería flag → máster, o campo → ALTER). Ficheros de S2 (equipo de Luis). Necesita firma (rótulo).
+- **3 · leyenda:** el PDF no la imprime y funde la S2 con su tipo (`src/modules/invoicing/infra/pdf/pdf.service.ts:646-653`). J1; GO (regla 40) y firma (regla 39). Fuente cotejada hoy en el BOE consolidado (`BOE-A-2012-14696`, bloque `a6`): ROF art. 6.1.m), «la mención «inversión del sujeto pasivo»». Propuesta: ese literal, sin cita del artículo.
+- **4 · libro:** el 303 (casilla 122) y el 390 (125) ya la llevan (SCRUM-1063f). El libro guarda `causa` (`libroRegistro.ts:91`) pero ni la descarga (`librosAeat.ts:323-329`) ni la pantalla (`libroRegistroView.js`) la enseñan. J1; firma, sin GO.
+- **6 · NIF en servidor:** no se rechaza. El portón de la causa no mira el NIF, y sin NIF el builder excluye la factura del registro pero «se emite, se envía y se cobra igual» (`src/modules/fiscal/verifactu/registro.builder.ts:260`). Haría falta un portón antes de emitir (`invoicesAdmin.routes.ts`, `src/lib/invoicing.ts`, J1): GO de regla 40 y es identidad fiscal, fuera de c.16594.
+- `docs/master/SCRUM-1264.md`: 0 «sujeto pasivo»/«ISP»/«Q-C2» (control: «asesor», 3). El índice de 45 de Jira NO leído.
+
+**Skill UI:** no cargada · no se toca `public/`: sólo se lee con `grep -n` para citar fichero:línea; el tramo es documentación.
+
+**Corrido:** nada de tests (sólo docs). Suite entera: NO CORRIDA.
+
+A9: sin fallo que generalice — es una medición de sólo lectura; cada fichero:línea citado sale de un `grep -n` de esta tanda, y lo que no se ejecutó lo dice el propio tramo.

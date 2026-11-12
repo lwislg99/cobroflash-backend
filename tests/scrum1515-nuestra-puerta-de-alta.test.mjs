@@ -234,7 +234,12 @@ test('SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el 
       assert.equal(enlaces.length, 0, '🔴 la ruta cerrada ha generado un enlace de acceso');
 
       // Lo que PINTA la página con esa respuesta: se ejecuta SU expresión, sacada de su fuente.
-      const pagina = fs.readFileSync(path.join(RAIZ, 'public', 'register.html'), 'utf8');
+      // SCRUM-1647d: el guion salió del HTML (CSP) y la página lo carga de `GET /auth/js/alta.js`; la
+      // fuente es el HTML MÁS el guion servido, si lo carga. Ninguna aserción cambia.
+      const html = fs.readFileSync(path.join(RAIZ, 'public', 'register.html'), 'utf8');
+      const pagina = /<script[^>]*\ssrc="\/auth\/js\/alta\.js"[^>]*>/.test(html)
+        ? html + '\n' + (await import(new URL('../dist/modules/auth/app/routes/altaNavegador.js', import.meta.url))).ALTA_JS
+        : html;
       const expresion = pagina.match(/showAlert\((.*'Error al crear la cuenta\.'), 'error'\)/);
       const tabla = pagina.match(/const msgs = (\{[^}]*\});/);
       assert.ok(expresion && tabla, '🔴 CIEGO: no encuentro en register.html la expresión que pinta el error, o su tabla');
