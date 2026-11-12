@@ -1999,5 +1999,4 @@ Aplica las decisiones del orquestador J de SCRUM-665 c.21592 y c.21608. Ningún 
 - **`scrum525d`: NO hecho.** `node scripts/carriles.mjs de docs/legal/AUDITORIA_CAMINO_EMISION.md` → «J4 propone» (`dos-equipos.md:204`). Paré; el orquestador J firmó como jefe reapuntar las 3 anclas en sitio (mensaje a jv-j1dk; en Jira, comentario siguiente a c.21606). No me cupo en contexto: queda para el relevo 8.
 - **NO corrido:** la dirigida de 73, `tsc -p .` con tipos, `guards:entrada`, 237/976/1387, mutaciones salvo la de 577, suite entera local. Sólo se corrieron 1142, 577 y 762 sueltos y los de registro (abajo).
 
-A9: aviso → cicatriz J1 «Escribí un test reemplazando texto con un script node cuyo literal llevaba `
-` dentro de una plantilla: salieron saltos de línea reales y el fichero no cargó; lo cazó el recuento (1 test en vez de 10)» — no se pudo comprobar: lo impediría un hook sobre la orden, y los hooks no son de este puesto
+A9: aviso → cicatriz J1 «Escribí un test reemplazando texto con un script node cuyo literal llevaba `\n` dentro de una plantilla: salieron saltos de línea reales y el fichero no cargó; lo cazó el recuento (1 test en vez de 10)» — no se pudo comprobar: lo impediría un hook sobre la orden, y los hooks no son de este puesto
