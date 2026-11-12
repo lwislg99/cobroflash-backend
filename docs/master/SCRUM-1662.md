@@ -106,3 +106,15 @@ en un PR que entre a la vez.
 ### Ancla de otro documento movida por el esquema de esta rama
 
 Las 6 líneas de `Job.queHayQueHacer` en `prisma/schema.prisma` desplazan `model VfSubmission` de 1809 a 1815, y `tests/scrum525d-anclas-que-apuntan` lo cazó en `docs/legal/AUDITORIA_CAMINO_EMISION.md:40`. Se lleva la coordenada a donde está hoy (opción ① del propio guard; mismo precedente que SCRUM-1072, que movió esas anclas por `activityKind`). Solo el número de línea: el texto de la auditoría no cambia.
+
+### 12-nov (S1 relevo) · cuatro rojos que la rama llevaba y el CI habría cazado
+
+Medidos al correr la tanda entera con banco desde la rama apilada de SCRUM-1707 y confirmados en ESTE árbol
+(`947f8e13c`): `scrum222`, `scrum461` y `scrum733` — `docs/sql/deriva-prod.sql` seguía con 515 columnas sin
+`jobs.que_hay_que_hacer`— y `scrum1185` —`PATCH /admin/jobs/:id::queHayQueHacer` sin consumidor—. El traspaso
+los contaba como «base de la antecesora»; no lo eran: en `main` no existe la columna.
+- `deriva-prod.sql` regenerado con su generador (`node scripts/generar-sql-deriva.mjs`, 516 columnas). Ni a mano
+  ni otro cambio.
+- El campo del PATCH se DECLARA en `scripts/_sin-consumir-declarados.json` (carril S2, este ticket): el alta ya
+  lo consume y el editor de la ficha es de S2. Si su commit en este PR lo conecta, la entrada pasa a `retiradas`.
+Los cuatro, en verde tras esto (62/62 con `scrum480`/`scrum533` de EOL).
