@@ -56,3 +56,133 @@ c.21663 §3.
    de SCRUM-1264.
 3. El encargo situaba el DPA de Railway en 1533 c.21593. Lo comprobé leyendo el comentario literal antes
    de clasificar: no estaba ahí, y lo tomé del registro de 1533.
+
+---
+
+# SCRUM-1264r · `docs/legal/PREGUNTAS_ASESOR.md` al día con el índice de 45: 19 bloques añadidos al final
+
+**Medido contra:** `origin/main` = `deab373d6a379fcbfc7ec1fce0428111156f49d3` · 2026-11-12T17:10:53Z (cabecera `Date:` de GitHub)
+
+A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
+
+Sesión J5 (IA, `jv-j5aw`), 12-nov-2026, por encargo del orquestador `cobroflash-backend-63`. **Solo
+docs.** Fuente: SCRUM-1264, descripción (índice de 45) y c.21741 (texto de las añadidas), leídos en
+Markdown por la herramienta de Jira; c.21743 decía que al fichero le faltaban «~12».
+
+## Ⓐ Medición: qué faltaba, por contenido
+
+Script con 1-5 palabras clave por entrada sobre `git show origin/main:docs/legal/PREGUNTAS_ASESOR.md`
+(1.544 líneas, 128.351 B). Control positivo **sembrado** (una línea fabricada añadida a una copia: sale
+1, y en el original 0) y uno negativo (cadena inventada: 0). El fichero no usa la numeración de 1264
+(P11-P25, Q-C1…Q-C9, bloques A-G), así que «está» quiere decir que su CONTENIDO está.
+
+- **Estaban (26):** A1 (P14), A2, A3, A4 (P19), 30-32 (P22-P24), B1 (P11), B2 (P16), B3 (bloque F),
+  B4 (P12), B5 (P13), B6 (Q-C6), D1 (P20), D2 (P18), C2 (bloque C.8), E1 (P15), E2 (21.1-21.5), E3
+  (SCRUM-324), E4 (Q-C8), Q-C5, E5 (Q-C7), F1, F2, F3 (bloque C), F4 (bloque G), G1 (bloque E), G2
+  (P17), G3 (bloque C.9).
+- **Faltaban con texto en Jira (19), añadidas:** Q-nueva-A, Q-nueva-B, R-1…R-4 + Q-redondeo, la
+  ampliación de B3 (las «obras conexas»), la confirmación de D1, **D3, C1 y F5 (tres de las 28
+  originales)**, 34 (E6) + A1-A6, E7, (e)(f)(g) + turismos, E10, E8, E9, 347-suplidos y G5.
+- **Faltan y no se pueden añadir:** A5 y G4 — Jira no tiene su texto (c.17682 solo las nombra).
+
+c.21743 decía ~12 porque miró solo las del comentario; las tres originales que faltaban (D3, C1, F5)
+no las buscó.
+
+## Ⓑ Cómo se añadió
+
+- **Al final**, bajo «# Al día con SCRUM-1264 el 12-nov-2026». No arriba: `SCRUM-1023.md`,
+  `SCRUM-1039.md`, los dos `INVENTARIO_AFIRMACIONES_*.md` y `ENVIO_ASESOR_2026-09-28.md` citan este
+  fichero por número de línea. Comprobado por bytes: las 1.544 líneas de antes son idénticas.
+- Texto cortado **por script** del Markdown que devuelve Jira, no tecleado. Control: los 16 bloques de
+  c.21741 que se añaden están ENTEROS en el fichero, y D3, C1 y F5 de la descripción también; los 3 que
+  no se añaden (A5, Q-C5, G4) y B2 (negativo) no están.
+- **Única desviación del literal:** la ampliación de B3 cita «este fichero:889». Copiada tal cual,
+  scrum525d sale ROJO (tomó el nombre de rama de la misma frase como testigo, y ese nombre está en la
+  línea nueva, no en la 889). Se cambió la coordenada por una nota entre corchetes, y se dice en la
+  cabecera del bloque. El guard no se tocó.
+
+## Ⓒ Guards
+
+Locales, por TAP: scrum525d, 267, 273, 1294, 737, 921c, 1106 y 1041 → antes del arreglo 64/65 (el
+rojo de scrum525d de arriba); tras él y con este registro escrito, los ocho otra vez: 65/65, 0 saltados. No hay test con «1524» en el nombre:
+el congelado de 1524 es `scripts/_anclas-sin-testigo.congelado.mjs`, y lo lee scrum525d. Suite
+entera local: NO CORRIDA (solo docs).
+
+## Ⓓ Lo que NO está medido
+
+- Solo he comparado CONTENIDO por palabras clave: una entrada que «está» puede estar con otra
+  redacción o con otra respuesta. No he cotejado la redacción de las 26 que ya estaban con la de Jira.
+- No he tocado la descripción de SCRUM-1264 ni la parte de arriba del fichero (P14 sigue diciendo que
+  es la más urgente, «al final del documento»; ahora hay algo más debajo).
+- Q-C5 cuenta como presente, pero c.20959 le añade 4 confirmaciones (a)-(d) que aquí no están escritas
+  como preguntas.
+
+## Ⓔ Lo que me salió mal
+
+1. Mi primer troceo de c.21741 cortaba por `---` y **se comió el final del bloque 23** (E6: el texto de
+   la 34 y las A1-A6), porque ese bloque lleva un `---` dentro. Lo cazó el recuento por palabra clave
+   («Bizum» no subía). Rehecho uniendo los trozos sin encabezado al anterior.
+2. Copié una cita «fichero:línea» sin pensar que este repositorio las lee como anclas: lo cazó
+   scrum525d (es la línea `A9:` de este tramo).
+3. No me medí justo al acabar de leer Jira: lo hice después de medir el fichero (~152k).
+
+---
+
+# SCRUM-1264s · Las preguntas de la tarde del 12-nov (1063l y 1129): 2 nuevas al final, 2 grupos que ya estaban
+
+**Medido contra:** `origin/main` = `8928099fe426f9a20857f1162c4cdbf4621d409a` · 2026-11-12T17:45:50Z (cabecera `Date:` de GitHub)
+
+A9: aviso → cicatriz J5 «Al copiar un literal de Jira al fichero del asesor quité en silencio una cita a fichero y línea, por miedo a que la leyera scrum525d como ancla; lo vi al releer el bloque, antes del commit» — no se pudo comprobar: ningún guard compara lo copiado en docs/legal con el comentario de Jira del que sale.
+
+Sesión J5 (IA, `jv-j5az`), 12-nov-2026, por encargo del orquestador `cobroflash-backend-63` (decisión
+de Javier en SCRUM-1063 c.21764). **Solo docs.** Al ir a empujar, `origin/main` iba 2 commits por
+delante (`2c52196fddfdee2f2875c38d51642785d2566812`) sin tocar ninguno de mis tres ficheros.
+
+## Ⓐ Medición, por contenido
+
+Script de patrones por candidata sobre `git show origin/main:docs/legal/PREGUNTAS_ASESOR.md` (1.847
+líneas, 156.034 B). Control positivo del árbol: la (f) de las furgonetas (fila 28) sale en la 1770.
+Control negativo: una frase inventada da 0. Positivo **sembrado**: una línea fabricada con «2 % … 2024
+… 2026» añadida a una copia sale (1849), y en el original no. También se miró el índice de la
+descripción de SCRUM-1264 (45 filas).
+
+| candidata (c.21764) | veredicto | dónde |
+| --- | --- | --- |
+| 30/31 (N1) | **ya estaba** | fila 29 (E10: (a) y (b) de c.20863), línea 1782; la (c) de c.20863 es la (e) y la (d) quedó superada por la (f) y los turismos |
+| (e), (f), (g) de c.20922 | **ya estaba** | fila 28, líneas 1769-1772 (c.20927) |
+| los cuatro comportamientos de 1063j | **ya estaba** | fila 27 (E7, c.21140), líneas 1753-1756 |
+| gasto al 2 % de 2024 apuntado en 2026 | **faltaba** → fila 46 | Q-C7 y E5 hablan de lo que se factura, no del soportado |
+| R1 de una factura con criterio de caja (c.21756/c.21757) | **faltaba** → fila 47 | B6 (2)(3) y Q-nueva-A rozan, no la contestan |
+| **de paso:** G3.(7) de c.21749 (disputa) | **faltaba** → dentro de G3 | c.21749 pide contarla dentro de G3, no como entrada nueva |
+
+## Ⓑ Cómo se añadió
+
+- **Al final**, bajo «# Añadidas el 12-nov-2026 por la tarde (SCRUM-1264s)». Comprobado por bytes: los
+  156.034 B de `origin/main` son el prefijo exacto del fichero nuevo (`cmp`), 57 líneas añadidas y 0
+  quitadas, 0 bytes CR.
+- Texto copiado del Markdown que devuelve Jira. La fila 47 no tiene en Jira una redacción para el
+  asesor: va como los dos literales de «sin decidir» de c.21756 y c.21757, y el bloque lo dice.
+- **No se ha tocado la descripción de SCRUM-1264.** Mide 31.993 caracteres y su tope es 32.000
+  (c.21743), y la herramienta de Jira la da como no editable: las filas 46-47 y G3.(7) van en el
+  comentario de 1264s. Se cambia el **título** (45 → 47 entradas).
+
+## Ⓒ Guards
+
+Locales: scrum525d, 267, 273, 1294, 737, 921c, 1106 y 1041 (resultado en la entrega y en el comentario
+de Jira). Suite entera local: NO CORRIDA (solo docs).
+
+## Ⓓ Lo que NO está medido
+
+- Si la R1 con criterio de caja es pregunta para el asesor o decisión del fundador: c.21757 no lo dice.
+- Que el índice de la descripción recoja las filas 46-47: no cabe sin pasar el tope; lo decide el
+  orquestador.
+- La redacción de las «ya estaban» frente a Jira: solo su contenido.
+
+## Ⓔ Lo que me salió mal
+
+1. Al copiar el caso 2 de c.21763 quité la cita `modelo303.ts` + línea, temiendo a scrum525d, sin
+   declararlo. Lo vi al releer, antes del commit, y la repuse entera; scrum525d la cazó (coordenada
+   sin testigo), y entonces sí la cambié por una nota entre corchetes DECLARADA en la cabecera, como
+   1264r. Lo que falló fue quitarla en silencio, y eso no lo caza ningún guard (es la línea `A9:`).
+2. Leí la descripción entera de 1264 (32 KB) y los comentarios de 1264, 1063 y 1129: crucé de 94k a
+   186k sólo leyendo Jira, y avisé al orquestador en ese momento, antes de los 200k.

@@ -1,0 +1,125 @@
+// Generador de un solo uso (SCRUM-1723, J2). Mueve el <style> de tres páginas de pago, TAL CUAL, a
+// src/modules/billing/app/routes/pagoEstilo.ts y cambia sus style= por clases. Aborta si algo no cuadra.
+import fs from 'node:fs';
+import path from 'node:path';
+
+const raiz = process.argv[2];
+const dir = path.join(raiz, 'src/modules/billing/app/routes');
+const PAGINAS = [
+  {
+    clave: 'banco', fichero: 'payBank.routes.ts',
+    attrs: [
+      ['<span style="color:#6b756f;font-size:.9rem">', '<span class="pago-sin-cuenta">', '.pago-sin-cuenta{color:#6b756f;font-size:.9rem}'],
+      ['<span style="color:#ef4444">', '<span class="pago-obligatorio">', '.pago-obligatorio{color:#ef4444}'],
+      ['<p style="font-size:.8rem;color:#6b756f;margin:0 0 .5rem">', '<p class="pago-dev-aviso">', '.pago-dev-aviso{font-size:.8rem;color:#6b756f;margin:0 0 .5rem}'],
+    ],
+  },
+  {
+    clave: 'bizum', fichero: 'payBizum.routes.ts',
+    attrs: [
+      ['class="row-value" style="font-size:.85rem"', 'class="row-value row-value-concepto"', '.row-value.row-value-concepto{font-size:.85rem}'],
+    ],
+  },
+  {
+    clave: 'factura', fichero: 'payInvoice.routes.ts',
+    attrs: [
+      ['<div style="text-align:center;font-size:.85rem;color:var(--muted);padding:.8rem 0;line-height:1.5">', '<div class="pago-sin-metodos">', '.pago-sin-metodos{text-align:center;font-size:.85rem;color:var(--muted);padding:.8rem 0;line-height:1.5}'],
+    ],
+  },
+];
+
+function una(hay, aguja, donde) {
+  const n = hay.split(aguja).length - 1;
+  if (n !== 1) throw new Error(`${donde}: «${aguja}» aparece ${n} veces (se esperaba 1)`);
+}
+
+const bloques = [];
+for (const p of PAGINAS) {
+  const ruta = path.join(dir, p.fichero);
+  let src = fs.readFileSync(ruta, 'utf8');
+  if (src.includes('\r')) throw new Error(`${p.fichero}: lleva CR`);
+  const abre = '  <style>\n';
+  const cierra = '  </style>\n';
+  una(src, abre, p.fichero); una(src, cierra, p.fichero);
+  const i = src.indexOf(abre), j = src.indexOf(cierra);
+  if (!(i < j)) throw new Error(`${p.fichero}: orden de <style>`);
+  const dentro = src.slice(i + abre.length, j);
+  if (dentro.includes('${') || dentro.includes('`')) throw new Error(`${p.fichero}: el CSS lleva \${ o comilla grave`);
+  src = src.slice(0, i) + `  \${etiquetaEstiloDePago('${p.clave}')}\n` + src.slice(j + cierra.length);
+  const extra = [];
+  for (const [antes, despues, regla] of p.attrs) {
+    una(src, antes, p.fichero);
+    src = src.replace(antes, despues);
+    extra.push('    ' + regla);
+  }
+  bloques.push({ clave: p.clave, css: dentro + '    /* SCRUM-1723 · los `style=` que llevaba el marcado, copiados tal cual a una clase. */\n' + extra.join('\n') + '\n  ' });
+  fs.writeFileSync(ruta, src);
+  console.log(`${p.fichero}: <style> de ${dentro.length} B fuera; ${p.attrs.length} style= a clase`);
+}
+
+const cuerpo = bloques.map(b => `  ${b.clave}: \`${b.css.replace(/\\/g, '\\\\')}\`,`).join('\n');
+// OJO: el texto venía de un template literal del fuente; copiar el FUENTE tal cual conserva el valor.
+// Por eso NO se escapan las barras: se deshace el escape de arriba.
+const cuerpoFuente = bloques.map(b => `  ${b.clave}: \`${b.css}\`,`).join('\n');
+void cuerpo;
+
+const ts = `// src/modules/billing/app/routes/pagoEstilo.ts — SCRUM-1723 (CSP paso 3, \`style-src 'self'\`; parte J2)
+//
+// EL CSS DE LAS PÁGINAS DE PAGO (\`/pay/bank\`, \`/pay/bizum\`, \`/pay/invoice\`), FUERA DEL HTML.
+//
+// Hasta aquí vivía en un \`<style>\` en línea de cada página, más algún \`style=\` suelto en el marcado.
+// Con \`style-src 'self'\` APLICADA (SCRUM-1637) el navegador no pinta ninguno de los dos y las tres
+// páginas salen desnudas: lo midió jv-j2bu en navegador real (SCRUM-1647 c.21665).
+//
+// ⚠️ CERO CAMBIOS VISIBLES (superficie pública): cada hoja es el \`<style>\` de SU página, copiado tal
+// cual (mismas reglas, mismo orden) y servido en el mismo sitio de la cascada (la \`<link>\` ocupa el
+// hueco del \`<style>\`). Lo único añadido son las reglas del final de cada hoja: los \`style=\` del
+// marcado, pasados a una clase con las mismas declaraciones.
+//
+// POR QUÉ UNA HOJA POR PÁGINA Y NO UNA SOLA: las tres definen \`body\`, \`.card\` o \`.copy-btn\` de forma
+// distinta; juntarlas cambiaría la cascada. Una sola RUTA (\`GET /pay/css/pago.css\`, la única línea
+// firmada en SCRUM-1723 c.21719) y la página por \`?p=\`, de un conjunto CERRADO: otra cosa es 404.
+//
+// Mismo patrón que el guion (\`pagoNavegador.ts\`, SCRUM-1647): cadenas CONSTANTES, servidas por el
+// router de pago (\`public/**\` es del carril S2), con huella (\`?v=\`, SCRUM-274).
+import { huellaDeContenido, CACHE_CON_HUELLA } from '../../../../core/http/huellaEstaticos';
+
+export type PaginaDePago = 'banco' | 'bizum' | 'factura';
+
+export const PAGO_CSS: Readonly<Record<PaginaDePago, string>> = {
+${cuerpoFuente}
+};
+
+const HUELLAS: Readonly<Record<PaginaDePago, string>> = {
+  banco: huellaDeContenido(PAGO_CSS.banco),
+  bizum: huellaDeContenido(PAGO_CSS.bizum),
+  factura: huellaDeContenido(PAGO_CSS.factura),
+};
+
+/** Ruta de la hoja dentro del router montado en \`/pay\`. */
+export const RUTA_PAGO_CSS = '/css/pago.css';
+
+/** La página pedida, sólo si es una de las del conjunto cerrado; si no, \`null\`. */
+export function paginaDeEstilo(pedida: unknown): PaginaDePago | null {
+  return typeof pedida === 'string' && Object.prototype.hasOwnProperty.call(PAGO_CSS, pedida)
+    ? (pedida as PaginaDePago)
+    : null;
+}
+
+/** \`Cache-Control\` según la huella pedida: \`immutable\` sólo si cuadra; si no, revalidar siempre. */
+export function cacheDelEstiloDePago(pagina: PaginaDePago, pedida: unknown): string {
+  return pedida === HUELLAS[pagina] ? CACHE_CON_HUELLA : 'no-cache';
+}
+
+/** El \`href\` de la hoja. Relativo al propio servidor: \`style-src 'self'\`. */
+export function hrefEstiloDePago(pagina: PaginaDePago): string {
+  return \`/pay\${RUTA_PAGO_CSS}?p=\${pagina}&v=\${HUELLAS[pagina]}\`;
+}
+
+/** La etiqueta que ocupa el hueco del \`<style>\`. \`pagina\` es una constante del servidor, nunca un dato. */
+export function etiquetaEstiloDePago(pagina: PaginaDePago): string {
+  return \`<link rel="stylesheet" href="\${hrefEstiloDePago(pagina).replace('&', '&amp;')}"/>\`;
+}
+`;
+fs.writeFileSync(path.join(dir, 'pagoEstilo.ts'), ts);
+console.log('pagoEstilo.ts escrito,', ts.length, 'B');
