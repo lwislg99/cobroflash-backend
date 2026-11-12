@@ -1,5 +1,7 @@
 # SCRUM-1661 · La ficha de un albarán VALORADO enseña sus líneas y su total
 
+**Medido contra:** `origin/main` = `22b1c4510e4034c1a70bd98e2a796bff9cecbf11` · 2026-11-11T20:29:44+01:00 (hora del commit que registra la medición; la rama nace de ese main)
+
 **Puesto:** S4 · **Rama:** `scrum-1661-albaran-valorado-lineas` · 11-nov-2026
 
 ## Qué pasaba (medido)
