@@ -27,7 +27,7 @@ import { BASE_URL } from '../../../../core/config/env';
 import { prisma } from '../../../../core/db/prisma';
 import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { applyVeriFactu, applyVeriFactuAnulacion } from '../../../invoicing/domain/verifactu.service'; // SCRUM-153
-import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { allocateInvoiceNumber, isReceiptNumber, appendStageLabel } from '../../../invoicing/domain/invoiceNumber.service';
 import { isDemoMerchant, DEMO_WATERMARK, motivoSiiSinEmision } from '../../../invoicing/domain/emission.service';
 import { getDeliveryStatus } from '../../../messaging/domain/whatsappLog.service';
 import { envioDelDocumento } from '../../../billing/domain/envioDelDocumento'; // SCRUM-885b
@@ -37,7 +37,7 @@ import { metodoDeUnCobro, ROTULO_SIN_METODO } from '../../../billing/domain/meto
 import { recordCustomerEvent } from '../../customerEvents.service';
 import { generateInvoicePdf } from '../../../../lib/pdf';
 
-import { sendWhatsAppTemplate, sendWhatsAppText } from '../../../../integrations/whatsapp';
+import { sendWhatsAppTemplate, sendWhatsAppText, sendWhatsAppWindowFirst } from '../../../../integrations/whatsapp';
 import { buildPaymentRequest } from '../../../../integrations/whatsappTemplates';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { canalDeWhatsApp } from '../../../../core/contacto/canalDeWhatsApp'; // SCRUM-590 (CONT-19)
@@ -54,6 +54,7 @@ import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-109
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
 import { exigirCausaLineaEmitible } from '../../../../core/validation/causaLineaEmitible'; // SCRUM-1051d
+import { exigirDestinatarioParaIsp, esErrorDestinatarioIsp } from '../../../invoicing/domain/destinatarioIsp'; // SCRUM-1051g
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-289 (C7)
 import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
 import {
@@ -152,7 +153,7 @@ router.post('/', requireRole('admin'), async (req, res) => {
     // sale a COSTE CERO, porque esta consulta de tenencia ya se hacía. Ni un viaje más.
     const customer = await prisma.customer.findFirst({
       where: { id: val.customerId, merchantId: req.merchantId },
-      select: { id: true, name: true, legalName: true, taxId: true, email: true, phone: true },
+      select: { id: true, name: true, legalName: true, taxId: true, email: true, phone: true, tipoDestinatario: true }, // SCRUM-1051g: + tipoDestinatario
     });
     if (!customer) {
       return res.status(404).json({ error: ERROR_CLIENTE_INVALIDO, message: 'Ese cliente no existe.' });
@@ -172,6 +173,9 @@ router.post('/', requireRole('admin'), async (req, res) => {
     // SCRUM-1051d · y que la CAUSA (si la línea trae una) esté en la lista activa: el mismo portón
     // que la boca de cobro (`lib/invoicing.ts`), en el mismo sitio y ANTES de pedir número.
     exigirCausaLineaEmitible(val.lineas);
+    // SCRUM-1051g · y si hay líneas S2, el cliente tiene que tener NIF válido y ser EMPRESARIO
+    // (GO de regla 40, c.21750 punto 3). Mismo sitio y misma razón: ANTES de pedir número.
+    exigirDestinatarioParaIsp(val.lineas, customer);
 
     const emisorCongelado = congelarEmisorDesdeFicha(merchant); // SCRUM-665 · sin viaje extra
 
@@ -237,6 +241,11 @@ router.post('/', requireRole('admin'), async (req, res) => {
   } catch (err: any) {
     if (esErrorSinLineas(err)) {
       return res.status(409).json({ error: ERROR_SIN_LINEAS, message: COPY_ADMIN_SIN_LINEAS });
+    }
+    // SCRUM-1051g · el rechazo del destinatario ISP. `message` sólo cuando hay texto firmado
+    // (P4, sin NIF); el caso «no es empresario» va con su código y sin texto (regla 39).
+    if (esErrorDestinatarioIsp(err)) {
+      return res.status(422).json(err.mensaje ? { error: err.code, message: err.mensaje } : { error: err.code });
     }
     console.error('[POST /admin/invoices]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
@@ -379,7 +388,8 @@ router.get('/:id/dispute-package', requireRole('admin'), async (req, res) => {
     const invoice = await prisma.invoice.findFirst({
       where: { id, merchantId: req.merchantId },
       include: {
-        merchant: { select: { name: true, legalName: true, taxId: true, address: true } },
+        // SCRUM-1726 (D1): `timezone`, para que las fechas de la hoja vayan en la zona del negocio.
+        merchant: { select: { name: true, legalName: true, taxId: true, address: true, timezone: true } },
         customer: { select: { id: true, name: true, phone: true, email: true } },
         quote: true,
         charge: { select: { id: true, method: true, intentId: true, reference: true, status: true } },
@@ -405,9 +415,17 @@ router.get('/:id/dispute-package', requireRole('admin'), async (req, res) => {
     });
 
     const esc = (v: unknown) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    const fD = (d: Date | string | null | undefined) => d ? new Date(d).toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' }) : '—';
+    // SCRUM-1726 (D1, firmada en SCRUM-1656 c.21724): las fechas que lee el banco son las que vivió
+    // el cliente, en la zona del negocio. Sin zona guardada, UTC (decisión A de `zonaDelMerchant`).
+    const zonaDelNegocio = zonaDelMerchant(invoice.merchant);
+    const fD = (d: Date | string | null | undefined) => d ? new Date(d).toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short', timeZone: zonaDelNegocio }) : '—';
     const money = (n: unknown, cur?: string) => formatMoneyEs(Number(n ?? 0), cur || invoice.currency);
     const ev = (quote?.evidence ?? {}) as Record<string, unknown>;
+    // SCRUM-1726 (texto 6, firmado en SCRUM-1656 c.21724 sobre c.21722): «de la factura»; «del
+    // justificante» se queda sólo para un `J-` antiguo. Los dos literales enteros, byte a byte.
+    const pieDeLaHoja = isReceiptNumber(invoice.number)
+      ? 'PDF del presupuesto firmado y del justificante: disponibles desde el panel (se adjuntan a la respuesta de la disputa).'
+      : 'PDF del presupuesto firmado y de la factura: disponibles desde el panel (se adjuntan a la respuesta de la disputa).';
 
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"/>
 <title>Paquete de disputa · ${esc(invoice.number)}</title>
@@ -464,7 +482,7 @@ router.get('/:id/dispute-package', requireRole('admin'), async (req, res) => {
 </table>
 
 <p class="sub" style="margin-top:26px">La aceptación queda registrada con marca de tiempo, IP y dispositivo en el momento de la firma.
-PDF del presupuesto firmado y del justificante: disponibles desde el panel (se adjuntan a la respuesta de la disputa).</p>
+${pieDeLaHoja}</p>
 </body></html>`;
 
     return res.status(200).type('html').send(html);
@@ -735,7 +753,8 @@ router.post('/:id/send-email', requireRole('admin'), async (req, res) => {
 /**
  * POST /admin/invoices/:id/send-reminder
  * Envía manualmente un recordatorio de pago al cliente.
- * Usa payment_request_es si la factura tiene charge; texto libre si no.
+ * Con charge: ventana de 24 h primero (botón «Pagar ahora»), y si está cerrada, payment_request_es
+ * (SCRUM-1726, D3). Sin charge: texto libre.
  * Actualiza el campo reminder7SentAt o reminder14SentAt según corresponda.
  */
 router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
@@ -771,11 +790,37 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
     // endpoints que no decía nada del motivo. failReason lo captura para el cuerpo final.
     let failReason: SendFailureReason = 'whatsapp_send_failed';
 
+    let via: 'window' | 'template' | 'text' = payUrl ? 'template' : 'text';
     if (payUrl) {
-      const result = await sendWhatsAppTemplate({
+      // SCRUM-1726 (D3, firmada en SCRUM-1656 c.21724): la ventana de 24 h PRIMERO, como el
+      // automático (`invoiceReminder.service.ts`). Abierta → botón «Pagar ahora»; cerrada (o si el
+      // botón falla) → la plantilla `payment_request_es` de siempre, con sus mismos parámetros.
+      // Regla 28: no cambia ni cuándo se manda (al pulsar) ni a quién (`phone`, el mismo).
+      // 🔴 El texto del botón es el del automático (firmado en SCRUM-1436), byte a byte: lo ata
+      // `tests/scrum1726-tanda-firmada-j1.test.mjs` por AST. El manual no tiene «día 14», así que
+      // su urgencia va vacía, que es lo que el automático pone el día 7.
+      const pagoDe   = isReceiptNumber(invoice.number) ? 'del justificante' : 'de la factura';
+      const urgency  = '';
+      const result = await sendWhatsAppWindowFirst({
         to: phone,
         merchantId: invoice.merchantId, // J3: respeta waOptOut
-        ...buildPaymentRequest({
+        customerId: invoice.customerId,
+        windowText:
+          `Hola ${customerName} 👋\n` +
+          `Te recordamos que tienes pendiente el pago ${pagoDe} ${appendStageLabel(invoice.number, invoice.stageLabel)} ` +
+          `por ${importe} de parte de ${merchantName}.${urgency}\n` +
+          `Paga de forma segura desde aquí 👇\n` +
+          `${payUrl}\n` +
+          `Si ya lo has pagado, ignora este mensaje. ¡Gracias!`,
+        windowCta: {
+          bodyText:
+            `Hola ${customerName} 👋\n` +
+            `Te recordamos el pago pendiente ${pagoDe} ${appendStageLabel(invoice.number, invoice.stageLabel)} por *${importe}* de parte de *${merchantName}*.${urgency}\n` +
+            `Si ya lo has pagado, ignora este mensaje. ¡Gracias!`,
+          buttonText: 'Pagar ahora',
+          url: payUrl,
+        },
+        template: buildPaymentRequest({
           customerName,
           businessName: merchantName,
           invoiceNumber: invoice.number,
@@ -788,6 +833,7 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
         log: { customerId: invoice.customerId, relatedType: 'invoice', relatedId: id },
       });
       sent = result.ok;
+      if (result.via === 'window') via = 'window';
       if (!result.ok) {
         console.error('[send-reminder] WA template error:', result.error);
         if ((result as any)?.reason && (result as any).reason in SEND_FAILURE_MESSAGES) failReason = (result as any).reason;
@@ -823,7 +869,7 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
       }
     }
 
-    const extra = { via: payUrl ? 'template' : 'text', phone };
+    const extra = { via, phone };
     return res.json(sent ? sendSuccessBody(extra) : falloDeEnvioDeFactura(failReason, extra));
   } catch (err) {
     console.error('[POST /admin/invoices/:id/send-reminder]', err);

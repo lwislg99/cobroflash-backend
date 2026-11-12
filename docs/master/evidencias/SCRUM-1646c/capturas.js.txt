@@ -1,0 +1,50 @@
+// SCRUM-1646c · recorrido de capturas. Se pasa tal cual a Playwright MCP (browser_run_code_unsafe), con
+// `node servidor-presupuesto.mjs <ARBOL> <TEMPORAL>` escuchando en 58124 y las caras ya volcadas
+// (`node volcar-presupuesto.mjs <ARBOL> <TEMPORAL>/antes|despues`, el de antes con el `src/` de main).
+async (page) => {
+  const B = 'http://127.0.0.1:58124';
+  const DIR = '<TEMPORAL>/capturas';
+  await page.emulateMedia({ reducedMotion: 'reduce' }); // sin confeti (Math.random): la captura es repetible
+  const trazo = async () => {
+    const c = await page.locator('#sig-canvas').boundingBox();
+    if (!c) throw new Error('CIEGO: sin lienzo');
+    await page.mouse.move(c.x + 20, c.y + 30); await page.mouse.down();
+    for (let i = 1; i <= 12; i++) await page.mouse.move(c.x + 20 + i * 15, c.y + 30 + (i % 2 ? 20 : -5), { steps: 2 });
+    await page.mouse.up();
+  };
+  const aceptar = async () => { await page.click('#btn-accept'); await page.waitForTimeout(700); };
+  const elegir = async () => { await page.click('.tier-card[data-tier-id="completa"] .btn-tier'); await page.waitForTimeout(900); };
+  const sinFirma = async () => { await page.check('#no-sig-check', { force: true }); };
+  const ESC = [
+    ['uno', 'inicial', async () => {}], ['uno', 'avisoSinFirma', aceptar], ['uno', 'conTrazo', trazo],
+    ['uno', 'exitoConTrazo', async () => { await trazo(); await aceptar(); }],
+    ['uno', 'exitoSinFirma', async () => { await sinFirma(); await aceptar(); }],
+    ['tres', 'inicial', async () => {}], ['tres', 'opcionElegida', elegir],
+    ['tres', 'exitoConTrazo', async () => { await elegir(); await trazo(); await aceptar(); }],
+    ['tres', 'exitoSinFirma', async () => { await elegir(); await sinFirma(); await aceptar(); }],
+    ['aceptado', 'inicial', async () => {}], ['rechazado', 'inicial', async () => {}],
+    ['rechazo-form', 'inicial', async () => {}], ['rechazo-enviado', 'inicial', async () => {}],
+  ];
+  const leer = async (r) => (await page.request.get(B + r)).json();
+  const lineas = [];
+  for (const ANCHO of [390, 1280]) {
+    await page.setViewportSize({ width: ANCHO, height: 900 });
+    for (const [cara, est, accion] of ESC) {
+      const f = {};
+      for (const v of ['antes', 'despues', 'control']) {
+        await page.request.get(B + '/reset');
+        await page.goto(`${B}/${v}/${cara}`, { waitUntil: 'networkidle' });
+        await page.evaluate(() => document.fonts.ready);
+        let error = null;
+        try { await accion(); } catch (e) { error = String(e.message).split('\n')[0].slice(0, 40); }
+        await page.waitForTimeout(300);
+        const png = await page.screenshot({ fullPage: true, animations: 'disabled', path: `${DIR}/${ANCHO}-${cara}-${est}-${v}.png` });
+        const texto = await page.evaluate(() => document.body.innerText);
+        await page.waitForTimeout(300);
+        f[v] = { png, error, texto, inf: (await leer('/informes')).length, dec: JSON.stringify(await leer('/decisiones')) };
+      }
+      lineas.push(`${ANCHO}px ${cara}/${est}: ${f.antes.png.equals(f.despues.png) ? 'IGUAL' : 'DISTINTA'} (${f.antes.png.length}/${f.despues.png.length}) · texto ${f.antes.texto === f.despues.texto ? '=' : 'DISTINTO'} · POST ${f.antes.dec === f.despues.dec ? '= ' + f.despues.dec : 'DISTINTO ' + f.antes.dec + ' vs ' + f.despues.dec} · informes ${f.antes.inf}/${f.despues.inf}/ctl ${f.control.inf} · control ${f.control.png.equals(f.antes.png) ? 'IGUAL' : 'DISTINTA'} POST ${f.control.dec} · err ${[f.antes.error, f.despues.error, f.control.error].map((e) => e || '-').join('|')}`);
+    }
+  }
+  return lineas.join('\n');
+}

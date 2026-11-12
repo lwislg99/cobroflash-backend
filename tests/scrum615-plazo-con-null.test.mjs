@@ -157,11 +157,19 @@ test('SCRUM-615 · 🔴 quién LEE `tipoDestinatario` en producción: la lista e
   assert.deepEqual(
     ficherosLectoresDeSrc,
     [
+      // SCRUM-1051g · lector NUEVO que DECIDE, autorizado por el GO del fundador (regla 40 del máster) en
+      // SCRUM-1051 c.21750 (punto 3): una factura con líneas S2 se rechaza si el cliente no es
+      // `EMPRESARIO`. NO es una segunda copia de «null → PARTICULAR»: no calcula plazo, y NULL
+      // aquí no se resuelve a nada, se rechaza («no declarado» no es empresario).
+      'src/modules/invoicing/domain/destinatarioIsp.ts',
       'src/modules/jobs/domain/pendientesFacturar.service.ts',
       // SCRUM-983 · transporte, como el de abajo: el `select` de GET /:id/detail lo trae para que
       // el modal «Editar» de la ficha 360 lo pinte con su valor en vez de vacío (vacío, al guardar,
       // lo BORRABA). No decide nada con él: ni plazo, ni «null → PARTICULAR».
       'src/modules/system/app/routes/customersAdmin.routes.ts',
+      // SCRUM-1051g · transporte: el `select` de `POST /admin/invoices` lo trae para pasárselo al
+      // portón de arriba (`exigirDestinatarioParaIsp`). No decide nada con él (c.21750, punto 3).
+      'src/modules/system/app/routes/invoicesAdmin.routes.ts',
       'src/modules/system/customerAdmin.ts', // transporte: el `select` que lo trae a la ficha
     ],
     '🔴 HA CAMBIADO QUIÉN LEE UN CAMPO CON CARGA FISCAL. Míralo antes de actualizar esta lista.',

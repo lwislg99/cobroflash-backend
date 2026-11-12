@@ -1,0 +1,7 @@
+BASE: 5 pasan · 0 caen
+CAZADA · const nuevos = customers.filter((c) => !c.waOptOut); → const nuevos = customers; · caen 3 de 5: SCRUM-1719 · cliente YA de baja escribe BAJA 120 veces → 0 avisos y 0 textos | SCRUM-1719 · POSITIVO: la primera BAJA avisa y contesta como hoy; las siguientes, silencio | SCRUM-1719 · dos negocios: sólo avisa al que aún no tenía la baja, y al cliente se le contesta una vez
+fuente restaurado byte a byte: true
+CAZADA ·   if (!nuevos.length) return;
+ →  · caen 2 de 5: SCRUM-1719 · cliente YA de baja escribe BAJA 120 veces → 0 avisos y 0 textos | SCRUM-1719 · POSITIVO: la primera BAJA avisa y contesta como hoy; las siguientes, silencio
+fuente restaurado byte a byte: true
+TRAS RESTAURAR: 5 pasan · 0 caen
