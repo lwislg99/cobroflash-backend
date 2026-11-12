@@ -35,10 +35,10 @@
 // Comparar sobre todo `src/` daría una diferencia que solo dice que ① mira menos sitios.
 import ts from 'typescript';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { analizar, ficherosTs, exportsDe } from './_alcance-dominio.mjs';
 import { censarAlcance, importacionesDe } from './_alcance-desde-entradas.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 export const SI = 'SI';
 export const NO = 'NO';
@@ -258,7 +258,7 @@ const FUENTE = {
 };
 
 export function escribirFuenteSintetica() {
-  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum493-comparador-'));
+  const raiz = temporal('scrum493-comparador-');
   for (const [r, c] of Object.entries(FUENTE)) {
     const destino = path.join(raiz, r);
     fs.mkdirSync(path.dirname(destino), { recursive: true });
@@ -283,6 +283,6 @@ export function autoprueba() {
       acuerdos: c.acuerdos,
     };
   } finally {
-    fs.rmSync(raiz, { recursive: true, force: true });
+    borrarTemporal(raiz);
   }
 }

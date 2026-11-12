@@ -43,3 +43,28 @@ export async function leerBorradorRetenciones(
   })) as unknown as GastoConRetencion[];
   return construirBorradorRetenciones({ gastos, merchantId: params.merchantId, año: params.año, trimestre: params.trimestre });
 }
+
+/**
+ * SCRUM-1066h · filtro ⑨ (SCRUM-1066 c.21636): ¿hay ALGUNA retención anotada en el año?
+ *
+ * «Anotada» es lo que el borrador NO cuenta como `sinRetencion` ni como `sinDatoDeRetencion`: lo que
+ * acaba en el 111, en el 115 o en `sinClasificar`. No se escribe un segundo criterio: se pasan los
+ * gastos del año entero por `construirBorradorRetenciones`, que no filtra fechas (lo dice su
+ * contrato), y se lee su recuento. Un solo `findMany`, filtrado por merchant (regla 2).
+ */
+export async function leerHayRetencionAnotadaEnElAño(
+  db: ClienteDeRetenciones,
+  params: { merchantId: number; año: number },
+): Promise<boolean> {
+  const desde = rangoTrimestre(params.año, 1).desde;
+  const hasta = rangoTrimestre(params.año, 4).hasta;
+  const gastos = (await db.expense.findMany({
+    where: {
+      merchantId: params.merchantId,
+      date: { gte: desde, lte: hasta },
+    },
+    select: CAMPOS,
+  })) as unknown as GastoConRetencion[];
+  const b = construirBorradorRetenciones({ gastos, merchantId: params.merchantId, año: params.año, trimestre: 1 });
+  return b.miradas - b.sinRetencion - b.sinDatoDeRetencion > 0;
+}

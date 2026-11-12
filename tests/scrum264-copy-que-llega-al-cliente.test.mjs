@@ -87,7 +87,9 @@ const SUPERFICIES = [
   },
   {
     nombre: 'página de acceso · /login.html',
-    fuente: () => leer('public', 'login.html'),
+    // SCRUM-1647c: el guion salió del HTML (CSP) y se sirve desde `GET /auth/js/login.js`; la
+    // expresión se lee donde vive ahora. El patrón es el mismo, sin tocar.
+    fuente: () => leer('dist', 'modules', 'auth', 'app', 'routes', 'loginNavegador.js'),
     // Anclado en su texto por defecto, que es lo único estable de la línea.
     patron: /showAlert\((.*'Error al enviar el enlace\.'), 'error'\)/,
     variables: ['data', 'msgs'],
@@ -96,7 +98,9 @@ const SUPERFICIES = [
   },
   {
     nombre: 'página de alta · /register.html (control positivo)',
-    fuente: () => leer('public', 'register.html'),
+    // SCRUM-1647d: el guion salió del HTML (CSP) y se sirve desde `GET /auth/js/alta.js`; la
+    // expresión se lee donde vive ahora. El patrón es el mismo, sin tocar (firma: SCRUM-1647 c.21658).
+    fuente: () => leer('dist', 'modules', 'auth', 'app', 'routes', 'altaNavegador.js'),
     patron: /showAlert\((.*'Error al crear la cuenta\.'), 'error'\)/,
     variables: ['data', 'msgs'],
     porDefecto: 'Error al crear la cuenta.',
@@ -199,7 +203,7 @@ test('SCRUM-275 · la página de acceso traduce TODOS los códigos que su ruta p
     `🔴 ESCÁNER CIEGO: derivo ${codigos.length} código(s) de /auth/login y son al menos 2 ` +
     '(invalid_email, internal_error). Si la forma cambió, este guard no está mirando nada.');
 
-  const login = leer('public', 'login.html');
+  const login = leer('dist', 'modules', 'auth', 'app', 'routes', 'loginNavegador.js'); // SCRUM-1647c: el guion salió del HTML
   const mapa = login.match(/const msgs = (\{[\s\S]*?\});/);
   assert.ok(mapa, '🔴 /login.html ya no tiene tabla de traducción');
   const traducciones = new Function(`return ${mapa[1]};`)();
@@ -223,7 +227,7 @@ test('SCRUM-275 · una respuesta que no es JSON NO se diagnostica como fallo de 
   // Miente dos veces: al usuario, que se pone a mirar su wifi mientras el servidor está caído; y
   // a quien lo depure después, que buscará el fallo en el sitio equivocado. Un diagnóstico falso
   // es peor que uno genérico.
-  const login = leer('public', 'login.html');
+  const login = leer('dist', 'modules', 'auth', 'app', 'routes', 'loginNavegador.js'); // SCRUM-1647c: el guion salió del HTML
   const m = login.match(/const data = (await res\.json\(\)[^;]*);/);
   assert.ok(m, '🔴 no encuentro el parseo de la respuesta en /login.html');
 

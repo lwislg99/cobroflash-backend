@@ -1,0 +1,25 @@
+
+M1 · el PATCH sin la puerta (la regla no se llama)
+  rc=1 · ℹ pass 6 · ℹ fail 1
+  🔴 PATCH valorar un SIN_VALORAR: 200 {"id":13,"jobId":4,"numero":"AB260002","fecha":"2026-11-12T13:07:56.373Z","modoValoracion":"VALORADO","lineas":[{
+  🔴 el técnico VALORÓ el albarán
+  🔴 PATCH cambiar el precio de un VALORADO: 200 {"id":12,"jobId":4,"numero":"AB260001","fecha":"2026-11-12T13:07:56.362Z","modoValoracion":"VALORADO","
+  🔴 el precio de la oficina cambió a 1
+  🔴 PATCH desvalorar un VALORADO: 200 {"id":12,"jobId":4,"numero":"AB260001","fecha":"2026-11-12T13:07:56.362Z","modoValoracion":"SIN_VALORAR","lineas"
+  🔴 el técnico DESVALORÓ el albarán de la oficina
+  🔴 el VALORADO cambió de versión: algo se escribió
+  🔴 control: la jefa ya no puede cambiar el precio (400)
+
+M2 · el PATCH sin el modo ACTUAL (desvalorar dejaría de contar)
+  rc=1 · ℹ pass 6 · ℹ fail 1
+  🔴 PATCH desvalorar un VALORADO: 200 {"id":15,"jobId":5,"numero":"AB260001","fecha":"2026-11-12T13:07:58.118Z","modoValoracion":"SIN_VALORAR","lineas"
+  🔴 el técnico DESVALORÓ el albarán de la oficina
+  🔴 el VALORADO cambió de versión: algo se escribió
+  🔴 control: la jefa ya no puede cambiar el precio (400)
+
+M3 · la regla por PRESENCIA de modoValoracion, no por valor
+  rc=1 · ℹ pass 5 · ℹ fail 2
+  🔴 control: el técnico ya no puede crear su albarán SIN precios (403 {"error":"forbidden","required_role":"admin","field":"modoValoracion"})
+  🔴 control: el técnico ya no puede editar su albarán SIN precios (403 {"error":"forbidden","required_role":"admin","field":"modoValoracion"})
+
+MUTACIONES=3 · sin caer o mal ancladas=0
