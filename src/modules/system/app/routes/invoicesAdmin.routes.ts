@@ -54,6 +54,7 @@ import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-109
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
 import { exigirCausaLineaEmitible } from '../../../../core/validation/causaLineaEmitible'; // SCRUM-1051d
+import { exigirDestinatarioParaIsp, esErrorDestinatarioIsp } from '../../../invoicing/domain/destinatarioIsp'; // SCRUM-1051g
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-289 (C7)
 import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
 import {
@@ -152,7 +153,7 @@ router.post('/', requireRole('admin'), async (req, res) => {
     // sale a COSTE CERO, porque esta consulta de tenencia ya se hacía. Ni un viaje más.
     const customer = await prisma.customer.findFirst({
       where: { id: val.customerId, merchantId: req.merchantId },
-      select: { id: true, name: true, legalName: true, taxId: true, email: true, phone: true },
+      select: { id: true, name: true, legalName: true, taxId: true, email: true, phone: true, tipoDestinatario: true }, // SCRUM-1051g: + tipoDestinatario
     });
     if (!customer) {
       return res.status(404).json({ error: ERROR_CLIENTE_INVALIDO, message: 'Ese cliente no existe.' });
@@ -172,6 +173,9 @@ router.post('/', requireRole('admin'), async (req, res) => {
     // SCRUM-1051d · y que la CAUSA (si la línea trae una) esté en la lista activa: el mismo portón
     // que la boca de cobro (`lib/invoicing.ts`), en el mismo sitio y ANTES de pedir número.
     exigirCausaLineaEmitible(val.lineas);
+    // SCRUM-1051g · y si hay líneas S2, el cliente tiene que tener NIF válido y ser EMPRESARIO
+    // (GO de regla 40, c.21750 punto 3). Mismo sitio y misma razón: ANTES de pedir número.
+    exigirDestinatarioParaIsp(val.lineas, customer);
 
     const emisorCongelado = congelarEmisorDesdeFicha(merchant); // SCRUM-665 · sin viaje extra
 
@@ -237,6 +241,11 @@ router.post('/', requireRole('admin'), async (req, res) => {
   } catch (err: any) {
     if (esErrorSinLineas(err)) {
       return res.status(409).json({ error: ERROR_SIN_LINEAS, message: COPY_ADMIN_SIN_LINEAS });
+    }
+    // SCRUM-1051g · el rechazo del destinatario ISP. `message` sólo cuando hay texto firmado
+    // (P4, sin NIF); el caso «no es empresario» va con su código y sin texto (regla 39).
+    if (esErrorDestinatarioIsp(err)) {
+      return res.status(422).json(err.mensaje ? { error: err.code, message: err.mensaje } : { error: err.code });
     }
     console.error('[POST /admin/invoices]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
