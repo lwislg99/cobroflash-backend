@@ -52,6 +52,10 @@ export const CAMPOS_QUE_VIAJAN: Record<string, string> = {
   // Si no viajara, el duplicado saldría con los márgenes a la vista y el pro lo descubriría
   // cuando el papel ya está entregado.
   ocultarPreciosEnDocumento: 'es una decisión sobre qué enseña el papel, no un hecho ocurrido',
+  // SCRUM-914: el EQUIPO del cliente sobre el que se trabaja (la caldera, el cuadro). Viaja por el
+  // mismo motivo que `jobId`: el parte de mañana es sobre el MISMO aparato. No afirma nada ocurrido;
+  // y no lleva clave ajena, así que un equipo borrado deja un número suelto, igual en los dos.
+  equipmentId: 'el parte nuevo es sobre el MISMO equipo del cliente: describe el trabajo, no afirma nada',
 };
 
 /**

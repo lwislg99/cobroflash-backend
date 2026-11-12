@@ -164,6 +164,7 @@ model Merchant {
   QuoteRequest  QuoteRequest[]
   CustomerEvent CustomerEvent[]
   CustomerSite  CustomerSite[]
+  Equipment     Equipment[]
   // SCRUM-1296: los registros de este comercio en la cola de remisión a la AEAT.
   vfSubmissions VfSubmission[]
 
@@ -461,6 +462,7 @@ model Customer {
   QuoteRequest QuoteRequest[]
   events       CustomerEvent[]
   sites        CustomerSite[]
+  equipments   Equipment[]
 
   @@index([merchantId])
   // Se busca «las personas de esta empresa»; sin índice sería un recorrido de toda la tabla.
@@ -1272,6 +1274,36 @@ model CustomerSite {
   @@map("customer_sites")
 }
 
+// SCRUM-914 · EQUIPOS DEL CLIENTE: cada instalación o aparato (caldera, cuadro eléctrico, alarma…).
+// DDL en `docs/sql/scrum-914-equipos-del-cliente.sql`, aplicado en las tres bases (SCRUM-914
+// c.20085). Cuelga del CLIENTE y, opcionalmente, de uno de sus sitios. `customerSiteId` y los
+// cuatro `equipmentId` (Job, MaintenancePlan, Albaran, ParteTrabajo) van SIN clave ajena, como
+// `Customer.companyId`: el borrado lo hace el código (SCRUM-192), no una cascada.
+// Las fechas son días del calendario (`DATE`), no instantes: la familia de SCRUM-1093.
+model Equipment {
+  id             Int       @id @default(autoincrement())
+  merchantId     Int       @map("merchant_id")
+  customerId     Int       @map("customer_id")
+  customerSiteId Int?      @map("customer_site_id")
+  type           String
+  name           String
+  brand          String?   @map("brand")
+  modelName      String?   @map("model_name")
+  serialNumber   String?   @map("serial_number")
+  installedOn    DateTime? @map("installed_on") @db.Date
+  warrantyUntil  DateTime? @map("warranty_until") @db.Date
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  merchant Merchant @relation(fields: [merchantId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([merchantId])
+  @@index([customerId])
+  @@index([customerSiteId])
+  @@map("equipments")
+}
+
 // WA-0b (master J4 · Parte L): log y estados de entrega de los mensajes de WhatsApp.
 // Tabla independiente (sin FKs) para mantenerla aditiva y tolerante: el código que la
 // escribe captura el error si aún no existe en prod (patrón ENT-3). El waMessageId mapea
@@ -1365,9 +1397,13 @@ model Job {
   // `assignedUserId` desaparece — dos sitios diciendo quien ejecuta acaban discrepando.
   assignees JobAssignee[]
 
+  // SCRUM-914: el equipo del cliente al que va ligado. NULL = ninguno. Sin FK (ver `Equipment`).
+  equipmentId Int? @map("equipment_id")
+
   @@index([merchantId, status])
   @@index([merchantId, scheduledAt])
   @@index([merchantId, operarioId])
+  @@index([equipmentId])
   @@map("jobs")
 }
 
@@ -1386,8 +1422,11 @@ model MaintenancePlan {
   rejectedStreak Int       @default(0) @map("rejected_streak")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
+  // SCRUM-914: el equipo del cliente al que va ligado. NULL = ninguno. Sin FK (ver `Equipment`).
+  equipmentId    Int?      @map("equipment_id")
 
   @@index([merchantId, active, nextDueAt])
+  @@index([equipmentId])
   @@map("maintenance_plans")
 }
 
@@ -1526,10 +1565,15 @@ model Albaran {
   /// línea ni un importe, y el sello certifica el CONTENIDO canónico, no el PDF.
   ocultarPreciosEnDocumento Boolean @default(false) @map("ocultar_precios_en_documento")
 
+  /// SCRUM-914: el equipo del cliente al que va ligado. NULL = ninguno. Sin FK (ver `Equipment`).
+  /// NO entra en el sobre de la firma: el canónico no lo lee.
+  equipmentId Int? @map("equipment_id")
+
   @@unique([merchantId, claveIdempotencia])
   @@unique([merchantId, numero])
   @@index([merchantId, jobId])
   @@index([merchantId, invoiceId])
+  @@index([equipmentId])
   @@map("albaranes")
 }
 
@@ -1712,9 +1756,14 @@ model ParteTrabajo {
   //
   // ⚠️ ORDEN DE LA CASA: el ALTER va a las TRES bases ANTES de que esto se mergee
   // (`docs/sql/scrum-685b-parte-numero-unico.sql`). ② antes que ③, siempre.
+  // SCRUM-914: el equipo del cliente al que va ligado. NULL = ninguno. Sin FK (ver `Equipment`).
+  // NO entra en el contenido sellado (`contenido_hash`): el canónico no lo lee.
+  equipmentId Int? @map("equipment_id")
+
   @@unique([merchantId, numero])
   @@index([merchantId, fecha])
   @@index([merchantId, estado])
+  @@index([equipmentId])
   @@map("partes_trabajo")
 }
 
