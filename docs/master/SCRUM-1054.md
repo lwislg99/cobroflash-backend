@@ -4,7 +4,7 @@
 
 **Medido contra:** `origin/main` = `e1ebdcf627097b2a2efaae7b967f55b62b4b3987` · 2026-11-13T18:26:41Z (hora de GitHub; sesión J1 `jv-j1eu`, por encargo del orquestador `cobroflash-backend-63`)
 
-A9: aviso → cicatriz J1 «Crucé los 200k (208.755) sin medirme entre el arranque (123,5k) y el primer test» — no se pudo comprobar: el hook que lo avisó vive en el scratchpad del orquestador, fuera del repositorio, y los hooks no son de este puesto
+A9: aviso → cicatriz J1 «Crucé los 200k (208.755) sin medirme entre el arranque (123,5k) y el primer test: dos skills y la lectura del sellado se comieron 85k, y lo dijo el hook del orquestador, no yo; la misma forma que 1129e ese día» — no se pudo comprobar: el hook que lo avisó vive en el scratchpad del orquestador, fuera del repositorio, y los hooks no son de este puesto
 
 **Qué es.** La medición previa es de `jv-j1er` (Jira c.21842). Dejó una cosa sin medir: si el sellado rechaza antes la línea al 0 %. La decisión de Javier está en c.21852: el recargo se aparca como SCRUM-1053, y para los suplidos, **«Medir el sellado y fijarlo»**. Esto es esa medición y su test. **No toca `src/`, ni el esquema, ni ninguna base** (reglas 38 y 40).
 
