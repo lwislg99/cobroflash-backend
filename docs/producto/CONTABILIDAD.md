@@ -75,7 +75,7 @@ Plan contable y asientos: solo Holded (cuenta por línea `[D]` L334); la matriz 
 
 ## 3 · Reglas con cita oficial comprobada
 
-Fuentes en §8 (LIVA · RIVA · LIRPF · RIRPF · RFACT · ORDEN303, BOE consolidado). Los números de apartado que no se ven en el texto extraído van marcados «(por confirmar)».
+Fuentes en §8 (LIVA · RIVA · LIRPF · RIRPF · RFACT · ORDEN303, BOE consolidado; y las cinco órdenes de los plazos de §10). Los números de apartado que no se ven en el texto extraído van marcados «(por confirmar)».
 
 | regla | dónde | cita literal |
 |---|---|---|
@@ -210,6 +210,11 @@ Bajadas con GET público el 21-sep-2026 ~15:05 (LIVA/RIVA/LIRPF/RIRPF/RFACT) y e
 | RIRPF · RD 439/2007 | https://www.boe.es/buscar/act.php?id=BOE-A-2007-6820 | `64D429A3E3810C42` |
 | RFACT · RD 1619/2012 | https://www.boe.es/buscar/act.php?id=BOE-A-2012-14696 | `DCB4D501BF9F0355` |
 | ORDEN303 · Orden EHA/3786/2008 | https://www.boe.es/buscar/act.php?id=BOE-A-2008-20953 | `0ECC0332CC06D7B6` |
+| ORDEN130 · Orden EHA/672/2007 | https://www.boe.es/buscar/act.php?id=BOE-A-2007-6032 | `7C79482E6E1D2188` (descarga 13-nov-2026, SCRUM-1076b) |
+| ORDEN111 · Orden EHA/586/2011 | https://www.boe.es/buscar/act.php?id=BOE-A-2011-4948 | `803532B7810A535C` (ídem; sin redacciones: el BOE la identifica solo por su `id_local` ELI) |
+| ORDEN115 · Orden de 20-nov-2000 | https://www.boe.es/buscar/act.php?id=BOE-A-2000-21430 | `FF462CF90180E67C` (ídem) |
+| ORDEN347 · Orden EHA/3012/2008 | https://www.boe.es/buscar/act.php?id=BOE-A-2008-16973 | `EC279CDB08A4E97F` (ídem) |
+| ORDEN390 · Orden EHA/3111/2009 | https://www.boe.es/buscar/act.php?id=BOE-A-2009-18472 | `7744B995E893687D` (ídem) |
 
 > **ORDEN303, medido en el consolidado del BOE el 25-sep-2026 (SCRUM-1096):** la orden **no está derogada**, y su art. 7.2 (el plazo que cita la §3) sigue en su redacción de 2017. Lo que se sustituyó es su **anexo I** —el impreso del 303, con las casillas—, que hoy es el anexo III de la Orden HAC/27/2026 (art. 2; https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-1761).
 
@@ -223,3 +228,21 @@ Los ficheros no están en git; se bajan de las direcciones de arriba con el nomb
 2. Una sola lista D1-D6 como comentario en SCRUM-1012 (junto a la del CRM).
 3. Ejecutar CON-03 (citas pendientes) antes de tocar CON-07 en adelante.
 4. Empujar la rama `scrum-1012-diseno-crm-contabilidad` (hoy solo commit local).
+
+## 10 · Plazos de presentación de 130, 111, 115, 347 y 390 (SCRUM-1076b · J5 · 13-nov-2026)
+
+Cada plazo, citado literal de SU orden ministerial **vigente**, y comprobado por el mismo script que el 303 de §3 (`docs/verificacion/comprobar-citas-contabilidad.mjs`, cinco fuentes nuevas en §8). Lo vigente se midió dos veces: el consolidado del BOE (`act.php`, la redacción marcada) y la API de legislación consolidada (`/datosabiertos/api/legislacion-consolidada/id/<id>/texto/bloque/<bloque>`, la última `version` y su `fecha_vigencia`; y `/metadatos`: `vigencia_agotada` = N en las cinco). El 303 sigue en §3 (Orden EHA/3786/2008, art. 7.2).
+
+| Modelo | Orden y artículo (vigente desde) | Cita |
+|---|---|---|
+| 130 | Orden EHA/672/2007, art. 7 (redacción original, vigente desde 23-mar-2007) | «la presentación de las declaraciones formuladas en los modelos 130 y 131 y, en su caso, el ingreso de la deuda tributaria resultante de las mismas en el Tesoro Público se realizará en los plazos siguientes: a) Los tres primeros trimestres, entre el día 1 y el 20 de los meses de abril, julio y octubre. b) El cuarto trimestre, entre el día 1 y el 30 del mes de enero.» |
+| 111 | Orden EHA/586/2011, art. 3.1.c (redacción original, vigente desde 19-mar-2011) | «c) Las restantes personas físicas, jurídicas y demás entidades obligadas a retener o a ingresar a cuenta, en los veinte primeros días naturales de los meses de abril, julio, octubre y enero en relación con las cantidades y los ingresos a cuenta que correspondan por el trimestre natural inmediato anterior.» |
+| 115 | Orden de 20 de noviembre de 2000, apartado séptimo (redacción original, vigente desde 1-ene-2001) | «La presentación e ingreso de este modelo, en papel o por vía telemática, se efectuará en los veinte primeros días naturales de los meses de abril, julio, octubre y enero en relación con las cantidades retenidas y los ingresos a cuenta efectuados por el primero, segundo, tercero y cuarto trimestre del año natural, respectivamente.» |
+| 347 | Orden EHA/3012/2008, art. 10 (redacción de la Orden HAC/1148/2018, vigente desde 1-nov-2018) | «La presentación de la declaración anual de operaciones con terceras personas, modelo 347, se realizará durante el mes de febrero de cada año en relación con las operaciones realizadas durante el año natural anterior, sin perjuicio de lo dispuesto en el artículo 17.2 de la Orden HAP/2194/2013» |
+| 390 | Orden EHA/3111/2009, art. 8 (añadido por la Orden HAP/2725/2012, vigente desde 22-dic-2012) | «La declaración-resumen anual del Impuesto sobre el Valor Añadido deberá presentarse en los treinta primeros días naturales del mes de enero siguiente al año al que se refiere la declaración, sin perjuicio, de lo establecido en el apartado 4 del artículo 4 de esta Orden.» |
+
+**Lo que NO cita esta sección, a propósito** (sigue en Q-C8, para el asesor: SCRUM-1264):
+
+- **Sábados, festivos y prórrogas.** Las órdenes del 130 (art. 7), del 111 (art. 3.1) y del 115 (apartado séptimo) traen además una frase sobre los vencimientos que caen en sábado o día inhábil; la del 347 (art. 10) remite al art. 17.2 de la Orden HAP/2194/2013, y la del 390 (art. 8) al art. 4.4 de su propia orden. **No se transcriben ni se interpretan aquí:** qué fecha límite resulta un año concreto es la pregunta del asesor.
+- **Otros plazos de las mismas órdenes:** grandes empresas y Administraciones públicas (mensual, 111 y 115), domiciliación del pago (111, art. 3.2), modelo 131 (módulos, mismo art. 7 que el 130).
+- **NO VERIFICADO:** qué dice el art. 17.2 de la Orden HAP/2194/2013 (no se ha bajado). Y un dato medido sin interpretar: el art. 4 de la Orden EHA/3111/2009, al que remite el plazo del 390, figura **suprimido con efectos de 1 de enero de 2023** (Orden HFP/1124/2022) en el consolidado del 13-nov-2026.
