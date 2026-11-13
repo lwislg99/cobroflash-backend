@@ -361,3 +361,56 @@ candidata que no he añadido, la factura mixta `S1` + `S2`. No la he buscado en
 **Sin medir:** ninguna base de datos · ningún PDF generado · suite entera local: NO CORRIDA (solo docs) · el
 volcado de SCRUM-1129 lo transcribió un subagente a mano, no por script. Las decisiones se citan por su
 número de comentario, no por ese volcado.
+
+## J1 · SCRUM-1240d · la mención «Régimen especial del criterio de caja» en el PDF, desde el valor congelado
+
+**Medido contra:** `origin/main` = `e1ebdcf627097b2a2efaae7b967f55b62b4b3987` · 2026-11-13T18:21:41Z (hora de GitHub; sesión J1 `jv-j1et`, por encargo del orquestador `cobroflash-backend-63`. Rama `scrum-1240d-mencion-pdf`, que sale de ese mismo sha: el merge de #3161, SCRUM-1129e, que escribe `Invoice.merchantCriterioCaja` al sellar)
+
+A9: comprobación → `tests/scrum1240d-mencion-criterio-caja-pdf.test.mjs`
+
+**Decisión que se construye:** SCRUM-1240 c.21776 (Javier, 12-nov-2026), sobre las preguntas de c.21773 ③:
+literal firmado **«Régimen especial del criterio de caja»** en una línea propia; GO de regla 40 para
+imprimirlo debajo de los totales y antes del bloque VERI*FACTU, solo en facturas; fuente el valor
+CONGELADO (`invoices.merchant_criterio_caja`), con NULL sin mención; condición la misma que la `07` del
+registro (congelado `true` y al menos un detalle `S1`). PR propio, después de 1129 en `main` (lo está:
+`e1ebdcf62`).
+
+**PASO 0.** `git grep -i "especial del criterio" origin/main -- src public` → 1 coincidencia, un comentario
+de `registro.builder.ts:57` (la constante `07` de 1129e). El PDF no la pintaba. Ninguna rama ni PR
+`scrum-1240d*` en el remoto.
+
+### Qué cambia
+
+| fichero | qué |
+| --- | --- |
+| `src/modules/invoicing/infra/pdf/pdf.service.ts` | parámetro OBLIGATORIO `merchantCriterioCaja: boolean \| null` (como `zona`: quien no lo pase no compila); `llevaMencionCriterioCaja` y la línea «4bis» antes de «5. VERIFACTU QR», con `!isReceipt` |
+| `src/lib/invoicing.ts` (×2) y `src/modules/system/app/routes/invoicesAdmin.routes.ts` | los tres llamadores pasan `inv.merchantCriterioCaja` / `invoice.merchantCriterioCaja`: la columna de la FACTURA, nunca `merchant.criterioCaja` |
+| `tests/scrum1240d-mencion-criterio-caja-pdf.test.mjs` | 10 casos, PDF generado de verdad y leído con `_texto-del-pdf.mjs` |
+
+**Por qué la condición «hay un S1» no importa el builder.** `scrum523d` deriva la población congelada
+del camino de emisión de los `import`: un fichero que importa de `fiscal/verifactu/` es raíz. Si
+`pdf.service.ts` importara `clasificarDetalleDesglose`, entraría en esa población y habría que
+recongelarla, que pide autorización. Así que la condición va local (`causa !== 'S2'` y tipo positivo,
+lo que el builder califica `S1`), y el caso «la mención y la 07 del registro no discrepan» la ata al
+builder: 6 juegos de líneas × {true, false, null}, comparando la mención del papel con lo que devuelve
+`clasificarDetalleDesglose` sobre `calcVatBreakdown` de las mismas líneas, con un positivo derivado (5
+juegos dan `07`; si saliera 0, CIEGO). `pdf.service.ts` sigue fuera de la población: `scrum523d` verde.
+
+### Medición
+
+- **Rojo primero** (código sin tocar, test escrito): 10 casos = 4 pasan (los negativos y controles: false/NULL/sin
+  columna sin mención, papel idéntico en los tres, solo S2 sin mención, justificante sin mención) + 6 caen.
+- **Verde:** 10/10.
+- **Control «se pinta igual que hoy»:** sin la columna, con NULL y con false el texto del papel es el
+  mismo, línea a línea; con `true` es el de `false` más exactamente UNA línea, la mención.
+- **Mutaciones** (`MUTACIONES_QUE_ME_TUMBAN`, pasadas con `correr` + `aplicarUna` de la casa): limpia 10
+  pasan / 0 caen; las 5 tumban el test que nombran (`!== true` → `== null`; la condición S1 → «hay
+  líneas»; quitar `!isReceipt`; el literal en minúscula; un llamador que pasa `inv.merchant.criterioCaja`).
+  Árbol restaurado tras la pasada (mismo `git diff --stat`, 10/10).
+- **Build con tipos** (`tsc -p .`, sin `--noCheck`): salida 0.
+
+**Sin medir:** ninguna base de datos · ningún PDF de producción ni de staging (solo PDFs generados en el
+test) · si una factura **mixta** (S1 + S2) debe llevar la mención: la construyo con mención porque
+c.21776 dice «al menos un detalle S1»; la duda para el asesor sigue abierta y no la he buscado en
+`docs/legal/PREGUNTAS_ASESOR.md` · la skill `yaqu-premium-ui` no la cargué (la línea usa el color `BODY`
+y la tipografía que ya tiene el PDF; no toca `public/`). Lo cierra el orquestador (A13).
