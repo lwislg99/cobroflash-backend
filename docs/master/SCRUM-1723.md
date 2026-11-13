@@ -113,6 +113,50 @@ Dos fallos míos con el runner de mutaciones, y los dos los cazó él diciendo C
 test desde mi guion (lo ejecutó en mi proceso) y le pasé el guard con `tests/` delante (lo resuelve dentro de
 `tests/`). Y volví a pasar un guion a node por bash (`node -e`); esta vez casó, pero es la cicatriz de J2 del 1-oct.
 
+## SCRUM-1723d · 12-nov: login y alta, ya estaba; medido (J3)
+
+**Medido contra:** `origin/main` = `deab373d6a379fcbfc7ec1fce0428111156f49d3` · 2026-11-12T17:05:14Z (hora de GitHub; sesión J3 `jv-j3cd`, por encargo del orquestador `cobroflash-backend-63`)
+
+A9: aviso → cicatriz J3 «Séptima vez: añadí un tramo de registro con tildes y comillas por un heredoc, con seis líneas de esta misma cicatriz encima; salió intacto, por suerte y no por control.» — no se pudo comprobar: cómo escribe una sesión en un fichero no deja rastro en el árbol
+
+El encargo era sacar el CSS en línea del login y del alta (la descripción decía «probablemente tienen lo mismo»).
+**El PASO 0 lo tumbó: ya no había nada que sacar.** Lo quitaron 1647c (#3106, login) y 1647d (#3116, alta).
+Este tramo no cambia código: solo deja la medición del login en navegador, que faltaba a 390 y 1280 px.
+
+### PASO 0 (sobre `deab373d6`)
+
+| qué | resultado |
+| --- | --- |
+| `public/login.html` · `public/register.html` | 0 `<style>` y 0 `style=` en las dos; solo `<link>` a `/fonts/inter.css`, `/tokens.css` y `/auth.css` |
+| Control positivo del contador | sobre `9cdf6a24d` (antes de 1647c): 2 `style=` en cada página |
+| HTML que inyectan los guiones (`loginNavegador.ts`, `altaNavegador.ts`) | 0 `style=`; solo `el.style.display`, que es CSSOM y la CSP no lo bloquea |
+| Alta con la CSP aplicada | ya medida en 1647d: `evidencias/SCRUM-1647/1647d/salida.txt`, 4/4 idénticas (390/1280, con y sin invitación), alta con invitación completa, 0 informes |
+| ¿Algo cambiado desde entonces? | `git log` sobre esos ficheros, `auth.css`, `tokens.css`, `public/fonts`, `src/modules/auth`, `huellaEstaticos.ts` y `csp.ts`: 0 commits desde `7786988f5`, y 0 desde `deab373d6` hasta `ebee34073` |
+
+### Medido: el login en navegador con la CSP aplicada
+
+Guion: `evidencias/SCRUM-1723/j3d-recorrido-login.mjs.txt`, sobre el servidor de 1647d (`evidencias/SCRUM-1647/1647d/servidor-alta.cjs`:
+la `app` real de un `dist/`, prisma doblado, la cabecera de 1637 escrita como `Content-Security-Policy` o quitada).
+Edge 157.0.4341.46. Vistas: `/login.html` y `/login.html?error=invalid_token` (caja de aviso abierta por el guion), a 390 y 1280 px.
+Salida entera y capturas: `evidencias/SCRUM-1723/j3d/` (`salida.txt`, `resultado.json`, 16 capturas).
+
+| comparación | resultado |
+| --- | --- |
+| main de hoy sin política ↔ main de hoy **con** política | **4/4 IDÉNTICAS** byte a byte · **0 informes** de cualquier directiva |
+| main de antes de 1647c sin política ↔ main de hoy sin política | 4/4 idénticas |
+| **Control:** main de antes sin política ↔ con política | 4/4 **distintas** · 12 informes (`style-src-attr` 2 + `script-src-elem` 1 por carga) |
+| Control sembrado (`<script>` en línea + `onerror`) | 2 informes con política, 0 sin ella |
+| Recursos propios que faltan · lecturas de la base | 0 · 0 |
+
+**Ojo con el control:** no sale «sin estilos». El login nunca tuvo `<style>`; solo tenía 2 `style="display:none"`.
+Con la política, lo que cambia en main de antes es que la caja de aviso vacía se ve y ocupa sitio
+(`B-antes-aplicada-login-1280.png`: hueco entre el botón y «¿Primera vez?»).
+
+### NO MEDIDO
+
+- yaqu.app; otros navegadores. Tanda entera local: NO CORRIDA (la hace el obligatorio).
+- El recorrido del enlace mágico bajo la política no se repitió aquí: lo midió 1647c (tramo 1647c de `SCRUM-1647.md`).
+
 ## SCRUM-1723e · 12-nov: tarjeta y Mercado Pago medidas en navegador con la CSP aplicada (J2, solo medir)
 
 **Medido contra:** `origin/main` = `deab373d6a379fcbfc7ec1fce0428111156f49d3` · 2026-11-12T17:13:11Z (hora de GitHub; sesión J2 `jv-j2c0`, por encargo del orquestador `cobroflash-backend-63`)
