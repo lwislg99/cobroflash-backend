@@ -27,3 +27,28 @@ A9: comprobación → `scripts/meta-guard-mutaciones.mjs`
 **Errores míos.** ① Mi primer driver le pasó a `correr` la ruta con `tests/` delante y la base salió 0 pasados · 1 caído: lo paró la PUERTA 1 del meta-guard (no muta sin base en verde). ② El ancla de la 5ª mutación no casaba (el `},` no va en su propia línea): lo paró su comprobación del ancla. ③ Encadené un `sed` roto con `&&` delante del `node` y leí el fichero de salida de la pasada ANTERIOR como si fuera el nuevo; lo vi por el `EXIT=1`, borré el fichero viejo y relancé con un driver escrito con la herramienta de escritura.
 
 **Sin medir:** ninguna base de datos · los libros AEAT y el paquete de evidencias (sólo ejecutados el libro y el 303) · la suite local entera (NO CORRIDA; los guards dirigidos, en la entrega).
+
+## J1 · SCRUM-1730b · construir (i) S2 por emisión y (ii) el tope del 31-dic (GO de c.21789)
+
+**Medido contra:** `origin/main` = `a29e8fadcaa208fb9c6139341de3648318947da5` · 2026-11-13T16:21:11Z (hora de GitHub; sesión J1 `jv-j1ek`, por encargo del orquestador `cobroflash-backend-63`)
+
+A9: comprobación → `tests/scrum1730-criterio-caja-huecos-declarados.test.mjs`
+
+**Qué se ha hecho.** Con el GO de Javier en c.21789 (puntos 1 y 2). Sólo libros: ni builder, ni sellado, ni PDF.
+
+- **`devengoPorCaja.ts` · `fechaDeDevengo` decide.** Con caja: si alguna línea lleva `causa: 'S2'`, devenga en `createdAt` (una mixta va ENTERA por emisión, como decide c.21789). Si no, devenga en el cobro si es hasta el tope, y en el tope si no hay cobro o el cobro es posterior. El tope es el 31-dic del año siguiente a `createdAt`, a las 23:59:59.999 locales, como el `hasta` de `rangoTrimestre` (`topeDeDevengo`). Con caja ya nunca devuelve `null`. La detección de S2 está copiada de `tieneLineasIsp` (`destinatarioIsp.ts`): aquélla no se exporta, y exportarla es tocar el camino de emisión (regla 38).
+- **`libroRegistro.repo.ts` · `leerPorCaja`.** Con caja y rango, la base trae CANDIDATAS con tres consultas de un solo rango cada una: cobradas en el rango, emitidas en el rango y emitidas en los años cuyo tope cae en el rango. Cada candidata entra sólo si su `fechaDeDevengo` cae dentro, y el orden es fecha de devengo y número. Una cobrada después del tope sale como candidata por su `paidAt`, pero su devengo es el tope y se queda fuera: no se cuenta dos veces. Sin caja, o sin rango, la consulta es la de siempre.
+- **El test de 1730.** Se retiran `s2` y `tope31dic` de `DEFECTO_CONOCIDO` (queda vacío; el (iii) nunca estuvo ahí). Los dos casos cambian de nombre y se añaden tres: la mixta (libro, casilla 122 y casilla 27 = 126 € en el T1), la cobrada DESPUÉS del tope (sale en el T4-2027 y NO en el T1-2028, y la casilla 27 da 210 y 0) y «el tope no adelanta nada» (sin cobro, fuera de 2026-T1, 2026-T4 y 2027-T3, que es lo de `scrum294b`). Casillas 28/29: salen del libro de recibidas, que no se toca.
+- **Dos listas de piezas sin consumidor.** `fechaDeDevengo` ya tiene llamador: sale de `tests/_huerfanos-declarados.mjs` (la entrada de `devengoPorCaja.ts`, con `CAMPO_COBRO`, que también se usa ya) y pasa de `declaradas` a `retiradas` en `scripts/_sin-consumir-declarados.json`, un contenedor de S0 (`scrum1185` lo exige). Avisado al orquestador antes de tocarlo.
+
+**Rojo primero.** Con `dist/` de los dos ficheros de `HEAD` (transpilados aparte) y el test nuevo: caen 4 de 10, los cuatro casos del arreglo. Con el arreglo, 10 de 10.
+
+**Mutaciones** (catálogo rehecho contra el arreglo, con `correr` + `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`): base 10 pasados, 0 caídos, 0 saltados. Las **6 VIVAS**: sin la excepción S2; con la función devolviendo `null` sin cobro; con el libro sin pedir la ventana del tope (medio arreglo); con la cobrada después del tope contando en su cobro; con la caja desconectada (CIEGO); y con `s2` declarado otra vez. Árbol limpio después.
+
+**Dirigida.** 54 ficheros: los que importan el libro, el 303, los libros AEAT, las evidencias, el 130, el 347 o `devengoPorCaja`, más `scrum294*`, `1063*`, `1064*`, `1240b`, `553`, `237`, `976`, `1387*`, `411`, `494`, `1185`, `189`, `615`, `622`, `719`, `273`, `267` y `1294`. Resultado: 518 casos, 511 ok, 6 saltados (todos `sin LIBRO_PG_URL`: 295, 296, dos de 297 y dos de 389) y 1 rojo, `scrum1185`, que se arregló con el movimiento de arriba (11 de 11 después).
+
+**Build con tipos:** `tsc -p .` sale 2 por UN error, y no es de esta rama: `Job.queHayQueHacer` no está en el cliente Prisma compartido (junction al árbol común, no se regenera; A1). En los ficheros de esta rama, 0 errores.
+
+**Errores míos.** Leí el arranque de normas después de Jira y no antes, y la cifra del arranque no la mandé al medirla (va a mis cicatrices).
+
+**Sin medir:** ninguna base de datos (los 6 casos de `LIBRO_PG_URL`, saltados) · los libros AEAT y las evidencias, ejecutados sólo a través de los tests de la dirigida que los importan · la suite local entera (NO CORRIDA, por orden del encargo: 10 sesiones a la vez) · el cobro parcial (punto 4 de c.21789, ticket aparte) · el (iii), que espera a 1129.

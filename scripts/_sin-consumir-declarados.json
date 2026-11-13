@@ -63,7 +63,6 @@
     {"clave":"export · src/modules/fiscal/verifactu/sif.cola.ts::trocear","donde":"src/modules/fiscal/verifactu/sif.cola.ts:74","carril":"J1","ticket":"SCRUM-1127"},
     {"clave":"export · src/modules/invoicing/domain/clienteCongelado.ts::CAMPOS_CONGELADOS","donde":"src/modules/invoicing/domain/clienteCongelado.ts:86","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/invoicing/domain/criterioCaja.ts::clasificarPorCobro","donde":"src/modules/invoicing/domain/criterioCaja.ts:90","carril":"J1","ticket":"SCRUM-1185"},
-    {"clave":"export · src/modules/invoicing/domain/devengoPorCaja.ts::fechaDeDevengo","donde":"src/modules/invoicing/domain/devengoPorCaja.ts:75","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/invoicing/domain/emisorCongelado.ts::CAMPOS_CONGELADOS_EMISOR","donde":"src/modules/invoicing/domain/emisorCongelado.ts:39","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/invoicing/domain/finalInvoice.service.ts::buildFinalInvoice","donde":"src/modules/invoicing/domain/finalInvoice.service.ts:72","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/invoicing/domain/invoiceNumber.service.ts::ORIGENES_C7","donde":"src/modules/invoicing/domain/invoiceNumber.service.ts:71","carril":"J1","ticket":"SCRUM-1185"},
@@ -166,6 +165,7 @@
     {"clave":"export · src/modules/fiscal/modelo390/casillas.ts::CASILLA_INVERSION_SUJETO_PASIVO_390","donde":"src/modules/fiscal/modelo390/casillas.ts:100","carril":"J1","ticket":"SCRUM-1077","motivo":"J1: SCRUM-1077c, la 125 (c.20833); solo la consume construirModelo390, sin ruta (arriba)"}
   ],
   "retiradas": [
+    {"clave":"export · src/modules/invoicing/domain/devengoPorCaja.ts::fechaDeDevengo","motivo":"SCRUM-1730b: conectada en src/modules/invoicing/domain/libroRegistro.repo.ts (leerPorCaja decide por ella qué factura devenga en el rango con criterio de caja; GO de SCRUM-1730 c.21789)"},
     {"clave":"cuerpo · PATCH /admin/jobs/:id::queHayQueHacer","motivo":"SCRUM-1662 (S2, 12-nov): el front ya nombra el campo —la ficha del Trabajo lo LEE y lo pinta (jobDetailView.js, línea «Qué hay que hacer»)— y el censo, que es por nombre, lo da por consumido. El EDITOR desde la ficha NO está hecho: pide textos de guardado sin firma (regla 39); se propone aparte."},
     {"clave":"ciega-router-sin-montar · src/modules/fiscal/retenciones/retenciones.routes.ts::router","motivo":"SCRUM-1721: conectada en src/app.ts (mountAdmin '/admin/retenciones' con requireRole('admin'), contrato de SCRUM-1721 c.21660)"},
     {"clave":"export · src/modules/fiscal/retenciones/retencionesPracticadas.repo.ts::leerHayRetencionAnotadaEnElAño","motivo":"SCRUM-1721: conectada vía retenciones.routes.ts, ya montado en src/app.ts"},
