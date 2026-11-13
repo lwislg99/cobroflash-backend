@@ -191,11 +191,16 @@ router.post('/', async (req, res) => {
           // en el `findFirst`; si el profesional anula mientras llega este pago, la fila ya está
           // anulada al escribir. Entonces Prisma no la encuentra (P2025) y no se escribe nada. Al
           // proveedor se le contesta lo mismo que antes: esto sólo decide si se escribe.
+          //
+          // 🔴 SCRUM-1735 · LA FACTURA SE FECHA CON EL COBRO, NO CON EL RELOJ. Aquí ponía `new Date()`:
+          // el `Charge` guardaba la fecha declarada (SCRUM-397) y la factura el instante de la
+          // confirmación, así que un Bizum del 31-mar confirmado en noviembre caía en el T4 con criterio
+          // de caja (SCRUM-1732 c.21820). Sin fecha declarada, `resolucion.fecha` ES el instante del aviso.
           if (puedeCobrarPorPasarela(linkedInvoice)) {
           try {
           await prisma.invoice.update({
             where: { id: linkedInvoice.id, status: { not: ESTADO_ANULADA } },
-            data: { status: 'paid', paidAt: new Date() },
+            data: { status: 'paid', paidAt: resolucion.fecha },
           });
           } catch (e) {
             if (!esFilaQueNoCasa(e)) throw e;
@@ -261,8 +266,9 @@ router.post('/', async (req, res) => {
               where: { id: invoiceId, status: { not: ESTADO_ANULADA } },
               data: {
                 status: 'paid',
-                // solo ponemos paidAt si no lo tenía aún, para que sea idempotente
-                paidAt: new Date(),
+                // SCRUM-1735 · la fecha del cobro, la misma de arriba (aquí decía «solo si no lo tenía
+                // aún», y nunca fue así: esta escritura lo pone siempre).
+                paidAt: resolucion.fecha,
               },
             });
           } catch (e) {
