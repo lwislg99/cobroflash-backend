@@ -84,7 +84,7 @@ no por suposición de comportamiento.
 
 **Medido contra:** `origin/main` = `e1ebdcf627097b2a2efaae7b967f55b62b4b3987` · 2026-11-13T18:32:34Z (hora de GitHub; sesión J1 `jv-j1ev`, por encargo del orquestador `cobroflash-backend-63`)
 
-A9: aviso → cicatriz J1 «Crucé los 200k (200.654) sin medirme entre el arranque (136.056) y la sonda del libro» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
+A9: aviso → cicatriz J1 «Crucé los 200k (200.654) sin medirme entre el arranque (136.056) y la sonda del libro; avisó el hook del orquestador, y además leí Jira antes del arranque de normas (SCRUM-1055b)» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
 
 Lo que faltaba tras SCRUM-1735 según la verificación de jv-j4bg (Jira c.21850). Medición y propuesta en
 Jira **c.21863**. No toca `src/`, ni el esquema, ni ninguna base. El test,
