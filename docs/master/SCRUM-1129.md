@@ -542,3 +542,43 @@ bases en c.21762. Un PR con esquema + código + tests (A5 ③). Lo construye la 
 **Sin medir:** ninguna base de datos (los merchants son dobles) · la suite entera en local (NO CORRIDA: hoy hay
 diez sesiones y lo pidió el orquestador) · el CI, hasta que se lea el obligatorio · yaqu.app (con
 `INVOICING_ES_ENABLED` en OFF no se sella nada en producción).
+
+---
+
+# SCRUM-1129e · los 7 rojos del obligatorio de #3161, y la huella de 523d (relevos jv-j1en y jv-j1ep)
+
+**Medido contra:** `origin/main` = `8c61c10e34728282942cb896151cfde331a26072` · 2026-11-13T17:12:02Z (cabecera `Date:` de GitHub)
+
+A9: comprobación → `tests/scrum523d-version-del-sif.test.mjs`
+
+Carril J1; cruza S3 en `scripts/_suelo-contra-main.mjs` con el respaldo de SCRUM-1129 c.21827. El primer empujón
+(`5da22935`, PR #3161) dio el obligatorio en rojo con 7 fallos (job 132011551789, c.21823). La dirigida de jv-j1ej
+no listaba los guards que recorren el árbol entero; por eso esta vez se corre la suite ENTERA en local (c.21829).
+
+## Qué lleva (commit `fde261c31f0f08af7e042dd25fe7afe6f161089d`, jv-j1en, y el de encima, jv-j1ep)
+
+| rojo | arreglo |
+|---|---|
+| `scrum222`, `scrum461`, `scrum733` | `docs/sql/deriva-prod.sql` regenerado con su generador desde un cliente de Prisma propio (517 columnas, + `merchant_criterio_caja`) |
+| `scrum409` | `tests/scrum1129e-clave-regimen-07.test.mjs` usa `merchantId` 7, y la R1 se comprueba con `merchantCriterioCaja === undefined` |
+| `scrum525d` | anclas movidas en sitio en `docs/legal/AUDITORIA_CAMINO_EMISION.md` y `docs/legal/PREGUNTAS_ASESOR.md` |
+| `scrum810` | la retirada del `DEFECTO_CONOCIDO` de 1240b, declarada en `RETIRADAS_A_PROPOSITO` (c.21827, «Sí a las dos») |
+| `scrum878` | `merchantCriterioCaja` clasificada como SELLADO (c.21827); en `verifactu.service.ts` el `...regimenCongelado` pasa a campo con nombre, `undefined` en la R1: Prisma no lo escribe, el comportamiento no cambia |
+| `scrum523d` | ese campo con nombre mueve la huella de `verifactu.service.ts`: `'1bef6183bb5547ba'` → `'7433c5b8fb3af758'`. Recongelada por jv-j1ep con la autorización de Javier (c.21829), con el valor que imprime el propio test sobre el código de `fde261c31` |
+
+## Medido (jv-j1ep)
+
+- **523d:** antes, 6 de 7 (cae «el camino de emisión es el congelado»; sólo nombra `verifactu.service.ts` y da
+  `'7433c5b8fb3af758'`, el valor autorizado). Después, 7 de 7.
+- **Ningún otro cambio en el camino de emisión:** `git diff fde261c31 -- src/modules/fiscal 'src/**/verifactu.service.ts'`
+  sale vacío. Control positivo del mismo pathspec: `git diff 5da22935 fde261c31` sobre él nombra
+  `verifactu.service.ts` (6+/4−).
+- **Build con tipos:** `tsc` sin `--noCheck`, salida 0, contra un cliente de Prisma generado en un temporal fuera
+  del árbol (el `node_modules` de este árbol es un enlace al compartido y no se regenera, A1). sha256 del cliente
+  compartido igual antes y después (`3627c69f…`). Control: el mismo `tsc` contra el compartido, 2 errores, uno
+  `merchantCriterioCaja`.
+- **Laboratorio de la tanda, declarado:** `@prisma/client` se resolvió al cliente propio con un hook de
+  resolución en `NODE_OPTIONS` (es lo que hace CI, que regenera), y la copia `schema.prisma` de ese cliente es la
+  del repo byte a byte (la generada llevaba la línea `output` del temporal y el guard de procedencia la cazaba).
+  Los tests que lanzan hijos con el entorno limpio cargan el cliente compartido.
+- **222/461/733 con el cliente propio:** 43 casos, 41 pasan, 2 saltados, 0 caen. Control sin él: 5 caen.

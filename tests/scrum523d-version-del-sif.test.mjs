@@ -72,6 +72,8 @@ const ANCLAS = [PRODUCTOR, 'src/modules/fiscal/verifactu/registro.builder.ts', S
  * de caja congelado al sellar): ESTE sí cambia el XML, y va por c.21290 porque el fundador lo dijo
  * en su GO (SCRUM-1129 c.21753, punto 3), con la condición de que la primera declaración no esté
  * entregada (medido el 13-nov-2026: 0 textos de declaración en `src/` y `public/`).
+ * La de `verifactu.service.ts` se recongeló otra vez en ese PR (SCRUM-1129 c.21829, autorización de
+ * Javier): el campo con nombre `merchantCriterioCaja` que pide scrum878, sin cambiar lo que se escribe.
  */
 const VERSION_CONGELADA = '1.0.0';
 const HUELLAS_CONGELADAS = Object.freeze({
@@ -89,7 +91,7 @@ const HUELLAS_CONGELADAS = Object.freeze({
   'src/modules/invoicing/domain/selladoEstado.ts': 'f08728ab84b81ba2',
   'src/modules/invoicing/domain/tipoDocumento.ts': '09a9e00aeb1068de',
   'src/modules/invoicing/domain/vat.service.ts': '91d10ea9159cdc0c',
-  'src/modules/invoicing/domain/verifactu.service.ts': '1bef6183bb5547ba',
+  'src/modules/invoicing/domain/verifactu.service.ts': '7433c5b8fb3af758',
 });
 
 // ── El instrumento ────────────────────────────────────────────────────────────────────────────
