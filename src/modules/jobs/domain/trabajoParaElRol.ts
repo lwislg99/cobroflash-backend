@@ -14,21 +14,61 @@
 //
 // El rol se pregunta POR CAPACIDAD (`seesOnlyOwnJobs`, SCRUM-147): un rol desconocido cae del lado
 // restringido, que es el seguro.
+//
+// SCRUM-1707 (PILOTO-1) · Y EL ESTADO DE COBRO. FIRMADO por el fundador (c.21547, Q1, literal):
+// «Importe de SUS trabajos: ve el importe de los trabajos suyos (igual que ya ve sus presupuestos),
+// pero SIN la tarjeta "Por cobrar" ni los filtros de cobro del negocio.» Alcance (c.21556 ①):
+// `invoices` (lleva status 'paid') NO sale — el operario ve el IMPORTE, no su estado de cobro.
+//   · SE QUEDAN: `totalAceptado`, `importeReferencia`, `quote.total` — el importe.
+//   · SALEN «vacíos»: `totalCobrado`, `estadoCobro`, `remaining`, `nextStage`, `pendingStagesCount`,
+//     `hasCustomPlan`, `invoices` y, en el detalle, `charge` — lo cobrado, lo pendiente y el plan
+//     de cobro, que es de lo que comen la tarjeta «Por cobrar» y los filtros Pendiente/Parcial/Pagado.
+//   · Los `albaranes` que viajan DENTRO del detalle pasan por `albaranParaElRol`: son la misma API
+//     de datos del albarán que Q2 recorta, y dejarlos aquí sería la puerta de atrás.
+// La escalera del front (`jobNextAction.js`) ya salta los niveles de dinero al técnico (SCRUM-89):
+// con `invoices: []` no se le pinta ningún CTA de cobrar ni de facturar.
 import { seesOnlyOwnJobs } from '../../../core/http/roleCapabilities';
+import { albaranParaElRol, type AlbaranSerializado } from './albaranParaElRol';
 
 /** Lo que este fichero lee de la respuesta. Estructural: vale para la lista, el detalle y el PATCH. */
 export interface TrabajoSerializado {
   notes?: string | null;
+  totalCobrado?: unknown;
+  estadoCobro?: unknown;
+  remaining?: unknown;
+  nextStage?: unknown;
+  pendingStagesCount?: unknown;
+  hasCustomPlan?: unknown;
+  invoices?: unknown;
+  charge?: unknown;
+  albaranes?: unknown;
 }
 
 /**
  * La respuesta del Trabajo tal y como la puede ver este rol. Para quien ve solo lo suyo (el operario),
- * `notes` sale `null`: la clave se conserva —no desaparece— para que la forma del objeto sea la misma
- * para todos y nadie tenga que distinguir «no viaja» de «está vacía».
+ * `notes` y el estado de cobro salen con su valor «vacío» (`null`, `0`, `false`, `[]`): las claves se
+ * conservan —no desaparecen— para que la forma del objeto sea la misma para todos y nadie tenga que
+ * distinguir «no viaja» de «está vacía». Una clave que la respuesta no traía (la lista no lleva
+ * `charge`) no se inventa.
  */
 export function trabajoParaElRol<T extends TrabajoSerializado>(trabajo: T, rol: string | null | undefined): T {
   if (!seesOnlyOwnJobs(rol)) return trabajo;
-  return { ...trabajo, notes: null };
+  const out: any = {
+    ...trabajo,
+    notes: null,
+    totalCobrado: null,
+    estadoCobro: null,
+    remaining: null,
+    nextStage: null,
+    pendingStagesCount: 0,
+    hasCustomPlan: false,
+    invoices: [],
+  };
+  if ('charge' in trabajo) out.charge = null;
+  if (Array.isArray(trabajo.albaranes)) {
+    out.albaranes = trabajo.albaranes.map((a: AlbaranSerializado) => albaranParaElRol(a, rol));
+  }
+  return out;
 }
 
 /**
