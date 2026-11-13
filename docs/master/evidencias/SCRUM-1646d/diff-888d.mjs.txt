@@ -1,0 +1,78 @@
+// SCRUM-1646d · ¿qué cambia en las 8 páginas SIN descuento de la huella de SCRUM-888d?
+// Uso: node diff-888d.mjs <arbol-antes> <arbol-ahora>
+// Renderiza los mismos 8 casos con el dist de cada árbol, imprime cada trozo distinto y,
+// aplicando a «antes» SOLO la sustitución style= → id/clase, exige que quede igual a «ahora».
+import { createHash } from 'node:crypto';
+import { pathToFileURL } from 'node:url';
+import path from 'node:path';
+
+const [antesDir, ahoraDir] = process.argv.slice(2).map((p) => path.resolve(p));
+const imp = (dir, rel) => import(pathToFileURL(path.join(dir, rel)).href);
+const RUTA = 'dist/modules/system/app/routes/quoteDecisionLanding.routes.js';
+const { renderQuoteDetail: antes } = await imp(antesDir, RUTA);
+const { renderQuoteDetail: ahora } = await imp(ahoraDir, RUTA);
+const { FIXTURES_SIN_DESCUENTO } = await imp(ahoraDir, 'tests/_fixtures-firma-888d.mjs');
+
+// La sustitución que declara el ticket, y nada más.
+const SUSTITUCION = [
+  ['<div id="tier-confirm" style="display:none">', '<div id="tier-confirm">'],
+  ['<div id="btn-accept-wrapper" style="display:none">', '<div id="btn-accept-wrapper" class="oculto-hasta-elegir">'],
+  ['<div id="btn-accept-wrapper" style="">', '<div id="btn-accept-wrapper">'],
+];
+
+function trozosDistintos(a, b) {
+  let i = 0; while (i < a.length && a[i] === b[i]) i++;
+  let j = 0; while (j < a.length - i && j < b.length - i && a[a.length - 1 - j] === b[b.length - 1 - j]) j++;
+  return { antes: a.slice(Math.max(0, i - 40), a.length - j + 10), ahora: b.slice(Math.max(0, i - 40), b.length - j + 10) };
+}
+
+// Prueba GENÉRICA (no una lista adivinada): se trocea en etiquetas y texto. El texto tiene que ser
+// idéntico, el número de piezas el mismo, y cada etiqueta distinta sólo puede diferir en que «antes»
+// lleva un `style="…"` y «ahora» no, y a cambio lleva un `class`/`id` que antes no tenía.
+const piezas = (h) => h.split(/(<[^>]+>)/);
+const sinAttr = (tag, nombre) => tag.replace(new RegExp(`\\s${nombre}="[^"]*"`), '');
+const pares = new Map();
+function explicar(a, b) {
+  const A = piezas(a); const B = piezas(b);
+  if (A.length !== B.length) return `nº de piezas ${A.length} ≠ ${B.length}`;
+  for (let k = 0; k < A.length; k++) {
+    if (A[k] === B[k]) continue;
+    if (!A[k].startsWith('<') || !B[k].startsWith('<')) return `TEXTO distinto: ${JSON.stringify(A[k])} → ${JSON.stringify(B[k])}`;
+    if (!/\sstyle="/.test(A[k]) || /\sstyle="/.test(B[k])) return `etiqueta distinta sin style→clase: ${A[k]} → ${B[k]}`;
+    let x = sinAttr(A[k], 'style'); let y = B[k];
+    for (const at of ['class', 'id']) if (!new RegExp(`\\s${at}="`).test(x)) y = sinAttr(y, at);
+    if (x.replace(/\s+>/, '>') !== y.replace(/\s+>/, '>')) return `etiqueta distinta además del style: ${A[k]} → ${B[k]}`;
+    const clave = `${A[k]}  →  ${B[k]}`; pares.set(clave, (pares.get(clave) || 0) + 1);
+  }
+  return null;
+}
+
+// CONTROL del propio instrumento antes de juzgar nada: un texto cambiado y un atributo cambiado
+// tienen que salir como «otra cosa»; un style→clase limpio, como explicado.
+const ctl = [
+  explicar('<div style="a">x</div>', '<div class="b">x</div>') === null,
+  explicar('<div style="a">x</div>', '<div class="b">y</div>') !== null,
+  explicar('<div style="a" data-k="1">x</div>', '<div class="b" data-k="2">x</div>') !== null,
+  explicar('<div class="z">x</div>', '<div class="b">x</div>') !== null,
+];
+pares.clear();
+if (!ctl.every(Boolean)) { console.log(`🔴 CIEGO: el instrumento no discrimina ${JSON.stringify(ctl)}`); process.exit(2); }
+console.log('control del instrumento: 4/4 (caza texto, atributo y clase sin style)');
+
+const hA = createHash('sha256'); const hB = createHash('sha256');
+let iguales = 0; let explicadas = 0; let sinExplicar = 0; let n = 0;
+for (const [nombre, q, tiers] of FIXTURES_SIN_DESCUENTO) {
+  n++;
+  const a = antes(q, 'abc123', tiers); const b = ahora(q, 'abc123', tiers);
+  hA.update(nombre + '\n' + a + '\n'); hB.update(nombre + '\n' + b + '\n');
+  if (a === b) { iguales++; console.log(`= ${nombre}: idéntica`); continue; }
+  const por = explicar(a, b);
+  if (!por) { explicadas++; console.log(`≈ ${nombre}: distinta SOLO por style= → clase/id`); }
+  else { sinExplicar++; console.log(`✗ ${nombre}: ${por}`); }
+}
+console.log('\netiquetas cambiadas (antes → ahora) × veces, sumando los 8 casos:');
+for (const [k, v] of pares) console.log(`  ${v}× ${k}`);
+console.log(`\ncasos ${n} · idénticas ${iguales} · sólo style→clase ${explicadas} · otra diferencia ${sinExplicar}`);
+console.log(`huella antes ${hA.digest('hex')}`);
+console.log(`huella ahora ${hB.digest('hex')}`);
+process.exit(n === 8 && sinExplicar === 0 && explicadas > 0 ? 0 : 1);

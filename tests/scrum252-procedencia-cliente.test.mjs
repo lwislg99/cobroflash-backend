@@ -50,6 +50,7 @@ import {
   mensaje,
   esInvocacionDirecta,
 } from '../scripts/_prisma-procedencia-guard.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SCHEMA = path.join(RAIZ, 'prisma', 'schema.prisma');
@@ -57,10 +58,10 @@ const textoSchema = fs.readFileSync(SCHEMA, 'utf8');
 
 /** Escribe un schema temporal y devuelve su ruta. */
 function conSchema(texto, nombre = 'schema.prisma') {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum252-'));
+  const dir = temporal('scrum252-');
   const p = path.join(dir, nombre);
   fs.writeFileSync(p, texto, 'utf8');
-  return { ruta: p, limpiar: () => fs.rmSync(dir, { recursive: true, force: true }) };
+  return { ruta: p, limpiar: () => borrarTemporal(dir) };
 }
 
 // ── ① El control del árbol sano, contra el cliente REAL ───────────────────────

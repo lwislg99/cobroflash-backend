@@ -16,6 +16,7 @@ import {
   parsearImagen, leerTicket, LECTURAS_TICKET_POR_DIA, hoyDelComercio, corteDeCuota, ERROR_POR_CORTE,
 } from '../../domain/lecturaTicket';
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant';
+import { leerRetencionPracticada } from '../../domain/retencionPracticadaEntrada'; // SCRUM-1721
 
 const router = Router();
 
@@ -182,7 +183,8 @@ router.post('/', async (req, res) => {
     // SCRUM-324 (E3) · los cinco del desglose. Sin ellos el gasto se guarda igual, pero el libro
     // de facturas recibidas lo EXCLUYE (`libroRecibidas.ts:98`) y sale sin un solo asiento.
     const { quoteId, providerId, concept, amount, currency, category, date, notes, receiptData, nifProveedor,
-            baseAmount, vatRate, vatAmount, providerInvoiceNumber, providerInvoiceDate } = req.body || {};
+            baseAmount, vatRate, vatAmount, providerInvoiceNumber, providerInvoiceDate,
+            retencionPracticadaTipo, retencionPracticadaCuota } = req.body || {};
     if (!concept || typeof concept !== 'string') return res.status(400).json({ error: 'concept_required' });
     if (amount == null || Number.isNaN(Number(amount))) return res.status(400).json({ error: 'amount_required' });
     if (Number(amount) <= 0) return res.status(400).json({ error: 'amount_invalid' });
@@ -193,6 +195,11 @@ router.post('/', async (req, res) => {
     if ((quoteIdNum !== null && !cabeEnColumnaInt(quoteIdNum)) || (providerIdNum !== null && !cabeEnColumnaInt(providerIdNum))) {
       return res.status(400).json({ error: 'invalid_id' });
     }
+    // SCRUM-1721 · ①③ la retención de IRPF que el profesional PRACTICA (111/115). Antes no se leía
+    // y el borrador salía a cero (SCRUM-1066 c.21634). Solo códigos de error: los textos son de S2.
+    // La opción «No» (④, `retencionPracticadaDeclarada`) va aparte, en SCRUM-1721b.
+    const retencion = leerRetencionPracticada({ retencionPracticadaTipo, retencionPracticadaCuota });
+    if (!retencion.ok) return res.status(400).json({ ok: false, error: retencion.error });
 
     const expense = await createExpense(req.merchantId, {
       quoteId:    quoteIdNum,
@@ -216,6 +223,7 @@ router.post('/', async (req, res) => {
       vatAmount:   vatAmount   ?? null,
       providerInvoiceNumber: providerInvoiceNumber ? String(providerInvoiceNumber) : null,
       providerInvoiceDate:   providerInvoiceDate ? new Date(providerInvoiceDate) : null,
+      ...retencion.campos,
     });
 
     // SCRUM-324 (E3) · el veredicto viaja CON el gasto recién creado.
@@ -321,7 +329,8 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
     const id = Number(req.params.id);
     if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const { concept, amount, currency, category, date, notes, quoteId, providerId, receiptData,
-            baseAmount, vatRate, vatAmount, providerInvoiceNumber, providerInvoiceDate, nifProveedor } = req.body || {};
+            baseAmount, vatRate, vatAmount, providerInvoiceNumber, providerInvoiceDate, nifProveedor,
+            retencionPracticadaTipo, retencionPracticadaCuota } = req.body || {};
     const patch: any = {};
     if (concept     !== undefined) patch.concept     = String(concept).trim();
     if (amount      !== undefined) patch.amount      = Number(amount);
@@ -345,6 +354,11 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
       if (providerInvoiceDate   !== undefined) patch.providerInvoiceDate   = providerInvoiceDate ? new Date(providerInvoiceDate) : null;
     // SCRUM-937 · el modal de edición manda el NIF igual que el alta, y aquí no se leía: se tiraba.
     if (nifProveedor !== undefined) patch.nifProveedor = nifProveedor ? String(nifProveedor) : null;
+    // SCRUM-1721 · ② la retención practicada, con la misma regla: solo viajan las claves que llegan
+    // (`undefined` = no se toca; `null` = se borra). La validación, en `leerRetencionPracticada`.
+    const retencionPut = leerRetencionPracticada({ retencionPracticadaTipo, retencionPracticadaCuota });
+    if (!retencionPut.ok) return res.status(400).json({ ok: false, error: retencionPut.error });
+    Object.assign(patch, retencionPut.campos);
     if (!Object.keys(patch).length) return res.status(400).json({ error: 'empty_update' });
     const updated = await updateExpense(req.merchantId, id, patch);
     if (!updated) return res.status(404).json({ error: 'not_found' });

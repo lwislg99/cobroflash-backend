@@ -22,6 +22,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { escribirGancho } from '../scripts/puerta-claude-empuje.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const barras = (p) => p.split(path.sep).join('/');
@@ -49,7 +50,9 @@ function git(cwd, args, env = {}) {
 }
 
 function montar() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1263-'));
+  // SCRUM-1718: `temporal()` y no `mkdtempSync`: entre crear y devolver hay `assert`, y uno que
+  // cae dejaba el directorio (4 de 4 fallos inyectados, J4). Ahora se borra al salir el proceso.
+  const dir = temporal('scrum1263-');
   const remoto = path.join(dir, 'remoto.git');
   const clon = path.join(dir, 'clon');
   const ganchos = path.join(dir, 'ganchos');
@@ -80,7 +83,7 @@ test('SCRUM-1263 · CONTROL: sin el gancho, `git push origin <ref>` (lo que ejec
     const r = git(m.clon, ['push', 'origin', 'rama-del-pr'], m.env);
     assert.equal(r.status, 0, r.stderr);
     assert.equal(m.cabezaRemota(), m.local, 'sin gancho el remoto avanza: si no, el test de abajo no mide nada');
-  } finally { fs.rmSync(m.dir, { recursive: true, force: true }); }
+  } finally { borrarTemporal(m.dir); }
 });
 
 test('SCRUM-1263 · 🔴 con el gancho GLOBAL, el push de Claude se PARA, lo dice, y el remoto no se mueve', () => {
@@ -98,7 +101,7 @@ test('SCRUM-1263 · 🔴 con el gancho GLOBAL, el push de Claude se PARA, lo dic
     const w = git(m.clon, ['-c', 'core.hooksPath=', 'push', 'origin', 'HEAD:refs/heads/rama-del-pr'], m.env);
     assert.equal(w.status, 0, w.stderr);
     assert.equal(m.cabezaRemota(), m.local, 'el push verificado sí llega');
-  } finally { fs.rmSync(m.dir, { recursive: true, force: true }); }
+  } finally { borrarTemporal(m.dir); }
 });
 
 // ── EL LABORATORIO: el paso `origen` REAL de claude.yml, con el comentario REAL del avisador ─────
@@ -180,7 +183,7 @@ test('SCRUM-1263 · 🔴 LABORATORIO · despierta el AVISADOR → el paso real i
       assert.notEqual(p.status, 0, 'con el gancho del paso real, el push de Claude no sale');
       assert.equal(m.cabezaRemota(), antes);
     });
-  } finally { fs.rmSync(m.dir, { recursive: true, force: true }); }
+  } finally { borrarTemporal(m.dir); }
 });
 
 test('SCRUM-1263 · CONTROL · despierta una PERSONA → no hay gancho y el push sale como hoy', () => {
@@ -193,5 +196,5 @@ test('SCRUM-1263 · CONTROL · despierta una PERSONA → no hay gancho y el push
       assert.equal(p.status, 0, p.stderr);
       assert.equal(m.cabezaRemota(), m.local);
     });
-  } finally { fs.rmSync(m.dir, { recursive: true, force: true }); }
+  } finally { borrarTemporal(m.dir); }
 });

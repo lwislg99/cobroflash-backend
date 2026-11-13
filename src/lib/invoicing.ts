@@ -21,7 +21,7 @@ import {
 import { exigirLineasFacturables } from '../modules/invoicing/domain/lineasFacturables'; // SCRUM-246
 import { lineasParaFacturar } from '../modules/invoicing/domain/invoiceLines.service'; // SCRUM-887
 import { exigirTiposDeIvaEmitibles } from '../core/validation/tiposIvaEmitibles'; // SCRUM-771
-import { exigirCausaLineaEmitible } from '../core/validation/causaLineaEmitible'; // SCRUM-1051
+import { exigirCausaLineaEmitible } from '../core/validation/causaLineaEmitible'; import { exigirDestinatarioParaIsp } from '../modules/invoicing/domain/destinatarioIsp'; // SCRUM-1051 · 1051g (en una línea: la auditoría cita este fichero por número de línea, scrum525d)
 import { crearFacturaEmitida } from '../modules/invoicing/domain/crearFacturaEmitida'; // SCRUM-729
 import { congelarDesdeFicha, clienteDelDocumento } from '../modules/invoicing/domain/clienteCongelado'; // SCRUM-729
 import { congelarEmisor, emisorDelDocumento } from '../modules/invoicing/domain/emisorCongelado'; // SCRUM-665
@@ -372,6 +372,9 @@ export async function ensureInvoiceForCharge(
   // cerrojo de serie.
   if (!ch.customer) throw new Error('missing_customer_in_charge');
   if (!ch.merchant) throw new Error('missing_merchant_in_charge');
+  // SCRUM-1051g · líneas S2: el cliente con NIF válido y EMPRESARIO (GO de regla 40, c.21750
+  // punto 3). ANTES de la transacción que pide número, como los portones de arriba.
+  exigirDestinatarioParaIsp(invoiceLines, ch.customer);
   const clienteCongelado = congelarDesdeFicha(ch.customer);
   const emisorCongelado = congelarEmisor({
     name: ch.merchant.name,

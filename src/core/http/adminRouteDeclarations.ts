@@ -413,8 +413,8 @@ export const FIELD_LEVEL_ROLE_GATES: ReadonlyArray<{ method: string; path: strin
   {
     method: 'PATCH',
     path: '/admin/jobs/:id',
-    campos: ['tipoOperacion', 'assignedUserId', "status:'cerrado'"],
-    why: 'SCRUM-120: la ruta NO es admin-only (status/scheduledAt/notes son del operario); lo reservado al admin son los campos que tocan facturación o dinero. Regla en roleCapabilities.adminOnlyJobField.',
+    campos: ['tipoOperacion', 'assignedUserId', "status:'cerrado'", 'notes'],
+    why: 'SCRUM-120: la ruta NO es admin-only (status/scheduledAt son del operario); lo reservado al admin son los campos que tocan facturación o dinero, y las notas internas, que son solo del jefe (SCRUM-1662 c.21555). Regla en roleCapabilities.adminOnlyJobField.',
   },
   {
     method: 'PATCH',

@@ -1,0 +1,29 @@
+390px uno/inicial: IGUAL (69941/69941) · reglas 123/136 · texto = · POST = [] · informes 0/0/ctl 7 · control DISTINTA · err -|-|-
+390px uno/avisoSinFirma: IGUAL (73124/73124) · reglas 123/136 · texto = · POST = [] · informes 0/0/ctl 7 · control DISTINTA · err -|-|-
+390px uno/conTrazo: IGUAL (71083/71083) · reglas 123/136 · texto = · POST = [] · informes 0/0/ctl 7 · control DISTINTA · err -|-|-
+390px uno/exitoConTrazo: IGUAL (28897/28897) · reglas 110/136 · texto = · POST = [{"decision":"accept","tierId":null,"conFirma":true,"comment":"Aceptado con firma digital"}] · informes 0/0/ctl 7 · control DISTINTA · err -|-|-
+390px uno/exitoSinFirma: IGUAL (27558/27558) · reglas 110/136 · texto = · POST = [{"decision":"accept","tierId":null,"conFirma":false,"comment":"Aceptado desde enlace WhatsApp"}] · informes 0/0/ctl 7 · control DISTINTA · err -|-|-
+390px tres/inicial: IGUAL (83621/83621) · reglas 123/136 · texto = · POST = [] · informes 0/0/ctl 10 · control DISTINTA · err -|-|-
+390px tres/opcionElegida: IGUAL (110225/110225) · reglas 123/136 · texto = · POST = [] · informes 0/0/ctl 10 · control DISTINTA · err -|-|-
+390px tres/exitoConTrazo: IGUAL (28897/28897) · reglas 110/136 · texto = · POST = [{"decision":"accept","tierId":"completa","conFirma":true,"comment":"Aceptado con firma digital"}] · informes 0/0/ctl 10 · control DISTINTA · err -|-|-
+390px tres/exitoSinFirma: IGUAL (27558/27558) · reglas 110/136 · texto = · POST = [{"decision":"accept","tierId":"completa","conFirma":false,"comment":"Aceptado desde enlace WhatsApp"}] · informes 0/0/ctl 10 · control DISTINTA · err -|-|-
+390px aceptado/inicial: IGUAL (18619/18619) · reglas 110/123 · texto = · POST = [] · informes 0/0/ctl 2 · control DISTINTA · err -|-|-
+390px rechazado/inicial: IGUAL (27056/27056) · reglas 110/123 · texto = · POST = [] · informes 0/0/ctl 3 · control DISTINTA · err -|-|-
+390px caducado/inicial: IGUAL (22064/22064) · reglas 110/123 · texto = · POST = [] · informes 0/0/ctl 3 · control DISTINTA · err -|-|-
+390px rechazo-form/inicial: IGUAL (64567/64567) · reglas 110/123 · texto = · POST = [] · informes 0/0/ctl 8 · control DISTINTA · err -|-|-
+390px rechazo-enviado/inicial: IGUAL (16562/16562) · reglas 110/123 · texto = · POST = [] · informes 0/0/ctl 1 · control DISTINTA · err -|-|-
+390px uno-marca/inicial: IGUAL (68513/68513) · reglas 129/142 · texto = · POST = [] · informes 0/0/ctl 8 · control DISTINTA · err -|-|-
+390px uno-marca/avisoSinFirma: IGUAL (71707/71707) · reglas 129/142 · texto = · POST = [] · informes 0/0/ctl 8 · control DISTINTA · err -|-|-
+390px uno-marca/conTrazo: IGUAL (69656/69656) · reglas 129/142 · texto = · POST = [] · informes 0/0/ctl 8 · control DISTINTA · err -|-|-
+390px uno-marca/exitoConTrazo: IGUAL (28904/28904) · reglas 116/142 · texto = · POST = [{"decision":"accept","tierId":null,"conFirma":true,"comment":"Aceptado con firma digital"}] · informes 0/0/ctl 8 · control DISTINTA · err -|-|-
+390px uno-marca/exitoSinFirma: IGUAL (27567/27567) · reglas 116/142 · texto = · POST = [{"decision":"accept","tierId":null,"conFirma":false,"comment":"Aceptado desde enlace WhatsApp"}] · informes 0/0/ctl 8 · control DISTINTA · err -|-|-
+390px tres-marca/inicial: IGUAL (82124/82124) · reglas 129/142 · texto = · POST = [] · informes 0/0/ctl 11 · control DISTINTA · err -|-|-
+390px tres-marca/opcionElegida: IGUAL (108781/108781) · reglas 129/142 · texto = · POST = [] · informes 0/0/ctl 11 · control DISTINTA · err -|-|-
+390px tres-marca/exitoConTrazo: IGUAL (28904/28904) · reglas 116/142 · texto = · POST = [{"decision":"accept","tierId":"completa","conFirma":true,"comment":"Aceptado con firma digital"}] · informes 0/0/ctl 11 · control DISTINTA · err -|-|-
+390px tres-marca/exitoSinFirma: IGUAL (27567/27567) · reglas 116/142 · texto = · POST = [{"decision":"accept","tierId":"completa","conFirma":false,"comment":"Aceptado desde enlace WhatsApp"}] · informes 0/0/ctl 11 · control DISTINTA · err -|-|-
+390px aceptado-marca/inicial: IGUAL (18619/18619) · reglas 116/129 · texto = · POST = [] · informes 0/0/ctl 3 · control DISTINTA · err -|-|-
+390px rechazado-marca/inicial: IGUAL (27056/27056) · reglas 116/129 · texto = · POST = [] · informes 0/0/ctl 4 · control DISTINTA · err -|-|-
+390px caducado-marca/inicial: IGUAL (22064/22064) · reglas 116/129 · texto = · POST = [] · informes 0/0/ctl 4 · control DISTINTA · err -|-|-
+390px rechazo-form-marca/inicial: IGUAL (63147/63147) · reglas 116/129 · texto = · POST = [] · informes 0/0/ctl 9 · control DISTINTA · err -|-|-
+390px rechazo-enviado-marca/inicial: IGUAL (16562/16562) · reglas 110/123 · texto = · POST = [] · informes 0/0/ctl 1 · control DISTINTA · err -|-|-
+RESUMEN 390px: 28/28 IGUALES · informes CSP en «después» 0 · control distinto en 28/28

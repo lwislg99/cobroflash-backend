@@ -1,5 +1,6 @@
 // SCRUM-120 — PATCH /admin/jobs/:id: gate POR CAMPO (no por ruta). Lo operativo del día a día
-// (status agendar/empezar/terminar, scheduledAt, notes) es del TÉCNICO; lo que afecta a FACTURACIÓN
+// (status agendar/empezar/terminar, scheduledAt, queHayQueHacer) es del TÉCNICO; las `notes` son del
+// jefe desde SCRUM-1662 c.21555 (ver el re-anclaje abajo); lo que afecta a FACTURACIÓN
 // es admin: `tipoOperacion` (bandera fiscal), `assignedUserId` (reparto de equipo) y cerrar el Trabajo
 // (`status:'cerrado'`: irreversible + mata la vía de "Cobrar el resto"). FAIL-CLOSED: un técnico que
 // mande CUALQUIER campo admin-only (aunque venga mezclado con campos legítimos) → 403, nada se aplica.
@@ -100,9 +101,20 @@ test('SCRUM-120: PATCH /admin/jobs/:id — gate por campo (técnico: operativo �
         assert.equal(tras.notes, 'nota-original', 'FAIL-CLOSED ROTO: se aplicó un campo legítimo pese al 403');
         assert.equal(tras.tipoOperacion, 'TRABAJO_UNICO', 'la bandera fiscal NO debe haber cambiado');
 
-        // ── TÉCNICO: lo OPERATIVO del día a día → 200 ─────────────────────────────
+        // ── RE-ANCLAJE (SCRUM-1662, regla nueva FIRMADA) ──────────────────────────────────
+        // Aquí ponía `notes` → 200: la regla de SCRUM-120 (23-jul) daba las notas al operario. La
+        // supera la firma del fundador de SCRUM-1662 c.21555 (literal): «Ocultarlas al operario — Las
+        // notas pasan a ser SOLO del jefe, como promete el rótulo: el operario deja de verlas y de
+        // poder editarlas, y tampoco van en el archivo de calendario. La tarea del operario vive en
+        // "Qué hay que hacer". Sin textos nuevos.» Con el código nuevo, el ancla viejo cayó aquí
+        // (200 esperado, 403 recibido) — medido antes de re-anclar (precedente 917c/C.1).
         const rNotes = await patch(cookieTecnico, { notes: 'nota-del-operario' });
-        assert.equal(rNotes.status, 200, 'técnico editando notes (operativo) debe ir bien');
+        assert.equal(rNotes.status, 403, 'técnico editando notes: son las notas internas del jefe (SCRUM-1662 c.21555)');
+        assert.equal((await rNotes.json()).field, 'notes');
+        assert.equal((await prisma.job.findUnique({ where: { id: job.id } })).notes, 'nota-original');
+        // ── TÉCNICO: lo OPERATIVO del día a día → 200 ─────────────────────────────
+        const rTarea = await patch(cookieTecnico, { queHayQueHacer: 'tarea-del-operario' });
+        assert.equal(rTarea.status, 200, 'técnico editando «Qué hay que hacer» (su tarea, SCRUM-1662) debe ir bien');
         const rTerm = await patch(cookieTecnico, { status: 'terminado' });
         assert.equal(rTerm.status, 200, 'técnico marcando terminado (en_curso→terminado) debe ir bien');
         assert.equal((await prisma.job.findUnique({ where: { id: job.id } })).status, 'terminado');

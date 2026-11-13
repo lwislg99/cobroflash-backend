@@ -33,7 +33,11 @@ export type EntradaTrabajoDirecto = {
   customerId: number;
   /** Dirección de OBRA. Puede no coincidir con la fiscal del cliente. */
   direccion: string | null;
-  /** Qué hay que hacer. Va a `Job.notes`, que ya existe y ya se pinta. */
+  /**
+   * Qué hay que hacer. Va a `Job.queHayQueHacer` (SCRUM-1662), el campo que el operario SÍ ve.
+   * 🔴 Antes iba a `Job.notes`, y `notes` es «Notas internas · Solo tú las ves»: la tarea del alta
+   * acababa en las notas privadas del jefe. Firmado «columna nueva» en SCRUM-1662 c.21548.
+   */
   descripcion: string | null;
   /** Nombre del Trabajo. Opcional: sin él, la pantalla se titula con el cliente (SCRUM-317). */
   titulo: string | null;
@@ -133,7 +137,9 @@ export function filaDeTrabajoDirecto(
     status: 'pendiente_agendar' as const,  // el mismo arranque de la FSM (Parte L)
     titulo: datos.titulo,
     direccion: datos.direccion,
-    notes: datos.descripcion,
+    // 🔴 SCRUM-1662 · la descripción del alta es la TAREA y va a su campo propio. `notes` NO se
+    // escribe aquí: son las notas internas del jefe y nacen vacías (null), no con la tarea dentro.
+    queHayQueHacer: datos.descripcion,
     // 🔴 SE PERSISTE. Mientras no habia columna, esto no estaba y la puerta rechazaba el campo
     // entero; ahora entra. `null` cuando no consta: ausente y «reparacion» no son lo mismo.
     tipoIntervencion: datos.tipoIntervencion,
