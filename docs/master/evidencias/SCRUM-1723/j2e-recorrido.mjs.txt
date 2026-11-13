@@ -1,0 +1,103 @@
+// SCRUM-1723c · Recorrido en navegador real (el de los guards: scripts/_navegador.mjs) de TARJETA y
+// MERCADO PAGO con la CSP de SCRUM-1637 APLICADA. Variante de evidencias/SCRUM-1647/recorrido.mjs.
+// Uso (desde la raíz; copia a .mjs y .cjs fuera del árbol):
+//   node <copia recorrido> <raíz> <copia servidor .cjs> <distMain> <distRama> <dirSalida>
+// A main SIN política · B main CON (control: TIENE que salir distinta y con informes) · C rama CON · D rama SIN.
+// Control sembrado en cada servidor (`/__sembrado`: un <style> y un style=): con política TIENE que dar
+// informes de style-src; si da 0, el contador está ciego.
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { spawn } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
+
+const [RAIZ, SERVIDOR, distMain, distRama, salida] = process.argv.slice(2);
+if (!salida) { console.error('uso: <raíz> <servidor> <distMain> <distRama> <dirSalida>'); process.exit(2); }
+const { lanzarNavegador, resolverNavegador } = await import(pathToFileURL(path.join(RAIZ, 'scripts/_navegador.mjs')).href);
+fs.mkdirSync(path.join(salida, 'capturas'), { recursive: true });
+const ESC = [
+  { id: 'A-main-sin', dist: distMain, modo: 'sin', puerto: 47271 },
+  { id: 'B-main-aplicada', dist: distMain, modo: 'aplicada', puerto: 47272 },
+  { id: 'C-rama-aplicada', dist: distRama, modo: 'aplicada', puerto: 47273 },
+  { id: 'D-rama-sin', dist: distRama, modo: 'sin', puerto: 47274 },
+];
+const PAGINAS = [
+  { id: 'tarjeta-409', ruta: '/__e/pending/42/pay/card/tok1723c', status: 409 },
+  { id: 'tarjeta-503', ruta: '/__e/pending/1/pay/card/tok1723c', status: 503 },
+  { id: 'mp-aviso-503', ruta: '/__e/pending/42/pay/mp/tok1723c', status: 503 },
+  { id: 'mp-approved', ruta: '/__e/paid/42/pay/mp/tok1723c/result', status: 200 },
+  { id: 'mp-rejected', ruta: '/__e/failed/42/pay/mp/tok1723c/result', status: 200 },
+  { id: 'mp-pending', ruta: '/__e/pending/42/pay/mp/tok1723c/result', status: 200 },
+  { id: 'mp-expired', ruta: '/__e/expired/42/pay/mp/tok1723c/result', status: 200 },
+];
+const ANCHOS = [390, 1280];
+function entornoHijo() {
+  const e = { ...process.env, DISABLE_CRONS: 'true', NODE_ENV: 'test', MP_ACCESS_TOKEN: '' };
+  for (const k of Object.keys(e)) if (/^DATABASE_URL/.test(k) || k === 'NODE_TEST_CONTEXT' || k === 'NODE_OPTIONS') delete e[k];
+  for (const k of ['DATABASE_URL', 'DATABASE_URL_STAGING', 'DATABASE_URL_DEV', 'DATABASE_URL_TESTS']) e[k] = '';
+  e.NODE_PATH = path.join(RAIZ, 'node_modules');
+  return e;
+}
+function arrancar(esc) {
+  return new Promise((ok, mal) => {
+    const h = spawn(process.execPath, [SERVIDOR, esc.dist, String(esc.puerto), esc.modo],
+      { cwd: path.dirname(path.resolve(esc.dist)), env: entornoHijo(), stdio: ['ignore', 'pipe', 'pipe'] });
+    let log = '';
+    const t = setTimeout(() => mal(new Error(`${esc.id}: sin LISTO en 60 s\n${log}`)), 60_000);
+    h.stdout.on('data', (d) => { log += d; if (log.includes('LISTO')) { clearTimeout(t); ok(h); } });
+    h.stderr.on('data', (d) => { log += d; });
+    h.on('exit', (c) => { clearTimeout(t); mal(new Error(`${esc.id}: salió con ${c}\n${log.slice(-800)}`)); });
+  });
+}
+const VIGIA = () => { window.__csp = []; document.addEventListener('securitypolicyviolation', (e) => window.__csp.push(e.effectiveDirective)); };
+const sha = (f) => crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
+const faltan = [];
+async function visitar(nav, origen, ruta, ancho, f) {
+  const ctx = await nav.createBrowserContext();
+  const p = await ctx.newPage();
+  p.on('response', (r) => { if (r.status() >= 400 && r.url() !== origen + ruta) faltan.push(`${r.status()} ${r.url()}`); });
+  await p.evaluateOnNewDocument(VIGIA);
+  await p.setViewport({ width: ancho, height: 900, deviceScaleFactor: 1 });
+  const r = await p.goto(origen + ruta, { waitUntil: 'networkidle0' });
+  const csp = await p.evaluate(() => window.__csp);
+  if (f) await p.screenshot({ path: f, fullPage: true });
+  await ctx.close();
+  return { status: r.status(), csp };
+}
+const informe = { navegador: resolverNavegador(), escenarios: {}, comparacion: [] };
+// SCRUM-1723e: el recorrido de 1723c llamaba `lanzarNavegador()` sin puppeteer; `puppeteer.launch`
+// sobre undefined lanza un TypeError que el lanzador imprime como «CORTADA EN proceso» a 0,0 s.
+const puppeteer = createRequire(path.join(RAIZ, 'package.json'))('puppeteer-core');
+const nav = await lanzarNavegador(puppeteer, { headless: true });
+const hijos = [];
+try {
+  for (const esc of ESC) {
+    hijos.push(await arrancar(esc));
+    const origen = `http://127.0.0.1:${esc.puerto}`;
+    const r = { sembrado: await visitar(nav, origen, '/__sembrado', 390, null), paginas: {} };
+    for (const pag of PAGINAS) {
+      r.paginas[pag.id] = {};
+      for (const ancho of ANCHOS) {
+        const f = path.join(salida, 'capturas', `${esc.id}-${pag.id}-${ancho}.png`);
+        const v = await visitar(nav, origen, pag.ruta, ancho, f);
+        if (v.status !== pag.status) throw new Error(`${esc.id} ${pag.id}: status ${v.status}, esperaba ${pag.status}`);
+        r.paginas[pag.id][ancho] = { informes: v.csp.length, directivas: [...new Set(v.csp)], sha256: sha(f) };
+      }
+    }
+    informe.escenarios[esc.id] = r;
+  }
+} finally { await nav.close(); for (const h of hijos) h.kill(); }
+for (const [x, y] of [['A-main-sin', 'C-rama-aplicada'], ['A-main-sin', 'D-rama-sin'], ['B-main-aplicada', 'C-rama-aplicada']]) {
+  let iguales = 0, total = 0;
+  for (const pag of PAGINAS) for (const ancho of ANCHOS) { total++; if (informe.escenarios[x].paginas[pag.id][ancho].sha256 === informe.escenarios[y].paginas[pag.id][ancho].sha256) iguales++; }
+  informe.comparacion.push({ par: `${x} ↔ ${y}`, iguales, total });
+}
+informe.recursosQueFaltan = [...new Set(faltan)];
+fs.writeFileSync(path.join(salida, 'resultado.json'), JSON.stringify(informe, null, 1));
+for (const c of informe.comparacion) console.log(`${c.par}: ${c.iguales}/${c.total} iguales`);
+for (const [id, e] of Object.entries(informe.escenarios)) {
+  const inf = Object.values(e.paginas).flatMap((p) => Object.values(p)).reduce((s, v) => s + v.informes, 0);
+  console.log(`${id}: informes CSP en las páginas ${inf} · sembrado ${e.sembrado.csp.length} (${[...new Set(e.sembrado.csp)].join(',')})`);
+}
+console.log('recursos que faltan:', informe.recursosQueFaltan.length, informe.recursosQueFaltan.slice(0, 5).join(' | '));

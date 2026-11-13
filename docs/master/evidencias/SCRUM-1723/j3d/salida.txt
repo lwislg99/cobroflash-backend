@@ -1,0 +1,19 @@
+⟦arranque⟧ 0.7 s COMPLETA · proceso+ws 0.7 s · primera-página 0.0 s
+A-hoy-sin         sembrado 0 · informes en el login 0 [{},{}] · aviso con ?error {"visible":true,"texto":"Enlace inválido."} · política ninguna · lecturas 0
+C-hoy-aplicada    sembrado 2 · informes en el login 0 [{},{}] · aviso con ?error {"visible":true,"texto":"Enlace inválido."} · política Content-Security-Policy · lecturas 0
+E-antes-sin       sembrado 0 · informes en el login 0 [{},{}] · aviso con ?error {"visible":true,"texto":"Enlace inválido."} · política ninguna · lecturas 0
+B-antes-aplicada  sembrado 2 · informes en el login 12 [{"style-src-attr":2,"script-src-elem":1},{"style-src-attr":2,"script-src-elem":1}] · aviso con ?error {"visible":true,"texto":""} · política Content-Security-Policy · lecturas 0
+visual A-hoy-sin → C-hoy-aplicada login 390: IDÉNTICAS
+visual A-hoy-sin → C-hoy-aplicada login 1280: IDÉNTICAS
+visual A-hoy-sin → C-hoy-aplicada login-error 390: IDÉNTICAS
+visual A-hoy-sin → C-hoy-aplicada login-error 1280: IDÉNTICAS
+visual E-antes-sin → A-hoy-sin login 390: IDÉNTICAS
+visual E-antes-sin → A-hoy-sin login 1280: IDÉNTICAS
+visual E-antes-sin → A-hoy-sin login-error 390: IDÉNTICAS
+visual E-antes-sin → A-hoy-sin login-error 1280: IDÉNTICAS
+visual E-antes-sin → B-antes-aplicada login 390: distintas
+visual E-antes-sin → B-antes-aplicada login 1280: distintas
+visual E-antes-sin → B-antes-aplicada login-error 390: distintas
+visual E-antes-sin → B-antes-aplicada login-error 1280: distintas
+navegador: Edg/157.0.4341.46
+C CUMPLE

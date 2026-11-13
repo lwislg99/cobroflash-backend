@@ -1,0 +1,367 @@
+{
+  "navegador": {
+    "ok": true,
+    "ruta": "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+    "quien": "Edge (Windows)"
+  },
+  "escenarios": {
+    "A-hoy-sin": {
+      "vistas": {
+        "login": {
+          "capturas": {
+            "390": {
+              "fichero": "A-hoy-sin-login-390.png",
+              "sha256": "436b5b3d07e2e206d1610a405054bfd2929d7cdca794e01524ad6af736503cfe"
+            },
+            "1280": {
+              "fichero": "A-hoy-sin-login-1280.png",
+              "sha256": "a927daaba131e36d125e41bd77dfa6ca8a7a8ff8d3869c9b024e910862130bf8"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "aviso": {
+            "visible": false,
+            "texto": ""
+          }
+        },
+        "login-error": {
+          "capturas": {
+            "390": {
+              "fichero": "A-hoy-sin-login-error-390.png",
+              "sha256": "b5e1832b4187d8537f2bc4a93192b83c891313ef9b3da7525cb0d9f8c63ffeb0"
+            },
+            "1280": {
+              "fichero": "A-hoy-sin-login-error-1280.png",
+              "sha256": "d5a8e9fc62036159e6b76294ba76fb4f57735c06e327490e8479b6a9ec08c8c4"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "aviso": {
+            "visible": true,
+            "texto": "Enlace inválido."
+          }
+        }
+      },
+      "sembrado": {
+        "politica": "sin",
+        "eventos": 0,
+        "porDirectiva": {}
+      },
+      "lecturasDelDoble": 0
+    },
+    "C-hoy-aplicada": {
+      "vistas": {
+        "login": {
+          "capturas": {
+            "390": {
+              "fichero": "C-hoy-aplicada-login-390.png",
+              "sha256": "436b5b3d07e2e206d1610a405054bfd2929d7cdca794e01524ad6af736503cfe"
+            },
+            "1280": {
+              "fichero": "C-hoy-aplicada-login-1280.png",
+              "sha256": "a927daaba131e36d125e41bd77dfa6ca8a7a8ff8d3869c9b024e910862130bf8"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "Content-Security-Policy",
+          "aviso": {
+            "visible": false,
+            "texto": ""
+          }
+        },
+        "login-error": {
+          "capturas": {
+            "390": {
+              "fichero": "C-hoy-aplicada-login-error-390.png",
+              "sha256": "b5e1832b4187d8537f2bc4a93192b83c891313ef9b3da7525cb0d9f8c63ffeb0"
+            },
+            "1280": {
+              "fichero": "C-hoy-aplicada-login-error-1280.png",
+              "sha256": "d5a8e9fc62036159e6b76294ba76fb4f57735c06e327490e8479b6a9ec08c8c4"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "Content-Security-Policy",
+          "aviso": {
+            "visible": true,
+            "texto": "Enlace inválido."
+          }
+        }
+      },
+      "sembrado": {
+        "politica": "aplicada",
+        "eventos": 2,
+        "porDirectiva": {
+          "script-src-elem": 1,
+          "script-src-attr": 1
+        }
+      },
+      "lecturasDelDoble": 0
+    },
+    "E-antes-sin": {
+      "vistas": {
+        "login": {
+          "capturas": {
+            "390": {
+              "fichero": "E-antes-sin-login-390.png",
+              "sha256": "436b5b3d07e2e206d1610a405054bfd2929d7cdca794e01524ad6af736503cfe"
+            },
+            "1280": {
+              "fichero": "E-antes-sin-login-1280.png",
+              "sha256": "a927daaba131e36d125e41bd77dfa6ca8a7a8ff8d3869c9b024e910862130bf8"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "aviso": {
+            "visible": false,
+            "texto": ""
+          }
+        },
+        "login-error": {
+          "capturas": {
+            "390": {
+              "fichero": "E-antes-sin-login-error-390.png",
+              "sha256": "b5e1832b4187d8537f2bc4a93192b83c891313ef9b3da7525cb0d9f8c63ffeb0"
+            },
+            "1280": {
+              "fichero": "E-antes-sin-login-error-1280.png",
+              "sha256": "d5a8e9fc62036159e6b76294ba76fb4f57735c06e327490e8479b6a9ec08c8c4"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "aviso": {
+            "visible": true,
+            "texto": "Enlace inválido."
+          }
+        }
+      },
+      "sembrado": {
+        "politica": "sin",
+        "eventos": 0,
+        "porDirectiva": {}
+      },
+      "lecturasDelDoble": 0
+    },
+    "B-antes-aplicada": {
+      "vistas": {
+        "login": {
+          "capturas": {
+            "390": {
+              "fichero": "B-antes-aplicada-login-390.png",
+              "sha256": "14e923e20ee76dcae1625b8bb9130d0b0cc3b76c9e80211d9ec468b860031f87"
+            },
+            "1280": {
+              "fichero": "B-antes-aplicada-login-1280.png",
+              "sha256": "d2527f5a9b8a841ed856a7ac4157a9f4060535ac7e7f1c5f3af620cf13afa7fa"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 3,
+              "porDirectiva": {
+                "style-src-attr": 2,
+                "script-src-elem": 1
+              }
+            },
+            "1280": {
+              "eventos": 3,
+              "porDirectiva": {
+                "style-src-attr": 2,
+                "script-src-elem": 1
+              }
+            }
+          },
+          "status": 200,
+          "politica": "Content-Security-Policy",
+          "aviso": {
+            "visible": true,
+            "texto": ""
+          }
+        },
+        "login-error": {
+          "capturas": {
+            "390": {
+              "fichero": "B-antes-aplicada-login-error-390.png",
+              "sha256": "14e923e20ee76dcae1625b8bb9130d0b0cc3b76c9e80211d9ec468b860031f87"
+            },
+            "1280": {
+              "fichero": "B-antes-aplicada-login-error-1280.png",
+              "sha256": "d2527f5a9b8a841ed856a7ac4157a9f4060535ac7e7f1c5f3af620cf13afa7fa"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 3,
+              "porDirectiva": {
+                "style-src-attr": 2,
+                "script-src-elem": 1
+              }
+            },
+            "1280": {
+              "eventos": 3,
+              "porDirectiva": {
+                "style-src-attr": 2,
+                "script-src-elem": 1
+              }
+            }
+          },
+          "status": 200,
+          "politica": "Content-Security-Policy",
+          "aviso": {
+            "visible": true,
+            "texto": ""
+          }
+        }
+      },
+      "sembrado": {
+        "politica": "aplicada",
+        "eventos": 2,
+        "porDirectiva": {
+          "script-src-elem": 1,
+          "script-src-attr": 1
+        }
+      },
+      "lecturasDelDoble": 0
+    }
+  },
+  "version": "Edg/157.0.4341.46",
+  "comparacionVisual": [
+    {
+      "par": "A-hoy-sin → C-hoy-aplicada",
+      "vista": "login",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-hoy-sin → C-hoy-aplicada",
+      "vista": "login",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-hoy-sin → C-hoy-aplicada",
+      "vista": "login-error",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-hoy-sin → C-hoy-aplicada",
+      "vista": "login-error",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "E-antes-sin → A-hoy-sin",
+      "vista": "login",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "E-antes-sin → A-hoy-sin",
+      "vista": "login",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "E-antes-sin → A-hoy-sin",
+      "vista": "login-error",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "E-antes-sin → A-hoy-sin",
+      "vista": "login-error",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "E-antes-sin → B-antes-aplicada",
+      "vista": "login",
+      "ancho": 390,
+      "identicas": false
+    },
+    {
+      "par": "E-antes-sin → B-antes-aplicada",
+      "vista": "login",
+      "ancho": 1280,
+      "identicas": false
+    },
+    {
+      "par": "E-antes-sin → B-antes-aplicada",
+      "vista": "login-error",
+      "ancho": 390,
+      "identicas": false
+    },
+    {
+      "par": "E-antes-sin → B-antes-aplicada",
+      "vista": "login-error",
+      "ancho": 1280,
+      "identicas": false
+    }
+  ],
+  "recursosQueFaltan": []
+}
