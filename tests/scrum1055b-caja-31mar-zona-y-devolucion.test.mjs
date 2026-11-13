@@ -43,8 +43,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // Retirar la declaración sin arreglar el defecto.
     fichero: 'tests/scrum1055b-caja-31mar-zona-y-devolucion.test.mjs',
-    de: "bordeEnZonaDelProceso: { declarado: true,",
-    a: "bordeEnZonaDelProceso: { declarado: false,",
+    de: 'DEFECTO_CONOCIDO = {\n  bordeEnZonaDelProceso: { declarado: true,',
+    a: 'DEFECTO_CONOCIDO = {\n  bordeEnZonaDelProceso: { declarado: false,',
     cae: 'SCRUM-1055b · ② el borde del trimestre sigue en la zona del proceso: defecto declarado',
   },
   {
