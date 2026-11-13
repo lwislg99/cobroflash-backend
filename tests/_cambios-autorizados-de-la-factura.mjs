@@ -116,6 +116,21 @@ export const CAMBIOS_AUTORIZADOS = [
       a: '1737745f493343caf708b01d64fe95d74bbfb5fdeae62918bd4f144ac405c25e',
     },
   },
+  {
+    // SCRUM-1051g · una F1 con líneas S2 imprime P1 («Inversión del sujeto pasivo») en su propia
+    // fila, con la base de las S2, y esas líneas salen de la fila de su tipo. Sin S2, el papel no cambia.
+    firma: 'SCRUM-1051 c.21750',
+    registro: 'docs/master/SCRUM-1051.md',
+    cita: '«el PDF imprime P1 y separa la fila S2 del desglose de IVA»',
+    cuerpo: {
+      de: '4666fceba0c0fea949ae93c963dc1dc4bf639d4059f8cbed48cca7d60d3cf8b7',
+      a: 'b4ee934e80da6a987ea3e7f125967a2e98179a5f90830342e9dcb6d988995146',
+    },
+    ambito: {
+      de: '1737745f493343caf708b01d64fe95d74bbfb5fdeae62918bd4f144ac405c25e',
+      a: '01fc1c03e13e38bed7621e399573e4fdfe85d5b76bfa953ba2643b70e7a4b5a6',
+    },
+  },
 ];
 
 /**

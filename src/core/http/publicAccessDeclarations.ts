@@ -183,6 +183,10 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
   // además su PDF no expone a nadie nuevo. Sin `:id` —eso es justo lo que cerró SCRUM-95— y
   // sólo LEE: no muta estado ni escribe `quote.pdfUrl`.
   { method: 'GET', path: '/pay/quote/:token/pdf', kind: 'token', reason: 'Quote.decisionToken' },
+  { method: 'GET', path: '/pay/quote/js/firma.js', kind: 'no-sensitive-resource', reason: 'guion constante de la página pública de firma del presupuesto, sin datos ni token: los datos van en el HTML que autoriza el token (SCRUM-1646c)' },
+  { method: 'GET', path: '/pay/quote/css/firma.css', kind: 'no-sensitive-resource', reason: 'CSS constante de la página pública de firma del presupuesto, sin datos (SCRUM-1646d)' },
+  { method: 'GET', path: '/pay/quote/css/opciones.css', kind: 'no-sensitive-resource', reason: 'CSS constante de las opciones de la página de firma del presupuesto, sin datos (SCRUM-1646d)' },
+  { method: 'GET', path: '/pay/quote/css/marca/:color', kind: 'no-sensitive-resource', reason: 'CSS del color de marca: seis hexadecimales validados en la ruta, sin token ni datos del cliente; lo demás es 404 (SCRUM-1646d)' },
   // SCRUM-1202 · POST /quote/:token/accept y /reject se RETIRARON: nadie las llamaba desde
   // SCRUM-95 y /accept marcaba `accepted` SIN firma ni sello, reescribiendo paymentTerms y
   // evidence con el cuerpo. La decisión del cliente entra SOLO por /decision.

@@ -26,7 +26,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { evaluar, tokenizar, acciones, coincide } from '../.claude/hooks/guard-dangerous.mjs';
-import { temporal } from './_temporal.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 import { casosEscritos } from './_casos-escritos.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
@@ -154,7 +154,9 @@ test('SCRUM-454 · el tokenizador no confunde el descriptor con una palabra', ()
 
 /** Un repo desechable. `sucio` decide si hay trabajo que perder — que es TODA la diferencia. */
 function repo(sucio) {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-454-')));
+  // SCRUM-1718: `temporal()`. Se llama al cargar el módulo; si algo de aquí lanza, el fichero muere
+  // antes de registrar el `test.after` de abajo y los directorios se quedaban (2, medido por J4).
+  const dir = fs.realpathSync(temporal('yaqu-454-'));
   const git = (...a) => spawnSync('git', a, { cwd: dir, encoding: 'utf8' });
   git('init', '-q');
   git('config', 'user.email', 'x@x');
@@ -186,7 +188,7 @@ function repo(sucio) {
 const SUCIO = repo(true);
 const LIMPIO = repo(false);
 test.after(() => {
-  for (const r of [SUCIO, LIMPIO]) fs.rmSync(r.dir, { recursive: true, force: true });
+  for (const r of [SUCIO, LIMPIO]) borrarTemporal(r.dir);
 });
 
 const veredicto = (comando, cwd) =>

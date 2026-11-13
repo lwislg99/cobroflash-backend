@@ -1,0 +1,26 @@
+// SCRUM-1727 · Corre SOLO las declaraciones de scrum1727 con las piezas de la casa (censo, correr,
+// aplicarUna). Mismo molde que docs/master/evidencias/SCRUM-1218/mutar-1218j.mjs.txt.
+// Uso: node docs/master/evidencias/SCRUM-1727/mutar-1727.mjs.txt <raíz del árbol>   (se copia a .mjs)
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+const RAIZ = process.argv[2];
+if (!RAIZ) { console.log('CIEGO: falta la raíz del árbol'); process.exit(2); }
+const m = await import(pathToFileURL(path.join(RAIZ, 'scripts/meta-guard-mutaciones.mjs')).href);
+const GUARD = 'scrum1727-disputa-sin-factura.test.mjs';
+const censo = m.censoDeDeclaraciones();
+console.log(`censo: ${censo.length} guards con declaración`);
+const fila = censo.find((x) => String(x.guard).endsWith(GUARD));
+if (!fila) { console.log('CIEGO: scrum1727 no sale en el censo de la casa'); process.exit(2); }
+console.log(`guard=${fila.guard} · declaraciones=${fila.mutaciones.length} · incompletas=${(fila.incompletas || []).length}`);
+const limpia = await m.correr(fila.guard);
+console.log(`limpia: pasados=${limpia.pasados?.length} caidos=${limpia.caidos?.length} movidos=${limpia.movidos?.length ?? 0}`);
+let rc = 0;
+for (const mut of fila.mutaciones) {
+  const r = await m.aplicarUna(mut, fila.guard, limpia);
+  // `ok: true` = el test nombrado CAYÓ con la mutación (cazada). El molde de 1218j lo rotulaba
+  // «VIVA», que en la jerga de la casa es lo contrario: aquí se dice CAE.
+  const v = r.ok ? 'CAE' : r.mudo ? 'MUDA (no cae)' : r.muerto ? 'MUERTO' : 'CIEGA';
+  if (!r.ok) rc = 1;
+  console.log(`${v} · ${mut.de} → ${mut.a} · cae «${mut.cae}» · colaterales=${r.colaterales ?? 0}${r.ok ? '' : ' · ' + (r.mudo || r.ciego || r.muerto)}`);
+}
+process.exit(rc);

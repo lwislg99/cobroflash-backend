@@ -20,6 +20,7 @@ import { esMetodoValido } from '../../domain/metodoDeCobro';
 import { recalcJobCobradoForCharge } from '../../../jobs/domain/job.service'; // SCRUM-13
 import { datosDeCobroPagado, resolverInstanteDeCobro } from '../../domain/instanteDeCobro'; // SCRUM-397
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1301
+import { motivoParaNoPedirResena } from '../../domain/resenaTrasElPago'; // SCRUM-1727b
 // SCRUM-502: la guarda de anulada se CONSUME de donde vive, no se reescribe aqui.
 import { puedeCobrarPorPasarela, ESTADO_ANULADA } from '../../../system/invoiceAdmin';
 // SCRUM-815: la constancia EN DISCO de que el correo de la factura ya salio para este cobro.
@@ -279,7 +280,7 @@ router.post('/', async (req, res) => {
       // Cargar merchant para notificaciones
       const merchant = await prisma.merchant.findUnique({
         where: { id: updated.merchantId },
-        select: { whatsappPhone: true, googleReviewUrl: true, name: true, legalName: true, email: true, notifyEmailOnPaid: true },
+        select: { whatsappPhone: true, googleReviewUrl: true, name: true, legalName: true, email: true, notifyEmailOnPaid: true, timezone: true }, // SCRUM-1727b: franja de la reseña
       });
 
       // Confirmación de pago al cliente por WhatsApp (J1: payment_confirmation_invoice_es,
@@ -321,11 +322,17 @@ router.post('/', async (req, res) => {
         });
       }
 
-      // Solicitud de reseña Google al cliente — A23: BOTÓN-ENLACE (fire-and-forget; solo
-      // en ventana, que está abierta porque el cliente acaba de pagar por el enlace).
+      // Solicitud de reseña Google al cliente — A23: BOTÓN-ENLACE (fire-and-forget).
+      // SCRUM-1727b (decisión c.21744): SOLO con la ventana de 24 h abierta y entre las 09:00 y las
+      // 21:00 del negocio; si no, no se manda (ni cola ni plantilla). Pagar en una web NO abre la
+      // ventana: se comprueba. La baja la sigue cortando `sendWhatsAppCtaUrl`.
       if (merchant?.googleReviewUrl && updated.customer && tieneNumeroDeContacto(updated.customer)) { // SCRUM-590 (CONT-19)
         const reviewPhone = canalDeWhatsApp(updated.customer);
-        if (reviewPhone) {
+        const sinResena = reviewPhone
+          ? await motivoParaNoPedirResena({ merchantId: updated.merchantId, customerId: updated.customer.id, merchant })
+          : null;
+        if (sinResena) console.info(`[review] SCRUM-1727b: no se pide la reseña del cobro ${updated.id} (${sinResena})`);
+        if (reviewPhone && !sinResena) {
           const customerName = updated.customer.name || 'Cliente';
           const merchantName = merchant.name || 'tu proveedor';
           sendWhatsAppCtaUrl({

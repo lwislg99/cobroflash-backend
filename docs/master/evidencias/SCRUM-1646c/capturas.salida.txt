@@ -1,0 +1,43 @@
+SCRUM-1646c · Playwright (Chromium, MCP) · 12-nov-2026 · reducedMotion=reduce · capturas fullPage
+antes   = HTML del router de main (8f2357255) SIN cabecera CSP
+después = HTML del router de la rama (aa24b0495) con Content-Security-Policy APLICADA:
+          default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;
+          font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';
+          frame-ancestors 'none'; report-uri /informes
+          (= POLITICA_CSP de src/core/http/csp.ts con style-src ampliado: el estilo en línea es el tramo 1646d)
+control = HTML de main CON esa misma CSP
+Comparación: Buffer.equals de los PNG dentro de Playwright, y otra vez por SHA-256 en PowerShell (mismos resultados).
+
+══ PASADA 1 · negocio «Fontanería 1646» (con mojibake «FontanerÃ­a» por el editor del banco, IGUAL a los dos lados)
+26/26 IGUALES byte a byte (13 caras/estados × 390 y 1280) · mismo cuerpo de POST en los 8 envíos
+informes CSP: antes 0 · después 0 (en las 26) · control 3 (un precio) / 4 (tres opciones)
+control DISTINTO de antes en 14 de 26 (todos los estados tras pulsar); IGUAL en los iniciales y en las caras sin
+guion: el primer pintado no depende del guion, así que lo que discrimina es el estado TRAS PULSAR. El control no
+envía ningún POST.
+390px uno/inicial IGUAL (64387) · uno/avisoSinFirma IGUAL (67589) · uno/conTrazo IGUAL (65523)
+390px uno/exitoConTrazo IGUAL (27567) POST accept conFirma · uno/exitoSinFirma IGUAL (26230) POST accept sin firma
+390px tres/inicial IGUAL (77247) · tres/opcionElegida IGUAL (102087)
+390px tres/exitoConTrazo IGUAL (27567) POST tierId=completa conFirma · tres/exitoSinFirma IGUAL (26230) POST tierId=completa
+390px aceptado IGUAL (18619) · rechazado IGUAL (25965) · rechazo-form IGUAL (59107) · rechazo-enviado IGUAL (16562)
+1280px uno/inicial IGUAL (72696) · uno/avisoSinFirma IGUAL (76174) · uno/conTrazo IGUAL (74156)
+1280px uno/exitoConTrazo IGUAL (32528) · uno/exitoSinFirma IGUAL (31610)
+1280px tres/inicial IGUAL (88022) · tres/opcionElegida IGUAL (115086) · tres/exitoConTrazo IGUAL (32528) · tres/exitoSinFirma IGUAL (31610)
+1280px aceptado IGUAL (23917) · rechazado IGUAL (31466) · rechazo-form IGUAL (67032) · rechazo-enviado IGUAL (19974)
+
+══ PASADA 2 · negocio «Fontanería & Hijos <Sur> 'Pepe'», cliente «Cliente Ñoño & <b>1646</b>», opción «Completa & más»
+16/26 IGUALES · 10 DISTINTAS — las 10 son el botón «Firmar y aceptar» de MAIN, que NO HACE NADA:
+  antes (main, SIN CSP): POST [] y la pantalla no cambia (igual que el control) en avisoSinFirma, exitoConTrazo y
+  exitoSinFirma de las dos caras, a los dos anchos. Causa, compilada (compilar-en-linea.mjs sobre el HTML de main):
+    antes/uno.html  → #1 ok · #2 ok · #3 SyntaxError: Unexpected identifier 'Pepe'
+    antes/tres.html → #1 ok · #2 ok · #3 SyntaxError: Unexpected identifier 'Pepe'
+    control: el mismo HTML con Pepe sin apóstrofos → #1 ok · #2 ok · #3 ok
+  El enlace de compartir va dentro de un literal JS con comillas simples, con encodeURIComponent, que NO escapa «'».
+  después (rama, CON CSP): el POST sale igual que con el nombre normal, y el éxito dice «Fontanería & Hijos <Sur>
+  'Pepe' ya tiene tu confirmación.» — el texto que main pintaría si su guion compilara (esc + innerHTML).
+  Los 16 IGUALES: todo lo que no depende del tercer guion (primer pintado, elegir opción y trazo — TIER_JS y SIG_JS sí
+  compilan — y las cuatro caras sin guion), con el texto visible idéntico (innerText =).
+390px uno/inicial IGUAL · uno/avisoSinFirma DISTINTA (main mudo) · uno/conTrazo IGUAL · uno/exitoConTrazo DISTINTA · uno/exitoSinFirma DISTINTA
+390px tres/inicial IGUAL · tres/opcionElegida IGUAL · tres/exitoConTrazo DISTINTA · tres/exitoSinFirma DISTINTA
+390px aceptado IGUAL · rechazado IGUAL · rechazo-form IGUAL · rechazo-enviado IGUAL
+1280px: el mismo reparto (5 DISTINTAS, las mismas)
+informes CSP: después 0 en las 26 · control 3/4 · antes 0

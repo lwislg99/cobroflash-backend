@@ -9,6 +9,7 @@ import type { Job } from '@prisma/client'; // SCRUM-717d: sin `select`, la consu
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: dinero = admin)
 import { canalDeWhatsApp } from '../../../../core/contacto/canalDeWhatsApp'; // SCRUM-1171
 import { seesOnlyOwnJobs, seesAllJobs, adminOnlyJobField, adminOnlyAlbaranField } from '../../../../core/http/roleCapabilities'; // SCRUM-147 / SCRUM-164 / SCRUM-1712
+import { trabajoParaElRol, descripcionDelCalendario } from '../../domain/trabajoParaElRol'; // SCRUM-1662 (c.21555)
 import { listExpenses } from '../../../expenses/domain/expenses.service'; // SCRUM-370: los gastos de ESTE Trabajo
 import { esSuyoElTrabajo, SELECT_DUENOS } from '../../domain/accesoAlTrabajo'; // SCRUM-1706: los tres ejes, también en `/:id`
 import { canTransition, estadoCobroFor, importeDeReferencia, JOB_TIPOS_OPERACION } from '../../domain/job.service';
@@ -496,6 +497,9 @@ async function serializeJob(job: Job, refs?: JobRefs) {
     scheduledAt: job.scheduledAt,
     assignedUserId: job.assignedUserId,
     notes: job.notes,
+    // SCRUM-1662 · «Qué hay que hacer»: la tarea del trabajo, que el operario SÍ ve (no es `notes`).
+    // `null` en los trabajos anteriores: no se copia nada de `notes`, que se escribieron como privadas.
+    queHayQueHacer: job.queHayQueHacer ?? null,
     createdAt: job.createdAt,
     // SCRUM-10: campos del contenedor "Trabajo". Fallback a derivado para Jobs
     // anteriores (titulo/totalAceptado null) → sin cambiar el comportamiento visible.
@@ -871,7 +875,8 @@ router.get('/', async (req, res) => {
     const refs = await loadJobRefs(jobs);
     const out = [];
     for (const j of jobs) out.push(await serializeJob(j, refs));
-    return res.json(out);
+    // SCRUM-1662 (c.21555) · las notas internas son solo del jefe: ver `trabajoParaElRol`.
+    return res.json(out.map((s) => trabajoParaElRol(s, req.userRole)));
   } catch (err: any) {
     console.error('[GET /admin/jobs]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
@@ -920,7 +925,7 @@ router.post('/', async (req, res) => {
       entityType: 'job',
       entityId: job.id,
     });
-    return res.status(201).json(await serializeJob(job));
+    return res.status(201).json(trabajoParaElRol(await serializeJob(job), req.userRole)); // SCRUM-1662
   } catch (err: any) {
     console.error('[jobs] POST / falló:', err?.message || err);
     return res.status(500).json({ error: 'server_error' });
@@ -954,7 +959,7 @@ router.get('/:id', async (req, res) => {
         return res.status(404).json({ error: 'not_found' });
       }
     }
-    return res.json(await serializeJobDetail(job));
+    return res.json(trabajoParaElRol(await serializeJobDetail(job), req.userRole)); // SCRUM-1662 (c.21555)
   } catch (err: any) {
     console.error('[GET /admin/jobs/:id]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
@@ -1009,7 +1014,7 @@ router.get('/:id/gastos', async (req, res) => {
   }
 });
 
-// PATCH /admin/jobs/:id — { status?, scheduledAt?, notes?, assignedUserId? }
+// PATCH /admin/jobs/:id — { status?, scheduledAt?, notes?, queHayQueHacer?, assignedUserId? }
 router.patch('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -1026,7 +1031,8 @@ router.patch('/:id', async (req, res) => {
       }
     }
 
-    // SCRUM-120: gate por CAMPO (no por ruta — status/scheduledAt/notes del día a día son del operario).
+    // SCRUM-120: gate por CAMPO (no por ruta — status/scheduledAt del día a día son del operario; las
+    // `notes` dejaron de serlo con la firma de SCRUM-1662 c.21555: son solo del jefe).
     // Admin-only por afectar a FACTURACIÓN/DINERO: `tipoOperacion` (bandera fiscal: recapitulativa mensual
     // vs. al concluir), `assignedUserId` (reparto del equipo, S1) y cerrar el Trabajo (`status:'cerrado'`:
     // única transición IRREVERSIBLE de la FSM y mata la vía de "Cobrar el resto"). FAIL-CLOSED: si un técnico
@@ -1065,6 +1071,13 @@ router.patch('/:id', async (req, res) => {
       data.scheduledAt = d;
     }
     if (req.body?.notes !== undefined) data.notes = String(req.body.notes || '').slice(0, 2000) || null;
+    // SCRUM-1662 · «Qué hay que hacer» se edita aquí. NO es admin-only: es la tarea del operario
+    // (c.21555: «La tarea del operario vive en "Qué hay que hacer"»), operativa como `titulo`. Las
+    // que sí pasan a ser solo del jefe son las `notes` de arriba: el 403 lo da `adminOnlyJobField`.
+    // Mismo tope que en el alta (2.000, `datosDeTrabajoDirecto`); vacío → `null`, un solo «no consta».
+    if (req.body?.queHayQueHacer !== undefined) {
+      data.queHayQueHacer = String(req.body.queHayQueHacer || '').trim().slice(0, 2000) || null;
+    }
     // ── SCRUM-317 (G2) · el pro pone NOMBRE al Trabajo ──────────────────────────────────
     //
     // `titulo` existía en el modelo desde SCRUM-10 y NINGUNA ruta lo escribía: se rellenaba solo
@@ -1171,7 +1184,7 @@ router.patch('/:id', async (req, res) => {
         meta: { tipoOperacion: tipoOperacionElegido },
       });
     }
-    return res.json(await serializeJob(updated));
+    return res.json(trabajoParaElRol(await serializeJob(updated), req.userRole)); // SCRUM-1662
   } catch (err: any) {
     console.error('[PATCH /admin/jobs/:id]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
@@ -1199,6 +1212,7 @@ router.get('/:id/ics', async (req, res) => {
     const start = new Date(job.scheduledAt);
     const end = new Date(start.getTime() + 2 * 3600_000); // bloque de 2 h por defecto
     const summary = `Trabajo: ${s.customer?.name || 'Cliente'}${s.quote ? ` · Presupuesto #${s.quote.number}` : ''}`;
+    const descripcion = descripcionDelCalendario(job, req.userRole);
     const escText = (t: string) => t.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
     const ics = [
       'BEGIN:VCALENDAR',
@@ -1210,7 +1224,8 @@ router.get('/:id/ics', async (req, res) => {
       `DTSTART:${dt(start)}`,
       `DTEND:${dt(end)}`,
       `SUMMARY:${escText(summary)}`,
-      ...(job.notes ? [`DESCRIPTION:${escText(job.notes)}`] : []),
+      // SCRUM-1662 (c.21555) · el jefe, sus notas; el operario, «Qué hay que hacer».
+      ...(descripcion ? [`DESCRIPTION:${escText(descripcion)}`] : []),
       'END:VEVENT',
       'END:VCALENDAR',
     ].join('\r\n');

@@ -92,6 +92,12 @@ export const RETIRADAS_A_PROPOSITO = [
   { guard: 'tests-declarados', motivo: 'SCRUM-773: se retiran el script backfill-job-assignees.mjs y su test scrum650c (6 test) — sin script no hay qué verificar (7802 → 7796)', fecha: '2026-09-22', antes: 7802, ahora: 7796 },
   { guard: 'scrum813-trinquete-de-zona.test.mjs', motivo: 'SCRUM-935d: ㉓ ㉔ se MUDAN a scrum1494-cortados-de-zona, no se retiran (26 → 24)', fecha: '2026-10-22', antes: 26, ahora: 24 },
   { guard: 'tests-declarados', motivo: 'SCRUM-1250b: se desmontan POST /admin/invoices/:id/pay y /unpay; sus 4 test de scrum1455b (decimal+control) se retiran con las rutas y se añaden 2 en scrum1250b (12419 → 12417)', fecha: '2026-10-24', antes: 12419, ahora: 12417 },
+  // 🔴 SCRUM-1718 · SE RETIRA `tests/scrum1396c-los-declarados-solo-bajan.test.mjs` ENTERO (4 test(), 3 mutaciones)
+  // con su lista `scripts/_mkdtemp-declarados.json`, que llegó a CERO (28 → 0: J6 17, SCRUM-1718 11). Lo manda su
+  // propio ①: «está vacía: se arreglaron todos. Retira este test y la lista con ella». La mutación de `fugasDe`
+  // se MUDA a scrum864c ③ (2 → 3), con el control positivo sembrado; las otras dos mutaban la lista retirada.
+  { guard: 'scrum1396c-los-declarados-solo-bajan.test.mjs', motivo: 'SCRUM-1718: lista de declarados a cero → se retira con ella, como manda su ① (3 → 0; la de fugasDe se muda a 864c)', fecha: '2026-11-12', antes: 3, ahora: 0 },
+  { guard: 'tests-declarados', motivo: 'SCRUM-1718: se retiran los 4 test() de scrum1396c con su lista vacía; 864c ③ hereda su control positivo (13448 → 13444)', fecha: '2026-11-12', antes: 13448, ahora: 13444 },
 ];
 
 // ══════════════════════════════════════════════════════════════════════════════════════════

@@ -35,6 +35,17 @@ import { clavesDelConstructor, puertasSinLosCampos } from './_puertas-del-presup
 import { censar, clasifica, IMPRIME, RETIRADAS } from '../scripts/_censo-fecha-sin-zona.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
+
+// SCRUM-1726 · el sello deja de distinguir la península: vuelve la hora del servidor para todos.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    fichero: 'src/modules/invoicing/domain/selloTemporal.ts',
+    de: '  const peninsular = zonaDelMerchant({ timezone: zona ?? null }) === ZONA_PENINSULAR;',
+    a: '  const peninsular = false;',
+    cae: 'SCRUM-1726 · 🔴 el sello de la evidencia va en la hora del negocio peninsular',
+  },
+];
+
 const MADRID = 'Europe/Madrid';
 const CANARIAS = 'Atlantic/Canary';
 
@@ -184,14 +195,32 @@ test('SCRUM-1470 · el BORDE sale del desplazamiento de la zona: el primer segun
   assert.equal(Date.parse(PAPELES.bordeDentroInvierno.instante) - Date.parse(PAPELES.bordeFueraInvierno.instante), 1000);
 });
 
-test('SCRUM-1470 · DECLARADO: el sello de la evidencia sigue en la hora del servidor, que es lo que su literal dice', () => {
-  // «Sello temporal: 02/10/2026, 22:30:00 (hora del servidor)». El literal está firmado y lo ata
-  // scrum805; pintarlo en la zona del negocio lo haría falso. Si algún día se cambia el literal,
-  // este caso es el que hay que tocar — y con él `fD`, su gemelo del paquete de disputa.
+// SCRUM-1726 · hasta aquí este caso decía «DECLARADO: el sello sigue en la hora del servidor»,
+// porque el literal «(hora del servidor)» estaba firmado. El fundador firmó el cambio el 12-nov-2026
+// (SCRUM-1656 c.21724 sobre la propuesta 1 de c.21722): con la zona del negocio en la península, el
+// sello va en ESA zona y dice «(hora peninsular)»; sin zona guardada, sigue «(hora del servidor)».
+// Lo que se espera leer va escrito A MANO (cabecera de este fichero): reloj de pared de Madrid.
+const SELLO_ESPERADO = {
+  verano: ['03/10/2026, 00:30:00', 'hora peninsular'],
+  invierno: ['15/01/2026, 00:30:00', 'hora peninsular'],
+  mediodia: ['02/10/2026, 14:00:00', 'hora peninsular'],
+};
+test('SCRUM-1726 · 🔴 el sello de la evidencia va en la hora del negocio peninsular y lo dice: «(hora peninsular)»', () => {
+  for (const [nombre, [sello, etiqueta]] of Object.entries(SELLO_ESPERADO)) {
+    const p = papel(nombre);
+    assert.equal(p.pdfSello, sello, `🔴 ${nombre}: el sello dice ${p.pdfSello}; en la península son las ${sello}`);
+    assert.equal(p.pdfSelloEtiqueta, etiqueta, `🔴 ${nombre}: el sello dice «(${p.pdfSelloEtiqueta})»`);
+  }
+});
+
+test('SCRUM-1726 · sin zona peninsular guardada, el sello sigue en la hora del servidor y lo dice (sin texto nuevo)', () => {
+  // Sin zona, con una zona rota y con Canarias: «(hora peninsular)» sería falso en los tres, y
+  // un texto para Canarias no está firmado. Se queda lo de antes: el reloj del proceso (UTC aquí).
   const utc = (iso) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}, ${iso.slice(11, 19)}`;
-  for (const nombre of ['verano', 'invierno', 'mediodia']) {
-    assert.equal(papel(nombre).pdfSello, utc(PAPELES[nombre].instante),
-      `🔴 ${nombre}: el sello ya no es la hora del servidor, y el papel sigue diciendo «(hora del servidor)»`);
+  for (const nombre of ['sinZona', 'zonaRota', 'canarias']) {
+    const p = papel(nombre);
+    assert.equal(p.pdfSello, utc(PAPELES[nombre].instante), `🔴 ${nombre}: el sello ya no es la hora del servidor`);
+    assert.equal(p.pdfSelloEtiqueta, 'hora del servidor', `🔴 ${nombre}: el sello dice «(${p.pdfSelloEtiqueta})»`);
   }
 });
 
@@ -353,16 +382,19 @@ const FICHEROS = [
   'src/modules/messaging/domain/weeklyDigest.service.ts',
 ];
 
-test('SCRUM-1470 · SCRUM-1471 · SCRUM-1472 · el censo: de las 12 llamadas que IMPRIMÍAN en estos cinco ficheros quedan 2, y cada una con su motivo (SCRUM-1470c retiró las 3 de `dateStr`, y SCRUM-1471b `fechaDeLaFactura`)', () => {
+test('SCRUM-1470 · SCRUM-1471 · SCRUM-1472 · SCRUM-1726 · el censo: de las 12 llamadas que IMPRIMÍAN en estos cinco ficheros quedan 0 (SCRUM-1470c retiró las 3 de `dateStr`, SCRUM-1471b `fechaDeLaFactura` y SCRUM-1726 el sello y `fD`)', () => {
   const real = censar();
   assert.ok(real.ficheros > 250, `🔴 CIEGO: el censo miró ${real.ficheros} ficheros`);
+  // Que el censo VE estos ficheros: alguna fila suya, de cualquier clase. Sin esto, el `[]` de abajo
+  // diría lo mismo con los cinco ficheros fuera de su población.
+  assert.ok(real.filas.some((f) => FICHEROS.includes(f.fichero)), '🔴 CIEGO: el censo no tiene ninguna fila de estos ficheros');
   const quedan = real.filas.filter((f) => FICHEROS.includes(f.fichero) && clasifica(f) === IMPRIME)
     .map((f) => `${f.identidad} · ${f.metodo}`).sort();
-  assert.deepEqual(quedan, [
-    'src/modules/invoicing/infra/pdf/pdf.service.ts::generateQuotePdf · toLocaleString',
-    'src/modules/system/app/routes/invoicesAdmin.routes.ts::fD · toLocaleString',
-  ], '🔴 las llamadas que IMPRIMEN sin zona en estos ficheros no son las dos declaradas: o ha vuelto una arreglada, o ha nacido otra');
+  assert.deepEqual(quedan, [],
+    '🔴 vuelve a haber llamadas que IMPRIMEN sin zona en estos ficheros: o ha vuelto una arreglada, o ha nacido otra');
   for (const id of [
+    'src/modules/invoicing/infra/pdf/pdf.service.ts::generateQuotePdf',
+    'src/modules/system/app/routes/invoicesAdmin.routes.ts::fD',
     'src/modules/billing/app/routes/receipt.routes.ts::GET /:token',
     'src/modules/system/app/routes/customerPortal.routes.ts::dateShort',
     'src/modules/system/app/routes/customerPortal.routes.ts::fechaDeLaFactura',
