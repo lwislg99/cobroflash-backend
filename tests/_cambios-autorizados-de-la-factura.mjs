@@ -131,6 +131,22 @@ export const CAMBIOS_AUTORIZADOS = [
       a: '01fc1c03e13e38bed7621e399573e4fdfe85d5b76bfa953ba2643b70e7a4b5a6',
     },
   },
+  {
+    // SCRUM-1240d · una factura con el criterio de caja CONGELADO a true y al menos un tramo S1
+    // imprime la mención firmada en su propia línea, entre los totales y el bloque VERI*FACTU.
+    // Con NULL o false, o sin S1, o en un justificante, el papel no cambia.
+    firma: 'SCRUM-1240 c.21776',
+    registro: 'docs/master/SCRUM-1240.md',
+    cita: '«Régimen especial del criterio de caja»',
+    cuerpo: {
+      de: 'b4ee934e80da6a987ea3e7f125967a2e98179a5f90830342e9dcb6d988995146',
+      a: '3967c7ef8e699f0e46167c4c04dbb6b11daa51745b78a23317416aa7d6bd96b1',
+    },
+    ambito: {
+      de: '01fc1c03e13e38bed7621e399573e4fdfe85d5b76bfa953ba2643b70e7a4b5a6',
+      a: '508c20188d476ab2bc19c82f37180201f2692fd881563ba73b2e185d132af3c0',
+    },
+  },
 ];
 
 /**

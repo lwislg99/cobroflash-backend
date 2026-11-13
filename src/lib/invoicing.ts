@@ -142,6 +142,7 @@ export async function ensureInvoicePdf(
       watermark: isDemoMerchant(inv.merchant) ? DEMO_WATERMARK : null,
       stageLabel: inv.stageLabel, // SCRUM-33
       zona: inv.merchant.timezone, // SCRUM-1470c: el día de la «Fecha:», el de su registro
+      merchantCriterioCaja: inv.merchantCriterioCaja, // SCRUM-1240d: el CONGELADO, nunca el vivo
     });
     await prisma.invoice.update({ where: { id: invoiceId }, data: { pdfUrl: publicUrlPath, qrData } });
   }
@@ -301,6 +302,7 @@ export async function ensureInvoiceForCharge(
         watermark: merchant && isDemoMerchant(merchant) ? DEMO_WATERMARK : null,
         stageLabel: inv.stageLabel ?? null, // SCRUM-33
         zona: merchant.timezone, // SCRUM-1470c: el día de la «Fecha:», el de su registro
+        merchantCriterioCaja: inv.merchantCriterioCaja, // SCRUM-1240d: el CONGELADO, nunca el vivo
       });
 
       updated = await prisma.invoice.update({
