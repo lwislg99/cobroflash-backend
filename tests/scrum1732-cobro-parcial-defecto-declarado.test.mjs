@@ -53,6 +53,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 // Por su efecto: pone `WHATSAPP_DRY_RUN=1` ANTES de cargar `dist/` (ni un byte hacia Meta).
 import './_envio-doblado.mjs';
+import { reqDeSesion } from './_arnes-de-router.mjs';
 import { leerLibroRegistro } from '../dist/modules/invoicing/domain/libroRegistro.repo.js';
 import { rangoTrimestre } from '../dist/modules/fiscal/modelo303/modelo303.js';
 
@@ -284,7 +285,7 @@ async function pedirAdmin(router, url, body) {
   const express = requiere('express');
   const app = express();
   app.use(express.json());
-  app.use((req, _res, next) => { req.merchantId = MERCHANT; req.userRole = 'admin'; next(); });
+  app.use((req, _res, next) => { Object.assign(req, reqDeSesion({ rol: 'admin', merchantId: MERCHANT })); next(); });
   app.use('/admin/charges', router);
   const server = http.createServer(app);
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
@@ -438,25 +439,28 @@ export function juicio(medida, declaracion) {
   }
 }
 
-const HUECOS = [
-  ['pagadaAlCien', '(a) un Bizum de 950 € sigue dejando la factura pagada al 100 %', () => medirPagada()],
-  ['liberacionSinEnlace', '(b) la liberación de la garantía sigue sin enlace a la factura', () => medirLiberacion()],
-  ['libroCienDeGolpe', '(c) el libro de caja sigue devengando el 100 % en el trimestre del primer cobro', () => medirLibro()],
-  ['cobrosSumanMas', '(d) los cobros del cliente siguen sumando 1.050 € por una factura de 1.000 €', () => medirSuma()],
-];
+const HUECOS = ['pagadaAlCien', 'liberacionSinEnlace', 'libroCienDeGolpe', 'cobrosSumanMas'];
 
-for (const [clave, nombre, medir] of HUECOS) {
-  test(`SCRUM-1732 · ${nombre}: defecto declarado`, async (t) => {
-    const medida = await medir();
-    t.diagnostic(`estado ${medida.estado} · ${medida.poblacion}`);
-    const v = juicio(medida, DEFECTO_CONOCIDO[clave]);
-    t.diagnostic(v.motivo);
-    assert.equal(v.ok, true, `🔴 ${v.motivo}`);
-  });
-}
+/** Un caso por hueco. El nombre va LITERAL en cada `test()` (SCRUM-1415: la tanda no pierde nombres). */
+const juzgar = (clave, medir) => async (t) => {
+  const medida = await medir();
+  t.diagnostic(`estado ${medida.estado} · ${medida.poblacion}`);
+  const v = juicio(medida, DEFECTO_CONOCIDO[clave]);
+  t.diagnostic(v.motivo);
+  assert.equal(v.ok, true, `🔴 ${v.motivo}`);
+};
+
+test('SCRUM-1732 · (a) un Bizum de 950 € sigue dejando la factura pagada al 100 %: defecto declarado',
+  juzgar('pagadaAlCien', () => medirPagada()));
+test('SCRUM-1732 · (b) la liberación de la garantía sigue sin enlace a la factura: defecto declarado',
+  juzgar('liberacionSinEnlace', () => medirLiberacion()));
+test('SCRUM-1732 · (c) el libro de caja sigue devengando el 100 % en el trimestre del primer cobro: defecto declarado',
+  juzgar('libroCienDeGolpe', () => medirLibro()));
+test('SCRUM-1732 · (d) los cobros del cliente siguen sumando 1.050 € por una factura de 1.000 €: defecto declarado',
+  juzgar('cobrosSumanMas', () => medirSuma()));
 
 test('SCRUM-1732 · cada declaración vigente cita el ticket que la retira, y las cuatro existen', () => {
-  assert.deepEqual(Object.keys(DEFECTO_CONOCIDO).sort(), HUECOS.map(([c]) => c).sort());
+  assert.deepEqual(Object.keys(DEFECTO_CONOCIDO).sort(), [...HUECOS].sort());
   for (const [hueco, d] of Object.entries(DEFECTO_CONOCIDO)) {
     if (d?.declarado !== true) continue;
     assert.deepEqual(d.tickets, ['SCRUM-1732'], `la declaración de ${hueco} tiene que citar SCRUM-1732`);
