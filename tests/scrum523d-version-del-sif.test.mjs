@@ -68,12 +68,18 @@ const ANCLAS = [PRODUCTOR, 'src/modules/fiscal/verifactu/registro.builder.ts', S
  * la versión, si no cambia cómo se crea o se remite un registro o si el fundador lo dice en su GO.
  * Recongeladas por esa vía: `emission.service.ts` e `invoiceNumber.service.ts` (SCRUM-1585, M, que
  * decide si se emite y no toca sellado ni XML), pegando lo que imprimió el mensaje de error.
+ * Y `registro.builder.ts` + `verifactu.service.ts` (SCRUM-1129e, ClaveRegimen 07 desde el criterio
+ * de caja congelado al sellar): ESTE sí cambia el XML, y va por c.21290 porque el fundador lo dijo
+ * en su GO (SCRUM-1129 c.21753, punto 3), con la condición de que la primera declaración no esté
+ * entregada (medido el 13-nov-2026: 0 textos de declaración en `src/` y `public/`).
+ * La de `verifactu.service.ts` se recongeló otra vez en ese PR (SCRUM-1129 c.21829, autorización de
+ * Javier): el campo con nombre `merchantCriterioCaja` que pide scrum878, sin cambiar lo que se escribe.
  */
 const VERSION_CONGELADA = '1.0.0';
 const HUELLAS_CONGELADAS = Object.freeze({
   'src/modules/fiscal/verifactu/instalacion.ts': '4e1c8389dc52ad24',
   'src/modules/fiscal/verifactu/productor.ts': 'd57941ac9e3d0797',
-  'src/modules/fiscal/verifactu/registro.builder.ts': '9cba94aa34f736ea',
+  'src/modules/fiscal/verifactu/registro.builder.ts': '7823fa3578a2e0ed',
   'src/modules/fiscal/verifactu/sif.client.ts': '16065f4d390ab831',
   'src/modules/fiscal/verifactu/sif.cola.ts': '0f456c225b0e4350',
   'src/modules/fiscal/verifactu/sif.procesador.ts': 'a817d5b83c318cab',
@@ -85,7 +91,7 @@ const HUELLAS_CONGELADAS = Object.freeze({
   'src/modules/invoicing/domain/selladoEstado.ts': 'f08728ab84b81ba2',
   'src/modules/invoicing/domain/tipoDocumento.ts': '09a9e00aeb1068de',
   'src/modules/invoicing/domain/vat.service.ts': '91d10ea9159cdc0c',
-  'src/modules/invoicing/domain/verifactu.service.ts': '40287a96b63efcf7',
+  'src/modules/invoicing/domain/verifactu.service.ts': '7433c5b8fb3af758',
 });
 
 // ── El instrumento ────────────────────────────────────────────────────────────────────────────

@@ -98,6 +98,9 @@ export const RETIRADAS_A_PROPOSITO = [
   // se MUDA a scrum864c ③ (2 → 3), con el control positivo sembrado; las otras dos mutaban la lista retirada.
   { guard: 'scrum1396c-los-declarados-solo-bajan.test.mjs', motivo: 'SCRUM-1718: lista de declarados a cero → se retira con ella, como manda su ① (3 → 0; la de fugasDe se muda a 864c)', fecha: '2026-11-12', antes: 3, ahora: 0 },
   { guard: 'tests-declarados', motivo: 'SCRUM-1718: se retiran los 4 test() de scrum1396c con su lista vacía; 864c ③ hereda su control positivo (13448 → 13444)', fecha: '2026-11-12', antes: 13448, ahora: 13444 },
+  // 🔴 SCRUM-1129e · SE RETIRA `DEFECTO_CONOCIDO` DE scrum1240b, como manda su c.21173: la clave ya no va fija a 01
+  // (GO c.21753). Queda la otra mitad del trinquete. Declarado aquí por decisión del jefe J en SCRUM-1129 c.21827.
+  { guard: 'scrum1240b-clave-regimen-defecto-declarado.test.mjs', motivo: 'SCRUM-1129e: se retira DEFECTO_CONOCIDO al cablear la clave 07 (c.21173, GO c.21753, decisión c.21827) (3 → 1)', fecha: '2026-11-13', antes: 3, ahora: 1 },
 ];
 
 // ══════════════════════════════════════════════════════════════════════════════════════════
