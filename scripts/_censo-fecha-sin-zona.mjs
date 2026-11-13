@@ -368,6 +368,11 @@ export const USO = new Map([
   ['src/integrations/whatsapp.ts::sendWhatsAppTemplate', { uso: AGREGADO }],
   ['src/modules/expenses/domain/expenses.service.ts::getExpenseSummary', { uso: AGREGADO }],
   ['src/modules/jobs/domain/precarga.service.ts::ventanaDePrecarga', { uso: AGREGADO }],
+  // SCRUM-1730b (J1) · el tope del 31-dic del criterio de caja y la ventana de años que el libro pide.
+  // Misma zona que `rangoTrimestre` (hora del servidor), que es quien pone las fronteras del trimestre
+  // del 303: si el trimestre pasa a la zona del merchant, estos dos se mueven con él, no antes.
+  ['src/modules/invoicing/domain/devengoPorCaja.ts::topeDeDevengo', { uso: AGREGADO, motivo: 'tope del 31-dic (LIVA 163 terdecies), en la zona de rangoTrimestre', ref: 'SCRUM-1730' }],
+  ['src/modules/invoicing/domain/libroRegistro.repo.ts::leerPorCaja', { uso: AGREGADO, motivo: 'años cuyo tope cae en el rango del libro, en la zona de rangoTrimestre', ref: 'SCRUM-1730' }],
   ['src/modules/system/app/routes/quotesAdmin.routes.ts::GET /', { uso: AGREGADO }],
   ['src/modules/system/app/routes/invoicesAdmin.routes.ts::GET /', { uso: AGREGADO }],
   ['src/modules/metrics/domain/metrics.service.ts::getHomeMetrics', { uso: AGREGADO }],

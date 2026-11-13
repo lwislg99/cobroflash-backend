@@ -258,7 +258,10 @@ export const CENSO = {
   // es un documento que AFIRMA que esa facturación no existió. El `where` es opaco solo por el
   // spread condicional de fechas; `quoteId` no aparece en él, y en el asiento el presupuesto es
   // un enlace OPCIONAL: una suelta sale con `presupuestoId: null`, no desaparece.
-  'src/modules/invoicing/domain/libroRegistro.repo.ts::invoice.findMany#1': { veredicto: 'OPACO', nota: 'libro de registro: spread condicional de fechas; NO ata al origen — la suelta SALE, con presupuestoId null' },
+  // SCRUM-1730b · desde el criterio de caja hay DOS: la #1 es `leerPorCaja` (candidatas por cobro, por
+  // emisión y por el tope, con el rango en un spread), y la #2 es la consulta de siempre.
+  'src/modules/invoicing/domain/libroRegistro.repo.ts::invoice.findMany#1': { veredicto: 'OPACO', nota: 'libro por caja: merchantId + un rango de paidAt o createdAt en un spread; NO ata al origen — la suelta SALE, con presupuestoId null' },
+  'src/modules/invoicing/domain/libroRegistro.repo.ts::invoice.findMany#2': { veredicto: 'OPACO', nota: 'libro de registro: spread condicional de fechas; NO ata al origen — la suelta SALE, con presupuestoId null' },
   'src/modules/jobs/domain/job.service.ts::invoice.aggregate#1': { veredicto: 'POBLACION', nota: 'totalCobrado de un Job = facturas de SUS quotes. Una suelta no pertenece a ningún Job' },
   'src/modules/maintenance/domain/maintenance.service.ts::invoice.findMany#1': { veredicto: 'POBLACION', nota: '€ nacidos del ciclo de mantenimientos (quote.origin); una suelta nunca nació de uno' },
   'src/modules/metrics/domain/metrics.service.ts::invoice.count#1': { veredicto: 'POBLACION', nota: 'embudo de PRESUPUESTOS: etapa «facturadas». Filtro simétrico con «cobradas» y razonado en SCRUM-236' },

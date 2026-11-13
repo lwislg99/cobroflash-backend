@@ -3,8 +3,9 @@
 // Sin gate: ni BD, ni red. EJECUTA el libro registro y el 303 reales (`dist/`) contra una base en
 // memoria, como `scrum294b`. No importa nada del camino de emisión (regla 38): sólo los libros.
 //
-// 🔴 ESTO NO ES UN VERDE QUE BENDICE EL COMPORTAMIENTO DE HOY. Es un TRINQUETE DE DOS DEFECTOS
-// CONOCIDOS del criterio de caja, reproducidos con casos fabricados:
+// SCRUM-1730b (GO de c.21789): los dos huecos están ARREGLADOS y sus declaraciones retiradas. El
+// trinquete se queda para que no vuelvan, y abajo van los casos que el GO pidió probar además (la
+// mixta, la cobrada después del tope y el 303). Lo que era el trinquete de los dos defectos:
 //
 //   (i)  S2 · LIVA 163 duodecies.Dos.d deja fuera del régimen las operaciones con inversión del
 //        sujeto pasivo. Hoy el libro aplica el cobro a TODAS las facturas del merchant: una factura
@@ -31,53 +32,55 @@ import { fechaDeDevengo, CAMPO_COBRO } from '../dist/modules/invoicing/domain/de
 import { rangoTrimestre } from '../dist/modules/fiscal/modelo303/modelo303.js';
 
 /**
- * 🔴 LA DECLARACIÓN DE LOS DOS DEFECTOS. Quien arregle uno retira SU entrada en el mismo cambio
- * (`declarado: false` o borrándola). Mientras esté, cualquier cambio de ese comportamiento tumba esto.
+ * 🔴 LA DECLARACIÓN DE LOS DEFECTOS. SCRUM-1730b (GO de c.21789) arregló los dos y retiró sus
+ * entradas, `s2` y `tope31dic`, en el mismo cambio. El objeto se queda: si alguien vuelve a declarar
+ * uno con el arreglo puesto, el juicio da «ha CAMBIADO con el defecto todavía declarado», en rojo.
+ * El (iii) —vivo contra congelado— nunca estuvo aquí: espera a SCRUM-1129 y lo describe el registro.
  */
-export const DEFECTO_CONOCIDO = {
-  s2: { declarado: true,
-    tickets: ['SCRUM-1730'],
-    que: 'con criterio de caja, una factura con líneas S2 devenga por cobro como las demás (LIVA 163 duodecies.Dos.d la excluye)' },
-  tope31dic: { declarado: true,
-    tickets: ['SCRUM-1730'],
-    que: 'con criterio de caja y sin cobro, la factura no devenga nunca (LIVA 163 terdecies.Uno: el 31-dic del año siguiente)' },
-};
+export const DEFECTO_CONOCIDO = {};
 
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
-    // (i) Un arreglo con la forma que tendría: las S2 se leen por emisión y se quitan de las de cobro.
-    fichero: 'src/modules/invoicing/domain/libroRegistro.repo.ts',
-    de: '  // SCRUM-1232 · fuera los justificantes, pero SÓLO',
-    a: "  if (campo !== CAMPO_EMISION && Object.keys(fecha).length > 0) { const esS2 = (f: any) => Array.isArray(f.lines) && f.lines.some((l: any) => l?.causa === 'S2'); const porEmision = (await db.invoice.findMany({ where: { merchantId: rango.merchantId, createdAt: fecha }, select: CAMPOS_FACTURA })) as any[]; leidas.splice(0, leidas.length, ...leidas.filter((f: any) => !esS2(f)), ...porEmision.filter(esS2)); }\n  // SCRUM-1232 · fuera los justificantes, pero SÓLO",
-    cae: 'SCRUM-1730 · (i) una factura S2 sigue devengando por cobro: defecto declarado',
+    // (i) Se quita la excepción de la S2: vuelve a devengar por cobro, sin declaración → rojo.
+    fichero: 'src/modules/invoicing/domain/devengoPorCaja.ts',
+    de: '  if (tieneLineasS2(factura.lines)) return factura.createdAt;\n',
+    a: '',
+    cae: 'SCRUM-1730 · (i) una factura S2 devenga por emisión aunque el merchant tenga caja',
   },
   {
-    // (ii) Medio arreglo: la función da el 31-dic y el libro sigue sin traerla. No vale.
+    // (ii) Se vuelve al `null` sin cobro en la función: la factura no devenga nunca → rojo.
     fichero: 'src/modules/invoicing/domain/devengoPorCaja.ts',
-    de: '  return factura.paidAt ?? null;',
-    a: '  return factura.paidAt ?? new Date(factura.createdAt.getFullYear() + 1, 11, 31, 12);',
-    cae: 'SCRUM-1730 · (ii) una factura sin cobro sigue sin devengar el 31-dic del año siguiente: defecto declarado',
+    de: '  return factura.paidAt && factura.paidAt.getTime() <= tope.getTime() ? factura.paidAt : tope;',
+    a: '  return factura.paidAt ?? null;',
+    cae: 'SCRUM-1730 · (ii) una factura sin cobro devenga el 31-dic del año siguiente',
+  },
+  {
+    // (ii) Medio arreglo: la función da el tope, pero el libro deja de pedir la ventana del tope.
+    fichero: 'src/modules/invoicing/domain/libroRegistro.repo.ts',
+    de: '  const hayTope = primerX === undefined || ultimoX === undefined || primerX <= ultimoX;',
+    a: '  const hayTope = false;',
+    cae: 'SCRUM-1730 · (ii) una factura sin cobro devenga el 31-dic del año siguiente',
+  },
+  {
+    // (ii) La cobrada DESPUÉS del tope vuelve a contar en el trimestre del cobro: el IVA dos veces.
+    fichero: 'src/modules/invoicing/domain/devengoPorCaja.ts',
+    de: '  return factura.paidAt && factura.paidAt.getTime() <= tope.getTime() ? factura.paidAt : tope;',
+    a: '  return factura.paidAt ? factura.paidAt : tope;',
+    cae: 'SCRUM-1730 · (ii) una factura cobrada DESPUÉS del tope no vuelve a salir en el trimestre del cobro',
   },
   {
     // La caja desconectada: el control positivo (una S1 cobrada en Q2 cae en Q2) no sale → CIEGO.
     fichero: 'src/modules/invoicing/domain/libroRegistro.repo.ts',
     de: "  const campo = 'criterioCaja' in rango ? campoDeDevengo(rango.criterioCaja) : CAMPO_EMISION;",
     a: '  const campo = CAMPO_EMISION;',
-    cae: 'SCRUM-1730 · (i) una factura S2 sigue devengando por cobro: defecto declarado',
+    cae: 'SCRUM-1730 · (i) una factura S2 devenga por emisión aunque el merchant tenga caja',
   },
   {
-    // Se retira la declaración de (i) y el defecto sigue.
+    // Se vuelve a declarar (i) con el arreglo puesto: «ha CAMBIADO con el defecto declarado» → rojo.
     fichero: 'tests/scrum1730-criterio-caja-huecos-declarados.test.mjs',
-    de: 'DEFECTO_CONOCIDO = {\n  s2: { declarado: true,',
-    a: 'DEFECTO_CONOCIDO = {\n  s2: { declarado: false,',
-    cae: 'SCRUM-1730 · (i) una factura S2 sigue devengando por cobro: defecto declarado',
-  },
-  {
-    // Se retira la declaración de (ii) y el defecto sigue.
-    fichero: 'tests/scrum1730-criterio-caja-huecos-declarados.test.mjs',
-    de: "la excluye)' },\n  tope31dic: { declarado: true,",
-    a: "la excluye)' },\n  tope31dic: { declarado: false,",
-    cae: 'SCRUM-1730 · (ii) una factura sin cobro sigue sin devengar el 31-dic del año siguiente: defecto declarado',
+    de: 'export const DEFECTO_CONOCIDO = {};',
+    a: "export const DEFECTO_CONOCIDO = { s2: { declarado: true, tickets: ['SCRUM-1730'] } };",
+    cae: 'SCRUM-1730 · (i) una factura S2 devenga por emisión aunque el merchant tenga caja',
   },
 ];
 
@@ -186,7 +189,7 @@ export function juicio(medida, declaracion) {
   }
 }
 
-test('SCRUM-1730 · (i) una factura S2 sigue devengando por cobro: defecto declarado', async (t) => {
+test('SCRUM-1730 · (i) una factura S2 devenga por emisión aunque el merchant tenga caja', async (t) => {
   const medida = await medirS2();
   t.diagnostic(`estado ${medida.estado} · ${medida.poblacion}`);
   const v = juicio(medida, DEFECTO_CONOCIDO.s2);
@@ -194,12 +197,53 @@ test('SCRUM-1730 · (i) una factura S2 sigue devengando por cobro: defecto decla
   assert.equal(v.ok, true, `🔴 ${v.motivo}`);
 });
 
-test('SCRUM-1730 · (ii) una factura sin cobro sigue sin devengar el 31-dic del año siguiente: defecto declarado', async (t) => {
+test('SCRUM-1730 · (ii) una factura sin cobro devenga el 31-dic del año siguiente', async (t) => {
   const medida = await medirTope();
   t.diagnostic(`estado ${medida.estado} · ${medida.poblacion}`);
   const v = juicio(medida, DEFECTO_CONOCIDO.tope31dic);
   t.diagnostic(v.motivo);
   assert.equal(v.ok, true, `🔴 ${v.motivo}`);
+});
+
+// ── SCRUM-1730b · lo que el GO de c.21789 pide probar además ────────────────────────────────────
+
+test('SCRUM-1730 · (i) una factura MIXTA (S1+S2) va ENTERA por emisión, en el libro y en el 303', async () => {
+  // Decidido en c.21789 «hasta que conteste el asesor» (pregunta en SCRUM-1264).
+  const mixta = factura(4, 'F-MIXTA', EMISION_I, COBRO_I, [
+    { qty: 1, price: 600, tax: 0.21 }, { qty: 1, price: 400, tax: 0, causa: 'S2' },
+  ]);
+  const db = baseCon([mixta, S1]);
+  const q1 = await leerLibroRegistro(db, { merchantId: MERCHANT, ...rangoTrimestre(2027, 1), criterioCaja: true });
+  const q2 = await leerLibroRegistro(db, { merchantId: MERCHANT, ...rangoTrimestre(2027, 2), criterioCaja: true });
+  // Control positivo: la S1 sigue en el trimestre del cobro, así que la caja está encendida.
+  assert.deepEqual([numeros(q1), numeros(q2)], [['F-MIXTA'], ['F-S1']]);
+  const m303q1 = await leerModelo303(db, { merchantId: MERCHANT, año: 2027, trimestre: 1 });
+  assert.deepEqual(m303q1.informacionAdicional.inversionSujetoPasivo.operaciones.map((o) => o.numero), ['F-MIXTA']);
+  // La parte S1 de la mixta (600 € al 21 %) también declara en el T1: casilla 27 = 126 €.
+  assert.equal(m303q1.casillaTotalCuota.valor, 126);
+});
+
+test('SCRUM-1730 · (ii) una factura cobrada DESPUÉS del tope no vuelve a salir en el trimestre del cobro', async () => {
+  // Emitida el 10-mar-2026 → tope el 31-dic-2027. Cobrada el 15-feb-2028, DESPUÉS del tope.
+  const tarde = { ...SIN_COBRO, number: 'F-TARDE', paidAt: new Date(2028, 1, 15, 12), status: 'paid' };
+  assert.equal(fechaDeDevengo(tarde, CAMPO_COBRO).getTime(), new Date(2027, 11, 31, 23, 59, 59, 999).getTime());
+  const db = baseCon([tarde]);
+  const enTope = await leerLibroRegistro(db, { merchantId: MERCHANT, ...rangoTrimestre(2027, 4), criterioCaja: true });
+  const enCobro = await leerLibroRegistro(db, { merchantId: MERCHANT, ...rangoTrimestre(2028, 1), criterioCaja: true });
+  // Positivo: sale en el T4 de 2027 (el tope). Negativo: NO en el T1 de 2028, que es el del cobro.
+  assert.deepEqual([numeros(enTope), numeros(enCobro)], [['F-TARDE'], []]);
+  // Y el 303 lo hereda: la cuota (casilla 27) cae en el T4 de 2027 y sólo ahí.
+  const c27 = async (año, t) => (await leerModelo303(db, { merchantId: MERCHANT, año, trimestre: t })).casillaTotalCuota.valor;
+  assert.deepEqual([await c27(2027, 4), await c27(2028, 1)], [210, 0]);
+});
+
+test('SCRUM-1730 · (ii) el tope no adelanta nada: sin cobro, fuera de los trimestres anteriores al 31-dic', async () => {
+  // Lo que fija `scrum294b` (sin cobro no sale en 2026) sigue igual, y tampoco en el T3 de 2027.
+  const db = baseCon([SIN_COBRO]);
+  for (const [año, t] of [[2026, 1], [2026, 4], [2027, 3]]) {
+    const libro = await leerLibroRegistro(db, { merchantId: MERCHANT, ...rangoTrimestre(año, t), criterioCaja: true });
+    assert.deepEqual(numeros(libro), [], `${año}-Q${t}`);
+  }
 });
 
 test('SCRUM-1730 · cada declaración vigente cita el ticket que la retira', () => {
