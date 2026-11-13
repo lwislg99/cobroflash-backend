@@ -120,8 +120,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // Se retira la declaración de (c) y el defecto sigue.
     fichero: 'tests/scrum1732-cobro-parcial-defecto-declarado.test.mjs',
-    de: '  libroCienDeGolpe: { declarado: true,',
-    a: '  libroCienDeGolpe: { declarado: false,',
+    de: "Charge original' },\n  libroCienDeGolpe: { declarado: true,",
+    a: "Charge original' },\n  libroCienDeGolpe: { declarado: false,",
     cae: 'SCRUM-1732 · (c) el libro de caja sigue devengando el 100 % en el trimestre del primer cobro: defecto declarado',
   },
 ];
