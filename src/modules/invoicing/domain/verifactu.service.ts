@@ -347,9 +347,11 @@ export async function applyVeriFactu(
   // SCRUM-1129e · el régimen se congela SOLO en una F1. Qué lleva una R1 (el suyo al sellarse o el
   // de la factura que rectifica) NO está decidido (SCRUM-1129 c.21757; pregunta al asesor): la R1
   // no escribe la columna, queda en NULL y sigue saliendo con 01, como hasta hoy.
-  const regimenCongelado = (invoice.type ?? 'F1') === 'F1'
-    ? { merchantCriterioCaja: merchantParaZona?.criterioCaja ?? null }
-    : {};
+  // `undefined` es «no se escribe» para Prisma; va como campo con nombre, no como `...spread`, para
+  // que el censo de escrituras de SCRUM-878 lo pueda leer.
+  const merchantCriterioCajaCongelado: boolean | null | undefined = (invoice.type ?? 'F1') === 'F1'
+    ? (merchantParaZona?.criterioCaja ?? null)
+    : undefined;
 
   const sellado =await (prismaClient as any).$transaction(async (tx: any) => {
     // Namespace fijo + merchantId: dos claves de 32 bits, para no colisionar con cualquier
@@ -438,7 +440,7 @@ export async function applyVeriFactu(
       where: { id: invoice.id },
       // SCRUM-1129e: el criterio de caja va en la MISMA escritura que la huella. No entra en ella
       // (`computeVeriFactuHash` no lo recibe): la cadena no cambia.
-      data: { vfHash, vfPrevHash: prevHash, qrData: qrUrl, vfTimestamp: ahora, ...regimenCongelado },
+      data: { vfHash, vfPrevHash: prevHash, qrData: qrUrl, vfTimestamp: ahora, merchantCriterioCaja: merchantCriterioCajaCongelado },
     });
 
     return { vfHash, prevHash, qrUrl, conservada: false };

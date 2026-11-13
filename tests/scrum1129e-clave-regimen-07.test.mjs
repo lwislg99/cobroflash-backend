@@ -99,7 +99,7 @@ const exportar = async (invoices, merchant) => {
     merchant: { findUnique: async () => merchant },
     invoice: { findMany: async (a) => (a?.where?.vfHash ? invoices.filter((i) => i.vfHash) : invoices) },
   };
-  const { xml } = await buildVerifactuRegistrosXml({ merchantId: 1, year: 2026 }, fake);
+  const { xml } = await buildVerifactuRegistrosXml({ merchantId: 7, year: 2026 }, fake);
   return xml;
 };
 
@@ -154,7 +154,7 @@ function fakeSellado({ criterioCaja }) {
 }
 
 const factura = (type = 'F1') => ({
-  id: 7, number: '2026-CF-007', total: '121.00', createdAt: new Date('2026-03-15T10:00:00Z'), merchantId: 1, type,
+  id: 7, number: '2026-CF-007', total: '121.00', createdAt: new Date('2026-03-15T10:00:00Z'), merchantId: 7, type,
 });
 
 async function sellar(criterioCaja, type = 'F1') {
@@ -178,7 +178,7 @@ test('SCRUM-1129e · ⑤ una R1 NO se decide aquí: no escribe la columna y sigu
   mock.timers.enable({ apis: ['Date'], now: new Date('2026-03-15T10:00:05Z') });
   t.after(() => mock.timers.reset());
   const { data } = await sellar(true, 'R1');
-  assert.ok(!('merchantCriterioCaja' in data), 'una R1 no congela el régimen: lo que lleva es pregunta del asesor');
+  assert.equal(data.merchantCriterioCaja, undefined, 'una R1 no congela el régimen: lo que lleva es pregunta del asesor');
 });
 
 test('SCRUM-1129e · ⑥ la huella NO depende del régimen: caja y no caja dan la misma', async (t) => {
