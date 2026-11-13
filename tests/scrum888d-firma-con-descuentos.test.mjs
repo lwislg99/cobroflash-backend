@@ -76,7 +76,11 @@ test('SCRUM-888d · 🔴 con descuentos, base e IVA de la página suman EXACTAME
 
 test('SCRUM-888d · ✅ SIN descuentos, las páginas son BYTE A BYTE las de antes del arreglo (8 casos)', () => {
   // Huella tomada con el código anterior (main 2be8fe16 + el GET de este PR, que no toca la página).
-  const HUELLA = '4eaf52182a7f1945309de9c0dcd3d5ca1bce20293cdafaee5135cd908d14ca9e';
+  // Re-anclada en SCRUM-1646d (de 4eaf5218… a bd247521…): las 8 páginas difieren de las de antes SÓLO en dos
+  // etiquetas —`<div style="text-align:center">` → `class="centrado"` y `<div style="text-align:center;
+  // margin-bottom:4px">` → `class="condiciones-wrap"`—, con el texto idéntico pieza a pieza. Demostrado con
+  // docs/master/evidencias/SCRUM-1646d/diff-888d.mjs.txt (control del instrumento 4/4; «antes» reproduce 4eaf5218…).
+  const HUELLA = 'bd247521623bc4531999e1ba3a95eae69cdfed27f2c52fc73d5a1020a1d7834f';
   assert.equal(FIXTURES_SIN_DESCUENTO.length, 8, '🔴 CIEGO: la muestra no es la de la huella');
   const h = createHash('sha256');
   for (const [nombre, q, tiers] of FIXTURES_SIN_DESCUENTO) h.update(nombre + '\n' + renderQuoteDetail(q, 'abc123', tiers) + '\n');

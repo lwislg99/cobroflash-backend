@@ -63,7 +63,7 @@
     {"fichero":"src/modules/maintenance/domain/maintenance.service.ts","fuente":"/reforma|obra|\\bbano|cocina/i","clase":"persona","motivo":"semilla de mantenimiento sobre el concepto de la línea, que escribe el profesional"},
     {"fichero":"src/modules/messaging/domain/registroDeEnvios.ts","fuente":"/[^\\s<>()[\\],;:\"']+@[^\\s<>()[\\],;:\"']+\\.[A-Za-z]{2,}/g","clase":"maquina","motivo":"una dirección de correo dentro de un motivo de fallo, para enmascararla"},
     {"fichero":"src/modules/quotes/app/routes/quotes.routes.ts","fuente":"/pf_session=([^;]+)/","clase":"maquina","motivo":"la cookie de sesión dentro de la cabecera HTTP"},
-    {"fichero":"src/modules/system/app/routes/quoteDecisionLanding.routes.ts","fuente":"/^#[0-9a-fA-F]{6}$/","clase":"maquina","motivo":"color hexadecimal de la marca"},
+    {"fichero":"src/modules/system/app/routes/quoteDecisionEstilo.ts","fuente":"/^#[0-9a-fA-F]{6}$/","clase":"maquina","motivo":"color hexadecimal de la marca (la hoja de marca se sirve aquí desde SCRUM-1646d)"},
     {"fichero":"src/modules/system/app/routes/quoteDecisionLanding.routes.ts","fuente":"/(mano de obra|hora|jornal|instalaci|montaj|reparaci)/","clase":"persona","motivo":"el icono de la línea se elige por el concepto, que escribe el profesional"},
     {"fichero":"src/modules/system/app/routes/quoteDecisionLanding.routes.ts","fuente":"/(material|tuber|cable|pintura|placa|cemento|pieza|grifo|caldera)/","clase":"persona","motivo":"el icono de la línea se elige por el concepto, que escribe el profesional"},
     {"fichero":"src/modules/system/app/routes/quoteDecisionLanding.routes.ts","fuente":"/(desplaz|viaje|\\bkm\\b|transporte|dieta)/","clase":"persona","motivo":"el icono de la línea se elige por el concepto, que escribe el profesional"},
