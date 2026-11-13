@@ -339,12 +339,19 @@ export async function applyVeriFactu(
   // DESPUÉS del portón de arriba: un cliente de transacción se rechaza sin gastar esta consulta.
   const merchantParaZona = await prismaClient.merchant.findUnique({
     where: { id: invoice.merchantId },
-    select: { timezone: true },
+    // SCRUM-1129e: y su criterio de caja, que se congela en la factura al sellar (abajo).
+    select: { timezone: true, criterioCaja: true },
   });
   const zona = zonaDelMerchant(merchantParaZona);
   const fecha = formatDateES(invoice.createdAt, zona);
+  // SCRUM-1129e · el régimen se congela SOLO en una F1. Qué lleva una R1 (el suyo al sellarse o el
+  // de la factura que rectifica) NO está decidido (SCRUM-1129 c.21757; pregunta al asesor): la R1
+  // no escribe la columna, queda en NULL y sigue saliendo con 01, como hasta hoy.
+  const regimenCongelado = (invoice.type ?? 'F1') === 'F1'
+    ? { merchantCriterioCaja: merchantParaZona?.criterioCaja ?? null }
+    : {};
 
-  const sellado = await (prismaClient as any).$transaction(async (tx: any) => {
+  const sellado =await (prismaClient as any).$transaction(async (tx: any) => {
     // Namespace fijo + merchantId: dos claves de 32 bits, para no colisionar con cualquier
     // otro advisory lock de la aplicación.
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(${VERIFACTU_LOCK_NS}::int, ${invoice.merchantId}::int)`;
@@ -429,7 +436,9 @@ export async function applyVeriFactu(
     // `formatFechaHoraHuso(inv.vfTimestamp, zona)`, que vuelve a truncar y produce la misma cadena.
     await tx.invoice.update({
       where: { id: invoice.id },
-      data: { vfHash, vfPrevHash: prevHash, qrData: qrUrl, vfTimestamp: ahora },
+      // SCRUM-1129e: el criterio de caja va en la MISMA escritura que la huella. No entra en ella
+      // (`computeVeriFactuHash` no lo recibe): la cadena no cambia.
+      data: { vfHash, vfPrevHash: prevHash, qrData: qrUrl, vfTimestamp: ahora, ...regimenCongelado },
     });
 
     return { vfHash, prevHash, qrUrl, conservada: false };
@@ -956,7 +965,8 @@ function construirRegistro(inv: FacturaParaRegistro, contexto: ContextoRegistro)
     // sujeta-al-0 / exenta / no sujeta son tres declaraciones distintas y el dato que las
     // separa no está en las líneas). Bloquea la emisión en vez de inventarse el código.
     const desglose = buildDetallesDesgloseXml(
-      vat.entries.map((e) => clasificarDetalleDesglose(e, inv.number)),
+      // SCRUM-1129e: el régimen sale de la FILA (congelado al sellar), nunca del Merchant vivo.
+      vat.entries.map((e) => clasificarDetalleDesglose(e, inv.number, { criterioCaja: inv.merchantCriterioCaja })),
     );
 
     // Sin líneas no hay desglose que declarar. Antes se emitía un tramo al 0 % con la base

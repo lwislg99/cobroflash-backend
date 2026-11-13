@@ -487,3 +487,58 @@ al sellar + lector + tests en un PR, tras SCRUM-1051g.
 
 **Sin medir:** ninguna base de datos (no se ha conectado a ninguna) · si alguna de las tres ya tiene la columna · el
 escritor y el lector (no existen) · la suite entera en local (NO CORRIDA) · el CI.
+
+---
+
+# SCRUM-1129e · ClaveRegimen 07 desde el criterio de caja congelado al sellar (A5, paso ③)
+
+**Medido contra:** `origin/main` = `a29e8fadcaa208fb9c6139341de3648318947da5` · 2026-11-13T16:20:05Z (cabecera `Date:` de GitHub)
+
+A9: comprobación → `tests/scrum1129e-clave-regimen-07.test.mjs`
+
+Carril J1. GO de regla 40 del fundador en SCRUM-1129 c.21753; columna aprobada en c.21757 y aplicada en las tres
+bases en c.21762. Un PR con esquema + código + tests (A5 ③). Lo construye la sesión jv-j1ej.
+
+## Qué cambia
+
+- `prisma/schema.prisma`: `Invoice.merchantCriterioCaja Boolean? @map("merchant_criterio_caja")`, sin `@default`.
+- `applyVeriFactu` (`verifactu.service.ts`): lee `Merchant.criterioCaja` junto a la zona y lo escribe en la MISMA
+  `update` que la huella. Sólo en una F1. Una **R1 no lo escribe**: queda en NULL y sale con `01`, como hasta hoy.
+  Qué lleva una R1 no se decide en el código (c.21757; pregunta 47 del asesor, SCRUM-1264).
+- `registro.builder.ts`: `clasificarDetalleDesglose(entrada, ref, regimen?)` pone `07`
+  (`CLAVE_REGIMEN_CRITERIO_CAJA`) sólo en un tramo `S1` con `criterioCaja === true`. `S2` sigue en `01`. NULL,
+  `false` o ausente → `01`.
+- `construirRegistro` le pasa `inv.merchantCriterioCaja`, el de la FILA. Con NULL **no cae** al Merchant vivo. Sus
+  dos llamadores (exportación y `registroParaRemision`) leen la fila entera, así que no cambia `ContextoRegistro`.
+- `tests/scrum1240b-…`: `DEFECTO_CONOCIDO` retirado (`declarado: false`). Su catálogo pasa a la otra mitad del
+  trinquete: volver a declararlo con la clave arreglada cae.
+- `tests/scrum523d-…`: recongeladas las huellas de `registro.builder.ts` y `verifactu.service.ts` por la vía de
+  c.21290, sin subir `VERIFACTU_VERSION`, porque lo dice el GO (c.21753, punto 3). Las otras 13, iguales.
+
+## Medido
+
+- **Rojo primero**, contra `dist/` de main: 5 de 10 casos caen (①, ④, la fila manda, la mixta, ⑤ F1). Los otros
+  cinco fijan lo que no debe cambiar (S2, NULL, la R1, la huella). Con el arreglo: 10 de 10.
+- **Huella** (`vfHash` del sellado, reloj fijado): `2C4901FF1A3A764E…0A16` antes y después, con `criterioCaja`
+  true, false y null. **No cambia.**
+- **XML** (sha256 de la exportación, mismos datos): `34ea7d1291961fe1` antes en los cuatro casos; después igual en
+  NULL, false y sin columna, y `e7e916b6f9e60e4b` sólo en el caso en caja, que dice `07`. El de `07` y el de una
+  factura mixta (S1 + S2 → `07` + `01`) **validan contra el XSD vendorizado**.
+- **Mutaciones del catálogo** (`aplicarUna` de `scripts/meta-guard-mutaciones.mjs`): 5 de 5 vivas en 1129e y 1 de
+  1 en 1240b. Árbol restaurado, comprobado por contenido.
+- **Tipos**: `tsc` sin `--noCheck`, salida 0, contra un cliente de Prisma generado APARTE (fuera del árbol, con
+  `output` propio): el `node_modules` de este árbol es un enlace al compartido y no se regenera (A1). El sha256
+  del cliente compartido es el mismo antes y después. Control: el mismo `tsc` contra el compartido da 2 errores,
+  uno de ellos `merchantCriterioCaja` en `verifactu.service.ts`.
+- **Primera declaración responsable**: no entregada. `DECLARACIÓN RESPONSABLE DEL SISTEMA` sale 0 veces en
+  `src/` y `public/` de origin/main (control: 1 en `docs/` y `.claude/`). La SL está sin constituir (SCRUM-1561) y
+  el nombre del productor sigue siendo un marcador (SCRUM-870).
+
+## Lo que no se ha hecho
+
+- `18`, `19` y `20`: fuera (c.21753, punto 5). La mención del PDF: aparte, en SCRUM-1240 (punto 6).
+- La R1 (arriba) y la pregunta 47.
+
+**Sin medir:** ninguna base de datos (los merchants son dobles) · la suite entera en local (NO CORRIDA: hoy hay
+diez sesiones y lo pidió el orquestador) · el CI, hasta que se lea el obligatorio · yaqu.app (con
+`INVOICING_ES_ENABLED` en OFF no se sella nada en producción).
