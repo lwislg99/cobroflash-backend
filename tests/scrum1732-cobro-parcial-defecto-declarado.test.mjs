@@ -96,8 +96,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'SCRUM-1732 · (b) la liberación de la garantía sigue sin enlace a la factura: defecto declarado',
   },
   {
-    // (c) La caja desconectada: el libro pasa a filtrar por emisión y el control (la factura sale en
-    // el T1 POR SU COBRO y no en el T4 de... ) deja de distinguir → CIEGO.
+    // (c) La caja desconectada: el libro pasa a filtrar por emisión y el control sembrado «cobrada
+    // en el T2 → sale en el T2» no sale → CIEGO.
     fichero: 'src/modules/invoicing/domain/libroRegistro.repo.ts',
     de: "  const campo = 'criterioCaja' in rango ? campoDeDevengo(rango.criterioCaja) : CAMPO_EMISION;",
     a: '  const campo = CAMPO_EMISION;',
@@ -390,10 +390,17 @@ export async function medirLibro(factura = FACTURA_LIBRO) {
   // Control positivo SEMBRADO: la misma factura sin caja sale por emisión en el T1 (el libro la ve).
   const sinCaja = (await leerLibroRegistro(baseDelLibro([factura]), { merchantId: MERCHANT_LIBRO, ...rangoTrimestre(2026, 1) }))
     .asientos.some((a) => a.numero === factura.number);
+  // Control positivo SEMBRADO de que la caja está ENCENDIDA: la misma factura cobrada el 20-may sale
+  // en el T2 con caja. Hace falta porque el caso se emite y se cobra en el T1: con la caja apagada
+  // (por emisión) saldría igual, y la medida no lo vería (la mutación «caja desconectada» salió MUDA
+  // sin este control, medido el 13-nov-2026).
+  const cobradaEnT2 = { ...factura, paidAt: new Date(2026, 4, 20, 12) };
+  const cajaEncendida = (await leerLibroRegistro(baseDelLibro([cobradaEnT2]), { merchantId: MERCHANT_LIBRO, ...rangoTrimestre(2026, 2), criterioCaja: true }))
+    .asientos.some((a) => a.numero === factura.number);
   const con = [1, 2, 3, 4].filter((t) => q[t].length > 0);
   const poblacion = `1 factura de 1.000 (950 cobrados el 31-mar, 50 al liberar) · libro de caja 2026 · trimestres con asiento [${con}] · `
-    + `T1 ${JSON.stringify(q[1])} · control sin caja en T1=${sinCaja}`;
-  if (!sinCaja || con.length === 0) return { estado: 'CIEGO', poblacion };
+    + `T1 ${JSON.stringify(q[1])} · control sin caja en T1=${sinCaja} · control caja encendida (cobrada en T2 → T2)=${cajaEncendida}`;
+  if (!sinCaja || !cajaEncendida || con.length === 0) return { estado: 'CIEGO', poblacion };
   const t1 = q[1];
   if (con.join() === '1' && t1.length === 1 && t1[0].total === 1000 && t1[0].base === 826.45) return { estado: 'DEFECTO', poblacion };
   return { estado: 'CAMBIADO', poblacion };
