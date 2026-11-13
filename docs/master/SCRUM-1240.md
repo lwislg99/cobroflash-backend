@@ -414,3 +414,16 @@ test) · si una factura **mixta** (S1 + S2) debe llevar la mención: la construy
 c.21776 dice «al menos un detalle S1»; la duda para el asesor sigue abierta y no la he buscado en
 `docs/legal/PREGUNTAS_ASESOR.md` · la skill `yaqu-premium-ui` no la cargué (la línea usa el color `BODY`
 y la tipografía que ya tiene el PDF; no toca `public/`). Lo cierra el orquestador (A13).
+
+**Suite ENTERA en local** (`tanda-entera-por-tramos.mjs`, 14 tramos): 13.621 casos, 7 caen, y los 7 son
+de esta máquina: `scrum1298b` (2) y `scrum351` (1) caen igual en un árbol limpio de `origin/main`
+(`e1ebdcf6`, 12/15 en los dos), y `scrum932` (4) también cae ahí (6 de 12 en el árbol limpio, 4 en
+el mío: no son el mismo recuento, y no sé por qué; ninguno de los tres ficheros nombra nada de lo que
+toco). La primera pasada sacó 5 rojos MÍOS en los tramos 10–12, consecuencia mecánica del cambio:
+`scrum603b` y `scrum723` (el cuerpo y el ámbito de `generateInvoicePdf` comparados con la base) →
+entrada en la vía de cambio autorizado (`tests/_cambios-autorizados-de-la-factura.mjs`, SCRUM-1446
+c.20473) con firma `SCRUM-1240 c.21776`, cita «Régimen especial del criterio de caja» y el par de huellas
+base → disco, cuya base es la «a» de 1051g; y `MENCION_CRITERIO_CAJA` + `llevaMencionCriterioCaja` al
+`AMBITO_DECLARADO` de 723 (vigila más, no menos); `scrum525d` → la coordenada
+`docs/legal/AUDITORIA_CAMINO_EMISION.md:148` pasa de `invoicing.ts:262` a `:263` (mi línea la movió).
+Tras eso, tramos 10, 11 y 12 otra vez: 1.204 + 1.211 + 970 casos, 0 caen.
