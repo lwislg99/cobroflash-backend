@@ -15,6 +15,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SCRIPT = process.env.COMPROBADOR_CITAS ?? path.join(RAIZ, 'docs/verificacion/comprobar-citas-contabilidad.mjs');
@@ -69,16 +70,21 @@ test('SCRUM-1076b · 🔴 el id ELI de OTRA norma no vale: sale 3 y nombra la fu
   assert.match(r.out, /ORDEN111: no es el consolidado BOE-A-2011-4948/);
 });
 
-for (const k of ['ORDEN130', 'ORDEN111', 'ORDEN115', 'ORDEN347', 'ORDEN390']) {
-  test(`SCRUM-1076b · 🔴 sin ${k}.html sale 3 (FUENTE ILEGIBLE) y la nombra: la fuente del plazo es obligatoria`, () => {
-    const m = montar();
-    fs.rmSync(path.join(m.fuentes, k + '.html'));
-    const r = correr(m);
-    assert.equal(r.code, 3, r.out);
-    assert.match(r.out, new RegExp(`${k}: no se puede leer`));
-    assert.doesNotMatch(r.out, /encontradas|control_ancla/);
-  });
-}
+const ORDENES = ['ORDEN130', 'ORDEN111', 'ORDEN115', 'ORDEN347', 'ORDEN390'];
+const falta = casosEscritos(ORDENES, (k) => `SCRUM-1076b · 🔴 sin ${k}.html sale 3 (FUENTE ILEGIBLE) y la nombra: la fuente del plazo es obligatoria`, (k) => {
+  const m = montar();
+  fs.rmSync(path.join(m.fuentes, k + '.html'));
+  const r = correr(m);
+  assert.equal(r.code, 3, r.out);
+  assert.match(r.out, new RegExp(`${k}: no se puede leer`));
+  assert.doesNotMatch(r.out, /encontradas|control_ancla/);
+});
+test('SCRUM-1076b · 🔴 sin ORDEN130.html sale 3 (FUENTE ILEGIBLE) y la nombra: la fuente del plazo es obligatoria', falta(0));
+test('SCRUM-1076b · 🔴 sin ORDEN111.html sale 3 (FUENTE ILEGIBLE) y la nombra: la fuente del plazo es obligatoria', falta(1));
+test('SCRUM-1076b · 🔴 sin ORDEN115.html sale 3 (FUENTE ILEGIBLE) y la nombra: la fuente del plazo es obligatoria', falta(2));
+test('SCRUM-1076b · 🔴 sin ORDEN347.html sale 3 (FUENTE ILEGIBLE) y la nombra: la fuente del plazo es obligatoria', falta(3));
+test('SCRUM-1076b · 🔴 sin ORDEN390.html sale 3 (FUENTE ILEGIBLE) y la nombra: la fuente del plazo es obligatoria', falta(4));
+falta.todos();
 
 test('SCRUM-1076b · cada fila de plazos de CONTABILIDAD.md §10 tiene su ancla en SU orden (sin fuentes)', () => {
   const norm = (s) => s.replace(/[“”„«»]/g, '"').replace(/[‘’]/g, "'").replace(/[–—]/g, '-')
