@@ -79,3 +79,38 @@ es el `:907` (R1) que el propio comentario de `criterioCaja.ts` ya señalaba com
 se ha podido ejecutar contra una base de datos real (esta máquina no tiene Postgres): la medición es
 por lectura de código determinista (la función no tiene ninguna rama que lea una fecha declarada),
 no por suposición de comportamiento.
+
+## J1 · SCRUM-1055b · tests de caja (31-mar, borde del trimestre, devolución) y propuesta de la señal «cobro sin fecha»
+
+**Medido contra:** `origin/main` = `e1ebdcf627097b2a2efaae7b967f55b62b4b3987` · 2026-11-13T18:32:34Z (hora de GitHub; sesión J1 `jv-j1ev`, por encargo del orquestador `cobroflash-backend-63`)
+
+A9: aviso → cicatriz J1 «Crucé los 200k (200.654) sin medirme entre el arranque (136.056) y la sonda del libro» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
+
+Lo que faltaba tras SCRUM-1735 según la verificación de jv-j4bg (Jira c.21850). Medición y propuesta en
+Jira **c.21863**. No toca `src/`, ni el esquema, ni ninguna base. El test,
+`tests/scrum1055b-caja-31mar-zona-y-devolucion.test.mjs`, ejecuta piezas reales de `dist/`
+(`resolverInstanteDeCobro`, `rangoTrimestre`, `leerLibroRegistro` con caja, `updateInvoiceStatusAdmin`)
+contra una base en memoria: 8 casos.
+
+| lo pedido | resultado | dónde se ve |
+| --- | --- | --- |
+| cobro del 31-mar confirmado en abril → T1 | **funciona**: declarado `2026-03-31`, confirmado el 2-abr, devenga en el T1 y sólo en el T1, con el proceso en UTC, Madrid y Canarias | caso ① |
+| borde del trimestre con zona horaria | 🔴 **DEFECTO, declarado**: `rangoTrimestre` corta en la zona del PROCESO. Con `TZ=UTC`, un cobro del 1-abr 00:30 de Madrid cae en el T1 (con `Europe/Madrid`, en el T2). La zona real de Railway **NO está medida** (`fechaDeCobro.ts` dice UTC) | caso ②, `DEFECTO_CONOCIDO.bordeEnZonaDelProceso` |
+| devolución | lo que hace hoy: una F1 cobrada no se des-paga (`UnpayNotAllowedError` → «emite una R1»); la R1 nace `paid` con `paidAt: new Date()` (leído, camino de emisión) y en el libro de caja **resta en el trimestre de su emisión**, no en el de la devolución. No lo llamo defecto: pregunta candidata al asesor en c.21863 | casos ③ |
+| cobro parcial | ya fijado en `tests/scrum1732-cobro-parcial-defecto-declarado.test.mjs`, hueco (c); no se duplica | — |
+| señal «cobro sin fecha declarada» | **propuesta, no construida** (regla 39): dónde se vería, dato (vía a sin esquema / vía b columna con ALTER) y tres textos literales para firmar | c.21863 §⑤ |
+
+**Mutaciones** (`MUTACIONES_QUE_ME_TUMBAN`, 3 de 3 vivas, aplicadas una a una con compilación, árbol
+restaurado con `git restore --source=HEAD` y `git status` vacío): retirar la declaración de ②; que
+`resolverFechaDeCobro` ignore la fecha declarada; que una F1 cobrada se deje des-pagar. La primera salió
+**CIEGA** en mi primera pasada: su ancla aparecía dos veces (la propia declaración la contenía); se
+rehízo con el salto de línea, como `scrum1732`.
+
+**Quien arregle ②** (bordes en la zona del merchant) retira `bordeEnZonaDelProceso` de `DEFECTO_CONOCIDO`
+en el mismo PR; si no, el test sale en rojo como «cambió con el defecto declarado».
+
+**Sin medir:** la zona horaria del proceso en producción (decide si ② tiene víctimas); el libro por
+emisión con el caso de ② (sólo leído: usa el mismo `rangoTrimestre`); Q-C6 sigue sin respuesta.
+
+**Error mío:** leí Jira antes del arranque de normas (la cicatriz de 1730b, otra vez) y crucé los 200k
+sin medirme entre el arranque y la sonda; avisó el hook del orquestador, no yo.
