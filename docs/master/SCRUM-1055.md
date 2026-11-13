@@ -90,7 +90,7 @@ Lo que faltaba tras SCRUM-1735 según la verificación de jv-j4bg (Jira c.21850)
 Jira **c.21863**. No toca `src/`, ni el esquema, ni ninguna base. El test,
 `tests/scrum1055b-caja-31mar-zona-y-devolucion.test.mjs`, ejecuta piezas reales de `dist/`
 (`resolverInstanteDeCobro`, `rangoTrimestre`, `leerLibroRegistro` con caja, `updateInvoiceStatusAdmin`)
-contra una base en memoria: 8 casos.
+contra una base en memoria: 9 casos.
 
 | lo pedido | resultado | dónde se ve |
 | --- | --- | --- |

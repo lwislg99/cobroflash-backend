@@ -27,6 +27,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 // Por su efecto: pone `WHATSAPP_DRY_RUN=1` ANTES de cargar `dist/`.
 import { dobleDeLaBase } from './_envio-doblado.mjs';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const requiere = createRequire(path.join(RAIZ, 'package.json'));
@@ -140,12 +141,14 @@ test('SCRUM-1055b · ① control: el último minuto del 31-mar de Madrid es T1 e
 
 // ── ② EL BORDE DEL TRIMESTRE Y LA ZONA DEL PROCESO (DEFECTO DECLARADO) ─────────────────────
 
-export async function medirBorde() {
-  // 1-abr-2026 00:30 en Madrid (CEST, UTC+2) = 31-mar 22:30Z. Para un merchant de Madrid es del T2.
-  const f = factura('F-10553', new Date('2025-12-10T11:00:00Z'), new Date('2026-03-31T22:30:00Z'));
+// 1-abr-2026 00:30 en Madrid (CEST, UTC+2) = 31-mar 22:30Z. Para un merchant de Madrid es del T2.
+const BORDE = new Date('2026-03-31T22:30:00Z');
+
+export async function medirBorde(paidAt = BORDE) {
+  const f = factura('F-10553', new Date('2025-12-10T11:00:00Z'), paidAt);
   const enUtc = await enZona('UTC', async () => trimestresDe(await porTrimestre([f]), 'F-10553'));
   const enMadrid = await enZona('Europe/Madrid', async () => trimestresDe(await porTrimestre([f]), 'F-10553'));
-  const poblacion = `1 factura cobrada el 1-abr 00:30 de Madrid (2026-03-31T22:30Z) · proceso UTC → T[${enUtc}] · proceso Europe/Madrid → T[${enMadrid}]`;
+  const poblacion = `1 factura cobrada el ${paidAt.toISOString()} · proceso UTC → T[${enUtc}] · proceso Europe/Madrid → T[${enMadrid}]`;
   if (enMadrid.join() !== '2') return { estado: 'CIEGO', poblacion };
   if (enUtc.join() === '1') return { estado: 'DEFECTO', poblacion };
   return { estado: 'CAMBIADO', poblacion };
@@ -174,6 +177,15 @@ test('SCRUM-1055b · ② el borde del trimestre sigue en la zona del proceso: de
   const v = juicio(medida, DEFECTO_CONOCIDO.bordeEnZonaDelProceso);
   t.diagnostic(v.motivo);
   assert.equal(v.ok, true, `🔴 ${v.motivo}`);
+});
+
+test('SCRUM-1055b · ② control: el instrumento con entradas fabricadas, en los dos sentidos', async () => {
+  // SÍ: el instante del borde (1-abr 00:30 de Madrid) da el defecto.
+  assert.equal((await medirBorde(new Date('2026-03-31T22:30:00Z'))).estado, 'DEFECTO');
+  // NO: un cobro del 15-may cae en el T2 en las dos zonas; no hay defecto que ver.
+  assert.equal((await medirBorde(new Date('2026-05-15T10:00:00Z'))).estado, 'CAMBIADO');
+  // CIEGO: con un cobro del T1 en las dos zonas, el control (Madrid → T2) no sale.
+  assert.equal((await medirBorde(new Date('2026-03-15T10:00:00Z'))).estado, 'CIEGO');
 });
 
 test('SCRUM-1055b · ② control: las casillas del juicio', () => {
@@ -219,7 +231,9 @@ test('SCRUM-1055b · ③ control: un justificante J- sí se des-paga y pierde su
 /** El `create` de la R1 en `/rectify`, sin comentarios: qué estado y qué fecha de cobro le pone. */
 function creacionDeLaR1() {
   const fuente = fs.readFileSync(path.join(RAIZ, 'src/modules/system/app/routes/invoicesAdmin.routes.ts'), 'utf8');
-  const lineas = fuente.split(/\r?\n/).map((l) => l.replace(/\/\/.*$/, '').trim());
+  // Sin comentarios con el filtro de la casa (SCRUM-694): el comentario que explica la R1 podría
+  // contener la misma línea que se busca.
+  const lineas = soloCodigo(fuente, 'invoicesAdmin.routes.ts').split(/\r?\n/).map((l) => l.trim());
   const tipos = lineas.map((l, i) => (l === "type: 'R1'," ? i : -1)).filter((i) => i >= 0);
   return { tipos, cercanas: tipos.map((i) => lineas.slice(i, i + 6)) };
 }
