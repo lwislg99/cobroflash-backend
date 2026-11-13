@@ -157,3 +157,10 @@ Con la política, lo que cambia en main de antes es que la caja de aviso vacía 
 - yaqu.app; otros navegadores. Tanda entera local: NO CORRIDA (la hace el obligatorio).
 - El recorrido del enlace mágico bajo la política no se repitió aquí: lo midió 1647c (tramo 1647c de `SCRUM-1647.md`).
 
+## SCRUM-1723e · 12-nov: tarjeta y Mercado Pago medidas en navegador con la CSP aplicada (J2, solo medir)
+
+**Medido contra:** `origin/main` = `deab373d6a379fcbfc7ec1fce0428111156f49d3` · 2026-11-12T17:13:11Z (hora de GitHub; sesión J2 `jv-j2c0`, por encargo del orquestador `cobroflash-backend-63`)
+
+A9: aviso → cicatriz J2 «el recorrido de SCRUM-1723c llamó `lanzarNavegador()` sin puppeteer y la sesión lo dio por un Edge que no arranca: el lanzador se traga el TypeError y lo imprime como «CORTADA EN proceso+ws» a 0,0 s, igual que un navegador que no levanta» — no se pudo comprobar: el recorrido vive en evidencias como .txt y ningún test lo ejecuta
+
+Edge 157, rama de #3132 fusionada sobre main, 7 páginas × 390/1280: **rama con política ↔ main sin política 14/14 idénticas**, **0 informes** en la rama (ni `style-src` ni `script-src`); control main con política 0/14 iguales y 34 informes (`style-src-attr` 12, `style-src-elem` 10), sembrado 2/2. Edge sí arranca: el «NO MEDIDO» de 1723c era el recorrido sin puppeteer (corregido solo en la copia, `evidencias/SCRUM-1723/j2e-recorrido.*`). La rama fusionada chocaba con main en `dos-equipos.md`: resuelto con las dos filas y carriles regenerados (`comprobar` = IGUAL). No medido: otros navegadores, yaqu.app, tanda entera.
