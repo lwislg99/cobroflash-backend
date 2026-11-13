@@ -5,7 +5,7 @@ import fs from 'fs'; // SCRUM-224b: leer UNA vez el HTML del dashboard para sell
 import { outboxDir } from './core/storage/dirs'; // SCRUM-72: invoicesDir ya no se sirve como estático
 import { jsonError } from './core/http/jsonError';
 import { cspSoloInforme } from './core/http/csp';
-import { notFoundPageHtml } from './core/http/publicNotFound';
+import { notFoundPageHtml, AVISOS_CSS, rutaDeAviso, cacheDelAviso, type HojaDeAviso } from './core/http/publicNotFound';
 import { isFlagEnabled } from './core/flags';
 import { decidirAvisoBizum } from './modules/billing/domain/avisoBizumSinTelefono'; // SCRUM-328
 import { viasDeCobro } from './modules/billing/domain/viasDeCobro'; // SCRUM-519
@@ -142,6 +142,17 @@ app.use((_req, res, next) => {
 // SCRUM-1637 (paso 1): CSP en modo INFORME, global y antes de cualquier ruta. No bloquea nada:
 // el porqué, y por qué no lleva 'unsafe-inline', en core/http/csp.ts.
 app.use(cspSoloInforme);
+
+// SCRUM-1646 (S1) · el CSS de los tres avisos públicos de `publicNotFound.ts` (documento no
+// disponible, página no encontrada, factura en proceso), servido desde 'self' para `style-src
+// 'self'`. Hojas CONSTANTES, sin datos ni token. Antes que cualquier ruta con auth y que el 404.
+for (const hoja of Object.keys(AVISOS_CSS) as HojaDeAviso[]) {
+  app.get(rutaDeAviso(hoja), (req, res) => {
+    res.setHeader('Content-Type', 'text/css; charset=utf-8');
+    res.setHeader('Cache-Control', cacheDelAviso(hoja, req.query?.v));
+    return res.send(AVISOS_CSS[hoja]);
+  });
+}
 
 // Landings públicas (antes del JSON parser)
 app.use('/pay', quoteDecisionLandingRouter);

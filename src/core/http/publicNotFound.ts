@@ -2,6 +2,69 @@
 // Master Parte N3: diseño digno SIEMPRE, jamás texto/JSON crudo; copy oficial:
 // "Este enlace no corresponde a ningún documento activo."
 // La usan las landings de pago/recibo y la de decisión cuando el id no existe.
+//
+// SCRUM-1646 (CSP paso 2, `style-src 'self'`) · EL CSS DE LAS TRES PÁGINAS, FUERA DEL HTML.
+// Cada una llevaba su `<style>` en línea, y con la CSP APLICADA (paso 3) el navegador no lo pinta:
+// la página saldría desnuda. Ahora cada hoja es una cadena CONSTANTE —las MISMAS reglas, en el MISMO
+// orden, copiadas tal cual— servida desde el propio servidor en `/avisos/css/<hoja>.css` (`app.ts`)
+// y enlazada en el MISMO sitio de la cabecera donde estaba el `<style>`. Tres hojas y no una, porque
+// las tres páginas dan reglas DISTINTAS a `h1` y `p`: juntarlas cambiaría lo que se ve.
+// Huella `?v=` = sha1 del contenido (SCRUM-274): `immutable` SÓLO si la huella cuadra.
+// Ningún texto tocado (regla 39).
+import { huellaDeContenido, CACHE_CON_HUELLA } from './huellaEstaticos';
+
+export const AVISOS_CSS = {
+  'documento-no-disponible': `
+    body{margin:0;font-family:Inter,system-ui,-apple-system,sans-serif;background:#f6f7f5;color:#0f1c17;
+         min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .card{background:#fff;border:1px solid #e7e9e5;border-radius:16px;max-width:420px;width:100%;
+          padding:36px 28px;text-align:center;box-shadow:0 4px 12px -2px rgba(16,24,40,.08)}
+    .icon{font-size:40px;line-height:1;margin-bottom:14px}
+    h1{font-size:18px;margin:0 0 8px}
+    p{font-size:14px;color:#6b756f;margin:0;line-height:1.5}
+  `,
+  'pagina-no-encontrada': `
+    body{margin:0;font-family:Inter,system-ui,-apple-system,sans-serif;background:#f6f7f5;color:#0f1c17;
+         min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .card{background:#fff;border:1px solid #e7e9e5;border-radius:16px;max-width:420px;width:100%;
+          padding:36px 28px;text-align:center;box-shadow:0 4px 12px -2px rgba(16,24,40,.08)}
+    .logo{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:17px;margin-bottom:18px}
+    .logo span{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#22d3ee);
+          display:inline-flex;align-items:center;justify-content:center;color:#052e16;font-size:12px}
+    h1{font-size:18px;margin:0 0 8px}
+    p{font-size:14px;color:#6b756f;margin:0 0 20px;line-height:1.5}
+    a.btn{display:inline-block;background:#16a34a;color:#fff;font-weight:700;font-size:14px;
+          padding:11px 24px;border-radius:999px;text-decoration:none}
+  `,
+  'documento-en-registro': `
+    body{margin:0;font-family:Inter,system-ui,-apple-system,sans-serif;background:#f6f7f5;color:#0f1c17;
+         min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .card{background:#fff;border:1px solid #e7e9e5;border-radius:16px;max-width:420px;width:100%;
+          padding:36px 28px;text-align:center;box-shadow:0 4px 12px -2px rgba(16,24,40,.08)}
+    .icon{font-size:40px;line-height:1;margin-bottom:14px}
+    h1{font-size:18px;margin:0;line-height:1.45}
+  `,
+} as const;
+
+export type HojaDeAviso = keyof typeof AVISOS_CSS;
+
+const HUELLAS_AVISOS = Object.fromEntries(
+  Object.entries(AVISOS_CSS).map(([hoja, css]) => [hoja, huellaDeContenido(css)]),
+) as Record<HojaDeAviso, string>;
+
+/** La ruta que sirve cada hoja (sin huella). Relativa al propio servidor: `style-src 'self'`. */
+export function rutaDeAviso(hoja: HojaDeAviso): string {
+  return `/avisos/css/${hoja}.css`;
+}
+
+/** `Cache-Control` según la huella pedida: `immutable` sólo si cuadra; si no, revalidar siempre. */
+export function cacheDelAviso(hoja: HojaDeAviso, pedida: unknown): string {
+  return pedida === HUELLAS_AVISOS[hoja] ? CACHE_CON_HUELLA : 'no-cache';
+}
+
+function enlaceDeAviso(hoja: HojaDeAviso): string {
+  return `<link rel="stylesheet" href="${rutaDeAviso(hoja)}?v=${HUELLAS_AVISOS[hoja]}"/>`;
+}
 
 export function documentNotFoundHtml(): string {
   return `<!doctype html>
@@ -11,15 +74,7 @@ export function documentNotFoundHtml(): string {
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="robots" content="noindex"/>
   <title>Documento no disponible — YaQu</title>
-  <style>
-    body{margin:0;font-family:Inter,system-ui,-apple-system,sans-serif;background:#f6f7f5;color:#0f1c17;
-         min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-    .card{background:#fff;border:1px solid #e7e9e5;border-radius:16px;max-width:420px;width:100%;
-          padding:36px 28px;text-align:center;box-shadow:0 4px 12px -2px rgba(16,24,40,.08)}
-    .icon{font-size:40px;line-height:1;margin-bottom:14px}
-    h1{font-size:18px;margin:0 0 8px}
-    p{font-size:14px;color:#6b756f;margin:0;line-height:1.5}
-  </style>
+  ${enlaceDeAviso('documento-no-disponible')}
 </head>
 <body>
   <div class="card">
@@ -42,19 +97,7 @@ export function notFoundPageHtml(): string {
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="robots" content="noindex"/>
   <title>Página no encontrada — YaQu</title>
-  <style>
-    body{margin:0;font-family:Inter,system-ui,-apple-system,sans-serif;background:#f6f7f5;color:#0f1c17;
-         min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-    .card{background:#fff;border:1px solid #e7e9e5;border-radius:16px;max-width:420px;width:100%;
-          padding:36px 28px;text-align:center;box-shadow:0 4px 12px -2px rgba(16,24,40,.08)}
-    .logo{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:17px;margin-bottom:18px}
-    .logo span{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#22d3ee);
-          display:inline-flex;align-items:center;justify-content:center;color:#052e16;font-size:12px}
-    h1{font-size:18px;margin:0 0 8px}
-    p{font-size:14px;color:#6b756f;margin:0 0 20px;line-height:1.5}
-    a.btn{display:inline-block;background:#16a34a;color:#fff;font-weight:700;font-size:14px;
-          padding:11px 24px;border-radius:999px;text-decoration:none}
-  </style>
+  ${enlaceDeAviso('pagina-no-encontrada')}
 </head>
 <body>
   <div class="card">
@@ -83,14 +126,7 @@ export function documentoEnRegistroHtml(copy: string): string {
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="robots" content="noindex"/>
   <title>Factura en proceso — YaQu</title>
-  <style>
-    body{margin:0;font-family:Inter,system-ui,-apple-system,sans-serif;background:#f6f7f5;color:#0f1c17;
-         min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-    .card{background:#fff;border:1px solid #e7e9e5;border-radius:16px;max-width:420px;width:100%;
-          padding:36px 28px;text-align:center;box-shadow:0 4px 12px -2px rgba(16,24,40,.08)}
-    .icon{font-size:40px;line-height:1;margin-bottom:14px}
-    h1{font-size:18px;margin:0;line-height:1.45}
-  </style>
+  ${enlaceDeAviso('documento-en-registro')}
 </head>
 <body>
   <div class="card">
