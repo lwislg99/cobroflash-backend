@@ -42,7 +42,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // El sellado deja de congelar el régimen.
     fichero: 'src/modules/invoicing/domain/verifactu.service.ts',
-    de: 'vfTimestamp: ahora, ...regimenCongelado }',
+    de: 'vfTimestamp: ahora, merchantCriterioCaja: merchantCriterioCajaCongelado }',
     a: 'vfTimestamp: ahora }',
     cae: 'SCRUM-1129e · ⑤ el sellado de una F1 congela',
   },

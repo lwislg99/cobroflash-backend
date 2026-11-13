@@ -582,3 +582,21 @@ no listaba los guards que recorren el árbol entero; por eso esta vez se corre l
   del repo byte a byte (la generada llevaba la línea `output` del temporal y el guard de procedencia la cazaba).
   Los tests que lanzan hijos con el entorno limpio cargan el cliente compartido.
 - **222/461/733 con el cliente propio:** 43 casos, 41 pasan, 2 saltados, 0 caen. Control sin él: 5 caen.
+- **Suite ENTERA en local** (`scripts/tanda-entera-por-tramos.mjs`, 14 tramos, 1.670 ficheros, 13.595 casos), sobre
+  `1f54b2f3`: 17 caen, y los 17 se reparten así (suman el total):
+  - **nuestro, arreglado de paso:** `scrum836` (1) — la mutación ⑤ de `tests/scrum1129e-clave-regimen-07.test.mjs`
+    seguía anclada al `...regimenCongelado` que cambió `fde261c31`. Reanclada al campo con nombre; 836 + 1129e
+    27/27, y la mutación aplicada en `dist/` tumba el caso ⑤ (viva; `dist/` restaurado, `cmp` igual).
+  - **el cliente de Prisma compartido** (el runner por tramos quita `NODE_OPTIONS`, así que ahí no llega el
+    cliente propio): `scrum222` (1), `scrum235` (3), `scrum252` (1, su control contra el cliente real), `scrum461`
+    (2), `scrum733` (2). Con el cliente propio, 222/235/461/733 pasan; los dos SUELO de 252 caen entonces por el
+    propio hook (resuelven `.prisma/client` por el camino de la app, y el hook lo desvía): laboratorio, no rama.
+  - **ajenos, caen igual en un árbol limpio de `origin/main` `8c61c10e`:** `scrum1298b` (2 de 8 en los dos) y
+    `scrum351` (1 de 7 en los dos).
+  - **`scrum932` (4), sin juzgar del todo:** lee `scripts/_cargar-env.mjs` y `scripts/turno-staging.mjs`, que la
+    rama no toca; en el árbol de `origin/main` (sin `node_modules`) caen 6, así que la comparación no es limpia.
+  - Los siete del primer obligatorio y `523d`: `scrum409`, `525d`, `810`, `878` y `523d` en verde en la tanda;
+    `222`, `461`, `733` en verde con el cliente propio.
+
+**Sin medir:** ninguna base de datos · yaqu.app (con `INVOICING_ES_ENABLED` en OFF no se sella nada) · los guards
+de navegador · el obligatorio de CI de este empujón, hasta leerlo.
