@@ -11,7 +11,8 @@
 //   ⑤ `/garantia`: 409 sobre un cobro sin cobrar y 409 con el texto 7 si cobrado + retenido ≠ total;
 //   ⑥ `/garantia/liberar` con FECHA declarada: fila `liberacion_garantia` con el `invoice_id`, texto 5;
 //   ⑦ el marcado a mano (`updateInvoiceStatusAdmin`) y su des-pagar (fila de anulación, c.21928 ⑤);
-//   ⑧ `/bulk-paid`: una fila por factura marcada.
+//   ⑧ `/bulk-paid`: una fila por factura marcada;
+//   ⑨ `/invoice/:id/paid-webhook`: NO se retira (scrum1455b/c miden más que ella), apunta su fila (c.21928 ⑥).
 //
 // ROJO PRIMERO: cada caso cae con el código de `main` (sin la tabla, ningún escritor apunta nada) y
 // con su mutación de `MUTACIONES_QUE_ME_TUMBAN`. Los textos que se comparan son los FIRMADOS en
@@ -82,6 +83,12 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: "    } else if (status === 'pending' && existing.status === 'paid') {\n      await anularCobrosDeFactura(",
     a: "    } else if (false as boolean) {\n      await anularCobrosDeFactura(",
     cae: 'SCRUM-1732c · ⑦ marcado a mano: fila por el total, y des-pagar la anula sin borrar',
+  },
+  {
+    fichero: 'src/modules/invoicing/app/routes/invoice.routes.ts',
+    de: "      importe: Number(updated.total), fechaCobro: updated.paidAt ?? now, fechaOrigen: 'aviso', metodo: null, tipo: 'cobro',",
+    a: "      importe: 0.01, fechaCobro: updated.paidAt ?? now, fechaOrigen: 'aviso', metodo: null, tipo: 'cobro',",
+    cae: 'SCRUM-1732c · ⑨ /invoice/:id/paid-webhook: apunta su fila por el total (c.21928 ⑥)',
   },
   {
     fichero: 'src/modules/system/app/routes/invoicesAdmin.routes.ts',
@@ -236,6 +243,7 @@ const chargesAdminMod = requiere(rutaDe('dist/modules/billing/app/routes/charges
 const invoicesAdmin = requiere(rutaDe('dist/modules/system/app/routes/invoicesAdmin.routes.js'));
 const bulkPaid = (invoicesAdmin.default || invoicesAdmin).stack?.find((l) => l.route?.path === '/bulk-paid' && l.route.methods.post)?.route.stack.at(-1).handle ?? null;
 const { updateInvoiceStatusAdmin } = requiere(rutaDe('dist/modules/system/invoiceAdmin.js'));
+const paidWebhook = handleDe(requiere(rutaDe('dist/modules/invoicing/app/routes/invoice.routes.js')), '/:id/paid-webhook');
 
 async function llamar(handle, req) {
   let salida = null;
@@ -472,4 +480,16 @@ test('SCRUM-1732c · ⑧ /bulk-paid: una fila por factura marcada, por el total'
   assert.deepEqual([st.invoices.get(1).status, st.invoices.get(2).status, st.invoices.get(9).status], ['paid', 'paid', 'pending'], 'CIEGO: el lote no marcó lo esperado');
   assert.deepEqual(st.pagos.map((p) => [p.invoiceId, p.importe, p.fechaOrigen, p.merchantId]).sort(),
     [[1, '1000.00', 'declarada', M], [2, '120.50', 'declarada', M]], `🔴 filas: ${resumen(st)}`);
+});
+
+// ── ⑨ · paid-webhook ───────────────────────────────────────────────────────────────────────
+
+test('SCRUM-1732c · ⑨ /invoice/:id/paid-webhook: apunta su fila por el total (c.21928 ⑥)', async () => {
+  assert.ok(paidWebhook, 'CIEGO: no encuentro POST /:id/paid-webhook');
+  actual = banco();
+  const r = await llamar(paidWebhook, { params: { id: '1' }, body: {} });
+  assert.equal(r.status, 200, JSON.stringify(r.cuerpo));
+  const { st } = actual;
+  assert.equal(st.invoices.get(1).status, 'paid', 'CIEGO: no marcó la factura');
+  assert.deepEqual(st.pagos.map((p) => [p.invoiceId, p.chargeId, p.importe, p.fechaOrigen, p.tipo]), [[1, 1732, '1000.00', 'aviso', 'cobro']], `🔴 filas: ${resumen(st)}`);
 });
