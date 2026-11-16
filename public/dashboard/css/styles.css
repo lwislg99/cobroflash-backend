@@ -1804,6 +1804,10 @@ html, body { overflow-x: clip; }
    S2: recibe el dedo: medía 44,6 con la fuente de respaldo del banco y 43,6 con Inter en yaqu.app. Con
    S2: la fuente real se quedaba corta por 0,4 px; el suelo no depende de la fuente. */
 .quote-dto-global__campo { min-height: 44px; }
+/* S2: SCRUM-1716b · el selector €/% es el `.segmented` del sistema (SCRUM-574), al ancho del campo
+   S2: que acompaña; y «Equivale a …» en el gris de ayuda de los demás campos (`--muted`, AA). */
+.quote-dto-global__unidad { max-width: 200px; margin-top: 6px; }
+.quote-dto-global__equivale { margin: 4px 0 0; font-size: 12.5px; color: var(--muted); }
 
 /* SCRUM-139 F2 · RENGLÓN EN BLANCO DEL CUADERNILLO.
    El editor abre con varias líneas dibujadas (LINEAS_CUADERNILLO): son una INVITACIÓN, no
@@ -3238,6 +3242,9 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 /* El cuerpo se alinea con el rótulo (14 px de galón + 10 de hueco) y las secciones de siempre que
    viven dentro pierden su relleno y su raya: la raya es de la tarjeta, no de cada línea. */
 .detail-plega-cuerpo { padding: 2px 0 14px 24px; }
+/* S2 · SCRUM-1662 · «Qué hay que hacer»: la tarea es un párrafo escrito en el alta; se respetan sus
+   saltos de línea y una palabra larga no desborda a 390 px. Mismo cuerpo que el valor de la línea. */
+.detail-tarea { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; color: var(--body); }
 .detail-plega-cuerpo .detail-section { padding: 0; border-bottom: none; }
 .detail-plega-ayuda { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
 /* SCRUM-1184 · «Siguiente número: …» bajo la cabecera de «Nuevo albarán». Mismos tokens que las ayudas. */
@@ -4457,6 +4464,37 @@ textarea.parte-linea-desc {
   .parte-dictado [data-dictado-ordenar],
   .parte-bloque .parte-anadir,
   .parte-horas .parte-ahora { transition: none; }
+}
+
+/* SCRUM-1722b · ESCRITORIO (≥1024): el fundador, sobre lo desplegado, a 1280 — «se ve asi»: una hoja de
+   720 px centrada y dos márgenes vacíos más anchos que ella. El parte pasa a DOS COLUMNAS: a la izquierda
+   lo que se apunta, en su orden (datos, horas, dictado, mano de obra, materiales, volver); a la derecha,
+   las firmas, que cierran el parte y se quedan a la vista mientras se baja. Por debajo de 1024 no cambia
+   nada (móvil y tableta, una columna como hasta ahora). Sin texto nuevo, sin tocar el orden del DOM: el
+   tabulador recorre la izquierda y luego las firmas, que es el orden en que se lee.
+   La columna de firmas ocupa una sola casilla que ABARCA las filas de la izquierda (span 40): así las
+   tarjetas de la izquierda se apilan sin huecos, sea cual sea su número, y las filas que sobran miden 0.
+   Medido con la sonda (DOM ejecutado): a 1024 las dos columnas dejaban la izquierda en 344 px, y el parte
+   FIRMADO se encogía a su contenido (362 px a 1280, ya en prod) porque el contenedor no pedía ancho.
+   Por eso: de 1024 a 1199, UNA columna a todo el ancho; desde 1200, las dos. */
+@media (min-width: 1024px) {
+  *:has(> header.parte-cabecera) { width: 100%; max-width: 1120px; }
+}
+@media (min-width: 1200px) {
+  *:has(> header.parte-cabecera) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+    column-gap: 24px;
+    align-items: start;
+  }
+  *:has(> header.parte-cabecera) > * { grid-column: 1; min-width: 0; }
+  *:has(> header.parte-cabecera) > header.parte-cabecera { grid-column: 1 / -1; }
+  *:has(> header.parte-cabecera) > .parte-firmas {
+    grid-column: 2;
+    grid-row: 2 / span 40;
+    position: sticky;
+    top: calc(var(--topbar-h) + 16px);
+  }
 }
 /* ══ fin S4 · SCRUM-1722 ══ */
 /* Las tres fichas del tipo: 48 px de alto y la ficha entera recibe el toque. */

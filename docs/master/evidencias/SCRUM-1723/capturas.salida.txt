@@ -1,0 +1,13 @@
+Playwright (Chromium, MCP) · 12-nov-2026 · antes = router sin el cambio de 1723, SIN cabecera CSP · después = router con 1723 y Content-Security-Policy APLICADA (POLITICA_CSP de src/core/http/csp.ts)
+390px emitido/nada: IGUAL (63104/63104 bytes)
+390px emitido/otro: IGUAL (63869/63869 bytes)
+390px emitido/sinFirma: IGUAL (64714/64714 bytes)
+390px firmado/nada: IGUAL (20343/20343 bytes)
+390px borrador/nada: IGUAL (20639/20639 bytes)
+1280px emitido/nada: IGUAL (75417/75417 bytes)
+1280px emitido/otro: IGUAL (76626/76626 bytes)
+1280px emitido/sinFirma: IGUAL (77673/77673 bytes)
+1280px firmado/nada: IGUAL (24136/24136 bytes)
+1280px borrador/nada: IGUAL (25152/25152 bytes)
+CONTROL antes+CSP vs antes: DISTINTA (el instrumento ve)
+violaciones en /despues: 0 · en el control: 3

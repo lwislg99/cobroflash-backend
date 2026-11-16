@@ -27,6 +27,7 @@ import path from 'node:path';
 import { spawnSync, execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { RUTA_DE_REGISTRO, decidir, gitReal, mezclar } from '../scripts/conflicto-de-registro.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -146,7 +147,7 @@ const REGLA = 'docs/master/*.md merge=union\n';
 
 /** Un repositorio con `main` y una rama `pr` que parten de la misma base. */
 function repo({ base, enPr, enMain, attrsMain = REGLA, attrsPr = '', infoAttributes = '' }) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum839d-'));
+  const dir = temporal('scrum839d-');
   const g = (...args) => execFileSync('git', args, { cwd: dir, encoding: 'utf8', stdio: 'pipe' }).trim();
   const escribir = (ficheros) => {
     for (const [f, txt] of Object.entries(ficheros)) {
@@ -176,7 +177,7 @@ function repo({ base, enPr, enMain, attrsMain = REGLA, attrsPr = '', infoAttribu
 
 function conRepo(opts, fn) {
   const r = repo(opts);
-  try { return fn(r); } finally { fs.rmSync(r.dir, { recursive: true, force: true }); }
+  try { return fn(r); } finally { borrarTemporal(r.dir); }
 }
 
 // SCRUM-839e: la decisión solo mira PR que ya estaban armados. Todo lo de este fichero va sobre uno

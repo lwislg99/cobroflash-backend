@@ -1,0 +1,25 @@
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { createRequire } from 'node:module';
+const require = createRequire('file:///<ARBOL>/dist/x.js');
+const { ALBARAN_FIRMA_JS } = require('<ARBOL>/dist/modules/jobs/app/routes/albaranFirmaNavegador.js');
+const { ALBARAN_FIRMA_CSS } = require('<ARBOL>/dist/modules/jobs/app/routes/albaranFirmaEstilo.js');
+const { POLITICA_CSP } = require('<ARBOL>/dist/core/http/csp.js');
+const informes = [];
+http.createServer((req, res) => {
+  const u = new URL(req.url, 'http://x');
+  const p = u.pathname;
+  if (p === '/informes') { res.end(JSON.stringify(informes)); return; }
+  if (p === '/albaran/js/firma.js') { res.setHeader('content-type', 'application/javascript'); res.end(ALBARAN_FIRMA_JS); return; }
+  if (p === '/albaran/css/firma.css') { res.setHeader('content-type', 'text/css'); res.end(ALBARAN_FIRMA_CSS); return; }
+  if (p.startsWith('/fonts/')) { const f = path.join('<ARBOL>/public', p); if (fs.existsSync(f)) { res.setHeader('content-type', p.endsWith('.css') ? 'text/css' : 'font/woff2'); res.end(fs.readFileSync(f)); return; } }
+  const m = /^\/(antes|despues)\/(\w+)$/.exec(p);
+  if (m) {
+    if (m[1] === 'despues') res.setHeader('Content-Security-Policy', POLITICA_CSP);
+    res.setHeader('content-type', 'text/html; charset=utf-8');
+    res.end(fs.readFileSync('<TEMPORAL>/' + m[1] + '/' + m[2] + '.html'));
+    return;
+  }
+  res.statusCode = 404; res.end('no');
+}).listen(58123, '127.0.0.1', () => console.log('ok'));

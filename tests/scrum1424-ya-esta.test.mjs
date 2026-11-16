@@ -18,6 +18,7 @@ import {
   veredictoDe, informe, ultimaAncla, YA_ESTA, NO_ESTA, NO_PUDE, SALIDA_MIRADO, SALIDA_CIEGO,
   duenoDelAsunto, repartirCommits,
 } from '../scripts/equipo/ya-esta.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const GUION = path.join(RAIZ, 'scripts', 'equipo', 'ya-esta.mjs');
@@ -111,7 +112,7 @@ test('SCRUM-1424 · la última ancla de un registro es la ÚLTIMA, y sin ancla e
 
 /** Un `origin` y un clon suyo, con un ticket (41) hecho en main, otro (42) sólo en rama viva. */
 function juguete() {
-  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-ya-esta-'));
+  const base = temporal('yaqu-ya-esta-');
   const origen = path.join(base, 'origen.git'); const clon = path.join(base, 'clon');
   const g = (dir, ...a) => execFileSync('git', ['-C', dir, '-c', 'user.name=prueba', '-c', 'user.email=prueba@example.invalid', '-c', 'commit.gpgsign=false', '-c', 'core.autocrlf=false', ...a], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   execFileSync('git', ['init', '--quiet', '--bare', '--initial-branch=main', origen]);
@@ -139,7 +140,7 @@ const lanzar = (clon, ...args) => {
 };
 
 test('SCRUM-1424 · el COMANDO: un ticket que SÍ está sale YA ESTÁ con su fecha, su registro y sus evidencias', (t) => {
-  const j = juguete(); t.after(() => fs.rmSync(j.base, { recursive: true, force: true }));
+  const j = juguete(); t.after(() => borrarTemporal(j.base));
   const r = lanzar(j.clon, '41');
   assert.equal(r.status, SALIDA_MIRADO, r.stdout + r.stderr);
   const primera = r.stdout.split('\n')[0];
@@ -150,7 +151,7 @@ test('SCRUM-1424 · el COMANDO: un ticket que SÍ está sale YA ESTÁ con su fec
 });
 
 test('SCRUM-1424 · el COMANDO: uno inventado sale NO ESTÁ; uno con sólo rama viva, NO ESTÁ y lo avisa; uno cubierto por otro, se enseña la línea', (t) => {
-  const j = juguete(); t.after(() => fs.rmSync(j.base, { recursive: true, force: true }));
+  const j = juguete(); t.after(() => borrarTemporal(j.base));
   const inventado = lanzar(j.clon, '99');
   assert.equal(inventado.status, SALIDA_MIRADO, inventado.stdout + inventado.stderr);
   assert.match(inventado.stdout.split('\n')[0], /SCRUM-99 · NO ESTÁ en origin\/main con ese número$/);
@@ -167,7 +168,7 @@ test('SCRUM-1424 · el COMANDO: uno inventado sale NO ESTÁ; uno con sólo rama 
 });
 
 test('SCRUM-1424 · el COMANDO, CIEGO: con el acceso cortado dice NO HE PODIDO MIRAR y sale 2, nunca «no está»', (t) => {
-  const j = juguete(); t.after(() => fs.rmSync(j.base, { recursive: true, force: true }));
+  const j = juguete(); t.after(() => borrarTemporal(j.base));
   // ① el remoto desaparece: no se puede traer, y lo que hay en disco puede ser viejo.
   fs.rmSync(j.origen, { recursive: true, force: true });
   const sinRemoto = lanzar(j.clon, '41');
@@ -238,7 +239,7 @@ function jugueteConAjeno() {
 }
 
 test('SCRUM-1454 · el COMANDO: un ticket que sólo NOMBRA un commit ajeno sale NO ESTÁ, y el commit se enseña con su dueño', (t) => {
-  const j = jugueteConAjeno(); t.after(() => fs.rmSync(j.base, { recursive: true, force: true }));
+  const j = jugueteConAjeno(); t.after(() => borrarTemporal(j.base));
   const abierto = lanzar(j.clon, '51');
   assert.equal(abierto.status, SALIDA_MIRADO, abierto.stdout + abierto.stderr);
   assert.match(abierto.stdout.split('\n')[0], /SCRUM-51 · NO ESTÁ en origin\/main con ese número/);
@@ -252,7 +253,7 @@ test('SCRUM-1454 · el COMANDO: un ticket que sólo NOMBRA un commit ajeno sale 
 });
 
 test('SCRUM-1454 · el COMANDO con VARIOS: una respuesta por ticket, un recuento que dice cuántos se preguntaron, y sale 2 si UNO no se pudo mirar', (t) => {
-  const j = jugueteConAjeno(); t.after(() => fs.rmSync(j.base, { recursive: true, force: true }));
+  const j = jugueteConAjeno(); t.after(() => borrarTemporal(j.base));
   const cabezas = (r) => r.stdout.split('\n').filter((l) => /^(🟢|⚪|🔴) SCRUM-/u.test(l));
   const tres = lanzar(j.clon, '41', '99', '51');
   assert.equal(tres.status, SALIDA_MIRADO, tres.stdout + tres.stderr);
@@ -335,7 +336,7 @@ test('SCRUM-1505 · el POSITIVO: un ticket que de verdad no está sigue diciendo
 });
 
 test('SCRUM-1505 · el COMANDO: el segundo ticket de una cabecera SÍ está; el que sólo se cita detrás, NO', (t) => {
-  const j = jugueteConAjeno(); t.after(() => fs.rmSync(j.base, { recursive: true, force: true }));
+  const j = jugueteConAjeno(); t.after(() => borrarTemporal(j.base));
   const g = (...a) => execFileSync('git', ['-C', j.clon, '-c', 'user.name=prueba', '-c', 'user.email=prueba@example.invalid', '-c', 'commit.gpgsign=false', ...a], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   // Commit VACÍO, como el de arriba: lo que se prueba es el asunto (SCRUM-824).
   g('commit', '--quiet', '--allow-empty', '-m', 'SCRUM-60 + SCRUM-61: los dos a la vez');
@@ -353,7 +354,7 @@ test('SCRUM-1505 · el COMANDO: el segundo ticket de una cabecera SÍ está; el 
 
 test('SCRUM-1454 · el COMANDO sin sus motores: lo dice por su SALIDA y sale 2 — con el stderr tirado sigue habiendo respuesta', (t) => {
   // Lo más cerca que se puede fabricar del 6-oct: el guion, solo, en un árbol donde no está lo que importa.
-  const j = juguete(); t.after(() => fs.rmSync(j.base, { recursive: true, force: true }));
+  const j = juguete(); t.after(() => borrarTemporal(j.base));
   // Fuera del árbol y donde se vea de qué cuelga (SCRUM-824): un temporal propio, no una subcarpeta del juguete.
   const arbolSuelto = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-ya-esta-suelto-'));
   t.after(() => fs.rmSync(arbolSuelto, { recursive: true, force: true }));

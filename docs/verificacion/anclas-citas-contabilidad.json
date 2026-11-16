@@ -250,6 +250,46 @@
     "a24quater@20181229",
     "a38@20071120"
    ]
+  },
+  {
+   "sha": "6e9c16f727c7b1b3",
+   "inicio": "la presentación de las declaraciones formuladas en los modelos 130 y 1",
+   "fuente": "ORDEN130",
+   "bloques": [
+    "a7@original"
+   ]
+  },
+  {
+   "sha": "5adb725f77918ea5",
+   "inicio": "c) Las restantes personas físicas, jurídicas y demás entidades obligad",
+   "fuente": "ORDEN111",
+   "bloques": [
+    "a3@original"
+   ]
+  },
+  {
+   "sha": "8807950b978a74e6",
+   "inicio": "La presentación e ingreso de este modelo, en papel o por vía telemátic",
+   "fuente": "ORDEN115",
+   "bloques": [
+    "septimo@original"
+   ]
+  },
+  {
+   "sha": "e32b08788ba58a2d",
+   "inicio": "La presentación de la declaración anual de operaciones con terceras pe",
+   "fuente": "ORDEN347",
+   "bloques": [
+    "a10@20181031"
+   ]
+  },
+  {
+   "sha": "a3968064480baff0",
+   "inicio": "La declaración-resumen anual del Impuesto sobre el Valor Añadido deber",
+   "fuente": "ORDEN390",
+   "bloques": [
+    "a8@original"
+   ]
   }
  ]
 }

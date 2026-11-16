@@ -17,6 +17,7 @@ import { URL_BANCO } from './_banco-libro.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import http from 'node:http';
 import net from 'node:net';
 
@@ -130,7 +131,13 @@ function montarPagina({ fetchDePagina = fetchReal } = {}) {
     els.set(id, el);
   }
   // SCRUM-553 · sin el `>` pegado; los que llevan `src` no son «en línea» y no cuentan.
+  // SCRUM-1647d: el guion salió del HTML (CSP) y la página lo carga de `GET /auth/js/alta.js`. Los
+  // guiones que corre la página son los en línea MÁS el servido, si lo carga; la aserción, sin tocar
+  // (firma: SCRUM-1647 c.21658).
   const scripts = [...HTML.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+  if (/<script[^>]*\ssrc="\/auth\/js\/alta\.js"[^>]*>/.test(HTML)) {
+    scripts.push(createRequire(import.meta.url)('../dist/modules/auth/app/routes/altaNavegador.js').ALTA_JS);
+  }
   assert.equal(scripts.length, 1, '🔴 register.html tiene que tener UN script en línea (el banco ejecuta ése)');
   const document = { getElementById: (id) => els.get(id) || null };
   const enviados = [];

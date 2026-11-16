@@ -795,6 +795,14 @@ model Invoice {
   merchantPhone     String? @map("merchant_phone")
   merchantEmail     String? @map("merchant_email")
 
+  /// SCRUM-1129e · EL CRITERIO DE CAJA, CONGELADO AL SELLAR (GO del fundador: SCRUM-1129 c.21753;
+  /// ALTER aditivo de c.21757 aplicado en las TRES bases, c.21762). Copia de `Merchant.criterioCaja`
+  /// en el instante del sellado (`applyVeriFactu`). De él saca el builder la `ClaveRegimen` 07 de
+  /// los tramos `S1`. Se guarda el HECHO y no la clave: la clave va por tramo (S1 → 07, S2 → 01).
+  /// 🔴 Sin `@default`, y NULL se lee como 01 SIN caer al Merchant vivo: las facturas selladas
+  /// antes de esta columna se sellaron con 01, y re-exportarlas tiene que dar el mismo XML.
+  merchantCriterioCaja Boolean? @map("merchant_criterio_caja")
+
   number String
   total  Decimal @db.Decimal(12, 2)
 
@@ -1359,6 +1367,12 @@ model Job {
   // Nullable y sin @default: los trabajos anteriores no declararon tipo, y «no consta» no es
   // ninguno de los valores del vocabulario.
   tipoIntervencion String? @map("tipo_intervencion")
+
+  // SCRUM-1662 (PILOTO-1, firmado por el fundador en SCRUM-1662 c.21548): «Qué hay que hacer», la tarea
+  // del trabajo, que el operario SÍ ve. Campo PROPIO, separado de `notes` (las «Notas internas · Solo tú
+  // las ves», que siguen privadas del jefe). Aditiva, nullable y sin @default: los trabajos anteriores
+  // no la tienen, y «no consta» no se rellena con nada.
+  queHayQueHacer   String? @map("que_hay_que_hacer")
 
   // SCRUM-650 (T1) · los empleados asignados a EJECUTAR este trabajo. Relacion virtual: no crea
   // ninguna columna en `jobs`. Destino final (paso C): esta tabla es la UNICA fuente y

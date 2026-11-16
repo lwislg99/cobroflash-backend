@@ -35,32 +35,23 @@ const CAMPO = 'claveRegimen';
  * 🔴 LA DECLARACIÓN DEL DEFECTO. Quien arregle SCRUM-1240/1129 la retira EN EL MISMO CAMBIO
  * (borrándola o con `declarado: false`). Mientras esté, cualquier cambio de la clave tumba esto.
  */
+// SCRUM-1129e (GO del fundador, SCRUM-1129 c.21753): RETIRADA en el mismo PR del arreglo. El 07 sale
+// del criterio de caja congelado al sellar (`Invoice.merchantCriterioCaja`); lo fija
+// `tests/scrum1129e-clave-regimen-07.test.mjs`. Lo que queda abierto de 1240 (la mención del PDF) y
+// de 1129 (18/19/20, la R1) no es este trinquete.
 export const DEFECTO_CONOCIDO = {
-  declarado: true,
+  declarado: false,
   tickets: ['SCRUM-1240', 'SCRUM-1129'],
   que: 'ClaveRegimen va fija a 01 en el builder VERI*FACTU: no depende de criterioCaja ni del régimen del comercio',
 };
 
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
-    // La clave del detalle sujeto pasa a depender de `criterioCaja`, sin retirar la declaración.
-    fichero: 'src/modules/fiscal/verifactu/registro.builder.ts',
-    de: '  return {\n    claveRegimen: CLAVE_REGIMEN_GENERAL,',
-    a: "  return {\n    claveRegimen: (entrada as { criterioCaja?: boolean }).criterioCaja ? '07' : CLAVE_REGIMEN_GENERAL,",
-    cae: 'SCRUM-1240b · la clave de régimen sigue siendo el defecto declarado',
-  },
-  {
-    // Alguien cambia el valor fijo sin cerrar los tickets.
-    fichero: 'src/modules/fiscal/verifactu/registro.builder.ts',
-    de: "export const CLAVE_REGIMEN_GENERAL = '01';",
-    a: "export const CLAVE_REGIMEN_GENERAL = '07';",
-    cae: 'SCRUM-1240b · la clave de régimen sigue siendo el defecto declarado',
-  },
-  {
-    // Se retira la declaración y la clave sigue fija: retirarla no es arreglarlo.
+    // SCRUM-1129e · retirada la declaracion, la que queda es la otra mitad del trinquete: volver a
+    // declarar el defecto con la clave ya arreglada es mentir en el otro sentido, y cae.
     fichero: 'tests/scrum1240b-clave-regimen-defecto-declarado.test.mjs',
-    de: '  declarado: true,\n  tickets:',
-    a: '  declarado: false,\n  tickets:',
+    de: '  declarado: false,\n  tickets:',
+    a: '  declarado: true,\n  tickets:',
     cae: 'SCRUM-1240b · la clave de régimen sigue siendo el defecto declarado',
   },
 ];

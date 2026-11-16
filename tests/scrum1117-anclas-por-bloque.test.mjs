@@ -19,7 +19,7 @@ import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SCRIPT = process.env.COMPROBADOR_CITAS ?? path.join(RAIZ, 'docs/verificacion/comprobar-citas-contabilidad.mjs');
-const BOE = { LIVA: 'BOE-A-1992-28740', RIVA: 'BOE-A-1992-28925', LIRPF: 'BOE-A-2006-20764', RIRPF: 'BOE-A-2007-6820', RFACT: 'BOE-A-2012-14696', ORDEN303: 'BOE-A-2008-20953' };
+const BOE = { LIVA: 'BOE-A-1992-28740', RIVA: 'BOE-A-1992-28925', LIRPF: 'BOE-A-2006-20764', RIRPF: 'BOE-A-2007-6820', RFACT: 'BOE-A-2012-14696', ORDEN303: 'BOE-A-2008-20953', ORDEN130: 'BOE-A-2007-6032', ORDEN111: 'BOE-A-2011-4948', ORDEN115: 'BOE-A-2000-21430', ORDEN347: 'BOE-A-2008-16973', ORDEN390: 'BOE-A-2009-18472' };
 const CITA = 'El Impuesto se exigirá al tipo del 21 por ciento, salvo lo dispuesto en el artículo siguiente.';
 const OTRA = 'Se aplicará el tipo del 10 por ciento a las operaciones siguientes, que son de prueba.';
 

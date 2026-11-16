@@ -86,8 +86,9 @@
     notas: 'Notas',
     // APROBADO · SCRUM-1215 comentario 17367
     anadirLinea: 'Añadir línea',
-    // APROBADO · SCRUM-1215 comentario 17367
-    firmar: 'Firmar aquí mismo',
+    // SCRUM-1722b · sustituye a «Firmar aquí mismo» en el mismo sitio (el botón del recuadro del cliente).
+    // El albarán sigue con el suyo: la firma es del parte.
+    firmar: 'Firma aquí, cliente', // APROBADO por el fundador el 12-nov-2026 (SCRUM-1722 comentario 21708)
     // SCRUM-1215 (lote 1) · `yaFirmado` RETIRADA: cero consumidores, no se pintaba nunca. Decidido
     // por el orquestador el 28-sep-2026; motivo en `scripts/_censo-convenio-microcopy-declarados.json`.
     // ✅ APROBADO literal por el fundador el 3-sep-2026, sin cambiar una letra. Consta en
@@ -138,8 +139,9 @@
     tipoMantenimiento: 'Mantenimiento',
     // APROBADO · SCRUM-1215 comentario 17367
     tipoInstalacion: 'Instalación',
-    // APROBADO · SCRUM-1215 comentario 17367
-    dictado: 'Dicta lo que has hecho',
+    // SCRUM-1722b · sustituye al título «Dicta lo que has hecho» en el mismo sitio. La pista de debajo
+    // no entra en la firma y se queda como está.
+    dictado: 'Cuéntalo con tu voz', // APROBADO por el fundador el 12-nov-2026 (SCRUM-1722 comentario 21708)
     // APROBADO · SCRUM-1215 comentario 17367
     pistaDictado: 'Usa el micrófono de tu teclado. Luego lo ordenamos.',
     // APROBADO · SCRUM-1215 comentario 17367
@@ -178,6 +180,9 @@
     //
     // Etiquetas de estado SIN punto final; frases CON punto. Es deliberado, no un descuido.
     firmarTecnico: 'Firma del técnico', // APROBADO por el fundador el 4-sep-2026 (SCRUM-653)
+    // SCRUM-1722b · el BOTÓN del recuadro del técnico dice ahora esto, en el sitio de «Firma del técnico».
+    // `firmarTecnico` se queda: sigue siendo el título del pad de firma, que la firma no toca.
+    firmarAquiTecnico: 'Firma aquí, técnico', // APROBADO por el fundador el 12-nov-2026 (SCRUM-1722 comentario 21708)
     yaFirmoElCliente: 'Firmado por el cliente', // APROBADO por el fundador el 4-sep-2026 (SCRUM-653)
     yaFirmoElTecnico: 'Firmado por el técnico', // APROBADO por el fundador el 4-sep-2026 (SCRUM-653)
     // 🔴 DOS CLAVES Y NO UNA. «Falta una firma para cerrar el parte» **no decía cuál**, y el
@@ -1371,7 +1376,7 @@
         : '') +
       '</div>' +
       '<div class="parte-firma-caja" data-parte-caja-firma="tecnico">' +
-      recuadro(parte.firmoElTecnico, 'firmar-tecnico', TEXTOS.firmarTecnico, TEXTOS.yaFirmoElTecnico, parte.firmadoTecnicoNombre) +
+      recuadro(parte.firmoElTecnico, 'firmar-tecnico', TEXTOS.firmarAquiTecnico, TEXTOS.yaFirmoElTecnico, parte.firmadoTecnicoNombre) +
       (!parte.firmoElTecnico
         ? '<p class="parte-firma-falta" data-parte-falta-firma="tecnico">' +
           esc(TEXTOS.faltaLaFirmaDelTecnico) + '</p>'

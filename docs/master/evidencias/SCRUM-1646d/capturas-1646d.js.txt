@@ -1,0 +1,60 @@
+// SCRUM-1646d · recorrido de capturas (Playwright MCP, browser_run_code_unsafe), con
+// `node servidor-1646d.mjs <ARBOL_RAMA> <TEMPORAL>` en 58125 y las caras ya volcadas.
+// ANCHO se cambia a mano entre las dos pasadas (390 y 1280).
+async (page) => {
+  const ANCHO = 390;
+  const B = 'http://127.0.0.1:58125';
+  const DIR = 'C:/Users/Admin/.claude/jobs/cf8f9266/tmp/capturas';
+  await page.emulateMedia({ reducedMotion: 'reduce' }); // sin confeti (Math.random): repetible
+  const trazo = async () => {
+    const c = await page.locator('#sig-canvas').boundingBox();
+    if (!c) throw new Error('CIEGO: sin lienzo');
+    await page.mouse.move(c.x + 20, c.y + 30); await page.mouse.down();
+    for (let i = 1; i <= 12; i++) await page.mouse.move(c.x + 20 + i * 15, c.y + 30 + (i % 2 ? 20 : -5), { steps: 2 });
+    await page.mouse.up();
+  };
+  const aceptar = async () => { await page.click('#btn-accept'); await page.waitForTimeout(700); };
+  const elegir = async () => { await page.click('.tier-card[data-tier-id="completa"] .btn-tier'); await page.waitForTimeout(900); };
+  const sinFirma = async () => { await page.check('#no-sig-check', { force: true }); };
+  const ESC = [];
+  for (const sufijo of ['', '-marca']) {
+    ESC.push(
+      ['uno' + sufijo, 'inicial', async () => {}], ['uno' + sufijo, 'avisoSinFirma', aceptar], ['uno' + sufijo, 'conTrazo', trazo],
+      ['uno' + sufijo, 'exitoConTrazo', async () => { await trazo(); await aceptar(); }],
+      ['uno' + sufijo, 'exitoSinFirma', async () => { await sinFirma(); await aceptar(); }],
+      ['tres' + sufijo, 'inicial', async () => {}], ['tres' + sufijo, 'opcionElegida', elegir],
+      ['tres' + sufijo, 'exitoConTrazo', async () => { await elegir(); await trazo(); await aceptar(); }],
+      ['tres' + sufijo, 'exitoSinFirma', async () => { await elegir(); await sinFirma(); await aceptar(); }],
+      ['aceptado' + sufijo, 'inicial', async () => {}], ['rechazado' + sufijo, 'inicial', async () => {}],
+      ['caducado' + sufijo, 'inicial', async () => {}],
+      ['rechazo-form' + sufijo, 'inicial', async () => {}], ['rechazo-enviado' + sufijo, 'inicial', async () => {}],
+    );
+  }
+  const leer = async (r) => (await page.request.get(B + r)).json();
+  const lineas = [];
+  let iguales = 0, controlDistinto = 0, informesDespues = 0;
+  await page.setViewportSize({ width: ANCHO, height: 900 });
+  for (const [cara, est, accion] of ESC) {
+    const f = {};
+    for (const v of ['antes', 'despues', 'control']) {
+      await page.request.get(B + '/reset');
+      await page.goto(`${B}/${v}/${cara}`, { waitUntil: 'networkidle' });
+      await page.evaluate(() => document.fonts.ready);
+      let error = null;
+      try { await accion(); } catch (e) { error = String(e.message).split('\n')[0].slice(0, 40); }
+      await page.waitForTimeout(300);
+      const png = await page.screenshot({ fullPage: true, animations: 'disabled', path: `${DIR}/${ANCHO}-${cara}-${est}-${v}.png` });
+      const texto = await page.evaluate(() => document.body.innerText);
+      const reglas = await page.evaluate(() => [...document.styleSheets].reduce((n, s) => { try { return n + s.cssRules.length; } catch { return n; } }, 0));
+      await page.waitForTimeout(300);
+      f[v] = { png, error, texto, reglas, inf: (await leer('/informes')).length, dec: JSON.stringify(await leer('/decisiones')) };
+    }
+    const igual = f.antes.png.equals(f.despues.png);
+    if (igual) iguales++;
+    if (!f.control.png.equals(f.antes.png)) controlDistinto++;
+    informesDespues += f.despues.inf;
+    lineas.push(`${ANCHO}px ${cara}/${est}: ${igual ? 'IGUAL' : 'DISTINTA'} (${f.antes.png.length}/${f.despues.png.length}) · reglas ${f.antes.reglas}/${f.despues.reglas} · texto ${f.antes.texto === f.despues.texto ? '=' : 'DISTINTO'} · POST ${f.antes.dec === f.despues.dec ? '= ' + f.despues.dec : 'DISTINTO ' + f.antes.dec + ' vs ' + f.despues.dec} · informes ${f.antes.inf}/${f.despues.inf}/ctl ${f.control.inf} · control ${f.control.png.equals(f.antes.png) ? 'IGUAL' : 'DISTINTA'} · err ${[f.antes.error, f.despues.error, f.control.error].map((e) => e || '-').join('|')}`);
+  }
+  lineas.push(`RESUMEN ${ANCHO}px: ${iguales}/${ESC.length} IGUALES · informes CSP en «después» ${informesDespues} · control distinto en ${controlDistinto}/${ESC.length}`);
+  return lineas.join('\n');
+}

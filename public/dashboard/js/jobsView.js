@@ -128,7 +128,10 @@ async function renderJobsView(container) {
   // SCRUM-917c · las dos preguntas del fundador, contestadas ANTES de la lista. Se pintan UNA vez
   // y con TODOS los Trabajos, no con los del filtro: «cuánto me deben» no cambia porque esté
   // mirando sólo los pendientes.
-  pintarCifrasDeLaLista(document.getElementById('jobs-cifras'), jobs);
+  // SCRUM-1725 (D1) · quien no ve el cobro no recibe ni la cifra ni los filtros (ver `veEstadoDeCobro`).
+  const veCobro = veEstadoDeCobro(window.appUserRole);
+  if (!veCobro) jobsCobroFilter = 'all';
+  pintarCifrasDeLaLista(document.getElementById('jobs-cifras'), jobs, veCobro);
 
   // SCRUM-11: filtro por estado de cobro (segmentado; reutiliza botones del inventario,
   // NO crea componente nuevo). Filtra el array ANTES del agrupado → no rompe los grupos.
@@ -137,7 +140,7 @@ async function renderJobsView(container) {
     for (const j of jobs) if (counts[j.estadoCobro] != null) counts[j.estadoCobro]++;
 
     filterBar.innerHTML = '';
-    [['all', 'Todos'], ['Pendiente', 'Pendiente'], ['Parcial', 'Parcial'], ['Pagado', 'Pagado']].forEach(([key, label]) => {
+    (veCobro ? [['all', 'Todos'], ['Pendiente', 'Pendiente'], ['Parcial', 'Parcial'], ['Pagado', 'Pagado']] : []).forEach(([key, label]) => {
       const b = document.createElement('button');
       b.className = 'btn-sm ' + (jobsCobroFilter === key ? 'btn-secondary' : 'btn-ghost');
       b.textContent = `${label} · ${key === 'all' ? counts.all : counts[key]}`;
@@ -346,7 +349,27 @@ function cifraDeLaLista(rotulo, valor, pie, extra) {
   return caja;
 }
 
-function pintarCifrasDeLaLista(zona, jobs) {
+/**
+ * SCRUM-1725 (D1) · ¿Este rol ve el ESTADO DE COBRO de un Trabajo (lo cobrado, lo que falta, «Por
+ * cobrar», los filtros Pendiente/Parcial/Pagado)?
+ *
+ * FIRMADO por el fundador en SCRUM-1707 c.21547 (Q1, literal): «Importe de SUS trabajos: ve el
+ * importe de los trabajos suyos (igual que ya ve sus presupuestos), pero SIN la tarjeta "Por cobrar"
+ * ni los filtros de cobro del negocio.» El servidor (1707, `trabajoParaElRol`) le manda vacíos
+ * `totalCobrado`, `estadoCobro`, `remaining`…; y esta lista calcula «lo que falta» EN EL NAVEGADOR,
+ * así que con lo cobrado vacío (→ 0) diría que falta el importe entero: una cifra FALSA, peor que
+ * no decir nada (medido, SCRUM-1725 ⓪). El IMPORTE sí se queda.
+ *
+ * LISTA BLANCA y fail-closed, como `puedeVerEconomia` (SCRUM-597) y `veNegocio` del Inicio: un rol
+ * que no se reconoce NO VE. Va en `window` para que la ficha del Trabajo haga la MISMA pregunta y
+ * no escriba la suya (canon de SCRUM-831: «una decisión de producto no vive en una vista»).
+ */
+function veEstadoDeCobro(rol) {
+  return rol === 'admin';
+}
+if (typeof window !== 'undefined') window.veEstadoDeCobro = veEstadoDeCobro;
+
+function pintarCifrasDeLaLista(zona, jobs, veCobro = true) {
   if (!zona) return;
   zona.innerHTML = '';
   const { deHoy, porCobrar } = resumenDeLaLista(jobs, new Date());
@@ -360,7 +383,7 @@ function pintarCifrasDeLaLista(zona, jobs) {
     n ? deHoy.map((j) => (j.customer && j.customer.name) || 'Cliente').join(' · ') : 'Nada para hoy.',
   ));
 
-  if (!porCobrar) return;
+  if (!porCobrar || !veCobro) return;
   const partes = [];
   if (porCobrar.conFalta) partes.push(`en ${porCobrar.conFalta} ${porCobrar.conFalta === 1 ? 'trabajo' : 'trabajos'} sin cerrar`);
   if (porCobrar.sinImporte) partes.push(`${porCobrar.sinImporte} sin importe de referencia, ${porCobrar.sinImporte === 1 ? 'no entra' : 'no entran'}`);
@@ -700,7 +723,8 @@ function renderJobRows(list, jobs, container, todos, equipo) {
     tbody.className = 'jobs-grupo';
 
     // La cabecera del grupo, con su importe y su salvedad: microcopy aprobada que NO se toca.
-    const resumen = g.key === 'terminado' && typeof resumenTerminadoSinCobrar === 'function'
+    // SCRUM-1725 (D1) · el importe «por cobrar» y su salvedad son estado de cobro: no para quien no lo ve.
+    const resumen = g.key === 'terminado' && veEstadoDeCobro(window.appUserRole) && typeof resumenTerminadoSinCobrar === 'function'
       ? resumenTerminadoSinCobrar(g.items)
       : null;
     // SCRUM-917c · «por cobrar» junto a la suma (dos palabras firmadas, comentario 15881): sin
@@ -932,6 +956,9 @@ function celdaImporte(j) {
   if (falta === null) {
     linea('jobs-importe-falta jobs-importe-sin', 'Sin importe');
     linea('jobs-importe-de', 'no hay presupuesto aceptado');
+  } else if (!veEstadoDeCobro(window.appUserRole)) {
+    // SCRUM-1725 (D1) · el importe, sin lo que falta ni «de»: c.21547 deja el importe y quita el cobro.
+    linea('jobs-importe-falta', fmtMoneyEs(j.importeReferencia, cur));
   } else if (cobrado > Number(j.importeReferencia) + 0.005) {
     importeComoHoy(td, j);
   } else if (falta <= 0) {

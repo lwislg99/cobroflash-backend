@@ -1,0 +1,23 @@
+⟦arranque⟧ 0.4 s COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+A-main-sin       sembrado script-src 0 · alta completa true · altas 1 · script-src en el alta 0 {} · insignia sin ref false · url final /login.html
+B-main-aplicada  sembrado script-src 2 · alta completa false · altas 0 · script-src en el alta 2 {"style-src-attr":4,"script-src-elem":2} · insignia sin ref true · url final /register.html
+C-rama-aplicada  sembrado script-src 2 · alta completa true · altas 1 · script-src en el alta 0 {} · insignia sin ref false · url final /login.html
+D-rama-sin       sembrado script-src 0 · alta completa true · altas 1 · script-src en el alta 0 {} · insignia sin ref false · url final /login.html
+visual A-main-sin → D-rama-sin con-invitacion 390: IDÉNTICAS
+visual A-main-sin → D-rama-sin con-invitacion 1280: IDÉNTICAS
+visual A-main-sin → D-rama-sin sin-invitacion 390: IDÉNTICAS
+visual A-main-sin → D-rama-sin sin-invitacion 1280: IDÉNTICAS
+visual A-main-sin → C-rama-aplicada con-invitacion 390: IDÉNTICAS
+visual A-main-sin → C-rama-aplicada con-invitacion 1280: IDÉNTICAS
+visual A-main-sin → C-rama-aplicada sin-invitacion 390: IDÉNTICAS
+visual A-main-sin → C-rama-aplicada sin-invitacion 1280: IDÉNTICAS
+visual D-rama-sin → C-rama-aplicada con-invitacion 390: IDÉNTICAS
+visual D-rama-sin → C-rama-aplicada con-invitacion 1280: IDÉNTICAS
+visual D-rama-sin → C-rama-aplicada sin-invitacion 390: IDÉNTICAS
+visual D-rama-sin → C-rama-aplicada sin-invitacion 1280: IDÉNTICAS
+visual A-main-sin → B-main-aplicada con-invitacion 390: distintas
+visual A-main-sin → B-main-aplicada con-invitacion 1280: distintas
+visual A-main-sin → B-main-aplicada sin-invitacion 390: distintas
+visual A-main-sin → B-main-aplicada sin-invitacion 1280: distintas
+navegador: Edg/157.0.4341.46
+C CUMPLE

@@ -1,0 +1,47 @@
+SCRUM-1723e · recorrido en navegador de TARJETA y MERCADO PAGO con la CSP de SCRUM-1637 APLICADA
+Sesión jv-j2c0 (J2) · 2026-11-12 · origin/main = deab373d6a379fcbfc7ec1fce0428111156f49d3 (Date de GitHub: 17:13:11Z)
+Navegador: Edge (Windows) 157.0.4341.46, headless, por scripts/_navegador.mjs · puppeteer-core 25.3.0 · node v24.18.0
+
+Distribuciones (tsc -p . --noCheck, fuera del árbol):
+  main = deab373d6 (sin #3132)
+  rama = deab373d6 + merge de origin/scrum-1723c-css-tarjeta-mp @ fc0bd68c6 (#3132; lleva dentro #3130)
+  public/ = copia del árbol al lado de las dos (publicDir = dist/../public). `git diff origin/main HEAD -- public`
+  vacío: main y rama sirven el mismo public/.
+Servidor: j2c-servidor-csp.cjs.txt SIN CAMBIOS (cmp igual). Prisma doblado, Stripe doblado (su `create` lanza),
+  sin base, sin red, sin Mercado Pago (mpAccessToken null). Datos fabricados. Ni producción ni staging.
+Recorrido: j2e-recorrido.mjs.txt = j2c-recorrido.mjs.txt + UNA corrección (ver abajo).
+
+── POR QUÉ EL RECORRIDO DE 1723c NO ARRANCÓ (no era Edge) ─────────────────────────────────────────
+j2c-recorrido llama `lanzarNavegador()` sin argumentos. La firma es `lanzarNavegador(puppeteer, opciones)`:
+`puppeteer.launch` sobre undefined lanza un TypeError, el `catch` del lanzador no imprime el motivo y lo
+cuenta como «CORTADA EN proceso+ws» a 0,0 s; tras 3 intentos sale con 3 («el navegador ESTÁ y no levanta»).
+Control: el recorrido ORIGINAL, corrido tal cual en esta máquina con Edge presente → salida=3, mismo texto.
+Corrección (solo en la copia de medir): `lanzarNavegador(require('puppeteer-core'), { headless: true })`,
+como hace evidencias/SCRUM-1647/recorrido.mjs:111. Ni el lanzador ni el producto se han tocado.
+
+── SALIDA (pasada 2, con public/; salida=0) ──────────────────────────────────────────────────────
+⟦arranque⟧ 0.4 s COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+A-main-sin ↔ C-rama-aplicada: 14/14 iguales
+A-main-sin ↔ D-rama-sin: 14/14 iguales
+B-main-aplicada ↔ C-rama-aplicada: 0/14 iguales
+A-main-sin: informes CSP en las páginas 0 · sembrado 0 ()
+B-main-aplicada: informes CSP en las páginas 34 · sembrado 2 (style-src-elem,style-src-attr)
+C-rama-aplicada: informes CSP en las páginas 0 · sembrado 2 (style-src-elem,style-src-attr)
+D-rama-sin: informes CSP en las páginas 0 · sembrado 0 ()
+recursos que faltan: 4 404 http://127.0.0.1:47271/favicon.ico | …:47272 | …:47273 | …:47274 (los cuatro escenarios igual)
+
+Desglose por directiva (páginas × anchos con esa directiva, de resultado.json):
+  A-main-sin       14 capturas · ninguna
+  B-main-aplicada  14 capturas · style-src-attr 12 · style-src-elem 10 · script-src 0
+  C-rama-aplicada  14 capturas · ninguna (ni style-src ni script-src)
+  D-rama-sin       14 capturas · ninguna
+
+Páginas (7 × 390/1280 = 14 capturas por escenario): tarjeta 409 (sin Connect), tarjeta 503 (Stripe falla),
+MP aviso 503, y el resultado de MP en sus 4 estados (approved, rejected, pending, expired).
+Comprobado a ojo además del sha256: C-mp-approved-390 y C-tarjeta-409-1280 con su CSS; B-mp-approved-390 desnuda.
+
+── PASADA 1 (descartada, se dice) ───────────────────────────────────────────────────────────────
+Mismos números (14/14, 14/14, 0/14; 0/34/0/0), pero sin public/ al lado del dist: faltaba /fonts/inter.css en
+los cuatro escenarios, así que las capturas iguales lo eran sin la fuente. Se repitió con public/ copiado.
+
+NO MEDIDO: otros navegadores; yaqu.app; tanda entera local; las capturas no se suben (sha256 en el JSON).

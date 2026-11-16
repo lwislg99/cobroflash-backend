@@ -1,0 +1,16 @@
+# SCRUM-1719 · rojo del test nuevo sobre origin/main 2c52196fd, sin el arreglo
+# node --test --test-reporter=tap tests/scrum1719-baja-repetida-silencio.test.mjs (líneas de resultado y mensajes)
+not ok 1 - SCRUM-1719 · cliente YA de baja escribe BAJA 120 veces → 0 avisos y 0 textos
+    avisos al profesional
+    20 !== 0
+not ok 2 - SCRUM-1719 · POSITIVO: la primera BAJA avisa y contesta como hoy; las siguientes, silencio
+    tras la primera, ni un aviso más
+    20 !== 1
+not ok 3 - SCRUM-1719 · dos negocios: sólo avisa al que aún no tenía la baja, y al cliente se le contesta una vez
+    un aviso: el del negocio B
+    2 !== 1
+ok 4 - SCRUM-1719 · CONTROL: un número que no es cliente de nadie sigue recibiendo la respuesta de siempre
+ok 5 - SCRUM-1719 · CONTROL: un cliente sin baja que escribe otra cosa, sin cambios (no pasa por la baja)
+# tests 5
+# pass 2
+# fail 3

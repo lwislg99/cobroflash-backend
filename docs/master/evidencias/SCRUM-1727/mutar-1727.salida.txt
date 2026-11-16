@@ -1,0 +1,6 @@
+censo: 272 guards con declaración
+guard=scrum1727-disputa-sin-factura.test.mjs · declaraciones=3 · incompletas=0
+limpia: pasados=3 caidos=0 movidos=0
+CAE · if (p.numeroDeFactura === null) { → if (p.numeroDeFactura === undefined) { · cae «SCRUM-1727 · 🔴 el cobro NO tiene factura» · colaterales=0
+CAE · Este cobro no tiene factura, así que → Este cobro no tiene factura, asi que · cae «SCRUM-1727 · 🔴 el cobro NO tiene factura» · colaterales=0
+CAE · if (p.numeroDeFactura === null) { → if (p.numeroDeFactura !== null) { · cae «SCRUM-1727 · ✅ CONTROL» · colaterales=1

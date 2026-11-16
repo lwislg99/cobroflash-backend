@@ -52,7 +52,8 @@ test('SCRUM-325 · 🔴 R1: las columnas del libro están CONGELADAS, en orden y
   // tienen que poder cambiar cuando el fundador los apruebe sin romper el formato.
   const esperado = [
     'fechaExpedicion', 'serieNumero', 'tipoFactura', 'nifDestinatario', 'nombreDestinatario',
-    'baseImponible', 'tipoIva', 'cuotaIva', 'totalFactura', 'cobro', 'anulada',
+    // 12-nov-2026 · `isp`: decisión consciente, firmada (SCRUM-1051 c.21750 punto 5, P3; tramo 1051h).
+    'baseImponible', 'tipoIva', 'cuotaIva', 'isp', 'totalFactura', 'cobro', 'anulada',
   ];
   const real = COLUMNAS_EXPEDIDAS.map((c) => c.clave);
   assert.deepEqual(real, esperado,
@@ -67,7 +68,8 @@ test('SCRUM-325 · 🔴 R1: una fila completa, congelada celda a celda', () => {
   const linea = csvLibroExpedidas(filas).split('\r\n')[1];
   assert.equal(
     linea,
-    '2026-08-15;2026-CF-001;F1;B12345678;Peñalver & Ço, S.L.;100,00;21;21,00;121,00;Cobrada;—',
+    // 12-nov-2026 · SCRUM-1051h: la celda VACÍA tras `21,00` es la columna `isp` (P3, c.21750): sin S2, vacía.
+    '2026-08-15;2026-CF-001;F1;B12345678;Peñalver & Ço, S.L.;100,00;21;21,00;;121,00;Cobrada;—',
     '🔴 la fila del libro ha cambiado de forma. Si el cambio es querido, actualiza el vector Y di ' +
     'por qué en el commit: este fichero se entrega fuera.',
   );
