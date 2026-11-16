@@ -26,6 +26,7 @@
 // la fecha que declara la persona. Esa es la mejor fecha que hay, y es la que se usa; lo que no se
 // hace es fingir que es otra cosa.
 import { leerCriterioCaja } from './criterioCaja';
+import { diaNaturalEn, finDelDiaEn } from '../../../core/zonaDelMerchant';
 
 /** La fecha que decide el periodo cuando NO hay criterio de caja: la de emisión. */
 export const CAMPO_EMISION = 'createdAt';
@@ -81,7 +82,13 @@ function tieneLineasS2(lines: unknown): boolean {
  * año inmediato posterior al de la operación. Con su último milisegundo, como `rangoTrimestre`: el
  * tope cae DENTRO del cuarto trimestre de ese año.
  */
-export function topeDeDevengo(createdAt: Date): Date {
+export function topeDeDevengo(createdAt: Date, zona?: string): Date {
+  // SCRUM-1445d (fase 1): con `zona`, el año de la operación y el 31-dic son los de ESA zona (una
+  // factura del 1-ene a las 00:30 de Madrid es del año nuevo). Sin ella, la zona del proceso.
+  if (zona !== undefined) {
+    const año = Number(diaNaturalEn(createdAt, zona).slice(0, 4));
+    return finDelDiaEn(`${String(año + 1).padStart(4, '0')}-12-31`, zona);
+  }
   return new Date(createdAt.getFullYear() + 1, 11, 31, 23, 59, 59, 999);
 }
 
@@ -102,9 +109,10 @@ export function topeDeDevengo(createdAt: Date): Date {
 export function fechaDeDevengo(
   factura: FacturaParaDevengo,
   campo: CampoDeDevengo,
+  zona?: string,
 ): Date | null {
   if (campo === CAMPO_EMISION) return factura.createdAt ?? null;
   if (tieneLineasS2(factura.lines)) return factura.createdAt;
-  const tope = topeDeDevengo(factura.createdAt);
+  const tope = topeDeDevengo(factura.createdAt, zona);
   return factura.paidAt && factura.paidAt.getTime() <= tope.getTime() ? factura.paidAt : tope;
 }
