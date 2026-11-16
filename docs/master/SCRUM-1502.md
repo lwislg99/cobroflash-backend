@@ -1438,3 +1438,51 @@ en `src/` no cambia nada. Suite entera en local: NO CORRIDA. yaqu.app: no abiert
   misma fecha de verano y sin localizador: es la 31 de SCRUM-1652 (clasificada ASESOR), que ese ticket corrige en su
   tramo 2. No se toca aquí.
 - No se ha transicionado el ticket (A13).
+
+## SCRUM-1502t · Tramo 19 (J4, 16-nov-2026): las 3 marcas que no afirman firma, reescritas con el visto bueno de Javier (c.21915) — sin respaldo 11 → 8
+
+**Medido contra:** `origin/main` = `37947dc1522a094320a4499eac28800f38cdc659` · 2026-11-16T15:43:49Z (hora de GitHub)
+A9: sin fallo que generalice — no hubo ningún error mío que pidiera comprobación; la lectura parcial de Jira (abajo, «Lo que NO se ha hecho») fue una decisión por el contexto, y está dicha, no escondida
+
+### Lo que se pidió y quién lo firmó
+
+El punto 4 de c.21908 (J4, `jv-j4bl`) pedía el visto bueno para reescribir 3 marcas que el guard cuenta como «sin
+respaldo» pero que no afirman ninguna firma. c.21915 (lo escribe el orquestador J; la respuesta es de Javier):
+«Sí, reescribirlos». Sólo esos 3, cada uno con su motivo y citando c.21915, sin tocar el guard (regla 41). El
+cruce de carril (`customersView.js`) lo cubre esa firma, como en §3.4.
+
+### Los 3, uno a uno: qué casaba y por qué no es una firma
+
+| marca (como la da `congeladas()`) | lo que casaba con `MARCA` | por qué no afirma firma | ahora dice |
+|---|---|---|---|
+| `public/dashboard/js/customersView.js:1063` | «distingue «sin marcador» de «firmado por el fundador»» | describe lo que distingue el contador `DTO_POR_DEFECTO_SIN_APROBAR`; no dice que nada esté firmado | «… de «con la firma del fundador»» + línea 1066 con la cita a c.21915 (la línea vacía `//` pasa a ser la cita) |
+| `tests/scrum715-consta-por-identidad.test.mjs:147` | «cada nota se convertiría en un literal firmado por el fundador» | condicional: es lo que pasaría si las notas contaran, y lo que la regla 30 prohíbe | «… un literal con la firma del fundador, que es lo que la regla 30 prohíbe (SCRUM-1502 c.21915)» |
+| `scripts/seed-video.mjs:1` (bloque de cabecera; casa la línea 12) | «el fundador decide la BD» | dice quién elige la base contra la que se corre el script, no aprueba ningún texto | «la BD la elige el fundador; … redacción: SCRUM-1502 c.21915» |
+
+Ninguna de las tres afirmaba firma: ninguna se ha dejado sin tocar. Mismo número de líneas en los tres ficheros, así
+que **ningún ancla fichero:línea se mueve** (barrido: `git grep` de `customersView.js:1NNN`, `scrum715…:N` y
+`seed-video.mjs:N` fuera de `docs/master/` → una sola, `products.service.ts:11` → `seed-video.mjs:406`, que no se
+mueve). Control de «ni un carácter visible»: en `git diff -U0`, las líneas cambiadas que no son comentario son
+**2**, las dos de la línea del trinquete (- y +).
+
+### Rojo y verde del guard (`tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs`)
+
+- **Rojo** (comentarios reescritos, trinquete aún en 11): 15 de 16; cae «el trinquete tampoco baja en silencio» con
+  «quedan 8 y el trinquete dice 11. Si se ha firmado alguna, BÁJALO aquí».
+- `congeladas()`: 11 → 8. **Las 8 que quedan son las 11 de antes menos exactamente estas 3** (comparado como
+  conjunto, no como número). `porNivel`: negada 13, citada 1, rastreable 200, anclado 52, documental 12 iguales;
+  sin-respaldo 11 → 8. Ninguna marca cambia de nivel: las 3 salen del censo porque ya no casan con `MARCA`.
+- **Verde** (trinquete en 8): 16 de 16, y `scrum715` 5 de 5 (21 de 21, 0 saltos).
+
+⚠️ **Sobre «el guard no se toca»:** la constante `SIN_RESPALDO` se ha bajado de 11 a 8, que es lo que el propio
+guard exige cuando el recuento baja, y lo que hicieron 1502o, 1502p y 1502q. Es apretar el trinquete, no
+relajarlo; la lógica del guard (marca, niveles, ventana) no cambia. El fichero es del carril J6: lo declara el commit.
+
+### Lo que NO se ha hecho
+
+- De Jira leí el índice de los 41 comentarios (id, fecha, primera línea) y enteros sólo c.21783, c.21908 y
+  c.21915; los otros 38, no. Lo que estos 3 dicen del estado lo tomo de ellos y no lo he vuelto a medir.
+- Carril: c.21915 dice que `customersView.js` es de S2; `node scripts/carriles.mjs de` dice **J2**
+  (`dos-equipos.md:144`). La firma cubre el cruce en los dos casos; no lo he corregido en Jira.
+- yaqu.app: no abierto. `customersView.js` se sirve, pero lo que cambia es un comentario.
+- Las 8 que quedan (S1/S2, c.21333) no son de este tramo. No se ha transicionado el ticket (A13).
