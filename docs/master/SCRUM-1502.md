@@ -1481,6 +1481,25 @@ mueve). Control de «ni un carácter visible»: en `git diff -U0`, las líneas c
 guard exige cuando el recuento baja, y lo que hicieron 1502o, 1502p y 1502q. Es apretar el trinquete, no
 relajarlo; la lógica del guard (marca, niveles, ventana) no cambia. El fichero es del carril J6: lo declara el commit.
 
+### Suite entera en local (`tanda-entera-por-tramos.mjs`, 14 de 14 tramos, sobre el árbol fusionado)
+
+1681 ficheros · 13665 tests · 13480 pass · **7 fail**, veredicto ROJO. Las 7 son del entorno de esta máquina; ninguna
+toca lo que cambia aquí, y las tres causas se aislaron una a una:
+
+- `scrum1298b` (2): el TMP de la sesión viene en forma corta (`JAVIER~1`) y git devuelve la ruta larga. Con TMP en forma
+  larga, 8 de 8. Con TMP largo cae en cambio `scrum1289b` (2) por el espacio de la ruta, que con el corto pasa 9 de 9:
+  son excluyentes.
+- `scrum351` (1): hay un `node_modules` en `C:\Users\Javier Pereira\`, ancestro del TMP. Con TMP en
+  `C:\Users\Public\…`, 7 de 7.
+- `scrum932` (4): este árbol tiene un `.env` (16-nov, 15:38, no lo he creado yo) con `DATABASE_URL_STAGING`, `_DEV` y
+  `_TESTS`, y el test espera que no haya ninguna clave. `comprobar-claves-bd.mjs`: STAGING → `railway`, DEV →
+  `yaqu_dev_javier`, TESTS sin destino declarado para este árbol, DATABASE_URL ausente. **No lo he vuelto a correr sin
+  el `.env`.** ⚠️ Al correr, ese test consultó el turno en la base de staging (sólo leyó el turno; salió «Turno LIBRE»).
+  Es el test, no un comando mío, pero quedó hecho.
+
+La primera pasada, sobre `37947dc15` y antes del merge, dio la misma huella (13642 tests, 7 fail, las mismas tres
+causas).
+
 ### Lo que NO se ha hecho
 
 - De Jira leí el índice de los 41 comentarios (id, fecha, primera línea) y enteros sólo c.21783, c.21908 y
