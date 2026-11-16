@@ -1,0 +1,3116 @@
+[
+  {
+    "w": 390,
+    "caso": "borrador-obra-larga-REAL",
+    "png": "antes-borrador-obra-larga-REAL-390.png",
+    "servidosLocal": [],
+    "rol": "tecnico",
+    "testigoVisita": null,
+    "desbordeX": 61,
+    "bordeDerecho": 451,
+    "anchoVentana": 390,
+    "masALaDerecha": "section.view-container view-enter",
+    "cajasMiradas": 112,
+    "desbordeXDelDocumento": 0,
+    "anchoHoja": 451,
+    "altoPagina": 1970,
+    "titulos": [
+      {
+        "t": "Horas y desplazamiento",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Mano de obra",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Materiales",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Firmas",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Datos del parte",
+        "fs": "18px",
+        "fw": "700"
+      }
+    ],
+    "rotuloCampo": {
+      "fs": "12.5px",
+      "fw": "600"
+    },
+    "botones": [
+      {
+        "t": "",
+        "cls": "topbar-hamburger",
+        "h": 36,
+        "w": 36,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(75, 85, 79)",
+        "borde": "rgb(231, 233, 227) 1px"
+      },
+      {
+        "t": "← Trabajo: Marta Prieto (PILOT",
+        "cls": "detail-miga-link",
+        "h": 44,
+        "w": 218,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ordenar en líneas",
+        "cls": "",
+        "h": 48,
+        "w": 393,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Firma aquí, cliente",
+        "cls": "",
+        "h": 112,
+        "w": 393,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      },
+      {
+        "t": "Firma aquí, técnico",
+        "cls": "",
+        "h": 112,
+        "w": 393,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      }
+    ],
+    "cajas": [
+      {
+        "k": "parte-cabecera",
+        "x": 12,
+        "y": 80,
+        "w": 427,
+        "h": 104
+      },
+      {
+        "k": "parte-horas",
+        "x": 12,
+        "y": 204,
+        "w": 427,
+        "h": 298
+      },
+      {
+        "k": "parte-dictado",
+        "x": 12,
+        "y": 517,
+        "w": 427,
+        "h": 242
+      },
+      {
+        "k": "parte-bloque",
+        "x": 12,
+        "y": 775,
+        "w": 427,
+        "h": 183
+      },
+      {
+        "k": "parte-bloque",
+        "x": 12,
+        "y": 974,
+        "w": 427,
+        "h": 183
+      },
+      {
+        "k": "parte-firmas",
+        "x": 12,
+        "y": 1172,
+        "w": 427,
+        "h": 413
+      },
+      {
+        "k": "parte-datos-del-parte",
+        "x": 12,
+        "y": 1601,
+        "w": 427,
+        "h": 265
+      }
+    ],
+    "firmaTrasBajar": {
+      "scrollY": 700,
+      "topEnVentana": 472,
+      "position": "static"
+    },
+    "noGet": [
+      "POST /admin/entorno",
+      "POST /admin/__sonda_control_positivo"
+    ],
+    "errores": []
+  },
+  {
+    "w": 390,
+    "caso": "borrador-obra-larga-SIMULADO",
+    "png": "antes-borrador-obra-larga-SIMULADO-390.png",
+    "servidosLocal": [],
+    "rol": "tecnico",
+    "testigoVisita": "· Visita 4 de 6",
+    "desbordeX": 114,
+    "bordeDerecho": 504,
+    "anchoVentana": 390,
+    "masALaDerecha": "section.view-container view-enter",
+    "cajasMiradas": 113,
+    "desbordeXDelDocumento": 0,
+    "anchoHoja": 504,
+    "altoPagina": 1950,
+    "titulos": [
+      {
+        "t": "Horas y desplazamiento",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Mano de obra",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Materiales",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Firmas",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Datos del parte",
+        "fs": "18px",
+        "fw": "700"
+      }
+    ],
+    "rotuloCampo": {
+      "fs": "12.5px",
+      "fw": "600"
+    },
+    "botones": [
+      {
+        "t": "",
+        "cls": "topbar-hamburger",
+        "h": 36,
+        "w": 36,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(75, 85, 79)",
+        "borde": "rgb(231, 233, 227) 1px"
+      },
+      {
+        "t": "← Trabajo: Cliente de pruebas ",
+        "cls": "detail-miga-link",
+        "h": 44,
+        "w": 191,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ordenar en líneas",
+        "cls": "",
+        "h": 48,
+        "w": 446,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Firma aquí, cliente",
+        "cls": "",
+        "h": 112,
+        "w": 446,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      },
+      {
+        "t": "Firma aquí, técnico",
+        "cls": "",
+        "h": 112,
+        "w": 446,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      }
+    ],
+    "cajas": [
+      {
+        "k": "parte-cabecera",
+        "x": 12,
+        "y": 80,
+        "w": 480,
+        "h": 104
+      },
+      {
+        "k": "parte-horas",
+        "x": 12,
+        "y": 204,
+        "w": 480,
+        "h": 298
+      },
+      {
+        "k": "parte-dictado",
+        "x": 12,
+        "y": 517,
+        "w": 480,
+        "h": 242
+      },
+      {
+        "k": "parte-bloque",
+        "x": 12,
+        "y": 775,
+        "w": 480,
+        "h": 183
+      },
+      {
+        "k": "parte-bloque",
+        "x": 12,
+        "y": 974,
+        "w": 480,
+        "h": 183
+      },
+      {
+        "k": "parte-firmas",
+        "x": 12,
+        "y": 1172,
+        "w": 480,
+        "h": 393
+      },
+      {
+        "k": "parte-datos-del-parte",
+        "x": 12,
+        "y": 1582,
+        "w": 480,
+        "h": 265
+      }
+    ],
+    "firmaTrasBajar": {
+      "scrollY": 700,
+      "topEnVentana": 472,
+      "position": "static"
+    },
+    "noGet": [
+      "POST /admin/entorno",
+      "POST /admin/__sonda_control_positivo"
+    ],
+    "errores": []
+  },
+  {
+    "w": 390,
+    "caso": "borrador-sin-obra",
+    "png": "antes-borrador-sin-obra-390.png",
+    "servidosLocal": [],
+    "rol": "tecnico",
+    "testigoVisita": "· Visita 4 de 6",
+    "desbordeX": 0,
+    "bordeDerecho": 390,
+    "anchoVentana": 390,
+    "masALaDerecha": "section.view-container view-enter",
+    "cajasMiradas": 113,
+    "desbordeXDelDocumento": 0,
+    "anchoHoja": 390,
+    "altoPagina": 1990,
+    "titulos": [
+      {
+        "t": "Horas y desplazamiento",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Mano de obra",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Materiales",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Firmas",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Datos del parte",
+        "fs": "18px",
+        "fw": "700"
+      }
+    ],
+    "rotuloCampo": {
+      "fs": "12.5px",
+      "fw": "600"
+    },
+    "botones": [
+      {
+        "t": "",
+        "cls": "topbar-hamburger",
+        "h": 36,
+        "w": 36,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(75, 85, 79)",
+        "borde": "rgb(231, 233, 227) 1px"
+      },
+      {
+        "t": "← Trabajo: Cliente de pruebas ",
+        "cls": "detail-miga-link",
+        "h": 44,
+        "w": 191,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ordenar en líneas",
+        "cls": "",
+        "h": 48,
+        "w": 332,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Firma aquí, cliente",
+        "cls": "",
+        "h": 112,
+        "w": 332,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      },
+      {
+        "t": "Firma aquí, técnico",
+        "cls": "",
+        "h": 112,
+        "w": 332,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      }
+    ],
+    "cajas": [
+      {
+        "k": "parte-cabecera",
+        "x": 12,
+        "y": 80,
+        "w": 366,
+        "h": 104
+      },
+      {
+        "k": "parte-horas",
+        "x": 12,
+        "y": 204,
+        "w": 366,
+        "h": 298
+      },
+      {
+        "k": "parte-dictado",
+        "x": 12,
+        "y": 517,
+        "w": 366,
+        "h": 262
+      },
+      {
+        "k": "parte-bloque",
+        "x": 12,
+        "y": 795,
+        "w": 366,
+        "h": 183
+      },
+      {
+        "k": "parte-bloque",
+        "x": 12,
+        "y": 993,
+        "w": 366,
+        "h": 183
+      },
+      {
+        "k": "parte-firmas",
+        "x": 12,
+        "y": 1192,
+        "w": 366,
+        "h": 413
+      },
+      {
+        "k": "parte-datos-del-parte",
+        "x": 12,
+        "y": 1621,
+        "w": 366,
+        "h": 265
+      }
+    ],
+    "firmaTrasBajar": {
+      "scrollY": 700,
+      "topEnVentana": 492,
+      "position": "static"
+    },
+    "noGet": [
+      "POST /admin/entorno",
+      "POST /admin/__sonda_control_positivo"
+    ],
+    "errores": []
+  },
+  {
+    "w": 390,
+    "caso": "borrador-con-lineas-SIMULADO",
+    "png": "antes-borrador-con-lineas-SIMULADO-390.png",
+    "servidosLocal": [],
+    "rol": "tecnico",
+    "testigoVisita": "· Visita 4 de 6",
+    "desbordeX": 0,
+    "bordeDerecho": 390,
+    "anchoVentana": 390,
+    "masALaDerecha": "section.view-container view-enter",
+    "cajasMiradas": 123,
+    "desbordeXDelDocumento": 0,
+    "anchoHoja": 390,
+    "altoPagina": 2069,
+    "titulos": [
+      {
+        "t": "Horas y desplazamiento",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Mano de obra",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Materiales",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Firmas",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Datos del parte",
+        "fs": "18px",
+        "fw": "700"
+      }
+    ],
+    "rotuloCampo": {
+      "fs": "12.5px",
+      "fw": "600"
+    },
+    "botones": [
+      {
+        "t": "",
+        "cls": "topbar-hamburger",
+        "h": 36,
+        "w": 36,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(75, 85, 79)",
+        "borde": "rgb(231, 233, 227) 1px"
+      },
+      {
+        "t": "← Trabajo: Cliente de pruebas ",
+        "cls": "detail-miga-link",
+        "h": 44,
+        "w": 191,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ordenar en líneas",
+        "cls": "",
+        "h": 48,
+        "w": 332,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "×",
+        "cls": "parte-quitar-linea",
+        "h": 44,
+        "w": 44,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "×",
+        "cls": "parte-quitar-linea",
+        "h": 44,
+        "w": 44,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Firma aquí, cliente",
+        "cls": "",
+        "h": 112,
+        "w": 332,
+        "bg": "rgb(22, 163, 74)",
+        "color": "rgb(255, 255, 255)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Firma aquí, técnico",
+        "cls": "",
+        "h": 112,
+        "w": 332,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      }
+    ],
+    "cajas": [
+      {
+        "k": "parte-cabecera",
+        "x": 12,
+        "y": 80,
+        "w": 366,
+        "h": 104
+      },
+      {
+        "k": "parte-horas",
+        "x": 12,
+        "y": 204,
+        "w": 366,
+        "h": 298
+      },
+      {
+        "k": "parte-dictado",
+        "x": 12,
+        "y": 517,
+        "w": 366,
+        "h": 262
+      },
+      {
+        "k": "parte-bloque",
+        "x": 12,
+        "y": 795,
+        "w": 366,
+        "h": 242
+      },
+      {
+        "k": "parte-bloque",
+        "x": 12,
+        "y": 1053,
+        "w": 366,
+        "h": 222
+      },
+      {
+        "k": "parte-firmas",
+        "x": 12,
+        "y": 1291,
+        "w": 366,
+        "h": 393
+      },
+      {
+        "k": "parte-datos-del-parte",
+        "x": 12,
+        "y": 1700,
+        "w": 366,
+        "h": 265
+      }
+    ],
+    "firmaTrasBajar": {
+      "scrollY": 700,
+      "topEnVentana": 591,
+      "position": "static"
+    },
+    "noGet": [
+      "POST /admin/entorno",
+      "POST /admin/__sonda_control_positivo"
+    ],
+    "errores": []
+  },
+  {
+    "w": 390,
+    "caso": "firmado-PT006",
+    "png": "antes-firmado-PT006-390.png",
+    "servidosLocal": [],
+    "rol": "tecnico",
+    "testigoVisita": "· Visita 2 de 6",
+    "desbordeX": 0,
+    "bordeDerecho": 384,
+    "anchoVentana": 390,
+    "masALaDerecha": "section.view-container view-enter",
+    "cajasMiradas": 98,
+    "desbordeXDelDocumento": 0,
+    "anchoHoja": 378,
+    "altoPagina": 1442,
+    "titulos": [
+      {
+        "t": "Datos del parte",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Horas y desplazamiento",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Mano de obra",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Materiales",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Firmas",
+        "fs": "18px",
+        "fw": "700"
+      }
+    ],
+    "rotuloCampo": {
+      "fs": "12.5px",
+      "fw": "600"
+    },
+    "botones": [
+      {
+        "t": "",
+        "cls": "topbar-hamburger",
+        "h": 36,
+        "w": 36,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(75, 85, 79)",
+        "borde": "rgb(231, 233, 227) 1px"
+      },
+      {
+        "t": "← Trabajo: Cliente de pruebas ",
+        "cls": "detail-miga-link",
+        "h": 44,
+        "w": 191,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Firma aquí, técnico",
+        "cls": "",
+        "h": 112,
+        "w": 320,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      },
+      {
+        "t": "Volver al trabajo",
+        "cls": "btn btn-secondary",
+        "h": 44,
+        "w": 354,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(141, 143, 139) 1px"
+      }
+    ],
+    "cajas": [
+      {
+        "k": "parte-cabecera",
+        "x": 18,
+        "y": 80,
+        "w": 354,
+        "h": 104
+      },
+      {
+        "k": "parte-datos-del-parte",
+        "x": 18,
+        "y": 204,
+        "w": 354,
+        "h": 265
+      },
+      {
+        "k": "parte-horas",
+        "x": 18,
+        "y": 484,
+        "w": 354,
+        "h": 221
+      },
+      {
+        "k": "parte-bloque",
+        "x": 18,
+        "y": 721,
+        "w": 354,
+        "h": 125
+      },
+      {
+        "k": "parte-bloque",
+        "x": 18,
+        "y": 862,
+        "w": 354,
+        "h": 127
+      },
+      {
+        "k": "parte-firmas",
+        "x": 18,
+        "y": 1005,
+        "w": 354,
+        "h": 277
+      },
+      {
+        "k": "salida",
+        "x": 18,
+        "y": 1298,
+        "w": 354,
+        "h": 44
+      }
+    ],
+    "firmaTrasBajar": {
+      "scrollY": 700,
+      "topEnVentana": 407,
+      "position": "static"
+    },
+    "noGet": [
+      "POST /admin/entorno",
+      "POST /admin/__sonda_control_positivo"
+    ],
+    "errores": []
+  },
+  {
+    "w": 390,
+    "caso": "firmado-obra-larga-SIMULADO",
+    "png": "antes-firmado-obra-larga-SIMULADO-390.png",
+    "servidosLocal": [],
+    "rol": "tecnico",
+    "testigoVisita": "· Visita 2 de 6",
+    "desbordeX": 61,
+    "bordeDerecho": 451,
+    "anchoVentana": 390,
+    "masALaDerecha": "section.view-container view-enter",
+    "cajasMiradas": 98,
+    "desbordeXDelDocumento": 0,
+    "anchoHoja": 451,
+    "altoPagina": 1442,
+    "titulos": [
+      {
+        "t": "Datos del parte",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Horas y desplazamiento",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Mano de obra",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Materiales",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Firmas",
+        "fs": "18px",
+        "fw": "700"
+      }
+    ],
+    "rotuloCampo": {
+      "fs": "12.5px",
+      "fw": "600"
+    },
+    "botones": [
+      {
+        "t": "",
+        "cls": "topbar-hamburger",
+        "h": 36,
+        "w": 36,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(75, 85, 79)",
+        "borde": "rgb(231, 233, 227) 1px"
+      },
+      {
+        "t": "← Trabajo: Cliente de pruebas ",
+        "cls": "detail-miga-link",
+        "h": 44,
+        "w": 191,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Firma aquí, técnico",
+        "cls": "",
+        "h": 112,
+        "w": 393,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      },
+      {
+        "t": "Volver al trabajo",
+        "cls": "btn btn-secondary",
+        "h": 44,
+        "w": 427,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(141, 143, 139) 1px"
+      }
+    ],
+    "cajas": [
+      {
+        "k": "parte-cabecera",
+        "x": 12,
+        "y": 80,
+        "w": 427,
+        "h": 104
+      },
+      {
+        "k": "parte-datos-del-parte",
+        "x": 12,
+        "y": 204,
+        "w": 427,
+        "h": 265
+      },
+      {
+        "k": "parte-horas",
+        "x": 12,
+        "y": 484,
+        "w": 427,
+        "h": 221
+      },
+      {
+        "k": "parte-bloque",
+        "x": 12,
+        "y": 721,
+        "w": 427,
+        "h": 125
+      },
+      {
+        "k": "parte-bloque",
+        "x": 12,
+        "y": 862,
+        "w": 427,
+        "h": 127
+      },
+      {
+        "k": "parte-firmas",
+        "x": 12,
+        "y": 1005,
+        "w": 427,
+        "h": 277
+      },
+      {
+        "k": "salida",
+        "x": 12,
+        "y": 1298,
+        "w": 427,
+        "h": 44
+      }
+    ],
+    "firmaTrasBajar": {
+      "scrollY": 700,
+      "topEnVentana": 407,
+      "position": "static"
+    },
+    "noGet": [
+      "POST /admin/entorno",
+      "POST /admin/__sonda_control_positivo"
+    ],
+    "errores": []
+  },
+  {
+    "w": 1024,
+    "caso": "borrador-obra-larga-REAL",
+    "png": "antes-borrador-obra-larga-REAL-1024.png",
+    "servidosLocal": [],
+    "rol": "tecnico",
+    "testigoVisita": null,
+    "desbordeX": 0,
+    "bordeDerecho": 1024,
+    "anchoVentana": 1024,
+    "masALaDerecha": "section.view-container view-enter",
+    "cajasMiradas": 112,
+    "desbordeXDelDocumento": 0,
+    "anchoHoja": 776,
+    "altoPagina": 1998,
+    "titulos": [
+      {
+        "t": "Horas y desplazamiento",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Mano de obra",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Materiales",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Firmas",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Datos del parte",
+        "fs": "18px",
+        "fw": "700"
+      }
+    ],
+    "rotuloCampo": {
+      "fs": "12.5px",
+      "fw": "600"
+    },
+    "botones": [
+      {
+        "t": "← Trabajo: Marta Prieto (PILOT",
+        "cls": "detail-miga-link",
+        "h": 44,
+        "w": 218,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ordenar en líneas",
+        "cls": "",
+        "h": 48,
+        "w": 686,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Firma aquí, cliente",
+        "cls": "",
+        "h": 112,
+        "w": 686,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      },
+      {
+        "t": "Firma aquí, técnico",
+        "cls": "",
+        "h": 112,
+        "w": 686,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      }
+    ],
+    "cajas": [
+      {
+        "k": "parte-cabecera",
+        "x": 272,
+        "y": 88,
+        "w": 728,
+        "h": 104
+      },
+      {
+        "k": "parte-horas",
+        "x": 272,
+        "y": 212,
+        "w": 728,
+        "h": 306
+      },
+      {
+        "k": "parte-dictado",
+        "x": 272,
+        "y": 533,
+        "w": 728,
+        "h": 250
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 799,
+        "w": 728,
+        "h": 191
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 1006,
+        "w": 728,
+        "h": 191
+      },
+      {
+        "k": "parte-firmas",
+        "x": 272,
+        "y": 1212,
+        "w": 728,
+        "h": 401
+      },
+      {
+        "k": "parte-datos-del-parte",
+        "x": 272,
+        "y": 1630,
+        "w": 728,
+        "h": 273
+      }
+    ],
+    "firmaTrasBajar": {
+      "scrollY": 700,
+      "topEnVentana": 512,
+      "position": "static"
+    },
+    "noGet": [
+      "POST /admin/entorno",
+      "POST /admin/__sonda_control_positivo"
+    ],
+    "errores": []
+  },
+  {
+    "w": 1024,
+    "caso": "borrador-obra-larga-SIMULADO",
+    "png": "antes-borrador-obra-larga-SIMULADO-1024.png",
+    "servidosLocal": [],
+    "rol": "tecnico",
+    "testigoVisita": "· Visita 4 de 6",
+    "desbordeX": 0,
+    "bordeDerecho": 1024,
+    "anchoVentana": 1024,
+    "masALaDerecha": "section.view-container view-enter",
+    "cajasMiradas": 113,
+    "desbordeXDelDocumento": 0,
+    "anchoHoja": 776,
+    "altoPagina": 1998,
+    "titulos": [
+      {
+        "t": "Horas y desplazamiento",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Mano de obra",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Materiales",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Firmas",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Datos del parte",
+        "fs": "18px",
+        "fw": "700"
+      }
+    ],
+    "rotuloCampo": {
+      "fs": "12.5px",
+      "fw": "600"
+    },
+    "botones": [
+      {
+        "t": "← Trabajo: Cliente de pruebas ",
+        "cls": "detail-miga-link",
+        "h": 44,
+        "w": 191,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ordenar en líneas",
+        "cls": "",
+        "h": 48,
+        "w": 686,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Firma aquí, cliente",
+        "cls": "",
+        "h": 112,
+        "w": 686,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      },
+      {
+        "t": "Firma aquí, técnico",
+        "cls": "",
+        "h": 112,
+        "w": 686,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      }
+    ],
+    "cajas": [
+      {
+        "k": "parte-cabecera",
+        "x": 272,
+        "y": 88,
+        "w": 728,
+        "h": 104
+      },
+      {
+        "k": "parte-horas",
+        "x": 272,
+        "y": 212,
+        "w": 728,
+        "h": 306
+      },
+      {
+        "k": "parte-dictado",
+        "x": 272,
+        "y": 533,
+        "w": 728,
+        "h": 250
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 799,
+        "w": 728,
+        "h": 191
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 1006,
+        "w": 728,
+        "h": 191
+      },
+      {
+        "k": "parte-firmas",
+        "x": 272,
+        "y": 1212,
+        "w": 728,
+        "h": 401
+      },
+      {
+        "k": "parte-datos-del-parte",
+        "x": 272,
+        "y": 1630,
+        "w": 728,
+        "h": 273
+      }
+    ],
+    "firmaTrasBajar": {
+      "scrollY": 700,
+      "topEnVentana": 512,
+      "position": "static"
+    },
+    "noGet": [
+      "POST /admin/entorno",
+      "POST /admin/__sonda_control_positivo"
+    ],
+    "errores": []
+  },
+  {
+    "w": 1024,
+    "caso": "borrador-sin-obra",
+    "png": "antes-borrador-sin-obra-1024.png",
+    "servidosLocal": [],
+    "rol": "tecnico",
+    "testigoVisita": "· Visita 4 de 6",
+    "desbordeX": 0,
+    "bordeDerecho": 1024,
+    "anchoVentana": 1024,
+    "masALaDerecha": "section.view-container view-enter",
+    "cajasMiradas": 113,
+    "desbordeXDelDocumento": 0,
+    "anchoHoja": 776,
+    "altoPagina": 1998,
+    "titulos": [
+      {
+        "t": "Horas y desplazamiento",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Mano de obra",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Materiales",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Firmas",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Datos del parte",
+        "fs": "18px",
+        "fw": "700"
+      }
+    ],
+    "rotuloCampo": {
+      "fs": "12.5px",
+      "fw": "600"
+    },
+    "botones": [
+      {
+        "t": "← Trabajo: Cliente de pruebas ",
+        "cls": "detail-miga-link",
+        "h": 44,
+        "w": 191,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ordenar en líneas",
+        "cls": "",
+        "h": 48,
+        "w": 686,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Firma aquí, cliente",
+        "cls": "",
+        "h": 112,
+        "w": 686,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      },
+      {
+        "t": "Firma aquí, técnico",
+        "cls": "",
+        "h": 112,
+        "w": 686,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      }
+    ],
+    "cajas": [
+      {
+        "k": "parte-cabecera",
+        "x": 272,
+        "y": 88,
+        "w": 728,
+        "h": 104
+      },
+      {
+        "k": "parte-horas",
+        "x": 272,
+        "y": 212,
+        "w": 728,
+        "h": 306
+      },
+      {
+        "k": "parte-dictado",
+        "x": 272,
+        "y": 533,
+        "w": 728,
+        "h": 250
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 799,
+        "w": 728,
+        "h": 191
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 1006,
+        "w": 728,
+        "h": 191
+      },
+      {
+        "k": "parte-firmas",
+        "x": 272,
+        "y": 1212,
+        "w": 728,
+        "h": 401
+      },
+      {
+        "k": "parte-datos-del-parte",
+        "x": 272,
+        "y": 1630,
+        "w": 728,
+        "h": 273
+      }
+    ],
+    "firmaTrasBajar": {
+      "scrollY": 700,
+      "topEnVentana": 512,
+      "position": "static"
+    },
+    "noGet": [
+      "POST /admin/entorno",
+      "POST /admin/__sonda_control_positivo"
+    ],
+    "errores": []
+  },
+  {
+    "w": 1024,
+    "caso": "borrador-con-lineas-SIMULADO",
+    "png": "antes-borrador-con-lineas-SIMULADO-1024.png",
+    "servidosLocal": [],
+    "rol": "tecnico",
+    "testigoVisita": "· Visita 4 de 6",
+    "desbordeX": 0,
+    "bordeDerecho": 1024,
+    "anchoVentana": 1024,
+    "masALaDerecha": "section.view-container view-enter",
+    "cajasMiradas": 123,
+    "desbordeXDelDocumento": 0,
+    "anchoHoja": 776,
+    "altoPagina": 2039,
+    "titulos": [
+      {
+        "t": "Horas y desplazamiento",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Mano de obra",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Materiales",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Firmas",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Datos del parte",
+        "fs": "18px",
+        "fw": "700"
+      }
+    ],
+    "rotuloCampo": {
+      "fs": "12.5px",
+      "fw": "600"
+    },
+    "botones": [
+      {
+        "t": "← Trabajo: Cliente de pruebas ",
+        "cls": "detail-miga-link",
+        "h": 44,
+        "w": 191,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ordenar en líneas",
+        "cls": "",
+        "h": 48,
+        "w": 686,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "×",
+        "cls": "parte-quitar-linea",
+        "h": 44,
+        "w": 44,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "×",
+        "cls": "parte-quitar-linea",
+        "h": 44,
+        "w": 44,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Firma aquí, cliente",
+        "cls": "",
+        "h": 112,
+        "w": 686,
+        "bg": "rgb(22, 163, 74)",
+        "color": "rgb(255, 255, 255)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Firma aquí, técnico",
+        "cls": "",
+        "h": 112,
+        "w": 686,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      }
+    ],
+    "cajas": [
+      {
+        "k": "parte-cabecera",
+        "x": 272,
+        "y": 88,
+        "w": 728,
+        "h": 104
+      },
+      {
+        "k": "parte-horas",
+        "x": 272,
+        "y": 212,
+        "w": 728,
+        "h": 306
+      },
+      {
+        "k": "parte-dictado",
+        "x": 272,
+        "y": 533,
+        "w": 728,
+        "h": 250
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 799,
+        "w": 728,
+        "h": 211
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 1026,
+        "w": 728,
+        "h": 211
+      },
+      {
+        "k": "parte-firmas",
+        "x": 272,
+        "y": 1253,
+        "w": 728,
+        "h": 401
+      },
+      {
+        "k": "parte-datos-del-parte",
+        "x": 272,
+        "y": 1671,
+        "w": 728,
+        "h": 273
+      }
+    ],
+    "firmaTrasBajar": {
+      "scrollY": 700,
+      "topEnVentana": 553,
+      "position": "static"
+    },
+    "noGet": [
+      "POST /admin/entorno",
+      "POST /admin/__sonda_control_positivo"
+    ],
+    "errores": []
+  },
+  {
+    "w": 1024,
+    "caso": "firmado-PT006",
+    "png": "antes-firmado-PT006-1024.png",
+    "servidosLocal": [],
+    "rol": "tecnico",
+    "testigoVisita": "· Visita 2 de 6",
+    "desbordeX": 0,
+    "bordeDerecho": 1024,
+    "anchoVentana": 1024,
+    "masALaDerecha": "section.view-container view-enter",
+    "cajasMiradas": 98,
+    "desbordeXDelDocumento": 0,
+    "anchoHoja": 776,
+    "altoPagina": 1474,
+    "titulos": [
+      {
+        "t": "Datos del parte",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Horas y desplazamiento",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Mano de obra",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Materiales",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Firmas",
+        "fs": "18px",
+        "fw": "700"
+      }
+    ],
+    "rotuloCampo": {
+      "fs": "12.5px",
+      "fw": "600"
+    },
+    "botones": [
+      {
+        "t": "← Trabajo: Cliente de pruebas ",
+        "cls": "detail-miga-link",
+        "h": 44,
+        "w": 191,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Firma aquí, técnico",
+        "cls": "",
+        "h": 112,
+        "w": 686,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      },
+      {
+        "t": "Volver al trabajo",
+        "cls": "btn btn-secondary",
+        "h": 36,
+        "w": 728,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(141, 143, 139) 1px"
+      }
+    ],
+    "cajas": [
+      {
+        "k": "parte-cabecera",
+        "x": 272,
+        "y": 88,
+        "w": 728,
+        "h": 104
+      },
+      {
+        "k": "parte-datos-del-parte",
+        "x": 272,
+        "y": 212,
+        "w": 728,
+        "h": 273
+      },
+      {
+        "k": "parte-horas",
+        "x": 272,
+        "y": 500,
+        "w": 728,
+        "h": 229
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 745,
+        "w": 728,
+        "h": 133
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 894,
+        "w": 728,
+        "h": 135
+      },
+      {
+        "k": "parte-firmas",
+        "x": 272,
+        "y": 1045,
+        "w": 728,
+        "h": 285
+      },
+      {
+        "k": "salida",
+        "x": 272,
+        "y": 1346,
+        "w": 728,
+        "h": 36
+      }
+    ],
+    "firmaTrasBajar": {
+      "scrollY": 700,
+      "topEnVentana": 415,
+      "position": "static"
+    },
+    "noGet": [
+      "POST /admin/entorno",
+      "POST /admin/__sonda_control_positivo"
+    ],
+    "errores": []
+  },
+  {
+    "w": 1024,
+    "caso": "firmado-obra-larga-SIMULADO",
+    "png": "antes-firmado-obra-larga-SIMULADO-1024.png",
+    "servidosLocal": [],
+    "rol": "tecnico",
+    "testigoVisita": "· Visita 2 de 6",
+    "desbordeX": 0,
+    "bordeDerecho": 1024,
+    "anchoVentana": 1024,
+    "masALaDerecha": "section.view-container view-enter",
+    "cajasMiradas": 98,
+    "desbordeXDelDocumento": 0,
+    "anchoHoja": 776,
+    "altoPagina": 1474,
+    "titulos": [
+      {
+        "t": "Datos del parte",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Horas y desplazamiento",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Mano de obra",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Materiales",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Firmas",
+        "fs": "18px",
+        "fw": "700"
+      }
+    ],
+    "rotuloCampo": {
+      "fs": "12.5px",
+      "fw": "600"
+    },
+    "botones": [
+      {
+        "t": "← Trabajo: Cliente de pruebas ",
+        "cls": "detail-miga-link",
+        "h": 44,
+        "w": 191,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Firma aquí, técnico",
+        "cls": "",
+        "h": 112,
+        "w": 686,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      },
+      {
+        "t": "Volver al trabajo",
+        "cls": "btn btn-secondary",
+        "h": 36,
+        "w": 728,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(141, 143, 139) 1px"
+      }
+    ],
+    "cajas": [
+      {
+        "k": "parte-cabecera",
+        "x": 272,
+        "y": 88,
+        "w": 728,
+        "h": 104
+      },
+      {
+        "k": "parte-datos-del-parte",
+        "x": 272,
+        "y": 212,
+        "w": 728,
+        "h": 273
+      },
+      {
+        "k": "parte-horas",
+        "x": 272,
+        "y": 500,
+        "w": 728,
+        "h": 229
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 745,
+        "w": 728,
+        "h": 133
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 894,
+        "w": 728,
+        "h": 135
+      },
+      {
+        "k": "parte-firmas",
+        "x": 272,
+        "y": 1045,
+        "w": 728,
+        "h": 285
+      },
+      {
+        "k": "salida",
+        "x": 272,
+        "y": 1346,
+        "w": 728,
+        "h": 36
+      }
+    ],
+    "firmaTrasBajar": {
+      "scrollY": 700,
+      "topEnVentana": 415,
+      "position": "static"
+    },
+    "noGet": [
+      "POST /admin/entorno",
+      "POST /admin/__sonda_control_positivo"
+    ],
+    "errores": []
+  },
+  {
+    "w": 1280,
+    "caso": "borrador-obra-larga-REAL",
+    "png": "antes-borrador-obra-larga-REAL-1280.png",
+    "servidosLocal": [],
+    "rol": "tecnico",
+    "testigoVisita": null,
+    "desbordeX": 0,
+    "bordeDerecho": 1280,
+    "anchoVentana": 1280,
+    "masALaDerecha": "section.view-container view-enter",
+    "cajasMiradas": 112,
+    "desbordeXDelDocumento": 0,
+    "anchoHoja": 1032,
+    "altoPagina": 1581,
+    "titulos": [
+      {
+        "t": "Horas y desplazamiento",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Mano de obra",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Materiales",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Firmas",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Datos del parte",
+        "fs": "18px",
+        "fw": "700"
+      }
+    ],
+    "rotuloCampo": {
+      "fs": "12.5px",
+      "fw": "600"
+    },
+    "botones": [
+      {
+        "t": "← Trabajo: Marta Prieto (PILOT",
+        "cls": "detail-miga-link",
+        "h": 44,
+        "w": 218,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ordenar en líneas",
+        "cls": "",
+        "h": 48,
+        "w": 558,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Firma aquí, cliente",
+        "cls": "",
+        "h": 112,
+        "w": 318,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      },
+      {
+        "t": "Firma aquí, técnico",
+        "cls": "",
+        "h": 112,
+        "w": 318,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      }
+    ],
+    "cajas": [
+      {
+        "k": "parte-cabecera",
+        "x": 272,
+        "y": 88,
+        "w": 984,
+        "h": 104
+      },
+      {
+        "k": "parte-horas",
+        "x": 272,
+        "y": 212,
+        "w": 600,
+        "h": 306
+      },
+      {
+        "k": "parte-dictado",
+        "x": 272,
+        "y": 533,
+        "w": 600,
+        "h": 250
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 799,
+        "w": 600,
+        "h": 191
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 1006,
+        "w": 600,
+        "h": 191
+      },
+      {
+        "k": "parte-firmas",
+        "x": 896,
+        "y": 212,
+        "w": 360,
+        "h": 421
+      },
+      {
+        "k": "parte-datos-del-parte",
+        "x": 272,
+        "y": 1212,
+        "w": 600,
+        "h": 273
+      }
+    ],
+    "firmaTrasBajar": {
+      "scrollY": 700,
+      "topEnVentana": 76,
+      "position": "sticky"
+    },
+    "noGet": [
+      "POST /admin/entorno",
+      "POST /admin/__sonda_control_positivo"
+    ],
+    "errores": []
+  },
+  {
+    "w": 1280,
+    "caso": "borrador-obra-larga-SIMULADO",
+    "png": "antes-borrador-obra-larga-SIMULADO-1280.png",
+    "servidosLocal": [],
+    "rol": "tecnico",
+    "testigoVisita": "· Visita 4 de 6",
+    "desbordeX": 0,
+    "bordeDerecho": 1280,
+    "anchoVentana": 1280,
+    "masALaDerecha": "section.view-container view-enter",
+    "cajasMiradas": 113,
+    "desbordeXDelDocumento": 0,
+    "anchoHoja": 1032,
+    "altoPagina": 1581,
+    "titulos": [
+      {
+        "t": "Horas y desplazamiento",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Mano de obra",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Materiales",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Firmas",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Datos del parte",
+        "fs": "18px",
+        "fw": "700"
+      }
+    ],
+    "rotuloCampo": {
+      "fs": "12.5px",
+      "fw": "600"
+    },
+    "botones": [
+      {
+        "t": "← Trabajo: Cliente de pruebas ",
+        "cls": "detail-miga-link",
+        "h": 44,
+        "w": 191,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ordenar en líneas",
+        "cls": "",
+        "h": 48,
+        "w": 558,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Firma aquí, cliente",
+        "cls": "",
+        "h": 112,
+        "w": 318,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      },
+      {
+        "t": "Firma aquí, técnico",
+        "cls": "",
+        "h": 112,
+        "w": 318,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      }
+    ],
+    "cajas": [
+      {
+        "k": "parte-cabecera",
+        "x": 272,
+        "y": 88,
+        "w": 984,
+        "h": 104
+      },
+      {
+        "k": "parte-horas",
+        "x": 272,
+        "y": 212,
+        "w": 600,
+        "h": 306
+      },
+      {
+        "k": "parte-dictado",
+        "x": 272,
+        "y": 533,
+        "w": 600,
+        "h": 250
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 799,
+        "w": 600,
+        "h": 191
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 1006,
+        "w": 600,
+        "h": 191
+      },
+      {
+        "k": "parte-firmas",
+        "x": 896,
+        "y": 212,
+        "w": 360,
+        "h": 421
+      },
+      {
+        "k": "parte-datos-del-parte",
+        "x": 272,
+        "y": 1212,
+        "w": 600,
+        "h": 273
+      }
+    ],
+    "firmaTrasBajar": {
+      "scrollY": 700,
+      "topEnVentana": 76,
+      "position": "sticky"
+    },
+    "noGet": [
+      "POST /admin/entorno",
+      "POST /admin/__sonda_control_positivo"
+    ],
+    "errores": []
+  },
+  {
+    "w": 1280,
+    "caso": "borrador-sin-obra",
+    "png": "antes-borrador-sin-obra-1280.png",
+    "servidosLocal": [],
+    "rol": "tecnico",
+    "testigoVisita": "· Visita 4 de 6",
+    "desbordeX": 0,
+    "bordeDerecho": 1280,
+    "anchoVentana": 1280,
+    "masALaDerecha": "section.view-container view-enter",
+    "cajasMiradas": 113,
+    "desbordeXDelDocumento": 0,
+    "anchoHoja": 1032,
+    "altoPagina": 1581,
+    "titulos": [
+      {
+        "t": "Horas y desplazamiento",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Mano de obra",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Materiales",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Firmas",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Datos del parte",
+        "fs": "18px",
+        "fw": "700"
+      }
+    ],
+    "rotuloCampo": {
+      "fs": "12.5px",
+      "fw": "600"
+    },
+    "botones": [
+      {
+        "t": "← Trabajo: Cliente de pruebas ",
+        "cls": "detail-miga-link",
+        "h": 44,
+        "w": 191,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ordenar en líneas",
+        "cls": "",
+        "h": 48,
+        "w": 558,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Firma aquí, cliente",
+        "cls": "",
+        "h": 112,
+        "w": 318,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      },
+      {
+        "t": "Firma aquí, técnico",
+        "cls": "",
+        "h": 112,
+        "w": 318,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      }
+    ],
+    "cajas": [
+      {
+        "k": "parte-cabecera",
+        "x": 272,
+        "y": 88,
+        "w": 984,
+        "h": 104
+      },
+      {
+        "k": "parte-horas",
+        "x": 272,
+        "y": 212,
+        "w": 600,
+        "h": 306
+      },
+      {
+        "k": "parte-dictado",
+        "x": 272,
+        "y": 533,
+        "w": 600,
+        "h": 250
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 799,
+        "w": 600,
+        "h": 191
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 1006,
+        "w": 600,
+        "h": 191
+      },
+      {
+        "k": "parte-firmas",
+        "x": 896,
+        "y": 212,
+        "w": 360,
+        "h": 421
+      },
+      {
+        "k": "parte-datos-del-parte",
+        "x": 272,
+        "y": 1212,
+        "w": 600,
+        "h": 273
+      }
+    ],
+    "firmaTrasBajar": {
+      "scrollY": 700,
+      "topEnVentana": 76,
+      "position": "sticky"
+    },
+    "noGet": [
+      "POST /admin/entorno",
+      "POST /admin/__sonda_control_positivo"
+    ],
+    "errores": []
+  },
+  {
+    "w": 1280,
+    "caso": "borrador-con-lineas-SIMULADO",
+    "png": "antes-borrador-con-lineas-SIMULADO-1280.png",
+    "servidosLocal": [],
+    "rol": "tecnico",
+    "testigoVisita": "· Visita 4 de 6",
+    "desbordeX": 0,
+    "bordeDerecho": 1280,
+    "anchoVentana": 1280,
+    "masALaDerecha": "section.view-container view-enter",
+    "cajasMiradas": 123,
+    "desbordeXDelDocumento": 0,
+    "anchoHoja": 1032,
+    "altoPagina": 1622,
+    "titulos": [
+      {
+        "t": "Horas y desplazamiento",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Mano de obra",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Materiales",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Firmas",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Datos del parte",
+        "fs": "18px",
+        "fw": "700"
+      }
+    ],
+    "rotuloCampo": {
+      "fs": "12.5px",
+      "fw": "600"
+    },
+    "botones": [
+      {
+        "t": "← Trabajo: Cliente de pruebas ",
+        "cls": "detail-miga-link",
+        "h": 44,
+        "w": 191,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ahora",
+        "cls": "parte-ahora",
+        "h": 44,
+        "w": 98,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Ordenar en líneas",
+        "cls": "",
+        "h": 48,
+        "w": 558,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "×",
+        "cls": "parte-quitar-linea",
+        "h": 44,
+        "w": 44,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "×",
+        "cls": "parte-quitar-linea",
+        "h": 44,
+        "w": 44,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Añadir línea",
+        "cls": "parte-anadir",
+        "h": 44,
+        "w": 142,
+        "bg": "rgb(241, 242, 238)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Firma aquí, cliente",
+        "cls": "",
+        "h": 112,
+        "w": 318,
+        "bg": "rgb(22, 163, 74)",
+        "color": "rgb(255, 255, 255)",
+        "borde": "rgba(0, 0, 0, 0) 1px"
+      },
+      {
+        "t": "Firma aquí, técnico",
+        "cls": "",
+        "h": 112,
+        "w": 318,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      }
+    ],
+    "cajas": [
+      {
+        "k": "parte-cabecera",
+        "x": 272,
+        "y": 88,
+        "w": 984,
+        "h": 104
+      },
+      {
+        "k": "parte-horas",
+        "x": 272,
+        "y": 212,
+        "w": 600,
+        "h": 306
+      },
+      {
+        "k": "parte-dictado",
+        "x": 272,
+        "y": 533,
+        "w": 600,
+        "h": 250
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 799,
+        "w": 600,
+        "h": 211
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 1026,
+        "w": 600,
+        "h": 211
+      },
+      {
+        "k": "parte-firmas",
+        "x": 896,
+        "y": 212,
+        "w": 360,
+        "h": 401
+      },
+      {
+        "k": "parte-datos-del-parte",
+        "x": 272,
+        "y": 1253,
+        "w": 600,
+        "h": 273
+      }
+    ],
+    "firmaTrasBajar": {
+      "scrollY": 700,
+      "topEnVentana": 76,
+      "position": "sticky"
+    },
+    "noGet": [
+      "POST /admin/entorno",
+      "POST /admin/__sonda_control_positivo"
+    ],
+    "errores": []
+  },
+  {
+    "w": 1280,
+    "caso": "firmado-PT006",
+    "png": "antes-firmado-PT006-1280.png",
+    "servidosLocal": [],
+    "rol": "tecnico",
+    "testigoVisita": "· Visita 2 de 6",
+    "desbordeX": 0,
+    "bordeDerecho": 1280,
+    "anchoVentana": 1280,
+    "masALaDerecha": "section.view-container view-enter",
+    "cajasMiradas": 98,
+    "desbordeXDelDocumento": 0,
+    "anchoHoja": 1032,
+    "altoPagina": 1185,
+    "titulos": [
+      {
+        "t": "Datos del parte",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Horas y desplazamiento",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Mano de obra",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Materiales",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Firmas",
+        "fs": "18px",
+        "fw": "700"
+      }
+    ],
+    "rotuloCampo": {
+      "fs": "12.5px",
+      "fw": "600"
+    },
+    "botones": [
+      {
+        "t": "← Trabajo: Cliente de pruebas ",
+        "cls": "detail-miga-link",
+        "h": 44,
+        "w": 191,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Firma aquí, técnico",
+        "cls": "",
+        "h": 112,
+        "w": 318,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      },
+      {
+        "t": "Volver al trabajo",
+        "cls": "btn btn-secondary",
+        "h": 36,
+        "w": 600,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(141, 143, 139) 1px"
+      }
+    ],
+    "cajas": [
+      {
+        "k": "parte-cabecera",
+        "x": 272,
+        "y": 88,
+        "w": 984,
+        "h": 104
+      },
+      {
+        "k": "parte-datos-del-parte",
+        "x": 272,
+        "y": 212,
+        "w": 600,
+        "h": 273
+      },
+      {
+        "k": "parte-horas",
+        "x": 272,
+        "y": 500,
+        "w": 600,
+        "h": 229
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 745,
+        "w": 600,
+        "h": 133
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 894,
+        "w": 600,
+        "h": 135
+      },
+      {
+        "k": "parte-firmas",
+        "x": 896,
+        "y": 212,
+        "w": 360,
+        "h": 285
+      },
+      {
+        "k": "salida",
+        "x": 272,
+        "y": 1057,
+        "w": 600,
+        "h": 36
+      }
+    ],
+    "firmaTrasBajar": {
+      "scrollY": 700,
+      "topEnVentana": 76,
+      "position": "sticky"
+    },
+    "noGet": [
+      "POST /admin/entorno",
+      "POST /admin/__sonda_control_positivo"
+    ],
+    "errores": []
+  },
+  {
+    "w": 1280,
+    "caso": "firmado-obra-larga-SIMULADO",
+    "png": "antes-firmado-obra-larga-SIMULADO-1280.png",
+    "servidosLocal": [],
+    "rol": "tecnico",
+    "testigoVisita": "· Visita 2 de 6",
+    "desbordeX": 0,
+    "bordeDerecho": 1280,
+    "anchoVentana": 1280,
+    "masALaDerecha": "section.view-container view-enter",
+    "cajasMiradas": 98,
+    "desbordeXDelDocumento": 0,
+    "anchoHoja": 1032,
+    "altoPagina": 1185,
+    "titulos": [
+      {
+        "t": "Datos del parte",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Horas y desplazamiento",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Mano de obra",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Materiales",
+        "fs": "18px",
+        "fw": "700"
+      },
+      {
+        "t": "Firmas",
+        "fs": "18px",
+        "fw": "700"
+      }
+    ],
+    "rotuloCampo": {
+      "fs": "12.5px",
+      "fw": "600"
+    },
+    "botones": [
+      {
+        "t": "← Trabajo: Cliente de pruebas ",
+        "cls": "detail-miga-link",
+        "h": 44,
+        "w": 191,
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(106, 116, 110)",
+        "borde": "rgb(106, 116, 110) 0px"
+      },
+      {
+        "t": "Firma aquí, técnico",
+        "cls": "",
+        "h": 112,
+        "w": 318,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(205, 210, 203) 1px"
+      },
+      {
+        "t": "Volver al trabajo",
+        "cls": "btn btn-secondary",
+        "h": 36,
+        "w": 600,
+        "bg": "rgb(255, 255, 255)",
+        "color": "rgb(15, 28, 23)",
+        "borde": "rgb(141, 143, 139) 1px"
+      }
+    ],
+    "cajas": [
+      {
+        "k": "parte-cabecera",
+        "x": 272,
+        "y": 88,
+        "w": 984,
+        "h": 104
+      },
+      {
+        "k": "parte-datos-del-parte",
+        "x": 272,
+        "y": 212,
+        "w": 600,
+        "h": 273
+      },
+      {
+        "k": "parte-horas",
+        "x": 272,
+        "y": 500,
+        "w": 600,
+        "h": 229
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 745,
+        "w": 600,
+        "h": 133
+      },
+      {
+        "k": "parte-bloque",
+        "x": 272,
+        "y": 894,
+        "w": 600,
+        "h": 135
+      },
+      {
+        "k": "parte-firmas",
+        "x": 896,
+        "y": 212,
+        "w": 360,
+        "h": 285
+      },
+      {
+        "k": "salida",
+        "x": 272,
+        "y": 1057,
+        "w": 600,
+        "h": 36
+      }
+    ],
+    "firmaTrasBajar": {
+      "scrollY": 700,
+      "topEnVentana": 76,
+      "position": "sticky"
+    },
+    "noGet": [
+      "POST /admin/entorno",
+      "POST /admin/__sonda_control_positivo"
+    ],
+    "errores": []
+  }
+]
