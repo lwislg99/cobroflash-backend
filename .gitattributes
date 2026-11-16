@@ -67,3 +67,11 @@ docs/legal/fuentes/aeat-errores.properties -text
 # `tests/scrum839d-union-solo-en-el-registro.test.mjs` cae si esta regla aparece en cualquier
 # otro sitio. ⚠️ GitHub NO la respeta (medido, #1353): la aplica el job conflicto-de-registro.yml.
 docs/master/*.md merge=union
+
+# SCRUM-1734 · Y LAS CICATRICES DE CADA PUESTO, POR LA MISMA RAZÓN Y CON EL MISMO JOB.
+# Medido el 13-nov-2026 en 105 pasadas del job: 8 PR chocaron con main SOLO por una ficha de
+# cicatrices (`NO-EMPUJA · FUERA-DE-REGISTRO`). Cada ficha es una lista a la que se añade al FINAL:
+# dos ramas del mismo puesto chocan siempre en la última línea, y la resolución es quedarse con
+# las dos. `scrum1294` valida cada línea por separado, así que el orden que deje `union` da igual.
+# Solo el primer nivel, como el registro: `*` no cruza `/`.
+docs/equipo/cicatrices/*.md merge=union

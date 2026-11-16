@@ -37,14 +37,14 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: '.gitattributes',
     de: 'docs/master/*.md merge=union',
     a: 'docs/master/*.md merge=union\nsrc/**/*.ts merge=union',
-    cae: '🔴 DECLARACIÓN: ninguna línea pone merge=union fuera de docs/master/*.md',
+    cae: '🔴 DECLARACIÓN: ninguna línea pone merge=union fuera del registro y las cicatrices',
   },
   {
     // Por la puerta de atrás: una macro. La declaración no la ve; el EFECTO, sí.
     fichero: '.gitattributes',
     de: 'docs/master/*.md merge=union',
     a: 'docs/master/*.md merge=union\n[attr]registro merge=union\n*.json registro',
-    cae: '🔴 EFECTO: git no aplica union a ninguna ruta fuera de docs/master/*.md',
+    cae: '🔴 EFECTO: git no aplica union a ninguna ruta fuera del registro y las cicatrices',
   },
   {
     // La cerradura 1 apagada. La 2 seguiría parando el push, así que el test exige LA CAUSA.
@@ -55,9 +55,30 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     fichero: 'scripts/conflicto-de-registro.mjs',
-    de: 'export const RUTA_DE_REGISTRO = /^docs\\/master\\/[^/]+\\.md$/;',
-    a: 'export const RUTA_DE_REGISTRO = /^docs\\/master\\/.+\\.md$/;',
+    de: 'export const RUTA_DE_REGISTRO = /^docs\\/(?:master|equipo\\/cicatrices)\\/[^/]+\\.md$/;',
+    a: 'export const RUTA_DE_REGISTRO = /^docs\\/(?:master|equipo\\/cicatrices)\\/.+\\.md$/;',
     cae: '🔴 NEGATIVO: un subdirectorio de docs/master no es registro',
+  },
+  {
+    // SCRUM-1734 · un `docs/equipo/` entero sería el carril de todos los puestos, no una lista.
+    fichero: 'scripts/conflicto-de-registro.mjs',
+    de: 'export const RUTA_DE_REGISTRO = /^docs\\/(?:master|equipo\\/cicatrices)\\/[^/]+\\.md$/;',
+    a: 'export const RUTA_DE_REGISTRO = /^docs\\/(?:master|equipo)\\/[^/]+\\.md$/;',
+    cae: '🔴 NEGATIVO (SCRUM-1734): docs/equipo fuera de cicatrices no es registro',
+  },
+  {
+    // SCRUM-1734 · el defecto medido: la ruta de cicatrices fuera de la lista del job.
+    fichero: 'scripts/conflicto-de-registro.mjs',
+    de: 'export const RUTA_DE_REGISTRO = /^docs\\/(?:master|equipo\\/cicatrices)\\/[^/]+\\.md$/;',
+    a: 'export const RUTA_DE_REGISTRO = /^docs\\/master\\/[^/]+\\.md$/;',
+    cae: '🔴 POSITIVO (SCRUM-1734): dos cicatrices añadidas al final por dos ramas → se empuja con las dos',
+  },
+  {
+    // SCRUM-1734 · y la otra mitad: la regla de `.gitattributes` quitada.
+    fichero: '.gitattributes',
+    de: 'docs/equipo/cicatrices/*.md merge=union',
+    a: '',
+    cae: '🔴 EFECTO: git no aplica union a ninguna ruta fuera del registro y las cicatrices',
   },
   {
     // El suelo apagado: una salida 1 sin lista se tomaría por «conflicto de nada que esté fuera».
@@ -106,21 +127,35 @@ const RUTAS_CENTINELA = [
   'docs/master/sub/SCRUM-1.md',
   'docs/master/SCRUM-1.txt',
   'README.md',
+  // SCRUM-1734: las cicatrices sí, pero solo el primer nivel y solo esa carpeta de docs/equipo.
+  'docs/equipo/cicatrices/sub/S5.md',
+  'docs/equipo/cicatrices/S5.txt',
+  'docs/equipo/sesion-5.md',
+  'docs/equipo/nuevo.md',
 ];
 
-test('🔴 DECLARACIÓN: ninguna línea pone merge=union fuera de docs/master/*.md', () => {
+/** Las dos reglas admitidas, en el orden en que viven en `.gitattributes`. */
+const REGLAS_ADMITIDAS = ['docs/master/*.md merge=union', 'docs/equipo/cicatrices/*.md merge=union'];
+
+test('🔴 DECLARACIÓN: ninguna línea pone merge=union fuera del registro y las cicatrices', () => {
   const lineas = fs.readFileSync(path.join(RAIZ, '.gitattributes'), 'utf8').split(/\r?\n/)
     .map(sinComentario).filter((l) => l && !l.startsWith('#'));
   assert.ok(lineas.length > 20, `🔴 CIEGO: solo ${lineas.length} reglas en .gitattributes`);
 
   const conUnion = lineas.filter((l) => l.split(' ').slice(1).includes('merge=union'));
-  assert.deepEqual(conUnion, ['docs/master/*.md merge=union'],
+  assert.deepEqual(conUnion, REGLAS_ADMITIDAS,
     '🔴 `merge=union` aparece en otra regla de `.gitattributes`:\n  ' + conUnion.join('\n  ') + '\n\n'
     + '  union pega las dos versiones SIN marcadores de conflicto. En código eso es un merge «limpio»\n'
-    + '  con dos implementaciones a la vez. Solo el registro (docs/master/*.md) lo admite.');
+    + '  con dos implementaciones a la vez. Solo el registro (docs/master/*.md) y las cicatrices\n'
+    + '  (docs/equipo/cicatrices/*.md, SCRUM-1734) lo admiten.');
+  // La lista del job y la declaración son la MISMA lista: cada regla admitida casa con la ruta.
+  for (const r of REGLAS_ADMITIDAS) {
+    const ejemplo = r.split(' ')[0].replace('*', 'X');
+    assert.ok(RUTA_DE_REGISTRO.test(ejemplo), `🔴 ${ejemplo} lleva union y el job no lo resolvería`);
+  }
 });
 
-test('🔴 EFECTO: git no aplica union a ninguna ruta fuera de docs/master/*.md', () => {
+test('🔴 EFECTO: git no aplica union a ninguna ruta fuera del registro y las cicatrices', () => {
   const rastreados = execFileSync('git', ['ls-files', '-z'], { cwd: RAIZ, encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024 }).split('\0').filter(Boolean);
   assert.ok(rastreados.length > 1000, `🔴 CIEGO: git ls-files solo ve ${rastreados.length} ficheros`);
@@ -132,6 +167,11 @@ test('🔴 EFECTO: git no aplica union a ninguna ruta fuera de docs/master/*.md'
     '🔴 docs/master/SCRUM-839.md no sale con merge=union: o la regla se ha ido, o el instrumento no ve');
   assert.equal(attrs.get('docs/master/sub/SCRUM-1.md'), 'unspecified',
     '🔴 la regla alcanza subdirectorios de docs/master: el job solo sabe resolver el primer nivel');
+  // SCRUM-1734: el mismo suelo para las cicatrices, con una ficha que existe de verdad.
+  assert.equal(attrs.get('docs/equipo/cicatrices/S5.md'), 'union',
+    '🔴 docs/equipo/cicatrices/S5.md no sale con merge=union: la regla de SCRUM-1734 se ha ido');
+  assert.equal(attrs.get('docs/equipo/cicatrices/sub/S5.md'), 'unspecified',
+    '🔴 la regla alcanza subdirectorios de cicatrices: el job solo sabe resolver el primer nivel');
 
   const fuera = [...attrs].filter(([ruta, v]) => v === 'union' && !RUTA_DE_REGISTRO.test(ruta));
   assert.deepEqual(fuera, [],
@@ -143,7 +183,7 @@ test('🔴 EFECTO: git no aplica union a ninguna ruta fuera de docs/master/*.md'
 // ② LA DECISIÓN, CONTRA REPOSITORIOS DE VERDAD
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-const REGLA = 'docs/master/*.md merge=union\n';
+const REGLA = 'docs/master/*.md merge=union\ndocs/equipo/cicatrices/*.md merge=union\n';
 
 /** Un repositorio con `main` y una rama `pr` que parten de la misma base. */
 function repo({ base, enPr, enMain, attrsMain = REGLA, attrsPr = '', infoAttributes = '' }) {
@@ -268,6 +308,77 @@ test('🔴 NEGATIVO: un subdirectorio de docs/master no es registro', () => {
     const v = decide(r);
     assert.equal(v.accion, 'NO-EMPUJA');
     assert.deepEqual(v.fuera, ['docs/master/sub/SCRUM-1.md']);
+  });
+});
+
+// ── SCRUM-1734 · LAS CICATRICES ──────────────────────────────────────────────────────────
+// El caso medido el 13-nov-2026 (#3137 y otros 7): dos ramas del mismo puesto añaden una línea
+// cada una al FINAL de la ficha. Para GitHub es conflicto; con union, las dos líneas.
+const FICHA = 'docs/equipo/cicatrices/J1.md';
+const CICATRIZ_BASE = '# Cicatrices · J1\n\n- 2026-11-01 · la de base → sin comprobación: x\n';
+const CICATRIZ_PR = '- 2026-11-13 · la del PR → sin comprobación: x\n';
+const CICATRIZ_MAIN = '- 2026-11-12 · la de main → sin comprobación: x\n';
+
+test('🔴 POSITIVO (SCRUM-1734): dos cicatrices añadidas al final por dos ramas → se empuja con las dos', () => {
+  conRepo({
+    base: { [FICHA]: CICATRIZ_BASE, 'src/a.ts': 'export const a = 1;\n' },
+    enPr: { [FICHA]: CICATRIZ_BASE + CICATRIZ_PR },
+    enMain: { [FICHA]: CICATRIZ_BASE + CICATRIZ_MAIN },
+  }, (r) => {
+    // CONTROL: para quien no aplica atributos (GitHub) es un conflicto de verdad.
+    const sinAttrs = mezclar(gitReal(r.dir), {
+      cabeza: r.cabeza, main: r.main,
+      fuente: execFileSync('git', ['hash-object', '-t', 'tree', '-w', '--stdin'], { cwd: r.dir, input: '', encoding: 'utf8' }).trim(),
+    });
+    assert.equal(sinAttrs.estado, 'CONFLICTO', '🔴 el caso fabricado no choca: no prueba nada');
+    assert.deepEqual(sinAttrs.ficheros, [FICHA]);
+
+    const v = decide(r);
+    assert.equal(v.accion, 'EMPUJAR', JSON.stringify(v));
+    assert.deepEqual(v.ficheros, [FICHA]);
+    const texto = r.g('show', `${v.commit}:${FICHA}`) + '\n';
+    // Ninguna línea se pierde, ninguna se duplica, y no quedan marcadores.
+    for (const l of [CICATRIZ_BASE, CICATRIZ_PR, CICATRIZ_MAIN].join('').split('\n').filter(Boolean)) {
+      assert.equal(texto.split('\n').filter((x) => x === l).length, 1, `🔴 «${l}» no sale exactamente una vez:\n${texto}`);
+    }
+    assert.doesNotMatch(texto, /^(<<<<<<<|>>>>>>>|=======)/m);
+  });
+});
+
+test('SCRUM-1734 · la MISMA cicatriz añadida por las dos ramas no es conflicto ni se duplica', () => {
+  // Lo que el ticket dejó «sin medir»: dos lados con el mismo cambio. git lo da por limpio antes
+  // de llegar a union, así que no hay nada que empujar y la línea queda una vez.
+  conRepo({
+    base: { [FICHA]: CICATRIZ_BASE },
+    enPr: { [FICHA]: CICATRIZ_BASE + CICATRIZ_PR },
+    enMain: { [FICHA]: CICATRIZ_BASE + CICATRIZ_PR },
+  }, (r) => {
+    assert.equal(decide(r).accion, 'NADA');
+  });
+});
+
+test('🔴 NEGATIVO (SCRUM-1734): docs/equipo fuera de cicatrices no es registro', () => {
+  conRepo({
+    base: { 'docs/equipo/sesion-5.md': 'x\n', 'docs/equipo/cicatrices/sub/S5.md': 'x\n' },
+    enPr: { 'docs/equipo/sesion-5.md': 'PR\n', 'docs/equipo/cicatrices/sub/S5.md': 'PR\n' },
+    enMain: { 'docs/equipo/sesion-5.md': 'MAIN\n', 'docs/equipo/cicatrices/sub/S5.md': 'MAIN\n' },
+  }, (r) => {
+    const v = decide(r);
+    assert.equal(v.accion, 'NO-EMPUJA', JSON.stringify(v));
+    assert.equal(v.causa, 'FUERA-DE-REGISTRO');
+    assert.deepEqual([...v.fuera].sort(), ['docs/equipo/cicatrices/sub/S5.md', 'docs/equipo/sesion-5.md']);
+  });
+});
+
+test('🔴 NEGATIVO (SCRUM-1734): una cicatriz y un fichero de código en conflicto → no se empuja', () => {
+  conRepo({
+    base: { [FICHA]: CICATRIZ_BASE, 'src/a.ts': 'export const a = 1;\n' },
+    enPr: { [FICHA]: CICATRIZ_BASE + CICATRIZ_PR, 'src/a.ts': 'export const a = 2;\n' },
+    enMain: { [FICHA]: CICATRIZ_BASE + CICATRIZ_MAIN, 'src/a.ts': 'export const a = 3;\n' },
+  }, (r) => {
+    const v = decide(r);
+    assert.equal(v.accion, 'NO-EMPUJA', JSON.stringify(v));
+    assert.deepEqual(v.fuera, ['src/a.ts']);
   });
 });
 
