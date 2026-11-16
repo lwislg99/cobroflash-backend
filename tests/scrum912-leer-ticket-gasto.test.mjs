@@ -11,6 +11,34 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import express from 'express'; import { reqDeSesion } from './_arnes-de-router.mjs';
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218i): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, ok, headers.get, text, json, arrayBuffer) y, como el `redirect: 'manual'` de antes, no sigue
+// redirecciones. El cuerpo se guarda en bytes: `text()` lo decodifica como `fetch` (TextDecoder).
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    const trozos = [];
+    r.on('data', (t) => { trozos.push(t); });
+    r.on('end', () => {
+      const buf = Buffer.concat(trozos);
+      ok({
+        status: r.statusCode,
+        ok: r.statusCode >= 200 && r.statusCode < 300,
+        headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+        text: async () => new TextDecoder().decode(buf),
+        json: async () => JSON.parse(new TextDecoder().decode(buf)),
+        arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+      });
+    });
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 const { config } = await import('../dist/core/config/env.js');
 const { partesDelUsuario, cuotasDelError, geminiComplete, geminiCompleteConModelo } = await import('../dist/integrations/gemini.js');
@@ -89,7 +117,7 @@ async function conAppSinDoble(merchantId, fn) {
   const base = `http://127.0.0.1:${server.address().port}/admin/expenses`;
   try {
     return await fn(async (body) => {
-      const r = await fetch(`${base}/leer-ticket`, {
+      const r = await pedirSinAgente(`${base}/leer-ticket`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       });
       return { status: r.status, json: await r.json() };

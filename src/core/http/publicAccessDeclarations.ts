@@ -51,6 +51,7 @@ export const PUBLIC_PREFIXES = [
   '/pay', '/cliente', '/albaran', '/webhooks/stripe', '/webhooks/stripe-connect',
   '/health', '/auth', '/webhooks/psp', '/charges', '/quote', '/invoice', '/recibo',
   '/webhooks/mp', '/webhooks/whatsapp', '/legal', '/p', '/dev',
+  '/avisos', // SCRUM-1646 · las hojas de los avisos públicos (publicNotFound.ts), sueltas en app.ts
   '/webhooks/resend', // SCRUM-475 (fase 2B): entregas y rebotes del correo
 ] as const;
 
@@ -81,6 +82,9 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
   { method: 'GET', path: '/precios', kind: 'no-sensitive-resource', reason: 'HTML de landing estático' },
   { method: 'GET', path: '/public/founding-status', kind: 'no-sensitive-resource', reason: 'contador agregado de plazas, sin PII' },
   { method: 'GET', path: '/version', kind: 'no-sensitive-resource', reason: 'build id, sin caché, sin PII' },
+  { method: 'GET', path: '/avisos/css/documento-no-disponible.css', kind: 'no-sensitive-resource', reason: 'CSS constante del 404 de documento, sin datos (SCRUM-1646)' },
+  { method: 'GET', path: '/avisos/css/pagina-no-encontrada.css', kind: 'no-sensitive-resource', reason: 'CSS constante del 404 genérico, sin datos (SCRUM-1646)' },
+  { method: 'GET', path: '/avisos/css/documento-en-registro.css', kind: 'no-sensitive-resource', reason: 'CSS constante de «factura en proceso», sin datos (SCRUM-1646)' },
   {
     method: 'POST',
     path: '/schema-check',
@@ -113,7 +117,7 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
     method: 'POST',
     path: '/auth/register',
     kind: 'no-sensitive-resource',
-    reason: 'alta cerrada (SCRUM-1515): responde siempre el mismo 409 registration_closed, sin leer la petición ni consultar ninguna cuenta; no hay :id en la URL',
+    reason: 'alta con invitación (SCRUM-1685): sólo los correos de REGISTRATION_INVITED_EMAILS crean SU propia cuenta; los demás (y todos con la lista vacía) reciben el mismo 409 registration_closed de SCRUM-1515 sin consultar ninguna cuenta; no hay :id en la URL',
   },
   { method: 'GET', path: '/auth/verify', kind: 'token', reason: 'AuthSession.token, 256 bits, un solo uso' },
   {
@@ -123,6 +127,13 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
     reason: 'triple cerradura: flag E2E_TEST_LOGIN_ENABLED + secreto timing-safe + allowlist de emails',
   },
   { method: 'POST', path: '/auth/logout', kind: 'no-sensitive-resource', reason: 'revoca solo la cookie propia del llamante' },
+  {
+    method: 'GET',
+    path: '/auth/js/login.js',
+    kind: 'no-sensitive-resource',
+    reason: 'guion estático de /login.html (SCRUM-1647c): cadena constante, sin datos de la petición ni de ningún merchant; no hay :id en la URL',
+  },
+  { method: 'GET', path: '/auth/js/alta.js', kind: 'no-sensitive-resource', reason: 'guion constante de /register.html, sin datos (SCRUM-1647d; línea de J3 por excepción firmada en c.21658)' },
 
   // ── /quote — única ruta pública con sesión real (el resto del router, ver PENDING) ──
   {
@@ -158,6 +169,10 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
   { method: 'POST', path: '/pay/bizum/:token/claimed', kind: 'token', reason: 'Charge.receiptToken' },
   { method: 'GET', path: '/pay/mp/:token', kind: 'token', reason: 'Charge.receiptToken' },
   { method: 'GET', path: '/pay/mp/:token/result', kind: 'token', reason: 'Charge.receiptToken' },
+  { method: 'GET', path: '/pay/js/pago.js', kind: 'no-sensitive-resource', reason: 'guion constante de las páginas de pago, sin datos (SCRUM-1647; línea de J2 por excepción firmada en c.21631)' },
+  { method: 'GET', path: '/pay/css/pago.css', kind: 'no-sensitive-resource', reason: 'CSS constante de las páginas de pago, sin datos (SCRUM-1723; línea de J2 por excepción firmada en c.21719)' },
+  { method: 'GET', path: '/albaran/js/firma.js', kind: 'no-sensitive-resource', reason: 'guion constante de la página pública de firma del parte, sin datos ni token: los datos van en el HTML que autoriza el token (SCRUM-1646)' },
+  { method: 'GET', path: '/albaran/css/firma.css', kind: 'no-sensitive-resource', reason: 'CSS constante de la página pública de firma del parte, sin datos (SCRUM-1723)' },
 
   // ── /pay/quote y /quote — decisión del cliente (SCRUM-95). Quote.decisionToken,
   // mismo patrón que Charge.receiptToken/Albaran.firmaToken. Antes Quote.id crudo —
@@ -172,6 +187,10 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
   // además su PDF no expone a nadie nuevo. Sin `:id` —eso es justo lo que cerró SCRUM-95— y
   // sólo LEE: no muta estado ni escribe `quote.pdfUrl`.
   { method: 'GET', path: '/pay/quote/:token/pdf', kind: 'token', reason: 'Quote.decisionToken' },
+  { method: 'GET', path: '/pay/quote/js/firma.js', kind: 'no-sensitive-resource', reason: 'guion constante de la página pública de firma del presupuesto, sin datos ni token: los datos van en el HTML que autoriza el token (SCRUM-1646c)' },
+  { method: 'GET', path: '/pay/quote/css/firma.css', kind: 'no-sensitive-resource', reason: 'CSS constante de la página pública de firma del presupuesto, sin datos (SCRUM-1646d)' },
+  { method: 'GET', path: '/pay/quote/css/opciones.css', kind: 'no-sensitive-resource', reason: 'CSS constante de las opciones de la página de firma del presupuesto, sin datos (SCRUM-1646d)' },
+  { method: 'GET', path: '/pay/quote/css/marca/:color', kind: 'no-sensitive-resource', reason: 'CSS del color de marca: seis hexadecimales validados en la ruta, sin token ni datos del cliente; lo demás es 404 (SCRUM-1646d)' },
   // SCRUM-1202 · POST /quote/:token/accept y /reject se RETIRARON: nadie las llamaba desde
   // SCRUM-95 y /accept marcaba `accepted` SIN firma ni sello, reescribiendo paymentTerms y
   // evidence con el cuerpo. La decisión del cliente entra SOLO por /decision.

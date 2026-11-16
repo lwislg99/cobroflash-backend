@@ -1,0 +1,81 @@
+SCRUM-1396d · lote 1 · censo de scripts/_censo-mkdtemp.mjs (censar + fugasDe) sobre el árbol de trabajo, Windows, 27-oct-2026
+
+== ANTES (rama en 550c0fc16, sin tocar)
+169 ficheros con temporales (233 llamadas, de 3460 ficheros mirados) · 24 con nombres repetidos · 226 emparejamientos fuera de ámbito, que ya no cuentan · 0 emparejadas sólo por nombre
+NO_GARANTIZADA tests/scrum252-procedencia-cliente.test.mjs:60 · mkdtempSync(…) → dir  ·  borra en 63 SIN cobertura
+NO_GARANTIZADA tests/scrum754-el-juez-que-oscila.test.mjs:705 · mkdtempSync(…) → dir  ·  borra en 708 SIN cobertura
+NO_GARANTIZADA tests/scrum757-la-declaracion-que-nadie-lee.test.mjs:41 · mkdtempSync(…) → dir  ·  borra en 44 SIN cobertura
+NO_GARANTIZADA tests/scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs:107 · mkdtempSync(…) → dir  ·  borra en 122 SIN cobertura
+NO_GARANTIZADA tests/scrum836-ancla-de-mutacion-viva.test.mjs:83 · mkdtempSync(…) → dir  ·  borra en 87 SIN cobertura
+NO_GARANTIZADA tests/scrum836-ancla-de-mutacion-viva.test.mjs:491 · mkdtempSync(…) → dir  ·  borra en 498 SIN cobertura
+ESCAPA tests/scrum1263-gancho-pre-push.test.mjs:52 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum1289b-reporters-como-argumentos.test.mjs:80 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum1328-skips-con-motivo-en-el-tap.test.mjs:102 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum1424-ya-esta.test.mjs:114 · mkdtempSync(…) → base  ·  no se borra en ninguna parte
+ESCAPA tests/scrum1575b-censo-conexiones.test.mjs:37 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum1575c-censo-ve-el-singleton.test.mjs:22 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum1575d-staging-por-destino.test.mjs:71 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum454-destructivo-sin-comprobacion.test.mjs:157 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum521-resolvedor-de-importadores.test.mjs:52 · mkdtempSync(…) → raiz  ·  no se borra en ninguna parte
+ESCAPA tests/scrum709-microcopy-por-fichero.test.mjs:84 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum716c-la-memoria-del-vigia.test.mjs:224 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum726-quien-firma-la-microcopy.test.mjs:36 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum754-el-juez-que-oscila.test.mjs:345 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum811c-skill-ui-declarada.test.mjs:609 · mkdtempSync(…) → raiz  ·  no se borra en ninguna parte
+ESCAPA tests/scrum839d-union-solo-en-el-registro.test.mjs:149 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum839e-solo-pr-armados.test.mjs:116 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum850b-las-formas-que-mienten.test.mjs:73 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum899-sesion-lista-blanca.test.mjs:177 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/_alcance-desde-entradas.mjs:385 · mkdtempSync(…) → raiz  ·  no se borra en ninguna parte
+ESCAPA tests/_comparador-alcance.mjs:261 · mkdtempSync(…) → raiz  ·  no se borra en ninguna parte
+ESCAPA tests/_export-que-sobra.mjs:239 · mkdtempSync(…) → raiz  ·  no se borra en ninguna parte
+ESCAPA tests/_huerfanos-en-modulos-vivos.mjs:195 · mkdtempSync(…) → raiz  ·  no se borra en ninguna parte
+
+== DESPUÉS (los 6 con temporal() de tests/_temporal.mjs)
+165 ficheros con temporales (227 llamadas, de 3460 ficheros mirados) · 24 con nombres repetidos · 214 emparejamientos fuera de ámbito, que ya no cuentan · 0 emparejadas sólo por nombre
+NO_GARANTIZADA tests/scrum252-procedencia-cliente.test.mjs:60 · mkdtempSync(…) → dir  ·  borra en 63 SIN cobertura
+NO_GARANTIZADA tests/scrum754-el-juez-que-oscila.test.mjs:705 · mkdtempSync(…) → dir  ·  borra en 708 SIN cobertura
+NO_GARANTIZADA tests/scrum836-ancla-de-mutacion-viva.test.mjs:83 · mkdtempSync(…) → dir  ·  borra en 87 SIN cobertura
+NO_GARANTIZADA tests/scrum836-ancla-de-mutacion-viva.test.mjs:491 · mkdtempSync(…) → dir  ·  borra en 498 SIN cobertura
+ESCAPA tests/scrum1263-gancho-pre-push.test.mjs:52 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum1289b-reporters-como-argumentos.test.mjs:80 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum1328-skips-con-motivo-en-el-tap.test.mjs:102 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum1424-ya-esta.test.mjs:114 · mkdtempSync(…) → base  ·  no se borra en ninguna parte
+ESCAPA tests/scrum1575b-censo-conexiones.test.mjs:37 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum1575c-censo-ve-el-singleton.test.mjs:22 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum1575d-staging-por-destino.test.mjs:71 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum454-destructivo-sin-comprobacion.test.mjs:157 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum521-resolvedor-de-importadores.test.mjs:52 · mkdtempSync(…) → raiz  ·  no se borra en ninguna parte
+ESCAPA tests/scrum709-microcopy-por-fichero.test.mjs:84 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum716c-la-memoria-del-vigia.test.mjs:224 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum726-quien-firma-la-microcopy.test.mjs:36 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum754-el-juez-que-oscila.test.mjs:345 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum811c-skill-ui-declarada.test.mjs:609 · mkdtempSync(…) → raiz  ·  no se borra en ninguna parte
+ESCAPA tests/scrum839d-union-solo-en-el-registro.test.mjs:149 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum839e-solo-pr-armados.test.mjs:116 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum850b-las-formas-que-mienten.test.mjs:73 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum899-sesion-lista-blanca.test.mjs:177 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+
+== diff
+1c1
+< 169 ficheros con temporales (233 llamadas, de 3460 ficheros mirados) · 24 con nombres repetidos · 226 emparejamientos fuera de ámbito, que ya no cuentan · 0 emparejadas sólo por nombre
+---
+> 165 ficheros con temporales (227 llamadas, de 3460 ficheros mirados) · 24 con nombres repetidos · 214 emparejamientos fuera de ámbito, que ya no cuentan · 0 emparejadas sólo por nombre
+4,5d3
+< NO_GARANTIZADA tests/scrum757-la-declaracion-que-nadie-lee.test.mjs:41 · mkdtempSync(…) → dir  ·  borra en 44 SIN cobertura
+< NO_GARANTIZADA tests/scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs:107 · mkdtempSync(…) → dir  ·  borra en 122 SIN cobertura
+26,29d23
+< ESCAPA tests/_alcance-desde-entradas.mjs:385 · mkdtempSync(…) → raiz  ·  no se borra en ninguna parte
+< ESCAPA tests/_comparador-alcance.mjs:261 · mkdtempSync(…) → raiz  ·  no se borra en ninguna parte
+< ESCAPA tests/_export-que-sobra.mjs:239 · mkdtempSync(…) → raiz  ·  no se borra en ninguna parte
+< ESCAPA tests/_huerfanos-en-modulos-vivos.mjs:195 · mkdtempSync(…) → raiz  ·  no se borra en ninguna parte
+
+== tests tocados: casos por nombre, base → después (TAP)
+scrum757-la-declaracion-que-nadie-lee: # tests 9 # pass 9 # fail 0 
+scrum759-el-guard-ciego-fuera-de-su-fichero: # tests 12 # pass 12 # fail 0 
+scrum411-exports-inalcanzables: # tests 25 # pass 25 # fail 0 
+scrum493-dos-instrumentos: # tests 8 # pass 8 # fail 0 
+scrum494-export-que-sobra: # tests 12 # pass 12 # fail 0 
+scrum521-resolvedor-de-importadores: # tests 6 # pass 6 # fail 0 
+scrum631-la-unicidad-tiene-vigilante: # tests 18 # pass 18 # fail 0 
+scrum824-temporales-fuera-del-arbol: # tests 9 # pass 9 # fail 0 

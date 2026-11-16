@@ -413,13 +413,25 @@ export const FIELD_LEVEL_ROLE_GATES: ReadonlyArray<{ method: string; path: strin
   {
     method: 'PATCH',
     path: '/admin/jobs/:id',
-    campos: ['tipoOperacion', 'assignedUserId', "status:'cerrado'"],
-    why: 'SCRUM-120: la ruta NO es admin-only (status/scheduledAt/notes son del operario); lo reservado al admin son los campos que tocan facturación o dinero. Regla en roleCapabilities.adminOnlyJobField.',
+    campos: ['tipoOperacion', 'assignedUserId', "status:'cerrado'", 'notes'],
+    why: 'SCRUM-120: la ruta NO es admin-only (status/scheduledAt son del operario); lo reservado al admin son los campos que tocan facturación o dinero, y las notas internas, que son solo del jefe (SCRUM-1662 c.21555). Regla en roleCapabilities.adminOnlyJobField.',
   },
   {
     method: 'PATCH',
     path: '/admin/partes/:id',
     campos: ['precios'],
     why: 'SCRUM-1078: los importes de un parte son del admin; el técnico no los escribe. Regla en roleCapabilities.adminOnlyParteField.',
+  },
+  {
+    method: 'POST',
+    path: '/admin/jobs/:id/albaranes',
+    campos: ['modoValoracion', 'precioUnitario', 'tipoIva'],
+    why: 'SCRUM-1712: el técnico crea su albarán en la obra, pero VALORARLO es del admin (como los importes del parte, SCRUM-1078). Regla en roleCapabilities.adminOnlyAlbaranField.',
+  },
+  {
+    method: 'PATCH',
+    path: '/admin/albaranes/:id',
+    campos: ['modoValoracion', 'precioUnitario', 'tipoIva'],
+    why: 'SCRUM-1712: el técnico rellena su albarán, pero ni lo valora, ni cambia el precio de la oficina, ni lo desvalora. Regla en roleCapabilities.adminOnlyAlbaranField.',
   },
 ];

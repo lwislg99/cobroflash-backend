@@ -72,7 +72,10 @@ const CENSO_HEREDADO = Object.freeze({
   'invoiceDetailView.js': 4,
   // 11 → 9 (SCRUM-1233, 29-sep-2026): la dirección de la obra y «consolidar» pasan por
   // `mensajeParaPersona`, que entra en TRADUCTORES.
-  'jobDetailView.js': 9,
+  // 9 → 5 (SCRUM-1233j, 2-nov-2026): los cuatro `(e?.data?.message || e.message)` crudos de
+  // «No se pudo completar la acción», «…guardar el tipo de trabajo», «…crear el albarán» y
+  // «Error actualizando estado» pasan por `mensajeDeFallo` (helper local → `mensajeParaPersona`).
+  'jobDetailView.js': 5,
   // jobsView.js: 2 → 0 (SCRUM-1233f, 15-oct-2026). Salen, uno a uno, los dos que se contaron el 2-sep
   // sobre 19ea5a4052340cbe9598451c9ede91f2c1a07170:
   //   · :281 showToast(… invalid_transition … 'No se pudo guardar: ' + … err.message)
@@ -126,7 +129,8 @@ test('SCRUM-644 · 🔴 y el censo heredado NO CRECE por la puerta de atrás', (
   const total = Object.values(CENSO_HEREDADO).reduce((a, b) => a + b, 0);
   // 57 → 53 (SCRUM-1233f): la tabla sumaba 55 desde SCRUM-1233 (jobDetailView 11 → 9, sin bajar este
   // tope) y jobsView sale con sus 2. El tope es la suma de la tabla, no un número con holgura.
-  assert.ok(total <= 53,
+  // 53 → 49 (SCRUM-1233j): jobDetailView 9 → 5, los cuatro sitios que ya pasan por `mensajeDeFallo`.
+  assert.ok(total <= 49,
     `🔴 el censo heredado ha subido a ${total}. Sólo puede BAJAR. Si un fichero necesita más sitios,\n`
     + '  el arreglo es traducirlos, no ampliarle el techo.');
   assert.equal(censo(RAIZ).hallazgos.length <= total, true,

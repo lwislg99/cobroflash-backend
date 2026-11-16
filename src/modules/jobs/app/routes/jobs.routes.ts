@@ -8,8 +8,11 @@ import type { Prisma } from '@prisma/client'; // SCRUM-717b: los tipos SALEN del
 import type { Job } from '@prisma/client'; // SCRUM-717d: sin `select`, la consulta devuelve el MODELO
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: dinero = admin)
 import { canalDeWhatsApp } from '../../../../core/contacto/canalDeWhatsApp'; // SCRUM-1171
-import { seesOnlyOwnJobs, seesAllJobs, adminOnlyJobField } from '../../../../core/http/roleCapabilities'; // SCRUM-147 / SCRUM-164
+import { seesOnlyOwnJobs, seesAllJobs, adminOnlyJobField, adminOnlyAlbaranField } from '../../../../core/http/roleCapabilities'; // SCRUM-147 / SCRUM-164 / SCRUM-1712
+import { trabajoParaElRol, descripcionDelCalendario } from '../../domain/trabajoParaElRol'; // SCRUM-1662 (c.21555)
+import { albaranParaElRol } from '../../domain/albaranParaElRol'; // SCRUM-1707 (c.21547 Q2)
 import { listExpenses } from '../../../expenses/domain/expenses.service'; // SCRUM-370: los gastos de ESTE Trabajo
+import { esSuyoElTrabajo, SELECT_DUENOS } from '../../domain/accesoAlTrabajo'; // SCRUM-1706: los tres ejes, también en `/:id`
 import { canTransition, estadoCobroFor, importeDeReferencia, JOB_TIPOS_OPERACION } from '../../domain/job.service';
 import { recordAudit, actorDeRequest, sobreFiscal, flagsFiscalesDe } from '../../../system/audit.service'; // SCRUM-66 · SCRUM-207 · SCRUM-206b
 import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo } from '../../../quotes/domain/billingPlan';
@@ -495,13 +498,16 @@ async function serializeJob(job: Job, refs?: JobRefs) {
     scheduledAt: job.scheduledAt,
     assignedUserId: job.assignedUserId,
     notes: job.notes,
+    // SCRUM-1662 · «Qué hay que hacer»: la tarea del trabajo, que el operario SÍ ve (no es `notes`).
+    // `null` en los trabajos anteriores: no se copia nada de `notes`, que se escribieron como privadas.
+    queHayQueHacer: job.queHayQueHacer ?? null,
     createdAt: job.createdAt,
     // SCRUM-10: campos del contenedor "Trabajo". Fallback a derivado para Jobs
     // anteriores (titulo/totalAceptado null) → sin cambiar el comportamiento visible.
     // 🔴 SCRUM-651 · el CRITERIO del titulo vive en `tituloDeTrabajo`, no aqui: en linea solo se
     // podia vigilar comparando texto, y un guard asi pasa en verde en cuanto alguien reescribe la
     // expresion sin cambiar el defecto. Medido en su tanda de rojos.
-    titulo: tituloDeTrabajo({ titulo: job.titulo, quote, customer, jobId: job.id }),
+    titulo: tituloDeTrabajo({ titulo: job.titulo, customer, jobId: job.id }),
     // SCRUM-917d · aditivo: el nombre que puso el profesional, sin derivar (null si no hay). La
     // lista ya pinta el cliente aparte y con `titulo` a secas lo repetía.
     tituloPropio: tituloPropioDeTrabajo(job),
@@ -668,6 +674,18 @@ async function serializeJobDetail(job: any) {
     };
   });
 
+  // SCRUM-1671 (PILOTO-1) · LOS PARTES DEL TRABAJO. Medido el 10-nov en yaqu.app: el parte
+  // PT-2026-005 firmado con `jobId: 79` y la ficha del trabajo #79 diciendo «Aún no hay
+  // documentos», porque este detalle no los pedía. Como los albaranes, son del Trabajo (`jobId`)
+  // y no del presupuesto: se cargan SIEMPRE y viajan por las DOS salidas. Lo que viaja es lo mismo
+  // que pinta la ficha del cliente (`historialDelCliente.ts`): id, número, fecha y estado — el
+  // contenido del parte se lee en su propia ruta. 🔴 Regla 2: merchant Y trabajo en el `where`.
+  const partes = await prisma.parteTrabajo.findMany({
+    where: { merchantId: job.merchantId, jobId: job.id },
+    orderBy: [{ fecha: 'desc' }, { id: 'desc' }],
+    select: { id: true, numero: true, fecha: true, estado: true },
+  });
+
   // invoices[] y charge SÍ dependen de los presupuestos (tramos/cobro): un Job sin ninguno no
   // tiene → []/null.
   //
@@ -686,7 +704,7 @@ async function serializeJobDetail(job: any) {
       // presupuesto es la AVERÍA —el caso más frecuente del primer cliente real, y el que más se
       // reparte entre varios—: dejarlo fuera de aquí habría hecho que el selector saliera vacío
       // justo donde más falta hace, sin ningún error.
-      ...base, customer, invoices: [], charge: null, albaranes, asignados,
+      ...base, customer, invoices: [], charge: null, albaranes, partes, asignados,
       entregaPendiente: entregaParaVista(entregaDelTrabajo([], albaranesRaw)),
     };
   }
@@ -787,7 +805,7 @@ async function serializeJobDetail(job: any) {
   // entregar». El criterio es el de `dineroDelTrabajo.ts`, aplicado en `presupuestosQueSeEntregan`.
   const entrega = entregaParaVista(entregaDelTrabajo(presupuestosQueSeEntregan(quotesDelTrabajo), albaranesRaw));
 
-  return { ...base, customer, invoices, charge, albaranes, asignados, entregaPendiente: entrega };
+  return { ...base, customer, invoices, charge, albaranes, partes, asignados, entregaPendiente: entrega };
 }
 
 // GET /admin/jobs — lista para la vista "Esta semana" (simple, por fecha)
@@ -858,7 +876,8 @@ router.get('/', async (req, res) => {
     const refs = await loadJobRefs(jobs);
     const out = [];
     for (const j of jobs) out.push(await serializeJob(j, refs));
-    return res.json(out);
+    // SCRUM-1662 (c.21555) · las notas internas son solo del jefe: ver `trabajoParaElRol`.
+    return res.json(out.map((s) => trabajoParaElRol(s, req.userRole)));
   } catch (err: any) {
     console.error('[GET /admin/jobs]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
@@ -907,12 +926,25 @@ router.post('/', async (req, res) => {
       entityType: 'job',
       entityId: job.id,
     });
-    return res.status(201).json(await serializeJob(job));
+    return res.status(201).json(trabajoParaElRol(await serializeJob(job), req.userRole)); // SCRUM-1662
   } catch (err: any) {
     console.error('[jobs] POST / falló:', err?.message || err);
     return res.status(500).json({ error: 'server_error' });
   }
 });
+
+// SCRUM-1706 (PILOTO-1) · ¿SE LO ASIGNARON? La segunda mitad de la pertenencia en `/:id`.
+// La LISTA filtra por los tres ejes (autoría, `assignedUserId` y la tabla `assignees`; SCRUM-467 +
+// SCRUM-650) y las puertas de `/:id` miraban solo la autoría: el operario veía en la lista el trabajo
+// que le asignaban y al abrirlo recibía 404 («No pudimos cargar el trabajo»). Se pregunta DENTRO del
+// `if` de autoría —solo cuando no es el autor— con `esSuyoElTrabajo` (los tres ejes, UNA fuente), así
+// la lectura y la escritura de este recurso siguen mirando lo mismo que la lista.
+// La decisión se toma AQUÍ, en código, sobre los dueños leídos — no se delega en un `where`: un
+// `where` mal formado (o un doble que no lo interpreta, SCRUM-1390b) devolvería la fila y abriría.
+async function asignadoAlTecnico(merchantId: number, jobId: number, teamMemberId: number | null | undefined): Promise<boolean> {
+  const duenos = await prisma.job.findFirst({ where: { id: jobId, merchantId }, select: SELECT_DUENOS });
+  return esSuyoElTrabajo(duenos, teamMemberId);
+}
 
 router.get('/:id', async (req, res) => {
   try {
@@ -924,9 +956,11 @@ router.get('/:id', async (req, res) => {
     // URL el Trabajo de otro → 404 (mismo patrón que la tenancy: no filtra existencia).
     // SCRUM-147: por capacidad (ver el comentario de GET /admin/jobs y roleCapabilities.ts).
     if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
-      return res.status(404).json({ error: 'not_found' });
+      if (!(await asignadoAlTecnico(req.merchantId!, job.id, req.teamMemberId))) { // SCRUM-1706
+        return res.status(404).json({ error: 'not_found' });
+      }
     }
-    return res.json(await serializeJobDetail(job));
+    return res.json(trabajoParaElRol(await serializeJobDetail(job), req.userRole)); // SCRUM-1662 (c.21555)
   } catch (err: any) {
     console.error('[GET /admin/jobs/:id]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
@@ -966,7 +1000,9 @@ router.get('/:id/gastos', async (req, res) => {
     const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!job) return res.status(404).json({ error: 'not_found' });
     if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
-      return res.status(404).json({ error: 'not_found' });
+      if (!(await asignadoAlTecnico(req.merchantId!, job.id, req.teamMemberId))) { // SCRUM-1706
+        return res.status(404).json({ error: 'not_found' });
+      }
     }
     // Un Trabajo sin cotización no puede tener gastos vinculados: el gasto se ata por `quoteId`.
     // Lista VACÍA, no 404: «no tiene gastos» es una respuesta, no un error.
@@ -979,7 +1015,7 @@ router.get('/:id/gastos', async (req, res) => {
   }
 });
 
-// PATCH /admin/jobs/:id — { status?, scheduledAt?, notes?, assignedUserId? }
+// PATCH /admin/jobs/:id — { status?, scheduledAt?, notes?, queHayQueHacer?, assignedUserId? }
 router.patch('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -988,13 +1024,16 @@ router.patch('/:id', async (req, res) => {
     if (!job) return res.status(404).json({ error: 'not_found' });
     // 🔴 SCRUM-849 · LA MISMA COMPROBACION QUE `GET /:id`, QUE AQUI NO ESTABA.
     // Sin esto, un tecnico no podia ABRIR el Trabajo de otro (404 desde SCRUM-23) y si podia
-    // ESCRIBIR en el. Un eje y no tres, porque es el que aplica la lectura de ESTE recurso:
-    // subir aqui a los tres ejes de albaranes dejaria la escritura mas abierta que su lectura.
+    // ESCRIBIR en el. Los MISMOS ejes que la lectura de ESTE recurso (`GET /:id`), nunca mas: desde
+    // SCRUM-1706 la lectura mira los tres (autor dentro del `if`, asignado en `asignadoAlTecnico`).
     if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
-      return res.status(404).json({ error: 'not_found' });
+      if (!(await asignadoAlTecnico(req.merchantId!, job.id, req.teamMemberId))) { // SCRUM-1706
+        return res.status(404).json({ error: 'not_found' });
+      }
     }
 
-    // SCRUM-120: gate por CAMPO (no por ruta — status/scheduledAt/notes del día a día son del operario).
+    // SCRUM-120: gate por CAMPO (no por ruta — status/scheduledAt del día a día son del operario; las
+    // `notes` dejaron de serlo con la firma de SCRUM-1662 c.21555: son solo del jefe).
     // Admin-only por afectar a FACTURACIÓN/DINERO: `tipoOperacion` (bandera fiscal: recapitulativa mensual
     // vs. al concluir), `assignedUserId` (reparto del equipo, S1) y cerrar el Trabajo (`status:'cerrado'`:
     // única transición IRREVERSIBLE de la FSM y mata la vía de "Cobrar el resto"). FAIL-CLOSED: si un técnico
@@ -1033,6 +1072,13 @@ router.patch('/:id', async (req, res) => {
       data.scheduledAt = d;
     }
     if (req.body?.notes !== undefined) data.notes = String(req.body.notes || '').slice(0, 2000) || null;
+    // SCRUM-1662 · «Qué hay que hacer» se edita aquí. NO es admin-only: es la tarea del operario
+    // (c.21555: «La tarea del operario vive en "Qué hay que hacer"»), operativa como `titulo`. Las
+    // que sí pasan a ser solo del jefe son las `notes` de arriba: el 403 lo da `adminOnlyJobField`.
+    // Mismo tope que en el alta (2.000, `datosDeTrabajoDirecto`); vacío → `null`, un solo «no consta».
+    if (req.body?.queHayQueHacer !== undefined) {
+      data.queHayQueHacer = String(req.body.queHayQueHacer || '').trim().slice(0, 2000) || null;
+    }
     // ── SCRUM-317 (G2) · el pro pone NOMBRE al Trabajo ──────────────────────────────────
     //
     // `titulo` existía en el modelo desde SCRUM-10 y NINGUNA ruta lo escribía: se rellenaba solo
@@ -1139,7 +1185,7 @@ router.patch('/:id', async (req, res) => {
         meta: { tipoOperacion: tipoOperacionElegido },
       });
     }
-    return res.json(await serializeJob(updated));
+    return res.json(trabajoParaElRol(await serializeJob(updated), req.userRole)); // SCRUM-1662
   } catch (err: any) {
     console.error('[PATCH /admin/jobs/:id]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
@@ -1156,7 +1202,9 @@ router.get('/:id/ics', async (req, res) => {
     // SCRUM-1390b: la misma comprobación que `GET /:id` (SCRUM-23). Sin ella, un técnico que no
     // puede abrir el Trabajo de otro se bajaba su cita, con el cliente y las notas dentro.
     if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
-      return res.status(404).json({ error: 'not_found' });
+      if (!(await asignadoAlTecnico(req.merchantId!, job.id, req.teamMemberId))) { // SCRUM-1706
+        return res.status(404).json({ error: 'not_found' });
+      }
     }
     if (!job.scheduledAt) return res.status(409).json({ error: 'not_scheduled' });
 
@@ -1165,6 +1213,7 @@ router.get('/:id/ics', async (req, res) => {
     const start = new Date(job.scheduledAt);
     const end = new Date(start.getTime() + 2 * 3600_000); // bloque de 2 h por defecto
     const summary = `Trabajo: ${s.customer?.name || 'Cliente'}${s.quote ? ` · Presupuesto #${s.quote.number}` : ''}`;
+    const descripcion = descripcionDelCalendario(job, req.userRole);
     const escText = (t: string) => t.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
     const ics = [
       'BEGIN:VCALENDAR',
@@ -1176,7 +1225,8 @@ router.get('/:id/ics', async (req, res) => {
       `DTSTART:${dt(start)}`,
       `DTEND:${dt(end)}`,
       `SUMMARY:${escText(summary)}`,
-      ...(job.notes ? [`DESCRIPTION:${escText(job.notes)}`] : []),
+      // SCRUM-1662 (c.21555) · el jefe, sus notas; el operario, «Qué hay que hacer».
+      ...(descripcion ? [`DESCRIPTION:${escText(descripcion)}`] : []),
       'END:VEVENT',
       'END:VCALENDAR',
     ].join('\r\n');
@@ -1200,10 +1250,21 @@ router.post('/:id/albaranes', async (req, res) => {
     if (!job) return res.status(404).json({ error: 'not_found' });
     // 🔴 SCRUM-849 · LA MISMA COMPROBACION QUE `GET /:id`, QUE AQUI NO ESTABA.
     // Sin esto, un tecnico no podia ABRIR el Trabajo de otro (404 desde SCRUM-23) y si podia
-    // ESCRIBIR en el. Un eje y no tres, porque es el que aplica la lectura de ESTE recurso:
-    // subir aqui a los tres ejes de albaranes dejaria la escritura mas abierta que su lectura.
+    // ESCRIBIR en el. Los MISMOS ejes que la lectura de ESTE recurso (`GET /:id`), nunca mas: desde
+    // SCRUM-1706 la lectura mira los tres (autor dentro del `if`, asignado en `asignadoAlTecnico`).
     if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
-      return res.status(404).json({ error: 'not_found' });
+      if (!(await asignadoAlTecnico(req.merchantId!, job.id, req.teamMemberId))) { // SCRUM-1706
+        return res.status(404).json({ error: 'not_found' });
+      }
+    }
+
+    // SCRUM-1712: valorar el albarán es del admin. Después de la pertenencia (lo ajeno sigue en 404)
+    // y antes de validar nada: con un solo campo de precio, la petición ENTERA se rechaza.
+    if (!seesAllJobs(req.userRole)) {
+      const campoAdmin = adminOnlyAlbaranField({ modoValoracion: req.body?.modoValoracion, lineas: req.body?.lineas });
+      if (campoAdmin) {
+        return res.status(403).json({ error: 'forbidden', required_role: 'admin', field: campoAdmin });
+      }
     }
 
     // SCRUM-257 · UN ALBARÁN NACE DE UN PRESUPUESTO (decisión 1 del fundador, 2-ago-2026).
@@ -1361,7 +1422,8 @@ router.post('/:id/albaranes', async (req, res) => {
     // bien—; el cuerpo es el albarán original, que es lo que la cola necesita para cerrar su
     // elemento.
     const idempotencia = !clave ? 'no_solicitada' : repetida ? 'repetida' : 'aplicada';
-    return res.status(repetida ? 200 : 201).json({ ...serializeAlbaran(albaran), idempotencia });
+    // SCRUM-1707 (c.21547 Q2) · al operario, sin precios — la misma regla que las rutas del albarán.
+    return res.status(repetida ? 200 : 201).json({ ...albaranParaElRol(serializeAlbaran(albaran), req.userRole), idempotencia });
   } catch (err: any) {
     // SCRUM-358: misma clave con contenido DISTINTO. No es un fallo del servidor: es que la
     // etiqueta está puesta a dos cosas, y hay que decirlo con los dos documentos delante.

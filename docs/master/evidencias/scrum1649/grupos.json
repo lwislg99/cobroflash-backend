@@ -1,0 +1,2697 @@
+[
+ {
+  "donde": "src/core/documentos/asignacionDeDocumento.ts:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "2-oct-2026",
+  "pares": [],
+  "tickets": [
+   "1397",
+   "1390"
+  ]
+ },
+ {
+  "donde": "src/core/http/adminRouteDeclarations.ts:213",
+  "nivel": "rastreable",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "24-ago-2026",
+  "pares": [],
+  "tickets": [
+   "614",
+   "55",
+   "365"
+  ]
+ },
+ {
+  "donde": "src/core/http/publicNotFound.ts:70",
+  "nivel": "rastreable",
+  "grupo": "3b el ticket citado no dice nada",
+  "fecha": "30-jul-2026",
+  "pares": [],
+  "tickets": [
+   "206"
+  ]
+ },
+ {
+  "donde": "src/core/validation/schemas.ts:54",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "4-sep-2026",
+  "pares": [],
+  "tickets": [
+   "594"
+  ]
+ },
+ {
+  "donde": "src/core/validation/schemas.ts:136",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "4-sep-2026",
+  "pares": [],
+  "tickets": [
+   "712"
+  ]
+ },
+ {
+  "donde": "src/integrations/whatsappTemplates.ts:270",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "49"
+  ]
+ },
+ {
+  "donde": "src/lib/sendOutcome.ts:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "126"
+  ]
+ },
+ {
+  "donde": "src/modules/auth/app/routes/auth.routes.ts:31",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "8-oct-2026",
+  "pares": [],
+  "tickets": [
+   "1515",
+   "94"
+  ]
+ },
+ {
+  "donde": "src/modules/auth/domain/territorioDeAlta.ts:21",
+  "nivel": "rastreable",
+  "grupo": "1c fundador literal (ficha microcopy con comentario)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1536"
+  ]
+ },
+ {
+  "donde": "src/modules/auth/domain/zonaDeLaProvincia.ts:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1522",
+   "1616"
+  ]
+ },
+ {
+  "donde": "src/modules/billing/app/routes/payMp.routes.ts:14",
+  "nivel": "rastreable",
+  "grupo": "1c fundador literal (ficha microcopy con comentario)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1449"
+  ]
+ },
+ {
+  "donde": "src/modules/billing/app/routes/stripe.routes.ts:225",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "7-sep-2026",
+  "pares": [],
+  "tickets": [
+   "809"
+  ]
+ },
+ {
+  "donde": "src/modules/billing/app/routes/subscriptions.routes.ts:45",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1402"
+  ]
+ },
+ {
+  "donde": "src/modules/billing/domain/comercioSuprimido.ts:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1573"
+  ]
+ },
+ {
+  "donde": "src/modules/billing/domain/instanteDeCobro.ts:45",
+  "nivel": "rastreable",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "397"
+  ]
+ },
+ {
+  "donde": "src/modules/fiscal/evidencias/paquete.ts:174",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": "1-oct-2026",
+  "pares": [
+   "1252c17726"
+  ],
+  "tickets": [
+   "1252"
+  ]
+ },
+ {
+  "donde": "src/modules/fiscal/librosAeat/librosAeat.ts:183",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": "10-ago-2026",
+  "pares": [
+   "1502c20702"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "src/modules/fiscal/modelo303/modelo303.ts:444",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1063"
+  ]
+ },
+ {
+  "donde": "src/modules/fiscal/modelo303/modelo303.ts:452",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1063"
+  ]
+ },
+ {
+  "donde": "src/modules/fiscal/verifactu/registro.builder.ts:629",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": null,
+  "pares": [
+   "1258c17713"
+  ],
+  "tickets": [
+   "1258"
+  ]
+ },
+ {
+  "donde": "src/modules/invoicing/domain/cerrojoSaturado.ts:50",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": "8-sep-2026",
+  "pares": [],
+  "tickets": [
+   "728"
+  ]
+ },
+ {
+  "donde": "src/modules/invoicing/domain/invoiceNumber.service.ts:92",
+  "nivel": "rastreable",
+  "grupo": "3b el ticket citado no dice nada",
+  "fecha": "7-sep-2026",
+  "pares": [],
+  "tickets": [
+   "780",
+   "291",
+   "313"
+  ]
+ },
+ {
+  "donde": "src/modules/invoicing/domain/invoiceNumber.service.ts:193",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "780",
+   "234",
+   "291"
+  ]
+ },
+ {
+  "donde": "src/modules/invoicing/domain/lineasFacturables.ts:42",
+  "nivel": "rastreable",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": "3-ago-2026",
+  "pares": [],
+  "tickets": [
+   "264"
+  ]
+ },
+ {
+  "donde": "src/modules/invoicing/domain/lineasFacturables.ts:58",
+  "nivel": "rastreable",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": "3-ago-2026",
+  "pares": [],
+  "tickets": [
+   "264"
+  ]
+ },
+ {
+  "donde": "src/modules/invoicing/domain/portonDocumento.ts:46",
+  "nivel": "documental",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "30-jul-2026",
+  "pares": [],
+  "tickets": []
+ },
+ {
+  "donde": "src/modules/invoicing/infra/pdf/pdf.service.ts:23",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "604",
+   "636",
+   "436",
+   "625"
+  ]
+ },
+ {
+  "donde": "src/modules/invoicing/infra/pdf/pdf.service.ts:54",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "2-sep-2026",
+  "pares": [],
+  "tickets": [
+   "593"
+  ]
+ },
+ {
+  "donde": "src/modules/invoicing/infra/pdf/pdf.service.ts:546",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": null,
+  "pares": [
+   "1446c20917"
+  ],
+  "tickets": [
+   "1446"
+  ]
+ },
+ {
+  "donde": "src/modules/jobs/app/routes/albaranes.routes.ts:1515",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "17-sep-2026",
+  "pares": [],
+  "tickets": [
+   "895"
+  ]
+ },
+ {
+  "donde": "src/modules/jobs/app/routes/albaranes.routes.ts:1524",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "17-sep-2026",
+  "pares": [],
+  "tickets": [
+   "895"
+  ]
+ },
+ {
+  "donde": "src/modules/jobs/domain/albaranFirmante.ts:1",
+  "nivel": "rastreable",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": "6-ago-2026",
+  "pares": [],
+  "tickets": [
+   "300",
+   "289"
+  ]
+ },
+ {
+  "donde": "src/modules/jobs/domain/albaranFirmante.ts:87",
+  "nivel": "rastreable",
+  "grupo": "T2 asesor + fundador",
+  "fecha": "6-ago-2026",
+  "pares": [],
+  "tickets": [
+   "300"
+  ]
+ },
+ {
+  "donde": "src/modules/jobs/domain/albaranFirmante.ts:126",
+  "nivel": "rastreable",
+  "grupo": "2a asesor nombrado en la marca",
+  "fecha": "5-ago-2026",
+  "pares": [],
+  "tickets": [
+   "300"
+  ]
+ },
+ {
+  "donde": "src/modules/jobs/domain/albaranFirmante.ts:246",
+  "nivel": "documental",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": []
+ },
+ {
+  "donde": "src/modules/jobs/domain/albaranWhatsApp.service.ts:142",
+  "nivel": "rastreable",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": "27-jul-2026",
+  "pares": [],
+  "tickets": [
+   "62"
+  ]
+ },
+ {
+  "donde": "src/modules/jobs/domain/parteDictado.ts:98",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "2-sep-2026",
+  "pares": [],
+  "tickets": []
+ },
+ {
+  "donde": "src/modules/jobs/domain/parteDictado.ts:126",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": "7-sep-2026",
+  "pares": [],
+  "tickets": [
+   "725"
+  ]
+ },
+ {
+  "donde": "src/modules/jobs/domain/parteDictado.ts:138",
+  "nivel": "sin-respaldo",
+  "grupo": "3a sin respaldo (guard)"
+ },
+ {
+  "donde": "src/modules/jobs/domain/parteDictado.ts:401",
+  "nivel": "sin-respaldo",
+  "grupo": "3a sin respaldo (guard)"
+ },
+ {
+  "donde": "src/modules/jobs/domain/tipoIntervencion.ts:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "2-sep-2026",
+  "pares": [],
+  "tickets": [
+   "651",
+   "652"
+  ]
+ },
+ {
+  "donde": "src/modules/maintenance/domain/maintenance.service.ts:26",
+  "nivel": "rastreable",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": "7-ago-2026",
+  "pares": [],
+  "tickets": [
+   "394"
+  ]
+ },
+ {
+  "donde": "src/modules/metrics/domain/actividadEquipo.ts:1",
+  "nivel": "anclado",
+  "grupo": "2b delegacion del orquestador",
+  "fecha": null,
+  "pares": [
+   "1341c17825"
+  ],
+  "tickets": [
+   "1337"
+  ]
+ },
+ {
+  "donde": "src/modules/products/app/routes/products.routes.ts:282",
+  "nivel": "rastreable",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "22-jul-2026",
+  "pares": [],
+  "tickets": [
+   "614"
+  ]
+ },
+ {
+  "donde": "src/modules/quotes/domain/decisionDelCliente.ts:29",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "275"
+  ]
+ },
+ {
+  "donde": "src/modules/reports/domain/desgloseEmpleado.ts:48",
+  "nivel": "rastreable",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": "29-jul-2026",
+  "pares": [],
+  "tickets": [
+   "236"
+  ]
+ },
+ {
+  "donde": "src/modules/system/app/routes/invoicesAdmin.routes.ts:1284",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": "30-jul-2026",
+  "pares": [
+   "1502c18835"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "src/modules/system/app/routes/invoicesAdmin.routes.ts:1294",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "2-oct-2026",
+  "pares": [],
+  "tickets": [
+   "1400",
+   "1390"
+  ]
+ },
+ {
+  "donde": "src/modules/system/app/routes/quotesAdmin.routes.ts:408",
+  "nivel": "sin-respaldo",
+  "grupo": "3a sin respaldo (guard)"
+ },
+ {
+  "donde": "src/modules/system/app/routes/quotesAdmin.routes.ts:1134",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "2-oct-2026",
+  "pares": [],
+  "tickets": [
+   "1400",
+   "1390"
+  ]
+ },
+ {
+  "donde": "src/modules/system/domain/anonimizarMerchant.ts:57",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1569"
+  ]
+ },
+ {
+  "donde": "src/modules/system/merchantAdmin.ts:98",
+  "nivel": "rastreable",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": "5-ago-2026",
+  "pares": [],
+  "tickets": [
+   "338"
+  ]
+ },
+ {
+  "donde": "src/modules/system/quoteAdmin.ts:493",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": "15-sep-2026",
+  "pares": [],
+  "tickets": [
+   "688",
+   "655"
+  ]
+ },
+ {
+  "donde": "src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:519",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": null,
+  "pares": [
+   "1322c20957",
+   "1322c20977"
+  ],
+  "tickets": [
+   "1322"
+  ]
+ },
+ {
+  "donde": "src/modules/whatsappBot/domain/botFlow.service.ts:1",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": null,
+  "pares": [
+   "1502c20834"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "src/modules/whatsappBot/domain/botFlow.service.ts:129",
+  "nivel": "documental",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "5-jul-2026",
+  "pares": [],
+  "tickets": []
+ },
+ {
+  "donde": "public/dashboard/js/aiQuoteAssistant.js:112",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "507"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/aiQuoteAssistant.js:132",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "507"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:199",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": "17-sep-2026",
+  "pares": [
+   "895c15699"
+  ],
+  "tickets": [
+   "895"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:215",
+  "nivel": "rastreable",
+  "grupo": "3b el ticket citado no dice nada",
+  "fecha": "5-ago-2026",
+  "pares": [],
+  "tickets": [
+   "302"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:221",
+  "nivel": "rastreable",
+  "grupo": "3b el ticket citado no dice nada",
+  "fecha": "6-ago-2026",
+  "pares": [],
+  "tickets": [
+   "302"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:234",
+  "nivel": "rastreable",
+  "grupo": "3b el ticket citado no dice nada",
+  "fecha": "5-ago-2026",
+  "pares": [],
+  "tickets": [
+   "302"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:292",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": "6-ago-2026",
+  "pares": [
+   "1502c20702"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:332",
+  "nivel": "rastreable",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": "6-ago-2026",
+  "pares": [],
+  "tickets": [
+   "379",
+   "375"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/albaranDetailView.js:923",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": "8-sep-2026",
+  "pares": [],
+  "tickets": [
+   "707"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/api.js:1435",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "69",
+   "210"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/atajoNuevo.js:30",
+  "nivel": "rastreable",
+  "grupo": "2a asesor nombrado en la marca",
+  "fecha": "4-sep-2026",
+  "pares": [],
+  "tickets": [
+   "599"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/atajoNuevo.js:40",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": "7-sep-2026",
+  "pares": [],
+  "tickets": [
+   "722",
+   "606"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/atajoNuevo.js:62",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": "4-sep-2026",
+  "pares": [],
+  "tickets": [
+   "402",
+   "606",
+   "722"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/buscadorDeClientes.js:82",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": "7-sep-2026",
+  "pares": [],
+  "tickets": [
+   "713"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/csvImport.js:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "312",
+   "339"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/customerDetailView.js:255",
+  "nivel": "rastreable",
+  "grupo": "1c fundador literal (ficha microcopy con comentario)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1132"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/customersView.js:1063",
+  "nivel": "sin-respaldo",
+  "grupo": "3a sin respaldo (guard)"
+ },
+ {
+  "donde": "public/dashboard/js/customersView.js:1104",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "7-sep-2026",
+  "pares": [],
+  "tickets": [
+   "590",
+   "575"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/documentoAsignados.js:1",
+  "nivel": "rastreable",
+  "grupo": "1c fundador literal (ficha microcopy con comentario)",
+  "fecha": "8-sep-2026",
+  "pares": [],
+  "tickets": [
+   "597",
+   "650",
+   "229",
+   "709",
+   "402",
+   "755"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/expensesView.js:167",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": "6-sep-2026",
+  "pares": [],
+  "tickets": [
+   "769"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/exportView.js:30",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": null,
+  "pares": [
+   "1251c20675"
+  ],
+  "tickets": [
+   "1251"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/exportView.js:363",
+  "nivel": "rastreable",
+  "grupo": "3b el ticket citado no dice nada",
+  "fecha": "17-ago-2026",
+  "pares": [],
+  "tickets": [
+   "714"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/filtroClientes.js:97",
+  "nivel": "rastreable",
+  "grupo": "1c fundador literal (ficha microcopy con comentario)",
+  "fecha": "23-oct-2026",
+  "pares": [],
+  "tickets": [
+   "1043"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/filtroClientes.js:192",
+  "nivel": "rastreable",
+  "grupo": "2a asesor nombrado en la marca",
+  "fecha": "2-sep-2026",
+  "pares": [],
+  "tickets": [
+   "580"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/filtroClientes.js:276",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "2-sep-2026",
+  "pares": [],
+  "tickets": [
+   "581"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/homeView.js:394",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "25-sep-2026",
+  "pares": [],
+  "tickets": [
+   "1075"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/homeView.js:792",
+  "nivel": "sin-respaldo",
+  "grupo": "3a sin respaldo (guard)"
+ },
+ {
+  "donde": "public/dashboard/js/invoiceDetailView.js:315",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": "8-sep-2026",
+  "pares": [],
+  "tickets": [
+   "707"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/invoicesView.js:18",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": null,
+  "pares": [
+   "1640c21292"
+  ],
+  "tickets": [
+   "1640"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/invoicesView.js:20",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": null,
+  "pares": [
+   "1640c21292"
+  ],
+  "tickets": [
+   "1640"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/invoicesView.js:22",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": null,
+  "pares": [
+   "1640c21292"
+  ],
+  "tickets": [
+   "1640"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/invoicesView.js:291",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": "6-ago-2026",
+  "pares": [
+   "825c17446"
+  ],
+  "tickets": [
+   "346"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/invoicesView.js:795",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1562"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/invoicesView.js:879",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "5-sep-2026",
+  "pares": [],
+  "tickets": [
+   "648"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/jobDetailView.js:401",
+  "nivel": "documental",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "5-ago-2026",
+  "pares": [],
+  "tickets": []
+ },
+ {
+  "donde": "public/dashboard/js/jobDetailView.js:484",
+  "nivel": "documental",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "5-ago-2026",
+  "pares": [],
+  "tickets": []
+ },
+ {
+  "donde": "public/dashboard/js/jobDetailView.js:2124",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "366"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/jobNextAction.js:54",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "31"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/jobNuevoModal.js:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "3-sep-2026",
+  "pares": [],
+  "tickets": [
+   "651"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/jobRailBlocks.js:19",
+  "nivel": "sin-respaldo",
+  "grupo": "3a sin respaldo (guard)"
+ },
+ {
+  "donde": "public/dashboard/js/jobsCierreTrabajo.js:37",
+  "nivel": "rastreable",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "5-ago-2026",
+  "pares": [],
+  "tickets": [
+   "299"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/jobsView.js:63",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "2-sep-2026",
+  "pares": [],
+  "tickets": [
+   "651"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/jobsView.js:79",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": "6-sep-2026",
+  "pares": [
+   "769c14580"
+  ],
+  "tickets": [
+   "769"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/jobTrabajoPlegable.js:1",
+  "nivel": "rastreable",
+  "grupo": "2b delegacion del orquestador",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "915",
+   "917"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/onboardingView.js:48",
+  "nivel": "rastreable",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": "9-ago-2026",
+  "pares": [],
+  "tickets": [
+   "338"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/parteDetailView.js:40",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": "4-sep-2026",
+  "pares": [],
+  "tickets": [
+   "720"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/parteDetailView.js:57",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": "4-sep-2026",
+  "pares": [],
+  "tickets": [
+   "720"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/parteDetailView.js:67",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": "7-sep-2026",
+  "pares": [],
+  "tickets": [
+   "818"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/parteDetailView.js:162",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": "4-sep-2026",
+  "pares": [],
+  "tickets": [
+   "720"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/productsView.js:1178",
+  "nivel": "documental",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "5-ago-2026",
+  "pares": [],
+  "tickets": []
+ },
+ {
+  "donde": "public/dashboard/js/productsView.js:1214",
+  "nivel": "documental",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "5-ago-2026",
+  "pares": [],
+  "tickets": []
+ },
+ {
+  "donde": "public/dashboard/js/quoteActionsRegistry.js:68",
+  "nivel": "sin-respaldo",
+  "grupo": "3a sin respaldo (guard)"
+ },
+ {
+  "donde": "public/dashboard/js/quoteMargen.js:64",
+  "nivel": "sin-respaldo",
+  "grupo": "3a sin respaldo (guard)"
+ },
+ {
+  "donde": "public/dashboard/js/quoteRevisiones.js:34",
+  "nivel": "rastreable",
+  "grupo": "2b delegacion del orquestador",
+  "fecha": "3-sep-2026",
+  "pares": [],
+  "tickets": [
+   "688",
+   "1215",
+   "1157",
+   "402"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/quoteRevisiones.js:178",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": "15-sep-2026",
+  "pares": [],
+  "tickets": [
+   "688"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/quotesView.js:405",
+  "nivel": "rastreable",
+  "grupo": "3b el ticket citado no dice nada",
+  "fecha": "17-ago-2026",
+  "pares": [],
+  "tickets": [
+   "284"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/quotesView.js:429",
+  "nivel": "anclado",
+  "grupo": "2b delegacion del orquestador",
+  "fecha": null,
+  "pares": [
+   "915c15868"
+  ],
+  "tickets": [
+   "915"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/quotesView.js:1299",
+  "nivel": "rastreable",
+  "grupo": "2a asesor nombrado en la marca",
+  "fecha": "4-sep-2026",
+  "pares": [],
+  "tickets": [
+   "591",
+   "402",
+   "586",
+   "726"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/quotesView.js:1337",
+  "nivel": "rastreable",
+  "grupo": "2b delegacion del orquestador",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "915",
+   "586"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/quotesView.js:1695",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "794"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/reportsView.js:629",
+  "nivel": "rastreable",
+  "grupo": "2a asesor nombrado en la marca",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1049"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/reportsView.js:1204",
+  "nivel": "sin-respaldo",
+  "grupo": "3a sin respaldo (guard)"
+ },
+ {
+  "donde": "public/dashboard/js/rotulosDelDocumento.js:69",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "867"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/semaforoFiscal.js:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "210"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/settingsSubmenus.js:36",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": "5-ago-2026",
+  "pares": [
+   "1502c20514"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/settingsView.js:3",
+  "nivel": "rastreable",
+  "grupo": "3b el ticket citado no dice nada",
+  "fecha": "7-ago-2026",
+  "pares": [],
+  "tickets": [
+   "298"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/settingsView.js:311",
+  "nivel": "rastreable",
+  "grupo": "1c fundador literal (ficha microcopy con comentario)",
+  "fecha": "1-oct-2026",
+  "pares": [],
+  "tickets": [
+   "1102"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/settingsView.js:998",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": "3-sep-2026",
+  "pares": [],
+  "tickets": [
+   "656",
+   "402"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/settingsView.js:1787",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "314"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/textoDelDocumento.js:27",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "2-sep-2026",
+  "pares": [],
+  "tickets": [
+   "593",
+   "387"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/textoDelDocumento.js:41",
+  "nivel": "rastreable",
+  "grupo": "2a asesor nombrado en la marca",
+  "fecha": "2-sep-2026",
+  "pares": [],
+  "tickets": [
+   "593",
+   "387"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/tipoDestinatarioPendiente.js:55",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "615"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/voiceInput.js:45",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "2-sep-2026",
+  "pares": [],
+  "tickets": [
+   "674"
+  ]
+ },
+ {
+  "donde": "tests/scrum1016o-aria-label-firmado.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "24-oct-2026",
+  "pares": [],
+  "tickets": [
+   "1016"
+  ]
+ },
+ {
+  "donde": "tests/scrum1022-importa-xlsx-real.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "2b delegacion del orquestador",
+  "fecha": "21-sep-2026",
+  "pares": [],
+  "tickets": [
+   "1022"
+  ]
+ },
+ {
+  "donde": "tests/scrum1027-atajo-flag-off-sin-documento.test.mjs:200",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": null,
+  "pares": [
+   "825c17446"
+  ],
+  "tickets": [
+   "825"
+  ]
+ },
+ {
+  "donde": "tests/scrum1027-atajo-flag-off-sin-documento.test.mjs:223",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "895"
+  ]
+ },
+ {
+  "donde": "tests/scrum1041-facturas-emitidas-sin-marcador.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "2a asesor nombrado en la marca",
+  "fecha": "19-ago-2026",
+  "pares": [],
+  "tickets": [
+   "1041"
+  ]
+ },
+ {
+  "donde": "tests/scrum1043a-quien-me-debe-pantalla.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "1c fundador literal (ficha microcopy con comentario)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1043"
+  ]
+ },
+ {
+  "donde": "tests/scrum1065c-marca-borrador.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "1c fundador literal (ficha microcopy con comentario)",
+  "fecha": "24-oct-2026",
+  "pares": [],
+  "tickets": [
+   "1064",
+   "1065"
+  ]
+ },
+ {
+  "donde": "tests/scrum1128-envio-construido.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "25-sep-2026",
+  "pares": [],
+  "tickets": [
+   "1127"
+  ]
+ },
+ {
+  "donde": "tests/scrum1132-notas-en-la-ficha.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "1c fundador literal (ficha microcopy con comentario)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1132"
+  ]
+ },
+ {
+  "donde": "tests/scrum1145-pestana-sitios.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "1c fundador literal (ficha microcopy con comentario)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1145"
+  ]
+ },
+ {
+  "donde": "tests/scrum1250b-pay-unpay-desmontadas.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "24-oct-2026",
+  "pares": [],
+  "tickets": [
+   "1250"
+  ]
+ },
+ {
+  "donde": "tests/scrum1251b-el-zip-dice-cuantas-facturas.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "23-oct-2026",
+  "pares": [],
+  "tickets": [
+   "1602"
+  ]
+ },
+ {
+  "donde": "tests/scrum1260b-el-emisor-ya-no-escribe-just.test.mjs:1",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": null,
+  "pares": [
+   "1260c19616"
+  ],
+  "tickets": [
+   "1260"
+  ]
+ },
+ {
+  "donde": "tests/scrum1322-el-bot-entiende-lo-que-pide.test.mjs:106",
+  "nivel": "rastreable",
+  "grupo": "1c fundador literal (ficha microcopy con comentario)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1326"
+  ]
+ },
+ {
+  "donde": "tests/scrum1322-el-bot-entiende-lo-que-pide.test.mjs:333",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": null,
+  "pares": [
+   "1322c20957"
+  ],
+  "tickets": [
+   "1322"
+  ]
+ },
+ {
+  "donde": "tests/scrum1322-el-bot-entiende-lo-que-pide.test.mjs:368",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": null,
+  "pares": [
+   "1322c20977"
+  ],
+  "tickets": [
+   "1322"
+  ]
+ },
+ {
+  "donde": "tests/scrum1326-vale-pregunta-una-vez.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "1c fundador literal (ficha microcopy con comentario)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1326"
+  ]
+ },
+ {
+  "donde": "tests/scrum1341-actividad-del-equipo-sin-importes.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "1-oct-2026",
+  "pares": [],
+  "tickets": [
+   "1337"
+  ]
+ },
+ {
+  "donde": "tests/scrum1342-plan-desconocido-no-calla.test.mjs:102",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1342"
+  ]
+ },
+ {
+  "donde": "tests/scrum139-cuadernillo.test.mjs:22",
+  "nivel": "rastreable",
+  "grupo": "2b delegacion del orquestador",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "915"
+  ]
+ },
+ {
+  "donde": "tests/scrum1449b-la-pagina-de-mercado-pago.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "1c fundador literal (ficha microcopy con comentario)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1449"
+  ]
+ },
+ {
+  "donde": "tests/scrum151-motivo-sin-tramo.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "27-jul-2026",
+  "pares": [],
+  "tickets": [
+   "151"
+  ]
+ },
+ {
+  "donde": "tests/scrum151-motivo-sin-tramo.test.mjs:53",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": null,
+  "pares": [
+   "1502c20834"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "tests/scrum1546c-la-firma-del-fundador-sin-comprobar.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "14-oct-2026",
+  "pares": [],
+  "tickets": [
+   "1546"
+  ]
+ },
+ {
+  "donde": "tests/scrum1562g-facturas-con-teclado.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "27-oct-2026",
+  "pares": [],
+  "tickets": [
+   "1562"
+  ]
+ },
+ {
+  "donde": "tests/scrum1565-fin-de-periodo-clover.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "809"
+  ]
+ },
+ {
+  "donde": "tests/scrum1588-alquiler-en-las-categorias.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1066"
+  ]
+ },
+ {
+  "donde": "tests/scrum1609-fecha-de-cobro-de-una-en-una.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": "10-ago-2026",
+  "pares": [],
+  "tickets": [
+   "397"
+  ]
+ },
+ {
+  "donde": "tests/scrum1616b-provincias-bilingues.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1616"
+  ]
+ },
+ {
+  "donde": "tests/scrum244-menu-portabilidad.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": "4-ago-2026",
+  "pares": [],
+  "tickets": [
+   "244",
+   "264"
+  ]
+ },
+ {
+  "donde": "tests/scrum244-menu-portabilidad.test.mjs:43",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": "4-ago-2026",
+  "pares": [
+   "1502c20702"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "tests/scrum257-albaran-desde-presupuesto.test.mjs:26",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": null,
+  "pares": [
+   "1502c20702"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "tests/scrum257-albaran-desde-presupuesto.test.mjs:145",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "4-sep-2026",
+  "pares": [],
+  "tickets": [
+   "651"
+  ]
+ },
+ {
+  "donde": "tests/scrum267-ancla-de-medicion.test.mjs:394",
+  "nivel": "rastreable",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "243",
+   "273",
+   "244",
+   "516"
+  ]
+ },
+ {
+  "donde": "tests/scrum283-censo-acciones-factura.test.mjs:118",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": "17-ago-2026",
+  "pares": [
+   "1502c20834"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "tests/scrum284-configuracion-submenus.test.mjs:131",
+  "nivel": "rastreable",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "5-ago-2026",
+  "pares": [],
+  "tickets": [
+   "483",
+   "277",
+   "344"
+  ]
+ },
+ {
+  "donde": "tests/scrum291-series-huecos.test.mjs:99",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": "5-ago-2026",
+  "pares": [
+   "1502c20514"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "tests/scrum294c-criterio-del-merchant.test.mjs:175",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": "17-ago-2026",
+  "pares": [
+   "1502c20834"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "tests/scrum298-modo-visible.test.mjs:229",
+  "nivel": "documental",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": []
+ },
+ {
+  "donde": "tests/scrum299-copy-factura-publico.test.mjs:27",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": null,
+  "pares": [
+   "299c12188"
+  ],
+  "tickets": [
+   "299"
+  ]
+ },
+ {
+  "donde": "tests/scrum300-firmante-ids-y-microcopy.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "2a asesor nombrado en la marca",
+  "fecha": "6-ago-2026",
+  "pares": [],
+  "tickets": [
+   "300"
+  ]
+ },
+ {
+  "donde": "tests/scrum303-albaran-una-pantalla.test.mjs:203",
+  "nivel": "documental",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": []
+ },
+ {
+  "donde": "tests/scrum317-trabajo-por-su-nombre.test.mjs:278",
+  "nivel": "rastreable",
+  "grupo": "2b delegacion del orquestador",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "917"
+  ]
+ },
+ {
+  "donde": "tests/scrum320-que-falta-para-cobrar.test.mjs:36",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": null,
+  "pares": [
+   "1502c20629"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "tests/scrum320-que-falta-para-cobrar.test.mjs:253",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": null,
+  "pares": [
+   "1502c20834"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "tests/scrum331-heroe.test.mjs:197",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1016"
+  ]
+ },
+ {
+  "donde": "tests/scrum338-carga-de-catalogo-no-muda.test.mjs:109",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": "9-ago-2026",
+  "pares": [
+   "1502c20702"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "tests/scrum344-cierre-con-saldo.test.mjs:30",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": "5-ago-2026",
+  "pares": [
+   "1502c20702"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "tests/scrum364-cambiar-gremio.test.mjs:138",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": "5-ago-2026",
+  "pares": [
+   "1502c20702"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "tests/scrum377-plural-de-programador.test.mjs:72",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": null,
+  "pares": [
+   "1502c20853"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "tests/scrum394-plan-mudo.test.mjs:264",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": "7-ago-2026",
+  "pares": [
+   "1502c20702"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "tests/scrum404-trazo-no-se-pierde.test.mjs:106",
+  "nivel": "documental",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "7-ago-2026",
+  "pares": [],
+  "tickets": []
+ },
+ {
+  "donde": "tests/scrum411-exports-inalcanzables.test.mjs:68",
+  "nivel": "anclado",
+  "grupo": "2c sesion dice fundador, sin sus palabras",
+  "fecha": "12-ago-2026",
+  "pares": [
+   "1404c18840"
+  ],
+  "tickets": [
+   "294"
+  ]
+ },
+ {
+  "donde": "tests/scrum427-notas-internas-detalle.test.mjs:183",
+  "nivel": "rastreable",
+  "grupo": "2b delegacion del orquestador",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "917"
+  ]
+ },
+ {
+  "donde": "tests/scrum428-terminado-sin-cobrar.test.mjs:120",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": "10-ago-2026",
+  "pares": [
+   "1502c20702"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "tests/scrum497-dato-personal-no-sobrevive.test.mjs:41",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1569"
+  ]
+ },
+ {
+  "donde": "tests/scrum497-dato-personal-no-sobrevive.test.mjs:514",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1569"
+  ]
+ },
+ {
+  "donde": "tests/scrum505-dato-personal-en-contenido.test.mjs:130",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "21-oct-2026",
+  "pares": [],
+  "tickets": [
+   "1569"
+  ]
+ },
+ {
+  "donde": "tests/scrum514-aprobado-y-aplicado.test.mjs:235",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "1-oct-2026",
+  "pares": [],
+  "tickets": [
+   "1329"
+  ]
+ },
+ {
+  "donde": "tests/scrum514-aprobado-y-aplicado.test.mjs:963",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": null,
+  "pares": [
+   "1258c17713"
+  ],
+  "tickets": [
+   "1258"
+  ]
+ },
+ {
+  "donde": "tests/scrum534r-el-p1-se-ve-entero.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "534"
+  ]
+ },
+ {
+  "donde": "tests/scrum557-alcance-por-identidad.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "3b el ticket citado no dice nada",
+  "fecha": "20-ago-2026",
+  "pares": [],
+  "tickets": [
+   "557",
+   "551"
+  ]
+ },
+ {
+  "donde": "tests/scrum568-promesa-con-mecanismo.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": "20-ago-2026",
+  "pares": [],
+  "tickets": [
+   "564"
+  ]
+ },
+ {
+  "donde": "tests/scrum574-mismo-cliente-tras-migracion.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "24-ago-2026",
+  "pares": [],
+  "tickets": [
+   "574"
+  ]
+ },
+ {
+  "donde": "tests/scrum581-pestanas-y-orden-clientes.test.mjs:137",
+  "nivel": "documental",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "2-sep-2026",
+  "pares": [],
+  "tickets": []
+ },
+ {
+  "donde": "tests/scrum582-seleccion-multiple-clientes.test.mjs:187",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": "29-sep-2026",
+  "pares": [
+   "1135c17449"
+  ],
+  "tickets": [
+   "1135"
+  ]
+ },
+ {
+  "donde": "tests/scrum586-forma-de-pago-por-cliente.test.mjs:178",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": null,
+  "pares": [
+   "1502c20629"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "tests/scrum586-forma-de-pago-por-cliente.test.mjs:393",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": "5-sep-2026",
+  "pares": [
+   "1502c20629"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "tests/scrum586-forma-de-pago-por-cliente.test.mjs:491",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "726"
+  ]
+ },
+ {
+  "donde": "tests/scrum587-descuento-por-defecto.test.mjs:221",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "726"
+  ]
+ },
+ {
+  "donde": "tests/scrum590b-el-campo-en-la-pantalla.test.mjs:47",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "7-sep-2026",
+  "pares": [],
+  "tickets": [
+   "575"
+  ]
+ },
+ {
+  "donde": "tests/scrum591-alta-desde-el-documento.test.mjs:249",
+  "nivel": "rastreable",
+  "grupo": "2a asesor nombrado en la marca",
+  "fecha": "4-sep-2026",
+  "pares": [],
+  "tickets": [
+   "606",
+   "722"
+  ]
+ },
+ {
+  "donde": "tests/scrum593-cabecera-y-pie-del-documento.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "2-sep-2026",
+  "pares": [],
+  "tickets": [
+   "655"
+  ]
+ },
+ {
+  "donde": "tests/scrum593b-superficie-texto-del-documento.test.mjs:21",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": "2-sep-2026",
+  "pares": [
+   "593c14262",
+   "1502c20702"
+  ],
+  "tickets": [
+   "593"
+  ]
+ },
+ {
+  "donde": "tests/scrum593b-superficie-texto-del-documento.test.mjs:91",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": "2-sep-2026",
+  "pares": [
+   "593c14262"
+  ],
+  "tickets": [
+   "593"
+  ]
+ },
+ {
+  "donde": "tests/scrum594-descuentos-presupuesto.test.mjs:238",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "4-sep-2026",
+  "pares": [],
+  "tickets": [
+   "712"
+  ]
+ },
+ {
+  "donde": "tests/scrum599-navegacion-documentos-y-atajo.test.mjs:275",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": "6-sep-2026",
+  "pares": [],
+  "tickets": [
+   "769"
+  ]
+ },
+ {
+  "donde": "tests/scrum599-navegacion-documentos-y-atajo.test.mjs:302",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": "4-sep-2026",
+  "pares": [],
+  "tickets": [
+   "599"
+  ]
+ },
+ {
+  "donde": "tests/scrum601-copy-del-documento-vs-flag.test.mjs:75",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "7-sep-2026",
+  "pares": [],
+  "tickets": [
+   "67"
+  ]
+ },
+ {
+  "donde": "tests/scrum601-copy-del-documento-vs-flag.test.mjs:87",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": "16-sep-2026",
+  "pares": [
+   "887c15675",
+   "895c15699",
+   "920c15992",
+   "1216c17347",
+   "1257c17444",
+   "1402c20866",
+   "1251c20675"
+  ],
+  "tickets": [
+   "867",
+   "887",
+   "895",
+   "915",
+   "1040",
+   "426",
+   "1049",
+   "776",
+   "515",
+   "1155",
+   "920",
+   "1160",
+   "1164",
+   "1216",
+   "1257",
+   "825",
+   "1027",
+   "1232",
+   "1402",
+   "1602",
+   "1251"
+  ]
+ },
+ {
+  "donde": "tests/scrum607-precios-fuera-del-albaran.test.mjs:355",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "726"
+  ]
+ },
+ {
+  "donde": "tests/scrum609b-switch-tipo-articulo.test.mjs:75",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": "2-sep-2026",
+  "pares": [
+   "1502c20834"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "tests/scrum615-plazo-con-null.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "615"
+  ]
+ },
+ {
+  "donde": "tests/scrum616-que-guarda-la-factura.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "2b delegacion del orquestador",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "616",
+   "600"
+  ]
+ },
+ {
+  "donde": "tests/scrum627b-censo-declara-reimplementaciones.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "25-ago-2026",
+  "pares": [],
+  "tickets": [
+   "627",
+   "389",
+   "604"
+  ]
+ },
+ {
+  "donde": "tests/scrum636-sitio-unico-dinero.test.mjs:222",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "623"
+  ]
+ },
+ {
+  "donde": "tests/scrum641-nombre-cogido-sin-500.test.mjs:182",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "726"
+  ]
+ },
+ {
+  "donde": "tests/scrum647-presupuesto-tambien-neutral.test.mjs:61",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": null,
+  "pares": [
+   "1446c20939"
+  ],
+  "tickets": [
+   "1446"
+  ]
+ },
+ {
+  "donde": "tests/scrum647-presupuesto-tambien-neutral.test.mjs:97",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1446"
+  ]
+ },
+ {
+  "donde": "tests/scrum651-trabajo-sin-presupuesto.test.mjs:332",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "3-sep-2026",
+  "pares": [],
+  "tickets": [
+   "703"
+  ]
+ },
+ {
+  "donde": "tests/scrum651-trabajo-sin-presupuesto.test.mjs:381",
+  "nivel": "anclado",
+  "grupo": "1b fundador por cuestionario, transcrito",
+  "fecha": "2-sep-2026",
+  "pares": [
+   "1502c20834"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "tests/scrum651-trabajo-sin-presupuesto.test.mjs:529",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "7-sep-2026",
+  "pares": [],
+  "tickets": [
+   "816"
+  ]
+ },
+ {
+  "donde": "tests/scrum655c-pantalla-revisiones.test.mjs:175",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": "15-sep-2026",
+  "pares": [],
+  "tickets": [
+   "688"
+  ]
+ },
+ {
+  "donde": "tests/scrum660-iva-defecto-del-documento.test.mjs:91",
+  "nivel": "rastreable",
+  "grupo": "2b delegacion del orquestador",
+  "fecha": "18-sep-2026",
+  "pares": [],
+  "tickets": [
+   "915"
+  ]
+ },
+ {
+  "donde": "tests/scrum683-parte-dictado.test.mjs:85",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": "2-ago-2026",
+  "pares": [
+   "1502c20629"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "tests/scrum683-parte-dictado.test.mjs:253",
+  "nivel": "documental",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "2-sep-2026",
+  "pares": [],
+  "tickets": []
+ },
+ {
+  "donde": "tests/scrum688-crear-revision.test.mjs:348",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": "15-sep-2026",
+  "pares": [],
+  "tickets": [
+   "688"
+  ]
+ },
+ {
+  "donde": "tests/scrum709-microcopy-por-fichero.test.mjs:210",
+  "nivel": "rastreable",
+  "grupo": "2a asesor/sesion en el ticket",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "718",
+   "387",
+   "264"
+  ]
+ },
+ {
+  "donde": "tests/scrum713-buscar-al-cliente-donde-ya-se-busca.test.mjs:364",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "713"
+  ]
+ },
+ {
+  "donde": "tests/scrum715-consta-por-identidad.test.mjs:147",
+  "nivel": "sin-respaldo",
+  "grupo": "3a sin respaldo (guard)"
+ },
+ {
+  "donde": "tests/scrum716-ritmo-de-despliegue.test.mjs:127",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": "7-sep-2026",
+  "pares": [
+   "1502c20629"
+  ],
+  "tickets": [
+   "1502"
+  ]
+ },
+ {
+  "donde": "tests/scrum718-escaner-contra-parser.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "718"
+  ]
+ },
+ {
+  "donde": "tests/scrum725b-el-aviso-se-pinta.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": "7-sep-2026",
+  "pares": [],
+  "tickets": [
+   "725"
+  ]
+ },
+ {
+  "donde": "tests/scrum751-clave-duplicada-en-silencio.test.mjs:153",
+  "nivel": "rastreable",
+  "grupo": "2b delegacion del orquestador",
+  "fecha": "26-sep-2026",
+  "pares": [],
+  "tickets": [
+   "1124"
+  ]
+ },
+ {
+  "donde": "tests/scrum755-el-contador-que-cuadro-solo.test.mjs:63",
+  "nivel": "rastreable",
+  "grupo": "1c fundador literal (ficha microcopy con comentario)",
+  "fecha": "8-sep-2026",
+  "pares": [],
+  "tickets": [
+   "1124"
+  ]
+ },
+ {
+  "donde": "tests/scrum755-el-contador-que-cuadro-solo.test.mjs:113",
+  "nivel": "anclado",
+  "grupo": "2b delegacion del orquestador",
+  "fecha": "21-sep-2026",
+  "pares": [
+   "915c15868"
+  ],
+  "tickets": [
+   "915"
+  ]
+ },
+ {
+  "donde": "tests/scrum768-listas-sin-atajo.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "? ficha por el fundador sin id de comentario",
+  "fecha": "6-sep-2026",
+  "pares": [],
+  "tickets": [
+   "768",
+   "599",
+   "606"
+  ]
+ },
+ {
+  "donde": "tests/scrum776-una-sola-voz.test.mjs:79",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "875"
+  ]
+ },
+ {
+  "donde": "tests/scrum794-un-solo-anadir-linea.test.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "794",
+   "792"
+  ]
+ },
+ {
+  "donde": "tests/scrum878-poblacion-del-guard-29.test.mjs:284",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "17-sep-2026",
+  "pares": [],
+  "tickets": [
+   "878"
+  ]
+ },
+ {
+  "donde": "tests/scrum895b-literales-firmados.test.mjs:1",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": "17-sep-2026",
+  "pares": [
+   "895c15699"
+  ],
+  "tickets": [
+   "895"
+  ]
+ },
+ {
+  "donde": "tests/scrum899c-relevar-y-contexto.test.mjs:168",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "6-oct-2026",
+  "pares": [],
+  "tickets": [
+   "1479"
+  ]
+ },
+ {
+  "donde": "tests/scrum985-el-aviso-de-importar-no-promete-excel.test.mjs:98",
+  "nivel": "rastreable",
+  "grupo": "2b delegacion del orquestador",
+  "fecha": "23-sep-2026",
+  "pares": [],
+  "tickets": [
+   "1022"
+  ]
+ },
+ {
+  "donde": "tests/_asignacion-bloques-presupuesto.mjs:30",
+  "nivel": "anclado",
+  "grupo": "2b delegacion del orquestador",
+  "fecha": "18-sep-2026",
+  "pares": [
+   "915c15868"
+  ],
+  "tickets": [
+   "915"
+  ]
+ },
+ {
+  "donde": "tests/_cambios-autorizados-de-la-factura.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "23-oct-2026",
+  "pares": [],
+  "tickets": [
+   "1446"
+  ]
+ },
+ {
+  "donde": "tests/_composicion-detalle.mjs:193",
+  "nivel": "rastreable",
+  "grupo": "2b delegacion del orquestador",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "917"
+  ]
+ },
+ {
+  "donde": "tests/_huerfanos-declarados.mjs:875",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "8-sep-2026",
+  "pares": [],
+  "tickets": [
+   "340"
+  ]
+ },
+ {
+  "donde": "tests/_negacion-respaldo.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "237"
+  ]
+ },
+ {
+  "donde": "scripts/censo-anclas-bloque-f.mjs:67",
+  "nivel": "rastreable",
+  "grupo": "3b el ticket citado no dice nada",
+  "fecha": "20-ago-2026",
+  "pares": [],
+  "tickets": [
+   "557"
+  ]
+ },
+ {
+  "donde": "scripts/equipo/gasto-arranque.mjs:643",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "21-sep-2026",
+  "pares": [],
+  "tickets": [
+   "1070",
+   "1479"
+  ]
+ },
+ {
+  "donde": "scripts/guard-lista-trabajos.mjs:583",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "1562"
+  ]
+ },
+ {
+  "donde": "scripts/guard-objetivo-tactil.mjs:718",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "20-oct-2026",
+  "pares": [],
+  "tickets": [
+   "1149",
+   "786"
+  ]
+ },
+ {
+  "donde": "scripts/guard-pasos-del-editor.mjs:1",
+  "nivel": "anclado",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": null,
+  "pares": [
+   "1511c18924",
+   "915c15790"
+  ],
+  "tickets": [
+   "1511"
+  ]
+ },
+ {
+  "donde": "scripts/medir-hueco-condicion.mjs:2",
+  "nivel": "rastreable",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": null,
+  "pares": [],
+  "tickets": [
+   "564",
+   "562"
+  ]
+ },
+ {
+  "donde": "scripts/qa/sembrar-qa.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "29-sep-2026",
+  "pares": [],
+  "tickets": [
+   "1268"
+  ]
+ },
+ {
+  "donde": "scripts/seed-video.mjs:1",
+  "nivel": "sin-respaldo",
+  "grupo": "3a sin respaldo (guard)"
+ },
+ {
+  "donde": "scripts/voice-eval.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "2e verano jul-ago, ticket sin leer",
+  "fecha": "5-jul-2026",
+  "pares": [],
+  "tickets": []
+ },
+ {
+  "donde": "scripts/_guard-afirmacion-fiscal.mjs:229",
+  "nivel": "rastreable",
+  "grupo": "? sin leer (solo Jira lo decide)",
+  "fecha": "25-sep-2026",
+  "pares": [],
+  "tickets": [
+   "1128"
+  ]
+ },
+ {
+  "donde": "scripts/_hueco-condicion.mjs:1",
+  "nivel": "rastreable",
+  "grupo": "1a fundador literal (Jira)",
+  "fecha": "20-ago-2026",
+  "pares": [],
+  "tickets": [
+   "564",
+   "568"
+  ]
+ }
+]

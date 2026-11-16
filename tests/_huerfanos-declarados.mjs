@@ -88,19 +88,6 @@ export const CATEGORIAS = {
  * `módulo::export`, no la longitud: por eso da igual cómo se agrupen las líneas.
  */
 export const DECLARADOS = [
-  // ── SCRUM-1515 · el alta de merchants, cuando la ruta pública se cerró ─────────────────
-  {
-    modulo: 'src/modules/auth/domain/auth.service.ts',
-    cat: 'FALSO_POSITIVO_MEDIDO', desde: '2026-10-08',
-    motivo: '🔴 NO es huérfano: es la ÚNICA puerta de alta que queda. `POST /auth/register` se cerró '
-      + 'por orden del fundador (SCRUM-1515) y ya no lo llama; lo llama el guion '
-      + '`src/modules/auth/app/cli/altaDeMerchant.ts`, que se lanza a mano con `node dist/…` y por '
-      + 'eso no cuelga de ninguna entrada viva (`src/index.ts`, `src/app.ts`, los scripts de '
-      + '`package.json`): el censo no lo ve. Que el guion lo llama y que el merchant nace bien lo '
-      + 'EJECUTA `tests/scrum1515-nuestra-puerta-de-alta.test.mjs`. Sale de aquí el día que el '
-      + 'guion sea una entrada del censo o el alta vuelva a tener llamador en el servidor.',
-    exports: ['registerMerchant'],
-  },
   // ── SCRUM-805 · el sello del PRESUPUESTO, y por qué sus cuatro exports son distintos ───
   //
   // Nacen en el mismo módulo y NO son el mismo caso, así que van en tres categorías. El guard
@@ -376,10 +363,6 @@ export const DECLARADOS = [
     cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
     motivo: 'Clasificar los asientos por cobro y su advertencia son de A5 (el 303 contra cobros reales), que no es este ticket. La lectura del criterio SI esta cableada.',
     exports: ['ADVERTENCIA_CAJA', 'clasificarPorCobro'] },
-  { modulo: 'src/modules/invoicing/domain/devengoPorCaja.ts',
-    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
-    motivo: 'CAMPO_COBRO es el vocabulario del modulo -- lo consume su propio codigo y su test; el libro solo necesita CAMPO_EMISION. fechaDeDevengo decide la fecha de UNA factura y lo consumira A5 al agrupar; hoy el libro filtra por columna en la consulta.',
-    exports: ['CAMPO_COBRO', 'fechaDeDevengo'] },
   { modulo: 'src/modules/billing/domain/paidVia.ts',
     cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
     motivo: 'La validación del método de cobro existe y no se aplica en ningún camino vivo (SCRUM-484).',
@@ -750,7 +733,7 @@ export const DECLARADOS = [
   { modulo: 'src/modules/maintenance/domain/maintenance.service.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
-    exports: ['avisarPlanSinCanal', 'isQuietHours', 'seleccionarLotes'] },
+    exports: ['avisarPlanSinCanal', 'seleccionarLotes'] },
   { modulo: 'src/modules/maintenance/domain/maintenance.service.ts',
     cat: 'SIN_LECTOR_NI_TEST', desde: '2026-08-12',
     motivo: '🔴 Ni código vivo, ni test, ni documento lo mencionan en todo el repo. Es el único del censo del que no consta ni para qué se escribió.',

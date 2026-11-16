@@ -216,6 +216,51 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // compara la FILA campo a campo, con sus valores por defecto, y lo que el alta deja colgando
   // (sesiones, correos). Solo el desechable: da de alta y borra merchants por el guion.
   'scrum1515-nuestra-puerta-de-alta.test.mjs': 1,
+  // SCRUM-1685: el alta con invitación. Los casos del INVITADO crean (y borran) un merchant de
+  // verdad por la ruta y el formulario: sólo en el banco desechable. Los del no invitado no
+  // necesitan base (la puerta los para antes) y corren siempre.
+  'scrum1685-alta-con-invitacion.test.mjs': 3,
+  'scrum1685-formulario-de-alta.test.mjs': 2,
+  // SCRUM-1685 ②: el invitado que entra por la RUTA y el que da de alta el GUION nacen con la misma
+  // fila, campo a campo, y dejan colgando lo mismo. Necesita banco por el motivo de SCRUM-1515: crea
+  // y borra merchants de verdad y compara la fila con sus valores por defecto. Sólo el desechable.
+  'scrum1685-ruta-y-guion-campo-a-campo.test.mjs': 1,
+  // SCRUM-1674: el parte nace con la obra y el tipo del TRABAJO y nunca con la dirección de
+  // facturación (DOC-12). Necesita banco porque lo que mide es la FILA que crea `POST /admin/partes`
+  // de verdad, con un cliente que SÍ tiene facturación y sitio guardado para que el veto tenga algo
+  // que vetar. Sólo el desechable: crea y borra un merchant.
+  'scrum1674-parte-hereda-obra-y-tipo.test.mjs': 1,
+  // SCRUM-1706: el operario abre el trabajo que le ASIGNARON. Necesita banco porque entra por la RUTA
+  // real con una sesión de técnico guardada en la base, y lo que mide es la pertenencia por los tres
+  // ejes (campo, tabla `assignees`, autoría) que contesta Postgres. Sólo el desechable: crea y borra un merchant.
+  'scrum1706-operario-abre-su-trabajo.test.mjs': 1,
+  // SCRUM-1662: «Qué hay que hacer» en su columna propia. Necesita banco porque lo que mide es la FILA
+  // que escriben `POST` y `PATCH /admin/jobs` de verdad (`que_hay_que_hacer` lleno, `notes` intacto) y
+  // la lectura del operario con su sesión guardada en la base. Sólo el desechable: crea y borra un merchant.
+  // El segundo (c.21555): las notas internas no le llegan al operario por lista, detalle, PATCH ni `.ics`
+  // — por comportamiento, con dos sesiones de verdad (jefe y operario) y la fila leída de la base.
+  'scrum1662-que-hay-que-hacer.test.mjs': 2,
+  // SCRUM-1707: el operario sin el cobro de su trabajo ni los precios del albarán (c.21547). Necesita
+  // banco porque lo que mide son las RESPUESTAS de las ocho puertas JSON (lista y detalle del trabajo;
+  // listado, detalle, PATCH, emitir, duplicar, firmar y alta del albarán; «pendientes de facturar») con
+  // dos sesiones de verdad, jefe de control. Sólo el desechable: crea y borra un merchant. Las dos
+  // proyecciones puras van en el mismo fichero y corren sin banco.
+  'scrum1707-operario-sin-dinero.test.mjs': 1,
+  // SCRUM-1712: el operario no escribe precios en un albarán (POST del alta y PATCH). Necesita banco
+  // porque entra por la RUTA real con sesiones de técnico y de admin guardadas en la base y mira la
+  // FILA del albarán (modo, precio, versión) tras cada intento. Sólo el desechable: crea y borra un
+  // merchant. La regla pura y el cableado por AST van en el mismo fichero y corren sin banco.
+  'scrum1712-precios-del-albaran-solo-admin.test.mjs': 1,
+  // SCRUM-1714: verifactu.xml y datos.zip miran el SII como el modo de emisión. Necesita banco porque
+  // entra por las dos RUTAS reales de exportación con merchants guardados en la base (con el flag
+  // encendido y el SII contestado de distintas formas) y mira lo que sirven. Sólo el desechable: crea
+  // y borra merchants.
+  'scrum1714-exports-miran-el-sii.test.mjs': 1,
+  // SCRUM-1697 (b): «Visita n de m» sale del GET del parte. Necesita banco porque lo que mide es la
+  // RUTA contando filas de verdad: con borradores, sin los partes de OTRO merchant que comparten el
+  // número de trabajo (columna suelta) y con la sesión del técnico asignado. Sólo el desechable: crea y
+  // borra dos merchants. La regla pura (orden y recuento) va en el mismo fichero y corre sin banco.
+  'scrum1697b-visita-en-el-servidor.test.mjs': 1,
   // SCRUM-1403: los TRES que ejercitan el recorte de presupuestos del Tecnico y la pestana de
   // documentos de la ficha de cliente contra Prisma de verdad. Necesitan banco por el mismo motivo
   // que los de SCRUM-1397: lo que vigilan es el WHERE (el recorte en AND con la busqueda y con el

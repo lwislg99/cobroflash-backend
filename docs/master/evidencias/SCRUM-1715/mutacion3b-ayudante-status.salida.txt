@@ -1,0 +1,220 @@
+﻿✔ SCRUM-1489 · CONTROL del doble: evalúa relaciones, `in`, `some` y `AND`, y lanza con lo que no conoce (2.3091ms)
+✔ SCRUM-1489 · 🔴 aceptación 1: la Técnica NO encuentra un presupuesto ajeno, ni por el nombre del cliente ni por su número (20.5074ms)
+✔ SCRUM-1489 · 🔴 aceptación 2: tampoco una factura ajena, ni por su número ni por el nombre del cliente (1.799ms)
+✔ SCRUM-1489 · ✅ aceptación 3: la Técnica SIGUE encontrando cada presupuesto suyo, por cada camino (3.8445ms)
+✔ SCRUM-1489 · ✅ aceptación 3: y cada factura suya — autora, asignada, Trabajo, albarán (entero y por líneas) y rectificativa (3.2664ms)
+✔ SCRUM-1489 · 🔴 sin identidad no hay nada suyo: una sesión de Técnico sin `teamMemberId` no encuentra ningún documento (0.3163ms)
+✔ SCRUM-1489 · 🔴 aceptación 4: el recorte SALE de las dos puertas — lo que ellas contesten es lo que la consulta lleva (0.4016ms)
+✔ SCRUM-1489 · el admin no añade NADA a sus consultas, y la del negocio sigue en las tres (regla 2) (0.5696ms)
+✔ SCRUM-1489 · los CLIENTES no se recortan: la Técnica encuentra la cartera entera, como en su lista (SCRUM-979) (0.3878ms)
+✖ SCRUM-1489 · 🔴 CON BASE: por HTTP, el Técnico encuentra sus documentos y ninguno de su compañero; el admin, todos (1042.877ms)
+✖ SCRUM-912 · 🔴 sin clave de Gemini y CON clave de Anthropic: 503 y NI UNA petición fuera (33.9927ms)
+✔ SCRUM-912 · sin imágenes, el turno del usuario es UNA parte de texto (lo de siempre) (1.2479ms)
+✖ SCRUM-912 · la foto sale hacia Gemini como inline_data, con el esquema y a temperatura 0 (25.6638ms)
+[gemini:gemini-3.5-flash-lite] HTTP 429: quota
+[gemini:gemini-3.1-flash-lite] HTTP 429: quota
+[gemini:gemini-2.5-flash-lite] HTTP 429: quota
+[POST /admin/expenses/leer-ticket] gemini_rate_limited
+[gemini:modelo-a] HTTP 404: not found
+✖ SCRUM-912 · 🔴 la lectura NUNCA cae a gemini-2.5-flash (las 20 diarias son de los presupuestos) (4.5887ms)
+✔ SCRUM-912 · con `models`, un 404 pasa al siguiente de ESA lista, y se dice cuál contestó (1.0831ms)
+✔ SCRUM-912 · lo aditivo: sin `models`, geminiComplete sigue usando GEMINI_MODEL (presupuestos) (0.5878ms)
+✔ SCRUM-912 · parsearImagen: solo data-URL de imagen admitida, con base64 (0.2005ms)
+✔ SCRUM-912 · lectura completa → propuesta con los nombres del POST y nada descartado (0.2854ms)
+✔ SCRUM-912 · null es «no se leyó», NO un descarte; y el 0 % es un dato (0.1819ms)
+✔ SCRUM-912 · 🔴 lo que no cuadra se DESCARTA y se dice, no se arregla (0.5054ms)
+✔ SCRUM-912 · el céntimo de tolerancia de justificante.ts vale también aquí; dos céntimos, no (0.1261ms)
+✔ SCRUM-912 · el NIF se propone normalizado, y el «hoy» es el de Madrid, no el de UTC (0.1278ms)
+✔ SCRUM-912 · lo que no es un objeto no es una lectura (0.3656ms)
+✔ SCRUM-912 · el proveedor se propone solo si su NIF casa con UNA ficha del merchant (0.4363ms)
+✔ SCRUM-912 · 🔴 la IA NUNCA da un ticket por deducible: como mucho, «falta confirmar» (0.277ms)
+✔ SCRUM-912 · lo que devuelve el modelo sin ser JSON es ai_invalid_json (0.2203ms)
+✖ SCRUM-912 · la ruta: foto mala → 400 con código, y no se llama a Google (5.0919ms)
+✖ SCRUM-912 · 🔴 el tope diario corta en LECTURAS_TICKET_POR_DIA + 1, y es por merchant (3.7068ms)
+✔ SCRUM-912 · el 429 de Google: la diaria manda sobre la del minuto, y sin quotaId no se adivina (0.3067ms)
+[gemini:gemini-3.5-flash-lite] HTTP 429: quota
+[gemini:gemini-3.1-flash-lite] HTTP 429: quota
+[gemini:gemini-2.5-flash-lite] HTTP 429: quota
+[POST /admin/expenses/leer-ticket] gemini_rate_limited
+✖ SCRUM-912 · errores de Google → códigos (429, 502, 422), nunca un 500 ni una frase (4.2748ms)
+✖ SCRUM-912 · 🔴 ni la foto ni lo leído acaban en el log (3.7027ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 23
+ℹ fail 8
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1340.1468
+
+✖ failing tests:
+
+test at tests1715b\scrum1489-mut3.test.mjs:333:1
+✖ SCRUM-1489 · 🔴 CON BASE: por HTTP, el Técnico encuentra sus documentos y ninguno de su compañero; el admin, todos (1042.877ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  500 !== 200
+  
+      at file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum1489-mut3.test.mjs:389:14
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async withMerchant (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/_merchant-fixture.mjs:296:12)
+      at async TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum1489-mut3.test.mjs:337:3)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests1715b\scrum912-mut3.test.mjs:144:1
+✖ SCRUM-912 · 🔴 sin clave de Gemini y CON clave de Anthropic: 503 y NI UNA petición fuera (33.9927ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  500 !== 503
+  
+      at file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:151:16
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async conAppSinDoble (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:119:12)
+      at async conApp (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:105:12)
+      at async file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:149:7
+      at async TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:147:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 503,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests1715b\scrum912-mut3.test.mjs:175:1
+✖ SCRUM-912 · la foto sale hacia Gemini como inline_data, con el esquema y a temperatura 0 (25.6638ms)
+  AssertionError [ERR_ASSERTION]: {"ok":true,"propuesta":{"concept":"Codos de cobre","amount":12.1,"baseAmount":10,"vatRate":21,"vatAmount":2.1,"date":"2026-09-17","providerInvoiceDate":"2026-09-17","providerInvoiceNumber":"T-0042","proveedorNombre":"Almacén Pérez","nifProveedor":null,"providerId":null},"descartados":[{"campo":"nifProveedor","motivo":"nif_invalido"}],"justificante":{"veredicto":"no_deducible","faltan":["nif_proveedor"],"incoherencias":[]},"modelo":"gemini-3.5-flash-lite"}
+  
+  500 !== 200
+  
+      at file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:181:16
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async conAppSinDoble (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:119:12)
+      at async conApp (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:105:12)
+      at async file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:179:7
+      at async TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:178:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests1715b\scrum912-mut3.test.mjs:201:1
+✖ SCRUM-912 · 🔴 la lectura NUNCA cae a gemini-2.5-flash (las 20 diarias son de los presupuestos) (4.5887ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  500 !== 429
+  
+      at file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:206:14
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async conAppSinDoble (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:119:12)
+      at async conApp (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:105:12)
+      at async TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:205:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 429,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests1715b\scrum912-mut3.test.mjs:410:1
+✖ SCRUM-912 · la ruta: foto mala → 400 con código, y no se llama a Google (5.0919ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  500 !== 400
+  
+      at file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:415:14
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async conAppSinDoble (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:119:12)
+      at async conApp (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:105:12)
+      at async TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:413:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 400,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests1715b\scrum912-mut3.test.mjs:424:1
+✖ SCRUM-912 · 🔴 el tope diario corta en LECTURAS_TICKET_POR_DIA + 1, y es por merchant (3.7068ms)
+  AssertionError [ERR_ASSERTION]: lectura 1
+  
+  500 !== 200
+  
+      at file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:431:18
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async conAppSinDoble (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:119:12)
+      at async conApp (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:105:12)
+      at async file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:428:7
+      at async TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:427:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests1715b\scrum912-mut3.test.mjs:471:1
+✖ SCRUM-912 · errores de Google → códigos (429, 502, 422), nunca un 500 ni una frase (4.2748ms)
+  AssertionError [ERR_ASSERTION]: ai_cuota_diaria_agotada
+  
+  500 !== 429
+  
+      at file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:487:16
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async conAppSinDoble (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:119:12)
+      at async conApp (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:105:12)
+      at async TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:485:7)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 429,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests1715b\scrum912-mut3.test.mjs:496:1
+✖ SCRUM-912 · 🔴 ni la foto ni lo leído acaban en el log (3.7027ms)
+  AssertionError [ERR_ASSERTION]: {"ok":true,"propuesta":{"concept":"Codos de cobre","amount":12.1,"baseAmount":10,"vatRate":21,"vatAmount":2.1,"date":"2026-09-17","providerInvoiceDate":"2026-09-17","providerInvoiceNumber":"T-0042","proveedorNombre":"Almacén Pérez","nifProveedor":null,"providerId":null},"descartados":[{"campo":"nifProveedor","motivo":"nif_invalido"}],"justificante":{"veredicto":"no_deducible","faltan":["nif_proveedor"],"incoherencias":[]},"modelo":"gemini-3.5-flash-lite"}
+  
+  500 !== 200
+  
+      at file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:504:14
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async conAppSinDoble (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:119:12)
+      at async conApp (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:105:12)
+      at async TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests1715b/scrum912-mut3.test.mjs:502:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

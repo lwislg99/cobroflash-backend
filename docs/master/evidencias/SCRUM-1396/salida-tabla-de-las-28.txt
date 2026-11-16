@@ -1,0 +1,32 @@
+| fichero:línea | categoría | fuga | en el árbol | lo creó (git) | carril (`carriles.mjs de`) |
+|---|---|---|---|---|---|
+| `tests/scrum1263-gancho-pre-push.test.mjs:52` | ESCAPA | FUGA MEDIDA (J4 c.18875) | sí | Luis | sin fila en §3: nadie lo reclama |
+| `tests/scrum1289b-reporters-como-argumentos.test.mjs:80` | ESCAPA | por FORMA (J4: 0 restos) | sí | Luis | sin fila en §3: nadie lo reclama |
+| `tests/scrum1328-skips-con-motivo-en-el-tap.test.mjs:102` | ESCAPA | NUEVA, sin medir | sí | Javier Pereira Fernández | sin fila en §3: nadie lo reclama |
+| `tests/scrum1424-ya-esta.test.mjs:114` | ESCAPA | por FORMA (J4: 0 restos) | sí | Luis | sin fila en §3: nadie lo reclama |
+| `tests/scrum1575b-censo-conexiones.test.mjs:37` | ESCAPA | NUEVA, sin medir | sí | Javier Pereira Fernández | sin fila en §3: nadie lo reclama |
+| `tests/scrum1575c-censo-ve-el-singleton.test.mjs:22` | ESCAPA | NUEVA, sin medir | sí | Javier Pereira Fernández | sin fila en §3: nadie lo reclama |
+| `tests/scrum1575d-staging-por-destino.test.mjs:71` | ESCAPA | NUEVA, sin medir | sí | Javier Pereira Fernández | sin fila en §3: nadie lo reclama |
+| `tests/scrum252-procedencia-cliente.test.mjs:60` | NO_GARANTIZADA | por FORMA (J4: 0 restos) | sí | Luis | sin fila en §3: nadie lo reclama |
+| `tests/scrum454-destructivo-sin-comprobacion.test.mjs:157` | ESCAPA | FUGA MEDIDA (J4 c.18875) | sí | Luis | sin fila en §3: nadie lo reclama |
+| `tests/scrum521-resolvedor-de-importadores.test.mjs:52` | ESCAPA | por FORMA (J4: 0 restos) | sí | Javier Pereira Fernández | sin fila en §3: nadie lo reclama |
+| `tests/scrum709-microcopy-por-fichero.test.mjs:84` | ESCAPA | por FORMA (J4: 0 restos) | sí | Luis | sin fila en §3: nadie lo reclama |
+| `tests/scrum716c-la-memoria-del-vigia.test.mjs:224` | ESCAPA | por FORMA (J4: 0 restos) | sí | Javier Pereira Fernández | sin fila en §3: nadie lo reclama |
+| `tests/scrum726-quien-firma-la-microcopy.test.mjs:36` | ESCAPA | por FORMA (J4: 0 restos) | sí | Luis | sin fila en §3: nadie lo reclama |
+| `tests/scrum754-el-juez-que-oscila.test.mjs:345` | ESCAPA | por FORMA (J4: 0 restos) | sí | Javier Pereira Fernández | sin fila en §3: nadie lo reclama |
+| `tests/scrum754-el-juez-que-oscila.test.mjs:705` | NO_GARANTIZADA | por FORMA (J4: 0 restos) | sí | Javier Pereira Fernández | sin fila en §3: nadie lo reclama |
+| `tests/scrum757-la-declaracion-que-nadie-lee.test.mjs:41` | NO_GARANTIZADA | por FORMA (J4: 0 restos) | sí | Javier Pereira Fernández | sin fila en §3: nadie lo reclama |
+| `tests/scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs:107` | NO_GARANTIZADA | por FORMA (J4: 0 restos) | sí | Javier Pereira Fernández | sin fila en §3: nadie lo reclama |
+| `tests/scrum811c-skill-ui-declarada.test.mjs:609` | ESCAPA | por FORMA (J4: 0 restos) | sí | Luis | sin fila en §3: nadie lo reclama |
+| `tests/scrum836-ancla-de-mutacion-viva.test.mjs:83` | NO_GARANTIZADA | por FORMA (J4: 0 restos) | sí | Javier Pereira Fernández | sin fila en §3: nadie lo reclama |
+| `tests/scrum836-ancla-de-mutacion-viva.test.mjs:491` | NO_GARANTIZADA | por FORMA (J4: 0 restos) | sí | Javier Pereira Fernández | sin fila en §3: nadie lo reclama |
+| `tests/scrum839d-union-solo-en-el-registro.test.mjs:149` | ESCAPA | por FORMA (J4: 0 restos) | sí | Luis | sin fila en §3: nadie lo reclama |
+| `tests/scrum839e-solo-pr-armados.test.mjs:116` | ESCAPA | por FORMA (J4: 0 restos) | sí | Luis | sin fila en §3: nadie lo reclama |
+| `tests/scrum850b-las-formas-que-mienten.test.mjs:73` | ESCAPA | por FORMA (J4: 0 restos) | sí | Javier Pereira Fernández | sin fila en §3: nadie lo reclama |
+| `tests/scrum899-sesion-lista-blanca.test.mjs:177` | ESCAPA | por FORMA (J4: 0 restos) | sí | Luis | sin fila en §3: nadie lo reclama |
+| `tests/_alcance-desde-entradas.mjs:385` | ESCAPA | por FORMA (J4: 0 restos) | sí | Javier Pereira Fernández | sin fila en §3: nadie lo reclama |
+| `tests/_comparador-alcance.mjs:261` | ESCAPA | por FORMA (J4: 0 restos) | sí | Javier Pereira Fernández | sin fila en §3: nadie lo reclama |
+| `tests/_export-que-sobra.mjs:239` | ESCAPA | por FORMA (J4: 0 restos) | sí | Javier Pereira Fernández | sin fila en §3: nadie lo reclama |
+| `tests/_huerfanos-en-modulos-vivos.mjs:195` | ESCAPA | por FORMA (J4: 0 restos) | sí | Javier Pereira Fernández | sin fila en §3: nadie lo reclama |
+
+acusadas=28 · medida=2 · forma=22 · nueva=4 · rutas que no están en el árbol=0 · población: 169 ficheros con temporales, 233 llamadas, 3453 mirados

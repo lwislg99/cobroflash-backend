@@ -1,0 +1,124 @@
+URL https://yaqu.app/dashboard/#jobs
+--- TEXTO
+YQ
+YaQu
+Inicio
+Solicitudes
+Trabajos
+VENTA
+Presupuestos
+Albaranes
+Partes por valorar
+Facturas
+Cobros
+NEGOCIO
+Clientes
+Productos
+Proveedores
+Gastos
+Informes
+Libro de registro
+Facturas recibidas
+CUENTA
+Equipo
+Planes
+Configuración
+P
+PruebaQA
+Plan Pro
+Salir
+Trabajos
+P
+Trabajos
+Nuevo trabajo
+Partes por valorar
+PARA HOY
+1 trabajo
+Marta Prieto (PILOTO-1 QA)
+POR COBRAR
+1,21 €
+en 1 trabajo sin cerrar · 3 sin importe de referencia, no entran
+Todos · 4
+Pendiente · 1
+Parcial · 0
+Pagado · 0
+🔨 EN CURSO · 1
+Marta Prieto (PILOTO-1 QA)
+Sin importe
+no hay presupuesto aceptado
+jue, 12 nov, 09:00
+Ver detalle
+Enviar para firmar
+⋯
+⏳ SIN AGENDAR · 2
+Cliente de pruebas QA
+1,21 €
+de 1,21 €
+Ver detalle
+Agendar
+⋯
+Cliente de pruebas QA
+Trabajo de pruebas QA
+Sin importe
+no hay presupuesto aceptado
+Ver detalle
+Agendar
+⋯
+🗓 MÁS ADELANTE · 1
+Cliente de pruebas QA
+[QA-1183] agendado
+Sin importe
+no hay presupuesto aceptado
+vie, 20 nov, 10:00
+Ver detalle
+▶ Empezar
+⋯
+Técnicos
+✅ Marcar terminado
+--- PULSABLES
+button[submit] «Inicio» 228x34 @-238,85
+button[submit] «Solicitudes» 228x34 @-238,121
+button[submit] «Trabajos» 228x34 @-238,157
+button[button] «Presupuestos» 228x34 @-238,227
+button[submit] «Albaranes» 228x34 @-238,263
+button[submit] «Partes por valorar» 228x34 @-238,299
+button[submit] «Facturas» 228x34 @-238,335
+button[submit] «Cobros» 228x34 @-238,371
+button[submit] «Clientes» 228x34 @-238,440
+button[submit] «Productos» 228x34 @-238,476
+button[submit] «Proveedores» 228x34 @-238,512
+button[submit] «Gastos» 228x34 @-238,548
+button[submit] «Informes» 228x34 @-238,584
+button[submit] «Libro de registro» 228x34 @-238,620
+button[submit] «Facturas recibidas» 228x34 @-238,656
+button[submit] «Equipo» 228x34 @-238,726
+button[submit] «Planes» 228x34 @-238,762
+button[submit] «Configuración» 228x34 @-238,798
+button[submit] «Salir» 39x22 @-61,867
+button[submit] «Menú» 36x36 @12,12
+button[submit] «Nuevo trabajo» 160x44 @12,52
+button[submit] «Partes por valorar» 134x44 @180,52
+button[submit] «Todos · 4» 82x44 @12,354
+button[submit] «Pendiente · 1» 100x44 @102,354
+button[submit] «Parcial · 0» 83x44 @210,354
+button[submit] «Pagado · 0» 88x44 @12,406
+button[submit] «Ver detalle» 89x44 @40,634
+button[submit] «Enviar para firmar» 134x44 @137,634
+button[button] «⋯» 44x44 @279,634
+button[submit] «Ver detalle» 89x44 @40,840
+button[submit] «Agendar» 78x44 @137,840
+button[button] «⋯» 44x44 @222,840
+button[submit] «Ver detalle» 89x44 @40,1014
+button[submit] «Agendar» 78x44 @137,1014
+button[button] «⋯» 44x44 @222,1014
+button[submit] «Ver detalle» 89x44 @40,1282
+button[submit] «▶ Empezar» 93x44 @137,1282
+button[button] «⋯» 44x44 @238,1282
+button[submit] «Técnicos» 374x51 @8,732
+button[submit] «✅ Marcar terminado» 374x51 @8,785
+--- DESBORDES
+--- <44px
+button «Menú» 36x36
+--- LOG
+[warning] Service Worker registration blocked by Playwright
+--- NOTAS

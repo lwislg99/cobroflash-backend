@@ -69,12 +69,16 @@ export function isFieldMember(role: string | null | undefined): boolean {
 /**
  * SCRUM-164 · CAMPOS DE UN TRABAJO RESERVADOS AL ADMIN (gate por CAMPO, no por ruta).
  *
- * `PATCH /admin/jobs/:id` NO es admin-only y no debe serlo: status, scheduledAt y notes son el
- * día a día del operario (SCRUM-120). Lo que está reservado al admin son tres campos que tocan
- * FACTURACIÓN o DINERO:
+ * `PATCH /admin/jobs/:id` NO es admin-only y no debe serlo: status y scheduledAt son el día a día
+ * del operario (SCRUM-120). Lo que está reservado al admin son tres campos que tocan FACTURACIÓN o
+ * DINERO, y uno que es PRIVADO del jefe:
  *   · `tipoOperacion`   — bandera fiscal (recapitulativa mensual vs. facturar al concluir)
  *   · `assignedUserId`  — reparto del equipo (S1)
  *   · `status: 'cerrado'` — única transición IRREVERSIBLE de la FSM, y mata la vía de "Cobrar el resto"
+ *   · `notes`           — «Notas internas · Solo tú las ves». SCRUM-120 (23-jul) se las daba al
+ *     operario; el rótulo llegó después (SCRUM-427/917g) y la regla no se revisó. La cambia la firma
+ *     del fundador de SCRUM-1662 c.21555: «el operario deja de verlas y de poder editarlas […] La
+ *     tarea del operario vive en "Qué hay que hacer"». La LECTURA la recorta `trabajoParaElRol`.
  *
  * POR QUÉ VIVE AQUÍ Y NO EN LA RUTA. Estaba escrito como un `if` suelto dentro del handler: el
  * único gate de rol de todo `src/` que no pasaba por `requireRole`. Eso lo hacía **invisible por
@@ -87,7 +91,7 @@ export function isFieldMember(role: string | null | undefined): boolean {
  * SCRUM-120 construyó. La regla es por campo; lo que había que arreglar es que fuera visible y
  * comprobable, no convertirla en otra cosa.
  */
-export const ADMIN_ONLY_JOB_FIELDS = ['tipoOperacion', 'assignedUserId', "status:'cerrado'"] as const;
+export const ADMIN_ONLY_JOB_FIELDS = ['tipoOperacion', 'assignedUserId', "status:'cerrado'", 'notes'] as const;
 
 /**
  * Devuelve el PRIMER campo reservado al admin que trae el cuerpo, o null si no hay ninguno.
@@ -101,6 +105,9 @@ export function adminOnlyJobField(body: any): string | null {
   if (body.tipoOperacion !== undefined) return 'tipoOperacion';
   if (body.assignedUserId !== undefined) return 'assignedUserId';
   if (body.status !== undefined && String(body.status) === 'cerrado') return "status:'cerrado'";
+  // SCRUM-1662 (c.21555) · el último a propósito: con un campo de dinero mezclado, el 403 sigue
+  // nombrando ése, que es el que más importa ver.
+  if (body.notes !== undefined) return 'notes';
   return null;
 }
 
@@ -112,4 +119,43 @@ export function adminOnlyJobField(body: any): string | null {
 export function adminOnlyParteField(body: any): string | null {
   if (!body || typeof body !== 'object') return null;
   return body.precios !== undefined ? 'precios' : null;
+}
+
+/**
+ * SCRUM-1712 · VALORAR UN ALBARÁN es del admin (gate por CAMPO, hermano de `adminOnlyParteField`).
+ *
+ * Lo que escribe un importe en un albarán desde el cuerpo de `POST /admin/jobs/:id/albaranes` o
+ * `PATCH /admin/albaranes/:id` son tres cosas, y las tres quedan para quien `seesAllJobs`:
+ *   · `modoValoracion` que NO sea quedarse en SIN_VALORAR. Pasar a VALORADO es valorar; y pasar un
+ *     VALORADO a SIN_VALORAR también lo es, porque con líneas sin precio BORRA la valoración de la
+ *     oficina. Por eso se mira contra `modoActual` (el del albarán; en el alta, SIN_VALORAR).
+ *   · `lineas[].precioUnitario` y `lineas[].tipoIva` presentes (misma noción de «presente» que
+ *     `validarLineas`: ni `undefined`, ni `null`, ni `''`; un 0 SÍ es un precio).
+ *
+ * Lo que NO entra, a propósito: `ocultarPreciosEnDocumento` (qué imprime el papel, no cuánto vale)
+ * y `POST /:id/duplicar` (copia lo que la oficina ya puso; no recibe precios del cuerpo).
+ *
+ * Va POR VALOR y no por presencia porque la pantalla del técnico manda `modoValoracion:'SIN_VALORAR'`
+ * en su alta y su edición de siempre: rechazar el campo por venir le cerraría el día a día.
+ * FAIL-CLOSED y de una pieza, como SCRUM-164 y SCRUM-1078: un modo raro, aunque sea inválido, no lo
+ * decide el técnico, y basta UN campo para rechazar la petición entera.
+ *
+ * Los handlers le pasan SÓLO `{ modoValoracion, lineas }` del cuerpo, no el cuerpo entero: así el
+ * censo de lo que lee cada ruta (SCRUM-1185) sigue viendo sus campos.
+ */
+export function adminOnlyAlbaranField(body: any, modoActual: string = 'SIN_VALORAR'): string | null {
+  if (!body || typeof body !== 'object') return null;
+  if (body.modoValoracion !== undefined
+    && (String(body.modoValoracion) !== 'SIN_VALORAR' || modoActual !== 'SIN_VALORAR')) {
+    return 'modoValoracion';
+  }
+  if (Array.isArray(body.lineas)) {
+    const presente = (v: unknown) => v !== undefined && v !== null && v !== '';
+    for (const l of body.lineas) {
+      if (!l || typeof l !== 'object') continue;
+      if (presente((l as any).precioUnitario)) return 'precioUnitario';
+      if (presente((l as any).tipoIva)) return 'tipoIva';
+    }
+  }
+  return null;
 }

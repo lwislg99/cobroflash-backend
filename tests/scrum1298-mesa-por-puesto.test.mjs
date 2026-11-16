@@ -133,7 +133,7 @@ test('antes de cada lanzamiento la mesa se pone al día con lo que se mergeó mi
   assert.equal(fs.readFileSync(path.join(p2.mesa, 'CLAUDE.md'), 'utf8').replace(/\r/g, ''), 'v2\n', '🔴 la sesión carga el CLAUDE.md de HOY');
 });
 
-test('una mesa con trabajo sin guardar NO se actualiza: se dice y no se lanza', () => {
+test('una mesa con trabajo sin guardar NO se actualiza: se dice y no se da por buena (SCRUM-1298d: se lanza en el repo)', () => {
   const b = banco();
   const p1 = s.prepararMesa({ config: b.config, nombre: 'sesion-1', equipo: EQUIPO });
   fs.writeFileSync(path.join(p1.mesa, 'medicion.txt'), 'trabajo de alguien\n');
@@ -153,7 +153,7 @@ test('una carpeta con el nombre de la mesa que NO es un worktree del repo no se 
   assert.equal(p.veredicto, 'MESA-AJENA', JSON.stringify(p));
 });
 
-test('sin poder traer origin, NO se lanza con una mesa que «parece» al día', () => {
+test('sin poder traer origin, una mesa que «parece» al día NO se da por buena', () => {
   const b = banco();
   git(b.repo, 'remote', 'set-url', 'origin', path.join(b.base, 'no-existe.git'));
   const p = s.prepararMesa({ config: b.config, nombre: 'sesion-3', equipo: EQUIPO });
@@ -161,13 +161,13 @@ test('sin poder traer origin, NO se lanza con una mesa que «parece» al día', 
   assert.equal(p.veredicto, 'NO-PUDE-MIRAR');
 });
 
-test('sin generador de identidad en main, no se lanza (la cerradura de S0 pararía la sesión igual)', () => {
+test('sin generador de identidad en main, la mesa no se da por buena (la cerradura de S0 pararía la sesión igual)', () => {
   const b = banco({ conGenerador: false });
   const p = s.prepararMesa({ config: b.config, nombre: 'sesion-3', equipo: EQUIPO });
   assert.equal(p.veredicto, 'SIN-IDENTIDAD', JSON.stringify(p));
 });
 
-test('un generador que sale ≠ 0 corta el lanzamiento, y su motivo llega', () => {
+test('un generador que sale ≠ 0 deja la mesa sin dar por buena, y su motivo llega', () => {
   const b = banco();
   const p = s.prepararMesa({ config: { ...b.config, identidades: { 'sesion-3': 'ZZ' } }, nombre: 'sesion-3', equipo: EQUIPO });
   assert.equal(p.veredicto, 'SIN-IDENTIDAD');

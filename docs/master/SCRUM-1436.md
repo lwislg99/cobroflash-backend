@@ -474,3 +474,72 @@ importe por una variable y el censo no sigue variables.
   (`disputes.service.ts` ya manda esa forma en esa variable).
 - De paso, visto y NO tocado: en `/pay/mp/:token/result` el importe sólo se pinta si el cobro
   tiene concepto, y el concepto lleva un `style=` en línea. Es así desde antes.
+
+## SCRUM-1436j · El recordatorio automático decía «el pago del factura» (hallazgo 2, la parte de J2)
+
+**Medido contra:** `origin/main` = `c8195b2608c32624f39d1145cf031c93091d9161` · 2026-11-12T12:03:58Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1436j-el-pago-de-la-factura.test.mjs`
+
+Sesión J2 (`jv-j2bv`, 12-nov) · rama `scrum-1436j-pago-de-la-factura`. Carril: `node scripts/carriles.mjs de
+src/modules/billing/domain/invoiceReminder.service.ts` → J2 (`docs/equipo/dos-equipos.md:120`).
+
+### El texto firmado
+
+SCRUM-1436 c.18287 (cuenta de Luis, 6-oct), hallazgo 2: «el artículo va DENTRO de la etiqueta»,
+«…el pago de **la factura** N…» / «…el pago **del justificante** N…». El fundador decidió en c.18734 que
+una firma de cualquiera de los dos jefes vale para el carril de Javier. No se afirma aquí si c.18287 lo
+escribió Luis o su orquestador (c.18734 lo deja abierto a propósito). SCRUM-1656 c.21662 (grupo C) ya
+lo daba por firmado.
+
+### Rojo primero, ejecutando el cron
+
+`sendInvoicePaymentReminders()` desde `dist/`, con una base falsa en memoria y WhatsApp en dry-run (lo
+mismo que monta `scrum1509j`). Antes del arreglo: 6 casos, caen 3 y pasan 3. Los 3 que caen son los del
+defecto, y los 3 que pasan son los controles. Lo que salía:
+
+- con cobro y la ventana abierta (botón-enlace): «Te recordamos el pago pendiente del factura A-2026-0001 por *1.419,87 €*…»
+- sin cobro (texto libre): «…te recordamos que tienes pendiente el pago del factura *A-2026-0002*…»
+
+Con un justificante `J-` ya salía bien («del justificante»): ése es el control, y sigue igual.
+
+### Tres sitios, y sólo dos salen
+
+El fichero tenía tres «del ${docLabel}». La descripción del ticket citaba `:156` y `:165`. El 6-oct
+(`39af736e`), `:165` era el BOTÓN de la ventana, y hoy está en `:195`. c.18287 dice «`:165` es hoy
+`:204`», pero `:204` era entonces el texto libre sin cobro. El encargo de esta tanda citaba `:186` y `:234`.
+Medido ejecutando:
+
+| sitio | ¿llega al cliente? |
+| --- | --- |
+| `windowCta.bodyText` (con cobro, ventana abierta) | SÍ. Es el que de verdad sale |
+| texto libre (sin cobro) | SÍ |
+| `windowText` (con cobro) | NO desde aquí: `sendWhatsAppWindowFirst` sólo lo usa si no hay `windowCta`, y este llamador siempre lo pasa |
+
+Los tres pasan por una sola etiqueta, `pagoDe` (`'del justificante'` / `'de la factura'`), con la misma
+forma que el recordatorio manual (`invoicesAdmin.routes.ts`, SCRUM-1436b). `docLabel` sigue sin
+artículo para el aviso del panel (`detail`), que no forma parte de esta frase. Lo que se aplica es la
+regla firmada, no una frase nueva. Para el botón queda «el pago pendiente de la factura N»: es la misma
+corrección sobre la frase que ya había. Si el fundador entiende que esa línea pide firma aparte, se dice
+y se revierte esa línea sola.
+
+### Regla 28
+
+No cambia ni cuándo ni a quién se envía. El test comprueba en cada caso la vía (`cta_url`, `text` o
+`template`), el destinatario y que salen 2 avisos por pasada (7 y 14 días). Con la ventana cerrada sale
+`payment_request_es`, igual que antes. El texto de esa plantilla es de Meta y no se toca.
+
+### Después
+
+- `scrum1436j` 6/6, `scrum1509j` y `scrum1436b` en verde: 16 casos, 0 caen, 0 saltan.
+- Mutaciones declaradas en `MUTACIONES_QUE_ME_TUMBAN`, pasadas con `aplicarUna` de
+  `scripts/meta-guard-mutaciones.mjs`: 2 de 2 caen. Volver a «del factura» tumba el caso de la factura,
+  y quitarle el artículo al justificante tumba el control. Después, `git status` solo enseñaba este diff.
+
+### Lo que NO lleva
+
+- La tanda completa en local: no se ha corrido (hay 10 sesiones a la vez). Hace de tanda el obligatorio.
+- `windowText`: ningún caso lo ve, porque no sale (tabla de arriba).
+- Nada visto en yaqu.app. Para verlo haría falta un recordatorio real de 7 días.
+- El resto del ticket sigue abierto: el aviso de disputa sin factura (falta el texto), la plantilla sin
+  ventana del recordatorio manual (J1, regla 28) y la reseña (fundador).

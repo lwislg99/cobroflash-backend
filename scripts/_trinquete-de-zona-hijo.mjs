@@ -131,12 +131,23 @@ const flujo = run({
   timeout: LIMITE_TEST_MS, signal: pared,
 });
 
+/**
+ * 🔴 SCRUM-1335d · QUÉ FICHEROS ENTREGARON SU INFORME ENTERO. `run()` emite un `test:summary` con
+ * `file` por cada fichero cuyo informe llegó hasta el final, y NINGUNO para el que enmudece
+ * (medido en SCRUM-1335c; lo repite el caso ④ de `tests/scrum1335d-…`). Sin esto, un fichero que pierde el informe en las DOS
+ * zonas deja en cada una la entrada `pass` con su ruta por nombre, y el comparador lo cuenta como
+ * «comparado e igual». Aquí sólo se APUNTA; quien cuenta es `sinInformePorZona`.
+ */
+const conInforme = new Set();
+const relativa = (fichero) => (path.isAbsolute(fichero) ? path.relative(raiz, fichero) : fichero).split(path.sep).join('/');
+
 for await (const ev of flujo) {
   // 🔴 Un fichero que MUERE AL CARGAR emite UN solo `test:fail` y su `name` es la RUTA del
   // fichero (medido en SCRUM-784). Entra como una clave más, y eso es lo correcto aquí: si un
   // fichero muere en una zona y vive en la otra, ESO es una dependencia de zona de las gordas.
   // El que se CUELGA al cargar llega igual, por la pared, pero como `cortada` (SCRUM-1494).
   if (ev.type === 'test:pass' || ev.type === 'test:fail') anotar(ev.data.file, ev.data.name, resolver(ev));
+  else if (ev.type === 'test:summary' && ev.data.file) conInforme.add(relativa(ev.data.file));
 }
 
 fs.writeFileSync(destino, JSON.stringify({
@@ -146,4 +157,5 @@ fs.writeFileSync(destino, JSON.stringify({
   ficheros: ficheros.length,
   topes: { limiteTestMs: LIMITE_TEST_MS, paredMs: PARED_MS, saltoLaPared: pared.aborted },
   veredictos: [...veredictos],
+  conInforme: [...conInforme].sort(),
 }));

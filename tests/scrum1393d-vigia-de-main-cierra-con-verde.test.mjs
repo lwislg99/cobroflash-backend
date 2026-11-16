@@ -43,13 +43,13 @@ test('SCRUM-1393d · SIEMBRA: la punta VERDE con el Issue abierto lo CIERRA, dic
   assert.match(a.cuerpo, /Vigía de main · CERRADO/);
 });
 
-test('SCRUM-1393d · SIEMBRA: un CIEGO nunca cierra — ni en la punta, ni en la pasada, ni pendiente en el Issue', () => {
+test('SCRUM-1393d · SIEMBRA: un CIEGO no cierra en la punta ni pendiente en el Issue; en la pasada se declara (1393g)', () => {
   // en la punta
   assert.deepEqual(accionDelIssue(pasada([CIEGO(P)]), { estado: 'abierto' }).pasos, ['comentar']);
-  // en la pasada (la red diaria), con la punta verde
+  // en la pasada (la red diaria), con la punta verde: SCRUM-1393g (c.21059) ya no bloquea, se DECLARA
   const enLaPasada = accionDelIssue(pasada([CIEGO(V), VERDE(P)]), { estado: 'abierto' });
-  assert.deepEqual(enLaPasada.pasos, ['comentar']);
-  assert.match(enLaPasada.motivo, /CIEGO o SIN-LEER en esta pasada/);
+  assert.deepEqual(enLaPasada.pasos, ['comentar', 'cerrar']);
+  assert.match(enLaPasada.cuerpo, /1 CIEGO sin absolver de 2 commits mirados en esta pasada/);
   // pendiente en el Issue: un verde POSTERIOR no lo absuelve (sin «lectura generosa»)
   const pendiente = accionDelIssue(pasada([VERDE(P)]), { previos: marcaDeAviso(CIEGO(V)), estado: 'abierto' });
   assert.deepEqual(pendiente.pasos, []);

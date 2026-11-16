@@ -36,7 +36,8 @@ import {
   type AlbaranVivo,
 } from './libroRegistro';
 // SCRUM-294 (fase B): qué fecha devenga. Se importa el criterio, no se copia la regla.
-import { campoDeDevengo, CAMPO_EMISION } from './devengoPorCaja';
+import { campoDeDevengo, CAMPO_EMISION, CAMPO_COBRO, fechaDeDevengo, topeDeDevengo } from './devengoPorCaja';
+import { diaNaturalEn, inicioDelDiaEn, finDelDiaEn } from '../../../core/zonaDelMerchant';
 /**
  * Lo mínimo del cliente Prisma que el lector usa. Se pide por parámetro (no se importa el
  * singleton) para que el test pueda apuntarlo a SU Postgres sin tocar ninguna variable de
@@ -52,6 +53,11 @@ export interface RangoLibro {
   merchantId: number;
   desde?: Date;
   hasta?: Date;
+  /**
+   * SCRUM-1445d (fase 1) · la zona del comercio para los años y topes del criterio de caja.
+   * AUSENTE = la zona del proceso, como hasta hoy; la fase 2 se la pasa cada llamador.
+   */
+  zona?: string;
   /**
    * SCRUM-294 (fase B) · la configuración de criterio de caja **del merchant**, tal cual se lea.
    *
@@ -120,6 +126,72 @@ const CAMPOS_FACTURA = {
   lines: true,
 } as const;
 
+type FacturaLeida = FacturaParaLibro & { id: number };
+
+/**
+ * SCRUM-1730 (i) y (ii) · Las facturas que DEVENGAN en el rango con criterio de caja.
+ *
+ * Ya no basta con filtrar por `paidAt`: una factura con líneas S2 devenga por emisión, y una sin
+ * cobro (o cobrada después del tope) devenga el 31-dic del año siguiente al de la operación. Quien
+ * decide es `fechaDeDevengo`, una sola regla para todas; la base sólo trae CANDIDATAS, con tres
+ * consultas de un rango cada una:
+ *   · cobradas en el rango (las S1 de siempre);
+ *   · emitidas en el rango (las S2, por emisión);
+ *   · emitidas en un año cuyo 31-dic SIGUIENTE cae en el rango (las del tope).
+ * Después, cada candidata entra sólo si su fecha de devengo está dentro. Una cobrada después del
+ * tope sale como candidata por su `paidAt`, pero su devengo es el tope y se queda fuera: no se cuenta
+ * dos veces.
+ */
+async function leerPorCaja(db: ClienteDelLibro, rango: RangoLibro): Promise<FacturaLeida[]> {
+  const { desde, hasta } = rango;
+  const rangoDe = (gte?: Date, lte?: Date) => ({ ...(gte ? { gte } : {}), ...(lte ? { lte } : {}) });
+  const consulta = (where: Record<string, unknown>) =>
+    db.invoice.findMany({ where: { merchantId: rango.merchantId, ...where }, select: CAMPOS_FACTURA }) as
+      Promise<FacturaLeida[]>;
+
+  // El tope de una factura emitida en el año X es el 31-dic de X+1. Los años X cuyo tope cae en el
+  // rango van de (año de `desde`) − 1 hasta (último 31-dic que cabe antes de `hasta`) − 1.
+  // SCRUM-1445d: con `rango.zona`, el año y sus bordes son los de esa zona; sin ella, los del proceso.
+  const { zona } = rango;
+  // El año se calcula AQUÍ y no en una flecha con nombre: el censo de 1093h clasifica por función
+  // (`leerPorCaja`, AGREGADO), y una flecha nueva sería otra identidad sin clasificar.
+  const añoDesde = desde ? (zona !== undefined ? Number(diaNaturalEn(desde, zona).slice(0, 4)) : desde.getFullYear()) : undefined;
+  const añoHasta = hasta ? (zona !== undefined ? Number(diaNaturalEn(hasta, zona).slice(0, 4)) : hasta.getFullYear()) : undefined;
+  const dia = (a: number, md: string) => `${String(a).padStart(4, '0')}-${md}`;
+  const primeroDeEnero = (a: number) => (zona !== undefined ? inicioDelDiaEn(dia(a, '01-01'), zona) : new Date(a, 0, 1, 0, 0, 0, 0));
+  const finDeAño = (a: number) => (zona !== undefined ? finDelDiaEn(dia(a, '12-31'), zona) : new Date(a, 11, 31, 23, 59, 59, 999));
+  const primerX = añoDesde !== undefined ? añoDesde - 1 : undefined;
+  const ultimoX = hasta && añoHasta !== undefined
+    ? (hasta.getTime() >= topeDeDevengo(primeroDeEnero(añoHasta - 1), zona).getTime()
+      ? añoHasta : añoHasta - 1) - 1
+    : undefined;
+  const hayTope = primerX === undefined || ultimoX === undefined || primerX <= ultimoX;
+
+  const tandas = await Promise.all([
+    consulta({ paidAt: rangoDe(desde, hasta) }),
+    consulta({ createdAt: rangoDe(desde, hasta) }),
+    hayTope
+      ? consulta({ createdAt: rangoDe(
+        primerX === undefined ? undefined : primeroDeEnero(primerX),
+        ultimoX === undefined ? undefined : finDeAño(ultimoX),
+      ) })
+      : Promise.resolve([] as FacturaLeida[]),
+  ]);
+
+  const dentro = (d: Date | null) => d !== null
+    && (!desde || d.getTime() >= desde.getTime()) && (!hasta || d.getTime() <= hasta.getTime());
+  const porId = new Map<number, { f: FacturaLeida; d: Date }>();
+  for (const f of tandas.flat()) {
+    if (porId.has(f.id)) continue;
+    const d = fechaDeDevengo(f as never, CAMPO_COBRO, zona);
+    if (d && dentro(d)) porId.set(f.id, { f, d });
+  }
+  // Por fecha de devengo y, a igualdad, por número: el mismo orden que la consulta de siempre.
+  return [...porId.values()]
+    .sort((a, b) => a.d.getTime() - b.d.getTime() || String(a.f.number).localeCompare(String(b.f.number)))
+    .map((x) => x.f);
+}
+
 /**
  * Lee el libro de registro de UN merchant contra la base.
  *
@@ -143,16 +215,18 @@ export async function leerLibroRegistro(
   // fallida LANZA en vez de caer a emisión.
   const campo = 'criterioCaja' in rango ? campoDeDevengo(rango.criterioCaja) : CAMPO_EMISION;
 
-  const leidas = (await db.invoice.findMany({
-    where: {
-      merchantId: rango.merchantId,
-      ...(Object.keys(fecha).length > 0 ? { [campo]: fecha } : {}),
-    },
-    select: CAMPOS_FACTURA,
-    // Por fecha y, a igualdad, por número: dos facturas del mismo día tienen que salir en el
-    // orden en que se emitieron, que es el de la serie.
-    orderBy: [{ [campo]: 'asc' }, { number: 'asc' }],
-  })) as unknown as (FacturaParaLibro & { id: number })[];
+  const leidas = campo !== CAMPO_EMISION && Object.keys(fecha).length > 0
+    ? await leerPorCaja(db, rango)
+    : ((await db.invoice.findMany({
+      where: {
+        merchantId: rango.merchantId,
+        ...(Object.keys(fecha).length > 0 ? { [campo]: fecha } : {}),
+      },
+      select: CAMPOS_FACTURA,
+      // Por fecha y, a igualdad, por número: dos facturas del mismo día tienen que salir en el
+      // orden en que se emitieron, que es el de la serie.
+      orderBy: [{ [campo]: 'asc' }, { number: 'asc' }],
+    })) as unknown as (FacturaParaLibro & { id: number })[]);
 
   // SCRUM-1232 · fuera los justificantes, pero SÓLO los de este merchant: uno ajeno que se colara
   // tiene que llegar al constructor para contarse en `ajenas`, no desaparecer aquí (SCRUM-348).

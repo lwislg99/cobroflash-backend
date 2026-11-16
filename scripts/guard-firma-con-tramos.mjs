@@ -24,6 +24,7 @@
 // SUELO: el modo normal es el CONTROL. Si en modo normal tampoco sale una firma con trazo, el
 // instrumento no está dibujando y el guard dice que NO SUPO MIRAR, no que «3 opciones» esté bien.
 import http from 'node:http';
+import express from 'express';
 import puppeteer from 'puppeteer-core';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
@@ -73,9 +74,19 @@ const CASOS = [];
 for (const modo of ['normal', 'tramos']) for (const dpr of [1, 3]) CASOS.push({ modo, dpr });
 
 const paginas = { normal: await paginaDeAceptacion(null), tramos: await paginaDeAceptacion(TRAMOS) };
+// SCRUM-1646c · la página ya no lleva su guion en línea: lo pide a `GET /pay/quote/js/firma.js` (CSP
+// `script-src 'self'`). Este servidor sólo devolvía las dos páginas, así que el guion daba 404, nada
+// dibujaba y el guard salía CIEGO (medido en #3128, run 43285819918: 5 ciegos). Las subrutas que pide la
+// página (guion, y hojas cuando las haya) las contesta el ROUTER REAL montado en `/pay`, como en
+// producción: no una copia del guion. Lo que el guard EXIGE no cambia (regla 41): se arregla el arnés.
+const subrutas = express();
+subrutas.use('/pay', quoteDecisionLandingRouter);
 const srv = http.createServer((req, res) => {
   const pagina = paginas[req.url.replace(/^\//, '')];
-  if (!pagina) { res.writeHead(404); return res.end(''); }
+  if (!pagina) {
+    if (req.method === 'GET' && /^\/pay\/quote\/(js|css)\//.test(req.url)) return subrutas(req, res);
+    res.writeHead(404); return res.end('');
+  }
   res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
   res.end(pagina);
 });

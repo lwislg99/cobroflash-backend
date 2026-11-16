@@ -504,6 +504,7 @@ export const DECLARADOS = new Map([
   // ── NUMERO · LEGITIMO ─────────────────────────────────────────────────────────────────────────
   [`NUMERO|${M}invoicing/infra/pdf/pdf.service.ts::generateQuotePdf`, { n: 1, clase: LEGITIMO, retira: null, motivo: 'el valor ya sale de numeroConRevision; llega por una variable y el censo no sigue variables' }],
   [`NUMERO|${M}system/domain/qrPagina.service.ts::normalizarHex`, { n: 2, clase: LEGITIMO, retira: null, motivo: 'es un color hexadecimal, no el número de un documento' }],
+  [`NUMERO|${M}system/app/routes/quoteDecisionEstilo.ts::colorDeLaRuta`, { n: 1, clase: LEGITIMO, retira: null, motivo: 'es un color hexadecimal de la ruta de la hoja de marca (SCRUM-1646d), no el número de un documento' }],
   // ── NUMERO · DEUDA · cobros (J2) ──────────────────────────────────────────────────────────────
   [`NUMERO|${M}billing/app/routes/payBizum.routes.ts::POST /bizum/:token/claimed`, { n: 1, clase: DEUDA, retira: 'J2', motivo: '«cobro #id»: el id de la tabla a la vista (familia de SCRUM-95)' }],
   [`NUMERO|${M}billing/app/routes/payCard.routes.ts::GET /card/:token`, { n: 1, clase: DEUDA, retira: 'J2', motivo: '«Cobro #id» como nombre del producto en el pago con tarjeta; el censo por texto no lo veía' }],
@@ -516,7 +517,7 @@ export const DECLARADOS = new Map([
   [`NUMERO|${M}system/app/routes/invoicesAdmin.routes.ts::GET /:id/dispute-package`, { n: 1, clase: DEUDA, retira: 'J1', motivo: 'número del presupuesto en el paquete de disputa, sin displayQuoteNumber (SCRUM-1444)' }],
   // ── NUMERO · DEUDA · presupuestos y trabajos (S1) ─────────────────────────────────────────────
   [`NUMERO|${M}jobs/app/routes/jobs.routes.ts::GET /:id/ics`, { n: 1, clase: DEUDA, retira: 'S1', motivo: 'número del presupuesto en la cita de calendario; el censo por texto no lo veía' }],
-  [`NUMERO|${M}jobs/domain/trabajoDirecto.ts::tituloDeTrabajo`, { n: 2, clase: DEUDA, retira: 'S1', motivo: 'título del trabajo: número del presupuesto por una variable (no visto por texto) y el id del trabajo (SCRUM-1444)' }],
+  [`NUMERO|${M}jobs/domain/trabajoDirecto.ts::tituloDeTrabajo`, { n: 1, clase: DEUDA, retira: 'S1', motivo: 'título del trabajo: el id del trabajo (SCRUM-1444); el número del presupuesto salió del título en SCRUM-1690' }],
   [`NUMERO|${M}maintenance/domain/maintenance.service.ts::runMaintenanceProposals`, { n: 1, clase: DEUDA, retira: 'S1', motivo: 'número del presupuesto en el aviso de mantenimiento (SCRUM-1444)' }],
   [`NUMERO|${M}maintenance/domain/maintenance.service.ts::handleMaintenanceButton`, { n: 1, clase: DEUDA, retira: 'S1', motivo: 'número del presupuesto en la respuesta al profesional (SCRUM-1444)' }],
   [`NUMERO|${M}messaging/domain/email.service.ts::sendQuoteEmail`, { n: 1, clase: DEUDA, retira: 'S1', motivo: 'número del presupuesto en el correo al cliente, sin displayQuoteNumber (SCRUM-1444)' }],

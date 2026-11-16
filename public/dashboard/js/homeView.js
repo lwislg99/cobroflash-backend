@@ -1,5 +1,31 @@
 // public/dashboard/js/homeView.js
 
+/**
+ * SCRUM-1686 H4 · «Para hoy» en el Inicio del operario. Firmas del fundador, SCRUM-1686:
+ * c.21549 (el primer bloque es su trabajo de hoy) y c.21551 («Para hoy» · «N trabajos»/«1 trabajo»
+ * · «Nada para hoy.», «mismo significado, misma palabra en las dos pantallas»).
+ *
+ * «Mismo significado» se cumple LLAMANDO a la cifra de la lista de Trabajos (`pintarCifrasDeLaLista`,
+ * jobsView.js, de S4), no copiándola: cuenta lo mismo —en curso + agendado hoy— y dice lo mismo.
+ * De esa zona sólo se queda «Para hoy»: «Por cobrar» es dinero, no su trabajo de hoy, y se QUITA.
+ * `GET /admin/jobs` ya viene recortada a lo suyo (SCRUM-1706).
+ *
+ * 🔴 Si la lista no llega, NO se pinta nada: «Nada para hoy.» sobre una carga caída afirmaría que
+ * no tiene trabajo. El fallo no tiene texto firmado, así que el bloque se queda vacío (no ocupa).
+ */
+async function pintarTrabajoDeHoy(zona) {
+  if (!zona || typeof pintarCifrasDeLaLista !== 'function') return;
+  let jobs;
+  try {
+    jobs = await apiRequest('/admin/jobs');
+  } catch {
+    return;
+  }
+  if (!Array.isArray(jobs)) return;
+  pintarCifrasDeLaLista(zona, jobs);
+  zona.querySelectorAll('.jobs-cifra-dinero').forEach((cifra) => cifra.remove());
+}
+
 async function renderHomeView(container) {
   const qLabel = (window.appLocale && window.appLocale.quoteNew) || 'Nueva cotización';
   const firstName = String(window.appUserName || '').trim().split(/\s+/)[0] || '';
@@ -15,7 +41,7 @@ async function renderHomeView(container) {
       <header class="home-greeting" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
         <div>
           <h1>${greet}${firstName ? ', ' + esc(firstName) : ''} 👋</h1>
-          <p>Esto es lo que pasa hoy en tu negocio.</p>
+          <p>${veNegocio ? 'Esto es lo que pasa hoy en tu negocio.' : 'Esto es lo que tienes hoy.'}</p>
         </div>
         ${window.appUserRole === 'admin' ? '<button class="btn-ghost btn-sm" id="btn-home-prefs" title="Elige qué bloques ves en tu Home">⚙ Personalizar</button>' : ''}
       </header>
@@ -57,6 +83,13 @@ async function renderHomeView(container) {
            trimestre, SCRUM-1075 punto 5) y ese descarte no debe mezclarse con «Personalizar», que
            es un ajuste de qué bloques ver, no un acuse de que ya se ha leído éste. -->
       <div id="home-resumen-trimestre"></div>
+
+      <!-- SCRUM-1686 H4 · EL TRABAJO DE HOY DEL OPERARIO (firma del fundador c.21549: «el primer
+           bloque pasa a ser su trabajo de hoy»). Va DESPUÉS de los avisos de riesgo, que se leen antes
+           que una capacidad (SCRUM-357), y ANTES del héroe y de las acciones rápidas. Sólo lo pinta
+           quien no es admin; vacío no ocupa nada (.jobs-cifras:empty). Sin data-home-block:
+           «Personalizar» es del admin. -->
+      <div id="home-hoy" class="jobs-cifras"></div>
 
       <!-- Número héroe: lo que te deben (foco principal) -->
       <div id="home-hero" data-home-block="hero"></div>
@@ -117,7 +150,16 @@ async function renderHomeView(container) {
 
   document.getElementById("btn-quick-quote").addEventListener("click", openQuickQuoteModal);
   document.getElementById("btn-add-customer").addEventListener("click", () => window.renderAppView && renderAppView('customers'));
-  document.getElementById("btn-view-pending").addEventListener("click", () => window.renderAppView && renderAppView('invoices'));
+  // SCRUM-1701 (b) · decisión del orquestador, por coherencia con D3 (firmada en SCRUM-1686
+  // c.21461), reversible: la acción rápida «Pendientes de cobro» lleva a Facturas, y con `receipt`
+  // D3 saca Facturas de la barra. Un atajo a una sección escondida es un callejón roto, así que
+  // lee el MISMO interruptor (`window.appModoEmision`, sin recalcularlo) y no se pinta. No hay
+  // texto nuevo: sólo se quita uno. `null` (no se sabe) no esconde nada, igual que la barra.
+  // Se QUITA tras pintar, no con un ternario: el literal no se mueve para el censo de SCRUM-601.
+  // Va AQUÍ y no bajo `veNegocio`, donde partía el ancla de la mutación de 1390y (scrum836, #3077).
+  if (window.appModoEmision === 'receipt') document.getElementById("btn-view-pending").remove();
+  pintarAvisoSiiSinEmision(container);
+  document.getElementById("btn-view-pending")?.addEventListener("click", () => window.renderAppView && renderAppView('invoices'));
   document.getElementById("btn-home-prefs")?.addEventListener("click", openHomePrefsPanel);
 
   // SCRUM-1317 · EL INICIO DEL OPERARIO. Las cifras del negocio (lo que se debe, lo cobrado,
@@ -129,6 +171,11 @@ async function renderHomeView(container) {
   if (!veNegocio) {
     container.querySelectorAll('[data-home-block="kpis"],[data-home-block="week"],[data-home-block="tops"]')
       .forEach((bloque) => bloque.remove());
+    pintarTrabajoDeHoy(document.getElementById('home-hoy'));
+  } else {
+    // SCRUM-1686 H4 · el Inicio del admin no cambia ni en un nodo (scrum698 lo cuenta).
+    const hoy = document.getElementById('home-hoy');
+    if (hoy) hoy.remove();
   }
 
   // A6.7: aplicar preferencias cacheadas al instante (sin flash en re-renders)
@@ -413,6 +460,41 @@ async function pintarResumenTrimestreEnHome() {
   });
 }
 window.pintarResumenTrimestreEnHome = pintarResumenTrimestreEnHome;
+
+// SCRUM-1717 (S2) · POR QUÉ NO EMITES, CUANDO ES POR EL SII (SCRUM-1585 / SCRUM-1713).
+// Con el flag fiscal puesto y el SII en «Sí» o «No consta», el modo es `receipt` —igual que con el
+// flag apagado— y el panel escondía Facturas y Cobros sin decir por qué. El motivo lo manda el
+// servidor (`/admin/me` → `motivoSinEmision`, guardado en `window.appMotivoSinEmision`) y aquí NO se
+// recalcula: con `null` no se pinta nada, que es exactamente el Inicio de hoy.
+//
+// ✅ Los DOS literales, byte a byte, están FIRMADOS: por J1 en SCRUM-1585 c.20539 y por el fundador
+// (Luis) en SCRUM-1717 c.21705, que cubre también la colocación en Inicio. El «›» es U+203A, el mismo
+// que usa el resto del repo para «Configuración › Empresa». Sin botón ni enlace: cualquier texto más
+// necesita firma (regla 39; SCRUM-1717, «Textos»).
+//
+// Solo lo ve el admin: el literal le pide cambiar Configuración › Empresa, y el operario no entra en
+// Configuración. Se INSERTA cuando hay motivo, en vez de dejar un hueco fijo en la plantilla: así el
+// Inicio sin motivo no cambia ni en un nodo (scrum697/698 los cuentan).
+const AVISO_SII_SIN_EMISION = {
+  sii_declarado: 'Has indicado en Configuración › Empresa que llevas los libros de IVA por el SII. Con esa respuesta, YaQu no emite facturas ni cobra por ti. Si no es así, cámbiala allí.', // APROBADO por el fundador el 12-nov-2026 (SCRUM-1717 comentario 21705)
+  sii_no_consta: 'Para emitir facturas, contesta en Configuración › Empresa si llevas los libros de IVA por el SII.', // APROBADO por el fundador el 12-nov-2026 (SCRUM-1717 comentario 21705)
+};
+
+function pintarAvisoSiiSinEmision(container) {
+  if (window.appUserRole !== 'admin') return;
+  const texto = AVISO_SII_SIN_EMISION[window.appMotivoSinEmision];
+  if (!texto) return;
+  const saludo = container.querySelector('.home-greeting');
+  if (!saludo) return;
+  const aviso = document.createElement('div');
+  aviso.id = 'home-aviso-sii';
+  aviso.className = 'alert warning';
+  aviso.setAttribute('role', 'status');
+  aviso.dataset.motivo = window.appMotivoSinEmision;
+  aviso.textContent = texto;
+  saludo.insertAdjacentElement('afterend', aviso);
+}
+window.pintarAvisoSiiSinEmision = pintarAvisoSiiSinEmision;
 
 function renderSetupChecklist(merchant, data) {
   // A1.3: la checklist es tarea del admin (logo, datos fiscales → Configuración);

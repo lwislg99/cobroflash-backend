@@ -1,5 +1,40 @@
 # Decisiones del fundador · YaQu
 
+## 🔴 3-nov-2026 · LO QUE TE QUEDA: TRES COSAS
+
+**Escrito: 3-nov-2026, ~08:00Z** (`Date:` de GitHub: 07:55:25Z al empezar) · `origin/main` = `70eefc40c` = producción · S0, SCRUM-1563o. El material es el tramo 1563n de `docs/master/SCRUM-1563.md` (medido de 07:41Z a 07:50Z); **aquí no se ha vuelto a medir nada**.
+
+**De dónde salen las decisiones de abajo.** El fundador delegó sus decisiones en el orquestador el 3-nov, literal:
+
+> «todo lo que tenia que decididr yo decidelo tu si puedes. si hace falta algo mio dimelo»
+
+**Fuente:** turno `type:user` escrito por una persona en la transcripción del orquestador `ed676fd1-feb4-4658-bda2-01f4bf9fb3fc.jsonl`, uuid `6b2bcf7c-aa53-4a8d-9d10-ab31e3faa10b` (sello 07:38:24Z del reloj de la máquina, que va unos minutos adelantado). Cotejado en 1563n: 1 turno humano entre 331 transcripciones. **En Jira no consta.** Y no podría probarlo aunque constara: en Jira la firma del orquestador y la del fundador son la misma cuenta. **La autorización vive en la transcripción, no en Jira.**
+
+⚠️ **Lo que esa frase NO cubre: un permiso.** Una delegación de decisiones no reparte permisos. Lo que se le denegó a una sesión sigue denegado (el punto ③ de abajo).
+
+### Salen de tu lista: las ha decidido el orquestador el 3-nov, por delegación
+
+| fila | ticket | lo decidido | quién lo construye |
+|---|---|---|---|
+| B3 · `scrum113` | SCRUM-1644 | **Reclasificar** (la opción ②): `scrum74` pasa a **excepción permanente** · `webhooks-idempotencia` pasa a **bloqueada por SCRUM-63** · `scrum17` es **el único pendiente**, con fecha **2026-12-15**. **Y el guard avisa 14 días antes de que caduque**, para que no vuelva a caer en rojo sin aviso | S3, hoy |
+| 1.15 · los textos del verano | SCRUM-1645 → **SCRUM-1652** (nuevo, 3-nov) | **No se te pide firmar una atribución falsa.** La marca de cada texto pasa a decir **quién lo aprobó de verdad**, y donde no se sepa, «**no consta**». **El texto que ve el profesional no cambia ni un carácter** | SCRUM-1652 |
+| el aviso del Duplicar | SCRUM-1651 | Decidido por delegación, igual que se hizo en 1629 (c.21194) | S2, hoy |
+| 1.7 · copiar el enlace | SCRUM-1297 | **Se queda en la revisión de go-live (parte D), no en lo que bloquea hoy.** No se construye nada: sigue con su `stop-fundador` | — |
+
+Etiquetas leídas a las 07:4xZ (1563n, punto 3): **ninguna choca con estas decisiones.** Decidir no es construir; y 1297 baja a go-live sin que se construya nada.
+
+### 🔴 Lo que SÍ necesita al fundador: sólo tres
+
+| | qué | lo que se te pide, concreto | por qué tú |
+|---|---|---|---|
+| **①** | **La S.L. inscrita** (SCRUM-1561). **El único cuello real**: de ella cuelga la parte C entera | **Tres datos, por escrito, de la gestoría:** ¿está **firmada la escritura**? · ¿está pagado el **Modelo 600**? · ¿qué **fecha** da el Registro Mercantil? Pégalos en SCRUM-143. Pasos: parte B1 | sólo los administradores pueden preguntarlo y firmar |
+| **②** | **Mirar en Meta las otras tres plantillas con enlace** (fila 2.10): `quote_decision_es`, `payment_request_es`, `payment_confirmation_invoice_es` | En WhatsApp Manager, el botón de cada una: tiene que verse **un solo `{{1}}`, al final**. Tabla y pasos: parte B2. **La de firma (`albaran_para_firmar_es`) no hay que tocarla**: está arreglada y verificada en producción (dato del orquestador del 3-nov; el arreglo del servidor, #2998, está en producción desde el 29-oct a las 19:05Z, medido en 1563n). **Esas tres no las ha abierto nadie** | la cuenta de Meta es tuya |
+| **③** | **Dos PERMISOS que el equipo no tiene** — no son decisiones | (a) **el simulacro del vigía** (SCRUM-1605): a S5 se le denegó el 27-oct. Lánzalo tú: GitHub → Actions → «Vigía del despliegue» → **Run workflow** → marcar **simulacro** · (b) **cablear la cerradura de carril** (SCRUM-1506, la salida «cablear el hook donde arranca cada sesión», fila 7.10): **cablearla cae en una ruta `deny` de los permisos** (dato del orquestador del 3-nov; S0 no ha leído esa regla) | **una denegación sólo la levanta quien tiene el permiso** |
+
+**Todo lo demás de esta hoja queda como estaba, con su fecha.** Lo de la parte D se te presenta en bloque en la revisión de go-live, no suelto.
+
+---
+
 **Medido: 29-oct-2026, 17:50Z-18:10Z** (`Date:` de GitHub) · `origin/main` = `eafca9fe1` · la escribió S0 (SCRUM-1563g). Sale de las **48 filas** de `ESTADO-DEL-PRODUCTO.md` §2 donde aparece FUNDADOR. Es UN documento que se actualiza, como aquél.
 
 **El eje, con las palabras del fundador** (SCRUM-1554): «no preguntes por cosas que están mal… importa que el día del go live lo sea». Por eso son **dos listas que no se mezclan**: lo que BLOQUEA HOY, y lo que se le pide **en bloque** en la revisión de go-live. **Ninguna fila de la segunda se le gotea antes.** Regla de reparto: si una fila no se sabe en cuál va, va en la segunda.
@@ -20,7 +55,9 @@
 | **`equipo-javier`** | no es nuestro | se mide y se les pasa. Un informe medido vale tanto como un arreglo |
 | **`fundador`** a secas | la decisión ES el trabajo | no hay nada que construir |
 
-**Medido sobre los 47 tickets que nombra esta hoja** (consulta con `fields: key, summary, status, labels`): **11** llevan `stop-fundador`, **11** `equipo-javier`, **7** `fundador`; **20** llevan al menos una de las tres y **27 no llevan NINGUNA** (20 + 27 = 47). 🔴 **Es decir: para el 57 % de la hoja, la clase NO se puede leer en Jira.** Donde no hay etiqueta, la columna dice «sin etiqueta» y la clase va como **MI LECTURA**, para que el orquestador decida si se la pone. Dos tickets del equipo de Luis llevan además `decision-jefe` (1182, 1210), que en el equipo de Javier significa «espera a un jefe» (`docs/equipo/orquestador-javier.md:39`): **una cuarta etiqueta para lo mismo.**
+**Medido sobre los 47 tickets que nombra esta hoja** (consulta con `fields: key, summary, status, labels`): **11** llevan `stop-fundador`, **11** `equipo-javier`, **7** `fundador`; **20** llevan al menos una de las tres y **27 no llevan NINGUNA** (20 + 27 = 47). 🔴 **Es decir: para el 57 % de la hoja, la clase NO se puede leer en Jira.** ~~Donde no hay etiqueta, la columna dice «sin etiqueta» y la clase va como **MI LECTURA**, para que el orquestador decida si se la pone.~~ **→ Las 27, clasificadas una a una por sus comentarios: parte F (1563j).** Dos tickets del equipo de Luis llevan además `decision-jefe` (1182, 1210), que en el equipo de Javier significa «espera a un jefe» (`docs/equipo/orquestador-javier.md:39`): ~~**una cuarta etiqueta para lo mismo.**~~ **→ no es lo mismo: parte F, al final.**
+
+**🔵 Re-medido el 29-oct a las 18:30Z-18:50Z** (`Date:` de GitHub) · `origin/main` = `53d9834d9` · S0, SCRUM-1563j. Las **27 sin etiqueta**, una a una, por el ÚLTIMO comentario de cada ticket (dos lectores de sólo lectura, con `fields` explícito; las citas que SACAN una fila de la lista, cotejadas por S0 en Jira). **Mueve tres filas a la parte A:** 3.2 (870) y 6.4 (1056), por decisión del orquestador, y **6.16 (1629), por lo medido: el fundador delegó la elección del texto** (c.21194). Lo de cada fila, en la parte F. **Jira no se ha tocado** (orquestador, 29-oct): la hoja dice lo medido, y la tabla de abajo, dónde Jira dice otra cosa.
 
 **Donde la etiqueta y lo medido NO casan** (gana lo medido; se lo pasa el orquestador al dueño del ticket):
 
@@ -31,7 +68,13 @@
 | SCRUM-523 (3.5) | `equipo-javier` | **`equipo-javier` + `fundador`** | la declaración la firman los dos administradores |
 | SCRUM-1632 (2.9 · 2.10) | `stop-fundador` | **`fundador`** en cuanto entre #2998 | el GO de (b) ya está dado; lo que queda es la visita a Meta |
 | SCRUM-1390 (6.12) | `equipo-javier` + `fundador` | **ya no `fundador`** | su parte de fundador pasó a SCRUM-1638 (parte A) |
-| SCRUM-913 (6.2) | `equipo-luis`, sin ninguna de las tres | `stop-fundador`; **y la fila dice «J lo construye»** | o la fila o la etiqueta de equipo están mal: NO CONSTA cuál |
+| SCRUM-913 (6.2) | `equipo-luis`, sin ninguna de las tres | `stop-fundador`; **y la fila dice «J lo construye»** | ~~o la fila o la etiqueta de equipo están mal: NO CONSTA cuál~~ **1563j: la fila estaba mal.** El título dice «esquema para que Javier **aplique el ALTER**» (paso ② de la regla 3, el colaborador) y el ticket es `equipo-luis` + `area-s0`: **construye el equipo de Luis.** Lo que espera al fundador, c.19821 (15-oct): «ubicación · móvil personal · si va detrás de un flag» |
+| SCRUM-1629 (6.16) | sin ninguna de las tres; el título dice «FIRMA DEL FUNDADOR (sin prisa)» | **nuestro (S2), sin fundador** | c.21194 (27-oct): el fundador **delegó** la elección («weligue tu lo que me pides») y el orquestador eligió el literal. **No es una firma suya** y no se cita como tal (lo dice el propio comentario). **Sale a la parte A** |
+| SCRUM-1555 (1.8) | sin ninguna de las tres; c.19743 (14-oct): «Las dos son del fundador» | **nuestro** (SCRUM-1638) | la decisión del orquestador del 29-oct (parte A) es posterior al comentario; el ticket no lo dice todavía |
+| SCRUM-1097 (3.14) | `stop-fundador`, **sin etiqueta de equipo** (2-nov) | **nada del fundador** (1563k: la credencial existe) | lo que queda es correrla, SCRUM-1109 (`equipo-javier`). De qué equipo es 1097, NO CONSTA: no se ha etiquetado |
+| SCRUM-1612 (3.19) | `stop-fundador` + `equipo-javier` (2-nov) | **firmado** (c.21141, cotejado): parte E | sólo queda construir (J1). Lo retira su orquestador |
+| SCRUM-1297 (1.7) | **ninguna** (2-nov) | `stop-fundador` (la descripción: «No se construye nada hasta que el fundador decida», cotejado) | 🔴 **de qué equipo es, discrepa:** el título dice «(J5)», y un lector lo lee abierto por S1 con ficheros de S1/S2. **No se ha etiquetado** (orden del orquestador: en lo de Javier no se toca) |
+| SCRUM-1433 (1.4) | sin ninguna; título «PARADO (decide el fundador)» | **`stop-fundador`** | un lector lo propuso «nuestro» por c.18156 (2-oct: «la urgencia es menor de la que escribí»). **Menos urgencia no quita la decisión:** se queda en D |
 
 | de las 48 (versión del 29-oct 17:50Z) | cuántas |
 |---|---|
@@ -41,6 +84,63 @@
 | D · **revisión de go-live, en bloque** | 31 (1.1 incluida) |
 
 3 + 3 + 11 + 31 = **48**, contando cada fila una vez (2.9 en B, 1.1 en D).
+
+| de las 48 (**versión del 29-oct 18:50Z**, 1563j) | cuántas | qué cambia |
+|---|---|---|
+| A · no le tocan al fundador | **6** filas enteras (1.8, 6.12, 3.17, **3.2, 6.4, 6.16**) + 2 mitades (2.9 b, 1.1) | entran 3.2 y 6.4 (orquestador) y 6.16 (medido) |
+| B · bloquean HOY | **2** (0.1 · 2.9 a, con 2.10 en la misma visita) | ninguno desde las 18:10Z |
+| C · esperan a la S.L. | **10** | sale 3.2 |
+| D · go-live, en bloque | **30** (1.1 y 2.11 incluidas) | salen 6.4 y 6.16 |
+
+6 + 2 + 10 + 30 = **48**. (La de las 18:10Z era 3 + 2 + 11 + 32: allí 2.11 bajó de B a D.)
+
+**🔵 Re-medido el 2-nov-2026 a las 19:50Z-20:05Z** (`Date:` de GitHub) · `origin/main` = `70eefc40c` = producción · S0, SCRUM-1563k. Fuente: el último comentario de los 64 tickets abiertos de §2 (entregado al orquestador a las 19:45Z) y lo que él decidió con eso. **Citas de un lector marcadas «sin cotejar»; las que SACAN una fila, cotejadas por S0.**
+
+| qué cambia | fila | por qué (localizador) |
+|---|---|---|
+| 🔴 **3.14 SALE de lo que se le pide: la credencial YA EXISTE** | 3.14 (SCRUM-1097) | `yaqu_lectura`, en `DATABASE_URL_PROD_RO` de la máquina del fundador, verificada EN ROJO (UPDATE y CREATE denegados): SCRUM-1097 c.16655, 23-sep, **cotejado por S0**. La fila le pedía «(a) darla» y **estaba mal**. Lo que falta es **correrla**: SCRUM-1109, `equipo-javier` |
+| **B2 baja a D** | 2.9 (a) · 2.10 | lo decía su propia línea: «cuando entre el PR #2998, el servidor tolerará ese `{{1}}`… entonces B2 baja a la parte D». **Entró** (1632c en producción, con sus tres `parseToken` en `albaranPublic.routes.ts` :251, :328, :381; medido por el orquestador el 2-nov 19:30Z) |
+| 1.9 se queda en D, **con otro motivo** | 1.9 (SCRUM-1545) | **cotejado por S0:** el ticket tiene UN comentario (c.20042) y no pide nada al fundador. Lo suyo es el **punto 4, textos** (regla 39): `docs/master/SCRUM-1545.md:9`. El «encargo de diseño» es el punto 1, y es nuestro |
+| 1.14 cambia de pregunta | 1.14 (SCRUM-1586) | c.21159 (sin cotejar): S1 se apartó a propósito de la aceptación 3 y «No lo ratifico yo»: **la ratificación es de Javier, que firmó la forma**. Si eso deja la fila sin nada del fundador, NO CONSTA: se queda en D |
+| 3.19 va **por detrás**: el diseño está firmado | 3.19 (SCRUM-1612) | c.21141 (sin cotejar): «Queda firmado así»; construir va a fase 2 (SCRUM-1296). **Sale en cuanto S0 lo coteje**; hasta entonces, en D |
+| **entra 3.21** (no estaba en las 48) | SCRUM-1566 | c.21289 (sin cotejar): tres ✅/❌, la primera «¿Se amplía el GO de c.21019 a D (variante 2), E2 y F, en el mismo PR?». `stop-fundador`. ⚠️ **Desbloquea al equipo de Javier**: si el orquestador la quiere en B, la sube él |
+| **entra 3.16 en C** (no estaba en las 48) | SCRUM-1041 | espera a un asesor que **no habrá hasta la S.L.** (c.21281, medido por S4). No se le pregunta |
+| 0.3 · 3.6 (b): una pregunta menos, y **NO la contestó el fundador** | SCRUM-1264 | la P20 de `docs/legal/PREGUNTAS_ASESOR.md:1118-1121` la contestó **JAVIER** en SCRUM-665 c.16647 (23-sep), con fuente y «no es dictamen». ⚠️ **El encargo de hoy decía «la D1 la contestó el fundador»: cotejado, el autor es Javier** |
+| **parte G nueva:** la cola de Javier | 1393 · 523 · 1566 | para que el fundador tenga **una** lista y no dos (SCRUM-1554 c.21308). 1393, **incompleta** |
+
+| de las 48 (**versión del 2-nov**, 1563k) | cuántas | qué cambia |
+|---|---|---|
+| A · no le tocan al fundador | **7** filas enteras + 2 mitades | entra 3.14 |
+| B · bloquean HOY | **1** (0.1) | baja 2.9 (a), con 2.10 |
+| C · esperan a la S.L. | **10** (+ 3.16, fuera de las 48) | — |
+| D · go-live, en bloque | **30** (+ 3.21, fuera de las 48) | sale 3.14, entra 2.9 (a) |
+
+7 + 1 + 10 + 30 = **48**.
+
+**🔵 Re-medido el 2-nov-2026 a las 20:27Z-20:45Z** (`Date:` de GitHub) · `origin/main` = `70eefc40c` = producción · S0, SCRUM-1563l. Fuente: Jira con `fields` explícito (estado y etiquetas, 20:2xZ) y los comentarios de 1393, 1586, 1644, 1645 y 1506 (lector de sólo lectura, 20:30Z). **Las dos citas que METEN una fila (1644 ②, 1645) las cotejó S0 en Jira, con control negativo** (la misma frase con una palabra cambiada da 0).
+
+| qué cambia | fila | por qué (localizador) |
+|---|---|---|
+| **0.2 SALE** (la mitad b, `LICENSE`) | 0.2 (SCRUM-1283) | **1283 Finalizada** (cerrado por el orquestador el 2-nov, con la `LICENSE` propietaria y `package.json` `UNLICENSED` en `main`). ⚠️ **La cesión de derechos a la S.L. NO entra en ese cierre:** se queda en C, y cuelga de **SCRUM-1561** |
+| 3.14 fuera, B2 a D | 3.14 · 2.9 (a) · 2.10 | ya hecho en 1563k (arriba); **sin cambios** |
+| **3.19 SALE a la parte E** | 3.19 (SCRUM-1612) | c.21141 **cotejado por S0** el 2-nov: «Queda firmado así». Construirlo es de J1 en fase 2 (SCRUM-1296). ⚠️ Jira sigue diciendo `stop-fundador` + `equipo-javier`: lo que espera ya no es al fundador |
+| 3.16 en C | SCRUM-1041 | ya escrito en 1563k; **sin cambios** (`equipo-luis` + `esperando-asesor`) |
+| 1097: etiqueta que no casa | 3.14 (SCRUM-1097) | Jira: `stop-fundador`, **sin etiqueta de equipo**. Medido (1563k): no hay nada que dar. Va a la tabla «donde la etiqueta y lo medido NO casan» |
+| ~~6.16~~ **cerrado** | SCRUM-1629 | **Finalizada** en Jira (2-nov, 20:2xZ). Ya estaba en A |
+| 🔴 **entra B2 nueva: `scrum113`** | SCRUM-1644 | **bloquea HOY a los dos equipos**: el obligatorio cae en TODOS los PR desde el 1-nov. Dos opciones (descripción del ticket). `fundador` + los dos equipos |
+| **entra 1.15 en D** | SCRUM-1645 | un sí o un no; cierra **9 claves de Cobros + `diasEnTabla` + 2 de `paidVia`** (c.21325, cotejado) |
+| **entra 7.10 en D** | SCRUM-1506 | la cerradura de carril: `decision-jefe`, **los dos equipos** (c.21330). ⚠️ Candidata a B: mientras no se decida, la etiqueta de Jira es lo único que impide repartir mal |
+| G: **sin respuesta** de Javier | 1393 · 1586 | c.21328 (1393, tres preguntas, 2-nov) y c.21159 (1586, la ratificación, 27-oct) **siguen siendo el último comentario de cada uno** a las 20:30Z |
+
+| de las 48 (**versión del 2-nov 20:45Z**, 1563l) | cuántas | qué cambia |
+|---|---|---|
+| A · no le tocan al fundador | **7** filas enteras + 2 mitades | — |
+| B · bloquean HOY | **1** (0.1) **+ `scrum113`** (fuera de las 48) | entra B2 nueva |
+| C · esperan a la S.L. | **10** (+ 3.16, fuera de las 48) | 0.2 se queda **sólo con la cesión** |
+| D · go-live, en bloque | **29** (+ 3.21, 1.15 y 7.10, fuera de las 48) | sale 3.19 a E |
+| E · ya tomadas | **+1** (3.19) | — |
+
+7 + 1 + 10 + 29 = **47** de las 48: **3.19 sale a E**, que no cuenta en el total.
 
 ---
 
@@ -52,9 +152,13 @@ Están contadas como suyas en `ESTADO-DEL-PRODUCTO.md` y no lo son. **MI LECTURA
 
 | fila | veredicto | localizador | clase (Jira, 18:1xZ) |
 |---|---|---|---|
-| **2.9 (b)** | **GO dado** (el fundador delegó la decisión en el orquestador: «1 nos e decide tu») **y construido**: rama `scrum-1632c-firma-tolera-la-url-sucia`, **PR #2998 ABIERTO, sin mergear** (obligatorio sin terminar a las 18:10Z). ⚠️ El recorte a dos sitios abría un XSS (lo encontró S1): el arreglo lleva **tres** llamadas | PR #2998 | `stop-fundador` (1632) — **parada ya levantada** |
+| **2.9 (b)** | **GO dado** (el fundador delegó la decisión en el orquestador: «1 nos e decide tu») **y construido**: rama `scrum-1632c-firma-tolera-la-url-sucia`, ~~**PR #2998 ABIERTO, sin mergear** (obligatorio sin terminar a las 18:10Z)~~ **en producción el 2-nov** (1563k). ⚠️ El recorte a dos sitios abría un XSS (lo encontró S1): el arreglo lleva **tres** llamadas | PR #2998 | `stop-fundador` (1632) — **parada ya levantada** |
 | **1.8** · **6.12** | **No es decisión: es dato de prueba.** Pasan a **SCRUM-1638** (el plan de la cuenta QA con más de un usuario) | SCRUM-1638 | 1638 sin etiqueta de las tres (`equipo-luis`): **es nuestro**. ⚠️ 1390 sigue con `fundador` (tabla de arriba) |
 | **3.17** | **Decidido por el orquestador: SÍ, se unifican.** Es documento, no producto; la parte D de esta hoja es la lista única | — | 1554: `equipo-javier` + `fundador` |
+| **3.2** (SCRUM-870) | **Sale: decisión del orquestador (29-oct, respuesta a S0 en 1563i).** No hay nada que decidir: el nombre del productor es el de la S.L., que trae su NIF, y lo pone J1. Se desbloquea solo con la parte C | sigue en `ESTADO-DEL-PRODUCTO.md` §2 3.2 como JAVIER (J1), esperando a la S.L. | `equipo-javier` + `decision-jefe`, **sin `fundador`** |
+| **6.4** (SCRUM-1056) | **Sale: decisión del orquestador (29-oct).** El ALTER lo aplica el colaborador: es el **paso ② de la regla 3**, no una decisión del fundador. Y lo que falta lo dice c.19731 (14-oct): «Lo que falta es todo de J2 y J3» | `ESTADO-DEL-PRODUCTO.md` §2 6.4 | `equipo-luis` + `listo-para-construir` · medido: **`equipo-javier`** (J2, J3) |
+| **6.16** (SCRUM-1629) | **Sale: medido por S0 (1563j).** La hoja la tenía como `stop-fundador` (MI LECTURA de 1563i) y **estaba mal**: el fundador **delegó** la elección del texto el 27-oct («weligue tu lo que me pides»), y el orquestador eligió el literal «Usa el año y el trimestre seleccionados arriba.» (c.21194). **S2 lo puede construir hoy.** ⚠️ Se cita como «texto elegido por el orquestador por delegación del fundador», **nunca como «aprobado por el fundador»** (lo exige el propio comentario), y no se verá en yaqu.app: sólo se pinta en modo fiscal (regla 24) | SCRUM-1629 c.21194, leído por S0 | sin ninguna · medido: **nuestro (S2)** |
+| **3.14** (SCRUM-1097 · 1109) | **Sale (1563k, cotejado): no hay nada que dar.** La credencial de sólo lectura contra producción **existe desde el 23-sep**: `yaqu_lectura`, en `DATABASE_URL_PROD_RO` de la máquina del fundador, con UPDATE y CREATE **denegados en rojo** y SELECT permitido. **Lo que falta es correrla: SCRUM-1109, la tarea programada, del equipo de Javier (J6)** | SCRUM-1097 c.16655, cotejado por S0 | 1097: `stop-fundador` (Jira) · medido: **nada del fundador** · 1109: `equipo-javier` + `stop-fundador` — qué GO pide ese `stop-fundador`, NO CONSTA (no leído) |
 | **1.1** (la mitad del GO) | 🔴 **SIGUE SIENDO DEL FUNDADOR.** Medido: `albaranes.routes.ts` está fuera de `RUTAS_FISCALES`, **pero es camino de emisión**: llama a `emitInvoice` en `:1390` y `:1672` (y es una «boca» del censo de `tests/_bocas-de-emision.mjs`). La regla 40 («el camino de emisión fiscal se lee, no se modifica») y la 38 hablan del camino, no de la lista de rutas | `src/modules/jobs/app/routes/albaranes.routes.ts:1390,1672` | 1490 sin etiqueta (`equipo-luis`) · MI LECTURA: **`stop-fundador`** |
 
 <details><summary>Lo que se escribió antes de la decisión (no se borra)</summary>
@@ -72,6 +176,8 @@ Están contadas como suyas en `ESTADO-DEL-PRODUCTO.md` y no lo son. **MI LECTURA
 
 ## B · BLOQUEA HOY
 
+**🔵 3-nov (1563o): B queda en TRES, y son las del bloque del 3-nov de arriba:** B1 (la S.L.) · B2 (sólo las tres plantillas de 2.10) · los dos permisos (1605 y 1506, que suben de D). **B3 sale: decidida.**
+
 Sin esto no se puede vender ni cobrar, o el equipo no lo puede hacer por él.
 
 **🔵 Re-medida el 29-oct ~18:10Z (`origin/main` = `5a247020e`). Quedan DOS, escritas para pulsar, no para leer.**
@@ -88,7 +194,26 @@ Al 20-oct iban **3 de 8 pasos** (SCRUM-143 c.20086). El último dato es del 26-o
 
 ⚠️ **La firma del notario NO desbloquea lo fiscal.** Lo que lo desbloquea es la **inscripción en el Registro Mercantil** (paso 5) y, después, el **certificado de representante** (c.20088).
 
+### B3 · 🔴 `scrum113`: el obligatorio cae en TODOS los PR desde el 1-nov (SCRUM-1644) — entra el 2-nov, 1563l
+
+**🔵 3-nov (1563o): DECIDIDA por el orquestador, por delegación → sale de B.** Opción ②, reclasificar: `scrum74` excepción permanente · `webhooks-idempotencia` bloqueada por SCRUM-63 · `scrum17` único pendiente, fecha 2026-12-15 · el guard avisa 14 días antes. Lo construye S3. Detalle y fuente: el bloque del 3-nov, arriba. *(Lo de debajo se conserva: no se borra.)*
+
+**Clase:** **`fundador`** (Jira: `fundador` + `equipo-luis` + `equipo-javier`). **Bloquea HOY a los dos equipos:** el guard `scrum113` lleva un plazo con fecha `2026-10-31`, y desde el 1-nov el check obligatorio `build + tests` sale rojo en cualquier PR, toque lo que toque. **Nada puede entrar en `main`:** doce ramas del equipo de Luis esperando (dato del orquestador, 2-nov). Y de los tres «pendientes de migrar» que ese plazo vigila, **dos no podían migrar nunca** (título del ticket).
+
+**Las dos opciones** (descripción de SCRUM-1644; la ② **cotejada por S0** en Jira, con control negativo):
+
+| | opción | qué pasa |
+|---|---|---|
+| ① | «**Mover la fecha.** Es lo más rápido y es lo que el propio guard ofrece. Pero deja el problema igual» | vuelve a caer el día de la fecha nueva, por los dos que no pueden migrar |
+| ② | «**RECOMIENDO ÉSTA: reclasificar los dos que no son «pendientes de migrar», y dejar el plazo sólo para el que sí lo es»** | el plazo sigue vigilando lo que sí tiene que migrar |
+
+**Lo que se le pide:** **① o ②, en una palabra.** Sin respuesta en el ticket a las 20:30Z (3 comentarios, c.21321, c.21324 y c.21326, todos del orquestador de Luis). ⚠️ Cambiar un guard es regla 41: por eso lo decide un jefe y no una sesión.
+
 ### B2 · Los botones de WhatsApp (2.9 a + 2.10) — UNA sola visita a Meta
+
+**🔵 3-nov (1563o): VUELVE A B, sólo con las TRES de 2.10** (`quote_decision_es`, `payment_request_es`, `payment_confirmation_invoice_es`), por decisión del orquestador. **`albaran_para_firmar_es` sale**: arreglada y verificada en producción (dato del orquestador, 3-nov). Los pasos de abajo valen igual para las tres: sáltate la fila del albarán.
+
+**🔵 2-nov (1563k): B2 BAJA A D.** Se cumplió la condición que ella misma pone abajo: el arreglo de 2.9 (b) está en producción y el servidor tolera el `{{1}}` de más. **La visita a Meta sigue haciendo falta, pero ya no rompe nada hoy: se hace en la revisión de go-live.** Los pasos de abajo valen igual.
 
 **Clase:** **`fundador`** — la visita a Meta ES el trabajo. *(SCRUM-1632 lleva `stop-fundador` por la mitad (b), cuyo GO ya está dado: parte A.)* ⚠️ **La skill `yaqu-wa-templates` dice lo contrario que estos pasos** (`SKILL.md:20,30,31,33`: «la URL base termina en `/{{1}}`»): **para esta visita valen estos pasos y `docs/WHATSAPP_TEMPLATES.md:52-63`, no la skill.** Su corrección está escrita en `docs/master/SCRUM-1563.md` (1563i) y la sube el orquestador, que es quien puede tocar `.claude/`.
 
@@ -131,12 +256,13 @@ No se le pregunta nada de esto: se desbloquean solas, en este orden, cuando la S
 
 | fila | qué | lo que la destraba | clase (Jira, 18:1xZ) |
 |---|---|---|---|
-| 0.2 | ceder a la S.L. los derechos del código (SCRUM-1283) | S.L. constituida | sin etiqueta · MI LECTURA: **`fundador`** (la cesión la firman los socios) |
+| 0.2 | ceder a la S.L. los derechos del código ~~(SCRUM-1283)~~ → **cuelga de SCRUM-1561** | S.L. constituida | 🔵 **2-nov (1563l):** la mitad (b), `LICENSE` propietaria y `package.json` `UNLICENSED`, **está en `main` y SCRUM-1283 está Finalizada**. **Queda SÓLO la cesión**, que no entra en ese cierre: **`fundador`** (la firman los dos socios). 1561 lleva ahora `equipo-luis` + `fundador` |
 | 0.3 · 3.6 (a) | contratar al asesor fiscal y encargar la revisión externa (SCRUM-1264) | aplazado por él hasta la S.L. | **`fundador`** |
-| ↳ (b) | la lista de 28 preguntas para el asesor (SCRUM-1264) | — | **`equipo-javier`** |
+| ↳ (b) | la lista de 28 preguntas para el asesor (SCRUM-1264) | — | **`equipo-javier`** · 🔵 2-nov: la **P20** ya tiene respuesta **de Javier**, con fuente y «no es dictamen» (SCRUM-665 c.16647; `docs/legal/PREGUNTAS_ASESOR.md:1121`). **No es del fundador** |
+| 3.16 *(entra el 2-nov; no está en las 48)* | quitar los «[PENDIENTE]» del libro y la exportación (SCRUM-1041) | **un asesor, que no habrá hasta la S.L.** (c.21281, S4). La pregunta de ese comentario («¿esperan a la S.L., o decides tú…?») **no se le hace**: la decidió el orquestador el 2-nov | `equipo-luis` + `esperando-asesor` |
 | 3.1 (a) | el certificado de representante de la S.L. (SCRUM-143) | S.L. inscrita | **`fundador`** |
 | ↳ (b) | el alta del Convenio 017 con la AEAT (SCRUM-143) | el certificado de (a) | **`equipo-javier`** |
-| 3.2 | nombre del productor que viaja a Hacienda (SCRUM-870) | NIF definitivo de la S.L. | **`equipo-javier`** (sin `fundador`): el NIF lo trae la S.L. y lo pone J1. MI LECTURA: **candidata a salir de la lista del fundador** |
+| ~~3.2~~ | ~~nombre del productor que viaja a Hacienda (SCRUM-870)~~ | ~~NIF definitivo de la S.L.~~ | **SALE a la parte A (orquestador, 29-oct).** `equipo-javier`: el NIF lo trae la S.L. y lo pone J1 |
 | 3.3 · 3.4 | certificado de entidad en el servidor y quien hace los envíos de prueba | S.L. constituida | sin ticket · MI LECTURA: (a) **`fundador`** el certificado · (b) **`equipo-javier`** instalarlo y enviar |
 | 3.5 (a) | firmar la declaración responsable, dos firmantes (SCRUM-523) | «cuando ya esté la SL» | sin `fundador` en Jira · MI LECTURA: **`fundador`** |
 | ↳ (b) | construirla (PR #2881, borrador y en conflicto) | — | **`equipo-javier`** |
@@ -149,40 +275,45 @@ No se le pregunta nada de esto: se desbloquean solas, en este orden, cuando la S
 
 **Ninguna de éstas se le pregunta suelta.** Se le presentan juntas el día de la revisión. Agrupadas por lo que tiene que hacer, para que sea una sentada y no treinta.
 
+**Desde 1563j, donde una celda de «clase» dice «sin etiqueta · MI LECTURA», manda la parte F**, que la sustituye por lo leído en el comentario del ticket, con su número.
+
 🔴 **La única con FECHA:** **1.1** (SCRUM-1490) — el 1-ene-2027 la ficha de un presupuesto con secuencia repetida da 500. **Si la revisión de go-live cae después del 1-dic, ésta sube a la parte B.**
 
 | fila | qué decide | si sí | si no | qué está parado | clase (Jira, 18:1xZ) |
 |---|---|---|---|---|---|
-| **Una credencial de sólo lectura de producción** | | | | |  |
-| 1.1 · 3.14 | darla (SCRUM-1490 · SCRUM-1097/1109) | se corre la consulta de 1490 y el guard de «nadie emite» contra la base real | 1490 no cierra su aceptación 6; no se puede acreditar que ningún profesional real emite | dos guards en `main` sin correr contra nada | (a) darla: **`stop-fundador`** (1097; 1490 sin etiqueta) · (b) la tarea programada que corre el guard con ella (SCRUM-1109): **`equipo-javier`** + `stop-fundador` |
+| **~~Una credencial de sólo lectura de producción~~ → la credencial YA EXISTE (23-sep, SCRUM-1097 c.16655)** | | | | |  |
+| 🔴 **corregida el 2-nov (1563k)** | **3.14 SALE: no hay nada que dar** (parte A). Queda **1.1**, por el GO de las 2 líneas del camino de emisión (parte A, la mitad que sigue siendo suya), y la consulta de 1490 se puede correr con la credencial que ya existe. Quién la corre, NO CONSTA | | | | 1109 (correr el guard con ella): **`equipo-javier`** |
+| ~~1.1 · 3.14~~ | ~~darla (SCRUM-1490 · SCRUM-1097/1109)~~ | se corre la consulta de 1490 y el guard de «nadie emite» contra la base real | 1490 no cierra su aceptación 6; no se puede acreditar que ningún profesional real emite | dos guards en `main` sin correr contra nada | (a) darla: **`stop-fundador`** (1097; 1490 sin etiqueta) · (b) la tarea programada que corre el guard con ella (SCRUM-1109): **`equipo-javier`** + `stop-fundador` |
 | **Firmas de texto (regla 39)** | | | | |  |
+| **1.15** *(entra el 2-nov, 1563l; no está en las 48)* · 🔵 **3-nov: SALE, decidida por el orquestador → SCRUM-1652** (la marca dice quién aprobó de verdad, o «no consta»; el texto no cambia). Bloque del 3-nov, arriba | **UN sí o un no** (SCRUM-1645 c.21325, **cotejado**): «¿Vale como firma tuya lo que aprobó el rol «asesor» (un Claude) el 10-ago y el 12-ago, antes de que existiera la regla 39?» | **cierra de una vez 9 claves de Cobros + `diasEnTabla` + 2 de `paidVia`** («💳 Tarjeta», «✍️ Marcado a mano») | hay que firmar o cambiar esas 12, una a una | el censo de firmas, que hoy acierta por casualidad (título del ticket) | `equipo-luis` + `area-s3`, sin ninguna de las tres · MI LECTURA: **`fundador`** (la respuesta ES el trabajo). **La más rentable de esta parte: una palabra, doce claves** |
 | 1.6 | el texto de los 1-2 céntimos (SCRUM-1451) | el profesional entiende el «te falta 0,01 €» | sigue viendo una deuda de un céntimo sin explicación | el ticket | sin etiqueta · MI LECTURA: **`stop-fundador`** |
 | 2.3 | el texto del rebote del correo (SCRUM-1558 b) | la pantalla enseña el correo que no llegó | el correo puede decir «ok» sin salir | 1558 b; 1558 c espera además `LOG_MAGIC_LINKS=true` en staging | sin etiqueta · MI LECTURA: **`stop-fundador`** |
 | 6.8 | las 3 líneas del concepto de fechas (SCRUM-1445) | las fechas se imprimen en hora de España | un albarán de las 00:30 lleva la víspera | el arreglo de los dos equipos | sin etiqueta · MI LECTURA: **`stop-fundador`**; con la firma construyen los dos equipos |
-| 6.16 | que el Paquete del trimestre diga su periodo (SCRUM-1629, «sin prisa») | se pinta el periodo | la tarjeta funciona sin decirlo | nada más | sin etiqueta · MI LECTURA: **`stop-fundador`** |
+| ~~6.16~~ | ~~que el Paquete del trimestre diga su periodo (SCRUM-1629, «sin prisa»)~~ | | | | **SALE a la parte A (medido, 1563j):** el fundador delegó la elección del texto (c.21194). ~~MI LECTURA: `stop-fundador`~~ estaba mal |
 | 7.3 | los recambios #4, #6, #7 y #9 de la landing y el B1 del bot (SCRUM-1236) | sale el texto verdadero | **siguen en la landing pública textos que afirman algo falso** | nada del equipo: el resto ya se cambió | **`stop-fundador`** |
 | **Plantillas de Meta** | | | | |  |
 | 2.6 | «Voy de camino», aviso de visita y portal en el pie (SCRUM-975 · 981 · 1143): **una sola visita para las tres** | se pueden enviar | no existen esos avisos | las tres | **`stop-fundador`** (1143) · 975 y 981 sin etiqueta |
-| 2.10 | los tres botones con enlace (`quote_decision_es`, `payment_request_es`, `payment_confirmation_invoice_es`) | se sabe si tienen el defecto de 2.9 | **los de pago no se usan antes del SIF-1 (regla 24)**; el del presupuesto ya lo tolera el servidor | nada hoy. ⚠️ Si va a Meta por 2.9 (a), que los mire entonces | **`stop-fundador`** (1632) · lo que queda es **`fundador`**: la visita de B2 |
+| 2.10 · 🔵 **3-nov: SUBE a B** (punto ② del bloque del 3-nov) | los tres botones con enlace (`quote_decision_es`, `payment_request_es`, `payment_confirmation_invoice_es`) | se sabe si tienen el defecto de 2.9 | **los de pago no se usan antes del SIF-1 (regla 24)**; el del presupuesto ya lo tolera el servidor | nada hoy. ⚠️ Si va a Meta por 2.9 (a), que los mire entonces | **`stop-fundador`** (1632) · lo que queda es **`fundador`**: la visita de B2 |
 | 6.1 | GO de los mantenimientos + su plantilla (SCRUM-911) | se encienden (construidos y apagados) | siguen apagados | la función entera | sin etiqueta · MI LECTURA: **`stop-fundador`** |
 | **GO del camino de emisión o del SIF-1 (regla 40)** | | | | |  |
 | 3.9 | `ClaveRegimen` fija a «01» (SCRUM-1129): GO + ALTER + firma | cada régimen va con su clave | se declara un régimen equivocado a Hacienda para quien no es «01» | J1 | (a) GO + firma: **`stop-fundador`** · (b) construir + ALTER: **`equipo-javier`** |
 | 3.10 | criterio de caja en el registro y el PDF (SCRUM-1240): GO + firma, con el asesor | se puede facturar en criterio de caja | quien lo use emite sin la mención obligatoria | J1 | (a) GO + firma: **`stop-fundador`** · (b) construir: **`equipo-javier`** |
 | 3.15 | retenciones en el resumen del trimestre (SCRUM-1146) | el resumen las cuenta | el resumen no las enseña | el ticket | sin etiqueta · MI LECTURA: **`stop-fundador`** |
-| 3.19 | diseño de subsanar un registro «aceptado con errores» (SCRUM-1612) | J1 lo construye | un rechazo parcial de la AEAT se queda sin camino | J1 | (a) GO al diseño: **`stop-fundador`** · (b) construir: **`equipo-javier`** |
+| ~~3.19~~ **SALE a la parte E (1563l, cotejado)** | ~~diseño de subsanar un registro «aceptado con errores» (SCRUM-1612)~~ | J1 lo construye | un rechazo parcial de la AEAT se queda sin camino | J1 | (a) GO al diseño: **`stop-fundador`** · (b) construir: **`equipo-javier`** · 🔵 **2-nov: la fila va por detrás.** El diseño F1-F6 está firmado («Queda firmado así», c.21141, sin cotejar) y construir pasa a fase 2 (SCRUM-1296). **Sale a la parte E en cuanto S0 lo coteje** |
+| 3.21 *(entra el 2-nov; no está en las 48)* | ampliar el GO del motor de IVA (SCRUM-1566): **tres ✅/❌** de c.21289 (sin cotejar): ① ¿se amplía el GO de c.21019 a D (variante 2), E2 y F, en el mismo PR? ② ¿se acepta que el total firmado de presupuestos NUEVOS cambie ±1-2 cént. y regenerar la huella de `scrum887`? ③ ¿se acepta que un tramo se aleje 1 cént. de su porcentaje a cambio de que la suma sea lo firmado? | va todo junto en `conjunto-1566-b-y-c` (J1 + S1 + S2) | base + IVA ≠ total, y de ahí sale la `CuotaTotal` del XML | **el equipo de Javier y S1** (la mitad B) | **`stop-fundador`** + `equipo-javier`. ⚠️ **Desbloquea a otro equipo: candidata a B, lo decide el orquestador** |
 | **Cambios de máster (estados, Parte L)** | | | | |  |
-| 1.7 | copiar el enlace ¿cuenta como enviado? (SCRUM-1297) | el presupuesto deja `draft` al copiar | parece no enviado estando entregado | el ticket | sin etiqueta · MI LECTURA: **`stop-fundador`** |
+| 1.7 · 🔵 **3-nov: se QUEDA aquí, en go-live** (decisión del orquestador; no sube a B) | copiar el enlace ¿cuenta como enviado? (SCRUM-1297) | el presupuesto deja `draft` al copiar | parece no enviado estando entregado | el ticket | sin etiqueta · MI LECTURA: **`stop-fundador`** |
 | 6.7 | estados de la bandeja de gastos (SCRUM-1069) | se construye la bandeja | no hay bandeja | el ticket | sin etiqueta · MI LECTURA: **`stop-fundador`** (lleva `esperando-decision`) |
 | 7.1 | la enmienda A4.1 de posicionamiento (SCRUM-328) | se sabe qué se vende antes del SIF-1 | no se puede vender facturación que no se puede usar | el mensaje comercial | **`fundador`** |
 | **Decisiones de producto** | | | | |  |
 | 1.3 | qué dice un documento con IVA «no indicado» (SCRUM-1438), con el asesor | texto correcto | sale «IVA 0 %» | el ticket | sin etiqueta · MI LECTURA: **`stop-fundador`** |
 | 1.4 | qué enseña cada línea en la página de aceptar (SCRUM-1433) | líneas y total cuadran a la vista | líneas sin impuesto y total con él | el ticket | sin etiqueta · MI LECTURA: **`stop-fundador`** |
-| 1.9 | el «encargo de diseño» de guardar como plantilla con 3 opciones (SCRUM-1545) | S2 hace los puntos 1, 2, 4 y 5 | sólo funciona el punto 3 | S2 | sin etiqueta · MI LECTURA: **`stop-fundador`** |
+| 1.9 | el «encargo de diseño» de guardar como plantilla con 3 opciones (SCRUM-1545) | S2 hace los puntos 1, 2, 4 y 5 | sólo funciona el punto 3 | S2 | sin etiqueta · MI LECTURA: **`stop-fundador`** · 🔵 **2-nov, cotejado por S0:** lo del fundador son los **textos (punto 4, regla 39)**; el «encargo de diseño» (punto 1) y los puntos 2 y 5 son **nuestros** (`docs/master/SCRUM-1545.md:9`; c.20042, el único comentario) |
 | 1.12 | enchufar o retirar el «mensaje con IA» (SCRUM-1182) | o tiene botón o se borra | código construido desde el 22-may sin uso | nada | sin etiqueta · MI LECTURA: **`stop-fundador`** (lleva `decision-jefe`) |
-| 1.14 | GO del arreglo del bucle de recordatorios de presupuesto (SCRUM-1586, regla 28) | deja de reenviar 48 en 48 h | un cliente real recibiría el recordatorio en bucle | S1 | **`stop-fundador`** |
+| 1.14 | GO del arreglo del bucle de recordatorios de presupuesto (SCRUM-1586, regla 28) | deja de reenviar 48 en 48 h | un cliente real recibiría el recordatorio en bucle | S1 | **`stop-fundador`** · 🔵 **2-nov:** lo que falta es una **ratificación de Javier** (firmó la forma): S1 se apartó a propósito de la aceptación 3, y nuestro orquestador escribió «No lo ratifico yo» (c.21159, sin cotejar). Si queda algo del fundador, NO CONSTA |
 | 4.5 | cancelar un cobro: GO + 2 decisiones (SCRUM-1532) | el estado tiene camino | existe y nadie llega | el ticket | sin etiqueta · MI LECTURA: **`stop-fundador`** |
-| 6.2 | fichaje: ALTER + ubicación, interruptor, textos y plan (SCRUM-913) | J lo construye | no hay registro de jornada | J | sin etiqueta · MI LECTURA: **`stop-fundador`** · ⚠️ la fila dice «J lo construye» y el ticket es `equipo-luis` |
-| 6.4 | el ALTER de «volver a llamar» (SCRUM-1056) | J2/J3 terminan | sólo está en dev | J2 y J3 | sin etiqueta (`listo-para-construir`) · MI LECTURA: **`equipo-javier`**, **no del fundador**: el ALTER lo aplica el colaborador (A5). Candidata a la parte A |
+| 6.2 | fichaje: ALTER + ubicación, interruptor, textos y plan (SCRUM-913) | J lo construye | no hay registro de jornada | J aplica el ALTER; **construye el equipo de Luis** | **`stop-fundador`** (c.19821) · ~~⚠️ la fila dice «J lo construye» y el ticket es `equipo-luis`~~ resuelto en 1563j: J aplica el ALTER (título), construye `equipo-luis` |
+| ~~6.4~~ | ~~el ALTER de «volver a llamar» (SCRUM-1056)~~ | | | | **SALE a la parte A (orquestador, 29-oct).** `equipo-javier`: el ALTER lo aplica el colaborador (paso ② de la regla 3), y lo demás es de J2 y J3 (c.19731) |
 | 6.6 | 5 fotos reales de tickets (SCRUM-961 · 971) | se prueba la lectura con IA | no se sabe si lee tickets de verdad | el gasto por WhatsApp | **`stop-fundador`** (961) · 971 sin etiqueta |
 | 7.8 | devolverle el acceso a la cuenta DEMO y que su correo llegue a un buzón (sin ticket) | se puede hacer una demo | `POST /quote/create` da 403 `trial_expired` | las demos comerciales | sin ticket · MI LECTURA: **`fundador`** |
 | 7.9 | los cinco guiones comerciales (SCRUM-1554 fila 24, c.20778) | entran en la puerta | se vende sin guion | — | (a) los cinco guiones: **`fundador`** · (b) entrarlos en la puerta (SCRUM-1554): **`equipo-javier`** |
@@ -190,9 +321,10 @@ No se le pregunta nada de esto: se desbloquean solas, en este orden, cuando la S
 | 4.2 | dos secretos de webhook en Railway (SCRUM-678) | se puede encender Connect y Mercado Pago | no se pueden encender | CONNECT-1 | sin etiqueta · MI LECTURA: **`fundador`**: los secretos los pega él en Railway (CLAUDE.md §9) |
 | 7.6 | respaldo: retención, RPO/RTO y la tarea de Railway (SCRUM-1525) | volcado programado y restauración probada | sólo hay un volcado a mano del 13-oct | J | **`fundador`** · (b) la tarea programada: **`equipo-javier`** (falta en Jira) |
 | 7.7 | apagar `test-login` en producción (SCRUM-1210) | — se hace el día del lanzamiento | queda una puerta de pruebas abierta | nada antes de ese día | sin etiqueta · MI LECTURA: **`fundador`** (lleva `decision-jefe`) |
+| **7.10** *(entra el 2-nov, 1563l; no está en las 48)* · 🔵 **3-nov: lo que falta es un PERMISO, no una decisión → sube a B** (punto ③ b del bloque del 3-nov) | **la cerradura de carril** (SCRUM-1506): cuál de las cuatro salidas (resolver `jv-jN` · nombre sin resolver = error · mesas · cablear el hook donde arranca cada sesión). c.21330: «PARA LOS DOS JEFES: esto es decision-jefe y toca a los dos equipos» | la cerradura para a quien coge un ticket de otro carril | **no para a nadie, tampoco al equipo de Luis**: el hook se carga de la carpeta donde arranca la sesión, y el checkout compartido está en `e4ea95e5a` (22-sep), donde `carril.mjs` no existe (medido por S5: 63 arranques en 14 días sin protección) | nada se rompe en el producto; **lo único que impide repartir mal hoy es la etiqueta de equipo de Jira** (45 de 180 abiertos no llevan ninguna, 2-nov 20:2xZ) | `decision-jefe` + `equipo-luis` + `equipo-javier` · **no es `fundador`**: vale un jefe (`dos-equipos.md:28`). ⚠️ Candidata a B: lo decide el orquestador |
 | **Bajadas o añadidas el 29-oct** | | | | |  |
 | 2.11 | `EMAIL_FROM` en los otros dos servicios (SCRUM-1115). **Pasos:** Railway → proyecto `cobroflash-backend` → en **cada caja** que no sea la base de datos: pestaña **Variables** → `EMAIL_FROM`. Valor: **`YaQu <no-reply@yaqu.app>`** (el mismo que ya tiene el backend, c.19624). Si una caja no tiene la variable, no la crees: dínoslo con el nombre de la caja. **Cómo lo compruebas:** el valor se ve en la misma pestaña; o en Resend → Emails, el «From» del último envío de cada uno | los avisos internos salen con la marca nueva | un aviso interno sale como «PresuFácil»; a clientes, no | nada | Jira: `stop-fundador` + `equipo-javier` · **medido: **`fundador`****, no hay nada que construir |
-| — | **simulacro del vigía** (SCRUM-1605): `gh workflow run vigia-despliegue.yml -f simulacro=true`, o GitHub → Actions → «Vigía del despliegue» → **Run workflow** → marcar **simulacro**. Fabrica una producción congelada **de mentira** y hace sonar el aviso; **no mira ni toca `yaqu.app`**. **Lo lanza el fundador o lo autoriza con su palabra:** a S5 se le denegó el 27-oct | se sabe que el aviso suena | el aviso de producción congelada **no ha sonado nunca**; hoy el equipo estuvo 6 h 38 min caído | nada del equipo. **No bloquea vender; no está en las 48** | sin etiqueta · MI LECTURA: **`fundador`** |
+| — · 🔵 **3-nov: es un PERMISO → sube a B** (punto ③ a del bloque del 3-nov) | **simulacro del vigía** (SCRUM-1605): `gh workflow run vigia-despliegue.yml -f simulacro=true`, o GitHub → Actions → «Vigía del despliegue» → **Run workflow** → marcar **simulacro**. Fabrica una producción congelada **de mentira** y hace sonar el aviso; **no mira ni toca `yaqu.app`**. **Lo lanza el fundador o lo autoriza con su palabra:** a S5 se le denegó el 27-oct | se sabe que el aviso suena | el aviso de producción congelada **no ha sonado nunca**; hoy el equipo estuvo 6 h 38 min caído | nada del equipo. **No bloquea vender; no está en las 48** | sin etiqueta · MI LECTURA: **`fundador`** |
 
 **Y una pregunta más en la misma sentada (no está en las 48; añadida el 29-oct, SCRUM-1529):**
 
@@ -209,6 +341,14 @@ No se le pregunta nada de esto: se desbloquean solas, en este orden, cuando la S
 
 **Una decisión que no se puede encontrar se vuelve a preguntar.** Aquí van las que ya dio, con el sitio donde están. Si una sesión se la iba a preguntar, primero mira aquí.
 
+### 3-nov · cuatro decisiones del orquestador, por delegación del fundador (1563o)
+
+SCRUM-1644 (`scrum113`, reclasificar) · SCRUM-1645 → SCRUM-1652 (la marca dice quién aprobó de verdad, o «no consta») · SCRUM-1651 (el aviso del Duplicar) · SCRUM-1297 (se queda en go-live). **Localizador de la delegación:** `ed676fd1-feb4-4658-bda2-01f4bf9fb3fc.jsonl`, uuid `6b2bcf7c-aa53-4a8d-9d10-ab31e3faa10b`, turno humano; en Jira no consta. El detalle, en el bloque del 3-nov de arriba.
+
+### SCRUM-1612 · el diseño de subsanar un registro «aceptado con errores» (era la fila 3.19) — entra el 2-nov, 1563l
+
+**Decidido:** el diseño F1-F6 está firmado. Localizador: **SCRUM-1612 c.21141** (27-oct), «Queda firmado así», **cotejado por S0 el 2-nov**. La firma es de **Javier**, y vale: «donde las normas dicen "el fundador" para pedir un sí, vale un jefe» (`docs/equipo/dos-equipos.md:28`). **Lo que queda es construirlo: J1, fase 2 (SCRUM-1296).** Nada que preguntar. ⚠️ Jira sigue con `stop-fundador`: lo retira su orquestador, no el nuestro.
+
 ### SCRUM-1529 · las siete decisiones de campo (estados de la Parte L) — 7 de 7 ENCONTRADAS
 
 Censo de S0, 29-oct, sobre `origin/main`. El ticket dice que «no viven en ningún sitio abierto»: **eso era cierto el 8-oct y dejó de serlo el 13-oct.** Las siete las recogió el orquestador del equipo de Javier en **SCRUM-1529 c.19228**, la autorización para aplicarlas al máster está en **c.19299**, y **están aplicadas en `docs/YAQU_MASTER.md:403-409`**, cada línea con su nota «SCRUM-1529c».
@@ -224,6 +364,84 @@ Censo de S0, 29-oct, sobre `origin/main`. El ticket dice que «no viven en ning�
 | 7 | `WhatsAppMessage.status` | entra `received` para entrantes | c.19228 ⑦ · máster `:409` |
 
 ⚠️ **De qué clase es el localizador:** c.19228 y c.19299 **no son la voz literal del fundador**: los firma el orquestador «recogiendo» lo que el fundador dio por el canal. El equipo lo aceptó como localizador válido (c.19279). ~~**No hay ninguna que preguntarle.** Lo que queda es cerrar el ticket con este censo, y eso lo decide el orquestador (SCRUM-1529 lleva sólo la etiqueta `fundador`).~~ **Corregido el 29-oct (orquestador, SCRUM-1563i):** un «sí» del fundador viaja como **cita literal con localizador**, y una decisión apuntada por otro orquestador no lo es. Como las siete ya están aplicadas en el máster, si no fueran suyas serían siete reglas vivas sin firma. **Por eso van como UNA pregunta en la revisión de go-live (final de la parte D): «¿confirmas estas siete?». SCRUM-1529 NO se cierra hasta su respuesta.**
+
+---
+
+## F · Las 27 sin etiqueta, clasificadas una a una (1563j)
+
+**Medido el 29-oct a las 18:30Z-18:45Z** (`Date:` de GitHub), sobre los 27 tickets de la hoja que no llevan `stop-fundador`, `equipo-javier` ni `fundador`. **Fuente: el ÚLTIMO comentario de cada uno**, leído por dos lectores de sólo lectura (`fields` con `comment`), y **cotejado por S0 en Jira donde saca una fila de la lista del fundador** (1629). Donde el ticket no tiene comentarios, la clase sale del título y se dice. **Lo que no se sabe, se queda en D** (regla de reparto de esta hoja). Clases: las tres de arriba, más **«nuestro»** (equipo de Luis, sin nada del fundador).
+
+| ticket | fila | clase (medida) | evidencia | va en |
+|---|---|---|---|---|
+| SCRUM-41 | 4.1 · 5.1 | (a) **`fundador`** activar la cuenta en modo real · (b) **`stop-fundador`** migrar a `sk_live` (dinero real) | c.16294 (21-sep): «Stripe live no se activa antes de constituir la SL». (b) es MI LECTURA por la regla 4 | C |
+| SCRUM-678 | 4.2 | **`fundador`** | c.19059 (9-oct): «De sesión no queda nada por hacer»: pegar los dos secretos en Railway | D |
+| SCRUM-911 | 6.1 | **`stop-fundador`** (GO escrito) + **`fundador`** (la plantilla en Meta) | c.19807 (15-oct): «Pide su GO escrito» | D |
+| SCRUM-913 | 6.2 | **`stop-fundador`** | c.19821 (15-oct): «Decide el fundador: ubicación · móvil personal · si va detrás de un flag» | D |
+| SCRUM-971 | 6.6 | **`fundador`** (las fotos, vía 961) | c.16053 (21-sep): «961 está en Acción del fundador esperando esas fotos» | D |
+| SCRUM-975 | 2.6 | **`stop-fundador`** (aprobar el literal) | c.16051 (21-sep): «aprobar el texto literal de la plantilla (STOP de plantillas de Meta)» | D |
+| SCRUM-981 | 2.6 | **`fundador`** (crear las plantillas en Meta) + **`stop-fundador`** | c.16297 (21-sep): «el fundador tiene que CREAR las plantillas… en Meta» | D |
+| SCRUM-1056 | 6.4 | **`equipo-javier`** | c.19731 (14-oct): «Lo que falta es todo de J2 y J3» | **A** |
+| SCRUM-1069 | 6.7 | **`stop-fundador`** (estados nuevos = cambio de máster) | 0 comentarios con la decisión; lleva `esperando-decision`. Por título | D |
+| SCRUM-1146 | 3.15 | **`stop-fundador`** | c.19788 (15-oct): «espera la decisión del jefe sobre la emisión» | D |
+| SCRUM-1182 | 1.12 | **`stop-fundador`** (enchufar o retirar) | 0 comentarios; lleva `decision-jefe`. Por título | D |
+| SCRUM-1210 | 7.7 | **`fundador`** (las variables de Railway, el día del lanzamiento) | 0 comentarios; lleva `decision-jefe`. Por título | D |
+| SCRUM-1283 | 0.2 | (a) **`fundador`** la cesión, la firman los socios · (b) **nuestro** cambiar `LICENSE` después | 0 comentarios. Por título | C |
+| SCRUM-1297 | 1.7 | **`stop-fundador`** (propuesta de máster, Parte L) | 0 comentarios. Por título | D |
+| SCRUM-1433 | 1.4 | **`stop-fundador`** | título «PARADO (decide el fundador)»; c.18156 (2-oct) baja la urgencia, no quita la decisión | D |
+| SCRUM-1438 | 1.3 | **`stop-fundador`** (con la asesora) | 0 comentarios. Por título | D |
+| SCRUM-1445 | 6.8 | **`stop-fundador`** + **`equipo-javier`** (sub-tickets 1470-1472) | c.19429 (13-oct): «OK del fundador para dos líneas» | D |
+| SCRUM-1451 | 1.6 | **`stop-fundador`** (firma del literal) | 0 comentarios. Por título | D |
+| SCRUM-1490 | 1.1 | **`stop-fundador`** | c.20041 (19-oct): «Las 2 líneas del camino de emisión que siguen esperando OK» | A (mitad) + D |
+| SCRUM-1532 | 4.5 | **`stop-fundador`** | c.19234 (13-oct): «Dos decisiones que son del fundador» | D |
+| SCRUM-1545 | 1.9 | un lector la lee **nuestro** (c.20042, 19-oct: «Los puntos 1, 2, 4 y 5 siguen sin hacer») · **NO cotejado por S0** | si el «encargo de diseño» de la fila sigue esperando al fundador, NO CONSTA | **D** (no se sabe → se queda) |
+| SCRUM-1555 | 1.8 | **nuestro** (SCRUM-1638) por la decisión del orquestador del 29-oct | c.19743 (14-oct) decía «Las dos son del fundador»: es anterior | A |
+| SCRUM-1558 | 2.3 | **`stop-fundador`** (el texto del rebote, regla 39) | 0 comentarios. Por título | D |
+| SCRUM-1561 | 0.1 | **`fundador`** | 0 comentarios. Por título | B |
+| SCRUM-1605 | — | **`fundador`** (autorizar el simulacro: a S5 se le denegó el 27-oct) | c.21251 (29-oct): «Lo que queda es esa mitad de apertura». Un lector lo leyó «nuestro»; **lo denegado lo reintenta quien tiene el permiso**, no otra sesión | D |
+| SCRUM-1629 | 6.16 | **nuestro (S2)** | c.21194 (27-oct), **cotejado por S0**: delegación «weligue tu lo que me pides» | **A** |
+| SCRUM-1638 | 5.4 | **nuestro (S1)** | 0 comentarios; ya en A desde las 18:10Z | A |
+
+**Cuenta de las 27:** `stop-fundador` **13** (913, 975, 1069, 1146, 1182, 1297, 1433, 1438, 1451, 1490, 1532, 1558, y 1445 con J) · `fundador` **5** (678, 971, 1210, 1561, 1605) · mixtas `fundador` + `stop-fundador` **3** (41, 911, 981) · `fundador` + nuestro **1** (1283) · `equipo-javier` **1** (1056) · nuestro **3** (1555, 1629, 1638) · **sin decidir 1** (1545). 13 + 5 + 3 + 1 + 1 + 3 + 1 = **27**. **Por título y no por comentario: 10** (1069, 1182, 1210, 1283, 1297, 1438, 1451, 1558, 1561, 1638).
+
+**🔵 2-nov, 20:32Z (1563l): Jira SÍ se ha tocado en cinco, por encargo del orquestador** («ponlas en los NUESTROS»), con la clase de esta parte F y la frase de cada ticket cotejada (control negativo 0 de 3):
+
+| ticket | etiquetas antes | etiquetas ahora | por qué |
+|---|---|---|---|
+| SCRUM-1438 | `area-s2` | `area-s2` · `equipo-luis` · **`stop-fundador`** | título «PARADO (asesora + fundador)»; abierto por S2 |
+| SCRUM-1451 | ninguna | **`area-s2`** · `equipo-luis` · **`stop-fundador`** | «Es texto que lee el usuario (regla 39): se propone y se para»; «La ficha del Trabajo y el plan de cobro son pantalla (S2); el texto, del fundador» |
+| SCRUM-1558 | ninguna | **`area-s2`** · `equipo-luis` · **`stop-fundador`** | (a) hecha; lo que queda es el (b), texto nuevo en pantalla (regla 39). Comentario c.21334 |
+| SCRUM-1561 | ninguna | `equipo-luis` · **`fundador`** | lo abrió el orquestador de Luis; «No hay nada que construir aquí». ⚠️ La S.L. es de los dos socios: si lleva también `equipo-javier`, lo decide su orquestador |
+| SCRUM-1283 | ninguna | `equipo-luis` | Finalizada; cerrada por el orquestador de Luis |
+
+**No tocados, a propósito:** 1297 (equipo en discrepancia, tabla del principio) · **1595**, que es `equipo-luis` pero cuya parada es sólo del **sobre de la firma del albarán** («Eso toca sellado y firma»); un `stop-fundador` al ticket pararía también el buscador y el CSV, que no lo están (c.21335 propone partirlo).
+
+**🔵 2-nov, 20:48Z (1563m), con las respuestas del orquestador:**
+- **SCRUM-1595, PARTIDO.** Los 5 sitios libres de c.21337 (listado, ficha, página pública, precarga, buscador) → **SCRUM-1650**, `area-s1` · `calidad` · `equipo-luis`, **sin** `stop-fundador`. 1595 se queda con PDF e `invoices.csv` (pendientes) y el sobre de la firma, que **está DECIDIDO** (SCRUM-1576 c.20454, atado por `tests/scrum371-barrido-poblacion.test.mjs`), y pasa a llevar **`stop-fundador`**. Comentario c.21347.
+- **SCRUM-1297**: **`stop-fundador` y nada más.** La etiqueta de equipo se queda vacía a propósito, porque el orquestador se lo pregunta a Javier. Comentario c.21348.
+- **SCRUM-1561**: + `equipo-javier` (la S.L. es de los dos socios).
+- **1215, 1298, 1356, 1439, 1444**: + `equipo-luis` (ya llevaban `area-sN`).
+- Los 35 restantes sin equipo: detalle en el registro `docs/master/SCRUM-1563.md` §1563m.
+
+### `decision-jefe`: NO es lo mismo que `fundador`
+
+- **Qué es:** la etiqueta del equipo de Javier para «espera a **un jefe**» (`docs/equipo/orquestador-javier.md:39`), y su cola se saca con `labels = equipo-javier AND labels = decision-jefe` (`:28`). «Un jefe» es **Luis o Javier**: «donde las normas dicen "el fundador" para pedir un sí, vale un jefe» (`docs/equipo/dos-equipos.md:28`).
+- **Por qué no es `fundador`:** dice **QUIÉN** (cualquiera de los dos jefes), no **QUÉ** (si la decisión ES el trabajo o si es un GO para construir). Las tres de esta hoja dicen el QUÉ. En la hoja aparece en seis: 143, 870, 1390 y 1554 (las cuatro con `equipo-javier`, donde es su cola normal) y **1182 y 1210, que son `equipo-luis`**.
+- **El riesgo, en esas dos:** ninguna consulta del equipo de Luis busca `decision-jefe`, así que **1182 y 1210 no salen en nuestra cola de «lo que espera al fundador»**. La consulta de Javier tampoco las ve, porque exige `equipo-javier`. **Están en la hoja, y en ninguna cola.**
+- **Unificado en la hoja:** `decision-jefe` **no es una clase**; cada ticket lleva una de las tres por su contenido (1182 → `stop-fundador`, 1210 → `fundador`). **Propuesta, para que la decida el orquestador:** en los tickets `equipo-luis`, sustituir `decision-jefe` por la clase medida. Jira no se ha tocado.
+
+---
+
+## G · La cola del equipo de Javier, en la MISMA hoja (2-nov, 1563k)
+
+**Por qué:** el fundador tenía **dos colas**: ésta y el estado «Acción del fundador» de Jira del equipo de Javier, que aparcó 1393 y 523 el viernes 30-oct y que no estaban aquí (propuesta del orquestador en SCRUM-1554 c.21308). **Una fila incompleta dentro vale más que una completa fuera.** Las citas son de un lector de sólo lectura (2-nov ~19:55Z), **sin cotejar por S0**, salvo donde se dice.
+
+| ticket | qué decide | si sí | si no | qué está parado | clase | va en |
+|---|---|---|---|---|---|---|
+| **SCRUM-1393** · vigía de `main` | ⚠️ **INCOMPLETA.** El último comentario (c.21302, 30-oct) no le pregunta nada: la decisión ya la dio (c.21059, «Los CIEGO ya no bloquean el cierre, pero se DICEN») y el ticket se cierra «cuando entre» 1393g (c.21084). **Por qué sigue en «Acción del fundador», NO CONSTA** | se cierra 1393 | sigue abierto | PR #2940 (`scrum-1393g-cierre-con-ciegos-dichos`), en rojo | Jira: `equipo-javier` + `decision-jefe`; estado «Acción del fundador» · medido: **`equipo-javier`**, sin pregunta abierta al fundador | D, hasta que su orquestador diga qué espera |
+| **SCRUM-523** · declaración responsable | firmarla, los dos administradores: «Esto lo hacemos cuando ya esté la SL» (c.21064) | se firma con la S.L. | #2881 sigue en borrador | la declaración de S1-E | `equipo-javier`; estado «Acción del fundador» · medido: **`fundador`** + `equipo-javier` | **C** (ya estaba: fila 3.5) |
+| ↳ 1393, **2-nov (1563l)** | el orquestador de Luis le hizo **tres preguntas al equipo de Javier** en c.21328: el estado «Acción del fundador» que nadie retiró · el «OK del orquestador» que pide c.21302 y lleva 3 días · el rojo de `scrum737` en #2940 (82 cifras contra 81, sin ancla; **no** es `scrum113`) | — | — | — | — | **sin respuesta a las 20:30Z**: c.21328 sigue siendo el último de los 15 comentarios. **Re-medido a las 20:48Z (1563m): sigue sin respuesta**; el `updated` de 1393 es 20:19:05Z, anterior a la pregunta de las 20:30Z, y un comentario lo habría movido. **Lleva ~29 min** contados desde ese `updated` |
+| **SCRUM-1586** · bucle de recordatorios de presupuesto (fila 1.14) | **la ratificación de Javier**: S1 se apartó a propósito de la aceptación 3, «No lo ratifico yo» (c.21159, nuestro orquestador, 27-oct) | se cierra con la forma de S1 | se rehace contra la aceptación 3 | nada en producción: el arreglo (PR #2963) **está en `main` desde el 27-oct** | Jira: `equipo-luis` + `stop-fundador` + `aviso-a-luis` · medido: **un sí de Javier** (firmó la forma), no del fundador | D (fila 1.14). **Sin respuesta a las 20:30Z**: c.21159 sigue siendo el último de 2 comentarios. **Re-medido a las 20:48Z (1563m): sigue sin respuesta**; el `updated` de 1586 es 27-oct 17:33:10Z. **Lleva 6 d 3 h** |
+| **SCRUM-1566** · motor de IVA | las tres ✅/❌ de c.21289 | `conjunto-1566-b-y-c` se construye entero | se queda en B y C (lo ya autorizado, c.21019) | J1, S1 y S2 | **`stop-fundador`** + `equipo-javier` | **D** (fila 3.21); candidata a B |
 
 ---
 

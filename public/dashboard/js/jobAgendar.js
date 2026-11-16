@@ -80,6 +80,23 @@ function jobsModal(titulo, cuerpo, acciones) {
  * Los dos rótulos («Agendar» / «Reagendar») son los que ya estaban en pantalla en el «⋯» desde
  * SCRUM-727b: este ticket no estrena ni uno (regla 30).
  */
+/**
+ * SCRUM-1704 · la fecha que «Agendar» PROPONE cuando el trabajo aún no tiene ninguna: el SIGUIENTE
+ * DÍA LABORABLE a las 9:00, en la hora local del navegador (decisión del orquestador, SCRUM-1704
+ * c.21502). Laborable = de lunes a viernes; los festivos no se conocen aquí y no se adivinan.
+ * «Siguiente» = a partir de mañana: un viernes, un sábado o un domingo proponen el lunes.
+ *
+ * Devuelve el valor de un `datetime-local` («AAAA-MM-DDTHH:MM») armado con los campos LOCALES de
+ * la fecha, así que no pasa por UTC y cae en la misma hora local que pinta el reagendar.
+ * Proponer no es guardar: sólo rellena el campo, y nada se escribe hasta pulsar «Agendar».
+ */
+function propuestaDeAgenda(ahora) {
+  const d = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1, 9, 0, 0, 0);
+  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+  const dos = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}T09:00`;
+}
+
 function abrirAgendarTrabajo(j, patch) {
   const cuerpo = document.createElement('div');
   cuerpo.className = 'jobs-modal-cuerpo';
@@ -88,8 +105,11 @@ function abrirAgendarTrabajo(j, patch) {
   dt.className = 'input';
   dt.id = 'jobs-agendar-fecha';
   if (j.scheduledAt) {
+    // Al reagendar manda la fecha guardada, como hasta ahora.
     const d = new Date(j.scheduledAt);
     dt.value = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  } else {
+    dt.value = propuestaDeAgenda(new Date());
   }
   const lab = document.createElement('label');
   lab.className = 'jobs-modal-label';
@@ -118,4 +138,5 @@ function abrirAgendarTrabajo(j, patch) {
 if (typeof window !== 'undefined') {
   window.jobsModal = jobsModal;
   window.abrirAgendarTrabajo = abrirAgendarTrabajo;
+  window.propuestaDeAgenda = propuestaDeAgenda;
 }

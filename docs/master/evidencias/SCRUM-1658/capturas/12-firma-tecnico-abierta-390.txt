@@ -1,0 +1,194 @@
+URL https://yaqu.app/dashboard/#parte-detail/13
+--- TEXTO
+YQ
+YaQu
+Inicio
+Solicitudes
+Trabajos
+VENTA
+Presupuestos
+Albaranes
+Partes por valorar
+Facturas
+Cobros
+NEGOCIO
+Clientes
+Productos
+Proveedores
+Gastos
+Informes
+Libro de registro
+Facturas recibidas
+CUENTA
+Equipo
+Planes
+Configuración
+P
+PruebaQA
+Plan Pro
+Salir
+Parte de trabajo
+P
+PT-2026-005
+
+Marta Prieto (PILOTO-1 QA)
+
+Horas y desplazamiento
+
+La hora se elige, no se escribe.
+
+Entrada
+Ahora
+Salida
+Ahora
+Tiempo en la obra
+2 h 30 min
+Desplazamiento
+Kilómetros
+km
+Dicta lo que has hecho
+
+Usa el micrófono de tu teclado. Luego lo ordenamos.
+
+Ordenar en líneas
+Mano de obra
+UNDS	Descripción	
+	
+	×
+	
+	×
+	
+	×
+Añadir línea
+Materiales
+UNDS	Descripción	
+	
+	×
+	
+	×
+	
+	×
+Añadir línea
+Firmas
+
+Con la primera firma, lo apuntado queda fijo.
+
+Firmar aquí mismo
+
+Falta la firma del cliente.
+
+Firma del técnico
+
+Falta la firma del técnico.
+
+DATOS DEL PARTE
+Obra y referencia
+Calle Mayor 14, 3º B, 28801 Alcalá de Henares
+Tipo de intervención
+Reparación / asistencia
+Técnicos
+Jorge Operario (QA)
+Notas
+Sin notas
+?
+Firma del técnico
+
+Firma con el dedo dentro del recuadro.
+
+Nombre de quien firma
+
+Una firma sin nombre no identifica a nadie. Escribe el nombre de quien firma el parte.
+
+Marta Prieto (PILOTO-1 QA) · 10/11/2026 · Calle Mayor 14, 3º B, 28801 Alcalá de Henares
+Cambio de latiguillos del lavabo y llave de escuadra	1 Mano de obra
+Revisión de sifón	1 Mano de obra
+Horas de trabajo	2,5 Mano de obra
+Latiguillos de 40 centímetros	2 Materiales
+Llave de escuadra de media pulgada	1 Materiales
+Rollo de teflón	1 Materiales
+
+Con tu firma confirmas que este trabajo se ha hecho.
+
+Firma aquí
+Borrar
+Cancelar
+Confirmar firma
+--- PULSABLES
+button[submit] «Inicio» 228x34 @-238,85
+button[submit] «Solicitudes» 228x34 @-238,121
+button[submit] «Trabajos» 228x34 @-238,157
+button[button] «Presupuestos» 228x34 @-238,227
+button[submit] «Albaranes» 228x34 @-238,263
+button[submit] «Partes por valorar» 228x34 @-238,299
+button[submit] «Facturas» 228x34 @-238,335
+button[submit] «Cobros» 228x34 @-238,371
+button[submit] «Clientes» 228x34 @-238,440
+button[submit] «Productos» 228x34 @-238,476
+button[submit] «Proveedores» 228x34 @-238,512
+button[submit] «Gastos» 228x34 @-238,548
+button[submit] «Informes» 228x34 @-238,584
+button[submit] «Libro de registro» 228x34 @-238,620
+button[submit] «Facturas recibidas» 228x34 @-238,656
+button[submit] «Equipo» 228x34 @-238,726
+button[submit] «Planes» 228x34 @-238,762
+button[submit] «Configuración» 228x34 @-238,798
+button[submit] «Salir» 39x22 @-61,867
+button[submit] «Menú» 36x36 @12,12
+input[time] «09:10» 178x45 @12,-909
+button[button] «Ahora» 71x44 @12,-858
+input[time] «11:40» 178x45 @200,-909
+button[button] «Ahora» 71x44 @200,-858
+input[number] «20» 178x44 @12,-722
+input[number] «12» 150x44 @200,-722
+textarea[textarea] «» 366x88 @12,-640
+button[button] «Ordenar en líneas» 366x44 @12,-517
+input[number] «1» 80x44 @29,-387
+textarea[textarea] «Cambio de latiguillos del lavabo y llave de escuadra» 184x83 @117,-387
+button[button] «×» 44x44 @309,-387
+input[number] «1» 80x44 @29,-293
+textarea[textarea] «Revisión de sifón» 184x44 @117,-293
+button[button] «×» 44x44 @309,-293
+input[number] «2.5» 80x44 @29,-238
+textarea[textarea] «Horas de trabajo» 184x44 @117,-238
+button[button] «×» 44x44 @309,-238
+button[button] «Añadir línea» 109x44 @29,-183
+input[number] «2» 80x44 @29,-30
+textarea[textarea] «Latiguillos de 40 centímetros» 184x63 @117,-30
+button[button] «×» 44x44 @309,-30
+input[number] «1» 80x44 @29,44
+textarea[textarea] «Llave de escuadra de media pulgada» 184x63 @117,44
+button[button] «×» 44x44 @309,44
+input[number] «1» 80x44 @29,118
+textarea[textarea] «Rollo de teflón» 184x44 @117,118
+button[button] «×» 44x44 @309,118
+button[button] «Añadir línea» 109x44 @29,173
+button[button] «Firmar aquí mismo» 340x44 @25,323
+button[button] «Firma del técnico» 340x44 @25,431
+summary «Obra y referencia Calle Mayor 14, 3º B, 28801 Alcalá de Hena» 366x48 @12,560
+input[text] «Calle Mayor 14, 3º B, 28801 Alcalá de Henares» 366x44 @12,633
+input[text] «Tu referencia interna, si usas alguna» 366x44 @12,709
+summary «Tipo de intervención Reparación / asistencia» 366x48 @12,609
+input[radio] «reparacion_asistencia» 13x13 @29,677
+input[radio] «mantenimiento» 13x13 @29,733
+input[radio] «instalacion» 13x13 @190,733
+summary «Técnicos Jorge Operario (QA)» 366x48 @12,658
+input[text] «Jorge Operario (QA)» 366x44 @12,731
+summary «Notas Sin notas» 366x48 @12,707
+input[text] «Lo que haya que dejar dicho.» 366x44 @12,780
+button[submit] «?» 48x48 @322,776
+input[text] «» 318x44 @36,165
+button[submit] «Borrar» 62x30 @76,835
+button[submit] «Cancelar» 80x30 @146,835
+button[submit] «Confirmar firma» 120x30 @234,835 DISABLED
+--- DESBORDES
+--- <44px
+button «Menú» 36x36
+input «reparacion_asistencia» 13x13
+input «mantenimiento» 13x13
+input «instalacion» 13x13
+button «Borrar» 62x30
+button «Cancelar» 80x30
+button «Confirmar firma» 120x30
+--- LOG
+[warning] Service Worker registration blocked by Playwright
+--- NOTAS

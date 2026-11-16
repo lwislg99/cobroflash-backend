@@ -32,6 +32,33 @@ import { reqDeSesion } from './_arnes-de-router.mjs';
 import { parseBDSegura } from '../scripts/_db-guard.mjs';
 import { withMerchant } from './_merchant-fixture.mjs';
 
+// `node:http` sin agente y no `fetch` (SCRUM-1218i): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, ok, headers.get, text, json, arrayBuffer) y, como el `redirect: 'manual'` de antes, no sigue
+// redirecciones. El cuerpo se guarda en bytes: `text()` lo decodifica como `fetch` (TextDecoder).
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    const trozos = [];
+    r.on('data', (t) => { trozos.push(t); });
+    r.on('end', () => {
+      const buf = Buffer.concat(trozos);
+      ok({
+        status: r.statusCode,
+        ok: r.statusCode >= 200 && r.statusCode < 300,
+        headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+        text: async () => new TextDecoder().decode(buf),
+        json: async () => JSON.parse(new TextDecoder().decode(buf)),
+        arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+      });
+    });
+  });
+  req.on('error', mal);
+  req.end(body);
+});
+
 const URL_BANCO = process.env.LIBRO_PG_URL || '';
 if (URL_BANCO) {
   const p = parseBDSegura(URL_BANCO);
@@ -351,7 +378,7 @@ test('SCRUM-1489 · 🔴 CON BASE: por HTTP, el Técnico encuentra sus documento
     const server = http.createServer(app).listen(0);
     await new Promise((r) => server.once('listening', r));
     const pedir = async (token, q) => {
-      const r = await fetch(`http://127.0.0.1:${server.address().port}/admin/search?q=${encodeURIComponent(q)}`, { headers: { cookie: `pf_session=${token}` } });
+      const r = await pedirSinAgente(`http://127.0.0.1:${server.address().port}/admin/search?q=${encodeURIComponent(q)}`, { headers: { cookie: `pf_session=${token}` } });
       return { status: r.status, cuerpo: await r.json().catch(() => null) };
     };
     try {

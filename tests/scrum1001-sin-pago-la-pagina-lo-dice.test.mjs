@@ -57,7 +57,10 @@ async function pagina(m) {
 test('SCRUM-1001 · SUELO: la página se monta y trae el script de aceptar', async () => {
   const { status, html } = await pagina(merchant());
   assert.equal(status, 200);
-  assert.ok(html.includes("fetch('/quote/"), 'sin el script de decisión no se ha renderizado la página de firma');
+  // SCRUM-1646c · el script de decisión ya no va en línea (CSP): la página enlaza el guion servido
+  // y le da la ruta del POST en su bloque de datos. Las dos cosas, o no hay script de aceptar.
+  assert.ok(/<script\b[^>]*\bsrc="\/pay\/quote\/js\/firma\.js\?v=[0-9a-f]{10}"[^>]*><\/script>/.test(html), 'sin el guion de decisión no se ha renderizado la página de firma');
+  assert.ok(html.includes('"decisionUrl":"/quote/'), 'sin la ruta del POST en los datos el guion no tiene a dónde aceptar');
   assert.ok(html.includes('ya tiene tu confirmación'), 'sin la pantalla de «aceptado» no hay dónde poner la línea');
 });
 

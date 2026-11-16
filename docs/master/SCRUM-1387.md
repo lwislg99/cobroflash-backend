@@ -437,3 +437,73 @@ mutaciones en 192 (1387e ①): el corte de 1620 dejó 46 guards sin ninguna. Aho
     node --test tests/scrum1387f-el-rotulo-dice-los-juzgados.test.mjs
     node docs/master/evidencias/SCRUM-1620/juzgar-guards.mjs scrum1387f-el-rotulo-dice-los-juzgados.test.mjs
     npm run build && META_PRESUPUESTO_S=120 node scripts/meta-guard-mutaciones.mjs   # sale 2 por el corte; mirar la línea «vivas …»
+
+## SCRUM-1387x · estado medido el 12-nov y la decisión que falta
+
+**Medido contra:** `origin/main` = `2c52196fddfdee2f2875c38d51642785d2566812` · 2026-11-12T17:55:17Z (hora de GitHub)
+(J6, equipo de Javier, sesión `jv-j6eb`. Sólo mide y propone: no toca el meta-guard, el catálogo ni ningún test.
+Jira: c.21781, y la corrección c.21782.)
+
+A9: aviso → cicatriz J6 «Sumé a ojo las filas de un `uniq -c` y publiqué en Jira un 7 donde había 8, sin cuadrar el desglose con el total que imprimía el propio guard» — no se pudo comprobar: ningún hook cuadra un desglose con su total antes de comentar en Jira
+
+### ① Lo que el meta-guard dice y lo que cubre: HECHO
+
+CI de `main` run 43265165673 sobre `deab373d6a379fcbfc7ec1fce0428111156f49d3`, las tres partes de la matriz de
+SCRUM-1620b y el junte, las cuatro `success` (`1387x/meta-guard-partes-*.txt`, `1387x/meta-guard-junte-*.txt`):
+
+| | 1-oct (título) | 29-oct (1387e) | 12-nov |
+|---|---|---|---|
+| declaraciones juzgadas | 365 | 735 de 940 (corte) | **1082 de 1082**, sin corte |
+| ficheros de test con alguna mutación repetida | 118 de 1.189 (10 %) | 192 de 1565 (12,3 %) | **274 de 1652 (16,6 %)** |
+
+Control: 373 + 356 + 353 = 1082, lo que cada parte imprime como «el censo entero», y 92 + 91 + 91 = 274. El resto que
+dejó 1387f (`--juntar` sin los juzgados) lo cerró SCRUM-1620b (`ba50b2d1e`): el junte dice «guards con alguna mutación
+juzgada: 274 de 274 del censo». El «10 %» del título está caducado.
+
+### ② Registros que afirman mutaciones que nada repite: igual que el 29-oct
+
+`1387e/censo-registros.mjs` sin `--log` (con la matriz no hay lista del corte, y `--log` sale CIEGO). Población:
+1284 registros · 1653 tests · 275 declarantes · 1090 declaraciones.
+
+| criterio | afirman | A | B | C1 | C2 | C3 | fuera | fuera y sólo texto |
+|---|---|---|---|---|---|---|---|---|
+| `--estricto` | 294 | 128 | 135 | 14 | 13 | 4 | **152** | 129 (85 %) |
+| ancho | 675 | 200 | 378 | 29 | 50 | 18 | **446** | 393 (88 %) |
+
+El 29-oct daba 151 y 431. Los registros creados después de `5a247020e` (68, `1387x/registros-nuevos.txt`): de los 17 que
+afirman con veredicto, 12 están en el catálogo y 5 están fuera y sin guion (1671, 1673, 1684, 1685, 1717). Leí uno
+(1684, «7 mutaciones, 7 MUERTAS»). **Controles:** el positivo de la casa (1387 sale A) y uno SEMBRADO: un
+`docs/master/SCRUM-8130517.md` fabricado que afirma «la mutación M1 cae» suma exactamente +1 en afirman, C3 y texto
+con los dos criterios (`1387x/censo-*-sembrado.txt`). Quitado, la cuenta vuelve, y `git status` queda vacío.
+
+### ③ Bancos: la lista que mengua
+
+`tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs`, 8 de 8: 101 bancos · 33 heredados · 0 nuevos
+(`1387x/guard-1387-poblacion.txt`). La lista estaba en 31 al decidir, en 34 el 14-oct y hoy en 33. Quién retira cada uno: J1 4 · J4 4 · J6 3
+(SCRUM-1324, SCRUM-1345, scrum908c) · S1–S4 4 · sin etiqueta de área 8 · sin leer en Jira 10.
+
+### Decisiones (el detalle y las preguntas ✅/❌, en c.21781)
+
+- **Fundador, y cruza al equipo de Luis — F1:** ¿qué se exige a una mutación que se afirma en un registro y NO es
+  un banco? Las opciones: (a) catálogo siempre, con 152–446 en falta; (b) sólo las que vigilan un guard, más una frase;
+  (c) hacia adelante, una línea `Mutaciones:` por tramo (catálogo → test, o una vez → guion en git) que comprueba un
+  guard. Recomiendo (c): no mueve ningún registro viejo y no casa por la forma de la frase.
+- **Jefe J — J1:** cerrar SCRUM-1387 por el ① y llevar F1 a un ticket propio. **J2:** encargar la retirada de los 3
+  heredados de J6. **J3:** repartir los 10 heredados «sin leer en Jira».
+
+### Lo que no se construye, y por qué
+
+No hay ninguna pieza de J6 sin decisión **que me cupiera**. La de J2 no necesita decisión (la autoriza c.18016), pero
+pide mutaciones verificadas sobre tres bancos, y la sesión estaba en 181k antes de empezarla: queda propuesta.
+
+### Lo que NO he medido
+
+Si las mutaciones de fuera siguen cayendo hoy · las otras 4 nuevas de 5 · los tramos anexados a registros viejos
+después del 29-oct (sólo se cuentan los ficheros creados) · la tanda entera (NO CORRIDA).
+
+### Reproducir
+
+    node docs/master/evidencias/SCRUM-1387/1387e/censo-registros.mjs [--estricto] --lista <tsv>
+    node docs/master/evidencias/SCRUM-1387/1387x/registros-nuevos.mjs <tsv> 5a247020e5608fd2b21fad04bcf585694494397a <sha punta>
+    node --test tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs
+    gh api repos/lwislg99/cobroflash-backend/actions/jobs/131359710703/logs --allow-escape-sequences   # el junte

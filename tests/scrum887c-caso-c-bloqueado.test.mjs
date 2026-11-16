@@ -123,7 +123,7 @@ async function invocar(rutaModulo, metodo, ruta, req) {
 // Este fichero mide el bloqueo del CASO C (descuento global + varios IVA) en un merchant que SÍ
 // puede facturar; el bloqueo por «este merchant no emite nada» es otro mecanismo y tiene su
 // propia cobertura (tests/scrum1027-*, tests/scrum346-*, tests/scrum263-*).
-const MERCHANT = { id: 7, name: 'QA', country: 'ES', taxId: 'B12345678', invoiceSeriesPrefix: 'CF', approvalThreshold: null, flags: { INVOICING_ES_ENABLED: true } };
+const MERCHANT = { id: 7, name: 'QA', country: 'ES', taxId: 'B12345678', invoiceSeriesPrefix: 'CF', approvalThreshold: null, flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false };
 const CUSTOMER = { id: 2, name: 'Cliente QA', phone: telefonoDePrueba(887) }; // SCRUM-262: rango imposible
 
 /** Deja `prisma` con lo mínimo y ANOTA toda escritura: un rechazo tiene que llegar antes. */

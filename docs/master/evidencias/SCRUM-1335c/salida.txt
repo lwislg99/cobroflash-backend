@@ -1,0 +1,31 @@
+﻿
+== Pacific/Kiritimati ok=true  · claves 8
+   pass     sembrados/normal.test.mjs::normal 1
+   pass     sembrados/normal.test.mjs::normal 2
+   pass     sembrados/normal.test.mjs::normal 3
+   pass     sembrados/mudo-en-midway.test.mjs::midway 1
+   pass     sembrados/mudo-en-midway.test.mjs::midway 2
+   pass     sembrados/mudo-en-midway.test.mjs::midway 3
+   pass     sembrados/mudo-en-las-dos.test.mjs::<sembrados>/mudo-en-las-dos.test.mjs
+   pass     sembrados/mudo-a-mitad-en-las-dos.test.mjs::<sembrados>/mudo-a-mitad-en-las-dos.test.mjs
+
+== Pacific/Midway ok=true  · claves 6
+   pass     sembrados/normal.test.mjs::normal 1
+   pass     sembrados/normal.test.mjs::normal 2
+   pass     sembrados/normal.test.mjs::normal 3
+   pass     sembrados/mudo-en-midway.test.mjs::<sembrados>/mudo-en-midway.test.mjs
+   pass     sembrados/mudo-en-las-dos.test.mjs::<sembrados>/mudo-en-las-dos.test.mjs
+   pass     sembrados/mudo-a-mitad-en-las-dos.test.mjs::<sembrados>/mudo-a-mitad-en-las-dos.test.mjs
+
+== compararZonas
+   cambian 0 · sinComparar 4
+   sinComparar: sembrados/mudo-en-midway.test.mjs::<sembrados>/mudo-en-midway.test.mjs  Pacific/Kiritimati=ausente Pacific/Midway=pass
+   sinComparar: sembrados/mudo-en-midway.test.mjs::midway 1  Pacific/Kiritimati=pass Pacific/Midway=ausente
+   sinComparar: sembrados/mudo-en-midway.test.mjs::midway 2  Pacific/Kiritimati=pass Pacific/Midway=ausente
+   sinComparar: sembrados/mudo-en-midway.test.mjs::midway 3  Pacific/Kiritimati=pass Pacific/Midway=ausente
+
+== por fichero: pruebas DECLARADAS en el fuente vs claves con nombre de prueba vistas
+   normal.test.mjs                      declaradas 3 · vistas 3 / 3 · en alguna lista del instrumento 0
+   mudo-en-midway.test.mjs              declaradas 3 · vistas 3 / 0 · en alguna lista del instrumento 4
+   mudo-en-las-dos.test.mjs             declaradas 3 · vistas 0 / 0 · en alguna lista del instrumento 0
+   mudo-a-mitad-en-las-dos.test.mjs     declaradas 5 · vistas 0 / 0 · en alguna lista del instrumento 0

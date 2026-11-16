@@ -62,7 +62,7 @@ test('SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivo
       taxId: 'B12345678',
       // El flag ON para que `getEmissionMode` no devuelva 'receipt' y se reserve serie de
       // verdad en vez de un `J-…` con sufijo aleatorio (que no tiene carrera que medir).
-      flags: { INVOICING_ES_ENABLED: true },
+      flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false,
     },
     async (merchant) => {
       // `Invoice.customerId` es OBLIGATORIO en el schema (no `Int?`). Esto era

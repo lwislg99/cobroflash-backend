@@ -127,3 +127,81 @@ el comando. Si alguien lo escribe, la siguiente pasada da el siguiente.
 - El arreglo del guion y sus casos de test (S5).
 - La tanda completa. Sólo los candados de registro y de árbol, sobre este PR.
 - Leer el check obligatorio de la punta de `main`.
+
+---
+
+## 6 · 1505b · El arreglo, en la capa (S5, 2-nov-2026)
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T20:45:33Z (hora de GitHub)
+A9: comprobación → `tests/scrum1424-ya-esta.test.mjs`
+
+Lo hace S5 (sesión fresca, encargo del orquestador: «superficie de conflicto cero»). Sólo toca
+`scripts/equipo/ya-esta.mjs`, `tests/scrum1424-ya-esta.test.mjs` y este registro. Los tres guiones de J4
+**no se tocan**: son su evidencia, anclada a `a65a8c756`.
+
+**Primero, el motor.** El ticket avisa de que el defecto podía estar en el motor y no en la capa. No lo
+está: `censarTicket` devuelve `79479b9af` para 377 (la salida en vivo lo enseña en «lo citan», y ese
+cajón sólo se llena con `censo.commits`). Quien lo aparta es `repartirCommits`, que sólo miraba
+`duenoDelAsunto`. Así que el arreglo va en la capa.
+
+**El arreglo.** `ticketsDelAsunto(asunto)` (nueva, exportada) da TODOS los tickets de la cabecera del asunto
+con la expresión de `enCabecera` de J4. Sin cabecera (un merge, `feat(x): … (SCRUM-N)`) se queda en
+`[duenoDelAsunto]`, como antes. `repartirCommits` da por propio el commit cuya cabecera contiene el ticket;
+cuando lo cita, el dueño que se enseña sigue siendo `duenoDelAsunto`. La línea «ninguno de main es
+suyo» pasa de «ninguno lleva su número por delante en el asunto» a «ninguno lo lleva en la cabecera de su asunto».
+
+### Los controles, rojo primero
+
+| control | sin el arreglo | con el arreglo |
+|---|---|---|
+| `tests/scrum1424-ya-esta.test.mjs` | 16 tests · **4 fallan** (3 por el defecto; el 4.º, el positivo, sólo por el texto nuevo de la línea: su veredicto NO ESTÁ ya era bueno) | **16/16** |
+| sonda viva sobre `70eefc40c`, 10 casos (377 real y **sin registro**, 1434 **sin lo suyo**, las tres entregas de 1471 del 6-oct) | **7 FALLA** | **0 FALLA** |
+| · 377 sin registro | `NO ESTÁ` | **`YA ESTÁ`**, y no salen «ninguno de main es suyo» ni «lo citan» |
+| · 🔴 el POSITIVO: 1434 sin sus commits ni su registro | `NO ESTÁ` | **`NO ESTÁ`**; `da3798df8` sigue en «lo citan» (es de SCRUM-1123) |
+| tests vecinos (`scrum723`, `scrum1463b/c` de `cierre-sin-clic`, que llama a `mirar`; `scrum824*`) | — | 8/8 · 17/17 · 16/16 (`SIN PROBAR no crece` ✔) |
+
+La sonda falla en el código sin el arreglo, así que caza. Se corrió sobre el árbol de `wt-s5-2nov-1621`, que
+sólo cambia docs sobre `70eefc40c` (`git diff --stat` en `scripts tests` = vacío).
+
+### La población entera, antes y después
+
+El censo de J4 (`censo.mjs`, sin tocar), corrido dos veces sobre el mismo `70eefc40c`: primero con
+`ya-esta.mjs` de `main` y luego con el arreglo.
+
+    POBLACION  commits=11282  con_numero=10419  con_mas_de_un_numero=454  tickets_en_posicion_no_primera=268
+    CONTROL_CERO  max+1 de los asuntos  NO ESTÁ  propios=0  ajenos=0  OK          (en las dos pasadas)
+    antes    RECUENTO  preguntados=268  clasificados=268  CAMBIA=0  LATENTE=1  CITA=260  PROPIO=7  CIEGO=0  SIN_AJENOS=0
+    después  RECUENTO  preguntados=268  clasificados=268  CAMBIA=0  LATENTE=0  CITA=262  PROPIO=0  CIEGO=0  SIN_AJENOS=6
+
+- **Ninguna respuesta cambia:** 259 `YA ESTÁ` y 9 `NO ESTÁ` antes y después, ticket a ticket. Los 9 son
+  los mismos (27, 54, 269, 1013, 1044, 1203, 1264, 1535, 1604) y siguen siendo citas. **El arreglo no
+  convierte nada en «ya está»**: éste es el positivo sobre la población entera.
+- **LATENTE 1 → 0:** el único que quedaba era 377, y pasa a SIN_AJENOS (su único ajeno era `79479b9af`).
+  1471 ya no es latente desde el 23-oct (tiene commits propios).
+- **PROPIO 7 → 0:** a esos siete sus entregas en cabecera ya se les cuentan como suyas. Cinco se quedan
+  sin ningún ajeno (SIN_AJENOS = 5 + 377 = 6) y dos, que además tienen citas de verdad, pasan a CITA (260 → 262).
+- Lo que el arreglo cambia es el INFORME, no el veredicto: las dos líneas falsas («ninguno de main es suyo»
+  y «lo citan … suele ser el commit que lo ABRE») dejan de salir cuando el commit entrega el ticket.
+
+### 🔴 Los controles de J4 están VIEJOS: 3 FALLA de 7, con y sin el arreglo
+
+    node docs/master/evidencias/scrum1505/prueba-del-criterio.mjs 70eefc40cba2eb9636992b733223bf1555c1755f
+
+| caso | esperado (7-oct) | visto hoy, sin arreglo | visto hoy, con arreglo |
+|---|---|---|---|
+| 1471 real · propios/ajenos | 0/3 | 3/4 | 6/1 |
+| 1471 FABRICADO sin registro → rojo | NO ESTÁ | YA ESTÁ | YA ESTÁ |
+| 1434 real · con la cabecera sigue sin estar | NO ESTÁ | YA ESTÁ | YA ESTÁ |
+
+No es el arreglo: el 18-oct entraron commits propios de 1434 y el 23-oct los de 1471b, y desde entonces
+los dos tickets ya no sirven de caso «sin nada suyo». **Un control con un caso real CADUCA cuando el
+caso deja de serlo.** Por eso los controles nuevos FABRICAN la ausencia (quitan el registro y los
+commits propios de lo que da `mirar`), en vez de esperar que el árbol la conserve. Los guiones de J4
+siguen valiendo anclados a `a65a8c756`, que es lo que su registro dice. El `6/1` de 1471: el ajeno que
+queda es `98cfd08cc Merge origin/main (SCRUM-1470c) en scrum-1471b`, un merge de main en la rama; su
+asunto empieza por «Merge», así que no tiene cabecera y cuenta el primero (1470). No es una entrega, y ahí se queda.
+
+### Lo que NO se ha hecho
+
+- La tanda completa: el obligatorio cae hoy en todo PR por `scrum113` (SCRUM-1644, con el fundador).
+- El guion de J4 no se ha re-anclado ni re-escrito: es evidencia suya.

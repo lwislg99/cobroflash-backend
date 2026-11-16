@@ -36,11 +36,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { veredictoDeLinea, segmentar, VEREDICTOS, censar } from '../scripts/_invocaciones-de-la-tanda.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -70,7 +70,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
  * y la tabla entera medía otra cosa. Por eso el suelo de abajo no es adorno.
  */
 function bancoDeTanda() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tanda850b-'));
+  const dir = temporal('tanda850b-');
   const rojo = path.join(dir, 'rojo.test.mjs');
   const verde = path.join(dir, 'verde.test.mjs');
   fs.writeFileSync(rojo, "import test from 'node:test';\nimport assert from 'node:assert/strict';\n"
@@ -123,7 +123,7 @@ test('SCRUM-850b · 🔴 SUELO DEL BANCO: la tanda corre, y su rojo es el del TE
       + 'era del crash.)');
     assert.match(salida, /este pasa/, '🔴 el banco tampoco ejecuta el verde: no hay tanda.');
     assert.notEqual(enShell(tanda).code, 0, '🔴 la tanda de laboratorio no sale en rojo.');
-  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  } finally { borrarTemporal(dir); }
 });
 
 test('SCRUM-850b · 🔴 LAS FORMAS, EJECUTADAS: cuáles devuelven 0 con un test en rojo', () => {
@@ -151,7 +151,7 @@ test('SCRUM-850b · 🔴 LAS FORMAS, EJECUTADAS: cuáles devuelven 0 con un test
     assert.deepEqual(sorpresas, [],
       '🔴 el shell ya no se comporta como se midió el 15-sep-2026:\n  ' + sorpresas.join('\n  ')
       + '\n  Re-medir antes de tocar el censo: lo que decide es esta tabla, no la lista de casos.');
-  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  } finally { borrarTemporal(dir); }
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════

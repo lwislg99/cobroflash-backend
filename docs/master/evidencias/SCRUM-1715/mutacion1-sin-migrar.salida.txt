@@ -1,0 +1,55 @@
+﻿✔ SCRUM-560 · SUELO: el censo VE los ficheros que levantan servidor propio (443.0389ms)
+✔ SCRUM-560 · AUTOPRUEBA: el detector caza el patrón y NO acusa a `node:http` (31.983ms)
+✖ SCRUM-560 · ningún fichero NUEVO pide con `fetch` a su propio `app.listen(0)` (4015.6357ms)
+✔ SCRUM-560 · la lista de los que ya estaban no puede quedarse vieja (4162.8651ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9527.8216
+
+✖ failing tests:
+
+test at tests\scrum560-patron-fetch-servidor.test.mjs:308:1
+✖ SCRUM-560 · ningún fichero NUEVO pide con `fetch` a su propio `app.listen(0)` (4015.6357ms)
+  AssertionError [ERR_ASSERTION]: 🔴 UN FICHERO NUEVO USA `fetch` SOBRE SU PROPIO SERVIDOR:
+      scrum1188d-tiers-tambien-se-vacia.test.mjs — 7 `fetch` sobre su propio servidor (basta 1: SCRUM-1218j)
+  
+    Ese patrón revienta una aserción de libuv al cerrar el proceso: el fichero se marca fallido
+    sin nombrar ningún subtest, y sale en la tanda de todo el mundo de forma intermitente
+    (medido: 2 de cada 10 tandas).
+  
+    QUÉ HACER EN SU LUGAR — `node:http` con `agent: false` (sin pool de conexiones):
+      const req = http.request({ host: '127.0.0.1', port, path, method: 'GET', agent: false },
+        (res) => { let d = ''; res.setEncoding('utf8');
+                   res.on('data', (t) => { d += t; });
+                   res.on('end', () => resolve({ status: res.statusCode, cuerpo: d })); });
+      req.on('error', (e) => resolve({ status: 0, cuerpo: '' }));
+      req.end();
+    EL EJEMPLO PROBADO, con su motivo escrito: `tests/scrum100-webhooks-fail-closed.test.mjs`
+    (líneas 50-57), donde vive desde SCRUM-100. Y el antes/después medido, en
+    `docs/master/SCRUM-560.md`.
+  + actual - expected
+  
+  + [
+  +   'scrum1188d-tiers-tambien-se-vacia.test.mjs — 7 `fetch` sobre su propio servidor (basta 1: SCRUM-1218j)'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s2-12nov-1715/tests/scrum560-patron-fetch-servidor.test.mjs:310:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'scrum1188d-tiers-tambien-se-vacia.test.mjs — 7 `fetch` sobre su propio servidor (basta 1: SCRUM-1218j)' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

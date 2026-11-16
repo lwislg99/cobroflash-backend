@@ -92,12 +92,17 @@ test('SCRUM-1628 · CONTROL POSITIVO: un fichero de tests/ huérfano de verdad s
   const mapa = construirMapa(TABLA, ficheros);
   const huerfano = ficheros.find((f) => f.startsWith('tests/_') && !reglaDe(f, mapa) && !testDeTicket(f, TABLA));
   assert.ok(huerfano, 'población: hay al menos un ayudante de tests/ sin fila');
-  for (const f of [huerfano, 'tests/_un-ayudante-que-no-existe-1628.mjs']) {
-    const r = de(f);
-    assert.equal(r.status, 0, r.stdout + r.stderr);
-    assert.match(r.stdout, new RegExp(`^${f.replace(/[.]/g, '\\.')} → sin fila en §3: nadie lo reclama$`, 'm'), r.stdout);
-    assert.doesNotMatch(r.stdout, /NO-PUDE-MIRAR/, r.stdout);
-  }
+  const r = de(huerfano);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stdout, new RegExp(`^${huerfano.replace(/[.]/g, '\\.')} → sin fila en §3: nadie lo reclama$`, 'm'), r.stdout);
+  assert.doesNotMatch(r.stdout, /NO-PUDE-MIRAR/, r.stdout);
+  // SCRUM-1633: un ayudante que todavía NO existe ya no contesta «nadie lo reclama» a secas (era el defecto: una
+  // errata y un fichero real salían iguales). Preguntado como ruta nueva, la regla del test de un ticket sigue
+  // sin aplicarse a un nombre sin número, y lo dice marcado.
+  const nuevo = 'tests/_un-ayudante-que-no-existe-1628.mjs';
+  const n = spawnSync(process.execPath, [CLI, 'de', '--nueva', path.join(RAIZ, nuevo)], { cwd: RAIZ, env: entorno, encoding: 'utf8' });
+  assert.equal(n.status, 0, n.stdout + n.stderr);
+  assert.match(n.stdout, new RegExp(`^${nuevo.replace(/[.]/g, '\\.')} → RUTA NUEVA \\(hoy no existe\\) · sin fila en §3: nadie lo reclama$`, 'm'), n.stdout);
 });
 
 test('SCRUM-1628 · un test de ticket CON fila de ruta sigue dando su fila; la regla sólo habla donde no hay fila', () => {

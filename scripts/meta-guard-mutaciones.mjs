@@ -1878,8 +1878,13 @@ if (ejecutadoDirectamente(import.meta.url)) {
     const expo = censoDeExposicionATypeScript(); // `expo`, no `ts`: `ts` es el compilador de arriba
     console.log(`  sobre la frontera src/ ↔ dist/ (SCRUM-763): ${expo.expuestas.length} de ${expo.poblacion}`);
     for (const e of expo.expuestas) console.log(`    · ${e.guard} → ${e.fichero}`);
-    console.log('\n⚠️ MODO CENSO: NO se ha ejecutado ninguna mutación.');
-    process.exit(0);
+    // 🔴 SCRUM-1610d · la centinela se escribe y se sale EN SU CALLBACK, no con un exit a secas detrás
+    // de un console.log. Con stdout a una tubería en Linux, el exit inmediato tira lo que quede en la
+    // cola, y la cola es justo la centinela: el lector (scrum765) recibía código 0 sin ella, o sea, un
+    // verde que no ha medido nada (SCRUM-1610 c.20951). La promesa no se resuelve nunca, a propósito:
+    // así no corre nada de lo de abajo mientras stdout se vacía. Es el `fin` de `_censo-frontera.mjs`.
+    await new Promise(() => process.stdout.write('\n⚠️ MODO CENSO: NO se ha ejecutado ninguna mutación.\n',
+      () => process.exit(0)));
   }
 
   // 🔴 SCRUM-1620 · la parte del censo que juzga ESTA pasada. Después de los suelos (que miran el censo

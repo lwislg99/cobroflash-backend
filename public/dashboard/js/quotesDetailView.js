@@ -1072,12 +1072,23 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       const div = document.createElement('div');
       div.className = 'invoice-item';
       div.style.cursor = 'pointer';
-      div.innerHTML =
-        `<p style="margin:0"><strong>${escHtml(inv.number)}</strong><br>` +
+      const resumen = document.createElement('p');
+      resumen.style.margin = '0';
+      resumen.innerHTML =
+        `<strong>${escHtml(inv.number)}</strong><br>` +
         `Total: <span class="amount-muted">${fmtQuoteMoney(inv.total, inv.currency || cur)}</span><br>` +
-        `Creada: ${inv.createdAt ? new Date(inv.createdAt).toLocaleString('es-ES') : '—'}</p>`;
-      div.addEventListener('click', () => {
+        `Creada: ${inv.createdAt ? new Date(inv.createdAt).toLocaleString('es-ES') : '—'}`;
+      div.appendChild(resumen);
+      const abrirFactura = () => {
         if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: inv.id });
+      };
+      div.addEventListener('click', abrirFactura);
+      // SCRUM-1639 · con teclado: la tarjeta puede llevar «Marcar como pagada» y su selector, y un botón
+      // no contiene controles; el activable es el resumen de la factura, cuyo nombre es su propio texto.
+      resumen.setAttribute('role', 'button');
+      resumen.setAttribute('tabindex', '0');
+      resumen.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirFactura(); }
       });
 
       if (inv.status === 'pending') {
@@ -1528,6 +1539,9 @@ async function duplicateQuote(quoteId) {
     currency: detail.currency,
     lines: detail.lines || [],
     tiers: detail.tiers || null,
+    // SCRUM-1651 · el editor no tiene opciones: de un presupuesto con varias sólo le llegan las
+    // líneas de la recomendada. Esta marca hace que lo DIGA (`quotesView.js`, aviso propio).
+    soloLaRecomendada: Array.isArray(detail.tiers) && detail.tiers.length > 1,
     paymentTerms: detail.paymentTerms || null,
     // SCRUM-926 · EL DESCUENTO GLOBAL VIAJA EN LA COPIA. Sin esta línea, duplicar un presupuesto
     // con descuento abría el editor SIN él: el profesional creía estar copiando lo pactado y

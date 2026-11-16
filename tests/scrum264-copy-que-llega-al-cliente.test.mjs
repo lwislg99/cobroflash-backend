@@ -63,9 +63,17 @@ const DEL_MAPA = 'TEXTO DE LA TABLA DE LA PÁGINA';
 const SUPERFICIES = [
   {
     nombre: 'landing de presupuesto · ACEPTAR',
-    fuente: () => leer('dist', 'modules', 'system', 'app', 'routes', 'quoteDecisionLanding.routes.js'),
-    patron: /getElementById\('sig-error'\)\.textContent = ([^;]+);/,
+    // SCRUM-1646c: el guion salió del HTML (CSP) y se sirve desde `GET /pay/quote/js/firma.js`; la
+    // expresión se lee donde vive ahora. Su texto por defecto viaja en los DATOS de la página
+    // (`T.reserva`), así que se liga al literal que la ruta escribe en ellos, leído de su fuente.
+    fuente: () => leer('dist', 'modules', 'system', 'app', 'routes', 'quoteDecisionNavegador.js'),
+    patron: /getElementById\('sig-error'\)\.textContent=(data\.[^;]+);/,
     variables: ['data'],
+    ligaduras: () => {
+      const m = leer('dist', 'modules', 'system', 'app', 'routes', 'quoteDecisionLanding.routes.js').match(/\breserva: '([^']*)'/);
+      assert.ok(m, '🔴 no encuentro el texto por defecto (`reserva`) en los datos de la página de firma');
+      return { T: { reserva: m[1] } };
+    },
     porDefecto: 'No se ha podido firmar. Inténtalo de nuevo.', // SCRUM-1302d: firmado en SCRUM-1302 c.19428
     tieneMapa: false,
   },
@@ -87,7 +95,9 @@ const SUPERFICIES = [
   },
   {
     nombre: 'página de acceso · /login.html',
-    fuente: () => leer('public', 'login.html'),
+    // SCRUM-1647c: el guion salió del HTML (CSP) y se sirve desde `GET /auth/js/login.js`; la
+    // expresión se lee donde vive ahora. El patrón es el mismo, sin tocar.
+    fuente: () => leer('dist', 'modules', 'auth', 'app', 'routes', 'loginNavegador.js'),
     // Anclado en su texto por defecto, que es lo único estable de la línea.
     patron: /showAlert\((.*'Error al enviar el enlace\.'), 'error'\)/,
     variables: ['data', 'msgs'],
@@ -96,7 +106,9 @@ const SUPERFICIES = [
   },
   {
     nombre: 'página de alta · /register.html (control positivo)',
-    fuente: () => leer('public', 'register.html'),
+    // SCRUM-1647d: el guion salió del HTML (CSP) y se sirve desde `GET /auth/js/alta.js`; la
+    // expresión se lee donde vive ahora. El patrón es el mismo, sin tocar (firma: SCRUM-1647 c.21658).
+    fuente: () => leer('dist', 'modules', 'auth', 'app', 'routes', 'altaNavegador.js'),
     patron: /showAlert\((.*'Error al crear la cuenta\.'), 'error'\)/,
     variables: ['data', 'msgs'],
     porDefecto: 'Error al crear la cuenta.',
@@ -116,6 +128,11 @@ function expresionDe(sup) {
     `🔴 no encuentro la expresión de error en «${sup.nombre}». Si cambió de forma, este guard ` +
       'dejaría de comprobar nada y pasaría en verde: por eso falla aquí en vez de seguir.',
   );
+  if (sup.ligaduras) {
+    const lig = sup.ligaduras();
+    const fn = new Function(...sup.variables, ...Object.keys(lig), `return ${m[1]};`);
+    return (...a) => fn(...sup.variables.map((_, i) => a[i]), ...Object.values(lig));
+  }
   return new Function(...sup.variables, `return ${m[1]};`);
 }
 
@@ -199,7 +216,7 @@ test('SCRUM-275 · la página de acceso traduce TODOS los códigos que su ruta p
     `🔴 ESCÁNER CIEGO: derivo ${codigos.length} código(s) de /auth/login y son al menos 2 ` +
     '(invalid_email, internal_error). Si la forma cambió, este guard no está mirando nada.');
 
-  const login = leer('public', 'login.html');
+  const login = leer('dist', 'modules', 'auth', 'app', 'routes', 'loginNavegador.js'); // SCRUM-1647c: el guion salió del HTML
   const mapa = login.match(/const msgs = (\{[\s\S]*?\});/);
   assert.ok(mapa, '🔴 /login.html ya no tiene tabla de traducción');
   const traducciones = new Function(`return ${mapa[1]};`)();
@@ -223,7 +240,7 @@ test('SCRUM-275 · una respuesta que no es JSON NO se diagnostica como fallo de 
   // Miente dos veces: al usuario, que se pone a mirar su wifi mientras el servidor está caído; y
   // a quien lo depure después, que buscará el fallo en el sitio equivocado. Un diagnóstico falso
   // es peor que uno genérico.
-  const login = leer('public', 'login.html');
+  const login = leer('dist', 'modules', 'auth', 'app', 'routes', 'loginNavegador.js'); // SCRUM-1647c: el guion salió del HTML
   const m = login.match(/const data = (await res\.json\(\)[^;]*);/);
   assert.ok(m, '🔴 no encuentro el parseo de la respuesta en /login.html');
 

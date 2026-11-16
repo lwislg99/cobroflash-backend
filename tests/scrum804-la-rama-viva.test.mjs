@@ -58,8 +58,14 @@ import { RASTRO, rastroDeLosTickets, rastroDe, motivosParaNoFiarse, esCiego } fr
 
 const RAIZ = path.join(import.meta.dirname, '..');
 const YO = path.join(import.meta.dirname, 'scrum804-la-rama-viva.test.mjs');
+/**
+ * 🔴 SCRUM-1335e · DÓNDE SE PREGUNTA A GIT. Por defecto, el repositorio de este fichero, como
+ * siempre. `SCRUM804_GIT_EN` sólo existe para que `tests/scrum1335e-…` pueda correr ESTE fichero
+ * contra un clon SOMERO sintético y comprobar que cae diciendo por qué; ningún job lo pone.
+ */
+const RAIZ_GIT = process.env.SCRUM804_GIT_EN || RAIZ;
 const git = (...args) => execFileSync('git', args,
-  { cwd: RAIZ, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
+  { cwd: RAIZ_GIT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // 🔴 SCRUM-925 · POR QUÉ ESTE FICHERO SE PONÍA ROJO SOLO, Y NO ERA POR LOS WORKTREES
 //
@@ -96,7 +102,7 @@ const git = (...args) => execFileSync('git', args,
 /** La tienda de refs, como una clave por ref: si algo entra, sale o cambia de sha, se nota. */
 const claveDeRefs = (filas) => filas.map((f) => `${f.nombre}\t${f.sha}`).sort();
 
-const censo = rastroDeLosTickets({ raiz: RAIZ, traer: false });
+const censo = rastroDeLosTickets({ raiz: RAIZ_GIT, traer: false });
 
 /**
  * LA POBLACIÓN, DECLARADA Y ÚNICA: las TRES lecturas de `refs/remotes/origin/` se toman aquí,
@@ -104,9 +110,44 @@ const censo = rastroDeLosTickets({ raiz: RAIZ, traer: false });
  * dos lecturas en momentos distintos no son dos opiniones que promediar — son dos poblaciones, y
  * comparar una contra la otra es lo que producía el rojo del inocente.
  */
-const CRUDAS = refsCrudasEnVivo();
-const CRUDAS_EN_MAIN = refsCrudasEnVivo(`--merged=${censo.inst.sha}`);
-const CRUDAS_VIVAS = refsCrudasEnVivo(`--no-merged=${censo.inst.sha}`);
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-1335e · EN UN CLON SOMERO ESTE FICHERO MORÍA AL CARGAR, Y NADIE LO VEÍA.
+//
+// Sin la punta de `main` la instantánea no tiene sha, y las dos lecturas de abajo salían
+// `--merged=null` → `fatal: malformed object name null` en el NIVEL SUPERIOR: ni un caso declarado.
+// El job de zona clona sin `fetch-depth: 0`, así que moría igual en las dos zonas y el comparador
+// lo daba por «comparado e igual» (medido por SCRUM-1335d el 2-nov-2026: el único de 1.576).
+//
+// Ahora, como `scrum804b` (SCRUM-1331/1541): nada que pueda lanzar al cargar. Si el clon es somero o
+// no tiene la punta de `main`, NO se lee nada y los casos que miran el árbol vivo CAEN con el
+// motivo. Los puros corren. Un ciego no es un verde, y aquí tampoco se salta.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+function motivoDeCiego() {
+  let somero;
+  try {
+    somero = git('rev-parse', '--is-shallow-repository').trim() === 'true';
+  } catch (e) {
+    return `🔴 CIEGO · git no contesta en ${RAIZ_GIT}: «${String(e.message).split('\n')[0]}». `
+      + 'El censo de la rama viva NO se ha comprobado.';
+  }
+  const porque = [];
+  if (somero) porque.push('el clon es SOMERO (historia cortada: la alcanzabilidad no se puede saber, SCRUM-1541)');
+  if (censo.inst.incapaz) porque.push(`no se resuelve la punta de \`main\`: ${censo.inst.incapaz}`);
+  if (!porque.length) return null;
+  return `🔴 CIEGO · ${somero ? 'CLON SOMERO' : 'SIN LA PUNTA DE MAIN'} · ${porque.join(' · ')}. `
+    + 'El censo de la rama viva NO se ha comprobado en esta pasada: no es un rojo del código ni un '
+    + 'verde. Si esto es un job de CI, su `actions/checkout` necesita `fetch-depth: 0` y la punta de '
+    + '`main` (`.github/workflows/ci.yml`).';
+}
+const CIEGO = motivoDeCiego();
+/** Los casos que miran el árbol vivo empiezan aquí: ciego → caen con el motivo, nunca pasan vacíos. */
+function exigirArbol() {
+  if (CIEGO) assert.fail(CIEGO);
+}
+
+const CRUDAS = CIEGO ? null : refsCrudasEnVivo();
+const CRUDAS_EN_MAIN = CIEGO ? null : refsCrudasEnVivo(`--merged=${censo.inst.sha}`);
+const CRUDAS_VIVAS = CIEGO ? null : refsCrudasEnVivo(`--no-merged=${censo.inst.sha}`);
 
 /**
  * Y LA RELECTURA QUE DICE SI LA PASADA VALE. La tienda es compartida: no se puede
@@ -121,7 +162,7 @@ function movimientoDeRefs(filasAntes, filasDespues) {
   return [...entraron, ...salieron].sort();
 }
 
-const REFS_MOVIDAS = movimientoDeRefs(CRUDAS, refsCrudasEnVivo());
+const REFS_MOVIDAS = CIEGO ? [] : movimientoDeRefs(CRUDAS, refsCrudasEnVivo());
 
 /** El motivo, si la pasada no es fiable. `null` = se puede comparar. */
 const NO_FIABLE = REFS_MOVIDAS.length
@@ -209,6 +250,7 @@ function refsCrudasEnVivo(bandera = null) {
 }
 
 test('SCRUM-804 · 🔴 SUELO: el censo cuadra rama a rama con lo que `git` lista, sin cifras escritas', () => {
+  exigirArbol();
   assert.deepEqual(censo.suelo, [],
     '🔴 la dimensión se declara NO FIABLE en esta pasada:\n   · ' + censo.suelo.join('\n   · '));
 
@@ -263,6 +305,7 @@ test('SCRUM-804 · 🔴 SUELO: el censo cuadra rama a rama con lo que `git` list
 // y se exige que el censo no haya perdido ni inventado ninguna.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 test('SCRUM-804 · 🔴 CONTROL POSITIVO DERIVADO: la agrupación no pierde ni inventa ramas', () => {
+  exigirArbol();
   const crudas = CRUDAS;
   assert.ok(crudas.length > 0,
     '🔴 CIEGO: `for-each-ref` no ha listado ni una rama de `origin`. Sin población no se puede '
@@ -338,12 +381,13 @@ test('SCRUM-804 · 🔴 CONTROL POSITIVO DERIVADO: la agrupación no pierde ni i
 // sí mismo.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 test('SCRUM-804 · 🔴 EL ÁRBITRO: población permanente y coherencia con la alcanzabilidad de git', () => {
+  exigirArbol();
   const sha = censo.inst.sha;
   const alcanzables = new Set(git('rev-list', sha).split('\n').map((l) => l.trim()).filter(Boolean));
   const esAncestro = (objeto) => {
     try {
       execFileSync('git', ['merge-base', '--is-ancestor', objeto, sha],
-        { cwd: RAIZ, stdio: ['ignore', 'ignore', 'ignore'] });
+        { cwd: RAIZ_GIT, stdio: ['ignore', 'ignore', 'ignore'] });
       return true;
     } catch { return false; }
   };
@@ -393,6 +437,7 @@ test('SCRUM-804 · 🔴 EL ÁRBITRO: población permanente y coherencia con la a
 });
 
 test('SCRUM-804 · ✅ CONTROL NEGATIVO: una rama mergeada NO se cuenta como trabajo pendiente', () => {
+  exigirArbol();
   // Separa «existe el nombre» de «hay trabajo pendiente». Sin esto, un clasificador que dijera
   // «viva» a todo pasaría el control positivo entero.
   //
@@ -441,12 +486,14 @@ test('SCRUM-804 · ✅ CONTROL NEGATIVO: una rama mergeada NO se cuenta como tra
 });
 
 test('SCRUM-804 · ✅ SIN RASTRO es un veredicto, no un hueco', () => {
+  exigirArbol();
   // Un número que no existe no puede confundirse con uno cuyo trabajo está en main.
   assert.equal(rastroDe(censo.porTicket, 999999), RASTRO.SIN_RASTRO);
   assert.equal(censo.porTicket.has(999999), false);
 });
 
 test('SCRUM-804 · ⛔ POR IDENTIDAD: el número no casa dentro de otro ni con un sufijo de reintento', () => {
+  exigirArbol();
   // El encargo lo dice medido: un `grep <numero>` suelto le devolvió a S6 CINCO ramas falsas,
   // porque el número casa dentro de los SHAs y de los sufijos. Aquí se comprueba sobre el árbol
   // vivo que la agrupación NO recoge esa basura.

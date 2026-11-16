@@ -45,7 +45,7 @@ const ACTOR = { tipo: 'pro_propietario', teamMemberId: null };
 // (abajo), no se da por supuesto: si un flag global encendiera `fiscal` para todos, el modo
 // `receipt` dejaría de ejercitarse y el caso lo diría.
 const COMERCIOS = [
-  { nombre: 'ES con el flag ON', modo: 'fiscal', m: { id: 7, country: 'ES', flags: { INVOICING_ES_ENABLED: true } } },
+  { nombre: 'ES con el flag ON', modo: 'fiscal', m: { id: 7, country: 'ES', flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false } },
   { nombre: 'fuera de España', modo: 'fiscal', m: { id: 8, country: 'PT', flags: {} } },
   { nombre: 'demo', modo: 'demo', m: { id: 1, country: 'ES', flags: {} } },
   { nombre: 'ES con el flag OFF', modo: 'receipt', m: { id: 9, country: 'ES', flags: {} } },

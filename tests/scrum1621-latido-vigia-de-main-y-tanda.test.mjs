@@ -7,7 +7,7 @@
 // ③ La cabecera de `vigia-de-main.yml` cita un registro que EXISTE, y dice literal que su propio silencio
 //    no lo vigila nadie (SCRUM-1324 c.17719).
 // ④ El latido dice cuántos días lleva cada fichero gateado sin verde (SCRUM-1599 c.20715 ②), juntando los
-//    recibos de todos los árboles. 🔴 El umbral NO está decidido (c.20713 ④): sin él, ⚪ y ninguna avisa.
+//    recibos de todos los árboles. Umbral 1 desde SCRUM-1621h (avisa desde 48 h); sin umbral, ⚪ y ninguna avisa.
 //
 // Sólo lo PURO: `gh` y el disco no se prueban aquí.
 import test from 'node:test';
@@ -151,8 +151,24 @@ test('SCRUM-1621 · ②③ el título y el workflow son los del YAML, y su cabec
 const recibo = (terminadaEn, porFichero) => JSON.stringify({ terminadaEn, fail: 0, porFichero });
 const e = (veredicto, veredictoEn, ultimoVerdeEn = null) => ({ veredicto, veredictoEn, ultimoVerdeEn });
 
-test('SCRUM-1621 · ④ 🔴 el umbral NO está decidido: la constante es null hasta que lo decida el fundador', () => {
-  assert.equal(UMBRAL_DIAS_SIN_VERDE, null, 'alguien ha puesto un umbral: es la pregunta ④ de SCRUM-1599 c.20713, y la contesta el fundador. Si ya la contestó, cita su comentario en el registro y cambia esta línea');
+test('SCRUM-1621h · ④ el umbral es 1 (decisión del orquestador, 10-nov-2026, bajo la delegación del fundador)', () => {
+  assert.equal(UMBRAL_DIAS_SIN_VERDE, 1, 'el umbral decidido es 1 (registro: SCRUM-1621h en docs/master/SCRUM-1621.md). Cambiarlo es otra decisión, y va citada en el registro');
+});
+
+test('SCRUM-1621h · ④ con el umbral de la ORDEN (sin pasarlo): avisa desde 48 h justas, no a las 47:59', () => {
+  const borde = [{ arbol: 'A', texto: recibo('2026-10-27T17:00:00Z', {
+    'a-47h59.test.mjs': e('rojo', '2026-10-27T17:00:00Z', '2026-10-25T18:01:00Z'),
+    'b-48h.test.mjs': e('rojo', '2026-10-27T17:00:00Z', '2026-10-25T18:00:00Z'),
+    'c-verde-viejo.test.mjs': e('verde', '2026-09-01T10:00:00Z', '2026-09-01T10:00:00Z'),
+  }) }];
+  const s = seccionTandaGateada({ recibos: borde, arboles: 266, ahora: AHORA });
+  assert.equal(s.sinUmbral, undefined, 'con la constante en null esta sección no tendría umbral');
+  assert.deepEqual(s.alertas.map((a) => a.linea.split(' · ')[0]), ['b-48h.test.mjs', 'c-verde-viejo.test.mjs'],
+    'a las 48 h avisa; a las 47:59 no; y un verde VIEJO también avisa: la tanda no ha vuelto a correr');
+  // Defecto que cazó este test (SCRUM-1621h): el verde viejo se pintaba «CIEGO», que es «no pude mirar».
+  assert.equal(s.alertas[1].linea, 'c-verde-viejo.test.mjs · 56 días desde su último verde (2026-09-01): la tanda no ha vuelto a correr');
+  assert.match(s.poblacion, / · avisa por encima de 1 días$/);
+  assert.equal(salidaDe([s]), SALIDA_AVISO);
 });
 
 test('SCRUM-1621 · ④ los recibos de varios árboles se juntan: gana el veredicto más NUEVO y el último verde más nuevo', () => {
@@ -184,7 +200,8 @@ const DOS = [{ arbol: 'A', texto: recibo('2026-10-25T10:00:00Z', {
 }) }];
 
 test('SCRUM-1621 · ④ 🔴 sin umbral: enseña la edad con ⚪, NINGUNA avisa, y no sale ✅', () => {
-  const s = seccionTandaGateada({ recibos: DOS, arboles: 266, ahora: AHORA });
+  // `umbralDias: null` explícito: la rama «sin umbral» sigue existiendo y se prueba aunque la constante ya sea 1.
+  const s = seccionTandaGateada({ recibos: DOS, arboles: 266, ahora: AHORA, umbralDias: null });
   assert.equal(s.pudo, true);
   assert.equal(s.alertas.length, 0);
   assert.equal(s.sinUmbral, true);

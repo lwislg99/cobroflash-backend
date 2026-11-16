@@ -5,6 +5,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { numeroVisibleDelPresupuesto, numeroBuscado } from '../../../quotes/domain/revision'; // SCRUM-1483
 import { whereFacturasVisibles, quienPideDe } from '../../../../core/documentos/accesoALaFactura'; // SCRUM-1489
 import { wherePresupuestosVisibles } from '../../../../core/documentos/accesoAlPresupuesto'; // SCRUM-1489
+import { clienteDelDocumento } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-1650
 
 const router = Router();
 
@@ -95,6 +96,7 @@ router.get('/', async (req, res) => {
         select: {
           id: true, number: true, status: true, total: true, currency: true, createdAt: true,
           customer: { select: { name: true } },
+          customerName: true, // SCRUM-1650 · el nombre que quedó escrito en la factura al emitirla
         },
         take: MAX_RESULTS,
         orderBy: { createdAt: 'desc' },
@@ -109,7 +111,15 @@ router.get('/', async (req, res) => {
         ...resto,
         numeroVisible: numeroVisibleDelPresupuesto({ quoteNumber, revision }),
       })),
-      invoices,
+      // SCRUM-1650 · la factura se enseña con el cliente que lleva ESCRITO (el de su PDF y su XML,
+      // `clienteDelDocumento`), no con la ficha de hoy. Se busca por la ficha viva a propósito:
+      // eso es encontrar, no pintar. La columna cruda no viaja: la forma de la respuesta no cambia.
+      invoices: invoices.map(({ customerName, customer, ...resto }) => ({
+        ...resto,
+        customer: customerName != null || customer
+          ? { name: clienteDelDocumento({ customerName }, customer).name }
+          : customer,
+      })),
     });
   } catch (err) {
     console.error('[GET /admin/search]', err);

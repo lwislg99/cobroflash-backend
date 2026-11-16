@@ -130,7 +130,8 @@ function anotarEnvio(parte: ParteDeAvisos, destinatario: string, r: ResultadoCor
 export async function sendWelcomeEmail(merchantId: number): Promise<ResultadoCorreo | null> {
   const m = await prisma.merchant.findUnique({
     where: { id: merchantId },
-    select: { id: true, email: true, name: true, lifecycleEmailsSent: true, country: true, flags: true },
+    // SCRUM-1585 (carril J1, declarado): el modo mira el SII; obligatorio en `MerchantLike`.
+    select: { id: true, email: true, name: true, lifecycleEmailsSent: true, country: true, flags: true, llevaLibrosPorSii: true },
   });
   if (!m || alreadySent(m, 'welcome')) return null;
   // Sin correo NO se manda nada, y eso ahora se DICE: `sin_destino` es un dato, no un hueco.
@@ -155,7 +156,8 @@ export async function sendWelcomeEmail(merchantId: number): Promise<ResultadoCor
 export async function sendFirstPaymentEmail(merchantId: number): Promise<ResultadoCorreo | null> {
   const m = await prisma.merchant.findUnique({
     where: { id: merchantId },
-    select: { id: true, email: true, name: true, lifecycleEmailsSent: true, country: true, flags: true },
+    // SCRUM-1585 (carril J1, declarado): el modo mira el SII; obligatorio en `MerchantLike`.
+    select: { id: true, email: true, name: true, lifecycleEmailsSent: true, country: true, flags: true, llevaLibrosPorSii: true },
   });
   if (!m || alreadySent(m, 'firstPayment')) return null;
   if (!m.email) return resultadoSinDestino();
@@ -194,6 +196,8 @@ export async function runLifecycleEmails(): Promise<ParteDeAvisos> {
       id: true, email: true, name: true, plan: true, createdAt: true, lifecycleEmailsSent: true,
       // SCRUM-1029 (regla 24, superficie F): país+flags para el pie compartido de `wrap()`.
       country: true, flags: true,
+      // SCRUM-1585 (carril J1, declarado): el modo mira el SII; obligatorio en `MerchantLike`.
+      llevaLibrosPorSii: true,
     },
   });
 

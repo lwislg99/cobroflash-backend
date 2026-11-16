@@ -209,7 +209,9 @@ test('SCRUM-336 · el canal orgánico no se pierde: el referrer viaja como utm_s
 });
 
 test('SCRUM-336 · el registro lee la URL y NO tiene ya ningún respaldo de almacenamiento', () => {
-  const registro = fs.readFileSync(path.join(RAIZ, 'public/register.html'), 'utf8');
+  // SCRUM-1647d: el guion del registro salió del HTML (CSP) y se sirve desde `GET /auth/js/alta.js`;
+  // se lee donde vive ahora (firma: SCRUM-1647 c.21658). Las aserciones, sin tocar.
+  const registro = fs.readFileSync(path.join(RAIZ, 'dist/modules/auth/app/routes/altaNavegador.js'), 'utf8');
 
   // Derivado del censo, no de leer el fichero a ojo.
   const enRegistro = accesos.filter((a) => a.fichero === 'public/register.html');

@@ -261,6 +261,17 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // FUSIONADO (origin/main 5deff8b3b + la rama), no deducido: main da { flag: 7, tipo: 11, aPelo: 162 }
 // y la rama { flag: 8, tipo: 11, aPelo: 162 }; la única fila nueva de ① es ésa. («1 factura» de
 // `exportView.js` sólo cambia de línea, 179 → 205, y sigue en ③.)
+// aPelo 162 → 160 · 11-nov-2026 (SCRUM-1696, PILOTO-1) · CUÁLES SALIERON: las dos
+// «El parte sigue sin ser una factura.» de `jobDetailView.js` (ficha del trabajo y hoja de alta del
+// albarán). Se QUITAN por N8, firmado (SCRUM-1686 c.21470, «si firmo» c.21471): hablaban del albarán con
+// el nombre del parte. No hay movimiento a ①/②: los dos literales desaparecen. Contado por ESTE censo
+// sobre origin/main 573579309 + la rama; el propio test lo dijo (actual 160, esperado 162).
+// 12-nov-2026 · aPelo 160 → 161, MEDIDO (SCRUM-1051g): el literal nuevo es P4, «Para facturar con
+// inversión del sujeto pasivo, el cliente necesita NIF.», firmado por el fundador en SCRUM-1051
+// c.21750 (punto 3); `src/modules/invoicing/domain/destinatarioIsp.ts`. Es el mismo que sube los no legibles 38 → 39.
+// 12-nov-2026 · aPelo 161 → 162, MEDIDO (SCRUM-1051h): el literal nuevo es P5, «Para facturar con
+// inversión del sujeto pasivo, el cliente tiene que ser empresario o profesional.», firmado por Javier en
+// SCRUM-1051 c.21761; `destinatarioIsp.ts:33`. Es el mismo que sube los no legibles 39 → 40.
 const VEREDICTO_AL_MEDIR = { flag: 8, tipo: 11, aPelo: 162 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
@@ -330,7 +341,16 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   // SCRUM-1390y (27-oct-2026) · 894 → 898: el error de una respuesta sin lista se queda en su bloque
   // en vez de lanzarse; contra origin/main 77ce98573, `git diff --numstat` de `homeView.js` da 18 5,
   // todo POR ENCIMA de la nota. Medido con el mismo `grep -n`, en la rama: 898; en main: 885.
-  const boton = en('public/dashboard/js/homeView.js', 898);
+  // SCRUM-1701 (b) (11-nov-2026) · 898 → 906: quitar el atajo «Pendientes de cobro» en `receipt`
+  // mete 9 líneas y quita 1 POR ENCIMA de la nota (`git diff --numstat` de `homeView.js`: 9 1).
+  // Medido con el mismo `grep -n`, en la rama: 906; en origin/main 81f579535: 898.
+  // SCRUM-1686 H4 (12-nov-2026) · 906 → 944: el bloque «Para hoy» del Inicio del operario y el
+  // saludo por rol meten 39 líneas y quitan 1 POR ENCIMA de la nota (`git diff --numstat` de
+  // `homeView.js`: 39 1). Medido con el mismo `grep -n`, en la rama: 944; en origin/main acac25dba: 906.
+  // SCRUM-1717 S2 (12-nov-2026) · 944 → 980: el aviso del SII en Inicio (su llamada y
+  // `pintarAvisoSiiSinEmision`) mete 36 líneas y quita 0 POR ENCIMA de la nota (`git diff --numstat`
+  // de `homeView.js`: 36 0). Medido con el mismo `grep -n`, en la rama: 980; en origin/main 8f2357255: 944.
+  const boton = en('public/dashboard/js/homeView.js', 980);
   assert.equal(boton.length, 1, 'no se encuentra la nota de condiciones de homeView donde se midió');
   assert.match(boton[0].texto, /100% al aceptar/);
   assert.equal(boton[0].dependeDelFlag, true,
@@ -353,7 +373,15 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   // `grep -n "textContent = 'Facturas'" public/dashboard/js/app.js` da una sola línea, y es ésta.
   // SCRUM-1156c · 386 → 388: `app.js` gana por encima el menú activo de `expenses-detail` y su
   // `state.expenseId`. Medido, no deducido: el mismo `grep` da una sola línea, la 388.
-  const menu = en('public/dashboard/js/app.js', 388);
+  // SCRUM-1700 · 388 → 391: `app.js` gana por encima las 3 líneas que cuentan los partes por valorar
+  // al arrancar (bloque S4). Medido con el mismo `grep`: una sola línea, la 391.
+  // SCRUM-1701 · 388 → 391: `initApp` gana por encima la llamada a `aplicarModoALaBarra` (tres líneas,
+  // con su comentario). El mismo `grep -n`: en la rama 391, en origin/main a4a2ffc4a 388.
+  // SCRUM-1700 + SCRUM-1701 juntas (merge de main en la rama de 1700) · 391 → 394: las dos suman sus tres
+  // líneas por encima. Medido, no sumado: el mismo `grep -n` da una sola línea, la 394.
+  // SCRUM-1717 S2 (12-nov-2026) · 394 → 399: `app.js` gana por encima `window.appMotivoSinEmision` y su
+  // comentario (`git diff --numstat`: 5 0). El mismo `grep -n`: en la rama 399, en origin/main 8f2357255 394.
+  const menu = en('public/dashboard/js/app.js', 399);
   assert.equal(menu.length, 1, 'no se encuentra el rótulo del menú donde se midió');
   assert.equal(menu[0].texto, 'Facturas');
   assert.equal(menu[0].dependeDelFlag, false);
@@ -428,7 +456,9 @@ test('SCRUM-601 · EL VEREDICTO: las tres categorías, ancladas, y SUMAN', () =>
 // por `${conPaquete ? TARJETA_PAQUETE_TRIMESTRE : ''}`. No se pega en línea para bajar el número: el
 // motivo de 31→32. Medido con el censo sobre origin/main 5deff8b3b (37) + la rama (38): la única
 // construcción no legible nueva es `exportView.js:43`.
-const NO_LEGIBLES_AL_MEDIR = 38;
+// 12-nov-2026 · 38 → 39, MEDIDO (SCRUM-1051g): `destinatarioIsp.ts`, P4 (firmado, SCRUM-1051 c.21750).
+// 12-nov-2026 · 39 → 40, MEDIDO (SCRUM-1051h): `destinatarioIsp.ts:33`, P5 (firmado, SCRUM-1051 c.21761).
+const NO_LEGIBLES_AL_MEDIR = 40;
 
 test('SCRUM-601 · el censo DECLARA lo que no sabe leer, y esa lista no crece sola', () => {
   const n = censo.noLegibles.length;

@@ -58,7 +58,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  censar, clasificaFuente, motivosParaNoFiarse, sinCierre, sinDueno, comoLinea, DECLARADAS,
+  censar, clasificaFuente, motivosParaNoFiarse, comoLinea, DECLARADAS, fugasDe,
 } from '../scripts/_censo-mkdtemp.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -80,6 +80,14 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: "      if (!b.ids.has(d.nombre)) return false;",
     a: '      if (!b.ids.has(d.nombre)) return true;',
     cae: '🔴 ①b EL BORRADO DE OTRO NO ES EL MÍO: un finally que borra otra variable no cubre mi temporal',
+  },
+  // SCRUM-1718: heredada de 1396c (retirado con su lista). Sobre un árbol en cero, quitar las ESCAPA
+  // de `fugasDe` sólo QUITA acusaciones y el cero de ③ no se mueve: la mata el sembrado de ③.
+  {
+    fichero: 'scripts/_censo-mkdtemp.mjs',
+    de: 'export const fugasDe = (censo) => [...sinCierre(censo), ...sinDueno(censo)];',
+    a: 'export const fugasDe = (censo) => [...sinCierre(censo)];',
+    cae: '🔴 ③ NINGÚN temporal nuevo nace sin borrarse',
   },
 ];
 
@@ -274,8 +282,33 @@ test('SCRUM-864c · ② SUELO: el censo VE el árbol y DISTINGUE, así que su ce
 
 // ═══ ③ EL TRINQUETE ══════════════════════════════════════════════════════════════════════════
 
+// Una función que crea su temporal y lo devuelve: la forma ESCAPA, FABRICADA aquí y no tomada del
+// árbol (con el árbol en cero, un positivo prestado no existe). Viene de 1396c ③ (SCRUM-1718).
+const SEMBRADO = 'tests/sembrado-scrum864c.test.mjs';
+const FUENTE_SEMBRADA = [
+  "import fs from 'node:fs';",
+  "import os from 'node:os';",
+  "import path from 'node:path';",
+  'function crea() {',
+  "  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sembrado-'));",
+  '  return dir;',
+  '}',
+  'crea();',
+].join(NL);
+
 test('SCRUM-864c · 🔴 ③ NINGÚN temporal nuevo nace sin borrarse: las cuatro categorías de fuga = 0', () => {
-  const fugas = [...sinCierre(CENSO), ...sinDueno(CENSO)];
+  // SCRUM-1718: hasta aquí, los sitios que ya estaban en `main` el 27-oct-2026 entraban DECLARADOS
+  // (SCRUM-1396c, `scripts/_mkdtemp-declarados.json`). Nació con 28 y se vació; se retiró con 1396c.
+  // Desde entonces, cualquier fuga es roja, sin lista.
+
+  // CONTROL POSITIVO: sin él, un `fugasDe` que ya no contara alguna categoría daría este mismo cero.
+  const sembrado = clasificaFuente(SEMBRADO, FUENTE_SEMBRADA);
+  assert.deepEqual(sembrado.map((l) => l.categoria), ['ESCAPA'],
+    '🔴 CIEGO: el sitio sembrado ya no sale ESCAPA, así que este control no siembra nada.');
+  assert.deepEqual(fugasDe({ ...CENSO, ESCAPA: [...CENSO.ESCAPA, ...sembrado] }).filter((l) => l.fichero === SEMBRADO).length, 1,
+    '🔴 CIEGO: un sitio ESCAPA sembrado no cuenta como fuga. El cero de abajo no distinguiría «limpio» de «no mira».');
+
+  const fugas = fugasDe(CENSO);
   assert.deepEqual(fugas.map(comoLinea), [], [
     '',
     `🔴 HAY ${fugas.length} LLAMADA(S) A \`mkdtempSync\` QUE NO BORRAN SU DIRECTORIO PASE LO QUE PASE:`,
@@ -302,6 +335,7 @@ test('SCRUM-864c · 🔴 ③ NINGÚN temporal nuevo nace sin borrarse: las cuatr
     '  SI DE VERDAD HACE FALTA CONSERVARLO (para inspeccionar algo después)',
     '    Se DECLARA en `DECLARADAS` de `scripts/_censo-mkdtemp.mjs`, con el motivo al lado.',
     '    Un conservado sin declarar no es una decisión: es una fuga.',
+    '    ⛔ No hay otra lista: la de los que había el 27-oct-2026 (SCRUM-1396c) llegó a cero y se retiró (SCRUM-1718).',
     '',
     '  ⚠️ ESTE GUARD NO LO VE TODO: un SIGKILL no limpia nada, y sólo mira lo que se llama `mkdtemp*`.',
     '     Lo que no ve está escrito en la cabecera de este fichero.',

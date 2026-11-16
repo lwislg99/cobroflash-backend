@@ -383,8 +383,11 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   // SCRUM-1144 · 15-oct-2026 · 256 → 258, y lo mueve la VISTA. Por identidad, dentro de
   // `div.quote-direccion-obra`: el `button.btn-ghost` «Elegir un sitio guardado» y la
   // `div.sitios-guardados`, cerrada y vacía hasta que se pulsa. 2 = el delta.
-  assert.equal(nodos.length, 258,
-    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 258 `
+  // SCRUM-1716b · 12-nov-2026 · 258 → 267, y lo mueve la VISTA. Por identidad, dentro de
+  // `div.quote-dto-global`: `div.segmented` + 2 × (`label` · `input` radio · `span`) + la `p` de
+  // «Equivale a …» + la `p` del error, ocultos hasta abrir el descuento. 9 = el delta.
+  assert.equal(nodos.length, 267,
+    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 267 `
     + '(236 sobre `origin/main` = 80db312b, + la opción de alta de SCRUM-591, + el bloque de '
     + 'descuento global de SCRUM-594, + el control de la dirección de la obra de SCRUM-602, '
     + '+ la tira de propuesta de SCRUM-587, + la tira de formas de pago de SCRUM-586, + la elección de nombre de SCRUM-589, − el «+ Añadir línea» duplicado de SCRUM-794, + el buscador de cliente y su aviso de lista vacía de SCRUM-713). Un arreglo del BANCO no debe cambiar ni uno: si '

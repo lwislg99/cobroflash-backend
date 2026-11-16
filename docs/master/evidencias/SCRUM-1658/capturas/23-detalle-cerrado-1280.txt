@@ -1,0 +1,90 @@
+URL https://yaqu.app/dashboard/#jobs-detail/79
+--- TEXTO
+Trabajo
+P
+PruebaQA
+Trabajos
+›
+Marta Prieto (PILOTO-1 QA)
+
+Marta Prieto (PILOTO-1 QA) · 10 nov
+
+CERRADO
+LO QUE FALTA
+Este trabajo no tiene presupuesto aceptado
+Sin un importe de referencia no se puede saber cuánto falta por cobrar.
+Hacer presupuesto
+1 albarán sin firmar
+Ver albaranes
+ALBARANES
+
+El parte sigue sin ser una factura.
+
+Nº	FECHA	ESTADO	LÍNEAS	ACCIÓN
+AB260007
+	10 nov	
+EMITIDO
+Sin precios
+0	Enviar para firmar
+EL TRABAJO
+Tipo de trabajo
+Una obra o reforma de varios días
+Nombre y dirección
+Marta Prieto (PILOTO-1 QA)
+Quién lo ejecuta
+No tienes equipo
+Notas internas
+Solo tú las ves
+Gastos de este trabajo
+Sin gastos
+CLIENTE
+Marta Prieto (PILOTO-1 QA)
+DÓNDE
+Calle Mayor 14, 3º B, 28801 Alcalá de Henares
+Abrir en mapa
+RESPONSABLE
+PruebaQA
+--- PULSABLES
+input[text] «Buscar… (o pulsa /)» 340x32 @563,14
+button[button] «Trabajos» 49x44 @295,103
+button[button] «Hacer presupuesto» 139x44 @794,300
+button[button] «Ver albaranes» 107x44 @826,350
+button[button] «AB260007» 68x44 @309,540
+button[submit] «Enviar para firmar» 134x44 @769,540
+summary «Tipo de trabajo Una obra o reforma de varios días» 638x44 @295,655
+button[button] «» 302x103 @319,701
+button[button] «» 302x103 @631,701
+summary «Nombre y dirección Marta Prieto (PILOTO-1 QA)» 638x44 @295,700
+input[text] «Marta Prieto (PILOTO-1 QA)» 205x44 @319,780
+input[text] «Calle Mayor 14, 3º B, 28801 Alcalá de Henares» 205x44 @319,888
+button[button] «» 166x44 @524,889
+summary «Quién lo ejecuta No tienes equipo» 638x44 @295,745
+button[button] «» 166x44 @319,829
+summary «Notas internas Solo tú las ves» 638x44 @295,790
+textarea[textarea] «Fuga en el baño: cambiar latiguillos y llave de escuadra del» 614x87 @319,836
+summary «Gastos de este trabajo Sin gastos» 638x44 @295,835
+a «Abrir en mapa» 88x44 @978,435
+--- DESBORDES
+--- <44px
+button «Inicio» 228x34
+button «Solicitudes» 228x34
+button «Trabajos» 228x34
+button «Presupuestos» 228x34
+button «Albaranes» 228x34
+button «Partes por valorar» 228x34
+button «Facturas» 228x34
+button «Cobros» 228x34
+button «Clientes» 228x34
+button «Productos» 228x34
+button «Proveedores» 228x34
+button «Gastos» 228x34
+button «Informes» 228x34
+button «Libro de registro» 228x34
+button «Facturas recibidas» 228x34
+button «Equipo» 228x34
+button «Planes» 228x34
+button «Configuración» 228x34
+button «Salir» 39x22
+input «» 340x32
+--- LOG
+[warning] Service Worker registration blocked by Playwright

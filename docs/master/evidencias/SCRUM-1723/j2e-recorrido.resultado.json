@@ -1,0 +1,442 @@
+{
+ "navegador": {
+  "ok": true,
+  "ruta": "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+  "quien": "Edge (Windows)"
+ },
+ "escenarios": {
+  "A-main-sin": {
+   "sembrado": {
+    "status": 200,
+    "csp": []
+   },
+   "paginas": {
+    "tarjeta-409": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "384bfaef54c7f2fd88c1456088e080d8a5b5d28b26bc10048d69a86f80a61583"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "1862ed2b7d9624ec79d06d47d4c9675000dceb623abe0fbdd7e5803075087b35"
+     }
+    },
+    "tarjeta-503": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "7242f96b8ca65d3e6dee7825fbdc561ee341bd297ebcf462fbe492281adf1411"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "c74371e4e7d829b0953695020c013c9ec0e5807a6e7dbde95a93371dc75b89b1"
+     }
+    },
+    "mp-aviso-503": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "5d389fb2d4dae031b830f2fa23677f8b4c5c00372e387e03ae9c65ab5449b09e"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "1dffa276605588594090793c2fcb1126f1051356349f7cba05ae25719527e676"
+     }
+    },
+    "mp-approved": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "089eeecd4248d7c59c22072b18f0fb9cbae147c1964a82704764079595ea519d"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "7cc949cf6c57ad2ca49eaabd783027fd6dd0ba8b0c71250d68eb939ff9089ce2"
+     }
+    },
+    "mp-rejected": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "2d56c4fc2908815710713781d79f5eed42d88a81c372189a1b9a91118b3d7b05"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "50d1992a62967c5cc183756aaba0eb938b315dbc4267286f1bae173ccd887160"
+     }
+    },
+    "mp-pending": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "f1057160b65d724818e470af37e85be4d3c7a6da162285bcd5f6382c49136875"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "80d99f1013ff236d63a71427bc4f7c047e815a80b78cab60f3c784f232d2ff1e"
+     }
+    },
+    "mp-expired": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "b25f85bf5f0ac1d643b32d97726cd5e7358e767f4cda6634406990a8e8b223f2"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "c04cd83ff0a9439471aa0922f2e6762131cb244e9183658d39628e7b857f5dcc"
+     }
+    }
+   }
+  },
+  "B-main-aplicada": {
+   "sembrado": {
+    "status": 200,
+    "csp": [
+     "style-src-elem",
+     "style-src-attr"
+    ]
+   },
+   "paginas": {
+    "tarjeta-409": {
+     "390": {
+      "informes": 4,
+      "directivas": [
+       "style-src-attr"
+      ],
+      "sha256": "3786d0d875808ff2fa46f7bfd77fafc01059d96b204e2795bc30323f6254879b"
+     },
+     "1280": {
+      "informes": 4,
+      "directivas": [
+       "style-src-attr"
+      ],
+      "sha256": "310f0c89547b563e35eed518d62f37a46760bae0f188d143261a7773aeff77a4"
+     }
+    },
+    "tarjeta-503": {
+     "390": {
+      "informes": 4,
+      "directivas": [
+       "style-src-attr"
+      ],
+      "sha256": "2bd8e0e9c79ad34c94e9a1d7b2c560df7c6a46bb0cb8e17fad005b5ec383f8ad"
+     },
+     "1280": {
+      "informes": 4,
+      "directivas": [
+       "style-src-attr"
+      ],
+      "sha256": "4d4bd5c40bfc4cbc195f4cc2c53df2d98c36cbdf515dd2ab4da3439f211437c0"
+     }
+    },
+    "mp-aviso-503": {
+     "390": {
+      "informes": 1,
+      "directivas": [
+       "style-src-elem"
+      ],
+      "sha256": "f02e51e4759b78cb0f45c64020cbe0b813ba8b3fc3e290e72ee747f5d245618b"
+     },
+     "1280": {
+      "informes": 1,
+      "directivas": [
+       "style-src-elem"
+      ],
+      "sha256": "c3135cd795f96d4a6559f4bb435bb9e6d08ff4323d1db0e4e85a6fccd3164d2b"
+     }
+    },
+    "mp-approved": {
+     "390": {
+      "informes": 2,
+      "directivas": [
+       "style-src-elem",
+       "style-src-attr"
+      ],
+      "sha256": "0e4af76a8c68002197b087e13a4d24d1702d0f9c3df6447eff4a93a1a468113a"
+     },
+     "1280": {
+      "informes": 2,
+      "directivas": [
+       "style-src-elem",
+       "style-src-attr"
+      ],
+      "sha256": "8a89e0a4579617bec66841bdc002f9900c18d9cc20645d03cf781bad9166f8ab"
+     }
+    },
+    "mp-rejected": {
+     "390": {
+      "informes": 2,
+      "directivas": [
+       "style-src-elem",
+       "style-src-attr"
+      ],
+      "sha256": "0d03402564413a3d27fd45adeeaa1d432837b8c2e8824728c979794416550343"
+     },
+     "1280": {
+      "informes": 2,
+      "directivas": [
+       "style-src-elem",
+       "style-src-attr"
+      ],
+      "sha256": "733e510d956ce85438e04b5b4235e1319e5f74850c857cbd6f6a334f44c03304"
+     }
+    },
+    "mp-pending": {
+     "390": {
+      "informes": 2,
+      "directivas": [
+       "style-src-elem",
+       "style-src-attr"
+      ],
+      "sha256": "3ae77fec457cb2153aca2db31afc928d7e2f33af59f2153ad0d5e37f404ba626"
+     },
+     "1280": {
+      "informes": 2,
+      "directivas": [
+       "style-src-elem",
+       "style-src-attr"
+      ],
+      "sha256": "e72549fe0d10c69d8a17454657b648f58608202df709263bf9af311538d239be"
+     }
+    },
+    "mp-expired": {
+     "390": {
+      "informes": 2,
+      "directivas": [
+       "style-src-elem",
+       "style-src-attr"
+      ],
+      "sha256": "36cb8fe2c4c38bd7230a08be424749f4b79e50e446e48d4d75b49eb37f261339"
+     },
+     "1280": {
+      "informes": 2,
+      "directivas": [
+       "style-src-elem",
+       "style-src-attr"
+      ],
+      "sha256": "bc7671cd96d7fb41e9c5df733d8ea2d55430f5dcc20156efe388954539fb167a"
+     }
+    }
+   }
+  },
+  "C-rama-aplicada": {
+   "sembrado": {
+    "status": 200,
+    "csp": [
+     "style-src-elem",
+     "style-src-attr"
+    ]
+   },
+   "paginas": {
+    "tarjeta-409": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "384bfaef54c7f2fd88c1456088e080d8a5b5d28b26bc10048d69a86f80a61583"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "1862ed2b7d9624ec79d06d47d4c9675000dceb623abe0fbdd7e5803075087b35"
+     }
+    },
+    "tarjeta-503": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "7242f96b8ca65d3e6dee7825fbdc561ee341bd297ebcf462fbe492281adf1411"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "c74371e4e7d829b0953695020c013c9ec0e5807a6e7dbde95a93371dc75b89b1"
+     }
+    },
+    "mp-aviso-503": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "5d389fb2d4dae031b830f2fa23677f8b4c5c00372e387e03ae9c65ab5449b09e"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "1dffa276605588594090793c2fcb1126f1051356349f7cba05ae25719527e676"
+     }
+    },
+    "mp-approved": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "089eeecd4248d7c59c22072b18f0fb9cbae147c1964a82704764079595ea519d"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "7cc949cf6c57ad2ca49eaabd783027fd6dd0ba8b0c71250d68eb939ff9089ce2"
+     }
+    },
+    "mp-rejected": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "2d56c4fc2908815710713781d79f5eed42d88a81c372189a1b9a91118b3d7b05"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "50d1992a62967c5cc183756aaba0eb938b315dbc4267286f1bae173ccd887160"
+     }
+    },
+    "mp-pending": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "f1057160b65d724818e470af37e85be4d3c7a6da162285bcd5f6382c49136875"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "80d99f1013ff236d63a71427bc4f7c047e815a80b78cab60f3c784f232d2ff1e"
+     }
+    },
+    "mp-expired": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "b25f85bf5f0ac1d643b32d97726cd5e7358e767f4cda6634406990a8e8b223f2"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "c04cd83ff0a9439471aa0922f2e6762131cb244e9183658d39628e7b857f5dcc"
+     }
+    }
+   }
+  },
+  "D-rama-sin": {
+   "sembrado": {
+    "status": 200,
+    "csp": []
+   },
+   "paginas": {
+    "tarjeta-409": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "384bfaef54c7f2fd88c1456088e080d8a5b5d28b26bc10048d69a86f80a61583"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "1862ed2b7d9624ec79d06d47d4c9675000dceb623abe0fbdd7e5803075087b35"
+     }
+    },
+    "tarjeta-503": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "7242f96b8ca65d3e6dee7825fbdc561ee341bd297ebcf462fbe492281adf1411"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "c74371e4e7d829b0953695020c013c9ec0e5807a6e7dbde95a93371dc75b89b1"
+     }
+    },
+    "mp-aviso-503": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "5d389fb2d4dae031b830f2fa23677f8b4c5c00372e387e03ae9c65ab5449b09e"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "1dffa276605588594090793c2fcb1126f1051356349f7cba05ae25719527e676"
+     }
+    },
+    "mp-approved": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "089eeecd4248d7c59c22072b18f0fb9cbae147c1964a82704764079595ea519d"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "7cc949cf6c57ad2ca49eaabd783027fd6dd0ba8b0c71250d68eb939ff9089ce2"
+     }
+    },
+    "mp-rejected": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "2d56c4fc2908815710713781d79f5eed42d88a81c372189a1b9a91118b3d7b05"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "50d1992a62967c5cc183756aaba0eb938b315dbc4267286f1bae173ccd887160"
+     }
+    },
+    "mp-pending": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "f1057160b65d724818e470af37e85be4d3c7a6da162285bcd5f6382c49136875"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "80d99f1013ff236d63a71427bc4f7c047e815a80b78cab60f3c784f232d2ff1e"
+     }
+    },
+    "mp-expired": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "b25f85bf5f0ac1d643b32d97726cd5e7358e767f4cda6634406990a8e8b223f2"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "c04cd83ff0a9439471aa0922f2e6762131cb244e9183658d39628e7b857f5dcc"
+     }
+    }
+   }
+  }
+ },
+ "comparacion": [
+  {
+   "par": "A-main-sin ↔ C-rama-aplicada",
+   "iguales": 14,
+   "total": 14
+  },
+  {
+   "par": "A-main-sin ↔ D-rama-sin",
+   "iguales": 14,
+   "total": 14
+  },
+  {
+   "par": "B-main-aplicada ↔ C-rama-aplicada",
+   "iguales": 0,
+   "total": 14
+  }
+ ],
+ "recursosQueFaltan": [
+  "404 http://127.0.0.1:47271/favicon.ico",
+  "404 http://127.0.0.1:47272/favicon.ico",
+  "404 http://127.0.0.1:47273/favicon.ico",
+  "404 http://127.0.0.1:47274/favicon.ico"
+ ]
+}

@@ -14,6 +14,7 @@ import { generateAlbaranPdf } from '../infra/albaranPdf.service';
 // una versión desconocida. Sustituye la rama por defecto de `obraSegunVersion`.
 import { contenidoSegunVersion, type ContenidoCongelado } from './albaranContenidoFuentes';
 import { referenciaPresupuesto } from './albaranPrecios'; // SCRUM-607 (ALB-02)
+import { clienteDelDocumento } from '../../invoicing/domain/clienteCongelado'; // SCRUM-1650c (cliente del PDF sin firmar)
 
 export const ALBARAN_ESTADOS = ['borrador', 'emitido', 'firmado'] as const;
 export type AlbaranEstado = (typeof ALBARAN_ESTADOS)[number];
@@ -800,6 +801,15 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
   const customer = job
     ? await prisma.customer.findUnique({ where: { id: job.customerId }, select: { name: true, legalName: true, taxId: true } })
     : null;
+  // SCRUM-1650c · SIN FIRMAR, el papel nombra al cliente que quedó ESCRITO en el albarán al emitirlo,
+  // no la ficha de hoy (regla de `clienteDelDocumento`: columnas a NULL = anterior al escritor →
+  // ficha). FIRMADO, manda el sobre: v:3 imprime su bloque congelado y v:1/v:2 las fuentes vivas con
+  // que se sellaron —su hash se recalcula con ellas—, así que para ellos esto no cambia ni un byte.
+  // Sólo el NOMBRE (el `taxId` del cliente sigue en vivo, SCRUM-452). GO del fundador del 10-nov-2026
+  // (docs/master/SCRUM-1650.md, tramo c).
+  const clienteDelPapel = (albaran.evidenciaFirma as any)?.v == null && (albaran.customerName != null || customer)
+    ? clienteDelDocumento(albaran, customer)
+    : null;
 
   // SCRUM-607 (ALB-02) · EL PRESUPUESTO DE ORIGEN, para el pie del papel.
   //
@@ -861,7 +871,9 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
         jobDireccion: job?.direccion || null,
         lugarEntrega: albaran.lugarEntrega ?? null,
         referenciaTrabajo: job?.titulo || null,
-        cliente: customer?.legalName || customer?.name || null,
+        cliente: clienteDelPapel
+          ? clienteDelPapel.legalName || clienteDelPapel.name || null // SCRUM-1650c · sin firmar: el albarán
+          : customer?.legalName || customer?.name || null,
         emisor: merchant?.legalName || merchant?.name || null,
         emisorNif: merchant?.taxId || null,
         contenidoCongelado: (albaran.evidenciaFirma as any)?.contenidoCongelado,

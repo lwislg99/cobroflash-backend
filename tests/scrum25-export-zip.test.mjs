@@ -22,6 +22,7 @@ import zlib from 'node:zlib';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 import { crearFactura } from './_factura-fixture.mjs';
 import { assertAusenteConMecanismoVivo } from './_ausencia.mjs'; // SCRUM-108
+import { interceptarAuditLog } from './_audit-log-sync.mjs'; // SCRUM-1705: esperar la escritura, no el reloj
 import http from 'node:http';
 
 // `node:http` sin agente y no `fetch` (SCRUM-1218g): `fetch` contra un servidor propio puede
@@ -128,6 +129,7 @@ test('SCRUM-25 (B): datos.zip — técnico 403, entradas, PDFs, tenancy, rango, 
   // SCRUM-113: los merchants y TODO su montaje viven dentro de withMerchant. Antes se
   // creaban aquí, fuera del try: si reventaba el alta del técnico, de un cliente o de una
   // factura, el finally ni se planteaba y quedaban huérfanos en staging.
+  let au = null; // SCRUM-1705: el interceptor de AuditLog se deshace SIEMPRE, también si un assert cae antes
   try {
     await withMerchant(prisma, datosMerchant('A'), (merchantA) =>
       // vecino: nada suyo puede salir en el ZIP de A
@@ -187,6 +189,10 @@ test('SCRUM-25 (B): datos.zip — técnico 403, entradas, PDFs, tenancy, rango, 
     assert.equal(forbidden.status, 403, `el técnico NO debe poder exportar el ZIP (fue ${forbidden.status})`);
 
     // ── ADMIN: descarga y es un ZIP de verdad ───────────────────────────────
+    // SCRUM-1705: la traza de la descarga es fire-and-forget (`recordAudit` no se espera), así
+    // que el test se cuelga de la ESCRITURA antes de leerla. Se intercepta desde aquí, después
+    // del 403 del técnico, para que lo que se espera sean las dos descargas del admin.
+    au = interceptarAuditLog({ prisma });
     const res = await get('/admin/exports/datos.zip', cookieAdmin);
     assert.equal(res.status, 200, 'el admin debe poder descargar el paquete');
     assert.match(res.headers.get('content-type') || '', /zip/, 'content-type de ZIP');
@@ -238,12 +244,17 @@ test('SCRUM-25 (B): datos.zip — técnico 403, entradas, PDFs, tenancy, rango, 
       'una factura fuera del rango NO debe entrar en el paquete');
 
     // ── AUDIT: la descarga deja traza, con completo/parcial (S2/S4) ─────────
+    // SCRUM-1705: antes se leía UNA vez, justo después de la segunda descarga, sin esperar a que
+    // la escritura terminara — y si el `create` fallaba, el rojo no decía por qué. Ahora se espera
+    // a que ARRANQUEN las dos (una por descarga) y TERMINEN; si una falló, `explicar` lo dice.
+    await au.esperarAlMenos(2);
+    au.restaurar();
     const audits = await prisma.auditLog.findMany({
       where: { merchantId: merchantA.id, action: 'datos_exportados' },
       orderBy: { id: 'desc' },
     });
     const delZip = audits.map((a) => a.meta || {}).filter((m) => m.fichero === 'datos.zip');
-    assert.ok(delZip.length > 0, 'falta la traza de audit del ZIP');
+    assert.ok(delZip.length > 0, au.explicar('falta la traza de audit del ZIP'));
     const meta = delZip[delZip.length - 1]; // la primera descarga (sin rango)
     assert.equal(typeof meta.completo, 'boolean', 'el audit del ZIP debe registrar si salió completo');
     assert.equal(typeof meta.pdfs_incluidos, 'number', 'el audit debe registrar cuántos PDF llevó');
@@ -267,6 +278,7 @@ test('SCRUM-25 (B): datos.zip — técnico 403, entradas, PDFs, tenancy, rango, 
         t.diagnostic(`zip: ${entradas.length} entradas · técnico 403 ✓ · PDF dentro ✓ · sin XML (flag OFF) ✓ · tenancy ✓ · rango ✓ · audit ✓`);
       }));
   } finally {
+    au?.restaurar();
     // Solo lo que NO es del merchant: el borrado de datos lo garantiza withMerchant.
     server.close();
     await prisma.$disconnect();

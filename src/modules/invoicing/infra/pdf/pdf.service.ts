@@ -17,7 +17,9 @@ import { clausulasParaDocumento } from '../../../quotes/domain/clausulas';
 // SCRUM-688 · el número con su revisión lo forma el DOMINIO, no este documento.
 import { numeroConRevision } from '../../../quotes/domain/revision';
 import { zonaDelMerchant, diaNaturalEn } from '../../../../core/zonaDelMerchant'; // SCRUM-1470 · 1470c
+import { selloTemporal } from '../../domain/selloTemporal'; // SCRUM-1726 · pieza 1
 // SCRUM-602 (DOC-12) · el resolvedor de los tres modos y el rótulo, del dominio: la maqueta no decide.
+import { COPY_ISP_LEYENDA } from '../../domain/destinatarioIsp'; // SCRUM-1051g · P1
 import { resolverDireccionObra, ROTULO_DIRECCION_OBRA_PDF, type ClienteConFacturacion } from '../../../../core/documentos/direccionObra';
 
 /**
@@ -340,6 +342,27 @@ export type ParamsPdfPresupuesto = {
   zona?: string | null;
 };
 
+/** SCRUM-1240d · literal FIRMADO por el fundador en SCRUM-1240 c.21776 (regla 39). Ni una palabra más. */
+const MENCION_CRITERIO_CAJA = 'Régimen especial del criterio de caja';
+
+/**
+ * SCRUM-1240d · ¿Lleva la factura la mención del criterio de caja? La MISMA condición que la clave
+ * `07` del registro (c.21776): el valor CONGELADO es `true` (con NULL o false, no) y al menos un
+ * tramo del desglose es `S1` —sin causa `S2` y a un tipo positivo, lo que `clasificarDetalleDesglose`
+ * califica `S1`—. La inversión del sujeto pasivo queda fuera de la caja (LIVA 163 duodecies.Dos.d).
+ *
+ * ⚠️ No importa el builder a propósito: hacerlo metería este fichero en la población congelada de
+ * `scrum523d` (camino de emisión). Que las dos decisiones no discrepen lo ata
+ * `tests/scrum1240d-mencion-criterio-caja-pdf.test.mjs`, que compara las dos sobre las mismas líneas.
+ */
+function llevaMencionCriterioCaja(
+  criterioCaja: boolean | null | undefined,
+  lines: Array<{ qty: number; price: number; tax: number }>,
+): boolean {
+  if (criterioCaja !== true) return false;
+  return calcVatBreakdown(lines).entries.some((e) => e.causa !== 'S2' && Number.isFinite(e.rate) && e.rate > 0);
+}
+
 export async function generateInvoicePdf(params: {
   number: string;
   // SCRUM-72: id para la URL del endpoint auth y merchantId para el nombre de fichero
@@ -376,6 +399,11 @@ export async function generateInvoicePdf(params: {
   // Obligatoria a propósito: un llamador que no la pase no compila, en vez de imprimir otra vez la
   // víspera. `null` = sin zona declarada = UTC (`zonaDelMerchant`, decisión A del 2-sep).
   zona: string | null;
+  // SCRUM-1240d · el criterio de caja CONGELADO al sellar (`Invoice.merchantCriterioCaja`,
+  // SCRUM-1129e), nunca el `Merchant` vivo: este PDF se regenera, y una factura emitida no cambia
+  // (regla 29). Obligatorio a propósito, como `zona`: un llamador que no lo pase no compila.
+  // NULL = sin mención, que es con lo que se selló.
+  merchantCriterioCaja: boolean | null;
 }) {
   const fileName = `${params.merchantId}-${params.number}.pdf`; // SCRUM-72
   const outPath  = path.join(invoicesDir, fileName);
@@ -641,11 +669,16 @@ export async function generateInvoicePdf(params: {
     const vatMap: Record<string, VatGroup> = {};
     let subtotal = 0;
     let grandTotal = 0;
+    // SCRUM-1051g · la base de las líneas S2 (inversión del sujeto pasivo) va en su PROPIA fila,
+    // rotulada con P1 (firmado, c.21750), y no se funde con la fila de su tipo. `null` = no hay S2:
+    // entonces el papel sale exactamente como antes.
+    let baseIsp: number | null = null;
     if (leeElRegistro) {
       const desglose = calcVatBreakdown(lines);
-      // Una fila por TIPO, como hasta hoy: una línea con causa (S2) y otra sin ella al mismo tipo
-      // son dos entradas del desglose, y separarlas en el papel pediría un rótulo nuevo (regla 39).
+      // Una fila por TIPO, como hasta hoy. SCRUM-1051g: las entradas S2 salen de aquí y van a la
+      // fila de P1, abajo (GO de regla 40, c.21750 punto 2).
       desglose.entries.forEach((e) => {
+        if (e.causa === 'S2') { baseIsp = (baseIsp ?? 0) + e.base; return; }
         const key = `${rotuloDeTipo(e.rate)}%`;
         if (!vatMap[key]) vatMap[key] = { base: 0, vat: 0 };
         vatMap[key].base += e.base;
@@ -764,6 +797,16 @@ export async function generateInvoicePdf(params: {
         });
     }
 
+    // SCRUM-1051g · la fila S2, separada: P1 (la mención del ROF art. 6.1.m) y su base, sin cuota
+    // (la autorrepercute el destinatario). Sólo si hay líneas S2 y sólo en la F1 (la que lee el
+    // registro); la R1 y el justificante siguen como estaban.
+    if (baseIsp !== null) {
+      const iy = doc.y;
+      doc.text(`${COPY_ISP_LEYENDA}:`, totalsX, iy, { width: totalsW * 0.6 })
+        .text(fmt(baseIsp) + ' ' + params.currency, totalsX + totalsW * 0.6, iy, { width: totalsW * 0.4, align: 'right' });
+      doc.moveDown(0.4);
+    }
+
     // Total final — el momento del dinero (Regla del Importe: Tinta, grande,
     // con el acento de marca en la regla superior; el verde nunca en la cifra)
     doc.rect(totalsX, doc.y, totalsW, 2).fill(BRAND);
@@ -780,6 +823,15 @@ export async function generateInvoicePdf(params: {
     doc.fontSize(14).font('Helvetica-Bold')
       .text(`Total: ${fmt(Number(params.total))} ${params.currency}`, { align: 'right' });
     doc.moveDown(1.5);
+  }
+
+  // ── 4bis. MENCIÓN DEL CRITERIO DE CAJA (SCRUM-1240d · ROF 6.1.p, RIVA 61 undecies) ──────
+  // Literal FIRMADO en SCRUM-1240 c.21776 (regla 39), en su propia línea, debajo de los totales y
+  // antes del bloque VERI*FACTU. Nunca en justificantes, que no son factura.
+  if (!isReceipt && llevaMencionCriterioCaja(params.merchantCriterioCaja, params.lines ?? [])) {
+    doc.fontSize(9).font('Helvetica').fillColor(BODY)
+      .text(MENCION_CRITERIO_CAJA, M, doc.y, { width: W });
+    doc.fillColor('#000').moveDown(0.8);
   }
 
   // ── 5. VERIFACTU QR (nunca en justificantes — V0-0) ──────────────────────
@@ -999,16 +1051,39 @@ export async function generateQuotePdf(params: ParamsPdfPresupuesto) {
     const tierW = 155;
     const tierGap = 10;
     const startX = 50;
+    // SCRUM-1442c (2º GO, c.21717) · las tarjetas arrancan TODAS a la misma altura. Antes cada una
+    // leía `doc.y`, que la anterior había dejado en su total: salían en escalera.
+    const yTarjetas = doc.y;
+    let yFinTarjetas = yTarjetas;
 
     params.tiers.forEach((tier, idx) => {
       const x = startX + idx * (tierW + tierGap);
-      const yStart = doc.y;
+      const yStart = yTarjetas;
 
       // Caja del tier
       doc.rect(x, yStart, tierW, 14).fill(tier.recommended ? '#22c55e' : '#f3f4f6');
       doc.fillColor(tier.recommended ? '#ffffff' : '#374151')
-        .fontSize(9).font('Helvetica-Bold')
-        .text(tier.label + (tier.recommended ? ' ★' : ''), x + 4, yStart + 3, { width: tierW - 8, align: 'center' });
+        .fontSize(9).font('Helvetica-Bold');
+      if (tier.recommended) {
+        // La ★ (U+2605) no existe en WinAnsi, la codificación de Helvetica: PDFKit la partía en
+        // «&» + 0x05. Se DIBUJA, centrada con la etiqueta, como un polígono de diez puntas.
+        const lado = 7;
+        const hueco = 3;
+        const ancho = Math.min(doc.widthOfString(tier.label) + 1, tierW - 8 - hueco - lado);
+        const x0 = x + 4 + (tierW - 8 - ancho - hueco - lado) / 2;
+        doc.text(tier.label, x0, yStart + 3, { width: ancho, align: 'center' });
+        const cx = x0 + ancho + hueco + lado / 2;
+        const cy = yStart + 7;
+        const puntas: Array<[number, number]> = [];
+        for (let k = 0; k < 10; k++) {
+          const r = k % 2 === 0 ? lado / 2 : lado * 0.19;
+          const a = -Math.PI / 2 + (k * Math.PI) / 5;
+          puntas.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+        }
+        doc.polygon(...puntas).fill('#ffffff');
+      } else {
+        doc.text(tier.label, x + 4, yStart + 3, { width: tierW - 8, align: 'center' });
+      }
 
       doc.fillColor('black').font('Helvetica').fontSize(8);
       let lineY = yStart + 18;
@@ -1017,11 +1092,18 @@ export async function generateQuotePdf(params: ParamsPdfPresupuesto) {
         lineY += 12;
       }
       tier.lines.forEach((l: any) => {
-        const lineTotal = fmtImporte(l.qty * l.price * (1 + (ivaFueraDelPapel ? 0 : (l.tax ?? 0))));
-        const text = `${l.concept} × ${l.qty}`;
+        // SCRUM-1442c · una cabecera de apartado (SCRUM-655) llega sin `qty` ni `price`: pinta su
+        // concepto y el importe vacío, la vía decidida el 18-oct-2026 que ya aplica la página
+        // pública (1442b). Antes salía «Fase 1 × undefined» y «NaN EUR».
+        // SCRUM-1737 · el importe de línea va SIN IVA, como en la tabla principal y en la página
+        // pública; el IVA sale solo al final, en el total de la opción. Decisión de Javier
+        // (16-nov-2026): «sin IVA como está, solo al final». Antes sumaba `l.tax` en `sumar`.
+        const importe = l.qty * l.price;
+        const conImporte = Number.isFinite(importe);
+        const text = conImporte ? `${l.concept} × ${l.qty}` : String(l.concept ?? '');
         doc.text(text, x + 4, lineY, { width: tierW - 8 });
         lineY += 10;
-        doc.text(`${lineTotal} ${params.currency}`, x + 4, lineY, { width: tierW - 8, align: 'right' });
+        if (conImporte) doc.text(`${fmtImporte(importe)} ${params.currency}`, x + 4, lineY, { width: tierW - 8, align: 'right' });
         lineY += 12;
       });
 
@@ -1029,11 +1111,16 @@ export async function generateQuotePdf(params: ParamsPdfPresupuesto) {
       doc.rect(x, lineY, tierW, 14).fill(tier.recommended ? '#dcfce7' : '#e5e7eb');
       doc.fillColor('#111827').font('Helvetica-Bold').fontSize(9)
         .text(`Total: ${fmtImporte(ivaFueraDelPapel ? Number(tier.total) - ivaDentroDelImporte(tier.lines) : tier.total)} ${params.currency}`, x + 4, lineY + 3, { width: tierW - 8, align: 'center' });
+      yFinTarjetas = Math.max(yFinTarjetas, lineY + 14);
 
       doc.fillColor('black').font('Helvetica');
     });
 
-    doc.moveDown(14);
+    // Lo que sigue va debajo de la tarjeta MÁS ALTA y vuelve al margen izquierdo: `doc.x` se había
+    // quedado en la última tarjeta y el pie se centraba en su columna.
+    doc.x = startX;
+    doc.y = yFinTarjetas;
+    doc.moveDown(1);
     doc.fontSize(9).fillColor('#6b7280')
       .text('El cliente puede elegir la opción que mejor se adapte a sus necesidades.', { align: 'center' });
     doc.fillColor('black').moveDown(1);
@@ -1304,7 +1391,7 @@ if (params.signatureData) {
 
 // ── SCRUM-805 · Certificado de evidencias (solo si hay firma SELLADA) ─────────────────
 //
-// Prueba QUIÉN firmó, CUÁNDO (reloj del servidor), por qué CANAL y sobre qué CONTENIDO (hash
+// Prueba QUIÉN firmó, CUÁNDO (hora peninsular, o la del servidor sin zona: SCRUM-1726), por qué CANAL y sobre qué CONTENIDO (hash
 // SHA-256 canónico, no del PDF). ⚠️ NUNCA se imprime ip/ua (dato personal): quedan solo en la BD
 // para requerimiento legal. La fuerza probatoria final la valora la autoridad competente.
 //
@@ -1324,16 +1411,12 @@ if (params.evidencia && params.evidencia.contentHash) {
   // `firmadoAt` viene del sobre, que es Json: si faltara, `new Date(undefined)` daría «Invalid
   // Date» impreso en el papel. Se cae al vacío y el resto del certificado se pinta igual — un
   // sello sin fecha es un hueco, no una razón para tirar la prueba de integridad.
-  const sello = ev.firmadoAt
-    ? new Date(ev.firmadoAt).toLocaleString('es-ES', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    })
-    : '—';
+  // SCRUM-1726 (pieza 1, firmada en SCRUM-1656 c.21724): con la zona peninsular, en ESA zona y
+  // «(hora peninsular)»; sin ella, «(hora del servidor)» como antes. La regla vive en `selloTemporal`.
   const canalTxt = ev.canal === 'remoto' ? 'Firma remota (enlace por WhatsApp)' : 'Firma presencial (in situ)';
   const rows: Array<[string, string]> = [
     ['Firmante', ev.firmante || 'Cliente'],
-    ['Sello temporal', `${sello} (hora del servidor)`],
+    ['Sello temporal', selloTemporal(ev.firmadoAt, params.zona)],
     ['Canal', canalTxt],
     ['Integridad', `SHA-256: ${ev.contentHash}`],
   ];

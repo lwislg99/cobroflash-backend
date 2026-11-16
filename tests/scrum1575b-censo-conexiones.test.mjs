@@ -20,6 +20,7 @@ import ts from 'typescript';
 import { casosEscritos } from './_casos-escritos.mjs'; // SCRUM-1415 · un caso por fila, con su nombre escrito
 import { analizarConexion, censarConexiones, SIEMBRA, CLASES } from '../scripts/_censo-conexiones-a-base.mjs';
 import { comprobarCredencialDeProduccion, OK, PRODUCCION_EN_ARBOL } from '../scripts/_clave-vs-destino.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CENSO = path.join(RAIZ, 'scripts', '_censo-conexiones-a-base.mjs');
@@ -34,7 +35,7 @@ function entornoLimpio(extra) {
 }
 
 function arbolFabricado(ficheros) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1575b-'));
+  const dir = temporal('scrum1575b-');
   for (const [rel, texto] of Object.entries(ficheros)) {
     fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
     fs.writeFileSync(path.join(dir, rel), texto);
@@ -79,7 +80,7 @@ test('SCRUM-1575b · siembra · un árbol fabricado sale clasificado como se sab
       'scripts/solo-avisa.mjs': 'sin_guard_escribe',
     }, '🔴 el censo clasifica mal un árbol cuya respuesta se conoce. Ni el test del hook ni el fichero sin base conectan.');
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    borrarTemporal(dir);
   }
 });
 
@@ -90,7 +91,7 @@ test('SCRUM-1575b · sin nada que censar dice CIEGO y sale 2, no un verde', () =
     assert.equal(r.status, 2, `🔴 un árbol sin conexiones salió ${r.status}: ${r.stdout}${r.stderr}`);
     assert.match(r.stdout, /^CIEGO/, '🔴 el cero no dice CIEGO.');
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    borrarTemporal(dir);
   }
 });
 

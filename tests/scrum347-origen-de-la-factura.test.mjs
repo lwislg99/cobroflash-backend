@@ -39,7 +39,7 @@ function fakeTx() {
     merchant: {
       findUnique: async () => ({
         id: MERCHANT_ID, email: 'pro@fontaneria.es', country: 'ES',
-        flags: { INVOICING_ES_ENABLED: true },
+        flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false,
         invoiceSeriesPrefix: 'CF', nextInvoiceNumber: 1, nextRectInvoiceNumber: 1, invoiceSeriesYear: 2026,
       }),
       update: async () => ({}),

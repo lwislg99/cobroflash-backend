@@ -27,6 +27,25 @@ function parteOficinaEuros(n) {
   return fmtMoneyEs(n, (window.appLocale && window.appLocale.currency) || 'EUR');
 }
 
+/**
+ * SCRUM-1699 · N10 (firma SCRUM-1686 c.21471): cuántas líneas trae el parte, con palabra.
+ * Sustituye a «{n} ⚬», un glifo que no decía qué contaba.
+ */
+function parteOficinaLineas(n) {
+  return n === 1 ? '1 línea' : String(n) + ' líneas';
+}
+
+/**
+ * SCRUM-1699 · N11 (firma SCRUM-1686 c.21471, que extiende a esta pantalla el alcance de las
+ * firmadas nº 18-19): las columnas del detalle, en el orden de la fila. La clase es la de la
+ * celda de debajo, así la cabecera y la columna comparten anchura.
+ */
+const PARTE_OFICINA_COLUMNAS = [
+  ['po-col-cant', 'Cant.'],
+  ['po-col-precio', 'Precio ud.'],
+  ['po-col-importe', 'Importe'],
+];
+
 /** La pantalla: la lista de lo que falta por valorar, y el parte elegido al lado. */
 async function renderPartesOficinaView(container, opts) {
   container.innerHTML =
@@ -86,8 +105,15 @@ async function renderPartesOficinaView(container, opts) {
       '<span><span style="display:block;font-weight:700;color:var(--ink)">' + escHtml(p.numero || ('#' + p.id)) + '</span>'
       + '<span style="display:block;font-size:12.5px;color:var(--muted)">'
       + escHtml([p.clienteNombre, p.obra].filter(Boolean).join(' · ') || '—') + '</span></span>'
-      + '<span style="font-size:12.5px;color:var(--muted)">' + escHtml(String(p.lineas.length)) + ' ⚬</span>';
-    fila.addEventListener('click', function () { pintarParte(p.id, detalle, container, opts); });
+      + '<span style="font-size:12.5px;color:var(--muted)">' + escHtml(parteOficinaLineas(p.lineas.length)) + '</span>';
+    // SCRUM-1692 · la fila ABIERTA se marca: sin esto el detalle de abajo parecía un duplicado de una
+    // fila cualquiera. `aria-current` lo anuncia el lector de pantalla; el estilo cuelga de ese mismo
+    // atributo en la hoja (no de una clase: el banco de SCRUM-1285 exige `className` exacto).
+    fila.addEventListener('click', function () {
+      Array.prototype.forEach.call(lista.children, function (otra) { otra.removeAttribute('aria-current'); });
+      fila.setAttribute('aria-current', 'true');
+      pintarParte(p.id, detalle, container, opts);
+    });
     lista.appendChild(fila);
   });
 }
@@ -151,30 +177,40 @@ async function pintarParte(id, detalle, container, opts, yaTraido) {
         });
       if (!deEsteBloque.length) return;
 
+      // SCRUM-1699 · N11: el rótulo del bloque es también la CABECERA de sus columnas. Las anchuras
+      // salen de las mismas clases que las celdas de abajo, para que el rótulo no se separe de su
+      // columna si una de las dos cambia.
       const h = document.createElement('div');
-      h.style.cssText = 'font-size:11.5px;color:var(--muted);font-weight:700;text-transform:uppercase;'
-        + 'letter-spacing:.04em;margin:14px 0 6px';
-      h.textContent = par[1];
+      h.className = 'po-bloque-cab';
+      const rotulo = document.createElement('span');
+      rotulo.className = 'po-col-desc';
+      rotulo.textContent = par[1];
+      h.appendChild(rotulo);
+      PARTE_OFICINA_COLUMNAS.forEach(function (col) {
+        const c = document.createElement('span');
+        c.className = col[0];
+        c.textContent = col[1];
+        h.appendChild(c);
+      });
       card.appendChild(h);
 
       deEsteBloque.forEach(function (x) {
         const f = document.createElement('div');
-        f.style.cssText = 'display:flex;align-items:center;gap:10px;padding:6px 0;'
-          + 'border-bottom:1px solid var(--neutral-200)';
+        f.className = 'po-linea';
         f.innerHTML =
-          '<div style="flex:1;font-size:13px;color:var(--ink)">' + escHtml(x.l.descripcion || '—') + '</div>'
-          + '<div style="width:60px;text-align:right;font-size:13px;color:var(--muted)">'
+          '<div class="po-col-desc">' + escHtml(x.l.descripcion || '—') + '</div>'
+          + '<div class="po-col-cant">'
           + escHtml(x.l.unds === null ? '—' : String(x.l.unds)) + '</div>';
         const inp = document.createElement('input');
         inp.type = 'number';
         inp.step = '0.01';
         inp.min = '0';
-        inp.style.cssText = 'width:110px;text-align:right';
+        inp.className = 'po-col-precio';
         inp.value = x.l.precioUnitario === null ? '' : String(x.l.precioUnitario);
         inp.disabled = !editable;
         inp.setAttribute('aria-label', 'Precio por unidad');
         const imp = document.createElement('div');
-        imp.style.cssText = 'width:100px;text-align:right;font-size:13px;font-weight:600;color:var(--ink)';
+        imp.className = 'po-col-importe';
         imp.textContent = parteOficinaEuros(x.l.importe);
         f.appendChild(inp);
         f.appendChild(imp);

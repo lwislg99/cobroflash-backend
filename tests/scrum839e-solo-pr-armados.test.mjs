@@ -32,6 +32,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 // Por espacio de nombres y no por nombre: contra el código de antes del arreglo, cada test cae
 // por su aserción, no el fichero entero por un import que no existe.
 import * as registro from '../scripts/conflicto-de-registro.mjs';
@@ -113,7 +114,7 @@ const ARMADO = {
 
 /** `main` con la regla, y una rama `pr` que choca con ella SOLO en el registro. */
 function repoDeRegistro() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum839e-'));
+  const dir = temporal('scrum839e-');
   const g = (...args) => execFileSync('git', args, { cwd: dir, encoding: 'utf8', stdio: 'pipe' }).trim();
   const escribir = (f, txt) => {
     fs.mkdirSync(path.dirname(path.join(dir, f)), { recursive: true });
@@ -140,7 +141,7 @@ function repoDeRegistro() {
 
 function conRepo(fn) {
   const r = repoDeRegistro();
-  try { return fn(r); } finally { fs.rmSync(r.dir, { recursive: true, force: true }); }
+  try { return fn(r); } finally { borrarTemporal(r.dir); }
 }
 
 const decide = (r, pr) => decidir(gitReal(r.dir), { pr, cabeza: r.cabeza, main: r.main, mensaje: 'm' });
@@ -342,7 +343,7 @@ function bancoDelJob({ autoMergeRequest, quitar = '' }) {
     const ahora = execFileSync('git', ['--git-dir', origen, 'rev-parse', `refs/heads/${RAMA}`], { encoding: 'utf8' }).trim();
     return { ...run, empujado: ahora !== r.cabeza };
   } finally {
-    fs.rmSync(r.dir, { recursive: true, force: true });
+    borrarTemporal(r.dir);
     fs.rmSync(banco, { recursive: true, force: true });
   }
 }

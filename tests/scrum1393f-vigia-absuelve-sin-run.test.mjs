@@ -82,13 +82,15 @@ test('SCRUM-1393f · SIEMBRA: sin run cuyo sucesor está CORRIENDO → ESPERA, n
   assert.deepEqual(accionDelIssue(pasada([SIN_RUN(S), CORRIENDO(P)]), { estado: 'abierto' }).pasos, []);
 });
 
-test('SCRUM-1393f · SIEMBRA: sin run de OTRA rama → no se absuelve, ni cierra', () => {
+test('SCRUM-1393f · SIEMBRA: sin run de OTRA rama → no se absuelve (1393g: se declara)', () => {
   const a = accionDelIssue(pasada([SIN_RUN(S), VERDE(P)], [P, W]), { estado: 'abierto' });
-  assert.deepEqual(a.pasos, ['comentar']);
-  assert.match(a.motivo, /CIEGO o SIN-LEER en esta pasada/);
+  // SCRUM-1393g (c.21059): cierra, pero S sale declarado como CIEGO sin absolver
+  assert.deepEqual(a.pasos, ['comentar', 'cerrar']);
+  assert.match(a.cuerpo, /1 CIEGO sin absolver de 2 commits mirados/);
+  assert.doesNotMatch(a.cuerpo, /absuelto por el verde/);
   assert.equal(sinRunPorSustitucion(SIN_RUN(S), [SIN_RUN(S), VERDE(P)], [P, W]), false);
-  // sin línea, tampoco
-  assert.deepEqual(accionDelIssue(pasada([SIN_RUN(S), VERDE(P)], null), { estado: 'abierto' }).pasos, ['comentar']);
+  // sin línea, tampoco se absuelve
+  assert.doesNotMatch(accionDelIssue(pasada([SIN_RUN(S), VERDE(P)], null), { estado: 'abierto' }).cuerpo, /absuelto por el verde/);
   // y un ROJO por encima no lo absuelve
   assert.deepEqual(accionDelIssue(pasada([SIN_RUN(S), ROJO(P)]), { estado: 'abierto' }).pasos, ['comentar']);
 });

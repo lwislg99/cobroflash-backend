@@ -62,24 +62,36 @@ const ANCLAS = [PRODUCTOR, 'src/modules/fiscal/verifactu/registro.builder.ts', S
  * LO CONGELADO. Sólo se toca en el PR que sube `VERIFACTU_VERSION` con el OK del fundador, y se
  * pega lo que el mensaje de error trae recalculado. Medido sobre `origin/main` =
  * 81f9c0dc7 (26-oct-2026), con `VERIFACTU_VERSION` = "1.0.0" desde el 2-ago-2026.
+ *
+ * Matiz del fundador, SCRUM-1585 c.21290 (30-oct-2026), sólo hasta la primera declaración
+ * entregada: un cambio del camino con GO de regla 40 propio se recongela aquí en SU PR, sin subir
+ * la versión, si no cambia cómo se crea o se remite un registro o si el fundador lo dice en su GO.
+ * Recongeladas por esa vía: `emission.service.ts` e `invoiceNumber.service.ts` (SCRUM-1585, M, que
+ * decide si se emite y no toca sellado ni XML), pegando lo que imprimió el mensaje de error.
+ * Y `registro.builder.ts` + `verifactu.service.ts` (SCRUM-1129e, ClaveRegimen 07 desde el criterio
+ * de caja congelado al sellar): ESTE sí cambia el XML, y va por c.21290 porque el fundador lo dijo
+ * en su GO (SCRUM-1129 c.21753, punto 3), con la condición de que la primera declaración no esté
+ * entregada (medido el 13-nov-2026: 0 textos de declaración en `src/` y `public/`).
+ * La de `verifactu.service.ts` se recongeló otra vez en ese PR (SCRUM-1129 c.21829, autorización de
+ * Javier): el campo con nombre `merchantCriterioCaja` que pide scrum878, sin cambiar lo que se escribe.
  */
 const VERSION_CONGELADA = '1.0.0';
 const HUELLAS_CONGELADAS = Object.freeze({
   'src/modules/fiscal/verifactu/instalacion.ts': '4e1c8389dc52ad24',
   'src/modules/fiscal/verifactu/productor.ts': 'd57941ac9e3d0797',
-  'src/modules/fiscal/verifactu/registro.builder.ts': '9cba94aa34f736ea',
+  'src/modules/fiscal/verifactu/registro.builder.ts': '7823fa3578a2e0ed',
   'src/modules/fiscal/verifactu/sif.client.ts': '16065f4d390ab831',
   'src/modules/fiscal/verifactu/sif.cola.ts': '0f456c225b0e4350',
   'src/modules/fiscal/verifactu/sif.procesador.ts': 'a817d5b83c318cab',
   'src/modules/invoicing/domain/clienteCongelado.ts': 'b9acb99427984fc5',
   'src/modules/invoicing/domain/emisorCongelado.ts': 'f82c1d146a9e5c15',
-  'src/modules/invoicing/domain/emission.service.ts': '6bc8737eb96b7290',
+  'src/modules/invoicing/domain/emission.service.ts': 'fb326e3f1fb6f79f',
   'src/modules/invoicing/domain/encolarRemision.ts': '9250c4d15ce607c2',
-  'src/modules/invoicing/domain/invoiceNumber.service.ts': 'e08652a37d84d4f7',
+  'src/modules/invoicing/domain/invoiceNumber.service.ts': '65ff392f155d005b',
   'src/modules/invoicing/domain/selladoEstado.ts': 'f08728ab84b81ba2',
   'src/modules/invoicing/domain/tipoDocumento.ts': '09a9e00aeb1068de',
   'src/modules/invoicing/domain/vat.service.ts': '91d10ea9159cdc0c',
-  'src/modules/invoicing/domain/verifactu.service.ts': '40287a96b63efcf7',
+  'src/modules/invoicing/domain/verifactu.service.ts': '7433c5b8fb3af758',
 });
 
 // ── El instrumento ────────────────────────────────────────────────────────────────────────────

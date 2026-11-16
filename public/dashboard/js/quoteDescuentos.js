@@ -256,7 +256,29 @@
     return sumaBases > 0 && tipos.size > 1;
   }
 
+  /**
+   * SCRUM-1716b · el descuento global escrito EN %, pasado a EUROS. El % no viaja ni se guarda
+   * (E3/E4): lo que se guarda y se firma sigue siendo el importe, y sale de aquí.
+   *
+   * E1 · la base es la suma de líneas YA con su Dto., sin IVA, que es exactamente sobre lo que
+   *      `totalesConDescuento` resta el € global. Se pide a ESA función con global nulo, no se
+   *      recalcula aparte: dos cuentas sobre las mismas líneas acaban dando dos cifras.
+   *      Redondeo al céntimo.
+   * E5 · por encima de 100 no se convierte: `fueraDeRango` y `euros` nulo.
+   *
+   * @returns {{euros: number|null, fueraDeRango: boolean}}  vacío o ≤ 0 ⇒ sin descuento
+   */
+  function descuentoGlobalDesdePorcentaje(lineas, porcentaje) {
+    const pct = num(porcentaje);
+    if (pct === null || pct <= 0) return { euros: null, fueraDeRango: false };
+    if (pct > 100) return { euros: null, fueraDeRango: true };
+    const baseCents = totalesConDescuento(lineas, null).baseImponibleCents;
+    if (!(baseCents > 0)) return { euros: null, fueraDeRango: false };
+    return { euros: Math.round(baseCents * pct / 100) / 100, fueraDeRango: false };
+  }
+
   root.quoteDescuentos = {
+    descuentoGlobalDesdePorcentaje: descuentoGlobalDesdePorcentaje,
     dtoDeLinea: dtoDeLinea,
     precioEfectivo: precioEfectivo,
     importeDeLinea: importeDeLinea,

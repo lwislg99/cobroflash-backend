@@ -29,9 +29,16 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 // El banco se importa ANTES de cargar `dist/`: deja el doble de la base, el PDF y el correo.
 import {
-  banco, prisma, reiniciar, nuevoId, requiere, rutaDe, asentar,
+  banco, prisma, reiniciar as reiniciarBanco, nuevoId, requiere, rutaDe, asentar,
   M_ES, M_PT, CLIENTE,
 } from './_banco-emision-con-estado.mjs';
+
+// SCRUM-1585: con el flag ON el modo mira también el SII, y el banco (de S3) no trae la columna,
+// que en el modo cuenta como «No consta». Se pone en «No» aquí, al reiniciar, sin tocar el banco.
+function reiniciar() {
+  reiniciarBanco();
+  banco.tablas.merchant.find((m) => m.id === M_ES).llevaLibrosPorSii = false;
+}
 
 const { config } = requiere(rutaDe('dist/core/config/env.js'));
 const { sellarTrasEmision } = requiere(rutaDe('dist/modules/invoicing/domain/selladoEstado.js'));

@@ -319,6 +319,15 @@
 
 ## P1 — Bugs visibles al cliente / datos incorrectos
 
+### [ ] P1-1646c · con un `'` en el nombre del negocio, «Firmar y aceptar» del presupuesto no hace nada (12-nov-2026, hallazgo de la vara de SCRUM-1646c; arreglado en la misma rama)
+- **Población:** todo negocio cuyo `legalName` (o `name`, si no hay) lleve un apóstrofo — `D'Ángelo Reformas`, `Can Pep's`… —. Medido con `Fontanería & Hijos <Sur> 'Pepe'`: el error nombra el identificador que sigue al `'`, así que el que rompe es el apóstrofo (`&` y `<>` iban en el mismo nombre). Las comillas dobles NO se midieron en main.
+- **Qué pasa:** en la página `/pay/quote/:token`, el cliente firma, pulsa el botón y no ocurre nada: ni POST, ni éxito, ni aviso. El presupuesto no se acepta.
+- **Medido, no supuesto:** el HTML de `main` (`95265b07c`) con ese nombre, compilado script a script con `vm.Script` → `#1 ok · #2 ok · #3 SyntaxError: Unexpected identifier 'Pepe'`, en la cara de un precio y en la de tres opciones. Y en navegador con la CSP aplicada: 10 de 26 capturas distintas, todas «tras pulsar». Evidencias: `docs/master/evidencias/SCRUM-1646c/capturas.salida.txt` y `compilar-en-linea.mjs.txt`.
+- **Causa raíz:** el enlace de compartir por WhatsApp se metía con `encodeURIComponent` dentro de un literal JS de comilla simple del tercer `<script>` en línea; `encodeURIComponent` no escapa `'`, así que el apóstrofo cerraba el literal.
+- **Qué se cambió (SCRUM-1646c):** el script en línea desaparece; el guion se sirve desde `'self'` y todo lo que iba interpolado (incluido el nombre y el enlace) viaja en un `<script type="application/json">`, que no se ejecuta. Un `'` en un dato ya no puede tocar código.
+- **Guard:** `tests/scrum1646c-presupuesto-sin-script-en-linea.test.mjs`, «ARREGLO · un nombre de negocio con «'»…»: firma, POST y éxito con el nombre tal cual. Mutante que lo tumba SÓLO a él (8/9): entidad-escapar el `'` del texto de confirmación.
+- **Sigue en `[ ]`:** falta verlo en yaqu.app tras el merge (un negocio de QA con `'` en el nombre).
+
 ### [x] P1-1317 · la pantalla de Productos del OPERARIO sale con la lista vacía: `renderProductsView` lanza al cablear el margen (1-oct-2026, hallazgo de SCRUM-1317; arreglado en la misma rama)
 - **Qué pasa:** con sesión de operario, abrir Productos lanza `TypeError: Cannot read properties of
   null (reading 'addEventListener')` en `cablearMargen` (`productsView.js:604`, llamado desde
@@ -613,6 +622,7 @@
 ### [x] P2-1 · Acciones sobre presupuestos rechazados
 - **Mejora:** mostrar el motivo del cliente (depende de P1-3) y hacer visible **"Duplicar"** (o "Duplicar y editar") para revisar y reenviar. NO construir versionado/reapertura todavía — Duplicar es suficiente para el MVP.
 - **CERRADO (9 jun):** ya implementado — el detalle muestra "Motivo de rechazo" + "Comentario" (correctos desde P1-3) y el botón "⎘ Duplicar" está siempre visible en la cabecera (carga las líneas/tiers en un presupuesto nuevo, `duplicateQuote`). Sin código nuevo; lo desbloqueaba P1-3.
+- **CORREGIDO (2-nov-2026, SCRUM-1651): «/tiers» era FALSO.** `duplicateQuote` (`quotesDetailView.js`) mete `tiers` en la plantilla, pero el editor que la recibe (`renderQuotesView`, `quotesView.js`) no tiene opciones y sólo carga `lines` —su propio comentario: «`tiers` y `currency` viajan en la plantilla y NO se restauran aquí»—. Y en un presupuesto de 3 opciones `lines` son las de la recomendada (`quotes.routes.ts`, «líneas del tier recomendado como referencia»). Duplicar uno así abre el editor con UNA opción y pierde las otras dos sin avisar. El defecto vive en SCRUM-1651; esta línea no se borra para que se vea qué afirmaba.
 
 ### [x] P2-2 · Feedback al enviar presupuesto
 - **Mejora:** el aviso "Presupuesto enviado por WhatsApp" es muy discreto. Tras enviar, redirigir al detalle del presupuesto (muestra SENT + timeline) o mostrar un toast claro con enlace "Ver presupuesto".

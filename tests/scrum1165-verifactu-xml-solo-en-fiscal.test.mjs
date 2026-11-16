@@ -21,7 +21,7 @@ const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 // ⚠️ `id` REAL: `isDemoMerchant` es `id === 1` o `demo@yaqu.app` (ver scrum298).
 const ES_REAL = { id: 7, email: 'pro@fontaneria.es', country: 'ES', flags: null };
-const ES_CON_FLAG = { ...ES_REAL, flags: { INVOICING_ES_ENABLED: true } };
+const ES_CON_FLAG = { ...ES_REAL, flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false };
 const DEMO = { id: 1, email: 'demo@yaqu.app', country: 'ES', flags: null };
 
 /** La sentencia de `app.js` que convierte `me.modoEmision` en `window.appModoEmision`, tal cual. */

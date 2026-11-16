@@ -46,6 +46,54 @@ router.get('/', async (req, res) => {
   }
 });
 
+// SCRUM-1678 · LAS PLAZAS DEL PLAN, EN UN SOLO SITIO. Antes, el límite y su texto vivían SOLO dentro
+// del POST, así que el panel se enteraba DESPUÉS de que el admin rellenara el formulario. Ahora el
+// recuento, la regla y el literal salen de aquí para las dos rutas: `GET /admin/team/plazas` lo
+// enseña ANTES de abrir el formulario y el POST lo sigue haciendo cumplir (la red de siempre). Una
+// sola regla: si el panel dedujera el límite de `me.plan`, sería la tabla de entitlements copiada
+// en dos sitios, que es lo que divergió en SCRUM-1342.
+//
+// A10.3 (W3, regla 34): límite de usuarios por plan — 1 Pro/Founding, 5 Equipo. Cuenta = owner (1)
+// + miembros no suspendidos. Al tope: mensaje digno con la oferta Equipo (W1: oferta manual, no
+// autoservicio). Los literales son los que el POST ya servía: SCRUM-1678 no añade ninguno.
+export function mensajeDeLimiteDeUsuarios(maxUsers: number): string {
+  return maxUsers === 1
+    ? 'Tu plan incluye 1 usuario. ¿Trabajáis varios? El plan Equipo añade hasta 5 usuarios con aprobaciones y asignación — escríbenos y te lo activamos.'
+    : `Has llegado al límite de ${maxUsers} usuarios de tu plan Equipo.`;
+}
+
+async function plazasDelPlan(req: { merchantId: number }) {
+  const merchant = await prisma.merchant.findUnique({
+    where: { id: req.merchantId },
+    select: { name: true, plan: true },
+  });
+  const { maxUsers } = getEntitlements(merchant?.plan, { merchantId: req.merchantId }); // SCRUM-1342: si el plan no existe, el aviso dice de quién es
+  const activeMembers = await prisma.teamMember.count({
+    where: { merchantId: req.merchantId, status: { not: 'suspended' } },
+  });
+  const usadas = 1 + activeMembers;
+  const lleno = usadas >= maxUsers;
+  return { merchant, maxUsers, usadas, lleno };
+}
+
+// GET /admin/team/plazas — SCRUM-1678: { plazas, usadas, lleno, mensaje }. `mensaje` es el MISMO
+// literal del 409 `user_limit` cuando no cabe nadie más, y `null` cuando sí. Ruta aparte y no un
+// campo en `GET /admin/team`: ese array tiene otros consumidores y su forma no se toca (SCRUM-136).
+router.get('/plazas', async (req, res) => {
+  try {
+    const { maxUsers, usadas, lleno } = await plazasDelPlan(req);
+    return res.json({
+      plazas: maxUsers,
+      usadas,
+      lleno,
+      mensaje: lleno ? mensajeDeLimiteDeUsuarios(maxUsers) : null,
+    });
+  } catch (err) {
+    console.error('[GET /admin/team/plazas]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 // POST /admin/team  — invitar nuevo miembro (límite W3 vía entitlements, regla 34)
 router.post('/', async (req, res) => {
   try {
@@ -64,25 +112,13 @@ router.post('/', async (req, res) => {
     if (!name)  return res.status(400).json({ error: 'name_required' });
     if (!email || !email.includes('@')) return res.status(400).json({ error: 'invalid_email' });
 
-    const merchant = await prisma.merchant.findUnique({
-      where: { id: req.merchantId },
-      select: { name: true, plan: true },
-    });
-
-    // A10.3 (W3, regla 34): límite de usuarios por plan — 1 Pro/Founding, 5
-    // Equipo. Cuenta = owner (1) + miembros no suspendidos. Al tope: mensaje
-    // digno con la oferta Equipo (W1: oferta manual, no autoservicio).
-    const { maxUsers } = getEntitlements(merchant?.plan, { merchantId: req.merchantId }); // SCRUM-1342: si el plan no existe, el aviso dice de quién es
-    const activeMembers = await prisma.teamMember.count({
-      where: { merchantId: req.merchantId, status: { not: 'suspended' } },
-    });
-    if (1 + activeMembers >= maxUsers) {
+    // El límite: misma regla y mismo literal que `GET /admin/team/plazas` (SCRUM-1678, arriba).
+    const { merchant, maxUsers, lleno } = await plazasDelPlan(req);
+    if (lleno) {
       return res.status(409).json({
         error: 'user_limit',
         maxUsers,
-        message: maxUsers === 1
-          ? 'Tu plan incluye 1 usuario. ¿Trabajáis varios? El plan Equipo añade hasta 5 usuarios con aprobaciones y asignación — escríbenos y te lo activamos.'
-          : `Has llegado al límite de ${maxUsers} usuarios de tu plan Equipo.`,
+        message: mensajeDeLimiteDeUsuarios(maxUsers),
       });
     }
 

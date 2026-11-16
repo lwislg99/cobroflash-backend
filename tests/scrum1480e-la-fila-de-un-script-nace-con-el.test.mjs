@@ -77,9 +77,10 @@ test('SCRUM-1480e · los 28 scripts que decide el área del ticket creador tiene
 });
 
 test('SCRUM-1480e · `carriles.mjs de` avisa cuando a un script sólo lo cubre la fila general, y calla cuando tiene fila', () => {
-  const nuevo = de('scripts/__un-script-que-nace-hoy__.mjs');
+  // SCRUM-1633: un fichero que aún no existe se pregunta como ruta NUEVA; a secas contesta «esa ruta no existe».
+  const nuevo = spawnSync(process.execPath, [CLI, 'de', '--nueva', path.join(RAIZ, 'scripts/__un-script-que-nace-hoy__.mjs')], { cwd: RAIZ, env: entorno, encoding: 'utf8' });
   assert.equal(nuevo.status, 0, nuevo.stderr);
-  assert.match(nuevo.stdout, /SIN CERRADURA/, 'un script nuevo cae en la fila general');
+  assert.match(nuevo.stdout, /RUTA NUEVA \(hoy no existe\) · SIN CERRADURA/, 'un script nuevo cae en la fila general, y se dice que es nuevo');
   assert.match(nuevo.stdout, /su dueño no lo ha decidido nadie/, 'y se le dice que nadie ha decidido su dueño');
   assert.match(nuevo.stdout, /área del ticket que lo crea/, 'con el criterio');
   assert.match(nuevo.stdout, /dos-equipos\.md §3\.3/, 'y dónde está escrito');

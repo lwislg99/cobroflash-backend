@@ -91,19 +91,11 @@ async function renderJobsView(container) {
     }
     zonaNuevo.appendChild(bNuevo);
 
-    // Sprint Tecnosel · LA PUERTA A «PARTES POR VALORAR». No va en la barra lateral porque su
-    // rótulo no está aprobado y ahí no cabe un marcador (SCRUM-420): cuando el fundador lo firme,
-    // se mueve. Mientras, la pantalla es alcanzable — que es lo que la separa de un fichero.
-    const bValorar = document.createElement("button");
-    bValorar.className = "btn-secondary btn-sm";
-    bValorar.id = "jobs-partes-valorar";
-    // SCRUM-917c · el margen que iba aquí en línea (`style.marginLeft`) lo pone ahora el `gap` de
-    // `.jobs-nuevo` en la hoja: mismo hueco, sin estilo en línea.
-    bValorar.textContent = "Partes por valorar";
-    bValorar.addEventListener("click", () => {
-      if (window.renderAppView) window.renderAppView("partes-oficina");
-    });
-    zonaNuevo.appendChild(bValorar);
+    // 🔴 SCRUM-1700 (T7 de SCRUM-1686, N2 firmado) · AQUÍ IBA LA PUERTA A «PARTES POR VALORAR», y
+    // se retira. Era provisional («cuando el fundador lo firme, se mueve»): el rótulo se firmó el
+    // 3-sep-2026 y la entrada vive en el menú desde entonces (`index.html`, `data-rol="admin"`),
+    // que ahora además dice cuántos esperan (`contarPartesPorValorar`, `app.js`). Dos puertas a la
+    // misma cola, una de ellas en la pantalla del operario, sobraban.
   }
 
   uiSkeletonCards(list, 4);
@@ -136,7 +128,10 @@ async function renderJobsView(container) {
   // SCRUM-917c · las dos preguntas del fundador, contestadas ANTES de la lista. Se pintan UNA vez
   // y con TODOS los Trabajos, no con los del filtro: «cuánto me deben» no cambia porque esté
   // mirando sólo los pendientes.
-  pintarCifrasDeLaLista(document.getElementById('jobs-cifras'), jobs);
+  // SCRUM-1725 (D1) · quien no ve el cobro no recibe ni la cifra ni los filtros (ver `veEstadoDeCobro`).
+  const veCobro = veEstadoDeCobro(window.appUserRole);
+  if (!veCobro) jobsCobroFilter = 'all';
+  pintarCifrasDeLaLista(document.getElementById('jobs-cifras'), jobs, veCobro);
 
   // SCRUM-11: filtro por estado de cobro (segmentado; reutiliza botones del inventario,
   // NO crea componente nuevo). Filtra el array ANTES del agrupado → no rompe los grupos.
@@ -145,7 +140,7 @@ async function renderJobsView(container) {
     for (const j of jobs) if (counts[j.estadoCobro] != null) counts[j.estadoCobro]++;
 
     filterBar.innerHTML = '';
-    [['all', 'Todos'], ['Pendiente', 'Pendiente'], ['Parcial', 'Parcial'], ['Pagado', 'Pagado']].forEach(([key, label]) => {
+    (veCobro ? [['all', 'Todos'], ['Pendiente', 'Pendiente'], ['Parcial', 'Parcial'], ['Pagado', 'Pagado']] : []).forEach(([key, label]) => {
       const b = document.createElement('button');
       b.className = 'btn-sm ' + (jobsCobroFilter === key ? 'btn-secondary' : 'btn-ghost');
       b.textContent = `${label} · ${key === 'all' ? counts.all : counts[key]}`;
@@ -354,7 +349,27 @@ function cifraDeLaLista(rotulo, valor, pie, extra) {
   return caja;
 }
 
-function pintarCifrasDeLaLista(zona, jobs) {
+/**
+ * SCRUM-1725 (D1) · ¿Este rol ve el ESTADO DE COBRO de un Trabajo (lo cobrado, lo que falta, «Por
+ * cobrar», los filtros Pendiente/Parcial/Pagado)?
+ *
+ * FIRMADO por el fundador en SCRUM-1707 c.21547 (Q1, literal): «Importe de SUS trabajos: ve el
+ * importe de los trabajos suyos (igual que ya ve sus presupuestos), pero SIN la tarjeta "Por cobrar"
+ * ni los filtros de cobro del negocio.» El servidor (1707, `trabajoParaElRol`) le manda vacíos
+ * `totalCobrado`, `estadoCobro`, `remaining`…; y esta lista calcula «lo que falta» EN EL NAVEGADOR,
+ * así que con lo cobrado vacío (→ 0) diría que falta el importe entero: una cifra FALSA, peor que
+ * no decir nada (medido, SCRUM-1725 ⓪). El IMPORTE sí se queda.
+ *
+ * LISTA BLANCA y fail-closed, como `puedeVerEconomia` (SCRUM-597) y `veNegocio` del Inicio: un rol
+ * que no se reconoce NO VE. Va en `window` para que la ficha del Trabajo haga la MISMA pregunta y
+ * no escriba la suya (canon de SCRUM-831: «una decisión de producto no vive en una vista»).
+ */
+function veEstadoDeCobro(rol) {
+  return rol === 'admin';
+}
+if (typeof window !== 'undefined') window.veEstadoDeCobro = veEstadoDeCobro;
+
+function pintarCifrasDeLaLista(zona, jobs, veCobro = true) {
   if (!zona) return;
   zona.innerHTML = '';
   const { deHoy, porCobrar } = resumenDeLaLista(jobs, new Date());
@@ -368,7 +383,7 @@ function pintarCifrasDeLaLista(zona, jobs) {
     n ? deHoy.map((j) => (j.customer && j.customer.name) || 'Cliente').join(' · ') : 'Nada para hoy.',
   ));
 
-  if (!porCobrar) return;
+  if (!porCobrar || !veCobro) return;
   const partes = [];
   if (porCobrar.conFalta) partes.push(`en ${porCobrar.conFalta} ${porCobrar.conFalta === 1 ? 'trabajo' : 'trabajos'} sin cerrar`);
   if (porCobrar.sinImporte) partes.push(`${porCobrar.sinImporte} sin importe de referencia, ${porCobrar.sinImporte === 1 ? 'no entra' : 'no entran'}`);
@@ -708,7 +723,8 @@ function renderJobRows(list, jobs, container, todos, equipo) {
     tbody.className = 'jobs-grupo';
 
     // La cabecera del grupo, con su importe y su salvedad: microcopy aprobada que NO se toca.
-    const resumen = g.key === 'terminado' && typeof resumenTerminadoSinCobrar === 'function'
+    // SCRUM-1725 (D1) · el importe «por cobrar» y su salvedad son estado de cobro: no para quien no lo ve.
+    const resumen = g.key === 'terminado' && veEstadoDeCobro(window.appUserRole) && typeof resumenTerminadoSinCobrar === 'function'
       ? resumenTerminadoSinCobrar(g.items)
       : null;
     // SCRUM-917c · «por cobrar» junto a la suma (dos palabras firmadas, comentario 15881): sin
@@ -940,6 +956,9 @@ function celdaImporte(j) {
   if (falta === null) {
     linea('jobs-importe-falta jobs-importe-sin', 'Sin importe');
     linea('jobs-importe-de', 'no hay presupuesto aceptado');
+  } else if (!veEstadoDeCobro(window.appUserRole)) {
+    // SCRUM-1725 (D1) · el importe, sin lo que falta ni «de»: c.21547 deja el importe y quita el cobro.
+    linea('jobs-importe-falta', fmtMoneyEs(j.importeReferencia, cur));
   } else if (cobrado > Number(j.importeReferencia) + 0.005) {
     importeComoHoy(td, j);
   } else if (falta <= 0) {
@@ -1217,6 +1236,43 @@ function jobRow(j, container, equipo) {
   // SCRUM-1570 c.20161: sale de la caja y el guard no se toca. Sigue siendo el MISMO `<button>`
   // nativo en la misma celda —el teclado de SCRUM-1562 no cambia— y va DELANTE, como en
   // Presupuestos, para que el «⋯» siga cerrando la fila.
+  // ── 🔴 SCRUM-1700 · N1 «Abrir parte»: EN OBRA, EL DOCUMENTO ES EL PARTE ──────────────────────
+  // Texto FIRMADO (tanda N1-N13 de SCRUM-1686, c.21470): botón principal del Trabajo EN CURSO. Es
+  // lo primero que ve el operario del piloto (D1 de SCRUM-1686: en obra, un documento, el parte).
+  //
+  // FUERA de `.jobs-acciones`, como «Ver detalle» (SCRUM-1562f): esa caja es la ESCALERA
+  // (`jobNextAction`), compartida con el detalle y comparada por `guard:escalera-por-estado`.
+  // Esto no la cambia ni la sustituye: es la puerta directa al parte desde la lista.
+  //
+  // ABRE EL BORRADOR DE ESTE TRABAJO, Y SI NO HAY, CREA EL DE ESTA VISITA (D2: un parte por
+  // visita). Ni uno nuevo cada vez que se pulsa, ni abrir el FIRMADO de la visita anterior —que ya
+  // no se puede tocar— para apuntar lo de hoy.
+  if (j.status === 'en_curso') {
+    const bParte = document.createElement('button');
+    bParte.className = 'btn-primary btn-sm';
+    bParte.setAttribute('data-abrir-parte', '1');
+    bParte.dataset.filaNoNavega = '1';
+    bParte.textContent = 'Abrir parte';
+    bParte.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      bParte.disabled = true;
+      try {
+        const lista = await apiRequest('/admin/partes');
+        const borrador = (lista && Array.isArray(lista.partes) ? lista.partes : [])
+          .find((p) => p && p.jobId === j.id && p.estado === 'borrador');
+        const parte = borrador
+          || await apiRequest('/admin/partes', { method: 'POST', body: JSON.stringify({ jobId: j.id }) });
+        if (window.renderAppView) window.renderAppView('parte-detail', { parteId: parte.id });
+      } catch (_err) {
+        // El MISMO aviso, literal, que la puerta del detalle (`jobDetailView.js`, SCRUM-652).
+        if (typeof showToast === 'function') showToast('No se ha podido abrir el parte. Vuelve a intentarlo.', 'warn');
+      } finally {
+        bParte.disabled = false;
+      }
+    });
+    celda.appendChild(bParte);
+  }
+
   const bDetalle = document.createElement('button');
   bDetalle.className = 'btn-ghost btn-sm';
   bDetalle.textContent = 'Ver detalle';

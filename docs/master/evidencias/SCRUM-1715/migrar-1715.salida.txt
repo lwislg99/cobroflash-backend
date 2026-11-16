@@ -1,0 +1,2 @@
+﻿scrum1188d-tiers-tambien-se-vacia: fetch( 1 → 0 · llamadas a pedirSinAgente( 1 · imports hasta la línea 26 · node:http ya importado
+POBLACION=1 ficheros · malos=0 · EXIT=0

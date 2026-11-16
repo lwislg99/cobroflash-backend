@@ -42,6 +42,7 @@ import {
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const F_PUBLICA = path.join(RAIZ, 'src', 'modules', 'jobs', 'app', 'routes', 'albaranPublic.routes.ts');
+const F_GUION = path.join(RAIZ, 'src', 'modules', 'jobs', 'app', 'routes', 'albaranFirmaNavegador.ts'); // SCRUM-1646
 const F_ADMIN = path.join(RAIZ, 'src', 'modules', 'jobs', 'app', 'routes', 'albaranes.routes.ts');
 
 // ── 🔴 EL TEST · LO QUE PASA CUANDO EL ALBARÁN CAMBIA ────────────────────────────────────
@@ -123,17 +124,27 @@ test('SCRUM-361 · la versión VIAJA al cliente y VUELVE con la firma', () => {
   // prohíbe una palabra cae sobre el comentario que explica la prohibición. Me mordió a mí
   // también, con el comentario de aquí abajo que dice por qué no se duplica el hash.
   const fuente = leerFuente(F_PUBLICA);
+  // ⚠️ RE-ANCLADO por SCRUM-1646 (10-nov-2026): con la CSP, el código de la página ya no va en línea.
+  // La versión viaja en los DATOS de la página (`version: albaran.version`) y el guion servido
+  // (`albaranFirmaNavegador.ts`, una cadena constante) la mete en el cuerpo del POST
+  // (`version:D.version`). Se exigen LAS DOS mitades, y la búsqueda del hash cubre ahora los dos
+  // ficheros: el guion es parte de la página aunque viva aparte. Que la versión llega de verdad al
+  // cuerpo del POST lo mira, ejecutándolo, `tests/scrum1646-albaran-sin-script-en-linea.test.mjs`.
+  const guion = leerFuente(F_GUION);
 
   // Mencionar no es hacer: no basta con que el fichero diga «version», tiene que ponerla en el
   // cuerpo del POST y compararla en el servidor.
-  assert.match(fuente, /version:\$\{JSON\.stringify\(albaran\.version\)\}/,
-    '🔴 la página de firma NO manda la versión que pintó. Sin eso el servidor no tiene contra qué ' +
+  assert.match(fuente, /\bversion:\s*albaran\.version\b/,
+    '🔴 la página de firma NO pinta la versión que enseña. Sin eso el servidor no tiene contra qué ' +
     'comparar, y el cliente puede firmar un documento que ya cambió.');
+  assert.match(guion, /JSON\.stringify\(\{[^}]*\bversion:\s*D\.version\b/,
+    '🔴 el guion de la página de firma NO manda en el POST la versión que la página pintó.');
   assert.match(fuente, /puedeFirmarEstaVersion\(req\.body\?\.version, albaran\.version\)/,
     '🔴 el servidor NO compara la versión recibida con la de ahora. La manda el cliente y nadie la mira.');
 
   // 🔴 Y NO se ha duplicado el hash: era el riesgo entero que H0 señaló.
   for (const rastro of ['crypto.subtle', 'computeAlbaranContentHash', 'contenidoCanonico', 'sha256', 'digest(']) {
+    assert.ok(!guion.includes(rastro), `🔴 el guion de la página pública menciona «${rastro}»: se está recalculando el hash en el cliente.`);
     assert.ok(!fuente.includes(rastro),
       `🔴 la página pública menciona «${rastro}» EN CÓDIGO: se está recalculando el hash en el cliente.\n\n` +
       '  H0 midió por qué no: habría DOS implementaciones del mismo hash, y dos que derivan en\n' +

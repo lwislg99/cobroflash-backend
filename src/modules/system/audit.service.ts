@@ -314,9 +314,22 @@ function datosDe(params: AuditParams<AuditAction>): Record<string, unknown> {
  * No acepta las acciones bloqueantes: el tipo lo impide y `tsc` lo caza en cada tanda.
  */
 export function recordAudit(params: AuditParams<AuditActionFireSafe>): void {
+  // SCRUM-1705 · SIGUE SIN TUMBAR LA ACCIÓN, PERO YA NO CALLA. Antes salía sólo `e?.message`, y
+  // en el CI del 11-nov esa línea salió VACÍA decenas de veces: un fallo de escritura que no decía
+  // ni qué acción, ni de qué merchant, ni qué error. Ahora el canal de errores del servidor
+  // (stderr, el que recoge Railway) dice las tres cosas. `meta` NO se imprime: puede llevar datos
+  // personales, y para encontrar la fila que falta bastan la acción, el merchant y la entidad.
   prisma.auditLog
     .create({ data: datosDe(params) as any })
-    .catch((e) => console.error('[audit] no se pudo registrar:', e?.message));
+    .catch((e: any) => {
+      const codigo = e?.code ? ` ${e.code}` : '';
+      const motivo = e?.message || String(e);
+      console.error(
+        `[audit] no se pudo registrar «${params.action}» (merchant ${params.merchantId}` +
+          `${params.entityType ? `, ${params.entityType} ${params.entityId ?? '-'}` : ''}):` +
+          ` ${e?.name ?? typeof e}${codigo}: ${motivo}`,
+      );
+    });
 }
 
 /**

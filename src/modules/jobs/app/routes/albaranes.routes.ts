@@ -35,7 +35,10 @@ import { datosDuplicado } from '../../domain/albaranDuplicado'; // SCRUM-302: qu
 import { ERROR_ALBARAN_CAMBIADO, exigirNombreFirmante, normalizarLugarEntrega, resolverCalidadFirmante } from '../../domain/albaranFirmante';
 // SCRUM-361 (H6 · fase 2): dos editores a la vez dejaban de existir el uno para el otro.
 import { ERROR_ALBARAN_CAMBIADO_AL_EDITAR, puedeEditarEstaVersion } from '../../domain/albaranEdicion';
-import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-467
+import { seesOnlyOwnJobs, seesAllJobs, adminOnlyAlbaranField } from '../../../../core/http/roleCapabilities'; // SCRUM-467 / SCRUM-1712
+// SCRUM-1707 (c.21547 Q2) · cada respuesta JSON del albarán pasa por aquí: el operario, sin precios.
+// El PDF (`/:id/pdf`) NO: lo gobierna `ocultarPreciosEnDocumento`, no el rol (c.21556 ②).
+import { albaranParaElRol, filaDeAlbaranParaElRol, grupoPendienteParaElRol } from '../../domain/albaranParaElRol';
 import { esSuyoElTrabajo, SELECT_DUENOS } from '../../domain/accesoAlTrabajo'; // SCRUM-849
 import { quienPideDe } from '../../../../core/documentos/accesoALaFactura'; // SCRUM-1555
 import { wherePresupuestosVisibles } from '../../../../core/documentos/accesoAlPresupuesto'; // SCRUM-1555
@@ -65,7 +68,7 @@ import {
 } from '../../domain/albaranFacturacion';
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service';
 import { lineasParaFacturar, tieneDescuentoGlobal } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-887
-import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
+import { congelarCliente, clienteDelDocumento } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729 · SCRUM-1650b (lector de GET /:id)
 import { congelarEmisorDesdeFicha } from '../../../invoicing/domain/emisorCongelado'; // SCRUM-665
 import { datosDeAlbaranEmitido } from '../../domain/albaranEmision'; // SCRUM-841
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
@@ -132,7 +135,7 @@ const lectorAcotado = (jobIds: number[]): LectorListado => ({
     select: {
       id: true, merchantId: true, jobId: true, numero: true, fecha: true,
       createdAt: true, estado: true, lineas: true, invoiceId: true,
-      modoValoracion: true,
+      modoValoracion: true, customerName: true, customerLegalName: true, // SCRUM-1650 · cliente congelado al emitir
     },
   }),
 });
@@ -144,7 +147,7 @@ const lectorPrismaListado: LectorListado = {
     select: {
       id: true, merchantId: true, jobId: true, numero: true, fecha: true,
       createdAt: true, estado: true, lineas: true, invoiceId: true,
-      modoValoracion: true,
+      modoValoracion: true, customerName: true, customerLegalName: true, // SCRUM-1650 · cliente congelado al emitir
     },
   }),
   jobs: ({ merchantId, ids }) => prisma.job.findMany({
@@ -201,7 +204,8 @@ router.get('/', async (req, res) => {
       ? lectorAcotado(await jobIdsVisiblesPara(req.merchantId!, req.teamMemberId ?? null))
       : lectorPrismaListado;
     const listado = await listarAlbaranesDelMerchant(req.merchantId!, lector);
-    return res.json(listado);
+    // SCRUM-1707 · el `total` de cada fila es la suma de los precios: al operario, `null`.
+    return res.json({ ...listado, filas: listado.filas.map((f) => filaDeAlbaranParaElRol(f, req.userRole)) });
   } catch (err: any) {
     console.error('[GET /admin/albaranes]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
@@ -221,7 +225,10 @@ router.get('/pendientes-facturar', async (req, res) => {
       ? await jobIdsVisiblesPara(req.merchantId!, req.teamMemberId ?? null)
       : null;
     const clientes = await getPendientesFacturar(req.merchantId!, prisma, visibles);
-    res.json({ clientes });
+    // SCRUM-1707 · el `importePotencial` de cada grupo es la suma de los precios: al operario, `null`.
+    res.json({
+      clientes: clientes.map((c) => ({ ...c, grupos: c.grupos.map((g) => grupoPendienteParaElRol(g, req.userRole)) })),
+    });
   } catch (err: any) {
     console.error('[GET /admin/albaranes/pendientes-facturar]', err?.message || err);
     res.status(500).json({ error: 'internal_error' });
@@ -628,6 +635,17 @@ router.patch('/:id', async (req, res) => {
     const found = await findAlbaran(req);
     if (!found.ok) return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
     const { albaran } = found;
+    // SCRUM-1712: valorar es del admin — ni valorar, ni cambiar el precio de la oficina, ni
+    // desvalorar (por eso va contra el modo ACTUAL). Antes de nada más: la petición ENTERA.
+    if (!seesAllJobs(req.userRole)) {
+      const campoAdmin = adminOnlyAlbaranField(
+        { modoValoracion: req.body?.modoValoracion, lineas: req.body?.lineas },
+        albaran.modoValoracion === 'VALORADO' ? 'VALORADO' : 'SIN_VALORAR',
+      );
+      if (campoAdmin) {
+        return res.status(403).json({ error: 'forbidden', required_role: 'admin', field: campoAdmin });
+      }
+    }
     if (albaran.estado === 'firmado') {
       return res.status(409).json({ error: 'albaran_locked', message: 'Un albarán firmado está congelado: no se puede editar.' });
     }
@@ -815,7 +833,7 @@ router.patch('/:id', async (req, res) => {
       meta: { cambios, deVersion: albaran.version, aVersion: updated.version },
       ip: requestIp(req),
     });
-    return res.json(serializeAlbaran(updated));
+    return res.json(albaranParaElRol(serializeAlbaran(updated), req.userRole)); // SCRUM-1707
   } catch (err: any) {
     console.error('[PATCH /admin/albaranes/:id]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
@@ -883,7 +901,7 @@ router.get('/:id', async (req, res) => {
     // `customer_missing_phone` en los dos envíos (`albaranWhatsApp.service.ts`): sin canal, esos
     // botones sólo saben fallar y la pantalla no los ofrece. Viaja resuelto, sin el número.
     const customer = cliente
-      ? { id: cliente.id, name: cliente.name, puedeRecibirWhatsApp: !!canalDeWhatsApp(cliente) }
+      ? { id: cliente.id, name: clienteDelDocumento(albaran, cliente).name, puedeRecibirWhatsApp: !!canalDeWhatsApp(cliente) } // SCRUM-1650b · el nombre que quedó ESCRITO al emitir (sugerencia del firmante, albaranDetailView.js)
       : null;
 
     // SCRUM-302 · EL PRESUPUESTO DE ORIGEN, Y ES DEL DOCUMENTO — NO DE LAS LÍNEAS.
@@ -919,7 +937,9 @@ router.get('/:id', async (req, res) => {
     // SCRUM-49b · lo que de verdad pasó con el último WhatsApp «para firmar». Sólo LEE.
     const entregaParaFirmar = await leerEntregaParaFirmar(req.merchantId, albaran.id, albaran.enviadoParaFirmaAt);
 
-    return res.json({
+    // SCRUM-1707 · el objeto ENTERO pasa por el recorte, no sólo `serializeAlbaran`: así lo que se
+    // añada abajo mañana con dinero dentro cae en la misma regla en vez de saltársela.
+    return res.json(albaranParaElRol({
       ...serializeAlbaran(albaran),
       // El rail: contexto de solo lectura. Nada de aquí es accionable desde esta página.
       job: job ? { id: job.id, titulo: job.titulo, direccion: job.direccion } : null,
@@ -948,7 +968,7 @@ router.get('/:id', async (req, res) => {
       // esta ruta sólo LEE, no lo genera.
       firmaToken: albaran.firmaToken ?? null,
       cabenMasFotos: fotos < FOTOS_MAX_POR_ALBARAN, // SCRUM-1302 (G)
-    });
+    }, req.userRole));
   } catch (err: any) {
     console.error('[GET /admin/albaranes/:id]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
@@ -960,9 +980,18 @@ router.post('/:id/emitir', async (req, res) => {
     const found = await findAlbaran(req);
     if (!found.ok) return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
     const { albaran } = found;
-    if (albaran.estado === 'emitido') return res.json(serializeAlbaran(albaran)); // idempotente
+    if (albaran.estado === 'emitido') return res.json(albaranParaElRol(serializeAlbaran(albaran), req.userRole)); // idempotente · SCRUM-1707
     if (!canTransitionAlbaran(albaran.estado, 'emitido')) {
       return res.status(409).json({ error: 'invalid_transition', from: albaran.estado, to: 'emitido' });
+    }
+    // SCRUM-1673 · UN ALBARÁN SIN LÍNEAS NO SE EMITE. Medido en yaqu.app (SCRUM-1658): un borrador
+    // con `lineas: []` salía numerado y emitido, listo para firmar sin decir qué se hizo. El
+    // borrador vacío SÍ se puede crear (es un documento a medias); lo que no puede es salir.
+    // Fail-closed: un `lineas` que no es lista cuenta como vacío. DESPUÉS de la salida idempotente
+    // —un emitido viejo se devuelve tal cual, no se reescribe— y ANTES de congelar nada. Solo el
+    // código: no hay texto firmado para este caso (regla 39); la pantalla lo traduce (SCRUM-1659).
+    if (!Array.isArray(albaran.lineas) || albaran.lineas.length === 0) {
+      return res.status(409).json({ error: 'albaran_sin_lineas' });
     }
 
     // ── SCRUM-841 · EL CLIENTE SE CONGELA AQUÍ, AL EMITIR ──────────────────────────────────
@@ -997,7 +1026,7 @@ router.post('/:id/emitir', async (req, res) => {
       // obligatorio: un emisor que se olvide del congelado no compila.
       data: datosDeAlbaranEmitido(clienteCongelado),
     });
-    return res.json(serializeAlbaran(updated));
+    return res.json(albaranParaElRol(serializeAlbaran(updated), req.userRole)); // SCRUM-1707
   } catch (err: any) {
     console.error('[POST /admin/albaranes/:id/emitir]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
@@ -1030,7 +1059,7 @@ router.post('/:id/duplicar', async (req, res) => {
       const numero = await allocateAlbaranNumber(tx, req.merchantId!);
       return tx.albaran.create({ data: { ...datosDuplicado(albaran as any), numero } as any });
     });
-    return res.status(201).json(serializeAlbaran(copia));
+    return res.status(201).json(albaranParaElRol(serializeAlbaran(copia), req.userRole)); // SCRUM-1707
   } catch (err: any) {
     console.error('[POST /admin/albaranes/:id/duplicar]', err?.message || err);
     // SCRUM-728 · el cerrojo de serie no dio turno a tiempo. No es un fallo del servidor ni del
@@ -1129,7 +1158,7 @@ router.post('/:id/firmar', async (req, res) => {
     await ensureAlbaranPdf(albaran.id, true).catch((e) =>
       console.error('[albaranes] PDF tras firmar:', e?.message || e),
     );
-    return res.json(serializeAlbaran({ ...updated, pdfUrl: `/admin/albaranes/${updated.id}/pdf` }));
+    return res.json(albaranParaElRol(serializeAlbaran({ ...updated, pdfUrl: `/admin/albaranes/${updated.id}/pdf` }), req.userRole)); // SCRUM-1707
   } catch (err: any) {
     console.error('[POST /admin/albaranes/:id/firmar]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });

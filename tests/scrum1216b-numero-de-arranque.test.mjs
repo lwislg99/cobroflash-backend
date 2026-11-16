@@ -46,7 +46,7 @@ const ses = sesionesDe(77, { id: 9, role: 'technician', merchantId: 77 });
 /** El merchant de partida: sin declarar nada, sin serie del año. */
 const BASE = {
   invoiceSeriesPrefix: 'CF', invoiceSeriesYear: null, nextInvoiceNumber: 1, nextRectInvoiceNumber: 1,
-  timezone: ZONA, country: 'ES', email: 'pro@x.es', flags: { INVOICING_ES_ENABLED: true },
+  timezone: ZONA, country: 'ES', email: 'pro@x.es', flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false,
 };
 
 /**

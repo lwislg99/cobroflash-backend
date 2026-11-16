@@ -338,15 +338,8 @@ const APARCADOS = [
       + 'Lo desbloquea el fundador el dia que quiera un aviso de «otra peticion se te ha '
       + 'adelantado»; registro en `docs/microcopy/2026-09-07-SCRUM-814-tramo-tomado.md`.',
   },
-  {
-    texto: '¿Tienes el domicilio fiscal en Canarias?',
-    motivo: 'APROBADO Y SIN PANTALLA DONDE PINTARSE TODAVÍA (SCRUM-1536d, 22-oct-2026). Es la segunda '
-      + 'pregunta Q1 del alta, firmada por el fundador en SCRUM-1536 c.20225. Su sitio es la pantalla '
-      + 'pública de alta, y está cerrada: `POST /auth/register` contesta siempre 409 (SCRUM-1515). '
-      + 'Hoy la pregunta la hace quien lanza la consola de alta (`--domicilio-canarias si|no`). Lo '
-      + 'desbloquea J3 el día que se reabra el alta (pieza C del tramo 1536c): se pinta entonces, '
-      + 'literal, en `public/register.html`. Registro: `docs/master/SCRUM-1536.md`, tramo 1536d.',
-  },
+  // SCRUM-1685b (11-nov-2026): «¿Tienes el domicilio fiscal en Canarias?» salió de aquí al pintarse,
+  // literal, en `public/register.html` (el alta con invitación). Registro: docs/master/SCRUM-1685.md.
   {
     texto: '2. Líneas',
     motivo: 'SUSTITUIDO POR UNA FIRMA POSTERIOR (SCRUM-915d, 18-sep-2026). Era el título del bloque '
