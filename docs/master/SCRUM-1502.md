@@ -1441,7 +1441,7 @@ en `src/` no cambia nada. Suite entera en local: NO CORRIDA. yaqu.app: no abiert
 
 ## SCRUM-1502t · Tramo 19 (J4, 16-nov-2026): las 3 marcas que no afirman firma, reescritas con el visto bueno de Javier (c.21915) — sin respaldo 11 → 8
 
-**Medido contra:** `origin/main` = `37947dc1522a094320a4499eac28800f38cdc659` · 2026-11-16T15:43:49Z (hora de GitHub)
+**Medido contra:** `origin/main` = `4e2aaab3a55ed4779d9b6272751767940de39f38` · 2026-11-16T16:19:50Z (hora de GitHub)
 A9: sin fallo que generalice — no hubo ningún error mío que pidiera comprobación; la lectura parcial de Jira (abajo, «Lo que NO se ha hecho») fue una decisión por el contexto, y está dicha, no escondida
 
 ### Lo que se pidió y quién lo firmó
@@ -1473,6 +1473,9 @@ mueve). Control de «ni un carácter visible»: en `git diff -U0`, las líneas c
   conjunto, no como número). `porNivel`: negada 13, citada 1, rastreable 200, anclado 52, documental 12 iguales;
   sin-respaldo 11 → 8. Ninguna marca cambia de nivel: las 3 salen del censo porque ya no casan con `MARCA`.
 - **Verde** (trinquete en 8): 16 de 16, y `scrum715` 5 de 5 (21 de 21, 0 saltos).
+- Lo de arriba se midió sobre `37947dc15`. Main avanzó 25 commits y tocó `homeView.js`, que es una de las 8. Después
+  de `git merge origin/main` (base `4e2aaab3a`): siguen 8, el mismo conjunto, con `homeView.js:838` → `:874`
+  (main la ha movido); rastreable 200 → 202 por lo que trae main; el guard, 16 de 16.
 
 ⚠️ **Sobre «el guard no se toca»:** la constante `SIN_RESPALDO` se ha bajado de 11 a 8, que es lo que el propio
 guard exige cuando el recuento baja, y lo que hicieron 1502o, 1502p y 1502q. Es apretar el trinquete, no
