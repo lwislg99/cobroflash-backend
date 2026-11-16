@@ -120,6 +120,11 @@ test('1076d · sin cita no hay fila: sólo salen modelos de la tabla de citas, y
   const conCita = new Set(CITAS_PLAZOS.filter((c) => c.cita && c.orden && c.articulo).map((c) => c.modelo));
   assert.deepEqual(new Set(filas.map((f) => f.modelo)), conCita);
   for (const sinCita of ['131', '349', '100']) assert.ok(!filas.some((f) => f.modelo === sinCita));
+  // Una entrada de la tabla con la cita vacía no da fila; su gemela con cita, sí (control positivo).
+  const base = CITAS_PLAZOS.find((c) => c.modelo === '390');
+  const tabla = [{ ...base, modelo: '131', cita: '' }, base];
+  const conHueco = construirCalendario({ ejercicio: 2026, hoy: '2026-11-16', esVisible: todoVisible, marcas: [], citas: tabla });
+  assert.deepEqual(conHueco.map((f) => f.modelo), ['390'], 'la entrada sin cita no tiene fila');
   const db = clienteFalso();
   assert.deepEqual(await marcarPlazo(db, { merchantId: 1, modelo: '131', ejercicio: 2026, periodo: '1T', estado: 'llevado_asesor', teamMemberId: null }), { ok: false, error: 'modelo_sin_cita' });
   assert.deepEqual(await marcarPlazo(db, { merchantId: 1, modelo: '347', ejercicio: 2026, periodo: '1T', estado: 'llevado_asesor', teamMemberId: null }), { ok: false, error: 'periodo_invalido' });
@@ -177,6 +182,22 @@ async function servir(db, sesion) {
   const base = `http://127.0.0.1:${srv.address().port}/admin/plazos-fiscales`;
   return { base, cerrar: () => new Promise((r) => srv.close(r)) };
 }
+// `http.request` sin agente (la conexión se cierra), y no `fetch`: con `--test-force-exit`, en Windows, los sockets
+// que `fetch` deja vivos abortan el proceso (libuv `UV_HANDLE_CLOSING`, salida 3221226505) y el fichero sale ROJO
+// con sus casos en verde. Medido al montar este test.
+function pedir(url, { method = 'GET', headers = {}, body } = {}) {
+  return new Promise((ok, mal) => {
+    const req = http.request(url, { method, headers, agent: false }, (res) => {
+      let txt = '';
+      res.setEncoding('utf8');
+      res.on('data', (c) => { txt += c; });
+      res.on('end', () => ok({ status: res.statusCode, json: async () => JSON.parse(txt) }));
+    });
+    req.on('error', mal);
+    if (body) req.write(body);
+    req.end();
+  });
+}
 
 test('1076d · la API: requireRole admin en GET y PUT, filtra por req.merchantId, y devuelve los textos firmados sin «presentad»', async () => {
   const db = clienteFalso({ comercios: { 1: { country: 'ES' }, 2: { country: 'ES' } } });
@@ -186,19 +207,19 @@ test('1076d · la API: requireRole admin en GET y PUT, filtra por req.merchantId
 
   const tecnico = await servir(db, { merchantId: 1, userRole: 'tecnico' });
   try {
-    assert.equal((await fetch(`${tecnico.base}?year=2026`)).status, 403);
-    assert.equal((await fetch(`${tecnico.base}/303/2026/1T`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: '{"estado":"llevado_asesor"}' })).status, 403);
+    assert.equal((await pedir(`${tecnico.base}?year=2026`)).status, 403);
+    assert.equal((await pedir(`${tecnico.base}/303/2026/1T`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: '{"estado":"llevado_asesor"}' })).status, 403);
   } finally { await tecnico.cerrar(); }
 
   const admin = await servir(db, { merchantId: 2, userRole: 'admin', teamMemberId: null });
   try {
-    const put = await fetch(`${admin.base}/390/2026/ANUAL`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: '{"estado":"llevado_asesor"}' });
+    const put = await pedir(`${admin.base}/390/2026/ANUAL`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: '{"estado":"llevado_asesor"}' });
     assert.equal(put.status, 200);
     assert.equal(db.marcas[0].merchantId, 2, 'escribe en el comercio de la sesión');
-    const mal = await fetch(`${admin.base}/131/2026/1T`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: '{"estado":"llevado_asesor"}' });
+    const mal = await pedir(`${admin.base}/131/2026/1T`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: '{"estado":"llevado_asesor"}' });
     assert.equal(mal.status, 400);
     assert.equal((await mal.json()).mensaje, FIRMADOS.errorGuardar);
-    const res = await fetch(`${admin.base}?year=2026`);
+    const res = await pedir(`${admin.base}?year=2026`);
     assert.equal(res.status, 200);
     const cuerpo = await res.json();
     assert.equal(cuerpo.ejercicio, 2026);
@@ -217,7 +238,7 @@ test('1076d · la API: requireRole admin en GET y PUT, filtra por req.merchantId
   } finally { await admin.cerrar(); }
 
   const sinSesion = await servir(db, { userRole: 'admin' });
-  try { assert.equal((await fetch(`${sinSesion.base}?year=2026`)).status, 401); } finally { await sinSesion.cerrar(); }
+  try { assert.equal((await pedir(`${sinSesion.base}?year=2026`)).status, 401); } finally { await sinSesion.cerrar(); }
 });
 
 // ── La cadena de la cita: código → CONTABILIDAD.md → comprobador del BOE ─────────────────────────────────────

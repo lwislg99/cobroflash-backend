@@ -80,6 +80,8 @@ export function construirCalendario(params: {
   /** ¿Ve el comercio la fila de este modelo y periodo? (aceptación 7) */
   esVisible: (modelo: CodigoModelo, periodo: Periodo) => boolean;
   marcas: readonly MarcaDelPlazo[];
+  /** La tabla de citas. Por parámetro sólo para que un test le pase una entrada SIN cita. */
+  citas?: readonly CitaDelPlazo[];
 }): FilaDelPlazo[] {
   const marcadas = new Set(
     params.marcas
@@ -87,7 +89,7 @@ export function construirCalendario(params: {
       .map((m) => claveDelPlazo(m.modelo, m.ejercicio, m.periodo)),
   );
   const filas: FilaDelPlazo[] = [];
-  for (const cita of CITAS_PLAZOS) {
+  for (const cita of params.citas ?? CITAS_PLAZOS) {
     if (!cita.cita || !cita.orden || !cita.articulo) continue; // sin cita, no hay fila
     for (const periodo of periodosDe(cita)) {
       if (!params.esVisible(cita.modelo, periodo)) continue;
