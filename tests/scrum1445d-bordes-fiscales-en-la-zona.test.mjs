@@ -77,13 +77,9 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: '    const d = fechaDeDevengo(f as never, CAMPO_COBRO);',
     cae: 'SCRUM-1445d · leerPorCaja con zona',
   },
-  {
-    // La consulta de candidatas por tope usa el año del proceso.
-    fichero: 'src/modules/invoicing/domain/libroRegistro.repo.ts',
-    de: '  const añoDe = (d: Date) => (zona !== undefined ? Number(diaNaturalEn(d, zona).slice(0, 4)) : d.getFullYear());',
-    a: '  const añoDe = (d: Date) => d.getFullYear();',
-    cae: 'SCRUM-1445d · leerPorCaja con zona',
-  },
+  // NO declarada, a propósito: `añoDe` con el año del PROCESO en `leerPorCaja`. Medida MUDA con
+  // aplicarUna (registro 1445d): con un rango de trimestre alineado en la zona, el año del proceso sólo
+  // ENSANCHA la consulta de candidatas, y el filtro por `fechaDeDevengo` deja el mismo libro.
   {
     // Sin zona deja de ser «lo de siempre»: la fase 1 cambiaría a los llamadores.
     fichero: 'src/modules/fiscal/modelo303/modelo303.ts',
