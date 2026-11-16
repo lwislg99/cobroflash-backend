@@ -202,10 +202,11 @@ export function construirBorrador130(params: {
   // 01 que sólo ve lo facturado por YaQu desde el alta; lo de antes, por otra vía, no está. Es un CÓDIGO:
   // si algún día se pinta, su texto se firma aparte (regla 39). El 1 de enero, a cualquier hora, no avisa.
   // Fecha LOCAL, como `rangoAcumulado`.
-  const dosDeEnero = params.zona !== undefined
-    ? inicioDelDiaEn(`${String(params.año).padStart(4, '0')}-01-02`, params.zona)
-    : new Date(params.año, 0, 2, 0, 0, 0, 0);
-  if (params.altaDelMerchant && params.altaDelMerchant >= dosDeEnero) {
+  // SCRUM-1445d: con `zona`, el 2-ene empieza a las 00:00 del comercio; sin ella, la línea de siempre.
+  const altaTardia = params.zona !== undefined
+    ? !!params.altaDelMerchant && params.altaDelMerchant >= inicioDelDiaEn(`${String(params.año).padStart(4, '0')}-01-02`, params.zona)
+    : !!params.altaDelMerchant && params.altaDelMerchant >= new Date(params.año, 0, 2, 0, 0, 0, 0);
+  if (altaTardia) {
     motivosParaNoFiarse.push('alta_a_mitad_de_ejercicio');
   }
 

@@ -52,8 +52,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // El aviso de alta vuelve a la zona del proceso aunque se le dé la del comercio.
     fichero: 'src/modules/fiscal/modelo130/modelo130.ts',
-    de: '  const dosDeEnero = params.zona !== undefined',
-    a: '  const dosDeEnero = params.zona === "__nunca__"',
+    de: '  const altaTardia = params.zona !== undefined',
+    a: '  const altaTardia = params.zona === "__nunca__"',
     cae: 'SCRUM-1445d · el aviso de alta a mitad de ejercicio',
   },
   {
