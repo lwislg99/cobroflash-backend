@@ -245,3 +245,104 @@ el texto de la descripción de SCRUM-1264.
 2. Pedí los comentarios de SCRUM-1264 enteros sabiendo que es el ticket más largo del equipo; tardó más de
    cinco minutos y murió sin respuesta; la segunda vez llegó a un fichero. Crucé los 200k leyendo Jira
    (211.078, avisado al orquestador en ese momento).
+
+---
+
+# SCRUM-1264u · La garantía retenida con criterio de caja (1732) y el ImporteTotal con suplido (1054): 1 fila nueva (49), 1 ampliación (15) y el RIVA 61 decies leído en el BOE
+
+**Medido contra:** `origin/main` = `f84a8ca16ce3b3365fb4e1c08635a48377bcc683` · 2026-11-16T16:59:36Z (cabecera `Date:` de GitHub)
+
+A9: aviso → A10 «Una tilde entre corchetes no casa en `git grep -E` ni en `grep -E`: el patrón da cero sin avisar.» — no se pudo comprobar: mi primer barrido de este fichero llevaba `garant[ií]a` y dio CERO líneas en total; lo vi porque sabía que «garantía contractual» estaba (Q-C5), y con la raíz sin tilde salió. Ningún guard sabe qué patrón escribe una sesión en su consola.
+
+Sesión J5 (IA, `jv-j5bd`), 16-nov-2026, por encargo del orquestador del equipo de Javier
+(`cobroflash-backend-64`). **Solo docs.** No se toca `src/`, ni `public/`, ni el esquema, ni el camino de
+emisión, ni la descripción de SCRUM-1264. Nada de esto es respuesta de asesor.
+
+## Ⓐ Qué se leyó
+
+- SCRUM-1264: descripción entera (índice de 46 filas y las 28 preguntas).
+- SCRUM-1732: descripción y los 10 comentarios, hasta c.21947; SCRUM-1054: descripción y los 6, hasta
+  c.21866. Los dos los leyó un agente lector de esta sesión, que devolvió literales c.21820 ④, c.21926 §②,
+  c.21862, c.21864 (pregunta 4) y c.21865, y una línea por cada comentario posterior. **No los he cotejado
+  byte a byte en la pantalla de Jira.**
+- Ninguno de los comentarios posteriores añade estas preguntas a SCRUM-1264 ni las contesta: c.21820
+  dice «**no la he añadido**», y c.21865 deja los suplidos esperando a P12.1.
+
+## Ⓑ Medición, por contenido
+
+Sobre `docs/legal/PREGUNTAS_ASESOR.md` de esta rama (= `origin/main`, 1.972 líneas, 165.308 B):
+`terdecies|garant|1\.310|1\.210|liberac` → 4 líneas, ninguna sobre devengo con caja (Q-C5, la garantía
+como retención de pago en régimen general; 1344, 1394, 1521, ajenas). **Positivo del árbol:** «contractual»
+→ 1 (la línea de Q-C5). `P12.1` → 1 (la P12 de junio, sin cifras). Además, a mano: B4, B6, P12, Q-C3,
+Q-C5, Q-C6 y Q-C8, y el índice y el texto de la descripción de SCRUM-1264.
+
+| pregunta | veredicto | dónde queda |
+| --- | --- | --- |
+| garantía retenida con caja y el tope del 31-dic (1732 c.21820 ④.4) | **faltaba**: B6 pregunta la fecha de cobro, no el devengo de lo retenido | **fila 49** |
+| ImporteTotal con suplido, 1.310 o 1.210 (1054 c.21864/c.21865) | **ya estaba** como P12.1 en el fichero y B4.(2) en Jira, sin las cifras | ampliación de la **fila 15** (B4), con las cifras y el tramo al 0 % de c.21862 |
+
+## Ⓒ Cómo se añadió
+
+- **Al final**, bajo «# Añadidas el 16-nov-2026 (SCRUM-1264u)». Comprobado por bytes: los 165.308 B de
+  `origin/main` son el prefijo exacto del fichero nuevo (`cmp -n`), 54 líneas añadidas y 0 quitadas, 0 CR.
+- **Para el índice de la descripción de SCRUM-1264** (lo actualiza el orquestador): una fila nueva, la
+  **47** («**49 (fichero)** · Garantía retenida con criterio de caja: ¿el IVA de lo retenido se devenga al
+  liberarlo o el 31-dic del año siguiente (163 terdecies.Uno)?» · SCRUM-1732 c.21820 ④ · SIN RESPUESTA ·
+  fichero), y una fila que cambia: la **15** (B4 → «B4 (+ P12.1 con cifras: ¿ImporteTotal 1.310 o 1.210?,
+  SCRUM-1054 c.21864/c.21865)» · respuesta: «IA · 22-sep; la (2) con cifras SIN RESPUESTA» · «DESC +
+  fichero (16-nov)»).
+
+## Ⓓ Verificación legal: RIVA art. 61 decies (para el PR-2 de SCRUM-1732)
+
+**Fuente:** API de legislación consolidada del BOE, `BOE-A-1992-28925` (RD 1624/1992, RIVA), bloque
+`a61decies`, pedido el 16-nov-2026 a las 16:58:02Z (cabecera `Date:` del BOE). Metadatos de la norma:
+`estado_consolidacion` «Finalizado», `vigencia_agotada` N, última actualización del consolidado
+`20261105`. **El bloque tiene UNA sola versión:** `id_norma="BOE-A-2013-11216"`, `fecha_publicacion=20131026`,
+`fecha_vigencia=20140101`; nota: «Se añade por el art. 1.21 del Real Decreto 828/2013, de 25 de octubre.»
+**Control de que es el texto consolidado y no el original:** el artículo no existe en el RIVA de 1992 (lo
+añade un RD de 2013), y el índice consolidado lo trae.
+
+Literal, entero:
+
+> Artículo 61 decies. Obligaciones registrales específicas.
+>
+> 1. Los sujetos pasivos acogidos al régimen especial del criterio de caja deberán incluir en el libro registro de facturas expedidas a que se refiere el artículo 63 de este Reglamento, la siguiente información:
+>
+> 1.º Las fechas del cobro, parcial o total, de la operación, con indicación por separado del importe correspondiente, en su caso.
+>
+> 2.º Indicación de la cuenta bancaria o del medio de cobro utilizado, que pueda acreditar el cobro parcial o total de la operación.
+>
+> 2. Los sujetos pasivos acogidos al régimen especial del criterio de caja así como los sujetos pasivos no acogidos al régimen especial del criterio de caja pero que sean destinatarios de las operaciones afectadas por el mismo deberán incluir en el libro registro de facturas recibidas a que se refiere el artículo 64 de este Reglamento, la siguiente información:
+>
+> 1.º Las fechas del pago, parcial o total, de la operación, con indicación por separado del importe correspondiente, en su caso.
+>
+> 2.º Indicación del medio de pago por el que se satisface el importe parcial o total de la operación.
+
+**Contra lo que c.21926 §② recordaba «de memoria»** («el libro de expedidas con RECC tiene que llevar la
+fecha y el importe de cada cobro y el medio»): **lo dice**, con cuatro matices que el PR-2 necesita:
+
+1. **Por cada cobro, parcial o total:** su fecha y, «en su caso», su importe por separado. Un cobro
+   total único no necesita importe aparte; varios cobros, sí, cada uno con el suyo.
+2. **«la cuenta bancaria o del medio de cobro»:** es una alternativa, no dos campos. Pero no vale
+   cualquier medio: tiene que ser uno «que pueda acreditar el cobro». Va con LIVA 163 terdecies.Uno:
+   «deberá acreditarse el momento del cobro, total o parcial».
+3. **El apartado 2 alcanza al libro de RECIBIDAS:** el propio profesional en caja, y también quien
+   **no** está en caja pero recibe facturas de uno que sí, tiene que llevar fecha, importe y medio de cada
+   **pago**. c.21926 no lo nombra.
+4. **No dice nada del devengo por tramos** ni del tope del 31-dic: eso es LIVA 163 terdecies.Uno (literal
+   en la fila 49 del fichero), y qué pasa con la garantía retenida es justo la pregunta 49.
+
+## Ⓔ Lo que NO está medido
+
+- Si la AEAT valida que el `ImporteTotal` cuadre con la suma del desglose (lo que haría inviable el 1.310
+  con desglose de 1.210): no lo he mirado en las validaciones; c.21864 tampoco.
+- Si el diseño de `InvoicePayment` (SCRUM-1732 c.21928) guarda la cuenta o el medio de cada cobro: no he
+  leído el esquema ni el PR-1.
+- Si la descripción de SCRUM-1264 admite la fila nueva sin pasar su tope de 32.000 caracteres (1264s Ⓑ).
+
+## Ⓕ Lo que me salió mal
+
+1. El barrido con `garant[ií]a` dio cero en todo (línea A9 de arriba). Lo cacé con el positivo que ya
+   conocía; sin él habría escrito «no hay nada de garantía» en Ⓑ.
+2. Los literales de Jira los trajo un agente lector, para no meter dos tickets enteros en mi contexto: son
+   copia de una copia, y lo dice el propio bloque del fichero.

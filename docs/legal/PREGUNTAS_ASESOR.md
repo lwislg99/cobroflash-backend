@@ -1970,3 +1970,57 @@ _Los dos datos (c.21868):_
 _Lo que hace hoy el producto (SCRUM-1076 c.21877, P5, decisión de Javier), literal:_ «**P5 · 347 y 390:** ✅ se pintan con su fecha citada y la nota T14.»
 
 _Lo que ya tenemos:_ SIN RESPUESTA (la de Q-C8 es de IA · 23-sep, y no trae estas remisiones).
+
+---
+
+# Añadidas el 16-nov-2026 (SCRUM-1264u): la garantía retenida con criterio de caja (SCRUM-1732) y el ImporteTotal con suplido (SCRUM-1054)
+
+> Mismo criterio que las secciones anteriores: **al final**, sin mover ninguna línea de encima. Se
+> buscaron antes por CONTENIDO en este fichero y en el índice de la descripción de SCRUM-1264 (registro en
+> `docs/master/SCRUM-1264.md`, tramo 1264u):
+>
+> - **La garantía retenida con criterio de caja no estaba** en ningún sitio. Lo más cercano son B6 (fila 17:
+>   qué fecha de cobro vale, la clave del régimen y el cruce con el 303), Q-C5 (que la garantía es una
+>   retención de pago y el IVA se devenga sobre el 100 %, en régimen GENERAL, respuesta de IA) y Q-C6 (qué
+>   fecha de cobro vale). Ninguna pregunta cuándo se devenga lo retenido con criterio de caja: es la **49**.
+> - **El ImporteTotal con suplido ya estaba**: es la **P12.1** de este fichero y la **B4.(2)** de la
+>   descripción de SCRUM-1264 (fila 15). **No es una fila nueva:** va como ampliación de la fila 15, con
+>   las dos cifras de SCRUM-1054 y lo que hoy le pasa a una factura con un tramo al 0 %.
+>
+> Los literales de Jira se leyeron en el Markdown que devuelve Jira a través de un agente lector de esta
+> misma sesión, no en la pantalla de Jira. Los de la norma, en la API de legislación consolidada del BOE
+> (16-nov-2026, 16:58Z, cabecera `Date:` del BOE).
+
+### 49 · Garantía retenida con criterio de caja: ¿cuándo se devenga el IVA de lo retenido?
+
+_Origen: SCRUM-1732 c.21820, sección ④, punto 4 (J1), que la dejó como candidata: «**no la he añadido** a `PREGUNTAS_ASESOR.md`». Ningún comentario posterior de SCRUM-1732 (hasta c.21947) la contesta, la cambia ni la retira. Texto literal._
+
+_La pregunta (c.21820 ④.4):_ «con criterio de caja y retención de garantía, ¿el IVA de lo retenido se devenga al liberarlo, o el 31-dic del año siguiente si la liberación es posterior (163 terdecies.Uno)? La garantía suele ser de 12 meses, así que el tope puede caer **antes** que la liberación.»
+
+_La norma, literal (LIVA art. 163 terdecies.Uno, BOE-A-1992-28740, bloque `a163terdecies`, versión única, vigente desde el 1-ene-2014; «Se añade por el art. 23.2 de la Ley 14/2013, de 27 de septiembre»):_ «En las operaciones a las que sea de aplicación este régimen especial, el Impuesto se devengará en el momento del cobro total o parcial del precio por los importes efectivamente percibidos o si este no se ha producido, el devengo se producirá el 31 de diciembre del año inmediato posterior a aquel en que se haya realizado la operación.» · «A estos efectos, deberá acreditarse el momento del cobro, total o parcial, del precio de la operación.»
+
+_Lo que hace hoy el producto (título de SCRUM-1732), literal:_ «la retención de garantía se cobra como un Charge suelto sin enlace a la factura, y el libro devengaría el 100 % en el primer cobro.» La liberación se cobra aparte. Lo que se está construyendo es una tabla de cobros por factura (`InvoicePayment`, decisiones de Javier en SCRUM-1732 c.21824 y c.21928) y, después, el devengo por tramos en el libro (el «PR-2» de SCRUM-1732, de J1, sin empezar).
+
+_Lo que cambia según la respuesta:_ si el tope del 31-dic corta también a lo retenido, el libro y el 303 tienen que devengar el resto en esa fecha aunque no se haya cobrado, y la liberación posterior ya no devenga nada.
+
+_Relacionadas, que no la contestan:_ B6 (fila 17), Q-C5 (la garantía como retención de pago, en régimen general; IA · 23-sep) y Q-C6 (qué fecha de cobro vale).
+
+_Lo que ya tenemos:_ SIN RESPUESTA.
+
+---
+
+### 15 · B4 / P12.1 · ampliación: con un suplido, ¿el ImporteTotal del registro es 1.310 o 1.210?
+
+_Origen: la pregunta B4.(2) de la descripción de SCRUM-1264 («¿Entra en el **importe total** que se declara en el registro?») y la P12.1 de este fichero (arriba, «P12. Suplidos»); el caso con cifras, de SCRUM-1054 c.21864 (J1, `jv-j1ew`), pregunta 4, y la decisión que la deja esperando al asesor, de c.21865. Texto literal._
+
+_El caso (c.21864, pregunta 4):_ «`ImporteTotal` del registro y del QR: 1.310 (hoy es `inv.total`, mientras el desglose suma 1.210) o 1.210 (suplido fuera del registro, Q-C3 de IA). Es la P12.1 del asesor, sin respuesta profesional. No he medido si la AEAT valida que cuadren.»
+
+_La decisión (c.21865, punto 1):_ «Los suplidos (sacarlos de la base, T2, `Invoice.suplidos`) esperan a **P12.1** (asesor): ¿el ImporteTotal es 1.310 o 1.210?»
+
+_Lo que hace hoy el producto con un tramo al 0 % (c.21862, escrito por el orquestador del equipo de Javier), literal:_ «**Factura sellada cuyo registro de alta no existe ni existirá.** Bloquea SIF-1. Hoy no hay víctimas: `INVOICING_ES` está apagado para comercios reales. **Quitar la casilla de suplido NO lo arregla**, porque pasa con cualquier tramo al 0 %.» La decisión de Javier en c.21862 y c.21865 es un portón antes del número que impide emitir una línea al 0 % sin causa; el suplido, aparte, espera a esta respuesta.
+
+_Por qué cuadrar importa (sin medir):_ c.21864 lo dice: «No he medido si la AEAT valida que cuadren.» Si la validación de la AEAT exige que el ImporteTotal sea la suma del desglose, 1.310 con un desglose de 1.210 se rechazaría; esta sesión tampoco lo ha medido.
+
+_Relacionadas, que no la contestan:_ P12.2 (con qué clave del desglose, si entra), Q-C3 (cuándo un gasto es suplido; IA · 23-sep) y la 347-suplidos (fila 34).
+
+_Lo que ya tenemos:_ IA · 22-sep sobre B4 entera; sobre la (2) con estas cifras, SIN RESPUESTA.
