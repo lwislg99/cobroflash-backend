@@ -1902,3 +1902,71 @@ _Contexto (c.21753 y c.21757), literal:_ «Se cablea `07` desde `Merchant.criter
 _Relacionadas, que no la contestan:_ B6 (2) y (3) (si una clave de régimen equivocada es infracción, y si la AEAT cruza el 303 con los registros) y Q-nueva-A (fila 5, qué es una «variación» del SIF).
 
 _Lo que ya tenemos:_ SIN RESPUESTA.
+
+---
+
+# Añadidas el 16-nov-2026 (SCRUM-1264t): los restos de SCRUM-1129 y SCRUM-1240, y dos datos del 1076
+
+> Mismo criterio que las dos secciones anteriores: **al final**, sin mover ninguna línea de encima, y
+> el texto copiado del Markdown que devuelve Jira. Son los restos que pasan a SCRUM-1264 al cerrarse
+> SCRUM-1129 (c.21912) y SCRUM-1240 (c.21913), más dos datos de SCRUM-1076 c.21868. Se buscaron antes
+> por CONTENIDO en este fichero y en el índice de la descripción de SCRUM-1264 (registro en
+> `docs/master/SCRUM-1264.md`, tramo 1264t):
+>
+> - **La clave 18 ya estaba**, con otra redacción, como **B5.(4)** en la descripción de SCRUM-1264
+>   (fila 16), y c.21753 punto 5 ya la remitía allí. En este fichero no estaba: P13 (que es B5) no
+>   trae esa (4). **No es una fila nueva:** va como ampliación de la fila 16, con el dato de la v1.0.4.
+> - **La factura mixta S1+S2 no estaba** en ningún sitio: es la **fila 48**.
+> - **Los dos datos de los plazos** van como ampliación de **Q-C8**, que en el índice de SCRUM-1264
+>   va dentro de E4 (fila 30): no son una pregunta nueva, sino lo que la norma remite y no se ha leído.
+>
+> Sin ninguna desviación del literal.
+
+### 16 · B5.(4) · ampliación: la clave 18 (recargo de equivalencia), ¿quién la usa y cuándo?
+
+_Origen: la pregunta B5.(4) de la descripción de SCRUM-1264; el dato, de SCRUM-1129 c.17387 (J5, tramo 1129b) y de la descripción de SCRUM-1240; la pasa aquí SCRUM-1129 c.21912 (decisión de Javier: «Sí, cerrar y pasar los restos a 1264»), anotada en SCRUM-1264 c.21914. Texto literal. c.21914 la pide como «fila literal nueva»; va como ampliación de la fila 16 porque B5.(4) ya la preguntaba._
+
+_La pregunta (descripción de SCRUM-1264, B5):_ «(4) En el registro VeriFactu, ¿la clave del régimen especial del recargo la pone **quien vende** o **quien compra**?»
+
+_El dato nuevo (descripción de SCRUM-1240), literal:_ «⚠️ _Sigue SIN DETERMINAR quién usa la clave 18_ (recargo de equivalencia): lo tiene que decir un asesor o la AEAT. Dato nuevo de J5: la v1.0.4 de las validaciones —recuperada del Internet Archive— obligaba a que la 18 llevara los campos de recargo, _que sólo cobra el proveedor_. **Se retiró sin sustituirla.**»
+
+_Contexto (SCRUM-1129 c.17387, puntos 3 y 5), literal:_ «El recargo (18) es venta de mercancía, no servicios, y excluye los materiales de construcción (RIVA art. 59.2.12.º).» · «SIN DETERMINAR (a), quién usa la 18: **sigue abierta y hay que preguntarla a un asesor o a la AEAT**.»
+
+_Lo que hace hoy el producto (SCRUM-1129 c.21753, punto 5), literal:_ «`18`/`19`/`20` fuera por ahora: ✅. Iba dentro de la pregunta 1. La `18` espera al asesor (SCRUM-1264, fila 16).»
+
+_Relacionadas, que no la contestan:_ P13.3 (a quién se le aplica el recargo, en la ficha del CLIENTE) y Q-C4 (quién está en recargo, respuesta de IA) hablan de quién lo soporta, no de qué clave lleva el registro de quien emite.
+
+_Lo que ya tenemos:_ SIN RESPUESTA.
+
+---
+
+### 48 · Una factura mixta (líneas S1 y S2) con criterio de caja: ¿lleva la mención?
+
+_Origen: SCRUM-1240 c.21776 (orquestador, con la decisión de Javier) y c.21910 (J4, que da la redacción); la pasa aquí c.21913, al cerrar SCRUM-1240, anotada en SCRUM-1264 c.21914. Texto literal._
+
+_La pregunta (c.21910):_ «En una factura con líneas S1 y S2 de un profesional acogido a criterio de caja, ¿lleva la mención del art. 61 undecies?»
+
+_Lo que hace hoy el producto (c.21913), literal:_ «Hoy sale CON la mención, según c.21776.» · Y la condición firmada (c.21776): «congelado `true` y al menos un detalle `S1`».
+
+_La norma (c.21773), literal:_ ROF 6.1.p): _«En el caso de aplicación del régimen especial del criterio de caja la mención «régimen especial del criterio de caja.»_ (sic: el BOE consolidado no cierra las comillas) · RIVA 61 undecies.1: _«toda factura y sus copias expedida por sujetos pasivos acogidos al régimen especial del criterio de caja referentes a operaciones a las que sea aplicable el mismo, contendrá la mención de «régimen especial del criterio de caja»»_. Y c.21773: «RIVA 61 undecies no lo resuelve.»
+
+_Por qué importa la línea S2 (SCRUM-1240, descripción), literal:_ «Con criterio de caja (`07`), **una obra con inversión del sujeto pasivo queda FUERA del régimen de caja** (LIVA art. 163 _duodecies_.Dos.d)».
+
+_Relacionadas, que no la contestan:_ la 47 (qué régimen lleva la R1; c.21773: «Decide también si una R1 lleva la mención») y B6 (2) y (3).
+
+_Lo que ya tenemos:_ SIN RESPUESTA.
+
+---
+
+### 30 · E4 / Q-C8 · ampliación: a qué remiten los plazos del 390 y del 347
+
+_Origen: SCRUM-1076 c.21868 (J5, tramo 1076b), en la lista «Lo que NO se ha hecho (Q-C8, SCRUM-1264, para el asesor)». Texto literal. No es una pregunta nueva: es lo que las órdenes citadas remiten y no se ha leído, y va con los sábados y festivos de Q-C8._
+
+_Los dos datos (c.21868):_
+
+> * El 347 remite al art. 17.2 de la Orden HAP/2194/2013: **NO VERIFICADO**, no se ha bajado.
+> * El 390 remite al art. 4.4 de su orden, y el consolidado da ese art. 4 **suprimido con efectos de 1-ene-2023**. Es un dato, sin interpretar.
+
+_Lo que hace hoy el producto (SCRUM-1076 c.21877, P5, decisión de Javier), literal:_ «**P5 · 347 y 390:** ✅ se pintan con su fecha citada y la nota T14.»
+
+_Lo que ya tenemos:_ SIN RESPUESTA (la de Q-C8 es de IA · 23-sep, y no trae estas remisiones).
