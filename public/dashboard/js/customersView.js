@@ -1060,10 +1060,10 @@ function renderCustomersView(container) {
   // es el registro del FUNDADOR y `constaAprobado()` lo barre (SCRUM-726), así que una firma del
   // asesor metida ahí se leería como la suya. Hay un test que lo impide.
   const DTO_POR_DEFECTO_ROTULO = "Descuento pactado (%)";
-  // 🔴 Y EL CONTADOR, que es lo que distingue «sin marcador» de «firmado por el fundador». Es UNA
+  // 🔴 Y EL CONTADOR, que es lo que distingue «sin marcador» de «con la firma del fundador». Es UNA
   // ranura y el número tiene que decirlo: si mañana entra un segundo texto sin firma y esto se
   // queda en 1, el hueco deja de estar declarado y el texto entra en pantalla en silencio.
-  //
+  // (Redactado así por SCRUM-1502 c.21915: describe el contador, no afirma ninguna firma.)
   // ⚠️ NO SE SUMA AL `SIN_APROBAR` DE `filtroClientes.js` (hoy 7), y es deliberado: aquél cuenta
   // los textos que viven EN ESE módulo —el filtro y la selección de la lista—, y meter aquí un
   // rótulo del FORMULARIO haría que el mismo número significara dos cosas. El contador vive donde
