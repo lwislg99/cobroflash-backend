@@ -219,3 +219,78 @@ firma pendiente de SCRUM-1470 y no se toca aquí.
 
 Evidencia en `docs/master/evidencias/SCRUM-1445/1445c-visto/`: la sonda, los dos PDF, su texto extraído y la
 salida. Uso: `node sonda-pdf-albaran.mjs <árbol> <id>...` (sale 2, CIEGO, si el número no aparece).
+
+---
+
+## SCRUM-1445d · 16-nov-2026 · J1 (jv-j1f2) · FASE 1: las 4 funciones de borde fiscal aceptan la zona del comercio
+
+**Medido contra:** `origin/main` = `37947dc1522a094320a4499eac28800f38cdc659` · 2026-11-16T15:34:09Z
+
+A9: comprobación → `tests/scrum1445d-bordes-fiscales-en-la-zona.test.mjs`
+
+**Encargo:** la decisión del fundador de SCRUM-1445 c.21896 («arreglarlo en el código, sin tocar TZ»),
+partida en dos por el plan de c.21898 (jv-j1f1). Esta es la FASE 1: las cuatro funciones de borde reciben
+la zona y calculan en ella, **sin cambiar a ningún llamador**. La FASE 2 (los ~12 llamadores leen
+`merchant.timezone` y la pasan con `zonaDelMerchant`) va en otra sesión.
+
+### Qué cambia (carril J1, `carriles.mjs de` comprobado en los cuatro ficheros)
+
+| función | fichero | con `zona` | sin `zona` |
+| --- | --- | --- | --- |
+| `rangoTrimestre` (+ `rangoDeMesesEn`, nueva y exportada) | `src/modules/fiscal/modelo303/modelo303.ts` | bordes con `inicioDelDiaEn`/`finDelDiaEn` de esa zona | lo de siempre |
+| `rangoAcumulado` y el aviso `alta_a_mitad_de_ejercicio` (`construirBorrador130`, parámetro `zona`) | `src/modules/fiscal/modelo130/modelo130.ts` | ídem; el 2-ene empieza a las 00:00 del comercio | lo de siempre |
+| `topeDeDevengo` / `fechaDeDevengo` | `src/modules/invoicing/domain/devengoPorCaja.ts` | el año de la operación con `diaNaturalEn`, y el 31-dic de X+1 con `finDelDiaEn` | lo de siempre |
+| `leerPorCaja` (por `RangoLibro.zona`) | `src/modules/invoicing/domain/libroRegistro.repo.ts` | años y bordes de la consulta de candidatas, y la fecha de devengo, en la zona | lo de siempre |
+
+**El valor por defecto es la zona del PROCESO, no `ZONA_POR_DEFECTO`.** jv-j1f1 recomendaba UTC por
+defecto (c.21898); el encargo de esta fase pide «el valor que tienen hoy por defecto, para que los
+llamadores sigan dando lo mismo», y hoy es la zona del proceso. Con UTC, la suite podía cambiar en el
+trinquete de zona (Kiritimati/Midway), que es justo el riesgo que jv-j1f1 dejó sin medir. En la FASE 2
+cada llamador pasa `zonaDelMerchant(merchant)`, que ya da `'UTC'` para un comercio sin zona: el defecto
+«zona del proceso» se queda sin llamadores y se puede quitar.
+
+`src/core/zonaDelMerchant.ts` (S1) se importa, no se toca. El DEFECTO_CONOCIDO ② de
+`tests/scrum1055b-caja-31mar-zona-y-devolucion.test.mjs` **sigue declarado**: llama a `rangoTrimestre`
+sin zona, y sin zona nada cambia. Lo retira la FASE 2.
+
+### Rojo primero
+
+`tests/scrum1445d-bordes-fiscales-en-la-zona.test.mjs` fija `process.env.TZ` ANTES de cargar `dist/`
+(jv-j3cf cazó que `TZ=X node` desde Git Bash no llega), y cada caso con zona se corre con el proceso en UTC
+y en Pacific/Kiritimati, con un control que comprueba que el proceso VE esa zona (si no, sale CIEGO).
+Casos A–G de c.21891 con la zona a mano, más tope, libro por caja y aviso de alta.
+
+| pasada | resultado |
+| --- | --- |
+| `dist/` de `origin/main` (sin el cambio) | 6 casos · **5 fallan** (los cinco «con zona») · 1 pasa («sin zona, lo de siempre») |
+| con el cambio | 6 · 6 pasan · 0 fallan |
+
+### Mutaciones (con `aplicarUna` y `correr` de `scripts/meta-guard-mutaciones.mjs`)
+
+**9 probadas: 8 VIVAS (el test cae) y 1 MUDA.** La muda era el año (`añoDesde`/`añoHasta`, entonces una flecha `añoDe`) del proceso dentro de
+`leerPorCaja`: con un rango de trimestre alineado en la zona, el año del proceso sólo ENSANCHA la consulta
+de candidatas, y el filtro por `fechaDeDevengo` deja el mismo libro. No la he declarado; el motivo va en
+un comentario en `MUTACIONES_QUE_ME_TUMBAN`. Las 8 declaradas son las vivas.
+
+### No hecho / no medido
+
+- **FASE 2** (llamadores y `merchant.timezone`): otra sesión.
+- **El año del XML VeriFactu exportado** (`verifactu.service.ts`): es camino de emisión (regla 38). Aquí
+  no se lee ni se fija. Su test DEFECTO_CONOCIDO **no lo he escrito**: no lo he encontrado ya escrito y no
+  me cabía en esta sesión. Queda para la FASE 2 o para su propio ticket.
+- S1 (`reports.routes.ts`, crons, métricas, gastos, exports) y el censo `_censo-fecha-sin-zona` (S0): no
+  tocados.
+- yaqu.app: nada visible cambia (ningún llamador pasa la zona todavía), así que no hay nada que mirar allí.
+
+### Errores propios
+
+- Lancé `node scripts/meta-guard-mutaciones.mjs --help` para ver sus opciones: **no tiene `--help`**, y
+  arrancó el meta-guard ENTERO sobre el árbol. Lo paré a los 120 s y se dejó puesta una mutación
+  (`if (false)` en `scripts/censo-clics-del-80.mjs`). La devolví a sus bytes y lo comprobé con
+  `git hash-object` = blob de HEAD (`ef47f59c`). Sin comprobación: un `--help` que no existe no lo para
+  ningún guard; queda como aviso en mis cicatrices.
+- El primer verde no salió: el test esperaba el 1-oct de Canarias a UTC+0, y aún va en verano (UTC+1). El
+  código acertaba; corregí lo esperado.
+- Mi driver de mutaciones llamó a `instalarRedDeSeguridad()` sin argumentos y su manejador de salida
+  reventó al acabar (salida 1). Las 9 mutaciones ya habían terminado y el árbol estaba limpio
+  (`git status` vacío).
