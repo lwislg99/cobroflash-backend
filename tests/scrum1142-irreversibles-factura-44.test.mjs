@@ -40,7 +40,7 @@ const CLASE = 'accion-irreversible-btn-44';
 // Sin móvil, el «⋯» de una pendiente se queda hoy con UNA opción: observación de pantalla, no de este test.
 const FACTURA = Object.freeze({
   id: 7, number: 'F-2026-0007', status: 'pending', type: 'F1', total: 121, currency: 'EUR',
-  createdAt: '2026-09-01T09:00:00.000Z', customer: { id: 1, name: 'ZZCLIENTE prueba', phone: '+34600000000' },
+  createdAt: '2026-09-01T09:00:00.000Z', customer: { id: 1, name: 'ZZCLIENTE prueba', phone: '+447700900123' },
   items: [], rectifiedBy: [],
 });
 
