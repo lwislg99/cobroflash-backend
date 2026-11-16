@@ -50,7 +50,7 @@ const NOMBRES_FIRMADOS = {
 };
 
 // ── El cliente falso: cualquier tabla responde vacío; `merchant`, `expense` y `fiscalPlazoEstado` en memoria ──
-function clienteFalso({ comercios = { 1: { country: 'ES', timezone: 'Europe/Madrid' } }, gastos = [] } = {}) {
+function clienteFalso({ comercios = { 7: { country: 'ES', timezone: 'Europe/Madrid' } }, gastos = [] } = {}) {
   const marcas = [];
   const casa = (fila, where) => Object.entries(where ?? {}).every(([k, v]) =>
     v && typeof v === 'object' && !Array.isArray(v) ? true : fila[k] === v);
@@ -126,48 +126,48 @@ test('1076d · sin cita no hay fila: sólo salen modelos de la tabla de citas, y
   const conHueco = construirCalendario({ ejercicio: 2026, hoy: '2026-11-16', esVisible: todoVisible, marcas: [], citas: tabla });
   assert.deepEqual(conHueco.map((f) => f.modelo), ['390'], 'la entrada sin cita no tiene fila');
   const db = clienteFalso();
-  assert.deepEqual(await marcarPlazo(db, { merchantId: 1, modelo: '131', ejercicio: 2026, periodo: '1T', estado: 'llevado_asesor', teamMemberId: null }), { ok: false, error: 'modelo_sin_cita' });
-  assert.deepEqual(await marcarPlazo(db, { merchantId: 1, modelo: '347', ejercicio: 2026, periodo: '1T', estado: 'llevado_asesor', teamMemberId: null }), { ok: false, error: 'periodo_invalido' });
-  assert.deepEqual(await marcarPlazo(db, { merchantId: 1, modelo: '303', ejercicio: 2026, periodo: '1T', estado: 'presentado', teamMemberId: null }), { ok: false, error: 'estado_invalido' });
+  assert.deepEqual(await marcarPlazo(db, { merchantId: 7, modelo: '131', ejercicio: 2026, periodo: '1T', estado: 'llevado_asesor', teamMemberId: null }), { ok: false, error: 'modelo_sin_cita' });
+  assert.deepEqual(await marcarPlazo(db, { merchantId: 7, modelo: '347', ejercicio: 2026, periodo: '1T', estado: 'llevado_asesor', teamMemberId: null }), { ok: false, error: 'periodo_invalido' });
+  assert.deepEqual(await marcarPlazo(db, { merchantId: 7, modelo: '303', ejercicio: 2026, periodo: '1T', estado: 'presentado', teamMemberId: null }), { ok: false, error: 'estado_invalido' });
   assert.equal(db.marcas.length, 0, 'nada inválido se escribe');
 });
 
 test('1076d · visibilidad: 303, 130 y 390 siempre en España; 111/115 sólo con retenciones; nada fuera de España', async () => {
-  const sinGastos = await leerCalendario(clienteFalso(), { merchantId: 1, ejercicio: 2026, ahora: AHORA });
+  const sinGastos = await leerCalendario(clienteFalso(), { merchantId: 7, ejercicio: 2026, ahora: AHORA });
   assert.deepEqual([...new Set(sinGastos.filas.map((f) => f.modelo))].sort(), ['130', '303', '390']);
-  const conRetencion = clienteFalso({ gastos: [{ id: 1, merchantId: 1, date: new Date(2026, 4, 10), providerId: 5, currency: 'EUR', category: 'servicios', baseAmount: '100', retencionPracticadaTipo: 15, retencionPracticadaCuota: '15', retencionPracticadaDeclarada: true }] });
-  const c = await leerCalendario(conRetencion, { merchantId: 1, ejercicio: 2026, ahora: AHORA });
+  const conRetencion = clienteFalso({ gastos: [{ id: 1, merchantId: 7, date: new Date(2026, 4, 10), providerId: 5, currency: 'EUR', category: 'servicios', baseAmount: '100', retencionPracticadaTipo: 15, retencionPracticadaCuota: '15', retencionPracticadaDeclarada: true }] });
+  const c = await leerCalendario(conRetencion, { merchantId: 7, ejercicio: 2026, ahora: AHORA });
   assert.deepEqual(c.filas.filter((f) => f.modelo === '111').map((f) => f.periodo), ['2T'], 'el 111 sale sólo en el trimestre con retención');
   assert.ok(!c.filas.some((f) => f.modelo === '115'));
-  const fuera = await leerCalendario(clienteFalso({ comercios: { 1: { country: 'AR', timezone: 'America/Argentina/Buenos_Aires' } } }), { merchantId: 1, ejercicio: 2026, ahora: AHORA });
+  const fuera = await leerCalendario(clienteFalso({ comercios: { 7: { country: 'AR', timezone: 'America/Argentina/Buenos_Aires' } } }), { merchantId: 7, ejercicio: 2026, ahora: AHORA });
   assert.deepEqual(fuera.filas, []);
 });
 
 test('1076d · el estado persiste, vuelve a pendiente borrando la fila, y no lo cambia un cobro', async () => {
   const db = clienteFalso();
-  const ok = await marcarPlazo(db, { merchantId: 1, modelo: '303', ejercicio: 2026, periodo: '3T', estado: 'llevado_asesor', teamMemberId: 7 });
+  const ok = await marcarPlazo(db, { merchantId: 7, modelo: '303', ejercicio: 2026, periodo: '3T', estado: 'llevado_asesor', teamMemberId: 7 });
   assert.deepEqual(ok, { ok: true, estado: 'llevado_asesor' });
-  const estadoDe = async () => Object.fromEntries((await leerCalendario(db, { merchantId: 1, ejercicio: 2026, ahora: AHORA })).filas.map((f) => [`${f.modelo}|${f.periodo}`, f.estado]));
+  const estadoDe = async () => Object.fromEntries((await leerCalendario(db, { merchantId: 7, ejercicio: 2026, ahora: AHORA })).filas.map((f) => [`${f.modelo}|${f.periodo}`, f.estado]));
   const antes = await estadoDe();
   assert.equal(antes['303|3T'], 'llevado_asesor');
   assert.equal(antes['303|2T'], 'pendiente', 'sin marca es pendiente, aunque el plazo haya vencido (P4: no hay «vencido»)');
   // Un cobro: la factura cobrada y el pago entran en el cliente. El calendario no los lee.
-  db.cobros.push({ merchantId: 1, invoiceId: 9, amount: 121, paidAt: AHORA });
+  db.cobros.push({ merchantId: 7, invoiceId: 9, amount: 121, paidAt: AHORA });
   assert.deepEqual(await estadoDe(), antes, 'un cobro no cambia ningún estado');
   assert.equal(db.marcas[0].marcadoPor, 7);
-  await marcarPlazo(db, { merchantId: 1, modelo: '303', ejercicio: 2026, periodo: '3T', estado: 'pendiente', teamMemberId: 7 });
+  await marcarPlazo(db, { merchantId: 7, modelo: '303', ejercicio: 2026, periodo: '3T', estado: 'pendiente', teamMemberId: 7 });
   assert.equal(db.marcas.length, 0, '«volver a pendiente» borra la fila');
   assert.equal((await estadoDe())['303|3T'], 'pendiente');
 });
 
 test('1076d · aislamiento entre comercios: lo que marca uno no lo ve ni lo borra el otro', async () => {
-  const db = clienteFalso({ comercios: { 1: { country: 'ES' }, 2: { country: 'ES' } } });
-  await marcarPlazo(db, { merchantId: 1, modelo: '130', ejercicio: 2026, periodo: '1T', estado: 'llevado_asesor', teamMemberId: null });
+  const db = clienteFalso({ comercios: { 7: { country: 'ES' }, 2: { country: 'ES' } } });
+  await marcarPlazo(db, { merchantId: 7, modelo: '130', ejercicio: 2026, periodo: '1T', estado: 'llevado_asesor', teamMemberId: null });
   const deB = await leerCalendario(db, { merchantId: 2, ejercicio: 2026, ahora: AHORA });
   assert.equal(deB.filas.find((f) => f.modelo === '130' && f.periodo === '1T').estado, 'pendiente');
   await marcarPlazo(db, { merchantId: 2, modelo: '130', ejercicio: 2026, periodo: '1T', estado: 'pendiente', teamMemberId: null });
   assert.equal(db.marcas.length, 1, 'el «pendiente» del comercio 2 no borra la marca del 1');
-  const deA = await leerCalendario(db, { merchantId: 1, ejercicio: 2026, ahora: AHORA });
+  const deA = await leerCalendario(db, { merchantId: 7, ejercicio: 2026, ahora: AHORA });
   assert.equal(deA.filas.find((f) => f.modelo === '130' && f.periodo === '1T').estado, 'llevado_asesor');
 });
 
@@ -200,12 +200,12 @@ function pedir(url, { method = 'GET', headers = {}, body } = {}) {
 }
 
 test('1076d · la API: requireRole admin en GET y PUT, filtra por req.merchantId, y devuelve los textos firmados sin «presentad»', async () => {
-  const db = clienteFalso({ comercios: { 1: { country: 'ES' }, 2: { country: 'ES' } } });
+  const db = clienteFalso({ comercios: { 7: { country: 'ES' }, 2: { country: 'ES' } } });
   const router = crearRouterDePlazos(db);
   const roles = router.stack.map((l) => l.route?.stack.map((s) => s.handle.__requiredRole).find(Boolean));
   assert.deepEqual(roles, ['admin', 'admin'], 'las dos rutas llevan requireRole(admin)');
 
-  const tecnico = await servir(db, { merchantId: 1, userRole: 'tecnico' });
+  const tecnico = await servir(db, { merchantId: 7, userRole: 'tecnico' });
   try {
     assert.equal((await pedir(`${tecnico.base}?year=2026`)).status, 403);
     assert.equal((await pedir(`${tecnico.base}/303/2026/1T`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: '{"estado":"llevado_asesor"}' })).status, 403);

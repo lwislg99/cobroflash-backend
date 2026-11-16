@@ -100,7 +100,7 @@ export const ORDEN_BORRADO_MERCHANT: readonly string[] = [
   // Documentos: albarán antes que factura (el albarán apunta a la factura que lo consolidó).
   'albaran', 'maintenancePlan', 'invoice', 'charge', 'job', 'quote', 'quoteRequest',
   // Catálogo y operativa: nadie cuelga de ellos a estas alturas.
-  'quoteTemplate', 'expense', 'product', 'provider', 'authSession', 'teamMember',
+  'quoteTemplate', 'expense', 'fiscalPlazoEstado', 'product', 'provider', 'authSession', 'teamMember',
   // El cliente al FINAL: media casa le apunta.
   'customer',
 ];
