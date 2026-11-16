@@ -314,3 +314,9 @@ Scripts en `docs/master/evidencias/SCRUM-1646/`. ⚠️ Banco local, NO un recor
 ### ⑦ CI rojo de #3124 (12-nov, noche) y su arreglo
 
 Cayó UN test: `scrum676-hojas-del-indice` — «en `tests/` hay UNA sola regex que lee `<link>`»: el censo de `scrum1646-avisos-sin-estilo-en-linea` traía la suya (`/^<link\b/i`). Ahora deriva de `hojasDeLaPagina(html).locales` (`tests/_scripts-de-la-pagina.mjs`). 1646-avisos + 676 + 553: **40/40**.
+
+### ⑧ CI rojo de #3124 tras el parón (16-nov, S1) y su arreglo
+- Run 43250730647: un solo «✖ failing tests», `scrum1572` — el merge `4ff7b4bf5` entrelazó este registro, que crearon
+  a la vez main y esta rama (`merge=union` contra base vacía). No era código: se juntaron a mano los dos tramos, cada
+  uno entero (el de main delante, éste detrás), con main unida (`68f8152c9`). Control: ninguna línea no vacía de los
+  dos padres ni del merge falta. `scrum1572` 6/6 en local.
