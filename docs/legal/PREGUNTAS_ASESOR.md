@@ -1924,7 +1924,7 @@ _Lo que ya tenemos:_ SIN RESPUESTA.
 
 ### 16 · B5.(4) · ampliación: la clave 18 (recargo de equivalencia), ¿quién la usa y cuándo?
 
-_Origen: la pregunta B5.(4) de la descripción de SCRUM-1264; el dato, de SCRUM-1129 c.17387 (J5, tramo 1129b) y de la descripción de SCRUM-1240; la pasa aquí SCRUM-1129 c.21912 (decisión de Javier: «Sí, cerrar y pasar los restos a 1264»). Texto literal._
+_Origen: la pregunta B5.(4) de la descripción de SCRUM-1264; el dato, de SCRUM-1129 c.17387 (J5, tramo 1129b) y de la descripción de SCRUM-1240; la pasa aquí SCRUM-1129 c.21912 (decisión de Javier: «Sí, cerrar y pasar los restos a 1264»), anotada en SCRUM-1264 c.21914. Texto literal. c.21914 la pide como «fila literal nueva»; va como ampliación de la fila 16 porque B5.(4) ya la preguntaba._
 
 _La pregunta (descripción de SCRUM-1264, B5):_ «(4) En el registro VeriFactu, ¿la clave del régimen especial del recargo la pone **quien vende** o **quien compra**?»
 
@@ -1942,7 +1942,7 @@ _Lo que ya tenemos:_ SIN RESPUESTA.
 
 ### 48 · Una factura mixta (líneas S1 y S2) con criterio de caja: ¿lleva la mención?
 
-_Origen: SCRUM-1240 c.21776 (orquestador, con la decisión de Javier) y c.21910 (J4, que da la redacción); la pasa aquí c.21913, al cerrar SCRUM-1240. Texto literal._
+_Origen: SCRUM-1240 c.21776 (orquestador, con la decisión de Javier) y c.21910 (J4, que da la redacción); la pasa aquí c.21913, al cerrar SCRUM-1240, anotada en SCRUM-1264 c.21914. Texto literal._
 
 _La pregunta (c.21910):_ «En una factura con líneas S1 y S2 de un profesional acogido a criterio de caja, ¿lleva la mención del art. 61 undecies?»
 

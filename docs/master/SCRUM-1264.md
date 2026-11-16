@@ -204,7 +204,8 @@ emisión, ni la descripción de SCRUM-1264. Nada de esto es respuesta de asesor.
 - SCRUM-1264: descripción entera (índice de 45 filas y las 28 preguntas).
 - SCRUM-1129: los 19 comentarios, hasta c.21912 (cierre). SCRUM-1240: descripción y los 12 comentarios,
   hasta c.21913 (cierre). SCRUM-1076: los 8 comentarios, hasta c.21916.
-- SCRUM-1264 c.21914: ver Ⓓ.
+- SCRUM-1264 c.21914 (los restos que pasan aquí): los 27 comentarios bajados a un fichero y leído ese.
+  Pide la clave 18 como «fila literal nueva»; va como ampliación de la fila 16 (Ⓑ), y se dice en el bloque.
 
 ## Ⓑ Medición, por contenido
 
@@ -234,8 +235,6 @@ el texto de la descripción de SCRUM-1264.
 
 ## Ⓓ Lo que NO está medido
 
-- La lectura de SCRUM-1264 c.21914: ver la entrega en Jira (la descarga de los comentarios de 1264 tardó
-  más de dos minutos y se lanzó en segundo plano).
 - Si la descripción de SCRUM-1264 admite las tres filas sin pasar su tope de 32.000 caracteres (1264s Ⓑ).
 - La redacción de B5.(4) para el asesor con el dato nuevo: va como los literales de Jira, sin redactar.
 
@@ -244,4 +243,5 @@ el texto de la descripción de SCRUM-1264.
 1. Mi primera llamada a Jira usó el nombre del sitio como `cloudId` y rebotó; el bueno salió de
    `getAccessibleAtlassianResources`. Sin coste.
 2. Pedí los comentarios de SCRUM-1264 enteros sabiendo que es el ticket más largo del equipo; tardó más de
-   dos minutos y crucé los 200k leyendo Jira (211.078, avisado al orquestador en ese momento).
+   cinco minutos y murió sin respuesta; la segunda vez llegó a un fichero. Crucé los 200k leyendo Jira
+   (211.078, avisado al orquestador en ese momento).
