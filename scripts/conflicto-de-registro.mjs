@@ -17,9 +17,10 @@
 // ── DOS CERRADURAS, INDEPENDIENTES, PARA NO EMPUJAR NUNCA SOBRE CÓDIGO ───────────────────────
 //
 //   1 · LA LISTA. Se mira el merge COMO LO VE GITHUB —sin ningún atributo— y se exige que TODOS
-//       los ficheros en conflicto casen `docs/master/<algo>.md`. Uno fuera, y no se empuja.
+//       los ficheros en conflicto casen `docs/master/<algo>.md` o, desde SCRUM-1734,
+//       `docs/equipo/cicatrices/<puesto>.md`. Uno fuera, y no se empuja.
 //   2 · EL MERGE. Se rehace con los atributos de `main` y tiene que salir LIMPIO. Como el guard
-//       de `.gitattributes` (SCRUM-839d) impide `merge=union` fuera de `docs/master/*.md`, un
+//       de `.gitattributes` (SCRUM-839d) impide `merge=union` fuera de esas dos listas, un
 //       conflicto de código SIGUE siendo conflicto aquí aunque la cerradura 1 fallara.
 //
 // ── 🔴 LA TRAMPA DE LOS ATRIBUTOS, MEDIDA ANTES DE ESCRIBIR ESTO ─────────────────────────────
@@ -48,8 +49,14 @@ import path from 'node:path';
 import { spawnSync, execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-/** Lo único que se deja resolver solo. `*` de gitattributes no cruza `/`, y esto tampoco. */
-export const RUTA_DE_REGISTRO = /^docs\/master\/[^/]+\.md$/;
+/**
+ * Lo único que se deja resolver solo: el registro (`docs/master/*.md`) y, desde SCRUM-1734, las
+ * fichas de cicatrices (`docs/equipo/cicatrices/*.md`), las dos listas a las que solo se añade.
+ * Tiene que casar EXACTAMENTE con las rutas que `.gitattributes` declara `merge=union`; lo
+ * comprueba `tests/scrum839d-union-solo-en-el-registro.test.mjs` por la declaración y por el
+ * efecto. `*` de gitattributes no cruza `/`, y esto tampoco.
+ */
+export const RUTA_DE_REGISTRO = /^docs\/(?:master|equipo\/cicatrices)\/[^/]+\.md$/;
 
 const OID = /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/;
 
@@ -195,8 +202,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const mainSha = execFileSync('git', ['rev-parse', '--verify', main + '^{commit}'], { encoding: 'utf8' }).trim();
   // El mensaje no lleva el nombre de la rama: es texto que escribe otra persona.
   const mensaje = `Merge main (${mainSha.slice(0, 8)}) en el PR #${pr}\n\n`
-    + 'SCRUM-839d: el conflicto era solo de registro (docs/master/*.md) y se resolvió con\n'
-    + 'merge=union. Ningún fichero fuera de docs/master estaba en conflicto.';
+    + 'SCRUM-839d: el conflicto era solo de registro (docs/master/*.md o, desde SCRUM-1734,\n'
+    + 'docs/equipo/cicatrices/*.md) y se resolvió con merge=union. Ningún otro fichero\n'
+    + 'estaba en conflicto.';
   const v = decidir(gitReal(process.cwd()), { pr: entrada, cabeza, main: mainSha, mensaje });
   process.stdout.write(JSON.stringify({ pr: Number(pr), ...v }) + '\n');
 }

@@ -1,7 +1,8 @@
 # .github/workflows/conflicto-de-registro.yml — SCRUM-839d · fase 2, pieza A
 #
 # QUÉ HACE: cada vez que `main` avanza, mira los PR `scrum-*` abiertos. Si uno ha quedado en
-# conflicto y TODOS sus ficheros en conflicto son `docs/master/*.md`, trae `main` con git por
+# conflicto y TODOS sus ficheros en conflicto son `docs/master/*.md` o, desde SCRUM-1734,
+# `docs/equipo/cicatrices/*.md` (la lista exacta: `RUTA_DE_REGISTRO`), trae `main` con git por
 # línea de comandos —que SÍ respeta `merge=union`— y empuja ese merge a la rama del PR con la
 # llave de la App. El PR vuelve a estar limpio, corre CI y el auto-merge hace el resto.
 #
@@ -9,7 +10,7 @@
 #   · 🔴 NO toca un PR que no tuviera el auto-merge ARMADO antes de la pasada (SCRUM-839e). El
 #     16-sep-2026 la primera pasada empujó a #880 y #399, PR de semanas sin armar; el push los
 #     hizo armar y entraron en `main`. Si no se puede leer el armado, «no pude mirar».
-#   · NO toca un PR con UN SOLO fichero en conflicto fuera de `docs/master/`. Eso lo resuelve
+#   · NO toca un PR con UN SOLO fichero en conflicto fuera de esas dos listas. Eso lo resuelve
 #     una persona. La decisión —con sus dos cerraduras— vive en `scripts/conflicto-de-registro.mjs`
 #     y la tanda la ejecuta contra repositorios git de verdad.
 #   · NO fuerza nunca. El merge es hijo de la cabeza del PR: si la rama se ha movido entre medias,

@@ -1,0 +1,12 @@
+Capturas SCRUM-1646 · avisos públicos · 2026-11-12 · Chromium (Playwright MCP), fullPage
+Uso: node preparar.cjs <ARBOL> <TEMPORAL> ; node servidor.cjs <ARBOL> <TEMPORAL> (puerto 58146)
+/antes/<cara> = fuente de origin/main sin CSP · /despues/<cara> = esta rama con POLITICA_CSP aplicada · /control/<cara> = antes CON CSP
+ancho cara       antes==despues  bytes  control distinto  reglas antes/despues/control  fondo despues / control
+390   documento  true            10632  true              5 / 5 / -                     rgb(246,247,245) / transparente
+390   pagina     true            11769  true              7 / 7 / -                     rgb(246,247,245) / transparente
+390   registro   true             9497  true              4 / 4 / -                     rgb(246,247,245) / transparente
+1280  documento  true            13863  true              5 / 5 / -                     rgb(246,247,245) / transparente
+1280  pagina     true            14846  true              7 / 7 / -                     rgb(246,247,245) / transparente
+1280  registro   true            12465  true              4 / 4 / -                     rgb(246,247,245) / transparente
+Consola: 6 «Applying inline style violates ... 'style-src 'self''», TODAS en /control/*; 0 en /despues/*.
+(1 «404 /favicon.ico» del servidor de capturas, que no sirve favicon: ajeno a la página.)
