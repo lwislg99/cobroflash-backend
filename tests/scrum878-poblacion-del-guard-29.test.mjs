@@ -60,6 +60,11 @@ const SELLADO = new Set([
   // congelado se escribe SOLO en la misma update que la huella, al sellar, y no se reescribe. No
   // entra en la huella. Como FISCAL caería el cerrojo 878b sobre la propia escritura del sellado.
   'merchantCriterioCaja',
+  // SCRUM-665e (GO SCRUM-665 c.21182 puntos 1 y 4; clasificación decidida en c.21943 punto 3): la
+  // huella del PDF emitido se escribe UNA vez, al congelarlo en `ensureInvoicePdf`, y no se
+  // reescribe (una factura con huella sirve su fichero y no lo rehace). Es parte de emitir, no de
+  // editar: como FICHA dejaría de contar como contenido del documento emitido.
+  'pdfSha256',
 ]);
 
 /** FICHA y PUNTEROS: lo que se sabe DESPUÉS de emitir. La regla 29 los permite explícitamente. */

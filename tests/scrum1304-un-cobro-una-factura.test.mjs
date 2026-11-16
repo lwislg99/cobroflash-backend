@@ -42,6 +42,9 @@
 //   · Se doblan el PDF (no escribe en disco; puede fallar a propósito) y el correo. Nada más.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 // El banco se importa ANTES de cargar `dist/`: deja el doble de la base, el PDF y el correo.
 import {
   banco, prisma, reiniciar as reiniciarBanco, nuevoId, POR_DEFECTO, requiere, rutaDe, asentar,
@@ -54,6 +57,41 @@ function reiniciar() {
   reiniciarBanco();
   banco.tablas.merchant.find((m) => m.id === M_ES).llevaLibrosPorSii = false;
 }
+
+// SCRUM-665e · EL DOBLE DEL PDF, AL DÍA CON SU CONTRATO. Registrado por la vía de SCRUM-665 c.21943
+// punto 3 (GO del camino de emisión: c.21182 punto 1), con la forma de scrum1330 ④f (apéndice H de
+// docs/master/SCRUM-665.md). Desde 665e, `ensurePdfAndEvent` pasa por `ensureInvoicePdf`, que relee
+// la factura con `include: { merchant, customer }` y guarda la huella del fichero TAL COMO QUEDÓ EN
+// DISCO. Con el banco tal cual, cinco casos caían por su suelo (`missing_relations`, y la factura en
+// `PENDING_PDF`): C, ④c, ④e, «a secas» y la regla 2. Dos huecos del doble, no del código:
+//   · el banco sólo resuelve `include` en `charge`;
+//   · el generador de verdad escribe el fichero; el doble del banco no.
+// El banco es de S3 y no se toca: se envuelven AQUÍ, el PDF en un temporal del sistema y nunca en el
+// árbol (SCRUM-824). Lo que se cuenta (filas `Invoice` por cobro, sellos, eventos) no cambia, y el
+// fallo a propósito del PDF (`banco.pdf.fallos`) sigue cayendo ANTES de escribir nada.
+const DIR_PDF = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1304-'));
+process.on('exit', () => { try { fs.rmSync(DIR_PDF, { recursive: true, force: true }); } catch { /* temporal */ } });
+const dirs = requiere(rutaDe('dist/core/storage/dirs.js'));
+dirs.invoicesDir = DIR_PDF;
+const pdfDoble = requiere(rutaDe('dist/lib/pdf.js'));
+const generarDelBanco = pdfDoble.generateInvoicePdf;
+pdfDoble.generateInvoicePdf = async (d) => {
+  const r = await generarDelBanco(d);
+  fs.writeFileSync(path.join(dirs.invoicesDir, `${d.merchantId}-${d.number}.pdf`), `%PDF-doble ${d.number}
+`);
+  return r;
+};
+// `prisma.invoice` es el MISMO objeto dentro y fuera de una transacción (el mapa `modelos` del banco).
+const facturas = prisma.invoice;
+const leerFacturaDelBanco = facturas.findUnique;
+facturas.findUnique = async (a) => {
+  const fila = await leerFacturaDelBanco(a);
+  if (!fila || !a?.include) return fila;
+  if (a.include.merchant) fila.merchant = banco.tablas.merchant.find((m) => m.id === fila.merchantId) ?? null;
+  if (a.include.customer) fila.customer = banco.tablas.customer.find((c) => c.id === fila.customerId) ?? null;
+  if (a.include.rectifies) fila.rectifies = null;
+  return fila;
+};
 
 const { config } = requiere(rutaDe('dist/core/config/env.js'));
 const { ensureInvoiceForCharge } = requiere(rutaDe('dist/lib/invoicing.js'));
