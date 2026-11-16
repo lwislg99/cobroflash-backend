@@ -167,7 +167,7 @@ model Merchant {
   // SCRUM-1296: los registros de este comercio en la cola de remisión a la AEAT.
   vfSubmissions VfSubmission[]
   // SCRUM-1076d: lo que el profesional ha marcado en su calendario de plazos.
-  fiscalPlazosEstado FiscalPlazoEstado[]
+  fiscalPlazos FiscalPlazoEstado[]
 
   // SCRUM-293 (A2) · RETENCIÓN DE IRPF. Autorización expresa del fundador para ESTAS DOS LÍNEAS.
   //
