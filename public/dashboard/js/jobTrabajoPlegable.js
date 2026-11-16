@@ -50,6 +50,13 @@ const TEXTOS_EL_TRABAJO = {
   altaEquipo: 'Dar de alta a alguien',
 };
 
+// SCRUM-1662 · el rótulo de la línea de la TAREA, FIRMADO por el fundador en SCRUM-1662 c.21548: el
+// campo propio que el operario SÍ ve. Es el mismo literal que ya rotula ese campo en el alta
+// (`jobNuevoModal.js`, `tn-descripcion`). Va FUERA de `TEXTOS_EL_TRABAJO` a propósito: ese objeto lo
+// fija entero la firma de SCRUM-917 (com. 15881 y 16142) y meterle una clave con otra firma mezclaría
+// las dos procedencias en un mismo registro.
+const ROTULO_TAREA = 'Qué hay que hacer';
+
 /** «N gastos», N ≥ 2. El singular y el vacío tienen su propio literal. */
 function textoVariosGastos(n) {
   return n + ' gastos';
@@ -167,6 +174,7 @@ function construirBloqueElTrabajo(doc, lineas) {
 
 if (typeof window !== 'undefined') {
   window.TEXTOS_EL_TRABAJO = TEXTOS_EL_TRABAJO;
+  window.ROTULO_TAREA = ROTULO_TAREA;
   window.resumenDeNombre = resumenDeNombre;
   window.resumenDeQuien = resumenDeQuien;
   window.resumenDeGastos = resumenDeGastos;
@@ -175,7 +183,7 @@ if (typeof window !== 'undefined') {
 }
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    TEXTOS_EL_TRABAJO, resumenDeNombre, resumenDeQuien, resumenDeGastos,
+    TEXTOS_EL_TRABAJO, ROTULO_TAREA, resumenDeNombre, resumenDeQuien, resumenDeGastos,
     construirLineaPlegable, construirBloqueElTrabajo,
   };
 }

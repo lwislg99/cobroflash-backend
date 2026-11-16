@@ -110,3 +110,58 @@ pasan y cae 1, el mismo de CI. Con el arreglo: 8 de 8.
 el sha de arriba, sin conflictos.
 
 **NO medido:** la tanda entera en local (10 sesiones a la vez; hace de tanda el obligatorio).
+
+## SCRUM-1727b · La reseña tras el pago, solo con la ventana abierta y en 09:00-21:00 del negocio
+
+> Lo escribe la sesión jv-j2bz (puesto J2, equipo de Javier), no el fundador. Carril J2
+> (`node scripts/carriles.mjs de src/modules/billing/app/routes/psp.routes.ts` → J2; ídem
+> `mpWebhook.routes.ts`). `zonaDelMerchant` y `isQuietHours` (S1) se IMPORTAN, no se tocan.
+
+**Medido contra:** `origin/main` = `f7c897bc9614aef79d2f7b9c7f7ae37b3d5c784c` · 2026-11-12T18:54:35Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1727b-resena-ventana-y-franja.test.mjs`
+
+### De dónde sale
+
+Pregunta H5 de jv-j2bx (comentario 21742) y decisión del fundador transcrita por el orquestador del
+equipo de Javier (comentario 21744): la reseña de Google tras un pago sale SOLO si la ventana de 24 h
+está abierta y es entre las 09:00 y las 21:00 en la hora del negocio. Si no, no se manda: ni se encola
+ni pasa a plantilla. La baja, como hoy. Sin texto nuevo. Regla 28: restringe un envío que ya existía.
+
+### Qué cambia
+
+- `src/modules/billing/domain/resenaTrasElPago.ts` (nuevo): `motivoParaNoPedirResena` devuelve `null`
+  (puede salir) o el motivo: `fuera_de_franja` (`isQuietHours` con la zona de `zonaDelMerchant`, la
+  misma puerta que usan los mantenimientos para J6), `ventana_cerrada` (`isServiceWindowOpen`, la misma
+  que usa `sendWhatsAppWindowFirst`; sin cliente cuenta como cerrada) o `no_comprobable` (si algo lanza:
+  lo llaman dos webhooks de cobro y un throw haría reintentar el pago).
+- `psp.routes.ts` y `mpWebhook.routes.ts`: antes de `sendWhatsAppCtaUrl`, se pregunta; si hay motivo,
+  no se manda y queda una línea `[review] SCRUM-1727b` en el log. El `select` del comercio en el PSP
+  añade `timezone` (sin él, la franja caería a la zona por defecto). Mercado Pago ya trae el comercio
+  entero. El comentario del PSP que daba la ventana por abierta «porque el cliente acaba de pagar» se
+  corrige: pagar en una web no abre la ventana.
+- Nada del estado del pago ni del webhook cambia: sólo el envío de la reseña.
+- De paso: `tests/_huerfanos-declarados.mjs` declaraba `isQuietHours` como export sin lector de
+  fuera; ahora lo tiene y scrum411 pedía borrar la línea en el mismo commit (su causa ①).
+
+### Cómo se comprobó
+
+- **Rojo primero**, con las rutas de `origin/main` compiladas: 9 casos (suelo + 4 por ruta), caían 4
+  —ventana cerrada y fuera de franja, en las dos rutas— y pasaban 5 (4 + 5 = 9). Con el arreglo, 9 de 9.
+  Los handlers reales de `dist/`, base doblada, WhatsApp en dry-run y el reloj fijado sólo en `Date`
+  (12:00 y 22:30 de Madrid). Cada caso comprueba antes que el cobro pasó a pagado, para que «no salió»
+  no sea un webhook que no hizo nada; el control positivo es «ventana abierta y en franja → sale».
+- **Mutaciones** con `aplicarUna` de la casa sobre el catálogo del propio test: 4 de 4 caen.
+- **Build con tipos** (`tsc -p . --noEmit`): salida 0.
+- **Guards dirigidos**: 105 ficheros (los 88 que nombran estas rutas, `sendWhatsAppCtaUrl`,
+  `isQuietHours`, `maintenance.service` o `billing/domain`, más scrum553, 237, 976, 1387, 411, 1415,
+  747, 737…): 1.034 casos, 1.026 pasan, 6 saltan (gateados por base) y caían 2, los dos de scrum411
+  por la declaración de arriba; arreglada, scrum411 + 494 + 1622 + el mío, 54 de 54. `guards:entrada`
+  15 de 15 y los 5 de árbol entero que recomienda, 38 de 38.
+
+**Al día con main.** `git merge origin/main` (sin rebase) contra el sha de arriba, después de entrar
+#3131: un conflicto, en los `import` de `mpWebhook.routes.ts` con SCRUM-1720; se conservan los dos.
+Tras el merge, build con tipos salida 0 y 55 de 55 (el mío, scrum411, 1436f y los de 1720 y 1727).
+
+**NO medido:** la tanda completa en local (hace de tanda el obligatorio) · yaqu.app (haría falta un pago
+real por enlace con el cliente escribiendo por WhatsApp) · qué hora tiene configurada cada comercio real.

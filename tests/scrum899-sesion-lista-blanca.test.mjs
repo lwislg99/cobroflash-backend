@@ -10,10 +10,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SCRIPT = path.join(RAIZ, 'scripts', 'equipo', 'sesion.mjs');
@@ -174,7 +174,7 @@ test('decidir parar: por id, solo si el nombre casa y es de fondo', () => {
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
 function banco({ alterar = false, configEnElRepo = false } = {}) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum899-'));
+  const dir = temporal('scrum899-');
   const git = (cwd, ...a) => execFileSync('git', ['-c', 'core.autocrlf=false', '-C', cwd, ...a], { encoding: 'utf8' });
 
   // El repositorio: el sesion.mjs de ESTE árbol, en `origin/main`.
@@ -227,7 +227,7 @@ test('🔴 SUELO del banco: la copia instalada e IDÉNTICA actúa (llama a claud
     const r = correr(path.join(b.inst, 'sesion.mjs'), 'estado');
     assert.equal(r.v?.veredicto, 'ESTADO', `🔴 NO PUDE MIRAR: la copia buena no actúa (${JSON.stringify(r.v)}); el rojo de abajo no mediría nada`);
     assert.ok(fs.existsSync(b.marca), '🔴 NO PUDE MIRAR: la copia buena no llamó al claude falso');
-  } finally { fs.rmSync(b.dir, { recursive: true, force: true }); }
+  } finally { borrarTemporal(b.dir); }
 });
 
 test('🔴 ROJO: una copia ALTERADA se niega a actuar y no llama a claude', () => {
@@ -237,7 +237,7 @@ test('🔴 ROJO: una copia ALTERADA se niega a actuar y no llama a claude', () =
     assert.equal(r.v?.veredicto, 'ALTERADO', `🔴 una copia distinta de origin/main actúa: ${JSON.stringify(r.v)}`);
     assert.equal(r.status, 2);
     assert.equal(fs.existsSync(b.marca), false, '🔴 la copia alterada llegó a llamar a claude');
-  } finally { fs.rmSync(b.dir, { recursive: true, force: true }); }
+  } finally { borrarTemporal(b.dir); }
 });
 
 test('🔴 ROJO: ejecutada desde un árbol de git, no actúa', () => {
@@ -247,7 +247,7 @@ test('🔴 ROJO: ejecutada desde un árbol de git, no actúa', () => {
     const r = correr(path.join(b.repo, 'scripts', 'equipo', 'sesion.mjs'), 'estado');
     assert.equal(r.v?.veredicto, 'DESDE-UN-ARBOL', `🔴 actúa desde un worktree: ${JSON.stringify(r.v)}`);
     assert.equal(fs.existsSync(b.marca), false, '🔴 desde un árbol llegó a llamar a claude');
-  } finally { fs.rmSync(b.dir, { recursive: true, force: true }); }
+  } finally { borrarTemporal(b.dir); }
 });
 
 test('SUELO: sin config.json, o sin origin/main, «no pude mirar» y no actúa', () => {
@@ -255,12 +255,12 @@ test('SUELO: sin config.json, o sin origin/main, «no pude mirar» y no actúa',
   try {
     fs.rmSync(path.join(b.inst, 'config.json'));
     assert.equal(correr(path.join(b.inst, 'sesion.mjs'), 'estado').v?.veredicto, 'NO-PUDE-MIRAR');
-  } finally { fs.rmSync(b.dir, { recursive: true, force: true }); }
+  } finally { borrarTemporal(b.dir); }
   const c = banco();
   try {
     execFileSync('git', ['-C', c.repo, 'update-ref', '-d', 'refs/remotes/origin/main']);
     const r = correr(path.join(c.inst, 'sesion.mjs'), 'estado');
     assert.equal(r.v?.veredicto, 'NO-PUDE-MIRAR');
     assert.equal(fs.existsSync(c.marca), false);
-  } finally { fs.rmSync(c.dir, { recursive: true, force: true }); }
+  } finally { borrarTemporal(c.dir); }
 });

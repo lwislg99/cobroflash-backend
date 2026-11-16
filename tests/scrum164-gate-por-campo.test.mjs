@@ -31,8 +31,21 @@ test('SCRUM-164: el técnico SÍ puede con su día a día', () => {
   // silenciosa de SCRUM-120 disfrazada de "endurecer permisos".
   assert.equal(adminOnlyJobField({ status: 'en_curso' }), null);
   assert.equal(adminOnlyJobField({ scheduledAt: '2026-08-01' }), null);
-  assert.equal(adminOnlyJobField({ notes: 'el cliente no estaba' }), null);
-  assert.equal(adminOnlyJobField({ status: 'en_curso', notes: 'ok' }), null);
+  // RE-ANCLAJE (SCRUM-1662): aquí estaban `notes` → null. La tarea del operario es ahora
+  // `queHayQueHacer`; las notas internas son del jefe (test de abajo).
+  assert.equal(adminOnlyJobField({ queHayQueHacer: 'el cliente no estaba' }), null);
+  assert.equal(adminOnlyJobField({ status: 'en_curso', queHayQueHacer: 'ok' }), null);
+});
+
+test('SCRUM-1662 · las notas internas son SOLO del jefe (firma c.21555)', () => {
+  // Literal de la firma: «el operario deja de verlas y de poder editarlas». Supera la regla de
+  // SCRUM-120 (23-jul) que este fichero fijaba en el test de arriba — con el código nuevo el ancla
+  // viejo cayó en `notes` → 'notes' (medido antes de re-anclar).
+  assert.equal(adminOnlyJobField({ notes: 'el cliente no estaba' }), 'notes');
+  assert.equal(adminOnlyJobField({ status: 'en_curso', notes: 'ok' }), 'notes', 'mezclado con lo legítimo: se rechaza ENTERO');
+  assert.equal(adminOnlyJobField({ notes: null }), 'notes', 'vaciarlas también es editarlas');
+  // Con un campo de dinero mezclado, el 403 sigue nombrando el de dinero.
+  assert.equal(adminOnlyJobField({ notes: 'x', tipoOperacion: 'TRABAJO_UNICO' }), 'tipoOperacion');
 });
 
 test('SCRUM-164: FAIL-CLOSED — un campo reservado contamina el PATCH entero', () => {

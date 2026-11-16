@@ -1,0 +1,171 @@
+// SCRUM-1723d · El LOGIN (`/login.html`) en navegador real, con la política de SCRUM-1637 APLICADA.
+// (Guardado como .txt, igual que los guiones de J2 en esta carpeta. Para correrlo se copia a un .mjs
+//  fuera del árbol y se lanza DESDE LA RAÍZ del repo: la raíz sale de process.cwd().)
+// Reutiliza el servidor del alta de SCRUM-1647d (`evidencias/SCRUM-1647/1647d/servidor-alta.cjs`): la `app`
+// REAL de un `dist/`, prisma DOBLADO, y la cabecera de 1637 escrita como `Content-Security-Policy` o quitada.
+//
+// Cuatro escenarios:
+//   A = main de HOY sin política            · C = main de HOY con política (lo que se mide)
+//   E = main de ANTES de 1647c sin política · B = main de ANTES con política (CONTROL: tiene que romperse)
+// Vistas: `/login.html` y `/login.html?error=invalid_token` (la caja de aviso abierta por el guion), a 390 y
+// 1280 px. Cumple si A↔C son IDÉNTICAS byte a byte en las 4 capturas y C da 0 informes de cualquier directiva.
+//
+// Uso:  node <copia>.mjs <distHoy> <distAntes> <dirSalida>      (cwd = raíz del repo)
+// Salida: 0 = C cumple y los controles responden · 1 = C no cumple · 2 = CIEGO (un control no responde).
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import net from 'node:net';
+import { spawn } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
+
+const RAIZ = process.cwd();
+if (!fs.existsSync(path.join(RAIZ, 'scripts/_navegador.mjs'))) { console.error('CIEGO: cwd no es la raíz del repo'); process.exit(2); }
+const { lanzarNavegador, resolverNavegador } = await import(pathToFileURL(path.join(RAIZ, 'scripts/_navegador.mjs')).href);
+const puppeteer = createRequire(path.join(RAIZ, 'package.json'))('puppeteer-core');
+
+const [distHoy, distAntes, salida] = process.argv.slice(2);
+if (!distHoy || !distAntes || !salida) { console.error('uso: <distHoy> <distAntes> <dirSalida>'); process.exit(2); }
+fs.mkdirSync(path.join(salida, 'capturas'), { recursive: true });
+
+const SERVIDOR = path.join(RAIZ, 'docs/master/evidencias/SCRUM-1647/1647d/servidor-alta.cjs');
+const puertoLibre = () => new Promise((ok, mal) => {
+  const s = net.createServer().once('error', mal).listen(0, '127.0.0.1', () => { const { port } = s.address(); s.close(() => ok(port)); });
+});
+const ESCENARIOS = [
+  { id: 'A-hoy-sin', dist: distHoy, modo: 'sin' },
+  { id: 'C-hoy-aplicada', dist: distHoy, modo: 'aplicada' },
+  { id: 'E-antes-sin', dist: distAntes, modo: 'sin' },
+  { id: 'B-antes-aplicada', dist: distAntes, modo: 'aplicada' },
+];
+for (const esc of ESCENARIOS) esc.puerto = await puertoLibre();
+const VISTAS = [
+  { id: 'login', ruta: '/login.html' },
+  { id: 'login-error', ruta: '/login.html?error=invalid_token' },
+];
+const ANCHOS = [390, 1280];
+
+function entornoHijo() {
+  const e = { ...process.env, DISABLE_CRONS: 'true', NODE_ENV: 'test' };
+  for (const k of Object.keys(e)) if (/^DATABASE_URL/.test(k) || k === 'NODE_TEST_CONTEXT' || k === 'NODE_OPTIONS') delete e[k];
+  for (const k of ['DATABASE_URL', 'DATABASE_URL_STAGING', 'DATABASE_URL_DEV', 'DATABASE_URL_TESTS']) e[k] = '';
+  e.NODE_PATH = path.join(RAIZ, 'node_modules');
+  return e;
+}
+function arrancar(esc) {
+  return new Promise((ok, mal) => {
+    const h = spawn(process.execPath, [SERVIDOR, esc.dist, String(esc.puerto), esc.modo],
+      { cwd: path.dirname(path.resolve(esc.dist)), env: entornoHijo(), stdio: ['ignore', 'pipe', 'pipe'] });
+    let log = '';
+    const t = setTimeout(() => mal(new Error(`${esc.id}: el servidor no dijo LISTO en 60 s\n${log}`)), 60_000);
+    h.stdout.on('data', (d) => { log += d; if (log.includes('LISTO')) { clearTimeout(t); ok(h); } });
+    h.stderr.on('data', (d) => { log += d; });
+    h.on('exit', (c) => { clearTimeout(t); mal(new Error(`${esc.id}: el servidor salió con ${c}\n${log}`)); });
+  });
+}
+
+const recursosQueFaltan = [];
+const sha = (f) => crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
+const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function abrir(nav, origen, ruta, ancho) {
+  const ctx = await nav.createBrowserContext();
+  const p = await ctx.newPage();
+  const csp = [];
+  p.on('response', (r) => {
+    const tipo = r.request().resourceType();
+    if (r.status() >= 400 && ['stylesheet', 'font', 'script', 'image'].includes(tipo)
+      && !r.url().includes('/no-existe/') && !r.url().endsWith('/favicon.ico')) recursosQueFaltan.push(`${r.status()} ${tipo} ${r.url()}`);
+  });
+  p.on('console', (m) => { const t = m.text(); if (t.startsWith('⟦csp⟧')) csp.push(JSON.parse(t.slice(5))); });
+  await p.evaluateOnNewDocument(() => {
+    document.addEventListener('securitypolicyviolation', (e) => {
+      console.log('⟦csp⟧' + JSON.stringify({ directiva: e.effectiveDirective, bloqueado: e.blockedURI, linea: e.lineNumber }));
+    });
+  });
+  await p.setViewport({ width: ancho, height: 900, deviceScaleFactor: 1 });
+  const r = await p.goto(origen + ruta, { waitUntil: 'networkidle0' });
+  await espera(300);
+  return { ctx, p, csp, status: r.status(), cabeceras: r.headers() };
+}
+const resumen = (ev) => {
+  const porDirectiva = {};
+  for (const e of ev) porDirectiva[e.directiva] = (porDirectiva[e.directiva] || 0) + 1;
+  return { eventos: ev.length, porDirectiva };
+};
+
+const informe = { navegador: resolverNavegador(), escenarios: {} };
+const hijos = [];
+let nav;
+try {
+  for (const esc of ESCENARIOS) hijos.push(await arrancar(esc));
+  nav = await lanzarNavegador(puppeteer, { headless: true });
+  if (!nav) throw new Error('el navegador no arrancó');
+  informe.version = await nav.version();
+
+  for (const esc of ESCENARIOS) {
+    const origen = `http://127.0.0.1:${esc.puerto}`;
+    const res = { vistas: {} };
+    { // control sembrado: script en línea + onerror; con la política TIENE que dar informes
+      const { ctx, csp, cabeceras } = await abrir(nav, origen, '/__sembrado', 1280);
+      res.sembrado = { politica: cabeceras['content-security-policy'] ? 'aplicada' : 'sin', ...resumen(csp) };
+      await ctx.close();
+    }
+    for (const v of VISTAS) {
+      const r = { capturas: {}, csp: {} };
+      for (const ancho of ANCHOS) {
+        const { ctx, p, csp, status, cabeceras } = await abrir(nav, origen, v.ruta, ancho);
+        r.status = status;
+        r.politica = cabeceras['content-security-policy'] ? 'Content-Security-Policy'
+          : cabeceras['content-security-policy-report-only'] ? 'Report-Only' : 'ninguna';
+        const f = path.join(salida, 'capturas', `${esc.id}-${v.id}-${ancho}.png`);
+        await p.screenshot({ path: f, fullPage: true });
+        r.capturas[ancho] = { fichero: path.basename(f), sha256: sha(f) };
+        r.csp[ancho] = resumen(csp);
+        if (ancho === 1280) {
+          r.aviso = await p.evaluate(() => { const el = document.getElementById('alert');
+            return el ? { visible: getComputedStyle(el).display !== 'none', texto: el.textContent } : null; });
+        }
+        await ctx.close();
+      }
+      res.vistas[v.id] = r;
+    }
+    res.lecturasDelDoble = Number(await (await fetch(`${origen}/__lecturas`)).text());
+    informe.escenarios[esc.id] = res;
+  }
+
+  informe.comparacionVisual = [];
+  const PARES = [['A-hoy-sin', 'C-hoy-aplicada'], ['E-antes-sin', 'A-hoy-sin'], ['E-antes-sin', 'B-antes-aplicada']];
+  for (const [x, y] of PARES) for (const v of VISTAS) for (const ancho of ANCHOS) {
+    informe.comparacionVisual.push({ par: `${x} → ${y}`, vista: v.id, ancho,
+      identicas: informe.escenarios[x].vistas[v.id].capturas[ancho].sha256 === informe.escenarios[y].vistas[v.id].capturas[ancho].sha256 });
+  }
+  informe.recursosQueFaltan = [...new Set(recursosQueFaltan)];
+} finally {
+  if (nav) await nav.close().catch(() => {});
+  for (const h of hijos) h.kill();
+}
+
+fs.writeFileSync(path.join(salida, 'resultado.json'), JSON.stringify(informe, null, 2) + '\n');
+const E = informe.escenarios;
+const totalCsp = (id) => Object.values(E[id].vistas).reduce((s, v) => s + Object.values(v.csp).reduce((t, c) => t + c.eventos, 0), 0);
+const par = (p) => informe.comparacionVisual.filter((c) => c.par === p);
+const ciegos = [];
+if (!(E['B-antes-aplicada'].sembrado.eventos > 0 && E['C-hoy-aplicada'].sembrado.eventos > 0)) ciegos.push('el sembrado no da informes con la política aplicada');
+if (E['A-hoy-sin'].sembrado.eventos !== 0 || E['E-antes-sin'].sembrado.eventos !== 0) ciegos.push('el sembrado da informes SIN política');
+if (par('E-antes-sin → B-antes-aplicada').some((c) => c.identicas)) ciegos.push('CONTROL: main de antes con la política se pinta igual que sin ella (el banco no aplica la política)');
+if (totalCsp('B-antes-aplicada') === 0) ciegos.push('CONTROL: main de antes con la política no da ningún informe');
+if (informe.recursosQueFaltan.length) ciegos.push(`faltan recursos propios: ${informe.recursosQueFaltan.join(', ')}`);
+if (!E['A-hoy-sin'].vistas['login-error'].aviso?.visible) ciegos.push('la vista de error no abre la caja de aviso: no mide ese estado');
+for (const [id, e] of Object.entries(E)) if (e.lecturasDelDoble !== 0) ciegos.push(`${id}: la página leyó la base ${e.lecturasDelDoble} veces`);
+const cumple = par('A-hoy-sin → C-hoy-aplicada').every((c) => c.identicas) && totalCsp('C-hoy-aplicada') === 0
+  && E['C-hoy-aplicada'].vistas['login-error'].aviso?.visible === true;
+for (const [id, e] of Object.entries(E)) {
+  console.log(`${id.padEnd(17)} sembrado ${e.sembrado.eventos} · informes en el login ${totalCsp(id)} `
+    + `${JSON.stringify(Object.values(e.vistas).map((v) => v.csp[1280].porDirectiva))} · aviso con ?error ${JSON.stringify(e.vistas['login-error'].aviso)} · política ${e.vistas.login.politica} · lecturas ${e.lecturasDelDoble}`);
+}
+for (const c of informe.comparacionVisual) console.log(`visual ${c.par} ${c.vista} ${c.ancho}: ${c.identicas ? 'IDÉNTICAS' : 'distintas'}`);
+console.log(`navegador: ${informe.version}`);
+if (ciegos.length) { console.log('CIEGO:\n  ' + ciegos.join('\n  ')); process.exitCode = 2; }
+else { console.log(cumple ? 'C CUMPLE' : 'C NO CUMPLE'); process.exitCode = cumple ? 0 : 1; }

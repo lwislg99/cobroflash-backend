@@ -1,0 +1,83 @@
+﻿{
+  "R_post": {
+    "status": [
+      201,
+      201
+    ],
+    "guardado": [
+      {
+        "id": 1000,
+        "category": "otros",
+        "tipo": 15,
+        "cuota": 150
+      },
+      {
+        "id": 1001,
+        "category": "alquiler",
+        "tipo": 19,
+        "cuota": 114
+      }
+    ],
+    "borrador": {
+      "115": "{\"fuente\":\"Orden de 20-nov-2000, Anexo II, pág. 1 · https://www.boe.es/datos/imagenes/disp/2000/285/21430_005.png\",\"perceptores\":{\"casilla\":\"1\",\"valor\":1},\"base\":{\"casilla\":\"2\",\"valor\":600},\"retenciones\":{\"casilla\":\"3\",\"valor\":114},\"aDeducir\":{\"casilla\":\"4\",\"valor\":0},\"resultado\":{\"casilla\":\"5\",\"valor\":114},\"vacioPorque\":null}",
+      "111.casilla07_perceptores": 1,
+      "111.casilla08_importe": 1000,
+      "111.casilla09_retenciones": 150,
+      "motivos": []
+    }
+  },
+  "R_put": {
+    "status": 200,
+    "respuesta": {
+      "ok": true,
+      "item": {
+        "id": 1000,
+        "vatDeducible": null,
+        "retencionPracticadaDeclarada": null,
+        "merchantId": 4242,
+        "quoteId": null,
+        "providerId": 801,
+        "concept": "Subcontrata fontanería",
+        "amount": 1210,
+        "currency": "EUR",
+        "category": "otros",
+        "date": "2026-10-15T00:00:00.000Z",
+        "notes": null,
+        "receiptData": null,
+        "teamMemberId": null,
+        "baseAmount": 1000,
+        "vatRate": 21,
+        "vatAmount": 210,
+        "providerInvoiceNumber": "S-1",
+        "providerInvoiceDate": "2026-10-15T00:00:00.000Z",
+        "retencionPracticadaTipo": 15,
+        "retencionPracticadaCuota": 150
+      },
+      "destinoDelNif": null
+    },
+    "tipoTrasPut": 15
+  },
+  "S_servicio": {
+    "guardado": [
+      {
+        "tipo": 15,
+        "cuota": 150
+      }
+    ],
+    "borrador": {
+      "115": "{\"fuente\":\"Orden de 20-nov-2000, Anexo II, pág. 1 · https://www.boe.es/datos/imagenes/disp/2000/285/21430_005.png\",\"perceptores\":{\"casilla\":\"1\",\"valor\":0},\"base\":{\"casilla\":\"2\",\"valor\":0},\"retenciones\":{\"casilla\":\"3\",\"valor\":0},\"aDeducir\":{\"casilla\":\"4\",\"valor\":0},\"resultado\":{\"casilla\":\"5\",\"valor\":0},\"vacioPorque\":\"sin_dato_de_arrendamiento\"}",
+      "111.casilla07_perceptores": 1,
+      "111.casilla08_importe": 1000,
+      "111.casilla09_retenciones": 150,
+      "motivos": []
+    }
+  },
+  "P_positivo": {
+    "115": "{\"fuente\":\"Orden de 20-nov-2000, Anexo II, pág. 1 · https://www.boe.es/datos/imagenes/disp/2000/285/21430_005.png\",\"perceptores\":{\"casilla\":\"1\",\"valor\":1},\"base\":{\"casilla\":\"2\",\"valor\":600},\"retenciones\":{\"casilla\":\"3\",\"valor\":114},\"aDeducir\":{\"casilla\":\"4\",\"valor\":0},\"resultado\":{\"casilla\":\"5\",\"valor\":114},\"vacioPorque\":null}",
+    "111.casilla07_perceptores": 1,
+    "111.casilla08_importe": 1000,
+    "111.casilla09_retenciones": 150,
+    "motivos": []
+  }
+}
+VEREDICTO: medido (el positivo sale)

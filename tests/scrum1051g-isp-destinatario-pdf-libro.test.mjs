@@ -62,11 +62,15 @@ test('1051g ② · S2 con NIF de control falso se rechaza igual (válido, no só
   assert.equal(r?.code, ERROR_ISP_CLIENTE_SIN_NIF);
 });
 
-test('1051g ② · S2 con NIF válido y cliente NO empresario se rechaza, SIN texto (no hay firma)', () => {
+// 12-nov-2026 · SCRUM-1051h: este caso iba «SIN texto (no hay firma)». Javier firmó P5 en
+// SCRUM-1051 c.21761, así que el rechazo sigue siendo el mismo y ahora lleva su texto; el literal
+// se fija en `tests/scrum1051h-isp-p5-y-libro.test.mjs`. Aquí queda el rechazo y que NO es P4.
+test('1051g ② · S2 con NIF válido y cliente NO empresario se rechaza, y no con P4 (P5, c.21761)', () => {
   for (const tipoDestinatario of [null, undefined, 'PARTICULAR', 'empresario']) {
     const r = rechazo([S2], { taxId: NIF_OK, tipoDestinatario });
-    assert.deepEqual(r, { code: ERROR_ISP_CLIENTE_NO_EMPRESARIO }, `tipoDestinatario=${tipoDestinatario}`);
-    assert.equal('message' in r, false, 'el caso «no es empresario» no lleva texto: no está firmado');
+    assert.equal(r?.code, ERROR_ISP_CLIENTE_NO_EMPRESARIO, `tipoDestinatario=${tipoDestinatario}`);
+    assert.notEqual(r.message, P4, 'el cliente sí tiene NIF: P4 no es su texto');
+    assert.equal(typeof r.message, 'string', 'el caso «no es empresario» lleva P5 desde c.21761');
   }
 });
 

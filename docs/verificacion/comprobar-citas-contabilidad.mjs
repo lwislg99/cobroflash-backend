@@ -1,6 +1,7 @@
 // Comprueba que cada cita «...» (25+ caracteres) de docs/producto/CONTABILIDAD.md aparece literal en las fuentes oficiales bajadas.
 // Uso: node docs/verificacion/comprobar-citas-contabilidad.mjs docs/producto/CONTABILIDAD.md <carpetaFuentes> [--fijar] [--anclas <fichero>]
-// La carpeta lleva LIVA.html RIVA.html LIRPF.html RIRPF.html RFACT.html ORDEN303.html: NO estan en git; direcciones y SHA-256 en la §8 del documento.
+// La carpeta lleva LIVA.html RIVA.html LIRPF.html RIRPF.html RFACT.html ORDEN303.html ORDEN130.html ORDEN111.html ORDEN115.html
+// ORDEN347.html ORDEN390.html: NO estan en git; direcciones y SHA-256 en la §8 del documento.
 // Convierte cada HTML a texto plano aqui mismo (quita etiquetas, decodifica entidades, colapsa blancos) y busca la cita normalizada.
 // En CONTABILIDAD.md las « » se usan SOLO para citas literales: cualquier otra cosa entre « » saldria como NO ENCONTRADA.
 // Control negativo: una cita alterada a proposito (21 -> 20 por ciento) debe salir NO ENCONTRADA; si la encuentra, el comprobador esta ciego.
@@ -46,7 +47,9 @@ const norm = (s) => s
 const sinElipsis = (c) => norm(c).replace(/\s*(\(\.\.\.\)|\.\.\.|…)\s*/g, ' ');
 
 // Cada fuente, con el identificador BOE del consolidado que tiene que ser (§8 del documento).
-const BOE = { LIVA: 'BOE-A-1992-28740', RIVA: 'BOE-A-1992-28925', LIRPF: 'BOE-A-2006-20764', RIRPF: 'BOE-A-2007-6820', RFACT: 'BOE-A-2012-14696', ORDEN303: 'BOE-A-2008-20953' };
+// SCRUM-1076b: las cinco ORDEN<modelo> de la §10 (plazos de 130, 111, 115, 347 y 390) son obligatorias igual que las demas.
+const BOE = { LIVA: 'BOE-A-1992-28740', RIVA: 'BOE-A-1992-28925', LIRPF: 'BOE-A-2006-20764', RIRPF: 'BOE-A-2007-6820', RFACT: 'BOE-A-2012-14696', ORDEN303: 'BOE-A-2008-20953',
+  ORDEN130: 'BOE-A-2007-6032', ORDEN111: 'BOE-A-2011-4948', ORDEN115: 'BOE-A-2000-21430', ORDEN347: 'BOE-A-2008-16973', ORDEN390: 'BOE-A-2009-18472' };
 const FUENTES = Object.keys(BOE);
 
 // ── 3 · FUENTE ILEGIBLE: se mira ANTES que nada, y si falla no se afirma nada más.
@@ -57,7 +60,9 @@ for (const k of FUENTES) {
   let h = '';
   try { h = fs.readFileSync(f, 'utf8'); } catch { ilegibles.push(`${k}: no se puede leer ${f}`); continue; }
   if (h.length === 0) ilegibles.push(`${k}: fichero vacio`);
-  else if (!h.includes(`name="id" value="${BOE[k]}"`)) ilegibles.push(`${k}: no es el consolidado ${BOE[k]} (¿pagina de error, otra norma?)`);
+  // El id va en el formulario de redacciones; una norma que nunca se modifico no lo trae y el BOE la identifica solo en
+  // sus metadatos ELI (`id_local`; la Orden EHA/586/2011, medido el 13-nov-2026, SCRUM-1076b). Mismo id exigido.
+  else if (!h.includes(`name="id" value="${BOE[k]}"`) && !h.includes(`eli/ontology#id_local" content="${BOE[k]}"`)) ilegibles.push(`${k}: no es el consolidado ${BOE[k]} (¿pagina de error, otra norma?)`);
   else if (!h.includes('<div class="bloque" id="')) ilegibles.push(`${k}: no tiene bloques de consolidado`);
   else HTML[k] = h;
 }

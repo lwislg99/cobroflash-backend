@@ -97,6 +97,7 @@ const SIN_DECIDIR = Object.freeze({
   // fundador decidió que se anonimizan (SCRUM-1569 c.20142, «Ok tu recomendación»). Salen.
   'job.direccion': 'la dirección DONDE se trabajó — casi siempre el domicilio del cliente',
   'job.notes': 'texto libre del profesional sobre el trabajo y su cliente',
+  'job.queHayQueHacer': 'texto libre del jefe al operario sobre la tarea (SCRUM-1662): misma pregunta que job.notes',
   'quote.internalNotes': 'texto libre, y va dentro de un documento que puede estar sellado (regla 29)',
   'expense.notes': 'texto libre; puede nombrar a un proveedor o a una persona',
   'botSession.phone': 'el teléfono del cliente que escribió por WhatsApp, antes de ser cliente',
@@ -320,8 +321,10 @@ test('SCRUM-497 · 🔴 TRINQUETE: noventa datos personales siguen sin anonimiza
     + '  o a `FUERA_DE_ANONIMIZADO` y baja este número a mano, en el mismo commit.\n'
     + '  Si no, el censo ha dejado de verlos y «cero pendientes» significa «no supe mirar».');
 
-  assert.equal(reparto.sinDecidir.length, 90,
-    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 90 (SCRUM-1547 sumó, el 12-nov-2026 y sobre 86, ` +
+  assert.equal(reparto.sinDecidir.length, 91,
+    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 91 (SCRUM-1662 sumó, el 12-nov-2026 y sobre 90, ` +
+    '`job.queHayQueHacer`, columna nueva de texto libre: misma pregunta que `job.notes`, SIN decidir —decide el fundador—; ' +
+    'SCRUM-1547 sumó, el 12-nov-2026 y sobre 86, ' +
     'los 4 textos de error de envío, decididos por el fundador en c.21617; antes, ese mismo día y sobre 42, ' +
     'las 44 que ningún nombre dejaba ver —21 personales y 23 dudosas—, decididas por el fundador en c.21607; ' +
     'SCRUM-1569d restó `merchant.iban` ' +

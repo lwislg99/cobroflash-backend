@@ -366,7 +366,7 @@ A9: aviso → cicatriz J6 «Crucé el aviso de 200k entre dos mediciones (141k a
   exige que cuadre con c.21095 (28 = 17 + 11). Clon superficial → CIEGO.
 - `scrum864c` ③ compara con la lista: cae lo NO declarado (con el detalle de siempre) y lo declarado que ya
   no se acusa. Su título no cambia (lo citan registros de otros tickets).
-- `tests/scrum1396c-los-declarados-solo-bajan.test.mjs`: ① forma de la lista · ② sólo baja contra el
+- `scrum1396c-los-declarados-solo-bajan` (retirado en SCRUM-1718): ① forma de la lista · ② sólo baja contra el
   nacimiento, con sus controles · ③ positivo SEMBRADO (una función fabricada que devuelve su `mkdtemp`, fuera
   y dentro de un fichero declarado; si deja de salir ESCAPA dice CIEGO) · ④ negativo: los 28 no acusan, y
   sacar uno de la lista sin arreglarlo, o arreglarlo sin borrar su entrada, sí.
@@ -388,8 +388,8 @@ Salidas en `docs/master/evidencias/SCRUM-1396/salida-mutar-1396c.txt`.
 | aceptación (c.21095 / encargo) | dónde se ve |
 |---|---|
 | el guard empareja por ámbito | `tests/scrum1396-el-borrado-de-otra-funcion.test.mjs` (desde 1396) |
-| los 28 en una lista declarada, con motivo y quién los retira | `scripts/_mkdtemp-declarados.json` · `tests/scrum1396c-los-declarados-solo-bajan.test.mjs` ① |
-| un trinquete que prueba que la lista solo puede BAJAR | `tests/scrum1396c-los-declarados-solo-bajan.test.mjs` ② |
+| los 28 en una lista declarada, con motivo y quién los retira | `scripts/_mkdtemp-declarados.json` · `scrum1396c-los-declarados-solo-bajan` (retirado en SCRUM-1718) ① |
+| un trinquete que prueba que la lista solo puede BAJAR | `scrum1396c-los-declarados-solo-bajan` (retirado en SCRUM-1718) ② |
 | todo sitio NUEVO acusa en rojo | `tests/scrum864c-el-temporal-no-vuelve.test.mjs` ③ · 1396c ③ |
 | un sitio que sale de la lista sin arreglarse acusa | 1396c ④ |
 | `scrum864c` en VERDE sin tocar ninguno de los 28 | `tests/scrum864c-el-temporal-no-vuelve.test.mjs` |
@@ -456,7 +456,7 @@ Salida en `docs/master/evidencias/SCRUM-1396/salida-1396d-lote-1.txt`.
 |---|---|
 | hasta 6 de los 17 de J6, empezando por FORMA | la tabla de arriba · `scripts/_mkdtemp-declarados.json` (22 llamadas: J6 11 · SCRUM-1621 11) |
 | borrado garantizado en su ámbito con el ayudante de la casa | `temporal()` / `borrarTemporal()` de `tests/_temporal.mjs` en los seis |
-| cada uno sale de la lista; la lista sólo baja | `tests/scrum1396c-los-declarados-solo-bajan.test.mjs` ② · `tests/scrum864c-el-temporal-no-vuelve.test.mjs` ③ |
+| cada uno sale de la lista; la lista sólo baja | `scrum1396c-los-declarados-solo-bajan` (retirado en SCRUM-1718) ② · `tests/scrum864c-el-temporal-no-vuelve.test.mjs` ③ |
 | rojo primero y después fuera del censo | `docs/master/evidencias/SCRUM-1396/salida-1396d-lote-1.txt` |
 | los tests tocados pasan igual, mismos casos por nombre | la misma salida (99/99 → 99/99) |
 | vaciar los 11 restantes de J6 | NO HECHO → J6, siguientes lotes (7 FORMA: 521, 716c, 754 ×2, 836 ×2, 850b · 4 SIN_MEDIR) |
@@ -540,7 +540,7 @@ Salida en `docs/master/evidencias/SCRUM-1396/salida-1396e-lote-2.txt`.
 |---|---|
 | los 11 de J6 con el ayudante de la casa, o declarados con su porqué | la tabla de arriba · `tests/_temporal.mjs` en los 9 ficheros; ninguno se queda declarado |
 | las 4 SIN_MEDIR, medidas con fallo inyectado antes de tocarlas | `docs/master/evidencias/SCRUM-1396/medir-restos-1396e.sh` · la salida, sección «ANTES» |
-| cada uno sale de la lista; la lista sólo baja | `scripts/_mkdtemp-declarados.json` (11, todas SCRUM-1621) · `tests/scrum1396c-los-declarados-solo-bajan.test.mjs` · `tests/scrum864c-el-temporal-no-vuelve.test.mjs` ③ |
+| cada uno sale de la lista; la lista sólo baja | `scripts/_mkdtemp-declarados.json` (11, todas SCRUM-1621) · `scrum1396c-los-declarados-solo-bajan` (retirado en SCRUM-1718) · `tests/scrum864c-el-temporal-no-vuelve.test.mjs` ③ |
 | rojo primero y negativos | la salida, sección «negativos» |
 | los tests tocados pasan igual, con los mismos nombres | la salida (83/83 → 83/83) |
 | los 11 de SCRUM-1621 | NO TOCADOS (encargo) → SCRUM-1621 |

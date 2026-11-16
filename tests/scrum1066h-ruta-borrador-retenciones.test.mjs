@@ -16,6 +16,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { reqDeSesion } from './_arnes-de-router.mjs'; // SCRUM-1721
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const require_ = createRequire(path.join(RAIZ, 'package.json'));
@@ -106,7 +107,9 @@ async function pedir({ filas, url, merchantId = YO }) {
   require_.cache[R_PRISMA] = { id: R_PRISMA, filename: R_PRISMA, loaded: true, exports: { prisma } };
   const express = require_('express');
   const app = express();
-  app.use((req, _res, next) => { req.merchantId = merchantId; req.userRole = 'admin'; next(); });
+  // SCRUM-1721 · con la ruta MONTADA bajo /admin, este arnés entra en el censo de SCRUM-1344 ⑤:
+  // el `req` de sesión se arma con `reqDeSesion`, no con `userRole` a mano (mismo admin, mismo merchant).
+  app.use((req, _res, next) => { Object.assign(req, reqDeSesion({ rol: 'admin', merchantId })); next(); });
   app.use('/admin/retenciones', require_(R_ROUTES).default);
   const server = http.createServer(app);
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
