@@ -267,7 +267,7 @@ Casos A–G de c.21891 con la zona a mano, más tope, libro por caja y aviso de 
 
 ### Mutaciones (con `aplicarUna` y `correr` de `scripts/meta-guard-mutaciones.mjs`)
 
-**9 probadas: 8 VIVAS (el test cae) y 1 MUDA.** La muda era `añoDe` con el año del proceso dentro de
+**9 probadas: 8 VIVAS (el test cae) y 1 MUDA.** La muda era el año (`añoDesde`/`añoHasta`, entonces una flecha `añoDe`) del proceso dentro de
 `leerPorCaja`: con un rango de trimestre alineado en la zona, el año del proceso sólo ENSANCHA la consulta
 de candidatas, y el filtro por `fechaDeDevengo` deja el mismo libro. No la he declarado; el motivo va en
 un comentario en `MUTACIONES_QUE_ME_TUMBAN`. Las 8 declaradas son las vivas.

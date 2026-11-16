@@ -153,14 +153,17 @@ async function leerPorCaja(db: ClienteDelLibro, rango: RangoLibro): Promise<Fact
   // rango van de (año de `desde`) − 1 hasta (último 31-dic que cabe antes de `hasta`) − 1.
   // SCRUM-1445d: con `rango.zona`, el año y sus bordes son los de esa zona; sin ella, los del proceso.
   const { zona } = rango;
-  const añoDe = (d: Date) => (zona !== undefined ? Number(diaNaturalEn(d, zona).slice(0, 4)) : d.getFullYear());
+  // El año se calcula AQUÍ y no en una flecha con nombre: el censo de 1093h clasifica por función
+  // (`leerPorCaja`, AGREGADO), y una flecha nueva sería otra identidad sin clasificar.
+  const añoDesde = desde ? (zona !== undefined ? Number(diaNaturalEn(desde, zona).slice(0, 4)) : desde.getFullYear()) : undefined;
+  const añoHasta = hasta ? (zona !== undefined ? Number(diaNaturalEn(hasta, zona).slice(0, 4)) : hasta.getFullYear()) : undefined;
   const dia = (a: number, md: string) => `${String(a).padStart(4, '0')}-${md}`;
   const primeroDeEnero = (a: number) => (zona !== undefined ? inicioDelDiaEn(dia(a, '01-01'), zona) : new Date(a, 0, 1, 0, 0, 0, 0));
   const finDeAño = (a: number) => (zona !== undefined ? finDelDiaEn(dia(a, '12-31'), zona) : new Date(a, 11, 31, 23, 59, 59, 999));
-  const primerX = desde ? añoDe(desde) - 1 : undefined;
-  const ultimoX = hasta
-    ? (hasta.getTime() >= topeDeDevengo(primeroDeEnero(añoDe(hasta) - 1), zona).getTime()
-      ? añoDe(hasta) : añoDe(hasta) - 1) - 1
+  const primerX = añoDesde !== undefined ? añoDesde - 1 : undefined;
+  const ultimoX = hasta && añoHasta !== undefined
+    ? (hasta.getTime() >= topeDeDevengo(primeroDeEnero(añoHasta - 1), zona).getTime()
+      ? añoHasta : añoHasta - 1) - 1
     : undefined;
   const hayTope = primerX === undefined || ultimoX === undefined || primerX <= ultimoX;
 

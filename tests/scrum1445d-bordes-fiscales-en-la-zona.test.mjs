@@ -77,7 +77,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: '    const d = fechaDeDevengo(f as never, CAMPO_COBRO);',
     cae: 'SCRUM-1445d · leerPorCaja con zona',
   },
-  // NO declarada, a propósito: `añoDe` con el año del PROCESO en `leerPorCaja`. Medida MUDA con
+  // NO declarada, a propósito: el año (`añoDesde`/`añoHasta`) del PROCESO en `leerPorCaja`. Medida MUDA con
   // aplicarUna (registro 1445d): con un rango de trimestre alineado en la zona, el año del proceso sólo
   // ENSANCHA la consulta de candidatas, y el filtro por `fechaDeDevengo` deja el mismo libro.
   {
