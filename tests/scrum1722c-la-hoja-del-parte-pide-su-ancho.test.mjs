@@ -25,6 +25,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { soloEjecutable } from './_guard-texto.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CSS = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8');
@@ -50,7 +51,10 @@ function reglas(css) {
       i = j;
     }
   };
-  recorrer(css.replace(/\/\*[\s\S]*?\*\//g, ''), null);
+  // Los comentarios los quita EL SITIO ÚNICO de la casa (`soloEjecutable`, SCRUM-700), no un filtro de este
+  // fichero. Sin la almohadilla: en CSS `#` abre un id o un color, no un comentario. Medido sobre el
+  // `styles.css` de hoy: da las mismas 1.350 reglas que el filtro propio que hubo aquí (texto igual salvo espacios).
+  recorrer(soloEjecutable(css, { almohadillaEsComentario: false }), null);
   return out;
 }
 /** Las declaraciones de un cuerpo, como mapa propiedad → valor (la última gana, como en CSS). */

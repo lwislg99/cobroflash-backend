@@ -123,3 +123,15 @@ mide la sonda.
 
 ## Pendiente
 - Regla 42: tras el merge, la sonda SIN `PARTE_CSS` contra yaqu.app → 18 pasadas, 0 con desborde.
+
+## El rojo del CI de #3173 y su arreglo (16-nov-2026, ~16:30Z)
+El obligatorio cayó con UN fallo: `tests/scrum700-filtros-de-comentario.test.mjs` («más ficheros con filtro propio:
+92 > 91»). El test nuevo quitaba los comentarios del CSS con una expresión propia, y la casa tiene un sitio único
+para eso (`soloEjecutable`, de `tests/_guard-texto.mjs`).
+- Arreglo en el TEST, no en el guard (regla 41): usa `soloEjecutable(css, { almohadillaEsComentario: false })`
+  (en CSS la almohadilla abre un id o un color, no un comentario).
+- Medido antes de cambiarlo, sobre el `styles.css` de la rama: el texto que sale es el mismo salvo espacios, con
+  1.350 llaves de apertura y 1.350 de cierre por los dos caminos. El test lee las mismas reglas.
+- Tras el arreglo: `scrum700` + el test nuevo + `scrum1415`, 17 de 17, 0 fallos, 0 saltos.
+- Por qué no se vio antes de empujar: `scrum700` recorre el árbol entero y no está entre los vecinos que se
+  corrieron ni en los 15 guards de entrada; sólo corre en la tanda completa del CI.
