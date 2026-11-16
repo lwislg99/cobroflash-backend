@@ -1,7 +1,7 @@
 {
-  "_": "GENERADO por scripts/carriles.mjs desde docs/equipo/dos-equipos.md (sha256 5af5f7e73841). NO se edita a mano: se cambia la tabla y se regenera.",
+  "_": "GENERADO por scripts/carriles.mjs desde docs/equipo/dos-equipos.md (sha256 1b233cf527ae). NO se edita a mano: se cambia la tabla y se regenera.",
   "fuente": "docs/equipo/dos-equipos.md",
-  "sha": "5af5f7e73841",
+  "sha": "1b233cf527ae",
   "areas": {
     "S0": "consultoría y auditoría: «¿esto existe hoy?», filtro de las afirmaciones de SU orquestador, dueña de `00-normas-comunes.md`, `dos-equipos.md` y `trampas-del-entorno.md`",
     "S1": "servidor: importes, presupuestos, gastos, mantenimientos, y el servidor de todo lo que no sea de J1-J3",
@@ -1573,6 +1573,15 @@
       "motivo": "sólo la declaración de las piezas de SCRUM-1066h que aún nadie consume (`retenciones.routes.ts::router` y sus 2 exports, `leerHayRetencionAnotadaEnElAño` y `TIPOS_RETENCION_PRACTICADA_VALIDOS`), con motivo «montaje pendiente de S1 en SCRUM-1721»; el guard cuenta por clave, así que son tres objetos con el mismo motivo. Se retira en el PR de S1 que monte la ruta. Excepción firmada por el fundador en SCRUM-1066 c.21716 («Sí, una línea»); el resto del fichero sigue siendo de S0",
       "ticket": "SCRUM-1066",
       "linea": 263
+    },
+    {
+      "patron": "scripts/_sin-consumir-declarados.json",
+      "quien": [
+        "J1"
+      ],
+      "motivo": "sólo la declaración de las 10 piezas de SCRUM-1076d que aún nadie consume, todas de `src/modules/fiscal/plazos/` (`plazos.routes.ts::router`, `periodosDe`, `leerCalendario`, `marcarPlazo`, `construirCalendario`, `validarClave`, `TEXTOS_PLAZOS`, `rotuloDeLaFuente`, `rotuloDelPeriodo` y `citas.ts::CITAS_PLAZOS`), con motivo «montaje pendiente de S1: línea de src/app.ts que pide Javier a Luis». Se retira en el PR de S1 que monte la ruta. Excepción firmada por el fundador en SCRUM-1076 c.21899 («Sí, igual que 1066h»), ampliada a 10 piezas por el orquestador J en c.21916; el resto del fichero sigue siendo de S0",
+      "ticket": "SCRUM-1076",
+      "linea": 264
     }
   ]
 }
