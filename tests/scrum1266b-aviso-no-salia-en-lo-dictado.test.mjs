@@ -82,7 +82,12 @@ async function abrir({ estado, lineas, patchFalla = false, lento = false } = {})
   }, [RUTAS]);
   const router = moduloDeDist(RUTAS).default;
   const pedidas = [];
+  let enVuelo = 0;
   const apiRequest = async (ruta, o = {}) => {
+    enVuelo++;
+    try { return await peticion(ruta, o); } finally { enVuelo--; }
+  };
+  const peticion = async (ruta, o) => {
     const metodo = (o.method || 'GET').toLowerCase();
     const body = o.body ? JSON.parse(o.body) : undefined;
     pedidas.push({ metodo, ruta, body });
@@ -111,7 +116,24 @@ async function abrir({ estado, lineas, patchFalla = false, lento = false } = {})
     '🔴 NO PUDE MIRAR: la vista no pintó el parte');
   const escrituras = () => pedidas.filter((p) => p.metodo !== 'get');
   const boton = (i) => cont.querySelectorAll('[data-es-correcto]').find((b) => b.getAttribute('data-es-correcto') === String(i));
-  return { fila, cont, reg, escrituras, boton, ctx };
+  /**
+   * SCRUM-1689: espera a una CONDICIÓN, no a un tiempo. La vista no tiene temporizadores (su contexto no
+   * lleva `setTimeout`): lo único que tarda es el PATCH lento del doble. Así que «en reposo» = ninguna
+   * petición en vuelo Y ninguna nueva en una vuelta entera. El tope es ALTO y sólo salta si se cuelga.
+   */
+  const reposo = async (topeMs = 5000) => {
+    const limite = Date.now() + topeMs;
+    for (;;) {
+      const antes = pedidas.length;
+      await vaciar();
+      await new Promise((r) => setTimeout(r, 1));
+      await vaciar();
+      if (enVuelo === 0 && pedidas.length === antes) return;
+      assert.ok(Date.now() < limite,
+        `🔴 COLGADO: tras ${topeMs} ms siguen ${enVuelo} peticiones en vuelo (${pedidas.length} pedidas)`);
+    }
+  };
+  return { fila, cont, reg, escrituras, boton, ctx, reposo };
 }
 
 // ═══ SUELO ═════════════════════════════════════════════════════════════════════════════════════
@@ -275,7 +297,8 @@ test('SCRUM-1266b · una lista LARGA no ensancha la columna: el texto parte por 
 // lista con las líneas de la última lectura. El `blur` de la descripción sale y, antes de que vuelva,
 // el técnico ya ha tocado el botón.
 
-const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
+// SCRUM-1689: estos tres esperaban con `dormir(80)`/`dormir(20)` de reloj de pared y caían con la CPU
+// cargada (89 de 96 con 32 a la vez el 12-nov). Ahora esperan a `reposo()`: nada en vuelo.
 const corregirSinEsperar = (cont, i, texto) => {
   const desc = cont.querySelectorAll('.parte-linea-desc').find((x) => x.getAttribute('data-linea-desc') === String(i));
   desc.value = texto;
@@ -284,16 +307,16 @@ const corregirSinEsperar = (cont, i, texto) => {
 const CORREGIDA = 'Cambio de central Honeywell Galaxy Flex';
 
 test('SCRUM-1266b · 🔴 corregir una descripción y quitar OTRA línea con «×»: la corrección se queda', async () => {
-  const { fila, cont } = await abrir({ lento: true });
+  const { fila, cont, reposo } = await abrir({ lento: true });
   corregirSinEsperar(cont, 0, CORREGIDA);
   cont.querySelectorAll('.parte-quitar-linea').find((b) => b.getAttribute('data-indice') === '1').dispararClick();
-  await dormir(80);
+  await reposo();
   assert.deepEqual(fila.lineas.map((l) => l.descripcion), [CORREGIDA],
     '🔴 la «×» ha devuelto la descripción de antes de corregirla');
 });
 
 test('SCRUM-1266b · 🔴 corregir una descripción y añadir una línea nueva: la corrección se queda', async () => {
-  const { fila, cont } = await abrir({ lento: true });
+  const { fila, cont, reposo } = await abrir({ lento: true });
   corregirSinEsperar(cont, 0, CORREGIDA);
   cont.querySelectorAll('.parte-anadir').find((b) => b.getAttribute('data-bloque') === 'materiales').dispararClick();
   const unds = cont.querySelector('[data-nueva-unds]');
@@ -302,22 +325,22 @@ test('SCRUM-1266b · 🔴 corregir una descripción y añadir una línea nueva: 
   unds.value = '1';
   desc.value = 'Caja estanca';
   desc.disparar('change');
-  await dormir(80);
+  await reposo();
   assert.deepEqual(fila.lineas.map((l) => l.descripcion), [CORREGIDA, 'Detector volumétrico', 'Caja estanca'],
     '🔴 añadir una línea ha devuelto la descripción de antes de corregirla');
 });
 
 test('SCRUM-1266b · 🔴 corregir una descripción y «Añadir estas líneas» del dictado: la corrección se queda', async () => {
-  const { fila, cont } = await abrir({ lento: true });
+  const { fila, cont, reposo } = await abrir({ lento: true });
   const campo = cont.querySelector('[data-dictado-texto]');
   campo.value = 'He purgado el circuito';
   cont.querySelector('[data-dictado-ordenar]').dispararClick();
-  await dormir(20);
+  await reposo();
   const confirmar = cont.querySelectorAll('[data-propuesta-confirmar]').pop();
   assert.ok(confirmar && !confirmar.disabled, '🔴 NO PUDE MIRAR: no hay botón para añadir lo dictado');
   corregirSinEsperar(cont, 0, CORREGIDA);
   confirmar.dispararClick();
-  await dormir(80);
+  await reposo();
   assert.deepEqual(fila.lineas.map((l) => l.descripcion), [CORREGIDA, 'Detector volumétrico', 'Purga del circuito'],
     '🔴 añadir lo dictado ha devuelto la descripción de antes de corregirla');
 });

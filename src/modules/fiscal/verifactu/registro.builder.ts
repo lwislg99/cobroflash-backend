@@ -53,6 +53,20 @@ export const CALIFICACION_SUJETA_NO_EXENTA = 'S1';
 export const CALIFICACION_INVERSION_SUJETO_PASIVO = 'S2';
 /** Régimen general de IVA. `IdOperacionesTrascendenciaTributariaType`, lista L8A. */
 export const CLAVE_REGIMEN_GENERAL = '01';
+/**
+ * SCRUM-1129e · Régimen especial del criterio de caja. `IdOperacionesTrascendenciaTributariaType`,
+ * lista L8A (tabla en `docs/master/SCRUM-1129.md`). Sólo en tramos `S1`: con `S2` la AEAT la
+ * rechaza (§15.6.5) y la inversión del sujeto pasivo queda fuera de la caja (LIVA 163 duodecies.Dos.d).
+ */
+export const CLAVE_REGIMEN_CRITERIO_CAJA = '07';
+
+/**
+ * SCRUM-1129e · El régimen del emisor tal como se CONGELÓ al sellar la factura
+ * (`Invoice.merchantCriterioCaja`). Nunca el `Merchant` vivo: con NULL la clave es 01.
+ */
+export interface RegimenDelEmisor {
+  criterioCaja?: boolean | null;
+}
 
 /**
  * Una factura que NO se puede declarar con certeza. Quien construye el envío la EXCLUYE y la
@@ -307,6 +321,7 @@ export function resolverSinDestinatario(
 export function clasificarDetalleDesglose(
   entrada: { rate: number; base: number; cuota: number; causa?: string },
   ref?: string,
+  regimen?: RegimenDelEmisor,
 ): DetalleDesglose {
   if (entrada.causa === 'S2') {
     return {
@@ -325,7 +340,9 @@ export function clasificarDetalleDesglose(
     );
   }
   return {
-    claveRegimen: CLAVE_REGIMEN_GENERAL,
+    // SCRUM-1129e: `=== true`, y nada más. NULL o ausente (factura sellada antes de la columna, o
+    // sin dato al sellar) es 01, que es con lo que se selló.
+    claveRegimen: regimen?.criterioCaja === true ? CLAVE_REGIMEN_CRITERIO_CAJA : CLAVE_REGIMEN_GENERAL,
     calificacion: CALIFICACION_SUJETA_NO_EXENTA,
     tipoImpositivo: String(entrada.rate),
     baseImponible: entrada.base.toFixed(2),

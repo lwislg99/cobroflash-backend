@@ -61,3 +61,42 @@ un 404 de acceso).
 ## Texto propuesto (NO aplicado; para firma del fundador)
 
 «No se puede emitir un albarán sin líneas. Añade al menos una línea con lo que se ha hecho.»
+
+→ **Firmado** el 12-nov-2026: c.21707 (localizador allí). Aplicado en la pantalla por S2, abajo.
+
+## Pantalla · S2 · 12-nov-2026 · rama `scrum-1673b-albaran-remates-front`
+
+**Medido contra:** `origin/main` = `e599191a2ae41038acbeadd04a76feb2151746ec` · 2026-11-12T19:07:13Z
+A9: comprobación → `tests/scrum1673b-albaran-remates-front.test.mjs`
+
+**Skill UI:** cargada (`yaqu-premium-ui`, en el remate). AB6 sobre el diff: cero componentes,
+clases, tokens o colores nuevos; el texto sale por el `setStatus('error', …)` de siempre y lo demás
+es QUITAR nodos al técnico. Sin capturas antes/después: no hay pieza visual nueva que comparar; lo
+que se mide es qué nodos existen, y eso lo mide el test en el banco de vistas.
+
+Agrupa dos remates del mismo editor de la ficha del Trabajo, declarado: este ticket y
+**SCRUM-1712 ①** (c.21700), que no se repite en `docs/master/SCRUM-1712.md` (lo anota su comentario).
+
+- **SCRUM-1673** · `albaranAccion.js`: `errorDeEmitirSinLineas(data)` devuelve el literal firmado si
+  `data.error === 'albaran_sin_lineas'` y `null` en otro caso; va a `window` porque las tres
+  superficies que emiten lo alcanzan por ahí. `jobDetailView.js` lo usa en `falloDelCta` (CTA de
+  cabecera, `nextAct` `emitir`) y en el `catch` de «Entregar y enviar a firmar». Además ese botón
+  corta SIN líneas ANTES del alta, con la forma del mismo 409: antes dejaba un borrador vacío con
+  número reservado.
+- **SCRUM-1712 ①** · `buildAlbEditor`: con `appUserRole === 'tecnico'` no se montan la casilla
+  «Incluir precios en el albarán», las columnas precio+IVA, el total orientativo, «Ocultar precios en
+  el albarán» ni el precio del dictado; tampoco el rótulo «modo congelado» en un borrador. El servidor
+  ya lo rechaza (403, #3123). Cero textos nuevos.
+
+**Test:** `tests/scrum1673b-albaran-remates-front.test.mjs`, 6 casos por el camino real
+(`buildAlbEditor` montado en el banco de vistas con el rol de cada uno). Con `albaranAccion.js` y
+`jobDetailView.js` de `main`: 4 rojos (②④⑤⑥); ① es el control positivo (la jefa SÍ ve todo, mismo
+albarán) y ③ guarda la rama `else if` (en `main` el técnico ve la casilla, no el rótulo), así que
+pasan en los dos lados. Con la rama: 6/6.
+
+**Tanda de vecinos** (todo test que lee `albaranAccion` o `jobDetailView`, 86 ficheros; fuera
+`scrum759`, que lanza la tanda entera y lo cubre el CI): 790 tests, 789 en verde, 0 rojos, 1 saltado
+con motivo declarado (SCRUM-22, `sin QA_DB_TEST=1 ni LIBRO_PG_URL`).
+
+**Lo que queda fuera:** `albaranDetailView.js` (`btnEmitir`) es carril S4; tiene la función en
+`window.errorDeEmitirSinLineas` para usarla. Verificación en yaqu.app, tras el merge.

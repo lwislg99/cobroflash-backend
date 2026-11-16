@@ -36,6 +36,8 @@
 import type { LibroRegistro, AsientoLibro } from '../../invoicing/domain/libroRegistro';
 // SCRUM-426: E4 CONSUME el motor de A6. No lo recalcula -- lo llama y pinta lo que devuelve.
 import { exigirLibroRecibidasLegible, type LibroRecibidas } from '../../invoicing/domain/libroRecibidas';
+// SCRUM-1051h · P3, firmada (c.21750 punto 5): los dos textos viven con los otros de la ISP.
+import { COPY_ISP_COLUMNA, COPY_ISP_VALOR_SI } from '../../invoicing/domain/destinatarioIsp';
 
 /**
  * ⚠️ MICROCOPY SIN APROBAR (regla 30). Los rótulos van con marcador Y con la propuesta porque un
@@ -65,6 +67,12 @@ export const COLUMNAS_EXPEDIDAS = Object.freeze([
   { clave: 'baseImponible', rotulo: 'Base imponible' },
   { clave: 'tipoIva', rotulo: 'Tipo de IVA (%)' },
   { clave: 'cuotaIva', rotulo: 'Cuota de IVA' },
+  /**
+   * SCRUM-1051h · P3 (firmada, SCRUM-1051 c.21750 punto 5): «Sí» en la fila del desglose que es
+   * inversión del sujeto pasivo (`causa: 'S2'`), y VACÍA en las demás. Va al lado de la cuota
+   * porque es lo que explica una cuota 0 con un tipo del 21 %. Para «no» no hay texto firmado.
+   */
+  { clave: 'isp', rotulo: COPY_ISP_COLUMNA },
   { clave: 'totalFactura', rotulo: 'Total de la factura' },
   /**
    * `Invoice.status` SE PARTE EN DOS COLUMNAS, una por eje (decisión del asesor, 7-ago-2026).
@@ -310,12 +318,12 @@ export function filasDeAsiento(a: AsientoLibro, destinatario: DatosDestinatario)
   };
 
   if (a.importeIlegible) {
-    return [{ ...comun, baseImponible: null, tipoIva: null, cuotaIva: null, totalFactura: null }];
+    return [{ ...comun, baseImponible: null, tipoIva: null, cuotaIva: null, isp: null, totalFactura: null }];
   }
 
   const porTipo = Array.isArray(a.porTipo) ? a.porTipo : [];
   if (porTipo.length === 0) {
-    return [{ ...comun, baseImponible: a.base, tipoIva: null, cuotaIva: a.cuota, totalFactura: a.total }];
+    return [{ ...comun, baseImponible: a.base, tipoIva: null, cuotaIva: a.cuota, isp: null, totalFactura: a.total }];
   }
 
   // El total va SOLO en la primera fila del desglose: repetirlo en cada tipo haría que una suma
@@ -325,6 +333,7 @@ export function filasDeAsiento(a: AsientoLibro, destinatario: DatosDestinatario)
     baseImponible: t.base,
     tipoIva: t.tipo,
     cuotaIva: t.cuota,
+    isp: t.causa === 'S2' ? COPY_ISP_VALOR_SI : null,
     totalFactura: i === 0 ? a.total : null,
   }));
 }

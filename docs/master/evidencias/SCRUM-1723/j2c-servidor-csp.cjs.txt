@@ -1,0 +1,59 @@
+// SCRUM-1723c · Servidor del recorrido en navegador para TARJETA y MERCADO PAGO. Variante de
+// `evidencias/SCRUM-1647/servidor-csp.cjs` (misma intercepción de la política, mismo prisma doblado),
+// con el estado del cobro y el comercio elegidos por un prefijo de la URL, que se quita antes de la app:
+//   /__e/<estadoDelCobro>/<idDelComercio>/<ruta real>
+// Stripe es un DOBLE cuyo `create` LANZA: el camino de dinero no se ejecuta, sólo sus páginas de error.
+// Ni base de datos, ni red, ni Stripe, ni Mercado Pago (sin credencial: `mpAccessToken` null).
+// Uso: node <copia .cjs> <distDir> <puerto> <aplicada|sin>
+'use strict';
+const http = require('node:http');
+const path = require('node:path');
+
+const [distDir, puertoTxt, modo] = process.argv.slice(2);
+if (!distDir || !puertoTxt || !['aplicada', 'sin'].includes(modo)) { console.error('uso: <distDir> <puerto> <aplicada|sin>'); process.exit(2); }
+const DIST = path.resolve(distDir);
+let estado = 'pending';
+let idComercio = 42;
+function cobro() {
+  return {
+    id: 7, receiptToken: 'tok1723c', status: estado, amount: 250, currency: 'EUR',
+    concept: 'Reparación de bajante', reference: 'REF-1723C', payMethods: null, intentId: null,
+    createdAt: new Date('2026-11-12T10:00:00Z'),
+    merchant: {
+      id: idComercio, name: 'Fontanería Ruiz', legalName: 'Fontanería Ruiz SL', email: 'ruiz@ejemplo.test',
+      country: 'ES', logoUrl: null, iban: 'ES9121000418450200051332', clabe: null, bizumPhone: '600111222',
+      whatsappPhone: null, connectStatus: 'none', stripeAccountId: null, mpAccessToken: null,
+      flags: {}, deletedAt: null,
+    },
+    customer: { id: 3, name: 'Ana', email: null },
+  };
+}
+const prismaDoble = {
+  charge: { findUnique: async () => cobro(), update: async () => { throw new Error('el recorrido no escribe'); } },
+  invoice: { findFirst: async () => null, findUnique: async () => null },
+  quote: { findFirst: async () => null },
+  event: { findFirst: async () => null, create: async () => { throw new Error('el recorrido no escribe'); } },
+};
+const R_PRISMA = require.resolve(path.join(DIST, 'core/db/prisma.js'));
+require.cache[R_PRISMA] = { id: R_PRISMA, filename: R_PRISMA, loaded: true, exports: { prisma: prismaDoble } };
+const stripeMod = require(path.join(DIST, 'integrations/stripe.js'));
+stripeMod.stripe = { checkout: { sessions: { create: async () => { throw new Error('doble de SCRUM-1723c'); } } } };
+const { app } = require(path.join(DIST, 'app.js'));
+
+http.createServer((req, res) => {
+  if (req.url === '/__sembrado') {
+    const { POLITICA_CSP } = require(path.join(DIST, 'core/http/csp.js'));
+    if (modo === 'aplicada') res.setHeader('Content-Security-Policy', POLITICA_CSP);
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.end('<!doctype html><html><head><link rel="icon" href="data:,"><style>body{color:red}</style></head><body><p style="color:blue">x</p></body></html>');
+    return;
+  }
+  const m = /^\/__e\/(\w+)\/(\d+)(\/.*)$/.exec(req.url);
+  if (m) { estado = m[1]; idComercio = Number(m[2]); req.url = m[3]; }
+  const original = res.setHeader.bind(res);
+  res.setHeader = (n, v) => {
+    if (String(n).toLowerCase() === 'content-security-policy-report-only') return modo === 'aplicada' ? original('Content-Security-Policy', v) : res;
+    return original(n, v);
+  };
+  app(req, res);
+}).listen(Number(puertoTxt), '127.0.0.1', () => console.log(`LISTO ${puertoTxt} ${modo}`));

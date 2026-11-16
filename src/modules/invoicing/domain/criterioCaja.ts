@@ -13,8 +13,8 @@
 //
 // 🔴 AQUÍ PONÍA «TRES», Y ERA FALSO. Los cinco, censados por AST:
 //
-//     mpWebhook.routes.ts:142 · psp.routes.ts:121 · psp.routes.ts:167  ← webhooks: CORRECTO,
-//         el aviso llega en el momento del cobro;
+//     mpWebhook.routes.ts:142 · psp.routes.ts:121 · psp.routes.ts:167  ← webhooks (SCRUM-1735:
+//         los de psp ya NO usan el reloj, ver abajo);
 //     invoicesAdmin.routes.ts:373  ← marcado MANUAL EN LOTE. **Era la víctima**, y faltaba;
 //     invoicesAdmin.routes.ts:907  ← nace una R1 (camino de emisión, otro asunto).
 //
@@ -25,7 +25,7 @@
 // menos de cinco.
 //
 // ⚠️ Y el de :373 YA NO usa el reloj: desde SCRUM-397, `POST /bulk-paid` guarda la fecha que declara
-// la persona. Los tres webhooks siguen con `new Date()` a propósito.
+// la persona. Y desde SCRUM-1735 las dos de `psp` escriben `resolucion.fecha`; sólo `mpWebhook` sigue con `new Date()` (no le llega fecha declarada).
 //
 // Eso es el instante en que **alguien lo marcó**, no el instante en que el dinero entró. Y tres de
 // las cinco formas de cobro se marcan a mano.

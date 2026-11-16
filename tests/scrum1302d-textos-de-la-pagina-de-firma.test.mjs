@@ -22,6 +22,8 @@ import assert from 'node:assert/strict';
 import { inyectarBase, moduloDeDist, MERCHANT, CLIENTE } from './_envio-doblado.mjs';
 import { bancoDelParte, TRAZO_1, TRAZO_2, CLIENTE_DEL_PARTE } from './_banco-firma-del-parte.mjs';
 import { elementosDe, navegadorDelParte, textoDe } from './_navegador-del-parte.mjs'; // SCRUM-1646
+import { navegadorDeLaFirma, respuesta } from './_navegador-de-la-firma-del-presupuesto.mjs'; // SCRUM-1646c
+import { PRESUPUESTO_FIRMA_JS } from '../dist/modules/system/app/routes/quoteDecisionNavegador.js';
 
 const LANDING = '../dist/modules/system/app/routes/quoteDecisionLanding.routes.js';
 const RUTA_PARTE = '../dist/modules/jobs/app/routes/albaranPublic.routes.js';
@@ -54,6 +56,20 @@ const textoSinRespuesta = (html) => {
 const textoDeReserva = (html) => {
   const m = html.match(/getElementById\('sig-error'\)\.textContent = (data\.[^;]+);/);
   return m ? new Function('data', `return ${m[1]};`)({}) : null;
+};
+/**
+ * SCRUM-1646c · lo que lee el cliente del PRESUPUESTO bajo la firma, con la respuesta dada. Su guion
+ * ya no va en línea (CSP `script-src 'self'`): se EJECUTA el servido sobre los datos de la página,
+ * porque el texto ya no está en el código sino en los datos, y leerlo de uno u otro no dice cuál gana.
+ */
+const leeElPresupuesto = async (html, resp) => {
+  const nav = navegadorDeLaFirma(html, PRESUPUESTO_FIRMA_JS, async () => {
+    if (resp === 'red') throw new TypeError('Failed to fetch');
+    return respuesta(resp.status, resp.cuerpo);
+  }, { firma: null, sinFirmar: true });
+  await nav.aceptar();
+  assert.equal(nav.peticiones.length, 1, 'CIEGO: el clic de «Firmar y aceptar» no ha llegado a pedir la decisión');
+  return nav.el('sig-error').textContent;
 };
 /** Cualquier promesa de copia en la página: la palabra, no una frase concreta (D es una RETIRADA). */
 const promesasDeCopia = (html) => html.match(/[^<>'"`]*\b(?:copia|recibir[áa]s)\b[^<>'"`]*/gi) ?? [];
@@ -130,8 +146,11 @@ test('SCRUM-1302d · A · sin ninguna opción marcada, ninguna insignia', async 
 test('SCRUM-1302d · B y C · presupuesto: lo que se lee si la respuesta no vuelve y si vuelve un error sin texto', async () => {
   for (const [caso, extra] of [['un precio', {}], ['tres opciones', { tiers: TRES_OPCIONES }]]) {
     const html = await paginaDelPresupuesto(extra);
-    assert.deepEqual({ sinRespuesta: textoSinRespuesta(html), deReserva: textoDeReserva(html), viejos: viejosEn(html) },
-      { sinRespuesta: TEXTO_B, deReserva: TEXTO_C, viejos: [] }, caso);
+    assert.deepEqual({
+      sinRespuesta: await leeElPresupuesto(html, 'red'),
+      deReserva: await leeElPresupuesto(html, { status: 400, cuerpo: {} }),
+      viejos: [...viejosEn(html), ...viejosEn(PRESUPUESTO_FIRMA_JS)],
+    }, { sinRespuesta: TEXTO_B, deReserva: TEXTO_C, viejos: [] }, caso);
   }
 });
 
@@ -184,9 +203,10 @@ test('SCRUM-1302d · B · parte: lo que se lee si la respuesta de la firma no vu
 });
 
 test('SCRUM-1302e · C · parte: si el servidor contesta un error sin texto, se lee lo mismo que en el presupuesto', async () => {
+  // SCRUM-1646 (main): el parte se EJECUTA. SCRUM-1646c: el presupuesto también (su guion ya no va en línea).
   const { error } = await parteEnVivo(ERROR_SIN_TEXTO);
   assert.equal(error, TEXTO_C);
-  assert.equal(error, textoDeReserva(await paginaDelPresupuesto()), '🔴 parte y presupuesto ya no dicen lo mismo');
+  assert.equal(error, await leeElPresupuesto(await paginaDelPresupuesto(), { status: 400, cuerpo: {} }), '🔴 parte y presupuesto ya no dicen lo mismo');
 });
 
 test('🔴 SCRUM-1302d · D · el parte firmado no promete ninguna copia: ni al acabar de firmar ni al volver al enlace', async () => {

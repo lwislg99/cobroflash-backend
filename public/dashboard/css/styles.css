@@ -1801,6 +1801,10 @@ html, body { overflow-x: clip; }
    S2: recibe el dedo: medía 44,6 con la fuente de respaldo del banco y 43,6 con Inter en yaqu.app. Con
    S2: la fuente real se quedaba corta por 0,4 px; el suelo no depende de la fuente. */
 .quote-dto-global__campo { min-height: 44px; }
+/* S2: SCRUM-1716b · el selector €/% es el `.segmented` del sistema (SCRUM-574), al ancho del campo
+   S2: que acompaña; y «Equivale a …» en el gris de ayuda de los demás campos (`--muted`, AA). */
+.quote-dto-global__unidad { max-width: 200px; margin-top: 6px; }
+.quote-dto-global__equivale { margin: 4px 0 0; font-size: 12.5px; color: var(--muted); }
 
 /* SCRUM-139 F2 · RENGLÓN EN BLANCO DEL CUADERNILLO.
    El editor abre con varias líneas dibujadas (LINEAS_CUADERNILLO): son una INVITACIÓN, no
@@ -3235,6 +3239,9 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 /* El cuerpo se alinea con el rótulo (14 px de galón + 10 de hueco) y las secciones de siempre que
    viven dentro pierden su relleno y su raya: la raya es de la tarjeta, no de cada línea. */
 .detail-plega-cuerpo { padding: 2px 0 14px 24px; }
+/* S2 · SCRUM-1662 · «Qué hay que hacer»: la tarea es un párrafo escrito en el alta; se respetan sus
+   saltos de línea y una palabra larga no desborda a 390 px. Mismo cuerpo que el valor de la línea. */
+.detail-tarea { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; color: var(--body); }
 .detail-plega-cuerpo .detail-section { padding: 0; border-bottom: none; }
 .detail-plega-ayuda { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
 /* SCRUM-1184 · «Siguiente número: …» bajo la cabecera de «Nuevo albarán». Mismos tokens que las ayudas. */

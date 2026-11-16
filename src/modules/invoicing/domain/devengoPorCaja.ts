@@ -8,7 +8,7 @@
 // Con criterio de caja (RECC) el IVA se devenga **cuando se cobra**, no cuando se emite. Así que
 // una factura emitida en un trimestre y cobrada en otro **declara en el del cobro**.
 //
-// Hoy el periodo lo decide `Invoice.createdAt` —`libroRegistro.repo.ts` filtra por ahí— y de ese
+// Sin caja el periodo lo decide `Invoice.createdAt` —`libroRegistro.repo.ts` filtra por ahí— y de ese
 // libro sale el 303. Cambiar la fecha que manda es, literalmente, cambiar en qué declaración cae
 // el euro.
 //
@@ -58,24 +58,53 @@ export function campoDeDevengo(configCriterioCaja: unknown): CampoDeDevengo {
 }
 
 export interface FacturaParaDevengo {
-  /** Cuándo se emitió. Siempre existe. */
+  /** Cuándo se emitió. Siempre existe. Hace de fecha de la OPERACIÓN (SCRUM-1730 c.21789). */
   createdAt: Date;
   /** Cuándo consta cobrada. `null` = no consta cobrada. */
   paidAt?: Date | null;
+  /** Las líneas tal cual se guardan. Sólo se mira si alguna lleva `causa: 'S2'` (SCRUM-1730 · i). */
+  lines?: unknown;
+}
+
+/**
+ * SCRUM-1730 (i) · ¿Alguna línea lleva la causa S2 (inversión del sujeto pasivo)?
+ *
+ * ⚠️ Es la misma pregunta que `tieneLineasIsp` de `destinatarioIsp.ts`, y está COPIADA a propósito:
+ * aquélla no se exporta y vive en el camino de emisión; exportarla sería modificarlo (regla 38).
+ */
+function tieneLineasS2(lines: unknown): boolean {
+  return Array.isArray(lines) && lines.some((l) => (l as { causa?: unknown } | null)?.causa === 'S2');
+}
+
+/**
+ * SCRUM-1730 (ii) · LIVA 163 terdecies.Uno: sin cobro, el devengo se produce el 31 de diciembre del
+ * año inmediato posterior al de la operación. Con su último milisegundo, como `rangoTrimestre`: el
+ * tope cae DENTRO del cuarto trimestre de ese año.
+ */
+export function topeDeDevengo(createdAt: Date): Date {
+  return new Date(createdAt.getFullYear() + 1, 11, 31, 23, 59, 59, 999);
 }
 
 /**
  * La fecha que decide el trimestre de ESTA factura.
  *
- * ⚠️ CON RECC Y SIN COBRO, DEVUELVE `null`, y eso NO es un error: es el dato. Una factura emitida y
- * todavía no cobrada **no devenga** bajo criterio de caja, así que no cae en ningún trimestre
- * todavía. Devolver su fecha de emisión la metería en la declaración de un IVA que aún no se ha
- * cobrado — que es exactamente lo que el RECC existe para evitar.
+ * Con criterio de caja (SCRUM-1730, GO de c.21789):
+ *   · (i)  una factura con ALGUNA línea S2 devenga por EMISIÓN: LIVA 163 duodecies.Dos.d deja la
+ *          inversión del sujeto pasivo fuera del régimen. Una mixta (S1+S2) va ENTERA por emisión
+ *          hasta que conteste el asesor (pregunta en SCRUM-1264).
+ *   · (ii) cobrada hasta el tope → la del cobro. Sin cobro, o cobrada DESPUÉS del tope → el tope: ya
+ *          devengó el 31-dic, y el cobro posterior no la vuelve a meter en otro trimestre (el IVA
+ *          saldría dos veces).
+ *
+ * Nunca devuelve `null` con caja: toda factura devenga en algún momento. Antes de 1730 devolvía
+ * `null` sin cobro, y la factura no caía en ningún trimestre jamás.
  */
 export function fechaDeDevengo(
   factura: FacturaParaDevengo,
   campo: CampoDeDevengo,
 ): Date | null {
   if (campo === CAMPO_EMISION) return factura.createdAt ?? null;
-  return factura.paidAt ?? null;
+  if (tieneLineasS2(factura.lines)) return factura.createdAt;
+  const tope = topeDeDevengo(factura.createdAt);
+  return factura.paidAt && factura.paidAt.getTime() <= tope.getTime() ? factura.paidAt : tope;
 }

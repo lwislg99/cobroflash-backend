@@ -42,6 +42,15 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 export const TIPOS_111_ACTIVIDADES: ReadonlySet<number> = new Set([15, 7]);
 /** SCRUM-1066e · la clave interna de la categoría que lleva un gasto al 115. El profesional no la ve. */
 export const CATEGORIA_ALQUILER = 'alquiler';
+/** SCRUM-1066h · el tipo del alquiler (RIRPF art. 100, verificado en SCRUM-1066b). */
+export const TIPO_ALQUILER = 19;
+/**
+ * SCRUM-1066h · pieza ③ de SCRUM-1066 c.21634: los tipos que la ENTRADA del gasto admite, para la
+ * validación de S1 (`expenses.service.ts`). Son los que el borrador sabe colocar —15 y 7 en el
+ * 111, 19 en el 115— y en el orden de las opciones firmadas en c.21636 («Sí, 15 %» · «Sí, 7 %» ·
+ * «Sí, 19 % (alquiler)»). «No» no es un tipo: escribe `retencionPracticadaDeclarada = false`.
+ */
+export const TIPOS_RETENCION_PRACTICADA_VALIDOS: readonly number[] = Object.freeze([15, 7, TIPO_ALQUILER]);
 
 /** Las columnas de `Expense` que este borrador lee. */
 export interface GastoConRetencion {

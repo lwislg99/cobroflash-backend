@@ -25,10 +25,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import ts from 'typescript';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 import {
   aprobacionesDeMicrocopy, constaAprobado, PATRON_NOMBRE,
@@ -81,7 +81,7 @@ test('SCRUM-709 · ✅ CONTROL NEGATIVO: una aprobación que NO existe no se enc
 
 /** Un repo de usar y tirar donde se puede fusionar de verdad. */
 function repoDePruebas() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum709-'));
+  const dir = temporal('scrum709-');
   const git = (...args) => execFileSync('git', ['-C', dir, ...args], { encoding: 'utf8' });
   git('init', '-q', '-b', 'base');
   git('config', 'user.email', 'prueba@ejemplo.invalid');
@@ -137,7 +137,7 @@ test('SCRUM-709 · 🔴 DOS APROBACIONES EL MISMO DÍA, DOS RAMAS: los ficheros 
       `🔴 el conflicto no está donde se esperaba. En conflicto: ${JSON.stringify(enConflicto)}. `
       + 'Con el mecanismo viejo choca el fichero único, y sólo él.');
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    borrarTemporal(dir);
   }
 });
 
