@@ -186,3 +186,62 @@ de Jira). Suite entera local: NO CORRIDA (solo docs).
    1264r. Lo que falló fue quitarla en silencio, y eso no lo caza ningún guard (es la línea `A9:`).
 2. Leí la descripción entera de 1264 (32 KB) y los comentarios de 1264, 1063 y 1129: crucé de 94k a
    186k sólo leyendo Jira, y avisé al orquestador en ese momento, antes de los 200k.
+
+---
+
+# SCRUM-1264t · Los restos de 1129 y 1240 y dos datos del 1076: 1 fila nueva (48) y 2 ampliaciones (16 y 30)
+
+**Medido contra:** `origin/main` = `37947dc1522a094320a4499eac28800f38cdc659` · 2026-11-16T15:44:47Z (cabecera `Date:` de GitHub)
+
+A9: aviso → A10 «Cero resultados con tu vocabulario no es silencio del documento.» — no se pudo comprobar: la clave 18 se dio por ausente (SCRUM-1129 c.21909) buscando sólo en `PREGUNTAS_ASESOR.md`, y estaba como B5.(4) en la descripción de SCRUM-1264; ningún guard compara este fichero con la descripción viva de Jira.
+
+Sesión J5 (IA, `jv-j5bc`), 16-nov-2026, por encargo del orquestador del equipo de Javier
+(`cobroflash-backend-64`). **Solo docs.** No se toca `src/`, ni `public/`, ni el esquema, ni el camino de
+emisión, ni la descripción de SCRUM-1264. Nada de esto es respuesta de asesor.
+
+## Ⓐ Qué se leyó
+
+- SCRUM-1264: descripción entera (índice de 45 filas y las 28 preguntas).
+- SCRUM-1129: los 19 comentarios, hasta c.21912 (cierre). SCRUM-1240: descripción y los 12 comentarios,
+  hasta c.21913 (cierre). SCRUM-1076: los 8 comentarios, hasta c.21916.
+- SCRUM-1264 c.21914: ver Ⓓ.
+
+## Ⓑ Medición, por contenido
+
+Patrones sobre `git show origin/main:docs/legal/PREGUNTAS_ASESOR.md` (1.904 líneas, 159.866 B):
+`mixta|clave 18|ClaveRegimen.{0,20}18|v1\.0\.4|Internet Archive|HAP/2194|art\. 4\.4` → **0**.
+Positivo **sembrado**: una línea fabricada («factura mixta con la clave 18 y la HAP/2194») añadida a una
+copia sale (línea 1906). Negativo: una frase inventada da 0. Positivo del árbol: «criterio de caja», 5.
+Además se buscó a mano por concepto (recargo, B5, P13, Q-C4, Q-C8, 61 undecies, 6.1.p) y en el índice y
+el texto de la descripción de SCRUM-1264.
+
+| resto | veredicto | dónde queda |
+| --- | --- | --- |
+| clave 18: ¿quién la usa y cuándo? (1129 c.21909/c.21912) | **ya estaba en Jira** como B5.(4), fila 16 (c.21753 punto 5 ya la remitía allí); **no estaba en el fichero** (P13 = B5 no trae la (4)) | ampliación de la **fila 16**, con el dato de la v1.0.4 |
+| factura mixta S1+S2 con criterio de caja (1240 c.21776/c.21910/c.21913) | **faltaba** en los dos sitios | **fila 48** |
+| 390 → art. 4.4 suprimido; 347 → art. 17.2 HAP/2194/2013 NO VERIFICADO (1076 c.21868) | no son pregunta nueva: son remisiones sin leer de Q-C8 | ampliación de **Q-C8**, que es la **fila 30** (E4 = Q-C1 a Q-C8, `ENVIO_ASESOR_2026-09-28.md`) |
+
+## Ⓒ Cómo se añadió
+
+- **Al final**, bajo «# Añadidas el 16-nov-2026 (SCRUM-1264t)». Comprobado por bytes: los 159.866 B de
+  `origin/main` son el prefijo exacto del fichero nuevo (`cmp`), 68 líneas añadidas y 0 quitadas, 0 CR.
+- Texto copiado del Markdown que devuelve Jira, sin ninguna desviación declarada ni cita «fichero:línea».
+- **Para el índice de la descripción de SCRUM-1264** (lo actualiza el orquestador): una fila nueva, la
+  **48** («Factura mixta S1+S2 con criterio de caja: ¿lleva la mención?» · SCRUM-1240 c.21776/c.21910 ·
+  SIN RESPUESTA · COM), y dos filas que cambian: la **16** (B5 → «B5 (+ clave 18, c.21912)») y la **30**
+  (E4 → «E4 (+ remisiones del 390 y del 347, SCRUM-1076 c.21868)»). Las 46 y 47 siguen sin estar en el
+  índice (1264s Ⓓ).
+
+## Ⓓ Lo que NO está medido
+
+- La lectura de SCRUM-1264 c.21914: ver la entrega en Jira (la descarga de los comentarios de 1264 tardó
+  más de dos minutos y se lanzó en segundo plano).
+- Si la descripción de SCRUM-1264 admite las tres filas sin pasar su tope de 32.000 caracteres (1264s Ⓑ).
+- La redacción de B5.(4) para el asesor con el dato nuevo: va como los literales de Jira, sin redactar.
+
+## Ⓔ Lo que me salió mal
+
+1. Mi primera llamada a Jira usó el nombre del sitio como `cloudId` y rebotó; el bueno salió de
+   `getAccessibleAtlassianResources`. Sin coste.
+2. Pedí los comentarios de SCRUM-1264 enteros sabiendo que es el ticket más largo del equipo; tardó más de
+   dos minutos y crucé los 200k leyendo Jira (211.078, avisado al orquestador en ese momento).
