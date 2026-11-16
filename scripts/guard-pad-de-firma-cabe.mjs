@@ -153,6 +153,15 @@ const dentro = (c, v) => !!c && c.y >= -0.5 && c.fin <= v.h + 0.5 && c.x >= -0.5
 const px = (n) => Math.round(n);
 const dice = (c) => (c ? `y=${px(c.y)}–${px(c.fin)}` : 'NO ESTÁ');
 
+/** `PAD_CAPTURAS=<carpeta>` deja una foto de la VENTANA por caso y momento. Sin la variable, nada. */
+async function foto(pag, caso, momento) {
+  const carpeta = process.env.PAD_CAPTURAS;
+  if (!carpeta) return;
+  fs.mkdirSync(carpeta, { recursive: true });
+  const nombre = caso.id.normalize('NFD').replace(/[^\w×]+/g, '-').replace(/×/g, 'x').replace(/^-|-$/g, '').toLowerCase();
+  await pag.screenshot({ path: path.join(carpeta, `${nombre}-${momento}.png`) });
+}
+
 const hallazgos = [];
 const ciegos = [];
 const filas = [];
@@ -180,6 +189,7 @@ try {
       const fatal = await pag.evaluate(ABRIR, parteDe(caso), caso.quien);
       if (fatal) { ciegos.push(`${caso.id} → ${fatal}`); continue; }
       const m = await pag.evaluate(MEDIR);
+      await foto(pag, caso, 'al-abrir');
 
       // SUELO: el pad entero, o no se juzga.
       const falta = [];
@@ -219,6 +229,7 @@ try {
       for (let i = 1; i <= 12; i++) await pag.mouse.move(c.x + c.width * (0.2 + 0.05 * i), c.y + c.height * (0.6 - 0.02 * i));
       const f = await pag.evaluate(MEDIR);
       await pag.mouse.up();
+      await foto(pag, caso, 'firmando');
       const g = await pag.evaluate(MEDIR);
       const aLaVista = f.resumen ? Math.min(f.resumen.fin, f.recuadro.y) - Math.max(f.resumen.y, 0) : 0;
       if (!(aLaVista >= 60) || f.resumen.fin > f.recuadro.y + 0.5 || !dentro(f.recuadro, V)) {
