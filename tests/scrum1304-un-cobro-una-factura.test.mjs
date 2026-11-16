@@ -262,7 +262,13 @@ test('SCRUM-1304 · 🔴 ④c · dos entregas a la vez, con presupuesto aún SIN
 test('SCRUM-1304 · 🔴 ④e · SIN CARRERA: el PDF cae una vez → la entrega siguiente NO crea otra, y TERMINA la que hay', async () => {
   reiniciar();
   const cobro = nuevoCobro();
-  banco.pdf.fallos = 1;
+  // SCRUM-665e (sí del orquestador J del 16-nov-2026, por mensaje; GO del camino de emisión c.21182 punto 1):
+  // la rama congela el PDF AL EMITIR (`congelarTrasEmitir`, selladoEstado.ts), que no lanza, y
+  // `ensurePdfAndEvent` lo vuelve a pedir en la misma entrega. Medido con sonda: con UN fallo, el
+  // congelado se lo come y la entrega termina la factura, así que este caso dejaba de medir «el PDF
+  // cae en la entrega». Se siembran DOS: uno lo consume el congelado al emitir y otro cae en
+  // `ensurePdfAndEvent`. Las aserciones no cambian.
+  banco.pdf.fallos = 2;
   const { resultado, dicho } = await conFlag(async () => {
     const primera = await entrega(cobro);
     const trasLaPrimera = { facturas: facturasDe(cobro).length, eventos: eventosDe(cobro, 'invoiced').length, pdf: facturasDe(cobro)[0]?.pdfUrl };
