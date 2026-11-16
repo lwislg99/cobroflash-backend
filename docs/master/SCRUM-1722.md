@@ -135,3 +135,18 @@ para eso (`soloEjecutable`, de `tests/_guard-texto.mjs`).
 - Tras el arreglo: `scrum700` + el test nuevo + `scrum1415`, 17 de 17, 0 fallos, 0 saltos.
 - Por qué no se vio antes de empujar: `scrum700` recorre el árbol entero y no está entre los vecinos que se
   corrieron ni en los 15 guards de entrada; sólo corre en la tanda completa del CI.
+
+### El segundo rojo del CI (16-nov, ~16:45Z) · el filtro, ahora con suelo
+
+- El check obligatorio de #3173 volvió a caer, con DOS casos de `tests/scrum719-el-suelo-de-los-doce.test.mjs`
+  (job 133443247870): «un test NUEVO no llama al filtro sin suelo» (`soloEjecutable` en la línea 57 del test
+  nuevo) y «el veredicto guardado de `censo:mudez` cubre la población» (el test nuevo, «sin ficha»).
+- El arreglo anterior cambió un filtro propio por `soloEjecutable`, que es el sitio único pero NO da suelo: si
+  se queda ciego devuelve la nada, y «ninguna regla ensancha la hoja» sobre la nada pasa sola.
+- Arreglo en el TEST (regla 41): `ejecutableDe(css, { ancla: 'header.parte-cabecera', … })`, que revienta si
+  tras filtrar ya no está la cabecera del parte. Y su ficha, generada con `npm run censo:mudez -- --escribir`
+  (no a mano): `VIVO` — rompiendo el filtro, el test cae. El veredicto pasa a 131 fichas, 1 medida ahora.
+- Tras el arreglo: el test nuevo + `scrum719` + `scrum700` + `scrum1415`, 54 de 54, 0 fallos, 0 saltos;
+  guards de entrada 15 de 15.
+- Por qué no se vio antes de empujar (A9): `scrum719` tampoco está entre los vecinos ni en los guards de
+  entrada. Un test NUEVO que quita comentarios corre antes de empujar `scrum700` Y `scrum719`, los dos.
