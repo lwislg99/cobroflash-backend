@@ -76,7 +76,7 @@ A9: comprobación → `tests/scrum1076b-fuentes-de-los-plazos.test.mjs`
 
 **Medido contra:** `origin/main` = `a7a85a058e90744ba77ff1fa43af78b522369412` · 2026-11-16T16:49:48Z
 
-A9: aviso → cicatriz J1 «Imprimí `exit=$?` dentro de la misma cadena que un `$(basename …)` anterior» — no se pudo comprobar: lo impediría un hook sobre la orden, y los hooks no son de este puesto
+A9: aviso → cicatriz J1 «Imprimí `exit=$?` dentro de la misma cadena que un `$(basename …)` anterior, y salió el código del `basename`: tres ficheros con `fail 1` y `fail 2` dijeron `exit=0`; lo cacé por los recuentos, no por el código» — no se pudo comprobar: lo impediría un hook sobre la orden, y los hooks no son de este puesto
 
 Tres sesiones: jv-j1f0 (módulo, API, tests y DDL), jv-j1f3 (guards de esquema) y jv-j1f5 (renombrado, Parte L, suite y empujón). Decisiones y textos: SCRUM-1076 c.21877. ALTER en las tres bases: c.21897. Excepción de carril de las 10 piezas sin consumir: c.21899 y c.21916. Renombrado y Parte L: c.21925.
 
