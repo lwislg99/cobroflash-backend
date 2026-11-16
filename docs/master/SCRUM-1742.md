@@ -43,4 +43,12 @@ Capturas (ventana, al abrir y firmando, los 11 casos): fuera de git, en la máqu
 - La entrada en `docs/BUGS.md`.
 - La suite completa (`npm test`) no se corrió en local: el cliente de Prisma compartido no casa con el esquema de `main` (le faltan `Invoice.merchantCriterioCaja` y `Job.queHayQueHacer`) y no es mío regenerarlo. La juzga el CI.
 
+## Segundo empuje (16-nov-2026, relevo de S4) · la entrada de `docs/BUGS.md`
+
+Medido contra `origin/main` = `6c1024bf177daa47e8d64c60d45565c800137dfa` · 2026-11-16T17:18:27Z (cabecera `Date:` de `gh api -i zen`).
+
+- Escrita la entrada **P1-1742** de `docs/BUGS.md`, en `[ ]` hasta su regla 42. Sólo documentación: este empuje no toca código, tests ni pantalla.
+- De paso: la entrada **P1-1722c** pasa a `[x]`, con su regla 42 medida en yaqu.app (21 pasadas, 0 con desborde; SCRUM-1722, comentario 21954). Su rama ya estaba en `main` (#3173).
+- Para la regla 42 de este ticket ya existe el parte en borrador que hacía falta: el #23, PT-2026-015, del trabajo QA #84.
+
 **Lo que salió mal (A9).** No cargué la skill de UI antes de tocar el pad. Di una hora estimada («~17:20Z») en un mensaje al orquestador sin leerla de GitHub: eran las 17:0x. Y volqué dos listados largos al contexto en el arranque.
