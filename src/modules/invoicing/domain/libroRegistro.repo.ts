@@ -37,6 +37,7 @@ import {
 } from './libroRegistro';
 // SCRUM-294 (fase B): qué fecha devenga. Se importa el criterio, no se copia la regla.
 import { campoDeDevengo, CAMPO_EMISION, CAMPO_COBRO, fechaDeDevengo, topeDeDevengo } from './devengoPorCaja';
+import { diaNaturalEn, inicioDelDiaEn, finDelDiaEn } from '../../../core/zonaDelMerchant';
 /**
  * Lo mínimo del cliente Prisma que el lector usa. Se pide por parámetro (no se importa el
  * singleton) para que el test pueda apuntarlo a SU Postgres sin tocar ninguna variable de
@@ -52,6 +53,11 @@ export interface RangoLibro {
   merchantId: number;
   desde?: Date;
   hasta?: Date;
+  /**
+   * SCRUM-1445d (fase 1) · la zona del comercio para los años y topes del criterio de caja.
+   * AUSENTE = la zona del proceso, como hasta hoy; la fase 2 se la pasa cada llamador.
+   */
+  zona?: string;
   /**
    * SCRUM-294 (fase B) · la configuración de criterio de caja **del merchant**, tal cual se lea.
    *
@@ -145,10 +151,16 @@ async function leerPorCaja(db: ClienteDelLibro, rango: RangoLibro): Promise<Fact
 
   // El tope de una factura emitida en el año X es el 31-dic de X+1. Los años X cuyo tope cae en el
   // rango van de (año de `desde`) − 1 hasta (último 31-dic que cabe antes de `hasta`) − 1.
-  const primerX = desde ? desde.getFullYear() - 1 : undefined;
+  // SCRUM-1445d: con `rango.zona`, el año y sus bordes son los de esa zona; sin ella, los del proceso.
+  const { zona } = rango;
+  const añoDe = (d: Date) => (zona !== undefined ? Number(diaNaturalEn(d, zona).slice(0, 4)) : d.getFullYear());
+  const dia = (a: number, md: string) => `${String(a).padStart(4, '0')}-${md}`;
+  const primeroDeEnero = (a: number) => (zona !== undefined ? inicioDelDiaEn(dia(a, '01-01'), zona) : new Date(a, 0, 1, 0, 0, 0, 0));
+  const finDeAño = (a: number) => (zona !== undefined ? finDelDiaEn(dia(a, '12-31'), zona) : new Date(a, 11, 31, 23, 59, 59, 999));
+  const primerX = desde ? añoDe(desde) - 1 : undefined;
   const ultimoX = hasta
-    ? (hasta.getTime() >= topeDeDevengo(new Date(hasta.getFullYear() - 1, 0, 1)).getTime()
-      ? hasta.getFullYear() : hasta.getFullYear() - 1) - 1
+    ? (hasta.getTime() >= topeDeDevengo(primeroDeEnero(añoDe(hasta) - 1), zona).getTime()
+      ? añoDe(hasta) : añoDe(hasta) - 1) - 1
     : undefined;
   const hayTope = primerX === undefined || ultimoX === undefined || primerX <= ultimoX;
 
@@ -157,8 +169,8 @@ async function leerPorCaja(db: ClienteDelLibro, rango: RangoLibro): Promise<Fact
     consulta({ createdAt: rangoDe(desde, hasta) }),
     hayTope
       ? consulta({ createdAt: rangoDe(
-        primerX === undefined ? undefined : new Date(primerX, 0, 1, 0, 0, 0, 0),
-        ultimoX === undefined ? undefined : new Date(ultimoX, 11, 31, 23, 59, 59, 999),
+        primerX === undefined ? undefined : primeroDeEnero(primerX),
+        ultimoX === undefined ? undefined : finDeAño(ultimoX),
       ) })
       : Promise.resolve([] as FacturaLeida[]),
   ]);
@@ -168,7 +180,7 @@ async function leerPorCaja(db: ClienteDelLibro, rango: RangoLibro): Promise<Fact
   const porId = new Map<number, { f: FacturaLeida; d: Date }>();
   for (const f of tandas.flat()) {
     if (porId.has(f.id)) continue;
-    const d = fechaDeDevengo(f as never, CAMPO_COBRO);
+    const d = fechaDeDevengo(f as never, CAMPO_COBRO, zona);
     if (d && dentro(d)) porId.set(f.id, { f, d });
   }
   // Por fecha de devengo y, a igualdad, por número: el mismo orden que la consulta de siempre.
