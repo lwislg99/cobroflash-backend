@@ -1095,7 +1095,10 @@ export async function generateQuotePdf(params: ParamsPdfPresupuesto) {
         // SCRUM-1442c · una cabecera de apartado (SCRUM-655) llega sin `qty` ni `price`: pinta su
         // concepto y el importe vacío, la vía decidida el 18-oct-2026 que ya aplica la página
         // pública (1442b). Antes salía «Fase 1 × undefined» y «NaN EUR».
-        const importe = l.qty * l.price * (1 + (ivaFueraDelPapel ? 0 : (l.tax ?? 0)));
+        // SCRUM-1737 · el importe de línea va SIN IVA, como en la tabla principal y en la página
+        // pública; el IVA sale solo al final, en el total de la opción. Decisión de Javier
+        // (16-nov-2026): «sin IVA como está, solo al final». Antes sumaba `l.tax` en `sumar`.
+        const importe = l.qty * l.price;
         const conImporte = Number.isFinite(importe);
         const text = conImporte ? `${l.concept} × ${l.qty}` : String(l.concept ?? '');
         doc.text(text, x + 4, lineY, { width: tierW - 8 });

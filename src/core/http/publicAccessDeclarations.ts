@@ -51,6 +51,7 @@ export const PUBLIC_PREFIXES = [
   '/pay', '/cliente', '/albaran', '/webhooks/stripe', '/webhooks/stripe-connect',
   '/health', '/auth', '/webhooks/psp', '/charges', '/quote', '/invoice', '/recibo',
   '/webhooks/mp', '/webhooks/whatsapp', '/legal', '/p', '/dev',
+  '/avisos', // SCRUM-1646 · las hojas de los avisos públicos (publicNotFound.ts), sueltas en app.ts
   '/webhooks/resend', // SCRUM-475 (fase 2B): entregas y rebotes del correo
 ] as const;
 
@@ -81,6 +82,9 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
   { method: 'GET', path: '/precios', kind: 'no-sensitive-resource', reason: 'HTML de landing estático' },
   { method: 'GET', path: '/public/founding-status', kind: 'no-sensitive-resource', reason: 'contador agregado de plazas, sin PII' },
   { method: 'GET', path: '/version', kind: 'no-sensitive-resource', reason: 'build id, sin caché, sin PII' },
+  { method: 'GET', path: '/avisos/css/documento-no-disponible.css', kind: 'no-sensitive-resource', reason: 'CSS constante del 404 de documento, sin datos (SCRUM-1646)' },
+  { method: 'GET', path: '/avisos/css/pagina-no-encontrada.css', kind: 'no-sensitive-resource', reason: 'CSS constante del 404 genérico, sin datos (SCRUM-1646)' },
+  { method: 'GET', path: '/avisos/css/documento-en-registro.css', kind: 'no-sensitive-resource', reason: 'CSS constante de «factura en proceso», sin datos (SCRUM-1646)' },
   {
     method: 'POST',
     path: '/schema-check',

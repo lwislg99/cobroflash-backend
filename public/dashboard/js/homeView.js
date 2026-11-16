@@ -158,6 +158,7 @@ async function renderHomeView(container) {
   // Se QUITA tras pintar, no con un ternario: el literal no se mueve para el censo de SCRUM-601.
   // Va AQUÍ y no bajo `veNegocio`, donde partía el ancla de la mutación de 1390y (scrum836, #3077).
   if (window.appModoEmision === 'receipt') document.getElementById("btn-view-pending").remove();
+  pintarAvisoSiiSinEmision(container);
   document.getElementById("btn-view-pending")?.addEventListener("click", () => window.renderAppView && renderAppView('invoices'));
   document.getElementById("btn-home-prefs")?.addEventListener("click", openHomePrefsPanel);
 
@@ -459,6 +460,41 @@ async function pintarResumenTrimestreEnHome() {
   });
 }
 window.pintarResumenTrimestreEnHome = pintarResumenTrimestreEnHome;
+
+// SCRUM-1717 (S2) · POR QUÉ NO EMITES, CUANDO ES POR EL SII (SCRUM-1585 / SCRUM-1713).
+// Con el flag fiscal puesto y el SII en «Sí» o «No consta», el modo es `receipt` —igual que con el
+// flag apagado— y el panel escondía Facturas y Cobros sin decir por qué. El motivo lo manda el
+// servidor (`/admin/me` → `motivoSinEmision`, guardado en `window.appMotivoSinEmision`) y aquí NO se
+// recalcula: con `null` no se pinta nada, que es exactamente el Inicio de hoy.
+//
+// ✅ Los DOS literales, byte a byte, están FIRMADOS: por J1 en SCRUM-1585 c.20539 y por el fundador
+// (Luis) en SCRUM-1717 c.21705, que cubre también la colocación en Inicio. El «›» es U+203A, el mismo
+// que usa el resto del repo para «Configuración › Empresa». Sin botón ni enlace: cualquier texto más
+// necesita firma (regla 39; SCRUM-1717, «Textos»).
+//
+// Solo lo ve el admin: el literal le pide cambiar Configuración › Empresa, y el operario no entra en
+// Configuración. Se INSERTA cuando hay motivo, en vez de dejar un hueco fijo en la plantilla: así el
+// Inicio sin motivo no cambia ni en un nodo (scrum697/698 los cuentan).
+const AVISO_SII_SIN_EMISION = {
+  sii_declarado: 'Has indicado en Configuración › Empresa que llevas los libros de IVA por el SII. Con esa respuesta, YaQu no emite facturas ni cobra por ti. Si no es así, cámbiala allí.', // APROBADO por el fundador el 12-nov-2026 (SCRUM-1717 comentario 21705)
+  sii_no_consta: 'Para emitir facturas, contesta en Configuración › Empresa si llevas los libros de IVA por el SII.', // APROBADO por el fundador el 12-nov-2026 (SCRUM-1717 comentario 21705)
+};
+
+function pintarAvisoSiiSinEmision(container) {
+  if (window.appUserRole !== 'admin') return;
+  const texto = AVISO_SII_SIN_EMISION[window.appMotivoSinEmision];
+  if (!texto) return;
+  const saludo = container.querySelector('.home-greeting');
+  if (!saludo) return;
+  const aviso = document.createElement('div');
+  aviso.id = 'home-aviso-sii';
+  aviso.className = 'alert warning';
+  aviso.setAttribute('role', 'status');
+  aviso.dataset.motivo = window.appMotivoSinEmision;
+  aviso.textContent = texto;
+  saludo.insertAdjacentElement('afterend', aviso);
+}
+window.pintarAvisoSiiSinEmision = pintarAvisoSiiSinEmision;
 
 function renderSetupChecklist(merchant, data) {
   // A1.3: la checklist es tarea del admin (logo, datos fiscales → Configuración);
