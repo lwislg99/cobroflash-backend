@@ -9,13 +9,23 @@
 // LO QUE ESTO NO MIDE: que el servidor de yaqu.app recorte de verdad (eso sólo lo ve una sesión del
 // operario real) ni sus 403 de escritura. Cada escritura hecha «como operario» sale con la cookie de
 // admin: se APUNTA (s.escrituras) para casarla a mano con TECNICO_ALLOWED de adminRouteDeclarations.ts.
-export const COPIADO_DE = process.env.COPIADO_DE || 'PENDIENTE: SHA de origin/main con 1662+1707 dentro';
+//
+// 16-nov-2026 · DOS MODOS DE CABLE (`RECORTE=`), porque el tramo 0 midió que el paquete entró A MEDIAS:
+//   · `hoy`  (por defecto) = lo que hace PRODUCCIÓN hoy: `trabajoParaElRol` de main sólo vacía `notes`
+//     (#3151). El dinero del trabajo y los precios del albarán SIGUEN viajando al operario real.
+//   · `1707` = lo que hará cuando entre #3153: además vacía el cobro del trabajo y los precios, totales e
+//     importes de los albaranes. Sirve para cazar cifras FALSAS del front («0,00 €», «NaN») ANTES del merge.
+export const RECORTE = process.env.RECORTE === '1707' ? '1707' : 'hoy';
+export const COPIADO_DE = process.env.COPIADO_DE || (RECORTE === '1707'
+  ? 'rama scrum-1707-operario-sin-dinero @ a93e096f698fd02fbee6f2a6a3e6c7850f34ea49 (#3153, SIN mergear)'
+  : 'origin/main @ 37947dc1522a094320a4499eac28800f38cdc659 (sólo notes: null)');
 const OPERARIO = process.env.OPERARIO_QA || 'Operario QA';
 
 // ── copia de src/modules/jobs/domain/albaranParaElRol.ts (rama del operario) ──
 const pendienteOp = (p) => ({ index: p?.index, concepto: p?.concepto, unidad: p?.unidad, servida: p?.servida, facturada: p?.facturada, pendiente: p?.pendiente });
 const lineaOp = (l) => ({ concepto: l?.concepto, cantidad: l?.cantidad, unidad: l?.unidad, ...(typeof l?.quoteLineIndex === 'number' ? { quoteLineIndex: l.quoteLineIndex } : {}) });
 export function albaranParaElOperario(a) {
+  if (RECORTE !== '1707') return a; // hoy main no recorta el albarán
   const out = { ...a };
   if ('lineas' in a) out.lineas = Array.isArray(a.lineas) ? a.lineas.map(lineaOp) : [];
   if ('pendientes' in a) out.pendientes = Array.isArray(a.pendientes) ? a.pendientes.map(pendienteOp) : [];
@@ -25,12 +35,18 @@ export function albaranParaElOperario(a) {
 }
 // ── copia de src/modules/jobs/domain/trabajoParaElRol.ts (rama del operario) ──
 export function trabajoParaElOperario(t) {
+  if (RECORTE !== '1707') return { ...t, notes: null }; // copia de main (#3151)
   const out = { ...t, notes: null, totalCobrado: null, estadoCobro: null, remaining: null, nextStage: null, pendingStagesCount: 0, hasCustomPlan: false, invoices: [] };
   if ('charge' in t) out.charge = null;
   if (Array.isArray(t.albaranes)) out.albaranes = t.albaranes.map(albaranParaElOperario);
   return out;
 }
-const esSuyo = (t) => JSON.stringify(t.asignados || t.assignedUser || t.assignedUserName || '').includes(OPERARIO);
+// LOS TRES EJES del servidor (`GET /admin/jobs`, jobs.routes.ts de main: operarioId · assignedUserId · tabla
+// puente, que la respuesta trae como `asignados`). El 12-nov esto miraba sólo `asignados` por NOMBRE y dejaba
+// fuera al trabajo que el operario abre él mismo (nace con `operarioId` = el suyo): medido el 16-nov con el #83.
+const OPERARIO_ID = Number(process.env.OPERARIO_ID || 30);
+const esSuyo = (t) => t.operarioId === OPERARIO_ID || t.assignedUserId === OPERARIO_ID
+  || (Array.isArray(t.asignados) && t.asignados.some((a) => a && (a.id === OPERARIO_ID || a.name === OPERARIO)));
 
 export async function vestir(s, rol) {
   s.rol = rol || 'admin';
@@ -61,12 +77,13 @@ export async function vestir(s, rol) {
       s.recortes.push(`${m} ${p}`);
       return route.fulfill({ response: r, json: out });
     }
-    if (/^\/admin\/albaranes(\/\d+)?$/.test(p)) {
+    if (RECORTE === '1707' && /^\/admin\/albaranes(\/\d+)?$/.test(p)) {
       const { r, j } = await json(route);
       if (!j || r.status() >= 400) return route.fulfill({ response: r });
       const fila = (f) => ({ ...albaranParaElOperario(f), ...('total' in f ? { total: null } : {}) });
       let out;
       if (Array.isArray(j)) out = j.map(fila);
+      else if (Array.isArray(j.filas)) out = { ...j, filas: j.filas.map(fila) }; // `filaDeAlbaranParaElRol` (GET /admin/albaranes)
       else if (Array.isArray(j.albaranes)) out = { ...j, albaranes: j.albaranes.map(fila) };
       else if (j.albaran) out = { ...j, albaran: albaranParaElOperario(j.albaran) };
       else out = albaranParaElOperario(j);
@@ -80,7 +97,7 @@ export async function vestir(s, rol) {
 // Lo que se cuenta en CADA medida. Con /i y \s: las cabeceras salen en mayúsculas por CSS y el € lleva
 // espacio duro (lección de la regla 42 de #3127: dos patrones dieron un cero falso).
 const VOCABULARIO = {
-  porCobrar: /por\s+cobrar/gi, cobrado: /cobrado/gi, teFalta: /te\s+falta/gi, pendiente: /pendiente/gi, parcial: /parcial/gi,
+  porCobrar: /por\s+cobrar/gi, cobrado: /cobrado/gi, teFalta: /\bte\s+falta/gi, /* con \b: «par-te\nFalta la firma» del parte daba 1 falso (16-nov) */ pendiente: /pendiente/gi, parcial: /parcial/gi,
   pagado: /pagado/gi, factura: /factur/gi, euros: /\d[\d.]*,\d\d\s€/g, ceroEuros: /\b0,00\s€/g, deImporte: /\bde\s+\d/gi,
   notasInternas: /notas\s+internas/gi, queHayQueHacer: /qué\s+hay\s+que\s+hacer/gi,
   basura: /\bNaN\b|\bundefined\b|\bnull\b|\[object Object\]/g,
