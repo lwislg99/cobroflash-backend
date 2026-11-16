@@ -22,7 +22,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -60,16 +60,26 @@ export function ramasEmpujadas(jsonl) {
 }
 
 /**
- * @param {{rama:string, remoto:string|null|undefined, local:string|null|undefined, runs:object[]|undefined}} e
+ * @param {{rama:string, remoto:string|null|undefined, local:string|null|undefined, dentro?:boolean|null, runs:object[]|undefined}} e
  *   `remoto`: sha en origin · `null` = la rama ya no está · `undefined` = no se pudo mirar.
+ *   `dentro` (SCRUM-1736), solo cuando `local` y `remoto` difieren: `true` = la local ya está CONTENIDA
+ *   en lo empujado (no tiene nada que origin no tenga) · `false` = la local tiene commits que origin no
+ *   tiene · `null` = no se pudo comparar · sin dar = no se midió (se juzga como antes: sin empujar).
  * @returns {{rama:string, estado:'VERDE'|'ROJO'|'TODAVIA-NO'|'SIN-EMPUJAR'|'FUERA'|'CIEGO', linea:string, sha?:string}}
  */
-export function veredictoDeRama({ rama, remoto, local, runs }) {
+export function veredictoDeRama({ rama, remoto, local, dentro, runs }) {
   if (remoto === undefined) return { rama, estado: 'CIEGO', linea: `🔴 ${rama}: NO PUDE MIRAR si está en origin` };
   if (remoto === null) return { rama, estado: 'FUERA', linea: `· ${rama}: ya no está en origin (mergeada y borrada, o borrada): no la mido` };
   const sha = remoto.slice(0, 8);
-  if (local && local !== remoto) {
-    return { rama, estado: 'SIN-EMPUJAR', sha, linea: `🔴 ${rama}: la rama local (${local.slice(0, 8)}) NO es lo empujado (${sha}). El CI no ha visto tu último commit: empuja o dilo.` };
+  // SCRUM-1736 · LA LOCAL QUE SE LLAMA IGUAL NO TIENE POR QUÉ SER LA TUYA. Los worktrees comparten un solo
+  // `.git`: quien empuja `HEAD:<rama>` desde `<rama>-al-dia` lee aquí la `<rama>` que tiene colgada OTRA
+  // sesión, casi siempre por DETRÁS de lo empujado (medido el 13-nov en #3137, #3141 y #3142: las tres
+  // contenidas en origin). «Sin empujar» solo es verdad si la local tiene algo que origin no tiene.
+  if (local && local !== remoto && dentro !== true) {
+    if (dentro === null) {
+      return { rama, estado: 'CIEGO', sha, linea: `🔴 ${rama}: NO PUDE MIRAR si la rama local (${local.slice(0, 8)}) está dentro de lo empujado (${sha}): ese commit de origin no está en este repositorio, o git no respondió` };
+    }
+    return { rama, estado: 'SIN-EMPUJAR', sha, linea: `🔴 ${rama}: la rama local (${local.slice(0, 8)}) tiene commits que NO están en lo empujado (${sha}). El CI no ha visto tu último commit: empuja o dilo.` };
   }
   if (!Array.isArray(runs)) return { rama, estado: 'CIEGO', sha, linea: `🔴 ${rama} ${sha}: NO PUDE MIRAR sus checks` };
   const run = runs.filter((r) => String(r.name || '').startsWith(OBLIGATORIO))
@@ -115,7 +125,6 @@ function ghDe() {
   const cand = process.platform === 'win32' ? ['C:\\Program Files\\GitHub CLI\\gh.exe', 'gh'] : ['gh'];
   return cand.find((c) => c === 'gh' || fs.existsSync(c));
 }
-const correr = (bin, args) => execFileSync(bin, args, { cwd: RAIZ, encoding: 'utf8', timeout: 15000, maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
 
 function transcriptDe(s) {
   if (typeof s.transcript_path === 'string' && fs.existsSync(s.transcript_path)) return s.transcript_path;
@@ -128,7 +137,27 @@ function transcriptDe(s) {
   return undefined;
 }
 
-function medir(ramas, limite) {
+/**
+ * SCRUM-1736 · ¿Está `local` contenida en `remoto`? `true` / `false` / `null` (no se pudo mirar).
+ * `merge-base --is-ancestor` sale 0 (sí), 1 (no) y 128 si no conoce alguno de los dos commits —el caso
+ * de un `remoto` que movió otro (el bot, al meter `main`) sin que este repositorio lo haya traído—. Solo
+ * 0 y 1 son respuesta; lo demás es «no pude mirar», nunca «sin empujar».
+ */
+export function localDentroDe(cwd, local, remoto) {
+  const r = spawnSync('git', ['merge-base', '--is-ancestor', local, remoto], { cwd, encoding: 'utf8', timeout: 15000, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
+  if (r.error) return null;
+  if (r.status === 0) return true;
+  if (r.status === 1) return false;
+  return null;
+}
+
+/**
+ * El veredicto de cada rama, midiendo en `cwd`. `checks(sha)` da los check-runs de un commit (por defecto,
+ * `gh api`); se inyecta para que la tanda pruebe el cableado contra repositorios git de verdad sin red.
+ */
+export function medir(ramas, limite, { cwd = RAIZ, checks } = {}) {
+  const correr = (bin, args) => execFileSync(bin, args, { cwd, encoding: 'utf8', timeout: 15000, maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
+  const runsDe = checks || ((sha) => JSON.parse(correr(ghDe(), ['api', `repos/${REPO}/commits/${sha}/check-runs?per_page=100`]).replace(/^﻿/, '')).check_runs);
   // UNA llamada para todas: qué ramas siguen en origin y en qué commit.
   const remotos = intentar(() => correr('git', ['ls-remote', 'origin', ...ramas.map((r) => `refs/heads/${r}`)]));
   const enOrigin = remotos === undefined ? undefined
@@ -139,8 +168,9 @@ function medir(ramas, limite) {
     if (remoto === null) return veredictoDeRama({ rama, remoto });
     if (Date.now() > limite) return { rama, estado: 'CIEGO', sha: remoto.slice(0, 8), linea: `🔴 ${rama} ${remoto.slice(0, 8)}: NO PUDE MIRAR, se acabó el plazo de ${SEGUNDOS} s` };
     const local = intentar(() => correr('git', ['rev-parse', '-q', '--verify', `refs/heads/${rama}`]).trim()) || null;
-    const runs = intentar(() => JSON.parse(correr(ghDe(), ['api', `repos/${REPO}/commits/${remoto}/check-runs?per_page=100`]).replace(/^\uFEFF/, '')).check_runs);
-    return veredictoDeRama({ rama, remoto, local, runs });
+    const dentro = local && local !== remoto ? localDentroDe(cwd, local, remoto) : undefined;
+    const runs = intentar(() => runsDe(remoto));
+    return veredictoDeRama({ rama, remoto, local, dentro, runs });
   });
 }
 
