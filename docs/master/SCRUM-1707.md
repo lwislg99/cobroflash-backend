@@ -80,3 +80,21 @@ poder editarlas». Re-anclaje con el precedente 917c/C.1, camino pre-autorizado 
 - **Control por mutación, las dos direcciones** (en `public/dashboard/js/jobDetailView.js`, restaurado después):
   `veNotas = true` (notas para todos) → 6 hallazgos, todos del técnico (F.1, F.1b, F.2 × 2 anchos);
   `veNotas = false` (notas para nadie) → 32 hallazgos, todos de los casos del admin, el técnico en verde.
+
+## 16-nov (S1, tras el parón) · main unida y el rojo del run 43298861241
+
+- **El único «✖ failing tests»** (job 131464498485) era de este ticket: `scrum1707` ③ — «control: el operario crea
+  un albarán (403 … field: modoValoracion)». Causa: SCRUM-1712 (ya en main) deja VALORAR el albarán sólo al admin, y
+  el paso mandaba el alta del operario VALORADA y con precios. Reproducido igual en local (banco desechable propio,
+  `yaqu_1707_test`, puerto 55707) antes de tocar nada.
+- **Arreglo, sólo en el test:** el alta del operario pasa a ser la de su pantalla (`SIN_VALORAR`, líneas sin precio) y
+  se sigue mirando que su respuesta no lleve `precioUnitario`/`tipoIva`; el intento VALORADO queda como control
+  (`403`, SCRUM-1712). `scrum1707` 3/3, 0 saltados.
+- **Guard `detalle-trabajo-917` sobre el árbol unido:** salida 0, **244/244**. Control: el guard de main sobre ESTE
+  mismo árbol da **238/246, 8 hallazgos** (F.1/F.2/F.3/F.7 del TÉCNICO × 1280/390) = los de SCRUM-1733. La población
+  baja 246 → 244 por diseño del re-anclaje (c.21555): el técnico pierde F.3 y F.7 de «Notas internas» y gana F.1b,
+  −1 por anchura. El guard no se ha tocado en este tramo.
+- **Tanda entera** con `LIBRO_PG_URL` al banco: 13645 tests, 13635 pass, 8 saltados (gateados por staging/otros
+  bancos/Windows), **2 fallos `scrum1726` D1, ICU local** («3 de octubre de 2026, 0:30» frente a «… a las 0:30»: la
+  fecha es la buena, cambia el separador del Node de esta máquina; la rama no toca esos ficheros). `guards:entrada`
+  15/15 (170).

@@ -251,9 +251,17 @@ test('SCRUM-1707 · ③ (c.21547) por la API, el operario no recibe ni el cobro 
         });
         assert.equal(firma.status, 200, `control: el operario hace firmar (${firma.status}: ${firma.text.slice(0, 160)})`);
         sinPrecios(firma.text, 'POST /:id/firmar');
-        const nuevo = await op.escribir('POST', `/admin/jobs/${suyo.id}/albaranes`, {
+        // SCRUM-1712 (en main desde el 12-nov): VALORAR el albarán es del admin, así que el operario
+        // ya no puede darlo de alta VALORADO ni con precios — el control lo deja dicho, y el alta que
+        // se mira es la que hace su pantalla de siempre (SIN_VALORAR, líneas sin precio).
+        const valorado = await op.escribir('POST', `/admin/jobs/${suyo.id}/albaranes`, {
           modoValoracion: 'VALORADO',
           lineas: [{ concepto: 'Otro grifo', cantidad: 1, unidad: 'ud', precioUnitario: PRECIO, tipoIva: 21 }],
+        });
+        assert.equal(valorado.status, 403, `control (SCRUM-1712): el operario NO da de alta un albarán valorado (${valorado.status})`);
+        const nuevo = await op.escribir('POST', `/admin/jobs/${suyo.id}/albaranes`, {
+          modoValoracion: 'SIN_VALORAR',
+          lineas: [{ concepto: 'Otro grifo', cantidad: 1, unidad: 'ud' }],
         });
         assert.ok([200, 201].includes(nuevo.status), `control: el operario crea un albarán (${nuevo.status}: ${nuevo.text.slice(0, 160)})`);
         sinPrecios(nuevo.text, 'POST /admin/jobs/:id/albaranes');
