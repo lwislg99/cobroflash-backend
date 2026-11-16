@@ -34,8 +34,8 @@ var SUBMENUS = [
 var MARCA_MICROCOPY_SUBMENU = '[PENDIENTE microcopy oficial]';
 
 /**
- * LOS NUEVE RÓTULOS — APROBADOS por el fundador (5-ago-2026, regla 30).
- * Consta en: SCRUM-1502 comentario 20514.
+ * LOS NUEVE RÓTULOS — APROBADOS por Javier el 23-oct-2026, en el chat (regla 30); lo transcribió una sesión.
+ * Consta en: SCRUM-1502 comentario 20514 (orquestador cobroflash-backend-62). Marca corregida en SCRUM-1502s.
  *
  * Eran diez: el décimo, «Numeración», lo quitó SCRUM-483 el 12-ago (commit `af263005e`; su ajuste
  * pasó a «Facturación»). Lo que sigue es la historia de cuando eran diez.

@@ -538,6 +538,44 @@ export function topeDeCorridaDelCI(textoCiYml) {
   return minutos.length ? minutos.reduce((a, b) => a + b, 0) : null;
 }
 
+// SCRUM-1643 · UN JOB INFORMATIVO NO DECIDE. `ci.yml` declara informativos los jobs con
+// `continue-on-error: true` A NIVEL DE JOB (4 espacios; los de 8 son de un PASO, y el obligatorio
+// tiene alguno): el propio workflow dice que su resultado no decide el del run. Medido en #3015
+// (run 41099403956): «constancia del ALTER (informativo)» acabó sus 9 pasos en success a las
+// 17:39:17Z, el job se cerró `cancelled` a las 17:45:03Z, el run salió `cancelled`, y el vigía dio
+// «sin probar» a un commit con el obligatorio y el meta-guard en verde. La lista se LEE del
+// workflow, no se escribe aquí: si `ci.yml` no se puede leer, sale vacía y el veredicto es el de
+// siempre (CIEGO), nunca un verde de más. Un informativo en `failure` sigue siendo ROJO: este
+// cambio sólo quita su «sin veredicto» (cancelled/skipped).
+/** Los nombres de los jobs de `ci.yml` con `continue-on-error: true` a nivel de job. PURO. */
+export function jobsInformativosDelCI(textoCiYml) {
+  const lineas = String(textoCiYml).split(/\r?\n/);
+  const inicio = lineas.findIndex((l) => /^jobs:\s*$/.test(l));
+  if (inicio < 0) return [];
+  const nombres = [];
+  let job = null;
+  const cerrar = () => { if (job?.informativo && job.nombre) nombres.push(job.nombre); };
+  for (const l of lineas.slice(inicio + 1)) {
+    if (/^\S/.test(l)) break; // otra clave de primer nivel: se acabó `jobs:`
+    if (/^ {2}[\w-]+:\s*$/.test(l)) { cerrar(); job = { nombre: null, informativo: false }; continue; }
+    if (!job) continue;
+    const n = l.match(/^ {4}name:\s*(.+?)\s*$/);
+    if (n) job.nombre = n[1].replace(/^(['"])(.*)\1$/, '$2');
+    if (/^ {4}continue-on-error:\s*true\s*(#.*)?$/.test(l)) job.informativo = true;
+  }
+  cerrar();
+  return nombres;
+}
+
+/**
+ * Un job informativo que acabó sin veredicto (cancelled o skipped): no decide el commit. PURO.
+ * El obligatorio y el meta-guard deciden SIEMPRE: aunque alguien les pusiera `continue-on-error`
+ * en `ci.yml`, su cancelado sigue dejando el commit sin probar.
+ */
+const informativoSinVeredicto = (j, informativos) => informativos.includes(j?.name)
+  && j.name !== JOB_OBLIGATORIO && j.name !== JOB_META_GUARD
+  && j.status === 'completed' && ['cancelled', 'skipped'].includes(j.conclusion);
+
 /**
  * EL VEREDICTO DE UN COMMIT. Función PURA.
  *
@@ -550,7 +588,7 @@ export function topeDeCorridaDelCI(textoCiYml) {
  * @param {number|null} e.topeMin    `topeDeCorridaDelCI`; `null` = no se sabe, y un run sin acabar es SIN-LEER
  * @returns {{ sha: string, estado: string, motivo: string, url: string|null, jobs: object[] }}
  */
-export function veredictoDeCommit({ sha, run, jobs, ahora, topeMin, declarados = JOBS_DEL_CI }) {
+export function veredictoDeCommit({ sha, run, jobs, ahora, topeMin, declarados = JOBS_DEL_CI, informativos = [] }) {
   // SCRUM-1498d: `obligatorio` es lo que dio «build + tests» en este commit; lo lee la absolución (b).
   const r = (estado, motivo, lista = [], causa = null) => ({ sha, estado, motivo, url: run?.html_url ?? null, jobs: lista, causa, obligatorio: veredictoDelObligatorio(jobs) });
   // SCRUM-1393f: `sinRun` es el dato («GitHub no tiene run de este commit»); si fue por sustitución
@@ -603,7 +641,9 @@ export function veredictoDeCommit({ sha, run, jobs, ahora, topeMin, declarados =
     ? ' · el código de salida del meta-guard no se pudo leer: puede ser su CIEGO (2)' : '';
   if (rojos.length) return r('ROJO', `en rojo: ${rojos.map((j) => `«${j.name}»`).join(', ')}${sinCodigo}`, rojos);
 
-  const noCorrieron = jobs.filter((j) => j.status !== 'completed' || j.conclusion !== 'success');
+  // SCRUM-1643: un informativo sin veredicto no deja el commit «sin probar»; se nombra en el motivo.
+  const informativosApartados = jobs.filter((j) => informativoSinVeredicto(j, informativos));
+  const noCorrieron = jobs.filter((j) => (j.status !== 'completed' || j.conclusion !== 'success') && !informativosApartados.includes(j));
   const nombres = new Set(jobs.map((j) => j.name));
   const ausentes = declarados.filter((n) => !nombres.has(n));
   if (noCorrieron.length || ausentes.length) {
@@ -613,7 +653,14 @@ export function veredictoDeCommit({ sha, run, jobs, ahora, topeMin, declarados =
     ];
     return r('CIEGO', `sin probar: ${partes.join(', ')}`, noCorrieron);
   }
-  if (run.conclusion !== 'success') return r('CIEGO', `run «${run.conclusion}» con todos sus jobs en success: no cuadra`);
+  // SCRUM-1643: un run `cancelled` cuadra si lo que se canceló fue un informativo; si no, sigue sin cuadrar.
+  const cuadra = run.conclusion === 'success'
+    || (run.conclusion === 'cancelled' && informativosApartados.some((j) => j.conclusion === 'cancelled'));
+  if (!cuadra) return r('CIEGO', `run «${run.conclusion}» con todos sus jobs en success: no cuadra`);
+  if (informativosApartados.length) {
+    const lista = informativosApartados.map((j) => `«${j.name}» ${j.conclusion}`).join(', ');
+    return r('VERDE', `${jobs.length - informativosApartados.length} jobs en success · informativo sin veredicto, no decide: ${lista}`);
+  }
   return r('VERDE', `${jobs.length} jobs en success`);
 }
 
@@ -658,6 +705,11 @@ export function sueloPorCommit(juez = veredictoDeCommit) {
     // SCRUM-1339u: la señal que no pudo medir es CIEGO, también con otro job en rojo; la que midió 0, VERDE.
     { sha: 'cebo-senal-no-pudo', run: run('completed', 'failure'), jobs: senal({ estado: 'no-pudo', motivo: 'cebo' }, [job(JOBS_DEL_CI[1], 'failure')]), esperado: 'CIEGO' },
     { sha: 'cebo-senal-midio', run: run('completed', 'success'), jobs: senal({ estado: 'midio', ausentes: 0 }), esperado: 'VERDE' },
+    // SCRUM-1643: un informativo cancelado (run `cancelled`) no decide: VERDE. El MISMO cancelado sin
+    // declararlo informativo, o el obligatorio cancelado aunque lo declarasen, sigue CIEGO.
+    { sha: 'cebo-obligatorio-declarado-informativo', run: run('completed', 'cancelled'), jobs: [...todos('success').slice(1), job(JOBS_DEL_CI[0], 'cancelled')], informativos: [JOBS_DEL_CI[0]], esperado: 'CIEGO' },
+    { sha: 'cebo-informativo-no-decide', run: run('completed', 'cancelled'), jobs: [...todos('success').slice(0, -1), job(JOBS_DEL_CI.at(-1), 'cancelled')], informativos: [JOBS_DEL_CI.at(-1)], esperado: 'VERDE' },
+    { sha: 'cebo-informativo-sin-declarar', run: run('completed', 'cancelled'), jobs: [...todos('success').slice(0, -1), job(JOBS_DEL_CI.at(-1), 'cancelled')], esperado: 'CIEGO' },
   ];
   const estado = Object.fromEntries(cebos.map((c) => [c.sha, juez({ ...c, ahora, topeMin: 130 }).estado]));
   const ok = cebos.every((c) => estado[c.sha] === c.esperado);
@@ -974,7 +1026,13 @@ async function modoPorCommit(args, opcion) {
   if (!suelo.ok) return ciego('el vigía no reconoce sus cebos: esta pasada no puede afirmar nada');
 
   let topeMin = null;
-  try { topeMin = topeDeCorridaDelCI(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '..', '.github', 'workflows', 'ci.yml'), 'utf8')); } catch { /* queda null: un run sin acabar sale SIN-LEER */ }
+  // SCRUM-1643: los informativos salen del MISMO `ci.yml`; si no se lee, `[]` y nada se aparta.
+  let informativos = [];
+  try {
+    const ciYml = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '..', '.github', 'workflows', 'ci.yml'), 'utf8');
+    topeMin = topeDeCorridaDelCI(ciYml);
+    informativos = jobsInformativosDelCI(ciYml);
+  } catch { /* queda null: un run sin acabar sale SIN-LEER */ }
 
   // `--commit <sha>`: el (C), un commit. `--commits <fichero>`: el (B), un sha por línea. La lista
   // la saca quien llama (`git log --first-parent --since=<desdeDeLaRed>`): este motor no lee git.
@@ -1000,7 +1058,7 @@ async function modoPorCommit(args, opcion) {
   const veredictos = [];
   const juzgar = async (sha) => {
     try {
-      veredictos.push(veredictoDeCommit({ sha, ...(await leerCommitDeGitHub(sha, idDelCI)), ahora, topeMin }));
+      veredictos.push(veredictoDeCommit({ sha, ...(await leerCommitDeGitHub(sha, idDelCI)), ahora, topeMin, informativos }));
     } catch (e) {
       veredictos.push({ sha, estado: 'SIN-LEER', motivo: e.message, url: null, jobs: [], causa: null });
     }

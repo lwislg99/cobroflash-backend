@@ -1,0 +1,57 @@
+﻿✔ SCRUM-560 · SUELO: el censo VE los ficheros que levantan servidor propio (183.6501ms)
+✔ SCRUM-560 · AUTOPRUEBA: el detector caza el patrón y NO acusa a `node:http` (11.379ms)
+✖ SCRUM-560 · ningún fichero NUEVO pide con `fetch` a su propio `app.listen(0)` (2113.4784ms)
+✔ SCRUM-560 · la lista de los que ya estaban no puede quedarse vieja (1827.0874ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4495.9016
+
+✖ failing tests:
+
+test at tests\scrum560-patron-fetch-servidor.test.mjs:309:1
+✖ SCRUM-560 · ningún fichero NUEVO pide con `fetch` a su propio `app.listen(0)` (2113.4784ms)
+  AssertionError [ERR_ASSERTION]: 🔴 UN FICHERO NUEVO USA `fetch` SOBRE SU PROPIO SERVIDOR:
+      scrum1489-la-busqueda-recorta-al-tecnico.test.mjs — 5 `fetch` sobre su propio servidor (basta 1: SCRUM-1218j)
+      scrum912-leer-ticket-gasto.test.mjs — 1 `fetch` DENTRO DE UN BUCLE (cuenta por muchas peticiones, no por una)
+  
+    Ese patrón revienta una aserción de libuv al cerrar el proceso: el fichero se marca fallido
+    sin nombrar ningún subtest, y sale en la tanda de todo el mundo de forma intermitente
+    (medido: 2 de cada 10 tandas).
+  
+    QUÉ HACER EN SU LUGAR — `node:http` con `agent: false` (sin pool de conexiones):
+      const req = http.request({ host: '127.0.0.1', port, path, method: 'GET', agent: false },
+        (res) => { let d = ''; res.setEncoding('utf8');
+                   res.on('data', (t) => { d += t; });
+                   res.on('end', () => resolve({ status: res.statusCode, cuerpo: d })); });
+      req.on('error', (e) => resolve({ status: 0, cuerpo: '' }));
+      req.end();
+    EL EJEMPLO PROBADO, con su motivo escrito: `tests/scrum100-webhooks-fail-closed.test.mjs`
+    (líneas 50-57), donde vive desde SCRUM-100. Y el antes/después medido, en
+    `docs/master/SCRUM-560.md`.
+  + actual - expected
+  
+  + [
+  +   'scrum1489-la-busqueda-recorta-al-tecnico.test.mjs — 5 `fetch` sobre su propio servidor (basta 1: SCRUM-1218j)',
+  +   'scrum912-leer-ticket-gasto.test.mjs — 1 `fetch` DENTRO DE UN BUCLE (cuenta por muchas peticiones, no por una)'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s1-1715b/tests/scrum560-patron-fetch-servidor.test.mjs:311:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'scrum1489-la-busqueda-recorta-al-tecnico.test.mjs — 5 `fetch` sobre su propio servidor (basta 1: SCRUM-1218j)', 'scrum912-leer-ticket-gasto.test.mjs — 1 `fetch` DENTRO DE UN BUCLE (cuenta por muchas peticiones, no por una)' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

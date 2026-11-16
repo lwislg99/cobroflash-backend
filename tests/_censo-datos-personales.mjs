@@ -100,6 +100,23 @@ export const enCamel = (modelo) => modelo[0].toLowerCase() + modelo.slice(1);
  */
 export function camposPersonalesDelSchema(schemaText) {
   const vocab = new Set(VOCABULARIO_PERSONAL);
+  return columnasDeTexto(schemaText).filter((c) => vocab.has(c.campo) || nucleoDe(c.campo));
+}
+
+/**
+ * 🔴 SCRUM-1547 · TODAS las columnas de TEXTO del esquema (`String` o `String?`), de TODOS los modelos.
+ *
+ * Es la población del trinquete de clasificación total: el vocabulario y los núcleos de arriba sólo
+ * ven los nombres que alguien escribió antes, y una columna personal con otro nombre (`notas`,
+ * `firmadoPorNombre`, `ip`) era invisible y el guard salía VERDE. Aquí no se filtra por nombre:
+ * cada columna de texto tiene que estar declarada, personal o no.
+ *
+ * Es el único lector del esquema de este fichero: `camposPersonalesDelSchema` filtra sobre él, para
+ * que las dos poblaciones no puedan leer el esquema de dos formas distintas.
+ * ⚠️ Fuera, dicho: las columnas `Json` (30 el 12-nov-2026) y las `String[]` (0 ese día). Son un
+ * segundo paso que decidió el fundador (SCRUM-1547 c.21607), no un olvido.
+ */
+export function columnasDeTexto(schemaText) {
   const out = [];
   let modelo = null;
   for (const linea of String(schemaText || '').replace(/\r/g, '').split('\n')) {
@@ -111,10 +128,211 @@ export function camposPersonalesDelSchema(schemaText) {
     // es el correo de nadie, y un `Json` de qué se envió es el hecho, no la persona.
     const campo = /^\s*(\w+)\s+String(\?)?(\s|$)/.exec(linea);
     if (!campo) continue;
-    if (!vocab.has(campo[1]) && !nucleoDe(campo[1])) continue;
     out.push({ modelo: enCamel(modelo), campo: campo[1], clave: `${enCamel(modelo)}.${campo[1]}` });
   }
   return out;
+}
+
+// ── SCRUM-1547 · LO QUE NO ES DATO PERSONAL, declarado COLUMNA A COLUMNA ──────────────────────
+//
+// El motivo va por FAMILIA (una frase para todos los estados, otra para las monedas…); la CLAVE va
+// columna a columna. ⛔ Nunca un patrón por nombre en este lado: «todo lo que acabe en Status es no
+// personal» abre el mismo agujero que este ticket cierra, pero por el otro lado.
+// Las 114 son la medición del 12-nov-2026 (SCRUM-1547 c.21601: 224 columnas − 66 que ya veía el censo −
+// 44 personales o dudosas). El fundador decidió en c.21607 que esas 44 van a `SIN_DECIDIR`; éstas son el resto, menos
+// los 4 textos de error que sacó de aquí en c.21617 (un error de envío puede llevar el teléfono o el
+// correo del destinatario): quedan 110.
+// ⚠️ La clasificación es de UNA sesión y no la ha repetido nadie: si una de éstas te parece personal,
+// sácala de aquí y llévala a `SIN_DECIDIR` con su pregunta. Eso no afloja nada: sube el trinquete.
+const ESTADO = 'un estado, tipo, clase o modo: dice en qué punto está la fila o de qué clase es, no de quién es';
+const MONEDA = 'código de moneda ISO (EUR): configuración del documento, no de una persona';
+const SECRETO = 'token o identificador de acceso generado por el sistema: abre una puerta, no nombra a nadie';
+const ID_EXTERNO = 'identificador técnico que asigna un tercero (Stripe, Meta, Resend, la AEAT…) o el sistema: un número de referencia, no una persona';
+const HUELLA = 'huella SHA-256 de un contenido: no se puede leer de vuelta';
+const NUMERO_DOC = 'número o serie de un documento, asignado por el sistema o el profesional: no nombra a nadie';
+const CONFIG = 'configuración del negocio (marca, oficio, plan, zona horaria…): describe la cuenta, no a una persona';
+const CATALOGO = 'dato del catálogo de servicios del profesional (lo que vende), no de un cliente';
+const CONDICIONES = 'condiciones del documento (forma de pago, tramo, modalidad): reglas del cobro, no de quién paga';
+const REGISTRO_LEGAL = 'qué texto legal se aceptó y en qué versión (clave y hash): el hecho, no quién';
+const AUDITORIA = 'qué acción y sobre qué tipo de entidad: el verbo del registro, no el actor';
+
+export const NO_PERSONALES = Object.freeze({
+  // merchant
+  'merchant.trade': CONFIG,
+  'merchant.defaultCurrency': MONEDA,
+  'merchant.invoiceSeriesPrefix': NUMERO_DOC,
+  'merchant.logoUrl': 'la URL del logo del negocio, que el propio profesional sube para sus documentos',
+  'merchant.asesorPrograma': CONFIG,
+  'merchant.stripeAccountId': ID_EXTERNO,
+  'merchant.connectStatus': ESTADO,
+  'merchant.subscriptionStatus': ESTADO,
+  'merchant.plan': CONFIG,
+  'merchant.stripeSubscriptionId': ID_EXTERNO,
+  'merchant.timezone': CONFIG,
+  'merchant.pspId': ID_EXTERNO,
+  'merchant.status': ESTADO,
+  'merchant.acquisitionSource': 'por qué canal llegó la cuenta (campaña, referido…): marketing de la cuenta, no una persona',
+  'merchant.referralCode': SECRETO,
+  'merchant.brandColor': CONFIG,
+  'merchant.brandAccentColor': CONFIG,
+  'merchant.activityKind': CONFIG,
+  // authSession
+  'authSession.token': SECRETO,
+  'authSession.type': ESTADO,
+  // customer
+  'customer.contactKind': ESTADO,
+  'customer.portalToken': SECRETO,
+  'customer.tipoDestinatario': ESTADO,
+  'customer.billingPeriodicity': CONDICIONES,
+  // charge
+  'charge.currency': MONEDA,
+  'charge.method': ESTADO,
+  'charge.status': ESTADO,
+  'charge.intentId': ID_EXTERNO,
+  'charge.receiptToken': SECRETO,
+  // event
+  'event.type': ESTADO,
+  // quote
+  'quote.origin': ESTADO,
+  'quote.shippingAddressMode': ESTADO,
+  'quote.status': ESTADO,
+  'quote.currency': MONEDA,
+  'quote.paymentTerms': CONDICIONES,
+  'quote.createdVia': ESTADO,
+  'quote.decisionChannel': ESTADO,
+  'quote.selectedTierId': ID_EXTERNO,
+  'quote.decisionToken': SECRETO,
+  'quote.ivaModo': CONDICIONES,
+  // invoice
+  'invoice.merchantLogoUrl': 'la URL del logo del negocio, congelada en la factura: la sube el propio profesional',
+  'invoice.number': NUMERO_DOC,
+  'invoice.shippingAddressMode': ESTADO,
+  'invoice.currency': MONEDA,
+  'invoice.registerId': ID_EXTERNO,
+  'invoice.status': ESTADO,
+  'invoice.paidVia': ESTADO,
+  'invoice.stageLabel': CONDICIONES,
+  'invoice.type': ESTADO,
+  'invoice.vfEstado': ESTADO,
+  'invoice.vfHash': HUELLA,
+  'invoice.vfPrevHash': HUELLA,
+  'invoice.vfAnulHash': HUELLA,
+  'invoice.vfAnulPrevHash': HUELLA,
+  // expense
+  'expense.currency': MONEDA,
+  'expense.category': ESTADO,
+  'expense.providerInvoiceNumber': NUMERO_DOC,
+  // product
+  'product.nameSearch': CATALOGO,
+  'product.description': CATALOGO,
+  'product.itemKind': CATALOGO,
+  'product.sku': CATALOGO,
+  'product.supplierRef': CATALOGO,
+  'product.unit': CATALOGO,
+  // quoteRequest
+  'quoteRequest.status': ESTADO,
+  'quoteRequest.source': ESTADO,
+  // botSession
+  'botSession.state': ESTADO,
+  // quoteTemplate
+  'quoteTemplate.currency': MONEDA,
+  'quoteTemplate.paymentTerms': CONDICIONES,
+  // teamMember
+  'teamMember.role': ESTADO,
+  'teamMember.status': ESTADO,
+  // customerEvent
+  'customerEvent.type': ESTADO,
+  // whatsAppMessage
+  'whatsAppMessage.type': ESTADO,
+  'whatsAppMessage.waMessageId': ID_EXTERNO,
+  'whatsAppMessage.status': ESTADO,
+  'whatsAppMessage.relatedType': ESTADO,
+  // legalAcceptance
+  'legalAcceptance.docKey': REGISTRO_LEGAL,
+  'legalAcceptance.version': REGISTRO_LEGAL,
+  // job
+  'job.status': ESTADO,
+  'job.tipoOperacion': ESTADO,
+  'job.tipoIntervencion': ESTADO,
+  // auditLog
+  'auditLog.action': AUDITORIA,
+  'auditLog.entityType': AUDITORIA,
+  // attachment
+  'attachment.entityType': ESTADO,
+  'attachment.kind': ESTADO,
+  'attachment.mime': 'el tipo de fichero (image/jpeg…): formato, no contenido',
+  // albaran
+  'albaran.numero': NUMERO_DOC,
+  'albaran.modoValoracion': ESTADO,
+  'albaran.estado': ESTADO,
+  'albaran.firmadoPorCalidad': 'la CALIDAD en que se firma (titular, encargado…): el papel, no el nombre de quien firma',
+  'albaran.firmaToken': SECRETO,
+  'albaran.claveIdempotencia': ID_EXTERNO,
+  // emailMessage
+  'emailMessage.kind': ESTADO,
+  'emailMessage.providerId': ID_EXTERNO,
+  'emailMessage.status': ESTADO,
+  'emailMessage.relatedType': ESTADO,
+  // parteTrabajo
+  'parteTrabajo.numero': NUMERO_DOC,
+  'parteTrabajo.entrada': 'la hora de entrada del parte: cuándo se trabajó, no quién',
+  'parteTrabajo.salida': 'la hora de salida del parte: cuándo se trabajó, no quién',
+  'parteTrabajo.tipo': ESTADO,
+  'parteTrabajo.estado': ESTADO,
+  'parteTrabajo.firmadoPorCalidad': 'la CALIDAD en que se firma (titular, encargado…): el papel, no el nombre de quien firma',
+  'parteTrabajo.contenidoHash': HUELLA,
+  // gatewayEvent
+  'gatewayEvent.provider': ESTADO,
+  'gatewayEvent.eventId': ID_EXTERNO,
+  'gatewayEvent.type': ESTADO,
+  // vfSubmission
+  'vfSubmission.tipoOperacion': ESTADO,
+  'vfSubmission.lastEnvioId': ID_EXTERNO,
+  'vfSubmission.csv': 'el código seguro de verificación que devuelve la AEAT: identifica el envío, no a una persona',
+  'vfSubmission.estadoRegistro': ESTADO,
+  // vfFlujoObligado
+  'vfFlujoObligado.ultimoEnvioId': ID_EXTERNO,
+});
+
+/**
+ * 🔴 SCRUM-1547 · LA CLASIFICACIÓN TOTAL. Toda columna de texto es UNA de dos:
+ *
+ *   · PERSONAL — la ve el censo (vocabulario o núcleo) **o** está DECLARADA en uno de los cubos del
+ *     reparto (`CAMPOS_PERSONALES`, `FUERA_DE_ANONIMIZADO`, `SIN_DECIDIR`). Estar en un cubo ya es
+ *     declararla: no hay una segunda lista de «personales declaradas» que pueda divergir de la primera.
+ *   · NO PERSONAL — está en `noPersonales` con su motivo.
+ *
+ * Y tres listas que tienen que salir vacías:
+ *   · `sinDeclarar`   — ni una cosa ni otra. Es la columna nueva que nadie ha mirado.
+ *   · `enLasDos`      — declarada no personal y a la vez personal: una de las dos declaraciones miente.
+ *   · `fantasmas`     — claves de `noPersonales` que el esquema ya no tiene: una declaración que no
+ *                       declara nada, y el sitio donde una columna RENOMBRADA se queda sin mirar.
+ */
+export function clasificarTodas(schemaText, camposPersonales, fueraDeclarados, sinDecidir, noPersonales) {
+  const columnas = columnasDeTexto(schemaText);
+  const existe = new Set(columnas.map((c) => c.clave));
+  const personales = new Set(personalesDe(schemaText, camposPersonales, fueraDeclarados, sinDecidir).map((p) => p.clave));
+  const no = new Set(Object.keys(noPersonales || {}));
+  const out = { total: columnas.length, personales: [], noPersonales: [], sinDeclarar: [], enLasDos: [], fantasmas: [] };
+  for (const { clave } of columnas) {
+    if (personales.has(clave) && no.has(clave)) out.enLasDos.push(clave);
+    if (personales.has(clave)) out.personales.push(clave);
+    else if (no.has(clave)) out.noPersonales.push(clave);
+    else out.sinDeclarar.push(clave);
+  }
+  for (const clave of no) if (!existe.has(clave)) out.fantasmas.push(clave);
+  return out;
+}
+
+/** Las personales: las que ve el censo por nombre, más las DECLARADAS en un cubo (SCRUM-1547). En orden del esquema. */
+function personalesDe(schemaText, camposPersonales, fueraDeclarados, sinDecidir) {
+  const vistas = new Set(camposPersonalesDelSchema(schemaText).map((p) => p.clave));
+  const declaradas = new Set([
+    ...Object.entries(camposPersonales || {}).flatMap(([m, cs]) => (cs || []).map((c) => `${m}.${c}`)),
+    ...Object.keys(fueraDeclarados || {}),
+    ...Object.keys(sinDecidir || {}),
+  ]);
+  return columnasDeTexto(schemaText).filter((c) => vistas.has(c.clave) || declaradas.has(c.clave));
 }
 
 /**
@@ -133,7 +351,10 @@ export function camposPersonalesDelSchema(schemaText) {
  * demuestra que el guard está atado al hecho y no a la lista de hoy.
  */
 export function repartir(schemaText, camposPersonales, fueraDeclarados, sinDecidir) {
-  const personales = camposPersonalesDelSchema(schemaText);
+  // SCRUM-1547: la población es la que ve el censo MÁS las declaradas en un cubo. Sin eso, una
+  // columna que el vocabulario no sabe leer (`albaran.notas`) no contaría en el trinquete aunque
+  // esté en `SIN_DECIDIR` con su pregunta.
+  const personales = personalesDe(schemaText, camposPersonales, fueraDeclarados, sinDecidir);
   const cubiertos = new Set(
     Object.entries(camposPersonales || {}).flatMap(([m, cs]) => (cs || []).map((c) => `${m}.${c}`)),
   );

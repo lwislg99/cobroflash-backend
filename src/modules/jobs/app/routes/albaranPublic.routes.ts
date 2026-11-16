@@ -17,6 +17,7 @@ import {
   ALBARAN_ROTULOS,
   FIRMANTE_CALIDAD_ETIQUETAS,
   FIRMANTE_CALIDAD_LIBRE,
+  type FirmanteCalidadId,
   FIRMANTE_NOMBRE_MAX,
   FIRMANTE_OTRO_MAX,
   COPY_CALIDAD_OTRO_VACIO,
@@ -33,8 +34,26 @@ import { requestIp } from '../../../system/audit.service';
 import { getLocale } from '../../../../core/i18n/locales'; // SCRUM-967b
 import { portalUrlDelCliente } from '../../../system/customerAdmin'; // SCRUM-967b
 import { clienteDelDocumento } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-1650b
+// SCRUM-1646 (CSP paso 2): el guion de la página, fuera del HTML.
+import { ALBARAN_FIRMA_JS, ID_DATOS_FIRMA, SRC_FIRMA_JS, cacheDelGuion, datosParaLaPagina } from './albaranFirmaNavegador';
+// SCRUM-1723 (`style-src 'self'`): y su CSS, también fuera del HTML.
+import { ALBARAN_FIRMA_CSS, HREF_FIRMA_CSS, cacheDelEstilo } from './albaranFirmaEstilo';
 
 const router = Router();
+
+// SCRUM-1646 · el guion de la página de firma, servido desde 'self' (`script-src 'self'`). Dos tramos
+// de ruta, así que `/:token` (uno solo) no lo pisa. `immutable` SOLO con la huella buena.
+router.get('/js/firma.js', (req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  res.setHeader('Cache-Control', cacheDelGuion(req.query?.v));
+  return res.send(ALBARAN_FIRMA_JS);
+});
+// SCRUM-1723 · el CSS de la página, servido desde 'self' (`style-src 'self'`), mismo patrón y huella.
+router.get('/css/firma.css', (req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'text/css; charset=utf-8');
+  res.setHeader('Cache-Control', cacheDelEstilo(req.query?.v));
+  return res.send(ALBARAN_FIRMA_CSS);
+});
 // Superficie pública → rate-limit (patrón decisionLimiter del presupuesto).
 const firmaLimiter = rateLimit({ scope: 'albaran_firma_publica', max: 20, windowMs: 60_000 });
 const FIRMA_MAX_CHARS = 500_000; // mismo tope que la firma en obra (albaranes.routes.ts)
@@ -46,72 +65,8 @@ function renderPage(title: string, body: string): string {
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="theme-color" content="#16a34a"/>
 <link rel="stylesheet" href="/fonts/inter.css"/>
-<style>
-  *,*::before,*::after{box-sizing:border-box}
-  body{font-family:'Inter',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;
-    margin:0;padding:16px;background:#f6f7f5;color:#3f4a45;min-height:100vh}
-  .card{max-width:460px;margin:24px auto;background:#fff;border:1px solid #e7e9e5;border-radius:18px;
-    padding:26px 24px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 18px 40px -16px rgba(16,24,40,.16)}
-  .merchant-hero{text-align:center;padding:4px 0 16px}
-  .merchant-logo{max-height:56px;max-width:160px;object-fit:contain;margin-bottom:8px}
-  .merchant-avatar{width:60px;height:60px;border-radius:50%;margin:0 auto 8px;
-    background:linear-gradient(135deg,#22c55e,#22d3ee);color:#052e16;font-weight:800;font-size:24px;
-    display:flex;align-items:center;justify-content:center}
-  .merchant-name{font-size:20px;font-weight:800;color:#0f1c17}
-  h1{font-size:19px;margin:0 0 4px;color:#0f1c17;text-align:center}
-  .meta{font-size:13px;color:#6b756f;text-align:center;margin-bottom:16px}
-  .lines-table{width:100%;border-collapse:collapse;font-size:14px;margin:12px 0}
-  .lines-table th{text-align:left;padding:4px 6px;color:#6b756f;font-size:12px;border-bottom:1px solid #e7e9e5}
-  .lines-table td{padding:6px 6px;border-bottom:1px solid #f1f2ee}
-  .lines-table th:nth-child(2),.lines-table td:nth-child(2),
-  .lines-table th:nth-child(3),.lines-table td:nth-child(3){text-align:right;white-space:nowrap}
-  /* SCRUM-468 · columnas de importe y totales del albarán VALORADO. Solo casan con marcado que
-     el SIN_VALORAR NO genera (.num / .totales), así que esa pantalla no cambia ni un píxel.
-     Cero colores nuevos: los tres son los que ya usa este mismo fichero. */
-  .lines-table th.num,.lines-table td.num{text-align:right;white-space:nowrap}
-  .totales{text-align:right;margin-top:-4px}
-  .totales p{margin:2px 0}
-  .totales .base{font-size:14px;color:#3f4a45}
-  .totales .total{font-size:18px;font-weight:800;color:#0f1c17}
-  .totales .leyenda{font-size:11px;color:#8b948e;line-height:1.45;margin-top:6px}
-  .divider{border:none;border-top:1px solid #e7e9e5;margin:16px 0}
-  .sig-label{font-size:13px;font-weight:600;color:#333c37;margin-bottom:6px;display:block}
-  .sig-sub{font-size:12px;color:#6b756f;margin-bottom:8px}
-  .sig-wrapper{border:2px solid #cdd2cb;border-radius:10px;background:#f7f8f6;position:relative;overflow:hidden;margin-bottom:8px}
-  .sig-wrapper.has-sig{border-color:#22c55e;background:#fff}
-  #sig-canvas{display:block;width:100%;height:150px;cursor:crosshair;touch-action:none}
-  .sig-placeholder{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#cdd2cb;
-    font-size:14px;pointer-events:none;user-select:none}
-  .sig-actions{display:flex;gap:8px;margin-bottom:16px;align-items:center}
-  /* SCRUM-300: los dos campos de FIRMADO POR. El NOMBRE es OBLIGATORIO y viene precargado con el
-     del cliente —quien tiene el móvil en la mano suele ser él—, así que el camino normal no
-     añade toques: trazo y botón. La CALIDAD viene SIN marcar y es opcional.
-     ⚠️ El nombre precargado se BORRA si se declara que firmó otra persona. */
-  .firmante-campo{margin-bottom:10px}
-  .firmante-campo label{display:block;font-size:13px;font-weight:600;color:#333c37;margin-bottom:4px}
-  .firmante-campo input,.firmante-campo select{width:100%;padding:11px 12px;font-size:15px;font-family:inherit;
-    color:#0f1c17;background:#fff;border:1px solid #cdd2cb;border-radius:10px;min-height:44px}
-  .btn-clear{font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid #e7e9e5;background:#fff;cursor:pointer;color:#6b756f}
-  .btn-accept{width:100%;padding:15px;font-size:16px;font-weight:700;background:#16a34a;color:#fff;border:none;
-    border-radius:14px;cursor:pointer;min-height:52px;box-shadow:0 4px 14px -2px rgba(22,163,74,.35)}
-  .btn-accept:active{background:#15803d;transform:translateY(1px)}
-  .btn-accept:disabled{opacity:.5;cursor:default}
-  /* SCRUM-967b: el enlace al portal tras firmar es un <a>, con la misma cara que el botón primario. */
-  a.btn-portal{display:block;box-sizing:border-box;margin-top:16px;text-align:center;text-decoration:none;line-height:22px}
-  .status-ok{background:#ecfdf5;border-radius:12px;padding:16px;text-align:center}
-  /* SCRUM-361 (H6): el albarán cambió mientras esta página estaba abierta. Hermana de .status-ok
-     y NO de un error: mismo radio, mismo padding, mismo centrado — solo cambia el tono. Que no
-     parezca un fallo del programa es condición del texto aprobado, y el color es parte del texto. */
-  .status-aviso{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:16px;
-    text-align:center;color:#3f4a45;font-size:15px;line-height:1.45}
-  .status-ok strong{color:#166534}
-  .success-check{width:72px;height:72px;border-radius:50%;background:#16a34a;color:#fff;font-size:40px;
-    display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
-  small{font-size:12px;color:#6b756f;display:block;text-align:center;margin-top:12px}
-  .privacy-note{font-size:11px;color:#8b948e;text-align:left;line-height:1.5;margin-top:10px}
-  .privacy-note a{color:#8b948e;text-decoration:underline}
-  :focus-visible{outline:none;box-shadow:0 0 0 3px rgba(34,197,94,.30)}
-</style></head>
+<link rel="stylesheet" href="${HREF_FIRMA_CSS}"/>
+</head>
 <body><div class="card">${body}</div></body></html>`;
 }
 
@@ -140,28 +95,9 @@ function avisoPrivacidad(merchant: { name: string | null; legalName: string | nu
     <a href="/privacidad">política de privacidad</a>.</p>`;
 }
 
-// Canvas de firma (adaptado de quoteDecisionLanding SIG_JS): expone getSignatureData().
-const SIG_JS = `<script>(function(){
-  const canvas=document.getElementById('sig-canvas');if(!canvas)return;
-  const wrapper=canvas.parentElement,placeholder=document.getElementById('sig-placeholder');
-  const ctx=canvas.getContext('2d');let drawing=false,hasSig=false;
-  function resize(){const r=canvas.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
-    const prev=ctx.getImageData(0,0,canvas.width,canvas.height);
-    canvas.width=r.width*dpr;canvas.height=r.height*dpr;ctx.scale(dpr,dpr);ctx.putImageData(prev,0,0);
-    ctx.strokeStyle='#0f1c17';ctx.lineWidth=2.5;ctx.lineCap='round';ctx.lineJoin='round';}
-  resize();window.addEventListener('resize',resize);
-  function pos(e){const r=canvas.getBoundingClientRect(),s=e.touches?e.touches[0]:e;return{x:s.clientX-r.left,y:s.clientY-r.top};}
-  function start(e){e.preventDefault();drawing=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);}
-  function move(e){if(!drawing)return;e.preventDefault();const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();
-    if(!hasSig){hasSig=true;if(placeholder)placeholder.style.display='none';if(wrapper)wrapper.classList.add('has-sig');}}
-  function end(){drawing=false;}
-  canvas.addEventListener('mousedown',start);canvas.addEventListener('mousemove',move);canvas.addEventListener('mouseup',end);
-  canvas.addEventListener('touchstart',start,{passive:false});canvas.addEventListener('touchmove',move,{passive:false});canvas.addEventListener('touchend',end);
-  document.getElementById('sig-clear')?.addEventListener('click',function(){
-    ctx.clearRect(0,0,canvas.width/(window.devicePixelRatio||1),canvas.height/(window.devicePixelRatio||1));
-    hasSig=false;if(placeholder)placeholder.style.display='';if(wrapper)wrapper.classList.remove('has-sig');});
-  window.getSignatureData=function(){return hasSig?canvas.toDataURL('image/png'):null;};
-})();</script>`;
+// SCRUM-1646 · el lienzo de firma, los campos del firmante y el botón de firmar ya NO van en línea:
+// su guion vive en `albaranFirmaNavegador.ts` y se sirve en `GET /albaran/js/firma.js` (abajo). Aquí
+// sólo se pintan sus DATOS, en un bloque `application/json` que no se ejecuta.
 
 /**
  * SCRUM-300 (C5): los dos campos de FIRMADO POR, sin añadir toques al camino normal.
@@ -189,7 +125,6 @@ function firmanteCamposHtml(nombrePrecargado: string): string {
   const opciones = firmanteCalidadOpciones()
     .map((o) => `<option value="${esc(o.id)}">${esc(o.etiqueta)}</option>`)
     .join('');
-  const libre = esc(FIRMANTE_CALIDAD_LIBRE);
   return `
     <div class="firmante-campo">
       <label for="firmante-nombre">${esc(ALBARAN_ROTULOS.firmadoPorNombre)}</label>
@@ -199,28 +134,17 @@ function firmanteCamposHtml(nombrePrecargado: string): string {
       <label for="firmante-calidad">${esc(ALBARAN_ROTULOS.firmadoPorCalidad)}</label>
       <select id="firmante-calidad"><option value="" selected></option>${opciones}</select>
     </div>
-    <div class="firmante-campo" id="firmante-otro-wrap" style="display:none">
+    <div class="firmante-campo" id="firmante-otro-wrap">
       <input id="firmante-otro" type="text" maxlength="${FIRMANTE_OTRO_MAX}" placeholder="${esc(FIRMANTE_CALIDAD_ETIQUETAS[FIRMANTE_CALIDAD_LIBRE])}"/>
-    </div>
-    <script>(function(){
-      var sel=document.getElementById('firmante-calidad'),wrap=document.getElementById('firmante-otro-wrap');
-      var nom=document.getElementById('firmante-nombre');
-      if(!sel||!wrap)return;
-      // El nombre llega PRECARGADO con el del cliente: se marca como sugerencia NUESTRA.
-      if(nom&&nom.value)nom.dataset.deSugerencia='1';
-      if(nom)nom.addEventListener('input',function(){delete nom.dataset.deSugerencia;});
-      sel.addEventListener('change',function(){
-        wrap.style.display = sel.value===${JSON.stringify(libre)} ? '' : 'none';
-        if(sel.value===${JSON.stringify(libre)}){var o=document.getElementById('firmante-otro'); if(o)o.focus();}
-        // 🔴 SCRUM-300: el nombre PRECARGADO se borra al cambiar de opción. Si quien firma dice
-        // que no es el cliente, dejar ahí el nombre del cliente que pusimos nosotros sellaría una
-        // declaración falsa. Lo que haya tecleado él a mano NO se toca.
-        if(nom&&nom.dataset.deSugerencia==='1'&&sel.value&&sel.value!=='el_propio_cliente'){
-          nom.value='';delete nom.dataset.deSugerencia;nom.focus();
-        }
-      });
-    })();</script>`;
+    </div>`;
+  // SCRUM-1646 · el comportamiento de estos campos (el «Otro» que abre su hueco y, 🔴 SCRUM-300, el
+  // nombre PRECARGADO que se borra si quien firma dice que no es el cliente —dejarlo sellaría una
+  // declaración falsa; lo tecleado a mano NO se toca) vive en `albaranFirmaNavegador.ts`, con los
+  // ids de calidad que le llegan en los datos (`calidadLibre`, `calidadPropia`).
 }
+
+/** SCRUM-300 · la calidad que NO borra el nombre precargado: quien firma es el propio cliente. */
+const CALIDAD_PROPIA: FirmanteCalidadId = 'el_propio_cliente';
 
 // SCRUM-967b · las piezas de la línea firmada (L3) bajo «¡Parte firmado!».
 function negocioDe(m: { name: string; legalName: string | null } | null): string {
@@ -228,11 +152,6 @@ function negocioDe(m: { name: string; legalName: string | null } | null): string
 }
 function presupuestosDe(m: { country: string | null } | null): string {
   return getLocale(m?.country).quotePlural.toLowerCase();
-}
-/** Un literal de JS que se puede soltar dentro de un <script>: el nombre del negocio lo escribe el
- *  profesional, y un «</script>» en él cerraría el bloque. `<` es el mismo carácter para JS. */
-function literalJs(s: string): string {
-  return JSON.stringify(s).replace(/</g, '\\u003c');
 }
 
 async function loadContext(token: string) {
@@ -259,7 +178,10 @@ router.get('/:token', async (req: Request, res: Response) => {
   // fundador del 10-nov-2026 (registro en docs/master/SCRUM-1650.md). Un albarán anterior al
   // escritor (columnas a NULL) cae a la ficha: la regla es la de `clienteDelDocumento`, no una copia.
   const nombreDelDocumento = albaran.customerName != null || customer ? clienteDelDocumento(albaran, customer).name : '';
-  const customerName = esc(nombreDelDocumento || 'Cliente');
+  // SCRUM-1646 · el nombre SIN escapar va a los datos del guion («Gracias, …», por `textContent`); el
+  // escapado, al HTML. Salen de la MISMA línea a propósito: saludo y «Gracias» no pueden decir dos
+  // nombres.
+  const nombreCliente = nombreDelDocumento || 'Cliente'; const customerName = esc(nombreCliente);
   const obra = esc((job?.direccion || job?.titulo || '').trim());
 
   if (albaran.estado === 'firmado') {
@@ -289,6 +211,52 @@ router.get('/:token', async (req: Request, res: Response) => {
     albaran.lineas, albaran.modoValoracion, albaran.ocultarPreciosEnDocumento,
   );
 
+  /**
+   * SCRUM-1646 · LO QUE EL GUION NECESITA, COMO DATOS. Antes iba interpolado dentro de un `<script>` en
+   * línea; ahora viaja en un bloque `application/json` y el código (`albaranFirmaNavegador.ts`) no
+   * lleva ni uno. Los TEXTOS siguen naciendo aquí y en `albaranFirmante.ts`, los mismos de antes,
+   * palabra por palabra (regla 39: se mueve código, no copy).
+   *
+   * Lo que cada dato sostiene, y que no puede perderse al moverlo:
+   *  · `firmarUrl` — 🔴 SCRUM-1632c: con el token LIMPIO (`parseToken`), nunca con lo que trajo la URL.
+   *  · `version` — 🔴 SCRUM-361 (H6): la versión que ESTA PÁGINA pintó. El servidor la compara con la
+   *    de ahora y NO sella si difieren. No es un hash: es el contador de fila que el PATCH incrementa.
+   *  · `sinNombre` — SCRUM-300: el nombre es obligatorio al firmar; se corta en el navegador para no
+   *    gastar un viaje. Texto APROBADO (fundador, 6-ago-2026), de la fuente única.
+   *  · `cambiado` / `cambiadoBoton` — 🔴 SCRUM-361: aviso propio, no la línea roja, y se RETIRA el
+   *    botón de firmar (reintentar lo mismo es justo lo que no debe pasar).
+   *  · `portalLinea` / `portalBoton` — SCRUM-967b: el portal llega SOLO en la respuesta de un solo uso
+   *    del POST; la URL entra como atributo y todo texto como texto.
+   *  · `sinRespuesta` — SCRUM-1302d: no se sabe si la firma llegó; reintentar sobre un parte ya
+   *    firmado contesta que ya está, sin escribir.
+   *  · `firmadoGracias` — 🔴 SCRUM-1302d (D): NO promete la copia por WhatsApp. Lleva el nombre SIN
+   *    escapar porque entra por `textContent` (antes iba escapado porque entraba por `innerHTML`):
+   *    lo que se lee en pantalla es el mismo.
+   */
+  const datosDeFirma = {
+    firmarUrl: `/albaran/${parseToken(req.params.token)}/firmar`,
+    version: albaran.version,
+    calidadLibre: FIRMANTE_CALIDAD_LIBRE,
+    calidadPropia: CALIDAD_PROPIA,
+    errorCambiado: 'albaran_cambiado',
+    textos: {
+      sinFirma: 'Dibuja tu firma para continuar.',
+      sinNombre: COPY_FIRMA_SIN_NOMBRE,
+      calidadOtroVacio: COPY_CALIDAD_OTRO_VACIO,
+      enviando: 'Enviando…',
+      botonFirmar: 'Firmar el parte de trabajo',
+      marcaFirmado: '✓',
+      firmadoTitulo: '¡Parte firmado!',
+      firmadoGracias: `Gracias, ${nombreCliente}.`,
+      portalLinea: `Ahí tienes tus ${presupuestosDe(merchant)} y pagos con ${negocioDe(merchant)}.`,
+      portalBoton: 'Abrir mi portal de cliente',
+      cambiado: COPY_ALBARAN_CAMBIADO,
+      cambiadoBoton: COPY_ALBARAN_CAMBIADO_BOTON,
+      reserva: 'No se ha podido firmar. Inténtalo de nuevo.',
+      sinRespuesta: 'No hemos podido confirmar que tu firma haya llegado. Comprueba tu conexión y vuelve a intentarlo.',
+    },
+  };
+
   return html('Firmar parte de trabajo', `
     ${hero}
     <h1>Hola, ${customerName} 👋</h1>
@@ -304,81 +272,11 @@ router.get('/:token', async (req: Request, res: Response) => {
     </div>
     <div class="sig-actions"><button type="button" class="btn-clear" id="sig-clear">Borrar</button></div>
     <button class="btn-accept" id="btn-sign">Firmar el parte de trabajo</button>
-    <div id="sig-error" style="color:#dc2626;font-size:13px;margin-top:8px;display:none">Dibuja tu firma para continuar.</div>
+    <div id="sig-error">Dibuja tu firma para continuar.</div>
     <small>Documento no fiscal — no constituye factura. Si no esperabas esto, cierra esta página.</small>
     ${avisoPrivacidad(merchant)}
-    ${SIG_JS}
-    <script>
-      document.getElementById('btn-sign').addEventListener('click', async function(){
-        const sig = window.getSignatureData ? window.getSignatureData() : null;
-        const err = document.getElementById('sig-error');
-        if(!sig){ err.textContent=${JSON.stringify('Dibuja tu firma para continuar.')}; err.style.display='block'; return; }
-        // SCRUM-300: el NOMBRE es obligatorio al firmar (la columna admite nulo solo por las
-        // filas anteriores a C5). Se corta aquí para no gastarle al cliente un viaje al servidor.
-        // El texto sale de la fuente única y está APROBADO (fundador, 6-ago-2026).
-        const nomEl = document.getElementById('firmante-nombre');
-        if(nomEl && !nomEl.value.trim()){
-          err.textContent=${JSON.stringify(COPY_FIRMA_SIN_NOMBRE)}; err.style.display='block'; nomEl.focus(); return;
-        }
-        // Y si se ha elegido la ranura libre, su texto también.
-        const calEl0 = document.getElementById('firmante-calidad');
-        const otroEl0 = document.getElementById('firmante-otro');
-        if(calEl0 && calEl0.value===${JSON.stringify(FIRMANTE_CALIDAD_LIBRE)} && otroEl0 && !otroEl0.value.trim()){
-          err.textContent=${JSON.stringify(COPY_CALIDAD_OTRO_VACIO)}; err.style.display='block'; otroEl0.focus(); return;
-        }
-        err.style.display='none';
-        const btn=this; btn.disabled=true; btn.textContent='Enviando…';
-        try{
-          // SCRUM-300: los dos datos de FIRMADO POR viajan CON la firma, para que entren en el
-          // contenido ANTES de sellarlo. Pegarlos después rompería el hash.
-          const cal=document.getElementById('firmante-calidad');
-          const r=await fetch(${JSON.stringify(`/albaran/${parseToken(req.params.token)}/firmar`)},{
-            method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-              signatureData:sig,
-              // SCRUM-361 (H6): la versión que ESTA PÁGINA pintó. El servidor la compara con la de
-              // ahora y NO sella si difieren — el cliente no puede firmar algo que no vio. No es
-              // un hash: es el contador de fila que el PATCH ya incrementaba.
-              version:${JSON.stringify(albaran.version)},
-              firmadoPorNombre:(document.getElementById('firmante-nombre')||{}).value||'',
-              firmadoPorCalidad:cal?cal.value:'',
-              firmadoPorCalidadOtro:(document.getElementById('firmante-otro')||{}).value||''
-            })});
-          if(r.ok){
-            // SCRUM-967b: el portal llega SOLO en esta respuesta de un solo uso (ver el POST). La URL
-            // se pone como atributo y el texto como texto: nada de la respuesta entra como HTML.
-            const d=await r.json().catch(()=>({}));
-            document.querySelector('.card').innerHTML=
-              '<div style="text-align:center;padding:12px 0"><div class="success-check">✓</div>'+
-              '<h1>¡Parte firmado!</h1><p class="meta">Gracias, ${customerName}.</p></div>';
-            if(d && typeof d.portalUrl==='string' && /^https?:\\/\\//.test(d.portalUrl)){
-              const p=document.createElement('p'); p.className='meta';
-              p.textContent=${literalJs(`Ahí tienes tus ${presupuestosDe(merchant)} y pagos con ${negocioDe(merchant)}.`)};
-              const a=document.createElement('a'); a.className='btn-accept btn-portal'; a.href=d.portalUrl;
-              a.textContent=${JSON.stringify('Abrir mi portal de cliente')};
-              const caja=document.querySelector('.card > div'); caja.appendChild(p); caja.appendChild(a);
-            }
-          } else {
-            const d=await r.json().catch(()=>({}));
-            // 🔴 SCRUM-361: el albarán cambió mientras esta página estaba abierta. NO es un error
-            // de validación y no puede parecerlo: va en un aviso propio con su botón, no en la
-            // línea roja de «dibuja tu firma». Y se RETIRA el botón de firmar — dejarlo activo
-            // invitaría a reintentar lo mismo, que es exactamente lo que no debe pasar.
-            if(d.error===${JSON.stringify('albaran_cambiado')}){
-              document.querySelector('.card').innerHTML=
-                '<div class="status-aviso"><strong>'+${JSON.stringify(COPY_ALBARAN_CAMBIADO)}+'</strong>'+
-                '<button type="button" class="btn-accept" style="margin-top:14px" onclick="location.reload()">'+
-                ${JSON.stringify(COPY_ALBARAN_CAMBIADO_BOTON)}+'</button></div>';
-              return;
-            }
-            btn.disabled=false; btn.textContent='Firmar el parte de trabajo';
-            const e=document.getElementById('sig-error');
-            e.textContent=d.message||'No se ha podido firmar. Inténtalo de nuevo.'; e.style.display='block';
-          }
-        }catch(_){ btn.disabled=false; btn.textContent='Firmar el parte de trabajo';
-          // SCRUM-1302d: aquí no se sabe si la firma llegó. Sobre un parte ya firmado el POST contesta que ya está, sin escribir.
-          const e=document.getElementById('sig-error'); e.textContent='No hemos podido confirmar que tu firma haya llegado. Comprueba tu conexión y vuelve a intentarlo.'; e.style.display='block'; }
-      });
-    </script>
+    <script type="application/json" id="${ID_DATOS_FIRMA}">${datosParaLaPagina(datosDeFirma)}</script>
+    <script src="${SRC_FIRMA_JS}"></script>
   `);
 });
 

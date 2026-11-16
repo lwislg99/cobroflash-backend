@@ -55,10 +55,11 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'con tres opciones, cada caja y el total van sin IVA',
   },
   {
-    // M4 · la línea de cada opción vuelve a llevar el IVA.
+    // M4 · la línea de cada opción vuelve a llevar el IVA. (Re-anclada en SCRUM-1737: desde
+    // entonces la línea de la tarjeta va sin IVA en los dos modos, y la expresión es otra.)
     fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
-    de: '(ivaFueraDelPapel ? 0 : (l.tax ?? 0))',
-    a: '(l.tax ?? 0)',
+    de: 'const importe = l.qty * l.price;',
+    a: 'const importe = l.qty * l.price * (1 + (l.tax ?? 0));',
     cae: 'con tres opciones, cada caja y el total van sin IVA',
   },
   {

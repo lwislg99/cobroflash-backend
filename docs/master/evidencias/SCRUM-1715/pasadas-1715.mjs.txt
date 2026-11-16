@@ -1,0 +1,63 @@
+// pasadas-1715.mjs — SCRUM-1715 (S2, 12-nov-2026). Corre N pasadas de cada lado (antes = el fichero
+// de origin/main; después = migrado con migrar-1218i) contra un Postgres DESECHABLE propio, rehaciendo la
+// base antes de cada pasada, y anota por pasada: código de salida, si lleva la firma de SCRUM-1204
+// (0xC0000409 / 3221226505) y el conjunto «veredicto + nombre» de los casos (TAP).
+// Uso: node pasadas-1715.mjs <raiz-worktree> <N> [--bandera]
+import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const [raiz, nStr, ...resto] = process.argv.slice(2);
+const N = Number(nStr);
+const BANDERA = resto.includes('--bandera');
+const TMP = 'C:\\Users\\Admin\\.claude\\jobs\\ca722338\\tmp';
+const PSQL = path.join(TMP, 'pg', 'bin', 'psql.exe');
+const DDL = path.join(TMP, 'ddl.sql');
+const BASE = 'yaqu_1715_test';
+const URL = `postgresql://postgres@127.0.0.1:55715/${BASE}?sslmode=disable`;
+
+function rehacer() {
+  const a = spawnSync(PSQL, ['-h', '127.0.0.1', '-p', '55715', '-U', 'postgres', '-d', 'postgres', '-q', '-c', `DROP DATABASE IF EXISTS ${BASE} WITH (FORCE)`, '-c', `CREATE DATABASE ${BASE}`], { encoding: 'utf8' });
+  if (a.status !== 0) throw new Error(`rehacer: ${a.stderr}`);
+  const b = spawnSync(PSQL, ['-h', '127.0.0.1', '-p', '55715', '-U', 'postgres', '-d', BASE, '-q', '-v', 'ON_ERROR_STOP=1', '-f', DDL], { encoding: 'utf8' });
+  if (b.status !== 0) throw new Error(`ddl: ${b.stderr}`);
+}
+
+const LADOS = { antes: 'tests1715/scrum1188d-antes.test.mjs', despues: 'tests1715/scrum1188d-despues.test.mjs' };
+const env = { ...process.env, LIBRO_PG_URL: URL };
+delete env.DATABASE_URL; delete env.DATABASE_URL_STAGING; delete env.DATABASE_URL_DEV; delete env.DATABASE_URL_TESTS;
+
+const res = {};
+for (const [lado, fichero] of Object.entries(LADOS)) {
+  res[lado] = { pasadas: 0, abortos: 0, rcNoCero: 0, conjuntos: new Map(), skips: 0 };
+  for (let i = 0; i < N; i++) {
+    rehacer();
+    const args = [...(BANDERA ? ['--no-wasm-dynamic-tiering'] : []), '--test', '--test-force-exit', '--test-reporter=tap', fichero];
+    const r = spawnSync(process.execPath, args, { cwd: raiz, env, encoding: 'utf8', timeout: 180000 });
+    const salida = (r.stdout || '') + (r.stderr || '');
+    const casos = salida.split('\n').filter((l) => /^\s*(not )?ok \d+ - SCRUM-1188d/.test(l))
+      .map((l) => l.trim().replace(/^(not ok|ok) \d+ - /, '$1 · ')).sort();
+    if (/# SKIP/.test(salida)) res[lado].skips++;
+    const firma = r.status === 3221226505 || /UV_HANDLE_CLOSING/.test(salida);
+    res[lado].pasadas++;
+    if (firma) res[lado].abortos++;
+    if (r.status !== 0) { res[lado].rcNoCero++; fs.writeFileSync(path.join(TMP, 's1715', `fallo-${lado}-${i}.txt`), `rc=${r.status}\n${salida}`); }
+    const clave = casos.join(' | ');
+    res[lado].conjuntos.set(clave, (res[lado].conjuntos.get(clave) || 0) + 1);
+    process.stdout.write(`${lado} ${i + 1}/${N} rc=${r.status}${firma ? ' FIRMA-1204' : ''} casos=${casos.length}\n`);
+  }
+}
+console.log(`\nbandera --no-wasm-dynamic-tiering: ${BANDERA ? 'SÍ' : 'NO'} · N=${N} por lado`);
+for (const [lado, x] of Object.entries(res)) {
+  console.log(`\n${lado}: pasadas=${x.pasadas} · abortos con la firma=${x.abortos} · rc≠0=${x.rcNoCero} · pasadas con SKIP=${x.skips}`);
+  for (const [k, v] of x.conjuntos) console.log(`  ×${v}: ${k.split(' | ').join('\n        ')}`);
+}
+// Comparador: el conjunto «veredicto + nombre» de un lado es el del otro.
+const a = [...res.antes.conjuntos.keys()].sort().join('\n');
+const d = [...res.despues.conjuntos.keys()].sort().join('\n');
+console.log(`\nCASOS POR NOMBRE: ${a === d ? 'IGUAL' : 'DISTINTO'}`);
+// Control del comparador: un veredicto cambiado TIENE que salir DISTINTO.
+const sembrado = a.replace(/^ok · /m, 'not ok · ');
+console.log(`control sembrado (un veredicto cambiado): ${sembrado !== a && sembrado !== d ? 'VIVO' : 'MUERTO'}`);
+const cuatro = [...res.despues.conjuntos.keys()].every((k) => k.split(' | ').length === 4 && !k.includes('not ok'));
+console.log(`suelo: cada pasada de después con 4 casos «ok»: ${cuatro ? 'SÍ' : 'NO'}`);

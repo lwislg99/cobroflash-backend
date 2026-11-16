@@ -1,0 +1,11 @@
+import { bancoDelParte } from 'file:///<ARBOL>/tests/_banco-firma-del-parte.mjs';
+import fs from 'node:fs';
+const out = process.argv[2];
+fs.mkdirSync(out, { recursive: true });
+for (const estado of ['emitido', 'firmado', 'borrador']) {
+  const { status, cuerpo } = await bancoDelParte({ estado }).pagina();
+  if (status !== 200 || cuerpo.length < 500) throw new Error('CIEGO ' + estado + ' ' + status);
+  fs.writeFileSync(out + '/' + estado + '.html', cuerpo);
+  console.log(estado, cuerpo.length);
+}
+process.exit(0);

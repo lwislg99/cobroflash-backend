@@ -5,6 +5,8 @@ import { setCookie, clearCookie } from '../../../../core/http/authMiddleware';
 import { rateLimit } from '../../../../core/http/rateLimit'; // A11.2 (S3)
 import { prisma } from '../../../../core/db/prisma';
 import { isInvitedEmail } from '../../../../core/config/env';
+import { LOGIN_JS, RUTA_LOGIN_JS } from './loginNavegador'; // SCRUM-1647c
+import { ALTA_JS, RUTA_ALTA_JS } from './altaNavegador'; // SCRUM-1647d
 
 const router = Router();
 
@@ -192,6 +194,23 @@ router.post('/logout', async (req, res) => {
   }
   clearCookie(res);
   return res.json({ ok: true });
+});
+
+// GET /auth/js/login.js — SCRUM-1647c (J3): el guion de `public/login.html`, fuera del HTML para que
+// la CSP (`script-src 'self'`, SCRUM-1637) se pueda aplicar. Cadena constante, sin datos de la
+// petición. `no-cache`: la página es estática y no lleva huella, así que se revalida siempre.
+router.get(RUTA_LOGIN_JS, (_req, res) => {
+  res.setHeader('Content-Type', 'text/javascript; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.send(LOGIN_JS);
+});
+
+// GET /auth/js/alta.js — SCRUM-1647d (J3): el guion de `public/register.html` (incluido el alta con
+// invitación de SCRUM-1685), fuera del HTML por el mismo motivo. Cadena constante, `no-cache`.
+router.get(RUTA_ALTA_JS, (_req, res) => {
+  res.setHeader('Content-Type', 'text/javascript; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.send(ALTA_JS);
 });
 
 export default router;

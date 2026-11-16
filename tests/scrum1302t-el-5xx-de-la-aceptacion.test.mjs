@@ -15,6 +15,8 @@ process.env.WHATSAPP_DRY_RUN = '1';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { inyectarBase, moduloDeDist, MERCHANT, CLIENTE } from './_envio-doblado.mjs';
+import { navegadorDeLaFirma, respuesta, textoDe } from './_navegador-de-la-firma-del-presupuesto.mjs';
+import { PRESUPUESTO_FIRMA_JS } from '../dist/modules/system/app/routes/quoteDecisionNavegador.js';
 
 const LANDING = '../dist/modules/system/app/routes/quoteDecisionLanding.routes.js';
 const TOKEN = 'f'.repeat(32); // hexadecimal: `parseToken` no deja pasar otra cosa (y entonces sale el 404)
@@ -23,10 +25,10 @@ const FIRMADO = 'No hemos podido confirmar tu respuesta. Vuelve a abrir el enlac
 // Las mutaciones que este fichero tiene que cazar; las corre `npm run meta:mutaciones` en cada PR.
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
-    // M1 · sin la rama del 5xx: vuelve el código crudo.
-    fichero: 'src/modules/system/app/routes/quoteDecisionLanding.routes.ts',
-    de: '} else if (res.status >= 500) {',
-    a: '} else if (res.status >= 600) {',
+    // M1 · sin la rama del 5xx: vuelve el código crudo. (SCRUM-1646c: la rama vive en el guion servido.)
+    fichero: 'src/modules/system/app/routes/quoteDecisionNavegador.ts',
+    de: '}else if(res.status>=500){',
+    a: '}else if(res.status>=600){',
     cae: 'SCRUM-1302t · 🔴 un 5xx al aceptar enseña el literal firmado, nunca el código crudo',
   },
   {
@@ -74,36 +76,20 @@ async function pagina(extra = {}) {
 
 /**
  * Pulsa «Firmar y aceptar» en la página servida, con la respuesta del servidor que se le pase, y
- * devuelve lo que queda escrito bajo la firma. Ejecuta el `<script>` REAL del botón, no una copia.
+ * devuelve lo que queda escrito bajo la firma. Ejecuta el guion REAL, no una copia.
+ * SCRUM-1646c · el guion ya no va en línea (CSP `script-src 'self'`): es el que sirve
+ * `GET /pay/quote/js/firma.js`, y lee sus textos del bloque de datos de ESTA página.
  */
-async function pulsarAceptar(html, respuesta) {
-  const scripts = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
-  const delBoton = scripts.find((s) => s.includes("getElementById('btn-accept').addEventListener"));
-  assert.ok(delBoton, 'CIEGO: no encuentro el script del botón de aceptar en la página');
-  const nodos = {};
-  const nodo = (id) => (nodos[id] ??= { id, textContent: '', innerHTML: '', disabled: false, checked: id === 'no-sig-check', style: {}, oyentes: {},
-    addEventListener(ev, fn) { this.oyentes[ev] = fn; } });
-  const peticiones = [];
-  let recargas = 0;
-  const document = {
-    getElementById: nodo,
-    querySelector: (sel) => nodo(sel),
-    createElement: () => ({ style: {}, remove() {} }),
-    body: { appendChild() {} },
-  };
-  const window = { getSignatureData: () => null, matchMedia: () => ({ matches: true }) };
-  const fetch = async (url, opciones) => {
-    peticiones.push({ url, metodo: opciones?.method });
-    if (respuesta === 'red') throw new TypeError('Failed to fetch');
-    return { ok: respuesta.status < 400, status: respuesta.status, json: async () => { if (respuesta.cuerpo === undefined) throw new SyntaxError('no es JSON'); return respuesta.cuerpo; } };
-  };
-  const location = { reload: () => { recargas += 1; } };
-  new Function('document', 'window', 'fetch', 'location', 'setTimeout', delBoton)(document, window, fetch, location, () => {});
-  const pulsar = nodos['btn-accept']?.oyentes.click;
-  assert.ok(pulsar, 'CIEGO: el script no ha enganchado el clic de «Firmar y aceptar»');
-  await pulsar();
-  assert.equal(peticiones.length, 1, 'CIEGO: el clic no ha llegado a pedir la decisión');
-  return { aviso: nodos['sig-error'].textContent, avisoVisible: nodos['sig-error'].style.display === 'block', exito: nodos['.card']?.innerHTML ?? '', recargas, boton: nodos['btn-accept'] };
+async function pulsarAceptar(html, resp) {
+  const nav = navegadorDeLaFirma(html, PRESUPUESTO_FIRMA_JS, async () => {
+    if (resp === 'red') throw new TypeError('Failed to fetch');
+    return respuesta(resp.status, resp.cuerpo);
+  }, { firma: null, sinFirmar: true });
+  assert.ok(nav.el('btn-accept')?.oyentes.click?.length, 'CIEGO: el guion no ha enganchado el clic de «Firmar y aceptar»');
+  await nav.aceptar();
+  assert.equal(nav.peticiones.length, 1, 'CIEGO: el clic no ha llegado a pedir la decisión');
+  const aviso = nav.el('sig-error');
+  return { aviso: aviso.textContent, avisoVisible: aviso.style.display === 'block', exito: textoDe(nav.card().children[0]), recargas: nav.recargas(), boton: nav.el('btn-accept') };
 }
 
 test('SCRUM-1302t · CONTROL POSITIVO: la sonda ve el éxito con un 200 y el código con un 4xx sin texto (SCRUM-264, sin cambio)', async () => {
@@ -116,12 +102,12 @@ test('SCRUM-1302t · CONTROL POSITIVO: la sonda ve el éxito con un 200 y el có
 
 test('SCRUM-1302t · 🔴 un 5xx al aceptar enseña el literal firmado, nunca el código crudo', async () => {
   const html = await pagina();
-  for (const [caso, respuesta] of [
+  for (const [caso, resp] of [
     ['500 de la ruta', { status: 500, cuerpo: { error: 'internal_error' } }],
     ['502 del proxy, sin JSON', { status: 502 }],
     ['503 con un texto que no sabe si se guardó', { status: 503, cuerpo: { error: 'x', message: 'Error al procesar.' } }],
   ]) {
-    const r = await pulsarAceptar(html, respuesta);
+    const r = await pulsarAceptar(html, resp);
     assert.equal(r.aviso, FIRMADO, `${caso}: no se lee el literal firmado`);
     assert.equal(r.avisoVisible, true, `${caso}: el aviso no se ve`);
     assert.equal(/internal_error|API \d{3}|Inténtalo/.test(r.aviso), false, `${caso}: código crudo o consejo de repetir`);

@@ -74,6 +74,7 @@ import soporteAdminRouter from './modules/system/app/routes/soporteAdmin.routes'
 import libroRegistroRouter from './modules/invoicing/app/routes/libroRegistro.routes'; // SCRUM-296 (A6): libro de registro, SOLO LECTURA
 import librosAeatRouter from './modules/fiscal/librosAeat/librosAeat.routes'; // SCRUM-325 (E4): el libro de A6, por periodo y en CSV. SOLO LECTURA
 import modelo303Router from './modules/fiscal/modelo303/modelo303.routes'; // SCRUM-295 (A5): modelo 303, SOLO LECTURA
+import retencionesRouter from './modules/fiscal/retenciones/retenciones.routes'; // SCRUM-1066h
 import evidenciasRouter from './modules/fiscal/evidencias/evidencias.routes'; // SCRUM-297 (A7): paquete de evidencias, SOLO LECTURA
 import supresionRouter from './modules/system/app/routes/supresion.routes'; // SCRUM-244 (RGPD-1): tras MERCHANT_DELETE_ENABLED
 import maintenanceRouter from './modules/maintenance/app/routes/maintenance.routes';
@@ -104,7 +105,7 @@ import searchRouter        from './modules/search/app/routes/search.routes';
 import { merchantProfileUpdateSchema, sinLogoHeredadoIntacto } from './core/validation/schemas';
 // SCRUM-314 (D3): el barrido derivado del demo y quién es el demo.
 import { barridoDemo } from './modules/system/domain/barridoDemo';
-import { isDemoMerchant } from './modules/invoicing/domain/emission.service';
+import { isDemoMerchant, motivoSiiSinEmision } from './modules/invoicing/domain/emission.service'; // motivoSiiSinEmision: SCRUM-1717
 import { getMerchantProfile, updateMerchantProfile, SlugError, SerieError } from './modules/system/merchantAdmin';
 import { TerritorioError } from './modules/system/merchantAdmin'; // J3: SCRUM-1536d
 import { PaisError } from './modules/system/merchantAdmin'; // J3: SCRUM-1536g
@@ -525,6 +526,12 @@ app.get('/admin/me', async (req, res) => {
     // un derivado de éste, no una segunda opinión. Con dos lecturas distintas, el botón que se
     // pinta y el modo que se enseña podrían contradecirse.
     modoEmision: modoEmisionVisible(merchantParaModo),
+    // SCRUM-1717 (S1): POR QUÉ no emite, cuando es por el SII (SCRUM-1585). Con el flag puesto y
+    // el SII en «Sí» o «No consta» el modo es `receipt`, igual que con el flag apagado, y la
+    // pantalla no podía distinguirlos. `sii_declarado` · `sii_no_consta` · `null` (nada). Sale del
+    // MISMO objeto y de la MISMA función que usa el modo: el navegador no reimplementa la regla.
+    // Los dos literales del aviso los pinta S2 (firmados, SCRUM-1585 c.20539); aquí no hay texto.
+    motivoSinEmision: motivoSiiSinEmision(merchantParaModo),
     // SCRUM-300 (C5): las SEIS ranuras de «en calidad de qué», sus rótulos y sus ayudas se
     // SIRVEN, no se copian. El dashboard es vanilla y no puede importar el módulo de dominio, y
     // una segunda copia de una microcopy que acaba en un juzgado es exactamente cómo divergen
@@ -610,6 +617,9 @@ mountAdmin(app, '/admin/libros', requireRole('admin'), librosAeatRouter);
 // SCRUM-295 (A5): el 303 del trimestre. Admin-only por el mismo motivo que el libro: es la
 // declaración fiscal del negocio entero, no trabajo de campo del Operario.
 mountAdmin(app, '/admin/modelo-303', requireRole('admin'), modelo303Router);
+// SCRUM-1721 (pieza ⑦, contrato de J1 en SCRUM-1721 c.21660): el borrador del 111/115. Admin-only
+// como el 303: son las retenciones que el negocio entero ha practicado, no trabajo de campo.
+mountAdmin(app, '/admin/retenciones', requireRole('admin'), retencionesRouter);
 // SCRUM-297 (A7): el paquete que demuestra lo declarado. Admin-only: son las pruebas fiscales
 // del negocio entero, no trabajo de campo del Operario.
 mountAdmin(app, '/admin/evidencias.zip', requireRole('admin'), evidenciasRouter);

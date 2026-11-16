@@ -279,7 +279,7 @@ function dondePuedeEstarElNumero(phone: string) {
 async function handleOptOutRequest(phone: string, from: string): Promise<void> {
   const customers = await prisma.customer.findMany({
     where: dondePuedeEstarElNumero(phone),
-    select: { id: true, merchantId: true, name: true },
+    select: { id: true, merchantId: true, name: true, waOptOut: true },
   });
   if (!customers.length) {
     // SCRUM-245: numero desconocido pidiendo la baja — no hay merchant al que atribuirlo.
@@ -290,6 +290,12 @@ async function handleOptOutRequest(phone: string, from: string): Promise<void> {
     });
     return;
   }
+  // SCRUM-1719 (GO de Javier, c.21766): quien YA tenía la baja y escribe BAJA otra vez no genera
+  // nada — ni aviso al profesional ni texto de vuelta. Medido en SCRUM-1509 c.18923: sin esta
+  // lectura, cada BAJA repetida avisaba y contestaba. La primera BAJA sigue igual que antes.
+  // Con varios negocios, sólo cuentan las fichas que aún no la tenían.
+  const nuevos = customers.filter((c) => !c.waOptOut);
+  if (!nuevos.length) return;
   await prisma.customer.updateMany({ where: dondePuedeEstarElNumero(phone), data: { waOptOut: true } });
   await sendWhatsAppText({
     sinMerchant: 'multi-merchant', // SCRUM-245: la baja vale para TODOS sus negocios (customers.map)
@@ -298,11 +304,11 @@ async function handleOptOutRequest(phone: string, from: string): Promise<void> {
   });
   // Aviso a cada pro afectado (texto libre → fallback plantilla)
   const merchants = await prisma.merchant.findMany({
-    where: { id: { in: [...new Set(customers.map((c) => c.merchantId))] } },
+    where: { id: { in: [...new Set(nuevos.map((c) => c.merchantId))] } },
     select: { id: true, whatsappPhone: true },
   });
   for (const m of merchants) {
-    const cust = customers.find((c) => c.merchantId === m.id);
+    const cust = nuevos.find((c) => c.merchantId === m.id);
     notifyMerchantAlert({
       merchantId: m.id,
       merchantPhone: m.whatsappPhone,

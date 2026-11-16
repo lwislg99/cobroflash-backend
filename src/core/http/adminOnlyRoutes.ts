@@ -24,6 +24,8 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   { method: 'GET', path: '/admin/libros/expedidas.csv' },
   // SCRUM-295 (A5): el 303 del trimestre — misma razón que el libro.
   { method: 'GET', path: '/admin/modelo-303' },
+  // SCRUM-1721 (montaje de SCRUM-1066h): el borrador del 111/115 — misma razón que el 303.
+  { method: 'GET', path: '/admin/retenciones' },
   // SCRUM-297 (A7): el paquete de evidencias — misma razón que el libro y el 303.
   { method: 'GET', path: '/admin/evidencias.zip' },
   // SCRUM-244 (RGPD-1): la supresión del merchant, lo más destructivo que hay.

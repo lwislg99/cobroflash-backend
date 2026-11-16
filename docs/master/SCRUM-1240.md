@@ -279,3 +279,151 @@ declaraciones de este fichero dentro. Suite entera local: NO CORRIDA (encargo).
 **Error mío:** escribí las declaraciones de mutación con `fichero: BUILDER` (un identificador), y el
 meta-guard sólo evalúa literales: mi primer driver leyó 0 declaraciones, y en CI habría salido CIEGO
 («declaración que no se puede evaluar», el suelo de SCRUM-757). Corregido a literal antes de medir.
+
+## J1 · SCRUM-1240c · lo que queda tras las decisiones de 1129, y el texto del PDF para firmar
+
+**Medido contra:** `origin/main` = `2c52196fddfdee2f2875c38d51642785d2566812` · 2026-11-12T17:53:57Z (hora de GitHub; sesión J1 `jv-j1ef`, por encargo del orquestador `cobroflash-backend-63`. Rama `scrum-1240c-lo-que-queda`, que sale de ese mismo sha)
+
+A9: aviso → cicatriz J1 «En el comentario de Jira de 1240c (c.21773) di 10 ficheros como control positivo, leyendo una lista cortada con `head`; eran 20, y lo corregí a la vista en c.21774» — no se pudo comprobar: el texto de un comentario de Jira no pasa por ningún guard del repositorio
+
+**Solo medición y propuesta.** No toca `src/` (reglas 38, 39 y 40). Entrega en Jira: SCRUM-1240
+c.21773, con la corrección c.21774. Decisiones de partida, leídas en SCRUM-1129: c.21753 (GO del `07`;
+punto ⑥: la mención «va aparte, en SCRUM-1240»), c.21757 (columna `invoices.merchant_criterio_caja`;
+con NULL no se cae al merchant vivo) y c.21762 (ALTER aplicado en las tres bases).
+
+### ① Las seis piezas del título
+
+| pieza | estado | dónde |
+|---|---|---|
+| libro registro de expedidas | hecha: filtra por `paidAt` si `criterioCaja` es true | `invoicing/domain/libroRegistro.repo.ts:144` → `devengoPorCaja.ts` `campoDeDevengo` |
+| modelo 303 | hecha (le llega por el libro) | `fiscal/modelo303/modelo303.repo.ts:21` |
+| libros AEAT | hecha | `fiscal/librosAeat/librosAeat.repo.ts:46` |
+| paquete de evidencias | hecha | `fiscal/evidencias/paquete.repo.ts:40` |
+| `ClaveRegimen` del registro | la cubre 1129; sin construir hasta que entren 1051g/h | `fiscal/verifactu/registro.builder.ts` (`DEFECTO_CONOCIDO` de 1240b, puesto) |
+| mención del PDF (ROF 6.1.p) | **suelta**: 1129 la deja fuera (c.21753 ⑥) | `invoicing/infra/pdf/pdf.service.ts` |
+
+Las cuatro piezas hechas leen el merchant **vivo** (`criterioDelMerchantParaElLibro`).
+`merchant_criterio_caja` / `merchantCriterioCaja` aparecen 0 veces en `origin/main`, esquema incluido:
+entran con el PR de 1129.
+
+Tres huecos en las piezas hechas. Los he leído en el código, sin ejecutar nada, y hoy no tienen víctima
+porque `INVOICING_ES_ENABLED` está en OFF:
+
+- **(i)** No se excluyen las operaciones con inversión del sujeto pasivo (LIVA 163 duodecies.Dos.d):
+  `S2`, `inversi` y `sujeto pasivo` aparecen 0 veces en `libroRegistro.repo.ts`, `devengoPorCaja.ts` y
+  `criterioCaja.ts`. El builder sí las separa (1129: `S2` → `01`).
+- **(ii)** Falta el tope del 31 de diciembre del año siguiente (LIVA 163 terdecies.Uno, leído hoy en el
+  BOE, `BOE-A-1992-28740` bloque `a163terdecies`): `diciembre` y `terdecies` aparecen 0 veces en
+  `invoicing/domain`, `fiscal/modelo303` y `billing/domain/fechaDeCobro.ts`. Control del mismo
+  barrido: `devengo` sí sale en tres ficheros de `invoicing/domain`.
+- **(iii)** Cuando entre 1129, el registro leerá el valor congelado y estas cuatro piezas el vivo.
+
+**No medido:** el cobro parcial. 163 terdecies dice *«por los importes efectivamente percibidos»*, y el
+libro usa un solo `paidAt` por factura.
+
+### ② La mención
+
+Leída hoy en la API de legislación consolidada (no en `buscar/xml.php`):
+
+- ROF: `BOE-A-2012-14696`, bloque `a6`, 43.558 B, cinco versiones. La letra p) aparece por primera vez en
+  la versión vigente desde el **1-ene-2014** (RD 828/2013). El 7-dic-2023 que cita Ⓓ más arriba es la
+  fecha de la última versión consolidada, no la de la letra. Literal: *«En el caso de aplicación del
+  régimen especial del criterio de caja la mención «régimen especial del criterio de caja.»* (sic).
+- RIVA 61 undecies.1: `BOE-A-1992-28925`, bloque `a61undecies`. Da el literal limpio y su alcance,
+  *«referentes a operaciones a las que sea aplicable el mismo»*.
+
+Hoy no está: `git grep -i "especial del criterio" -- src public` da **0**. El control positivo,
+`criterio de caja`, da **20** ficheros.
+
+**Propuesta, sin construir:**
+
+- **Dónde:** en `generateInvoicePdf`, debajo de los totales y antes de «5. VERIFACTU QR», en una línea
+  propia. Nunca en justificantes.
+- **Fuente:** el valor **congelado** `Invoice.merchantCriterioCaja`. El PDF de una emitida se regenera
+  (`src/lib/invoicing.ts:123` y `:286`, y `invoicesAdmin.routes.ts:1237`, `regenerate-pdf`), y con el
+  valor vivo un cambio en Ajustes reescribiría una factura emitida (regla 29). Es el criterio de
+  SCRUM-665 (`emisorDelDocumento`). NULL = sin mención.
+- **Condición:** la misma que la de la `07` (congelado `true` y al menos un detalle `S1`), para que el
+  PDF y el XML no puedan discrepar.
+
+### ③ Preguntas al fundador (en c.21773)
+
+1. Firma del literal «Régimen especial del criterio de caja», o en minúscula, idéntico al BOE.
+2. GO regla 40 para imprimirlo, en un PR propio en 1240 y después del PR de 1129. El «aparte» ya lo
+   decidió c.21753 ⑥: el encargo pedía preguntar «en el mismo PR o aparte», y esa mitad no se vuelve a
+   preguntar.
+3. Si los huecos (i), (ii) y (iii) se parten en un ticket de J1.
+
+Del asesor, ninguna nueva: B6 (1), (2) y (3) y la fila 47 (c.21770), ya en SCRUM-1264. Hay una
+candidata que no he añadido, la factura mixta `S1` + `S2`. No la he buscado en
+`docs/legal/PREGUNTAS_ASESOR.md`.
+
+**Sin medir:** ninguna base de datos · ningún PDF generado · suite entera local: NO CORRIDA (solo docs) · el
+volcado de SCRUM-1129 lo transcribió un subagente a mano, no por script. Las decisiones se citan por su
+número de comentario, no por ese volcado.
+
+## J1 · SCRUM-1240d · la mención «Régimen especial del criterio de caja» en el PDF, desde el valor congelado
+
+**Medido contra:** `origin/main` = `e1ebdcf627097b2a2efaae7b967f55b62b4b3987` · 2026-11-13T18:21:41Z (hora de GitHub; sesión J1 `jv-j1et`, por encargo del orquestador `cobroflash-backend-63`. Rama `scrum-1240d-mencion-pdf`, que sale de ese mismo sha: el merge de #3161, SCRUM-1129e, que escribe `Invoice.merchantCriterioCaja` al sellar)
+
+A9: comprobación → `tests/scrum1240d-mencion-criterio-caja-pdf.test.mjs`
+
+**Decisión que se construye:** SCRUM-1240 c.21776 (Javier, 12-nov-2026), sobre las preguntas de c.21773 ③:
+literal firmado **«Régimen especial del criterio de caja»** en una línea propia; GO de regla 40 para
+imprimirlo debajo de los totales y antes del bloque VERI*FACTU, solo en facturas; fuente el valor
+CONGELADO (`invoices.merchant_criterio_caja`), con NULL sin mención; condición la misma que la `07` del
+registro (congelado `true` y al menos un detalle `S1`). PR propio, después de 1129 en `main` (lo está:
+`e1ebdcf62`).
+
+**PASO 0.** `git grep -i "especial del criterio" origin/main -- src public` → 1 coincidencia, un comentario
+de `registro.builder.ts:57` (la constante `07` de 1129e). El PDF no la pintaba. Ninguna rama ni PR
+`scrum-1240d*` en el remoto.
+
+### Qué cambia
+
+| fichero | qué |
+| --- | --- |
+| `src/modules/invoicing/infra/pdf/pdf.service.ts` | parámetro OBLIGATORIO `merchantCriterioCaja: boolean \| null` (como `zona`: quien no lo pase no compila); `llevaMencionCriterioCaja` y la línea «4bis» antes de «5. VERIFACTU QR», con `!isReceipt` |
+| `src/lib/invoicing.ts` (×2) y `src/modules/system/app/routes/invoicesAdmin.routes.ts` | los tres llamadores pasan `inv.merchantCriterioCaja` / `invoice.merchantCriterioCaja`: la columna de la FACTURA, nunca `merchant.criterioCaja` |
+| `tests/scrum1240d-mencion-criterio-caja-pdf.test.mjs` | 10 casos, PDF generado de verdad y leído con `_texto-del-pdf.mjs` |
+
+**Por qué la condición «hay un S1» no importa el builder.** `scrum523d` deriva la población congelada
+del camino de emisión de los `import`: un fichero que importa de `fiscal/verifactu/` es raíz. Si
+`pdf.service.ts` importara `clasificarDetalleDesglose`, entraría en esa población y habría que
+recongelarla, que pide autorización. Así que la condición va local (`causa !== 'S2'` y tipo positivo,
+lo que el builder califica `S1`), y el caso «la mención y la 07 del registro no discrepan» la ata al
+builder: 6 juegos de líneas × {true, false, null}, comparando la mención del papel con lo que devuelve
+`clasificarDetalleDesglose` sobre `calcVatBreakdown` de las mismas líneas, con un positivo derivado (5
+juegos dan `07`; si saliera 0, CIEGO). `pdf.service.ts` sigue fuera de la población: `scrum523d` verde.
+
+### Medición
+
+- **Rojo primero** (código sin tocar, test escrito): 10 casos = 4 pasan (los negativos y controles: false/NULL/sin
+  columna sin mención, papel idéntico en los tres, solo S2 sin mención, justificante sin mención) + 6 caen.
+- **Verde:** 10/10.
+- **Control «se pinta igual que hoy»:** sin la columna, con NULL y con false el texto del papel es el
+  mismo, línea a línea; con `true` es el de `false` más exactamente UNA línea, la mención.
+- **Mutaciones** (`MUTACIONES_QUE_ME_TUMBAN`, pasadas con `correr` + `aplicarUna` de la casa): limpia 10
+  pasan / 0 caen; las 5 tumban el test que nombran (`!== true` → `== null`; la condición S1 → «hay
+  líneas»; quitar `!isReceipt`; el literal en minúscula; un llamador que pasa `inv.merchant.criterioCaja`).
+  Árbol restaurado tras la pasada (mismo `git diff --stat`, 10/10).
+- **Build con tipos** (`tsc -p .`, sin `--noCheck`): salida 0.
+
+**Sin medir:** ninguna base de datos · ningún PDF de producción ni de staging (solo PDFs generados en el
+test) · si una factura **mixta** (S1 + S2) debe llevar la mención: la construyo con mención porque
+c.21776 dice «al menos un detalle S1»; la duda para el asesor sigue abierta y no la he buscado en
+`docs/legal/PREGUNTAS_ASESOR.md` · la skill `yaqu-premium-ui` no la cargué (la línea usa el color `BODY`
+y la tipografía que ya tiene el PDF; no toca `public/`). Lo cierra el orquestador (A13).
+
+**Suite ENTERA en local** (`tanda-entera-por-tramos.mjs`, 14 tramos): 13.621 casos, 7 caen, y los 7 son
+de esta máquina: `scrum1298b` (2) y `scrum351` (1) caen igual en un árbol limpio de `origin/main`
+(`e1ebdcf6`, 12/15 en los dos), y `scrum932` (4) también cae ahí (6 de 12 en el árbol limpio, 4 en
+el mío: no son el mismo recuento, y no sé por qué; ninguno de los tres ficheros nombra nada de lo que
+toco). La primera pasada sacó 5 rojos MÍOS en los tramos 10–12, consecuencia mecánica del cambio:
+`scrum603b` y `scrum723` (el cuerpo y el ámbito de `generateInvoicePdf` comparados con la base) →
+entrada en la vía de cambio autorizado (`tests/_cambios-autorizados-de-la-factura.mjs`, SCRUM-1446
+c.20473) con firma `SCRUM-1240 c.21776`, cita «Régimen especial del criterio de caja» y el par de huellas
+base → disco, cuya base es la «a» de 1051g; y `MENCION_CRITERIO_CAJA` + `llevaMencionCriterioCaja` al
+`AMBITO_DECLARADO` de 723 (vigila más, no menos); `scrum525d` → la coordenada
+`docs/legal/AUDITORIA_CAMINO_EMISION.md:148` pasa de `invoicing.ts:262` a `:263` (mi línea la movió).
+Tras eso, tramos 10, 11 y 12 otra vez: 1.204 + 1.211 + 970 casos, 0 caen.

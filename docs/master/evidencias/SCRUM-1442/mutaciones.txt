@@ -1,0 +1,8 @@
+POBLACION · 5 mutaciones declaradas en tests/scrum1442c-la-tarjeta-del-pdf-sin-nan.test.mjs
+BASE sin mutar · {"caidos":[]}
+M1 · VIVA (cae donde dice)
+M2 · VIVA (cae donde dice)
+M3 · VIVA (cae donde dice)
+M4 · VIVA (cae donde dice)
+M5 · VIVA (cae donde dice)
+RESUMEN · 5/5 vivas

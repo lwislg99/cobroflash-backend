@@ -552,3 +552,50 @@ El soportado sale del libro de recibidas del MISMO rango (tramo 1063b, líneas 1
 - Mutaciones en `MUTACIONES_QUE_ME_TUMBAN`, pasadas con `mutacionesDeclaradas`, `correr` y `aplicarUna` de `scripts/meta-guard-mutaciones.mjs` (el arnés de `docs/master/evidencias/SCRUM-1123f/arnes-mutaciones.mjs`): `Math.abs` en la base, `Math.abs` en la cuota y el filtro a `providerInvoiceDate`. Tumban las 3 su caso. `git status` después: sólo el fichero nuevo.
 - Dirigida, con los dos tramos de registro escritos: 52 ficheros (1063b-j, 1064c/d, 1077, 1077c, 1232, 1252/1252e/1252g, 295 ×2, 296 ×4, 297 ×4, 389 ×2, 411, 438 ×2, 377, 237, 976, 1387, 1294, 267, 273, 921, 921c, 387 ×2, 622, 719, 824, 824b ×2, 836, 419, 702, 700, 1415, 854). **467 casos, 461 pasan, 0 caen, 6 saltados** (`LIBRO_PG_URL`); suman. Los 7 de 1063j están en el TAP.
 - **Suite entera local: NO CORRIDA**: hace de tanda el obligatorio de CI. En yaqu.app no hay nada que ver (no hay pantalla del 303).
+
+## SCRUM-1063k · la aceptación 7, «documentos emitidos y libros intactos», fijada (solo test) (J1, jv-j1dt, 12-nov-2026)
+
+**Medido contra:** `origin/main` = `d8c441b9402cb21ea892afdf72f07b006294ba88` · 2026-11-12T11:01:46Z
+
+A9: comprobación → `tests/scrum1063k-303-emitidas-y-libros-intactos.test.mjs`
+
+**PASO 0.** Lo que pide el ticket, parte por parte, cruzado con main por contenido (Jira SCRUM-1063 c.21599, con la tabla entera). Construido: soportado y resultado (1063b), suplidos (1063c/d), 64 (1063c), S2 a la 122 (1063f), umbral de herramientas (1063h), R1 y gasto de otro periodo (1063j), marca «Borrador para tu asesor» (SCRUM-1065c). Bloqueado: 30/31 (N1, asesor, SCRUM-1264, c.20926); N2 condicionada; ❌ N3; la 99 fuera. Sin decidir: los cuatro comportamientos que 1063j dejó escritos y el aviso de recargo «no incluido» (texto nuevo, regla 39; hoy la emisión no calcula recargo: `recargoEquivalencia.ts` no tiene llamadores). Lo único construible sin decisión nueva era la aceptación 7: `grep` sobre los siete `tests/scrum1063*`, `scrum295-modelo-303*` y `scrum1077` no encontró ningún caso que mirara qué le hace el 303 a lo que lee.
+
+**Solo test.** `src/` no se toca. Cinco casos:
+- `leerModelo303` contra una base que APUNTA cada método pedido, de cualquier modelo y de la raíz: cero escrituras, con las lecturas de facturas y de gastos vistas como control positivo. La escritura se apunta y no se lanza, para que un `try/catch` del código no pueda tragarla.
+- Control sembrado del registrador: una `invoice.update` tragada en un `try/catch` y un `$executeRaw` se ven.
+- Las facturas emitidas y los gastos leídos salen iguales a una copia profunda tomada antes.
+- `construirModelo303` deja el libro y el de recibidas como entraron, sobre un trimestre con F1, R1, S2, suplido, herramienta apartada y gasto sin IVA.
+- Control sembrado de la comparación: un campo añadido y un orden cambiado se ven. Objetos congelados no: en el CommonJS de `dist/` sin `'use strict'` asignar a uno congelado se calla.
+
+### Medido
+
+- El test nuevo, 5 de 5 en verde: fija lo que el código hace hoy, y el rojo lo dan las mutaciones.
+- Mutaciones en `MUTACIONES_QUE_ME_TUMBAN`, con el arnés de `docs/master/evidencias/SCRUM-1123f/arnes-mutaciones.mjs`: una escritura en el lector, un campo añadido al libro en `construirModelo303` y `gastos.reverse()` en el lector de recibidas. Tumban las 3 su caso. `git status` después: sólo el fichero nuevo.
+- **Suite entera local: NO CORRIDA**: hace de tanda el obligatorio de CI. En yaqu.app no hay nada que ver (no hay pantalla del 303).
+
+## SCRUM-1063l · el caso límite «tipos 2 % y 7,5 % (Q-C7)», fijado por los dos lados del 303 (solo test) (J1, jv-j1ed, 12-nov-2026)
+
+**Medido contra:** `origin/main` = `e93c0b47b5f537dd4947d6ab5c721da124a2d7c0` · 2026-11-12T17:36:24Z
+
+A9: comprobación → `tests/scrum1063l-tipos-2-y-7-5-303.test.mjs`
+
+**PASO 0.** Lo que 1063k dejó, re-medido por contenido en main (Jira SCRUM-1063 c.21763, con la tabla entera):
+- Q-C8 para el 303, que 1063k no midió: el plazo ya es cita comprobada en `docs/producto/CONTABILIDAD.md:102` (Orden EHA/3786/2008, art. 7.2) y la periodicidad trimestral está en `docs/master/SCRUM-1232.md:135` (art. 71.3 RIVA). El 303 no presenta ni da fechas: no hay nada que construir. Sigue abierta sólo la marca «NO VERIFICADO» de `docs/legal/PREGUNTAS_ASESOR.md:991`, que es de J5.
+- Casos límite del enunciado: sin gastos y sin base (1063b, 1063h), otro periodo y R1 (1063j), 5 % y 7,5 % devengados (1064d). **El 2 % devengado y el 2 % y 7,5 % soportados no los fijaba nadie.**
+- Siguen igual: recargo «no incluido» (texto nuevo, regla 39), 30/31 (asesor, SCRUM-1264) y los cuatro comportamientos de 1063j.
+
+**Solo test.** `src/` no se toca. Cuatro casos, con las cifras a mano:
+- Devengado al 2 % en el 2T de 2026: fuera de la 27, apartado como `tipo_sin_casilla`, y casillas más apartado suman el libro entero. La tabla de la AEAT de 2026 (literal en la cabecera de 1064d) no tiene fila del 2 %. El 303 de 2024 no está leído y queda fuera.
+- Soportado al 2 % junto a uno al 21 %: 28 = 400, 29 = 65, 46 = 145. La 28/29 es una casilla para todos los tipos.
+- Soportado al 7,5 %: el libro de recibidas lo deja sin tipo (sólo admite enteros) y el 303 lo aparta con `tipo_cero`: 29 = 63, 46 = 147.
+- Por qué es inalcanzable: `vatRate Int?` en `model Expense`, leído sin comentarios y con suelo de CIEGO.
+
+**De paso, sin arreglar:** un tipo no entero en un gasto saldría apartado con el motivo `tipo_cero`, que no es el suyo. Hoy no puede ocurrir (columna entera), así que no tiene víctima.
+
+### Medido
+
+- El test nuevo, 4 de 4 en verde: fija lo que el código hace hoy, y el rojo lo dan las mutaciones.
+- Mutaciones en `MUTACIONES_QUE_ME_TUMBAN`, con el arnés de `docs/master/evidencias/SCRUM-1123f/arnes-mutaciones.mjs`: la fila del 4 % pasada al 2 %, el soportado apartando los tipos por debajo de 4, y el libro de recibidas aceptando tipos no enteros. Tumban las 3 su caso. `git status` después: limpio.
+- **Suite entera local: NO CORRIDA**: hace de tanda el obligatorio de CI. En yaqu.app no hay nada que ver (no hay pantalla del 303).
+- Tras esto no queda pieza de 1063 sin STOP: lo que falta es el ✅/❌ del recargo y las respuestas del asesor.

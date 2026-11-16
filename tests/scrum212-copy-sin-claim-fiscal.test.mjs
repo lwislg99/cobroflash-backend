@@ -26,8 +26,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   renderQuoteDetail,
-  TIER_JS,
 } from '../dist/modules/system/app/routes/quoteDecisionLanding.routes.js';
+// SCRUM-1646c · el JS de tramos salió del HTML (CSP `script-src 'self'`): vive en el guion servido.
+import { PRESUPUESTO_FIRMA_JS } from '../dist/modules/system/app/routes/quoteDecisionNavegador.js';
 
 /** Presupuesto mínimo con el que la landing sabe renderizar. `tax` en FRACCIÓN (0.21 = 21 %). */
 const presupuesto = (tax) => ({
@@ -96,7 +97,7 @@ test('SCRUM-212 · con cuota 0 la landing NO dice «exento» ni afirma «IVA inc
 // pegado incondicionalmente, y que la decisión se toma mirando el bloque que el servidor solo
 // pinta cuando hay cuota.
 test('SCRUM-212 · el JS de tramos condiciona «IVA incluido», no lo concatena siempre', () => {
-  const js = TIER_JS('tok');
+  const js = PRESUPUESTO_FIRMA_JS;
 
   assert.ok(js.includes('amount-hero-label'),
     '🔴 el JS ya no toca la etiqueta del héroe: este guard dejó de vigilar nada');
@@ -111,4 +112,11 @@ test('SCRUM-212 · el JS de tramos condiciona «IVA incluido», no lo concatena 
 
   assert.match(js, /totals-block/,
     '🔴 el JS de tramos no consulta `.totals-block`: no está condicionando por la cuota real');
+
+  // SCRUM-1646c · el literal viaja ahora en los DATOS (`T.ivaIncluido`), no en el código: la misma
+  // vigilancia, sobre su nueva forma. Se concatena SÓLO bajo la condición de la cuota.
+  assert.match(js, /conIva\s*\?\s*T\.ivaIncluido\s*:\s*''/,
+    '🔴 el texto del IVA de los datos ya no va condicionado por `conIva` en la ruta de tramos');
+  assert.doesNotMatch(js, /\+\s*T\.ivaIncluido\s*[;)]/,
+    '🔴 «IVA incluido» (de los datos) se concatena SIN CONDICIÓN en la ruta de tramos');
 });

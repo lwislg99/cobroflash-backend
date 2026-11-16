@@ -886,3 +886,101 @@ antes de esa fecha, el profesional decide solo.
    por «efectivo», que sé que está en `metodoDeCobro.ts:157`, y ése sí casa.
 2. **El encargo traía «E6 al asesor» y casi lo copio como tarea.** Lo paró leer SCRUM-1264 entero,
    comentarios incluidos: no hay asesor desde el 14-oct, y la E6 no está escrita en el sitio único.
+
+# SCRUM-1316g · A 12-nov: el RDL 29/2026 sigue SIN convalidar ni derogar; no se propone texto
+
+**Medido contra:** `origin/main` = `9cdf6a24d6831e16f4214b8c87cceaa286ebf303` · 2026-11-12T11:22:11Z (cabecera `Date:` de GitHub)
+
+A9: aviso → A10 «El `updatedAt` de una fila no es la versión de un trozo de esa fila.» — no se pudo comprobar: el sha256 de los metadatos del 29/2026 cambió hoy sólo porque el BOE reescribió `fecha_actualizacion`; lo que separa «la ficha cambió» de «la norma cambió» es repetir el hash con el campo de fecha devuelto a su valor anterior, y ningún guard sabe qué campo de una fuente externa es sello y cuál es contenido (la tanda de CI no sale a la red).
+
+Sesión J5 (IA, `jv-j5as`), 12-nov-2026, por encargo del orquestador del equipo de Javier
+(`cobroflash-backend-a0`), en cumplimiento de la decisión del fundador de c.20890 («volver a medir la
+convalidación antes del 20-nov»). **Sólo se mide.** No se toca `src/`, ni `public/`, ni el esquema, ni
+el camino de emisión, ni el máster; no se predice ninguna votación; nada de esto es respuesta de
+asesor. Lo de arriba no se toca.
+
+## Veredicto
+
+1. **El RDL 29/2026 (`BOE-A-2026-20823`) NO está convalidado ni derogado a 12-nov-2026, 11:22Z.**
+   Ni el BOE (§Ⓖ1) ni la ficha del Congreso (§Ⓖ2) dicen otra cosa que el 26-oct.
+2. **Por tanto, según P1 de c.20890 («Mientras no se convalide, no se construye nada»), NO se
+   redacta propuesta de aviso.** Ni literal, ni cambio en `tiposDeIva.js`.
+3. **El art. 91 de la LIVA consolidada no ha cambiado desde el 7-oct** (mismo sha256 de metadatos
+   que el 26-oct, `fecha_actualizacion` = `20261007T092353Z`): la condición del medio de pago sigue
+   escrita «con efectos de 1 de diciembre de 2026».
+4. 🔴 **El plazo calculado de §Ⓥ ya se ha comido cuatro de sus seis variantes.** Las de días naturales
+   (5 y 6-nov) y las de hábiles de lunes a sábado (11 y 12-nov) han vencido o vencen hoy **sin
+   resultado en la ficha**; quedan las de lunes a viernes (18 y 19-nov). Es CÁLCULO, no dato
+   publicado: **qué cómputo vale y qué pasa si vence sin votar es la pregunta A6, del asesor**, y no se
+   afirma aquí que haya decaído.
+5. **Próxima medición: antes del 1-dic-2026**, y en todo caso después del 19-nov (última variante del
+   plazo calculado). El ticket NO está resuelto por efecto.
+
+## Ⓖ1 El BOE
+
+API de datos abiertos, `Accept: application/xml`. Todas las peticiones 200 entre las 11:19:52Z y las
+11:21:36Z (cabeceras `Date:`), salvo los domingos 1 y 8-nov (404 de 170 B: no hay BOE).
+
+| qué | identificador | sha256 hoy (12-nov) | ¿igual que el 7, 23 y 26-oct? |
+|---|---|---|---|
+| RDL 29/2026, metadatos | `BOE-A-2026-20823` | `9c1c09b7d360252e591d30f676aea5a8ef6c557e8bb38ca151fb17774566cb45` | **no — sólo por la fecha** (abajo) |
+| RDL 29/2026, análisis | ídem | `0b97a3c40c587d99da937ce344f7b3dd03e5b0ad760237cf9df191cd6f141bed` | sí |
+| RDL 26/2026, metadatos | `BOE-A-2026-20266` | `d92367a02359ffb153308592a0d2f3027959c73167d189abd1b61685b292ab97` | igual que el 26-oct |
+| RDL 26/2026, análisis | ídem | `23de3cbe23ffd1a2e87c6366e6cc6f5a8ed60a27442ff50e71031c60e04db19d` | igual que el 23-oct |
+| LIVA, metadatos | `BOE-A-1992-28740` | `0b953b4214e62c190c605cbf0120e1b88b0578453e5dfed24dc7119edd4861e8` | igual que el 26-oct |
+
+- **Metadatos del 29/2026:** `fecha_actualizacion` = `20261111T065938Z` (antes `20261007T123908Z`);
+  `estatus_derogacion` = `N`, `estatus_anulacion` = `N`, `vigencia_agotada` = `N`. **Devolviendo ese
+  único campo a `20261007T123908Z`, el sha256 da `2b7dcb71…6c9b`, el del 7, 23 y 26-oct, byte a
+  byte:** el BOE tocó la ficha el 11-nov, pero no cambió nada más que la fecha. El análisis (que es
+  donde aparecería una convalidación o derogación como posterior) es idéntico.
+- **RDL 26/2026:** sigue `estatus_derogacion` = `S`, `fecha_derogacion` = `20261002`, `vigencia_agotada` = `S`.
+
+**Sumarios del 27-oct al 12-nov** (15 días con BOE, 3.366 ítems): títulos que nombren el Real
+Decreto-ley 29/2026: **0**. Ítems con «29/2026» en cualquier campo: 5, leídos uno a uno — un
+expediente de contratación «29/2026» (3 y 4-nov) y tres disposiciones ajenas (28 y 29-oct) cuyo
+texto de ítem lo contiene; ninguno es el RDL. Con «decreto-ley»: los RDL 32/2026 (4-nov) y 33 a
+36/2026 (11-nov), y dos decretos-ley autonómicos (5-nov). Con «convalidaci»: uno, un convenio de
+convalidación de títulos extranjeros (5-nov). Títulos del Congreso o de la Diputación Permanente:
+elecciones, Junta Electoral y una corrección de becas (12-nov); **ningún acuerdo de convalidación ni
+de derogación**.
+- **Control positivo:** el mismo recuento sobre el sumario del 20-oct da «decreto-ley» 2 y
+  «convalidaci» 2, y la frase «del Congreso de los Diputados, por la que se ordena la publicación del
+  Acuerdo de convalidación» 2: las del 24 y el 25/2026 (§Ⓣ).
+- **Control cero:** «zzqx» 0 en los 18 ficheros.
+- ⚠️ **Límite (§Ⓣ):** el BOE publica días después de votar; por eso se mira el Congreso.
+
+## Ⓖ2 El Congreso
+
+Fichas de la XV Legislatura, tipo 130, bajadas a las 11:21:55Z-11:21:58Z, texto literal tras quitar el HTML:
+
+> **130/000060 (RDL 29/2026):** «Situación actual Diputación Permanente Convalidación Tramitación
+> seguida por la iniciativa Diputación Permanente Convalidación desde 13/10/2026 B.O.E. BOE Núm: 249
+> de 07/10/2026»
+
+Sin «Resultado tramitación» y sin Diario de Sesiones: **igual que el 23 y el 26-oct.**
+
+**Control, misma lectura:** la 130/000058 (RDL 25/2026) dice «Resultado tramitación Convalidado» y trae
+«DS. Congreso de los Diputados Núm.211 de 16/10/2026 … Debate de convalidación o derogación de real
+decreto-ley». La lectura sabe ver un resultado. La 130/000059 (RDL 28/2026, mismo día que el 29) y la
+130/000061 (RDL 30/2026) siguen también en «Situación actual Diputación Permanente Convalidación».
+
+## Ⓖ3 Lo que NO está medido
+
+- **Orden del día de la Diputación Permanente:** no leído. No sé si hay sesión convocada antes del
+  19-nov y no lo infiero.
+- **Cómo se computan los 30 días del art. 86.2 CE** y **qué pasa si vencen sin votación**: no medido
+  en fuente; A6 de §ⓓ, del asesor (que no hay, c.20884 punto 4).
+- **El bloque `a91` de la LIVA no se ha vuelto a bajar:** el veredicto 3 sale de que los metadatos de
+  la LIVA no han cambiado (mismo sha256 y misma `fecha_actualizacion` que el 26-oct), no de releer el
+  artículo.
+- Nada se ha ejecutado contra ninguna base; ni `src/` ni `public/` se han releído hoy (lo de §ⓐ es
+  del 26-oct).
+
+## Ⓖ4 Lo que me salió mal
+
+1. **El sha256 de los metadatos del 29/2026 salió distinto y por un momento era «la ficha cambió».**
+   Lo separó recalcular el hash con la fecha anterior: era sólo el sello `fecha_actualizacion`. Sin ese
+   paso, un hash distinto se habría leído como novedad jurídica.
+2. **No me medí el contexto al acabar la lectura de arranque por separado**, como pedía el encargo:
+   la lectura de Jira fue seguida y la primera cifra (115.484) es arranque + Jira.

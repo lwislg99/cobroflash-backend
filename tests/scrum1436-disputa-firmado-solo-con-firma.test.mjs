@@ -54,8 +54,15 @@ const avisoDeSiempre = (numero) =>
   `⚠️ El banco de ${CLIENTE} ha abierto una disputa por ${IMPORTE}.\n`
   + `${FRASE} Entra en la factura${numero ? ` ${numero}` : ''} y pulsa "Paquete de disputa" — `
   + 'sale todo listo para responder al banco.';
-/** El mismo, sin la oración. No lleva ni una palabra que no estuviera ya. Es el del cobro SIN factura. */
-const avisoSinLaFrase = (numero) => avisoDeSiempre(numero).replace(`${FRASE} `, '');
+/**
+ * El del cobro SIN factura. Hasta SCRUM-1727 era el de siempre sin la oración, y seguía mandando a
+ * «la factura» sin que existiera. Desde SCRUM-1727, el literal firmado en SCRUM-1656 (texto 3 del
+ * comentario 21722, firma en el 21724), escrito aquí entero y a mano. Lo cubre a fondo
+ * `tests/scrum1727-disputa-sin-factura.test.mjs`.
+ */
+const AVISO_SIN_FACTURA =
+  `⚠️ El banco de ${CLIENTE} ha abierto una disputa por ${IMPORTE}.\n`
+  + `Este cobro no tiene factura, así que no hay "Paquete de disputa". Reúne el presupuesto y los mensajes con ${CLIENTE} para responder al banco.`;
 
 // LOS DOS LITERALES FIRMADOS — SCRUM-1436 comentario 18287 (cuenta de Luis), válidos para este
 // carril por la decisión del comentario 18734. Escritos aquí ENTEROS y a mano, no compuestos con
@@ -209,7 +216,7 @@ test('SCRUM-1436 · 🔴 el cobro NO tiene factura → el aviso NO dice «presup
 
   assert.ok(!texto.includes('FIRMADO'),
     `🔴 sin factura no hay paquete de disputa al que ir a buscar la firma, y el aviso la afirma:\n${texto}`);
-  assert.equal(texto, avisoSinLaFrase(null), '🔴 el resto del aviso ha cambiado, y sólo se retiraba una oración.');
+  assert.equal(texto, AVISO_SIN_FACTURA, '🔴 el aviso sin factura no es el literal firmado en SCRUM-1656 c.21724 (SCRUM-1727).');
   assert.equal(consultas.length, 0, '🔴 sin factura no hay presupuesto que consultar, y se ha consultado uno.');
 });
 

@@ -9,6 +9,8 @@ import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { comercioSuprimido } from '../../domain/comercioSuprimido'; // SCRUM-1573b
 import { esc, formatMoneyEs } from '../../../../core/utils/utils';
+import { PAGO_JS, RUTA_PAGO_JS, cacheDelGuionDePago, etiquetaGuionDePago } from './pagoNavegador'; // SCRUM-1647 (CSP paso 2)
+import { PAGO_CSS, RUTA_PAGO_CSS, cacheDelEstiloDePago, etiquetaEstiloDePago, paginaDeEstilo } from './pagoEstilo'; // SCRUM-1723 (style-src 'self')
 import { isFlagEnabled } from '../../../../core/flags';
 import { bizumAutoDisponible } from '../../domain/bizumCharge'; // SCRUM-3
 import { cardChargeMode } from '../../domain/cardCharge'; // SCRUM-893
@@ -16,6 +18,24 @@ import { transferenciaDisponible } from '../../domain/transferenciaDisponible'; 
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 
 const router = Router();
+
+// SCRUM-1647 · el guion de las tres páginas de pago, servido desde 'self' (`script-src 'self'`). Dos
+// tramos de ruta: ningún `/<algo>/:token` de los routers de /pay lo pisa. `immutable` sólo con la huella buena.
+router.get(RUTA_PAGO_JS, (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  res.setHeader('Cache-Control', cacheDelGuionDePago(req.query?.v));
+  return res.send(PAGO_JS);
+});
+
+// SCRUM-1723 · el CSS de las tres páginas de pago, servido desde 'self' (`style-src 'self'`). Una hoja
+// por página, elegida por `?p=` de un conjunto cerrado: lo que no esté en él es 404.
+router.get(RUTA_PAGO_CSS, (req, res) => {
+  const pagina = paginaDeEstilo(req.query?.p);
+  if (pagina === null) return res.status(404).end();
+  res.setHeader('Content-Type', 'text/css; charset=utf-8');
+  res.setHeader('Cache-Control', cacheDelEstiloDePago(pagina, req.query?.v));
+  return res.send(PAGO_CSS[pagina]);
+});
 
 router.get('/invoice/:token', async (req, res) => {
   res.set('Cache-Control', 'no-store, must-revalidate');
@@ -161,9 +181,10 @@ router.get('/invoice/:token', async (req, res) => {
   // deja de pintarse donde no es cierto.
   const pasaPorStripe = ordered.some((mm) => mm.key === 'card' || mm.key === 'bizum_auto');
 
-  // Si el logo no carga (URL rota, file://…), se oculta y no rompe la landing
+  // Si el logo no carga (URL rota, file://…), se oculta y no rompe la landing: lo hace el guion de
+  // `pagoNavegador.ts` (SCRUM-1647), que escucha el `error` del `.logo-img` sin manejador en línea.
   const logoHtml = m?.logoUrl
-    ? `<img class="logo-img" src="${esc(m.logoUrl)}" alt="${business}" onerror="this.style.display='none'"/>`
+    ? `<img class="logo-img" src="${esc(m.logoUrl)}" alt="${business}"/>`
     : `<div class="logo-mark">${initial}</div>`;
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -176,62 +197,8 @@ router.get('/invoice/:token', async (req, res) => {
   <meta name="theme-color" content="#16a34a"/>
   <title>Pagar ${amount} — YaQu</title>
   <link rel="stylesheet" href="/fonts/inter.css"/>
-  <style>
-    :root{--brand:#16a34a;--brand-bright:#22c55e;--brand-tint:#ecfdf5;--ink:#0f1c17;--body:#3f4a45;
-      --muted:#6b756f;--bg:#f6f7f5;--surface:#fff;--border:#e7e9e5;--slate-50:#f7f8f6;}
-    *{box-sizing:border-box}
-    body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-feature-settings:"cv11","ss01";
-      margin:0;background:var(--bg);color:var(--body);min-height:100vh;display:flex;
-      align-items:center;justify-content:center;padding:1rem;-webkit-font-smoothing:antialiased}
-    .card{background:var(--surface);border:1px solid var(--border);border-radius:18px;
-      box-shadow:0 1px 2px rgba(16,24,40,.04),0 18px 40px -16px rgba(16,24,40,.16);
-      padding:1.75rem 1.5rem;max-width:420px;width:100%}
-
-    /* Identidad del negocio */
-    .biz{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.55rem;margin-bottom:1.25rem}
-    .logo-mark{width:44px;height:44px;border-radius:50%;
-      background:linear-gradient(135deg,var(--brand-bright),#22d3ee);
-      display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#052e16}
-    .logo-img{max-height:44px;max-width:130px;object-fit:contain}
-    .biz-name{font-size:.9rem;font-weight:600;color:var(--ink)}
-
-    /* Importe */
-    .amount-wrap{text-align:center;padding:1.1rem 0 1.25rem;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
-    .amount-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.45rem}
-    .amount{font-size:2.3rem;font-weight:800;color:var(--ink);letter-spacing:-.025em;line-height:1;font-variant-numeric:tabular-nums}
-    .subline{font-size:.83rem;color:var(--muted);margin-top:.5rem;line-height:1.4}
-
-    /* Métodos — tarjetas IGUALES (patrón Stripe Checkout): el énfasis lo da
-       el orden + chip "Recomendado", no un botón macizo. Hover con borde de
-       marca y elevación suave; active hunde 1px. */
-    .methods-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:1.25rem 0 .7rem}
-    .method{display:flex;align-items:center;gap:.85rem;width:100%;padding:.95rem 1rem;border-radius:14px;
-      text-decoration:none;margin-bottom:.6rem;min-height:64px;background:var(--surface);color:var(--ink);
-      border:1px solid var(--border);transition:border-color .15s,box-shadow .15s,transform .1s}
-    .method:hover{border-color:var(--brand);box-shadow:0 4px 12px -2px rgba(16,24,40,.08),0 2px 6px -2px rgba(16,24,40,.05)}
-    .method:active{transform:translateY(1px)}
-    .method-ico{font-size:1.45rem;flex-shrink:0;width:30px;text-align:center}
-    .method-txt{flex:1;min-width:0}
-    /* A6.6 P2: block — como spans inline el título y el subtítulo fluían juntos
-       y a 390px envolvían a mitad de frase ("Pagar con tarjeta Visa · …") */
-    .method-title{display:block;font-weight:700;font-size:.98rem;line-height:1.2}
-    .method-sub{display:block;font-size:.76rem;color:var(--muted);margin-top:.12rem}
-    /* El chip va DEBAJO del texto (dentro de .method-txt): así el título nunca
-       se estruja en móviles estrechos (a 360px "Pagar con tarjeta" salía en 3
-       líneas cuando el chip competía por el ancho a la derecha). */
-    .method-chip{display:inline-block;margin-top:.35rem;font-size:.66rem;font-weight:700;letter-spacing:.03em;color:#166534;
-      background:var(--brand-tint);border:1px solid #bbf7d0;border-radius:999px;padding:.18rem .55rem;text-transform:uppercase}
-    .chev{font-size:1.25rem;opacity:.55;flex-shrink:0}
-    @media (prefers-reduced-motion: reduce){.method{transition:none}.method:active{transform:none}}
-
-    /* Confianza */
-    .trust{margin-top:1.4rem;text-align:center}
-    .trust-main{display:inline-flex;align-items:center;gap:.4rem;font-size:.8rem;font-weight:600;color:var(--body)}
-    .trust-sub{font-size:.72rem;color:var(--muted);margin-top:.3rem}
-    .lock{width:13px;height:13px;display:inline-block;vertical-align:-1px}
-    /* AB6: anillo de Foco accesible (DESIGN.md) en todo elemento enfocado por teclado */
-    :focus-visible{outline:none;box-shadow:0 0 0 3px rgba(34,197,94,.30)}
-  </style>
+  ${etiquetaGuionDePago('factura')}
+  ${etiquetaEstiloDePago('factura')}
 </head>
 <body>
   <div class="card">
@@ -248,7 +215,7 @@ router.get('/invoice/:token', async (req, res) => {
 
     <div class="methods-label">Elige cómo pagar</div>
     ${methodsHtml || `
-    <div style="text-align:center;font-size:.85rem;color:var(--muted);padding:.8rem 0;line-height:1.5">
+    <div class="pago-sin-metodos">
       El profesional te indicará cómo pagar.<br/>Contacta con él si tienes dudas.
     </div>`}
 

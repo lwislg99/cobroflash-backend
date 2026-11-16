@@ -56,6 +56,10 @@ const FISCAL = new Set([
 const SELLADO = new Set([
   'vfHash', 'vfPrevHash', 'vfTimestamp', 'vfEstado', 'qrData',
   'vfAnulHash', 'vfAnulPrevHash', 'vfAnulTimestamp',
+  // SCRUM-1129e (GO c.21753; clasificación decidida en SCRUM-1129 c.21827): el criterio de caja
+  // congelado se escribe SOLO en la misma update que la huella, al sellar, y no se reescribe. No
+  // entra en la huella. Como FISCAL caería el cerrojo 878b sobre la propia escritura del sellado.
+  'merchantCriterioCaja',
 ]);
 
 /** FICHA y PUNTEROS: lo que se sabe DESPUÉS de emitir. La regla 29 los permite explícitamente. */

@@ -381,3 +381,222 @@ admite merchants en Canarias, Ceuta o Melilla: si los admite, el problema no es 
      **camino de emisión, regla 40, GO del fundador.**
    - Si YaQu admite actividades fuera de la división 5 (electrodomésticos, tiendas), hace falta saber la
      actividad **como epígrafe del IAE**, no como etiqueta de marketing. Eso es una decisión de producto.
+
+---
+
+# SCRUM-1129c · Dónde está y qué falta para el GO
+
+**Medido contra:** `origin/main` = `deab373d6a379fcbfc7ec1fce0428111156f49d3` · 2026-11-12T17:12:00Z (cabecera `Date:` de GitHub)
+
+A9: sin fallo que generalice — tramo de solo lectura y propuesta; nada de `src/` cambia, y lo medido lleva su control positivo sembrado
+
+Sesión `jv-j1eb` (puesto J1). Solo docs. El detalle, con la tabla y las seis preguntas, está en Jira, SCRUM-1129 c.21752.
+
+- **PASO 0:** no hay ninguna decisión del fundador escrita después de 1129b (SCRUM-1129, 4 comentarios; SCRUM-1240, 3).
+  El trinquete `tests/scrum1240b-clave-regimen-defecto-declarado.test.mjs` está en `main`: 6/6 en verde.
+- **El builder, ejecutado:** `registro.builder.ts` transpilado a un temporal (no importa nada), con tres merchants
+  FABRICADOS (`criterioCaja` true / false / null) por dos tramos (21 % y `S2`). Salen 6 de 6 con `ClaveRegimen` 01
+  en el XML. Control positivo: un detalle con `07` sale `07`. `clasificarDetalleDesglose(entrada, ref)` no recibe
+  el régimen.
+- **Tabla:** general `01` ✅ · caja + `S1` → `07`, hoy `01` ❌ (el dato ya existe: `Merchant.criterioCaja`) · caja +
+  `S2` → `01` ✅ · NULL → decisión · recargo `18`, simplificado `20` y REAGYP `19` → hoy `01`, sin columna en
+  `Merchant`, y según 1129b no aplican a la división 5 (la `18` sigue SIN DETERMINAR).
+- **Propuesta (STOP, regla 40):** un tercer parámetro en `clasificarDetalleDesglose`, y `criterioCaja` en el
+  `ContextoRegistro` de `construirRegistro`, rellenado en sus dos llamadores. **La huella NO cambia**: `ClaveRegimen`
+  no es campo de la huella (`verifactu.service.ts:147-153`). **El XML sí cambia.** En el mismo PR: retirar
+  `DEFECTO_CONOCIDO` de 1240b y añadir un test de cuatro casos.
+- **`scrum523d` cae** (el builder y el sellador son dos de sus `ANCLAS`). La regla de SCRUM-1585 c.21290 solo vale
+  sin subir la versión si no cambia cómo se crea el registro, o si el GO lo dice. Este cambio lo cambia → versión
+  nueva, salvo que el GO diga lo contrario.
+- **Asesor:** ya preguntado en SCRUM-1264, filas 16 (B5.4), 17 (B6.2-3) y 5 (Q-nueva-A). No se añade ninguna.
+- **Sin medir:** ninguna base de datos · el llamador de la cola (`registroParaRemision`) · si la primera declaración
+  está entregada · la suite entera en local · el CI.
+
+---
+
+# SCRUM-1129d · El ALTER de la columna que congela el régimen al sellar (A5, paso ②)
+
+**Medido contra:** `origin/main` = `deab373d6a379fcbfc7ec1fce0428111156f49d3` · 2026-11-12T17:18:48Z (cabecera `Date:` de GitHub)
+
+A9: comprobación → `.claude/hooks/guard-dangerous.sh`
+
+Sesión `jv-j5ax` (puesto J5). Solo docs: **no se comitea `prisma/schema.prisma`** (el PR de esquema + código + tests
+es de J1, A5 ③, después del ALTER). Ninguna base tocada. Decisión que lo pide: SCRUM-1129 c.21753, punto 4.
+El fallo de la línea `A9:`: para deshacer el cambio de prueba del esquema encadené `git checkout --` en el mismo comando
+que la medición, y el hook lo paró antes de correr nada. Lo deshice con una edición inversa; `git status` quedó limpio.
+
+- **PASO 0, por contenido** (`schema.prisma` de `origin/main`, 105.417 B, leído entero por `grep`): `criterio`/`caja`
+  aparecen sólo en `Merchant.criterioCaja` (`:54`); `regimen` sólo en `Client` (`:342`, el recargo del CLIENTE).
+  **En `Invoice` no hay ninguna columna que guarde el régimen ni `criterioCaja`.**
+- **El patrón que se sigue — SCRUM-665 (B), el emisor congelado** (`schema.prisma:777-796`): columnas `merchant*`
+  en `invoices`, `String?` sin `@default`, porque el NULL es el centinela de «factura anterior al escritor».
+
+## La columna propuesta
+
+| | |
+| --- | --- |
+| modelo | `Invoice` (tabla `invoices`), junto a las siete del emisor |
+| campo Prisma | `merchantCriterioCaja Boolean? @map("merchant_criterio_caja")` |
+| tipo en BD | `BOOLEAN`, **NULL**, **sin `DEFAULT`** |
+| qué guarda | **el valor de `Merchant.criterioCaja` en el momento de sellar**: `true` / `false` / NULL |
+
+**Por qué el booleano y no la clave (`07`/`01`):**
+1. **La clave es POR OPERACIÓN, no por factura** (1129b Ⓑ, RRSIF art. 10.1.k). Una misma factura de un merchant
+   en caja puede llevar una línea `S1` (→ `07`) y otra `S2` (→ `01`, LIVA 163 duodecies.Dos.d). Una sola columna
+   con la clave no puede guardar las dos.
+2. **La tabla L8A vive en el builder.** Guardar `07` en la fila sería derivarla dos veces, y dos derivaciones del
+   mismo hecho son dos criterios que un día discrepan (el mismo argumento de 665). Se congela el HECHO del emisor
+   y el builder sigue sacando la clave de él.
+3. **Sin `@default`**, como `Merchant.criterioCaja`: un `false` por defecto diría «declaró que no» de quien no
+   declaró nada.
+
+**Qué pasa con las facturas ya selladas (NULL):**
+- Todas se sellaron con `ClaveRegimen 01`: el builder lo pone fijo (medido ejecutándolo, 1129c, 6 de 6).
+- La decisión 2 de c.21753 dice NULL → `01`. Así, **una factura antigua re-exportada da el MISMO XML que se selló.**
+- 🔴 **Para J1, al escribir el lector:** con NULL **NO se cae al `Merchant.criterioCaja` vivo**, a diferencia de lo
+  que hace el emisor congelado con su ficha. Si cayera, un merchant que hoy está en caja cambiaría a `07` el XML de
+  facturas que se sellaron con `01`: justo lo que la columna existe para impedir.
+- El NULL junta dos casos: «sellada antes del escritor» y «el merchant no lo tenía declarado al sellar». **Los dos
+  dan `01`**, así que la salida no depende de cuál sea.
+- Se escribe **al sellar** (paso a `sellado`), no al crear: la factura nace `pendiente_de_sellado` (`schema.prisma:930`).
+- ⚠️ **Sin decidir, de J1 / fundador:** qué foto lleva una R1 (la suya al sellarse, o la de la factura que rectifica).
+
+## El DDL — salida LITERAL de `node scripts/preview-migracion.mjs`, offline
+
+Árbol `cobroflash-jv-j5ax`, con la línea de arriba añadida al esquema sólo en el árbol (ya retirada), contra el esquema
+de `origin/main` volcado a un temporal: `node scripts/preview-migracion.mjs --desde <schema de origin/main>` → salida 0.
+
+```
+✔ control positivo: la herramienta responde (33 tablas).
+
+──────── SQL QUE SE APLICARÍA ────────
+-- AlterTable
+ALTER TABLE "invoices" ADD COLUMN     "merchant_criterio_caja" BOOLEAN;
+
+──────── VEREDICTO ────────
+✔ aditiva: ni DROP, ni RENAME, ni TRUNCATE, ni DELETE, ni SET NOT NULL.
+```
+
+- **Control negativo sembrado:** el mismo comando con `--desde` el esquema YA modificado → «✔ sin cambios pendientes»,
+  salida 0, con el control positivo de 33 tablas delante. La herramienta distingue las dos entradas.
+- `ADD COLUMN … BOOLEAN` sin `DEFAULT` en Postgres sólo toca el catálogo: no reescribe filas. Las facturas que ya
+  existen quedan con NULL y **ningún campo de la huella cambia** (`ClaveRegimen` tampoco es campo de la huella, 1129c).
+
+**Lo aplica Javier en staging y en producción; desarrollo, una sesión** (c.21753 ④). Después, J1: esquema + escritor
+al sellar + lector + tests en un PR, tras SCRUM-1051g.
+
+**Sin medir:** ninguna base de datos (no se ha conectado a ninguna) · si alguna de las tres ya tiene la columna · el
+escritor y el lector (no existen) · la suite entera en local (NO CORRIDA) · el CI.
+
+---
+
+# SCRUM-1129e · ClaveRegimen 07 desde el criterio de caja congelado al sellar (A5, paso ③)
+
+**Medido contra:** `origin/main` = `a29e8fadcaa208fb9c6139341de3648318947da5` · 2026-11-13T16:20:05Z (cabecera `Date:` de GitHub)
+
+A9: comprobación → `tests/scrum1129e-clave-regimen-07.test.mjs`
+
+Carril J1. GO de regla 40 del fundador en SCRUM-1129 c.21753; columna aprobada en c.21757 y aplicada en las tres
+bases en c.21762. Un PR con esquema + código + tests (A5 ③). Lo construye la sesión jv-j1ej.
+
+## Qué cambia
+
+- `prisma/schema.prisma`: `Invoice.merchantCriterioCaja Boolean? @map("merchant_criterio_caja")`, sin `@default`.
+- `applyVeriFactu` (`verifactu.service.ts`): lee `Merchant.criterioCaja` junto a la zona y lo escribe en la MISMA
+  `update` que la huella. Sólo en una F1. Una **R1 no lo escribe**: queda en NULL y sale con `01`, como hasta hoy.
+  Qué lleva una R1 no se decide en el código (c.21757; pregunta 47 del asesor, SCRUM-1264).
+- `registro.builder.ts`: `clasificarDetalleDesglose(entrada, ref, regimen?)` pone `07`
+  (`CLAVE_REGIMEN_CRITERIO_CAJA`) sólo en un tramo `S1` con `criterioCaja === true`. `S2` sigue en `01`. NULL,
+  `false` o ausente → `01`.
+- `construirRegistro` le pasa `inv.merchantCriterioCaja`, el de la FILA. Con NULL **no cae** al Merchant vivo. Sus
+  dos llamadores (exportación y `registroParaRemision`) leen la fila entera, así que no cambia `ContextoRegistro`.
+- `tests/scrum1240b-…`: `DEFECTO_CONOCIDO` retirado (`declarado: false`). Su catálogo pasa a la otra mitad del
+  trinquete: volver a declararlo con la clave arreglada cae.
+- `tests/scrum523d-…`: recongeladas las huellas de `registro.builder.ts` y `verifactu.service.ts` por la vía de
+  c.21290, sin subir `VERIFACTU_VERSION`, porque lo dice el GO (c.21753, punto 3). Las otras 13, iguales.
+
+## Medido
+
+- **Rojo primero**, contra `dist/` de main: 5 de 10 casos caen (①, ④, la fila manda, la mixta, ⑤ F1). Los otros
+  cinco fijan lo que no debe cambiar (S2, NULL, la R1, la huella). Con el arreglo: 10 de 10.
+- **Huella** (`vfHash` del sellado, reloj fijado): `2C4901FF1A3A764E…0A16` antes y después, con `criterioCaja`
+  true, false y null. **No cambia.**
+- **XML** (sha256 de la exportación, mismos datos): `34ea7d1291961fe1` antes en los cuatro casos; después igual en
+  NULL, false y sin columna, y `e7e916b6f9e60e4b` sólo en el caso en caja, que dice `07`. El de `07` y el de una
+  factura mixta (S1 + S2 → `07` + `01`) **validan contra el XSD vendorizado**.
+- **Mutaciones del catálogo** (`aplicarUna` de `scripts/meta-guard-mutaciones.mjs`): 5 de 5 vivas en 1129e y 1 de
+  1 en 1240b. Árbol restaurado, comprobado por contenido.
+- **Tipos**: `tsc` sin `--noCheck`, salida 0, contra un cliente de Prisma generado APARTE (fuera del árbol, con
+  `output` propio): el `node_modules` de este árbol es un enlace al compartido y no se regenera (A1). El sha256
+  del cliente compartido es el mismo antes y después. Control: el mismo `tsc` contra el compartido da 2 errores,
+  uno de ellos `merchantCriterioCaja` en `verifactu.service.ts`.
+- **Primera declaración responsable**: no entregada. `DECLARACIÓN RESPONSABLE DEL SISTEMA` sale 0 veces en
+  `src/` y `public/` de origin/main (control: 1 en `docs/` y `.claude/`). La SL está sin constituir (SCRUM-1561) y
+  el nombre del productor sigue siendo un marcador (SCRUM-870).
+
+## Lo que no se ha hecho
+
+- `18`, `19` y `20`: fuera (c.21753, punto 5). La mención del PDF: aparte, en SCRUM-1240 (punto 6).
+- La R1 (arriba) y la pregunta 47.
+
+**Sin medir:** ninguna base de datos (los merchants son dobles) · la suite entera en local (NO CORRIDA: hoy hay
+diez sesiones y lo pidió el orquestador) · el CI, hasta que se lea el obligatorio · yaqu.app (con
+`INVOICING_ES_ENABLED` en OFF no se sella nada en producción).
+
+---
+
+# SCRUM-1129e · los 7 rojos del obligatorio de #3161, y la huella de 523d (relevos jv-j1en y jv-j1ep)
+
+**Medido contra:** `origin/main` = `8c61c10e34728282942cb896151cfde331a26072` · 2026-11-13T17:12:02Z (cabecera `Date:` de GitHub)
+
+A9: comprobación → `tests/scrum523d-version-del-sif.test.mjs`
+
+Carril J1; cruza S3 en `scripts/_suelo-contra-main.mjs` con el respaldo de SCRUM-1129 c.21827. El primer empujón
+(`5da22935`, PR #3161) dio el obligatorio en rojo con 7 fallos (job 132011551789, c.21823). La dirigida de jv-j1ej
+no listaba los guards que recorren el árbol entero; por eso esta vez se corre la suite ENTERA en local (c.21829).
+
+## Qué lleva (commit `fde261c31f0f08af7e042dd25fe7afe6f161089d`, jv-j1en, y el de encima, jv-j1ep)
+
+| rojo | arreglo |
+|---|---|
+| `scrum222`, `scrum461`, `scrum733` | `docs/sql/deriva-prod.sql` regenerado con su generador desde un cliente de Prisma propio (517 columnas, + `merchant_criterio_caja`) |
+| `scrum409` | `tests/scrum1129e-clave-regimen-07.test.mjs` usa `merchantId` 7, y la R1 se comprueba con `merchantCriterioCaja === undefined` |
+| `scrum525d` | anclas movidas en sitio en `docs/legal/AUDITORIA_CAMINO_EMISION.md` y `docs/legal/PREGUNTAS_ASESOR.md` |
+| `scrum810` | la retirada del `DEFECTO_CONOCIDO` de 1240b, declarada en `RETIRADAS_A_PROPOSITO` (c.21827, «Sí a las dos») |
+| `scrum878` | `merchantCriterioCaja` clasificada como SELLADO (c.21827); en `verifactu.service.ts` el `...regimenCongelado` pasa a campo con nombre, `undefined` en la R1: Prisma no lo escribe, el comportamiento no cambia |
+| `scrum523d` | ese campo con nombre mueve la huella de `verifactu.service.ts`: `'1bef6183bb5547ba'` → `'7433c5b8fb3af758'`. Recongelada por jv-j1ep con la autorización de Javier (c.21829), con el valor que imprime el propio test sobre el código de `fde261c31` |
+
+## Medido (jv-j1ep)
+
+- **523d:** antes, 6 de 7 (cae «el camino de emisión es el congelado»; sólo nombra `verifactu.service.ts` y da
+  `'7433c5b8fb3af758'`, el valor autorizado). Después, 7 de 7.
+- **Ningún otro cambio en el camino de emisión:** `git diff fde261c31 -- src/modules/fiscal 'src/**/verifactu.service.ts'`
+  sale vacío. Control positivo del mismo pathspec: `git diff 5da22935 fde261c31` sobre él nombra
+  `verifactu.service.ts` (6+/4−).
+- **Build con tipos:** `tsc` sin `--noCheck`, salida 0, contra un cliente de Prisma generado en un temporal fuera
+  del árbol (el `node_modules` de este árbol es un enlace al compartido y no se regenera, A1). sha256 del cliente
+  compartido igual antes y después (`3627c69f…`). Control: el mismo `tsc` contra el compartido, 2 errores, uno
+  `merchantCriterioCaja`.
+- **Laboratorio de la tanda, declarado:** `@prisma/client` se resolvió al cliente propio con un hook de
+  resolución en `NODE_OPTIONS` (es lo que hace CI, que regenera), y la copia `schema.prisma` de ese cliente es la
+  del repo byte a byte (la generada llevaba la línea `output` del temporal y el guard de procedencia la cazaba).
+  Los tests que lanzan hijos con el entorno limpio cargan el cliente compartido.
+- **222/461/733 con el cliente propio:** 43 casos, 41 pasan, 2 saltados, 0 caen. Control sin él: 5 caen.
+- **Suite ENTERA en local** (`scripts/tanda-entera-por-tramos.mjs`, 14 tramos, 1.670 ficheros, 13.595 casos), sobre
+  `1f54b2f3`: 17 caen, y los 17 se reparten así (suman el total):
+  - **nuestro, arreglado de paso:** `scrum836` (1) — la mutación ⑤ de `tests/scrum1129e-clave-regimen-07.test.mjs`
+    seguía anclada al `...regimenCongelado` que cambió `fde261c31`. Reanclada al campo con nombre; 836 + 1129e
+    27/27, y la mutación aplicada en `dist/` tumba el caso ⑤ (viva; `dist/` restaurado, `cmp` igual).
+  - **el cliente de Prisma compartido** (el runner por tramos quita `NODE_OPTIONS`, así que ahí no llega el
+    cliente propio): `scrum222` (1), `scrum235` (3), `scrum252` (1, su control contra el cliente real), `scrum461`
+    (2), `scrum733` (2). Con el cliente propio, 222/235/461/733 pasan; los dos SUELO de 252 caen entonces por el
+    propio hook (resuelven `.prisma/client` por el camino de la app, y el hook lo desvía): laboratorio, no rama.
+  - **ajenos, caen igual en un árbol limpio de `origin/main` `8c61c10e`:** `scrum1298b` (2 de 8 en los dos) y
+    `scrum351` (1 de 7 en los dos).
+  - **`scrum932` (4), sin juzgar del todo:** lee `scripts/_cargar-env.mjs` y `scripts/turno-staging.mjs`, que la
+    rama no toca; en el árbol de `origin/main` (sin `node_modules`) caen 6, así que la comparación no es limpia.
+  - Los siete del primer obligatorio y `523d`: `scrum409`, `525d`, `810`, `878` y `523d` en verde en la tanda;
+    `222`, `461`, `733` en verde con el cliente propio.
+
+**Sin medir:** ninguna base de datos · yaqu.app (con `INVOICING_ES_ENABLED` en OFF no se sella nada) · los guards
+de navegador · el obligatorio de CI de este empujón, hasta leerlo.

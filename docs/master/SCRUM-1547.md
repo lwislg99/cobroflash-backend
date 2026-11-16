@@ -140,3 +140,78 @@ es justo la que el ticket echó en falta.
 - El cabo ④ del ticket (el paquete de disputa de `invoicesAdmin.routes.ts` lee la fila sin `select`): **no lo he mirado.**
 - Suite entera local: NO CORRIDA (sólo docs). Las dos sondas de esta medición viven en el temporal del trabajo y no se suben:
   son lectura, y el trinquete propuesto es lo que las sustituye.
+- **Después (2026-11-12T16:29:24Z, hora de GitHub; relevo `jv-j6ea`):** la propuesta está construida en el tramo 1547b, PR #3104. Al re-medir sobre `origin/main` = `ff2af3368930614c693353c144e521d3c50e8bc5`, `prisma/schema.prisma` no cambia en el merge: siguen las 224 columnas de texto y no hay ninguna `String` nueva que clasificar.
+
+# SCRUM-1547 · 1547b — el trinquete de clasificación TOTAL, construido
+
+**Medido contra:** `origin/main` = `0a843ce7e39555effe203549cb1c60c37472eabf` · 2026-11-12T11:13:49Z (hora de GitHub; la rama se puso al día con `git merge origin/main`, y entre `d8c441b94` y éste no cambia ninguno de los cinco ficheros de este tramo)
+A9: comprobación → `tests/scrum497-dato-personal-no-sobrevive.test.mjs`
+
+Puesto J6 (`jv-j6ea`) · rama `scrum-1547b-trinquete-clasificacion`. Encargo del orquestador (`cobroflash-backend-a0`), sobre las
+decisiones del fundador de c.21607: (b), los 33 modelos, las 44 a `SIN_DECIDIR` y el trinquete de 42 a 86. **No se anonimiza
+nada:** `anonimizarMerchant.ts` (J3) no se ha tocado, y `prisma/schema.prisma` sólo se ha leído (regla 40).
+
+## Qué hay
+
+| pieza | dónde |
+|---|---|
+| `columnasDeTexto(schema)`: las columnas `String`/`String?` de todos los modelos, sin filtrar por nombre. Es ahora el ÚNICO lector del esquema del censo: `camposPersonalesDelSchema` filtra sobre ella | `tests/_censo-datos-personales.mjs` |
+| `NO_PERSONALES`: 114 claves, **columna a columna**, con el motivo por familia (estado, moneda, secreto, id externo, huella…) | el mismo |
+| `clasificarTodas(…)`: personal o no personal; y tres listas que tienen que salir vacías: `sinDeclarar`, `enLasDos` y `fantasmas` (declaraciones de columnas que el esquema ya no tiene) | el mismo |
+| las 44 en `SIN_DECIDIR`, cada una con su pregunta; trinquete **86** | `tests/scrum497-dato-personal-no-sobrevive.test.mjs` |
+| tres casos nuevos: SIEMBRA, AUTOPRUEBA de `columnasDeTexto`, y «toda columna de texto está DECLARADA» | el mismo |
+
+**Población, medida con el propio instrumento:** 224 columnas de texto en 33 modelos = 110 personales (66 por nombre + 44
+declaradas) + 114 no personales. `sinDeclarar`, `enLasDos` y `fantasmas` salen vacíos. El caso tiene un suelo de 200: un esquema
+que no se lee da «0 sin declarar» igual que uno limpio.
+
+## 🔵 Un cambio sobre la propuesta de c.21601, dicho
+
+La propuesta pedía una lista `PERSONALES_DECLARADAS` aparte. **No la he hecho:** las 44 tenían que estar ya en `SIN_DECIDIR` con su
+pregunta, y una segunda lista con las mismas 44 claves son dos anclas para la misma comprobación (A10). Aquí, **estar en un cubo
+del reparto** (`CAMPOS_PERSONALES`, `FUERA_DE_ANONIMIZADO` o `SIN_DECIDIR`) **es** declararla personal. Para eso `repartir` cuenta
+también las declaradas en un cubo, y no sólo las que ve por nombre; si no, `albaran.notas` estaría en `SIN_DECIDIR` y no contaría
+en el trinquete. Lo prueba la mutación ③ de abajo.
+
+## Rojo primero, con SIEMBRA
+
+Cuatro columnas fabricadas EN MEMORIA dentro de `model Customer` (`recipientMsisdn`, `dni`, `contactoNombre`, `signerFullName`).
+Ninguna existe en el esquema, y el caso lo comprueba antes de sembrar (SCRUM-1537: el positivo no se toma prestado del árbol).
+- Las tres sin núcleo salen en `sinDeclarar`: rojo. `signerFullName` (núcleo «name») sale como personal y cae por la otra
+  puerta, «ninguna columna personal sin clasificar»: las dos no se pisan.
+- **Positivo:** declarada en `NO_PERSONALES` o en `SIN_DECIDIR`, la misma columna deja de caer.
+- Si no se encuentra `model Customer {` donde sembrar, el caso sale CIEGO con su mensaje, no verde.
+
+## Mutaciones — el catálogo de la casa
+
+Declaradas en `MUTACIONES_QUE_ME_TUMBAN` de scrum497 y pasadas por `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, con
+una pasada base sin mutar antes. **4 de 4 VIVAS**; el árbol, restaurado por la propia pieza (`git status` limpio de mutaciones):
+
+| mutación | cae |
+|---|---|
+| ① quitar `merchant.trade` de `NO_PERSONALES` | «toda columna de texto… DECLARADA» |
+| ② `columnasDeTexto` vuelve a filtrar por nombre (el defecto de este ticket) | SIEMBRA (+3 de rebote) |
+| ③ `repartir` deja de contar las declaradas en un cubo | TRINQUETE 86 |
+| ④ `fantasmas` deja de calcularse | SIEMBRA |
+
+## Corrido, y lo que no
+
+- `scrum497`: 19/19 en verde. Lo dicen los recuentos del TAP, 19 tests y 19 pass, no la salida.
+- Los guards de suite y de registro (`scrum237`, `scrum976`, `scrum1387`, `scrum1387d`, `scrum1387f`, `scrum267`, `scrum273`,
+  `scrum1294`): el resultado va en el comentario de Jira de este tramo, que se escribe después de correrlos.
+- `dist/` compilado con `tsc --noCheck`. No toco `src/`, así que no hacía falta compilar con tipos.
+- **Suite entera local: NO CORRIDA** (orden del encargo: hoy hay diez sesiones y la cola de CI está saturada). Hace de tanda el
+  check obligatorio.
+
+## Dudas mías, NO decididas y sin cambiar nada
+
+Sigo la clasificación de c.21601. Hay cuatro de las 114 que yo miraría otra vez, porque un texto de error puede citar el número
+o el correo al que no se pudo enviar: `whatsAppMessage.error`, `emailMessage.error`, `gatewayEvent.lastError` y
+`vfSubmission.lastError`. Siguen en `NO_PERSONALES`: moverlas a `SIN_DECIDIR` sube el trinquete, y eso le toca decidirlo al
+fundador. Las 30 columnas `Json` siguen fuera (c.21607: segundo paso).
+
+**Decidido después, en la misma rama (SCRUM-1547 c.21617, «Sí»):** las cuatro pasan de `NO_PERSONALES` a `SIN_DECIDIR`, cada una con su pregunta. Quedan 110 no personales, 114 personales, y el trinquete pasa de 86 a 90. El orquestador autorizó un segundo empujón.
+
+**Puesta al día (2026-11-12T11:59:07Z, hora de GitHub; relevo `jv-j6ea`):** el PR #3104 salía DIRTY. Hice `git merge origin/main` con `c8195b2608c32624f39d1145cf031c93091d9161` y no hubo conflictos: este fichero queda con la medición entera y, debajo, el tramo 1547b, sin entrelazar. `prisma/schema.prisma` es idéntico en los dos lados, así que no entra ninguna columna `String` nueva: siguen 224 y el trinquete se queda en 90. Corrido: `scrum497`, `scrum237`, `scrum976`, `scrum1387`, `1387d`, `1387f`, `scrum267`, `scrum273` y `scrum1294` dan **78 tests / 78 pass / 0 fail** (TAP). Están el positivo, los casos TRINQUETE, SIEMBRA y DECLARADA.
+
+**El obligatorio de ese empujón salió ROJO, y por código mío (2026-11-12T16:29:24Z, hora de GitHub; relevo `jv-j6ea`).** Run 43213903214 sobre `0fefc7b53a02db5afb77218d018267466ca4c531`, leído por nombre en el TAP: cayeron dos casos, y el meta-guard cayó de rebote (su parte 3 dio CIEGO a scrum812 porque ya caía sin mutar). ① `scrum737` · «83 cifras sin ancla y el censo estaba en 81»: las dos eran comentarios de este tramo (`_censo-datos-personales.mjs`, «224 columnas»; scrum497, «los 33 modelos»). La primera lleva ahora su fecha en la misma línea y la segunda dice «TODOS los modelos», sin número. ② `scrum812` · «la cobertura ha subido a 39 (el suelo decía 38)»: scrum497 entra en la lista porque ahora declara mutaciones. Tras el merge, main ya traía el suelo en 39 (SCRUM-1643) y la rama daba 40, así que subí `SUELO_GUARD_QUE_DECLARAN` a 40, con su ancla y su mutación de 40 a 39, como hizo `ed85d3549`. Es subir un suelo, no aflojarlo. **No** cayó por columnas `String` nuevas: el merge con `origin/main` = `ff2af3368930614c693353c144e521d3c50e8bc5` no toca `prisma/schema.prisma`, así que el trinquete sigue en 90 y no había nada que clasificar según c.21601. Corrido en local: `scrum737`, `scrum812`, `scrum497`, `scrum237`, `scrum976`, `scrum1387`, `1387d` y `1387f` dan **65/65** en el TAP, con 737 y 812 en `ok`; antes del arreglo, los dos ficheros daban 2 rojos de 11. La mutación del suelo de 812 con `aplicarUna`, después de la pasada base, sale VIVA. Sin línea A9 nueva: lo cazaron `tests/scrum737-cifra-con-arbol-y-hora.test.mjs` y `tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs`, que ya existían. Lo que me faltó fue correrlos antes de empujar.

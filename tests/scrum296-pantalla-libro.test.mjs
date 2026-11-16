@@ -276,6 +276,10 @@ test('SCRUM-296 · TODA la copy de esta pantalla va marcada como PENDIENTE (regl
     colTrazas: 'De dónde viene y dónde acabó',
     trazaAlbaran: 'Albarán',
     sinTrazas: 'Factura suelta',
+    // 12-nov-2026 · SCRUM-1051h · P3 FIRMADA por el fundador (SCRUM-1051 c.21750 punto 5):
+    // la columna de la inversión del sujeto pasivo y su valor. Registro: docs/microcopy/2026-11-12-SCRUM-1051-isp.md
+    colIsp: 'ISP',
+    valorIsp: 'Sí',
   };
   for (const [ranura, texto] of Object.entries(APROBADAS)) {
     assert.equal(COPY[ranura], texto,
@@ -310,13 +314,14 @@ test('SCRUM-296 · TODA la copy de esta pantalla va marcada como PENDIENTE (regl
     + '`docs/legal/PREGUNTAS_ASESOR.md` punto 21. Si una ha salido de aqui sin respuesta suya, se '
     + 'ha aprobado microcopy fiscal por analogia.'
     + ' Siguen marcadas: ' + JSON.stringify(conMarcador));
-  // 18 = las 17 de la tabla + `recuento`, que lleva parametro y se comprueba aparte. El numero se
+  // 20 = las 19 de la tabla + `recuento`, que lleva parametro y se comprueba aparte. El numero se
   // fija CONTANDO, no de memoria: si alguien anade una aprobada sin tocar este numero, cae aqui.
-  assert.equal(Object.keys(APROBADAS).length + 1, 18,
-    `🔴 la tabla de aprobadas ya no tiene 18 ranuras sino ${Object.keys(APROBADAS).length + 1}.`);
-  // Y el total cuadra: 18 aprobadas + 5 del asesor + `cargando` (declarada fuera) = todas.
-  assert.equal(Object.keys(COPY).length, 18 + MARCADAS_A_PROPOSITO.length + DECLARADAS_FUERA.length,
-    `🔴 las partes no suman el total: ${Object.keys(COPY).length} ranuras en COPY, y 18 + `
+  // 12-nov-2026 · 18 → 20 (SCRUM-1051h): `colIsp` y `valorIsp`, P3 firmada en SCRUM-1051 c.21750.
+  assert.equal(Object.keys(APROBADAS).length + 1, 20,
+    `🔴 la tabla de aprobadas ya no tiene 20 ranuras sino ${Object.keys(APROBADAS).length + 1}.`);
+  // Y el total cuadra: 20 aprobadas + 5 del asesor + `cargando` (declarada fuera) = todas.
+  assert.equal(Object.keys(COPY).length, 20 + MARCADAS_A_PROPOSITO.length + DECLARADAS_FUERA.length,
+    `🔴 las partes no suman el total: ${Object.keys(COPY).length} ranuras en COPY, y 20 + `
     + `${MARCADAS_A_PROPOSITO.length} + ${DECLARADAS_FUERA.length}. Hay una ranura nueva sin clasificar.`);
 
   assert.deepEqual(sinMarcar, [],

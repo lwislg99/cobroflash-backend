@@ -1,0 +1,98 @@
+﻿antes 1/40 rc=0 casos=4
+antes 2/40 rc=0 casos=4
+antes 3/40 rc=0 casos=4
+antes 4/40 rc=0 casos=4
+antes 5/40 rc=0 casos=4
+antes 6/40 rc=0 casos=4
+antes 7/40 rc=0 casos=4
+antes 8/40 rc=0 casos=4
+antes 9/40 rc=0 casos=4
+antes 10/40 rc=0 casos=4
+antes 11/40 rc=0 casos=4
+antes 12/40 rc=0 casos=4
+antes 13/40 rc=0 casos=4
+antes 14/40 rc=0 casos=4
+antes 15/40 rc=0 casos=4
+antes 16/40 rc=0 casos=4
+antes 17/40 rc=0 casos=4
+antes 18/40 rc=0 casos=4
+antes 19/40 rc=0 casos=4
+antes 20/40 rc=0 casos=4
+antes 21/40 rc=0 casos=4
+antes 22/40 rc=0 casos=4
+antes 23/40 rc=0 casos=4
+antes 24/40 rc=0 casos=4
+antes 25/40 rc=0 casos=4
+antes 26/40 rc=0 casos=4
+antes 27/40 rc=0 casos=4
+antes 28/40 rc=0 casos=4
+antes 29/40 rc=0 casos=4
+antes 30/40 rc=0 casos=4
+antes 31/40 rc=0 casos=4
+antes 32/40 rc=0 casos=4
+antes 33/40 rc=0 casos=4
+antes 34/40 rc=0 casos=4
+antes 35/40 rc=0 casos=4
+antes 36/40 rc=0 casos=4
+antes 37/40 rc=0 casos=4
+antes 38/40 rc=0 casos=4
+antes 39/40 rc=0 casos=4
+antes 40/40 rc=0 casos=4
+despues 1/40 rc=0 casos=4
+despues 2/40 rc=0 casos=4
+despues 3/40 rc=0 casos=4
+despues 4/40 rc=0 casos=4
+despues 5/40 rc=0 casos=4
+despues 6/40 rc=0 casos=4
+despues 7/40 rc=0 casos=4
+despues 8/40 rc=0 casos=4
+despues 9/40 rc=0 casos=4
+despues 10/40 rc=0 casos=4
+despues 11/40 rc=0 casos=4
+despues 12/40 rc=0 casos=4
+despues 13/40 rc=0 casos=4
+despues 14/40 rc=0 casos=4
+despues 15/40 rc=0 casos=4
+despues 16/40 rc=0 casos=4
+despues 17/40 rc=0 casos=4
+despues 18/40 rc=0 casos=4
+despues 19/40 rc=0 casos=4
+despues 20/40 rc=0 casos=4
+despues 21/40 rc=0 casos=4
+despues 22/40 rc=0 casos=4
+despues 23/40 rc=0 casos=4
+despues 24/40 rc=0 casos=4
+despues 25/40 rc=0 casos=4
+despues 26/40 rc=0 casos=4
+despues 27/40 rc=0 casos=4
+despues 28/40 rc=0 casos=4
+despues 29/40 rc=0 casos=4
+despues 30/40 rc=0 casos=4
+despues 31/40 rc=0 casos=4
+despues 32/40 rc=0 casos=4
+despues 33/40 rc=0 casos=4
+despues 34/40 rc=0 casos=4
+despues 35/40 rc=0 casos=4
+despues 36/40 rc=0 casos=4
+despues 37/40 rc=0 casos=4
+despues 38/40 rc=0 casos=4
+despues 39/40 rc=0 casos=4
+despues 40/40 rc=0 casos=4
+
+bandera --no-wasm-dynamic-tiering: NO · N=40 por lado
+
+antes: pasadas=40 · abortos con la firma=0 · rc≠0=0 · pasadas con SKIP=0
+  ×40: ok · SCRUM-1188d · SUELO: la relectura por SQL DISTINGUE el JSON `null` del NULL de SQL (si no, lo de abajo no mide nada)
+        ok · SCRUM-1188d · `jsonAnulable` traduce SOLO el `null`: lo demás pasa tal cual, y `undefined` sigue siendo «no toques»
+        ok · SCRUM-1188d · 🔴 el POST sin niveles deja la columna VACÍA (NULL de SQL), no el JSON `null`
+        ok · SCRUM-1188d · 🔴 el PUT con `tiers: null` VACÍA los niveles; sin la clave no los toca
+
+despues: pasadas=40 · abortos con la firma=0 · rc≠0=0 · pasadas con SKIP=0
+  ×40: ok · SCRUM-1188d · SUELO: la relectura por SQL DISTINGUE el JSON `null` del NULL de SQL (si no, lo de abajo no mide nada)
+        ok · SCRUM-1188d · `jsonAnulable` traduce SOLO el `null`: lo demás pasa tal cual, y `undefined` sigue siendo «no toques»
+        ok · SCRUM-1188d · 🔴 el POST sin niveles deja la columna VACÍA (NULL de SQL), no el JSON `null`
+        ok · SCRUM-1188d · 🔴 el PUT con `tiers: null` VACÍA los niveles; sin la clave no los toca
+
+CASOS POR NOMBRE: IGUAL
+control sembrado (un veredicto cambiado): VIVO
+suelo: cada pasada de después con 4 casos «ok»: SÍ
