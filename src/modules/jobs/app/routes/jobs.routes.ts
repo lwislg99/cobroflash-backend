@@ -10,6 +10,7 @@ import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 
 import { canalDeWhatsApp } from '../../../../core/contacto/canalDeWhatsApp'; // SCRUM-1171
 import { seesOnlyOwnJobs, seesAllJobs, adminOnlyJobField, adminOnlyAlbaranField } from '../../../../core/http/roleCapabilities'; // SCRUM-147 / SCRUM-164 / SCRUM-1712
 import { trabajoParaElRol, descripcionDelCalendario } from '../../domain/trabajoParaElRol'; // SCRUM-1662 (c.21555)
+import { albaranParaElRol } from '../../domain/albaranParaElRol'; // SCRUM-1707 (c.21547 Q2)
 import { listExpenses } from '../../../expenses/domain/expenses.service'; // SCRUM-370: los gastos de ESTE Trabajo
 import { esSuyoElTrabajo, SELECT_DUENOS } from '../../domain/accesoAlTrabajo'; // SCRUM-1706: los tres ejes, también en `/:id`
 import { canTransition, estadoCobroFor, importeDeReferencia, JOB_TIPOS_OPERACION } from '../../domain/job.service';
@@ -1421,7 +1422,8 @@ router.post('/:id/albaranes', async (req, res) => {
     // bien—; el cuerpo es el albarán original, que es lo que la cola necesita para cerrar su
     // elemento.
     const idempotencia = !clave ? 'no_solicitada' : repetida ? 'repetida' : 'aplicada';
-    return res.status(repetida ? 200 : 201).json({ ...serializeAlbaran(albaran), idempotencia });
+    // SCRUM-1707 (c.21547 Q2) · al operario, sin precios — la misma regla que las rutas del albarán.
+    return res.status(repetida ? 200 : 201).json({ ...albaranParaElRol(serializeAlbaran(albaran), req.userRole), idempotencia });
   } catch (err: any) {
     // SCRUM-358: misma clave con contenido DISTINTO. No es un fallo del servidor: es que la
     // etiqueta está puesta a dos cosas, y hay que decirlo con los dos documentos delante.
