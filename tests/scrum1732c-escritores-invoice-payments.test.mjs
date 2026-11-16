@@ -474,7 +474,7 @@ test('SCRUM-1732c · ⑧ /bulk-paid: una fila por factura marcada, por el total'
   actual = banco();
   actual.st.invoices.set(2, { id: 2, merchantId: M, number: 'F-2', type: 'F1', status: 'pending', total: '120.50', chargeId: null, paidAt: null });
   actual.st.invoices.set(9, { id: 9, merchantId: 999, number: 'F-9', type: 'F1', status: 'pending', total: '7.00', chargeId: null, paidAt: null });
-  const r = await llamar(bulkPaid, { merchantId: M, userRole: 'admin', teamMemberId: null, body: { ids: [1, 2, 9], paidAt: '2026-03-31' }, headers: {}, ip: '127.0.0.1', socket: {} });
+  const r = await llamar(bulkPaid, reqDeSesion({ rol: 'admin', merchantId: M, teamMemberId: null, body: { ids: [1, 2, 9], paidAt: '2026-03-31' }, headers: {}, ip: '127.0.0.1', socket: {} }));
   assert.equal(r.status, 200, JSON.stringify(r.cuerpo));
   const { st } = actual;
   assert.deepEqual([st.invoices.get(1).status, st.invoices.get(2).status, st.invoices.get(9).status], ['paid', 'paid', 'pending'], 'CIEGO: el lote no marcó lo esperado');
