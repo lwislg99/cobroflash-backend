@@ -365,7 +365,12 @@ const CASOS_DE_F = [
   },
   {
     etiqueta: 'TÉCNICO · sólo lectura', banco: 'tecnico', job: JOB_CON_EQUIPO, tecnico: true,
-    cerrada: { tipo: T_TIPO_SUELTAS, datos: 'Cambio de cuadro en el 3º B', quien: 'Javier P. y Lucía M.', notas: 'Solo tú las ves', gastos: '2 gastos' },
+    // 🔴 SIN «Notas internas»: firma del fundador SCRUM-1662 c.21555 (12-nov) — «Las notas pasan a ser SOLO
+    // del jefe, como promete el rótulo: el operario deja de verlas y de poder editarlas». Re-anclaje por
+    // regla nueva firmada (precedente 917c/C.1, registro en docs/master/SCRUM-1707.md). Sólo este caso: los
+    // del admin siguen exigiendo las cinco líneas, y son el control de que la línea no se cayó para todos.
+    sinLineas: ['notas'],
+    cerrada: { tipo: T_TIPO_SUELTAS, datos: 'Cambio de cuadro en el 3º B', quien: 'Javier P. y Lucía M.', gastos: '2 gastos' },
     dentro: { quien: { casillas: [], nota: 'Solo un administrador puede cambiar quién ejecuta este trabajo' }, gastos: { filas: 2 } },
   },
   {
@@ -430,8 +435,11 @@ for (const ancho of ANCHOS) {
         preciosEnBarra: barra ? preciosEn(barra) : -1,
         preciosEnPantalla: preciosEn(c),
         desbordaTarjeta: tarjeta ? tarjeta.scrollWidth > tarjeta.clientWidth : null,
+        campoNotas: !!c.querySelector('#job-notas-internas'),
       };
     });
+    // Las líneas que ESTE caso tiene que pintar (c.21555: el técnico, sin «Notas internas»).
+    const lineasDelCaso = LINEAS_F.filter(([clave]) => !(caso.sinLineas || []).includes(clave));
 
     // ⓪ control de discriminación: dos casos SIN el mismo perfil no pueden pintar lo mismo. El
     // técnico comparte trabajo con el caso «con equipo» a propósito (mide otro rol), así que sólo
@@ -446,23 +454,29 @@ for (const ancho of ANCHOS) {
       huellasF.set(clave, caso.etiqueta);
     }
 
-    // F.1 · UNA tarjeta «El trabajo» con las cinco líneas, en el orden del prototipo.
+    // F.1 · UNA tarjeta «El trabajo» con sus líneas (cinco; cuatro para el técnico, c.21555), en el orden del prototipo.
     const orden = m.lineas.map((l) => l.rotulo);
-    const ordenEsperado = LINEAS_F.map(([, r]) => r);
+    const ordenEsperado = lineasDelCaso.map(([, r]) => r);
     if (m.tarjetas === 1 && m.titulo === 'El trabajo' && JSON.stringify(orden) === JSON.stringify(ordenEsperado) && m.lineas.every((l) => l.enLaTarjeta)) {
-      bien(`F.1 ${q} una tarjeta «El trabajo» con sus cinco líneas en orden`);
+      bien(`F.1 ${q} una tarjeta «El trabajo» con sus ${lineasDelCaso.length} líneas en orden`);
     } else {
       mal(`F.1 ${q} tarjetas=${m.tarjetas} título=«${m.titulo}» líneas=${JSON.stringify(orden)} (esperaba UNA tarjeta «El trabajo» y ${JSON.stringify(ordenEsperado)})`);
+    }
+    // F.1b · c.21555: quien no es el jefe no tiene NI la línea NI el campo de las notas (no basta con
+    // que la línea falte del índice: el editor no puede quedar suelto en otra parte de la ficha).
+    if (caso.sinLineas && caso.sinLineas.includes('notas')) {
+      if (!m.campoNotas) bien(`F.1 ${q} sin campo de notas internas en toda la ficha (c.21555)`);
+      else mal(`F.1 ${q} la ficha del técnico sigue llevando #job-notas-internas (c.21555: las notas son SOLO del jefe)`);
     }
 
     // F.2 · TODAS cerradas: abrirlas es decisión de quien mira.
     const abiertas = m.lineas.filter((l) => l.abierta).map((l) => l.rotulo);
-    if (!abiertas.length && m.lineas.length === LINEAS_F.length) bien(`F.2 ${q} las cinco líneas se pintan cerradas`);
+    if (!abiertas.length && m.lineas.length === lineasDelCaso.length) bien(`F.2 ${q} las ${lineasDelCaso.length} líneas se pintan cerradas`);
     else mal(`F.2 ${q} líneas abiertas al cargar: ${JSON.stringify(abiertas)} (de ${m.lineas.length})`);
 
     // F.3 · lo que dice cada línea CERRADA. Es el corazón del corte: el valor a la derecha existe para
     // que no haga falta abrirla.
-    for (const [clave, rotulo] of LINEAS_F) {
+    for (const [clave, rotulo] of lineasDelCaso) {
       const l = m.lineas.find((x) => x.clave === clave);
       const esperado = caso.cerrada[clave];
       if (l && l.valor === esperado) bien(`F.3 ${q} «${rotulo}» dice «${l.valor}»${esperado === '' ? ' (nada: no se sabe)' : ''}`);
@@ -482,7 +496,7 @@ for (const ancho of ANCHOS) {
     else mal(`F.5 ${q} sigue vivo lo que F retira: cabeceras sueltas ${JSON.stringify(m.titulosSueltos)} · «Cambiar» ×${m.cambiarTipo} · rótulo del selector repetido ×${m.tituloAsignadosDuplicado}`);
 
     // F.7 · ESTADO DESPUÉS DE PULSAR: se abre cada línea y se mide lo de dentro.
-    for (const [clave, rotulo] of LINEAS_F) {
+    for (const [clave, rotulo] of lineasDelCaso) {
       const f = m.lineas.find((x) => x.clave === clave);
       // Una línea que no existe es un HALLAZGO con nombre, no una excepción: sobre el producto sin
       // tocar este bloque tiene que caer en rojo LIMPIO (se comprobó así), no reventar el guard.

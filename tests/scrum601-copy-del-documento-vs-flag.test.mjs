@@ -347,7 +347,10 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   // SCRUM-1686 H4 (12-nov-2026) · 906 → 944: el bloque «Para hoy» del Inicio del operario y el
   // saludo por rol meten 39 líneas y quitan 1 POR ENCIMA de la nota (`git diff --numstat` de
   // `homeView.js`: 39 1). Medido con el mismo `grep -n`, en la rama: 944; en origin/main acac25dba: 906.
-  const boton = en('public/dashboard/js/homeView.js', 944);
+  // SCRUM-1717 S2 (12-nov-2026) · 944 → 980: el aviso del SII en Inicio (su llamada y
+  // `pintarAvisoSiiSinEmision`) mete 36 líneas y quita 0 POR ENCIMA de la nota (`git diff --numstat`
+  // de `homeView.js`: 36 0). Medido con el mismo `grep -n`, en la rama: 980; en origin/main 8f2357255: 944.
+  const boton = en('public/dashboard/js/homeView.js', 980);
   assert.equal(boton.length, 1, 'no se encuentra la nota de condiciones de homeView donde se midió');
   assert.match(boton[0].texto, /100% al aceptar/);
   assert.equal(boton[0].dependeDelFlag, true,
@@ -376,7 +379,9 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   // con su comentario). El mismo `grep -n`: en la rama 391, en origin/main a4a2ffc4a 388.
   // SCRUM-1700 + SCRUM-1701 juntas (merge de main en la rama de 1700) · 391 → 394: las dos suman sus tres
   // líneas por encima. Medido, no sumado: el mismo `grep -n` da una sola línea, la 394.
-  const menu = en('public/dashboard/js/app.js', 394);
+  // SCRUM-1717 S2 (12-nov-2026) · 394 → 399: `app.js` gana por encima `window.appMotivoSinEmision` y su
+  // comentario (`git diff --numstat`: 5 0). El mismo `grep -n`: en la rama 399, en origin/main 8f2357255 394.
+  const menu = en('public/dashboard/js/app.js', 399);
   assert.equal(menu.length, 1, 'no se encuentra el rótulo del menú donde se midió');
   assert.equal(menu[0].texto, 'Facturas');
   assert.equal(menu[0].dependeDelFlag, false);

@@ -51,6 +51,11 @@ async function initApp() {
   // normalizar aquí sería inventarse el estado fiscal de alguien.
   window.appModoEmision =
     ['fiscal', 'demo', 'receipt'].includes(me.modoEmision) ? me.modoEmision : null;
+  // SCRUM-1717 (S2) · POR QUÉ no emite, cuando es por el SII. El veredicto lo da el servidor
+  // (`motivoSiiSinEmision`, la MISMA función que el modo); aquí solo se recibe. Un valor fuera del
+  // contrato cae a `null` y el aviso no se pinta: fallar cerrado, igual que `appModoEmision`.
+  window.appMotivoSinEmision =
+    ['sii_declarado', 'sii_no_consta'].includes(me.motivoSinEmision) ? me.motivoSinEmision : null;
 
   // 🔴 SCRUM-825 D1 (firma del fundador, SCRUM-825 comentario 17446) · el valor 'justificante' SALE del
   // contrato. Desde SCRUM-1027 el servidor no lo manda nunca (`modoDocumentoSuelto` solo devuelve

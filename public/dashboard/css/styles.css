@@ -1201,6 +1201,9 @@ html, body { overflow-x: clip; }
   color: #b45309;
   border-color: #fed7aa;
 }
+/* S2 · SCRUM-1717 · el aviso del SII en Inicio (homeView.js, pintarAvisoSiiSinEmision): el mismo
+   respiro de 16px que el aviso de trimestre que va debajo. */
+#home-aviso-sii { margin-bottom: 16px; }
 
 /* ── Section header ─────────────────────────────────────────── */
 .section-header {
