@@ -3,16 +3,15 @@
 // Sale con código 1 si la acción FALLA: un paso que no corrió no puede leerse como un paso limpio.
 import path from 'node:path';
 import fs from 'node:fs';
-import { pathToFileURL, fileURLToPath } from 'node:url';
-import { vestir, cuentas, COPIADO_DE } from './rol.mjs';
+import { pathToFileURL } from 'node:url';
+import { abrirVestido, cuentas, COPIADO_DE } from './rol.mjs';
 // El banco de SCRUM-1658 es su vecino en el repo (docs/master/evidencias/SCRUM-1658/banco): se reutiliza, no se copia.
-const BANCO = process.env.BANCO_1658 || fileURLToPath(new URL('../../SCRUM-1658/banco', import.meta.url));
-const h = await import(pathToFileURL(path.join(BANCO, 'lib.mjs')).href);
+// Import FIJO, no en caliente: es el que abre el contexto con el service worker bloqueado, y `rol.mjs` importa el mismo.
+import * as h from '../../SCRUM-1658/banco/lib.mjs';
 const [ancho, hash, nombre, acc] = process.argv.slice(2);
 const w = Number(ancho);
 const ROL = process.env.ROL || 'admin';
-const s = await h.abrir(w, w < 600 ? 844 : 800);
-await vestir(s, ROL);
+const s = await abrirVestido(w, w < 600 ? 844 : 800, ROL);
 const notas = [];
 let fallo = 0;
 s.nota = (t) => { notas.push(t); console.log('·', t); };
@@ -37,6 +36,16 @@ s.mide = async (sub) => {
 };
 try {
   await h.ir(s.page, hash);
+  // Un hash que el panel no conoce cae en «Inicio» SIN error: el 16-nov `#job-detail/84` (es `#jobs-detail/84`)
+  // dio EXIT 0 y dos medidas limpias de una pantalla que no era la pedida. Si el panel se ha ido a otro sitio, es CIEGO.
+  // El hash NO sirve de testigo (se queda como se escribió): se mira qué entrada del menú quedó ACTIVA. Si es la
+  // primera («Inicio») y no es lo que se pidió, el panel no conocía la pantalla.
+  const menu = await s.page.evaluate(() => ({
+    inicio: (document.querySelector('.nav-item[data-view]') || {}).dataset?.view || null,
+    activa: (document.querySelector('.nav-item.active[data-view]') || {}).dataset?.view || null,
+  }));
+  const pedida = String(hash || '').replace(/^#/, '').split('/')[0];
+  if (pedida && menu.inicio && menu.activa === menu.inicio && pedida !== menu.inicio) throw new Error(`CIEGO: se pidió «${pedida}» y el panel pintó «${menu.activa}» (pantalla desconocida para el panel)`);
   const mod = await import(pathToFileURL(path.resolve(acc)).href);
   await mod.default(s, h);
 } catch (e) {

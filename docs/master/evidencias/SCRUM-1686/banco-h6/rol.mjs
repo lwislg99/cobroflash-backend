@@ -26,6 +26,12 @@ export const COPIADO_DE = process.env.COPIADO_DE || (RECORTE === '1707'
   ? 'origin/main @ 4e2aaab3a55ed4779d9b6272751767940de39f38 (trabajoParaElRol + albaranParaElRol, #3153 dentro)'
   : 'origin/main @ 37947dc1522a094320a4499eac28800f38cdc659 (ANTES de #3153: sólo notes: null)');
 const OPERARIO = process.env.OPERARIO_QA || 'Operario QA';
+// El contexto lo abre SIEMPRE el banco de SCRUM-1658, que bloquea el service worker (`serviceWorkers: 'block'`).
+// Este fichero intercepta yaqu.app con `.route(`, y eso sólo vale si el SW no puede pedir por su cuenta
+// (SCRUM-1233g). Por eso el rol NO se viste sobre un contexto que venga de fuera: se abre y se viste aquí,
+// en `abrirVestido`. El 16-nov el CI lo dio CIEGO: `vestir(s)` recibía el contexto de `paso2.mjs`, que
+// importaba la librería en caliente, y desde este fichero no se veía quién lo abría.
+import { abrir } from '../../SCRUM-1658/banco/lib.mjs';
 
 // ── copia de src/modules/jobs/domain/albaranParaElRol.ts (rama del operario) ──
 const pendienteOp = (p) => ({ index: p?.index, concepto: p?.concepto, unidad: p?.unidad, servida: p?.servida, facturada: p?.facturada, pendiente: p?.pendiente });
@@ -54,7 +60,14 @@ const OPERARIO_ID = Number(process.env.OPERARIO_ID || 30);
 const esSuyo = (t) => t.operarioId === OPERARIO_ID || t.assignedUserId === OPERARIO_ID
   || (Array.isArray(t.asignados) && t.asignados.some((a) => a && (a.id === OPERARIO_ID || a.name === OPERARIO)));
 
-export async function vestir(s, rol) {
+/** Abre el navegador con el banco de SCRUM-1658 (SW bloqueado) y le viste el rol. Es la ÚNICA puerta de `vestir`. */
+export async function abrirVestido(ancho, alto, rol) {
+  const s = await abrir(ancho, alto);
+  await vestir(s, rol);
+  return s;
+}
+
+async function vestir(s, rol) {
   s.rol = rol || 'admin';
   s.escrituras = [];
   s.recortes = [];
