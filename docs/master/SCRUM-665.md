@@ -2026,3 +2026,30 @@ A9: comprobación → `tests/scrum694-los-guards-migrados.test.mjs`
 - **Para poder empujar falta:** las dos líneas de S1 (c.21564: `src/core/storage/dirs.ts` y `src/core/http/adminOnlyRoutes.ts:137`). Suite entera local y navegador: NO CORRIDOS.
 
 A9: sin fallo que generalice — el rojo de este tramo era el del tramo K, ya con su comprobación (`scrum694`), y aquí sólo se arregla
+
+# APÉNDICE (M) · SCRUM-665e · 16-nov-2026 · J1 (jv-j1f4) · main mergeado otra vez, suite entera corrida: 29 rojos clasificados. SIN EMPUJAR
+
+**Medido contra:** `origin/main` = `848e10bf071d4c807c6424f13a679ddfeaf1aecc` · 2026-11-16T16:39:06Z (hora de GitHub al cerrar el tramo; a esa hora `origin/main` ya iba en `5cf824e8`, sin mergear)
+
+GO del camino de emisión: SCRUM-665 c.21182, punto 1 («✅ GO de regla 40 a la opción A»), leído en Jira. Rama local `scrum-665e-relevo-j1f4`, sobre `cf380bc8c`.
+
+- **Merge de `origin/main` (`848e10bf`) → `41127d047`**, sin rebase. Hubo 5 conflictos. En `src/lib/invoicing.ts` y en `invoicesAdmin.routes.ts`, main sólo añadía `merchantCriterioCaja` (SCRUM-1240d) al segundo generador y a `regenerate-pdf`. La rama sustituye el primero por `ensureInvoicePdf`, que ya pasa ese campo, y retira la ruta (c.21182, puntos 1 y 3), así que gana el lado de la rama. En `scrum523d` se conservan los dos comentarios, y las huellas salen en verde. En la auditoría, 3 anclas recalculadas sobre el árbol fusionado (`schema.prisma:939-945` y `:1828`; `invoicing.ts:120` y `:320`). En las cicatrices, las líneas nuevas de los dos lados. 523d + 525d: 15/15.
+- **Parche S1 de c.21680 (commit `42655871`, en el `.git` de Luis): FUERA.** Queda pendiente de que S1 lo empuje sobre `scrum-665e-pdf-persistente` cuando esté en el remoto. La decisión es del orquestador J y la escribió por mensaje: c.21313 dice que esas líneas las escribe S1, así que no es una firma de cruce para que las escriba J1. El clasificador del arnés también paró la escritura.
+- **`tsc` con tipos: salida 0**, con el cliente de Prisma generado en el tmp del trabajo. Control: contra el cliente compartido salen 4 errores, los 4 de `pdfSha256`. La huella del `index.d.ts` compartido es `786de71ede9133a1` antes y después.
+- **Suite entera local** (`tanda-entera-por-tramos.mjs`, 14 de 14 tramos): 1678 ficheros, 13.661 tests, 13.455 pass y **29 fail**. Veredicto: ROJO.
+  - **Arreglado (1):** `scrum262`. El teléfono que la rama metió en el fixture de `scrum1142` era de rango real, y pasa a uno de ficción de Ofcom (`25ac883f2`).
+  - **Del parche S1 que falta (1):** `scrum55`, «ninguna entrada declarada apunta a una ruta que ya no existe». Cae porque `adminOnlyRoutes.ts` declara `regenerate-pdf`, y lo cubre el commit `42655871` de S1. `scrum824` (2 ficheros nuevos que escriben en `invoicesDir` dentro del árbol: `scrum665e` y `scrum1330`) se arregla con ese mismo parche: con `RAILWAY_VOLUME_MOUNT_PATH` el test puede llevar el volumen a `os.tmpdir()`. NO medido con el parche puesto.
+  - **Piden una decisión, porque tocan la lista o el número de un guard de otro ticket (regla 41) (11):**
+    - `scrum1240d` (2 → 1) y `scrum1470c` (3 → 1): cuentan llamadas a `generateInvoicePdf`, y la rama deja un solo generador. Es la misma forma que `scrum577` en c.21608.
+    - `scrum1304` (5): su doble no resuelve el `include` de `ensureInvoicePdf` (`missing_relations`, `PENDING_PDF`). Es la misma forma que `scrum1330` ④f.
+    - `scrum497`/SCRUM-1547 (2): `invoice.pdfSha256` sin declarar como personal o no personal.
+    - `scrum878` (1): la escritura de `pdfSha256` en `invoicing.ts:166`, sin clasificar.
+    - `scrum243` (1): `invoicing.ts`, lecturas sin merchant, censo 1 → 2. La segunda es la de la huella congelada (`invoicing.ts:84`, por `id` de una factura ya leída). Pasarla a `findFirst` con `merchantId` rompe 9 casos de los dobles de 665e, 1510b y 762, que sólo implementan `findUnique`; se probó y se revirtió.
+  - **Del entorno, por el cliente compartido sin `pdfSha256` (causa A de A1) (7):** `scrum235` (3), `scrum461` (3) y `scrum252` CONTROL.
+  - **Sin clasificar, NO comparados contra main (8):** `scrum932` (4, credenciales), `scrum1298b` (2, hooks del árbol principal), `scrum351` (1, `node_modules` en un ancestro) y `scrum719` (1, el veredicto guardado de `censo:mudez`). Ninguno nombra un fichero de la rama, pero eso no los absuelve.
+  - Suma: 1 + 1 + 11 + 7 + 8 = 28; el 29.º es `scrum824`, contado arriba con el parche S1.
+- **Decisiones del fundador antes de mergear** (c.21904): ① `NODE_ENV=production` y el volumen montado en `/data` en el servicio web (c.21680; c.21710 vio el volumen conectado, pero no la ruta ni `NODE_ENV`). ② Mergear con el volumen sin backups (plan Hobby) y pasar a Pro antes de la primera factura real (c.21563).
+
+**Mi error:** quise deshacer una edición mía en `invoicing.ts` con `git checkout --`, que descarta cambios sin commitear. Lo paró el hook antes de correr, y lo deshice a mano.
+
+A9: comprobación → `.claude/hooks/guard-dangerous.sh`
