@@ -109,10 +109,6 @@ export const CITAS_PLAZOS: readonly CitaDelPlazo[] = Object.freeze([
   },
 ] satisfies CitaDelPlazo[]);
 
-export function citaDe(modelo: string): CitaDelPlazo | null {
-  return CITAS_PLAZOS.find((c) => c.modelo === modelo) ?? null;
-}
-
 /** Los periodos de un modelo en un ejercicio: 1T–4T, o el año entero. */
 export function periodosDe(cita: CitaDelPlazo): Periodo[] {
   return cita.regla.tipo === 'trimestral' ? ['1T', '2T', '3T', '4T'] : ['ANUAL'];
