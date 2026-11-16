@@ -252,7 +252,7 @@ el texto de la descripción de SCRUM-1264.
 
 **Medido contra:** `origin/main` = `f84a8ca16ce3b3365fb4e1c08635a48377bcc683` · 2026-11-16T16:59:36Z (cabecera `Date:` de GitHub)
 
-A9: aviso → A10 «Una tilde entre corchetes no casa en `git grep -E` ni en `grep -E`: el patrón da cero sin avisar.» — no se pudo comprobar: mi primer barrido de este fichero llevaba `garant[ií]a` y dio CERO líneas en total; lo vi porque sabía que «garantía contractual» estaba (Q-C5), y con la raíz sin tilde salió. Ningún guard sabe qué patrón escribe una sesión en su consola.
+A9: aviso → A10 «Una tilde entre corchetes no casa en `git grep -E` ni en `grep -E`: el patrón da cero sin avisar. Se busca la raíz sin tilde y con un fichero que la tenga al lado.» — no se pudo comprobar: mi primer barrido de este fichero llevaba `garant[ií]a` y dio CERO líneas en total; lo vi porque sabía que «garantía contractual» estaba (Q-C5), y con la raíz sin tilde salió. Ningún guard sabe qué patrón escribe una sesión en su consola.
 
 Sesión J5 (IA, `jv-j5bd`), 16-nov-2026, por encargo del orquestador del equipo de Javier
 (`cobroflash-backend-64`). **Solo docs.** No se toca `src/`, ni `public/`, ni el esquema, ni el camino de
@@ -346,3 +346,5 @@ fecha y el importe de cada cobro y el medio»): **lo dice**, con cuatro matices 
    conocía; sin él habría escrito «no hay nada de garantía» en Ⓑ.
 2. Los literales de Jira los trajo un agente lector, para no meter dos tickets enteros en mi contexto: son
    copia de una copia, y lo dice el propio bloque del fichero.
+3. Cité la frase de A10 por la mitad en la línea `A9:`, y scrum1294 la tumbó: compara la línea entera, no
+   una subcadena. Arreglado copiando la frase completa; lo cazó el guard antes del push.
