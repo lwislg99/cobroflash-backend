@@ -1,0 +1,25 @@
+// node servidor.cjs <arbol> <dir>. /antes/<cara> sin CSP · /despues/<cara> con la CSP APLICADA ·
+// /control/<cara> = la de ANTES con la CSP aplicada (tiene que salir distinta: el instrumento ve).
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const [arbol, dir] = process.argv.slice(2);
+const { AVISOS_CSS, rutaDeAviso, cacheDelAviso } = require(path.join(arbol, 'dist/core/http/publicNotFound.js'));
+const { POLITICA_CSP } = require(path.join(arbol, 'dist/core/http/csp.js'));
+http.createServer((req, res) => {
+  const u = new URL(req.url, 'http://x');
+  for (const hoja of Object.keys(AVISOS_CSS)) {
+    if (u.pathname === rutaDeAviso(hoja)) {
+      res.setHeader('content-type', 'text/css; charset=utf-8');
+      res.setHeader('cache-control', cacheDelAviso(hoja, u.searchParams.get('v')));
+      return res.end(AVISOS_CSS[hoja]);
+    }
+  }
+  const m = /^\/(antes|despues|control)\/(\w+)$/.exec(u.pathname);
+  if (m) {
+    if (m[1] !== 'antes') res.setHeader('Content-Security-Policy', POLITICA_CSP);
+    res.setHeader('content-type', 'text/html; charset=utf-8');
+    return res.end(fs.readFileSync(path.join(dir, m[1] === 'despues' ? 'despues' : 'antes', m[2] + '.html')));
+  }
+  res.statusCode = 404; res.end('no');
+}).listen(58146, '127.0.0.1', () => console.log('ok 58146'));

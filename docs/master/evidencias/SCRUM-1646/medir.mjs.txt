@@ -1,0 +1,69 @@
+// Mide en el HTML GENERADO (no en el fuente) lo que una CSP con script-src/style-src 'self' bloquearía,
+// cara por cara, en la página de firma del presupuesto y en los 404 públicos. Uso: node medir1646q.mjs <árbol>
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+const ARBOL = path.resolve(process.argv[2] || '.');
+const imp = (p) => import(pathToFileURL(path.join(ARBOL, p)).href);
+const { inyectarBase, moduloDeDist, MERCHANT, CLIENTE } = await imp('tests/_envio-doblado.mjs');
+const LANDING = '../dist/modules/system/app/routes/quoteDecisionLanding.routes.js';
+const TOKEN = 'f'.repeat(32);
+let FILA = null;
+inyectarBase({
+  'quote.findUnique': ({ where }) => (where.decisionToken === TOKEN && FILA ? JSON.parse(JSON.stringify(FILA)) : null),
+  'quote.findFirst': () => null,
+  'quote.count': () => 0,
+}, [LANDING]);
+const { quoteDecisionLandingRouter } = moduloDeDist(LANDING);
+const { documentNotFoundHtml, notFoundPageHtml, documentoEnRegistroHtml } = await imp('dist/core/http/publicNotFound.js');
+
+const fila = (extra = {}) => ({
+  id: 1646, merchantId: MERCHANT, customerId: CLIENTE, status: 'sent', total: '121.00', currency: 'EUR',
+  lines: [{ concept: 'Revisión', qty: 1, price: 100, tax: 0.21 }], quoteNumber: 1646, revision: 0, seriesYear: 2026,
+  decisionToken: TOKEN, validUntil: new Date(Date.now() + 10 * 86400000).toISOString(), paymentTerms: 'FULL_UPFRONT',
+  tiers: null, discountGlobalAmount: null, acceptedAt: null, rejectedAt: null, jobId: null,
+  createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+  merchant: { id: MERCHANT, name: 'Fontanería 1646', legalName: null, country: 'ES', email: null, whatsappPhone: '34600000000',
+    flags: null, timezone: 'Europe/Madrid', brandColor: '#aa3300', brandAccentColor: null, logoUrl: null, address: null, clausulasPresupuesto: null },
+  customer: { id: CLIENTE, name: 'Cliente 1646' }, ...extra,
+});
+async function get(ruta, extra, filaOn = true) {
+  FILA = filaOn ? fila(extra) : null;
+  const capa = quoteDecisionLandingRouter.stack.find((l) => l.route && [].concat(l.route.path).includes(ruta) && l.route.methods.get);
+  if (!capa) throw new Error('CIEGO: no encuentro ' + ruta);
+  let cuerpo = null;
+  const res = { status() { return res; }, setHeader() { return res; }, redirect() { cuerpo = '(redirección)'; return res; }, send(b) { cuerpo = String(b); return res; } };
+  await capa.route.stack.at(-1).handle({ params: { token: TOKEN }, query: {}, headers: {}, ip: '127.0.0.1', socket: {} }, res);
+  return cuerpo;
+}
+function censo(html) {
+  const sinComentarios = html.replace(/<!--[\s\S]*?-->/g, '');
+  const scripts = [...sinComentarios.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
+  const enLinea = scripts.filter((m) => !/\bsrc=/.test(m[1]) && !/type="application\/json"/.test(m[1]));
+  const etiquetas = [...sinComentarios.matchAll(/<[a-zA-Z][^>]*>/g)].map((m) => m[0]);
+  return {
+    scriptEnLinea: enLinea.length,
+    on: etiquetas.filter((t) => /\son[a-z]+\s*=/i.test(t)).length,
+    styleEtiqueta: (sinComentarios.match(/<style\b/gi) || []).length,
+    styleAtributo: etiquetas.filter((t) => /\sstyle\s*=/i.test(t)).length,
+    // dentro de cadenas JS que acaban en innerHTML (no son etiquetas del documento, pero nacerán en él)
+    styleEnCadenasJs: enLinea.reduce((n, m) => n + (m[2].match(/style=\\?"/g) || []).length, 0),
+    innerHTML: enLinea.reduce((n, m) => n + (m[2].match(/\.innerHTML\s*=/g) || []).length, 0),
+  };
+}
+const TIERS = [{ id: 't1', label: 'Básica', total: 100, lines: [{ concept: 'A', qty: 1, price: 100, tax: 0 }] },
+  { id: 't2', label: 'Completa', total: 200, recommended: true, lines: [{ concept: 'B', qty: 1, price: 200, tax: 0 }] }];
+const caras = {
+  'firmar (sin opciones)': await get('/quote/:token'),
+  'firmar (con opciones)': await get('/quote/:token', { tiers: TIERS }),
+  'caducado': await get('/quote/:token', { validUntil: new Date(Date.now() - 86400000).toISOString() }),
+  'aceptado': await get('/quote/:token', { status: 'accepted', acceptedAt: new Date().toISOString() }),
+  'rechazado': await get('/quote/:token', { status: 'rejected', rejectedAt: new Date().toISOString() }),
+  'rechazar (form)': await get('/quote/:token/reject'),
+  '404 del token (documentNotFoundHtml)': await get('/quote/:token', {}, false),
+  '404 genérico (notFoundPageHtml)': notFoundPageHtml(),
+  'en registro (documentoEnRegistroHtml)': documentoEnRegistroHtml('x'),
+};
+// control positivo: el censo ve lo sembrado
+const control = censo('<style>a{}</style><!-- <script>x</script> --><div style="x" onclick="y"></div><script>z.innerHTML=1</script><script src="/a.js"></script>');
+console.log('CONTROL (esperado 1/1/1/1/1):', JSON.stringify(control));
+for (const [cara, html] of Object.entries(caras)) console.log(cara.padEnd(40), html === '(redirección)' ? html : JSON.stringify(censo(html)));
