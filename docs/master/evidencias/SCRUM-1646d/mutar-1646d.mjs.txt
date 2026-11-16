@@ -1,0 +1,43 @@
+// SCRUM-1646d · aplica cada MUTACIONES_QUE_ME_TUMBAN sobre dist (equivalente JS), corre el test y restaura.
+// uso: node mutar-1646d.mjs <ARBOL>
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
+const ARBOL = path.resolve(process.argv[2]);
+const TEST = 'tests/scrum1646d-presupuesto-sin-estilo-en-linea.test.mjs';
+process.env.WHATSAPP_DRY_RUN = '1';
+const { MUTACIONES_QUE_ME_TUMBAN: M } = await import(pathToFileURL(path.join(ARBOL, TEST)).href);
+const enDist = (f) => path.join(ARBOL, f.replace(/^src\//, 'dist/').replace(/\.ts$/, '.js'));
+const aJs = (s) => s.replace(/^export const (\w+) =/, 'exports.$1 =');
+function correr() {
+  const r = spawnSync(process.execPath, ['--test', '--test-force-exit', '--test-reporter=tap', TEST], { cwd: ARBOL, encoding: 'utf8' });
+  const caidos = [...r.stdout.matchAll(/^not ok \d+ - (.*)$/gm)].map((x) => x[1].trim());
+  const pass = (/^# pass (\d+)/m.exec(r.stdout) || [])[1];
+  return { caidos, pass };
+}
+const base = correr();
+console.log('BASE: pass', base.pass, '· caídos', base.caidos.length);
+if (base.caidos.length) process.exit(1);
+let i = 0;
+for (const m of M) {
+  i++;
+  const src = fs.readFileSync(path.join(ARBOL, m.fichero), 'utf8');
+  const enSrc = src.split(m.de).length - 1;
+  const f = enDist(m.fichero);
+  const original = fs.readFileSync(f);
+  const js = original.toString('utf8');
+  const de = aJs(m.de), a = aJs(m.a);
+  const n = js.split(de).length - 1;
+  if (enSrc !== 1 || n !== 1) { console.log(`M${i}: CIEGO (en src ${enSrc}, en dist ${n})`); continue; }
+  fs.writeFileSync(f, js.replace(de, a));
+  try {
+    const r = correr();
+    console.log(`M${i}: caen ${r.caidos.length} · ${r.caidos.includes(m.cae) ? 'cae el declarado ✔' : 'NO cae el declarado ✖'} · ${r.caidos.join(' | ')}`);
+  } finally {
+    fs.writeFileSync(f, original);
+    if (!fs.readFileSync(f).equals(original)) throw new Error('NO RESTAURADO ' + f);
+  }
+}
+const fin = correr();
+console.log('RESTAURADO: pass', fin.pass, '· caídos', fin.caidos.length);

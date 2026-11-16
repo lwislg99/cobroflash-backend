@@ -237,14 +237,30 @@ test('SCRUM-397 · 🔴 el marcado MANUAL ya no estampa el reloj', () => {
 // ── CONTROL NEGATIVO: LO QUE FUNCIONA NO SE TOCA ────────────────────────────────────────
 
 test('SCRUM-397 · CONTROL NEGATIVO: los webhooks siguen guardando el instante del aviso', () => {
-  // En un webhook `new Date()` es CORRECTO: el aviso llega en el momento del cobro. Si este test
-  // se pusiera rojo, alguien habría «arreglado» algo que no estaba roto.
+  // En un webhook SIN fecha declarada `new Date()` es CORRECTO: el aviso llega en el momento del
+  // cobro. Si este test se pusiera rojo, alguien habría «arreglado» algo que no estaba roto.
+  //
+  // 🔴 SCRUM-1735 · ESTRECHADO A `mpWebhook`, Y MÁS ESTRICTO CON `psp`. Este control exigía
+  // `new Date()` también en las dos escrituras de `psp.routes.ts`, y su premisa no valía allí:
+  // `/webhooks/psp` es también el camino de `confirm-bizum`, que manda la fecha DECLARADA (`body.ts`,
+  // SCRUM-397). La factura se quedaba con el reloj y el cobro con la fecha: un Bizum del 31-mar
+  // confirmado en noviembre caía en el T4 (SCRUM-1732 c.21820). Decisión de Javier en SCRUM-1735
+  // c.21828 («Sí a las dos»): el reloj se sigue exigiendo donde no llega fecha declarada
+  // (`mpWebhook`), y en `psp` se exige lo contrario, `resolucion.fecha`, la misma del cobro.
   const { sitios } = escriturasDePaidAt();
   const webhooks = sitios.filter((s) => /psp\.routes\.ts|mpWebhook\.routes\.ts/.test(s.f));
   assert.equal(webhooks.length, 3, `🔴 ESCÁNER CIEGO: ${webhooks.length} escrituras en webhooks, se midieron 3`);
-  for (const w of webhooks) {
+  const mp = webhooks.filter((s) => /mpWebhook\.routes\.ts/.test(s.f));
+  const psp = webhooks.filter((s) => /psp\.routes\.ts/.test(s.f));
+  assert.equal(mp.length, 1, `🔴 ESCÁNER CIEGO: ${mp.length} escrituras en mpWebhook, se midió 1`);
+  assert.equal(psp.length, 2, `🔴 ESCÁNER CIEGO: ${psp.length} escrituras en psp, se midieron 2`);
+  for (const w of mp) {
     assert.match(w.valor, /new Date\(\)/,
       `🔴 ${w.f}:${w.l} ha dejado de usar el instante del webhook (${w.valor}). Ahí era correcto.`);
+  }
+  for (const w of psp) {
+    assert.equal(w.valor, 'resolucion.fecha',
+      `🔴 ${w.f}:${w.l} fecha la factura con ${w.valor} y no con la fecha del cobro (SCRUM-1735).`);
   }
 
   // Y `paid-webhook` con su `?? now` tampoco se toca: también es un webhook.

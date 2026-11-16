@@ -545,6 +545,42 @@ No me cabía en el contexto (avisé de 200k a 206.154). Lo medido en 1051f (c.21
 
 Rojo primero: las cuatro mutaciones de ② y la de ① con `aplicarUna` del catálogo de la casa, las cinco tumban el test y el árbol queda limpio. Test propio 13/13. `tsc -p .` con tipos: salida 0. Dirigida de 153 ficheros (los de 1051, 237, 553, 976, 1387, 523d, 622, 624e, 623, 604, 771, 246, 1294, 267, 273 y todo test que nombra la ruta de la suelta, `lib/invoicing`, `pdf.service` o `lib/pdf.js`): 1.351 casos = 1.328 pass + 16 skip + 7 fail. Los 7 eran míos: 601 ×2 y 603b/723 (arriba), 976 (los arrastraba) y 525d ×2, porque mi import en `lib/invoicing.ts` corría una línea las dos coordenadas que cita la auditoría (`:104` y `:262`); el import va ahora en la línea del de causa. Re-corridos en dos pasadas: 18 ficheros (525d, 601, 603b, 723, 976, 523d, 1446d, 709, 726, 861, 997d, 1546c, 1294, 267, 273, 237, 553, 1051g) → 145 casos = 143 pass + 2 fail (los de 525d); tras el arreglo del import, 7 ficheros (525d, 976, 1051g, 1387, 1387d, 1387f, 622) → 60 casos = 60 pass. (Error propio, cazado antes de empujar: en el primer borrador de esta línea sumé las dos pasadas a ojo y escribí «25 ficheros, 205 casos».) `scrum523d` (versión del SIF): verde, sin recongelar nada. Suite entera local: NO CORRIDA (10 sesiones a la vez).
 
+## SCRUM-1051h · P5 en el portón ISP y columna «ISP» (P3) en el libro (J1, jv-j1ee, relevo de 1051g, 12-nov-2026)
+
+**Medido contra:** `origin/main` = `8928099fe426f9a20857f1162c4cdbf4621d409a` · 2026-11-12T17:43:30Z (hora de la cabecera `Date:` de GitHub)
+
+**Skill UI:** cargada (`yaqu-premium-ui`): una cabecera y una celda en la tabla que ya existe, con su mismo patrón; ningún token ni clase nueva.
+
+A9: aviso → cicatriz J1 «Crucé otra vez los 200k (223.865) sin medirme entre Jira (161.176) y la primera dirigida; lo avisé al medir, ya cruzados» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
+
+Rama `scrum-1051h-p5-y-libro`, hecha desde `scrum-1051g-isp-pdf-nif-libro` (`d582f545`, PR #3140, sin mergear al escribir esto): este PR lo contiene. Textos literales, copiados de Jira: P5 (c.21761) «Para facturar con inversión del sujeto pasivo, el cliente tiene que ser empresario o profesional.» · P3 (c.21750 punto 5) columna «ISP», valor «Sí». Registro de la firma: `docs/microcopy/2026-11-12-SCRUM-1051-isp.md`.
+
+### ① P5
+
+- `destinatarioIsp.ts`: constante `COPY_ISP_NO_EMPRESARIO` (P5) y el caso «no es EMPRESARIO» pasa de código sin texto a código + P5. Las dos bocas de J1 ya llevaban el `message` del error tipado desde 1051g: `POST /admin/invoices` lo pone en el 422 y el cobro (`src/lib/invoicing.ts`) lanza el mismo error con él. P4 no cambia.
+- Ningún cambio en `src/lib/invoicing.ts` ni en el `catch` de la ruta (solo su comentario).
+
+### ② Libro: columna P3 en la descarga y en la pantalla (las dos de J1)
+
+- Descarga (`librosAeat.ts`): columna `isp` con rótulo `COPY_ISP_COLUMNA`, detrás de la cuota (es lo que explica una cuota 0 a un tipo del 21 %). Valor `COPY_ISP_VALOR_SI` en la fila del desglose con `causa: 'S2'`; vacía en las demás, en la de importe ilegible y en la sin desglose. No hay texto firmado para «no», así que no se escribe.
+- Pantalla (`libroRegistroView.js`, J1 por `dos-equipos.md:143`): cabecera «ISP» detrás de «IVA» y «Sí» si alguna parte del desglose del asiento es S2 (el libro pinta un asiento por fila). El dato `porTipo[].causa` ya viajaba en `GET /admin/libro-registro`.
+- El libro solo lee: nada del camino de emisión cambia por ②.
+
+### Re-anclas
+
+- `scrum296` y `scrum325`: **re-ancla autorizada** por el orquestador J (cobroflash-backend-63, «OK (jefe J), puedes re-anclar 296 y 325 con c.21750 punto 5») sobre la firma de P3 en SCRUM-1051 c.21750 punto 5. Rojo antes del cambio: 296 «las partes no suman el total: 26 ranuras en COPY, y 18 + 5 + 1» (y, añadidas las ranuras, «la tabla de aprobadas ya no tiene 18 ranuras sino 20»); 325 «EL FORMATO DEL LIBRO HA CAMBIADO» (sobra `isp`) y la fila congelada (una celda más). Cambio: en 296 `colIsp:'ISP'` y `valorIsp:'Sí'` en APROBADAS y 18 → 20 en sus dos sitios (el recuento y la suma, que es el mismo número); en 325 `'isp'` en la lista y su celda vacía en la fila. Control pedido: renombrar `colIsp` a «I.S.P.» en la vista tumba 296 («la ranura «colIsp» no es su texto APROBADO»); restaurada byte a byte (`cmp`).
+- `scrum601`: `aPelo` 161 → 162 y no legibles 39 → 40, medidos: el literal nuevo es P5 (`destinatarioIsp.ts:33`, c.21761). «ISP» y «Sí» de la vista no entran en su censo.
+- `scrum1051g`: su caso «no empresario, SIN texto (no hay firma)» pasa a «se rechaza, y no con P4 (P5, c.21761)»; el literal de P5 lo fija el test de 1051h.
+
+### 🔴 Huella y XML, antes y después
+
+`buildVerifactuRegistrosXml` y `computeVeriFactuHash` de `dist/` de la base (`d582f545`, la punta de 1051g) y de la rama, misma factura fabricada: sin ISP, 3.364 B, sha256 `1964ec65…6332` en los dos; con ISP, 3.249 B, sha256 `35db2540…a52a` en los dos (positivo: «S2» 1 vez en el XML con ISP y 0 en el otro); huella `A482D961…BBE4` igual. Control de que son dos `dist/` distintos: `COPY_ISP_NO_EMPRESARIO` 0 veces en la base y 3 en la rama. **No cambian.** No se ha tocado `src/modules/fiscal/verifactu/`, `verifactu.service.ts` ni `pdf.service.ts`.
+
+### Corrido
+
+Rojo primero: `tests/scrum1051h-isp-p5-y-libro.test.mjs` 6 de 8 caían antes del cambio (los 2 que pasaban son controles). Mutaciones del catálogo con `aplicarUna` de la casa: las 3 de 1051h y las 5 de 1051g tumban su test; árbol limpio después. (Error propio: el primer intento las dio CIEGAS porque mi driver pasaba el guard con `tests/` delante y `correr` ya lo pone; lo cazó el recuento de la limpia, «0 pasados · 1 caídos».) `tsc -p .` con tipos: salida 0. Dirigida de 61 ficheros (1051*, 553, 237, 976, 1387*, 523d, 525d, 601, 603b, 723, 622, 1294, 267, 273, 824*, 811c, 296, 325, 1058c, 405, 402, 1041, 514, 436, 1232, 1233, 406, 628, 755 y todo test que nombra `librosAeat`, `libroRegistroView` o `destinatarioIsp`): 580 casos = 575 pass + 4 fail + 1 skip; los 4 eran míos (601 ×2, arriba; 1340 por este `**Skill UI:**`, y 976, que lo arrastra). Suite entera local: NO CORRIDA (10 sesiones a la vez).
+
+**NO medido:** yaqu.app (ninguna pantalla manda todavía la causa S2: la casilla es de S2, equipo de Luis); el libro con una R1 de una S2; las ocho bocas de S1 (sigue el aviso de 1051g).
 ## SCRUM-1051g-ci · los seis rojos del obligatorio de #3140 (J1, jv-j1eh, 12-nov-2026)
 
 **Medido contra:** `origin/main` = `9fabfbc087e20568633bf91d626c5ad414a99919` · 2026-11-12T18:11:58Z (hora de la cabecera `Date:` de GitHub)

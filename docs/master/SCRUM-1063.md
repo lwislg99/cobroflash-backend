@@ -573,3 +573,29 @@ A9: comprobación → `tests/scrum1063k-303-emitidas-y-libros-intactos.test.mjs`
 - El test nuevo, 5 de 5 en verde: fija lo que el código hace hoy, y el rojo lo dan las mutaciones.
 - Mutaciones en `MUTACIONES_QUE_ME_TUMBAN`, con el arnés de `docs/master/evidencias/SCRUM-1123f/arnes-mutaciones.mjs`: una escritura en el lector, un campo añadido al libro en `construirModelo303` y `gastos.reverse()` en el lector de recibidas. Tumban las 3 su caso. `git status` después: sólo el fichero nuevo.
 - **Suite entera local: NO CORRIDA**: hace de tanda el obligatorio de CI. En yaqu.app no hay nada que ver (no hay pantalla del 303).
+
+## SCRUM-1063l · el caso límite «tipos 2 % y 7,5 % (Q-C7)», fijado por los dos lados del 303 (solo test) (J1, jv-j1ed, 12-nov-2026)
+
+**Medido contra:** `origin/main` = `e93c0b47b5f537dd4947d6ab5c721da124a2d7c0` · 2026-11-12T17:36:24Z
+
+A9: comprobación → `tests/scrum1063l-tipos-2-y-7-5-303.test.mjs`
+
+**PASO 0.** Lo que 1063k dejó, re-medido por contenido en main (Jira SCRUM-1063 c.21763, con la tabla entera):
+- Q-C8 para el 303, que 1063k no midió: el plazo ya es cita comprobada en `docs/producto/CONTABILIDAD.md:102` (Orden EHA/3786/2008, art. 7.2) y la periodicidad trimestral está en `docs/master/SCRUM-1232.md:135` (art. 71.3 RIVA). El 303 no presenta ni da fechas: no hay nada que construir. Sigue abierta sólo la marca «NO VERIFICADO» de `docs/legal/PREGUNTAS_ASESOR.md:991`, que es de J5.
+- Casos límite del enunciado: sin gastos y sin base (1063b, 1063h), otro periodo y R1 (1063j), 5 % y 7,5 % devengados (1064d). **El 2 % devengado y el 2 % y 7,5 % soportados no los fijaba nadie.**
+- Siguen igual: recargo «no incluido» (texto nuevo, regla 39), 30/31 (asesor, SCRUM-1264) y los cuatro comportamientos de 1063j.
+
+**Solo test.** `src/` no se toca. Cuatro casos, con las cifras a mano:
+- Devengado al 2 % en el 2T de 2026: fuera de la 27, apartado como `tipo_sin_casilla`, y casillas más apartado suman el libro entero. La tabla de la AEAT de 2026 (literal en la cabecera de 1064d) no tiene fila del 2 %. El 303 de 2024 no está leído y queda fuera.
+- Soportado al 2 % junto a uno al 21 %: 28 = 400, 29 = 65, 46 = 145. La 28/29 es una casilla para todos los tipos.
+- Soportado al 7,5 %: el libro de recibidas lo deja sin tipo (sólo admite enteros) y el 303 lo aparta con `tipo_cero`: 29 = 63, 46 = 147.
+- Por qué es inalcanzable: `vatRate Int?` en `model Expense`, leído sin comentarios y con suelo de CIEGO.
+
+**De paso, sin arreglar:** un tipo no entero en un gasto saldría apartado con el motivo `tipo_cero`, que no es el suyo. Hoy no puede ocurrir (columna entera), así que no tiene víctima.
+
+### Medido
+
+- El test nuevo, 4 de 4 en verde: fija lo que el código hace hoy, y el rojo lo dan las mutaciones.
+- Mutaciones en `MUTACIONES_QUE_ME_TUMBAN`, con el arnés de `docs/master/evidencias/SCRUM-1123f/arnes-mutaciones.mjs`: la fila del 4 % pasada al 2 %, el soportado apartando los tipos por debajo de 4, y el libro de recibidas aceptando tipos no enteros. Tumban las 3 su caso. `git status` después: limpio.
+- **Suite entera local: NO CORRIDA**: hace de tanda el obligatorio de CI. En yaqu.app no hay nada que ver (no hay pantalla del 303).
+- Tras esto no queda pieza de 1063 sin STOP: lo que falta es el ✅/❌ del recargo y las respuestas del asesor.

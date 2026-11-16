@@ -195,6 +195,10 @@ test('SCRUM-723 · sin base que resolver dice que NO SABE, y no cae hacia `origi
 // de un repo que vive tres segundos dentro del temporal del sistema y se borra al acabar.
 const AMBITO_DECLARADO = [
   'MARCADOR_MICROCOPY_DESGLOSE',
+  // SCRUM-1240d (13-nov-2026) · entran `MENCION_CRITERIO_CAJA` y `llevaMencionCriterioCaja`: la
+  // mención del criterio de caja (literal y GO de regla 40 en SCRUM-1240 c.21776). Deciden qué
+  // imprime la F1, así que tienen que estar DENTRO de lo que vigilan 603b y este guard.
+  'MENCION_CRITERIO_CAJA',
   'NOMBRE_IMPUESTO_POR_DEFECTO',
   'fmtImporte',
   'generateInvoicePdf',
@@ -202,6 +206,7 @@ const AMBITO_DECLARADO = [
   // línea de mayor resto (decisión del fundador, SCRUM-1446 c.20945). Decide qué imprime la columna
   // de la F1, así que tiene que estar DENTRO de lo que vigilan 603b y este guard.
   'importesDeLaColumnaSinIva',
+  'llevaMencionCriterioCaja',
   'loadLogoBuffer',
 ];
 

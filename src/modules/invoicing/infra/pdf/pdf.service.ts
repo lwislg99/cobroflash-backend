@@ -342,6 +342,27 @@ export type ParamsPdfPresupuesto = {
   zona?: string | null;
 };
 
+/** SCRUM-1240d · literal FIRMADO por el fundador en SCRUM-1240 c.21776 (regla 39). Ni una palabra más. */
+const MENCION_CRITERIO_CAJA = 'Régimen especial del criterio de caja';
+
+/**
+ * SCRUM-1240d · ¿Lleva la factura la mención del criterio de caja? La MISMA condición que la clave
+ * `07` del registro (c.21776): el valor CONGELADO es `true` (con NULL o false, no) y al menos un
+ * tramo del desglose es `S1` —sin causa `S2` y a un tipo positivo, lo que `clasificarDetalleDesglose`
+ * califica `S1`—. La inversión del sujeto pasivo queda fuera de la caja (LIVA 163 duodecies.Dos.d).
+ *
+ * ⚠️ No importa el builder a propósito: hacerlo metería este fichero en la población congelada de
+ * `scrum523d` (camino de emisión). Que las dos decisiones no discrepen lo ata
+ * `tests/scrum1240d-mencion-criterio-caja-pdf.test.mjs`, que compara las dos sobre las mismas líneas.
+ */
+function llevaMencionCriterioCaja(
+  criterioCaja: boolean | null | undefined,
+  lines: Array<{ qty: number; price: number; tax: number }>,
+): boolean {
+  if (criterioCaja !== true) return false;
+  return calcVatBreakdown(lines).entries.some((e) => e.causa !== 'S2' && Number.isFinite(e.rate) && e.rate > 0);
+}
+
 export async function generateInvoicePdf(params: {
   number: string;
   // SCRUM-72: id para la URL del endpoint auth y merchantId para el nombre de fichero
@@ -378,6 +399,11 @@ export async function generateInvoicePdf(params: {
   // Obligatoria a propósito: un llamador que no la pase no compila, en vez de imprimir otra vez la
   // víspera. `null` = sin zona declarada = UTC (`zonaDelMerchant`, decisión A del 2-sep).
   zona: string | null;
+  // SCRUM-1240d · el criterio de caja CONGELADO al sellar (`Invoice.merchantCriterioCaja`,
+  // SCRUM-1129e), nunca el `Merchant` vivo: este PDF se regenera, y una factura emitida no cambia
+  // (regla 29). Obligatorio a propósito, como `zona`: un llamador que no lo pase no compila.
+  // NULL = sin mención, que es con lo que se selló.
+  merchantCriterioCaja: boolean | null;
 }) {
   const fileName = `${params.merchantId}-${params.number}.pdf`; // SCRUM-72
   const outPath  = path.join(invoicesDir, fileName);
@@ -797,6 +823,15 @@ export async function generateInvoicePdf(params: {
     doc.fontSize(14).font('Helvetica-Bold')
       .text(`Total: ${fmt(Number(params.total))} ${params.currency}`, { align: 'right' });
     doc.moveDown(1.5);
+  }
+
+  // ── 4bis. MENCIÓN DEL CRITERIO DE CAJA (SCRUM-1240d · ROF 6.1.p, RIVA 61 undecies) ──────
+  // Literal FIRMADO en SCRUM-1240 c.21776 (regla 39), en su propia línea, debajo de los totales y
+  // antes del bloque VERI*FACTU. Nunca en justificantes, que no son factura.
+  if (!isReceipt && llevaMencionCriterioCaja(params.merchantCriterioCaja, params.lines ?? [])) {
+    doc.fontSize(9).font('Helvetica').fillColor(BODY)
+      .text(MENCION_CRITERIO_CAJA, M, doc.y, { width: W });
+    doc.fillColor('#000').moveDown(0.8);
   }
 
   // ── 5. VERIFACTU QR (nunca en justificantes — V0-0) ──────────────────────
