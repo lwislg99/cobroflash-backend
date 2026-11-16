@@ -1,7 +1,7 @@
 # SCRUM-1737 · La tarjeta de opción del PDF del presupuesto pinta los importes de línea sin IVA
 
 **Medido contra:** `origin/main` = `37947dc1522a094320a4499eac28800f38cdc659` · 2026-11-16T15:14:13Z
-A9: comprobación → `tests/scrum1737-la-tarjeta-sin-iva.test.mjs`
+A9: comprobación → `tests/scrum836-ancla-de-mutacion-viva.test.mjs`
 
 Escribe jv-j1ez (J1), en su carril: `src/modules/invoicing/**` es de J1 (`node scripts/carriles.mjs de`).
 Decisión de Javier (jefe J), 16-nov-2026, con el GO de la regla 40 para esta zona, literal: «sin IVA
@@ -39,6 +39,19 @@ sin IVA: no cambia.
   No es relajar un guard: el número que exigía es el comportamiento que el jefe ha decidido quitar.
 - Mutaciones con `aplicarUna` de la casa (`evidencias/SCRUM-1737/mutaciones.mjs` y `.txt`): 1737
   2/2 VIVAS y 1442c 5/5 VIVAS, las dos con la base en 0 caídos.
+
+- **Error propio, cazado por la suite entera y no por la dirigida:** la mutación M4 de
+  `tests/scrum1302m-el-total-y-la-leyenda.test.mjs` citaba la expresión que quité
+  (`(ivaFueraDelPapel ? 0 : (l.tax ?? 0))`), y `scrum836` cayó por su ancla caducada. Re-anclada a
+  `const importe = l.qty * l.price;`, vigilando lo mismo (la línea de la opción no lleva IVA):
+  1302m 5/5 VIVAS, `scrum836` + 1302m 25/25. Carril de 1302m: `carriles.mjs de` dice NO-PUDE-MIRAR
+  (es «el test de SCRUM-1302»); el ancla es de `pdf.service.ts`, de J1.
+- Suite entera por tramos (`tanda-entera-por-tramos.mjs`, 14 tramos, 1.677 ficheros, 13.647 tests):
+  8 caídos, 1 mío (`scrum836`, arriba) y 7 que no tocan nada de este diff y leí como entorno de esta
+  máquina: `scrum1298b` ×2 (espera la ruta corta `JAVIER~1` del TEMP y recibe la larga), `scrum351`
+  ×1 (hay un `node_modules` en el home, ancestro del TEMP) y `scrum932` ×4 (cargador de claves de BD
+  fuera del árbol). No los he corrido sobre `origin/main` sin mi cambio: lo de «entorno» es lectura
+  del mensaje, no medición.
 
 ## NO medido
 
