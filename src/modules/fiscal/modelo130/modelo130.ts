@@ -33,7 +33,8 @@
 // asesor dice que un oficio imputa por cobros, se cambia aquí y el test lo dirá.
 import type { LibroRegistro } from '../../invoicing/domain/libroRegistro';
 import type { LibroRecibidas } from '../../invoicing/domain/libroRecibidas';
-import { AVISO_ORIENTATIVO } from '../modelo303/modelo303';
+import { AVISO_ORIENTATIVO, rangoDeMesesEn } from '../modelo303/modelo303';
+import { inicioDelDiaEn } from '../../../core/zonaDelMerchant';
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -132,8 +133,10 @@ const FUERA_DE_POBLACION = Object.freeze([
  * ⚠️ Fechas LOCALES, como `rangoTrimestre` del 303 y por lo mismo: el año fiscal es del calendario
  * español. El 31 de diciembre a las 23:30 de Madrid es del año que acaba, no del siguiente.
  */
-export function rangoAcumulado(año: number, trimestre: number): { desde: Date; hasta: Date } {
+export function rangoAcumulado(año: number, trimestre: number, zona?: string): { desde: Date; hasta: Date } {
   const t = Math.min(4, Math.max(1, Math.trunc(trimestre) || 1));
+  // SCRUM-1445d (fase 1): con `zona`, en su calendario; sin ella, la zona del proceso, como hasta hoy.
+  if (zona !== undefined) return rangoDeMesesEn(año, 1, t * 3, zona);
   return {
     desde: new Date(año, 0, 1, 0, 0, 0, 0),
     hasta: new Date(año, t * 3, 0, 23, 59, 59, 999),
@@ -158,9 +161,11 @@ export function construirBorrador130(params: {
    * `Merchant.createdAt` (SCRUM-1065e). Sin él no se avisa de nada: no se deduce un alta que no se ha leído.
    */
   altaDelMerchant?: Date | null;
+  /** SCRUM-1445d · la zona del comercio. Ausente = la del proceso, como hasta hoy (fase 2: la pasa cada llamador). */
+  zona?: string;
 }): Borrador130 {
   const trimestre = Math.min(4, Math.max(1, Math.trunc(params.trimestre) || 1));
-  const { desde, hasta } = rangoAcumulado(params.año, trimestre);
+  const { desde, hasta } = rangoAcumulado(params.año, trimestre, params.zona);
   let moneda = 'EUR';
 
   let ingresos = 0;
@@ -197,7 +202,11 @@ export function construirBorrador130(params: {
   // 01 que sólo ve lo facturado por YaQu desde el alta; lo de antes, por otra vía, no está. Es un CÓDIGO:
   // si algún día se pinta, su texto se firma aparte (regla 39). El 1 de enero, a cualquier hora, no avisa.
   // Fecha LOCAL, como `rangoAcumulado`.
-  if (params.altaDelMerchant && params.altaDelMerchant >= new Date(params.año, 0, 2, 0, 0, 0, 0)) {
+  // SCRUM-1445d: con `zona`, el 2-ene empieza a las 00:00 del comercio; sin ella, la línea de siempre.
+  const altaTardia = params.zona !== undefined
+    ? !!params.altaDelMerchant && params.altaDelMerchant >= inicioDelDiaEn(`${String(params.año).padStart(4, '0')}-01-02`, params.zona)
+    : !!params.altaDelMerchant && params.altaDelMerchant >= new Date(params.año, 0, 2, 0, 0, 0, 0);
+  if (altaTardia) {
     motivosParaNoFiarse.push('alta_a_mitad_de_ejercicio');
   }
 

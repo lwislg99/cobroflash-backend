@@ -32,6 +32,7 @@
 // ningún consumidor pueda pintar un 303 sin él.
 import type { LibroRegistro } from '../../invoicing/domain/libroRegistro';
 import type { LibroRecibidas } from '../../invoicing/domain/libroRecibidas';
+import { inicioDelDiaEn, finDelDiaEn } from '../../../core/zonaDelMerchant';
 import {
   TRIPLETAS, CASILLA_TOTAL_CUOTA_DEVENGADA, tripletaDe,
   CASILLAS_DEDUCIBLE_CORRIENTES, CASILLAS_DEDUCIBLE_BIENES_INVERSION,
@@ -205,13 +206,35 @@ export const AVISO_ORIENTATIVO = 'Borrador para tu asesor';
  * segundo trimestre cuando el servidor va en UTC+2 — un euro cambiado de declaración, y el error
  * solo se ve en abril.
  */
-export function rangoTrimestre(año: number, trimestre: number): { desde: Date; hasta: Date } {
+export function rangoTrimestre(año: number, trimestre: number, zona?: string): { desde: Date; hasta: Date } {
   const t = Math.min(4, Math.max(1, Math.trunc(trimestre) || 1));
+  // SCRUM-1445d (fase 1, decisión del fundador en SCRUM-1445 c.21896): con `zona`, los bordes son los
+  // del calendario de ESA zona (Canarias incluida), y no dependen de la máquina. SIN `zona`, lo de
+  // siempre (la zona del proceso): los llamadores aún no la pasan, y la fase 2 se la da a cada uno.
+  if (zona !== undefined) return rangoDeMesesEn(año, (t - 1) * 3 + 1, t * 3, zona);
   return {
     desde: new Date(año, (t - 1) * 3, 1, 0, 0, 0, 0),
     // Día 0 del mes siguiente al último = último día del trimestre. Con su último milisegundo:
     // una factura emitida a las 23:59:59.700 del 30 de junio es del segundo trimestre.
     hasta: new Date(año, t * 3, 0, 23, 59, 59, 999),
+  };
+}
+
+/** `YYYY-MM-DD` de un día del calendario, sin pasar por ningún reloj. */
+function diaISO(año: number, mes: number, dia: number): string {
+  return `${String(año).padStart(4, '0')}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+}
+
+/**
+ * SCRUM-1445d · Del primer instante del día 1 del mes `mesDesde` al último milisegundo del último día
+ * del mes `mesHasta` (meses 1-12), en el calendario de `zona`. Lo usan el 303 y el 130.
+ */
+export function rangoDeMesesEn(año: number, mesDesde: number, mesHasta: number, zona: string): { desde: Date; hasta: Date } {
+  // Día 0 del mes siguiente, en UTC: sólo da el NÚMERO del último día, que no depende de la zona.
+  const ultimoDia = new Date(Date.UTC(año, mesHasta, 0)).getUTCDate();
+  return {
+    desde: inicioDelDiaEn(diaISO(año, mesDesde, 1), zona),
+    hasta: finDelDiaEn(diaISO(año, mesHasta, ultimoDia), zona),
   };
 }
 
