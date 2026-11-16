@@ -4318,8 +4318,14 @@ textarea.parte-linea-desc {
    recuadro con raya = se firma**. Sin texto nuevo (regla 39) y sólo con tokens de DESIGN.md. Va
    DESPUÉS de las reglas del parte a propósito: gana por orden sin subir especificidad. */
 
-/* ④ Una columna de tarjetas. A 1280 no se estira más que una hoja: el parte es un papel. */
-*:has(> header.parte-cabecera) { max-width: 720px; margin-inline: auto; }
+/* ④ Una columna de tarjetas. A 1280 no se estira más que una hoja: el parte es un papel.
+   SCRUM-1722c · `width: 100%` NO es adorno: la hoja es hija de `.main` (flex en columna), y con márgenes
+   `auto` deja de estirarse y mide LO QUE MIDE SU CONTENIDO. Medido en yaqu.app el 16-nov-2026: con una
+   dirección larga en «Obra y referencia» (no parte línea) la hoja llegaba a 451 px en un móvil de 390 y,
+   como `html, body` recortan (`overflow-x: clip`), lo de la derecha se perdía sin barra para alcanzarlo;
+   y con poco contenido (parte firmado) se encogía. Con ancho definido, lo largo se recorta DENTRO.
+   Lo vigila `tests/scrum1722c-la-hoja-del-parte-pide-su-ancho.test.mjs`. */
+*:has(> header.parte-cabecera) { width: 100%; max-width: 720px; margin-inline: auto; }
 .parte-cabecera { margin: 4px 0 20px; }
 .parte-cabecera-numero {
   margin: 8px 0 0;

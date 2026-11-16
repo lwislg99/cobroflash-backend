@@ -319,6 +319,15 @@
 
 ## P1 — Bugs visibles al cliente / datos incorrectos
 
+### [ ] P1-1722c · en un móvil de 390 el parte de trabajo se sale 61 px por la derecha y no se puede desplazar (16-nov-2026, hallazgo del recorrido H6 de SCRUM-1686; P0 para el PILOTO-1; arreglado en la misma rama)
+- **Población:** todo parte cuya «Obra y referencia» sea una dirección larga. Desde SCRUM-1674 el parte hereda la dirección del trabajo, así que es cualquier parte abierto desde un trabajo con dirección. Medido con `Calle Mayor 14, 3º B, 28801 Alcalá de Henares` (45 caracteres): +61 px en el parte PT-2026-014 y +114 px con la misma obra inyectada en PT-2026-011. Sin obra no pasa.
+- **Qué pasa:** la hoja mide 451 px en una ventana de 390. `html, body` llevan `overflow-x: clip`, así que no hay barra: el borde derecho de «Salida», «Kilómetros», «Ordenar en líneas» y los recuadros de firma queda fuera de la pantalla.
+- **Medido, no supuesto:** en yaqu.app, con rol de operario simulado, con rol de admin y sin emulación de móvil (los tres igual). Vaciando en el DOM vivo el resumen de «Obra y referencia» la hoja vuelve a 390; vaciando los otros tres, no. Evidencias: `docs/evidencias/scrum1722c/antes-salida.txt` (3 de 18 pasadas en rojo) y `despues-salida.txt` (0 de 18).
+- **Causa raíz:** regresión de SCRUM-1722 (12-nov). La regla que centra la hoja (`max-width` + `margin-inline: auto`) no le pedía ancho; dentro de `.main` (flex en columna) un hijo con márgenes `auto` deja de estirarse y mide lo que su contenido. SCRUM-1722b lo arregló sólo desde 1024.
+- **Qué se cambió (SCRUM-1722c):** `width: 100%` en esa regla de `styles.css`. Y la sonda del parte, que el 12-nov dio «desborde 0» porque medía `html.scrollWidth` (0 bajo `clip`) sobre partes sin obra: ahora mide el borde derecho real, lleva la obra larga como control positivo y sale con código 1.
+- **Guard:** `tests/scrum1722c-la-hoja-del-parte-pide-su-ancho.test.mjs`; rojo sobre el CSS de `main` (1 de 6), verde con el arreglo (6 de 6).
+- **Sigue en `[ ]`:** falta verlo en yaqu.app tras el merge (la sonda sin servir CSS local: 18 pasadas, 0 con desborde).
+
 ### [ ] P1-1646c · con un `'` en el nombre del negocio, «Firmar y aceptar» del presupuesto no hace nada (12-nov-2026, hallazgo de la vara de SCRUM-1646c; arreglado en la misma rama)
 - **Población:** todo negocio cuyo `legalName` (o `name`, si no hay) lleve un apóstrofo — `D'Ángelo Reformas`, `Can Pep's`… —. Medido con `Fontanería & Hijos <Sur> 'Pepe'`: el error nombra el identificador que sigue al `'`, así que el que rompe es el apóstrofo (`&` y `<>` iban en el mismo nombre). Las comillas dobles NO se midieron en main.
 - **Qué pasa:** en la página `/pay/quote/:token`, el cliente firma, pulsa el botón y no ocurre nada: ni POST, ni éxito, ni aviso. El presupuesto no se acepta.

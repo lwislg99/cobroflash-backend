@@ -1,0 +1,30 @@
+﻿dueño(src/core/cron/cron.ts) = S1 (puesto)
+dueño(scripts/equipo/latido.mjs) = S5 (puesto)
+dueño(public/dashboard.html) = S2 (puesto)
+sesion-5  mesa=-  src/core/cron/cron.ts      dueño=S1  → exit 2 PARA
+sesion-5  mesa=-  scripts/equipo/latido.mjs  dueño=S5  → exit 0 deja
+sesion-5  mesa=-  public/dashboard.html      dueño=S2  → exit 2 PARA
+s5-2nov   mesa=-  src/core/cron/cron.ts      dueño=S1  → exit 2 PARA
+s5-2nov   mesa=-  scripts/equipo/latido.mjs  dueño=S5  → exit 0 deja
+s5-2nov   mesa=-  public/dashboard.html      dueño=S2  → exit 2 PARA
+sesion-1  mesa=-  src/core/cron/cron.ts      dueño=S1  → exit 0 deja
+sesion-1  mesa=-  scripts/equipo/latido.mjs  dueño=S5  → exit 2 PARA
+sesion-1  mesa=-  public/dashboard.html      dueño=S2  → exit 2 PARA
+sesion-2  mesa=-  src/core/cron/cron.ts      dueño=S1  → exit 2 PARA
+sesion-2  mesa=-  scripts/equipo/latido.mjs  dueño=S5  → exit 2 PARA
+sesion-2  mesa=-  public/dashboard.html      dueño=S2  → exit 0 deja
+jv-j1     mesa=-  src/core/cron/cron.ts      dueño=S1  → exit 0 deja
+jv-j1     mesa=-  scripts/equipo/latido.mjs  dueño=S5  → exit 0 deja
+jv-j1     mesa=-  public/dashboard.html      dueño=S2  → exit 0 deja
+jv-j6     mesa=-  src/core/cron/cron.ts      dueño=S1  → exit 0 deja
+jv-j6     mesa=-  scripts/equipo/latido.mjs  dueño=S5  → exit 0 deja
+jv-j6     mesa=-  public/dashboard.html      dueño=S2  → exit 0 deja
+j6-x      mesa=-  src/core/cron/cron.ts      dueño=S1  → exit 2 PARA
+j6-x      mesa=-  scripts/equipo/latido.mjs  dueño=S5  → exit 2 PARA
+j6-x      mesa=-  public/dashboard.html      dueño=S2  → exit 2 PARA
+null      mesa=-  src/core/cron/cron.ts      dueño=S1  → exit 0 deja
+null      mesa=-  scripts/equipo/latido.mjs  dueño=S5  → exit 0 deja
+null      mesa=-  public/dashboard.html      dueño=S2  → exit 0 deja
+jv-j6     mesa=J6  src/core/cron/cron.ts      dueño=S1  → exit 2 PARA
+sesion-5  mesa=S5  src/core/cron/cron.ts      dueño=S1  → exit 2 PARA
+POBLACION=26 casos
