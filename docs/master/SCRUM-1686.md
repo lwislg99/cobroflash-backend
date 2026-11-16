@@ -405,3 +405,45 @@ lo decide `seesOnlyOwnJobs` (`:56`) y, para la pertenencia a un Trabajo, `esSuyo
 **Lo que salió mal (A9):** el traspaso de la S2 anterior decía «H4 MEDIDO, SIN EMPEZAR A CONSTRUIR», y en otra worktree había un commit WIP sin empujar de después de escribirlo (`189d32aa9`). Lo vi sólo porque `git branch -m` chocó con el nombre; lo reaproveché (cherry-pick) en vez de hacerlo dos veces. Ese choque no es una comprobación. Lo que SÍ queda comprobado es el fallo que este bloque podía meter —afirmar «Nada para hoy.» con la carga caída—: el caso ⑤, cazado por mutación. Segundo fallo, mío: re-anclé `scrum601` y empujé sin `npm run censo:mudez -- --escribir`, aunque la trampa estaba escrita en mi traspaso desde SCRUM-1701; el CI de #3096 salió rojo en `scrum1395b` y se arregló en el commit siguiente. Ése sí lo caza un guard: el propio `scrum1395b`.
 
 A9: comprobación → `tests/scrum1686h4-inicio-operario.test.mjs`
+
+## APÉNDICE · SCRUM-1686 H6 · EL BANCO DEL RECORRIDO con operario simulado, y lo medido hasta el tramo 3.1 · S4 · 16-nov-2026
+
+**Medido contra:** `origin/main` = `4e2aaab3a55ed4779d9b6272751767940de39f38` · 2026-11-16T16:24:57Z (cabecera `Date:` de `gh api -i zen`) · **Rama:** `scrum-1686h6-recorrido-operario-simulado` · **Carril:** S4
+**Skill UI:** no cargada · no se toca ninguna pantalla: es un banco de medida, su guion y este registro
+
+**Qué entra.** El instrumento del recorrido final de Trabajos, que hasta hoy vivía en un commit local sin empujar (A8: si no está en git, no existe). Carpeta `docs/master/evidencias/SCRUM-1686/banco-h6/`:
+- `GUION.md` — el recorrido en frío, tramo a tramo, con su aserto y su control positivo (escrito el 12-nov ANTES de recorrer).
+- `rol.mjs` — viste al operario sobre la cookie QA de admin: `GET /admin/me` → `tecnico`, sólo sus trabajos por los tres ejes del servidor, `/admin/team` → 403, y cada respuesta de trabajos y albaranes pasa por una copia de `trabajoParaElRol` y `albaranParaElRol` (cotejadas hoy con las de `main`: iguales). Cuenta el vocabulario de dinero en cada medida.
+- `paso2.mjs` — el `paso.mjs` del banco de SCRUM-1658 más el rol, las cuentas y la bitácora; sale 1 si la acción falla o si la página no dice el rol pedido.
+- `b-mirar.mjs`, `b04`, `b05`, `b08`, `b-diag-*` — las acciones de los tramos 1 a 3.1 y el diagnóstico del desborde del parte.
+- En el banco de SCRUM-1658, `lib.mjs` gana `SIN_MOVIL=1` (misma ventana sin emulación de móvil). Sin la variable, todo sigue igual.
+
+**Cambio de hoy en el instrumento.** `RECORTE=hoy` era «lo que hace producción hoy» y dejó de ser verdad a las 16:02Z, cuando entró #3153 (`6ffa662fd03ad6994f08c9816de6f0c7307e14d0`). El modo por defecto pasa a ser `1707` (el recorte entero, que es lo que hay desplegado) y el viejo se llama `antes-de-3153`: sólo sirve para repetir las medidas del tramo 2 como se tomaron.
+
+**Lo que este banco NO mide** (y se dice en cada medida): que yaqu.app recorte de verdad al operario —eso lo prueba `tests/scrum1707-operario-sin-dinero.test.mjs`, o una sesión del operario real— ni sus 403 de escritura: las escrituras salen con la cookie de admin y se casan a mano con `TECNICO_ALLOWED`.
+
+**Recorrido hecho** (yaqu.app, 16-nov ~15:46Z-16:15Z, front de producción igual al de `main` por hash): tramo 0 (testigos), 1 (alta, ficha, nota, asignar, agendar), 2 (lista y fichas, admin y operario, 390 y 1280: 16 medidas) y 3.1 (⋯, «▶ Empezar», «Abrir parte»). **Falta:** 3.2-3.5 (rellenar el parte), 4 (firmas), 5 (albarán), 6 (oficina). Datos de prueba en la cuenta QA: trabajo #84 y parte #22 (`PT-2026-014`, borrador).
+
+**Lo medido hasta aquí** (capturas y `.txt` fuera de git, en la máquina del equipo):
+
+| # | pantalla · rol | qué se ve | de quién · estado |
+|---|---|---|---|
+| 1 | Parte · 390 | la hoja medía 451 px y no se desplazaba | S4 · arreglado en SCRUM-1722c (#3173) |
+| 2 | Albarán · operario | ficha: 0 importes, sin «Total» ni cabeceras de precio (vista real en el banco de vistas, con la proyección de `dist`; admin de control: 10). El «0 €» que se le atribuyó NO existe. Lista: la columna «Importe» sale con «—» en cada fila | ficha: nada que hacer · lista: S2 |
+| 3 | Parte | no enseña «Qué hay que hacer» del trabajo | S4 · espera la firma del rótulo (SCRUM-1662) |
+| 4 | Lista | la tarjeta no dice qué trabajo es (la tarea no sale) | S4 · sin empezar |
+| 5 | Alta | tras «Abrir trabajo» la URL sigue en la lista | S4 · sin empezar |
+| 6 | Lista · operario · «⋯» | ofrece «Técnicos», que pide `/admin/team` (403 para él) | S4 · falta probar el clic |
+| 7 | Lista · operario | pide `GET /admin/team` en cada carga → 403 en consola | S4 · sin empezar |
+| 8 | Lista · operario | filtro «Técnico» a quien sólo recibe los suyos | S4 · sin empezar |
+| 9 | Lista · 390 | la primaria cambia de sitio y de peso entre «EN CURSO» y «HOY» | S4 · medir antes de tocar |
+| 10 | Lista · 390 | la tarjeta-título repite la barra; cada cabecera de grupo es una tarjeta | S4 · retoque sin texto |
+| 11 | Lista · 390 · operario | «Sin importe / no hay presupuesto aceptado» parte el nombre del cliente | decide el fundador (SCRUM-1679) |
+| 12 | Ficha | creado como «Reparación», la ficha dice «Una obra o reforma de varios días» | S1 + S2 (SCRUM-1670) |
+| 13 | Parte · 390 | los radios de «Tipo de intervención» miden 13×13 px | S4 · medir la etiqueta |
+
+**Lo que SÍ funciona** (operario, con el admin de control positivo): lista sin «por cobrar», sin filtros de cobro y sin «de N»; ficha con la tarea y sin la nota privada (ni en texto, ni en el DOM, ni en un campo); «▶ Empezar» → `PATCH` 200 sin modal; «Abrir parte» → `POST /admin/partes` 201 y aterriza en el parte, que nace con la obra y el tipo del trabajo.
+
+**Lo que salió mal (A9).** Dos ceros falsos del propio banco, los dos cazados por el control de admin y arreglados EN el instrumento: `innerHTML` no lleva el `.value` de un `textarea` (la nota del admin daba dom=0, así que el cero del operario no probaba nada: `b-mirar.mjs` mira ahora texto, DOM y campos), y `/te\s+falta/` casaba «par-te / Falta la firma» (lleva `\b`). Y uno de nombre: un modo llamado `hoy` caduca el día que cambia producción; ya no se llama así.
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1686/banco-h6/b-mirar.mjs`

@@ -15,17 +15,23 @@
 //     (#3151). El dinero del trabajo y los precios del albarán SIGUEN viajando al operario real.
 //   · `1707` = lo que hará cuando entre #3153: además vacía el cobro del trabajo y los precios, totales e
 //     importes de los albaranes. Sirve para cazar cifras FALSAS del front («0,00 €», «NaN») ANTES del merge.
-export const RECORTE = process.env.RECORTE === '1707' ? '1707' : 'hoy';
+//
+// 16-nov-2026, 16:02Z · #3153 ENTRÓ en main (6ffa662fd03ad6994f08c9816de6f0c7307e14d0) y se desplegó: desde entonces
+// el modo que describe PRODUCCIÓN es `1707`, y pasa a ser el de por defecto. El modo que se llamaba `hoy` dejó de
+// ser verdad ese minuto (un nombre con fecha dentro caduca): se llama `antes-de-3153` y sólo sirve para repetir
+// las medidas del tramo 2 tal y como se tomaron. Las copias de abajo se cotejaron a mano con
+// `trabajoParaElRol.ts` y `albaranParaElRol.ts` de origin/main 4e2aaab3a55ed4779d9b6272751767940de39f38: iguales.
+export const RECORTE = process.env.RECORTE === 'antes-de-3153' ? 'antes-de-3153' : '1707';
 export const COPIADO_DE = process.env.COPIADO_DE || (RECORTE === '1707'
-  ? 'rama scrum-1707-operario-sin-dinero @ a93e096f698fd02fbee6f2a6a3e6c7850f34ea49 (#3153, SIN mergear)'
-  : 'origin/main @ 37947dc1522a094320a4499eac28800f38cdc659 (sólo notes: null)');
+  ? 'origin/main @ 4e2aaab3a55ed4779d9b6272751767940de39f38 (trabajoParaElRol + albaranParaElRol, #3153 dentro)'
+  : 'origin/main @ 37947dc1522a094320a4499eac28800f38cdc659 (ANTES de #3153: sólo notes: null)');
 const OPERARIO = process.env.OPERARIO_QA || 'Operario QA';
 
 // ── copia de src/modules/jobs/domain/albaranParaElRol.ts (rama del operario) ──
 const pendienteOp = (p) => ({ index: p?.index, concepto: p?.concepto, unidad: p?.unidad, servida: p?.servida, facturada: p?.facturada, pendiente: p?.pendiente });
 const lineaOp = (l) => ({ concepto: l?.concepto, cantidad: l?.cantidad, unidad: l?.unidad, ...(typeof l?.quoteLineIndex === 'number' ? { quoteLineIndex: l.quoteLineIndex } : {}) });
 export function albaranParaElOperario(a) {
-  if (RECORTE !== '1707') return a; // hoy main no recorta el albarán
+  if (RECORTE !== '1707') return a; // antes de #3153 main no recortaba el albarán
   const out = { ...a };
   if ('lineas' in a) out.lineas = Array.isArray(a.lineas) ? a.lineas.map(lineaOp) : [];
   if ('pendientes' in a) out.pendientes = Array.isArray(a.pendientes) ? a.pendientes.map(pendienteOp) : [];
@@ -35,7 +41,7 @@ export function albaranParaElOperario(a) {
 }
 // ── copia de src/modules/jobs/domain/trabajoParaElRol.ts (rama del operario) ──
 export function trabajoParaElOperario(t) {
-  if (RECORTE !== '1707') return { ...t, notes: null }; // copia de main (#3151)
+  if (RECORTE !== '1707') return { ...t, notes: null }; // copia de main ANTES de #3153 (sólo #3151)
   const out = { ...t, notes: null, totalCobrado: null, estadoCobro: null, remaining: null, nextStage: null, pendingStagesCount: 0, hasCustomPlan: false, invoices: [] };
   if ('charge' in t) out.charge = null;
   if (Array.isArray(t.albaranes)) out.albaranes = t.albaranes.map(albaranParaElOperario);
