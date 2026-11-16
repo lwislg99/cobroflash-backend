@@ -136,9 +136,11 @@ test('SCRUM-1442c · ① una cabecera de apartado dentro de una opción pinta su
 test('SCRUM-1442c · ② control: sin cabecera, las tres tarjetas pintan cantidad e importe como siempre', async () => {
   const pdf = await textoDelPdf(false);
   // El positivo de las negaciones de ①, con las MISMAS líneas: «× 1» y su importe siguen saliendo.
-  assert.equal(pdf.split('Revisión × 1121,00 EUR').length - 1, 3, `🔴 faltan líneas normales con su importe:\n  ${pdf}`);
-  assert.equal(pdf.split('Cambio de pieza × 196,80 EUR').length - 1, 2, pdf);
-  assert.ok(pdf.includes('Garantía × 160,50 EUR'), pdf);
+  // Desde SCRUM-1737 el importe de línea de la tarjeta va SIN IVA («sin IVA como está, solo al
+  // final»): 100,00 y no 121,00. Los totales de abajo, con IVA, no cambian.
+  assert.equal(pdf.split('Revisión × 1100,00 EUR').length - 1, 3, `🔴 faltan líneas normales con su importe:\n  ${pdf}`);
+  assert.equal(pdf.split('Cambio de pieza × 180,00 EUR').length - 1, 2, pdf);
+  assert.ok(pdf.includes('Garantía × 150,00 EUR'), pdf);
   for (const t of ['Total: 121,00 EUR', 'Total: 217,80 EUR', 'Total: 278,30 EUR']) assert.ok(pdf.includes(t), `falta «${t}»:\n  ${pdf}`);
   assert.ok(!pdf.includes('undefined') && !pdf.includes('NaN'), pdf);
 });
