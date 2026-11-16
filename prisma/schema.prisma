@@ -166,6 +166,8 @@ model Merchant {
   CustomerSite  CustomerSite[]
   // SCRUM-1296: los registros de este comercio en la cola de remisión a la AEAT.
   vfSubmissions VfSubmission[]
+  // SCRUM-1076d: lo que el profesional ha marcado en su calendario de plazos.
+  fiscalPlazosEstado FiscalPlazoEstado[]
 
   // SCRUM-293 (A2) · RETENCIÓN DE IRPF. Autorización expresa del fundador para ESTAS DOS LÍNEAS.
   //
@@ -1858,4 +1860,27 @@ model VfFlujoObligado {
   updatedAt           DateTime  @updatedAt @map("updated_at")
 
   @@map("vf_flujo_obligado")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-1076d · CALENDARIO DE PLAZOS: lo que el profesional MARCA, y nada más. Tabla y ALTER
+// aprobados por el fundador en SCRUM-1076 c.21877 (P6), con el modelo de c.21876 §2 (orden A5).
+// Sin fila = «Pendiente»: no hay valor por defecto que afirme nada, y «volver a pendiente» borra
+// la fila (no es un documento: la regla 29 no aplica). El estado NO se deduce de cobros ni de
+// documentos (aceptación 5). `estado` sólo admite hoy 'llevado_asesor' (lo comprueba el código).
+// `marcadoPor` es el `teamMemberId` de la sesión: NULL es el propietario del comercio.
+model FiscalPlazoEstado {
+  id         Int      @id @default(autoincrement())
+  merchantId Int      @map("merchant_id")
+  modelo     String   @map("modelo")
+  ejercicio  Int      @map("ejercicio")
+  periodo    String   @map("periodo")
+  estado     String   @map("estado")
+  marcadoAt  DateTime @default(now()) @map("marcado_at") @db.Timestamptz(3)
+  marcadoPor Int?     @map("marcado_por")
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@unique([merchantId, modelo, ejercicio, periodo])
+  @@map("fiscal_plazo_estado")
 }
