@@ -81,8 +81,10 @@ agentes leyeron un árbol compartido que otra sesión había dejado 9
 commits atrás.
 
 🔴 **Estas normas se leen con `node scripts/equipo/norma.mjs --arranque`,
-no enteras** (SCRUM-996d). Imprime las 14 secciones que hay que saber
-antes de tocar nada. Las demás se traen con `norma.mjs <id>` JUSTO
+no enteras** (SCRUM-996d). Imprime las 11 secciones que hay que saber
+antes de tocar nada y, de la A19, solo sus umbrales: lo que va antes de
+la A19.1 (SCRUM-996f, 17-nov-2026: de 39 KB a ~23 KB; la A19 entera se
+trae al relevar, `norma.mjs A19 --entera`). Las demás se traen con `norma.mjs <id>` JUSTO
 ANTES de hacer lo que dice esta tabla; si vas a hacerlo y no la has
 traído, la traes:
 
@@ -90,6 +92,8 @@ traído, la traes:
 |---|---|
 | tocar `prisma/schema.prisma` o pedir un ALTER | A5 |
 | decir que algo está hecho, o correr una suite completa | A6 |
+| abrir, coger, soltar o cerrar un ticket | A13 |
+| empujar una rama o editar el cuerpo de su PR | A24 |
 | proponer o editar una norma, o una frase de la casa | A10 · A11 |
 | barrer, borrar o renombrar en masa (ramas, ficheros, filas) | A12 |
 | apartar trabajo a medias | A15 |
@@ -670,21 +674,8 @@ segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar 
 - 🔴 **La COMPROBACIÓN al entregar — la hace la propia sesión, no espera a que se la pidan.** Tres
   casillas, cada una sí o no, después de cada entrega (push hecho o plan entregado):
   1. ¿He **medido** mi contexto? Es el `usage` del ÚLTIMO mensaje de mi propio jsonl: `input_tokens` +
-     `cache_read_input_tokens` + `cache_creation_input_tokens`. Estimarlo no vale.
-     - **«15.000.000 − restantes», el contador que enseña Claude Code, es una lectura válida de esa misma
-       suma:** la sigue a menos del 0,3 % (medido 2 de 2 por la S5, el 29-sep y el 1-oct-2026; SCRUM-1282).
-       Restarlo no es estimar. NO es el consumo acumulado: en la única sesión donde se sumó, el acumulado
-       era 32 veces mayor.
-     - **Desde fuera se lee en el latido** (`node scripts/equipo/latido.mjs`, sección CONTEXTO): corre desde
-       un árbol y da la cifra de cada sesión viva. `sesion.mjs contexto <nombre>` (el lanzador de la S5) lee
-       lo mismo, pero es de la copia INSTALADA y responde `ALTERADO` cada vez que un PR toca ese fichero y
-       nadie la refresca.
-     - **Si mi sesión ha COMPACTADO, lo digo al dar la cifra.** Al compactar, el número cae a ~70-80k
-       (medido sobre las 5 compactaciones de una transcripción: de 861-967k a 69-81k en las 4 que dejaron
-       un turno válido detrás) y es CIERTO como ocupación.
-       Lo que ya no dice es «sesión fresca»: desde ahí la sesión trabaja sobre un resumen de sí misma.
-       ⚠️ No medido: el contador visto desde DENTRO de una sesión recién compactada (una del otro equipo
-       leyó 6.108; ninguna nuestra lo ha cruzado con su jsonl).
+     `cache_read_input_tokens` + `cache_creation_input_tokens`. Estimarlo no vale. El contador de Claude
+     Code y el latido leen lo mismo; si has compactado, lo dices al dar la cifra (A19.1).
   2. ¿Lo **digo en el informe de entrega**, con la cifra, aunque sea bajo? Un informe sin la cifra no pasa
      esta casilla.
   3. ¿Pasa de **300k**? → no empiezo lo siguiente: escribo mi traspaso y pido el relevo por el canal.
@@ -692,6 +683,36 @@ segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar 
   Y **en mitad de una entrega**, si pasa de **500k**: busco el primer punto seguro (un commit local, nunca
   a medio editar), escribo el traspaso y pido el relevo. Es la única excepción a «nunca a mitad de una
   entrega» de abajo, y existe porque seguir hasta el final a ese tamaño cuesta más que un traspaso.
+
+  🔴 **Aviso a 115k; relevo a 300k mientras el arranque pase de 80k** (17-nov-2026, SCRUM-996f). Al pasar
+  de **115k**, la sesión lo dice en su siguiente informe, con la cifra medida (casilla 1). No es un relevo:
+  el relevo sigue siendo el de la casilla 3, al ENTREGAR la pieza en curso y con 300k de techo, mientras el
+  arranque de una sesión fresca pase de **80k** (medido el 17-nov-2026: suelo del primer turno 63k +
+  lectura ~58k ≈ 120k; con el relevo a 115k, una sesión fresca nacería ya por encima). Cuando el arranque
+  baje de 80k, acercar el relevo a 115k es coste, y es del fundador, como los otros dos números.
+
+  Lo que sigue (cómo se lee la cifra, el latido, el porqué de cada número, cómo se releva y qué lleva el
+  traspaso) se trae **al relevar**: `node scripts/equipo/norma.mjs A19 --entera`.
+
+### A19.1 · Al relevar, o para mover un número: el detalle
+
+- **Cómo se lee la cifra de la casilla 1:**
+  - **«15.000.000 − restantes», el contador que enseña Claude Code, es una lectura válida de esa misma
+    suma:** la sigue a menos del 0,3 % (medido 2 de 2 por la S5, el 29-sep y el 1-oct-2026; SCRUM-1282).
+    Restarlo no es estimar. NO es el consumo acumulado: en la única sesión donde se sumó, el acumulado
+    era 32 veces mayor.
+  - **Desde fuera se lee en el latido** (`node scripts/equipo/latido.mjs`, sección CONTEXTO): corre desde
+    un árbol y da la cifra de cada sesión viva. `sesion.mjs contexto <nombre>` (el lanzador de la S5) lee
+    lo mismo, pero es de la copia INSTALADA y responde `ALTERADO` cada vez que un PR toca ese fichero y
+    nadie la refresca.
+  - **Si mi sesión ha COMPACTADO, lo digo al dar la cifra.** Al compactar, el número cae a ~70-80k
+    (medido sobre las 5 compactaciones de una transcripción: de 861-967k a 69-81k en las 4 que dejaron
+    un turno válido detrás) y es CIERTO como ocupación.
+    Lo que ya no dice es «sesión fresca»: desde ahí la sesión trabaja sobre un resumen de sí misma.
+    ⚠️ No medido: el contador visto desde DENTRO de una sesión recién compactada (una del otro equipo
+    leyó 6.108; ninguna nuestra lo ha cruzado con su jsonl).
+- **El latido y los dos números:**
+
   **El latido avisa de este caso** (SCRUM-1484, en `main` desde el 6-oct-2026): a una sesión por encima de
   500k le dice «se releva YA, sin esperar a terminar — primer punto seguro (un commit local), traspaso y
   relevo», y a una que sólo ha pasado el umbral de entrega, «se releva AL TERMINAR su entrega». La frase
@@ -735,7 +756,7 @@ segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar 
   3. contesta **«traspaso listo»** por el canal y **PARA**, sin un comando más;
   4. el orquestador la detiene y lanza la sesión nueva con el prompt estándar y el encargo concreto;
   5. la nueva lee desde `origin/main` el `CLAUDE.md`, estas normas, su `sesion-N.md`, su fila de la
-     tabla §11bis y su traspaso, y se presenta por el canal: «Sesión N lista · <siguiente paso>».
+     tabla §11bis y su traspaso (no el histórico), y se presenta por el canal: «Sesión N lista · <siguiente paso>».
 
   El lanzador y su protocolo son de la S5 (`scripts/equipo/sesion.mjs`, `orquestador-autonomo.md`).
 - **Qué lleva el traspaso.** Es corto, y lo que no esté aquí la sesión nueva no lo sabe:
@@ -747,6 +768,12 @@ segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar 
      scratchpad se borra con la sesión: A8);
   5. **cola** de su carril, en orden;
   6. **autorizaciones que hay que volver a pedir** (punto siguiente).
+
+  🔴 **Cabe en 5 KB (A25) y se REEMPLAZA, no se apila** (17-nov-2026, SCRUM-996f). El relevo sustituye
+  el tramo vivo del traspaso por el suyo; lo viejo que merezca guardarse va a `project_sN_historico.md`
+  (`project_<puesto>_historico.md` para el resto), que **no se lee al arrancar**. Medido el 17-nov-2026:
+  los traspasos de S4 y S1 pesaban 100 y 144 KB, de 20 a 29 veces el tope, y a la S4 buscar solo sus
+  cabeceras le costó 10k. Cada puesto lo rota en su próximo relevo.
 - 🔴 **Las autorizaciones de un jefe NO se heredan.** Un GO de dinero, un alta en un servicio de
   terceros o un borrado que un jefe (Luis o Javier) escribió en el chat de una sesión valen para ESA
   sesión.
@@ -1101,10 +1128,11 @@ los tokens: son las **entregas que NOTA el profesional por millón de tokens**. 
 guardarraíl se deshace: **rojos de CI por entrega** y **correcciones tras entregar**.
 
 - **Mide y declara** tu contexto en cada informe de entrega (A19); estimarlo no vale.
-- **Arranque barato:** `norma.mjs --arranque`, traspaso ≤ 5 KB, ningún Read > 6 KB sin offset/limit,
+- **Arranque barato:** `norma.mjs --arranque`, traspaso ≤ 5 KB (se reemplaza en cada relevo; lo viejo
+  a `project_sN_historico.md`, que no se lee al arrancar: A19.1), ningún Read > 6 KB sin offset/limit,
   Grep antes que leer entero, salidas largas a fichero.
-- **Relevo a 300k** tras una entrega verificada, y a 500k en mitad de una (A19, que lleva la medición y el
-  coste del 6-oct-2026). Fue 300k hasta el 21-sep y 200k desde entonces: medido aquel día, una sesión de
+- **Aviso a 115k; relevo a 300k** tras una entrega verificada, y a 500k en mitad de una (A19, que lleva la
+  medición y el coste del 6-oct-2026; el aviso, del 17-nov-2026, vale mientras el arranque pase de 80k). Fue 300k hasta el 21-sep y 200k desde entonces: medido aquel día, una sesión de
   142 turnos fue el 48 % de las vivas, la mediana ACABABA en 337k y, simulado, 200k ahorraba el 43 % del
   contexto. Ese ahorro no llegó a cobrarse: el 6-oct, 35 de 42 sesiones pasaban de 200k y seguían.
 - **Al orquestador solo ENTREGA, BLOQUEO o DECISIÓN:** sin saludos ni acuses.
