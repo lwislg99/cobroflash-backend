@@ -72,8 +72,12 @@
     entrada: 'Entrada',
     // APROBADO · SCRUM-1215 comentario 17367
     salida: 'Salida',
-    // APROBADO · SCRUM-1215 comentario 17367
-    desplazamiento: 'Desplazamiento',
+    // SCRUM-1746 · el rótulo dice su UNIDAD. La casilla guarda el NÚMERO DE VIAJES (un entero) y no lo
+    // decía: en yaqu.app se rellenó «20» creyendo que eran kilómetros, con «Kilómetros» al lado. Solo
+    // cambia el rótulo; los tres avisos de más abajo tienen su firma (SCRUM-1491/1492) y no se tocan.
+    // APROBADO por el fundador el 17-nov-2026 (SCRUM-1746, en la descripción del ticket). Consta en
+    // `docs/microcopy/2026-11-17-SCRUM-1746-desplazamientos-numero-de-viajes.md`.
+    desplazamiento: 'Desplazamientos (nº de viajes)',
     // APROBADO · SCRUM-1215 comentario 17367
     kilometros: 'Kilómetros',
     // APROBADO · SCRUM-1215 comentario 17367

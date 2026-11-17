@@ -4147,6 +4147,10 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   gap: 10px;
   margin-bottom: 10px;
 }
+/* S4 · SCRUM-1746 · «Desplazamientos (nº de viajes)» ocupa dos líneas a 390 px y «Kilómetros» una. Las
+   dos casillas del par se alinean por ABAJO, que es donde se escribe: sin esto la de la izquierda
+   queda 20 px más baja que su vecina (medido en yaqu.app con el front local, 17-nov-2026). */
+.parte-horas-par { align-items: end; }
 .parte-ahora {
   min-height: 44px;
   margin-top: 6px;
