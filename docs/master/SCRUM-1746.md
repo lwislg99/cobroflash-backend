@@ -39,12 +39,17 @@ No cambian el dato, el esquema, la ruta ni el PDF.
 ## Verde
 
 - El test nuevo: 5 de 5.
-- Vecinos: los 296 ficheros de `tests/` que nombran `parteDetailView`, `PARTE_TEXTOS`, `renderParte`,
-  `microcopy` o el censo del convenio → 2.850 tests, 2.839 en verde, 9 saltos declarados
-  (`LIBRO_PG_URL`, `QA_DB_TEST`, `SERIE_PG_URL`) y **2 rojos que no son de este cambio**:
-  `tests/scrum1199-avisos-alta-cliente.test.mjs` pide `express` por la ruta literal
-  `<árbol>/node_modules/express`, y este worktree no tiene `node_modules` propio (resuelve hacia el
-  compartido). Es del entorno; en el CI hay `node_modules`.
+- Vecinos, sobre el árbol commiteado (`97e385fe5`): los 618 ficheros de `tests/` que nombran
+  `parteDetailView`, `PARTE_TEXTOS`, `renderParte`, `microcopy`, el censo del convenio, `styles.css`,
+  `docs/master` o la línea `A9:` → 5.316 tests, 5.196 en verde, 114 saltos y **6 rojos que no son de
+  este cambio**, los seis por lo mismo: este worktree no tiene `node_modules` propio (resuelve hacia el
+  compartido, un nivel más arriba).
+  - `scrum1199-avisos-alta-cliente` (2): pide `express` por la ruta literal `<árbol>/node_modules/express`.
+  - `scrum475-schema-vs-sql` (3): «la herramienta de la casa no responde» (el CLI de Prisma).
+  - `scrum476-reconciliar-censos` (1): «CERO directorios `node_modules` en el árbol».
+
+  En el CI hay `node_modules`: el veredicto de esos seis es el del check obligatorio, no el de aquí.
+  NO se ha corrido la suite completa en local (pide turno; A6).
 - En pantalla, con el banco H6 sobre yaqu.app y el front de esta rama servido encima
   (`LOCAL_DIR`; los datos son los de la cuenta QA), parte #23 (borrador) y parte #22 (firmado):
 
