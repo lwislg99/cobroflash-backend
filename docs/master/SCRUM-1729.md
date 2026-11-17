@@ -1,6 +1,8 @@
 # SCRUM-1729 — `causa` y las bocas de emisión transparentes: guard de solo lectura
 
-17-nov-2026 07:48Z (hora de GitHub) · medido sobre `origin/main` a3510f52b208b060e755c81e0c8cc1accc299672 · S1 · rama `scrum-1729-guard-causa-en-las-bocas`
+**Medido contra:** `origin/main` = `a3510f52b208b060e755c81e0c8cc1accc299672` · 2026-11-17T07:48:46Z
+
+S1 · rama `scrum-1729-guard-causa-en-las-bocas` · hora de GitHub (`gh api -i zen`)
 
 ## De dónde sale
 
