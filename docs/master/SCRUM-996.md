@@ -378,5 +378,17 @@ arranque» → `[ 'A13', 'A24' ]`. Ese rojo es la cerradura: la rama no se merge
   recalcula con la cifra, no se ensancha a ciegas.
 - Medido con un guion fuera del árbol sobre esta rama: **39.109 → 25.401 B** (−13,7 KB; ~4k tokens a 3,3 B/token).
 
+**4bis · Hecho por la S5 (17-nov, misma rama):** `ARRANQUE` a 12 entradas, sin A13 ni A24. Los cortes de A19 van
+ahora por modo: `CORTES_ARRANQUE` corta en una línea que EMPIEZA por `### A19.1` (una frase que lo cite no
+dispara el corte), y `CORTES` sigue cortando en «Cuarta versión» cuando la A19 se pide por id. `--entera` anula los
+dos. La nota del arranque: `[A19 cortada antes de «### A19.1» (el detalle y la historia); \`norma.mjs A19 --entera\`
+al relevar]`. En el test, `IDS_ARRANQUE` pasa a 12 y hay un control nuevo que distingue tres casos: el arranque deja
+fuera el detalle Y la historia, `A19` por id trae el detalle sin la historia, y `--entera` lo trae todo. «Sin
+marcador → entera» se prueba en los dos modos. «Falta A13 → salida 2» pasa a A14, y un caso nuevo dice que sin A13
+ni A24 el arranque sigue en verde. Horquilla del porcentaje: **28–40 %** alrededor de lo medido, **25.400 B de 75.830 B =
+33,5 %**. La S0 midió 25.401 B, uno más: la diferencia es de instrumento y no la he perseguido. Rojo de control: con
+`CORTES` en el arranque caen 3 tests; con el código final, 55/55 en verde en los 6 ficheros que leen las normas
+(996d incluido).
+
 **5 · Sin medir:** el suelo de 63k (la propuesta de lanzar UNA sesión sin los MCP que el puesto no usa sigue en pie;
 es de la S5) y el efecto real en U8 tras el merge: se mide con `gasto-arranque.mjs` en la primera tanda con la dieta.
