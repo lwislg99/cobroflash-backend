@@ -1,5 +1,7 @@
 # SCRUM-1740 · el albarán que nace de un trabajo con parte FIRMADO trae sus líneas (mitad SERVIDOR)
 
+**Medido contra:** `origin/main` = `e5145bc54e9709de09ac362a6d6c4d156bb32ac4` · 2026-11-17T17:19:39+00:00
+
 **Forma decidida:** SCRUM-1740 c.21982 (orquestador, por la delegación general del fundador,
 SCRUM-1656 c.21978). Al crear un albarán desde un trabajo cuyo último parte está FIRMADO, el
 borrador nace PRE-CARGADO con las líneas de ese parte (concepto y cantidad; SIN precios — nace sin
@@ -75,3 +77,5 @@ desechable (`LIBRO_PG_URL`, declarado en scrum419).
 Tras el merge: en yaqu.app, crear un albarán real desde un trabajo con parte firmado SIN `lineas`
 → nace con las líneas heredadas y sin precios. Hasta que S2 cablee la pantalla, se mide con la
 petición directa (sesión QA). El ticket no se cierra con esta mitad: lleva también la de S2.
+
+A9: comprobación → `tests/scrum267-ancla-de-medicion.test.mjs`
