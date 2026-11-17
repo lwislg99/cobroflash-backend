@@ -149,16 +149,12 @@ async function puertaDeLaFicha({ partes, falla = false }) {
   return { banco, boton, altas, navegado, avisos, jobId: 7, creado: 99 };
 }
 
-const PUERTAS = [
-  ['lista · «Abrir parte»', puertaDeLaLista],
-  ['ficha · «+ Nuevo parte»', puertaDeLaFicha],
-];
-
 const FIRMADO = { id: 9, numero: 'PT-2026-009', estado: 'firmado', fecha: HOY };
 const BORRADOR_DE_HOY = { id: 12, numero: 'PT-2026-012', estado: 'borrador', fecha: HOY };
 
-for (const [nombre, montar] of PUERTAS) {
-  test(`SCRUM-1751 · ${nombre} · último parte FIRMADO y sin borrador → sale el aviso, con el texto firmado, y NO crea`, async () => {
+// Cada caso es una función de la puerta (`montar`), y se registra abajo UNA vez por puerta con su
+// nombre ESCRITO: un nombre construido en un bucle no lo ve la señal por nombres (SCRUM-1415).
+  const casoAvisa = (montar) => async () => {
     const p = await montar({ partes: [FIRMADO] });
     p.boton.click();
     await espera();
@@ -176,9 +172,9 @@ for (const [nombre, montar] of PUERTAS) {
     assert.ok(!tiene(botones[0], 'btn-primary'), `🔴 «${CANCELAR}» también es primaria: dos primarias en un aviso`);
     assert.deepEqual(p.altas, [], '🔴 creó el parte ANTES de que nadie contestara al aviso');
     assert.deepEqual(plano(p.navegado), [], '🔴 navegó antes de que nadie contestara al aviso');
-  });
+  };
 
-  test(`SCRUM-1751 · ${nombre} · «Crear parte nuevo» crea UNO, lo abre y cierra el aviso`, async () => {
+  const casoCrea = (montar) => async () => {
     const p = await montar({ partes: [FIRMADO] });
     p.boton.click();
     await espera();
@@ -189,9 +185,9 @@ for (const [nombre, montar] of PUERTAS) {
     assert.deepEqual(p.altas, [{ jobId: p.jobId }], `🔴 se esperaba UN alta del trabajo ${p.jobId}: ${JSON.stringify(p.altas)}`);
     assert.deepEqual(plano(p.navegado), [['parte-detail', { parteId: p.creado }]], `🔴 navegó a ${JSON.stringify(p.navegado)}`);
     assert.equal(modales(p.banco).length, 0, '🔴 el aviso sigue abierto encima del parte recién creado');
-  });
+  };
 
-  test(`SCRUM-1751 · ${nombre} · «Cancelar» no crea, no navega, cierra el aviso y deja la puerta viva`, async () => {
+  const casoCancela = (montar) => async () => {
     const p = await montar({ partes: [FIRMADO] });
     p.boton.click();
     await espera();
@@ -203,9 +199,9 @@ for (const [nombre, montar] of PUERTAS) {
     assert.deepEqual(plano(p.navegado), [], '🔴 «Cancelar» navegó');
     assert.equal(modales(p.banco).length, 0, '🔴 el aviso sigue abierto tras «Cancelar»');
     assert.ok(!p.boton.disabled, '🔴 la puerta se queda deshabilitada tras «Cancelar»: un botón muerto');
-  });
+  };
 
-  test(`SCRUM-1751 · ${nombre} · si el alta falla tras aceptar, sale el aviso de siempre y no navega`, async () => {
+  const casoFalla = (montar) => async () => {
     const p = await montar({ partes: [FIRMADO], falla: true });
     p.boton.click();
     await espera();
@@ -217,26 +213,39 @@ for (const [nombre, montar] of PUERTAS) {
     assert.deepEqual(plano(p.navegado), [], '🔴 navegó a un parte que no se creó');
     assert.deepEqual(plano(p.avisos), ['No se ha podido abrir el parte. Vuelve a intentarlo.'],
       `🔴 el fallo del alta no se dice (o se dice con otro texto): ${JSON.stringify(p.avisos)}`);
-  });
+  };
 
-  test(`SCRUM-1751 · ${nombre} · con un BORRADOR, todo como antes: lo abre, sin aviso y sin crear`, async () => {
+  const casoConBorrador = (montar) => async () => {
     const p = await montar({ partes: [FIRMADO, BORRADOR_DE_HOY] });
     p.boton.click();
     await espera();
     assert.equal(modales(p.banco).length, 0, '🔴 sale el aviso habiendo un borrador que abrir');
     assert.deepEqual(p.altas, [], '🔴 creó un parte habiendo un borrador');
     assert.deepEqual(plano(p.navegado), [['parte-detail', { parteId: 12 }]], `🔴 navegó a ${JSON.stringify(p.navegado)}`);
-  });
+  };
 
-  test(`SCRUM-1751 · ${nombre} · sin NINGÚN parte, crea el de la primera visita sin aviso`, async () => {
+  const casoSinPartes = (montar) => async () => {
     const p = await montar({ partes: [] });
     p.boton.click();
     await espera();
     assert.equal(modales(p.banco).length, 0, '🔴 sale el aviso sin que haya ningún parte firmado');
     assert.deepEqual(p.altas, [{ jobId: p.jobId }], `🔴 se esperaba UN alta: ${JSON.stringify(p.altas)}`);
     assert.deepEqual(plano(p.navegado), [['parte-detail', { parteId: p.creado }]]);
-  });
-}
+  };
+
+test('SCRUM-1751 · lista · «Abrir parte» · último parte FIRMADO y sin borrador → sale el aviso, con el texto firmado, y NO crea', casoAvisa(puertaDeLaLista));
+test('SCRUM-1751 · lista · «Abrir parte» · «Crear parte nuevo» crea UNO, lo abre y cierra el aviso', casoCrea(puertaDeLaLista));
+test('SCRUM-1751 · lista · «Abrir parte» · «Cancelar» no crea, no navega, cierra el aviso y deja la puerta viva', casoCancela(puertaDeLaLista));
+test('SCRUM-1751 · lista · «Abrir parte» · si el alta falla tras aceptar, sale el aviso de siempre y no navega', casoFalla(puertaDeLaLista));
+test('SCRUM-1751 · lista · «Abrir parte» · con un BORRADOR, todo como antes: lo abre, sin aviso y sin crear', casoConBorrador(puertaDeLaLista));
+test('SCRUM-1751 · lista · «Abrir parte» · sin NINGÚN parte, crea el de la primera visita sin aviso', casoSinPartes(puertaDeLaLista));
+
+test('SCRUM-1751 · ficha · «+ Nuevo parte» · último parte FIRMADO y sin borrador → sale el aviso, con el texto firmado, y NO crea', casoAvisa(puertaDeLaFicha));
+test('SCRUM-1751 · ficha · «+ Nuevo parte» · «Crear parte nuevo» crea UNO, lo abre y cierra el aviso', casoCrea(puertaDeLaFicha));
+test('SCRUM-1751 · ficha · «+ Nuevo parte» · «Cancelar» no crea, no navega, cierra el aviso y deja la puerta viva', casoCancela(puertaDeLaFicha));
+test('SCRUM-1751 · ficha · «+ Nuevo parte» · si el alta falla tras aceptar, sale el aviso de siempre y no navega', casoFalla(puertaDeLaFicha));
+test('SCRUM-1751 · ficha · «+ Nuevo parte» · con un BORRADOR, todo como antes: lo abre, sin aviso y sin crear', casoConBorrador(puertaDeLaFicha));
+test('SCRUM-1751 · ficha · «+ Nuevo parte» · sin NINGÚN parte, crea el de la primera visita sin aviso', casoSinPartes(puertaDeLaFicha));
 
 test('SCRUM-1751 · ficha · firmado HOY y un borrador de OTRO día: crea como antes, sin aviso (hay borrador)', async () => {
   // La ficha sólo ABRE el borrador de HOY (SCRUM-1694); con uno de otro día crea el de esta visita.

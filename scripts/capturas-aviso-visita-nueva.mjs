@@ -57,8 +57,8 @@ const RUTAS = [
   { ruta: '/ficha', fnVista: 'renderJobDetailView', datos: datosFicha, args: '[7]' },
 ];
 
-/** Ninguna animación en marcha. Se evalúa DENTRO de la página. */
-const QUIETO = () => document.getAnimations().every((a) => a.playState !== 'running');
+/** Ninguna animación en marcha. Es TEXTO a propósito: se evalúa DENTRO de la página, no aquí. */
+const QUIETO = "document.getAnimations().every((a) => a.playState !== 'running')";
 
 fs.mkdirSync(DESTINO, { recursive: true });
 const { browser } = await abrirNavegador(puppeteer);
