@@ -95,10 +95,13 @@ export async function generateAlbaranPdf(params: {
   // SCRUM-68: evidencias de firma para el certificado. ⚠️ ip/ua vienen en el objeto pero
   // NO se pintan (solo hash/firmante/canal/sello temporal). Ver bloque "Certificado".
   evidencia?: FirmaEvidencia | null;
+  // SCRUM-1744 · el fichero en disco, cuando NO es el papel del negocio (el del operario, sin
+  // precios). Ausente = el de siempre: los albaranes salen byte a byte como salían.
+  nombreDeArchivo?: string;
 }): Promise<{ outPath: string }> {
   // SCRUM-48: la serie ALB- solo es única POR merchant (@@unique([merchantId, numero]));
   // sin el prefijo, dos merchants con ALB-2026-001 se pisaban el PDF en disco.
-  const fileName = `${params.merchantId}-${params.numero}.pdf`;
+  const fileName = params.nombreDeArchivo ?? `${params.merchantId}-${params.numero}.pdf`;
   const outPath = path.join(albaranesDir, fileName);
 
   // Tokens de DESIGN.md adaptados a papel (mismos del PDF de factura)
