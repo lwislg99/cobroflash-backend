@@ -1418,6 +1418,12 @@
     return typeof window.mensajeDeFalloAlFirmar === 'function' ? window.mensajeDeFalloAlFirmar(e, estado) : '';
   }
 
+  /** SCRUM-1742 · el nombre del técnico del parte si hay EXACTAMENTE uno; si no, ''. */
+  function elUnicoTecnico(parte) {
+    var t = parte && Array.isArray(parte.tecnicos) ? parte.tecnicos : [];
+    return t.length === 1 && typeof t[0] === 'string' ? t[0].trim() : '';
+  }
+
   function firmarParte(parte, opciones, quien) {
     var o = opciones || {};
     var cual = FIRMAS[quien || 'cliente'];
@@ -1459,8 +1465,11 @@
           return { concepto: l && l.descripcion, cantidad: l && l.unds, unidad: ETIQUETA_BLOQUE[l && l.bloque] };
         }),
       },
+      // SCRUM-1742 · el campo del TÉCNICO nace con su nombre cuando el parte nombra a UNO solo: es
+      // quien usa la app y el documento ya lo dice («Técnicos»). Con dos o con ninguno no se sabe
+      // quién firma, y nace vacío. El del CLIENTE no se toca (SCRUM-300: nace vacío siempre).
       firmante: esTecnico
-        ? { sugerencia: '', sinCalidad: true }
+        ? { sugerencia: '', sinCalidad: true, nombreInicial: elUnicoTecnico(parte) }
         : { sugerencia: parte.clienteNombre || '' },
       onConfirm: async function (dataUri, declaracion) {
         // El pad declara siempre `firmadoPorNombre`; cada ruta lee SU campo (`partes.routes.ts`:
