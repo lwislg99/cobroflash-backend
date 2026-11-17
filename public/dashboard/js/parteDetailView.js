@@ -74,7 +74,8 @@
     salida: 'Salida',
     // SCRUM-1746 · el rótulo dice su UNIDAD. La casilla guarda el NÚMERO DE VIAJES (un entero) y no lo
     // decía: en yaqu.app se rellenó «20» creyendo que eran kilómetros, con «Kilómetros» al lado. Solo
-    // cambia el rótulo; los tres avisos de más abajo tienen su firma (SCRUM-1491/1492) y no se tocan.
+    // cambia el rótulo; los tres avisos de más abajo tenían su firma (SCRUM-1491/1492) y SCRUM-1746 no
+    // los tocó: pasaron al plural después, con firma propia (SCRUM-1752).
     // APROBADO por el fundador el 17-nov-2026 (SCRUM-1746, en la descripción del ticket). Consta en
     // `docs/microcopy/2026-11-17-SCRUM-1746-desplazamientos-numero-de-viajes.md`.
     desplazamiento: 'Desplazamientos (nº de viajes)',
@@ -108,8 +109,12 @@
     // enorme y el negativo llevan código y texto propios, más abajo.
     // SCRUM-1492 · también se dice cuando es la CASILLA la que no entiende lo tecleado («1e»): es
     // el mismo error visto por el profesional, cazado en otro sitio. Estirón firmado en c.18633.
-    // APROBADO · SCRUM-1491 comentario 18517
-    desplazamientoEsEntero: 'No se ha guardado. Desplazamiento es un número entero, como 1 o 2 — no el tiempo de viaje',
+    // SCRUM-1752 · «Desplazamientos», como el rótulo de la casilla desde SCRUM-1746. Cambia UNA letra;
+    // el verbo sigue en «es», como en `kilometrosEsUnNumero`: nombra la casilla. La firma anterior
+    // (SCRUM-1491 comentario 18517) era del literal en singular. Consta en
+    // `docs/microcopy/2026-11-17-SCRUM-1752-avisos-desplazamientos-plural.md`.
+    // APROBADO · SCRUM-1752 comentario 21987
+    desplazamientoEsEntero: 'No se ha guardado. Desplazamientos es un número entero, como 1 o 2 — no el tiempo de viaje',
     // SCRUM-1492 · lo tecleado en Kilómetros que la casilla no entiende como número («1e», «-»,
     // «,»). No se manda nada y se dice lo que VALE. «No se ha podido guardar el cambio» sería
     // falso: nada ha fallado, no se ha intentado.
@@ -122,12 +127,14 @@
     // en el general, y «vuelve a intentarlo» ahí es falso: `-3` no va a entrar nunca. Los dos de
     // «negativo» dicen lo que VALE. Los de «no cabe» no: lo que vale es el tope de la columna, que
     // a un profesional no le dice nada.
-    // APROBADO · SCRUM-1492 comentario 18706
-    desplazamientoEsCeroOMas: 'No se ha guardado. Desplazamiento es 0 o más',
+    // SCRUM-1752 · los dos de Desplazamientos pasan al plural del rótulo (una letra cada uno); su
+    // firma anterior, en singular, era SCRUM-1492 comentario 18706. Los de Kilómetros no cambian.
+    // APROBADO · SCRUM-1752 comentario 21987
+    desplazamientoEsCeroOMas: 'No se ha guardado. Desplazamientos es 0 o más',
     // APROBADO · SCRUM-1492 comentario 18706
     kilometrosEsCeroOMas: 'No se ha guardado. Kilómetros es 0 o más',
-    // APROBADO · SCRUM-1492 comentario 18706
-    desplazamientoDemasiadoGrande: 'No se ha guardado. Ese número es demasiado grande para Desplazamiento',
+    // APROBADO · SCRUM-1752 comentario 21987
+    desplazamientoDemasiadoGrande: 'No se ha guardado. Ese número es demasiado grande para Desplazamientos',
     // APROBADO · SCRUM-1492 comentario 18706
     kilometrosDemasiadoGrande: 'No se ha guardado. Ese número es demasiado grande para Kilómetros',
     // APROBADO · SCRUM-1215 comentario 17367

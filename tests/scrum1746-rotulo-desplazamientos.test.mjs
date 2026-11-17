@@ -11,8 +11,9 @@
 //   ① el literal firmado, letra a letra;
 //   ② se pinta en la hoja del parte en sus DOS estados (borrador, con casilla; firmado, con dato), una
 //      vez, junto a «Kilómetros», y el rótulo viejo a secas ya no sale;
-//   ③ ningún otro texto cambia: los tres avisos de la misma casilla tienen firma propia (SCRUM-1491 y
-//      SCRUM-1492) y siguen diciendo lo que decían;
+//   ③ SCRUM-1746 no cambió ningún otro texto. Los tres avisos de la misma casilla tenían firma propia
+//      (SCRUM-1491 y SCRUM-1492) y pasaron al plural después, con la suya: SCRUM-1752 c.21987. Aquí se
+//      fija cómo quedan hoy; su test es `scrum1752-avisos-desplazamientos-plural.test.mjs`;
 //   ④ la firma tiene su ficha en `docs/microcopy/`, con el literal y la línea de aprobación.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -84,11 +85,11 @@ test('SCRUM-1746 ② el parte FIRMADO pinta el rótulo firmado junto a «Kilóme
   elRotuloSePinta(YA_FIRMADO, 'data-parte-dato');
 });
 
-test('SCRUM-1746 ③ solo el rótulo: los tres avisos de la casilla (firmas de SCRUM-1491 y SCRUM-1492) no cambian', () => {
+test('SCRUM-1746 ③ los tres avisos de la casilla dicen lo que firmó SCRUM-1752 (el plural del rótulo) y el vecino no cambia', () => {
   const T = cargarDashboard(RAIZ).ctx.PARTE_TEXTOS;
-  assert.equal(T.desplazamientoEsEntero, 'No se ha guardado. Desplazamiento es un número entero, como 1 o 2 — no el tiempo de viaje');
-  assert.equal(T.desplazamientoEsCeroOMas, 'No se ha guardado. Desplazamiento es 0 o más');
-  assert.equal(T.desplazamientoDemasiadoGrande, 'No se ha guardado. Ese número es demasiado grande para Desplazamiento');
+  assert.equal(T.desplazamientoEsEntero, 'No se ha guardado. Desplazamientos es un número entero, como 1 o 2 — no el tiempo de viaje');
+  assert.equal(T.desplazamientoEsCeroOMas, 'No se ha guardado. Desplazamientos es 0 o más');
+  assert.equal(T.desplazamientoDemasiadoGrande, 'No se ha guardado. Ese número es demasiado grande para Desplazamientos');
   assert.equal(T.kilometros, 'Kilómetros', 'el vecino tampoco');
 });
 
