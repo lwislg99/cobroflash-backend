@@ -261,6 +261,10 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // número de trabajo (columna suelta) y con la sesión del técnico asignado. Sólo el desechable: crea y
   // borra dos merchants. La regla pura (orden y recuento) va en el mismo fichero y corre sin banco.
   'scrum1697b-visita-en-el-servidor.test.mjs': 1,
+  // SCRUM-1662 (c) · c.21964: el GET del parte trae `queHayQueHacer` LEÍDO del trabajo. Necesita banco
+  // porque mide la ruta entera con sesiones reales (jefe, técnico asignado, técnico ajeno) y que la
+  // lectura es EN VIVO (cambia el trabajo → cambia el GET). Sólo el desechable: crea y borra un merchant.
+  'scrum1662c-parte-que-hay-que-hacer-get.test.mjs': 1,
   // SCRUM-1403: los TRES que ejercitan el recorte de presupuestos del Tecnico y la pestana de
   // documentos de la ficha de cliente contra Prisma de verdad. Necesitan banco por el mismo motivo
   // que los de SCRUM-1397: lo que vigilan es el WHERE (el recorte en AND con la busqueda y con el
