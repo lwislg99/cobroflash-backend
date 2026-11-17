@@ -501,6 +501,8 @@ const routerDe = (mod) => mod.default?.default ?? mod.default;
 
 async function invocarAlta(job, cuerpo = {}) {
   moduloPrisma.prisma.job = { findFirst: async () => job, findUnique: async () => job };
+  // SCRUM-1740: el alta sin `lineas` mira el último parte del trabajo; aquí no hay ninguno (= vacío).
+  moduloPrisma.prisma.parteTrabajo = { findFirst: async () => null };
   moduloPrisma.prisma.$transaction = async () => ({
     id: 9, jobId: job?.id ?? 1, numero: 'A-2026-0001', fecha: new Date(),
     modoValoracion: 'SIN_VALORAR', lineas: [], estado: 'borrador', version: 1,
