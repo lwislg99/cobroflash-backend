@@ -251,6 +251,10 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // FILA del albarán (modo, precio, versión) tras cada intento. Sólo el desechable: crea y borra un
   // merchant. La regla pura y el cableado por AST van en el mismo fichero y corren sin banco.
   'scrum1712-precios-del-albaran-solo-admin.test.mjs': 1,
+  // SCRUM-1744: el PDF del albarán sale sin precios para el operario. Necesita banco porque entra por
+  // la RUTA real del PDF con sesiones de técnico y de admin guardadas en la base. Sólo el desechable
+  // (LIBRO_PG_URL o QA_DB_TEST): crea y borra un merchant. Lo que no necesita banco corre siempre.
+  'scrum1744-pdf-del-albaran-sin-precios-operario.test.mjs': 1,
   // SCRUM-1714: verifactu.xml y datos.zip miran el SII como el modo de emisión. Necesita banco porque
   // entra por las dos RUTAS reales de exportación con merchants guardados en la base (con el flag
   // encendido y el SII contestado de distintas formas) y mira lo que sirven. Sólo el desechable: crea
