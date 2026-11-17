@@ -4590,6 +4590,13 @@ textarea.parte-linea-desc {
   .jobs-modal .jobs-modal-pie button,
   .jobs-modal .jobs-modal-cuerpo :is(.input, select, textarea) { min-height: 44px; }
 }
+/* SCRUM-1745c · POR DEBAJO DE 360, el Concepto gana 8 px de texto (su relleno lateral baja de 12 a 8).
+   Medido con Inter, que es la letra del panel: a 320 el campo enseñaba 196 px y un concepto de 31
+   letras («(prueba) Revisión de la caldera») pide 198,1 — se quedaba 2 px corto. A 360 y a 390 sobran
+   38 y 68, y ahí no se toca nada. La caja no se mueve: sólo el texto empieza 4 px antes. */
+@media (max-width: 359px) {
+  .modal-body div:has(> .alb-precio-field) > .input:first-child { padding-inline: 8px; }
+}
 /* ══ fin S4 · SCRUM-1745 ══ */
 /* Las tres fichas del tipo: 48 px de alto y la ficha entera recibe el toque. */
 .parte-tipo .parte-tipo-ficha {

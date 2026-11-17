@@ -120,3 +120,36 @@ Escrituras de las nueve pasadas: sólo `POST /admin/entorno`. No se guardó ni s
 - Dejé el directorio de trabajo dentro de `docs/master/evidencias` con un `cd`, y el hook `guard-dangerous` (ruta relativa) dejó de encontrarse y bloqueó todo hasta volver a la raíz del árbol.
 
 A9: comprobación → `docs/master/evidencias/SCRUM-1745/r42-hoja-y-agendar.mjs`
+
+## SCRUM-1745c (17-nov-2026, S4) · el guard medía con la letra de cada máquina, y con la del panel faltaban 2 px a 320
+
+**Qué pasó.** `guard:hojas-del-trabajo-44` salió en rojo en el CI de `main` (run 44131850649, sobre `e5145bc54`): 4 hallazgos, los cuatro del control C y los cuatro a 320×568 — «el campo enseña 196 px de 211» y «196 de 209». El mismo árbol, con el mismo CSS, daba 18 de 18 en esta máquina. Los 44 px de toque (A y B) daban verde en los dos sitios.
+
+**Causa, medida.** La página del banco enlazaba `tokens.css` y `styles.css` escritos a mano, sin `/fonts/inter.css`, que es la tercera hoja de `public/dashboard/index.html`. El texto se pintaba con la letra de reserva de cada máquina: Segoe UI aquí (cabía), otra en el runner (no cabía). El campo medía lo mismo en los dos, 196 px; lo que cambiaba era el ancho del texto. Ninguna de las dos medidas era la de quien usa la hoja, que ve Inter. Además, el servidor del banco leía todo fichero como texto: las `.woff2` habrían llegado rotas.
+
+Es la familia de **SCRUM-1603** (el banco que mide con la letra de reserva), que ya tiene instrumento en la casa: `scripts/_hojas-del-panel.mjs` saca las hojas del índice, espera las caras y dice si alguna no llegó. Este guard nació después y no lo usó; el test de 1603 nombra tres bancos y éste no estaba entre ellos. **Un guard que compara el ancho de un texto con algo tiene que medir con la letra del panel.** Contado por encima, sin verificar uno a uno: 13 scripts de `scripts/` enlazan `styles.css` sin la letra ni un banco de la casa; cuáles miden texto y cuáles no, no lo sé. Avisado al orquestador.
+
+**Con la letra real quedaba un defecto de verdad.** Con Inter, a 320, «(prueba) Revisión de la caldera» (31 letras) pide 198,1 px y el campo enseñaba 196: 2 px corto. A 360 sobran 38 y a 390, 68. Ni el verde de aquí ni el rojo del CI eran la medida buena.
+
+**Qué se cambió.**
+- `public/dashboard/css/styles.css`, dentro del bloque de S4: por debajo de 360 px el relleno lateral del Concepto baja de 12 a 8, y el campo enseña 204 px. La caja no se mueve; el texto empieza 4 px antes. A 360, 390 y 1280 no cambia nada. Ni un texto nuevo.
+- `scripts/guard-hojas-del-trabajo-44.mjs`: las hojas salen del índice, con su letra; las caras se esperan antes de abrir la hoja y otra vez antes de medir; sin letra el caso es CIEGO; la salida dice con qué letra midió («LETRA: Inter · caras cargadas 5 de 35»); las letras se sirven en bytes. Control nuevo, **G**: sin el bloque, C tiene que ver Conceptos cortados (ve 16). F no bastaba: se cumple con los 44 px solos aunque C no mirase. El criterio de C y su texto de prueba no se han tocado.
+
+**Medido** en esta máquina (Windows). El verde, tres pasadas seguidas; cada mutación, una, sobre una copia del guard que se borra.
+
+| qué se le hace | salida | qué dice |
+|---|---|---|
+| nada (el arreglo entero) | 0 | 18 de 18 · LETRA: Inter, 5 de 35 · sin el bloque, 132 cortos, 16 de ellos Conceptos cortados |
+| la letra, sin la regla de 359 px (rojo primero) | 1 | 4 casos, a 320: «el campo enseña 196 px de 198» |
+| las `.woff2` dan 404 | 2 | FUENTE ROTA: 5 de 35 caras no se pudieron bajar |
+| `/fonts/inter.css` da 404 | 2 | HOJA SIN CARGAR: /fonts/inter.css |
+| C no mira (`cabe` siempre cierto) | 2 | G · C ve 0 Conceptos cortados en 8 hojas de móvil |
+| las letras, servidas como texto | 2 | FUENTE ROTA |
+
+**Capturas.** `hoja-con-precios-320-inter-antes.png` (con Inter, sin la regla) y `hoja-con-precios-320-despues.png`. Esta segunda **sustituye** a la que había con ese nombre, que estaba hecha con Segoe UI: la pisé al copiar y el hook no deja restaurarla sin commit; la de antes sigue en la historia de git (`6693f963a`).
+
+**Lo que NO está medido.** Que Inter mida lo mismo en el runner que aquí: lo dirá el CI (el margen a 320 es de 5,9 px). La hoja en un móvil de 320 de verdad. Safari. La regla 42 de este cambio (yaqu.app a 320) queda por hacer tras el despliegue.
+
+**Lo que salió mal (A9).** El guard se entregó en SCRUM-1745 con «18 de 18, tres pasadas» y las tres eran en la misma máquina: una medida de texto que sólo se ha visto con una letra no se ha visto. Y la regla 42 de 1745b corrió este mismo guard contra el CSS de producción, pero con el banco de aquí: tampoco vio Inter.
+
+A9: comprobación → `scripts/guard-hojas-del-trabajo-44.mjs`
