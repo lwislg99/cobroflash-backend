@@ -4556,6 +4556,41 @@ textarea.parte-linea-desc {
 }
 .parte-tarea .detail-tarea { font-size: 1rem; line-height: 1.5; color: var(--ink); }
 /* ══ fin S4 · SCRUM-1662 (d) ══ */
+/* ══ S4 · SCRUM-1745 · LA HOJA DEL ALBARÁN Y LOS MODALES DE TRABAJOS, AL PULGAR (≤ 768 px) ══
+   Medido en yaqu.app a 390 (recorrido H6 de SCRUM-1686, fila 29): en la hoja «Editar albarán» el
+   Concepto medía 30 px de ancho con precios (enseñaba 4 px de un texto de 182), los campos de la línea
+   36, las casillas 13×13 y el «✕» 34 de ancho; en el modal «Agendar», los botones 30 y la fecha 38.
+   SÓLO CSS y sólo en móvil: `jobDetailView.js` y `jobAgendar.js` no se tocan, así que se selecciona por
+   lo que hay.
+   · La hoja se reconoce por su contenido, no por su rótulo: `.modal-body:has(.alb-precio-field)` es el
+     cuerpo que pinta `buildAlbEditor` (las dos columnas de precio están SIEMPRE en el DOM; sin precios
+     van ocultas). Entran así «Editar albarán» y la hoja de alta, que comparten editor.
+   · La fila de una línea es el `div` que tiene de hija directa una `.alb-precio-field`. El Concepto (su
+     primera hija) ocupa el renglón menos el hueco del «✕», que sube a su lado con `order`; cantidad,
+     unidad, precio e IVA van debajo. El `!important` es porque el JS pone `flex:3;min-width:0` EN LÍNEA.
+     El orden del DOM (el del teclado y el del lector) no cambia: Concepto → … → Quitar línea.
+     Cada línea ocupa ahora dos renglones, así que entre una y la siguiente van 16 px (el JS pone 6 en
+     línea, que es lo que separa los dos renglones de la misma): se ve qué cantidad es de qué concepto.
+   · Casillas: la del navegador mide 13 px; el `::before` le da 13 + 2 × 16 = 45 (el patrón de
+     `.catalogo-productos`, más arriba) y su `label` crece a 44 para que dos casillas seguidas no se pisen.
+   · `.jobs-modal` es el modal de la casa de Trabajos (`jobsModal`): Agendar, Reagendar y los demás que
+     abren la lista y la ficha. Los botones del pie y los campos van TODOS a 44, no sólo los de Agendar:
+     el defecto es del componente. El guard mide Agendar y Reagendar.
+   Los «?» y «×» de la cabecera ya dan 45 de toque (SCRUM-962d, de S2) y no se tocan.
+   Lo vigila `npm run guard:hojas-del-trabajo-44`, que mide además que a 1280 nada cambia. */
+@media (max-width: 768px) {
+  .modal-body:has(.alb-precio-field) .input { min-height: 44px; }
+  .modal-body:has(.alb-precio-field) label:has(> input[type="checkbox"]) { min-height: 44px; }
+  .modal-body:has(.alb-precio-field) label > input[type="checkbox"] { position: relative; }
+  .modal-body:has(.alb-precio-field) label > input[type="checkbox"]::before { content: ""; position: absolute; inset: -16px; }
+  .modal-body div:has(> .alb-precio-field) { margin-bottom: 16px !important; }
+  .modal-body div:has(> .alb-precio-field) > .input:first-child { order: 0; flex: 1 1 calc(100% - 50px) !important; }
+  .modal-body div:has(> .alb-precio-field) > button { order: 1; min-width: 44px; }
+  .modal-body div:has(> .alb-precio-field) > .input:not(:first-child) { order: 2; }
+  .jobs-modal .jobs-modal-pie button,
+  .jobs-modal .jobs-modal-cuerpo :is(.input, select, textarea) { min-height: 44px; }
+}
+/* ══ fin S4 · SCRUM-1745 ══ */
 /* Las tres fichas del tipo: 48 px de alto y la ficha entera recibe el toque. */
 .parte-tipo .parte-tipo-ficha {
   display: inline-flex;

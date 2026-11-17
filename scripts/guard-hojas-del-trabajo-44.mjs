@@ -154,6 +154,18 @@ const ABRIR = new Function('caso', `
   return document.querySelector('.modal-overlay [role="dialog"], .modal-overlay[role="dialog"]') ? null : 'no hay diálogo en el DOM';
 `);
 
+/**
+ * LA HOJA HA TERMINADO DE ENTRAR. `.modal` entra animada (`slide-up` de 0,18 s en escritorio y
+ * `slide-from-bottom` de 0,22 s por debajo de 640 px): medida a media entrada, la caja se mueve entre
+ * que el medidor la lee y la pulsa. Así salieron, antes de esperar aquí, tres resultados que no eran
+ * del producto: la fecha de Agendar CIEGA a 390 («el detector no lo alcanza ni en su centro») unas
+ * veces sí y otras no, «Cancelar» con 42,5 px de toque en una caja de 44, y el «?» de la cabecera
+ * bailando de 44,5 a 44,9 a 1280 (que tumbaba E). Si a los 5 s sigue animando, el caso es CIEGO.
+ */
+const SIN_ANIMACIONES = new Function(`
+  return document.getAnimations().every(function (a) { return a.playState !== 'running'; });
+`);
+
 /** El censo de lo que se puede pulsar dentro del diálogo, con su caja y su ÁREA de toque. */
 const CENSAR = new Function('SEL', 'CONCEPTO', `
   return (async function () {
@@ -231,6 +243,8 @@ async function medir(navegador, caso, variante) {
     await pag.goto(`http://127.0.0.1:${PUERTO}/dashboard/__hojas.html?variante=${variante}`, { waitUntil: 'load' });
     const fatal = await pag.evaluate(ABRIR, caso);
     if (fatal) return { fatal: fatal + (errores.length ? ' · errores de página: ' + errores.join(' | ') : '') };
+    const quieta = await pag.waitForFunction(SIN_ANIMACIONES, { timeout: 5000 }).then(() => true, () => false);
+    if (!quieta) return { fatal: 'la hoja no termina de entrar: a los 5 s sigue habiendo animaciones en marcha' };
     await pag.evaluate(FUENTE_MEDIDOR);
     const censo = await pag.evaluate(CENSAR, INTERACTIVOS, CONCEPTO);
     await pag.evaluate(() => { const m = document.querySelector('.modal-overlay .modal-body, .modal-overlay .modal'); if (m) m.scrollTop = 0; });
