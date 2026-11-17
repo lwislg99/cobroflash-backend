@@ -319,7 +319,7 @@
 
 ## P1 — Bugs visibles al cliente / datos incorrectos
 
-### [ ] P1-1745 · en un móvil de 390 la hoja «Editar albarán» no deja leer el concepto y sus controles no llegan al pulgar; en «Agendar», tampoco (17-nov-2026, fila 29 del recorrido H6 de SCRUM-1686; arreglado en la rama, falta verlo en yaqu.app)
+### [x] P1-1745 · en un móvil de 390 la hoja «Editar albarán» no deja leer el concepto y sus controles no llegan al pulgar; en «Agendar», tampoco (17-nov-2026, fila 29 del recorrido H6 de SCRUM-1686; arreglado en SCRUM-1745 y visto en yaqu.app)
 - **Población:** todo el que edita o crea un albarán desde la ficha del trabajo en un móvil, y todo el que agenda o reagenda un trabajo.
 - **Qué pasa:** en la hoja, con precios, el campo Concepto mide 30 px de ancho y enseña 4 px de un texto de 182; sin precios enseña 118 de 182. Los campos de cada línea miden 36 px de alto, las casillas 13×13 y el «✕» de quitar línea 34 de ancho. En el modal, «Cancelar» y el botón principal miden 30 px y la fecha 38.
 - **Medido, no supuesto:** en yaqu.app a 390 (recorrido H6). El guard da las mismas cifras contra el `styles.css` descargado de producción el 17-nov-2026: 12 de 18 casos en rojo, los 12 de móvil.
@@ -327,6 +327,7 @@
 - **Qué se cambió (SCRUM-1745):** un bloque de CSS sólo para móvil (≤ 768 px), sin tocar JS. Cada línea pasa a dos renglones (Concepto con su «✕»; debajo cantidad, unidad, precio e IVA), los campos y los botones miden 44 px y las casillas reciben el toque en 45. A 1280 nada cambia. Ni un texto nuevo. Detalle en `docs/master/SCRUM-1745.md`.
 - **Guard:** `npm run guard:hojas-del-trabajo-44` (`scripts/guard-hojas-del-trabajo-44.mjs`, de navegador): 18 de 18 en verde con el arreglo, a 390×844, 320×568 y 1280×800.
 - **No medido:** la hoja de alta del albarán y los demás modales de Trabajos (reciben el mismo CSS, el guard no los abre), Safari, y el teclado en pantalla.
+- **Visto en yaqu.app tras el merge (regla 42, 17-nov-2026 17:33Z, `/health` = `e5145bc54e9709de09ac362a6d6c4d156bb32ac4`):** el `styles.css` que sirve producción es idéntico byte a byte al de `main`, y el guard contra ese fichero descargado da 18 de 18. En la cuenta QA, hoja «Editar albarán» de dos borradores (AB260008 con precios, AB260003 sin precios) y modal «Agendar» desde la lista de Trabajos. A 390 y a 320: el Concepto mide 292 y 222 px y se lee entero, cada campo y cada botón mide 44 px, las casillas reciben el toque en 46×45 y nada se sale de lado; en «Agendar», fecha, «Cancelar» y «Agendar» a 44 px. A 1280 siguen como estaban (campos de 34, botones del modal de 30). Detalle en `docs/master/SCRUM-1745.md`, «Regla 42». No medido en producción: la hoja de un albarán emitido (su ficha no ofrece «Editar líneas»), «Reagendar», el rol técnico, Safari y el teclado en pantalla.
 
 ### [x] P1-1742 · en un móvil de 390 el pad de firma del parte no cabe: el recuadro del cliente empieza fuera de la pantalla y «Confirmar firma» queda cortado (16-nov-2026, filas 14, 15 y 16 del recorrido H6 de SCRUM-1686; arreglado en la misma rama)
 - **Población:** toda firma de un parte desde un móvil, la del técnico y la del cliente. Peor cuanto más resumen lleva el parte: el del cliente enseña las líneas encima del recuadro.
