@@ -505,3 +505,43 @@ A9: comprobación → `docs/master/evidencias/SCRUM-1686/banco-h6/paso2.mjs`
 - Todas las rutas que se escribieron están en `TECNICO_ALLOWED` (`adminRouteDeclarations.ts` de `main`). Sus 403 reales, sin medir: las escrituras salieron con la cookie de admin.
 
 **NO hecho.** El control de precios con un albarán VALORADO (tramo 5.3) · los estados que ve la oficina (tramo 6.2) · la lista de albaranes del operario · el clic de «Técnicos» (fila 6) y el de «Abrir parte» con el parte ya firmado (fila 21).
+
+## APÉNDICE · SCRUM-1686 H6c · tramo 6.2 y 6.3: los estados que ve la oficina · S4 · 17-nov-2026
+
+**Medido contra:** `origin/main` = `a3510f52b208b060e755c81e0c8cc1accc299672` · yaqu.app, 17-nov-2026 entre las 07:24Z y las 07:31Z (cabecera `Date:` de GitHub) · cuenta QA, rol admin, 390×844 · **Rama:** `scrum-1686h6c-tramo-6-2-estados-oficina` · **Carril:** S4
+**Skill UI:** no cargada · no se toca ninguna pantalla: son medidas, y pasan al registro tal como se tomaron
+**Quién lo escribe:** la S4 de relevo, a las 09:06Z de GitHub, con `origin/main` en `79495e37f4835c7ced26c60c045fe13375a0365c`. Las medidas son de la S4 anterior; aquí NO se ha vuelto a medir ninguna: se copian de su hoja de hallazgos, que sólo existía en un fichero de la máquina (A8).
+
+**Con qué.** `paso2.mjs` del banco H6 con cuatro pasos nuevos, que entran en este PR: `c04-crear-desechable.mjs`, `c15-estado-con-freno.mjs`, `c16-crear-albaran.mjs` y `c17-tarjeta-en-la-lista.mjs`. Un clic por pasada, y sólo si la primaria que hay es la pedida; el freno de `c15` no pulsa nada que salga de la cuenta o no tenga vuelta (cerrar, facturar, cobrar, enviar, borrar, anular). Sujeto: el trabajo DESECHABLE #85, creado para esto; el #84 no se tocó. Capturas y `.txt`: fuera de git, en la máquina del equipo (el repo es público y el texto de página no se ha revisado).
+
+**Primaria de cada estado** (población: 6 estados de la ficha del trabajo; medidos 6):
+
+| estado del trabajo | primaria en la FICHA | lo que se pulsó | respuesta |
+|---|---|---|---|
+| SIN AGENDAR | «Agendar» | «Agendar» → modal con fecha propuesta (mañana 09:00) → «Agendar» | `PATCH /admin/jobs/85` 200 |
+| AGENDADO | «▶ Empezar» | «▶ Empezar» (sin modal) | `PATCH /admin/jobs/85` 200 |
+| EN CURSO, sin albarán | «+ Nuevo albarán» | hoja «Nuevo albarán», una línea sin precios → «Crear albarán» | `POST /admin/jobs/85/albaranes` 201 (#54, `AB260009`, borrador) |
+| EN CURSO, albarán en borrador | «Emitir albarán» | «Emitir albarán» | `POST /admin/albaranes/54/emitir` 200, SIN modal |
+| EN CURSO, albarán emitido | «Enviar para firmar» | NO se pulsa (sale de la cuenta) · se pulsó la secundaria «✅ Marcar terminado» | `PATCH /admin/jobs/85` 200, SIN modal |
+| TERMINADO, albarán emitido | «Enviar para firmar» | nada: aquí se para | — |
+
+**Filas nuevas** (siguen a la 26 del apéndice H6b):
+
+| # | pantalla · ancho · rol | qué se ve | qué debería | dónde se midió | de quién |
+|---|---|---|---|---|---|
+| 27 | Ficha del trabajo · 390 · admin | «Emitir albarán» emite al primer toque, sin confirmar: se pulsó para MIRAR el modal y no lo hubo; el albarán #54 quedó EMITIDO. Lo mismo «✅ Marcar terminado». No se ha buscado en el repo si es deliberado | decide el fundador | pasadas «albarán en borrador» y «albarán emitido» de `c15-estado-con-freno.mjs` | sin repartir |
+| 28 | Lista y ficha del trabajo · 390 · admin | no coinciden en la primaria. EN CURSO: la tarjeta de la lista da «Abrir parte» y la ficha «+ Nuevo albarán» o «Emitir albarán»; en la ficha el parte es la secundaria «+ Nuevo parte». TERMINADO: la ficha da «Enviar para firmar» de primaria y la tarjeta la misma acción de secundaria, sin primaria | decide el fundador | `c15-estado-con-freno.mjs` (ficha) y `c17-tarjeta-en-la-lista.mjs` (tarjeta) | sin repartir |
+| 29 | Modal «Agendar» · 390 · admin | «Cancelar» 80×30, «Agendar» 76×30, la fecha 342×36, la casilla del técnico 20×20 | 44 o más | pasada SIN AGENDAR de `c15-estado-con-freno.mjs` | S4 · misma familia que SCRUM-1745 |
+| 30 | Lista · tarjeta del trabajo · 390 · admin | la tarjeta no pinta la tarea ni la dirección cuando el trabajo no tiene obra: el #85 sólo se distingue de los otros de la misma clienta por la fecha. Dos búsquedas por marca salieron CIEGAS (0 elementos); se vio en la captura del fallo | decide el fundador | `c17-tarjeta-en-la-lista.mjs` | sin repartir |
+
+**Filas de arriba que este tramo confirma.** La 20: la ficha EN CURSO ofrece «+ Nuevo albarán» dos veces (primaria de cabecera y secundaria de ALBARANES), ahora vista también como admin.
+
+**6.3 · la lista después.** «Por cobrar» 1,21 € antes y después («en 1 trabajo sin cerrar · 7 sin importe de referencia»). SIN AGENDAR 5 → 4 · TERMINADOS 1 → 2. El #85 está en «TERMINADOS — COBRA EL RESTO».
+
+**NO medido.** «Cerrar» (irreversible, no se pulsa: el #85 se queda TERMINADO) · «Enviar para firmar» · 1280 · la tarjeta de la lista en AGENDADO y en EN CURSO para ESTE trabajo.
+
+**Datos de prueba que quedan en la cuenta QA:** trabajo #85 (TERMINADO) · albarán #54 `AB260009` (EMITIDO, sin precios, una línea «(prueba) Revisión de la caldera»). Escrituras: 1 `POST` de trabajo, 3 `PATCH` de trabajo, 2 `POST` de albarán (uno 400), 1 emitir.
+
+**Lo que salió mal** (de la S4 que midió). El primer «Crear albarán» dio 400: el paso escribió el concepto en «Lugar de entrega» (el primer `input[type=text]` de la hoja no es el concepto). No creó nada. En la captura, tomada 15 s después, no se ve ningún aviso; no se afirma que no saliera.
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1686/banco-h6/c15-estado-con-freno.mjs`
