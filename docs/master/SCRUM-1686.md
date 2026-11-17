@@ -508,7 +508,7 @@ A9: comprobación → `docs/master/evidencias/SCRUM-1686/banco-h6/paso2.mjs`
 
 ## APÉNDICE · SCRUM-1686 H6c · tramo 6.2 y 6.3: los estados que ve la oficina · S4 · 17-nov-2026
 
-**Medido contra:** `origin/main` = `a3510f52b208b060e755c81e0c8cc1accc299672` · yaqu.app, 17-nov-2026 entre las 07:24Z y las 07:31Z (cabecera `Date:` de GitHub) · cuenta QA, rol admin, 390×844 · **Rama:** `scrum-1686h6c-tramo-6-2-estados-oficina` · **Carril:** S4
+**Medido contra:** `origin/main` = `a3510f52b208b060e755c81e0c8cc1accc299672` · yaqu.app, 17-nov-2026 entre las 07:24Z y las 07:31Z (cabecera `Date:` de GitHub) · cuenta QA, rol admin, 390×844 · **Rama:** `scrum-1686h6-apendice-c-tramo-6-2-estados-oficina` (nació como `scrum-1686h6c-tramo-6-2-estados-oficina`; por qué se renombró, al final del apéndice) · **Carril:** S4
 **Skill UI:** no cargada · no se toca ninguna pantalla: son medidas, y pasan al registro tal como se tomaron
 **Quién lo escribe:** la S4 de relevo, a las 09:06Z de GitHub, con `origin/main` en `79495e37f4835c7ced26c60c045fe13375a0365c`. Las medidas son de la S4 anterior; aquí NO se ha vuelto a medir ninguna: se copian de su hoja de hallazgos, que sólo existía en un fichero de la máquina (A8).
 
@@ -545,3 +545,7 @@ A9: comprobación → `docs/master/evidencias/SCRUM-1686/banco-h6/paso2.mjs`
 **Lo que salió mal** (de la S4 que midió). El primer «Crear albarán» dio 400: el paso escribió el concepto en «Lugar de entrega» (el primer `input[type=text]` de la hoja no es el concepto). No creó nada. En la captura, tomada 15 s después, no se ve ningún aviso; no se afirma que no saliera.
 
 A9: comprobación → `docs/master/evidencias/SCRUM-1686/banco-h6/c15-estado-con-freno.mjs`
+
+**Lo que salió mal con la RAMA** (de la S4 que relevó, 17-nov-2026). Este apéndice se empujó a las 09:13Z como `scrum-1686h6c-tramo-6-2-estados-oficina`. `numeroDeRama` (`scripts/_numero-de-rama.mjs`) admite tras el número UNA letra y cifras (`h6`), no `h6c`: devolvió `null`, el censo dejó la rama fuera, y `tests/scrum804-la-rama-viva.test.mjs` cayó — no sólo en su PR (#3188) sino en `main`, porque el test compara el censo con TODAS las refs de `origin`: los runs de CI de `main` 44053524890 (`5cbd8631e`) y 44054044211 (`340b084d4`) salieron en rojo con ese único «✖», nombrando esta rama. El guard tenía razón y no se tocó: se empujó el mismo trabajo con un nombre que el censo lee (el de la cabecera) y se borró la ref vieja. El arreglo de `main` no se da por visto aquí: se ve en el siguiente run verde de CI sobre `main`.
+
+A9: comprobación → `tests/scrum804-la-rama-viva.test.mjs`
