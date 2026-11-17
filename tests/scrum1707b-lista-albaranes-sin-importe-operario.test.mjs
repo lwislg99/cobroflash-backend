@@ -18,6 +18,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 import { soloCodigo } from './_solo-codigo.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 import { ALBARAN_ESTADOS } from '../dist/modules/jobs/domain/albaran.service.js';
 import { filaDeAlbaranParaElRol } from '../dist/modules/jobs/domain/albaranParaElRol.js';
 import { seesOnlyOwnJobs } from '../dist/core/http/roleCapabilities.js';
@@ -80,8 +81,9 @@ test('SCRUM-1707 · ADMIN (control positivo): la columna «Importe» sigue, con 
   for (const tr of trs) assert.equal(tr.hijos.length, ths, '🔴 admin: celdas por fila ≠ cabeceras');
 });
 
-for (const rol of ROLES.filter((r) => r !== 'admin')) {
-  test(`SCRUM-1707 · «${rol}» (sin precios): la columna «Importe» NO existe — ni cabecera ni celda`, async () => {
+const sinPrecios = casosEscritos(ROLES.filter((r) => r !== 'admin'),
+  (rol) => `SCRUM-1707 · «${rol}» (sin precios): la columna «Importe» NO existe — ni cabecera ni celda`,
+  async (rol) => {
     const { trs, cabecera, ths } = await tablaPara(rol);
     assert.doesNotMatch(cabecera, />Importe</, `🔴 a «${rol}» se le pinta la cabecera «Importe», y el servidor no le manda ni un importe`);
     assert.equal(ths, 7, `🔴 «${rol}» debería tener 7 columnas y tiene ${ths}`);
@@ -92,7 +94,10 @@ for (const rol of ROLES.filter((r) => r !== 'admin')) {
     // El resto de la fila se queda: lo único que se va es el importe.
     assert.match(cabecera, />Estado</, `🔴 a «${rol}» se le fue también «Estado»`);
   });
-}
+test('SCRUM-1707 · «tecnico» (sin precios): la columna «Importe» NO existe — ni cabecera ni celda', sinPrecios(0));
+test('SCRUM-1707 · «operario» (sin precios): la columna «Importe» NO existe — ni cabecera ni celda', sinPrecios(1));
+test('SCRUM-1707 · «comercial» (sin precios): la columna «Importe» NO existe — ni cabecera ni celda', sinPrecios(2));
+sinPrecios.todos();
 
 test('SCRUM-1707 · la pantalla responde lo MISMO que el servidor: sin columna ⇔ `seesOnlyOwnJobs`', async () => {
   // `owner` NO entra: es un pseudo-rol de los serializadores de métricas; `requireAuth` lo normaliza a
