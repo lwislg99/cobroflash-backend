@@ -82,7 +82,7 @@ todas las pasadas: sólo `POST /admin/entorno`.
   Chromium: el navegador no dispara `change` (para él el valor sigue siendo «»), la casilla se queda
   enseñando «1e» y no se guarda ni se dice nada. La acción despacha el `change` a mano para leer el
   literal, y lo declara. Con un dato ya guardado el aviso sí sale (SCRUM-1492). No medido en un móvil
-  de verdad. Avisado al orquestador.
+  de verdad. Avisado al orquestador, que lo ha abierto como SCRUM-1754.
 
 ## Lo que salió mal por el camino (A9)
 
