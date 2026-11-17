@@ -270,6 +270,11 @@
     // 1-23. Consta en `docs/microcopy/2026-11-10-SCRUM-1677-salida-al-trabajo.md`.
     trabajoDelCliente: '← Trabajo: {cliente}', // APROBADO por el fundador el 10-nov-2026 · SCRUM-1656 comentario 21408
     volverAlTrabajo: 'Volver al trabajo', // APROBADO por el fundador el 10-nov-2026 · SCRUM-1656 comentario 21408
+    // ── SCRUM-1662 (d) · LA TAREA DEL TRABAJO, EN LA HOJA DEL PARTE ───────────────────────
+    // El MISMO rótulo que el alta y la ficha del trabajo (`ROTULO_TAREA`, `jobTrabajoPlegable.js`).
+    // Consta en `docs/microcopy/2026-11-11-SCRUM-1662-que-hay-que-hacer-en-el-parte.md`.
+    // APROBADO por el fundador · SCRUM-1662 comentario 21548 (rótulo) y comentario 21956 (vale dentro del parte)
+    queHayQueHacer: 'Qué hay que hacer',
     // FIRMADO: N4 de la tanda N1-N13 de SCRUM-1686 (c.21471) · cabecera del parte, con varios en el
     // trabajo. Cómo se cuenta: M2 del máster (073c67ade). SCRUM-1697.
     visitaDeLas: 'Visita {n} de {m}',
@@ -772,6 +777,8 @@
       esc(parte.numero) + ' <span data-parte-visita="1"></span></h3>' +
       '<p class="parte-cabecera-cliente">' +
       esc(parte.clienteNombre || '') + '</p></header>' +
+      // SCRUM-1662 (d) · la tarea del trabajo, lo primero que se lee. Sin tarea no pinta nada.
+      pintarQueHayQueHacer(parte) +
       // 🔴 SCRUM-1693 · FIRMADO = EL ORDEN DE UN PAPEL: los datos del documento arriba y las
       // firmas que lo cierran al final. El BORRADOR no cambia (SCRUM-1175 PR-C: allí manda lo que
       // se apunta, y los datos van plegados al final). Lo fija `tests/scrum1693-…`.
@@ -808,6 +815,32 @@
   // ═══════════════════════════════════════════════════════════════════════════════════
   function tieneTrabajo(parte) {
     return parte && parte.jobId !== null && parte.jobId !== undefined && parte.jobId !== '';
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-1662 (d) · «QUÉ HAY QUE HACER», EN LA HOJA DEL PARTE.
+  //
+  // El operario abre el parte en la obra: lo primero que necesita es lo que el jefe le encargó, sin
+  // volver a la ficha del trabajo. Por eso va justo debajo de la cabecera, en TODOS los estados.
+  //
+  //   · El dato viene DENTRO del parte (`GET /admin/partes/:id`, pieza (c), decisión en c.21964): el
+  //     servidor lo lee del trabajo en cada GET y ya aplica la puerta del técnico. Esta vista NO pide
+  //     el trabajo: hacerlo tumbaba `scrum1697` ①bis y `scrum366` (medido, c.21962).
+  //   · SOLO LECTURA. La tarea se escribe en el trabajo; un editor aquí pediría textos de guardado y
+  //     de error que nadie ha firmado (regla 39).
+  //   · SIN TAREA NO HAY LÍNEA (c.21801): ni rótulo sobre nada, ni un «Sin tarea» inventado. Vale
+  //     también para un servidor que aún no mande la clave, y para cualquier cosa que no sea texto.
+  //   · No entra en lo que se firma ni en el PDF: es una ayuda de pantalla, no un dato del documento.
+  //
+  // Lo fija `tests/scrum1662d-parte-pinta-que-hay-que-hacer.test.mjs`.
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  function pintarQueHayQueHacer(parte) {
+    var tarea = typeof parte.queHayQueHacer === 'string' ? parte.queHayQueHacer.trim() : '';
+    if (!tarea) return '';
+    return '<section class="parte-tarea" data-parte-tarea="1">' +
+      '<h4 class="parte-tarea-titulo">' + esc(TEXTOS.queHayQueHacer) + '</h4>' +
+      // `.detail-tarea` es el párrafo de la ficha del trabajo: conserva los saltos del jefe.
+      '<p class="detail-tarea">' + esc(tarea) + '</p></section>';
   }
 
   function pintarMigaDelTrabajo(parte) {

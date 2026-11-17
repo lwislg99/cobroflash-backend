@@ -4523,6 +4523,35 @@ textarea.parte-linea-desc {
   }
 }
 /* ══ fin S4 · SCRUM-1722 ══ */
+/* ══ S4 · SCRUM-1662 (d) · «QUÉ HAY QUE HACER» EN LA HOJA DEL PARTE ══
+   La tarea del trabajo, justo debajo de la cabecera y solo de lectura (`pintarQueHayQueHacer`). Es una
+   tarjeta de la MISMA familia que los pasos del parte (Superficie, borde de 1 px, sombra Reposo, radio
+   grande) y su título, del mismo escalón que «Horas»: nada nuevo que aprender. El texto va en Tinta y
+   a 16 px porque es lo que el operario viene a leer, de pie y en la obra; los saltos de línea del jefe
+   los conserva `.detail-tarea`. En el escritorio de dos columnas cae en la izquierda, como cualquier
+   hija de la hoja, y las firmas arrancan a su altura. */
+.parte-tarea {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+  margin: 0 0 16px;
+}
+@media (min-width: 560px) {
+  .parte-tarea { padding: 20px; }
+}
+.parte-tarea-titulo {
+  display: block;
+  margin: 0 0 8px;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.parte-tarea .detail-tarea { font-size: 1rem; line-height: 1.5; color: var(--ink); }
+/* ══ fin S4 · SCRUM-1662 (d) ══ */
 /* Las tres fichas del tipo: 48 px de alto y la ficha entera recibe el toque. */
 .parte-tipo .parte-tipo-ficha {
   display: inline-flex;
