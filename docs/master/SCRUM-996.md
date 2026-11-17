@@ -337,3 +337,58 @@ ficha del puesto, `ya-esta` y el propio encargo.
 frente al de `main`.
 
 **Veredicto: 996 sigue ABIERTO.** 18,5 % medido, 6 de 6 por encima del 15 % al corregir el corte de U8.
+## SCRUM-996f · la dieta del arranque: la norma se recorta y el código la sigue (17-nov-2026, Sesión 0)
+
+**Medido contra:** `origin/main` = `b8fc4077c24a4338d73836b9918f51b31b17e1d8` · 2026-11-17T16:21:35Z (`gh api -i zen`)
+
+A9: sin fallo que generalice — tramo de norma; el reparto texto/código lo marca la cerradura (`norma.mjs` es de S5, `scripts/equipo/**`), y se respeta.
+
+Encargo del orquestador (17-nov), que ejecuta la propuesta ④ de la S0 de la mañana: el arranque deja fuera A13, A24
+y todo lo de la A19 que no sean sus umbrales; A19/A25 dicen el aviso a 115k y que el traspaso cumple A25.
+
+**1 · Lo medido.** Suelo del primer turno 63k (S4 63,6k el 12-nov; S0 62,9k el 17-nov) + lectura obligatoria ~58k
+(S4 llegó a 122k) ≈ 120k antes de trabajar. `norma.mjs --arranque` sobre `main`: **39.109 B**. Traspasos S4 100 KB
+y S1 144 KB contra los 5 KB de la A25.
+
+**2 · La norma (esta rama, firma de la S0 como dueña de `00-normas-comunes.md`):**
+- **A19** se parte en dos: arriba los umbrales (cuándo se releva, las tres casillas, 500k a mitad y el aviso nuevo,
+  2.888 B); debajo, `### A19.1 · Al relevar, o para mover un número: el detalle`, con lo que había (cómo se lee la
+  cifra, el latido, el porqué de cada número, cómo se releva, qué lleva el traspaso). Ningún párrafo se borra: se
+  MUEVEN; los dos números y las dos frases de `fraseDeRelevo` siguen en la sección (1484c en verde).
+- **Aviso a 115k; relevo a 300k mientras el arranque pase de 80k.** MI LECTURA del encargo («aviso a 115k; relevo al
+  ENTREGAR la pieza en curso (techo 300k) MIENTRAS el arranque pase de 80k»): 115k es AVISO en el informe, no relevo;
+  el relevo sigue siendo la casilla 3 (300k, al entregar). Leerlo como relevo a 115k movería un número de coste
+  (A19: es del fundador) y lo desataría de `UMBRAL_CONTEXTO` de `sesion.mjs`; con un arranque de ~120k, una sesión
+  fresca nacería por encima. Si el orquestador quería eso, es otro cambio y otra firma.
+- **Traspaso:** «cabe en 5 KB y se REEMPLAZA, no se apila»; lo viejo a `project_sN_historico.md`, que no se lee al
+  arrancar (A19.1, apuntado desde la A25). La rotación la hace cada puesto en su próximo relevo.
+- **A1:** «11 secciones y, de la A19, sus umbrales»; filas nuevas en la tabla: A13 (abrir/coger/soltar/cerrar un
+  ticket) y A24 (empujar o editar el cuerpo del PR).
+
+**3 · Rojo primero.** Con la norma ya cambiada y `norma.mjs` sin tocar, de los 10 ficheros que leen normas o A19
+(126 tests) cae **uno**, el previsto: `scrum996d` · «la tabla de la A1 manda traer secciones que ya imprime el
+arranque» → `[ 'A13', 'A24' ]`. Ese rojo es la cerradura: la rama no se mergea hasta que el código siga a la norma.
+
+**4 · El código (encargo para la S5, en ESTA rama; carril S5, no lo toco):**
+- `scripts/equipo/norma.mjs`: `ARRANQUE` sin A13 ni A24 (12 entradas, A19 incluida) y, **en `--arranque`**, la A19
+  cortada antes de `### A19.1`; `norma.mjs A19` sigue cortando en «Cuarta versión» y `--entera` la trae completa.
+  La nota del corte del arranque dice «`norma.mjs A19 --entera` al relevar». Comentario de cabecera al día (14 → 12).
+- `tests/scrum996-suelo-de-arranque.test.mjs`: `IDS_ARRANQUE` a las 12; el control del corte, también con el marcador
+  nuevo (la historia Y A19.1 fuera del arranque); la horquilla del 35-60 % pasará a ~34 % (25.401 / 75.830 B): se
+  recalcula con la cifra, no se ensancha a ciegas.
+- Medido con un guion fuera del árbol sobre esta rama: **39.109 → 25.401 B** (−13,7 KB; ~4k tokens a 3,3 B/token).
+
+**4bis · Hecho por la S5 (17-nov, misma rama):** `ARRANQUE` a 12 entradas, sin A13 ni A24. Los cortes de A19 van
+ahora por modo: `CORTES_ARRANQUE` corta en una línea que EMPIEZA por `### A19.1` (una frase que lo cite no
+dispara el corte), y `CORTES` sigue cortando en «Cuarta versión» cuando la A19 se pide por id. `--entera` anula los
+dos. La nota del arranque: `[A19 cortada antes de «### A19.1» (el detalle y la historia); \`norma.mjs A19 --entera\`
+al relevar]`. En el test, `IDS_ARRANQUE` pasa a 12 y hay un control nuevo que distingue tres casos: el arranque deja
+fuera el detalle Y la historia, `A19` por id trae el detalle sin la historia, y `--entera` lo trae todo. «Sin
+marcador → entera» se prueba en los dos modos. «Falta A13 → salida 2» pasa a A14, y un caso nuevo dice que sin A13
+ni A24 el arranque sigue en verde. Horquilla del porcentaje: **28–40 %** alrededor de lo medido, **25.400 B de 75.830 B =
+33,5 %**. La S0 midió 25.401 B, uno más: la diferencia es de instrumento y no la he perseguido. Rojo de control: con
+`CORTES` en el arranque caen 3 tests; con el código final, 55/55 en verde en los 6 ficheros que leen las normas
+(996d incluido).
+
+**5 · Sin medir:** el suelo de 63k (la propuesta de lanzar UNA sesión sin los MCP que el puesto no usa sigue en pie;
+es de la S5) y el efecto real en U8 tras el merge: se mide con `gasto-arranque.mjs` en la primera tanda con la dieta.

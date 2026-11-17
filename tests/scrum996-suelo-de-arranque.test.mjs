@@ -6,7 +6,8 @@
 // línea de población —la de fuente en `norma.mjs`, `POBLACION:` en `gasto-arranque.mjs`— antes de
 // mirar lo que dice.
 //
-//   norma.mjs         13 de 24 secciones al arrancar, el resto en un ÍNDICE. Falla en ALTO (salida 2)
+//   norma.mjs         12 de 25 secciones al arrancar (SCRUM-996f: sin A13 ni A24, y A19 solo hasta
+//                     `### A19.1`), el resto en un ÍNDICE. Falla en ALTO (salida 2)
 //                     si una sección falta, se retitula o se repite; nunca imprime un subconjunto en
 //                     verde. Se prueba contra el fichero REAL del repo y contra fixtures rotos a
 //                     mano, y los bytes impresos se recalculan aquí con un parser independiente.
@@ -66,8 +67,11 @@ const exitImpreso = (stdout) => Number(EXIT_FINAL.exec(stdout)?.[1]);
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
 const TEXTO_REAL = normalizar(fs.readFileSync(NORMAS_REALES));
-const IDS_ARRANQUE = ['A1', 'A2', 'A3', 'A4', 'A7', 'A8', 'A9', 'A13', 'A14', 'A16', 'A19', 'A20', 'A24', 'A25'];
+const IDS_ARRANQUE = ['A1', 'A2', 'A3', 'A4', 'A7', 'A8', 'A9', 'A14', 'A16', 'A19', 'A20', 'A25'];
 const MARCADOR = 'Cuarta versión';
+// SCRUM-996f: en el arranque A19 corta en su `###` de detalle, al COMIENZO de una línea.
+const MARCADOR_ARRANQUE = '### A19.1';
+const esCorteDeArranque = (l) => l.startsWith(MARCADOR_ARRANQUE);
 const RE_FUENTE = /^norma\.mjs · origen (.+) · (\d+) B · sha256 ([0-9a-f]{8}) · (\d+) secciones$/m;
 const RE_PIE = /^norma\.mjs · impresas=(\d+) · (\d+) B de (\d+) B \((\d+) %\) · sin leer=(\d+) · EXIT=(\d+)$/m;
 
@@ -88,26 +92,44 @@ function seccionesIndependientes(texto) {
   return out;
 }
 
-/** Lo que el arranque tiene que imprimir de una sección: entera, salvo A19 (corta en el marcador). */
-function textoEsperado(id, lineas) {
-  if (id !== 'A19') return lineas.join('\n');
-  const i = lineas.findIndex((l, k) => k > 0 && l.includes(MARCADOR));
-  assert.ok(i > 0, `A21: el fichero real ya no tiene «${MARCADOR}» en A19: el corte no tiene sujeto`);
+/** Las líneas de A19 antes de la primera que cumpla `casa`, sin blancos al final. */
+function a19CortadaEn(lineas, casa, etiqueta) {
+  const i = lineas.findIndex((l, k) => k > 0 && casa(l));
+  assert.ok(i > 0, `A21: el fichero real ya no tiene «${etiqueta}» en A19: el corte no tiene sujeto`);
   const previas = lineas.slice(0, i);
   while (previas.length && previas[previas.length - 1].trim() === '') previas.pop();
   return previas.join('\n');
 }
 
+/** Lo que el ARRANQUE tiene que imprimir de una sección: entera, salvo A19 (corta en `### A19.1`). */
+function textoEsperado(id, lineas) {
+  if (id !== 'A19') return lineas.join('\n');
+  return a19CortadaEn(lineas, esCorteDeArranque, MARCADOR_ARRANQUE);
+}
+
 const SECCIONES_REALES = seccionesIndependientes(TEXTO_REAL);
 
-/** Una línea larga y ÚNICA de la historia de A19 (la que el corte deja fuera). */
-function lineaDeLaHistoria() {
+/** Una línea larga y ÚNICA de A19 entre los índices `desde` (excluido) y `hasta` (excluido). */
+function lineaUnicaDeA19(desde, hasta, que) {
   const lineas = SECCIONES_REALES.get('A19');
-  const desde = lineas.findIndex((l, k) => k > 0 && l.includes(MARCADOR));
-  for (let k = lineas.length - 1; k > desde; k--) {
+  for (let k = hasta - 1; k > desde; k--) {
     if (lineas[k].length >= 40 && TEXTO_REAL.split(lineas[k]).length === 2) return lineas[k];
   }
-  return assert.fail('A21: no hay ninguna línea larga y única tras el marcador de A19: el control no tiene sujeto');
+  return assert.fail(`A21: no hay ninguna línea larga y única en ${que} de A19: el control no tiene sujeto`);
+}
+const indiceEnA19 = (casa) => SECCIONES_REALES.get('A19').findIndex((l, k) => k > 0 && casa(l));
+
+/** Una línea de la historia de A19 (tras «Cuarta versión»): fuera del arranque Y de `norma.mjs A19`. */
+function lineaDeLaHistoria() {
+  return lineaUnicaDeA19(indiceEnA19((l) => l.includes(MARCADOR)), SECCIONES_REALES.get('A19').length, 'la historia');
+}
+
+/** Una línea del detalle de A19 (entre `### A19.1` y «Cuarta versión»): fuera del arranque, dentro de `norma.mjs A19`. */
+function lineaDelDetalle() {
+  const desde = indiceEnA19(esCorteDeArranque);
+  const hasta = indiceEnA19((l) => l.includes(MARCADOR));
+  assert.ok(desde > 0 && hasta > desde, `A21: «${MARCADOR_ARRANQUE}» tiene que ir ANTES de «${MARCADOR}» en A19`);
+  return lineaUnicaDeA19(desde, hasta, 'el detalle (A19.1)');
 }
 
 function sinSeccion(texto, id, siguiente) {
@@ -118,13 +140,13 @@ function sinSeccion(texto, id, siguiente) {
   return [...lineas.slice(0, a), ...lineas.slice(b)].join('\n');
 }
 
-test('SCRUM-996 · norma · SUELO: el fichero real tiene secciones y las 14 de arranque están en él', () => {
+test('SCRUM-996 · norma · SUELO: el fichero real tiene secciones y las 12 de arranque están en él', () => {
   assert.ok(SECCIONES_REALES.size >= IDS_ARRANQUE.length, `solo ${SECCIONES_REALES.size} secciones en el fichero real`);
   for (const id of IDS_ARRANQUE) assert.ok(SECCIONES_REALES.has(id), `${id} no está en 00-normas-comunes.md`);
   assert.deepEqual(ARRANQUE.map((a) => a.id), IDS_ARRANQUE, 'la lista ARRANQUE de norma.mjs no es la del encargo');
 });
 
-test('SCRUM-996 · norma · el fichero real: 14 secciones de arranque (texto exacto), ~43 % de los bytes, índice con el resto', () => {
+test('SCRUM-996 · norma · el fichero real: 12 secciones de arranque (texto exacto), ~34 % de los bytes, índice con el resto', () => {
   const r = correr(NORMA, ['--fichero', NORMAS_REALES]);
   const fuente = RE_FUENTE.exec(r.stdout);
   assert.ok(fuente, `A21: no salió la línea de fuente; stdout:\n${r.stdout.slice(0, 400)}\nstderr:\n${r.stderr.slice(0, 400)}`);
@@ -134,9 +156,9 @@ test('SCRUM-996 · norma · el fichero real: 14 secciones de arranque (texto exa
 
   const lineas = lineasDe(r.stdout);
   const titulares = lineas.filter((l) => /^## A\d+ · /.test(l)).map((l) => /^## (A\d+) /.exec(l)[1]);
-  assert.deepEqual(titulares, IDS_ARRANQUE, 'las secciones impresas tienen que ser EXACTAMENTE las 13 de arranque');
+  assert.deepEqual(titulares, IDS_ARRANQUE, 'las secciones impresas tienen que ser EXACTAMENTE las 12 de arranque');
 
-  // El texto de cada una es el del fichero, byte a byte (A19 cortada en su marcador).
+  // El texto de cada una es el del fichero, byte a byte (A19 cortada en `### A19.1`).
   let bytesEsperados = 0;
   for (const id of IDS_ARRANQUE) {
     const esperado = textoEsperado(id, SECCIONES_REALES.get(id));
@@ -158,36 +180,66 @@ test('SCRUM-996 · norma · el fichero real: 14 secciones de arranque (texto exa
 
   const pie = RE_PIE.exec(r.stdout);
   assert.ok(pie, `no hay pie con población; stdout:\n${r.stdout.slice(-300)}`);
-  assert.equal(Number(pie[1]), 14);
+  assert.equal(Number(pie[1]), 12);
   assert.equal(Number(pie[2]), bytesEsperados, 'los bytes impresos no coinciden con el recálculo independiente');
   assert.equal(Number(pie[3]), Buffer.byteLength(TEXTO_REAL));
   assert.equal(Number(pie[5]), restoEsperado.length);
+  // SCRUM-996f, medido sobre la rama: 25.400 B de 75.830 B = 33,5 %. La horquilla rodea ESA cifra;
+  // si el arranque vuelve a crecer por encima del 40 %, la dieta se ha deshecho y se dice.
   const pct = (100 * Number(pie[2])) / Number(pie[3]);
-  assert.ok(pct >= 35 && pct <= 60, `el arranque ya no pesa ~43 % del fichero: ${pct.toFixed(1)} %`);
+  assert.ok(pct >= 28 && pct <= 40, `el arranque ya no pesa ~34 % del fichero: ${pct.toFixed(1)} %`);
   assert.equal(Number(pie[6]), r.status, 'el EXIT= impreso no es el estado real del proceso');
 });
 
-test('SCRUM-996 · norma · A19 se corta ANTES de «Cuarta versión» y lo declara; --entera la trae completa', () => {
+test('SCRUM-996f · norma · el arranque corta A19 ANTES de `### A19.1`; `A19` por id, antes de «Cuarta versión»; --entera, nada', () => {
   const historia = lineaDeLaHistoria();
-  const cortada = correr(NORMA, ['--fichero', NORMAS_REALES]);
-  assert.ok(RE_FUENTE.test(cortada.stdout), 'A21: la cobaya no arrancó');
-  assert.ok(!cortada.stdout.includes(historia), 'A19 sigue imprimiendo su historia: el corte no funciona');
-  assert.ok(cortada.stdout.includes('[A19 cortada antes de «Cuarta versión» (historia); `norma.mjs A19 --entera` la trae completa]'),
-    'el corte no se declara');
-
-  const entera = correr(NORMA, ['--fichero', NORMAS_REALES, '--entera']);
-  assert.ok(RE_FUENTE.test(entera.stdout), 'A21: la cobaya no arrancó');
-  assert.ok(entera.stdout.includes(historia), '--entera no trae la historia de A19');
-  assert.ok(!entera.stdout.includes('[A19 cortada'), '--entera no debería declarar un corte');
+  const detalle = lineaDelDetalle();
   const bytes = (o) => Number(RE_PIE.exec(o.stdout)[2]);
-  assert.ok(bytes(entera) > bytes(cortada), '--entera tiene que imprimir MÁS bytes que el arranque cortado');
+
+  // --arranque: fuera el detalle Y la historia, y el corte se declara con la orden de relevar.
+  const arranque = correr(NORMA, ['--fichero', NORMAS_REALES]);
+  assert.ok(RE_FUENTE.test(arranque.stdout), 'A21: la cobaya no arrancó');
+  // Como LÍNEA: la nota del corte nombra «### A19.1» dentro de una frase, y esa sí tiene que salir.
+  assert.ok(!lineasDe(arranque.stdout).some(esCorteDeArranque), 'el arranque imprime el `###` de A19.1: el corte no funciona');
+  assert.ok(!arranque.stdout.includes(detalle), 'el arranque imprime el detalle de A19 (A19.1)');
+  assert.ok(!arranque.stdout.includes(historia), 'el arranque imprime la historia de A19');
+  assert.ok(arranque.stdout.includes('[A19 cortada antes de «### A19.1» (el detalle y la historia); `norma.mjs A19 --entera` al relevar]'),
+    'el corte del arranque no se declara');
+
+  // `norma.mjs A19`: el detalle SÍ, la historia NO (el corte de siempre).
+  const porId = correr(NORMA, ['A19', '--fichero', NORMAS_REALES]);
+  assert.ok(RE_FUENTE.test(porId.stdout), 'A21: la cobaya no arrancó');
+  assert.ok(porId.stdout.includes(detalle), '`norma.mjs A19` ya no trae el detalle de A19.1');
+  assert.ok(!porId.stdout.includes(historia), '`norma.mjs A19` imprime la historia: el corte de siempre no funciona');
+  assert.ok(porId.stdout.includes('[A19 cortada antes de «Cuarta versión» (historia); `norma.mjs A19 --entera` la trae completa]'),
+    'el corte por id no se declara');
+
+  // --entera: todo, en los dos modos, y sin declarar corte.
+  for (const args of [['--entera'], ['A19', '--entera']]) {
+    const entera = correr(NORMA, ['--fichero', NORMAS_REALES, ...args]);
+    assert.ok(RE_FUENTE.test(entera.stdout), 'A21: la cobaya no arrancó');
+    assert.ok(entera.stdout.includes(detalle) && entera.stdout.includes(historia), `${args.join(' ')} no trae A19 completa`);
+    assert.ok(!entera.stdout.includes('[A19 cortada'), `${args.join(' ')} no debería declarar un corte`);
+  }
+  assert.ok(bytes(correr(NORMA, ['A19', '--fichero', NORMAS_REALES, '--entera'])) > bytes(porId),
+    '`A19 --entera` tiene que imprimir MÁS bytes que `A19` cortada');
+  assert.ok(bytes(correr(NORMA, ['--fichero', NORMAS_REALES, '--entera'])) > bytes(arranque),
+    '--entera tiene que imprimir MÁS bytes que el arranque cortado');
 });
 
-test('SCRUM-996 · norma · falta A13 → NO PUDE MIRAR, salida 2 y NADA impreso en verde', () => {
-  const f = escribir('sin-a13.md', sinSeccion(TEXTO_REAL, 'A13', 'A14'));
+test('SCRUM-996f · norma · A13 y A24 ya NO son de arranque: si faltan, el arranque sigue en verde', () => {
+  const f = escribir('sin-a13-ni-a24.md', sinSeccion(sinSeccion(TEXTO_REAL, 'A13', 'A14'), 'A24', 'A25'));
+  const r = correr(NORMA, ['--fichero', f]);
+  assert.ok(RE_FUENTE.test(r.stdout), `A21: la cobaya no arrancó:\n${r.stdout.slice(0, 300)}`);
+  assert.equal(r.status, 0, r.stdout.slice(0, 400));
+  assert.equal(Number(RE_PIE.exec(r.stdout)[1]), 12);
+});
+
+test('SCRUM-996 · norma · falta A14 → NO PUDE MIRAR, salida 2 y NADA impreso en verde', () => {
+  const f = escribir('sin-a14.md', sinSeccion(TEXTO_REAL, 'A14', 'A15'));
   const r = correr(NORMA, ['--fichero', f]);
   assert.equal(r.status, 2, r.stdout.slice(0, 400));
-  assert.match(r.stdout, /NO PUDE MIRAR: la sección A13 no está o cambió de título/);
+  assert.match(r.stdout, /NO PUDE MIRAR: la sección A14 no está o cambió de título/);
   assert.ok(!/^## A\d+ · /m.test(r.stdout), 'imprimió secciones aunque no pudo dar el conjunto completo');
   assert.equal(exitImpreso(r.stdout), 2);
 });
@@ -208,16 +260,25 @@ test('SCRUM-996 · norma · un id repetido es ambiguo → salida 2', () => {
   assert.match(r.stdout, /NO PUDE MIRAR: la sección A5 aparece dos veces/);
 });
 
-test('SCRUM-996 · norma · sin la línea «Cuarta versión», A19 sale ENTERA y lo declara', () => {
+test('SCRUM-996 · norma · sin su marcador, A19 sale ENTERA y lo declara (en el arranque y pedida por id)', () => {
   const lineas = TEXTO_REAL.split('\n');
-  const i = lineas.findIndex((l) => l.includes(MARCADOR));
-  assert.ok(i > 0, 'A21: el fichero real ya no tiene el marcador');
-  const f = escribir('sin-marcador.md', [...lineas.slice(0, i), ...lineas.slice(i + 1)].join('\n'));
-  const r = correr(NORMA, ['--fichero', f]);
-  assert.ok(RE_FUENTE.test(r.stdout), 'A21: la cobaya no arrancó');
-  assert.equal(r.status, 0, r.stdout.slice(-400));
-  assert.ok(r.stdout.includes('[A19: no encontré el corte; impresa entera]'), 'no declara que no encontró el corte');
-  assert.ok(r.stdout.includes(lineaDeLaHistoria()), 'A19 no salió entera');
+  const quitar = (casa, nombre) => {
+    const i = lineas.findIndex(casa);
+    assert.ok(i > 0, `A21: el fichero real ya no tiene «${nombre}»`);
+    return escribir(`sin-${nombre.replace(/[^a-z0-9]+/gi, '-')}.md`, [...lineas.slice(0, i), ...lineas.slice(i + 1)].join('\n'));
+  };
+  const casos = [
+    { args: [], fichero: quitar(esCorteDeArranque, MARCADOR_ARRANQUE), marcador: MARCADOR_ARRANQUE },
+    { args: ['A19'], fichero: quitar((l) => l.includes(MARCADOR), MARCADOR), marcador: MARCADOR },
+  ];
+  for (const c of casos) {
+    const r = correr(NORMA, [...c.args, '--fichero', c.fichero]);
+    assert.ok(RE_FUENTE.test(r.stdout), 'A21: la cobaya no arrancó');
+    assert.equal(r.status, 0, r.stdout.slice(-400));
+    assert.ok(r.stdout.includes(`[A19: no encontré el corte «${c.marcador}»; impresa entera]`),
+      `${c.args.join(' ') || '--arranque'}: no declara que no encontró el corte`);
+    assert.ok(r.stdout.includes(lineaDeLaHistoria()), `${c.args.join(' ') || '--arranque'}: A19 no salió entera`);
+  }
 });
 
 test('SCRUM-996 · norma · el mismo fichero en CRLF da las mismas secciones y los mismos bytes', () => {
@@ -257,7 +318,7 @@ test('SCRUM-996 · norma · SIN --fichero lee de git (bytes crudos, CRLF incluid
   assert.equal(ok.status, 0);
   assert.equal(fuente[1], 'HEAD:docs/equipo/00-normas-comunes.md');
   assert.equal(Number(fuente[2]), Buffer.byteLength(TEXTO_REAL), 'un blob CRLF debe medirse con LF');
-  assert.equal(lineasDe(ok.stdout).filter((l) => /^## A\d+ · /.test(l)).length, 14);
+  assert.equal(lineasDe(ok.stdout).filter((l) => /^## A\d+ · /.test(l)).length, 12);
 
   // Sin origen legible NO cae al árbol de trabajo: es NO PUDE MIRAR.
   const roto = correr(NORMA, ['--origen', 'refs/heads/no-existe-996'], { cwd: repo });

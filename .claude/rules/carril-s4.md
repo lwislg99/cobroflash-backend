@@ -3,6 +3,7 @@ paths:
   - "public/dashboard/js/albaranDetailView.js"
   - "scripts/capturas-lista-trabajos-917.mjs"
   - "public/dashboard/js/parteDetailView.js"
+  - "scripts/guard-hojas-del-trabajo-44.mjs"
   - "scripts/guard-detalle-trabajo-917.mjs"
   - "scripts/guard-lista-trabajos-917.mjs"
   - "scripts/guard-pad-de-firma-cabe.mjs"
