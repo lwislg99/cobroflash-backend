@@ -1,6 +1,9 @@
 # SCRUM-1747 — el `firmaToken` llega al operario, y la página pública enseña precios: CONFIRMADO
 
-**Medido contra:** `origin/main` = `a3510f52b208b060e755c81e0c8cc1accc299672` · 2026-11-17T08:01:00Z
+**Medido contra:** `origin/main` = `a3510f52b208b060e755c81e0c8cc1accc299672` · 2026-11-17T07:57:39Z
+
+(Hora de GitHub, `gh api -i zen`, tomada justo DESPUÉS de correr la sonda. La primera versión de este
+registro decía 08:01Z: era el reloj de la máquina, que va adelantado, y caía en el futuro.)
 
 S1 · rama `scrum-1747-sonda-firma-token-operario` · **solo confirmación, no arreglo** (encargo del
 orquestador, 17-nov-2026). La decisión de qué hacer es de PRODUCTO y la lleva el orquestador al fundador.
@@ -36,4 +39,4 @@ tiene en la mano. Salvo que el albarán lleve `ocultarPreciosEnDocumento`.
 → Qué se prefiere (¿puede el operario pasar el enlace de firma al cliente?) lo decide el FUNDADOR.
 Aquí se PARA.
 
-A9: sin fallo que generalice — medición de un encargo de solo confirmar, con sus controles en verde a la primera.
+A9: sin fallo que generalice — el ancla salió primero con la hora del reloj LOCAL (adelantado); A14 ya dice que la hora sale de GitHub, y se corrigió antes de entregar.
