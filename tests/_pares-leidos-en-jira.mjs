@@ -49,6 +49,9 @@
 // cabecera «IMPORTE» al PDF del presupuesto (tramo 1446f).
 // SCRUM-1251 comentario 20675 lo leyó la S2 el 27-oct, con el ticket entero: es la firma de los ocho
 // textos de la tarjeta «Paquete del trimestre» de `exportView.js` (SCRUM-1602).
+// SCRUM-1662 comentario 21548 lo leyó el orquestador de Luis el 17-nov, a petición de la S4 (que no
+// tiene lectura de Jira): existe, es de ese ticket, del 11-nov, y dice literalmente el rótulo «Qué hay
+// que hacer». Es la firma de `TEXTOS.queHayQueHacer` de `parteDetailView.js` (SCRUM-1662d).
 //
 // Una fila por línea (lo pide `tests/scrum710b`): dos tickets que añaden pares no se pisan.
 
@@ -65,6 +68,7 @@ const POR_1322D = 'jv-j2bh · SCRUM-1322d';
 const POR_1602 = 'S2 · SCRUM-1602';
 const POR_1640 = 'jv-j1dq · SCRUM-1640';
 const POR_1618 = 'jv-j1dg · SCRUM-1618';
+const POR_1662D = 'orquestador de Luis, a petición de S4 · SCRUM-1662d';
 
 export const PARES_LEIDOS = Object.freeze([
   { ticket: 299, comentario: 12188, leido: '2026-10-24', por: POR_1511G },
@@ -101,4 +105,5 @@ export const PARES_LEIDOS = Object.freeze([
   { ticket: 1640, comentario: 21292, leido: '2026-10-30', por: POR_1640 },
   { ticket: 1618, comentario: 21183, leido: '2026-10-30', por: POR_1618 },
   { ticket: 1618, comentario: 21221, leido: '2026-10-30', por: POR_1618 },
+  { ticket: 1662, comentario: 21548, leido: '2026-11-17', por: POR_1662D },
 ].map(Object.freeze));
