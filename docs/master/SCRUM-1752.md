@@ -90,5 +90,14 @@ todas las pasadas: sólo `POST /admin/entorno`.
   `MODULE_NOT_FOUND`, también el que fija lo que NO cambia. Ese caso es el que lo delató: un test de
   «rojo primero» en el que cae hasta el control no ha medido nada. Compilado, el rojo fue el bueno
   (4 de 5).
+- **Dos rojos míos que sólo sacó la tanda ancha**, y por poco: el sistema la mató por falta de memoria
+  con 3 lotes de 4 hechos (600 ficheros de 723), y los leí del TAP que dejó. (1) `SCRUM-514`: las fichas
+  de SCRUM-1491 y SCRUM-1492 seguían citando con `>` el literal en singular, y una cita en una ficha es
+  un texto firmado que el código debe pintar; pasan a decir que ya no es el vigente, sin `>`, con la
+  firma que lo sustituye. (2) `SCRUM-700`: mi test estrenaba su propio filtro de comentarios; usa el de
+  la casa (`soloEjecutable`). Los otros tres rojos de esos lotes son de entorno y ya conocidos
+  (`SCRUM-1199` ×2 y `SCRUM-476`). **El cuarto lote (123 ficheros) no llegó a correr aquí**: lo cubre el
+  CI. Después, en estrecho: `scrum514`, `scrum700`, `scrum1334`, `scrum1294`, `scrum1233g`, `scrum1157`
+  y el test nuevo, 68 de 68.
 - **El lector del aviso salió vacío dos veces** y la acción lo dio por CIEGO (código 1), no por limpio:
   buscaba el texto por toda la página y el aviso no había llegado a pintarse (el hallazgo de arriba).

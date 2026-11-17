@@ -27,6 +27,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard } from './_banco-vistas.mjs';
+import { soloEjecutable } from './_guard-texto.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FICHA = path.join(RAIZ, 'docs', 'microcopy', '2026-11-17-SCRUM-1752-avisos-desplazamientos-plural.md');
@@ -86,7 +87,8 @@ test('SCRUM-1752 ④ la firma tiene su ficha, con los tres literales y la línea
 test('SCRUM-1752 ⑤ el rótulo del par de las horas reparte sus líneas (la regla de CSS está)', () => {
   const css = fs.readFileSync(CSS, 'utf8').replace(/\r\n/g, '\n');
   // Sin comentarios: el que explica la regla la nombra (A23, casilla 2). Y anclado a principio de línea.
-  const sinComentarios = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  // El filtro es el de la casa (SCRUM-700: un solo sitio); en CSS la almohadilla es un color o un id.
+  const sinComentarios = soloEjecutable(css, { almohadillaEsComentario: false });
   assert.ok(sinComentarios.length > 100000, `🔴 SUELO: styles.css sin comentarios mide ${sinComentarios.length} caracteres`);
   const m = sinComentarios.match(/\n\.parte-horas-par \.parte-campo-rotulo \{([^}]*)\}/);
   assert.ok(m, '🔴 falta la regla `.parte-horas-par .parte-campo-rotulo { … }` en styles.css');
