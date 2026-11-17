@@ -4151,6 +4151,12 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    dos casillas del par se alinean por ABAJO, que es donde se escribe: sin esto la de la izquierda
    queda 20 px más baja que su vecina (medido en yaqu.app con el front local, 17-nov-2026). */
 .parte-horas-par { align-items: end; }
+/* S4 · SCRUM-1752 · a 390 px el rótulo se partía por dentro del paréntesis («Desplazamientos (nº de» /
+   «viajes)»). Repartiendo las dos líneas, el salto cae entre el nombre y su unidad. Sólo afecta a un
+   rótulo que ya ocupa dos líneas; donde el navegador no reparte, se queda como estaba. */
+.parte-horas-par .parte-campo-rotulo {
+  text-wrap: balance;
+}
 .parte-ahora {
   min-height: 44px;
   margin-top: 6px;
