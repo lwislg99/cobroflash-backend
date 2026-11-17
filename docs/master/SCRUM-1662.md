@@ -172,3 +172,44 @@ tarjeta "Por cobrar"»). El servidor de 1707 le manda lo cobrado vacío y la fic
 única regla nueva de `styles.css` copia el cuerpo del valor de la línea (14 px, `--body`). Sin color ni
 componente nuevo. **Revisar a 390 px tras el merge.**
 A9: comprobación → `tests/scrum713c-trinquete-de-estilos-en-js.test.mjs`
+
+### 17-nov (S1) · (c) el GET del parte trae «Qué hay que hacer», leído del trabajo
+
+**Decisión: c.21964** (orquestador, opción A, precedente 1697 (b)). Viene del choque medido por S4 en c.21962:
+si `parteDetailView.js` pide `GET /admin/jobs/:id` al abrir, caen `scrum1697` ①bis y `scrum366`. Por eso la
+lectura la hace el SERVIDOR y no la pantalla. El fondo de c.21892 no cambia: «leerlo del trabajo en vivo,
+solo pantalla».
+
+- `src/modules/jobs/app/routes/partes.routes.ts` · `GET /admin/partes/:id`. La consulta del trabajo que ya hacía
+  la puerta de la visita para el técnico pasa a hacerse siempre que el parte tenga trabajo. Lleva
+  `{ ...SELECT_DUENOS, queHayQueHacer: true }`, y la respuesta suma `queHayQueHacer`. Va tras la **MISMA**
+  puerta: con `puedeContar` en falso (técnico de un trabajo ajeno) es `null`. Sin trabajo o sin tarea, `null`.
+- **No se guarda en el parte** (`ParteTrabajo` no tiene dónde), **sin esquema**, y no toca el sello ni lo que
+  firma el cliente: sólo cambia la respuesta del GET. Para el admin, la visita se cuenta igual que antes, también
+  si el trabajo ya no existe.
+- `tests/scrum419-ci-declara-lo-que-no-corre.test.mjs` · el test nuevo, declarado en el inventario de gateados
+  (+1, con su motivo).
+
+### Comprobación
+
+Banco desechable propio: `127.0.0.1:55662/yaqu_1662c_test`. Esquema puesto con
+`prisma migrate diff --from-empty` del árbol, 33 tablas, y `jobs.que_hay_que_hacer` presente (1 fila).
+
+- `tests/scrum1662c-parte-que-hay-que-hacer-get.test.mjs`, nuevo y gateado por `LIBRO_PG_URL`/`QA_DB_TEST`.
+  **Rojo primero** contra `456683247`: 3 fallos, y son exactamente las tres causas de «la clave llega».
+  - ① el jefe, con tarea.
+  - ④ el técnico asignado.
+  - ⑤ en vivo: se cambia el trabajo y cambia el GET.
+
+  Los negativos ya estaban verdes en la base: ② sin tarea → `null`, ③ parte suelto → `null`, ⑥ técnico ajeno →
+  404 y el texto no viaja. Control positivo en cada lectura: 200 y el `id` del parte. **Verde: 1/1**, y
+  `scrum1697b` 2/2 a su lado.
+- Vecinos: todo test que nombra `partes.routes` o `/admin/partes`, más `scrum366*`, `scrum1697*`, `scrum1662*` y
+  `scrum419`. Son 55 ficheros.
+  - **Con banco: 448/448, 0 fallos, 0 saltos.**
+  - Sin banco: 442 pasan y 6 saltan, todos con su motivo declarado.
+- `npm run guards:entrada`: 170/170.
+- **Falta (regla 42):** después del merge, `GET /admin/partes/:id` en yaqu.app de un parte cuyo trabajo tenga
+  tarea. La pantalla que lo pinta es la pieza de S4, que va detrás.
+
+A9: comprobación → `tests/scrum1662c-parte-que-hay-que-hacer-get.test.mjs`
