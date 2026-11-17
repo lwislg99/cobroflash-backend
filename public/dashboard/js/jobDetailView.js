@@ -1739,6 +1739,15 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   parteBtn.className = 'btn-secondary btn-sm job-toolbar-btn-44'; // SCRUM-962 (AB6)
   parteBtn.setAttribute('data-abrir-parte', '1');
   parteBtn.textContent = ROTULOS_PARTES.nuevo;
+  const abrirElParte = (parte) => {
+    if (window.renderAppView) window.renderAppView('parte-detail', { parteId: parte.id });
+  };
+  const crearElParte = async () => abrirElParte(
+    await apiRequest('/admin/partes', { method: 'POST', body: JSON.stringify({ jobId: job.id }) }),
+  );
+  const avisarDelFalloDelParte = () => {
+    if (typeof showToast === 'function') showToast('No se ha podido abrir el parte. Vuelve a intentarlo.', 'warn');
+  };
   parteBtn.addEventListener('click', async () => {
     parteBtn.disabled = true;
     try {
@@ -1747,11 +1756,17 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
       const suyos = (lista && Array.isArray(lista.partes) ? lista.partes : [])
         .filter((p) => p && p.jobId === job.id);
       const deHoy = borradorDeHoy(suyos, merchant, new Date(), window.quoteCaducidad);
-      const parte = deHoy
-        || await apiRequest('/admin/partes', { method: 'POST', body: JSON.stringify({ jobId: job.id }) });
-      if (window.renderAppView) window.renderAppView('parte-detail', { parteId: parte.id });
+      if (deHoy) {
+        abrirElParte(deHoy);
+      } else if (pideAvisoDeVisitaNueva(suyos)) {
+        // SCRUM-1751 · el último está FIRMADO y no hay ningún borrador: crear es empezar OTRA
+        // visita, y eso se pregunta. La regla y el aviso son los de la lista (jobDocsReparto.js).
+        avisarDeVisitaNueva(() => crearElParte().catch(avisarDelFalloDelParte));
+      } else {
+        await crearElParte();
+      }
     } catch (e) {
-      if (typeof showToast === 'function') showToast('No se ha podido abrir el parte. Vuelve a intentarlo.', 'warn');
+      avisarDelFalloDelParte();
     } finally {
       parteBtn.disabled = false;
     }

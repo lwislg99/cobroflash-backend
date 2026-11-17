@@ -147,8 +147,73 @@ function borradorDeHoy(partes, merchant, ahora, cal) {
   return null;
 }
 
+// ── SCRUM-1751 · ANTES DE CREAR EL PARTE DE OTRA VISITA, SE PREGUNTA ──────────────────────────
+//
+// Las dos puertas al parte («Abrir parte» en la lista, «+ Nuevo parte» en la ficha) CREAN uno
+// cuando no encuentran un borrador que abrir. Con el último parte del trabajo ya FIRMADO eso es
+// empezar otra visita, y hasta este ticket pasaba sin decir nada: quien entraba a mirar lo de ayer
+// se encontraba un parte vacío recién creado.
+//
+// La regla y el aviso viven AQUÍ, junto a `borradorDeHoy`, para que las dos puertas no puedan
+// decidir distinto (es el defecto de SCRUM-366: mismo trabajo, dos respuestas).
+//
+// Texto aprobado por el orquestador por delegación del fundador (SCRUM-1656 c.21978), en
+// SCRUM-1751; ficha en `docs/microcopy/2026-11-17-SCRUM-1751-aviso-visita-nueva.md`. «Cancelar» no
+// está aquí: lo pone `jobsModal`, que es quien pinta el pie.
+const AVISO_VISITA_NUEVA = Object.freeze({
+  titulo: '¿Empezar una visita nueva?',
+  cuerpo: 'El último parte de este trabajo ya está firmado. Si sigues, se crea un parte nuevo para otra visita.',
+  crear: 'Crear parte nuevo',
+});
+
+/**
+ * ¿Hay que preguntar antes de crear? Sólo si el ÚLTIMO parte del trabajo está `firmado` y no hay
+ * NINGÚN `borrador`. Con un borrador —de hoy o de otro día— cada puerta hace lo que ya hacía; sin
+ * ningún parte, es la primera visita y no hay nada que confundir.
+ *
+ * `partes` son los de UN trabajo y llegan ordenados por fecha DESC (los ordena el servidor): el
+ * primero es el último.
+ */
+function pideAvisoDeVisitaNueva(partes) {
+  const suyos = Array.isArray(partes) ? partes.filter(Boolean) : [];
+  if (!suyos.length) return false;
+  if (suyos.some((p) => p.estado === 'borrador')) return false;
+  return suyos[0].estado === 'firmado';
+}
+
+/**
+ * Pinta el aviso en el modal de la casa (`jobsModal`, jobAgendar.js) y llama a `alCrear` SÓLO si
+ * se pulsa «Crear parte nuevo». Cancelar —con el botón, con Escape o pulsando fuera— no hace nada
+ * más que cerrar, así que este código no tiene que enterarse de CÓMO se cierra el modal.
+ *
+ * Sin `jobsModal` LANZA: quien llama enseña su aviso de fallo y no se crea nada sin preguntar.
+ */
+function avisarDeVisitaNueva(alCrear) {
+  if (typeof window.jobsModal !== 'function') throw new Error('sin_modal_de_trabajos');
+  const cuerpo = document.createElement('div');
+  cuerpo.className = 'jobs-modal-cuerpo';
+  const frase = document.createElement('p');
+  frase.className = 'jobs-modal-vacio';
+  frase.textContent = AVISO_VISITA_NUEVA.cuerpo;
+  cuerpo.appendChild(frase);
+  let crear = null;
+  window.jobsModal(AVISO_VISITA_NUEVA.titulo, cuerpo, (pie, cerrar) => {
+    crear = document.createElement('button');
+    crear.className = 'btn-primary btn-sm';
+    crear.setAttribute('data-crear-parte-nuevo', '1');
+    crear.textContent = AVISO_VISITA_NUEVA.crear;
+    // Se cierra ANTES de crear, como «Agendar»: con el aviso fuera no cabe un segundo clic.
+    crear.addEventListener('click', () => { cerrar(); alCrear(); });
+    pie.appendChild(crear);
+  });
+  // El foco entra en el diálogo: quien va con teclado no se queda detrás del velo.
+  setTimeout(() => { if (crear && typeof crear.focus === 'function') crear.focus(); }, 0);
+}
+
 if (typeof window !== 'undefined') {
   window.borradorDeHoy = borradorDeHoy;
+  window.pideAvisoDeVisitaNueva = pideAvisoDeVisitaNueva;
+  window.avisarDeVisitaNueva = avisarDeVisitaNueva;
   window.tipoDeFactura = tipoDeFactura;
   window.repartirDocumentos = repartirDocumentos;
   window.DESTINO_POR_TIPO = DESTINO_POR_TIPO;
@@ -156,5 +221,5 @@ if (typeof window !== 'undefined') {
   window.SECCIONES_CUERPO = SECCIONES_CUERPO;
 }
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { borradorDeHoy, tipoDeFactura, repartirDocumentos, clavesRepartidas, DESTINO_POR_TIPO, DESTINOS_DOCUMENTO, SECCIONES_CUERPO };
+  module.exports = { borradorDeHoy, pideAvisoDeVisitaNueva, avisarDeVisitaNueva, AVISO_VISITA_NUEVA, tipoDeFactura, repartirDocumentos, clavesRepartidas, DESTINO_POR_TIPO, DESTINOS_DOCUMENTO, SECCIONES_CUERPO };
 }
