@@ -20,6 +20,7 @@
 // tras el número venga un separador, el final, o una letra de fase (`scrum-534d-…`).
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 import { execFileSync } from 'node:child_process';
+import { numeroDeRama } from './_numero-de-rama.mjs';
 
 const git = (args) => {
   try {
@@ -166,10 +167,17 @@ export function arbolDeMain(main) {
   return salida === null ? null : salida.split('\n').filter(Boolean);
 }
 
-/** 🔴 POR IDENTIDAD: tras el número, separador, fin, o letra de fase. Nunca dentro de otro número. */
+/**
+ * 🔴 POR IDENTIDAD, y con la regla CANÓNICA (`numeroDeRama`, scripts/_numero-de-rama.mjs).
+ *
+ * Hasta el 17-nov-2026 aquí vivía una copia propia, `^scrum-N([a-z])?(-|$)`, sin el corte tras la
+ * fase que la canónica admite desde SCRUM-804h. `scrum-1686h6-apendice-c-…` era invisible para el
+ * censo, el ticket salía DENTRO con su rama viva fuera, y el control de 804b puso `main` en rojo.
+ * El `toLowerCase` conserva lo que la copia hacía con su `i`; la canónica distingue mayúsculas.
+ * Medido sobre los 179 refs de origin ese día: cambia exactamente 1, esa rama (null → 1686).
+ */
 export function ramasDelTicket(nombres, n) {
-  const re = new RegExp(`^scrum-${n}([a-z])?(-|$)`, 'i');
-  return nombres.filter((x) => re.test(x));
+  return nombres.filter((x) => numeroDeRama(String(x).toLowerCase()) === n);
 }
 
 /** Rutas de artefacto que nombra un texto: código y documentos de este repo. */
