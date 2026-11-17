@@ -319,6 +319,15 @@
 
 ## P1 — Bugs visibles al cliente / datos incorrectos
 
+### [ ] P1-1745 · en un móvil de 390 la hoja «Editar albarán» no deja leer el concepto y sus controles no llegan al pulgar; en «Agendar», tampoco (17-nov-2026, fila 29 del recorrido H6 de SCRUM-1686; arreglado en la rama, falta verlo en yaqu.app)
+- **Población:** todo el que edita o crea un albarán desde la ficha del trabajo en un móvil, y todo el que agenda o reagenda un trabajo.
+- **Qué pasa:** en la hoja, con precios, el campo Concepto mide 30 px de ancho y enseña 4 px de un texto de 182; sin precios enseña 118 de 182. Los campos de cada línea miden 36 px de alto, las casillas 13×13 y el «✕» de quitar línea 34 de ancho. En el modal, «Cancelar» y el botón principal miden 30 px y la fecha 38.
+- **Medido, no supuesto:** en yaqu.app a 390 (recorrido H6). El guard da las mismas cifras contra el `styles.css` descargado de producción el 17-nov-2026: 12 de 18 casos en rojo, los 12 de móvil.
+- **Causa raíz:** cada línea del editor es una sola fila con cinco campos y un botón, y el JS reparte el ancho con `flex` en línea: a 390 al Concepto le toca lo que sobra. Los campos, las casillas y los botones de `.btn-sm` heredan su alto de escritorio.
+- **Qué se cambió (SCRUM-1745):** un bloque de CSS sólo para móvil (≤ 768 px), sin tocar JS. Cada línea pasa a dos renglones (Concepto con su «✕»; debajo cantidad, unidad, precio e IVA), los campos y los botones miden 44 px y las casillas reciben el toque en 45. A 1280 nada cambia. Ni un texto nuevo. Detalle en `docs/master/SCRUM-1745.md`.
+- **Guard:** `npm run guard:hojas-del-trabajo-44` (`scripts/guard-hojas-del-trabajo-44.mjs`, de navegador): 18 de 18 en verde con el arreglo, a 390×844, 320×568 y 1280×800.
+- **No medido:** la hoja de alta del albarán y los demás modales de Trabajos (reciben el mismo CSS, el guard no los abre), Safari, y el teclado en pantalla.
+
 ### [x] P1-1742 · en un móvil de 390 el pad de firma del parte no cabe: el recuadro del cliente empieza fuera de la pantalla y «Confirmar firma» queda cortado (16-nov-2026, filas 14, 15 y 16 del recorrido H6 de SCRUM-1686; arreglado en la misma rama)
 - **Población:** toda firma de un parte desde un móvil, la del técnico y la del cliente. Peor cuanto más resumen lleva el parte: el del cliente enseña las líneas encima del recuadro.
 - **Qué pasa:** a 390×844 el pad mide más que la ventana (técnico 901 px, cliente 1.195 px). El recuadro del cliente empieza en y=925 y «Confirmar firma» queda en y=1129. Se puede desplazar, pero el dedo sobre el recuadro dibuja en vez de desplazar. Además «Borrar», «Cancelar» y «Confirmar firma» miden 30 px de alto, y «Nombre de quien firma» nace vacío para el técnico aunque el parte ya diga quién es.

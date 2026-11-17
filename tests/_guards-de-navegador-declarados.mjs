@@ -85,6 +85,8 @@ export const DECLARADOS = [
   'guard:notas-en-la-ficha',
   // SCRUM-1742 · el pad de firma del parte cabe en la ventana (390×844, 390×664, 320×568 y 1280×800).
   'guard:pad-de-firma-cabe',
+  // SCRUM-1745 · la hoja «Editar albarán» y el modal «Agendar», al pulgar (390×844, 320×568 y 1280×800).
+  'guard:hojas-del-trabajo-44',
   // 👆 EL TUYO VA AQUÍ, EN SU PROPIA LÍNEA, Y NO SE TOCA NINGUNA DE LAS DE ARRIBA.
   //    Si al mergear sale conflicto en esta línea es que otra rama añadió el suyo a la vez:
   //    se quedan LOS DOS. Es el conflicto que se buscaba, no un problema.
