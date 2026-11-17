@@ -168,10 +168,12 @@ const filas = [];
 
 const mc = await microcopy();
 if (!mc || !mc.rotulos || !mc.rotulos.firmadoPorNombre || !mc.opciones.length) {
-  console.error('\n  🔴 NO SUPE MEDIR: no hay microcopy del firmante en dist/ (¿falta `npm run build`?). Sin ella el pad se pinta sin nombre ni calidades y mediría menos.\n');
-  const v = veredictoDe({ hallazgos: 0, ciegos: 1 });
-  console.error('  ' + v.linea + '\n');
-  process.exit(v.codigo);
+  ciegos.push('no hay microcopy del firmante en dist/ (¿falta `npm run build`?): sin ella el pad se pinta sin nombre ni calidades y mediría menos');
+}
+if (ciegos.length) {
+  const sinMicrocopy = veredictoDe({ hallazgos, ciegos });
+  console.error(`\n  🔴 NO SUPE MEDIR: ${ciegos.join(' · ')}\n\n  ${sinMicrocopy.linea}\n`);
+  process.exit(sinMicrocopy.codigo);
 }
 
 const srv = await arrancarServidor(mc);

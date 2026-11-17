@@ -52,3 +52,20 @@ Medido contra `origin/main` = `6c1024bf177daa47e8d64c60d45565c800137dfa` · 2026
 - Para la regla 42 de este ticket ya existe el parte en borrador que hacía falta: el #23, PT-2026-015, del trabajo QA #84.
 
 **Lo que salió mal (A9).** No cargué la skill de UI antes de tocar el pad. Di una hora estimada («~17:20Z») en un mensaje al orquestador sin leerla de GitHub: eran las 17:0x. Y volqué dos listados largos al contexto en el arranque.
+
+## Tercer empuje (17-nov-2026, relevo de S4) · el rojo del check obligatorio
+
+Medido contra `origin/main` = `a3510f52b208b060e755c81e0c8cc1accc299672` · 2026-11-17T07:23:39Z (cabecera `Date:` de `gh api -i zen`).
+
+El check «build + tests (con banco desechable)» de `d9c71526e` cayó con 2 «✖» de 13.690 tests (run 43917621948), los dos sobre el guard nuevo:
+
+- `tests/scrum1327-el-veredicto-no-se-decide-a-mano.test.mjs`: el guard salía con cuentas escritas a mano cuando faltaba la microcopy en `dist/` (`veredictoDe` con dos números puestos por el guard). Arreglo en el guard, no en el censo: el ciego se apunta en la lista `ciegos` y la salida la decide `veredictoDe` sobre las listas. No se ha tocado `SALEN_A_MANO`.
+- `tests/scrum1480f-un-script-nuevo-no-entra-sin-fila.test.mjs`: el guard no tenía fila en `docs/equipo/dos-equipos.md` §3.3. Se le da fila de **S4** por el área del ticket que lo crea (`area-s4`, etiqueta leída en Jira el 17-nov) y se regenera con `node scripts/carriles.mjs generar`. No se ha tocado `suelo.quedan` ni la foto.
+
+Visto después del arreglo, en este árbol:
+
+- Los dos tests del rojo: 19 de 19. Con los seis de carriles y el del viaje de la firma: 53 de 53, 0 saltados.
+- El guard en CIEGO (apartando `dist/modules/jobs/domain/albaranFirmante.js` y devolviéndolo): «0 hallazgos · 1 ciego → salida 2». En verde: 11 casos, medidos 11, salida 0.
+- `node scripts/carriles.mjs de scripts/guard-pad-de-firma-cabe.mjs` → S4, `dos-equipos.md:189`.
+
+**Lo que salió mal (A9).** El guard se empujó sin correr los dos censos que miran a todo guard nuevo (cómo sale y de quién es), y el rojo lo dijo el CI once minutos después en vez de mi árbol en uno. Antes de empujar un `scripts/guard-*.mjs` nuevo: `tests/scrum1327-…` y `tests/scrum1480f-…`, que juntos tardan segundos.
