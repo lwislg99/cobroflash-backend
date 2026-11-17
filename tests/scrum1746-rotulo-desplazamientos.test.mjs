@@ -66,19 +66,23 @@ test('SCRUM-1746 ① el rótulo es el firmado, literal', () => {
   assert.equal(b.ctx.PARTE_TEXTOS.desplazamiento, FIRMADO);
 });
 
-for (const [estado, parte, marca] of [
-  ['borrador', BORRADOR, 'data-parte-campo'],
-  ['firmado', YA_FIRMADO, 'data-parte-dato'],
-]) {
-  test(`SCRUM-1746 ② el parte ${estado} pinta «${FIRMADO}» junto a «Kilómetros», una vez`, () => {
-    // `marca` es el SUELO del estado: la casilla en borrador, el dato en firmado. Si la hoja pintara el
-    // otro, `rotulosDelPar` no encuentra el par y cae ahí, no en un verde sobre el estado equivocado.
-    const { delPar, todosLosRotulos } = rotulosDelPar(parte, marca);
-    assert.deepEqual(delPar, [FIRMADO, 'Kilómetros']);
-    assert.equal(todosLosRotulos.filter((t) => t === FIRMADO).length, 1, 'el rótulo firmado sale una sola vez en la hoja');
-    assert.equal(todosLosRotulos.filter((t) => t === 'Desplazamiento').length, 0, '🔴 el rótulo viejo, sin unidad, sigue pintado');
-  });
+// `marca` es el SUELO del estado: la casilla en borrador, el dato en firmado. Si la hoja pintara el
+// otro, `rotulosDelPar` no encuentra el par y cae ahí, no en un verde sobre el estado equivocado.
+function elRotuloSePinta(parte, marca) {
+  const { delPar, todosLosRotulos } = rotulosDelPar(parte, marca);
+  assert.deepEqual(delPar, [FIRMADO, 'Kilómetros']);
+  assert.equal(todosLosRotulos.filter((t) => t === FIRMADO).length, 1, 'el rótulo firmado sale una sola vez en la hoja');
+  assert.equal(todosLosRotulos.filter((t) => t === 'Desplazamiento').length, 0, '🔴 el rótulo viejo, sin unidad, sigue pintado');
 }
+
+// Dos tests de nombre LITERAL, no un bucle con el nombre construido (SCRUM-1415).
+test('SCRUM-1746 ② el parte en BORRADOR pinta el rótulo firmado junto a «Kilómetros», una vez', () => {
+  elRotuloSePinta(BORRADOR, 'data-parte-campo');
+});
+
+test('SCRUM-1746 ② el parte FIRMADO pinta el rótulo firmado junto a «Kilómetros», una vez', () => {
+  elRotuloSePinta(YA_FIRMADO, 'data-parte-dato');
+});
 
 test('SCRUM-1746 ③ solo el rótulo: los tres avisos de la casilla (firmas de SCRUM-1491 y SCRUM-1492) no cambian', () => {
   const T = cargarDashboard(RAIZ).ctx.PARTE_TEXTOS;
