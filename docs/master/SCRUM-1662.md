@@ -213,3 +213,74 @@ Banco desechable propio: `127.0.0.1:55662/yaqu_1662c_test`. Esquema puesto con
   tarea. La pantalla que lo pinta es la pieza de S4, que va detrás.
 
 A9: comprobación → `tests/scrum1662c-parte-que-hay-que-hacer-get.test.mjs`
+
+### 17-nov (S4) · (d) la hoja del parte PINTA «Qué hay que hacer»
+
+**Skill UI:** cargada (`yaqu-premium-ui`; DESIGN.md única fuente de tokens)
+**Medido contra:** `origin/main` = `17de28fa2abc653bd946f42d94c061f3a5daf954` · 2026-11-17T08:50:26Z (hora de GitHub) · **Rama:** `scrum-1662d-parte-pinta-que-hay-que-hacer` · **Carril:** S4.
+
+La última pieza de la aceptación: el operario abre el parte y lee la tarea sin volver a la ficha del trabajo.
+El dato ya viaja dentro del parte (pieza (c), arriba). Aquí, **solo pantalla**.
+
+- `public/dashboard/js/parteDetailView.js`
+  - `TEXTOS.queHayQueHacer` = «Qué hay que hacer». Es el mismo literal de la ficha del trabajo
+    (`ROTULO_TAREA`), firmado en c.21548; que vale dentro del parte, c.21956.
+  - `pintarQueHayQueHacer(parte)`, llamada en `renderParte` justo después de la cabecera. Si
+    `parte.queHayQueHacer` es texto y no está vacío, pinta `section.parte-tarea` con el rótulo y la tarea en
+    un `<p class="detail-tarea">`, el párrafo de la ficha, que conserva los saltos de línea.
+  - **Sin tarea no hay línea** (c.21801): `null`, sin la clave (un servidor anterior a (c)), vacío, solo
+    espacios o cualquier cosa que no sea texto → no se pinta nada. No hay «Sin tarea».
+  - **Solo lectura.** Ni casilla ni botón: la tarea se escribe en el trabajo. Un editor pediría textos de
+    guardado y de error sin firma (regla 39).
+  - **La vista no pide el trabajo.** Sigue haciendo un solo `GET /admin/partes/:id`: `scrum1697` y `scrum366`
+    no se tocan y siguen en verde.
+  - No toca la firma, el sello ni el PDF.
+- `public/dashboard/css/styles.css` · bloque propio `S4 · SCRUM-1662 (d)`: `.parte-tarea` es una tarjeta de la
+  misma familia que los pasos del parte (Superficie, borde de 1 px, sombra Reposo, radio grande) y
+  `.parte-tarea-titulo`, del mismo escalón que «Horas». El texto, 16 px en Tinta. Ningún token nuevo.
+- `docs/microcopy/2026-11-11-SCRUM-1662-que-hay-que-hacer-en-el-parte.md` · la ficha de la firma.
+
+**Decisión de S4, sin contrastar con nadie:** se pinta en **todos** los estados, también en el parte firmado,
+encima de los datos del documento. El firmado conserva su orden de papel (SCRUM-1693) de ahí hacia abajo. Si
+el fundador prefiere que el firmado no la enseñe, es una condición en `renderParte`.
+
+**La firma, leída por otro:** esta sesión no tiene lectura de Jira. Los comentarios 21548 (11-nov) y 21956
+(17-nov) los leyó el orquestador el 17-nov a petición mía y confirmó que existen, que son de este ticket y lo
+que dicen; por eso `tests/_pares-leidos-en-jira.mjs` gana la fila del 21548 con su nombre, no con el mío. El
+21801 no se ha leído: se cita por número, del encargo. La ficha de microcopy lo dice igual.
+
+### Comprobación (d)
+
+- `tests/scrum1662d-parte-pinta-que-hay-que-hacer.test.mjs` (nuevo, sin gate, banco de vistas), 9 tests.
+  - **Rojo primero** contra `17de28fa2`: 9 de 9 en rojo por su causa (sin la clave, sin el bloque, sin la
+    regla, sin la ficha). Los negativos de «sin tarea no hay línea» llevan DENTRO un control positivo —con
+    tarea, el mismo buscador ve el bloque— y por eso también nacen rojos.
+  - **Verde: 9/9.**
+  - **Por mutación, con base** (base 9/9 antes y después): 8 mutantes, 8 muertos. Sin `esc()` → ⑤. Pinta sin
+    tarea → ③. Acepta lo que no es texto → ③. Sin recortar → ③. Sin la llamada → ②③④⑤⑥. Literal cambiado
+    → ①②. Con un botón dentro → ④. Sin la regla `.parte-tarea` → ⑥.
+- **En pantalla, antes de empujar** (`docs/master/evidencias/SCRUM-1662/c1662d-parte-tarea.mjs`, con el front
+  de este árbol servido encima de yaqu.app y los datos de la cuenta QA; no escribe nada):
+
+  | | 390 px | 1280 px |
+  |---|---|---|
+  | parte #23, borrador | 1 bloque, justo tras la cabecera; después, «Horas» | igual; columna izquierda (600 px) |
+  | parte #22, firmado | 1 bloque, justo tras la cabecera; después, los datos del parte | igual |
+  | rótulo, veces en la hoja | 1 | 1 |
+  | desborde horizontal de la página | 0 | 0 |
+  | el texto se sale de su caja | no (una palabra de 60 letras sin espacios parte línea) | no |
+  | las firmas | debajo, como antes | arrancan a la altura del bloque (y = 212 las dos) |
+  | interactivos dentro del bloque | 0 | 0 |
+
+  Tipografía medida: título 18 px / 700, texto 16 px / 24 px, los dos en Tinta `rgb(15, 28, 23)`.
+  Testigo del dato: el servidor de producción ya manda `queHayQueHacer` (texto de 218 caracteres) en los
+  partes #22 y #23, los dos del trabajo #84.
+- **Falta (regla 42):** tras el merge y el despliegue, la misma medida SIN `LOCAL_DIR`, a 390 y a 1280.
+
+A9: comprobación → `tests/scrum1662d-parte-pinta-que-hay-que-hacer.test.mjs`
+A9 (lo que me salió mal): mi primera corrida «en rojo» fue CIEGA — el árbol no tenía `dist` y los diez tests
+de entonces caían por `Cannot find module`, no por su causa. Lo vi al leer el motivo de cada rojo, no el
+recuento; compilé y la repetí. Y un test que escribí («la tarea se recorta por los bordes») no podía fallar:
+el banco de vistas ya recorta el texto de un nodo. Lo cazó la mutación y lo quité; el recorte lo sujeta ③.
+Y escribí la marca de firma citando un comentario que no había leído: lo cazó `scrum921c` en la tanda ancha
+(«par no leído: SCRUM-1662 comentario 21548»). No cambié la marca; pedí la lectura a quien puede hacerla.
