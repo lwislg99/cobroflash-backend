@@ -60,6 +60,16 @@ Cada mutación comprobó antes que su texto aparecía una sola vez en el fichero
 
 **A9 · el guard medía a media animación.** La primera versión de este guard (commit `d7b18fb930b427a115f52d09991bacae5df947c9`, sin empujar) medía nada más abrir la hoja, y `.modal` entra animada (0,18 s en escritorio, 0,22 s en móvil). De ahí salieron tres resultados que no eran del producto: la fecha de Agendar ciega a 390 unas pasadas sí y otras no, «Cancelar» con 42,5 px de toque en una caja de 44, y el «?» de la cabecera bailando de 44,5 a 44,9 a 1280, que tumbaba el control E. Ahora espera a que no quede ninguna animación en marcha, y si a los 5 s sigue habiéndola el caso sale ciego. Se vio porque el mismo árbol daba resultados distintos en dos pasadas seguidas.
 
+## La tanda
+
+Tanda dirigida (`node scripts/tests-que-cubren.mjs --lanzar`): 510 ficheros de test de 1.689, 4.569 tests. En la primera pasada cayeron 5:
+
+- `scrum471` y `scrum476`: del entorno. Este worktree no tiene `node_modules` propio y los dos lo exigen; en el CI sí lo hay.
+- `scrum854`: pedía el registro ya commiteado. Pasa tras el commit.
+- `scrum548` y, por arrastre, `scrum976`: de esta rama. El guard nuevo sirve su página en una ruta virtual y un puerto efímero, y `scrum548` exige declarar a los guards cuyo destino no se puede derivar del fuente. Declarado, con su motivo y su medida (`__hojas` sólo aparece en este guard).
+
+Después, los seis tests del alta (`scrum548`, `scrum976`, `scrum854`, `scrum522`, `scrum1295`, `scrum1294`): 63 de 63. La tanda completa la juzga el CI.
+
 ## Lo que NO está medido
 
 - La hoja de **alta** del albarán: recibe el mismo CSS por el selector, pero el guard abre sólo la de «Editar» (`openAlbCrearSheet` vive dentro de la ficha y no se alcanza desde fuera).
