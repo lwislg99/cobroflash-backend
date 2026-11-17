@@ -1906,3 +1906,71 @@ viva confirmada). `npm test` sobre los dos ficheros: **12 pass · 0 fail**.
 - `git diff origin/main --stat` sobre los 4 ficheros del PR: sin sorpresas, sólo lo esperado.
 - Empujado a `scrum-804b-el-barrido-de-la-42`; `mergeable` pasó de `CONFLICTING` a `MERGEABLE`,
   CI en marcha (auto-merge sigue armado desde la apertura del PR).
+
+---
+
+# APÉNDICE · 17-nov-2026 · SCRUM-804b · el censo de la 42 leía las ramas con una COPIA estrecha de la regla
+
+**Puesto:** S5 (instrumentos) · **Rama:** `scrum-804b-censo-regla-canonica`
+**Medido contra:** `origin/main` = `340b084d485421188a546a6f0323a52fb456b1a6` · 2026-11-17T15:52:51Z
+A9: comprobación → `tests/scrum804b-el-barrido-de-la-42.test.mjs`
+
+## ① El rojo, medido en el log
+
+`main` con UN ✖ en el obligatorio (runs 44054044211 y 44053524890; también el de #3189, run
+44061427224): «SCRUM-804b · 🔴 SUELO y CONTROLES», `tests/scrum804b-el-barrido-de-la-42.test.mjs:245`:
+
+> 🔴 SCRUM-1686 tiene rama viva SIN mergear y el criterio lo saca DENTRO (entrada en main + 23/23
+> artefactos suyos presentes). — `'DENTRO' !== 'FUERA'`
+
+El negativo lo deriva el propio test del estado vivo (no está escrito a mano desde la quinta
+re-elección): la rama viva sin mergear de número más alto. Hoy es
+`scrum-1686h6-apendice-c-tramo-6-2-estados-oficina` (S4 la renombró hacia las 10:04Z desde
+`…-1686h6c-…`, que la regla canónica no lee, y borró la vieja; con eso se curó el 804 y apareció este).
+
+## ② La causa: la cuarta copia de la misma regla
+
+El control y el censo leen el número de la rama por vías distintas, a propósito:
+- el control: `/refs\/heads\/scrum-(\d+)(?:[a-z]\d*)?(?:-|$)/` → admite la fase CON CORTE (`h6`);
+- el censo (`ramasDelTicket`, `scripts/censo-regla-42.mjs`): `^scrum-N([a-z])?(-|$)` → NO la admite.
+
+Para el censo la rama no existía, así que el ticket no tenía «rama viva» (orden ① de su criterio) y
+caía a la ② (entrada + artefactos) → DENTRO. **El control hizo su trabajo: cazó un falso DENTRO
+real.** El suelo no estaba anclado a un estado viejo de refs (la LECTURA del orquestador queda
+descartada): con cualquier rama `scrum-N<letra><dígito>-…` viva el censo habría dicho lo mismo.
+
+La regla canónica es `numeroDeRama` (`scripts/_numero-de-rama.mjs`, SCRUM-829), que admite el
+corte desde SCRUM-804h (20-sep) y lo DECLARA en su bloque `FORMAS:` (`scrum-915e1-documento-vivo → 915`).
+Ese fichero existe precisamente para que la regla no se copie; el censo de la 42 tenía su copia.
+
+## ③ Lo hecho (regla 41: se arregla el código, el criterio no se toca)
+
+- `ramasDelTicket` delega en `numeroDeRama` (con `toLowerCase`, que conserva lo que la copia hacía
+  con su `i`). El suelo, los positivos y el negativo de 804b quedan **byte a byte igual**.
+- Impacto medido antes de cambiar, sobre los 179 refs de origin: cambia **exactamente 1** nombre,
+  `scrum-1686h6-apendice-c-tramo-6-2-estados-oficina` (null → 1686). Ninguna rama en mayúsculas.
+- El caso puro de IDENTIDAD lee el bloque `FORMAS:` de la regla canónica y exige que el censo
+  empareje cada forma con su número y con ningún otro número del nombre, más el caso del 17-nov
+  tal cual. Va DENTRO de ese caso, no en uno nuevo: `tests/scrum1331-sin-red-se-dice.test.mjs`
+  fija que 804b declara 5 casos y 2 puros.
+
+## ④ Los controles
+
+- Rojo primero: con el código viejo, el caso nuevo cae con «`scrum-915e1-documento-vivo` (la regla
+  dice → 915) NO casa con SCRUM-915 en el censo».
+- Mutación (vuelta a la copia vieja sobre el arreglo): cae el caso de IDENTIDAD con el mismo motivo;
+  restaurado.
+- Familia entera (`tests/scrum804*`, `scrum1541`, `scrum1539b`, `scrum1331`, `scrum723`, `scrum1286*`):
+  **62 pass · 0 fail · 0 skipped** (TAP). SCRUM-1686 sale `FUERA` por «rama viva SIN mergear».
+
+## ⑤ Lo que me salió mal (A9)
+
+La primera versión metía las comprobaciones en un caso NUEVO, y `scrum1331` cayó («declara 6
+caso(s) y tiene 5»). Lo vi en mi propia pasada, antes de empujar; no se tocó el guard de 1331: las
+comprobaciones van dentro del caso puro que ya existía.
+
+## ⑥ Visto de paso, NO tocado
+
+`propios` en el mismo fichero (`(^|/)scrum-?N([a-z])?[-._]`) tampoco admite el corte para NOMBRES DE
+FICHERO (`tests/scrum915e1-….test.mjs`). No es la regla de ramas y ensancharlo empuja hacia DENTRO,
+que es el lado peligroso: se nombra aquí, sin arreglarlo a ciegas.
