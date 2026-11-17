@@ -69,3 +69,25 @@ Visto después del arreglo, en este árbol:
 - `node scripts/carriles.mjs de scripts/guard-pad-de-firma-cabe.mjs` → S4, `dos-equipos.md:189`.
 
 **Lo que salió mal (A9).** El guard se empujó sin correr los dos censos que miran a todo guard nuevo (cómo sale y de quién es), y el rojo lo dijo el CI once minutos después en vez de mi árbol en uno. Antes de empujar un `scripts/guard-*.mjs` nuevo: `tests/scrum1327-…` y `tests/scrum1480f-…`, que juntos tardan segundos.
+
+## Regla 42 (17-nov-2026, S4) · el pad, visto en yaqu.app
+
+Medido contra `origin/main` = `4566832477aa7b101588984765887369d6d0f024` (el merge de #3179, 07:59:12Z), y `/health` de yaqu.app sirviendo ese mismo SHA a las 08:08:44Z (cabecera `Date:` de `gh api -i zen`). Las pasadas, 08:15Z.
+
+Instrumento: `docs/master/evidencias/SCRUM-1686/banco-h6/paso2.mjs` + `b12-firmas.mjs`, sin `HACER` (abre el pad, no firma). Sujeto: parte #23 PT-2026-015 de la cuenta QA, en borrador. Antes estaba vacío y así el pad no se abre; se rellenó con `b09-rellenar-parte.mjs` (`PASO=dictado` y `PASO=anadir`).
+
+| pasada | recuadro | «Confirmar firma» | botones del pie | alto desplazable |
+|---|---|---|---|---|
+| ANTES · técnico · 390×844 | y=631–821 | 120×30, y=835–865 | 30 px | 901 de 844 |
+| ANTES · cliente · 390×844 | y=925–1115 | 120×30, y=1129–1159 | 30 px | 1195 de 844 |
+| DESPUÉS · técnico · 390×844 | y=560–750 | 120×44, y=764–808 | 44 / 44 / 44 | 844 de 844 |
+| DESPUÉS · cliente · 390×844 | y=560–750 | 120×44, y=764–808 | 44 / 44 / 44 | 844 de 844 |
+| DESPUÉS · técnico · 1280×800 | y=516–706 | 120×44, y=720–764 | 44 / 44 / 44 | 800 de 800 |
+| DESPUÉS · cliente · 1280×800 | y=516–706 | 120×44, y=720–764 | 44 / 44 / 44 | 800 de 800 |
+
+El ANTES es de las 07:33Z del mismo día, con producción sirviendo `main` sin el arreglo: es el control positivo (el instrumento ve el defecto con las cifras del ticket). Escrituras de las cuatro pasadas DESPUÉS: sólo `POST /admin/entorno`. No se firmó nada.
+
+No medido: móvil apaisado, teclado en pantalla, Safari y el trazo sobre el recuadro en producción (el guard lo hace sobre la página montada a mano: caso G).
+
+**Lo que salió mal (A9).** El parte que el traspaso daba por listo para la regla 42 estaba vacío, y un parte vacío no abre el pad: la primera pasada salió «NO HAY canvas visible» con código 0. El banco `b12` no distingue «no se abrió» de «se abrió y no lo vi», y yo tampoco lo había mirado antes de lanzarlo.
+A9: aviso → cicatriz S4 «Un sujeto de QA se comprueba en su estado de HOY antes de medir sobre él: un parte vacío no abre el pad, y la pasada sale 0 sin medir nada.» — no se pudo comprobar: el banco `b12` sale 0 cuando no hay pad y cambiarlo es otra entrega.
