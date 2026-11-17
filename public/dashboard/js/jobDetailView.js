@@ -542,6 +542,16 @@ function decidirAperturaAlbaran({ modoValoracion, tieneQuote, quoteLeido, lineas
   return { lineas, descartadas: origen.length - lineas.length, motivo: null };
 }
 
+// SCRUM-1740 · el último parte del Trabajo (el de id MAYOR) si está FIRMADO; si no, null. Es el
+// criterio de la ruta (S1): con él, el POST sin `lineas` nace con las líneas del parte. Si el
+// último es un borrador, no cuenta uno firmado anterior.
+function ultimoParteFirmado(partes) {
+  const lista = Array.isArray(partes) ? partes.filter((p) => p && Number.isInteger(p.id)) : [];
+  if (!lista.length) return null;
+  const ultimo = lista.reduce((a, b) => (b.id > a.id ? b : a));
+  return ultimo.estado === 'firmado' ? ultimo : null;
+}
+
 // SCRUM-1694 · los textos de la sección Partes. Tanda N1-N13 de SCRUM-1686 c.21470, con la firma
 // literal del fundador «si firmo» en c.21471 (~12:05 local, 11-nov-2026); cada clave lleva su marca.
 //   N7 los dos vacíos (sustituyen a «Aún no hay documentos. Crea un albarán…») · N9 el botón
@@ -1685,7 +1695,9 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   const newAlbBtn = document.createElement('button');
   newAlbBtn.className = 'btn-secondary btn-sm job-toolbar-btn-44'; // SCRUM-962 (AB6)
   newAlbBtn.textContent = '+ Nuevo albarán';
-  newAlbRow.appendChild(newAlbBtn);
+  // SCRUM-1740 · UNA sola vez en la ficha: si la primaria de la cabecera ya es `nuevo` (mismo rótulo,
+  // misma alta), la barra no lo repite. Medido duplicado en el recorrido H6, fila 20.
+  if (!(nextAct && nextAct.kind === 'nuevo')) newAlbRow.appendChild(newAlbBtn);
   // ── SCRUM-917g (F) · LA CASILLA DE PRECIOS YA NO ESTÁ EN ESTA BARRA ─────────────────────────
   //
   // Antes fijaba el modo del albarán ANTES de abrir la hoja de alta (SCRUM-65). La hoja de alta lleva
@@ -2007,6 +2019,14 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
    * se reescribe distinto. Por eso el alta se nombra UNA vez y los dos botones la llaman.
    */
   async function abrirAltaAlbaran(modoValoracion) {
+    // SCRUM-1740 (c.21982) · con el último parte FIRMADO, las líneas las pone el SERVIDOR: la hoja
+    // se abre sin prellenar desde el presupuesto, para que el POST salga SIN `lineas` (con ellas no
+    // precarga). Sigue sin crearse nada hasta guardar (SCRUM-303).
+    const parteFirmado = modoValoracion === 'SIN_VALORAR' ? ultimoParteFirmado(job.partes) : null;
+    if (parteFirmado) {
+      openAlbCrearSheet({ lineas: [], descartadas: 0, motivo: null, desdeParte: parteFirmado }, modoValoracion);
+      return;
+    }
     const tieneQuote = modoValoracion === 'SIN_VALORAR' && job.quote?.id != null;
     // ⚠️ `quoteLeido` arranca en `true` para el caso en que NI SIQUIERA se pide (VALORADO o sin
     // presupuesto a la vista): ahí no ha fallado ninguna lectura, y decir «ilegible» sería
@@ -2223,12 +2243,18 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
         // habría cazado ningún test del editor: el editor sí lo manda.
         // `undefined` = no se pudo leer → no se manda la clave y el servidor no toca la columna.
         if (docHeaderText !== undefined) cuerpo.docHeaderText = docHeaderText;
-        await crearAlbaran(cuerpo);
+        const creado = await crearAlbaran(cuerpo);
+        // SCRUM-1740 · si el servidor lo precargó desde el parte, el flujo ATERRIZA en ese borrador
+        // (su editor de siempre): ahí se quita o cambia lo que no aplique antes de emitir.
+        const precargado = decision.desdeParte && !lineas.length && creado && creado.precargaDelParte
+          && Array.isArray(creado.lineas) && creado.lineas.length ? creado : null;
+        const nLineas = precargado ? precargado.lineas.length : lineas.length;
         showToast(
-          lineas.length
-            ? `✓ Albarán creado con ${lineas.length} ${lineas.length === 1 ? 'línea' : 'líneas'}.`
+          nLineas
+            ? `✓ Albarán creado con ${nLineas} ${nLineas === 1 ? 'línea' : 'líneas'}.`
             : '✓ Albarán creado (borrador).',
         );
+        if (precargado) openAlbEditorSheet(precargado, { cur, refresh, setStatus, direccionSugerida: job.direccion || null });
       },
       // SCRUM-993 · «UN TOQUE»: crea (por `crearAlbaran`, arriba — un solo alta, SCRUM-303), EMITE
       // y ENVÍA A FIRMAR, encadenados. Si el envío falla, el albarán YA está emitido (paso
