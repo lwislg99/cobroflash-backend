@@ -244,9 +244,10 @@ El dato ya viaja dentro del parte (pieza (c), arriba). Aquí, **solo pantalla**.
 encima de los datos del documento. El firmado conserva su orden de papel (SCRUM-1693) de ahí hacia abajo. Si
 el fundador prefiere que el firmado no la enseñe, es una condición en `renderParte`.
 
-**No comprobado:** no he leído en Jira los comentarios 21548, 21956 y 21801 (esta sesión no tiene conector de
-lectura). Los cito por número: el 21548 consta con su literal al principio de este registro; el 21956 y el
-21801 vienen del encargo del orquestador. La ficha de microcopy lo dice igual.
+**La firma, leída por otro:** esta sesión no tiene lectura de Jira. Los comentarios 21548 (11-nov) y 21956
+(17-nov) los leyó el orquestador el 17-nov a petición mía y confirmó que existen, que son de este ticket y lo
+que dicen; por eso `tests/_pares-leidos-en-jira.mjs` gana la fila del 21548 con su nombre, no con el mío. El
+21801 no se ha leído: se cita por número, del encargo. La ficha de microcopy lo dice igual.
 
 ### Comprobación (d)
 
@@ -281,3 +282,5 @@ A9 (lo que me salió mal): mi primera corrida «en rojo» fue CIEGA — el árbo
 de entonces caían por `Cannot find module`, no por su causa. Lo vi al leer el motivo de cada rojo, no el
 recuento; compilé y la repetí. Y un test que escribí («la tarea se recorta por los bordes») no podía fallar:
 el banco de vistas ya recorta el texto de un nodo. Lo cazó la mutación y lo quité; el recorte lo sujeta ③.
+Y escribí la marca de firma citando un comentario que no había leído: lo cazó `scrum921c` en la tanda ancha
+(«par no leído: SCRUM-1662 comentario 21548»). No cambié la marca; pedí la lectura a quien puede hacerla.

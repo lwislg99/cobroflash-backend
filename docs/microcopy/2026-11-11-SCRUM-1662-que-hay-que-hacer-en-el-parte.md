@@ -31,9 +31,16 @@ nadie lo ha firmado.
 Es de **solo lectura**. No hay botón de editar ni textos de guardado o de error: la tarea se escribe en
 el trabajo.
 
-## Lo que no se ha comprobado desde esta ficha
+## Quién leyó la firma, y qué no se ha comprobado
 
-Quien la escribió (S4, 17-nov-2026) no ha leído los comentarios 21548, 21956 y 21801 en Jira: los cita
-por su número tal como constan en `docs/master/SCRUM-1662.md` (el 21548, con su literal) y en el
-encargo del orquestador (el 21956 y el 21801). La fecha del 11-nov-2026 sale de ese registro, que da
-el comentario 21548 por existente en su hallazgo del 11-nov.
+Quien escribió esta ficha (S4, 17-nov-2026) no tiene lectura de Jira. Los comentarios 21548 y 21956 los
+leyó el orquestador de Luis el 17-nov-2026, a petición suya, y esto es lo que dijo de ellos:
+
+- **21548** — existe, es de SCRUM-1662 y es del 11-nov-2026. Lo escribe el orquestador y registra la
+  firma del fundador («respuesta directa a la pregunta del orquestador; literal de la opción elegida»).
+  Dice literalmente el rótulo.
+- **21956** — existe, es de SCRUM-1662 y es del 17-nov-2026. Lo escribe el orquestador y registra que
+  el fundador aceptó que el mismo rótulo vale dentro del parte.
+
+El comentario 21801 («sin tarea no hay línea») no lo ha leído nadie para esta ficha: se cita por su
+número, tal como viene en el encargo.
