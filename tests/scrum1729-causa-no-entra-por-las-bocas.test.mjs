@@ -45,7 +45,9 @@ function leerAst(relPath) {
 }
 function nombreDeLlamada(nodo) {
   if (!ts.isCallExpression(nodo)) return null;
-  const c = nodo.expression;
+  let c = nodo.expression;
+  // `(f as any)(…)`, `(f)(…)`, `f!(…)`: la misma llamada (lo destapó la inyección R3).
+  while (ts.isParenthesizedExpression(c) || ts.isAsExpression(c) || ts.isNonNullExpression(c) || ts.isTypeAssertionExpression?.(c)) c = c.expression;
   if (ts.isIdentifier(c)) return c.text;
   if (ts.isPropertyAccessExpression(c)) return c.name.text;
   return null;
@@ -204,7 +206,15 @@ test('SCRUM-1729 · censo: quien llama a crearFacturaEmitida está clasificado',
     if (!texto.includes('crearFacturaEmitida')) continue;
     const sf = ts.createSourceFile(abs, texto, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
     const r = rel(abs);
-    if (llamadas(sf, 'crearFacturaEmitida').length > 0 || r.endsWith('/crearFacturaEmitida.ts')) llaman.add(r);
+    // Por IMPORT, no por el nombre de la llamada: un alias (`import { crearFacturaEmitida as x }`)
+    // cambia el nombre y no el camino. Más la llamada directa y la definición.
+    let importa = false;
+    const visitar = (n) => {
+      if (ts.isImportSpecifier(n) && (n.propertyName ?? n.name).text === 'crearFacturaEmitida') importa = true;
+      ts.forEachChild(n, visitar);
+    };
+    visitar(sf);
+    if (importa || llamadas(sf, 'crearFacturaEmitida').length > 0 || r.endsWith('/crearFacturaEmitida.ts')) llaman.add(r);
   }
   const clasificados = new Set([...Object.keys(BOCAS_TRANSPARENTES), ...Object.keys(OTRAS_BOCAS)]);
   t.diagnostic(`población: ${vistos.length} ficheros .ts · llaman a crearFacturaEmitida: ${llaman.size}`);
