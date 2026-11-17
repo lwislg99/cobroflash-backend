@@ -227,6 +227,12 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // página desde un servidor propio en un puerto EFÍMERO y navega a `base + '/'`, con la base en una
   // variable. MEDIDO: esa página la fabrica él (la ficha 360 con las `/notes` del router real) y no
   // la comparte con ningún otro guard. El orden de la lista es el de package.json, y se midió.
+  // SCRUM-1745 · entra `guard:hojas-del-trabajo-44`, por lo mismo que `completar-lleva-al-campo`:
+  // sirve su página desde una ruta VIRTUAL (`/dashboard/__hojas.html`) en un servidor propio y en un
+  // puerto EFÍMERO, y navega con el puerto y la variante de la hoja de estilos en variables.
+  // MEDIDO: `__hojas` sólo aparece en `scripts/guard-hojas-del-trabajo-44.mjs`; la página la fabrica él
+  // (los scripts del panel menos `app.js`) y no la comparte con ningún otro guard. Su sitio en la lista
+  // es el de package.json, y lo dio este mismo test al caer.
   assert.deepEqual(s.noResueltos, [
     'guard:contraste',
     'guard:caja-semaforo',
@@ -237,6 +243,7 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
     'guard:arranque-sin-red',
     'guard:un-solo-presupuesto',
     'guard:firma-con-tramos',
+    'guard:hojas-del-trabajo-44',
     'guard:completar-lleva-al-campo',
     'guard:objetivo-tactil',
     'guard:detalle-trabajo-917',
