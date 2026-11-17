@@ -61,6 +61,8 @@ una a mano y comprobada con `git status --porcelain`; base verde al final (4/4).
 - R3: el censo contaba la llamada por `Identifier`; `(crearFacturaEmitida as any)(…)` **salía VERDE**.
   Ahora el censo cuenta por IMPORT (un alias no lo esquiva) y la llamada desenvuelve paréntesis, `as` y `!`.
 
+A9: sin fallo que generalice — los dos agujeros del instrumento (R1b, R3) los cazaron las inyecciones del rojo-primero ANTES del primer push; es el método funcionando, y cada uno se arregló y se volvió a inyectar.
+
 ## Límite que queda dicho
 
 El trinquete mira la **sentencia de nivel de fichero** que contiene la boca (el `router.post(...)`
