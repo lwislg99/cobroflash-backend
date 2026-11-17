@@ -18,7 +18,9 @@ function cookieValor() {
 
 export async function abrir(ancho = 390, alto = 844) {
   const browser = await chromium.launch({ executablePath: EXE, headless: true });
-  const movil = ancho < 600;
+  // SIN_MOVIL=1 (16-nov, recorrido H6): misma ventana SIN emulación de móvil, para separar un desborde real
+  // de uno que sólo fabrica la emulación. Sin la variable, todo sigue como el 11-nov.
+  const movil = ancho < 600 && process.env.SIN_MOVIL !== '1';
   const ctx = await browser.newContext({
     viewport: { width: ancho, height: alto },
     deviceScaleFactor: movil ? 2 : 1,
