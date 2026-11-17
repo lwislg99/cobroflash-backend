@@ -5,6 +5,7 @@ paths:
   - "public/dashboard/js/parteDetailView.js"
   - "scripts/guard-detalle-trabajo-917.mjs"
   - "scripts/guard-lista-trabajos-917.mjs"
+  - "scripts/guard-pad-de-firma-cabe.mjs"
   - "public/dashboard/js/jobsView.js"
   - "scripts/_trabajos-917.mjs"
   - "scripts/_detalle-917.mjs"

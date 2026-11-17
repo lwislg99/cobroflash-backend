@@ -478,7 +478,9 @@ if (S2) {
     registroAnterior: anterior ? anterior.numSerieFactura : null,
     // 240 s desde el sello, según el código 2004. Es hora de España, la del reloj de esta máquina.
     margenSegundos: 240,
-    subirAntesDe: new Date(ahora.getTime() + 240_000).toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }),
+    subirAntesDe: new Date(ahora.getTime() + 240_000).toLocaleTimeString('es-ES', {
+      timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+    }),
     endpointParaElFormulario: '/wlpl/TIKE-CONT/ws/SistemaFacturacion/VerifactuSOAP',
     controles,
     cadena: `NO avanza. Si la AEAT lo acepta: node scripts/sobre-soap-prueba-aeat.mjs --confirmar-s2 ${VARIANTE}`,
