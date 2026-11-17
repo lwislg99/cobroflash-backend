@@ -9,8 +9,8 @@ La delegación de microcopy es la permanente de `docs/equipo/limites-del-fundado
 Para el código `desplazamientos_negativo`:
 
 «No se ha guardado. Desplazamiento es 0 o más» — **ya no es el texto vigente** (17-nov-2026): pasó al
-plural del rótulo con firma propia, SCRUM-1752 comentario 21987 (ficha
-`2026-11-17-SCRUM-1752-avisos-desplazamientos-plural.md`). Por eso ya no va como cita.
+plural del rótulo con firma propia, SCRUM-1752 comentario 21987 (con su ficha en esta carpeta). Por eso
+ya no va como cita.
 
 Para el código `kilometros_negativo`:
 

@@ -101,3 +101,11 @@ todas las pasadas: sólo `POST /admin/entorno`.
   y el test nuevo, 68 de 68.
 - **El lector del aviso salió vacío dos veces** y la acción lo dio por CIEGO (código 1), no por limpio:
   buscaba el texto por toda la página y el aviso no había llegado a pintarse (el hallazgo de arriba).
+
+## Tres rojos del CI tras el push (17-nov-2026, PR #3198, run 44143134291) — los tres de esta rama
+
+- `SCRUM-709`: las fichas de 1491 y 1492 nombraban el fichero de la ficha nueva, y eso es un índice a mano. Ahora dicen «con su ficha en esta carpeta».
+- `SCRUM-1395`: el test nuevo llamaba a `soloEjecutable` sin suelo. Pasa a `ejecutableDe` con el selector de ancla.
+- `SCRUM-1395b`: el test nuevo no tenía ficha en `tests/_veredicto-mudez.json`. Regenerado con `npm run censo:mudez -- --escribir`.
+
+Los tres estaban en el lote que no llegó a correr en local (la tanda de 723 la mató la memoria). Después: 16 ficheros en estrecho, 178 de 178.
