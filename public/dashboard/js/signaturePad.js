@@ -72,9 +72,32 @@
       'background:var(--surface,#fff);border-radius:16px;box-shadow:0 18px 50px rgba(15,28,23,.22);padding:20px;width:100%;max-width:520px';
     overlay.appendChild(card);
 
+    // 🔴 SCRUM-1742 · LA TARJETA YA NO CRECE: TRES PISOS, Y SÓLO EL DE EN MEDIO SE DESPLAZA.
+    //
+    // Medido en yaqu.app el 16-nov-2026, a 390×844: el pad del técnico medía 901 px y el del cliente
+    // 1.195; el recuadro del cliente EMPEZABA en y=925, fuera de la ventana, y «Confirmar firma»
+    // quedaba cortado o fuera. Se podía desplazar, pero el dedo sobre el recuadro DIBUJA: con el
+    // recuadro ocupando la pantalla no había por dónde tirar.
+    //
+    //   cabeza · el título (quién firma).
+    //   cuerpo · la pista, quién firma y el resumen. Es lo ÚNICO que se desplaza.
+    //   pie    · la confirmación, el recuadro, el aviso y los botones. Siempre a la vista.
+    //
+    // El alto lo pone `.firma-pad` en `styles.css` (la ventana menos el margen, con un suelo: por
+    // debajo de él la tarjeta vuelve a desplazarse entera, que es para lo que el fondo conserva su
+    // `overflow:auto`). Sin esa hoja el pad se comporta como antes: más alto, pero entero.
+    // Lo mide en navegador `scripts/guard-pad-de-firma-cabe.mjs`.
+    card.className = 'firma-pad';
     card.innerHTML =
-      `<h3 style="margin:0 0 4px;font-size:1.05rem;font-weight:700;color:var(--ink)">${title}</h3>` +
+      `<h3 style="margin:0 0 4px;font-size:1.05rem;font-weight:700;color:var(--ink)">${title}</h3>`;
+    const cuerpo = document.createElement('div');
+    cuerpo.className = 'firma-pad__cuerpo';
+    cuerpo.innerHTML =
       (hint === null ? '' : `<p style="margin:0 0 12px;font-size:13px;color:var(--muted)">${hint}</p>`);
+    card.appendChild(cuerpo);
+    const pie = document.createElement('div');
+    pie.className = 'firma-pad__pie';
+    card.appendChild(pie);
 
     // ── SCRUM-300: quién firma, ANTES del recuadro ───────────────────────────
     // ⚠️ EN OBRA EL CAMPO VA VACÍO, con la sugerencia como un CHIP DE UN TOQUE. Prerrellenarlo
@@ -108,7 +131,15 @@
       nombreEl.maxLength = 160; // tope del asesor: truncar un nombre legal en un documento firmado sale caro
       nombreEl.style.cssText = 'width:100%;min-height:44px;padding:10px 12px;font-size:16px;font-family:inherit;color:var(--ink);background:var(--surface,#fff);border:1.5px solid var(--border);border-radius:10px';
       wrap.appendChild(nombreEl);
-      card.appendChild(wrap);
+      cuerpo.appendChild(wrap);
+
+      // SCRUM-1742 · `firmante.nombreInicial`: el nombre con el que NACE el campo. Lo pasa SÓLO el
+      // pad del técnico, y sólo cuando el parte nombra a UN técnico (`parteDetailView.js`): es el
+      // usuario de la app y su nombre ya está escrito en el documento que firma. Se puede cambiar y
+      // borrar. Para el CLIENTE no se pasa nunca: ahí sigue mandando el aviso de arriba (SCRUM-300).
+      if (typeof firmante.nombreInicial === 'string' && firmante.nombreInicial.trim()) {
+        nombreEl.value = firmante.nombreInicial.trim();
+      }
 
       if (firmante.sugerencia && AYU.chipNombreCliente) {
         const chip = document.createElement('button');
@@ -190,7 +221,7 @@
           }
           syncOk();
         });
-        card.appendChild(lista);
+        cuerpo.appendChild(lista);
       }
     }
 
@@ -242,7 +273,7 @@
             `${esc(cantidadDeLinea(l && l.cantidad))}${l && l.unidad ? ' ' + esc(l.unidad) : ''}</td></tr>`).join('')
         : '<tr><td style="padding:5px 0;color:var(--muted)">Sin líneas.</td></tr>';
       resumen.appendChild(tabla);
-      card.appendChild(resumen);
+      cuerpo.appendChild(resumen);
     }
 
     // Los dos textos APROBADOS (asesor, 11-ago-2026), justo encima del recuadro. Salen de
@@ -252,25 +283,28 @@
       conf.setAttribute('data-firma-confirmacion', '1');
       conf.style.cssText = 'margin:0 0 6px;font-size:14px;color:var(--ink);font-weight:600';
       conf.textContent = ROT.confirmacionFirma;
-      card.appendChild(conf);
+      pie.appendChild(conf);
     }
     if (ROT.recuadroFirma) {
       const rot = document.createElement('label');
       rot.style.cssText = 'display:block;font-size:13px;color:var(--muted);margin-bottom:6px';
       rot.textContent = ROT.recuadroFirma;
-      card.appendChild(rot);
+      pie.appendChild(rot);
     }
 
     // Canvas nítido en pantallas retina (escala por devicePixelRatio)
     const cssW = Math.min(470, Math.max(240, window.innerWidth - 80));
-    const cssH = 190;
+    // SCRUM-1742 · en una ventana BAJA el recuadro cede 40 px al cuerpo: un móvil de 390×844 deja
+    // unos 664 útiles con las barras del navegador, y con 190 de recuadro lo de arriba se quedaba
+    // en una rendija. El ancho ya variaba con la ventana; ahora también el alto.
+    const cssH = window.innerHeight < 700 ? 150 : 190;
     const dpr = window.devicePixelRatio || 1;
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(cssW * dpr);
     canvas.height = Math.round(cssH * dpr);
     canvas.style.cssText =
       `width:${cssW}px;height:${cssH}px;display:block;background:#fff;border:1px solid var(--border);border-radius:12px;touch-action:none;cursor:crosshair`;
-    card.appendChild(canvas);
+    pie.appendChild(canvas);
 
     const ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
@@ -289,6 +323,10 @@
     canvas.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       canvas.setPointerCapture(e.pointerId);
+      // SCRUM-1742 · AL EMPEZAR EL TRAZO, LO QUE SE FIRMA ESTÁ DELANTE. El resumen es lo último del
+      // cuerpo, así que llevarlo al final lo deja pegado encima del recuadro (SCRUM-466: «el albarán
+      // arriba y el recuadro debajo, a la vez»). El recuadro no se mueve: vive en el pie.
+      if (alb) cuerpo.scrollTop = cuerpo.scrollHeight;
       drawing = true;
       const p = pos(e);
       ctx.beginPath();
@@ -316,13 +354,16 @@
     aviso.setAttribute('data-sp-aviso', '');
     aviso.setAttribute('role', 'status');
     aviso.style.cssText = 'margin:12px 0 0;font-size:13px;color:var(--red-600,#dc2626);display:none';
-    card.appendChild(aviso);
+    pie.appendChild(aviso);
     function mostrarAviso(texto) { aviso.textContent = texto; aviso.style.display = 'block'; }
     function limpiarAviso() { aviso.textContent = ''; aviso.style.display = 'none'; }
 
     const btnRow = document.createElement('div');
+    // SCRUM-1742 · la clase sube los tres botones a 44 px de alto (`styles.css`, regla acotada como
+    // las de SCRUM-962: `.btn-sm` en general no se toca). Medían 30.
+    btnRow.className = 'firma-pad__botones';
     btnRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:14px';
-    card.appendChild(btnRow);
+    pie.appendChild(btnRow);
 
     const clearBtn = document.createElement('button');
     clearBtn.className = 'btn-ghost btn-sm';
