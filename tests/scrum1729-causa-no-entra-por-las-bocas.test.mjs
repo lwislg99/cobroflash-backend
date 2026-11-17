@@ -119,7 +119,8 @@ function astDeclaraCausa() {
       // `z.object({...})` puede ir encadenado (`.superRefine`): se busca el primer `z.object` dentro.
       const buscar = (m) => {
         if (claves) return;
-        if (nombreDeLlamada(m) === 'object' && m.arguments[0] && ts.isObjectLiteralExpression(m.arguments[0])) {
+        // `looseObject` deja pasar claves NO declaradas: eso lo caza la mitad de zod (runtime), no ésta.
+        if (['object', 'looseObject', 'strictObject'].includes(nombreDeLlamada(m)) && m.arguments[0] && ts.isObjectLiteralExpression(m.arguments[0])) {
           claves = m.arguments[0].properties.map((p) => p.name && (ts.isIdentifier(p.name) || ts.isStringLiteral(p.name)) ? p.name.text : null);
           return;
         }
