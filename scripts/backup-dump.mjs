@@ -129,6 +129,9 @@ const TABLES = [
   // SELLÓ y lo que contestó la AEAT (CSV, estado): no se puede regenerar, y restaurar sin ella
   // dejaría sin saber qué se presentó. `vf_flujo_obligado`, la espera que impone la AEAT a cada NIF.
   'vf_submissions', 'vf_flujo_obligado',
+  // SCRUM-1732: una fila por dinero recibido y atribuido a una factura (lo que ENTRÓ, no lo pedido).
+  // Append-only y de ella sale el devengo con criterio de caja: no se puede regenerar de `charges`.
+  'invoice_payments',
 ];
 
 async function logicalDump(prisma) {
