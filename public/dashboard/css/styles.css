@@ -4816,7 +4816,10 @@ textarea.parte-linea-desc {
    la tarea se corta a dos líneas y la dirección a una, para que una tarea de 2.000 letras no haga
    una tarjeta de un palmo (entera, en `title` y en la ficha). La tarea va en `--ink` porque es lo
    que distingue la tarjeta; la dirección, en `--muted`, como el resto de metadatos de la celda.
-   El peso se fija a 400: en móvil la celda hereda 600 de `.table--cards-mobile td.cell-client`. */
+   El peso se fija a 400: en móvil la celda hereda 600 de `.table--cards-mobile td.cell-client`.
+   SCRUM-1670c · el tipo de intervención («Mantenimiento»…) es un metadato más de la celda y va
+   con la MISMA regla que la dirección: mismo cuerpo, mismo gris, mismo recorte. Ningún tono nuevo. */
+.jobs-fila-tipo,
 .jobs-fila-tarea,
 .jobs-fila-direccion {
   display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden;
@@ -4824,10 +4827,12 @@ textarea.parte-linea-desc {
   white-space: normal; overflow-wrap: anywhere;
 }
 .jobs-fila-tarea { -webkit-line-clamp: 2; line-clamp: 2; color: var(--ink); }
+.jobs-fila-tipo,
 .jobs-fila-direccion { -webkit-line-clamp: 1; line-clamp: 1; color: var(--muted); }
 /* En la tabla de escritorio una celda mide lo que su texto más largo: sin tope, una tarea larga
    ensancha la columna del cliente y estruja Importe, Fecha y Acciones. */
 @media (min-width: 641px) {
+  .jobs-fila-tipo,
   .jobs-fila-tarea,
   .jobs-fila-direccion { max-width: 46ch; }
 }
@@ -4837,6 +4842,7 @@ textarea.parte-linea-desc {
    «Calle Mayor 14, 3…». Ahí se da una línea más a cada una. */
 @media (max-width: 640px) {
   .jobs-fila-tarea { -webkit-line-clamp: 3; line-clamp: 3; }
+  .jobs-fila-tipo,
   .jobs-fila-direccion { -webkit-line-clamp: 2; line-clamp: 2; }
 }
 /* ══ fin S4 · SCRUM-1679 ══ */

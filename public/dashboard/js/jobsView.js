@@ -1032,6 +1032,24 @@ function jobRow(j, container, equipo) {
   nombre.className = 'jobs-fila-cliente';
   nombre.textContent = j.customer?.name || 'Cliente';
   tdCliente.appendChild(nombre);
+  // SCRUM-1670c · QUÉ CLASE de trabajo es: el tipo de intervención elegido en el alta, entre el
+  // cliente y la tarea. Se pinta el RÓTULO que da el servidor (`/admin/me` → `appTiposIntervencion`),
+  // nunca una lista escrita aquí: sería una segunda fuente del vocabulario cerrado. Va sin rótulo
+  // delante (decisión SCRUM-1670 c.22036: los tres valores se explican solos y en móvil la columna
+  // mide unas 19 letras). Sin tipo, o con un valor que el vocabulario no conoce, no nace renglón:
+  // el código crudo (`REPARACION_ASISTENCIA`) no es texto para nadie.
+  const vocabularioDeTipos = Array.isArray(window.appTiposIntervencion) ? window.appTiposIntervencion : [];
+  const tipoConocido = typeof j.tipoIntervencion === 'string' && j.tipoIntervencion
+    ? vocabularioDeTipos.find((t) => t && t.valor === j.tipoIntervencion)
+    : null;
+  const rotuloDelTipo = tipoConocido && typeof tipoConocido.rotulo === 'string' ? tipoConocido.rotulo.trim() : '';
+  if (rotuloDelTipo) {
+    const tipo = document.createElement('div');
+    tipo.className = 'jobs-fila-tipo';
+    tipo.textContent = rotuloDelTipo;
+    tipo.title = rotuloDelTipo;
+    tdCliente.appendChild(tipo);
+  }
   // SCRUM-1679 · QUÉ trabajo es, cuando no tiene nombre propio: la tarea («Qué hay que hacer»),
   // que es lo que el alta pide y lo que el operario ya ve en su parte. Sin esto, dos trabajos del
   // mismo cliente eran dos tarjetas iguales. Con nombre propio manda el nombre propio (917c) y la
