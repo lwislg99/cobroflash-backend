@@ -424,6 +424,11 @@ Lo que **no** se midió: cuánto tardan los `before` de los ficheros gateados de
   encima de los dígitos del código de color. Las sesiones heredan `FORCE_COLOR=3`.
 - **Las 6 mutaciones del banco de este mismo registro** (`evidencias/SCRUM-1345/mutar.mjs`): 3 de sus anclas (M1,
   M2, M5) ya no existen, porque SCRUM-1386 reescribió esas líneas. Hoy las daría ciegas. No se tocan aquí.
+- **El guion `mutar.mjs` se retiró el 18-nov-2026 (SCRUM-1765a):** M3 y M4 viven en el catálogo de
+  `tests/scrum976-guards-entrada-con-techo.test.mjs` (2 de 2 tumban ④bis y ④ter con `aplicarUna`). M1 la re-derivó
+  SCRUM-1386 en ese mismo catálogo (`…ciegos: 1, vistos, terminado, callados: [] };` → ⑦). M2, M5 y M6 se declaran
+  CADUCADAS: el ancla de M2 y M5 la reescribió `4556d3ffc` (SCRUM-1386) y la de M6, `9b2bc971f` (SCRUM-1152c); hoy
+  saldrían ciegas y no se re-derivan aquí. Su salida sigue en `evidencias/SCRUM-1345/salida-mutar.txt`.
 
 ## Lo que NO sé y lo que NO cubre
 

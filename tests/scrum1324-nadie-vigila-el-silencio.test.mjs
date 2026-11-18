@@ -49,6 +49,117 @@ const fila = (v, job) => v.filas.find((f) => f.job === job);
 const nombres = (lista) => lista.map((f) => `${f.estado} · ${f.workflow} / ${f.job}`).sort();
 const masHoras = (iso, h) => new Date(Date.parse(iso) + h * 3600000).toISOString();
 
+// SCRUM-1765a · las quince mutaciones que aplicaba `docs/master/evidencias/SCRUM-1324/mutar.mjs`
+// (retirado el 18-nov-2026), aquí para que las repita el meta-guard. Mismo `de` y mismo `a` que el
+// guion; el `cae` es el caso que el guion vio caer (su salida sigue en `evidencias/SCRUM-1324/mutaciones.txt`).
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // M01 · umbral de rojos 5 → 4
+    fichero: 'scripts/vigia-silencio-de-main.mjs',
+    de: 'export const UMBRAL_ROJOS_SEGUIDOS = 5;',
+    a: 'export const UMBRAL_ROJOS_SEGUIDOS = 4;',
+    cae: '② los tres umbrales no se eligen',
+  },
+  {
+    // M02 · umbral de rojos 5 → 6
+    fichero: 'scripts/vigia-silencio-de-main.mjs',
+    de: 'export const UMBRAL_ROJOS_SEGUIDOS = 5;',
+    a: 'export const UMBRAL_ROJOS_SEGUIDOS = 6;',
+    cae: '② los tres umbrales no se eligen',
+  },
+  {
+    // M03 · umbral de runs sin ejecutar 22 → 23
+    fichero: 'scripts/vigia-silencio-de-main.mjs',
+    de: 'export const UMBRAL_RUNS_SIN_EJECUTAR = 22;',
+    a: 'export const UMBRAL_RUNS_SIN_EJECUTAR = 23;',
+    cae: '② los tres umbrales no se eligen',
+  },
+  {
+    // M04 · umbral de horas de cron 10 → 11
+    fichero: 'scripts/vigia-silencio-de-main.mjs',
+    de: 'export const UMBRAL_HORAS_DE_CRON = 10;',
+    a: 'export const UMBRAL_HORAS_DE_CRON = 11;',
+    cae: '② los tres umbrales no se eligen',
+  },
+  {
+    // M05 · el rojo del obligatorio también avisa
+    fichero: 'scripts/vigia-silencio-de-main.mjs',
+    de: "(f.estado === 'ROJO-SOSTENIDO' && !f.obligatorio)",
+    a: "(f.estado === 'ROJO-SOSTENIDO')",
+    cae: '⑦ lo que no sabe, lo dice',
+  },
+  {
+    // M06 · el silencio deja de avisar
+    fichero: 'scripts/vigia-silencio-de-main.mjs',
+    de: "f.estado === 'SILENCIO' || (f.estado",
+    a: '(f.estado',
+    cae: '⑤ EL SILENCIO: un job que deja de ejecutarse',
+  },
+  {
+    // M07 · un job ausente del run no cuenta como hueco
+    fichero: 'scripts/vigia-silencio-de-main.mjs',
+    de: "estado: r.jobs[job] ?? 'ausente' }",
+    a: "estado: r.jobs[job] ?? 'pendiente' }",
+    cae: '⑤ EL SILENCIO: un job que deja de ejecutarse',
+  },
+  {
+    // M08 · un solo rojo de cron ya avisa
+    fichero: 'scripts/vigia-silencio-de-main.mjs',
+    de: 'export const MINIMO_ROJOS_DE_CRON = 2;',
+    a: 'export const MINIMO_ROJOS_DE_CRON = 1;',
+    cae: '⑥ el cron va en HORAS',
+  },
+  {
+    // M09 · los commits de main sin run no cuentan
+    fichero: 'scripts/vigia-silencio-de-main.mjs',
+    de: 'huecosSinEjecutar(serie).vivo + (sinRun ?? 0);',
+    a: 'huecosSinEjecutar(serie).vivo;',
+    cae: '⑤ EL SILENCIO: un job que deja de ejecutarse',
+  },
+  {
+    // M10 · sin lista de obligatorios sigue adelante
+    fichero: 'scripts/vigia-silencio-de-main.mjs',
+    de: 'if (!Array.isArray(obligatorios)) {',
+    a: 'if (false) {',
+    cae: '⑦ lo que no sabe, lo dice',
+  },
+  {
+    // M11 · un run sin ejecutar rompe la racha roja
+    fichero: 'scripts/vigia-silencio-de-main.mjs',
+    de: "    if (!EJECUTO.has(s.estado)) continue;\n    if (s.estado === 'failure') {",
+    a: "    if (s.estado === 'failure') {",
+    cae: '③ EL ROJO, con los datos de entonces',
+  },
+  {
+    // M12 · el veredicto mira también el futuro
+    fichero: 'scripts/vigia-silencio-de-main.mjs',
+    de: 'const vistos = runs.filter((r) => r.creado <= ahora);',
+    a: 'const vistos = runs;',
+    cae: '③ EL ROJO, con los datos de entonces',
+  },
+  {
+    // M13 · nunca hay nada sin declarar
+    fichero: 'scripts/vigia-silencio-de-main.mjs',
+    de: '.filter((k) => !declarados.has(k)).sort();',
+    a: '.filter(() => false);',
+    cae: '⑦ lo que no sabe, lo dice',
+  },
+  {
+    // M14 · el cron que no llega no es silencio
+    fichero: 'scripts/vigia-silencio-de-main.mjs',
+    de: 'if (fila.horasSinRun > U.horas) {',
+    a: 'if (false) {',
+    cae: '⑥ el cron va en HORAS',
+  },
+  {
+    // M15 · la tasa de fallo se mide con las rachas largas dentro
+    fichero: 'scripts/vigia-silencio-de-main.mjs',
+    de: '.filter((r) => r.tamano >= N).reduce((a, r) => a + r.tamano, 0);',
+    a: '.filter(() => false).reduce((a, r) => a + r.tamano, 0);',
+    cae: '② los tres umbrales no se eligen',
+  },
+];
+
 test('SCRUM-1324 · ① el censo: el historial es el real, y la lista de jobs es EXACTAMENTE la que corre en main', () => {
   const porWorkflow = {};
   for (const r of RUNS) porWorkflow[r.workflow] = (porWorkflow[r.workflow] || 0) + 1;

@@ -91,6 +91,16 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: 'return { hallazgos: vistos.length, ciegos: 1, vistos, terminado, callados: [] };',
     a: 'return { hallazgos: 0, ciegos: 1, vistos, terminado, callados: [] };',
     cae: 'SCRUM-1386 ⑦ un runner que acaba SIN su resumen' },
+  // SCRUM-1765a · M3 y M4 de `evidencias/SCRUM-1345/mutar.mjs` (retirado el 18-nov-2026). Mutan ESTE
+  // fichero: el ancla lleva el salto de línea, que aquí va escapado, así que sólo casa con el código.
+  { fichero: 'tests/scrum976-guards-entrada-con-techo.test.mjs',
+    de: "function seJuzgaElPresupuesto(valorDeCI) {\n  return valorDeCI !== undefined;",
+    a: "function seJuzgaElPresupuesto(valorDeCI) {\n  return Boolean(valorDeCI);",
+    cae: 'SCRUM-1345 ④bis' },
+  { fichero: 'tests/scrum976-guards-entrada-con-techo.test.mjs',
+    de: "\n    if (enCI) return { rojo: `PRESUPUESTO: ${informe} En CI esto",
+    a: "\n    if (false) return { rojo: `PRESUPUESTO: ${informe} En CI esto",
+    cae: 'SCRUM-1345 ④ter' },
 ];
 
 // Los cinco de antes y los seis de SCRUM-976. Es la lista por la que se decidió, escrita a
