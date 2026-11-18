@@ -43,4 +43,4 @@ cabecera es «✅ Terminados · N», a secas; con `admin`, de control, «✅ Ter
 El fundador pidió la lista PLANA (SCRUM-1725 comentario 22073) y la cabecera «Terminados» dejó de
 pintarse para todos los roles (P4, comentario 22076). Este texto ya no sale en pantalla y el test de
 «Lo vigila» exige ahora que no haya cabecera de grupo (cambio autorizado en el comentario 22077). El
-registro se conserva: ver `2026-11-18-SCRUM-1725-estado-en-la-lista-de-trabajos.md`.
+registro se conserva; la firma de «Estado» tiene el suyo, en esta misma carpeta y con la misma fecha.

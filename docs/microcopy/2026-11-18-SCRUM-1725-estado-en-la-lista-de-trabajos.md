@@ -28,7 +28,7 @@ reescriben: dejan de pintarse.
 | «🔨 En curso», «📅 Hoy», «📅 Esta semana», «⏳ Sin agendar», «🗓 Más adelante», «🔒 Cerrados» | SCRUM-428 / SCRUM-917 c.15881 | dejan de pintarse; el estado lo dice la píldora de cada fila |
 | «✅ Terminados — cobra el resto» y «· X € por cobrar» | SCRUM-428 / SCRUM-917 c.15881 | dejan de pintarse; lo que falta queda en la tarjeta «Por cobrar» y en «💰 Cobrar el resto (importe)» de cada fila |
 | «N sin importe de referencia: no se sabe cuánto falta y no entran en el total.» | fundador, 10-ago-2026 | deja de pintarse; queda la salvedad corta de la tarjeta, «N sin importe de referencia, no entra(n)» (SCRUM-917 c.15881) |
-| «✅ Terminados» a secas (M1) | SCRUM-1725 c.22052 | SUPERADO: no hay cabecera para ningún rol. Su registro (`2026-11-18-SCRUM-1725-terminados-sin-cobra-el-resto.md`) se conserva |
+| «✅ Terminados» a secas (M1) | SCRUM-1725 c.22052 | SUPERADO: no hay cabecera para ningún rol. Su registro, en esta misma carpeta y con la misma fecha, se conserva |
 
 «Ver N cerrados» se queda, tal cual, como última fila de la lista.
 
