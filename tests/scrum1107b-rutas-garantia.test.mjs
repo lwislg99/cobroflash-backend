@@ -81,7 +81,9 @@ function dobleDeclarar({ chargeExiste = true, merchantIdDelCargo = 42 } = {}) {
       charge: {
         findFirst: async ({ where }) => {
           if (!chargeExiste || where.merchantId !== merchantIdDelCargo) return null;
-          return { id: where.id };
+          // SCRUM-1732c · la retención se declara sobre un cobro YA cobrado, y cobrado (9.500, sin filas en
+          // invoice_payments: vale su `amount`) + retenido (500) = total (10.000). Antes bastaba `{ id }`.
+          return { id: where.id, status: 'paid', amount: '9500.00' };
         },
         update: async ({ where, data, select }) => {
           llamadas.update.push({ where, data });
@@ -90,6 +92,7 @@ function dobleDeclarar({ chargeExiste = true, merchantIdDelCargo = 42 } = {}) {
           return salida;
         },
       },
+      invoicePayment: { findMany: async () => [] }, // SCRUM-1732c · cobro anterior a la tabla
     },
     llamadas,
   };
@@ -163,6 +166,11 @@ function dobleLiberar({ retencion = { retencionGarantiaPorcentaje: 5, retencionG
         },
       },
       $transaction: async (ops) => { llamadas.transaction += 1; return Promise.all(ops); },
+      // SCRUM-1732c · liberar lee la zona del merchant (fecha declarada) y busca la factura del cobro
+      // original para apuntar su fila; aquí no hay factura, así que no apunta nada.
+      merchant: { findUnique: async () => ({ timezone: 'Europe/Madrid' }) },
+      quote: { findFirst: async () => null },
+      invoice: { findFirst: async () => null },
     },
     llamadas,
   };
