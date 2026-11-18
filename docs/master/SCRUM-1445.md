@@ -317,7 +317,7 @@ Decisión del fundador: SCRUM-1445 c.21896 («arreglarlo en el código, sin toca
 
 **Medido contra:** `origin/main` = `65b2e3b2a03a4a5cb6119b9b7e33465b89494769` · 2026-11-18T05:09:19Z
 
-A9: aviso → cicatriz J1 «Empujé 1445f con el 303 contra Postgres visto en local como SKIP (sin `LIBRO_PG_URL`), y lo cazó en CI el trinquete de zona» — no se pudo comprobar: el job que lo caza no es obligatorio, y hacerlo obligatorio es un workflow (S5 y fundador)
+A9: aviso → cicatriz J1 «Empujé 1445f con el 303 contra Postgres visto en local como SKIP (sin `LIBRO_PG_URL`), y lo cazó en CI el trinquete de zona, un job no obligatorio que no paró el merge» — no se pudo comprobar: el job que lo caza no es obligatorio, y hacerlo obligatorio es un workflow (S5 y fundador)
 
 Mutaciones: `scrum1065b` 10 declaradas, 10 vivas (con `aplicarUna` y `correr`; antes, 9 vivas y 1 MUDA). `scrum295` (gateado por `LIBRO_PG_URL`, sin declaración: el meta-guard del CI no tiene base y lo contaría como pasado) a mano en `dist/`: el 303 con la zona forzada a UTC y a Canarias, las 2 caen; antes del arreglo, la de UTC salía VERDE.
 
