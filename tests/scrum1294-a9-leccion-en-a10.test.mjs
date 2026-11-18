@@ -13,11 +13,19 @@
 // en TODA sesión: lo que pesa, lo arrastra cada turno).
 //
 // Población declarada: registros, anclas, anclas bajo la norma, líneas A9 por tipo, frases, cicatrices.
+//
+// SCRUM-1731 (A3 de 00-normas-comunes, «Una mutación que afirmas se puede repetir, o no cuenta»):
+// desde CORTE_MUTACIONES, una línea `Mutaciones: catálogo → \`<test>\`` exige que el test EXISTA y
+// declare `MUTACIONES_QUE_ME_TUMBAN` (leído por AST con el lector del meta-guard, no por texto), y una
+// `Mutaciones: una vez → \`<guion>\`` exige que el guion esté en git. Sólo ve la línea que EXISTE: la
+// que falta la ve quien cierra (la norma lo dice así, y no se finge aquí lo contrario).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { mutacionesDeclaradas } from '../scripts/meta-guard-mutaciones.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SIEMPRE = 'docs/equipo/00-normas-siempre.md';
@@ -35,6 +43,12 @@ const RE_AVISO = /^aviso → (A10|cicatriz (S[0-5]|J[1-6])) «(.+)» — no se p
 const RE_SIN = /^sin fallo que generalice — \S.*$/;
 const RE_CICATRIZ = /^- \d{4}-\d{2}-\d{2} · (.+?) → (?:comprobación: `([^`]+)`|sin comprobación: \S.*)\s*$/;
 const RE_ORIGEN = /\s*\(SCRUM-\d+[a-z]?\)\s*$/;
+// SCRUM-1731 · la línea se reconoce por su CLAVE (con o sin viñeta y negrita, como se escriben los
+// registros); detrás de la flecha va UNA ruta, con o sin comillas invertidas (la norma firmada la
+// escribe `→ <test>`, y quien la copie tal cual no tiene por qué caer), y después lo que se quiera.
+const CORTE_MUTACIONES = '2026-11-18';
+const RE_MUT_CLAVE = /^\s*(?:- )?(?:\*\*)?Mutaciones:(?:\*\*)? (catálogo|una vez) →(.*)$/;
+const RE_MUT_RUTA = /^ +(?:`([^`\s]+)`|([^`\s]+))/;
 
 /** Las frases de A10: una por línea física no vacía, sin su `(SCRUM-N)` final. */
 export function frasesDeA10(texto) {
@@ -65,20 +79,39 @@ export function leerCicatrices(nombre, texto, existe) {
 
 /**
  * Parte un registro en tramos por ancla y dice qué le falta a cada uno.
- * @param {{a10:string[], cicatrices:Record<string,string[]>, existe:(ruta:string)=>boolean}} ctx
+ * @param {{a10:string[], cicatrices:Record<string,string[]>, existe:(ruta:string)=>boolean,
+ *          declara?:(ruta:string)=>number|null, enGit?:(ruta:string)=>boolean}} ctx
+ *   `declara`: cuántas mutaciones declara el test en MUTACIONES_QUE_ME_TUMBAN (null si no existe).
  */
 export function revisarRegistro(nombre, texto, ctx) {
   const tramos = [];
   for (const [n, l] of texto.replace(/\r\n/g, '\n').split('\n').entries()) {
     const m = RE_ANCLA.exec(l);
-    if (m) tramos.push({ linea: n + 1, fecha: m[1], a9: [] });
+    if (m) tramos.push({ linea: n + 1, fecha: m[1], a9: [], mut: [] });
     else if (tramos.length) {
       const a = RE_A9.exec(l);
       if (a) tramos.at(-1).a9.push(a[1].trim());
+      const k = RE_MUT_CLAVE.exec(l);
+      if (k) tramos.at(-1).mut.push({ linea: n + 1, clave: k[1], resto: k[2] });
     }
   }
   const fallos = [];
-  const tipos = { comprobación: 0, aviso: 0, sin: 0 };
+  const tipos = { comprobación: 0, aviso: 0, sin: 0, catálogo: 0, 'una vez': 0 };
+  for (const t of tramos) {
+    if (t.fecha < CORTE_MUTACIONES) continue;
+    for (const { linea, clave, resto } of t.mut) {
+      const donde = `${nombre}:${linea}`;
+      const r = RE_MUT_RUTA.exec(resto);
+      if (!r) { fallos.push(`${donde} · «Mutaciones: ${clave} →» sin ruta detrás de la flecha (A3, SCRUM-1731)`); continue; }
+      const ruta = r[1] ?? r[2];
+      tipos[clave]++;
+      if (clave === 'catálogo') {
+        const n = ctx.declara(ruta);
+        if (n === null) fallos.push(`${donde} · el test del catálogo \`${ruta}\` no existe en el repo`);
+        else if (n === 0) fallos.push(`${donde} · \`${ruta}\` no declara ninguna mutación completa en MUTACIONES_QUE_ME_TUMBAN: la del registro no se puede repetir`);
+      } else if (!ctx.enGit(ruta)) fallos.push(`${donde} · el guion \`${ruta}\` no está en git: la mutación no se puede repetir`);
+    }
+  }
   let bajoNorma = 0;
   for (const t of tramos) {
     if (t.fecha < CORTE) continue;
@@ -102,6 +135,63 @@ export function revisarRegistro(nombre, texto, ctx) {
   return { anclas: tramos.length, bajoNorma, tipos, fallos };
 }
 
+// SCRUM-1731 · Las mutaciones de la línea «Mutaciones:», REPETIBLES por el meta-guard (A3: «una mutación
+// que afirmas se puede repetir, o no cuenta»). Van DEBAJO del código que mutan: este guard se muta a sí
+// mismo, y el ancla de verdad tiene que ser la primera ocurrencia y empezar línea (meta-guard, SCRUM-812c).
+// Sustituyen al guion propio que tuvo la rama (`docs/master/evidencias/SCRUM-1731/mutar.mjs`): un banco
+// con lista propia queda fuera del catálogo y lo tumba SCRUM-1387.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // El test del catálogo que no existe deja de caer.
+    fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+    de: '        if (n === null) fallos.push(',
+    a: '        if (false) fallos.push(',
+    cae: 'control positivo: el revisor SABE fallar por cada una de sus reglas',
+  },
+  {
+    // El test que existe pero no declara ninguna mutación deja de caer.
+    fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+    de: '        else if (n === 0) fallos.push(',
+    a: '        else if (false) fallos.push(',
+    cae: 'control positivo: el revisor SABE fallar por cada una de sus reglas',
+  },
+  {
+    // El guion «una vez» que no está en git deja de caer.
+    fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+    de: '      } else if (!ctx.enGit(ruta)) fallos.push(',
+    a: '      } else if (false) fallos.push(',
+    cae: 'control positivo: el revisor SABE fallar por cada una de sus reglas',
+  },
+  {
+    // La clave sin ruta detrás de la flecha pasa callada.
+    fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+    de: '      if (!r) { fallos.push(',
+    a: '      if (!r) { continue; fallos.push(',
+    cae: 'control positivo: el revisor SABE fallar por cada una de sus reglas',
+  },
+  {
+    // El corte deja de respetarse: se exigiría hacia atrás.
+    fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+    de: '    if (t.fecha < CORTE_MUTACIONES) continue;',
+    a: '    if (false) continue;',
+    cae: 'control positivo: el revisor SABE fallar por cada una de sus reglas',
+  },
+  {
+    // La ruta sin comillas invertidas (la forma literal de la norma firmada) deja de verse.
+    fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+    de: 'const RE_MUT_RUTA = /^ +(?:`([^`\\s]+)`|([^`\\s]+))/;',
+    a: 'const RE_MUT_RUTA = /^ +(?:`([^`\\s]+)`)/;',
+    cae: 'control positivo: el revisor SABE fallar por cada una de sus reglas',
+  },
+  {
+    // La clave «una vez» deja de reconocerse como la línea (la trajo 34e6d8437, del @claude del CI).
+    fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+    de: 'const RE_MUT_CLAVE = /^\\s*(?:- )?(?:\\*\\*)?Mutaciones:(?:\\*\\*)? (catálogo|una vez) →(.*)$/;',
+    a: 'const RE_MUT_CLAVE = /^\\s*(?:- )?(?:\\*\\*)?Mutaciones:(?:\\*\\*)? (catálogo) →(.*)$/;',
+    cae: 'control positivo: el revisor SABE fallar por cada una de sus reglas',
+  },
+];
+
 const existeEnRepo = (ruta) => fs.existsSync(path.join(RAIZ, ruta));
 const textoSiempre = fs.readFileSync(path.join(RAIZ, SIEMPRE), 'utf8');
 const A10 = frasesDeA10(textoSiempre);
@@ -124,7 +214,29 @@ test('SCRUM-1294 · control positivo: el revisor SABE fallar por cada una de sus
     ancla('2026-10-03'), 'A9: aviso → cicatriz S3 «Una cicatriz de S3.» — no se pudo comprobar: depende del prompt',
     ancla('2026-10-04'), 'A9: sin fallo que generalice — solo docs',
   ].join('\n'), ctx);
-  assert.deepEqual([bien.fallos, bien.bajoNorma, bien.tipos], [[], 4, { comprobación: 1, aviso: 2, sin: 1 }]);
+  assert.deepEqual([bien.fallos, bien.bajoNorma, bien.tipos], [[], 4, { comprobación: 1, aviso: 2, sin: 1, catálogo: 0, 'una vez': 0 }]);
+  // SCRUM-1731 · la línea «Mutaciones:» — cada regla sabe fallar, y el corte se respeta.
+  const ctxM = {
+    ...ctx,
+    declara: (r) => ({ 'tests/declara.test.mjs': 2, 'tests/no-declara.test.mjs': 0 })[r] ?? null,
+    enGit: (r) => r === 'docs/master/evidencias/x/mutar.mjs',
+  };
+  const A9OK = 'A9: sin fallo que generalice — solo docs';
+  const fallanM = (linea, fecha = '2026-11-18') => revisarRegistro('x.md', `${ancla(fecha)}\n${A9OK}\n${linea}\n`, ctxM).fallos;
+  assert.equal(fallanM('Mutaciones: catálogo → `tests/no-existe.test.mjs`').length, 1, 'un test del catálogo que no existe tiene que fallar');
+  assert.equal(fallanM('Mutaciones: catálogo → `tests/no-declara.test.mjs`').length, 1, 'un test sin MUTACIONES_QUE_ME_TUMBAN tiene que fallar');
+  assert.equal(fallanM('- **Mutaciones:** una vez → `/tmp/mutar.mjs`').length, 1, 'un guion fuera de git tiene que fallar, también con viñeta y negrita');
+  assert.equal(fallanM('Mutaciones: catálogo → ').length, 1, 'la clave sin ruta detrás tiene que fallar');
+  assert.equal(fallanM('Mutaciones: catálogo → tests/no-existe.test.mjs').length, 1, 'sin comillas invertidas también se mira, y también falla');
+  assert.equal(fallanM('Mutaciones: catálogo → tests/declara.test.mjs').length, 0, 'la forma literal de la norma firmada (sin comillas) es válida');
+  assert.equal(fallanM('Mutaciones: catálogo → `tests/no-existe.test.mjs`', '2026-11-17').length, 0, 'antes de su corte no se exige (solo hacia adelante)');
+  assert.equal(fallanM('Mutaciones: 6 de 6 caen').length, 0, 'una línea sin la clave no es «la línea»: no la ve el guard, la ve quien cierra');
+  const bienM = revisarRegistro('x.md', [
+    ancla('2026-11-18'), A9OK,
+    'Mutaciones: catálogo → `tests/declara.test.mjs` (2 de 2 caen)',
+    '- **Mutaciones:** una vez → `docs/master/evidencias/x/mutar.mjs`',
+  ].join('\n'), ctxM);
+  assert.deepEqual([bienM.fallos, bienM.tipos.catálogo, bienM.tipos['una vez']], [[], 1, 1]);
   assert.deepEqual(frasesDeA10('## A10 · F\n\nUno. (SCRUM-7)\nDos.\n## A11 · x\nTres.\n'), ['Uno.', 'Dos.']);
   const c = leerCicatrices('c.md', '- 2026-09-29 · Bien. → sin comprobación: criterio\n- 2026-09-29 · Mal.\n- 2026-09-29 · Rota. → comprobación: `no/existe`\n', ctx.existe);
   assert.deepEqual([c.frases, c.fallos.length], [['Bien.', 'Rota.'], 2]);
@@ -167,19 +279,30 @@ test('SCRUM-1294 · todo registro desde el corte lleva su línea A9, y lo que di
     const rel = `${CICATRICES}/${p}.md`;
     cicatrices[p] = existeEnRepo(rel) ? leerCicatrices(rel, fs.readFileSync(path.join(RAIZ, rel), 'utf8'), existeEnRepo).frases : [];
   }
-  const ctx = { a10: A10, cicatrices, existe: existeEnRepo };
+  // SCRUM-1731 · «está en git» se pregunta a git, una sola vez. Si git no contesta, el guard es CIEGO
+  // para las líneas «una vez» y lo dice: no da por buena una ruta que no ha podido mirar.
+  let enGit;
+  try {
+    const listados = new Set(execFileSync('git', ['ls-files', '-z'], { cwd: RAIZ, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).split('\0'));
+    assert.ok(listados.has('tests/scrum1294-a9-leccion-en-a10.test.mjs'), 'git ls-files no lista ni este mismo fichero');
+    enGit = (r) => listados.has(r);
+  } catch (e) {
+    enGit = (r) => { throw new Error(`CIEGO: no pude preguntar a git si \`${r}\` está en el repo (${e.message})`); };
+  }
+  const declara = (r) => (existeEnRepo(r) ? mutacionesDeclaradas(fs.readFileSync(path.join(RAIZ, r), 'utf8'), r).length : null);
+  const ctx = { a10: A10, cicatrices, existe: existeEnRepo, declara, enGit };
   const dir = path.join(RAIZ, 'docs', 'master');
   const ficheros = fs.readdirSync(dir).filter((f) => /^SCRUM-\d+.*\.md$/.test(f));
-  const suma = { anclas: 0, bajoNorma: 0, comprobación: 0, aviso: 0, sin: 0 };
+  const suma = { anclas: 0, bajoNorma: 0, comprobación: 0, aviso: 0, sin: 0, catálogo: 0, 'una vez': 0 };
   const fallos = [];
   for (const f of ficheros) {
     const r = revisarRegistro(`docs/master/${f}`, fs.readFileSync(path.join(dir, f), 'utf8'), ctx);
     suma.anclas += r.anclas;
     suma.bajoNorma += r.bajoNorma;
-    for (const k of ['comprobación', 'aviso', 'sin']) suma[k] += r.tipos[k];
+    for (const k of ['comprobación', 'aviso', 'sin', 'catálogo', 'una vez']) suma[k] += r.tipos[k];
     fallos.push(...r.fallos);
   }
-  console.log(`scrum1294 · población: ${ficheros.length} registros · ${suma.anclas} anclas · ${suma.bajoNorma} desde ${CORTE} · A9: ${suma.comprobación} comprobación, ${suma.aviso} aviso, ${suma.sin} sin fallo · ${A10.length} frases en A10`);
+  console.log(`scrum1294 · población: ${ficheros.length} registros · ${suma.anclas} anclas · ${suma.bajoNorma} desde ${CORTE} · A9: ${suma.comprobación} comprobación, ${suma.aviso} aviso, ${suma.sin} sin fallo · ${A10.length} frases en A10 · Mutaciones (desde ${CORTE_MUTACIONES}): ${suma.catálogo} catálogo, ${suma['una vez']} una vez`);
   // Suelo: si el parser del ancla se rompe, «0 anclas» se leería como «nada que exigir».
   assert.ok(ficheros.length >= 800, `solo ${ficheros.length} registros en docs/master`);
   assert.ok(suma.anclas >= 1000, `solo ${suma.anclas} anclas reconocidas: el formato de ancla cambió y el guard ya no mira`);
