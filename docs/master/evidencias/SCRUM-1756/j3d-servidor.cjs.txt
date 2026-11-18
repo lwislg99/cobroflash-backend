@@ -1,0 +1,55 @@
+// SCRUM-1756d · Servidor de medida: copia del de SCRUM-1647d (`evidencias/SCRUM-1647/1647d/servidor-alta.cjs`) con
+// un TERCER modo. La `app` REAL de un `dist/`, prisma DOBLADO (ni base, ni staging, ni producción).
+//
+// Uso:  node servidor.cjs <distDir> <puerto> <aplicada|sin|aislada>
+//   aplicada → la cabecera de SCRUM-1637 escrita como `Content-Security-Policy`, mismo valor (paso 3).
+//   sin      → la cabecera de informe se quita.
+//   aislada  → la de `aplicada` con UN solo cambio: `script-src 'self'` → `script-src 'self' 'unsafe-inline'`.
+//              SÓLO PARA MEDIR: la landing y precios llevan `<script>` en línea (fila aparte de SCRUM-1756,
+//              no de este tramo). Con la política entera ese guion no corre y la página cambia por él, no
+//              por el CSS; así se separa lo que mide este tramo (`style-src`) de lo que no.
+'use strict';
+const http = require('node:http');
+const path = require('node:path');
+
+const [distDir, puertoTxt, modo] = process.argv.slice(2);
+if (!distDir || !puertoTxt || !['aplicada', 'sin', 'aislada'].includes(modo)) {
+  console.error('uso: node servidor.cjs <distDir> <puerto> <aplicada|sin|aislada>');
+  process.exit(2);
+}
+const DIST = path.resolve(distDir);
+const PUERTO = Number(puertoTxt);
+
+let lecturasDelDoble = 0;
+const modelo = new Proxy({}, { get: () => async () => { lecturasDelDoble++; return null; } });
+const prismaDoble = new Proxy({}, { get: (_, k) => (k === 'then' ? undefined : modelo) });
+const R_PRISMA = require.resolve(path.join(DIST, 'core/db/prisma.js'));
+require.cache[R_PRISMA] = { id: R_PRISMA, filename: R_PRISMA, loaded: true, exports: { prisma: prismaDoble } };
+
+const { app } = require(path.join(DIST, 'app.js'));
+const { POLITICA_CSP } = require(path.join(DIST, 'core/http/csp.js'));
+const AISLADA = POLITICA_CSP.replace("script-src 'self'", "script-src 'self' 'unsafe-inline'");
+if (AISLADA === POLITICA_CSP) { console.error("CIEGO: la política no lleva `script-src 'self'`"); process.exit(2); }
+const politica = (v) => (modo === 'aislada' ? AISLADA : v);
+
+const servidor = http.createServer((req, res) => {
+  if (req.url === '/__lecturas') { res.end(String(lecturasDelDoble)); return; }
+  // CONTROL SEMBRADO: un `<script>` en línea, un `onerror`, un `<style>` y un `style=` bajo la misma política.
+  if (req.url === '/__sembrado') {
+    if (modo !== 'sin') res.setHeader('Content-Security-Policy', politica(POLITICA_CSP));
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.end('<!doctype html><html><head><link rel="icon" href="data:,"><style>p{color:red}</style>'
+      + '<script>window.__sembrado=1</script></head><body><p style="color:blue">x</p>'
+      + '<img src="/no-existe/s.png" onerror="window.__sembrado2=1"></body></html>');
+    return;
+  }
+  const original = res.setHeader.bind(res);
+  res.setHeader = (n, v) => {
+    if (String(n).toLowerCase() === 'content-security-policy-report-only') {
+      return modo === 'sin' ? res : original('Content-Security-Policy', politica(v));
+    }
+    return original(n, v);
+  };
+  app(req, res);
+});
+servidor.listen(PUERTO, '127.0.0.1', () => console.log(`LISTO ${PUERTO} ${modo} ${DIST}`));
