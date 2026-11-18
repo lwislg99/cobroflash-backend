@@ -81,7 +81,13 @@ async function renderJobsView(container) {
     // `quotesListView` y `customersView`— por si la pieza no ha cargado; el que manda es el de
     // `atajoNuevo.TEXTOS` y `etiquetar` lo pisa un renglón más abajo.
     bNuevo.textContent = 'Nuevo trabajo';
-    bNuevo.addEventListener('click', () => abrirModalTrabajoNuevo(() => renderJobsView(container)));
+    // SCRUM-1679 · el botón del modal dice «Abrir trabajo», y al crear se quedaba en la lista. El
+    // modal entrega el Trabajo ya creado (`alCrear(job)`, jobNuevoModal.js): con él se abre SU
+    // ficha. Sin él —o sin router— se repinta la lista, que es lo que se hacía antes.
+    bNuevo.addEventListener('click', () => abrirModalTrabajoNuevo((job) => {
+      if (job && job.id != null && window.renderAppView) window.renderAppView('jobs-detail', { jobId: job.id });
+      else renderJobsView(container);
+    }));
     // SCRUM-769 · el atajo «N», por el MISMO mecanismo que las otras cuatro (SCRUM-599): nada se
     // reimplementa aquí. Este botón encaja en el patrón porque ABRE una creación —el modal de
     // Trabajo nuevo— en vez de confirmarla.
@@ -1026,6 +1032,19 @@ function jobRow(j, container, equipo) {
   nombre.className = 'jobs-fila-cliente';
   nombre.textContent = j.customer?.name || 'Cliente';
   tdCliente.appendChild(nombre);
+  // SCRUM-1679 · QUÉ trabajo es, cuando no tiene nombre propio: la tarea («Qué hay que hacer»),
+  // que es lo que el alta pide y lo que el operario ya ve en su parte. Sin esto, dos trabajos del
+  // mismo cliente eran dos tarjetas iguales. Con nombre propio manda el nombre propio (917c) y la
+  // tarea no se repite. Va por `textContent`: es texto del profesional. El recorte a dos líneas es
+  // del CSS; `title` deja leerla entera sin abrir la ficha.
+  const tarea = !j.tituloPropio && typeof j.queHayQueHacer === 'string' ? j.queHayQueHacer.trim() : '';
+  if (tarea) {
+    const q = document.createElement('div');
+    q.className = 'jobs-fila-tarea';
+    q.textContent = tarea;
+    q.title = tarea;
+    tdCliente.appendChild(q);
+  }
   const piezas = [];
   if (j.tituloPropio) {
     const t = document.createElement('span');
@@ -1051,6 +1070,16 @@ function jobRow(j, container, equipo) {
       linea.appendChild(p);
     });
     tdCliente.appendChild(linea);
+  }
+  // SCRUM-1679 · DÓNDE es. La dirección del trabajo ya viaja en la lista; se pinta al final de la
+  // celda (quién · qué · quién lo hace · dónde) y sólo si existe.
+  const direccion = typeof j.direccion === 'string' ? j.direccion.trim() : '';
+  if (direccion) {
+    const d = document.createElement('div');
+    d.className = 'jobs-fila-direccion';
+    d.textContent = direccion;
+    d.title = direccion;
+    tdCliente.appendChild(d);
   }
   tr.appendChild(tdCliente);
 

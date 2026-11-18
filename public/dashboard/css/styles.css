@@ -4811,6 +4811,35 @@ textarea.parte-linea-desc {
   font-size: 13px; font-weight: 400; color: var(--muted); white-space: normal;
 }
 .jobs-fila-tecnicos { overflow-wrap: anywhere; }
+/* ══ S4 · SCRUM-1679 · LA TARJETA DICE QUÉ TRABAJO ES Y DÓNDE ══
+   La tarea («Qué hay que hacer») y la dirección, bajo el cliente. Son texto libre del profesional:
+   la tarea se corta a dos líneas y la dirección a una, para que una tarea de 2.000 letras no haga
+   una tarjeta de un palmo (entera, en `title` y en la ficha). La tarea va en `--ink` porque es lo
+   que distingue la tarjeta; la dirección, en `--muted`, como el resto de metadatos de la celda.
+   El peso se fija a 400: en móvil la celda hereda 600 de `.table--cards-mobile td.cell-client`. */
+.jobs-fila-tarea,
+.jobs-fila-direccion {
+  display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden;
+  margin-top: 2px; font-size: 13px; font-weight: 400; line-height: 1.35;
+  white-space: normal; overflow-wrap: anywhere;
+}
+.jobs-fila-tarea { -webkit-line-clamp: 2; line-clamp: 2; color: var(--ink); }
+.jobs-fila-direccion { -webkit-line-clamp: 1; line-clamp: 1; color: var(--muted); }
+/* En la tabla de escritorio una celda mide lo que su texto más largo: sin tope, una tarea larga
+   ensancha la columna del cliente y estruja Importe, Fecha y Acciones. */
+@media (min-width: 641px) {
+  .jobs-fila-tarea,
+  .jobs-fila-direccion { max-width: 46ch; }
+}
+/* En la tarjeta de móvil la celda del cliente comparte renglón con el importe, y «no hay
+   presupuesto aceptado» se lleva más de media tarjeta: medido a 390 px, al cliente le quedan unos
+   125 px (19 letras por línea). Con dos líneas y una, «Calle Mayor 14, 3º B…» se quedaba en
+   «Calle Mayor 14, 3…». Ahí se da una línea más a cada una. */
+@media (max-width: 640px) {
+  .jobs-fila-tarea { -webkit-line-clamp: 3; line-clamp: 3; }
+  .jobs-fila-direccion { -webkit-line-clamp: 2; line-clamp: 2; }
+}
+/* ══ fin S4 · SCRUM-1679 ══ */
 
 /* El importe: lo que FALTA en grande, el total debajo y pequeño. */
 .table--trabajos th.jobs-th-importe,
