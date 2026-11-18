@@ -11,10 +11,11 @@
 //   veces. La segunda escritura choca (P2002) y se da por apuntada.
 // · En este PR NADIE LEE la tabla (el devengo por tramos es el PR-2, de J1).
 
-/** Conjuntos cerrados de la tabla (c.21926 §①; `anulacion` por c.21928 ⑤). */
-export const TIPOS_DE_COBRO = ['cobro', 'liberacion_garantia', 'anulacion'] as const;
+/** Conjuntos cerrados de la tabla (c.21926 §①; `anulacion` por c.21928 ⑤). Sin `export`: solo los
+ *  lee este módulo (scrum411); fuera se usan sus tipos. */
+const TIPOS_DE_COBRO = ['cobro', 'liberacion_garantia', 'anulacion'] as const;
 export type TipoDeCobro = (typeof TIPOS_DE_COBRO)[number];
-export const ORIGENES_DE_FECHA = ['declarada', 'aviso', 'marcado'] as const;
+const ORIGENES_DE_FECHA = ['declarada', 'aviso', 'marcado'] as const;
 export type OrigenDeFecha = (typeof ORIGENES_DE_FECHA)[number];
 
 export function esOrigenDeFecha(v: unknown): v is OrigenDeFecha {
