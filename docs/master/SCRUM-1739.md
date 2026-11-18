@@ -124,3 +124,47 @@ Capturas, en `docs/master/evidencias/SCRUM-1739/`: `antes-` y `despues-lista-adm
 | En «EN CURSO» nada cambia (control positivo). | mismo test (caso EN-CURSO) · «Abrir parte» 2 de 2 rellenas antes y después, en la tabla de arriba |
 | Capturas antes/después a 390 y 1280 con el banco del recorrido. | `docs/master/evidencias/SCRUM-1739/` (seis PNG) |
 | SCRUM-1749, mitad-tarjeta: misma primaria por estado en tarjeta y ficha, o razón escrita | la tabla «La decisión» de arriba es la razón escrita de la TARJETA · la ficha: NO HECHO aquí → S2, SCRUM-1749 |
+
+## SCRUM-1739b · Regla 42: visto en yaqu.app con un trabajo AGENDADO de verdad (18-nov-2026)
+
+**Rama:** `scrum-1739b-reglas-42-cara-trabajos`. Sólo registro y evidencia; no toca `src/` ni `public/`.
+**Medido contra:** `origin/main` = `25b6c8f9c7edaf4eb7ded049abdd59d75a22974a` · 2026-11-18T11:12:37Z (cabecera `Date:` de `gh api -i zen`). `yaqu.app/dashboard/js/jobsView.js` servía el blob `7f55a66bace5582fc2246df779f9815b0e619929`, el de `origin/main` (descarga a fichero + `git hash-object --no-filters`).
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
+Lo que arriba quedó «PENDIENTE de la regla 42»: hasta hoy la cuenta QA no tenía ningún trabajo agendado y los dos «▶ Empezar» medidos eran simulados en el navegador (`SIMULA_AGENDADO=1`). Esta pasada va SIN `LOCAL_DIR` y SIN `SIMULA_AGENDADO`: código de producción pintando un dato que el servidor tiene.
+
+**Cómo se hizo:**
+
+1. Se agendó el trabajo **#86** (el que creó la regla 42 de SCRUM-1679, `docs/master/SCRUM-1679.md`, sección 1679b) desde su ficha, con el botón «Agendar» de la propia pantalla: `PASO=agendar FECHA=2026-11-18 … paso2.mjs 1280 "#jobs-detail/86" r42-agendar SCRUM-1686/banco-h6/b05-nota-asignar-agendar.mjs`. `PATCH /admin/jobs/86` → **200**, cuerpo `{"status":"agendado","scheduledAt":"2026-11-18T17:30:00.000Z"}` (18:30 de Madrid). Salida en `evidencias/SCRUM-1739/r42-agendar-1280.txt`.
+2. Se midió la lista con `evidencias/SCRUM-1739/c1739-primaria.mjs`, que no escribe ni pulsa, a 390 y a 1280. Código de salida 0 en las dos. Salidas en `r42-primaria-390.txt` y `r42-primaria-1280.txt`.
+
+**Lo medido** (idéntico en los dos anchos; población: 9 tarjetas):
+
+| | resultado |
+|---|---|
+| grupo «📅 Hoy» | 1 tarjeta, la de #86, con sus botones en este orden: ■ «▶ Empezar» · □ «Ver detalle» · □ «⋯» |
+| «▶ Empezar» rellena | 1 de 1 · `btn-primary btn-sm`, fondo calculado `rgb(4, 120, 87)`, 91×44 |
+| tarjetas cuya rellena NO va primera | 0 |
+| tarjetas con DOS rellenas | 0 |
+| «Agendar» rellena | 0 de 4 (se queda secundaria) |
+| control positivo: «Abrir parte» rellena (En curso) | 2 de 2 |
+
+### Aceptación → dónde se ve (la fila que faltaba)
+
+| aceptación (literal) | dónde se ve |
+|---|---|
+| En «HOY», «▶ Empezar» es la primera acción y usa la variante primaria; las demás, secundarias. | yaqu.app, cuenta QA, Trabajos, grupo «Hoy» (mientras #86 siga agendado para el 18-nov) · `evidencias/SCRUM-1739/r42-lista-390.png` y `r42-lista-1280.png` · `r42-primaria-390.txt` y `r42-primaria-1280.txt`, línea `TESTIGO` |
+| En «EN CURSO» nada cambia (control positivo). | las mismas dos salidas: «Abrir parte» 2/2 rellenas |
+
+Las otras dos filas (capturas antes/después y la mitad-tarjeta de SCRUM-1749) no cambian: están en la tabla de arriba.
+
+### Lo que se queda en la cuenta QA (declarado)
+
+- El trabajo **#86** queda **agendado para el 18-nov-2026 a las 18:30 (Madrid)**, sin técnico. NO se ha empezado (pulsar «▶ Empezar» lo pasaría a en curso) ni desagendado. A partir del 19-nov será un agendado con la fecha pasada: saldrá de «Hoy», y quien mida ese día la lista lo verá donde el producto ponga los atrasados.
+- Mientras dure el día, la tarjeta «PARA HOY» de la cabecera cuenta 3 trabajos en vez de 2.
+- Agendar no avisa al cliente: lo leyó la sesión anterior en `jobs.routes.ts` (PATCH sin envíos; ningún cron de `src/` lee `scheduledAt`), y en la pasada las únicas escrituras son `POST /admin/entorno` (del banco) y el `PATCH`.
+
+### Lo que NO se ha medido
+
+- El operario con un agendado de verdad: la pasada es con la cookie de administrador (el operario simulado está en las capturas de arriba).
+- Pulsar «▶ Empezar»: a propósito, escribe.

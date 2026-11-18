@@ -1974,3 +1974,71 @@ comprobaciones van dentro del caso puro que ya existía.
 `propios` en el mismo fichero (`(^|/)scrum-?N([a-z])?[-._]`) tampoco admite el corte para NOMBRES DE
 FICHERO (`tests/scrum915e1-….test.mjs`). No es la regla de ramas y ensancharlo empuja hacia DENTRO,
 que es el lado peligroso: se nombra aquí, sin arreglarlo a ciegas.
+
+---
+
+# APÉNDICE · 18-nov-2026 · SCRUM-804j · los ficheros propios, leídos como la regla canónica, y la entrada fuera
+
+**Puesto:** S5 (instrumentos) · **Rama:** `scrum-804j-propios-regla-canonica`
+**Medido contra:** `origin/main` = `6881a0d27e8b4e337bd55175c3068791c8304c69` · 2026-11-18T07:48:08Z (GitHub)
+**Precedente:** 804b (17-nov, arriba): las ramas pasaron a la regla canónica; esto hace lo mismo con los ficheros.
+**OK:** del orquestador a la propuesta medida (A+B juntos), con tres condiciones: registro que declare
+los 10, rojo primero en los dos, mutaciones declaradas.
+A9: comprobación → `tests/scrum804b-el-barrido-de-la-42.test.mjs`
+
+## ① La población, medida antes de tocar
+
+8.659 ficheros de `main`, 180 ramas. 6.699 llevan `scrum<N>` al principio de un tramo de la ruta; la regla
+vieja, `(^|/)scrum-?N([a-z])?[-._]`, sacaba 3.143 pares (ticket, fichero).
+
+| lectura | pares | cambios de cubo |
+|---|---|---|
+| vieja | 3.143 | — |
+| a lo loco (`[a-z]?\d*` detrás de `N`) | 9.542 (6.398 falsos, 175 tickets) | 95 de NO DECIDIBLE a DENTRO (2, 28, 91, 133…: `scrum284-antes.png` sería del 2 y del 28) |
+| **canónica** (número entero e igualdad) | 3.144 (+1, 0 perdidos) | **0** |
+
+La ambigüedad de la fase con corte en NOMBRES DE FICHERO era, ese día, **un solo fichero**:
+`tests/scrum1686h4-inicio-operario.test.mjs`, y el 1686 ya tenía otros propios.
+
+## ② Lo hecho
+
+- **A.** `numerosDeFichero(ruta)` y `ficherosPropios(ficheros, n)` en `scripts/censo-regla-42.mjs`: el número
+  ENTERO (`\d+` voraz, sin ceros delante) con la fase y su corte, en cualquier tramo de la ruta, comparado por
+  IGUALDAD, como `numeroDeRama`. No se llama a `numeroDeRama` tal cual: un fichero va sin guion, lleva `.`
+  antes de la extensión y el nombre no está sólo al principio.
+- **B.** La entrada `docs/master/SCRUM-N.md` ya no cuenta como fichero propio. Casaba (`SCRUM-N.` con la `i`), y
+  por eso la rama «entrada en main pero NINGÚN artefacto comprobable → NO DECIDIBLE» no se ejecutaba nunca:
+  290 tickets tenían su entrada como único «propio».
+- **Los directorios quedan FUERA, declarado:** 3.555 ficheros cuelgan de un `scrum-N/` y ninguna lectura los
+  atribuye (3.222 en `docs/master/evidencias/`, 51 en `docs/capturas/`). Son registro y capturas, no obra;
+  contarlos sumaría 3 tickets (213, 1391, 916) y empujaría hacia DENTRO. Lo fija un assert.
+
+## ③ 🔴 Los 10 tickets que cambian de cubo (todos por B, todos hacia el lado malo)
+
+Medido con la regla vieja y la nueva sobre los mismos 1.466 tickets y la misma foto: **1.456 iguales y 10
+cambian**, todos de DENTRO a NO DECIDIBLE («entrada en main pero NINGÚN artefacto comprobable»):
+
+354 · 482 · 638 · 972 · 1002 · 1110 · 1112 · 1204 · 1283 · 1352
+
+Salían DENTRO con «entrada en main + 1 fichero(s) con su nombre», y ese fichero era su propio registro.
+Los positivos del test (866, 881) no están entre ellos.
+
+## ④ Los controles
+
+- **Rojo primero**, con los tests comiteados antes que el arreglo (`9056171292681e53f70066f69a94563d86c7c4ca`):
+  2 de 5 casos en rojo, cada uno por su motivo. A: «`tests/scrum1686h4-inicio-operario.test.mjs` no es
+  fichero propio del 1686 (… el censo no ve NADA …)». B: «un ticket cuya única evidencia es su propia
+  entrada sale DENTRO (entrada en main + 1 fichero(s) con su nombre)».
+- **Verde** con el arreglo (`d624190557b366ff64fc3e9493655d3e17007b60`): 5/5; y los vecinos (1331, 1539b,
+  1541, 723, 804h, 850, 710b), 42/42.
+- **Mutaciones**, declaradas en `MUTACIONES_QUE_ME_TUMBAN` del test y ejecutadas una a una, con
+  `numstat` 1/1 y restauración verificada byte a byte: ① ensanche a lo loco → caen 2 casos (identidad y
+  entrada) · ② lector sin el corte → cae «identidad» · ③ la entrada vuelve a contar → cae «artefactos del
+  TEXTO». Las 3, ninguna muda. `meta-guard-mutaciones --solo-censo`: salida 0.
+- Las comprobaciones van DENTRO de los dos casos puros que ya había: `scrum1331` fija 5 casos y 2 puros.
+
+## ⑤ Visto de paso, NO tocado
+
+Hay 3 entradas cuyo único artefacto presente es la propia entrada, citada en su texto: **452, 466, 862**.
+Siguen DENTRO por la rama ②. Es la misma familia que B, pero por otro camino (`artefactosQueNombra`), y no
+entraba en el OK: se pasa al orquestador.
