@@ -294,3 +294,21 @@ un comentario en `MUTACIONES_QUE_ME_TUMBAN`. Las 8 declaradas son las vivas.
 - Mi driver de mutaciones llamó a `instalarRedDeSeguridad()` sin argumentos y su manejador de salida
   reventó al acabar (salida 1). Las 9 mutaciones ya habían terminado y el árbol estaba limpio
   (`git status` vacío).
+
+## SCRUM-1445f · 18-nov-2026 · J1 (jv-j1fa, relevo de jv-j1f7) · FASE 2: los lectores de J1 pasan la zona del comercio
+
+**Medido contra:** `origin/main` = `6c5327559bb8e17f1ecad128f99331ee16b31a2f` · 2026-11-18T04:34:55Z
+
+A9: comprobación → `tests/scrum1445f-los-lectores-pasan-la-zona.test.mjs`
+
+Decisión del fundador: SCRUM-1445 c.21896 («arreglarlo en el código, sin tocar TZ»). Plan: c.21898; fase 1: c.21937; código de esta fase (jv-j1f7): c.21950.
+
+- **Código** (jv-j1f7, commit 11180aa8c): `src/modules/invoicing/domain/zonaDelLibro.ts` (`zonaDelMerchantParaElLibro`: lee `merchant.timezone`, sin zona da UTC, y PARA si el merchant no existe). Lo llaman 303, 130, 347, retenciones (x2), libros AEAT (x2) y el paquete de evidencias; el 390 lo hereda del 303.
+- **Test nuevo** (este relevo): los 8 lectores piden el periodo en la zona del comercio (Madrid, Canarias y sin zona) con el proceso en UTC; casos A, D, E y F de c.21891 y el suelo. **Rojo en `origin/main`: 10 de 14** (los 8 lectores y A y D; E, F, el suelo y el control pasan, como deben en UTC). Verde en la rama: 14/14.
+- **Mutaciones** con `aplicarUna` y `correr`: 10 declaradas, 10 vivas. Más las 3 anclas que la fase 2 había dejado caducadas (scrum836): `scrum1065e`, `scrum1066h` y `scrum1067b`, puestas al texto nuevo; las 3 vivas.
+- **Fakes** de 10 ficheros de tests (1040, 1063b, 1065b, 1065e, 1066c, 1066e, 1067b, 1077, 1721, 426): el comercio falso declara la zona del PROCESO, porque sus fixtures son hora local; 1065e y 1066c cuentan la lectura nueva. Los 21 ficheros de los lectores: 151 pasan + 5 saltados (`LIBRO_PG_URL`) de 156, en UTC, Kiritimati, Midway y Canarias.
+- **Suite por tramos** (15): tramos 1-14 corridos. Rojos de entorno: 1298b (2) en el 3 y 351 (1) en el 9. Dos rojos míos, arreglados en el código y vueltos a correr: `scrum1415` (títulos de test construidos, en el 5) y `scrum836` (en el 14). `scrum854` (14) pedía este registro. **El tramo 15 NO se ha corrido** (contexto); los tramos 1-13 se corrieron antes de los dos arreglos de anclas y títulos. Build con tipos (`tsc -p .`): salida 0.
+
+**NO HECHO:** el DEFECTO_CONOCIDO ② de `scrum1055b` sigue declarado (no lo he mirado); el año del XML VeriFactu (`verifactu.service.ts`, camino de emisión) sigue sin su test DEFECTO_CONOCIDO; `libroRegistro.routes.ts` sin decidir. **Para Luis:** S1 `reports.routes.ts` (rangoTrimestre sin zona), `cron.ts`, `exports.routes.ts`, métricas y gastos; S0 el censo de `new Date(a, b, …)`. yaqu.app no mirado: sin comercio con zona y con facturación, no se ve nada.
+
+**Error propio:** el primer `test()` de los lectores llevaba el título construido con `${l.nombre}`, y lo cazó `scrum1415` en la suite. Ya lo dice A10 («Una prohibición sin mecanismo es una frase»): aquí el mecanismo existía y funcionó; el error fue no correr antes los guards que leen `tests/`.

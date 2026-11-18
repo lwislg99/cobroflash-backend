@@ -21,7 +21,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'SCRUM-1065e · el borde: el 2 de enero a las 00:00' },
   { fichero: 'src/modules/fiscal/modelo130/modelo130.ts', de: "motivosParaNoFiarse.push('alta_a_mitad_de_ejercicio');", a: 'void 0;',
     cae: 'SCRUM-1065e · alta en julio' },
-  { fichero: 'src/modules/fiscal/modelo130/modelo130.repo.ts', de: 'trimestre: params.trimestre, altaDelMerchant });', a: 'trimestre: params.trimestre });',
+  { fichero: 'src/modules/fiscal/modelo130/modelo130.repo.ts', de: 'trimestre: params.trimestre, altaDelMerchant, zona });', a: 'trimestre: params.trimestre, zona });',
     cae: 'SCRUM-1065e · el lector LEE el alta' },
   { fichero: 'src/modules/fiscal/modelo130/modelo130.repo.ts', de: 'where: { id: params.merchantId }, select:', a: 'where: { id: params.merchantId + 1 }, select:',
     cae: 'SCRUM-1065e · el lector LEE el alta' },
@@ -52,7 +52,7 @@ function baseFalsa(alta) {
     get: (_, modelo) => new Proxy({}, {
       get: (_, op) => async (args) => {
         llamadas.push({ op: `${String(modelo)}.${String(op)}`, where: args?.where, select: args?.select });
-        if (modelo === 'merchant' && op === 'findUnique') return args?.where?.id === M ? { createdAt: alta } : null;
+        if (modelo === 'merchant' && op === 'findUnique') return args?.where?.id === M ? { createdAt: alta, timezone: ZONA_DEL_PROCESO } : null;
         if (modelo === 'invoice') return FACTURAS.filter((f) => dentro(f.createdAt, args.where.createdAt));
         return [];
       },
@@ -60,6 +60,11 @@ function baseFalsa(alta) {
   });
   return { db, llamadas };
 }
+
+// SCRUM-1445f · los fixtures de este fichero se escriben en hora LOCAL del proceso (el trinquete de zona
+// los pasa en Kiritimati y Midway): el comercio falso vive en esa misma zona. La zona del comercio de
+// verdad (Canarias, península, sin zona) la prueba tests/scrum1445f-los-lectores-pasan-la-zona.test.mjs.
+const ZONA_DEL_PROCESO = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 test('SCRUM-1065e · alta en julio: el borrador lleva el motivo, como código', () => {
   for (const t of [1, 2, 3, 4]) {
@@ -99,7 +104,10 @@ test('SCRUM-1065e · el lector LEE el alta de la fila del merchant, filtrada por
   const r = await leerBorrador130(db, { merchantId: M, año: 2026, trimestre: 3 });
   assert.ok(r.motivosParaNoFiarse.includes(MOTIVO), '🔴 el lector no le pasa el alta al borrador');
   const fila = llamadas.filter((l) => l.op.startsWith('merchant.'));
-  assert.deepEqual(fila.map((l) => [l.op, l.where, l.select]), [['merchant.findUnique', { id: M }, { createdAt: true }]]);
+  assert.deepEqual(fila.map((l) => [l.op, l.where, l.select]), [
+    ['merchant.findUnique', { id: M }, { timezone: true }], // SCRUM-1445f: la zona de los bordes
+    ['merchant.findUnique', { id: M }, { createdAt: true }],
+  ]);
   // CONTROL POSITIVO del mismo lector: con un alta anterior al ejercicio, el motivo NO sale.
   const antes = await leerBorrador130(baseFalsa(new Date(2025, 3, 1)).db, { merchantId: M, año: 2026, trimestre: 3 });
   assert.deepEqual(antes.motivosParaNoFiarse, []);

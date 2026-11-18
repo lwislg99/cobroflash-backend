@@ -19,6 +19,7 @@ import {
 import { verificarSobre, verificarPoblacion, type EntradaVerificacion } from '../../jobs/domain/albaranVerificacion';
 import { construirPaqueteEvidencias, type PaqueteEvidencias, type AlbaranDelPaquete } from './paquete';
 import { criterioDelMerchantParaElLibro } from '../../invoicing/domain/criterioDelMerchant'; // SCRUM-294 fase C
+import { zonaDelMerchantParaElLibro } from '../../invoicing/domain/zonaDelLibro'; // SCRUM-1445d fase 2
 
 /** Lo que el lector necesita del cliente Prisma. Inyectable: el test le pasa el suyo. */
 export interface ClienteDelPaquete extends ClienteDelLibro {
@@ -32,7 +33,9 @@ export async function leerPaqueteEvidencias(
   db: ClienteDelPaquete,
   params: { merchantId: number; año: number; trimestre: number },
 ): Promise<PaqueteEvidencias> {
-  const { desde, hasta } = rangoTrimestre(params.año, params.trimestre);
+  // SCRUM-1445d (fase 2) · el trimestre, en la zona del comercio (c.21896): el mismo que el 303 de dentro.
+  const zona = await zonaDelMerchantParaElLibro(db, params.merchantId);
+  const { desde, hasta } = rangoTrimestre(params.año, params.trimestre, zona);
   const { merchantId } = params;
 
   // SCRUM-294 (fase C) · el criterio de caja del merchant. Va ANTES del Promise.all: si el
@@ -44,7 +47,7 @@ export async function leerPaqueteEvidencias(
     // ⚠️ El 303 de la línea de abajo lee el libro POR SU CUENTA y sin filtro: declara lo devengado
     // (LIVA 75/167). Por eso los dos pueden no sumar lo mismo, y el paquete lo DICE
     // (`AVISO_LIBRO_SOLO_FACTURAS`, en `paquete.ts`): esta línea y ese aviso entran juntos.
-    leerLibroRegistro(db, { merchantId, desde, hasta, ...criterio, soloFacturas: true }),
+    leerLibroRegistro(db, { merchantId, desde, hasta, zona, ...criterio, soloFacturas: true }),
     leerModelo303(db, { merchantId, año: params.año, trimestre: params.trimestre }),
     db.albaran.findMany({
       // Firmados y del periodo: son los que tienen sello que comprobar.

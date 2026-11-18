@@ -27,6 +27,16 @@
 //
 // SALIDAS: 0 verde · 1 rojo (caídos que no son ciegos por entorno declarados) · 2 ciego / no supe medir.
 // ⛔ NO sustituye al CI: el juez obligatorio sigue siendo él.
+//
+// 🔴 SCRUM-1743 · UN TRAMO POR COMANDO, y el runner lo hace cumplir. El 16-nov-2026 las «muertes por memoria»
+// eran bucles `for` de tramos en UN comando: pasan de 600 s, el arnés los manda a segundo plano y allí los mata
+// su REAPER por presión de memoria, que sólo actúa sobre shells `backgrounded` (leído en el binario de Claude
+// Code 2.1.325 por jv-j6ef; la sesión que lo construyó corría 2.1.327). Un tramo solo en primer plano no lo mata.
+// Por eso `--tramo` apunta en la pasada la RAÍZ DEL COMANDO que lo lanza —el primer ancestro cuyo padre es
+// `claude.exe`, con pid + hora de creación— y, si otro tramo de la misma pasada ya vino de esa raíz, sale con 2.
+// No es `process.ppid`: desde Git Bash el padre directo es un bash recién forkeado en cada vuelta (medido el
+// 18-nov, c.21996: 11 de 11 distintos dentro del bucle). Sin `claude.exe` en la cadena (CI, una terminal a
+// mano) no bloquea y lo DICE con una línea CIEGO. Decisión: SCRUM-1743 c.21998.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -110,6 +120,75 @@ function leerArgumentos(args) {
   return o;
 }
 
+/** SCRUM-1743 · el mensaje literal del ticket. */
+export const MENSAJE_ENCADENADO =
+  'un tramo por comando: encadenados pasan de 600 s, el arnés los manda a segundo plano y allí los mata por memoria';
+export const AVISO_SIN_CLAUDE =
+  '🔴 CIEGO · no sé quién me lanza (no hay claude.exe entre mis ancestros): no compruebo si vas encadenado (SCRUM-1743)';
+
+/**
+ * SCRUM-1743 · la raíz del comando del arnés: en la cadena de ancestros (del padre hacia arriba), el elemento
+ * que va justo antes del primer `claude.exe`. Puro: los tests le pasan la cadena a mano.
+ * `null` si no hay `claude.exe` (no sé quién me lanza). Si el padre directo ya es `claude.exe`, la raíz es
+ * el propio runner (`yo`): un comando sin shell no puede encadenar.
+ */
+export function raizDelComando(cadena, yo) {
+  const k = cadena.findIndex((p) => /^claude(\.exe)?$/i.test(p.nombre ?? ''));
+  if (k < 0) return null;
+  const r = k === 0 ? yo : cadena[k - 1];
+  return { pid: r.pid, creado: r.creado };
+}
+
+/**
+ * La cadena de ancestros de este proceso, con UNA consulta a `Win32_Process`. `TANDA_TRAMOS_CADENA` (JSON) la
+ * sustituye: sólo la pone su test. Se mira la HERRAMIENTA y no la plataforma (scrum702): sin `powershell.exe`,
+ * o si la consulta falla, `null`, y quien llama lo dice como CIEGO.
+ */
+export function leerCadena() {
+  if (process.env.TANDA_TRAMOS_CADENA != null) {
+    try { return { cadena: JSON.parse(process.env.TANDA_TRAMOS_CADENA), yo: { pid: process.pid, creado: 'simulado' } }; }
+    catch { return null; }
+  }
+  const r = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
+    'Get-CimInstance Win32_Process | ForEach-Object { "{0}|{1}|{2}|{3}" -f $_.ProcessId,$_.ParentProcessId,$_.Name,$_.CreationDate.ToUniversalTime().ToString("o") }'],
+  { encoding: 'utf8', timeout: 30_000, windowsHide: true, maxBuffer: 16 * 1024 * 1024 });
+  if (r.error || r.status !== 0) return null;
+  const todos = new Map();
+  for (const l of r.stdout.split(/\r?\n/)) {
+    const [pid, ppid, nombre, creado] = l.split('|');
+    if (pid && creado) todos.set(Number(pid), { pid: Number(pid), ppid: Number(ppid), nombre, creado });
+  }
+  const yo = todos.get(process.pid);
+  if (!yo) return null;
+  const cadena = [];
+  for (let p = todos.get(yo.ppid); p && cadena.length < 16; p = todos.get(p.ppid)) {
+    // Un padre más joven que su hijo es un PID reutilizado: la cadena real se acabó ahí.
+    const hijo = cadena.at(-1) ?? yo;
+    if (p.creado > hijo.creado) break;
+    cadena.push(p);
+  }
+  return { cadena, yo };
+}
+
+/**
+ * SCRUM-1743 · apunta la raíz de este `--tramo` en la pasada y dice si otro tramo ya vino de ella.
+ * Devuelve `{ encadenado, aviso }`. La marca se escribe ANTES de correr el tramo.
+ */
+export function comprobarRaiz(dirPasada, i, lectura) {
+  const raiz = lectura ? raizDelComando(lectura.cadena, lectura.yo) : null;
+  if (!raiz) return { encadenado: null, aviso: AVISO_SIN_CLAUDE };
+  fs.mkdirSync(dirPasada, { recursive: true });
+  const previas = fs.readdirSync(dirPasada).filter((f) => /^raiz-tramo-\d+\.json$/.test(f))
+    .map((f) => { try { return JSON.parse(fs.readFileSync(path.join(dirPasada, f), 'utf8')); } catch { return {}; } });
+  const repetida = previas.find((p) => p.pid === raiz.pid && p.creado === raiz.creado);
+  if (repetida) {
+    return { encadenado: repetida, aviso: `🔴 ${MENSAJE_ENCADENADO} (SCRUM-1743). El tramo ${repetida.tramo} de esta `
+      + `pasada ya salió de este mismo comando (raíz pid ${raiz.pid}, creada ${raiz.creado}): lanza cada --tramo en su comando.` };
+  }
+  fs.writeFileSync(path.join(dirPasada, `raiz-tramo-${i}.json`), JSON.stringify({ ...raiz, tramo: i, hora: new Date().toISOString() }));
+  return { encadenado: null, aviso: null };
+}
+
 // El árbol entero, no sólo el runner: sus trabajadores, huérfanos, seguirían comiendo memoria. Se mira
 // la HERRAMIENTA y no la plataforma (scrum702 pone tope a quien lee la plataforma): si `taskkill` no
 // existe, se para el runner y `--test-force-exit` se lleva a los suyos.
@@ -171,7 +250,13 @@ async function main() {
   // escribe en el árbol, y la huella del árbol real cambiaría entre su tramo 1 y su resumen.
   const arbol = process.env.TANDA_TRAMOS_ARBOL || estadoDelArbol(RAIZ);
   const dirPasada = dirDeLaPasada(base, huellaDeLaPasada({ elegidos, n, arbol }));
-  if (o.tramo) process.exit(await correrTramo(o.tramo, tramoDe(elegidos, o.tramo.i, n), dirPasada));
+  if (o.tramo) {
+    const t0 = Date.now();
+    const { encadenado, aviso } = comprobarRaiz(dirPasada, o.tramo.i, leerCadena());
+    console.log(aviso ?? `raíz del comando comprobada en ${Date.now() - t0} ms (SCRUM-1743: un tramo por comando)`);
+    if (encadenado) process.exit(2);
+    process.exit(await correrTramo(o.tramo, tramoDe(elegidos, o.tramo.i, n), dirPasada));
+  }
   const r = resumenDeTramos(leerTramos(dirPasada), n);
   console.log(`población: ${elegidos.length} ficheros de ${path.relative(RAIZ, o.dir) || '.'} · pasada ${path.basename(dirPasada)}`);
   for (const l of lineasDelResumen(r)) console.log(l);

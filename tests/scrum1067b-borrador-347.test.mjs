@@ -36,7 +36,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'SCRUM-1067b · 🔴 regla 2' },
   { fichero: 'src/modules/fiscal/modelo347/modelo347.repo.ts', de: 'where: { merchantId: params.merchantId, id: { in: ids } },',
     a: 'where: { id: { in: ids } },', cae: 'SCRUM-1067b · el lector filtra por merchant' },
-  { fichero: 'src/modules/fiscal/modelo347/modelo347.repo.ts', de: 'desde, hasta, soloFacturas: true });', a: 'desde, hasta });',
+  { fichero: 'src/modules/fiscal/modelo347/modelo347.repo.ts', de: 'desde, hasta, zona, soloFacturas: true });', a: 'desde, hasta, zona });',
     cae: 'SCRUM-1067b · el libro son facturas' },
 ];
 
@@ -79,12 +79,18 @@ function baseFalsa({ facturas = [], gastos = [], proveedores = [] } = {}) {
     llamadas,
     invoice: tabla('invoice', facturas), quote: tabla('quote', []), albaran: tabla('albaran', []),
     expense: tabla('expense', gastos), provider: tabla('provider', proveedores),
+    merchant: { findUnique: async () => ({ timezone: ZONA_DEL_PROCESO }) }, // SCRUM-1445f
   };
 }
 
 const leer = (datos, año = AÑO) => leerBorradorModelo347(baseFalsa(datos), { merchantId: M, año });
 const porNif = (lado) => Object.fromEntries(lado.declarados.map((t) => [t.nif, t]));
 const fecha = (mes, dia = 15) => new Date(AÑO, mes - 1, dia, 12);
+
+// SCRUM-1445f · los fixtures de este fichero se escriben en hora LOCAL del proceso (el trinquete de zona
+// los pasa en Kiritimati y Midway): el comercio falso vive en esa misma zona. La zona del comercio de
+// verdad (Canarias, península, sin zona) la prueba tests/scrum1445f-los-lectores-pasan-la-zona.test.mjs.
+const ZONA_DEL_PROCESO = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 test('SCRUM-1067b · cifras a mano: 3 NIF por encima y 1 por debajo', async () => {
   const r = await leer({ facturas: [
