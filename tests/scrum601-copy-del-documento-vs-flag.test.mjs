@@ -272,7 +272,13 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // 12-nov-2026 · aPelo 161 → 162, MEDIDO (SCRUM-1051h): el literal nuevo es P5, «Para facturar con
 // inversión del sujeto pasivo, el cliente tiene que ser empresario o profesional.», firmado por Javier en
 // SCRUM-1051 c.21761; `destinatarioIsp.ts:33`. Es el mismo que sube los no legibles 39 → 40.
-const VEREDICTO_AL_MEDIR = { flag: 8, tipo: 11, aPelo: 162 };
+// 162 → 163 · 18-nov-2026 (SCRUM-1732c) · cuál entró y por qué no es regresión: texto 7 firmado en
+// SCRUM-1732 c.21928, «Lo cobrado más lo retenido no suma el total de la factura. Revisa el importe recibido
+// antes de declarar la garantía.», `src/modules/billing/app/routes/chargesAdmin.routes.ts:31`
+// (`TEXTO_GARANTIA_NO_CUADRA`, el 409 de `/garantia`). Recalculado con `censoCopy` sobre el árbol FUSIONADO
+// (origin/main 6c5327559 + la rama): { flag: 8, tipo: 11, aPelo: 163 }, suman 182 de 182; es el único
+// literal nuevo de ③. Re-anclaje autorizado por el fundador en SCRUM-1732 c.22001.
+const VEREDICTO_AL_MEDIR = { flag: 8, tipo: 11, aPelo: 163 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
@@ -458,7 +464,11 @@ test('SCRUM-601 · EL VEREDICTO: las tres categorías, ancladas, y SUMAN', () =>
 // construcción no legible nueva es `exportView.js:43`.
 // 12-nov-2026 · 38 → 39, MEDIDO (SCRUM-1051g): `destinatarioIsp.ts`, P4 (firmado, SCRUM-1051 c.21750).
 // 12-nov-2026 · 39 → 40, MEDIDO (SCRUM-1051h): `destinatarioIsp.ts:33`, P5 (firmado, SCRUM-1051 c.21761).
-const NO_LEGIBLES_AL_MEDIR = 40;
+// 40 → 41 · 18-nov-2026 (SCRUM-1732c) · cuál entró y por qué no es regresión: el mismo texto 7 firmado en
+// SCRUM-1732 c.21928, `chargesAdmin.routes.ts:31` (sumidero `PROP:message`, alcance
+// `const TEXTO_GARANTIA_NO_CUADRA`). Recalculado con `censoCopy` sobre el árbol fusionado: 41, y es la única
+// construcción no legible nueva. Autorizado en SCRUM-1732 c.22001.
+const NO_LEGIBLES_AL_MEDIR = 41;
 
 test('SCRUM-601 · el censo DECLARA lo que no sabe leer, y esa lista no crece sola', () => {
   const n = censo.noLegibles.length;

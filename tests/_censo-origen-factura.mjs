@@ -239,6 +239,7 @@ export function clavesDe(sitios) {
 export const CENSO = {
   'src/lib/invoicing.ts::invoice.findFirst#1': { veredicto: 'CLAVE', nota: 'idempotencia al crear desde un charge que YA tiene quote' },
   'src/modules/billing/app/routes/psp.routes.ts::invoice.findFirst#1': { veredicto: 'CLAVE', nota: 'OR chargeId/quoteId; el quoteId entra por spread condicional solo si hay quote' },
+  'src/modules/billing/app/routes/chargesAdmin.routes.ts::invoice.findFirst#1': { veredicto: 'CLAVE', nota: 'SCRUM-1732 facturaDelCobro: el mismo criterio que psp (OR chargeId/quoteId, el quoteId solo si hay quote); la suelta entra por chargeId' },
   'src/modules/billing/app/routes/receipt.routes.ts::invoice.findFirst#1': { veredicto: 'CLAVE', nota: 'guardado por `if (quote)`, con camino alternativo por evento' },
   'src/modules/billing/app/routes/receipt.routes.ts::invoice.findFirst#2': { veredicto: 'CLAVE', nota: 'idéntico al anterior, en la otra ruta de recibo' },
   'src/modules/expenses/domain/expenses.service.ts::expense.findMany#1': { veredicto: 'PROYECCION', nota: 'lista de gastos; include quote solo para el id' },

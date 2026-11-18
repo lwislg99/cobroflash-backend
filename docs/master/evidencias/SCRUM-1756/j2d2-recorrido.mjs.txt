@@ -1,0 +1,115 @@
+// SCRUM-1756c (j2d2) · Recorrido FUNCIONAL en navegador real (el de los guards: scripts/_navegador.mjs) del
+// recibo y del portal con la CSP de SCRUM-1637 APLICADA. Variante de `recorrido.mjs.txt` (1756b): aquí no
+// se comparan capturas (este tramo no toca CSS) sino que los TRES botones hagan lo que hacían:
+//   · recibo pagado: tocar la 3.ª estrella pone stars=3 y enciende 3; enviar sin estrella NO navega;
+//   · portal: desplegar líneas abre el cuerpo y cambia el chevron; «Solicitar» abre el formulario; enviar
+//     llega al servidor por la ruta de `data-url` y pinta el aviso de enviado;
+//   · 404 del portal: sólo informes CSP.
+// Uso (desde la raíz; copia a .mjs y el servidor a .cjs, fuera del árbol):
+//   node <copia recorrido> <raíz> <copia servidor .cjs> <distAntes> <distRama> <salida.json>
+// B antes CON política (control: los botones TIENEN que fallar y dar informes script-src) · C rama CON ·
+// D rama SIN. Control sembrado (`/__sembrado-js`, un <script> en línea): con política, informe script-src.
+// PUBLIC_BASE_URL = el propio servidor: la URL de la solicitud no sale de 127.0.0.1 (y se comprueba).
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawn } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
+
+const [RAIZ, SERVIDOR, distAntes, distRama, salida] = process.argv.slice(2);
+if (!salida) { console.error('uso: <raíz> <servidor> <distAntes> <distRama> <salida.json>'); process.exit(2); }
+const { lanzarNavegador, resolverNavegador } = await import(pathToFileURL(path.join(RAIZ, 'scripts/_navegador.mjs')).href);
+const ESC = [
+  { id: 'B-antes-aplicada', dist: distAntes, modo: 'aplicada', puerto: 47391 },
+  { id: 'C-rama-aplicada', dist: distRama, modo: 'aplicada', puerto: 47392 },
+  { id: 'D-rama-sin', dist: distRama, modo: 'sin', puerto: 47393 },
+];
+function entornoHijo(puerto) {
+  const e = { ...process.env, DISABLE_CRONS: 'true', NODE_ENV: 'test', MP_ACCESS_TOKEN: '' };
+  for (const k of Object.keys(e)) if (/^DATABASE_URL/.test(k) || k === 'NODE_TEST_CONTEXT' || k === 'NODE_OPTIONS') delete e[k];
+  for (const k of ['DATABASE_URL', 'DATABASE_URL_STAGING', 'DATABASE_URL_DEV', 'DATABASE_URL_TESTS']) e[k] = '';
+  e.NODE_PATH = path.join(RAIZ, 'node_modules');
+  e.PUBLIC_BASE_URL = `http://127.0.0.1:${puerto}`;
+  return e;
+}
+function arrancar(esc) {
+  return new Promise((ok, mal) => {
+    const h = spawn(process.execPath, [SERVIDOR, esc.dist, String(esc.puerto), esc.modo],
+      { cwd: path.dirname(path.resolve(esc.dist)), env: entornoHijo(esc.puerto), stdio: ['ignore', 'pipe', 'pipe'] });
+    let log = '';
+    const t = setTimeout(() => mal(new Error(`${esc.id}: sin LISTO en 60 s\n${log}`)), 60_000);
+    h.stdout.on('data', (d) => { log += d; if (log.includes('LISTO')) { clearTimeout(t); ok(h); } });
+    h.stderr.on('data', (d) => { log += d; });
+    h.on('exit', (c) => { clearTimeout(t); mal(new Error(`${esc.id}: salió con ${c}\n${log.slice(-800)}`)); });
+  });
+}
+const VIGIA = () => { window.__csp = []; document.addEventListener('securitypolicyviolation', (e) => window.__csp.push(e.effectiveDirective)); };
+const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+async function abrir(nav, url) {
+  const ctx = await nav.createBrowserContext();
+  const p = await ctx.newPage();
+  const fuera = [];
+  p.on('request', (q) => { if (!q.url().startsWith('http://127.0.0.1:') && !q.url().startsWith('data:')) fuera.push(q.url()); });
+  p.on('dialog', async (d) => { fuera.push(`DIALOGO ${d.message()}`); await d.dismiss(); });
+  await p.evaluateOnNewDocument(VIGIA);
+  await p.setViewport({ width: 390, height: 900, deviceScaleFactor: 1 });
+  const r = await p.goto(url, { waitUntil: 'networkidle0' });
+  return { ctx, p, status: r.status(), fuera };
+}
+const informe = { navegador: resolverNavegador(), escenarios: {} };
+const puppeteer = createRequire(path.join(RAIZ, 'package.json'))('puppeteer-core');
+const nav = await lanzarNavegador(puppeteer, { headless: true });
+const hijos = [];
+try {
+  for (const esc of ESC) {
+    hijos.push(await arrancar(esc));
+    const o = `http://127.0.0.1:${esc.puerto}`;
+    const r = {};
+    // Control sembrado.
+    { const v = await abrir(nav, o + '/__sembrado-js'); r.sembrado = { csp: await v.p.evaluate(() => window.__csp), corrio: (await v.p.title()) === 'corrio' }; await v.ctx.close(); }
+    // Recibo: las estrellas.
+    {
+      const v = await abrir(nav, o + '/__e/paid/42/recibo/tok1756');
+      await v.p.click('.fb-stars button[data-star="3"]');
+      const stars = await v.p.$eval('#fb-stars-input', (x) => x.value);
+      const encendidas = await v.p.$$eval('.fb-stars button.on', (xs) => xs.length);
+      const antes = v.p.url();
+      await v.ctx.close();
+      const w = await abrir(nav, o + '/__e/paid/42/recibo/tok1756');
+      await w.p.click('.fb-send');
+      await espera(500);
+      const navego = w.p.url() !== antes;
+      r.recibo = { status: v.status, stars, encendidas, enviarSinEstrellaNavega: navego, csp: [...(await w.p.evaluate(() => window.__csp))], fuera: [...v.fuera, ...w.fuera] };
+      await w.ctx.close();
+    }
+    // Portal: desplegar, solicitar, enviar.
+    {
+      const v = await abrir(nav, o + '/__e/x/42/cliente/portal1756');
+      const csp0 = await v.p.evaluate(() => window.__csp.slice());
+      await v.p.click('.pf-lines-toggle');
+      const desplegado = await v.p.$eval('.pf-lines-toggle', (b) => ({ abierto: b.nextElementSibling.classList.contains('open'), chevron: b.querySelector('.pf-chevron').textContent }));
+      await v.p.click('#pf-req-btn');
+      const formAbierto = await v.p.$eval('#pf-req-form', (f) => f.classList.contains('open'));
+      let error = null;
+      try {
+        await v.p.type('#pf-req-ta', 'Revisar la caldera');
+        await v.p.click('#pf-req-submit');
+        await espera(800);
+      } catch (e) { error = String(e.message).slice(0, 120); } // sin guion el formulario no se abre: no hay a qué hacer clic
+      if (error) v.fuera.push(`NO SE PUDO ENVIAR: ${error}`);
+      const exito = await v.p.$eval('#pf-req-success', (x) => getComputedStyle(x).display !== 'none');
+      const sol = await (await fetch(o + '/__solicitudes')).json();
+      r.portal = { status: v.status, csp: csp0, desplegado, formAbierto, exito, solicitudes: sol, fuera: v.fuera };
+      await v.ctx.close();
+    }
+    { const v = await abrir(nav, o + '/__e/x/0/cliente/no-existe'); r.portal404 = { status: v.status, csp: await v.p.evaluate(() => window.__csp) }; await v.ctx.close(); }
+    informe.escenarios[esc.id] = r;
+  }
+} finally { await nav.close(); for (const h of hijos) h.kill(); }
+fs.writeFileSync(salida, JSON.stringify(informe, null, 1));
+for (const [id, e] of Object.entries(informe.escenarios)) {
+  console.log(`${id}: sembrado ${e.sembrado.csp.join(',') || '—'} (corrió: ${e.sembrado.corrio})`);
+  console.log(`   recibo ${e.recibo.status}: stars=${JSON.stringify(e.recibo.stars)} encendidas=${e.recibo.encendidas} enviarSinEstrellaNavega=${e.recibo.enviarSinEstrellaNavega} csp=${e.recibo.csp.join(',') || '0'} fuera=${e.recibo.fuera.length}`);
+  console.log(`   portal ${e.portal.status}: desplegado=${JSON.stringify(e.portal.desplegado)} formAbierto=${e.portal.formAbierto} exito=${e.portal.exito} solicitudes=${JSON.stringify(e.portal.solicitudes)} csp=${e.portal.csp.join(',') || '0'} fuera=${JSON.stringify(e.portal.fuera)}`);
+  console.log(`   portal404 ${e.portal404.status}: csp=${e.portal404.csp.join(',') || '0'}`);
+}

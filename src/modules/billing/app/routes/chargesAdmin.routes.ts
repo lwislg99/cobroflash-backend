@@ -21,6 +21,31 @@ import {
   calcularSplitRetencion, tieneRetencionDeclarada, retencionPendiente,
   datosParaDeclararRetencion, datosParaMarcarCobrada,
 } from '../../domain/retencionGarantia'; // SCRUM-1107
+import { apuntarCobroDeFactura, resolverImporteRecibido, aCentimos } from '../../domain/cobrosDeFactura'; // SCRUM-1732
+import { formatMoneyEs } from '../../../../core/utils/utils'; // SCRUM-1732: los textos firmados de c.21928
+
+// SCRUM-1732 · TEXTOS FIRMADOS por Javier (regla 39) en SCRUM-1732 c.21928, LITERALES. Solo los de
+// los escritores de este PR (3, 5 y 7); los demás son de la UI y van aparte.
+export const TEXTO_BIZUM_PARCIAL = (cobrado: string, total: string) => `✓ Bizum confirmado: has recibido ${cobrado} de ${total}.`;
+export const TEXTO_GARANTIA_COBRADA = (importe: string, numero: string) => `Garantía cobrada: ${importe} de la factura ${numero}.`;
+export const TEXTO_GARANTIA_NO_CUADRA = 'Lo cobrado más lo retenido no suma el total de la factura. Revisa el importe recibido antes de declarar la garantía.';
+
+/**
+ * SCRUM-1732 · LA FACTURA DE UN COBRO, con el mismo criterio que `/webhooks/psp` (P0-3): por
+ * `chargeId` directo o por el presupuesto ligado al cobro. Regla 2: dentro del merchant.
+ */
+async function facturaDelCobro(merchantId: number, chargeId: number) {
+  const presupuesto = await prisma.quote.findFirst({ where: { chargeId, merchantId }, select: { id: true } });
+  return prisma.invoice.findFirst({
+    where: { merchantId, OR: [{ chargeId }, ...(presupuesto ? [{ quoteId: presupuesto.id }] : [])] },
+    select: { id: true, number: true },
+  });
+}
+
+/** SCRUM-1732 · ¿quien confirma ha DECLARADO una fecha? Si no, la fila sale como `marcado`. */
+function hayFechaDeclarada(v: unknown): boolean {
+  return v !== undefined && v !== null && v !== '';
+}
 
 // SCRUM-885 · cuánto se espera, como mucho, a que el WhatsApp de la confirmación deje su fila.
 // psp lo lanza sin `await`, así que al volver de psp puede no haber vuelto aún de Meta.
@@ -77,13 +102,20 @@ router.post('/:id/confirm-bizum', async (req, res) => {
     );
     if (!fecha.ok) return res.status(400).json({ error: fecha.error, message: fecha.message });
 
+    // SCRUM-1732 · EL IMPORTE LO DICE QUIEN CONFIRMA, como la fecha. Hasta aquí se mandaba siempre
+    // `charge.amount` (lo pedido) y no había forma de decir «he recibido 950». Sin declarar, lo pedido.
+    const importeRecibido = resolverImporteRecibido((req.body as any)?.importe, charge.amount);
+    if (!importeRecibido.ok) return res.status(400).json({ error: importeRecibido.error });
+    const fechaOrigen = hayFechaDeclarada((req.body as any)?.paid_at ?? (req.body as any)?.fecha) ? 'declarada' : 'marcado';
+
     // Misma cadena post-pago que el PSP (P0-3: factura ligada → paid, WA, email)
     await axios.post(`${BASE_URL}/webhooks/psp`, {
       event: 'payment.confirmed',
       charge_id: id,
       method: 'bizum_manual',
       bank_ref: `bizum-manual-${Date.now()}`,
-      amount: Number(charge.amount),
+      amount: importeRecibido.importe, // SCRUM-1732: lo que entró, no lo pedido
+      fecha_origen: fechaOrigen, // SCRUM-1732: psp lo apunta en invoice_payments
       currency: charge.currency,
       // `ts` ya estaba en el esquema del webhook y no lo leía nadie. Ahora es la fecha del cobro.
       ts: fecha.fecha.toISOString(),
@@ -94,7 +126,14 @@ router.post('/:id/confirm-bizum', async (req, res) => {
     // envía nada. Qué se pinta lo decide la regla del dashboard (`avisoDocumentoSinEnviar`).
     const envioDocumento = await envioDelDocumentoDelCobro(req.merchantId!, id);
 
-    return res.json({ ok: true, status: 'paid', paid_via: 'bizum_manual', paid_at: fecha.fecha.toISOString(), envioDocumento });
+    // SCRUM-1732 · texto 3 firmado (c.21928), sólo si entró menos de lo pedido; el cobro entero
+    // conserva el aviso de siempre, que pinta la UI.
+    const parcial = (aCentimos(importeRecibido.importe) ?? 0) < (aCentimos(charge.amount) ?? 0);
+    return res.json({
+      ok: true, status: 'paid', paid_via: 'bizum_manual', paid_at: fecha.fecha.toISOString(), envioDocumento,
+      importe_recibido: importeRecibido.importe,
+      ...(parcial ? { message: TEXTO_BIZUM_PARCIAL(formatMoneyEs(importeRecibido.importe, charge.currency), formatMoneyEs(charge.amount, charge.currency)) } : {}),
+    });
   } catch (err: any) {
     console.error('[POST /admin/charges/:id/confirm-bizum]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
@@ -119,9 +158,11 @@ router.post('/:id/garantia', requireRole('admin'), async (req, res) => {
 
     const charge = await prisma.charge.findFirst({
       where: { id, merchantId: req.merchantId }, // regla 2
-      select: { id: true, merchant: { select: { timezone: true } } },
+      select: { id: true, status: true, amount: true, merchant: { select: { timezone: true } } },
     });
     if (!charge) return res.status(404).json({ error: 'not_found' });
+    // SCRUM-1732 · la retención se declara sobre un cobro YA cobrado (antes aceptaba uno `pending`).
+    if (charge.status !== 'paid') return res.status(409).json({ error: 'charge_not_paid' });
 
     const total = Number(req.body?.total);
     const porcentaje = Number(req.body?.porcentaje);
@@ -138,6 +179,20 @@ router.post('/:id/garantia', requireRole('admin'), async (req, res) => {
 
     const split = calcularSplitRetencion(total, porcentaje);
     if (!split.ok) return res.status(400).json({ error: split.error });
+
+    // SCRUM-1732 · COBRADO + RETENIDO = TOTAL, en céntimos. «Cobrado» es lo apuntado en
+    // `invoice_payments` para este cobro (filas `cobro` que nadie ha anulado); un cobro anterior
+    // a la tabla no tiene filas y vale lo que dice su `amount`, como hasta hoy.
+    const filas = await prisma.invoicePayment.findMany({
+      where: { merchantId: req.merchantId!, chargeId: id, tipo: 'cobro', anuladaPor: null },
+      select: { importe: true },
+    });
+    const cobradoC = filas.length
+      ? filas.reduce((a, fila) => a + (aCentimos(fila.importe) ?? 0), 0)
+      : (aCentimos(charge.amount) ?? 0);
+    if (cobradoC + (aCentimos(split.importeRetenido) ?? NaN) !== aCentimos(total)) {
+      return res.status(409).json({ error: 'cobrado_mas_retenido_no_cuadra', message: TEXTO_GARANTIA_NO_CUADRA });
+    }
 
     const actualizado = await prisma.charge.update({
       where: { id },
@@ -190,7 +245,17 @@ router.post('/:id/garantia/liberar', requireRole('admin'), async (req, res) => {
     // SCRUM-397 · un solo generador para «pagado + su instante + su evento» — nunca los tres
     // campos a mano (censo `tests/scrum397-instante-de-cobro.test.mjs`, «nadie marca un cobro
     // pagado fuera del generador»).
-    const ahora = new Date();
+    // SCRUM-1732 (decisión ④ de c.21928) · LA FECHA LA DICE QUIEN LIBERA, con el patrón de
+    // `confirm-bizum`: mismo criterio (futura no, hacia atrás sin límite) y la zona del merchant.
+    const merchantZona = await prisma.merchant.findUnique({ where: { id: req.merchantId! }, select: { timezone: true } });
+    const fechaDeclarada = (req.body as any)?.paid_at ?? (req.body as any)?.fecha;
+    const fecha = resolverFechaDeCobro(fechaDeclarada, new Date(), zonaDelMerchant(merchantZona));
+    if (!fecha.ok) return res.status(400).json({ error: fecha.error, message: fecha.message });
+    const ahora = fecha.fecha;
+    const fechaOrigen = hayFechaDeclarada(fechaDeclarada) ? 'declarada' : 'marcado';
+    // SCRUM-1732 · la factura del cobro ORIGINAL: la liberación se apunta contra ella.
+    const factura = await facturaDelCobro(req.merchantId!, original.id);
+
     const [nuevoCharge] = await prisma.$transaction([
       prisma.charge.create({
         data: {
@@ -206,7 +271,18 @@ router.post('/:id/garantia/liberar', requireRole('admin'), async (req, res) => {
       }),
       prisma.charge.update({ where: { id: original.id }, data: datosParaMarcarCobrada(ahora) }),
     ]);
-    return res.json({ ok: true, chargeLiberacionId: nuevoCharge.id, retencionGarantiaCobrada: ahora.toISOString() });
+    // SCRUM-1732 · fila `liberacion_garantia` con el `invoice_id`: lo que le faltaba (c.21820 ②).
+    // Idempotente por el único (invoice_id, charge_id), y el cobro de la liberación es nuevo.
+    if (factura) {
+      await apuntarCobroDeFactura(prisma, {
+        merchantId: req.merchantId!, invoiceId: factura.id, chargeId: nuevoCharge.id,
+        importe, fechaCobro: ahora, fechaOrigen, metodo: method, tipo: 'liberacion_garantia',
+      });
+    }
+    return res.json({
+      ok: true, chargeLiberacionId: nuevoCharge.id, retencionGarantiaCobrada: ahora.toISOString(),
+      ...(factura ? { invoiceId: factura.id, message: TEXTO_GARANTIA_COBRADA(formatMoneyEs(importe, original.currency), factura.number) } : {}),
+    });
   } catch (err) {
     console.error('[POST /admin/charges/:id/garantia/liberar]', err);
     return res.status(500).json({ error: 'internal_error' });
