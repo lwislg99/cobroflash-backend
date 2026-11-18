@@ -1,0 +1,13 @@
+⟦arranque⟧ 0.4 s COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+B-antes-aplicada: sembrado script-src-elem (corrió: false)
+   recibo 200: stars="" encendidas=0 enviarSinEstrellaNavega=true csp=script-src-elem fuera=0
+   portal 200: desplegado={"abierto":false,"chevron":"▼"} formAbierto=false exito=false solicitudes=[] csp=script-src-elem,script-src-elem fuera=["NO SE PUDO ENVIAR: Node is either not clickable or not an Element"]
+   portal404 404: csp=script-src-elem
+C-rama-aplicada: sembrado script-src-elem (corrió: false)
+   recibo 200: stars="3" encendidas=3 enviarSinEstrellaNavega=false csp=0 fuera=0
+   portal 200: desplegado={"abierto":true,"chevron":"▲"} formAbierto=true exito=true solicitudes=["/cliente/portal1756/quote-request"] csp=0 fuera=[]
+   portal404 404: csp=0
+D-rama-sin: sembrado — (corrió: true)
+   recibo 200: stars="3" encendidas=3 enviarSinEstrellaNavega=false csp=0 fuera=0
+   portal 200: desplegado={"abierto":true,"chevron":"▲"} formAbierto=true exito=true solicitudes=["/cliente/portal1756/quote-request"] csp=0 fuera=[]
+   portal404 404: csp=0

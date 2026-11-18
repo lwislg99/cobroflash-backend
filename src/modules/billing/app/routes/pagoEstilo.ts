@@ -19,6 +19,7 @@
 // Mismo patrón que el guion (`pagoNavegador.ts`, SCRUM-1647): cadenas CONSTANTES, servidas por el
 // router de pago (`public/**` es del carril S2), con huella (`?v=`, SCRUM-274).
 import { huellaDeContenido, CACHE_CON_HUELLA } from '../../../../core/http/huellaEstaticos';
+import { RECIBO_PORTAL_CSS, type HojaDeReciboOPortal } from './reciboPortalEstilo'; // SCRUM-1756b
 
 // SCRUM-1723c · tarjeta y Mercado Pago (las otras dos de las cinco firmadas en c.21719).
 //   · `tarjeta`: las dos páginas de error de `/pay/card/:token` no llevaban `<style>`, sólo 8 `style=`
@@ -216,9 +217,14 @@ export const PAGO_CSS: Readonly<Record<PaginaDePago, string>> = {
   `,
 };
 
+// SCRUM-1756b · el recibo y el portal del cliente sirven sus hojas por esta MISMA ruta (`reciboPortalEstilo.ts`).
+// Viven en su propio mapa: `PAGO_CSS` sigue siendo el de las páginas de pago.
+export type HojaDeEstilo = PaginaDePago | HojaDeReciboOPortal;
+const HOJAS: Readonly<Record<HojaDeEstilo, string>> = { ...PAGO_CSS, ...RECIBO_PORTAL_CSS };
+
 const HUELLAS = Object.fromEntries(
-  (Object.keys(PAGO_CSS) as PaginaDePago[]).map((p) => [p, huellaDeContenido(PAGO_CSS[p])]),
-) as Readonly<Record<PaginaDePago, string>>;
+  (Object.keys(HOJAS) as HojaDeEstilo[]).map((p) => [p, huellaDeContenido(HOJAS[p])]),
+) as Readonly<Record<HojaDeEstilo, string>>;
 
 /** La hoja del resultado de Mercado Pago para un estado; uno fuera del conjunto cae a `pending`, como `statusMap`. */
 export function estiloDeResultadoMp(estado: string): PaginaDePago {
@@ -231,23 +237,29 @@ export function estiloDeResultadoMp(estado: string): PaginaDePago {
 export const RUTA_PAGO_CSS = '/css/pago.css';
 
 /** La página pedida, sólo si es una de las del conjunto cerrado; si no, `null`. */
-export function paginaDeEstilo(pedida: unknown): PaginaDePago | null {
-  return typeof pedida === 'string' && Object.prototype.hasOwnProperty.call(PAGO_CSS, pedida)
-    ? (pedida as PaginaDePago)
+export function paginaDeEstilo(pedida: unknown): HojaDeEstilo | null {
+  return typeof pedida === 'string' &&
+    (Object.prototype.hasOwnProperty.call(PAGO_CSS, pedida) || Object.prototype.hasOwnProperty.call(RECIBO_PORTAL_CSS, pedida))
+    ? (pedida as HojaDeEstilo)
     : null;
 }
 
+/** El CSS de una hoja del conjunto cerrado (pago, recibo o portal). */
+export function cssDeHoja(pagina: HojaDeEstilo): string {
+  return HOJAS[pagina];
+}
+
 /** `Cache-Control` según la huella pedida: `immutable` sólo si cuadra; si no, revalidar siempre. */
-export function cacheDelEstiloDePago(pagina: PaginaDePago, pedida: unknown): string {
+export function cacheDelEstiloDePago(pagina: HojaDeEstilo, pedida: unknown): string {
   return pedida === HUELLAS[pagina] ? CACHE_CON_HUELLA : 'no-cache';
 }
 
 /** El `href` de la hoja. Relativo al propio servidor: `style-src 'self'`. */
-export function hrefEstiloDePago(pagina: PaginaDePago): string {
+export function hrefEstiloDePago(pagina: HojaDeEstilo): string {
   return `/pay${RUTA_PAGO_CSS}?p=${pagina}&v=${HUELLAS[pagina]}`;
 }
 
 /** La etiqueta que ocupa el hueco del `<style>`. `pagina` es una constante del servidor, nunca un dato. */
-export function etiquetaEstiloDePago(pagina: PaginaDePago): string {
+export function etiquetaEstiloDePago(pagina: HojaDeEstilo): string {
   return `<link rel="stylesheet" href="${hrefEstiloDePago(pagina).replace('&', '&amp;')}"/>`;
 }
