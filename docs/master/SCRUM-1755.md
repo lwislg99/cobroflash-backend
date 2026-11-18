@@ -63,3 +63,24 @@ Censo tras la tanda: 27 bancos (casa 8 · casa-lista 10 · a mano 9: 7 solo geom
 **Lo que NO está medido.** Quedan 2 en la DEUDA, que siguen midiendo con la letra de reserva:
 `guard-pad-de-firma-cabe` y `guard-notas-en-la-ficha`. Son para la sesión siguiente de S3. Inter en el runner (lo
 dirá el CI). Ninguno de estos guards entra en `npm test`: sólo el censo (scrum1603) corre en la suite.
+
+## SCRUM-1755c (18-nov-2026, S3, sesión de relevo) · tanda 3
+
+**⒈ El rojo de #3212** era de esta rama y sólo de ella: `scrum267` (la entrada no traía «Medido contra»); el
+`scrum976 ④` caía en cadena porque corre `guards:entrada`. Arreglado con el ancla y la línea A9 de arriba.
+
+**⒉ `guard-notas-en-la-ficha`.** Ya enlazaba `/fonts/inter.css`, pero escrito a mano, servía la `.woff2` como
+`application/octet-stream; charset=utf-8` y no esperaba las caras. Ahora: hojas del índice, `.woff2` con su
+tipo, `esperarFuentes` + `cegueraDeLaFuente` tras cada `goto`, `LETRA:` en la salida.
+
+| qué se le hace | salida |
+|---|---|
+| sacarlo de DEUDA y techo 2→1, sin tocar el guard (rojo primero) | scrum1603 ⑥ en rojo: «…monta el panel con sus hojas escritas a mano y no está declarado» |
+| base (guard viejo) | 0 · 9 filas: admin con notas ×3, sin notas ×3, técnico sin pestaña ×3 |
+| con el arreglo | 0 · las mismas 9 filas, mismo veredicto · `LETRA: Inter · caras cargadas 5 de 35 · fallidas 0`; scrum1603 7/7 |
+| `inter.css` 404 | 2 · HOJA SIN CARGAR |
+| `.woff2` 404 | 2 · FUENTE ROTA |
+
+**⒊ `guard-pad-de-firma-cabe` NO está hecho.** Es fichero de S4 (fila propia en `docs/equipo/dos-equipos.md`
+§3, SCRUM-1742), y el cruce necesita su fila en §3.4, que es de S0. El orquestador la ha pedido a S0; cuando
+esté en `main`, se arregla con la misma receta. Hasta entonces la DEUDA queda en 1, con techo 1.
