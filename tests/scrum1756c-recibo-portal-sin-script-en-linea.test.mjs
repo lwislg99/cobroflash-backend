@@ -64,7 +64,7 @@ const require_ = createRequire(path.join(RAIZ, 'package.json'));
 const comercio = () => ({
   id: 42, name: 'Fontanería Ruiz', legalName: 'Fontanería Ruiz SL', email: 'ruiz@ejemplo.test',
   country: 'ES', logoUrl: null, timezone: null, iban: 'ES9121000418450200051332', clabe: null,
-  bizumPhone: '600111222', whatsappPhone: '600111222', connectStatus: 'none', stripeAccountId: null,
+  bizumPhone: '34000000001', whatsappPhone: '34000000001', connectStatus: 'none', stripeAccountId: null,
   flags: { BIZUM_MANUAL_ENABLED: true }, deletedAt: null, googleReviewUrl: null, llevaLibrosPorSii: true,
 });
 const clienteFila = () => ({ id: 3, merchantId: 42, name: 'Ana', email: null, phone: null, portalToken: 'portal1756c' });
