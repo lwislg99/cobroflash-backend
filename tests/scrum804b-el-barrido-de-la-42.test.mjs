@@ -267,7 +267,8 @@ function comprobarLosFicherosPropios() {
     '🔴 `scrum-0072-…` no es del 72.');
 
   // ⛔ DECLARADO: un DIRECTORIO con número no hace propios a sus ficheros. Son evidencias y capturas
-  // (3.222 de los 3.555 ficheros bajo `SCRUM-N/` están en `docs/master/evidencias/`), registro y no
+  // (medido el 18-nov-2026: 3.222 de los 3.555 ficheros bajo `SCRUM-N/` están en
+  // `docs/master/evidencias/`), registro y no
   // obra: contarlos empujaría tickets hacia DENTRO.
   assert.equal(clasificar(1756, { ...SIN_NADA, ficheros: ['docs/master/evidencias/SCRUM-1756/j3d-x.txt'] }).propios, 0,
     '🔴 un fichero dentro de `evidencias/SCRUM-1756/` cuenta como obra del 1756.');
