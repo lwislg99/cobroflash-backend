@@ -151,19 +151,27 @@ test('SCRUM-1445f · 🔵 CONTROL: el proceso corre en UTC (si no, el resto no m
   assert.equal(new Date(2026, 3, 1).toISOString(), '2026-04-01T00:00:00.000Z');
 });
 
-for (const l of LECTORES) {
-  test(`SCRUM-1445f · ${l.nombre} pide el periodo en la zona del comercio (península, Canarias y sin zona)`, async () => {
-    for (const zona of ZONAS) {
-      const { db, rangos, merchantsLeidos } = baseFalsa(zona);
-      await l.llamar(db);
-      assert.ok(rangos.length > 0, `CIEGO: ${l.nombre} no ha pedido ningún rango de fechas`);
-      assert.ok(merchantsLeidos.includes(M), `🔴 ${l.nombre} no lee la fila del merchant`);
-      const [desde, hasta] = l.periodo[zona];
-      const malos = rangos.filter((r) => r.gte !== desde || r.lte !== hasta);
-      assert.deepEqual(malos, [], `🔴 ${l.nombre}, comercio ${zona ?? 'sin zona'}: esperaba [${desde} .. ${hasta}]`);
-    }
-  });
+// Un test por lector, con su título LITERAL (scrum1415: los nombres de test no se construyen).
+async function pideElPeriodoEnLaZona(nombre) {
+  const l = LECTORES.find((x) => x.nombre === nombre);
+  for (const zona of ZONAS) {
+    const { db, rangos, merchantsLeidos } = baseFalsa(zona);
+    await l.llamar(db);
+    assert.ok(rangos.length > 0, `CIEGO: ${l.nombre} no ha pedido ningún rango de fechas`);
+    assert.ok(merchantsLeidos.includes(M), `🔴 ${l.nombre} no lee la fila del merchant`);
+    const [desde, hasta] = l.periodo[zona];
+    const malos = rangos.filter((r) => r.gte !== desde || r.lte !== hasta);
+    assert.deepEqual(malos, [], `🔴 ${l.nombre}, comercio ${zona ?? 'sin zona'}: esperaba [${desde} .. ${hasta}]`);
+  }
 }
+test('SCRUM-1445f · leerModelo303 pide el periodo en la zona del comercio (península, Canarias y sin zona)', () => pideElPeriodoEnLaZona('leerModelo303'));
+test('SCRUM-1445f · leerBorrador130 pide el periodo en la zona del comercio (península, Canarias y sin zona)', () => pideElPeriodoEnLaZona('leerBorrador130'));
+test('SCRUM-1445f · leerBorradorModelo347 pide el periodo en la zona del comercio (península, Canarias y sin zona)', () => pideElPeriodoEnLaZona('leerBorradorModelo347'));
+test('SCRUM-1445f · leerBorradorRetenciones pide el periodo en la zona del comercio (península, Canarias y sin zona)', () => pideElPeriodoEnLaZona('leerBorradorRetenciones'));
+test('SCRUM-1445f · leerHayRetencionAnotadaEnElAño pide el periodo en la zona del comercio (península, Canarias y sin zona)', () => pideElPeriodoEnLaZona('leerHayRetencionAnotadaEnElAño'));
+test('SCRUM-1445f · leerLibroExpedidasDelTrimestre pide el periodo en la zona del comercio (península, Canarias y sin zona)', () => pideElPeriodoEnLaZona('leerLibroExpedidasDelTrimestre'));
+test('SCRUM-1445f · leerLibroRecibidasDelTrimestre pide el periodo en la zona del comercio (península, Canarias y sin zona)', () => pideElPeriodoEnLaZona('leerLibroRecibidasDelTrimestre'));
+test('SCRUM-1445f · leerPaqueteEvidencias pide el periodo en la zona del comercio (península, Canarias y sin zona)', () => pideElPeriodoEnLaZona('leerPaqueteEvidencias'));
 
 // Los casos de c.21891, como instantes concretos contra el rango que pide el 303 (el que heredan el
 // 390 y el paquete). `dentro` es el mismo filtro que aplica la base.

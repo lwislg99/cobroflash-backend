@@ -36,7 +36,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'SCRUM-1067b · 🔴 regla 2' },
   { fichero: 'src/modules/fiscal/modelo347/modelo347.repo.ts', de: 'where: { merchantId: params.merchantId, id: { in: ids } },',
     a: 'where: { id: { in: ids } },', cae: 'SCRUM-1067b · el lector filtra por merchant' },
-  { fichero: 'src/modules/fiscal/modelo347/modelo347.repo.ts', de: 'desde, hasta, soloFacturas: true });', a: 'desde, hasta });',
+  { fichero: 'src/modules/fiscal/modelo347/modelo347.repo.ts', de: 'desde, hasta, zona, soloFacturas: true });', a: 'desde, hasta, zona });',
     cae: 'SCRUM-1067b · el libro son facturas' },
 ];
 

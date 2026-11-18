@@ -21,7 +21,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'SCRUM-1065e · el borde: el 2 de enero a las 00:00' },
   { fichero: 'src/modules/fiscal/modelo130/modelo130.ts', de: "motivosParaNoFiarse.push('alta_a_mitad_de_ejercicio');", a: 'void 0;',
     cae: 'SCRUM-1065e · alta en julio' },
-  { fichero: 'src/modules/fiscal/modelo130/modelo130.repo.ts', de: 'trimestre: params.trimestre, altaDelMerchant });', a: 'trimestre: params.trimestre });',
+  { fichero: 'src/modules/fiscal/modelo130/modelo130.repo.ts', de: 'trimestre: params.trimestre, altaDelMerchant, zona });', a: 'trimestre: params.trimestre, zona });',
     cae: 'SCRUM-1065e · el lector LEE el alta' },
   { fichero: 'src/modules/fiscal/modelo130/modelo130.repo.ts', de: 'where: { id: params.merchantId }, select:', a: 'where: { id: params.merchantId + 1 }, select:',
     cae: 'SCRUM-1065e · el lector LEE el alta' },
