@@ -129,6 +129,9 @@ const TABLES = [
   // SELLÓ y lo que contestó la AEAT (CSV, estado): no se puede regenerar, y restaurar sin ella
   // dejaría sin saber qué se presentó. `vf_flujo_obligado`, la espera que impone la AEAT a cada NIF.
   'vf_submissions', 'vf_flujo_obligado',
+  // SCRUM-1076d: qué plazos ha marcado el profesional como «llevado a mi asesor». Lo marca él y no
+  // se deduce de nada, así que restaurar sin ella lo devolvería todo a «Pendiente».
+  'fiscal_plazo_estado',
 ];
 
 async function logicalDump(prisma) {

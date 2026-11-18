@@ -293,6 +293,10 @@ export const NO_PERSONALES = Object.freeze({
   'vfSubmission.lastEnvioId': ID_EXTERNO,
   'vfSubmission.csv': 'el código seguro de verificación que devuelve la AEAT: identifica el envío, no a una persona',
   'vfSubmission.estadoRegistro': ESTADO,
+  // fiscalPlazoEstado (SCRUM-1076d): qué modelo y periodo, y si está «llevado a mi asesor».
+  'fiscalPlazoEstado.modelo': 'el número del modelo tributario (303, 130…): dice de qué declaración es la fila, no de quién',
+  'fiscalPlazoEstado.periodo': 'el periodo del modelo (1T…4T o ANUAL): un trozo del calendario, no una persona',
+  'fiscalPlazoEstado.estado': ESTADO,
   // vfFlujoObligado
   'vfFlujoObligado.ultimoEnvioId': ID_EXTERNO,
 });

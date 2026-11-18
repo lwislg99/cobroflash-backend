@@ -71,3 +71,38 @@ A9: comprobación → `tests/scrum1076b-fuentes-de-los-plazos.test.mjs`
 
 - Leí Jira antes de la lectura de arranque, así que mis dos puntos de medida de contexto salieron en uno (145.037).
 - Puse primero la entrada de versión arriba del documento, cuatro líneas que habrían desplazado diez anclas `CONTABILIDAD.md:<línea>`. Lo vi antes del commit (`git grep` de las anclas) y la quité.
+
+## SCRUM-1076d · Calendario de plazos, tanda 1 de servidor: tabla, módulo, API y tests (J1, 16-nov-2026)
+
+**Medido contra:** `origin/main` = `a7a85a058e90744ba77ff1fa43af78b522369412` · 2026-11-16T16:49:48Z
+
+A9: aviso → cicatriz J1 «Imprimí `exit=$?` dentro de la misma cadena que un `$(basename …)` anterior, y salió el código del `basename`: tres ficheros con `fail 1` y `fail 2` dijeron `exit=0`; lo cacé por los recuentos, no por el código» — no se pudo comprobar: lo impediría un hook sobre la orden, y los hooks no son de este puesto
+
+Tres sesiones: jv-j1f0 (módulo, API, tests y DDL), jv-j1f3 (guards de esquema) y jv-j1f5 (renombrado, Parte L, suite y empujón). Decisiones y textos: SCRUM-1076 c.21877. ALTER en las tres bases: c.21897. Excepción de carril de las 10 piezas sin consumir: c.21899 y c.21916. Renombrado y Parte L: c.21925.
+
+### Qué se hizo
+
+| aceptación (c.21876 §4 y c.21877) | dónde se ve |
+|---|---|
+| tabla `fiscal_plazo_estado` (P6), sin fila = «Pendiente» | `prisma/schema.prisma` (modelo `FiscalPlazoEstado`, relación `Merchant.fiscalPlazos`) · `docs/sql/scrum-1076d-fiscal-plazo-estado.sql` |
+| año y cita en cada fila; sin cita no hay fila | `tests/scrum1076d-calendario-de-plazos.test.mjs` |
+| el estado persiste y no lo cambia un cobro; aislamiento entre comercios | ídem |
+| ningún literal contiene «presentad»; textos T1–T20, T6a y T7 tal como se firmaron | ídem |
+| el estado en la Parte L (c.21925 ②) | `docs/YAQU_MASTER.md` Parte L, línea de «Estados con VALORES fijados» (escrito en esa línea, sin añadir ninguna) · `docs/master/evidencias/scrum1500c/cotejo-once.cjs` (entrada `FiscalPlazoEstado.estado`, sale `COINCIDE_CON_EL_MASTER`) · `tests/scrum1537-los-dos-cotejos.test.mjs` |
+| montar la ruta en `src/app.ts` | **NO HECHO → S1**, la pide Javier a Luis: `mountAdmin(app, '/admin/plazos-fiscales', requireRole('admin'), plazosRouter)`. Hasta entonces, las 10 piezas declaradas en `scripts/_sin-consumir-declarados.json` |
+| pantalla, menú y contrato del DOM | **NO HECHO → S2** |
+
+- **Renombrado (c.21925 ①):** `Merchant.fiscalPlazosEstado` → `fiscalPlazos`, sólo el nombre del campo de relación (`schema.prisma:170`). No tenía ningún uso en el código (`git grep` del nombre: 1 aparición, la del esquema). scrum1537 lo contaba como campo de estado por el sufijo.
+- **Guards de esquema (jv-j1f3):** 172, 192/314 (una línea de `borradoMerchant.ts`, cruce J3 firmado por el orquestador J), 241, 337, 1547, 525d (dos anclas +2 en sitio), 409 y 461 (`deriva-prod.sql` regenerado).
+- **De paso:** `.claude/carriles.json` no se había regenerado tras la fila de excepción de `dos-equipos.md`; scrum1295 caía. Regenerado con `node scripts/carriles.mjs generar` (sólo esa fila y el sha de la fuente).
+
+### Medido
+
+- Build con tipos (`tsc -p .`, sin `--noCheck`) contra un cliente Prisma PROPIO en un árbol desechable: salida 0. El cliente compartido, intacto (misma mtime 1794593716 y tamaño antes y después).
+- scrum1537: 6 de 6; población 12 = 12; controles 8 de 8.
+- Suite entera, 14 tramos, antes del merge de `origin/main`: 1.677 ficheros, 13.649 tests, 13.468 pass, 4 fail (el resto, saltos). Los 4: 1298b ×2 y 351 caen igual en un árbol de `origin/main` `a7a85a05` limpio (entorno de esta máquina); 1295 era de la rama y se arregló (8 de 8, y 1295b 3 de 3).
+- Sobre el merge de `origin/main` (36 commits, el único fichero común es `cicatrices/J1.md`) NO se repitió la suite entera, por orden del orquestador J: sólo los guards de registro y 1295/1295b. La tanda entera la hace el obligatorio.
+
+### Lo que NO se ha hecho
+
+- Ni `src/app.ts` ni la pantalla (otro equipo). Nada verificado en yaqu.app: la ruta no está montada.

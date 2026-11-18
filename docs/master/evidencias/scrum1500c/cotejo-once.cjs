@@ -117,6 +117,14 @@ const ONCE = [
       { tipo: 'enum', nombre: 'VfSubmissionStatus' },
     ],
     master: null },
+  { campo: 'FiscalPlazoEstado.estado',
+    // SCRUM-1076d · la Parte L lo nombra desde el 16-nov-2026 (SCRUM-1076 c.21877 y c.21925 ②), en la
+    // misma línea que Merchant.status. La escritura de Prisma no lleva literal: va por la constante.
+    fuentes: [
+      { tipo: 'prisma', delegado: 'fiscalPlazoEstado', puedeNoTraerLiteral: true },
+      { tipo: 'consts', fichero: 'src/modules/fiscal/plazos/plazos.ts', nombres: ['ESTADO_LLEVADO_ASESOR'] },
+    ],
+    master: { ancla: /\*\*FiscalPlazoEstado\.estado:\*\* `/, lista: /\*\*FiscalPlazoEstado\.estado:\*\* `([^`]+)`/ } },
 ];
 
 // CONTROLES. Viajan en cada pasada. Los de CERO no pueden salir «coincide»; el POSITIVO tiene que.
