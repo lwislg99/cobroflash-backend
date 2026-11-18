@@ -122,8 +122,11 @@ const PRIMARIO_DETALLE = `(() => {
   if (n < 20) return { error: 'la ficha no monta (' + n + ' nodos)' };
   // El CTA del héroe vive en la cabecera del patrón; el resto de primarias de la pantalla (como
   // «Consolidar seleccionados») no son la siguiente acción y no se comparan.
-  const b = document.querySelector('#view-container .detail-head button.btn-primary')
-    || document.querySelector('#view-container [data-accion="cta"] button.btn-primary');
+  // SCRUM-1725h (18-nov-2026, autorizado en SCRUM-1725 c.22107): REANCLADO POR IDENTIDAD, como la
+  // lista en 917e. Desde 1749 el CTA va relleno solo cuando es el paso de hoy; buscarlo por su peso
+  // (btn-primary) dejó el detalle CIEGO en ① ② ②-bis y MUDO en ③: un cerrado con CTA daba verde.
+  // Se marca en jobDetailView.js con data-accion="cta", pese lo que pese.
+  const b = document.querySelector('#view-container .detail-head button[data-accion="cta"]');
   return { rotulo: b ? b.textContent.trim() : null, nodos: n };
 })()`;
 
@@ -173,7 +176,7 @@ di('② «Agendar» SE PUEDE EJECUTAR EN LAS DOS — y no navega, y no deja el b
 di('══════════════════════════════════════════════════════════════════════════════════════');
 for (const [ruta, quienEs, sel] of [
   [`/lista-pendiente_agendar`, 'LISTA', '#view-container tr.jobs-fila .jobs-acciones > button:not(.overflow-trigger)'],
-  [`/detalle-pendiente_agendar`, 'DETALLE', '#view-container .detail-head button.btn-primary'],
+  [`/detalle-pendiente_agendar`, 'DETALLE', '#view-container .detail-head button[data-accion="cta"]'],
 ]) {
   const { page } = await abrirVista(browser, puerto, ruta, 1280);
   const antes = await page.evaluate(`(() => {
@@ -220,7 +223,7 @@ di('②-bis «▶ Empezar» ESCRIBE en las dos — y escribe la transición que 
 di('══════════════════════════════════════════════════════════════════════════════════════');
 for (const [ruta, quienEs, sel] of [
   ['/lista-agendado', 'LISTA', '#view-container tr.jobs-fila .jobs-acciones > button:not(.overflow-trigger)'],
-  ['/detalle-agendado', 'DETALLE', '#view-container .detail-head button.btn-primary'],
+  ['/detalle-agendado', 'DETALLE', '#view-container .detail-head button[data-accion="cta"]'],
 ]) {
   const { page } = await abrirVista(browser, puerto, ruta, 1280);
   const antes = await page.evaluate(`(() => {
@@ -257,7 +260,7 @@ di('③ UN TRABAJO CERRADO NO PROPONE NADA — en ninguna de las dos');
 di('══════════════════════════════════════════════════════════════════════════════════════');
 for (const [ruta, quienEs, sel] of [
   ['/lista-cerrado', 'LISTA', '#view-container tr.jobs-fila .jobs-acciones > button:not(.overflow-trigger)'],
-  ['/detalle-cerrado', 'DETALLE', '#view-container .detail-head button.btn-primary'],
+  ['/detalle-cerrado', 'DETALLE', '#view-container .detail-head button[data-accion="cta"]'],
 ]) {
   const { page } = await abrirVista(browser, puerto, ruta, 1280);
   await page.evaluate(DESPLEGAR);

@@ -331,7 +331,7 @@ sus tres valores y que la sección Ⓒ ya leyó (hablan del albarán). Una terce
 4. **El banco de mutaciones** (`evidencias/scrum1500b/mutar.mjs`, salida en `mutaciones.txt`): 17
    cambios de un literal en el instrumento, con la base en verde antes (13 de 13). **17 vivas, 0
    mudas, 0 ciegas**, y el instrumento restaurado con el mismo sha256. La primera es volver a la
-   pregunta vieja (comparar el código con el comentario): caen 8 de 13.
+   pregunta vieja (comparar el código con el comentario): caen 8 de 13. *(18-nov-2026: el guion `evidencias/scrum1500b/mutar.mjs` se retiró el 18-nov-2026 (SCRUM-1500i): sus mutaciones viven en el catálogo de `tests/scrum1500-el-cotejo-contra-el-master.test.mjs`. Su salida, `mutaciones.txt`, se conserva.)*
 5. **Controles a cero que viajan en cada pasada:** 4 de 4 (campo inventado, modelo inventado, ancla
    inventada, constante inventada).
 
@@ -1561,3 +1561,62 @@ línea 130 y esta rama la 300, la 301 y la 777, las dos sin mover líneas; GitHu
 
 **Lo que NO he hecho:** relanzar el job (`gh run rerun` conserva la base vieja), cerrar y reabrir el
 PR (desarma el auto-merge, que no se toca), ni correr la tanda completa en este árbol.
+
+# SCRUM-1500i · El banco heredado `scrum1500b/mutar.mjs` se retira: sus 17 mutaciones pasan al catálogo del test que tumban
+
+**Medido contra:** `origin/main` = `dd26ef66fa8d9e92cbefc116e6f55da900db6fb0` · 2026-11-18T16:47:10Z (cabecera `Date:` de GitHub)
+
+A9: aviso → cicatriz J5 «Lancé el meta-guard con la ruta de un test creyendo que mutaría sólo ése, y con un `timeout 580` encima: no acepta ruta, corrió el censo entero (309 ficheros) y el timeout lo mató con `scripts/guards-visuales.mjs` mutado; lo devolvió su propia marca con `--solo-censo`» — no se pudo comprobar: que el meta-guard grite ante un argumento que no conoce es un cambio en `scripts/meta-guard-mutaciones.mjs`, fuera de este encargo; se propone aquí y no se construye.
+
+Mutaciones: catálogo → tests/scrum1500-el-cotejo-contra-el-master.test.mjs
+
+Sesión J5 (IA, `jv-j5bh`), 18-nov-2026, por encargo del orquestador del equipo de Javier
+(`cobroflash-backend-ee`), con la decisión de qué es «retirar» de SCRUM-1387 c.22070. SCRUM-1500 está
+cerrado (c.19230): el tramo va aquí por A8, y la entrega en Jira va en SCRUM-1765. Sólo `tests/` y
+documentos: ni `src/`, ni `public/`, ni esquema, ni máster, ni emisión. Lo de arriba no se toca.
+
+## Lo medido, una a una
+
+1. **Base sin mutar:** el test tiene hoy **14** casos (no 13: el registro de 1500b es del 7-oct) y los
+   14 pasan.
+2. **El guion heredado, corrido por última vez antes de borrarlo:** 17 mutaciones sobre
+   `docs/master/evidencias/scrum1500/cotejo.cjs` (sha256 `574a7dd335583ec5…`), **17 vivas, 0 mudas,
+   0 ciegas**; cada ancla aparece **una** vez en el sujeto (el guion lo exige, y ninguna salió CIEGA);
+   instrumento restaurado con el mismo sha256. **Ninguna de ancla muerta:** no hay caducadas que declarar.
+3. **El catálogo:** las 17 pasan a `MUTACIONES_QUE_ME_TUMBAN` del test, con `fichero`, `de`, `a` y `cae`
+   como literales de cadena. `cae` es, para cada una, un caso que ya caía con ella en el guion.
+4. **Rojo visto con `aplicarUna` de la casa** (`scripts/meta-guard-mutaciones.mjs`, con su `correr`
+   para la pasada limpia): limpia 14 pasados, 0 caídos, 0 saltados; **17 de 17 VIVA**. Control
+   negativo sembrado: la 5.ª con `cae` = «EL CONTROL QUE LO SEPARA DE SU PADRE», que esa mutación no
+   tumba → **MUDA** («el guard NO cayó … PASÓ»). El driver fue un fichero de 1 KB fuera del árbol.
+5. **El sujeto bajo `docs/master/evidencias/` lo admite el meta-guard:** ya hay un precedente en main
+   (`tests/scrum1336-un-ciego-no-se-pinta-de-hallazgo.test.mjs`, `fichero:
+   'docs/master/evidencias/scrum1336/linea.mjs'`), y su `aplicarUna` mutó y restauró éste sin queja.
+6. **El guion se borra** (`git rm`); se quedan `mutaciones.txt` y `cotejo-salida.txt`. Nota fechada en
+   el único registro que lo citaba (`git grep "scrum1500b/mutar"`: `docs/master/SCRUM-1500.md:331`, al
+   final de la línea 334, sin mover líneas). Las dos salidas de evidencia que nombran la carpeta
+   (`SCRUM-1387/1387x/guard-1387-poblacion.txt`, `scrum1387b/salida-derivar.txt`) son salidas de otro
+   instrumento, fechadas: no se tocan.
+7. **`scrum1387` baja solo:** antes, «245 ficheros con «mut» en el nombre · 106 bancos · 33 fuera ·
+   33 heredados · 0 nuevos» con `heredado · docs/master/evidencias/scrum1500b`; después, «244 … · 32
+   fuera · 32 heredados · 0 nuevos» y la línea de `scrum1500b` ya no sale. Baja porque el guion
+   desaparece: el texto del test no nombra el guion ni la carpeta.
+
+## Lo que me salió mal
+
+1. **Lancé `node scripts/meta-guard-mutaciones.mjs <este test>` creyendo que mediría sólo ése.** No lee
+   rutas (sólo `--solo-censo` y `--juntar`): corrió el censo entero, 309 ficheros y 1.258
+   declaraciones, y mi `timeout 580` lo mató a mitad con `scripts/guards-visuales.mjs` mutado (una
+   línea: `codigo: null` → `codigo: 1`). Lo vio `git status`. Lo devolvió **su propia marca**
+   (`.cache/meta-guard-mutaciones/en-vuelo.json`) al lanzar `--solo-censo`, que dijo «UNA PASADA
+   ANTERIOR MURIÓ CON LA MUTACIÓN PUESTA … Devuelto a sus bytes»; después, `git status` limpio. La
+   marca de SCRUM-808 funcionó. Va a la cicatriz de J5. **Comprobación que falta y no construyo:** que
+   el meta-guard salga ≠ 0 ante un argumento que no conoce.
+
+**Corrido:** guards scrum1387/745/757/1321/1415/1294/267/273/854/237/976/525d y el propio test, 110
+casos, en verde (tras corregir mi A9, que citaba sólo media frase de la cicatriz: lo cazó scrum1294);
+`guards:entrada` 170/170. **Suite entera por tramos, 15 de 15:** 1.710 ficheros, 13.866 tests, 13.682
+pass, **2 fail**, los dos de `tests/scrum1298b-latido-arbol-de-arranque.test.mjs` («EL CASO: el árbol
+va por detrás…» y «se mide el árbol PRINCIPAL…»). **No son de este cambio:** el mismo fichero cae igual
+(6 de 8) en la rama de SCRUM-1316i, que es main más tres líneas de documentos. No lo he corrido sobre
+un main limpio ni sé si cae en CI. `dist/` compilado con `--noCheck` (no se toca `src/`).
