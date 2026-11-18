@@ -118,7 +118,7 @@ const MODELOS_POR_MERCHANT = [
   // SCRUM-1296 · `vfSubmission` es FK-RESTRICT hacia `invoice` y `merchant`: va antes de los dos.
   'vfSubmission',
   'albaran', 'maintenancePlan', 'invoice', 'charge', 'job', 'quote', 'quoteRequest',
-  'botSession', 'quoteTemplate', 'expense', 'product', 'provider', 'authSession',
+  'botSession', 'quoteTemplate', 'expense', 'fiscalPlazoEstado', 'product', 'provider', 'authSession',
   'teamMember', 'customer',
 ];
 
