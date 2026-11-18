@@ -111,7 +111,10 @@ function banco() {
     await pila[pila.length - 1].handle(reqDeSesion({ rol: 'admin', merchantId: MERCHANT, body, params, teamMemberId: null }), res);
     return r;
   };
-  const db = { expense: { findMany: async (a) => filas.filter(enPeriodo(a.where)).map((f) => ({ ...f })) } };
+  const db = {
+    merchant: { findUnique: async () => ({ timezone: ZONA_DEL_PROCESO }) }, // SCRUM-1445f
+    expense: { findMany: async (a) => filas.filter(enPeriodo(a.where)).map((f) => ({ ...f })) },
+  };
   const borrador = () => repo.leerBorradorRetenciones(db, { merchantId: MERCHANT, año: AÑO, trimestre: TRIM });
   return { filas, escriturasUpdate, llamar, borrador };
 }
@@ -123,6 +126,11 @@ const retencionDe = (f) => ({
 });
 
 // ── ① POST ──────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-1445f · los fixtures de este fichero se escriben en hora LOCAL del proceso (el trinquete de zona
+// los pasa en Kiritimati y Midway): el comercio falso vive en esa misma zona. La zona del comercio de
+// verdad (Canarias, península, sin zona) la prueba tests/scrum1445f-los-lectores-pasan-la-zona.test.mjs.
+const ZONA_DEL_PROCESO = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
 test('SCRUM-1721 · ① POST · «Sí, 15 %» con su importe se guarda y sale en el 111 (casillas 07-09)', async () => {
   const b = banco();
   const r = await b.llamar('post', '/', { body: { ...GASTO_111, retencionPracticadaTipo: 15, retencionPracticadaCuota: 150 } });

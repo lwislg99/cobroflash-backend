@@ -38,6 +38,11 @@ function m303(gastos, facturas = [factura()]) {
   return construirModelo303({ libro, libroRecibidas, año: 2026, trimestre: 2 });
 }
 
+// SCRUM-1445f · los fixtures de este fichero se escriben en hora LOCAL del proceso (el trinquete de zona
+// los pasa en Kiritimati y Midway): el comercio falso vive en esa misma zona. La zona del comercio de
+// verdad (Canarias, península, sin zona) la prueba tests/scrum1445f-los-lectores-pasan-la-zona.test.mjs.
+const ZONA_DEL_PROCESO = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
 test('SCRUM-1063b · las casillas son las del formulario leído (28/29, 30/31, 45, 46)', () => {
   assert.deepEqual(casillas.CASILLAS_DEDUCIBLE_CORRIENTES, { base: 28, cuota: 29 });
   assert.deepEqual(casillas.CASILLAS_DEDUCIBLE_BIENES_INVERSION, { base: 30, cuota: 31 });
@@ -132,7 +137,7 @@ test('SCRUM-1063b · el lector pide los gastos del merchant, del MISMO trimestre
     invoice: { async findMany() { return [factura()]; } },
     quote: { async findMany() { return []; } },
     albaran: { async findMany() { return []; } },
-    merchant: { async findUnique() { return { id: M }; } },
+    merchant: { async findUnique() { return { id: M, timezone: ZONA_DEL_PROCESO }; } },
     expense: { async findMany(args) { visto.push(args); return [gasto(), gasto({ merchantId: 99 })]; } },
   };
   const r = await leerModelo303(db, { merchantId: M, año: 2026, trimestre: 2 });
