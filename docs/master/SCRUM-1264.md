@@ -348,3 +348,224 @@ fecha y el importe de cada cobro y el medio»): **lo dice**, con cuatro matices 
    copia de una copia, y lo dice el propio bloque del fichero.
 3. Cité la frase de A10 por la mitad en la línea `A9:`, y scrum1294 la tumbó: compara la línea entera, no
    una subcadena. Arreglado copiando la frase completa; lo cazó el guard antes del push.
+
+# SCRUM-1264v · Lectura legal para el PR-2 de SCRUM-1732: el RIVA 69 bis no es el artículo; la frase está en el 69.5, y el asiento con caja se anota como si no hubiera caja
+
+**Medido contra:** `origin/main` = `8c8c2b7c2896bf8963294b2120f208405d3e0f87` · 2026-11-18T05:11:00Z (cabecera `Date:` de GitHub)
+
+A9: sin fallo que generalice — la cita equivocada (el 69 bis «apartado 3» por el 69.5) venía en el encargo, la cazó leer el bloque entero en el BOE antes de escribir, y lo que la para ya es norma de este puesto (leer el bloque vigente, no la memoria); el espacio duro del BOE se declara en Ⓑ y no se esconde.
+
+Sesión J5 (IA, `jv-j5be`), 18-nov-2026, por encargo del orquestador del equipo de Javier
+(`cobroflash-backend-ee`). **Solo docs.** No toca `src/`, ni el esquema, ni el camino de emisión.
+**Esto NO es respuesta de asesor ni decisión de producto:** es la norma literal con su fuente, para que el
+fundador decida con el texto delante (reglas 17 y 26: cero claims). Va como tramo nuevo al final, y no como
+«Ⓔ debajo de Ⓓ» de 1264u, que pedía el encargo: 1264u ya tiene un Ⓔ («Lo que NO está medido»), e
+insertar ahí movía todas las líneas de debajo.
+
+## Ⓐ Qué se leyó, y la corrección al encargo
+
+- SCRUM-1732 entero, descripción y los 15 comentarios, hasta c.22006 (J1, `jv-j1fb`), en esta sesión.
+- API de legislación consolidada del BOE, el 18-nov-2026 entre las 05:09:56Z y las 05:10:17Z (cabecera
+  `Date:` del BOE, las seis respuestas `200 OK`). Metadatos del RIVA (`BOE-A-1992-28925`):
+  `estado_consolidacion` «Finalizado», `vigencia_agotada` N, `fecha_actualizacion` `20261105T101238Z`.
+
+| bloque | norma | versiones | la vigente (la última) |
+| --- | --- | --- | --- |
+| `a69bis` | RIVA | 5 | `BOE-A-2023-8576`, publicada 20230405, vigente desde 20230701 |
+| `a69` | RIVA | 3 | `BOE-A-2013-11216`, publicada 20131026, vigente desde 20131027; su nota: el apartado 5 «entrará en vigor el 1 de enero de 2014» |
+| `a61decies` | RIVA | 1 | `BOE-A-2013-11216`, vigente desde 20140101 (la misma que leyó 1264u Ⓓ) |
+| `a62` | RIVA | 7 | `BOE-A-2021-10026`, vigente desde 20210701 |
+| `a63` | RIVA | 10 | `BOE-A-2023-8576`, vigente desde 20230701 |
+| `a163terdecies` | LIVA (`BOE-A-1992-28740`) | 1 | `BOE-A-2013-10074` (Ley 14/2013), vigente desde 20140101 |
+
+**Control de que es el consolidado y no el original:** ninguno de los cuatro preceptos que deciden aquí
+estaba en el texto de 1992. El 69 bis lo añade el RD 596/2016, el 61 decies y el 69.5 el RD 828/2013, y el
+163 terdecies la Ley 14/2013. Las notas de cada bloque lo dicen, y el índice consolidado los trae.
+
+🔴 **Corrección al encargo, medida:** el orquestador recordaba «RIVA art. 69 bis apartado 3 ("Plazos para
+las anotaciones registrales")». **No es así.**
+- El artículo que se titula «Plazos para las anotaciones registrales» es el **69**, y la frase «como si a
+  dichas operaciones no les hubiera sido de aplicación dicho régimen especial» está en su **apartado 5**.
+- El **69 bis** se titula «Plazos para la remisión electrónica de los registros de facturación». Su
+  apartado 1 se aplica solo a «las personas y entidades a que se refiere el artículo 62.6», es decir, el
+  SII. Su **apartado 2** lleva la frase paralela para el *suministro*, y añade un plazo de cuatro días
+  naturales para los cobros. Su apartado 3 trata de las rectificaciones registrales del art. 70, no de caja.
+- El 62.6 manda al SII a quien tenga «un periodo de liquidación que coincida con el mes natural». Si algún
+  comercio de YaQu liquida por mes: **sin medir** (no he mirado ninguna base).
+
+**La frase que el orquestador recordaba existe y dice lo que recordaba.** Lo que estaba mal era el
+artículo, y eso cambia a quién se aplica: el 69.5 vale para todo libro registro general; el 69 bis.2, solo
+para el SII.
+
+## Ⓑ Literales vigentes
+
+NBSP: el BOE trae espacios duros (U+00A0) dentro del texto. Contados con un recuento: 8 en el 69 bis, 1 en el
+61 decies, 8 en el 62 y 24 en el 63. Aquí van como espacio normal, igual que en 1264u Ⓓ. **Es la única
+desviación del literal.** Se quitan las notas de modificación del bloque; sus fechas van en Ⓐ.
+
+**RIVA art. 69 bis, entero** (`a69bis`, versión `BOE-A-2023-8576`):
+
+> Artículo 69 bis. Plazos para la remisión electrónica de los registros de facturación.
+>
+> 1. En el caso de las personas y entidades a que se refiere el artículo 62.6 de este Reglamento, el suministro de los registros de facturación deberá realizarse en los siguientes plazos:
+>
+> a) La información correspondiente a las facturas expedidas, en el plazo de cuatro días naturales desde la expedición de la factura, salvo que se trate de facturas expedidas por el destinatario o por un tercero, de acuerdo con lo dispuesto en el artículo 164.dos de la Ley del Impuesto, en cuyo caso dicho plazo será de ocho días naturales. En ambos supuestos el suministro deberá realizarse antes del día 16 del mes siguiente a aquel en que se hubiera producido el devengo del Impuesto correspondiente a la operación que debe registrarse. No obstante, tratándose de operaciones no sujetas al Impuesto por las que se hubiera debido expedir factura, este último plazo se determinará con referencia a la fecha en que se hubiera realizado la operación.
+>
+> En los casos en los que no proceda la emisión de factura rectificativa y deba anotarse en el libro registro de facturas expedidas las regularizaciones o ajustes de la base imponible y cuota calculadas inicialmente en operaciones acogidas al régimen especial de las agencias de viajes o al régimen especial de los bienes usados, objetos de arte, antigüedades y objetos de colección, consecuencia de descuentos u otras circunstancias posteriores al devengo de la operación, el registro de estas anotaciones deberá realizarse antes del día 16 del mes siguiente a aquél en que se hayan advertido estas regularizaciones o ajustes.
+>
+> b) La información correspondiente a las facturas recibidas, en un plazo de cuatro días naturales desde la fecha en que se produzca el registro contable de la factura y, en todo caso, antes del día 16 del mes siguiente al periodo de liquidación en que se hayan incluido las operaciones correspondientes.
+>
+> En el caso operaciones de importación, los cuatro días naturales se deberán computar desde que se produzca el registro contable del documento en el que conste la cuota liquidada por las aduanas y en todo caso antes del día 16 del mes siguiente al final del periodo al que se refiera la declaración en la que se hayan incluido.
+>
+> c) La información de las operaciones a que se refiere el artículo 66.1, números 1.º y 2.º, de este Reglamento, en un plazo de cuatro días naturales, desde el momento de inicio de la expedición o transporte, o, en su caso, desde el momento de la recepción de los bienes a que se refieren.
+>
+> La información de las operaciones a que se refiere el artículo 66.1, número 3.º, de este Reglamento, antes del día 16 del mes siguiente a la fecha de llegada de los bienes al almacén, de la puesta a disposición del adquirente o de la operación que deba registrarse.
+>
+> d) La información correspondiente a las facturas rectificativas expedidas y recibidas, en el plazo de cuatro días naturales desde la fecha en que se produzca la expedición o el registro contable de la factura, respectivamente.
+>
+> No obstante, en el caso de que la rectificación determine un incremento del importe de las cuotas inicialmente deducidas de acuerdo con lo dispuesto en el número 1.º del apartado Dos del artículo 114 de la Ley del Impuesto, el plazo será el previsto en la letra b) anterior para las facturas recibidas.
+>
+> e) La información correspondiente al documento electrónico de reembolso al que se refiere el artículo 9.1.2.ºB) de este Reglamento, antes del día 16 del mes siguiente al período de liquidación en que se incluya la rectificación del Impuesto correspondiente a la devolución de la cuota soportada por el viajero.
+>
+> A efectos del cómputo del plazo de cuatro u ocho días naturales a que se refieren las letras a), b), c) y d) anteriores, se excluirán los sábados, los domingos y los declarados festivos nacionales.
+>
+> 2. El suministro de la información correspondiente a las operaciones a las que sea de aplicación el régimen especial del criterio de caja deberá realizarse en los plazos establecidos en los apartados anteriores, como si a dichas operaciones no les hubiera sido de aplicación dicho régimen especial, sin perjuicio de los datos que deban suministrarse en el momento en que se efectúen los cobros o pagos totales o parciales de las operaciones.
+>
+> La información correspondiente a los cobros y pagos se realizará en el plazo de cuatro días naturales desde el cobro o pago correspondiente.
+>
+> 3. En el caso de rectificaciones registrales a que se refiere el artículo 70 de este Reglamento, el suministro de los registros de facturación que recojan tales rectificaciones deberá realizarse antes del día 16 del mes siguiente al final del periodo en que el obligado tributario tenga constancia del error en que haya incurrido.
+
+**RIVA art. 69, entero** (`a69`, versión `BOE-A-2013-11216`):
+
+> Artículo 69. Plazos para las anotaciones registrales.
+>
+> 1. Las operaciones que hayan de ser objeto de anotación registral deberán hallarse asentadas en los correspondientes libros registros en el momento en que se realice la liquidación y pago del impuesto relativo a dichas operaciones o, en cualquier caso, antes de que finalice el plazo legal para realizar la referida liquidación y pago en período voluntario.
+>
+> 2. No obstante, las operaciones efectuadas por el sujeto pasivo respecto de las cuales no se expidan facturas deberán anotarse en el plazo de siete días a partir del momento de la realización de las operaciones o de la expedición de los documentos, siempre que este plazo sea menor que el señalado en el apartado anterior.
+>
+> 3. Las facturas recibidas deberán anotarse en el correspondiente libro registro por el orden en que se reciban, y dentro del período de liquidación en que proceda efectuar su deducción.
+>
+> 4. Las operaciones a que se refiere el artículo 66.1 deberán anotarse en el plazo de siete días a partir del momento de inicio de la expedición o transporte de los bienes a que se refieren.
+>
+> 5. Las operaciones a las que sea de aplicación el régimen especial del criterio de caja que hayan de ser objeto de anotación registral deberán hallarse asentadas en los correspondientes Libros Registro generales en los plazos establecidos en los números anteriores como si a dichas operaciones no les hubiera sido de aplicación dicho régimen especial, sin perjuicio de los datos que deban completarse en el momento en que se efectúen los cobros o pagos totales o parciales de las operaciones.
+
+**RIVA art. 61 decies, entero** (`a61decies`, versión `BOE-A-2013-11216`). **Cotejado con 1264u Ⓓ línea a
+línea: idéntico**, salvo el espacio duro del apartado 1, que Ⓓ ya escribió como espacio normal:
+
+> Artículo 61 decies. Obligaciones registrales específicas.
+>
+> 1. Los sujetos pasivos acogidos al régimen especial del criterio de caja deberán incluir en el libro registro de facturas expedidas a que se refiere el artículo 63 de este Reglamento, la siguiente información:
+>
+> 1.º Las fechas del cobro, parcial o total, de la operación, con indicación por separado del importe correspondiente, en su caso.
+>
+> 2.º Indicación de la cuenta bancaria o del medio de cobro utilizado, que pueda acreditar el cobro parcial o total de la operación.
+>
+> 2. Los sujetos pasivos acogidos al régimen especial del criterio de caja así como los sujetos pasivos no acogidos al régimen especial del criterio de caja pero que sean destinatarios de las operaciones afectadas por el mismo deberán incluir en el libro registro de facturas recibidas a que se refiere el artículo 64 de este Reglamento, la siguiente información:
+>
+> 1.º Las fechas del pago, parcial o total, de la operación, con indicación por separado del importe correspondiente, en su caso.
+>
+> 2.º Indicación del medio de pago por el que se satisface el importe parcial o total de la operación.
+
+**RIVA art. 63.3, primer párrafo** (`a63`, versión `BOE-A-2023-8576`; el resto del apartado son menciones
+para el SII y no se copia):
+
+> 3. En el libro registro de facturas expedidas se inscribirán, una por una, las facturas expedidas y se consignarán el número y, en su caso, serie, la fecha de expedición, la fecha de realización de las operaciones, en caso de que sea distinta de la anterior, el nombre y apellidos, razón social o denominación completa y número de identificación fiscal del destinatario, la base imponible de las operaciones, determinada conforme a los artículos 78 y 79 de la Ley del Impuesto y, en su caso, el tipo impositivo aplicado y, opcionalmente, también la expresión “IVA incluido”, la cuota tributaria y si la operación se ha efectuado conforme al régimen especial del criterio de caja, en cuyo caso se deberán incluir las menciones a que se refiere el apartado 1 del artículo 61 decies de este Reglamento.
+
+**RIVA art. 62.6** (`a62`, versión `BOE-A-2021-10026`), que dice a quién alcanza el 69 bis:
+
+> 6. No obstante lo dispuesto en los apartados anteriores, los libros registro a que se refiere el apartado 1 de este artículo, deberán llevarse a través de la Sede electrónica de la Agencia Estatal de Administración Tributaria, mediante el suministro electrónico de los registros de facturación, por los empresarios o profesionales y otros sujetos pasivos del Impuesto, que tengan un periodo de liquidación que coincida con el mes natural de acuerdo con lo dispuesto en el artículo 71.3 del presente Reglamento.
+
+**LIVA art. 163 terdecies, apartados Uno y Dos** (`a163terdecies`, versión `BOE-A-2013-10074`; el Tres
+trata de las deducciones y el Cuatro remite al reglamento, y no se copian):
+
+> Artículo 163 terdecies. Contenido del régimen especial del criterio de caja.
+>
+> Uno. En las operaciones a las que sea de aplicación este régimen especial, el Impuesto se devengará en el momento del cobro total o parcial del precio por los importes efectivamente percibidos o si este no se ha producido, el devengo se producirá el 31 de diciembre del año inmediato posterior a aquel en que se haya realizado la operación.
+>
+> A estos efectos, deberá acreditarse el momento del cobro, total o parcial, del precio de la operación.
+>
+> Dos. La repercusión del Impuesto en las operaciones a las que sea de aplicación este régimen especial deberá efectuarse al tiempo de expedir y entregar la factura correspondiente, pero se entenderá producida en el momento del devengo de la operación determinado conforme a lo dispuesto en el apartado anterior.
+
+## Ⓒ La tabla: libro, cobros, 303 y tope
+
+| | pregunta | lo que dice la norma (literal entre comillas) | artículo y apartado |
+| --- | --- | --- | --- |
+| (a) | ¿En qué periodo se **anota** la factura expedida con caja? | «deberán hallarse asentadas en los correspondientes Libros Registro generales en los plazos establecidos en los números anteriores **como si a dichas operaciones no les hubiera sido de aplicación dicho régimen especial**». El plazo de «los números anteriores» es «en el momento en que se realice la liquidación y pago del impuesto relativo a dichas operaciones o, en cualquier caso, antes de que finalice el plazo legal para realizar la referida liquidación y pago en período voluntario». Se inscriben «una por una», con «la fecha de expedición» y la indicación de «si la operación se ha efectuado conforme al régimen especial del criterio de caja» | RIVA **69.5** y **69.1**; contenido, RIVA **63.3** |
+| (b) | ¿Cómo y cuándo se **completan los cobros** parciales? | El asiento se completa: «sin perjuicio de los datos que deban completarse **en el momento en que se efectúen los cobros** o pagos totales o parciales». Qué datos: «Las fechas del cobro, parcial o total, de la operación, con indicación por separado del importe correspondiente, en su caso» y la «cuenta bancaria o del medio de cobro utilizado, que pueda acreditar el cobro». **Plazo en días: solo para el SII**, «cuatro días naturales desde el cobro». Fuera del SII, el 69.5 dice «en el momento», sin más | RIVA **69.5**; datos, **61 decies.1.1.º y 2.º**; SII, **69 bis.2** (segundo párrafo) |
+| (c) | ¿Qué pide el 303, es decir, cuándo se **devenga**? | «el Impuesto se devengará en el momento del cobro total o parcial del precio **por los importes efectivamente percibidos**». Y «deberá acreditarse el momento del cobro». La repercusión se hace al expedir la factura, «pero se entenderá producida en el momento del devengo» | LIVA **163 terdecies.Uno** y **.Dos** |
+| (d) | ¿Cuál es el **tope**? | «si este no se ha producido, el devengo se producirá el 31 de diciembre del año inmediato posterior a aquel en que se haya realizado la operación» | LIVA **163 terdecies.Uno** |
+
+**Lo que la norma remite y no está leído aquí:**
+- Que el 303 de un periodo recoja lo devengado en ese periodo sale de las reglas generales de
+  declaración-liquidación (LIVA 164 y 167, y RIVA 71). **No las he abierto en esta sesión.** La fila (c)
+  dice cuándo se devenga, no cómo se declara.
+- El 163 terdecies.Cuatro remite al reglamento para las obligaciones formales. Leídos aquí: 61 decies, 63.3,
+  69 y 69 bis. Los arts. 61 septies a 61 nonies (renuncia, exclusión y opción), **no**.
+- El formato de los libros registro que publica la AEAT (sus columnas de cobro): **no leído**. Lo que
+  pida en columnas no sale de estos artículos.
+
+## Ⓓ Lectura, no decisión: qué implica para Q1 y Q2 de SCRUM-1732 c.22006
+
+> Lo que sigue es una lectura del literal para que el fundador decida. No elige entre U y T, no contesta
+> al asesor y no dice qué está bien en el código.
+
+**La distinción que hace la norma.** Con caja hay dos cosas distintas que no caen en el mismo periodo:
+- **El libro de expedidas** anota la factura una vez, «una por una», en los plazos de una factura sin caja
+  (69.5 y 63.3), y después se le **completan** los cobros (69.5 y 61 decies.1).
+- **El devengo**, que es lo que va al 303, sigue a cada cobro y a su importe (163 terdecies.Uno).
+
+El libro no se reparte por cobros. Lo que se reparte por cobros es el devengo.
+
+**Q1 (forma del asiento: U, «un asiento por factura y periodo»).**
+- **Encaja con el literal:**
+  - `cobros[]` con fecha, importe y medio por cobro: es lo que pide el 61 decies.1.1.º y 2.º.
+  - Que `fecha` siga siendo la de expedición: el 63.3 pide «la fecha de expedición».
+- **No sale del literal:**
+  - Que el asiento **viva en el periodo del cobro**, o se repita en cada periodo con cobros: el 69.5 lo
+    sitúa donde estaría sin caja.
+  - Que sus `base`, `cuota` y `total` sean **la parte devengada** en el periodo. El 63.3 pide «la base
+    imponible de las operaciones» y «la cuota tributaria», que son las de la factura.
+- **En la lectura literal:** una factura, un asiento, en su periodo de expedición, con todos sus cobros
+  dentro, también los que lleguen en periodos posteriores. Los importes devengados por periodo serían una
+  cuenta del 303, no la forma del asiento.
+- **T** (un asiento por tramo, el `numero` repetido) se aleja aún más: el 63.3 dice «una por una».
+
+**Q2 (que el filtro del libro AEAT pase a ser la fecha de devengo).**
+- El 69.5 apunta al revés para el libro de expedidas: la factura emitida en el T1 y cobrada en el T2 se
+  anota en el T1, y en el T2 se completa su cobro.
+- **Leído así, el defecto que J1 describe en c.22006 ②.2** (`leerPorCaja` la trae al T2 y el libro AEAT del
+  T2 la descarta) **estaría en `leerPorCaja`**, en traer la factura al libro del periodo del cobro, y no en
+  el filtro por expedición.
+- **Lo que el literal no cierra:**
+  - Cómo se ve, en el libro del T2, el cobro de una factura anotada en el T1. El 69.5 dice que se completa,
+    no dónde se pinta.
+  - Si el formato AEAT de libros tiene columnas para eso: no leído (Ⓒ).
+
+**¿Encaja la propuesta U con la norma literal?** **En parte.** Encajan `cobros[]` y la `fecha` de
+expedición. No encajan que el asiento se reparta por periodo de devengo y que sus importes sean la parte
+devengada. Una forma que encaja con el literal sería: un asiento por factura en su periodo de expedición,
+con `cobros[]` completo, y el devengo por periodo calculado aparte para el 303. **Es una lectura, no una
+recomendación de diseño:** el coste y los consumidores (303, evidencias, pantalla) son de J1.
+
+**Lo que esto NO toca:**
+- Q3 (tramo sin medio): el 61 decies.1.2.º pide un medio «que pueda acreditar el cobro»; qué se hace si
+  falta es decisión.
+- Q4 y Q5 (anulaciones, cobrado de más): el literal no los trata.
+- Q6 (la garantía, pregunta 49 al asesor): sigue sin respuesta, y esta lectura no la contesta.
+
+## Ⓔ Lo que NO está medido
+
+- LIVA 164 y 167 y RIVA 71 (cómo se declara lo devengado en cada periodo): no abiertos (Ⓒ).
+- El formato de los libros registro de la AEAT y sus columnas de cobro: no leído.
+- Si algún comercio de YaQu liquida por mes (y entonces cae en el SII y en el 69 bis): sin medir, ninguna
+  base consultada.
+- El código de `leerPorCaja`, del libro AEAT y del 303: no leído en esta sesión. Lo que digo de ellos sale de
+  c.22006, que dice que está leído y no ejecutado.
+- Ninguna FAQ ni consulta vinculante de la AEAT sobre caja: no leídas. La cicatriz J5 del 22-oct (la FAQ
+  dice lo contrario que el anexo) vale aquí también: el literal reglamentario no es todo lo que hay.
+
+## Ⓕ Lo que me salió mal
+
+1. Mi primera pasada de `x.mjs` sobre el 69 no escribió el fichero de texto (lo leí por consola y no lo
+   guardé), y el primer recuento de espacios duros cayó con `ENOENT` en ese bloque. Lo rehice antes de
+   copiar nada; no llegó al registro.

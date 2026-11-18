@@ -65,36 +65,33 @@ const rutaDe = (r) => requiere.resolve(path.join(RAIZ, r));
  * 🔴 LA DECLARACIÓN DE LOS CUATRO DEFECTOS. Quien arregle uno retira SU entrada en el mismo cambio
  * (`declarado: false` o borrándola). Mientras esté, cualquier cambio de ese comportamiento tumba esto.
  */
+//
+// SCRUM-1732c (opción A, PR-1, c.21926 §⑤ y c.21928) · (a) y (b) RETIRADAS: los arregla la tabla
+// `invoice_payments` (el webhook apunta 950; la liberación apunta su fila con el `invoice_id`), y sus
+// casos pasan a exigir la fila. (c) sigue: es del PR-2 (J1). (d) se queda A PROPÓSITO, con su motivo.
 export const DEFECTO_CONOCIDO = {
-  pagadaAlCien: { declarado: true,
-    tickets: ['SCRUM-1732'],
-    que: 'un Bizum de 950 € sobre un enlace de 1.000 € deja la factura pagada al 100 %, y nadie guarda que entraron 950' },
-  liberacionSinEnlace: { declarado: true,
-    tickets: ['SCRUM-1732'],
-    que: 'la liberación de la garantía es un Charge suelto: 0 escrituras en invoice y su evento apunta al Charge original' },
   libroCienDeGolpe: { declarado: true,
     tickets: ['SCRUM-1732'],
     que: 'con criterio de caja, el libro devenga el 100 % de la factura en el trimestre del primer cobro y la liberación no devenga nunca' },
   cobrosSumanMas: { declarado: true,
     tickets: ['SCRUM-1732'],
-    que: 'los Charge pagados del cliente suman 1.050 € por una factura de 1.000 €' },
+    que: 'los Charge pagados del cliente suman 1.050 € por una factura de 1.000 €, A PROPÓSITO (c.21928 ②): Charge.amount es lo pedido; lo cobrado vive en invoice_payments, que suma 1.000' },
 };
 
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
-    // (a) Un arreglo con la forma que tendría: el webhook no marca pagada la factura si el importe
-    // notificado no llega al del cobro.
+    // (a) El webhook deja de apuntar la fila de la factura enlazada: vuelve el defecto retirado.
     fichero: 'src/modules/billing/app/routes/psp.routes.ts',
-    de: '          if (puedeCobrarPorPasarela(linkedInvoice)) {',
-    a: '          if (puedeCobrarPorPasarela(linkedInvoice) && !(body.amount !== undefined && body.amount < Number(updated.amount))) {',
-    cae: 'SCRUM-1732 · (a) un Bizum de 950 € sigue dejando la factura pagada al 100 %: defecto declarado',
+    de: '          await cobroDeFactura(linkedInvoice.id); // SCRUM-1732',
+    a: '          // mutado',
+    cae: 'SCRUM-1732 · (a) un Bizum de 950 € apunta 950 en invoice_payments: arreglado por la opción A',
   },
   {
-    // (b) La liberación pasa a escribir algo en la factura.
+    // (b) La liberación deja de apuntar su fila contra la factura: vuelve el defecto retirado.
     fichero: 'src/modules/billing/app/routes/chargesAdmin.routes.ts',
-    de: '      prisma.charge.update({ where: { id: original.id }, data: datosParaMarcarCobrada(ahora) }),\n    ]);',
-    a: "      prisma.charge.update({ where: { id: original.id }, data: datosParaMarcarCobrada(ahora) }),\n      prisma.invoice.updateMany({ where: { chargeId: original.id, merchantId: req.merchantId! }, data: { notes: 'garantia liberada' } as any }),\n    ]);",
-    cae: 'SCRUM-1732 · (b) la liberación de la garantía sigue sin enlace a la factura: defecto declarado',
+    de: '    if (factura) {\n      await apuntarCobroDeFactura(prisma, {',
+    a: '    if (false as boolean) {\n      await apuntarCobroDeFactura(prisma, {',
+    cae: 'SCRUM-1732 · (b) la liberación de la garantía apunta su fila contra la factura: arreglado por la opción A',
   },
   {
     // (c) La caja desconectada: el libro pasa a filtrar por emisión y el control sembrado «cobrada
@@ -112,18 +109,25 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'SCRUM-1732 · (d) los cobros del cliente siguen sumando 1.050 € por una factura de 1.000 €: defecto declarado',
   },
   {
-    // Se retira la declaración de (a) y el defecto sigue.
-    fichero: 'tests/scrum1732-cobro-parcial-defecto-declarado.test.mjs',
-    de: 'DEFECTO_CONOCIDO = {\n  pagadaAlCien: { declarado: true,',
-    a: 'DEFECTO_CONOCIDO = {\n  pagadaAlCien: { declarado: false,',
-    cae: 'SCRUM-1732 · (a) un Bizum de 950 € sigue dejando la factura pagada al 100 %: defecto declarado',
+    // (d) La tabla deja de sumar 1.000: la liberación apunta 0,01 €.
+    fichero: 'src/modules/billing/app/routes/chargesAdmin.routes.ts',
+    de: '        importe, fechaCobro: ahora, fechaOrigen, metodo: method, tipo: \'liberacion_garantia\',',
+    a: '        importe: 0.01, fechaCobro: ahora, fechaOrigen, metodo: method, tipo: \'liberacion_garantia\',',
+    cae: 'SCRUM-1732 · (d) los cobros del cliente siguen sumando 1.050 € por una factura de 1.000 €: defecto declarado',
   },
   {
     // Se retira la declaración de (c) y el defecto sigue.
     fichero: 'tests/scrum1732-cobro-parcial-defecto-declarado.test.mjs',
-    de: "Charge original' },\n  libroCienDeGolpe: { declarado: true,",
-    a: "Charge original' },\n  libroCienDeGolpe: { declarado: false,",
+    de: 'DEFECTO_CONOCIDO = {\n  libroCienDeGolpe: { declarado: true,',
+    a: 'DEFECTO_CONOCIDO = {\n  libroCienDeGolpe: { declarado: false,',
     cae: 'SCRUM-1732 · (c) el libro de caja sigue devengando el 100 % en el trimestre del primer cobro: defecto declarado',
+  },
+  {
+    // Se retira la declaración de (d) y la suma sigue igual.
+    fichero: 'tests/scrum1732-cobro-parcial-defecto-declarado.test.mjs',
+    de: "  cobrosSumanMas: { declarado: true,",
+    a: "  cobrosSumanMas: { declarado: false,",
+    cae: 'SCRUM-1732 · (d) los cobros del cliente siguen sumando 1.050 € por una factura de 1.000 €: defecto declarado',
   },
 ];
 
@@ -153,6 +157,7 @@ export function baseConEstado({ importeEnlace = '1000.00' } = {}) {
     invoice: { id: 1, merchantId: MERCHANT, number: 'F-1732', status: 'pending', total: '1000.00',
       customerId: CLIENTE, chargeId: 1732, quoteId: null, paidAt: null },
     eventos: [],
+    pagos: [], // SCRUM-1732c · `invoice_payments`, con sus dos únicos
     escriturasInvoice: [],
     otrasEscrituras: [],
     siguienteId: 1733,
@@ -203,8 +208,31 @@ export function baseConEstado({ importeEnlace = '1000.00' } = {}) {
       return m.endsWith('Many') ? { count: 1 } : { ...st.invoice };
     };
   }
+  // SCRUM-1732c · el modelo de la opción A. El único `(invoice_id, charge_id)` y el de `anula_id`
+  // se hacen cumplir (P2002), y `findMany` entiende lo que usan los escritores.
+  const invoicePayment = {
+    async create({ data }) {
+      if (data.chargeId != null && st.pagos.some((p) => p.invoiceId === data.invoiceId && p.chargeId === data.chargeId)) {
+        const e = new Error('Unique constraint failed'); e.code = 'P2002'; throw e;
+      }
+      if (data.anulaId != null && st.pagos.some((p) => p.anulaId === data.anulaId)) {
+        const e = new Error('Unique constraint failed'); e.code = 'P2002'; throw e;
+      }
+      const fila = { id: st.pagos.length + 1, anulaId: null, ...data };
+      st.pagos.push(fila);
+      return { ...fila };
+    },
+    async findMany({ where = {} } = {}) {
+      const tipos = typeof where.tipo === 'string' ? [where.tipo] : where.tipo?.in;
+      return st.pagos.filter((p) => (where.merchantId === undefined || p.merchantId === where.merchantId)
+        && (where.invoiceId === undefined || p.invoiceId === where.invoiceId)
+        && (where.chargeId === undefined || p.chargeId === where.chargeId)
+        && (!tipos || tipos.includes(p.tipo))
+        && (where.anuladaPor !== null || !st.pagos.some((a) => a.anulaId === p.id))).map((p) => ({ ...p }));
+    },
+  };
   const conocidos = {
-    charge, invoice,
+    charge, invoice, invoicePayment,
     event: { async create({ data }) { st.eventos.push(data); return { id: st.eventos.length }; } },
     merchant: { async findUnique() { return { id: MERCHANT, timezone: 'Europe/Madrid', criterioCaja: true }; } },
     quote: { async findFirst() { return null; }, async findMany() { return []; } },
@@ -333,7 +361,13 @@ export async function medirPagada(recibido = 950) {
     return { estado: 'CIEGO', poblacion };
   }
   // El defecto: 950 y 1.000 dejan la MISMA huella — factura pagada, Charge en 1.000, nada más escrito.
-  const nadieGuarda950 = caso.otrasTrasPago === 0 && String(caso.chargeTrasPago.amount) === '1000.00'
+  // SCRUM-1732c · ARREGLADO = la tabla guarda que entraron 950, contra la factura y el cobro.
+  const filas = caso.st.pagos;
+  if (caso.facturaTrasPago.status === 'paid' && filas.length === 1 && Number(filas[0].importe) === recibido
+    && filas[0].invoiceId === 1 && filas[0].chargeId === 1732 && filas[0].tipo === 'cobro') {
+    return { estado: 'ARREGLADO', poblacion: `${poblacion} · filas ${JSON.stringify(filas.map((f) => [f.invoiceId, f.chargeId, Number(f.importe), f.tipo]))}` };
+  }
+  const nadieGuarda950 = filas.length === 0 && caso.otrasTrasPago === 0 && String(caso.chargeTrasPago.amount) === '1000.00'
     && caso.escriturasInvoiceTrasPago === control.escriturasInvoiceTrasPago;
   if (caso.facturaTrasPago.status === 'paid' && nadieGuarda950) return { estado: 'DEFECTO', poblacion };
   return { estado: 'CAMBIADO', poblacion };
@@ -355,8 +389,13 @@ export async function medirLiberacion() {
   if (caso.liberacion?.status !== 200 || !nuevo || Number(nuevo.amount) !== 50 || nuevo.status !== 'paid') {
     return { estado: 'CIEGO', poblacion };
   }
+  // SCRUM-1732c · ARREGLADO = una fila `liberacion_garantia` de 50 contra la factura, con el cobro nuevo.
+  const filaLib = caso.st.pagos.filter((f) => f.tipo === 'liberacion_garantia');
+  if (filaLib.length === 1 && filaLib[0].invoiceId === 1 && filaLib[0].chargeId === id && Number(filaLib[0].importe) === 50) {
+    return { estado: 'ARREGLADO', poblacion: `${poblacion} · fila liberacion_garantia invoiceId ${filaLib[0].invoiceId}` };
+  }
   const soloAlCharge = evento?.payload?.chargeOriginalId === 1732 && evento?.payload?.invoiceId === undefined;
-  if (escriturasInvoice === 0 && otras === 0 && nuevo.invoiceId === undefined && soloAlCharge) return { estado: 'DEFECTO', poblacion };
+  if (filaLib.length === 0 && escriturasInvoice === 0 && otras === 0 && nuevo.invoiceId === undefined && soloAlCharge) return { estado: 'DEFECTO', poblacion };
   return { estado: 'CAMBIADO', poblacion };
 }
 
@@ -413,10 +452,13 @@ export async function medirSuma() {
   if (caso.ciego) return { estado: 'CIEGO', poblacion: caso.ciego };
   const pagados = [...caso.st.charges.values()].filter((c) => c.customerId === CLIENTE && c.status === 'paid');
   const suma = pagados.reduce((s, c) => s + Number(c.amount), 0);
-  const poblacion = `${caso.st.charges.size} Charge(s) · ${pagados.length} pagado(s) del cliente: [${pagados.map((c) => `${c.id}=${c.amount}`)}] · suma ${suma} · factura ${caso.st.invoice.total}`;
+  // SCRUM-1732c · lo COBRADO vive en `invoice_payments` (c.21928 ②): tiene que sumar la factura, en céntimos.
+  const sumaTablaC = caso.st.pagos.filter((f) => f.invoiceId === 1).reduce((s, f) => s + Math.round(Number(f.importe) * 100), 0);
+  const poblacion = `${caso.st.charges.size} Charge(s) · ${pagados.length} pagado(s) del cliente: [${pagados.map((c) => `${c.id}=${c.amount}`)}] · suma ${suma} · factura ${caso.st.invoice.total}`
+    + ` · invoice_payments ${caso.st.pagos.length} fila(s), suman ${sumaTablaC / 100}`;
   // Control positivo: tiene que haber DOS cobros pagados (el del Bizum y el de la liberación).
   if (pagados.length !== 2) return { estado: 'CIEGO', poblacion };
-  if (suma === 1050 && Number(caso.st.invoice.total) === 1000) return { estado: 'DEFECTO', poblacion };
+  if (suma === 1050 && Number(caso.st.invoice.total) === 1000 && sumaTablaC === 100000) return { estado: 'DEFECTO', poblacion };
   return { estado: 'CAMBIADO', poblacion };
 }
 
@@ -439,7 +481,7 @@ export function juicio(medida, declaracion) {
   }
 }
 
-const HUECOS = ['pagadaAlCien', 'liberacionSinEnlace', 'libroCienDeGolpe', 'cobrosSumanMas'];
+const HUECOS = ['libroCienDeGolpe', 'cobrosSumanMas'];
 
 /** Un caso por hueco. El nombre va LITERAL en cada `test()` (SCRUM-1415: la tanda no pierde nombres). */
 const juzgar = (clave, medir) => async (t) => {
@@ -450,16 +492,22 @@ const juzgar = (clave, medir) => async (t) => {
   assert.equal(v.ok, true, `🔴 ${v.motivo}`);
 };
 
-test('SCRUM-1732 · (a) un Bizum de 950 € sigue dejando la factura pagada al 100 %: defecto declarado',
-  juzgar('pagadaAlCien', () => medirPagada()));
-test('SCRUM-1732 · (b) la liberación de la garantía sigue sin enlace a la factura: defecto declarado',
-  juzgar('liberacionSinEnlace', () => medirLiberacion()));
+/** SCRUM-1732c · (a) y (b), retiradas: se exige el ARREGLO (la fila), no sólo que «cambió». */
+const arreglado = (medir) => async (t) => {
+  const medida = await medir();
+  t.diagnostic(`estado ${medida.estado} · ${medida.poblacion}`);
+  assert.equal(medida.estado, 'ARREGLADO', `🔴 ${medida.estado}: ${medida.poblacion}`);
+};
+test('SCRUM-1732 · (a) un Bizum de 950 € apunta 950 en invoice_payments: arreglado por la opción A',
+  arreglado(() => medirPagada()));
+test('SCRUM-1732 · (b) la liberación de la garantía apunta su fila contra la factura: arreglado por la opción A',
+  arreglado(() => medirLiberacion()));
 test('SCRUM-1732 · (c) el libro de caja sigue devengando el 100 % en el trimestre del primer cobro: defecto declarado',
   juzgar('libroCienDeGolpe', () => medirLibro()));
 test('SCRUM-1732 · (d) los cobros del cliente siguen sumando 1.050 € por una factura de 1.000 €: defecto declarado',
   juzgar('cobrosSumanMas', () => medirSuma()));
 
-test('SCRUM-1732 · cada declaración vigente cita el ticket que la retira, y las cuatro existen', () => {
+test('SCRUM-1732 · cada declaración vigente cita el ticket que la retira, y las dos que quedan existen', () => {
   assert.deepEqual(Object.keys(DEFECTO_CONOCIDO).sort(), [...HUECOS].sort());
   for (const [hueco, d] of Object.entries(DEFECTO_CONOCIDO)) {
     if (d?.declarado !== true) continue;
@@ -469,10 +517,17 @@ test('SCRUM-1732 · cada declaración vigente cita el ticket que la retira, y la
 
 // ── Los controles del propio instrumento: el positivo se SIEMBRA aquí, no se toma del árbol ─────
 
-test('SCRUM-1732 · control: el banco apunta la escritura a un modelo que no conoce (lo que hará A)', async () => {
+test('SCRUM-1732 · control: el banco apunta la escritura a un modelo que no conoce', async () => {
   const { prisma, st } = baseConEstado();
-  await prisma.cobroDeFactura.create({ data: { invoiceId: 1, importe: 950 } });
+  await prisma.modeloQueNoExiste.create({ data: { invoiceId: 1, importe: 950 } });
   assert.equal(st.otrasEscrituras.length, 1, 'el banco tiene que apuntar la escritura a un modelo que no conoce');
+});
+
+test('SCRUM-1732 · control: el banco conoce invoicePayment y hace cumplir su único', async () => {
+  const { prisma, st } = baseConEstado();
+  await prisma.invoicePayment.create({ data: { invoiceId: 1, chargeId: 1732, importe: 950, tipo: 'cobro' } });
+  await assert.rejects(prisma.invoicePayment.create({ data: { invoiceId: 1, chargeId: 1732, importe: 950, tipo: 'cobro' } }), (e) => e.code === 'P2002');
+  assert.deepEqual([st.pagos.length, st.otrasEscrituras.length], [1, 0]);
 });
 
 test('SCRUM-1732 · control: una factura que el libro no ve deja (c) en CIEGO, no en verde', async () => {

@@ -13,6 +13,8 @@ import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { recalcJobCobradoForCharge } from '../../../jobs/domain/job.service'; // SCRUM-13
 import { datosDeCobroPagado } from '../../domain/instanteDeCobro'; // SCRUM-397
+import { apuntarCobroDeFactura } from '../../domain/cobrosDeFactura'; // SCRUM-1732
+import { esPaidViaValido } from '../../domain/paidVia'; // SCRUM-1732
 // SCRUM-502: la guarda de anulada se CONSUME de donde vive, no se reescribe aqui.
 import { puedeCobrarPorPasarela, ESTADO_ANULADA } from '../../../system/invoiceAdmin';
 // SCRUM-1315: «el `update` no encontró la fila de su `where`» se reconoce con la misma función que en `/webhooks/psp`.
@@ -173,7 +175,16 @@ router.post('/', async (req, res) => {
         await prisma.invoice.update({
           where: { id: invoiceId, status: { not: ESTADO_ANULADA } },
           data: { status: 'paid', paidAt: new Date() },
-        }).catch((e) => {
+        })
+        // SCRUM-1732 (opción A) · la fila de lo que entró. Fecha `aviso` (aquí no hay fecha declarada:
+        // SCRUM-1735 c.21826) y el importe que dice Mercado Pago (`payment.amount`, que
+        // `getMpPayment` saca de `transaction_amount`), no lo pedido.
+        .then(() => apuntarCobroDeFactura(prisma, {
+          merchantId: updated.merchantId, invoiceId: invoiceId!, chargeId,
+          importe: Number(payment.amount ?? updated.amount), fechaCobro: updated.paidAt ?? new Date(),
+          fechaOrigen: 'aviso', metodo: esPaidViaValido(payment.method) ? payment.method : null, tipo: 'cobro',
+        }).catch((e) => console.error(`[mpWebhook] SCRUM-1732 no se pudo apuntar el cobro de la factura ${invoiceId}:`, e?.message || 'error desconocido')))
+        .catch((e) => {
           if (esFilaQueNoCasa(e)) {
             console.error(`[mpWebhook] SCRUM-1315 la factura ${invoiceId} se anuló entre la lectura y el cobro: no se marca pagada`);
           }
