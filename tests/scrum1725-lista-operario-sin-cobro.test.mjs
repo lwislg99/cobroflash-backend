@@ -293,4 +293,40 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: "    tdEstado.appendChild(pildora); { const otra = document.createElement('span'); otra.className = 'status-pill'; otra.textContent = 'Parcial'; tdEstado.appendChild(otra); }",
     cae: 'SCRUM-1725g · la lista es PLANA para los tres roles: sin cabeceras de grupo, en el orden de la cola y con el estado en cada fila',
   },
+  // ── SCRUM-1725i · los filtros ──────────────────────────────────────────────────────────────────
+  {
+    // Las pestañas dejan de CONTAR su estado: todas dicen el total de la lista.
+    fichero: 'public/dashboard/js/jobsView.js',
+    de: '      .concat(JOBS_ESTADOS_DE_LA_LISTA.map((estado) => [estado, jobStatusMeta(estado).label, porEstado.get(estado)]))',
+    a: '      .concat(JOBS_ESTADOS_DE_LA_LISTA.map((estado) => [estado, jobStatusMeta(estado).label, jobs.length]))',
+    cae: 'SCRUM-1725i ① · pestañas de ESTADO con contador para los tres roles: «Todos» + las cinco de la ficha',
+  },
+  {
+    // La pestaña se marca pero NO filtra: cualquiera de las cinco enseña la lista entera.
+    fichero: 'public/dashboard/js/jobsView.js',
+    de: "    const deEsaPestana = jobsEstadoFilter === 'all' ? jobs : jobs.filter((j) => pestanaDeTrabajo(j) === jobsEstadoFilter);",
+    a: "    const deEsaPestana = jobsEstadoFilter === 'all' ? jobs : jobs.filter((j) => true);",
+    cae: 'SCRUM-1725i ② · cada pestaña enseña SU estado; «Cerrado» enseña los cerrados directos y «Todos» los sigue plegando',
+  },
+  {
+    // La pestaña «Cerrado» vuelve a esconder los cerrados tras «Ver N cerrados» (P2 de c.22098).
+    fichero: 'public/dashboard/js/jobsView.js',
+    de: '  if (cerrados.length && cerradosALaVista) {',
+    a: '  if (cerrados.length && false) {',
+    cae: 'SCRUM-1725i ② · cada pestaña enseña SU estado; «Cerrado» enseña los cerrados directos y «Todos» los sigue plegando',
+  },
+  {
+    // El cobro deja de CRUZARSE con el estado: elegir un cobro filtra la lista entera, no la pestaña.
+    fichero: 'public/dashboard/js/jobsView.js',
+    de: "    const porCobro = jobsCobroFilter === 'all' ? deEsaPestana : deEsaPestana.filter((j) => j.estadoCobro === jobsCobroFilter);",
+    a: "    const porCobro = jobsCobroFilter === 'all' ? deEsaPestana : jobs.filter((j) => j.estadoCobro === jobsCobroFilter);",
+    cae: 'SCRUM-1725i ③ · el COBRO es un desplegable («Cobro: todos»), sin píldoras, y se CRUZA con el estado',
+  },
+  {
+    // El desplegable de cobro se le cuelga a TODOS los roles: el operario vuelve a ver el eje de cobro.
+    fichero: 'public/dashboard/js/jobsView.js',
+    de: '    if (veCobro) {',
+    a: '    if (true) {',
+    cae: 'SCRUM-1725 ①② · rol «tecnico»: sin «Por cobrar», sin filtros de cobro, sin «de X €»; el importe sí',
+  },
 ];
