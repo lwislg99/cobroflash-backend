@@ -331,7 +331,7 @@ sus tres valores y que la sección Ⓒ ya leyó (hablan del albarán). Una terce
 4. **El banco de mutaciones** (`evidencias/scrum1500b/mutar.mjs`, salida en `mutaciones.txt`): 17
    cambios de un literal en el instrumento, con la base en verde antes (13 de 13). **17 vivas, 0
    mudas, 0 ciegas**, y el instrumento restaurado con el mismo sha256. La primera es volver a la
-   pregunta vieja (comparar el código con el comentario): caen 8 de 13.
+   pregunta vieja (comparar el código con el comentario): caen 8 de 13. *(18-nov-2026: el guion `evidencias/scrum1500b/mutar.mjs` se retiró el 18-nov-2026 (SCRUM-1500i): sus mutaciones viven en el catálogo de `tests/scrum1500-el-cotejo-contra-el-master.test.mjs`. Su salida, `mutaciones.txt`, se conserva.)*
 5. **Controles a cero que viajan en cada pasada:** 4 de 4 (campo inventado, modelo inventado, ancla
    inventada, constante inventada).
 
