@@ -55,6 +55,7 @@ import puppeteer from 'puppeteer-core';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
 import { veredictoDe, recorrerCasos } from './_hallazgos-y-ciegos.mjs';
+import { enlacesDelPanel, TIPOS_DE_FUENTE, esperarFuentes, cegueraDeLaFuente, decirFuente } from './_hojas-del-panel.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
@@ -62,8 +63,20 @@ const PUBLIC = path.join(RAIZ, 'public');
 
 /** Los anchos de la casa. 929 = portátil con sidebar · 390 = iPhone estándar. */
 const ANCHOS = [929, 390];
-const CSS = ['/tokens.css', '/dashboard/css/styles.css'];
-const TIPOS = { '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/html' };
+// SCRUM-1755 · LAS HOJAS DEL ÍNDICE, CON SU LETRA: aquí iban tokens + styles escritos a mano, sin
+// /fonts/inter.css, y el desborde y las líneas de cada caja se medían con la letra de reserva.
+let HOJAS;
+try { HOJAS = enlacesDelPanel(PUBLIC); } catch (e) { HOJAS = null; console.error(String(e && e.message ? e.message : e)); }
+// Las letras son binarias: se sirven en bytes y con su tipo (SCRUM-1745c).
+const TIPOS = { '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/html', ...TIPOS_DE_FUENTE };
+const letras = new Set();
+/** La letra, esperada tras cada navegación. Devuelve el motivo del CIEGO, o null si mide con Inter. */
+const laLetra = async (pag, donde) => {
+  const fuente = await esperarFuentes(pag);
+  const sin = cegueraDeLaFuente(fuente, donde) || (fuente.cargadas > 0 ? null : '🔴 SIN LETRA WEB en ' + donde + ': ' + fuente.declaradas + ' caras declaradas y 0 cargadas.');
+  if (!sin) letras.add(decirFuente(fuente));
+  return sin;
+};
 
 /**
  * Los modos que el profesional puede tener HOY. Eran dos.
@@ -99,7 +112,7 @@ function scriptsDelIndice() {
 function paginaDelListado(modo) {
   return `<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-${CSS.map((c) => `<link rel="stylesheet" href="${c}">`).join('\n')}
+${HOJAS}
 </head><body>
 <div class="layout">
   <aside class="sidebar"><div class="sidebar-logo"><div class="sidebar-logo-text">YaQu</div></div></aside>
@@ -139,7 +152,7 @@ ${CSS.map((c) => `<link rel="stylesheet" href="${c}">`).join('\n')}
 function paginaDelDocumento(modo, scripts) {
   return `<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-${CSS.map((c) => `<link rel="stylesheet" href="${c}">`).join('\n')}
+${HOJAS}
 </head><body>
 <div class="layout">
   <aside class="sidebar"><div class="sidebar-logo"><div class="sidebar-logo-text">YaQu</div></div></aside>
@@ -218,6 +231,7 @@ function servidor(modoActual, scripts) {
 // lo da `veredictoDe` con las dos cuentas.
 const hallazgos = [];
 const ciegos = [];
+if (!HOJAS) ciegos.push('no supe sacar las hojas de public/dashboard/index.html: sin ellas mediría con la letra de reserva.');
 
 /** El ÚNICO sitio por el que este guard sale con algo que no sea 0: dice las dos cuentas. */
 function cerrar() {
@@ -317,6 +331,8 @@ try {
     // ── ① EL LISTADO ─────────────────────────────────────────────────────────────────────
     listado: async (modo, ancho, suyas) => {
       await page.goto(`${base}/__caja-${modo}.html`, { waitUntil: 'networkidle0' });
+      const sinLetraL = await laLetra(page, `listado (${modo} @${ancho}px)`);
+      if (sinLetraL) return soloCiego(sinLetraL);
       const lista = await page.evaluate((cajaSrc) => {
         const caja = eval(cajaSrc); // eslint-disable-line no-eval
         return {
@@ -338,6 +354,8 @@ try {
     página: async (modo, ancho, suyas) => {
       const altasAntes = altas.length;
       await page.goto(`${base}/__pagina-${modo}.html`, { waitUntil: 'networkidle0' });
+      const sinLetraP = await laLetra(page, `página (${modo} @${ancho}px)`);
+      if (sinLetraP) return soloCiego(sinLetraP);
       const doc = await page.evaluate(async (cajaSrc) => {
         const caja = eval(cajaSrc); // eslint-disable-line no-eval
         const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -424,6 +442,7 @@ try {
 }
 
 console.log('\n════ VEREDICTO ════');
+console.log(`   LETRA: ${[...letras].join(' ‖ ') || '(ningún caso llegó a medir)'}`);
 if (fuenteUnica === false) {
   console.log('   ⚠️  `rotulosDelDocumento` NO existe todavía: los rótulos medidos son los de hoy.');
 }

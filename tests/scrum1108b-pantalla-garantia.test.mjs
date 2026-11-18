@@ -124,9 +124,11 @@ async function declarar(timezone, liberacion) {
   const escritas = [];
   const prisma = {
     charge: {
-      findFirst: async ({ where }) => (where.merchantId === 42 ? { id: where.id, merchant: { timezone } } : null),
+      // SCRUM-1732c · cobro YA cobrado, y 9.500 + 500 retenidos = 10.000 (sin filas: vale su `amount`).
+      findFirst: async ({ where }) => (where.merchantId === 42 ? { id: where.id, status: 'paid', amount: '9500.00', merchant: { timezone } } : null),
       update: async ({ data }) => { escritas.push(data); return {}; },
     },
+    invoicePayment: { findMany: async () => [] },
   };
   delete require_.cache[R_ROUTES];
   require_.cache[R_PRISMA] = { id: R_PRISMA, filename: R_PRISMA, loaded: true, exports: { prisma } };

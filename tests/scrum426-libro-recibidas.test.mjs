@@ -62,6 +62,11 @@ const sinClasificar = (over = {}) => ({
 
 // ── ① EL SUELO ──────────────────────────────────────────────────────────────────────────
 
+// SCRUM-1445f · los fixtures de este fichero se escriben en hora LOCAL del proceso (el trinquete de zona
+// los pasa en Kiritimati y Midway): el comercio falso vive en esa misma zona. La zona del comercio de
+// verdad (Canarias, península, sin zona) la prueba tests/scrum1445f-los-lectores-pasan-la-zona.test.mjs.
+const ZONA_DEL_PROCESO = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
 test('SCRUM-426 · SUELO: `miradas` viaja SIEMPRE, y distingue «no había» de «no supe leer»', () => {
   const vacio = construirLibroRecibidas({ gastos: [], merchantId: M });
   assert.equal(vacio.asientos.length, 0, '🔴 un libro sin gastos no puede traer asientos');
@@ -304,6 +309,7 @@ function dbFalsa(gastos, proveedores = [{ id: 3, name: 'Suministros Peña', taxI
     quote: { findMany: async () => [] },
     albaran: { findMany: async () => [] },
     customer: { findMany: async () => [] },
+    merchant: { findUnique: async () => ({ timezone: ZONA_DEL_PROCESO }) }, // SCRUM-1445f
   };
 }
 

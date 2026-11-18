@@ -1,0 +1,10 @@
+﻿· campos: input#jobs-agendar-fecha.input|2026-11-19T09:00
+r42-agendar-modal-admin@1280: rol=admin · 36 pulsables · 0 desbordes · 6 <44 · log 1 · {"porCobrar":1,"cobrado":0,"teFalta":0,"pendiente":0,"parcial":0,"pagado":0,"factura":0,"euros":0,"ceroEuros":0,"deImporte":0,"notasInternas":1,"queHayQueHacer":1,"basura":0}
+· botón: Agendar
+· PATCH /admin/jobs/86 → 200 · cuerpo enviado: {"status":"agendado","scheduledAt":"2026-11-18T17:30:00.000Z"}
+r42-agendar-agendado-admin@1280: rol=admin · 36 pulsables · 0 desbordes · 3 <44 · log 1 · {"porCobrar":1,"cobrado":0,"teFalta":0,"pendiente":0,"parcial":0,"pagado":0,"factura":0,"euros":0,"ceroEuros":0,"deImporte":0,"notasInternas":1,"queHayQueHacer":1,"basura":0}
+ESCRITURAS
+POST /admin/entorno → 200
+PATCH /admin/jobs/86 → 200
+LOG
+[warning] Service Worker registration blocked by Playwright

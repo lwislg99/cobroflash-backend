@@ -50,6 +50,7 @@ import { esErrorSinSellar, ERROR_SIN_SELLAR, type MerchantPorton } from '../../.
 import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { resolverFechaDeCobro } from '../../../billing/domain/fechaDeCobro'; // SCRUM-397
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1093 (bulk-paid)
+import { apuntarCobroDeFactura } from '../../../billing/domain/cobrosDeFactura'; // SCRUM-1732 (bulk-paid)
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
 import { exigirCausaLineaEmitible } from '../../../../core/validation/causaLineaEmitible'; // SCRUM-1051d
@@ -521,6 +522,16 @@ router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
     const fecha = resolverFechaDeCobro(req.body?.paidAt, new Date(), zonaDelMerchant(m));
     if (!fecha.ok) return res.status(400).json({ error: fecha.error, message: fecha.message });
 
+    // SCRUM-1732 (opción A; cruce J2→J1 autorizado por el orquestador J, 16-nov) · las facturas que
+    // el lote VA a marcar, leídas con el mismo `where`, para apuntar después su fila en
+    // `invoice_payments` (por el total: el lote no admite importes parciales). `updateMany` no
+    // devuelve filas. Si una cambia entre esta lectura y la escritura, el único (invoice_id,
+    // charge_id) y la relectura de abajo impiden apuntar lo que no se marcó.
+    const aMarcar = await prisma.invoice.findMany({
+      where: { id: { in: ids }, merchantId: req.merchantId, status: { notIn: [...NO_SE_MARCAN_PAGADAS_EN_LOTE] } },
+      select: { id: true },
+    });
+
     const result = await prisma.invoice.updateMany({
       where: {
         id: { in: ids },
@@ -536,6 +547,21 @@ router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
       },
       data: { status: 'paid', paidAt: fecha.fecha },
     });
+
+    // SCRUM-1732 · una fila por factura marcada, releída: solo las que quedaron `paid` con ESTA fecha.
+    if (aMarcar.length) {
+      const marcadas = await prisma.invoice.findMany({
+        where: { id: { in: aMarcar.map((x) => x.id) }, merchantId: req.merchantId, status: 'paid', paidAt: fecha.fecha },
+        select: { id: true, total: true, chargeId: true },
+      });
+      for (const inv of marcadas) {
+        await apuntarCobroDeFactura(prisma, {
+          merchantId: req.merchantId!, invoiceId: inv.id, chargeId: inv.chargeId ?? null,
+          importe: Number(inv.total), fechaCobro: fecha.fecha,
+          fechaOrigen: fecha.origen === 'declarada' ? 'declarada' : 'marcado', metodo: null, tipo: 'cobro',
+        }).catch((e) => console.error(`[bulk-paid] SCRUM-1732 no se pudo apuntar el cobro de la factura ${inv.id}:`, e?.message || 'error desconocido'));
+      }
+    }
 
     // A11.1 (S2): marcar pagado a mano queda auditado (quién, desde dónde, qué)
     recordAudit({

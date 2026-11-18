@@ -968,3 +968,12 @@ cero») y ni la hoja ni ningún texto cambian.
   navegador. Pendiente tras el despliegue: la sonda sin argumento sobre yaqu.app → 0 de 6.
 - De paso, de otro carril y sin tocar: `node scripts/carriles.mjs de <ruta>` contesta un carril
   también para una ruta que NO existe (casa el patrón `public/**`), sin decir que no la ha encontrado.
+
+## SCRUM-917 ← SCRUM-1739 (18-nov-2026) · la letra de C.1 ya no describe la LISTA
+
+C.1 («una sola primaria, la del dinero; Agendar/▶ Empezar en secundaria») se queda escrita arriba como
+se aprobó (c.15876) y **no se borra**, pero para la lista de Trabajos la sustituye la regla reconciliada
+por el orquestador en SCRUM-1739 c.22030 (delegación de SCRUM-1656 c.21978): «como mucho UNA rellena por
+TARJETA, y es el paso que hace avanzar el trabajo HOY». Ya la había abierto N1 (SCRUM-1700, «Abrir
+parte»). Lo que se conserva de C.1: «Agendar» sigue secundaria —su argumento de los doce verdes— y el
+cobro sigue relleno. El detalle y las medidas, en `docs/master/SCRUM-1739.md`.

@@ -70,6 +70,7 @@ function baseFalsa(facturas, gastos) {
         llamadas.push({ op: `${String(modelo)}.${String(op)}`, where: args?.where });
         if (modelo === 'invoice') return facturas.filter((f) => dentro(f.createdAt, args.where.createdAt));
         if (modelo === 'expense') return gastos.filter((g) => dentro(g.date, args.where.date));
+        if (modelo === 'merchant') return { timezone: ZONA_DEL_PROCESO };
         return [];
       },
     }),
@@ -91,6 +92,11 @@ const AÑO_GASTOS = [
   gasto(new Date(2026, 5, 5, 9), 500),
   gasto(new Date(2026, 8, 30, 23, 59), 200, { providerInvoiceNumber: 'P-3' }),
 ];
+
+// SCRUM-1445f · los fixtures de este fichero se escriben en hora LOCAL del proceso (el trinquete de zona
+// los pasa en Kiritimati y Midway): el comercio falso vive en esa misma zona. La zona del comercio de
+// verdad (Canarias, península, sin zona) la prueba tests/scrum1445f-los-lectores-pasan-la-zona.test.mjs.
+const ZONA_DEL_PROCESO = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 test('SCRUM-1065b · las casillas son las del impreso LEÍDO (sección I, 01-07), cada una con su cita', () => {
   const s = b130([], [], 2).seccionI;
@@ -140,6 +146,13 @@ test('SCRUM-1065b · cifras a mano: un año con tres trimestres, ACUMULADO y sin
     const r = await leerBorrador130(db, { merchantId: M, año: 2026, trimestre: t });
     const e = esperado[t];
     assert.equal(r.seccionI.ingresos.valor, e.c01, `T${t}: la 01 es el ACUMULADO desde el 1 de enero`);
+    // SCRUM-1445g · desde 1445f el lector pasa la zona del comercio y toma la rama CON zona de
+    // `rangoAcumulado`; la de SIN zona («la del proceso, como hasta hoy») se quedó sin quien la mirara
+    // aquí, y su mutación declarada salió MUDA. Con el comercio en la zona del proceso, las dos ramas
+    // tienen que dar el MISMO acumulado: del 1 de enero al fin del trimestre.
+    const sinZona = rangoAcumulado(2026, t);
+    assert.deepEqual([r.desde, r.hasta], [sinZona.desde.toISOString(), sinZona.hasta.toISOString()],
+      `T${t}: sin zona y con la zona del proceso, el acumulado es el mismo`);
     assert.deepEqual(r.hipotesisTodosLosGastosAnotados,
       { gastosAnotados: e.gastos, rendimientoNeto: e.rn, veintePorCiento: e.veinte }, `T${t}`);
     assert.equal(r.asientos.facturas, t, `T${t}: cada factura una vez`);

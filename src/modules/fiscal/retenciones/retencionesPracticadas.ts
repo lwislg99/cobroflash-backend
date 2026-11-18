@@ -153,8 +153,10 @@ export function construirBorradorRetenciones(params: {
   merchantId: number;
   año: number;
   trimestre: number;
+  /** SCRUM-1445d (fase 2) · la zona del comercio; ausente = la del proceso, como `rangoTrimestre`. */
+  zona?: string;
 }): BorradorRetenciones {
-  const { desde, hasta } = rangoTrimestre(params.año, params.trimestre);
+  const { desde, hasta } = rangoTrimestre(params.año, params.trimestre, params.zona);
   const sinClasificar: GastoSinClasificar[] = [];
   const perceptores111 = new Set<number>();
   const perceptores115 = new Set<number>();

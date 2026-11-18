@@ -70,6 +70,18 @@ const DECLARADAS = {
   // fundador (18-sep-2026) deja UNA sola primaria en la lista —la del dinero, `cobrarBtn`— y pasa
   // la acción siguiente de la escalera a secundaria («doce "Agendar" verdes idénticos no
   // jerarquizan»). Se va de esta lista porque se ARREGLÓ, que es lo que este censo pide.
+  //
+  // SCRUM-1739 · VUELVE, Y SE DECLARA: RE-ANCLADO a la regla reconciliada por el orquestador
+  // (SCRUM-1739 c.22030, por la delegación general de SCRUM-1656 c.21978). La letra de 917c dejó de
+  // describir la lista cuando N1 (SCRUM-1700, c.21470) puso «Abrir parte» rellena en EN CURSO. La
+  // regla viva: «como mucho UNA rellena por TARJETA, y es el paso que hace avanzar el trabajo HOY».
+  // `bSiguiente` es `btn-primary btn-sm` SOLO cuando es «▶ Empezar» de un agendado para hoy; «Agendar»
+  // —los doce verdes que midió 917c— sigue en `btn-secondary`. Cuándo sí y cuándo no lo fija
+  // `tests/scrum1739-una-rellena-por-tarjeta.test.mjs`; aquí solo se declara que existe y por qué.
+  'jobsView.js:bSiguiente':
+    'FILA. El «▶ Empezar» de cada trabajo agendado para HOY: como `bParte` y `cobrarBtn`, la rellena '
+    + 'de UNA fila, no la de la pantalla (que es «Nuevo trabajo»). En cualquier otro caso esta misma '
+    + 'variable es `btn-secondary` (SCRUM-1739 c.22030).',
   'jobsView.js:cobrarBtn':
     'FILA. El «Cobrar el resto» de cada trabajo terminado con saldo. Es el momento de dinero, '
     + 'pero va por fila: la pantalla no existe para cobrar UNO en concreto.',

@@ -21,6 +21,8 @@ import { recalcJobCobradoForCharge } from '../../../jobs/domain/job.service'; //
 import { datosDeCobroPagado, resolverInstanteDeCobro } from '../../domain/instanteDeCobro'; // SCRUM-397
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1301
 import { motivoParaNoPedirResena } from '../../domain/resenaTrasElPago'; // SCRUM-1727b
+import { apuntarCobroDeFactura, esOrigenDeFecha } from '../../domain/cobrosDeFactura'; // SCRUM-1732
+import { esPaidViaValido } from '../../domain/paidVia'; // SCRUM-1732
 // SCRUM-502: la guarda de anulada se CONSUME de donde vive, no se reescribe aqui.
 import { puedeCobrarPorPasarela, ESTADO_ANULADA } from '../../../system/invoiceAdmin';
 // SCRUM-815: la constancia EN DISCO de que el correo de la factura ya salio para este cobro.
@@ -135,6 +137,25 @@ router.post('/', async (req, res) => {
         return res.status(400).json({ error: resolucion.error, message: resolucion.message });
       }
 
+      // SCRUM-1732 (opción A) · LO QUE ENTRÓ, fila a fila en `invoice_payments`. El importe es el
+      // notificado (`body.amount`: 950 si se pagaron 950), no lo pedido; sin él, lo pedido. El origen
+      // de la fecha lo dice quien llama (`confirm-bizum` manda `declarada` o `marcado`); los avisos
+      // automáticos no lo mandan y son `aviso`. `PSPWebhookSchema` (S1) no lo conoce y lo quitaría:
+      // se lee del cuerpo crudo, y solo un valor del conjunto cerrado cuenta.
+      const origenCrudo = (req.body as { fecha_origen?: unknown } | null)?.fecha_origen;
+      const cobroDeFactura = (invoiceIdCobrada: number) => apuntarCobroDeFactura(prisma, {
+        merchantId: charge.merchantId,
+        invoiceId: invoiceIdCobrada,
+        chargeId,
+        importe: Number(body.amount ?? charge.amount),
+        fechaCobro: resolucion.fecha,
+        fechaOrigen: esOrigenDeFecha(origenCrudo) ? origenCrudo : 'aviso',
+        metodo: esPaidViaValido(body.method) ? body.method : null,
+        tipo: 'cobro',
+      }).catch((e) => {
+        console.error(`[psp] SCRUM-1732 no se pudo apuntar el cobro de la factura ${invoiceIdCobrada}:`, (e as any)?.message || 'error desconocido');
+      });
+
       const updated = await prisma.charge.update({
         where: { id: chargeId },
         data: {
@@ -202,6 +223,7 @@ router.post('/', async (req, res) => {
             where: { id: linkedInvoice.id, status: { not: ESTADO_ANULADA } },
             data: { status: 'paid', paidAt: resolucion.fecha },
           });
+          await cobroDeFactura(linkedInvoice.id); // SCRUM-1732
           } catch (e) {
             if (!esFilaQueNoCasa(e)) throw e;
             console.error(`[psp] SCRUM-1303 ${linkedInvoice.number} se anuló entre la lectura y el cobro: no se marca pagada`);
@@ -271,6 +293,7 @@ router.post('/', async (req, res) => {
                 paidAt: resolucion.fecha,
               },
             });
+            await cobroDeFactura(invoiceId); // SCRUM-1732: si es la misma de arriba, el único lo deja en una fila
           } catch (e) {
             if (esFilaQueNoCasa(e)) {
               console.error(`[psp] SCRUM-1315 la factura ${invoiceId} se anuló entre la lectura y el cobro: no se marca pagada`);

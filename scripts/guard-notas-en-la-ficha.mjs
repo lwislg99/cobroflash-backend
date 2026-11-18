@@ -38,6 +38,7 @@ import { lanzarNavegador } from './_navegador.mjs';
 import { veredictoDe, recorrerCasos } from './_hallazgos-y-ciegos.mjs';
 import { aprobacionesDeMicrocopy } from '../tests/_microcopy-aprobada.mjs';
 import { reqDeSesion } from '../tests/_arnes-de-router.mjs';
+import { enlacesDelPanel, TIPOS_DE_FUENTE, esperarFuentes, cegueraDeLaFuente, decirFuente } from './_hojas-del-panel.mjs';
 
 const AQUI = fileURLToPath(import.meta.url);
 const RAIZ = path.join(path.dirname(AQUI), '..');
@@ -139,9 +140,13 @@ function despachar(metodo, ruta, cuerpo, rol, res) {
 const SCRIPTS = ['api.js', 'contacto.js', 'modalHeader.js', 'filtroClientes.js', 'clienteVolverALlamar.js',
   'etiquetasDelDocumento.js', 'buscadorDeClientes.js', 'customerDetailView.js'];
 
+// SCRUM-1755 · las hojas del índice del panel, en su orden (antes, inter + tokens + styles escritos a mano).
+let HOJAS;
+try { HOJAS = enlacesDelPanel(PUBLICO); } catch (e) { HOJAS = null; console.error(String(e && e.message ? e.message : e)); }
+
 function pagina(caso) {
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="stylesheet" href="/fonts/inter.css"><link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/dashboard/css/styles.css">
+${HOJAS}
 </head><body><div class="layout"><div class="main"><div id="ficha"></div></div></div>
 ${SCRIPTS.map((s) => `<script src="/dashboard/js/${s}"></script>`).join('\n')}
 <script>
@@ -188,8 +193,10 @@ const servidor = http.createServer((req, res) => {
   }
   const fichero = path.join(PUBLICO, u.pathname);
   if (!fichero.startsWith(PUBLICO) || !fs.existsSync(fichero)) { res.writeHead(404); return res.end(); }
-  const tipo = fichero.endsWith('.js') ? 'text/javascript' : fichero.endsWith('.css') ? 'text/css' : 'application/octet-stream';
-  res.writeHead(200, { 'content-type': `${tipo}; charset=utf-8` });
+  // SCRUM-1755 · una `.woff2` con su tipo y sin charset: como octet-stream, la cara podía no cargar.
+  const letra = TIPOS_DE_FUENTE[path.extname(fichero)];
+  const tipo = letra || `${fichero.endsWith('.js') ? 'text/javascript' : fichero.endsWith('.css') ? 'text/css' : 'application/octet-stream'}; charset=utf-8`;
+  res.writeHead(200, { 'content-type': tipo });
   res.end(fs.readFileSync(fichero));
 });
 await new Promise((r) => servidor.listen(0, '127.0.0.1', r));
@@ -205,6 +212,7 @@ const ANCHOS = [320, 390, 1280];
 const navegador = await lanzarNavegador(puppeteer, {});
 let cuentas;
 const filas = [];
+const letras = new Set();
 
 /** Lo que una persona ve en la pestaña abierta, leído del DOM. */
 async function leerTarjeta(page) {
@@ -235,10 +243,18 @@ try {
     if (!TITULO || !VACIO || !BOTON || !ERROR || !RESPALDO) {
       return { hallazgos: [], ciegos: [`sin los cinco literales en los registros de las firmas (leídos: ${JSON.stringify(L)})`] };
     }
+    if (!HOJAS) return { hallazgos: [], ciegos: ['no supe sacar las hojas de `public/dashboard/index.html`: sin ellas mediría con la letra de reserva'] };
     for (const ancho of ANCHOS) {
       sembrar(); forzar500 = false; peticiones.length = 0; casoActual = caso;
       await page.setViewport({ width: ancho, height: 900 });
       await page.goto(base + '/', { waitUntil: 'networkidle0' });
+      // LA LETRA, ESPERADA: el alto del botón y el desborde dependen de lo que ocupa el texto. Sin
+      // ninguna cara web cargada, el ancho es CIEGO: mediría con la letra de reserva (SCRUM-1745c).
+      const fuente = await esperarFuentes(page);
+      const sinLetra = cegueraDeLaFuente(fuente, `${caso.nombre} · ${ancho}px`)
+        || (fuente.cargadas > 0 ? null : `🔴 SIN LETRA WEB en ${caso.nombre} · ${ancho}px: ${fuente.declaradas} caras declaradas y 0 cargadas.`);
+      if (sinLetra) { ciegos.push(sinLetra); continue; }
+      letras.add(decirFuente(fuente));
       await page.evaluate(() => renderCustomer360View(document.getElementById('ficha'), window.appState.customerId360));
       await page.waitForNetworkIdle({ idleTime: 150 });
       // SUELO: la ficha tiene que haber pintado algo suyo. Sin ancla, «no hay tarjeta» no dice nada.
@@ -329,6 +345,7 @@ try {
 console.log(`\n${'═'.repeat(84)}`);
 console.log('LA PESTAÑA «NOTAS» · medida en NAVEGADOR, con la ruta real · ' + ANCHOS.join(' / ') + ' px');
 console.log(`${'═'.repeat(84)}`);
+console.log(`  LETRA: ${[...letras].join(' ‖ ') || '(ningún caso llegó a medir)'}`);
 for (const f of filas) console.log(`  ${f.caso.padEnd(18)}${String(f.ancho).padEnd(6)}${f.tarjeta ? 'pestaña' : 'SIN PESTAÑA'}${f.notas !== undefined ? ` · ${f.notas} nota(s)` : ''}${f.error ? ` · vacío: ${f.error}` : ''}${f.fallo ? ` · 500: ${f.fallo}` : ''}`);
 
 const { hallazgos, ciegos } = cuentas;

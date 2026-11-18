@@ -45,7 +45,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: 'return b.miradas - b.sinRetencion - b.sinDatoDeRetencion > 0;', a: 'return b.miradas > 0;',
     cae: 'SCRUM-1066h · filtro ⑨' },
   { fichero: 'src/modules/fiscal/retenciones/retencionesPracticadas.repo.ts',
-    de: 'const hasta = rangoTrimestre(params.año, 4).hasta;', a: 'const hasta = rangoTrimestre(params.año, 1).hasta;',
+    de: 'const hasta = rangoTrimestre(params.año, 4, zona).hasta;', a: 'const hasta = rangoTrimestre(params.año, 1, zona).hasta;',
     cae: 'SCRUM-1066h · filtro ⑨' },
   { fichero: 'src/modules/fiscal/retenciones/retencionesPracticadas.ts',
     de: 'Object.freeze([15, 7, TIPO_ALQUILER])', a: 'Object.freeze([15, 7])',
