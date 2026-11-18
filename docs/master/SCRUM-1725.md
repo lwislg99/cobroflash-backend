@@ -34,7 +34,6 @@ El obligatorio «build + tests» de #3127 cayó a las 15:34Z con UN fallo: `test
 **Skill UI:** cargadas (`yaqu-premium-ui` + `impeccable`; DESIGN.md única fuente de tokens; Parte AB: una pantalla)
 **Medido contra:** `origin/main` = `bcff9d8b1ea465938ef797c17548cb5217de02bc` · 2026-11-18T15:29:14Z
 A9: comprobación → `docs/master/evidencias/SCRUM-1725/c1725e-lista.mjs`
-Mutaciones: una vez → `docs/master/evidencias/SCRUM-1725/mutar-m1.mjs`
 
 **Orden (fundador, 18-nov, literal):** lavado de cara del panel, «clean nuevo elegante facil de usar intuitivo bien ordenadas las cosas». Se empieza por Trabajos. Esta sección es la LISTA (`jobsView.js` + un bloque propio en `styles.css`); la ficha es de S2, en otra rama.
 
@@ -71,7 +70,8 @@ Capturas y medidas: `docs/master/evidencias/SCRUM-1725/{antes,despues}-lista-{ad
 
 ### Tests
 - `tests/scrum1725-lista-operario-sin-cobro.test.mjs`: 3/3, con M1 dentro (técnico y rol desconocido «✅ Terminados · N» a secas; admin, de control, su cabecera entera).
-- Mutaciones (con base 3/3 y restauración): todos con «— cobra el resto» → 2 ✖; todos a secas → 1 ✖ (el del admin).
+- El test distingue por construcción: exige una cabecera a cada rol y la otra al admin, así que ni «todos con — cobra el resto» ni «todos a secas» lo pasan. No se declara ninguna mutación como evidencia: el guion de un solo uso que la corría no nombraba el catálogo (guard SCRUM-1387, cazado en `guards:entrada` antes del push) y se retiró; llevarla al catálogo queda como resto.
+- Vecinos: los 215 ficheros `tests/*.test.mjs` que nombran `jobsView`, `styles.css`, `docs/microcopy` o las clases de la lista → 1.824 casos · 1.815 pass · 2 fail · 7 skip. Los 2 rojos son de SCRUM-1199 y son de entorno: `express` no está en el `node_modules` de este árbol (comprobado: no existe la carpeta).
 
 ### Lo que NO se ve en las capturas, y lo que queda fuera
 - **M1 no sale en las capturas del operario:** en la cuenta QA el operario no tiene ningún trabajo terminado. Lo prueba el test; en pantalla se verá cuando tenga uno.
