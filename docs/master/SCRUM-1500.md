@@ -1612,3 +1612,11 @@ documentos: ni `src/`, ni `public/`, ni esquema, ni máster, ni emisión. Lo de 
    ANTERIOR MURIÓ CON LA MUTACIÓN PUESTA … Devuelto a sus bytes»; después, `git status` limpio. La
    marca de SCRUM-808 funcionó. Va a la cicatriz de J5. **Comprobación que falta y no construyo:** que
    el meta-guard salga ≠ 0 ante un argumento que no conoce.
+
+**Corrido:** guards scrum1387/745/757/1321/1415/1294/267/273/854/237/976/525d y el propio test, 110
+casos, en verde (tras corregir mi A9, que citaba sólo media frase de la cicatriz: lo cazó scrum1294);
+`guards:entrada` 170/170. **Suite entera por tramos, 15 de 15:** 1.710 ficheros, 13.866 tests, 13.682
+pass, **2 fail**, los dos de `tests/scrum1298b-latido-arbol-de-arranque.test.mjs` («EL CASO: el árbol
+va por detrás…» y «se mide el árbol PRINCIPAL…»). **No son de este cambio:** el mismo fichero cae igual
+(6 de 8) en la rama de SCRUM-1316i, que es main más tres líneas de documentos. No lo he corrido sobre
+un main limpio ni sé si cae en CI. `dist/` compilado con `--noCheck` (no se toca `src/`).
