@@ -4874,6 +4874,126 @@ textarea.parte-linea-desc {
   .table--trabajos .jobs-grupo-salvedad td { white-space: normal; }
 }
 
+/* ══ S4 · SCRUM-1725e · LA LISTA DE TRABAJOS, LAVADO DE CARA (orden del fundador, 18-nov-2026) ══
+   «clean nuevo elegante facil de usar intuitivo bien ordenadas las cosas». El mismo lenguaje que el
+   parte de SCRUM-1722: una tarjeta por bloque, títulos que mandan, acciones que parecen botones, y
+   390 px primero. SOLO ROPA: ni un texto, ni un botón, ni una cifra cambian de sitio en el DOM ni de
+   significado (la escalera de SCRUM-1739 y el contenido de 1679/1670c, intactos).
+   Medido en yaqu.app antes de tocar (390, cuenta QA):
+     ① el título «Trabajos» gastaba una tarjeta de 70 px para repetir la barra de arriba;
+     ② la lista era una tarjeta con tarjetas dentro, y cada rótulo de grupo, OTRA tarjeta (65 px);
+     ③ «🔒 Cerrados» gastaba dos: su rótulo y, debajo, la de «Ver 2 cerrados» (88 px);
+     ④ «Sin importe / no hay presupuesto aceptado» se llevaba media tarjeta y dejaba al cliente
+        en 19 letras por línea (el nombre en dos renglones, la tarea cortada a tres de 12 letras);
+     ⑤ en la tarjeta EN CURSO los cuatro botones caían en dos filas sin orden.
+   Tokens de `tokens.css` (DESIGN.md), ninguno nuevo. Todo acotado a `.jobs-pantalla`, que solo
+   existe en `jobsView.js`, o a `.table--trabajos`: las listas hermanas no se mueven. */
+.jobs-pantalla { --jobs-lavado: 1725e; }   /* testigo: el banco comprueba que ESTA hoja es la que pinta */
+
+/* ① La cabecera: el título deja de ser una tarjeta y comparte renglón con «Nuevo trabajo». La
+   rejilla es de `.jobs-pantalla`; el DOM no cambia (título, botón, cifras, filtros, lista). */
+.jobs-pantalla { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; align-items: center; }
+.jobs-pantalla > * { grid-column: 1 / -1; min-width: 0; }
+.jobs-pantalla > .jobs-cabecera {
+  grid-column: 1; grid-row: 1; margin-bottom: 16px; padding: 0;
+  background: none; border: 0; border-radius: 0; box-shadow: none;
+}
+.jobs-pantalla > .jobs-nuevo { grid-column: 2; grid-row: 1; margin-bottom: 16px; }
+.jobs-pantalla .jobs-cabecera h2 { font-size: 1.25rem; line-height: 1.2; letter-spacing: -.01em; }   /* Headline */
+.jobs-pantalla .jobs-cifra { padding: 16px; }   /* el mismo relleno que la tarjeta del trabajo: los textos caen en la misma vertical */
+.jobs-pantalla .jobs-filtros { margin-bottom: 16px; }
+
+/* Escritorio: el rótulo de grupo es un TÍTULO (Tinta, 700, sin mayúsculas). En mayúsculas de 12 px
+   era la misma voz que la cabecera de la tabla que tiene encima, y no se distinguían. */
+@media (min-width: 641px) {
+  .table--trabajos .jobs-grupo-titulo td {
+    padding: 20px 14px 6px; font-size: .9375rem; line-height: 1.3;
+    color: var(--ink); text-transform: none; letter-spacing: -.01em;
+  }
+}
+
+@media (max-width: 640px) {
+  /* ① A 390 la barra de arriba YA dice «Trabajos»: el `h2` se queda para quien lo oye y deja de
+     pintarse. «Nuevo trabajo» abre la pantalla. */
+  .jobs-pantalla > .jobs-cabecera {
+    position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap; align-self: start; justify-self: start;
+  }
+  .jobs-pantalla > .jobs-nuevo { grid-column: 1 / -1; }
+
+  /* Los cuatro filtros de cobro, en UN renglón y repartidos; el de técnico, a todo el ancho. */
+  .jobs-pantalla .jobs-filtros { gap: 6px; }
+  .jobs-pantalla .jobs-filtros > button { flex: 1 1 auto; padding-left: 10px; padding-right: 10px; white-space: nowrap; }
+  .jobs-pantalla .jobs-filtro-tecnico { gap: 8px; }
+  .jobs-pantalla .jobs-filtro-tecnico-buscar,
+  .jobs-pantalla .jobs-filtro-tecnico select { flex: 1 1 0; width: auto; min-width: 0; }
+
+  /* ② La lista deja de ser una tarjeta: las tarjetas son los TRABAJOS. */
+  .jobs-pantalla .jobs-card { background: none; border: 0; border-radius: 0; box-shadow: none; overflow: visible; }
+
+  /* Cada grupo, una rejilla de dos columnas: el rótulo a la izquierda y, si lo hay, «Ver N
+     cerrados» a su derecha, en el MISMO renglón (③). Todo lo demás ocupa el ancho entero. */
+  .table--trabajos tbody.jobs-grupo { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; align-items: center; }
+  .table--trabajos tbody.jobs-grupo + tbody.jobs-grupo { margin-top: 24px; }
+  .table--trabajos tbody.jobs-grupo > tr { grid-column: 1 / -1; }
+  .table--trabajos tbody.jobs-grupo > tr.jobs-grupo-titulo,
+  .table--trabajos tbody.jobs-grupo > tr.jobs-grupo-salvedad,
+  .table--trabajos tbody.jobs-grupo > tr.jobs-grupo-abrir {
+    display: block; margin: 0 0 10px; padding: 0;
+    background: none; border: 0; border-radius: 0; box-shadow: none;
+  }
+  .table--trabajos tbody.jobs-grupo > tr.jobs-grupo-titulo { grid-column: 1; grid-row: 1; }
+  .table--trabajos tbody.jobs-grupo > tr.jobs-grupo-abrir { grid-column: 2; grid-row: 1; }
+  .table--trabajos tbody.jobs-grupo > tr.jobs-grupo-salvedad { margin-top: -4px; }
+  /* El rótulo de grupo: un título de sección, no una etiqueta en mayúsculas dentro de una caja. */
+  .table--trabajos .jobs-grupo-titulo td {
+    padding: 0; font-size: 1.0625rem; font-weight: 700; line-height: 1.3;
+    color: var(--ink); text-transform: none; letter-spacing: -.01em;
+  }
+  .table--trabajos .jobs-grupo-salvedad td { padding: 0; font-size: 12.5px; line-height: 1.4; }
+  .table--trabajos .jobs-grupo-abrir td { padding: 0; }
+
+  /* La tarjeta del trabajo: la de la casa (DESIGN.md §5: borde 1 px + Reposo, radio lg). */
+  .table--trabajos tbody.jobs-grupo > tr.jobs-fila {
+    gap: 4px 12px; margin: 0 0 10px; padding: 16px;
+    border-radius: var(--r-lg); box-shadow: var(--shadow-sm);
+  }
+  .table--trabajos tbody.jobs-grupo > tr.jobs-fila:last-child { margin-bottom: 0; }
+  /* Jerarquía dentro de la tarjeta: quién (Title) › qué hay que hacer › el resto, en gris. */
+  .table--trabajos .jobs-fila-cliente { font-size: 1rem; line-height: 1.3; }
+  .table--trabajos .jobs-fila-tarea { margin-top: 4px; font-size: 14px; line-height: 1.4; }
+  .table--trabajos .jobs-fila-linea { margin-top: 6px; }
+  .table--trabajos .jobs-fila-direccion { margin-top: 6px; }
+  .table--trabajos tr.jobs-fila td.cell-date { margin-top: 4px; font-size: 13px; font-weight: 600; color: var(--body); }
+
+  /* ④ SIN IMPORTE: el aviso baja de la esquina a un renglón propio, bajo los datos del trabajo.
+     Las mismas dos frases, en el mismo orden; el cliente recupera el ancho entero de la tarjeta.
+     Con importe, la cifra sigue arriba a la derecha (Regla del Importe). */
+  .table--trabajos tbody.jobs-grupo > tr.jobs-fila:has(.jobs-importe-sin) {
+    grid-template-areas:
+      "client  client"
+      "amount  amount"
+      "date    date"
+      "actions actions";
+  }
+  .table--trabajos tr.jobs-fila:has(.jobs-importe-sin) td.cell-amount {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px;
+    margin-top: 4px; text-align: left; font-size: 13px;
+  }
+  .table--trabajos tr.jobs-fila:has(.jobs-importe-sin) :is(.jobs-importe-sin, .jobs-importe-de) { font-size: 13px; line-height: 1.4; }
+
+  /* ⑤ Las acciones, en su franja: la rellena (el paso de hoy, SCRUM-1739) a todo el ancho y al
+     pulgar; debajo, las demás en un renglón, con el «⋯» cerrando a la derecha. El orden es el del
+     DOM, que es el del teclado: aquí no hay ningún `order`. */
+  .table--trabajos tr.jobs-fila td.cell-actions { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--neutral-200); }
+  .table--trabajos .jobs-celda-acciones > .btn-primary,
+  .table--trabajos .jobs-celda-acciones > .jobs-acciones:first-child { flex: 1 0 100%; }
+  .table--trabajos .jobs-celda-acciones > .jobs-acciones:first-child > .btn-primary { flex: 1 1 auto; }
+  .table--trabajos .jobs-celda-acciones > .jobs-acciones:not(:first-child) { flex: 1 1 auto; }
+  .table--trabajos .jobs-celda-acciones .overflow-trigger { margin-left: auto; }
+}
+/* ══ fin S4 · SCRUM-1725e ══ */
+
 /* ═══ SCRUM-831 · LA LISTA DE ALBARANES RECUPERA SU RANURA DE ACCIONES ═══════════════════════
    Medido en el censo de las cinco listas (8-sep-2026): era la ÚNICA con `.cell-actions` ocupada
    por un enlace a otra pantalla, y la única con CERO acciones en la fila. El enlace al Trabajo
