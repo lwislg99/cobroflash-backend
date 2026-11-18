@@ -130,7 +130,7 @@ test('1240d · la mención y la 07 del registro no discrepan: misma decisión qu
 // ── Los llamadores pasan la columna CONGELADA, nunca el Merchant vivo ──────────────────────────
 // SCRUM-665e (GO SCRUM-665 c.21182 puntos 1 y 3; registrado por la vía de c.21943 punto 3, con la
 // forma de scrum577 en c.21608 (b)): la rama junta los generadores de PDF en UNO, `ensureInvoicePdf`,
-// y retira la ruta «regenerar PDF». Medido con el AST de abajo: en main, 2 llamadas en invoicing.ts y
+// y retira la ruta «regenerar PDF». Medido el 16-nov-2026 con el AST: en main, 2 llamadas en invoicing.ts y
 // 1 en invoicesAdmin.routes.ts; en la rama, 1 y 0. La lista es un número derivado y se recalcula; la
 // comprobación no se relaja: cada llamada que quede sigue pasando la columna congelada (lo tumba la
 // última mutación del catálogo), y una llamada que vuelva en cualquiera de los dos ficheros lo tumba.

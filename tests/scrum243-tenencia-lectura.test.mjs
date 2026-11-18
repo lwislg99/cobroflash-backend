@@ -104,7 +104,7 @@ const CENSO_SIN_RED = [
   //    `ensureInvoicePdf`: un `findUnique` por el `id` de una factura que la misma función ya leyó
   //    (y que trae su merchant) unas líneas antes; sólo pide `pdfSha256`. No llega un id nuevo de
   //    fuera: es la misma fila, releída dentro del cerrojo del PDF. Pasarla a `findFirst` con
-  //    `merchantId` se probó y rompe 9 casos de los dobles de 665e, 1510b y 762, que sólo
+  //    `merchantId` se probó el 16-nov-2026 y rompió 9 casos de los dobles de 665e, 1510b y 762, que sólo
   //    implementan `findUnique` (apéndice M de docs/master/SCRUM-665.md); se revirtió.
   ['src/lib/invoicing.ts', 2],
   ['src/modules/jobs/domain/job.service.ts', 6],
