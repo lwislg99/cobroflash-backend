@@ -8,6 +8,8 @@ A9: aviso → cicatriz J2 «otra vez tomé de control positivo del ls-remote la 
 
 **Qué es.** La decisión está tomada: D5 de CRM, «SÍ (documentos adjuntos; el tope de tamaño lo fija J4/Javier)» (SCRUM-1012 c.16226), reetiquetada a J2 con `esperando-alter` (SCRUM-1005 c.17173). Este tramo es sólo DISEÑO: ni `prisma/schema.prisma`, ni `src/`, ni `public/`, ni ninguna base. Lo que queda: las preguntas ✅/❌ del final.
 
+**Tanda:** suite entera no corrida: cambio solo de documentos; CI la corre. Guards de docs y esquema en local: 1294, 267, 273, 525d, 854, 222, 475, 1310b → 0 fallos (222: 2 casos saltados por gate). Decisión del orquestador `cobroflash-backend-8a`, por mensaje, el 18-nov.
+
 **PASO 0** (18-nov, 23:45Z): `git log origin/main --grep=SCRUM-1005` → 0 commits · `git ls-remote origin 'refs/heads/scrum-1005*'` → 0 ramas (control positivo con una rama viva, `scrum-paso0-dinero`: 1) · `gh pr list --search 1005` → sólo #1005, que es SCRUM-668 · `docs/master/SCRUM-1005.md` no existía.
 
 ### 1 · El cambio de esquema: menos del que dice el ticket
