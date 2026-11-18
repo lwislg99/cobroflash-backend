@@ -289,11 +289,9 @@ const SOLO_GEOMETRIA = {
  * la letra de reserva de cada máquina. Esta lista SÓLO BAJA: cada uno sale de aquí el día que pasa a la
  * casa (patrón de SCRUM-1745c), y el test cae si uno de la lista ya está arreglado y sigue en ella.
  */
-const DEUDA = {
-  'scripts/guard-pad-de-firma-cabe.mjs': 'la tarjeta con 20 líneas cabe en la ventana; alto de los botones',
-};
-/** El techo de la deuda: el 18-nov-2026 eran 7. Sólo se baja. */
-const TECHO_DEUDA = 1;
+const DEUDA = {};
+/** El techo de la deuda: el 18-nov-2026 eran 7; a 0 desde SCRUM-1755d (el pad de firma). Sólo se baja. */
+const TECHO_DEUDA = 0;
 
 /** Primitivas que miden lo que pone un TEXTO: un banco de SOLO_GEOMETRIA que use una ya no lo es. */
 const MIDE_TEXTO = /\b(scrollWidth|scrollHeight|clientWidth|clientHeight|lineHeight|getClientRects|measureText|createRange)\b/;
@@ -397,14 +395,15 @@ test('SCRUM-1603 ⑥ · mutación: un banco NUEVO sin letra cae, y uno de la DEU
   assert.equal(clasificarBanco(rel, arreglado), 'casa');
   // Sin el CIEGO no es de la casa: esperar la letra y no decir nada si no llega es medir con la de reserva.
   assert.equal(clasificarBanco(rel, arreglado.replace('cegueraDeLaFuente(f)', 'f')), 'a-mano');
-  // Uno de la DEUDA que pasa a la casa y sigue en la lista: cae.
-  const deDeuda = Object.keys(DEUDA)[0];
-  const sanado = bancos.map((b) => (b.rel === deDeuda ? { ...b, clase: 'casa' } : b));
-  assert.ok(veredictoDelCenso(sanado).some((m) => m.startsWith(deDeuda) && /ya mide con la letra/.test(m)));
+  // Uno de la DEUDA que pasa a la casa y sigue en la lista: cae. Con la DEUDA a 0 (SCRUM-1755d) no hay
+  // uno de verdad: se declara a propósito un banco que ya es de la casa, y tiene que caer igual.
+  const deCasa = bancos.find((b) => b.clase === 'casa').rel;
+  const declaradoDeMas = { [deCasa]: 'mutación: ya es de la casa' };
+  assert.ok(veredictoDelCenso(bancos, { deuda: declaradoDeMas, techo: 1 }).some((m) => m.startsWith(deCasa) && /ya mide con la letra/.test(m)));
   // Uno de SOLO_GEOMETRIA que empieza a medir texto: cae.
   const geo = Object.keys(SOLO_GEOMETRIA)[0];
   const midiendo = bancos.map((b) => (b.rel === geo ? { ...b, codigo: b.codigo + '\nel.scrollWidth;' } : b));
   assert.ok(veredictoDelCenso(midiendo).some((m) => m.startsWith(geo) && /scrollWidth/.test(m)));
-  // Y la deuda no sube.
-  assert.ok(veredictoDelCenso(bancos, { techo: TECHO_DEUDA - 1 }).some((m) => /sólo baja/.test(m)));
+  // Y la deuda no sube: uno más de lo que permite el techo, cae.
+  assert.ok(veredictoDelCenso(bancos, { deuda: declaradoDeMas, techo: TECHO_DEUDA }).some((m) => /sólo baja/.test(m)));
 });
