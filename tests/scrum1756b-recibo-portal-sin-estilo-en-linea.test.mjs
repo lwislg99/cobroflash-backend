@@ -227,7 +227,7 @@ test('SCRUM-1756b · /cliente: cada estado lleva los dos colores de su style= de
   clientePortal = { ...clienteFila(), merchant: comercio() };
   const r = await pedir('/cliente/portal1756');
   assert.equal(r.status, 200, `contestó ${r.status}`);
-  const etiquetas = [...r.cuerpo.matchAll(/<span class="portal-pill (portal-pill-[a-z]+)">([^<]*)<\/span>/g)];
+  const etiquetas = [...r.cuerpo.matchAll(/<span[^>]*class="portal-pill (portal-pill-[a-z]+)"[^>]*>([^<]*)<\/span>/g)];
   // 7 presupuestos de estado conocido + 1 desconocido + 1 factura pagada.
   assert.equal(etiquetas.length, ESTADOS.length + 2, `etiquetas pintadas: ${etiquetas.length}`);
   const hoja = RECIBO_PORTAL_CSS.portal;

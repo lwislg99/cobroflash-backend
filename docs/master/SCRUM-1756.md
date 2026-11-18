@@ -4,7 +4,7 @@
 
 **Medido contra:** `origin/main` = `65b2e3b2a03a4a5cb6119b9b7e33465b89494769` · 2026-11-18T05:11:12Z (hora de GitHub; sesión J2 `jv-j2d1`, por encargo del orquestador `cobroflash-backend-ee`; la rama lleva main fusionado)
 
-A9: aviso → cicatriz J2 «2026-10-26 · otra vez un heredoc de bash se comió una barra invertida» — no se pudo comprobar: esta vez fue un `sed -i` que convirtió el `\\n` de la mutación inocua en un salto de línea real; lo cacé al leer la salida del propio `sed`, antes de correr nada, y se rehízo con la herramienta de edición; lo que se teclea en la consola no lo ve ningún guard
+A9: aviso → cicatriz J2 «pasé una mutación por `sed -i` con `\n` dentro de la cadena y la escribió como un salto de línea REAL: el guion de mutaciones quedó con una cadena partida; lo vi al leer la salida antes de correrlo y lo rehíce con la herramienta de edición» — no se pudo comprobar: lo que se teclea en la consola no lo ve ningún guard
 
 Las dos filas de J2 de la tabla de SCRUM-1756. Receta de SCRUM-1723b/c, sin ruta nueva y sin tocar
 `publicAccessDeclarations.ts`.
