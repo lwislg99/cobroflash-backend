@@ -22,6 +22,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { soloEjecutable } from './_guard-texto.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const require_ = createRequire(import.meta.url);
@@ -68,8 +69,14 @@ test('SCRUM-428 · SUELO: la vista carga el módulo y lo usa', () => {
     '🔴 `terminadoSinCobrar.js` se carga DESPUÉS de `jobsView.js`. Con scripts clásicos eso deja ' +
     '`resumenTerminadoSinCobrar` sin definir cuando la vista se pinta, y el importe desaparece ' +
     'sin un solo error visible.');
-  assert.match(leer('public/dashboard/js/jobsView.js'), /resumenTerminadoSinCobrar\(/,
-    '🔴 la lista de Trabajos ya no llama al resumen: el motor existiría y no se vería, que es ' +
+  // SCRUM-1725g · AQUÍ SE EXIGÍA `resumenTerminadoSinCobrar(` (el subtotal de la cabecera «Terminados»).
+  // El requisito cambió: veredicto del fundador (SCRUM-1725 c.22073) + P4 firmada (c.22076) → la lista
+  // es plana, la cabecera desaparece y lo que falta por cobrar queda en la tarjeta «Por cobrar» y fila a
+  // fila. Cambio de exigencia AUTORIZADO con nombre en SCRUM-1725 c.22077. Lo que queda de la intención
+  // («el motor existe Y se ve»): la lista sigue sumando con `faltaPorCobrarDe`, la resta de este módulo.
+  // Sobre el código SIN comentarios: la prosa que explica la retirada nombra lo retirado.
+  assert.match(soloEjecutable(leer('public/dashboard/js/jobsView.js')), /faltaPorCobrarDe\(/,
+    '🔴 la lista de Trabajos ya no llama a `faltaPorCobrarDe`: el motor existiría y no se vería, que es ' +
     'exactamente el estado del que sale este ticket.');
 });
 
@@ -135,20 +142,28 @@ test('SCRUM-428 · 🔴 la cifra y su SALVEDAD viajan juntas, o ninguna de las d
   // Lo que este guard fija NO es cuál de las dos versiones está pintada, sino que **las dos
   // piezas van juntas**: enseñar la cifra sin la salvedad vuelve a inducir a error, y romper el
   // texto oficial la deja diciendo otra cosa.
-  const vista = leer('public/dashboard/js/jobsView.js');
+  //
+  // SCRUM-1725g · LA CIFRA Y LA SALVEDAD SE MUDARON, JUNTAS. Vivían en la cabecera «Terminados», que la
+  // lista plana ya no tiene (veredicto del fundador, SCRUM-1725 c.22073; P4 firmada, c.22076). La cifra
+  // que queda es la de la tarjeta «Por cobrar», y su salvedad es la corta que esa tarjeta ya llevaba,
+  // firmada en SCRUM-917 c.15881: «N sin importe de referencia, no entra(n)». La frase larga
+  // (`SALVEDAD_APROBADA`, arriba) deja de exigirse: es la pérdida declarada en P4. Cambio de exigencia
+  // AUTORIZADO con nombre en SCRUM-1725 c.22078. La intención es la misma: las dos piezas van juntas.
+  const vista = soloEjecutable(leer('public/dashboard/js/jobsView.js'));
 
-  assert.match(vista, /resumen\.cuantos\s*>\s*0/,
-    '🔴 el importe se pinta siempre: con cero terminados con deuda, «0,00 €» afirma que no se debe ' +
-    'nada, y eso solo es verdad si además se sabe de todos.');
+  assert.match(vista, /if\s*\(\s*porCobrar\.conFalta\s*\)/,
+    '🔴 el pie de «Por cobrar» dice «en N trabajos sin cerrar» siempre: con cero trabajos con deuda ' +
+    'afirmaría algo de un importe que no se debe.');
 
-  assert.match(vista, /resumen\.sinImporte\s*>\s*0/,
-    '🔴 la vista ya no pinta nada cuando hay terminados sin importe conocido. Si desaparece la ' +
-    'salvedad, el importe de arriba vuelve a leerse como si lo contara todo — y entonces ese ' +
+  assert.match(vista, /if\s*\(\s*porCobrar\.sinImporte\s*\)/,
+    '🔴 la tarjeta «Por cobrar» ya no dice nada cuando hay trabajos sin importe conocido. Si desaparece ' +
+    'la salvedad, el importe de arriba vuelve a leerse como si lo contara todo — y entonces ese ' +
     'importe tampoco se puede enseñar.');
 
-  assert.ok(vista.includes(SALVEDAD_APROBADA),
-    `🔴 no aparece el texto APROBADO, literal:\n      «{N} ${SALVEDAD_APROBADA}»\n\n` +
-    '  Es microcopy oficial (regla 30, fundador 10-ago-2026): no se reescribe ni se «mejora». Una ' +
+  assert.ok(vista.includes('${porCobrar.sinImporte} sin importe de referencia, '),
+    '🔴 no aparece el texto APROBADO de la salvedad de la tarjeta, literal:\n' +
+    '      «{N} sin importe de referencia, no entra(n)»\n\n' +
+    '  Es microcopy firmada (SCRUM-917, comentario 15881): no se reescribe ni se «mejora». Una ' +
     'paráfrasis afirma algo que nadie ha aprobado sobre el dinero de un profesional.');
 
   assert.doesNotMatch(vista, /\[PENDIENTE microcopy oficial\]/,
@@ -174,10 +189,18 @@ test('SCRUM-428 · el importe se calcula sobre lo que se VE, no sobre la lista e
   // El filtro de cobro (`jobsView.js`) es client-side: si el importe se sumara sobre `jobs` y no
   // sobre el grupo pintado, con el chip «Pagado» activo la cabecera diría un total que no cuadra
   // con ninguna fila de debajo.
-  const vista = leer('public/dashboard/js/jobsView.js');
-  assert.match(vista, /resumenTerminadoSinCobrar\(g\.items\)/,
-    '🔴 el resumen no se calcula sobre `g.items` (lo pintado). Un importe que no cuadra con las ' +
-    'filas de debajo no se cree: se ignora, y entonces da igual haberlo puesto.');
+  //
+  // SCRUM-1725g · exigía `resumenTerminadoSinCobrar(g.items)`: el subtotal de la cabecera, sobre el grupo
+  // pintado. Sin cabecera (c.22073, c.22076) no hay subtotal que pueda descuadrar. Cambio de exigencia
+  // AUTORIZADO con nombre en SCRUM-1725 c.22077. Lo que queda de la intención —el importe que se enseña
+  // junto a una fila es el de ESA fila— es el botón del terminado con saldo: «💰 Cobrar el resto», con
+  // lo que le falta a ese Trabajo y no con una suma de otros.
+  // (La tarjeta «Por cobrar» suma TODOS los sin cerrar, no lo filtrado: decisión de SCRUM-917c, que
+  // este ticket no toca; por eso aquí no se le exige «lo que se ve».)
+  const vista = soloEjecutable(leer('public/dashboard/js/jobsView.js'));
+  assert.ok(vista.includes('`💰 Cobrar el resto (${fmtMoneyEs(j.remaining.amount, j.remaining.currency)})`'),
+    '🔴 el botón del terminado con saldo ya no dice lo que falta de SU fila (`j.remaining`). Un importe ' +
+    'que no cuadra con la fila en la que está no se cree: se ignora, y entonces da igual haberlo puesto.');
 });
 
 test('SCRUM-428 · nada de esto revienta con datos ausentes', () => {
