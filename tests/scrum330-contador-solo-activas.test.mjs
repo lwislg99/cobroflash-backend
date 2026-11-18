@@ -39,13 +39,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { casosEscritos } from './_casos-escritos.mjs';
+import { paginaConSusGuiones } from './_pagina-con-sus-guiones.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = pathToFileURL(path.join(RAIZ, 'dist')).href + '/';
 const moduloPrisma = await import(DIST + 'core/db/prisma.js');
 const { getFoundingStatus, FOUNDING_SEATS } = await import(DIST + 'modules/billing/domain/founding.js');
 
-const leer = (...p) => fs.readFileSync(path.join(RAIZ, ...p), 'utf8');
+// SCRUM-1756f: el guion de cada página vive en el `.js` que enlaza (`/landing.js`, `/precios.js`);
+// se lee la página CON sus guiones. Cambia dónde se lee, no qué se exige.
+const leer = (...p) => paginaConSusGuiones(RAIZ, path.posix.join(...p));
 
 /** Prisma de doble que apunta el `where` con el que se cuenta y devuelve lo que le digan. */
 function prismaQueCuenta(devuelve) {
