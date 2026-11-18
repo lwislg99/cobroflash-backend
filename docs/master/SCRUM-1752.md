@@ -109,3 +109,18 @@ todas las pasadas: sólo `POST /admin/entorno`.
 - `SCRUM-1395b`: el test nuevo no tenía ficha en `tests/_veredicto-mudez.json`. Regenerado con `npm run censo:mudez -- --escribir`.
 
 Los tres estaban en el lote que no llegó a correr en local (la tanda de 723 la mató la memoria). Después: 16 ficheros en estrecho, 178 de 178.
+
+## Regla 42 (18-nov-2026, S4) · los tres avisos y el paréntesis, vistos en yaqu.app
+
+Medido el 18-nov-2026 a las 07:43Z (hora de GitHub) con `origin/main` en `6881a0d27e8b4e337bd55175c3068791c8304c69`. Producción sirve los mismos blobs que `main`: `parteDetailView.js` `abf652e0` y `styles.css` `cd9a9d64`.
+
+| aceptación | dónde se ve |
+|---|---|
+| los tres avisos en plural, en la página real | `#parte-detail/23` (cuenta +qa, borrador), pintados bajo la casilla: «1e» → «No se ha guardado. Desplazamientos es un número entero, como 1 o 2 — no el tiempo de viaje»; «-1» → «No se ha guardado. Desplazamientos es 0 o más»; «99999999999» → «No se ha guardado. Ese número es demasiado grande para Desplazamientos». |
+| el paréntesis entero a 390, 360 y 320 | el borrador #23 y el firmado #22, a los tres anchos: dos líneas, «Desplazamientos» y «(nº de viajes)», con `text-wrap: balance` y sin desborde de página (el rótulo mide 161, 146 y 126 px). |
+
+- El primero se midió con `evidencias/SCRUM-1752/c1752-parentesis.mjs` (`FIRMADO=22`, `AVISO=1`, sin `LOCAL_DIR`). Con la casilla vacía, Chromium no dispara `change` al salir y el literal se leyó despachándolo a mano: es SCRUM-1754, que sigue abierto.
+- Los otros dos los pone la ruta al rechazar el valor, y se midieron con la acción nueva `evidencias/SCRUM-1752/r42-tres-avisos.mjs`: `PATCH /admin/partes/23` → 400 las dos veces. Un rechazo no guarda: tras recargar, la casilla vale «» como al entrar; si no, la acción sale con 1.
+- Capturas: `evidencias/SCRUM-1752/r42-aviso-cero-o-mas-390.png`, `r42-aviso-demasiado-grande-390.png` y `r42-parentesis-320.png`.
+
+**Lo que NO está medido:** los dos avisos de la ruta a 360 y 320 (sólo a 390), un teléfono de verdad y Safari.
