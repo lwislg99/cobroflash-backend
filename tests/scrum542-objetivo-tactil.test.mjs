@@ -19,9 +19,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { casosEscritos } from './_casos-escritos.mjs';
+import { paginaConSusHojas } from './_pagina-con-sus-hojas.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const LANDING = fs.readFileSync(path.join(RAIZ, 'public', 'index.html'), 'utf8');
+// SCRUM-1756d: el CSS de la landing vive en la hoja que enlaza (`public/landing.css`); se lee
+// la página CON sus hojas. Cambia dónde se lee, no qué se exige.
+const LANDING = paginaConSusHojas(RAIZ, 'public/index.html');
 const GUARD_RUTA = path.join(RAIZ, 'scripts', 'guard-objetivo-tactil.mjs');
 const PKG = fs.readFileSync(path.join(RAIZ, 'package.json'), 'utf8');
 

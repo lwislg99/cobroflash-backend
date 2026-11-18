@@ -1,0 +1,72 @@
+// SCRUM-1756d · Genera las cuatro hojas de las páginas públicas de J3 COPIANDO TAL CUAL el `<style>` de
+// main, y comprueba que lo copiado es byte a byte lo que había.
+// (Guardado como .txt, como los guiones de SCRUM-1723. Para correrlo se copia a un .mjs fuera del árbol y
+//  se lanza DESDE LA RAÍZ del repo.)
+//
+// Uso:  node <copia>.mjs <sha de main> [--comprobar]
+//   sin --comprobar: escribe public/landing.css, precios.css, legal.css y legal-documento.css
+//   con --comprobar: no escribe; sale 0 si cada hoja EMPIEZA por el `<style>` de main copiado tal cual
+//                    y lo que sigue son SÓLO las reglas de las clases nuevas; 1 si no; 2 CIEGO.
+// Aborta (2) si el CSS de un literal de plantilla lleva `${`, una comilla grave o una barra invertida:
+// entonces el texto servido no sería el del fuente y «tal cual» no se podría afirmar.
+import fs from 'node:fs';
+import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+
+const RAIZ = process.cwd();
+const [sha, modo] = process.argv.slice(2);
+if (!sha || !fs.existsSync(path.join(RAIZ, 'scripts/carriles.mjs'))) { console.error('CIEGO: uso <sha> [--comprobar], desde la raíz'); process.exit(2); }
+const deMain = (ruta) => execFileSync('git', ['show', `${sha}:${ruta}`], { cwd: RAIZ, encoding: 'utf8' });
+
+function interior(texto, ruta) {
+  const abre = texto.match(/<style>/g) || [];
+  if (abre.length !== 1) { console.error(`CIEGO: ${ruta} lleva ${abre.length} <style> (esperaba 1)`); process.exit(2); }
+  const i = texto.indexOf('<style>') + '<style>'.length;
+  const j = texto.indexOf('</style>', i);
+  return texto.slice(i, j);
+}
+
+// hoja → [fuente en main, reglas añadidas (una por cada `style=` del marcado, mismas declaraciones)]
+const HOJAS = {
+  'landing.css': ['public/index.html', [
+    '.landing-firma-titulo{font-size:12px;color:var(--muted);font-weight:700;margin-top:2px}',
+    '.landing-ancho-completo{width:100%}',
+  ]],
+  'precios.css': ['public/precios.html', [
+    '.precios-empezar{font-size:13.5px;font-weight:600}',
+    '.precios-oculto{display:none}',
+  ]],
+  'legal.css': ['public/privacidad.html', []],
+  'legal-documento.css': ['src/modules/system/app/routes/legalPages.routes.ts', []],
+};
+const CABECERA_AÑADIDAS = '\n/* SCRUM-1756d · los `style=` del marcado, como clases con las mismas declaraciones */\n';
+
+// privacidad y términos comparten hoja: tienen que llevar el MISMO `<style>`.
+const priv = interior(deMain('public/privacidad.html'), 'privacidad');
+const term = interior(deMain('public/terminos.html'), 'terminos');
+if (priv !== term) { console.error('CIEGO: privacidad y términos no llevan el mismo <style>: no pueden compartir hoja'); process.exit(2); }
+
+let mal = 0;
+for (const [hoja, [fuente, reglas]] of Object.entries(HOJAS)) {
+  const css = interior(deMain(fuente), fuente);
+  if (fuente.endsWith('.ts') && /\$\{|`|\\/.test(css)) { console.error(`CIEGO: el CSS de ${fuente} lleva \${, \` o \\`); process.exit(2); }
+  const esperado = css + (reglas.length ? CABECERA_AÑADIDAS + reglas.join('\n') + '\n' : '');
+  const destino = path.join(RAIZ, 'public', hoja);
+  if (modo === '--comprobar') {
+    const hay = fs.existsSync(destino) ? fs.readFileSync(destino, 'utf8') : null;
+    const igual = hay === esperado;
+    console.log(`${hoja.padEnd(20)} ${igual ? 'IGUAL' : 'DISTINTA'} · ${css.length} B copiados de ${fuente}@${sha.slice(0, 9)} + ${reglas.length} reglas`);
+    if (!igual) mal++;
+  } else {
+    fs.writeFileSync(destino, esperado);
+    console.log(`escrita ${hoja} · ${Buffer.byteLength(esperado)} B`);
+  }
+}
+if (modo === '--comprobar') {
+  // Control sembrado: una hoja con un byte cambiado TIENE que salir distinta.
+  const css = interior(deMain('public/precios.html'), 'precios');
+  const sembrada = css.replace('flex-wrap:wrap', 'flex-wrap:nowrap');
+  if (sembrada === css) { console.error('CIEGO: el sembrado no cambió nada'); process.exit(2); }
+  console.log('control sembrado (un byte cambiado): DISTINTA');
+  process.exit(mal ? 1 : 0);
+}

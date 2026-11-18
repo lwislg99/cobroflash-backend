@@ -66,8 +66,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // `fechaDeDevengo` no pasa la zona al tope.
     fichero: 'src/modules/invoicing/domain/devengoPorCaja.ts',
-    de: '  const tope = topeDeDevengo(factura.createdAt, zona);',
-    a: '  const tope = topeDeDevengo(factura.createdAt);',
+    de: '  const tope = topeDeDevengo(factura.createdAt, zona);\n  return factura.paidAt && factura.paidAt.getTime() <= tope.getTime()',
+    a: '  const tope = topeDeDevengo(factura.createdAt);\n  return factura.paidAt && factura.paidAt.getTime() <= tope.getTime()',
     cae: 'SCRUM-1445d · topeDeDevengo con zona',
   },
   {
@@ -199,6 +199,8 @@ const baseDelLibro = (facturas) => ({
   } },
   quote: { async findMany() { return []; } },
   albaran: { async findMany() { return []; } },
+  // SCRUM-1732d · invoice_payments: sin filas, cada factura se lee como hoy (100 % en paidAt, c.21926 §①).
+  invoicePayment: { async findMany() { return []; } },
 });
 const factura = (numero, createdAt, paidAt) => ({
   id: Number(numero.replace(/\D/g, '')) || 1, merchantId: M, number: numero, createdAt: new Date(createdAt),
@@ -207,7 +209,7 @@ const factura = (numero, createdAt, paidAt) => ({
 });
 async function numerosEn(facturas, año, t, zona) {
   const libro = await leerLibroRegistro(baseDelLibro(facturas), {
-    merchantId: M, ...rangoTrimestre(año, t, zona), criterioCaja: true, zona,
+    merchantId: M, ...rangoTrimestre(año, t, zona), criterioCaja: true, devengo: true, zona,
   });
   return libro.asientos.map((a) => a.numero);
 }

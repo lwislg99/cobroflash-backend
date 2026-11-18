@@ -1,0 +1,2072 @@
+{
+  "navegador": {
+    "ok": true,
+    "ruta": "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+    "quien": "Edge (Windows)"
+  },
+  "escenarios": {
+    "A-main-sin": {
+      "vistas": {
+        "landing": {
+          "capturas": {
+            "390": {
+              "fichero": "A-main-sin-landing-390.png",
+              "sha256": "555b6c07b97a72ffff42d098ff6fc0d21afe60454712665c74cd653fbd8191ad"
+            },
+            "1280": {
+              "fichero": "A-main-sin-landing-1280.png",
+              "sha256": "e69935f0c8ac3f8bbdad22f6b63ef7011d488e28574a476a513c1436eded9e5e"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": false,
+            "tachado": null,
+            "pantallaFirma": false,
+            "congeladas": 1
+          }
+        },
+        "precios": {
+          "capturas": {
+            "390": {
+              "fichero": "A-main-sin-precios-390.png",
+              "sha256": "44c0e61070ab0ff8a9ddc8904d752e15828e5e58a56d5fc12d1b96af4bb3d335"
+            },
+            "1280": {
+              "fichero": "A-main-sin-precios-1280.png",
+              "sha256": "2abb95ade1fc6e3a9ae7ad5fd4b50bdd8bcac7944448dc3d978b8b476ecfd868"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": false,
+            "tachado": false,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "privacidad": {
+          "capturas": {
+            "390": {
+              "fichero": "A-main-sin-privacidad-390.png",
+              "sha256": "21ef1b6de18b9a1c53a7c79912c767b07ec37fbd7e00e3060add9106414295a0"
+            },
+            "1280": {
+              "fichero": "A-main-sin-privacidad-1280.png",
+              "sha256": "709d7b9d4724b80c9942ff567d06040a15e8c1bf74b3a9c21349ae0c0504b512"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": null,
+            "tachado": null,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "terminos": {
+          "capturas": {
+            "390": {
+              "fichero": "A-main-sin-terminos-390.png",
+              "sha256": "b06c5a6e54bbf84b02a0cd1b77be944d5ac62ca1fc15fd3e42ea088a6f189bc7"
+            },
+            "1280": {
+              "fichero": "A-main-sin-terminos-1280.png",
+              "sha256": "d9b4f99b99c3a4735ebd0177569989cab1fc43efc1010b77b280e25f9b7f8453"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": null,
+            "tachado": null,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "legal-alcance": {
+          "capturas": {
+            "390": {
+              "fichero": "A-main-sin-legal-alcance-390.png",
+              "sha256": "88b6ee290e16820d2cca6325102b13b2aba5fe2eeba5cc0798e8c330d451106d"
+            },
+            "1280": {
+              "fichero": "A-main-sin-legal-alcance-1280.png",
+              "sha256": "78b2b58f2f78a11d12aa5d8c32c1287755d806b1f25ba2dfb77b1a1a16bd33de"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": null,
+            "tachado": null,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "landing-plazas": {
+          "capturas": {
+            "390": {
+              "fichero": "A-main-sin-landing-plazas-390.png",
+              "sha256": "1ac69b992630dabba78d22a1f1683af5e34d460bce8bb7ffd12cccd2b66c77a6"
+            },
+            "1280": {
+              "fichero": "A-main-sin-landing-plazas-1280.png",
+              "sha256": "fb66ee6898dc31225450919e485af33ad2ac302e5e644e30e9476db2b7715e14"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": true,
+            "tachado": null,
+            "pantallaFirma": false,
+            "congeladas": 1
+          }
+        },
+        "precios-plazas": {
+          "capturas": {
+            "390": {
+              "fichero": "A-main-sin-precios-plazas-390.png",
+              "sha256": "1500cedb27710220dd32206bb8a5ca11ffbe7ce9f3b5eec049b10e3260af9904"
+            },
+            "1280": {
+              "fichero": "A-main-sin-precios-plazas-1280.png",
+              "sha256": "556682aa33a85e3443c8f962c2d7347582f08725632faa3709258ad007ff99c0"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": true,
+            "tachado": true,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "landing-firma": {
+          "capturas": {
+            "390": {
+              "fichero": "A-main-sin-landing-firma-390.png",
+              "sha256": "8b7292e8c75ee3e6cdc5c6de9f8d6f4a0ad503d096aa06407723e3ea9f0c7ecf"
+            },
+            "1280": {
+              "fichero": "A-main-sin-landing-firma-1280.png",
+              "sha256": "9e9cbc0f2291be4aca6eadf8b7f4a8c2345964fd105582ca105a540046856ee4"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": false,
+            "tachado": null,
+            "pantallaFirma": true,
+            "congeladas": 1
+          }
+        }
+      },
+      "sembrado": {
+        "eventos": 0,
+        "porDirectiva": {}
+      },
+      "lecturasDelDoble": 0
+    },
+    "A2-main-sin": {
+      "vistas": {
+        "landing": {
+          "capturas": {
+            "390": {
+              "fichero": "A2-main-sin-landing-390.png",
+              "sha256": "555b6c07b97a72ffff42d098ff6fc0d21afe60454712665c74cd653fbd8191ad"
+            },
+            "1280": {
+              "fichero": "A2-main-sin-landing-1280.png",
+              "sha256": "e69935f0c8ac3f8bbdad22f6b63ef7011d488e28574a476a513c1436eded9e5e"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": false,
+            "tachado": null,
+            "pantallaFirma": false,
+            "congeladas": 1
+          }
+        },
+        "precios": {
+          "capturas": {
+            "390": {
+              "fichero": "A2-main-sin-precios-390.png",
+              "sha256": "44c0e61070ab0ff8a9ddc8904d752e15828e5e58a56d5fc12d1b96af4bb3d335"
+            },
+            "1280": {
+              "fichero": "A2-main-sin-precios-1280.png",
+              "sha256": "2abb95ade1fc6e3a9ae7ad5fd4b50bdd8bcac7944448dc3d978b8b476ecfd868"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": false,
+            "tachado": false,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "privacidad": {
+          "capturas": {
+            "390": {
+              "fichero": "A2-main-sin-privacidad-390.png",
+              "sha256": "21ef1b6de18b9a1c53a7c79912c767b07ec37fbd7e00e3060add9106414295a0"
+            },
+            "1280": {
+              "fichero": "A2-main-sin-privacidad-1280.png",
+              "sha256": "709d7b9d4724b80c9942ff567d06040a15e8c1bf74b3a9c21349ae0c0504b512"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": null,
+            "tachado": null,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "terminos": {
+          "capturas": {
+            "390": {
+              "fichero": "A2-main-sin-terminos-390.png",
+              "sha256": "b06c5a6e54bbf84b02a0cd1b77be944d5ac62ca1fc15fd3e42ea088a6f189bc7"
+            },
+            "1280": {
+              "fichero": "A2-main-sin-terminos-1280.png",
+              "sha256": "d9b4f99b99c3a4735ebd0177569989cab1fc43efc1010b77b280e25f9b7f8453"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": null,
+            "tachado": null,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "legal-alcance": {
+          "capturas": {
+            "390": {
+              "fichero": "A2-main-sin-legal-alcance-390.png",
+              "sha256": "88b6ee290e16820d2cca6325102b13b2aba5fe2eeba5cc0798e8c330d451106d"
+            },
+            "1280": {
+              "fichero": "A2-main-sin-legal-alcance-1280.png",
+              "sha256": "78b2b58f2f78a11d12aa5d8c32c1287755d806b1f25ba2dfb77b1a1a16bd33de"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": null,
+            "tachado": null,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "landing-plazas": {
+          "capturas": {
+            "390": {
+              "fichero": "A2-main-sin-landing-plazas-390.png",
+              "sha256": "1ac69b992630dabba78d22a1f1683af5e34d460bce8bb7ffd12cccd2b66c77a6"
+            },
+            "1280": {
+              "fichero": "A2-main-sin-landing-plazas-1280.png",
+              "sha256": "fb66ee6898dc31225450919e485af33ad2ac302e5e644e30e9476db2b7715e14"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": true,
+            "tachado": null,
+            "pantallaFirma": false,
+            "congeladas": 1
+          }
+        },
+        "precios-plazas": {
+          "capturas": {
+            "390": {
+              "fichero": "A2-main-sin-precios-plazas-390.png",
+              "sha256": "1500cedb27710220dd32206bb8a5ca11ffbe7ce9f3b5eec049b10e3260af9904"
+            },
+            "1280": {
+              "fichero": "A2-main-sin-precios-plazas-1280.png",
+              "sha256": "556682aa33a85e3443c8f962c2d7347582f08725632faa3709258ad007ff99c0"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": true,
+            "tachado": true,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "landing-firma": {
+          "capturas": {
+            "390": {
+              "fichero": "A2-main-sin-landing-firma-390.png",
+              "sha256": "8b7292e8c75ee3e6cdc5c6de9f8d6f4a0ad503d096aa06407723e3ea9f0c7ecf"
+            },
+            "1280": {
+              "fichero": "A2-main-sin-landing-firma-1280.png",
+              "sha256": "9e9cbc0f2291be4aca6eadf8b7f4a8c2345964fd105582ca105a540046856ee4"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": false,
+            "tachado": null,
+            "pantallaFirma": true,
+            "congeladas": 1
+          }
+        }
+      },
+      "sembrado": {
+        "eventos": 0,
+        "porDirectiva": {}
+      },
+      "lecturasDelDoble": 0
+    },
+    "B-main-aplicada": {
+      "vistas": {
+        "landing": {
+          "capturas": {
+            "390": {
+              "fichero": "B-main-aplicada-landing-390.png",
+              "sha256": "cfb15be28e43889599857d648a31635755e3e65729090010f69d9dcbedaf11ec"
+            },
+            "1280": {
+              "fichero": "B-main-aplicada-landing-1280.png",
+              "sha256": "822c5ebed860c821c9feb4956a9ceb94dc2ff1efd5a052da6b01500c3bf4a1c8"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 4,
+              "porDirectiva": {
+                "style-src-elem": 1,
+                "style-src-attr": 2,
+                "script-src-elem": 1
+              }
+            },
+            "1280": {
+              "eventos": 4,
+              "porDirectiva": {
+                "style-src-elem": 1,
+                "style-src-attr": 2,
+                "script-src-elem": 1
+              }
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": false,
+            "tachado": null,
+            "pantallaFirma": false,
+            "congeladas": 0
+          }
+        },
+        "precios": {
+          "capturas": {
+            "390": {
+              "fichero": "B-main-aplicada-precios-390.png",
+              "sha256": "d8aa676ae94c521e4d6378472da35ba8787a98d192603c009d1e66348655d42e"
+            },
+            "1280": {
+              "fichero": "B-main-aplicada-precios-1280.png",
+              "sha256": "db949399bef87cbabc2846e4609ad8d0a3f2c10a7403ae74955306c2a798e3d5"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 5,
+              "porDirectiva": {
+                "style-src-elem": 1,
+                "style-src-attr": 3,
+                "script-src-elem": 1
+              }
+            },
+            "1280": {
+              "eventos": 5,
+              "porDirectiva": {
+                "style-src-elem": 1,
+                "style-src-attr": 3,
+                "script-src-elem": 1
+              }
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": true,
+            "tachado": true,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "privacidad": {
+          "capturas": {
+            "390": {
+              "fichero": "B-main-aplicada-privacidad-390.png",
+              "sha256": "b9338c143055078b7b088e3be66addd5d62be61bfcf83b97bbaf15d985356696"
+            },
+            "1280": {
+              "fichero": "B-main-aplicada-privacidad-1280.png",
+              "sha256": "9b3899333eb6520fda37e4b7b5aacd035840f717f2c6109e8db066d5ab81f156"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 1,
+              "porDirectiva": {
+                "style-src-elem": 1
+              }
+            },
+            "1280": {
+              "eventos": 1,
+              "porDirectiva": {
+                "style-src-elem": 1
+              }
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": null,
+            "tachado": null,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "terminos": {
+          "capturas": {
+            "390": {
+              "fichero": "B-main-aplicada-terminos-390.png",
+              "sha256": "dab57c79470521c6ed5122c808cf3046a310025a46ea3a8f091cf8ca9c1db9ad"
+            },
+            "1280": {
+              "fichero": "B-main-aplicada-terminos-1280.png",
+              "sha256": "d5fc6b307c3d92be92eb6ad322e9ca375933ecb2020ce33a50fec730920290f9"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 1,
+              "porDirectiva": {
+                "style-src-elem": 1
+              }
+            },
+            "1280": {
+              "eventos": 1,
+              "porDirectiva": {
+                "style-src-elem": 1
+              }
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": null,
+            "tachado": null,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "legal-alcance": {
+          "capturas": {
+            "390": {
+              "fichero": "B-main-aplicada-legal-alcance-390.png",
+              "sha256": "fe8130fa64bf5f9e92c00c60514137c4d8fc791fa7dc7b2caa4f8180d4f54799"
+            },
+            "1280": {
+              "fichero": "B-main-aplicada-legal-alcance-1280.png",
+              "sha256": "2311ecd9b8e0fde6b448bddc1fcb589183bcb77ff9d75860e88a4ebfdb24fff0"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 1,
+              "porDirectiva": {
+                "style-src-elem": 1
+              }
+            },
+            "1280": {
+              "eventos": 1,
+              "porDirectiva": {
+                "style-src-elem": 1
+              }
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": null,
+            "tachado": null,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "landing-plazas": {
+          "capturas": {
+            "390": {
+              "fichero": "B-main-aplicada-landing-plazas-390.png",
+              "sha256": "cfb15be28e43889599857d648a31635755e3e65729090010f69d9dcbedaf11ec"
+            },
+            "1280": {
+              "fichero": "B-main-aplicada-landing-plazas-1280.png",
+              "sha256": "02e9775c021cbcdc5ff58aab6a9858b3a8ef4f9a3e72ac7d1fb7fb3047c46a56"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 4,
+              "porDirectiva": {
+                "style-src-elem": 1,
+                "style-src-attr": 2,
+                "script-src-elem": 1
+              }
+            },
+            "1280": {
+              "eventos": 4,
+              "porDirectiva": {
+                "style-src-elem": 1,
+                "style-src-attr": 2,
+                "script-src-elem": 1
+              }
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": false,
+            "tachado": null,
+            "pantallaFirma": false,
+            "congeladas": 0
+          }
+        },
+        "precios-plazas": {
+          "capturas": {
+            "390": {
+              "fichero": "B-main-aplicada-precios-plazas-390.png",
+              "sha256": "d8aa676ae94c521e4d6378472da35ba8787a98d192603c009d1e66348655d42e"
+            },
+            "1280": {
+              "fichero": "B-main-aplicada-precios-plazas-1280.png",
+              "sha256": "db949399bef87cbabc2846e4609ad8d0a3f2c10a7403ae74955306c2a798e3d5"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 5,
+              "porDirectiva": {
+                "style-src-elem": 1,
+                "style-src-attr": 3,
+                "script-src-elem": 1
+              }
+            },
+            "1280": {
+              "eventos": 5,
+              "porDirectiva": {
+                "style-src-elem": 1,
+                "style-src-attr": 3,
+                "script-src-elem": 1
+              }
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": true,
+            "tachado": true,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "landing-firma": {
+          "capturas": {
+            "390": {
+              "fichero": "B-main-aplicada-landing-firma-390.png",
+              "sha256": "cfb15be28e43889599857d648a31635755e3e65729090010f69d9dcbedaf11ec"
+            },
+            "1280": {
+              "fichero": "B-main-aplicada-landing-firma-1280.png",
+              "sha256": "02e9775c021cbcdc5ff58aab6a9858b3a8ef4f9a3e72ac7d1fb7fb3047c46a56"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 4,
+              "porDirectiva": {
+                "style-src-elem": 1,
+                "style-src-attr": 2,
+                "script-src-elem": 1
+              }
+            },
+            "1280": {
+              "eventos": 4,
+              "porDirectiva": {
+                "style-src-elem": 1,
+                "style-src-attr": 2,
+                "script-src-elem": 1
+              }
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": false,
+            "tachado": null,
+            "pantallaFirma": false,
+            "congeladas": 0
+          }
+        }
+      },
+      "sembrado": {
+        "eventos": 4,
+        "porDirectiva": {
+          "style-src-elem": 1,
+          "script-src-elem": 1,
+          "style-src-attr": 1,
+          "script-src-attr": 1
+        }
+      },
+      "lecturasDelDoble": 0
+    },
+    "C-rama-aplicada": {
+      "vistas": {
+        "landing": {
+          "capturas": {
+            "390": {
+              "fichero": "C-rama-aplicada-landing-390.png",
+              "sha256": "fc1d27ace495e28ad47e7562a307f98e3f1d50083d278aeb72aa0be36f83600d"
+            },
+            "1280": {
+              "fichero": "C-rama-aplicada-landing-1280.png",
+              "sha256": "b5b32d2cc78910136b2f26318172213822617019d62e46f3cca5997fb20b64f6"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 1,
+              "porDirectiva": {
+                "script-src-elem": 1
+              }
+            },
+            "1280": {
+              "eventos": 1,
+              "porDirectiva": {
+                "script-src-elem": 1
+              }
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": false,
+            "tachado": null,
+            "pantallaFirma": false,
+            "congeladas": 1
+          }
+        },
+        "precios": {
+          "capturas": {
+            "390": {
+              "fichero": "C-rama-aplicada-precios-390.png",
+              "sha256": "44c0e61070ab0ff8a9ddc8904d752e15828e5e58a56d5fc12d1b96af4bb3d335"
+            },
+            "1280": {
+              "fichero": "C-rama-aplicada-precios-1280.png",
+              "sha256": "2abb95ade1fc6e3a9ae7ad5fd4b50bdd8bcac7944448dc3d978b8b476ecfd868"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 1,
+              "porDirectiva": {
+                "script-src-elem": 1
+              }
+            },
+            "1280": {
+              "eventos": 1,
+              "porDirectiva": {
+                "script-src-elem": 1
+              }
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": false,
+            "tachado": false,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "privacidad": {
+          "capturas": {
+            "390": {
+              "fichero": "C-rama-aplicada-privacidad-390.png",
+              "sha256": "21ef1b6de18b9a1c53a7c79912c767b07ec37fbd7e00e3060add9106414295a0"
+            },
+            "1280": {
+              "fichero": "C-rama-aplicada-privacidad-1280.png",
+              "sha256": "709d7b9d4724b80c9942ff567d06040a15e8c1bf74b3a9c21349ae0c0504b512"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": null,
+            "tachado": null,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "terminos": {
+          "capturas": {
+            "390": {
+              "fichero": "C-rama-aplicada-terminos-390.png",
+              "sha256": "b06c5a6e54bbf84b02a0cd1b77be944d5ac62ca1fc15fd3e42ea088a6f189bc7"
+            },
+            "1280": {
+              "fichero": "C-rama-aplicada-terminos-1280.png",
+              "sha256": "d9b4f99b99c3a4735ebd0177569989cab1fc43efc1010b77b280e25f9b7f8453"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": null,
+            "tachado": null,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "legal-alcance": {
+          "capturas": {
+            "390": {
+              "fichero": "C-rama-aplicada-legal-alcance-390.png",
+              "sha256": "88b6ee290e16820d2cca6325102b13b2aba5fe2eeba5cc0798e8c330d451106d"
+            },
+            "1280": {
+              "fichero": "C-rama-aplicada-legal-alcance-1280.png",
+              "sha256": "78b2b58f2f78a11d12aa5d8c32c1287755d806b1f25ba2dfb77b1a1a16bd33de"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": null,
+            "tachado": null,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "landing-plazas": {
+          "capturas": {
+            "390": {
+              "fichero": "C-rama-aplicada-landing-plazas-390.png",
+              "sha256": "fc1d27ace495e28ad47e7562a307f98e3f1d50083d278aeb72aa0be36f83600d"
+            },
+            "1280": {
+              "fichero": "C-rama-aplicada-landing-plazas-1280.png",
+              "sha256": "b5b32d2cc78910136b2f26318172213822617019d62e46f3cca5997fb20b64f6"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 1,
+              "porDirectiva": {
+                "script-src-elem": 1
+              }
+            },
+            "1280": {
+              "eventos": 1,
+              "porDirectiva": {
+                "script-src-elem": 1
+              }
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": false,
+            "tachado": null,
+            "pantallaFirma": false,
+            "congeladas": 1
+          }
+        },
+        "precios-plazas": {
+          "capturas": {
+            "390": {
+              "fichero": "C-rama-aplicada-precios-plazas-390.png",
+              "sha256": "44c0e61070ab0ff8a9ddc8904d752e15828e5e58a56d5fc12d1b96af4bb3d335"
+            },
+            "1280": {
+              "fichero": "C-rama-aplicada-precios-plazas-1280.png",
+              "sha256": "2abb95ade1fc6e3a9ae7ad5fd4b50bdd8bcac7944448dc3d978b8b476ecfd868"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 1,
+              "porDirectiva": {
+                "script-src-elem": 1
+              }
+            },
+            "1280": {
+              "eventos": 1,
+              "porDirectiva": {
+                "script-src-elem": 1
+              }
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": false,
+            "tachado": false,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "landing-firma": {
+          "capturas": {
+            "390": {
+              "fichero": "C-rama-aplicada-landing-firma-390.png",
+              "sha256": "fc1d27ace495e28ad47e7562a307f98e3f1d50083d278aeb72aa0be36f83600d"
+            },
+            "1280": {
+              "fichero": "C-rama-aplicada-landing-firma-1280.png",
+              "sha256": "b5b32d2cc78910136b2f26318172213822617019d62e46f3cca5997fb20b64f6"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 1,
+              "porDirectiva": {
+                "script-src-elem": 1
+              }
+            },
+            "1280": {
+              "eventos": 1,
+              "porDirectiva": {
+                "script-src-elem": 1
+              }
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": false,
+            "tachado": null,
+            "pantallaFirma": false,
+            "congeladas": 1
+          }
+        }
+      },
+      "sembrado": {
+        "eventos": 4,
+        "porDirectiva": {
+          "style-src-elem": 1,
+          "script-src-elem": 1,
+          "style-src-attr": 1,
+          "script-src-attr": 1
+        }
+      },
+      "lecturasDelDoble": 0
+    },
+    "I-rama-aislada": {
+      "vistas": {
+        "landing": {
+          "capturas": {
+            "390": {
+              "fichero": "I-rama-aislada-landing-390.png",
+              "sha256": "555b6c07b97a72ffff42d098ff6fc0d21afe60454712665c74cd653fbd8191ad"
+            },
+            "1280": {
+              "fichero": "I-rama-aislada-landing-1280.png",
+              "sha256": "e69935f0c8ac3f8bbdad22f6b63ef7011d488e28574a476a513c1436eded9e5e"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": false,
+            "tachado": null,
+            "pantallaFirma": false,
+            "congeladas": 1
+          }
+        },
+        "precios": {
+          "capturas": {
+            "390": {
+              "fichero": "I-rama-aislada-precios-390.png",
+              "sha256": "44c0e61070ab0ff8a9ddc8904d752e15828e5e58a56d5fc12d1b96af4bb3d335"
+            },
+            "1280": {
+              "fichero": "I-rama-aislada-precios-1280.png",
+              "sha256": "2abb95ade1fc6e3a9ae7ad5fd4b50bdd8bcac7944448dc3d978b8b476ecfd868"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": false,
+            "tachado": false,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "privacidad": {
+          "capturas": {
+            "390": {
+              "fichero": "I-rama-aislada-privacidad-390.png",
+              "sha256": "21ef1b6de18b9a1c53a7c79912c767b07ec37fbd7e00e3060add9106414295a0"
+            },
+            "1280": {
+              "fichero": "I-rama-aislada-privacidad-1280.png",
+              "sha256": "709d7b9d4724b80c9942ff567d06040a15e8c1bf74b3a9c21349ae0c0504b512"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": null,
+            "tachado": null,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "terminos": {
+          "capturas": {
+            "390": {
+              "fichero": "I-rama-aislada-terminos-390.png",
+              "sha256": "b06c5a6e54bbf84b02a0cd1b77be944d5ac62ca1fc15fd3e42ea088a6f189bc7"
+            },
+            "1280": {
+              "fichero": "I-rama-aislada-terminos-1280.png",
+              "sha256": "d9b4f99b99c3a4735ebd0177569989cab1fc43efc1010b77b280e25f9b7f8453"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": null,
+            "tachado": null,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "legal-alcance": {
+          "capturas": {
+            "390": {
+              "fichero": "I-rama-aislada-legal-alcance-390.png",
+              "sha256": "88b6ee290e16820d2cca6325102b13b2aba5fe2eeba5cc0798e8c330d451106d"
+            },
+            "1280": {
+              "fichero": "I-rama-aislada-legal-alcance-1280.png",
+              "sha256": "78b2b58f2f78a11d12aa5d8c32c1287755d806b1f25ba2dfb77b1a1a16bd33de"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": null,
+            "tachado": null,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "landing-plazas": {
+          "capturas": {
+            "390": {
+              "fichero": "I-rama-aislada-landing-plazas-390.png",
+              "sha256": "1ac69b992630dabba78d22a1f1683af5e34d460bce8bb7ffd12cccd2b66c77a6"
+            },
+            "1280": {
+              "fichero": "I-rama-aislada-landing-plazas-1280.png",
+              "sha256": "fb66ee6898dc31225450919e485af33ad2ac302e5e644e30e9476db2b7715e14"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": true,
+            "tachado": null,
+            "pantallaFirma": false,
+            "congeladas": 1
+          }
+        },
+        "precios-plazas": {
+          "capturas": {
+            "390": {
+              "fichero": "I-rama-aislada-precios-plazas-390.png",
+              "sha256": "1500cedb27710220dd32206bb8a5ca11ffbe7ce9f3b5eec049b10e3260af9904"
+            },
+            "1280": {
+              "fichero": "I-rama-aislada-precios-plazas-1280.png",
+              "sha256": "556682aa33a85e3443c8f962c2d7347582f08725632faa3709258ad007ff99c0"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": true,
+            "tachado": true,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "landing-firma": {
+          "capturas": {
+            "390": {
+              "fichero": "I-rama-aislada-landing-firma-390.png",
+              "sha256": "8b7292e8c75ee3e6cdc5c6de9f8d6f4a0ad503d096aa06407723e3ea9f0c7ecf"
+            },
+            "1280": {
+              "fichero": "I-rama-aislada-landing-firma-1280.png",
+              "sha256": "9e9cbc0f2291be4aca6eadf8b7f4a8c2345964fd105582ca105a540046856ee4"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "aplicada",
+          "estado": {
+            "banner": false,
+            "tachado": null,
+            "pantallaFirma": true,
+            "congeladas": 1
+          }
+        }
+      },
+      "sembrado": {
+        "eventos": 2,
+        "porDirectiva": {
+          "style-src-elem": 1,
+          "style-src-attr": 1
+        }
+      },
+      "lecturasDelDoble": 0
+    },
+    "D-rama-sin": {
+      "vistas": {
+        "landing": {
+          "capturas": {
+            "390": {
+              "fichero": "D-rama-sin-landing-390.png",
+              "sha256": "555b6c07b97a72ffff42d098ff6fc0d21afe60454712665c74cd653fbd8191ad"
+            },
+            "1280": {
+              "fichero": "D-rama-sin-landing-1280.png",
+              "sha256": "e69935f0c8ac3f8bbdad22f6b63ef7011d488e28574a476a513c1436eded9e5e"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": false,
+            "tachado": null,
+            "pantallaFirma": false,
+            "congeladas": 1
+          }
+        },
+        "precios": {
+          "capturas": {
+            "390": {
+              "fichero": "D-rama-sin-precios-390.png",
+              "sha256": "44c0e61070ab0ff8a9ddc8904d752e15828e5e58a56d5fc12d1b96af4bb3d335"
+            },
+            "1280": {
+              "fichero": "D-rama-sin-precios-1280.png",
+              "sha256": "2abb95ade1fc6e3a9ae7ad5fd4b50bdd8bcac7944448dc3d978b8b476ecfd868"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": false,
+            "tachado": false,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "privacidad": {
+          "capturas": {
+            "390": {
+              "fichero": "D-rama-sin-privacidad-390.png",
+              "sha256": "21ef1b6de18b9a1c53a7c79912c767b07ec37fbd7e00e3060add9106414295a0"
+            },
+            "1280": {
+              "fichero": "D-rama-sin-privacidad-1280.png",
+              "sha256": "709d7b9d4724b80c9942ff567d06040a15e8c1bf74b3a9c21349ae0c0504b512"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": null,
+            "tachado": null,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "terminos": {
+          "capturas": {
+            "390": {
+              "fichero": "D-rama-sin-terminos-390.png",
+              "sha256": "b06c5a6e54bbf84b02a0cd1b77be944d5ac62ca1fc15fd3e42ea088a6f189bc7"
+            },
+            "1280": {
+              "fichero": "D-rama-sin-terminos-1280.png",
+              "sha256": "d9b4f99b99c3a4735ebd0177569989cab1fc43efc1010b77b280e25f9b7f8453"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": null,
+            "tachado": null,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "legal-alcance": {
+          "capturas": {
+            "390": {
+              "fichero": "D-rama-sin-legal-alcance-390.png",
+              "sha256": "88b6ee290e16820d2cca6325102b13b2aba5fe2eeba5cc0798e8c330d451106d"
+            },
+            "1280": {
+              "fichero": "D-rama-sin-legal-alcance-1280.png",
+              "sha256": "78b2b58f2f78a11d12aa5d8c32c1287755d806b1f25ba2dfb77b1a1a16bd33de"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": null,
+            "tachado": null,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "landing-plazas": {
+          "capturas": {
+            "390": {
+              "fichero": "D-rama-sin-landing-plazas-390.png",
+              "sha256": "1ac69b992630dabba78d22a1f1683af5e34d460bce8bb7ffd12cccd2b66c77a6"
+            },
+            "1280": {
+              "fichero": "D-rama-sin-landing-plazas-1280.png",
+              "sha256": "fb66ee6898dc31225450919e485af33ad2ac302e5e644e30e9476db2b7715e14"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": true,
+            "tachado": null,
+            "pantallaFirma": false,
+            "congeladas": 1
+          }
+        },
+        "precios-plazas": {
+          "capturas": {
+            "390": {
+              "fichero": "D-rama-sin-precios-plazas-390.png",
+              "sha256": "1500cedb27710220dd32206bb8a5ca11ffbe7ce9f3b5eec049b10e3260af9904"
+            },
+            "1280": {
+              "fichero": "D-rama-sin-precios-plazas-1280.png",
+              "sha256": "556682aa33a85e3443c8f962c2d7347582f08725632faa3709258ad007ff99c0"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": true,
+            "tachado": true,
+            "pantallaFirma": null,
+            "congeladas": 0
+          }
+        },
+        "landing-firma": {
+          "capturas": {
+            "390": {
+              "fichero": "D-rama-sin-landing-firma-390.png",
+              "sha256": "8b7292e8c75ee3e6cdc5c6de9f8d6f4a0ad503d096aa06407723e3ea9f0c7ecf"
+            },
+            "1280": {
+              "fichero": "D-rama-sin-landing-firma-1280.png",
+              "sha256": "9e9cbc0f2291be4aca6eadf8b7f4a8c2345964fd105582ca105a540046856ee4"
+            }
+          },
+          "csp": {
+            "390": {
+              "eventos": 0,
+              "porDirectiva": {}
+            },
+            "1280": {
+              "eventos": 0,
+              "porDirectiva": {}
+            }
+          },
+          "status": 200,
+          "politica": "ninguna",
+          "estado": {
+            "banner": false,
+            "tachado": null,
+            "pantallaFirma": true,
+            "congeladas": 1
+          }
+        }
+      },
+      "sembrado": {
+        "eventos": 0,
+        "porDirectiva": {}
+      },
+      "lecturasDelDoble": 0
+    }
+  },
+  "version": "Edg/157.0.4341.60",
+  "comparacionVisual": [
+    {
+      "par": "A-main-sin → A2-main-sin",
+      "vista": "landing",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → A2-main-sin",
+      "vista": "landing",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → A2-main-sin",
+      "vista": "precios",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → A2-main-sin",
+      "vista": "precios",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → A2-main-sin",
+      "vista": "privacidad",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → A2-main-sin",
+      "vista": "privacidad",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → A2-main-sin",
+      "vista": "terminos",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → A2-main-sin",
+      "vista": "terminos",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → A2-main-sin",
+      "vista": "legal-alcance",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → A2-main-sin",
+      "vista": "legal-alcance",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → A2-main-sin",
+      "vista": "landing-plazas",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → A2-main-sin",
+      "vista": "landing-plazas",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → A2-main-sin",
+      "vista": "precios-plazas",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → A2-main-sin",
+      "vista": "precios-plazas",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → A2-main-sin",
+      "vista": "landing-firma",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → A2-main-sin",
+      "vista": "landing-firma",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → I-rama-aislada",
+      "vista": "landing",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → I-rama-aislada",
+      "vista": "landing",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → I-rama-aislada",
+      "vista": "precios",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → I-rama-aislada",
+      "vista": "precios",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → I-rama-aislada",
+      "vista": "privacidad",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → I-rama-aislada",
+      "vista": "privacidad",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → I-rama-aislada",
+      "vista": "terminos",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → I-rama-aislada",
+      "vista": "terminos",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → I-rama-aislada",
+      "vista": "legal-alcance",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → I-rama-aislada",
+      "vista": "legal-alcance",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → I-rama-aislada",
+      "vista": "landing-plazas",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → I-rama-aislada",
+      "vista": "landing-plazas",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → I-rama-aislada",
+      "vista": "precios-plazas",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → I-rama-aislada",
+      "vista": "precios-plazas",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → I-rama-aislada",
+      "vista": "landing-firma",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → I-rama-aislada",
+      "vista": "landing-firma",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "vista": "landing",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "vista": "landing",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "vista": "precios",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "vista": "precios",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "vista": "privacidad",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "vista": "privacidad",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "vista": "terminos",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "vista": "terminos",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "vista": "legal-alcance",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "vista": "legal-alcance",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "vista": "landing-plazas",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "vista": "landing-plazas",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "vista": "precios-plazas",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "vista": "precios-plazas",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "vista": "landing-firma",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → D-rama-sin",
+      "vista": "landing-firma",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "vista": "landing",
+      "ancho": 390,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "vista": "landing",
+      "ancho": 1280,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "vista": "precios",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "vista": "precios",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "vista": "privacidad",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "vista": "privacidad",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "vista": "terminos",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "vista": "terminos",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "vista": "legal-alcance",
+      "ancho": 390,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "vista": "legal-alcance",
+      "ancho": 1280,
+      "identicas": true
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "vista": "landing-plazas",
+      "ancho": 390,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "vista": "landing-plazas",
+      "ancho": 1280,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "vista": "precios-plazas",
+      "ancho": 390,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "vista": "precios-plazas",
+      "ancho": 1280,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "vista": "landing-firma",
+      "ancho": 390,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → C-rama-aplicada",
+      "vista": "landing-firma",
+      "ancho": 1280,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → B-main-aplicada",
+      "vista": "landing",
+      "ancho": 390,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → B-main-aplicada",
+      "vista": "landing",
+      "ancho": 1280,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → B-main-aplicada",
+      "vista": "precios",
+      "ancho": 390,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → B-main-aplicada",
+      "vista": "precios",
+      "ancho": 1280,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → B-main-aplicada",
+      "vista": "privacidad",
+      "ancho": 390,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → B-main-aplicada",
+      "vista": "privacidad",
+      "ancho": 1280,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → B-main-aplicada",
+      "vista": "terminos",
+      "ancho": 390,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → B-main-aplicada",
+      "vista": "terminos",
+      "ancho": 1280,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → B-main-aplicada",
+      "vista": "legal-alcance",
+      "ancho": 390,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → B-main-aplicada",
+      "vista": "legal-alcance",
+      "ancho": 1280,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → B-main-aplicada",
+      "vista": "landing-plazas",
+      "ancho": 390,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → B-main-aplicada",
+      "vista": "landing-plazas",
+      "ancho": 1280,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → B-main-aplicada",
+      "vista": "precios-plazas",
+      "ancho": 390,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → B-main-aplicada",
+      "vista": "precios-plazas",
+      "ancho": 1280,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → B-main-aplicada",
+      "vista": "landing-firma",
+      "ancho": 390,
+      "identicas": false
+    },
+    {
+      "par": "A-main-sin → B-main-aplicada",
+      "vista": "landing-firma",
+      "ancho": 1280,
+      "identicas": false
+    }
+  ],
+  "recursosQueFaltan": []
+}

@@ -116,3 +116,102 @@ export function fechaDeDevengo(
   const tope = topeDeDevengo(factura.createdAt, zona);
   return factura.paidAt && factura.paidAt.getTime() <= tope.getTime() ? factura.paidAt : tope;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-1732 PR-2 (U′, c.22012 + ✅ c.22014; Q3–Q6 de c.22007) · EL DEVENGO POR TRAMOS
+//
+// Con caja el 303 devenga «por los importes efectivamente percibidos» (LIVA 163 terdecies.Uno): cada
+// fila viva de `invoice_payments` es un tramo en su `fechaCobro`, y lo no cobrado devenga en el tope
+// del 31-dic X+1. Esto es SOLO del 303: el libro de expedidas anota la factura entera en su periodo de
+// expedición (RIVA 69.5 y 63.3) y le completa los cobros (61 decies.1).
+
+/** Una fila de `invoice_payments` tal como la lee el libro. */
+export interface FilaDeCobro {
+  id: number;
+  importe: unknown;
+  fechaCobro: Date;
+  fechaOrigen?: string | null;
+  metodo?: string | null;
+  tipo: string;
+  anulaId?: number | null;
+}
+
+/**
+ * Q4 · las filas que CUENTAN: ni las de `anulacion` ni las que una anulación anula. Por fecha de
+ * cobro y, a igualdad, por id (el orden en que se apuntaron).
+ */
+export function filasVivas(filas: readonly FilaDeCobro[]): FilaDeCobro[] {
+  const anuladas = new Set(filas.filter((f) => f.tipo === 'anulacion' && typeof f.anulaId === 'number').map((f) => f.anulaId));
+  return filas.filter((f) => f.tipo !== 'anulacion' && !anuladas.has(f.id))
+    .sort((a, b) => a.fechaCobro.getTime() - b.fechaCobro.getTime() || a.id - b.id);
+}
+
+/** Céntimos enteros, o `null` si el importe no se puede leer (familia SCRUM-271: nunca 0). */
+export function centimosDe(v: unknown): number | null {
+  if (v === null || v === undefined || v === '' || Array.isArray(v)) return null;
+  const n = Number(typeof v === 'object' ? String(v) : v);
+  return Number.isFinite(n) ? Math.round(n * 100) : null;
+}
+
+export interface TramoDeDevengo { fecha: Date; centimos: number }
+
+export interface DevengoPorTramos {
+  /** Suman SIEMPRE `totalCentimos`: el último es el resto, en el tope si no se cobró antes. */
+  tramos: TramoDeDevengo[];
+  totalCentimos: number;
+  /** Q5 · lo cobrado por encima del total. No devenga y no lanza: se cuenta. */
+  cobradoDeMasCentimos: number;
+}
+
+/**
+ * Los tramos de devengo de UNA factura con caja, o `null` = «la regla de una fecha» de siempre
+ * (`fechaDeDevengo`, el 100 % en un solo instante): sin filas (c.21926 §①, como hoy), con línea S2
+ * (entera por emisión, SCRUM-1730 i) o con un total que no es un importe positivo legible (la R1 no
+ * se toca; un total ilegible no se prorratea).
+ *
+ * Una factura CON filas, aunque todas estén anuladas, se lee por la tabla: es la verdad fiscal
+ * (c.21926 V1). Un cobro posterior al tope no vuelve a devengar: el tope ya se llevó el resto.
+ * Q6: la garantía retenida sin liberar es ese resto (pregunta 49 del asesor, sin respuesta).
+ */
+export function tramosDeDevengo(
+  factura: FacturaParaDevengo & { total: unknown },
+  filas: readonly FilaDeCobro[] | undefined,
+  zona?: string,
+): DevengoPorTramos | null {
+  if (!filas || filas.length === 0) return null;
+  if (tieneLineasS2(factura.lines)) return null;
+  const totalCentimos = centimosDe(factura.total);
+  if (totalCentimos === null || totalCentimos <= 0) return null;
+  const tope = topeDeDevengo(factura.createdAt, zona);
+  const tramos: TramoDeDevengo[] = [];
+  let acumulado = 0;
+  let cobrado = 0;
+  for (const f of filasVivas(filas)) {
+    const c = centimosDe(f.importe);
+    if (c === null || c <= 0) throw new Error(`[devengoPorCaja] fila ${f.id} de invoice_payments con un importe que no se puede leer`);
+    cobrado += c;
+    if (f.fechaCobro.getTime() > tope.getTime()) continue;
+    const d = Math.min(c, totalCentimos - acumulado);
+    if (d > 0) { tramos.push({ fecha: f.fechaCobro, centimos: d }); acumulado += d; }
+  }
+  if (totalCentimos - acumulado > 0) tramos.push({ fecha: tope, centimos: totalCentimos - acumulado });
+  return { tramos, totalCentimos, cobradoDeMasCentimos: Math.max(0, cobrado - totalCentimos) };
+}
+
+/**
+ * Reparte `valor` (euros) entre los tramos en proporción a sus céntimos. Cada parte se redondea al
+ * céntimo con el signo aparte (A10, SCRUM-624d: `Math.round` sube el medio céntimo negativo) y el
+ * ÚLTIMO tramo es el resto (c.21926): las partes suman `valor` al céntimo.
+ */
+export function prorratear(valor: number, tramos: readonly { centimos: number }[], totalCentimos: number): number[] {
+  const signo = valor < 0 ? -1 : 1;
+  const abs = Math.round(Math.abs(valor) * 100);
+  let hecho = 0;
+  const partes: number[] = [];
+  for (let i = 0; i < tramos.length; i++) {
+    const p = i === tramos.length - 1 ? abs - hecho : Math.round((abs * tramos[i].centimos) / totalCentimos);
+    hecho += p;
+    partes.push((signo * p) / 100);
+  }
+  return partes;
+}

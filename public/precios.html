@@ -8,58 +8,18 @@
   <link rel="manifest" href="/manifest.json"/>
   <link rel="stylesheet" href="/fonts/inter.css"/>
   <link rel="stylesheet" href="/tokens.css"/>
-  <style>
-    *{box-sizing:border-box}
-    body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);
-         min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:24px 16px 48px}
-    a{color:var(--brand-700)}
-    .top{width:100%;max-width:560px;display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
-    .logo{font-size:20px;font-weight:800;text-decoration:none;color:var(--ink)}
-    .logo span{color:var(--brand)}
-    h1{font-size:26px;margin:0 0 6px;text-align:center;letter-spacing:-.02em}
-    .sub{margin:0 0 24px;color:var(--body);font-size:15px;text-align:center;max-width:480px}
-
-    .founding{width:100%;max-width:560px;background:linear-gradient(135deg,var(--brand) 0%,var(--logo-cyan) 100%);
-              color:var(--brand-ink);border-radius:var(--r-lg);padding:16px 20px;margin-bottom:14px;
-              display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;justify-content:space-between;
-              box-shadow:var(--shadow-md)}
-    .founding strong{font-size:15px}
-    .founding .seats{font-size:13px;font-weight:700;background:rgba(255,255,255,.35);border-radius:var(--r-full);
-                     padding:4px 12px;white-space:nowrap}
-
-    .card{width:100%;max-width:560px;background:var(--surface);border:1px solid var(--border);
-          border-radius:var(--r-xl);box-shadow:var(--shadow-md);padding:32px 28px}
-    .plan-name{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px}
-    .price-line{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-    .price-old{font-size:22px;color:var(--muted);text-decoration:line-through;font-weight:600}
-    .price{font-size:44px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
-    .per{font-size:15px;color:var(--muted)}
-    .annual{margin:6px 0 0;font-size:13.5px;color:var(--body)}
-    .fee{margin:14px 0 0;font-size:13.5px;color:var(--body);background:var(--brand-tint);color:var(--brand-tint-ink);
-         border-radius:var(--r-md);padding:10px 14px;font-weight:600}
-    ul{list-style:none;margin:22px 0;padding:0;display:flex;flex-direction:column;gap:11px}
-    li{display:flex;gap:10px;font-size:14.5px;color:var(--body)}
-    li::before{content:"✓";color:var(--brand);font-weight:800;flex:none}
-    /* SCRUM-368 · A1: 18.66px (era 16px) para cumplir AA por la vía de texto grande. */
-    .cta{display:block;width:100%;text-align:center;background:var(--brand);color:#fff;font-weight:700;
-         font-size:18.66px;padding:15px 18px;border-radius:var(--r-full);text-decoration:none;
-         box-shadow:var(--shadow-btn);transition:background .15s}
-    .cta:hover{background:var(--brand-700)}
-    .trial-note{margin:12px 0 0;text-align:center;font-size:12.5px;color:var(--muted)}
-    .legal{margin-top:26px;font-size:12px;color:var(--muted);text-align:center}
-    .legal a{color:var(--muted)}
-  </style>
+  <link rel="stylesheet" href="/precios.css"/>
 </head>
 <body>
   <div class="top">
     <a class="logo" href="/">Ya<span>Qu</span></a>
-    <a href="/register.html" style="font-size:13.5px;font-weight:600">Empezar gratis</a>
+    <a href="/register.html" class="precios-empezar">Empezar gratis</a>
   </div>
 
   <h1>Un plan. Todo incluido.</h1>
   <p class="sub">Presupuesta en 30 segundos y envíalo por WhatsApp — tu cliente firma desde el móvil.</p>
 
-  <div class="founding" id="founding-banner" style="display:none">
+  <div class="founding precios-oculto" id="founding-banner">
     <div>
       <strong>Oferta founding:</strong> 9,90 €/mes <u>de por vida</u>, mientras mantengas la suscripción activa, para los 20 primeros.
     </div>
@@ -69,7 +29,7 @@
   <div class="card">
     <p class="plan-name">YaQu Pro</p>
     <div class="price-line">
-      <span class="price-old" id="price-old" style="display:none">19,90 €</span>
+      <span class="price-old precios-oculto" id="price-old">19,90 €</span>
       <span class="price" id="price">19,90 €</span>
       <span class="per">/mes</span>
     </div>
@@ -100,7 +60,7 @@
     // Contador REAL de plazas founding (V0-4): si quedan, se muestra el banner y el 29 tachado.
     fetch('/public/founding-status').then(function (r) { return r.json(); }).then(function (f) {
       if (!f || typeof f.seatsLeft !== 'number' || f.seatsLeft <= 0) return;
-      document.getElementById('founding-banner').style.display = 'flex';
+      document.getElementById('founding-banner').classList.remove('precios-oculto');
       // SCRUM-330 · la ESCASEZ solo se pinta si alguien ha comprado DE VERDAD. La OFERTA (precio,
       // tachado, CTA) se sigue mostrando igual — es otra decisión y no es de este ticket.
       // «Quedan 20 de 20» no comunica escasez: comunica que no ha comprado nadie. Y con el dato
@@ -110,7 +70,7 @@
       document.getElementById('founding-seats').textContent = pintarPlazas
         ? 'Quedan ' + f.seatsLeft + ' de ' + f.seatsTotal + ' plazas'
         : '';
-      document.getElementById('price-old').style.display = '';
+      document.getElementById('price-old').classList.remove('precios-oculto');
       document.getElementById('price').textContent = '9,90 €';
       document.getElementById('cta').textContent = 'Quiero mi plaza founding';
     }).catch(function () {});
