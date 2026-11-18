@@ -70,3 +70,49 @@ No se cierra (A13): queda el PR-2 (J1) y la UI de los textos.
 **Apéndice · relevo `jv-j2d2` · el veredicto de mudez regenerado** (2026-11-18 ~05:25Z, hora de GitHub; sobre `origin/main` `65b2e3b2a03a4a5cb6119b9b7e33465b89494769`, mergeado en esta rama). El obligatorio de `67638f7ce` (run 44240157181) dio 13.778 tests y **1 fallo**: `SCRUM-1395b · ①` en `tests/scrum719-el-suelo-de-los-doce.test.mjs`, «el veredicto de mudez no cubre el árbol de hoy». Reproducido en local tras el merge (37 = 36 + 1): la única ficha caducada era `scrum601-copy-del-documento-vs-flag.test.mjs` · «el fichero cambió desde la medida». La caducó **el re-anclaje de `scrum601` de esta misma rama** (c.22001), no el merge con main: corrijo aquí la premisa del encargo, que decía «caduca con el merge». Regenerado con el guion de la casa, `npm run censo:mudez -- --escribir`: midió 1 de 132, VIVO, `_guard-texto.mjs` comprobado idéntico. El diff de `tests/_veredicto-mudez.json` es una línea: la huella de `scrum601` pasa de `19d77490afa78381` a `3672b49d67d06312` y la clase sigue en VIVO. Después, `scrum719` 37/37. El merge de main (7 commits: 1743 y 1445f) entró sin conflictos y sin ningún fichero en común con la rama (27 de main, 29 de la rama, intersección vacía). Tipos con cliente Prisma propio en el temporal: salida 0; control con el compartido: salida 2, 10 errores, todos de `invoicePayment`. El cliente compartido no cambió (sha256 del `index.js` igual antes y después). Lo que no vio `jv-j2d0`: tras re-anclar `scrum601`, su tanda dirigida no incluía `scrum719`, y un test que se toca caduca su ficha en el veredicto guardado. La comprobación ya existía y lo cazó, pero en CI, no en local. **Sin correr:** la suite entera (la corrió `jv-j2d0`, 15/15, antes del segundo merge; CI la corre), ninguna base y yaqu.app.
 
 A9: comprobación → `tests/scrum719-el-suelo-de-los-doce.test.mjs`
+
+## J1 · SCRUM-1732d · PR-2: el libro con criterio de caja según U′ y el 303 por tramos
+
+**Medido contra:** `origin/main` = `bcff9d8b1ea465938ef797c17548cb5217de02bc` · 2026-11-18T15:26:17Z (hora de GitHub; sesión J1 `jv-j1fd`, por encargo del orquestador `cobroflash-backend-ee`)
+
+A9: comprobación → `scripts/meta-guard-mutaciones.mjs`
+
+**Diseño:** U′ (c.22012, ✅ del fundador en c.22014) + Q3–Q6 de c.22007; lectura legal de J5 en c.22011 (tramo 1264v de `docs/master/SCRUM-1264.md`). Construir hoy: confirmado por el fundador («sí», publicado por el orquestador tras c.22014).
+
+**Qué cambia (solo lectores; ni emisión, ni sellado, ni esquema):**
+* `libroRegistro.repo.ts` · el libro de expedidas va por fecha de EXPEDICIÓN también con caja (RIVA 69.5): un asiento por factura, entero (63.3), con `cobros: [{ fecha, importe, metodo, origen }]` leído de `invoice_payments` sin anuladas ni anulaciones (61 decies.1; Q4). Con caja el libro declara además `cobrosSinMedio` (Q3) y `cobradoDeMas` (Q5). Sin caja: `cobros: []` y nada más.
+* `leerPorCaja` alimenta SOLO al libro que pide `devengo: true`, que es el del 303 (`modelo303.repo.ts`). Candidatas: las tres tandas de siempre más las facturas con un tramo de `invoice_payments` en el rango. Cada factura con filas devenga por TRAMOS (`tramosDeDevengo` en `devengoPorCaja.ts`): cada fila viva en su `fechaCobro` hasta lo que falte para el total, y el resto en el tope del 31-dic X+1. Los importes del asiento del 303 son la prorrata de `porTipo` (y `suplidosPorTipo`) de los tramos del trimestre, con el último tramo como resto (c.21926). Sin filas, con S2 o con un total que no es positivo legible: la regla de una fecha de siempre (c.21926 §①; la R1 no se toca).
+* Un cliente sin `invoicePayment` con criterio de caja hace LANZAR al libro: «no pude leer los cobros» no se convierte en «no hubo cobros».
+* **Tercer consumidor de `leerPorCaja`, no nombrado en c.22012:** las evidencias (`src/modules/fiscal/evidencias/paquete.repo.ts:50`). Su libro es el de expedidas (`soloFacturas`) y sigue la expedición como `librosAeat`; su 303 interno es `leerModelo303` y va por tramos. Lo acordó el orquestador antes de construir.
+* Q6: la garantía retenida sin liberar devenga en el tope y su liberación posterior al tope no vuelve a devengar. Pregunta 49 del asesor sin respuesta: `DEFECTO_CONOCIDO.garantiaRetenidaAlTope` en `tests/scrum1732d-libro-por-tramos.test.mjs`.
+
+**Tests:** `tests/scrum1732d-libro-por-tramos.test.mjs`, 10 casos (dos tramos T1/T2, sin filas, criterio general, sin medio, anulación, cobrado de más, retenida al tope, zona de Madrid frente a UTC, redondeo en tres tramos, y el control de que lanza sin `invoice_payments`). Rojo primero: 10/10 en rojo contra el código de main y 10/10 en verde después. En `tests/scrum1732-cobro-parcial-defecto-declarado.test.mjs` se RETIRA el hueco (c) (`libroCienDeGolpe`): su caso exige ahora el arreglo (950 en T1 y 50 en T4 en el 303, y la factura entera en el libro de expedidas del T1). En `scrum1055b`, `scrum1445d`, `scrum1730` y `scrum294b` la base en memoria gana `invoicePayment` (sin filas) y sus llamadas con caja piden `devengo: true`, porque lo que miden es el devengo. Ninguna aserción cambia de valor. Los nueve ficheros de caja: 75/75.
+Mutaciones: catálogo → tests/scrum1732d-libro-por-tramos.test.mjs
+Mutaciones: catálogo → tests/scrum1732-cobro-parcial-defecto-declarado.test.mjs
+Las 11 tumban con `correr` + `aplicarUna` del runner de la casa.
+
+**Mis errores, contados:** (1) mi driver de mutaciones le pasó a `correr` la ruta con `tests/` delante y las 12 salieron CIEGAS, también (a) y (b) de main. Lo cazó la línea base del runner, que no muta si el test no sale en verde limpio. (2) Dos mutaciones salieron MUDAS: «sin tope de lo cobrado» (mis dos cobros caían en el mismo trimestre, y el resto del último tramo lo tapaba: el segundo cobro va ahora al T2) y «el 303 sin `devengo`» en el test de la opción C (su medida no pasa por `leerModelo303`; la retiré y la cubre el test nuevo). (3) Un heredoc con acentos reventó al escribir el parche (cicatriz conocida); no dejó nada escrito.
+
+**Sin correr / sin medir:** ninguna base real, ni staging ni yaqu.app (`INVOICING_ES_ENABLED` OFF: sin víctima). La pantalla del libro (`libroRegistro.routes.ts`) no pasa el criterio y no cambia: **no muestra** `cobros` ni los avisos, y el aviso de «tramo sin medio» es texto nuevo que espera firma (Q3). `librosAeat` no pinta los cobros en sus filas: el literal no dice dónde (c.22011). LIVA 164/167 y RIVA 71, sin leer (J5).
+
+No se cierra (A13).
+
+### J1 · SCRUM-1732d · relevo: los rojos del obligatorio de ce969687b (run 44336229482)
+
+**Medido contra:** `origin/main` = `34939a6ad7c0ad7abc4f06e34e92b43fd519400b` · 2026-11-18T16:06:49Z (hora de GitHub; sesión J1 `jv-j1fh`, relevo de `jv-j1fd`, por encargo del orquestador `cobroflash-backend-ee`)
+
+A9: comprobación → `tests/scrum757-la-declaracion-que-nadie-lee.test.mjs`
+
+Seis rojos del obligatorio, tres causas, todas en tests (ni `src/` ni guards tocados):
+- `scrum1415`, `scrum757`, `scrum745`, `scrum765`: en `tests/scrum1732d-libro-por-tramos.test.mjs` el nombre del caso ① vivía en una constante (`CASO_A`), y la usaban el `test()` y dos `cae`. El lector de declaraciones solo lee literales y el censo de nombres construidos solo acepta nombres escritos: ahora los tres son el literal. Visto en rojo en local con el fichero de ce969687b (4 de 4) y en verde con el arreglo.
+- `scrum836` · SCRUM-1321 (ancla ambigua): la declaración «`fechaDeDevengo` no pasa la zona al tope» de `tests/scrum1445d-bordes-fiscales-en-la-zona.test.mjs` anclaba a una línea que el PR-2 repite en `devengoPorTramos` (`devengoPorCaja.ts`, líneas 116 y 185). El ancla lleva ahora la línea siguiente de `fechaDeDevengo`, y sigue tumbando su caso.
+- `scrum810` (suelo contra la base de fusión): `tests/scrum1732-cobro-parcial-defecto-declarado.test.mjs` bajaba de 7 a 6 declaraciones al retirar «se retira la declaración de (c)», que murió con la declaración. No se apunta en `RETIRADAS_A_PROPOSITO`: se repone la vigilancia con una mutación del ARREGLO (el libro de expedidas vuelve a anotar por cobro → (c) deja de salir ARREGLADO). Vuelve a 7.
+
+Mutaciones: catálogo → tests/scrum1732d-libro-por-tramos.test.mjs
+Mutaciones: catálogo → tests/scrum1732-cobro-parcial-defecto-declarado.test.mjs
+Mutaciones: catálogo → tests/scrum1445d-bordes-fiscales-en-la-zona.test.mjs
+Las 20 de los tres ficheros (5 + 7 + 8) tumban su caso con `correr` + `aplicarUna` del runner de la casa; ninguna muda ni ciega. Censo `--solo-censo`: 1.236 declaraciones, 0 ilegibles.
+
+**Mis errores, contados:** el encargo me nombraba solo el fichero 1732d, y `scrum836`/`scrum810` no estaban en mi tanda dirigida: los vi al leer el log del job, no corriendo. Mi primer parche del ancla de 1445d escribió un salto de línea real en vez de `\n` dentro del literal (lo vi en el diff antes de correr nada).
+
+**Sin correr:** la suite entera (la corre CI). El job «guards de navegador» (`guard:escalera-por-estado`) cae también en #3201: no es de este PR y no se ha tocado.
