@@ -81,7 +81,13 @@ async function renderJobsView(container) {
     // `quotesListView` y `customersView`— por si la pieza no ha cargado; el que manda es el de
     // `atajoNuevo.TEXTOS` y `etiquetar` lo pisa un renglón más abajo.
     bNuevo.textContent = 'Nuevo trabajo';
-    bNuevo.addEventListener('click', () => abrirModalTrabajoNuevo(() => renderJobsView(container)));
+    // SCRUM-1679 · el botón del modal dice «Abrir trabajo», y al crear se quedaba en la lista. El
+    // modal entrega el Trabajo ya creado (`alCrear(job)`, jobNuevoModal.js): con él se abre SU
+    // ficha. Sin él —o sin router— se repinta la lista, que es lo que se hacía antes.
+    bNuevo.addEventListener('click', () => abrirModalTrabajoNuevo((job) => {
+      if (job && job.id != null && window.renderAppView) window.renderAppView('jobs-detail', { jobId: job.id });
+      else renderJobsView(container);
+    }));
     // SCRUM-769 · el atajo «N», por el MISMO mecanismo que las otras cuatro (SCRUM-599): nada se
     // reimplementa aquí. Este botón encaja en el patrón porque ABRE una creación —el modal de
     // Trabajo nuevo— en vez de confirmarla.
@@ -1026,6 +1032,19 @@ function jobRow(j, container, equipo) {
   nombre.className = 'jobs-fila-cliente';
   nombre.textContent = j.customer?.name || 'Cliente';
   tdCliente.appendChild(nombre);
+  // SCRUM-1679 · QUÉ trabajo es, cuando no tiene nombre propio: la tarea («Qué hay que hacer»),
+  // que es lo que el alta pide y lo que el operario ya ve en su parte. Sin esto, dos trabajos del
+  // mismo cliente eran dos tarjetas iguales. Con nombre propio manda el nombre propio (917c) y la
+  // tarea no se repite. Va por `textContent`: es texto del profesional. El recorte a dos líneas es
+  // del CSS; `title` deja leerla entera sin abrir la ficha.
+  const tarea = !j.tituloPropio && typeof j.queHayQueHacer === 'string' ? j.queHayQueHacer.trim() : '';
+  if (tarea) {
+    const q = document.createElement('div');
+    q.className = 'jobs-fila-tarea';
+    q.textContent = tarea;
+    q.title = tarea;
+    tdCliente.appendChild(q);
+  }
   const piezas = [];
   if (j.tituloPropio) {
     const t = document.createElement('span');
@@ -1051,6 +1070,16 @@ function jobRow(j, container, equipo) {
       linea.appendChild(p);
     });
     tdCliente.appendChild(linea);
+  }
+  // SCRUM-1679 · DÓNDE es. La dirección del trabajo ya viaja en la lista; se pinta al final de la
+  // celda (quién · qué · quién lo hace · dónde) y sólo si existe.
+  const direccion = typeof j.direccion === 'string' ? j.direccion.trim() : '';
+  if (direccion) {
+    const d = document.createElement('div');
+    d.className = 'jobs-fila-direccion';
+    d.textContent = direccion;
+    d.title = direccion;
+    tdCliente.appendChild(d);
   }
   tr.appendChild(tdCliente);
 
@@ -1102,6 +1131,9 @@ function jobRow(j, container, equipo) {
   const puedeFacturar = typeof window.facturaFiscalDisponible === 'function' && window.facturaFiscalDisponible();
   const cobraAqui = puedeFacturar && j.status === 'terminado' && j.remaining && j.remaining.amount > 0;
   const siguiente = typeof jobNextAction === 'function' ? jobNextAction(j, !isTecnico) : null;
+  // SCRUM-1739 · ¿la rellena de esta fila es la acción de la ESCALERA? Entonces va PRIMERA (abajo, al
+  // montar la celda). «Abrir parte» ya iba primera porque se monta fuera de la escalera.
+  let rellenaEnEscalera = cobraAqui;
   if (siguiente && !cobraAqui) {
     const bSiguiente = document.createElement('button');
     // ── SCRUM-917c · SECUNDARIA: UNA SOLA PRIMARIA EN LA LISTA, Y ES LA DEL DINERO ─────────────
@@ -1110,6 +1142,23 @@ function jobRow(j, container, equipo) {
     // mismo ejecutor—; cambia cuánto pesa. La primaria se reserva para «💰 Cobrar el resto», que
     // es el momento del dinero (AB1).
     bSiguiente.className = 'btn-secondary btn-sm';
+    // ── SCRUM-1739 · …SALVO «▶ Empezar»: COMO MUCHO UNA RELLENA POR TARJETA, EL PASO DE HOY ────
+    // Regla reconciliada (SCRUM-1739 c.22030, por la delegación de SCRUM-1656 c.21978). La letra de
+    // 917c (prototipo aprobado, c.15876) ya no describía la lista desde que N1 (SCRUM-1700) puso
+    // «Abrir parte» rellena en EN CURSO: el operario veía su paso de hoy relleno en una tarjeta y
+    // con contorno en la de al lado. Lo que queda: como mucho UNA rellena por tarjeta, y es el paso
+    // que hace avanzar el trabajo HOY → «▶ Empezar» en el agendado PARA HOY, «Abrir parte» en el
+    // en curso, «💰 Cobrar el resto» en el terminado con importe.
+    // «Agendar» NO: sigue secundaria, que es exactamente el caso de los doce verdes de arriba. Y el
+    // «▶ Empezar» de un agendado para OTRO día, tampoco: no es el paso de hoy, y así el riesgo
+    // declarado en c.22030 —un día con muchos agendados pinta varios— queda acotado al grupo
+    // «📅 Hoy». «Hoy» lo decide `grupoDeTrabajo`, la MISMA regla que la cabecera del grupo y que la
+    // cifra «Para hoy»: una fila rellena fuera del grupo «Hoy» sería una segunda definición de hoy.
+    // Va en su propia asignación, con el literal entero, para que el censo de SCRUM-412 lo VEA.
+    if (siguiente.kind === 'empezar' && grupoDeTrabajo(j, new Date()) === 'hoy') {
+      bSiguiente.className = 'btn-primary btn-sm';
+      rellenaEnEscalera = true;
+    }
     bSiguiente.textContent = siguiente.label;
     // ── SCRUM-823 · «Agendar» y «▶ Empezar» SE EJECUTAN AQUÍ, no llevan al detalle ─────────
     //
@@ -1296,10 +1345,24 @@ function jobRow(j, container, equipo) {
     e.stopPropagation();
     if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: j.id });
   });
-  celda.appendChild(bDetalle);
-  celda.appendChild(caja);
-
-  if (menu.length && typeof overflowMenu === 'function') caja.appendChild(overflowMenu(menu));
+  // ── SCRUM-1739 · LA RELLENA VA PRIMERA, EN EL DOM Y NO SOLO A LA VISTA ───────────────────────
+  // Medido en yaqu.app el 16-nov-2026 (recorrido H6 del operario): en EN CURSO «Abrir parte» abría
+  // la tarjeta, y en el agendado «▶ Empezar» iba detrás de «Ver detalle». Cuando la rellena es la
+  // acción de la escalera, su caja se monta DELANTE de «Ver detalle». Se cambia el orden del DOM y
+  // no un `order` de CSS: el foco del teclado sigue el orden que se ve (SCRUM-1562).
+  // El «⋯» sigue CERRANDO la fila (SCRUM-1562f): en ese caso cuelga de la celda, detrás de «Ver
+  // detalle», y no de la caja. Los guards lo buscan por la FILA (`tr .overflow-trigger`) y la
+  // escalera sigue siendo `.jobs-acciones > button`: ninguno de los dos cambia.
+  const tresPuntos = menu.length && typeof overflowMenu === 'function' ? overflowMenu(menu) : null;
+  if (rellenaEnEscalera) {
+    celda.appendChild(caja);
+    celda.appendChild(bDetalle);
+    if (tresPuntos) celda.appendChild(tresPuntos);
+  } else {
+    celda.appendChild(bDetalle);
+    celda.appendChild(caja);
+    if (tresPuntos) caja.appendChild(tresPuntos);
+  }
   tr.appendChild(tdAcc);
 
   // La fila abre el Trabajo. Los controles de dentro NO disparan la navegación (guard por
