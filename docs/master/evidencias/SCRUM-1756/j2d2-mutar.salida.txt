@@ -1,0 +1,7 @@
+base limpia: pasados 6 · caídos 0
+MUERE (la caza) · src/modules/billing/app/routes/receipt.routes.ts · SCRUM-1756c · /recibo pagado con valoración: 0 <script> en línea y el guion de su página enlazado
+MUERE (la caza) · src/modules/system/app/routes/customerPortal.routes.ts · SCRUM-1756c · /cliente con un enlace que no vale (404): 0 <script> en línea y el guion enlazado
+MUERE (la caza) · src/modules/system/app/routes/customerPortal.routes.ts · SCRUM-1756c · /cliente: la URL de la solicitud va en data-url, no en código
+MUERE (la caza) · src/modules/billing/app/routes/pagoNavegador.ts · SCRUM-1756c · el guion servido es constante, conoce recibo y portal, y se sirve como antes
+CONTROL inocua: MUDA (bien)
+VEREDICTO: 4/4 cazadas · 0 no

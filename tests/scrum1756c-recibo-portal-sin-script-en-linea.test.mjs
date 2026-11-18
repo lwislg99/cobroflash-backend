@@ -141,6 +141,8 @@ test('SCRUM-1756c · control positivo sembrado: el contador ve un <script> en l�
   assert.equal(guionesEnLinea('<script>alert(1)</script><script src="/pay/js/pago.js" data-pagina="portal"></script>').length, 1,
     'el contador no ve el sembrado o cuenta el enlazado: está CIEGO');
   assert.deepEqual(ANTES.map((h) => guionesEnLinea(h).length), [1, 1, 1], 'sobre el HTML de antes tiene que contar los tres');
+  // Positivo del token que los casos de abajo niegan: en el HTML de antes, la variable global SÍ estaba.
+  assert.ok(ANTES[2].includes('PF_REQUEST_URL'), 'el fragmento de antes no lleva la variable global: la negación de abajo no se distingue de un vacío');
 });
 
 function sinGuionEnLinea(cuerpo, pagina, suelo) {
