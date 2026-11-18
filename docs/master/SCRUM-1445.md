@@ -312,3 +312,43 @@ Decisión del fundador: SCRUM-1445 c.21896 («arreglarlo en el código, sin toca
 **NO HECHO:** el DEFECTO_CONOCIDO ② de `scrum1055b` sigue declarado (no lo he mirado); el año del XML VeriFactu (`verifactu.service.ts`, camino de emisión) sigue sin su test DEFECTO_CONOCIDO; `libroRegistro.routes.ts` sin decidir. **Para Luis:** S1 `reports.routes.ts` (rangoTrimestre sin zona), `cron.ts`, `exports.routes.ts`, métricas y gastos; S0 el censo de `new Date(a, b, …)`. yaqu.app no mirado: sin comercio con zona y con facturación, no se ve nada.
 
 **Error propio:** el primer `test()` de los lectores llevaba el título construido con `${l.nombre}`, y lo cazó `scrum1415` en la suite. Ya lo dice A10 («Una prohibición sin mecanismo es una frase»): aquí el mecanismo existía y funcionó; el error fue no correr antes los guards que leen `tests/`.
+
+## SCRUM-1445g · 18-nov-2026 · J1 (jv-j1fc) · los dos rojos informativos que dejó 1445f en main: el trinquete de zona en scrum295 y el MUDO de scrum1065b
+
+**Medido contra:** `origin/main` = `65b2e3b2a03a4a5cb6119b9b7e33465b89494769` · 2026-11-18T05:09:19Z
+
+A9: aviso → cicatriz J1 «Empujé 1445f con el 303 contra Postgres visto en local como SKIP (sin `LIBRO_PG_URL`), y lo cazó en CI el trinquete de zona, un job no obligatorio que no paró el merge» — no se pudo comprobar: el job que lo caza no es obligatorio, y hacerlo obligatorio es un workflow (S5 y fundador)
+
+Mutaciones: `scrum1065b` 10 declaradas, 10 vivas (con `aplicarUna` y `correr`; antes, 9 vivas y 1 MUDA). `scrum295` (gateado por `LIBRO_PG_URL`, sin declaración: el meta-guard del CI no tiene base y lo contaría como pasado) a mano en `dist/`: el 303 con la zona forzada a UTC y a Canarias, las 2 caen; antes del arreglo, la de UTC salía VERDE.
+
+Los dos jobs de #3202 (run 44238444994) que no son obligatorios, y por eso #3202 entró en main: «La tanda entera en dos zonas extremas» y «Cada guard cae con la mutación que declara». Se arreglan los TESTS; ni el trinquete ni el meta-guard se tocan (regla 41), y el producto no está mal.
+
+### (b) `tests/scrum1065b-borrador-130.test.mjs` · MUDO
+
+- **Cuál:** la #1, `desde: new Date(año, 0, 1, 0, 0, 0, 0)` → `(t - 1) * 3`, con `cae` «cifras a mano». Medido: limpia 9/9; mutada, «cifras a mano» PASA y cae otro («cambio de año»).
+- **Por qué:** «cifras a mano» va por `leerBorrador130`, que desde 1445f pasa la zona del comercio, así que `rangoAcumulado` toma la rama CON zona (`rangoDeMesesEn`). La línea mutada es la rama SIN zona («la del proceso, como hasta hoy»): sigue existiendo y la usa `construirBorrador130` sin zona, pero el test que la declaraba ya no pasaba por ella.
+- **Arreglo, en el test:** «cifras a mano» comprueba además que, con el comercio en la zona del proceso, las dos ramas dan el MISMO acumulado (`r.desde`/`r.hasta` del lector = `rangoAcumulado(2026, t)` sin zona). La declaración no cambia. 10/10 vivas; 9/9 en Kiritimati y en Midway.
+
+### (a) `tests/scrum295-modelo-303-postgres.test.mjs` · el trinquete de zona
+
+Banco DESECHABLE, sin Postgres en la máquina: PGlite 0.5.8 + pglite-socket 0.2.11 (`maxConnections: 64`) en loopback, base `yaqu_libro_test`, esquema de `migrate diff --from-empty` (34 `CREATE TABLE`, 34 `model`), PGlite nuevo por zona, `TZ` en el entorno del hijo (el prefijo `TZ=` de Git Bash no llega a node: lo comprobé con una sonda).
+
+| pasada | UTC | Kiritimati (+14) | Midway (−11) |
+|---|---|---|---|
+| test de `HEAD` (antes) | 1/1 | 1/1 | **0/1**: «la factura del PRIMER instante del trimestre … se ha caído entre dos trimestres» |
+| arreglado | 1/1 | 1/1 | 1/1 |
+| arreglado, con el 303 forzado a UTC en `dist/` | **0/1** | — | — |
+| arreglado, con el 303 forzado a Canarias en `dist/` | **0/1** | — | — |
+
+**Dos defectos, los dos del TEST:**
+1. Los bordes del 2T iban en hora LOCAL del proceso y los comercios se sembraban sin `timezone`. Desde 1445f el 303 lee la zona del comercio (sin ella, UTC), así que en Midway el borde de entrada y el ms anterior entran los dos. Arreglo ①: los dos comercios con `timezone: 'Europe/Madrid'` y los bordes escritos como instantes (`2026-03-31T22:00:00.000Z`, `2026-06-30T21:59:59.999Z`).
+2. **Los bordes eran simétricos.** FUERA-DESPUES llevaba las mismas líneas que BORDE-INI (base 100 al 21 %): un trimestre corrido hacia delante perdía una y ganaba la otra, y la 07, la 04 y la 27 cuadraban igual. Por eso el test de `HEAD` salía VERDE en Kiritimati, y por eso la primera mutación (303 a UTC con el comercio en Madrid) salió MUDA con el arreglo ① ya puesto. Arreglo: las dos de fuera con importes propios (3.000 y 5.000).
+
+② El producto no está mal: con zona, el 303 calcula en la del comercio y sin ella en UTC, como decidió el fundador (c.21896). ③ `CENSADAS` no se toca.
+
+### Lo que se ha corrido
+
+- Los dos ficheros, en UTC, Kiritimati y Midway (tablas de arriba). Guards de registro y de tests: en la entrega. Suite por tramos: en la entrega, con los tramos que no corran nombrados.
+- `src/` no se toca: ni build con tipos ni yaqu.app (no hay nada que ver allí).
+
+**Error propio:** mi primera pasada en las dos zonas fue con `TZ=Pacific/… node` desde Git Bash, y salió 9/9 en las dos sin haber cambiado de zona (el proceso seguía en Europe/London). Lo cacé al imprimir `new Date(2026, 0, 1)`; la lección ya está escrita en el trinquete (`scripts/_trinquete-de-zona.mjs`, «LA SONDA»), y por eso el lanzador del banco imprime la zona que ve el hijo en cada línea.
