@@ -129,6 +129,7 @@ Capturas, en `docs/master/evidencias/SCRUM-1739/`: `antes-` y `despues-lista-adm
 
 **Rama:** `scrum-1739b-reglas-42-cara-trabajos`. Sólo registro y evidencia; no toca `src/` ni `public/`.
 **Medido contra:** `origin/main` = `25b6c8f9c7edaf4eb7ded049abdd59d75a22974a` · 2026-11-18T11:12:37Z (cabecera `Date:` de `gh api -i zen`). `yaqu.app/dashboard/js/jobsView.js` servía el blob `7f55a66bace5582fc2246df779f9815b0e619929`, el de `origin/main` (descarga a fichero + `git hash-object --no-filters`).
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
 
 Lo que arriba quedó «PENDIENTE de la regla 42»: hasta hoy la cuenta QA no tenía ningún trabajo agendado y los dos «▶ Empezar» medidos eran simulados en el navegador (`SIMULA_AGENDADO=1`). Esta pasada va SIN `LOCAL_DIR` y SIN `SIMULA_AGENDADO`: código de producción pintando un dato que el servidor tiene.
 

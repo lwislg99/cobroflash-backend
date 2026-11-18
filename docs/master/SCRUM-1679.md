@@ -68,6 +68,7 @@ El primer rojo de esta rama (`scrum1233g`, la acción de banco) se arregló sin 
 
 **Rama:** `scrum-1739b-reglas-42-cara-trabajos` (sirve también a la regla 42 de SCRUM-1739: el mismo trabajo). Sólo registro y evidencia; no toca `src/` ni `public/`.
 **Medido contra:** `origin/main` = `25b6c8f9c7edaf4eb7ded049abdd59d75a22974a` (merge de #3214) · 2026-11-18T11:12:37Z (cabecera `Date:` de `gh api -i zen`).
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
 
 **El despliegue, cotejado antes de medir** (descarga a fichero + `git hash-object --no-filters`, contra `git rev-parse origin/main:<ruta>`):
 
@@ -110,5 +111,7 @@ La aceptación literal del ticket en Jira NO la ha leído esta sesión (no tiene
 - El aterrizaje a 1280 (es el mismo código a cualquier ancho; no se creó un segundo trabajo sólo para fotografiarlo).
 - Un teléfono de verdad y Safari: sigue como arriba.
 - El operario: la pasada es con la cookie de administrador.
+
+**Lo que salió mal en esta pasada (A9):** las dos secciones nuevas (ésta y la 1739b) se escribieron con su ancla «Medido contra» y sin la línea `A9:` que cada ancla exige. Lo cazó `npm run guards:entrada` antes del push (`tests/scrum1294-a9-leccion-en-a10.test.mjs`, 2 hallazgos); no llegó a CI.
 
 **La acción se revisó antes de correrla** (la dejó escrita y sin correr la sesión anterior). Dos cambios: comprueba que el cliente de la prueba ESTÁ en el desplegable antes de escribir nada (si no, para sin crear), y lee la tarjeta en la misma pasada aunque la ficha diera rojo, porque para entonces el trabajo ya existe.
