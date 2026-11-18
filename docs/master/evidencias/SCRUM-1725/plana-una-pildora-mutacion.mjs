@@ -5,7 +5,7 @@
 // línea que cuelga la píldora, leída con `mutacionesDeclaradas` (el lector por AST del meta-guard).
 // El meta-guard ya comprueba que tumba el caso de 1725g; este guion mide ADEMÁS los otros dos:
 //
-//   · tests/scrum816-la-lista-no-miente.test.mjs   (caso 5, «ESTADO y FECHA…»)
+//   · tests/scrum816-la-lista-no-miente.test.mjs   (caso 5, «ESTADO lleva UNA sola píldora…»)
 //   · scripts/guard-lista-trabajos-917.mjs         (B.3)
 //
 // Mide la BASE sin mutar, inyecta, vuelve a medir y RESTAURA el fichero comprobándolo byte a byte.

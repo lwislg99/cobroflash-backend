@@ -127,7 +127,7 @@ test('SCRUM-816 · los albaranes de la lista viajan EN LOTE, no una consulta por
 
 // ═══ ② LO QUE LA PANTALLA DEJA DE REPETIR, Y LO QUE NO PIERDE ═══════════════════════════════
 
-test('SCRUM-816 · ESTADO y FECHA son una sola columna, y el cobro NO se pierde', () => {
+test('SCRUM-816 · ESTADO lleva UNA sola píldora, FECHA sigue en su columna, y el cobro NO se pierde', () => {
   const codigo = soloEjecutable(LISTA, { almohadillaEsComentario: false });
 
   // ⚠️ `<th[^>]*>` Y NO `<th>`: un extractor con el `>` pegado deja de casar en cuanto alguien le
@@ -139,8 +139,8 @@ test('SCRUM-816 · ESTADO y FECHA son una sola columna, y el cobro NO se pierde'
   // lista es PLANA (veredicto del fundador, c.22073; P1 firmada en c.22076), no hay grupo que diga
   // el estado y lo dice la fila. Lo que SIGUE VIVO de la intención de 816 es lo que se exige ahora:
   // la celda lleva UNA sola píldora, la de `jobStatusMeta`, y nunca dos apiladas. El título del
-  // caso no se ha tocado (queda fuera de la autorización): «una sola columna» se lee hoy como «una
-  // sola píldora».
+  // caso decía «ESTADO y FECHA son una sola columna»; se renombró a lo que ahora comprueba (solo el
+  // título, ninguna exigencia: autorizado en SCRUM-1725 c.22084).
   assert.ok(
     /<th[^>]*>Estado<\/th>/.test(codigo),
     '🔴 ha desaparecido la columna ESTADO. La lista es plana (SCRUM-1725g): sin cabeceras de grupo,\n' +
