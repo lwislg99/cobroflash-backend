@@ -2072,3 +2072,22 @@ GO del camino de emisión: SCRUM-665 c.21182, punto 1. Decisiones de Javier: c.2
 **Error del relevo:** `d20f0657a` registró dos cifras sin fecha en comentarios de tests, y el empujón de entonces no habría pasado. Lo cazó `scrum737` en el tramo 13, no la dirigida.
 
 A9: comprobación → `tests/scrum737-cifra-con-arbol-y-hora.test.mjs`
+
+# APÉNDICE (O) · SCRUM-665e · 18-nov-2026 · J1 (jv-j1fe) · main mergeado tras #3203 (PR #3201 DIRTY), dos derivados recalculados. EMPUJADA
+
+**Medido contra:** `origin/main` = `bcff9d8b1ea465938ef797c17548cb5217de02bc` · 2026-11-18T15:17:21Z (hora de GitHub; mergeado en la rama, sin rebase ni force)
+
+Encargo del orquestador J. No toca el diseño de 665e ni el camino de emisión: solo el merge y sus derivados. Antes del merge, la rama estaba en `63f4dd83d`, que incluye los dos commits de jv-j1f8 posteriores al apéndice N (`13c5bf2ae`: anclas tras el merge de `35153debf`; `63f4dd83d`: `deriva-prod.sql` con `pdf_sha256`).
+
+- **Conflictos: 2, los previstos.**
+  - `docs/legal/AUDITORIA_CAMINO_EMISION.md`, filas 4-8. Los dos lados solo se diferenciaban en dos anclas, y eso se comprobó con un diff tras sustituir las anclas. Se recalcularon sobre el árbol fusionado: `prisma/schema.prisma:949-955` (`vf_hash` está en la 949 y `vf_prev_hash` en la 955; en medio, `pdf_sha256` en la 954) y `:1884` (`model VfSubmission`). Main decía 949-950 y 1879, y la rama, 941-947 y 1830.
+  - `docs/sql/deriva-prod.sql`: se regeneró con las funciones exportadas de `scripts/generar-sql-deriva.mjs` (`paresEsperados`, `generarSql` y `motivoParaNoEncoger`), usando el datamodel de un cliente de Prisma propio en tmp generado con el `schema.prisma` de este árbol. Resultado: 537 columnas en 35 tablas, que son las 536 de main más `invoices.pdf_sha256`. Contra el texto de main, DIFIERE antes y COINCIDE después. El fichero no se editó a mano.
+- El cliente compartido no se tocó: la huella sha256 de su `index.js` es `4a0afec7d1f4f2ae` antes y después.
+- `tsc` con tipos da salida 0 contra el cliente de tmp. El control contra el compartido da 4 errores, los 4 de `pdfSha256`.
+- **Dirigida** (`scrum222`, `scrum523d`, `scrum525d`, `scrum719`): 75 tests, 72 pasan, 1 falla y 2 saltan (gateados por `QA_DB_TEST`). El que falla es `scrum222`, y su diff es exactamente la línea `pdf_sha256` y el recuento 537/536: lo compara con el cliente COMPARTIDO, que no trae la columna. Lo sustituye la comprobación equivalente de arriba. En CI el cliente se regenera.
+- **Sin suite entera:** el encargo la deja al CI. jv-j1f8 corrió los 15 tramos el 18-nov, antes de este merge.
+- **Esperado en el obligatorio:** ROJO por `scrum55`, `scrum824` y A12.1+A12.4 (`regenerate-pdf`), que son del parche S1 `42655871`. No se tocan.
+
+**Error propio:** para dejar el `.sql` en la versión de main antes de regenerarlo probé dos órdenes de shell, primero un `>` y luego `git checkout --theirs`. El hook las paró las dos porque truncaban o descartaban un fichero en conflicto. Lo resolví leyendo la base desde `git show` a un fichero de tmp, sin la llave `allow-destructivo`.
+
+A9: comprobación → `.claude/hooks/guard-dangerous.sh`
