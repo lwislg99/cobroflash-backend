@@ -168,6 +168,11 @@ const BORRADOS_DECLARADOS = [
   // reescribe entera (borrar + crear) en la misma transaccion que la columna. `trialExpired`
   // —«tus datos siguen aqui»— sigue siendo cierto.
   'src/modules/jobs/domain/asignacionDeTrabajo.ts::jobAssignee.deleteMany#1',
+  // SCRUM-1076d · CONTESTADA: NO se dispara al vencer la prueba ni por inactividad. Es el botón
+  // «Volver a pendiente» del calendario de plazos (`marcarPlazo` con estado `pendiente`, por
+  // `PUT /admin/plazos-fiscales/:modelo/:ejercicio/:periodo`): borra la marca «llevado a mi
+  // asesor» de UNA fila del propio comercio. Sin cron ni trial de por medio.
+  'src/modules/fiscal/plazos/plazos.repo.ts::fiscalPlazoEstado.deleteMany#1',
   'src/modules/auth/domain/auth.service.ts::authSession.deleteMany#1',
   'src/modules/expenses/domain/expenses.service.ts::expense.delete#1',
   'src/modules/maintenance/domain/maintenance.service.ts::quote.delete#1',

@@ -132,6 +132,9 @@ const TABLES = [
   // SCRUM-1732: una fila por dinero recibido y atribuido a una factura (lo que ENTRÓ, no lo pedido).
   // Append-only y de ella sale el devengo con criterio de caja: no se puede regenerar de `charges`.
   'invoice_payments',
+  // SCRUM-1076d: qué plazos ha marcado el profesional como «llevado a mi asesor». Lo marca él y no
+  // se deduce de nada, así que restaurar sin ella lo devolvería todo a «Pendiente».
+  'fiscal_plazo_estado',
 ];
 
 async function logicalDump(prisma) {

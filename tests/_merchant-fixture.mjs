@@ -121,7 +121,7 @@ const MODELOS_POR_MERCHANT = [
   // los tres, en el mismo sitio que en `ORDEN_BORRADO_MERCHANT` (borradoMerchant.ts).
   'invoicePayment',
   'albaran', 'maintenancePlan', 'invoice', 'charge', 'job', 'quote', 'quoteRequest',
-  'botSession', 'quoteTemplate', 'expense', 'product', 'provider', 'authSession',
+  'botSession', 'quoteTemplate', 'expense', 'fiscalPlazoEstado', 'product', 'provider', 'authSession',
   'teamMember', 'customer',
 ];
 

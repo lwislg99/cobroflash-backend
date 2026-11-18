@@ -101,7 +101,7 @@ export const ORDEN_BORRADO_MERCHANT: readonly string[] = [
   // SCRUM-1732 · `invoicePayment` antes que `invoice` y `charge`: cuelga de los dos con FK RESTRICT.
   'invoicePayment', 'albaran', 'maintenancePlan', 'invoice', 'charge', 'job', 'quote', 'quoteRequest',
   // Catálogo y operativa: nadie cuelga de ellos a estas alturas.
-  'quoteTemplate', 'expense', 'product', 'provider', 'authSession', 'teamMember',
+  'quoteTemplate', 'expense', 'fiscalPlazoEstado', 'product', 'provider', 'authSession', 'teamMember',
   // El cliente al FINAL: media casa le apunta.
   'customer',
 ];
