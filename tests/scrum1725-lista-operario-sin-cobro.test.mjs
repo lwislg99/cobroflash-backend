@@ -56,7 +56,10 @@ async function montar(rol) {
     filtrosCobro: nodos.filter((n) => n.tagName === 'BUTTON' && /^(Pendiente|Parcial|Pagado) · /.test(texto(n))).length,
     lineasDe: nodos.filter((n) => tiene(n, 'jobs-importe-de')).length,
     salvedad: nodos.filter((n) => tiene(n, 'jobs-grupo-salvedad')).length,
-    cabeceraTerminados: texto(nodos.find((n) => tiene(n, 'jobs-grupo-titulo') && texto(n).includes('Terminados')) || { hijos: [] }),
+    // SCRUM-1725g · la lista es PLANA: ya no se lee el texto de una cabecera, se CUENTAN las que haya
+    // (tienen que ser 0) y se lee, fila a fila y en el orden pintado, la píldora que dice el estado.
+    cabecerasDeGrupo: nodos.filter((n) => tiene(n, 'jobs-grupo-titulo')).length,
+    pildoras: filas.map((f) => todos(f).filter((n) => tiene(n, 'status-pill')).map(texto).join('+')),
     celdas,
   };
 }
@@ -68,10 +71,13 @@ async function sinCobroParaElRol(rol) {
   assert.doesNotMatch(m.todo, /Por cobrar/, '🔴 la tarjeta «Por cobrar» sigue (c.21547 la quita)');
   assert.equal(m.filtrosCobro, 0, `🔴 ${m.filtrosCobro} filtros de cobro (Pendiente/Parcial/Pagado) a la vista`);
   assert.equal(m.lineasDe, 0, `🔴 ${m.lineasDe} líneas «de X €»: es lo que falta por cobrar, no el importe`);
-  assert.doesNotMatch(m.cabeceraTerminados, /por cobrar/, `🔴 la cabecera de Terminados dice «${m.cabeceraTerminados}»`);
-  // SCRUM-1725e (M1, firmado por delegación: SCRUM-1725 c.22052) · sin el cobro a la vista, la cabecera
-  // es «✅ Terminados» A SECAS y su cuenta: ni «— cobra el resto» ni nada detrás.
-  assert.match(m.cabeceraTerminados, /^✅ Terminados · \d+$/, `🔴 M1: la cabecera de Terminados dice «${m.cabeceraTerminados}»`);
+  // SCRUM-1725g · miraba la cabecera de Terminados, que ya no existe: sobre un texto vacío esta línea
+  // pasaría siempre. Mira la lista ENTERA (más estricto, no menos): «por cobrar» no sale en ningún sitio.
+  assert.doesNotMatch(m.todo, /por cobrar/i, '🔴 la lista le dice «por cobrar» a quien no ve el cobro');
+  // SCRUM-1725g · AQUÍ SE EXIGÍA M1 («✅ Terminados» a secas, c.22052). El requisito cambió: veredicto
+  // del fundador (SCRUM-1725 c.22073) + P4 firmada (c.22076) → la lista es plana y no hay cabecera de
+  // grupo para NINGÚN rol. Cambio de exigencia AUTORIZADO con nombre en SCRUM-1725 c.22077.
+  assert.equal(m.cabecerasDeGrupo, 0, `🔴 la lista vuelve a pintar ${m.cabecerasDeGrupo} cabecera(s) de grupo (c.22073: plana)`);
   assert.equal(m.salvedad, 0, '🔴 la salvedad del total por cobrar sigue');
   assert.ok(m.celdas.some((c) => /100,00/.test(c)) && m.celdas.some((c) => /50,00/.test(c)),
     `🔴 el IMPORTE tiene que verse (c.21547): celdas = ${JSON.stringify(m.celdas)}`);
@@ -86,8 +92,60 @@ test('SCRUM-1725 ③ · CONTROL POSITIVO: el admin sigue viendo «Por cobrar», 
   assert.match(m.todo, /Por cobrar/, '🔴 CIEGO: ni el admin ve «Por cobrar»; el test no prueba nada');
   assert.equal(m.filtrosCobro, 3, `🔴 CIEGO: el admin ve ${m.filtrosCobro} filtros de cobro, no 3`);
   assert.ok(m.lineasDe >= 1, '🔴 CIEGO: el admin no ve ninguna línea «de X €»');
-  assert.match(m.cabeceraTerminados, /por cobrar/, `🔴 CIEGO: la cabecera de Terminados del admin dice «${m.cabeceraTerminados}»`);
-  // SCRUM-1725e (M1) · el admin CONSERVA su cabecera entera: si también perdiera «— cobra el resto»,
-  // los dos casos de arriba pasarían sin que M1 distinguiera a nadie.
-  assert.match(m.cabeceraTerminados, /^✅ Terminados — cobra el resto · \d+ · /, `🔴 M1: el admin ha perdido su cabecera: «${m.cabeceraTerminados}»`);
+  // SCRUM-1725g · aquí se exigía la cabecera «✅ Terminados — cobra el resto · N · … por cobrar» del
+  // admin (c.22077 autoriza el cambio): tampoco él tiene cabecera de grupo. Su cobro sigue en la tarjeta
+  // «Por cobrar» y en la línea «de X €», que son las tres comprobaciones de arriba.
+  assert.equal(m.cabecerasDeGrupo, 0, `🔴 el admin vuelve a ver ${m.cabecerasDeGrupo} cabecera(s) de grupo (c.22073: plana)`);
+  assert.equal(m.salvedad, 0, '🔴 vuelve la salvedad larga de la cabecera de Terminados (P4, c.22076: queda la de la tarjeta)');
 });
+
+// ══ SCRUM-1725g · LA LISTA ES PLANA ═══════════════════════════════════════════════════════════════
+// Veredicto del fundador (SCRUM-1725 c.22073): «un listado normal como los que tenemos en otros sitios».
+// Los dos Trabajos del banco llegan del servidor con el TERMINADO delante y el EN CURSO detrás. La lista:
+//   · no pinta ninguna cabecera de grupo, para ningún rol;
+//   · los ordena como la cola del día (P2, c.22076): el en curso PRIMERO, el terminado después;
+//   · y dice el estado en cada fila, con la etiqueta de `jobStatusMeta` (la píldora de la ficha).
+// SUELO: `montar` ya exige las 2 filas; sin ellas, «0 cabeceras» sería cierto por vacío.
+test('SCRUM-1725g · la lista es PLANA para los tres roles: sin cabeceras de grupo, en el orden de la cola y con el estado en cada fila', async () => {
+  const roles = ['admin', 'tecnico', 'contable'];
+  for (const rol of roles) {
+    const m = await montar(rol);
+    assert.equal(m.cabecerasDeGrupo, 0, `🔴 (${rol}) ${m.cabecerasDeGrupo} cabecera(s) de grupo: la lista no es plana`);
+    assert.deepEqual(m.pildoras, ['En curso', 'Terminado'],
+      `🔴 (${rol}) las filas dicen ${JSON.stringify(m.pildoras)}: o falta la píldora de estado, o el orden no es el de la cola (en curso antes que terminado)`);
+  }
+});
+
+// Las mutaciones que tumban el caso de arriba (SCRUM-745: las ejecuta `scripts/meta-guard-mutaciones.mjs`).
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // Vuelve una cabecera de grupo al cuerpo de la tabla.
+    fichero: 'public/dashboard/js/jobsView.js',
+    de: '  vivos.forEach((j) => tbody.appendChild(jobRow(j, container, equipo)));',
+    a: "  { const rotulo = document.createElement('tr'); rotulo.className = 'jobs-grupo-titulo'; tbody.appendChild(rotulo); } vivos.forEach((j) => tbody.appendChild(jobRow(j, container, equipo)));",
+    cae: 'SCRUM-1725g · la lista es PLANA para los tres roles: sin cabeceras de grupo, en el orden de la cola y con el estado en cada fila',
+  },
+  {
+    // El orden deja de ser el de la cola: los terminados pasan delante de lo que está en curso.
+    fichero: 'public/dashboard/js/jobsView.js',
+    de: "  const SECUENCIA = ['en_curso', 'hoy', 'semana', 'sin', 'adelante', 'terminado'];",
+    a: "  const SECUENCIA = ['terminado', 'en_curso', 'hoy', 'semana', 'sin', 'adelante'];",
+    cae: 'SCRUM-1725g · la lista es PLANA para los tres roles: sin cabeceras de grupo, en el orden de la cola y con el estado en cada fila',
+  },
+  {
+    // La fila deja de decir su estado: sin cabeceras, ya no lo diría nadie.
+    fichero: 'public/dashboard/js/jobsView.js',
+    de: '    pildora.textContent = metaDelEstado.label;',
+    a: "    pildora.textContent = '';",
+    cae: 'SCRUM-1725g · la lista es PLANA para los tres roles: sin cabeceras de grupo, en el orden de la cola y con el estado en cada fila',
+  },
+  {
+    // Vuelven DOS insignias apiladas en la celda de estado (lo que SCRUM-816 quitó): una fila dice
+    // «En curso+Parcial». Es también la mutación que tumba 816 caso 5 y guard-917 B.3: la toma de aquí
+    // `docs/master/evidencias/SCRUM-1725/plana-una-pildora-mutacion.mjs`.
+    fichero: 'public/dashboard/js/jobsView.js',
+    de: '    tdEstado.appendChild(pildora);',
+    a: "    tdEstado.appendChild(pildora); { const otra = document.createElement('span'); otra.className = 'status-pill'; otra.textContent = 'Parcial'; tdEstado.appendChild(otra); }",
+    cae: 'SCRUM-1725g · la lista es PLANA para los tres roles: sin cabeceras de grupo, en el orden de la cola y con el estado en cada fila',
+  },
+];
