@@ -19,9 +19,12 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { nodo, todos } from './_banco-vistas.mjs';
+import { paginaConSusGuiones } from './_pagina-con-sus-guiones.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const HTML = fs.readFileSync(path.join(RAIZ, 'public/index.html'), 'utf8');
+// SCRUM-1756f: el guion de la landing vive en el `.js` que enlaza (`/landing.js`); se lee la página
+// CON sus guiones. Cambia dónde se lee, no qué se exige ni qué se ejecuta.
+const HTML = paginaConSusGuiones(RAIZ, 'public/index.html');
 
 const INI_SECCION = '<section id="probar"';
 const INI_SCRIPT = '// Interactive playable demo';

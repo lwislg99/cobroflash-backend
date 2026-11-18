@@ -28,6 +28,42 @@ El obligatorio «build + tests» de #3127 cayó a las 15:34Z con UN fallo: `test
 - Por qué no se vio antes de empujar: se corrieron el test nuevo, la mutación y los 33 vecinos de `jobsView`; `scrum1415` no nombra `jobsView` y no entró en esa selección.
 - Medido tras el arreglo: `scrum1415` 6/6 y `scrum1725` 3/3 (9/9, 0 fallos, 0 saltos).
 
+## Ficha (S2 · 18-nov)
+
+**Puesto:** S2 · **Rama:** `scrum-1725f-ficha-visual` · 18-nov-2026
+**Skill UI:** yaqu-premium-ui + impeccable (registro `product`), cargadas antes de tocar nada; DESIGN.md única fuente de tokens; checklist AB6
+**Medido contra:** `origin/main` = `bcff9d8b1ea465938ef797c17548cb5217de02bc` · 2026-11-18T15:43:13Z
+A9: comprobación → `tests/scrum1725-ficha-lenguaje-del-parte.test.mjs`
+
+**Encargo (c.22052):** la FICHA del Trabajo (`jobDetailView.js` + `styles.css`) con el mismo lenguaje visual que el parte de 1722 —tarjeta por bloque, jerarquía de títulos, acciones que parecen botones, 390 primero—. Cero textos nuevos; cifras y flujos intactos (la línea «Tipo de intervención» de c.22019 y la primaria única de c.22030/c.22041 no se tocan). M2 decidido (sin bloque vacío), M3 aplazado.
+
+### Qué cambia (forma, no función)
+- `styles.css`, bloque «S2 · SCRUM-1725» al final del fichero. Todo cuelga de `.detail-page--trabajo`: `.detail-page` lo comparten cinco fichas (albarán, gasto, factura, presupuesto, trabajo) y las otras cuatro no cambian.
+  - La hoja deja de ser UNA tarjeta partida por rayas: cada bloque es su tarjeta (borde 1 px + Reposo, radio lg, 16/20 px), sobre el lienzo, con 16 px entre ellas. El rail (cliente, dónde, presupuesto, responsable) es UNA tarjeta de contexto con sus bloques separados por la raya fina; a 390 sigue arriba (SCRUM-318).
+  - Cabecera sobre el lienzo: título 1,375 rem/800 en Tinta (el número del parte), cita en Tinta 600.
+  - Títulos de bloque en Tinta, 18 px, 700, sin versalitas (los del parte). Los del rail son literales en mayúsculas (`JOB_RAIL_TITULOS`) y no se reescriben: llevan el estilo Label de DESIGN.md §3.
+  - Relleno = se pulsa: `.btn-secondary` pasa de blanca con contorno (igual que una casilla) al relleno neutro del parte. La única voz verde sigue siendo la primaria.
+  - Partes y albaranes a 390: filas de la tarjeta separadas por la raya fina, no tarjetas dentro de la tarjeta. A ≥641, la tabla va de borde a borde de su tarjeta (DESIGN.md §5) y número, fecha y estado no se parten.
+  - De paso, en esta misma pantalla: a 1280 la celda «Estado» del albarán era `display: flex`, dejaba de ser celda y su raya quedaba más arriba que la de sus vecinas. Vuelve a ser celda.
+- `jobDetailView.js`: la clase `detail-page--trabajo` en el contenedor, y un espacio delante de cada badge de la celda de estado del albarán. Sin él, el texto de la ficha decía «EMITIDOSin precios» (medido en yaqu.app a 390, ya en prod antes de este cambio) y así lo lee un lector de pantalla. Ni una palabra nueva.
+
+### Comprobación
+- Sonda `docs/master/evidencias/SCRUM-1725/prod-1725-ficha-visual.mjs` (corre desde `sondas-s2/`, junto a su `comun.mjs`), sólo GET con control positivo del interceptor, build `bcff9d8b1`. Fichas #76, #82, #77, #84 y #86 (terminado con 8 albaranes, sin agendar mínimo, en curso con importe y 6 partes, en curso con tarea y dirección, agendado hoy con «▶ Empezar»), a 390 y 1280, como OPERARIO simulado (rol `tecnico` y la proyección de `trabajoParaElRol.ts` @ `bcff9d8b1`) y como ADMIN real (control). «Antes» = yaqu.app tal cual; «después» = el mismo yaqu.app sirviendo el `jobDetailView.js` y el `styles.css` de esta rama.
+- **Huella de función, 20/20 iguales**: el texto de la ficha (sin contar mayúsculas, que las pone el CSS, y con el espacio nuevo entre pastilla y badge), la lista de botones y enlaces visibles, los importes y las primarias son los mismos antes y después. El instrumento SÍ ve diferencias: en la primera pasada marcó 8/8 por las mayúsculas y 2 por el espacio que faltaba a 1280.
+- Después: desborde horizontal 0, ninguna caja fuera del viewport, ningún control táctil por debajo de 44 px a 390, 0 errores de página. El operario ve 1 importe y el admin 2 (#77), como pide D1.
+- Test nuevo, 6/6: la frontera (toda regla del bloque cuelga de `.detail-page--trabajo`, con control positivo de una regla suelta), la clase sólo en la ficha del Trabajo, sólo tokens en el bloque (con control positivo: un `#dc2626` a mano se caza) y el espacio delante de los tres badges. El mismo test contra los ficheros de `origin/main` da 6/6 rojos.
+- Tanda completa local (13 840 tests): 4 fallos en la primera pasada. Dos eran de este test y se arreglaron EN EL TEST, con los guards intactos (regla 41): `scrum553` (extractores con el `>` pegado → sin él) y `scrum700` (filtro de comentarios propio → `soloEjecutable`, con `almohadillaEsComentario: false`, porque en CSS `#` es un color). Los otros dos son `scrum1726` D1, y no los toca este cambio: prueban el servidor (`dist/app.js`) y esta máquina (Node 24.8, ICU 77.1) formatea «3 de octubre de 2026, 0:30» donde el test espera «a las 0:30». Tras el arreglo: `scrum1725` + `scrum553` + `scrum700`, 27/27.
+- Aceptación (capturas antes/después y el «me gusta» del fundador): las rutas van en la entrega al orquestador. El ticket NO lo cierra S2.
+
+### Ficha · el rojo del obligatorio y su arreglo (S2 · 18-nov, relevo)
+A9: comprobación → `tests/scrum719-el-suelo-de-los-doce.test.mjs`
+- El check obligatorio de #3227 cayó con 3 ✖, los tres en ficheros de esta rama (TAP del run 44341511745):
+  - `scrum1233g` («todo banco que intercepta yaqu.app bloquea el service worker»): la sonda importaba `comun.mjs` por ruta absoluta fuera de git, así que desde el repo no se podía comprobar que bloquease el SW. **Arreglo:** `comun.mjs` sube a `docs/master/evidencias/SCRUM-1725/` (copia byte a byte de `sondas-s2/comun.mjs`, que abre el contexto con `serviceWorkers: 'block'`) y la sonda lo importa por `./comun.mjs`. La sonda ya no «corre desde `sondas-s2/`»: corre desde su carpeta.
+  - `scrum719` SCRUM-1395 ② («un test NUEVO no llama al filtro sin suelo»): el test nuevo llamaba a `soloEjecutable`. **Arreglo:** `ejecutableDe` con ancla `.detail-page--trabajo` (de esa clase cuelga todo el bloque) y `almohadillaEsComentario: false`.
+  - `scrum719` SCRUM-1395b ① (el veredicto de `censo:mudez`, al día): **regenerado** con `npm run censo:mudez -- --escribir`: 1 medido de 133, VIVO; 0 mudos, 0 ciegos.
+- Los tres guards quedan como estaban (regla 41). Medido en local tras el merge de `main` (`dd26ef66fa8d9e92cbefc116e6f55da900db6fb0`): `scrum1233g` + `scrum719` + `scrum1725`, 45/45 · los 31 tests que recorren `evidencias/`, 303 pass · 0 fail · 8 saltos (BD).
+- Mi lectura del porqué: la tanda completa se corrió ANTES de dos cambios (pasar a `soloEjecutable` para contentar a `scrum700`, y subir la sonda al repo), y después sólo se repitieron los ficheros que habían caído. Cambiar de instrumento destapó dos guards que vigilan ese instrumento, y nadie los volvió a correr. El obligatorio lo cazó antes del merge.
+- `guard:escalera-por-estado` (job «guards de navegador», no obligatorio): rojo, **igual que la BASE de `origin/main`** que midió S4 hoy. Las 32 líneas de su salida estándar están todas en la mía y no hay ninguna distinta: la misma tabla, con lista y detalle sin casar en `pendiente_agendar`, `agendado`, `en_curso` y `terminado`. Mi pasada dice además «4 hallazgos · 2 ciegos» (los dos «NO SUPE MIRAR» del DETALLE). Eso sale por la salida de error, y la BASE no la guardó, así que esa línea no la he podido comparar. No lo causa este CSS y no se arregla en esta rama.
 ## Lista (S4 · 18-nov)
 
 **Puesto:** S4 · **Rama:** `scrum-1725e-lista-visual` · 18-nov-2026

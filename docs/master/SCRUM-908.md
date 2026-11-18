@@ -789,6 +789,9 @@ van a `docs/equipo/afirmaciones-verificadas-javier.md`.
 - Banco subido (A8): `docs/master/evidencias/scrum908c/`. Son 9 scripts con las rutas en variables de
   entorno (`J6_908C_DIR`, `GH`) y 14 salidas, sin bytes de control. Los logs de CI no se suben
   (~80 KB cada uno): se vuelven a bajar con el `job` de cada fila de `censo-meta-ci.json`.
+- **Los guiones `mutar2.mjs` y `mut2-todos.mjs` se retiraron el 18-nov-2026 (SCRUM-1765a):** la mutación que
+  aplicaban vive en el catálogo de `tests/scrum859-identidad-y-motivo-cerrado.test.mjs` (la nº 2; tumba su caso con
+  `aplicarUna`). Sus salidas siguen en `evidencias/scrum908c/` (`mut2-todos.json`, `mut2-todos.out`, `sonda-mut2.*`).
 
 # SCRUM-908c-2 · El rojo a propósito salió VERDE, entró en `main` con el arreglo comentado, y el mecanismo sigue sin reproducirse
 

@@ -182,5 +182,7 @@ panel: «VACIO» era verdad (no había proceso) y decía «no hay nadie» donde 
 - `docs/master/evidencias/SCRUM-1345/mutar.mjs` (M6) busca el literal viejo «La entrada puede
   empujarse»; es un banco histórico que ya no casaba en M1, M2 ni M5 y no está en el catálogo del
   meta-guard. No se toca.
+- El guion `evidencias/SCRUM-1345/mutar.mjs` se retiró el 18-nov-2026 (SCRUM-1765a): sus mutaciones vivas viven en
+  el catálogo de `tests/scrum976-guards-entrada-con-techo.test.mjs`, y M6 queda declarada caducada en `SCRUM-1345.md`.
 - El caso ④ter de `scrum976` usa como cebo un verde con la frase vieja; sólo lee la primera parte, que
   no cambia. No se toca.
