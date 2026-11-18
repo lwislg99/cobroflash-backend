@@ -1657,7 +1657,8 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   body.appendChild(docsSec);
   // SCRUM-1662 · la tarea va donde vivía antes (el alta la escribía en las notas), justo delante de
   // ellas; `construirBloqueElTrabajo` se salta la que es `null`.
-  body.appendChild(construirBloqueElTrabajo(document, [lineaTipo, lineaIntervencion, lineaDatos, lineaQuien, lineaTarea, lineaNotas, lineaGastos]));
+  const bloqueElTrabajo = construirBloqueElTrabajo(document, [lineaTipo, lineaIntervencion, lineaDatos, lineaQuien, lineaTarea, lineaNotas, lineaGastos]);
+  body.appendChild(bloqueElTrabajo);
   if (!veNotas) lineaNotas.elemento.remove();
 
   const docs = []; // { when, el } — se ordena ascendente y se vuelca al final en la lista.
@@ -1890,9 +1891,11 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // Rótulo: `+ ${L.quoteNew}`, el de la ficha del cliente para el caso equivalente (abrir el editor
   // atado a la ficha). Reutilización, no texto nuevo: firma del orquestador, 16-oct-2026.
   // No escribe `Quote.esAdicional`: quién pone ese rol está sin decidir (docs/master/SCRUM-1190.md).
+  let botonOtroPresupuesto = null; // SCRUM-1768: el ensamblado lo sube a la columna lateral
   if (job.totalAceptado != null) {
     const L = window.appLocale || {};
     const otroPresupuestoBtn = document.createElement('button');
+    botonOtroPresupuesto = otroPresupuestoBtn;
     otroPresupuestoBtn.type = 'button';
     otroPresupuestoBtn.className = 'btn-secondary btn-sm job-toolbar-btn-44';
     otroPresupuestoBtn.setAttribute('data-presupuesto-del-trabajo', '1');
@@ -2821,14 +2824,28 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     ? construirBloquesRail(job, { fmtMoney: fmtMoneyEs, fechaCorta, responsableName, contacto: window.contactoDelCliente })
     : []).filter(Boolean);
 
+  // SCRUM-1768 · LA COLUMNA LATERAL. En escritorio la ficha son dos columnas reales: a la izquierda
+  // el trabajo que se hace (lo que falta, partes, albaranes, facturas); a la derecha el contexto (el
+  // rail) y los datos del trabajo («El trabajo»), con «+ Nuevo presupuesto» junto al presupuesto.
+  // `lateral` NO es el rail: el rail sigue siendo el `aside` de solo lectura (patrón B2, regla 4) y
+  // va dentro tal cual. En móvil `lateral` se disuelve (styles.css, bloque «S2 · SCRUM-1768») y el
+  // orden de 390 queda el de antes: rail arriba, «El trabajo» al final.
+  const lateral = document.createElement('div');
+  lateral.className = 'detail-lateral';
   if (bloquesRail.length) {
     const rail = document.createElement('aside');
     rail.className = 'detail-rail';
     rail.setAttribute('aria-label', 'Contexto del trabajo');
     for (const b of bloquesRail) rail.appendChild(pintarBloqueRail(b));
-    cuerpo.appendChild(rail);
-    cuerpo.classList.add('detail-cuerpo--con-rail');
+    lateral.appendChild(rail);
   }
+  if (botonOtroPresupuesto) {
+    botonOtroPresupuesto.hidden = newAlbRow.hidden; // Trabajo cerrado: oculto, como su barra (SCRUM-1190)
+    lateral.appendChild(botonOtroPresupuesto);
+  }
+  lateral.appendChild(bloqueElTrabajo);
+  cuerpo.appendChild(lateral);
+  cuerpo.classList.add('detail-cuerpo--con-rail');
 
   // ── SCRUM-606 (ALB-01) · SE LLEGA DESDE EL BUSCADOR DE PRESUPUESTO, CON LA HOJA ABIERTA ────
   //
