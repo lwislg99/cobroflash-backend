@@ -668,13 +668,19 @@ function renderJobRows(list, jobs, container, todos, equipo) {
   // que el fundador quiere ver primero es lo de hoy. El criterio vive en `grupoDeTrabajo`, que es
   // el mismo que cuenta la cifra «Para hoy» de arriba.
   const ahora = new Date();
+  // SCRUM-1725e (M1) · «— cobra el resto» es una orden sobre el COBRO, y quien no ve el estado de
+  // cobro no puede cumplirla: para ese rol la cabecera dice «✅ Terminados», a secas. El admin
+  // conserva la suya, sin tocar una letra. FIRMADO por el orquestador por delegación del fundador
+  // (SCRUM-1656 c.21978), registrado en SCRUM-1725 c.22052 y en `docs/microcopy/`. La pregunta es
+  // la MISMA que quita el importe «por cobrar» de esta cabecera, unas líneas más abajo.
+  const veCobro = veEstadoDeCobro(window.appUserRole);
   const groups = [
     { key: 'en_curso',  title: '🔨 En curso',         items: [] },
     { key: 'hoy',       title: '📅 Hoy',               items: [] },
     { key: 'semana',    title: '📅 Esta semana',       items: [] },
     { key: 'sin',       title: '⏳ Sin agendar',       items: [] },
     { key: 'adelante',  title: '🗓 Más adelante',      items: [] },
-    { key: 'terminado', title: '✅ Terminados — cobra el resto', items: [] },
+    { key: 'terminado', title: veCobro ? '✅ Terminados — cobra el resto' : '✅ Terminados', items: [] },
     { key: 'cerrado',   title: '🔒 Cerrados', items: [], collapsed: true },
   ];
   const porClave = new Map(groups.map((g) => [g.key, g]));
@@ -730,7 +736,7 @@ function renderJobRows(list, jobs, container, todos, equipo) {
 
     // La cabecera del grupo, con su importe y su salvedad: microcopy aprobada que NO se toca.
     // SCRUM-1725 (D1) · el importe «por cobrar» y su salvedad son estado de cobro: no para quien no lo ve.
-    const resumen = g.key === 'terminado' && veEstadoDeCobro(window.appUserRole) && typeof resumenTerminadoSinCobrar === 'function'
+    const resumen = g.key === 'terminado' && veCobro && typeof resumenTerminadoSinCobrar === 'function'
       ? resumenTerminadoSinCobrar(g.items)
       : null;
     // SCRUM-917c · «por cobrar» junto a la suma (dos palabras firmadas, comentario 15881): sin

@@ -27,3 +27,54 @@ El obligatorio «build + tests» de #3127 cayó a las 15:34Z con UN fallo: `test
 - Arreglo en el TEST, no en el guard (regla 41): el cuerpo pasa a `sinCobroParaElRol(rol)` y los dos `test(…)` llevan su nombre escrito. Los nombres que registra la tanda son los mismos de antes.
 - Por qué no se vio antes de empujar: se corrieron el test nuevo, la mutación y los 33 vecinos de `jobsView`; `scrum1415` no nombra `jobsView` y no entró en esa selección.
 - Medido tras el arreglo: `scrum1415` 6/6 y `scrum1725` 3/3 (9/9, 0 fallos, 0 saltos).
+
+## Lista (S4 · 18-nov)
+
+**Puesto:** S4 · **Rama:** `scrum-1725e-lista-visual` · 18-nov-2026
+**Skill UI:** cargadas (`yaqu-premium-ui` + `impeccable`; DESIGN.md única fuente de tokens; Parte AB: una pantalla)
+**Medido contra:** `origin/main` = `bcff9d8b1ea465938ef797c17548cb5217de02bc` · 2026-11-18T15:29:14Z
+A9: comprobación → `docs/master/evidencias/SCRUM-1725/c1725e-lista.mjs`
+
+**Orden (fundador, 18-nov, literal):** lavado de cara del panel, «clean nuevo elegante facil de usar intuitivo bien ordenadas las cosas». Se empieza por Trabajos. Esta sección es la LISTA (`jobsView.js` + un bloque propio en `styles.css`); la ficha es de S2, en otra rama.
+
+### Qué se midió antes (yaqu.app, cuenta QA, 390) y qué se hizo
+| # | Medido | Arreglo (solo ropa) |
+|---|---|---|
+| ① | El título «Trabajos» gastaba una tarjeta de 70 px para repetir la barra de arriba (hallazgo (c) de c.21809) | Deja de ser tarjeta. A 390 no se pinta (el `h2` sigue para quien lo oye); desde 641, título Headline en el mismo renglón que «Nuevo trabajo» |
+| ② | La lista era una tarjeta con tarjetas dentro, y cada rótulo de grupo era OTRA tarjeta de 65 px con una etiqueta de 12 px en mayúsculas | La lista no es tarjeta: las tarjetas son los trabajos (borde 1 px + Reposo, radio lg, 16 px). El rótulo de grupo es un título (1,0625 rem/700 Tinta a 390; 0,9375 rem en la tabla), de 22 px de alto |
+| ③ | «🔒 Cerrados» gastaba dos tarjetas: su rótulo y «Ver 2 cerrados» (65 + 88 px) | Un renglón de 44 px: el rótulo a la izquierda y el botón a su derecha |
+| ④ | «Sin importe / no hay presupuesto aceptado» ocupaba media tarjeta y dejaba al cliente en 19 letras por línea | Con «Sin importe», las dos frases bajan a un renglón propio bajo los datos; el cliente y la tarea recuperan el ancho entero. Con importe, la cifra sigue arriba a la derecha |
+| ⑤ | En la tarjeta EN CURSO, cuatro botones en dos filas sin orden; los cuatro filtros de cobro, en dos renglones | La rellena (el paso de hoy) a todo el ancho; debajo las demás, con el «⋯» cerrando a la derecha. Filtros de cobro en un renglón |
+
+Nada cambia de sitio en el DOM ni de significado: mismo orden de botones (el del teclado), sin ningún `order`. No se estrena token, color, sombra ni icono. El único cambio de `jobsView.js` es M1.
+
+### M1 (texto firmado)
+Para quien no pasa `veEstadoDeCobro`, la cabecera del grupo dice «✅ Terminados», a secas; el admin conserva «✅ Terminados — cobra el resto». Firmado por el orquestador por delegación (SCRUM-1656 c.21978), registrado en SCRUM-1725 c.22052 y en `docs/microcopy/2026-11-18-SCRUM-1725-terminados-sin-cobra-el-resto.md`.
+
+### Medidas (banco H6 sobre yaqu.app, solo lectura; «después» = JS y CSS de esta rama servidos encima)
+Población: 8 pasadas (antes/después × admin/operario × 390/1280); admin 9 tarjetas en 5 grupos, operario (rol `tecnico` vestido) 3 en 2.
+
+| | antes | después |
+|---|---|---|
+| Desborde horizontal de la página | 0 en las 4 | 0 en las 4 |
+| Contenido de las tarjetas (cliente, tipo, tarea, dirección, importe, fecha, botones y cuál va rellena), comparado como CONJUNTO | — | idéntico: 0 líneas distintas de 9, 9, 3 y 3 |
+| Tarjetas con dos rellenas · rellena que no va primera (SCRUM-1739) | 0 · 0 | 0 · 0 |
+| Con tipo · con tarea · con dirección (admin; SCRUM-1670c/1679) | 5 · 3 · 6 | 5 · 3 · 6 |
+| Botones de tarjeta por debajo de 44 px | 0 | 0 |
+| Dónde empieza la lista a 390 (admin · operario) | 645 px · 393 px | 522 px · 317 px |
+| Alto de la página a 390 (admin · operario) | 3.692 · 1.370 px | 3.546 · 1.305 px |
+| Rótulo de grupo a 390 | 340×65, tarjeta | 354×22, título |
+| «Cerrados» a 390 | 65 + 88 px, dos tarjetas | un renglón de 44 px |
+
+Capturas y medidas: `docs/master/evidencias/SCRUM-1725/{antes,despues}-lista-{admin,tecnico}-{390,1280}.{png,txt}`.
+
+### Tests
+- `tests/scrum1725-lista-operario-sin-cobro.test.mjs`: 3/3, con M1 dentro (técnico y rol desconocido «✅ Terminados · N» a secas; admin, de control, su cabecera entera).
+- El test distingue por construcción: exige una cabecera a cada rol y la otra al admin, así que ni «todos con — cobra el resto» ni «todos a secas» lo pasan. No se declara ninguna mutación como evidencia: el guion de un solo uso que la corría no nombraba el catálogo (guard SCRUM-1387, cazado en `guards:entrada` antes del push) y se retiró; llevarla al catálogo queda como resto.
+- Vecinos: los 215 ficheros `tests/*.test.mjs` que nombran `jobsView`, `styles.css`, `docs/microcopy` o las clases de la lista → 1.824 casos · 1.815 pass · 2 fail · 7 skip. Los 2 rojos son de SCRUM-1199 y son de entorno: `express` no está en el `node_modules` de este árbol (comprobado: no existe la carpeta).
+
+### Lo que NO se ve en las capturas, y lo que queda fuera
+- **M1 no sale en las capturas del operario:** en la cuenta QA el operario no tiene ningún trabajo terminado. Lo prueba el test; en pantalla se verá cuando tenga uno.
+- Hallazgos (a) y (b) de c.21809 (acciones que el técnico no debería ver; filtro «Técnico» pintado al operario) NO entran: cambian flujo. Confirmados hoy en la captura del operario: el filtro «Técnico» sigue pintado, y en sus tarjetas salen «+ Nuevo albarán», «Emitir albarán» y «Agendar».
+- Escritorio: la tabla se queda tabla; solo cambian la cabecera y el rótulo de grupo.
+- Pendiente: el «me gusta» del fundador sobre las capturas, y la regla 42 tras el merge (las mismas pasadas, sin `LOCAL_DIR`).
