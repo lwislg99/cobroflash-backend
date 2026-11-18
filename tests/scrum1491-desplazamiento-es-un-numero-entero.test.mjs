@@ -4,8 +4,10 @@
 // con 400 `desplazamientos_invalido`, y la ficha enseñaba el aviso general, que manda a repetir
 // algo que no va a entrar nunca.
 //
-// El literal está FIRMADO en SCRUM-1491 c.18517 (6-oct-2026) y se compara aquí letra a letra:
-//   «No se ha guardado. Desplazamiento es un número entero, como 1 o 2 — no el tiempo de viaje»
+// El literal se FIRMÓ en SCRUM-1491 c.18517 (6-oct-2026) con «Desplazamiento» en singular. Desde
+// SCRUM-1752 c.21987 (17-nov-2026) dice «Desplazamientos», como el rótulo de la casilla; cambia esa
+// letra y nada más. Se compara aquí letra a letra:
+//   «No se ha guardado. Desplazamientos es un número entero, como 1 o 2 — no el tiempo de viaje»
 //
 // Monta la vista de verdad en el banco. El servidor de aquí rechaza como `apiRequest` entrega un
 // rechazo (`public/dashboard/js/api.js`: `err.status`, `err.code`, y el `message` del servidor
@@ -17,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { cargarDashboard, todos } from './_banco-vistas.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const FIRMADO_EN_18517 = 'No se ha guardado. Desplazamiento es un número entero, como 1 o 2 — no el tiempo de viaje';
+const FIRMADO_EN_21987 = 'No se ha guardado. Desplazamientos es un número entero, como 1 o 2 — no el tiempo de viaje';
 const EL_GENERAL = 'No se ha podido guardar el cambio — vuelve a intentarlo';
 const MENSAJE_DE_LA_RUTA = 'Los desplazamientos son un número entero.';
 const TOPE_DE_LA_COLUMNA = 2147483647;
@@ -96,7 +98,7 @@ test('SCRUM-1491 · 🔴 «1,5» en Desplazamiento: sale el literal firmado, let
   assert.equal(srv.leer().desplazamientos, 1, '🔴 SUELO: la ruta de aquí no lo rechazó');
   const salen = avisos(c);
   assert.equal(salen.length, 1, '🔴 el campo no se guardó y la ficha no dice nada');
-  assert.equal(salen[0].textContent, FIRMADO_EN_18517);
+  assert.equal(salen[0].textContent, FIRMADO_EN_21987);
   assert.equal(attr(salen[0], 'data-parte-campo-no-guardado'), 'desplazamientos');
   assert.equal(attr(salen[0], 'role'), 'alert');
   assert.equal(casilla(c, 'desplazamientos').value, '1', 'la casilla vuelve a lo que quedó en el servidor');
@@ -117,7 +119,7 @@ test('SCRUM-1491 · un número que no cabe tiene código propio: sale SU texto, 
   assert.equal(srv.leer().desplazamientos, 1, '🔴 SUELO: la ruta de aquí no lo rechazó');
   const salen = avisos(c);
   assert.equal(salen.length, 1, '🔴 la ruta lo rechazó y la ficha no dice nada');
-  assert.notEqual(salen[0].textContent, FIRMADO_EN_18517, '🔴 «es un número entero» a quien ha tecleado un entero');
+  assert.notEqual(salen[0].textContent, FIRMADO_EN_21987, '🔴 «es un número entero» a quien ha tecleado un entero');
   assert.notEqual(salen[0].textContent, EL_GENERAL, '🔴 manda a reintentar algo que la ruta va a rechazar siempre');
 });
 

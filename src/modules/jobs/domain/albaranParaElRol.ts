@@ -4,8 +4,9 @@
 //
 // FIRMADO por el fundador (SCRUM-1707 c.21547, Q2, literal): «No: se recortan — el servidor recorta
 // los precios del albarán para el rol operario, igual que ya hace con el parte.»
-// ALCANCE (c.21556 ②): la API de datos (JSON). El PDF (`/:id/pdf`) queda FUERA: es el documento del
-// negocio y lo gobierna el interruptor del merchant (`ocultarPreciosEnDocumento`), no el rol.
+// ALCANCE (c.21556 ②): la API de datos (JSON). El PDF (`/:id/pdf`) quedó FUERA… y por ahí el operario
+// se llevaba en el papel los precios que la pantalla ya le escondía (SCRUM-1744, medido por S4 el
+// 16-nov). Desde SCRUM-1744 el PDF también se recorta: ver `pdfDelAlbaranSinPrecios`, abajo.
 //
 // POR QUÉ UNA PROYECCIÓN DESPUÉS DE `serializeAlbaran` Y NO OTRO SERIALIZADOR. Es la forma de
 // `trabajoParaElRol` (SCRUM-1662): el serializador sigue igual para todos y cada respuesta pasa por
@@ -68,6 +69,17 @@ export function albaranParaElRol<T extends AlbaranSerializado>(albaran: T, rol: 
   if ('totales' in albaran) out.totales = null;
   if ('importePendienteDeFacturar' in albaran) out.importePendienteDeFacturar = null;
   return out;
+}
+
+/**
+ * SCRUM-1744 · ¿El PDF del albarán (`GET /admin/albaranes/:id/pdf`) sale SIN precios para este rol?
+ * Mismo criterio que la API (Q2 de c.21547): quien ve solo lo suyo, sin precios. Cuando es `true`,
+ * el papel se imprime con el interruptor que ya existe (`ocultarPreciosEnDocumento`, SCRUM-607) en
+ * un fichero APARTE —ni un rótulo nuevo— y el albarán no se toca. Por capacidad: un rol desconocido
+ * o ausente cae del lado restringido.
+ */
+export function pdfDelAlbaranSinPrecios(rol: string | null | undefined): boolean {
+  return seesOnlyOwnJobs(rol);
 }
 
 /** Una fila del LISTADO (`GET /admin/albaranes`): su `total` es la suma de los precios. */

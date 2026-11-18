@@ -16,7 +16,8 @@ import { fileURLToPath } from 'node:url';
 import { cargarDashboard, todos } from './_banco-vistas.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const DESPLAZAMIENTO = 'No se ha guardado. Desplazamiento es un número entero, como 1 o 2 — no el tiempo de viaje';
+// SCRUM-1752 c.21987 · «Desplazamientos», como el rótulo de la casilla (antes, en singular).
+const DESPLAZAMIENTO = 'No se ha guardado. Desplazamientos es un número entero, como 1 o 2 — no el tiempo de viaje';
 const KILOMETROS = 'No se ha guardado. Kilómetros es un número, como 12 o 12,5';
 const EL_GENERAL = 'No se ha podido guardar el cambio — vuelve a intentarlo';
 
@@ -228,9 +229,10 @@ test('SCRUM-1492 · CONTROL: una casilla de texto, que no tiene `badInput`, sigu
 // entrar nunca. Y `-3` no es `badInput`: es un número, sólo que fuera de rango; lo de arriba no
 // lo cubre. El servidor de aquí rechaza como `apiRequest` entrega un rechazo (`err.code`).
 // ═══════════════════════════════════════════════════════════════════════════════════════════
-const DESPLAZAMIENTO_NEGATIVO = 'No se ha guardado. Desplazamiento es 0 o más';
+// SCRUM-1752 c.21987 · los dos de Desplazamientos, al plural del rótulo. Los de Kilómetros no cambian.
+const DESPLAZAMIENTO_NEGATIVO = 'No se ha guardado. Desplazamientos es 0 o más';
 const KILOMETROS_NEGATIVO = 'No se ha guardado. Kilómetros es 0 o más';
-const DESPLAZAMIENTO_NO_CABE = 'No se ha guardado. Ese número es demasiado grande para Desplazamiento';
+const DESPLAZAMIENTO_NO_CABE = 'No se ha guardado. Ese número es demasiado grande para Desplazamientos';
 const KILOMETROS_NO_CABE = 'No se ha guardado. Ese número es demasiado grande para Kilómetros';
 
 /** Qué pinta la ficha ante cada código de `parteRango.ts`. Un código nuevo entra aquí con su texto. */

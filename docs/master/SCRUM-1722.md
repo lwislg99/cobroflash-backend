@@ -68,3 +68,85 @@ Población: los 106 ficheros que nombran `parteDetailView`, el censo de microcop
 ## Pendiente
 - El «me gusta» del fundador (capturas antes/después a 1280 y después a 390 en `evidencias-s4-12nov-1722b\capturas`).
 - Regla 42: tras el merge, la sonda sin servir nada local a 1280 y 390.
+
+# SCRUM-1722c — a 390 el parte se salía por la derecha (regresión de SCRUM-1722)
+
+**Puesto:** S4 · **Rama:** `scrum-1722c-parte-390-no-se-ensancha` · 16-nov-2026
+**Skill UI:** cargada (`yaqu-premium-ui`; una declaración de ancho, ningún token ni texto nuevo)
+**Medido contra:** `origin/main` = `6ffa662fd03ad6994f08c9816de6f0c7307e14d0` · 2026-11-16T16:06:22Z
+A9: comprobación → `docs/evidencias/scrum1722c/antes-salida.txt`
+
+## Qué se vio
+En yaqu.app, durante el recorrido del operario simulado (SCRUM-1686, H6), el parte PT-2026-014 —abierto desde
+la lista con «Abrir parte» en un trabajo con dirección— medía **451 px en una ventana de 390**. `html, body`
+llevan `overflow-x: clip`: la página no se desplaza (`scrollTo(300, 0)` → `scrollX = 0`), así que el borde
+derecho de «Salida», «Kilómetros», «Ordenar en líneas» y los dos recuadros de firma queda fuera de la pantalla.
+Igual con rol de admin y sin emulación de móvil. El parte PT-2026-011 (sin obra) no se salía.
+
+## Causa (probada en el DOM vivo, no deducida)
+`.main` es un flex en columna y `.view-container` se estira a su ancho. SCRUM-1722 centró la hoja del parte con
+`*:has(> header.parte-cabecera) { max-width: 720px; margin-inline: auto; }`: con márgenes `auto` el hijo deja de
+estirarse y mide lo que mide su contenido. La línea «Obra y referencia» lleva el dato en una sola línea
+(`nowrap`), y una dirección larga ensancha la hoja. Vaciando ESE resumen la hoja volvía a 390; vaciando
+cualquiera de los otros tres, no. Desde SCRUM-1674 el parte hereda la dirección del trabajo, así que le pasa a
+cualquier parte abierto desde un trabajo con una dirección de tamaño normal.
+Es la misma causa que encogía el parte firmado (18 px de margen frente a 12 a 390; 362 px a 1280), y que
+SCRUM-1722b arregló sólo desde 1024.
+
+## Arreglo
+`width: 100%` en esa regla (`public/dashboard/css/styles.css`, bloque S4 · SCRUM-1722). Nada más: sin texto,
+sin tocar `parteDetailView.js`, sin esquema.
+
+## Por qué no se cazó el 12-nov (A9)
+La sonda del parte medía el desborde con `html.scrollWidth − clientWidth`, que bajo `overflow-x: clip` da 0
+aunque la hoja mida 451; y sus cuatro casos eran partes sin obra larga. Dije «desborde 0 en las 8 pasadas» y era
+cierto para lo que miraba. En este PR la sonda (`docs/evidencias/scrum1722b/sonda-parte.mjs.txt`):
+- mide el borde derecho real del contenido (la cifra vieja se conserva al lado, `desbordeXDelDocumento`);
+- lleva dos casos con obra larga, uno real y uno inyectado, como control positivo;
+- sale con código 1 si algo desborda o si alguna pasada no miró ninguna caja;
+- lee la cookie de QA en sus dos formatos (con el de hoy moría en un timeout de `renderAppView`).
+
+## Medidas
+| pasada | CSS | pasadas | con desborde | medida vieja (`html.scrollWidth`) |
+|---|---|---|---|---|
+| antes | el de yaqu.app | 18 (6 casos × 390, 1024, 1280) | **3**, las tres a 390: +61, +114 y +61 px | 0 en las 18 |
+| después | el de esta rama, servido sobre yaqu.app | 18 | **0** | 0 en las 18 |
+
+Además, a 390 la hoja del parte firmado pasa de 378 a 390 px (deja de encogerse). A 1024 y 1280 las 12 pasadas
+miden lo mismo antes y después (776 y 1032 px). Salidas y medidas completas: `docs/evidencias/scrum1722c/`.
+
+## Tests
+`tests/scrum1722c-la-hoja-del-parte-pide-su-ancho.test.mjs` (6 casos). Rojo primero: sobre el CSS de `main` cae
+el caso «toda regla que centra la hoja del parte con márgenes auto le pide `width: 100%`» (1 de 6); con el
+arreglo, 6 de 6. Lee el CSS sin comentarios y recorre también las reglas de dentro de `@media`; los píxeles los
+mide la sonda.
+
+## Pendiente
+- Regla 42: tras el merge, la sonda SIN `PARTE_CSS` contra yaqu.app → 18 pasadas, 0 con desborde.
+
+## El rojo del CI de #3173 y su arreglo (16-nov-2026, ~16:30Z)
+El obligatorio cayó con UN fallo: `tests/scrum700-filtros-de-comentario.test.mjs` («más ficheros con filtro propio:
+92 > 91»). El test nuevo quitaba los comentarios del CSS con una expresión propia, y la casa tiene un sitio único
+para eso (`soloEjecutable`, de `tests/_guard-texto.mjs`).
+- Arreglo en el TEST, no en el guard (regla 41): usa `soloEjecutable(css, { almohadillaEsComentario: false })`
+  (en CSS la almohadilla abre un id o un color, no un comentario).
+- Medido antes de cambiarlo, sobre el `styles.css` de la rama: el texto que sale es el mismo salvo espacios, con
+  1.350 llaves de apertura y 1.350 de cierre por los dos caminos. El test lee las mismas reglas.
+- Tras el arreglo: `scrum700` + el test nuevo + `scrum1415`, 17 de 17, 0 fallos, 0 saltos.
+- Por qué no se vio antes de empujar: `scrum700` recorre el árbol entero y no está entre los vecinos que se
+  corrieron ni en los 15 guards de entrada; sólo corre en la tanda completa del CI.
+
+### El segundo rojo del CI (16-nov, ~16:45Z) · el filtro, ahora con suelo
+
+- El check obligatorio de #3173 volvió a caer, con DOS casos de `tests/scrum719-el-suelo-de-los-doce.test.mjs`
+  (job 133443247870): «un test NUEVO no llama al filtro sin suelo» (`soloEjecutable` en la línea 57 del test
+  nuevo) y «el veredicto guardado de `censo:mudez` cubre la población» (el test nuevo, «sin ficha»).
+- El arreglo anterior cambió un filtro propio por `soloEjecutable`, que es el sitio único pero NO da suelo: si
+  se queda ciego devuelve la nada, y «ninguna regla ensancha la hoja» sobre la nada pasa sola.
+- Arreglo en el TEST (regla 41): `ejecutableDe(css, { ancla: 'header.parte-cabecera', … })`, que revienta si
+  tras filtrar ya no está la cabecera del parte. Y su ficha, generada con `npm run censo:mudez -- --escribir`
+  (no a mano): `VIVO` — rompiendo el filtro, el test cae. El veredicto pasa a 131 fichas, 1 medida ahora.
+- Tras el arreglo: el test nuevo + `scrum719` + `scrum700` + `scrum1415`, 54 de 54, 0 fallos, 0 saltos;
+  guards de entrada 15 de 15.
+- Por qué no se vio antes de empujar (A9): `scrum719` tampoco está entre los vecinos ni en los guards de
+  entrada. Un test NUEVO que quita comentarios corre antes de empujar `scrum700` Y `scrum719`, los dos.

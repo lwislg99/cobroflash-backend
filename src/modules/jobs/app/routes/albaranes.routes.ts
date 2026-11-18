@@ -37,8 +37,8 @@ import { ERROR_ALBARAN_CAMBIADO, exigirNombreFirmante, normalizarLugarEntrega, r
 import { ERROR_ALBARAN_CAMBIADO_AL_EDITAR, puedeEditarEstaVersion } from '../../domain/albaranEdicion';
 import { seesOnlyOwnJobs, seesAllJobs, adminOnlyAlbaranField } from '../../../../core/http/roleCapabilities'; // SCRUM-467 / SCRUM-1712
 // SCRUM-1707 (c.21547 Q2) · cada respuesta JSON del albarán pasa por aquí: el operario, sin precios.
-// El PDF (`/:id/pdf`) NO: lo gobierna `ocultarPreciosEnDocumento`, no el rol (c.21556 ②).
-import { albaranParaElRol, filaDeAlbaranParaElRol, grupoPendienteParaElRol } from '../../domain/albaranParaElRol';
+// El PDF (`/:id/pdf`) también, desde SCRUM-1744: `pdfDelAlbaranSinPrecios` (antes, fuera por c.21556 ②).
+import { albaranParaElRol, filaDeAlbaranParaElRol, grupoPendienteParaElRol, pdfDelAlbaranSinPrecios } from '../../domain/albaranParaElRol';
 import { esSuyoElTrabajo, SELECT_DUENOS } from '../../domain/accesoAlTrabajo'; // SCRUM-849
 import { quienPideDe } from '../../../../core/documentos/accesoALaFactura'; // SCRUM-1555
 import { wherePresupuestosVisibles } from '../../../../core/documentos/accesoAlPresupuesto'; // SCRUM-1555
@@ -1171,7 +1171,9 @@ router.get('/:id/pdf', async (req, res) => {
     const found = await findAlbaran(req);
     if (!found.ok) return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
     const { albaran } = found;
-    const { diskPath, numero } = await ensureAlbaranPdf(albaran.id);
+    // SCRUM-1744 · el operario baja el papel SIN precios (Q2 de c.21547): la pantalla ya se los
+    // escondía y este botón se los daba.
+    const { diskPath, numero } = await ensureAlbaranPdf(albaran.id, false, { sinPrecios: pdfDelAlbaranSinPrecios(req.userRole) });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${numero}.pdf"`);
     // SCRUM-822 · `root` obligatorio: sin él `send` aplica su regla de dotfiles a la ruta

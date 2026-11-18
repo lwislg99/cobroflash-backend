@@ -1253,19 +1253,35 @@ function jobRow(j, container, equipo) {
     bParte.setAttribute('data-abrir-parte', '1');
     bParte.dataset.filaNoNavega = '1';
     bParte.textContent = 'Abrir parte';
+    const abrirElParte = (parte) => {
+      if (window.renderAppView) window.renderAppView('parte-detail', { parteId: parte.id });
+    };
+    const crearElParte = async () => abrirElParte(
+      await apiRequest('/admin/partes', { method: 'POST', body: JSON.stringify({ jobId: j.id }) }),
+    );
+    // El MISMO aviso, literal, que la puerta del detalle (`jobDetailView.js`, SCRUM-652).
+    const avisarDelFallo = () => {
+      if (typeof showToast === 'function') showToast('No se ha podido abrir el parte. Vuelve a intentarlo.', 'warn');
+    };
     bParte.addEventListener('click', async (e) => {
       e.stopPropagation();
       bParte.disabled = true;
       try {
         const lista = await apiRequest('/admin/partes');
-        const borrador = (lista && Array.isArray(lista.partes) ? lista.partes : [])
-          .find((p) => p && p.jobId === j.id && p.estado === 'borrador');
-        const parte = borrador
-          || await apiRequest('/admin/partes', { method: 'POST', body: JSON.stringify({ jobId: j.id }) });
-        if (window.renderAppView) window.renderAppView('parte-detail', { parteId: parte.id });
+        const suyos = (lista && Array.isArray(lista.partes) ? lista.partes : [])
+          .filter((p) => p && p.jobId === j.id);
+        const borrador = suyos.find((p) => p.estado === 'borrador');
+        if (borrador) {
+          abrirElParte(borrador);
+        } else if (pideAvisoDeVisitaNueva(suyos)) {
+          // SCRUM-1751 · el último está FIRMADO y no hay borrador: crear es empezar OTRA visita,
+          // y eso se pregunta. El alta sale del aviso; si se cancela, no pasa nada.
+          avisarDeVisitaNueva(() => crearElParte().catch(avisarDelFallo));
+        } else {
+          await crearElParte();
+        }
       } catch (_err) {
-        // El MISMO aviso, literal, que la puerta del detalle (`jobDetailView.js`, SCRUM-652).
-        if (typeof showToast === 'function') showToast('No se ha podido abrir el parte. Vuelve a intentarlo.', 'warn');
+        avisarDelFallo();
       } finally {
         bParte.disabled = false;
       }

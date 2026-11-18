@@ -215,7 +215,7 @@
     },
     {
       "id": "public/dashboard/js/parteDetailView.js · TEXTOS.desplazamiento",
-      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+      "motivo": "SCRUM-1746: el literal pasó de «Desplazamiento» (SCRUM-1215 comentario 17367) a «Desplazamientos (nº de viajes)», APROBADO por el fundador el 17-nov-2026 en SCRUM-1746 (descripción del ticket; ficha docs/microcopy/2026-11-17-SCRUM-1746-desplazamientos-numero-de-viajes.md). Lleva su comentario de firma encima."
     },
     {
       "id": "public/dashboard/js/parteDetailView.js · TEXTOS.kilometros",

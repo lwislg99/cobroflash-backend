@@ -6,7 +6,7 @@
 //   node scripts/equipo/norma.mjs --todo           el fichero entero
 //   opciones:  --fichero <ruta>   lee ese fichero (tests, o quien no tenga origin/main)
 //              --origen <ref>     otra referencia de git en vez de `origin/main`
-//              --entera           no corta A19 antes de su historia
+//              --entera           no corta A19 (ni en el arranque ni pedida por id)
 //
 // ── POR QUÉ EXISTE ────────────────────────────────────────────────────────────────────────────
 // Cada sesión nueva del equipo arranca leyendo `docs/equipo/00-normas-comunes.md` ENTERO (51,8 KB,
@@ -14,23 +14,25 @@
 // traspaso (11,4 KB de media). Con las dos lecturas, un relevo cuesta ~55.000 tokens ANTES de
 // hacer nada, y esos tokens se vuelven a pagar (como caché leída) en cada turno de la sesión.
 // El suelo de arranque se mide con `gasto-arranque.mjs`; este script es la mitad que lo baja:
-// 13 de las 24 secciones son las que hay que saber ANTES de tocar nada (tanda, PASO 0, medir, git,
-// lo que no se toca, entrega, fallos, ticket, informe, encargo, relevo, carril, PR), y las otras
-// 11 son consulta: el arranque imprime su ÍNDICE (id, título y tamaño) y se traen a demanda.
+// 12 de las 25 secciones son las que hay que saber ANTES de tocar nada (tanda, PASO 0, medir, git,
+// lo que no se toca, entrega, fallos, informe, encargo, los umbrales del relevo, carril, gasto), y
+// las otras 13 son consulta: el arranque imprime su ÍNDICE (id, título y tamaño) y se traen a
+// demanda cuando la tabla de la A1 lo dice (A13 al tocar un ticket, A24 al empujar; SCRUM-996f).
 //
 // ── LO QUE HACE Y LO QUE NO ───────────────────────────────────────────────────────────────────
 // Solo LEE y solo IMPRIME: no escribe nada, no hace `fetch`, no toca el fichero. Y no se calla:
 //   · la fuente por defecto es `git show origin/main:docs/equipo/00-normas-comunes.md`. Si no se
 //     puede leer, es «NO PUDE MIRAR» (salida 2). NO hay caída silenciosa al árbol de trabajo: un
 //     checkout viejo daría normas fósiles y la sesión creería tener las de hoy.
-//   · las 14 secciones de arranque se buscan por id Y por título. Si falta una, o su título ya no
+//   · las 12 secciones de arranque se buscan por id Y por título. Si falta una, o su título ya no
 //     casa, es «NO PUDE MIRAR» y NO se imprime un subconjunto en verde: referenciar por posición
-//     caduca en cuanto alguien renumera, y un arranque que omite en silencio A13 es peor que uno
+//     caduca en cuanto alguien renumera, y un arranque que omite en silencio A14 es peor que uno
 //     que falla.
 //   · un id que aparece dos veces es ambiguo: salida 2.
-//   · el corte de A19 (la historia de sus versiones anteriores) se DECLARA en la salida, con la
-//     orden que trae la sección completa; si el marcador ya no está, se imprime ENTERA y también
-//     se declara.
+//   · los cortes de A19 se DECLARAN en la salida, con la orden que trae la sección completa. En
+//     `--arranque` corta antes de `### A19.1` (se queda en los umbrales); pedida por id, antes de
+//     «Cuarta versión» (solo fuera la historia). Si el marcador ya no está, se imprime ENTERA y
+//     también se declara.
 //
 // Salida: 0 = impreso · 2 = NO PUDE MIRAR o argumentos que no se entienden. No existe el 1: aquí
 // no hay «algo que listar», o se leyó o no se leyó. La última línea trae `EXIT=<código>` y sale de
@@ -48,14 +50,35 @@ import { fileURLToPath } from 'node:url';
 export const RUTA_NORMAS = 'docs/equipo/00-normas-comunes.md';
 export const ORIGEN_POR_DEFECTO = 'origin/main';
 export const MARCADOR_DE_CORTE_A19 = 'Cuarta versión';
+/** SCRUM-996f: en el arranque, A19 se queda en sus umbrales; el detalle empieza en este `###`. */
+export const MARCADOR_DE_CORTE_A19_ARRANQUE = '### A19.1';
 export const MAX_BUFFER = 20 * 1024 * 1024;
 
-/** Las secciones que tienen un corte y por dónde se cortan. */
-export const CORTES = { A19: MARCADOR_DE_CORTE_A19 };
+/**
+ * Las secciones que tienen un corte y por dónde se cortan, uno por modo.
+ *   · `CORTES` vale al pedir una sección por id (`norma.mjs A19`): fuera solo la historia.
+ *   · `CORTES_ARRANQUE` vale en `--arranque`: fuera el detalle (A19.1) Y la historia, que va
+ *     debajo. El marcador del arranque es un `###`, así que casa con el COMIENZO de la línea: una
+ *     frase que cite «### A19.1» no lo dispara.
+ * `--entera` anula los dos.
+ */
+export const CORTES = {
+  A19: {
+    marcador: MARCADOR_DE_CORTE_A19, que: 'historia', pista: '`norma.mjs A19 --entera` la trae completa',
+    casa: (l) => l.includes(MARCADOR_DE_CORTE_A19),
+  },
+};
+export const CORTES_ARRANQUE = {
+  A19: {
+    marcador: MARCADOR_DE_CORTE_A19_ARRANQUE, que: 'el detalle y la historia', pista: '`norma.mjs A19 --entera` al relevar',
+    casa: (l) => l.startsWith(MARCADOR_DE_CORTE_A19_ARRANQUE),
+  },
+};
 
 /**
- * Las 14 secciones que se leen al arrancar. `titulo` es un TROZO del título real (no el título
+ * Las 12 secciones que se leen al arrancar. `titulo` es un TROZO del título real (no el título
  * entero): si la sección se renumera o se retitula, el arranque avisa en vez de callar.
+ * SCRUM-996f: A13 (el ticket) y A24 (el PR) salen; la tabla de la A1 dice cuándo traerlas.
  */
 export const ARRANQUE = [
   { id: 'A1', titulo: 'Cada tanda' },
@@ -65,12 +88,10 @@ export const ARRANQUE = [
   { id: 'A7', titulo: 'Lo que no se toca' },
   { id: 'A8', titulo: 'Cómo se entrega' },
   { id: 'A9', titulo: 'Cuando algo te sale mal' },
-  { id: 'A13', titulo: 'El ticket' },
   { id: 'A14', titulo: 'Todo informe empieza' },
   { id: 'A16', titulo: 'Repite el encargo' },
   { id: 'A19', titulo: 'El PUESTO es fijo' },
   { id: 'A20', titulo: 'Si el encargo cae fuera' },
-  { id: 'A24', titulo: 'El PR lo abre el bot' },
   { id: 'A25', titulo: 'Eficiencia y gasto' },
 ];
 
@@ -207,18 +228,18 @@ export function seleccionarArranque(secciones, lista = ARRANQUE) {
  * Lo que se imprime de UNA sección: el texto exacto del fichero, salvo el corte declarado (A19).
  * Devuelve el texto, sus bytes (sin la nota, que es del script y no del fichero) y la nota.
  */
-export function imprimirSeccion(sec, { entera = false } = {}) {
-  const marcador = entera ? null : CORTES[sec.id];
-  if (!marcador) return { texto: sec.texto, bytes: sec.bytes, nota: null };
-  const i = sec.lineas.findIndex((l, k) => k > 0 && l.includes(marcador));
+export function imprimirSeccion(sec, { entera = false, cortes = CORTES } = {}) {
+  const corte = entera ? null : cortes[sec.id];
+  if (!corte) return { texto: sec.texto, bytes: sec.bytes, nota: null };
+  const i = sec.lineas.findIndex((l, k) => k > 0 && corte.casa(l));
   if (i === -1) {
-    return { texto: sec.texto, bytes: sec.bytes, nota: `[${sec.id}: no encontré el corte; impresa entera]` };
+    return { texto: sec.texto, bytes: sec.bytes, nota: `[${sec.id}: no encontré el corte «${corte.marcador}»; impresa entera]` };
   }
   const texto = sinFinalEnBlanco(sec.lineas.slice(0, i)).join('\n');
   return {
     texto,
     bytes: bytesDe(texto),
-    nota: `[${sec.id} cortada antes de «${marcador}» (historia); \`norma.mjs ${sec.id} --entera\` la trae completa]`,
+    nota: `[${sec.id} cortada antes de «${corte.marcador}» (${corte.que}); ${corte.pista}]`,
   };
 }
 
@@ -243,7 +264,7 @@ export function lineaFinal({ impresas, bytesImpresos, total, sinLeer }, codigo) 
 /** El subconjunto de arranque + el índice de lo que no se ha impreso. */
 export function renderizarArranque({ fuente, parseo, entera = false }) {
   const elegidas = seleccionarArranque(parseo.secciones);
-  const bloques = elegidas.map((s) => bloqueDe(s, { entera }));
+  const bloques = elegidas.map((s) => bloqueDe(s, { entera, cortes: CORTES_ARRANQUE }));
   const impresas = new Set(elegidas.map((s) => s.id));
   const resto = parseo.secciones.filter((s) => !impresas.has(s.id));
   const cuerpo = [

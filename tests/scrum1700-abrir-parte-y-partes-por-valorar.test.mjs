@@ -100,9 +100,19 @@ test('SCRUM-1700 ③ · abre el BORRADOR de ESTE trabajo, no el firmado ni el de
   assert.deepEqual(JSON.parse(JSON.stringify(navegado.at(-1))), ['parte-detail', { parteId: 8 }], `🔴 navegó a ${JSON.stringify(navegado.at(-1))}`);
 });
 
-test('SCRUM-1700 ③ · sin borrador (sólo uno firmado), CREA el parte de esta visita y lo abre', async () => {
-  const { porEstado, pedidas, navegado } = await montar({ partes: [{ id: 9, jobId: 101, estado: 'firmado' }], creado: { id: 77 } });
+// SCRUM-1751 cambió QUÉ pasa aquí, con texto firmado: con el último parte firmado y sin borrador, la
+// puerta ya no crea a secas — pregunta «¿Empezar una visita nueva?» y crea al aceptar. Lo que este
+// caso ataba sigue atado: no abre el FIRMADO de la visita anterior, y el parte nuevo es de ESTE
+// trabajo. El aviso en sí (texto, cancelar, las dos puertas) lo ata `scrum1751-aviso-de-visita-nueva`.
+test('SCRUM-1700 ③ · sin borrador (sólo uno firmado), NO abre el firmado: pregunta, y al aceptar CREA el de esta visita y lo abre', async () => {
+  const { banco, porEstado, pedidas, navegado } = await montar({ partes: [{ id: 9, jobId: 101, estado: 'firmado' }], creado: { id: 77 } });
   botones(porEstado.en_curso, 'Abrir parte')[0].click();
+  await espera();
+  assert.equal(pedidas.filter((p) => p.startsWith('POST /admin/partes')).length, 0, `🔴 creó sin preguntar: ${pedidas.join(' | ')}`);
+  assert.equal(navegado.length, 0, `🔴 navegó sin preguntar (¿al firmado?): ${JSON.stringify(navegado)}`);
+  const [crear] = botones(banco.ctx.document.body, 'Crear parte nuevo');
+  assert.ok(crear, '🔴 CIEGO: no sale el aviso de visita nueva, así que no hay con qué aceptar');
+  crear.click();
   await espera();
   const post = pedidas.filter((p) => p.startsWith('POST /admin/partes'));
   assert.equal(post.length, 1, `🔴 se esperaba UN alta de parte: ${pedidas.join(' | ')}`);

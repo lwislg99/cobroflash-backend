@@ -131,6 +131,9 @@ async function invocar(req) {
 /** Deja `prisma` con lo justo para llegar (o no) a la creación. */
 function sustituirPrisma(job) {
   moduloPrisma.prisma.job = { findFirst: async () => job, findUnique: async () => job };
+  // SCRUM-1740: el alta sin `lineas` mira el último parte del trabajo. Aquí no hay ninguno (= el alta
+  // de siempre, vacía); la precarga tiene su propio test con banco.
+  moduloPrisma.prisma.parteTrabajo = { findFirst: async () => null };
   // El `$transaction` devuelve un albarán ya hecho SIN ejecutar el callback: lo que se comprueba
   // aquí es que el guard DEJA PASAR, no la numeración (que tiene sus propios tests).
   moduloPrisma.prisma.$transaction = async () => ({

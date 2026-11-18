@@ -6,7 +6,11 @@ Firmado el 6-oct-2026. La delegación de microcopy es la permanente de `docs/equ
 
 ## Texto aprobado, literal
 
-> No se ha guardado. Desplazamiento es un número entero, como 1 o 2 — no el tiempo de viaje
+«No se ha guardado. Desplazamiento es un número entero, como 1 o 2 — no el tiempo de viaje»
+
+**Ya no es el texto vigente** (17-nov-2026): la casilla se rotula «Desplazamientos (nº de viajes)» desde
+SCRUM-1746 y el aviso pasó al plural, con firma propia — SCRUM-1752 comentario 21987, con su ficha en
+esta carpeta. Por eso esta línea ya no va como cita: es lo que se firmó aquí, no lo que se pinta hoy.
 
 ## Dónde se pinta
 

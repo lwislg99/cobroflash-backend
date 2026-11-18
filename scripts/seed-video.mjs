@@ -9,7 +9,7 @@
 // allocateInvoiceNumber / allocateAlbaranNumber) — PROHIBIDO hardcodear números.
 // Requiere `npm run build` antes (importa los servicios compilados de dist/).
 //
-// EJECUCIÓN (el fundador decide la BD; el script NO asume prod):
+// EJECUCIÓN (la BD la elige el fundador; el script NO asume prod; redacción: SCRUM-1502 c.21915):
 //   node scripts/seed-video.mjs --dev    (o `--staging`: la URL la resuelve el script,
 //                                        nadie la exporta; ver `_destino-de-semilla.mjs`)
 //
