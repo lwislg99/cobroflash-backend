@@ -135,6 +135,56 @@ export function revisarRegistro(nombre, texto, ctx) {
   return { anclas: tramos.length, bajoNorma, tipos, fallos };
 }
 
+// SCRUM-1731 · Las mutaciones de la línea «Mutaciones:», REPETIBLES por el meta-guard (A3: «una mutación
+// que afirmas se puede repetir, o no cuenta»). Van DEBAJO del código que mutan: este guard se muta a sí
+// mismo, y el ancla de verdad tiene que ser la primera ocurrencia y empezar línea (meta-guard, SCRUM-812c).
+// Sustituyen al guion propio que tuvo la rama (`docs/master/evidencias/SCRUM-1731/mutar.mjs`): un banco
+// con lista propia queda fuera del catálogo y lo tumba SCRUM-1387.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // El test del catálogo que no existe deja de caer.
+    fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+    de: '        if (n === null) fallos.push(',
+    a: '        if (false) fallos.push(',
+    cae: 'control positivo: el revisor SABE fallar por cada una de sus reglas',
+  },
+  {
+    // El test que existe pero no declara ninguna mutación deja de caer.
+    fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+    de: '        else if (n === 0) fallos.push(',
+    a: '        else if (false) fallos.push(',
+    cae: 'control positivo: el revisor SABE fallar por cada una de sus reglas',
+  },
+  {
+    // El guion «una vez» que no está en git deja de caer.
+    fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+    de: '      } else if (!ctx.enGit(ruta)) fallos.push(',
+    a: '      } else if (false) fallos.push(',
+    cae: 'control positivo: el revisor SABE fallar por cada una de sus reglas',
+  },
+  {
+    // La clave sin ruta detrás de la flecha pasa callada.
+    fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+    de: '      if (!r) { fallos.push(',
+    a: '      if (!r) { continue; fallos.push(',
+    cae: 'control positivo: el revisor SABE fallar por cada una de sus reglas',
+  },
+  {
+    // El corte deja de respetarse: se exigiría hacia atrás.
+    fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+    de: '    if (t.fecha < CORTE_MUTACIONES) continue;',
+    a: '    if (false) continue;',
+    cae: 'control positivo: el revisor SABE fallar por cada una de sus reglas',
+  },
+  {
+    // La ruta sin comillas invertidas (la forma literal de la norma firmada) deja de verse.
+    fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+    de: 'const RE_MUT_RUTA = /^ +(?:`([^`\\s]+)`|([^`\\s]+))/;',
+    a: 'const RE_MUT_RUTA = /^ +(?:`([^`\\s]+)`)/;',
+    cae: 'control positivo: el revisor SABE fallar por cada una de sus reglas',
+  },
+];
+
 const existeEnRepo = (ruta) => fs.existsSync(path.join(RAIZ, ruta));
 const textoSiempre = fs.readFileSync(path.join(RAIZ, SIEMPRE), 'utf8');
 const A10 = frasesDeA10(textoSiempre);

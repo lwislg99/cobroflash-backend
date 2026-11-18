@@ -30,9 +30,9 @@ Se avisa al orquestador para el canal con el equipo J; no es de este carril corr
 2026-11-18: 0 catálogo, 0 una vez antes de este registro (hacia adelante: arranca en cero, y lo que lo prueba
 es el control positivo y el rojo real de abajo).
 
-Mutaciones: una vez → `docs/master/evidencias/SCRUM-1731/mutar.mjs`
-(inyecta cada línea en ESTE registro, corre el guard, restaura por bytes; base sin mutar primero.
-Resultado en la sección «Rojo real», abajo.)
+Mutaciones: catálogo → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+(corregida en el tramo «Rojo del PR #3210», abajo: decía `una vez → docs/master/evidencias/SCRUM-1731/mutar.mjs`,
+y ese guion se retiró porque un banco con lista propia queda fuera del catálogo y lo tumba SCRUM-1387.)
 
 A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
 
@@ -58,3 +58,28 @@ nombran `00-normas-comunes`, `scrum1294-a9` o `meta-guard-mutaciones`: 471 tests
 nombran; 103 `ERR_MODULE_NOT_FOUND`). No hice `npm run build`: el cliente de Prisma de este árbol no casa con
 `schema.prisma` (`_prisma-client-guard`: faltan `InvoicePayment` y `FiscalPlazoEstado`) y no regenero (A1).
 Los de normas —scrum1294, scrum996/996d/996f, scrum1484c— en verde. La suite completa la corre el CI.
+
+## Rojo del PR #3210 (obligatorio «build + tests»)
+
+**Medido contra:** `origin/main` = `d69ccd51362c2861389ebc632a843e971330b406` · 2026-11-18T08:23:01Z
+
+**Qué cayó** (run 44261510118, job 134655710442; solo los «✖ failing tests»): dos, con UNA causa.
+`tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs` («ningún banco de mutación nuevo queda fuera del
+catálogo»): `docs/master/evidencias/SCRUM-1731/mutar.mjs` traía su lista propia, entró después del corte del
+guard y no nombra el catálogo. Y `tests/scrum976-guards-entrada-con-techo.test.mjs` ④, porque `guards:entrada`
+corre ese mismo guard. La sospecha inicial (que la ampliación del guard de la A9 cazara líneas `Mutaciones:`
+existentes) era FALSA: medido, la A9 no aparece en el rojo.
+
+**Arreglo** (el guard no se toca, regla 41): las mutaciones pasan al catálogo. `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+exporta `MUTACIONES_QUE_ME_TUMBAN` (6, sobre su propio código, debajo de lo que mutan: el ancla de verdad es la
+primera ocurrencia y empieza línea), todas con `cae` = su control positivo. Se retira `mutar.mjs` y la línea
+`Mutaciones:` de arriba pasa de `una vez` a `catálogo`. La tabla «Rojo real» queda como medida HISTÓRICA de
+aquel guion (inyectaba líneas en este registro); lo que se repite desde hoy es el catálogo.
+
+**Rojo real de las 6** (aplicadas como el meta-guard, `texto.replace(de, a)`; base limpia primero; guion de
+comprobación FUERA del árbol, en el tmp del trabajo): BASE rc=0 · 4 ok · 0 not ok; las 6 caen en el control
+positivo, `ambiguedadDelAncla` = null en las 6; restaurado por bytes: sí. **MAL 0 de 6.**
+
+Mutaciones: catálogo → `tests/scrum1294-a9-leccion-en-a10.test.mjs` (6 de 6 caen)
+
+A9: comprobación → `tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs`
