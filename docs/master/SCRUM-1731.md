@@ -30,13 +30,26 @@ Se avisa al orquestador para el canal con el equipo J; no es de este carril corr
 2026-11-18: 0 catálogo, 0 una vez antes de este registro (hacia adelante: arranca en cero, y lo que lo prueba
 es el control positivo y el rojo real de abajo).
 
-Mutaciones: una vez → `docs/master/evidencias/SCRUM-1731/mutar.mjs`
-(inyecta cada línea en ESTE registro, corre el guard, restaura por bytes; base sin mutar primero.
-Resultado en la sección «Rojo real», abajo.)
+Mutaciones: catálogo → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+(5 declaradas en su `MUTACIONES_QUE_ME_TUMBAN`; `docs/master/evidencias/SCRUM-1731/mutar.mjs` las toma de ahí,
+sin lista propia, las aplica una a una, exige que caiga su prueba y restaura por bytes. Ver «Corrección tras el
+rojo del CI», abajo.)
 
 A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
 
-## Rojo real (A23 ⑧ y ⑨)
+## Corrección tras el rojo del CI (run 44261510118, commit ba27154e)
+
+Cayeron `SCRUM-1387 · ningún banco de mutación nuevo queda fuera del catálogo` y, por arrastre,
+`SCRUM-976 ④` (`guards:entrada`): el `mutar.mjs` original traía su lista propia (`CASOS`) y no nombraba el
+catálogo, y entró después del corte. Arreglo en el código, sin tocar ningún guard: el test de la A9 declara
+sus 5 `MUTACIONES_QUE_ME_TUMBAN` (al final del fichero: el ancla del código va primero y empieza línea, SCRUM-1321)
+y `mutar.mjs` las importa. Las líneas inyectadas de la tabla de abajo ya no las ejecuta el guion: las cubre el
+control positivo del test (`fallanM(...)`), que es el que `cae` nombra.
+**NO verificado por mí:** en esa ejecución no pude correr `node` (permiso denegado), así que ni `mutar.mjs` ni la
+tanda corrieron tras el cambio. Lo único medido es estático: cada una de las 5 anclas aparece exactamente 2 veces
+en el fichero (código a principio de línea + cita en la declaración). Lo juzga el CI.
+
+## Rojo real (A23 ⑧ y ⑨) — del guion ANTERIOR (lista propia), conservado como historia
 
 Sobre el commit `a2dd50f1fc8b028643addf5ddb2ed2517ef40bb2` (árbol entero commiteado antes de inyectar), con
 `mutar.mjs`: **BASE rc=0 · pass 4 · fail 0**; luego, cada línea al final de este registro:

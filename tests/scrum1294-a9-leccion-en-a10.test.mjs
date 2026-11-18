@@ -251,3 +251,45 @@ test('SCRUM-1294 · todo registro desde el corte lleva su línea A9, y lo que di
   assert.ok(suma.anclas >= 1000, `solo ${suma.anclas} anclas reconocidas: el formato de ancla cambió y el guard ya no mira`);
   assert.deepEqual(fallos, []);
 });
+
+// SCRUM-1731 · las mutaciones que tumban a la parte nueva de este guard (A3: «una mutación que afirmas se
+// puede repetir»). Van AL FINAL a propósito: el meta-guard muta la PRIMERA ocurrencia del ancla, y la
+// declaración cita cada una a mitad de línea; el código, empezando línea. Si se sube este array por encima
+// del código, el ancla sale ambigua (SCRUM-1321). Cada una cae en el control positivo, que sabe fallar.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // «El test del catálogo no existe» deja de ser un fallo.
+    fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+    de: '        if (n === null) fallos.push(',
+    a: '        if (false) fallos.push(',
+    cae: 'SCRUM-1294 · control positivo: el revisor SABE fallar por cada una de sus reglas',
+  },
+  {
+    // «El test del catálogo no declara ninguna mutación» deja de ser un fallo.
+    fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+    de: '        else if (n === 0) fallos.push(',
+    a: '        else if (false) fallos.push(',
+    cae: 'SCRUM-1294 · control positivo: el revisor SABE fallar por cada una de sus reglas',
+  },
+  {
+    // «El guion no está en git» deja de ser un fallo.
+    fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+    de: '      } else if (!ctx.enGit(ruta)) fallos.push(',
+    a: '      } else if (false) fallos.push(',
+    cae: 'SCRUM-1294 · control positivo: el revisor SABE fallar por cada una de sus reglas',
+  },
+  {
+    // El corte se vuelve infinito: ninguna línea «Mutaciones:» se mira nunca.
+    fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+    de: '    if (t.fecha < CORTE_MUTACIONES) continue;',
+    a: '    if (true) continue;',
+    cae: 'SCRUM-1294 · control positivo: el revisor SABE fallar por cada una de sus reglas',
+  },
+  {
+    // La clave «una vez» deja de reconocerse como la línea.
+    fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+    de: 'const RE_MUT_CLAVE = /^\\s*(?:- )?(?:\\*\\*)?Mutaciones:(?:\\*\\*)? (catálogo|una vez) →(.*)$/;',
+    a: 'const RE_MUT_CLAVE = /^\\s*(?:- )?(?:\\*\\*)?Mutaciones:(?:\\*\\*)? (catálogo) →(.*)$/;',
+    cae: 'SCRUM-1294 · control positivo: el revisor SABE fallar por cada una de sus reglas',
+  },
+];
