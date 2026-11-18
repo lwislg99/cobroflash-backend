@@ -66,8 +66,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // `fechaDeDevengo` no pasa la zona al tope.
     fichero: 'src/modules/invoicing/domain/devengoPorCaja.ts',
-    de: '  const tope = topeDeDevengo(factura.createdAt, zona);',
-    a: '  const tope = topeDeDevengo(factura.createdAt);',
+    de: '  const tope = topeDeDevengo(factura.createdAt, zona);\n  return factura.paidAt && factura.paidAt.getTime() <= tope.getTime()',
+    a: '  const tope = topeDeDevengo(factura.createdAt);\n  return factura.paidAt && factura.paidAt.getTime() <= tope.getTime()',
     cae: 'SCRUM-1445d · topeDeDevengo con zona',
   },
   {

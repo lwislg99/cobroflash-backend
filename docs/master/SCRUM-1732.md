@@ -96,3 +96,23 @@ Las 11 tumban con `correr` + `aplicarUna` del runner de la casa.
 **Sin correr / sin medir:** ninguna base real, ni staging ni yaqu.app (`INVOICING_ES_ENABLED` OFF: sin víctima). La pantalla del libro (`libroRegistro.routes.ts`) no pasa el criterio y no cambia: **no muestra** `cobros` ni los avisos, y el aviso de «tramo sin medio» es texto nuevo que espera firma (Q3). `librosAeat` no pinta los cobros en sus filas: el literal no dice dónde (c.22011). LIVA 164/167 y RIVA 71, sin leer (J5).
 
 No se cierra (A13).
+
+### J1 · SCRUM-1732d · relevo: los rojos del obligatorio de ce969687b (run 44336229482)
+
+**Medido contra:** `origin/main` = `34939a6ad7c0ad7abc4f06e34e92b43fd519400b` · 2026-11-18T16:06:49Z (hora de GitHub; sesión J1 `jv-j1fh`, relevo de `jv-j1fd`, por encargo del orquestador `cobroflash-backend-ee`)
+
+A9: comprobación → `tests/scrum757-la-declaracion-que-nadie-lee.test.mjs`
+
+Seis rojos del obligatorio, tres causas, todas en tests (ni `src/` ni guards tocados):
+- `scrum1415`, `scrum757`, `scrum745`, `scrum765`: en `tests/scrum1732d-libro-por-tramos.test.mjs` el nombre del caso ① vivía en una constante (`CASO_A`), y la usaban el `test()` y dos `cae`. El lector de declaraciones solo lee literales y el censo de nombres construidos solo acepta nombres escritos: ahora los tres son el literal. Visto en rojo en local con el fichero de ce969687b (4 de 4) y en verde con el arreglo.
+- `scrum836` · SCRUM-1321 (ancla ambigua): la declaración «`fechaDeDevengo` no pasa la zona al tope» de `tests/scrum1445d-bordes-fiscales-en-la-zona.test.mjs` anclaba a una línea que el PR-2 repite en `devengoPorTramos` (`devengoPorCaja.ts`, líneas 116 y 185). El ancla lleva ahora la línea siguiente de `fechaDeDevengo`, y sigue tumbando su caso.
+- `scrum810` (suelo contra la base de fusión): `tests/scrum1732-cobro-parcial-defecto-declarado.test.mjs` bajaba de 7 a 6 declaraciones al retirar «se retira la declaración de (c)», que murió con la declaración. No se apunta en `RETIRADAS_A_PROPOSITO`: se repone la vigilancia con una mutación del ARREGLO (el libro de expedidas vuelve a anotar por cobro → (c) deja de salir ARREGLADO). Vuelve a 7.
+
+Mutaciones: catálogo → tests/scrum1732d-libro-por-tramos.test.mjs
+Mutaciones: catálogo → tests/scrum1732-cobro-parcial-defecto-declarado.test.mjs
+Mutaciones: catálogo → tests/scrum1445d-bordes-fiscales-en-la-zona.test.mjs
+Las 20 de los tres ficheros (5 + 7 + 8) tumban su caso con `correr` + `aplicarUna` del runner de la casa; ninguna muda ni ciega. Censo `--solo-censo`: 1.236 declaraciones, 0 ilegibles.
+
+**Mis errores, contados:** el encargo me nombraba solo el fichero 1732d, y `scrum836`/`scrum810` no estaban en mi tanda dirigida: los vi al leer el log del job, no corriendo. Mi primer parche del ancla de 1445d escribió un salto de línea real en vez de `\n` dentro del literal (lo vi en el diff antes de correr nada).
+
+**Sin correr:** la suite entera (la corre CI). El job «guards de navegador» (`guard:escalera-por-estado`) cae también en #3201: no es de este PR y no se ha tocado.

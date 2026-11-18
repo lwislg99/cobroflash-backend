@@ -104,6 +104,14 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'SCRUM-1732 · (c) el 303 de caja devenga por los tramos de invoice_payments: arreglado por el PR-2',
   },
   {
+    // (c) SCRUM-1732d · sustituye a «se retira la declaración de (c)», que murió con la declaración: el
+    // libro de expedidas vuelve a anotar por cobro (sin `devengo`) y la factura deja de salir entera en el T1.
+    fichero: 'src/modules/invoicing/domain/libroRegistro.repo.ts',
+    de: '  const porDevengo = campo !== CAMPO_EMISION && rango.devengo === true && Object.keys(fecha).length > 0;',
+    a: '  const porDevengo = campo !== CAMPO_EMISION && Object.keys(fecha).length > 0;',
+    cae: 'SCRUM-1732 · (c) el 303 de caja devenga por los tramos de invoice_payments: arreglado por el PR-2',
+  },
+  {
     // (d) La liberación deja de crear el Charge de 50 (escribe el importe en 0): la suma cambia.
     fichero: 'src/modules/billing/app/routes/chargesAdmin.routes.ts',
     de: '          amount: importe,\n          currency: original.currency,',

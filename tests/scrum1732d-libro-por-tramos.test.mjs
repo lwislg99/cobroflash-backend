@@ -29,22 +29,20 @@ export const DEFECTO_CONOCIDO = {
     que: 'la garantía retenida sin liberar devenga en el tope del 31-dic X+1 y su liberación posterior no devenga: pregunta 49 del asesor sin respuesta' },
 };
 
-const CASO_A = 'SCRUM-1732d · ① emitida en T1 y cobrada en dos tramos: el libro la lleva entera en T1 con sus dos cobros, y el 303 devenga cada tramo en su trimestre';
-
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // El 303 deja de pedir el devengo: vuelve a sumar el libro de expedidas (factura entera en T1).
     fichero: 'src/modules/fiscal/modelo303/modelo303.repo.ts',
     de: '...criterio, devengo: true });',
     a: '...criterio });',
-    cae: CASO_A,
+    cae: 'SCRUM-1732d · ① emitida en T1 y cobrada en dos tramos: el libro la lleva entera en T1 con sus dos cobros, y el 303 devenga cada tramo en su trimestre',
   },
   {
     // El libro vuelve a traer la factura al periodo del cobro (leerPorCaja también para el libro).
     fichero: 'src/modules/invoicing/domain/libroRegistro.repo.ts',
     de: "  const porDevengo = campo !== CAMPO_EMISION && rango.devengo === true && Object.keys(fecha).length > 0;",
     a: "  const porDevengo = campo !== CAMPO_EMISION && Object.keys(fecha).length > 0;",
-    cae: CASO_A,
+    cae: 'SCRUM-1732d · ① emitida en T1 y cobrada en dos tramos: el libro la lleva entera en T1 con sus dos cobros, y el 303 devenga cada tramo en su trimestre',
   },
   {
     // Redondeo de cada fracción en vez de cerrar con el último tramo: los céntimos no cuadran.
@@ -115,7 +113,7 @@ const c21 = async (db, año, t) => {
 const FA = factura(1, 'F-A', madrid('2026-02-10T12:00:00'), madrid('2026-03-20T12:00:00'));
 const FILAS_A = [fila(1, '605.00', madrid('2026-03-20T12:00:00'), { metodo: 'bizum' }), fila(1, '605.00', madrid('2026-05-15T12:00:00', true))];
 
-test(CASO_A, async () => {
+test('SCRUM-1732d · ① emitida en T1 y cobrada en dos tramos: el libro la lleva entera en T1 con sus dos cobros, y el 303 devenga cada tramo en su trimestre', async () => {
   const db = base([FA], FILAS_A);
   const t1 = await libro(db, 2026, 1);
   const a = t1.asientos.find((x) => x.numero === 'F-A');
