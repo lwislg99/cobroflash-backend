@@ -544,6 +544,10 @@ async function serializeJob(job: Job, refs?: JobRefs) {
     // SCRUM-66 (TRABAJO-4): tipo de operación fiscal (default para Jobs previos al campo).
     // El motor que lo respeta es SCRUM-17; aquí solo se lee/edita en el detalle.
     tipoOperacion: job.tipoOperacion ?? 'TRABAJO_UNICO',
+    // SCRUM-1670 · el TIPO DE INTERVENCIÓN (SCRUM-651), que NO es `tipoOperacion`: aquél es la bandera
+    // fiscal de arriba; éste, la clase de trabajo que eligió el profesional al crearlo. Se guardaba en
+    // `jobs.tipo_intervencion` y ninguna respuesta lo devolvía. `null` = no consta: SIN valor por defecto.
+    tipoIntervencion: job.tipoIntervencion ?? null,
     quote: quote
       ? { id: quote.id, number: quote.quoteNumber ?? quote.id,
           numeroVisible: numeroVisibleDelPresupuesto(quote), // SCRUM-1444c: el número HECHO; `number` sigue mientras S2 migra
