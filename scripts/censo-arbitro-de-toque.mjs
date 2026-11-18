@@ -27,6 +27,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { hojasEnlazadas } from '../tests/_pagina-con-sus-hojas.mjs';
 
 const RAIZ = process.cwd();
 
@@ -169,7 +170,18 @@ const cssDe = (rel) => {
   if (!fs.existsSync(abs)) return null;
   const src = fs.readFileSync(abs, 'utf8');
   if (!rel.endsWith('.html')) return src;
-  return [...src.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join('\n');
+  const enLinea = [...src.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]);
+  // SCRUM-1756d: el CSS de una página puede vivir en la hoja local que enlaza (CSP paso 3). Esas
+  // reglas son de la página y se cuentan con ella; las hojas que ya están en la superficie
+  // (tokens.css, auth.css) se cuentan una sola vez, con su nombre.
+  const hojas = hojasEnlazadas(src).filter((h) => !SUPERFICIE_PUBLICA.includes(h))
+    .map((h) => {
+      const a = path.join(RAIZ, h);
+      // Una hoja enlazada que no está no se calla: parecería una página sin decorativos.
+      if (!fs.existsSync(a)) throw new Error(`🔴 ${rel} enlaza ${h} y no existe en el árbol.`);
+      return fs.readFileSync(a, 'utf8');
+    });
+  return [...enLinea, ...hojas].join('\n');
 };
 
 export function censarPseudos(ficherosRel = SUPERFICIE_PUBLICA) {
