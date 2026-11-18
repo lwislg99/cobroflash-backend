@@ -290,7 +290,6 @@ const SOLO_GEOMETRIA = {
  * casa (patrón de SCRUM-1745c), y el test cae si uno de la lista ya está arreglado y sigue en ella.
  */
 const DEUDA = {
-  'scripts/guard-caja-avisos.mjs': 'desborde horizontal y vertical del aviso, y su número de líneas',
   'scripts/guard-caja-datos-del-cliente.mjs': 'desborde, líneas y filas visuales de las etiquetas',
   'scripts/guard-caja-documento-suelto.mjs': 'desborde (scrollWidth) y líneas de cada caja',
   'scripts/guard-falta-en-otra-pestana.mjs': '«cabe»: scrollWidth <= clientWidth del aviso',
@@ -298,7 +297,7 @@ const DEUDA = {
   'scripts/guard-notas-en-la-ficha.mjs': 'alto del botón y desborde de la página; enlaza inter.css a mano y no espera las caras',
 };
 /** El techo de la deuda: el 18-nov-2026 eran 7. Sólo se baja. */
-const TECHO_DEUDA = 6;
+const TECHO_DEUDA = 5;
 
 /** Primitivas que miden lo que pone un TEXTO: un banco de SOLO_GEOMETRIA que use una ya no lo es. */
 const MIDE_TEXTO = /\b(scrollWidth|scrollHeight|clientWidth|clientHeight|lineHeight|getClientRects|measureText|createRange)\b/;
