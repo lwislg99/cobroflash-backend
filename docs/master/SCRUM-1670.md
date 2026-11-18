@@ -50,3 +50,24 @@ parecido. Pintar `tipoIntervencion` en la ficha y en la tarjeta, y decidir cómo
 - Arreglo: `scrum1670-tipo-intervencion-viaja.test.mjs: 1` declarado en `GATEADOS_DECLARADOS`, con su motivo. El total se deriva con `.reduce()`: no hay cifra a mano. Merge de `origin/main` (iba 85 por detrás).
 - Verde: `scrum419` 8/8 (TAP a fichero fuera del árbol, 0 `not ok`).
 - ⚠️ `tsc --noEmit` NO verde EN ESTE ÁRBOL: 10 errores, todos `InvoicePayment`/`FiscalPlazoEstado`. Es el cliente de Prisma compartido, que va por detrás del schema de main (el guard: causa A+B). Este árbol cuelga del `node_modules` compartido, así que no regenero (trampas-del-entorno §10). No toca este diff; lo juzga el check de CI.
+
+## 18-nov-2026 (S2) · la FICHA pinta el tipo de intervención
+
+**Medido contra:** `origin/main` = `d69ccd51362c2861389ebc632a843e971330b406` · 2026-11-18T08:19:36Z · **Rama:** `scrum-1670b-ficha-tipo-intervencion` · **Carril:** S2
+**Skill UI:** cargada (`yaqu-premium-ui`) · no hay token, color ni componente nuevo: reutiliza la línea plegable de 917g en su variante fija (`sinCuerpo`)
+A9: comprobación → `tests/scrum1670b-ficha-tipo-intervencion.test.mjs`
+
+**Forma aprobada** por el orquestador con la delegación de firma: SCRUM-1670 **c.22019** (propuesta de S2, aprobada tal cual).
+
+- **Qué se pinta.** Una línea de SOLO LECTURA en «El trabajo», justo DEBAJO de «Tipo de trabajo». Rótulo: «Tipo de intervención». No es un texto nuevo: es el mismo literal que rotula ese campo en el alta (`jobNuevoModal.js`, `tn-tipo`), y vive en `ROTULO_TIPO_INTERVENCION` (`jobTrabajoPlegable.js`), fuera de `TEXTOS_EL_TRABAJO` por la misma razón que `ROTULO_TAREA`. Valor: el rótulo que manda el servidor (`/admin/me` → `tiposIntervencion`), resuelto por `rotuloDeTipoIntervencion`. El navegador no tiene su propia lista del vocabulario.
+- **Convivencia (c.21989).** «Tipo de trabajo» sigue siendo `tipoOperacion`, la bandera fiscal, con sus dos tarjetas: no se toca ni se mueve. Las dos líneas dicen «qué clase de trabajo es», pero son datos distintos y con rótulos distintos.
+- **Sin dato, sin línea.** Con `null`, con un valor que el vocabulario recibido no nombra o sin vocabulario no se pinta nada: ni «Sin especificar» ni el valor de la enum en bruto. La ven el jefe y el operario, porque no es dinero.
+- **Por qué no se edita:** un editor pediría textos de guardado sin firmar (regla 39). El tipo se elige en el alta.
+
+**Pruebas.**
+- Rojo primero: 5/7 ✖ sin el cambio. Los 2 negativos (sin línea) pasaban por vacío, y por eso hay mutación.
+- Verde 7/7. Mutación «si el servidor no lo nombra, pinta el valor en bruto» → cae «NO se pinta en bruto».
+- `scrum651` (fuente única del vocabulario) cayó con la primera versión del test, que COPIABA los tres valores. El guard tenía razón: ahora el test los importa de `dist/modules/jobs/domain/tipoIntervencion.js`.
+- Vecinos (115 ficheros que leen la ficha, el plegable o el vocabulario): 1031 tests, 0 fallos tras ese arreglo.
+- **Vista previa en yaqu.app ANTES del merge** (sonda de solo GET `sondas-s2/prod-1670b-tipo-intervencion.mjs`, fuera del repo; LOCAL_DIR = este árbol). Prod aún no devolvía la clave (`tipoServidor: (sin clave)`), así que `tipoIntervencion = MANTENIMIENTO` se INYECTÓ en la respuesta del GET, y queda declarado. Trabajo #77, 390 y 1280, admin real y operario SIMULADO en el front: 6/6 OK (línea justo debajo de «tipo», rótulo y valor, fija, desborde 0, 0 errores). Control `null` forzado: sin línea. Capturas fuera de git (`sondas-s2/evid-1670b-ficha/antes-del-merge`).
+- **Pendiente (regla 42):** tras el merge, la misma sonda SIN inyectar, sobre un trabajo creado con tipo.
