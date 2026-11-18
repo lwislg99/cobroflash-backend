@@ -35,3 +35,26 @@ Mutaciones: una vez → `docs/master/evidencias/SCRUM-1731/mutar.mjs`
 Resultado en la sección «Rojo real», abajo.)
 
 A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
+## Rojo real (A23 ⑧ y ⑨)
+
+Sobre el commit `a2dd50f1fc8b028643addf5ddb2ed2517ef40bb2` (árbol entero commiteado antes de inyectar), con
+`mutar.mjs`: **BASE rc=0 · pass 4 · fail 0**; luego, cada línea al final de este registro:
+
+| línea inyectada | espera | sale | el rojo dice |
+|---|---|---|---|
+| `catálogo → \`tests/no-existe-1731.test.mjs\`` | rojo | rojo | «no existe en el repo» |
+| `catálogo → \`tests/scrum1294-…\`` (existe, no declara) | rojo | rojo | «no declara ninguna mutación» |
+| `- **Mutaciones:** una vez → \`…/no-esta.mjs\`` | rojo | rojo | «no está en git» |
+| `catálogo → tests/no-existe-1731.test.mjs` (sin comillas) | rojo | rojo | «no existe en el repo» |
+| `catálogo → \`tests/scrum1387d-…\`` (control: declara 4) | verde | verde | — |
+
+**MAL 0 de 5**, restaurado por bytes: sí; `git status --porcelain` después, sin cambios míos. Con este registro
+dentro, el guard cuenta `Mutaciones (desde 2026-11-18): 0 catálogo, 1 una vez` (la de arriba, que se valida sola).
+
+**Tests corridos** (TAP fuera del árbol, código de salida en comando aparte): los 84 ficheros de `tests/` que
+nombran `00-normas-comunes`, `scrum1294-a9` o `meta-guard-mutaciones`: 471 tests · 384 pass · 83 fail · 4 skip.
+**Los 22 ficheros rojos importan `dist/`, y este worktree nuevo no tiene `dist/`** (comprobado: los 22 lo
+nombran; 103 `ERR_MODULE_NOT_FOUND`). No hice `npm run build`: el cliente de Prisma de este árbol no casa con
+`schema.prisma` (`_prisma-client-guard`: faltan `InvoicePayment` y `FiscalPlazoEstado`) y no regenero (A1).
+Los de normas —scrum1294, scrum996/996d/996f, scrum1484c— en verde. La suite completa la corre el CI.
