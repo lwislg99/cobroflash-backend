@@ -5706,3 +5706,37 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
   .detail-page--trabajo .btn-secondary { transition: none; }
 }
 /* ══ fin S2 · SCRUM-1725 ══ */
+
+/* ══ S2 · SCRUM-1768 · LA FICHA DEL TRABAJO APROVECHA EL ANCHO ══════════════════════════════════════════
+   Orden del fundador (18-nov): «en desktop se ve raro, todo en el medio sin aprovechar el espacio».
+   Medido en yaqu.app (build 738ecbef8, sonda prod-1768-ficha-formato.mjs): a 1920 la ficha ocupaba 1120 px
+   centrados (276 px muertos a cada lado) y el rail acababa a 700 px de alto con la columna principal en 1800.
+   Referencia (docs/competencia/capturas): ServiceM8 parte la ficha del job en datos | documentos con el total
+   y la acción arriba a la derecha; Housecall Pro, cabecera a todo el ancho + columna de resumen + columna ancha.
+   Aquí: cabecera a todo el ancho, columna principal fluida (lo que se hace) y columna lateral fija (contexto y
+   datos del trabajo). FORMA, NO FUNCIÓN: cero textos nuevos; sólo tokens de DESIGN.md. */
+.detail-page--trabajo { max-width: 1680px; margin-inline: 0; }
+.detail-page--trabajo .detail-cuerpo--con-rail { grid-template-columns: minmax(0, 1fr) minmax(300px, 340px); }
+@media (min-width: 1440px) {
+  .detail-page--trabajo .detail-cuerpo--con-rail { grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; }
+  .detail-page--trabajo .detail-cuerpo > div { gap: 20px; }
+}
+.detail-page--trabajo .detail-cuerpo > .detail-lateral { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+/* «+ Nuevo presupuesto», a todo el ancho de la columna y pegado al bloque PRESUPUESTO del rail. */
+.detail-page--trabajo .detail-lateral > [data-presupuesto-del-trabajo] { width: 100%; justify-content: center; }
+/* En la columna estrecha, cada línea de «El trabajo» lleva su valor DEBAJO del rótulo (alineado con él, tras
+   el galón de 14 px + 10 de hueco): a la derecha, «Una obra o reforma de varios días» se partía en dos. */
+@media (min-width: 721px) {
+  .detail-page--trabajo .detail-lateral .detail-plega-cab { flex-wrap: wrap; row-gap: 0; padding: 8px 0; }
+  .detail-page--trabajo .detail-lateral .detail-plega-valor {
+    flex-basis: 100%; margin-left: 24px; text-align: left; font-size: 13px; color: var(--body);
+  }
+}
+/* A 390 la columna lateral se disuelve: el orden es el de antes (rail arriba, «El trabajo» al final). */
+@media (max-width: 720px) {
+  .detail-page--trabajo .detail-cuerpo--con-rail { display: flex; flex-direction: column; gap: 16px; }
+  .detail-page--trabajo .detail-cuerpo > .detail-lateral { display: contents; }
+  .detail-page--trabajo .detail-lateral > [data-presupuesto-del-trabajo] { order: -1; }
+  .detail-page--trabajo .detail-lateral > .detail-section { order: 1; }
+}
+/* ══ fin S2 · SCRUM-1768 ══ */
