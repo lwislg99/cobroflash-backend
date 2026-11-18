@@ -136,3 +136,32 @@ Las filas son las de la decisión c.22036 (la aceptación literal de Jira no la 
 - El operario: las pasadas son con la cookie de administrador.
 - Un teléfono de verdad y Safari (`-webkit-line-clamp`), como en SCRUM-1679.
 - La ficha (SCRUM-1670b, S2) trae su propia función `rotuloDeTipoIntervencion` en `jobTrabajoPlegable.js`. Aquí la búsqueda va dentro de `jobRow`, sin función global, para no chocar con ese nombre mientras su PR sigue abierto. Cuando las dos estén en `main`, la tarjeta puede llamar a la de la ficha y quedar una sola.
+
+## SCRUM-1670d · Regla 42 de la TARJETA: visto en yaqu.app con el código desplegado (18-nov-2026)
+
+**Puesto:** S4 · **Rama:** `scrum-1670d-regla-42-tarjeta`. Sólo registro y evidencia; no toca `src/` ni `public/`.
+**Medido contra:** `origin/main` = `c9c8a7c3a2e9d2b5525494164755144f35d762d4` · 2026-11-18T12:07:30Z (cabecera `Date:` de `gh api -i zen`). #3220 (la tarjeta) mergeó a las 11:49:58Z.
+A9: sin fallo que generalice — pasada de sólo lectura con el instrumento que ya estaba en `main`, sin tropiezos
+
+**El despliegue, cotejado antes de medir** (descarga a fichero + `git hash-object --no-filters`, contra `git rev-parse origin/main:<ruta>`): yaqu.app sirve `/dashboard/js/jobsView.js` con el blob `e254d00683348cfeba0eacf5ae0af71d07c8ad34` y `/dashboard/css/styles.css` con el `70d719e798578cb1462078d497553089d12dca98`, los dos iguales a los de `origin/main`; el `jobsView.js` servido lleva `jobs-fila-tipo`.
+
+**Instrumento:** `docs/master/evidencias/SCRUM-1670/c1670c-tarjeta.mjs`, SIN `LOCAL_DIR`: nada servido encima, lo que se mide es producción. No escribe (la única escritura de la bitácora es `POST /admin/entorno`, del banco). Dos pasadas, 390 y 1280, las dos con código de salida 0. Población: 9 tarjetas en cada una.
+
+| | 390 | 1280 |
+|---|---|---|
+| tarjetas con el tipo | 5 de 9 | 5 de 9 |
+| tipo que no es un rótulo del vocabulario de la página | 0 | 0 |
+| tipo que no va justo debajo del cliente | 0 | 0 |
+| tipo con cuerpo, peso o color distinto de la dirección | 0 | 0 |
+| desborde de la página | 0 | 0 |
+| tarjeta del trabajo QA #86 | «Reparación / Asistencia técnica», 2 líneas sin cortar | la misma, 1 línea |
+
+Es lo mismo que se midió antes del merge con el front del árbol servido encima (sección 1670c): 5 de 9 y los contadores de rojo a cero.
+
+### Aceptación → dónde se ve (la fila que faltaba)
+
+| aceptación | dónde se ve |
+|---|---|
+| Visto en yaqu.app con el código desplegado (regla 42) | yaqu.app, cuenta QA, Trabajos: la tarjeta del trabajo #86 dice «Reparación / Asistencia técnica» bajo el nombre del cliente · `evidencias/SCRUM-1670/r42-390.png` y `r42-1280.png` · `r42-390.txt` y `r42-1280.txt`, línea `TESTIGO` |
+
+**Sigue sin medirse:** el operario (cookie de administrador), un teléfono de verdad y Safari, y «Instalación» en pantalla (ningún trabajo de la cuenta QA la lleva).
