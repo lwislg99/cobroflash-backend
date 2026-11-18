@@ -139,4 +139,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: "    pildora.textContent = '';",
     cae: 'SCRUM-1725g · la lista es PLANA para los tres roles: sin cabeceras de grupo, en el orden de la cola y con el estado en cada fila',
   },
+  {
+    // Vuelven DOS insignias apiladas en la celda de estado (lo que SCRUM-816 quitó): una fila dice
+    // «En curso+Parcial». Es también la mutación que tumba 816 caso 5 y guard-917 B.3: la toma de aquí
+    // `docs/master/evidencias/SCRUM-1725/plana-una-pildora-mutacion.mjs`.
+    fichero: 'public/dashboard/js/jobsView.js',
+    de: '    tdEstado.appendChild(pildora);',
+    a: "    tdEstado.appendChild(pildora); { const otra = document.createElement('span'); otra.className = 'status-pill'; otra.textContent = 'Parcial'; tdEstado.appendChild(otra); }",
+    cae: 'SCRUM-1725g · la lista es PLANA para los tres roles: sin cabeceras de grupo, en el orden de la cola y con el estado en cada fila',
+  },
 ];

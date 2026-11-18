@@ -1,37 +1,45 @@
-// SCRUM-1725g · «una sola píldora por fila», visto en ROJO.
+// SCRUM-1725g · «una sola píldora por fila», visto en ROJO en los TRES instrumentos que lo exigen.
 //
-// Qué hace: mide la BASE (sin mutar), cuelga una SEGUNDA píldora en la celda de estado de la fila
-// de `jobsView.js` (lo que SCRUM-816 quitó: dos insignias apiladas), vuelve a correr los dos
-// instrumentos y RESTAURA el fichero, comprobándolo byte a byte.
+// NO trae lista propia (guard SCRUM-1387): la mutación es la que declara el catálogo
+// `MUTACIONES_QUE_ME_TUMBAN` de `tests/scrum1725-lista-operario-sin-cobro.test.mjs` cuyo `de` es la
+// línea que cuelga la píldora, leída con `mutacionesDeclaradas` (el lector por AST del meta-guard).
+// El meta-guard ya comprueba que tumba el caso de 1725g; este guion mide ADEMÁS los otros dos:
 //
-//   · tests/scrum816-la-lista-no-miente.test.mjs   (el caso «ESTADO y FECHA…»)
+//   · tests/scrum816-la-lista-no-miente.test.mjs   (caso 5, «ESTADO y FECHA…»)
 //   · scripts/guard-lista-trabajos-917.mjs         (B.3)
 //
+// Mide la BASE sin mutar, inyecta, vuelve a medir y RESTAURA el fichero comprobándolo byte a byte.
 // Uso, desde la raíz del repo:   node docs/master/evidencias/SCRUM-1725/plana-una-pildora-mutacion.mjs
-// Sale 0 si la base está verde y la mutación tumba a los DOS; 1 si alguno no cae; 3 si no pudo
-// restaurar. La mutación NUNCA se commitea.
+// Sale 0 si la base está verde y la mutación tumba a los TRES; 1 si alguno no cae; 3 si quedó ciego
+// o no pudo restaurar. La mutación NUNCA se commitea.
 import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { mutacionesDeclaradas } from '../../../../scripts/meta-guard-mutaciones.mjs';
 
-const FICHERO = 'public/dashboard/js/jobsView.js';
-const DE = '    tdEstado.appendChild(pildora);';
-const A = '    tdEstado.appendChild(pildora); tdEstado.appendChild(pildora.cloneNode(true));';
+const CATALOGO = 'tests/scrum1725-lista-operario-sin-cobro.test.mjs';
+const LINEA = '    tdEstado.appendChild(pildora);';
+const suyas = mutacionesDeclaradas(fs.readFileSync(CATALOGO, 'utf8'), CATALOGO).filter((m) => m.de === LINEA);
+if (suyas.length !== 1) {
+  console.error(`🔴 CIEGO: el catálogo de ${CATALOGO} declara ${suyas.length} mutaciones sobre «${LINEA.trim()}» (esperaba 1).`);
+  process.exit(3);
+}
+const { fichero: FICHERO, de: DE, a: A } = suyas[0];
 
-const correr = (args) => {
-  const r = spawnSync(process.execPath, args, { encoding: 'utf8', env: { ...process.env, FORCE_COLOR: undefined } });
-  return { codigo: r.status, salida: (r.stdout || '') + (r.stderr || '') };
-};
+const INSTRUMENTOS = [
+  { nombre: '1725', args: ['--test', '--test-force-exit', '--test-reporter=tap', CATALOGO], ver: /^not ok|^# (tests|pass|fail) / },
+  { nombre: '816', args: ['--test', '--test-force-exit', '--test-reporter=tap', 'tests/scrum816-la-lista-no-miente.test.mjs'], ver: /^not ok|^# (tests|pass|fail) |no lleva UNA sola/ },
+  { nombre: 'guard-917', args: ['scripts/guard-lista-trabajos-917.mjs'], ver: /B\.3|NO SUPE|comprobaciones/ },
+];
+const entorno = { ...process.env };
+delete entorno.FORCE_COLOR;
 const medir = (rotulo) => {
-  const t = correr(['--test', '--test-force-exit', '--test-reporter=tap', 'tests/scrum816-la-lista-no-miente.test.mjs']);
-  const g = correr(['scripts/guard-lista-trabajos-917.mjs']);
-  const lineasT = t.salida.split(/\r?\n/).filter((l) => /^not ok|^# (tests|pass|fail) |no lleva UNA sola/.test(l));
-  const lineasG = g.salida.split(/\r?\n/).filter((l) => /B\.3|NO SUPE|comprobaciones|^\s*(✅|🔴)\s*guard/i.test(l));
   console.log(`\n── ${rotulo} ──`);
-  console.log(`816 · exit ${t.codigo}`);
-  lineasT.forEach((l) => console.log('   ' + l.trim()));
-  console.log(`guard-917 · exit ${g.codigo}`);
-  lineasG.forEach((l) => console.log('   ' + l.trim()));
-  return { t: t.codigo, g: g.codigo };
+  return INSTRUMENTOS.map((i) => {
+    const r = spawnSync(process.execPath, i.args, { encoding: 'utf8', env: entorno });
+    console.log(`${i.nombre} · exit ${r.status}`);
+    ((r.stdout || '') + (r.stderr || '')).split(/\r?\n/).filter((l) => i.ver.test(l.trim())).forEach((l) => console.log('   ' + l.trim()));
+    return r.status;
+  });
 };
 
 const original = fs.readFileSync(FICHERO);
@@ -49,7 +57,7 @@ try {
   base = medir('BASE (sin mutar)');
   fs.writeFileSync(FICHERO, texto.replace(DE, A));
   const aplicada = fs.readFileSync(FICHERO, 'utf8').includes(A);
-  console.log(`\ninyección aplicada: ${aplicada ? 'SÍ' : 'NO'} (${FICHERO})`);
+  console.log(`\ninyección aplicada: ${aplicada ? 'SÍ' : 'NO'} (${FICHERO}, tomada del catálogo de ${CATALOGO})`);
   if (!aplicada) throw new Error('la inyección no se aplicó');
   mutado = medir('MUTADO (dos píldoras apiladas en la celda de estado)');
 } finally {
@@ -59,7 +67,7 @@ try {
 }
 if (!restaurado) process.exit(3);
 
-const baseVerde = base.t === 0 && base.g === 0;
-const caenLosDos = mutado && mutado.t !== 0 && mutado.g !== 0;
-console.log(`\nVEREDICTO: base ${baseVerde ? 'verde' : '🔴 NO verde'} · mutación ${caenLosDos ? 'tumba a los dos' : '🔴 NO tumba a los dos'}`);
-process.exit(baseVerde && caenLosDos ? 0 : 1);
+const baseVerde = base.every((c) => c === 0);
+const caen = mutado ? mutado.filter((c) => c !== 0 && c !== null).length : 0;
+console.log(`\nVEREDICTO: base ${baseVerde ? 'verde' : '🔴 NO verde'} (${base.join(',')}) · la mutación tumba ${caen} de ${INSTRUMENTOS.length} (${mutado ? mutado.join(',') : 'sin medir'})`);
+process.exit(baseVerde && caen === INSTRUMENTOS.length ? 0 : 1);

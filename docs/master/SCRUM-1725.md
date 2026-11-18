@@ -83,7 +83,6 @@ Capturas y medidas: `docs/master/evidencias/SCRUM-1725/{antes,despues}-lista-{ad
 
 A9: comprobación → `docs/master/evidencias/SCRUM-1725/c1725g-lista.mjs`
 Mutaciones: catálogo → `tests/scrum1725-lista-operario-sin-cobro.test.mjs`
-Mutaciones: una vez → `docs/master/evidencias/SCRUM-1725/plana-una-pildora-mutacion.mjs`
 
 **Por qué.** El fundador vio la lista de 1725e y dio veredicto (SCRUM-1725 c.22073): «no me acabna de gustar es muy lioso la lsita […] me molaria un listado normal como los que tenemos en otros sitios». La vuelta anterior era de ropa; ésta es de estructura.
 
@@ -129,7 +128,8 @@ Las tarjetas se comparan como CONJUNTOS de líneas (cliente, tipo, tarea, técni
 **816 y guard-917 B.3: una sola píldora por fila (c.22081).** La columna «Estado» de la P1 tumbaba el caso 5 de `tests/scrum816-la-lista-no-miente.test.mjs`, que exigía que NO existiera. Rojo primero, con el test SIN tocar: `plana-816-rojo-primero.tap.txt` (12 casos, 1 caído: «sigue la columna ESTADO»). Después de la edición autorizada, 12 de 12.
 - 816 L136-140 exige ahora: el `<th>` «Estado» existe; la celda sale de `jobStatusMeta(j.status)`; y a `tdEstado` se le cuelga UNA sola cosa. FECHA, el cobro en IMPORTE y la ausencia de `cobroPillClass` siguen como estaban. El TÍTULO del caso («ESTADO y FECHA son una sola columna…») no se ha tocado: queda fuera de la autorización y hoy dice otra cosa que lo que el caso comprueba.
 - guard-917 B.3: **se REESCRIBE, no se retira.** C.4 no lo exige idéntico: lee solo la PRIMERA píldora de la celda de estado (`querySelector`), así que dos apiladas le pasarían. B.3 cuenta todas las píldoras de la fila (`.status-pill` y la antigua `.jobs-estado-pill`) y exige exactamente una, con suelo («no pinta ninguna fila» es NO SUPE MIRAR). Sus otras dos comprobaciones (la fecha o nada) no cambian. El guard sigue en 51 comprobaciones.
-- Visto en rojo con una mutación real (dos píldoras apiladas en la celda), base verde antes y restauración byte a byte: `plana-una-pildora-mutacion.txt`. Cae 816 caso 5 («se le cuelga 2 vez/veces») y cae B.3 («11 de 11 filas no llevan exactamente UNA píldora»). Commit previo a la inyección: `e0d5402528dc9fcdff6b3720974df3733c31488e`.
+- Visto en rojo con una mutación real (dos píldoras apiladas en la celda), base verde antes y restauración byte a byte: `plana-una-pildora-mutacion.txt`. Es la cuarta del catálogo del test de 1725 y tumba a los TRES que lo exigen: el caso de 1725g (la fila dice «En curso+Parcial»), 816 caso 5 («se le cuelga 2 vez/veces») y B.3 («11 de 11 filas no llevan exactamente UNA píldora»). El guion `plana-una-pildora-mutacion.mjs` no trae lista propia: toma la mutación del catálogo y mide además 816 y el guard. Commit previo a la primera inyección: `e0d5402528dc9fcdff6b3720974df3733c31488e`.
+- Un error mío de esta vuelta: la primera versión del guion traía la mutación escrita dentro, y eso lo prohíbe el guard SCRUM-1387 («un banco nuevo va al catálogo»), el mismo que ya hizo retirar un guion a 1725e. Lo cazó correr `tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs` tras el merge, antes del push. Arreglado en el guion, no en el guard.
 
 **Lo que NO queda probado, y lo que queda fuera:**
 - `guard:escalera-por-estado` sale ROJO (4 hallazgos, 2 ciegos: «el detalle (ninguna)») **también con la lista y la hoja de `origin/main` 34939a6ad**: es del detalle del Trabajo, no de esta rama. Reportado al orquestador.
