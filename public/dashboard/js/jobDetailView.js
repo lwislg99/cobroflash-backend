@@ -625,7 +625,10 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   const id = Number(jobId);
 
   const page = document.createElement('div');
-  page.className = 'detail-page';
+  // S2 · SCRUM-1725 · `detail-page--trabajo` sólo da a la ficha del Trabajo el lenguaje del parte
+  // (tarjeta por bloque, styles.css, bloque «S2 · SCRUM-1725»). `.detail-page` lo comparten cinco
+  // fichas; la clase es la frontera para que ninguna otra cambie. Forma, no función.
+  page.className = 'detail-page detail-page--trabajo';
   container.appendChild(page);
 
   const head = document.createElement('div');
@@ -2388,10 +2391,13 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
         // SCRUM-17/170: «facturado» NO es un estado del documento — es un derivado de TRES valores
         // contra el libro de líneas. Va como badge aparte del pill a propósito: son DOS EJES, y
         // aplanarlos escondería el parcial, que en una obra por fases es el caso normal.
+        // S2 · SCRUM-1725 · el ESPACIO delante de cada badge no es adorno: sin él, la celda se leía
+        // «EMITIDOSin precios» (medido en el texto de la ficha a 390 en yaqu.app, 18-nov) y así lo
+        // dice un lector de pantalla. Ningún texto nuevo: sólo separa los dos ejes.
         (alb.estadoFacturacion === 'parcial'
-          ? `<span class="job-doc-row__badge">Facturado en parte</span>`
-          : (alb.facturado || alb.estadoFacturacion === 'facturado' ? `<span class="job-doc-row__badge">Facturado</span>` : '')) +
-        (albValorado ? '' : `<span class="job-doc-row__badge">Sin precios</span>`) +
+          ? ` <span class="job-doc-row__badge">Facturado en parte</span>`
+          : (alb.facturado || alb.estadoFacturacion === 'facturado' ? ` <span class="job-doc-row__badge">Facturado</span>` : '')) +
+        (albValorado ? '' : ` <span class="job-doc-row__badge">Sin precios</span>`) +
       `</td>` +
       // LÍNEAS se OCULTA en móvil con `col-hide-mobile`, que es lo que la casa hace con lo
       // informativo que no acciona: `invoicesView.js:392` esconde ahí la Fecha y
