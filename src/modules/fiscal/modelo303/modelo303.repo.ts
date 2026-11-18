@@ -22,7 +22,9 @@ export async function leerModelo303(
   // `{}` —la columna aun no esta en el modelo de Prisma— y el libro devenga por emision, EXACTAMENTE
   // como siempre. El dia que el campo entre en `schema.prisma`, esto empieza a mandar solo.
   const criterio = await criterioDelMerchantParaElLibro(db as never, params.merchantId);
-  const libro = await leerLibroRegistro(db, { merchantId: params.merchantId, desde, hasta, zona, ...criterio });
+  // SCRUM-1732d (U′, c.22012) · con caja el 303 NO hereda las sumas del libro de expedidas: devenga por
+  // los TRAMOS cobrados en el trimestre, y lo no cobrado en el tope del 31-dic X+1 (LIVA 163 terdecies).
+  const libro = await leerLibroRegistro(db, { merchantId: params.merchantId, desde, hasta, zona, ...criterio, devengo: true });
   // SCRUM-1063b · el soportado sale del libro de recibidas del MISMO rango (`rangoTrimestre`), el
   // que entrega E4: un gasto no puede caer en la 29 de un trimestre y en el libro de otro.
   const libroRecibidas = await leerLibroRecibidas(db, { merchantId: params.merchantId, desde, hasta });

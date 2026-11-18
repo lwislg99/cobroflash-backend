@@ -68,9 +68,11 @@ const rutaDe = (r) => requiere.resolve(path.join(RAIZ, r));
 //
 // SCRUM-1732c (opción A, PR-1, c.21926 §⑤ y c.21928) · (a) y (b) RETIRADAS: los arregla la tabla
 // `invoice_payments` (el webhook apunta 950; la liberación apunta su fila con el `invoice_id`), y sus
-// casos pasan a exigir la fila. (c) sigue: es del PR-2 (J1). (d) se queda A PROPÓSITO, con su motivo.
+// casos pasan a exigir la fila. (d) se queda A PROPÓSITO, con su motivo.
+// SCRUM-1732d (PR-2, U′ de c.22012) · (c) RETIRADA: el 303 devenga por los tramos de invoice_payments y el
+// libro de expedidas lleva la factura entera en su expedición; su caso pasa a exigir el ARREGLO.
 export const DEFECTO_CONOCIDO = {
-  libroCienDeGolpe: { declarado: true,
+  libroCienDeGolpe: { declarado: false,
     tickets: ['SCRUM-1732'],
     que: 'con criterio de caja, el libro devenga el 100 % de la factura en el trimestre del primer cobro y la liberación no devenga nunca' },
   cobrosSumanMas: { declarado: true,
@@ -94,12 +96,12 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'SCRUM-1732 · (b) la liberación de la garantía apunta su fila contra la factura: arreglado por la opción A',
   },
   {
-    // (c) La caja desconectada: el libro pasa a filtrar por emisión y el control sembrado «cobrada
-    // en el T2 → sale en el T2» no sale → CIEGO.
+    // (c) La caja desconectada: el 303 vuelve a devengar por emisión y el control sembrado «cobrada
+    // en el T2 → devenga en el T2» no sale → CIEGO.
     fichero: 'src/modules/invoicing/domain/libroRegistro.repo.ts',
     de: "  const campo = 'criterioCaja' in rango ? campoDeDevengo(rango.criterioCaja) : CAMPO_EMISION;",
     a: '  const campo = CAMPO_EMISION;',
-    cae: 'SCRUM-1732 · (c) el libro de caja sigue devengando el 100 % en el trimestre del primer cobro: defecto declarado',
+    cae: 'SCRUM-1732 · (c) el 303 de caja devenga por los tramos de invoice_payments: arreglado por el PR-2',
   },
   {
     // (d) La liberación deja de crear el Charge de 50 (escribe el importe en 0): la suma cambia.
@@ -114,13 +116,6 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: '        importe, fechaCobro: ahora, fechaOrigen, metodo: method, tipo: \'liberacion_garantia\',',
     a: '        importe: 0.01, fechaCobro: ahora, fechaOrigen, metodo: method, tipo: \'liberacion_garantia\',',
     cae: 'SCRUM-1732 · (d) los cobros del cliente siguen sumando 1.050 € por una factura de 1.000 €: defecto declarado',
-  },
-  {
-    // Se retira la declaración de (c) y el defecto sigue.
-    fichero: 'tests/scrum1732-cobro-parcial-defecto-declarado.test.mjs',
-    de: 'DEFECTO_CONOCIDO = {\n  libroCienDeGolpe: { declarado: true,',
-    a: 'DEFECTO_CONOCIDO = {\n  libroCienDeGolpe: { declarado: false,',
-    cae: 'SCRUM-1732 · (c) el libro de caja sigue devengando el 100 % en el trimestre del primer cobro: defecto declarado',
   },
   {
     // Se retira la declaración de (d) y la suma sigue igual.
@@ -400,12 +395,18 @@ export async function medirLiberacion() {
 }
 
 const MERCHANT_LIBRO = 7;
-export function baseDelLibro(facturas) {
+export function baseDelLibro(facturas, filas = []) {
   const cumple = (v, f) => !f || ((!f.gte || (v && v >= f.gte)) && (!f.lte || (v && v <= f.lte)));
   return {
     invoice: { async findMany(args) {
       const w = args.where || {};
-      return facturas.filter((f) => f.merchantId === w.merchantId && cumple(f.createdAt, w.createdAt) && cumple(f.paidAt, w.paidAt));
+      return facturas.filter((f) => f.merchantId === w.merchantId && cumple(f.createdAt, w.createdAt) && cumple(f.paidAt, w.paidAt)
+        && (!w.id?.in || w.id.in.includes(f.id)));
+    } },
+    // SCRUM-1732d · invoice_payments, que es lo que lee el devengo por tramos.
+    invoicePayment: { async findMany({ where: w = {} }) {
+      return filas.filter((p) => p.merchantId === w.merchantId && cumple(p.fechaCobro, w.fechaCobro)
+        && (!w.invoiceId?.in || w.invoiceId.in.includes(p.invoiceId)));
     } },
     quote: { async findMany() { return []; } },
     albaran: { async findMany() { return []; } },
@@ -420,29 +421,41 @@ export const FACTURA_LIBRO = {
   albaranRefs: null, lines: [{ qty: 1, price: 826.45, tax: 0.21 }],
 };
 
-/** (c) ¿Qué devenga el libro de caja, trimestre a trimestre de 2026? */
-export async function medirLibro(factura = FACTURA_LIBRO) {
+// SCRUM-1732d · las filas del caso, como las deja el PR-1: 950 el 31-mar y la liberación (50) el 1-oct.
+const filaDelCaso = (id, importe, fechaCobro, tipo) => ({ id, merchantId: MERCHANT_LIBRO, invoiceId: 1, importe, fechaCobro,
+  fechaOrigen: 'declarada', metodo: 'bizum_manual', tipo, anulaId: null });
+export const FILAS_LIBRO = [filaDelCaso(1, '950.00', new Date(2026, 2, 31, 12), 'cobro'), filaDelCaso(2, '50.00', new Date(2026, 9, 1, 12), 'liberacion_garantia')];
+
+/** (c) ¿Qué devenga el 303 de caja, trimestre a trimestre de 2026? Y ¿dónde anota el libro de expedidas? */
+export async function medirLibro(factura = FACTURA_LIBRO, filas = FILAS_LIBRO) {
   const q = {};
+  const db = () => baseDelLibro([factura], filas);
   for (const t of [1, 2, 3, 4]) {
-    const libro = await leerLibroRegistro(baseDelLibro([factura]), { merchantId: MERCHANT_LIBRO, ...rangoTrimestre(2026, t), criterioCaja: true });
+    // El libro que lee el 303 (`devengo: true`): los importes de los tramos del trimestre.
+    const libro = await leerLibroRegistro(db(), { merchantId: MERCHANT_LIBRO, ...rangoTrimestre(2026, t), criterioCaja: true, devengo: true });
     q[t] = libro.asientos.filter((a) => a.numero === factura.number).map((a) => ({ base: a.base, total: a.total }));
   }
+  // El libro de expedidas con caja (sin `devengo`): la factura entera en el T1, con sus cobros.
+  const expedidas = (await leerLibroRegistro(db(), { merchantId: MERCHANT_LIBRO, ...rangoTrimestre(2026, 1), criterioCaja: true }))
+    .asientos.find((a) => a.numero === factura.number);
   // Control positivo SEMBRADO: la misma factura sin caja sale por emisión en el T1 (el libro la ve).
-  const sinCaja = (await leerLibroRegistro(baseDelLibro([factura]), { merchantId: MERCHANT_LIBRO, ...rangoTrimestre(2026, 1) }))
+  const sinCaja = (await leerLibroRegistro(db(), { merchantId: MERCHANT_LIBRO, ...rangoTrimestre(2026, 1) }))
     .asientos.some((a) => a.numero === factura.number);
-  // Control positivo SEMBRADO de que la caja está ENCENDIDA: la misma factura cobrada el 20-may sale
-  // en el T2 con caja. Hace falta porque el caso se emite y se cobra en el T1: con la caja apagada
-  // (por emisión) saldría igual, y la medida no lo vería (la mutación «caja desconectada» salió MUDA
-  // sin este control, medido el 13-nov-2026).
-  const cobradaEnT2 = { ...factura, paidAt: new Date(2026, 4, 20, 12) };
-  const cajaEncendida = (await leerLibroRegistro(baseDelLibro([cobradaEnT2]), { merchantId: MERCHANT_LIBRO, ...rangoTrimestre(2026, 2), criterioCaja: true }))
+  // Control positivo SEMBRADO de que la caja está ENCENDIDA: la misma factura cobrada entera el 20-may
+  // devenga en el T2. Hace falta porque el caso se emite y se cobra en el T1: con la caja apagada (por
+  // emisión) el T1 saldría igual (la mutación «caja desconectada» salió MUDA sin este control, 13-nov).
+  const cobradaEnT2 = baseDelLibro([{ ...factura, paidAt: new Date(2026, 4, 20, 12) }], [filaDelCaso(3, '1000.00', new Date(2026, 4, 20, 12), 'cobro')]);
+  const cajaEncendida = (await leerLibroRegistro(cobradaEnT2, { merchantId: MERCHANT_LIBRO, ...rangoTrimestre(2026, 2), criterioCaja: true, devengo: true }))
     .asientos.some((a) => a.numero === factura.number);
   const con = [1, 2, 3, 4].filter((t) => q[t].length > 0);
-  const poblacion = `1 factura de 1.000 (950 cobrados el 31-mar, 50 al liberar) · libro de caja 2026 · trimestres con asiento [${con}] · `
-    + `T1 ${JSON.stringify(q[1])} · control sin caja en T1=${sinCaja} · control caja encendida (cobrada en T2 → T2)=${cajaEncendida}`;
+  const poblacion = `1 factura de 1.000 (950 cobrados el 31-mar, 50 al liberar el 1-oct) · 303 de caja 2026 · trimestres que devengan [${con}] · `
+    + `T1 ${JSON.stringify(q[1])} · T4 ${JSON.stringify(q[4])} · expedidas T1 total=${expedidas?.total} cobros=${expedidas?.cobros?.length} · `
+    + `control sin caja en T1=${sinCaja} · control caja encendida (cobrada en T2 → T2)=${cajaEncendida}`;
   if (!sinCaja || !cajaEncendida || con.length === 0) return { estado: 'CIEGO', poblacion };
   const t1 = q[1];
   if (con.join() === '1' && t1.length === 1 && t1[0].total === 1000 && t1[0].base === 826.45) return { estado: 'DEFECTO', poblacion };
+  if (con.join() === '1,4' && t1[0].total === 950 && t1[0].base === 785.13 && q[4][0].total === 50 && q[4][0].base === 41.32
+    && expedidas?.total === 1000 && expedidas?.cobros?.length === 2) return { estado: 'ARREGLADO', poblacion };
   return { estado: 'CAMBIADO', poblacion };
 }
 
@@ -502,8 +515,8 @@ test('SCRUM-1732 · (a) un Bizum de 950 € apunta 950 en invoice_payments: arre
   arreglado(() => medirPagada()));
 test('SCRUM-1732 · (b) la liberación de la garantía apunta su fila contra la factura: arreglado por la opción A',
   arreglado(() => medirLiberacion()));
-test('SCRUM-1732 · (c) el libro de caja sigue devengando el 100 % en el trimestre del primer cobro: defecto declarado',
-  juzgar('libroCienDeGolpe', () => medirLibro()));
+test('SCRUM-1732 · (c) el 303 de caja devenga por los tramos de invoice_payments: arreglado por el PR-2',
+  arreglado(() => medirLibro()));
 test('SCRUM-1732 · (d) los cobros del cliente siguen sumando 1.050 € por una factura de 1.000 €: defecto declarado',
   juzgar('cobrosSumanMas', () => medirSuma()));
 
@@ -534,10 +547,9 @@ test('SCRUM-1732 · control: una factura que el libro no ve deja (c) en CIEGO, n
   assert.equal((await medirLibro({ ...FACTURA_LIBRO, merchantId: 99 })).estado, 'CIEGO');
 });
 
-test('SCRUM-1732 · control: una factura cobrada por partes en dos trimestres se mide como CAMBIO', async () => {
-  // Sembrado: si el libro pusiera la factura en otro trimestre (como haría A con la liberación), la
-  // medida tiene que salir del DEFECTO.
-  assert.equal((await medirLibro({ ...FACTURA_LIBRO, paidAt: new Date(2026, 10, 1, 12) })).estado, 'CAMBIADO');
+test('SCRUM-1732 · control: sin filas, la factura vuelve al 100 % en el T1 y (c) lo ve como DEFECTO', async () => {
+  // Sembrado: sin invoice_payments el devengo es el de siempre (c.21926 §①), que es el defecto de (c).
+  assert.equal((await medirLibro(FACTURA_LIBRO, [])).estado, 'DEFECTO');
 });
 
 test('SCRUM-1732 · control: las casillas del juicio', () => {

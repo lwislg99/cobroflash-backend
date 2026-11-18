@@ -199,6 +199,8 @@ const baseDelLibro = (facturas) => ({
   } },
   quote: { async findMany() { return []; } },
   albaran: { async findMany() { return []; } },
+  // SCRUM-1732d · invoice_payments: sin filas, cada factura se lee como hoy (100 % en paidAt, c.21926 §①).
+  invoicePayment: { async findMany() { return []; } },
 });
 const factura = (numero, createdAt, paidAt) => ({
   id: Number(numero.replace(/\D/g, '')) || 1, merchantId: M, number: numero, createdAt: new Date(createdAt),
@@ -207,7 +209,7 @@ const factura = (numero, createdAt, paidAt) => ({
 });
 async function numerosEn(facturas, año, t, zona) {
   const libro = await leerLibroRegistro(baseDelLibro(facturas), {
-    merchantId: M, ...rangoTrimestre(año, t, zona), criterioCaja: true, zona,
+    merchantId: M, ...rangoTrimestre(año, t, zona), criterioCaja: true, devengo: true, zona,
   });
   return libro.asientos.map((a) => a.numero);
 }

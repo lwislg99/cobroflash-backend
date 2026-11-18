@@ -54,6 +54,8 @@ function baseCon(facturas) {
     },
     quote: { async findMany() { return []; } },
     albaran: { async findMany() { return []; } },
+    // SCRUM-1732d · invoice_payments: sin filas, cada factura se lee como hoy (100 % en paidAt, c.21926 §①).
+    invoicePayment: { async findMany() { return []; } },
   };
 }
 
@@ -89,8 +91,8 @@ test('SCRUM-294 f2 · 🔴 CONTROL NEGATIVO: el libro SIN preguntar por el crite
 
 test('SCRUM-294 f2 · 🔴 EL CASO: emitida en Q1 y cobrada en Q2, con RECC declara en Q2', async () => {
   const db = baseCon([FACTURA]);
-  const q1 = await leerLibroRegistro(db, { merchantId: 7, ...Q(1), criterioCaja: true });
-  const q2 = await leerLibroRegistro(db, { merchantId: 7, ...Q(2), criterioCaja: true });
+  const q1 = await leerLibroRegistro(db, { merchantId: 7, ...Q(1), criterioCaja: true, devengo: true });
+  const q2 = await leerLibroRegistro(db, { merchantId: 7, ...Q(2), criterioCaja: true, devengo: true });
 
   assert.deepEqual(numerosDelLibro(q2), ['F-2026-001'],
     '🔴 LA FACTURA NO HA CAÍDO EN EL TRIMESTRE DEL COBRO.\n\n'
@@ -110,7 +112,7 @@ test('SCRUM-294 f2 · con RECC, una factura EMITIDA Y NO COBRADA no cae en ning�
   const sinCobrar = { ...FACTURA, id: 2, number: 'F-2026-002', paidAt: null, status: 'pending' };
   const db = baseCon([sinCobrar]);
   for (const t of [1, 2, 3, 4]) {
-    const libro = await leerLibroRegistro(db, { merchantId: 7, ...Q(t), criterioCaja: true });
+    const libro = await leerLibroRegistro(db, { merchantId: 7, ...Q(t), criterioCaja: true, devengo: true });
     assert.deepEqual(numerosDelLibro(libro), [],
       `🔴 una factura SIN cobrar ha caído en el trimestre ${t} con criterio de caja: se estaría `
       + 'declarando un IVA que no se ha cobrado.');

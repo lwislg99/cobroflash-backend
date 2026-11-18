@@ -101,6 +101,8 @@ export function baseCon(facturas, { criterioCaja = true } = {}) {
     },
     quote: { async findMany() { return []; } },
     albaran: { async findMany() { return []; } },
+    // SCRUM-1732d · invoice_payments: sin filas, cada factura se lee como hoy (100 % en paidAt, c.21926 §①).
+    invoicePayment: { async findMany() { return []; } },
     expense: { async findMany() { return []; } },
   };
 }
@@ -127,7 +129,7 @@ export async function medirS2(facturas = [S2, S1]) {
   const db = baseCon(facturas);
   const q = {};
   for (const t of [1, 2]) {
-    const libro = await leerLibroRegistro(db, { merchantId: MERCHANT, ...rangoTrimestre(2027, t), criterioCaja: true });
+    const libro = await leerLibroRegistro(db, { merchantId: MERCHANT, ...rangoTrimestre(2027, t), criterioCaja: true, devengo: true });
     const m303 = await leerModelo303(db, { merchantId: MERCHANT, año: 2027, trimestre: t });
     q[t] = { libro: numeros(libro), c122: m303.informacionAdicional.inversionSujetoPasivo.operaciones.map((o) => o.numero) };
   }
@@ -151,12 +153,12 @@ export async function medirTope(sinCobro = SIN_COBRO) {
   const esElTope = fecha instanceof Date && fecha.getFullYear() === tope.getFullYear()
     && fecha.getMonth() === 11 && fecha.getDate() === 31;
   const rango = rangoTrimestre(TOPE.año, TOPE.trimestre);
-  const enElTope = numeros(await leerLibroRegistro(baseCon([sinCobro]), { merchantId: MERCHANT, ...rango, criterioCaja: true }))
+  const enElTope = numeros(await leerLibroRegistro(baseCon([sinCobro]), { merchantId: MERCHANT, ...rango, criterioCaja: true, devengo: true }))
     .includes(sinCobro.number);
   // Controles positivos: la misma factura COBRADA en ese trimestre sale en él, y sin caja sale por
   // emisión. Si no salen, la factura no existe para el libro y el «no está» de arriba no dice nada.
   const cobrada = { ...sinCobro, paidAt: new Date(TOPE.año, 10, 15, 12), status: 'paid' };
-  const ctrlCobrada = numeros(await leerLibroRegistro(baseCon([cobrada]), { merchantId: MERCHANT, ...rango, criterioCaja: true }))
+  const ctrlCobrada = numeros(await leerLibroRegistro(baseCon([cobrada]), { merchantId: MERCHANT, ...rango, criterioCaja: true, devengo: true }))
     .includes(sinCobro.number);
   const ctrlEmision = numeros(await leerLibroRegistro(baseCon([sinCobro]), { merchantId: MERCHANT, ...rangoTrimestre(2026, 1) }))
     .includes(sinCobro.number);
@@ -213,8 +215,8 @@ test('SCRUM-1730 · (i) una factura MIXTA (S1+S2) va ENTERA por emisión, en el 
     { qty: 1, price: 600, tax: 0.21 }, { qty: 1, price: 400, tax: 0, causa: 'S2' },
   ]);
   const db = baseCon([mixta, S1]);
-  const q1 = await leerLibroRegistro(db, { merchantId: MERCHANT, ...rangoTrimestre(2027, 1), criterioCaja: true });
-  const q2 = await leerLibroRegistro(db, { merchantId: MERCHANT, ...rangoTrimestre(2027, 2), criterioCaja: true });
+  const q1 = await leerLibroRegistro(db, { merchantId: MERCHANT, ...rangoTrimestre(2027, 1), criterioCaja: true, devengo: true });
+  const q2 = await leerLibroRegistro(db, { merchantId: MERCHANT, ...rangoTrimestre(2027, 2), criterioCaja: true, devengo: true });
   // Control positivo: la S1 sigue en el trimestre del cobro, así que la caja está encendida.
   assert.deepEqual([numeros(q1), numeros(q2)], [['F-MIXTA'], ['F-S1']]);
   const m303q1 = await leerModelo303(db, { merchantId: MERCHANT, año: 2027, trimestre: 1 });
@@ -228,8 +230,8 @@ test('SCRUM-1730 · (ii) una factura cobrada DESPUÉS del tope no vuelve a salir
   const tarde = { ...SIN_COBRO, number: 'F-TARDE', paidAt: new Date(2028, 1, 15, 12), status: 'paid' };
   assert.equal(fechaDeDevengo(tarde, CAMPO_COBRO).getTime(), new Date(2027, 11, 31, 23, 59, 59, 999).getTime());
   const db = baseCon([tarde]);
-  const enTope = await leerLibroRegistro(db, { merchantId: MERCHANT, ...rangoTrimestre(2027, 4), criterioCaja: true });
-  const enCobro = await leerLibroRegistro(db, { merchantId: MERCHANT, ...rangoTrimestre(2028, 1), criterioCaja: true });
+  const enTope = await leerLibroRegistro(db, { merchantId: MERCHANT, ...rangoTrimestre(2027, 4), criterioCaja: true, devengo: true });
+  const enCobro = await leerLibroRegistro(db, { merchantId: MERCHANT, ...rangoTrimestre(2028, 1), criterioCaja: true, devengo: true });
   // Positivo: sale en el T4 de 2027 (el tope). Negativo: NO en el T1 de 2028, que es el del cobro.
   assert.deepEqual([numeros(enTope), numeros(enCobro)], [['F-TARDE'], []]);
   // Y el 303 lo hereda: la cuota (casilla 27) cae en el T4 de 2027 y sólo ahí.
@@ -241,7 +243,7 @@ test('SCRUM-1730 · (ii) el tope no adelanta nada: sin cobro, fuera de los trime
   // Lo que fija `scrum294b` (sin cobro no sale en 2026) sigue igual, y tampoco en el T3 de 2027.
   const db = baseCon([SIN_COBRO]);
   for (const [año, t] of [[2026, 1], [2026, 4], [2027, 3]]) {
-    const libro = await leerLibroRegistro(db, { merchantId: MERCHANT, ...rangoTrimestre(año, t), criterioCaja: true });
+    const libro = await leerLibroRegistro(db, { merchantId: MERCHANT, ...rangoTrimestre(año, t), criterioCaja: true, devengo: true });
     assert.deepEqual(numeros(libro), [], `${año}-Q${t}`);
   }
 });
