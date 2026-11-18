@@ -5718,8 +5718,8 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
 .detail-page--trabajo { max-width: 1680px; margin-inline: 0; }
 .detail-page--trabajo .detail-cuerpo--con-rail { grid-template-columns: minmax(0, 1fr) minmax(300px, 340px); }
 @media (min-width: 1440px) {
-  .detail-page--trabajo .detail-cuerpo--con-rail { grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; }
-  .detail-page--trabajo .detail-cuerpo > div { gap: 20px; }
+  .detail-page--trabajo .detail-cuerpo--con-rail { grid-template-columns: minmax(0, 1fr) 380px; gap: 24px; }
+  .detail-page--trabajo .detail-cuerpo > div { gap: 24px; }
 }
 .detail-page--trabajo .detail-cuerpo > .detail-lateral { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 /* «+ Nuevo presupuesto», a todo el ancho de la columna y pegado al bloque PRESUPUESTO del rail. */
