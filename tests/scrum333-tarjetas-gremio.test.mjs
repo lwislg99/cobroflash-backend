@@ -24,10 +24,13 @@ import {
 // Se REUTILIZA el extractor de SCRUM-400 en vez de escribir un segundo: ya sabe quitar
 // comentarios, `<script>` y `<style>`, y una segunda copia de la misma idea se desincroniza.
 import { textoPublicado } from '../scripts/_guard-conformidad-landing.mjs';
+import { paginaConSusHojas } from './_pagina-con-sus-hojas.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const LANDING = path.join(RAIZ, 'public', 'index.html');
-const html = fs.readFileSync(LANDING, 'utf8');
+// SCRUM-1756d: el CSS de la landing vive en la hoja que enlaza (`public/landing.css`); se lee
+// la página CON sus hojas. Cambia dónde se lee, no qué se exige.
+const html = paginaConSusHojas(RAIZ, 'public/index.html');
 
 // 🔴 LA DISTINCIÓN QUE ESTE FICHERO APRENDIÓ EN ROJO, Y EN SU PRIMERA EJECUCIÓN.
 //

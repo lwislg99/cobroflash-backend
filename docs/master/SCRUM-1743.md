@@ -3,7 +3,7 @@
 **Puesto:** J6 (jv-j6eg) · **Rama:** `scrum-1743-un-tramo-por-comando` · 18-nov-2026
 **Medido contra:** `origin/main` = `35153debff1a7adbb5a1176262c57f2a456d2632` · 2026-11-18T04:32:42Z (cabecera `Date:` de `gh api -i zen`)
 A9: comprobación → `tests/scrum1743-un-tramo-por-comando.test.mjs`
-Mutaciones: las dos de `MUTACIONES_QUE_ME_TUMBAN`, corridas con `correr` y `aplicarUna` de `scripts/meta-guard-mutaciones.mjs` (línea base limpia: 3 pasan, 0 caen, 0 saltan): **2 de 2 tumban su caso**, 0 colaterales. Quitar la hora de creación de la comparación tumba «raíz DISTINTA (mismo pid, otra hora…)»; anular el `if (repetida)` tumba «EL CASO». Fuente restaurado, comprobado después con `grep -c` de las dos anclas (1 y 1) y `git status`.
+Mutaciones: catálogo → `tests/scrum1743-un-tramo-por-comando.test.mjs` · las dos de `MUTACIONES_QUE_ME_TUMBAN`, corridas con `correr` y `aplicarUna` de `scripts/meta-guard-mutaciones.mjs` (línea base limpia: 3 pasan, 0 caen, 0 saltan): **2 de 2 tumban su caso**, 0 colaterales. Quitar la hora de creación de la comparación tumba «raíz DISTINTA (mismo pid, otra hora…)»; anular el `if (repetida)` tumba «EL CASO». Fuente restaurado, comprobado después con `grep -c` de las dos anclas (1 y 1) y `git status`.
 
 ## Decisiones
 

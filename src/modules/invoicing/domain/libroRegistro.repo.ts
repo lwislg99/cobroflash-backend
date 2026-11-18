@@ -34,9 +34,10 @@ import {
   type LibroRegistro,
   type FacturaParaLibro,
   type AlbaranVivo,
+  type DevengoDelPeriodo,
 } from './libroRegistro';
 // SCRUM-294 (fase B): qué fecha devenga. Se importa el criterio, no se copia la regla.
-import { campoDeDevengo, CAMPO_EMISION, CAMPO_COBRO, fechaDeDevengo, topeDeDevengo } from './devengoPorCaja';
+import { campoDeDevengo, CAMPO_EMISION, CAMPO_COBRO, fechaDeDevengo, topeDeDevengo, tramosDeDevengo, type FilaDeCobro } from './devengoPorCaja';
 import { diaNaturalEn, inicioDelDiaEn, finDelDiaEn } from '../../../core/zonaDelMerchant';
 /**
  * Lo mínimo del cliente Prisma que el lector usa. Se pide por parámetro (no se importa el
@@ -47,6 +48,11 @@ export interface ClienteDelLibro {
   invoice: { findMany(args: any): Promise<any[]> };
   quote: { findMany(args: any): Promise<any[]> };
   albaran: { findMany(args: any): Promise<any[]> };
+  /**
+   * SCRUM-1732d · `invoice_payments` (PR-1). Opcional en el tipo porque sin criterio de caja no se lee;
+   * CON caja, si falta, el libro LANZA: «no pude leer los cobros» no se convierte en «no hubo cobros».
+   */
+  invoicePayment?: { findMany(args: any): Promise<any[]> };
 }
 
 export interface RangoLibro {
@@ -82,6 +88,13 @@ export interface RangoLibro {
    * 303 sin que su código moviera una letra. ⚠️ 2-oct-2026 · SCRUM-1252: las evidencias YA lo encienden (su 303, no).
    */
   soloFacturas?: boolean;
+  /**
+   * SCRUM-1732d (U′, c.22012) · `true` = el libro que lee el 303. Con criterio de caja trae las
+   * facturas que DEVENGAN en el rango (`leerPorCaja`) con los importes de sus tramos dentro. Ausente,
+   * el libro de expedidas: cada factura en el periodo de su EXPEDICIÓN, entera (RIVA 69.5 y 63.3), con
+   * sus `cobros`. Sin caja no cambia nada.
+   */
+  devengo?: boolean;
 }
 
 /**
@@ -142,7 +155,8 @@ type FacturaLeida = FacturaParaLibro & { id: number };
  * tope sale como candidata por su `paidAt`, pero su devengo es el tope y se queda fuera: no se cuenta
  * dos veces.
  */
-async function leerPorCaja(db: ClienteDelLibro, rango: RangoLibro): Promise<FacturaLeida[]> {
+async function leerPorCaja(db: ClienteDelLibro, rango: RangoLibro):
+  Promise<{ facturas: FacturaLeida[]; filas: Map<number, FilaDeCobro[]>; devengo: Map<number, DevengoDelPeriodo> }> {
   const { desde, hasta } = rango;
   const rangoDe = (gte?: Date, lte?: Date) => ({ ...(gte ? { gte } : {}), ...(lte ? { lte } : {}) });
   const consulta = (where: Record<string, unknown>) =>
@@ -176,20 +190,66 @@ async function leerPorCaja(db: ClienteDelLibro, rango: RangoLibro): Promise<Fact
         ultimoX === undefined ? undefined : finDeAño(ultimoX),
       ) })
       : Promise.resolve([] as FacturaLeida[]),
+    // SCRUM-1732d · las que tienen un TRAMO cobrado en el rango (`invoice_payments`, por `fecha_cobro`).
+    leerFilasDeCobro(db, rango.merchantId, { fechaCobro: rangoDe(desde, hasta) }).then((fs) => {
+      const ids = [...new Set(fs.map((f) => f.invoiceId))];
+      return ids.length === 0 ? [] as FacturaLeida[] : consulta({ id: { in: ids } });
+    }),
   ]);
+  const candidatas = [...new Map(tandas.flat().map((f) => [f.id, f])).values()];
+  const filas = await filasPorFactura(db, rango.merchantId, candidatas.map((f) => f.id));
 
   const dentro = (d: Date | null) => d !== null
     && (!desde || d.getTime() >= desde.getTime()) && (!hasta || d.getTime() <= hasta.getTime());
   const porId = new Map<number, { f: FacturaLeida; d: Date }>();
-  for (const f of tandas.flat()) {
-    if (porId.has(f.id)) continue;
+  const devengo = new Map<number, DevengoDelPeriodo>();
+  for (const f of candidatas) {
+    // SCRUM-1732d · con filas, por TRAMOS: entra si alguno cae dentro, y se ordena por el primero.
+    const t = tramosDeDevengo(f as never, filas.get(f.id), zona);
+    if (t) {
+      const marcas = t.tramos.map((x) => dentro(x.fecha));
+      const i = marcas.indexOf(true);
+      if (i >= 0) { porId.set(f.id, { f, d: t.tramos[i].fecha }); devengo.set(f.id, { ...t, dentro: marcas }); }
+      continue;
+    }
     const d = fechaDeDevengo(f as never, CAMPO_COBRO, zona);
     if (d && dentro(d)) porId.set(f.id, { f, d });
   }
   // Por fecha de devengo y, a igualdad, por número: el mismo orden que la consulta de siempre.
-  return [...porId.values()]
+  const facturas = [...porId.values()]
     .sort((a, b) => a.d.getTime() - b.d.getTime() || String(a.f.number).localeCompare(String(b.f.number)))
     .map((x) => x.f);
+  return { facturas, filas, devengo };
+}
+
+/** SCRUM-1732d · lee filas de `invoice_payments` del merchant. Sin el modelo, LANZA. */
+async function leerFilasDeCobro(db: ClienteDelLibro, merchantId: number, where: Record<string, unknown>):
+  Promise<(FilaDeCobro & { invoiceId: number; merchantId: number })[]> {
+  if (!db.invoicePayment) {
+    throw new Error('[libroRegistro] con criterio de caja hay que leer invoice_payments y este cliente no la trae: no se sigue como si no hubiera cobros');
+  }
+  const fs = await db.invoicePayment.findMany({
+    // `merchantId:` escrito entero, no abreviado: es lo que lee el guard de tenencia (scrum296).
+    where: { merchantId: merchantId, ...where },
+    select: { id: true, merchantId: true, invoiceId: true, importe: true, fechaCobro: true, fechaOrigen: true, metodo: true, tipo: true, anulaId: true },
+  });
+  // Como las facturas: una fila ajena que se colara no cuenta (regla 2).
+  return fs.filter((f) => f.merchantId === merchantId);
+}
+
+/** SCRUM-1732d · las filas de esas facturas, agrupadas por factura. */
+async function filasPorFactura(db: ClienteDelLibro, merchantId: number, ids: number[]): Promise<Map<number, FilaDeCobro[]>> {
+  const porFactura = new Map<number, FilaDeCobro[]>();
+  if (ids.length === 0) {
+    if (!db.invoicePayment) await leerFilasDeCobro(db, merchantId, {});
+    return porFactura;
+  }
+  for (const f of await leerFilasDeCobro(db, merchantId, { invoiceId: { in: ids } })) {
+    const l = porFactura.get(f.invoiceId) ?? [];
+    l.push(f);
+    porFactura.set(f.invoiceId, l);
+  }
+  return porFactura;
 }
 
 /**
@@ -215,17 +275,21 @@ export async function leerLibroRegistro(
   // fallida LANZA en vez de caer a emisión.
   const campo = 'criterioCaja' in rango ? campoDeDevengo(rango.criterioCaja) : CAMPO_EMISION;
 
-  const leidas = campo !== CAMPO_EMISION && Object.keys(fecha).length > 0
-    ? await leerPorCaja(db, rango)
+  // SCRUM-1732d (U′) · con caja, SOLO el 303 (`devengo`) lee por devengo. El libro de expedidas va
+  // por EXPEDICIÓN también con caja (RIVA 69.5): ni se trae al periodo del cobro ni se repite.
+  const porDevengo = campo !== CAMPO_EMISION && rango.devengo === true && Object.keys(fecha).length > 0;
+  const porCaja = porDevengo ? await leerPorCaja(db, rango) : null;
+  const leidas = porCaja
+    ? porCaja.facturas
     : ((await db.invoice.findMany({
       where: {
         merchantId: rango.merchantId,
-        ...(Object.keys(fecha).length > 0 ? { [campo]: fecha } : {}),
+        ...(Object.keys(fecha).length > 0 ? { [CAMPO_EMISION]: fecha } : {}),
       },
       select: CAMPOS_FACTURA,
       // Por fecha y, a igualdad, por número: dos facturas del mismo día tienen que salir en el
       // orden en que se emitieron, que es el de la serie.
-      orderBy: [{ [campo]: 'asc' }, { number: 'asc' }],
+      orderBy: [{ [CAMPO_EMISION]: 'asc' }, { number: 'asc' }],
     })) as unknown as (FacturaParaLibro & { id: number })[]);
 
   // SCRUM-1232 · fuera los justificantes, pero SÓLO los de este merchant: uno ajeno que se colara
@@ -268,11 +332,18 @@ export async function leerLibroRegistro(
     albaranesVivos.set(a.invoiceId, lista);
   }
 
+  // SCRUM-1732d · con caja, los cobros de cada factura (RIVA 61 decies.1): los del 303 ya vienen leídos.
+  const cobrosPorFactura = campo === CAMPO_EMISION
+    ? undefined
+    : (porCaja?.filas ?? await filasPorFactura(db, rango.merchantId, idsFactura));
+
   const libro = construirLibroRegistro({
     facturas,
     merchantId: rango.merchantId,
     presupuestosFirmados: firmados.map((q) => q.id),
     albaranesVivos,
+    ...(cobrosPorFactura ? { cobrosPorFactura } : {}),
+    ...(porCaja ? { devengo: porCaja.devengo } : {}),
   });
   return rango.soloFacturas
     ? { ...libro, justificantesFuera: leidas.length - facturas.length }

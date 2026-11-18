@@ -30,6 +30,7 @@
 import { calcVatBreakdown } from './vat.service';
 import type { Causa } from './vat.service'; // SCRUM-1063e
 import { partirPorSuplido } from './suplidos'; // SCRUM-1063c
+import { filasVivas, centimosDe, prorratear, type FilaDeCobro, type TramoDeDevengo } from './devengoPorCaja'; // SCRUM-1732d
 
 /**
  * SCRUM-1063c · el desglose de las líneas de suplido, con la MISMA función que `porTipo`. No llama a
@@ -101,6 +102,13 @@ export interface AsientoLibro {
    */
   suplidosPorTipo: { tipo: number; base: number; cuota: number }[] | null;
   total: number | null;
+  /**
+   * SCRUM-1732d (U′, c.22012) · los cobros de la factura (RIVA 61 decies.1: fecha, importe y medio de
+   * cada cobro), de `invoice_payments`, sin las anuladas ni las anulaciones (Q4). `[]` sin criterio de
+   * caja o sin filas (la factura `paid` sin filas se lee como hoy, c.21926 §①). `metodo: null` = no
+   * consta el medio (Q3). `origen` es `fecha_origen` de la fila.
+   */
+  cobros: { fecha: string; importe: number; metodo: string | null; origen: string | null }[];
   moneda: string | null;
   estado: string | null;
   /** ⚠️ `true` = el importe no se pudo leer. NO es cero: es «no se sabe». */
@@ -162,6 +170,23 @@ export interface LibroRegistro {
    * que se ha mirado. Lo que un libro fiscal descarta se cuenta, igual que `ajenas` y `sinNumero`.
    */
   justificantesFuera?: number;
+  /** SCRUM-1732d · Q3 · números de las facturas con algún cobro sin medio. Sólo con criterio de caja. */
+  cobrosSinMedio?: string[];
+  /** SCRUM-1732d · Q5 · lo cobrado por encima del total, por factura. No devenga. Sólo con caja. */
+  cobradoDeMas?: { numero: string; importe: number }[];
+}
+
+/** SCRUM-1732d · el devengo de una factura en el periodo: sus tramos y cuáles caen dentro. */
+export interface DevengoDelPeriodo {
+  tramos: readonly TramoDeDevengo[];
+  totalCentimos: number;
+  dentro: readonly boolean[];
+}
+
+/** La suma de las partes de `valor` que caen dentro del periodo. */
+function parteDelPeriodo(valor: number, d: DevengoDelPeriodo): number {
+  const partes = prorratear(valor, d.tramos, d.totalCentimos);
+  return Math.round(partes.reduce((s, p, i) => (d.dentro[i] ? s + p * 100 : s), 0)) / 100;
 }
 
 /** Lee un importe SIN coercionar. Devuelve `null` si no es un número utilizable. */
@@ -204,6 +229,16 @@ export function construirLibroRegistro(params: {
   presupuestosFirmados?: Iterable<number>;
   /** Albaranes que apuntan hoy a cada factura, por id de factura. */
   albaranesVivos?: ReadonlyMap<number, readonly AlbaranVivo[]>;
+  /**
+   * SCRUM-1732d · las filas de `invoice_payments` por id de factura. PRESENTE = criterio de caja: cada
+   * asiento lleva sus `cobros` y el libro declara `cobrosSinMedio` y `cobradoDeMas`.
+   */
+  cobrosPorFactura?: ReadonlyMap<number, readonly FilaDeCobro[]>;
+  /**
+   * SCRUM-1732d · SOLO el libro que lee el 303 con caja: la parte de cada factura que devenga en el
+   * periodo. Con ella los importes del asiento son los de sus tramos dentro, no los de la operación.
+   */
+  devengo?: ReadonlyMap<number, DevengoDelPeriodo>;
 }): LibroRegistro {
   const asientos: AsientoLibro[] = [];
   const importesIlegibles: string[] = [];
@@ -211,6 +246,8 @@ export function construirLibroRegistro(params: {
   let ajenas = 0;
   let sinNumero = 0;
   let sinNumeroImporte = 0;
+  const cobrosSinMedio: string[] = [];
+  const cobradoDeMas: { numero: string; importe: number }[] = [];
 
   for (const f of params.facturas) {
     if (f.merchantId !== params.merchantId) { ajenas += 1; continue; }
@@ -240,6 +277,29 @@ export function construirLibroRegistro(params: {
     const idsSellados = new Set(sellados.map((r) => r.albaranId).filter((n) => n !== null));
     const noSellados = vivos.filter((v) => !idsSellados.has(v.albaranId)).length;
 
+    const filas = typeof f.id === 'number' ? filasVivas(params.cobrosPorFactura?.get(f.id) ?? []) : [];
+    const cobros = filas.map((c) => ({
+      fecha: c.fechaCobro.toISOString(),
+      importe: (centimosDe(c.importe) ?? Number.NaN) / 100,
+      metodo: c.metodo ?? null,
+      origen: c.fechaOrigen ?? null,
+    }));
+    if (cobros.some((c) => c.metodo === null)) cobrosSinMedio.push(f.number);
+    const totalC = centimosDe(f.total);
+    const cobradoC = filas.reduce((s, c) => s + (centimosDe(c.importe) ?? 0), 0);
+    if (totalC !== null && cobradoC > totalC) cobradoDeMas.push({ numero: f.number, importe: (cobradoC - totalC) / 100 });
+
+    const dev = typeof f.id === 'number' ? params.devengo?.get(f.id) : undefined;
+    const porTipo = tieneLineas
+      ? desglose.entries.map((e) => {
+        const base = dev ? parteDelPeriodo(e.base, dev) : e.base;
+        const cuota = dev ? parteDelPeriodo(e.cuota, dev) : e.cuota;
+        return e.causa ? { tipo: e.rate, base, cuota, causa: e.causa } : { tipo: e.rate, base, cuota };
+      })
+      : [];
+    const suplidos = suplidosPorTipo(tieneLineas ? (f.lines as any[]) : []);
+    const suma = (k: 'base' | 'cuota') => Math.round(porTipo.reduce((s, e) => s + e[k] * 100, 0)) / 100;
+
     asientos.push({
       numero: f.number,
       fecha: f.createdAt instanceof Date
@@ -250,18 +310,18 @@ export function construirLibroRegistro(params: {
       clienteCongelado: f.customerName != null
         ? { name: f.customerName, legalName: f.customerLegalName ?? null, taxId: f.customerTaxId ?? null }
         : null,
-      base: tieneLineas ? desglose.base : null,
-      cuota: tieneLineas ? desglose.cuota : null,
+      base: tieneLineas ? (dev ? suma('base') : desglose.base) : null,
+      cuota: tieneLineas ? (dev ? suma('cuota') : desglose.cuota) : null,
       // Mismo `desglose`, misma llamada: el 303 suma ESTO, así que no hay dos caminos que puedan
       // divergir. Sin líneas la lista va vacía — no cero, vacía: «no se puede desglosar» y
       // «desglosa a cero» son cosas distintas, y el 303 tiene que poder separarlas.
-      porTipo: tieneLineas
-        ? desglose.entries.map((e) => (e.causa
-          ? { tipo: e.rate, base: e.base, cuota: e.cuota, causa: e.causa }
-          : { tipo: e.rate, base: e.base, cuota: e.cuota }))
-        : [],
-      suplidosPorTipo: suplidosPorTipo(tieneLineas ? (f.lines as any[]) : []),
-      total,
+      // SCRUM-1732d: con `devengo` (sólo el 303 con caja), cada entrada es la parte de sus tramos.
+      porTipo,
+      suplidosPorTipo: suplidos && dev
+        ? suplidos.map((x) => ({ tipo: x.tipo, base: parteDelPeriodo(x.base, dev), cuota: parteDelPeriodo(x.cuota, dev) }))
+        : suplidos,
+      total: total !== null && dev ? parteDelPeriodo(total, dev) : total,
+      cobros,
       moneda: f.currency ?? null,
       estado: f.status ?? null,
       importeIlegible: total === null,
@@ -284,5 +344,6 @@ export function construirLibroRegistro(params: {
     sinNumero,
     sinNumeroImporte: Math.round(sinNumeroImporte * 100) / 100,
     importesIlegibles,
+    ...(params.cobrosPorFactura ? { cobrosSinMedio, cobradoDeMas } : {}),
   };
 }

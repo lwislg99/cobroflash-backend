@@ -507,3 +507,23 @@ después del 29-oct (sólo se cuentan los ficheros creados) · la tanda entera (
     node docs/master/evidencias/SCRUM-1387/1387x/registros-nuevos.mjs <tsv> 5a247020e5608fd2b21fad04bcf585694494397a <sha punta>
     node --test tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs
     gh api repos/lwislg99/cobroflash-backend/actions/jobs/131359710703/logs --allow-escape-sequences   # el junte
+
+## SCRUM-1387y · los 3 bancos heredados de J6, mutación a mutación (solo medición)
+
+**Medido contra:** `origin/main` = `34939a6ad7c0ad7abc4f06e34e92b43fd519400b` · 2026-11-18T16:05:00Z (hora de GitHub)
+(J6, equipo de Javier, sesión `jv-j6eh`. Sólo mide: no toca ningún banco, test ni guard.
+Jira: c.22069; decisión del orquestador J sobre cómo se retira: c.22070.)
+
+A9: sin fallo que generalice — solo medición; la sonda declara su población y lleva un control positivo sembrado
+
+- Guard `tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs`: 8/8 · 106 bancos · 33 fuera · 33 heredados · 0 nuevos. Lo mismo que el 12-nov (1387x): la lista no ha menguado.
+- Sonda `docs/master/evidencias/SCRUM-1387/1387y/sonda-bancos.mjs` → `sonda-bancos.txt`: 3 bancos · 22 mutaciones · 351 tests con catálogo de 1706. Control positivo: un `de` copiado de un catálogo real sale «declarado».
+  - `SCRUM-1324`: 15 de 15 con el ancla viva en `scripts/vigia-silencio-de-main.mjs` · 0 en el catálogo.
+  - `SCRUM-1345`: M3 y M4 ya están en el catálogo de `scrum976` · M1, M2, M5 y M6 tienen el ancla muerta en `scripts/guards-entrada.mjs`. M1 se parece a la mutación de SCRUM-1386 en `scrum976`, pero no la he comparado una a una.
+  - `scrum908c/mutar2.mjs`: su mutación ya está en el catálogo de `scrum859`.
+- Los 10 «sin leer en Jira», según la etiqueta del ticket padre: 6 son del equipo de Luis (1056, 1150 ×2, 1188, 1482, 876g), 1 es de J5 (1500b) y 3 no tienen etiqueta (1288b-d). Los tramos con letra no los he leído.
+- Lo que se construye sale de c.22070, en un ticket nuevo para el siguiente J6. Aquí no se construye nada.
+
+### Reproducir
+
+    node docs/master/evidencias/SCRUM-1387/1387y/sonda-bancos.mjs "$(pwd)"

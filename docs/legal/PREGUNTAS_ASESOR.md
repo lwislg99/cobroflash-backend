@@ -2024,3 +2024,21 @@ _Por qué cuadrar importa (sin medir):_ c.21864 lo dice: «No he medido si la AE
 _Relacionadas, que no la contestan:_ P12.2 (con qué clave del desglose, si entra), Q-C3 (cuándo un gasto es suplido; IA · 23-sep) y la 347-suplidos (fila 34).
 
 _Lo que ya tenemos:_ IA · 22-sep sobre B4 entera; sobre la (2) con estas cifras, SIN RESPUESTA.
+
+# Añadida el 18-nov-2026 (SCRUM-1264w): el medio de cobro con criterio de caja (SCRUM-1732)
+
+> Al final, sin mover ninguna línea de encima. Busqué antes por contenido («acreditar», «medio de
+> cobro», «cuenta bancaria») en este fichero, en `docs/master/SCRUM-1264.md` y en la descripción de
+> SCRUM-1264 con c.21770 y c.21995. Lo más cercano es P2/A4 de SCRUM-1316 («¿es obligatorio declarar el
+> medio de cobro?»), que pregunta SI se declara, no si el que guardamos es suficiente. B6 (fila 17)
+> pregunta por la fecha. Registro: tramo 1264w.
+
+### 50 · Con criterio de caja, ¿basta con anotar el medio de cobro, sin la cuenta?
+
+_La norma, literal (RIVA art. 61 decies.1.2.º, BOE-A-1992-28925, bloque `a61decies`):_ «Indicación de la cuenta bancaria o del medio de cobro utilizado, que pueda acreditar el cobro parcial o total de la operación.»
+
+_La pregunta._ Para cada cobro de una factura con criterio de caja, el libro de facturas expedidas anotará la fecha, el importe y el medio. El medio sale de una lista cerrada: tarjeta, Bizum (automático o marcado a mano), transferencia y efectivo. No guardamos el número de cuenta. (1) ¿Basta con esa indicación del medio para cumplir el 61 decies.1.2.º, o hace falta la cuenta bancaria en la transferencia y en el Bizum? (2) En efectivo, ¿qué «puede acreditar el cobro»?
+
+_Lo que cambia según la respuesta:_ si hace falta la cuenta, el registro del cobro necesita un dato que hoy no se guarda.
+
+_Lo que ya tenemos:_ SIN RESPUESTA.

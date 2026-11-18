@@ -93,7 +93,9 @@ function montar(status, { yaRectificada = null } = {}) {
   const p = moduloPrisma.prisma;
   const original = {
     id: 10, merchantId: 7, customerId: 5, quoteId: null, number: 'F-2026-0001',
-    total: 100, currency: 'EUR', type: 'F1', status,
+    // SCRUM-1763 · 121, no 100: una F1 de 1 × 100 al 21 % guarda 121 desde SCRUM-624, y la R1
+    // sale ahora del desglose de sus líneas. Con 100 el fixture era una factura que no existe.
+    total: 121, currency: 'EUR', type: 'F1', status,
     lines: [{ concept: 'Reparación', qty: 1, price: 100, tax: 0.21 }],
     merchant: MERCHANT,
   };
@@ -147,7 +149,7 @@ test('SCRUM-308 · LA RUTA: sobre una factura NORMAL sigue funcionando exactamen
     assert.equal(r.code, 201, `🔴 «${estado}» ha dejado de poder rectificarse (${r.code}: ${JSON.stringify(r.body)})`);
     assert.ok(cap.emitida, '🔴 no se emitió la rectificativa');
     assert.equal(cap.emitida.type, 'R1');
-    assert.equal(cap.emitida.total, '-100.00', 'la R1 sigue naciendo en negativo');
+    assert.equal(cap.emitida.total, '-121.00', 'la R1 sigue naciendo en negativo');
   }
 });
 
