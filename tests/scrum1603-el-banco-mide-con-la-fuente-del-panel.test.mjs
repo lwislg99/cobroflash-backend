@@ -181,10 +181,14 @@ function navegacionesSinEspera(rel) {
   const sf = ts.createSourceFile(rel, fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
   const esFuncion = (n) => ts.isArrowFunction(n) || ts.isFunctionDeclaration(n) || ts.isFunctionExpression(n) || ts.isMethodDeclaration(n);
   /** Las llamadas a un identificador dentro de `raiz`, con su posición. */
+  // SCRUM-1755: `raiz` puede ser el MÓDULO (un guard que navega con `await` de nivel superior, como
+  // `guard-caja-semaforo`). Entonces sólo cuentan las llamadas de ese nivel: la espera que vive dentro
+  // de una función que nadie llama ahí no espera nada.
   const llamadas = (raiz) => {
     const out = [];
     const ver = (n) => {
       if (ts.isCallExpression(n) && ts.isIdentifier(n.expression)) out.push({ nombre: n.expression.text, pos: n.getStart() });
+      if (ts.isSourceFile(raiz) && n !== raiz && esFuncion(n)) return;
       ts.forEachChild(n, ver);
     };
     ver(raiz);
@@ -216,6 +220,7 @@ function navegacionesSinEspera(rel) {
       gotos.push(n);
       let f = n.parent;
       while (f && !esFuncion(f)) f = f.parent;
+      if (!f) f = sf; // navegación de nivel superior: su ámbito es el módulo (ver `llamadas`)
       // Antes del SIGUIENTE `goto` de la misma función: si no, la espera de una navegación posterior
       // taparía a una anterior que no espera (la landing navega dos veces seguidas).
       const fin = n.getEnd();
@@ -288,13 +293,12 @@ const DEUDA = {
   'scripts/guard-caja-avisos.mjs': 'desborde horizontal y vertical del aviso, y su número de líneas',
   'scripts/guard-caja-datos-del-cliente.mjs': 'desborde, líneas y filas visuales de las etiquetas',
   'scripts/guard-caja-documento-suelto.mjs': 'desborde (scrollWidth) y líneas de cada caja',
-  'scripts/guard-caja-semaforo.mjs': 'líneas y scrollWidth del motivo del ámbar',
   'scripts/guard-falta-en-otra-pestana.mjs': '«cabe»: scrollWidth <= clientWidth del aviso',
   'scripts/guard-pad-de-firma-cabe.mjs': 'la tarjeta con 20 líneas cabe en la ventana; alto de los botones',
   'scripts/guard-notas-en-la-ficha.mjs': 'alto del botón y desborde de la página; enlaza inter.css a mano y no espera las caras',
 };
 /** El techo de la deuda: el 18-nov-2026 eran 7. Sólo se baja. */
-const TECHO_DEUDA = 7;
+const TECHO_DEUDA = 6;
 
 /** Primitivas que miden lo que pone un TEXTO: un banco de SOLO_GEOMETRIA que use una ya no lo es. */
 const MIDE_TEXTO = /\b(scrollWidth|scrollHeight|clientWidth|clientHeight|lineHeight|getClientRects|measureText|createRange)\b/;
