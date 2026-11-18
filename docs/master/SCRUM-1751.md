@@ -65,3 +65,22 @@ El script de capturas dio «el aviso NO salió» a 390, una pasada sí y otra no
 - Nada en yaqu.app: la rama no está desplegada. La regla 42 queda pendiente (en la cuenta de QA hay un parte firmado, el #22, y uno en borrador, el #23).
 - Con lector de pantalla no se ha probado. El modal lleva `role="dialog"` y el foco entra en «Crear parte nuevo».
 - La tanda completa la juzga el CI; aquí se corrió la dirigida.
+
+## Regla 42 (18-nov-2026, S4) · el aviso, visto con el código de yaqu.app — y con qué datos
+
+Medido el 18-nov-2026 a las 07:43Z (hora de GitHub) con `origin/main` en `6881a0d27e8b4e337bd55175c3068791c8304c69`. Producción sirve los mismos blobs que `main`: `jobsView.js` `4a077851`, `jobDetailView.js` `68278713`, `jobDocsReparto.js` `6978b3bd`.
+
+🔴 **Con los datos de ese día el aviso no puede salir, y eso es lo correcto.** La cuenta +qa no tenía ningún trabajo EN CURSO con el último parte firmado y sin borrador: el #84 tiene el firmado #22 y el borrador #23; el #77, el firmado #18 y tres borradores; el #76 está terminado. El encargo daba por hecho que el #22 estaba «sin borrador en su trabajo».
+
+Para ver el aviso sin firmar ni borrar partes que usan otros bancos, la acción `evidencias/SCRUM-1751/r42-aviso-visita-nueva.mjs` quita los borradores de la respuesta de `GET /admin/partes` **en el navegador**. El código es el de producción; los datos son los reales menos los borradores. La acción dice cuántos quitó (9) y cuántos firmados le quedan al trabajo (1); con cualquiera de los dos a cero sale CIEGO.
+
+| aceptación | dónde se ve |
+|---|---|
+| el toque abre «¿Empezar una visita nueva?» con los literales exactos | las dos puertas («Abrir parte» en `#jobs`, «+ Nuevo parte» en `#jobs-detail/84`), a 390 y a 1280: título, cuerpo y los botones «Cancelar» y «Crear parte nuevo», iguales letra por letra en las 4 medidas. Con los datos intervenidos de arriba. |
+| «Cancelar» no crea nada | 4 de 4: el aviso se cierra, ninguna escritura hacia `/admin/partes`, el hash no cambia. La cuenta sigue con 15 partes. |
+| botones a 44 a 390 | «Cancelar» 80,1×44 y «Crear parte nuevo» 133×44; el panel va de 0 a 390, sin texto cortado ni desborde. A 1280 miden 30 de alto: el criterio es de móvil. |
+| «Crear parte nuevo» crea | NO HECHO en producción: no se pulsó. Lo cubre `tests/scrum1751-aviso-de-visita-nueva.test.mjs`. |
+
+Capturas: `evidencias/SCRUM-1751/r42-aviso-lista-390.png` y `r42-aviso-ficha-390.png`.
+
+**Lo que NO está medido:** el aviso con datos de producción sin tocar. Hace falta un trabajo EN CURSO con su último parte firmado y sin borrador, y crearlo (o firmar el #23, que no tiene vuelta atrás) es decisión del orquestador: se le planteó el 18-nov.

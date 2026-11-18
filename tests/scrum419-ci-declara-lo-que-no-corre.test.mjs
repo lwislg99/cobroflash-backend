@@ -274,6 +274,11 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // técnico ajeno), lo que queda en la FILA del albarán y que la del parte no cambia. Sólo el
   // desechable: crea y borra un merchant. La traducción pura va en el mismo fichero y corre sin banco.
   'scrum1740-albaran-nace-con-las-lineas-del-parte.test.mjs': 1,
+  // SCRUM-1670: el tipo de intervención elegido al crear un trabajo vuelve en el POST, en la lista y en
+  // la ficha. Necesita banco porque mide las tres RUTAS reales con el trabajo guardado en la base y la
+  // lectura de vuelta de la fila. Sólo el desechable (LIBRO_PG_URL o QA_DB_TEST): crea y borra un
+  // merchant.
+  'scrum1670-tipo-intervencion-viaja.test.mjs': 1,
   // SCRUM-1403: los TRES que ejercitan el recorte de presupuestos del Tecnico y la pestana de
   // documentos de la ficha de cliente contra Prisma de verdad. Necesitan banco por el mismo motivo
   // que los de SCRUM-1397: lo que vigilan es el WHERE (el recorte en AND con la busqueda y con el

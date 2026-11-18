@@ -180,6 +180,33 @@ export function ramasDelTicket(nombres, n) {
   return nombres.filter((x) => numeroDeRama(String(x).toLowerCase()) === n);
 }
 
+/**
+ * 🔴 SCRUM-804j · LOS NÚMEROS DE TICKET QUE NOMBRA UNA RUTA, leídos como `numeroDeRama` lee una rama:
+ * el número ENTERO (`\d+` voraz, ceros delante fuera) y la fase con su corte detrás (`h4`, `e12`).
+ * Quien pregunta compara por IGUALDAD, así que `scrum1686-…` no es del 168 ni `scrum284-…` del 28.
+ *
+ * No se llama a `numeroDeRama` tal cual porque un fichero no es una rama: va sin guion
+ * (`scrum1686h4-…`), con un `.` antes de la extensión, y el nombre puede estar en cualquier tramo
+ * de la ruta (sólo al principio de uno: `(?<![^/])`). Un DIRECTORIO no cuenta (`scrum-284/`, nada
+ * de `/` como delimitador): son evidencias y capturas, registro y no obra.
+ *
+ * Hasta el 18-nov-2026 aquí había un patrón por ticket, `(^|/)scrum-?N([a-z])?[-._]`, sin el corte:
+ * `tests/scrum1686h4-inicio-operario.test.mjs` no era de nadie. Ensancharlo a lo loco (`\d*` detrás
+ * de `N`) hacía casar `N` como PREFIJO: 6.398 pares falsos en 175 tickets, medido ese día sobre main.
+ */
+const NOMBRE_EN_RUTA = /(?<![^/])scrum-?0*(\d+)[a-z]?\d*[-._]/gi;
+export function numerosDeFichero(ruta) {
+  return new Set([...String(ruta ?? '').matchAll(NOMBRE_EN_RUTA)].map((m) => Number(m[1])));
+}
+
+/** La entrada de registro de un ticket. No es artefacto de sí misma (SCRUM-804j). */
+const ES_ENTRADA = /^docs\/master\/SCRUM-\d+\.md$/i;
+
+/** Los ficheros de `main` que llevan el número `n` en su nombre, sin contar la entrada de registro. */
+export function ficherosPropios(ficheros, n) {
+  return ficheros.filter((f) => !ES_ENTRADA.test(f) && numerosDeFichero(f).has(n));
+}
+
 /** Rutas de artefacto que nombra un texto: código y documentos de este repo. */
 export function artefactosQueNombra(texto) {
   const re = /\b((?:src|tests|scripts|public|docs|prisma|\.github)\/[A-Za-z0-9_./-]+\.[a-z]{2,4})\b/g;
@@ -217,7 +244,9 @@ export function clasificar(n, { ramas, ficheros, entrada, commits, primeraEntrad
   const sinSaber = mias.filter((r) => juicio.get(r).es === NO_SE_SABE);
   const mergeadas = mias.filter((r) => juicio.get(r).es === SI);
 
-  const propios = ficheros.filter((f) => new RegExp(`(^|/)scrum-?${n}([a-z])?[-._]`, 'i').test(f));
+  // SCRUM-804j · la entrada de registro del ticket (`ES_ENTRADA`) ya no cuenta como fichero propio: antes lo
+  // hacía, y la rama «entrada pero NINGÚN artefacto» de abajo no se alcanzaba nunca.
+  const propios = ficherosPropios(ficheros, n);
 
   if (sinMergear.length) {
     return { n, cubo: FUERA, motivo: `rama viva SIN mergear: ${sinMergear.join(', ')}`, ramas: mias, mergeadas, propios: propios.length };

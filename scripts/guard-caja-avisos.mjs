@@ -39,6 +39,7 @@ import puppeteer from 'puppeteer-core';
 import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
+import { enlacesDelPanel, TIPOS_DE_FUENTE, esperarFuentes, cegueraDeLaFuente, decirFuente } from './_hojas-del-panel.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
@@ -58,15 +59,21 @@ let PUERTO = Number(process.env.CAJA_PUERTO || 0);
 /** Los anchos que se miden. 390 = iPhone estándar; 320 = el más estrecho que soportamos. */
 const ANCHOS = [390, 320];
 
-/** Lo que la página necesita del árbol, en el orden en que lo necesita. */
-const CSS = ['/tokens.css', '/dashboard/css/styles.css'];
+/**
+ * SCRUM-1755 · LAS HOJAS DEL ÍNDICE, CON SU LETRA. Aquí se enlazaban `tokens.css` y `styles.css`
+ * escritos a mano, sin `/fonts/inter.css`: las líneas y el desborde de cada aviso se medían con la
+ * letra de reserva de cada máquina, no con la del panel (familia de SCRUM-1603 y SCRUM-1745c).
+ */
+let HOJAS;
+try { HOJAS = enlacesDelPanel(PUBLIC); } catch (e) { HOJAS = null; console.error(String(e && e.message ? e.message : e)); }
 // `almacenLocal.js` entra por SCRUM-357: publica los TRES estados de la precarga, y pasarle al
 // pintor `window.PRECARGADO` en vez de la cadena 'PRECARGADO' es lo que evita que esta página tenga
 // su propia copia del vocabulario. Si el medidor y el producto se separan, se separan en silencio.
 const JS = ['/dashboard/js/almacenLocal.js', '/dashboard/js/resistenciaAlmacen.js',
   '/dashboard/js/estadoFirma.js'];
 
-const TIPOS = { '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/html' };
+// Las letras son binarias: se sirven en bytes y con su tipo (SCRUM-1745c).
+const TIPOS = { '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/html', ...TIPOS_DE_FUENTE };
 
 /**
  * La página de medida. No se escribe en `public/`: un fichero nuevo ahí entra en el precache del
@@ -78,7 +85,7 @@ const TIPOS = { '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/htm
 function paginaDeMedida() {
   return `<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-${CSS.map((c) => `<link rel="stylesheet" href="${c}">`).join('\n')}
+${HOJAS}
 </head><body>
 <div class="view-container">
   <div id="home-desalojo"></div>
@@ -146,6 +153,8 @@ function servidor() {
 
 const fallos = [];
 const ciego = [];
+const letras = new Set();
+if (!HOJAS) ciego.push('no supe sacar las hojas de `public/dashboard/index.html`: sin ellas mediría con la letra de reserva.');
 
 const { s, servidos } = servidor();
 // SCRUM-620 · el servidor se levanta por el módulo común: el ÚNICO sitio donde se decide
@@ -169,6 +178,13 @@ try {
     const page = await navegador.newPage();
     await page.setViewport({ width: ancho, height: 844, deviceScaleFactor: 2 });
     await page.goto(`http://127.0.0.1:${PUERTO}/__caja-avisos.html`, { waitUntil: 'networkidle0' });
+    // LA LETRA, ESPERADA (`font-display: swap` pinta primero con la de reserva). Sin ninguna cara web
+    // cargada, este ancho es CIEGO: sus líneas serían las de la letra de esta máquina.
+    const fuente = await esperarFuentes(page);
+    const sinLetra = cegueraDeLaFuente(fuente, `la página del banco a ${ancho}px`)
+      || (fuente.cargadas > 0 ? null : `🔴 SIN LETRA WEB a ${ancho}px: ${fuente.declaradas} caras declaradas y 0 cargadas.`);
+    if (sinLetra) { ciego.push(sinLetra); await page.close(); continue; }
+    letras.add(decirFuente(fuente));
 
     const m = await page.evaluate(() => {
       const mirar = (id) => {
@@ -297,7 +313,8 @@ try {
 
 // ── EL INFORME ───────────────────────────────────────────────────────────────────────────
 console.log('caja de los avisos de la home, medida en Edge — SCRUM-469 (desalojo) + SCRUM-357 (precarga)\n');
-console.log(`servidos del disco: ${[...servidos.keys()].join(', ')}\n`);
+console.log(`servidos del disco: ${[...servidos.keys()].join(', ')}`);
+console.log(`LETRA: ${[...letras].join(' ‖ ') || '(ningún ancho llegó a medir)'}\n`);
 const ROTULO = { lleva: 'precarga · LO QUE LLEVAS ', nada: 'precarga · NO HAY NADA   ', averia: 'precarga · NO SE PUDO    ' };
 for (const m of medidas) {
   console.log(`  ${m.ancho} px · caja del .alert ${m.anchoAviso} px (útil ${m.util - 28} px de texto)`);

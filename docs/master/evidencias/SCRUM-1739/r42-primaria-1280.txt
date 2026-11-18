@@ -1,0 +1,19 @@
+﻿· SIN LOCAL_DIR: se mide lo que sirve producción
+· TARJETA [🔨 En curso · 2] Cliente de pruebas QA → ■Abrir parte · □Ver detalle · □+ Nuevo albarán · □⋯
+· TARJETA [🔨 En curso · 2] Marta Prieto (PILOTO-1 QA) → ■Abrir parte · □Ver detalle · □Emitir albarán · □⋯
+· TARJETA [📅 Hoy · 1] Marta Prieto (PILOTO-1 QA) → ■▶ Empezar · □Ver detalle · □⋯
+· TARJETA [⏳ Sin agendar · 4] luis → □Ver detalle · □Agendar · □⋯
+· TARJETA [⏳ Sin agendar · 4] Marta Prieto (PILOTO-1 QA) → □Ver detalle · □Agendar · □⋯
+· TARJETA [⏳ Sin agendar · 4] Marta Prieto (PILOTO-1 QA) → □Ver detalle · □Agendar · □⋯
+· TARJETA [⏳ Sin agendar · 4] luis → □Ver detalle · □Agendar · □⋯
+· TARJETA [✅ Terminados — cobra el resto · 2] Cliente de pruebas QA → □Ver detalle · □Enviar para firmar · □⋯
+· TARJETA [✅ Terminados — cobra el resto · 2] Marta Prieto (PILOTO-1 QA) → □Ver detalle · □Enviar para firmar · □⋯
+· RELLENA «Abrir parte» clase=«btn-primary btn-sm» fondo=rgb(4, 120, 87) 89x44 @(924,511)
+· RELLENA «Abrir parte» clase=«btn-primary btn-sm» fondo=rgb(4, 120, 87) 89x44 @(924,646)
+· RELLENA «▶ Empezar» clase=«btn-primary btn-sm» fondo=rgb(4, 120, 87) 91x44 @(924,858)
+· TESTIGO @1280: 9 tarjetas · rellenas 3 · tarjetas con DOS rellenas 0 · rellenas/total → «▶ Empezar» 1/1 · «Agendar» 0/4 · «Abrir parte» 2/2 · «Cobrar el resto» 0/0 · tarjetas cuya rellena NO va primera 0
+r42-1739-lista-admin@1280: rol=admin · 72 pulsables · 0 desbordes · 10 <44 · log 1 · {"porCobrar":1,"cobrado":0,"teFalta":0,"pendiente":1,"parcial":1,"pagado":1,"factura":0,"euros":3,"ceroEuros":0,"deImporte":1,"notasInternas":0,"queHayQueHacer":0,"basura":0}
+ESCRITURAS
+POST /admin/entorno → 200
+LOG
+[warning] Service Worker registration blocked by Playwright

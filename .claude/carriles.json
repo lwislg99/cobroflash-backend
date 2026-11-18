@@ -1,7 +1,7 @@
 {
-  "_": "GENERADO por scripts/carriles.mjs desde docs/equipo/dos-equipos.md (sha256 4f601e409736). NO se edita a mano: se cambia la tabla y se regenera.",
+  "_": "GENERADO por scripts/carriles.mjs desde docs/equipo/dos-equipos.md (sha256 0843bdd62c3c). NO se edita a mano: se cambia la tabla y se regenera.",
   "fuente": "docs/equipo/dos-equipos.md",
-  "sha": "4f601e409736",
+  "sha": "0843bdd62c3c",
   "areas": {
     "S0": "consultoría y auditoría: «¿esto existe hoy?», filtro de las afirmaciones de SU orquestador, dueña de `00-normas-comunes.md`, `dos-equipos.md` y `trampas-del-entorno.md`",
     "S1": "servidor: importes, presupuestos, gastos, mantenimientos, y el servidor de todo lo que no sea de J1-J3",
@@ -1639,6 +1639,15 @@
       "motivo": "fichero NUEVO bajo el patrón `public/**` de S2: el `<style>` de `legalShell` en `legalPages.routes.ts` (J3) copiado tal cual, enlazado como hoja estática en vez de abrir ruta nueva (CSP paso 3). Hoja aparte porque sus reglas chocan con las de `legal.css`. Excepción firmada por el fundador en SCRUM-1756 c.22008",
       "ticket": "SCRUM-1756",
       "linea": 271
+    },
+    {
+      "patron": "scripts/guard-pad-de-firma-cabe.mjs",
+      "quien": [
+        "S3"
+      ],
+      "motivo": "SCRUM-1755: cambiar sólo la regla de medida (hojas del índice + espera de las caras + LETRA en la salida), sin tocar ningún caso ni veredicto",
+      "ticket": "SCRUM-1755",
+      "linea": 272
     }
   ]
 }

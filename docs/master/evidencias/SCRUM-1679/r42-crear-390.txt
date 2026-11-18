@@ -1,0 +1,21 @@
+﻿· ANTES @390: 8 tarjetas · con tarea 2 · con dirección 5
+· botón del modal: «Abrir trabajo»
+· tipos que ofrece: Sin especificar / Reparación / Asistencia técnica / Mantenimiento / Instalación
+· clientes en el desplegable: 4 · está «Marta Prieto (PILOTO-1 QA)»: true
+· tipo elegido: REPARACION_ASISTENCIA · «Reparación / Asistencia técnica»
+r42-relleno-admin@390: rol=admin · 74 pulsables · 0 desbordes · 11 <44 · log 1 · {"porCobrar":1,"cobrado":0,"teFalta":0,"pendiente":1,"parcial":1,"pagado":1,"factura":0,"euros":3,"ceroEuros":0,"deImporte":1,"notasInternas":0,"queHayQueHacer":1,"basura":0}
+· POST /admin/jobs → 201 · id=86 · status=pendiente_agendar · queHayQueHacer igual a lo escrito=true · direccion igual=true · tipoIntervencion=REPARACION_ASISTENCIA
+· ATERRIZA: hash=#jobs-detail/86 (se espera #jobs-detail/86) · el panel pidió la ficha=true [/admin/jobs/86 → 200] · modal abierto=false · filas de lista pintadas=0
+· LA FICHA DICE · a la vista: tarea=true dirección=true · en el DOM (plegado incluido): tarea=true dirección=true
+r42-ficha-admin@390: rol=admin · 36 pulsables · 0 desbordes · 2 <44 · log 1 · {"porCobrar":1,"cobrado":0,"teFalta":0,"pendiente":0,"parcial":0,"pagado":0,"factura":0,"euros":0,"ceroEuros":0,"deImporte":0,"notasInternas":1,"queHayQueHacer":1,"basura":0}
+· TRABAJO CREADO Y DECLARADO: #86 · Marta Prieto (PILOTO-1 QA)
+· TESTIGO lista @390: 9 tarjetas · con tarea 3 · con dirección 6
+· tarjetas cuya tarea es LA ESCRITA: 1
+· TARJETA {"id":null,"cliente":"Marta Prieto (PILOTO-1 QA)","tarea":"(prueba) Regla 42 de SCRUM-1679 del 18-nov: revisar la presión de la caldera y cambiar la válvula de seguridad.","direccion":"Calle de la Regla 42, n.º 18, 1.º A, 28801 Alcalá de Henares","botones":["Ver detalle","Agendar","⋯"],"atributos":"class=jobs-fila"}
+r42-lista-admin@390: rol=admin · 72 pulsables · 0 desbordes · 10 <44 · log 1 · {"porCobrar":1,"cobrado":0,"teFalta":0,"pendiente":1,"parcial":1,"pagado":1,"factura":0,"euros":3,"ceroEuros":0,"deImporte":1,"notasInternas":0,"queHayQueHacer":0,"basura":0}
+· TARJETA de #86: tarea=«(prueba) Regla 42 de SCRUM-1679 del 18-nov: revisar la presión de la caldera y cambiar la válvula de seguridad.» · dirección=«Calle de la Regla 42, n.º 18, 1.º A, 28801 Alcalá de Henares» · botones: Ver detalle · Agendar · ⋯
+ESCRITURAS
+POST /admin/entorno → 200
+POST /admin/jobs → 201
+LOG
+[warning] Service Worker registration blocked by Playwright

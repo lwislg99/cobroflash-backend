@@ -206,6 +206,15 @@ porque no la había (SCRUM-774).
   `null`: se declara ciego e invalida la fila. ✗ Falla: SCRUM-844
   (15-sep), cinco mutantes dieron «pass null · fail null» y parecían
   resultados.
+- **Una mutación que afirmas se puede repetir, o no cuenta** (SCRUM-1731,
+  de SCRUM-1387 F1). Si un tramo de registro dice que una mutación tumba
+  un test, lleva una línea `Mutaciones: catálogo → <test>` (el test la
+  declara en `MUTACIONES_QUE_ME_TUMBAN`) o `Mutaciones: una vez → <guion>`
+  (el guion está en git). Lo comprueba el guard de la A9 cuando la línea
+  existe. Cuando falta, no lo ve ningún guard: lo ve quien cierra, y una
+  mutación sin su línea no cuenta como evidencia. Solo hacia adelante.
+  *(Firmada por delegación, SCRUM-1731 c.21980; acuse del equipo J,
+  c.21999. Rige desde el 18-nov-2026: `tests/scrum1294-a9-leccion-en-a10.test.mjs`.)*
 
 ## A4 · Git (AA2)
 
