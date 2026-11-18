@@ -37,8 +37,20 @@ function conBanco(ficheros, cuerpo) {
   }
 }
 
+// SCRUM-1743: el runner se niega a dos --tramo de la misma pasada lanzados desde el MISMO comando del arnés, y
+// aquí todos salen de este proceso. Cada llamada simula su propio comando (una raíz distinta), que es lo que
+// este test describe: «cada tramo en su comando». El caso encadenado lo prueba scrum1743.
+let comandos = 0;
+const otroComando = () => JSON.stringify([
+  { pid: 70000 + ++comandos, nombre: 'bash.exe', creado: `2026-11-18T00:00:${String(comandos).padStart(2, '0')}.000Z` },
+  { pid: 15440, nombre: 'claude.exe', creado: '2026-11-17T23:00:00.000Z' },
+]);
+
 function correr({ raiz, dir }, args, extra = {}) {
-  const env = { ...process.env, TANDA_TRAMOS_BASE: path.join(raiz, 'registro'), TANDA_TRAMOS_ARBOL: 'banco-1244c', ...extra };
+  const env = {
+    ...process.env, TANDA_TRAMOS_BASE: path.join(raiz, 'registro'), TANDA_TRAMOS_ARBOL: 'banco-1244c',
+    TANDA_TRAMOS_CADENA: otroComando(), ...extra,
+  };
   for (const k of ['FORCE_COLOR', 'NODE_OPTIONS', 'NODE_TEST_CONTEXT']) delete env[k];
   const r = spawnSync(process.execPath, [SCRIPT, '--dir', dir, ...args], { cwd: RAIZ, env, encoding: 'utf8', timeout: 120000 });
   return { status: r.status, out: `${r.stdout}${r.stderr}` };
