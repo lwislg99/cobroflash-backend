@@ -1116,3 +1116,39 @@ decisión de P1 y, si se quiere, el recurso.
    (§Ⓖ3). Correcta para su hora; seis días desfasada. Cicatriz J5 del 18-nov.
 2. **La ficha del Congreso dio 403 de 410 B a la primera.** Lo separó mirar el tamaño y el código antes
    de contar nada: un 403 contado como texto daba «0 Convalidado», que es lo que decía el 12-nov.
+
+# SCRUM-1316i · La cabecera 1708 de PREGUNTAS_ASESOR deja de decir «⏰ A6: 18/19-nov»
+
+**Medido contra:** `origin/main` = `dd26ef66fa8d9e92cbefc116e6f55da900db6fb0` · 2026-11-18T16:44:42Z (cabecera `Date:` de GitHub)
+
+A9: sin fallo que generalice — es corregir una cabecera caducada por un hecho nuevo (convalidación del 12-nov, medida en 1316h); el desfase de la medición 1316g ya lo apuntó jv-j5bg en su tramo.
+
+Sesión J5 (IA, `jv-j5bh`), 18-nov-2026, por encargo del orquestador del equipo de Javier
+(`cobroflash-backend-ee`). **Sólo documentos.** Ni `src/`, ni `public/`, ni el esquema, ni el máster, ni
+la emisión. **No se redacta el aviso de P1** (c.20890): eso es regla 39 y pantalla de S2; el orquestador
+dice que ya tiene texto firmado (c.22084) y ticket de construcción (SCRUM-1766), y aquí no se copia.
+
+## Qué cambia en `docs/legal/PREGUNTAS_ASESOR.md` (en sitio: 2044 líneas antes y después)
+
+1. **Línea 1708 (cabecera del bloque 23):** pasa a decir lo de la fila 23 del índice de SCRUM-1264
+   (c.22074, que copia el literal que propuso jv-j5bg en c.22068): «34 (E6) + A1–A5 · … · ✅ A6 sin
+   objeto: el RDL 29/2026 se convalidó el 12-nov (BOE-A-2026-23755, BOE 13-nov; DS 213) · ⏰ A1–A5: 1-dic
+   (condición cumplida)». El título del bloque («El 10 % de obras y el medio de pago») se conserva.
+2. **Línea 1714 (el aviso ⚠️ del bloque):** se le añade al final una nota fechada el 18-nov-2026 con la
+   fuente (`BOE-A-2026-23755`, DS 213, SCRUM-1316 c.22068) y «Sin respuesta de asesor».
+3. **Línea 1741 (A1–A6):** A6 se **marca** sin objeto desde el 12-nov, con fecha y fuente; **la pregunta
+   no se borra** y el estado medido el 12-nov (c.21629) se deja como se escribió.
+
+## Las citas a esas líneas
+
+`git grep` de `PREGUNTAS_ASESOR(.md)?:<n>` en el árbol: 43 ficheros, 130 citas; la más alta apunta a
+`:1327`. **Ninguna apunta a 1690-1750** (control positivo: las de `:978` salen 17 veces). Como no se
+mueve ninguna línea, las de fuera del bloque siguen apuntando a lo mismo. Las de Jira (`:1708` y `:1740`
+en c.21854) siguen cayendo en la cabecera y en la línea «34 (E6), completada».
+
+## Lo que NO está medido
+
+- La descripción de SCRUM-1264 no la he leído entera: el literal de la fila 23 lo confirmó el
+  orquestador por mensaje (c.22074 = el de c.22068, sin cambios).
+- El «_Origen: c.20892_» de la línea 1710 cita un comentario que, según jv-j5bg (c.22068), no es de
+  SCRUM-1316; no lo he tocado porque no estaba en el encargo y no he medido de qué ticket es.
