@@ -40,6 +40,7 @@ import puppeteer from 'puppeteer-core';
 import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
+import { enlacesDelPanel, TIPOS_DE_FUENTE, esperarFuentes, cegueraDeLaFuente, decirFuente } from './_hojas-del-panel.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
@@ -47,7 +48,10 @@ let PUERTO = Number(process.env.PAD_PUERTO || 0);
 const ALTO_MINIMO = 44;
 
 const JS = ['/dashboard/js/api.js', '/dashboard/js/signaturePad.js', '/dashboard/js/parteDetailView.js'];
-const CSS = ['/tokens.css', '/dashboard/css/styles.css'];
+// SCRUM-1755d · las hojas del índice del panel, en su orden (antes, tokens + styles escritos a mano y sin
+// `inter.css`: el pad se medía con la letra de reserva de cada máquina, y el alto de la tarjeta lo pone el texto).
+let HOJAS;
+try { HOJAS = enlacesDelPanel(PUBLIC); } catch (e) { HOJAS = null; console.error(String(e && e.message ? e.message : e)); }
 
 const VENTANAS = [
   { id: '390×844', width: 390, height: 844, movil: true },
@@ -83,7 +87,7 @@ async function microcopy() {
 function paginaHtml(mc) {
   return '<!doctype html><html lang="es"><head><meta charset="utf-8">\n'
     + '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
-    + CSS.map((h) => '<link rel="stylesheet" href="' + h + '">').join('\n')
+    + HOJAS
     + '\n</head><body>\n'
     + '<script>window.appLocale = { currency: "EUR" };'
     + 'window.appAlbaranRotulos = ' + JSON.stringify(mc.rotulos) + ';'
@@ -101,7 +105,9 @@ function arrancarServidor(mc) {
   app.use((req, res, next) => {
     const f = path.join(PUBLIC, req.path.replace(/^\//, ''));
     if (!f.startsWith(PUBLIC) || !fs.existsSync(f) || !fs.statSync(f).isFile()) return next();
-    res.type(f.endsWith('.css') ? 'text/css' : f.endsWith('.js') ? 'text/javascript' : 'text/plain').send(fs.readFileSync(f, 'utf8'));
+    // SCRUM-1755d · en bytes y la `.woff2` con su tipo: leída como texto (`'utf8'`), la cara llegaría rota.
+    const letra = TIPOS_DE_FUENTE[path.extname(f)];
+    res.type(letra || (f.endsWith('.css') ? 'text/css' : f.endsWith('.js') ? 'text/javascript' : 'text/plain')).send(fs.readFileSync(f));
   });
   const srv = http.createServer(app);
   return levantarServidor(srv, PUERTO).then((p) => { PUERTO = p; return srv; });
@@ -165,11 +171,13 @@ async function foto(pag, caso, momento) {
 const hallazgos = [];
 const ciegos = [];
 const filas = [];
+const letras = new Set();
 
 const mc = await microcopy();
 if (!mc || !mc.rotulos || !mc.rotulos.firmadoPorNombre || !mc.opciones.length) {
   ciegos.push('no hay microcopy del firmante en dist/ (¿falta `npm run build`?): sin ella el pad se pinta sin nombre ni calidades y mediría menos');
 }
+if (!HOJAS) ciegos.push('no supe sacar las hojas de `public/dashboard/index.html`: sin ellas mediría con la letra de reserva');
 if (ciegos.length) {
   const sinMicrocopy = veredictoDe({ hallazgos, ciegos });
   console.error(`\n  🔴 NO SUPE MEDIR: ${ciegos.join(' · ')}\n\n  ${sinMicrocopy.linea}\n`);
@@ -188,6 +196,13 @@ try {
     try {
       await pag.setViewport({ width: caso.v.width, height: caso.v.height, isMobile: caso.v.movil, hasTouch: caso.v.movil });
       await pag.goto(`http://127.0.0.1:${PUERTO}/__pad-de-firma.html`, { waitUntil: 'load' });
+      // LA LETRA, ESPERADA: el alto de la tarjeta, del resumen y de los botones lo pone el texto. Sin
+      // ninguna cara web cargada el caso es CIEGO: mediría con la letra de reserva (SCRUM-1745c).
+      const fuente = await esperarFuentes(pag);
+      const sinLetra = cegueraDeLaFuente(fuente, caso.id)
+        || (fuente.cargadas > 0 ? null : `🔴 SIN LETRA WEB en ${caso.id}: ${fuente.declaradas} caras declaradas y 0 cargadas.`);
+      if (sinLetra) { ciegos.push(sinLetra); continue; }
+      letras.add(decirFuente(fuente));
       const fatal = await pag.evaluate(ABRIR, parteDe(caso), caso.quien);
       if (fatal) { ciegos.push(`${caso.id} → ${fatal}`); continue; }
       const m = await pag.evaluate(MEDIR);
@@ -254,6 +269,7 @@ try {
 console.log('');
 console.log('  SCRUM-1742 · EL PAD DE FIRMA DEL PARTE CABE EN EL MÓVIL (pad real, abierto por window.firmarParte)');
 console.log(`  POBLACIÓN: ${CASOS.length} casos (técnico y cliente × ${VENTANAS.map((v) => v.id).join(', ')}; más 20 líneas, dos técnicos y ninguno) · medidos ${filas.length}`);
+console.log(`  LETRA: ${[...letras].join(' ‖ ') || '(ningún caso llegó a medir)'}`);
 for (const f of filas) console.log(`   ${f.ok ? '✔' : '🔴'} ${f.id} · ${f.resumen}`);
 
 if (!process.env.PAD_CASO && filas.length + ciegos.length !== CASOS.length) ciegos.push(`se juzgaron ${filas.length + ciegos.length} casos de ${CASOS.length}`);

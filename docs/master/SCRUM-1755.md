@@ -106,3 +106,34 @@ encargo a S0 del 18-nov. El texto de la fila es el del encargo, literal.
 `dos-equipos.md:189`, con la excepción para S3 en `dos-equipos.md:268`.
 
 A9: comprobación → `tests/scrum1295-carriles.test.mjs`
+
+## SCRUM-1755d (18-nov-2026, S3, sesión de relevo) · el pad de firma, y la DEUDA a 0
+
+**Medido contra:** `origin/main` = `2cce398c3007d23b6aa048d44f5cd2d54d592e9f` · 2026-11-18T11:50:05Z (reloj local)
+A9: comprobación → `tests/scrum1603-el-banco-mide-con-la-fuente-del-panel.test.mjs`
+**Autoridad:** la fila de §3.4 de arriba (S0, PR #3218, en `main`): sólo la regla de medida, sin tocar casos ni veredictos.
+
+**⒈ `guard-pad-de-firma-cabe`.** Enlazaba `tokens.css` + `styles.css` a mano, sin `inter.css`, y su servidor leía
+todo como texto (`'utf8'`). Ahora: hojas del índice (`enlacesDelPanel`), `.woff2` en bytes con su tipo,
+`esperarFuentes` + `cegueraDeLaFuente` tras el `goto` (y CIEGO si no carga ninguna cara), `LETRA:` en la salida.
+Ningún caso, umbral ni veredicto cambia.
+
+| qué se le hace | salida |
+|---|---|
+| sacarlo de DEUDA y techo 1→0, sin tocar el guard (rojo primero) | scrum1603 ⑥ en rojo: «…guard-pad-de-firma-cabe.mjs monta el panel con sus hojas escritas a mano y no está declarado» |
+| base (guard viejo, letra de reserva) | 0 · 11/11 ✔ · tarjeta 812/632/536/768 px · botones 44/44/44 |
+| con el arreglo (Inter) | 0 · 11/11 ✔ · **las mismas cifras, caso a caso** · `LETRA: Inter · caras cargadas 5 de 35 declaradas · fallidas 0` |
+| `inter.css` 404 | 2 · HOJA SIN CARGAR |
+| `.woff2` 404 | 2 · FUENTE ROTA |
+
+Ningún caso de la población 11/11 cambia de veredicto. MI LECTURA de por qué no cambia ni una cifra: la tarjeta
+mide la ventana menos 32 px en todas (812 = 844 − 32 …) y el recuadro y el pie se colocan desde su borde de abajo;
+la letra mueve lo de dentro del resumen, que se desplaza, no lo que el guard juzga.
+
+**⒉ scrum1603 ⑥.** `DEUDA = {}` y `TECHO_DEUDA = 0`. La mutación «uno de la DEUDA ya arreglado sigue en la lista»
+leía `Object.keys(DEUDA)[0]`, que con la lista vacía no tiene sujeto: ahora declara a propósito un banco que ya es
+de la casa y comprueba que cae; la de «la deuda no sube» declara uno con techo 0 y comprueba que cae.
+Censo: 27 bancos (casa 10 · casa-lista 10 · a mano 7: 7 solo geometría + 0 de DEUDA); scrum1603 en verde.
+
+**Lo que NO está medido.** Inter en el runner del CI (lo dirá el CI). El pad sigue sin medir apaisado, teclado en
+pantalla ni otro navegador que Chromium (declarado en el propio guard). Con la DEUDA a 0, el ticket se puede cerrar.
