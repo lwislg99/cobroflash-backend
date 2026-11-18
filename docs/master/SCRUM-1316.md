@@ -1152,3 +1152,5 @@ en c.21854) siguen cayendo en la cabecera y en la línea «34 (E6), completada»
   orquestador por mensaje (c.22074 = el de c.22068, sin cambios).
 - El «_Origen: c.20892_» de la línea 1710 cita un comentario que, según jv-j5bg (c.22068), no es de
   SCRUM-1316; no lo he tocado porque no estaba en el encargo y no he medido de qué ticket es.
+
+**Corrido:** scrum1294, scrum267, scrum273 y scrum525d, 32 de 32 en verde; `guards:entrada`, 170 de 170. **Suite entera no corrida: sólo documentos; la corre CI** (decisión del orquestador por mensaje, 18-nov, para que la suite entera vaya una vez en SCRUM-1500i, que toca `tests/`).
