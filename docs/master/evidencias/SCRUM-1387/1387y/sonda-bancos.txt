@@ -1,0 +1,24 @@
+SCRUM-1324 · M01 umbral de rojos 5 → 4 · ancla en scripts/vigia-silencio-de-main.mjs: 1 · catálogo: —
+SCRUM-1324 · M02 umbral de rojos 5 → 6 · ancla en scripts/vigia-silencio-de-main.mjs: 1 · catálogo: —
+SCRUM-1324 · M03 umbral de runs sin ejecutar 22 → 23 · ancla en scripts/vigia-silencio-de-main.mjs: 1 · catálogo: —
+SCRUM-1324 · M04 umbral de horas de cron 10 → 11 · ancla en scripts/vigia-silencio-de-main.mjs: 1 · catálogo: —
+SCRUM-1324 · M05 el rojo del obligatorio también avisa · ancla en scripts/vigia-silencio-de-main.mjs: 1 · catálogo: —
+SCRUM-1324 · M06 el silencio deja de avisar · ancla en scripts/vigia-silencio-de-main.mjs: 1 · catálogo: —
+SCRUM-1324 · M07 un job ausente del run no cuenta como hueco · ancla en scripts/vigia-silencio-de-main.mjs: 1 · catálogo: —
+SCRUM-1324 · M08 un solo rojo de cron ya avisa · ancla en scripts/vigia-silencio-de-main.mjs: 1 · catálogo: —
+SCRUM-1324 · M09 los commits de main sin run no cuentan · ancla en scripts/vigia-silencio-de-main.mjs: 1 · catálogo: —
+SCRUM-1324 · M10 sin lista de obligatorios sigue adelante · ancla en scripts/vigia-silencio-de-main.mjs: 1 · catálogo: —
+SCRUM-1324 · M11 un run sin ejecutar rompe la racha roja · ancla en scripts/vigia-silencio-de-main.mjs: 1 · catálogo: —
+SCRUM-1324 · M12 el veredicto mira también el futuro · ancla en scripts/vigia-silencio-de-main.mjs: 1 · catálogo: —
+SCRUM-1324 · M13 nunca hay nada sin declarar · ancla en scripts/vigia-silencio-de-main.mjs: 1 · catálogo: —
+SCRUM-1324 · M14 el cron que no llega no es silencio · ancla en scripts/vigia-silencio-de-main.mjs: 1 · catálogo: —
+SCRUM-1324 · M15 la tasa de fallo se mide con las rachas largas dentro · ancla en scripts/vigia-silencio-de-main.mjs: 1 · catálogo: —
+SCRUM-1345 · M1 · el plazo agotado olvida los caídos ya vistos · ancla en scripts/guards-entrada.mjs: 0 · catálogo: —
+SCRUM-1345 · M2 · el plazo agotado deja de contar como ciego (saldría 0) · ancla en scripts/guards-entrada.mjs: 0 · catálogo: —
+SCRUM-1345 · M3 · la señal CI se lee por verdad y no por presencia · ancla en tests/scrum976-guards-entrada-con-techo.test.mjs: 1 · catálogo: scrum976-guards-entrada-con-techo.test.mjs
+SCRUM-1345 · M4 · en CI el plazo agotado deja de ser rojo · ancla en tests/scrum976-guards-entrada-con-techo.test.mjs: 1 · catálogo: scrum976-guards-entrada-con-techo.test.mjs
+SCRUM-1345 · M5 · un rojo dentro de plazo sale 0 · ancla en scripts/guards-entrada.mjs: 0 · catálogo: —
+SCRUM-1345 · M6 · la línea de la pasada deja de salir en verde · ancla en scripts/guards-entrada.mjs: 0 · catálogo: —
+scrum908c/mutar2 · mut2 de scrum859 · ancla en tests/scrum267-ancla-de-medicion.test.mjs: 1 · catálogo: scrum859-identidad-y-motivo-cerrado.test.mjs
+CONTROL-sembrado · copia de restauracion-del-arbol-ejecutable.test.mjs · ancla en tests/restauracion-del-arbol-ejecutable.test.mjs: 1 · catálogo: restauracion-del-arbol-ejecutable.test.mjs
+población: 3 bancos · 22 mutaciones · 351 tests con catálogo de 1706
