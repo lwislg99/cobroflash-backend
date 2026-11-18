@@ -36,7 +36,23 @@ y ese guion se retiró porque un banco con lista propia queda fuera del catálog
 
 A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
 
-## Rojo real (A23 ⑧ y ⑨)
+## Corrección tras el rojo del CI (run 44261510118, commit ba27154e)
+
+> ⚠️ **Superada** por el tramo «Rojo del PR #3210», abajo (S0, medido). Este tramo lo escribió el `@claude` del
+> CI en 34e6d8437, en paralelo y sin poder correr `node`; se conserva como historia. De él queda la mutación de
+> `RE_MUT_CLAVE`; su `mutar.mjs` (que importaba el catálogo) se retira: repetía lo que ya hace el meta-guard.
+
+Cayeron `SCRUM-1387 · ningún banco de mutación nuevo queda fuera del catálogo` y, por arrastre,
+`SCRUM-976 ④` (`guards:entrada`): el `mutar.mjs` original traía su lista propia (`CASOS`) y no nombraba el
+catálogo, y entró después del corte. Arreglo en el código, sin tocar ningún guard: el test de la A9 declara
+sus 5 `MUTACIONES_QUE_ME_TUMBAN` (al final del fichero: el ancla del código va primero y empieza línea, SCRUM-1321)
+y `mutar.mjs` las importa. Las líneas inyectadas de la tabla de abajo ya no las ejecuta el guion: las cubre el
+control positivo del test (`fallanM(...)`), que es el que `cae` nombra.
+**NO verificado por mí:** en esa ejecución no pude correr `node` (permiso denegado), así que ni `mutar.mjs` ni la
+tanda corrieron tras el cambio. Lo único medido es estático: cada una de las 5 anclas aparece exactamente 2 veces
+en el fichero (código a principio de línea + cita en la declaración). Lo juzga el CI.
+
+## Rojo real (A23 ⑧ y ⑨) — del guion ANTERIOR (lista propia), conservado como historia
 
 Sobre el commit `a2dd50f1fc8b028643addf5ddb2ed2517ef40bb2` (árbol entero commiteado antes de inyectar), con
 `mutar.mjs`: **BASE rc=0 · pass 4 · fail 0**; luego, cada línea al final de este registro:
@@ -80,6 +96,9 @@ aquel guion (inyectaba líneas en este registro); lo que se repite desde hoy es 
 comprobación FUERA del árbol, en el tmp del trabajo): BASE rc=0 · 4 ok · 0 not ok; las 6 caen en el control
 positivo, `ambiguedadDelAncla` = null en las 6; restaurado por bytes: sí. **MAL 0 de 6.**
 
-Mutaciones: catálogo → `tests/scrum1294-a9-leccion-en-a10.test.mjs` (6 de 6 caen)
+**Al empujar, la rama traía 34e6d8437** (el `@claude` del CI, mismo arreglo, sin verificar). Merge: un solo
+array (estas 6 + su `RE_MUT_CLAVE`, la 7.ª), sin guion. Medido después del merge: ver la línea de abajo.
+
+Mutaciones: catálogo → `tests/scrum1294-a9-leccion-en-a10.test.mjs` (7 de 7 caen)
 
 A9: comprobación → `tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs`

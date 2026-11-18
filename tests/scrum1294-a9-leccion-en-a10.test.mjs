@@ -183,6 +183,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: 'const RE_MUT_RUTA = /^ +(?:`([^`\\s]+)`)/;',
     cae: 'control positivo: el revisor SABE fallar por cada una de sus reglas',
   },
+  {
+    // La clave «una vez» deja de reconocerse como la línea (la trajo 34e6d8437, del @claude del CI).
+    fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+    de: 'const RE_MUT_CLAVE = /^\\s*(?:- )?(?:\\*\\*)?Mutaciones:(?:\\*\\*)? (catálogo|una vez) →(.*)$/;',
+    a: 'const RE_MUT_CLAVE = /^\\s*(?:- )?(?:\\*\\*)?Mutaciones:(?:\\*\\*)? (catálogo) →(.*)$/;',
+    cae: 'control positivo: el revisor SABE fallar por cada una de sus reglas',
+  },
 ];
 
 const existeEnRepo = (ruta) => fs.existsSync(path.join(RAIZ, ruta));
