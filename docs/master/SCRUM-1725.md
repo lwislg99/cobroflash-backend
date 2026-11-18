@@ -259,3 +259,64 @@ Las tarjetas se comparan como CONJUNTOS de líneas, con el formato de `c1725g-li
 - Los tres casos nuevos no llevan aún su mutación en `MUTACIONES_QUE_ME_TUMBAN`: no se afirma ninguna.
 - Los controles de la barra van a 12,5 px (los del técnico ya lo estaban; el de cobro se iguala). Subirlos a los 13,5 px de Albaranes es ropa del PR-②.
 - Un error mío: crucé los 115k de contexto sin avisar y lo medí a 287.926, ya pasado el umbral del traspaso (280k). Leer capturas PNG pesa mucho más de lo que calculé: se mide DESPUÉS de cada imagen, no al final.
+
+### Relevo del mismo puesto (S4 · 18-nov, 17:55Z de GitHub): autorización, mutaciones y tanda de antes del push
+
+Medido sobre `origin/main` `703df1474d8406bacd89c4609a89281256d7063e`, mergeado en la rama (`dd8f94593`) sin conflictos. Comprobado tras el merge: este registro conserva las dos secciones nuevas (la de S2, «Escalera por identidad», y ésta) y la rama solo difiere de `main` en sus seis ficheros y sus evidencias.
+
+**Autorización nominal de las líneas — SCRUM-1725 c.22109** (copiada del encargo del orquestador; esta sesión no tiene Jira y no la ha leído allí):
+- `tests/scrum1725-lista-operario-sin-cobro.test.mjs`: L56-60 (`filtrosCobro` cuenta también `<option>`, más `selectoresDeCobro`) · L77-79 nuevo (sin cobro: 0 desplegables, sin «Cobro: todos») · L101-102 nuevo (admin: 1 desplegable). Los 0/3 de siempre, intactos.
+- `scripts/guard-lista-trabajos-917.mjs`: A.2 L162-171, L183-189, L218-240 (desplegable en vez de píldoras, mismas exigencias) · A.4 nuevo, L191-196 y L242-273.
+- Los tests de 428 y 816 no se tocan. `aria-label="Cobro"`: confirmado (c.21978, según el mismo encargo); deja de estar «pendiente de confirmar».
+
+Cotejo del commit `c0231b35b` contra esa lista, con `git diff -U0`: en el test, los trozos caen en L56-60, L77-79 y L101-102, más L128-264 (los tres casos nuevos). En el guard, en L162-171, L183-196 y L218-273. Los tests de 428 y 816 no están en el diff. **Una línea fuera de la lista:** el comentario que encabeza el catálogo del test dice ahora «los casos de arriba» donde decía «el caso de arriba». Es un comentario, no una exigencia.
+
+**Mutaciones** de los casos nuevos, que el tramo anterior no declaró:
+
+Mutaciones: catálogo → `tests/scrum1725-lista-operario-sin-cobro.test.mjs`
+
+| mutación en `jobsView.js` | caso que nombra | cae |
+|---|---|---|
+| las pestañas cuentan `jobs.length` en vez de su estado | 1725i ① | sí (y de rebote ② y ③) |
+| la pestaña no filtra (`filter((j) => true)`) | 1725i ② | sí (y de rebote ③) |
+| `cerradosALaVista` no se atiende (`&& false`) | 1725i ② | sí, solo él |
+| el cobro filtra la lista entera, no la pestaña | 1725i ③ | sí, solo él |
+| el desplegable de cobro se cuelga con `if (true)` | 1725 ①② «tecnico» | sí (y de rebote «contable») |
+
+Inyectadas una a una, con la base primero (7 de 7 en verde) y el fichero restaurado por bytes: `filtros-mutaciones.txt`. En esa salida la declaración nº 4 (de 1725g, ya en `main`) sale «CIEGO: la inyección no se aplicó»: es mi guion, que exige que el texto de partida desaparezca, y en esa declaración el de llegada lo contiene. No la juzgo aquí; la juzga `meta-guard-mutaciones` en el CI, como hasta hoy.
+
+**Tanda de antes del push** (rama con `main` dentro, `npm run build` salida 0, un fichero cada vez, TAP fuera del árbol):
+
+| fichero | pasan | caen |
+|---|---|---|
+| `scrum1387-banco-nuevo-va-al-catalogo` | 8 | 0 |
+| `scrum1387d-el-recuento-dice-sobre-cuantos` | 5 | 0 |
+| `scrum1387f-el-rotulo-dice-los-juzgados` | 3 | 0 |
+| `scrum1294-a9-leccion-en-a10` | 4 | 0 |
+| `scrum1572-registro-creado-por-dos-ramas` | 6 | 0 |
+| `scrum709-microcopy-por-fichero` | 8 | 0 |
+| `scrum1185-trinquete-sin-consumir` | 11 | 0 |
+| `scrum719-el-suelo-de-los-doce` | 37 | 0 |
+| `scrum1725-lista-operario-sin-cobro` | 7 | 0 |
+| `scrum1725-ficha-lenguaje-del-parte` | 6 | 0 |
+
+Esa pasada es ANTERIOR a este tramo de registro. Los que leen el registro (1387, 1294, 1572, 709) y `guards:entrada` se repiten después de escribirlo; su resultado va en el cuerpo del PR.
+
+**Triaje de los 14 «not ok» de la suite a medias.** La suite completa del tramo anterior NO terminó (sin fichero de salida y con el TAP cortado en un caso): no hay veredicto local de suite completa, y no la he relanzado (no tengo el turno). Sus 14 caídos se han vuelto a correr, fichero a fichero, en la rama y en `main` limpio (`703df147`) dentro del mismo árbol y con el mismo `dist/` (la rama no toca `src/`, `prisma/` ni `package.json`: 0 ficheros):
+
+| fichero | caen en la rama | caen en `main` |
+|---|---|---|
+| `scrum1199-avisos-alta-cliente` | 2 | 2 |
+| `scrum1726-tanda-firmada-j1` | 2 | 2 |
+| `scrum245-tipo-obliga-declarar` | 2 | 2 |
+| `scrum385-preview-fiable` | 3 | 3 |
+| `scrum471-node-modules-al-dia` | 1 | 1 |
+| `scrum475-schema-vs-sql` | 3 | 3 |
+| `scrum476-reconciliar-censos` | 1 | 1 |
+
+Comparados como conjuntos de NOMBRES: 14 en la rama, 14 en `main`, 14 en la suite a medias, y ninguno en un solo lado. Ninguno es de esta rama. Su causa no la he investigado: lo medido es que caen igual sin mi cambio, en este árbol.
+
+**Guards de navegador, repetidos con `main` dentro:**
+- `guard:lista-trabajos-917`: 56 de 56.
+- `guard:escalera-por-estado`: VERDE (salida 0, «las dos pantallas dicen y hacen lo mismo en los cinco estados»). Lo curó #3239 (S2), que ya está en `main` y en esta rama.
+- `guard:lista-trabajos`: ROJO PREEXISTENTE, 1 defecto, la misma firma («el clic en la fila NO abrió el Trabajo»). Se cura en el PR-② (c.22103).
