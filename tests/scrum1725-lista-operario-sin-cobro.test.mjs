@@ -69,6 +69,9 @@ async function sinCobroParaElRol(rol) {
   assert.equal(m.filtrosCobro, 0, `🔴 ${m.filtrosCobro} filtros de cobro (Pendiente/Parcial/Pagado) a la vista`);
   assert.equal(m.lineasDe, 0, `🔴 ${m.lineasDe} líneas «de X €»: es lo que falta por cobrar, no el importe`);
   assert.doesNotMatch(m.cabeceraTerminados, /por cobrar/, `🔴 la cabecera de Terminados dice «${m.cabeceraTerminados}»`);
+  // SCRUM-1725e (M1, firmado por delegación: SCRUM-1725 c.22052) · sin el cobro a la vista, la cabecera
+  // es «✅ Terminados» A SECAS y su cuenta: ni «— cobra el resto» ni nada detrás.
+  assert.match(m.cabeceraTerminados, /^✅ Terminados · \d+$/, `🔴 M1: la cabecera de Terminados dice «${m.cabeceraTerminados}»`);
   assert.equal(m.salvedad, 0, '🔴 la salvedad del total por cobrar sigue');
   assert.ok(m.celdas.some((c) => /100,00/.test(c)) && m.celdas.some((c) => /50,00/.test(c)),
     `🔴 el IMPORTE tiene que verse (c.21547): celdas = ${JSON.stringify(m.celdas)}`);
@@ -84,4 +87,7 @@ test('SCRUM-1725 ③ · CONTROL POSITIVO: el admin sigue viendo «Por cobrar», 
   assert.equal(m.filtrosCobro, 3, `🔴 CIEGO: el admin ve ${m.filtrosCobro} filtros de cobro, no 3`);
   assert.ok(m.lineasDe >= 1, '🔴 CIEGO: el admin no ve ninguna línea «de X €»');
   assert.match(m.cabeceraTerminados, /por cobrar/, `🔴 CIEGO: la cabecera de Terminados del admin dice «${m.cabeceraTerminados}»`);
+  // SCRUM-1725e (M1) · el admin CONSERVA su cabecera entera: si también perdiera «— cobra el resto»,
+  // los dos casos de arriba pasarían sin que M1 distinguiera a nadie.
+  assert.match(m.cabeceraTerminados, /^✅ Terminados — cobra el resto · \d+ · /, `🔴 M1: el admin ha perdido su cabecera: «${m.cabeceraTerminados}»`);
 });
