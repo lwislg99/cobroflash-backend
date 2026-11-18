@@ -13,6 +13,12 @@
 // o los ficheros locales no se sirvieron, o la cuenta no tiene ningún trabajo que las lleve.
 import fs from 'node:fs';
 import path from 'node:path';
+// QUIÉN ABRE EL CONTEXTO DE ESTA ACCIÓN: el banco de SCRUM-1658 (`abrir`, con `serviceWorkers: 'block'`).
+// Esta acción llama a `.route(` sobre yaqu.app y no abre navegador: sin service worker bloqueado, lo
+// interceptado puede no pasar por aquí (SCRUM-1233). Se importa el MISMO módulo que importa `paso2.mjs`
+// y abajo se comprueba que es el que nos han pasado. Lo vigila `tests/scrum1233g-…`, que en el CI
+// tumbó esta rama (18-nov-2026) porque no encontraba quién abría el contexto.
+import * as banco from '../SCRUM-1658/banco/lib.mjs';
 
 const SERVIDOS = [['js/jobsView.js', 'application/javascript'], ['css/styles.css', 'text/css']];
 
@@ -30,6 +36,7 @@ const leerTarjetas = () => [...document.querySelectorAll('tr.jobs-fila')].map((t
 });
 
 export default async (s, h) => {
+  if (h !== banco) throw new Error('CIEGO: esta acción no corre sobre el banco de SCRUM-1658 (el que bloquea el service worker); no intercepto sin él');
   const p = s.page;
   const local = process.env.LOCAL_DIR;
   if (local) {
