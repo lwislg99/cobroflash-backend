@@ -1191,6 +1191,16 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   const textosTrabajo = TEXTOS_EL_TRABAJO;
   const nombresAsignados = typeof nombresDeAsignados === 'function' ? nombresDeAsignados(job.asignados) : '';
   const lineaTipo = construirLineaPlegable(document, { clave: 'tipo', rotulo: textosTrabajo.rotuloTipo });
+  // SCRUM-1670 (c.22019) · «Tipo de intervención» (SCRUM-651), justo DEBAJO de «Tipo de trabajo»: las
+  // dos dicen qué clase de trabajo es, pero NO son el mismo dato — aquélla es `tipoOperacion` (la
+  // bandera fiscal, editable con sus tarjetas); ésta, lo que eligió el profesional al crearlo. SOLO
+  // LECTURA (se elige en el alta; un editor pediría textos de guardado sin firmar). La ven jefe y
+  // operario. Sin valor o con uno que el servidor no nombra, no hay línea (cero textos nuevos).
+  const valorIntervencion = rotuloDeTipoIntervencion(job.tipoIntervencion, window.appTiposIntervencion);
+  const lineaIntervencion = valorIntervencion
+    ? construirLineaPlegable(document, { clave: 'intervencion', rotulo: ROTULO_TIPO_INTERVENCION, valor: valorIntervencion })
+    : null;
+  if (lineaIntervencion) lineaIntervencion.sinCuerpo();
   const lineaDatos = construirLineaPlegable(document, {
     clave: 'datos', rotulo: textosTrabajo.rotuloDatos, valor: resumenDeNombre(nombreTrabajo),
   });
@@ -1626,7 +1636,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   body.appendChild(docsSec);
   // SCRUM-1662 · la tarea va donde vivía antes (el alta la escribía en las notas), justo delante de
   // ellas; `construirBloqueElTrabajo` se salta la que es `null`.
-  body.appendChild(construirBloqueElTrabajo(document, [lineaTipo, lineaDatos, lineaQuien, lineaTarea, lineaNotas, lineaGastos]));
+  body.appendChild(construirBloqueElTrabajo(document, [lineaTipo, lineaIntervencion, lineaDatos, lineaQuien, lineaTarea, lineaNotas, lineaGastos]));
   if (!veNotas) lineaNotas.elemento.remove();
 
   const docs = []; // { when, el } — se ordena ascendente y se vuelca al final en la lista.
