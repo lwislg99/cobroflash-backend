@@ -137,3 +137,17 @@ Las tarjetas se comparan como CONJUNTOS de líneas (cliente, tipo, tarea, técni
 - Pendiente: el «me gusta» del fundador sobre las capturas, y la regla 42 tras el merge (las mismas pasadas, sin `LOCAL_DIR`).
 - Dos mensajes míos al orquestador llevaban una hora ESTIMADA («~16:40Z», «~17:05Z») y era falsa por exceso: la de GitHub a esa altura era 16:17Z. La hora se lee de `gh api -i zen`.
 
+### El rojo del CI de #3233 y su cura (relevo de S4 · 18-nov, 17:00Z)
+
+El obligatorio «build + tests (con banco desechable)» cayó sobre la punta `9f87946596e3f6dc1121f77d22e784f33817cdc9` con 3 casos (run 44350276921). Ninguno es de la lista en sí: son los tres trinquetes de árbol entero, que no se corrieron antes del push.
+
+| caso caído | causa | cura |
+|---|---|---|
+| `tests/scrum1185-trinquete-sin-consumir.test.mjs` ① | al quitar la cabecera «Terminados» se quedaron sin llamador `jobsView.js::eurosJobs` y `terminadoSinCobrar.js::resumenTerminadoSinCobrar` | `eurosJobs` se BORRA (función muerta de este fichero). `resumenTerminadoSinCobrar` se DECLARA en `scripts/_sin-consumir-declarados.json` (carril S4, SCRUM-1725, con su motivo): el motor no se toca (c.22098) y vive en un fichero de S2 |
+| `tests/scrum719-el-suelo-de-los-doce.test.mjs` · SCRUM-1395 ② | 1725g metió tres `soloEjecutable(…)` sin suelo en `tests/scrum428-terminado-sin-cobrar.test.mjs` (L78, L152, L200) | las tres pasan por `vistaDeTrabajos()`, que usa `ejecutableDe` con el ancla `function renderJobsView`. Ninguna exigencia cambia: se añade el suelo |
+| `tests/scrum719-el-suelo-de-los-doce.test.mjs` · SCRUM-1395b ① | el veredicto de mudez no tenía ficha de 428 y la de 816 estaba caducada | `npm run censo:mudez -- --escribir` (133 fichas, 2 medidas: VIVO 2, MUDO 0, CIEGO 0) |
+
+Después, en local: los siete ficheros que tocan esto (1185, 719, 428, 816, 1725, 1387, 1294) dan 85 casos, 0 caídos, 0 saltados.
+
+**`guard:lista-trabajos` (navegador, NO obligatorio) sale ROJO con esta rama, y NO se cura aquí.** Dice «el clic en la fila NO abrió el Trabajo». Medido en local a 1280 con el banco del propio guard: la columna «Estado» estrecha la celda del cliente a 249 px y su centro (397, 390) cae sobre el desplegable de técnicos (de x=287 a 409, 44 px de alto), que por diseño no navega (`data-fila-no-navega`). El clic en cualquier otro punto de la fila sigue abriendo el Trabajo, pero el centro de la celda del cliente ya no: es un defecto real de la plana, pequeño. Se cura en la rama siguiente (SCRUM-1725h), que rehace justo esa geometría (desplegable sin caja, fila de un renglón); arreglarlo dos veces el mismo día era trabajo tirado. Queda dicho al orquestador.
+

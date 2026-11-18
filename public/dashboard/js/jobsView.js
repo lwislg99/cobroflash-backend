@@ -249,14 +249,10 @@ async function renderJobsView(container) {
 
 // Agrupado de LISTA (spec: lista simple por fecha). Extraído (SCRUM-11) para reutilizarlo
 // con el filtro de cobro; el agrupado y su lógica NO cambian.
-// SCRUM-436 · el formato de la casa, y NO una copia. Este fichero ya usaba `fmtMoneyEs` en cuatro
-// sitios (`:188`, `:261`, `:347`, `:356`) cuando SCRUM-428 le añadió este formateador local: la
-// misma pantalla imprimía «1000,00 €» en la cabecera del grupo y «1.000,00 €» en las filas de
-// debajo. El censo que lo denunció era mío y estaba MAL: sí había un formateador compartido
-// (`fmtMoneyEs`, api.js:190, 66 usos), y no lo busqué antes de escribir el quinto.
-function eurosJobs(n) {
-  return fmtMoneyEs(n);
-}
+// SCRUM-436 · el formato de la casa es `fmtMoneyEs` (api.js), y NO una copia local. Aquí vivía
+// `eurosJobs`, el formateador que SCRUM-428 añadió para el subtotal de la cabecera «Terminados»;
+// SCRUM-1725g quitó esa cabecera y con ella su único llamador, así que se va (lo cazó el trinquete
+// de SCRUM-1185: una función sin llamador no se deja en el fichero).
 
 // ══ SCRUM-917c · LA LISTA CONTESTA LAS DOS PREGUNTAS ANTES DE ENSEÑAR FILAS ═══════════════════
 //

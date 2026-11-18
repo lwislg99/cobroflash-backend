@@ -22,7 +22,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
-import { soloEjecutable } from './_guard-texto.mjs';
+import { ejecutableDe } from './_guard-texto.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const require_ = createRequire(import.meta.url);
@@ -34,6 +34,14 @@ const leer = (rel) => {
   assert.ok(fs.existsSync(p), `🔴 no existe ${rel}: el guard no puede mirar, y FALLA.`);
   return fs.readFileSync(p, 'utf8');
 };
+
+/**
+ * El código de la lista de Trabajos SIN comentarios, y CON SUELO (SCRUM-1395): si tras el filtro no
+ * queda `function renderJobsView` —la vista que este test mira—, el filtro se ha quedado ciego y esto
+ * FALLA, en vez de dejar que una negación pase sobre la nada.
+ */
+const vistaDeTrabajos = () => ejecutableDe(leer('public/dashboard/js/jobsView.js'),
+  { ancla: 'function renderJobsView', donde: 'public/dashboard/js/jobsView.js' });
 
 /** Un Trabajo como lo serializa `jobs.routes.ts:263-275`, no como me convenga inventarlo. */
 const job = (o) => ({ id: 1, status: 'terminado', estadoCobro: 'Pendiente', totalCobrado: 0, importeReferencia: 1000, ...o });
@@ -75,7 +83,7 @@ test('SCRUM-428 · SUELO: la vista carga el módulo y lo usa', () => {
   // fila. Cambio de exigencia AUTORIZADO con nombre en SCRUM-1725 c.22077. Lo que queda de la intención
   // («el motor existe Y se ve»): la lista sigue sumando con `faltaPorCobrarDe`, la resta de este módulo.
   // Sobre el código SIN comentarios: la prosa que explica la retirada nombra lo retirado.
-  assert.match(soloEjecutable(leer('public/dashboard/js/jobsView.js')), /faltaPorCobrarDe\(/,
+  assert.match(vistaDeTrabajos(), /faltaPorCobrarDe\(/,
     '🔴 la lista de Trabajos ya no llama a `faltaPorCobrarDe`: el motor existiría y no se vería, que es ' +
     'exactamente el estado del que sale este ticket.');
 });
@@ -149,7 +157,7 @@ test('SCRUM-428 · 🔴 la cifra y su SALVEDAD viajan juntas, o ninguna de las d
   // firmada en SCRUM-917 c.15881: «N sin importe de referencia, no entra(n)». La frase larga
   // (`SALVEDAD_APROBADA`, arriba) deja de exigirse: es la pérdida declarada en P4. Cambio de exigencia
   // AUTORIZADO con nombre en SCRUM-1725 c.22078. La intención es la misma: las dos piezas van juntas.
-  const vista = soloEjecutable(leer('public/dashboard/js/jobsView.js'));
+  const vista = vistaDeTrabajos();
 
   assert.match(vista, /if\s*\(\s*porCobrar\.conFalta\s*\)/,
     '🔴 el pie de «Por cobrar» dice «en N trabajos sin cerrar» siempre: con cero trabajos con deuda ' +
@@ -197,7 +205,7 @@ test('SCRUM-428 · el importe se calcula sobre lo que se VE, no sobre la lista e
   // lo que le falta a ese Trabajo y no con una suma de otros.
   // (La tarjeta «Por cobrar» suma TODOS los sin cerrar, no lo filtrado: decisión de SCRUM-917c, que
   // este ticket no toca; por eso aquí no se le exige «lo que se ve».)
-  const vista = soloEjecutable(leer('public/dashboard/js/jobsView.js'));
+  const vista = vistaDeTrabajos();
   assert.ok(vista.includes('`💰 Cobrar el resto (${fmtMoneyEs(j.remaining.amount, j.remaining.currency)})`'),
     '🔴 el botón del terminado con saldo ya no dice lo que falta de SU fila (`j.remaining`). Un importe ' +
     'que no cuadra con la fila en la que está no se cree: se ignora, y entonces da igual haberlo puesto.');
