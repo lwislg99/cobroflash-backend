@@ -23,6 +23,32 @@ import {
   artefactosQueNombra, clasificar,
 } from '../scripts/censo-regla-42.mjs';
 
+// 🔴 SCRUM-804j · lo que tiene que tumbar a este fichero (lo ejecuta `npm run meta:mutaciones`).
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // El ensanche A LO LOCO: el corte detrás de `N` con un patrón por ticket. `N` casa como prefijo
+    // y vuelven los 6.398 pares falsos medidos el 18-nov-2026 (`scrum1686-…` sería del 168).
+    fichero: 'scripts/censo-regla-42.mjs',
+    de: '  const propios = ficherosPropios(ficheros, n);',
+    a: "  const propios = ficheros.filter((f) => new RegExp(`(^|/)scrum-?${n}([a-z])?\\\\d*[-._]`, 'i').test(f));",
+    cae: 'SCRUM-804b · 🔴 el emparejamiento va por IDENTIDAD, no por contener el número',
+  },
+  {
+    // El lector sin el corte tras la fase: `tests/scrum1686h4-…` vuelve a no ser de nadie.
+    fichero: 'scripts/censo-regla-42.mjs',
+    de: 'const NOMBRE_EN_RUTA = /(?<![^/])scrum-?0*(\\d+)[a-z]?\\d*[-._]/gi;',
+    a: 'const NOMBRE_EN_RUTA = /(?<![^/])scrum-?0*(\\d+)[a-z]?[-._]/gi;',
+    cae: 'SCRUM-804b · 🔴 el emparejamiento va por IDENTIDAD, no por contener el número',
+  },
+  {
+    // La entrada vuelve a contar como fichero propio: 10 tickets DENTRO sólo por su registro.
+    fichero: 'scripts/censo-regla-42.mjs',
+    de: '  return ficheros.filter((f) => !ES_ENTRADA.test(f) && numerosDeFichero(f).has(n));',
+    a: '  return ficheros.filter((f) => numerosDeFichero(f).has(n));',
+    cae: 'SCRUM-804b · los artefactos se sacan del TEXTO de la entrada, no del número del ticket',
+  },
+];
+
 /** SCRUM-804j · un ticket sin ramas, sin entrada y sin commits: sólo cuentan los ficheros que se le pasen. */
 const SIN_NADA = { ramas: new Map(), entrada: null, commits: 0, primeraEntrada: 192, main: 'x', somero: false };
 
