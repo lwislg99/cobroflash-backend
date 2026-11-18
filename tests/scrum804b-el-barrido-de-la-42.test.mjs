@@ -20,8 +20,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   DENTRO, FUERA, NO_DECIDIBLE, SIN_RED, censarConMotivo, leerRemoto, linea, ramasDelTicket,
-  artefactosQueNombra,
+  artefactosQueNombra, clasificar,
 } from '../scripts/censo-regla-42.mjs';
+
+/** SCRUM-804j · un ticket sin ramas, sin entrada y sin commits: sólo cuentan los ficheros que se le pasen. */
+const SIN_NADA = { ramas: new Map(), entrada: null, commits: 0, primeraEntrada: 192, main: 'x', somero: false };
 
 /** Cerrados y mergeados: el criterio TIENE que sacarlos DENTRO o no está midiendo, está opinando. */
 const POSITIVOS = [866, 881];
@@ -201,7 +204,48 @@ test('SCRUM-804b · 🔴 el emparejamiento va por IDENTIDAD, no por contener el 
   // 🔴 Y con la regla CANÓNICA (17-nov-2026, bloque de abajo). Va DENTRO de este caso, no en uno
   // nuevo: `tests/scrum1331-sin-red-se-dice.test.mjs` fija que este fichero declara 5 casos y 2 puros.
   comprobarLaReglaCanonica();
+  // 🔴 SCRUM-804j · y los FICHEROS propios, con la misma lectura (bloque de abajo).
+  comprobarLosFicherosPropios();
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 18-nov-2026 · SCRUM-804j · LOS FICHEROS PROPIOS SE LEEN COMO LAS RAMAS: NÚMERO ENTERO E IGUALDAD.
+//
+// `propios` llevaba su propio patrón, `(^|/)scrum-?N([a-z])?[-._]`, sin el corte tras la fase:
+// `tests/scrum1686h4-inicio-operario.test.mjs` no era de nadie. Ensancharlo a lo loco
+// (`[a-z]?\d*` detrás de `N`) lo arregla y rompe otra cosa: `N` pasa a casar como PREFIJO, y
+// `scrum284-antes.png` se vuelve del 2 y del 28. Medido sobre main el 18-nov (6881a0d27): 6.398
+// pares falsos en 175 tickets, 95 de ellos de NO DECIDIBLE a DENTRO. La lectura buena es la de
+// `numeroDeRama`: se saca el número ENTERO y se compara por igualdad.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+function comprobarLosFicherosPropios() {
+  // ✅ la fase con corte se lee (el caso que lo destapó, tal cual).
+  const a = clasificar(1686, { ...SIN_NADA, ficheros: ['tests/scrum1686h4-inicio-operario.test.mjs'] });
+  assert.equal(a.cubo, DENTRO,
+    `🔴 \`tests/scrum1686h4-inicio-operario.test.mjs\` no es fichero propio del 1686 (${a.motivo}). `
+    + 'La fase con corte (`h4`) es una forma legal desde SCRUM-804h, y un fichero que nadie reconoce '
+    + 'deja su ticket sin evidencia.');
+  assert.equal(a.propios, 1, '🔴 el 1686 no cuenta exactamente su fichero.');
+
+  // 🔴 y el número NO casa como prefijo de otro: ni 168 en 1686, ni 2/28 en 284, ni 1686 en 16860.
+  const banco = ['tests/scrum1686-x.test.mjs', 'tests/scrum1686h4-y.test.mjs', 'docs/capturas/scrum-284/scrum284-antes.png', 'tests/scrum16860-z.test.mjs'];
+  for (const [k, esperados] of [[168, 0], [2, 0], [28, 0], [284, 1], [1686, 2], [16860, 1]]) {
+    const f = clasificar(k, { ...SIN_NADA, ficheros: banco });
+    assert.equal(f.propios, esperados,
+      `🔴 SCRUM-${k} cuenta ${f.propios} ficheros propios del banco y son ${esperados}. Un número que `
+      + 'casa como prefijo de otro le atribuye trabajo ajeno y lo saca DENTRO sin motivo (6.398 pares '
+      + 'falsos medidos el 18-nov-2026 con el ensanche a lo loco).');
+  }
+  // Los ceros delante no hacen otro ticket (como en la regla de ramas).
+  assert.equal(clasificar(72, { ...SIN_NADA, ficheros: ['scripts/scrum-0072-x.mjs'] }).propios, 1,
+    '🔴 `scrum-0072-…` no es del 72.');
+
+  // ⛔ DECLARADO: un DIRECTORIO con número no hace propios a sus ficheros. Son evidencias y capturas
+  // (3.222 de los 3.555 ficheros bajo `SCRUM-N/` están en `docs/master/evidencias/`), registro y no
+  // obra: contarlos empujaría tickets hacia DENTRO.
+  assert.equal(clasificar(1756, { ...SIN_NADA, ficheros: ['docs/master/evidencias/SCRUM-1756/j3d-x.txt'] }).propios, 0,
+    '🔴 un fichero dentro de `evidencias/SCRUM-1756/` cuenta como obra del 1756.');
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 // 🔴 17-nov-2026 · EL CENSO LEE LAS RAMAS CON LA MISMA REGLA QUE TODOS, NO CON UNA COPIA.
@@ -264,6 +308,16 @@ test('SCRUM-804b · los artefactos se sacan del TEXTO de la entrada, no del núm
   }
   assert.deepEqual(artefactosQueNombra('Sin ninguna ruta aquí.'), [],
     '🔴 inventa rutas donde no las hay.');
+
+  // 🔴 SCRUM-804j · LA ENTRADA NO ES ARTEFACTO DE SÍ MISMA. `docs/master/SCRUM-N.md` casaba como
+  // «fichero propio» (`SCRUM-N.` con la `i`), así que la rama «entrada sin artefactos → NO DECIDIBLE»
+  // no se alcanzaba nunca: medido el 18-nov, 10 tickets salían DENTRO sólo por su registro.
+  const f = clasificar(777, { ...SIN_NADA, ficheros: ['docs/master/SCRUM-777.md', 'src/otra/cosa.ts'], entrada: 'Un registro sin rutas.' });
+  assert.equal(f.cubo, NO_DECIDIBLE,
+    `🔴 un ticket cuya única evidencia es su propia entrada sale ${f.cubo} (${f.motivo}). La entrada `
+    + 'dice que alguien escribió un registro, no que la obra esté en main.');
+  assert.match(f.motivo, /NINGÚN artefacto comprobable/,
+    '🔴 sale NO DECIDIBLE pero por otro motivo: la rama de «entrada sin artefactos» sigue sin ejecutarse.');
 });
 
 // ═══ 🔴 EL SUELO Y LOS DOS CONTROLES, sobre el árbol de verdad ══════════════════════════════
