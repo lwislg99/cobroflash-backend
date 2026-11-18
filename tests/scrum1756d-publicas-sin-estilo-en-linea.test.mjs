@@ -26,6 +26,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { casosEscritos } from './_casos-escritos.mjs';
 import { hojasDeLaPagina } from './_scripts-de-la-pagina.mjs';
+import { guionesEnlazados } from './_pagina-con-sus-guiones.mjs';
 
 // Las del meta-guard (`scripts/meta-guard-mutaciones.mjs`): cada una devuelve una pieza del arreglo
 // a como estaba, y tiene que tumbar el caso que nombra.
@@ -46,7 +47,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // El precio tachado vuelve a destaparse con `style.display = ''`: con la clase puesta, no se ve.
-    fichero: 'public/precios.html',
+    // (Desde 1756f el guion vive en `public/precios.js`.)
+    fichero: 'public/precios.js',
     de: "document.getElementById('price-old').classList.remove('precios-oculto');",
     a: "document.getElementById('price-old').style.display = '';",
     cae: 'SCRUM-1756d · /precios: lo que nace oculto por clase lo destapa el guion quitando la clase',
@@ -168,10 +170,16 @@ test('SCRUM-1756d · /precios: lo que nace oculto por clase lo destapa el guion 
     .filter((m) => /class="[^"]*\bprecios-oculto\b/.test(m[0])).map((m) => m[1]);
   // SUELO: el banner founding y el precio tachado nacen ocultos. Si no se encuentran, está CIEGO.
   assert.deepEqual(ocultos.sort(), ['founding-banner', 'price-old'], 'suelo: no encuentro los dos ocultos de precios');
+  // SCRUM-1756f: el guion vive en el `.js` que la página ENLAZA (`/precios.js`); se pide por la misma
+  // app, como el HTML. Cambia dónde se lee, no qué se exige.
+  let guion = cuerpo;
+  for (const rel of guionesEnlazados(cuerpo, 'public/precios.html')) {
+    guion += '\n' + (await pedir(rel.slice('public'.length))).cuerpo;
+  }
   for (const id of ocultos) {
-    assert.ok(cuerpo.includes(`document.getElementById('${id}').classList.remove('precios-oculto');`),
+    assert.ok(guion.includes(`document.getElementById('${id}').classList.remove('precios-oculto');`),
       `#${id} nace oculto por clase y el guion no le quita la clase: no se destaparía nunca`);
-    assert.ok(!new RegExp(`getElementById\\('${id}'\\)\\.style\\.display`).test(cuerpo),
+    assert.ok(!new RegExp(`getElementById\\('${id}'\\)\\.style\\.display`).test(guion),
       `#${id} se destapa por style.display: con la clase puesta, «''» no lo destapa`);
   }
   const css = fs.readFileSync(path.join(PUBLICO, 'precios.css'), 'utf8');

@@ -1,0 +1,7 @@
+base limpia: pasados 5 · caídos 0
+MUERE (la caza) · public/index.html · SCRUM-1756f · /: 0 <script> en línea y su guion enlazado
+MUERE (la caza) · public/precios.html · SCRUM-1756f · /precios: 0 <script> en línea y su guion enlazado
+MUERE (la caza) · public/landing.js · SCRUM-1756f · /landing.js: se sirve como JavaScript y es byte a byte el guion de main
+MUERE (la caza) · public/precios.js · SCRUM-1756f · /precios.js: se sirve como JavaScript y es byte a byte el guion de main
+CONTROL inocua: MUDA (bien)
+VEREDICTO: 4/4 cazadas · 0 no

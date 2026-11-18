@@ -1,0 +1,55 @@
+⟦arranque⟧ 0.5 s COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+C privacidad (fuera del criterio, c.22082 ②): informes {"style-src-elem":2}
+estado C: precios-plazas {"banner":true,"tachado":true,"pantallaFirma":null,"congeladas":0} · landing-plazas {"banner":true,"tachado":null,"pantallaFirma":false,"congeladas":1} · landing-firma {"banner":false,"tachado":null,"pantallaFirma":true,"congeladas":1}
+A-main-sin       sembrado {} · informes {} · lecturas 0
+   landing         200 ninguna · 390 {} · 1280 {} · {"banner":false,"tachado":null,"pantallaFirma":false,"congeladas":1}
+   precios         200 ninguna · 390 {} · 1280 {} · {"banner":false,"tachado":false,"pantallaFirma":null,"congeladas":0}
+   privacidad      200 ninguna · 390 {} · 1280 {} · {"banner":null,"tachado":null,"pantallaFirma":null,"congeladas":0}
+   terminos        200 ninguna · 390 {} · 1280 {} · {"banner":null,"tachado":null,"pantallaFirma":null,"congeladas":0}
+   legal-alcance   200 ninguna · 390 {} · 1280 {} · {"banner":null,"tachado":null,"pantallaFirma":null,"congeladas":0}
+   landing-plazas  200 ninguna · 390 {} · 1280 {} · {"banner":true,"tachado":null,"pantallaFirma":false,"congeladas":1}
+   precios-plazas  200 ninguna · 390 {} · 1280 {} · {"banner":true,"tachado":true,"pantallaFirma":null,"congeladas":0}
+   landing-firma   200 ninguna · 390 {} · 1280 {} · {"banner":false,"tachado":null,"pantallaFirma":true,"congeladas":1}
+A2-main-sin      sembrado {} · informes {} · lecturas 0
+   landing         200 ninguna · 390 {} · 1280 {} · {"banner":false,"tachado":null,"pantallaFirma":false,"congeladas":1}
+   precios         200 ninguna · 390 {} · 1280 {} · {"banner":false,"tachado":false,"pantallaFirma":null,"congeladas":0}
+   privacidad      200 ninguna · 390 {} · 1280 {} · {"banner":null,"tachado":null,"pantallaFirma":null,"congeladas":0}
+   terminos        200 ninguna · 390 {} · 1280 {} · {"banner":null,"tachado":null,"pantallaFirma":null,"congeladas":0}
+   legal-alcance   200 ninguna · 390 {} · 1280 {} · {"banner":null,"tachado":null,"pantallaFirma":null,"congeladas":0}
+   landing-plazas  200 ninguna · 390 {} · 1280 {} · {"banner":true,"tachado":null,"pantallaFirma":false,"congeladas":1}
+   precios-plazas  200 ninguna · 390 {} · 1280 {} · {"banner":true,"tachado":true,"pantallaFirma":null,"congeladas":0}
+   landing-firma   200 ninguna · 390 {} · 1280 {} · {"banner":false,"tachado":null,"pantallaFirma":true,"congeladas":1}
+B-main-aplicada  sembrado {"style-src-elem":1,"script-src-elem":1,"style-src-attr":1,"script-src-attr":1} · informes {"script-src-elem":10,"style-src-elem":2} · lecturas 0
+   landing         200 aplicada · 390 {"script-src-elem":1} · 1280 {"script-src-elem":1} · {"banner":false,"tachado":null,"pantallaFirma":false,"congeladas":1}
+   precios         200 aplicada · 390 {"script-src-elem":1} · 1280 {"script-src-elem":1} · {"banner":false,"tachado":false,"pantallaFirma":null,"congeladas":0}
+   privacidad      200 aplicada · 390 {"style-src-elem":1} · 1280 {"style-src-elem":1} · {"banner":null,"tachado":null,"pantallaFirma":null,"congeladas":0}
+   terminos        200 aplicada · 390 {} · 1280 {} · {"banner":null,"tachado":null,"pantallaFirma":null,"congeladas":0}
+   legal-alcance   200 aplicada · 390 {} · 1280 {} · {"banner":null,"tachado":null,"pantallaFirma":null,"congeladas":0}
+   landing-plazas  200 aplicada · 390 {"script-src-elem":1} · 1280 {"script-src-elem":1} · {"banner":false,"tachado":null,"pantallaFirma":false,"congeladas":1}
+   precios-plazas  200 aplicada · 390 {"script-src-elem":1} · 1280 {"script-src-elem":1} · {"banner":false,"tachado":false,"pantallaFirma":null,"congeladas":0}
+   landing-firma   200 aplicada · 390 {"script-src-elem":1} · 1280 {"script-src-elem":1} · {"banner":false,"tachado":null,"pantallaFirma":false,"congeladas":1}
+C-rama-aplicada  sembrado {"style-src-elem":1,"script-src-elem":1,"style-src-attr":1,"script-src-attr":1} · informes {"style-src-elem":2} · lecturas 0
+   landing         200 aplicada · 390 {} · 1280 {} · {"banner":false,"tachado":null,"pantallaFirma":false,"congeladas":1}
+   precios         200 aplicada · 390 {} · 1280 {} · {"banner":false,"tachado":false,"pantallaFirma":null,"congeladas":0}
+   privacidad      200 aplicada · 390 {"style-src-elem":1} · 1280 {"style-src-elem":1} · {"banner":null,"tachado":null,"pantallaFirma":null,"congeladas":0}
+   terminos        200 aplicada · 390 {} · 1280 {} · {"banner":null,"tachado":null,"pantallaFirma":null,"congeladas":0}
+   legal-alcance   200 aplicada · 390 {} · 1280 {} · {"banner":null,"tachado":null,"pantallaFirma":null,"congeladas":0}
+   landing-plazas  200 aplicada · 390 {} · 1280 {} · {"banner":true,"tachado":null,"pantallaFirma":false,"congeladas":1}
+   precios-plazas  200 aplicada · 390 {} · 1280 {} · {"banner":true,"tachado":true,"pantallaFirma":null,"congeladas":0}
+   landing-firma   200 aplicada · 390 {} · 1280 {} · {"banner":false,"tachado":null,"pantallaFirma":true,"congeladas":1}
+D-rama-sin       sembrado {} · informes {} · lecturas 0
+   landing         200 ninguna · 390 {} · 1280 {} · {"banner":false,"tachado":null,"pantallaFirma":false,"congeladas":1}
+   precios         200 ninguna · 390 {} · 1280 {} · {"banner":false,"tachado":false,"pantallaFirma":null,"congeladas":0}
+   privacidad      200 ninguna · 390 {} · 1280 {} · {"banner":null,"tachado":null,"pantallaFirma":null,"congeladas":0}
+   terminos        200 ninguna · 390 {} · 1280 {} · {"banner":null,"tachado":null,"pantallaFirma":null,"congeladas":0}
+   legal-alcance   200 ninguna · 390 {} · 1280 {} · {"banner":null,"tachado":null,"pantallaFirma":null,"congeladas":0}
+   landing-plazas  200 ninguna · 390 {} · 1280 {} · {"banner":true,"tachado":null,"pantallaFirma":false,"congeladas":1}
+   precios-plazas  200 ninguna · 390 {} · 1280 {} · {"banner":true,"tachado":true,"pantallaFirma":null,"congeladas":0}
+   landing-firma   200 ninguna · 390 {} · 1280 {} · {"banner":false,"tachado":null,"pantallaFirma":true,"congeladas":1}
+visual A-main-sin → A2-main-sin: 16/16 idénticas · distintas: —
+visual A-main-sin → D-rama-sin: 16/16 idénticas · distintas: —
+visual A-main-sin → C-rama-aplicada: 14/16 idénticas · distintas: privacidad@390 privacidad@1280
+visual A-main-sin → B-main-aplicada: 6/16 idénticas · distintas: landing@390 landing@1280 privacidad@390 privacidad@1280 landing-plazas@390 landing-plazas@1280 precios-plazas@390 precios-plazas@1280 landing-firma@390 landing-firma@1280
+navegador: Edg/157.0.4341.60
+CIEGO:
+  CONTROL: main con la política se pinta igual que sin ella en alguna vista base

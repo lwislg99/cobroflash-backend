@@ -211,3 +211,36 @@ A9: comprobación → `tests/scrum676-hojas-del-indice.test.mjs`
 | 15 | 1001 | 1 | `scrum976` ④ (corre los guards de entrada: arrastre de los de arriba; ver la re-pasada) |
 
 Los tramos 1-3 los corrió jv-j3cg sobre su rama sin main; la re-pasada final, en el comentario de entrega de Jira.
+
+## SCRUM-1756f · 18-nov: landing y precios sin `<script>` en línea → `public/landing.js` y `public/precios.js` (J3)
+
+**Medido contra:** `origin/main` = `64ec33eecace555eaca35bb034e62a22b88b3f9e` · 2026-11-18T16:54:25Z (hora de GitHub; sesión J3 `jv-j3ci`, por encargo del orquestador `cobroflash-backend-ee`; al empujar, main iba por `dd26ef66f`, que no toca ninguno de estos ficheros)
+
+A9: comprobación → `tests/scrum1756f-publicas-sin-script-en-linea.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1756f-publicas-sin-script-en-linea.test.mjs` (4/4 cazadas con `correr` + `aplicarUna`; inocua de control MUDA; `evidencias/SCRUM-1756/j3ci-mutar.*`).
+
+**Skill UI:** no cargada · cero cambios visibles: el guion pasa byte a byte a un `.js` y la etiqueta queda en el mismo sitio; lo visual lo prueba el recorrido en Edge (capturas idénticas byte a byte), no la skill. Es la misma omisión que la cicatriz J3 del 22-oct, y lo digo.
+
+La fila nueva de c.22017 (paso 2). Excepción de carril firmada por el fundador en SCRUM-1756 c.22082 ① («Sí firmo»): dos guiones estáticos nuevos en la raíz de `public/` (patrón de S2), declarados en `dos-equipos.md` §3.4 (`carriles comprobar` = IGUAL). `public/privacidad.html` NO se toca (c.22082 ②).
+
+| fila | estado | dónde se ve |
+| --- | --- | --- |
+| `public/index.html` `<script>` en línea :420-511 | → `public/landing.js` (5.548 B), `<script src="/landing.js">` en el mismo sitio, sin `defer` (se ejecuta en el mismo punto del análisis que el guion en línea) | `tests/scrum1756f-publicas-sin-script-en-linea.test.mjs` |
+| `public/precios.html` `<script>` en línea :56-77 | → `public/precios.js` (1.479 B), ídem | ídem |
+| `public/index.html` `<script type="application/ld+json">` :27-49 | **se queda**: son datos, no código. Medido: con la política aplicada, la landing de la rama da 0 informes con él puesto | `evidencias/SCRUM-1756/j3ci-recorrido.salida.txt` |
+
+- **Byte a byte:** el texto de cada `.js` es el de las líneas estrictamente entre `<script>` y `</script>` de main, más un salto final. Lo midieron dos sondas: la que lo movió y otra por `indexOf` sobre `git show 64ec33eec:…`. Las dos dan el mismo sha-256 (`a19bfdd7…` y `947ed1a9…`), que el test fija.
+- **Servido sin declarar nada:** `GET /landing.js` y `GET /precios.js` contestan 200 `application/javascript` por la `app` de `dist/`, el mismo estático que sirve `/js/atribucion.js`. No se ha tocado nada de S1 (`publicAccessDeclarations.ts`, `csp.ts`, `app.ts`).
+- **Rojo primero:** en un árbol de main (`64ec33eec`), el test sale 4/5 rojo por su aserción («/ lleva un `<script>` en línea…», «/landing.js no existe»). Con la rama, 5/5 verde. El control sembrado pasa en los dos.
+- **Lectores que leían el guion dentro del HTML** (se rompieron 18 casos en 5 ficheros al moverlo): `scrum1130`, `scrum330`, `scrum544` y `scrum1756d` ③ leen ahora la página CON sus guiones (`tests/_pagina-con-sus-guiones.mjs`, gemelo de `_pagina-con-sus-hojas.mjs`, con el extractor único `scriptsDeLaPagina`). El censo de `scripts/_censo-microcopy-sin-marcar.mjs` (549) suma los guiones que la página enlaza. La mutación de 1756d sobre el guion de precios apunta ahora a `public/precios.js`. **No cambia ninguna aserción, ningún umbral ni ningún literal esperado.** Después: 390 casos, 389 pasan; el que caía (`scrum553`, el `>` pegado de una etiqueta literal en mi test) era mío y está arreglado en mi test, no en el guard.
+- **Navegador** (Edge 157, la CSP de 1637; `j3ci-recorrido.mjs.txt`, copia de `j3d-recorrido` sin el escenario «aislada»; servidor `j3d-servidor.cjs.txt` sin cambios): main contra main 16/16 idénticas · main sin política ↔ rama sin política 16/16 · **main sin política ↔ rama con la política APLICADA 14/16 idénticas byte a byte**. Las dos distintas son `privacidad`, a 390 y a 1280: es su `<style>`, que se queda por c.22082 ② y está fuera del criterio. **La rama aplicada da 0 informes `script-src-elem`** (el control, main aplicada, da 10). Su único informe es `style-src-elem` ×2, de privacidad. Precios y landing con plazas destapan banner y tachado en la rama aplicada igual que en main. Main aplicada no los destapa. La demo llega a la pantalla de firma.
+- **Un error mío en el instrumento:** la 1.ª pasada (`j3ci-recorrido.pasada1.salida.txt`) salió CIEGA porque heredé de 1756d un control que exigía que main aplicada rompiera las vistas BASE. Ese control era del CSS en línea, que ya está en main (#3209). Ahora mira las vistas que dependen del guion (plazas y demo). Los números de las dos pasadas son los mismos.
+- `tsc -p .` con tipos: salida 0 (la rama no toca `src/`).
+
+| aceptación (literal) | dónde se ve |
+| --- | --- |
+| Cada fila de la tabla tiene su PR mergeado o su «no aplica» medido | fila de c.22017 (`<script>` de index y precios): `tests/scrum1756f-publicas-sin-script-en-linea.test.mjs` · PR de esta rama, sin mergear todavía · privacidad: PENDIENTE por decisión (c.22082 ②) |
+| (encargo) capturas 390/1280 idénticas entre main sin política y la rama con la CSP APLICADA, 0 `script-src-elem`, control distinto, banner de precios | `docs/master/evidencias/SCRUM-1756/j3ci-recorrido.salida.txt` (+ `.resultado.json`) |
+
+**NO MEDIDO:** la suite entera por tramos. Corrí los 43 ficheros que leen landing o precios (390 casos) y los guards que se nombran en el comentario de entrega de Jira. Tampoco he mirado el obligatorio, yaqu.app ni otros navegadores.
