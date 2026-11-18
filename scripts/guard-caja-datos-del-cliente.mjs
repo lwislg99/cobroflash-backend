@@ -33,6 +33,7 @@ import puppeteer from 'puppeteer-core';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
 import { veredictoDe, recorrerCasos } from './_hallazgos-y-ciegos.mjs';
+import { enlacesDelPanel, TIPOS_DE_FUENTE, esperarFuentes, cegueraDeLaFuente, decirFuente } from './_hojas-del-panel.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
@@ -40,8 +41,13 @@ const PUBLIC = path.join(RAIZ, 'public');
 const VISTA = path.join(PUBLIC, 'dashboard/js/quotesView.js');
 
 const ANCHOS = [929, 390];
-const CSS = ['/tokens.css', '/dashboard/css/styles.css'];
-const TIPOS = { '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/html' };
+// SCRUM-1755 · LAS HOJAS DEL ÍNDICE, CON SU LETRA: aquí iban tokens + styles escritos a mano, sin
+// `/fonts/inter.css`, y el desborde y las líneas se medían con la letra de reserva de cada máquina.
+let HOJAS;
+try { HOJAS = enlacesDelPanel(PUBLIC); } catch (e) { HOJAS = null; console.error(String(e && e.message ? e.message : e)); }
+// Las letras son binarias: se sirven en bytes y con su tipo (SCRUM-1745c).
+const TIPOS = { '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/html', ...TIPOS_DE_FUENTE };
+const letras = new Set();
 
 // ── 🔴 SCRUM-1327 · ESTE GUARD YA NO DECIDE CON QUÉ SALE, NI CUÁNDO DEJA DE MIRAR ─────────
 // `noSupeMirar()` hacía `process.exit(2)` en el primer caso ciego, DENTRO del bucle: los casos de
@@ -50,6 +56,7 @@ const TIPOS = { '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/htm
 // Ahora un caso ciego se APUNTA y se sigue (`recorrerCasos`), y el código lo da `veredictoDe`.
 const hallazgos = [];
 const ciegos = [];
+if (!HOJAS) ciegos.push('no supe sacar las hojas de `public/dashboard/index.html`: sin ellas mediría con la letra de reserva.');
 
 /** El ÚNICO sitio por el que este guard sale con algo que no sea 0: dice las dos cuentas. */
 function cerrar() {
@@ -96,7 +103,7 @@ function pagina(estado) {
   const opacidad = estado === 'con-nombre' ? '' : 'opacity:0.5;';
   return `<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-${CSS.map((c) => `<link rel="stylesheet" href="${c}">`).join('\n')}
+${HOJAS}
 </head><body>
 <div class="layout">
   <aside class="sidebar"><div class="sidebar-logo"><div class="sidebar-logo-text">YaQu</div></div></aside>
@@ -154,6 +161,12 @@ try {
       const suyos = suyas.hallazgos;
       await page.setViewport({ width: ancho, height: 1000 });
       await page.goto(`${base}/__datos-${estado}.html`, { waitUntil: 'networkidle0' });
+      // LA LETRA, ESPERADA: sin ninguna cara web cargada este caso es CIEGO (SCRUM-1755, patrón de 1745c).
+      const fuente = await esperarFuentes(page);
+      const sinLetra = cegueraDeLaFuente(fuente, 'la página del banco')
+        || (fuente.cargadas > 0 ? null : `🔴 SIN LETRA WEB: ${fuente.declaradas} caras declaradas y 0 cargadas.`);
+      if (sinLetra) return soloCiego(sinLetra);
+      letras.add(decirFuente(fuente));
       const m = await page.evaluate(() => {
         const caja = (id) => {
           const n = document.getElementById(id);
@@ -212,6 +225,7 @@ try {
 } finally { await nav.close(); srv.close(); }
 
 console.log('\n════ VEREDICTO ════');
+console.log(`   LETRA: ${[...letras].join(' ‖ ') || '(ningún caso llegó a medir)'}`);
 cerrar();
 console.log('   El bloque cabe en los dos estados y en los dos anchos, y la elección nunca');
 console.log('   desaparece del layout. (Envolver no es hallazgo; desbordar o salirse, sí.)');
