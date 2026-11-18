@@ -1166,6 +1166,14 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
     // que sea positivo: una R1 mueve dinero en la otra dirección, pero lo mueve.
     exigirLineasFacturables(negLines);
 
+    // SCRUM-1763 (GO del fundador, c.22062) · el total de la R1 sale de SU PROPIO desglose, como
+    // el de la F1 desde SCRUM-624: su XML lleva `ImporteTotal` = este total y `Desglose`/`CuotaTotal`
+    // = `calcVatBreakdown` de estas mismas líneas, así que cuadran por construcción. Con
+    // `−original.total` no cuadraban: 12,50 al 21 % guarda 15,13 y su R1 desglosa −15,12.
+    // El redondeo de las cuotas negativas NO se decide aquí (SCRUM-1264, fila 11).
+    const bdRect = calcVatBreakdown(negLines);
+    const totalRect = (bdRect.base + bdRect.cuota).toFixed(2);
+
     // SCRUM-729 · la R1 HEREDA el destinatario de la factura que rectifica. Fuera de la
     // transacción, como todos: sólo viaja a la base si la original es anterior al escritor.
     const clienteCongelado = await congelarParaRectificativa(prisma, original);
@@ -1193,7 +1201,7 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
         customerId: original.customerId,
         quoteId: original.quoteId,
         number,
-        total: (-Number(original.total)).toFixed(2),
+        total: totalRect,
         currency: original.currency,
         lines: negLines,
         type: 'R1',
