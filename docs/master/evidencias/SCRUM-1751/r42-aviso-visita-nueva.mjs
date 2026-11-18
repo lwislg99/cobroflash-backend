@@ -9,6 +9,11 @@
 // EN EL NAVEGADOR: el código es el de producción y los datos son los reales MENOS los borradores. Dice cuántos
 // quitó; si no quitó ninguno o no quedó ningún firmado, CIEGO. Lo que NO prueba: «Crear parte nuevo» (no se pulsa).
 // «Cancelar» no crea: se mira que no salga NINGUNA escritura hacia /admin/partes mientras el aviso está abierto.
+// El contexto lo abre el banco de SCRUM-1658 (`abrir`, con `serviceWorkers: 'block'`) a través de
+// `paso2.mjs` → `rol.mjs`. Se importa aquí, fijo, porque esta acción intercepta yaqu.app con `.route(`
+// y eso sólo vale si el SW no puede pedir por su cuenta (SCRUM-1233g: el guard lo exige).
+import { OUT } from '../SCRUM-1658/banco/lib.mjs';
+
 const LITERALES = {
   titulo: '¿Empezar una visita nueva?',
   cuerpo: 'El último parte de este trabajo ya está firmado. Si sigues, se crea un parte nuevo para otra visita.',
@@ -39,6 +44,7 @@ const leerAviso = () => {
 
 export default async (s, h) => {
   const p = s.page;
+  s.nota(`SALIDA de las capturas: ${OUT}`);
   let quitados = 0; let firmados = 0; let pedidas = 0;
   await p.route((u) => u.pathname === '/admin/partes', async (ruta) => {
     if (ruta.request().method() !== 'GET') return ruta.continue();
