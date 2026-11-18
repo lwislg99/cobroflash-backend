@@ -212,6 +212,52 @@ A9: comprobación → `tests/scrum676-hojas-del-indice.test.mjs`
 
 Los tramos 1-3 los corrió jv-j3cg sobre su rama sin main; la re-pasada final, en el comentario de entrega de Jira.
 
+## SCRUM-1756e · 18-nov: el paquete de disputa sin CSS en línea (J1)
+
+**Medido contra:** `origin/main` = `51efbb280039077d30599604fbaea1b809cf41a3` · 2026-11-18T16:31:12Z (cabecera `Date:` de GitHub; sesión J1 `jv-j1fi`, por encargo del orquestador `cobroflash-backend-ee`; la rama sale de ese main y no se ha movido)
+
+**Skill UI:** no cargada · el tramo no cambia nada visible: el `<style>` pasa tal cual a una hoja y cada `style=` a una clase con la misma declaración; el aspecto en navegador NO se ha medido (abajo).
+
+A9: comprobación → `scripts/meta-guard-mutaciones.mjs`
+
+Escribí el arreglo antes que el test: el rojo lo vi después, compilando el fichero de main en `dist` y volviendo al mío. Y copié el guion de mutaciones de 1756c con `sed`, y dos sustituciones (las que llevaban `\n` y comillas) no casaron sin dar error: la inocua seguía apuntando a una cadena de `receipt.routes.ts`. Lo cacé con un `grep` antes de correrlo; si no, `aplicarUna` la habría dado CIEGA («el ancla no está»), y el guion sale 1 sin una inocua MUDA.
+
+### PASO 0 (sobre `51efbb280`)
+
+- Ni rama `scrum-1756e*` en el remoto, ni commit en main con «1756e», ni PR (`gh pr list --search 1756`: sólo #1756, otro ticket, y #3209 = 1756d).
+- `invoicesAdmin.routes.ts` → J1 (`carriles.mjs de`). En main, igual que en el encargo: `<style>` en :433, tres `style="width:…"` en :478 y `style="margin-top:26px"` en :485.
+- No toca la emisión: sólo el handler de `GET /:id/dispute-package` (lee factura, presupuesto y mensajes y pinta HTML) y una ruta nueva DENTRO de este router, junto a la del guion de imprimir (SCRUM-1647f). `rectify` y `POST /` sin tocar.
+
+### Qué cambia
+
+- `DISPUTA_CSS`: el cuerpo del `<style>` de main, byte a byte, más cuatro reglas al final (`.disputa-col-fecha{width:170px}`, `.disputa-col-tipo{width:110px}`, `.disputa-col-estado{width:110px}`, `.disputa-pie{margin-top:26px}`). Van detrás de `th{…width:220px}` y de `.sub{…}` para ganarles como les ganaba el atributo.
+- `GET /admin/invoices/css/disputa.css` (`RUTA_DISPUTA_CSS`): mismo `requireRole('admin')` que la página, `text/css; charset=utf-8`, `private, no-cache`. **No es ruta pública**: `publicAccessDeclarations.ts` sin tocar.
+- El HTML enlaza `<link rel="stylesheet" href="/admin/invoices/css/disputa.css"/>` donde iba el `<style>`, y los cuatro `style=` pasan a esas clases. **Ni un texto nuevo ni cambiado.**
+
+### Medido
+
+- `tests/scrum1756e-paquete-disputa-sin-estilo-en-linea.test.mjs`, 5 casos, por la capa de la ruta (gate incluido) del router real de `dist` con `prisma` doblado. Rojo primero con el fichero de main compilado: 4 de 5 caen por su aserción (0 `<style>`, la clase en el marcado, el export de la hoja, la ruta); pasa el control sembrado, que copia el marcado de main y da 1 `<style>` y 4 `style=`. Con la rama: 5/5.
+- Con los otros tests del paquete (`scrum1647f`, `scrum342`, `scrum1727`, `scrum1726`, `scrum1576b`): 33 casos, 33 pasan.
+- `tsc -p . --noEmit` con tipos: salida 0.
+
+Mutaciones: catálogo → `tests/scrum1756e-paquete-disputa-sin-estilo-en-linea.test.mjs` (5/5 cazadas con `correr` + `aplicarUna`; la inocua de control sale MUDA; `evidencias/SCRUM-1756/j1-mutar.*`).
+
+- **Rojo propio que cazó la suite:** `scrum1436d` (tramo 5). Su caso del paquete quitaba el `<style>` antes de buscar importes en crudo, porque las cifras del CSS no son importes, y su control exigía haber quitado algo. Sin `<style>` en la página, ese control caía: «CIEGO: no se ha quitado la hoja de estilo». Ahora el control exige lo contrario (ningún `<style>` y la hoja enlazada) y el importe en crudo se busca en el HTML ENTERO. La aserción del importe no cambia, y mira más texto que antes. Comprobado que sigue cazando: con «1419.87 EUR» sembrado a mano en el `dist` del paquete, cae «queda un importe en crudo en el paquete: «9.87 EUR»»; luego recompilado y vuelto a verde.
+- **Suite entera**, un tramo por comando, todos sobre la misma pasada (`--resumen 15`, pasada `8f2d6fed7a0377ae`): 15 de 15 tramos, 1709 ficheros, 13.861 casos, 13.677 pasan y 2 caen. Los 2 son `scrum1298b` (el latido y los hooks del árbol principal), que jv-j3cg midió cayendo en main limpio (tramo 1756d). Yo no lo he vuelto a medir, y este diff no toca hooks ni el latido. Los 182 restantes son saltados, que no he enumerado.
+- Guards dirigidos (1294, 267, 273, 525d, 854, 1415, 676, 811c, 757, 745, 1321, 237, 976, 1572 + el test nuevo): 146 casos, 146 pasan. `meta-guard-mutaciones.mjs --solo-censo`: salida 0, y el test nuevo entra con sus declaraciones.
+
+### NO MEDIDO
+
+- **El navegador.** Ni capturas a 390/1280 ni informes CSP: el paquete pide una factura de la base y sesión de admin, y en esta máquina no hay Postgres; tampoco me cabía en el contexto montar el servidor de 1756 con el paquete doblado. Lo que sí está medido es que la hoja contiene el `<style>` de main byte a byte y que cada clase lleva la declaración de su `style=`, en el orden que gana.
+- yaqu.app y el check obligatorio.
+
+### Fila J1 de la tabla
+
+| fichero | `<style>` | `style="` | estado |
+| --- | --- | --- | --- |
+| `src/modules/system/app/routes/invoicesAdmin.routes.ts` | 1 → 0 | 4 → 0 | hecha en la rama `scrum-1756e-css-paquete-disputa`, PR del bot pendiente |
+
+(La tabla de la descripción dice 2 `style="` para este fichero porque `git grep -c` cuenta líneas: los tres `<th>` van en una.)
 ## SCRUM-1756f · 18-nov: landing y precios sin `<script>` en línea → `public/landing.js` y `public/precios.js` (J3)
 
 **Medido contra:** `origin/main` = `64ec33eecace555eaca35bb034e62a22b88b3f9e` · 2026-11-18T16:54:25Z (hora de GitHub; sesión J3 `jv-j3ci`, por encargo del orquestador `cobroflash-backend-ee`; al empujar, main iba por `dd26ef66f`, que no toca ninguno de estos ficheros)
