@@ -24,6 +24,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 // Las del meta-guard (`scripts/meta-guard-mutaciones.mjs`): cada una devuelve una pieza del arreglo
 // a como estaba, y tiene que tumbar el caso que nombra.
@@ -133,8 +134,10 @@ const PAGINAS = [
   ['/legal/alcance-beta', '/legal-documento.css', 'Versión del documento'],
 ];
 
-for (const [ruta, hoja, suelo] of PAGINAS) {
-  test(`SCRUM-1756d · ${ruta}: 0 <style>, 0 style= y su hoja enlazada`, async () => {
+// Un caso por fila con el nombre ESCRITO (SCRUM-1415): un nombre construido en un bucle no lo
+// puede echar de menos la señal por nombres si la tanda lo pierde.
+const pagina = casosEscritos(PAGINAS, ([ruta]) => `SCRUM-1756d · ${ruta}: 0 <style>, 0 style= y su hoja enlazada`,
+  async ([ruta, hoja, suelo]) => {
     const r = await pedir(ruta);
     assert.equal(r.status, 200, `${ruta} no contestó 200 (contestó ${r.status}): no hay HTML que contar`);
     assert.ok(r.cuerpo.includes(suelo), `suelo: ${ruta} no pintó «${suelo}»`);
@@ -153,7 +156,11 @@ for (const [ruta, hoja, suelo] of PAGINAS) {
       assert.ok(css.cuerpo.includes(`.${c}{`), `la clase ${c} del marcado no tiene regla en ${hoja}`);
     }
   });
-}
+test('SCRUM-1756d · /: 0 <style>, 0 style= y su hoja enlazada', pagina(0));
+test('SCRUM-1756d · /precios: 0 <style>, 0 style= y su hoja enlazada', pagina(1));
+test('SCRUM-1756d · /terminos: 0 <style>, 0 style= y su hoja enlazada', pagina(2));
+test('SCRUM-1756d · /legal/alcance-beta: 0 <style>, 0 style= y su hoja enlazada', pagina(3));
+pagina.todos();
 
 test('SCRUM-1756d · /precios: lo que nace oculto por clase lo destapa el guion quitando la clase', async () => {
   const { cuerpo } = await pedir('/precios');
