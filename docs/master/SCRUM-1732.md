@@ -48,3 +48,21 @@ El caso: una factura F-1732 de 1.000 € con su enlace de pago (un `Charge` de 1
 **Sin medir.** Ninguna base de datos. `mpWebhook.routes.ts` y el marcado manual (`invoiceAdmin.ts`) no se ejecutan aquí. Tampoco se ejecutan el 303 ni los libros AEAT con este caso, ni `ensureInvoiceForCharge`: se dobla para que lance, así que solo corre el marcado «P0-3» del webhook. El cliente de Prisma de este árbol va por detrás del esquema (`Job.queHayQueHacer`, según `_prisma-client-guard`), pero el test no lo usa, porque la base va doblada.
 
 No se cierra (A13): queda A.
+
+## J2 · SCRUM-1732c · opción A, PR-1: la tabla `invoice_payments` y sus escritores
+
+**Medido contra:** `origin/main` = `6c5327559bb8e17f1ecad128f99331ee16b31a2f` · 2026-11-18T04:35:14Z (hora de GitHub; sesión J2 `jv-j2d0`, relevo 4 de `jv-j2c7`, `jv-j2c8` y `jv-j2c9`)
+
+A9: comprobación → `tests/scrum1732c-escritores-invoice-payments.test.mjs`
+
+**Qué es.** El PR-1 de la opción A, con las decisiones y los 7 textos firmados de c.21928, el ALTER aplicado en las tres bases (c.21940) y el orden A5. Modelo `InvoicePayment` → `invoice_payments`: una fila por cada dinero que entra y se atribuye a una factura. Append-only: una fila mal apuntada se anula con otra (`tipo = 'anulacion'`, `anula_id`). `Charge.amount` pasa a ser «lo pedido» y la tabla «lo cobrado» (c.21928 ②; la cabecera de SCRUM-1107/397 en `schema.prisma` lo dice). `Invoice.status` no cambia (V1).
+
+**Escritores** (todos por `src/modules/billing/domain/cobrosDeFactura.ts`, idempotente por el único `(invoice_id, charge_id)`): `/webhooks/psp` (los dos marcados), `confirm-bizum` (importe declarado), `mpWebhook`, `/garantia` (409 si el cobro no está `paid` o cobrado + retenido ≠ total), `/garantia/liberar` (fecha declarada, fila `liberacion_garantia` con el `invoice_id`), el marcado manual y `/bulk-paid` (cruce J2→J1) y `/invoice/:id/paid-webhook`, que **se queda y apunta su fila** (lo miden `scrum1455b/c`; c.21947). **Los lectores no cambian: el devengo por tramos es el PR-2, de J1.** Cruces declarados en los commits: J1 (`invoiceAdmin.ts`, `invoicesAdmin.routes.ts`, `invoice.routes.ts`) y J3 (`ORDEN_BORRADO_MERCHANT`), autorizados por el orquestador J el 16-nov.
+
+**Medido (ejecutado).** Tests de los escritores 13/13 y `scrum1732` 10/10, con mutaciones 11/11 y 7/7 vivas (jv-j2c8, c.21947). Tras el merge de `origin/main` `6c5327559`: tipos con un cliente Prisma propio en el temporal, salida 0; con el compartido (sin `invoicePayment`), salida 2 y 10 errores, todos de la tabla nueva. **Suite entera, 15 tramos de 113 ficheros**, uno por comando. Rojos míos que cazó y ya están arreglados en esta rama: `scrum1480f` (script nuevo declarado en `_sin-fila-declarados.json`), `scrum172` (`invoicePayment` en el fixture de merchant), `scrum241` (el backup lógico vuelca `invoice_payments`), `scrum289` (`facturaDelCobro` censada CLAVE), `scrum411` (dos conjuntos sin `export`; `esPaidViaValido` ya se consume y sale de los huérfanos), `scrum497/1547` (tres columnas de texto NO personales) y `scrum525d` (dos anclas de la auditoría que el esquema desplazó). Rojos que no son de código: el cliente Prisma compartido (`235`, `244`, `461`, `498` y el control de `241`), `1298b`, `351` y `932` (esta máquina), `1101` (intermitente: 11/11 suelto) y `854` (este registro).
+
+🔴 **Sin arreglar: `scrum601`.** El texto 7 firmado (`TEXTO_GARANTIA_NO_CUADRA`, `chargesAdmin.routes.ts:31`) sube los literales «a pelo» de 162 a 163 y los no legibles de 40 a 41. El test pide re-anclar los dos números con su motivo, como en SCRUM-1051g/h; el permiso de la sesión **me denegó esa edición** y no la he rodeado: queda para quien decida.
+
+**Sin medir.** Ninguna base (staging y producción: los midió Javier, c.21940). El obligatorio de CI. yaqu.app. Que la limpieza del fixture de merchant borre bien las filas de anulación que se apuntan a sí mismas por `anula_id` con FK RESTRICT: solo corre en los tests con base.
+
+No se cierra (A13): queda el PR-2 (J1) y la UI de los textos.
