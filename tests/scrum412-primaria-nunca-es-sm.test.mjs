@@ -78,6 +78,12 @@ const DECLARADAS = {
   'jobsView.js:bParte':
     'FILA. El «Abrir parte» de cada trabajo en curso: hay tantos como trabajos en obra, y la lista '
     + 'tiene sentido completo sin él (su primaria de pantalla es «Nuevo trabajo»).',
+  // SCRUM-1751 · «Crear parte nuevo», la confirmación del aviso «¿Empezar una visita nueva?». Mismo
+  // caso que `okAgendar`: el botón que acepta un diálogo de `jobsModal`, con «Cancelar» al lado.
+  'jobDocsReparto.js:crear':
+    'MODAL. Acepta el aviso de visita nueva, que sale desde las dos puertas al parte cuando el '
+    + 'último está firmado y no hay borrador. Es la confirmación de un diálogo, no la primaria de '
+    + 'ninguna pantalla.',
   'signaturePad.js:okBtn':
     'MODAL de firma. ⚠️ DECLARADO CON DUDA, y se dice en vez de decidirlo solo: es un modal, pero '
     + 'lo pulsa el CLIENTE en una obra y es el momento más irrepetible del producto (SCRUM-404). '

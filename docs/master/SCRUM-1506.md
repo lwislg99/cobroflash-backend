@@ -64,3 +64,121 @@ tiene ese modo: `--exigir-identidad`). La tercera es la que no cambia código. E
 
 Y lo que dijo J4 en el comentario 18864 sigue en pie y es de la misma familia: la cerradura también sale sin mirar
 cuando el FICHERO no tiene fila (5.118 de 5.795 aquel día). No lo he vuelto a medir.
+
+## SCRUM-1506b · re-medida del 2-nov: la cerradura tampoco para al equipo de Luis (S5)
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T20:08:53Z (hora de GitHub; las sondas corrieron ~15 min después)
+
+A9: sin fallo que generalice — sólo medición, no se construye nada (`decision-jefe`)
+
+Lo de arriba (15-oct) medía la LÓGICA del hook. Esta vez se mide si el hook CORRE en las sesiones de verdad.
+
+### ① La lógica, ejecutando el hook como proceso
+
+Sonda: `docs/master/evidencias/SCRUM-1506/sonda-hook-como-proceso.mjs <árbol>`. Lanza `.claude/hooks/carril.mjs` del
+árbol con un stdin de PreToolUse (`Edit`), un transcript sembrado con el nombre y la carpeta de arranque (con o sin
+mesa), todo en temporales fuera del árbol. Los dueños salen del mapa (`.claude/carriles.json`), no supuestos.
+Salida entera en `salida-2026-11-02.txt`. **POBLACION=26 casos.**
+
+| nombre | sin mesa, fichero AJENO | sin mesa, fichero PROPIO |
+|---|---|---|
+| `sesion-5`, `s5-2nov`, `sesion-1`, `sesion-2` | **PARA** (exit 2) | deja (exit 0) |
+| `j6-x` (control de J6) | **PARA** | — |
+| `jv-j1`, `jv-j6` | **deja** (exit 0) los tres ficheros | — |
+| sin nombre | **deja** | — |
+| `jv-j6` con mesa J6 · `sesion-5` con mesa S5 | **PARA** | — |
+
+O sea: igual que el 15-oct. **La lógica para a los nombres del equipo de Luis y a `jv-jN` con mesa; deja pasar a
+`jv-jN` sin mesa.**
+
+### ② 🔴 El control de verdad: una sesión real de Luis, editando un fichero de otro puesto, NO fue parada
+
+Esta sesión se llama `sesion-5` (transcript: `{"type":"agent-name","agentName":"sesion-5"}`). Edité con la
+herramienta `Edit` `src/core/cron/cron.ts` (dueño **S1** según el mapa), en mi árbol desechable `wt-s5-2nov-1621`,
+añadiendo una línea de comentario. **La edición entró: ningún hook la paró.** La deshice con otro `Edit` y comprobé
+el árbol limpio (`git status --short` vacío); no se commiteó ni se empujó.
+
+**Por qué:** el hook se carga de la carpeta de ARRANQUE de la sesión, y esta sesión arrancó en el checkout
+compartido `D:\MILLONARIO\cobroFlash\cobroflash-backend`. Ese checkout está en `e4ea95e5a` (22-sep-2026, 4.998
+commits por detrás de `main`):
+
+- su `.claude/settings.json` sólo cablea `guard-dangerous.sh` (no nombra `carril`);
+- `.claude/hooks/carril.mjs` **no existe** allí;
+- el hook nació el 29-sep (`ed27499f6`), y `merge-base --is-ancestor ed27499f6 HEAD` del compartido da 1: **no ha
+  estado nunca** en ese checkout.
+
+### ③ A cuántas sesiones afecta
+
+Carpetas de proyecto de Claude Code con transcripts de los últimos 14 días (el nombre de la carpeta sale del cwd de
+arranque):
+
+| carpeta de arranque | transcripts | nombres |
+|---|---|---|
+| el checkout compartido | 67 | `sesion-0` 14 · `sesion-4` 13 · `sesion-5` 12 · `sesion-3` 9 · `sesion-1` 8 · `sesion-2` 7 · 4 ajenos |
+| worktrees `.claude/worktrees/s*-…` | 1 cada uno | — |
+
+**63 sesiones de los seis puestos de Luis arrancaron en 14 días donde la cerradura no está cableada.** El
+lanzador sin `config.mesas` arranca en `config.repo` (`scripts/equipo/sesion.mjs:862-866`, veredicto `SIN-MESA`),
+que en esta máquina es el compartido. **No he podido mirar** la `config.json` instalada del lanzador (no la
+encontré buscando la copia de 81.772 B bajo el perfil); la deducción sale de los transcripts, no de la config.
+Tampoco he podido mirar la máquina de Javier.
+
+### ④ Lo que cambia respecto al 15-oct
+
+La pregunta del ticket era si la cerradura protegía a un equipo y no al otro. **Medido hoy: en esta máquina no
+protege a ninguno.** La lógica distingue nombres, pero el hook no corre donde arrancan las sesiones. Las tres
+salidas del tramo de arriba (③) siguen siendo las que hay, y se añade una cuarta, previa a las tres: **que el hook
+esté cableado en la carpeta donde arranca cada sesión** (mesa con árbol al día, o el compartido al día). Sin eso,
+cualquiera de las otras tres arregla un hook que no se ejecuta. Elegir sigue siendo `decision-jefe`: no se
+construye aquí.
+
+## SCRUM-1506c · pieza ②: `puestoDeNombre` lee `jv-jN` por su forma (S5, 17-nov)
+
+**Medido contra:** `origin/main` = `340b084d485421188a546a6f0323a52fb456b1a6` · 2026-11-17T16:01Z (cabecera `Date` de GitHub)
+
+A9: sin fallo que generalice — encargo literal de S0 (SCRUM-1506 c.21966), test con rojo primero y mutaciones en el catálogo.
+
+**Decisión:** S0, SCRUM-1506 c.21966 («SÍ, y SIN esperar a ①»). `scripts/_carriles.mjs` es carril S0; el cambio lo hace
+S5 por ese encargo. **No toca** `.claude/hooks/carril.mjs` ni `.claude/settings.json` (la pieza ③, fail-closed, sigue
+siendo del fundador; la ①, cablear el hook, sigue siendo de los jefes, c.21944).
+
+**Qué cambia:** `puestoDeNombre` acepta `^jv-j([1-6])(?:[a-z]{1,3}|-[a-z0-9-]+)?$` → `J<N>`. Va detrás de las dos
+expresiones que ya había y delante de `orquestador`; el nombre de la mesa sigue ganando, porque esa comprobación va
+antes que todas.
+
+**Test:** `tests/scrum1506c-jv-jn-por-su-forma.test.mjs`, 5 casos. Sobre main: **4 rojos y 1 verde** (el ② de
+negativos, que ya era verde porque antes todo `jv-j…` daba null). Con el cambio: 5/5 verdes, y `scrum1295-carriles` 8/8.
+- ① positivos: `jv-j1`…`jv-j6`, `jv-j4g`, `jv-j6ar`, `jv-j2ay`, `jv-j1bb`, `JV-J3CF ` (mayúsculas y espacio), `jv-j5-prueba-1`.
+- ② negativos → null: `jv-j9z` (el caso de SCRUM-1549), `jv-j0`, `jv-j7`, `jv-j12`, `jv-j4abcd`, `jv-j`, `jv-orquestador`, `xjv-j1`, `jv-j1_`.
+- ③ lo de antes, igual: `j6-x`→J6, `puesto-j3`→J3, `sesion-5`→S5, `s1-14oct`→S1, `orquestador`→ORQ, `cobroflash-backend-57`→null; y con mesa, el nombre de la mesa gana.
+- ④ POR EFECTO, con el hook ejecutado como proceso y SIN mesa: `jv-j1` pasa en un fichero de J1 y se para en uno de S2 («es de S2 … tú eres J1»).
+- ⑤ `carriles.mjs mesa J1|J4|J6 --nombre jv-j1|jv-j4g|jv-j6ar` → salida 0, la mesa lleva puesto y nombre. **Control:** `mesa J4 --nombre jv-j3` → salida 2, «dice J3 por su forma y la mesa es de J4».
+
+**Mutaciones** (en `MUTACIONES_QUE_ME_TUMBAN` del test, el catálogo del meta-guard). Ejecutadas a mano, una a una, con
+restauración verificada byte a byte: quitar la expresión tumba ①; ensancharla a `^jv-j(\d)` tumba ②. **2 de 2 vivas.**
+
+### La tabla de SCRUM-1549, re-pasada
+
+`docs/master/evidencias/SCRUM-1549/controles.mjs` ejecutado contra este árbol con el `_carriles.mjs` de main y con el
+nuevo. Salida de los dos en `docs/master/evidencias/SCRUM-1506/controles-1549-antes-y-despues-2026-11-17.txt`.
+**Cambian 3 líneas de 38, y las tres son `jv-j4g` sin mesa.**
+
+| tabla de `SCRUM-1549.md` | fila | antes | ahora |
+|---|---|---|---|
+| §1 «Por forma de nombre» | `jv-jN…` (329) | caen todos | **pasan** los que tienen N de 1 a 6 y hasta 3 letras de cola. No lo he podido recontar: la población es de la máquina de Javier |
+| §1 «Vivas» | `jv-j3g` sin mesa | CAE | **pasa como J3** (deducido de la función, no re-medido en vivo) |
+| §2 «Luis» | todas | — | sin cambio (`controles.mjs`: los 10 nombres de Luis, iguales) |
+| §3 «Una mesa sella cualquier nombre» | — / `jv-j4g` | null · cae | **J4 · pasa como J4** (medido) |
+| §3 | J4/`jv-j4g` con nombre `jv-j9z` | null · pasa como J4 | sin cambio (`jv-j9z` sigue sin ser un puesto) |
+| §3 | resto de filas | — | sin cambio (medido) |
+| §3, texto | «`puestoDeNombre('jv-j1')` → null también» | null | **J1**: los nombres que la puerta permite ya pasan por su forma |
+
+🔴 **Lo que se vuelve más estricto, y es para el equipo J:** una sesión `jv-jM` sentada en una mesa de **otro** J
+(`.yaqu-puesto.json` de J4 con la sesión `jv-j3x`) antes pasaba como J4, porque su nombre no decía nada. **Ahora
+su nombre dice J3, y la cerradura para por DISCREPANCIA**, que no tiene interruptor por variable. Hoy no afecta a
+nadie, porque el hook no está cableado donde arrancan las sesiones (c.21944, pieza ①). Cuando lo esté, una mesa
+reutilizada por otro puesto J dejará de funcionar en silencio. Es lo que la cabecera de `textoMesa` llama «la
+discrepancia ES el dato». No lo he podido mirar: si en la máquina de Javier se reutilizan mesas entre puestos.
+
+**Sin medir:** la población real de nombres del equipo J (vive en su máquina) y si su lanzador acepta los relevos
+`jv-jN<letras>` (SCRUM-1549 §3 midió que la puerta solo acepta `jv-j1`…`jv-j6`).

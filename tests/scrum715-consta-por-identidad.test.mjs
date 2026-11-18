@@ -145,7 +145,7 @@ test('SCRUM-715 · 🔴 SUELO: el extractor SACA literales, y un cero se declara
 
 test('SCRUM-715 · las NOTAS del registro congelado no son textos aprobados', () => {
   // El registro usa `>` para avisos y advertencias. Si las citas contaran ahí, cada nota se
-  // convertiría en un literal firmado por el fundador, que es justo lo que la regla 30 prohíbe.
+  // convertiría en un literal con la firma del fundador, que es lo que la regla 30 prohíbe (SCRUM-1502 c.21915).
   const congelado = aprobacionesDeMicrocopy().find((a) => a.origen === 'congelado');
   assert.ok(congelado, '🔴 no se está leyendo el registro congelado');
 

@@ -13,13 +13,32 @@ const require = createRequire('C:/Users/Admin/AppData/Local/npm-cache/_npx/9833c
 const { chromium } = require('playwright-core');
 const [OUT, ETIQ = 'antes'] = process.argv.slice(2);
 mkdirSync(OUT, { recursive: true });
-const [nombre, ...resto] = readFileSync('C:/Users/Admin/.yaqu-qa-sesion.txt', 'utf8').trim().split('=');
+// La cookie se lee de fuera del repo y NUNCA se imprime. El fichero puede traer `pf_session=…` (con más cosas
+// detrás) o el valor a secas: el 16-nov el `split('=')` de antes ya no la encontraba y la sonda moría en un
+// timeout de `renderAppView` (acababa en la pantalla de entrada), que se lee como «la app no carga».
+const crudo = readFileSync('C:/Users/Admin/.yaqu-qa-sesion.txt', 'utf8').trim();
+const casada = crudo.match(/pf_session=([^;\s]+)/);
+const nombre = 'pf_session';
+const resto = [casada ? casada[1] : crudo];
 
-const CASOS = [
-  { id: 18, nombre: 'borrador-vacio' },
-  { id: 18, nombre: 'borrador-con-lineas-SIMULADO', inyectar: true },
+// SCRUM-1722c (16-nov-2026) · ESTA SONDA DIO UN «DESBORDE 0» FALSO el 12-nov, por dos motivos, y los dos se
+// corrigen aquí:
+//   ① medía `html.scrollWidth − clientWidth`, y `html, body` llevan `overflow-x: clip` (styles.css): bajo `clip`
+//      el documento dice 390 aunque la hoja mida 451. Ahora `desbordeX` es el BORDE DERECHO REAL del contenido
+//      (la caja más a la derecha de la vista que nadie recorta) menos el ancho de la ventana. La cifra vieja se
+//      conserva como `desbordeXDelDocumento`, para que se vea que seguía diciendo 0.
+//   ② ninguno de sus casos llevaba una OBRA LARGA, que es lo que ensancha la hoja. Ahora hay dos que la llevan
+//      (uno REAL y uno inyectado): son el CONTROL POSITIVO — con el CSS de antes de 1722c dan ROJO.
+// Y SALE CON CÓDIGO 1 si algún caso desborda: un rojo que sólo se lee en un JSON no para a nadie.
+const OBRA_LARGA = 'Calle Mayor 14, 3º B, 28801 Alcalá de Henares';
+// SONDA_CASOS='[{"id":19,"nombre":"…","obra":"…","inyectar":true}]' sustituye la lista (los partes de QA cambian de estado).
+const CASOS = process.env.SONDA_CASOS ? JSON.parse(process.env.SONDA_CASOS) : [
+  { id: 22, nombre: 'borrador-obra-larga-REAL' },                                   // PT-2026-014, nacido del trabajo #84 con su dirección
+  { id: 19, nombre: 'borrador-obra-larga-SIMULADO', obra: OBRA_LARGA },               // PT-2026-011 + obra inyectada en el GET
+  { id: 19, nombre: 'borrador-sin-obra' },
+  { id: 19, nombre: 'borrador-con-lineas-SIMULADO', inyectar: true },
   { id: 14, nombre: 'firmado-PT006' },
-  { id: 12, nombre: 'firmado-PT004' },
+  { id: 14, nombre: 'firmado-obra-larga-SIMULADO', obra: OBRA_LARGA },
 ];
 
 async function pasada(w, caso) {
@@ -46,9 +65,15 @@ async function pasada(w, caso) {
       if (!j) throw new Error('/admin/me no devolvió JSON tras 4 intentos');
       return route.fulfill({ response: r, json: { ...j, userRole: 'tecnico', isOwner: false } });
     }
+    if (caso.obra && !caso.inyectar && url.pathname === '/admin/partes/' + caso.id) {
+      const r = await route.fetch(); const j = await r.json();
+      (j.parte || j).obra = caso.obra;
+      return route.fulfill({ response: r, json: j });
+    }
     if (caso.inyectar && url.pathname === '/admin/partes/' + caso.id) {
       const r = await route.fetch(); const j = await r.json();
       const p = j.parte || j;
+      if (caso.obra) p.obra = caso.obra;
       p.lineas = [
         { id: 'sim-1', bloque: 'mano_obra', unds: 2, descripcion: 'Revisión de la caldera y purgado de radiadores' },
         { id: 'sim-2', bloque: 'materiales', unds: 1, descripcion: 'Válvula de seguridad 3 bar' },
@@ -77,7 +102,22 @@ async function pasada(w, caso) {
     return {
       rol: window.appUserRole,
       testigoVisita: document.querySelector('[data-parte-visita]')?.innerText.trim() || null,
-      desbordeX: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      // SCRUM-1722c · el borde derecho REAL: la caja visible más a la derecha de la vista que ningún antepasado
+      // recorta DENTRO de la página (el `clip` de html/body no cuenta: ése es justo el que esconde el defecto).
+      ...(() => {
+        const W = document.documentElement.clientWidth;
+        const recortada = (n) => { for (let p = n.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) { if (getComputedStyle(p).overflowX !== 'visible') return true; } return false; };
+        let max = 0, quien = null, mirados = 0;
+        document.querySelectorAll('.view-container, .view-container *').forEach((n) => {
+          const c = n.getBoundingClientRect();
+          if (c.width <= 0 || c.height <= 0 || getComputedStyle(n).position === 'fixed' || recortada(n)) return;
+          mirados++;
+          if (c.right > max) { max = c.right; quien = n.tagName.toLowerCase() + '.' + String(n.className).slice(0, 40); }
+        });
+        return { desbordeX: Math.max(0, Math.round(max - W)), bordeDerecho: Math.round(max), anchoVentana: W, masALaDerecha: quien, cajasMiradas: mirados };
+      })(),
+      desbordeXDelDocumento: document.documentElement.scrollWidth - document.documentElement.clientWidth, // la medida del 12-nov: 0 bajo `clip`
+      anchoHoja: Math.round((document.querySelector('.view-container') || document.body).getBoundingClientRect().width),
       altoPagina: document.documentElement.scrollHeight,
       titulos: tit,
       rotuloCampo: rot ? { fs: getComputedStyle(rot).fontSize, fw: getComputedStyle(rot).fontWeight } : null,
@@ -95,5 +135,10 @@ async function pasada(w, caso) {
 }
 
 const salida = [];
-for (const w of (process.env.SONDA_W || '390,1280').split(',').map(Number)) for (const c of CASOS) { const r = await pasada(w, c); salida.push(r); console.log(JSON.stringify({ w: r.w, caso: r.caso, desbordeX: r.desbordeX, local: r.servidosLocal, noGet: r.noGet, errores: r.errores, visita: r.testigoVisita, rol: r.rol })); }
+for (const w of (process.env.SONDA_W || '390,1280').split(',').map(Number)) for (const c of CASOS) { const r = await pasada(w, c); salida.push(r); console.log(JSON.stringify({ w: r.w, caso: r.caso, desbordeX: r.desbordeX, anchoHoja: r.anchoHoja, bordeDerecho: r.bordeDerecho, masALaDerecha: r.masALaDerecha, cajasMiradas: r.cajasMiradas, delDocumento: r.desbordeXDelDocumento, local: r.servidosLocal, noGet: r.noGet, errores: r.errores, visita: r.testigoVisita, rol: r.rol })); }
 writeFileSync(path.join(OUT, `${ETIQ}-medidas.json`), JSON.stringify(salida, null, 2));
+// Población y veredicto, dichos: cuántas pasadas, cuántas desbordan, y un CIEGO si alguna no miró ninguna caja.
+const rojas = salida.filter((r) => r.desbordeX > 1);
+const ciegas = salida.filter((r) => !(r.cajasMiradas > 0));
+console.log(`SONDA ${ETIQ}: ${salida.length} pasadas · ${rojas.length} con desborde${rojas.length ? ' → ' + rojas.map((r) => `${r.caso}@${r.w}=+${r.desbordeX}px`).join(', ') : ''} · ${ciegas.length} ciegas`);
+process.exit(rojas.length || ciegas.length ? 1 : 0);
