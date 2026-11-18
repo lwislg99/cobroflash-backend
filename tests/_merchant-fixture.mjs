@@ -117,6 +117,9 @@ const MODELOS_POR_MERCHANT = [
   'auditLog', 'whatsAppMessage', 'legalAcceptance', 'customerEvent', 'customerSite', 'attachment',
   // SCRUM-1296 · `vfSubmission` es FK-RESTRICT hacia `invoice` y `merchant`: va antes de los dos.
   'vfSubmission',
+  // SCRUM-1732 · `invoicePayment` es FK-RESTRICT hacia `invoice`, `charge` y `merchant`: va antes de
+  // los tres, en el mismo sitio que en `ORDEN_BORRADO_MERCHANT` (borradoMerchant.ts).
+  'invoicePayment',
   'albaran', 'maintenancePlan', 'invoice', 'charge', 'job', 'quote', 'quoteRequest',
   'botSession', 'quoteTemplate', 'expense', 'product', 'provider', 'authSession',
   'teamMember', 'customer',
