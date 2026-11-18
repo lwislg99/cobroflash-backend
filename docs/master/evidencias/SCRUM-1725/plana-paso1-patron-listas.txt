@@ -1,0 +1,109 @@
+﻿
+=== 1280 #quotes-list
+· TABLA «table table--cards-mobile» @1280: columnas [ID | Cliente | Fecha | Importe | Estado | Método | Etiquetas | Acciones] · 1 tbody · 10 filas de datos
+· GRUPOS (filas de cabecera dentro del cuerpo): 0
+· ESTADO EN LA FILA: 10 de 10 filas llevan píldora · valores: Borrador[status-pill-draft] , Aceptado[status-pill-accepted]
+· ALTO de fila: mín 61 · máx 75
+· FILA #9 QA 1198 cliente de prueba sin teléfono 29/10/26, 12:00 1.089,00 € BORRADOR — Ver detalle ⟶ Borrador[status-pill-draft] ⟶ □Ver detalle
+· FILA #8 QA 1198 cliente de prueba sin teléfono 29/10/26, 12:00 967,50 € BORRADOR — Ver detalle ⟶ Borrador[status-pill-draft] ⟶ □Ver detalle
+· FILA #7 Cliente de pruebas QA 18/10/26, 19:36 181,50 € BORRADOR — Ver detalle ⟶ Borrador[status-pill-draft] ⟶ □Ver detalle
+· FILA #6 Cliente de pruebas QA 18/10/26, 19:36 121,00 € BORRADOR — Ver detalle ⟶ Borrador[status-pill-draft] ⟶ □Ver detalle
+· FILA #3 Cliente de pruebas QA 14/10/26, 11:15 1,00 € BORRADOR — Ver detalle ⟶ Borrador[status-pill-draft] ⟶ □Ver detalle
+· FILA #5 Cliente de pruebas QA 07/10/26, 08:50 1,21 € ACEPTADO — Ver detalle ⟶ Aceptado[status-pill-accepted] ⟶ □Ver detalle
+· FILA #4 QA 1198 cliente de prueba sin teléfono 02/10/26, 15:10 1,00 € BORRADOR — Ver detalle ⟶ Borrador[status-pill-draft] ⟶ □Ver detalle
+· FILA #3 Cliente de pruebas QA 02/10/26, 14:54 1,00 € BORRADOR ⚠ WhatsApp: No entregado — Ver detalle ⟶ Borrador[status-pill-draft] ⟶ □Ver detalle
+· FILA #2 Cliente de pruebas QA 01/10/26, 13:00 121,00 € BORRADOR — Ver detalle ⟶ Borrador[status-pill-draft] ⟶ □Ver detalle
+· FILA #1 Cliente de pruebas QA 29/09/26, 19:37 12,10 € BORRADOR — Ver detalle ⟶ Borrador[status-pill-draft] ⟶ □Ver detalle
+patron-presupuestos-patron-admin@1280: rol=admin · 35 pulsables · 0 desbordes · 17 <44 · log 1 · {"porCobrar":0,"cobrado":0,"teFalta":0,"pendiente":1,"parcial":0,"pagado":0,"factura":0,"euros":10,"ceroEuros":0,"deImporte":0,"notasInternas":0,"queHayQueHacer":0,"basura":0}
+ESCRITURAS
+POST /admin/entorno → 200
+LOG
+[warning] Service Worker registration blocked by Playwright
+EXIT=0
+=== 1280 #albaranes
+· TABLA «table table--cards-mobile table--albaranes» @1280: columnas [Nº | Emisión | Entrega | Cliente | Trabajo | Importe | Estado | Acciones] · 1 tbody · 12 filas de datos
+· GRUPOS (filas de cabecera dentro del cuerpo): 0
+· ESTADO EN LA FILA: 12 de 12 filas llevan píldora · valores: borrador[status-pill-draft] , emitido[status-pill-pending] , firmado[status-pill-accepted]
+· ALTO de fila: mín 69 · máx 69
+· FILA AB260012 — 17/11/2026 Marta Prieto (PILOTO-1 QA) #84 — BORRADOR Emitir ⟶ borrador[status-pill-draft] ⟶ □Emitir
+· FILA AB260011 — 17/11/2026 Cliente de pruebas QA Trabajo de pruebas QA — BORRADOR Emitir ⟶ borrador[status-pill-draft] ⟶ □Emitir
+· FILA AB260010 — 17/11/2026 Cliente de pruebas QA Trabajo de pruebas QA — BORRADOR Emitir ⟶ borrador[status-pill-draft] ⟶ □Emitir
+· FILA AB260009 17/11/2026 17/11/2026 Marta Prieto (PILOTO-1 QA) #85 — EMITIDO Enviar para firmar ⟶ emitido[status-pill-pending] ⟶ □Enviar para firmar
+· FILA AB260008 — 16/11/2026 Marta Prieto (PILOTO-1 QA) #84 30,25 € BORRADOR Emitir ⟶ borrador[status-pill-draft] ⟶ □Emitir
+· FILA AB260007 10/11/2026 10/11/2026 Marta Prieto (PILOTO-1 QA) #79 — EMITIDO Enviar para firmar ⟶ emitido[status-pill-pending] ⟶ □Enviar para firmar
+· FILA AB260006 10/11/2026 10/11/2026 Cliente de pruebas QA RENOMBRADA-1650c Trabajo de pruebas QA 242,36 € EMITIDO E ⟶ emitido[status-pill-pending] ⟶ □Enviar para firmar
+· FILA AB260005 29/10/2026 29/10/2026 Cliente de pruebas QA Trabajo de pruebas QA — EMITIDO Enviar para firmar ⟶ emitido[status-pill-pending] ⟶ □Enviar para firmar
+· FILA AB260004 29/10/2026 29/10/2026 Cliente de pruebas QA Trabajo de pruebas QA — FIRMADO ⟶ firmado[status-pill-accepted] ⟶ 
+· FILA AB260003 — 16/10/2026 Cliente de pruebas QA Trabajo de pruebas QA — BORRADOR Emitir ⟶ borrador[status-pill-draft] ⟶ □Emitir
+· FILA AB260002 14/10/2026 14/10/2026 Cliente de pruebas QA Trabajo de pruebas QA — FIRMADO ⟶ firmado[status-pill-accepted] ⟶ 
+· FILA AB260001 29/09/2026 29/09/2026 Cliente de pruebas QA Trabajo de pruebas QA — EMITIDO Enviar para firmar ⟶ emitido[status-pill-pending] ⟶ □Enviar para firmar
+patron-albaranes-patron-admin@1280: rol=admin · 58 pulsables · 0 desbordes · 16 <44 · log 1 · {"porCobrar":0,"cobrado":0,"teFalta":0,"pendiente":0,"parcial":0,"pagado":0,"factura":4,"euros":2,"ceroEuros":0,"deImporte":0,"notasInternas":0,"queHayQueHacer":0,"basura":0}
+ESCRITURAS
+POST /admin/entorno → 200
+LOG
+[warning] Service Worker registration blocked by Playwright
+EXIT=0
+=== 1280 #jobs
+· TABLA «table table--cards-mobile table--trabajos» @1280: columnas [Cliente | Importe | Fecha | Acciones] · 5 tbody · 9 filas de datos
+· GRUPOS (filas de cabecera dentro del cuerpo): 7 → 🔨 En curso · 2 ‖ 📅 Hoy · 1 ‖ ⏳ Sin agendar · 4 ‖ ✅ Terminados — cobra el resto · 2 ‖ 2 sin importe de referencia: no se sabe cuánto falta y no entran en el total. ‖ 🔒 Cerrados · 2 ‖ Ver 2 cerrados
+· ESTADO EN LA FILA: 0 de 9 filas llevan píldora · valores: —
+· ALTO de fila: mín 91 · máx 168
+· FILA Cliente de pruebas QA Operario QA 1,21 € de 1,21 € mié, 11 nov, 16:54 Abrir parte Ver detalle + Nuevo albarán  ⟶  ⟶ ■Abrir parte · □Ver detalle · □+ Nuevo albarán · □⋯
+· FILA Marta Prieto (PILOTO-1 QA) Reparación / Asistencia técnica (prueba) Recorrido H6 del 16-nov: cambiar el termos ⟶  ⟶ ■Abrir parte · □Ver detalle · □Emitir albarán · □⋯
+· FILA Marta Prieto (PILOTO-1 QA) Reparación / Asistencia técnica (prueba) Regla 42 de SCRUM-1679 del 18-nov: revisar ⟶  ⟶ ■▶ Empezar · □Ver detalle · □⋯
+· FILA luis Reparación / Asistencia técnica Sin asignar calle alerce Sin importe no hay presupuesto aceptado Ver deta ⟶  ⟶ □Ver detalle · □Agendar · □⋯
+· FILA Marta Prieto (PILOTO-1 QA) [QA-1674] sin obra ni tipo · Sin asignar Sin importe no hay presupuesto aceptado Ve ⟶  ⟶ □Ver detalle · □Agendar · □⋯
+· FILA Marta Prieto (PILOTO-1 QA) Mantenimiento [QA-1674] con obra y tipo · Sin asignar Calle Obra QA 1674, 5º A Sin  ⟶  ⟶ □Ver detalle · □Agendar · □⋯
+· FILA luis Sin asignar Calle de Prueba QA 17 Sin importe no hay presupuesto aceptado Ver detalle Agendar ⋯ ⟶  ⟶ □Ver detalle · □Agendar · □⋯
+· FILA Cliente de pruebas QA Trabajo de pruebas QA · Sin asignar Sin importe no hay presupuesto aceptado jue, 12 nov, ⟶  ⟶ □Ver detalle · □Enviar para firmar · □⋯
+· FILA Marta Prieto (PILOTO-1 QA) Reparación / Asistencia técnica (prueba) Estados de oficina 6.2 del 17-nov: revisar ⟶  ⟶ □Ver detalle · □Enviar para firmar · □⋯
+patron-trabajos-patron-admin@1280: rol=admin · 72 pulsables · 0 desbordes · 10 <44 · log 1 · {"porCobrar":1,"cobrado":0,"teFalta":0,"pendiente":1,"parcial":1,"pagado":1,"factura":0,"euros":3,"ceroEuros":0,"deImporte":1,"notasInternas":0,"queHayQueHacer":0,"basura":0}
+ESCRITURAS
+POST /admin/entorno → 200
+LOG
+[warning] Service Worker registration blocked by Playwright
+EXIT=0
+=== 390 #quotes-list
+· TABLA «table table--cards-mobile» @390: columnas [ID | Cliente | Fecha | Importe | Estado | Método | Etiquetas | Acciones] · 1 tbody · 10 filas de datos
+· GRUPOS (filas de cabecera dentro del cuerpo): 0
+· ESTADO EN LA FILA: 10 de 10 filas llevan píldora · valores: Borrador[status-pill-draft] , Aceptado[status-pill-accepted]
+· ALTO de fila: mín 147 · máx 167
+· FILA #9 QA 1198 cliente de prueba sin teléfono 29/10/26, 12:00 1.089,00 € BORRADOR Ver detalle ⟶ Borrador[status-pill-draft] ⟶ □Ver detalle
+· FILA #8 QA 1198 cliente de prueba sin teléfono 29/10/26, 12:00 967,50 € BORRADOR Ver detalle ⟶ Borrador[status-pill-draft] ⟶ □Ver detalle
+· FILA #7 Cliente de pruebas QA 18/10/26, 19:36 181,50 € BORRADOR Ver detalle ⟶ Borrador[status-pill-draft] ⟶ □Ver detalle
+· FILA #6 Cliente de pruebas QA 18/10/26, 19:36 121,00 € BORRADOR Ver detalle ⟶ Borrador[status-pill-draft] ⟶ □Ver detalle
+· FILA #3 Cliente de pruebas QA 14/10/26, 11:15 1,00 € BORRADOR Ver detalle ⟶ Borrador[status-pill-draft] ⟶ □Ver detalle
+· FILA #5 Cliente de pruebas QA 07/10/26, 08:50 1,21 € ACEPTADO Ver detalle ⟶ Aceptado[status-pill-accepted] ⟶ □Ver detalle
+· FILA #4 QA 1198 cliente de prueba sin teléfono 02/10/26, 15:10 1,00 € BORRADOR Ver detalle ⟶ Borrador[status-pill-draft] ⟶ □Ver detalle
+· FILA #3 Cliente de pruebas QA 02/10/26, 14:54 1,00 € BORRADOR ⚠ WhatsApp: No entregado Ver detalle ⟶ Borrador[status-pill-draft] ⟶ □Ver detalle
+· FILA #2 Cliente de pruebas QA 01/10/26, 13:00 121,00 € BORRADOR Ver detalle ⟶ Borrador[status-pill-draft] ⟶ □Ver detalle
+· FILA #1 Cliente de pruebas QA 29/09/26, 19:37 12,10 € BORRADOR Ver detalle ⟶ Borrador[status-pill-draft] ⟶ □Ver detalle
+patron-presupuestos-patron-admin@390: rol=admin · 35 pulsables · 0 desbordes · 5 <44 · log 1 · {"porCobrar":0,"cobrado":0,"teFalta":0,"pendiente":1,"parcial":0,"pagado":0,"factura":0,"euros":10,"ceroEuros":0,"deImporte":0,"notasInternas":0,"queHayQueHacer":0,"basura":0}
+ESCRITURAS
+POST /admin/entorno → 200
+LOG
+[warning] Service Worker registration blocked by Playwright
+EXIT=0
+=== 390 #albaranes
+· TABLA «table table--cards-mobile table--albaranes» @390: columnas [Nº | Emisión | Entrega | Cliente | Trabajo | Importe | Estado | Acciones] · 1 tbody · 12 filas de datos
+· GRUPOS (filas de cabecera dentro del cuerpo): 0
+· ESTADO EN LA FILA: 12 de 12 filas llevan píldora · valores: borrador[status-pill-draft] , emitido[status-pill-pending] , firmado[status-pill-accepted]
+· ALTO de fila: mín 168 · máx 220
+· FILA AB260012 17/11/2026 Marta Prieto (PILOTO-1 QA) #84 — BORRADOR Emitir ⟶ borrador[status-pill-draft] ⟶ □Emitir
+· FILA AB260011 17/11/2026 Cliente de pruebas QA Trabajo de pruebas QA — BORRADOR Emitir ⟶ borrador[status-pill-draft] ⟶ □Emitir
+· FILA AB260010 17/11/2026 Cliente de pruebas QA Trabajo de pruebas QA — BORRADOR Emitir ⟶ borrador[status-pill-draft] ⟶ □Emitir
+· FILA AB260009 17/11/2026 Marta Prieto (PILOTO-1 QA) #85 — EMITIDO Enviar para firmar ⟶ emitido[status-pill-pending] ⟶ □Enviar para firmar
+· FILA AB260008 16/11/2026 Marta Prieto (PILOTO-1 QA) #84 30,25 € BORRADOR Emitir ⟶ borrador[status-pill-draft] ⟶ □Emitir
+· FILA AB260007 10/11/2026 Marta Prieto (PILOTO-1 QA) #79 — EMITIDO Enviar para firmar ⟶ emitido[status-pill-pending] ⟶ □Enviar para firmar
+· FILA AB260006 10/11/2026 Cliente de pruebas QA RENOMBRADA-1650c Trabajo de pruebas QA 242,36 € EMITIDO Enviar para  ⟶ emitido[status-pill-pending] ⟶ □Enviar para firmar
+· FILA AB260005 29/10/2026 Cliente de pruebas QA Trabajo de pruebas QA — EMITIDO Enviar para firmar ⟶ emitido[status-pill-pending] ⟶ □Enviar para firmar
+· FILA AB260004 29/10/2026 Cliente de pruebas QA Trabajo de pruebas QA — FIRMADO ⟶ firmado[status-pill-accepted] ⟶ 
+· FILA AB260003 16/10/2026 Cliente de pruebas QA Trabajo de pruebas QA — BORRADOR Emitir ⟶ borrador[status-pill-draft] ⟶ □Emitir
+· FILA AB260002 14/10/2026 Cliente de pruebas QA Trabajo de pruebas QA — FIRMADO ⟶ firmado[status-pill-accepted] ⟶ 
+· FILA AB260001 29/09/2026 Cliente de pruebas QA Trabajo de pruebas QA — EMITIDO Enviar para firmar ⟶ emitido[status-pill-pending] ⟶ □Enviar para firmar
+patron-albaranes-patron-admin@390: rol=admin · 58 pulsables · 0 desbordes · 5 <44 · log 1 · {"porCobrar":0,"cobrado":0,"teFalta":0,"pendiente":0,"parcial":0,"pagado":0,"factura":4,"euros":2,"ceroEuros":0,"deImporte":0,"notasInternas":0,"queHayQueHacer":0,"basura":0}
+ESCRITURAS
+POST /admin/entorno → 200
+LOG
+[warning] Service Worker registration blocked by Playwright
+EXIT=0

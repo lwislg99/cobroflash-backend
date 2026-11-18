@@ -78,3 +78,56 @@ Capturas y medidas: `docs/master/evidencias/SCRUM-1725/{antes,despues}-lista-{ad
 - Hallazgos (a) y (b) de c.21809 (acciones que el técnico no debería ver; filtro «Técnico» pintado al operario) NO entran: cambian flujo. Confirmados hoy en la captura del operario: el filtro «Técnico» sigue pintado, y en sus tarjetas salen «+ Nuevo albarán», «Emitir albarán» y «Agendar».
 - Escritorio: la tabla se queda tabla; solo cambian la cabecera y el rótulo de grupo.
 - Pendiente: el «me gusta» del fundador sobre las capturas, y la regla 42 tras el merge (las mismas pasadas, sin `LOCAL_DIR`).
+
+## Lista plana (S4 · 18-nov · SCRUM-1725g)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1725/c1725g-lista.mjs`
+Mutaciones: catálogo → `tests/scrum1725-lista-operario-sin-cobro.test.mjs`
+
+**Por qué.** El fundador vio la lista de 1725e y dio veredicto (SCRUM-1725 c.22073): «no me acabna de gustar es muy lioso la lsita […] me molaria un listado normal como los que tenemos en otros sitios». La vuelta anterior era de ropa; ésta es de estructura.
+
+**PASO 1, medido en yaqu.app** (cuenta QA, 1280 y 390; `g1-patron-listas.mjs`, salida en `plana-paso1-patron-listas.txt`):
+
+| lista | `tbody` | filas de cabecera en el cuerpo | filas con píldora de estado |
+|---|---|---|---|
+| Presupuestos | 1 | 0 | 10 de 10 |
+| Albaranes | 1 | 0 | 12 de 12 |
+| Trabajos (antes) | 5 | 7 | 0 de 9 |
+
+**Qué cambia** (`jobsView.js`, bloque `S4 · SCRUM-1725g` de `styles.css`):
+- Un `tbody`, una fila por trabajo, ninguna cabecera de grupo. Columna «Estado» con la píldora de `jobStatusMeta` (la de la ficha).
+- El ORDEN es el de siempre sin sus rótulos: en curso → hoy → esta semana → sin agendar → más adelante → terminados. `grupoDeTrabajo` sigue siendo la única regla (ordena, cuenta «Para hoy», decide el «▶ Empezar» relleno).
+- Los cerrados siguen plegados: «Ver N cerrados» es la última fila.
+- Móvil: la tarjeta gana el área `status` (a la derecha del renglón de la fecha, como en Presupuestos y Albaranes). Escritorio ≥1200 px: la celda de acciones se asegura 296 px, porque con la columna nueva el trío «Ver detalle · Enviar para firmar · ⋯» partía en dos renglones.
+
+**Firmas y autorizaciones** (orquestador, por la delegación de SCRUM-1656 c.21978):
+- c.22076 · P1 `<th>` «Estado» (registrado en `docs/microcopy/2026-11-18-SCRUM-1725-estado-en-la-lista-de-trabajos.md`) · P2 el orden · P3 los cerrados · P4 el cobro.
+- c.22077 · autoriza cambiar lo que exigen `tests/scrum428-terminado-sin-cobrar.test.mjs` L71 y L178 y `tests/scrum1725-lista-operario-sin-cobro.test.mjs` L74, L89 y L92, «porque el REQUISITO cambió […] no para esquivar un rojo».
+- c.22078 · amplía a 428 L130-157 y a `scripts/guard-lista-trabajos-917.mjs` B.1, C.4 y C.5.
+
+**Lo que se PIERDE, declarado (P4):** el subtotal «por cobrar» de SOLO los terminados y la salvedad larga («N sin importe de referencia: no se sabe cuánto falta y no entran en el total.»). Queda la tarjeta «Por cobrar» (importe + «N sin importe de referencia, no entra(n)») y, fila a fila, «💰 Cobrar el resto (importe)» y «X de Y». **M1 (c.22052) queda superado**: no hay cabecera para ningún rol; su doc de microcopy se conserva, anotado.
+
+**`resumenTerminadoSinCobrar` pierde su llamador en la lista.** El motor (`terminadoSinCobrar.js`) y sus tests unitarios (428 L109-128 y siguientes) no se tocan; su retirada, si procede, es ticket aparte del orquestador.
+
+**Rojo primero** (código nuevo, tests sin tocar): `plana-rojo-primero.tap.txt`, 12 casos, 6 caídos (1725 ×3 por L74/L89; 428 ×3 por L71, L140 y L178). `plana-guard917-rojo.txt`: 49 comprobaciones, 5 rojas (B.1, C.4 ×2, C.5 ×2). Después: los dos tests, 13 de 13; el guard, 51 de 51 (`plana-guard917-verde.txt`).
+
+**Mutaciones** (declaradas en el test, vistas en rojo en local con base verde y restauración byte a byte): vuelve un rótulo de grupo → caen 4 casos; `SECUENCIA` con `terminado` delante → cae el caso de 1725g; píldora vacía → cae el caso de 1725g.
+
+**Antes/después en yaqu.app** (`c1725g-lista.mjs`; el después sirve `jobsView.js` y `styles.css` del árbol sobre producción). Capturas `antes-plana-*` y `despues-plana-*`:
+
+| pasada | filas antes → después | tarjetas solo-antes / solo-después | orden | cifras y filtros | cabeceras | con píldora | desborde | <44 px |
+|---|---|---|---|---|---|---|---|---|
+| admin 1280 | 9 → 9 | 0 / 0 | idéntico | idénticos | 6 → 0 | 0 → 9 | 0 | 0 |
+| admin 390 | 9 → 9 | 0 / 0 | idéntico | idénticos | 6 → 0 | 0 → 9 | 0 | 0 |
+| operario 1280 | 3 → 3 | 0 / 0 | idéntico | idénticos | 2 → 0 | 0 → 3 | 0 | 0 |
+| operario 390 | 3 → 3 | 0 / 0 | idéntico | idénticos | 2 → 0 | 0 → 3 | 0 | 0 |
+
+Las tarjetas se comparan como CONJUNTOS de líneas (cliente, tipo, tarea, técnicos, dirección, importe, fecha y botones con su relleno). «Ver 2 cerrados» sigue al pie en las dos del admin. El operario no tiene filtros de cobro: ahí «filtros idénticos» compara dos vacíos y no prueba nada.
+
+**Lo que NO queda probado, y lo que queda fuera:**
+- `guard:lista-trabajos-917` B.3 («sin píldora») sigue verde porque busca `.jobs-estado-pill`, una clase que ya no existe; su intención (917c) la revierte P1. No está en la autorización: no se toca, se declara.
+- `guard:escalera-por-estado` sale ROJO (4 hallazgos, 2 ciegos: «el detalle (ninguna)») **también con la lista y la hoja de `origin/main` 34939a6ad**: es del detalle del Trabajo, no de esta rama. Reportado al orquestador.
+- En la cuenta QA ningún terminado tiene saldo: «💰 Cobrar el resto» en su fila lo prueba el guard-917 (C.5, banco local), no la captura.
+- Pendiente: el «me gusta» del fundador sobre las capturas, y la regla 42 tras el merge (las mismas pasadas, sin `LOCAL_DIR`).
+- Dos mensajes míos al orquestador llevaban una hora ESTIMADA («~16:40Z», «~17:05Z») y era falsa por exceso: la de GitHub a esa altura era 16:17Z. La hora se lee de `gh api -i zen`.
+
