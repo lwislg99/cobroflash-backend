@@ -133,10 +133,39 @@ test('SCRUM-816 · ESTADO y FECHA son una sola columna, y el cobro NO se pierde'
   // ⚠️ `<th[^>]*>` Y NO `<th>`: un extractor con el `>` pegado deja de casar en cuanto alguien le
   // pone un atributo al `<th>` —y el de IMPORTE ya lo lleva—, así que se volvería verde sin que
   // el defecto se hubiera arreglado. Es lo que cuenta el censo de SCRUM-553.
+  // ── SCRUM-1725g (18-nov-2026) · ESTA ASERCIÓN CAMBIA DE EXIGENCIA, autorizada con nombre
+  // (SCRUM-1725 c.22081). Exigía que NO hubiera `<th>Estado</th>`: en 816 el estado lo decía la
+  // cabecera del grupo y la celda apilaba DOS insignias (agenda y cobro). El requisito cambió: la
+  // lista es PLANA (veredicto del fundador, c.22073; P1 firmada en c.22076), no hay grupo que diga
+  // el estado y lo dice la fila. Lo que SIGUE VIVO de la intención de 816 es lo que se exige ahora:
+  // la celda lleva UNA sola píldora, la de `jobStatusMeta`, y nunca dos apiladas. El título del
+  // caso no se ha tocado (queda fuera de la autorización): «una sola columna» se lee hoy como «una
+  // sola píldora».
   assert.ok(
-    !/<th[^>]*>Estado<\/th>/.test(codigo),
-    '🔴 sigue la columna ESTADO. Contestaba lo mismo que FECHA —«¿cuándo se hace esto?»— y su\n' +
-    '  celda apilaba dos insignias de dimensiones distintas: una de agenda y otra de cobro.',
+    /<th[^>]*>Estado<\/th>/.test(codigo),
+    '🔴 ha desaparecido la columna ESTADO. La lista es plana (SCRUM-1725g): sin cabeceras de grupo,\n' +
+    '  si la fila no dice su estado ya no lo dice nadie.',
+  );
+  const desdeEstado = codigo.indexOf('const tdEstado');
+  const hastaEstado = codigo.indexOf('tr.appendChild(tdEstado)');
+  assert.ok(
+    desdeEstado > 0 && hastaEstado > desdeEstado,
+    '🔴 ESCÁNER CIEGO: no encuentro la celda de estado de la fila (`const tdEstado` …\n' +
+    '  `tr.appendChild(tdEstado)`). Sin ella no puedo contar cuántas píldoras lleva.',
+  );
+  const celdaEstado = codigo.slice(desdeEstado, hastaEstado);
+  assert.ok(
+    /jobStatusMeta\(j\.status\)/.test(celdaEstado),
+    '🔴 la píldora de la fila no sale de `jobStatusMeta`. Es la única copia de la etiqueta y de su\n' +
+    '  clase (la de la ficha): un literal escrito aquí acaba diciendo otra cosa que el detalle.',
+  );
+  const colgado = celdaEstado.match(/tdEstado\.(appendChild|append|prepend|insertAdjacentHTML|insertAdjacentElement|innerHTML|replaceChildren)\b/g) || [];
+  assert.deepEqual(
+    colgado,
+    ['tdEstado.appendChild'],
+    '🔴 la celda ESTADO no lleva UNA sola píldora: se le cuelga ' + colgado.length + ' vez/veces\n' +
+    '  (' + (colgado.join(' · ') || 'nada') + '). Lo que 816 quitó fueron DOS insignias apiladas, una de\n' +
+    '  agenda y otra de cobro; el cobro vive en IMPORTE, con sus dos cifras.',
   );
   assert.ok(/<th[^>]*>Fecha<\/th>/.test(codigo), '🔴 ha desaparecido también FECHA: la fusión se ha comido la columna buena.');
 

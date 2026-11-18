@@ -235,7 +235,7 @@ for (const [ruta, motivo] of [['/t-200', 'la lista llega truncada (200 filas)'],
 }
 
 // ═══ B · LAS COLUMNAS ═══════════════════════════════════════════════════════════════════════
-titulo('B · columnas (B.1) · técnico en la línea del cliente (B.2) · sin píldora (B.3) · la cifra grande es lo que falta (B.4-B.6)');
+titulo('B · columnas (B.1) · técnico en la línea del cliente (B.2) · una píldora por fila (B.3) · la cifra grande es lo que falta (B.4-B.6)');
 {
   const { page } = await abrirVista(browser, puerto, '/t', 1280);
   const fmt = (n) => page.evaluate((x) => window.fmtMoneyEs(x, 'EUR'), n);
@@ -255,7 +255,9 @@ titulo('B · columnas (B.1) · técnico en la línea del cliente (B.2) · sin p�
       desplegable: !!(cli && cli.querySelector('details.jobs-tecnicos-menu')),
       celdaTecnicos: !!tr.querySelector('td.cell-tecnicos'),
       fecha: (tr.querySelector('td.cell-date') || {}).textContent?.trim() ?? null,
-      pildora: !!tr.querySelector('.jobs-estado-pill'),
+      // `.jobs-estado-pill` es la clase de la píldora que 917c quitó: se cuenta también, para que
+      // su vuelta al lado de la nueva sea «dos», no «una».
+      pildoras: tr.querySelectorAll('.status-pill, .jobs-estado-pill').length,
       importe: partes,
     };
   }), SEL_FILA);
@@ -273,10 +275,16 @@ titulo('B · columnas (B.1) · técnico en la línea del cliente (B.2) · sin p�
   if (!f4 || f4.linea.startsWith('Lucía Romero')) mal(`B.2 sin nombre propio, la línea repite el cliente: «${f4 && f4.linea}»`);
   else bien(`B.2 sin nombre propio no se repite el cliente · «${f4.linea}»`);
 
-  // B.3 · Fecha: la fecha o nada; ninguna píldora que repita su cabecera
-  const conPildora = celdas.filter((c) => c.pildora).length;
-  if (conPildora) mal(`B.3 ${conPildora} filas siguen con la píldora «Sin agendar» debajo de su cabecera`);
-  else bien('B.3 cero píldoras «Sin agendar» en las filas');
+  // B.3 · Fecha: la fecha o nada. Y la píldora: EXACTAMENTE UNA por fila, nunca dos apiladas.
+  // SCRUM-1725g · CAMBIA DE EXIGENCIA (autorizado con nombre: SCRUM-1725 c.22081). Exigía «cero
+  // píldoras "Sin agendar" debajo de su cabecera» buscando `.jobs-estado-pill`; desde la lista
+  // plana esa clase no existe y la comprobación daba verde sin mirar nada. No se retira: C.4 lee
+  // SOLO la primera píldora de la celda de estado (`querySelector`), así que dos apiladas le
+  // pasarían. Aquí se cuentan TODAS las de la fila, estén en la celda que estén.
+  const sinUna = celdas.filter((c) => c.pildoras !== 1);
+  if (!celdas.length) nosupe('B.3 el banco no pinta ninguna fila: no se puede contar píldoras.');
+  else if (sinUna.length) mal(`B.3 ${sinUna.length} de ${celdas.length} filas no llevan exactamente UNA píldora: ${sinUna.map((c) => `${c.cliente} ×${c.pildoras}`).join(' · ')}`);
+  else bien(`B.3 exactamente una píldora por fila en ${celdas.length} de ${celdas.length} filas`);
   if (!f4 || f4.fecha !== '') mal(`B.3 un Trabajo sin fecha enseña «${f4 && f4.fecha}» en Fecha (esperaba nada)`);
   else bien('B.3 sin fecha, la celda Fecha está vacía');
   const f3 = deCliente(3);
