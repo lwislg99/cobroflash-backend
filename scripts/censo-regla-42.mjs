@@ -244,7 +244,7 @@ export function clasificar(n, { ramas, ficheros, entrada, commits, primeraEntrad
   const sinSaber = mias.filter((r) => juicio.get(r).es === NO_SE_SABE);
   const mergeadas = mias.filter((r) => juicio.get(r).es === SI);
 
-  // SCRUM-804j · la entrada (`docs/master/SCRUM-N.md`) ya no cuenta como fichero propio: antes lo
+  // SCRUM-804j · la entrada de registro del ticket (`ES_ENTRADA`) ya no cuenta como fichero propio: antes lo
   // hacía, y la rama «entrada pero NINGÚN artefacto» de abajo no se alcanzaba nunca.
   const propios = ficherosPropios(ficheros, n);
 
