@@ -102,6 +102,11 @@ test('SCRUM-1670c · sin tipo no nace ningún renglón', async () => {
 });
 
 test('SCRUM-1670c · un valor que el vocabulario no conoce no se pinta, ni crudo', async () => {
+  // CONTROL POSITIVO de la negación de abajo: si ese mismo valor SÍ estuviera en el vocabulario, con ese
+  // mismo texto por rótulo, la tarjeta lo pintaría y este instrumento lo vería. Sin esto, «no se ve» sería
+  // cierto también con un instrumento que no lee la celda (SCRUM-237).
+  const control = await tarjeta({ tipoIntervencion: 'TIPO_QUE_NO_EXISTE' }, [{ valor: 'TIPO_QUE_NO_EXISTE', rotulo: 'TIPO_QUE_NO_EXISTE' }]);
+  assert.ok(texto(control.celda).includes('TIPO_QUE_NO_EXISTE'), `🔴 CIEGO: con el valor en el vocabulario la tarjeta no lo pinta o el instrumento no lo lee: «${texto(control.celda)}»`);
   const { de, celda } = await tarjeta({ tipoIntervencion: 'TIPO_QUE_NO_EXISTE' });
   assert.equal(de('jobs-fila-tipo').length, 0, `🔴 se pinta un tipo desconocido: «${texto(celda)}»`);
   assert.ok(!texto(celda).includes('TIPO_QUE_NO_EXISTE'), `🔴 el valor crudo se ve en la tarjeta: «${texto(celda)}»`);
