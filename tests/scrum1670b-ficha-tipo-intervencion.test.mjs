@@ -122,7 +122,8 @@ test('SCRUM-1670b · 🔴 un valor que no está en el vocabulario recibido NO se
 
 test('SCRUM-1670b · el rótulo es el MISMO literal del alta (no es un texto nuevo)', () => {
   const alta = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/jobNuevoModal.js'), 'utf8');
-  assert.ok(alta.includes('<label for="tn-tipo">Tipo de intervención</label>'),
+  // Hueco para atributos (SCRUM-553): un `class` añadido al label no puede dejarlo ciego.
+  assert.match(alta, /<label[^>]*\bfor="tn-tipo"[^>]*>Tipo de intervención<\/label>/,
     '🔴 el alta ya no rotula así su campo: el rótulo de la ficha se queda sin procedencia');
   const plegable = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/jobTrabajoPlegable.js'), 'utf8');
   assert.ok(/const ROTULO_TIPO_INTERVENCION = 'Tipo de intervención';/.test(plegable),
