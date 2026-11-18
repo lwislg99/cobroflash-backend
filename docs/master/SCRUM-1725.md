@@ -115,6 +115,31 @@ Capturas y medidas: `docs/master/evidencias/SCRUM-1725/{antes,despues}-lista-{ad
 - Escritorio: la tabla se queda tabla; solo cambian la cabecera y el rótulo de grupo.
 - Pendiente: el «me gusta» del fundador sobre las capturas, y la regla 42 tras el merge (las mismas pasadas, sin `LOCAL_DIR`).
 
+## Escalera por identidad (S2 · 18-nov · 1725h)
+
+**Puesto:** S2 · **Rama:** `scrum-1725h-escalera-por-identidad` · 18-nov-2026
+**Skill UI:** no cargada · no cambia nada que se vea: una marca `data-accion` en un botón que ya existe, sin texto, clase ni estilo nuevos
+**Medido contra:** `origin/main` = `b3fe6ba82d6e6afa6590cbf3c669510a792943e5` · 2026-11-18T17:20:38Z
+A9: comprobación → `scripts/guard-escalera-por-estado.mjs`
+
+**Autorización (SCRUM-1725 c.22107, nominal del orquestador), copiada:** «AUTORIZO cambiar los 4 selectores de guard:escalera-por-estado (L125/176/223/260) de `.detail-head button.btn-primary` a `.detail-head button[data-accion="cta"]`, retirar el respaldo muerto, y añadir `cta.dataset.accion = 'cta'` en jobDetailView.js — porque el guard miraba por PESO y el canon de 1749 lo dejó ciego Y MUDO (tu mutante del cerrado lo prueba); por identidad queda MÁS estricto.»
+
+### El defecto (instrumento, no producto)
+- `guard:escalera-por-estado` (job «guards de navegador», fuera del obligatorio) llevaba rojo en `main` desde el merge de SCRUM-1749 (`bcff9d8b1`): 4 «DISTINTAS» y 2 «NO SUPE MIRAR» en el DETALLE. Sobre `ddb811109`, el padre de ese merge en `main`, salía verde (EXIT 0).
+- Causa: 1749 deja el CTA de la cabecera con contorno (`btn-secondary`) cuando no es el paso de hoy, y el guard lo buscaba por `button.btn-primary`. El rótulo lo sigue dando `jobNextAction` en la lista y en la ficha. Lo que se quedó sin medir fue el detalle, no hubo desacuerdo entre las dos pantallas.
+- Lo grave: ③ («un Trabajo CERRADO no propone nada») estaba MUDO en el detalle. Con un cerrado que propone «MUTADO», el guard de `main` decía «✅ DETALLE: sin acción principal» y seguía dando los mismos 4+2.
+- El respaldo `[data-accion="cta"] button.btn-primary` no lo encontraba nadie: en `jobDetailView.js` no había ningún `data-accion`.
+
+### Qué cambia
+- `public/dashboard/js/jobDetailView.js`: `cta.dataset.accion = 'cta'` justo después de poner su rótulo. Es la identidad del CTA, pese lo que pese. Ni texto, ni clase, ni estilo.
+- `scripts/guard-escalera-por-estado.mjs`: los 4 selectores del DETALLE pasan a `.detail-head button[data-accion="cta"]`, y el respaldo muerto se va. Nada más del guard: suelos, mensajes y exigencias, iguales.
+
+### Comprobación (salidas en `docs/master/evidencias/SCRUM-1725/1725h/`)
+- Base, esta rama: `escalera-1725h-base.txt`, EXIT 0, 0 ciegos. Lista = detalle en los cinco estados, ② y ②-bis medidos en el DETALLE (modal y fecha; `PATCH {"status":"en_curso"}`), ③ verde con la pantalla montada (137 nodos).
+- Mutante de rótulo (`cta.textContent = nextAct.label;` → `cta.textContent = nextAct.label + ' (mutado)';`): `escalera-1725h-rotulo.txt`, EXIT 1, «6 hallazgos · 0 ciegos».
+- Mutante de cerrado (`const nextAct = jobNextAction(job, !isTecnico);` → `… || { kind: 'nuevo', label: 'MUTADO' };`): `escalera-1725h-cerrado.txt`, EXIT 1, «2 hallazgos · 0 ciegos», con «un Trabajo CERRADO propone «MUTADO»». Es justo el caso que el guard de `main` daba por verde.
+- Cada mutante se aplicó, se corrió el guard y se restauró `jobDetailView.js` byte a byte (comprobado). El guion NO está en git: SCRUM-1387 manda al catálogo del meta-guard todo banco de mutación nuevo en `evidencias/`, y ese catálogo corre tests de node, no guards de navegador. Por eso esta tanda no lleva línea `Mutaciones:`, y la receta exacta (de → a) queda aquí arriba.
+- Fuera de esta rama (carril de S4, apuntado por el orquestador para su brief): el lado LISTA del guard se ancla a `tr.jobs-fila` y `.jobs-acciones > button`, y la lista plana de #3233 puede cegarlo. No lo he medido.
 ## Lista plana (S4 · 18-nov · SCRUM-1725g)
 
 A9: comprobación → `docs/master/evidencias/SCRUM-1725/c1725g-lista.mjs`
