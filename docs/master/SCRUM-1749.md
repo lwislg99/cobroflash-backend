@@ -1,6 +1,7 @@
 # SCRUM-1749 · La ficha del Trabajo: como mucho UNA rellena, el paso de hoy — mitad FICHA (S2)
 
-**Medido contra:** `origin/main` = `c9c8a7c3a2e9d2b5525494164755144f35d762d4` · 2026-11-18T12:15:26Z · **Rama:** `scrum-1749-ficha-primarias` · **Carril:** S2
+**Medido contra:** `origin/main` = `c9c8a7c3a2e9d2b5525494164755144f35d762d4` · 2026-11-18T12:15:26Z
+**Rama:** `scrum-1749-ficha-primarias` · **Carril:** S2
 **Skill UI:** cargada (`yaqu-premium-ui`) · no hay token, color, texto ni componente nuevo: solo cambia la CLASE de dos botones que ya existían
 A9: comprobación → `tests/scrum1749-ficha-una-rellena.test.mjs`
 
