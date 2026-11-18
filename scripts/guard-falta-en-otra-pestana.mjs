@@ -30,6 +30,7 @@ import puppeteer from 'puppeteer-core';
 import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
+import { enlacesDelPanel, TIPOS_DE_FUENTE, esperarFuentes, cegueraDeLaFuente, decirFuente } from './_hojas-del-panel.mjs';
 
 export const SALIDA_HALLAZGO = 1;
 export const SALIDA_NO_SUPE_MEDIR = 2;
@@ -43,7 +44,9 @@ const JS = [
   '/dashboard/js/puertaSerie.js',
   '/dashboard/js/settingsView.js',
 ];
-const CSS = ['/tokens.css', '/dashboard/css/styles.css'];
+// SCRUM-1755 · las hojas del índice, con /fonts/inter.css (antes, tokens + styles escritos a mano).
+let HOJAS;
+try { HOJAS = enlacesDelPanel(PUBLIC); } catch (e) { HOJAS = null; console.error(String(e && e.message ? e.message : e)); }
 const ANCHOS = [390, 360];
 
 // Merchant con TODO lo obligatorio puesto. Cada caso vacía lo suyo en el DOM antes de pulsar.
@@ -71,7 +74,7 @@ const CASOS = [
 function paginaHtml() {
   return '<!doctype html><html lang="es"><head><meta charset="utf-8">\n'
     + '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
-    + CSS.map((h) => '<link rel="stylesheet" href="' + h + '">').join('\n')
+    + HOJAS
     + '\n</head><body>\n<div id="vista" class="view-container"></div>\n'
     + '<script>\n'
     + '  window.__merchant = ' + JSON.stringify(MERCHANT) + ';\n'
@@ -102,9 +105,11 @@ function arrancarServidor() {
       return res.end(paginaHtml());
     }
     try {
-      const cuerpo = fs.readFileSync(path.join(PUBLIC, ruta.replace(/^\//, '')), 'utf8');
-      const tipo = ruta.endsWith('.css') ? 'text/css' : ruta.endsWith('.js') ? 'text/javascript' : 'text/plain';
-      res.writeHead(200, { 'content-type': tipo + '; charset=utf-8' });
+      // SCRUM-1755 · en BYTES: leídas como texto, las `.woff2` llegarían rotas y la cara daría `error`.
+      const cuerpo = fs.readFileSync(path.join(PUBLIC, ruta.replace(/^\//, '')));
+      const letra = TIPOS_DE_FUENTE[path.extname(ruta)];
+      const tipo = letra || (ruta.endsWith('.css') ? 'text/css' : ruta.endsWith('.js') ? 'text/javascript' : 'text/plain') + '; charset=utf-8';
+      res.writeHead(200, { 'content-type': tipo });
       res.end(cuerpo);
     } catch { res.writeHead(404); res.end(''); }
   });
@@ -177,6 +182,8 @@ const QUEDAN = new Function(`
 const hallazgos = [];
 const ciegos = [];
 const filas = [];
+const letras = new Set();
+if (!HOJAS) ciegos.push('no supe sacar las hojas de `public/dashboard/index.html`: sin ellas mediría con la letra de reserva.');
 
 const srv = await arrancarServidor();
 let navegador;
@@ -189,6 +196,13 @@ try {
       try {
         await pag.setViewport({ width: ancho, height: 844, isMobile: true, hasTouch: true });
         await pag.goto(`http://127.0.0.1:${PUERTO}/__falta-en-otra-pestana.html`, { waitUntil: 'load' });
+        // LA LETRA, ESPERADA: «cabe» compara el ancho del TEXTO del aviso con su caja. Sin ninguna cara
+        // web cargada el caso es CIEGO: mediría con la letra de reserva de esta máquina (SCRUM-1745c).
+        const fuente = await esperarFuentes(pag);
+        const sinLetra = cegueraDeLaFuente(fuente, etiqueta)
+          || (fuente.cargadas > 0 ? null : `🔴 SIN LETRA WEB en ${etiqueta}: ${fuente.declaradas} caras declaradas y 0 cargadas.`);
+        if (sinLetra) { ciegos.push(sinLetra); continue; }
+        letras.add(decirFuente(fuente));
         const fatal = await pag.evaluate(RENDER);
         if (fatal) { ciegos.push(`${etiqueta} → ${fatal}`); continue; }
         const cargado = await pag.waitForFunction(CARGADO, { timeout: 5000 })
@@ -243,6 +257,7 @@ try {
 
 console.log('');
 console.log('  SCRUM-894 · «GUARDAR CAMBIOS» CON LO QUE FALTA EN OTRA PESTAÑA, EN EL DOM VIVO');
+console.log(`  LETRA: ${[...letras].join(' ‖ ') || '(ningún caso llegó a medir)'}`);
 console.log('  ' + '─'.repeat(100));
 for (const f of filas) {
   const a = f.r.avisos[0];
