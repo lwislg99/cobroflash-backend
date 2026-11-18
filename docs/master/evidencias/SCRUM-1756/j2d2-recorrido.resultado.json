@@ -1,0 +1,116 @@
+{
+ "navegador": {
+  "ok": true,
+  "ruta": "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+  "quien": "Edge (Windows)"
+ },
+ "escenarios": {
+  "B-antes-aplicada": {
+   "sembrado": {
+    "csp": [
+     "script-src-elem"
+    ],
+    "corrio": false
+   },
+   "recibo": {
+    "status": 200,
+    "stars": "",
+    "encendidas": 0,
+    "enviarSinEstrellaNavega": true,
+    "csp": [
+     "script-src-elem"
+    ],
+    "fuera": []
+   },
+   "portal": {
+    "status": 200,
+    "csp": [
+     "script-src-elem",
+     "script-src-elem"
+    ],
+    "desplegado": {
+     "abierto": false,
+     "chevron": "▼"
+    },
+    "formAbierto": false,
+    "exito": false,
+    "solicitudes": [],
+    "fuera": [
+     "NO SE PUDO ENVIAR: Node is either not clickable or not an Element"
+    ]
+   },
+   "portal404": {
+    "status": 404,
+    "csp": [
+     "script-src-elem"
+    ]
+   }
+  },
+  "C-rama-aplicada": {
+   "sembrado": {
+    "csp": [
+     "script-src-elem"
+    ],
+    "corrio": false
+   },
+   "recibo": {
+    "status": 200,
+    "stars": "3",
+    "encendidas": 3,
+    "enviarSinEstrellaNavega": false,
+    "csp": [],
+    "fuera": []
+   },
+   "portal": {
+    "status": 200,
+    "csp": [],
+    "desplegado": {
+     "abierto": true,
+     "chevron": "▲"
+    },
+    "formAbierto": true,
+    "exito": true,
+    "solicitudes": [
+     "/cliente/portal1756/quote-request"
+    ],
+    "fuera": []
+   },
+   "portal404": {
+    "status": 404,
+    "csp": []
+   }
+  },
+  "D-rama-sin": {
+   "sembrado": {
+    "csp": [],
+    "corrio": true
+   },
+   "recibo": {
+    "status": 200,
+    "stars": "3",
+    "encendidas": 3,
+    "enviarSinEstrellaNavega": false,
+    "csp": [],
+    "fuera": []
+   },
+   "portal": {
+    "status": 200,
+    "csp": [],
+    "desplegado": {
+     "abierto": true,
+     "chevron": "▲"
+    },
+    "formAbierto": true,
+    "exito": true,
+    "solicitudes": [
+     "/cliente/portal1756/quote-request"
+    ],
+    "fuera": []
+   },
+   "portal404": {
+    "status": 404,
+    "csp": []
+   }
+  }
+ }
+}

@@ -18,6 +18,7 @@ import { comercioSuprimido } from '../../domain/comercioSuprimido'; // SCRUM-157
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1471
 import { clienteDelDocumento } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-1576
 import { etiquetaEstiloDePago } from './pagoEstilo'; // SCRUM-1756b (style-src 'self')
+import { etiquetaGuionDePago } from './pagoNavegador'; // SCRUM-1756c (script-src 'self')
 
 const router = Router();
 
@@ -365,24 +366,7 @@ router.get('/:token', async (req, res) => {
            <textarea name="comment" maxlength="500" placeholder="Cuéntale cómo fue (solo lo verá el profesional)"></textarea><br/>
            <button type="submit" class="fb-send">Enviar valoración</button>
          </form>
-         <script>
-           (function(){
-             var btns = document.querySelectorAll('.fb-stars button');
-             var input = document.getElementById('fb-stars-input');
-             btns.forEach(function(b){
-               b.addEventListener('click', function(){
-                 var n = Number(b.getAttribute('data-star'));
-                 input.value = String(n);
-                 btns.forEach(function(x){
-                   x.classList.toggle('on', Number(x.getAttribute('data-star')) <= n);
-                 });
-               });
-             });
-             document.getElementById('fb-form').addEventListener('submit', function(ev){
-               if (!input.value) { ev.preventDefault(); btns[4].focus(); }
-             });
-           })();
-         </script>`}
+         ${etiquetaGuionDePago('recibo')}`}
   </div>`
       : '';
 
