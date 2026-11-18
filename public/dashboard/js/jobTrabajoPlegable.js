@@ -57,6 +57,29 @@ const TEXTOS_EL_TRABAJO = {
 // las dos procedencias en un mismo registro.
 const ROTULO_TAREA = 'Qué hay que hacer';
 
+// SCRUM-1670 (S2) · el rótulo de la línea del TIPO DE INTERVENCIÓN (SCRUM-651), aprobado por el
+// orquestador con la delegación de firma (SCRUM-1670 c.22019). NO es un texto nuevo: es el mismo
+// literal que rotula ese campo en el alta (`jobNuevoModal.js`, `tn-tipo`). Fuera de
+// `TEXTOS_EL_TRABAJO` por la misma razón que `ROTULO_TAREA`: otra firma, otro registro.
+// 🔴 NO es `rotuloTipo` («Tipo de trabajo» = `tipoOperacion`, la bandera fiscal): los dos conviven.
+const ROTULO_TIPO_INTERVENCION = 'Tipo de intervención';
+
+/**
+ * Lo que dice la línea del tipo de intervención: el rótulo que manda el SERVIDOR para ese valor
+ * (`/admin/me` → `tiposIntervencion`), o cadena vacía = SIN línea.
+ *
+ * 🔴 Sin valor, o con un valor que el vocabulario recibido no nombra (o sin vocabulario), NO se
+ * pinta nada: ni «Sin especificar» (texto nuevo sin firma) ni el valor de la enum en bruto. El
+ * navegador no tiene lista propia del vocabulario: la recibe (fuente única, SCRUM-651).
+ */
+function rotuloDeTipoIntervencion(valor, vocabulario) {
+  if (typeof valor !== 'string' || !valor) return '';
+  const lista = Array.isArray(vocabulario) ? vocabulario : [];
+  const t = lista.find(function (x) { return x && x.valor === valor; });
+  const r = t && typeof t.rotulo === 'string' ? t.rotulo.trim() : '';
+  return r;
+}
+
 /** «N gastos», N ≥ 2. El singular y el vacío tienen su propio literal. */
 function textoVariosGastos(n) {
   return n + ' gastos';
@@ -175,6 +198,8 @@ function construirBloqueElTrabajo(doc, lineas) {
 if (typeof window !== 'undefined') {
   window.TEXTOS_EL_TRABAJO = TEXTOS_EL_TRABAJO;
   window.ROTULO_TAREA = ROTULO_TAREA;
+  window.ROTULO_TIPO_INTERVENCION = ROTULO_TIPO_INTERVENCION;
+  window.rotuloDeTipoIntervencion = rotuloDeTipoIntervencion;
   window.resumenDeNombre = resumenDeNombre;
   window.resumenDeQuien = resumenDeQuien;
   window.resumenDeGastos = resumenDeGastos;
@@ -183,7 +208,7 @@ if (typeof window !== 'undefined') {
 }
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    TEXTOS_EL_TRABAJO, ROTULO_TAREA, resumenDeNombre, resumenDeQuien, resumenDeGastos,
+    TEXTOS_EL_TRABAJO, ROTULO_TAREA, ROTULO_TIPO_INTERVENCION, rotuloDeTipoIntervencion, resumenDeNombre, resumenDeQuien, resumenDeGastos,
     construirLineaPlegable, construirBloqueElTrabajo,
   };
 }
