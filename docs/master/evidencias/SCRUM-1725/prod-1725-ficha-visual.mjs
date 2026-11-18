@@ -10,7 +10,7 @@
 // Por cada ficha guarda: captura de página entera, desborde horizontal, cajas que se salen del viewport,
 // y la HUELLA de función: el texto visible de la ficha y la lista de botones/enlaces. Esta tanda es FORMA:
 // la huella de «despues» debe ser IDÉNTICA a la de «antes» (control: cifras, rótulos y acciones intactos).
-import { abrir } from 'file:///D:/MILLONARIO/cobroFlash/sondas-s2/comun.mjs';
+import { abrir } from './comun.mjs'; // copia en git de sondas-s2/comun.mjs: abre el contexto con serviceWorkers: 'block' (guard SCRUM-1233g)
 import path from 'node:path';
 import { mkdirSync, writeFileSync } from 'node:fs';
 const [OUT, FASE = 'antes'] = process.argv.slice(2);

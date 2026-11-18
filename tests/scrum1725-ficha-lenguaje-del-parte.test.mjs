@@ -20,7 +20,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { soloEjecutable } from './_guard-texto.mjs';
+import { ejecutableDe } from './_guard-texto.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (r) => readFileSync(path.join(RAIZ, r), 'utf8');
@@ -65,8 +65,9 @@ function partirEnComasDeFuera(cab) {
 }
 
 // El filtro de comentarios es el de la casa (SCRUM-700). En CSS «#» NO es comentario: es un color, y es
-// justo lo que mira ②; con el valor por defecto ese caso se quedaría ciego.
-const sinComentarios = (css) => soloEjecutable(css, { almohadillaEsComentario: false });
+// justo lo que mira ②; con el valor por defecto ese caso se quedaría ciego. Con SUELO (SCRUM-1395): el ancla es la
+// clase de la que cuelga todo el bloque; si el filtro la borrara, ① y ② estarían mirando la nada.
+const sinComentarios = (css) => ejecutableDe(css, { ancla: '.detail-page--trabajo', donde: 'el bloque S2 · SCRUM-1725 de styles.css', almohadillaEsComentario: false });
 
 const colores = (css) => css.match(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/g) || [];
 
