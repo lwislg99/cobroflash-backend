@@ -13,6 +13,12 @@
 
 // SCRUM-11: filtro de cobro persistente entre re-renders (una acción FSM recarga la vista).
 let jobsCobroFilter = 'all';
+// SCRUM-1725i: y el de ESTADO (las pestañas), por el mismo motivo: empezar un trabajo desde la
+// pestaña «Agendado» recarga la vista, y no puede devolver a «Todos» a quien estaba acotando.
+let jobsEstadoFilter = 'all';
+// Los cinco estados del Trabajo, en el orden de su vida. Aquí van solo las CLAVES: la etiqueta de
+// cada pestaña sale de `jobStatusMeta` (api.js), la única copia, que es también la de la píldora.
+const JOBS_ESTADOS_DE_LA_LISTA = ['pendiente_agendar', 'agendado', 'en_curso', 'terminado', 'cerrado'];
 // SCRUM-727b: y el de técnico, por el mismo motivo — asignar recarga la lista, y perder el
 // filtro justo después de asignar sería devolverle al jefe las 19 filas que acababa de acotar.
 let jobsTecnicoFilter = 'all';
@@ -139,21 +145,92 @@ async function renderJobsView(container) {
   if (!veCobro) jobsCobroFilter = 'all';
   pintarCifrasDeLaLista(document.getElementById('jobs-cifras'), jobs, veCobro);
 
-  // SCRUM-11: filtro por estado de cobro (segmentado; reutiliza botones del inventario,
-  // NO crea componente nuevo). Filtra el array ANTES del agrupado → no rompe los grupos.
+  // ══ SCRUM-1725i · LOS FILTROS, COMO EN ALBARANES: DOS EJES, DOS CONTROLES ═══════════════════════
+  //
+  // Orden del fundador (SCRUM-1725 c.22095) y decisiones de c.22098: la lista plana no tenía con qué
+  // filtrar por ESTADO, y las cuatro píldoras de arriba («Todos · N», «Pendiente · N»…) eran del eje
+  // de COBRO, que solo ve el admin. Se espeja `albaranesView.js`, que ya resuelve los dos ejes:
+  //   · el ESTADO del trabajo, en PESTAÑAS con contador (`data-card-tabs`), para todos los roles;
+  //   · el COBRO, en un DESPLEGABLE de la barra (`data-card-toolbar`): es otra pregunta, no una
+  //     pestaña más. Solo para quien pasa `veEstadoDeCobro`, como hasta hoy.
+  // Los tres filtros se cruzan (estado Y cobro Y técnico) y filtran el array ANTES de ordenarlo.
+  // Los contadores son de la lista ENTERA, como los de Albaranes: no bailan al mover otro filtro.
+  //
+  // `paint` rehace la barra y la lista; `pintarFilas`, solo la lista. Las pestañas y el desplegable
+  // de cobro llaman a `pintarFilas`: rehacer la barra les quitaría el foco a media pulsación y, a
+  // 390 px, devolvería la tira de pestañas a su principio, escondiendo la que se acaba de tocar.
+  const pintarFilas = () => {
+    const deEsaPestana = jobsEstadoFilter === 'all' ? jobs : jobs.filter((j) => pestanaDeTrabajo(j) === jobsEstadoFilter);
+    const porCobro = jobsCobroFilter === 'all' ? deEsaPestana : deEsaPestana.filter((j) => j.estadoCobro === jobsCobroFilter);
+    const shown = porCobro.filter((j) => pasaFiltroTecnico(j, jobsTecnicoFilter));
+    // P2 de c.22098: bajo «Todos» los cerrados siguen plegados; la pestaña «Cerrado» los enseña.
+    renderJobRows(list, shown, container, jobs, equipo, jobsEstadoFilter === 'cerrado');
+  };
   const paint = () => {
     const counts = { all: jobs.length, Pendiente: 0, Parcial: 0, Pagado: 0 };
     for (const j of jobs) if (counts[j.estadoCobro] != null) counts[j.estadoCobro]++;
+    const porEstado = new Map(JOBS_ESTADOS_DE_LA_LISTA.map((estado) => [estado, 0]));
+    for (const j of jobs) porEstado.set(pestanaDeTrabajo(j), porEstado.get(pestanaDeTrabajo(j)) + 1);
+    if (jobsEstadoFilter !== 'all' && !porEstado.has(jobsEstadoFilter)) jobsEstadoFilter = 'all';
 
     filterBar.innerHTML = '';
-    (veCobro ? [['all', 'Todos'], ['Pendiente', 'Pendiente'], ['Parcial', 'Parcial'], ['Pagado', 'Pagado']] : []).forEach(([key, label]) => {
-      const b = document.createElement('button');
-      b.className = 'btn-sm ' + (jobsCobroFilter === key ? 'btn-secondary' : 'btn-ghost');
-      b.textContent = `${label} · ${key === 'all' ? counts.all : counts[key]}`;
-      b.setAttribute('aria-pressed', jobsCobroFilter === key ? 'true' : 'false');
-      b.addEventListener('click', () => { jobsCobroFilter = key; paint(); });
-      filterBar.appendChild(b);
-    });
+
+    // ── Eje 1 · el ESTADO, en pestañas ────────────────────────────────────────────────────────
+    // «Todos» es el literal de las listas hermanas; las otras cinco, las etiquetas de la ficha.
+    const pestanas = document.createElement('div');
+    pestanas.className = 'data-card-tabs';
+    filterBar.appendChild(pestanas);
+    const marcarPestanas = () => {
+      for (const b of botones) {
+        const activa = b.dataset.tab === jobsEstadoFilter;
+        b.classList.toggle('active', activa);
+        // Son filtros que se pulsan, no pestañas con panel: quien no ve el subrayado lo oye aquí.
+        b.setAttribute('aria-pressed', activa ? 'true' : 'false');
+        if (activa) pestanaALaVista(pestanas, b);
+      }
+    };
+    const botones = [['all', 'Todos', jobs.length]]
+      .concat(JOBS_ESTADOS_DE_LA_LISTA.map((estado) => [estado, jobStatusMeta(estado).label, porEstado.get(estado)]))
+      .map(([clave, rotulo, cuantos]) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'data-card-tab';
+        b.dataset.tab = clave;
+        b.textContent = rotulo;
+        const cuenta = document.createElement('span');
+        cuenta.className = 'badge badge-slate';
+        cuenta.textContent = String(cuantos);
+        b.appendChild(cuenta);
+        b.addEventListener('click', () => { jobsEstadoFilter = clave; marcarPestanas(); pintarFilas(); });
+        pestanas.appendChild(b);
+        return b;
+      });
+    marcarPestanas();
+
+    // ── La barra · eje 2 (el COBRO) y el técnico ──────────────────────────────────────────────
+    // Solo se cuelga si lleva algo: una franja vacía bajo las pestañas sería un hueco con borde.
+    const barra = document.createElement('div');
+    barra.className = 'data-card-toolbar jobs-barra';
+    let enLaBarra = 0;
+    if (veCobro) {
+      const selCobro = document.createElement('select');
+      selCobro.className = 'input jobs-filtro-cobro';
+      // El nombre del control es el arranque de su primera opción, como «Facturación» en Albaranes.
+      selCobro.setAttribute('aria-label', 'Cobro');
+      // «Cobro: todos» · FIRMADO por el orquestador por delegación del fundador (SCRUM-1656 c.21978)
+      // en SCRUM-1725 c.22098; registrado en `docs/microcopy/`. Las otras tres son las de siempre.
+      for (const [clave, rotulo] of [['all', 'Cobro: todos'], ['Pendiente', 'Pendiente'], ['Parcial', 'Parcial'], ['Pagado', 'Pagado']]) {
+        const o = document.createElement('option');
+        o.value = clave;
+        o.textContent = `${rotulo} (${counts[clave]})`;
+        if (jobsCobroFilter === clave) o.selected = true;
+        selCobro.appendChild(o);
+      }
+      selCobro.value = jobsCobroFilter;
+      selCobro.addEventListener('change', () => { jobsCobroFilter = selCobro.value; pintarFilas(); });
+      barra.appendChild(selCobro);
+      enLaBarra++;
+    }
 
     // ── SCRUM-727b · EL FILTRO POR TÉCNICO ────────────────────────────────────────────────
     //
@@ -237,14 +314,43 @@ async function renderJobsView(container) {
       caja.appendChild(lab);
       caja.appendChild(buscador);
       caja.appendChild(sel);
-      filterBar.appendChild(caja);
+      // SCRUM-1725i · el filtro de técnico entra en la barra, tal cual: mismo nodo, mismo comportamiento.
+      barra.appendChild(caja);
+      enLaBarra++;
     }
+    if (enLaBarra) filterBar.appendChild(barra);
 
-    const porCobro = jobsCobroFilter === 'all' ? jobs : jobs.filter((j) => j.estadoCobro === jobsCobroFilter);
-    const shown = porCobro.filter((j) => pasaFiltroTecnico(j, jobsTecnicoFilter));
-    renderJobRows(list, shown, container, jobs, equipo);
+    pintarFilas();
   };
   paint();
+}
+
+/**
+ * SCRUM-1725i · en qué pestaña cae un Trabajo: la que lleva la MISMA etiqueta que su píldora.
+ *
+ * No se compara `j.status` a pelo: `jobStatusMeta` manda un estado que no conoce a «Sin agendar», y
+ * la pestaña tiene que decir lo mismo que la fila. Con la regla en un solo sitio, las cinco pestañas
+ * suman siempre lo que dice «Todos», y ningún Trabajo se queda sin pestaña.
+ */
+function pestanaDeTrabajo(j) {
+  const etiqueta = jobStatusMeta(j && j.status).label;
+  return JOBS_ESTADOS_DE_LA_LISTA.find((estado) => jobStatusMeta(estado).label === etiqueta) || JOBS_ESTADOS_DE_LA_LISTA[0];
+}
+
+/**
+ * SCRUM-1725i · trae la pestaña activa a la vista, SOLO en horizontal.
+ *
+ * A 390 px la tira de pestañas desplaza (seis no caben). Albaranes usa `scrollIntoView`, que vale al
+ * pulsar; aquí además hay que recolocarla cuando la barra se rehace (elegir técnico, o una acción que
+ * recarga la vista con la pestaña «Cerrado» puesta), y `scrollIntoView` movería también la PÁGINA,
+ * sacando de debajo del dedo la fila que se acababa de tocar. Se mueve la tira y nada más.
+ */
+function pestanaALaVista(tira, boton) {
+  if (typeof boton.getBoundingClientRect !== 'function' || typeof tira.getBoundingClientRect !== 'function') return;
+  const t = tira.getBoundingClientRect();
+  const b = boton.getBoundingClientRect();
+  if (b.left < t.left) tira.scrollLeft -= t.left - b.left;
+  else if (b.right > t.right) tira.scrollLeft += b.right - t.right;
 }
 
 // Agrupado de LISTA (spec: lista simple por fecha). Extraído (SCRUM-11) para reutilizarlo
@@ -644,7 +750,7 @@ function pasaFiltroTecnico(j, filtro) {
   return (Array.isArray(j.asignados) ? j.asignados : []).some((a) => a && String(a.id) === String(filtro));
 }
 
-function renderJobRows(list, jobs, container, todos, equipo) {
+function renderJobRows(list, jobs, container, todos, equipo, cerradosALaVista = false) {
   list.innerHTML = '';
 
   // 🔴 CONTROL NEGATIVO DEL FILTRO, escrito en el propio camino: si el filtro no encuentra nada,
@@ -733,7 +839,11 @@ function renderJobRows(list, jobs, container, todos, equipo) {
 
   const tbody = document.createElement('tbody');
   vivos.forEach((j) => tbody.appendChild(jobRow(j, container, equipo)));
-  if (cerrados.length) {
+  // SCRUM-1725i (P2 de c.22098) · quien pulsa la pestaña «Cerrado» ya ha pedido los cerrados: se
+  // pintan directos. Detrás de «Ver N cerrados» le costarían dos pulsaciones para ver una lista.
+  if (cerrados.length && cerradosALaVista) {
+    cerrados.forEach((j) => tbody.appendChild(jobRow(j, container, equipo)));
+  } else if (cerrados.length) {
     const tr = document.createElement('tr');
     tr.className = 'jobs-grupo-abrir';
     const td = document.createElement('td');

@@ -187,3 +187,50 @@ Después, en local: los siete ficheros que tocan esto (1185, 719, 428, 816, 1725
 
 **`guard:lista-trabajos` (navegador, NO obligatorio) sale ROJO con esta rama, y NO se cura aquí.** Dice «el clic en la fila NO abrió el Trabajo». Medido en local a 1280 con el banco del propio guard: la columna «Estado» estrecha la celda del cliente a 249 px y su centro (397, 390) cae sobre el desplegable de técnicos (de x=287 a 409, 44 px de alto), que por diseño no navega (`data-fila-no-navega`). El clic en cualquier otro punto de la fila sigue abriendo el Trabajo, pero el centro de la celda del cliente ya no: es un defecto real de la plana, pequeño. Se cura en la rama siguiente (SCRUM-1725h), que rehace justo esa geometría (desplegable sin caja, fila de un renglón); arreglarlo dos veces el mismo día era trabajo tirado. Queda dicho al orquestador.
 
+
+## Filtros: pestañas de estado y desplegable de cobro (S4 · 18-nov · SCRUM-1725i)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1725/c1725i-lista.mjs`
+
+**Por qué.** Orden del fundador sobre la lista plana (SCRUM-1725 c.22095: «ni elegante ni clara ni profesional»). Decisiones del orquestador en c.22098 y reparto en dos PR en c.22103. Éste es el PR-① (filtros). El lavado (tarjeta única, renglones, P3, P4, clic en fila) es el PR-② y aquí no se toca.
+
+**Qué cambia** (`jobsView.js`, bloque `S4 · SCRUM-1725i` de `styles.css`). Es el patrón de Albaranes, con sus mismas piezas (`data-card-tabs`, `data-card-tab`, `badge-slate`, `data-card-toolbar`):
+- ESTADO en pestañas con contador, para todos los roles: «Todos» + las cinco etiquetas de `jobStatusMeta`. Un trabajo cae en la pestaña que lleva la misma etiqueta que su píldora (`pestanaDeTrabajo`), así que las cinco suman siempre «Todos».
+- COBRO en un desplegable de la barra, solo para quien pasa `veEstadoDeCobro`: «Cobro: todos (N)» (literal firmado en c.22098; `docs/microcopy/2026-11-18-SCRUM-1725-cobro-todos.md`) y «Pendiente/Parcial/Pagado (N)». Las cuatro píldoras desaparecen.
+- El filtro de técnico entra en la misma barra: mismo nodo, mismo comportamiento. El buscador «Técnico [ ]» no se toca.
+- Los tres filtros se cruzan. Los contadores son de la lista entera, como en Albaranes.
+- Cerrados (P2): bajo «Todos» siguen plegados tras «Ver N cerrados»; la pestaña «Cerrado» los pinta directos.
+- Las pestañas y el desplegable de cobro repintan solo las filas (`pintarFilas`): no pierden el foco, y a 390 la tira no vuelve a su principio. `pestanaALaVista` mueve la tira solo en horizontal.
+- Hoja: en escritorio la caja de filtros es la cabeza de la tarjeta de la lista (0 px entre las dos); en móvil va en su propia tarjeta. Las tres franjas comparten vertical izquierda (medido a 1280: 299/293/287 px antes de alinear; 287 después).
+
+**Pendiente de confirmar por el orquestador:** `aria-label="Cobro"` en el desplegable (no se ve; lo oye el lector de pantalla). Es el arranque del literal firmado, como «Facturación» en Albaranes.
+
+**Tests que cambian de exigencia (PIDEN autorización nominal antes del push; a esta hora NO la tienen):**
+- `tests/scrum1725-lista-operario-sin-cobro.test.mjs` L56-60: `filtrosCobro` contaba `<button>` «Pendiente · N» y pasa a contar también `<option>` «Pendiente (N)»; se añade `selectoresDeCobro`. L77-79 (nuevo): quien no ve el cobro, 0 desplegables y sin «Cobro: todos». L101-102 (nuevo): el admin, 1 desplegable. Las exigencias de siempre (0 para el operario, 3 para el admin) no cambian de número.
+- `scripts/guard-lista-trabajos-917.mjs` A.2: L162-171 (lee las opciones del desplegable en vez de `#jobs-filter > button`), L183-189 (espera «Cobro: todos (N)», «Pendiente (N)»… y 0 píldoras), L218-240 (ELIGE «Pendiente» en el desplegable en vez de pulsar la píldora; exige lo mismo: filas pendientes, control que lo dice, cifra quieta). A.4 es nuevo, L191-196 y L242-273 (pestañas en cuentas, y pulsadas).
+- Tests nuevos, sin cambio de exigencia: «SCRUM-1725i ①», «②» y «③» en el test de 1725.
+
+**Rojo primero** (tests nuevos, vista sin tocar): `filtros-rojo-primero.tap.txt`, 7 casos, 4 caídos (el control positivo del admin y los tres nuevos). `filtros-guard917-rojo.err.txt`: 3 hallazgos y 2 ciegos de 51, todos en A.2/A.4. Después: 7 de 7, y el guard 56 de 56 (`filtros-guard917-verde.txt`).
+
+**Medido en local** (`c1725i-sonda-local.mjs`, banco de listas, 12 trabajos, admin y técnico a 1280 y 390; `sonda-local.txt`): desborde 0; pestañas 52 px; controles de la barra 44 px; subrayado de la activa 2 px; a 1280 las seis pestañas caben y la caja y la lista se tocan; a 390 la tira pide 684 px en 364 y desplaza, y «Cerrado» pulsada queda entera a la vista.
+
+**Antes/después en yaqu.app** (`c1725i-lista.mjs`, cuenta QA, solo lectura; el después sirve `jobsView.js` y `styles.css` del árbol sobre producción). Capturas `antes-filtros-*` y `despues-filtros-*`:
+
+| pasada | filas bajo «Todos» antes → después | tarjetas solo-antes / solo-después | orden | pestañas (Todos/Sin agendar/Agendado/En curso/Terminado/Cerrado) | cobro | desborde | <44 px antes → después |
+|---|---|---|---|---|---|---|---|
+| admin 1280 | 9 → 9 | 0 / 0 | idéntico | 11/4/1/2/2/2 | «Cobro: todos (11)» + 3 | 0 | 10 → 10 |
+| admin 390 | 9 → 9 | 0 / 0 | idéntico | 11/4/1/2/2/2 | «Cobro: todos (11)» + 3 | 0 | 10 → 10 |
+| operario 1280 | 3 → 3 | 0 / 0 | idéntico | 3/1/0/2/0/0 | no lo tiene | 0 | 1 → 1 |
+| operario 390 | 3 → 3 | 0 / 0 | idéntico | 3/1/0/2/0/0 | no lo tiene | 0 | 1 → 1 |
+
+Las tarjetas se comparan como CONJUNTOS de líneas, con el formato de `c1725g-lista.mjs`. En el después cada pestaña se pulsa: enseña tantas filas como dice su contador, todas de su estado, la pulsada queda entera en la tira, «Cerrado» no trae «Ver N cerrados», las vacías dicen «No hay trabajos con ese filtro.» y al volver a «Todos» la lista es la de entrada. La página crece 57 px a 1280 y 76 px a 390 (la caja de filtros pasa de un renglón a dos franjas).
+
+**Guards de navegador, medidos con esta rama:**
+- `guard:lista-trabajos`: ROJO PREEXISTENTE, misma firma que en `main` («el clic en la fila NO abrió el Trabajo»). Se cura en el PR-②. No se arregla aquí.
+- `guard:escalera-por-estado`: ROJO con la firma de `main` («la lista propone «Agendar» y el detalle (ninguna)»). El lado LISTA sigue leyendo: las pestañas no tocan `tr.jobs-fila` ni `.jobs-acciones`. El lado detalle lo re-ancla S2 en `scrum-1725h-escalera-por-identidad`.
+
+**Lo que NO queda hecho en este tramo:**
+- La suite completa local estaba corriendo al escribir esto; su resultado va en la entrega, no aquí.
+- Los tres casos nuevos no llevan aún su mutación en `MUTACIONES_QUE_ME_TUMBAN`: no se afirma ninguna.
+- Los controles de la barra van a 12,5 px (los del técnico ya lo estaban; el de cobro se iguala). Subirlos a los 13,5 px de Albaranes es ropa del PR-②.
+- Un error mío: crucé los 115k de contexto sin avisar y lo medí a 287.926, ya pasado el umbral del traspaso (280k). Leer capturas PNG pesa mucho más de lo que calculé: se mide DESPUÉS de cada imagen, no al final.
