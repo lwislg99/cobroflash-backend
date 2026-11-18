@@ -159,6 +159,16 @@ catálogo de `scrum864c`. Retirarlas solo exige ver que tumban y borrar el guion
 
 ### Lo que NO está
 
-- La suite entera no se ha corrido (orden del encargo: RAM justa). Solo los guards de la lista y el
-  tramo de la suite que contiene los dos tests tocados.
+- La suite entera no se ha corrido (orden del encargo: RAM justa). Solo los guards de la lista y los
+  dos tramos de la suite que contienen los tests tocados, sobre `cee71881c` con `dist/` de `tsc --noCheck`
+  (no toco `src/`):
+  · guards 1387, 745, 757, 1321, 1415, 812, 1294, 267, 273, 854, 237, 976 + `scrum1392`: **103/103 en 13
+    ficheros** (TAP a fichero) · `meta-guard-mutaciones.mjs --solo-censo`: 316 declarantes, 1.296
+    declaraciones, salida 0 (no muta: el meta-guard no admite limitarse a un test, y sus mutaciones de los
+    dos tests tocados se corrieron con su propio `aplicarUna`, arriba).
+  · tramo 4/15 (`scrum1392`): 115 ficheros · 1.111 tests · **2 fail**, los dos en
+    `tests/scrum1328-skips-con-motivo-en-el-tap.test.mjs` (EPERM al abrir `C:\Users\Javier`: su línea 99
+    pasa la ruta del TAP sin comillas y aquí `TMP` lleva un espacio). Del entorno: el mismo fichero, con
+    `TMP` sin espacios, 5/5. Mismo patrón que `scrum1298b` en 1765a. No es de mi carril y no lo toco.
+  · tramo 14/15 (`scrum812`): 115 ficheros · 988 tests · 0 fail.
 - 864, 864c y 933 no se retiran: no son de J6 por literal.
