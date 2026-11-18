@@ -17,6 +17,7 @@ import { transferenciaDisponible } from '../../domain/transferenciaDisponible'; 
 import { comercioSuprimido } from '../../domain/comercioSuprimido'; // SCRUM-1573b
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1471
 import { clienteDelDocumento } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-1576
+import { etiquetaEstiloDePago } from './pagoEstilo'; // SCRUM-1756b (style-src 'self')
 
 const router = Router();
 
@@ -241,16 +242,16 @@ router.get('/:token', async (req, res) => {
 
   const simulateBlock =
     config.NODE_ENV !== 'production'
-      ? `<details style="margin-top:1rem"><summary>🔧 Simulación (solo dev)</summary>
-         <form method="post" action="${BASE_URL}/dev/sim/pay/${ch.id}" style="margin-top:.5rem">
-           <button style="background:#2563eb;color:#fff;padding:.4rem .8rem;border-radius:.4rem;border:none;cursor:pointer">Simular pago SCTinst</button>
+      ? `<details class="recibo-dev-simulacion"><summary>🔧 Simulación (solo dev)</summary>
+         <form method="post" action="${BASE_URL}/dev/sim/pay/${ch.id}" class="recibo-dev-formulario">
+           <button class="recibo-dev-boton-pago">Simular pago SCTinst</button>
          </form>
-         <div style="display:flex;gap:.5rem;margin-top:.5rem">
+         <div class="recibo-dev-fila">
            <form method="post" action="${BASE_URL}/dev/sim/fail/${ch.id}">
-             <button style="background:#dc2626;color:#fff;padding:.35rem .7rem;border-radius:.4rem;border:none;cursor:pointer">Simular fallo</button>
+             <button class="recibo-dev-boton-fallo">Simular fallo</button>
            </form>
            <form method="post" action="${BASE_URL}/dev/sim/expire/${ch.id}">
-             <button style="background:#6b7280;color:#fff;padding:.35rem .7rem;border-radius:.4rem;border:none;cursor:pointer">Simular expiración</button>
+             <button class="recibo-dev-boton-caducidad">Simular expiración</button>
            </form>
          </div>
        </details>`
@@ -345,23 +346,7 @@ router.get('/:token', async (req, res) => {
   const feedbackBlock =
     ch.status === 'paid'
       ? `
-  <style>
-    .fb{border-top:1px solid var(--border);margin-top:1.1rem;padding-top:1rem;text-align:center}
-    .fb-title{font-weight:700;color:var(--ink);font-size:.98rem;margin-bottom:.55rem}
-    .fb-stars{display:flex;justify-content:center;gap:.35rem;font-size:1.9rem;margin-bottom:.6rem}
-    .fb-stars button{background:none;border:none;cursor:pointer;font-size:inherit;line-height:1;filter:grayscale(1);opacity:.45;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:0;transition:filter .12s,opacity .12s,transform .12s} /* A9.4 AB6: target 44px */
-    .fb-stars button.on{filter:none;opacity:1;transform:scale(1.08)}
-    .fb textarea{width:100%;max-width:420px;border:1px solid var(--border);border-radius:12px;padding:.6rem .8rem;font:inherit;font-size:.88rem;color:var(--ink);resize:vertical;min-height:56px}
-    .fb-send{margin-top:.6rem;background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:999px;padding:.55rem 1.2rem;font:inherit;font-weight:600;cursor:pointer}
-    .fb-send:hover{background:var(--slate-50)}
-    .fb-google{margin-top:.9rem}
-    .fb-hint{font-size:.82rem;color:var(--muted);margin-top:.5rem}
-    .fb-or{font-size:.82rem;color:var(--muted);margin:1.15rem 0 .55rem;border-top:1px solid var(--border);padding-top:.9rem}
-    .fb-gstars{display:flex;justify-content:center;gap:.15rem;margin:.5rem 0 .35rem}
-    .fb-gstars a{font-size:2.35rem;line-height:1;text-decoration:none;color:#f5b301;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;transition:transform .12s,color .12s}
-    .fb-gstars a:hover,.fb-gstars a:focus{transform:scale(1.18);color:#e0a800;outline:none}
-    @media (prefers-reduced-motion: reduce){.fb-stars button{transition:none;transform:none}}
-  </style>
+  ${etiquetaEstiloDePago('recibo-valoracion')}
   <div class="fb">
     ${fbThanks
       ? `<div class="fb-title">🙌 ¡Gracias por tu valoración!</div>
@@ -410,9 +395,9 @@ router.get('/:token', async (req, res) => {
   // La lista de eventos SE QUEDA: no dependía de esa ruta y sigue siendo útil en desarrollo.
   const devInternals =
     config.NODE_ENV !== 'production'
-      ? `<hr style="margin:1.25rem 0;border:none;border-top:1px solid var(--border)"/>
+      ? `<hr class="recibo-dev-separador"/>
          <small>Dev · eventos del cobro</small>
-         <ul style="margin-top:.4rem">${eventsList || '<li>—</li>'}</ul>`
+         <ul class="recibo-dev-eventos">${eventsList || '<li>—</li>'}</ul>`
       : '';
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -423,54 +408,7 @@ router.get('/:token', async (req, res) => {
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>${esc(title)}</title>
 <link rel="stylesheet" href="/fonts/inter.css"/>
-<style>
-  :root{--brand:#16a34a;--brand-tint:#ecfdf5;--ink:#0f1c17;--body:#3f4a45;--muted:#6b756f;--bg:#f6f7f5;--surface:#fff;--border:#e7e9e5;--slate-50:#f7f8f6}
-  body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-feature-settings:"cv11","ss01";margin:0;padding:2rem 1rem;background:var(--bg);color:var(--body);-webkit-font-smoothing:antialiased}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.5rem;max-width:720px;margin:0 auto;box-shadow:0 1px 2px rgba(16,24,40,.04),0 12px 32px -12px rgba(16,24,40,.10)}
-  h2{color:var(--ink);letter-spacing:-.01em}
-  .row{display:flex;gap:1rem;flex-wrap:wrap}
-  .row > div{flex:1 1 240px}
-  .row b{color:var(--ink);font-variant-numeric:tabular-nums}
-  small{color:var(--muted)}
-  ul{padding-left:1.1rem;color:var(--body)}
-  a{color:#15803d} /* A9.4 AB6: 4,55:1 — var(--brand) fallaba AA en texto normal */
-  .pay-btn{display:inline-block;padding:.7rem 1.1rem;border-radius:12px;text-decoration:none;font-weight:700;font-size:.92rem;text-align:center}
-  .pay-btn-primary{background:var(--brand);color:#fff}
-  .pay-btn-secondary{background:var(--surface);color:var(--ink);border:1px solid var(--border)}
-  /* Banners de estado/aviso — tokens DESIGN.md (semánticos), sin hex inline sueltos */
-  .note{padding:.6rem .8rem;border-radius:12px;margin:.75rem 0;font-size:.9rem;line-height:1.45;border:1px solid}
-  .note b{font-weight:700}
-  .note-ok{background:var(--brand-tint);border-color:#bbf7d0;color:#166534}
-  .note-warn{background:#fff7ed;border-color:#fed7aa;color:#b45309}
-  .note-danger{background:#fef2f2;border-color:#fecaca;color:#991b1b}
-  .note-muted{background:var(--slate-50);border-color:var(--border);color:var(--body)}
-  .note-info{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
-  .doc-link{margin:.5rem 0}
-  .email-form{margin-top:.5rem}
-  .btn-email{background:var(--brand);color:#fff;padding:.5rem 1rem;border-radius:999px;border:none;cursor:pointer;font-weight:600;font-family:inherit}
-  .btn-email:hover{background:#15803d}
-  .biz{text-align:center;font-size:.88rem;font-weight:600;color:var(--ink);margin-bottom:.25rem}
-  .status-hero{text-align:center;padding:.5rem 0 1.1rem;border-bottom:1px solid var(--border);margin-bottom:1rem}
-  .status-icon{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;margin:.4rem auto .6rem}
-  .status-icon.paid{background:#ecfdf5;color:#15803d}
-  /* A6.2: celebración post-pago — check que "aterriza" + onda expansiva, CSS puro */
-  .status-icon.celebrate{position:relative;animation:rcheck .5s cubic-bezier(.34,1.56,.64,1) both}
-  .status-icon.celebrate::after{content:"";position:absolute;inset:-4px;border-radius:50%;
-    border:2px solid #22c55e;opacity:0;animation:rring .9s ease-out .25s}
-  @keyframes rcheck{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
-  @keyframes rring{0%{transform:scale(.8);opacity:.8}100%{transform:scale(1.9);opacity:0}}
-  @media (prefers-reduced-motion: reduce){.status-icon.celebrate{animation:none}.status-icon.celebrate::after{display:none}}
-  .status-icon.pending{background:#fffbeb;color:#b45309}
-  .status-icon.failed{background:#fef2f2;color:#dc2626}
-  .status-icon.expired{background:var(--slate-50);color:var(--muted)}
-  .status-title{font-size:1.05rem;font-weight:700;color:var(--ink)}
-  .status-amount{font-size:2rem;font-weight:800;color:var(--ink);letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:.35rem}
-  .status-sub{font-size:.85rem;color:var(--muted);margin-top:.35rem}
-  .status-meta{font-size:.82rem;color:var(--muted);font-weight:600;margin-top:.5rem;font-variant-numeric:tabular-nums}
-  .pay-stack{display:flex;flex-direction:column;gap:.5rem;margin:1rem 0}
-  /* AB6: anillo de Foco accesible (DESIGN.md) en todo elemento enfocado por teclado */
-  :focus-visible{outline:none;box-shadow:0 0 0 3px rgba(34,197,94,.30)}
-</style>
+${etiquetaEstiloDePago('recibo')}
 </head>
 <body>
 <div class="card">
@@ -480,7 +418,7 @@ router.get('/:token', async (req, res) => {
   ${invBlock}
   ${mailBanner}
   ${feedbackBlock}
-  <div style="margin-top:1rem;text-align:center"><small>Cobro #${ch.id} · Cliente: ${esc(nombreDelCliente ?? '—')}</small></div>
+  <div class="recibo-pie"><small>Cobro #${ch.id} · Cliente: ${esc(nombreDelCliente ?? '—')}</small></div>
   ${simulateBlock}
   ${devInternals}
 </div>

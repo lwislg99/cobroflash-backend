@@ -1,0 +1,50 @@
+// SCRUM-1756b · sonda: cuenta `<style>` y `style=` en el HTML SERVIDO del recibo y del portal, con la
+// `app` de `dist/app.js` del árbol que se le pase (prisma doblado; ni base ni red). Sirve de control
+// positivo sobre main (tiene que dar lo de la tabla de SCRUM-1756) y de medida sobre la rama (0 y 0).
+// Uso: node contar-html.mjs <raíz del árbol con dist/>
+import http from 'node:http';
+import path from 'node:path';
+import { createRequire } from 'node:module';
+
+const RAIZ = path.resolve(process.argv[2] ?? '.');
+const require_ = createRequire(path.join(RAIZ, 'package.json'));
+const m = { id: 42, name: 'Fontanería Ruiz', legalName: 'Fontanería Ruiz SL', email: null, country: 'ES', logoUrl: null,
+  timezone: null, iban: 'ES9121000418450200051332', clabe: null, bizumPhone: '600111222', whatsappPhone: '600111222',
+  connectStatus: 'none', stripeAccountId: null, flags: { BIZUM_MANUAL_ENABLED: true }, googleReviewUrl: null, llevaLibrosPorSii: true };
+const c = { id: 3, merchantId: 42, name: 'Ana', email: null, phone: null, portalToken: 'p' };
+let cobro = null; let cli = null;
+const estados = ['accepted', 'paid', 'sent', 'pending', 'rejected', 'expired', 'draft', 'archivado'];
+const t = {
+  charge: { findUnique: async () => cobro, findFirst: async () => cobro, update: async () => cobro },
+  customer: { findUnique: async () => cli, findFirst: async () => cli },
+  invoice: { findFirst: async () => null, findUnique: async () => null, findMany: async () => [] },
+  quote: { findFirst: async () => null, findUnique: async () => ({ decisionToken: 'd' }),
+    findMany: async () => estados.map((status, i) => ({ id: 100 + i, quoteNumber: 100 + i, status, currency: 'EUR', total: 121,
+      createdAt: new Date('2026-11-10T10:00:00Z'), decisionToken: `d${i}`, discount: null, lines: [{ concept: 'x', qty: 1, price: 100, tax: 21 }] })) },
+  event: { findFirst: async () => null, create: async () => ({ id: 1 }) },
+};
+const doble = new Proxy(t, { get: (o, k) => o[k] ?? new Proxy({}, { get: () => async () => null }) });
+const RP = require_.resolve('./dist/core/db/prisma.js');
+require_.cache[RP] = { id: RP, filename: RP, loaded: true, exports: { prisma: doble } };
+const { app } = require_('./dist/app.js');
+const srv = http.createServer(app);
+await new Promise((r) => srv.listen(0, '127.0.0.1', r));
+const pedir = (ruta) => new Promise((ok, mal) => {
+  const q = http.request({ host: '127.0.0.1', port: srv.address().port, path: ruta, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8'); r.on('data', (x) => { d += x; }); r.on('end', () => ok({ s: r.statusCode, d }));
+  }); q.on('error', mal); q.end();
+});
+const contar = (h) => ({ style: (h.match(/<style\b[^<>]*>/gi) || []).length,
+  attr: (h.match(/<[a-zA-Z][^<>]*>/g) || []).filter((x) => /\sstyle\s*=/i.test(x)).length,
+  script: (h.match(/<script\b[^<>]*>/gi) || []).filter((x) => !/\ssrc\s*=/i.test(x)).length });
+const fila = (n, r) => console.log(`${n.padEnd(22)} ${r.s}  <style>=${contar(r.d).style}  style==${contar(r.d).attr}  <script> en línea=${contar(r.d).script}  ${r.d.length} B`);
+// Control sembrado: el contador TIENE que ver 1 y 1.
+fila('sembrado', { s: 0, d: '<style>p{}</style><b style="x">' });
+const ch = (status) => ({ id: 7, receiptToken: 'r', status, amount: 250, currency: 'EUR', concept: 'x', reference: 'R', method: 'bizum',
+  payMethods: null, intentId: null, createdAt: new Date(), paidAt: null, merchantId: 42, merchant: m, customer: c, events: [], reconciliations: [] });
+cobro = ch('paid'); fila('recibo pagado', await pedir('/recibo/r'));
+cobro = ch('pending'); fila('recibo pendiente', await pedir('/recibo/r'));
+cli = { ...c, merchant: m }; fila('portal', await pedir('/cliente/p'));
+cli = null; fila('portal 404', await pedir('/cliente/x'));
+srv.close();
+process.exit(0);
