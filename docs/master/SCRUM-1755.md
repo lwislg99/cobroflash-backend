@@ -1,5 +1,8 @@
 # SCRUM-1755 · Los bancos del panel miden con la letra del panel, y scrum1603 los censa
 
+**Medido contra:** `origin/main` = `d69ccd51362c2861389ebc632a843e971330b406` · 2026-11-18T08:21:27Z
+A9: comprobación → `tests/scrum1603-el-banco-mide-con-la-fuente-del-panel.test.mjs`
+
 ## SCRUM-1755 (18-nov-2026, S3) · censo + tanda 1 (semáforo y avisos)
 
 **Origen.** SCRUM-1745c: `guard-hojas-del-trabajo-44` medía el ancho de un texto con la letra de reserva de cada
