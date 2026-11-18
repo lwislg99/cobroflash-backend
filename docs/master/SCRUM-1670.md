@@ -44,3 +44,9 @@ parecido. Pintar `tipoIntervencion` en la ficha y en la tarjeta, y decidir cómo
 - Proyección por rol: test sin banco — el técnico ve el tipo y sigue sin ver notas ni dinero.
 - **En yaqu.app:** pendiente del merge (crear un trabajo con tipo en la cuenta QA y leer `tipoIntervencion` en la
   respuesta del POST y en `GET /admin/jobs/:id`).
+
+### 18-nov-2026 · el rojo de #3199 era PROPIO
+- CI de `f22ba6847` (medido por S2): 2 ✖ en `scrum419-ci-declara-lo-que-no-corre` (l.510 y l.630), «se declaran 175 y hay 176». El gateado nuevo de este ticket no estaba en el inventario.
+- Arreglo: `scrum1670-tipo-intervencion-viaja.test.mjs: 1` declarado en `GATEADOS_DECLARADOS`, con su motivo. El total se deriva con `.reduce()`: no hay cifra a mano. Merge de `origin/main` (iba 85 por detrás).
+- Verde: `scrum419` 8/8 (TAP a fichero fuera del árbol, 0 `not ok`).
+- ⚠️ `tsc --noEmit` NO verde EN ESTE ÁRBOL: 10 errores, todos `InvoicePayment`/`FiscalPlazoEstado`. Es el cliente de Prisma compartido, que va por detrás del schema de main (el guard: causa A+B). Este árbol cuelga del `node_modules` compartido, así que no regenero (trampas-del-entorno §10). No toca este diff; lo juzga el check de CI.
