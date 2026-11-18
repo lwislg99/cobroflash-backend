@@ -190,9 +190,13 @@ test('SCRUM-1436d · 🔴 J1 · el paquete de disputa que se entrega al banco ll
   const bueno = formatMoneyEs(TOTAL, 'EUR');
   assert.ok(filaDeImporte(bueno).test(r.html), '🔴 el importe del documento de cobro no sale en el formato de la casa');
   assert.ok(r.html.includes(`#12 · ${bueno}</td>`), '🔴 el importe del presupuesto no sale en el formato de la casa');
-  const sinEstilo = r.html.replace(/<style[^>]*>[\s\S]*?<\/style>/, '');
-  assert.notEqual(sinEstilo.length, r.html.length, '🔴 CIEGO: no se ha quitado la hoja de estilo del paquete');
-  assert.ok(!CRUDO.test(sinEstilo), `🔴 queda un importe en crudo en el paquete: «${(sinEstilo.match(CRUDO) || [])[0]}»`);
+  // SCRUM-1756e · el CSS del paquete ya no va en la página: va en `/admin/invoices/css/disputa.css`.
+  // Antes se quitaba el `<style>` (sus cifras no son importes) y el control exigía haberlo quitado;
+  // ahora no hay nada que quitar, así que el control exige que NO haya `<style>` y que la hoja vaya
+  // enlazada, y el importe en crudo se busca en el HTML ENTERO, sin recorte.
+  assert.ok(!/<style\b/i.test(r.html), '🔴 CIEGO: el paquete vuelve a llevar CSS en línea y sus cifras entrarían en la búsqueda');
+  assert.ok(r.html.includes('href="/admin/invoices/css/disputa.css"'), '🔴 CIEGO: el paquete no enlaza su hoja');
+  assert.ok(!CRUDO.test(r.html), `🔴 queda un importe en crudo en el paquete: «${(r.html.match(CRUDO) || [])[0]}»`);
 });
 
 test('SCRUM-1436d · J1 · fuera del euro sale el código de la moneda, no un € impostado', async () => {
