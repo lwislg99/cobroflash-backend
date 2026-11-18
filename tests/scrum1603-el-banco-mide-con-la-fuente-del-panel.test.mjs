@@ -15,7 +15,11 @@
 //   ③ el «antes» que materializa `arbolDePartida` lleva las letras (si no, antes y después miden con
 //      fuentes distintas y todo guard que los compara dice «HA CAMBIADO»);
 //   ④ el guard táctil y el censo montan con esas hojas y esperan la fuente en CADA navegación;
-//   ⑤ el veredicto sobre el recuento de caras: una fuente rota o sin cargar es un CIEGO.
+//   ⑤ el veredicto sobre el recuento de caras: una fuente rota o sin cargar es un CIEGO;
+//   ⑥ (SCRUM-1755) EL CENSO: todo script de `scripts/` que monta el panel en un navegador usa las hojas
+//      de la casa, o está DECLARADO aquí con su motivo. Hasta el 18-nov ① a ④ nombraban tres bancos a
+//      mano, y `guard-hojas-del-trabajo-44` nació después, no estaba en la lista y midió el ancho de un
+//      texto con la letra de reserva (SCRUM-1745c: verde en Windows, rojo en el runner, 2 px de verdad).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -87,6 +91,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: '  if (f.hojasSinCargar.length) return',
     a: '  if (false) return',
     cae: 'SCRUM-1603 ⑤ ·',
+  },
+  {
+    // SCRUM-1755 · el caso que lo parió: el guard de SCRUM-1745 sin su CIEGO de letra.
+    fichero: 'scripts/guard-hojas-del-trabajo-44.mjs',
+    de: "const sinLetra = cegueraDeLaFuente(fuente, 'la página del banco') ||",
+    a: "const sinLetra = (fuente, null) ||",
+    cae: 'SCRUM-1603 ⑥ ·',
   },
 ];
 
@@ -170,10 +181,14 @@ function navegacionesSinEspera(rel) {
   const sf = ts.createSourceFile(rel, fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
   const esFuncion = (n) => ts.isArrowFunction(n) || ts.isFunctionDeclaration(n) || ts.isFunctionExpression(n) || ts.isMethodDeclaration(n);
   /** Las llamadas a un identificador dentro de `raiz`, con su posición. */
+  // SCRUM-1755: `raiz` puede ser el MÓDULO (un guard que navega con `await` de nivel superior, como
+  // `guard-caja-semaforo`). Entonces sólo cuentan las llamadas de ese nivel: la espera que vive dentro
+  // de una función que nadie llama ahí no espera nada.
   const llamadas = (raiz) => {
     const out = [];
     const ver = (n) => {
       if (ts.isCallExpression(n) && ts.isIdentifier(n.expression)) out.push({ nombre: n.expression.text, pos: n.getStart() });
+      if (ts.isSourceFile(raiz) && n !== raiz && esFuncion(n)) return;
       ts.forEachChild(n, ver);
     };
     ver(raiz);
@@ -205,6 +220,7 @@ function navegacionesSinEspera(rel) {
       gotos.push(n);
       let f = n.parent;
       while (f && !esFuncion(f)) f = f.parent;
+      if (!f) f = sf; // navegación de nivel superior: su ámbito es el módulo (ver `llamadas`)
       // Antes del SIGUIENTE `goto` de la misma función: si no, la espera de una navegación posterior
       // taparía a una anterior que no espera (la landing navega dos veces seguidas).
       const fin = n.getEnd();
@@ -244,4 +260,151 @@ test('SCRUM-1603 ⑤ · el veredicto de la fuente: hoja sin cargar, rota, sin ca
   assert.match(cegueraDeLaFuente(undefined), /NO SUPE MIRAR/);
   assert.match(cegueraDeLaFuente({ declaradas: 35, cargadas: 5, fallidas: 0, familias: ['Inter'] }), /NO SUPE MIRAR/,
     'un recuento sin la lista de hojas es de otra versión del instrumento: no se le da por bueno');
+});
+
+// ── ⑥ EL CENSO DE LOS BANCOS (SCRUM-1755) ─────────────────────────────────────────────────────────
+// La población: todo `.mjs` de `scripts/` (con sus carpetas) que abre un NAVEGADOR y monta el panel,
+// es decir, que en su CÓDIGO (sin comentarios: `soloCodigo`) nombra `styles.css` o llama a una de las
+// piezas de la casa que lo montan. Cada uno sale en una de tres clases:
+//   · `casa`        → saca las hojas del índice (`hojasDelPanel`/`enlacesDelPanel`), espera las caras
+//                     (`esperarFuentes`) y da CIEGO sin letra (`cegueraDeLaFuente`); y cada navegación
+//                     suya espera la letra antes de la siguiente (lo de ④, ahora para todos);
+//   · `casa-lista`  → monta con `servirListas` de `_banco-lista`, cuya página espera la letra y apunta
+//                     su fallo en `__errores` (②);
+//   · `a-mano`      → enlaza sus hojas escritas a mano. Sólo vale DECLARADO abajo.
+
+/** Bancos que enlazan sus hojas a mano y NO miden texto: su veredicto no depende de la letra. */
+const SOLO_GEOMETRIA = {
+  'scripts/guard-aviso-bizum.mjs': 'mira si el aviso está, si cuelga de su campo (DOM) y si mide 0 px de alto',
+  'scripts/guard-modo-en-ajustes.mjs': 'mira si la frase se ve: alto > 0 y visible',
+  'scripts/guard-foto-del-gasto.mjs': 'mide la <img> de la foto (naturalWidth, alto > 0), no un texto',
+  'scripts/guard-nif-del-gasto.mjs': 'texto, foco y checkVisibility; ninguna medida de caja',
+  'scripts/guard-vias-de-cobro.mjs': 'qué fila y qué aviso se pintan; ninguna medida de caja',
+  'scripts/guard-completar-lleva-al-campo.mjs': 'adónde lleva cada acción (pestaña, foco); ninguna medida de caja',
+  'scripts/guard-marcadores-en-pantalla.mjs': 'qué texto sale en pantalla; ninguna medida de caja',
+};
+
+/**
+ * 🔴 DEUDA (SCRUM-1755): bancos a mano que SÍ miden texto, o una caja que pone el texto. Miden hoy con
+ * la letra de reserva de cada máquina. Esta lista SÓLO BAJA: cada uno sale de aquí el día que pasa a la
+ * casa (patrón de SCRUM-1745c), y el test cae si uno de la lista ya está arreglado y sigue en ella.
+ */
+const DEUDA = {
+  'scripts/guard-pad-de-firma-cabe.mjs': 'la tarjeta con 20 líneas cabe en la ventana; alto de los botones',
+};
+/** El techo de la deuda: el 18-nov-2026 eran 7. Sólo se baja. */
+const TECHO_DEUDA = 1;
+
+/** Primitivas que miden lo que pone un TEXTO: un banco de SOLO_GEOMETRIA que use una ya no lo es. */
+const MIDE_TEXTO = /\b(scrollWidth|scrollHeight|clientWidth|clientHeight|lineHeight|getClientRects|measureText|createRange)\b/;
+
+/** Los instrumentos de la casa: montan el panel, pero son lo que se vigila en ① a ⑤, no un banco. */
+const INSTRUMENTOS = new Set(['scripts/_hojas-del-panel.mjs', 'scripts/_banco-lista.mjs']);
+
+/** Todos los `.mjs` de `scripts/`, con sus carpetas, como rutas `scripts/…` con barras. */
+function scriptsDelArbol() {
+  const out = [];
+  const ver = (dir) => {
+    for (const e of fs.readdirSync(path.join(RAIZ, dir), { withFileTypes: true })) {
+      const rel = `${dir}/${e.name}`;
+      if (e.isDirectory()) { if (e.name !== 'node_modules') ver(rel); } else if (e.name.endsWith('.mjs')) out.push(rel);
+    }
+  };
+  ver('scripts');
+  return out.sort();
+}
+
+/**
+ * La clase de un fuente, o `null` si no es un banco del panel. Se exporta para poder probar el
+ * clasificador con un fuente que no existe (la mutación de «banco nuevo sin letra»).
+ */
+export function clasificarBanco(rel, fuente) {
+  if (INSTRUMENTOS.has(rel)) return null;
+  const codigo = soloCodigo(fuente, path.basename(rel));
+  const navegador = /from\s+['"](puppeteer|puppeteer-core|playwright|playwright-core)['"]/.test(codigo)
+    || /\b(lanzarNavegador|abrirNavegador)\s*\(/.test(codigo);
+  const deLaCasa = /\b(hojasDelPanel|enlacesDelPanel)\s*\(/.test(codigo);
+  const lista = /\bservirListas\s*\(/.test(codigo);
+  if (!navegador || !(/styles\.css/.test(codigo) || deLaCasa || lista)) return null;
+  if (deLaCasa && /\besperarFuentes\s*\(/.test(codigo) && /\bcegueraDeLaFuente\s*\(/.test(codigo)) return 'casa';
+  if (lista) return 'casa-lista';
+  return 'a-mano';
+}
+
+/** Lo que el censo tiene que decir de cada banco. Devuelve la lista de problemas (vacía = verde). */
+export function veredictoDelCenso(bancos, { geometria = SOLO_GEOMETRIA, deuda = DEUDA, techo = TECHO_DEUDA } = {}) {
+  const mal = [];
+  const porRuta = new Map(bancos.map((b) => [b.rel, b]));
+  for (const b of bancos) {
+    if (b.clase !== 'a-mano') continue;
+    if (deuda[b.rel]) continue;
+    if (!geometria[b.rel]) {
+      mal.push(`${b.rel} monta el panel con sus hojas escritas a mano y no está declarado: o usa las de la casa `
+        + '(`_hojas-del-panel`, patrón de SCRUM-1745c) o se declara en SOLO_GEOMETRIA con el motivo de que su veredicto no dependa de la letra.');
+    } else if (MIDE_TEXTO.test(b.codigo)) {
+      mal.push(`${b.rel} está en SOLO_GEOMETRIA y usa «${b.codigo.match(MIDE_TEXTO)[1]}»: ya mide lo que pone un texto, y con la letra de reserva.`);
+    }
+  }
+  for (const [rel] of Object.entries({ ...geometria, ...deuda })) {
+    const b = porRuta.get(rel);
+    if (!b) mal.push(`${rel} está declarado y el censo no lo ve como banco: se borró, se renombró o ya no monta el panel. Se quita de la lista.`);
+    else if (b.clase !== 'a-mano') mal.push(`${rel} ya mide con la letra de la casa (${b.clase}) y sigue declarado: se quita de la lista (la deuda sólo baja).`);
+  }
+  for (const rel of Object.keys(geometria)) if (deuda[rel]) mal.push(`${rel} está a la vez en SOLO_GEOMETRIA y en DEUDA.`);
+  if (Object.keys(deuda).length > techo) mal.push(`la DEUDA tiene ${Object.keys(deuda).length} bancos y el techo es ${techo}: sólo baja.`);
+  return mal;
+}
+
+function censarBancos() {
+  return scriptsDelArbol().map((rel) => {
+    const fuente = fs.readFileSync(path.join(RAIZ, rel), 'utf8');
+    return { rel, clase: clasificarBanco(rel, fuente), codigo: soloCodigo(fuente, path.basename(rel)) };
+  }).filter((b) => b.clase);
+}
+
+test('SCRUM-1603 ⑥ · el censo: todo banco del panel mide con la letra de la casa, o está declarado con su motivo', () => {
+  const bancos = censarBancos();
+  // POBLACIÓN, y su SUELO: los dos de ④ y el de SCRUM-1745c son de la casa HOY. Si el censo no los ve,
+  // el clasificador está ciego y su verde no dice nada.
+  const deLaCasa = bancos.filter((b) => b.clase === 'casa').map((b) => b.rel);
+  for (const rel of ['scripts/guard-objetivo-tactil.mjs', 'scripts/censo-objetivo-tactil-panel.mjs', 'scripts/guard-hojas-del-trabajo-44.mjs']) {
+    assert.ok(deLaCasa.includes(rel), `🔴 CIEGO: el censo no ve ${rel} como banco de la casa; ve ${JSON.stringify(deLaCasa)}.`);
+  }
+  assert.ok(bancos.some((b) => b.clase === 'casa-lista'), '🔴 CIEGO: el censo no ve ningún banco montado con `servirListas`.');
+  const cuenta = (c) => bancos.filter((b) => b.clase === c).length;
+  console.log(`   censo de bancos del panel: ${bancos.length} (casa ${cuenta('casa')} · casa-lista ${cuenta('casa-lista')} · a mano ${cuenta('a-mano')}: `
+    + `${Object.keys(SOLO_GEOMETRIA).length} solo geometría + ${Object.keys(DEUDA).length} de DEUDA)`);
+  assert.deepEqual(veredictoDelCenso(bancos), []);
+  // Y lo de ④, para cada banco de la casa que espera la letra él mismo: ninguna navegación sin su espera.
+  for (const b of bancos.filter((x) => x.clase === 'casa')) {
+    const { gotos, sinEspera } = navegacionesSinEspera(b.rel);
+    assert.ok(gotos > 0, `🔴 CIEGO: ${b.rel} es banco y no encuentro ningún \`.goto(\`.`);
+    assert.deepEqual(sinEspera, [], `🔴 ${b.rel}: navegaciones que no esperan la letra antes de la siguiente.`);
+  }
+});
+
+test('SCRUM-1603 ⑥ · mutación: un banco NUEVO sin letra cae, y uno de la DEUDA ya arreglado también', () => {
+  const bancos = censarBancos();
+  // Un guard nuevo, como nació el de SCRUM-1745: navegador y hojas escritas a mano.
+  const nuevo = "import puppeteer from 'puppeteer-core';\nconst CSS = ['/tokens.css', '/dashboard/css/styles.css'];\n";
+  const rel = 'scripts/guard-banco-nuevo-sin-letra.mjs';
+  assert.equal(clasificarBanco(rel, nuevo), 'a-mano');
+  const conNuevo = [...bancos, { rel, clase: 'a-mano', codigo: nuevo }];
+  assert.ok(veredictoDelCenso(conNuevo).some((m) => m.startsWith(rel)), '🔴 un banco nuevo sin letra no hace caer el censo.');
+  // El mismo, con las piezas de la casa: ya no es deuda de nadie.
+  const arreglado = "import puppeteer from 'puppeteer-core';\nimport { enlacesDelPanel, esperarFuentes, cegueraDeLaFuente } from './_hojas-del-panel.mjs';\n"
+    + 'const H = enlacesDelPanel(P); await esperarFuentes(p); cegueraDeLaFuente(f);\n';
+  assert.equal(clasificarBanco(rel, arreglado), 'casa');
+  // Sin el CIEGO no es de la casa: esperar la letra y no decir nada si no llega es medir con la de reserva.
+  assert.equal(clasificarBanco(rel, arreglado.replace('cegueraDeLaFuente(f)', 'f')), 'a-mano');
+  // Uno de la DEUDA que pasa a la casa y sigue en la lista: cae.
+  const deDeuda = Object.keys(DEUDA)[0];
+  const sanado = bancos.map((b) => (b.rel === deDeuda ? { ...b, clase: 'casa' } : b));
+  assert.ok(veredictoDelCenso(sanado).some((m) => m.startsWith(deDeuda) && /ya mide con la letra/.test(m)));
+  // Uno de SOLO_GEOMETRIA que empieza a medir texto: cae.
+  const geo = Object.keys(SOLO_GEOMETRIA)[0];
+  const midiendo = bancos.map((b) => (b.rel === geo ? { ...b, codigo: b.codigo + '\nel.scrollWidth;' } : b));
+  assert.ok(veredictoDelCenso(midiendo).some((m) => m.startsWith(geo) && /scrollWidth/.test(m)));
+  // Y la deuda no sube.
+  assert.ok(veredictoDelCenso(bancos, { techo: TECHO_DEUDA - 1 }).some((m) => /sólo baja/.test(m)));
 });

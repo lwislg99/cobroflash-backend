@@ -38,6 +38,7 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
+import { enlacesDelPanel, TIPOS_DE_FUENTE, esperarFuentes, cegueraDeLaFuente, decirFuente } from './_hojas-del-panel.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
@@ -46,8 +47,14 @@ const PUBLIC = path.join(RAIZ, 'public');
 /** Los anchos que pidió el fundador. 929 = portátil con sidebar · 390 = iPhone estándar. */
 const ANCHOS = [929, 390];
 
-/** Lo que la página necesita del árbol. */
-const CSS = ['/tokens.css', '/dashboard/css/styles.css'];
+/**
+ * SCRUM-1755 · LAS HOJAS DEL ÍNDICE, CON SU LETRA. Aquí se enlazaban `tokens.css` y `styles.css`
+ * escritos a mano, sin `/fonts/inter.css`: el número de líneas del motivo se medía con la letra de
+ * reserva de cada máquina (Segoe UI en Windows, otra en el runner), no con la que ve quien usa el
+ * panel. Es la familia de SCRUM-1603 y SCRUM-1745c, y se cura con su instrumento.
+ */
+let HOJAS;
+try { HOJAS = enlacesDelPanel(PUBLIC); } catch (e) { HOJAS = null; console.error(String(e && e.message ? e.message : e)); }
 
 /** El candidato del fundador, pendiente de esta medida. 34 caracteres. */
 const CANDIDATO = 'No hemos podido comprobar el plazo.';
@@ -55,7 +62,8 @@ const CANDIDATO = 'No hemos podido comprobar el plazo.';
 /** Un texto de referencia que YA está aprobado y vive en esta misma card (SCRUM-171b). */
 const REFERENCIA = '🗓️ Toca facturarle: lo tienes pactado cada quince días.';
 
-const TIPOS = { '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/html' };
+// Las letras son binarias: se sirven en bytes y con su tipo (SCRUM-1745c).
+const TIPOS = { '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/html', ...TIPOS_DE_FUENTE };
 
 /**
  * La página de medida. Reproduce el shell donde importa para la caja: `.layout` + `.sidebar`
@@ -68,7 +76,7 @@ function paginaDeMedida() {
   const linea = 'margin-top:8px;font-size:13px;color:var(--neutral-700)';
   return `<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-${CSS.map((c) => `<link rel="stylesheet" href="${c}">`).join('\n')}
+${HOJAS}
 </head><body>
 <div class="layout">
   <aside class="sidebar"><div class="sidebar-logo"><div class="sidebar-logo-text">YaQu</div></div></aside>
@@ -137,6 +145,7 @@ function noSupeMirar(porque) {
   process.exit(2);
 }
 
+if (!HOJAS) noSupeMirar('no supe sacar las hojas de `public/dashboard/index.html`: sin ellas mediría con la letra de reserva.');
 const { s, servidos } = servidor();
 
 // SCRUM-648 · MODO SERVIR: levanta la MISMA página y no mide. Existe porque en este entorno el
@@ -151,12 +160,20 @@ const puerto = await levantarServidor(s, 0, '127.0.0.1');
 const base = `http://127.0.0.1:${puerto}`;
 const navegador = await lanzarNavegador(puppeteer, {});
 const resultados = [];
+const letras = new Set();
 
 try {
   const page = await navegador.newPage();
   for (const ancho of ANCHOS) {
     await page.setViewport({ width: ancho, height: 900 });
     await page.goto(`${base}/__caja-semaforo.html`, { waitUntil: 'networkidle0' });
+    // LA LETRA, ESPERADA (`font-display: swap` pinta primero con la de reserva). Sin ninguna cara web
+    // cargada no se da un número: sería el de la letra de esta máquina.
+    const fuente = await esperarFuentes(page);
+    const sinLetra = cegueraDeLaFuente(fuente, 'la página del banco')
+      || (fuente.cargadas > 0 ? null : `🔴 SIN LETRA WEB en la página del banco: ${fuente.declaradas} caras declaradas y 0 cargadas.`);
+    if (sinLetra) noSupeMirar(sinLetra);
+    letras.add(decirFuente(fuente));
 
     const m = await page.evaluate(() => {
       const caja = (id) => {
@@ -222,6 +239,7 @@ try {
   }
 
   console.log('\n════ VEREDICTO ════');
+  console.log(`   LETRA: ${[...letras].join(' ‖ ')}`);
   for (const { ancho, m } of resultados) {
     console.log(`   ${String(ancho).padStart(4)} px → el candidato de ${m.motivo.chars} caracteres ocupa `
       + `${m.motivo.lineas} línea(s) en ${m.motivo.width.toFixed(0)} px de ancho útil.`);
