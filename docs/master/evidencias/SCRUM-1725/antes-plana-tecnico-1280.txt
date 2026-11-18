@@ -1,0 +1,112 @@
+URL https://yaqu.app/dashboard/#jobs
+ROL pedido=tecnico · en la página=tecnico · recorte copiado de origin/main @ 4e2aaab3a55ed4779d9b6272751767940de39f38 (trabajoParaElRol + albaranParaElRol, #3153 dentro)
+--- CUENTAS
+{"porCobrar":0,"cobrado":0,"teFalta":0,"pendiente":0,"parcial":0,"pagado":0,"factura":0,"euros":1,"ceroEuros":0,"deImporte":0,"notasInternas":0,"queHayQueHacer":0,"basura":0}
+--- TEXTO
+Trabajos
+Operario
+P
+PruebaQA
+Trabajos
+Nuevo trabajo
+N
+PARA HOY
+2 trabajos
+Cliente de pruebas QA · Marta Prieto (PILOTO-1 QA)
+Técnico
+Todos los técnicos
+Operario QA
+Sin asignar
+CLIENTE	IMPORTE	FECHA	ACCIONES
+🔨 En curso · 2
+
+Cliente de pruebas QA
+Operario QA
+	
+1,21 €
+	mié, 11 nov, 16:54	
+Abrir parte
+Ver detalle
++ Nuevo albarán
+⋯
+
+
+Marta Prieto (PILOTO-1 QA)
+Reparación / Asistencia técnica
+(prueba) Recorrido H6 del 16-nov: cambiar el termostato de la caldera y purgar los radiadores del salón. Segundo párrafo: la llave de paso está en el patio. Referenciadelfabricantesinespaciosparaverquenosesaledelatarj
+Operario QA
+Calle Mayor 14, 3º B, 28801 Alcalá de Henares
+	
+Sin importe
+no hay presupuesto aceptado
+	lun, 16 nov, 18:30	
+Abrir parte
+Ver detalle
+Emitir albarán
+⋯
+
+⏳ Sin agendar · 1
+
+luis
+Reparación / Asistencia técnica
+calle alerce
+	
+Sin importe
+no hay presupuesto aceptado
+		
+Ver detalle
+Agendar
+⋯
+--- MODAL
+
+--- PULSABLES
+button[submit] «Inicio» 228x34 @10,85
+button[submit] «Solicitudes» 228x34 @10,121
+button[submit] «Trabajos» 228x34 @10,157
+button[button] «Presupuestos» 228x34 @10,227
+button[submit] «Albaranes» 228x34 @10,263
+button[submit] «Clientes» 228x34 @10,332
+button[submit] «Productos» 228x34 @10,368
+button[submit] «Salir» 39x22 @187,751
+input[text] «Buscar… (o pulsa /)» 340x32 @529,14
+button[submit] «Nuevo trabajo N» 196x44 @1060,84
+input[search] «Técnico» 132x44 @965,265
+select[select-one] «Todos los técnicos Operario QA Sin asignar» 153x44 @1103,265
+button[submit] «Abrir parte» 89x44 @923,423
+button[submit] «Ver detalle» 89x44 @1021,423
+button[submit] «+ Nuevo albarán» 125x44 @923,475
+button[button] «⋯» 44x44 @1056,475
+button[submit] «Abrir parte» 89x44 @923,555
+button[submit] «Ver detalle» 89x44 @1021,555
+button[submit] «Emitir albarán» 109x44 @923,607
+button[button] «⋯» 44x44 @1040,607
+button[submit] «Ver detalle» 89x44 @923,740
+button[submit] «Agendar» 78x44 @1020,740
+button[button] «⋯» 44x44 @1106,740
+button[submit] «?» 48x48 @1212,732
+--- DESBORDES
+--- <44px
+input «» 340x32
+--- ESCRITURAS
+POST /admin/entorno → 200
+--- RECORTES
+GET /admin/jobs
+--- LOG
+[warning] Service Worker registration blocked by Playwright
+[http 403] GET /admin/team
+[error] Failed to load resource: the server responded with a status of 403 (Forbidden)
+--- NOTAS
+SIN LOCAL_DIR: se mide lo que sirve producción
+PAGINA @1280: ancho 1280 · ancho de scroll 1280 · desborde 0 · alto 885
+ESTRUCTURA @1280: columnas [Cliente | Importe | Fecha | Acciones] · 2 tbody · 2 filas de cabecera de grupo · 3 filas de trabajo · pie «»
+CABECERA-DE-GRUPO «🔨 En curso · 2»
+CABECERA-DE-GRUPO «⏳ Sin agendar · 1»
+CIFRA PARA HOY 2 trabajos Cliente de pruebas QA · Marta Prieto (PILOTO-1 QA)
+FILTROS 
+TARJETA Cliente de pruebas QA | tipo= | tarea= | trabajo= | tec=Operario QA | dir= | importe=1,21 € | fecha=mié, 11 nov, 16:54 → ■Abrir parte · □Ver detalle · □+ Nuevo albarán · □⋯
+TARJETA Marta Prieto (PILOTO-1 QA) | tipo=Reparación / Asistencia técnica | tarea=(prueba) Recorrido H6 del 16-nov: cambiar el termostato de la caldera y purgar los radiadores del salón. Segundo párrafo: la llave de paso está en el patio. Referenciadelfabricantesinespaciosparaverquenosesaledelatarj | trabajo= | tec=Operario QA | dir=Calle Mayor 14, 3º B, 28801 Alcalá de Henares | importe=Sin importeno hay presupuesto aceptado | fecha=lun, 16 nov, 18:30 → ■Abrir parte · □Ver detalle · □Emitir albarán · □⋯
+TARJETA luis | tipo=Reparación / Asistencia técnica | tarea= | trabajo= | tec= | dir=calle alerce | importe=Sin importeno hay presupuesto aceptado | fecha= → □Ver detalle · □Agendar · □⋯
+ORDEN 01 Cliente de pruebas QA · mié, 11 nov, 16:54 · grupo=«🔨 En curso» · píldora=«» · alto 121
+ORDEN 02 Marta Prieto (PILOTO-1 QA) · lun, 16 nov, 18:30 · grupo=«🔨 En curso» · píldora=«» · alto 144
+ORDEN 03 luis · sin fecha · grupo=«⏳ Sin agendar» · píldora=«» · alto 84
+TESTIGO @1280: 3 filas · con píldora 0 · con tipo 2 · con tarea 1 · con dirección 2 · rellenas 2 · filas con DOS rellenas 0 · rellena NO primera 0 · botones de fila <44 px 0

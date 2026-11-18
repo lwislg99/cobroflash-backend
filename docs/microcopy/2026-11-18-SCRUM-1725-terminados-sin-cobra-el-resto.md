@@ -37,3 +37,10 @@ su mano.
 
 `tests/scrum1725-lista-operario-sin-cobro.test.mjs`: con rol `tecnico` y con un rol desconocido la
 cabecera es «✅ Terminados · N», a secas; con `admin`, de control, «✅ Terminados — cobra el resto · N · …».
+
+## SUPERADO el mismo 18-nov-2026 (SCRUM-1725g)
+
+El fundador pidió la lista PLANA (SCRUM-1725 comentario 22073) y la cabecera «Terminados» dejó de
+pintarse para todos los roles (P4, comentario 22076). Este texto ya no sale en pantalla y el test de
+«Lo vigila» exige ahora que no haya cabecera de grupo (cambio autorizado en el comentario 22077). El
+registro se conserva; la firma de «Estado» tiene el suyo, en esta misma carpeta y con la misma fecha.

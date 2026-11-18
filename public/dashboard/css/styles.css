@@ -4888,7 +4888,15 @@ textarea.parte-linea-desc {
      ⑤ en la tarjeta EN CURSO los cuatro botones caían en dos filas sin orden.
    Tokens de `tokens.css` (DESIGN.md), ninguno nuevo. Todo acotado a `.jobs-pantalla`, que solo
    existe en `jobsView.js`, o a `.table--trabajos`: las listas hermanas no se mueven. */
-.jobs-pantalla { --jobs-lavado: 1725e; }   /* testigo: el banco comprueba que ESTA hoja es la que pinta */
+/* ── S4 · SCRUM-1725g · Y LA LISTA, PLANA (veredicto del fundador, SCRUM-1725 c.22073) ──────────
+   «un listado normal como los que tenemos en otros sitios». Los rótulos de grupo desaparecen del
+   DOM (`jobsView.js`, `renderJobRows`): queda UN `tbody`, una fila por trabajo y el estado como
+   píldora en la fila, igual que Presupuestos y Albaranes (medido en yaqu.app el 18-nov-2026:
+   1 `tbody`, 0 cabeceras y píldora en el 100 % de sus filas). De este bloque se van, con ellos, las
+   reglas que vestían `tbody.jobs-grupo` y `tr.jobs-grupo-titulo|salvedad`; lo demás del lavado de
+   cara (cabecera, cifras, filtros, la tarjeta del trabajo, «Sin importe» en su renglón, la franja de
+   acciones) NO cambia, solo deja de colgar de `tbody.jobs-grupo`. */
+.jobs-pantalla { --jobs-lavado: 1725g; }   /* testigo: el banco comprueba que ESTA hoja es la que pinta */
 
 /* ① La cabecera: el título deja de ser una tarjeta y comparte renglón con «Nuevo trabajo». La
    rejilla es de `.jobs-pantalla`; el DOM no cambia (título, botón, cifras, filtros, lista). */
@@ -4903,13 +4911,17 @@ textarea.parte-linea-desc {
 .jobs-pantalla .jobs-cifra { padding: 16px; }   /* el mismo relleno que la tarjeta del trabajo: los textos caen en la misma vertical */
 .jobs-pantalla .jobs-filtros { margin-bottom: 16px; }
 
-/* Escritorio: el rótulo de grupo es un TÍTULO (Tinta, 700, sin mayúsculas). En mayúsculas de 12 px
-   era la misma voz que la cabecera de la tabla que tiene encima, y no se distinguían. */
+/* SCRUM-1725g · Escritorio: la columna «Estado» no parte su píldora («SIN AGENDAR» en dos renglones
+   haría la fila más alta que la de Presupuestos), y «Ver N cerrados» cierra la tabla sin raya debajo. */
 @media (min-width: 641px) {
-  .table--trabajos .jobs-grupo-titulo td {
-    padding: 20px 14px 6px; font-size: .9375rem; line-height: 1.3;
-    color: var(--ink); text-transform: none; letter-spacing: -.01em;
-  }
+  .table--trabajos td.cell-status { white-space: nowrap; }
+  .table--trabajos tr.jobs-grupo-abrir td { padding: 10px 14px 12px; }
+}
+/* Con la columna nueva, a 1280 la celda de acciones se quedó en 276 px y el trío más corriente
+   («Ver detalle» · «Enviar para firmar» · «⋯», 282 px) partía en dos renglones; antes cabía en uno.
+   Se le asegura su ancho donde la tabla tiene de dónde sacarlo. Por debajo, parte como siempre. */
+@media (min-width: 1200px) {
+  .table--trabajos td.cell-actions { min-width: 296px; }
 }
 
 @media (max-width: 640px) {
@@ -4931,34 +4943,27 @@ textarea.parte-linea-desc {
   /* ② La lista deja de ser una tarjeta: las tarjetas son los TRABAJOS. */
   .jobs-pantalla .jobs-card { background: none; border: 0; border-radius: 0; box-shadow: none; overflow: visible; }
 
-  /* Cada grupo, una rejilla de dos columnas: el rótulo a la izquierda y, si lo hay, «Ver N
-     cerrados» a su derecha, en el MISMO renglón (③). Todo lo demás ocupa el ancho entero. */
-  .table--trabajos tbody.jobs-grupo { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; align-items: center; }
-  .table--trabajos tbody.jobs-grupo + tbody.jobs-grupo { margin-top: 24px; }
-  .table--trabajos tbody.jobs-grupo > tr { grid-column: 1 / -1; }
-  .table--trabajos tbody.jobs-grupo > tr.jobs-grupo-titulo,
-  .table--trabajos tbody.jobs-grupo > tr.jobs-grupo-salvedad,
-  .table--trabajos tbody.jobs-grupo > tr.jobs-grupo-abrir {
-    display: block; margin: 0 0 10px; padding: 0;
+  /* SCRUM-1725g · «Ver N cerrados», la última fila: un botón suelto al pie de la pila, no una
+     tarjeta más (la rejilla compartida viste de tarjeta a todo `tbody tr`). */
+  .table--trabajos tbody > tr.jobs-grupo-abrir {
+    display: block; margin: 2px 0 0; padding: 0;
     background: none; border: 0; border-radius: 0; box-shadow: none;
   }
-  .table--trabajos tbody.jobs-grupo > tr.jobs-grupo-titulo { grid-column: 1; grid-row: 1; }
-  .table--trabajos tbody.jobs-grupo > tr.jobs-grupo-abrir { grid-column: 2; grid-row: 1; }
-  .table--trabajos tbody.jobs-grupo > tr.jobs-grupo-salvedad { margin-top: -4px; }
-  /* El rótulo de grupo: un título de sección, no una etiqueta en mayúsculas dentro de una caja. */
-  .table--trabajos .jobs-grupo-titulo td {
-    padding: 0; font-size: 1.0625rem; font-weight: 700; line-height: 1.3;
-    color: var(--ink); text-transform: none; letter-spacing: -.01em;
-  }
-  .table--trabajos .jobs-grupo-salvedad td { padding: 0; font-size: 12.5px; line-height: 1.4; }
   .table--trabajos .jobs-grupo-abrir td { padding: 0; }
 
-  /* La tarjeta del trabajo: la de la casa (DESIGN.md §5: borde 1 px + Reposo, radio lg). */
-  .table--trabajos tbody.jobs-grupo > tr.jobs-fila {
+  /* La tarjeta del trabajo: la de la casa (DESIGN.md §5: borde 1 px + Reposo, radio lg).
+     SCRUM-1725g · gana el área `status` que SCRUM-816 le quitó: el estado vuelve a la fila y va
+     donde lo llevan Presupuestos y Albaranes, a la derecha del renglón de la fecha. */
+  .table--trabajos tbody > tr.jobs-fila {
+    grid-template-areas:
+      "client  amount"
+      "date    status"
+      "actions actions";
     gap: 4px 12px; margin: 0 0 10px; padding: 16px;
     border-radius: var(--r-lg); box-shadow: var(--shadow-sm);
   }
-  .table--trabajos tbody.jobs-grupo > tr.jobs-fila:last-child { margin-bottom: 0; }
+  .table--trabajos tbody > tr.jobs-fila:last-child { margin-bottom: 0; }
+  .table--trabajos tr.jobs-fila td.cell-status { align-self: center; margin-top: 4px; }
   /* Jerarquía dentro de la tarjeta: quién (Title) › qué hay que hacer › el resto, en gris. */
   .table--trabajos .jobs-fila-cliente { font-size: 1rem; line-height: 1.3; }
   .table--trabajos .jobs-fila-tarea { margin-top: 4px; font-size: 14px; line-height: 1.4; }
@@ -4969,11 +4974,11 @@ textarea.parte-linea-desc {
   /* ④ SIN IMPORTE: el aviso baja de la esquina a un renglón propio, bajo los datos del trabajo.
      Las mismas dos frases, en el mismo orden; el cliente recupera el ancho entero de la tarjeta.
      Con importe, la cifra sigue arriba a la derecha (Regla del Importe). */
-  .table--trabajos tbody.jobs-grupo > tr.jobs-fila:has(.jobs-importe-sin) {
+  .table--trabajos tbody > tr.jobs-fila:has(.jobs-importe-sin) {
     grid-template-areas:
       "client  client"
       "amount  amount"
-      "date    date"
+      "date    status"
       "actions actions";
   }
   .table--trabajos tr.jobs-fila:has(.jobs-importe-sin) td.cell-amount {

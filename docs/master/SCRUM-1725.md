@@ -114,3 +114,76 @@ Capturas y medidas: `docs/master/evidencias/SCRUM-1725/{antes,despues}-lista-{ad
 - Hallazgos (a) y (b) de c.21809 (acciones que el técnico no debería ver; filtro «Técnico» pintado al operario) NO entran: cambian flujo. Confirmados hoy en la captura del operario: el filtro «Técnico» sigue pintado, y en sus tarjetas salen «+ Nuevo albarán», «Emitir albarán» y «Agendar».
 - Escritorio: la tabla se queda tabla; solo cambian la cabecera y el rótulo de grupo.
 - Pendiente: el «me gusta» del fundador sobre las capturas, y la regla 42 tras el merge (las mismas pasadas, sin `LOCAL_DIR`).
+
+## Lista plana (S4 · 18-nov · SCRUM-1725g)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1725/c1725g-lista.mjs`
+Mutaciones: catálogo → `tests/scrum1725-lista-operario-sin-cobro.test.mjs`
+
+**Por qué.** El fundador vio la lista de 1725e y dio veredicto (SCRUM-1725 c.22073): «no me acabna de gustar es muy lioso la lsita […] me molaria un listado normal como los que tenemos en otros sitios». La vuelta anterior era de ropa; ésta es de estructura.
+
+**PASO 1, medido en yaqu.app** (cuenta QA, 1280 y 390; `g1-patron-listas.mjs`, salida en `plana-paso1-patron-listas.txt`):
+
+| lista | `tbody` | filas de cabecera en el cuerpo | filas con píldora de estado |
+|---|---|---|---|
+| Presupuestos | 1 | 0 | 10 de 10 |
+| Albaranes | 1 | 0 | 12 de 12 |
+| Trabajos (antes) | 5 | 7 | 0 de 9 |
+
+**Qué cambia** (`jobsView.js`, bloque `S4 · SCRUM-1725g` de `styles.css`):
+- Un `tbody`, una fila por trabajo, ninguna cabecera de grupo. Columna «Estado» con la píldora de `jobStatusMeta` (la de la ficha).
+- El ORDEN es el de siempre sin sus rótulos: en curso → hoy → esta semana → sin agendar → más adelante → terminados. `grupoDeTrabajo` sigue siendo la única regla (ordena, cuenta «Para hoy», decide el «▶ Empezar» relleno).
+- Los cerrados siguen plegados: «Ver N cerrados» es la última fila.
+- Móvil: la tarjeta gana el área `status` (a la derecha del renglón de la fecha, como en Presupuestos y Albaranes). Escritorio ≥1200 px: la celda de acciones se asegura 296 px, porque con la columna nueva el trío «Ver detalle · Enviar para firmar · ⋯» partía en dos renglones.
+
+**Firmas y autorizaciones** (orquestador, por la delegación de SCRUM-1656 c.21978):
+- c.22076 · P1 `<th>` «Estado» (registrado en `docs/microcopy/2026-11-18-SCRUM-1725-estado-en-la-lista-de-trabajos.md`) · P2 el orden · P3 los cerrados · P4 el cobro.
+- c.22077 · autoriza cambiar lo que exigen `tests/scrum428-terminado-sin-cobrar.test.mjs` L71 y L178 y `tests/scrum1725-lista-operario-sin-cobro.test.mjs` L74, L89 y L92, «porque el REQUISITO cambió […] no para esquivar un rojo».
+- c.22078 · amplía a 428 L130-157 y a `scripts/guard-lista-trabajos-917.mjs` B.1, C.4 y C.5.
+- c.22081 · autoriza `tests/scrum816-la-lista-no-miente.test.mjs` L136-140 (pasa a exigir que la columna «Estado» existe y que su celda lleva UNA sola píldora de `jobStatusMeta`; el resto del caso no se toca) y guard-917 B.3 (pasa a «exactamente UNA píldora por fila, nunca dos apiladas», o se retira si C.4 ya lo exige idéntico).
+
+**Lo que se PIERDE, declarado (P4):** el subtotal «por cobrar» de SOLO los terminados y la salvedad larga («N sin importe de referencia: no se sabe cuánto falta y no entran en el total.»). Queda la tarjeta «Por cobrar» (importe + «N sin importe de referencia, no entra(n)») y, fila a fila, «💰 Cobrar el resto (importe)» y «X de Y». **M1 (c.22052) queda superado**: no hay cabecera para ningún rol; su doc de microcopy se conserva, anotado.
+
+**`resumenTerminadoSinCobrar` pierde su llamador en la lista.** El motor (`terminadoSinCobrar.js`) y sus tests unitarios (428 L109-128 y siguientes) no se tocan; su retirada, si procede, es ticket aparte del orquestador.
+
+**Rojo primero** (código nuevo, tests sin tocar): `plana-rojo-primero.tap.txt`, 12 casos, 6 caídos (1725 ×3 por L74/L89; 428 ×3 por L71, L140 y L178). `plana-guard917-rojo.txt`: 49 comprobaciones, 5 rojas (B.1, C.4 ×2, C.5 ×2). Después: los dos tests, 13 de 13; el guard, 51 de 51 (`plana-guard917-verde.txt`).
+
+**Mutaciones** (declaradas en el test, vistas en rojo en local con base verde y restauración byte a byte): vuelve un rótulo de grupo → caen 4 casos; `SECUENCIA` con `terminado` delante → cae el caso de 1725g; píldora vacía → cae el caso de 1725g.
+
+**Antes/después en yaqu.app** (`c1725g-lista.mjs`; el después sirve `jobsView.js` y `styles.css` del árbol sobre producción). Capturas `antes-plana-*` y `despues-plana-*`:
+
+| pasada | filas antes → después | tarjetas solo-antes / solo-después | orden | cifras y filtros | cabeceras | con píldora | desborde | <44 px |
+|---|---|---|---|---|---|---|---|---|
+| admin 1280 | 9 → 9 | 0 / 0 | idéntico | idénticos | 6 → 0 | 0 → 9 | 0 | 0 |
+| admin 390 | 9 → 9 | 0 / 0 | idéntico | idénticos | 6 → 0 | 0 → 9 | 0 | 0 |
+| operario 1280 | 3 → 3 | 0 / 0 | idéntico | idénticos | 2 → 0 | 0 → 3 | 0 | 0 |
+| operario 390 | 3 → 3 | 0 / 0 | idéntico | idénticos | 2 → 0 | 0 → 3 | 0 | 0 |
+
+Las tarjetas se comparan como CONJUNTOS de líneas (cliente, tipo, tarea, técnicos, dirección, importe, fecha y botones con su relleno). «Ver 2 cerrados» sigue al pie en las dos del admin. El operario no tiene filtros de cobro: ahí «filtros idénticos» compara dos vacíos y no prueba nada.
+
+**816 y guard-917 B.3: una sola píldora por fila (c.22081).** La columna «Estado» de la P1 tumbaba el caso 5 de `tests/scrum816-la-lista-no-miente.test.mjs`, que exigía que NO existiera. Rojo primero, con el test SIN tocar: `plana-816-rojo-primero.tap.txt` (12 casos, 1 caído: «sigue la columna ESTADO»). Después de la edición autorizada, 12 de 12.
+- 816 L136-140 exige ahora: el `<th>` «Estado» existe; la celda sale de `jobStatusMeta(j.status)`; y a `tdEstado` se le cuelga UNA sola cosa. FECHA, el cobro en IMPORTE y la ausencia de `cobroPillClass` siguen como estaban. El TÍTULO del caso decía «ESTADO y FECHA son una sola columna, y el cobro NO se pierde», que ya no era lo que comprueba: renombrado a «ESTADO lleva UNA sola píldora, FECHA sigue en su columna, y el cobro NO se pierde» (solo el título, ninguna exigencia; autorizado en c.22084). Las salidas guardadas antes del renombrado (`plana-816-rojo-primero.tap.txt`, `plana-una-pildora-mutacion.txt`) llevan el título viejo: son de ese momento y no se reescriben.
+- guard-917 B.3: **se REESCRIBE, no se retira.** C.4 no lo exige idéntico: lee solo la PRIMERA píldora de la celda de estado (`querySelector`), así que dos apiladas le pasarían. B.3 cuenta todas las píldoras de la fila (`.status-pill` y la antigua `.jobs-estado-pill`) y exige exactamente una, con suelo («no pinta ninguna fila» es NO SUPE MIRAR). Sus otras dos comprobaciones (la fecha o nada) no cambian. El guard sigue en 51 comprobaciones.
+- Visto en rojo con una mutación real (dos píldoras apiladas en la celda), base verde antes y restauración byte a byte: `plana-una-pildora-mutacion.txt`. Es la cuarta del catálogo del test de 1725 y tumba a los TRES que lo exigen: el caso de 1725g (la fila dice «En curso+Parcial»), 816 caso 5 («se le cuelga 2 vez/veces») y B.3 («11 de 11 filas no llevan exactamente UNA píldora»). El guion `plana-una-pildora-mutacion.mjs` no trae lista propia: toma la mutación del catálogo y mide además 816 y el guard. Commit previo a la primera inyección: `e0d5402528dc9fcdff6b3720974df3733c31488e`.
+- Un error mío de esta vuelta: la primera versión del guion traía la mutación escrita dentro, y eso lo prohíbe el guard SCRUM-1387 («un banco nuevo va al catálogo»), el mismo que ya hizo retirar un guion a 1725e. Lo cazó correr `tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs` tras el merge, antes del push. Arreglado en el guion, no en el guard.
+
+**Lo que NO queda probado, y lo que queda fuera:**
+- `guard:escalera-por-estado` sale ROJO (4 hallazgos, 2 ciegos: «el detalle (ninguna)») **también con la lista y la hoja de `origin/main` 34939a6ad**: es del detalle del Trabajo, no de esta rama. Reportado al orquestador.
+- En la cuenta QA ningún terminado tiene saldo: «💰 Cobrar el resto» en su fila lo prueba el guard-917 (C.5, banco local), no la captura.
+- Pendiente: el «me gusta» del fundador sobre las capturas, y la regla 42 tras el merge (las mismas pasadas, sin `LOCAL_DIR`).
+- Dos mensajes míos al orquestador llevaban una hora ESTIMADA («~16:40Z», «~17:05Z») y era falsa por exceso: la de GitHub a esa altura era 16:17Z. La hora se lee de `gh api -i zen`.
+
+### El rojo del CI de #3233 y su cura (relevo de S4 · 18-nov, 17:00Z)
+
+El obligatorio «build + tests (con banco desechable)» cayó sobre la punta `9f87946596e3f6dc1121f77d22e784f33817cdc9` con 3 casos (run 44350276921). Ninguno es de la lista en sí: son los tres trinquetes de árbol entero, que no se corrieron antes del push.
+
+| caso caído | causa | cura |
+|---|---|---|
+| `tests/scrum1185-trinquete-sin-consumir.test.mjs` ① | al quitar la cabecera «Terminados» se quedaron sin llamador `jobsView.js::eurosJobs` y `terminadoSinCobrar.js::resumenTerminadoSinCobrar` | `eurosJobs` se BORRA (función muerta de este fichero). `resumenTerminadoSinCobrar` se DECLARA en `scripts/_sin-consumir-declarados.json` (carril S4, SCRUM-1725, con su motivo): el motor no se toca (c.22098) y vive en un fichero de S2 |
+| `tests/scrum719-el-suelo-de-los-doce.test.mjs` · SCRUM-1395 ② | 1725g metió tres `soloEjecutable(…)` sin suelo en `tests/scrum428-terminado-sin-cobrar.test.mjs` (L78, L152, L200) | las tres pasan por `vistaDeTrabajos()`, que usa `ejecutableDe` con el ancla `function renderJobsView`. Ninguna exigencia cambia: se añade el suelo |
+| `tests/scrum719-el-suelo-de-los-doce.test.mjs` · SCRUM-1395b ① | el veredicto de mudez no tenía ficha de 428 y la de 816 estaba caducada | `npm run censo:mudez -- --escribir` (133 fichas, 2 medidas: VIVO 2, MUDO 0, CIEGO 0) |
+
+Después, en local: los siete ficheros que tocan esto (1185, 719, 428, 816, 1725, 1387, 1294) dan 85 casos, 0 caídos, 0 saltados.
+
+**`guard:lista-trabajos` (navegador, NO obligatorio) sale ROJO con esta rama, y NO se cura aquí.** Dice «el clic en la fila NO abrió el Trabajo». Medido en local a 1280 con el banco del propio guard: la columna «Estado» estrecha la celda del cliente a 249 px y su centro (397, 390) cae sobre el desplegable de técnicos (de x=287 a 409, 44 px de alto), que por diseño no navega (`data-fila-no-navega`). El clic en cualquier otro punto de la fila sigue abriendo el Trabajo, pero el centro de la celda del cliente ya no: es un defecto real de la plana, pequeño. Se cura en la rama siguiente (SCRUM-1725h), que rehace justo esa geometría (desplegable sin caja, fila de un renglón); arreglarlo dos veces el mismo día era trabajo tirado. Queda dicho al orquestador.
+

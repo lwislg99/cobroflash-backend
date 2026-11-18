@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: SCRUM-816 · SUELO: la escalera se carga y DISTINGUE según los albaranes
+ok 1 - SCRUM-816 · SUELO: la escalera se carga y DISTINGUE según los albaranes
+  ---
+  duration_ms: 1.6331
+  type: 'test'
+  ...
+# Subtest: SCRUM-816 · 🔴 el CAMPO AUSENTE y el campo VACÍO se leen igual — por eso había que mandarlo
+ok 2 - SCRUM-816 · 🔴 el CAMPO AUSENTE y el campo VACÍO se leen igual — por eso había que mandarlo
+  ---
+  duration_ms: 0.5873
+  type: 'test'
+  ...
+# Subtest: SCRUM-816 · `serializeJob` (la LISTA) manda `albaranes` e `invoices`
+ok 3 - SCRUM-816 · `serializeJob` (la LISTA) manda `albaranes` e `invoices`
+  ---
+  duration_ms: 7.0058
+  type: 'test'
+  ...
+# Subtest: SCRUM-816 · los albaranes de la lista viajan EN LOTE, no una consulta por fila
+ok 4 - SCRUM-816 · los albaranes de la lista viajan EN LOTE, no una consulta por fila
+  ---
+  duration_ms: 4.0575
+  type: 'test'
+  ...
+# Subtest: SCRUM-816 · ESTADO y FECHA son una sola columna, y el cobro NO se pierde
+not ok 5 - SCRUM-816 · ESTADO y FECHA son una sola columna, y el cobro NO se pierde
+  ---
+  duration_ms: 4.047
+  type: 'test'
+  location: 'D:\\MILLONARIO\\cobroFlash\\cobroflash-backend\\.claude\\worktrees\\s4-18nov-r42\\tests\\scrum816-la-lista-no-miente.test.mjs:130:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 sigue la columna ESTADO. Contestaba lo mismo que FECHA —«¿cuándo se hace esto?»— y su
+      celda apilaba dos insignias de dimensiones distintas: una de agenda y otra de cobro.
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/s4-18nov-r42/tests/scrum816-la-lista-no-miente.test.mjs:136:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1106:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+    Test.postRun (node:internal/test_runner/test:1235:19)
+    Test.run (node:internal/test_runner/test:1163:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+  ...
+# Subtest: SCRUM-816 · el subtítulo de la cabecera se ha borrado y el estado vacío conserva el suyo
+ok 6 - SCRUM-816 · el subtítulo de la cabecera se ha borrado y el estado vacío conserva el suyo
+  ---
+  duration_ms: 2.6475
+  type: 'test'
+  ...
+# Subtest: SCRUM-816 · 🔒 la guarda de navegación de la fila pregunta por el HECHO, no por la forma
+ok 7 - SCRUM-816 · 🔒 la guarda de navegación de la fila pregunta por el HECHO, no por la forma
+  ---
+  duration_ms: 2.6055
+  type: 'test'
+  ...
+# Subtest: SCRUM-816 · el guardado del desplegable REVIERTE lo que se ve si falla
+ok 8 - SCRUM-816 · el guardado del desplegable REVIERTE lo que se ve si falla
+  ---
+  duration_ms: 1.6534
+  type: 'test'
+  ...
+# Subtest: SCRUM-816 · cero microcopy nueva: los literales del desplegable ya estaban en pantalla
+ok 9 - SCRUM-816 · cero microcopy nueva: los literales del desplegable ya estaban en pantalla
+  ---
+  duration_ms: 1.6322
+  type: 'test'
+  ...
+# Subtest: SCRUM-816 · el tope de ancho se ha ido, y no era compartido
+ok 10 - SCRUM-816 · el tope de ancho se ha ido, y no era compartido
+  ---
+  duration_ms: 16.9924
+  type: 'test'
+  ...
+# Subtest: SCRUM-816 · el filtro de técnico busca EN CLIENTE: ni una petición nueva
+ok 11 - SCRUM-816 · el filtro de técnico busca EN CLIENTE: ni una petición nueva
+  ---
+  duration_ms: 2.7435
+  type: 'test'
+  ...
+# Subtest: SCRUM-816 · las clases nuevas del desplegable tienen regla en la hoja
+ok 12 - SCRUM-816 · las clases nuevas del desplegable tienen regla en la hoja
+  ---
+  duration_ms: 0.9239
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 11
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 116.1132

@@ -1,0 +1,68 @@
+﻿navegador: Edge (Windows) · 12 trabajos · hoy Wed Nov 18 2026
+
+══════════════════════════════════════════════════════════════════════════════
+⓪ SUELO · ¿hay pantalla, con sus filas, sus grupos y sus controles?
+══════════════════════════════════════════════════════════════════════════════
+   filas pintadas: 11 de 12 (1 cerrado detrás de su botón: sí)
+
+══════════════════════════════════════════════════════════════════════════════
+A · arriba: título y botones (A.1) · las DOS cifras (A.2) · filtros de cobro (A.2) · filtro de técnico (A.3)
+══════════════════════════════════════════════════════════════════════════════
+   ✅ A.1 «Trabajos» + «Nuevo trabajo» arriba; la puerta provisional «Partes por valorar» ya no está en la cabecera
+   ✅ A.2 filtros de cobro, en cuentas: Todos · 12 · Pendiente · 4 · Parcial · 3 · Pagado · 3
+   ✅ A.2 «Para hoy · 2 trabajos» · Ana Cuadro · Comunidad Los Olivos
+   ✅ A.2 «Por cobrar · 5.356,61 €» · en 7 trabajos sin cerrar · 2 sin importe de referencia, no entran
+   ✅ A.3 filtro por técnico presente con equipo
+   ✅ A.2 pulsar «Pendiente» deja 4 filas y queda pulsado
+   ✅ A.2 con el filtro puesto, «Por cobrar» sigue siendo el total
+   ✅ A.1 «Nuevo trabajo» abre su modal
+   ✅ A.2 con la lista llega truncada (200 filas) «Por cobrar» NO se pinta (y «Para hoy» sí) · 200 filas
+   ✅ A.2 con hay dos monedas «Por cobrar» NO se pinta (y «Para hoy» sí) · 2 filas
+
+══════════════════════════════════════════════════════════════════════════════
+B · columnas (B.1) · técnico en la línea del cliente (B.2) · sin píldora (B.3) · la cifra grande es lo que falta (B.4-B.6)
+══════════════════════════════════════════════════════════════════════════════
+   ✅ B.2 el desplegable de técnicos vive en la línea del cliente en 11 de 11 filas
+   ✅ B.2 línea del cliente: «Cambio de cuadro eléctrico·Miguel Ángel FerrerMiguel Ángel FerrerNadia Ben AliIsrael CarmonaToni Sanchís»
+   ✅ B.2 sin nombre propio no se repite el cliente · «Sin asignarMiguel Ángel FerrerNadia Ben AliIsrael CarmonaToni Sanchís»
+   ✅ B.3 cero píldoras «Sin agendar» en las filas
+   ✅ B.3 sin fecha, la celda Fecha está vacía
+   ✅ B.3 con fecha, la enseña: «vie, 20 nov, 08:00»
+   ✅ B.4 Ana Cuadro: «590,00 €» grande · «de 590,00 €» debajo
+   ✅ B.4 Recarga Garaje: «679,16 €» grande · «de 970,23 €» debajo
+   ✅ B.4 Bar El Puerto: «740,00 €» grande · «de 1.240,00 €» debajo
+   ✅ B.4 cobrado del todo: «✓ Cobrado» · «300,00 €»
+   ✅ B.5 Taller Hnos. Vega: «Sin importe» · «no hay presupuesto aceptado»
+   ✅ B.5 Inmobiliaria Sur: «Sin importe» · «no hay presupuesto aceptado»
+   ✅ B.6 cobrado de más, como hoy: «539,05 €» · «628,60 € de 539,05 €»
+   ✅ B.2 sin equipo, «Sin asignar» en 0 de 11 filas
+   ✅ B.2 sin equipo, ningún desplegable
+   ✅ B.2 sin equipo, los técnicos que constan se siguen diciendo (2 filas)
+
+══════════════════════════════════════════════════════════════════════════════
+C · nunca dos primarias en la misma fila (C.1, SCRUM-1700) · el «⋯» entero (C.2) · la fila navega (C.3) · grupos (C.4-C.5) · sin cobro en modo justificante (C.6)
+══════════════════════════════════════════════════════════════════════════════
+   ✅ C.1 11 filas, ninguna con dos primarias · primarias: ["Abrir parte","▶ Empezar","💰 Cobrar el resto (740,00 €)"]
+   ✅ C.1 «Agendar» en secundaria (btn-secondary btn-sm) · pulsado abre «Agendar» y no navega
+   ✅ C.1 «▶ Empezar» · PATCH /admin/jobs/3 {"status":"en_curso"} · no navega
+   ✅ C.1 «💰 Cobrar el resto» · POST /admin/jobs/8/collect-rest
+   ✅ C.2 «⋯» de Ana Cuadro: Técnicos · ✅ Marcar terminado
+   ✅ C.2 «⋯» de Recarga Garaje: Técnicos · Reagendar · ▶ Empezar · 📆 Añadir a mi calendario
+   ✅ C.2 «⋯» de Lucía Romero: Técnicos · Agendar
+   ✅ C.2 «⋯» de Bar El Puerto: Técnicos · Cerrar trabajo
+   ✅ C.2 pulsar «✅ Marcar terminado» del «⋯» · PATCH /admin/jobs/1 {"status":"terminado"}
+   ✅ C.2 pulsar «Técnicos» del «⋯» abre el modal «Técnicos»
+   ✅ C.3 el clic en la fila abre el Trabajo 4 y no escribe
+   ✅ C.6 en modo justificante ningún «Cobrar» en 11 filas (primarias: ["Abrir parte","▶ Empezar"])
+
+══════════════════════════════════════════════════════════════════════════════
+G · todo control a ≥ 44 px (G.2) y sin scroll horizontal, a 1280 y a 390
+══════════════════════════════════════════════════════════════════════════════
+   ✅ G.2 a 1280 px, 0 de 97 controles por debajo de 44 px
+   ✅ G.3 a 1280 px, 0 de 71 textos cortados
+   ✅ G a 1280 px sin scroll horizontal
+   ✅ G.2 a 390 px, 0 de 97 controles por debajo de 44 px
+   ✅ G.3 a 390 px, 0 de 68 textos cortados
+   ✅ G a 390 px sin scroll horizontal
+
+población: 49 comprobaciones sobre 12 trabajos + 200 + 2 monedas + sin equipo · a 1280 y 390
