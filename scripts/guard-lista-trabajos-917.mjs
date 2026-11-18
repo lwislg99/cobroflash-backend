@@ -54,7 +54,6 @@ const ESPERADO = {
   sinImporte: VIVOS.filter((j) => j.importeReferencia == null).length,
   // «Para hoy» = lo que está en marcha + lo agendado para hoy (prototipo, `deHoy`).
   paraHoy: [1, 2],
-  grupos: ['🔨 En curso', '📅 Hoy', '📅 Esta semana', '⏳ Sin agendar', '🗓 Más adelante', '✅ Terminados — cobra el resto', '🔒 Cerrados'],
   // Qué ofrece el «⋯» por estado: las seis entradas de hoy, sin perder una (inventario C.2).
   menu: {
     1: ['Técnicos', '✅ Marcar terminado'],
@@ -241,8 +240,10 @@ titulo('B · columnas (B.1) · técnico en la línea del cliente (B.2) · sin p�
   const { page } = await abrirVista(browser, puerto, '/t', 1280);
   const fmt = (n) => page.evaluate((x) => window.fmtMoneyEs(x, 'EUR'), n);
   const th = await page.evaluate(() => [...document.querySelectorAll('#view-container table thead th')].map((x) => x.textContent.trim()));
-  if (JSON.stringify(th) === JSON.stringify(['Cliente', 'Importe', 'Fecha', 'Acciones'])) bien('B.1 cuatro columnas: ' + th.join(' · '));
-  else mal(`B.1 columnas ${JSON.stringify(th)} (esperaba Cliente · Importe · Fecha · Acciones: «Técnicos» deja de ser columna)`);
+  // SCRUM-1725g · entra «Estado» (firmado, SCRUM-1725 c.22076; cambio de exigencia autorizado en
+  // c.22078): la lista es plana y el estado lo dice la fila. «Técnicos» sigue sin ser columna.
+  if (JSON.stringify(th) === JSON.stringify(['Cliente', 'Importe', 'Fecha', 'Estado', 'Acciones'])) bien('B.1 cinco columnas: ' + th.join(' · '));
+  else mal(`B.1 columnas ${JSON.stringify(th)} (esperaba Cliente · Importe · Fecha · Estado · Acciones: «Técnicos» deja de ser columna)`);
 
   const celdas = await page.evaluate((sel) => [...document.querySelectorAll(sel)].map((tr) => {
     const imp = tr.querySelector('td.cell-amount');
@@ -476,24 +477,70 @@ titulo('C · nunca dos primarias en la misma fila (C.1, SCRUM-1700) · el «⋯�
     else bien('C.3 el clic en la fila abre el Trabajo 4 y no escribe');
   }
 
-  // C.4 · grupos, en su orden, con «📅 Hoy» separado de «Esta semana»
-  const grupos = await page.evaluate(() => [...document.querySelectorAll('tr.jobs-grupo-titulo td')].map((t) => t.textContent.trim()));
-  const orden = grupos.map((g) => ESPERADO.grupos.find((e) => g.startsWith(e + ' ·')) || '?' + g);
-  if (JSON.stringify(orden) !== JSON.stringify(ESPERADO.grupos)) mal(`C.4 grupos ${JSON.stringify(grupos)} (esperaba ${ESPERADO.grupos.join(' · ')})`);
-  else bien('C.4 grupos: ' + orden.join(' · '));
-  const hoyG = grupos.find((g) => g.startsWith('📅 Hoy'));
-  if (hoyG !== '📅 Hoy · 1') mal(`C.4 el grupo «📅 Hoy» dice «${hoyG}» (esperaba «📅 Hoy · 1»: el en curso va en su grupo)`);
-  else bien('C.4 «📅 Hoy · 1»');
+  // ── SCRUM-1725g · C.4 y C.5 CAMBIAN DE EXIGENCIA (autorizado con nombre: SCRUM-1725 c.22078) ──
+  // Exigían los siete rótulos de grupo en su orden, «📅 Hoy · 1», la cabecera «✅ Terminados — cobra
+  // el resto · 4 · 740,00 € por cobrar» y su salvedad larga. El requisito cambió: veredicto del
+  // fundador (c.22073, «un listado normal como los que tenemos en otros sitios») y P1-P4 firmadas
+  // (c.22076). La lista es PLANA. Lo que queda de la intención de cada una:
+  //   C.4 · ni una cabecera de grupo; las filas van en el ORDEN de la cola (en curso → hoy → esta
+  //         semana → sin agendar → más adelante → terminados), con lo de hoy justo detrás de lo que
+  //         está en curso; y cada fila dice su estado con la etiqueta de `jobStatusMeta`.
+  //   C.5 · no hay cabecera de Terminados ni salvedad larga; el terminado con saldo lleva su
+  //         «💰 Cobrar el resto», que es donde queda dicho lo que falta.
+  // El tramo de cada Trabajo se calcula AQUÍ, con los datos del banco, y no se le pregunta a la
+  // página: si se lo preguntara, el orden se compararía consigo mismo.
+  const plana = await page.evaluate((sel) => ({
+    cabeceras: [...document.querySelectorAll('tr.jobs-grupo-titulo, tr.jobs-grupo-salvedad')].map((t) => t.textContent.trim()),
+    cuerpos: document.querySelectorAll('table.table--trabajos tbody').length,
+    etiquetas: Object.fromEntries(['pendiente_agendar', 'agendado', 'en_curso', 'terminado', 'cerrado'].map((s) => [s, window.jobStatusMeta(s).label])),
+    filas: [...document.querySelectorAll(sel)].map((tr) => {
+      const cli = tr.querySelector('td.cell-client');
+      return {
+        cliente: (cli && cli.querySelector('b') || cli || {}).textContent?.trim() || '',
+        pildora: (tr.querySelector('td.cell-status .status-pill') || {}).textContent?.trim() ?? null,
+        cobrarElResto: [...tr.querySelectorAll('button')].some((b) => b.textContent.trim().startsWith('💰 Cobrar el resto (')),
+      };
+    }),
+  }), SEL_FILA);
+  const ahoraC4 = new Date();
+  const TRAMOS = ['en curso', 'hoy', 'esta semana', 'sin agendar', 'más adelante', 'terminados'];
+  const tramoDe = (j) => {
+    if (j.status === 'en_curso') return 0;
+    if (j.status === 'terminado') return 5;
+    const d = j.scheduledAt ? new Date(j.scheduledAt) : null;
+    if (j.status === 'agendado' && d && d.toDateString() === ahoraC4.toDateString()) return 1;
+    if (j.status === 'agendado' && d && d.getTime() <= ahoraC4.getTime() + 7 * 86400000) return 2;
+    if (j.status === 'pendiente_agendar') return 3;
+    return 4;
+  };
+  const conSuTrabajo = plana.filas.map((f) => ({ ...f, job: TRABAJOS.find((j) => j.customer && j.customer.name === f.cliente) || null }));
+  const sinTrabajo = conSuTrabajo.filter((f) => !f.job);
+  if (!conSuTrabajo.length || sinTrabajo.length) nosupe(`C.4 ${sinTrabajo.length} de ${conSuTrabajo.length} filas no casan con ningún Trabajo del banco: sin eso, el orden y la píldora no se pueden comprobar.`);
+  else {
+    if (plana.cabeceras.length || plana.cuerpos !== 1) mal(`C.4 la lista no es plana: ${plana.cabeceras.length} fila(s) de cabecera ${JSON.stringify(plana.cabeceras)} y ${plana.cuerpos} tbody (esperaba 0 y 1)`);
+    else bien(`C.4 lista plana: 0 cabeceras de grupo, 1 tbody, ${conSuTrabajo.length} filas`);
+    const tramos = conSuTrabajo.map((f) => tramoDe(f.job));
+    const vistos = [...new Set(tramos)].sort();
+    const enOrden = tramos.every((t, i) => i === 0 || tramos[i - 1] <= t);
+    // SUELO del orden: con un solo tramo en el banco, «en orden» sería cierto sin ordenar nada.
+    if (vistos.length !== TRAMOS.length) nosupe(`C.4 el banco pinta ${vistos.length} de los ${TRAMOS.length} tramos (${vistos.map((t) => TRAMOS[t]).join(' · ')}): el orden no queda probado.`);
+    else if (!enOrden) mal(`C.4 las filas no van en el orden de la cola: ${tramos.map((t) => TRAMOS[t]).join(' → ')}`);
+    else bien('C.4 orden de la cola: ' + TRAMOS.map((n, t) => `${n} ×${tramos.filter((x) => x === t).length}`).join(' → '));
+    const deHoy = tramos.filter((t) => t === 1).length;
+    if (deHoy !== 1 || tramos[tramos.lastIndexOf(0) + 1] !== 1) mal(`C.4 esperaba 1 agendado para hoy, justo detrás de los en curso; hay ${deHoy} y los tramos van ${tramos.join(',')}`);
+    else bien('C.4 lo de hoy (1) va justo detrás de lo que está en curso');
+    const malDichas = conSuTrabajo.filter((f) => f.pildora !== plana.etiquetas[f.job.status]);
+    if (malDichas.length) mal(`C.4 ${malDichas.length} fila(s) no dicen su estado con la etiqueta de la ficha: ${malDichas.map((f) => `${f.cliente} «${f.pildora}» ≠ «${plana.etiquetas[f.job.status]}»`).join(' · ')}`);
+    else bien(`C.4 las ${conSuTrabajo.length} filas dicen su estado (${[...new Set(conSuTrabajo.map((f) => f.pildora))].join(' · ')})`);
 
-  // C.5 · la cabecera de Terminados: microcopy aprobada + «por cobrar» junto a la suma
-  const term = grupos.find((g) => g.startsWith('✅ Terminados'));
-  const sumaT = await page.evaluate(() => window.fmtMoneyEs(740, 'EUR'));
-  const cabT = `✅ Terminados — cobra el resto · 4 · ${sumaT} por cobrar`;
-  if (term !== cabT) mal(`C.5 cabecera de Terminados «${term}» ≠ «${cabT}»`);
-  else bien(`C.5 «${term}»`);
-  const salvedad = await page.evaluate(() => (document.querySelector('tr.jobs-grupo-salvedad td') || {}).textContent || null);
-  if (salvedad !== '1 sin importe de referencia: no se sabe cuánto falta y no entran en el total.') mal(`C.5 la salvedad aprobada cambió o falta: «${salvedad}»`);
-  else bien('C.5 salvedad aprobada, palabra por palabra');
+    // C.5 · sin cabecera de Terminados ni salvedad larga; el cobro, en la fila
+    const dichoArriba = plana.cabeceras.filter((c) => /Terminados|sin importe de referencia: /.test(c));
+    if (dichoArriba.length) mal(`C.5 vuelve la cabecera de Terminados o su salvedad: ${JSON.stringify(dichoArriba)}`);
+    else bien('C.5 sin cabecera de Terminados ni salvedad larga');
+    const terminadosConBoton = conSuTrabajo.filter((f) => f.job.status === 'terminado' && f.cobrarElResto);
+    if (!terminadosConBoton.length) mal('C.5 ningún terminado trae «💰 Cobrar el resto (…)»: sin la cabecera, lo que falta por cobrar ya no lo dice nadie en la lista');
+    else bien(`C.5 ${terminadosConBoton.length} terminado(s) con «💰 Cobrar el resto (…)» en su fila`);
+  }
   await page.close();
 }
 {
