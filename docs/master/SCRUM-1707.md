@@ -98,3 +98,37 @@ poder editarlas». Re-anclaje con el precedente 917c/C.1, camino pre-autorizado 
   bancos/Windows), **2 fallos `scrum1726` D1, ICU local** («3 de octubre de 2026, 0:30» frente a «… a las 0:30»: la
   fecha es la buena, cambia el separador del Node de esta máquina; la rama no toca esos ficheros). `guards:entrada`
   15/15 (170).
+
+## 17-nov (S2) · la LISTA de albaranes sin la columna «Importe» para el operario (retoque de c.21939)
+
+**Fecha:** 17-nov-2026 · **Puesto:** S2 · **Skill UI:** cargada (`yaqu-premium-ui`; es una retirada: cero tokens,
+cero estilos en línea, cero componentes, cero textos).
+
+- **Qué había (medido por S4, c.21939; re-medido aquí en yaqu.app @ `91efc82d1`, operario SIMULADO):** desde #3153 el
+  servidor manda `total: null` en cada fila del listado al operario (`filaDeAlbaranParaElRol`, firma c.21547 Q2), y
+  `albaranesView.js` le pintaba la columna «Importe» con «—» en las 9 filas: 8 cabeceras, 9 celdas `cell-amount`, todas
+  «—», a 390 y a 1280.
+- **Arreglo (`public/dashboard/js/albaranesView.js`):** `veImporteDeLaLista(rol)` = `rol === 'admin'`, lista blanca
+  fail-closed, la MISMA pregunta que el servidor (`seesOnlyOwnJobs`; `owner` no llega al panel, `requireAuth` lo
+  normaliza a `admin`). Sin importe, ni cabecera ni celda. El admin la conserva. Cero textos nuevos: el literal
+  «Importe» (firmado n.º 17) sigue igual y donde estaba.
+- **Por qué toca `styles.css`:** la cabecera del importe se alineaba con `.table--albaranes th:nth-child(6)`. Sin la
+  columna, la 6.ª es «Estado», que se habría ido a la derecha. Pasa a `th.col-importe` (clase puesta en la cabecera).
+- **Test** `tests/scrum1707b-lista-albaranes-sin-importe-operario.test.mjs` (banco de vistas, respuesta pasada por el
+  `filaDeAlbaranParaElRol` del dist): contra main **1 verde (control admin) / 5 rojos**; con el arreglo **6/6**.
+  Mutación (`veImporteDeLaLista` → `true`): **4 rojos**. Incluye la paridad rol a rol con `seesOnlyOwnJobs` (admin,
+  tecnico, operario, comercial). Los 19 ficheros que tocan `albaranesView`/`.table--albaranes`, fichero a fichero:
+  0 rojos.
+- **Vista previa en yaqu.app** (sonda fuera del repo `sondas-s2/local-1707b-lista-albaranes.mjs`, que sirve los dos
+  ficheros locales sobre el build `91efc82d1`; entre ese build y la base de la rama esos ficheros no cambian; sólo GET):
+
+  | | 390 | 1280 |
+  |---|---|---|
+  | operario (simulado): cabeceras / celdas por fila / celdas de importe | 7 / 7 / 0 | 7 / 7 / 0 |
+  | admin real (control): cabeceras / celdas de importe / muestra | 8 / 9 / «30,25 €», «242,36 €» | 8 / 9 / ídem |
+  | «Estado» del operario alineado | left | left (con el `nth-child(6)` viejo saldría right: testigo de que la hoja servida es la local) |
+  | desborde horizontal (página / tabla) | 0 / 0 | 0 / 0 |
+
+  Capturas antes/después en local (`sondas-s2/evid-1707b-lista-albaranes/`), no en el repo público.
+- **No medido:** una sesión de operario REAL (pisaría la cookie QA compartida); que el servidor recorte el `total` lo
+  fija `tests/scrum1707-operario-sin-dinero` en CI.

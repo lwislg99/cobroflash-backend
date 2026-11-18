@@ -83,7 +83,7 @@ const PARTE = {
   puedeEditarContenido: { ok: true, motivo: null }, puedeEditarPrecios: { ok: true, motivo: null },
 };
 
-function montar() {
+function montar(parte = PARTE) {
   const envios = [];
   const red = { caida: false };
   const responder = (cuerpo) => ({
@@ -97,9 +97,9 @@ function montar() {
     if (metodo === 'POST' && /\/admin\/partes\/7\/firmar/.test(u)) {
       if (red.caida) throw new TypeError('Failed to fetch');
       envios.push({ ruta: u.replace(/^https?:\/\/[^/]+/, ''), cuerpo: JSON.parse(opts.body || '{}') });
-      return responder({ ...PARTE, id: 7, estado: 'firmado' });
+      return responder({ ...parte, id: 7, estado: 'firmado' });
     }
-    if (/\/admin\/partes\/7$/.test(u)) return responder(PARTE);
+    if (/\/admin\/partes\/7$/.test(u)) return responder(parte);
     return responder({});
   };
   const banco = cargarDashboard(RAIZ, {
@@ -230,4 +230,63 @@ test('SCRUM-1229 · 🔴 SIN RED: la firma del técnico se encola y, al volver l
   assert.ok(exigirNombreFirmante(cuerpo[contrato]).ok,
     `🔴 la COLA la sube sin «${contrato}» (${JSON.stringify(Object.keys(cuerpo))}): el servidor la ` +
     'rechazaría, y además la sacaría de la cola como rechazada — la firma se perdería.');
+});
+
+// ── SCRUM-1742 · CON QUÉ NOMBRE NACE EL CAMPO ────────────────────────────────────────────────
+// Medido en yaqu.app el 16-nov-2026 (recorrido H6, fila 16): al técnico el campo le nacía vacío
+// aunque el parte ya decía «Técnicos: …» y la sesión era suya. Decisión del orquestador (descripción
+// de SCRUM-1742): se propone SÓLO en el pad del técnico y SÓLO si el parte nombra a UNO; el del
+// cliente no se toca (SCRUM-300). Va aquí y no en un fichero nuevo porque es el mismo viaje y el
+// mismo banco; la caja del pad la mide en navegador `scripts/guard-pad-de-firma-cabe.mjs`.
+
+/** Abre el pad de `quien` sobre `parte` y devuelve el pad y su campo del nombre, sin tocar nada. */
+async function abrirElPad(parte, quien) {
+  const m = montar(parte);
+  const contenedor = m.banco.mk('div');
+  m.banco.ctx.document.body.appendChild(contenedor);
+  const pintado = await m.banco.ctx.window.renderParteDetailView(contenedor, 7);
+  assert.equal(pintado, true, '🔴 CIEGO: la ficha del parte no se pintó en el banco');
+  const boton = contenedor.querySelector(quien === 'tecnico' ? '[data-parte-firmar-tecnico]' : '[data-parte-firmar]');
+  assert.ok(boton, `🔴 CIEGO: no está el botón de firma del ${quien}`);
+  boton.click();
+  await esperar();
+  const pad = padAbierto(m.banco);
+  assert.ok(pad, `🔴 CIEGO: pulsar la firma del ${quien} no abrió el pad`);
+  const campo = pad.querySelector('#sp-nombre');
+  assert.ok(campo, '🔴 CIEGO: el pad no pide el nombre de quien firma');
+  return { pad, campo };
+}
+const valorDe = (campo) => String(campo.value === undefined || campo.value === null ? '' : campo.value);
+
+test('SCRUM-1742 · 🔴 el pad del TÉCNICO nace con su nombre cuando el parte nombra a UNO', async () => {
+  assert.deepEqual(PARTE.tecnicos, ['Israel'], '🔴 CIEGO: el parte de prueba ya no nombra a un solo técnico');
+  const { campo } = await abrirElPad(PARTE, 'tecnico');
+  assert.equal(valorDe(campo), 'Israel',
+    '🔴 el campo «Nombre de quien firma» le nace vacío al técnico, y el parte ya dice quién es');
+});
+
+test('SCRUM-1742 · con DOS técnicos en el parte, o con ninguno, nace vacío: no se sabe quién firma', async () => {
+  const dos = await abrirElPad({ ...PARTE, tecnicos: ['Israel', 'Marta'] }, 'tecnico');
+  assert.equal(valorDe(dos.campo), '', '🔴 con dos técnicos se ha elegido a uno por él');
+  const ninguno = await abrirElPad({ ...PARTE, tecnicos: [] }, 'tecnico');
+  assert.equal(valorDe(ninguno.campo), '', '🔴 sin técnicos en el parte el campo nace con algo');
+});
+
+test('SCRUM-1742 · ✅ CONTROL: el del CLIENTE nace vacío aunque el parte traiga su nombre (SCRUM-300)', async () => {
+  assert.ok(PARTE.clienteNombre, '🔴 CIEGO: el parte de prueba no trae nombre de cliente; el vacío no probaría nada');
+  const { campo } = await abrirElPad(PARTE, 'cliente');
+  assert.equal(valorDe(campo), '',
+    '🔴 al cliente se le ha puesto un nombre en la boca: SCRUM-300 lo deja vacío a propósito');
+});
+
+test('SCRUM-1742 · el nombre propuesto al técnico se puede BORRAR, y vacío no confirma', async () => {
+  const { pad, campo } = await abrirElPad(PARTE, 'tecnico');
+  const lienzo = pad.querySelector('canvas');
+  lienzo.disparar('pointerdown');
+  lienzo.disparar('pointermove');
+  const ok = todos(pad).find((n) => n.tagName === 'BUTTON' && n.textContent === 'Confirmar firma');
+  assert.ok(ok && !ok.disabled, '🔴 CIEGO: con el nombre propuesto y trazo, «Confirmar firma» sigue bloqueado');
+  campo.value = '';
+  campo.disparar('input');
+  assert.equal(ok.disabled, true, '🔴 borrado el nombre, «Confirmar firma» sigue encendido: se firmaría sin nombre');
 });

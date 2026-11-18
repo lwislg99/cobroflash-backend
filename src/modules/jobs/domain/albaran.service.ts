@@ -775,18 +775,30 @@ export function serializeAlbaran(a: any) {
  * Garantiza que el PDF del albarán existe en disco y devuelve su ruta (patrón
  * ensureInvoicePdf: Railway pierde el disco en cada deploy → regenerar si falta).
  * `force` = regenerar SIEMPRE (tras firmar, para incrustar el bloque de firma).
+ *
+ * SCRUM-1744 · `sinPrecios` = el papel del OPERARIO (`pdfDelAlbaranSinPrecios`): el mismo documento
+ * con el interruptor que ya existe (`ocultarPreciosEnDocumento`) puesto, en un fichero APARTE —así ni
+ * envenena el del negocio ni se le sirve el del negocio desde la caché— y regenerado en cada petición
+ * (nadie lo invalida al editar el albarán). El albarán NO se toca: ni el interruptor ni `pdfUrl`.
  */
-export async function ensureAlbaranPdf(albaranId: number, force = false): Promise<{ diskPath: string; pdfUrl: string; numero: string }> {
+export async function ensureAlbaranPdf(
+  albaranId: number,
+  force = false,
+  opciones: { sinPrecios?: boolean } = {},
+): Promise<{ diskPath: string; pdfUrl: string; numero: string }> {
   const albaran = await prisma.albaran.findUnique({ where: { id: albaranId } });
   if (!albaran) throw new Error('albaran_not_found');
+  const sinPrecios = opciones.sinPrecios === true;
 
   // SCRUM-48: nombre prefijado con merchantId (mata la colisión entre merchants) y pdfUrl
   // apuntando al endpoint AUTENTICADO (ya no hay estático público /albaranes).
-  const fileName = `${albaran.merchantId}-${albaran.numero}.pdf`;
+  const fileName = sinPrecios
+    ? `${albaran.merchantId}-${albaran.numero}-sin-precios.pdf`
+    : `${albaran.merchantId}-${albaran.numero}.pdf`;
   const diskPath = path.join(albaranesDir, fileName);
   const pdfUrl = `/admin/albaranes/${albaran.id}/pdf`;
 
-  if (!force && albaran.pdfUrl === pdfUrl && fs.existsSync(diskPath)) {
+  if (!sinPrecios && !force && albaran.pdfUrl === pdfUrl && fs.existsSync(diskPath)) {
     return { diskPath, pdfUrl, numero: albaran.numero };
   }
 
@@ -895,7 +907,8 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
     // ✅ SIN `as any`: la columna esta aplicada en las tres bases y el campo vive en el schema
     // con su `@map("ocultar_precios_en_documento")`. Ese `@map` NO es decorativo — medido:
     // `albaranes` es snake al 100 %, y preguntar en camel falla con 42703.
-    ocultarPreciosEnDocumento: albaran.ocultarPreciosEnDocumento === true,
+    ocultarPreciosEnDocumento: sinPrecios || albaran.ocultarPreciosEnDocumento === true, // SCRUM-1744
+    ...(sinPrecios ? { nombreDeArchivo: fileName } : {}),
     presupuestoRef: referenciaPresupuesto(
       quoteOrigen ? { id: quoteOrigen.id, number: quoteOrigen.quoteNumber ?? quoteOrigen.id } : null,
     ),
@@ -910,7 +923,7 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
     evidencia: (albaran.evidenciaFirma as unknown as FirmaEvidencia | null) ?? null,
   });
 
-  if (albaran.pdfUrl !== pdfUrl) {
+  if (!sinPrecios && albaran.pdfUrl !== pdfUrl) {
     await prisma.albaran.update({ where: { id: albaranId }, data: { pdfUrl } });
   }
   return { diskPath, pdfUrl, numero: albaran.numero };

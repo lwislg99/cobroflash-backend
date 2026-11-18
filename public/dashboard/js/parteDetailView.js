@@ -72,8 +72,13 @@
     entrada: 'Entrada',
     // APROBADO · SCRUM-1215 comentario 17367
     salida: 'Salida',
-    // APROBADO · SCRUM-1215 comentario 17367
-    desplazamiento: 'Desplazamiento',
+    // SCRUM-1746 · el rótulo dice su UNIDAD. La casilla guarda el NÚMERO DE VIAJES (un entero) y no lo
+    // decía: en yaqu.app se rellenó «20» creyendo que eran kilómetros, con «Kilómetros» al lado. Solo
+    // cambia el rótulo; los tres avisos de más abajo tenían su firma (SCRUM-1491/1492) y SCRUM-1746 no
+    // los tocó: pasaron al plural después, con firma propia (SCRUM-1752).
+    // APROBADO por el fundador el 17-nov-2026 (SCRUM-1746, en la descripción del ticket). Consta en
+    // `docs/microcopy/2026-11-17-SCRUM-1746-desplazamientos-numero-de-viajes.md`.
+    desplazamiento: 'Desplazamientos (nº de viajes)',
     // APROBADO · SCRUM-1215 comentario 17367
     kilometros: 'Kilómetros',
     // APROBADO · SCRUM-1215 comentario 17367
@@ -104,8 +109,12 @@
     // enorme y el negativo llevan código y texto propios, más abajo.
     // SCRUM-1492 · también se dice cuando es la CASILLA la que no entiende lo tecleado («1e»): es
     // el mismo error visto por el profesional, cazado en otro sitio. Estirón firmado en c.18633.
-    // APROBADO · SCRUM-1491 comentario 18517
-    desplazamientoEsEntero: 'No se ha guardado. Desplazamiento es un número entero, como 1 o 2 — no el tiempo de viaje',
+    // SCRUM-1752 · «Desplazamientos», como el rótulo de la casilla desde SCRUM-1746. Cambia UNA letra;
+    // el verbo sigue en «es», como en `kilometrosEsUnNumero`: nombra la casilla. La firma anterior
+    // (SCRUM-1491 comentario 18517) era del literal en singular. Consta en
+    // `docs/microcopy/2026-11-17-SCRUM-1752-avisos-desplazamientos-plural.md`.
+    // APROBADO · SCRUM-1752 comentario 21987
+    desplazamientoEsEntero: 'No se ha guardado. Desplazamientos es un número entero, como 1 o 2 — no el tiempo de viaje',
     // SCRUM-1492 · lo tecleado en Kilómetros que la casilla no entiende como número («1e», «-»,
     // «,»). No se manda nada y se dice lo que VALE. «No se ha podido guardar el cambio» sería
     // falso: nada ha fallado, no se ha intentado.
@@ -118,12 +127,14 @@
     // en el general, y «vuelve a intentarlo» ahí es falso: `-3` no va a entrar nunca. Los dos de
     // «negativo» dicen lo que VALE. Los de «no cabe» no: lo que vale es el tope de la columna, que
     // a un profesional no le dice nada.
-    // APROBADO · SCRUM-1492 comentario 18706
-    desplazamientoEsCeroOMas: 'No se ha guardado. Desplazamiento es 0 o más',
+    // SCRUM-1752 · los dos de Desplazamientos pasan al plural del rótulo (una letra cada uno); su
+    // firma anterior, en singular, era SCRUM-1492 comentario 18706. Los de Kilómetros no cambian.
+    // APROBADO · SCRUM-1752 comentario 21987
+    desplazamientoEsCeroOMas: 'No se ha guardado. Desplazamientos es 0 o más',
     // APROBADO · SCRUM-1492 comentario 18706
     kilometrosEsCeroOMas: 'No se ha guardado. Kilómetros es 0 o más',
-    // APROBADO · SCRUM-1492 comentario 18706
-    desplazamientoDemasiadoGrande: 'No se ha guardado. Ese número es demasiado grande para Desplazamiento',
+    // APROBADO · SCRUM-1752 comentario 21987
+    desplazamientoDemasiadoGrande: 'No se ha guardado. Ese número es demasiado grande para Desplazamientos',
     // APROBADO · SCRUM-1492 comentario 18706
     kilometrosDemasiadoGrande: 'No se ha guardado. Ese número es demasiado grande para Kilómetros',
     // APROBADO · SCRUM-1215 comentario 17367
@@ -270,6 +281,11 @@
     // 1-23. Consta en `docs/microcopy/2026-11-10-SCRUM-1677-salida-al-trabajo.md`.
     trabajoDelCliente: '← Trabajo: {cliente}', // APROBADO por el fundador el 10-nov-2026 · SCRUM-1656 comentario 21408
     volverAlTrabajo: 'Volver al trabajo', // APROBADO por el fundador el 10-nov-2026 · SCRUM-1656 comentario 21408
+    // ── SCRUM-1662 (d) · LA TAREA DEL TRABAJO, EN LA HOJA DEL PARTE ───────────────────────
+    // El MISMO rótulo que el alta y la ficha del trabajo (`ROTULO_TAREA`, `jobTrabajoPlegable.js`).
+    // Consta en `docs/microcopy/2026-11-11-SCRUM-1662-que-hay-que-hacer-en-el-parte.md`.
+    // APROBADO por el fundador · SCRUM-1662 comentario 21548 (rótulo) y comentario 21956 (vale dentro del parte)
+    queHayQueHacer: 'Qué hay que hacer',
     // FIRMADO: N4 de la tanda N1-N13 de SCRUM-1686 (c.21471) · cabecera del parte, con varios en el
     // trabajo. Cómo se cuenta: M2 del máster (073c67ade). SCRUM-1697.
     visitaDeLas: 'Visita {n} de {m}',
@@ -772,6 +788,8 @@
       esc(parte.numero) + ' <span data-parte-visita="1"></span></h3>' +
       '<p class="parte-cabecera-cliente">' +
       esc(parte.clienteNombre || '') + '</p></header>' +
+      // SCRUM-1662 (d) · la tarea del trabajo, lo primero que se lee. Sin tarea no pinta nada.
+      pintarQueHayQueHacer(parte) +
       // 🔴 SCRUM-1693 · FIRMADO = EL ORDEN DE UN PAPEL: los datos del documento arriba y las
       // firmas que lo cierran al final. El BORRADOR no cambia (SCRUM-1175 PR-C: allí manda lo que
       // se apunta, y los datos van plegados al final). Lo fija `tests/scrum1693-…`.
@@ -808,6 +826,32 @@
   // ═══════════════════════════════════════════════════════════════════════════════════
   function tieneTrabajo(parte) {
     return parte && parte.jobId !== null && parte.jobId !== undefined && parte.jobId !== '';
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-1662 (d) · «QUÉ HAY QUE HACER», EN LA HOJA DEL PARTE.
+  //
+  // El operario abre el parte en la obra: lo primero que necesita es lo que el jefe le encargó, sin
+  // volver a la ficha del trabajo. Por eso va justo debajo de la cabecera, en TODOS los estados.
+  //
+  //   · El dato viene DENTRO del parte (`GET /admin/partes/:id`, pieza (c), decisión en c.21964): el
+  //     servidor lo lee del trabajo en cada GET y ya aplica la puerta del técnico. Esta vista NO pide
+  //     el trabajo: hacerlo tumbaba `scrum1697` ①bis y `scrum366` (medido, c.21962).
+  //   · SOLO LECTURA. La tarea se escribe en el trabajo; un editor aquí pediría textos de guardado y
+  //     de error que nadie ha firmado (regla 39).
+  //   · SIN TAREA NO HAY LÍNEA (c.21801): ni rótulo sobre nada, ni un «Sin tarea» inventado. Vale
+  //     también para un servidor que aún no mande la clave, y para cualquier cosa que no sea texto.
+  //   · No entra en lo que se firma ni en el PDF: es una ayuda de pantalla, no un dato del documento.
+  //
+  // Lo fija `tests/scrum1662d-parte-pinta-que-hay-que-hacer.test.mjs`.
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  function pintarQueHayQueHacer(parte) {
+    var tarea = typeof parte.queHayQueHacer === 'string' ? parte.queHayQueHacer.trim() : '';
+    if (!tarea) return '';
+    return '<section class="parte-tarea" data-parte-tarea="1">' +
+      '<h4 class="parte-tarea-titulo">' + esc(TEXTOS.queHayQueHacer) + '</h4>' +
+      // `.detail-tarea` es el párrafo de la ficha del trabajo: conserva los saltos del jefe.
+      '<p class="detail-tarea">' + esc(tarea) + '</p></section>';
   }
 
   function pintarMigaDelTrabajo(parte) {
@@ -1418,6 +1462,12 @@
     return typeof window.mensajeDeFalloAlFirmar === 'function' ? window.mensajeDeFalloAlFirmar(e, estado) : '';
   }
 
+  /** SCRUM-1742 · el nombre del técnico del parte si hay EXACTAMENTE uno; si no, ''. */
+  function elUnicoTecnico(parte) {
+    var t = parte && Array.isArray(parte.tecnicos) ? parte.tecnicos : [];
+    return t.length === 1 && typeof t[0] === 'string' ? t[0].trim() : '';
+  }
+
   function firmarParte(parte, opciones, quien) {
     var o = opciones || {};
     var cual = FIRMAS[quien || 'cliente'];
@@ -1459,8 +1509,11 @@
           return { concepto: l && l.descripcion, cantidad: l && l.unds, unidad: ETIQUETA_BLOQUE[l && l.bloque] };
         }),
       },
+      // SCRUM-1742 · el campo del TÉCNICO nace con su nombre cuando el parte nombra a UNO solo: es
+      // quien usa la app y el documento ya lo dice («Técnicos»). Con dos o con ninguno no se sabe
+      // quién firma, y nace vacío. El del CLIENTE no se toca (SCRUM-300: nace vacío siempre).
       firmante: esTecnico
-        ? { sugerencia: '', sinCalidad: true }
+        ? { sugerencia: '', sinCalidad: true, nombreInicial: elUnicoTecnico(parte) }
         : { sugerencia: parte.clienteNombre || '' },
       onConfirm: async function (dataUri, declaracion) {
         // El pad declara siempre `firmadoPorNombre`; cada ruta lee SU campo (`partes.routes.ts`:

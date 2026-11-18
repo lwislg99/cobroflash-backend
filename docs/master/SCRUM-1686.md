@@ -405,3 +405,147 @@ lo decide `seesOnlyOwnJobs` (`:56`) y, para la pertenencia a un Trabajo, `esSuyo
 **Lo que salió mal (A9):** el traspaso de la S2 anterior decía «H4 MEDIDO, SIN EMPEZAR A CONSTRUIR», y en otra worktree había un commit WIP sin empujar de después de escribirlo (`189d32aa9`). Lo vi sólo porque `git branch -m` chocó con el nombre; lo reaproveché (cherry-pick) en vez de hacerlo dos veces. Ese choque no es una comprobación. Lo que SÍ queda comprobado es el fallo que este bloque podía meter —afirmar «Nada para hoy.» con la carga caída—: el caso ⑤, cazado por mutación. Segundo fallo, mío: re-anclé `scrum601` y empujé sin `npm run censo:mudez -- --escribir`, aunque la trampa estaba escrita en mi traspaso desde SCRUM-1701; el CI de #3096 salió rojo en `scrum1395b` y se arregló en el commit siguiente. Ése sí lo caza un guard: el propio `scrum1395b`.
 
 A9: comprobación → `tests/scrum1686h4-inicio-operario.test.mjs`
+
+## APÉNDICE · SCRUM-1686 H6 · EL BANCO DEL RECORRIDO con operario simulado, y lo medido hasta el tramo 3.1 · S4 · 16-nov-2026
+
+**Medido contra:** `origin/main` = `4e2aaab3a55ed4779d9b6272751767940de39f38` · 2026-11-16T16:24:57Z (cabecera `Date:` de `gh api -i zen`) · **Rama:** `scrum-1686h6-recorrido-operario-simulado` · **Carril:** S4
+**Skill UI:** no cargada · no se toca ninguna pantalla: es un banco de medida, su guion y este registro
+
+**Qué entra.** El instrumento del recorrido final de Trabajos, que hasta hoy vivía en un commit local sin empujar (A8: si no está en git, no existe). Carpeta `docs/master/evidencias/SCRUM-1686/banco-h6/`:
+- `GUION.md` — el recorrido en frío, tramo a tramo, con su aserto y su control positivo (escrito el 12-nov ANTES de recorrer).
+- `rol.mjs` — viste al operario sobre la cookie QA de admin: `GET /admin/me` → `tecnico`, sólo sus trabajos por los tres ejes del servidor, `/admin/team` → 403, y cada respuesta de trabajos y albaranes pasa por una copia de `trabajoParaElRol` y `albaranParaElRol` (cotejadas hoy con las de `main`: iguales). Cuenta el vocabulario de dinero en cada medida.
+- `paso2.mjs` — el `paso.mjs` del banco de SCRUM-1658 más el rol, las cuentas y la bitácora; sale 1 si la acción falla o si la página no dice el rol pedido.
+- `b-mirar.mjs`, `b04`, `b05`, `b08`, `b-diag-*` — las acciones de los tramos 1 a 3.1 y el diagnóstico del desborde del parte.
+- En el banco de SCRUM-1658, `lib.mjs` gana `SIN_MOVIL=1` (misma ventana sin emulación de móvil). Sin la variable, todo sigue igual.
+
+**Cambio de hoy en el instrumento.** `RECORTE=hoy` era «lo que hace producción hoy» y dejó de ser verdad a las 16:02Z, cuando entró #3153 (`6ffa662fd03ad6994f08c9816de6f0c7307e14d0`). El modo por defecto pasa a ser `1707` (el recorte entero, que es lo que hay desplegado) y el viejo se llama `antes-de-3153`: sólo sirve para repetir las medidas del tramo 2 como se tomaron.
+
+**Lo que este banco NO mide** (y se dice en cada medida): que yaqu.app recorte de verdad al operario —eso lo prueba `tests/scrum1707-operario-sin-dinero.test.mjs`, o una sesión del operario real— ni sus 403 de escritura: las escrituras salen con la cookie de admin y se casan a mano con `TECNICO_ALLOWED`.
+
+**Recorrido hecho** (yaqu.app, 16-nov ~15:46Z-16:15Z, front de producción igual al de `main` por hash): tramo 0 (testigos), 1 (alta, ficha, nota, asignar, agendar), 2 (lista y fichas, admin y operario, 390 y 1280: 16 medidas) y 3.1 (⋯, «▶ Empezar», «Abrir parte»). **Falta:** 3.2-3.5 (rellenar el parte), 4 (firmas), 5 (albarán), 6 (oficina). Datos de prueba en la cuenta QA: trabajo #84 y parte #22 (`PT-2026-014`, borrador).
+
+**Lo medido hasta aquí** (capturas y `.txt` fuera de git, en la máquina del equipo):
+
+| # | pantalla · rol | qué se ve | de quién · estado |
+|---|---|---|---|
+| 1 | Parte · 390 | la hoja medía 451 px y no se desplazaba | S4 · arreglado en SCRUM-1722c (#3173) |
+| 2 | Albarán · operario | ficha: 0 importes, sin «Total» ni cabeceras de precio (vista real en el banco de vistas, con la proyección de `dist`; admin de control: 10). El «0 €» que se le atribuyó NO existe. Lista: la columna «Importe» sale con «—» en cada fila | ficha: nada que hacer · lista: S2 |
+| 3 | Parte | no enseña «Qué hay que hacer» del trabajo | S4 · espera la firma del rótulo (SCRUM-1662) |
+| 4 | Lista | la tarjeta no dice qué trabajo es (la tarea no sale) | S4 · sin empezar |
+| 5 | Alta | tras «Abrir trabajo» la URL sigue en la lista | S4 · sin empezar |
+| 6 | Lista · operario · «⋯» | ofrece «Técnicos», que pide `/admin/team` (403 para él) | S4 · falta probar el clic |
+| 7 | Lista · operario | pide `GET /admin/team` en cada carga → 403 en consola | S4 · sin empezar |
+| 8 | Lista · operario | filtro «Técnico» a quien sólo recibe los suyos | S4 · sin empezar |
+| 9 | Lista · 390 | la primaria cambia de sitio y de peso entre «EN CURSO» y «HOY» | S4 · medir antes de tocar |
+| 10 | Lista · 390 | la tarjeta-título repite la barra; cada cabecera de grupo es una tarjeta | S4 · retoque sin texto |
+| 11 | Lista · 390 · operario | «Sin importe / no hay presupuesto aceptado» parte el nombre del cliente | decide el fundador (SCRUM-1679) |
+| 12 | Ficha | creado como «Reparación», la ficha dice «Una obra o reforma de varios días» | S1 + S2 (SCRUM-1670) |
+| 13 | Parte · 390 | los radios de «Tipo de intervención» miden 13×13 px | S4 · medir la etiqueta |
+
+**Lo que SÍ funciona** (operario, con el admin de control positivo): lista sin «por cobrar», sin filtros de cobro y sin «de N»; ficha con la tarea y sin la nota privada (ni en texto, ni en el DOM, ni en un campo); «▶ Empezar» → `PATCH` 200 sin modal; «Abrir parte» → `POST /admin/partes` 201 y aterriza en el parte, que nace con la obra y el tipo del trabajo.
+
+**Lo que salió mal (A9).** Dos ceros falsos del propio banco, los dos cazados por el control de admin y arreglados EN el instrumento: `innerHTML` no lleva el `.value` de un `textarea` (la nota del admin daba dom=0, así que el cero del operario no probaba nada: `b-mirar.mjs` mira ahora texto, DOM y campos), y `/te\s+falta/` casaba «par-te / Falta la firma» (lleva `\b`). Y uno de nombre: un modo llamado `hoy` caduca el día que cambia producción; ya no se llama así.
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1686/banco-h6/b-mirar.mjs`
+
+### H6 · el rojo del primer empuje y lo que entra detrás (16-nov-2026, empujado a las 16:44:48Z de GitHub)
+
+**El rojo.** El check obligatorio de #3175 cayó con UN caso: `tests/scrum1233g-banco-bloquea-el-sw.test.mjs` dio **CIEGO** sobre `banco-h6/rol.mjs` («llama a `.route(` y no se encuentra quién abre su contexto»). Era cierto: `rol.mjs` interceptaba un contexto que le pasaba `paso2.mjs`, y éste importaba la librería de SCRUM-1658 en caliente (`await import(...)` con una ruta de entorno), así que desde el fichero que intercepta no se veía quién bloquea el service worker. El contexto SÍ lo bloqueaba (la librería lleva `serviceWorkers: 'block'`, y cada medida deja en su LOG el aviso de Playwright), pero no era comprobable. **Arreglado en el instrumento, no en el guard:** `rol.mjs` importa `abrir` de la librería con un import fijo y exporta `abrirVestido`, que abre y viste; `vestir` deja de exportarse, así que el rol ya no se puede vestir sobre un contexto que venga de fuera. `paso2.mjs` importa la misma librería, también fijo, y pierde la variable `BANCO_1658`. En local, con el arreglo, el guard da 2 de 2; el rojo de antes es el del CI (job 133441426364), no lo repetí en local.
+
+**Lo que salió mal (A9), dos más.** El guard del service worker no estaba entre los que se corrieron antes del primer empuje (se corrieron los de entrada y los de árbol entero): un banco nuevo que llama a `.route(` lo corre SIEMPRE antes de empujar. Y un hash que el panel no conoce (`#job-detail/84` por `#jobs-detail/84`) cae en «Inicio» sin error: `paso2.mjs` dio EXIT 0 y dos medidas limpias de una pantalla que no era la pedida. Ahora mira qué entrada del menú quedó activa y sale 1 con «CIEGO: se pidió … y el panel pintó …» (control malo → 1; dos controles buenos, ficha y parte → 0).
+
+**Instrumentos nuevos** (tramos 3.2 a 5): `b09-rellenar-parte.mjs` (`PASO=horas|dictado|anadir|linea|datos|recarga|releer`), `b12-firmas.mjs` (los rótulos de hoy, y el pad medido en la VENTANA: si cabe, si se desplaza y dónde queda «Confirmar firma») y `b13-albaran.mjs` («+ Nuevo albarán» desde la ficha: qué ofrece y qué escribe). Ninguno pulsa nada que salga por WhatsApp o correo. Lo medido con ellos va en el apéndice siguiente, cuando el recorrido esté entero.
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1686/banco-h6/paso2.mjs`
+
+*(Corrección del relevo, 16-nov 16:58Z de GitHub: el título de este sub-apartado decía «~17:25Z», una hora que aún no había llegado; salió del reloj de la máquina, que va adelantado. La hora buena es la del run del CI que abrió ese empuje, `43910875818`, creado a las 16:44:48Z.)*
+
+## APÉNDICE · SCRUM-1686 H6b · EL RECORRIDO, tramos 3.2 a 6: lo medido · S4 · 16-nov-2026
+
+**Medido contra:** `origin/main` = `5cf824e869dd2c729d0a94a0d9eaa67eb1355288` · yaqu.app, 16-nov-2026 entre ~16:35Z y ~16:50Z (hora de GitHub) · **Rama:** `scrum-1686h6-recorrido-operario-simulado` · **Carril:** S4
+**Skill UI:** no cargada · no se toca ninguna pantalla: son medidas, y pasan al registro tal como se tomaron
+**Quién lo escribe:** la S4 de relevo, a las 16:58Z de GitHub, con `origin/main` en `a7a85a058e90744ba77ff1fa43af78b522369412`. Las medidas son de la S4 anterior; aquí NO se ha vuelto a medir ninguna: se copian de su tabla, que sólo existía en un fichero de la máquina (A8).
+
+**Con qué.** El banco de este mismo PR (`b09-rellenar-parte.mjs`, `b12-firmas.mjs`, `b13-albaran.mjs`), operario SIMULADO con el recorte por defecto. Front de producción igual al de `main` en 5 de 5 ficheros cotejados por hash (`albaranDetailView`, `albaranesView`, `jobDetailView`, `jobsView`, `parteDetailView`); **`styles.css` NO se cotejó**. Las escrituras salen con la cookie de admin QA. Capturas y `.txt` (prefijos `t3-2` a `t6-3`): fuera de git, en la máquina del equipo.
+
+**Datos de prueba que quedan en la cuenta QA:** trabajo #84 (en curso) · parte #22 `PT-2026-014` **FIRMADO** por técnico y cliente (tipo «Mantenimiento», referencia `REF-QA-H6`, 6 líneas): ya no sirve para rellenar, y para repetir el tramo 3 hay que abrir otro · albarán #53 `AB260008` (borrador, sin valorar, 1 línea).
+
+**Filas nuevas** (siguen a la 13 de la tabla de arriba):
+
+| # | pantalla · ancho · rol | qué se ve | qué debería | dónde se midió | de quién |
+|---|---|---|---|---|---|
+| 14 | Pad de firma · 390×844 · todos | el pad mide más que la ventana y «Confirmar firma» queda cortado o fuera: técnico 901 px (botón en y=835-865); cliente 1.195 px (el recuadro «Firma aquí» EMPIEZA en y=925, fuera de la ventana; botón en y=1129). Se desplaza (`overflow-y: auto`), pero el dedo sobre el recuadro dibuja, no desplaza. Crece con cada línea del parte: el resumen va dentro | recuadro y «Confirmar firma» siempre a la vista | nota PAD de `t4-1-salida.txt` y `t4-3-salida.txt` | S4 · P1 del piloto: un móvil real tiene menos de 844 px útiles |
+| 15 | Pad de firma · 390 | «Borrar», «Cancelar» y «Confirmar firma» miden 30 px de alto | 44 o más | sección `<44px` de `t4-1-firma-tecnico-abierta-tecnico-390.txt` | S4 |
+| 16 | Pad de firma · técnico | «Nombre de quien firma» nace VACÍO para el propio técnico, aunque el parte ya dice «Técnicos: Operario QA» y la sesión es suya | proponer su nombre | `t4-2-salida.txt` («nombre propuesto: «»») | S4 · sin texto nuevo |
+| 17 | Parte · «Ordenar en líneas» | «Dos horas y media de trabajo yo solo» da la línea «Horas de trabajo» SIN cantidad («Falta la cantidad — ponla tú»); «dos latiguillos» sí sale con 2. Dos pasadas del mismo dictado dan líneas distintas (2 y 3 de mano de obra) | la cantidad dicha, puesta | `t3-2-salida-dictado.txt`, `t3-3-salida-anadir.txt` | S4 + quien lleve el prompt · medir más antes de tocar |
+| 18 | Parte · «Desplazamiento» | campo numérico sin unidad ni pista: se escribió 20 y guardó `{"desplazamientos":20}`, que son VIAJES; «Kilómetros» sí lleva «km». Firmado se lee «Desplazamiento 20» | que se entienda qué se cuenta | `t3-2-salida-horas.txt` | S4 · pide texto, y por tanto firma |
+| 19 | Parte · tras «Ordenar» | «Añadir al parte» es un botón de contorno debajo de la propuesta; el relleno sigue en «Ordenar en líneas» | la que toca, con el peso de primaria | `t3-2-ordenado-tecnico-390.png` | S4 · sin texto |
+| 20 | Ficha del trabajo · operario, tras firmar el parte | ofrece «+ Nuevo albarán» DOS veces (cabecera y sección ALBARANES), y la hoja dice «Este trabajo no tiene presupuesto, así que empiezas de cero»: las 6 líneas del parte recién firmado no se ofrecen | lo que diga D1 (arriba: el albarán lo hace la oficina DESDE el parte) | `t5-0-ficha-tras-firmar-fin-tecnico-390.txt`, `t5-1-salida-abrir.txt` | S2 + S1 · no es nuevo de fondo: el recorrido lo confirma |
+| 21 | Lista · operario, parte ya firmado | la tarjeta del #84 sigue con «Abrir parte» de primaria y nada dice que su parte está firmado; debajo, «Emitir albarán» | que la tarjeta diga dónde está el trabajo | `t6-3-lista-fin-tecnico-390.png` · el clic de «Abrir parte» NO se probó (crearía otro parte) | S4 · medir el clic antes |
+| 22 | Albarán (ficha) · todos | «TRABAJO —» en un albarán que cuelga del #84: `GET /admin/albaranes/53` da `job.titulo: null` y `GET /admin/jobs/84` sí da su título | el mismo nombre por los dos caminos | `t5-2-albaran53-fin-admin-390.txt` y los dos JSON | S1 (lo que devuelve la ruta) · la fila la pinta S4 |
+| 23 | Albarán (ficha) · operario | «FACTURACIÓN · Sin facturar» y «PENDIENTE DE FACTURAR · 1 línea» a quien no factura | decide el fundador | `t5-2-albaran53-fin-tecnico-390.txt` | S4 · pregunta, no avería |
+| 24 | Hoja «Nuevo albarán» · 390 | «Concepto», «Cant.» y «Unidad» miden 34 px de alto; «?» 29×26 y «×» 30×30 | 44 o más | CAMPO y BOTONES de `t5-1-salida-abrir.txt` | S2 (hoja de alta) |
+| 25 | Parte firmado · todos | la única acción es «Volver al trabajo»: ni PDF ni copia para el cliente que acaba de firmar | decide el fundador | `t6-1-parte-firmado-fin-admin-1280.txt` | pregunta de producto |
+| 26 | Parte FIRMADO · 390 | la hoja mide 533 px, más que los 451 del borrador | 390 | CAJA de `t4-4-salida.txt` | S4 · se vuelve a sondar sobre lo desplegado cuando entre #3173: si sigue, SCRUM-1722c no lo cubre |
+
+**Reparto que hizo el orquestador el mismo día** (encargo del relevo, 16-nov): 14, 15 y 16 a S4, como P1 del piloto · 17, 20 y 22 los lleva él a sus carriles · 18 y 25 esperan al fundador (una pide texto, la otra es una decisión) · 21, de S4, detrás del pad.
+
+**Filas de la tabla de arriba que este tramo cierra o confirma.** La 13 (radios de 13×13) NO es avería: el objetivo real del dedo es la etiqueta, de 153×48. La 7 (el 403 de `/admin/team`) sigue. La 1 (el parte a 390) sigue en producción hasta que entre #3173.
+
+**Lo que SÍ funciona** (medido; operario simulado, con el admin de control):
+- 3.2 · cuatro `PATCH /admin/partes/22` → 200 (entrada escrita, salida con «Ahora», desplazamientos, kilómetros); «Tiempo en la obra 1 h 36 min».
+- «Ordenar en líneas» · `POST /admin/partes/22/dictado` → 200 en unos 3 s; el botón se apaga mientras ordena.
+- 3.3 · «Añadir al parte» → `PATCH` con las líneas, 200; tras recargar siguen las 6.
+- El dictado a medias SOBREVIVE a una recarga en el mismo navegador (SCRUM-1675, por efecto) y se vacía si se vacía.
+- 3.4 · referencia, tipo y notas → tres `PATCH` 200; tras recargar, el bloque los conserva.
+- 3.5 · parte relleno, operario, 1280: 0 desbordes; las cuentas de dinero, todas a 0.
+- 4 · «Confirmar firma» nace apagado y se enciende con el trazo; `POST …/firmar-tecnico` 200 y `POST …/firmar` 200; tras la primera firma, 0 campos editables.
+- 5 · `POST /admin/jobs/84/albaranes` → 201 (sin valorar); en la ficha del albarán, al operario: «€», «Total», «Importe», «Precio», «Base», «IVA» y «NaN» dan 0 en texto, DOM y campos. ⚠️ **Sin control positivo de precios:** el albarán no está valorado, y el admin tampoco ve ninguno. Ese cero no prueba el recorte.
+- 6 · la oficina ve en la ficha el parte FIRMADO, el albarán, la tarea y, en su campo, la nota privada.
+- Todas las rutas que se escribieron están en `TECNICO_ALLOWED` (`adminRouteDeclarations.ts` de `main`). Sus 403 reales, sin medir: las escrituras salieron con la cookie de admin.
+
+**NO hecho.** El control de precios con un albarán VALORADO (tramo 5.3) · los estados que ve la oficina (tramo 6.2) · la lista de albaranes del operario · el clic de «Técnicos» (fila 6) y el de «Abrir parte» con el parte ya firmado (fila 21).
+
+## APÉNDICE · SCRUM-1686 H6c · tramo 6.2 y 6.3: los estados que ve la oficina · S4 · 17-nov-2026
+
+**Medido contra:** `origin/main` = `a3510f52b208b060e755c81e0c8cc1accc299672` · yaqu.app, 17-nov-2026 entre las 07:24Z y las 07:31Z (cabecera `Date:` de GitHub) · cuenta QA, rol admin, 390×844 · **Rama:** `scrum-1686h6-apendice-c-tramo-6-2-estados-oficina` (nació como `scrum-1686h6c-tramo-6-2-estados-oficina`; por qué se renombró, al final del apéndice) · **Carril:** S4
+**Skill UI:** no cargada · no se toca ninguna pantalla: son medidas, y pasan al registro tal como se tomaron
+**Quién lo escribe:** la S4 de relevo, a las 09:06Z de GitHub, con `origin/main` en `79495e37f4835c7ced26c60c045fe13375a0365c`. Las medidas son de la S4 anterior; aquí NO se ha vuelto a medir ninguna: se copian de su hoja de hallazgos, que sólo existía en un fichero de la máquina (A8).
+
+**Con qué.** `paso2.mjs` del banco H6 con cuatro pasos nuevos, que entran en este PR: `c04-crear-desechable.mjs`, `c15-estado-con-freno.mjs`, `c16-crear-albaran.mjs` y `c17-tarjeta-en-la-lista.mjs`. Un clic por pasada, y sólo si la primaria que hay es la pedida; el freno de `c15` no pulsa nada que salga de la cuenta o no tenga vuelta (cerrar, facturar, cobrar, enviar, borrar, anular). Sujeto: el trabajo DESECHABLE #85, creado para esto; el #84 no se tocó. Capturas y `.txt`: fuera de git, en la máquina del equipo (el repo es público y el texto de página no se ha revisado).
+
+**Primaria de cada estado** (población: 6 estados de la ficha del trabajo; medidos 6):
+
+| estado del trabajo | primaria en la FICHA | lo que se pulsó | respuesta |
+|---|---|---|---|
+| SIN AGENDAR | «Agendar» | «Agendar» → modal con fecha propuesta (mañana 09:00) → «Agendar» | `PATCH /admin/jobs/85` 200 |
+| AGENDADO | «▶ Empezar» | «▶ Empezar» (sin modal) | `PATCH /admin/jobs/85` 200 |
+| EN CURSO, sin albarán | «+ Nuevo albarán» | hoja «Nuevo albarán», una línea sin precios → «Crear albarán» | `POST /admin/jobs/85/albaranes` 201 (#54, `AB260009`, borrador) |
+| EN CURSO, albarán en borrador | «Emitir albarán» | «Emitir albarán» | `POST /admin/albaranes/54/emitir` 200, SIN modal |
+| EN CURSO, albarán emitido | «Enviar para firmar» | NO se pulsa (sale de la cuenta) · se pulsó la secundaria «✅ Marcar terminado» | `PATCH /admin/jobs/85` 200, SIN modal |
+| TERMINADO, albarán emitido | «Enviar para firmar» | nada: aquí se para | — |
+
+**Filas nuevas** (siguen a la 26 del apéndice H6b):
+
+| # | pantalla · ancho · rol | qué se ve | qué debería | dónde se midió | de quién |
+|---|---|---|---|---|---|
+| 27 | Ficha del trabajo · 390 · admin | «Emitir albarán» emite al primer toque, sin confirmar: se pulsó para MIRAR el modal y no lo hubo; el albarán #54 quedó EMITIDO. Lo mismo «✅ Marcar terminado». No se ha buscado en el repo si es deliberado | decide el fundador | pasadas «albarán en borrador» y «albarán emitido» de `c15-estado-con-freno.mjs` | sin repartir |
+| 28 | Lista y ficha del trabajo · 390 · admin | no coinciden en la primaria. EN CURSO: la tarjeta de la lista da «Abrir parte» y la ficha «+ Nuevo albarán» o «Emitir albarán»; en la ficha el parte es la secundaria «+ Nuevo parte». TERMINADO: la ficha da «Enviar para firmar» de primaria y la tarjeta la misma acción de secundaria, sin primaria | decide el fundador | `c15-estado-con-freno.mjs` (ficha) y `c17-tarjeta-en-la-lista.mjs` (tarjeta) | sin repartir |
+| 29 | Modal «Agendar» · 390 · admin | «Cancelar» 80×30, «Agendar» 76×30, la fecha 342×36, la casilla del técnico 20×20 | 44 o más | pasada SIN AGENDAR de `c15-estado-con-freno.mjs` | S4 · misma familia que SCRUM-1745 |
+| 30 | Lista · tarjeta del trabajo · 390 · admin | la tarjeta no pinta la tarea ni la dirección cuando el trabajo no tiene obra: el #85 sólo se distingue de los otros de la misma clienta por la fecha. Dos búsquedas por marca salieron CIEGAS (0 elementos); se vio en la captura del fallo | decide el fundador | `c17-tarjeta-en-la-lista.mjs` | sin repartir |
+
+**Filas de arriba que este tramo confirma.** La 20: la ficha EN CURSO ofrece «+ Nuevo albarán» dos veces (primaria de cabecera y secundaria de ALBARANES), ahora vista también como admin.
+
+**6.3 · la lista después.** «Por cobrar» 1,21 € antes y después («en 1 trabajo sin cerrar · 7 sin importe de referencia»). SIN AGENDAR 5 → 4 · TERMINADOS 1 → 2. El #85 está en «TERMINADOS — COBRA EL RESTO».
+
+**NO medido.** «Cerrar» (irreversible, no se pulsa: el #85 se queda TERMINADO) · «Enviar para firmar» · 1280 · la tarjeta de la lista en AGENDADO y en EN CURSO para ESTE trabajo.
+
+**Datos de prueba que quedan en la cuenta QA:** trabajo #85 (TERMINADO) · albarán #54 `AB260009` (EMITIDO, sin precios, una línea «(prueba) Revisión de la caldera»). Escrituras: 1 `POST` de trabajo, 3 `PATCH` de trabajo, 2 `POST` de albarán (uno 400), 1 emitir.
+
+**Lo que salió mal** (de la S4 que midió). El primer «Crear albarán» dio 400: el paso escribió el concepto en «Lugar de entrega» (el primer `input[type=text]` de la hoja no es el concepto). No creó nada. En la captura, tomada 15 s después, no se ve ningún aviso; no se afirma que no saliera.
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1686/banco-h6/c15-estado-con-freno.mjs`
+
+**Lo que salió mal con la RAMA** (de la S4 que relevó, 17-nov-2026). Este apéndice se empujó a las 09:13Z como `scrum-1686h6c-tramo-6-2-estados-oficina`. `numeroDeRama` (`scripts/_numero-de-rama.mjs`) admite tras el número UNA letra y cifras (`h6`), no `h6c`: devolvió `null`, el censo dejó la rama fuera, y `tests/scrum804-la-rama-viva.test.mjs` cayó — no sólo en su PR (#3188) sino en `main`, porque el test compara el censo con TODAS las refs de `origin`: los runs de CI de `main` 44053524890 (`5cbd8631e`) y 44054044211 (`340b084d4`) salieron en rojo con ese único «✖», nombrando esta rama. El guard tenía razón y no se tocó: se empujó el mismo trabajo con un nombre que el censo lee (el de la cabecera) y se borró la ref vieja. El arreglo de `main` no se da por visto aquí: se ve en el siguiente run verde de CI sobre `main`.
+
+A9: comprobación → `tests/scrum804-la-rama-viva.test.mjs`

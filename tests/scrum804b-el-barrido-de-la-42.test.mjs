@@ -16,6 +16,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   DENTRO, FUERA, NO_DECIDIBLE, SIN_RED, censarConMotivo, leerRemoto, linea, ramasDelTicket,
   artefactosQueNombra,
@@ -195,7 +197,64 @@ test('SCRUM-804b · 🔴 el emparejamiento va por IDENTIDAD, no por contener el 
     '🔴 una rama sin slug (`scrum-904`) no se empareja con su ticket. El slug es para las '
     + 'personas; lo que el barrido lee es el número, y exigir slug para reconocerla es perder una '
     + 'rama por una razón que no tiene que ver con lo que se mide.');
+
+  // 🔴 Y con la regla CANÓNICA (17-nov-2026, bloque de abajo). Va DENTRO de este caso, no en uno
+  // nuevo: `tests/scrum1331-sin-red-se-dice.test.mjs` fija que este fichero declara 5 casos y 2 puros.
+  comprobarLaReglaCanonica();
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 17-nov-2026 · EL CENSO LEE LAS RAMAS CON LA MISMA REGLA QUE TODOS, NO CON UNA COPIA.
+//
+// `main` en rojo (runs 44054044211 y 44053524890; y el obligatorio de #3189): el control de abajo
+// eligió como negativo SCRUM-1686, con rama viva `scrum-1686h6-apendice-c-tramo-6-2-estados-oficina`,
+// y el censo lo sacó DENTRO («entrada en main + 23/23 artefactos suyos presentes»). La rama era
+// INVISIBLE para el censo: `ramasDelTicket` llevaba su propio patrón, `^scrum-N([a-z])?(-|$)`, que
+// no admite el corte tras la fase (`h6`). La regla canónica —`numeroDeRama`, en
+// `scripts/_numero-de-rama.mjs`— lo admite desde SCRUM-804h (20-sep) y lo DECLARA en su bloque
+// `FORMAS:`. Era la cuarta copia de la misma regla que ese fichero existe para evitar.
+//
+// Este caso lee ESE bloque y exige que el censo empareje cada forma con su número y con ningún otro.
+// La forma que se añada mañana a la regla se exige aquí sola, sin re-elegir nada a mano.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+function formasDeLaRegla() {
+  const fuente = fs.readFileSync(path.join(import.meta.dirname, '..', 'scripts', '_numero-de-rama.mjs'), 'utf8');
+  const bloque = /^\/\/\s+FORMAS:$([\s\S]*?)^\/\/\s+:FIN$/m.exec(fuente);
+  if (!bloque) return null;
+  const formas = [];
+  for (const l of bloque[1].split('\n')) {
+    const m = /^\/\/\s+(\S+)\s+→\s+(\d+|null)\b/.exec(l);
+    if (m) formas.push({ nombre: m[1], espera: m[2] === 'null' ? null : Number(m[2]) });
+  }
+  return formas;
+}
+
+function comprobarLaReglaCanonica() {
+  const formas = formasDeLaRegla();
+  assert.ok(formas, '🔴 NO PUDE MIRAR: no encuentro el bloque `FORMAS:` … `:FIN` en scripts/_numero-de-rama.mjs.');
+  // SUELO: sin formas con número, lo de abajo estaría verde sin haber comprobado nada.
+  const conNumero = formas.filter((f) => f.espera !== null);
+  assert.ok(conNumero.length >= 5 && formas.some((f) => f.espera === null),
+    `🔴 NO PUDE MIRAR: el bloque declara ${conNumero.length} formas con número y `
+    + `${formas.length - conNumero.length} sin él; así no se ejercita nada.`);
+
+  for (const { nombre, espera } of formas) {
+    // Todo número que aparece en el nombre es un candidato a casar mal (`revert-1192-scrum-824b`).
+    const candidatos = new Set((nombre.match(/\d+/g) || []).map(Number));
+    if (espera !== null) candidatos.add(espera);
+    for (const k of candidatos) {
+      const casa = ramasDelTicket([nombre], k).length === 1;
+      assert.equal(casa, k === espera,
+        `🔴 \`${nombre}\` (la regla dice → ${espera}) ${casa ? 'casa' : 'NO casa'} con SCRUM-${k} en el censo. `
+        + 'Una rama que el censo no ve deja su ticket sin «rama viva» y lo saca DENTRO con obra fuera '
+        + '(SCRUM-1686, 17-nov-2026); una que casa con otro número le atribuye trabajo ajeno.');
+    }
+  }
+  // Y el caso que lo destapó, escrito tal cual: fase con corte Y slug.
+  assert.deepEqual(ramasDelTicket(['scrum-1686h6-apendice-c-tramo-6-2-estados-oficina', 'scrum-16860-x'], 1686),
+    ['scrum-1686h6-apendice-c-tramo-6-2-estados-oficina'],
+    '🔴 la rama del 17-nov sigue invisible para el censo, o el 1686 arrastra al 16860.');
+}
 
 test('SCRUM-804b · los artefactos se sacan del TEXTO de la entrada, no del número del ticket', () => {
   const entrada = 'Ver `tests/scrum999-x.test.mjs` y `src/modules/a/b.ts`, y también docs/master/SCRUM-1.md.';

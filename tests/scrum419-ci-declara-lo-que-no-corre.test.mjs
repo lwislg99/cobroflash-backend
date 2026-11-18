@@ -251,6 +251,10 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // FILA del albarán (modo, precio, versión) tras cada intento. Sólo el desechable: crea y borra un
   // merchant. La regla pura y el cableado por AST van en el mismo fichero y corren sin banco.
   'scrum1712-precios-del-albaran-solo-admin.test.mjs': 1,
+  // SCRUM-1744: el PDF del albarán sale sin precios para el operario. Necesita banco porque entra por
+  // la RUTA real del PDF con sesiones de técnico y de admin guardadas en la base. Sólo el desechable
+  // (LIBRO_PG_URL o QA_DB_TEST): crea y borra un merchant. Lo que no necesita banco corre siempre.
+  'scrum1744-pdf-del-albaran-sin-precios-operario.test.mjs': 1,
   // SCRUM-1714: verifactu.xml y datos.zip miran el SII como el modo de emisión. Necesita banco porque
   // entra por las dos RUTAS reales de exportación con merchants guardados en la base (con el flag
   // encendido y el SII contestado de distintas formas) y mira lo que sirven. Sólo el desechable: crea
@@ -261,6 +265,15 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // número de trabajo (columna suelta) y con la sesión del técnico asignado. Sólo el desechable: crea y
   // borra dos merchants. La regla pura (orden y recuento) va en el mismo fichero y corre sin banco.
   'scrum1697b-visita-en-el-servidor.test.mjs': 1,
+  // SCRUM-1662 (c) · c.21964: el GET del parte trae `queHayQueHacer` LEÍDO del trabajo. Necesita banco
+  // porque mide la ruta entera con sesiones reales (jefe, técnico asignado, técnico ajeno) y que la
+  // lectura es EN VIVO (cambia el trabajo → cambia el GET). Sólo el desechable: crea y borra un merchant.
+  'scrum1662c-parte-que-hay-que-hacer-get.test.mjs': 1,
+  // SCRUM-1740 · c.21982: el albarán que nace de un trabajo con parte FIRMADO trae sus líneas, sin
+  // precios. Necesita banco porque mide la RUTA de alta con sesiones reales (jefa, técnico asignado,
+  // técnico ajeno), lo que queda en la FILA del albarán y que la del parte no cambia. Sólo el
+  // desechable: crea y borra un merchant. La traducción pura va en el mismo fichero y corre sin banco.
+  'scrum1740-albaran-nace-con-las-lineas-del-parte.test.mjs': 1,
   // SCRUM-1403: los TRES que ejercitan el recorte de presupuestos del Tecnico y la pestana de
   // documentos de la ficha de cliente contra Prisma de verdad. Necesitan banco por el mismo motivo
   // que los de SCRUM-1397: lo que vigilan es el WHERE (el recorte en AND con la busqueda y con el

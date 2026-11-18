@@ -203,7 +203,10 @@ export function excepcionPara(rel, puesto, mapa) {
 /**
  * El puesto que declara un nombre de sesión. Formatos medidos el 29-sep: `sesion-N` (sesion.mjs),
  * `sN-<fecha><letra>` (lanzados a mano), `orquestador`. Para el equipo de Javier se aceptan
- * `jN-…` y `puesto-jN`. Cualquier otro nombre (`cobroflash-backend-57`, vacío) → null.
+ * `jN-…`, `puesto-jN` y, desde SCRUM-1506c (decisión de S0, SCRUM-1506 c.21966), la forma con la que
+ * de verdad lanza: `jv-jN` y sus relevos `jv-jN<1-3 letras>` o `jv-jN-<lo que sea>` (medidos: jv-j4g,
+ * jv-j6ar, jv-j2ay). Sólo N de 1 a 6: `jv-j9z`, `jv-j0`, `jv-j7` o `jv-j12` NO son un puesto.
+ * Cualquier otro nombre (`cobroflash-backend-57`, vacío) → null.
  *
  * UNA SOLA TRADUCCIÓN (choque con SCRUM-1298, medido el 29-sep): `sesion-N` NO es un nombre unívoco.
  * En el equipo de Luis es SN; en el de Javier, `sesion-1` es J1 (`config.identidades` de sesion.mjs).
@@ -225,6 +228,8 @@ export function puestoDeNombre(nombre, mesa = null) {
   if (m) return `S${m[1] ?? m[2]}`;
   m = /^(?:puesto-j([1-6])|j([1-6])-[a-z0-9-]+)$/.exec(n);
   if (m) return `J${m[1] ?? m[2]}`;
+  m = /^jv-j([1-6])(?:[a-z]{1,3}|-[a-z0-9-]+)?$/.exec(n);
+  if (m) return `J${m[1]}`;
   if (/^orquestador(?:-[a-z0-9-]+)?$/.test(n)) return 'ORQ';
   return null;
 }
