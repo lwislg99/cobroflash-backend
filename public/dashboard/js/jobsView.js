@@ -664,27 +664,40 @@ function renderJobRows(list, jobs, container, todos, equipo) {
     return;
   }
 
-  // SCRUM-917c · entra «📅 Hoy» (texto firmado, comentario 15881), separado de «Esta semana»: lo
-  // que el fundador quiere ver primero es lo de hoy. El criterio vive en `grupoDeTrabajo`, que es
-  // el mismo que cuenta la cifra «Para hoy» de arriba.
+  // ══ SCRUM-1725g · LA LISTA ES PLANA: UNA FILA POR TRABAJO, SIN CABECERAS DE GRUPO ═══════════════
+  //
+  // Veredicto del fundador sobre la vuelta anterior (SCRUM-1725 c.22073): quiere «un listado normal
+  // como los que tenemos en otros sitios». Medido en yaqu.app el 18-nov-2026
+  // (`docs/master/evidencias/SCRUM-1725/g1-patron-listas.mjs`): Presupuestos y Albaranes pintan UN
+  // `tbody`, CERO filas de cabecera y el estado como píldora en 10 de 10 y 12 de 12 filas; Trabajos
+  // pintaba 5 `tbody`, 7 filas de cabecera y ninguna píldora. Se espeja ese patrón.
+  //
+  // LO QUE SE VA: los rótulos de grupo («🔨 En curso», «📅 Hoy», «📅 Esta semana», «⏳ Sin agendar»,
+  // «🗓 Más adelante», «✅ Terminados…», «🔒 Cerrados») y, con el de Terminados, su subtotal «por
+  // cobrar» y su salvedad larga. Decisión firmada por el orquestador por delegación del fundador
+  // (SCRUM-1656 c.21978), registrada en SCRUM-1725 c.22076: el cobro queda en la tarjeta «Por
+  // cobrar» de arriba (importe + «N sin importe de referencia») y fila a fila («💰 Cobrar el
+  // resto (importe)» y «X de Y»). M1 (c.22052, «✅ Terminados» a secas para quien no ve el cobro)
+  // queda superado: no hay cabecera para ningún rol.
+  //
+  // LO QUE SE QUEDA:
+  //   · EL ORDEN. La misma secuencia que tenían los grupos, sin sus rótulos: en curso → hoy → esta
+  //     semana → sin agendar → más adelante → terminados (c.22076, P2). Trabajos es la cola del día:
+  //     los N de la cifra «Para hoy» son las N primeras filas, y la rellena del operario queda
+  //     arriba. Dentro de cada tramo manda el orden del servidor (fecha agendada), como antes.
+  //   · `grupoDeTrabajo` sigue siendo la ÚNICA regla: ordena aquí, cuenta la cifra «Para hoy» y
+  //     decide qué «▶ Empezar» va relleno (SCRUM-1739).
+  //   · LOS CERRADOS, PLEGADOS (c.22076, P3): «Ver N cerrados» —el literal de siempre— es la última
+  //     fila; al pulsarla se añaden con su píldora «Cerrado». Sin eso la lista crecería para siempre
+  //     con lo que ya no pide nada. La fila conserva su clase (`jobs-grupo-abrir`): la buscan por
+  //     ella `guard:escalera-por-estado` y `censo:clics-del-80`.
+  //   · El ESTADO ya no lo dice un rótulo: lo dice cada fila, con la píldora de la ficha (`jobRow`).
   const ahora = new Date();
-  // SCRUM-1725e (M1) · «— cobra el resto» es una orden sobre el COBRO, y quien no ve el estado de
-  // cobro no puede cumplirla: para ese rol la cabecera dice «✅ Terminados», a secas. El admin
-  // conserva la suya, sin tocar una letra. FIRMADO por el orquestador por delegación del fundador
-  // (SCRUM-1656 c.21978), registrado en SCRUM-1725 c.22052 y en `docs/microcopy/`. La pregunta es
-  // la MISMA que quita el importe «por cobrar» de esta cabecera, unas líneas más abajo.
-  const veCobro = veEstadoDeCobro(window.appUserRole);
-  const groups = [
-    { key: 'en_curso',  title: '🔨 En curso',         items: [] },
-    { key: 'hoy',       title: '📅 Hoy',               items: [] },
-    { key: 'semana',    title: '📅 Esta semana',       items: [] },
-    { key: 'sin',       title: '⏳ Sin agendar',       items: [] },
-    { key: 'adelante',  title: '🗓 Más adelante',      items: [] },
-    { key: 'terminado', title: veCobro ? '✅ Terminados — cobra el resto' : '✅ Terminados', items: [] },
-    { key: 'cerrado',   title: '🔒 Cerrados', items: [], collapsed: true },
-  ];
-  const porClave = new Map(groups.map((g) => [g.key, g]));
-  for (const j of jobs) porClave.get(grupoDeTrabajo(j, ahora)).items.push(j);
+  const SECUENCIA = ['en_curso', 'hoy', 'semana', 'sin', 'adelante', 'terminado'];
+  const porTramo = new Map([...SECUENCIA, 'cerrado'].map((clave) => [clave, []]));
+  for (const j of jobs) porTramo.get(grupoDeTrabajo(j, ahora)).push(j);
+  const vivos = SECUENCIA.flatMap((clave) => porTramo.get(clave));
+  const cerrados = porTramo.get('cerrado');
 
   const card = document.createElement('div');
   card.className = 'customers-card jobs-card';
@@ -703,85 +716,44 @@ function renderJobRows(list, jobs, container, todos, equipo) {
   // Los rótulos son los que ya usan las listas hermanas en producción; «Técnicos» lo firmó el
   // fundador el 4-sep-2026 (regla 30, `docs/microcopy/`).
   //
-  // ── SCRUM-816 · «ESTADO» Y «FECHA» ERAN LA MISMA PREGUNTA ─────────────────────────────────
+  // ── SCRUM-816 · «ESTADO» Y «FECHA» ERAN LA MISMA PREGUNTA… MIENTRAS HUBO CABECERAS DE GRUPO ──
+  // SCRUM-816 retiró el `<th>Estado</th>` porque el estado ya lo decía la cabecera del grupo, y
+  // SCRUM-917c retiró la píldora «Sin agendar» por lo mismo (salía en 12 de 13 filas, todas bajo
+  // «⏳ Sin agendar · 12»). Las dos decisiones descansaban en esas cabeceras. SCRUM-1725g las quita,
+  // así que el estado VUELVE a la fila: sin rótulo y sin píldora no lo diría nadie.
   //
-  // Se funden en una. Y no es que quepan juntas: es que **contestan lo mismo** —«¿cuándo se hace
-  // esto?»—, y separadas se contradecían a media pantalla. FECHA estaba vacía («—») en 11 de 12
-  // filas de la captura de producción: una columna que no dice nada el 92% del tiempo gasta ancho
-  // y no informa. Y la insignia que iba al lado repetía en una palabra lo que la fecha ya decía.
+  // «Estado» es el `<th>` de Presupuestos y Albaranes. FIRMADO por el orquestador por delegación
+  // del fundador (SCRUM-1656 c.21978), SCRUM-1725 c.22076, y registrado en `docs/microcopy/`.
   //
-  // 🔴 LO QUE SE PODÍA PERDER Y NO SE PIERDE. La FSM tiene cinco estados y sólo dos hablan de
-  // agenda; «En curso», «Terminado» y «Cerrado» no responden a «cuándo». Pero **cada fila vive
-  // bajo una cabecera de grupo que ya los nombra** (🔨 En curso · ✅ Terminados · 🔒 Cerrados), y
-  // esas cabeceras llevan microcopy aprobada de SCRUM-428. Así que la fusión no borra el estado:
-  // lo deja donde ya estaba dicho, en vez de repetirlo veinte veces.
-  //
-  // Se retira el `<th>Estado</th>`. No se estrena ni un rótulo: «Fecha» ya estaba.
-  //
-  // ── SCRUM-917c · Y SE RETIRA «Técnicos» COMO COLUMNA ──────────────────────────────────────
-  // Baja a la línea del cliente (ver `celdaTecnicos`). La alineación del importe pasa a la hoja:
-  // el `style=` en línea que llevaba este `<th>` se va con él.
+  // ── SCRUM-917c · «Técnicos» NO ES COLUMNA ─────────────────────────────────────────────────
+  // Vive en la línea del cliente (ver `celdaTecnicos`). La alineación del importe está en la hoja.
   thead.innerHTML =
     '<tr><th>Cliente</th><th class="jobs-th-importe">Importe</th>'
-    + '<th>Fecha</th><th>Acciones</th></tr>';
+    + '<th>Fecha</th><th>Estado</th><th>Acciones</th></tr>';
   table.appendChild(thead);
-  // El `colSpan` de las filas de grupo se CUENTA de esta cabecera, no se escribe: dos números a
-  // mano para lo mismo se descuadran (los dos `colSpan = 8` de SCRUM-584). Aquí pasa de 5 a 4.
+  // El `colSpan` de la fila «Ver N cerrados» se CUENTA de esta cabecera, no se escribe: dos números
+  // a mano para lo mismo se descuadran (los dos `colSpan = 8` de SCRUM-584).
   const columnas = thead.querySelectorAll('th').length;
 
-  for (const g of groups) {
-    if (!g.items.length) continue;
-    const tbody = document.createElement('tbody');
-    tbody.className = 'jobs-grupo';
-
-    // La cabecera del grupo, con su importe y su salvedad: microcopy aprobada que NO se toca.
-    // SCRUM-1725 (D1) · el importe «por cobrar» y su salvedad son estado de cobro: no para quien no lo ve.
-    const resumen = g.key === 'terminado' && veCobro && typeof resumenTerminadoSinCobrar === 'function'
-      ? resumenTerminadoSinCobrar(g.items)
-      : null;
-    // SCRUM-917c · «por cobrar» junto a la suma (dos palabras firmadas, comentario 15881): sin
-    // ellas el importe de la cabecera no decía de qué era.
-    const importe = resumen && resumen.cuantos > 0 ? ` · ${eurosJobs(resumen.importe)} por cobrar` : '';
-    const trTitulo = document.createElement('tr');
-    trTitulo.className = 'jobs-grupo-titulo';
-    const tdTitulo = document.createElement('td');
-    tdTitulo.colSpan = columnas;
-    tdTitulo.textContent = `${g.title} · ${g.items.length}${importe}`;
-    trTitulo.appendChild(tdTitulo);
-    tbody.appendChild(trTitulo);
-
-    if (resumen && resumen.sinImporte > 0) {
-      const trSalvedad = document.createElement('tr');
-      trSalvedad.className = 'jobs-grupo-salvedad';
-      const tdSalvedad = document.createElement('td');
-      tdSalvedad.colSpan = columnas;
-      // ⚠️ TEXTO OFICIAL APROBADO (regla 30, fundador 10-ago-2026). Ni se reescribe ni se «mejora».
-      tdSalvedad.textContent =
-        `${resumen.sinImporte} sin importe de referencia: no se sabe cuánto falta y no entran en el total.`;
-      trSalvedad.appendChild(tdSalvedad);
-      tbody.appendChild(trSalvedad);
-    }
-
-    if (g.collapsed) {
-      const tr = document.createElement('tr');
-      tr.className = 'jobs-grupo-abrir';
-      const td = document.createElement('td');
-      td.colSpan = columnas;
-      const btn = document.createElement('button');
-      btn.className = 'btn-ghost btn-sm';
-      btn.textContent = `Ver ${g.items.length} cerrado${g.items.length !== 1 ? 's' : ''}`;
-      btn.addEventListener('click', () => {
-        tr.remove();
-        g.items.forEach((j) => tbody.appendChild(jobRow(j, container, equipo)));
-      });
-      td.appendChild(btn);
-      tr.appendChild(td);
-      tbody.appendChild(tr);
-    } else {
-      g.items.forEach((j) => tbody.appendChild(jobRow(j, container, equipo)));
-    }
-    table.appendChild(tbody);
+  const tbody = document.createElement('tbody');
+  vivos.forEach((j) => tbody.appendChild(jobRow(j, container, equipo)));
+  if (cerrados.length) {
+    const tr = document.createElement('tr');
+    tr.className = 'jobs-grupo-abrir';
+    const td = document.createElement('td');
+    td.colSpan = columnas;
+    const btn = document.createElement('button');
+    btn.className = 'btn-ghost btn-sm';
+    btn.textContent = `Ver ${cerrados.length} cerrado${cerrados.length !== 1 ? 's' : ''}`;
+    btn.addEventListener('click', () => {
+      tr.remove();
+      cerrados.forEach((j) => tbody.appendChild(jobRow(j, container, equipo)));
+    });
+    td.appendChild(btn);
+    tr.appendChild(td);
+    tbody.appendChild(tr);
   }
+  table.appendChild(tbody);
 
   list.appendChild(card);
 }
@@ -1131,6 +1103,25 @@ function jobRow(j, container, equipo) {
   tdFecha.className = 'cell-date';
   if (j.scheduledAt) tdFecha.textContent = fecha;
   tr.appendChild(tdFecha);
+
+  // ── SCRUM-1725g · EL ESTADO, EN LA FILA ───────────────────────────────────────────────────
+  // «El grupo ya lo dice» dejó de ser verdad: la lista es plana y no hay grupo que lo diga. La
+  // píldora vuelve, y es LA DE LA FICHA —`jobStatusMeta` (api.js), la única copia de la etiqueta y
+  // de su clase—: «Sin agendar», «Agendado», «En curso», «Terminado», «Cerrado». Ni un literal
+  // escrito aquí. Es el estado de la FSM, no el de cobro: el cobro sigue en la celda de IMPORTE
+  // («X de Y»), que es donde SCRUM-816 lo dejó dicho con las dos cifras.
+  // Misma celda y misma clase que Presupuestos y Albaranes (`cell-status`): la rejilla compartida
+  // de la tarjeta de móvil ya sabe dónde va.
+  const tdEstado = document.createElement('td');
+  tdEstado.className = 'cell-status';
+  const metaDelEstado = typeof jobStatusMeta === 'function' ? jobStatusMeta(j.status) : null;
+  if (metaDelEstado) {
+    const pildora = document.createElement('span');
+    pildora.className = 'status-pill ' + metaDelEstado.pillClass;
+    pildora.textContent = metaDelEstado.label;
+    tdEstado.appendChild(pildora);
+  }
+  tr.appendChild(tdEstado);
 
   // ⑤ Acción principal + el «⋯»
   const tdAcc = document.createElement('td');
