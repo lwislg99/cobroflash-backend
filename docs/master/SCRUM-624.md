@@ -610,7 +610,7 @@ invoiceLines, billingPlan, utils), y no lo relancé.
 # SCRUM-624w · la cuenta QA de STAGING pasa a modo factura con criterio de caja (18-nov-2026)
 
 **Medido contra:** `origin/main` = `e37a7051f87b195ceeae4852c56a02bc0d218438` · 2026-11-18T23:32:57Z (staging `/health` `version` = el mismo sha, `db: up`)
-A9: aviso → cicatriz J1 «Puse la hora de una evidencia con un `fetch` de node a `api.github.com/zen` y devolvió una `Date` anterior a la operación que acababa de hacer» — no se pudo comprobar: la hora de una evidencia se escribe en la consola, y ningún guard del repositorio ve de dónde salió
+A9: aviso → cicatriz J1 «Puse la hora de una evidencia con un `fetch` de node a `api.github.com/zen` y devolvió una `Date` anterior a la operación que acababa de hacer (23:32:20 tras una fila de auditoría de 23:32:51); lo cacé contra esa fila y la corregí con `gh api -i zen` antes de comitear» — no se pudo comprobar: la hora de una evidencia se escribe en la consola, y ningún guard del repositorio ve de dónde salió
 
 Una operación, no código: aplica el ✅ del fundador de **c.22099** («Ok ponlo»: SOLO staging, SOLO el comercio 2,
 `INVOICING_ES_ENABLED` encendido para ese comercio, SII en «No», `criterioCaja` activado). Lo pidió el bloqueo medido
