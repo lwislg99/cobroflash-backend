@@ -269,6 +269,11 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // porque mide la ruta entera con sesiones reales (jefe, técnico asignado, técnico ajeno) y que la
   // lectura es EN VIVO (cambia el trabajo → cambia el GET). Sólo el desechable: crea y borra un merchant.
   'scrum1662c-parte-que-hay-que-hacer-get.test.mjs': 1,
+  // SCRUM-1740 · c.21982: el albarán que nace de un trabajo con parte FIRMADO trae sus líneas, sin
+  // precios. Necesita banco porque mide la RUTA de alta con sesiones reales (jefa, técnico asignado,
+  // técnico ajeno), lo que queda en la FILA del albarán y que la del parte no cambia. Sólo el
+  // desechable: crea y borra un merchant. La traducción pura va en el mismo fichero y corre sin banco.
+  'scrum1740-albaran-nace-con-las-lineas-del-parte.test.mjs': 1,
   // SCRUM-1403: los TRES que ejercitan el recorte de presupuestos del Tecnico y la pestana de
   // documentos de la ficha de cliente contra Prisma de verdad. Necesitan banco por el mismo motivo
   // que los de SCRUM-1397: lo que vigilan es el WHERE (el recorte en AND con la busqueda y con el

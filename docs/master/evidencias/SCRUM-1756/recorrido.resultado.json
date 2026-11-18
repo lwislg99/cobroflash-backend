@@ -1,0 +1,358 @@
+{
+ "navegador": {
+  "ok": true,
+  "ruta": "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+  "quien": "Edge (Windows)"
+ },
+ "escenarios": {
+  "A-main-sin": {
+   "sembrado": {
+    "status": 200,
+    "csp": []
+   },
+   "paginas": {
+    "recibo-pagado": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "3eddc08c2a7b1032ebfc67810da2d80837194790252bf5c05808760b8f711690"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "4616cd8ee6cd4416fd4310ef548b4d3337e8d04e01b898c66166c2f82d8271c3"
+     }
+    },
+    "recibo-pendiente": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "6eb22f5076d9198775699db5ca855982b489ee69b7609587ddfafed4772a59c6"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "13f7f02664c55d6c9924c22087dda018815803844a0666205a916333f9dd2bc2"
+     }
+    },
+    "recibo-fallido": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "8db873c5fac692cc06a9dc86a1d83e5a0c8965c354763e66c9eca28ff942c183"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "64888c1c4a5ebf126cef121095ad75f2b5271ca3c0cbece474a50f359e98fc4d"
+     }
+    },
+    "portal": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "cf04be76c09f9a13e4652f0b21e461a07d58d7611a22df22050865af5ca8c4da"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "115677a589d7966cb47e3fbc93c00f6555c01724923c85b72cf1017cd7fc1692"
+     }
+    },
+    "portal-404": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "307bb177902f351af0d629f4183e7291e3bc07b8049d8472feea3649053d2b21"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "0a6704989d6487267e9c0040471b0df83dbbc1c048f5be5b8fe8798243381799"
+     }
+    }
+   }
+  },
+  "B-main-aplicada": {
+   "sembrado": {
+    "status": 200,
+    "csp": [
+     "style-src-elem",
+     "style-src-attr"
+    ]
+   },
+   "paginas": {
+    "recibo-pagado": {
+     "390": {
+      "informes": 12,
+      "directivas": [
+       "style-src-elem",
+       "script-src-elem",
+       "style-src-attr"
+      ],
+      "sha256": "9f7abbd01283671420c0a04d59adccf2671f600bf482a08dd01d508513461d02"
+     },
+     "1280": {
+      "informes": 12,
+      "directivas": [
+       "style-src-elem",
+       "script-src-elem",
+       "style-src-attr"
+      ],
+      "sha256": "49fdec052c6dd0a46a5d9e64ba81c6f7319c312e157910e5c028448aa6d49126"
+     }
+    },
+    "recibo-pendiente": {
+     "390": {
+      "informes": 10,
+      "directivas": [
+       "style-src-elem",
+       "style-src-attr"
+      ],
+      "sha256": "d453a8c34798e05bfea917b6ae6ef591e380b65e49cdc8f9b1ecddd1081f4976"
+     },
+     "1280": {
+      "informes": 10,
+      "directivas": [
+       "style-src-elem",
+       "style-src-attr"
+      ],
+      "sha256": "84b92caeeb9a033846565cdfc07bc3324e909a19084d6182087768c056773f0e"
+     }
+    },
+    "recibo-fallido": {
+     "390": {
+      "informes": 10,
+      "directivas": [
+       "style-src-elem",
+       "style-src-attr"
+      ],
+      "sha256": "05811daa8a3d51c512d267aba3466abaad0118f6a085ac9adedb1fed1e47bb87"
+     },
+     "1280": {
+      "informes": 10,
+      "directivas": [
+       "style-src-elem",
+       "style-src-attr"
+      ],
+      "sha256": "d219fe2c2d739f2e8eaaecbcae279e07d4fd38550c565e8aeca54e63f847f484"
+     }
+    },
+    "portal": {
+     "390": {
+      "informes": 23,
+      "directivas": [
+       "style-src-elem",
+       "style-src-attr",
+       "script-src-elem"
+      ],
+      "sha256": "24b8ddebb3bbbd56c11863fbfcf4c854948cfe9d69251f68ba46e7b1b3639f74"
+     },
+     "1280": {
+      "informes": 23,
+      "directivas": [
+       "style-src-elem",
+       "style-src-attr",
+       "script-src-elem"
+      ],
+      "sha256": "47bff1e53eca5aef1515a6f84584ec430939acaf980f0bd90e07545659568492"
+     }
+    },
+    "portal-404": {
+     "390": {
+      "informes": 4,
+      "directivas": [
+       "style-src-elem",
+       "style-src-attr",
+       "script-src-elem"
+      ],
+      "sha256": "81b731e349926ea0c71a3e550e44f6133e0a48951f6229eb9f58de7dd4ab5d2c"
+     },
+     "1280": {
+      "informes": 4,
+      "directivas": [
+       "style-src-elem",
+       "style-src-attr",
+       "script-src-elem"
+      ],
+      "sha256": "e81f6d1846df6f2748109b836a4f3785b64acfbd4d72e21901b5068d1da98f1f"
+     }
+    }
+   }
+  },
+  "C-rama-aplicada": {
+   "sembrado": {
+    "status": 200,
+    "csp": [
+     "style-src-elem",
+     "style-src-attr"
+    ]
+   },
+   "paginas": {
+    "recibo-pagado": {
+     "390": {
+      "informes": 1,
+      "directivas": [
+       "script-src-elem"
+      ],
+      "sha256": "3eddc08c2a7b1032ebfc67810da2d80837194790252bf5c05808760b8f711690"
+     },
+     "1280": {
+      "informes": 1,
+      "directivas": [
+       "script-src-elem"
+      ],
+      "sha256": "4616cd8ee6cd4416fd4310ef548b4d3337e8d04e01b898c66166c2f82d8271c3"
+     }
+    },
+    "recibo-pendiente": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "6eb22f5076d9198775699db5ca855982b489ee69b7609587ddfafed4772a59c6"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "13f7f02664c55d6c9924c22087dda018815803844a0666205a916333f9dd2bc2"
+     }
+    },
+    "recibo-fallido": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "8db873c5fac692cc06a9dc86a1d83e5a0c8965c354763e66c9eca28ff942c183"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "64888c1c4a5ebf126cef121095ad75f2b5271ca3c0cbece474a50f359e98fc4d"
+     }
+    },
+    "portal": {
+     "390": {
+      "informes": 2,
+      "directivas": [
+       "script-src-elem"
+      ],
+      "sha256": "cf04be76c09f9a13e4652f0b21e461a07d58d7611a22df22050865af5ca8c4da"
+     },
+     "1280": {
+      "informes": 2,
+      "directivas": [
+       "script-src-elem"
+      ],
+      "sha256": "115677a589d7966cb47e3fbc93c00f6555c01724923c85b72cf1017cd7fc1692"
+     }
+    },
+    "portal-404": {
+     "390": {
+      "informes": 1,
+      "directivas": [
+       "script-src-elem"
+      ],
+      "sha256": "307bb177902f351af0d629f4183e7291e3bc07b8049d8472feea3649053d2b21"
+     },
+     "1280": {
+      "informes": 1,
+      "directivas": [
+       "script-src-elem"
+      ],
+      "sha256": "0a6704989d6487267e9c0040471b0df83dbbc1c048f5be5b8fe8798243381799"
+     }
+    }
+   }
+  },
+  "D-rama-sin": {
+   "sembrado": {
+    "status": 200,
+    "csp": []
+   },
+   "paginas": {
+    "recibo-pagado": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "3eddc08c2a7b1032ebfc67810da2d80837194790252bf5c05808760b8f711690"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "4616cd8ee6cd4416fd4310ef548b4d3337e8d04e01b898c66166c2f82d8271c3"
+     }
+    },
+    "recibo-pendiente": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "6eb22f5076d9198775699db5ca855982b489ee69b7609587ddfafed4772a59c6"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "13f7f02664c55d6c9924c22087dda018815803844a0666205a916333f9dd2bc2"
+     }
+    },
+    "recibo-fallido": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "8db873c5fac692cc06a9dc86a1d83e5a0c8965c354763e66c9eca28ff942c183"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "64888c1c4a5ebf126cef121095ad75f2b5271ca3c0cbece474a50f359e98fc4d"
+     }
+    },
+    "portal": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "cf04be76c09f9a13e4652f0b21e461a07d58d7611a22df22050865af5ca8c4da"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "115677a589d7966cb47e3fbc93c00f6555c01724923c85b72cf1017cd7fc1692"
+     }
+    },
+    "portal-404": {
+     "390": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "307bb177902f351af0d629f4183e7291e3bc07b8049d8472feea3649053d2b21"
+     },
+     "1280": {
+      "informes": 0,
+      "directivas": [],
+      "sha256": "0a6704989d6487267e9c0040471b0df83dbbc1c048f5be5b8fe8798243381799"
+     }
+    }
+   }
+  }
+ },
+ "comparacion": [
+  {
+   "par": "A-main-sin ↔ C-rama-aplicada",
+   "iguales": 10,
+   "total": 10
+  },
+  {
+   "par": "A-main-sin ↔ D-rama-sin",
+   "iguales": 10,
+   "total": 10
+  },
+  {
+   "par": "B-main-aplicada ↔ C-rama-aplicada",
+   "iguales": 0,
+   "total": 10
+  }
+ ],
+ "recursosQueFaltan": [
+  "404 http://127.0.0.1:47281/favicon.ico",
+  "404 http://127.0.0.1:47282/favicon.ico",
+  "404 http://127.0.0.1:47283/favicon.ico",
+  "404 http://127.0.0.1:47284/favicon.ico"
+ ]
+}

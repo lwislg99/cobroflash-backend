@@ -4151,6 +4151,12 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    dos casillas del par se alinean por ABAJO, que es donde se escribe: sin esto la de la izquierda
    queda 20 px más baja que su vecina (medido en yaqu.app con el front local, 17-nov-2026). */
 .parte-horas-par { align-items: end; }
+/* S4 · SCRUM-1752 · a 390 px el rótulo se partía por dentro del paréntesis («Desplazamientos (nº de» /
+   «viajes)»). Repartiendo las dos líneas, el salto cae entre el nombre y su unidad. Sólo afecta a un
+   rótulo que ya ocupa dos líneas; donde el navegador no reparte, se queda como estaba. */
+.parte-horas-par .parte-campo-rotulo {
+  text-wrap: balance;
+}
 .parte-ahora {
   min-height: 44px;
   margin-top: 6px;
@@ -4589,6 +4595,13 @@ textarea.parte-linea-desc {
   .modal-body div:has(> .alb-precio-field) > .input:not(:first-child) { order: 2; }
   .jobs-modal .jobs-modal-pie button,
   .jobs-modal .jobs-modal-cuerpo :is(.input, select, textarea) { min-height: 44px; }
+}
+/* SCRUM-1745c · POR DEBAJO DE 360, el Concepto gana 8 px de texto (su relleno lateral baja de 12 a 8).
+   Medido con Inter, que es la letra del panel: a 320 el campo enseñaba 196 px y un concepto de 31
+   letras («(prueba) Revisión de la caldera») pide 198,1 — se quedaba 2 px corto. A 360 y a 390 sobran
+   38 y 68, y ahí no se toca nada. La caja no se mueve: sólo el texto empieza 4 px antes. */
+@media (max-width: 359px) {
+  .modal-body div:has(> .alb-precio-field) > .input:first-child { padding-inline: 8px; }
 }
 /* ══ fin S4 · SCRUM-1745 ══ */
 /* Las tres fichas del tipo: 48 px de alto y la ficha entera recibe el toque. */

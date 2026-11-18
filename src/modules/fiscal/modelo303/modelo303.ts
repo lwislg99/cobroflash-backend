@@ -339,8 +339,10 @@ export function construirModelo303(params: {
   libroRecibidas: LibroRecibidas;
   año: number;
   trimestre: number;
+  /** SCRUM-1445d (fase 2) · la zona del comercio; ausente = la del proceso, como `rangoTrimestre`. */
+  zona?: string;
 }): Modelo303 {
-  const { desde, hasta } = rangoTrimestre(params.año, params.trimestre);
+  const { desde, hasta } = rangoTrimestre(params.año, params.trimestre, params.zona);
 
   const acumulado = new Map<number, { base: number; cuota: number }>();
   const sinClasificar: OperacionSinClasificar[] = [];

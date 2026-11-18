@@ -77,6 +77,7 @@ export const DECLARADOS = [
   { par: 'POST /admin/partes/:id/firmar-tecnico · ESTADOS_PARTE [borrador|firmado|facturado] · src/modules/jobs/domain/parteTrabajo.ts', veredicto: 'no nombra NINGUNO', faltan: ['borrador', 'firmado', 'facturado'], motivo: 'no es la forma (1194d): estado interno del parte; liga por el salto de import a parteTrabajo.ts, no por el cuerpo' },
   { par: 'POST /admin/partes/:id/firmar · ESTADOS_PARTE [borrador|firmado|facturado] · src/modules/jobs/domain/parteTrabajo.ts', veredicto: 'no nombra NINGUNO', faltan: ['borrador', 'firmado', 'facturado'], motivo: 'no es la forma (1194d): estado interno del parte; liga por el salto de import a parteTrabajo.ts, no por el cuerpo' },
   { par: 'POST /admin/partes/:id/dictado · ESTADOS_PARTE [borrador|firmado|facturado] · src/modules/jobs/domain/parteTrabajo.ts', veredicto: 'no nombra NINGUNO', faltan: ['borrador', 'firmado', 'facturado'], motivo: 'no es la forma (1194): estado interno del parte' },
+  { par: 'POST /admin/invoices/bulk-paid · TIPOS_DE_COBRO [cobro|liberacion_garantia|anulacion] · src/modules/billing/domain/cobrosDeFactura.ts', veredicto: 'no nombra NINGUNO', faltan: ['cobro', 'liberacion_garantia', 'anulacion'], motivo: 'no es la forma (1732c): tipo interno de la fila de invoice_payments; lo pone el escritor, no viene del cuerpo' },
 ];
 
 // Lo que tumba a este fichero (SCRUM-745; lo ejecuta `scripts/meta-guard-mutaciones.mjs`).

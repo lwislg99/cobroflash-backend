@@ -22,6 +22,12 @@
 //          con la hoja de estilos sin él.
 //   ✅ F · EL INSTRUMENTO VE: sin el bloque, a 390, hay controles cortos. Si no los hubiera, este
 //          guard no sabría distinguir «arreglado» de «no miro» y sale 2.
+//   ✅ G · Y EL CONTROL C VE (SCRUM-1745c): sin el bloque, el Concepto sale cortado. Va aparte de F
+//          porque F se cumple con los 44 px solos, aunque C no mirase.
+//
+// 🔴 LA LETRA (SCRUM-1745c). C compara el ancho de un TEXTO con el de su campo, así que depende de con
+// qué letra se pinte. La página del banco enlaza las hojas del índice —con `/fonts/inter.css`— y espera
+// sus caras; sin ninguna cargada el caso es CIEGO. La salida dice con qué letra se midió.
 //
 // ⚠️ LO QUE NO MIDE, declarado: los 36 px de escritorio (son de `guard:objetivo-tactil` y del censo
 // del panel), el teclado en pantalla, la hoja de dictado que abre «Dictar», ni un navegador que no
@@ -44,6 +50,7 @@ import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
 import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL, CORTE_MOVIL } from './_medidor-de-toque.mjs';
+import { hojasDelPanel, TIPOS_DE_FUENTE, esperarFuentes, cegueraDeLaFuente, decirFuente } from './_hojas-del-panel.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
@@ -101,11 +108,24 @@ function scriptsDelPanel() {
   return fuera;
 }
 
-function paginaHtml(scripts, variante) {
+const ESTILOS = '/dashboard/css/styles.css';
+
+/**
+ * SCRUM-1745c · LAS HOJAS SALEN DEL ÍNDICE, CON SU LETRA. Aquí se enlazaban `tokens.css` y `styles.css`
+ * escritos a mano, y el panel enlaza además `/fonts/inter.css`: el banco medía con la fuente de RESERVA
+ * de cada máquina. Medido el 17-nov-2026: el mismo árbol y el mismo CSS daban «el Concepto se lee
+ * entero» en Windows (Segoe UI) y «enseña 196 px de 211» a 320 en el runner de CI (run 44131850649):
+ * el campo medía lo mismo, lo que cambiaba era el ancho del texto. Ninguna de las dos era la letra que
+ * ve quien usa la hoja. Es la familia de SCRUM-1603 y se cura con su instrumento (`_hojas-del-panel`).
+ */
+function hojasDeLaPaginaDelBanco() {
+  try { return hojasDelPanel(PUBLIC); } catch (e) { return { ciego: String(e && e.message ? e.message : e) }; }
+}
+
+function paginaHtml(scripts, variante, hojas) {
   return '<!doctype html><html lang="es"><head><meta charset="utf-8">\n'
     + '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
-    + '<link rel="stylesheet" href="/tokens.css">\n'
-    + '<link rel="stylesheet" href="/dashboard/css/styles.css?variante=' + variante + '">\n'
+    + hojas.map((h) => '<link rel="stylesheet" href="' + h + (h === ESTILOS ? '?variante=' + variante : '') + '">').join('\n') + '\n'
     + '</head><body>\n'
     + '<script>window.appLocale = { currency: "EUR" };'
     + 'window.fetch = function () { return Promise.resolve(new Response("{}", { status: 200, headers: { "content-type": "application/json" } })); };<\/script>\n'
@@ -124,14 +144,17 @@ function hojaDeEstilos() {
   return { fichero: f, real, sin, tieneBloque };
 }
 
-function arrancarServidor(scripts, css) {
+// Las letras son binarias: se sirven en BYTES (leídas como texto llegarían rotas y la cara daría `error`).
+const TIPOS = { '.css': 'text/css', '.js': 'text/javascript', ...TIPOS_DE_FUENTE };
+
+function arrancarServidor(scripts, css, hojas) {
   const app = express();
-  app.get('/dashboard/__hojas.html', (q, res) => res.type('html').send(paginaHtml(scripts, q.query.variante === 'sin' ? 'sin' : 'real')));
-  app.get('/dashboard/css/styles.css', (q, res) => res.type('text/css').send(q.query.variante === 'sin' ? css.sin : css.real));
+  app.get('/dashboard/__hojas.html', (q, res) => res.type('html').send(paginaHtml(scripts, q.query.variante === 'sin' ? 'sin' : 'real', hojas)));
+  app.get(ESTILOS, (q, res) => res.type('text/css').send(q.query.variante === 'sin' ? css.sin : css.real));
   app.use((req, res, next) => {
     const f = path.join(PUBLIC, req.path.replace(/^\//, ''));
     if (!f.startsWith(PUBLIC) || !fs.existsSync(f) || !fs.statSync(f).isFile()) return next();
-    res.type(f.endsWith('.css') ? 'text/css' : f.endsWith('.js') ? 'text/javascript' : 'text/plain').send(fs.readFileSync(f, 'utf8'));
+    res.type(TIPOS[path.extname(f)] || 'text/plain').send(fs.readFileSync(f));
   });
   const srv = http.createServer(app);
   return levantarServidor(srv, PUERTO).then((p) => { PUERTO = p; return srv; });
@@ -221,12 +244,17 @@ async function foto(pag, caso, variante) {
 const hallazgos = [];
 const ciegos = [];
 const filas = [];
+/** Con qué letra midió cada página (una línea distinta por recuento distinto: tiene que salir UNA). */
+const letras = new Set();
 
 const scripts = scriptsDelPanel();
 if (scripts.length < 50 || !scripts.includes('/dashboard/js/jobDetailView.js') || !scripts.includes('/dashboard/js/jobAgendar.js')) {
   ciegos.push(`index.html da ${scripts.length} scripts y tienen que estar jobDetailView.js y jobAgendar.js: no monto el panel real`);
 }
 const css = hojaDeEstilos();
+const hojas = hojasDeLaPaginaDelBanco();
+if (hojas.ciego) ciegos.push(`no sé qué hojas enlaza el panel: ${hojas.ciego}`);
+else if (!hojas.includes(ESTILOS)) ciegos.push(`el índice enlaza ${hojas.join(', ')} y tiene que estar ${ESTILOS}: es la hoja que este guard mide con y sin el bloque`);
 if (ciegos.length) {
   const v = veredictoDe({ hallazgos, ciegos });
   console.error(`\n  🔴 NO SUPE MEDIR: ${ciegos.join(' · ')}\n\n  ${v.linea}\n`);
@@ -241,10 +269,18 @@ async function medir(navegador, caso, variante) {
   try {
     await pag.setViewport({ width: caso.v.width, height: caso.v.height, isMobile: caso.v.movil, hasTouch: caso.v.movil });
     await pag.goto(`http://127.0.0.1:${PUERTO}/dashboard/__hojas.html?variante=${variante}`, { waitUntil: 'load' });
+    // LA LETRA, ESPERADA antes de abrir (`font-display: swap` pinta primero con la de reserva) y vuelta
+    // a contar con la hoja abierta. Sin ninguna cara cargada el caso es CIEGO: mediría el ancho de un
+    // texto con la letra de esta máquina, que es justo lo que este guard medía hasta SCRUM-1745c.
+    await esperarFuentes(pag);
     const fatal = await pag.evaluate(ABRIR, caso);
     if (fatal) return { fatal: fatal + (errores.length ? ' · errores de página: ' + errores.join(' | ') : '') };
     const quieta = await pag.waitForFunction(SIN_ANIMACIONES, { timeout: 5000 }).then(() => true, () => false);
     if (!quieta) return { fatal: 'la hoja no termina de entrar: a los 5 s sigue habiendo animaciones en marcha' };
+    const fuente = await esperarFuentes(pag);
+    const sinLetra = cegueraDeLaFuente(fuente, 'la página del banco') || (fuente.cargadas > 0 ? null : `🔴 SIN LETRA WEB en la página del banco: ${fuente.declaradas} caras declaradas y 0 cargadas; mediría con la de reserva de esta máquina.`);
+    if (sinLetra) return { fatal: sinLetra };
+    letras.add(decirFuente(fuente));
     await pag.evaluate(FUENTE_MEDIDOR);
     const censo = await pag.evaluate(CENSAR, INTERACTIVOS, CONCEPTO);
     await pag.evaluate(() => { const m = document.querySelector('.modal-overlay .modal-body, .modal-overlay .modal'); if (m) m.scrollTop = 0; });
@@ -295,10 +331,13 @@ function cortos(c) {
 
 const huella = (c) => c.controles.map((x) => `${x.quien} ${x.w}×${x.h} toque ${x.tocable}`).join('\n');
 
-const srv = await arrancarServidor(scripts, css);
+const srv = await arrancarServidor(scripts, css, hojas);
 let navegador;
 let cortosSinBloque = 0;
 let medidosSinBloque = 0;
+// G · lo mismo que F, pero del control C solo: cuántos Conceptos se ven cortados SIN el bloque.
+let conceptosCortadosSinBloque = 0;
+let hojasSinBloque = 0;
 try {
   navegador = await lanzarNavegador(puppeteer, { headless: 'new', args: ['--disable-dev-shm-usage'] });
   for (const caso of CASOS) {
@@ -316,7 +355,13 @@ try {
       if (css.tieneBloque) {
         const sin = await medir(navegador, caso, 'sin');
         if (sin.fatal || loQueFalta(caso, sin.censo).length) ciegos.push(`${caso.id} → sin el bloque no se pudo montar: ${sin.fatal || loQueFalta(caso, sin.censo).join(' · ')}`);
-        else { medidosSinBloque++; const n = cortos(sin.censo).length; cortosSinBloque += n; nota = ` · sin el bloque: ${n} cortos`; }
+        else {
+          medidosSinBloque++;
+          const delSin = cortos(sin.censo);
+          cortosSinBloque += delSin.length;
+          if (caso.tipo === 'hoja') { hojasSinBloque++; conceptosCortadosSinBloque += delSin.filter((m) => m.startsWith('C · ')).length; }
+          nota = ` · sin el bloque: ${delSin.length} cortos`;
+        }
       }
     } else if (css.tieneBloque) {
       // E · a escritorio, nada cambia.
@@ -341,6 +386,7 @@ try {
 console.log('');
 console.log('  SCRUM-1745 · LA HOJA «EDITAR ALBARÁN» Y EL MODAL «AGENDAR», AL PULGAR (lo real, abierto como lo abre la ficha del trabajo)');
 console.log(`  HOJA DE ESTILOS: ${path.relative(RAIZ, css.fichero) || css.fichero} · bloque de SCRUM-1745: ${css.tieneBloque ? 'sí' : 'NO ESTÁ'}`);
+console.log(`  LETRA: ${[...letras].join(' ‖ ') || '(ningún caso llegó a medir)'}`);
 console.log(`  POBLACIÓN: ${CASOS.length} casos (${SUPERFICIES.length} superficies × ${VENTANAS.map((v) => v.id).join(', ')}) · medidos ${filas.length}`);
 for (const f of filas) console.log(`   ${f.ok ? '✔' : '🔴'} ${f.id} · ${f.resumen}`);
 
@@ -349,6 +395,11 @@ if (!process.env.HOJAS_CASO && filas.length + ciegos.length < CASOS.length) cieg
 if (css.tieneBloque && !process.env.HOJAS_CASO && !hallazgos.length && !ciegos.length && !(medidosSinBloque > 0 && cortosSinBloque > 0)) {
   ciegos.push(`F · sin el bloque de SCRUM-1745 salen ${cortosSinBloque} controles cortos en ${medidosSinBloque} casos de móvil: o la base ya da 44 (y el bloque y este control sobran) o no estoy midiendo`);
 }
+// G · sin el bloque el Concepto se queda en 30 px: si C no lo ve cortado ni una vez, C no mira.
+if (css.tieneBloque && !process.env.HOJAS_CASO && !hallazgos.length && !ciegos.length && !(hojasSinBloque > 0 && conceptosCortadosSinBloque > 0)) {
+  ciegos.push(`G · sin el bloque de SCRUM-1745 el control C ve ${conceptosCortadosSinBloque} Conceptos cortados en ${hojasSinBloque} hojas de móvil: el campo de 30 px tendría que cazarlo, así que no sé si C mira`);
+}
+if (letras.size > 1) ciegos.push(`las páginas no midieron todas con la misma letra: ${[...letras].join(' ‖ ')}`);
 if (ciegos.length) {
   console.error('\n  🔴 NO SUPE MEDIR — esto NO es «cumple»:\n');
   for (const c of ciegos) console.error('     · ' + c);
@@ -365,4 +416,4 @@ if (veredictoFinal.codigo !== 0) {
   console.error('\n  ' + veredictoFinal.linea + '\n');
   process.exit(veredictoFinal.codigo);
 }
-console.log(`\n  ✔ los ${CASOS.length} casos: a 390 y a 320 todo recibe el toque en ${MINIMO_TACTIL} px, el Concepto se lee entero y nada se sale de lado; a 1280 nada cambia (sin el bloque había ${cortosSinBloque} cortos en ${medidosSinBloque} casos de móvil).\n`);
+console.log(`\n  ✔ los ${CASOS.length} casos: a 390 y a 320 todo recibe el toque en ${MINIMO_TACTIL} px, el Concepto se lee entero y nada se sale de lado; a 1280 nada cambia (sin el bloque había ${cortosSinBloque} cortos en ${medidosSinBloque} casos de móvil, ${conceptosCortadosSinBloque} de ellos Conceptos cortados).\n`);

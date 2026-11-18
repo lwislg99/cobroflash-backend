@@ -24,7 +24,7 @@
 -- ajenas ni valores de enum. Y no reporta columnas de MÁS en la base: que la base vaya por
 -- delante del código es el orden seguro de un cambio aditivo, no un problema.
 --
--- Columnas esperadas: 517. Tablas: 33.
+-- Columnas esperadas: 536. Tablas: 35.
 
 WITH esperado (tabla, columna) AS (
   VALUES
@@ -208,6 +208,14 @@ WITH esperado (tabla, columna) AS (
     ('expenses','vat_amount'),
     ('expenses','vat_deducible'),
     ('expenses','vat_rate'),
+    ('fiscal_plazo_estado','ejercicio'),
+    ('fiscal_plazo_estado','estado'),
+    ('fiscal_plazo_estado','id'),
+    ('fiscal_plazo_estado','marcado_at'),
+    ('fiscal_plazo_estado','marcado_por'),
+    ('fiscal_plazo_estado','merchant_id'),
+    ('fiscal_plazo_estado','modelo'),
+    ('fiscal_plazo_estado','periodo'),
     ('gateway_events','attempts'),
     ('gateway_events','event_id'),
     ('gateway_events','id'),
@@ -219,6 +227,17 @@ WITH esperado (tabla, columna) AS (
     ('invoice_assignees','assigned_at'),
     ('invoice_assignees','invoice_id'),
     ('invoice_assignees','team_member_id'),
+    ('invoice_payments','anula_id'),
+    ('invoice_payments','charge_id'),
+    ('invoice_payments','created_at'),
+    ('invoice_payments','fecha_cobro'),
+    ('invoice_payments','fecha_origen'),
+    ('invoice_payments','id'),
+    ('invoice_payments','importe'),
+    ('invoice_payments','invoice_id'),
+    ('invoice_payments','merchant_id'),
+    ('invoice_payments','metodo'),
+    ('invoice_payments','tipo'),
     ('invoices','albaran_refs'),
     ('invoices','charge_id'),
     ('invoices','client_comment'),

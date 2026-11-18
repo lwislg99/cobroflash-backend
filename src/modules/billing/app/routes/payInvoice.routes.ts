@@ -10,7 +10,7 @@ import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { comercioSuprimido } from '../../domain/comercioSuprimido'; // SCRUM-1573b
 import { esc, formatMoneyEs } from '../../../../core/utils/utils';
 import { PAGO_JS, RUTA_PAGO_JS, cacheDelGuionDePago, etiquetaGuionDePago } from './pagoNavegador'; // SCRUM-1647 (CSP paso 2)
-import { PAGO_CSS, RUTA_PAGO_CSS, cacheDelEstiloDePago, etiquetaEstiloDePago, paginaDeEstilo } from './pagoEstilo'; // SCRUM-1723 (style-src 'self')
+import { cssDeHoja, RUTA_PAGO_CSS, cacheDelEstiloDePago, etiquetaEstiloDePago, paginaDeEstilo } from './pagoEstilo'; // SCRUM-1723 (style-src 'self')
 import { isFlagEnabled } from '../../../../core/flags';
 import { bizumAutoDisponible } from '../../domain/bizumCharge'; // SCRUM-3
 import { cardChargeMode } from '../../domain/cardCharge'; // SCRUM-893
@@ -34,7 +34,7 @@ router.get(RUTA_PAGO_CSS, (req, res) => {
   if (pagina === null) return res.status(404).end();
   res.setHeader('Content-Type', 'text/css; charset=utf-8');
   res.setHeader('Cache-Control', cacheDelEstiloDePago(pagina, req.query?.v));
-  return res.send(PAGO_CSS[pagina]);
+  return res.send(cssDeHoja(pagina)); // SCRUM-1756b: también las del recibo y el portal
 });
 
 router.get('/invoice/:token', async (req, res) => {

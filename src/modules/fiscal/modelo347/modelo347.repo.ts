@@ -10,6 +10,7 @@ import { leerLibroRecibidas, type ClienteDeGastos } from '../../invoicing/domain
 import { exigirLibroRecibidasLegible } from '../../invoicing/domain/libroRecibidas';
 import { rangoTrimestre } from '../modelo303/modelo303';
 import { construirModelo347, type BorradorModelo347, type ProveedorPara347 } from './modelo347';
+import { zonaDelMerchantParaElLibro, type ClienteParaZona } from '../../invoicing/domain/zonaDelLibro'; // SCRUM-1445d fase 2
 
 /** Lo mínimo del cliente Prisma para leer las fichas de proveedor. */
 export interface ClienteDeProveedores {
@@ -21,12 +22,14 @@ export interface ClienteDeProveedores {
  * que el 303 y los libros, para que una factura del 31 de diciembre a última hora no cambie de año.
  */
 export async function leerBorradorModelo347(
-  db: ClienteDelLibro & ClienteDeGastos & ClienteDeProveedores,
+  db: ClienteDelLibro & ClienteDeGastos & ClienteDeProveedores & ClienteParaZona,
   params: { merchantId: number; año: number },
 ): Promise<BorradorModelo347> {
-  const { desde } = rangoTrimestre(params.año, 1);
-  const { hasta } = rangoTrimestre(params.año, 4);
-  const libro = await leerLibroRegistro(db, { merchantId: params.merchantId, desde, hasta, soloFacturas: true });
+  // SCRUM-1445d (fase 2) · el año, en la zona del comercio (c.21896).
+  const zona = await zonaDelMerchantParaElLibro(db, params.merchantId);
+  const { desde } = rangoTrimestre(params.año, 1, zona);
+  const { hasta } = rangoTrimestre(params.año, 4, zona);
+  const libro = await leerLibroRegistro(db, { merchantId: params.merchantId, desde, hasta, zona, soloFacturas: true });
   const libroRecibidas = await leerLibroRecibidas(db, { merchantId: params.merchantId, desde, hasta });
   exigirLibroRecibidasLegible(libroRecibidas);
 
@@ -38,5 +41,5 @@ export async function leerBorradorModelo347(
         select: { id: true, merchantId: true, name: true, legalName: true, taxId: true },
       })) as ProveedorPara347[]);
 
-  return construirModelo347({ libro, libroRecibidas, proveedores, merchantId: params.merchantId, año: params.año });
+  return construirModelo347({ libro, libroRecibidas, proveedores, merchantId: params.merchantId, año: params.año, zona });
 }

@@ -25,6 +25,7 @@ import { dineroDelTrabajo, presupuestoAceptado } from '../../domain/dineroDelTra
 // SCRUM-651 (T2): el nucleo del Trabajo sin presupuesto, puro y probado sin base.
 import { datosDeTrabajoDirecto, filaDeTrabajoDirecto, tituloDeTrabajo, tituloPropioDeTrabajo } from '../../domain/trabajoDirecto';
 import { veredictoAlbaranSinPresupuesto } from '../../domain/albaranSinPresupuesto'; // SCRUM-684
+import { precargaDelParte, type PrecargaDelParte } from '../../domain/albaranDesdeParte'; // SCRUM-1740
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
@@ -1313,6 +1314,20 @@ router.post('/:id/albaranes', async (req, res) => {
       if (!v.ok) return res.status(400).json({ error: 'lineas_invalidas', message: v.error });
       lineas = v.lineas;
     }
+    // SCRUM-1740 (c.21982) · SIN `lineas` en el cuerpo y sin valorar: si el ÚLTIMO parte del trabajo
+    // está FIRMADO, el borrador nace con sus líneas (concepto y cantidad, sin precios). Quien manda
+    // `lineas` —aunque sea `[]`— decide él; VALORADO nace como siempre. El porqué, en el módulo.
+    // «Último» = el de id mayor del trabajo (del merchant, regla 2); el módulo decide si precarga.
+    let precarga: PrecargaDelParte | null = null;
+    if (req.body?.lineas === undefined && modoValoracion === 'SIN_VALORAR') {
+      const ultimoParte = await prisma.parteTrabajo.findFirst({
+        where: { merchantId: req.merchantId, jobId: job.id },
+        orderBy: { id: 'desc' },
+        select: { id: true, numero: true, estado: true, lineas: true },
+      });
+      precarga = precargaDelParte(ultimoParte);
+      if (precarga) lineas = precarga.lineas;
+    }
     const notas = req.body?.notas !== undefined ? String(req.body.notas || '').slice(0, 2000) || null : null;
     // SCRUM-593 (DOC-03): el texto de cabecera se lee EXACTAMENTE igual que `notas`, su campo
     // hermano del mismo documento — mismo tope, misma regla de vacío→NULL. Dos formas de leer
@@ -1427,7 +1442,11 @@ router.post('/:id/albaranes', async (req, res) => {
     // elemento.
     const idempotencia = !clave ? 'no_solicitada' : repetida ? 'repetida' : 'aplicada';
     // SCRUM-1707 (c.21547 Q2) · al operario, sin precios — la misma regla que las rutas del albarán.
-    return res.status(repetida ? 200 : 201).json({ ...albaranParaElRol(serializeAlbaran(albaran), req.userRole), idempotencia });
+    // SCRUM-1740 · `precargaDelParte` dice de qué parte salieron las líneas (null = no precargó).
+    const resumenPrecarga = precarga
+      ? { parteId: precarga.parteId, numero: precarga.numero, lineas: precarga.lineas.length, omitidas: precarga.omitidas }
+      : null;
+    return res.status(repetida ? 200 : 201).json({ ...albaranParaElRol(serializeAlbaran(albaran), req.userRole), precargaDelParte: resumenPrecarga, idempotencia });
   } catch (err: any) {
     // SCRUM-358: misma clave con contenido DISTINTO. No es un fallo del servidor: es que la
     // etiqueta está puesta a dos cosas, y hay que decirlo con los dos documentos delante.

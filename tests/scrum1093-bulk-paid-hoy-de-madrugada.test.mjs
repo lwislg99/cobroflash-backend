@@ -43,6 +43,8 @@ async function marcarEnLote({ ahoraIso, timezone, paidAt, ids = [1, 2, 3] }) {
       findFirst: async (a) => { consultasMerchant.push(a); return a?.where?.id === M ? { id: M, timezone } : null; },
     },
     invoice: {
+      // SCRUM-1732c · el lote lee las que va a marcar y las relee para apuntar su fila en invoice_payments.
+      findMany: async () => [],
       updateMany: async ({ where, data }) => {
         const casan = facturas.filter((f) => where.id.in.includes(f.id) && f.merchantId === where.merchantId
           && !where.status.notIn.includes(f.status));

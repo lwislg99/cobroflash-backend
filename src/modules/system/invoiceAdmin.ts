@@ -5,6 +5,7 @@ import { recalcJobCobradoForInvoice } from '../jobs/domain/job.service'; // SCRU
 // SCRUM-441: el conjunto cerrado de métodos se CONSUME desde su dueño. Aquí no se copia ni un valor.
 import { campoPaidViaAlMarcar } from '../billing/domain/metodoDeCobro';
 import { esFilaQueNoCasa } from '../billing/domain/estadoDelCobro'; // SCRUM-1303
+import { apuntarCobroDeFactura, anularCobrosDeFactura } from '../billing/domain/cobrosDeFactura'; // SCRUM-1732
 import { tagsParaPrisma } from './tagsDelCliente'; // SCRUM-595 (DOC-05): el MISMO mecanismo que CONT-07
 
 // Listado para el BO (con filtros)
@@ -318,6 +319,25 @@ export async function updateInvoiceStatusAdmin(
   } catch (e) {
     if (!esFilaQueNoCasa(e) || yaSeReleyo) throw e;
     return updateInvoiceStatusAdmin(id, status, merchantId, paidVia, fechaDeCobro, true);
+  }
+  // SCRUM-1732 (opción A; cruce J2→J1 autorizado por el orquestador J, 16-nov) · LO QUE ENTRÓ,
+  // en `invoice_payments`. Al pasar a `paid`, una fila por el total (el marcado a mano no admite
+  // todavía un importe parcial: su campo es UI aparte). Con el `chargeId` de la factura, para que
+  // un aviso de pago que llegue después choque con el único y no cuente dos veces. Al des-pagar
+  // (solo un justificante llega aquí), las filas vivas se anulan con su fila de anulación.
+  try {
+    if (status === 'paid' && existing.status !== 'paid' && updated.paidAt) {
+      await apuntarCobroDeFactura(prisma, {
+        merchantId: updated.merchantId, invoiceId: updated.id, chargeId: updated.chargeId ?? null,
+        importe: Number(updated.total), fechaCobro: updated.paidAt,
+        fechaOrigen: fechaDeCobro ? 'declarada' : 'marcado',
+        metodo: (campoMetodo as { paidVia?: string }).paidVia ?? null, tipo: 'cobro',
+      });
+    } else if (status === 'pending' && existing.status === 'paid') {
+      await anularCobrosDeFactura(prisma, updated.merchantId, updated.id, new Date());
+    }
+  } catch (e) {
+    console.error('[invoiceAdmin] SCRUM-1732 no se pudo apuntar el cobro:', (e as any)?.message || 'error desconocido');
   }
   // SCRUM-28 (COBROS-2): el cobro MANUAL (Bizum/transferencia) también materializa
   // Job.totalCobrado. Reutiliza el núcleo de SCRUM-13 (suma Invoices paid, idempotente).

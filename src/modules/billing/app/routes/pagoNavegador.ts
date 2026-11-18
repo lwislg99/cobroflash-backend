@@ -24,12 +24,85 @@
 // EL LOGO QUE NO CARGA: `error` de una imagen no burbujea, así que se escucha en FASE DE CAPTURA en el
 // documento. La etiqueta `<script src>` va en el `<head>`, síncrona: el escuchador existe antes de que
 // el analizador cree el `<img>` del `<body>`, así que ningún error llega antes que él.
+//
+// SCRUM-1756c · EL RECIBO Y EL PORTAL, POR LA MISMA RUTA. Las estrellas de la valoración del recibo
+// (`receipt.routes.ts`) y el pie del portal del cliente (`customerPortal.routes.ts`: desplegar líneas y
+// «Solicitar nuevo presupuesto») vivían en `<script>` en línea; el portal, además, escribía la URL de la
+// solicitud en `window.PF_REQUEST_URL` desde el servidor. Ahora son dos ramas de este guion
+// (`data-pagina="recibo"` / `"portal"`), con los mismos textos que ya había, y la URL se lee del `data-url`
+// del formulario (regla 1). Ninguna ruta nueva: la de arriba ya está declarada.
 import { huellaDeContenido, CACHE_CON_HUELLA } from '../../../../core/http/huellaEstaticos';
 
 export const PAGO_JS = String.raw`(function(){
 'use strict';
 var yo=document.currentScript;
 var pagina=(yo&&yo.getAttribute('data-pagina'))||'';
+
+if(pagina==='recibo'){
+  var btns=document.querySelectorAll('.fb-stars button');
+  var input=document.getElementById('fb-stars-input');
+  btns.forEach(function(b){
+    b.addEventListener('click',function(){
+      var n=Number(b.getAttribute('data-star'));
+      input.value=String(n);
+      btns.forEach(function(x){
+        x.classList.toggle('on',Number(x.getAttribute('data-star'))<=n);
+      });
+    });
+  });
+  document.getElementById('fb-form').addEventListener('submit',function(ev){
+    if(!input.value){ev.preventDefault();btns[4].focus();}
+  });
+  return;
+}
+
+if(pagina==='portal'){
+  document.querySelectorAll('.pf-lines-toggle').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var body=btn.nextElementSibling;
+      var open=body.classList.toggle('open');
+      btn.querySelector('.pf-chevron').textContent=open?'▲':'▼';
+    });
+  });
+  var reqBtn=document.getElementById('pf-req-btn');
+  var reqForm=document.getElementById('pf-req-form');
+  var reqCancel=document.getElementById('pf-req-cancel');
+  var reqSubmit=document.getElementById('pf-req-submit');
+  var reqTa=document.getElementById('pf-req-ta');
+  var reqSuccess=document.getElementById('pf-req-success');
+  if(!reqBtn)return;
+  var reintentar=function(msg){
+    alert(msg);
+    reqSubmit.disabled=false;
+    reqSubmit.textContent='Enviar solicitud';
+  };
+  reqBtn.addEventListener('click',function(){
+    reqBtn.style.display='none';
+    reqForm.classList.add('open');
+    reqTa.focus();
+  });
+  reqCancel.addEventListener('click',function(){
+    reqBtn.style.display='block';
+    reqForm.classList.remove('open');
+  });
+  reqSubmit.addEventListener('click',function(){
+    var desc=reqTa.value.trim();
+    if(!desc){reqTa.focus();return;}
+    reqSubmit.disabled=true;
+    reqSubmit.textContent='Enviando…';
+    fetch(reqForm.getAttribute('data-url')||'',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({description:desc})
+    }).then(function(r){
+      if(r.ok){
+        reqForm.classList.remove('open');
+        reqSuccess.style.display='block';
+      }else reintentar('Error al enviar. Inténtalo de nuevo.');
+    },function(){reintentar('Error de conexión.');});
+  });
+  return;
+}
 
 document.addEventListener('error',function(e){
   var t=e.target;
@@ -84,7 +157,12 @@ export function cacheDelGuionDePago(pedida: unknown): string {
   return pedida === HUELLA_PAGO_JS ? CACHE_CON_HUELLA : 'no-cache';
 }
 
-/** La etiqueta que va en el `<head>` de cada página. `pagina` es una constante del servidor, nunca un dato. */
-export function etiquetaGuionDePago(pagina: 'banco' | 'bizum' | 'factura'): string {
+/**
+ * La etiqueta del guion. `pagina` es una constante del servidor, nunca un dato. En las tres de pago va en
+ * el `<head>`; en `recibo` y `portal` (SCRUM-1756c) va DESPUÉS del marcado que maneja, donde estaba su
+ * `<script>` en línea: al correr, sus botones ya existen. Esas dos ramas salen antes del escuchador del
+ * logo, que no tenían.
+ */
+export function etiquetaGuionDePago(pagina: 'banco' | 'bizum' | 'factura' | 'recibo' | 'portal'): string {
   return `<script src="${SRC_PAGO_JS}" data-pagina="${pagina}"></script>`;
 }

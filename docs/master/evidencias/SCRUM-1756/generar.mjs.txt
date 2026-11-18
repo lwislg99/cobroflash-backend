@@ -1,0 +1,168 @@
+// SCRUM-1756b · generador de un solo uso (J2), copia del de SCRUM-1723 (`../SCRUM-1723/j2-generar.mjs.txt`).
+// Mueve los tres `<style>` del recibo y del portal, TAL CUAL, a `reciboPortalEstilo.ts`, y cambia sus
+// `style=` por clases con las mismas declaraciones. Aborta si algo no cuadra: un ancla que no está
+// exactamente las veces esperadas, un CR, o un CSS con `${` o comilla grave.
+// Uso: node generar.mjs <raíz del árbol>
+import fs from 'node:fs';
+import path from 'node:path';
+
+const raiz = process.argv[2];
+const F_RECIBO = path.join(raiz, 'src/modules/billing/app/routes/receipt.routes.ts');
+const F_PORTAL = path.join(raiz, 'src/modules/system/app/routes/customerPortal.routes.ts');
+const F_HOJAS = path.join(raiz, 'src/modules/billing/app/routes/reciboPortalEstilo.ts');
+
+function veces(hay, aguja) { return hay.split(aguja).length - 1; }
+function exacto(hay, aguja, n, donde) {
+  const v = veces(hay, aguja);
+  if (v !== n) throw new Error(`${donde}: «${aguja.slice(0, 80)}» aparece ${v} veces (se esperaban ${n})`);
+}
+function leer(f) {
+  const s = fs.readFileSync(f, 'utf8');
+  if (s.includes('\r')) throw new Error(`${f}: lleva CR`);
+  return s;
+}
+// Saca el CSS entre `abre` y `cierra` (los dos únicos), y pone `pon` en el hueco de los tres.
+function sacar(src, abre, cierra, pon, donde) {
+  exacto(src, abre, 1, donde); exacto(src, cierra, 1, donde);
+  const i = src.indexOf(abre); const j = src.indexOf(cierra);
+  if (!(i < j)) throw new Error(`${donde}: orden de <style>`);
+  const css = src.slice(i + abre.length, j);
+  if (css.includes('${') || css.includes('`')) throw new Error(`${donde}: el CSS lleva \${ o comilla grave`);
+  if (/<\/?style/i.test(css)) throw new Error(`${donde}: el CSS lleva otra etiqueta <style>`);
+  return { src: src.slice(0, i) + pon + src.slice(j + cierra.length), css };
+}
+function cambiar(src, antes, despues, n, donde) {
+  exacto(src, antes, n, donde);
+  return src.split(antes).join(despues);
+}
+
+// ── El recibo ──────────────────────────────────────────────────────────────────────────────────
+let recibo = leer(F_RECIBO);
+let r = sacar(recibo, '<link rel="stylesheet" href="/fonts/inter.css"/>\n<style>\n', '</style>\n</head>',
+  '<link rel="stylesheet" href="/fonts/inter.css"/>\n${etiquetaEstiloDePago(\'recibo\')}\n</head>', 'recibo · cabecera');
+recibo = r.src; const cssRecibo = r.css;
+r = sacar(recibo, '      ? `\n  <style>\n', '  </style>\n  <div class="fb">',
+  '      ? `\n  ${etiquetaEstiloDePago(\'recibo-valoracion\')}\n  <div class="fb">', 'recibo · valoración');
+recibo = r.src; const cssValoracion = r.css;
+const ATTR_RECIBO = [
+  ['<details style="margin-top:1rem">', '<details class="recibo-dev-simulacion">', '.recibo-dev-simulacion{margin-top:1rem}'],
+  [' style="margin-top:.5rem">', ' class="recibo-dev-formulario">', '.recibo-dev-formulario{margin-top:.5rem}'],
+  ['<button style="background:#2563eb;color:#fff;padding:.4rem .8rem;border-radius:.4rem;border:none;cursor:pointer">', '<button class="recibo-dev-boton-pago">', '.recibo-dev-boton-pago{background:#2563eb;color:#fff;padding:.4rem .8rem;border-radius:.4rem;border:none;cursor:pointer}'],
+  ['<div style="display:flex;gap:.5rem;margin-top:.5rem">', '<div class="recibo-dev-fila">', '.recibo-dev-fila{display:flex;gap:.5rem;margin-top:.5rem}'],
+  ['<button style="background:#dc2626;color:#fff;padding:.35rem .7rem;border-radius:.4rem;border:none;cursor:pointer">', '<button class="recibo-dev-boton-fallo">', '.recibo-dev-boton-fallo{background:#dc2626;color:#fff;padding:.35rem .7rem;border-radius:.4rem;border:none;cursor:pointer}'],
+  ['<button style="background:#6b7280;color:#fff;padding:.35rem .7rem;border-radius:.4rem;border:none;cursor:pointer">', '<button class="recibo-dev-boton-caducidad">', '.recibo-dev-boton-caducidad{background:#6b7280;color:#fff;padding:.35rem .7rem;border-radius:.4rem;border:none;cursor:pointer}'],
+  ['<hr style="margin:1.25rem 0;border:none;border-top:1px solid var(--border)"/>', '<hr class="recibo-dev-separador"/>', '.recibo-dev-separador{margin:1.25rem 0;border:none;border-top:1px solid var(--border)}'],
+  ['<ul style="margin-top:.4rem">', '<ul class="recibo-dev-eventos">', '.recibo-dev-eventos{margin-top:.4rem}'],
+  ['<div style="margin-top:1rem;text-align:center">', '<div class="recibo-pie">', '.recibo-pie{margin-top:1rem;text-align:center}'],
+];
+for (const [a, d] of ATTR_RECIBO) recibo = cambiar(recibo, a, d, 1, 'recibo');
+exacto(recibo, 'style="', 0, 'recibo · quedan style=');
+recibo = cambiar(recibo, "import { clienteDelDocumento } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-1576\n",
+  "import { clienteDelDocumento } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-1576\nimport { etiquetaEstiloDePago } from './pagoEstilo'; // SCRUM-1756b (style-src 'self')\n", 1, 'recibo · import');
+
+// ── El portal ──────────────────────────────────────────────────────────────────────────────────
+let portal = leer(F_PORTAL);
+r = sacar(portal, '<link rel="stylesheet" href="/fonts/inter.css"/>\n<style>\n', '</style>`;\n}',
+  '<link rel="stylesheet" href="/fonts/inter.css"/>\n${etiquetaEstiloDePago(\'portal\')}`;\n}', 'portal');
+portal = r.src; const cssPortal = r.css;
+// La etiqueta de estado: el mapa de colores se va a la hoja (una clase por estado), sin cambiar un color.
+const MAPA = `const STATUS_COLOR: Record<string, { bg: string; fg: string }> = {
+  accepted: { bg: '#dcfce7', fg: '#166534' },
+  paid:     { bg: '#dcfce7', fg: '#166534' },
+  sent:     { bg: '#dbeafe', fg: '#1d4ed8' },
+  pending:  { bg: '#fef3c7', fg: '#92400e' },
+  rejected: { bg: '#fee2e2', fg: '#991b1b' },
+  expired:  { bg: '#f1f2ee', fg: '#4b554f' },
+  draft:    { bg: '#f1f2ee', fg: '#4b554f' },
+};
+`;
+portal = cambiar(portal, MAPA, '', 1, 'portal · mapa de colores');
+portal = cambiar(portal, "  const c = STATUS_COLOR[status] ?? { bg: '#f1f2ee', fg: '#4b554f' };\n", '', 1, 'portal · color');
+const ATTR_PORTAL = [
+  ['<span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:${c.bg};color:${c.fg};letter-spacing:.02em;text-transform:uppercase">', '<span class="portal-pill ${claseDeEtiquetaDelPortal(status)}">', 1],
+  ['<a href="${BASE_URL}" style="color:inherit;font-weight:700;text-decoration:none">', '<a href="${BASE_URL}" class="portal-pie-enlace">', 1],
+  ['<div style="padding:60px 20px;text-align:center;color:#6b756f;font-size:15px">', '<div class="portal-enlace-no-valido">', 1],
+  ['<div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#22c55e,#22d3ee);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#052e16">', '<div class="portal-inicial">', 1],
+  ['<div style="margin-top:12px">', '<div class="portal-acciones">', 2],
+  ['<div class="pf-card-title" style="margin-bottom:0">', '<div class="pf-card-title portal-sin-margen-inferior">', 1],
+  ['<div class="pf-success" id="pf-req-success" style="display:none">', '<div class="pf-success portal-oculto" id="pf-req-success">', 1],
+];
+for (const [a, d, n] of ATTR_PORTAL) portal = cambiar(portal, a, d, n, 'portal');
+exacto(portal, 'style="', 0, 'portal · quedan style=');
+exacto(portal, 'STATUS_COLOR', 0, 'portal · queda STATUS_COLOR');
+portal = cambiar(portal, "import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service'; // SCRUM-1567b\n",
+  "import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service'; // SCRUM-1567b\nimport { etiquetaEstiloDePago } from '../../../billing/app/routes/pagoEstilo'; // SCRUM-1756b (style-src 'self')\nimport { claseDeEtiquetaDelPortal } from '../../../billing/app/routes/reciboPortalEstilo'; // SCRUM-1756b\n", 1, 'portal · import');
+
+// ── La hoja ────────────────────────────────────────────────────────────────────────────────────
+const reglasRecibo = ATTR_RECIBO.map(([, , regla]) => `  ${regla}`).join('\n');
+const ts = `// src/modules/billing/app/routes/reciboPortalEstilo.ts — SCRUM-1756b (CSP paso 3 · restos; filas de J2)
+//
+// EL CSS DEL RECIBO PÚBLICO (\`/recibo/:token\`) Y DEL PORTAL DEL CLIENTE (\`/cliente/:token\`), FUERA DEL HTML.
+//
+// Es la receta de SCRUM-1723 (\`pagoEstilo.ts\`): con \`style-src 'self'\` APLICADA el navegador no pinta
+// un \`<style>\` en línea ni un \`style=\`. Cada hoja es el \`<style>\` de su sitio, COPIADO TAL CUAL por
+// \`docs/master/evidencias/SCRUM-1756/generar.mjs.txt\` (aborta ante \`\${\` o comilla grave), y la
+// \`<link>\` ocupa el hueco del \`<style>\`, que es el mismo sitio de la cascada. Lo único añadido son las
+// reglas del final de cada hoja: los \`style=\` del marcado, pasados a una clase con las mismas declaraciones.
+//
+//   · \`recibo\`: el \`<style>\` de la cabecera del recibo, más sus 9 \`style=\` (7 de ellos solo salen fuera
+//     de producción: simulación y eventos de desarrollo).
+//   · \`recibo-valoracion\`: el \`<style>\` del bloque de valoración (solo con el cobro pagado); su \`<link>\`
+//     va dentro del bloque, donde estaba, así que se carga DESPUÉS de la hoja del recibo, como antes.
+//   · \`portal\`: el \`<style>\` del portal, más sus 8 \`style=\`. La etiqueta de estado pintaba sus dos colores
+//     con \`\${c.bg}\`/\`\${c.fg}\` de un mapa CERRADO: el mapa se muda aquí y sale una clase por estado, con
+//     el gris de antes para un estado que el mapa no conoce.
+//
+// Se sirven por la MISMA ruta que las de pago (\`GET /pay/css/pago.css?p=<hoja>&v=<huella>\`, declarada en
+// SCRUM-1723 c.21719): un recurso constante, sin datos. Ninguna ruta nueva.
+//
+// ⚠️ Los \`<script>\` en línea de estas dos páginas NO están aquí: son el paso 2 (SCRUM-1756, filas nuevas).
+
+export type HojaDeReciboOPortal = 'recibo' | 'recibo-valoracion' | 'portal';
+
+// El mapa de \`customerPortal.routes.ts\` (\`STATUS_COLOR\`), mudado tal cual.
+const COLOR_DE_ETIQUETA_DEL_PORTAL: Readonly<Record<string, { bg: string; fg: string }>> = {
+  accepted: { bg: '#dcfce7', fg: '#166534' },
+  paid:     { bg: '#dcfce7', fg: '#166534' },
+  sent:     { bg: '#dbeafe', fg: '#1d4ed8' },
+  pending:  { bg: '#fef3c7', fg: '#92400e' },
+  rejected: { bg: '#fee2e2', fg: '#991b1b' },
+  expired:  { bg: '#f1f2ee', fg: '#4b554f' },
+  draft:    { bg: '#f1f2ee', fg: '#4b554f' },
+};
+// El gris con el que se pintaba un estado que el mapa no conoce.
+const COLOR_DE_ETIQUETA_DESCONOCIDA = { bg: '#f1f2ee', fg: '#4b554f' };
+
+/** La clase de color de la etiqueta de estado del portal. Del conjunto cerrado; si no, la gris. */
+export function claseDeEtiquetaDelPortal(status: string): string {
+  return Object.prototype.hasOwnProperty.call(COLOR_DE_ETIQUETA_DEL_PORTAL, status) ? \`portal-pill-\${status}\` : 'portal-pill-otro';
+}
+
+const REGLAS_DE_ETIQUETA = [
+  ...Object.entries(COLOR_DE_ETIQUETA_DEL_PORTAL).map(([s, c]) => \`  .portal-pill-\${s}{background:\${c.bg};color:\${c.fg}}\`),
+  \`  .portal-pill-otro{background:\${COLOR_DE_ETIQUETA_DESCONOCIDA.bg};color:\${COLOR_DE_ETIQUETA_DESCONOCIDA.fg}}\`,
+].join('\\n');
+
+export const RECIBO_PORTAL_CSS: Readonly<Record<HojaDeReciboOPortal, string>> = {
+  recibo: \`${cssRecibo}  /* SCRUM-1756b · los atributos style= que llevaba el marcado, copiados tal cual a una clase. */
+${reglasRecibo}
+\`,
+  'recibo-valoracion': \`${cssValoracion}\`,
+  portal: \`${cssPortal}  /* SCRUM-1756b · los atributos style= que llevaba el marcado, copiados tal cual a una clase. */
+  .portal-pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:uppercase}
+\${REGLAS_DE_ETIQUETA}
+  .portal-pie-enlace{color:inherit;font-weight:700;text-decoration:none}
+  .portal-enlace-no-valido{padding:60px 20px;text-align:center;color:#6b756f;font-size:15px}
+  .portal-inicial{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#22c55e,#22d3ee);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#052e16}
+  .portal-acciones{margin-top:12px}
+  .portal-sin-margen-inferior{margin-bottom:0}
+  .portal-oculto{display:none}
+\`,
+};
+`;
+if (fs.existsSync(F_HOJAS)) throw new Error('reciboPortalEstilo.ts ya existe: el generador es de un solo uso');
+fs.writeFileSync(F_RECIBO, recibo);
+fs.writeFileSync(F_PORTAL, portal);
+fs.writeFileSync(F_HOJAS, ts);
+console.log(`recibo: cabecera ${cssRecibo.length} B y valoración ${cssValoracion.length} B fuera; ${ATTR_RECIBO.length} style= a clase`);
+console.log(`portal: ${cssPortal.length} B fuera; ${ATTR_PORTAL.reduce((n, a) => n + a[2], 0)} style= a clase`);

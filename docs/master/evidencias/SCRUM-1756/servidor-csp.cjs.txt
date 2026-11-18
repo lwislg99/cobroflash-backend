@@ -1,0 +1,70 @@
+// SCRUM-1756b · Servidor del recorrido en navegador para el RECIBO y el PORTAL. Variante de
+// `evidencias/SCRUM-1723/j2c-servidor-csp.cjs.txt` (misma intercepción de la política, prisma doblado),
+// con el estado del cobro y el comercio elegidos por un prefijo de la URL, que se quita antes de la app:
+//   /__e/<estadoDelCobro>/<idDelComercio>/<ruta real>   (comercio 0 = el portal no encuentra al cliente)
+// Ni base de datos, ni red. Las fechas son fijas: las capturas no dependen del reloj.
+// Uso: node <copia .cjs> <distDir> <puerto> <aplicada|sin>
+'use strict';
+const http = require('node:http');
+const path = require('node:path');
+
+const [distDir, puertoTxt, modo] = process.argv.slice(2);
+if (!distDir || !puertoTxt || !['aplicada', 'sin'].includes(modo)) { console.error('uso: <distDir> <puerto> <aplicada|sin>'); process.exit(2); }
+const DIST = path.resolve(distDir);
+let estado = 'pending';
+let idComercio = 42;
+const comercio = () => ({
+  id: idComercio, name: 'Fontanería Ruiz', legalName: 'Fontanería Ruiz SL', email: 'ruiz@ejemplo.test',
+  country: 'ES', logoUrl: null, timezone: 'Europe/Madrid', iban: 'ES9121000418450200051332', clabe: null,
+  bizumPhone: '600111222', whatsappPhone: '600111222', connectStatus: 'none', stripeAccountId: null,
+  mpAccessToken: null, flags: { BIZUM_MANUAL_ENABLED: true }, deletedAt: null, googleReviewUrl: null, llevaLibrosPorSii: true,
+});
+const cliente = () => ({ id: 3, merchantId: 42, name: 'Ana', email: null, phone: null, portalToken: 'portal1756' });
+const FECHA = new Date('2026-11-10T10:00:00Z');
+const cobro = () => ({
+  id: 7, receiptToken: 'tok1756', status: estado, amount: 250, currency: 'EUR', concept: 'Reparación de bajante',
+  reference: 'REF-1756', method: estado === 'paid' ? 'bizum' : null, payMethods: null, intentId: null,
+  createdAt: FECHA, paidAt: estado === 'paid' ? FECHA : null, merchantId: 42, merchant: comercio(), customer: cliente(),
+  events: [], reconciliations: [],
+});
+const ESTADOS = ['accepted', 'paid', 'sent', 'pending', 'rejected', 'expired', 'draft', 'archivado'];
+const NO_ESCRIBE = async () => { throw new Error('el recorrido no escribe'); };
+const tablas = {
+  charge: { findUnique: async () => cobro(), findFirst: async () => cobro(), update: NO_ESCRIBE },
+  customer: { findUnique: async () => (idComercio === 0 ? null : { ...cliente(), merchant: comercio() }), findFirst: async () => null },
+  invoice: {
+    findFirst: async () => null, findUnique: async () => null,
+    findMany: async () => [{ id: 11, number: 'F-2026-0001', status: 'paid', currency: 'EUR', total: 250, createdAt: FECHA,
+      pdfUrl: null, lines: [], charge: null, chargeId: null }],
+  },
+  quote: {
+    findFirst: async () => null, findUnique: async () => ({ decisionToken: 'dec1756' }),
+    findMany: async () => ESTADOS.map((status, i) => ({ id: 100 + i, quoteNumber: 100 + i, status, currency: 'EUR', total: 121,
+      createdAt: FECHA, decisionToken: `dec1756-${i}`, discount: null, lines: [{ concept: 'Mano de obra', qty: 1, price: 100, tax: 21 }] })),
+  },
+  event: { findFirst: async () => null, create: NO_ESCRIBE },
+  job: { findFirst: async () => null },
+  teamMember: { findFirst: async () => null },
+};
+const prismaDoble = new Proxy(tablas, { get: (t, k) => t[k] ?? new Proxy({}, { get: () => async () => null }) });
+const R_PRISMA = require.resolve(path.join(DIST, 'core/db/prisma.js'));
+require.cache[R_PRISMA] = { id: R_PRISMA, filename: R_PRISMA, loaded: true, exports: { prisma: prismaDoble } };
+const { app } = require(path.join(DIST, 'app.js'));
+
+http.createServer((req, res) => {
+  if (req.url === '/__sembrado') {
+    const { POLITICA_CSP } = require(path.join(DIST, 'core/http/csp.js'));
+    if (modo === 'aplicada') res.setHeader('Content-Security-Policy', POLITICA_CSP);
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.end('<!doctype html><html><head><link rel="icon" href="data:,"><style>body{color:red}</style></head><body><p style="color:blue">x</p></body></html>');
+    return;
+  }
+  const m = /^\/__e\/(\w+)\/(\d+)(\/.*)$/.exec(req.url);
+  if (m) { estado = m[1]; idComercio = Number(m[2]); req.url = m[3]; }
+  const original = res.setHeader.bind(res);
+  res.setHeader = (n, v) => {
+    if (String(n).toLowerCase() === 'content-security-policy-report-only') return modo === 'aplicada' ? original('Content-Security-Policy', v) : res;
+    return original(n, v);
+  };
+  app(req, res);
+}).listen(Number(puertoTxt), '127.0.0.1', () => console.log(`LISTO ${puertoTxt} ${modo}`));

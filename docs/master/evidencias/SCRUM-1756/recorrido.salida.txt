@@ -1,0 +1,29 @@
+⟦arranque⟧ 0.4 s COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+A-main-sin ↔ C-rama-aplicada: 10/10 iguales
+A-main-sin ↔ D-rama-sin: 10/10 iguales
+B-main-aplicada ↔ C-rama-aplicada: 0/10 iguales
+A-main-sin: informes CSP en las páginas 0 · sembrado 0 ()
+   recibo-pagado: 0/0 informes (390/1280) · —
+   recibo-pendiente: 0/0 informes (390/1280) · —
+   recibo-fallido: 0/0 informes (390/1280) · —
+   portal: 0/0 informes (390/1280) · —
+   portal-404: 0/0 informes (390/1280) · —
+B-main-aplicada: informes CSP en las páginas 118 · sembrado 2 (style-src-elem,style-src-attr)
+   recibo-pagado: 12/12 informes (390/1280) · style-src-elem,script-src-elem,style-src-attr
+   recibo-pendiente: 10/10 informes (390/1280) · style-src-elem,style-src-attr
+   recibo-fallido: 10/10 informes (390/1280) · style-src-elem,style-src-attr
+   portal: 23/23 informes (390/1280) · style-src-elem,style-src-attr,script-src-elem
+   portal-404: 4/4 informes (390/1280) · style-src-elem,style-src-attr,script-src-elem
+C-rama-aplicada: informes CSP en las páginas 8 · sembrado 2 (style-src-elem,style-src-attr)
+   recibo-pagado: 1/1 informes (390/1280) · script-src-elem
+   recibo-pendiente: 0/0 informes (390/1280) · —
+   recibo-fallido: 0/0 informes (390/1280) · —
+   portal: 2/2 informes (390/1280) · script-src-elem
+   portal-404: 1/1 informes (390/1280) · script-src-elem
+D-rama-sin: informes CSP en las páginas 0 · sembrado 0 ()
+   recibo-pagado: 0/0 informes (390/1280) · —
+   recibo-pendiente: 0/0 informes (390/1280) · —
+   recibo-fallido: 0/0 informes (390/1280) · —
+   portal: 0/0 informes (390/1280) · —
+   portal-404: 0/0 informes (390/1280) · —
+recursos que faltan: 4 404 http://127.0.0.1:47281/favicon.ico | 404 http://127.0.0.1:47282/favicon.ico | 404 http://127.0.0.1:47283/favicon.ico | 404 http://127.0.0.1:47284/favicon.ico

@@ -19,11 +19,12 @@ import {
   type DatosDestinatario, type DatosProveedor, type FilaLibro,
 } from './librosAeat';
 import { criterioDelMerchantParaElLibro } from '../../invoicing/domain/criterioDelMerchant'; // SCRUM-294 fase C
+import { zonaDelMerchantParaElLibro, type ClienteParaZona } from '../../invoicing/domain/zonaDelLibro'; // SCRUM-1445d fase 2
 import { nombreParaDocumento } from '../../../core/documentos/nombreParaDocumento'; // SCRUM-577
 import { clienteDelDocumento } from '../../invoicing/domain/clienteCongelado'; // SCRUM-1058c
 import type { AsientoLibro } from '../../invoicing/domain/libroRegistro';
 
-export interface ClienteDeLibros extends ClienteDelLibro {
+export interface ClienteDeLibros extends ClienteDelLibro, ClienteParaZona {
   customer: { findMany(args: any): Promise<any[]> };
 }
 
@@ -39,13 +40,15 @@ export async function leerLibroExpedidasDelTrimestre(
   db: ClienteDeLibros,
   params: { merchantId: number; año: number; trimestre: number },
 ): Promise<{ filas: FilaLibro[]; miradas: number; desde: Date; hasta: Date }> {
-  const { desde, hasta } = rangoTrimestre(params.año, params.trimestre);
+  // SCRUM-1445d (fase 2) · el trimestre, en la zona del comercio (c.21896).
+  const zona = await zonaDelMerchantParaElLibro(db, params.merchantId);
+  const { desde, hasta } = rangoTrimestre(params.año, params.trimestre, zona);
   const { merchantId } = params;
 
   // SCRUM-294 (fase C) · el criterio de caja del merchant, igual que en el 303.
   const criterio = await criterioDelMerchantParaElLibro(db as never, merchantId);
   // SCRUM-1232: el libro de expedidas son facturas; el justificante sigue en el 303, que NO pide esto.
-  const libro = await leerLibroRegistro(db, { merchantId, desde, hasta, ...criterio, soloFacturas: true });
+  const libro = await leerLibroRegistro(db, { merchantId, desde, hasta, zona, ...criterio, soloFacturas: true });
   // El suelo va ANTES de mirar los asientos: si el libro no se pudo leer, no se resuelve ningún
   // cliente ni se emite nada. Ver `exigirLibroLegible`.
   exigirLibroLegible(libro);
@@ -92,7 +95,8 @@ export async function leerLibroRecibidasDelTrimestre(
   db: ClienteDeLibros & ClienteDeGastos & { provider: { findMany(args: any): Promise<any[]> } },
   params: { merchantId: number; año: number; trimestre: number },
 ): Promise<{ filas: FilaLibro[]; miradas: number; avisos: string[]; desde: Date; hasta: Date }> {
-  const { desde, hasta } = rangoTrimestre(params.año, params.trimestre);
+  const zona = await zonaDelMerchantParaElLibro(db, params.merchantId); // SCRUM-1445d fase 2
+  const { desde, hasta } = rangoTrimestre(params.año, params.trimestre, zona);
   const { merchantId } = params;
 
   const libro = await leerLibroRecibidas(db, { merchantId, desde, hasta });

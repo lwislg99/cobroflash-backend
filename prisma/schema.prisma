@@ -166,6 +166,10 @@ model Merchant {
   CustomerSite  CustomerSite[]
   // SCRUM-1296: los registros de este comercio en la cola de remisión a la AEAT.
   vfSubmissions VfSubmission[]
+  // SCRUM-1732 (opción A): lo cobrado de sus facturas, fila a fila (`invoice_payments`).
+  invoicePayments InvoicePayment[]
+  // SCRUM-1076d: lo que el profesional ha marcado en su calendario de plazos.
+  fiscalPlazos FiscalPlazoEstado[]
 
   // SCRUM-293 (A2) · RETENCIÓN DE IRPF. Autorización expresa del fundador para ESTAS DOS LÍNEAS.
   //
@@ -513,9 +517,14 @@ model Charge {
   // un crédito pendiente de cobro que se anota sobre el `Charge` que cobró el resto.
   //
   // El importe REAL cobrado en la liberación (si difiere del retenido, p. ej. un desperfecto)
-  // no vive aquí: vive en el `amount` de un `Charge` NUEVO que registre esa liberación — un
-  // solo generador de «cuánto se cobró», el mismo principio de SCRUM-397. Por eso
-  // `retencionGarantiaCobrada` es solo una FECHA (el marcador que apaga el aviso), no un importe.
+  // no vive aquí. Por eso `retencionGarantiaCobrada` es solo una FECHA (el marcador que apaga el
+  // aviso), no un importe.
+  //
+  // 🔴 SCRUM-1732 (opción A, decisión ② de Javier en SCRUM-1732 c.21928) · REESCRITO: hasta aquí
+  // decía que «cuánto se cobró» tenía un solo generador, el `amount` de un `Charge` nuevo. Ya no.
+  // `Charge.amount` es LO PEDIDO (el enlace de pago); LO COBRADO —lo que entró de verdad, también
+  // en la liberación— vive en `InvoicePayment` (`invoice_payments`), una fila por dinero recibido
+  // y atribuible a una factura. El generador único de «cuánto se cobró» es esa tabla.
   //
   // ALTER ya aplicado en las tres bases (producción y staging por Javier, dev por J2), 23-sep-2026
   // — verificado leyendo `information_schema.columns` (docs/master/SCRUM-1107.md §"APLICADO").
@@ -525,6 +534,7 @@ model Charge {
   retencionGarantiaCobrada    DateTime? @map("retencion_garantia_cobrada")
   Quote     Quote[]
   invoices  Invoice[]
+  invoicePayments InvoicePayment[]
 
   @@index([merchantId, status])
   @@index([customerId])
@@ -977,10 +987,56 @@ model Invoice {
   // subsanación). Virtual, sin columna en `invoices`.
   vfSubmissions VfSubmission[]
 
+  // SCRUM-1732 (opción A): lo cobrado de esta factura, fila a fila. Virtual, sin columna en `invoices`.
+  payments InvoicePayment[]
+
   // El número es único POR MERCHANT (antes era único global: dos merchants con el
   // mismo prefijo "CF" colisionaban; la serie es del emisor, no de la plataforma)
   @@unique([merchantId, number])
   @@map("invoices")
+}
+
+/// SCRUM-1732 (opción A) · LO COBRADO DE UNA FACTURA: una fila por cada dinero que entra y se puede
+/// atribuir a una factura. Diseño en SCRUM-1732 c.21926 §①; decisiones y firma de Javier en c.21928.
+///
+/// · `Invoice.status` NO cambia de significado (V1, c.21928 ①): pasa a `paid` con el primer cobro
+///   apuntado, como siempre. Esta tabla manda en el DEVENGO fiscal (lo lee el libro en el PR-2, J1);
+///   en el PR-1 nadie la lee todavía.
+/// · `Charge.amount` = lo PEDIDO; `importe` = lo que ENTRÓ (c.21928 ②). Siempre > 0: una devolución
+///   no es una fila negativa (va por R1 o por `Refund`).
+/// · Sin relleno: una factura `paid` sin filas se lee como hoy, un cobro del 100 % en su `paidAt`.
+/// · APPEND-ONLY. Una fila mal apuntada no se edita ni se borra: se apunta una fila
+///   `tipo = anulacion` con `anulaId` = la fila mala (mismo importe), y otra con el importe bueno
+///   (c.21928 ⑤). `anulaId` es único: una fila se anula una sola vez. Las filas de anulación y de
+///   corrección van con `chargeId` NULL: el único `(invoiceId, chargeId)` es la idempotencia del
+///   aviso de pago (un reintento de webhook no apunta dos veces), no una regla de negocio.
+/// · `fechaOrigen` (`declarada` / `aviso` / `marcado`) sustituye a `paidAtOrigen` de SCRUM-1055
+///   c.21863 ⑤, que no se crea (c.21928 ③).
+/// · `metodo`: el conjunto cerrado `PAID_VIA`; NULL = no consta.
+/// · `tipo`: `cobro` / `liberacion_garantia` / `anulacion`.
+/// · Sin índice propio en `invoice_id`: el único `(invoice_id, charge_id)` empieza por esa columna.
+model InvoicePayment {
+  id          Int      @id @default(autoincrement())
+  merchantId  Int      @map("merchant_id")
+  invoiceId   Int      @map("invoice_id")
+  chargeId    Int?     @map("charge_id")
+  importe     Decimal  @db.Decimal(12, 2)
+  fechaCobro  DateTime @map("fecha_cobro")
+  fechaOrigen String   @map("fecha_origen")
+  metodo      String?
+  tipo        String
+  anulaId     Int?     @unique @map("anula_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  merchant   Merchant        @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  invoice    Invoice         @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  charge     Charge?         @relation(fields: [chargeId], references: [id], onDelete: Restrict)
+  anula      InvoicePayment? @relation("AnulacionDeCobro", fields: [anulaId], references: [id], onDelete: Restrict)
+  anuladaPor InvoicePayment? @relation("AnulacionDeCobro")
+
+  @@unique([invoiceId, chargeId])
+  @@index([merchantId, fechaCobro])
+  @@map("invoice_payments")
 }
 
 model Expense {
@@ -1858,4 +1914,27 @@ model VfFlujoObligado {
   updatedAt           DateTime  @updatedAt @map("updated_at")
 
   @@map("vf_flujo_obligado")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-1076d · CALENDARIO DE PLAZOS: lo que el profesional MARCA, y nada más. Tabla y ALTER
+// aprobados por el fundador en SCRUM-1076 c.21877 (P6), con el modelo de c.21876 §2 (orden A5).
+// Sin fila = «Pendiente»: no hay valor por defecto que afirme nada, y «volver a pendiente» borra
+// la fila (no es un documento: la regla 29 no aplica). El estado NO se deduce de cobros ni de
+// documentos (aceptación 5). `estado` sólo admite hoy 'llevado_asesor' (lo comprueba el código).
+// `marcadoPor` es el `teamMemberId` de la sesión: NULL es el propietario del comercio.
+model FiscalPlazoEstado {
+  id         Int      @id @default(autoincrement())
+  merchantId Int      @map("merchant_id")
+  modelo     String   @map("modelo")
+  ejercicio  Int      @map("ejercicio")
+  periodo    String   @map("periodo")
+  estado     String   @map("estado")
+  marcadoAt  DateTime @default(now()) @map("marcado_at") @db.Timestamptz(3)
+  marcadoPor Int?     @map("marcado_por")
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@unique([merchantId, modelo, ejercicio, periodo])
+  @@map("fiscal_plazo_estado")
 }

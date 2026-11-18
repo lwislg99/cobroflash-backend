@@ -66,6 +66,11 @@ function cuadra(r, gastos) {
   assert.equal(Math.round(anotada * 100), Math.round(repartida * 100), '🔴 un euro retenido se ha evaporado');
 }
 
+// SCRUM-1445f · los fixtures de este fichero se escriben en hora LOCAL del proceso (el trinquete de zona
+// los pasa en Kiritimati y Midway): el comercio falso vive en esa misma zona. La zona del comercio de
+// verdad (Canarias, península, sin zona) la prueba tests/scrum1445f-los-lectores-pasan-la-zona.test.mjs.
+const ZONA_DEL_PROCESO = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
 test('SCRUM-1066e · la clave interna es «alquiler» (c.20485: el profesional no la ve)', () => {
   assert.equal(CATEGORIA_ALQUILER, 'alquiler');
 });
@@ -123,7 +128,10 @@ test('SCRUM-1066e · un alquiler sin arrendador ni base se declara, como el rest
 
 test('SCRUM-1066e · el lector pide la categoría, y sigue filtrando sólo por merchant y trimestre', async () => {
   let args = null;
-  const db = { expense: { findMany: async (a) => { args = a; return [alquiler()]; } } };
+  const db = {
+    merchant: { findUnique: async () => ({ timezone: ZONA_DEL_PROCESO }) }, // SCRUM-1445f
+    expense: { findMany: async (a) => { args = a; return [alquiler()]; } },
+  };
   const r = await leerBorradorRetenciones(db, { merchantId: M, año: 2026, trimestre: 2 });
   assert.equal(args.select.category, true, '🔴 sin la categoría, el 115 vuelve a salir siempre a cero');
   assert.deepEqual(Object.keys(args.where).sort(), ['date', 'merchantId']);
