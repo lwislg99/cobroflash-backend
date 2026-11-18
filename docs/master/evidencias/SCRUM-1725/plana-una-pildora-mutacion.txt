@@ -1,0 +1,33 @@
+﻿
+── BASE (sin mutar) ──
+816 · exit 0
+   # tests 12
+   # pass 12
+   # fail 0
+guard-917 · exit 0
+   B · columnas (B.1) · técnico en la línea del cliente (B.2) · una píldora por fila (B.3) · la cifra grande es lo que falta (B.4-B.6)
+   ✅ B.3 exactamente una píldora por fila en 11 de 11 filas
+   ✅ B.3 sin fecha, la celda Fecha está vacía
+   ✅ B.3 con fecha, la enseña: «vie, 20 nov, 08:00»
+   población: 51 comprobaciones sobre 12 trabajos + 200 + 2 monedas + sin equipo · a 1280 y 390
+
+inyección aplicada: SÍ (public/dashboard/js/jobsView.js)
+
+── MUTADO (dos píldoras apiladas en la celda de estado) ──
+816 · exit 1
+   not ok 5 - SCRUM-816 · ESTADO y FECHA son una sola columna, y el cobro NO se pierde
+   🔴 la celda ESTADO no lleva UNA sola píldora: se le cuelga 2 vez/veces
+   # tests 12
+   # pass 11
+   # fail 1
+guard-917 · exit 1
+   B · columnas (B.1) · técnico en la línea del cliente (B.2) · una píldora por fila (B.3) · la cifra grande es lo que falta (B.4-B.6)
+   ✅ B.3 sin fecha, la celda Fecha está vacía
+   ✅ B.3 con fecha, la enseña: «vie, 20 nov, 08:00»
+   población: 51 comprobaciones sobre 12 trabajos + 200 + 2 monedas + sin equipo · a 1280 y 390
+   🔴 B.3 11 de 11 filas no llevan exactamente UNA píldora: Ana Cuadro ×2 · Comunidad Los Olivos ×2 · Recarga Garaje ×2 · Lucía Romero ×2 · QA Cinco ×2 · Taller Hnos. Vega ×2 · Hotel Arenal ×2 · Cliente Electricista ×2 · Bar El Puerto ×2 · Inmobiliaria Sur ×2 · Pagado Entero ×2
+   🔴 1 de 51 comprobaciones en rojo.
+
+restaurado byte a byte: SÍ
+
+VEREDICTO: base verde · mutación tumba a los dos

@@ -83,6 +83,7 @@ Capturas y medidas: `docs/master/evidencias/SCRUM-1725/{antes,despues}-lista-{ad
 
 A9: comprobación → `docs/master/evidencias/SCRUM-1725/c1725g-lista.mjs`
 Mutaciones: catálogo → `tests/scrum1725-lista-operario-sin-cobro.test.mjs`
+Mutaciones: una vez → `docs/master/evidencias/SCRUM-1725/plana-una-pildora-mutacion.mjs`
 
 **Por qué.** El fundador vio la lista de 1725e y dio veredicto (SCRUM-1725 c.22073): «no me acabna de gustar es muy lioso la lsita […] me molaria un listado normal como los que tenemos en otros sitios». La vuelta anterior era de ropa; ésta es de estructura.
 
@@ -104,6 +105,7 @@ Mutaciones: catálogo → `tests/scrum1725-lista-operario-sin-cobro.test.mjs`
 - c.22076 · P1 `<th>` «Estado» (registrado en `docs/microcopy/2026-11-18-SCRUM-1725-estado-en-la-lista-de-trabajos.md`) · P2 el orden · P3 los cerrados · P4 el cobro.
 - c.22077 · autoriza cambiar lo que exigen `tests/scrum428-terminado-sin-cobrar.test.mjs` L71 y L178 y `tests/scrum1725-lista-operario-sin-cobro.test.mjs` L74, L89 y L92, «porque el REQUISITO cambió […] no para esquivar un rojo».
 - c.22078 · amplía a 428 L130-157 y a `scripts/guard-lista-trabajos-917.mjs` B.1, C.4 y C.5.
+- c.22081 · autoriza `tests/scrum816-la-lista-no-miente.test.mjs` L136-140 (pasa a exigir que la columna «Estado» existe y que su celda lleva UNA sola píldora de `jobStatusMeta`; el resto del caso no se toca) y guard-917 B.3 (pasa a «exactamente UNA píldora por fila, nunca dos apiladas», o se retira si C.4 ya lo exige idéntico).
 
 **Lo que se PIERDE, declarado (P4):** el subtotal «por cobrar» de SOLO los terminados y la salvedad larga («N sin importe de referencia: no se sabe cuánto falta y no entran en el total.»). Queda la tarjeta «Por cobrar» (importe + «N sin importe de referencia, no entra(n)») y, fila a fila, «💰 Cobrar el resto (importe)» y «X de Y». **M1 (c.22052) queda superado**: no hay cabecera para ningún rol; su doc de microcopy se conserva, anotado.
 
@@ -124,8 +126,12 @@ Mutaciones: catálogo → `tests/scrum1725-lista-operario-sin-cobro.test.mjs`
 
 Las tarjetas se comparan como CONJUNTOS de líneas (cliente, tipo, tarea, técnicos, dirección, importe, fecha y botones con su relleno). «Ver 2 cerrados» sigue al pie en las dos del admin. El operario no tiene filtros de cobro: ahí «filtros idénticos» compara dos vacíos y no prueba nada.
 
+**816 y guard-917 B.3: una sola píldora por fila (c.22081).** La columna «Estado» de la P1 tumbaba el caso 5 de `tests/scrum816-la-lista-no-miente.test.mjs`, que exigía que NO existiera. Rojo primero, con el test SIN tocar: `plana-816-rojo-primero.tap.txt` (12 casos, 1 caído: «sigue la columna ESTADO»). Después de la edición autorizada, 12 de 12.
+- 816 L136-140 exige ahora: el `<th>` «Estado» existe; la celda sale de `jobStatusMeta(j.status)`; y a `tdEstado` se le cuelga UNA sola cosa. FECHA, el cobro en IMPORTE y la ausencia de `cobroPillClass` siguen como estaban. El TÍTULO del caso («ESTADO y FECHA son una sola columna…») no se ha tocado: queda fuera de la autorización y hoy dice otra cosa que lo que el caso comprueba.
+- guard-917 B.3: **se REESCRIBE, no se retira.** C.4 no lo exige idéntico: lee solo la PRIMERA píldora de la celda de estado (`querySelector`), así que dos apiladas le pasarían. B.3 cuenta todas las píldoras de la fila (`.status-pill` y la antigua `.jobs-estado-pill`) y exige exactamente una, con suelo («no pinta ninguna fila» es NO SUPE MIRAR). Sus otras dos comprobaciones (la fecha o nada) no cambian. El guard sigue en 51 comprobaciones.
+- Visto en rojo con una mutación real (dos píldoras apiladas en la celda), base verde antes y restauración byte a byte: `plana-una-pildora-mutacion.txt`. Cae 816 caso 5 («se le cuelga 2 vez/veces») y cae B.3 («11 de 11 filas no llevan exactamente UNA píldora»). Commit previo a la inyección: `e0d5402528dc9fcdff6b3720974df3733c31488e`.
+
 **Lo que NO queda probado, y lo que queda fuera:**
-- `guard:lista-trabajos-917` B.3 («sin píldora») sigue verde porque busca `.jobs-estado-pill`, una clase que ya no existe; su intención (917c) la revierte P1. No está en la autorización: no se toca, se declara.
 - `guard:escalera-por-estado` sale ROJO (4 hallazgos, 2 ciegos: «el detalle (ninguna)») **también con la lista y la hoja de `origin/main` 34939a6ad**: es del detalle del Trabajo, no de esta rama. Reportado al orquestador.
 - En la cuenta QA ningún terminado tiene saldo: «💰 Cobrar el resto» en su fila lo prueba el guard-917 (C.5, banco local), no la captura.
 - Pendiente: el «me gusta» del fundador sobre las capturas, y la regla 42 tras el merge (las mismas pasadas, sin `LOCAL_DIR`).
