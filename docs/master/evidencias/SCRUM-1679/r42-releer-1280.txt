@@ -1,0 +1,9 @@
+﻿· RELECTURA del trabajo #86: no se crea nada
+· TESTIGO lista @1280: 9 tarjetas · con tarea 3 · con dirección 6
+· tarjetas cuya tarea es LA ESCRITA: 1
+· TARJETA {"id":null,"cliente":"Marta Prieto (PILOTO-1 QA)","tarea":"(prueba) Regla 42 de SCRUM-1679 del 18-nov: revisar la presión de la caldera y cambiar la válvula de seguridad.","direccion":"Calle de la Regla 42, n.º 18, 1.º A, 28801 Alcalá de Henares","botones":["Ver detalle","Agendar","⋯"],"atributos":"class=jobs-fila"}
+r42-lista-admin@1280: rol=admin · 72 pulsables · 0 desbordes · 10 <44 · log 1 · {"porCobrar":1,"cobrado":0,"teFalta":0,"pendiente":1,"parcial":1,"pagado":1,"factura":0,"euros":3,"ceroEuros":0,"deImporte":1,"notasInternas":0,"queHayQueHacer":0,"basura":0}
+ESCRITURAS
+POST /admin/entorno → 200
+LOG
+[warning] Service Worker registration blocked by Playwright

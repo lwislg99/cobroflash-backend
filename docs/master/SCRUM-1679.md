@@ -63,3 +63,55 @@ El obligatorio de `1bc9ab652` cayó con 17 fallos, y ninguno era de código. Le�
 El primer rojo de esta rama (`scrum1233g`, la acción de banco) se arregló sin ver el resto: el log del run salió vacío porque `gh run view --log` no entrega nada mientras el run sigue en marcha. El log de UN job ya terminado sí se puede pedir: `gh api repos/<dueño>/<repo>/actions/jobs/<id>/logs`.
 
 **Arreglo:** las dos líneas del encabezado, y `origin/main` fusionado dentro (la rama iba por detrás y `main` ya lleva SCRUM-1739, que toca la misma función `jobRow`). Git fusionó `jobsView.js` sin conflicto; que la fusión sea correcta se midió aparte: los 28 tests que nombran `jobsView` más `scrum1233g`, 305 pruebas, 0 fallos.
+
+## SCRUM-1679b · Regla 42: visto en yaqu.app con un trabajo de verdad (18-nov-2026)
+
+**Rama:** `scrum-1739b-reglas-42-cara-trabajos` (sirve también a la regla 42 de SCRUM-1739: el mismo trabajo). Sólo registro y evidencia; no toca `src/` ni `public/`.
+**Medido contra:** `origin/main` = `25b6c8f9c7edaf4eb7ded049abdd59d75a22974a` (merge de #3214) · 2026-11-18T11:12:37Z (cabecera `Date:` de `gh api -i zen`).
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
+**El despliegue, cotejado antes de medir** (descarga a fichero + `git hash-object --no-filters`, contra `git rev-parse origin/main:<ruta>`):
+
+| fichero servido por yaqu.app | blob servido | blob de `origin/main` |
+|---|---|---|
+| `/dashboard/js/jobsView.js` | `7f55a66bace5582fc2246df779f9815b0e619929` | el mismo |
+| `/dashboard/css/styles.css` | `5d41e118853e7ec368698b8a74c3ebe2f0538950` | el mismo |
+
+**Instrumento:** `docs/master/evidencias/SCRUM-1679/r42-crear-y-abrir.mjs`, acción del banco H6 (`SCRUM-1686/banco-h6/paso2.mjs`). No usa `.route(`: mide lo que sirve producción. Tres pasadas, las tres con código de salida 0:
+
+1. **Mirar** (sin `HACER=1`, 390): abre el modal y no crea nada. Botón «Abrir trabajo»; 4 clientes en el desplegable, entre ellos el de la prueba.
+2. **Crear** (`HACER=1`, 390): rellena cliente, tipo de intervención, dirección y tarea, pulsa «Abrir trabajo» y mira dónde queda el panel. Salida en `evidencias/SCRUM-1679/r42-crear-390.txt`.
+3. **Releer** (`TRABAJO=86`, 1280): lee la tarjeta de ese trabajo a escritorio sin crear otro. Salida en `r42-releer-1280.txt`.
+
+**Lo medido al crear:**
+
+- `POST /admin/jobs` → **201**, `id=86`, `status=pendiente_agendar`; el servidor devuelve la tarea y la dirección iguales a lo escrito.
+- **Aterriza:** `location.hash` = `#jobs-detail/86` · el panel pidió `GET /admin/jobs/86` → 200 · el modal ya no está · se pintan 0 filas de la lista. El hash solo no probaría nada (se queda como se escribió aunque el panel pinte otra cosa): por eso van las cuatro.
+- **La ficha lo dice a la vista** (`innerText`, sin abrir nada): la tarea, en «Qué hay que hacer», y la dirección, en «DÓNDE».
+- **La tarjeta lo dice:** de vuelta en la lista, UNA tarjeta pinta esa tarea, con esa dirección y ese cliente. Población: 9 tarjetas, 3 con tarea, 6 con dirección (antes de crear: 8, 2 y 5).
+
+### Aceptación → dónde se ve
+
+La aceptación literal del ticket en Jira NO la ha leído esta sesión (no tiene Rovo): las filas son las del encargo del orquestador del 18-nov, copiadas.
+
+| aceptación (del encargo) | dónde se ve |
+|---|---|
+| crear trabajo QA REAL con tarea y dirección → la tarjeta lo dice | yaqu.app, cuenta QA, Trabajos: la tarjeta del trabajo #86 · `evidencias/SCRUM-1679/r42-lista-390.png` y `r42-lista-1280.png` (tomadas con el trabajo aún sin agendar) · `r42-crear-390.txt`, línea `TARJETA de #86` |
+| «Abrir trabajo» ATERRIZA en su ficha | `evidencias/SCRUM-1679/r42-ficha-390.png` · `r42-crear-390.txt`, líneas `ATERRIZA` y `LA FICHA DICE` · `tests/scrum1679-la-tarjeta-dice-que-trabajo-es.test.mjs` |
+| capturas 390/1280 | las tres PNG `r42-*` de `evidencias/SCRUM-1679/`. El aterrizaje se midió a 390; a 1280 sólo la tarjeta |
+
+### Lo que se queda en la cuenta QA (declarado)
+
+- **Trabajo #86**, de «Marta Prieto (PILOTO-1 QA)», creado el 18-nov-2026 entre las 11:12:37Z y las 11:14:41Z (GitHub). Tarea: «(prueba) Regla 42 de SCRUM-1679 del 18-nov: revisar la presión de la caldera y cambiar la válvula de seguridad.» Dirección: «Calle de la Regla 42, n.º 18, 1.º A, 28801 Alcalá de Henares». Tipo de intervención: `REPARACION_ASISTENCIA`. Sin técnico asignado.
+- Después se AGENDÓ para la regla 42 de SCRUM-1739 (`docs/master/SCRUM-1739.md`, sección 1739b). No se ha borrado ni cerrado.
+- Crear un trabajo no manda nada al cliente: leído en `jobs.routes.ts` (el único envío del fichero es el del enlace de cobro, otra ruta); no se observó ningún envío en la pasada (escrituras de la bitácora: `POST /admin/entorno`, del banco, y `POST /admin/jobs`).
+
+### Lo que NO se ha medido
+
+- El aterrizaje a 1280 (es el mismo código a cualquier ancho; no se creó un segundo trabajo sólo para fotografiarlo).
+- Un teléfono de verdad y Safari: sigue como arriba.
+- El operario: la pasada es con la cookie de administrador.
+
+**Lo que salió mal en esta pasada (A9):** las dos secciones nuevas (ésta y la 1739b) se escribieron con su ancla «Medido contra» y sin la línea `A9:` que cada ancla exige. Lo cazó `npm run guards:entrada` antes del push (`tests/scrum1294-a9-leccion-en-a10.test.mjs`, 2 hallazgos); no llegó a CI.
+
+**La acción se revisó antes de correrla** (la dejó escrita y sin correr la sesión anterior). Dos cambios: comprueba que el cliente de la prueba ESTÁ en el desplegable antes de escribir nada (si no, para sin crear), y lee la tarjeta en la misma pasada aunque la ficha diera rojo, porque para entonces el trabajo ya existe.
