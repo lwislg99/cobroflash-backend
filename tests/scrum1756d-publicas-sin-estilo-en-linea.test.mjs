@@ -25,6 +25,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { casosEscritos } from './_casos-escritos.mjs';
+import { hojasDeLaPagina } from './_scripts-de-la-pagina.mjs';
 
 // Las del meta-guard (`scripts/meta-guard-mutaciones.mjs`): cada una devuelve una pieza del arreglo
 // a como estaba, y tiene que tumbar el caso que nombra.
@@ -106,9 +107,8 @@ function estilosEnLinea(html) { return (sinComentarios(html).match(/<style\b[^<>
 function atributosStyle(html) {
   return (sinComentarios(html).match(ETIQUETA) || []).filter((t) => /\sstyle\s*=/i.test(t));
 }
-function hojasEnlazadas(html) {
-  return [...sinComentarios(html).matchAll(/<link\b[^<>]*rel="stylesheet"[^<>]*href="([^"]+)"/gi)].map((m) => m[1]);
-}
+// El `<link>` lo lee el único extractor de `tests/` (SCRUM-676), no una regex de aquí.
+function hojasEnlazadas(html) { return hojasDeLaPagina(html).locales; }
 // Las clases que puso el arreglo: cada una tiene que tener regla en la hoja de su página.
 function clasesNuevas(html) {
   return [...sinComentarios(html).matchAll(/class="([^"]*)"/g)].flatMap((x) => x[1].split(/\s+/))

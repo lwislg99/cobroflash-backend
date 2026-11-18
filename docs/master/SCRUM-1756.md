@@ -174,3 +174,40 @@ la landing no da informe.
 - yaqu.app; otros navegadores. `prefers-reduced-motion: no-preference` (las animaciones de la landing en marcha).
 - `SCRUM-1756.md` lo crea también 1756b (J2, rama `scrum-1756b-css-recibo-portal`, sin mergear al escribir esto): las
   dos ramas CREAN el fichero. Lo vigila scrum1572 en CI.
+
+### Relevo · 18-nov · jv-j3ch (J3): main unido, los tests de la landing leen la hoja, 498/541 clasificados, suite
+
+**Medido sobre:** `origin/main` = `bcff9d8b1ea465938ef797c17548cb5217de02bc` · 2026-11-18T15:35:01Z (cabecera `Date:` de GitHub) · sesión `jv-j3ch`, por encargo del orquestador `cobroflash-backend-ee`. La rama del PR #3209 estaba en `2b20d4c89` (sólo el merge del bot encima de `58f4312d5` de jv-j3cg).
+
+**Skill UI:** no cargada · el relevo no toca `public/`: sólo tests, un censo de `scripts/` y registros. Lo de `public/` es de jv-j3cg (el CSS en línea pasado tal cual a hojas, capturas idénticas byte a byte); si ella cargó la skill no consta en su tramo, y no lo afirmo.
+
+A9: comprobación → `tests/scrum676-hojas-del-indice.test.mjs`
+
+(El fallo: mi primer lector de la hoja enlazada llevaba su propia regex de `<link>`, y la del test de 1756d otra; el guard de un solo extractor las cazó en el tramo 12 y ahora las dos derivan de `hojasDeLaPagina`.)
+
+- **Merge de `origin/main`** (`bcff9d8b1`): `.claude/carriles.json` tomado de main y regenerado (`carriles.mjs comprobar` = IGUAL; la primera pasada dio «ambigua ×3» porque el fichero seguía en conflicto en el índice: tras `git add`, limpio); `docs/equipo/dos-equipos.md` §3.4 con las filas de las DOS ramas (las 4 de 1756d y la de SCRUM-1755). Cero marcadores. `tsc -p .` con tipos: salida 0. Guard del cliente de Prisma: ✔.
+- **El registro entrelazado:** el merge del bot `2b20d4c89` había entrelazado este fichero (lo crearon las dos ramas; lo cazó `scrum1572` en el tramo 6). Se rehízo: 1756b y 1756c tal cual están en main, y 1756d detrás tal cual lo dejó `58f4312d5`. Control: 0 de 179 líneas no vacías de las dos versiones faltan.
+- **Los tests que leían el CSS dentro de `index.html`:** `scrum541`, `542`, `543`, `544` y `333` leen ahora la landing CON las hojas que enlaza (`tests/_pagina-con-sus-hojas.mjs`, que saca la hoja del `<link>` de la propia página con `hojasDeLaPagina`); el censo de `scrum562` (`scripts/censo-arbitro-de-toque.mjs`) cuenta las reglas de la hoja enlazada con su página, y las hojas que ya están en su superficie (`tokens.css`, `auth.css`) una vez. **Ninguna aserción, ningún umbral ni ningún literal esperado cambia**: los cinco candidatos de 562 siguen saliendo como `public/index.html — …`. Antes del cambio, 541+542+543+544+562: 13 rojos; después, 0.
+- **Rojos propios de la rama que cazó la suite y no estaban en la lista de jv-j3cg:** `scrum1415` (el test de 1756d construía el nombre de sus 4 casos en un bucle; ahora `casosEscritos`, nombres escritos), `scrum676` (arriba), `scrum811c` (este tramo no declaraba `**Skill UI:**`; ahora sí), `scrum1572` (arriba) y `scrum333` (la misma causa que 541-544).
+- **498:** verde hoy (tramo 11). Su caso «los DOS instrumentos dan la misma lista, o hay un cliente desparejado» compara el cliente de Prisma con el esquema; hoy el guard del cliente da ✔ tras regenerarse el compartido con main. → **entorno**, deducido de qué compara: no re-medido en el árbol de jv-j3cg.
+- **541:** de **la rama**, misma causa que 542-544 (busca `.cmp-lbl{display:block` en `index.html`). Arreglado como ellos.
+- **`scrum351`** («sin `node_modules` en ningún ancestro: SIN DEPENDENCIAS»): **entorno**. Existe `C:\Users\Javier Pereira\node_modules` (fecha 13-nov, con `@prisma` dentro), ancestro del temporal donde el test monta su árbol «sin dependencias». No es de esta rama y no lo he borrado.
+
+### Suite (un tramo por comando, sobre esta rama con main unido)
+
+| tramo | casos | rojos | qué |
+|---|---|---|---|
+| 4 | 1106 | 0 | |
+| 5 | 1043 | 1 | `scrum1415` → arreglado |
+| 6 | 681 | 1 | `scrum1572` → arreglado |
+| 7 | 685 | 0 | |
+| 8 | 854 | 0 | |
+| 9 | 1095 | 2 | `scrum333` → arreglado · `scrum351` → entorno |
+| 10 | 992 | 0 | |
+| 11 | 1184 | 1 | `scrum541` → arreglado |
+| 12 | 1119 | 1 | `scrum676` → arreglado |
+| 13 | 879 | 0 | |
+| 14 | 940 | 1 | `scrum811c` → arreglado |
+| 15 | 1001 | 1 | `scrum976` ④ (corre los guards de entrada: arrastre de los de arriba; ver la re-pasada) |
+
+Los tramos 1-3 los corrió jv-j3cg sobre su rama sin main; la re-pasada final, en el comentario de entrega de Jira.

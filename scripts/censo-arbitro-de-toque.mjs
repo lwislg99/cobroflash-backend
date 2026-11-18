@@ -174,7 +174,7 @@ const cssDe = (rel) => {
   // SCRUM-1756d: el CSS de una página puede vivir en la hoja local que enlaza (CSP paso 3). Esas
   // reglas son de la página y se cuentan con ella; las hojas que ya están en la superficie
   // (tokens.css, auth.css) se cuentan una sola vez, con su nombre.
-  const hojas = hojasEnlazadas(src).filter((h) => !SUPERFICIE_PUBLICA.includes(h))
+  const hojas = hojasEnlazadas(src, rel).filter((h) => !SUPERFICIE_PUBLICA.includes(h))
     .map((h) => {
       const a = path.join(RAIZ, h);
       // Una hoja enlazada que no está no se calla: parecería una página sin decorativos.
