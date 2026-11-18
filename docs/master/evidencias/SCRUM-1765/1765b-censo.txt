@@ -1,0 +1,287 @@
+POBLACIÓN · 246 ficheros con «mut» · 107 bancos · 29 fuera (las funciones de tests/_catalogo-obligatorio.mjs)
+CORPUS · 5012 ficheros (src, scripts, tests, public, dist, prisma, docs sin evidencias, .claude, .github) · dist/ VISTO · catálogos: 314 tests
+
+docs/evidencias/scrum1317 · guiones: mutar-servidor.mjs.txt, mutar.mjs.txt · anclas 13 · VIVA 13 · AMBIGUA 0 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 0
+    · mutar-servidor.mjs.txt · T1 alguien vuelve a APARCAR una ruta (lista 0 -> 1 · VIVA · src/core/http/adminRouteDeclarations.ts ×1
+    · mutar-servidor.mjs.txt · T2 aparca la ruta Y sube el tope a 1 (el atajo ent · VIVA · src/core/http/adminRouteDeclarations.ts ×1
+    · mutar-servidor.mjs.txt · T3 se le quita el requireRole a DELETE /admin/temp · VIVA · src/modules/templates/app/routes/templates.routes.ts ×1
+    · mutar-servidor.mjs.txt · T4 se le quita el requireRole a platform-funnel · VIVA · src/modules/metrics/app/routes/metrics.routes.ts ×1
+    · mutar-servidor.mjs.txt · T5 la portada del operario pide una suma a la base · VIVA · src/modules/metrics/domain/metrics.service.ts ×1
+    · mutar.mjs.txt · M1 el Inicio del operario vuelve a pedir /home · VIVA · public/dashboard/js/homeView.js ×1
+    · mutar.mjs.txt · M2 no se le quitan los bloques del negocio · VIVA · public/dashboard/js/homeView.js ×1
+    · mutar.mjs.txt · M3 los globos del arranque vuelven a /home · VIVA · public/dashboard/js/homeView.js ×1
+    · mutar.mjs.txt · M4 el aviso del trimestre vuelve a preguntar a /ad · VIVA · public/dashboard/js/homeView.js ×1
+    · mutar.mjs.txt · M5 Productos vuelve a pedir proveedores · VIVA · public/dashboard/js/productsView.js ×1
+    · mutar.mjs.txt · M6 Productos vuelve a cablear el margen sin mirar · VIVA · public/dashboard/js/productsView.js ×1
+    · mutar.mjs.txt · M7 Plantillas vuelve a pintar Renombrar y Borrar · VIVA · public/dashboard/js/templatesView.js ×1
+    · mutar.mjs.txt · M8 el editor vuelve a pintar Guardar como plantill · VIVA · public/dashboard/js/quotesView.js ×1
+
+docs/evidencias/scrum1338 · guiones: mutar.mjs.txt · anclas 10 · VIVA 8 · AMBIGUA 1 · MOVIDA 0 · MUERTA 1 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 0
+    · mutar.mjs.txt · M1 · Cobros nace SIN declarar (la entrada hacia un · MUERTA · public/dashboard/index.html
+    · mutar.mjs.txt · M2 · Clientes se le oculta al operario (se le quit · VIVA · public/dashboard/index.html ×1
+    · mutar.mjs.txt · M3 · aplicarRolALaBarra deja de ocultar · VIVA · public/dashboard/js/app.js ×1
+    · mutar.mjs.txt · M4 · se quita el veto de la vista tecleada · VIVA · public/dashboard/js/app.js ×1
+    · mutar.mjs.txt · M5 · el rótulo de una sección vacía se queda pinta · AMBIGUA · public/dashboard/js/app.js ×2
+    · mutar.mjs.txt · M6 · «Crear producto» vuelve a estar pulsable para · VIVA · public/dashboard/js/productsView.js ×1
+    · mutar.mjs.txt · M7 · la barra se escribe como denylist de «tecnico · VIVA · public/dashboard/js/app.js ×1
+    · mutar.mjs.txt · M8 · initApp deja de aplicar el rol a la barra · VIVA · public/dashboard/js/app.js ×1
+    · mutar.mjs.txt · M9 · «Crear producto» deshabilitado pero SIN su no · VIVA · public/dashboard/js/productsView.js ×1
+    · mutar.mjs.txt · M10 · vistaVedadaPorRol veta también al admin · VIVA · public/dashboard/js/app.js ×1
+
+docs/master/evidencias/SCRUM-1056 · guiones: mutantes-1056b.mjs · anclas 17 · VIVA 14 · AMBIGUA 3 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 0
+    · mutantes-1056b.mjs · replace() · AMBIGUA · 2 rutas del guion
+    · mutantes-1056b.mjs · replace() · VIVA · public/dashboard/js/clienteVolverALlamar.js ×1 (por las rutas del guion)
+    · mutantes-1056b.mjs · replace() · VIVA · public/dashboard/js/clienteVolverALlamar.js ×1 (por las rutas del guion)
+    · mutantes-1056b.mjs · replace() · VIVA · public/dashboard/js/clienteVolverALlamar.js ×1 (por las rutas del guion)
+    · mutantes-1056b.mjs · replace() · VIVA · public/dashboard/js/clienteVolverALlamar.js ×1 (por las rutas del guion)
+    · mutantes-1056b.mjs · replace() · VIVA · public/dashboard/js/clienteVolverALlamar.js ×1 (por las rutas del guion)
+    · mutantes-1056b.mjs · replace() · VIVA · public/dashboard/js/clienteVolverALlamar.js ×1 (por las rutas del guion)
+    · mutantes-1056b.mjs · replace() · VIVA · public/dashboard/js/clienteVolverALlamar.js ×1 (por las rutas del guion)
+    · mutantes-1056b.mjs · replace() · VIVA · public/dashboard/js/clienteVolverALlamar.js ×1 (por las rutas del guion)
+    · mutantes-1056b.mjs · replace() · VIVA · public/dashboard/js/clienteVolverALlamar.js ×1 (por las rutas del guion)
+    · mutantes-1056b.mjs · replace() · VIVA · public/dashboard/js/clienteVolverALlamar.js ×1 (por las rutas del guion)
+    · mutantes-1056b.mjs · replace() · VIVA · public/dashboard/js/clienteVolverALlamar.js ×1 (por las rutas del guion)
+    · mutantes-1056b.mjs · replace() · VIVA · public/dashboard/js/clienteVolverALlamar.js ×1 (por las rutas del guion)
+    · mutantes-1056b.mjs · replace() · VIVA · public/dashboard/js/clienteVolverALlamar.js ×1 (por las rutas del guion)
+    · mutantes-1056b.mjs · replace() · VIVA · public/dashboard/js/clienteVolverALlamar.js ×1 (por las rutas del guion)
+    · mutantes-1056b.mjs · replace() · AMBIGUA · 2 rutas del guion
+    · mutantes-1056b.mjs · replace() · AMBIGUA · 2 rutas del guion
+
+docs/master/evidencias/SCRUM-1150 · guiones: mutantes-1150b.mjs · anclas 7 · VIVA 6 · AMBIGUA 1 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 0
+    · mutantes-1150b.mjs · replace() · VIVA · public/dashboard/js/quoteRevisiones.js ×1 (por las rutas del guion)
+    · mutantes-1150b.mjs · replace() · VIVA · public/dashboard/js/quoteRevisiones.js ×1 (por las rutas del guion)
+    · mutantes-1150b.mjs · replace() · VIVA · public/dashboard/js/quoteRevisiones.js ×1 (por las rutas del guion)
+    · mutantes-1150b.mjs · replace() · VIVA · public/dashboard/js/quoteRevisiones.js ×1 (por las rutas del guion)
+    · mutantes-1150b.mjs · replace() · AMBIGUA · 2 rutas del guion
+    · mutantes-1150b.mjs · replace() · VIVA · public/dashboard/js/quoteRevisiones.js ×1 (por las rutas del guion)
+    · mutantes-1150b.mjs · replace() · VIVA · src/modules/quotes/domain/revision.ts ×1 (por las rutas del guion)
+
+docs/master/evidencias/SCRUM-1150c · guiones: mutar-1150c.mjs · anclas 3 · VIVA 0 · AMBIGUA 0 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 3 · ilegibles 0 · en catálogo 0
+    · mutar-1150c.mjs · cambiar() · SIN-FICHERO · en 1 fichero(s) del corpus
+    · mutar-1150c.mjs · cambiar() · SIN-FICHERO · en 2 fichero(s) del corpus
+    · mutar-1150c.mjs · cambiar() · SIN-FICHERO · en 1 fichero(s) del corpus
+
+docs/master/evidencias/SCRUM-1188 · guiones: mutantes-1188e.mjs · anclas 8 · VIVA 8 · AMBIGUA 0 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 0
+    · mutantes-1188e.mjs · replace() · VIVA · public/dashboard/js/quotesView.js ×1 (por las rutas del guion)
+    · mutantes-1188e.mjs · replace() · VIVA · public/dashboard/js/quotesView.js ×1 (por las rutas del guion)
+    · mutantes-1188e.mjs · replace() · VIVA · public/dashboard/js/quotesView.js ×1 (por las rutas del guion)
+    · mutantes-1188e.mjs · replace() · VIVA · public/dashboard/js/quotesView.js ×1 (por las rutas del guion)
+    · mutantes-1188e.mjs · replace() · VIVA · public/dashboard/js/quotesView.js ×1 (por las rutas del guion)
+    · mutantes-1188e.mjs · replace() · VIVA · public/dashboard/js/quotesView.js ×1 (por las rutas del guion)
+    · mutantes-1188e.mjs · replace() · VIVA · public/dashboard/js/quotesView.js ×1 (por las rutas del guion)
+    · mutantes-1188e.mjs · replace() · VIVA · public/dashboard/js/quotesView.js ×1 (por las rutas del guion)
+
+docs/master/evidencias/SCRUM-1288b · guiones: mutar-1288b.mjs · anclas 10 · VIVA 0 · AMBIGUA 0 · MOVIDA 0 · MUERTA 1 · SIN-FICHERO 9 · ilegibles 1 · en catálogo 0
+    · mutar-1288b.mjs · M1 · la forma apagada (nunca hay moneda detrás) · SIN-FICHERO · en 1 fichero(s) del corpus
+    · mutar-1288b.mjs · M2 · las envolturas dejan de mirarse por dentro · SIN-FICHERO · en 1 fichero(s) del corpus
+    · mutar-1288b.mjs · M3 · un parámetro ya no tapa al const de fuera · SIN-FICHERO · en 1 fichero(s) del corpus
+    · mutar-1288b.mjs · M4 · a `fmt` se le cree por el nombre · SIN-FICHERO · en 1 fichero(s) del corpus
+    · mutar-1288b.mjs · M5 · el toFixed(2) pegado a la moneda se acusa dos · SIN-FICHERO · en 1 fichero(s) del corpus
+    · mutar-1288b.mjs · M6 · un `let` libra igual que un `const` · SIN-FICHERO · en 1 fichero(s) del corpus
+    · mutar-1288b.mjs · M7 · cualquier llamada libra (no se mira qué devue · SIN-FICHERO · en 1 fichero(s) del corpus
+    · mutar-1288b.mjs · M8 · un registro interno se acusa (se pierde DENTR · SIN-FICHERO · en 1 fichero(s) del corpus
+    · mutar-1288b.mjs · M9 · uno de los tres correos pasa a LEGITIMO · MUERTA · —
+    · mutar-1288b.mjs · M11 · «euros» casa aunque siga la palabra (sin fro · SIN-FICHERO · en 1 fichero(s) del corpus
+
+docs/master/evidencias/SCRUM-1288c · guiones: mutar-1288c.mjs · anclas 0 · VIVA 0 · AMBIGUA 0 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 0
+    (la sonda no leyó ninguna ancla de texto fijo: el guion muta por función, regex o sobre dist/ por plantilla; NO es «sin mutaciones»)
+
+docs/master/evidencias/SCRUM-1288d · guiones: mutar-1288d.mjs · anclas 0 · VIVA 0 · AMBIGUA 0 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 0
+    (la sonda no leyó ninguna ancla de texto fijo: el guion muta por función, regex o sobre dist/ por plantilla; NO es «sin mutaciones»)
+
+docs/master/evidencias/SCRUM-1482 · guiones: mutantes-1482b.mjs · anclas 0 · VIVA 0 · AMBIGUA 0 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 0
+    (la sonda no leyó ninguna ancla de texto fijo: el guion muta por función, regex o sobre dist/ por plantilla; NO es «sin mutaciones»)
+
+docs/master/evidencias/SCRUM-1486 · guiones: mutar-1486.mjs · anclas 0 · VIVA 0 · AMBIGUA 0 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 0
+    (la sonda no leyó ninguna ancla de texto fijo: el guion muta por función, regex o sobre dist/ por plantilla; NO es «sin mutaciones»)
+
+docs/master/evidencias/SCRUM-876f · guiones: mutar-dist-876f.mjs · anclas 0 · VIVA 0 · AMBIGUA 0 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 0
+    (la sonda no leyó ninguna ancla de texto fijo: el guion muta por función, regex o sobre dist/ por plantilla; NO es «sin mutaciones»)
+
+docs/master/evidencias/SCRUM-876g · guiones: mutar-dist-876g.mjs · anclas 0 · VIVA 0 · AMBIGUA 0 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 0
+    (la sonda no leyó ninguna ancla de texto fijo: el guion muta por función, regex o sobre dist/ por plantilla; NO es «sin mutaciones»)
+
+docs/master/evidencias/SCRUM-912 · guiones: mutacion-912.mjs · anclas 17 · VIVA 0 · AMBIGUA 0 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 17 · ilegibles 0 · en catálogo 0
+    · mutacion-912.mjs · M1 respaldo de pago · SIN-FICHERO · en 1 fichero(s) del corpus
+    · mutacion-912.mjs · M13 cae a 2.5-flash · SIN-FICHERO · en 2 fichero(s) del corpus
+    · mutacion-912.mjs · M14 ignora la lista · SIN-FICHERO · en 1 fichero(s) del corpus
+    · mutacion-912.mjs · M15 models ignorado · SIN-FICHERO · en 2 fichero(s) del corpus
+    · mutacion-912.mjs · M16 cuota sin leer · SIN-FICHERO · en 2 fichero(s) del corpus
+    · mutacion-912.mjs · M17 diaria no manda · SIN-FICHERO · en 2 fichero(s) del corpus
+    · mutacion-912.mjs · M2 la foto no viaja · SIN-FICHERO · en 2 fichero(s) del corpus
+    · mutacion-912.mjs · M3 sin temperatura 0 · SIN-FICHERO · en 2 fichero(s) del corpus
+    · mutacion-912.mjs · M4 tipo no entero · SIN-FICHERO · en 1 fichero(s) del corpus
+    · mutacion-912.mjs · M5 base sin cuadrar · SIN-FICHERO · en 1 fichero(s) del corpus
+    · mutacion-912.mjs · M6 fecha futura · SIN-FICHERO · en 2 fichero(s) del corpus
+    · mutacion-912.mjs · M7 NIF sin control · SIN-FICHERO · en 1 fichero(s) del corpus
+    · mutacion-912.mjs · M8 elige entre dos · SIN-FICHERO · en 3 fichero(s) del corpus
+    · mutacion-912.mjs · M9 sin merchantId · SIN-FICHERO · en 3 fichero(s) del corpus
+    · mutacion-912.mjs · M10 IA confirma · SIN-FICHERO · en 13 fichero(s) del corpus
+    · mutacion-912.mjs · M11 tope global · SIN-FICHERO · en 2 fichero(s) del corpus
+    · mutacion-912.mjs · M12 log de lo leído · SIN-FICHERO · en 2 fichero(s) del corpus
+
+docs/master/evidencias/SCRUM-917 · guiones: mutar-917g.mjs · anclas 2 · VIVA 2 · AMBIGUA 0 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 0
+    · mutar-917g.mjs · replace() · VIVA · public/dashboard/index.html ×1 (por las rutas del guion)
+    · mutar-917g.mjs · replace() · VIVA · public/dashboard/index.html ×1 (por las rutas del guion)
+
+docs/master/evidencias/scrum1304 · guiones: mutar.mjs · anclas 5 · VIVA 5 · AMBIGUA 0 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 0
+    · mutar.mjs · M1 sin cerrojo (la pregunta, fuera de la exclusion · VIVA · src/lib/invoicing.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M2 la pregunta no decide · VIVA · src/lib/invoicing.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M3 la pregunta ignora el cobro · VIVA · src/lib/invoicing.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M4 la entrega que no emite se calla · VIVA · src/lib/invoicing.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M5 la pregunta ignora el merchant (regla 2) · VIVA · src/lib/invoicing.ts ×1 (por las rutas del guion)
+
+docs/master/evidencias/scrum1326 · guiones: mutar.mjs · anclas 26 · VIVA 23 · AMBIGUA 3 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 0
+    · mutar.mjs · M1 «vale» vuelve a aceptar (el defecto del ticket) · VIVA · src/modules/whatsappBot/domain/decisionPorTexto.ts ×1 (por las rutas del guion)
+    · mutar.mjs · ? · VIVA · src/modules/whatsappBot/domain/decisionPorTexto.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M2 todo pregunta: «Acepto» tambien pasa por la pre · VIVA · src/modules/whatsappBot/domain/decisionPorTexto.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M3 una de las ocho al lado de una clara mete la pr · VIVA · src/modules/whatsappBot/domain/decisionPorTexto.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M4 una de las ocho con un rechazo: gana el rechazo · VIVA · src/modules/whatsappBot/domain/decisionPorTexto.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M5 la ruta trata la pregunta como aceptacion · VIVA · src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts ×1 (por las rutas del guion)
+    · mutar.mjs · ? · VIVA · src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M6 la pregunta deja una marca en el presupuesto (u · VIVA · src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M7 la pregunta apunta que pregunto en OTRA tabla · VIVA · src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M8 una palabra distinta en el texto firmado · VIVA · src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M9 sin el arranque «Entendido» · VIVA · src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M10 las negritas de WhatsApp se pierden · VIVA · src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M11 otro numero: el id aunque haya quoteNumber · VIVA · src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M12 la pregunta avisa TAMBIEN al profesional · VIVA · src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M13 la pregunta deja de declararse respuesta a un  · VIVA · src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M14 con el bot encendido, la pregunta se la queda  · VIVA · src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M15 a mitad de captacion, «vale» decide sobre el p · VIVA · src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M16 una novena palabra que pregunta: «sale», la qu · VIVA · src/modules/whatsappBot/domain/decisionPorTexto.ts ×1 (por las rutas del guion)
+    · mutar.mjs · ? · VIVA · src/modules/whatsappBot/domain/decisionPorTexto.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M18 «va» vuelve a aceptar · AMBIGUA · 2 rutas del guion
+    · mutar.mjs · ? · VIVA · src/modules/whatsappBot/domain/decisionPorTexto.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M19 «okay» vuelve a aceptar y «ok» sigue preguntan · AMBIGUA · 2 rutas del guion
+    · mutar.mjs · ? · VIVA · src/modules/whatsappBot/domain/decisionPorTexto.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M20 una flexion deja de aceptar («lo confirmo» pre · VIVA · src/modules/whatsappBot/domain/decisionPorTexto.ts ×1 (por las rutas del guion)
+    · mutar.mjs · ? · AMBIGUA · 2 rutas del guion
+    · mutar.mjs · M17 sin quitar las tildes · VIVA · tests/scrum1326-vale-pregunta-una-vez.test.mjs ×1 (por las rutas del guion)
+
+docs/master/evidencias/scrum1327 · guiones: mutar.mjs · anclas 16 · VIVA 16 · AMBIGUA 0 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 5 · en catálogo 1
+    · mutar.mjs · R3 · VIVA · scripts/_hallazgos-y-ciegos.mjs ×1
+    · mutar.mjs · R4 · VIVA · scripts/_hallazgos-y-ciegos.mjs ×1
+    · mutar.mjs · S4 · VIVA · scripts/guard-vias-de-cobro.mjs ×1
+    · mutar.mjs · S1 · VIVA · scripts/guard-aviso-bizum.mjs ×1 · EN CATÁLOGO: tests/scrum1336-un-ciego-no-se-pinta-de-hallazgo.test.mjs
+    · mutar.mjs · S2 · VIVA · scripts/guard-caja-datos-del-cliente.mjs ×1
+    · mutar.mjs · S3 · VIVA · scripts/guard-portal-en-la-ficha.mjs ×1
+    · mutar.mjs · C3 · VIVA · scripts/guard-rastro-del-menu.mjs ×1
+    · mutar.mjs · C5 · VIVA · tests/_salidas-de-guard.mjs ×1
+    · mutar.mjs · L2 · VIVA · tests/_salidas-de-guard.mjs ×1
+    · mutar.mjs · L3 · VIVA · tests/_salidas-de-guard.mjs ×1
+    · mutar.mjs · L4 · VIVA · tests/_salidas-de-guard.mjs ×1
+    · mutar.mjs · L5 · VIVA · tests/_salidas-de-guard.mjs ×1
+    · mutar.mjs · F1 · VIVA · tests/_salidas-de-guard.mjs ×1
+    · mutar.mjs · F2 · VIVA · tests/_salidas-de-guard.mjs ×1
+    · mutar.mjs · F3 · VIVA · tests/_salidas-de-guard.mjs ×1
+    · mutar.mjs · F4 · VIVA · tests/_salidas-de-guard.mjs ×1
+
+docs/master/evidencias/scrum1330 · guiones: mutar.mjs · anclas 6 · VIVA 6 · AMBIGUA 0 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 1
+    · mutar.mjs · ? · VIVA · src/lib/invoicing.ts ×1
+    · mutar.mjs · ? · VIVA · src/modules/invoicing/domain/verifactu.service.ts ×1 · EN CATÁLOGO: tests/scrum1330-una-sellada-no-se-resella.test.mjs
+    · mutar.mjs · ? · VIVA · src/modules/invoicing/domain/verifactu.service.ts ×1
+    · mutar.mjs · ? · VIVA · src/modules/invoicing/domain/verifactu.service.ts ×1
+    · mutar.mjs · replace() · VIVA · src/modules/invoicing/domain/verifactu.service.ts ×1 (por las rutas del guion)
+    · mutar.mjs · ? · VIVA · src/modules/invoicing/domain/verifactu.service.ts ×1
+
+docs/master/evidencias/scrum1333 · guiones: mutar.mjs · anclas 8 · VIVA 8 · AMBIGUA 0 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 2
+    · mutar.mjs · M1 la pregunta no decide (el defecto entero) · VIVA · src/modules/invoicing/domain/encolarRemision.ts ×1 (por las rutas del guion) · EN CATÁLOGO: tests/scrum1054-suplido-al-sellar-defecto-declarado.test.mjs
+    · mutar.mjs · M2 la pregunta va SIN cerrojo · VIVA · src/modules/invoicing/domain/encolarRemision.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M3 la pregunta ignora la FACTURA · VIVA · src/modules/invoicing/domain/encolarRemision.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M4 la pregunta ignora el COMERCIO (regla 2) · VIVA · src/modules/invoicing/domain/encolarRemision.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M5 la pregunta ignora el TIPO de operación · VIVA · src/modules/invoicing/domain/encolarRemision.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M6 no encolar se calla · VIVA · src/modules/invoicing/domain/encolarRemision.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M7 no encolar se registra como un FALLO · VIVA · src/modules/invoicing/domain/encolarRemision.ts ×1 (por las rutas del guion)
+    · mutar.mjs · M8 no encola NUNCA · VIVA · src/modules/invoicing/domain/encolarRemision.ts ×1 (por las rutas del guion) · EN CATÁLOGO: tests/scrum1054-suplido-al-sellar-defecto-declarado.test.mjs
+
+docs/master/evidencias/scrum1340 · guiones: mutar.mjs · anclas 16 · VIVA 16 · AMBIGUA 0 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 2 · en catálogo 0
+    · mutar.mjs · M1 · VIVA · tests/_skill-ui-por-efecto.mjs ×1
+    · mutar.mjs · M2 · VIVA · tests/_skill-ui-por-efecto.mjs ×1
+    · mutar.mjs · M3 · VIVA · tests/_skill-ui-por-efecto.mjs ×1
+    · mutar.mjs · M4 · VIVA · tests/_skill-ui-por-efecto.mjs ×1
+    · mutar.mjs · M5 · VIVA · tests/_skill-ui-por-efecto.mjs ×1
+    · mutar.mjs · M6 · VIVA · tests/_skill-ui-por-efecto.mjs ×1
+    · mutar.mjs · M7 · VIVA · tests/_skill-ui-por-efecto.mjs ×1
+    · mutar.mjs · M8 · VIVA · tests/_skill-ui-por-efecto.mjs ×1
+    · mutar.mjs · M9 · VIVA · tests/_skill-ui-por-efecto.mjs ×1
+    · mutar.mjs · M10 · VIVA · tests/_skill-ui-por-efecto.mjs ×1
+    · mutar.mjs · J1 · VIVA · tests/scrum811c-skill-ui-declarada.test.mjs ×1
+    · mutar.mjs · J2 · VIVA · tests/scrum811c-skill-ui-declarada.test.mjs ×1
+    · mutar.mjs · J3 · VIVA · tests/scrum811c-skill-ui-declarada.test.mjs ×1
+    · mutar.mjs · J4 · VIVA · tests/scrum811c-skill-ui-declarada.test.mjs ×1
+    · mutar.mjs · J5 · VIVA · tests/scrum811c-skill-ui-declarada.test.mjs ×1
+    · mutar.mjs · J6 · VIVA · tests/scrum811c-skill-ui-declarada.test.mjs ×1
+
+docs/master/evidencias/scrum1344 · guiones: mutar.mjs · anclas 1 · VIVA 0 · AMBIGUA 1 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 0
+    · mutar.mjs · replace() · AMBIGUA · 2 rutas del guion
+
+docs/master/evidencias/scrum1392 · guiones: mutar.mjs · anclas 6 · VIVA 6 · AMBIGUA 0 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 0
+    · mutar.mjs · la pieza deja de conservar lo entregado cuando el  · VIVA · scripts/_hallazgos-y-ciegos.mjs ×1
+    · mutar.mjs · todo lanzamiento se vuelve hallazgo (lo que romper · VIVA · scripts/_hallazgos-y-ciegos.mjs ×1
+    · mutar.mjs · la línea sólo sale si alguien lanzó con hallazgos · VIVA · scripts/_hallazgos-y-ciegos.mjs ×1
+    · mutar.mjs · lo entregado se cuenta dos veces · VIVA · scripts/_hallazgos-y-ciegos.mjs ×1
+    · mutar.mjs · `guard-duplicar-926` vuelve a llevar los errores d · VIVA · scripts/guard-duplicar-926.mjs ×1
+    · mutar.mjs · `guard-portal-en-la-ficha` vuelve a su lista propi · VIVA · scripts/guard-portal-en-la-ficha.mjs ×1
+
+docs/master/evidencias/scrum1395 · guiones: mutar.mjs · anclas 0 · VIVA 0 · AMBIGUA 0 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 3 · en catálogo 0
+    (la sonda no leyó ninguna ancla de texto fijo: el guion muta por función, regex o sobre dist/ por plantilla; NO es «sin mutaciones»)
+
+docs/master/evidencias/scrum864 · guiones: mutacion.mjs · anclas 0 · VIVA 0 · AMBIGUA 0 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 0
+    (la sonda no leyó ninguna ancla de texto fijo: el guion muta por función, regex o sobre dist/ por plantilla; NO es «sin mutaciones»)
+
+docs/master/evidencias/scrum864c · guiones: mutacion.mjs · anclas 0 · VIVA 0 · AMBIGUA 0 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 0
+    (la sonda no leyó ninguna ancla de texto fijo: el guion muta por función, regex o sobre dist/ por plantilla; NO es «sin mutaciones»)
+
+docs/master/evidencias/scrum920 · guiones: mutar-920d.mjs, mutar-920j.mjs · anclas 24 · VIVA 18 · AMBIGUA 1 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 5 · ilegibles 1 · en catálogo 0
+    · mutar-920d.mjs · M01 · VIVA · public/dashboard/css/styles.css ×1
+    · mutar-920d.mjs · M02 · AMBIGUA · public/dashboard/js/expensesView.js ×2
+    · mutar-920d.mjs · M03 · VIVA · public/dashboard/js/expensesView.js ×1
+    · mutar-920d.mjs · M04 · VIVA · public/dashboard/js/expensesView.js ×1
+    · mutar-920d.mjs · M05 · VIVA · public/dashboard/js/expensesView.js ×1
+    · mutar-920d.mjs · M06 · VIVA · public/dashboard/js/expensesView.js ×1
+    · mutar-920d.mjs · M07 · VIVA · public/dashboard/js/expensesView.js ×1
+    · mutar-920d.mjs · M08 · VIVA · public/dashboard/js/expensesView.js ×1
+    · mutar-920d.mjs · M09 · VIVA · public/dashboard/css/styles.css ×1
+    · mutar-920d.mjs · ? · VIVA · public/dashboard/css/styles.css ×1 (por las rutas del guion)
+    · mutar-920d.mjs · ? · VIVA · public/dashboard/css/styles.css ×1 (por las rutas del guion)
+    · mutar-920d.mjs · M11 · VIVA · public/dashboard/js/expensesView.js ×1
+    · mutar-920d.mjs · M12 · VIVA · public/dashboard/js/expensesView.js ×1
+    · mutar-920d.mjs · M13 · VIVA · public/dashboard/js/expensesView.js ×1
+    · mutar-920d.mjs · M14 · VIVA · public/dashboard/css/styles.css ×1
+    · mutar-920d.mjs · M15 · VIVA · public/dashboard/js/expensesView.js ×1
+    · mutar-920d.mjs · M16 · VIVA · public/dashboard/css/styles.css ×1
+    · mutar-920d.mjs · M17 · VIVA · public/dashboard/js/expensesView.js ×1
+    · mutar-920d.mjs · M18 · VIVA · public/dashboard/js/expensesView.js ×1
+    · mutar-920j.mjs · replace() · SIN-FICHERO · en 2 fichero(s) del corpus
+    · mutar-920j.mjs · replace() · SIN-FICHERO · en 2 fichero(s) del corpus
+    · mutar-920j.mjs · replace() · SIN-FICHERO · en 2 fichero(s) del corpus
+    · mutar-920j.mjs · replace() · SIN-FICHERO · en 1 fichero(s) del corpus
+    · mutar-920j.mjs · replace() · SIN-FICHERO · en 2 fichero(s) del corpus
+
+docs/master/evidencias/scrum933 · guiones: mutar-y-correr.mjs · anclas 2 · VIVA 0 · AMBIGUA 2 · MOVIDA 0 · MUERTA 0 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 2
+    · mutar-y-correr.mjs · ? · AMBIGUA · 2 rutas del guion · EN CATÁLOGO: tests/scrum864c-el-temporal-no-vuelve.test.mjs
+    · mutar-y-correr.mjs · ? · AMBIGUA · 2 rutas del guion · EN CATÁLOGO: tests/scrum864c-el-temporal-no-vuelve.test.mjs
+
+docs/master/evidencias/scrum982 · guiones: mutar-nota-982.mjs · anclas 13 · VIVA 12 · AMBIGUA 0 · MOVIDA 0 · MUERTA 1 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 0
+    · mutar-nota-982.mjs · M1 notes en CUSTOMER_SELECT (la lista) · VIVA · src/modules/jobs/app/routes/jobs.routes.ts ×1
+    · mutar-nota-982.mjs · M2 el detalle deja de pedir notes · VIVA · src/modules/jobs/app/routes/jobs.routes.ts ×1
+    · mutar-nota-982.mjs · M3 el customer devuelto no lleva notes · VIVA · src/modules/jobs/app/routes/jobs.routes.ts ×1
+    · mutar-nota-982.mjs · M4 serializeJobDetail se exporta · VIVA · src/modules/jobs/app/routes/jobs.routes.ts ×1
+    · mutar-nota-982.mjs · M5 el router de Trabajos se monta también en una r · VIVA · src/app.ts ×1
+    · mutar-nota-982.mjs · M6 el router sale de /admin · VIVA · src/app.ts ×1
+    · mutar-nota-982.mjs · M7 la nota sin recortar (sólo espacios cuenta como · MUERTA · public/dashboard/js/jobRailBlocks.js
+    · mutar-nota-982.mjs · M8 rótulo con dos puntos · VIVA · public/dashboard/js/jobRailBlocks.js ×1
+    · mutar-nota-982.mjs · M9 la vista no pone la clase de la nota · VIVA · public/dashboard/js/jobDetailView.js ×1
+    · mutar-nota-982.mjs · M10 la nota entra por innerHTML · VIVA · public/dashboard/js/jobDetailView.js ×1
+    · mutar-nota-982.mjs · M11 el CSS pierde pre-line · VIVA · public/dashboard/css/styles.css ×1
+    · mutar-nota-982.mjs · M12 el CSS recorta la nota · VIVA · public/dashboard/css/styles.css ×1
+    · mutar-nota-982.mjs · M13 el CSS deja la etiqueta al lado · VIVA · public/dashboard/css/styles.css ×1
+
+(CONTROL SEMBRADO) · guiones: (en memoria) · anclas 2 · VIVA 1 · AMBIGUA 0 · MOVIDA 0 · MUERTA 1 · SIN-FICHERO 0 · ilegibles 0 · en catálogo 1
+    · (en memoria) · C+ · VIVA · tests/_catalogo-obligatorio.mjs ×1 · EN CATÁLOGO: tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs
+    · (en memoria) · C- · MUERTA · tests/_catalogo-obligatorio.mjs
+
+TOTAL (sin el control) · 29 bancos · 210 anclas · VIVA 161 · AMBIGUA 12 · MOVIDA 0 · MUERTA 3 · SIN-FICHERO 34 · ilegibles 12 · en catálogo 6
+CONTROL SEMBRADO · C+ VIVA y en catálogo · C- MUERTA → la sonda ve
+EXIT=0

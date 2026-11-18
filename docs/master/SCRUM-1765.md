@@ -172,3 +172,80 @@ catálogo de `scrum864c`. Retirarlas solo exige ver que tumban y borrar el guion
     `TMP` sin espacios, 5/5. Mismo patrón que `scrum1298b` en 1765a. No es de mi carril y no lo toco.
   · tramo 14/15 (`scrum812`): 115 ficheros · 988 tests · 0 fail.
 - 864, 864c y 933 no se retiran: no son de J6 por literal.
+## SCRUM-1765b · 1288b/c/d con puesto propuesto, y el censo de los 29 heredados que quedan, por dueño
+
+**Puesto:** J6 (jv-j6ej) · **Rama:** `scrum-1765b-los-que-quedan` · 18-nov-2026
+**Medido contra:** `origin/main` = `e37a7051f87b195ceeae4852c56a02bc0d218438` · 2026-11-18T23:35:43Z (cabecera `Date:` de `gh api -i zen`)
+A9: aviso → A10 «Cero resultados con tu vocabulario no es silencio del documento.» — no se pudo comprobar: la sonda declara ILEGIBLE y «0 anclas leídas» por banco, pero ningún guard exige que un censo de anclas lea todos los formatos de guion
+
+Solo medición y docs: ningún banco retirado, ningún test ni guard tocado (regla 41), `src/` y emisión, nada.
+
+### PASO 0
+
+Ninguna rama `scrum-1765*` en el remoto, ningún commit con «1765b» en main, ningún PR. `scrum1387` en este
+árbol, su línea de población: **246 ficheros con «mut» · 107 bancos · 29 fuera · 29 heredados · 0 nuevos**
+(historia de 3536 commits). Cuadra con 33 − 3 (#3235) − 1 (#3238) = 29.
+
+### 1288b/c/d: el literal del ticket
+
+SCRUM-1288 está «Finalizada» y **sin ninguna etiqueta** (leído en Jira hoy). El literal que sí hay es el de
+autoría de cada tramo, en sus comentarios: 1288b, c.19094 («S3 · 9-oct-2026»); 1288c, c.19112 y c.19321
+(«S3»); 1288d, c.19465 («S3»). Sujetos de sus guiones, por `node scripts/carriles.mjs de`:
+`scripts/_censo-gemelo-crudo.mjs` → **S3** (`dos-equipos.md:183`); `merchantNotifications.ts` y
+`quotesAdmin.routes.ts` → **S1** (`dos-equipos.md:136`); los tests nombrados (`scrum1288b/c/d`, `scrum1452`)
+→ «el test de un ticket» = quien lo trabajó, S3.
+**Propuesta: los tres a S3 (equipo de Luis, `aviso-a-luis`).** Por literal de autoría, no por etiqueta: la
+etiqueta no existe.
+
+### Los 29, por dueño
+
+Sonda: `docs/master/evidencias/SCRUM-1765/1765b-sonda.mjs` (generaliza la de 1387y; población con las
+funciones del guard, anclas por AST), salida `1765b-censo.txt`. Control SEMBRADO: un ancla del catálogo de
+`scrum1387` sale VIVA y «en catálogo», una inventada sale MUERTA; con `--sin-control` dice CIEGO y sale 2
+(corrido). Total: 210 anclas · VIVA 161 · AMBIGUA 12 · MUERTA 3 · SIN-FICHERO 34 · ilegibles 12 · ya en
+catálogo 6. **Nueve bancos salen con 0 anclas leídas**: mutan por función, por tuplas o sobre `dist/` por
+plantilla; eso es «la sonda no sabe leerlos», no «no tienen mutaciones».
+
+| banco | padre · etiquetas (Jira, 18-nov) | dueño propuesto | anclas V/A/M/SF/ileg · en catálogo |
+|---|---|---|---|
+| docs/evidencias/scrum1317 | 1317 · area-j4 | J4 | 13/0/0/0/0 · 0 |
+| docs/evidencias/scrum1338 | 1338 · area-j4 | J4 | 8/1/1/0/0 · 0 |
+| SCRUM-1056 | 1056 · area-s1, area-s2, equipo-luis | Luis | 14/3/0/0/0 · 0 |
+| SCRUM-1150 | 1150 · area-s4, equipo-luis | Luis (S4) | 6/1/0/0/0 · 0 |
+| SCRUM-1150c | 1150 · area-s4, equipo-luis | Luis (S4) | 0/0/0/3/0 · 0 |
+| SCRUM-1188 | 1188 · area-s2, equipo-luis | Luis (S2) | 8/0/0/0/0 · 0 |
+| SCRUM-1288b | 1288 · ninguna | S3 por autoría (arriba) | 0/0/1/9/1 · 0 |
+| SCRUM-1288c | 1288 · ninguna | S3 por autoría | 0 leídas |
+| SCRUM-1288d | 1288 · ninguna | S3 por autoría | 0 leídas |
+| SCRUM-1482 | 1482 · area-s2, equipo-luis | Luis (S2) | 0 leídas |
+| SCRUM-1486 | 1486 · area-s3, equipo-luis | Luis (S3) | 0 leídas |
+| SCRUM-876f | 876 · area-s3 | Luis (S3) | 0 leídas |
+| SCRUM-876g | 876 · area-s3 | Luis (S3) | 0 leídas |
+| SCRUM-912 | 912 · area-s1, equipo-luis | Luis (S1) | 0/0/0/17/0 · 0 (anclas sobre `dist/`) |
+| SCRUM-917 | 917 · area-s4, equipo-luis | Luis (S4) | 2/0/0/0/0 · 0 |
+| scrum1304 | 1304 · area-j1 | J1 | 5/0/0/0/0 · 0 |
+| scrum1326 | 1326 · equipo-javier, sin área | sin dueño por literal; propuesta **J2**: los sujetos son `whatsappBot/` (J2, `dos-equipos.md:124`) | 23/3/0/0/0 · 0 |
+| scrum1327 | 1327 · area-j1 | J1 | 16/0/0/0/5 · 1 |
+| scrum1330 | 1330 · area-j1 | J1 | 6/0/0/0/0 · 1 |
+| scrum1333 | 1333 · area-j1 | J1 | 8/0/0/0/0 · 2 |
+| scrum1340 | 1340 · area-j4 | J4 | 16/0/0/0/2 · 0 |
+| scrum1344 | 1344 · area-j4 | J4 | 0/1/0/0/0 · 0 |
+| scrum1392 | 1392 · equipo-javier, sin área | **J6** por literal: `SCRUM-1392.md:7` «Sesión J6 (`jv-j6`)» | 6/0/0/0/0 · 0 |
+| scrum1395 | 1395 · equipo-javier, sin área | **J4** por literal: `SCRUM-1395.md:7` «Sesión J4c (`jv-j4`)» | 0 leídas, 3 ilegibles |
+| scrum864 | 864 · ninguna | sin dueño por literal; el sujeto (`tests/_temporal.mjs`) no lo reclama nadie: lo decide el orquestador | 0 leídas |
+| scrum864c | 864 · ninguna | igual que scrum864 | 0 leídas |
+| scrum920 | 920 · ninguna | sin dueño por literal; propuesta **Luis**: el guion lo comiteó la máquina de Luis (`3326db1e5`) y el registro es de S2/S4 | 18/1/0/5/1 · 0 |
+| scrum933 | 933 · ninguna | sin dueño por literal; mismo sujeto que scrum864c: va con ellos | 0/2/0/0/0 · 2 |
+| scrum982 | 982 · area-s2, equipo-luis | Luis (S2) | 12/0/1/0/0 · 0 |
+
+Recuento, cuadrado fila a fila: J1 4 · J4 5 · J6 1 · J2 1 (propuesta) · Luis 15 (11 por etiqueta, 3 de
+1288 por autoría, 920 por propuesta) · sin dueño 3 (864, 864c, 933) = 29. (El primer borrador decía J4 6
+y Luis 14: sumado a ojo; lo cazó cuadrar con el 29 antes de comentar en Jira.)
+
+### Lo que NO está
+
+- **scrum1392, el banco de J6, sigue sin retirar**: 6 anclas vivas, 0 en el catálogo de su test. Por orden
+  del orquestador (contexto) queda para el siguiente J6, con la receta de c.22070.
+- Las tres MUERTAS (1338 M1, 1288b M9, 982 M7) no se han re-derivado; las 12 AMBIGUAS y las 34 SIN-FICHERO
+  no se han resuelto a mano. La sonda no aplica mutaciones: «VIVA» es «el ancla está», no «tumba su test».
+- Los nueve bancos con 0 anclas leídas: sin leer por la sonda.
