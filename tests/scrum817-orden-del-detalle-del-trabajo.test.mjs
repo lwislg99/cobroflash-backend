@@ -162,6 +162,7 @@ test('SCRUM-817 · 🔴 el reorden no pierde NI UNA acción', async () => {
   // su motivo y dónde vive ahora la función. `perdidas()` compara CONJUNTOS, así que el test exige
   // que lo perdido sea EXACTAMENTE esto —ni una acción más (que sería un reorden que borra algo), ni
   // una menos (que sería una retirada que ya no se produce y nadie miró)—.
+  // SCRUM-1740 añade una TERCERA, declarada igual: el segundo «+ Nuevo albarán» (era un duplicado).
   const RETIRADAS_A_PROPOSITO = [
     {
       accion: 'BUTTON:Cambiar',
@@ -174,6 +175,13 @@ test('SCRUM-817 · 🔴 el reorden no pierde NI UNA acción', async () => {
       motivo: 'la casilla «Incluir precios en el parte» de la barra de Documentos: decisión del '
         + 'orquestador, SCRUM-917 com. 16142 punto 2',
       vive: 'la MISMA casilla dentro de la hoja de alta del albarán (`buildAlbEditor`); la vigila SCRUM-319',
+    },
+    {
+      accion: 'BUTTON:+ Nuevo albarán',
+      motivo: 'SCRUM-1740 (c.21982): salía DOS veces —primaria de la cabecera y barra de Albaranes— cuando '
+        + 'la escalera propone `nuevo` (recorrido H6, fila 20); la barra deja de repetirlo',
+      vive: 'la primaria de la cabecera (`kind: nuevo`), que llama a la MISMA alta (`abrirAltaAlbaran`); '
+        + 'con otra primaria, la barra lo sigue ofreciendo (tests/scrum1740-albaran-desde-parte-firmado)',
     },
   ];
   assert.deepEqual(perdidas(ANTES, hoy).sort(), RETIRADAS_A_PROPOSITO.map((x) => x.accion).sort(),

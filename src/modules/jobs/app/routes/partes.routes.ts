@@ -508,15 +508,22 @@ router.get('/:id', async (req: any, res) => {
     // trabajo que es suyo. Hoy `findParte` ya lo ha comprobado, pero el recuento no se apoya en eso: si
     // `findParte` cambia, esto no puede quedarse contando los partes de un trabajo ajeno. La pertenencia
     // se decide en CÓDIGO (`esSuyoElTrabajo`), como en `findParte`, no en un `where` con `OR`.
+    //
+    // SCRUM-1662 (c) · c.21964 · «Qué hay que hacer» también sale de AQUÍ y por la MISMA puerta: se LEE
+    // del trabajo en cada GET (c.21892), no se copia al parte, no lleva esquema y no entra en lo que
+    // firma el cliente. Sin trabajo, sin tarea o sin acceso, `null`.
     let visita: VisitaDelParte = { visitaN: null, visitaM: null };
     let puedeContar = found.parte.jobId !== null && found.parte.jobId !== undefined;
-    if (puedeContar && seesOnlyOwnJobs(req.userRole)) {
-      const trabajo = await prisma.job.findFirst({
+    let trabajo: { queHayQueHacer: string | null } | null = null;
+    if (puedeContar) {
+      const delJob = await prisma.job.findFirst({
         where: { id: found.parte.jobId, merchantId: req.merchantId },
-        select: SELECT_DUENOS,
+        select: { ...SELECT_DUENOS, queHayQueHacer: true },
       });
-      puedeContar = esSuyoElTrabajo(trabajo, req.teamMemberId);
+      if (seesOnlyOwnJobs(req.userRole)) puedeContar = esSuyoElTrabajo(delJob, req.teamMemberId);
+      trabajo = delJob;
     }
+    const queHayQueHacer = puedeContar ? (trabajo?.queHayQueHacer ?? null) : null;
     if (puedeContar) {
       const delTrabajo = await prisma.parteTrabajo.findMany({
         where: { merchantId: req.merchantId, jobId: found.parte.jobId },
@@ -524,7 +531,7 @@ router.get('/:id', async (req: any, res) => {
       });
       visita = visitaDelParte(found.parte.id, delTrabajo);
     }
-    return res.json({ ...serializeParteParaElTecnico(found.parte), ...visita });
+    return res.json({ ...serializeParteParaElTecnico(found.parte), ...visita, queHayQueHacer });
   } catch (err: any) {
     console.error('[GET /admin/partes/:id]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });

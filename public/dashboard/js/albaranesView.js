@@ -68,6 +68,16 @@
   // usa `invoicesView.js` en tres sitios, copiada tal cual. Someterla aquí la convertiría en texto
   // oficial de pantallas que este ticket no toca.
 
+  /**
+   * SCRUM-1707 (apéndice S2) · ¿Este rol recibe el importe de cada albarán de la lista? La MISMA
+   * pregunta que el servidor (`filaDeAlbaranParaElRol` → `seesOnlyOwnJobs`, firma c.21547 Q2): a quien
+   * ve sólo lo suyo le llega `total: null` en TODAS las filas, y la columna le salía con «—» en cada
+   * una (S4, c.21939). LISTA BLANCA y fail-closed: un rol que no se reconoce no ve la columna.
+   */
+  function veImporteDeLaLista(rol) {
+    return rol === 'admin';
+  }
+
   /** Plural español del valor + mayúscula inicial: `borrador` → `Borradores`, `emitido` → `Emitidos`. */
   function etiquetaEstado(valor) {
     const s = String(valor).replace(/_/g, ' ');
@@ -302,13 +312,17 @@
       tabla.className = 'table table--cards-mobile table--albaranes';
       scroll.appendChild(tabla);
       const thead = document.createElement('thead');
+      // SCRUM-1707 · sin importe para este rol, la columna NO EXISTE (ni cabecera ni celda).
+      const veImporte = veImporteDeLaLista(window.appUserRole);
       // SCRUM-831 · entra «Acciones», y NO es un rótulo nuevo: es el que ya usan en producción
       // `jobsView.js` y `quotesListView.js` para esta misma columna. Se copia tal cual en vez de
       // estrenar un sinónimo (regla 30). Las otras seis no se tocan.
       thead.innerHTML = '<tr>' +
         // SCRUM-1669 · «Importe» = texto firmado n.º 17 (SCRUM-1656 c.21405, firma c.21408).
         ['Nº', 'Emisión', 'Entrega', 'Cliente', 'Trabajo', 'Importe', 'Estado', 'Acciones']
-          .map((c) => '<th>' + esc(c) + '</th>').join('') + // APROBADAS tal cual
+          .filter((c) => veImporte || c !== 'Importe')
+          // SCRUM-1707 · la cabecera del importe se alinea por CLASE: por posición alinearía «Estado».
+          .map((c) => (c === 'Importe' ? '<th class="col-importe">' : '<th>') + esc(c) + '</th>').join('') + // APROBADAS tal cual
         '</tr>';
       tabla.appendChild(thead);
       const tbody = document.createElement('tbody');
@@ -444,13 +458,15 @@
         // pinta «—» y NUNCA «0,00 €»: un parte sin precios no vale cero, es que no lleva precio.
         // `.amount` = Tinta 700 tabular (Regla del Importe, AB4); `cell-amount` = su área en la
         // tarjeta de móvil, la de la rejilla compartida.
-        const tdImporte = document.createElement('td');
-        tdImporte.className = 'cell-amount';   // UNA clase de área por celda (lo lee el guard de SCRUM-301)
-        tdImporte.classList.add('amount');
-        tdImporte.textContent = typeof f.total === 'number' && Number.isFinite(f.total) && typeof fmtMoneyEs === 'function'
-          ? fmtMoneyEs(f.total, 'EUR')
-          : '—';
-        tr.appendChild(tdImporte);
+        if (veImporte) {
+          const tdImporte = document.createElement('td');
+          tdImporte.className = 'cell-amount';   // UNA clase de área por celda (lo lee el guard de SCRUM-301)
+          tdImporte.classList.add('amount');
+          tdImporte.textContent = typeof f.total === 'number' && Number.isFinite(f.total) && typeof fmtMoneyEs === 'function'
+            ? fmtMoneyEs(f.total, 'EUR')
+            : '—';
+          tr.appendChild(tdImporte);
+        }
 
         const tdEstado = document.createElement('td');
         tdEstado.className = 'cell-status';
