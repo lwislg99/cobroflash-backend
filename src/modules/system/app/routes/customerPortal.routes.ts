@@ -18,6 +18,7 @@ import { getEmissionMode } from '../../../invoicing/domain/emission.service'; //
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service'; // SCRUM-1567b
 import { etiquetaEstiloDePago } from '../../../billing/app/routes/pagoEstilo'; // SCRUM-1756b (style-src 'self')
 import { claseDeEtiquetaDelPortal } from '../../../billing/app/routes/reciboPortalEstilo'; // SCRUM-1756b
+import { etiquetaGuionDePago } from '../../../billing/app/routes/pagoNavegador'; // SCRUM-1756c (script-src 'self')
 
 const router = Router();
 
@@ -74,61 +75,7 @@ function page(title: string, body: string) {
 <body>
 ${body}
 <p class="pf-footer">Hecho con <a href="${BASE_URL}" class="portal-pie-enlace">YaQu</a></p>
-<script>
-  // Expandir líneas de factura
-  document.querySelectorAll('.pf-lines-toggle').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const body = btn.nextElementSibling;
-      const open = body.classList.toggle('open');
-      btn.querySelector('.pf-chevron').textContent = open ? '▲' : '▼';
-    });
-  });
-
-  // Formulario de solicitud
-  const reqBtn  = document.getElementById('pf-req-btn');
-  const reqForm = document.getElementById('pf-req-form');
-  const reqCancel = document.getElementById('pf-req-cancel');
-  const reqSubmit = document.getElementById('pf-req-submit');
-  const reqTa    = document.getElementById('pf-req-ta');
-  const reqSuccess = document.getElementById('pf-req-success');
-
-  if (reqBtn) {
-    reqBtn.addEventListener('click', () => {
-      reqBtn.style.display = 'none';
-      reqForm.classList.add('open');
-      reqTa.focus();
-    });
-    reqCancel.addEventListener('click', () => {
-      reqBtn.style.display = 'block';
-      reqForm.classList.remove('open');
-    });
-    reqSubmit.addEventListener('click', async () => {
-      const desc = reqTa.value.trim();
-      if (!desc) { reqTa.focus(); return; }
-      reqSubmit.disabled = true;
-      reqSubmit.textContent = 'Enviando…';
-      try {
-        const r = await fetch(window.PF_REQUEST_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ description: desc }),
-        });
-        if (r.ok) {
-          reqForm.classList.remove('open');
-          reqSuccess.style.display = 'block';
-        } else {
-          alert('Error al enviar. Inténtalo de nuevo.');
-          reqSubmit.disabled = false;
-          reqSubmit.textContent = 'Enviar solicitud';
-        }
-      } catch {
-        alert('Error de conexión.');
-        reqSubmit.disabled = false;
-        reqSubmit.textContent = 'Enviar solicitud';
-      }
-    });
-  }
-</script>
+${etiquetaGuionDePago('portal')}
 </body>
 </html>`;
 }
@@ -442,7 +389,7 @@ router.get('/:token', async (req, res) => {
       <!-- Solicitar presupuesto -->
       <div class="pf-section">
         <button class="pf-request-btn" id="pf-req-btn">✏️ Solicitar nuevo presupuesto</button>
-        <div class="pf-request-form" id="pf-req-form">
+        <div class="pf-request-form" id="pf-req-form" data-url="${esc(requestUrl)}">
           <label class="pf-request-label">Describe brevemente el trabajo que necesitas:</label>
           <textarea class="pf-request-textarea" id="pf-req-ta"
             placeholder="Ej. Quiero reparar una gotera en el baño y revisar las tuberías del suelo..."></textarea>
@@ -468,7 +415,6 @@ router.get('/:token', async (req, res) => {
         ${invoicesHtml}
       </div>` : ''}
     </div>
-    <script>window.PF_REQUEST_URL = "${esc(requestUrl)}";</script>
   `);
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8').send(html);
