@@ -1,8 +1,11 @@
 # SCRUM-1679 · la tarjeta de Trabajos dice qué trabajo es y dónde, y «Abrir trabajo» abre la ficha
 
 **Fecha:** 18-nov-2026 · **Carril:** S4 (producto) · **Pedido por:** el orquestador, con orden del fundador («la cara de Trabajos») · **Rama:** `scrum-1679-cara-trabajos`
+**Skill UI:** cargada (`yaqu-premium-ui`. La sesión que escribió el cambio la cargó DESPUÉS de editar, y lo dejó dicho en su relevo; la que arregla este encabezado la cargó antes de tocarlo y repasó el diff contra ella: sólo `--ink` y `--muted`, ningún token, color, sombra ni `style=` nuevo)
+**Medido contra:** `origin/main` = `c36bd1648deb26f39b173eab0439029dc4746781` · 2026-11-18T08:35:33Z
+A9: comprobación → `tests/scrum267-ancla-de-medicion.test.mjs`
 
-Medido el 18-nov-2026 a las 08:00Z (hora de GitHub) sobre `origin/main` `6881a0d27e8b4e337bd55175c3068791c8304c69`.
+La primera medición, la del defecto y la de las capturas, se hizo el 18-nov-2026 a las 08:00Z (hora de GitHub) sobre `origin/main` `6881a0d27e8b4e337bd55175c3068791c8304c69`. El ancla de arriba es la del árbol que se empuja: esta rama con `c36bd1648…` (que ya lleva SCRUM-1739) fusionado dentro.
 
 ## El defecto, visto hoy
 
@@ -48,3 +51,15 @@ Capturas en `docs/master/evidencias/SCRUM-1679/`: `antes-390.png`, `despues-390.
 - En móvil la columna del cliente sigue siendo estrecha cuando no hay importe: una tarea larga se corta a tres líneas de unas 19 letras. Darle el ancho entero de la tarjeta es tocar la rejilla que comparten las listas (carril S2).
 - A 320 el desplegable «Todos los técnicos» llega a x=357 (se sale 37 px de su caja, sin desbordar la página). Ya pasaba antes de esta rama: medido igual en producción.
 - Un teléfono de verdad y Safari (`-webkit-line-clamp`).
+
+## El rojo de #3214 (18-nov-2026): era PROPIO, y eran dos más de los que se arreglaron
+
+El obligatorio de `1bc9ab652` cayó con 17 fallos, y ninguno era de código. Leído en el log del job (21.110 líneas, 13.829 «✔», 36 «✖» contando el resumen):
+
+- `scrum267-ancla-de-medicion` (3 casos, que otros cuatro ficheros vuelven a correr): este registro no llevaba la línea `**Medido contra:**`. Decía contra qué `main` se midió, pero en prosa.
+- `scrum811c-skill-ui-declarada` (SCRUM-1340): la rama toca `public/` y el registro no declaraba `**Skill UI:**`.
+- `SCRUM-976 ④`: corre los guards de verdad, así que cae con los dos de arriba.
+
+El primer rojo de esta rama (`scrum1233g`, la acción de banco) se arregló sin ver el resto: el log del run salió vacío porque `gh run view --log` no entrega nada mientras el run sigue en marcha. El log de UN job ya terminado sí se puede pedir: `gh api repos/<dueño>/<repo>/actions/jobs/<id>/logs`.
+
+**Arreglo:** las dos líneas del encabezado, y `origin/main` fusionado dentro (la rama iba por detrás y `main` ya lleva SCRUM-1739, que toca la misma función `jobRow`). Git fusionó `jobsView.js` sin conflicto; que la fusión sea correcta se midió aparte: los 28 tests que nombran `jobsView` más `scrum1233g`, 305 pruebas, 0 fallos.
