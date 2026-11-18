@@ -153,3 +153,15 @@ Es la familia de **SCRUM-1603** (el banco que mide con la letra de reserva), que
 **Lo que salió mal (A9).** El guard se entregó en SCRUM-1745 con «18 de 18, tres pasadas» y las tres eran en la misma máquina: una medida de texto que sólo se ha visto con una letra no se ha visto. Y la regla 42 de 1745b corrió este mismo guard contra el CSS de producción, pero con el banco de aquí: tampoco vio Inter.
 
 A9: comprobación → `scripts/guard-hojas-del-trabajo-44.mjs`
+
+## Regla 42 de SCRUM-1745c (18-nov-2026, S4) · el Concepto entero a 320, visto en yaqu.app
+
+Medido el 18-nov-2026 a las 07:43Z (hora de GitHub) con `origin/main` en `6881a0d27e8b4e337bd55175c3068791c8304c69`.
+
+- **Lo que sirve producción es lo de `main`:** `git hash-object` de `https://yaqu.app/dashboard/css/styles.css` = `cd9a9d64`, el mismo blob que `origin/main:public/dashboard/css/styles.css`.
+- **El guard con esa hoja:** `HOJAS_CSS=<la bajada> node scripts/guard-hojas-del-trabajo-44.mjs` sale 0. Dice «LETRA: fuente: Inter · caras cargadas 5 de 35 declaradas · fallidas 0» y «POBLACIÓN: 18 casos · medidos 18». Su control positivo sigue vivo: sin el bloque ve 132 controles cortos y 16 Conceptos cortados.
+- **La página real:** cuenta +qa, `#jobs-detail/84`, hoja «Editar albarán AB260008» a 320 de ancho, con `PASO=hoja` de `evidencias/SCRUM-1745/r42-hoja-y-agendar.mjs` y sin `LOCAL_DIR`: «Concepto · caja 222×44 · toque 44,6 · concepto ve 220 de 220»; 17 controles, toque mínimo 44,6 px, ninguno fuera de norma, la hoja no desborda de lado. Captura: `evidencias/SCRUM-1745/r42-hoja-320-concepto-entero.png`.
+- **No escribe:** la única escritura del banco es su `POST /admin/entorno`.
+- P3-1745c pasa a `[x]` en `docs/BUGS.md`.
+
+**Lo que NO está medido:** un móvil de 320 de verdad y Safari. Que el CI de `main` quedara en verde dos veces lo midió el orquestador, no esta sesión. El concepto del albarán AB260008 es el que tiene hoy ese borrador: no es el de 31 letras con el que se midió el defecto; ese caso lo cubre el guard.
