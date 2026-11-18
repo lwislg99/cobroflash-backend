@@ -1705,13 +1705,13 @@ _Fila 21 del índice de SCRUM-1264 · origen: su descripción. Texto literal._
 
 ---
 
-### 23 · 34 (E6) + A1–A6 · El 10 % de obras y el medio de pago ⏰ A6: 18/19-nov (cálculo) · A1–A5: 1-dic
+### 23 · 34 (E6) + A1–A5 · El 10 % de obras y el medio de pago · ✅ A6 sin objeto: el RDL 29/2026 se convalidó el 12-nov (BOE-A-2026-23755, BOE 13-nov; DS 213) · ⏰ A1–A5: 1-dic (condición cumplida)
 
 _Origen: c.20892 y c.21663 (SCRUM-1316). Texto literal._
 
 Es copia LITERAL de la pregunta 34 de su documento del escritorio, «CORREO al asesor - las 31 preguntas.md», sección «I · LA QUE TIENE FECHA».
 
-⚠️ **El texto está escrito el 7-oct:** donde dice «hoy», es el 7-oct. Lo medido después está en SCRUM-1316: c.20597 del 23-oct (las Cortes están disueltas y lo vota la Diputación Permanente) y c.20884 del 26-oct (sigue sin convalidar; el plazo se calcula entre el 5 y el 19-nov).
+⚠️ **El texto está escrito el 7-oct:** donde dice «hoy», es el 7-oct. Lo medido después está en SCRUM-1316: c.20597 del 23-oct (las Cortes están disueltas y lo vota la Diputación Permanente) y c.20884 del 26-oct (sigue sin convalidar; el plazo se calcula entre el 5 y el 19-nov). **Nota del 18-nov-2026 (SCRUM-1316i):** el RDL 29/2026 quedó convalidado el 12-nov-2026 por la Diputación Permanente (`BOE-A-2026-23755`, BOE del 13-nov; Diario de Sesiones núm. 213), medido en SCRUM-1316 c.22068. Por eso A6 queda sin objeto y A1–A5 siguen con fecha 1-dic, con su condición («sólo si se convalida») cumplida. **Sin respuesta de asesor.**
 
 Las preguntas A1–A6 de c.20884 completan esta, y P2 de c.20890 se une a A4: ¿es obligatorio declarar el medio de cobro?
 
@@ -1738,7 +1738,7 @@ Las preguntas A1–A6 de c.20884 completan esta, y P2 de c.20890 se une a A4: ¿
 **Y el contexto de nuestro lado, que acota la pregunta:** el programa **no elige nunca el 10 %** —de 36 sitios del código que escriben un tipo de IVA, ninguno pone una constante—: **lo elige el profesional en un desplegable**. Guardamos el medio de cobro, **pero declararlo es opcional cuando marca una factura como cobrada a mano**. Y el tipo se fija **al emitir**, es decir **antes de saber cómo se cobrará**.
 
 **34 (E6), completada: las A1–A6 de** `SCRUM-1316.md` §ⓓ, copiadas aquí (solo valen si el RDL 29/2026 se convalida, salvo A6):    
-A1 · Obra en vivienda cobrada en efectivo desde el 1-dic: ¿pierde el 10 %? · A2 · ¿Bizum cuenta como «transferencia bancaria»? · A3 · Obra empezada, o señal cobrada, antes del 1-dic: ¿qué tipo lleva cada parte? · A4 · ¿Qué tiene que poder acreditar el profesional sobre el medio de pago, y qué guardaría el programa? · A5 · Un programa que ofrece el 10 % en un desplegable sin avisar de la condición, ¿tiene responsabilidad como productor? · **A6 · Si el 29/2026 no se vota en plazo, ¿decae y el 1-dic deja de existir?** (y cómo se computan los 30 días del art. 86.2 CE). Estado medido hoy (c.21629): ni convalidado ni derogado a 12-nov 11:22Z; quedan las variantes de cómputo del **18 y 19-nov** (cálculo, no dato publicado).
+A1 · Obra en vivienda cobrada en efectivo desde el 1-dic: ¿pierde el 10 %? · A2 · ¿Bizum cuenta como «transferencia bancaria»? · A3 · Obra empezada, o señal cobrada, antes del 1-dic: ¿qué tipo lleva cada parte? · A4 · ¿Qué tiene que poder acreditar el profesional sobre el medio de pago, y qué guardaría el programa? · A5 · Un programa que ofrece el 10 % en un desplegable sin avisar de la condición, ¿tiene responsabilidad como productor? · **A6 · Si el 29/2026 no se vota en plazo, ¿decae y el 1-dic deja de existir?** (y cómo se computan los 30 días del art. 86.2 CE). Estado medido hoy (c.21629): ni convalidado ni derogado a 12-nov 11:22Z; quedan las variantes de cómputo del **18 y 19-nov** (cálculo, no dato publicado). **A6 sin objeto desde el 12-nov-2026** (nota del 18-nov-2026, SCRUM-1316i): se votó y se convalidó ese día (`BOE-A-2026-23755`; DS 213; SCRUM-1316 c.22068). La pregunta se conserva como se escribió.
 
 ---
 
