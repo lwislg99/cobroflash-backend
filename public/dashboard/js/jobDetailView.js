@@ -1044,6 +1044,9 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
         && grupoDeTrabajo(job, new Date()) === 'hoy');
     if (!esElPasoDeHoy) cta.className = 'btn-secondary btn-sm job-toolbar-btn-44'; // SCRUM-962 (AB6), como sus vecinas
     cta.textContent = nextAct.label;
+    // SCRUM-1725h · la IDENTIDAD del CTA, que no depende de su peso: desde 1749 puede ir relleno o con
+    // contorno, y `guard:escalera-por-estado` lo buscaba por `btn-primary` (se quedó ciego y mudo).
+    cta.dataset.accion = 'cta';
     cta.addEventListener('click', async () => {
       cta.disabled = true;
       const orig = cta.textContent;
