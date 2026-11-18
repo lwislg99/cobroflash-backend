@@ -211,6 +211,10 @@ export const NO_PERSONALES = Object.freeze({
   'invoice.registerId': ID_EXTERNO,
   'invoice.status': ESTADO,
   'invoice.paidVia': ESTADO,
+  // SCRUM-1732 · `invoice_payments`: los tres son conjuntos cerrados de cobrosDeFactura.ts / PAID_VIA.
+  'invoicePayment.fechaOrigen': ESTADO,
+  'invoicePayment.metodo': ESTADO,
+  'invoicePayment.tipo': ESTADO,
   'invoice.stageLabel': CONDICIONES,
   'invoice.type': ESTADO,
   'invoice.vfEstado': ESTADO,
