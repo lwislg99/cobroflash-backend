@@ -2053,3 +2053,22 @@ GO del camino de emisión: SCRUM-665 c.21182, punto 1 («✅ GO de regla 40 a la
 **Mi error:** quise deshacer una edición mía en `invoicing.ts` con `git checkout --`, que descarta cambios sin commitear. Lo paró el hook antes de correr, y lo deshice a mano.
 
 A9: comprobación → `.claude/hooks/guard-dangerous.sh`
+
+# APÉNDICE (N) · SCRUM-665e · 18-nov-2026 · J1 (jv-j1f6 y jv-j1f8) · los 11 registrados, tramos 13-15, main mergeado. EMPUJADA
+
+**Medido contra:** `origin/main` = `6c5327559bb8e17f1ecad128f99331ee16b31a2f` · 2026-11-18T04:17:58Z (hora de GitHub; mergeado en la rama, sin rebase ni force)
+
+GO del camino de emisión: SCRUM-665 c.21182, punto 1. Decisiones de Javier: c.21943 (Railway comprobado, «Sí, mergear ya», los 11 por su vía). Se empuja a `scrum-665e-pdf-persistente`.
+
+- **jv-j1f6 (16-nov, `d20f0657a` y `cd8310c51`, Jira c.21953):** los 11 registrados por su vía (1240d 2→1, 1470c 3→1, 1304 ×5 con el doble que resuelve el `include`, 497/1547 `pdfSha256` como huella, 878 como SELLADO, 243 censo 1→2). En 1304 ④e, `banco.pdf.fallos` 1→2, con el sí del orquestador J: el congelado al emitir consumía el único fallo sembrado. Tramos 1 a 12 de 15 corridos en su árbol.
+- **jv-j1f8 (18-nov), tramos 13 a 15 sobre `cd8310c51`:**
+  - Tramo 13 (113 ficheros, 855 tests, 2 fail). Los dos eran de la rama, y se han arreglado. `scrum737`: las cifras «2 llamadas» (`scrum1240d`:133) y «9 casos» (`scrum243`:107) de `d20f0657a` no tenían ancla, y ahora llevan su fecha (opción ④ del guard). `scrum719` (SCRUM-1395b): la ficha de mudez de `scrum707`, que la rama tocó en `1bc6fd740`, había caducado. Se re-midió con `npm run censo:mudez -- --escribir`: VIVO, sobre 132 guards, y con el filtro idéntico.
+  - Tramo 14 (113 ficheros, 982 tests, 1 fail): `scrum824`. Lo cubre el parche S1 (c.21680, commit `42655871`). No se toca.
+  - Tramo 15 (101 ficheros, 897 tests, 4 fail): `scrum932` ×4, del entorno. Este worktree trae un `.env`, ignorado por git y creado con el árbol, con claves de BD, y el CLI del turno encuentra una credencial («Turno LIBRE en la base "railway"») donde el test espera que no haya ninguna. La rama no toca `scripts/` ni ese test (`git diff origin/main...HEAD`). No lo he corrido contra un main limpio.
+- **Merge de `origin/main` `6c5327559`, sin conflictos.** Ningún fichero lo tocan los dos lados (diff de los dos padres contra la base del merge). `schema.prisma` no cambia. `tsc` con tipos da salida 0, contra un cliente de Prisma propio en tmp; el control contra el cliente compartido da 4 errores, los 4 de `pdfSha256`, y su `index.d.ts` sigue con la huella `786de71ede9133a1`.
+- **Tras el merge:** tramos 1/15 (784 tests) y 2/15 (726 tests), con 0 fail. Los tramos 3 a 15 NO se han vuelto a correr: el orquestador J pidió empujar ya.
+- **Esperado en el obligatorio:** ROJO por `scrum55` y `scrum824` hasta que S1 empuje `42655871` encima (c.21943, orden de entrada). Quedan del entorno, sin comparar con main: `scrum1298b` ×2, `scrum351`, `scrum235` ×3, `scrum461` ×3 y el CONTROL de `scrum252`.
+
+**Error del relevo:** `d20f0657a` registró dos cifras sin fecha en comentarios de tests, y el empujón de entonces no habría pasado. Lo cazó `scrum737` en el tramo 13, no la dirigida.
+
+A9: comprobación → `tests/scrum737-cifra-con-arbol-y-hora.test.mjs`
