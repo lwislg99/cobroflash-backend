@@ -70,6 +70,7 @@ function baseFalsa(facturas, gastos) {
         llamadas.push({ op: `${String(modelo)}.${String(op)}`, where: args?.where });
         if (modelo === 'invoice') return facturas.filter((f) => dentro(f.createdAt, args.where.createdAt));
         if (modelo === 'expense') return gastos.filter((g) => dentro(g.date, args.where.date));
+        if (modelo === 'merchant') return { timezone: ZONA_DEL_PROCESO };
         return [];
       },
     }),
@@ -91,6 +92,11 @@ const AÑO_GASTOS = [
   gasto(new Date(2026, 5, 5, 9), 500),
   gasto(new Date(2026, 8, 30, 23, 59), 200, { providerInvoiceNumber: 'P-3' }),
 ];
+
+// SCRUM-1445f · los fixtures de este fichero se escriben en hora LOCAL del proceso (el trinquete de zona
+// los pasa en Kiritimati y Midway): el comercio falso vive en esa misma zona. La zona del comercio de
+// verdad (Canarias, península, sin zona) la prueba tests/scrum1445f-los-lectores-pasan-la-zona.test.mjs.
+const ZONA_DEL_PROCESO = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 test('SCRUM-1065b · las casillas son las del impreso LEÍDO (sección I, 01-07), cada una con su cita', () => {
   const s = b130([], [], 2).seccionI;

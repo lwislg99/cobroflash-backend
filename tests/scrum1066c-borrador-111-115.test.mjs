@@ -64,6 +64,11 @@ function cuadra(r, gastos) {
   assert.equal(Math.round(anotada * 100), Math.round(repartida * 100), '🔴 un euro retenido se ha evaporado');
 }
 
+// SCRUM-1445f · los fixtures de este fichero se escriben en hora LOCAL del proceso (el trinquete de zona
+// los pasa en Kiritimati y Midway): el comercio falso vive en esa misma zona. La zona del comercio de
+// verdad (Canarias, península, sin zona) la prueba tests/scrum1445f-los-lectores-pasan-la-zona.test.mjs.
+const ZONA_DEL_PROCESO = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
 test('SCRUM-1066c · las casillas son las de los impresos LEÍDOS (111: 07/08/09, 28-30 · 115: 1-5)', () => {
   assert.deepEqual({ ...casillas.CASILLAS_111_ACTIVIDADES_DINERARIAS }, { perceptores: '07', importe: '08', retenciones: '09' });
   assert.equal(casillas.CASILLA_111_SUMA_RETENCIONES, '28');
@@ -175,13 +180,15 @@ test('SCRUM-1066c · el lector filtra por merchant y por el trimestre, y no escr
     get: (_, modelo) => new Proxy({}, {
       get: (_, op) => async (a) => {
         llamadas.push(`${String(modelo)}.${String(op)}`);
+        if (String(modelo) === 'merchant') return { timezone: ZONA_DEL_PROCESO }; // SCRUM-1445f
         args = a;
         return [gasto()];
       },
     }),
   });
   const r = await leerBorradorRetenciones(db, { merchantId: M, año: 2026, trimestre: 2 });
-  assert.deepEqual(llamadas, ['expense.findMany'], '🔴 el borrador sólo lee: una llamada, un findMany');
+  assert.deepEqual(llamadas, ['merchant.findUnique', 'expense.findMany'],
+    '🔴 el borrador sólo lee: la zona del comercio (SCRUM-1445f) y un findMany');
   assert.equal(args.where.merchantId, M);
   assert.equal(args.where.date.gte.getTime(), new Date(2026, 3, 1).getTime());
   assert.equal(args.where.date.lte.getTime(), new Date(2026, 6, 0, 23, 59, 59, 999).getTime());

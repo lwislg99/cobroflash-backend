@@ -80,6 +80,11 @@ const delTicket = () => [
 
 const m390 = (trimestres, ahora = AÑO_CERRADO, año = AÑO) => construirModelo390({ año, trimestres, ahora });
 
+// SCRUM-1445f · los fixtures de este fichero se escriben en hora LOCAL del proceso (el trinquete de zona
+// los pasa en Kiritimati y Midway): el comercio falso vive en esa misma zona. La zona del comercio de
+// verdad (Canarias, península, sin zona) la prueba tests/scrum1445f-los-lectores-pasan-la-zona.test.mjs.
+const ZONA_DEL_PROCESO = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
 test('SCRUM-1077 · las casillas son las del impreso LEÍDO (01-06, 33/34, 47, 48/49, 50/51, 64, 65)', () => {
   assert.deepEqual(casillas.TRIPLETAS_DEVENGADO_390.map((f) => ({ ...f })), [
     { tipo: 4, base: '01', cuota: '02' }, { tipo: 10, base: '03', cuota: '04' }, { tipo: 21, base: '05', cuota: '06' },
@@ -209,7 +214,7 @@ test('SCRUM-1077 · el lector pide los cuatro trimestres del 303, filtra por mer
       get: (_, op) => async (a) => {
         llamadas.push({ op: `${String(modelo)}.${String(op)}`, args: a });
         // El 303 lee el merchant para su criterio de caja (`criterioDelMerchant.ts`), y sin fila para.
-        if (String(modelo) === 'merchant') return { id: M };
+        if (String(modelo) === 'merchant') return { id: M, timezone: ZONA_DEL_PROCESO }; // y su zona (SCRUM-1445f)
         return String(op) === 'findMany' ? [] : null;
       },
     }),

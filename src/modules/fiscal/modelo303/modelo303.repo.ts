@@ -9,20 +9,23 @@ import { leerLibroRecibidas, type ClienteDeGastos } from '../../invoicing/domain
 import { exigirLibroRecibidasLegible } from '../../invoicing/domain/libroRecibidas';
 import { construirModelo303, rangoTrimestre, type Modelo303 } from './modelo303';
 import { criterioDelMerchantParaElLibro } from '../../invoicing/domain/criterioDelMerchant'; // SCRUM-294 fase C
+import { zonaDelMerchantParaElLibro } from '../../invoicing/domain/zonaDelLibro'; // SCRUM-1445d fase 2
 
 export async function leerModelo303(
   db: ClienteDelLibro & ClienteDeGastos,
   params: { merchantId: number; año: number; trimestre: number },
 ): Promise<Modelo303> {
-  const { desde, hasta } = rangoTrimestre(params.año, params.trimestre);
+  // SCRUM-1445d (fase 2) · los bordes del trimestre, en la zona del comercio (c.21896).
+  const zona = await zonaDelMerchantParaElLibro(db as never, params.merchantId);
+  const { desde, hasta } = rangoTrimestre(params.año, params.trimestre, zona);
   // SCRUM-294 (fase C) · EL CABLE: el criterio de caja del merchant llega al libro. Hoy devuelve
   // `{}` —la columna aun no esta en el modelo de Prisma— y el libro devenga por emision, EXACTAMENTE
   // como siempre. El dia que el campo entre en `schema.prisma`, esto empieza a mandar solo.
   const criterio = await criterioDelMerchantParaElLibro(db as never, params.merchantId);
-  const libro = await leerLibroRegistro(db, { merchantId: params.merchantId, desde, hasta, ...criterio });
+  const libro = await leerLibroRegistro(db, { merchantId: params.merchantId, desde, hasta, zona, ...criterio });
   // SCRUM-1063b · el soportado sale del libro de recibidas del MISMO rango (`rangoTrimestre`), el
   // que entrega E4: un gasto no puede caer en la 29 de un trimestre y en el libro de otro.
   const libroRecibidas = await leerLibroRecibidas(db, { merchantId: params.merchantId, desde, hasta });
   exigirLibroRecibidasLegible(libroRecibidas);
-  return construirModelo303({ libro, libroRecibidas, año: params.año, trimestre: params.trimestre });
+  return construirModelo303({ libro, libroRecibidas, año: params.año, trimestre: params.trimestre, zona });
 }

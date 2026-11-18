@@ -140,12 +140,12 @@ export interface BorradorModelo347 {
 }
 
 /** El trimestre (1-4) de una fecha del año, con los bordes de `rangoTrimestre`. 0 = fuera del año. */
-function trimestreDe(fecha: string | Date | null, año: number): number {
+function trimestreDe(fecha: string | Date | null, año: number, zona?: string): number {
   if (fecha === null || fecha === undefined) return 0;
   const t = new Date(fecha).getTime();
   if (!Number.isFinite(t)) return 0;
   for (let q = 1; q <= 4; q++) {
-    const { desde, hasta } = rangoTrimestre(año, q);
+    const { desde, hasta } = rangoTrimestre(año, q, zona);
     if (t >= desde.getTime() && t <= hasta.getTime()) return q;
   }
   return 0;
@@ -194,6 +194,8 @@ export function construirModelo347(params: {
   proveedores: readonly ProveedorPara347[];
   merchantId: number;
   año: number;
+  /** SCRUM-1445d (fase 2) · la zona del comercio; ausente = la del proceso, como rangoTrimestre. */
+  zona?: string;
 }): BorradorModelo347 {
   const { año, merchantId } = params;
   const señaladas: OperacionSeñalada[] = [];
@@ -211,7 +213,7 @@ export function construirModelo347(params: {
 
   for (const a of params.libro.asientos) {
     if (a.moneda) moneda = a.moneda;
-    const trimestre = trimestreDe(a.fecha, año);
+    const trimestre = trimestreDe(a.fecha, año, params.zona);
     if (trimestre === 0) throw new Error(`🔴 SCRUM-1067 · la factura ${a.numero} (${a.fecha}) no es del año ${año}.`);
     const señalar = (motivo: MotivoSeñalada) =>
       señaladas.push({ sentido: 'entrega', referencia: a.numero, terceroId: a.clienteId, total: a.total, trimestre, motivo });
@@ -227,7 +229,7 @@ export function construirModelo347(params: {
 
   for (const g of params.libroRecibidas.asientos) {
     if (g.moneda) moneda = g.moneda;
-    const trimestre = trimestreDe(g.fechaApunte, año);
+    const trimestre = trimestreDe(g.fechaApunte, año, params.zona);
     const referencia = g.numeroProveedor;
     if (trimestre === 0) throw new Error(`🔴 SCRUM-1067 · un gasto (${g.fechaApunte}) no es del año ${año}.`);
     const señalar = (motivo: MotivoSeñalada) =>
@@ -241,8 +243,8 @@ export function construirModelo347(params: {
     sumar(adquisiciones, nif, p.legalName || p.name, trimestre, g.total);
   }
 
-  const { desde } = rangoTrimestre(año, 1);
-  const { hasta } = rangoTrimestre(año, 4);
+  const { desde } = rangoTrimestre(año, 1, params.zona);
+  const { hasta } = rangoTrimestre(año, 4, params.zona);
   return {
     año,
     desde: desde.toISOString(),

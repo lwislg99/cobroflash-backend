@@ -5,9 +5,10 @@
 // Sin ruta: hoy no lo llama nadie, y montarla es una pantalla que pide texto firmado (regla 39).
 import { rangoTrimestre } from '../modelo303/modelo303';
 import { construirBorradorRetenciones, type BorradorRetenciones, type GastoConRetencion } from './retencionesPracticadas';
+import { zonaDelMerchantParaElLibro, type ClienteParaZona } from '../../invoicing/domain/zonaDelLibro'; // SCRUM-1445d fase 2
 
 /** Lo mínimo del cliente Prisma. Por parámetro, para que un test lo apunte a lo que quiera. */
-export interface ClienteDeRetenciones {
+export interface ClienteDeRetenciones extends ClienteParaZona {
   expense: { findMany(args: any): Promise<any[]> };
 }
 
@@ -32,7 +33,9 @@ export async function leerBorradorRetenciones(
   db: ClienteDeRetenciones,
   params: { merchantId: number; año: number; trimestre: number },
 ): Promise<BorradorRetenciones> {
-  const { desde, hasta } = rangoTrimestre(params.año, params.trimestre);
+  // SCRUM-1445d (fase 2) · el trimestre, en la zona del comercio (c.21896).
+  const zona = await zonaDelMerchantParaElLibro(db, params.merchantId);
+  const { desde, hasta } = rangoTrimestre(params.año, params.trimestre, zona);
   const gastos = (await db.expense.findMany({
     where: {
       merchantId: params.merchantId,
@@ -41,7 +44,7 @@ export async function leerBorradorRetenciones(
     select: CAMPOS,
     orderBy: [{ date: 'asc' }, { id: 'asc' }],
   })) as unknown as GastoConRetencion[];
-  return construirBorradorRetenciones({ gastos, merchantId: params.merchantId, año: params.año, trimestre: params.trimestre });
+  return construirBorradorRetenciones({ gastos, merchantId: params.merchantId, año: params.año, trimestre: params.trimestre, zona });
 }
 
 /**
@@ -56,8 +59,9 @@ export async function leerHayRetencionAnotadaEnElAño(
   db: ClienteDeRetenciones,
   params: { merchantId: number; año: number },
 ): Promise<boolean> {
-  const desde = rangoTrimestre(params.año, 1).desde;
-  const hasta = rangoTrimestre(params.año, 4).hasta;
+  const zona = await zonaDelMerchantParaElLibro(db, params.merchantId); // SCRUM-1445d fase 2
+  const desde = rangoTrimestre(params.año, 1, zona).desde;
+  const hasta = rangoTrimestre(params.año, 4, zona).hasta;
   const gastos = (await db.expense.findMany({
     where: {
       merchantId: params.merchantId,
@@ -65,6 +69,6 @@ export async function leerHayRetencionAnotadaEnElAño(
     },
     select: CAMPOS,
   })) as unknown as GastoConRetencion[];
-  const b = construirBorradorRetenciones({ gastos, merchantId: params.merchantId, año: params.año, trimestre: 1 });
+  const b = construirBorradorRetenciones({ gastos, merchantId: params.merchantId, año: params.año, trimestre: 1, zona });
   return b.miradas - b.sinRetencion - b.sinDatoDeRetencion > 0;
 }

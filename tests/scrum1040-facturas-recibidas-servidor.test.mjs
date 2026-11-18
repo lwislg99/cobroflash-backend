@@ -44,6 +44,7 @@ function dbFalsa(gastos, proveedores = [{ id: 3, name: 'Suministros Peña', taxI
       findMany: async ({ where }) => gastos.filter((g) => g.merchantId === where.merchantId),
     },
     provider: { findMany: async () => proveedores },
+    merchant: { findUnique: async () => ({ timezone: ZONA_DEL_PROCESO }) }, // SCRUM-1445f
   };
 }
 
@@ -61,17 +62,22 @@ async function pedir(db, { merchantId = M, query = {} } = {}) {
   // El handler lee `prisma` importado del módulo, no el `db` de aquí: se sustituye vía el mismo
   // truco que SCRUM-1043 (doble global), porque la ruta importa `{ prisma }` directamente.
   const { prisma } = await import('../dist/core/db/prisma.js');
-  const orig = { expense: prisma.expense, provider: prisma.provider };
-  prisma.expense = db.expense; prisma.provider = db.provider;
+  const orig = { expense: prisma.expense, provider: prisma.provider, merchant: prisma.merchant };
+  prisma.expense = db.expense; prisma.provider = db.provider; prisma.merchant = db.merchant; // + la zona (SCRUM-1445f)
   try {
     await capa.route.stack[capa.route.stack.length - 1].handle(reqDeSesion({ rol: 'admin', merchantId, query }), res);
   } finally {
-    prisma.expense = orig.expense; prisma.provider = orig.provider;
+    prisma.expense = orig.expense; prisma.provider = orig.provider; prisma.merchant = orig.merchant;
   }
   return { status, cuerpo, headers: res._headers || {} };
 }
 
 // ── EL CONTRATO DE PERIODO, IDÉNTICO AL DE `/recibidas.csv` ────────────────────────────────
+
+// SCRUM-1445f · los fixtures de este fichero se escriben en hora LOCAL del proceso (el trinquete de zona
+// los pasa en Kiritimati y Midway): el comercio falso vive en esa misma zona. La zona del comercio de
+// verdad (Canarias, península, sin zona) la prueba tests/scrum1445f-los-lectores-pasan-la-zona.test.mjs.
+const ZONA_DEL_PROCESO = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 test('SCRUM-1040 · 🔴 sin año o sin trimestre, 400 con el MISMO texto que `/recibidas.csv`', async () => {
   const db = dbFalsa([gasto()]);
