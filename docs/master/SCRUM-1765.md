@@ -67,6 +67,24 @@ Re-derivar M2, M5 y M6 sobre el código de hoy queda por hacer: no lo he intenta
 `SCRUM-1324.md` (⑤; y se quita el comando de reproducir que apuntaba al guion), `SCRUM-908.md`
 (tramo 908c), `SCRUM-1345.md` y `SCRUM-1152.md`.
 
+### El trinquete de `scrum812` sube 40 → 41
+
+Al declarar sus 15, `scrum1324` entra en la lista de «titulados GUARD que declaran»: el trinquete dijo
+«LA COBERTURA HA SUBIDO a 41 (el suelo decía 40)». Se re-ancla hacia ARRIBA, con su línea fechada en el
+comentario y la declaración ④ que cita la constante (41 → 40). Cobertura que sube, no una tolerancia
+(visto por el orquestador). Sus 5 mutaciones, con `aplicarUna`: 5 de 5 tumban.
+
+### Suite, por tramos (`scripts/tanda-entera-por-tramos.mjs`, 15 tramos, 1.707 ficheros)
+
+- Tramos 1 a 13 sobre el commit `eb41c3a14` (sin el cambio de `scrum812`): 11.905 casos y 2 fallos, los
+  dos en el tramo 3, `scrum1298b`, por el `TMP` en ruta corta 8.3 (`JAVIER~1`) que hereda esta sesión del
+  lanzador. Con `TMP` largo, ese fichero da 8 de 8 (y entonces caen 2 de `scrum1289b`, que con el `TMP` por
+  defecto da 9 de 9): son del entorno. No los arreglo aquí: los corrige el orquestador en su lanzador.
+- Tramo 14 (que tiene `scrum812`) y tramo 15, sobre el árbol final: 1.941 casos · 1.910 pass · 0 fail.
+- 🔴 `--resumen 15` dice **CIEGO**: la pasada se identifica por la huella del árbol, y el cambio de
+  `scrum812` la cambió, así que los tramos 1 a 13 no cuentan para ella. No es un verde de la tanda entera.
+  Lo que sí cubre: el único fichero que difiere entre los dos árboles está en el tramo 14, ya re-corrido.
+
 ### Lo que NO está
 
 - 1288b/c/d (puesto propuesto en SCRUM-1765): no lo he leído; no me cupo en contexto.
