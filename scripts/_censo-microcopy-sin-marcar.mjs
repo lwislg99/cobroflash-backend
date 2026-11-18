@@ -36,6 +36,7 @@
 // extractor se queda ciego por pedir el `>` pegado a la etiqueta (SCRUM-553).
 import fs from 'node:fs';
 import path from 'node:path';
+import { guionesEnlazados } from '../tests/_pagina-con-sus-guiones.mjs';
 
 export class CensoCiego extends Error {}
 
@@ -93,6 +94,12 @@ export function loDesocultaUnScript(raiz, html, id) {
   const fuentes = [html];
   const dir = path.join(raiz, 'public', 'js');
   try { for (const f of fs.readdirSync(dir)) if (f.endsWith('.js')) fuentes.push(fs.readFileSync(path.join(dir, f), 'utf8')); } catch { /* sin js sueltos */ }
+  // SCRUM-1756f: el guion que era inline vive ahora en un `.js` de la raíz de `public/` que la página
+  // ENLAZA (`/landing.js`). Se suman los guiones locales que enlaza, leídos con el extractor único.
+  for (const rel of guionesEnlazados(html, 'public/index.html')) {
+    const abs = path.join(raiz, rel);
+    if (fs.existsSync(abs)) fuentes.push(fs.readFileSync(abs, 'utf8'));
+  }
 
   for (const src of fuentes) {
     // (a) por id explícito: getElementById('x') … hidden = false
