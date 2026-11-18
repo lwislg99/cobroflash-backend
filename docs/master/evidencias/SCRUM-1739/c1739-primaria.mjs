@@ -19,6 +19,12 @@
 // no tiene ningún trabajo agendado → CIEGO (no se lee como «no cambia nada»).
 import fs from 'node:fs';
 import path from 'node:path';
+// QUIÉN ABRE EL CONTEXTO DE ESTA ACCIÓN: el banco de SCRUM-1658 (`abrir`, con `serviceWorkers: 'block'`).
+// Esta acción llama a `.route(` sobre yaqu.app y no abre navegador: sin service worker bloqueado, lo
+// interceptado puede no pasar por aquí y la petición sale a producción (SCRUM-1233). Se importa el MISMO
+// módulo que importa `paso2.mjs`, y abajo se comprueba que es el que nos han pasado: si alguien corre esta
+// acción desde otro lanzador, para en vez de interceptar a ciegas. Lo vigila `tests/scrum1233g-…`.
+import * as banco from '../SCRUM-1658/banco/lib.mjs';
 
 const SERVIDOS = [['js/jobsView.js', 'application/javascript']];
 
@@ -73,7 +79,8 @@ async function simularAgendados(s) {
   return tocados;
 }
 
-export default async (s) => {
+export default async (s, h) => {
+  if (h !== banco) throw new Error('CIEGO: esta acción no corre sobre el banco de SCRUM-1658 (el que bloquea el service worker); no intercepto sin él');
   const p = s.page;
   const local = process.env.LOCAL_DIR;
   const simula = process.env.SIMULA_AGENDADO === '1';
