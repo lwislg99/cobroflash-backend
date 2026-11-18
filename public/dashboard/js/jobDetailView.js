@@ -1025,6 +1025,21 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     // **la primaria de una pantalla fuera un `btn-sm`**. Se cambia la clase de ESTE botón y
     // `btn-sm` sigue midiendo 30 para todo lo demás.
     cta.className = 'btn-primary';
+    // ── SCRUM-1749 · COMO MUCHO UNA RELLENA POR PANTALLA: EL PASO QUE HACE AVANZAR EL TRABAJO HOY ──
+    // Regla reconciliada (SCRUM-1739 c.22030) aplicada a la ficha (SCRUM-1749 c.22041). La escalera
+    // NO cambia —misma acción, mismo hueco de la cabecera, mismo ejecutor—: cambia cuánto pesa.
+    // Se queda RELLENA sólo cuando es el paso de hoy, igual que en la tarjeta de la lista:
+    //   · «💰 Cobrar el resto» (`cobrar`), el momento del dinero;
+    //   · «▶ Empezar» de un agendado PARA HOY. «Hoy» lo decide `grupoDeTrabajo` (jobsView.js), la
+    //     MISMA regla que la tarjeta, la cabecera del grupo «📅 Hoy» y la cifra «Para hoy»: se LLAMA,
+    //     no se copia. Si no está cargada, no se sabe qué es hoy y NO se rellena (falla cerrado).
+    // Lo demás —«Agendar», «Recordar pago» y los tres del albarán— va con contorno. En EN CURSO la
+    // rellena es la puerta al PARTE de su sección (abajo); un terminado sin resto se queda sin
+    // rellena: «como mucho una» es techo, no suelo (c.22041).
+    const esElPasoDeHoy = nextAct.kind === 'cobrar'
+      || (nextAct.kind === 'empezar' && typeof grupoDeTrabajo === 'function'
+        && grupoDeTrabajo(job, new Date()) === 'hoy');
+    if (!esElPasoDeHoy) cta.className = 'btn-secondary btn-sm job-toolbar-btn-44'; // SCRUM-962 (AB6), como sus vecinas
     cta.textContent = nextAct.label;
     cta.addEventListener('click', async () => {
       cta.disabled = true;
@@ -1759,6 +1774,12 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   if (job.status === 'cerrado') partesRow.hidden = true;
   const parteBtn = document.createElement('button');
   parteBtn.className = 'btn-secondary btn-sm job-toolbar-btn-44'; // SCRUM-962 (AB6)
+  // ── SCRUM-1749 · EN CURSO, EL PASO DE HOY ES EL PARTE (c.22041, opción a) ──────────────────────
+  // Se rellena DONDE ESTÁ, con su rótulo firmado (N9): ni texto nuevo ni sitio nuevo. Y sin `btn-sm`:
+  // es la primaria de la pantalla en ese estado (SCRUM-380/412). El CTA de la cabecera pasa a
+  // contorno en en_curso (arriba). ⚠️ DECLARADO: a 390 px esta rellena queda bajo el pliegue; subirla
+  // al hueco de la primaria (opción b) es mejora anotada, no de este ticket.
+  if (job.status === 'en_curso') parteBtn.className = 'btn-primary';
   parteBtn.setAttribute('data-abrir-parte', '1');
   parteBtn.textContent = ROTULOS_PARTES.nuevo;
   const abrirElParte = (parte) => {
