@@ -44,5 +44,19 @@ la salida). Medido en esta máquina (Windows, Edge):
 | guard-caja-semaforo | 0 · candidato 1 línea a 929 y 390 | 0 · igual | 2 · HOJA SIN CARGAR | 2 · FUENTE ROTA |
 | guard-caja-avisos | 0 · cabe | 0 · cabe; **a 320 el aviso de pendientes pasa de 3 a 4 líneas** | 2 · HOJA SIN CARGAR | 2 · FUENTE ROTA |
 
-**Lo que NO está medido.** Los cinco de la DEUDA siguen midiendo con la letra de reserva. Inter en el runner (lo
-dirá el CI). Ninguno de estos guards entra en `npm test`.
+## SCRUM-1755b (18-nov-2026, S3) · tanda 2
+
+Mismo patrón y mismas cuatro pasadas por guard. En `guard-falta-en-otra-pestana` el servidor leía todo como
+texto (`'utf8'`): las `.woff2` habrían llegado rotas; ahora van en bytes con su tipo.
+
+| guard | base (reserva) | con Inter | `inter.css` 404 | `.woff2` 404 |
+|---|---|---|---|---|
+| guard-falta-en-otra-pestana | 0 · 12 de 12 | 0 · 12 de 12 | 2 · HOJA SIN CARGAR | 2 · FUENTE ROTA |
+| guard-caja-datos-del-cliente | 0 · cabe | 0 · las mismas cifras | 2 · HOJA SIN CARGAR | 2 · FUENTE ROTA |
+| guard-caja-documento-suelto | 0 · cabe | 0 · cabe; cambian los anchos («Nº factura» 86,2→95,9 px a 929, 50,0→52,7 px en móvil; «Emitir factura» 151,6→154,8), no las líneas | 2 · HOJA SIN CARGAR | 2 · FUENTE ROTA |
+
+Censo tras la tanda: 27 bancos (casa 8 · casa-lista 10 · a mano 9: 7 solo geometría + 2 de DEUDA), techo 2.
+
+**Lo que NO está medido.** Quedan 2 en la DEUDA, que siguen midiendo con la letra de reserva:
+`guard-pad-de-firma-cabe` y `guard-notas-en-la-ficha`. Son para la sesión siguiente de S3. Inter en el runner (lo
+dirá el CI). Ninguno de estos guards entra en `npm test`: sólo el censo (scrum1603) corre en la suite.
