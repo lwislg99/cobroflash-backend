@@ -20,6 +20,9 @@ import assert from 'node:assert/strict';
 import { parseBDSegura } from '../scripts/_db-guard.mjs';
 import { withMerchant } from './_merchant-fixture.mjs';
 
+/** SCRUM-1445g · la zona de los dos comercios sembrados, explícita (en Railway el proceso corre en UTC). */
+const ZONA_DEL_COMERCIO = 'Europe/Madrid';
+
 const URL_BANCO = process.env.LIBRO_PG_URL || '';
 const ENABLED = URL_BANCO !== '';
 const PROHIBIDAS = ['railway', 'yaqu_dev', 'yaqu_dev_javier', 'postgres', 'staging', 'prod'];
@@ -72,8 +75,10 @@ test('SCRUM-295 · CONTRA POSTGRES: el 303 de un merchant no declara NI UN euro 
     const { leerLibroRegistro } = await import('../dist/modules/invoicing/domain/libroRegistro.repo.js');
 
     try {
-      await withMerchant(prisma, { name: `QA 303 MIO ${SELLO}`, email: `m303.${SELLO}@qa.invalid` }, async (mio) => {
-      await withMerchant(prisma, { name: `QA 303 OTRO ${SELLO}`, email: `o303.${SELLO}@qa.invalid` }, async (otro) => {
+      // SCRUM-1445g · desde 1445f el 303 calcula el trimestre en la zona del COMERCIO (sin zona, UTC),
+      // no en la del proceso: los dos comercios declaran la suya, y los bordes de abajo van en esa zona.
+      await withMerchant(prisma, { name: `QA 303 MIO ${SELLO}`, email: `m303.${SELLO}@qa.invalid`, timezone: ZONA_DEL_COMERCIO }, async (mio) => {
+      await withMerchant(prisma, { name: `QA 303 OTRO ${SELLO}`, email: `o303.${SELLO}@qa.invalid`, timezone: ZONA_DEL_COMERCIO }, async (otro) => {
         const cliMio  = await prisma.customer.create({ data: { merchantId: mio.id,  name: 'Cliente MIO',  phone: `+34611${String(mio.id).padStart(6, '0')}` } });
         const cliOtro = await prisma.customer.create({ data: { merchantId: otro.id, name: 'Cliente OTRO', phone: `+34622${String(otro.id).padStart(6, '0')}` } });
 
@@ -81,20 +86,28 @@ test('SCRUM-295 · CONTRA POSTGRES: el 303 de un merchant no declara NI UN euro 
         const L10 = [{ concept: 'Material',     qty: 1, price: 200, tax: 0.10 }]; // base 200 · cuota 20
 
         // ── Los BORDES del 2T de 2026, en hora LOCAL ────────────────────────────────────────
-        const primerInstante = new Date(2026, 3, 1, 0, 0, 0, 0);
-        const ultimoInstante = new Date(2026, 5, 30, 23, 59, 59, 999);
+        // SCRUM-1445g · ya NO en hora local del proceso: en la del comercio (Madrid, UTC+2 en verano),
+        // escritos como instantes para que el trinquete de zona (+14 y −11) no los mueva.
+        const primerInstante = new Date('2026-03-31T22:00:00.000Z'); // 1-abr 00:00 en Madrid
+        const ultimoInstante = new Date('2026-06-30T21:59:59.999Z'); // 30-jun 23:59:59,999 en Madrid
         const unMsAntes      = new Date(primerInstante.getTime() - 1);
         const unMsDespues    = new Date(ultimoInstante.getTime() + 1);
 
         await factura(prisma, { merchantId: mio.id, customerId: cliMio.id, number: `BORDE-INI-${SELLO}`, createdAt: primerInstante, lines: L21 });
         await factura(prisma, { merchantId: mio.id, customerId: cliMio.id, number: `BORDE-FIN-${SELLO}`, createdAt: ultimoInstante, lines: L10, status: 'paid' });
-        await factura(prisma, { merchantId: mio.id, customerId: cliMio.id, number: `FUERA-ANTES-${SELLO}`, createdAt: unMsAntes,   lines: L21 });
-        await factura(prisma, { merchantId: mio.id, customerId: cliMio.id, number: `FUERA-DESPUES-${SELLO}`, createdAt: unMsDespues, lines: L21 });
+        // SCRUM-1445g · las dos de FUERA llevan importes PROPIOS. Con las mismas líneas que BORDE-INI, un
+        // trimestre corrido hacia delante perdía BORDE-INI y ganaba FUERA-DESPUES, y las casillas cuadraban
+        // igual: medido, un 303 forzado a UTC con el comercio en Madrid salía VERDE (y en Kiritimati, el
+        // test de antes también). Así una sustitución cambia la 07 o la 27, y cae.
+        const L21_ANTES   = [{ concept: 'Mano de obra', qty: 1, price: 3000, tax: 0.21 }]; // base 3000 · cuota 630
+        const L21_DESPUES = [{ concept: 'Mano de obra', qty: 1, price: 5000, tax: 0.21 }]; // base 5000 · cuota 1050
+        await factura(prisma, { merchantId: mio.id, customerId: cliMio.id, number: `FUERA-ANTES-${SELLO}`, createdAt: unMsAntes,   lines: L21_ANTES });
+        await factura(prisma, { merchantId: mio.id, customerId: cliMio.id, number: `FUERA-DESPUES-${SELLO}`, createdAt: unMsDespues, lines: L21_DESPUES });
 
         // El otro merchant, con facturas DENTRO del mismo trimestre: si el filtro fallara, sus
         // euros se sumarían a la declaración ajena.
         for (const n of ['1', '2']) {
-          await factura(prisma, { merchantId: otro.id, customerId: cliOtro.id, number: `XX-${SELLO}-${n}`, createdAt: new Date(2026, 4, 15, 10, 0, 0), lines: L21 });
+          await factura(prisma, { merchantId: otro.id, customerId: cliOtro.id, number: `XX-${SELLO}-${n}`, createdAt: new Date('2026-05-15T08:00:00.000Z'), lines: L21 });
         }
 
         const m303 = await leerModelo303(prisma, { merchantId: mio.id, año: 2026, trimestre: 2 });
