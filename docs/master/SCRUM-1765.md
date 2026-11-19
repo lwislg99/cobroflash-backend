@@ -326,5 +326,8 @@ el de SCRUM-1326. `scrum1387` en `d4a0fc951`: **28 heredados** (249 ficheros con
 - **Lo que me salió mal:** primero escribí «SCRUM-1326, comentario 17802». Esa forma exige su par en
   `tests/_pares-leidos-en-jira.mjs`, y `scrum921c` (caso 1511h) lo tumbó. Quité el número de comentario
   en vez de añadir un par que no había leído.
+- **La punta se movió:** `claude[bot]` empujó `2613f3f0f` (18:27:25Z) con «SCRUM-1326, comentario 17802»
+  en esa línea; sobre ella, `scrum921c` dio 15/16 (cae 1511h, «par no leído»). Decisión del orquestador:
+  (b), por mensaje 18:3xZ. Se trae `2613f3f0f` por merge y en el conflicto de una línea se queda «SCRUM-1326».
 
 A9: comprobación → `tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs`
