@@ -13,9 +13,12 @@ const router = Router();
 
 /** Estado para la card "Cobros" de Configuración. */
 router.get('/status', async (req, res) => {
+  // SCRUM-1774a · `flags` va en el `select` porque `isFlagEnabled` lee de ahí el override por
+  // comercio (merchant > país > env). Sin la columna contestaba el global, y la tarjeta decía
+  // «Bizum apagado» a un comercio al que `confirm-bizum` sí le acepta el cobro. No sale en la respuesta.
   const merchant = await prisma.merchant.findUnique({
     where: { id: req.merchantId },
-    select: { id: true, country: true, connectStatus: true, stripeAccountId: true, bizumPhone: true, whatsappPhone: true, iban: true },
+    select: { id: true, country: true, flags: true, connectStatus: true, stripeAccountId: true, bizumPhone: true, whatsappPhone: true, iban: true },
   });
   if (!merchant) return res.status(404).json({ error: 'merchant_not_found' });
   return res.json({
