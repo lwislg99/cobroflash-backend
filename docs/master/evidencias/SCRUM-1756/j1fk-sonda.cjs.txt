@@ -1,0 +1,61 @@
+// SCRUM-1756j (jv-j1fk) · sonda de navegador de las 28 piezas, SIN datos del servidor.
+// Monta cada pieza en el contenedor de su vista (la caja #puerta-serie.field, el modal de anular, la
+// tabla de facturas, la barra del lote, el vacío) y sirve tres páginas:
+//   /a  marcado de MAIN (con su style=) + styles.css de main  · sin política
+//   /b  marcado de la RAMA (con su clase) + styles.css de la rama · con `style-src 'self'` APLICADA
+//   /c  CONTROL: marcado de main + styles.css de la rama · con la política aplicada (TIENE que salir distinto)
+// Las piezas se leen de la tabla CAMBIOS del test (no se escriben aquí otra vez).
+// Uso (desde la raíz, copiado a un .cjs fuera del árbol): node <copia> <raíz> <puerto> <main.css>
+'use strict';
+const http = require('node:http');
+const fs = require('node:fs');
+const path = require('node:path');
+const [raiz, puerto, mainCss] = process.argv.slice(2);
+if (!raiz || !puerto || !mainCss) { console.error('CIEGO: uso <raíz> <puerto> <main.css>'); process.exit(2); }
+const src = fs.readFileSync(path.join(raiz, 'tests/scrum1756j-panel-j1-sin-style-en-linea.test.mjs'), 'utf8');
+const filas = [];
+for (const m of src.matchAll(/^  C\((DETALLE|LISTA|PUERTA), (\d+), ('(?:[^'\\]|\\.)*'|`[^`]*`), ('(?:[^'\\]|\\.)*'|`[^`]*`), '([^']+)', '([^']+)', (true|false)\),$/gm)) {
+  filas.push({ fichero: m[1], linea: +m[2], antes: eval(m[3]), ahora: eval(m[4]), selector: m[5], decl: m[6] });
+}
+if (filas.length !== 28) { console.error('CIEGO: filas leídas ' + filas.length + ' (esperaba 28)'); process.exit(2); }
+const etiqueta = (f) => (/<(\w+)/.exec(f.antes) || [, 'input'])[1];
+const attr = (s, n) => { const r = new RegExp('\\s' + n + '="([^"]*)"').exec(s); return r ? r[1] : null; };
+function pieza(f, rama) {
+  const tag = etiqueta(f);
+  const ids = attr(f.antes, 'id') || attr(f.antes, 'for');
+  const clases = rama ? attr(f.ahora, 'class') : attr(f.antes, 'class');
+  const a = ['data-k="' + f.fichero + ':' + f.linea + '"'];
+  if (attr(f.antes, 'id')) a.push('id="' + ids + '"');
+  if (clases) a.push('class="' + clases + '"');
+  if (!rama) a.push('style="' + f.decl + '"');
+  const cierre = tag === 'input' ? '' : 'x</' + tag + '>';
+  return '<' + tag + ' ' + a.join(' ') + (tag === 'input' ? '/>' : '>') + cierre;
+}
+function contexto(f, html) {
+  const s = f.selector;
+  if (s.startsWith('#puerta-serie')) return '<div id="puerta-serie" class="field">' + html + '</div>';
+  if (s === '.j1-anul-modal') return '<div class="modal-overlay">' + html + '</div>';
+  if (s === '.j1-anul-motivo') return '<div class="modal-overlay"><div class="modal"><div class="modal-body"><div class="field">' + html + '</div></div></div></div>';
+  if (s.startsWith('.j1-anul')) return '<div class="modal-overlay"><div class="modal"><div class="modal-body">' + html + '</div></div></div>';
+  if (s.startsWith('.j1-fac-col')) return '<table class="table table--cards-mobile"><thead><tr>' + html + '</tr></thead></table>';
+  if (s === '.j1-fac-vacio-cta') return '<table class="table"><tbody><tr><td><div class="empty-state">' + html + '</div></td></tr></tbody></table>';
+  if (s === '.j1-fac-sin-datos') return '<dl>' + html + '</dl>';
+  return '<div>' + html + '</div>';
+}
+const pagina = (rama, css) => '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
+  + '<link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="' + css + '"><script src="/informes.js"></script></head><body>'
+  + filas.map((f) => contexto(f, pieza(f, rama))).join('\n') + '</body></html>';
+const INFORMES = "window.__informes=[];document.addEventListener('securitypolicyviolation',e=>window.__informes.push(e.violatedDirective));";
+const POLITICA = "default-src 'self'; style-src 'self'; script-src 'self'";
+http.createServer((req, res) => {
+  const u = req.url.split('?')[0];
+  const enviar = (tipo, cuerpo, csp) => { const h = { 'content-type': tipo, 'cache-control': 'no-store' }; if (csp) h['content-security-policy'] = POLITICA; res.writeHead(200, h); res.end(cuerpo); };
+  if (u === '/a') return enviar('text/html; charset=utf-8', pagina(false, '/main.css'), false);
+  if (u === '/b') return enviar('text/html; charset=utf-8', pagina(true, '/rama.css'), true);
+  if (u === '/c') return enviar('text/html; charset=utf-8', pagina(false, '/rama.css'), true);
+  if (u === '/informes.js') return enviar('text/javascript', INFORMES, false);
+  if (u === '/main.css') return enviar('text/css', fs.readFileSync(mainCss), false);
+  if (u === '/rama.css') return enviar('text/css', fs.readFileSync(path.join(raiz, 'public/dashboard/css/styles.css')), false);
+  if (u === '/tokens.css') return enviar('text/css', fs.readFileSync(path.join(raiz, 'public/tokens.css')), false);
+  res.writeHead(404); res.end();
+}).listen(+puerto, '127.0.0.1', () => console.log('sonda 1756j en ' + puerto + ' · piezas ' + filas.length));

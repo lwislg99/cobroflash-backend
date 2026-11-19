@@ -657,3 +657,83 @@ Evidencias: `evidencias/SCRUM-624/624w-antes.json` y `evidencias/SCRUM-624/624w-
   libro y el 303 por tramos (SCRUM-1732) son de CIERRES (J4), después.
 - `SIF_ENABLED` del comercio sigue `false` (lo dice la fila de auditoría): no lo pedía c.22099 y no se tocó.
 - De los 20 comentarios de SCRUM-624 leí enteros los 5 del 18-nov (c.22057 a c.22099); los 15 anteriores (sep-oct) no.
+
+# SCRUM-624y · el arreglo A también en la R1: su PDF imprime el desglose y el total guardados (19-nov-2026)
+
+**Medido contra:** `origin/main` = `0c787556f6eaf44531b76bbe0b59b076ef744386` · 2026-11-19T00:23:40Z (la medición empezó sobre `3dfeeaa99404dcce83417c5b589bc182eb45c290`; `main` se mezcló en la rama sin tocar ningún fichero de este tramo salvo este registro, por el tramo 624w)
+A9: comprobación → `tests/scrum624y-pdf-r1-total-del-desglose.test.mjs`
+Mutaciones: catálogo → `tests/scrum624y-pdf-r1-total-del-desglose.test.mjs`
+Mutaciones: catálogo → `tests/scrum624e-a-solo-en-f1.test.mjs`
+
+Lo hace J1 (`jv-j1fm`) con el GO del fundador de **c.22137** («A en la R1»; respuesta literal de Javier: «GO»).
+Las dos decisiones del orquestador J sobre lo que el GO no decía las publicó él en c.22145. Las pedí en c.22144.
+
+## 1 · Qué divergía, leído en el código (no supuesto)
+
+Caso de staging (c.22118, y SCRUM-1763 c.22119): F1 `F260001`, con 1 × 36,03 al 21 % + 3 × 12,35 al 10 %, total 84,36.
+Su R1 `2026-QA-R-001` guarda −84,35 (desde SCRUM-1763, Σ `calcVatBreakdown` de las líneas negadas). Su PDF imprimía
+«IVA 10%: −3,71» y «TOTAL: −84,35», con un desglose que suma −84,36.
+
+En `pdf.service.ts` la R1 iba por la rama que no lee el registro: acumula base × tipo **sin redondear por grupo**
+(−3,705, que `fmt` imprime −3,71) y su TOTAL es esa misma suma sin redondear (−84,3513, impresa −84,35). La F1 ya
+imprimía `calcVatBreakdown` (−3,705 → `Math.round` → −3,70) y el total guardado.
+
+⚠️ **Corrección al encargo y a c.22137, que el orquestador publicó en c.22145:** con A, el TOTAL impreso de la R1 NO
+pasa a −84,36. Se queda en −84,35. Lo que cambia es la cuota del 10 %, que pasa de −3,71 a −3,70. El papel cuadra
+consigo mismo y con su XML (Desglose = `calcVatBreakdown`, ImporteTotal = total guardado).
+
+## 2 · El arreglo (sólo el PDF)
+
+- `leeElRegistro` pasa a ser F1 **o R1**. El justificante sigue sumando como hasta hoy.
+- La fila de P1 (S2, SCRUM-1051g) sigue siendo sólo de la F1. En la R1, la base S2 va en la fila de su tipo, como iba
+  antes, así que no entra ningún texto nuevo en el papel de la R1 (regla 39).
+- No se tocan el total guardado, el XML, `rectify` ni ninguna R1 emitida (regla 29: el PDF se repinta desde los datos).
+- Cambio autorizado del PDF, declarado en `tests/_cambios-autorizados-de-la-factura.mjs` con firma `SCRUM-624 c.22137`.
+  Las huellas las generó `evidencias/SCRUM-1446d/huellas.mjs` sobre `0c787556`.
+
+## 3 · 624e ②: un caso que afirmaba una decisión revocada
+
+`tests/scrum624e-a-solo-en-f1.test.mjs` ② afirmaba «la R1 imprime EXACTAMENTE el bloque que imprimía». Eso es la
+decisión **c.20817, revocada por c.22137**. Su mutación de catálogo (`!== 'JUST'`) era literalmente este arreglo.
+
+- **Decisión 1** (orquestador, c.22145): el caso de la R1 sale de 624e y lo cubre 624y. El caso del justificante se
+  queda, y la mutación de 624e pasa a ser «A también en el justificante».
+- **Aprobación del fundador:** el clasificador de permisos del arnés denegó esa edición. **Javier la aprobó en la sesión
+  `jv-j1fm`** («apruebo!»), y entonces se hizo.
+
+No es relajar un guard: el caso fijaba una decisión que el fundador ha cambiado por escrito.
+
+## 4 · Aviso: las R1 emitidas ANTES de SCRUM-1763
+
+**Decisión 2** (orquestador, c.22145): A literal. Esas R1 guardan −original.total, y con A su PDF imprime las cuotas de
+`calcVatBreakdown` y ese total guardado, que puede no cuadrar por 1 céntimo. Por ejemplo, 12,50 al 21 % guardado −15,13
+imprime «IVA 21%: −2,62» y «TOTAL: −15,13». Es el defecto de SU registro (c.20814), y el papel no lo esconde.
+
+Víctimas reales: ninguna conocida (`INVOICING_ES_ENABLED` OFF en producción, regla 24; la R1 de staging es posterior a
+#3232). Cuántas R1 anteriores a 1763 hay en las bases: **NO medido** (sin BD).
+
+## 5 · Medido
+
+- **Rojo primero**, con el `dist/` de main `3dfeeaa99`: «imprime TOTAL -84.35 y su desglose suma -84.36». El caso de un
+  solo tipo imprimía −2,63 y TOTAL −15,13, con −15,12 guardado.
+- **Verde:** 624y 3/3 · 624e 6/6 · 624c 6/6 · 1763 5/5 · 624b 5/5.
+- **Mutaciones** (`aplicarUna` del catálogo, con `evidencias/SCRUM-624/mutaciones-624y.mjs`): 2 de 2 vivas.
+  - 624y: volver a `=== 'F1'` tumba el caso de staging y el de un solo tipo.
+  - 624e: `leeElRegistro = true` tumba el del justificante.
+- **Build con tipos** (`tsc -p .`): salida 0.
+
+## 6 · Lo que NO está hecho o no está medido
+
+- **Suite entera no corrida en local: la mide el obligatorio de CI.** Corrí los guards dirigidos de la lista del encargo
+  y los de huella del PDF.
+- La verificación en staging (el PDF de `2026-QA-R-001` con IVA 10 % −3,70) es de CIERRES 13, después del merge.
+- El marcador `[PENDIENTE microcopy oficial]` que imprime el desglose de dos tipos es de SCRUM-1771: no se toca.
+
+## 7 · Relevo jv-j1fp (19-nov-2026): la mutación 1051g ① reanclada
+
+- relevo jv-j1fp: la mutación 1051g ① estaba anclada a la rama `if (e.causa === 'S2') {…}` que 624y cambió
+  (`&& tipoDoc === 'F1'`); reanclada a `{ baseIsp = (baseIsp ?? 0) + e.base; return; }` → `{ }`. `aplicarUna`: viva, tumba su caso.
+A9: comprobación → `tests/scrum836-ancla-de-mutacion-viva.test.mjs`
+- verificado por jv-j1fq (relevo de jv-j1fp, que lo dejó en commit local sin empujar): `aplicarUna` del meta-guard sobre la declaración
+  reanclada → `ok`, tumba «1051g ① · una F1 sólo S2 imprime P1 en su propia fila» (+1 colateral); pdf.service.ts con el mismo sha256 antes y después.
+Mutaciones: catálogo → `tests/scrum1051g-isp-destinatario-pdf-libro.test.mjs`

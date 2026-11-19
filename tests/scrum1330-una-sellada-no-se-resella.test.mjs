@@ -73,6 +73,37 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: '    if (false) {',
     cae: 'SCRUM-1330 · 🔴 B · `applyVeriFactu` sobre una factura YA sellada, con otra encadenada detrás → la cadena queda BYTE A BYTE',
   },
+  // SCRUM-1765g · las del banco retirado `docs/master/evidencias/scrum1330/mutar.mjs` (MA, MB-lanza,
+  // MB-anterior, MB-calla). Su MB es la de arriba; su MAB (A y B a la vez, en dos ficheros) no cabe
+  // en una declaración de un fichero y la cubren MA y MB por separado: dicho en docs/master/SCRUM-1765.md.
+  {
+    // MA · la guarda del punto de llamada no decide (la de dentro del cerrojo sigue puesta).
+    fichero: 'src/lib/invoicing.ts',
+    de: '    if (inv.vfEstado !== SELLADO_HECHO) {',
+    a: '    if (true as boolean) {',
+    cae: 'SCRUM-1330 · 🔴 A · con la fila ya `sellado`, `ensurePdfAndEvent` NO entra en `sellarTrasEmision`',
+  },
+  {
+    // MB-lanza · la guarda de dentro LANZA en vez de devolver el sello persistido.
+    fichero: 'src/modules/invoicing/domain/verifactu.service.ts',
+    de: "      return { vfHash: yaSellada.vfHash, prevHash: yaSellada.vfPrevHash ?? '', qrUrl: yaSellada.qrData, conservada: true };",
+    a: "      throw new Error('verifactu_ya_sellada');",
+    cae: 'SCRUM-1330 · ✅ B · una fila con huella que se quedó `pendiente_de_sellado` se TERMINA sin tocarle la huella',
+  },
+  {
+    // MB-anterior · la guarda de dentro devuelve como anterior la PROPIA huella.
+    fichero: 'src/modules/invoicing/domain/verifactu.service.ts',
+    de: "      return { vfHash: yaSellada.vfHash, prevHash: yaSellada.vfPrevHash ?? '', qrUrl: yaSellada.qrData, conservada: true };",
+    a: '      return { vfHash: yaSellada.vfHash, prevHash: yaSellada.vfHash, qrUrl: yaSellada.qrData, conservada: true };',
+    cae: 'SCRUM-1330 · transcripción de scrum173 (SCRUM-177, excluirId): «resellar» un alta no la encadena a sí misma',
+  },
+  {
+    // MB-calla · lo conservado se anuncia como un sellado.
+    fichero: 'src/modules/invoicing/domain/verifactu.service.ts',
+    de: '  if (sellado.conservada) {',
+    a: '  if ((false as boolean) && sellado.conservada) {',
+    cae: 'SCRUM-1330 · ⚠️ B · conservar la huella NO es mudo, y NO se anuncia como un sellado',
+  },
 ];
 
 // ── LAS PIEZAS ────────────────────────────────────────────────────────────────────────────

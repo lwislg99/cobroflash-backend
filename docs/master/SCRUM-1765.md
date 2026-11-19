@@ -310,3 +310,36 @@ el de SCRUM-1326. `scrum1387` en `d4a0fc951`: **28 heredados** (249 ficheros con
   medido más allá de `git grep`). Queda dicho, no tocado.
 - SCRUM-1005b (la medición de solo lectura del mismo encargo): **NO empezada**, porque se acabó el
   contexto (185k al cerrar las mutaciones, por encima del tope de 180k).
+## SCRUM-1765g · Dos de los cuatro bancos de J1 (`scrum1304`, `scrum1330`) se retiran al catálogo
+
+**Puesto:** J1 (jv-j1ft) · **Rama:** `scrum-1765g-bancos-1304-1330-al-catalogo` · 19-nov-2026 (Madrid)
+**Medido contra:** `origin/main` = `89bb8593b603c84b3413f4c3f90b1c4e4e715329` · 2026-11-19T18:03:42Z (cabecera `Date:` de `gh api -i zen`)
+A9: comprobación → `.claude/hooks/guard-dangerous.sh`
+Mutaciones: catálogo → `tests/scrum1304-un-cobro-una-factura.test.mjs`
+Mutaciones: catálogo → `tests/scrum1330-una-sellada-no-se-resella.test.mjs`
+
+Receta de SCRUM-1387 c.22070, con la tabla de c.22114 (J1: 1304, 1327, 1330, 1333). Aquí solo 1304 y 1330;
+1327 y 1333 van en 1765h. Las salidas de `aplicarUna`: `docs/master/evidencias/SCRUM-1765/1765g-aplicarUna.txt`.
+
+- **Carril del sujeto** (`carriles.mjs de`): `src/lib/invoicing.ts` y
+  `src/modules/invoicing/domain/verifactu.service.ts` → **J1**. Camino de emisión: solo se LEE (regla 38);
+  las mutaciones las aplica y revierte `aplicarUna` (fuente y `dist/`), y `git status` sale limpio después.
+- **scrum1304** (5 anclas, las 5 vivas una vez en `src/lib/invoicing.ts`): M1–M5 al catálogo nuevo de su
+  test. Las 5 tumban con `aplicarUna` (base 18 pasan · 0 caen). M3 y M5 comparten ancla (dos reemplazos
+  distintos de la misma línea): el ancla casa una vez.
+- **scrum1330** (6 mutaciones): MB ya estaba en el catálogo. MA, MB-lanza, MB-anterior y MB-calla entran:
+  las 4 tumban, y MB sigue tumbando (base 16 pasan · 0 caen). **MAB no se traslada**: muta dos ficheros a la
+  vez y una declaración es de un fichero; la cubren MA y MB por separado (sus anclas son las mismas).
+- **Controles:** un `cae` que no existe sale CIEGO en los dos tests; M4 con el `cae` de M3 (1304) y MA con
+  el `cae` de MB-calla (1330) salen MUDA. El driver va por índice de la declaración, no por subcadena del id.
+- **Guiones borrados:** `scrum1304/mutar.mjs` y `scrum1330/mutar.mjs`; sus salidas se quedan. Línea fechada
+  en `docs/master/SCRUM-1304.md` y `docs/master/SCRUM-1330.md`, bajo «Mutaciones».
+- **`scrum1387`:** 28 heredados con los dos guiones (medido en este árbol, restaurándolos sin `git`) → **26**
+  sin ellos, 0 nuevos. El guard no se ha tocado. `scrum812` sigue en verde sin tocarlo (entra `scrum1304`).
+- **Sin tocar, dicho:** `docs/master/evidencias/SCRUM-1404/mutar-guarda.mjs` exige UNA declaración sobre
+  `verifactu.service.ts` en el catálogo de `scrum1330`; ahora hay cuatro, así que si se vuelve a correr dirá
+  CIEGO por su propio mensaje. Ningún test lo corre (`git grep`). `docs/master/evidencias/scrum1333/mutar.mjs`
+  cita en un comentario el guion retirado de 1330: es de 1765h.
+- **Lo que me salió mal:** para medir el «antes» de `scrum1387` lancé `git checkout HEAD --` sobre los dos
+  guiones ya borrados en el índice; el hook `guard-dangerous` lo paró antes de tocar nada. Lo hice con
+  `git show HEAD:<ruta> > <ruta>` y los volví a borrar.
