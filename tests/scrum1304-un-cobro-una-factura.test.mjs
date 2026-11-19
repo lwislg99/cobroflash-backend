@@ -62,6 +62,46 @@ const capa = (pspRouter.default || pspRouter).stack.find((l) => l.route?.path ==
 assert.ok(capa, '🔴 CIEGO: no encuentro POST / en psp.routes');
 const pspH = capa.route.stack.at(-1).handle;
 
+// Los rojos del arreglo, declarados: los ejecuta `npm run meta:mutaciones` (SCRUM-1765g; venían
+// del banco retirado `docs/master/evidencias/scrum1304/mutar.mjs`, M1–M5, y sus salidas siguen allí).
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // M1 · sin cerrojo: la pregunta queda fuera de la exclusión.
+    fichero: 'src/lib/invoicing.ts',
+    de: '    await tomarCerrojoDeSerie(tx, ch.merchantId);\n',
+    a: '',
+    cae: 'SCRUM-1304 · 🔴 ④b · dos entregas A LA VEZ del mismo cobro → UNA factura',
+  },
+  {
+    // M2 · la pregunta no decide.
+    fichero: 'src/lib/invoicing.ts',
+    de: '    if (yaEmitida) return { factura: yaEmitida, nueva: false };',
+    a: '    if (false as boolean) return { factura: yaEmitida!, nueva: false };',
+    cae: 'SCRUM-1304 · 🔴 ④e · SIN CARRERA: el PDF cae una vez',
+  },
+  {
+    // M3 · la pregunta ignora el cobro.
+    fichero: 'src/lib/invoicing.ts',
+    de: '      where: { chargeId: ch.id, merchantId: ch.merchantId }, // regla 2: scoped',
+    a: '      where: { merchantId: ch.merchantId }, // regla 2: scoped',
+    cae: 'SCRUM-1304 · ✅ dos cobros DISTINTOS del mismo merchant → dos facturas, una por cobro',
+  },
+  {
+    // M4 · la entrega que no emite se calla.
+    fichero: 'src/lib/invoicing.ts',
+    de: '    console.error(`[invoicing] SCRUM-1304 el cobro ${ch.id} ya tenía la factura ${emision.factura.number}: no se emite otra`);',
+    a: '    void 0;',
+    cae: 'SCRUM-1304 · ⚠️ la entrega que NO emite lo DICE',
+  },
+  {
+    // M5 · la pregunta ignora el merchant (regla 2).
+    fichero: 'src/lib/invoicing.ts',
+    de: '      where: { chargeId: ch.id, merchantId: ch.merchantId }, // regla 2: scoped',
+    a: '      where: { chargeId: ch.id }, // regla 2: scoped',
+    cae: 'SCRUM-1304 · ⛔ regla 2: una factura de OTRO merchant con ese `chargeId`',
+  },
+];
+
 // ── LAS PIEZAS DE CADA CASO ───────────────────────────────────────────────────────────────
 
 function nuevoCobro({ merchantId = M_PT, status = 'pending', amount = '121.00' } = {}) {

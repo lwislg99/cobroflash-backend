@@ -65,6 +65,8 @@ contestado «no hay» cuando la otra escribe.
 
 `docs/master/evidencias/scrum1304/mutar.mjs` y su salida, `mutaciones.json`. Base sin mutar primero.
 
+*19-nov-2026 (SCRUM-1765g): el guion `scrum1304/mutar.mjs` se retiró: sus mutaciones M1–M5 viven en el catálogo de `tests/scrum1304-un-cobro-una-factura.test.mjs`; sus salidas siguen en `docs/master/evidencias/scrum1304/`.*
+
 | Mutación | Resultado |
 | --- | --- |
 | M1 · sin el cerrojo | cae: ④b, ④b′, ④c, el aviso y la función suelta |

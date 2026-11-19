@@ -358,6 +358,57 @@ Las cifras de `style="` del panel son ocurrencias (sonda 2), no líneas. Los `on
 
 **Propuesta, no hecha:** este censo, convertido en un guard trinquete que no deje subir ninguna columna, impediría que la tabla vuelva a nacer con una población más corta que la real. Es otro ticket (A23), y no lo abro.
 
+# SCRUM-1756j
+
+**Medido contra:** `origin/main` = `3dfeeaa99404dcce83417c5b589bc182eb45c290` · 2026-11-19T00:09:29Z (cabecera `Date:` de GitHub; sesión J1 `jv-j1fk`, por encargo del orquestador `cobroflash-backend-8a`; la rama lleva ese main fusionado)
+
+A9: aviso → A10 «Un bloque al principio de una hoja pierde contra las reglas posteriores: quien elige el sitio del bloque elige también la cascada.» — no se pudo comprobar: dónde va un bloque en un contenedor lo decide quien reparte, y ningún guard lee el reparto
+
+Mutaciones: catálogo → `tests/scrum1756j-panel-j1-sin-style-en-linea.test.mjs` (4/4 cazadas con `correr` + `aplicarUna`; la inocua de control sale MUDA; `evidencias/SCRUM-1756/j1fk-mutar.*`).
+
+**Skill UI:** no cargada · cero cambios visibles: cada `style=` pasa a una clase con las mismas declaraciones, y lo visual lo decide la sonda de navegador de abajo (capturas idénticas byte a byte), no la skill.
+
+**Qué:** la fila J1 del censo 1756g (c.22122): 28 `style="` en cadenas de `innerHTML` de `public/dashboard/js/invoiceDetailView.js` (8), `invoicesView.js` (5) y `puertaSerie.js` (15). Mi recuento con el mismo patrón (`RX.style_attr` de `1756g-censo.mjs.txt`) sobre el AST de las cadenas da 8 + 5 + 15 = 28 en main y 0 en la rama. Cada uno pasa a una clase con sus declaraciones, en el bloque `/* J1: SCRUM-1756j … */ … /* J1: fin del bloque SCRUM-1756j */` de `public/dashboard/css/styles.css`. Es contenedor de S2, así que sólo se añade el bloque marcado, al PRINCIPIO del fichero, por decisión del orquestador (mensaje a jv-j1fk del 19-nov: J1 al principio, J2 tras :5483, J3 al final, para que no choquen los tres PR). Cero textos nuevos o cambiados.
+
+**Por qué `!important` (y dónde no).** Un `style=` gana a toda regla de autor sin `!important`. Al principio de la hoja, una clase de igual especificidad pierde contra las reglas que vienen detrás. La causa es el sitio del bloque, no la receta:
+- **Con `!important`, las 13 de facturas y del modal de anular (13 reglas).** Cada declaración lo lleva, para ganar como ganaba el atributo: `.j1-anul-modal` a `.modal` y a `.modal-overlay .modal` en móvil, `.j1-bulk-cancelar` a `.btn-ghost` y a su `:hover`, `.j1-fac-vacio-cta` a `.btn-primary`, `.j1-fac-col-*` a `th`/`.table`, y las demás por lo mismo. Ningún guion toca estas piezas con `el.style` (medido con grep sobre los dos ficheros), así que el `!important` no le quita nada.
+- **Sin `!important`, las 15 de la puerta de la serie (14 reglas: los dos botones comparten una).** Van bajo `#puerta-serie` (la caja, con id fijo): especificidad (1,1,0), que gana a `.field input`, `.field input:focus`, `.field label` y `.btn-*`. No llevan `!important` porque el guion cambia `display` y `border-color` con `el.style.*`, y eso tiene que seguir ganando.
+- **Sin `!important`, el `display:none` inicial del error de anular**, en su propia regla `.modal .j1-anul-err`, por lo mismo.
+
+**Un cambio de comportamiento, no visible:** el error de anular (`invoiceDetailView.js`, «err») se enseñaba con `err.style.display = ''`, que lo devolvía al `display` de `.alert` (block). Con la clase, `''` lo deja oculto, así que ahora se enseña con `'block'`, que es el valor que salía. Lo cubre el caso ③ del test, y lo tumba la mutación 4.
+
+**Test** `tests/scrum1756j-panel-j1-sin-style-en-linea.test.mjs` (4 casos):
+- ① 0 `style=` en las cadenas de los tres ficheros;
+- ② cada una de las 28 de main, copiada con su línea de `e37a7051f` (las 28 casan con `origin/main`), tiene su marcado nuevo UNA vez y su regla con EXACTAMENTE sus declaraciones;
+- ③ los `display:none` que el guion enciende siguen sin `!important`, y el error se enseña con `'block'`.
+- Control sembrado: 4 `style=` en cadenas más 1 en un comentario dan 4, y el control cero da 0.
+- **Rojo primero** con los cuatro ficheros de main en su sitio: 3/4 caen por su aserción y el control pasa.
+
+**Navegador** (Chromium del MCP de Playwright, `evidencias/SCRUM-1756/j1fk-sonda.cjs.txt`). Cada una de las 28 piezas va montada en el contenedor de su vista (`#puerta-serie.field`, `.modal-overlay .modal .modal-body`, `table.table--cards-mobile thead`, la barra del lote, `.empty-state`), con `tokens.css` y la hoja entera. Tres páginas: A = main sin política, B = rama con `style-src 'self'` APLICADA, C = control, marcado de main con política. Resultado, a 390 y a 1280:
+- **capturas A y B idénticas byte a byte** (6.739 B y 14.409 B);
+- **0 informes en B**;
+- C sale distinta y con 28 informes `style-src-attr`.
+
+Estilos computados, todas las propiedades, A frente a B: dos diferencias, explicadas:
+- `:848` (acciones del modal): mi sonda le fuerza `el.style.display='block'` a todas las piezas, y el `!important` le gana. Es un artefacto de la sonda: ningún guion hace eso con esa pieza.
+- `:824` a 390: opacidad 0,999976 y una traslación de 0,0006 px. Es un fotograma de la animación de entrada del modal; la captura es idéntica.
+
+**NO MEDIDO:**
+- Las vistas reales con datos del servidor (lista, detalle, modal de anular, puerta de la serie dentro de ajustes): en esta máquina no hay Postgres, y doblar las rutas del panel no me cabía en el contexto. La sonda mide las piezas en su contenedor, no la vista entera.
+- `:hover` y `:focus` en navegador; razonado por especificidad, arriba.
+- La suite ENTERA: sólo los guards del encargo y los tests que leen `styles.css` (en la entrega).
+- yaqu.app y el obligatorio.
+
+**Un rojo mío, arreglado antes de empujar:** `scrum737` (cifras sin ancla) cayó por un comentario de mi test que decía «las 28 ocurrencias». Lo reformulé sin número: la población la ata el caso de control (`CAMBIOS.length`). No cambié el guard ni su censo.
+
+**Medido antes del empujón** (rama con main `3dfeeaa99` fusionado, `dist/` compilado con `tsc --noCheck`; no toco `src/`):
+- los 13 guards del encargo y el test: 139/139;
+- los 160 ficheros que leen `styles.css` o los tres ficheros: 1.290 casos, 1.289 pasan, 0 caen, 1 se salta (pide `LIBRO_PG_URL`);
+- `guards:entrada`: 15 guards y 170 casos en verde;
+- los 5 de árbol entero que nombra, más `scrum622`: 50 casos, 50 pasan después del arreglo de arriba;
+- meta-guard `--solo-censo`: salida 0, 1.294 declaraciones. Su listado sólo enseña la frontera `src/`↔`dist/`, así que no nombra este fichero.
+
+**Relevo jv-j1fo, 19-nov (rojo del obligatorio en el run 44432520334, `scrum719` · SCRUM-1395b, «sin ficha»):** relevo jv-j1fo: ficha de mudez regenerada con `censo:mudez --escribir`; A9: comprobación → `tests/scrum719-el-suelo-de-los-doce.test.mjs`. El censo midió 1 de 136 y el diff de `tests/_veredicto-mudez.json` es una línea: este test, `NO APLICA` (4 tests, no llama al filtro de comentarios).
 ## SCRUM-1756h · 19-nov: las cinco vistas de J3 del panel sin `style="…"` en las cadenas de `innerHTML` (J3)
 
 **Medido contra:** `origin/main` = `3dfeeaa99404dcce83417c5b589bc182eb45c290` · 2026-11-19T00:07:52Z (cabecera `Date:` de GitHub; sesión J3 `jv-j3ck`, por encargo del orquestador `cobroflash-backend-8a`; la rama lleva ese main fusionado, y entre su base `d86f7ef92` y él main solo cambió este registro)
