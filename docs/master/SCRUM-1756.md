@@ -407,6 +407,8 @@ Estilos computados, todas las propiedades, A frente a B: dos diferencias, explic
 - `guards:entrada`: 15 guards y 170 casos en verde;
 - los 5 de árbol entero que nombra, más `scrum622`: 50 casos, 50 pasan después del arreglo de arriba;
 - meta-guard `--solo-censo`: salida 0, 1.294 declaraciones. Su listado sólo enseña la frontera `src/`↔`dist/`, así que no nombra este fichero.
+
+**Relevo jv-j1fo, 19-nov (rojo del obligatorio en el run 44432520334, `scrum719` · SCRUM-1395b, «sin ficha»):** relevo jv-j1fo: ficha de mudez regenerada con `censo:mudez --escribir`; A9: comprobación → `tests/scrum719-el-suelo-de-los-doce.test.mjs`. El censo midió 1 de 136 y el diff de `tests/_veredicto-mudez.json` es una línea: este test, `NO APLICA` (4 tests, no llama al filtro de comentarios).
 ## SCRUM-1756h · 19-nov: las cinco vistas de J3 del panel sin `style="…"` en las cadenas de `innerHTML` (J3)
 
 **Medido contra:** `origin/main` = `3dfeeaa99404dcce83417c5b589bc182eb45c290` · 2026-11-19T00:07:52Z (cabecera `Date:` de GitHub; sesión J3 `jv-j3ck`, por encargo del orquestador `cobroflash-backend-8a`; la rama lleva ese main fusionado, y entre su base `d86f7ef92` y él main solo cambió este registro)
