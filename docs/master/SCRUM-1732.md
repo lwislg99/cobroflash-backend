@@ -136,6 +136,7 @@ Aplica el ✅ del fundador de **c.22165** («OK» a la pregunta de jv-j4bs en c.
 | ③ `BIZUM_MANUAL_ENABLED` efectivo | OFF | **ON** | `isFlagEnabled` de `dist/core/flags.js` sobre la fila leída |
 | ④ `whatsappPhone` del comercio | presente (`…001`, 11 caracteres; enmascarado) | **`NULL`** (vaciado el 2.º paso, c.22176) | SELECT de la fila y `GET /admin/merchant` (`vacío`) |
 | `bizumPhone` del comercio | presente | presente (no se tocó: el Bizum se sigue ofreciendo, `bizumPhone \|\| whatsappPhone`) | `GET /admin/merchant` |
+| `whatsappPhone` del comercio | presente | presente (**no se tocó**) | `GET /admin/merchant` |
 | cliente 49 | teléfono y correo | igual (no se tocó) | `GET /admin/customers` |
 
 Evidencias (sin secretos, sin teléfonos: solo «presente/vacío»): `evidencias/SCRUM-1732/1732f-antes.json` y
@@ -170,6 +171,10 @@ Evidencias (sin secretos, sin teléfonos: solo «presente/vacío»): `evidencias
 ### 3 · Lo que NO está hecho o no está medido
 
 - ✅ **Cerrado por ④ (c.22176).** Lo que decía este punto antes del vaciado, para que se lea la cicatriz: **el WhatsApp al PROFESIONAL seguía siendo una vía viva.** `psp.routes.ts:383` llama a `notifyMerchantPaid` sin
+
+### 3 · Lo que NO está hecho o no está medido
+
+- 🔴 **El WhatsApp al PROFESIONAL sigue siendo una vía viva.** `psp.routes.ts:383` llama a `notifyMerchantPaid` sin
   condición propia, y `notifyMerchantAlert` solo se para si `whatsappPhone` está vacío (`whatsappNotifications.ts`), y en el comercio 2 está presente.
   No lo quité: no está en la lista ①②③ de c.22165 (aunque su pregunta decía «sin aviso al profesional»), y la ruta
   del panel no deja vaciarlo (`whatsappPhone: z.string().min(6).max(20).optional()`, `schemas.ts:468`): haría falta otro UPDATE
@@ -178,6 +183,10 @@ Evidencias (sin secretos, sin teléfonos: solo «presente/vacío»): `evidencias
   le llega nada: ni confirmación (`tieneNumeroDeContacto`) ni reseña.
 - Hallazgo de paso (J2, sin arreglar porque el encargo no toca `src/`): `GET /admin/me` (`app.ts:484`, `:495`) y
   `GET /admin/connect/status` (`connect.routes.ts:23`) — ya con ticket propio, SCRUM-1774 — calculan `BIZUM_MANUAL_ENABLED` con un `merchant` **sin `flags`**,
+  Hasta que se decida, **un confirm-bizum en la QA puede mandar un WA al número del profesional.** Al cliente 3936 no
+  le llega nada: ni confirmación (`tieneNumeroDeContacto`) ni reseña.
+- Hallazgo de paso (J2, sin arreglar porque el encargo no toca `src/`): `GET /admin/me` (`app.ts:484`, `:495`) y
+  `GET /admin/connect/status` (`connect.routes.ts:23`) calculan `BIZUM_MANUAL_ENABLED` con un `merchant` **sin `flags`**,
   así que no ven el override por comercio: con ③ aplicado, el panel puede decir que el Bizum está apagado. `confirm-bizum`
   (`chargesAdmin.routes.ts:74`) sí carga `flags`, y es la puerta que usa CIERRES. Leído en el código, no visto en pantalla.
 - Ninguna factura, cobro ni envío: la F1 nueva con cobro parcial, el libro con `cobros[]` y el 303 por tramos son de CIERRES 14.
