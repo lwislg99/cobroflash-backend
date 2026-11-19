@@ -153,7 +153,7 @@ Mutaciones: catálogo → tests/scrum903-marcador-no-se-imprime.test.mjs
 
 ### Relevo jv-j1fu · (a) y (b) de la decisión P4 (c.22180)
 
-A9: aviso → cicatriz J1 «Lancé `meta-guard-mutaciones.mjs --help` para ver sus opciones: no tiene `--help`, arrancó el censo entero (323 guards), lo maté a mitad y dejó `invoiceAdmin.ts` mutado (`if (false)`)» — no se pudo comprobar: ningún guard sabe qué opción no existe en un instrumento que muta
+A9: aviso → cicatriz J1 «Lancé `meta-guard-mutaciones.mjs --help` para ver sus opciones: no tiene `--help`, arrancó el censo entero (323 guards), lo maté a mitad y dejó `invoiceAdmin.ts` mutado (`if (false)`); lo restauré a mano contra `HEAD` y recompilé `dist/`» — no se pudo comprobar: ningún guard sabe qué opción no existe en un instrumento que muta
 Mutaciones: una vez → docs/master/evidencias/SCRUM-624/mutaciones-624y.mjs
 
 Medido el 2026-11-19 hacia las 18:30Z (`gh api -i zen` 18:32:42Z) sobre `origin/main` `4081668b2f2aa6a3685324eef234bdd92690d0e6`, con el trabajo de jv-j1fs (`cb3efbf22ee52e29dac9ccee85685b4025ec89c3`) mergeado. jv-j1fs paró en c.22179 (P4) y el orquestador decidió en c.22180: ✅ (a) y ✅ (b), en el mismo PR.
