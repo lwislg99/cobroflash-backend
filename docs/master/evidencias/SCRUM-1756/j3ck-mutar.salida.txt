@@ -1,0 +1,7 @@
+base limpia: pasados 10 · caídos 0
+MUERE (la caza) · public/dashboard/js/tutorial.js · SCRUM-1756h · tutorial.js: 0 style= dentro de cadenas
+MUERE (la caza) · public/dashboard/css/styles.css · SCRUM-1756h · cada clase j3e- usada tiene su regla y su hash casa
+MUERE (la caza) · public/dashboard/js/settingsView.js · SCRUM-1756h · settingsView.js: el ancho de la barra va por CSSOM
+MUERE (la caza) · public/dashboard/js/onboardingView.js · SCRUM-1756h · ningún className = pisa un elemento con clase j3e-
+CONTROL inocua: MUDA (bien)
+VEREDICTO: 4/4 cazadas · 0 no
