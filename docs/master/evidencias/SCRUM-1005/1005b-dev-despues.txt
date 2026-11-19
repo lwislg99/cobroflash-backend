@@ -1,0 +1,14 @@
+# SCRUM-1005b · ②-dev · despues del ALTER · sonda de SOLO LECTURA (SET TRANSACTION READ ONLY) con DATABASE_URL_DEV · sesion jv-j2d9
+# ALTER aplicado con: node scripts/aplicar-sql-dev.mjs --file docs/sql/scrum-1005-adjuntos-cliente.sql --go (2026-11-19 ~18:03Z, hora de GitHub)
+# Dos controles de tipo distinto (information_schema y pg_attribute) + current_database() (A5); positivo: entity_type y mime ya existentes.
+current_database: yaqu_dev_javier · transaction_read_only: on
+control positivo (pg_attribute, columnas que ya existian: entity_type, mime): entity_type, mime
+columnas totales de attachments (information_schema): 12
+information_schema.columns para file_name/sha256/size_bytes: 3 fila(s)
+    file_name text YES
+    sha256 text YES
+    size_bytes integer YES
+pg_attribute para file_name/sha256/size_bytes: 3 fila(s)
+    file_name text NULL
+    sha256 text NULL
+    size_bytes integer NULL

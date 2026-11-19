@@ -1490,12 +1490,15 @@ model AuditLog {
 model Attachment {
   id         Int      @id @default(autoincrement())
   merchantId Int      @map("merchant_id")
-  entityType String   @map("entity_type") // a qué cuelga el adjunto. Lo escriben attachment.service.ts (solicitud) y albaranes.routes.ts (albarán); el de Trabajo (MEDIA-1 c) no está construido.
+  entityType String   @map("entity_type") // a qué cuelga el adjunto. Lo escriben attachment.service.ts (solicitud), albaranes.routes.ts (albarán) y customerAdmin.ts (cliente, SCRUM-1005b); el de Trabajo (MEDIA-1 c) no está construido.
   entityId   Int      @map("entity_id")
   url        String
-  kind       String   @default("photo") // photo | audio (audio = F2, no F1)
+  kind       String   @default("photo") // photo | audio (audio = F2, no F1) | document (documento del cliente, SCRUM-1005b)
   data       Bytes? // MEDIA-1: bytes del fichero en Postgres (bytea) — fallback persistente sin R2
-  mime       String? // MEDIA-1: content-type (image/jpeg, image/png…)
+  mime       String? // MEDIA-1: content-type (image/jpeg, image/png…; application/pdf en documentos del cliente)
+  fileName   String?  @map("file_name") // SCRUM-1005b: nombre con el que se subió el documento
+  sizeBytes  Int?     @map("size_bytes") // SCRUM-1005b: tope por cliente con una suma, sin leer los bytea
+  sha256     String? // SCRUM-1005b: subida idempotente sin cargar los bytes
   createdAt  DateTime @default(now()) @map("created_at")
 
   @@index([merchantId, entityType, entityId])

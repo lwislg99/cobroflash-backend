@@ -1,5 +1,8 @@
-import { Router, Request, Response } from 'express';
+import express, { Router, Request, Response, NextFunction } from 'express';
 import { listCustomers, getCustomer, createCustomer, updateCustomer, deleteCustomer, ensurePortalToken } from '../../customerAdmin';
+import {
+  DOC_MAX_BYTES, listarDocumentos, subirDocumento, leerDocumento, borrarDocumento, contentDispositionAdjunto,
+} from '../../customerAdmin'; // SCRUM-1005b
 import { config } from '../../../../core/config/env';
 import { customerCreateSchema, customerUpdateSchema } from '../../../../core/validation/schemas';
 import { prisma } from '../../../../core/db/prisma';
@@ -532,6 +535,106 @@ router.delete('/:id/sites/:siteId', async (req, res) => {
     return res.status(204).send();
   } catch (err) {
     console.error('[DELETE /admin/customers/:id/sites/:siteId]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1005b · DOCUMENTOS ADJUNTOS DEL CLIENTE. La lógica, los topes y los formatos viven en
+// `customerAdmin.ts` (decisión del fundador, SCRUM-1005 c.22140). Aquí, la forma HTTP.
+// Contestan CÓDIGOS (`FORMATO_NO_ADMITIDO`, `FICHERO_DEMASIADO_GRANDE`, `TOPE_DEL_CLIENTE`…),
+// ninguna frase: los textos los firma el fundador con la pestaña (regla 39, 1005c).
+// Sin `requireRole`, al mismo nivel que la agenda de sitios de arriba: el operario en la obra es
+// quien necesita el boletín o el plano. Borrar el CLIENTE sigue siendo de admin (`DELETE /:id`).
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/** Los dos ids de la ruta, o `null` si alguno no cabe en la columna. */
+function idsDeDocumento(req: Request): { id: number; docId: number | null } | null {
+  const id = Number(req.params.id);
+  if (!cabeEnColumnaInt(id) || id <= 0) return null;
+  if (req.params.docId === undefined) return { id, docId: null };
+  const docId = Number(req.params.docId);
+  if (!cabeEnColumnaInt(docId) || docId <= 0) return null;
+  return { id, docId };
+}
+
+// GET /admin/customers/:id/documentos — la lista, SIN bytes.
+router.get('/:id/documentos', async (req, res) => {
+  try {
+    const ids = idsDeDocumento(req);
+    if (!ids) return res.status(400).json({ error: 'invalid_id' });
+    const documentos = await listarDocumentos(req.merchantId, ids.id);
+    if (!documentos) return res.status(404).json({ error: 'not_found' });
+    return res.json({ documentos });
+  } catch (err) {
+    console.error('[GET /admin/customers/:id/documentos]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * El cuerpo llega en BINARIO (`Content-Type` = el formato del fichero, nombre en la cabecera
+ * `X-Nombre-Fichero`, codificado con `encodeURIComponent`). El parser global de `src/app.ts` es
+ * `express.json` de 2 MB y no lee estos tipos; por eso el tope lo pone este `express.raw`,
+ * derivado de la constante, y un cuerpo que lo pasa contesta el código del tope y no el 413
+ * genérico de Express.
+ */
+const leerCuerpoDocumento = express.raw({ type: () => true, limit: DOC_MAX_BYTES });
+function cuerpoDocumento(req: Request, res: Response, next: NextFunction) {
+  leerCuerpoDocumento(req, res, (err?: any) => {
+    if (!err) return next();
+    if (err.type === 'entity.too.large') return res.status(413).json({ error: 'FICHERO_DEMASIADO_GRANDE' });
+    return res.status(400).json({ error: 'CUERPO_ILEGIBLE' });
+  });
+}
+
+// POST /admin/customers/:id/documentos — sube uno. 201 creado · 200 si ya estaba (idempotente).
+router.post('/:id/documentos', cuerpoDocumento, async (req, res) => {
+  try {
+    const ids = idsDeDocumento(req);
+    if (!ids) return res.status(400).json({ error: 'invalid_id' });
+    const mime = String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
+    const bytes = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+    const r = await subirDocumento(req.merchantId, ids.id, { mime, nombre: req.headers['x-nombre-fichero'], bytes });
+    if (!r.ok) return res.status(r.status).json({ error: r.status === 404 ? 'not_found' : r.error });
+    return res.status(r.creado ? 201 : 200).json(r.creado ? { documento: r.documento } : { already: true, documento: r.documento });
+  } catch (err) {
+    console.error('[POST /admin/customers/:id/documentos]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// GET /admin/customers/:id/documentos/:docId — la descarga. Siempre como ADJUNTO y con
+// `nosniff`: el navegador no lo abre en nuestro dominio ni adivina otro tipo.
+router.get('/:id/documentos/:docId', async (req, res) => {
+  try {
+    const ids = idsDeDocumento(req);
+    if (!ids || ids.docId === null) return res.status(400).json({ error: 'invalid_id' });
+    const doc = await leerDocumento(req.merchantId, ids.id, ids.docId);
+    if (!doc || !doc.data) return res.status(404).json({ error: 'not_found' });
+    const bytes = Buffer.from(doc.data);
+    res.setHeader('Content-Type', doc.mime || 'application/octet-stream');
+    res.setHeader('Content-Disposition', contentDispositionAdjunto(doc.fileName || `${doc.id}`));
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Content-Length', String(bytes.length));
+    return res.end(bytes);
+  } catch (err) {
+    console.error('[GET /admin/customers/:id/documentos/:docId]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// DELETE /admin/customers/:id/documentos/:docId — borra uno. 404 si no es de este cliente/comercio.
+router.delete('/:id/documentos/:docId', async (req, res) => {
+  try {
+    const ids = idsDeDocumento(req);
+    if (!ids || ids.docId === null) return res.status(400).json({ error: 'invalid_id' });
+    const borrado = await borrarDocumento(req.merchantId, ids.id, ids.docId);
+    if (!borrado) return res.status(404).json({ error: 'not_found' });
+    return res.status(204).send();
+  } catch (err) {
+    console.error('[DELETE /admin/customers/:id/documentos/:docId]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });
