@@ -116,3 +116,61 @@ Las 20 de los tres ficheros (5 + 7 + 8) tumban su caso con `correr` + `aplicarUn
 **Mis errores, contados:** el encargo me nombraba solo el fichero 1732d, y `scrum836`/`scrum810` no estaban en mi tanda dirigida: los vi al leer el log del job, no corriendo. Mi primer parche del ancla de 1445d escribió un salto de línea real en vez de `\n` dentro del literal (lo vi en el diff antes de correr nada).
 
 **Sin correr:** la suite entera (la corre CI). El job «guards de navegador» (`guard:escalera-por-estado`) cae también en #3201: no es de este PR y no se ha tocado.
+
+## J2 · SCRUM-1732f · la cuenta QA de STAGING se queda sin vías de aviso y con el Bizum manual encendido (operación, no código)
+
+**Medido contra:** `origin/main` = `6cabd3d42c1e0c7ba531a91ab94471c17c288949` · 2026-11-19T18:00:42Z (hora de GitHub; sesión J2 `jv-j2d8`, por encargo del orquestador `cobroflash-backend-c7`)
+
+A9: aviso → cicatriz J2 «leí el `.env` de staging con un regex de claves `[A-Z_]+`, sin dígitos: `E2E_TEST_LOGIN_SECRET` no casó y el login QA salió 404 con el secreto vacío» — no se pudo comprobar: el lector vive en el temporal de la sesión y ningún guard ve cómo una sesión lee su `.env`
+
+Aplica el ✅ del fundador de **c.22165** («OK» a la pregunta de jv-j4bs en c.22158): SOLO staging, SOLO el comercio 2
+(`qa@staging.yaqu`). `src/` no se toca. Staging `/health`: `version` = el mismo sha, `db: up` (17:59:28Z).
+
+### 1 · Antes → después
+
+| dato | ANTES | DESPUÉS | de dónde |
+|---|---|---|---|
+| ① cliente de prueba sin teléfono ni correo | no había (el 49 «Cliente QA» tiene teléfono y correo) | **id 3936 «Cliente QA sin avisos»**: `phone`, `mobile` y `email` vacíos | `GET /admin/customers` |
+| ② `notifyEmailOnPaid` | `true` | **`false`** | `GET /admin/merchant` y columna `notify_email_on_paid` |
+| ③ `merchants.flags` (fila id=2) | `{"INVOICING_ES_ENABLED": true}` | `{"BIZUM_MANUAL_ENABLED": true, "INVOICING_ES_ENABLED": true}` | `SELECT` de la fila |
+| ③ `BIZUM_MANUAL_ENABLED` efectivo | OFF | **ON** | `isFlagEnabled` de `dist/core/flags.js` sobre la fila leída |
+| `whatsappPhone` del comercio | presente | presente (**no se tocó**) | `GET /admin/merchant` |
+| cliente 49 | teléfono y correo | igual (no se tocó) | `GET /admin/customers` |
+
+Evidencias (sin secretos, sin teléfonos: solo «presente/vacío»): `evidencias/SCRUM-1732/1732f-antes.json` y
+`evidencias/SCRUM-1732/1732f-despues.json`.
+
+### 2 · Cómo se hizo (comandos sin secretos)
+
+1. PASO 0: sin ramas `scrum-1732f*` en el remoto ni PR; turno de staging LIBRE.
+2. Login: `POST /auth/test-login` con `qa@staging.yaqu` y el secreto del `.env` del árbol, leído por código: 200 + cookie.
+3. ① El 49 no se podía editar quitándole los datos: `customerUpdateSchema` es `phone/mobile: z.string().min(5).optional()`,
+   `email: z.string().email().optional()`, sin `nullable()` (`schemas.ts:547-565`), así que la ficha no deja borrarlos.
+   Se creó uno nuevo: `POST /admin/customers {"name":"Cliente QA sin avisos"}` → 201, id 3936. `createCustomer` no envía nada (leído).
+4. ② `PUT /admin/merchant {"notifyEmailOnPaid": false}` (nada más: lo ausente no se toca) → 200.
+5. ③ **No hay ruta ni guion para `BIZUM_MANUAL_ENABLED`**: el único escritor de `merchants.flags` en `src/` es
+   `flagFiscal.service.ts:136`, y él y `cambiar-flag-fiscal.mjs` solo admiten `INVOICING_ES_ENABLED|SIF_ENABLED`
+   (`FLAGS_FISCALES`). Por eso, UPDATE del JSONB, con el turno (`turno-staging.mjs tomar --base staging --ref SCRUM-1732f`,
+   17:59:40Z) y la URL de `DATABASE_URL_STAGING` pasada solo a ese proceso, detrás de
+   `exigirDestinoCorrecto('DATABASE_URL_STAGING', …)` (`_clave-vs-destino.mjs`), que dijo `acela…/railway (STAGING) ✅`:
+   `UPDATE merchants SET flags = COALESCE(flags,'{}'::jsonb) || '{"BIZUM_MANUAL_ENABLED": true}'::jsonb WHERE id = <id> AND email = 'qa@staging.yaqu' RETURNING id, flags`
+   - control negativo, antes: con `id = 999999` → **0 filas**;
+   - el real, con `id = 2` → **1 fila**, con el JSON de la tabla. El resto de claves se conserva (`||` fusiona).
+   - Turno soltado (`soltar --base staging`), y `estado` da LIBRE. Mi primer `soltar` fue sin `--base` y apuntó a la base por defecto: no soltó nada ni quitó nada a nadie.
+   - Sin fila de auditoría `cambio_flag`: esa la escribe solo el servicio fiscal. El rastro es este tramo.
+
+### 3 · Lo que NO está hecho o no está medido
+
+- 🔴 **El WhatsApp al PROFESIONAL sigue siendo una vía viva.** `psp.routes.ts:383` llama a `notifyMerchantPaid` sin
+  condición propia, y `notifyMerchantAlert` solo se para si `whatsappPhone` está vacío (`whatsappNotifications.ts`), y en el comercio 2 está presente.
+  No lo quité: no está en la lista ①②③ de c.22165 (aunque su pregunta decía «sin aviso al profesional»), y la ruta
+  del panel no deja vaciarlo (`whatsappPhone: z.string().min(6).max(20).optional()`, `schemas.ts:468`): haría falta otro UPDATE
+  directo. Si staging tiene credenciales de Meta, **no lo sé**: `/health` solo da `ok service version db dbMs`.
+  Hasta que se decida, **un confirm-bizum en la QA puede mandar un WA al número del profesional.** Al cliente 3936 no
+  le llega nada: ni confirmación (`tieneNumeroDeContacto`) ni reseña.
+- Hallazgo de paso (J2, sin arreglar porque el encargo no toca `src/`): `GET /admin/me` (`app.ts:484`, `:495`) y
+  `GET /admin/connect/status` (`connect.routes.ts:23`) calculan `BIZUM_MANUAL_ENABLED` con un `merchant` **sin `flags`**,
+  así que no ven el override por comercio: con ③ aplicado, el panel puede decir que el Bizum está apagado. `confirm-bizum`
+  (`chargesAdmin.routes.ts:74`) sí carga `flags`, y es la puerta que usa CIERRES. Leído en el código, no visto en pantalla.
+- Ninguna factura, cobro ni envío: la F1 nueva con cobro parcial, el libro con `cobros[]` y el 303 por tramos son de CIERRES 14.
+- `dist/` para leer `isFlagEnabled`: `tsc -p . --noCheck` local (no se empuja). Ni `prisma generate` ni nada contra producción.
