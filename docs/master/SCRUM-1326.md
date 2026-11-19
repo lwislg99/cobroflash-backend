@@ -128,6 +128,7 @@ conflictos), con `prisma generate` y build en 0:
   directa o indirectamente, el test, la ficha, su lector, el banco, `package.json`, `tsconfig.json`
   y el esquema). Control: el cierre de imports sí contiene `core/db/prisma.ts` e
   `integrations/whatsapp.ts`.
+  El guion `docs/master/evidencias/scrum1326/mutar.mjs` se retiró el 19-nov-2026 (SCRUM-1765f): sus mutaciones viven en el catálogo de `tests/scrum1326-vale-pregunta-una-vez.test.mjs` (19 de 20, mismo `de` y `a`; las de dos tramos, en una sola sustitución que produce el mismo fichero; 19 de 19 tumban con `aplicarUna`, `docs/master/evidencias/SCRUM-1765/1765f-aplicarUna.txt`). M17 («sin quitar las tildes») queda caducada: su ancla salió de `decisionPorTexto.ts` con `604df568c` (SCRUM-1325). Se conservan `mutaciones.json` y las dos trazas.
 - **La tanda completa local NO corrió.** La lancé con el turno del orquestador y 4.688 MB libres,
   y el arnés la detuvo a los pocos segundos por presión de memoria en la máquina. No hay
   resultado. Dejó un TAP parcial con 1.198 resultados y 505 «not ok», que no son rojos: son tests

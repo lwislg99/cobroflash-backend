@@ -251,3 +251,62 @@ catálogo de `scrum864c`. Retirarlas solo exige ver que tumban y borrar el guion
     `TMP` sin espacios, 5/5. Mismo patrón que `scrum1298b` en 1765a. No es de mi carril y no lo toco.
   · tramo 14/15 (`scrum812`): 115 ficheros · 988 tests · 0 fail.
 - 864, 864c y 933 no se retiran: no son de J6 por literal.
+
+## SCRUM-1765f · El banco de J2 (`scrum1326`) se retira al catálogo de su test
+
+**Puesto:** J2 (jv-j2d7) · **Rama:** `scrum-1765f-banco-1326-al-catalogo` · 19-nov-2026 (Madrid)
+**Medido contra:** `origin/main` = `d4a0fc951cd54405d6e9ae908a7b52b12b26c024` · 2026-11-19T17:46:20Z (cabecera `Date:` de `gh api -i zen`)
+A9: aviso → A10 «Un prefijo no es un nombre, y una subcadena tampoco.» — no se pudo comprobar: mi driver (fuera del árbol) buscó la mutación del control MUDA por una subcadena del ancla de M13 que también está en el ancla unida de M5, y aplicó M5; el resultado (MUDA) vale para M5 y la etiqueta de la traza se corrigió a mano con la explicación; ningún guard lee un driver que no está en git
+Mutaciones: catálogo → `tests/scrum1326-vale-pregunta-una-vez.test.mjs`
+
+Decisión que se aplica: SCRUM-1387 c.22070 («retirar») y el reparto de SCRUM-1765 c.22114/c.22116
+(J2, 1 propuesto: `scrum1326`).
+
+### PASO 0
+
+Sin ramas `scrum-1765f*` en el remoto, sin PR y sin commits «1765f» en `origin/main`. Carril del SUJETO
+(`node scripts/carriles.mjs de`): `src/modules/whatsappBot/domain/decisionPorTexto.ts` y
+`src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts` → **J2** (`dos-equipos.md:124`). El test es
+el de SCRUM-1326. `scrum1387` en `d4a0fc951`: **28 heredados** (249 ficheros con «mut» · 107 bancos · 0 nuevos).
+
+### `scrum1326` — 19 de 20 al catálogo, 1 caducada
+
+- **19 VIVAS** → `MUTACIONES_QUE_ME_TUMBAN` de `tests/scrum1326-vale-pregunta-una-vez.test.mjs`, cuatro
+  literales cada una, con el `de`/`a` del guion. Seis del guion (M1, M5, M16, M18, M19, M20) hacían **dos**
+  sustituciones (`ademas`). Van en **una** sola: `de` = primer tramo + texto intermedio + segundo tramo, y
+  `a` igual con los dos tramos cambiados. El generador comprobó dos cosas: que cada ancla unida aparece
+  una sola vez y que el fichero resultante es **idéntico** al de aplicar las dos del guion una detrás de
+  otra. `cae` es el primer caso que esa misma mutación tumbaba en `mutaciones.json`. Ningún fuente lleva CR.
+- **M17 «sin quitar las tildes» → CADUCADA.** Su ancla (`.replace(/\p{M}/gu, '')`) aparece 0 veces en
+  `decisionPorTexto.ts`. Se la llevó `604df568c` (SCRUM-1325, 1-oct-2026) a `src/core/texto/sinTildes.ts`.
+  No se re-deriva aquí, porque ese fichero es de **S1** (`carriles.mjs de`) y sus mutaciones son de quien lo vigila.
+- Corridas con `correr` + `aplicarUna` de `scripts/meta-guard-mutaciones.mjs` (driver fuera del árbol). La
+  salida está en `docs/master/evidencias/SCRUM-1765/1765f-aplicarUna.txt`. Línea base: 16 pasan · 0 caen ·
+  0 saltados · 0 movidos. **19 de 19 tumban** su caso, con 11, 9, 4, 2, 9, 3, 3, 6, 6, 6, 6, 3, 1, 1, 1, 4, 5,
+  4 y 2 caídos: los mismos números, en el mismo orden, que la traza original del guion (`mutaciones.json`,
+  1-oct). Controles: un `cae` inexistente sale **CIEGO**; M5 con el `cae` de un caso que no tumba sale
+  **MUDA**. `git status` tras la pasada: solo el test editado (`src/` y `dist/` restaurados por `aplicarUna`).
+- Guion borrado: `docs/master/evidencias/scrum1326/mutar.mjs`. Se conservan `mutaciones.json` y las dos
+  trazas `.tap.txt`. Línea fechada en `docs/master/SCRUM-1326.md`, bajo «Mutaciones».
+- `scrum1387`: **28 → 27 heredados** (248 ficheros con «mut» · 107 bancos · 0 nuevos). Baja porque el guion
+  desaparece; el guard no se ha tocado. `scrum812` sigue verde sin tocarlo.
+
+### Corrido (sobre `d4a0fc951` + este diff, `dist/` de `tsc --noCheck`; no toco `src/`)
+
+- guards 1387, 745, 757, 1321, 1415, 812, 1294, 267, 273, 854, 237, 976, 700, 719 + `scrum1326` + el
+  meta-guard (`tests/scrum1610d-meta-guard-censo-sale-vaciado.test.mjs`): **153/153 en 16 ficheros**
+  (TAP a fichero). `guards:entrada`: 15 guards, salida 0. Los 5 de árbol entero que nombra: 38/38.
+  `meta-guard-mutaciones.mjs --solo-censo`: 319 declarantes, 1.323 declaraciones, salida 0.
+  `censo:mudez -- --escribir`: salida 0, sin cambios en `tests/_veredicto-mudez.json`.
+- Suite: solo el tramo 4/15 (el de `scrum1326`): 115 ficheros · 1.111 tests · **0 fail**. **La suite entera
+  no se ha corrido** (contexto); la mide el obligatorio.
+
+### Lo que NO está
+
+- `tests/_catalogo-obligatorio.mjs:219` sigue nombrando `docs/master/evidencias/scrum1326` en
+  `RETIRA_LEIDO_EN_JIRA_EL_7_OCT`. Es un dato con fecha que solo informa (lo mismo hizo 1765c con 1392).
+- `docs/master/evidencias/SCRUM-1394/bancos.mjs:60` usaba `scrum1326` como CONTROL POSITIVO «sale FUERA». Con
+  el guion borrado, ese control ya no se cumple. Es evidencia de otro ticket y ningún test la corre (no
+  medido más allá de `git grep`). Queda dicho, no tocado.
+- SCRUM-1005b (la medición de solo lectura del mismo encargo): **NO empezada**, porque se acabó el
+  contexto (185k al cerrar las mutaciones, por encima del tope de 180k).
