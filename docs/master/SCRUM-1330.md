@@ -89,6 +89,8 @@ ya no lo dirá. Recuperar esa cobertura es una decisión aparte.
 `docs/master/evidencias/scrum1330/mutar.mjs` y su salida, `mutaciones.json` (dos pasadas, base sin
 mutar primero, sobre los dos ficheros de test: 34 casos).
 
+*19-nov-2026 (SCRUM-1765g): el guion `scrum1330/mutar.mjs` se retiró: MA, MB, MB-lanza, MB-anterior y MB-calla viven en el catálogo de `tests/scrum1330-una-sellada-no-se-resella.test.mjs`; MAB (dos ficheros a la vez) no cabe en una declaración y la cubren MA y MB por separado. Sus salidas siguen en `docs/master/evidencias/scrum1330/`.*
+
 | Mutación | Resultado |
 | --- | --- |
 | MA · la A no decide (B puesta) | cae 1: el caso de la A |
