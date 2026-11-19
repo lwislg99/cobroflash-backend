@@ -290,3 +290,70 @@ La fila nueva de c.22017 (paso 2). Excepción de carril firmada por el fundador 
 | (encargo) capturas 390/1280 idénticas entre main sin política y la rama con la CSP APLICADA, 0 `script-src-elem`, control distinto, banner de precios | `docs/master/evidencias/SCRUM-1756/j3ci-recorrido.salida.txt` (+ `.resultado.json`) |
 
 **NO MEDIDO:** la suite entera por tramos. Corrí los 43 ficheros que leen landing o precios (390 casos) y los guards que se nombran en el comentario de entrega de Jira. Tampoco he mirado el obligatorio, yaqu.app ni otros navegadores.
+
+## SCRUM-1756g · 18-nov: censo final de lo que bloquea el paso 3 de la CSP en el main de hoy (J3, solo medir)
+
+**Medido contra:** `origin/main` = `e37a7051f87b195ceeae4852c56a02bc0d218438` · 2026-11-18T23:45:53Z (hora de GitHub; sesión J3 `jv-j3cj`, por encargo del orquestador `cobroflash-backend-8a`; la rama sale de ese main y no toca `src/` ni `public/`)
+
+A9: aviso → cicatriz J3 «Saqué el dueño de cada fichero con la ÚLTIMA línea de `carriles.mjs de`, y para `teamView.js` esa línea era la de una excepción de S1: el censo lo daba sin carril; lo vi al leer la salida y lo medí aparte (J3).» — no se pudo comprobar: el censo es un guion de evidencias que corre a mano y ningún test lo ejecuta
+
+**Skill UI:** no aplica · solo docs: el tramo no cambia nada de `src/` ni de `public/`.
+
+**Qué mide.** Lo que queda en `src/**` + `public/**` (518 ficheros; fuera los 13 de `src/modules/messaging/**`, el correo: quedan 505) que, con `csp.ts` APLICADA (`script-src 'self'`, `style-src 'self'`), deja CSS sin pintar o un botón mudo: `<style`, `style="`, `<script>` sin `src` y `on*=`. Guion `evidencias/SCRUM-1756/1756g-censo.mjs.txt`; salida entera en `1756g-censo.txt`.
+
+- **Sonda 1, `git grep` por LÍNEA** (como la tabla original del 18-nov sobre `35153debf`): 68 ficheros con algún acierto.
+- **Sonda 2, análisis por OCURRENCIA** sobre los 475 ficheros de texto. Los TS/JS van por el AST de `typescript`, que separa cadena, comentario y código. El HTML va sin `<!-- -->` y con el cuerpo de `<script>` aparte, y el CSS sin `/* */`. Los `<script type="…json">` son datos y no se ejecutan: no cuentan. Salen 68 ficheros, 42 de ellos «vivos». **Los conjuntos de las dos sondas coinciden**: ningún fichero está en una y no en la otra.
+- **Controles:** una siembra fabricada por el guion (`public/siembra.html` y `src/siembra.ts`, con recuentos derivados de su texto) pasa por las dos sondas: CAZA 4/4. El fichero cero, con casi-aciertos (`<link>`, `<script src>`, `class="styles"`), da 0. **Con `--sin-siembra` el censo sale CIEGO, código 2**, no verde. Al acabar, `git status` está limpio.
+- **Navegador** (Chrome 157, página `data:` con las tres directivas de `csp.ts` en un `<meta>`): un `style="…"` y un `onclick="…"` metidos por `innerHTML` **no pintan y no corren**, con informes `style-src-attr` y `script-src-attr`. `elemento.style.x = …` (CSSOM) sí pinta. El control sin política pinta, corre y da 0 informes. Esto importa porque casi todo lo que queda está en cadenas que el panel mete por `innerHTML`.
+
+### 🔴 Lo que la tabla original no tenía
+
+**`public/dashboard/js/*.js`: 36 ficheros con `style="` dentro de las cadenas que pintan el panel.** Hoy son 880 ocurrencias, y 6 `on*=` en 5 de ellos. En `35153debf` ya había 36 ficheros con 856 líneas, y **ninguno estaba en la tabla**: su población fue, en la práctica, `*.ts` + `*.html`. Esto lo deduzco de las filas que tiene; la descripción no da el glob. **Con la tabla original vacía, el paso 3 rompería igualmente el panel entero.**
+
+### Tabla final
+
+| fichero | `<style` | `style="` | `<script>` sin `src` | `on*=` | carril (`carriles.mjs de`) | estado |
+| --- | --- | --- | --- | --- | --- | --- |
+| `receipt.routes.ts` (recibo) | 0 | 0 | 0 | 0 | J2 | **HECHO** · #3205 + #3208 |
+| `customerPortal.routes.ts` (portal) | 0 | 0 | 0 | 0 | J2 | **HECHO** · #3205 + #3208 |
+| `public/index.html` | 0 | 0 | 0 (1 línea es `ld+json`: datos) | 0 | J3 | **HECHO** · #3209 + #3236 |
+| `public/precios.html` | 0 | 0 | 0 | 0 | J3 | **HECHO** · #3209 + #3236 |
+| `public/terminos.html` | 0 | 0 | 0 | 0 | J3 | **HECHO** · #3209 |
+| `legalPages.routes.ts` | 0 | 0 | 0 | 0 | J3 | **HECHO** · #3209 |
+| `invoicesAdmin.routes.ts` (paquete de disputa) | 0 (S1 da 2 líneas: comentario :378-379) | 0 | 0 | 0 | J1 | **HECHO** · #3237 |
+| `src/core/http/publicNotFound.ts` (404 público) | 0 (S1 da 2: comentario :7, :10) | 0 | 0 | 0 | S1 (no medido hoy: no tiene ocurrencias vivas) | **HECHO** por SCRUM-1646 (`32585791d`), no por este ticket |
+| `auth.service.ts` | 0 | 4 (cadena :112-113, :233-234) | 0 | 0 | J3 | **NO APLICA**: correo (`renderEmailLayout` → `sendEmail`), medido en 1756d; las líneas no se han movido |
+| `soporte.ts` | 0 | 1 (cadena :99) | 0 | 0 | J3 | **NO APLICA**: correo (`construirCorreoSoporte` → `enviarCorreo`), 1756d |
+| `altaNavegador.ts` | 0 | 0 (S1 da 2: comentario) | 0 (S1 da 3: comentario) | 0 | J3 | **NO APLICA**: comentarios |
+| `quoteDecisionLanding.routes.ts` | 0 (S1 da 2: comentario :80, :413) | 0 | 0 (`application/json` :596: datos) | 0 | — | **NO APLICA** (c.21849) |
+| `*Estilo.ts`, `*Navegador.ts`, `payBank`, `albaranPublic`, `csp.ts`, `huellaEstaticos.ts`, `sw.js`, `styles.css` | sólo comentarios o bloques JSON | | | | — | **NO APLICA** (lista entera en la salida, sección S2) |
+| `public/privacidad.html` | **1** (:10) | 0 | 0 | 0 | J3 | **PENDIENTE con disparador**: se espera a la edición real de la política (c.22082 ②) |
+| `publicProfile.service.ts` (perfil público) | **1** (cadena :89, HTML servido) | 0 | 0 | 0 | S1 | **PENDIENTE** · Luis |
+| `public/admin.html` | **1** (:7) | **4** (:576-593) | **1** (:613) | 0 | S2 | **PENDIENTE** · Luis |
+| `public/dashboard/index.html` | 0 | **8** | **1** (:402) | 0 | S2 (contenedor) | **PENDIENTE** · Luis |
+| `public/dashboard/js/*`, 22 ficheros: `aiQuoteAssistant`, `api`, `app`, `estadoFirma`, `expensesView`, `exportView`, `facturasRecibidasView`, `globalSearch`, `homeView`, `jobDetailView`, `jobNuevoModal`, `parteOficinaView`, `productsView`, `providersView`, `quoteRequestsView`, `quoteRevisiones`, `quotesDetailView`, `quotesListView`, `quotesView`, `reportsView`, `signaturePad`, `templatesView` | 0 | **543** | 0 | **6** | S2 | **PENDIENTE** · Luis · **NUEVA** |
+| `public/dashboard/js/`: `albaranDetailView` (1), `parteDetailView` (19) | 0 | **20** | 0 | 0 | S4 | **PENDIENTE** · Luis · **NUEVA** |
+| `public/dashboard/js/`: `onboardingView` (54), `plansView` (52), `settingsView` (75, contenedor), `teamView` (32), `tutorial` (15) | 0 | **228** | 0 | 0 | J3 | **PENDIENTE** · J3 · **NUEVA** |
+| `public/dashboard/js/`: `cobrosView` (1), `csvImport` (31), `customerDetailView` (28), `customersView` (1) | 0 | **61** | 0 | 0 | J2 | **PENDIENTE** · J2 · **NUEVA** |
+| `public/dashboard/js/`: `invoiceDetailView` (8), `invoicesView` (5), `puertaSerie` (15) | 0 | **28** | 0 | 0 | J1 | **PENDIENTE** · J1 · **NUEVA** |
+
+Las cifras de `style="` del panel son ocurrencias (sonda 2), no líneas. Los `on*=` vivos son seis: `expensesView.js:726` (`onerror`), `globalSearch.js:160-161` (`onmouseenter` y `onmouseleave`), `homeView.js:577`, `quotesDetailView.js:1342` y `templatesView.js:24` (`onclick`).
+
+**Comprobación de lo HECHO:** las siete filas que dan por hechas los tramos b–f dan 0 VIVOS en las cuatro columnas. En la sonda 1 sólo quedan comentarios (`invoicesAdmin.routes.ts:378-379`) y el `ld+json` de `index.html:27`.
+
+### Qué se rompe si se aplica la política hoy
+
+- **Privacidad** (J3): se pinta sin su hoja. Es lo esperado y está decidido (c.22082 ②).
+- **Perfil público** (S1): se pinta sin CSS.
+- **Admin** (S2): se pinta sin CSS y su guion de `:613` no corre, así que la página no funciona.
+- **Panel** (`dashboard/index.html`, S2): su guion de `:402` no corre y 8 elementos pierden su estilo.
+- **Panel, vistas** (S2, S4, J1, J2, J3): todo lo que pintan por `innerHTML` pierde los estilos en línea (880 ocurrencias en 36 ficheros: márgenes, colores, `display:none`…). Un `display:none` que no se aplica ENSEÑA lo que debía ir oculto. Además, los 6 `on*=` dejan mudos estos controles: el enlace «+ Nuevo presupuesto» de plantillas, el botón del paso de `homeView`, el de gastos de `quotesDetailView`, y el resaltado de la búsqueda global. Y en gastos, una imagen que no carga ya no se oculta (`onerror="this.style.display='none'"`).
+
+**Sin medir:**
+- `setAttribute('style', …)` y `href="javascript:"`. El guion los busca y no salen, pero esos dos patrones no tienen siembra, así que su cero no vale.
+- Qué `display:none` de cada vista cambia lo que se ve.
+- Si `api.js` (10) pinta siempre o sólo en errores.
+- yaqu.app.
+- Si el panel tiene alguna vía, fuera de `innerHTML`, por la que un `style=` se libre. La medí en una página `data:`, no en el panel.
+
+**Propuesta, no hecha:** este censo, convertido en un guard trinquete que no deje subir ninguna columna, impediría que la tabla vuelva a nacer con una población más corta que la real. Es otro ticket (A23), y no lo abro.
