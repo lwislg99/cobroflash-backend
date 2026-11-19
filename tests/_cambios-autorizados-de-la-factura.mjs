@@ -154,7 +154,7 @@ export const CAMBIOS_AUTORIZADOS = [
     // origin/main 0c787556f6eaf44531b76bbe0b59b076ef744386.
     firma: 'SCRUM-624 c.22137',
     registro: 'docs/master/SCRUM-624.md',
-    cita: '«GO»',
+    cita: '«A en la R1»',
     cuerpo: {
       de: '3967c7ef8e699f0e46167c4c04dbb6b11daa51745b78a23317416aa7d6bd96b1',
       a: '7cbda25fd230c4f65873e4549c1a93ba0f98ee3b212cad922a0abcf12b7855e5',
