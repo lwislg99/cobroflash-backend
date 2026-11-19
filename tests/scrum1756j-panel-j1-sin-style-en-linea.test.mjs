@@ -131,7 +131,15 @@ function bloqueJ1(hoja) {
 }
 /** Las declaraciones de UNA regla con ese selector exacto (null si no hay una y solo una). */
 function declaracionesDe(bloque, selector) {
-  const sin = bloque.replace(/\/\*[\s\S]*?\*\//g, '');
+  // Comentarios CSS fuera con un recorrido, no con `.replace(/…/)`: un filtro propio más lo cuenta el
+  // trinquete de SCRUM-700 (el sitio único es `soloEjecutable`, y ese es de JS, no de CSS).
+  let sin = '';
+  for (let i = 0; i < bloque.length;) {
+    if (bloque.startsWith('/*', i)) {
+      const f = bloque.indexOf('*/', i + 2);
+      i = f === -1 ? bloque.length : f + 2;
+    } else sin += bloque[i++];
+  }
   const reglas = [...sin.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((m) => m[1].trim() === selector);
   if (reglas.length !== 1) return null;
   return reglas[0][2].split(';').map((d) => d.trim()).filter(Boolean);
