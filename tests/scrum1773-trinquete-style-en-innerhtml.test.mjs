@@ -124,15 +124,12 @@ export const CONGELADA_STYLE = {
   'public/dashboard/js/facturasRecibidasView.js': 4,
   'public/dashboard/js/globalSearch.js': 20,
   'public/dashboard/js/homeView.js': 108,
-  'public/dashboard/js/invoiceDetailView.js': 8,
-  'public/dashboard/js/invoicesView.js': 5,
   'public/dashboard/js/jobDetailView.js': 18,
   'public/dashboard/js/jobNuevoModal.js': 7,
   'public/dashboard/js/parteDetailView.js': 19,
   'public/dashboard/js/parteOficinaView.js': 11,
   'public/dashboard/js/productsView.js': 21,
   'public/dashboard/js/providersView.js': 10,
-  'public/dashboard/js/puertaSerie.js': 15,
   'public/dashboard/js/quoteRequestsView.js': 16,
   'public/dashboard/js/quoteRevisiones.js': 10,
   'public/dashboard/js/quotesDetailView.js': 38,
@@ -153,10 +150,10 @@ export const CONGELADA_ON = {
 // Cada recongelación añade una línea fechada con el total que deja la tabla. El guard exige que la
 // tabla sume exactamente lo que dice la ÚLTIMA línea: bajar un número sin fecharlo da rojo.
 export const HISTORIAL = [
-  // Congelación inicial (main d4a0fc951, 19-nov-2026): 27 ficheros de 98. Frente al censo 1756g (880 + 6 en 36): 1756h (J3) y 1756i
-  // (J2) ya bajaron a 0 sus nueve ficheros (−228 y −61), y `quoteRequestsView.js` lleva 2 más (+2), dos
-  // cadenas concatenadas que abren con `'style="` y la regex del censo no veía.
-  { fecha: '2026-11-19', ticket: 'SCRUM-1773', sha: 'd4a0fc951cd54405d6e9ae908a7b52b12b26c024', style: 593, on: 6 },
+  // Congelación inicial (main 6cabd3d42, 19-nov-2026): 24 ficheros de 98. Frente al censo 1756g (880 + 6 en 36): 1756h (J3),
+  // 1756i (J2) y 1756j (J1) ya bajaron a 0 sus doce ficheros (−228, −61 y −28), y `quoteRequestsView.js` lleva
+  // 2 más (+2), dos cadenas concatenadas que abren con `'style="` y la regex del censo no veía.
+  { fecha: '2026-11-19', ticket: 'SCRUM-1773', sha: '6cabd3d42c1e0c7ba531a91ab94471c17c288949', style: 565, on: 6 },
 ];
 
 const CONGELADA = { style: CONGELADA_STYLE, on: CONGELADA_ON };
