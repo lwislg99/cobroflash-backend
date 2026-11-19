@@ -38,7 +38,7 @@ import {
 } from '../../fiscal/verifactu/registro.builder';
 import { clienteDelDocumento } from './clienteCongelado'; // SCRUM-729
 import { emisorDelDocumento, type FichaDeEmisor } from './emisorCongelado'; // SCRUM-665
-import { zonaDelMerchant } from '../../../core/zonaDelMerchant'; // SCRUM-735 (GO comentario 16573)
+import { zonaDelMerchant, inicioDelDiaEn, finDelDiaEn } from '../../../core/zonaDelMerchant'; // SCRUM-735 (GO comentario 16573)
 
 // SCRUM-145: los namespaces oficiales de los XSD de la AEAT vivían aquí (`NS_LR`, `NS_INFO`)
 // SOLO para el sobre que se armaba en este fichero. SCRUM-240 se llevó el sobre a
@@ -730,8 +730,8 @@ export async function buildVerifactuRegistrosXml(
     where: {
       merchantId: params.merchantId,
       createdAt: {
-        gte: new Date(params.year, 0, 1),
-        lte: new Date(params.year, 11, 31, 23, 59, 59, 999),
+        gte: inicioDelDiaEn(`${params.year}-01-01`, zona),
+        lte: finDelDiaEn(`${params.year}-12-31`, zona),
       },
     },
     orderBy: { createdAt: 'asc' },
