@@ -35,7 +35,13 @@ test('SCRUM-1293 · CONTROL POSITIVO: el fichero REAL se lee, y trae las tres se
   const r = leerMarcadoresDeclarados();
   assert.equal(r.ok, true, `🔴 el cargador no sabe leer ${RUTA_DECLARADOS}: ${r.motivo}`);
   for (const seccion of ['panel', 'servidor', 'papel']) {
-    assert.ok(Object.keys(r[seccion]).length > 0, `🔴 \`${seccion}\` llega vacía y el cargador la dio por buena`);
+    // SCRUM-1771c · `papel` puede llegar vacía SOLO con su vacío DECLARADO (`papelVaciaDesde`); sin
+    // la declaración, vacía sigue siendo el rojo de siempre.
+    if (seccion === 'papel' && r.papelVaciaDesde !== undefined) {
+      assert.equal(Object.keys(r.papel).length, 0, '🔴 `papel` declara el vacío y trae entradas');
+    } else {
+      assert.ok(Object.keys(r[seccion]).length > 0, `🔴 \`${seccion}\` llega vacía y el cargador la dio por buena`);
+    }
     assert.ok(Object.isFrozen(r[seccion]), `🔴 \`${seccion}\` no llega congelada: un test podría cambiarla`);
   }
 });
@@ -61,7 +67,9 @@ const ROTOS = [
   ['sección `papel` AUSENTE', sin('papel'), /falta `papel\.constantes`/],
   ['sección `panel` VACÍA', con((o) => { o.panel.ficheros = {}; }), /`panel\.ficheros` está VACÍO/],
   ['sección `servidor` VACÍA', con((o) => { o.servidor.ficheros = {}; }), /`servidor\.ficheros` está VACÍO/],
-  ['sección `papel` VACÍA', con((o) => { o.papel.constantes = {}; }), /`papel\.constantes` está VACÍO/],
+  // SCRUM-1771c (c.22171, P1) · el caso 7 PARTIDO EN DOS: ésta es la mitad que sigue en ROJO (vacía
+  // SIN declarar); la mitad que se lee (vacía DECLARADA) es un caso propio, debajo de `caso2.todos()`.
+  ['sección `papel` VACÍA SIN declarar', con((o) => { o.papel.constantes = {}; }), /`papel\.constantes` está VACÍO/],
   ['sección que es una LISTA', con((o) => { o.panel.ficheros = ['a.js']; }), /falta `panel\.ficheros`/],
   ['un número a CERO', con((o) => { o.panel.ficheros['a.js'] = 0; }), /MAYOR que 0/],
   ['un número NEGATIVO', con((o) => { o.servidor.ficheros['src/a.ts'] = -1; }), /MAYOR que 0/],
@@ -74,6 +82,10 @@ const ROTOS = [
   ['clave REPETIDA en el papel',
     texto(SANO).replace('"MARCADOR_X": "cuando pasa tal cosa"', '"MARCADOR_X": "una",\n      "MARCADOR_X": "otra"'),
     /`papel\.constantes` repite "MARCADOR_X"/],
+  ['vacío DECLARADO con una firma mal escrita',
+    con((o) => { o.papel.constantes = {}; o.papel._vacia_desde = 'lo firmó Javier'; }), /`papel\._vacia_desde` = .*SCRUM-<n> c\.<comentario>/],
+  ['vacío DECLARADO y con entradas a la vez',
+    con((o) => { o.papel._vacia_desde = 'SCRUM-1771 c.22164'; }), /declara la sección VACÍA y `papel\.constantes` trae 1/],
 ];
 
 const caso2 = casosEscritos(ROTOS, ([caso, contenido, motivo]) => `SCRUM-1293 · 🔴 ${caso}: NO se lee como bueno, y el motivo lo nombra`, ([caso, contenido, motivo], t) => {
@@ -96,7 +108,7 @@ test('SCRUM-1293 · 🔴 sección `servidor` AUSENTE: NO se lee como bueno, y el
 test('SCRUM-1293 · 🔴 sección `papel` AUSENTE: NO se lee como bueno, y el motivo lo nombra', caso2(4));
 test('SCRUM-1293 · 🔴 sección `panel` VACÍA: NO se lee como bueno, y el motivo lo nombra', caso2(5));
 test('SCRUM-1293 · 🔴 sección `servidor` VACÍA: NO se lee como bueno, y el motivo lo nombra', caso2(6));
-test('SCRUM-1293 · 🔴 sección `papel` VACÍA: NO se lee como bueno, y el motivo lo nombra', caso2(7));
+test('SCRUM-1293 · 🔴 sección `papel` VACÍA SIN declarar: NO se lee como bueno, y el motivo lo nombra', caso2(7));
 test('SCRUM-1293 · 🔴 sección que es una LISTA: NO se lee como bueno, y el motivo lo nombra', caso2(8));
 test('SCRUM-1293 · 🔴 un número a CERO: NO se lee como bueno, y el motivo lo nombra', caso2(9));
 test('SCRUM-1293 · 🔴 un número NEGATIVO: NO se lee como bueno, y el motivo lo nombra', caso2(10));
@@ -105,7 +117,20 @@ test('SCRUM-1293 · 🔴 una condición del papel VACÍA: NO se lee como bueno, 
 test('SCRUM-1293 · 🔴 clave REPETIDA con el MISMO valor (el incidente del PR #1065): NO se lee como bueno, y el motivo lo nombra', caso2(13));
 test('SCRUM-1293 · 🔴 clave REPETIDA con valor DISTINTO: NO se lee como bueno, y el motivo lo nombra', caso2(14));
 test('SCRUM-1293 · 🔴 clave REPETIDA en el papel: NO se lee como bueno, y el motivo lo nombra', caso2(15));
+test('SCRUM-1293 · 🔴 vacío DECLARADO con una firma mal escrita: NO se lee como bueno, y el motivo lo nombra', caso2(16));
+test('SCRUM-1293 · 🔴 vacío DECLARADO y con entradas a la vez: NO se lee como bueno, y el motivo lo nombra', caso2(17));
 caso2.todos();
+
+// ═══ SCRUM-1771c · LA OTRA MITAD DEL CASO 7: EL VACÍO DECLARADO SE LEE (c.22171, P1) ═══════════
+test('SCRUM-1293 · sección `papel` VACÍA y DECLARADA (`_vacia_desde`): se lee, y dice desde cuándo', (t) => {
+  const r = leerMarcadoresDeclarados(temporal(t, con((o) => { o.papel.constantes = {}; o.papel._vacia_desde = 'SCRUM-1771 c.22164'; })));
+  assert.equal(r.ok, true, `🔴 un vacío DECLARADO no se lee: ${r.motivo}`);
+  assert.deepEqual({ ...r.papel }, {});
+  assert.equal(r.papelVaciaDesde, 'SCRUM-1771 c.22164');
+  // Y la declaración vale SÓLO para `papel`: en `panel` un vacío sigue siendo «no supe leer».
+  const rPanel = leerMarcadoresDeclarados(temporal(t, con((o) => { o.panel.ficheros = {}; o.panel._vacia_desde = 'SCRUM-1771 c.22164'; })));
+  assert.equal(rPanel.ok, false, '🔴 `_vacia_desde` ha abierto también un vacío en `panel`');
+});
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // LAS MUTACIONES QUE ME TUMBAN (SCRUM-745) · las ejecuta `npm run meta:mutaciones`
@@ -138,5 +163,27 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: 'if (entradas.length === 0) {',
     a: 'if (false) {',
     cae: 'sección `panel` VACÍA',
+  },
+  {
+    // SCRUM-1771c · quitar la declaración del fichero REAL: `papel` queda vacía sin declarar y el
+    // cargador tiene que volver a negarse a leerla.
+    fichero: 'scripts/_marcadores-pendientes-declarados.json',
+    de: '    "_vacia_desde": "SCRUM-1771 c.22164",\n',
+    a: '',
+    cae: 'CONTROL POSITIVO: el fichero REAL se lee, y trae las tres secciones con algo',
+  },
+  {
+    // SCRUM-1771c · el cargador acepta un vacío SIN la clave: la mitad roja del caso 7 tiene que caer.
+    fichero: 'tests/_marcadores-declarados.mjs',
+    de: '      if (vaciaDesde === undefined) {',
+    a: '      if (false) {',
+    cae: 'sección `papel` VACÍA SIN declarar',
+  },
+  {
+    // SCRUM-1771c · el cargador deja de leer la declaración: la mitad que se lee tiene que caer.
+    fichero: 'tests/_marcadores-declarados.mjs',
+    de: "  const vaciaDesde = seccion === 'papel' ? json[seccion]._vacia_desde : undefined;",
+    a: '  const vaciaDesde = undefined;',
+    cae: 'sección `papel` VACÍA y DECLARADA (`_vacia_desde`): se lee, y dice desde cuándo',
   },
 ];
