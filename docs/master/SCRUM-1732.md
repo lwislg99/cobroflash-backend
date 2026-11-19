@@ -134,7 +134,8 @@ Aplica el ✅ del fundador de **c.22165** («OK» a la pregunta de jv-j4bs en c.
 | ② `notifyEmailOnPaid` | `true` | **`false`** | `GET /admin/merchant` y columna `notify_email_on_paid` |
 | ③ `merchants.flags` (fila id=2) | `{"INVOICING_ES_ENABLED": true}` | `{"BIZUM_MANUAL_ENABLED": true, "INVOICING_ES_ENABLED": true}` | `SELECT` de la fila |
 | ③ `BIZUM_MANUAL_ENABLED` efectivo | OFF | **ON** | `isFlagEnabled` de `dist/core/flags.js` sobre la fila leída |
-| `whatsappPhone` del comercio | presente | presente (**no se tocó**) | `GET /admin/merchant` |
+| ④ `whatsappPhone` del comercio | presente (`…001`, 11 caracteres; enmascarado) | **`NULL`** (vaciado el 2.º paso, c.22176) | SELECT de la fila y `GET /admin/merchant` (`vacío`) |
+| `bizumPhone` del comercio | presente | presente (no se tocó: el Bizum se sigue ofreciendo, `bizumPhone \|\| whatsappPhone`) | `GET /admin/merchant` |
 | cliente 49 | teléfono y correo | igual (no se tocó) | `GET /admin/customers` |
 
 Evidencias (sin secretos, sin teléfonos: solo «presente/vacío»): `evidencias/SCRUM-1732/1732f-antes.json` y
@@ -158,22 +159,30 @@ Evidencias (sin secretos, sin teléfonos: solo «presente/vacío»): `evidencias
    - el real, con `id = 2` → **1 fila**, con el JSON de la tabla. El resto de claves se conserva (`||` fusiona).
    - Turno soltado (`soltar --base staging`), y `estado` da LIBRE. Mi primer `soltar` fue sin `--base` y apuntó a la base por defecto: no soltó nada ni quitó nada a nadie.
    - Sin fila de auditoría `cambio_flag`: esa la escribe solo el servicio fiscal. El rastro es este tramo.
+6. ④ Segundo paso, decidido por el orquestador en **c.22176** dentro del alcance de c.22165 («un WhatsApp al profesional es una
+   vía de aviso»), con la misma liturgia: turno (`tomar --base staging`, 18:08:38Z), `exigirDestinoCorrecto` STAGING ✅, SELECT antes
+   (valor guardado ENMASCARADO: solo los 3 últimos dígitos), y
+   `UPDATE merchants SET whatsapp_phone = NULL WHERE id = <id> AND email = 'qa@staging.yaqu' RETURNING id, whatsapp_phone`:
+   control negativo `id = 999999` → **0 filas**; real `id = 2` → **1 fila**, `whatsapp_phone: null`. Turno soltado con
+   `--base staging`, `estado` LIBRE (18:08:56Z, `Date:` de GitHub). La columna es `String?` en el esquema: admite `NULL`.
+   Reversible: el profesional lo vuelve a escribir desde el panel.
 
 ### 3 · Lo que NO está hecho o no está medido
 
-- 🔴 **El WhatsApp al PROFESIONAL sigue siendo una vía viva.** `psp.routes.ts:383` llama a `notifyMerchantPaid` sin
+- ✅ **Cerrado por ④ (c.22176).** Lo que decía este punto antes del vaciado, para que se lea la cicatriz: **el WhatsApp al PROFESIONAL seguía siendo una vía viva.** `psp.routes.ts:383` llama a `notifyMerchantPaid` sin
   condición propia, y `notifyMerchantAlert` solo se para si `whatsappPhone` está vacío (`whatsappNotifications.ts`), y en el comercio 2 está presente.
   No lo quité: no está en la lista ①②③ de c.22165 (aunque su pregunta decía «sin aviso al profesional»), y la ruta
   del panel no deja vaciarlo (`whatsappPhone: z.string().min(6).max(20).optional()`, `schemas.ts:468`): haría falta otro UPDATE
   directo. Si staging tiene credenciales de Meta, **no lo sé**: `/health` solo da `ok service version db dbMs`.
-  Hasta que se decida, **un confirm-bizum en la QA puede mandar un WA al número del profesional.** Al cliente 3936 no
+  Con ④ aplicado, `notifyMerchantAlert` sale por `if (!to) return { ok: false, via: 'none' }` y no envía. Al cliente 3936 no
   le llega nada: ni confirmación (`tieneNumeroDeContacto`) ni reseña.
 - Hallazgo de paso (J2, sin arreglar porque el encargo no toca `src/`): `GET /admin/me` (`app.ts:484`, `:495`) y
-  `GET /admin/connect/status` (`connect.routes.ts:23`) calculan `BIZUM_MANUAL_ENABLED` con un `merchant` **sin `flags`**,
+  `GET /admin/connect/status` (`connect.routes.ts:23`) — ya con ticket propio, SCRUM-1774 — calculan `BIZUM_MANUAL_ENABLED` con un `merchant` **sin `flags`**,
   así que no ven el override por comercio: con ③ aplicado, el panel puede decir que el Bizum está apagado. `confirm-bizum`
   (`chargesAdmin.routes.ts:74`) sí carga `flags`, y es la puerta que usa CIERRES. Leído en el código, no visto en pantalla.
 - Ninguna factura, cobro ni envío: la F1 nueva con cobro parcial, el libro con `cobros[]` y el 303 por tramos son de CIERRES 14.
 - `dist/` para leer `isFlagEnabled`: `tsc -p . --noCheck` local (no se empuja). Ni `prisma generate` ni nada contra producción.
+
 ## J5 · SCRUM-1732e · la R1 de una factura sin cobrar con criterio de caja: lo que dice la norma
 
 **Medido contra:** `origin/main` = `d4a0fc951cd54405d6e9ae908a7b52b12b26c024` · 2026-11-19T17:40:04Z (hora de GitHub; sesión J5 `jv-j5bl`, por encargo del orquestador `cobroflash-backend-c7`)

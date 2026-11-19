@@ -2,21 +2,21 @@
   "medido": {
     "health": {
       "status": 200,
-      "version": "6cabd3d42c1e0c7ba531a91ab94471c17c288949",
+      "version": "89bb8593b603c84b3413f4c3f90b1c4e4e715329",
       "db": "up",
-      "date": "Thu, 19 Nov 2026 18:00:05 GMT"
+      "date": "Thu, 19 Nov 2026 18:09:05 GMT"
     },
     "login": {
       "status": 200,
-      "date": "Thu, 19 Nov 2026 18:00:05 GMT"
+      "date": "Thu, 19 Nov 2026 18:09:05 GMT"
     }
   },
   "perfil": {
     "ruta": "GET /admin/merchant",
     "status": 200,
-    "date": "Thu, 19 Nov 2026 18:00:05 GMT",
+    "date": "Thu, 19 Nov 2026 18:09:05 GMT",
     "notifyEmailOnPaid": false,
-    "whatsappPhone": "presente",
+    "whatsappPhone": "vacío",
     "bizumPhone": "presente",
     "email": "vacío",
     "flags": {
@@ -55,5 +55,14 @@
         "email": "presente"
       }
     ]
+  },
+  "vaciado_whatsapp": {
+    "decision": "SCRUM-1732 c.22176",
+    "sql": "UPDATE merchants SET whatsapp_phone = NULL WHERE id = 2 AND email = 'qa@staging.yaqu'",
+    "antes": "…001 (11 caracteres; enmascarado)",
+    "control_negativo_id_999999": "0 filas",
+    "real": "1 filas",
+    "despues_columna": null,
+    "hora": "2026-11-19T18:08:56Z (Date de GitHub, al acabar)"
   }
 }
