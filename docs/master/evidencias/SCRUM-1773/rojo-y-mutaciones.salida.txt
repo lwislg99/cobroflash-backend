@@ -1,0 +1,26 @@
+# SCRUM-1773 · rojo con un fichero NUEVO real en el árbol (public/dashboard/js/zz-siembra-1773.js, creado y borrado en el mismo comando) · rc=1
+✔ SCRUM-1773 · SUELO: la población no es cero y hay algo que contar (si no, CIEGO, no verde) (1.3507ms)
+✔ SCRUM-1773 · CONTROL POSITIVO sembrado: la forma concatenada, la plantilla y el on*= se cuentan (8.2613ms)
+✔ SCRUM-1773 · CONTROL CERO: comentario, código, regex y data-style= no cuentan (9.5394ms)
+✖ SCRUM-1773 · un fichero NUEVO con style= en una cadena cae (sembrado) (2.1438ms)
+✔ SCRUM-1773 · un fichero congelado que SUBE una unidad cae (sembrado) (0.9873ms)
+✖ SCRUM-1773 · 🔴 EL TRINQUETE sobre el árbol: ningún fichero SUBE y no entra ninguno NUEVO (0.8426ms)
+✔ SCRUM-1773 · 🔴 EL TRINQUETE no baja en silencio: una bajada se RECONGELA con línea fechada (0.3855ms)
+✔ SCRUM-1773 · la tabla suma lo que dice la última línea fechada de HISTORIAL (0.3805ms)
+ℹ tests 8
+ℹ pass 6
+ℹ fail 2
+✖ failing tests:
+✖ SCRUM-1773 · un fichero NUEVO con style= en una cadena cae (sembrado) (2.1438ms)
+✖ SCRUM-1773 · 🔴 EL TRINQUETE sobre el árbol: ningún fichero SUBE y no entra ninguno NUEVO (0.8426ms)
+  AssertionError [ERR_ASSERTION]: 🔴 HA ENTRADO style=/on*= en cadenas de public/dashboard/js (población 99 ficheros). Con la CSP del paso 3 no pinta ni corre:
+    · public/dashboard/js/zz-siembra-1773.js · NUEVO · style= en public/dashboard/js/zz-siembra-1773.js:1 · on*= en —
+
+# mutaciones (mutar.mjs.txt) · rc=0
+base limpia: pasados 8 · caídos 0
+MUERE (la caza) · tests/scrum1773-trinquete-style-en-innerhtml.test.mjs · SCRUM-1773 · CONTROL POSITIVO sembrado: la forma concatenada, la plantilla y el on*= se cuentan
+MUERE (la caza) · tests/scrum1773-trinquete-style-en-innerhtml.test.mjs · SCRUM-1773 · 🔴 EL TRINQUETE no baja en silencio: una bajada se RECONGELA con línea fechada
+MUERE (la caza) · tests/scrum1773-trinquete-style-en-innerhtml.test.mjs · SCRUM-1773 · un fichero NUEVO con style= en una cadena cae (sembrado)
+MUERE (la caza) · tests/scrum1773-trinquete-style-en-innerhtml.test.mjs · SCRUM-1773 · un fichero congelado que SUBE una unidad cae (sembrado)
+CONTROL inocua: MUDA (bien)
+VEREDICTO: 4/4 cazadas · 0 no
