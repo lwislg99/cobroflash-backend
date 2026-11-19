@@ -484,7 +484,7 @@ function renderCobrosView(container) {
   thead.innerHTML = '<tr>'
     + '<th>' + COBROS_COPY.cabeceras[0] + '</th>'
     + '<th>' + COBROS_COPY.cabeceras[1] + '</th>'
-    + '<th style="text-align:right">' + COBROS_COPY.cabeceras[2] + '</th>'
+    + '<th class="cobros-th-importe">' + COBROS_COPY.cabeceras[2] + '</th>'
     + '<th class="col-hide-mobile">' + COBROS_COPY.cabeceras[3] + '</th>'
     + '<th>' + COBROS_COPY.cabeceras[4] + '</th>'
     + '<th>' + COBROS_COPY.cabeceras[5] + '</th>'

@@ -1,0 +1,27 @@
+390 clientes-vacio           elem=89 objetivo=0 hoy=0 control=34 styleJ2 rama/main=0/1 todas=50/51
+390 cobros                   elem=24 objetivo=0 hoy=0 control=1 styleJ2 rama/main=0/1 todas=8/9
+390 csv-paso1                elem=108 objetivo=0 hoy=0 control=286 styleJ2 rama/main=0/17 todas=50/67
+390 csv-acentos              elem=104 objetivo=0 hoy=0 control=159 styleJ2 rama/main=0/23 todas=50/73
+390 csv-mapeo                elem=138 objetivo=0 hoy=0 control=410 styleJ2 rama/main=0/36 todas=50/86
+390 csv-informe              elem=108 objetivo=0 hoy=0 control=271 styleJ2 rama/main=0/45 todas=50/95
+390 c360-resumen             elem=94 objetivo=0 hoy=0 control=904 styleJ2 rama/main=0/30 todas=8/38
+390 c360-presupuestos        elem=94 objetivo=0 hoy=0 control=904 styleJ2 rama/main=0/32 todas=8/40
+390 c360-facturas            elem=96 objetivo=0 hoy=0 control=926 styleJ2 rama/main=0/34 todas=8/42
+390 c360-vacio-presupuestos  elem=68 objetivo=0 hoy=0 control=491 styleJ2 rama/main=0/15 todas=8/23
+390 c360-vacio-facturas      elem=68 objetivo=0 hoy=0 control=491 styleJ2 rama/main=0/15 todas=8/23
+390 c360-editar              elem=155 objetivo=0 hoy=0 control=965 styleJ2 rama/main=0/36 todas=8/44
+1280 clientes-vacio           elem=89 objetivo=0 hoy=0 control=30 styleJ2 rama/main=0/1 todas=50/51
+1280 cobros                   elem=24 objetivo=0 hoy=0 control=1 styleJ2 rama/main=0/1 todas=8/9
+1280 csv-paso1                elem=108 objetivo=0 hoy=0 control=300 styleJ2 rama/main=0/17 todas=50/67
+1280 csv-acentos              elem=104 objetivo=0 hoy=0 control=183 styleJ2 rama/main=0/23 todas=50/73
+1280 csv-mapeo                elem=138 objetivo=0 hoy=0 control=432 styleJ2 rama/main=0/36 todas=50/86
+1280 csv-informe              elem=108 objetivo=0 hoy=0 control=287 styleJ2 rama/main=0/45 todas=50/95
+1280 c360-resumen             elem=94 objetivo=0 hoy=0 control=920 styleJ2 rama/main=0/30 todas=8/38
+1280 c360-presupuestos        elem=94 objetivo=0 hoy=0 control=920 styleJ2 rama/main=0/32 todas=8/40
+1280 c360-facturas            elem=96 objetivo=0 hoy=0 control=934 styleJ2 rama/main=0/34 todas=8/42
+1280 c360-vacio-presupuestos  elem=68 objetivo=0 hoy=0 control=491 styleJ2 rama/main=0/15 todas=8/23
+1280 c360-vacio-facturas      elem=68 objetivo=0 hoy=0 control=491 styleJ2 rama/main=0/15 todas=8/23
+1280 c360-editar              elem=155 objetivo=0 hoy=0 control=981 styleJ2 rama/main=0/36 todas=8/44
+COBERTURA clases del bloque J2 vistas en pantalla: 55 de 57 SIN VER: csv-oculto c360-vacio
+TOTAL {"elementos":2292,"difsObjetivo":0,"difsHoy":0,"difsControl":11812,"violJ2Rama":0,"violJ2Main":570,"estructura":0,"errores":0} SEMBRADO {"v":["style-src-attr"],"color":"rgb(0, 0, 0)"}
+VEREDICTO: VERDE

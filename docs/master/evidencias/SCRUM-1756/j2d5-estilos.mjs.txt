@@ -1,0 +1,210 @@
+// SCRUM-1756i (jv-j2d5) · ¿PIERDE alguna clase nueva contra la cascada? Estilos COMPUTADOS, elemento a elemento.
+//
+// Sirve el `public/` de DOS árboles (main extraído con `git archive` y la rama) con un servidor estático
+// propio y las rutas `/admin/*` contestadas AQUÍ con datos sembrados (ni BD, ni red, ni envíos: regla 28).
+// Abre el panel REAL (`/dashboard/index.html`, sus hojas y sus scripts, en orden) en Chrome, navega a las
+// cuatro vistas J2 y recoge `getComputedStyle` de cada elemento de `#view-container` y de `.modal-overlay`.
+//
+// Compara:   main SIN política  ↔  rama CON política   (lo que verá el profesional tras el paso 3)
+//            main SIN política  ↔  rama SIN política   (hoy, en modo informe)
+//            main CON política  ↔  main SIN política   (CONTROL: tiene que DIFERIR; si no, el instrumento no ve)
+// y cuenta los `securitypolicyviolation` de `style-src` cuyo fichero es uno de los cuatro.
+//
+// Uso: node j2d5-estilos.mjs <public de main> <public de la rama> <chrome.exe> <puppeteer-core dir>
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+
+const [PUB_MAIN, PUB_RAMA, CHROME, PUPDIR] = process.argv.slice(2);
+if (!PUB_MAIN || !PUB_RAMA || !CHROME || !PUPDIR) { console.error('uso: <public main> <public rama> <chrome> <puppeteer-core>'); process.exit(2); }
+const puppeteer = createRequire(path.join(PUPDIR, 'x.js'))('puppeteer-core');
+
+// La política de `src/core/http/csp.ts` de la rama, leída del fichero (no copiada a mano).
+const CSP_TS = fs.readFileSync(path.join(PUB_RAMA, '..', 'src', 'core', 'http', 'csp.ts'), 'utf8');
+const DIRECTIVAS = [...CSP_TS.slice(CSP_TS.indexOf('DIRECTIVAS_CSP'), CSP_TS.indexOf('];')).matchAll(/^\s*"([^"]+)",/gm)].map((m) => m[1]);
+const POLITICA = DIRECTIVAS.join('; ');
+if (!/style-src 'self'/.test(POLITICA) || DIRECTIVAS.length < 5) { console.error('CIEGO: no pude leer la política de csp.ts'); process.exit(2); }
+
+const FECHA = '2026-11-10T10:00:00.000Z';
+const ME = { merchantId: 1, userRole: 'admin', name: 'QA', merchantName: 'Fontanería Ruiz', isOwner: true, plan: 'pro',
+  subscriptionStatus: 'active', onboardingCompleted: true, locale: 'es-ES', cobrosCubos: [], metodosDeclarables: [] };
+const CLIENTE = { id: 3, name: 'Ana Pérez', phone: '600111222', email: 'ana@ejemplo.test', taxId: 'B1234567',
+  address: 'Calle Mayor 1', createdAt: '2026-01-10T10:00:00.000Z', notes: 'Prefiere por la tarde', tags: [] };
+function detalle(variante) {
+  const vacio = variante === 'vacio';
+  return {
+    customer: CLIENTE,
+    stats: vacio ? { totalQuoted: 0, totalPaid: 0, debt: 0, profit: 5, quotesCount: 0, invoicesCount: 0 }
+                 : { totalQuoted: 1000, totalPaid: 500, debt: 200, profit: -50, quotesCount: 1, invoicesCount: 1 },
+    quotes: vacio ? [] : [{ id: 100, quoteNumber: 100, status: 'sent', total: 121, currency: 'EUR', createdAt: FECHA }],
+    invoices: vacio ? [] : [{ id: 11, number: 'F-2026-0001', status: 'paid', total: 121, currency: 'EUR', createdAt: FECHA, pdfUrl: '/x.pdf' }],
+    events: vacio ? [] : [
+      { type: 'quote_accepted', title: 'Presupuesto aceptado', detail: 'Nº 100', date: FECHA, createdAt: FECHA },
+      { type: 'quote_rejected', title: 'Presupuesto rechazado', detail: '', date: FECHA, createdAt: FECHA },
+      { type: 'otro', title: 'Otro', detail: 'x', date: FECHA, createdAt: FECHA },
+    ],
+  };
+}
+let variante = 'lleno';
+function api(req) {
+  const u = new URL(req.url, 'http://x');
+  const p = u.pathname;
+  if (p === '/admin/me') return ME;
+  if (p === '/admin/cobros') return [{ id: 7, status: 'paid', amount: 250, currency: 'EUR', concept: 'Bajante', createdAt: FECHA, paidAt: FECHA, method: 'bizum', customer: { id: 3, name: 'Ana Pérez' } }];
+  if (p === '/admin/customers' && req.method === 'GET') return [];
+  if (p === '/admin/customers/3' || p === '/admin/customers/3/') return CLIENTE;
+  if (p === '/admin/customers/3/detail') return detalle(variante);
+  if (p === '/admin/customers/import/preparar') return { primeraFila: 'Ana Pérez;600111222', codificacion: 'utf-8', alternativa: 'windows-1252',
+    columnas: [{ indice: 0, columna: 'nombre', campo: 'name' }, { indice: 1, columna: 'movil_raro', campo: null }] };
+  if (p === '/admin/customers/import') return { creados: 2, omitidos: 1, rechazos: [{ fila: 3, motivo: 'Falta el nombre' }, { fila: 4, motivo: 'Teléfono no válido' }] };
+  if (/\/(historial|whatsapp|sites|notes)$/.test(p)) return { items: [], eventos: [], mensajes: [] };
+  return {};
+}
+const TIPOS = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json', '.webmanifest': 'application/manifest+json' };
+function servidor(raiz, conPolitica) {
+  return http.createServer((req, res) => {
+    if (conPolitica) res.setHeader('Content-Security-Policy', POLITICA);
+    const p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+    if (p.startsWith('/admin/')) { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(api(req))); return; }
+    if (p === '/__sembrado') { res.setHeader('Content-Type', 'text/html; charset=utf-8'); res.end('<!doctype html><p id="s" style="color:rgb(1, 2, 3)">x</p>'); return; }
+    if (p === '/sw.js') { res.statusCode = 404; res.end(); return; } // sin service worker: no cachea entre corridas
+    const f = path.join(raiz, p.endsWith('/') ? p + 'index.html' : p);
+    if (!f.startsWith(raiz) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.statusCode = 404; res.end(); return; }
+    res.setHeader('Content-Type', TIPOS[path.extname(f)] || 'application/octet-stream');
+    res.end(fs.readFileSync(f));
+  });
+}
+const escuchar = (s) => new Promise((r) => s.listen(0, '127.0.0.1', () => r(s.address().port)));
+const PUERTOS = {};
+const SERV = [];
+for (const [arbol, raiz] of [['main', PUB_MAIN], ['rama', PUB_RAMA]]) for (const pol of [false, true]) {
+  const s = servidor(path.resolve(raiz), pol); SERV.push(s); PUERTOS[`${arbol}-${pol ? 'con' : 'sin'}`] = await escuchar(s);
+}
+
+const FICHEROS_J2 = ['cobrosView.js', 'csvImport.js', 'customerDetailView.js', 'customersView.js'];
+// Recoge el estilo computado de cada elemento de las raíces, en orden de documento.
+const RECOGER = () => {
+  const raices = [document.getElementById('view-container'), ...document.querySelectorAll('.modal-overlay')].filter(Boolean);
+  const filas = [];
+  for (const r of raices) for (const el of [r, ...r.querySelectorAll('*')]) {
+    const cs = getComputedStyle(el);
+    const o = {};
+    for (let i = 0; i < cs.length; i++) o[cs[i]] = cs.getPropertyValue(cs[i]);
+    const id = el.id ? '#' + el.id : '';
+    filas.push({ tag: el.tagName + id, clase: el.getAttribute('class') || '', estilos: o });
+  }
+  return filas;
+};
+const pausa = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Escenarios: cada uno deja en pantalla elementos que llevaban `style=` en main.
+const ESCENARIOS = [
+  { nombre: 'clientes-vacio', hash: '#customers', pasos: [] },
+  { nombre: 'cobros', hash: '#cobros', pasos: [] },
+  { nombre: 'csv-paso1', hash: '#customers', pasos: [['click', '#btn-import-csv, [data-accion="importar-csv"]', 'importar']] },
+  { nombre: 'csv-acentos', hash: '#customers', pasos: [['click', null, 'importar'], ['fichero']] },
+  { nombre: 'csv-mapeo', hash: '#customers', pasos: [['click', null, 'importar'], ['fichero'], ['click', '#csv-acentos-si']] },
+  { nombre: 'csv-informe', hash: '#customers', pasos: [['click', null, 'importar'], ['fichero'], ['click', '#csv-acentos-si'], ['click', '#csv-importar']] },
+  { nombre: 'c360-resumen', hash: '#customer-360/3', pasos: [] },
+  { nombre: 'c360-presupuestos', hash: '#customer-360/3', pasos: [['click', 'button[data-key="quotes"]']] },
+  { nombre: 'c360-facturas', hash: '#customer-360/3', pasos: [['click', 'button[data-key="invoices"]']] },
+  { nombre: 'c360-vacio-presupuestos', hash: '#customer-360/3', variante: 'vacio', pasos: [['click', 'button[data-key="quotes"]']] },
+  { nombre: 'c360-vacio-facturas', hash: '#customer-360/3', variante: 'vacio', pasos: [['click', 'button[data-key="invoices"]']] },
+  { nombre: 'c360-editar', hash: '#customer-360/3', pasos: [['click', '#btn-edit-360']] },
+];
+const CSV = path.join(path.dirname(fileURLToPath(import.meta.url)), 'j2d5-muestra.csv');
+fs.writeFileSync(CSV, 'nombre;movil_raro\nAna Pérez;600111222\n');
+
+const navegador = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-first-run'] });
+async function correr(clave, esc, ancho) {
+  variante = esc.variante || 'lleno';
+  const page = await navegador.newPage();
+  await page.setViewport({ width: ancho, height: 900 });
+  await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+  const errores = [];
+  page.on('pageerror', (e) => errores.push(String(e.message).slice(0, 160)));
+  await page.evaluateOnNewDocument(() => {
+    window.__violaciones = [];
+    document.addEventListener('securitypolicyviolation', (e) => window.__violaciones.push({ dir: e.effectiveDirective, src: e.sourceFile, linea: e.lineNumber }));
+  });
+  await page.goto(`http://127.0.0.1:${PUERTOS[clave]}/dashboard/index.html${esc.hash}`, { waitUntil: 'networkidle0' });
+  await pausa(400);
+  for (const paso of esc.pasos) {
+    if (paso[0] === 'click') {
+      if (paso[2] === 'importar') {
+        const ok = await page.evaluate(() => { const b = [...document.querySelectorAll('#view-container button')].find((x) => /importar/i.test(x.textContent)); if (b) b.click(); return !!b; });
+        if (!ok) errores.push('no encontré el botón de importar');
+      } else {
+        const ok = await page.evaluate((s) => { const b = document.querySelector(s); if (b) b.click(); return !!b; }, paso[1]);
+        if (!ok) errores.push('no encontré ' + paso[1]);
+      }
+    } else if (paso[0] === 'fichero') {
+      const input = await page.$('#csv-file-input');
+      if (!input) errores.push('no encontré #csv-file-input'); else await input.uploadFile(CSV);
+    }
+    await pausa(350);
+  }
+  const filas = await page.evaluate(RECOGER);
+  const viol = await page.evaluate(() => window.__violaciones);
+  await page.close();
+  return { filas, viol, errores };
+}
+function comparar(a, b) {
+  const difs = [];
+  if (a.filas.length !== b.filas.length) return { estructura: `${a.filas.length} ≠ ${b.filas.length} elementos`, difs };
+  for (let i = 0; i < a.filas.length; i++) {
+    const x = a.filas[i], y = b.filas[i];
+    if (x.tag !== y.tag) return { estructura: `elemento ${i}: ${x.tag} ≠ ${y.tag}`, difs };
+    for (const k of Object.keys(x.estilos)) if (x.estilos[k] !== y.estilos[k]) difs.push(`${i} ${x.tag}.${(y.clase || '').replace(/ /g, '.')} ${k}: «${x.estilos[k]}» → «${y.estilos[k]}»`);
+  }
+  return { estructura: null, difs };
+}
+const informe = { politica: POLITICA, escenarios: [] };
+const HOJA = fs.readFileSync(path.join(PUB_RAMA, 'dashboard', 'css', 'styles.css'), 'utf8');
+const BLOQUE = HOJA.slice(HOJA.indexOf('/* J2: SCRUM-1756i'), HOJA.indexOf('/* ── J3 · SCRUM-1577b'));
+const CLASES = [...BLOQUE.matchAll(/^[^{\n]*\.([a-z0-9-]+) \{/gm)].map((m) => m[1]);
+if (CLASES.length < 50) { console.error('CIEGO: no encontré el bloque J2 en la hoja de la rama'); process.exit(2); }
+const VISTAS = new Set();
+let total = { elementos: 0, difsObjetivo: 0, difsHoy: 0, difsControl: 0, violJ2Rama: 0, violJ2Main: 0, estructura: 0, errores: 0 };
+for (const ancho of [390, 1280]) for (const esc of ESCENARIOS) {
+  const r = {};
+  for (const clave of ['main-sin', 'main-con', 'rama-sin', 'rama-con']) r[clave] = await correr(clave, esc, ancho);
+  for (const f of r['rama-con'].filas) for (const c of f.clase.split(/\s+/)) VISTAS.add(c);
+  const objetivo = comparar(r['main-sin'], r['rama-con']);
+  const hoy = comparar(r['main-sin'], r['rama-sin']);
+  const control = comparar(r['main-sin'], r['main-con']);
+  const j2 = (v) => v.filter((x) => x.dir.startsWith('style-src') && FICHEROS_J2.some((f) => String(x.src).endsWith('/' + f)));
+  const fila = {
+    ancho, escenario: esc.nombre, elementos: r['main-sin'].filas.length,
+    objetivo: objetivo.estructura || objetivo.difs.length, hoy: hoy.estructura || hoy.difs.length, control: control.estructura || control.difs.length,
+    violStyleJ2: { rama: j2(r['rama-con'].viol).length, main: j2(r['main-con'].viol).length },
+    violStyleTodas: { rama: r['rama-con'].viol.filter((x) => x.dir.startsWith('style-src')).length, main: r['main-con'].viol.filter((x) => x.dir.startsWith('style-src')).length },
+    errores: [...new Set(Object.values(r).flatMap((x) => x.errores))],
+    muestraObjetivo: objetivo.difs, muestraHoy: hoy.difs.slice(0, 6),
+  };
+  informe.escenarios.push(fila);
+  total.elementos += fila.elementos;
+  if (objetivo.estructura || hoy.estructura) total.estructura++;
+  total.difsObjetivo += objetivo.difs.length; total.difsHoy += hoy.difs.length; total.difsControl += control.difs.length;
+  total.violJ2Rama += fila.violStyleJ2.rama; total.violJ2Main += fila.violStyleJ2.main; total.errores += fila.errores.length;
+  console.log(`${ancho} ${esc.nombre.padEnd(24)} elem=${fila.elementos} objetivo=${fila.objetivo} hoy=${fila.hoy} control=${fila.control} styleJ2 rama/main=${fila.violStyleJ2.rama}/${fila.violStyleJ2.main} todas=${fila.violStyleTodas.rama}/${fila.violStyleTodas.main}${fila.errores.length ? ' ERR ' + fila.errores.join(' | ') : ''}`);
+}
+// Control del instrumento: la página sembrada con un `style=` TIENE que dar un informe con la política.
+const pg = await navegador.newPage();
+await pg.evaluateOnNewDocument(() => { window.__v = []; document.addEventListener('securitypolicyviolation', (e) => window.__v.push(e.effectiveDirective)); });
+await pg.goto(`http://127.0.0.1:${PUERTOS['rama-con']}/__sembrado`);
+const sembrado = await pg.evaluate(() => ({ v: window.__v, color: getComputedStyle(document.getElementById('s')).color }));
+await navegador.close();
+for (const s of SERV) s.close();
+const sinVer = CLASES.filter((c) => !VISTAS.has(c));
+console.log('COBERTURA clases del bloque J2 vistas en pantalla:', CLASES.length - sinVer.length, 'de', CLASES.length, sinVer.length ? 'SIN VER: ' + sinVer.join(' ') : '');
+informe.cobertura = { clases: CLASES.length, sinVer };
+informe.total = total; informe.sembrado = sembrado;
+fs.writeFileSync(path.join(path.dirname(CSV), 'j2d5-estilos.resultado.json'), JSON.stringify(informe, null, 1));
+console.log('TOTAL', JSON.stringify(total), 'SEMBRADO', JSON.stringify(sembrado));
+const ciego = total.elementos === 0 || total.difsControl === 0 || !sembrado.v.includes('style-src-attr') || total.errores > 0 || total.estructura > 0;
+const verde = !ciego && total.difsObjetivo === 0 && total.difsHoy === 0 && total.violJ2Rama === 0 && total.violJ2Main > 0;
+console.log(ciego ? 'VEREDICTO: CIEGO' : verde ? 'VEREDICTO: VERDE' : 'VEREDICTO: ROJO');
+process.exit(ciego ? 2 : verde ? 0 : 1);
