@@ -59,3 +59,35 @@ Literales (texto quitadas las etiquetas; 596 párrafos en la Orden; el art. 7 va
 Controles: `zzqx` da 0 en los dos textos (cero); «huso horario» da 4 en la Orden (positivo, el mismo recuento que c.22115). En el RRSIF, «ejercicio» casa 5 veces y ninguna se refiere a un registro («en el ejercicio de su actividad», «de responsabilidad», «de las habilitaciones», «de su actividad económica», «de sus competencias»): lo mismo que midió c.22115.
 
 **Sin medir:** las tablas del anexo de la Orden (son imágenes en el BOE, c.22115); `docs/RUNBOOKS.md` R13, que cito de c.22115; nada en yaqu.app (no hay superficie: es el máster).
+
+# SCRUM-1770b · Aplicado en el máster el literal FIRMADO del motivo de «un XML por año natural» (sin la media frase de R13)
+
+**Medido contra:** `origin/main` = `74b3b64f17008449d086008358436f0cb884a8d8` · 2026-11-19T00:41:02Z
+
+A9: sin fallo que generalice — mi único tropiezo fue de este reflow: tomé el ancho de línea de una ventana del máster que incluía una línea de 171 caracteres y el primer ajuste salió a ese ancho; lo vi en la salida, lo deshice antes del commit y el ancho final (101) sale del propio párrafo
+
+Carril J5 (solo documentos). Encargo del orquestador J (`cobroflash-backend-8a`), 19-nov-2026. Rama `scrum-1770b-master-motivo-firmado`, que sale de `scrum-1770a-literal-del-motivo` (PR #3251, abierto al empezar).
+
+## 1 · La firma
+
+SCRUM-1770 c.22156 (publicada por el orquestador J, no por el fundador): respuesta literal de Javier **«Firmo»** sobre el párrafo «Propuesto» de c.22139 §1, «byte a byte, incluido el corchete fechado con la frase vieja y su motivo». Única excepción autorizada en el mismo comentario: «quien aplique el máster lo relee y, si R13 no dice eso, quita esa media frase y lo deja dicho en el registro; el resto del literal no se toca».
+
+## 2 · R13, releído: la media frase se QUITA
+
+`docs/RUNBOOKS.md` en `origin/main` `74b3b64f1`, «## R13 · "Mi cliente tiene una inspección"» (7 líneas de contenido): dice QUÉ se entrega en una inspección (export XML RRSIF + facturas en PDF + declaración responsable + guía del pack gestoría). **No dice nada del periodo**: ni año, ni ejercicio, ni periodo aparecen en la sección. La media frase afirmaba que el año natural es «el de la exportación para una inspección (R13)», y R13 no lo sostiene. Quitado del literal exactamente « y el de la exportación para una inspección (R13)»; la frase queda «…porque es el periodo que manejan el profesional y su asesor.» Nada más del literal cambia.
+
+## 3 · El diff del máster
+
+Solo `docs/YAQU_MASTER.md`, 16 líneas añadidas y 3 quitadas (`git diff --numstat`), todas dentro de la cita `>` del párrafo de los ZIP de exportación.
+
+- **Antes** (766-769): la línea 766 hasta «…que toque el rango pedido**», y luego «(no por el rango en sí): el registro RRSIF se organiza por ejercicio y la cadena de huellas es / anual — recortar por meses rompería el encadenamiento, mezclar años no representaría un registro / válido. **Fail-closed deliberado** (asimetría con los PDF del mismo ZIP, que sí toleran fallos».
+- **Después** (766-782): la 766 sin tocar; en 767-781, el literal firmado (§2 aparte) con su corchete fechado en cursiva, que guarda la frase vieja; y en 781-782, «**Fail-closed / deliberado** (asimetría con los PDF del mismo ZIP, que sí toleran fallos». Desde la 783 («parciales con aviso)…»), nada se mueve más que el número de línea.
+- Ajuste: los saltos de línea del máster no son texto; reajusté el párrafo al ancho de su propia línea más larga (101 caracteres), finales LF, último byte del fichero igual que antes.
+
+**Cotejo byte a byte** (guion de un solo uso en el temporal de la sesión, no en git): junta 766-782 quitando `> ` y los saltos, y lo compara con la línea «Propuesto» de §1 de este registro tras aplicarle sus tres diferencias conocidas con Jira, cada una obligada a aparecer UNA vez o sale CIEGO: la media frase de R13 (§2), el enlace `[SCRUM-1761 c.22126](…)` (en c.22139 va sin enlace, leído en ADF) y «y este registro» (en c.22139 dice «y SCRUM-1770a»). Resultado: **IDÉNTICOS, 1.506 caracteres**. Control rojo: el mismo cotejo sobre el máster sin tocar sale «DIFIEREN en 100». Control CIEGO: la primera pasada eligió la línea «Hoy» del registro, la sustitución de R13 dio 0 ocurrencias y el guion salió CIEGO (código 2), no verde.
+
+## 4 · Lo que NO se toca aquí
+
+Los dos ecos del motivo caducado van por su carril, según c.22156: `docs/legal/AUDITLOG_FISCAL_CONTRATO.md:450` (J4, nota fechada A8) y `src/modules/exports/app/routes/exports.routes.ts:233-235` (S1, Para Luis). Ningún código, ningún guard.
+
+**Sin medir:** yaqu.app (no hay superficie: es el máster); el obligatorio de este PR (lo abre y arma el bot).
