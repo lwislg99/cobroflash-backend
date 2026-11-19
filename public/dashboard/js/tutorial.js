@@ -86,7 +86,7 @@ function showTutorialTooltip(target, text, position) {
   `;
   tip.innerHTML = `
     <div>${text}</div>
-    <button id="tut-close" style="margin-top:10px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:var(--radius-full);padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer">Entendido</button>
+    <button id="tut-close" class="j3e-645af21">Entendido</button>
   `;
   document.body.appendChild(tip);
 
@@ -227,28 +227,28 @@ function openHelpGuide() {
     padding:24px 22px;overflow-y:auto;transform:translateX(100%);transition:transform .25s;
   `;
   panel.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-      <h2 style="margin:0;font-size:18px;color:#0f1c17">Guía de inicio</h2>
-      <button id="tut-guide-close" style="border:none;background:none;font-size:24px;cursor:pointer;color:#6b756f">&times;</button>
+    <div class="j3e-683659d">
+      <h2 class="j3e-76754cd">Guía de inicio</h2>
+      <button id="tut-guide-close" class="j3e-944b01d">&times;</button>
     </div>
     ${TUTORIAL_GUIDE.filter((g) => !g.soloSiCobra || window.appModoEmision !== 'receipt').map((g, i) => `
-      <div style="border:1px solid #e7e9e5;border-radius:12px;margin-bottom:10px;overflow:hidden">
-        <button class="tut-acc" data-i="${i}" style="width:100%;text-align:left;padding:13px 14px;background:#f7f8f6;border:none;cursor:pointer;font-size:14px;font-weight:600;color:#0f1c17;display:flex;justify-content:space-between;align-items:center">
-          <span>${g.q}</span><span style="color:#22c55e">+</span>
+      <div class="j3e-9f332cc">
+        <button class="j3e-bf35b15 tut-acc" data-i="${i}">
+          <span>${g.q}</span><span class="j3e-f918b2a">+</span>
         </button>
-        <div class="tut-acc-body" data-i="${i}" style="display:none;padding:12px 16px">
-          <ol style="margin:0;padding-left:18px;color:#333c37;font-size:14px;line-height:1.7">
+        <div class="j3e-809b4d7 tut-acc-body" data-i="${i}">
+          <ol class="j3e-2271d1c">
             ${g.steps.map((s) => `<li>${s}</li>`).join('')}
           </ol>
         </div>
       </div>
     `).join('')}
-    <div id="tut-soporte" style="margin-top:18px;border-top:1px solid #e7e9e5;padding-top:16px">
-      <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#0f1c17">Escríbenos</p>
-      <label for="tut-soporte-txt" style="display:block;font-size:13px;color:#6b756f;margin-bottom:6px">¿Qué ha pasado?</label>
-      <textarea id="tut-soporte-txt" rows="4" maxlength="4000" style="width:100%;box-sizing:border-box;padding:10px 12px;font:inherit;font-size:14px;color:#0f1c17;background:#fff;border:1px solid #cdd2cb;border-radius:10px;resize:vertical"></textarea>
-      <button id="tut-soporte-enviar" type="button" style="margin-top:8px;width:100%;min-height:44px;padding:11px;font:inherit;font-size:15px;font-weight:700;color:#fff;background:#16a34a;border:none;border-radius:10px;cursor:pointer">Enviar</button>
-      <p id="tut-soporte-estado" role="status" aria-live="polite" style="margin:10px 0 0;font-size:13px;line-height:1.5;color:#6b756f"></p>
+    <div id="tut-soporte" class="j3e-bc600bf">
+      <p class="j3e-76e3b97">Escríbenos</p>
+      <label for="tut-soporte-txt" class="j3e-241285f">¿Qué ha pasado?</label>
+      <textarea id="tut-soporte-txt" rows="4" maxlength="4000" class="j3e-1d0e748"></textarea>
+      <button id="tut-soporte-enviar" type="button" class="j3e-39d9474">Enviar</button>
+      <p id="tut-soporte-estado" role="status" aria-live="polite" class="j3e-dd1c338"></p>
     </div>
   `;
   backdrop.appendChild(panel);

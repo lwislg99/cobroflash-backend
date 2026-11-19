@@ -102,16 +102,16 @@ function showOnboardingWizard(onComplete) {
   backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.6);display:flex;align-items:center;justify-content:center;z-index:300;padding:16px';
 
   backdrop.innerHTML = `
-    <div style="background:#fff;border-radius:20px;padding:28px 24px;width:100%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,.2)">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:24px">
-        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#22d3ee);display:flex;align-items:center;justify-content:center;font-weight:800;color:#052e16;font-size:14px">YQ</div>
-        <span style="font-weight:700;font-size:18px;color:#0f1c17">Bienvenido a YaQu</span>
+    <div class="j3e-669b172">
+      <div class="j3e-0c14200">
+        <div class="j3e-d665c46">YQ</div>
+        <span class="j3e-fc1f615">Bienvenido a YaQu</span>
       </div>
 
       <div id="ob-steps"></div>
 
-      <div id="ob-footer" style="display:flex;justify-content:space-between;margin-top:24px;gap:8px"></div>
-      <div style="display:flex;justify-content:center;gap:6px;margin-top:16px" id="ob-dots"></div>
+      <div id="ob-footer" class="j3e-cd3a3be"></div>
+      <div class="j3e-128cec4" id="ob-dots"></div>
     </div>
   `;
 
@@ -137,28 +137,28 @@ function showOnboardingWizard(onComplete) {
     {
       title: '¿A qué te dedicas?',
       render: () => `
-        <p style="font-size:14px;color:#6b756f;margin:0 0 16px">En 30 segundos lo tenemos listo.</p>
-        <div style="display:flex;flex-direction:column;gap:12px">
+        <p class="j3e-8218703">En 30 segundos lo tenemos listo.</p>
+        <div class="j3e-e12feb9">
           <div>
-            <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Nombre de tu negocio</label>
+            <label class="j3e-8149c31">Nombre de tu negocio</label>
             <input id="ob-name" type="text" placeholder="Ej: Electricidad García" value="${esc(state.name)}"
-              style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>
+              class="j3e-336791a"/>
           </div>
           <div>
-            <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Tu oficio</label>
-            <select id="ob-trade" style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px;background:#fff">
+            <label class="j3e-8149c31">Tu oficio</label>
+            <select id="ob-trade" class="j3e-75d623a">
               <option value="">Selecciona…</option>
               ${OB_TRADES.map((t) => `<option value="${t.value}" ${state.trade === t.value ? 'selected' : ''}>${t.label}</option>`).join('')}
             </select>
           </div>
           <div>
-            <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">País</label>
+            <label class="j3e-8149c31">País</label>
             <output id="ob-country">${esc(state.paisLeido ? obCountryLabel(state.country) : '')}</output>
           </div>
           <div>
-            <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Tu WhatsApp <span style="font-weight:400;color:#6b756f">(te avisamos ahí cuando te acepten o paguen)</span></label>
+            <label class="j3e-8149c31">Tu WhatsApp <span class="j3e-84a5aef">(te avisamos ahí cuando te acepten o paguen)</span></label>
             <input id="ob-phone" type="tel" placeholder="Ej: 34XXXXXXXXX (con código de país)" value="${esc(state.phone)}"
-              style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>
+              class="j3e-336791a"/>
           </div>
         </div>
       `,
@@ -197,27 +197,27 @@ function showOnboardingWizard(onComplete) {
       pasoDeSerie: true,
       title: TS.titulo(ANIO_EN_CURSO),
       render: () => `
-        <p style="font-size:13px;color:#6b756f;margin:-2px 0 12px">${TS.ayudaTitulo}</p>
-        <div id="ob-serie-elec" style="display:flex;gap:10px;margin:4px 0 16px">
-          <button type="button" id="ob-serie-si" class="btn-secondary" style="flex:1;min-height:44px">Sí</button>
-          <button type="button" id="ob-serie-no" class="btn-secondary" style="flex:1;min-height:44px">No, empiezo ahora</button>
+        <p class="j3e-1d75021">${TS.ayudaTitulo}</p>
+        <div id="ob-serie-elec" class="j3e-eb659eb">
+          <button type="button" id="ob-serie-si" class="j3e-d5a522d btn-secondary">Sí</button>
+          <button type="button" id="ob-serie-no" class="j3e-d5a522d btn-secondary">No, empiezo ahora</button>
         </div>
-        <div id="ob-serie-detalle" style="display:none">
-          <label for="ob-serie-numero" style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">
+        <div id="ob-serie-detalle" class="j3e-6b99de8">
+          <label for="ob-serie-numero" class="j3e-8149c31">
             ${TS.etiquetaCampo(ANIO_EN_CURSO)}</label>
           <input id="ob-serie-numero" type="number" min="1" step="1" inputmode="numeric" placeholder="41"
             aria-describedby="ob-serie-numero-ayuda"
-            style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>
-          <p id="ob-serie-numero-ayuda" style="font-size:12px;color:#6b756f;margin:6px 0 0">${TS.ayudaCampo}</p>
+            class="j3e-336791a"/>
+          <p id="ob-serie-numero-ayuda" class="j3e-3f6c4b1">${TS.ayudaCampo}</p>
           <div id="ob-serie-previa" aria-live="polite"
-            style="margin-top:14px;background:#f4f7f4;border:1px solid #cdd2cb;border-radius:10px;padding:12px;display:none">
-            <p style="margin:0 0 4px;font-size:13px;color:#333c37">Tu primera factura con YaQu será:
-              <strong id="ob-serie-numero-previa" style="font-size:15px;white-space:nowrap"></strong></p>
-            <p style="margin:0;font-size:12px;color:#6b756f">
+            class="j3e-f00a578">
+            <p class="j3e-ad5973b">Tu primera factura con YaQu será:
+              <strong id="ob-serie-numero-previa" class="j3e-01b0aae"></strong></p>
+            <p class="j3e-ace8d82">
               Compruébalo bien: cuando emitas esa factura, este número ya no se puede cambiar.</p>
           </div>
         </div>
-        <p id="ob-serie-error" role="alert" style="display:none;font-size:13px;color:#b91c1c;margin:10px 0 0"></p>`,
+        <p id="ob-serie-error" role="alert" class="j3e-fac7438"></p>`,
       montar: () => {
         const detalle = document.getElementById('ob-serie-detalle');
         const previa  = document.getElementById('ob-serie-previa');
@@ -228,8 +228,9 @@ function showOnboardingWizard(onComplete) {
 
         const marcar = (elegido) => {
           state.vieneDeOtroSitio = elegido;
-          btnSi.className = elegido ? 'btn-primary' : 'btn-secondary';
-          btnNo.className = elegido ? 'btn-secondary' : 'btn-primary';
+          // J3: SCRUM-1756h · classList y no className: className borraría la clase j3e- que lleva su estilo
+          btnSi.classList.toggle('btn-primary', elegido); btnSi.classList.toggle('btn-secondary', !elegido);
+          btnNo.classList.toggle('btn-secondary', elegido); btnNo.classList.toggle('btn-primary', !elegido);
           detalle.style.display = elegido ? 'block' : 'none';
           serieLimpiar();
           if (elegido) numero.focus();
@@ -307,21 +308,21 @@ function showOnboardingWizard(onComplete) {
         const hasCatalog = state.trade && state.trade !== 'otro';
         if (hasCatalog) {
           return `
-            <p style="font-size:14px;color:#6b756f;margin:0 0 16px">
+            <p class="j3e-8218703">
               Hemos preparado una lista de servicios típicos de <strong>${esc(obTradeLabel(state.trade))}</strong> con precios de mercado. Cárgalos como base y edítalos a tu gusto.
             </p>
-            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:#f7f8f6;border:1px solid #e7e9e5;border-radius:12px;padding:12px 14px">
-              <input type="checkbox" id="ob-load-catalog" checked style="width:18px;height:18px;accent-color:#22c55e;flex-shrink:0"/>
-              <span style="font-size:14px;color:#333c37">Sí, cargar el catálogo de <strong>${esc(obTradeLabel(state.trade))}</strong></span>
+            <label class="j3e-f4b46a1">
+              <input type="checkbox" id="ob-load-catalog" checked class="j3e-6a934cf"/>
+              <span class="j3e-801fd0e">Sí, cargar el catálogo de <strong>${esc(obTradeLabel(state.trade))}</strong></span>
             </label>
-            <p style="font-size:12px;color:#6b756f;margin:10px 0 0">Podrás añadir, editar o borrar servicios cuando quieras.</p>
+            <p class="j3e-1cc8c8a">Podrás añadir, editar o borrar servicios cuando quieras.</p>
           `;
         }
         return `
-          <p style="font-size:14px;color:#6b756f;margin:0 0 8px">
+          <p class="j3e-abd769d">
             Un catálogo te permite crear cotizaciones en segundos con autocompletado.
           </p>
-          <p style="font-size:13px;color:#6b756f;margin:0">Podrás añadir tus servicios desde la sección <strong>Productos</strong> en cualquier momento.</p>
+          <p class="j3e-9ab2346">Podrás añadir tus servicios desde la sección <strong>Productos</strong> en cualquier momento.</p>
         `;
       },
       validate: () => true,
@@ -371,26 +372,26 @@ function showOnboardingWizard(onComplete) {
       custom: true,
       render: () => {
         const productLine = state.firstProduct
-          ? `<p style="margin:0;font-size:13px;color:#065f46">Incluiremos <strong>${esc(state.firstProduct.name)}</strong> como primera línea — podrás ajustarla.</p>`
+          ? `<p class="j3e-ef14aff">Incluiremos <strong>${esc(state.firstProduct.name)}</strong> como primera línea — podrás ajustarla.</p>`
           : '';
         return `
-          <p style="font-size:14px;color:#6b756f;margin:0 0 14px">
+          <p class="j3e-5cf82cd">
             Dinos a quién y te lo dejamos prerrellenado — el cliente la recibe por WhatsApp y la firma con el dedo en segundos.
           </p>
-          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+          <div class="j3e-b514ddb">
             <div>
-              <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Nombre del cliente <span style="font-weight:400;color:#6b756f">(opcional)</span></label>
+              <label class="j3e-8149c31">Nombre del cliente <span class="j3e-84a5aef">(opcional)</span></label>
               <input id="ob-cust-name" type="text" placeholder="Ej: María López" value="${esc(state.customerName)}"
-                style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>
+                class="j3e-336791a"/>
             </div>
             <div>
-              <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Su WhatsApp <span style="font-weight:400;color:#6b756f">(con código de país)</span></label>
+              <label class="j3e-8149c31">Su WhatsApp <span class="j3e-84a5aef">(con código de país)</span></label>
               <input id="ob-cust-phone" type="tel" placeholder="Ej: 34XXXXXXXXX" value="${esc(state.customerPhone)}"
-                style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>
+                class="j3e-336791a"/>
             </div>
           </div>
-          <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:14px 16px;margin-bottom:8px">
-            <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#047857">El momento que lo cambia todo</p>
+          <div class="j3e-a3d290d">
+            <p class="j3e-f287a21">El momento que lo cambia todo</p>
             ${productLine}
           </div>
         `;
@@ -398,10 +399,10 @@ function showOnboardingWizard(onComplete) {
       renderFooter: (footer) => {
         footer.style.flexDirection = 'column';
         footer.innerHTML = `
-          <button id="ob-wow" style="width:100%;padding:13px;border-radius:12px;border:none;background:#22c55e;color:#052e16;font-weight:800;font-size:15px;cursor:pointer">
+          <button id="ob-wow" class="j3e-0e6b950">
             🚀 Enviar mi primera cotización
           </button>
-          <button id="ob-explore" style="width:100%;padding:11px;border-radius:10px;border:1px solid #e7e9e5;background:#fff;font-size:14px;cursor:pointer;color:#6b756f;margin-top:8px">
+          <button id="ob-explore" class="j3e-9b47678">
             Explorar el panel
           </button>
         `;
@@ -432,7 +433,7 @@ function showOnboardingWizard(onComplete) {
   function renderStep() {
     const step = steps[currentStep];
     document.getElementById('ob-steps').innerHTML = `
-      <h2 style="margin:0 0 8px;font-size:17px;color:#0f1c17">${step.title}</h2>
+      <h2 class="j3e-a311fde">${step.title}</h2>
       ${step.render()}
     `;
     // SCRUM-313: los pasos con controles vivos necesitan enganchar sus listeners DESPUES de que
@@ -454,9 +455,9 @@ function showOnboardingWizard(onComplete) {
 
     footer.innerHTML = `
       ${currentStep > 0
-        ? '<button id="ob-back" style="flex:1;padding:11px;border-radius:10px;border:1px solid #e7e9e5;background:#fff;font-size:14px;cursor:pointer;color:#6b756f">← Atrás</button>'
-        : '<button id="ob-skip" style="flex:1;padding:11px;border-radius:10px;border:1px solid #e7e9e5;background:#fff;font-size:14px;cursor:pointer;color:#6b756f">Saltar por ahora</button>'}
-      <button id="ob-next" style="flex:2;padding:11px;border-radius:10px;border:none;background:#22c55e;color:#052e16;font-weight:700;font-size:15px;cursor:pointer">
+        ? '<button id="ob-back" class="j3e-db72112">← Atrás</button>'
+        : '<button id="ob-skip" class="j3e-db72112">Saltar por ahora</button>'}
+      <button id="ob-next" class="j3e-461f267">
         ${typeof step.textoBoton === 'function' ? step.textoBoton() : 'Siguiente →'}
       </button>
     `;
@@ -469,7 +470,7 @@ function showOnboardingWizard(onComplete) {
 
   function renderDots() {
     document.getElementById('ob-dots').innerHTML = steps.map((_, i) =>
-      `<div style="width:8px;height:8px;border-radius:50%;background:${i === currentStep ? '#22c55e' : '#e7e9e5'}"></div>`
+      `<div class="${i === currentStep ? 'j3e-1e65d7a' : 'j3e-9ece05a'}"></div>`
     ).join('');
   }
 

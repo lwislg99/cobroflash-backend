@@ -127,6 +127,8 @@ caso que le toca: la pieza deja de conservar lo entregado · todo lanzamiento se
 línea sólo sale con algo que contar · lo entregado se cuenta dos veces · `guard-duplicar-926` vuelve
 a su lista · `guard-portal-en-la-ficha` vuelve a la suya. Traza: `mutaciones-traza.txt`.
 
+El guion `docs/master/evidencias/scrum1392/mutar.mjs` se retiró el 19-nov-2026 (SCRUM-1765c): sus mutaciones viven en el catálogo de `tests/scrum1392-un-hallazgo-visto-no-caduca.test.mjs` (las 6, mismo `de` y `a`; 6 de 6 tumban con `aplicarUna`, `docs/master/evidencias/SCRUM-1765/1765c-aplicarUna.txt`). Su traza se conserva.
+
 ## Aceptación → dónde se ve
 
 | aceptación (del ticket) | dónde se ve |

@@ -606,3 +606,54 @@ invoiceLines, billingPlan, utils), y no lo relancé.
 - Una F1 con importes tan pequeños que una cuota redondea a 0,00 pierde su fila «IVA x%» con un solo tipo (la regla de
   siempre: sin cuota no hay fila). No medido con facturas reales.
 - La R1: sin cambio, hasta el GO de su creación (regla 40) y la respuesta del asesor sobre el redondeo negativo.
+
+# SCRUM-624w · la cuenta QA de STAGING pasa a modo factura con criterio de caja (18-nov-2026)
+
+**Medido contra:** `origin/main` = `e37a7051f87b195ceeae4852c56a02bc0d218438` · 2026-11-18T23:32:57Z (staging `/health` `version` = el mismo sha, `db: up`)
+A9: aviso → cicatriz J1 «Puse la hora de una evidencia con un `fetch` de node a `api.github.com/zen` y devolvió una `Date` anterior a la operación que acababa de hacer (23:32:20 tras una fila de auditoría de 23:32:51); lo cacé contra esa fila y la corregí con `gh api -i zen` antes de comitear» — no se pudo comprobar: la hora de una evidencia se escribe en la consola, y ningún guard del repositorio ve de dónde salió
+
+Una operación, no código: aplica el ✅ del fundador de **c.22099** («Ok ponlo»: SOLO staging, SOLO el comercio 2,
+`INVOICING_ES_ENABLED` encendido para ese comercio, SII en «No», `criterioCaja` activado). Lo pidió el bloqueo medido
+por jv-j4bq en c.22088. `src/` no se toca. Sesión jv-j1fj (J1).
+
+## 1 · Antes → después (cuenta QA de staging, `qa@staging.yaqu`, comercio 2, país ES)
+
+| dato | ANTES | DESPUÉS | de dónde |
+|---|---|---|---|
+| `modoEmision` | `receipt` | **`fiscal`** | `GET /admin/me` |
+| `motivoSinEmision` | `null` | `null` | `GET /admin/me` |
+| `documentoSuelto` | `no` | `factura` | `GET /admin/me` |
+| `criterioCaja` | `null` (no consta) | **`true`** | `GET /admin/merchant` |
+| `llevaLibrosPorSii` | `null` (no consta) | **`false`** | `GET /admin/merchant` |
+| `domicilioFiscalForal` | `null` | `null` (no se tocó) | `GET /admin/merchant` |
+| `INVOICING_ES_ENABLED` efectivo | OFF | **ON** | salida del guion (antes y después) |
+| override en la fila (`flags`) | ausente | `true` | `GET /admin/merchant` |
+
+Evidencias: `evidencias/SCRUM-624/624w-antes.json` y `evidencias/SCRUM-624/624w-despues.json` (sin secretos ni cookies).
+`fiscal` es uno de los tres de `MODOS_VISIBLES` (`modoVisible.ts`); no es `demo` porque el comercio 2 no es el demo.
+
+## 2 · Cómo se hizo (comandos sin secretos)
+
+1. Turno de staging: `node scripts/turno-staging.mjs tomar --base staging --ref SCRUM-624w --minutos 30`
+   (estaba LIBRE; tomado 23:32:13Z, soltado al acabar, y `estado` volvió a dar LIBRE).
+2. Login: `POST /auth/test-login` con `qa@staging.yaqu` y el secreto del `.env` del árbol, leído por código: 200 + cookie.
+3. Perfil, por la ruta del panel con esa sesión: `PUT /admin/merchant` con el cuerpo EXACTO
+   `{"llevaLibrosPorSii": false, "criterioCaja": true}` (nada más: lo AUSENTE no se toca, `schemas.ts`). 200, y la
+   relectura da los dos valores. Con eso solo, el modo seguía `receipt`: faltaba el flag.
+4. Control negativo del flag, ANTES del real: el comando del punto 5 con `--email qa-equivocado@staging.yaqu` →
+   salida 1, `confirmacion_no_coincide`, el efectivo siguió OFF.
+5. El flag: `DATABASE_URL=<la de DATABASE_URL_STAGING, leída del .env dentro del propio comando>
+   FLAG_CONFIRM=DATABASE_URL_STAGING node scripts/cambiar-flag-fiscal.mjs --merchant 2 --flag INVOICING_ES_ENABLED
+   --valor on --email qa@staging.yaqu` → la puerta de destino dijo `acela…/railway (STAGING) ✅`; salida 0.
+   Fila de auditoría: `id=1651 · action=cambio_flag · merchant=2 · 2026-11-18T23:32:51.378Z`, con
+   `valorAnterior: false`, `valorNuevo: true`, `overrideAnterior: null`, `overrideNuevo: true`,
+   `llevaLibrosPorSii: false`, `flagsFiscales: {SIF_ENABLED: false, INVOICING_ES_ENABLED: true}`.
+
+`dist/` para el guion: `tsc -p . --noCheck` local (no se empuja). Ni `prisma generate` ni nada contra producción.
+
+## 3 · Lo que NO está hecho o no está medido
+
+- Ninguna factura emitida ni ningún envío: emitir la F1 con dos tipos y mirar su PDF (c.22057), la R1 (SCRUM-1763) y el
+  libro y el 303 por tramos (SCRUM-1732) son de CIERRES (J4), después.
+- `SIF_ENABLED` del comercio sigue `false` (lo dice la fila de auditoría): no lo pedía c.22099 y no se tocó.
+- De los 20 comentarios de SCRUM-624 leí enteros los 5 del 18-nov (c.22057 a c.22099); los 15 anteriores (sep-oct) no.

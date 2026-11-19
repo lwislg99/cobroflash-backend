@@ -26,6 +26,53 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIR_SCRIPTS = path.join(RAIZ, 'scripts');
 const callado = () => {};
 
+// SCRUM-1765c · las seis de `docs/master/evidencias/scrum1392/mutar.mjs` (retirado el 19-nov-2026),
+// con el mismo `de` y el mismo `a`: viven aquí, en el catálogo que corre el meta-guard.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // M1 · la pieza deja de conservar lo entregado cuando el caso lanza (el defecto del ticket)
+    fichero: 'scripts/_hallazgos-y-ciegos.mjs',
+    de: '      hallazgos.push(...suyas.hallazgos);\n      ciegos.push(...suyas.ciegos);\n      ciegos.push(nombre +',
+    a: '      ciegos.push(nombre +',
+    cae: '① un caso que apunta en las listas ENTREGADAS',
+  },
+  {
+    // M2 · todo lanzamiento se vuelve hallazgo (lo que rompería el ciego)
+    fichero: 'scripts/_hallazgos-y-ciegos.mjs',
+    de: "      ciegos.push(nombre + ': no se pudo medir — '",
+    a: "      hallazgos.push(nombre + ': no se pudo medir — '",
+    cae: '② EL POSITIVO',
+  },
+  {
+    // M3 · la línea sólo sale si alguien lanzó con hallazgos
+    fichero: 'scripts/_hallazgos-y-ciegos.mjs',
+    de: '  decir(linea);',
+    a: '  if (lanzaronConHallazgos > 0) decir(linea);',
+    cae: '③ la línea del recorrido sale SIEMPRE',
+  },
+  {
+    // M4 · lo entregado se cuenta dos veces
+    fichero: 'scripts/_hallazgos-y-ciegos.mjs',
+    de: '    if (devueltos !== suyas.hallazgos) hallazgos.push(...suyas.hallazgos);',
+    a: '    hallazgos.push(...suyas.hallazgos);',
+    cae: '① lo entregado no se cuenta dos veces',
+  },
+  {
+    // M5 · `guard-duplicar-926` vuelve a llevar los errores de página en la mano
+    fichero: 'scripts/guard-duplicar-926.mjs',
+    de: 'const abrirEditorDuplicando = async (nav, c, errores) => {\n  caso = c;\n  const pag = await nav.newPage();\n',
+    a: 'const abrirEditorDuplicando = async (nav, c) => {\n  caso = c;\n  const pag = await nav.newPage();\n  const errores = [];\n',
+    cae: '④ ningún guard de scripts/ lleva',
+  },
+  {
+    // M6 · `guard-portal-en-la-ficha` vuelve a su lista propia
+    fichero: 'scripts/guard-portal-en-la-ficha.mjs',
+    de: '    const suyos = suyas.hallazgos;',
+    a: '    const suyos = [];',
+    cae: '④ ningún guard de scripts/ lleva',
+  },
+];
+
 // ── ① LA PIEZA ─────────────────────────────────────────────────────────────────────────────────
 
 test('SCRUM-1392 · ① un caso que apunta en las listas ENTREGADAS y después lanza conserva lo que vio', async () => {
