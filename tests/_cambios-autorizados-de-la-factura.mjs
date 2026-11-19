@@ -147,6 +147,18 @@ export const CAMBIOS_AUTORIZADOS = [
       a: '508c20188d476ab2bc19c82f37180201f2692fd881563ba73b2e185d132af3c0',
     },
   },
+  {
+    // SCRUM-1771c · el rótulo de la columna de bases del desglose (≥ 2 tipos) deja de ser el
+    // marcador `[PENDIENTE microcopy oficial]` y pasa al literal firmado. Solo cambia la constante
+    // de `pdf.service.ts:54`, que está en el ámbito y no en el cuerpo: por eso no hay par `cuerpo`.
+    firma: 'SCRUM-1771 c.22164',
+    registro: 'docs/master/SCRUM-1771.md',
+    cita: '«Base imponible por tipo»',
+    ambito: {
+      de: '508c20188d476ab2bc19c82f37180201f2692fd881563ba73b2e185d132af3c0',
+      a: '76f535597140e1c133c64e9d6e7d72534bce81e84985ea80034bcf80d3a8c24c',
+    },
+  },
 ];
 
 /**
