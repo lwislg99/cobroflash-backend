@@ -246,7 +246,7 @@ test('SCRUM-1756i · control positivo sembrado: el contador ve las tres formas d
     "el.style.display = 'none'; const d = 'font-style=no';",
   ].join('\n');
   assert.equal(styleEnCadenas(sembrado).length, 3, 'el contador por AST no ve los style= sembrados: está CIEGO');
-  assert.equal(DE_MAIN.length, 62, 'la referencia de main son 62 style= (61 del censo 1756g + csvImport.js:78)');
+  assert.equal(DE_MAIN.length, 62, 'la referencia de main son 62 style= (61 del censo 1756g + el style= de csvImport que se escapaba)');
   assert.ok(BLOQUE.length > 1000, 'SUELO: no encuentro el bloque J2 de la hoja');
 });
 
