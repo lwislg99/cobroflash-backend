@@ -117,3 +117,43 @@ Aceptación de SCRUM-1771 → dónde se ve:
 | Literal firmado por el fundador en este ticket. | NO HECHO → fundador (opciones de ④) |
 | Guard en la tanda: ningún PDF emitido por `pdf.service.ts` contiene `[PENDIENTE` (con control positivo sembrado). | NO HECHO → J1, tramo siguiente, tras la firma (⑤) |
 | Verificado en staging con la cuenta QA: F1 nueva sin el marcador. | NO HECHO → tras el despliegue del arreglo |
+
+## SCRUM-1771c · La pieza entera: el literal firmado en el PDF, el último marcador fuera de `papel` y el guard de los papeles con positivo sembrado
+
+**Medido contra:** `origin/main` = `89bb8593b603c84b3413f4c3f90b1c4e4e715329` · 2026-11-19T18:06:33Z (cabecera `Date:` de `gh api -i zen`)
+A9: aviso → cicatriz J1 «Abrí el PDF de la F1 (lo fabriqué y lo leí) antes de cargar la skill `yaqu-verifactu-sif`, que el encargo pedía cargar ANTES de abrirlo por las menciones fiscales; la cargué después, al ir a citar el RD 1619/2012» — no se pudo comprobar: el orden de las herramientas de una sesión no pasa por ningún guard del repositorio (se repitió: en el PASO 0 de 1771c hice un `grep` de dos líneas de `pdf.service.ts` antes de cargar la skill)
+Mutaciones: catálogo → tests/scrum1771c-pdf-sin-marcador.test.mjs
+Mutaciones: catálogo → tests/scrum1293-cargador-de-marcadores.test.mjs
+Mutaciones: catálogo → tests/scrum903-marcador-no-se-imprime.test.mjs
+
+**Firma:** SCRUM-1771 c.22164 (fundador, «A»: `Base imponible por tipo`). **Decisión:** c.22171 (P1 ✅ · P2 ✅ · P3 un PR). Parte de la medición de jv-j1fr (c.22169, 1771b parado sin commits).
+
+### Lo que cambia
+
+* `src/modules/invoicing/infra/pdf/pdf.service.ts:54` — la constante `MARCADOR_MICROCOPY_DESGLOSE` lleva el literal firmado byte a byte. Es la única línea tocada en `src/`. El nombre de la constante y el comentario de `:777` («no me toca escribirlo… va como marcador») quedan viejos: renombrar o reescribir era tocar más camino de emisión que el firmado.
+* `scripts/_marcadores-pendientes-declarados.json` — `papel.constantes` queda `{}` con `papel._vacia_desde: "SCRUM-1771 c.22164"`; la entrada de `pdf.service.ts` en `servidor.ficheros` llegaba a 0 y se BORRA.
+* `tests/_marcadores-declarados.mjs` (P1) — un vacío en `papel` se lee SÓLO con `_vacia_desde` en forma `SCRUM-<n> c.<comentario>`; vacío sin la clave sigue lanzando; la clave con entradas, o mal escrita, también lanza; en `panel`/`servidor` no existe.
+* `tests/scrum1293-cargador-de-marcadores.test.mjs` — caso 7 partido: «`papel` VACÍA SIN declarar» (rojo) y «`papel` VACÍA y DECLARADA» (se lee); dos casos rojos nuevos (firma mal escrita; declaración con entradas). El control positivo del fichero real admite `papel` vacía sólo si la declara.
+* `tests/scrum903-marcador-no-se-imprime.test.mjs:236` (P2) — de «está declarado» a «NO está declarado Y `pdf.service.ts` lleva `'Base imponible por tipo'` Y no lleva el marcador». El nombre del caso de `:74` («la factura SIGUE imprimiendo su marcador») queda viejo: su aserción sólo pide que el PDF se genere, sigue verde, y no estaba autorizado a tocarlo.
+* `tests/scrum1771c-pdf-sin-marcador.test.mjs` — nuevo: nueve papeles del `dist/` (F1/R1/JUST de dos tipos, F1 un tipo, F1 sin líneas, presupuesto de dos tipos, albarán sin valorar, valorado y firmado). Ninguno trae `[PENDIENTE`; los tres de dos tipos traen el literal una vez y los demás cero. Positivo sembrado (pdfkit con el marcador y con el literal): si el detector no los ve, cada caso de papel sale ROJO con «CIEGO».
+* `docs/microcopy/2026-11-19-SCRUM-1771-rotulo-desglose-por-tipo.md` — la microcopy anotada como aplicada (el registro congelado no admite entradas).
+### Medido
+
+* **Rojo primero** con el `dist/` de main: 11 casos · 8 pass · 3 fail (F1, R1 y JUST de dos tipos: imprimen `[PENDIENTE`).
+* **Verde** con el cambio: los 8 ficheros que leen el JSON (402, 591, 650d, 667, 751, 755, 903, 1293; el encargo nombraba 7: `scrum751` también lo lee) + el nuevo: 96 casos · 96 pass · 0 fail · 0 skip.
+* **Mutaciones** con `aplicarUna` de la casa (pasada limpia + mutación + restauración por bytes; `git diff` con el mismo sha1 antes y después): 8 declaradas · 8 tumban. Las cuatro de c.22171: el marcador de vuelta en `:779` tumba F1, R1 y JUST; quitar `_vacia_desde` del JSON tumba el control positivo de `scrum1293`; aceptar vacío sin clave tumba «`papel` VACÍA SIN declarar»; volver la entrada al JSON tumba `scrum903`. Y dos más: el cargador que deja de leer la clave tumba la mitad que se lee, y un detector ciego tumba el positivo sembrado y los nueve papeles.
+* **Hallazgo de paso, no arreglado (no autorizado: `scrum667` no se toca):** el «albarán firmado» de `scrum667` (`pdfDeAlbaran` con `firmadoPorCalidad` y sin `signatureData`) NO pinta el bloque del firmante — `albaranPdf.service.ts` sólo lo pinta con `signatureData` —, así que ese papel no recorre la rama de «En calidad de» que dice medir. Lo medí volcando el texto: sin `signatureData` no sale «Ana Pérez». El test nuevo sí la pasa.
+
+### NO medido
+
+* No existe ningún `tests/scrum624y*`: de la lista del encargo no lo corrí porque no hay fichero.
+* La suite entera: no la corrí (el orquestador lo confirmó: no la pide el encargo).
+* El PDF de staging y la F1 nueva en staging: tras el despliegue.
+* Si `scrum667` queda MUDO con la lista vacía: ver la línea de `censo:mudez` en la entrega.
+
+| aceptación (literal) | dónde se ve |
+| --- | --- |
+| Clave identificada con fichero:línea y lista de documentos afectados (comentario de J1). | c.22159 · tramo 1771a de este registro |
+| Literal firmado por el fundador en este ticket. | c.22164 · `docs/microcopy/2026-11-19-SCRUM-1771-rotulo-desglose-por-tipo.md` |
+| Guard en la tanda: ningún PDF emitido por `pdf.service.ts` contiene `[PENDIENTE` (con control positivo sembrado). | `tests/scrum1771c-pdf-sin-marcador.test.mjs` |
+| Verificado en staging con la cuenta QA: F1 nueva sin el marcador. | NO HECHO → tras desplegar (CIERRES en staging, J1) |

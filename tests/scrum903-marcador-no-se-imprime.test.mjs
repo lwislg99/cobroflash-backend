@@ -233,7 +233,32 @@ test('SCRUM-903 · ⛔ TODO generador de PDF filtra sus marcadores', () => {
   // 🔴 SCRUM-1293 (1-oct-2026) · antes se buscaba el nombre en el TEXTO del test de SCRUM-667. Desde
   // que `EN_EL_PAPEL` sale del JSON declarado, ese texto solo lo nombra en un comentario de historia:
   // la búsqueda seguía verde aunque la entrada se quitara de la lista. Ahora se mira la LISTA.
-  assert.ok(Object.hasOwn(marcadoresDeclarados().papel, 'MARCADOR_MICROCOPY_DESGLOSE'),
-    '🔴 el marcador de la factura ha dejado de estar DECLARADO en `EN_EL_PAPEL`. Si se ha escrito '
-    + 'su texto, perfecto — retíralo de allí en ese commit. Si no, nadie lo vigila ya.');
+  // 🔴 SCRUM-1771c (decisión SCRUM-1771 c.22171, P2) · LA ASERCIÓN SE INVIERTE A UNA MÁS FUERTE. Lo
+  // que el mensaje de arriba anunciaba ya pasó: el fundador firmó el texto («Base imponible por tipo»,
+  // SCRUM-1771 c.22164) y el marcador salió de `EN_EL_PAPEL`. Ahora se exigen las DOS cosas a la vez:
+  // que NO esté declarado y que el generador lleve el literal firmado. Si vuelve el marcador sin
+  // volver a declararlo, cae la segunda; si alguien lo vuelve a declarar, cae la primera.
+  const factura = fs.readFileSync(path.join(RAIZ, 'src/modules/invoicing/infra/pdf/pdf.service.ts'), 'utf8');
+  assert.ok(!Object.hasOwn(marcadoresDeclarados().papel, 'MARCADOR_MICROCOPY_DESGLOSE'),
+    '🔴 el rótulo del desglose vuelve a estar DECLARADO como marcador en `EN_EL_PAPEL`, y su texto '
+    + 'está firmado desde SCRUM-1771 c.22164: un marcador declarado es un permiso para imprimirlo.');
+  assert.ok(factura.includes("'Base imponible por tipo'"),
+    '🔴 el generador de la factura ya no lleva el literal firmado «Base imponible por tipo» '
+    + '(SCRUM-1771 c.22164) como rótulo de la columna de bases del desglose.');
+  assert.ok(!factura.includes(MARCADOR),
+    '🔴 el generador de la factura vuelve a llevar el marcador como literal: saldría en el papel.');
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// LAS MUTACIONES QUE ME TUMBAN (SCRUM-745) · las ejecuta `npm run meta:mutaciones`
+// ═════════════════════════════════════════════════════════════════════════════════════════
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // SCRUM-1771c · vuelve la entrada al JSON de declarados (y se va la declaración de vacío, para
+    // que el fichero siga siendo legible y lo que caiga sea esta aserción, no el cargador).
+    fichero: 'scripts/_marcadores-pendientes-declarados.json',
+    de: '    "_vacia_desde": "SCRUM-1771 c.22164",\n    "constantes": {}',
+    a: '    "constantes": {\n      "MARCADOR_MICROCOPY_DESGLOSE": "factura con MÁS DE UN tipo de IVA — el rótulo de la columna de bases"\n    }',
+    cae: 'SCRUM-903 · ⛔ TODO generador de PDF filtra sus marcadores',
+  },
+];
