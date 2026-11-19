@@ -1,0 +1,213 @@
+// SCRUM-1756g · censo de lo que bloquea el paso 3 de la CSP (csp.ts a aplicada), SOLO LECTURA.
+// Uso (desde la raíz de un árbol del repo):  node 1756g-censo.mjs [--sha <sha>] [--sin-siembra]
+//
+// Dos sondas independientes sobre la MISMA población (git ls-tree del sha, src/** + public/**,
+// fuera src/modules/messaging/** = correo):
+//   S1 · `git grep -c` (cuenta LÍNEAS, como la tabla original del 18-nov sobre 35153debf).
+//   S2 · análisis: TS/JS con el AST de typescript (cadena / comentario / código), HTML con los
+//        comentarios <!-- --> y los cuerpos de <script> separados, CSS con /* */ separado.
+// Controles: una SIEMBRA fabricada (src/siembra.ts + public/siembra.html, con recuentos conocidos)
+// que pasa por EL MISMO código de las dos sondas (S1 por `git grep --no-index`), y un fichero CERO
+// con casi-aciertos que tiene que dar 0. Con --sin-siembra la siembra no se escribe y el censo
+// tiene que salir CIEGO (código 2), no verde.
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+
+const args = process.argv.slice(2);
+const SIN_SIEMBRA = args.includes('--sin-siembra');
+const raiz = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
+const sha = execFileSync('git', ['rev-parse', args.includes('--sha') ? args[args.indexOf('--sha') + 1] : 'origin/main'], { encoding: 'utf8' }).trim();
+const ts = createRequire(join(raiz, 'package.json'))('typescript');
+const git = (a, opts = {}) => {
+  try { return execFileSync('git', a, { encoding: 'utf8', maxBuffer: 1 << 28, ...opts }); }
+  catch (e) { if (e.status === 1) return ''; throw e; }
+};
+const FUERA = ':!src/modules/messaging/**';
+
+// ── Patrones de S1 (git grep, por línea) ───────────────────────────────────────────────────
+const S1 = {
+  style_tag: ['-F', '-e', '<style'],
+  style_attr: ['-F', '-e', 'style="'],
+  script: ['-F', '-e', '<script'], // luego se quitan las líneas con `src=`
+  on: ['-E', '-e', String.raw`[[:space:]]on[a-z]{3,}=\\?["']`],
+};
+function s1(base, cwd) {
+  const out = {};
+  for (const [k, pat] of Object.entries(S1)) {
+    const a = ['grep', ...(base ? [] : ['--no-index']), '-n', ...pat, ...(base ? [base] : []), '--', 'src', 'public', ...(base ? [FUERA] : [])];
+    for (const l of git(a, { cwd }).split('\n')) {
+      if (!l) continue;
+      let r = base && l.startsWith(base + ':') ? l.slice(base.length + 1) : l;
+      const m = /^(.*?):(\d+):(.*)$/.exec(r);
+      if (!m) continue;
+      if (k === 'script' && /src=/.test(m[3])) continue;
+      ((out[m[1]] ??= { style_tag: 0, style_attr: 0, script: 0, on: 0 })[k])++;
+    }
+  }
+  return out;
+}
+
+// ── S2: clasificación por ocurrencia ───────────────────────────────────────────────────────
+const RX = {
+  style_tag: /<style[\s>]/gi,
+  style_attr: /\sstyle\s*=\s*\\?["']/gi,
+  script: /<script\b([^>]*)>/gi,
+  on: /[\s"']on[a-z]{3,}\s*=\s*\\?["']/gi,
+  set_style: /setAttribute\(\s*['"]style['"]/g,
+  js_url: /href\s*=\s*\\?["']javascript:/gi,
+};
+function rangosTs(path, txt) {
+  const kind = /\.m?js$/.test(path) ? ts.ScriptKind.JS : ts.ScriptKind.TS;
+  const sf = ts.createSourceFile(path, txt, ts.ScriptTarget.Latest, true, kind);
+  const cad = [], com = [];
+  const K = ts.SyntaxKind;
+  const visto = new Set();
+  const comentarios = (pos) => {
+    for (const f of [ts.getLeadingCommentRanges, ts.getTrailingCommentRanges]) {
+      for (const c of f(txt, pos) ?? []) { const k = c.pos + ':' + c.end; if (!visto.has(k)) { visto.add(k); com.push([c.pos, c.end]); } }
+    }
+  };
+  (function v(n) {
+    comentarios(n.pos); comentarios(n.end);
+    if ([K.StringLiteral, K.NoSubstitutionTemplateLiteral, K.TemplateHead, K.TemplateMiddle, K.TemplateTail, K.RegularExpressionLiteral].includes(n.kind)) cad.push([n.getStart(sf), n.end, n.kind === K.RegularExpressionLiteral ? 'regex' : 'cadena']);
+    ts.forEachChild(n, v);
+  })(sf);
+  comentarios(sf.endOfFileToken.pos);
+  return (i) => {
+    for (const [a, b, t] of cad) if (i >= a && i < b) return t;
+    for (const [a, b] of com) if (i >= a && i < b) return 'comentario';
+    return 'codigo';
+  };
+}
+function rangosHtml(txt, css) {
+  const r = [];
+  const re = css ? /\/\*[\s\S]*?\*\//g : /<!--[\s\S]*?-->/g;
+  for (const m of txt.matchAll(re)) r.push([m.index, m.index + m[0].length, 'comentario']);
+  if (!css) for (const m of txt.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) { const a = m.index + m[0].indexOf('>') + 1; r.push([a, a + m[1].length, 'dentro-de-guion']); }
+  return (i) => { for (const [a, b, t] of r) if (i >= a && i < b) return t; return css ? 'css' : 'marcado'; };
+}
+function s2(path, txt) {
+  const donde = /\.(m?js|ts)$/.test(path) ? rangosTs(path, txt) : rangosHtml(txt, /\.css$/.test(path));
+  const linea = (i) => txt.slice(0, i).split('\n').length;
+  const res = [];
+  for (const [k, rx] of Object.entries(RX)) {
+    for (const m of txt.matchAll(rx)) {
+      let extra = '';
+      if (k === 'script') {
+        if (/\ssrc\s*=/.test(m[1])) continue;
+        const t = /type\s*=\s*\\?["']([^"'\\]+)/.exec(m[1]);
+        if (t && /json/.test(t[1])) extra = 'datos:' + t[1];
+      }
+      const lugar = donde(m.index);
+      const i0 = m.index;
+      res.push({ k, lugar, linea: linea(i0), extra, texto: txt.slice(i0, i0 + 70).replace(/\s+/g, ' ') });
+    }
+  }
+  return res;
+}
+
+// ── Siembra y cero (fabricados aquí; se borran al acabar) ──────────────────────────────────
+const SIEMBRA = {
+  'public/siembra.html': '<!doctype html>\n<!-- <style> comentado: no cuenta en S2 -->\n<style>p{color:red}</style>\n<p style="color:red">x</p>\n<script>var a=1;</script>\n<script src="/a.js"></script>\n<button onclick="go()">b</button>\n',
+  'src/siembra.ts': '// un <style> en comentario: S1 lo cuenta, S2 lo da por comentario\nexport const h = `<style>a{}</style><b style="x:y" onclick="f()">c</b><script>1</script>`;\n',
+  'public/cero.html': '<!doctype html>\n<link rel="stylesheet" href="/a.css">\n<script src="/b.js"></script>\n<p class="styles">sin nada</p>\n',
+};
+// Lo que TIENE que salir (derivado de los textos de arriba, no de lo que dé el instrumento):
+const ESPERADO_S1 = { 'public/siembra.html': { style_tag: 2, style_attr: 1, script: 1, on: 1 }, 'src/siembra.ts': { style_tag: 2, style_attr: 1, script: 1, on: 1 } };
+const ESPERADO_S2_CODIGO = { 'public/siembra.html': { style_tag: 1, style_attr: 1, script: 1, on: 1 }, 'src/siembra.ts': { style_tag: 1, style_attr: 1, script: 1, on: 1 } };
+
+const dir = mkdtempSync(join(tmpdir(), 'scrum1756g-'));
+let ciego = [];
+const vivo = (l) => l === 'cadena' || l === 'marcado' || l === 'dentro-de-guion' || l === 'codigo';
+try {
+  if (!SIN_SIEMBRA) for (const [p, t] of Object.entries(SIEMBRA)) { mkdirSync(join(dir, p, '..'), { recursive: true }); writeFileSync(join(dir, p), t); }
+  const sS1 = s1(null, dir);
+  console.log('CONTROLES (siembra fabricada por este guion en ' + (SIN_SIEMBRA ? '— NO SEMBRADA (--sin-siembra)' : 'un temporal') + ')');
+  for (const [p, esp] of Object.entries(ESPERADO_S1)) {
+    const got = sS1[p] ?? { style_tag: 0, style_attr: 0, script: 0, on: 0 };
+    const ok = Object.keys(esp).every((k) => got[k] === esp[k]);
+    console.log(`  S1 positivo ${p}: ${JSON.stringify(got)} esperado ${JSON.stringify(esp)} → ${ok ? 'CAZA' : 'CIEGO'}`);
+    if (!ok) ciego.push('S1 ' + p);
+    const txt = SIN_SIEMBRA ? '' : SIEMBRA[p];
+    const c = {}; for (const o of s2(p, txt)) if (vivo(o.lugar)) c[o.k] = (c[o.k] ?? 0) + 1;
+    const e2 = ESPERADO_S2_CODIGO[p];
+    const ok2 = Object.keys(e2).every((k) => (c[k] ?? 0) === e2[k]);
+    console.log(`  S2 positivo ${p}: vivos ${JSON.stringify(c)} esperado ${JSON.stringify(e2)} → ${ok2 ? 'CAZA' : 'CIEGO'}`);
+    if (!ok2) ciego.push('S2 ' + p);
+  }
+  const cero = sS1['public/cero.html'];
+  const c2 = SIN_SIEMBRA ? [] : s2('public/cero.html', SIEMBRA['public/cero.html']);
+  console.log(`  cero public/cero.html: S1 ${JSON.stringify(cero ?? {})} · S2 ${c2.length} ocurrencias → ${!cero && c2.length === 0 ? 'CERO' : 'FALLA'}`);
+  if (cero || c2.length) ciego.push('cero');
+} finally { rmSync(dir, { recursive: true, force: true }); }
+if (ciego.length) { console.log('\nCIEGO: los controles no salen (' + ciego.join(', ') + '). Sin controles no hay censo.'); process.exit(2); }
+
+// ── Población ─────────────────────────────────────────────────────────────────────────────
+const todos = git(['ls-tree', '-r', '--name-only', sha, '--', 'src', 'public']).split('\n').filter(Boolean);
+const correo = todos.filter((p) => p.startsWith('src/modules/messaging/'));
+const pob = todos.filter((p) => !p.startsWith('src/modules/messaging/'));
+const porExt = {}; for (const p of pob) { const e = (/\.([a-z0-9]+)$/i.exec(p) ?? [, '(sin)'])[1]; porExt[e] = (porExt[e] ?? 0) + 1; }
+console.log(`\nPOBLACIÓN · origin/main ${sha} · src/** + public/** = ${todos.length} ficheros · fuera correo (src/modules/messaging/**) ${correo.length} · quedan ${pob.length}`);
+console.log('  por extensión: ' + Object.entries(porExt).sort((a, b) => b[1] - a[1]).map(([e, n]) => `${e} ${n}`).join(' · '));
+
+const r1 = s1(sha, raiz);
+const ficheros = Object.keys(r1).sort();
+console.log(`\nS1 · git grep -c (LÍNEAS) · ficheros con algún acierto: ${ficheros.length}`);
+console.log('  fichero | <style | style=" | <script sin src | on*=');
+for (const f of ficheros) { const c = r1[f]; console.log(`  ${f} | ${c.style_tag} | ${c.style_attr} | ${c.script} | ${c.on}`); }
+
+// S2 sobre TODA la población con extensión de texto (no solo sobre los aciertos de S1: así S2 puede ver lo que S1 no)
+const texto = pob.filter((p) => /\.(ts|m?js|html|css)$/.test(p));
+const r2 = {};
+for (const f of texto) {
+  const txt = git(['show', `${sha}:${f}`]);
+  const occ = s2(f, txt);
+  if (occ.length) r2[f] = occ;
+}
+console.log(`\nS2 · análisis sobre ${texto.length} ficheros de texto (ts/js/mjs/html/css) · con alguna ocurrencia: ${Object.keys(r2).length}`);
+console.log('  fichero | tipo | lugar | n | líneas (hasta 12)');
+const vivos = {};
+for (const f of Object.keys(r2).sort()) {
+  const g = {};
+  for (const o of r2[f]) { const key = o.k + '|' + o.lugar + (o.extra ? '|' + o.extra : ''); (g[key] ??= []).push(o.linea); }
+  for (const [key, ls] of Object.entries(g)) {
+    const [k, lugar, extra] = key.split('|');
+    console.log(`  ${f} | ${k}${extra ? ' (' + extra + ')' : ''} | ${lugar} | ${ls.length} | ${ls.slice(0, 12).join(',')}${ls.length > 12 ? ',…' : ''}`);
+    if (vivo(lugar) && !extra) ((vivos[f] ??= {})[k] = (vivos[f]?.[k] ?? 0) + ls.length);
+  }
+}
+// Discrepancias S1↔S2 por fichero (conjuntos, no cuentas)
+const solo1 = ficheros.filter((f) => !r2[f]);
+const solo2 = Object.keys(r2).filter((f) => !r1[f] && Object.values(r2[f]).some((o) => ['style_tag', 'style_attr', 'script', 'on'].includes(o.k)));
+console.log(`\nDISCREPANCIA de conjuntos · en S1 y no en S2: ${solo1.length ? solo1.join(', ') : 'ninguno'} · en S2 (4 tipos) y no en S1: ${solo2.length ? solo2.join(', ') : 'ninguno'}`);
+
+console.log(`\nVIVOS (S2, fuera de comentario y de bloque de datos) · ${Object.keys(vivos).length} ficheros`);
+for (const f of Object.keys(vivos).sort()) console.log(`  ${f} | ${JSON.stringify(vivos[f])}`);
+
+// Comprobación de lo HECHO (tramos b–f)
+const HECHO = {
+  'src/modules/billing/app/routes/receipt.routes.ts': '1756b+c #3205/#3208',
+  'src/modules/system/app/routes/customerPortal.routes.ts': '1756b+c #3205/#3208',
+  'public/index.html': '1756d+f #3209/#3236',
+  'public/precios.html': '1756d+f #3209/#3236',
+  'public/terminos.html': '1756d #3209',
+  'src/modules/system/app/routes/legalPages.routes.ts': '1756d #3209',
+  'src/modules/system/app/routes/invoicesAdmin.routes.ts': '1756e #3237',
+};
+console.log('\nHECHO (b–f) · S1 líneas [<style, style=", <script sin src, on*=] · S2 vivos');
+for (const [f, pr] of Object.entries(HECHO)) {
+  const c = r1[f] ?? { style_tag: 0, style_attr: 0, script: 0, on: 0 };
+  const existe = todos.includes(f);
+  console.log(`  ${f} (${pr}) | existe ${existe ? 'sí' : 'NO'} | S1 [${c.style_tag}, ${c.style_attr}, ${c.script}, ${c.on}] | S2 vivos ${JSON.stringify(vivos[f] ?? {})} → ${!existe ? 'NO-PUDE-MIRAR' : vivos[f] ? 'NO DA 0' : '0'}`);
+}
+
+// Carril de cada fichero vivo
+console.log('\nCARRIL (node scripts/carriles.mjs de <f>, salida literal)');
+for (const f of Object.keys(vivos).sort()) {
+  let s; try { s = execFileSync(process.execPath, ['scripts/carriles.mjs', 'de', f], { cwd: raiz, encoding: 'utf8' }); } catch (e) { s = (e.stdout ?? '') + ' [salida ' + e.status + ']'; }
+  console.log('  ' + s.trim().split('\n').pop());
+}
+console.log('\nFIN · controles CAZA/CERO · sha ' + sha);
