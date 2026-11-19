@@ -1,0 +1,18 @@
+// Driver fuera del árbol: aplicarUna de la casa sobre el catálogo de scrum1328 (SCRUM-1328x).
+import { pathToFileURL } from 'node:url';
+const RAIZ = process.argv[2];
+const G = 'scrum1328-skips-con-motivo-en-el-tap.test.mjs';
+const { correr, aplicarUna, lecturaDeDeclaraciones } = await import(pathToFileURL(RAIZ + '/scripts/meta-guard-mutaciones.mjs'));
+const fs = await import("node:fs");
+const M = lecturaDeDeclaraciones(fs.readFileSync(RAIZ + "/tests/" + G, "utf8"), G).buenas;
+console.log(`TMP=${process.env.TMP} · declaradas: ${M.length}`);
+const limpia = await correr(G);
+console.log(`BASE: ${`pasan ${limpia.pasados.length} · caen ${limpia.caidos.length} · saltados ${limpia.saltados.length}`}`);
+for (const [i, m] of M.entries()) {
+  const r = await aplicarUna(m, G, limpia);
+  console.log(`${i + 1}. ${m.fichero} · cae «${m.cae}» → ${JSON.stringify(r).slice(0, 300)}`);
+}
+const ctl = { ...M[0], cae: 'CONTROL-cae-que-no-existe-1328x' };
+console.log(`control CIEGO → ${JSON.stringify(await aplicarUna(ctl, G, limpia)).slice(0, 200)}`);
+const muda = { ...M[0], cae: 'el «# SKIP» escapado dentro de un nombre' };
+console.log(`control MUDA → ${JSON.stringify(await aplicarUna(muda, G, limpia)).slice(0, 200)}`);
