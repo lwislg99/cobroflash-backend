@@ -310,3 +310,21 @@ el de SCRUM-1326. `scrum1387` en `d4a0fc951`: **28 heredados** (249 ficheros con
   medido más allá de `git grep`). Queda dicho, no tocado.
 - SCRUM-1005b (la medición de solo lectura del mismo encargo): **NO empezada**, porque se acabó el
   contexto (185k al cerrar las mutaciones, por encima del tope de 180k).
+
+### Relevo (jv-j2dc, 2026-11-19T18:27Z, `Date:` de GitHub): el rojo de `scrum921c` en #3257
+
+- **Lo medido.** El obligatorio (run 44582347799) cayó en `scrum921c` con 9 marcas sin respaldo y el
+  trinquete en 8. La marca de más NO era una antigua que hubiera perdido su respaldo con el guion: era
+  NUEVA, el comentario de M16 que este tramo añadió en `tests/scrum1326-vale-pregunta-una-vez.test.mjs:148`
+  («la que el fundador decidio que acepta»), copiado del id del guion borrado. El guion vivía en
+  `docs/master/evidencias/`, que `scrum921c` no barre; el test sí lo barre.
+- **La firma existe, no se fabrica:** `sale` la decidió el fundador según `docs/master/SCRUM-1326.md:31` y
+  el propio test (línea 563, «SCRUM-1326, comentario 17802»). El comentario 17802 no lo he vuelto a leer
+  en Jira (presupuesto de contexto).
+- **Arreglo:** el comentario de M16 lleva `SCRUM-1326`. El trinquete no se toca: `scrum921c` da 16/16, y
+  su caso «tampoco baja en silencio» pasa, así que vuelve a ser exactamente 8.
+- **Lo que me salió mal:** primero escribí «SCRUM-1326, comentario 17802». Esa forma exige su par en
+  `tests/_pares-leidos-en-jira.mjs`, y `scrum921c` (caso 1511h) lo tumbó. Quité el número de comentario
+  en vez de añadir un par que no había leído.
+
+A9: comprobación → `tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs`
