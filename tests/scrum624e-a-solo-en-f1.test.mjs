@@ -8,14 +8,15 @@
 //
 // Decisión del fundador: SCRUM-624 c.20775 (arreglo A, autorizado) y c.20817 («A solo en
 // facturas normales»). En una F1, el bloque de totales del PDF imprime la base y la cuota por tipo
-// de `calcVatBreakdown` y el TOTAL GUARDADO, en vez de recalcularlos. La R1 se queda como hoy: su
-// total guardado es −original.total y su desglose no siempre lo suma (SCRUM-624d).
+// de `calcVatBreakdown` y el TOTAL GUARDADO, en vez de recalcularlos. (SCRUM-624y: desde el GO
+// c.22137, que revoca c.20817 para la R1, la R1 hace lo mismo; lo fija `scrum624y-…`. Aquí queda
+// la F1 y el justificante, que sigue quieto.)
 //
 // Se genera el PDF DE VERDAD y se lee su texto: no se mira la función, se mira el papel.
 //
 // ① ROJO PRIMERO (medido con el `dist/` de main antes del cambio): 3 × 9,99 al 21 % con 36,27
 //    guardado imprimía TOTAL 36,26; dos tipos con 0,03 guardado imprimía 0,04.
-// ② La R1 y el justificante imprimen EXACTAMENTE el bloque que imprimían (texto copiado de la
+// ② El justificante imprime EXACTAMENTE el bloque que imprimían (texto copiado de la
 //    salida de main `bcfc99b0d`, no escrito a mano).
 // ③ El caso 15,13 + 15,13 de SCRUM-1446 es CONTROL, no rojo: su TOTAL (30,25) ya era el guardado,
 //    y A no toca la columna de líneas.
@@ -30,14 +31,16 @@ const require = createRequire(import.meta.url);
 const { generateInvoicePdf } = require('../dist/lib/pdf.js');
 const { calcVatBreakdown } = require('../dist/modules/invoicing/domain/vat.service.js');
 
-// La mutación que imita el defecto que este fichero promete cazar: A aplicado también a la R1.
+// La mutación que imita el defecto que este fichero promete cazar: A aplicado también al
+// justificante. (SCRUM-624y: antes era «A también en la R1»; esa decisión, c.20817, la revocó el GO
+// c.22137, y la R1 la cubre ahora `tests/scrum624y-pdf-r1-total-del-desglose.test.mjs`.)
 // `dist/` está en `.gitignore`: no puede llegar a un commit.
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     fichero: 'dist/modules/invoicing/infra/pdf/pdf.service.js',
-    de: "const leeElRegistro = (params.type ?? 'F1') === 'F1';",
-    a: "const leeElRegistro = (params.type ?? 'F1') !== 'JUST';",
-    cae: 'la R1 imprime EXACTAMENTE el bloque de totales que imprimía',
+    de: "const leeElRegistro = tipoDoc === 'F1' || tipoDoc === 'R1';",
+    a: "const leeElRegistro = true;",
+    cae: 'el justificante imprime EXACTAMENTE el bloque de totales que imprimía',
   },
 ];
 
@@ -103,20 +106,12 @@ test('SCRUM-624e · ① F1 sin `type` es F1 (el valor por defecto de la columna)
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
-// ② LA R1 Y EL JUSTIFICANTE NO CAMBIAN
+// ② EL JUSTIFICANTE NO CAMBIA
+// (SCRUM-624y: aquí había un caso «la R1 imprime EXACTAMENTE el bloque que imprimía», que fijaba la
+// decisión c.20817. El GO del fundador c.22137 («A en la R1») la revocó por escrito, y el fundador
+// aprobó retirar el caso en la sesión jv-j1fm; la R1 la cubre ahora
+// `tests/scrum624y-pdf-r1-total-del-desglose.test.mjs`.)
 // ═════════════════════════════════════════════════════════════════════════════════════════
-
-test('SCRUM-624e · ② la R1 imprime EXACTAMENTE el bloque de totales que imprimía', async () => {
-  // La R1 de 12,50 al 21 % (SCRUM-624d): guarda −15,13 y su desglose da −12,50 − 2,62. Con A
-  // imprimiría −2,62; hoy imprime −2,63, y así se queda hasta el GO de su creación.
-  assert.deepEqual(await bloque('R1', '-15.13', [L(-12.5, 0.21)]),
-    ['Base imponible:-12,50 EUR', 'IVA 21%:-2,63 EUR', 'TOTAL:-15,13 EUR'],
-    '🔴 HA CAMBIADO EL PAPEL DE LA R1, y c.20817 dice que se queda como hoy.');
-  assert.deepEqual(await bloque('R1', '-0.03', [L(-0.02, 0.21), L(-0.01, 0.10)]), [
-    'Base imponible:-0,03 EUR', 'Base imponible por tipo',
-    '21%-0,02 EURIVA 21%:-0,00 EUR', '10%-0,01 EURIVA 10%:-0,00 EUR', 'TOTAL:-0,04 EUR',
-  ], '🔴 HA CAMBIADO EL PAPEL DE LA R1 de dos tipos, y c.20817 dice que se queda como hoy.');
-});
 
 test('SCRUM-624e · ② el justificante imprime EXACTAMENTE el bloque de totales que imprimía', async () => {
   assert.deepEqual(await bloque('JUST', '36.27', [L(9.99, 0.21), L(9.99, 0.21), L(9.99, 0.21)]),

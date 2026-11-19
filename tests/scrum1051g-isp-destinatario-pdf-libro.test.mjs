@@ -220,8 +220,10 @@ test('1051g ① · CONTROL: una F1 sin S2 sale como antes y P1 no aparece en nin
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
-    de: "        if (e.causa === 'S2') { baseIsp = (baseIsp ?? 0) + e.base; return; }\n",
-    a: '',
+    // Reanclada por SCRUM-624y (relevo jv-j1fp): al cuerpo que ACUMULA la fila P1, no a la forma
+    // de su condición (624y le añadió `&& tipoDoc === 'F1'`). Vaciado, la base S2 cae a su tipo.
+    de: '{ baseIsp = (baseIsp ?? 0) + e.base; return; }',
+    a: '{ }',
     cae: '1051g ① · una F1 sólo S2 imprime P1 en su propia fila',
   },
   {

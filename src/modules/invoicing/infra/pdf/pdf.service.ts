@@ -659,11 +659,14 @@ export async function generateInvoicePdf(params: {
     // XML de VeriFactu, y el TOTAL es el GUARDADO, el que ese XML declara como `ImporteTotal`. Así
     // el papel y el registro coinciden por construcción. A no elige convención de redondeo: imprime
     // la que ya tiene el registro (cuál gobierna es pregunta del asesor, SCRUM-1264 c.20774).
-    // ⛔ La R1 y el justificante siguen sumando aquí abajo, como hasta hoy. La R1 guarda
-    // −original.total y su desglose no siempre lo suma (`Math.round(-262.5)` es −262, SCRUM-624d):
-    // con A su papel dejaría de cuadrar consigo mismo. Cambiar cómo se crea es otro GO (regla 40).
-    // Lo fija `tests/scrum624e-a-solo-en-f1.test.mjs`.
-    const leeElRegistro = (params.type ?? 'F1') === 'F1';
+    // 🔴 SCRUM-624y · Y DESDE EL GO DE SCRUM-624 c.22137 («A en la R1»), TAMBIÉN EN LA R1. Desde
+    // SCRUM-1763 la R1 guarda Σ(base + cuota) de `calcVatBreakdown` de sus líneas negadas, así que
+    // su total guardado y este desglose cuadran por construcción. Antes iba por la rama de abajo y
+    // su papel no cuadraba: la R1 de staging imprimía IVA 10 % −3,71 y TOTAL −84,35 (c.22119).
+    // Lo fija `tests/scrum624y-pdf-r1-total-del-desglose.test.mjs`.
+    // ⛔ El justificante sigue sumando aquí abajo, como hasta hoy (`tests/scrum624e-a-solo-en-f1.test.mjs`).
+    const tipoDoc = params.type ?? 'F1';
+    const leeElRegistro = tipoDoc === 'F1' || tipoDoc === 'R1';
     // Agrupar IVA por tipo
     type VatGroup = { base: number; vat: number };
     const vatMap: Record<string, VatGroup> = {};
@@ -678,7 +681,9 @@ export async function generateInvoicePdf(params: {
       // Una fila por TIPO, como hasta hoy. SCRUM-1051g: las entradas S2 salen de aquí y van a la
       // fila de P1, abajo (GO de regla 40, c.21750 punto 2).
       desglose.entries.forEach((e) => {
-        if (e.causa === 'S2') { baseIsp = (baseIsp ?? 0) + e.base; return; }
+        // SCRUM-624y: la fila de P1 sigue siendo sólo de la F1; en la R1 la base S2 va en la fila
+        // de su tipo, como iba antes (ningún texto nuevo en el papel de la R1, regla 39).
+        if (e.causa === 'S2' && tipoDoc === 'F1') { baseIsp = (baseIsp ?? 0) + e.base; return; }
         const key = `${rotuloDeTipo(e.rate)}%`;
         if (!vatMap[key]) vatMap[key] = { base: 0, vat: 0 };
         vatMap[key].base += e.base;
@@ -742,7 +747,7 @@ export async function generateInvoicePdf(params: {
     // porque aquella redondea base y cuota POR SEPARADO y ésta no redondea hasta `fmt`.
     // Cambiar una cifra de una factura no es este ticket. Queda escrito en docs/master/SCRUM-623.md.
     // (SCRUM-624e: desde el GO de SCRUM-624 c.20817, en la F1 SÍ se consume —ver arriba—; esto
-    // sigue valiendo para la R1 y el justificante.)
+    // sigue valiendo para el justificante; SCRUM-624y, c.22137: la R1 ya no va por aquí.)
     //
     // Así que las cifras salen del MISMO `vatMap` de arriba, que ya venía acumulando `base` por
     // tipo sin imprimirla nunca. **Ni una operación aritmética nueva.**
