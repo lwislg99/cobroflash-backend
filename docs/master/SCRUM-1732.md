@@ -121,7 +121,7 @@ Las 20 de los tres ficheros (5 + 7 + 8) tumban su caso con `correr` + `aplicarUn
 
 **Medido contra:** `origin/main` = `6cabd3d42c1e0c7ba531a91ab94471c17c288949` · 2026-11-19T18:00:42Z (hora de GitHub; sesión J2 `jv-j2d8`, por encargo del orquestador `cobroflash-backend-c7`)
 
-A9: aviso → cicatriz J2 «leí el `.env` de staging con un regex de claves `[A-Z_]+`, sin dígitos: `E2E_TEST_LOGIN_SECRET` no casó y el login QA salió 404 con el secreto vacío» — no se pudo comprobar: el lector vive en el temporal de la sesión y ningún guard ve cómo una sesión lee su `.env`
+A9: aviso → cicatriz J2 «leí el fichero de entorno de staging con un regex de claves `[A-Z_]+`, sin dígitos: `E2E_TEST_LOGIN_SECRET` no casó y el login QA salió 404 con el secreto vacío» — no se pudo comprobar: el lector vive en el temporal de la sesión y ningún guard ve cómo una sesión lee su fichero de entorno
 
 Aplica el ✅ del fundador de **c.22165** («OK» a la pregunta de jv-j4bs en c.22158): SOLO staging, SOLO el comercio 2
 (`qa@staging.yaqu`). `src/` no se toca. Staging `/health`: `version` = el mismo sha, `db: up` (17:59:28Z).
