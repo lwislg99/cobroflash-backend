@@ -357,3 +357,42 @@ Las cifras de `style="` del panel son ocurrencias (sonda 2), no líneas. Los `on
 - Si el panel tiene alguna vía, fuera de `innerHTML`, por la que un `style=` se libre. La medí en una página `data:`, no en el panel.
 
 **Propuesta, no hecha:** este censo, convertido en un guard trinquete que no deje subir ninguna columna, impediría que la tabla vuelva a nacer con una población más corta que la real. Es otro ticket (A23), y no lo abro.
+
+## SCRUM-1756h · 19-nov: las cinco vistas de J3 del panel sin `style="…"` en las cadenas de `innerHTML` (J3)
+
+**Medido contra:** `origin/main` = `3dfeeaa99404dcce83417c5b589bc182eb45c290` · 2026-11-19T00:07:52Z (cabecera `Date:` de GitHub; sesión J3 `jv-j3ck`, por encargo del orquestador `cobroflash-backend-8a`; la rama lleva ese main fusionado, y entre su base `d86f7ef92` y él main solo cambió este registro)
+
+A9: comprobación → `tests/scrum1756h-panel-j3-sin-style-en-linea.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1756h-panel-j3-sin-style-en-linea.test.mjs` (4/4 cazadas con `correr` + `aplicarUna`; la inocua de control sale MUDA; `evidencias/SCRUM-1756/j3ck-mutar.*`).
+
+**Skill UI:** `yaqu-premium-ui` cargada y leída. No aplica nada más que «cero estilos inline aleatorios»: se mueven las declaraciones byte a byte y no se cambia ningún token, componente ni texto. El aspecto en navegador NO se ha medido (abajo).
+
+| fichero | `style="` en cadenas (AST), antes → después | carril |
+| --- | --- | --- |
+| `public/dashboard/js/onboardingView.js` | 54 → 0 | J3 |
+| `public/dashboard/js/plansView.js` | 52 → 0 | J3 |
+| `public/dashboard/js/settingsView.js` | 76 → 0 | J3 (contenedor) |
+| `public/dashboard/js/teamView.js` | 32 → 0 | J3 (la excepción S1 de `dos-equipos.md:264` es sólo el clic de «+ Añadir miembro», y no se ha tocado) |
+| `public/dashboard/js/tutorial.js` | 15 → 0 | J3 |
+
+- **Son 229 y no 228.** La 229.ª es `settingsView.js:1048`, `'style="width:100%">'`, una cadena que empieza con `style=`. La regex del censo 1756g (`\sstyle\s*=`) exige un blanco delante, y ese blanco está en la cadena anterior, al otro lado del `+`. El caso CONTROL del test siembra justo esa forma.
+- **Dónde va el CSS:** en un bloque `/* J3: SCRUM-1756h … */ … /* J3: fin del bloque SCRUM-1756h */` al final de `public/dashboard/css/styles.css`, que es contenedor de S2. Lo permite la regla de los contenedores (`dos-equipos.md:95-97` y `:150`) y lo decidió el orquestador J al acusar c.22122/c.22127. No hay hoja nueva y `dashboard/index.html` no se ha tocado. Para no chocar: J2 (1756i) pone su bloque detrás de `/* J2: SCRUM-1132 */` y J1 (1756j) al principio.
+- **Cómo se ha hecho:** con el guion `evidencias/SCRUM-1756/1756h-transformar.mjs.txt`, por AST. Cada valor da una regla `.j3e-<7 hex del sha1>:not(#j3-sin-id):not(#j3-sin-id){<declaraciones byte a byte>}`: 181 reglas para 229 atributos. Antes de mover, los 168 valores estáticos de HEAD están todos en el bloque (faltan 0).
+- **Por qué los dos `:not(#…)`:** suben la especificidad a (2,1,0). El máximo medido en `styles.css` es un id (`#home-aviso-sii`). Así la clase gana donde ganaba el atributo, y un `el.style.x` del guion sigue ganando a la clase, como ganaba al atributo.
+- **Los 7 valores con `${…}`:** los 6 ternarios pasan a elegir entre dos o tres clases. `settingsView.js:1275`, `width:${pct}%`, es un dato: lleva `data-j3-ancho` y su ancho se pone por CSSOM tras pintar, que la CSP permite (c.22122). Es la única línea de guion nueva, con el OK del orquestador.
+- **Dos `className =` que habrían borrado la clase nueva:** los botones Sí/No del alta (`onboardingView.js:231`) y `#invite-alert` (`teamView.js:306`). Pasan a `classList`, con el mismo efecto sobre las clases que ya tenían. Sin este cambio, al pulsar Sí/No los botones perdían su estilo. Lo vigila el caso ⑤ del test.
+- **Cero textos nuevos o cambiados.**
+
+| aceptación (literal) | dónde se ve |
+| --- | --- |
+| Cada fila de la tabla tiene su PR mergeado o su «no aplica» medido | fila J3 del panel de c.22122/c.22127: `tests/scrum1756h-panel-j3-sin-style-en-linea.test.mjs` (10 casos) · PR de esta rama, sin mergear |
+| (encargo) 0 `style="` dentro de cadenas (AST) y la hoja contiene cada declaración movida, byte a byte | el mismo test: un caso por fichero, el del hash y el del sha-256 del conjunto. Rojo primero sobre las copias de HEAD: 9 de 10 caen y el control pasa (`evidencias/SCRUM-1756/j3ck-rojo-sobre-head.salida.txt`) |
+| (encargo) mutaciones en el catálogo | `evidencias/SCRUM-1756/j3ck-mutar.salida.txt`: 4/4 cazadas, inocua MUDA |
+| (encargo) capturas 390/1280 idénticas con la política aplicada, 0 informes `style-src`, control distinto | **NO HECHO** → relevo sobre esta punta: no me cabía en el contexto. Las vistas necesitan la sesión del panel y datos del servidor |
+
+**Corrido:** los 138 ficheros de `tests/` que nombran estos cinco ficheros o `styles.css` dan 1.197 casos: 1.196 pasan, 0 caen y 1 saltado. Además, los guards de la lista del encargo (en el comentario de entrega).
+
+**Error mío:** la primera pasada del guion escribía cada fichero según lo acababa. Abortó en `settingsView.js` con dos ficheros ya escritos y sus reglas CSS perdidas. Los devolví a HEAD con `git show` (el hook había parado `git checkout --`, con razón), rehíce a mano sus cuatro marcadores, y ahora el guion escribe todo al final o nada. Me lo encontré yo al ver el `diff --stat`.
+
+**NO MEDIDO:** las capturas 390/1280 y los informes CSP en navegador; la suite entera por tramos (por contexto); otros `className =` de fuera de estos cinco ficheros (`app.js`, S2) que pudieran tocar estos elementos; yaqu.app.

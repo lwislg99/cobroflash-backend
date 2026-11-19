@@ -591,7 +591,7 @@ function renderSettingsView(container) {
     fIban.input.placeholder = "ES91 2100 0418 4502 0005 1332";
     fIban.wrapper.querySelector("label").insertAdjacentHTML(
       "afterend",
-      '<p style="font-size:12px;color:var(--muted);margin:2px 0 4px">Se muestra al cliente en la página de pago por transferencia bancaria.</p>'
+      '<p class="j3e-410b62f">Se muestra al cliente en la página de pago por transferencia bancaria.</p>'
     );
     fClabe.input.placeholder = "646180110400000007";
     colocar("iban", fIban.wrapper);
@@ -602,7 +602,7 @@ function renderSettingsView(container) {
     fBizumPhone.input.placeholder = "+34 600 000 000";
     fBizumPhone.wrapper.querySelector("label").insertAdjacentHTML(
       "afterend",
-      '<p style="font-size:12px;color:var(--muted);margin:2px 0 4px">El cliente verá este móvil en la página "Pagar por Bizum". Si lo dejas vacío se usa tu número de WhatsApp.</p>'
+      '<p class="j3e-410b62f">El cliente verá este móvil en la página "Pagar por Bizum". Si lo dejas vacío se usa tu número de WhatsApp.</p>'
     );
     colocar("bizumPhone", fBizumPhone.wrapper);
 
@@ -637,8 +637,8 @@ function renderSettingsView(container) {
     const connectBlock = document.createElement("div");
     connectBlock.style.cssText = "border-top:1px solid var(--border);margin:12px 0 4px;padding-top:12px;display:none";
     connectBlock.innerHTML =
-      '<p style="font-size:12px;color:var(--muted);margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Cobros con tarjeta</p>' +
-      '<div id="connect-status-body" style="font-size:13px;color:var(--body)">Cargando…</div>';
+      '<p class="j3e-511ddb1">Cobros con tarjeta</p>' +
+      '<div id="connect-status-body" class="j3e-15e2000">Cargando…</div>';
     panelDeSuperficie("connectStatus").appendChild(connectBlock);
 
     (async function renderConnectCard() {
@@ -648,17 +648,17 @@ function renderSettingsView(container) {
       connectBlock.style.display = 'block';
       const body = connectBlock.querySelector('#connect-status-body');
       if (st.connectStatus === 'active') {
-        body.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;background:var(--brand-tint,#ecfdf5);color:#166534;padding:6px 12px;border-radius:999px;font-weight:600;font-size:12.5px">✓ Cobros con tarjeta activos</span>' +
-          '<p style="font-size:12px;color:var(--muted);margin:8px 0 0">Tus clientes pagan con tarjeta y el dinero llega a tu cuenta de Stripe. Comisión YaQu: 0,9&nbsp;% por cobro.</p>';
+        body.innerHTML = '<span class="j3e-de7fbe3">✓ Cobros con tarjeta activos</span>' +
+          '<p class="j3e-a9ae080">Tus clientes pagan con tarjeta y el dinero llega a tu cuenta de Stripe. Comisión YaQu: 0,9&nbsp;% por cobro.</p>';
         return;
       }
       const label = st.connectStatus === 'none'
         ? 'Activar cobros con tarjeta'
         : 'Continuar activación';
       body.innerHTML =
-        '<p style="font-size:12.5px;color:var(--body);margin:0 0 10px">Actívalo en 2 minutos con tu DNI y tu IBAN. Tus clientes podrán pagar con tarjeta y el dinero va directo a tu cuenta (0,9&nbsp;% por cobro).</p>' +
+        '<p class="j3e-cf446ed">Actívalo en 2 minutos con tu DNI y tu IBAN. Tus clientes podrán pagar con tarjeta y el dinero va directo a tu cuenta (0,9&nbsp;% por cobro).</p>' +
         (st.connectStatus === 'restricted'
-          ? '<p style="font-size:12px;color:#b45309;margin:0 0 10px">⚠ Stripe necesita algún dato más para activarte del todo.</p>' : '');
+          ? '<p class="j3e-91eb251">⚠ Stripe necesita algún dato más para activarte del todo.</p>' : '');
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'btn btn-primary';
@@ -681,7 +681,7 @@ function renderSettingsView(container) {
     fGoogleReviewUrl.input.placeholder = "https://g.page/r/tu-negocio/review";
     fGoogleReviewUrl.wrapper.querySelector("label").insertAdjacentHTML(
       "afterend",
-      '<p style="font-size:12px;color:var(--muted);margin:2px 0 4px">Al recibir un pago, se enviará automáticamente un WhatsApp al cliente pidiéndole una reseña.</p>'
+      '<p class="j3e-410b62f">Al recibir un pago, se enviará automáticamente un WhatsApp al cliente pidiéndole una reseña.</p>'
     );
     colocar("googleReviewUrl", fGoogleReviewUrl.wrapper);
 
@@ -696,8 +696,8 @@ function renderSettingsView(container) {
       chk.id = id;
       chk.style.marginTop = "2px;flex-shrink:0";
       const textBlock = document.createElement("div");
-      textBlock.innerHTML = '<span style="font-weight:600;font-size:13.5px;color:var(--neutral-700)">' + labelText + '</span>' +
-        (hint ? '<br/><span style="font-size:12px;color:var(--muted)">' + hint + '</span>' : '');
+      textBlock.innerHTML = '<span class="j3e-feec793">' + labelText + '</span>' +
+        (hint ? '<br/><span class="j3e-7fc448e">' + hint + '</span>' : '');
       label.appendChild(chk);
       label.appendChild(textBlock);
       wrapper.appendChild(label);
@@ -768,12 +768,12 @@ function renderSettingsView(container) {
           ["⏳ Pendiente", fmt(s.pendiente?.amount, s.pendiente?.currency) + " · " + (s.pendiente?.count || 0) + " factura/s"],
         ];
         previewBox.innerHTML =
-          '<div style="font-weight:700;font-size:13.5px;color:var(--ink);margin-bottom:10px">' +
+          '<div class="j3e-cfaa63c">' +
           escSettings(res.subject || "📊 Tu semana en YaQu") + '</div>' +
           rows.map(([k, v]) =>
-            '<div style="display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:4px 0;border-bottom:1px solid var(--border)">' +
-            '<span style="color:var(--muted)">' + k + '</span>' +
-            '<span style="color:var(--body);font-weight:600">' + escSettings(v) + '</span></div>'
+            '<div class="j3e-2c7f34e">' +
+            '<span class="j3e-57f9e31">' + k + '</span>' +
+            '<span class="j3e-eded475">' + escSettings(v) + '</span></div>'
           ).join('');
         previewBox.style.display = "block";
       } catch (err) {
@@ -797,10 +797,10 @@ function renderSettingsView(container) {
     fBrandWrapper.className = "field";
     fBrandWrapper.innerHTML = `
       <label>Color de marca</label>
-      <p style="font-size:12px;color:var(--muted);margin:2px 0 6px">Se usa en el botón de aceptar y los acentos de la página que ve tu cliente.</p>
-      <div style="display:flex;align-items:center;gap:10px">
+      <p class="j3e-a0c3819">Se usa en el botón de aceptar y los acentos de la página que ve tu cliente.</p>
+      <div class="j3e-b87ca32">
         <input type="color" id="brand-color-input" value="#22c55e"/>
-        <span id="brand-color-hex" style="font-size:13px;color:var(--muted)">#22c55e</span>
+        <span id="brand-color-hex" class="j3e-17d902b">#22c55e</span>
         <button type="button" id="brand-color-reset" class="btn-secondary btn-sm">Sin color (por defecto)</button>
       </div>`;
     colocar("brand-color-input", fBrandWrapper);
@@ -827,7 +827,7 @@ function renderSettingsView(container) {
     fApproval.input.placeholder = "Ej: 1000 (vacío = sin aprobación)";
     fApproval.wrapper.querySelector("label").insertAdjacentHTML(
       "afterend",
-      '<p style="font-size:12px;color:var(--muted);margin:2px 0 4px">Las cotizaciones de un operario por encima de este importe quedarán "pendientes de aprobación" hasta que un admin las apruebe.</p>'
+      '<p class="j3e-410b62f">Las cotizaciones de un operario por encima de este importe quedarán "pendientes de aprobación" hasta que un admin las apruebe.</p>'
     );
     colocar("approvalThreshold", fApproval.wrapper);
 
@@ -1041,11 +1041,11 @@ function renderSettingsView(container) {
 
     function filaClausula(c, i) {
       return '' +
-        '<div class="clausula-fila" data-clausula-fila="' + i + '" style="margin-bottom:10px">' +
+        '<div class="j3e-761d3ad clausula-fila" data-clausula-fila="' + i + '">' +
         '<input type="text" data-clausula-titulo="1" placeholder="' + TX.clausulaTitulo + '" ' +
-        'value="' + escapaAtributo(c.titulo || '') + '" style="width:100%;margin-bottom:4px">' +
+        'value="' + escapaAtributo(c.titulo || '') + '" class="j3e-17ddae7">' +
         '<textarea data-clausula-texto="1" rows="2" placeholder="' + TX.clausulaTexto + '" ' +
-        'style="width:100%">' + escapaTexto(c.texto || '') + '</textarea>' +
+        'class="j3e-0466783">' + escapaTexto(c.texto || '') + '</textarea>' +
         '<button type="button" class="btn btn-ghost" data-clausula-quitar="' + i + '">' +
         TX.clausulaQuitar + '</button></div>';
     }
@@ -1066,7 +1066,7 @@ function renderSettingsView(container) {
       // ilegible lo pinta la rama de error de `loadMerchant`.
       caja.innerHTML = clausulasEstado.length
         ? clausulasEstado.map(filaClausula).join('')
-        : '<p style="color:var(--muted);font-size:13px">' + TX.clausulasVacio + '</p>';
+        : '<p class="j3e-9390c33">' + TX.clausulasVacio + '</p>';
     }
 
     /** Lo escrito en pantalla → lo que viaja. Se lee de los CAMPOS, no del estado. */
@@ -1102,8 +1102,8 @@ function renderSettingsView(container) {
     // que el censo diga la verdad. Ampliarlo es de su carril.
     cajaClausulas.name = 'clausulasPresupuesto';
     cajaClausulas.innerHTML =
-      '<label style="display:block;font-weight:600;margin-bottom:2px">' + TX.clausulasTitulo + '</label>' +
-      '<p style="font-size:12px;color:var(--muted);margin:2px 0 6px">' + TX.clausulasPista + '</p>' +
+      '<label class="j3e-3661921">' + TX.clausulasTitulo + '</label>' +
+      '<p class="j3e-a0c3819">' + TX.clausulasPista + '</p>' +
       '<div id="clausulas-lista"></div>' +
       // AB6 (SCRUM-962b): era un `<button>` nativo de 22 px de toque y sin estilo de la casa. Con
       // `btn btn-secondary` mide lo que manda DESIGN.md §5: 44 en móvil, 36 en escritorio.
@@ -1263,22 +1263,24 @@ async function renderWaFairUseCard(container) {
   card.className = 'customers-card';
   card.style.marginTop = '16px';
   card.innerHTML = `
-    <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">WhatsApp este mes</h2>
-    <p style="margin:0 0 14px;font-size:13px;color:var(--neutral-400)">
+    <h2 class="j3e-96e52bd">WhatsApp este mes</h2>
+    <p class="j3e-89d44d5">
       Tu plan incluye <strong>${FAIR_USE} plantillas/mes</strong> de uso razonable — si te acercas te avisamos, <strong>nunca cortamos</strong>.
     </p>
-    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px">
-      <span style="color:var(--neutral-600);font-weight:600">${used} de ${FAIR_USE} plantillas</span>
-      <span style="color:var(--muted)">${pct}%</span>
+    <div class="j3e-08dcbcf">
+      <span class="j3e-bcca52c">${used} de ${FAIR_USE} plantillas</span>
+      <span class="j3e-57f9e31">${pct}%</span>
     </div>
-    <div style="background:var(--neutral-100);border-radius:6px;height:12px;overflow:hidden;margin-bottom:10px">
-      <div style="width:${pct}%;height:100%;border-radius:6px;background:${nearLimit ? '#f59e0b' : 'var(--green-600)'}"></div>
+    <div class="j3e-8becc56">
+      <div data-j3-ancho="${pct}" class="${nearLimit ? 'j3e-bdd795e' : 'j3e-deec7a5'}"></div>
     </div>
-    ${nearLimit ? `<div class="alert warning" style="display:block;margin:0 0 10px;font-size:13px">Estás cerca del uso razonable de tu plan. No se corta nada — si tu volumen crece, hablamos.</div>` : ''}
-    <p style="margin:0;font-size:12.5px;color:var(--muted)">
+    ${nearLimit ? `<div class="j3e-4ac84be alert warning">Estás cerca del uso razonable de tu plan. No se corta nada — si tu volumen crece, hablamos.</div>` : ''}
+    <p class="j3e-323ce1f">
       Además, <strong>${windowFree}</strong> mensaje${windowFree === 1 ? '' : 's'} de este mes ${windowFree === 1 ? 'ha viajado' : 'han viajado'} por la ventana de 24 h — gratis y sin computar aquí.
     </p>
   `;
+  // J3: SCRUM-1756h · el ancho de la barra es un dato, no una clase: va por CSSOM, que la CSP permite (c.22122).
+  card.querySelector('[data-j3-ancho]').style.width = `${pct}%`;
   container.appendChild(card);
 }
 
@@ -1423,9 +1425,9 @@ async function renderReadinessCard(container, mainFormCard) {
 
   const done = rows.filter((r) => r.ok).length;
   card.innerHTML = `
-    <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Tu cuenta, lista para cobrar</h2>
-    <p style="margin:0 0 14px;font-size:13px;color:var(--neutral-400)">${done} de ${rows.length} en verde. Cada punto te dice qué desbloquea.</p>
-    <div id="readiness-rows" style="display:flex;flex-direction:column;gap:8px"></div>
+    <h2 class="j3e-96e52bd">Tu cuenta, lista para cobrar</h2>
+    <p class="j3e-89d44d5">${done} de ${rows.length} en verde. Cada punto te dice qué desbloquea.</p>
+    <div id="readiness-rows" class="j3e-be26537"></div>
   `;
   const box = card.querySelector('#readiness-rows');
   rows.forEach((r) => {
@@ -1459,13 +1461,13 @@ async function renderReadinessCard(container, mainFormCard) {
       }
     }
     row.innerHTML = `
-      <span style="flex:none;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:800;color:#fff;background:${state === 'ok' ? 'var(--green-600,#16a34a)' : state === 'warn' ? '#f59e0b' : 'var(--neutral-300,#cdd2cb)'}">${state === 'ok' ? '✓' : state === 'warn' ? '…' : '·'}</span>
-      <span style="min-width:0">
-        <span style="display:block;font-size:13.5px;font-weight:600;color:var(--ink)">${r.label}</span>
-        <span style="display:block;font-size:12.5px;color:${state === 'ko' ? 'var(--neutral-600)' : 'var(--muted)'}">${r.ok ? r.okText : r.warn ? r.warnText : r.koText}</span>
-        ${pestanaHint ? `<span style="display:block;font-size:12px;color:var(--neutral-400);margin-top:2px">${pestanaHint}</span>` : ''}
+      <span class="${state === 'ok' ? 'j3e-7f88bb8' : state === 'warn' ? 'j3e-be23340' : 'j3e-e9a537d'}">${state === 'ok' ? '✓' : state === 'warn' ? '…' : '·'}</span>
+      <span class="j3e-3922d32">
+        <span class="j3e-2e36581">${r.label}</span>
+        <span class="${state === 'ko' ? 'j3e-fc83829' : 'j3e-12c34af'}">${r.ok ? r.okText : r.warn ? r.warnText : r.koText}</span>
+        ${pestanaHint ? `<span class="j3e-7ca806b">${pestanaHint}</span>` : ''}
       </span>
-      ${state === 'ok' || !completable ? '' : '<span style="margin-left:auto;flex:none;font-size:12.5px;font-weight:600;color:var(--green-700,#15803d)">Completar →</span>'}
+      ${state === 'ok' || !completable ? '' : '<span class="j3e-c104ac3">Completar →</span>'}
     `;
     // ── SCRUM-904 · «COMPLETAR →» LLEVA A DONDE ESTÁ EL CAMPO ───────────────────────────────
     //
@@ -1521,43 +1523,43 @@ async function renderPublicProfileCard(container) {
     const locked = nextChangeDate(m.slugChangedAt);
     const zonesText = Array.isArray(m.profileZones) ? m.profileZones.join(', ') : '';
     card.innerHTML = `
-      <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Tu página pública</h2>
-      <p style="margin:0 0 14px;font-size:13px;color:var(--neutral-400)">
+      <h2 class="j3e-96e52bd">Tu página pública</h2>
+      <p class="j3e-89d44d5">
         La página que ve quien escanea tu QR o abre tu enlace: tu nombre, tu gremio, tus zonas
         y un botón para pedirte presupuesto por WhatsApp. Nada de precios ni datos de clientes.
       </p>
       ${enabled
         ? (m.slug
-          ? `<div class="alert success" style="display:block;margin:0 0 14px;font-size:13px">Tu página está <strong>activa</strong>: <a class="pp-enlace" href="/p/${escSettings(m.slug)}" target="_blank" rel="noopener">yaqu.app/p/${escSettings(m.slug)} ↗</a></div>`
-          : `<div class="alert warning" style="display:block;margin:0 0 14px;font-size:13px">Elige una dirección para estrenar tu página.</div>`)
-        : `<div class="alert" style="display:block;margin:0 0 14px;font-size:13px;background:var(--neutral-50);border:1px solid var(--border);color:var(--neutral-600)">Aún no está activada — déjala lista y la encendemos contigo.</div>`}
-      <div class="field" style="margin-bottom:12px">
+          ? `<div class="j3e-fabcc96 alert success">Tu página está <strong>activa</strong>: <a class="pp-enlace" href="/p/${escSettings(m.slug)}" target="_blank" rel="noopener">yaqu.app/p/${escSettings(m.slug)} ↗</a></div>`
+          : `<div class="j3e-fabcc96 alert warning">Elige una dirección para estrenar tu página.</div>`)
+        : `<div class="j3e-2d79b37 alert">Aún no está activada — déjala lista y la encendemos contigo.</div>`}
+      <div class="j3e-da12f28 field">
         <label>Dirección de tu página</label>
-        <div style="display:flex;align-items:center;gap:0">
-          <span style="padding:11px 10px;border:1px solid var(--border);border-right:none;border-radius:10px 0 0 10px;background:var(--neutral-50);font-size:13px;color:var(--muted);white-space:nowrap">yaqu.app/p/</span>
+        <div class="j3e-f560a56">
+          <span class="j3e-4c7b27e">yaqu.app/p/</span>
           <input id="pp-slug" type="text" value="${escSettings(m.slug || '')}" ${locked ? 'disabled' : ''}
             placeholder="fontaneria-garcia" autocapitalize="none" autocorrect="off" spellcheck="false"
-            style="flex:1;min-width:0;border-radius:0 10px 10px 0;border:1px solid var(--border);padding:11px 13px;font-size:14px"/>
+            class="j3e-4b78af7"/>
         </div>
-        <p style="font-size:12px;color:var(--muted);margin:4px 0 0">
+        <p class="j3e-2eadaff">
           ${locked
             ? 'Podrás cambiarla de nuevo el ' + locked.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) + '.'
             : 'Solo minúsculas, números y guiones (3-40). Se puede cambiar una vez cada 30 días.'}
         </p>
       </div>
-      <div class="field" style="margin-bottom:12px">
+      <div class="j3e-da12f28 field">
         <label>Zonas donde trabajas</label>
         <input id="pp-zones" type="text" value="${escSettings(zonesText)}" placeholder="Chamberí, Tetuán, Centro"/>
-        <p style="font-size:12px;color:var(--muted);margin:4px 0 0">Separa las zonas con comas (máx. 12).</p>
+        <p class="j3e-2eadaff">Separa las zonas con comas (máx. 12).</p>
       </div>
-      <div class="field" style="margin-bottom:14px;max-width:220px">
+      <div class="j3e-d1af971 field">
         <label>Años de experiencia (opcional)</label>
         <input id="pp-years" type="number" min="0" max="80" value="${m.profileYears != null ? m.profileYears : ''}"/>
       </div>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <div class="j3e-0e184ba">
         <button id="pp-save" class="btn btn-primary btn-sm">Guardar página</button>
         <span id="pp-qr-slot"></span>
-        <span id="pp-msg" style="font-size:12.5px;color:var(--muted)"></span>
+        <span id="pp-msg" class="j3e-7a35b96"></span>
       </div>
     `;
 
@@ -1708,9 +1710,9 @@ async function renderReferralCard(container) {
   card.className = "customers-card";
   card.style.marginTop = "16px";
   card.innerHTML = `
-    <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Invita y gana meses gratis 🎁</h2>
-    <p style="margin:0 0 16px;font-size:13px;color:var(--neutral-400)">Por cada profesional que se suscriba con tu enlace, recibes 1 mes gratis.</p>
-    <div style="color:var(--neutral-400);font-size:13px">Cargando…</div>
+    <h2 class="j3e-96e52bd">Invita y gana meses gratis 🎁</h2>
+    <p class="j3e-2aa2a49">Por cada profesional que se suscriba con tu enlace, recibes 1 mes gratis.</p>
+    <div class="j3e-d7275d8">Cargando…</div>
   `;
   container.appendChild(card);
 
@@ -1723,27 +1725,27 @@ async function renderReferralCard(container) {
   }
 
   card.innerHTML = `
-    <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Invita y gana meses gratis 🎁</h2>
-    <p style="margin:0 0 16px;font-size:13px;color:var(--neutral-400)">Por cada profesional que se suscriba con tu enlace, recibes 1 mes gratis.</p>
+    <h2 class="j3e-96e52bd">Invita y gana meses gratis 🎁</h2>
+    <p class="j3e-2aa2a49">Por cada profesional que se suscriba con tu enlace, recibes 1 mes gratis.</p>
 
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+    <div class="j3e-033e7ec">
       <input id="ref-link" type="text" readonly value="${escSettings(data.link)}"
-        style="flex:1;min-width:220px;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:13px;background:var(--neutral-50);color:var(--body)"/>
-      <button id="ref-copy" class="btn btn-primary btn-sm" style="white-space:nowrap">Copiar link</button>
+        class="j3e-a636e53"/>
+      <button id="ref-copy" class="j3e-86abdab btn btn-primary btn-sm">Copiar link</button>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px">
-      <div class="kpi-card"><div class="kpi-label">Tu código</div><div class="kpi-value" style="font-size:18px">${escSettings(data.code)}</div></div>
-      <div class="kpi-card"><div class="kpi-label">Referidos</div><div class="kpi-value" style="font-size:20px">${data.referredCount} <span style="font-size:12px;color:var(--muted)">(${data.payingCount} pagando)</span></div></div>
-      <div class="kpi-card"><div class="kpi-label">Meses gratis ganados</div><div class="kpi-value" style="font-size:20px;color:var(--green-600)">${data.freeMonthsEarned}</div></div>
+    <div class="j3e-489e724">
+      <div class="kpi-card"><div class="kpi-label">Tu código</div><div class="j3e-4ff818f kpi-value">${escSettings(data.code)}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Referidos</div><div class="j3e-b9199e2 kpi-value">${data.referredCount} <span class="j3e-7fc448e">(${data.payingCount} pagando)</span></div></div>
+      <div class="kpi-card"><div class="kpi-label">Meses gratis ganados</div><div class="j3e-e789f74 kpi-value">${data.freeMonthsEarned}</div></div>
     </div>
 
     ${Number(data.freeMonthsEarned) >= 1 ? `
-    <div style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--brand-tint);border:1px solid #bbf7d0;border-radius:12px;padding:12px 14px">
-      <div style="font-size:13px;color:var(--ink)">Tienes <strong>${data.freeMonthsEarned}</strong> mes${Number(data.freeMonthsEarned) !== 1 ? 'es' : ''} gratis disponible${Number(data.freeMonthsEarned) !== 1 ? 's' : ''}. Canjéalo para extender tu plan 30 días.</div>
-      <button id="ref-redeem" class="btn-primary btn-sm" style="white-space:nowrap">Canjear 1 mes gratis</button>
+    <div class="j3e-3d68052">
+      <div class="j3e-8c7b852">Tienes <strong>${data.freeMonthsEarned}</strong> mes${Number(data.freeMonthsEarned) !== 1 ? 'es' : ''} gratis disponible${Number(data.freeMonthsEarned) !== 1 ? 's' : ''}. Canjéalo para extender tu plan 30 días.</div>
+      <button id="ref-redeem" class="j3e-86abdab btn-primary btn-sm">Canjear 1 mes gratis</button>
     </div>
-    <div id="ref-redeem-msg" style="font-size:12.5px;color:var(--muted);margin-top:8px;min-height:16px"></div>
+    <div id="ref-redeem-msg" class="j3e-173480f"></div>
     ` : ''}
   `;
 
@@ -1818,7 +1820,7 @@ function montarDatosDeEjemplo(merchant) {
     // sabe leer. Con concatenación el pie existía pero sus botones eran invisibles para ese guard
     // — y un pie que el censo ve a medias es un modal que su arreglo de CSS no cubre.
     overlay.innerHTML = `
-      <div class="modal" style="max-width:460px" role="dialog" aria-modal="true" aria-labelledby="de-t">
+      <div class="j3e-d84af8f modal" role="dialog" aria-modal="true" aria-labelledby="de-t">
 
         <div class="modal-body">
           <p>Vamos a borrar los clientes, presupuestos y facturas de ejemplo. Esto no se puede deshacer.</p>

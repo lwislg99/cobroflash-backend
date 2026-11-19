@@ -37,8 +37,8 @@ async function renderTeamView(container) {
   header.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap';
   header.innerHTML = `
     <div>
-      <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Equipo</h2>
-      <p style="margin:0;font-size:13px;color:var(--neutral-400)">Quién trabaja contigo y qué lleva cada uno. Los operarios pueden crear presupuestos y registrar gastos, pero no tocan la configuración.</p>
+      <h2 class="j3e-96e52bd">Equipo</h2>
+      <p class="j3e-cfca14c">Quién trabaja contigo y qué lleva cada uno. Los operarios pueden crear presupuestos y registrar gastos, pero no tocan la configuración.</p>
     </div>
     <button class="btn-primary btn-sm" id="btn-invite-member">+ Añadir miembro</button>
   `;
@@ -105,23 +105,23 @@ async function renderTeamView(container) {
       const cur = (window.appLocale && window.appLocale.currency) || 'EUR';
 
       tr.innerHTML = `
-        <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:700;color:var(--ink);font-size:15px">${esc(m.name)}</div>
-            <div style="font-size:12.5px;color:var(--neutral-500);margin-top:2px;word-break:break-all">${esc(m.email)}</div>
-            <div style="margin-top:6px">
+        <div class="j3e-cbd0db6">
+          <div class="j3e-59eddc6">
+            <div class="j3e-a18b13b">${esc(m.name)}</div>
+            <div class="j3e-7e7db4c">${esc(m.email)}</div>
+            <div class="j3e-fe7b497">
               <span class="status-pill ${roleClass}">${roleLabel}</span>
               ${m.isOwner ? '' : ` <span class="status-pill ${statusClass}">${statusLabel}</span>`}
             </div>
           </div>
-          <div style="flex:none;text-align:right">
-            <div style="font-size:12px;color:var(--muted)">Pendiente de cobrar</div>
-            <div style="font-weight:700;color:var(--ink);font-size:16px;font-variant-numeric:tabular-nums">${fmtMoneyEs(r.pendiente, cur)}</div>
+          <div class="j3e-eaf29aa">
+            <div class="j3e-7fc448e">Pendiente de cobrar</div>
+            <div class="j3e-4cd37f7">${fmtMoneyEs(r.pendiente, cur)}</div>
           </div>
         </div>
-        <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);border-top:1px solid var(--neutral-100);padding-top:10px">
-          <span>Presupuestos <b style="color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums">${r.presupuestosEnviados}</b> <span style="color:var(--neutral-400)">este mes</span>${r.presupuestosEnviados > 0 ? ` · ${r.presupuestosAceptados} aceptados` : ''}</span>
-          <span>Trabajos abiertos <b style="color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums">${r.trabajosAbiertos}</b> <span style="color:var(--neutral-400)">de ${r.trabajosTotales} en total</span></span>
+        <div class="j3e-dda368b">
+          <span>Presupuestos <b class="j3e-8f90438">${r.presupuestosEnviados}</b> <span class="j3e-eb43d1f">este mes</span>${r.presupuestosEnviados > 0 ? ` · ${r.presupuestosAceptados} aceptados` : ''}</span>
+          <span>Trabajos abiertos <b class="j3e-8f90438">${r.trabajosAbiertos}</b> <span class="j3e-eb43d1f">de ${r.trabajosTotales} en total</span></span>
         </div>
         <div class="cell-actions"></div>
       `;
@@ -236,10 +236,10 @@ function showInviteModal(onSuccess, setAlert, prefill = null) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal" style="max-width:420px">
+    <div class="j3e-0fd8744 modal">
       <div class="modal-body">
-        <div class="alert error" id="invite-alert" style="display:none"></div>
-        <form id="invite-form" style="display:flex;flex-direction:column;gap:14px">
+        <div class="j3e-6b99de8 alert error" id="invite-alert"></div>
+        <form id="invite-form" class="j3e-c7da915">
           <div class="field">
             <label>Nombre</label>
             <input name="name" type="text" required placeholder="Ej. María García" value="${prefill ? esc(prefill.name) : ''}"/>
@@ -303,7 +303,7 @@ function showInviteModal(onSuccess, setAlert, prefill = null) {
         ? 'Ese email es el del propietario de la cuenta.'
         : 'Error al enviar la invitación.';
       alertEl.textContent = msg;
-      alertEl.className = 'alert error';
+      alertEl.classList.add('alert', 'error'); // J3: SCRUM-1756h · className borraría la clase j3e- de su estilo
       alertEl.style.display = 'block';
       btn.disabled = false;
       btn.textContent = 'Enviar invitación';
@@ -315,9 +315,9 @@ function showEditModal(member, onSuccess, setAlert) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal" style="max-width:380px">
+    <div class="j3e-b4a851b modal">
       <div class="modal-body">
-        <form id="edit-form" style="display:flex;flex-direction:column;gap:14px">
+        <form id="edit-form" class="j3e-c7da915">
           <div class="field">
             <label>Nombre</label>
             <input name="name" type="text" required value="${esc(member.name)}"/>
@@ -404,7 +404,7 @@ async function renderTeamMemberDetail(container, member) {
   head.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap';
   head.innerHTML = `
     <div>
-      <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">${esc(member.name)}</h2>
+      <h2 class="j3e-96e52bd">${esc(member.name)}</h2>
       <div><span class="status-pill ${teamRoleClass(member)}">${teamRoleLabel(member)}</span></div>
     </div>
   `;
@@ -421,8 +421,8 @@ async function renderTeamMemberDetail(container, member) {
 
   const seccion = (titulo, nota) => {
     const s = document.createElement('div');
-    s.innerHTML = `<div style="font-size:13px;font-weight:600;color:#6b756f;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">${esc(titulo)}</div>
-      <div style="font-size:12px;color:var(--neutral-400);margin:-4px 0 8px">${esc(nota)}</div>`;
+    s.innerHTML = `<div class="j3e-b927614">${esc(titulo)}</div>
+      <div class="j3e-eec70bf">${esc(nota)}</div>`;
     const cuerpo = document.createElement('div');
     s.appendChild(cuerpo);
     bloques.appendChild(s);
@@ -434,7 +434,7 @@ async function renderTeamMemberDetail(container, member) {
   uiSkeletonCards(cuerpoTrabajos, 2);
   uiSkeletonCards(cuerpoPresupuestos, 2);
 
-  const vacio = (texto) => `<div class="customers-card" style="text-align:center;color:var(--muted);font-size:13px;padding:18px">${esc(texto)}</div>`;
+  const vacio = (texto) => `<div class="j3e-809faf4 customers-card">${esc(texto)}</div>`;
 
   // Las dos listas se piden a la vez pero se pintan por separado: si una falla, la otra
   // se ve igual — un fallo en presupuestos no puede dejar la pantalla en blanco.
@@ -448,11 +448,11 @@ async function renderTeamMemberDetail(container, member) {
         card.className = 'customers-card';
         card.style.cssText = 'display:flex;justify-content:space-between;gap:12px;align-items:center;cursor:pointer;margin-bottom:8px';
         card.innerHTML = `
-          <div style="min-width:0">
-            <div style="font-weight:600;color:var(--ink);font-size:14px">${esc(j.titulo || 'Trabajo')}</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:2px">${esc(j.customer?.name || '')} · <span class="status-pill ${cobroPillClass(j.estadoCobro)}">${esc(j.estadoCobro || '')}</span></div>
+          <div class="j3e-3922d32">
+            <div class="j3e-22c45d3">${esc(j.titulo || 'Trabajo')}</div>
+            <div class="j3e-fc85ba5">${esc(j.customer?.name || '')} · <span class="status-pill ${cobroPillClass(j.estadoCobro)}">${esc(j.estadoCobro || '')}</span></div>
           </div>
-          <div style="flex:none;text-align:right;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums">${fmtMoneyEs(j.totalAceptado || 0, cur)}</div>
+          <div class="j3e-f38982b">${fmtMoneyEs(j.totalAceptado || 0, cur)}</div>
         `;
         card.addEventListener('click', () => { if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: j.id }); });
         cuerpoTrabajos.appendChild(card);
@@ -474,11 +474,11 @@ async function renderTeamMemberDetail(container, member) {
         // importe correcto en la BD, y ningún test de backend lo habría visto: solo salió en
         // el click-through.
         card.innerHTML = `
-          <div style="min-width:0">
-            <div style="font-weight:600;color:var(--ink);font-size:14px">${esc(q.customerName || 'Cliente')}</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:2px">#${esc(String(q.number ?? q.id))} · ${esc(quoteStatusLabel(q.status))}</div>
+          <div class="j3e-3922d32">
+            <div class="j3e-22c45d3">${esc(q.customerName || 'Cliente')}</div>
+            <div class="j3e-fc85ba5">#${esc(String(q.number ?? q.id))} · ${esc(quoteStatusLabel(q.status))}</div>
           </div>
-          <div style="flex:none;text-align:right;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums">${fmtMoneyEs(q.totalAmount || 0, q.currency || cur)}</div>
+          <div class="j3e-f38982b">${fmtMoneyEs(q.totalAmount || 0, q.currency || cur)}</div>
         `;
         card.addEventListener('click', () => { if (window.renderAppView) window.renderAppView('quotes-detail', { quoteId: q.id }); });
         cuerpoPresupuestos.appendChild(card);
