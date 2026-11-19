@@ -51,6 +51,67 @@ const pspH = capa.route.stack.at(-1).handle;
 const NIF = 'B27000001'; // el del merchant de España del banco
 const MERCHANT_ES = { country: 'ES', taxId: NIF, email: 'lugo@ejemplo.invalid' };
 
+// Los rojos del arreglo, declarados: los ejecuta `npm run meta:mutaciones` (SCRUM-1765h; venían
+// del banco retirado `docs/master/evidencias/scrum1333/mutar.mjs`, M1–M8, y sus salidas siguen allí).
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // M1 · la pregunta no decide (el defecto entero).
+    fichero: 'src/modules/invoicing/domain/encolarRemision.ts',
+    de: '      if (yaEnCola > 0) return false;',
+    a: '      if ((false as boolean) && yaEnCola > 0) return false;',
+    cae: 'SCRUM-1333 · 🔴 una factura ya sellada que vuelve a pasar por `sellarTrasEmision` NO se encola otra vez',
+  },
+  {
+    // M2 · la pregunta va SIN cerrojo.
+    fichero: 'src/modules/invoicing/domain/encolarRemision.ts',
+    de: '      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${ENCOLADO_LOCK_NS}::int, ${invoice.id}::int)`;',
+    a: '      // (sin cerrojo)',
+    cae: 'SCRUM-1333 · 🔴 dos encolados A LA VEZ de la misma factura → UNA fila',
+  },
+  {
+    // M3 · la pregunta ignora la FACTURA.
+    fichero: 'src/modules/invoicing/domain/encolarRemision.ts',
+    de: '        where: { invoiceId: invoice.id, merchantId: invoice.merchantId, tipoOperacion: TIPO_OPERACION_ALTA }, // regla 2: scoped',
+    a: '        where: { merchantId: invoice.merchantId, tipoOperacion: TIPO_OPERACION_ALTA },',
+    cae: 'SCRUM-1333 · ✅ dos facturas DISTINTAS dejan cada una SU fila',
+  },
+  {
+    // M4 · la pregunta ignora el COMERCIO (regla 2).
+    fichero: 'src/modules/invoicing/domain/encolarRemision.ts',
+    de: '        where: { invoiceId: invoice.id, merchantId: invoice.merchantId, tipoOperacion: TIPO_OPERACION_ALTA }, // regla 2: scoped',
+    a: '        where: { invoiceId: invoice.id, tipoOperacion: TIPO_OPERACION_ALTA },',
+    cae: 'SCRUM-1333 · ✅ regla 2: una fila de OTRO comercio no cuenta como «ya encolada»',
+  },
+  {
+    // M5 · la pregunta ignora el TIPO de operación.
+    fichero: 'src/modules/invoicing/domain/encolarRemision.ts',
+    de: '        where: { invoiceId: invoice.id, merchantId: invoice.merchantId, tipoOperacion: TIPO_OPERACION_ALTA }, // regla 2: scoped',
+    a: '        where: { invoiceId: invoice.id, merchantId: invoice.merchantId },',
+    cae: 'SCRUM-1333 · ✅ una fila de OTRA operación de la misma factura no cuenta como su alta',
+  },
+  {
+    // M6 · no encolar se calla.
+    fichero: 'src/modules/invoicing/domain/encolarRemision.ts',
+    de: '      console.warn(`[verifactu] invoice=${invoice.number} ya tenía su alta en la cola de remisión: no se encola otra`);',
+    a: '      // (sin aviso)',
+    cae: 'SCRUM-1333 · 🔴 una factura ya sellada que vuelve a pasar por `sellarTrasEmision` NO se encola otra vez',
+  },
+  {
+    // M7 · no encolar se registra como un FALLO.
+    fichero: 'src/modules/invoicing/domain/encolarRemision.ts',
+    de: "      return { encolado: false, motivo: 'ya_encolada' };",
+    a: "      throw new Error('ya_encolada');",
+    cae: 'SCRUM-1333 · 🔴 ④b · dos entregas A LA VEZ del mismo cobro → UNA factura, UNA huella, UNA fila en la cola',
+  },
+  {
+    // M8 · no encola NUNCA (la misma edición la declara scrum1054 para SU test; aquí, para el suelo de éste).
+    fichero: 'src/modules/invoicing/domain/encolarRemision.ts',
+    de: '      if (yaEnCola > 0) return false;',
+    a: '      if (yaEnCola >= 0) return false;',
+    cae: 'SCRUM-1333 · SUELO Y ✅ POSITIVO: una factura sellada UNA vez deja UNA fila en la cola',
+  },
+];
+
 // ── LAS PIEZAS ────────────────────────────────────────────────────────────────────────────
 
 /** Un cobro cuya factura será DECLARABLE: cliente con NIF y un presupuesto con una línea al 21 %. */

@@ -251,3 +251,32 @@ catálogo de `scrum864c`. Retirarlas solo exige ver que tumban y borrar el guion
     `TMP` sin espacios, 5/5. Mismo patrón que `scrum1298b` en 1765a. No es de mi carril y no lo toco.
   · tramo 14/15 (`scrum812`): 115 ficheros · 988 tests · 0 fail.
 - 864, 864c y 933 no se retiran: no son de J6 por literal.
+
+## SCRUM-1765h · El tercer banco de J1 (`scrum1333`) se retira al catálogo; `scrum1327` no cabe y pasa a otra sesión
+
+**Puesto:** J1 (jv-j1fv) · **Rama:** `scrum-1765h-bancos-1333-1327-al-catalogo` · 19-nov-2026 (Madrid)
+**Medido contra:** `origin/main` = `37076a391924becc91cbe4fe1a0c40c06ed16635` · 2026-11-19T18:22:08Z (cabecera `Date:` de `gh api -i zen`)
+A9: sin fallo que generalice — la receta de 1765g se copió tal cual (driver por índice, controles CIEGO y MUDA) y no hubo tropiezo propio que convertir.
+Mutaciones: catálogo → `tests/scrum1333-una-factura-se-encola-una-vez.test.mjs`
+
+Receta de SCRUM-1387 c.22070, forma de 1765g (c.22181). Salidas de `aplicarUna`:
+`docs/master/evidencias/SCRUM-1765/1765h-aplicarUna.txt`.
+
+- **Carril del sujeto** (`carriles.mjs de`): `src/modules/invoicing/domain/encolarRemision.ts` → **J1**
+  (`dos-equipos.md:117`). Solo se LEE: las mutaciones las aplica y revierte `aplicarUna` (fuente y `dist/`),
+  y `git status` sale limpio después (solo el test, el registro y la evidencia).
+- **scrum1333** (8 mutaciones, las 8 con el ancla una vez en `encolarRemision.ts`): M1–M8 al catálogo nuevo
+  de su test. Las 8 tumban con `aplicarUna` (base 8 pasan · 0 caen). M3, M4 y M5 comparten ancla (tres
+  reemplazos distintos de la misma línea) y M1 y M8 también. El censo de 1765b daba «2 en catálogo»: por lo que leo
+  (no lo he comprobado dentro de la sonda) son M1 y M8, cuya ancla está en el catálogo de `scrum1054`; la de M8 es la misma edición, pero allí tumba OTRO test,
+  así que se declara también aquí para el suelo de éste.
+- **Controles:** un `cae` que no existe sale CIEGO; M3 con el `cae` de M4 sale MUDA.
+- **Guion borrado:** `scrum1333/mutar.mjs`; `mutaciones.json` y la traza se quedan. Línea fechada en
+  `docs/master/SCRUM-1333.md`, bajo «Mutaciones».
+- **`scrum1387`:** 28 heredados con el guion (medido en este árbol, restaurándolo con `git show`) → **27**
+  sin él, 0 nuevos. El guard no se ha tocado. 1765f y 1765g no estaban en `main` al medir: cuando entren,
+  bajará 3 más.
+- **scrum1327 NO HECHO:** entero o nada, y con 171k de contexto tras cerrar 1333 no cabían sus 22
+  mutaciones (16 vivas, 5 ilegibles, 1 en catálogo) bajo el tope de 230k. Pasa a otra sesión, con la misma receta.
+- **Aviso de merge:** 1765f, 1765g y esta rama añaden su tramo al final de este mismo fichero; la que entre
+  después saldrá en conflicto (DIRTY) y se resuelve conservando los tres tramos.
