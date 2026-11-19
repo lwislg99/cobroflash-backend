@@ -396,3 +396,54 @@ Mutaciones: catálogo → `tests/scrum1756h-panel-j3-sin-style-en-linea.test.mjs
 **Error mío:** la primera pasada del guion escribía cada fichero según lo acababa. Abortó en `settingsView.js` con dos ficheros ya escritos y sus reglas CSS perdidas. Los devolví a HEAD con `git show` (el hook había parado `git checkout --`, con razón), rehíce a mano sus cuatro marcadores, y ahora el guion escribe todo al final o nada. Me lo encontré yo al ver el `diff --stat`.
 
 **NO MEDIDO:** las capturas 390/1280 y los informes CSP en navegador; la suite entera por tramos (por contexto); otros `className =` de fuera de estos cinco ficheros (`app.js`, S2) que pudieran tocar estos elementos; yaqu.app.
+
+## SCRUM-1756i · 19-nov: las cuatro vistas J2 del panel sin `style="…"` en las cadenas de `innerHTML` (J2)
+
+**Medido contra:** `origin/main` = `fe41e215a8bb090506df192079322c5695581512` · 2026-11-19T00:36:10Z (cabecera `Date:` de GitHub). Sesión J2 `jv-j2d5`, **relevo de jv-j2d4** (paró a 190k con el trabajo en local, c.22134), por encargo del orquestador `cobroflash-backend-8a`. La rama sale del commit local `3949921cf` de jv-j2d4, con `3dfeeaa99` y después `fe41e215a` mergeados (este último trae 1756h, que toca la misma hoja).
+
+A9: comprobación → `tests/scrum1756i-panel-j2-sin-style-en-linea.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1756i-panel-j2-sin-style-en-linea.test.mjs` (4/4 cazadas con `correr` + `aplicarUna`; la inocua de control sale MUDA; `evidencias/SCRUM-1756/j2d5-mutar.*`).
+
+**Skill UI:** no cargada · cero cambios visibles: cada `style=` pasa a una clase con la misma declaración. Lo visual no lo prueba la skill sino el navegador: estilos computados main ↔ rama, elemento a elemento (abajo).
+
+**Qué hay.** Los 62 `style=` de `cobrosView.js` (1), `csvImport.js` (32), `customerDetailView.js` (28) y `customersView.js` (1) pasan a 57 clases en el bloque `/* J2: SCRUM-1756i */` de `public/dashboard/css/styles.css`. Va justo antes del bloque J3 de 1577b, por la regla de los contenedores (`dos-equipos.md:95`). Lo hizo jv-j2d4 (c.22134). Este relevo añade el test, las mutaciones, la medida en el navegador y el arreglo de cuatro clases.
+
+**Corrección al censo 1756g: son 62, no 61.** Se le escapa `csvImport.js:78`, una cadena que EMPIEZA por `style="…"` porque su `<textarea` va en la cadena anterior. El contador por AST del test da **62 contra `3dfeeaa99`** (1 + 32 + 28 + 1), y `git grep -c` también da 62.
+
+**🔴 Lo que encontró el navegador, y por qué.** Un atributo en línea gana a cualquier regla de la hoja; una clase, no. Cuatro clases PERDÍAN:
+
+| clase | contra | qué cambiaba |
+|---|---|---|
+| `.cobros-th-importe` | `.table th { text-align: left }` (:969) | el importe salía a la izquierda |
+| `.c360-celda-fecha` | `.table td` (:980) | el color de la fecha |
+| `.c360-tabla-vacia` | `.table td` | el color y el relleno (24px → 10px) de «Sin presupuestos» / «Sin facturas» |
+| `.csv-modal` | `@media (max-width: 639px) .modal-overlay .modal { max-width: 100% }` (:2568) | a 390 px el modal dejaba de tener 600px de máximo |
+
+Se arreglan subiendo la especificidad con el mismo selector que usa la casa (`.table td.historial-vacio`, :2656): `.table th.cobros-th-importe`, `.table td.c360-celda-fecha`, `.table td.c360-tabla-vacia` y `.modal-overlay .modal.csv-modal`. Sin `!important` y con las declaraciones intactas. Las otras 53 no tenían rival en las propiedades que declaran. Con el selector a secas, el test de especificidad cae (mutación 4).
+
+**Navegador** (`evidencias/SCRUM-1756/j2d5-estilos.*`). Chrome sin interfaz y el panel REAL (`dashboard/index.html`, sus hojas y sus scripts) servido estático desde dos árboles: `main` (extraído con `git archive`) y la rama. Las rutas `/admin/*` las contesta el propio guion con datos sembrados: ni BD, ni red, ni envíos. Hay 12 escenarios: la lista vacía, Cobros, los cuatro pasos del importador CSV (con un fichero de verdad), la ficha 360 (resumen, presupuestos, facturas y sus dos vacíos) y el modal de edición. Se miden a 390 y a 1280. En cada uno se recoge `getComputedStyle` de cada elemento de `#view-container` y de `.modal-overlay`.
+
+- main sin política ↔ rama CON la política de `csp.ts`: **0 diferencias sobre 2.292 elementos**. Antes del arreglo eran 390, todas de las cuatro clases de arriba.
+- main sin ↔ rama sin (hoy, en modo informe): 0.
+- Control, main con política ↔ main sin: **11.812 diferencias**, así que el instrumento ve lo que la política rompe.
+- Informes `style-src` cuyo fichero es uno de los cuatro: **0 en la rama y 570 en main** (control).
+- Página sembrada con un `style=`: da `style-src-attr` y no pinta.
+- Cobertura: 55 de las 57 clases salen en pantalla. Sin ver: `csv-oculto` (el aviso nace oculto y el primer `setAlert` le cambia la clase antes de que pueda verse) y `c360-vacio` (la ficha sin cliente, a la que no se llega desde el hash).
+- Se midió otra vez después de mergear `fe41e215a`, con 1756h dentro: el mismo resultado.
+
+**Test:** `tests/scrum1756i-panel-j2-sin-style-en-linea.test.mjs`, 5 casos con nombres literales.
+- ① Las cadenas de los 4 ficheros, por AST de typescript (literales, plantillas y sus trozos), dan 0 `style=`.
+- ② Los 62 de main están copiados con su línea, y cada uno tiene en el bloque su declaración EXACTA y su clase en el fichero de donde salió. Los dos que se calculaban se parten en una clase base más los modificadores `c360-verde`, `c360-rojo` y `c360-tinta`.
+- ③ Las cuatro especificidades.
+- ④ El índice carga la hoja (`hojasDeLaPagina`, SCRUM-676).
+- El positivo va sembrado: tres formas, y la tercera es la de `:78`.
+- Rojo primero: contra el `public/` de `3dfeeaa99` da 1/5, con `total: 62`.
+
+**Error mío:** pasé por heredoc un trozo de guion con `\n` y `\.` dentro de una expresión regular, y bash se comió las barras. El guion reventó (no dio un falso verde), así que lo vi y lo reescribí con la herramienta de edición. Es la cicatriz de siempre (heredoc), y no es nueva.
+
+**NO MEDIDO:**
+- La suite entera en local: no me cabía en el contexto. La mide el obligatorio de CI.
+- yaqu.app.
+- Con sesión real: los datos son sembrados.
+- Otros estados del panel que no salen en los 12 escenarios: filas de cobros con otros métodos, el modal de fusión y las pestañas de WhatsApp, sitios y notas. Ahí no hay ninguno de los 62.
