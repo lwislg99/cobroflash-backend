@@ -488,10 +488,10 @@ async function fetchInvoices(options = {}) {
     const thead = document.createElement('thead');
     thead.innerHTML = `
       <tr>
-        <th style="width:36px" class="col-hide-mobile"><input type="checkbox" id="inv-check-all" title="Seleccionar todas"/></th>
+        <th class="col-hide-mobile j1-fac-col-check"><input type="checkbox" id="inv-check-all" title="Seleccionar todas"/></th>
         <th>${window.rotulosDelDocumento.columnaNumero()}</th>
         <th>Cliente</th>
-        <th style="text-align:right">Total</th>
+        <th class="j1-fac-col-total">Total</th>
         <th>Estado</th>
         <th class="col-hide-mobile">Fecha</th>
         <th class="col-hide-mobile">${FC.TEXTOS_ETIQUETAS.columna}</th>
@@ -512,9 +512,9 @@ async function fetchInvoices(options = {}) {
       'box-shadow:var(--shadow-lg);margin:8px 16px;',
     ].join('');
     bulkBar.innerHTML = `
-      <span id="bulk-count" style="font-size:13.5px;font-weight:600"></span>
+      <span id="bulk-count" class="j1-bulk-count"></span>
       <button id="bulk-paid-btn" class="btn-primary btn-sm">✓ Marcar como pagadas</button>
-      <button id="bulk-cancel-btn" class="btn-ghost btn-sm" style="color:rgba(255,255,255,.7)">Cancelar</button>
+      <button id="bulk-cancel-btn" class="btn-ghost btn-sm j1-bulk-cancelar">Cancelar</button>
     `;
     // SCRUM-1618 · la fecha de cobro del lote: nace en `updateBulkBar`, con la primera selección, para
     // que la lista sin seleccionar pinte lo mismo que antes del campo. Vacía = cuerpo de siempre.
@@ -655,7 +655,7 @@ async function fetchInvoices(options = {}) {
             + '<div class="empty-state-desc">' + (filtering
               ? 'Prueba con otra búsqueda o limpia los filtros.'
               : cuerpoVacio) + '</div>'
-            + (filtering ? '' : '<button id="inv-empty-cta" class="btn-primary btn-sm" style="margin-top:14px">Crear un presupuesto</button>')
+            + (filtering ? '' : '<button id="inv-empty-cta" class="btn-primary btn-sm j1-fac-vacio-cta">Crear un presupuesto</button>')
             + '</div>';
           tr.appendChild(td);
           tbody.appendChild(tr);

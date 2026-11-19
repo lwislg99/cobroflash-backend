@@ -1,0 +1,37 @@
+// SCRUM-1756j (jv-j1fk, copia de j1-mutar.mjs.txt) · las MUTACIONES_QUE_ME_TUMBAN del test, con el runner de la casa (`correr` + `aplicarUna`
+// de scripts/meta-guard-mutaciones.mjs), más una inocua de control que TIENE que salir MUDA.
+// Uso (desde la raíz, copiado a un .mjs fuera del árbol): node <copia> <raíz>
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+const raiz = process.argv[2];
+if (!raiz) { console.log('CIEGO: falta la raíz'); process.exit(2); }
+const mg = await import(pathToFileURL(path.join(raiz, 'scripts/meta-guard-mutaciones.mjs')).href);
+const guard = 'scrum1756j-panel-j1-sin-style-en-linea.test.mjs'; // el runner lo resuelve dentro de tests/
+// La lista se LEE del fuente, no se importa: importar el test lo EJECUTA en este proceso (levanta la
+// app y su servidor), y la pasada limpia del hijo salió CIEGA así (1.ª pasada de SCRUM-1723c).
+import fs from 'node:fs';
+const fuente = fs.readFileSync(path.join(raiz, 'tests', guard), 'utf8');
+const ini = fuente.indexOf('export const MUTACIONES_QUE_ME_TUMBAN = [');
+const fin = fuente.indexOf('\n];', ini);
+if (ini < 0 || fin < 0) { console.log('CIEGO: no encuentro MUTACIONES_QUE_ME_TUMBAN'); process.exit(2); }
+const MUTACIONES_QUE_ME_TUMBAN = new Function(`return ${fuente.slice(fuente.indexOf('[', ini), fin + 2)}`)();
+const inocua = {
+  // Cambia solo el comentario del bloque J1: ninguna regla ni declaración se mueve.
+  fichero: 'public/dashboard/css/styles.css',
+  de: '/* J1: SCRUM-1756j · los style="…" de las vistas de facturas, pasados a clases (CSP paso 3).',
+  a: '/* J1: SCRUM-1756j · los style="…" de las vistas de facturas, pasados a clases (CSP paso 3, inocua).',
+  cae: 'SCRUM-1756j · cada style= de main tiene su clase y su regla con las mismas declaraciones',
+};
+const limpia = await mg.correr(guard);
+console.log('base limpia: pasados', limpia.pasados?.length, '· caídos', limpia.caidos?.length);
+let vivas = 0, otras = 0;
+for (const mut of MUTACIONES_QUE_ME_TUMBAN) {
+  const r = await mg.aplicarUna(mut, guard, limpia);
+  const v = r.ok ? 'MUERE (la caza)' : r.mudo ? 'MUDA' : r.muerto ? 'FICHERO MUERTO' : `CIEGA ${String(r.ciego).slice(0, 300)}`;
+  if (r.ok) vivas++; else otras++;
+  console.log(`${v} · ${mut.fichero} · ${mut.cae}`);
+}
+const c = await mg.aplicarUna(inocua, guard, limpia);
+console.log(`CONTROL inocua: ${c.ok ? 'MUERE (¡mal!)' : c.mudo ? 'MUDA (bien)' : 'CIEGA ' + String(c.ciego).slice(0, 300)}`);
+console.log(`VEREDICTO: ${vivas}/${MUTACIONES_QUE_ME_TUMBAN.length} cazadas · ${otras} no`);
+process.exit(otras === 0 && c.mudo ? 0 : 1);
