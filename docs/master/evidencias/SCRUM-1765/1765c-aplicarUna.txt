@@ -1,0 +1,22 @@
+SCRUM-1765c · aplicarUna (scripts/meta-guard-mutaciones.mjs) sobre tests/scrum1392-un-hallazgo-visto-no-caduca.test.mjs · árbol en scrum-1765c-banco-1392-al-catalogo sobre e37a7051f · driver fuera del árbol
+declaradas: 6
+BASE: pasan 9 · caen 0 · saltados 0 · movidos 0
+1. scripts/_hallazgos-y-ciegos.mjs · cae «① un caso que apunta en las listas ENTREGADAS» → {"ok":true,"colaterales":1,"caidos":2,"otros":[]}
+2. scripts/_hallazgos-y-ciegos.mjs · cae «② EL POSITIVO» → {"ok":true,"colaterales":2,"caidos":3,"otros":[]}
+3. scripts/_hallazgos-y-ciegos.mjs · cae «③ la línea del recorrido sale SIEMPRE» → {"ok":true,"colaterales":1,"caidos":2,"otros":[]}
+4. scripts/_hallazgos-y-ciegos.mjs · cae «① lo entregado no se cuenta dos veces» → {"ok":true,"colaterales":0,"caidos":1,"otros":[]}
+5. scripts/guard-duplicar-926.mjs · cae «④ ningún guard de scripts/ lleva» → {"ok":true,"colaterales":0,"caidos":1,"otros":[]}
+6. scripts/guard-portal-en-la-ficha.mjs · cae «④ ningún guard de scripts/ lleva» → {"ok":true,"colaterales":0,"caidos":1,"otros":[]}
+7. scripts/_hallazgos-y-ciegos.mjs · cae «CONTROL-cae-que-no-existe-1765c» → {"ok":false,"ciego":"el test «CONTROL-cae-que-no-existe-1765c» NO aparece EN VERDE en la pasada limpia, así que no se ha mutado nada. Ese test NO LLEGÓ: ni pasó, ni cayó, ni se salt","otros":[]}
+--- control MUDA (M4 con el cae de ③, que M4 no tumba):
+{"ok":false,"mudo":"el guard NO cayó. Test que debía ponerse rojo: «③ la línea del recorrido sale SIEMPRE» → en la pasada MUTADA ese test: PASÓ. Recuento: 8 pasados · 1 caídos · 0 saltados. Y en la LIMPIA: 9 pasados · 0 caídos."}
+
+=== scrum812 tras subir el suelo 41 → 42 (mismo driver, guard tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs):
+declaradas: 5
+BASE: pasan 6 · caen 0 · saltados 0 · movidos 0
+1. scripts/meta-guard-mutaciones.mjs · cae «SCRUM-812 · 🔴 GUARD del rótulo: dice DECLARANTES y publica su DENOMINADOR» → {"ok":true,"colaterales":0,"caidos":1,"otros":[]}
+2. scripts/meta-guard-mutaciones.mjs · cae «SCRUM-812 · 🔴 EL QUE DECIDE: el subconjunto auto-declarado lleva su LÍMITE PEGADO» → {"ok":true,"colaterales":0,"caidos":1,"otros":[]}
+3. scripts/meta-guard-mutaciones.mjs · cae «SCRUM-812 · 🔴 SUELO del GUARD: sobre población CERO se declara CIEGO, no cero» → {"ok":true,"colaterales":0,"caidos":1,"otros":[]}
+4. tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs · cae «SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA» → {"ok":true,"colaterales":0,"caidos":1,"otros":[]}
+5. scripts/meta-guard-mutaciones.mjs · cae «SCRUM-812d · 🔴 el título se cuenta por PALABRA: «guarda» y «guardado» no son un guard» → {"ok":true,"colaterales":1,"caidos":2,"otros":[]}
+6. scripts/meta-guard-mutaciones.mjs · cae «CONTROL-cae-que-no-existe-1765c» → {"ok":false,"ciego":"el test «CONTROL-cae-que-no-existe-1765c» NO aparece EN VERDE en la pasada limpia, así que no se ha mutado nada. Ese test NO LLEGÓ: ni pasó, ni cayó, ni se salt","otros":[]}
