@@ -5534,9 +5534,9 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
    el texto literal del atributo de main). Con la CSP aplicada (`style-src 'self'`) un atributo `style`
    no pinta; una clase de esta hoja, sí. Cero cambios visibles: medido con los estilos computados de cada
    elemento, main contra rama. Lo ata `tests/scrum1756i-panel-j2-sin-style-en-linea.test.mjs`. */
-.cobros-th-importe { text-align:right }
+.table th.cobros-th-importe { text-align:right }
 .clientes-vacio-cta { margin-top:14px }
-.csv-modal { max-width:600px }
+.modal-overlay .modal.csv-modal { max-width:600px }
 .csv-oculto { display:none }
 .csv-guia { font-size:13px;color:var(--neutral-500);margin:0 0 12px }
 .csv-dropzone { border:2px dashed var(--neutral-300);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:border-color .15s;margin-bottom:8px }
@@ -5581,9 +5581,9 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
 .c360-evento-titulo { font-size:13.5px;font-weight:600 }
 .c360-evento-detalle { font-size:12.5px;color:var(--muted);margin-top:1px }
 .c360-evento-hora { flex-shrink:0;font-size:11.5px;color:var(--muted);white-space:nowrap }
-.c360-tabla-vacia { text-align:center;color:var(--neutral-400);padding:24px }
+.table td.c360-tabla-vacia { text-align:center;color:var(--neutral-400);padding:24px }
 .c360-celda-numero { font-weight:600 }
-.c360-celda-fecha { color:var(--muted) }
+.table td.c360-celda-fecha { color:var(--muted) }
 .c360-sin-subrayado { text-decoration:none }
 .c360-celda-acciones { display:flex;gap:6px;align-items:center }
 .c360-editar-cuerpo { flex-direction:column;gap:10px }
