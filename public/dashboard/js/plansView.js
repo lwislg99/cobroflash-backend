@@ -1,7 +1,7 @@
 // public/dashboard/js/plansView.js
 
 async function renderPlansView(container) {
-  container.innerHTML = `<div style="max-width:520px"><div style="color:var(--neutral-400);font-size:13px">Cargando plan…</div></div>`;
+  container.innerHTML = `<div class="j3e-04391f0"><div class="j3e-d7275d8">Cargando plan…</div></div>`;
   let data;
   try {
     data = await apiRequest('/admin/billing/plans');
@@ -63,35 +63,35 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding, suscripci
   // que estaba mal era el destino. Renombrarlo dejaria esta pantalla sin acceso a cobros — una
   // perdida de funcion disfrazada de arreglo de copy — y ademas exigiria microcopy nueva.
   const statusHtml = isTrialExpired ? `
-    <div class="customers-card" style="display:flex;align-items:center;gap:12px;margin-bottom:20px;border-color:#fde68a;background:#fffbeb">
-      <div style="font-size:28px">⏳</div>
+    <div class="j3e-480940b customers-card">
+      <div class="j3e-a2600b0">⏳</div>
       <div>
-        <div style="font-weight:700;font-size:15px;color:var(--ink)">Tu prueba ha terminado, elige un plan para seguir</div>
-        <div style="font-size:13px;color:var(--body);margin-top:2px">Puedes ver tus datos, pero para crear y enviar presupuestos necesitas una suscripción activa.</div>
-        <div style="font-size:12.5px;color:var(--muted);margin-top:6px">
+        <div class="j3e-626dca9">Tu prueba ha terminado, elige un plan para seguir</div>
+        <div class="j3e-e627574">Puedes ver tus datos, pero para crear y enviar presupuestos necesitas una suscripción activa.</div>
+        <div class="j3e-d56471a">
           Tus datos son tuyos y NUNCA se borran — exporta cuando quieras:
-          <a href="/admin/exports/quotes.csv" style="color:#15803d">presupuestos</a> ·
-          <a href="/admin/exports/charges.csv" style="color:#15803d">cobros</a> ·
-          <a href="/admin/exports/expenses.csv" style="color:#15803d">gastos</a>
+          <a href="/admin/exports/quotes.csv" class="j3e-4a12b6e">presupuestos</a> ·
+          <a href="/admin/exports/charges.csv" class="j3e-4a12b6e">cobros</a> ·
+          <a href="/admin/exports/expenses.csv" class="j3e-4a12b6e">gastos</a>
         </div>
       </div>
     </div>
   ` : currentPlan === 'trial' ? `
-    <div class="customers-card" style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-      <div style="font-size:28px">🎉</div>
+    <div class="j3e-857bdd4 customers-card">
+      <div class="j3e-a2600b0">🎉</div>
       <div>
-        <div style="font-weight:700;font-size:15px;color:var(--neutral-900)">Periodo de prueba gratuito</div>
-        <div style="font-size:13px;color:var(--neutral-400);margin-top:2px">
+        <div class="j3e-b6de9e3">Periodo de prueba gratuito</div>
+        <div class="j3e-8ad4db4">
           ${trialDaysLeft !== null ? `${trialDaysLeft} día${trialDaysLeft !== 1 ? 's' : ''} restante${trialDaysLeft !== 1 ? 's' : ''}` : 'Tiempo limitado'}
         </div>
       </div>
     </div>
   ` : `
-    <div class="customers-card" style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-      <div style="font-size:28px">✅</div>
+    <div class="j3e-857bdd4 customers-card">
+      <div class="j3e-a2600b0">✅</div>
       <div>
-        <div style="font-weight:700;font-size:15px;color:var(--neutral-900)">Plan activo: <strong>${currentPlan === 'founding' ? 'Founding (9,90 €/mes de por vida, mientras mantengas la suscripción activa)' : currentPlan === 'equipo' ? 'Equipo' : 'Pro'}</strong></div>
-        ${planExpiresAt ? `<div style="font-size:13px;color:var(--neutral-400);margin-top:2px">Próxima renovación: ${new Date(planExpiresAt).toLocaleDateString('es', { day: '2-digit', month: 'long', year: 'numeric' })}</div>` : ''}
+        <div class="j3e-b6de9e3">Plan activo: <strong>${currentPlan === 'founding' ? 'Founding (9,90 €/mes de por vida, mientras mantengas la suscripción activa)' : currentPlan === 'equipo' ? 'Equipo' : 'Pro'}</strong></div>
+        ${planExpiresAt ? `<div class="j3e-8ad4db4">Próxima renovación: ${new Date(planExpiresAt).toLocaleDateString('es', { day: '2-digit', month: 'long', year: 'numeric' })}</div>` : ''}
       </div>
     </div>
   `;
@@ -101,7 +101,7 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding, suscripci
   const heroAmount = annual ? fmtMoneyEs(plan.priceAnnual / 12) : fmtMoneyEs(plan.price);
   const perLabel   = '/mes';
   const ctaPrice   = annual ? `${plan.priceAnnual} €/año` : `${fmtMoneyEs(plan.price)}/mes`;
-  const saving     = annual ? `<div style="font-size:12px;color:var(--green-600);font-weight:600;margin-top:4px">${plan.priceAnnual} €/año facturado una vez · Ahorras 2 meses</div>` : '';
+  const saving     = annual ? `<div class="j3e-18b030c">${plan.priceAnnual} €/año facturado una vez · Ahorras 2 meses</div>` : '';
 
   // SCRUM-1029 (regla 24): estas dos filas prometen cobro; en `receipt` (ES real, facturación
   // apagada) YaQu no cobra por ninguna vía. Se OCULTAN para ese modo, no se reescriben (texto
@@ -127,78 +127,78 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding, suscripci
   // (regla 24). Se oculta, no se reescribe.
   const notaComision = window.appModoEmision === 'receipt'
     ? ''
-    : '<div style="font-size:12.5px;color:var(--neutral-500);margin-top:8px">+ 0,9 % solo cuando cobras con tarjeta · Bizum y transferencia, gratis</div>';
+    : '<div class="j3e-0855863">+ 0,9 % solo cuando cobras con tarjeta · Bizum y transferencia, gratis</div>';
 
   // V0-4 (W1): banner founding sobre Pro — 9,90 €/mes de por vida, contador REAL
   const foundingHtml = showFounding ? `
-    <div class="customers-card" style="margin-bottom:14px;background:linear-gradient(135deg,var(--brand) 0%,var(--logo-cyan) 100%);border:none;color:var(--brand-ink)">
-      <div style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between">
-        <div style="font-size:14px;font-weight:700">
-          Oferta founding: <span style="text-decoration:line-through;opacity:.7">19,90 €</span>
-          <span style="font-size:18px"> 9,90 €/mes</span> de por vida, mientras mantengas la suscripción activa
+    <div class="j3e-58d699c customers-card">
+      <div class="j3e-9cea5ce">
+        <div class="j3e-a1b26d5">
+          Oferta founding: <span class="j3e-3131eb0">19,90 €</span>
+          <span class="j3e-4ff818f"> 9,90 €/mes</span> de por vida, mientras mantengas la suscripción activa
         </div>
-        <span style="font-size:12px;font-weight:700;background:rgba(255,255,255,.35);border-radius:999px;padding:4px 12px;white-space:nowrap">
+        <span class="j3e-867572a">
           Quedan ${founding.seatsLeft} de ${founding.seatsTotal} plazas
         </span>
       </div>
-      <button class="plan-btn" data-plan="founding" style="margin-top:12px;width:100%;font-size:14px;font-weight:700;padding:11px;border:none;border-radius:999px;cursor:pointer;background:#fff;color:var(--brand-700)">
+      <button class="j3e-3350dfb plan-btn" data-plan="founding">
         Quiero mi plaza founding — 9,90 €/mes
       </button>
     </div>
   ` : '';
 
   return `
-    <div style="max-width:440px">
+    <div class="j3e-5521062">
       ${statusHtml}
       ${foundingHtml}
 
       ${ocultaPro ? '' : `<div class="customers-card">
-        <div style="display:flex;justify-content:center;margin-bottom:20px">
-          <div style="display:flex;background:var(--neutral-100);border-radius:8px;padding:3px;gap:3px">
-            <button id="toggle-monthly" style="padding:6px 16px;border-radius:6px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;${!annual ? 'background:#fff;color:var(--neutral-900);box-shadow:0 1px 3px rgba(0,0,0,.08)' : 'background:transparent;color:var(--neutral-400)'}">
+        <div class="j3e-e791a2c">
+          <div class="j3e-3fe60ac">
+            <button id="toggle-monthly" class="${!annual ? 'j3e-fbb8fe6' : 'j3e-c3d1d19'}">
               Mensual
             </button>
-            <button id="toggle-annual" style="padding:6px 16px;border-radius:6px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;${annual ? 'background:#fff;color:var(--neutral-900);box-shadow:0 1px 3px rgba(0,0,0,.08)' : 'background:transparent;color:var(--neutral-400)'}">
-              Anual <span style="color:var(--green-600);font-size:11px">-17%</span>
+            <button id="toggle-annual" class="${annual ? 'j3e-fbb8fe6' : 'j3e-c3d1d19'}">
+              Anual <span class="j3e-5c97094">-17%</span>
             </button>
           </div>
         </div>
 
-        <div style="text-align:center;margin-bottom:20px;${isCurrent ? 'border:2px solid var(--green-500);border-radius:12px;padding:16px;background:var(--neutral-50)' : ''}">
-          ${isCurrent ? `<div style="display:inline-block;background:var(--green-500);color:#fff;font-size:10px;font-weight:700;padding:2px 10px;border-radius:var(--radius-full);margin-bottom:10px">Plan actual</div>` : ''}
-          <div style="font-weight:700;font-size:18px;color:var(--neutral-800);margin-bottom:6px">Plan Pro</div>
-          <div style="font-size:40px;font-weight:800;color:var(--neutral-900);letter-spacing:-.5px;line-height:1">
-            ${heroAmount}<span style="font-size:16px;font-weight:400;color:var(--neutral-400)">${perLabel}</span>
+        <div class="${isCurrent ? 'j3e-7130325' : 'j3e-9f77f85'}">
+          ${isCurrent ? `<div class="j3e-2d05b1d">Plan actual</div>` : ''}
+          <div class="j3e-69e7d1c">Plan Pro</div>
+          <div class="j3e-9a17a94">
+            ${heroAmount}<span class="j3e-80cddd9">${perLabel}</span>
           </div>
           ${notaComision}
           ${saving}
-          <div style="font-size:12px;color:var(--neutral-400);margin-top:8px">Todo incluido · Sin límites</div>
+          <div class="j3e-a83343d">Todo incluido · Sin límites</div>
         </div>
 
-        <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px">
+        <ul class="j3e-2a5a0b5">
           ${features.map(f => `
-            <li style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--neutral-700)">
-              <span style="color:var(--green-500);font-weight:700;flex-shrink:0">✓</span> ${f}
+            <li class="j3e-3cc20a6">
+              <span class="j3e-3999e17">✓</span> ${f}
             </li>
           `).join('')}
         </ul>
 
         ${!conSuscripcion ? `
-          <button class="btn-primary plan-btn" data-plan="${plan.id}" style="width:100%;font-size:15px;padding:12px">
+          <button class="j3e-bc1a03e btn-primary plan-btn" data-plan="${plan.id}">
             Suscribirme — ${ctaPrice}
           </button>
-          <p style="text-align:center;font-size:12px;color:var(--neutral-400);margin:10px 0 0">
+          <p class="j3e-85eb928">
             Sin permanencia · Cancela cuando quieras
           </p>
         ` : `
-          <button id="portal-btn" class="btn-secondary" style="width:100%">
+          <button id="portal-btn" class="j3e-0466783 btn-secondary">
             Gestionar suscripción / facturación
           </button>
         `}
       </div>`}
 
       ${currentPlan !== 'trial' && (!conSuscripcion || ocultaPro) ? `
-        <div style="margin-top:12px;text-align:center">
+        <div class="j3e-cfd7bd7">
           <button id="portal-btn" class="btn-ghost btn-sm">Gestionar suscripción / facturación</button>
         </div>
       ` : ''}
@@ -234,18 +234,18 @@ function openAlcanceModal() {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
-      <div class="modal" style="max-width:560px">
+      <div class="j3e-765d57b modal">
         <div class="modal-body">
           <iframe src="/legal/alcance-beta" title="Alcance de la beta"
-            style="width:100%;height:320px;border:1px solid var(--neutral-200);border-radius:10px;background:#fff"></iframe>
-          <p style="margin:10px 0 0;font-size:12.5px;color:var(--muted)">
+            class="j3e-36a245b"></iframe>
+          <p class="j3e-b37c531">
             También puedes <a href="/legal/alcance-beta" target="_blank" rel="noopener">abrirlo en una pestaña</a>.
           </p>
-          <label style="display:flex;align-items:flex-start;gap:10px;margin-top:14px;cursor:pointer;font-size:14px;color:var(--ink)">
-            <input type="checkbox" id="alc-check" style="width:18px;height:18px;margin-top:1px;accent-color:#16a34a;flex-shrink:0"/>
+          <label class="j3e-2ddb7ed">
+            <input type="checkbox" id="alc-check" class="j3e-8640d47"/>
             <span>He leído y acepto el alcance de la beta</span>
           </label>
-          <button class="btn-primary" id="alc-continue" disabled style="width:100%;margin-top:14px;opacity:.5">
+          <button class="j3e-ec4c999 btn-primary" id="alc-continue" disabled>
             Aceptar y continuar al pago
           </button>
         </div>
