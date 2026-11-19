@@ -447,7 +447,7 @@ convierte el fallo mudo en un hecho consultable.
 
 > **`rango` tiene DOS formas, y es a propósito** (SCRUM-221, medido): las dos rutas no exportan
 > lo mismo. El XML suelto va por **ejercicio** (`{tipo:'ejercicio', year}`) porque el registro
-> RRSIF se organiza por año natural y la cadena de huellas es anual; el ZIP va por **fechas**
+> RRSIF se organiza por año natural y la cadena de huellas es anual *[Nota del 19-nov-2026 (SCRUM-1770c): ese motivo caducó ese día; el máster lo sustituyó por SCRUM-1770 en `docs/YAQU_MASTER.md:766-782` (`Motivo sustituido el 19-nov-2026 por SCRUM-1770`): el año natural es una decisión de PRODUCTO, no una exigencia de la norma, y la cadena es una sola por obligado y sistema, no anual (Orden HAC/1177/2024, arts. 7.a-c y 8.2). La frase de la izquierda se deja como estaba (A8); la decisión de las dos formas de `rango` no cambia.]*; el ZIP va por **fechas**
 > (`{tipo:'fechas', from, to, ejercicios[]}`), que es su filtro real. Forzar las dos a un
 > `{from,to}` único habría obligado a inventar un rango en la ruta del XML — un dato construido
 > por el registro en vez de observado.
