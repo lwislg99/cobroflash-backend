@@ -116,3 +116,46 @@ Las 20 de los tres ficheros (5 + 7 + 8) tumban su caso con `correr` + `aplicarUn
 **Mis errores, contados:** el encargo me nombraba solo el fichero 1732d, y `scrum836`/`scrum810` no estaban en mi tanda dirigida: los vi al leer el log del job, no corriendo. Mi primer parche del ancla de 1445d escribió un salto de línea real en vez de `\n` dentro del literal (lo vi en el diff antes de correr nada).
 
 **Sin correr:** la suite entera (la corre CI). El job «guards de navegador» (`guard:escalera-por-estado`) cae también en #3201: no es de este PR y no se ha tocado.
+
+## J5 · SCRUM-1732e · la R1 de una factura sin cobrar con criterio de caja: lo que dice la norma
+
+**Medido contra:** `origin/main` = `d4a0fc951cd54405d6e9ae908a7b52b12b26c024` · 2026-11-19T17:40:04Z (hora de GitHub; sesión J5 `jv-j5bl`, por encargo del orquestador `cobroflash-backend-c7`)
+
+A9: sin fallo que generalice — lectura de norma con su control positivo y cero por bloque; el único tropiezo fue pasar el tope de contexto del encargo (150k), y lo dije al cruzarlo, no al entregar
+
+Solo documentos. Ni código, ni esquema, ni el camino de emisión. No es respuesta de asesor (reglas 17 y 26). El detalle y los literales están en Jira, SCRUM-1732 c.22167.
+
+**La observación (c.22158):** con caja, la R1 `2026-QA-R-001` de la F1 `F260001`, que está sin cobrar, devenga en el 303 de 4T-2026 (cuota −11,27), y la F1 devenga en 4T-2027, en el tope.
+
+**Fuente:** API de legislación consolidada del BOE. Siete bloques, todos `200`, `Date:` del BOE Thu, 19 Nov 2026 17:39:09 GMT. De cada uno, la última versión:
+
+| bloque | vigente desde | sha256 (16) | positivo | cero (`SCRUM-`) |
+| --- | --- | --- | --- | --- |
+| LIVA `a163terdecies` | 20140101 | `6c48644a55e27cdc` | «31 de diciembre» ×2 | 0 |
+| LIVA `a80` | 20230101 | `ef0f25c43a9fa2ad` | «base imponible» ×19 | 0 |
+| LIVA `a89` | 20150101 | `cc6137a9c5548155` | «rectificaci» ×15 | 0 |
+| LIVA `a163decies` | 20140101 | `87b9970a67d75a41` | «caja» ×3 | 0 |
+| RIVA `a24` | 20240101 | `bf85c50c9e484b03` | «rectificaci» ×2 | 0 |
+| RIVA `a61decies` | 20140101 | `63a6080bbdd08f46` | «cobro» ×3 | 0 |
+| RIVA `a61septies` | 20140101 | `1b530870545e3d5f` | «caja» ×1 | 0 |
+
+**Veredicto: (c). La norma leída no lo fija, y la pregunta es para el asesor.**
+
+- LIVA 89.Cinco b) manda la minoración a la «declaración-liquidación correspondiente al periodo en que deba efectuarse la rectificación», pero habla de «cuotas inicialmente repercutidas».
+- LIVA 163 terdecies.Dos dice que, con caja, la repercusión «se entenderá producida en el momento del devengo de la operación», y para una F1 sin cobrar ese momento no ha llegado.
+- La única regla de caja para modificar la base está en el art. 80, apartado Cuatro: es la de los créditos incobrables, no la de una R1. «caja» sale 0 veces en el RIVA 24, 0 en el LIVA 89, y «rectificativ» 0 en el RIVA 61 decies y 61 septies.
+- **NO leído:** consultas de la DGT, el manual del IVA de la AEAT y sus FAQ del régimen de caja.
+
+**Qué hace hoy el código (leído, no ejecutado):** `tramosDeDevengo` devuelve `null` con un total ≤ 0 (`src/modules/invoicing/domain/devengoPorCaja.ts`), así que la R1 va por `fechaDeDevengo`: su `paidAt` si cae antes del tope, y si no, el tope. En staging la R1 lleva `paidAt` (`asientosCobrados: 1`). **NO medido:** quién se lo pone.
+
+**Lo que queda pendiente:**
+
+- La pregunta, literal, para la fila de SCRUM-1264 (la pone el orquestador): está en c.22167.
+- Las opciones de producto, para cuando conteste el asesor, todas con GO del fundador (regla 38):
+  - O1: como hoy.
+  - O2: la R1 sigue a su F1. Toca `devengoPorCaja` y sus tres consumidores.
+  - O3: mixta.
+- La recomendación de la sesión es O1 hasta que conteste el asesor.
+- ⚠️ Sin juzgar: F1 total 84,36 (cuota 11,28) y su R1 −84,35 (cuota −11,27). Le falta un céntimo para anularla entera.
+
+No se cierra ni se transiciona (A13).
