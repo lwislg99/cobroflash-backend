@@ -1,0 +1,300 @@
+SCRUM-1756g · salida de 1756g-censo.mjs.txt (node 1756g-censo.mjs, desde la raíz del árbol jv-j3cj, HEAD = origin/main e37a7051f)
+
+CONTROLES (siembra fabricada por este guion en un temporal)
+  S1 positivo public/siembra.html: {"style_tag":2,"style_attr":1,"script":1,"on":1} esperado {"style_tag":2,"style_attr":1,"script":1,"on":1} → CAZA
+  S2 positivo public/siembra.html: vivos {"style_tag":1,"style_attr":1,"script":1,"on":1} esperado {"style_tag":1,"style_attr":1,"script":1,"on":1} → CAZA
+  S1 positivo src/siembra.ts: {"style_tag":2,"style_attr":1,"script":1,"on":1} esperado {"style_tag":2,"style_attr":1,"script":1,"on":1} → CAZA
+  S2 positivo src/siembra.ts: vivos {"style_tag":1,"style_attr":1,"script":1,"on":1} esperado {"style_tag":1,"style_attr":1,"script":1,"on":1} → CAZA
+  cero public/cero.html: S1 {} · S2 0 ocurrencias → CERO
+
+POBLACIÓN · origin/main e37a7051f87b195ceeae4852c56a02bc0d218438 · src/** + public/** = 518 ficheros · fuera correo (src/modules/messaging/**) 13 · quedan 505
+  por extensión: ts 355 · js 103 · png 10 · html 9 · css 8 · woff2 7 · xsd 6 · svg 3 · txt 2 · json 1 · xml 1
+
+S1 · git grep -c (LÍNEAS) · ficheros con algún acierto: 68
+  fichero | <style | style=" | <script sin src | on*=
+  public/admin.html | 1 | 4 | 1 | 0
+  public/dashboard/css/styles.css | 0 | 2 | 0 | 0
+  public/dashboard/index.html | 0 | 8 | 1 | 0
+  public/dashboard/js/aiQuoteAssistant.js | 0 | 19 | 0 | 0
+  public/dashboard/js/albaranDetailView.js | 0 | 1 | 0 | 0
+  public/dashboard/js/api.js | 0 | 8 | 0 | 0
+  public/dashboard/js/app.js | 0 | 2 | 0 | 0
+  public/dashboard/js/avisoDocumentoSinEnviar.js | 0 | 0 | 1 | 0
+  public/dashboard/js/cobrosView.js | 0 | 1 | 0 | 0
+  public/dashboard/js/csvImport.js | 0 | 32 | 1 | 0
+  public/dashboard/js/customerDetailView.js | 0 | 28 | 0 | 0
+  public/dashboard/js/customersView.js | 0 | 1 | 0 | 0
+  public/dashboard/js/estadoFirma.js | 0 | 1 | 0 | 0
+  public/dashboard/js/expensesView.js | 0 | 27 | 0 | 1
+  public/dashboard/js/exportView.js | 0 | 32 | 0 | 0
+  public/dashboard/js/facturasRecibidasView.js | 0 | 4 | 0 | 0
+  public/dashboard/js/globalSearch.js | 0 | 20 | 0 | 2
+  public/dashboard/js/homeView.js | 0 | 101 | 0 | 1
+  public/dashboard/js/invoiceActionsRegistry.js | 0 | 0 | 1 | 0
+  public/dashboard/js/invoiceDetailView.js | 0 | 8 | 1 | 0
+  public/dashboard/js/invoicesView.js | 0 | 5 | 0 | 0
+  public/dashboard/js/jobActionsRegistry.js | 0 | 0 | 1 | 0
+  public/dashboard/js/jobDetailView.js | 0 | 18 | 0 | 0
+  public/dashboard/js/jobNuevoModal.js | 0 | 7 | 0 | 0
+  public/dashboard/js/jobsCierreTrabajo.js | 0 | 0 | 1 | 0
+  public/dashboard/js/onboardingView.js | 0 | 51 | 0 | 0
+  public/dashboard/js/parteDetailView.js | 0 | 19 | 0 | 0
+  public/dashboard/js/parteOficinaView.js | 0 | 11 | 0 | 0
+  public/dashboard/js/patronDetalleAcciones.js | 0 | 0 | 1 | 0
+  public/dashboard/js/plansView.js | 0 | 51 | 0 | 0
+  public/dashboard/js/productsView.js | 0 | 21 | 0 | 0
+  public/dashboard/js/providersView.js | 0 | 10 | 0 | 0
+  public/dashboard/js/puertaSerie.js | 0 | 15 | 0 | 0
+  public/dashboard/js/quoteAtajosVencimiento.js | 0 | 0 | 1 | 0
+  public/dashboard/js/quoteRequestsView.js | 0 | 16 | 0 | 0
+  public/dashboard/js/quoteRevisiones.js | 0 | 10 | 0 | 0
+  public/dashboard/js/quotesDetailView.js | 0 | 37 | 0 | 1
+  public/dashboard/js/quotesListView.js | 0 | 3 | 0 | 0
+  public/dashboard/js/quotesView.js | 0 | 13 | 0 | 0
+  public/dashboard/js/reportsView.js | 0 | 150 | 0 | 0
+  public/dashboard/js/settingsView.js | 0 | 75 | 0 | 0
+  public/dashboard/js/signaturePad.js | 0 | 5 | 0 | 0
+  public/dashboard/js/teamView.js | 0 | 30 | 0 | 0
+  public/dashboard/js/templatesView.js | 0 | 9 | 0 | 1
+  public/dashboard/js/terminadoSinCobrar.js | 0 | 0 | 1 | 0
+  public/dashboard/js/tutorial.js | 0 | 15 | 0 | 0
+  public/index.html | 0 | 0 | 1 | 0
+  public/privacidad.html | 1 | 0 | 0 | 0
+  public/sw.js | 0 | 0 | 1 | 0
+  src/core/http/csp.ts | 0 | 0 | 1 | 0
+  src/core/http/huellaEstaticos.ts | 0 | 0 | 1 | 0
+  src/core/http/publicNotFound.ts | 2 | 0 | 0 | 0
+  src/modules/auth/app/routes/altaNavegador.ts | 0 | 2 | 3 | 0
+  src/modules/auth/app/routes/loginNavegador.ts | 0 | 0 | 2 | 0
+  src/modules/auth/domain/auth.service.ts | 0 | 4 | 0 | 0
+  src/modules/billing/app/routes/pagoEstilo.ts | 8 | 0 | 0 | 0
+  src/modules/billing/app/routes/pagoNavegador.ts | 0 | 0 | 5 | 0
+  src/modules/billing/app/routes/payBank.routes.ts | 0 | 0 | 1 | 0
+  src/modules/billing/app/routes/reciboPortalEstilo.ts | 5 | 0 | 1 | 0
+  src/modules/jobs/app/routes/albaranFirmaEstilo.ts | 1 | 0 | 0 | 0
+  src/modules/jobs/app/routes/albaranFirmaNavegador.ts | 0 | 0 | 3 | 0
+  src/modules/jobs/app/routes/albaranPublic.routes.ts | 0 | 0 | 2 | 0
+  src/modules/system/app/routes/invoicesAdmin.routes.ts | 2 | 0 | 0 | 0
+  src/modules/system/app/routes/quoteDecisionEstilo.ts | 2 | 0 | 0 | 0
+  src/modules/system/app/routes/quoteDecisionLanding.routes.ts | 2 | 0 | 2 | 0
+  src/modules/system/app/routes/quoteDecisionNavegador.ts | 0 | 0 | 3 | 0
+  src/modules/system/domain/publicProfile.service.ts | 1 | 0 | 0 | 0
+  src/modules/system/domain/soporte.ts | 0 | 1 | 0 | 0
+
+S2 · análisis sobre 475 ficheros de texto (ts/js/mjs/html/css) · con alguna ocurrencia: 68
+  fichero | tipo | lugar | n | líneas (hasta 12)
+  public/admin.html | style_tag | marcado | 1 | 7
+  public/admin.html | style_attr | marcado | 4 | 576,580,585,593
+  public/admin.html | script | marcado | 1 | 613
+  public/dashboard/css/styles.css | style_attr | comentario | 1 | 574
+  public/dashboard/index.html | style_attr | marcado | 8 | 50,84,119,224,225,226,229,231
+  public/dashboard/index.html | script | marcado | 1 | 402
+  public/dashboard/js/aiQuoteAssistant.js | style_attr | cadena | 19 | 12,14,17,22,26,29,93,143,145,146,149,189,…
+  public/dashboard/js/albaranDetailView.js | style_attr | cadena | 1 | 575
+  public/dashboard/js/api.js | style_attr | cadena | 10 | 965,1076,1077,1078,1093,1094,1094,1094,1095,1098
+  public/dashboard/js/app.js | style_attr | cadena | 2 | 116,221
+  public/dashboard/js/avisoDocumentoSinEnviar.js | script | comentario | 1 | 33
+  public/dashboard/js/cobrosView.js | style_attr | cadena | 1 | 487
+  public/dashboard/js/csvImport.js | style_attr | cadena | 31 | 30,32,66,70,71,72,74,76,79,145,146,147,…
+  public/dashboard/js/csvImport.js | script | comentario | 1 | 154
+  public/dashboard/js/customerDetailView.js | style_attr | cadena | 28 | 379,454,455,457,458,463,465,469,623,645,665,666,…
+  public/dashboard/js/customersView.js | style_attr | cadena | 1 | 757
+  public/dashboard/js/estadoFirma.js | style_attr | cadena | 1 | 349
+  public/dashboard/js/expensesView.js | style_attr | comentario | 1 | 394
+  public/dashboard/js/expensesView.js | style_attr | cadena | 27 | 704,705,709,710,711,713,714,716,721,727,728,729,…
+  public/dashboard/js/expensesView.js | on | cadena | 1 | 726
+  public/dashboard/js/exportView.js | style_attr | cadena | 32 | 64,65,66,67,73,74,75,76,83,84,86,87,…
+  public/dashboard/js/facturasRecibidasView.js | style_attr | cadena | 4 | 133,134,137,138
+  public/dashboard/js/globalSearch.js | style_attr | cadena | 20 | 22,37,142,155,159,168,169,171,172,182,184,185,…
+  public/dashboard/js/globalSearch.js | on | cadena | 2 | 160,161
+  public/dashboard/js/homeView.js | style_attr | cadena | 108 | 41,119,120,121,129,133,133,133,134,134,134,138,…
+  public/dashboard/js/homeView.js | on | cadena | 1 | 577
+  public/dashboard/js/invoiceActionsRegistry.js | script | comentario | 1 | 69
+  public/dashboard/js/invoiceDetailView.js | style_attr | cadena | 8 | 122,234,824,828,834,836,846,848
+  public/dashboard/js/invoiceDetailView.js | script | comentario | 1 | 815
+  public/dashboard/js/invoicesView.js | style_attr | cadena | 5 | 491,494,515,517,658
+  public/dashboard/js/jobActionsRegistry.js | script | comentario | 1 | 97
+  public/dashboard/js/jobDetailView.js | style_attr | cadena | 18 | 729,1505,1506,1507,2020,2021,2022,2023,3144,3146,3149,3151,…
+  public/dashboard/js/jobNuevoModal.js | style_attr | cadena | 7 | 33,35,38,42,54,58,60
+  public/dashboard/js/jobsCierreTrabajo.js | script | comentario | 1 | 135
+  public/dashboard/js/onboardingView.js | style_attr | cadena | 54 | 105,106,107,108,113,114,140,141,143,145,148,149,…
+  public/dashboard/js/parteDetailView.js | style_attr | cadena | 19 | 377,379,487,495,514,871,872,873,1028,1067,1070,1080,…
+  public/dashboard/js/parteOficinaView.js | style_attr | cadena | 11 | 52,53,54,56,60,105,106,108,150,151,153
+  public/dashboard/js/patronDetalleAcciones.js | script | comentario | 1 | 122
+  public/dashboard/js/plansView.js | style_attr | cadena | 52 | 4,4,66,67,69,70,71,73,74,75,80,81,…
+  public/dashboard/js/productsView.js | style_attr | cadena | 21 | 322,323,572,691,692,693,694,695,696,697,698,788,…
+  public/dashboard/js/providersView.js | style_attr | cadena | 10 | 78,79,112,113,239,281,283,284,285,286
+  public/dashboard/js/puertaSerie.js | style_attr | cadena | 15 | 143,144,145,146,147,149,150,151,152,153,154,155,…
+  public/dashboard/js/quoteAtajosVencimiento.js | script | comentario | 1 | 96
+  public/dashboard/js/quoteRequestsView.js | style_attr | cadena | 14 | 17,18,58,64,82,83,84,100,102,103,105,107,…
+  public/dashboard/js/quoteRevisiones.js | style_attr | cadena | 10 | 157,158,161,165,174,196,210,217,219,236
+  public/dashboard/js/quotesDetailView.js | style_attr | cadena | 38 | 346,347,349,356,368,373,375,599,619,707,760,813,…
+  public/dashboard/js/quotesDetailView.js | on | cadena | 1 | 1342
+  public/dashboard/js/quotesListView.js | style_attr | cadena | 3 | 159,248,265
+  public/dashboard/js/quotesView.js | style_attr | cadena | 13 | 1035,3595,3605,4999,5001,5002,5022,5023,5025,5080,5082,5088,…
+  public/dashboard/js/reportsView.js | style_attr | cadena | 161 | 18,19,169,176,266,266,267,299,300,301,307,319,…
+  public/dashboard/js/settingsView.js | style_attr | cadena | 75 | 594,605,640,641,651,652,659,661,684,699,700,771,…
+  public/dashboard/js/signaturePad.js | style_attr | cadena | 5 | 92,96,271,272,274
+  public/dashboard/js/teamView.js | style_attr | cadena | 32 | 40,41,108,109,110,111,112,117,118,119,122,123,…
+  public/dashboard/js/templatesView.js | style_attr | cadena | 9 | 21,22,60,70,96,99,100,168,174
+  public/dashboard/js/templatesView.js | on | cadena | 1 | 24
+  public/dashboard/js/terminadoSinCobrar.js | script | comentario | 1 | 32
+  public/dashboard/js/tutorial.js | style_attr | cadena | 15 | 89,230,231,232,235,236,237,239,240,246,247,248,…
+  public/index.html | script (datos:application/ld+json) | marcado | 1 | 27
+  public/privacidad.html | style_tag | marcado | 1 | 10
+  public/sw.js | script | comentario | 1 | 8
+  src/core/http/csp.ts | script | comentario | 1 | 4
+  src/core/http/huellaEstaticos.ts | script | comentario | 1 | 8
+  src/core/http/publicNotFound.ts | style_tag | comentario | 2 | 7,10
+  src/modules/auth/app/routes/altaNavegador.ts | script | comentario | 3 | 5,15,19
+  src/modules/auth/app/routes/loginNavegador.ts | script | comentario | 2 | 5,18
+  src/modules/auth/domain/auth.service.ts | style_attr | cadena | 4 | 112,113,233,234
+  src/modules/billing/app/routes/pagoEstilo.ts | style_tag | comentario | 8 | 6,10,12,25,27,28,45,262
+  src/modules/billing/app/routes/pagoNavegador.ts | script | comentario | 6 | 6,6,19,25,30,163
+  src/modules/billing/app/routes/payBank.routes.ts | script | comentario | 1 | 18
+  src/modules/billing/app/routes/reciboPortalEstilo.ts | style_tag | comentario | 6 | 6,6,8,11,13,15
+  src/modules/billing/app/routes/reciboPortalEstilo.ts | script | comentario | 1 | 22
+  src/modules/jobs/app/routes/albaranFirmaEstilo.ts | style_tag | comentario | 1 | 5
+  src/modules/jobs/app/routes/albaranFirmaNavegador.ts | script | comentario | 1 | 5
+  src/modules/jobs/app/routes/albaranFirmaNavegador.ts | script (datos:application/json) | comentario | 2 | 13,155
+  src/modules/jobs/app/routes/albaranPublic.routes.ts | script | comentario | 1 | 215
+  src/modules/jobs/app/routes/albaranPublic.routes.ts | script (datos:application/json) | cadena | 1 | 278
+  src/modules/system/app/routes/invoicesAdmin.routes.ts | style_tag | comentario | 2 | 378,379
+  src/modules/system/app/routes/quoteDecisionEstilo.ts | style_tag | comentario | 2 | 5,17
+  src/modules/system/app/routes/quoteDecisionLanding.routes.ts | style_tag | comentario | 2 | 80,413
+  src/modules/system/app/routes/quoteDecisionLanding.routes.ts | script (datos:application/json) | cadena | 1 | 596
+  src/modules/system/app/routes/quoteDecisionLanding.routes.ts | script | comentario | 1 | 597
+  src/modules/system/app/routes/quoteDecisionNavegador.ts | script | comentario | 1 | 5
+  src/modules/system/app/routes/quoteDecisionNavegador.ts | script (datos:application/json) | comentario | 2 | 16,235
+  src/modules/system/domain/publicProfile.service.ts | style_tag | cadena | 1 | 89
+  src/modules/system/domain/soporte.ts | style_attr | cadena | 1 | 99
+
+DISCREPANCIA de conjuntos · en S1 y no en S2: ninguno · en S2 (4 tipos) y no en S1: ninguno
+
+VIVOS (S2, fuera de comentario y de bloque de datos) · 42 ficheros
+  public/admin.html | {"style_tag":1,"style_attr":4,"script":1}
+  public/dashboard/index.html | {"style_attr":8,"script":1}
+  public/dashboard/js/aiQuoteAssistant.js | {"style_attr":19}
+  public/dashboard/js/albaranDetailView.js | {"style_attr":1}
+  public/dashboard/js/api.js | {"style_attr":10}
+  public/dashboard/js/app.js | {"style_attr":2}
+  public/dashboard/js/cobrosView.js | {"style_attr":1}
+  public/dashboard/js/csvImport.js | {"style_attr":31}
+  public/dashboard/js/customerDetailView.js | {"style_attr":28}
+  public/dashboard/js/customersView.js | {"style_attr":1}
+  public/dashboard/js/estadoFirma.js | {"style_attr":1}
+  public/dashboard/js/expensesView.js | {"style_attr":27,"on":1}
+  public/dashboard/js/exportView.js | {"style_attr":32}
+  public/dashboard/js/facturasRecibidasView.js | {"style_attr":4}
+  public/dashboard/js/globalSearch.js | {"style_attr":20,"on":2}
+  public/dashboard/js/homeView.js | {"style_attr":108,"on":1}
+  public/dashboard/js/invoiceDetailView.js | {"style_attr":8}
+  public/dashboard/js/invoicesView.js | {"style_attr":5}
+  public/dashboard/js/jobDetailView.js | {"style_attr":18}
+  public/dashboard/js/jobNuevoModal.js | {"style_attr":7}
+  public/dashboard/js/onboardingView.js | {"style_attr":54}
+  public/dashboard/js/parteDetailView.js | {"style_attr":19}
+  public/dashboard/js/parteOficinaView.js | {"style_attr":11}
+  public/dashboard/js/plansView.js | {"style_attr":52}
+  public/dashboard/js/productsView.js | {"style_attr":21}
+  public/dashboard/js/providersView.js | {"style_attr":10}
+  public/dashboard/js/puertaSerie.js | {"style_attr":15}
+  public/dashboard/js/quoteRequestsView.js | {"style_attr":14}
+  public/dashboard/js/quoteRevisiones.js | {"style_attr":10}
+  public/dashboard/js/quotesDetailView.js | {"style_attr":38,"on":1}
+  public/dashboard/js/quotesListView.js | {"style_attr":3}
+  public/dashboard/js/quotesView.js | {"style_attr":13}
+  public/dashboard/js/reportsView.js | {"style_attr":161}
+  public/dashboard/js/settingsView.js | {"style_attr":75}
+  public/dashboard/js/signaturePad.js | {"style_attr":5}
+  public/dashboard/js/teamView.js | {"style_attr":32}
+  public/dashboard/js/templatesView.js | {"style_attr":9,"on":1}
+  public/dashboard/js/tutorial.js | {"style_attr":15}
+  public/privacidad.html | {"style_tag":1}
+  src/modules/auth/domain/auth.service.ts | {"style_attr":4}
+  src/modules/system/domain/publicProfile.service.ts | {"style_tag":1}
+  src/modules/system/domain/soporte.ts | {"style_attr":1}
+
+HECHO (b–f) · S1 líneas [<style, style=", <script sin src, on*=] · S2 vivos
+  src/modules/billing/app/routes/receipt.routes.ts (1756b+c #3205/#3208) | existe sí | S1 [0, 0, 0, 0] | S2 vivos {} → 0
+  src/modules/system/app/routes/customerPortal.routes.ts (1756b+c #3205/#3208) | existe sí | S1 [0, 0, 0, 0] | S2 vivos {} → 0
+  public/index.html (1756d+f #3209/#3236) | existe sí | S1 [0, 0, 1, 0] | S2 vivos {} → 0
+  public/precios.html (1756d+f #3209/#3236) | existe sí | S1 [0, 0, 0, 0] | S2 vivos {} → 0
+  public/terminos.html (1756d #3209) | existe sí | S1 [0, 0, 0, 0] | S2 vivos {} → 0
+  src/modules/system/app/routes/legalPages.routes.ts (1756d #3209) | existe sí | S1 [0, 0, 0, 0] | S2 vivos {} → 0
+  src/modules/system/app/routes/invoicesAdmin.routes.ts (1756e #3237) | existe sí | S1 [2, 0, 0, 0] | S2 vivos {} → 0
+
+CARRIL (node scripts/carriles.mjs de <f>, salida literal)
+  public/admin.html → S2 (puesto) · docs/equipo/dos-equipos.md:152 · «**S2**» · patrón public/**
+  public/dashboard/index.html → S2 (contenedor) · docs/equipo/dos-equipos.md:150 · «**S2** (contenedor)» · patrón public/dashboard/index.html
+  public/dashboard/js/aiQuoteAssistant.js → S2 (puesto) · docs/equipo/dos-equipos.md:152 · «**S2**» · patrón public/**
+  public/dashboard/js/albaranDetailView.js → S4 (puesto) · docs/equipo/dos-equipos.md:149 · «**S4**» · patrón public/dashboard/js/albaranDetailView.js
+  public/dashboard/js/api.js → S2 (contenedor) · docs/equipo/dos-equipos.md:150 · «**S2** (contenedor)» · patrón public/dashboard/js/api.js
+  public/dashboard/js/app.js → S2 (contenedor) · docs/equipo/dos-equipos.md:150 · «**S2** (contenedor)» · patrón public/dashboard/js/app.js
+  public/dashboard/js/cobrosView.js → J2 (puesto) · docs/equipo/dos-equipos.md:144 · «**J2**» · patrón public/dashboard/js/cobrosView.js
+  public/dashboard/js/csvImport.js → J2 (puesto) · docs/equipo/dos-equipos.md:144 · «**J2**» · patrón public/dashboard/js/csvImport.js
+  public/dashboard/js/customerDetailView.js → J2 (puesto) · docs/equipo/dos-equipos.md:144 · «**J2**» · patrón public/dashboard/js/customerDetailView.js
+  public/dashboard/js/customersView.js → J2 (puesto) · docs/equipo/dos-equipos.md:144 · «**J2**» · patrón public/dashboard/js/customersView.js
+  public/dashboard/js/estadoFirma.js → S2 (puesto) · docs/equipo/dos-equipos.md:152 · «**S2**» · patrón public/**
+  public/dashboard/js/expensesView.js → S2 (puesto) · docs/equipo/dos-equipos.md:152 · «**S2**» · patrón public/**
+  public/dashboard/js/exportView.js → S2 (puesto) · docs/equipo/dos-equipos.md:152 · «**S2**» · patrón public/**
+  public/dashboard/js/facturasRecibidasView.js → S2 (puesto) · docs/equipo/dos-equipos.md:152 · «**S2**» · patrón public/**
+  public/dashboard/js/globalSearch.js → S2 (puesto) · docs/equipo/dos-equipos.md:152 · «**S2**» · patrón public/**
+  public/dashboard/js/homeView.js → S2 (puesto) · docs/equipo/dos-equipos.md:152 · «**S2**» · patrón public/dashboard/js/homeView.js
+  public/dashboard/js/invoiceDetailView.js → J1 (puesto) · docs/equipo/dos-equipos.md:143 · «**J1**» · patrón public/dashboard/js/invoiceDetailView.js
+  public/dashboard/js/invoicesView.js → J1 (puesto) · docs/equipo/dos-equipos.md:143 · «**J1**» · patrón public/dashboard/js/invoicesView.js
+  public/dashboard/js/jobDetailView.js → S2 (puesto) · docs/equipo/dos-equipos.md:152 · «**S2**» · patrón public/**
+  public/dashboard/js/jobNuevoModal.js → S2 (puesto) · docs/equipo/dos-equipos.md:152 · «**S2**» · patrón public/**
+  public/dashboard/js/onboardingView.js → J3 (puesto) · docs/equipo/dos-equipos.md:145 · «**J3**» · patrón public/dashboard/js/onboardingView.js
+  public/dashboard/js/parteDetailView.js → S4 (puesto) · docs/equipo/dos-equipos.md:149 · «**S4**» · patrón public/dashboard/js/parteDetailView.js
+  public/dashboard/js/parteOficinaView.js → S2 (puesto) · docs/equipo/dos-equipos.md:152 · «**S2**» · patrón public/**
+  public/dashboard/js/plansView.js → J3 (puesto) · docs/equipo/dos-equipos.md:145 · «**J3**» · patrón public/dashboard/js/plansView.js
+  public/dashboard/js/productsView.js → S2 (puesto) · docs/equipo/dos-equipos.md:152 · «**S2**» · patrón public/**
+  public/dashboard/js/providersView.js → S2 (puesto) · docs/equipo/dos-equipos.md:152 · «**S2**» · patrón public/**
+  public/dashboard/js/puertaSerie.js → J1 (puesto) · docs/equipo/dos-equipos.md:143 · «**J1**» · patrón public/dashboard/js/puertaSerie.js
+  public/dashboard/js/quoteRequestsView.js → S2 (puesto) · docs/equipo/dos-equipos.md:152 · «**S2**» · patrón public/**
+  public/dashboard/js/quoteRevisiones.js → S2 (puesto) · docs/equipo/dos-equipos.md:151 · «**S2**» · patrón public/dashboard/js/quoteRevisiones.js
+  public/dashboard/js/quotesDetailView.js → S2 (puesto) · docs/equipo/dos-equipos.md:152 · «**S2**» · patrón public/**
+  public/dashboard/js/quotesListView.js → S2 (puesto) · docs/equipo/dos-equipos.md:152 · «**S2**» · patrón public/**
+  public/dashboard/js/quotesView.js → S2 (puesto) · docs/equipo/dos-equipos.md:152 · «**S2**» · patrón public/**
+  public/dashboard/js/reportsView.js → S2 (puesto) · docs/equipo/dos-equipos.md:152 · «**S2**» · patrón public/**
+  public/dashboard/js/settingsView.js → J3 (contenedor) · docs/equipo/dos-equipos.md:146 · «**J3** (contenedor)» · patrón public/dashboard/js/settingsView.js
+  public/dashboard/js/signaturePad.js → S2 (puesto) · docs/equipo/dos-equipos.md:152 · «**S2**» · patrón public/**
+    excepción para S1: sólo el clic de «+ Añadir miembro»: consulta `GET /admin/team/plazas` y, con el plan lleno, enseña el mensaje del 409 `user_limit` (el literal ya servido, cero textos nuevos) en vez de abrir el formulario. Reasignado ENTERO al equipo de Luis por el fundador, pantalla incluida (SCRUM-1678 c.21462, camino A de c.21456); el resto del fichero sigue siendo de J3 (docs/equipo/dos-equipos.md:264)
+  public/dashboard/js/templatesView.js → S2 (puesto) · docs/equipo/dos-equipos.md:152 · «**S2**» · patrón public/**
+  public/dashboard/js/tutorial.js → J3 (puesto) · docs/equipo/dos-equipos.md:145 · «**J3**» · patrón public/dashboard/js/tutorial.js
+  public/privacidad.html → J3 (puesto) · docs/equipo/dos-equipos.md:148 · «**J3** construye» · patrón public/privacidad.html
+  src/modules/auth/domain/auth.service.ts → J3 (puesto) · docs/equipo/dos-equipos.md:126 · «**J3**» · patrón src/modules/auth/**
+  src/modules/system/domain/publicProfile.service.ts → S1 (puesto) · docs/equipo/dos-equipos.md:136 · «**S1**» · patrón src/**
+  src/modules/system/domain/soporte.ts → J3 (puesto) · docs/equipo/dos-equipos.md:126 · «**J3**» · patrón src/modules/system/domain/soporte.ts
+
+FIN · controles CAZA/CERO · sha e37a7051f87b195ceeae4852c56a02bc0d218438
+
+════ CONTROL QUITANDO LA SIEMBRA: node 1756g-censo.mjs --sin-siembra → código 2 ════
+CONTROLES (siembra fabricada por este guion en — NO SEMBRADA (--sin-siembra))
+  S1 positivo public/siembra.html: {"style_tag":0,"style_attr":0,"script":0,"on":0} esperado {"style_tag":2,"style_attr":1,"script":1,"on":1} → CIEGO
+  S2 positivo public/siembra.html: vivos {} esperado {"style_tag":1,"style_attr":1,"script":1,"on":1} → CIEGO
+  S1 positivo src/siembra.ts: {"style_tag":0,"style_attr":0,"script":0,"on":0} esperado {"style_tag":2,"style_attr":1,"script":1,"on":1} → CIEGO
+  S2 positivo src/siembra.ts: vivos {} esperado {"style_tag":1,"style_attr":1,"script":1,"on":1} → CIEGO
+  cero public/cero.html: S1 {} · S2 0 ocurrencias → CERO
+
+CIEGO: los controles no salen (S1 public/siembra.html, S2 public/siembra.html, S1 src/siembra.ts, S2 src/siembra.ts). Sin controles no hay censo.
+
+════ NAVEGADOR · ¿la política bloquea lo que el panel mete por innerHTML? (Playwright MCP, Chrome/157, 2026-11-18 ~23:45Z) ════
+Página data: con <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'">
+(las tres directivas que importan, copiadas de src/core/http/csp.ts en e37a7051f). Mismo guion en las dos pasadas:
+  caja.innerHTML = '<p id="a" style="color: rgb(255, 0, 0)">x</p><button id="b" onclick="window.__c=1">b</button><p id="d">y</p>'
+  d.style.color = 'rgb(0, 0, 255)'   (CSSOM, para ver qué SÍ deja pasar)   ·   b.click()
+
+  CON política : style="" → rgb(0, 0, 0) (NO pinta) · onclick → NO corre · CSSOM → rgb(0, 0, 255) (pinta)
+                 informes: style-src-attr, style-src-attr, script-src-attr
+  SIN política : style="" → rgb(255, 0, 0) · onclick → corre · CSSOM → rgb(0, 0, 255) · informes: ninguno   (control)
+
+Lectura: un style="…" o un on*="…" escrito en una cadena que acaba en innerHTML se bloquea igual que uno escrito
+en el HTML servido; `elemento.style.x = …` no. Medido con meta, no con la cabecera de csp.ts; una página data:,
+no el panel.
+
+════ COMPARACIÓN con la tabla original (35153debf) ════
+git grep -c -F 'style="' 35153debf -- 'public/dashboard/js/*.js'  →  36 ficheros, 856 líneas, y ninguno en la tabla.
+O sea, la tabla original ya los tenía delante y no los listó: su población real fue *.ts + *.html (deducido de qué
+filas tiene y cuáles no; la descripción no dice qué glob usó).
