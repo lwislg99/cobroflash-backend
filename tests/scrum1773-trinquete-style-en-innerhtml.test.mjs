@@ -227,8 +227,9 @@ test('SCRUM-1773 · un fichero congelado que SUBE una unidad cae (sembrado)', ()
 test('SCRUM-1773 · 🔴 EL TRINQUETE sobre el árbol: ningún fichero SUBE y no entra ninguno NUEVO', () => {
   const { suben, nuevos } = comparar(CONGELADA, MEDIDA.porFichero);
   const msg = [];
-  for (const x of suben) msg.push(`  · ${x.f} · ${x.k}: congelado ${x.antes}, hoy ${x.hoy} · líneas ${x.lineas.join(', ')}`);
-  for (const x of nuevos) msg.push(`  · ${x.f} · NUEVO · style= en ${x.lin.style.join(', ') || '—'} · on*= en ${x.lin.on.join(', ') || '—'}`);
+  const donde = (f, ls) => ls.map((l) => `${f}:${l}`).join(', ') || '—';
+  for (const x of suben) msg.push(`  · ${x.f} · ${x.k}: congelado ${x.antes}, hoy ${x.hoy} · todas las de hoy: ${donde(x.f, x.lineas)}`);
+  for (const x of nuevos) msg.push(`  · ${x.f} · NUEVO · style= en ${donde(x.f, x.lin.style)} · on*= en ${donde(x.f, x.lin.on)}`);
   assert.equal(msg.length, 0,
     `🔴 HA ENTRADO style=/on*= en cadenas de ${DIR} (población ${MEDIDA.poblacion} ficheros). Con la CSP del paso 3 `
     + `no pinta ni corre:\n${msg.join('\n')}\n${RECETA}`);
