@@ -5,7 +5,7 @@
 //
 // Por qué: con la política `style-src 'self'; script-src 'self'` del paso 3 de la CSP, un
 // `style="…"` o un `onclick="…"` que el panel mete por `innerHTML` NO PINTA y NO CORRE (medido en
-// Chrome, SCRUM-1756 c.22122). El censo 1756g encontró 880 + 6 en 36 ficheros que la tabla original
+// Chrome, SCRUM-1756 c.22122). El censo 1756g (main e37a7051f, 18-nov-2026) dio 880 + 6 en 36 ficheros que la tabla original
 // no listaba. Este guard no arregla ninguno: CONGELA el número de cada fichero para que solo baje.
 //
 // Cómo cuenta (A23 casillas 2, 3 y 5): por AST de typescript, igual que `1756g-censo.mjs.txt`
@@ -153,7 +153,7 @@ export const CONGELADA_ON = {
 // Cada recongelación añade una línea fechada con el total que deja la tabla. El guard exige que la
 // tabla sume exactamente lo que dice la ÚLTIMA línea: bajar un número sin fecharlo da rojo.
 export const HISTORIAL = [
-  // Congelación inicial: 27 ficheros de 98. Frente al censo 1756g (880 + 6 en 36): 1756h (J3) y 1756i
+  // Congelación inicial (main d4a0fc951, 19-nov-2026): 27 ficheros de 98. Frente al censo 1756g (880 + 6 en 36): 1756h (J3) y 1756i
   // (J2) ya bajaron a 0 sus nueve ficheros (−228 y −61), y `quoteRequestsView.js` lleva 2 más (+2), dos
   // cadenas concatenadas que abren con `'style="` y la regex del censo no veía.
   { fecha: '2026-11-19', ticket: 'SCRUM-1773', sha: 'd4a0fc951cd54405d6e9ae908a7b52b12b26c024', style: 593, on: 6 },
