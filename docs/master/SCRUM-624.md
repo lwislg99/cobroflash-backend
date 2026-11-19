@@ -734,3 +734,6 @@ Víctimas reales: ninguna conocida (`INVOICING_ES_ENABLED` OFF en producción, r
 - relevo jv-j1fp: la mutación 1051g ① estaba anclada a la rama `if (e.causa === 'S2') {…}` que 624y cambió
   (`&& tipoDoc === 'F1'`); reanclada a `{ baseIsp = (baseIsp ?? 0) + e.base; return; }` → `{ }`. `aplicarUna`: viva, tumba su caso.
 A9: comprobación → `tests/scrum836-ancla-de-mutacion-viva.test.mjs`
+- verificado por jv-j1fq (relevo de jv-j1fp, que lo dejó en commit local sin empujar): `aplicarUna` del meta-guard sobre la declaración
+  reanclada → `ok`, tumba «1051g ① · una F1 sólo S2 imprime P1 en su propia fila» (+1 colateral); pdf.service.ts con el mismo sha256 antes y después.
+Mutaciones: catálogo → `tests/scrum1051g-isp-destinatario-pdf-libro.test.mjs`
