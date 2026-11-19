@@ -728,3 +728,9 @@ Víctimas reales: ninguna conocida (`INVOICING_ES_ENABLED` OFF en producción, r
   y los de huella del PDF.
 - La verificación en staging (el PDF de `2026-QA-R-001` con IVA 10 % −3,70) es de CIERRES 13, después del merge.
 - El marcador `[PENDIENTE microcopy oficial]` que imprime el desglose de dos tipos es de SCRUM-1771: no se toca.
+
+## 7 · Relevo jv-j1fp (19-nov-2026): la mutación 1051g ① reanclada
+
+- relevo jv-j1fp: la mutación 1051g ① estaba anclada a la rama `if (e.causa === 'S2') {…}` que 624y cambió
+  (`&& tipoDoc === 'F1'`); reanclada a `{ baseIsp = (baseIsp ?? 0) + e.base; return; }` → `{ }`. `aplicarUna`: viva, tumba su caso.
+A9: comprobación → `tests/scrum836-ancla-de-mutacion-viva.test.mjs`
