@@ -10,7 +10,7 @@
 // QUÉ MIRA:
 //   ① con el AST de typescript, 0 `style=` dentro de cadenas (literal, plantilla y sus trozos) en los
 //      tres ficheros; el mismo patrón que el censo de 1756g (`1756g-censo.mjs.txt`, RX.style_attr);
-//   ② cada una de las 28 ocurrencias de main (copiadas aquí, con su línea de `e37a7051f`) tiene su
+//   ② cada ocurrencia de main (copiadas aquí con su línea; cuántas, lo ata el control) tiene su
 //      marcado nuevo en el fichero, y su regla en el bloque J1 con EXACTAMENTE las declaraciones del
 //      atributo: ni una de más, ni una de menos, byte a byte (`!important` donde el bloque lo declara);
 //   ③ los `display:none` que el guion enciende con `el.style.display` NO llevan `!important` (si lo
