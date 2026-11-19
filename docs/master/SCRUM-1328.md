@@ -200,3 +200,50 @@ segundo empujón.
 **Lo que NO está medido.** Nada en Linux (el CI es la primera pasada allí). Ninguna tanda completa en local:
 lo corrido está en la entrega. Si un TAP real del CI trae saltos sin motivo hoy, no lo he mirado (lo vigila
 en el fuente `tests/scrum419-…`, que es otro instrumento).
+
+## SCRUM-1328x · El test caía con un TMP que lleva ESPACIO: la ruta del TAP iba sin comillas en `NODE_OPTIONS`
+
+**Medido contra:** `origin/main` = `74b3b64f17008449d086008358436f0cb884a8d8` · 2026-11-19T00:43:55Z
+(jv-j3cl, J3 del equipo de Javier, encargo del orquestador `cobroflash-backend-8a`; Windows 11, Git Bash)
+
+A9: comprobación → `tests/scrum1328-skips-con-motivo-en-el-tap.test.mjs`
+Mutaciones: catálogo → tests/scrum1328-skips-con-motivo-en-el-tap.test.mjs
+
+**De dónde sale.** Medido por J6 en SCRUM-1765 c.22135 y c.22138 (tabla: 1328 → forma con espacio → `:99` →
+J3). `opcionesDelCi` metía `--test-reporter-destination=${tap}` a secas en `NODE_OPTIONS`; node corta esa
+variable por espacios y el destino quedaba en `C:\Users\Javier` (`EPERM … open 'C:\Users\Javier'`).
+
+**El arreglo** (una línea, `opcionesDelCi`): el destino va entre comillas dobles y con `/`, porque dentro de
+comillas `NODE_OPTIONS` toma `\` como escape. Cambia CÓMO el test construye la ruta, no QUÉ mide: ninguna
+aserción, ningún caso ni ninguna declaración del catálogo se ha tocado.
+
+**Antes y después** (`TMP`, `TEMP` y `TMPDIR` a la vez; un `node --test` del fichero por forma):
+
+| forma de TMP | antes | después |
+|---|---|---|
+| larga, `C:\Users\Javier Pereira\AppData\Local\Temp` | **3/5**, caen ④ «CON el envoltorio…» y su control sembrado | 5/5 |
+| 8.3, `C:\Users\JAVIER~1\AppData\Local\Temp` | 5/5 | 5/5 |
+
+**El control: un TAP roto sigue haciendo caer el test.** Las dos mutaciones del catálogo, con `aplicarUna` de
+`scripts/meta-guard-mutaciones.mjs`, en las DOS formas: base 5 pasan · 0 caen; quitar el arreglo de 1289b
+(TAP pisado) → VIVA; quitar la puerta de integridad del lector → VIVA. Controles del driver: un `cae` que no
+existe → CIEGO; la primera mutación con el `cae` de un caso que no tumba → MUDA. Salida entera:
+`docs/master/evidencias/scrum1328/1328x-aplicarUna.txt`; driver (fuera del árbol al correr):
+`docs/master/evidencias/scrum1328/1328x-driver.mjs.txt`.
+
+**Lo que no es mío y no he tocado:** `tests/scrum1289b-*` (el mismo defecto, misma línea) y `tests/scrum1298b-*`
+(la forma 8.3) son de S5, SCRUM-1772.
+
+**Mis errores.** ① La receta de la forma 8.3 del encargo (`cmd //c "for %I in (\"$TMP\") do @echo %~sI"`) salió
+en Git Bash como `C:\"C:\Users\Javier Pereira\…\"`, y mi primera pasada «8.3» corrió en realidad con esa ruta
+rota (3/5): lo vi al leer la ruta impresa antes de contarlo, y la saqué con `Scripting.FileSystemObject`. ② Mi
+primer driver importaba el test para leer su catálogo, y le pasaba a `correr` la ruta con `tests/` delante:
+la base salió CIEGA (0 pasan · 1 cae, `tests\tests\…`) y todas las mutaciones CIEGAS. Lo cazó que el control
+MUDA saliera CIEGO; el driver lee ahora el catálogo por AST (`lecturaDeDeclaraciones`).
+
+**Corrido:** el test en las dos formas (5/5 y 5/5) · guards 1294, 267, 273, 854, 237, 976, 1387 y 836: 74/74 en
+8 ficheros · `guards:entrada`: 15 guards, 170 tests, salida 0 · suite por tramos, sólo el 1/15 (799 tests, 0
+fail) y el 4/15, donde vive este test (1.111 tests, 0 fail; con TMP con espacio, el de la máquina).
+
+**Lo que NO está medido.** Nada en Linux (lo prueba el CI). Suite entera no corrida en local: la mide el
+obligatorio de CI (orden del orquestador `cobroflash-backend-8a`, 19-nov).

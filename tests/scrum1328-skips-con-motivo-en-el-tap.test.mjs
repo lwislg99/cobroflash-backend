@@ -95,8 +95,11 @@ const CAE = 'cae a proposito · SCRUM-1328';
 const PRIMEROS = 20;
 const TOTAL = PRIMEROS + 1 + 5; // a-primero + b-lanza + c-mezcla
 
+// NODE_OPTIONS se corta por espacios y, dentro de comillas, toma «\» como escape: con un TMP que lleva
+// espacio («C:\Users\Javier Pereira\…») el destino quedaba en «C:\Users\Javier» (EPERM). Se cita y se
+// escribe con «/»; lo que se mide no cambia (SCRUM-1328x, medido en SCRUM-1765 c.22135/c.22138).
 const opcionesDelCi = (tap) =>
-  `--test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination=${tap}`;
+  `--test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination="${tap.replaceAll('\\', '/')}"`;
 
 function banco() {
   const dir = temporal('yaqu-1328-');
