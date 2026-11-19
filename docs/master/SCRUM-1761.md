@@ -63,3 +63,33 @@ LECTURA de la norma para la pregunta de c.22059 ① (encargo c.22087). Entrega c
 - **Opciones para el orquestador** (con su coste, en c.22115): A · año de la expedición en la zona del emisor; B · calendario UTC del proceso, que es lo de hoy; C · año de la generación con su propio huso, la única que sigue el literal del art. 8.2. A y C tocan el camino de emisión: GO del fundador. En c.22115 va también el literal propuesto para una fila de SCRUM-1264, si el fundador la quiere.
 
 **Sin medir:** las imágenes del anexo de la Orden; con qué fecha imputa la AEAT el `PeriodoImputacion` de `ConsultaLR.xsd:21`; si `createdAt` coincide con el instante de generación del registro.
+
+# SCRUM-1761c
+
+**Medido contra:** `origin/main` = `3dfeeaa99404dcce83417c5b589bc182eb45c290` · 2026-11-19T00:17:41Z
+**Rama:** `scrum-1761c-anio-del-xml-por-zona-del-emisor` · **Carril:** J1 · sesión jv-j1fl · camino de emisión con GO
+A9: aviso → A10 «Una operación que no se ejecutó se lee exactamente igual que un éxito.» — no se pudo comprobar: el censo AST de `scripts/meta-guard-mutaciones.mjs` lee 0 mutaciones, sin error, cuando `cae` es un identificador y no un literal; no hay guard que exija que una declaración con `cae` no literal se cuente
+Mutaciones: catálogo → `tests/scrum1761a-anio-del-xml-por-zona.test.mjs`
+
+**Decisión y GO.** Decisión A del fundador (SCRUM-1761 c.22126, «A»): el XML de registros del año N lleva las facturas cuya fecha de EXPEDICIÓN cae en N **en la zona del emisor**. GO para tocar `verifactu.service.ts:733-734` (c.22136, «GO»), que cubre solo el filtro de `buildVerifactuRegistrosXml(year)`.
+
+**Qué cambia** (`src/modules/invoicing/domain/verifactu.service.ts`, 3 líneas):
+- `:733-734`: `inicioDelDiaEn(`${params.year}-01-01`, zona)` / `finDelDiaEn(`${params.year}-12-31`, zona)`, con `zona = zonaDelMerchant(merchant)` (`:727`). Antes eran `new Date(params.year, 0, 1)` / `new Date(params.year, 11, 31, 23, 59, 59, 999)`, que usan el calendario del proceso. Los helpers son los de `src/core/zonaDelMerchant.ts`, los mismos que usa `rangoDeMesesEn` (`modelo303.ts`).
+- Línea 41: import de los dos helpers, consecuencia mecánica del GO de c.22136, sin lógica; la lógica del GO sigue en :733-734. OK del orquestador por mensaje; la publica en c.22143 (cita del orquestador, no leída por mí en Jira).
+- El campo filtrado sigue siendo `createdAt`: es el que imprime `FechaExpedicionFactura` (`:1204`, `formatDateES(inv.createdAt, zona)`). No cambia el contenido de ningún registro ni la huella: solo qué registros entran en la exportación de un año.
+
+**Medido** (`tests/scrum1761a-anio-del-xml-por-zona.test.mjs`, que ejecuta el servicio de `dist/` con base doblada):
+- Rojo primero, con `DEFECTO_CONOCIDO.anioDelXmlEnZonaDelProceso` retirado y el servicio intacto: 5 casos · 2 pass · 3 fail.
+- Control negativo, solo con el import y sin `:733-734`: 5 · 2 pass · 3 fail.
+- Con el arreglo: 5/5. Los 4 casos de c.22059 (Kiritimati 31-dic 23:30Z → XML 2027; Midway → 2026; Kiritimati con el proceso en Kiritimati → 2027; Midway 1-ene 05:00Z → 2026). Además, «no depende de la zona del proceso» y «sin zona guardada = UTC». Positivo SEMBRADO: la base aplica el filtro de antes y el instrumento dice DEFECTO.
+- Mutaciones, por `correr` + `aplicarUna` de la casa: 3 de 3 tumban el caso principal.
+- Los 19 ficheros de `tests/` que leen `buildVerifactuRegistrosXml`: 145 casos · 145 pass · 0 fail · 0 skip. Ningún valor esperado cambiado.
+- `tsc -p .` con tipos: salida 0.
+
+**Error propio (A9).** La primera versión del catálogo nombraba el test con una constante (`cae: NOMBRE_PRINCIPAL`). El censo AST leyó 0 mutaciones sin quejarse. Lo cacé porque mi driver imprime cuántas lee antes de aplicarlas. Van como literales.
+
+**Aviso:** sin zona guardada, `ZONA_POR_DEFECTO` = UTC. Es lo de hoy solo si el proceso va en UTC, y eso no está medido (Railway sin `TZ`: SCRUM-1055 c.21873).
+
+**Sin medir:** la suite entera en local (la mide el obligatorio de CI); yaqu.app (no hay comercio ES con facturación, así que no hay XML que ver).
+
+**🔴 PARADO antes de empujar: cae `tests/scrum523d-version-del-sif.test.mjs`** («523d · el camino de emisión es el congelado, o la versión ha subido»). Ese guard congela una huella por FICHERO del camino de emisión, y `verifactu.service.ts` ha cambiado sin subir `VERIFACTU_VERSION` (`src/modules/fiscal/verifactu/productor.ts`, sigue en `1.0.0`). Según el guard, subirla pide OK del fundador y una declaración responsable nueva (SCRUM-523 c.20878, V1/V2). El GO de c.22136 no cubre la versión. No toco el guard (regla 41) y no subo la versión: lo decide el fundador. Guards dirigidos (15 ficheros): 122 casos · 120 pass · 2 fail. Uno es este; el otro es un `tests/` suelto que coló mi lista de ficheros (un espacio de más), no un guard.
