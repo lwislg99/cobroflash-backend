@@ -91,3 +91,32 @@ Solo `docs/YAQU_MASTER.md`, 16 líneas añadidas y 3 quitadas (`git diff --numst
 Los dos ecos del motivo caducado van por su carril, según c.22156: `docs/legal/AUDITLOG_FISCAL_CONTRATO.md:450` (J4, nota fechada A8) y `src/modules/exports/app/routes/exports.routes.ts:233-235` (S1, Para Luis). Ningún código, ningún guard.
 
 **Sin medir:** yaqu.app (no hay superficie: es el máster); el obligatorio de este PR (lo abre y arma el bot).
+
+# SCRUM-1770c · Nota fechada (A8) en el eco del motivo caducado de `AUDITLOG_FISCAL_CONTRATO.md:450`
+
+**Medido contra:** `origin/main` = `d4a0fc951cd54405d6e9ae908a7b52b12b26c024` · 2026-11-19T17:37:48Z
+
+A9: sin fallo que generalice — la única forma de romper algo aquí era mover las líneas que otros citan por fichero:línea (A6), y lo comprobé por recuento antes de escribir este tramo: el fichero tiene 800 líneas antes y después, y la nota va dentro de la misma línea física
+
+Carril J4 (solo documentos: `docs/legal/` sin cerradura, propone J4, `dos-equipos.md:207`). Encargo del orquestador J, 19-nov-2026. Rama `scrum-1770c-auditlog-nota-fechada`.
+
+## 1 · Qué se hace
+
+`docs/legal/AUDITLOG_FISCAL_CONTRATO.md:450` daba como motivo del `rango` tipo `ejercicio` que «el registro RRSIF se organiza por año natural y la cadena de huellas es anual»: el mismo motivo que el máster sustituyó con SCRUM-1770b (`docs/YAQU_MASTER.md:766-782`, literal firmado en c.22156). Según c.22156 y c.22139 §3, este eco es de J4 y lleva **nota fechada (A8)**, no reescritura: la frase vieja se queda como estaba y a su lado, dentro de la misma línea, va una nota en cursiva entre corchetes que dice que el motivo caducó el 19-nov-2026, que el máster lo sustituyó por SCRUM-1770 en 766-782, el motivo nuevo en una frase (decisión de producto, no exigencia de la norma; la cadena es una sola por obligado y sistema, Orden HAC/1177/2024 arts. 7.a-c y 8.2) y que **la decisión de las dos formas de `rango` no cambia**.
+
+La nota no es un literal firmado nuevo: resume el párrafo firmado del máster y lo cita por sus líneas; quien quiera el texto, lo lee allí.
+
+## 2 · Controles
+
+- Líneas: `wc -l` = 800 antes (`origin/main`) y después; `git diff --numstat` = 1 añadida / 1 quitada, la 450.
+- Citas por fichero:línea a este documento (`git grep -n "AUDITLOG_FISCAL_CONTRATO.md:[0-9]"`): 129, 130, 287, 300, 450, 639, 777 y 94-95; ninguna se mueve. Las dos a la 450 son de este registro (tramos a y b) y siguen apuntando a la frase vieja, que sigue ahí.
+- Frase vieja: «la cadena de huellas es anual» casa 1 vez en el fichero (no se ha reescrito). Positivo: «SCRUM-1770c» casa 1 vez en el fichero de la rama y 0 en el de `origin/main`.
+- La cita al máster lleva testigo (`Motivo sustituido el 19-nov-2026 por SCRUM-1770`, que está en 766-782): sin él, `tests/scrum525d-anclas-que-apuntan.test.mjs` cayó con «1 par(es) documento↔fichero NUEVOS que citan sin testigo»; con él, verde.
+- Guards: 1294 + 267 + 273 + 525d + 854 → 38/38; `guards:entrada` 15 guards / 170 tests verdes; los 5 de árbol entero (SCRUM-1560) 38/38.
+- Suite entera por tramos (`dist/` con `tsc --noCheck`, no toco `src/`): 15/15 tramos, 1.716 ficheros, 13.906 tests, 13.722 pass, **2 fail**, los dos de `scrum1289b-reporters-como-argumentos` por la ruta temporal con espacio (c.22154); con `TEMP` en la ruta corta 8.3, 9/9. Los 182 sin pass ni fail no los he desglosado.
+
+## 3 · Lo que NO se toca aquí
+
+El otro eco, `src/modules/exports/app/routes/exports.routes.ts:233-235` (S1, equipo de Luis), va por «Para Luis» según c.22156. Ningún código, ningún guard.
+
+**Sin medir:** yaqu.app (no hay superficie: es un documento); el obligatorio de este PR (lo abre y arma el bot).
