@@ -1,0 +1,68 @@
+{
+  "medido": {
+    "health": {
+      "status": 200,
+      "version": "89bb8593b603c84b3413f4c3f90b1c4e4e715329",
+      "db": "up",
+      "date": "Thu, 19 Nov 2026 18:09:05 GMT"
+    },
+    "login": {
+      "status": 200,
+      "date": "Thu, 19 Nov 2026 18:09:05 GMT"
+    }
+  },
+  "perfil": {
+    "ruta": "GET /admin/merchant",
+    "status": 200,
+    "date": "Thu, 19 Nov 2026 18:09:05 GMT",
+    "notifyEmailOnPaid": false,
+    "whatsappPhone": "vacío",
+    "bizumPhone": "presente",
+    "email": "vacío",
+    "flags": {
+      "BIZUM_MANUAL_ENABLED": true,
+      "INVOICING_ES_ENABLED": true
+    }
+  },
+  "fila": {
+    "id": 2,
+    "email": "qa@staging.yaqu",
+    "country": "ES",
+    "flags": {
+      "BIZUM_MANUAL_ENABLED": true,
+      "INVOICING_ES_ENABLED": true
+    },
+    "notify_email_on_paid": false
+  },
+  "BIZUM_MANUAL_ENABLED_efectivo": true,
+  "clientes": {
+    "ruta": "GET /admin/customers?limit=200",
+    "status": 200,
+    "total": 8,
+    "de_interes": [
+      {
+        "id": 3936,
+        "name": "Cliente QA sin avisos",
+        "phone": "vacío",
+        "mobile": "vacío",
+        "email": "vacío"
+      },
+      {
+        "id": 49,
+        "name": "Cliente QA",
+        "phone": "presente",
+        "mobile": "vacío",
+        "email": "presente"
+      }
+    ]
+  },
+  "vaciado_whatsapp": {
+    "decision": "SCRUM-1732 c.22176",
+    "sql": "UPDATE merchants SET whatsapp_phone = NULL WHERE id = 2 AND email = 'qa@staging.yaqu'",
+    "antes": "…001 (11 caracteres; enmascarado)",
+    "control_negativo_id_999999": "0 filas",
+    "real": "1 filas",
+    "despues_columna": null,
+    "hora": "2026-11-19T18:08:56Z (Date de GitHub, al acabar)"
+  }
+}
