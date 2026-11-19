@@ -151,6 +151,23 @@ Mutaciones: catálogo → tests/scrum903-marcador-no-se-imprime.test.mjs
 * El PDF de staging y la F1 nueva en staging: tras el despliegue.
 * Si `scrum667` queda MUDO con la lista vacía: ver la línea de `censo:mudez` en la entrega.
 
+### Relevo jv-j1fu · (a) y (b) de la decisión P4 (c.22180)
+
+A9: aviso → cicatriz J1 «Lancé `meta-guard-mutaciones.mjs --help` para ver sus opciones: no tiene `--help`, arrancó el censo entero (323 guards), lo maté a mitad y dejó `invoiceAdmin.ts` mutado (`if (false)`)» — no se pudo comprobar: ningún guard sabe qué opción no existe en un instrumento que muta
+Mutaciones: una vez → docs/master/evidencias/SCRUM-624/mutaciones-624y.mjs
+
+Medido el 2026-11-19 hacia las 18:30Z (`gh api -i zen` 18:32:42Z) sobre `origin/main` `4081668b2f2aa6a3685324eef234bdd92690d0e6`, con el trabajo de jv-j1fs (`cb3efbf22ee52e29dac9ccee85685b4025ec89c3`) mergeado. jv-j1fs paró en c.22179 (P4) y el orquestador decidió en c.22180: ✅ (a) y ✅ (b), en el mismo PR.
+
+* **(a)** `tests/_cambios-autorizados-de-la-factura.mjs`: una entrada nueva con firma `SCRUM-1771 c.22164` y solo el par `ambito` (el `cuerpo` de `generateInvoicePdf` no cambia: la constante de `:54` está fuera de él). El par que midió jv-j1fs (`508c2018…` → `76f53559…`) **caducó antes de empujar**: mientras tanto entró en `main` el #3250 (SCRUM-624y), que cambia `pdf.service.ts` y añade su propia entrada. Resolví el conflicto conservando las dos entradas y **regeneré** el par con `docs/master/evidencias/SCRUM-1446d/huellas.mjs` sobre la base nueva: `775ce32827dad87ee48cfa9c3c98593570866587ade6e267ea62bf5539f41a2d` → `deb02178fdb8d0346d7127db2f89c6e663a41c9725f7ec1b063c3060f51343a8` (`cuerpo` `7cbda25f…` igual en base y disco). Esta vez el clasificador de permisos no denegó la edición.
+* **(b)** `tests/scrum624e-a-solo-en-f1.test.mjs`: el bloque de la F1 de dos tipos fija `'Base imponible por tipo'` en lugar del marcador. La segunda línea (`:116`, la R1) desapareció con el #3250, que retiró ese caso por c.22137; el conflicto se resolvió con el lado de `main`. El catálogo de 624e no cambia (su mutación es la del justificante), y no hizo falta añadir ninguna.
+* **Diff de `src/` contra `main`**: una línea, `pdf.service.ts:54`.
+* **Verde**: 32 ficheros (723, 624e, 624y, 624c, 1763, 1051g, los 8 lectores del JSON, 1771c, 836, 700, 710b, 719, 1294, 267, 273, 525d, 854, 523d y los cinco de árbol entero de `guards:entrada`: 195, 414, 694, 710b, 737): 314 casos · 314 pass · 0 fail · 0 skip. `npm run guards:entrada`: 15 guards, 170 tests, salida 0. `tsc -p .` con tipos: salida 0.
+* **Mutaciones**: `mutaciones-624y.mjs` (624y + 624e, `aplicarUna` de la casa): 2 declaradas · 2 vivas; `git status` limpio después.
+* **`censo:mudez`**: 136 de 136 · VIVO 124 · MUDO 0 · CIEGO 0 · NO APLICA 11 · YA ROJO 1. Ningún fichero de esta pieza llama al filtro (`_guard-texto`), así que la ficha no cambia y no se escribió. `scrum667` no entra en esa población: con la lista vacía su mudez no la mide este censo, y no se toca (c.22171).
+* **El rojo de (a) y (b) sin el cambio** no lo volví a ver: `guard-dangerous` bloqueó sobrescribir los ficheros con su versión de `HEAD`, y no lo rodeé. Vale el que midió jv-j1fs en c.22179.
+
+**NO medido:** la suite entera; el meta-guard completo (no tiene filtro por fichero, y la pasada entera son 1.321 mutaciones); qué fichero es el YA ROJO de `censo:mudez` (la salida no lo nombra); staging.
+
 | aceptación (literal) | dónde se ve |
 | --- | --- |
 | Clave identificada con fichero:línea y lista de documentos afectados (comentario de J1). | c.22159 · tramo 1771a de este registro |

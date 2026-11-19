@@ -172,8 +172,8 @@ export const CAMBIOS_AUTORIZADOS = [
     registro: 'docs/master/SCRUM-1771.md',
     cita: '«Base imponible por tipo»',
     ambito: {
-      de: '508c20188d476ab2bc19c82f37180201f2692fd881563ba73b2e185d132af3c0',
-      a: '76f535597140e1c133c64e9d6e7d72534bce81e84985ea80034bcf80d3a8c24c',
+      de: '775ce32827dad87ee48cfa9c3c98593570866587ade6e267ea62bf5539f41a2d',
+      a: 'deb02178fdb8d0346d7127db2f89c6e663a41c9725f7ec1b063c3060f51343a8',
     },
   },
 ];
