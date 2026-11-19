@@ -12,7 +12,7 @@
 // byte a byte. Los dos colores que se calculaban (KPI y eventos) pasan a modificadores de color.
 //
 // QUÉ MIRA:
-//   ① por AST (typescript), las cadenas de los 4 ficheros —literales, plantillas y sus trozos— llevan
+//   ① por AST (typescript), las cadenas de los ficheros de la lista `FICHEROS` —literales, plantillas y sus trozos— llevan
 //     0 `style=`; los comentarios no cuentan;
 //   ② cada `style=` de main (copiado abajo, con su línea) tiene en el bloque J2 una regla con esa
 //     declaración EXACTA, y su clase la usa el fichero de donde salió;
