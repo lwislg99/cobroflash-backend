@@ -1,5 +1,6 @@
 ---
 paths:
+  - "scripts/capturas-presupuesto-desde-parte.mjs"
   - "public/dashboard/js/albaranDetailView.js"
   - "scripts/capturas-aviso-visita-nueva.mjs"
   - "scripts/capturas-lista-trabajos-917.mjs"
