@@ -25,13 +25,13 @@ const espera = async () => { for (let i = 0; i < 20; i++) await new Promise((r) 
 
 // Catálogo del meta-guard (SCRUM-1387 / A3, SCRUM-1731): `aplicarUna` de la casa.
 export const MUTACIONES_QUE_ME_TUMBAN = [
-  { fichero: VISTA, de: "const puedeBorrar = window.appUserRole === 'admin';", a: 'const puedeBorrar = true;',
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: "const puedeBorrar = window.appUserRole === 'admin';", a: 'const puedeBorrar = true;',
     cae: 'TÉCNICO: no hay botón de borrar' },
-  { fichero: VISTA, de: "subido: 'Documento guardado.',", a: "subido: 'Documento guardado',",
-    cae: 'los 14 textos son los de c.22192' },
-  { fichero: VISTA, de: '        if (!window.confirm(', a: '        if (false && !window.confirm(',
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: "subido: 'Documento guardado.',", a: "subido: 'Documento guardado',",
+    cae: 'los 14 firmados en c.22192' },
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: 'if (!window.confirm(D.rellenar(T.confirmarBorrar, { nombre }))) return;', a: 'if (false && !window.confirm(D.rellenar(T.confirmarBorrar, { nombre }))) return;',
     cae: 'ADMIN: «🗑 Eliminar» pregunta' },
-  { fichero: VISTA, de: "    if (file.size === 0) { avisar(T.vacioFichero); input.value = ''; return; }\n", a: '',
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: "    if (file.size === 0) { avisar(T.vacioFichero); input.value = ''; return; }\n", a: '',
     cae: 'ANTES de enviar' },
 ];
 
@@ -84,7 +84,8 @@ async function montarFicha({ rol = 'admin', docs = null, limites = LIMITES, list
     return { status: 200, json: { documentos: lista, limites } };
   };
   const fetch = async (url, opts) => {
-    const u = String(url).replace(/^https?:\/\/[^/]+/, '');
+    // La ruta sin el origen, con `URL` y no con una regex de `//` (el censo de SCRUM-700 la contaría como filtro de comentarios).
+    const pu = new URL(String(url), 'http://banco.invalid'); const u = pu.pathname + pu.search;
     const metodo = (opts && opts.method) || 'GET';
     peticiones.push({ u, metodo, opts });
     let r;

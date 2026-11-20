@@ -51,6 +51,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: "router.delete('/:id/documentos/:docId', async (req, res) => {",
     cae: 'el técnico ve y sube, pero NO borra',
   },
+  {
+    // SCRUM-1005d · sin `limites`, la pestaña no tiene de dónde sacar «{mb}» y caería a una cifra escrita.
+    fichero: 'src/modules/system/app/routes/customersAdmin.routes.ts',
+    de: 'return res.json({ documentos, limites: { porFichero: DOC_MAX_BYTES, porCliente: DOCS_MAX_BYTES_POR_CLIENTE } });',
+    a: 'return res.json({ documentos });',
+    cae: 'la lista trae `limites` en bytes',
+  },
 ];
 
 const A = 2; // el comercio de la sesión

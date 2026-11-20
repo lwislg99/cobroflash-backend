@@ -179,3 +179,37 @@ Mutaciones: catálogo → `tests/scrum1005b-documentos-cliente.test.mjs`
 ⚠️ **Carril:** `src/core/http/adminRouteDeclarations.ts` es S1 (`carriles.mjs`). Escribí en él las tres líneas de permisos que exige el guard de S1 para MIS rutas, con la decisión del fundador citada (c.22192); no toqué nada más del fichero. Se dice en el commit y en la entrega.
 
 **Test:** `tests/scrum1005b-documentos-cliente.test.mjs` suma el caso «el técnico ve y sube, pero NO borra»: por la ruta real, el técnico recibe 200 en la lista, 201 al subir y 403 al borrar, el documento sigue; el admin, 204 (positivo del mismo camino). 15/15. Mutación nueva al catálogo: quitar `requireRole('admin')` del DELETE. Las tres del catálogo, pasadas con `aplicarUna` de `scripts/meta-guard-mutaciones.mjs` (línea base limpia de la casa): las tres VIVAS (tumban el test); `git status` después, sólo mis cambios.
+
+## SCRUM-1005d · J2 · la pestaña «Documentos» de la ficha del cliente (relevo jv-j2df → jv-j2dh)
+
+**Medido contra:** `origin/main` = `dff849bc78e0a8c1f1e32e5e18e2e17296c63ae5` · 2026-11-20T16:32:15Z (hora de GitHub; sesión J2 `jv-j2dh`, por encargo del orquestador `cobroflash-backend-c7`). Parte del commit local de `jv-j2df` `aedd87f21887bcfd7d6da59998f5857bbccc339e` (padre `0142551fb`), traído con `git merge` y no con `--ff-only`: main había avanzado #3275 (solo docs de SCRUM-1771, 8 ficheros, ninguno de este tramo).
+
+A9: comprobación → `tests/scrum757-la-declaracion-que-nadie-lee.test.mjs`
+
+**Skill UI:** cargada (`yaqu-premium-ui`, antes de tocar `customerDetailView.js`)
+
+Mutaciones: catálogo → `tests/scrum1005d-pestana-documentos.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1005b-documentos-cliente.test.mjs`
+
+**Literales:** los 14 de SCRUM-1005 c.22192, byte a byte (comparados por punto de código con `docs/master/evidencias/SCRUM-1005/1005c-textos-propuestos.md`, la columna A que cita c.22192: `🗑` es U+1F5D1 sin selector de variante y `…` es U+2026, igual en la vista, la ficha y el test). Ficha: `docs/microcopy/2026-11-20-SCRUM-1005-documentos-del-cliente.md`. La fila 10 está firmada y NO se aplica (no existe diálogo de borrar cliente): en la ficha va como nota, no como cita. La fila 13 es «sin texto». `CUERPO_ILEGIBLE` → el genérico del panel. `docs/MICROCOPY_APROBADA_SIN_APLICAR.md` no se toca: está congelado desde SCRUM-709. Ningún literal faltó ni se inventó.
+
+**Permisos (c.22192):** ver y subir, todo el equipo; borrar, solo admin (botón y confirmación solo si `appUserRole === 'admin'`; el `DELETE` ya lleva `requireRole('admin')` desde 1005b).
+
+**Lo que hizo jv-j2df (commit aedd87f):** la pestaña en `public/dashboard/js/customerDetailView.js` (bloque marcado `SCRUM-1005d · INICIO/FIN`, sin `style=` ni `on*=` en cadenas, clases de «Sitios»), `limites` en bytes en `GET /admin/customers/:id/documentos` (`customersAdmin.routes.ts`) para que `{mb}` salga de las constantes, la ficha de microcopy y los tests (`tests/scrum1005d-pestana-documentos.test.mjs` nuevo; `tests/scrum1005b-documentos-cliente.test.mjs` con el caso de `limites`, visto en rojo antes).
+
+**Lo que hice yo (jv-j2dh):**
+
+1. **Dos declaraciones de mutación de j2df estaban CIEGAS.** Las cuatro decían `fichero: VISTA` (un identificador): el lector estático de la casa (`lecturaDeDeclaraciones`) las dejaba en `incompletas`, y `scrum757` caía nombrando a `scrum1005d` (rojo visto en local reintroduciendo el identificador). Ahora es la ruta literal. Además, el `cae` de la del literal («los 14 textos son los de c.22192») no era subcadena de ningún nombre de test, y el ancla del `confirm` tenía 8 espacios donde el código tiene 4: `aplicarUna` la dio CIEGA («el ancla no está… caducó»). Las dos, corregidas.
+2. **Mutación nueva** en el catálogo de 1005b: «`limites` desaparece del GET» (`return res.json({ documentos });`).
+3. **Las 8 mutaciones** (4 de 1005d + 4 de 1005b), con `correr` + `aplicarUna` de `scripts/meta-guard-mutaciones.mjs` sobre la línea base limpia (25 y 16 pasados, 0 caídos, 0 saltados): las 8 `ok:true` (tumban su test). `git status` después: `src/` y `public/` sin diff.
+4. **`scrum1185`:** rojo visto (11 casos, 2 caen). ② GET y POST de documentos ya tienen consumidor → a `retiradas` de `scripts/_sin-consumir-declarados.json` con su motivo. ① traía 4 piezas ciegas nuevas: 3 `ciega-llamada-opaca` porque la pestaña llamaba con la ruta en una variable → **arreglado en el código** (la ruta escrita en cada `apiRequest`; `base` queda solo para el enlace de descarga, con su comentario). La cuarta, `ciega-lector-cuerpo · POST /admin/customers/:id/documentos`, es un límite de la sonda (el cuerpo es el fichero en binario y el nombre va en `X-Nombre-Fichero`): declarada en `declaradas`, carril J2, SCRUM-1005, como las de «Sitios». Después, 11/11.
+5. **`scrum700`** (92 > 91 ficheros con filtro de comentarios propio): el test nuevo quitaba el origen de la URL con `/^https?:\/\/[^/]+/`, que el censo cuenta como filtro. No es un filtro de comentarios, así que `soloEjecutable` no aplica: se cambia por `new URL(…).pathname + search`. Vuelve a 91; el trinquete no se toca.
+6. **Aviso ① de j2df (import de `medirTexto`):** se queda el import desde `tests/scrum1773-trinquete-style-en-innerhtml.test.mjs` con el recuento declarado: **25 casos en `scrum1005d` = 18 propios + 7 de 1773** que se ejecutan al importarlo. Extraer `medirTexto` a un módulo aparte obligaba a mover `RX_STYLE` y `NODOS_CADENA`, que son el `de:` de las mutaciones ① y ② del propio 1773: era tocar el guard de J3 más allá del import (el encargo dice PARA). 8 tests de la casa ya importan otro `.test.mjs`.
+
+**Verde, con recuento:**
+
+- `scrum1005d` 25/25 + `scrum1005b` 16/16 = 41/41 (`tsc -p .` con tipos: salida 0, sin `--noCheck`).
+- Lote dirigido, 36 ficheros (1773, 836, 700, 710b, 719, 1294, 267, 273, 525d, 854, 391, 1185, 1387, 514, 1145, 1005d, 1005b y los 21 que nombran `customerDetailView`): 371 tests = 367 pass + 2 fail + 2 saltados; los 2 rojos eran `scrum700` (arreglado, punto 5) y `scrum854` ② (faltaba este tramo). Re-medido después: 700 + 1005d + 1005b + 1185 = 57/57.
+
+**Lo que NO he medido:** yaqu.app (la pestaña no está desplegada: entra con el merge; la verifica CIERRES en staging, otra sesión); el obligatorio de CI de la punta; si el `🗑` de Jira lleva selector de variante (comparé con el fichero de evidencias que cita c.22192, no con los bytes del comentario).

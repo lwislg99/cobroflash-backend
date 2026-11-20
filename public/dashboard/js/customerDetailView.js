@@ -244,6 +244,8 @@ function montarDocumentosDelCliente(card, customerId, viva, alContar) {
   const D = DOCUMENTOS_CLIENTE;
   const T = D.TEXTOS;
   const puedeBorrar = window.appUserRole === 'admin';
+  // `base` solo para el enlace de descarga: las llamadas de red llevan la ruta ESCRITA, porque con una
+  // variable la sonda de SCRUM-1185 no ve quién consume la ruta (sale «ciega-llamada-opaca»).
   const base = `/admin/customers/${customerId}/documentos`;
   let limites = null;
   card.classList.add('sitios-cliente');
@@ -337,7 +339,7 @@ function montarDocumentosDelCliente(card, customerId, viva, alContar) {
   }
 
   function cargar() {
-    return apiRequest(base).then((r) => {
+    return apiRequest(`/admin/customers/${customerId}/documentos`).then((r) => {
       if (!viva()) return;
       const docs = r && Array.isArray(r.documentos) ? r.documentos : [];
       limites = r && r.limites ? r.limites : limites;
@@ -355,7 +357,7 @@ function montarDocumentosDelCliente(card, customerId, viva, alContar) {
     boton.disabled = true;
     avisar('');
     estado.textContent = '';
-    apiRequest(`${base}/${d.id}`, { method: 'DELETE' }).then(() => {
+    apiRequest(`/admin/customers/${customerId}/documentos/${d.id}`, { method: 'DELETE' }).then(() => {
       if (viva()) cargar();
     }, (err) => {
       if (!viva()) return;
@@ -376,7 +378,7 @@ function montarDocumentosDelCliente(card, customerId, viva, alContar) {
     }
     estado.textContent = T.subiendo;
     subir.disabled = true;
-    apiRequest(base, {
+    apiRequest(`/admin/customers/${customerId}/documentos`, {
       method: 'POST',
       headers: { 'Content-Type': file.type || 'application/octet-stream', 'X-Nombre-Fichero': encodeURIComponent(file.name) },
       body: file,
