@@ -117,6 +117,42 @@ const PRIMARIO_LISTA = `(() => {
     .find((x) => !x.classList.contains('overflow-trigger') && (x.textContent || '').trim() !== '⋯');
   return { rotulo: b ? b.textContent.trim() : null, nodos: document.querySelectorAll('#view-container *').length };
 })()`;
+// ── SCRUM-1725j · EN CURSO, LA ACCIÓN DE LA ESCALERA SE LEE DENTRO DEL «⋯», POR IDENTIDAD ─────────
+//
+// CAMBIA LO QUE EL GUARD MIRA, NO LO QUE EXIGE (autorizado con nombre por el orquestador el
+// 20-nov-2026, por la delegación de SCRUM-1656 c.21978; copia literal en docs/master/SCRUM-1725.md,
+// tramo 1725j; el mismo patrón que SCRUM-1725 c.22107 aplicó al detalle). P4 (firmado, SCRUM-1725
+// c.22098): en EN CURSO la fila lleva «Abrir parte», que es el paso de hoy (N1, SCRUM-1700), y la
+// acción de la escalera —el albarán— baja al «⋯». Buscándola en la caja de la fila el guard decía
+// «la lista propone (ninguna)» sobre una lista que sí la propone, un gesto más allá.
+//
+// Se lee por su identidad (data-accion="escalera", que pone jobsView.js esté el botón donde esté) y
+// con el «⋯» ABIERTO: overflowMenu solo cuelga sus entradas del documento al abrirse. La exigencia es
+// la de siempre: MISMO RÓTULO que el detalle. Los otros cuatro estados siguen leyendo la caja.
+//
+// Fail-closed: sin «⋯», o con el «⋯» abierto y sin acción de escalera dentro, el rótulo es null y
+// eso es un DEFECTO contra el detalle (no un ciego). Dos menús abiertos a la vez sí es no saber mirar.
+// (Sin acentos graves aquí dentro: este bloque VIVE en un template literal y los cerraría.)
+const ESTADOS_CON_LA_ESCALERA_EN_EL_MENU = ['en_curso'];
+const ABRIR_EL_MENU_DE_LA_FILA = `(() => {
+  const tr = document.querySelector('#view-container tr.jobs-fila');
+  if (!tr) return { error: 'sin filas que medir ni siquiera tras desplegar los grupos' };
+  const d = tr.querySelector('.overflow-trigger');
+  // Clic del DOM y no del ratón: el ratón de puppeteer desplaza la página para llegar al control, y
+  // el menú se cierra con el scroll, a propósito (medido en guard-lista-trabajos-917, «pulsar»).
+  if (d) d.click();
+  return { habiaDisparador: !!d };
+})()`;
+const PRIMARIO_LISTA_EN_EL_MENU = `(() => {
+  const paneles = [...document.querySelectorAll('.overflow-menu, .overflow-sheet')];
+  if (paneles.length > 1) return { error: 'hay ' + paneles.length + ' «⋯» abiertos a la vez: no sé de qué fila leo' };
+  const b = paneles.length ? paneles[0].querySelector('button[data-accion="escalera"]') : null;
+  return {
+    rotulo: b ? b.textContent.trim() : null,
+    entradas: paneles.length ? paneles[0].children.length : 0,
+    nodos: document.querySelectorAll('#view-container *').length,
+  };
+})()`;
 const PRIMARIO_DETALLE = `(() => {
   const n = document.querySelectorAll('#view-container *').length;
   if (n < 20) return { error: 'la ficha no monta (' + n + ' nodos)' };
@@ -140,7 +176,19 @@ let vistos = new Set();
 for (const estado of ESTADOS) {
   const a = await abrirVista(browser, puerto, `/lista-${estado}`, 1280);
   await a.page.evaluate(DESPLEGAR);
-  const rl = await a.page.evaluate(PRIMARIO_LISTA);
+  let rl;
+  if (ESTADOS_CON_LA_ESCALERA_EN_EL_MENU.includes(estado)) {
+    // SCRUM-1725j · se abre el «⋯» de la fila y se lee DENTRO (ver arriba). Si la fila no tiene «⋯»,
+    // la lectura sigue y da null: la lista no propone nada, y eso se compara con el detalle.
+    const abierto = await a.page.evaluate(ABRIR_EL_MENU_DE_LA_FILA);
+    if (abierto.error) rl = abierto;
+    else {
+      await new Promise((r) => setTimeout(r, 120));
+      rl = await a.page.evaluate(PRIMARIO_LISTA_EN_EL_MENU);
+    }
+  } else {
+    rl = await a.page.evaluate(PRIMARIO_LISTA);
+  }
   await a.page.close();
   const b = await abrirVista(browser, puerto, `/detalle-${estado}`, 1280);
   const rd = await b.page.evaluate(PRIMARIO_DETALLE);
