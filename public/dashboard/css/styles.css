@@ -5892,22 +5892,57 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
 .detail-page--trabajo .detail-cuerpo > .detail-lateral { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 /* «+ Nuevo presupuesto», a todo el ancho de la columna y pegado al bloque PRESUPUESTO del rail. */
 .detail-page--trabajo .detail-lateral > [data-presupuesto-del-trabajo] { width: 100%; justify-content: center; }
-/* En la columna estrecha, cada línea de «El trabajo» lleva su valor DEBAJO del rótulo (alineado con él, tras
-   el galón de 14 px + 10 de hueco): a la derecha, «Una obra o reforma de varios días» se partía en dos. */
-@media (min-width: 721px) {
-  .detail-page--trabajo .detail-lateral .detail-plega-cab { flex-wrap: wrap; row-gap: 0; padding: 8px 0; }
-  .detail-page--trabajo .detail-lateral .detail-plega-valor {
-    flex-basis: 100%; margin-left: 24px; text-align: left; font-size: 13px; color: var(--body);
-  }
-}
-/* A 390 la columna lateral se disuelve: el orden es el de antes (rail arriba, «El trabajo» al final). */
+/* Vuelta 2 (SCRUM-1768b, abajo): «El trabajo» volvió a la columna principal como pestaña, así que aquí se
+   retiraron sus dos reglas de la lateral (el valor bajo el rótulo y su `order: 1` de móvil). */
+/* A 390 la columna lateral se disuelve: rail y «+ Nuevo presupuesto» arriba, las pestañas debajo. */
 @media (max-width: 720px) {
   .detail-page--trabajo .detail-cuerpo--con-rail { display: flex; flex-direction: column; gap: 16px; }
   .detail-page--trabajo .detail-cuerpo > .detail-lateral { display: contents; }
   .detail-page--trabajo .detail-lateral > [data-presupuesto-del-trabajo] { order: -1; }
-  .detail-page--trabajo .detail-lateral > .detail-section { order: 1; }
 }
 /* ══ fin S2 · SCRUM-1768 ══ */
+
+/* ══ S2 · SCRUM-1768b · LA FICHA POR PESTAÑAS Y EL DINERO ARRIBA ═════════════════════════════════════════
+   Vuelta 2 del formato (c.22113). Las pestañas son las secciones que ya existían (jobDetailView.js,
+   `montarPestanasDeLaFicha`): la tira es el control segmentado de la casa (btn-secondary / btn-ghost, el de
+   quotesTabs y cobrosView) y cada sección sigue siendo su tarjeta. La franja del dinero sube a la cabecera,
+   encima de las acciones, con la misma tarjeta que tenía en el cuerpo. Sin cabecera fija. Sólo tokens. */
+.detail-page--trabajo .detail-head > .detail-head-dinero {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+}
+@media (min-width: 721px) {
+  /* Dos columnas: el título a la izquierda; a la derecha, el dinero y debajo las acciones. Sin franja (un
+     Trabajo sin importe que conste), las acciones suben a la primera fila: la colocación es automática. */
+  .detail-page--trabajo .detail-head {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 24px; row-gap: 12px; align-items: start;
+  }
+  .detail-page--trabajo .detail-head > .detail-head-izq { grid-column: 1; grid-row: 1 / span 2; }
+  .detail-page--trabajo .detail-head > .detail-head-dinero { grid-column: 2; grid-row: 1; min-width: 320px; padding: 16px 20px; }
+  .detail-page--trabajo .detail-head > .detail-head-acciones { grid-column: 2; justify-content: flex-end; margin-left: 0; }
+}
+/* A 390 todo se apila en el orden del documento: título, dinero, acciones. */
+@media (max-width: 720px) {
+  .detail-page--trabajo .detail-head > .detail-head-dinero { flex: 1 1 100%; }
+}
+
+/* La tira: los rótulos se parten en dos filas antes que esconder una pestaña tras un desplazamiento. */
+.detail-page--trabajo .detail-pestanas { display: flex; flex-wrap: wrap; gap: 8px; }
+/* El 44 px lo da `job-toolbar-btn-44` (SCRUM-962); el panel oculto lo esconde la regla global de `[hidden]`
+   (SCRUM-731: no se añaden reglas `[hidden]` por clase). */
+.detail-page--trabajo .detail-pestanas > [role="tab"] { padding-inline: 14px; }
+.detail-page--trabajo .detail-pestanas > [aria-selected="true"] { font-weight: 700; }
+.detail-page--trabajo .detail-pestanas > [role="tab"]:focus-visible { outline: none; box-shadow: var(--ring); }
+/* El `<h3>` de cada sección ya es el rótulo de su pestaña, justo encima: se aparta de la vista y lo sigue
+   leyendo el lector de pantalla (es el nombre del panel, y su texto no cambia). */
+.detail-page--trabajo .detail-cuerpo > div > [role="tabpanel"] > .detail-section-title {
+  position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+/* ══ fin S2 · SCRUM-1768b ══ */
 
 /* J3: SCRUM-1756h · las vistas de J3 del panel (onboardingView, plansView, settingsView, teamView, tutorial)
    sin style="…" en las cadenas de innerHTML: la CSP del paso 3 (style-src 'self') no los pinta (c.22122).

@@ -1,0 +1,608 @@
+{
+ "ids": [
+  77,
+  76
+ ],
+ "salida": [
+  {
+   "w": 390,
+   "quien": "operario",
+   "fase": "antes",
+   "build": "0b8b9eda502d9e20c943ab348dd0fd4f26824168",
+   "local": false,
+   "reescritas": {
+    "me": 1,
+    "jobs": 3
+   },
+   "filas": [
+    {
+     "id": 77,
+     "pestanas": [],
+     "abierta": "",
+     "rol": "tecnico",
+     "desbordeX": 0,
+     "fuera": [],
+     "alto": 2069,
+     "primarias": [
+      "+ Nuevo parte"
+     ],
+     "altoMenor44": [],
+     "acciones": [
+      "Trabajos",
+      "+ Nuevo albarán",
+      "✅ Marcar terminado",
+      "+ Añadir gasto",
+      "+ Nuevo parte",
+      "PT-2026-013",
+      "PT-2026-012",
+      "PT-2026-011",
+      "PT-2026-010",
+      "PT-2026-006",
+      "PT-2026-004",
+      "📞 34629965893",
+      "💬 WhatsApp",
+      "#5 · 14 oct",
+      "+ Nuevo presupuesto",
+      "Elegir un sitio guardado"
+     ],
+     "textoFicha": "Trabajos › Cliente de pruebas QA Cliente de pruebas QA · Abierto el 14 oct · Presupuesto #5 Cita: mié 11 nov, 16:54 EN CURSO + Nuevo albarán ✅ Marcar terminado + Añadir gasto Aceptado 1,21 € Partes + Nuevo parte PT-2026-013 16 nov BORRADOR PT-2026-012 13 nov BORRADOR PT-2026-011 12 nov BORRADOR PT-2026-010 12 nov FIRMADO PT-2026-006 11 nov FIRMADO PT-2026-004 29 oct FIRMADO Albaranes Aún no hay albaranes. CLIENTE Cliente de pruebas QA 📞 34629965893 💬 WhatsApp Nota del cliente Datos de prueba creados por scripts/qa/sembrar-qa.mjs (SCRUM-1268). PRESUPUESTO #5 · 14 oct RESPONSABLE PruebaQA + Nuevo presupuesto El trabajo Tipo de trabajo Una obra o reforma de varios días Nombre y dirección Cliente de pruebas QA Quién lo ejecuta Operario QA Gastos de este trabajo Sin gastos",
+     "euros": [
+      "1,21 €"
+     ]
+    },
+    {
+     "id": 76,
+     "pestanas": [],
+     "abierta": "",
+     "rol": "tecnico",
+     "desbordeX": 0,
+     "fuera": [],
+     "alto": 2597,
+     "primarias": [],
+     "altoMenor44": [],
+     "acciones": [
+      "Trabajos",
+      "Enviar para firmar",
+      "+ Añadir gasto",
+      "⋯",
+      "+ Nuevo parte",
+      "PT-2026-002",
+      "PT-2026-001",
+      "+ Nuevo albarán",
+      "AB260001",
+      "Enviar para firmar",
+      "AB260002",
+      "AB260003",
+      "Emitir",
+      "Editar líneas",
+      "AB260004",
+      "AB260005",
+      "Enviar para firmar",
+      "AB260006",
+      "Enviar para firmar",
+      "AB260010",
+      "Emitir",
+      "Editar líneas",
+      "AB260011",
+      "Emitir",
+      "Editar líneas",
+      "📞 34629965893",
+      "💬 WhatsApp",
+      "#2 · 29 sept",
+      "Elegir un sitio guardado"
+     ],
+     "textoFicha": "Trabajos › Trabajo de pruebas QA Cliente de pruebas QA · Abierto el 29 sept · Presupuesto #2 Cita: jue 12 nov, 09:00 TERMINADO Enviar para firmar + Añadir gasto ⋯ Partes + Nuevo parte PT-2026-002 29 sept FIRMADO PT-2026-001 29 sept BORRADOR Albaranes + Nuevo albarán AB260001 29 sept EMITIDO Sin precios Enviar para firmar AB260002 14 oct FIRMADO Sin precios AB260003 16 oct BORRADOR Sin precios EmitirEditar líneas AB260004 29 oct FIRMADO Sin precios AB260005 29 oct EMITIDO Sin precios Enviar para firmar AB260006 10 nov EMITIDO Enviar para firmar AB260010 17 nov BORRADOR Sin precios EmitirEditar líneas AB260011 17 nov BORRADOR Sin precios EmitirEditar líneas CLIENTE Cliente de pruebas QA 📞 34629965893 💬 WhatsApp Nota del cliente Datos de prueba creados por scripts/qa/sembrar-qa.mjs (SCRUM-1268). PRESUPUESTO #2 · 29 sept RESPONSABLE PruebaQA El trabajo Tipo de trabajo Una obra o reforma de varios días Nombre y dirección Trabajo de pruebas QA Quién lo ejecuta Sin asignar Gastos de este trabajo Sin gastos",
+     "euros": []
+    }
+   ],
+   "noGet": [
+    "POST /admin/entorno cortada"
+   ],
+   "errores": []
+  },
+  {
+   "w": 390,
+   "quien": "admin",
+   "fase": "antes",
+   "build": "0b8b9eda502d9e20c943ab348dd0fd4f26824168",
+   "local": false,
+   "reescritas": {
+    "me": 0,
+    "jobs": 0
+   },
+   "filas": [
+    {
+     "id": 77,
+     "pestanas": [],
+     "abierta": "",
+     "rol": "admin",
+     "desbordeX": 0,
+     "fuera": [],
+     "alto": 2323,
+     "primarias": [
+      "+ Nuevo parte"
+     ],
+     "altoMenor44": [],
+     "acciones": [
+      "Trabajos",
+      "+ Nuevo albarán",
+      "✅ Marcar terminado",
+      "+ Añadir gasto",
+      "Ver albaranes",
+      "+ Nuevo parte",
+      "PT-2026-013",
+      "PT-2026-012",
+      "PT-2026-011",
+      "PT-2026-010",
+      "PT-2026-006",
+      "PT-2026-004",
+      "📞 34629965893",
+      "💬 WhatsApp",
+      "#5 · 14 oct",
+      "+ Nuevo presupuesto",
+      "🔧Varios avisos o visitas sueltasCada visita es un trabajo independiente para este cliente.",
+      "🏗️Una obra o reforma de varios díasEs un solo trabajo que se factura al concluir.",
+      "Elegir un sitio guardado"
+     ],
+     "textoFicha": "Trabajos › Cliente de pruebas QA Cliente de pruebas QA · Abierto el 14 oct · Presupuesto #5 Cita: mié 11 nov, 16:54 EN CURSO + Nuevo albarán ✅ Marcar terminado + Añadir gasto Lo que falta 1 línea del presupuesto sin entregar Ver albaranes Aceptado 1,21 € Cobrado 0,00 € Partes + Nuevo parte PT-2026-013 16 nov BORRADOR PT-2026-012 13 nov BORRADOR PT-2026-011 12 nov BORRADOR PT-2026-010 12 nov FIRMADO PT-2026-006 11 nov FIRMADO PT-2026-004 29 oct FIRMADO Albaranes Aún no hay albaranes. CLIENTE Cliente de pruebas QA 📞 34629965893 💬 WhatsApp Nota del cliente Datos de prueba creados por scripts/qa/sembrar-qa.mjs (SCRUM-1268). PRESUPUESTO #5 · 14 oct RESPONSABLE PruebaQA + Nuevo presupuesto El trabajo Tipo de trabajo Una obra o reforma de varios días Nombre y dirección Cliente de pruebas QA Quién lo ejecuta Operario QA Notas internas Solo tú las ves Gastos de este trabajo Sin gastos",
+     "euros": [
+      "1,21 €",
+      "0,00 €"
+     ]
+    },
+    {
+     "id": 76,
+     "pestanas": [],
+     "abierta": "",
+     "rol": "admin",
+     "desbordeX": 0,
+     "fuera": [],
+     "alto": 2894,
+     "primarias": [],
+     "altoMenor44": [],
+     "acciones": [
+      "Trabajos",
+      "Enviar para firmar",
+      "+ Añadir gasto",
+      "⋯",
+      "Hacer presupuesto",
+      "Ver albaranes",
+      "+ Nuevo parte",
+      "PT-2026-002",
+      "PT-2026-001",
+      "+ Nuevo albarán",
+      "AB260001",
+      "Enviar para firmar",
+      "AB260002",
+      "AB260003",
+      "Emitir",
+      "Editar líneas",
+      "AB260004",
+      "AB260005",
+      "Enviar para firmar",
+      "AB260006",
+      "Enviar para firmar",
+      "AB260010",
+      "Emitir",
+      "Editar líneas",
+      "AB260011",
+      "Emitir",
+      "Editar líneas",
+      "📞 34629965893",
+      "💬 WhatsApp",
+      "#2 · 29 sept",
+      "🔧Varios avisos o visitas sueltasCada visita es un trabajo independiente para este cliente.",
+      "🏗️Una obra o reforma de varios díasEs un solo trabajo que se factura al concluir.",
+      "Elegir un sitio guardado"
+     ],
+     "textoFicha": "Trabajos › Trabajo de pruebas QA Cliente de pruebas QA · Abierto el 29 sept · Presupuesto #2 Cita: jue 12 nov, 09:00 TERMINADO Enviar para firmar + Añadir gasto ⋯ Lo que falta Este trabajo no tiene presupuesto aceptado Sin un importe de referencia no se puede saber cuánto falta por cobrar. Hacer presupuesto 6 albaranes sin firmar Ver albaranes Partes + Nuevo parte PT-2026-002 29 sept FIRMADO PT-2026-001 29 sept BORRADOR Albaranes + Nuevo albarán AB260001 29 sept EMITIDO Sin precios Enviar para firmar AB260002 14 oct FIRMADO Sin precios AB260003 16 oct BORRADOR Sin precios EmitirEditar líneas AB260004 29 oct FIRMADO Sin precios AB260005 29 oct EMITIDO Sin precios Enviar para firmar AB260006 10 nov EMITIDO Enviar para firmar AB260010 17 nov BORRADOR Sin precios EmitirEditar líneas AB260011 17 nov BORRADOR Sin precios EmitirEditar líneas CLIENTE Cliente de pruebas QA 📞 34629965893 💬 WhatsApp Nota del cliente Datos de prueba creados por scripts/qa/sembrar-qa.mjs (SCRUM-1268). PRESUPUESTO #2 · 29 sept RESPONSABLE PruebaQA El trabajo Tipo de trabajo Una obra o reforma de varios días Nombre y dirección Trabajo de pruebas QA Quién lo ejecuta Sin asignar Notas internas Solo tú las ves Gastos de este trabajo Sin gastos",
+     "euros": []
+    }
+   ],
+   "noGet": [
+    "POST /admin/entorno cortada"
+   ],
+   "errores": []
+  },
+  {
+   "w": 1280,
+   "quien": "operario",
+   "fase": "antes",
+   "build": "0b8b9eda502d9e20c943ab348dd0fd4f26824168",
+   "local": false,
+   "reescritas": {
+    "me": 1,
+    "jobs": 3
+   },
+   "filas": [
+    {
+     "id": 77,
+     "pestanas": [],
+     "abierta": "",
+     "rol": "tecnico",
+     "desbordeX": 0,
+     "fuera": [],
+     "alto": 1138,
+     "primarias": [
+      "+ Nuevo parte"
+     ],
+     "altoMenor44": [],
+     "acciones": [
+      "Trabajos",
+      "+ Nuevo albarán",
+      "✅ Marcar terminado",
+      "+ Añadir gasto",
+      "+ Nuevo parte",
+      "PT-2026-013",
+      "PT-2026-012",
+      "PT-2026-011",
+      "PT-2026-010",
+      "PT-2026-006",
+      "PT-2026-004",
+      "📞 34629965893",
+      "💬 WhatsApp",
+      "#5 · 14 oct",
+      "+ Nuevo presupuesto",
+      "Elegir un sitio guardado"
+     ],
+     "textoFicha": "Trabajos › Cliente de pruebas QA Cliente de pruebas QA · Abierto el 14 oct · Presupuesto #5 Cita: mié 11 nov, 16:54 EN CURSO + Nuevo albarán ✅ Marcar terminado + Añadir gasto Aceptado 1,21 € Partes + Nuevo parte Nº FECHA ESTADO PT-2026-013 16 nov BORRADOR PT-2026-012 13 nov BORRADOR PT-2026-011 12 nov BORRADOR PT-2026-010 12 nov FIRMADO PT-2026-006 11 nov FIRMADO PT-2026-004 29 oct FIRMADO Albaranes Aún no hay albaranes. CLIENTE Cliente de pruebas QA 📞 34629965893 💬 WhatsApp Nota del cliente Datos de prueba creados por scripts/qa/sembrar-qa.mjs (SCRUM-1268). PRESUPUESTO #5 · 14 oct RESPONSABLE PruebaQA + Nuevo presupuesto El trabajo Tipo de trabajo Una obra o reforma de varios días Nombre y dirección Cliente de pruebas QA Quién lo ejecuta Operario QA Gastos de este trabajo Sin gastos",
+     "euros": [
+      "1,21 €"
+     ]
+    },
+    {
+     "id": 76,
+     "pestanas": [],
+     "abierta": "",
+     "rol": "tecnico",
+     "desbordeX": 0,
+     "fuera": [],
+     "alto": 1512,
+     "primarias": [],
+     "altoMenor44": [],
+     "acciones": [
+      "Trabajos",
+      "Enviar para firmar",
+      "+ Añadir gasto",
+      "⋯",
+      "+ Nuevo parte",
+      "PT-2026-002",
+      "PT-2026-001",
+      "+ Nuevo albarán",
+      "AB260001",
+      "Enviar para firmar",
+      "AB260002",
+      "AB260003",
+      "Emitir",
+      "Editar líneas",
+      "AB260004",
+      "AB260005",
+      "Enviar para firmar",
+      "AB260006",
+      "Enviar para firmar",
+      "AB260010",
+      "Emitir",
+      "Editar líneas",
+      "AB260011",
+      "Emitir",
+      "Editar líneas",
+      "📞 34629965893",
+      "💬 WhatsApp",
+      "#2 · 29 sept",
+      "Elegir un sitio guardado"
+     ],
+     "textoFicha": "Trabajos › Trabajo de pruebas QA Cliente de pruebas QA · Abierto el 29 sept · Presupuesto #2 Cita: jue 12 nov, 09:00 TERMINADO Enviar para firmar + Añadir gasto ⋯ Partes + Nuevo parte Nº FECHA ESTADO PT-2026-002 29 sept FIRMADO PT-2026-001 29 sept BORRADOR Albaranes + Nuevo albarán Nº FECHA ESTADO LÍNEAS ACCIÓN AB260001 29 sept EMITIDO Sin precios 0 Enviar para firmar AB260002 14 oct FIRMADO Sin precios 0 AB260003 16 oct BORRADOR Sin precios 0 EmitirEditar líneas AB260004 29 oct FIRMADO Sin precios 0 AB260005 29 oct EMITIDO Sin precios 0 Enviar para firmar AB260006 10 nov EMITIDO 4 Enviar para firmar AB260010 17 nov BORRADOR Sin precios 1 EmitirEditar líneas AB260011 17 nov BORRADOR Sin precios 1 EmitirEditar líneas CLIENTE Cliente de pruebas QA 📞 34629965893 💬 WhatsApp Nota del cliente Datos de prueba creados por scripts/qa/sembrar-qa.mjs (SCRUM-1268). PRESUPUESTO #2 · 29 sept RESPONSABLE PruebaQA El trabajo Tipo de trabajo Una obra o reforma de varios días Nombre y dirección Trabajo de pruebas QA Quién lo ejecuta Sin asignar Gastos de este trabajo Sin gastos",
+     "euros": []
+    }
+   ],
+   "noGet": [
+    "POST /admin/entorno cortada"
+   ],
+   "errores": []
+  },
+  {
+   "w": 1280,
+   "quien": "admin",
+   "fase": "antes",
+   "build": "0b8b9eda502d9e20c943ab348dd0fd4f26824168",
+   "local": false,
+   "reescritas": {
+    "me": 0,
+    "jobs": 0
+   },
+   "filas": [
+    {
+     "id": 77,
+     "pestanas": [],
+     "abierta": "",
+     "rol": "admin",
+     "desbordeX": 0,
+     "fuera": [],
+     "alto": 1297,
+     "primarias": [
+      "+ Nuevo parte"
+     ],
+     "altoMenor44": [],
+     "acciones": [
+      "Trabajos",
+      "+ Nuevo albarán",
+      "✅ Marcar terminado",
+      "+ Añadir gasto",
+      "Ver albaranes",
+      "+ Nuevo parte",
+      "PT-2026-013",
+      "PT-2026-012",
+      "PT-2026-011",
+      "PT-2026-010",
+      "PT-2026-006",
+      "PT-2026-004",
+      "📞 34629965893",
+      "💬 WhatsApp",
+      "#5 · 14 oct",
+      "+ Nuevo presupuesto",
+      "🔧Varios avisos o visitas sueltasCada visita es un trabajo independiente para este cliente.",
+      "🏗️Una obra o reforma de varios díasEs un solo trabajo que se factura al concluir.",
+      "Elegir un sitio guardado"
+     ],
+     "textoFicha": "Trabajos › Cliente de pruebas QA Cliente de pruebas QA · Abierto el 14 oct · Presupuesto #5 Cita: mié 11 nov, 16:54 EN CURSO + Nuevo albarán ✅ Marcar terminado + Añadir gasto Lo que falta 1 línea del presupuesto sin entregar Ver albaranes Aceptado 1,21 € Cobrado 0,00 € Partes + Nuevo parte Nº FECHA ESTADO PT-2026-013 16 nov BORRADOR PT-2026-012 13 nov BORRADOR PT-2026-011 12 nov BORRADOR PT-2026-010 12 nov FIRMADO PT-2026-006 11 nov FIRMADO PT-2026-004 29 oct FIRMADO Albaranes Aún no hay albaranes. CLIENTE Cliente de pruebas QA 📞 34629965893 💬 WhatsApp Nota del cliente Datos de prueba creados por scripts/qa/sembrar-qa.mjs (SCRUM-1268). PRESUPUESTO #5 · 14 oct RESPONSABLE PruebaQA + Nuevo presupuesto El trabajo Tipo de trabajo Una obra o reforma de varios días Nombre y dirección Cliente de pruebas QA Quién lo ejecuta Operario QA Notas internas Solo tú las ves Gastos de este trabajo Sin gastos",
+     "euros": [
+      "1,21 €",
+      "0,00 €"
+     ]
+    },
+    {
+     "id": 76,
+     "pestanas": [],
+     "abierta": "",
+     "rol": "admin",
+     "desbordeX": 0,
+     "fuera": [],
+     "alto": 1701,
+     "primarias": [],
+     "altoMenor44": [],
+     "acciones": [
+      "Trabajos",
+      "Enviar para firmar",
+      "+ Añadir gasto",
+      "⋯",
+      "Hacer presupuesto",
+      "Ver albaranes",
+      "+ Nuevo parte",
+      "PT-2026-002",
+      "PT-2026-001",
+      "+ Nuevo albarán",
+      "AB260001",
+      "Enviar para firmar",
+      "AB260002",
+      "AB260003",
+      "Emitir",
+      "Editar líneas",
+      "AB260004",
+      "AB260005",
+      "Enviar para firmar",
+      "AB260006",
+      "Enviar para firmar",
+      "AB260010",
+      "Emitir",
+      "Editar líneas",
+      "AB260011",
+      "Emitir",
+      "Editar líneas",
+      "📞 34629965893",
+      "💬 WhatsApp",
+      "#2 · 29 sept",
+      "🔧Varios avisos o visitas sueltasCada visita es un trabajo independiente para este cliente.",
+      "🏗️Una obra o reforma de varios díasEs un solo trabajo que se factura al concluir.",
+      "Elegir un sitio guardado"
+     ],
+     "textoFicha": "Trabajos › Trabajo de pruebas QA Cliente de pruebas QA · Abierto el 29 sept · Presupuesto #2 Cita: jue 12 nov, 09:00 TERMINADO Enviar para firmar + Añadir gasto ⋯ Lo que falta Este trabajo no tiene presupuesto aceptado Sin un importe de referencia no se puede saber cuánto falta por cobrar. Hacer presupuesto 6 albaranes sin firmar Ver albaranes Partes + Nuevo parte Nº FECHA ESTADO PT-2026-002 29 sept FIRMADO PT-2026-001 29 sept BORRADOR Albaranes + Nuevo albarán Nº FECHA ESTADO LÍNEAS ACCIÓN AB260001 29 sept EMITIDO Sin precios 0 Enviar para firmar AB260002 14 oct FIRMADO Sin precios 0 AB260003 16 oct BORRADOR Sin precios 0 EmitirEditar líneas AB260004 29 oct FIRMADO Sin precios 0 AB260005 29 oct EMITIDO Sin precios 0 Enviar para firmar AB260006 10 nov EMITIDO 4 Enviar para firmar AB260010 17 nov BORRADOR Sin precios 1 EmitirEditar líneas AB260011 17 nov BORRADOR Sin precios 1 EmitirEditar líneas CLIENTE Cliente de pruebas QA 📞 34629965893 💬 WhatsApp Nota del cliente Datos de prueba creados por scripts/qa/sembrar-qa.mjs (SCRUM-1268). PRESUPUESTO #2 · 29 sept RESPONSABLE PruebaQA El trabajo Tipo de trabajo Una obra o reforma de varios días Nombre y dirección Trabajo de pruebas QA Quién lo ejecuta Sin asignar Notas internas Solo tú las ves Gastos de este trabajo Sin gastos",
+     "euros": []
+    }
+   ],
+   "noGet": [
+    "POST /admin/entorno cortada"
+   ],
+   "errores": []
+  },
+  {
+   "w": 1920,
+   "quien": "operario",
+   "fase": "antes",
+   "build": "0b8b9eda502d9e20c943ab348dd0fd4f26824168",
+   "local": false,
+   "reescritas": {
+    "me": 1,
+    "jobs": 3
+   },
+   "filas": [
+    {
+     "id": 77,
+     "pestanas": [],
+     "abierta": "",
+     "rol": "tecnico",
+     "desbordeX": 0,
+     "fuera": [],
+     "alto": 1138,
+     "primarias": [
+      "+ Nuevo parte"
+     ],
+     "altoMenor44": [],
+     "acciones": [
+      "Trabajos",
+      "+ Nuevo albarán",
+      "✅ Marcar terminado",
+      "+ Añadir gasto",
+      "+ Nuevo parte",
+      "PT-2026-013",
+      "PT-2026-012",
+      "PT-2026-011",
+      "PT-2026-010",
+      "PT-2026-006",
+      "PT-2026-004",
+      "📞 34629965893",
+      "💬 WhatsApp",
+      "#5 · 14 oct",
+      "+ Nuevo presupuesto",
+      "Elegir un sitio guardado"
+     ],
+     "textoFicha": "Trabajos › Cliente de pruebas QA Cliente de pruebas QA · Abierto el 14 oct · Presupuesto #5 Cita: mié 11 nov, 16:54 EN CURSO + Nuevo albarán ✅ Marcar terminado + Añadir gasto Aceptado 1,21 € Partes + Nuevo parte Nº FECHA ESTADO PT-2026-013 16 nov BORRADOR PT-2026-012 13 nov BORRADOR PT-2026-011 12 nov BORRADOR PT-2026-010 12 nov FIRMADO PT-2026-006 11 nov FIRMADO PT-2026-004 29 oct FIRMADO Albaranes Aún no hay albaranes. CLIENTE Cliente de pruebas QA 📞 34629965893 💬 WhatsApp Nota del cliente Datos de prueba creados por scripts/qa/sembrar-qa.mjs (SCRUM-1268). PRESUPUESTO #5 · 14 oct RESPONSABLE PruebaQA + Nuevo presupuesto El trabajo Tipo de trabajo Una obra o reforma de varios días Nombre y dirección Cliente de pruebas QA Quién lo ejecuta Operario QA Gastos de este trabajo Sin gastos",
+     "euros": [
+      "1,21 €"
+     ]
+    },
+    {
+     "id": 76,
+     "pestanas": [],
+     "abierta": "",
+     "rol": "tecnico",
+     "desbordeX": 0,
+     "fuera": [],
+     "alto": 1388,
+     "primarias": [],
+     "altoMenor44": [],
+     "acciones": [
+      "Trabajos",
+      "Enviar para firmar",
+      "+ Añadir gasto",
+      "⋯",
+      "+ Nuevo parte",
+      "PT-2026-002",
+      "PT-2026-001",
+      "+ Nuevo albarán",
+      "AB260001",
+      "Enviar para firmar",
+      "AB260002",
+      "AB260003",
+      "Emitir",
+      "Editar líneas",
+      "AB260004",
+      "AB260005",
+      "Enviar para firmar",
+      "AB260006",
+      "Enviar para firmar",
+      "AB260010",
+      "Emitir",
+      "Editar líneas",
+      "AB260011",
+      "Emitir",
+      "Editar líneas",
+      "📞 34629965893",
+      "💬 WhatsApp",
+      "#2 · 29 sept",
+      "Elegir un sitio guardado"
+     ],
+     "textoFicha": "Trabajos › Trabajo de pruebas QA Cliente de pruebas QA · Abierto el 29 sept · Presupuesto #2 Cita: jue 12 nov, 09:00 TERMINADO Enviar para firmar + Añadir gasto ⋯ Partes + Nuevo parte Nº FECHA ESTADO PT-2026-002 29 sept FIRMADO PT-2026-001 29 sept BORRADOR Albaranes + Nuevo albarán Nº FECHA ESTADO LÍNEAS ACCIÓN AB260001 29 sept EMITIDO Sin precios 0 Enviar para firmar AB260002 14 oct FIRMADO Sin precios 0 AB260003 16 oct BORRADOR Sin precios 0 EmitirEditar líneas AB260004 29 oct FIRMADO Sin precios 0 AB260005 29 oct EMITIDO Sin precios 0 Enviar para firmar AB260006 10 nov EMITIDO 4 Enviar para firmar AB260010 17 nov BORRADOR Sin precios 1 EmitirEditar líneas AB260011 17 nov BORRADOR Sin precios 1 EmitirEditar líneas CLIENTE Cliente de pruebas QA 📞 34629965893 💬 WhatsApp Nota del cliente Datos de prueba creados por scripts/qa/sembrar-qa.mjs (SCRUM-1268). PRESUPUESTO #2 · 29 sept RESPONSABLE PruebaQA El trabajo Tipo de trabajo Una obra o reforma de varios días Nombre y dirección Trabajo de pruebas QA Quién lo ejecuta Sin asignar Gastos de este trabajo Sin gastos",
+     "euros": []
+    }
+   ],
+   "noGet": [
+    "POST /admin/entorno cortada"
+   ],
+   "errores": []
+  },
+  {
+   "w": 1920,
+   "quien": "admin",
+   "fase": "antes",
+   "build": "0b8b9eda502d9e20c943ab348dd0fd4f26824168",
+   "local": false,
+   "reescritas": {
+    "me": 0,
+    "jobs": 0
+   },
+   "filas": [
+    {
+     "id": 77,
+     "pestanas": [],
+     "abierta": "",
+     "rol": "admin",
+     "desbordeX": 0,
+     "fuera": [],
+     "alto": 1321,
+     "primarias": [
+      "+ Nuevo parte"
+     ],
+     "altoMenor44": [],
+     "acciones": [
+      "Trabajos",
+      "+ Nuevo albarán",
+      "✅ Marcar terminado",
+      "+ Añadir gasto",
+      "Ver albaranes",
+      "+ Nuevo parte",
+      "PT-2026-013",
+      "PT-2026-012",
+      "PT-2026-011",
+      "PT-2026-010",
+      "PT-2026-006",
+      "PT-2026-004",
+      "📞 34629965893",
+      "💬 WhatsApp",
+      "#5 · 14 oct",
+      "+ Nuevo presupuesto",
+      "🔧Varios avisos o visitas sueltasCada visita es un trabajo independiente para este cliente.",
+      "🏗️Una obra o reforma de varios díasEs un solo trabajo que se factura al concluir.",
+      "Elegir un sitio guardado"
+     ],
+     "textoFicha": "Trabajos › Cliente de pruebas QA Cliente de pruebas QA · Abierto el 14 oct · Presupuesto #5 Cita: mié 11 nov, 16:54 EN CURSO + Nuevo albarán ✅ Marcar terminado + Añadir gasto Lo que falta 1 línea del presupuesto sin entregar Ver albaranes Aceptado 1,21 € Cobrado 0,00 € Partes + Nuevo parte Nº FECHA ESTADO PT-2026-013 16 nov BORRADOR PT-2026-012 13 nov BORRADOR PT-2026-011 12 nov BORRADOR PT-2026-010 12 nov FIRMADO PT-2026-006 11 nov FIRMADO PT-2026-004 29 oct FIRMADO Albaranes Aún no hay albaranes. CLIENTE Cliente de pruebas QA 📞 34629965893 💬 WhatsApp Nota del cliente Datos de prueba creados por scripts/qa/sembrar-qa.mjs (SCRUM-1268). PRESUPUESTO #5 · 14 oct RESPONSABLE PruebaQA + Nuevo presupuesto El trabajo Tipo de trabajo Una obra o reforma de varios días Nombre y dirección Cliente de pruebas QA Quién lo ejecuta Operario QA Notas internas Solo tú las ves Gastos de este trabajo Sin gastos",
+     "euros": [
+      "1,21 €",
+      "0,00 €"
+     ]
+    },
+    {
+     "id": 76,
+     "pestanas": [],
+     "abierta": "",
+     "rol": "admin",
+     "desbordeX": 0,
+     "fuera": [],
+     "alto": 1585,
+     "primarias": [],
+     "altoMenor44": [],
+     "acciones": [
+      "Trabajos",
+      "Enviar para firmar",
+      "+ Añadir gasto",
+      "⋯",
+      "Hacer presupuesto",
+      "Ver albaranes",
+      "+ Nuevo parte",
+      "PT-2026-002",
+      "PT-2026-001",
+      "+ Nuevo albarán",
+      "AB260001",
+      "Enviar para firmar",
+      "AB260002",
+      "AB260003",
+      "Emitir",
+      "Editar líneas",
+      "AB260004",
+      "AB260005",
+      "Enviar para firmar",
+      "AB260006",
+      "Enviar para firmar",
+      "AB260010",
+      "Emitir",
+      "Editar líneas",
+      "AB260011",
+      "Emitir",
+      "Editar líneas",
+      "📞 34629965893",
+      "💬 WhatsApp",
+      "#2 · 29 sept",
+      "🔧Varios avisos o visitas sueltasCada visita es un trabajo independiente para este cliente.",
+      "🏗️Una obra o reforma de varios díasEs un solo trabajo que se factura al concluir.",
+      "Elegir un sitio guardado"
+     ],
+     "textoFicha": "Trabajos › Trabajo de pruebas QA Cliente de pruebas QA · Abierto el 29 sept · Presupuesto #2 Cita: jue 12 nov, 09:00 TERMINADO Enviar para firmar + Añadir gasto ⋯ Lo que falta Este trabajo no tiene presupuesto aceptado Sin un importe de referencia no se puede saber cuánto falta por cobrar. Hacer presupuesto 6 albaranes sin firmar Ver albaranes Partes + Nuevo parte Nº FECHA ESTADO PT-2026-002 29 sept FIRMADO PT-2026-001 29 sept BORRADOR Albaranes + Nuevo albarán Nº FECHA ESTADO LÍNEAS ACCIÓN AB260001 29 sept EMITIDO Sin precios 0 Enviar para firmar AB260002 14 oct FIRMADO Sin precios 0 AB260003 16 oct BORRADOR Sin precios 0 EmitirEditar líneas AB260004 29 oct FIRMADO Sin precios 0 AB260005 29 oct EMITIDO Sin precios 0 Enviar para firmar AB260006 10 nov EMITIDO 4 Enviar para firmar AB260010 17 nov BORRADOR Sin precios 1 EmitirEditar líneas AB260011 17 nov BORRADOR Sin precios 1 EmitirEditar líneas CLIENTE Cliente de pruebas QA 📞 34629965893 💬 WhatsApp Nota del cliente Datos de prueba creados por scripts/qa/sembrar-qa.mjs (SCRUM-1268). PRESUPUESTO #2 · 29 sept RESPONSABLE PruebaQA El trabajo Tipo de trabajo Una obra o reforma de varios días Nombre y dirección Trabajo de pruebas QA Quién lo ejecuta Sin asignar Notas internas Solo tú las ves Gastos de este trabajo Sin gastos",
+     "euros": []
+    }
+   ],
+   "noGet": [
+    "POST /admin/entorno cortada"
+   ],
+   "errores": []
+  }
+ ]
+}
