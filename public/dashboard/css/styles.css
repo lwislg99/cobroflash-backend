@@ -6300,6 +6300,13 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
 .con-icono--telefono { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z'/%3E%3C/svg%3E"); }
 .con-icono--whatsapp { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/%3E%3C/svg%3E"); }
 /* S2: fin del bloque SCRUM-1762b */
+/* S2 · SCRUM-915c — «+ Nuevo presupuesto» en la fila del parte firmado (pestaña Partes de la ficha).
+   Al lado del pill de estado; a 390 (cards) baja debajo sin desbordar la tarjeta. */
+.parte-fila-presupuesto { margin-left: 8px; white-space: nowrap; }
+@media (max-width: 640px) {
+  .parte-fila-presupuesto { margin: 8px 0 0; }
+}
+/* S2: fin del bloque SCRUM-915c */
 
 /* ══ S4 · SCRUM-1762d · EL PARTE EN ESCRITORIO APROVECHA EL ANCHO + PASADA HALLMARK (20-nov-2026) ══
    Orden del fundador (20-nov): «el parte en escritorio tiene demasiado espacio por los lados».

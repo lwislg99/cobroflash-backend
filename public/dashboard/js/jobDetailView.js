@@ -1948,6 +1948,49 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // del inventario AB3. Ni componente ni token nuevos. El rótulo del estado es el canónico de la
   // casa para esas dos palabras (`jobDetAlbEstado`, SCRUM-14); un estado que no sea `borrador` o
   // `firmado` sale SIN pill en vez de con una palabra que nadie ha firmado (regla 39).
+  // ── SCRUM-915c · «+ Nuevo presupuesto» TAMBIÉN EN LA FILA DEL PARTE FIRMADO ──────────────────
+  //
+  // Orden del fundador (20-nov-2026): la puerta que 915b puso DENTRO del parte, «que apareciese
+  // también a fuera», en esta lista. Es LA MISMA puerta, no otra:
+  //   · LA PLANTILLA NO SE ARMA AQUÍ. La arma `window.partePlantillaDelPresupuesto` (parteDetailView,
+  //     S4), la misma función que ata el botón de dentro: una sola definición (canon 831). Si no está
+  //     cargada, no se pinta botón: mejor ninguno que uno que arme otra cosa.
+  //   · SÓLO EN LA FILA `firmado`: la lista ya trae el estado. Lo que la lista NO trae son los
+  //     candados ni las líneas, así que al pulsar se pide el parte (`GET /admin/partes/:id`) y decide
+  //     la función de S4 con lo mismo que decide dentro.
+  //   · Si la función dice que NO (facturado, sin líneas) o el parte no llega, cae a la plantilla de
+  //     la ficha (sólo `deTrabajo`, la de SCRUM-1190): el editor nace con este trabajo y su cliente,
+  //     sin líneas. Cero texto nuevo (regla 39). Firma: orquestador, c.21978, 20-nov ~16:15 ③.
+  //   · Técnico: no se ofrece (SCRUM-89, veta de las acciones de dinero de esta ficha).
+  // Rótulo: `+ ${L.quoteNew}`, el de 915b y el de SCRUM-1190. Lo fija `tests/scrum915c-…`.
+  // ⚠️ NO ENLAZA parte↔presupuesto: el presupuesto viaja con `job_id`, no con el parte del que nace.
+  const botonPresupuestoDelParte = (p) => {
+    if (isTecnico || !p || p.estado !== 'firmado') return null;
+    if (typeof window.partePlantillaDelPresupuesto !== 'function') return null;
+    const L = window.appLocale || {};
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn-secondary btn-sm job-toolbar-btn-44 parte-fila-presupuesto';
+    b.setAttribute('data-parte-fila-presupuesto', String(p.id));
+    b.textContent = `+ ${L.quoteNew || 'Nuevo presupuesto'}`;
+    b.addEventListener('click', async () => {
+      if (!window.renderAppView) return;
+      b.disabled = true;
+      let plantilla = null;
+      try {
+        plantilla = window.partePlantillaDelPresupuesto(await apiRequest('/admin/partes/' + p.id));
+      } catch (e) {
+        plantilla = null;
+      } finally {
+        b.disabled = false;
+      }
+      window.renderAppView('quotes-new', {
+        template: plantilla || { deTrabajo: { jobId: job.id, customerId: job.customer && job.customer.id != null ? job.customer.id : null } },
+      });
+    });
+    return b;
+  };
+
   if (!partesDelTrabajo.length) {
     partesSec.appendChild(parrafoVacioDeSeccion(ROTULOS_PARTES.vacio));
   } else {
@@ -1987,6 +2030,8 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
         pill.textContent = jobDetAlbEstado(p.estado);
         tdEstado.appendChild(pill);
       }
+      const puertaPresupuesto = botonPresupuestoDelParte(p);
+      if (puertaPresupuesto) tdEstado.appendChild(puertaPresupuesto);
       tr.appendChild(tdNumero);
       tr.appendChild(tdFecha);
       tr.appendChild(tdEstado);

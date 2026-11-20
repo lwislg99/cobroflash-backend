@@ -1312,3 +1312,59 @@ cambió de ancla) y las capturas (el guion sólo cambió dos teléfonos). El met
 navegador del CI no los he reproducido en local.
 
 A9: comprobación → `tests/scrum915b-presupuesto-desde-el-parte.test.mjs`
+
+---
+
+## §915c · «+ Nuevo presupuesto» también en la FILA del parte firmado (S2, 20-nov-2026)
+
+**Encargo:** orden del fundador vía orquestador (cobroflash-backend-25), 20-nov: la puerta que 915b puso
+DENTRO del parte, «que apareciese también a fuera», en la sección «Partes» de la ficha del trabajo.
+Rama `scrum-915c-boton-en-la-lista`.
+
+**① Medido (main 5d6114fb1).** La lógica de 915b vive en tres funciones PRIVADAS de
+`parteDetailView.js` (S4): `firmadoYSinFacturar`, `tieneTrabajo`, `lineasParaElPresupuesto`. Ninguna
+está en `window`. Reutilizarla sin tocar el fichero sólo se podía montando la vista del parte en un
+div oculto y simulando el clic: descartado (corta el listener de la cola del parte y borra el
+borrador del dictado). Duplicarla rompe el canon 831. → caso (b): PARÉ y lo propuse.
+
+**FIRMA (c.21978, 20-nov ~16:15), literal del orquestador:** «① el helper plantillaDelPresupuesto +
+window.partePlantillaDelPresupuesto se añade en parteDetailView POR S4 dentro de su rama abierta
+scrum-1762d (su fichero, ya en obra — así no hay conflicto); el snippet de S2 viaja literal. ② S2
+construye y EMPUJA HOY su lado en jobDetailView CON el fallback defensivo: sin
+window.partePlantillaDelPresupuesto no se pinta botón (si el helper no llega hoy, el botón despierta
+solo mañana al mergear S4). ③ Fallback con plantilla null (facturado/sin líneas): SÍ a tu propuesta —
+cae a la plantilla de la ficha (solo deTrabajo, L2021), cero texto nuevo. ④ Duda 2: botón SOLO con
+estado 'firmado'.»
+
+**Lo hecho (sólo `jobDetailView.js`, `styles.css` bloque S2 al final):**
+- En la fila con `estado === 'firmado'` (lo que la lista ya trae), en la celda del estado, un
+  `btn-secondary btn-sm job-toolbar-btn-44` con `+ ${L.quoteNew}` (el literal de 915b y 1190: CERO
+  texto nuevo) y gancho `data-parte-fila-presupuesto="<id>"`.
+- Al pulsar: `GET /admin/partes/:id` → `window.partePlantillaDelPresupuesto(parte)` (de S4) →
+  `quotes-new` con esa plantilla. Si devuelve null o el GET falla → plantilla de la ficha (sólo
+  `deTrabajo`). Sin la función → no hay botón. Técnico → no hay botón (SCRUM-89, veta de dinero).
+- **Declarado:** el fallo del GET también cae a la plantilla de la ficha (sin líneas); la firma ③
+  cubría el null, el fallo de red lo he tratado igual para no inventar un aviso.
+
+**③ LO QUE NO ES DE HOY:** el ENLACE visible parte↔presupuesto. El presupuesto nace con `job_id` pero
+NO guarda de qué parte salió; enlazarlo pide un dato nuevo (posible columna → proceso A5). Ticket
+aparte (mañana).
+
+**④ Tests (rojo primero).** `tests/scrum915c-presupuesto-desde-la-lista-de-partes.test.mjs`, 7 casos:
+contra el `jobDetailView.js` de main, 3 rojos (fila firmada, null→ficha, GET falla→ficha) y 3 verdes
+que son los negativos (borrador, sin función, técnico); con el cambio, 6 verdes + 1 SALTADO con
+motivo declarado (integración con la función REAL de S4: despierta sola cuando 1762d llegue a main).
+Mutaciones 4/4 cazadas: quitar la condición de `firmado`, quitar el fallback sin función, quitar la
+veta de técnico, ignorar la plantilla de S4. Vecinos: `scrum1694`, `scrum915b`, `scrum1190b` en verde.
+Ninguna exigencia existente cambia. Subconjunto de guards del front (213 ficheros): 1483 ok, 4 rojos
+AJENOS (SCRUM-461 ×2 y SCRUM-733 ×2: el cliente Prisma generado de este worktree contra el esquema; no
+toco esquema).
+
+**Capturas** (`node scripts/capturas-presupuesto-desde-la-lista-de-partes.mjs`, antes = merge-base
+5d6114fb1): `docs/master/evidencias/SCRUM-915c/ficha-partes-{antes,despues}-{390,1280}.png`. Medido:
+antes 0 botones; después 1, en la fila firmada (22), 156×44 a 390 y a 1280, desborda 0. ⚠️ La foto
+del «después» lleva un DOBLE de `window.partePlantillaDelPresupuesto` (aún no está en main).
+
+**Pendiente:** verificación en yaqu.app cuando entren 915c y el helper de S4 (1762d).
+
+A9: comprobación → `tests/scrum915c-presupuesto-desde-la-lista-de-partes.test.mjs`
