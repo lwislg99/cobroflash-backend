@@ -271,3 +271,25 @@ Hasta entonces la ruta NO existe en la app y el botón de S2 no tiene a qué lla
 `tests/scrum1780c-factura-desde-parte.test.mjs`, 11 casos, sobre `_banco-emision-con-estado.mjs` (`emitInvoice` de `dist/` de verdad; la tabla `parteTrabajo` la pone el test, porque el banco es de S3). El handler va montado en un **router de prueba** con el mismo `requireRole('admin')`: el test sigue verde con la ruta sin montar (A10, SCRUM-1344). Casos: caso feliz (F1, líneas tal cual con el IVA en fracción, total 118,25, 0 Charge, `C7-parte` en la auditoría, parte `facturado` con su `invoiceId`), comercio B → 404, borrador → 409, sin precio / sin IVA → 409, sin cliente (nulo o de otro comercio) → 409, doble secuencial y simultánea → 409 con UNA factura y el contador +1, firmado con factura ya enlazada → 409 (lo para el WHERE), flag OFF → 409 con el parte intacto, técnico → 403, trabajo con presupuesto facturado → se factura.
 Sonda de una vez (sin guion en git, por eso no cuenta como mutación): con la comprobación `reclamado.count !== 1` desactivada en `dist/`, caen la simultánea y la de factura ya enlazada (9/11); `dist/` restaurado y comparado con `cmp`.
 **No medido:** la carrera contra Postgres de verdad (el banco no aísla ni deshace; aquí no hay base desechable); ninguna pantalla; la suite entera.
+
+## SCRUM-1780d · Relevo de 1780c: 523d recongelado sin subir la versión y los otros cuatro rojos (sesión jv-j1ge, J1)
+
+**Medido contra:** `origin/main` = `fea1c00078654d8d617af055de94f2b627df07ce` · 2026-11-20T18:35:25Z (cabecera `Date:` de `gh api -i zen`)
+A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
+
+Mi fallo: al fechar las dos citas movidas puse en la nota un término entre acentos graves, y el guard lo tomó como testigo de la coordenada; lo cazó él mismo en la dirigida y quité el término. Y la primera versión de esta línea `A9:` llevaba la explicación detrás de la ruta: la tumbó `guards:entrada` (scrum1294).
+
+Relevo de `jv-j1gd` desde su commit local `323390f35598bc0623f267aa37d7edf63080f57f` (no estaba en el remoto). El `merge --ff-only` del encargo no podía avanzar: mi rama nacía en `fea1c000` (main), que no es antecesor de `323390f35`; monté la rama en `323390f35` y le hice `git merge origin/main` (sin conflictos). Decisiones que aplico, leídas en Jira: SCRUM-1780 c.22249 (orquestador J, 18:32Z): NO se sube `VERIFACTU_VERSION`; se recongela `invoiceNumber.service.ts` por el matiz SCRUM-1585 c.21290, con el GO de regla 40 de c.22237.
+
+| rojo (mensaje literal, abreviado) | arreglo |
+|---|---|
+| scrum523d «Has cambiado el camino de emisión sin subir VERIFACTU_VERSION … `invoiceNumber.service.ts` — cambia» | recongelada SOLO esa huella (`65ff392f155d005b` → `703674abecd33799`, la que imprimió el mensaje), con la cita «SCRUM-1780 c.22237 por SCRUM-1585 c.21290» en su línea y en el comentario de `HUELLAS_CONGELADAS`. `VERSION_CONGELADA` sigue en `1.0.0`; las otras 14 huellas, idénticas a las recalculadas. Diff del fichero frente a main: solo `'C7-parte'` en `OrigenC7` y `ORIGENES_C7` |
+| scrum347 «el tipo declara 5 orígenes y emitInvoice tiene 4 llamadores medidos» | declarado el 5.º llamador (`facturaDesdeParte.ts`, `C7-parte`) en el suelo y en el mínimo del censo, con su ticket. El censo sigue derivado del AST y la prueba «cada camino usa un origen distinto» sigue igual |
+| scrum1185 «Hay piezas NUEVAS que nada consume … `facturaDesdeParte.ts::facturarParte`» | declarada en `scripts/_sin-consumir-declarados.json` (carril J1, SCRUM-1780): la monta S1 en `partes.routes.ts` |
+| scrum222 «docs/sql/deriva-prod.sql no coincide con el schema actual» | regenerado con `node scripts/generar-sql-deriva.mjs` (540 columnas) |
+| scrum525d «2 ancla(s) RESUELVEN pero apuntan a otra cosa» (`AUDITORIA_CAMINO_EMISION.md:35` y `:40`) | `invoiceNumber.service.ts:335→336` y `schema.prisma:1882→1887`, en sitio y con la nota fechada «cita puesta al día el 20-nov-2026, SCRUM-1780c» |
+
+`scrum1294` (transitorio según j1gd): verde en la dirigida. `censo:mudez --escribir`: 1 ficha re-medida (scrum347), sigue VIVO.
+
+**Verificado:** `prisma generate` en mi `node_modules` propio y guard del cliente ✔; `tsc -p .` con tipos, salida 0; dirigida de 40 ficheros (los cinco, `scrum1780c-*`, 1027/289b/346/207/emission, albarán, 836, 700, 710b, 719, 1294, 267, 273, 854, 391, 475, 1310b, 1610d, 290, 1740, 1673, 841, 257, 606): 422 casos, 414 pasan, 7 saltados (gateados), 1 caía (525d, el de la línea A9) y tras el arreglo 8/8. La suite entera y `guards:entrada`, en el comentario de entrega de Jira.
+**No medido:** ninguna base (no toqué ninguna); la carrera contra Postgres de verdad; ninguna pantalla. La ruta sigue sin montar: las tres líneas de `partes.routes.ts` son de S1.

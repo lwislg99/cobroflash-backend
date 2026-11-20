@@ -74,6 +74,10 @@ const ANCLAS = [PRODUCTOR, 'src/modules/fiscal/verifactu/registro.builder.ts', S
  * entregada (medido el 13-nov-2026: 0 textos de declaración en `src/` y `public/`).
  * La de `verifactu.service.ts` se recongeló otra vez en ese PR (SCRUM-1129 c.21829, autorización de
  * Javier): el campo con nombre `merchantCriterioCaja` que pide scrum878, sin cambiar lo que se escribe.
+ * Y `invoiceNumber.service.ts` otra vez (SCRUM-1780 c.22237 por SCRUM-1585 c.21290): un valor nuevo,
+ * `'C7-parte'`, en `OrigenC7`/`ORIGENES_C7` (factura desde el parte firmado, GO de regla 40 en
+ * c.22237); no cambia cómo se crea ni se remite un registro. Decisión del orquestador J en
+ * SCRUM-1780 c.22249, sin subir la versión; pegado lo que imprimió el mensaje de error.
  */
 const VERSION_CONGELADA = '1.0.0';
 const HUELLAS_CONGELADAS = Object.freeze({
@@ -87,7 +91,7 @@ const HUELLAS_CONGELADAS = Object.freeze({
   'src/modules/invoicing/domain/emisorCongelado.ts': 'f82c1d146a9e5c15',
   'src/modules/invoicing/domain/emission.service.ts': 'fb326e3f1fb6f79f',
   'src/modules/invoicing/domain/encolarRemision.ts': '9250c4d15ce607c2',
-  'src/modules/invoicing/domain/invoiceNumber.service.ts': '65ff392f155d005b',
+  'src/modules/invoicing/domain/invoiceNumber.service.ts': '703674abecd33799', // recongelada: SCRUM-1780 c.22237 por SCRUM-1585 c.21290 (origen 'C7-parte'; decisión del orquestador J, SCRUM-1780 c.22249)
   'src/modules/invoicing/domain/selladoEstado.ts': 'f08728ab84b81ba2',
   'src/modules/invoicing/domain/tipoDocumento.ts': '09a9e00aeb1068de',
   'src/modules/invoicing/domain/vat.service.ts': '91d10ea9159cdc0c',
