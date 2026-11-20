@@ -1,5 +1,6 @@
 ---
 paths:
+  - "scripts/capturas-presupuesto-desde-la-lista-de-partes.mjs"
   - "scripts/guard-965-un-solo-presupuesto.mjs"
   - "public/dashboard/js/quoteRevisiones.js"
   - "public/dashboard/css/styles.css"
