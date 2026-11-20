@@ -81,7 +81,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // MA · la guarda del punto de llamada no decide (la de dentro del cerrojo sigue puesta).
     fichero: 'src/lib/invoicing.ts',
-    de: '    if (inv.vfEstado !== SELLADO_HECHO) {',
+    // SCRUM-1779d · ancla re-copiada: la guarda ahora deja fuera también la `no_aplica` (c.22245 ①).
+    de: '    if (inv.vfEstado !== SELLADO_HECHO && inv.vfEstado !== SELLADO_NO_APLICA) {',
     a: '    if (true as boolean) {',
     cae: 'SCRUM-1330 · 🔴 A · con la fila ya `sellado`, `ensurePdfAndEvent` NO entra en `sellarTrasEmision`',
   },

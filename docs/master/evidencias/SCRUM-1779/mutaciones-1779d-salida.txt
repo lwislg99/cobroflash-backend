@@ -1,0 +1,9 @@
+=== scrum1779d-factura-sin-verifactu.test.mjs · declaradas: 5
+BASE: pasan 4 · caen 0 · saltados 0
+1. src/modules/invoicing/domain/selladoEstado.ts · «  if (false) {» → TUMBA {"ok":true,"colaterales":2}
+2. src/modules/invoicing/domain/selladoEstado.ts · «sifEncendido = isFlagEnabled('SIF_ENABLED', { merchant });» → TUMBA {"ok":true,"colaterales":0}
+3. src/modules/invoicing/domain/portonDocumento.ts · «&& inv.vfEstado === 'nunca') return '';» → TUMBA {"ok":true,"colaterales":1}
+4. src/modules/invoicing/domain/portonDocumento.ts · «  if (false) return true;» → TUMBA {"ok":true,"colaterales":2}
+5. src/lib/invoicing.ts · «if (inv.vfEstado !== SELLADO_HECHO) {» → TUMBA {"ok":true,"colaterales":0}
+CONTROL-ciego → CIEGO (bien)
+RESUMEN: 5/5 tumban

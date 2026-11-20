@@ -1,0 +1,55 @@
+Comercio: id=5304 email=lugo@ejemplo.invalid country=ES taxId=B27000001 flags={"INVOICING_ES_ENABLED":true} llevaLibrosPorSii=false · env SIF_ENABLED=(sin definir)
+Líneas F1: [{"concept":"Arreglo de una fuga","qty":1,"price":36.03,"tax":0.21},{"concept":"Material de fontanería","qty":3,"price":12.35,"tax":0.1}] → calcVatBreakdown total 84.36
+FALLO F1 sellada: sello=no_aplica vfEstado=no_aplica
+FALLO R1 sellada: 2026-CF-R-001 sello=no_aplica vfEstado=no_aplica
+
+═══ PDF F1 · comercio NO-demo: F260001 (F1) · status=pending · vfEstado=no_aplica · total=84.36 · huella=no
+  qrData guardado: INV:F260001|AMOUNT:84.36|CUR:EUR
+  merchant: id=5304 email=lugo@ejemplo.invalid · isDemoMerchant=false · getEmissionMode=fiscal
+  PDF: 5304-F260001.pdf (2491 B, en <tmp>/storage/invoices)
+  texto leído con lineasDePdf: 18 líneas
+  menciones (0 líneas):
+  imágenes en el PDF: 0 →  · operadores «/I… Do» en contenido: 0
+  QR: píxeles de una imagen del PDF == QRCode.toBuffer(qrData) (200x200): false · control negativo (QR de otra URL) coincide: false
+
+═══ PDF R1 · comercio NO-demo: 2026-CF-R-001 (R1) · status=paid · vfEstado=no_aplica · total=-84.35 · huella=no
+  qrData guardado: INV:2026-CF-R-001|AMOUNT:-84.35|CUR:EUR
+  merchant: id=5304 email=lugo@ejemplo.invalid · isDemoMerchant=false · getEmissionMode=fiscal
+  PDF: 5304-2026-CF-R-001.pdf (2564 B, en <tmp>/storage/invoices)
+  texto leído con lineasDePdf: 19 líneas
+  menciones (2 líneas):
+    L01 [rectificativa / artículo] «FACTURA RECTIFICATIVA»
+    L04 [rectificativa / artículo] «Rectifica a la factura Nº F260001»
+  imágenes en el PDF: 0 →  · operadores «/I… Do» en contenido: 0
+  QR: píxeles de una imagen del PDF == QRCode.toBuffer(qrData) (200x200): false · control negativo (QR de otra URL) coincide: false
+
+═══ CONTROLES DEL BARRIDO
+OK   F1 · positivo sembrado: el NIF fabricado «B27000001» aparece 1 vez/veces
+OK   F1 · cero: «Z9Z9Z9Z9Q» aparece 0 veces
+OK   F1 · «DEMO» en el comercio no-demo: 0 veces
+FALLO F1 · el QR dibujado es el de qrData y no el de otra URL
+OK   R1 · positivo sembrado: el NIF fabricado «B27000001» aparece 1 vez/veces
+OK   R1 · cero: «Z9Z9Z9Z9Q» aparece 0 veces
+OK   R1 · «DEMO» en el comercio no-demo: 0 veces
+FALLO R1 · el QR dibujado es el de qrData y no el de otra URL
+
+═══ CONTROL DEMO · misma fila F1; merchant.email = demo@yaqu.app (id sigue 5304)
+
+═══ PDF F1 · comercio DEMO (control): F260001 (F1) · status=pending · vfEstado=no_aplica · total=84.36 · huella=no
+  qrData guardado: INV:F260001|AMOUNT:84.36|CUR:EUR
+  merchant: id=5304 email=demo@yaqu.app · isDemoMerchant=true · getEmissionMode=demo
+  PDF: 5304-F260001.pdf (2804 B, en <tmp>/storage/invoices)
+  texto leído con lineasDePdf: 20 líneas
+  menciones (2 líneas):
+    L19 [DEMO] «DEMO — no válida »
+    L20 [fiscal] «fiscalmente»
+  imágenes en el PDF: 0 →  · operadores «/I… Do» en contenido: 0
+  QR: píxeles de una imagen del PDF == QRCode.toBuffer(qrData) (200x200): false · control negativo (QR de otra URL) coincide: false
+OK   control demo: «DEMO» aparece 1 vez/veces; literal DEMO_WATERMARK 1 (si 0 en ambos el extractor estaría CIEGO a la marca)
+  líneas que están en el control y no en el no-demo: ["DEMO — no válida ","fiscalmente"]
+
+AVISOS del dist (0): (ninguno)
+ajenas: (ninguna)
+ficheros de texto escritos: {"pdf-F1-texto.txt":18,"pdf-R1-texto.txt":19,"pdf-demo-control-texto.txt":20}
+
+RESULTADO: 4 comprobación(es) en FALLO

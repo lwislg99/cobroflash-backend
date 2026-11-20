@@ -176,6 +176,23 @@ export const CAMBIOS_AUTORIZADOS = [
       a: 'deb02178fdb8d0346d7127db2f89c6e663a41c9725f7ec1b063c3060f51343a8',
     },
   },
+  {
+    // SCRUM-1779d · una factura que la emisión dejó sin sello (`SIF_ENABLED` en OFF) no dibuja QR:
+    // `qrData` vacío → sin imagen. SCRUM-1779 c.22239 por SCRUM-1585 c.21290 (decisión de
+    // autorizar: SCRUM-1779 c.22253). Huellas de `evidencias/SCRUM-1446d/huellas.mjs` sobre
+    // origin/main fea1c00078654d8d617af055de94f2b627df07ce.
+    firma: 'SCRUM-1779 c.22239',
+    registro: 'docs/master/SCRUM-1779.md',
+    cita: '«no linkado a verifactu»',
+    cuerpo: {
+      de: '7cbda25fd230c4f65873e4549c1a93ba0f98ee3b212cad922a0abcf12b7855e5',
+      a: '4daa145e0323e604a3c1a6e591204303466c4546e4b0dee47329a233ba0378d6',
+    },
+    ambito: {
+      de: 'deb02178fdb8d0346d7127db2f89c6e663a41c9725f7ec1b063c3060f51343a8',
+      a: '300a3fb3f0a1af3481188846a89e457e8cf4d4b75f71bfcbd9b0e5a1c7ca4b23',
+    },
+  },
 ];
 
 /**

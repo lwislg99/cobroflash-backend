@@ -90,3 +90,56 @@ Controles: el buzón dry-run de `whatsapp.ts` coincide con la captura; con el cl
 - `AUTO_*_ON_PAID` en Railway.
 - Las plantillas tal como están en Meta.
 - Ninguna base real.
+
+## SCRUM-1779d · 20-nov: con `SIF_ENABLED` en OFF la factura se emite sin VeriFactu (J1, código del camino de emisión con GO)
+
+**Medido contra:** `origin/main` = `fea1c00078654d8d617af055de94f2b627df07ce` · 2026-11-20T18:58:22Z (cabecera `Date:` de `gh api -i zen`; construido por `jv-j1gb` y `jv-j1gc`, cerrado por `jv-j1gf`, por encargo del orquestador `cobroflash-backend-c7`)
+
+A9: comprobación → `tests/scrum836-ancla-de-mutacion-viva.test.mjs`
+Mutaciones: catálogo → tests/scrum1779d-factura-sin-verifactu.test.mjs
+Mutaciones: catálogo → tests/scrum1330-una-sellada-no-se-resella.test.mjs
+
+(El A9: el cambio de `src/lib/invoicing.ts:243` dejó caducada el ancla de la mutación MA de `scrum1330`, y nadie lo vio hasta que la cazó `scrum836` en la dirigida; ancla re-copiada y la MA vuelve a tumbar.)
+
+**GO (regla 40):** SCRUM-1779 c.22239, literal de Javier: «Osea dejalo encendido, pero como lo que teniamos hecho de igual de presupuestos, no linkado a verifactu». Decisiones: c.22245 (① lo emitido sin sello se queda sin sello; ② el demo tampoco sella), c.22246 (caso G de 1404g, opción A), c.22253 (no se sube `VERIFACTU_VERSION`: se recongela y se autoriza el PDF, por SCRUM-1585 c.21290).
+
+### Los cortes (fichero:línea)
+
+- `src/modules/invoicing/domain/selladoEstado.ts:147-162` · `sellarTrasEmision` lee `SIF_ENABLED` del comercio EN LA BASE y, en OFF, deja la factura `no_aplica`: sin huella, sin QR y sin alta en `VfSubmission`. Si no puede leer el flag, `pendiente_de_sellado` (fail-closed). Con ON, como antes. `verifactu.service.ts`, `registro.builder.ts`, `productor.ts`, `sif.*` e `instalacion.ts` no se tocan (523d no los nombra).
+- `src/modules/invoicing/domain/portonDocumento.ts:105` · el portón deja salir el PDF de una `no_aplica` sin huella; `:114-121` `qrDelDocumento` le quita el QR (ni el de la AEAT ni el casero).
+- `src/lib/invoicing.ts:243` · ① la segunda entrega del cobro NO sella después una `no_aplica`; `:136` y `:299` pasan el QR por `qrDelDocumento`.
+- `src/modules/invoicing/infra/pdf/pdf.service.ts:416` · `qrData` vacío → no se dibuja QR. No hay texto nuevo: las leyendas VeriFactu ya dependían sólo de la huella.
+
+### Bancos que pasaron a `SIF_ENABLED` ON (afirman el sellado en sí)
+
+| test | por qué |
+|---|---|
+| `tests/scrum1054-suplido-al-sellar-defecto-declarado.test.mjs` | mide el sellado |
+| `tests/scrum1296-emitir-encola.test.mjs` | mide el encolado tras sellar |
+| `tests/scrum1304-un-cobro-una-factura.test.mjs` | mide la huella de un cobro |
+| `tests/scrum1330-una-sellada-no-se-resella.test.mjs` | mide el no-resellado |
+| `tests/scrum1333-una-factura-se-encola-una-vez.test.mjs` | mide la cola |
+| `tests/scrum1333-carrera-del-encolado-postgres.test.mjs` | ídem contra Postgres (SKIP sin `LIBRO_PG_URL`) |
+| `tests/scrum1404g-el-409-del-pendiente-de-sellado.test.mjs` | mide el portón; caso G reanclado a c.22246 |
+| `tests/scrum1510b-pendiente-que-el-porton-dejaria-pasar.test.mjs` | mide el pendiente de sellado |
+
+### Recongelación y autorización (regla 41: por su mecanismo, sin relajar nada)
+
+- `tests/scrum523d-version-del-sif.test.mjs` · el guard nombró SOLO `selladoEstado.ts` como cambiado; huella `ac1bda6897b46219` pegada de su mensaje, con la cita «SCRUM-1779 c.22239 por SCRUM-1585 c.21290». `VERIFACTU_VERSION` sigue en 1.0.0.
+- `tests/_cambios-autorizados-de-la-factura.mjs` · par de huellas (cuerpo y ámbito de `generateInvoicePdf`) generado con `docs/master/evidencias/SCRUM-1446d/huellas.mjs` sobre `fea1c000`; firma `SCRUM-1779 c.22239`, cita «no linkado a verifactu».
+
+### Lo que recibe el cliente con SIF OFF
+
+PDF fabricado con el `dist/` de esta rama por `evidencias/SCRUM-1779/pdf-banco.mjs` (el banco de 1779a): `evidencias/SCRUM-1779/1779d-pdf-F1-texto.txt`, `1779d-pdf-R1-texto.txt` y `1779d-pdf-demo-control-texto.txt`. 0 líneas con «VeriFactu», «AEAT», «Huella» o «QR» en los tres (control: 4 en el `pdf-F1-texto.txt` de 1779a) y sin imagen de QR. El banco sale con 4 FALLO: son sus comprobaciones de «F1/R1 sellada» y «el QR dibujado», que es justo lo que este tramo quita (`1779d-pdf-banco-salida.txt`).
+
+### Medido
+
+- `tsc -p .` (con tipos): salida 0.
+- Dirigida (31 ficheros: 523d, 603b, 1779d, los 8 bancos, 1771c, 624y/624e, 604, 623, 1763, 1051g, 1027, 289b, 346, 207, 836, 700, 710b, 1446d, 525d, 1344): ver la entrega en Jira con el recuento final.
+- Mutaciones con `aplicarUna` (driver `evidencias/SCRUM-1779/mutaciones-1779d.mjs`): 1779d 5/5 tumban («sella aunque SIF esté OFF», «encola sin sello», «pinta el QR sin sello», el portón, ① «sella después»); 1330 5/5. Control sembrado (un `cae` que no existe) sale CIEGO en los dos.
+
+### Sin medir
+
+- La suite entera por tramos: no cupo en el contexto de la sesión; la corre el obligatorio de CI (orden del orquestador).
+- Postgres (no hay ninguno en la máquina), los handlers HTTP de C1–C4 y de la R1.
+- **Para Luis (S1, exportaciones):** qué hacen el XML y el ZIP de VeriFactu con una factura emitida sin huella.
