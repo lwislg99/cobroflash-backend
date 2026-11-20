@@ -1,0 +1,46 @@
+SCRUM-1779a · punto 6 — lo que FALTA para que esas facturas fuesen un registro VeriFactu remitido
+Fuente: `git show origin/main:docs/legal/AUDITORIA_CAMINO_EMISION.md` (origin/main = 7f5ea0138), leída el 20-nov-2026.
+Cruce propio: `git grep` por nombre en `src/` de origin/main (población: src/ entero, 7f5ea0138).
+Sin valoraciones. «Auditoría §N» = sección de ese documento.
+
+EXISTEN (auditoría §1, eslabones 1-7): puerta de emisión, modo de documento, numeración, huella encadenada,
+sellado al emitir, QR de cotejo, XML del registro con el sobre oficial (su destino es una DESCARGA, eslabón 7).
+Lo medido en vias-banco.mjs/pdf-banco.mjs (esta carpeta) coincide: F1/R1 selladas con huella y QR, y
+`vfSubmission` con 6 filas en `pending` (vias-salida.txt:32).
+
+NO CONSTRUIDOS O NO EJECUTADOS:
+
+E8 · Cola de remisión (auditoría §1 fila 8, §4 «Cola VfSubmission», §6 punto 4)
+     La tabla existe y la emisión la llena (`encolarRemision.ts:61`, desde `selladoEstado.ts:173`).
+     Ningún proceso la vacía: ni cron, ni ruta, ni arranque. No se encola ninguna anulación.
+     Cruce 20-nov: `procesarObligado` — 1 definición (`src/modules/fiscal/verifactu/sif.procesador.ts:70`),
+     0 llamadas en src/. Ejecutado en el banco con SIF_ENABLED OFF → {"hecho":"pausada"} (vias-salida.txt:41).
+
+E9 · Envío telemático a la AEAT (auditoría §1 fila 9, §6 punto 5)
+     NO EXISTE como envío. Hay pieza sin llamante: `sif.client.ts` (SOAP, mTLS que le llega de fuera).
+     Cruce 20-nov: `enviarSobre` — 1 definición (`src/modules/fiscal/verifactu/sif.client.ts:355`), 0 llamadas en src/.
+     Control de flujo (reintentos/ritmo, `sif.cola.ts`): el código existe y nada lo ejecuta (auditoría §4).
+
+Carril de representación (auditoría §2; §6 decisión 1)
+     Ni colaborador social ni certificado del merchant: no hay lectura de certificado, ni mTLS configurado,
+     ni campo «en nombre propio / de otro». Decisión pendiente del fundador con su asesor
+     (`docs/legal/PREGUNTAS_ASESOR.md` punto 1); sin ella no se construye S1-D.
+
+Lectura de la respuesta de la AEAT (auditoría §6 punto 6)
+     No existe: no llega respuesta. La clasificación `SEMAFORO_CALIBRACION.md` es documentación («Cero código»).
+
+Subsanacion / RechazoPrevio / SinRegistroPrevio (auditoría §4 y §6 punto 7)
+     NO MEDIDO en la auditoría. No medido aquí.
+
+Visibilidad del modo («se guarda» / «se envía») para el profesional (auditoría §6 punto 8; máster A8)
+     Pendiente según la auditoría. No medido aquí.
+
+Decisiones abiertas que la auditoría lista (§6, puntos 1-3)
+     1 · carril de representación · 2 · microcopy fiscal con marcador `PENDIENTE_ASESOR`
+     (`public/dashboard/js/semaforoFiscal.js:37`) · 3 · cuándo se encienden `INVOICING_ES_ENABLED` y
+     `SIF_ENABLED` (`src/core/flags.ts:16-17`, por defecto false).
+
+NO MEDIDO (auditoría «Qué queda NO MEDIDO» y este cruce):
+  · valor de las banderas en Railway (producción/staging); ninguna base de datos (filas de VfSubmission reales).
+  · la auditoría está fechada el 19-ago-2026 con correcciones hasta el 13-oct-2026; desde entonces sólo se
+    re-midieron aquí las llamadas a `procesarObligado` y `enviarSobre` (por nombre, `git grep`, no AST).
