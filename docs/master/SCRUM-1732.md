@@ -136,7 +136,6 @@ Aplica el ✅ del fundador de **c.22165** («OK» a la pregunta de jv-j4bs en c.
 | ③ `BIZUM_MANUAL_ENABLED` efectivo | OFF | **ON** | `isFlagEnabled` de `dist/core/flags.js` sobre la fila leída |
 | ④ `whatsappPhone` del comercio | presente (`…001`, 11 caracteres; enmascarado) | **`NULL`** (vaciado el 2.º paso, c.22176) | SELECT de la fila y `GET /admin/merchant` (`vacío`) |
 | `bizumPhone` del comercio | presente | presente (no se tocó: el Bizum se sigue ofreciendo, `bizumPhone \|\| whatsappPhone`) | `GET /admin/merchant` |
-| `whatsappPhone` del comercio | presente | presente (**no se tocó**) | `GET /admin/merchant` |
 | cliente 49 | teléfono y correo | igual (no se tocó) | `GET /admin/customers` |
 
 Evidencias (sin secretos, sin teléfonos: solo «presente/vacío»): `evidencias/SCRUM-1732/1732f-antes.json` y
@@ -171,10 +170,6 @@ Evidencias (sin secretos, sin teléfonos: solo «presente/vacío»): `evidencias
 ### 3 · Lo que NO está hecho o no está medido
 
 - ✅ **Cerrado por ④ (c.22176).** Lo que decía este punto antes del vaciado, para que se lea la cicatriz: **el WhatsApp al PROFESIONAL seguía siendo una vía viva.** `psp.routes.ts:383` llama a `notifyMerchantPaid` sin
-
-### 3 · Lo que NO está hecho o no está medido
-
-- 🔴 **El WhatsApp al PROFESIONAL sigue siendo una vía viva.** `psp.routes.ts:383` llama a `notifyMerchantPaid` sin
   condición propia, y `notifyMerchantAlert` solo se para si `whatsappPhone` está vacío (`whatsappNotifications.ts`), y en el comercio 2 está presente.
   No lo quité: no está en la lista ①②③ de c.22165 (aunque su pregunta decía «sin aviso al profesional»), y la ruta
   del panel no deja vaciarlo (`whatsappPhone: z.string().min(6).max(20).optional()`, `schemas.ts:468`): haría falta otro UPDATE
@@ -183,10 +178,6 @@ Evidencias (sin secretos, sin teléfonos: solo «presente/vacío»): `evidencias
   le llega nada: ni confirmación (`tieneNumeroDeContacto`) ni reseña.
 - Hallazgo de paso (J2, sin arreglar porque el encargo no toca `src/`): `GET /admin/me` (`app.ts:484`, `:495`) y
   `GET /admin/connect/status` (`connect.routes.ts:23`) — ya con ticket propio, SCRUM-1774 — calculan `BIZUM_MANUAL_ENABLED` con un `merchant` **sin `flags`**,
-  Hasta que se decida, **un confirm-bizum en la QA puede mandar un WA al número del profesional.** Al cliente 3936 no
-  le llega nada: ni confirmación (`tieneNumeroDeContacto`) ni reseña.
-- Hallazgo de paso (J2, sin arreglar porque el encargo no toca `src/`): `GET /admin/me` (`app.ts:484`, `:495`) y
-  `GET /admin/connect/status` (`connect.routes.ts:23`) calculan `BIZUM_MANUAL_ENABLED` con un `merchant` **sin `flags`**,
   así que no ven el override por comercio: con ③ aplicado, el panel puede decir que el Bizum está apagado. `confirm-bizum`
   (`chargesAdmin.routes.ts:74`) sí carga `flags`, y es la puerta que usa CIERRES. Leído en el código, no visto en pantalla.
 - Ninguna factura, cobro ni envío: la F1 nueva con cobro parcial, el libro con `cobros[]` y el 303 por tramos son de CIERRES 14.
@@ -232,5 +223,28 @@ Solo documentos. Ni código, ni esquema, ni el camino de emisión. No es respues
   - O3: mixta.
 - La recomendación de la sesión es O1 hasta que conteste el asesor.
 - ⚠️ Sin juzgar: F1 total 84,36 (cuota 11,28) y su R1 −84,35 (cuota −11,27). Le falta un céntimo para anularla entera.
+
+No se cierra ni se transiciona (A13).
+
+## J2 · SCRUM-1732g · el tramo 1732f, una sola vez: fuera las 9 líneas que coló el merge de c295f190f
+
+**Medido contra:** `origin/main` = `0142551fba28455a7b56bc21807c9b63a3bdaaf5` · 2026-11-20T16:17:31Z (hora de GitHub; sesión J2 `jv-j2dg`, por encargo del orquestador `cobroflash-backend-c7`)
+
+A9: sin fallo que generalice — el defecto no es de esta sesión (lo dejó el merge `c295f190f` de 1732f) y su lección ya está en A4 («Un merge SIN conflictos no es un merge correcto»); lo que lo impediría es un guard que compare cada registro con la última versión de su autor, y no existe: aquí se dice, no se finge
+
+- **Qué había.** El merge `c295f190f` metió en el tramo 1732f, sin conflicto, la versión ANTERIOR a ④ (`46af2e504`) dentro de la
+  posterior (`f0a144571`, del mismo autor): una fila de tabla («`whatsappPhone` … **no se tocó**», contra la fila ④ que dice `NULL`)
+  y 8 líneas de la sección 3 (su título otra vez y el punto 🔴 de antes del vaciado, contra el ✅ de c.22176). Positivo: `uniq -c`
+  de los títulos daba 2 para «### 3 · Lo que NO está hecho o no está medido».
+- **Qué se hizo.** Quitar esas 9 líneas y nada más. El tramo 1732f queda igual que en `f0a144571`, salvo la línea `A9:` que
+  corrigió `558c1e478` (se queda la corregida). El tramo 1732e (J5) es idéntico al de `f8e6ab9b9`. El de CIERRES 14 no ha entrado.
+- ⚠️ **No es la unión, y lo digo.** De las 9 líneas quitadas, 5 siguen en el fichero (dos en blanco, el título, «le llega nada…» y
+  la primera del hallazgo de paso). Las otras 4 solo existen en `46af2e504`: son la redacción de antes de ④, que su autor
+  reescribió en `f0a144571`. Su contenido no se pierde: el propio ✅ lo cita («Lo que decía este punto antes del vaciado…»).
+  Conservarlas pondría otra vez «sigue siendo una vía viva» y «no se tocó» al lado de lo que ④ cerró. Si se prefiere la unión
+  literal, es devolver esas 4 líneas, y lo decide el orquestador.
+- **Citas por línea** a este fichero desde `docs/`, `tests/`, `scripts/` y `.github/`: 0 antes y 0 después. No se movió ninguna.
+- Evidencia: `docs/master/evidencias/SCRUM-1732/1732g-dedupe.txt` (antes y después, sha256, recuentos) y su guion
+  `1732g-comprobar.mjs`: una línea quitada que no esté en ninguna parte sale 1, y cero quitadas sale 2 (CIEGO; control corrido).
 
 No se cierra ni se transiciona (A13).

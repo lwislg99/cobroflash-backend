@@ -1,0 +1,21 @@
+SCRUM-1732g · deduplicación de docs/master/SCRUM-1732.md · 2026-11-20T16:17:31Z (Date: de GitHub) · origin/main 0142551fba28455a7b56bc21807c9b63a3bdaaf5
+
+ANTES : 236 líneas (wc -l) · sha256 d2175ed1ba728b92064696013bdc87b4ab1795350c1e84c980228b16a9dce17e
+        títulos ^##/^### con uniq -c: «### 3 · Lo que NO está hecho o no está medido» = 2 (positivo); el resto = 1
+DESPUÉS (sin el tramo 1732g): 227 líneas · sha256 a6d19decc2b1a99dde90af620e963f2f1fcb493ab4cd30ccacc6fe8112b3a8d2 · todos los títulos = 1
+        el tramo 1732f queda IGUAL a f0a144571 salvo la línea A9 que corrigió 558c1e478 (diff de 1 línea)
+        el tramo 1732e (J5) es idéntico al de f8e6ab9b9; el tramo de CIERRES 14 no ha entrado (0 títulos)
+Citas por línea a este fichero (git grep 'SCRUM-1732.md:' en docs tests scripts .github, fuera del propio fichero): 0 antes, 0 después
+
+Comprobación línea a línea: node docs/master/evidencias/SCRUM-1732/1732g-comprobar.mjs <copia ANTES> docs/master/SCRUM-1732.md
+SIGUE en el fichero · 
+SIGUE en el fichero · 
+SOLO en 46af2e504 (pre-④) · | `whatsappPhone` del comercio | presente | presente (**no se tocó**) | `GET /admin/merchant` |
+SIGUE en el fichero · ### 3 · Lo que NO está hecho o no está medido
+SOLO en 46af2e504 (pre-④) · - 🔴 **El WhatsApp al PROFESIONAL sigue siendo una vía viva.** `psp.routes.ts:383` llama a `notifyMerchantPaid
+SIGUE en el fichero ·   le llega nada: ni confirmación (`tieneNumeroDeContacto`) ni reseña.
+SIGUE en el fichero · - Hallazgo de paso (J2, sin arreglar porque el encargo no toca `src/`): `GET /admin/me` (`app.ts:484`, `:495`)
+SOLO en 46af2e504 (pre-④) ·   Hasta que se decida, **un confirm-bizum en la QA puede mandar un WA al número del profesional.** Al cliente 
+SOLO en 46af2e504 (pre-④) ·   `GET /admin/connect/status` (`connect.routes.ts:23`) calculan `BIZUM_MANUAL_ENABLED` con un `merchant` **sin
+población: 237 líneas antes, 228 después, 9 quitadas · sigue=5 solo-pre4=4 ninguna=0
+control ciego (mismo fichero dos veces): 0 quitadas → el guion sale 2, no 0
