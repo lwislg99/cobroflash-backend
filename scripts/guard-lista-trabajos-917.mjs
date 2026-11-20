@@ -159,7 +159,16 @@ titulo('A · arriba: título y botones (A.1) · las DOS cifras (A.2) · filtros 
       // cabecera se RETIRA; «Partes por valorar» vive en el menú (#nav-partes-oficina), que este
       // banco no monta: el número del menú lo mide tests/scrum1700-abrir-parte-y-partes-por-valorar.
       valorar: !!document.getElementById('jobs-partes-valorar'),
-      filtros: [...document.querySelectorAll('#jobs-filter > button')].map((b) => b.textContent.trim()),
+      // SCRUM-1725i · el eje de COBRO vive en un desplegable de la barra («Cobro: todos (N)», c.22098) y
+      // el de ESTADO en pestañas con contador (patrón de Albaranes). Se leen los dos, y las píldoras de
+      // antes (`#jobs-filter > button`) se cuentan para exigir que ya no estén.
+      filtros: [...document.querySelectorAll('#jobs-filter select.jobs-filtro-cobro option')].map((o) => o.textContent.trim()),
+      pildorasDeCobro: document.querySelectorAll('#jobs-filter > button').length,
+      pestanas: [...document.querySelectorAll('#jobs-filter .data-card-tab')].map((b) => ({
+        rotulo: (b.firstChild && b.firstChild.nodeType === 3 ? b.firstChild.textContent : '').trim(),
+        n: (b.querySelector('.badge') || {}).textContent || null,
+        pulsada: b.getAttribute('aria-pressed'),
+      })),
       tecnico: !!document.getElementById('jobs-filtro-tecnico-select'),
       cifras,
     };
@@ -171,9 +180,20 @@ titulo('A · arriba: título y botones (A.1) · las DOS cifras (A.2) · filtros 
   // A.2 · los filtros por cobro, en cuentas: igual
   const cuentas = { Pendiente: 0, Parcial: 0, Pagado: 0 };
   for (const j of TRABAJOS) if (cuentas[j.estadoCobro] != null) cuentas[j.estadoCobro]++;
-  const filtrosEsperados = [`Todos · ${TRABAJOS.length}`, `Pendiente · ${cuentas.Pendiente}`, `Parcial · ${cuentas.Parcial}`, `Pagado · ${cuentas.Pagado}`];
+  // SCRUM-1725i (c.22098) · las mismas cuatro cuentas, ahora como opciones de UN desplegable:
+  // «Todos · N» pasa a «Cobro: todos (N)» (el «Todos» a secas es ya la pestaña de estado).
+  const filtrosEsperados = [`Cobro: todos (${TRABAJOS.length})`, `Pendiente (${cuentas.Pendiente})`, `Parcial (${cuentas.Parcial})`, `Pagado (${cuentas.Pagado})`];
   if (JSON.stringify(arriba.filtros) === JSON.stringify(filtrosEsperados)) bien(`A.2 filtros de cobro, en cuentas: ${arriba.filtros.join(' · ')}`);
   else mal(`A.2 filtros: ${JSON.stringify(arriba.filtros)} ≠ ${JSON.stringify(filtrosEsperados)}`);
+  if (arriba.pildorasDeCobro === 0) bien('A.2 el cobro va en el desplegable: ninguna píldora suelta en la barra');
+  else mal(`A.2 siguen ${arriba.pildorasDeCobro} píldoras de filtro sueltas en la barra (c.22098: el cobro va en el desplegable)`);
+
+  // A.4 (SCRUM-1725i) · las pestañas de ESTADO: «Todos» + las cinco de la ficha, con su cuenta.
+  const ESTADOS_DE_LA_FICHA = [['pendiente_agendar', 'Sin agendar'], ['agendado', 'Agendado'], ['en_curso', 'En curso'], ['terminado', 'Terminado'], ['cerrado', 'Cerrado']];
+  const pestanasEsperadas = [{ rotulo: 'Todos', n: String(TRABAJOS.length), pulsada: 'true' }]
+    .concat(ESTADOS_DE_LA_FICHA.map(([estado, rotulo]) => ({ rotulo, n: String(TRABAJOS.filter((j) => j.status === estado).length), pulsada: 'false' })));
+  if (JSON.stringify(arriba.pestanas) === JSON.stringify(pestanasEsperadas)) bien(`A.4 pestañas de estado, en cuentas: ${arriba.pestanas.map((p) => `${p.rotulo} ${p.n}`).join(' · ')}`);
+  else mal(`A.4 pestañas de estado: ${JSON.stringify(arriba.pestanas)} ≠ ${JSON.stringify(pestanasEsperadas)}`);
 
   // A.2 · 🔴 LAS DOS CIFRAS — lo que estaba MAL DECIDIDO: la pantalla no decía en euros cuánto falta.
   const hoy = arriba.cifras.find((c) => c.rotulo === 'Para hoy');
@@ -195,21 +215,62 @@ titulo('A · arriba: título y botones (A.1) · las DOS cifras (A.2) · filtros 
   else mal('A.3 falta el filtro por técnico con equipo dado de alta');
 
   // A.2 · y el filtro FILTRA: se pulsa y se mira qué filas quedan.
-  const bPend = await page.evaluateHandle(() => [...document.querySelectorAll('#jobs-filter > button')].find((b) => b.textContent.startsWith('Pendiente')) || null);
-  if (!bPend.asElement()) nosupe('no encontré el filtro «Pendiente» para pulsarlo');
+  // SCRUM-1725i · antes se PULSABA la píldora «Pendiente»; ahora se ELIGE en el desplegable, como lo
+  // hace una persona (`page.select` dispara `input` y `change`). Lo que se exige es lo mismo: quedan
+  // las filas pendientes, el control dice lo elegido y la cifra de arriba no se mueve.
+  const SEL_COBRO = '#jobs-filter select.jobs-filtro-cobro';
+  if (!(await page.$(SEL_COBRO))) nosupe('no encontré el desplegable de cobro para elegir «Pendiente»');
   else {
-    await pulsar(bPend.asElement());
-    const tras = await page.evaluate((sel) => ({
+    await page.select(SEL_COBRO, 'Pendiente');
+    await espera(120);
+    const tras = await page.evaluate((sel, selCobro) => ({
       filas: document.querySelectorAll(sel).length,
-      pulsado: ([...document.querySelectorAll('#jobs-filter > button')].find((b) => b.textContent.startsWith('Pendiente')) || {}).getAttribute?.('aria-pressed'),
+      elegido: (document.querySelector(selCobro) || {}).value,
       cifra: ([...document.querySelectorAll('.jobs-cifra')].find((c) => /Por cobrar/.test(c.textContent)) || {}).textContent || null,
-    }), SEL_FILA);
+    }), SEL_FILA, SEL_COBRO);
     const pendientesVisibles = TRABAJOS.filter((j) => j.estadoCobro === 'Pendiente' && j.status !== 'cerrado').length;
-    if (tras.filas !== pendientesVisibles || tras.pulsado !== 'true') mal(`A.2 pulsar «Pendiente» deja ${tras.filas} filas (esperaba ${pendientesVisibles}) · aria-pressed ${tras.pulsado}`);
-    else bien(`A.2 pulsar «Pendiente» deja ${tras.filas} filas y queda pulsado`);
+    if (tras.filas !== pendientesVisibles || tras.elegido !== 'Pendiente') mal(`A.2 elegir «Pendiente» deja ${tras.filas} filas (esperaba ${pendientesVisibles}) · el desplegable dice «${tras.elegido}»`);
+    else bien(`A.2 elegir «Pendiente» deja ${tras.filas} filas y el desplegable lo dice`);
     // La cifra de arriba contesta «cuánto me deben», no «cuánto hay en este filtro»: no se mueve.
     if (!tras.cifra || !tras.cifra.includes(valorEsperado)) mal(`A.2 con el filtro puesto, «Por cobrar» cambió: «${tras.cifra}»`);
     else bien('A.2 con el filtro puesto, «Por cobrar» sigue siendo el total');
+    // Se deja como estaba: lo de abajo (A.4, A.1) mide la lista entera.
+    await page.select(SEL_COBRO, 'all');
+    await espera(120);
+  }
+
+  // A.4 (SCRUM-1725i) · y las pestañas FILTRAN, pulsadas con el ratón. «Cerrado» enseña los cerrados
+  // DIRECTOS (sin «Ver N cerrados»); «Todos» los vuelve a plegar (P2 de c.22098).
+  const pestana = (rotulo) => page.evaluateHandle((r) => [...document.querySelectorAll('#jobs-filter .data-card-tab')]
+    .find((b) => b.firstChild && b.firstChild.textContent.trim() === r) || null, rotulo);
+  const loQueSeVe = () => page.evaluate((sel) => ({
+    pildoras: [...document.querySelectorAll(sel)].map((tr) => (tr.querySelector('td.cell-status .status-pill') || {}).textContent || ''),
+    plegados: !!document.querySelector('tr.jobs-grupo-abrir button'),
+    pulsadas: [...document.querySelectorAll('#jobs-filter .data-card-tab[aria-pressed="true"]')].map((b) => b.firstChild.textContent.trim()),
+  }), SEL_FILA);
+  const cerradosEsperados = TRABAJOS.filter((j) => j.status === 'cerrado').length;
+  const terminadosEsperados = TRABAJOS.filter((j) => j.status === 'terminado').length;
+  const bCerrado = (await pestana('Cerrado')).asElement();
+  const bTerminado = (await pestana('Terminado')).asElement();
+  const bTodos = (await pestana('Todos')).asElement();
+  if (!bCerrado || !bTerminado || !bTodos) nosupe('no encontré las pestañas «Cerrado», «Terminado» y «Todos» para pulsarlas');
+  else if (!cerradosEsperados || !terminadosEsperados) nosupe('el fixture no trae ni un cerrado o ni un terminado: pulsar esas pestañas no probaría nada');
+  else {
+    await pulsar(bCerrado);
+    await espera(120);
+    const enCerrado = await loQueSeVe();
+    if (enCerrado.pildoras.length === cerradosEsperados && enCerrado.pildoras.every((p) => p === 'Cerrado') && !enCerrado.plegados && enCerrado.pulsadas.join() === 'Cerrado') bien(`A.4 la pestaña «Cerrado» enseña sus ${cerradosEsperados} directamente, sin «Ver N cerrados»`);
+    else mal(`A.4 pestaña «Cerrado»: ${JSON.stringify(enCerrado)} (esperaba ${cerradosEsperados} filas «Cerrado», sin botón de plegados)`);
+    await pulsar(bTerminado);
+    await espera(120);
+    const enTerminado = await loQueSeVe();
+    if (enTerminado.pildoras.length === terminadosEsperados && enTerminado.pildoras.every((p) => p === 'Terminado') && !enTerminado.plegados) bien(`A.4 la pestaña «Terminado» enseña sus ${terminadosEsperados} y nada más`);
+    else mal(`A.4 pestaña «Terminado»: ${JSON.stringify(enTerminado)} (esperaba ${terminadosEsperados} filas «Terminado»)`);
+    await pulsar(bTodos);
+    await espera(120);
+    const enTodos = await loQueSeVe();
+    if (enTodos.pildoras.length === TRABAJOS.length - cerradosEsperados && enTodos.plegados && enTodos.pulsadas.join() === 'Todos') bien(`A.4 «Todos» vuelve a las ${enTodos.pildoras.length} filas sin cerrar, con los cerrados plegados`);
+    else mal(`A.4 «Todos»: ${JSON.stringify({ filas: enTodos.pildoras.length, plegados: enTodos.plegados, pulsadas: enTodos.pulsadas })} (esperaba ${TRABAJOS.length - cerradosEsperados} filas y los cerrados plegados)`);
   }
 
   // A.1 · y el botón de arriba HACE lo suyo. («Partes por valorar» ya no está aquí: SCRUM-1700.)

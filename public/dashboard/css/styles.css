@@ -4949,7 +4949,7 @@ textarea.parte-linea-desc {
 .jobs-pantalla > .jobs-nuevo { grid-column: 2; grid-row: 1; margin-bottom: 16px; }
 .jobs-pantalla .jobs-cabecera h2 { font-size: 1.25rem; line-height: 1.2; letter-spacing: -.01em; }   /* Headline */
 .jobs-pantalla .jobs-cifra { padding: 16px; }   /* el mismo relleno que la tarjeta del trabajo: los textos caen en la misma vertical */
-.jobs-pantalla .jobs-filtros { margin-bottom: 16px; }
+/* (La caja de filtros la viste el bloque «S4 · SCRUM-1725i», más abajo.) */
 
 /* SCRUM-1725g · Escritorio: la columna «Estado» no parte su píldora («SIN AGENDAR» en dos renglones
    haría la fila más alta que la de Presupuestos), y «Ver N cerrados» cierra la tabla sin raya debajo. */
@@ -4973,9 +4973,8 @@ textarea.parte-linea-desc {
   }
   .jobs-pantalla > .jobs-nuevo { grid-column: 1 / -1; }
 
-  /* Los cuatro filtros de cobro, en UN renglón y repartidos; el de técnico, a todo el ancho. */
-  .jobs-pantalla .jobs-filtros { gap: 6px; }
-  .jobs-pantalla .jobs-filtros > button { flex: 1 1 auto; padding-left: 10px; padding-right: 10px; white-space: nowrap; }
+  /* El filtro de técnico, a todo el ancho de la barra: la caja y el desplegable se reparten el renglón.
+     (Las cuatro píldoras de cobro que se repartían aquí pasaron al desplegable: SCRUM-1725i.) */
   .jobs-pantalla .jobs-filtro-tecnico { gap: 8px; }
   .jobs-pantalla .jobs-filtro-tecnico-buscar,
   .jobs-pantalla .jobs-filtro-tecnico select { flex: 1 1 0; width: auto; min-width: 0; }
@@ -5038,6 +5037,72 @@ textarea.parte-linea-desc {
   .table--trabajos .jobs-celda-acciones .overflow-trigger { margin-left: auto; }
 }
 /* ══ fin S4 · SCRUM-1725e ══ */
+
+/* ══ S4 · SCRUM-1725i · LOS FILTROS DE LA LISTA DE TRABAJOS: PESTAÑAS DE ESTADO Y BARRA ══════════
+   Orden del fundador (SCRUM-1725 c.22095) y decisiones de c.22098 y c.22103 (PR-① de la vuelta 3).
+   Es el patrón de Albaranes, con sus mismas piezas (`.data-card-tabs`, `.data-card-tab`,
+   `.badge-slate`, `.data-card-toolbar`): el ESTADO en pestañas con contador y el COBRO en un
+   desplegable de la barra, junto al técnico. Ninguna regla compartida cambia: todo va acotado a
+   `.jobs-pantalla`, que solo existe en `jobsView.js`. Tokens de `tokens.css`, ninguno nuevo.
+   La tarjeta única con la cabecera dentro es del PR-② (el lavado): aquí la caja de filtros solo se
+   pega a la lista para que las pestañas tengan debajo lo que filtran. */
+.jobs-pantalla { --jobs-filtros: 1725i; }   /* testigo: el banco comprueba que ESTA hoja es la que pinta */
+
+/* La caja deja de ser un renglón de píldoras: dos franjas apiladas (pestañas, barra). Vacía —mientras
+   carga, o sin ningún trabajo— no pinta ni su borde. */
+.jobs-pantalla .jobs-filtros {
+  display: block; margin-bottom: 0; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--neutral-200);
+}
+.jobs-pantalla .jobs-filtros:empty { display: none; }
+
+/* Las pestañas no se parten ni se encogen: si no caben, la tira desplaza (a 390 px, seis no caben)
+   y la que asoma cortada al borde es la pista de que hay más. Es lo que Albaranes hace en móvil
+   (SCRUM-1659), aquí a cualquier ancho porque esta tira lleva seis. `overflow-y: hidden`: al
+   desplazar en X el eje Y pasa a `auto`, y el `margin-bottom: -1px` del subrayado dejaría 1 px de
+   desplazamiento vertical.
+   Y por ese recorte la raya de la tira NO puede ser su borde: el subrayado verde de la pestaña
+   activa monta 1 px sobre él (`margin-bottom: -1px`), y una tira que recorta se lo comería,
+   dejándolo en 1 px. La raya pasa a ser una sombra interior y la pestaña se queda dentro: el verde
+   pinta encima, los mismos 2 px sobre la misma raya que en Albaranes. */
+.jobs-pantalla .data-card-tabs {
+  overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none;
+  border-bottom: 0; box-shadow: inset 0 -1px 0 var(--neutral-100);
+}
+.jobs-pantalla .data-card-tabs::-webkit-scrollbar { display: none; }
+.jobs-pantalla .data-card-tab { flex-shrink: 0; margin-bottom: 0; white-space: nowrap; }
+/* El anillo de foco, hacia DENTRO: el de la casa va por fuera y esta tira lo recortaría por arriba. */
+.jobs-pantalla .data-card-tab:focus-visible { box-shadow: inset var(--ring); }
+
+/* UNA vertical a la izquierda para las tres franjas. Medido a 1280 con los rellenos compartidos: el
+   rótulo de la primera pestaña caía en x 299, el desplegable en 293 y «CLIENTE» en 287. La tira y la
+   barra toman el relleno de la celda de la tabla (14 px; la pestaña pone 6 de los suyos). */
+.jobs-pantalla .data-card-tabs { padding: 0 8px; }
+/* La barra: el cobro y el técnico, seguidos y a la izquierda, con la misma letra y los 44 px de AB6. */
+.jobs-pantalla .jobs-barra { padding: 10px 14px; gap: 12px; }
+.jobs-pantalla .jobs-filtro-cobro { width: auto; min-height: 44px; padding: 4px 10px; font-size: 12.5px; }
+.jobs-pantalla .jobs-barra .jobs-filtro-tecnico { margin-left: 0; }
+
+@media (min-width: 641px) {
+  /* Escritorio: la caja es la CABEZA de la tarjeta de la lista. Se queda con las esquinas de arriba
+     y la lista (o su «No hay trabajos con ese filtro.») con las de abajo; entre las dos, UNA raya:
+     la de la última franja de la caja (la barra, o las pestañas si no hay barra). */
+  .jobs-pantalla .jobs-filtros { border-bottom: 0; border-radius: var(--r-lg) var(--r-lg) 0 0; }
+  .jobs-pantalla .jobs-filtros:not(:empty) + .jobs-lista > .customers-card { border-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; }
+}
+
+@media (max-width: 640px) {
+  /* Móvil: las tarjetas son los TRABAJOS (SCRUM-1725e), así que los filtros van en la suya, encima.
+     La última franja no lleva raya: debajo ya está el borde de la tarjeta. */
+  .jobs-pantalla .jobs-filtros { margin-bottom: 12px; border-radius: var(--r-lg); box-shadow: var(--shadow-sm); }
+  .jobs-pantalla .jobs-filtros > .jobs-barra:last-child { border-bottom: 0; }
+  .jobs-pantalla .jobs-filtros > .data-card-tabs:last-child { box-shadow: none; }
+  /* Y aquí la vertical es la de la tarjeta del trabajo (16 px de relleno). */
+  .jobs-pantalla .data-card-tabs { padding: 0 10px; }
+  .jobs-pantalla .jobs-barra { padding: 12px 16px; gap: 8px; }
+  .jobs-pantalla .jobs-filtro-cobro { flex: 1 1 100%; width: 100%; }
+}
+/* ══ fin S4 · SCRUM-1725i ══ */
 
 /* ═══ SCRUM-831 · LA LISTA DE ALBARANES RECUPERA SU RANURA DE ACCIONES ═══════════════════════
    Medido en el censo de las cinco listas (8-sep-2026): era la ÚNICA con `.cell-actions` ocupada

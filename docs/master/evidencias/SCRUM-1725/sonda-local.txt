@@ -1,0 +1,48 @@
+﻿
+── admin@1280 · rol en la página: admin · 11 filas · testigo «1725i»
+OK   admin@1280 la página no desborda a lo ancho (0 px)
+OK   admin@1280 las 6 pestañas miden ≥44 px de alto (52)
+OK   admin@1280 los 3 controles de la barra miden ≥44 px (44/44/44) · letra 12.5px
+OK   admin@1280 el desplegable de cobro está
+OK   admin@1280 la pestaña activa lleva su subrayado de 2 px (2px rgb(22, 163, 74))
+OK   admin@1280 la caja de filtros y la lista son UNA pieza: se tocan y miden lo mismo (filtros {"x":272,"y":210,"an":984,"al":118,"der":1256,"bajo":328} · lista {"x":272,"y":328,"an":984,"al":1219,"der":1256,"bajo":1548})
+OK   admin@1280 las 6 pestañas caben sin desplazar (982 en 982)
+OK   admin@1280 «Cerrado» pulsada queda entera dentro de la tira (x 848-945 en 273-1255)
+OK   admin@1280 la pestaña «Cerrado» enseña 1 fila(s)
+     admin@1280 tras Tab, el foco está en «input jobs-filtro-cobro» · sombra rgba(34, 197, 94, 0.12) 0px 0px 0px 3px
+
+── admin@390 · rol en la página: admin · 11 filas · testigo «1725i»
+OK   admin@390 la página no desborda a lo ancho (0 px)
+OK   admin@390 las 6 pestañas miden ≥44 px de alto (52)
+OK   admin@390 los 3 controles de la barra miden ≥44 px (44/44/44) · letra 12.5px
+OK   admin@390 el desplegable de cobro está
+OK   admin@390 la pestaña activa lleva su subrayado de 2 px (2px rgb(22, 163, 74))
+     admin@390 la tira pide 684 px en 364: desplaza
+OK   admin@390 «Cerrado» pulsada queda entera dentro de la tira (x 280-377 en 13-377)
+OK   admin@390 la pestaña «Cerrado» enseña 1 fila(s)
+     admin@390 tras Tab, el foco está en «input jobs-filtro-cobro» · sombra rgba(34, 197, 94, 0.12) 0px 0px 0px 3px
+
+── tecnico@1280 · rol en la página: tecnico · 11 filas · testigo «1725i»
+OK   tecnico@1280 la página no desborda a lo ancho (0 px)
+OK   tecnico@1280 las 6 pestañas miden ≥44 px de alto (52)
+OK   tecnico@1280 los 2 controles de la barra miden ≥44 px (44/44) · letra 12.5px
+OK   tecnico@1280 el desplegable de cobro NO está
+OK   tecnico@1280 la pestaña activa lleva su subrayado de 2 px (2px rgb(22, 163, 74))
+OK   tecnico@1280 la caja de filtros y la lista son UNA pieza: se tocan y miden lo mismo (filtros {"x":272,"y":205,"an":984,"al":118,"der":1256,"bajo":323} · lista {"x":272,"y":323,"an":984,"al":1354,"der":1256,"bajo":1677})
+OK   tecnico@1280 las 6 pestañas caben sin desplazar (982 en 982)
+OK   tecnico@1280 «Cerrado» pulsada queda entera dentro de la tira (x 848-945 en 273-1255)
+OK   tecnico@1280 la pestaña «Cerrado» enseña 1 fila(s)
+     tecnico@1280 tras Tab, el foco está en «input jobs-filtro-tecnico-buscar» · sombra rgba(34, 197, 94, 0.12) 0px 0px 0px 3px
+
+── tecnico@390 · rol en la página: tecnico · 11 filas · testigo «1725i»
+OK   tecnico@390 la página no desborda a lo ancho (0 px)
+OK   tecnico@390 las 6 pestañas miden ≥44 px de alto (52)
+OK   tecnico@390 los 2 controles de la barra miden ≥44 px (44/44) · letra 12.5px
+OK   tecnico@390 el desplegable de cobro NO está
+OK   tecnico@390 la pestaña activa lleva su subrayado de 2 px (2px rgb(22, 163, 74))
+     tecnico@390 la tira pide 684 px en 364: desplaza
+OK   tecnico@390 «Cerrado» pulsada queda entera dentro de la tira (x 280-377 en 13-377)
+OK   tecnico@390 la pestaña «Cerrado» enseña 1 fila(s)
+     tecnico@390 tras Tab, el foco está en «input jobs-filtro-tecnico-buscar» · sombra rgba(34, 197, 94, 0.12) 0px 0px 0px 3px
+
+VERDE: 0 en rojo · población: 2 roles × 2 anchos sobre 12 trabajos

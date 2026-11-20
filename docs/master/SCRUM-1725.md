@@ -212,3 +212,131 @@ Después, en local: los siete ficheros que tocan esto (1185, 719, 428, 816, 1725
 
 **`guard:lista-trabajos` (navegador, NO obligatorio) sale ROJO con esta rama, y NO se cura aquí.** Dice «el clic en la fila NO abrió el Trabajo». Medido en local a 1280 con el banco del propio guard: la columna «Estado» estrecha la celda del cliente a 249 px y su centro (397, 390) cae sobre el desplegable de técnicos (de x=287 a 409, 44 px de alto), que por diseño no navega (`data-fila-no-navega`). El clic en cualquier otro punto de la fila sigue abriendo el Trabajo, pero el centro de la celda del cliente ya no: es un defecto real de la plana, pequeño. Se cura en la rama siguiente (SCRUM-1725h), que rehace justo esa geometría (desplegable sin caja, fila de un renglón); arreglarlo dos veces el mismo día era trabajo tirado. Queda dicho al orquestador.
 
+
+## Filtros: pestañas de estado y desplegable de cobro (S4 · 18-nov · SCRUM-1725i)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1725/c1725i-lista.mjs`
+
+**Por qué.** Orden del fundador sobre la lista plana (SCRUM-1725 c.22095: «ni elegante ni clara ni profesional»). Decisiones del orquestador en c.22098 y reparto en dos PR en c.22103. Éste es el PR-① (filtros). El lavado (tarjeta única, renglones, P3, P4, clic en fila) es el PR-② y aquí no se toca.
+
+**Qué cambia** (`jobsView.js`, bloque `S4 · SCRUM-1725i` de `styles.css`). Es el patrón de Albaranes, con sus mismas piezas (`data-card-tabs`, `data-card-tab`, `badge-slate`, `data-card-toolbar`):
+- ESTADO en pestañas con contador, para todos los roles: «Todos» + las cinco etiquetas de `jobStatusMeta`. Un trabajo cae en la pestaña que lleva la misma etiqueta que su píldora (`pestanaDeTrabajo`), así que las cinco suman siempre «Todos».
+- COBRO en un desplegable de la barra, solo para quien pasa `veEstadoDeCobro`: «Cobro: todos (N)» (literal firmado en c.22098; `docs/microcopy/2026-11-18-SCRUM-1725-cobro-todos.md`) y «Pendiente/Parcial/Pagado (N)». Las cuatro píldoras desaparecen.
+- El filtro de técnico entra en la misma barra: mismo nodo, mismo comportamiento. El buscador «Técnico [ ]» no se toca.
+- Los tres filtros se cruzan. Los contadores son de la lista entera, como en Albaranes.
+- Cerrados (P2): bajo «Todos» siguen plegados tras «Ver N cerrados»; la pestaña «Cerrado» los pinta directos.
+- Las pestañas y el desplegable de cobro repintan solo las filas (`pintarFilas`): no pierden el foco, y a 390 la tira no vuelve a su principio. `pestanaALaVista` mueve la tira solo en horizontal.
+- Hoja: en escritorio la caja de filtros es la cabeza de la tarjeta de la lista (0 px entre las dos); en móvil va en su propia tarjeta. Las tres franjas comparten vertical izquierda (medido a 1280: 299/293/287 px antes de alinear; 287 después).
+
+**Pendiente de confirmar por el orquestador:** `aria-label="Cobro"` en el desplegable (no se ve; lo oye el lector de pantalla). Es el arranque del literal firmado, como «Facturación» en Albaranes.
+
+**Tests que cambian de exigencia (PIDEN autorización nominal antes del push; a esta hora NO la tienen):**
+- `tests/scrum1725-lista-operario-sin-cobro.test.mjs` L56-60: `filtrosCobro` contaba `<button>` «Pendiente · N» y pasa a contar también `<option>` «Pendiente (N)»; se añade `selectoresDeCobro`. L77-79 (nuevo): quien no ve el cobro, 0 desplegables y sin «Cobro: todos». L101-102 (nuevo): el admin, 1 desplegable. Las exigencias de siempre (0 para el operario, 3 para el admin) no cambian de número.
+- `scripts/guard-lista-trabajos-917.mjs` A.2: L162-171 (lee las opciones del desplegable en vez de `#jobs-filter > button`), L183-189 (espera «Cobro: todos (N)», «Pendiente (N)»… y 0 píldoras), L218-240 (ELIGE «Pendiente» en el desplegable en vez de pulsar la píldora; exige lo mismo: filas pendientes, control que lo dice, cifra quieta). A.4 es nuevo, L191-196 y L242-273 (pestañas en cuentas, y pulsadas).
+- Tests nuevos, sin cambio de exigencia: «SCRUM-1725i ①», «②» y «③» en el test de 1725.
+
+**Rojo primero** (tests nuevos, vista sin tocar): `filtros-rojo-primero.tap.txt`, 7 casos, 4 caídos (el control positivo del admin y los tres nuevos). `filtros-guard917-rojo.err.txt`: 3 hallazgos y 2 ciegos de 51, todos en A.2/A.4. Después: 7 de 7, y el guard 56 de 56 (`filtros-guard917-verde.txt`).
+
+**Medido en local** (`c1725i-sonda-local.mjs`, banco de listas, 12 trabajos, admin y técnico a 1280 y 390; `sonda-local.txt`): desborde 0; pestañas 52 px; controles de la barra 44 px; subrayado de la activa 2 px; a 1280 las seis pestañas caben y la caja y la lista se tocan; a 390 la tira pide 684 px en 364 y desplaza, y «Cerrado» pulsada queda entera a la vista.
+
+**Antes/después en yaqu.app** (`c1725i-lista.mjs`, cuenta QA, solo lectura; el después sirve `jobsView.js` y `styles.css` del árbol sobre producción). Capturas `antes-filtros-*` y `despues-filtros-*`:
+
+| pasada | filas bajo «Todos» antes → después | tarjetas solo-antes / solo-después | orden | pestañas (Todos/Sin agendar/Agendado/En curso/Terminado/Cerrado) | cobro | desborde | <44 px antes → después |
+|---|---|---|---|---|---|---|---|
+| admin 1280 | 9 → 9 | 0 / 0 | idéntico | 11/4/1/2/2/2 | «Cobro: todos (11)» + 3 | 0 | 10 → 10 |
+| admin 390 | 9 → 9 | 0 / 0 | idéntico | 11/4/1/2/2/2 | «Cobro: todos (11)» + 3 | 0 | 10 → 10 |
+| operario 1280 | 3 → 3 | 0 / 0 | idéntico | 3/1/0/2/0/0 | no lo tiene | 0 | 1 → 1 |
+| operario 390 | 3 → 3 | 0 / 0 | idéntico | 3/1/0/2/0/0 | no lo tiene | 0 | 1 → 1 |
+
+Las tarjetas se comparan como CONJUNTOS de líneas, con el formato de `c1725g-lista.mjs`. En el después cada pestaña se pulsa: enseña tantas filas como dice su contador, todas de su estado, la pulsada queda entera en la tira, «Cerrado» no trae «Ver N cerrados», las vacías dicen «No hay trabajos con ese filtro.» y al volver a «Todos» la lista es la de entrada. La página crece 57 px a 1280 y 76 px a 390 (la caja de filtros pasa de un renglón a dos franjas).
+
+**Guards de navegador, medidos con esta rama:**
+- `guard:lista-trabajos`: ROJO PREEXISTENTE, misma firma que en `main` («el clic en la fila NO abrió el Trabajo»). Se cura en el PR-②. No se arregla aquí.
+- `guard:escalera-por-estado`: ROJO con la firma de `main` («la lista propone «Agendar» y el detalle (ninguna)»). El lado LISTA sigue leyendo: las pestañas no tocan `tr.jobs-fila` ni `.jobs-acciones`. El lado detalle lo re-ancla S2 en `scrum-1725h-escalera-por-identidad`.
+
+**Lo que NO queda hecho en este tramo:**
+- La suite completa local estaba corriendo al escribir esto; su resultado va en la entrega, no aquí.
+- Los tres casos nuevos no llevan aún su mutación en `MUTACIONES_QUE_ME_TUMBAN`: no se afirma ninguna.
+- Los controles de la barra van a 12,5 px (los del técnico ya lo estaban; el de cobro se iguala). Subirlos a los 13,5 px de Albaranes es ropa del PR-②.
+- Un error mío: crucé los 115k de contexto sin avisar y lo medí a 287.926, ya pasado el umbral del traspaso (280k). Leer capturas PNG pesa mucho más de lo que calculé: se mide DESPUÉS de cada imagen, no al final.
+
+### Relevo del mismo puesto (S4 · 18-nov, 17:55Z de GitHub): autorización, mutaciones y tanda de antes del push
+
+Medido sobre `origin/main` `703df1474d8406bacd89c4609a89281256d7063e`, mergeado en la rama (`dd8f94593`) sin conflictos. Comprobado tras el merge: este registro conserva las dos secciones nuevas (la de S2, «Escalera por identidad», y ésta) y la rama solo difiere de `main` en sus seis ficheros y sus evidencias.
+
+**Autorización nominal de las líneas — SCRUM-1725 c.22109** (copiada del encargo del orquestador; esta sesión no tiene Jira y no la ha leído allí):
+- `tests/scrum1725-lista-operario-sin-cobro.test.mjs`: L56-60 (`filtrosCobro` cuenta también `<option>`, más `selectoresDeCobro`) · L77-79 nuevo (sin cobro: 0 desplegables, sin «Cobro: todos») · L101-102 nuevo (admin: 1 desplegable). Los 0/3 de siempre, intactos.
+- `scripts/guard-lista-trabajos-917.mjs`: A.2 L162-171, L183-189, L218-240 (desplegable en vez de píldoras, mismas exigencias) · A.4 nuevo, L191-196 y L242-273.
+- Los tests de 428 y 816 no se tocan. `aria-label="Cobro"`: confirmado (c.21978, según el mismo encargo); deja de estar «pendiente de confirmar».
+
+Cotejo del commit `c0231b35b` contra esa lista, con `git diff -U0`: en el test, los trozos caen en L56-60, L77-79 y L101-102, más L128-264 (los tres casos nuevos). En el guard, en L162-171, L183-196 y L218-273. Los tests de 428 y 816 no están en el diff. **Una línea fuera de la lista:** el comentario que encabeza el catálogo del test dice ahora «los casos de arriba» donde decía «el caso de arriba». Es un comentario, no una exigencia.
+
+**Mutaciones** de los casos nuevos, que el tramo anterior no declaró:
+
+Mutaciones: catálogo → `tests/scrum1725-lista-operario-sin-cobro.test.mjs`
+
+| mutación en `jobsView.js` | caso que nombra | cae |
+|---|---|---|
+| las pestañas cuentan `jobs.length` en vez de su estado | 1725i ① | sí (y de rebote ② y ③) |
+| la pestaña no filtra (`filter((j) => true)`) | 1725i ② | sí (y de rebote ③) |
+| `cerradosALaVista` no se atiende (`&& false`) | 1725i ② | sí, solo él |
+| el cobro filtra la lista entera, no la pestaña | 1725i ③ | sí, solo él |
+| el desplegable de cobro se cuelga con `if (true)` | 1725 ①② «tecnico» | sí (y de rebote «contable») |
+
+Inyectadas una a una, con la base primero (7 de 7 en verde) y el fichero restaurado por bytes: `filtros-mutaciones.txt`. En esa salida la declaración nº 4 (de 1725g, ya en `main`) sale «CIEGO: la inyección no se aplicó»: es mi guion, que exige que el texto de partida desaparezca, y en esa declaración el de llegada lo contiene. No la juzgo aquí; la juzga `meta-guard-mutaciones` en el CI, como hasta hoy.
+
+**Tanda de antes del push** (rama con `main` dentro, `npm run build` salida 0, un fichero cada vez, TAP fuera del árbol):
+
+| fichero | pasan | caen |
+|---|---|---|
+| `scrum1387-banco-nuevo-va-al-catalogo` | 8 | 0 |
+| `scrum1387d-el-recuento-dice-sobre-cuantos` | 5 | 0 |
+| `scrum1387f-el-rotulo-dice-los-juzgados` | 3 | 0 |
+| `scrum1294-a9-leccion-en-a10` | 4 | 0 |
+| `scrum1572-registro-creado-por-dos-ramas` | 6 | 0 |
+| `scrum709-microcopy-por-fichero` | 8 | 0 |
+| `scrum1185-trinquete-sin-consumir` | 11 | 0 |
+| `scrum719-el-suelo-de-los-doce` | 37 | 0 |
+| `scrum1725-lista-operario-sin-cobro` | 7 | 0 |
+| `scrum1725-ficha-lenguaje-del-parte` | 6 | 0 |
+
+Esa pasada es ANTERIOR a este tramo de registro. Los que leen el registro (1387, 1294, 1572, 709) y `guards:entrada` se repiten después de escribirlo; su resultado va en el cuerpo del PR.
+
+**Triaje de los 14 «not ok» de la suite a medias.** La suite completa del tramo anterior NO terminó (sin fichero de salida y con el TAP cortado en un caso): no hay veredicto local de suite completa, y no la he relanzado (no tengo el turno). Sus 14 caídos se han vuelto a correr, fichero a fichero, en la rama y en `main` limpio (`703df147`) dentro del mismo árbol y con el mismo `dist/` (la rama no toca `src/`, `prisma/` ni `package.json`: 0 ficheros):
+
+| fichero | caen en la rama | caen en `main` |
+|---|---|---|
+| `scrum1199-avisos-alta-cliente` | 2 | 2 |
+| `scrum1726-tanda-firmada-j1` | 2 | 2 |
+| `scrum245-tipo-obliga-declarar` | 2 | 2 |
+| `scrum385-preview-fiable` | 3 | 3 |
+| `scrum471-node-modules-al-dia` | 1 | 1 |
+| `scrum475-schema-vs-sql` | 3 | 3 |
+| `scrum476-reconciliar-censos` | 1 | 1 |
+
+Comparados como conjuntos de NOMBRES: 14 en la rama, 14 en `main`, 14 en la suite a medias, y ninguno en un solo lado. Ninguno es de esta rama. Su causa no la he investigado: lo medido es que caen igual sin mi cambio, en este árbol.
+
+**Guards de navegador, repetidos con `main` dentro:**
+- `guard:lista-trabajos-917`: 56 de 56.
+- `guard:escalera-por-estado`: VERDE (salida 0, «las dos pantallas dicen y hacen lo mismo en los cinco estados»). Lo curó #3239 (S2), que ya está en `main` y en esta rama.
+- `guard:lista-trabajos`: ROJO PREEXISTENTE, 1 defecto, la misma firma («el clic en la fila NO abrió el Trabajo»). Se cura en el PR-② (c.22103).
+
+### Cura del rojo del CI de #3240 (S4 · 20-nov-2026 07:07Z · run 44364880372)
+
+**Medido contra:** `origin/main` = `b0b7cf9970e7b4202f547a11e1d09add4ffca971` · 2026-11-20T07:07:58Z
+
+El obligatorio cayó con 2 casos. Los dos se arreglan en el código; ni `scrum622` ni `scrum816` se tocan (regla 41).
+
+| caso caído | causa MEDIDA (del log del run) | arreglo |
+|---|---|---|
+| «SCRUM-622 · EL CENSO: queda UNA red benigna…» | `c1725i-sonda-local.mjs` L96 decía `rojos ? 'ROJO' : 'VERDE'`: el censo por AST la cuenta como red con lado benigno por defecto. Y lo era: con cero exigencias habría dicho «VERDE». | La sonda cuenta sus exigencias. Sin ninguna sale 2 (ciega); con rojos sale 1; «VERDE» solo con exigencias y cero rojos. |
+| «SCRUM-816 · el filtro de técnico busca EN CLIENTE…» | Cayó por CIEGO («no acoté el bloque del filtro»), no por una petición nueva: el test acota entre `const tecnicos = tecnicosParaElFiltro` y el `const porCobro` que le sigue, y 1725i había puesto el cruce de filtros (`pintarFilas`) DELANTE de `paint`. | `pintarFilas` se declara después de `paint`, donde iba el cruce en la base (703df1474: L172 y L243). Mismo cuerpo, mismo comportamiento. |
+
+Lo que falló de mi lado: la tanda de antes del push del 18-nov eligió los tests por memoria y dejó fuera estos dos; uno lee `jobsView.js` y el otro barre el árbol entero. Esta vez la lista sale de `git grep -l` sobre `tests/*.test.mjs` (los que nombran `jobsView`, la sonda o `redesBenignas`).
+
+A9: aviso → cicatriz S4 «La tanda de antes del push sale de un git grep de los tests que nombran lo tocado, no de la memoria: el 18-nov dejé fuera los dos que tumbaron #3240.» — no se pudo comprobar: ningún test puede ver qué tanda corrió una sesión antes de empujar
+
+**Medido tras el arreglo**, con `main` traído (111 commits) y `tsc` limpio:
+- 30 ficheros de `tests/` (los del `git grep` de arriba): 322 casos, 322 pass, 0 fail, 0 skip. Los dos caídos, en verde.
+- `c1725i-sonda-local.mjs` en navegador real: VERDE, 0 en rojo de 32 exigencias (2 roles × 2 anchos, 12 trabajos).
+- En ese run cayó también «guards de navegador» (no obligatorio): 40 verdes, 0 ciegos, 1 rojo, `guard:lista-trabajos`, con la firma preexistente de arriba. Se cura en el PR-②.
