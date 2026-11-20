@@ -30,6 +30,150 @@ import { aprobacionesDeMicrocopy } from './_microcopy-aprobada.mjs';
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const require_ = createRequire(path.join(RAIZ, 'package.json'));
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1765f · El catálogo de este test. Venían del banco heredado
+// `docs/master/evidencias/scrum1326/mutar.mjs` (retirado el 19-nov-2026): las 19 con el ancla viva,
+// cada una con su rojo visto con `aplicarUna` (`docs/master/evidencias/SCRUM-1765/1765f-aplicarUna.txt`).
+// M17 («sin quitar las tildes») queda CADUCADA: su ancla salió de `decisionPorTexto.ts` con 604df568c
+// (SCRUM-1325) hacia `src/core/texto/sinTildes.ts`, que es de S1. Motivo en `docs/master/SCRUM-1765.md`.
+// `cae` es el primer caso que la misma mutación tumbaba en el guion (`mutaciones.json`).
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // M1 «vale» vuelve a aceptar (el defecto del ticket) (dos tramos del guion en UNA sustitución: el texto de en medio va igual en `de` y en `a`)
+    fichero: "src/modules/whatsappBot/domain/decisionPorTexto.ts",
+    de: "'me interesa', 'quiero', 'lo quiero', 'sale',\n];\n\n/**\n * 🔴 SCRUM-1326 · Las que NO aceptan solas: el bot pregunta. Son las ocho que firmó el fundador\n * (comentarios 17692 y 17802), ni una más: `tests/scrum1326-vale-pregunta-una-vez.test.mjs` las\n * enumera. El criterio firmado: un acuse de recibo pregunta; una autorización o un deseo, acepta.\n * `okay` y `okey` van con `ok`; `va` es «vale» abreviado. `sale` ACEPTA: lo decidió el fundador.\n * Junto a una entrada de `ACEPTA` («sí, vale») no añaden un paso; junto a una de `RECHAZA`, el\n * mensaje no decide nada, igual que antes.\n */\nconst PREGUNTA: readonly string[] = ['vale', 'ok',",
+    a: "'me interesa', 'quiero', 'lo quiero', 'sale', 'vale',\n];\n\n/**\n * 🔴 SCRUM-1326 · Las que NO aceptan solas: el bot pregunta. Son las ocho que firmó el fundador\n * (comentarios 17692 y 17802), ni una más: `tests/scrum1326-vale-pregunta-una-vez.test.mjs` las\n * enumera. El criterio firmado: un acuse de recibo pregunta; una autorización o un deseo, acepta.\n * `okay` y `okey` van con `ok`; `va` es «vale» abreviado. `sale` ACEPTA: lo decidió el fundador.\n * Junto a una entrada de `ACEPTA` («sí, vale») no añaden un paso; junto a una de `RECHAZA`, el\n * mensaje no decide nada, igual que antes.\n */\nconst PREGUNTA: readonly string[] = ['ok',",
+    cae: "🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional",
+  },
+  {
+    // M2 todo pregunta: «Acepto» tambien pasa por la pregunta
+    fichero: "src/modules/whatsappBot/domain/decisionPorTexto.ts",
+    de: "return acepta ? 'accept' : 'ask';",
+    a: "return 'ask';",
+    cae: "🔴 SCRUM-1326 · por efecto: las nueve que aceptan («Acepto», «sí», «dale», «sale»…) aceptan SIN pregunta intermedia",
+  },
+  {
+    // M3 una de las ocho al lado de una clara mete la pregunta («si, vale»)
+    fichero: "src/modules/whatsappBot/domain/decisionPorTexto.ts",
+    de: "return acepta ? 'accept' : 'ask';",
+    a: "return pregunta ? 'ask' : 'accept';",
+    cae: "🔴 SCRUM-1326 · por efecto: las nueve que aceptan («Acepto», «sí», «dale», «sale»…) aceptan SIN pregunta intermedia",
+  },
+  {
+    // M4 una de las ocho con un rechazo: gana el rechazo
+    fichero: "src/modules/whatsappBot/domain/decisionPorTexto.ts",
+    de: "if ((acepta || pregunta) === rechaza) return 'unknown';",
+    a: "if (acepta === rechaza && !pregunta) return 'unknown';",
+    cae: "SCRUM-1326 · control: «No» sigue rechazando, y lo que no es una decisión sigue recibiendo la instrucción de siempre",
+  },
+  {
+    // M5 la ruta trata la pregunta como aceptacion (dos tramos del guion en UNA sustitución: el texto de en medio va igual en `de` y en `a`)
+    fichero: "src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts",
+    de: "if (decision === 'ask') {\n    await sendWhatsAppText({\n      merchantId: quote.merchantId,\n      exentoDelDemo: 'respuesta-a-entrante', exentoDeLaBaja: 'respuesta-a-entrante', // responde a quien acaba de escribir\n      to: from,\n      text: `Entendido 🙌 Para que no haya dudas sobre el presupuesto #${(quote as any).quoteNumber ?? quote.id}: escribe *Acepto* y avisamos a tu profesional, o *No* si prefieres rechazarlo.`,\n    });\n    return;\n  }\n\n  if (decision === 'accept') {",
+    a: "if (decision === 'ask' && false) {\n    await sendWhatsAppText({\n      merchantId: quote.merchantId,\n      exentoDelDemo: 'respuesta-a-entrante', exentoDeLaBaja: 'respuesta-a-entrante', // responde a quien acaba de escribir\n      to: from,\n      text: `Entendido 🙌 Para que no haya dudas sobre el presupuesto #${(quote as any).quoteNumber ?? quote.id}: escribe *Acepto* y avisamos a tu profesional, o *No* si prefieres rechazarlo.`,\n    });\n    return;\n  }\n\n  if (decision === 'accept' || decision === 'ask') {",
+    cae: "🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional",
+  },
+  {
+    // M6 la pregunta deja una marca en el presupuesto (un estado intermedio)
+    fichero: "src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts",
+    de: "  if (decision === 'ask') {\n    await sendWhatsAppText({",
+    a: "  if (decision === 'ask') {\n    await prisma.quote.update({ where: { id: quote.id }, data: { decisionChannel: 'pendiente_de_confirmar' } });\n    await sendWhatsAppText({",
+    cae: "🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional",
+  },
+  {
+    // M7 la pregunta apunta que pregunto en OTRA tabla
+    fichero: "src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts",
+    de: "  if (decision === 'ask') {\n    await sendWhatsAppText({",
+    a: "  if (decision === 'ask') {\n    await (prisma as any).botSession.upsert({ where: { phone }, create: { phone }, update: {} });\n    await sendWhatsAppText({",
+    cae: "🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional",
+  },
+  {
+    // M8 una palabra distinta en el texto firmado
+    fichero: "src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts",
+    de: "y avisamos a tu profesional, o *No*",
+    a: "y avisaremos a tu profesional, o *No*",
+    cae: "🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional",
+  },
+  {
+    // M9 sin el arranque «Entendido»
+    fichero: "src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts",
+    de: "text: `Entendido 🙌 Para que no haya dudas",
+    a: "text: `Para que no haya dudas",
+    cae: "🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional",
+  },
+  {
+    // M10 las negritas de WhatsApp se pierden
+    fichero: "src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts",
+    de: "escribe *Acepto* y avisamos",
+    a: "escribe Acepto y avisamos",
+    cae: "🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional",
+  },
+  {
+    // M11 otro numero: el id aunque haya quoteNumber
+    fichero: "src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts",
+    de: "dudas sobre el presupuesto #${(quote as any).quoteNumber ?? quote.id}:",
+    a: "dudas sobre el presupuesto #${quote.id}:",
+    cae: "🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional",
+  },
+  {
+    // M12 la pregunta avisa TAMBIEN al profesional
+    fichero: "src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts",
+    de: "  if (decision === 'ask') {\n    await sendWhatsAppText({",
+    a: "  if (decision === 'ask') {\n    await sendWhatsAppText({ merchantId: quote.merchantId, to: '34600111222', text: 'tu cliente ha dicho vale' });\n    await sendWhatsAppText({",
+    cae: "🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional",
+  },
+  {
+    // M13 la pregunta deja de declararse respuesta a un entrante
+    fichero: "src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts",
+    de: "exentoDelDemo: 'respuesta-a-entrante', exentoDeLaBaja: 'respuesta-a-entrante', // responde a quien acaba de escribir",
+    a: "",
+    cae: "SCRUM-1326 · la pregunta es una RESPUESTA a quien escribió: un envío, al cliente, declarado como respuesta",
+  },
+  {
+    // M14 con el bot encendido, la pregunta se la queda el menu del bot
+    fichero: "src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts",
+    de: "if (text && parseDecision(text) !== 'unknown' && !(await isMidIntake(phone))) {",
+    a: "if (text && !['unknown', 'ask'].includes(parseDecision(text)) && !(await isMidIntake(phone))) {",
+    cae: "SCRUM-1326 · con el bot encendido: «vale» sobre UN presupuesto enviado pregunta; a mitad de captación es del bot",
+  },
+  {
+    // M15 a mitad de captacion, «vale» decide sobre el presupuesto viejo
+    fichero: "src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts",
+    de: "if (text && parseDecision(text) !== 'unknown' && !(await isMidIntake(phone))) {",
+    a: "if (text && parseDecision(text) !== 'unknown') {",
+    cae: "SCRUM-1326 · con el bot encendido: «vale» sobre UN presupuesto enviado pregunta; a mitad de captación es del bot",
+  },
+  {
+    // M16 una novena palabra que pregunta: «sale», la que el fundador decidio que acepta, SCRUM-1326 (dos tramos del guion en UNA sustitución: el texto de en medio va igual en `de` y en `a`)
+    fichero: "src/modules/whatsappBot/domain/decisionPorTexto.ts",
+    de: "'lo quiero', 'sale',\n];\n\n/**\n * 🔴 SCRUM-1326 · Las que NO aceptan solas: el bot pregunta. Son las ocho que firmó el fundador\n * (comentarios 17692 y 17802), ni una más: `tests/scrum1326-vale-pregunta-una-vez.test.mjs` las\n * enumera. El criterio firmado: un acuse de recibo pregunta; una autorización o un deseo, acepta.\n * `okay` y `okey` van con `ok`; `va` es «vale» abreviado. `sale` ACEPTA: lo decidió el fundador.\n * Junto a una entrada de `ACEPTA` («sí, vale») no añaden un paso; junto a una de `RECHAZA`, el\n * mensaje no decide nada, igual que antes.\n */\nconst PREGUNTA: readonly string[] = ['vale',",
+    a: "'lo quiero',\n];\n\n/**\n * 🔴 SCRUM-1326 · Las que NO aceptan solas: el bot pregunta. Son las ocho que firmó el fundador\n * (comentarios 17692 y 17802), ni una más: `tests/scrum1326-vale-pregunta-una-vez.test.mjs` las\n * enumera. El criterio firmado: un acuse de recibo pregunta; una autorización o un deseo, acepta.\n * `okay` y `okey` van con `ok`; `va` es «vale» abreviado. `sale` ACEPTA: lo decidió el fundador.\n * Junto a una entrada de `ACEPTA` («sí, vale») no añaden un paso; junto a una de `RECHAZA`, el\n * mensaje no decide nada, igual que antes.\n */\nconst PREGUNTA: readonly string[] = ['sale', 'vale',",
+    cae: "🔴 SCRUM-1326 · por efecto: las nueve que aceptan («Acepto», «sí», «dale», «sale»…) aceptan SIN pregunta intermedia",
+  },
+  {
+    // M18 «va» vuelve a aceptar (dos tramos del guion en UNA sustitución: el texto de en medio va igual en `de` y en `a`)
+    fichero: "src/modules/whatsappBot/domain/decisionPorTexto.ts",
+    de: "'lo quiero', 'sale',\n];\n\n/**\n * 🔴 SCRUM-1326 · Las que NO aceptan solas: el bot pregunta. Son las ocho que firmó el fundador\n * (comentarios 17692 y 17802), ni una más: `tests/scrum1326-vale-pregunta-una-vez.test.mjs` las\n * enumera. El criterio firmado: un acuse de recibo pregunta; una autorización o un deseo, acepta.\n * `okay` y `okey` van con `ok`; `va` es «vale» abreviado. `sale` ACEPTA: lo decidió el fundador.\n * Junto a una entrada de `ACEPTA` («sí, vale») no añaden un paso; junto a una de `RECHAZA`, el\n * mensaje no decide nada, igual que antes.\n */\nconst PREGUNTA: readonly string[] = ['vale', 'ok', 'okay', 'okey', 'perfecto', 'listo', 'claro', 'va'];",
+    a: "'lo quiero', 'va', 'sale',\n];\n\n/**\n * 🔴 SCRUM-1326 · Las que NO aceptan solas: el bot pregunta. Son las ocho que firmó el fundador\n * (comentarios 17692 y 17802), ni una más: `tests/scrum1326-vale-pregunta-una-vez.test.mjs` las\n * enumera. El criterio firmado: un acuse de recibo pregunta; una autorización o un deseo, acepta.\n * `okay` y `okey` van con `ok`; `va` es «vale» abreviado. `sale` ACEPTA: lo decidió el fundador.\n * Junto a una entrada de `ACEPTA` («sí, vale») no añaden un paso; junto a una de `RECHAZA`, el\n * mensaje no decide nada, igual que antes.\n */\nconst PREGUNTA: readonly string[] = ['vale', 'ok', 'okay', 'okey', 'perfecto', 'listo', 'claro'];",
+    cae: "🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional",
+  },
+  {
+    // M19 «okay» vuelve a aceptar y «ok» sigue preguntando (dos tramos del guion en UNA sustitución: el texto de en medio va igual en `de` y en `a`)
+    fichero: "src/modules/whatsappBot/domain/decisionPorTexto.ts",
+    de: "'lo quiero', 'sale',\n];\n\n/**\n * 🔴 SCRUM-1326 · Las que NO aceptan solas: el bot pregunta. Son las ocho que firmó el fundador\n * (comentarios 17692 y 17802), ni una más: `tests/scrum1326-vale-pregunta-una-vez.test.mjs` las\n * enumera. El criterio firmado: un acuse de recibo pregunta; una autorización o un deseo, acepta.\n * `okay` y `okey` van con `ok`; `va` es «vale» abreviado. `sale` ACEPTA: lo decidió el fundador.\n * Junto a una entrada de `ACEPTA` («sí, vale») no añaden un paso; junto a una de `RECHAZA`, el\n * mensaje no decide nada, igual que antes.\n */\nconst PREGUNTA: readonly string[] = ['vale', 'ok', 'okay', 'okey',",
+    a: "'lo quiero', 'okay', 'sale',\n];\n\n/**\n * 🔴 SCRUM-1326 · Las que NO aceptan solas: el bot pregunta. Son las ocho que firmó el fundador\n * (comentarios 17692 y 17802), ni una más: `tests/scrum1326-vale-pregunta-una-vez.test.mjs` las\n * enumera. El criterio firmado: un acuse de recibo pregunta; una autorización o un deseo, acepta.\n * `okay` y `okey` van con `ok`; `va` es «vale» abreviado. `sale` ACEPTA: lo decidió el fundador.\n * Junto a una entrada de `ACEPTA` («sí, vale») no añaden un paso; junto a una de `RECHAZA`, el\n * mensaje no decide nada, igual que antes.\n */\nconst PREGUNTA: readonly string[] = ['vale', 'ok', 'okey',",
+    cae: "🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional",
+  },
+  {
+    // M20 una flexion deja de aceptar («lo confirmo» pregunta) (dos tramos del guion en UNA sustitución: el texto de en medio va igual en `de` y en `a`)
+    fichero: "src/modules/whatsappBot/domain/decisionPorTexto.ts",
+    de: "'confirmamos', 'lo confirmo',\n  // lo que ya se entendía suelto antes de SCRUM-1322 (las raíces, tal cual, incluidas)\n  'acept', 'confirm', 'dale', 'adelante', 'de acuerdo',\n  'me interesa', 'quiero', 'lo quiero', 'sale',\n];\n\n/**\n * 🔴 SCRUM-1326 · Las que NO aceptan solas: el bot pregunta. Son las ocho que firmó el fundador\n * (comentarios 17692 y 17802), ni una más: `tests/scrum1326-vale-pregunta-una-vez.test.mjs` las\n * enumera. El criterio firmado: un acuse de recibo pregunta; una autorización o un deseo, acepta.\n * `okay` y `okey` van con `ok`; `va` es «vale» abreviado. `sale` ACEPTA: lo decidió el fundador.\n * Junto a una entrada de `ACEPTA` («sí, vale») no añaden un paso; junto a una de `RECHAZA`, el\n * mensaje no decide nada, igual que antes.\n */\nconst PREGUNTA: readonly string[] = ['vale',",
+    a: "'confirmamos',\n  // lo que ya se entendía suelto antes de SCRUM-1322 (las raíces, tal cual, incluidas)\n  'acept', 'confirm', 'dale', 'adelante', 'de acuerdo',\n  'me interesa', 'quiero', 'lo quiero', 'sale',\n];\n\n/**\n * 🔴 SCRUM-1326 · Las que NO aceptan solas: el bot pregunta. Son las ocho que firmó el fundador\n * (comentarios 17692 y 17802), ni una más: `tests/scrum1326-vale-pregunta-una-vez.test.mjs` las\n * enumera. El criterio firmado: un acuse de recibo pregunta; una autorización o un deseo, acepta.\n * `okay` y `okey` van con `ok`; `va` es «vale» abreviado. `sale` ACEPTA: lo decidió el fundador.\n * Junto a una entrada de `ACEPTA` («sí, vale») no añaden un paso; junto a una de `RECHAZA`, el\n * mensaje no decide nada, igual que antes.\n */\nconst PREGUNTA: readonly string[] = ['lo confirmo', 'vale',",
+    cae: "🔴 SCRUM-1326 · las que preguntan son OCHO, las firmadas, y ninguna más",
+  },
+];
+
 const RUTA_SRC = path.join(RAIZ, 'src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts');
 const MODULO_SRC = path.join(RAIZ, 'src/modules/whatsappBot/domain/decisionPorTexto.ts');
 const { parseDecision } = require_('./dist/modules/whatsappBot/domain/decisionPorTexto.js');
