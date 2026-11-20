@@ -1292,9 +1292,8 @@ function jobRow(j, container, equipo) {
   const puedeFacturar = typeof window.facturaFiscalDisponible === 'function' && window.facturaFiscalDisponible();
   const cobraAqui = puedeFacturar && j.status === 'terminado' && j.remaining && j.remaining.amount > 0;
   const siguiente = typeof jobNextAction === 'function' ? jobNextAction(j, !isTecnico) : null;
-  // SCRUM-1739 · ¿la rellena de esta fila es la acción de la ESCALERA? Entonces va PRIMERA (abajo, al
-  // montar la celda). «Abrir parte» ya iba primera porque se monta fuera de la escalera.
-  let rellenaEnEscalera = cobraAqui;
+  // (SCRUM-1739 llevaba aquí la cuenta de si la rellena era la de la escalera, para montarla delante
+  // de «Ver detalle». Con el orden fijo de SCRUM-1725j la caja va SIEMPRE delante y la cuenta sobra.)
   // SCRUM-1725j · P4: la acción de la escalera que BAJA al «⋯» (ver dónde se monta el menú).
   let escaleraAlMenu = null;
   if (siguiente && !cobraAqui) {
@@ -1323,7 +1322,6 @@ function jobRow(j, container, equipo) {
     // Va en su propia asignación, con el literal entero, para que el censo de SCRUM-412 lo VEA.
     if (siguiente.kind === 'empezar' && grupoDeTrabajo(j, new Date()) === 'hoy') {
       bSiguiente.className = 'btn-primary btn-sm';
-      rellenaEnEscalera = true;
     }
     bSiguiente.textContent = siguiente.label;
     // ── SCRUM-823 · «Agendar» y «▶ Empezar» SE EJECUTAN AQUÍ, no llevan al detalle ─────────

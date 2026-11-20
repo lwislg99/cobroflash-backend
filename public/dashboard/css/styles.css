@@ -4938,15 +4938,9 @@ textarea.parte-linea-desc {
    acciones) NO cambia, solo deja de colgar de `tbody.jobs-grupo`. */
 .jobs-pantalla { --jobs-lavado: 1725g; }   /* testigo: el banco comprueba que ESTA hoja es la que pinta */
 
-/* ① La cabecera: el título deja de ser una tarjeta y comparte renglón con «Nuevo trabajo». La
-   rejilla es de `.jobs-pantalla`; el DOM no cambia (título, botón, cifras, filtros, lista). */
-.jobs-pantalla { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; align-items: center; }
-.jobs-pantalla > * { grid-column: 1 / -1; min-width: 0; }
-.jobs-pantalla > .jobs-cabecera {
-  grid-column: 1; grid-row: 1; margin-bottom: 16px; padding: 0;
-  background: none; border: 0; border-radius: 0; box-shadow: none;
-}
-.jobs-pantalla > .jobs-nuevo { grid-column: 2; grid-row: 1; margin-bottom: 16px; }
+/* ① La cabecera: el título y «Nuevo trabajo» comparten renglón. Desde SCRUM-1725j viven DENTRO de
+   la tarjeta de la lista (`.data-card-header`), así que la rejilla que los juntaba desde
+   `.jobs-pantalla` se fue con ellos; lo que queda aquí es la letra del título. */
 .jobs-pantalla .jobs-cabecera h2 { font-size: 1.25rem; line-height: 1.2; letter-spacing: -.01em; }   /* Headline */
 .jobs-pantalla .jobs-cifra { padding: 16px; }   /* el mismo relleno que la tarjeta del trabajo: los textos caen en la misma vertical */
 /* (La caja de filtros la viste el bloque «S4 · SCRUM-1725i», más abajo.) */
@@ -4957,21 +4951,11 @@ textarea.parte-linea-desc {
   .table--trabajos td.cell-status { white-space: nowrap; }
   .table--trabajos tr.jobs-grupo-abrir td { padding: 10px 14px 12px; }
 }
-/* Con la columna nueva, a 1280 la celda de acciones se quedó en 276 px y el trío más corriente
-   («Ver detalle» · «Enviar para firmar» · «⋯», 282 px) partía en dos renglones; antes cabía en uno.
-   Se le asegura su ancho donde la tabla tiene de dónde sacarlo. Por debajo, parte como siempre. */
-@media (min-width: 1200px) {
-  .table--trabajos td.cell-actions { min-width: 296px; }
-}
+/* (Aquí se le aseguraba un ancho a la celda de acciones para que su trío no partiera. Desde
+   SCRUM-1725j las acciones van en UN renglón por construcción: bloque «S4 · SCRUM-1725j».) */
 
 @media (max-width: 640px) {
-  /* ① A 390 la barra de arriba YA dice «Trabajos»: el `h2` se queda para quien lo oye y deja de
-     pintarse. «Nuevo trabajo» abre la pantalla. */
-  .jobs-pantalla > .jobs-cabecera {
-    position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden;
-    clip-path: inset(50%); white-space: nowrap; align-self: start; justify-self: start;
-  }
-  .jobs-pantalla > .jobs-nuevo { grid-column: 1 / -1; }
+  /* ① (El título oculto a la vista y «Nuevo trabajo» abriendo la pantalla: bloque «S4 · SCRUM-1725j».) */
 
   /* El filtro de técnico, a todo el ancho de la barra: la caja y el desplegable se reparten el renglón.
      (Las cuatro píldoras de cobro que se repartían aquí pasaron al desplegable: SCRUM-1725i.) */
@@ -5010,21 +4994,8 @@ textarea.parte-linea-desc {
   .table--trabajos .jobs-fila-direccion { margin-top: 6px; }
   .table--trabajos tr.jobs-fila td.cell-date { margin-top: 4px; font-size: 13px; font-weight: 600; color: var(--body); }
 
-  /* ④ SIN IMPORTE: el aviso baja de la esquina a un renglón propio, bajo los datos del trabajo.
-     Las mismas dos frases, en el mismo orden; el cliente recupera el ancho entero de la tarjeta.
-     Con importe, la cifra sigue arriba a la derecha (Regla del Importe). */
-  .table--trabajos tbody > tr.jobs-fila:has(.jobs-importe-sin) {
-    grid-template-areas:
-      "client  client"
-      "amount  amount"
-      "date    status"
-      "actions actions";
-  }
-  .table--trabajos tr.jobs-fila:has(.jobs-importe-sin) td.cell-amount {
-    display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px;
-    margin-top: 4px; text-align: left; font-size: 13px;
-  }
-  .table--trabajos tr.jobs-fila:has(.jobs-importe-sin) :is(.jobs-importe-sin, .jobs-importe-de) { font-size: 13px; line-height: 1.4; }
+  /* ④ (SIN IMPORTE bajaba a un renglón propio porque eran dos frases. Desde SCRUM-1725j la lista
+     dice solo «Sin importe», que cabe en la esquina de siempre, a la derecha del cliente.) */
 
   /* ⑤ Las acciones, en su franja: la rellena (el paso de hoy, SCRUM-1739) a todo el ancho y al
      pulgar; debajo, las demás en un renglón, con el «⋯» cerrando a la derecha. El orden es el del
@@ -5103,6 +5074,126 @@ textarea.parte-linea-desc {
   .jobs-pantalla .jobs-filtro-cobro { flex: 1 1 100%; width: 100%; }
 }
 /* ══ fin S4 · SCRUM-1725i ══ */
+
+/* ══ S4 · SCRUM-1725j · EL LAVADO DE LA LISTA: UNA TARJETA Y FILAS DE TRES RENGLONES ═══════════════
+   PR-② de la vuelta 3 (SCRUM-1725 c.22098 y c.22103). Lo que cambia, y por qué:
+     ① UNA tarjeta, como Presupuestos, Albaranes y Facturas: cabecera con el título y «Nuevo
+        trabajo», pestañas, barra y tabla. Las dos cifras se quedan encima.
+     ② La fila de escritorio mide tres renglones (quién · qué y los técnicos · tipo y dirección),
+        no los 92-121 px de antes. Y con eso se cura el clic: medido el 18-nov, en 8 de 16 filas el
+        centro de la celda de cliente caía en el desplegable de técnicos, que no navega. El
+        desplegable pasa a la MITAD DERECHA de su renglón y el centro queda libre.
+     ③ Las acciones, en un renglón y a la derecha: «Ver detalle» y «⋯» en la misma vertical.
+     ④ La barra, con la letra de la casa para un control (13,5 px) y sitio para la flecha.
+   Todo acotado a `.jobs-pantalla` o `.table--trabajos`. Tokens de `tokens.css`, ninguno nuevo. */
+.jobs-pantalla { --jobs-lista: 1725j; }   /* testigo: el banco comprueba que ESTA hoja es la que pinta */
+
+/* ① La cabecera toma el relleno de la celda de la tabla: título, pestañas y «CLIENTE», en una vertical. */
+.jobs-pantalla .jobs-tarjeta > .jobs-cabecera { padding: 16px 14px; }
+.jobs-pantalla .jobs-cabecera h2 { margin: 0; }
+
+/* ③ La caja de la escalera se monta siempre (los guards cuentan UNA por fila); vacía, no ocupa. */
+.table--trabajos .jobs-acciones:empty { display: none; }
+/* La hora acompaña al día: mismo renglón, en gris. */
+.table--trabajos .jobs-fecha-hora { color: var(--muted); font-weight: 400; }
+
+/* ④ La barra. El desplegable guarda sitio para su flecha: a 390 «Todos los técnicos» la pisaba. */
+.jobs-pantalla .jobs-barra select,
+.jobs-pantalla .jobs-barra .input { font-size: 13.5px; }
+.jobs-pantalla .jobs-barra select { padding-right: 28px; text-overflow: ellipsis; }
+
+@media (min-width: 641px) {
+  /* ① Dentro de la tarjeta, las piezas no llevan caja propia: el borde y las esquinas son de ella. */
+  .jobs-pantalla .jobs-tarjeta .jobs-filtros { border: 0; border-radius: 0; }
+  .jobs-pantalla .jobs-tarjeta .jobs-lista > .customers-card { border: 0; border-radius: 0; box-shadow: none; }
+
+  /* ② La fila. 8 px arriba y abajo; dentro, tres renglones sin márgenes (14 / 13 / 12,5 px a 1.3). */
+  .table--trabajos tr.jobs-fila > td { padding-top: 8px; padding-bottom: 8px; }
+  /* Los renglones: ① quién · ② qué, y al final los técnicos · ③ tipo y dirección.
+     Los técnicos van en el SEGUNDO y no en el tercero, y es una medida: a 1280 la celda de cliente
+     se queda en unos 256 px, y con tipo, dirección y técnicos en un renglón la dirección medía
+     0 px en 4 de 8 filas. La tarea es texto largo que se corta igual; la dirección pasa a tener el
+     renglón para ella y el tipo. La tercera columna mide, como mucho, la mitad derecha. */
+  .table--trabajos .jobs-fila-cuerpo {
+    display: grid; align-items: start;
+    grid-template-columns: auto minmax(0, 1fr) fit-content(calc(50% - 16px));
+  }
+  .table--trabajos .jobs-fila-linea { display: contents; }
+  .table--trabajos .jobs-fila-sep { display: none; }
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-cliente,
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-tarea,
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-trabajo,
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-tipo,
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-direccion {
+    display: block; min-width: 0; max-width: none; margin: 0;
+    line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-cliente { grid-area: 1 / 1 / 2 / -1; font-size: 14px; }
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-tarea,
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-trabajo { grid-area: 2 / 1 / 3 / 3; font-size: 13px; color: var(--ink); }
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-tipo { grid-area: 3 / 1; font-size: 12.5px; }
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-tipo:has(~ .jobs-fila-direccion)::after { content: "·"; margin: 0 6px; }
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-direccion { grid-area: 3 / 2 / 4 / -1; font-size: 12.5px; }
+
+  /* Los técnicos: al final del segundo renglón. Sin `overflow` en la caja, que recortaría la lista
+     que se abre debajo; quien corta con elipsis es el resumen. */
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-tecnicos {
+    grid-area: 2 / 3; justify-self: end; display: block; min-width: 0; max-width: 100%;
+    margin-left: 12px; font-size: 12.5px; line-height: 1.3; white-space: nowrap; overflow-wrap: normal;
+  }
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-tecnicos:not(:has(.jobs-tecnicos-menu)) { overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+  /* El desplegable, sin caja: un texto con su flecha, que se marca al pasar o al abrirlo. El
+     objetivo sigue midiendo 44 px (AB6); el relleno que lo da se compensa con margen negativo para
+     que el renglón no engorde, y el fondo de «pasar por encima» lo pinta una pieza del alto del
+     texto, no los 44 px (taparía la tarea del renglón de arriba). */
+  .table--trabajos .jobs-fila-cuerpo .jobs-tecnicos-resumen {
+    display: block; position: relative; isolation: isolate; box-sizing: border-box;
+    max-width: 100%; min-height: 44px; margin: -14px 0; padding: 14px 20px 14px 8px;
+    border: 0; background: none; color: var(--body);
+    font-size: 12.5px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .table--trabajos .jobs-fila-cuerpo .jobs-tecnicos-resumen:hover { background: none; }
+  .table--trabajos .jobs-fila-cuerpo .jobs-tecnicos-resumen::before {
+    content: ""; position: absolute; z-index: -1; inset: 11px 0; border-radius: var(--radius-sm);
+  }
+  .table--trabajos .jobs-fila-cuerpo .jobs-tecnicos-resumen:hover::before,
+  .table--trabajos .jobs-fila-cuerpo .jobs-tecnicos-menu[open] > .jobs-tecnicos-resumen::before { background: var(--neutral-100); }
+  .table--trabajos .jobs-fila-cuerpo .jobs-tecnicos-resumen::after { position: absolute; right: 7px; top: 14px; line-height: 16px; }
+  /* La lista se abre hacia la izquierda desde el borde del resumen: está en la mitad derecha. */
+  .table--trabajos .jobs-fila-cuerpo .jobs-tecnicos-lista { left: auto; right: 0; top: calc(100% - 10px); }
+
+  /* La fecha y el importe, sin partir. La celda de cliente pide todo el ancho que haya (sus
+     renglones no parten), y sin esto la tabla se lo quitaba al importe: medido, «Sin importe» y
+     «de 1.194,27 €» caían en dos renglones cada uno y la fila se iba a 76-96 px. */
+  .table--trabajos tr.jobs-fila > td.cell-date,
+  .table--trabajos tr.jobs-fila > td.cell-amount { white-space: nowrap; }
+
+  /* ③ Las acciones: un renglón, a la derecha, y su rótulo de columna encima de ellas. */
+  .table--trabajos thead th:last-child { text-align: right; }
+  .table--trabajos .jobs-celda-acciones { justify-content: flex-end; flex-wrap: nowrap; }
+  .table--trabajos .jobs-celda-acciones .jobs-acciones { flex-wrap: nowrap; }
+  .table--trabajos .jobs-celda-acciones button { white-space: nowrap; }
+}
+
+@media (max-width: 640px) {
+  /* ① Móvil: las tarjetas son los TRABAJOS (SCRUM-1725e), así que la de la lista no se pinta. La
+     barra de arriba YA dice «Trabajos»: el `h2` se queda para quien lo oye. «Nuevo trabajo» abre
+     la pantalla, a todo el ancho. */
+  .jobs-pantalla .jobs-tarjeta { background: none; border: 0; border-radius: 0; box-shadow: none; overflow: visible; }
+  .jobs-pantalla .jobs-tarjeta > .jobs-cabecera { padding: 0 0 12px; border-bottom: 0; }
+  .jobs-pantalla .jobs-tarjeta > .jobs-cabecera:has(.jobs-nuevo:empty) { padding: 0; }
+  .jobs-pantalla .jobs-cabecera h2 {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap;
+  }
+  .jobs-pantalla .jobs-cabecera .jobs-nuevo { flex: 1 1 100%; align-self: stretch; width: 100%; }
+  .jobs-pantalla .jobs-cabecera .jobs-nuevo > .btn-primary { flex: 1 1 auto; justify-content: center; }
+
+  /* ③ Con el orden fijo, la caja del paso va siempre delante. Solo se lleva el renglón entero
+     cuando el paso es la rellena; si no, comparte renglón con «Ver detalle» y el «⋯». */
+  .table--trabajos .jobs-celda-acciones > .jobs-acciones:first-child:not(:has(> .btn-primary)) { flex: 0 1 auto; }
+}
+/* ══ fin S4 · SCRUM-1725j ══ */
 
 /* ═══ SCRUM-831 · LA LISTA DE ALBARANES RECUPERA SU RANURA DE ACCIONES ═══════════════════════
    Medido en el censo de las cinco listas (8-sep-2026): era la ÚNICA con `.cell-actions` ocupada
