@@ -98,6 +98,7 @@ const SIN_DECIDIR = Object.freeze({
   'job.direccion': 'la dirección DONDE se trabajó — casi siempre el domicilio del cliente',
   'job.notes': 'texto libre del profesional sobre el trabajo y su cliente',
   'job.queHayQueHacer': 'texto libre del jefe al operario sobre la tarea (SCRUM-1662): misma pregunta que job.notes',
+  'attachment.fileName': 'el nombre del documento de un CLIENTE (SCRUM-1005b, «boletin-juan-perez.pdf»): con la baja del profesional, ¿se redacta como customer.name o se va la fila entera con sus bytes?',
   'quote.internalNotes': 'texto libre, y va dentro de un documento que puede estar sellado (regla 29)',
   'expense.notes': 'texto libre; puede nombrar a un proveedor o a una persona',
   'botSession.phone': 'el teléfono del cliente que escribió por WhatsApp, antes de ser cliente',
@@ -321,8 +322,10 @@ test('SCRUM-497 · 🔴 TRINQUETE: noventa datos personales siguen sin anonimiza
     + '  o a `FUERA_DE_ANONIMIZADO` y baja este número a mano, en el mismo commit.\n'
     + '  Si no, el censo ha dejado de verlos y «cero pendientes» significa «no supe mirar».');
 
-  assert.equal(reparto.sinDecidir.length, 91,
-    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 91 (SCRUM-1662 sumó, el 12-nov-2026 y sobre 90, ` +
+  assert.equal(reparto.sinDecidir.length, 92,
+    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 92 (SCRUM-1005b sumó, el 20-nov-2026 y sobre 91, ` +
+    '`attachment.fileName`, el nombre del documento de un cliente: columna nueva, SIN decidir —decide el fundador—; ' +
+    `SCRUM-1662 sumó, el 12-nov-2026 y sobre 90, ` +
     '`job.queHayQueHacer`, columna nueva de texto libre: misma pregunta que `job.notes`, SIN decidir —decide el fundador—; ' +
     'SCRUM-1547 sumó, el 12-nov-2026 y sobre 86, ' +
     'los 4 textos de error de envío, decididos por el fundador en c.21617; antes, ese mismo día y sobre 42, ' +

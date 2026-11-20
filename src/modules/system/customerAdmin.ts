@@ -561,8 +561,9 @@ export async function subirDocumento(
   if (!(await clienteDelComercio(merchantId, customerId))) return { ok: false, status: 404, error: 'NO_ENCONTRADO' };
 
   const huella = crypto.createHash('sha256').update(bytes).digest('hex');
-  const where = whereDocumentosDe(merchantId, customerId);
   return prisma.$transaction(async (tx): Promise<ResultadoSubida> => {
+    // Dentro del callback: el filtro de comercio se ve en la función que lee (SCRUM-243).
+    const where = whereDocumentosDe(merchantId, customerId);
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(${DOCUMENTOS_CLIENTE_LOCK_NS}::int, ${customerId}::int)`;
     const ya = await tx.attachment.findFirst({ where: { ...where, sha256: huella }, select: SELECT_DOCUMENTO });
     if (ya) return { ok: true, creado: false, documento: ya };

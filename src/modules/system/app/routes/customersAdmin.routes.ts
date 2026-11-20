@@ -544,8 +544,10 @@ router.delete('/:id/sites/:siteId', async (req, res) => {
 // `customerAdmin.ts` (decisión del fundador, SCRUM-1005 c.22140). Aquí, la forma HTTP.
 // Contestan CÓDIGOS (`FORMATO_NO_ADMITIDO`, `FICHERO_DEMASIADO_GRANDE`, `TOPE_DEL_CLIENTE`…),
 // ninguna frase: los textos los firma el fundador con la pestaña (regla 39, 1005c).
-// Sin `requireRole`, al mismo nivel que la agenda de sitios de arriba: el operario en la obra es
-// quien necesita el boletín o el plano. Borrar el CLIENTE sigue siendo de admin (`DELETE /:id`).
+// Ver y subir, sin `requireRole`, al mismo nivel que la agenda de sitios de arriba: el operario en la
+// obra es quien necesita el boletín o el plano (declaradas en `adminRouteDeclarations.ts`). BORRAR un
+// documento, solo admin (decisión del fundador, SCRUM-1005 c.22192): un documento borrado por error en
+// la obra no se recupera. Borrar el CLIENTE sigue siendo de admin (`DELETE /:id`).
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 
 /** Los dos ids de la ruta, o `null` si alguno no cabe en la columna. */
@@ -626,7 +628,7 @@ router.get('/:id/documentos/:docId', async (req, res) => {
 });
 
 // DELETE /admin/customers/:id/documentos/:docId — borra uno. 404 si no es de este cliente/comercio.
-router.delete('/:id/documentos/:docId', async (req, res) => {
+router.delete('/:id/documentos/:docId', requireRole('admin'), async (req, res) => {
   try {
     const ids = idsDeDocumento(req);
     if (!ids || ids.docId === null) return res.status(400).json({ error: 'invalid_id' });

@@ -100,6 +100,12 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   { method: 'POST',   path: '/admin/customers/:id/sites', why: 'Añadir un sitio desde la obra, igual que corregir la dirección del cliente' },
   { method: 'PUT',    path: '/admin/customers/:id/sites/:siteId', why: 'Corregir un sitio desde la obra, igual que el resto de la ficha' },
   { method: 'DELETE', path: '/admin/customers/:id/sites/:siteId', why: 'Quitar un sitio dado de alta por error, mismo nivel que crearlo' },
+  // SCRUM-1005b · DECISIÓN DEL FUNDADOR, no un trámite (SCRUM-1005 c.22192, «ver y subir, todo el equipo;
+  // borrar, solo admin»): el boletín, el contrato o el plano del cliente los necesita el técnico EN LA OBRA.
+  // El DELETE de un documento NO está aquí: lleva `requireRole('admin')` en su ruta.
+  { method: 'GET',  path: '/admin/customers/:id/documentos', why: 'Ver la lista de documentos del cliente que va a visitar (SCRUM-1005 c.22192)' },
+  { method: 'POST', path: '/admin/customers/:id/documentos', why: 'Subir desde la obra el boletín o el plano del cliente; borrar sigue siendo de admin (SCRUM-1005 c.22192)' },
+  { method: 'GET',  path: '/admin/customers/:id/documentos/:docId', why: 'Descargar un documento del cliente que va a visitar (SCRUM-1005 c.22192)' },
 
   // Presupuestos — S1: "quotes crear-ver · enviar WA" ✅. EMITIR FACTURA no (ver /invoice).
   { method: 'GET',  path: '/admin/quotes', why: 'S1: quotes crear-ver ✅ — SÓLO LOS SUYOS: autor, asignado o Trabajo suyo (SCRUM-1403)' },

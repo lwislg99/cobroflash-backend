@@ -156,3 +156,26 @@ Evidencias, sin secretos: `docs/master/evidencias/SCRUM-1005/1005b-dev-antes.txt
 3. **Aviso a Luis (S1), `GET /admin/attachments/:id`:** sirve CUALQUIER adjunto del comercio por id, con su `mime` y sin `Content-Disposition` ni `nosniff`. Un documento del cliente también sale por ahí, en línea. Los formatos admitidos son sólo PDF/JPEG/PNG con su firma comprobada, así que no hay SVG ni HTML que ejecutar, pero la puerta de la descarga como adjunto se puede rodear.
 4. **Pregunta al fundador:** las 4 rutas van sin `requireRole`, al nivel de la agenda de sitios (el operario en la obra es quien necesita el boletín). Si el técnico NO debe ver o borrar documentos del cliente, es una línea por ruta.
 5. **Pregunta 7 de 1005a** (la línea de MEDIA-1 del máster con `kind 'document'` y `entityType 'customer'`): sigue sin contestar; el código no la necesita, porque `kind` no es un estado cerrado.
+
+### SCRUM-1005b · relevo J2 (`jv-j2dd`): los guards de declaración y el `requireRole` del borrado
+
+**Medido contra:** `origin/main` = `b0b7cf9970e7b4202f547a11e1d09add4ffca971` · 2026-11-20T07:03:43Z (hora de GitHub; sesión J2 `jv-j2dd`, por encargo del orquestador `cobroflash-backend-c7`). Rama `scrum-1005b-documentos-cliente-servidor` @ `87c1a2a26` + `git merge origin/main` (0 conflictos).
+
+A9: comprobación → `tests/scrum1005b-documentos-cliente.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1005b-documentos-cliente.test.mjs`
+
+**Por qué:** #3262 cayó en el obligatorio (run 44587006217, c.22201) con 8 fallos, todos guards que piden DECLARAR o CONECTAR piezas nuevas. c.22201 nombraba cinco guards; el octavo fallo, que no nombraba, es `tests/scrum55-admin-fail-closed.test.mjs` (las 4 rutas sin rol declarado). Rojo visto en local en los seis antes de tocar nada (7 casos en 1185/243/337/365/497 + 1 en 55); después, 73/73 con el test de 1005b. Ningún guard relajado (regla 41): cada uno, declarado donde él lo pide o arreglado en el código.
+
+| guard | qué pedía | dónde quedó |
+|---|---|---|
+| `scrum1185` | `GET` y `POST /admin/customers/:id/documentos`, sin consumir | `scripts/_sin-consumir-declarados.json`, carril J2, ticket SCRUM-1005, motivo «la consume la pestaña de SCRUM-1005c»; se mueven a `retiradas` en ese PR |
+| `scrum497` (casos SCRUM-1547) | `attachment.fileName` personal sin clasificar; `attachment.sha256` texto sin declarar | `fileName` → `SIN_DECIDIR` de `tests/scrum497-dato-personal-no-sobrevive.test.mjs` con su pregunta (¿se redacta en la baja del profesional o se va la fila entera?, decide el fundador); el trinquete sube de 91 a 92, con la cadena de su mensaje ampliada. `sha256` → `NO_PERSONALES` de `tests/_censo-datos-personales.mjs` (huella de los bytes, no se invierte a una persona) |
+| `scrum243` | 2 lecturas «sin red» en `customerAdmin.ts` (`findFirst` y `aggregate` de `subirDocumento`) | **arreglado en el código, no en el censo:** el `where` con el comercio se construía FUERA del callback de `$transaction`, y el analizador mira la función que lee. Ahora se construye dentro. Mismo filtro; 2 → 0 |
+| `scrum337` | 2 sitios de borrado nuevos (`attachment.deleteMany#1` en `borrarDocumento`, `#2` en `deleteCustomer`) | `BORRADOS_DECLARADOS`, con la pregunta del guard contestada: ninguno se dispara al vencer la prueba ni por inactividad (acción manual de un admin); `trialExpired` sigue siendo cierto |
+| `scrum365` | escrituras abiertas (`POST` y `DELETE` de documentos) con lectura protegida en el fichero | `DELETE /:id/documentos/:docId` lleva `requireRole('admin')` (c.22192); `GET`, `POST` y `GET /:docId` declarados en `TECNICO_ALLOWED` de `src/core/http/adminRouteDeclarations.ts` con la cita de c.22192 |
+| `scrum55` | las 4 rutas sin rol declarado (fail-closed) | lo mismo que 365: 1 con `requireRole`, 3 en `TECNICO_ALLOWED` |
+
+⚠️ **Carril:** `src/core/http/adminRouteDeclarations.ts` es S1 (`carriles.mjs`). Escribí en él las tres líneas de permisos que exige el guard de S1 para MIS rutas, con la decisión del fundador citada (c.22192); no toqué nada más del fichero. Se dice en el commit y en la entrega.
+
+**Test:** `tests/scrum1005b-documentos-cliente.test.mjs` suma el caso «el técnico ve y sube, pero NO borra»: por la ruta real, el técnico recibe 200 en la lista, 201 al subir y 403 al borrar, el documento sigue; el admin, 204 (positivo del mismo camino). 15/15. Mutación nueva al catálogo: quitar `requireRole('admin')` del DELETE. Las tres del catálogo, pasadas con `aplicarUna` de `scripts/meta-guard-mutaciones.mjs` (línea base limpia de la casa): las tres VIVAS (tumban el test); `git status` después, sólo mis cambios.

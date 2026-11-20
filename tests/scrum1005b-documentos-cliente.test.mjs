@@ -44,6 +44,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: '',
     cae: 'borrar el cliente se lleva sus documentos',
   },
+  {
+    // Sin el rol en la ruta, el técnico borra un documento que no se recupera (SCRUM-1005 c.22192).
+    fichero: 'src/modules/system/app/routes/customersAdmin.routes.ts',
+    de: "router.delete('/:id/documentos/:docId', requireRole('admin'), async (req, res) => {",
+    a: "router.delete('/:id/documentos/:docId', async (req, res) => {",
+    cae: 'el técnico ve y sube, pero NO borra',
+  },
 ];
 
 const A = 2; // el comercio de la sesión
@@ -331,6 +338,21 @@ test('SCRUM-1005b · borrar un documento: 204 y sólo ése', async () => {
   assert.equal(r.status, 204);
   assert.equal(attachments.some((a) => a.id === 1), false);
   assert.ok(attachments.some((a) => a.id === 2) && attachments.some((a) => a.id === 3) && attachments.some((a) => a.id === 4));
+});
+
+// Decisión del fundador, SCRUM-1005 c.22192: «ver y subir, todo el equipo; borrar, solo admin». Por la
+// ruta REAL (con su `requireRole`), no por el handler suelto: así cae si alguien quita el rol (SCRUM-1344).
+test('SCRUM-1005b · 🔴 permisos: el técnico ve y sube, pero NO borra (403), y el documento sigue', async () => {
+  sembrar();
+  const lista = await pedir('GET', `/admin/customers/${CLI_A}/documentos`, { rol: 'tecnico' });
+  assert.equal(lista.status, 200, 'el técnico VE la lista de documentos');
+  const subida = await subir(CLI_A, Buffer.from('%PDF-1.4 tecnico'), 'application/pdf', 'boletin.pdf', { rol: 'tecnico' });
+  assert.equal(subida.status, 201, 'el técnico SUBE un documento');
+  const baja = await pedir('DELETE', `/admin/customers/${CLI_A}/documentos/1`, { rol: 'tecnico' });
+  assert.equal(baja.status, 403, 'el técnico NO borra un documento: es de admin');
+  assert.ok(attachments.some((a) => a.id === 1), 'tras el 403, el documento sigue ahí');
+  const admin = await pedir('DELETE', `/admin/customers/${CLI_A}/documentos/1`, { rol: 'admin' });
+  assert.equal(admin.status, 204, 'el admin SÍ lo borra (control positivo del mismo camino)');
 });
 
 test('SCRUM-1005b · 🔴 borrar el cliente se lleva sus documentos, y sólo los suyos', async () => {
