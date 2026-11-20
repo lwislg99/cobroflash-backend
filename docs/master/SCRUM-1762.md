@@ -72,3 +72,19 @@ Las 5 del catálogo, aplicadas una a una sobre la rama: **5/5 ROJO**.
 la mañana) · después = el mismo build con `styles.css`, `jobDetailView.js` y `jobRailBlocks.js` de la rama servidos
 en local (sonda `sondas-s2\capturar-1762.mjs`, solo GET), admin a 390 y 1280. Medido después: 0 emojis visibles,
 0 px de desborde, «+ Nuevo parte» 13,5 px × 44 px sobre rgb(4,120,87), pestaña abierta sobre rgb(236,253,245).
+
+## PR-2 · INICIO (S2 · 20-nov-2026) — COMITEADO EN LOCAL, SIN EMPUJAR
+
+**Medido contra:** `origin/main` = `cde9d2f04da5567dc45233cd9356ddcbf5f7cb9e` · 2026-11-20T11:23:11Z
+**Rama:** `scrum-1762c-hallmark-inicio` (desde PR-1: los dos anexan al final de styles.css)
+**Skill UI:** cargada (`yaqu-premium-ui` + `impeccable`; iconos del set del menú; tokens existentes)
+A9: sin fallo que generalice — el tramo se cortó por límite de uso antes de la tanda entera; queda declarado aquí.
+
+- Estructura: «Para hoy» (franja de la Lista, `pintarCifrasDeLaLista`) arriba también para el admin · «Dinero en juego» debajo · «Completa tu configuración» AL FINAL (ranura `#home-configuracion`; el equipo se inserta antes).
+- Ropa: emojis → iconos del menú (⚙ 💶 ⚡ 👤 💰 🚀 ⚠; 👋 fuera; 🎉 → ✓ en línea) · sin raya lateral en `.home-hero-card` · 16 px bajo los avisos · un solo H1 (saludo → h2).
+- Texto FIRMADO por c.21978: «Cotizaciones» → `appLocale.quotePlural` (el literal del menú) · «0%» con 0 enviados → «—» neutro.
+- Tests: NUEVO `scrum1762c-hallmark-inicio` (4) · CAMBIAN 698 (148→151, delta medido por identidad) y 601 (980→1000). Líneas mandadas al -25; su OK está PENDIENTE.
+
+Mutaciones: catálogo → `tests/scrum1762c-hallmark-inicio.test.mjs`
+
+PENDIENTE antes del push: `npm run censo:mudez -- --escribir` (test nuevo con `ejecutableDe`) · tanda entera · OK del -25 a las líneas de 698/601 · capturas ya en `D:\MILLONARIO\cobroFlash\capturas\SCRUM-1762\c-inicio\despues\`.

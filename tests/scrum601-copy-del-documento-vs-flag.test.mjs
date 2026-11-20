@@ -356,7 +356,10 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   // SCRUM-1717 S2 (12-nov-2026) · 944 → 980: el aviso del SII en Inicio (su llamada y
   // `pintarAvisoSiiSinEmision`) mete 36 líneas y quita 0 POR ENCIMA de la nota (`git diff --numstat`
   // de `homeView.js`: 36 0). Medido con el mismo `grep -n`, en la rama: 980; en origin/main 8f2357255: 944.
-  const boton = en('public/dashboard/js/homeView.js', 980);
+  // SCRUM-1762c (20-nov-2026) · 980 → 1000: el lavado del Inicio (ranura de «Completa tu configuración»,
+  // «Para hoy» del admin, `pluralDelPresupuesto`, `ponerAntesDeLaConfiguracion`) mueve la nota 20 líneas,
+  // todo POR ENCIMA de ella. Medido con el mismo `grep -n`, en la rama: 1000; en origin/main cde9d2f04: 980.
+  const boton = en('public/dashboard/js/homeView.js', 1000);
   assert.equal(boton.length, 1, 'no se encuentra la nota de condiciones de homeView donde se midió');
   assert.match(boton[0].texto, /100% al aceptar/);
   assert.equal(boton[0].dependeDelFlag, true,

@@ -429,8 +429,13 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // VISTA, POR IDENTIDAD dentro de `div.quote-dto-global`: `div.segmented` + 2 × (`label.segmented-option`
   // · `input` radio · `span` «€»/«%») + `p.quote-dto-global__equivale` + `p.aviso-falta-campo`, los tres
   // ocultos hasta pulsar «+ Añadir descuento». 9 = todo el delta. Rótulos firmados en SCRUM-1716 c.21704.
+  // 🔴 SCRUM-1762c · 20-nov-2026 · `renderHomeView` 148 → 151, y las otras tres intactas. Lo mueve la
+  // VISTA, POR IDENTIDAD: `div#home-configuracion` (la ranura nueva de «Completa tu configuración», al
+  // final) + `div#home-hoy` (el admin ya NO lo quita: «Para hoy» arriba; vacío aquí porque el banco no
+  // sirve una lista) + `span.con-icono--hecho` (el ✓ que sustituye al 🎉 en el héroe vacío) = 3, todo el
+  // delta. El checklist sigue entero, solo cambia de sitio.
   for (const [vista, nodos] of [['renderQuotesView', 267], ['renderProductsView', 176],
-    ['renderCustomersView', 89], ['renderHomeView', 148]]) {
+    ['renderCustomersView', 89], ['renderHomeView', 151]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
     assert.equal(todos(r.contenedor).length, nodos,
