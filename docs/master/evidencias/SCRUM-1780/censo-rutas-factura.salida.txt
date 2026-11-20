@@ -1,0 +1,21 @@
+población: 368 ficheros .ts bajo src/
+① llamadas a emitInvoice(tx, …): 4
+   src/modules/jobs/app/routes/albaranes.routes.ts:1421 · origen C7-parcial
+   src/modules/jobs/app/routes/albaranes.routes.ts:1703 · origen C7-albaran
+   src/modules/jobs/domain/recapitulativa.service.ts:109 · origen C7-recapitulativa
+   src/modules/system/app/routes/invoicesAdmin.routes.ts:184 · origen C7-suelta
+  control positivo · definición de emitInvoice: 1 ✔
+② sitios que crean Charge: 2 en 2 fichero(s)
+   src/modules/billing/app/routes/charges.routes.ts:53
+   src/modules/billing/app/routes/chargesAdmin.routes.ts:260
+   … de ellos en un fichero que llama a emitInvoice: 0
+③ líneas con «estado: 'facturado'» literal en src/: 0
+   escrituras de estado en src/modules/jobs/app/routes/partes.routes.ts: 3
+   :483 estado: 'borrador',
+   :783 estado: estadoTrasFirmar(parte.estado as EstadoParte),
+   :871 estado: estadoTrasFirmar(parte.estado as EstadoParte),
+  control positivo · 'facturado' declarado en ESTADOS_PARTE: 1 ✔
+  control positivo · escritura literal «estado: 'borrador'» en el alta del parte: 1 ✔
+④ rutas POST/PATCH/PUT de partes con «factur»/«invoice» en su path: 0
+  control positivo · rutas POST/PATCH/PUT en partes.routes.ts: 5 ✔
+VEREDICTO: controles positivos presentes
