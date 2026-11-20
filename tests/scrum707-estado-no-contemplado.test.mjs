@@ -59,7 +59,9 @@ const ofrecidas = (registro, estado) => {
 
 test('SCRUM-707 · 🔴 SUELO: los dos registros traen acciones y estados de verdad', () => {
   for (const [nombre, registro, estados] of DOCS) {
-    assert.ok(registro.length >= 9, `🔴 «${nombre}» sólo trae ${registro.length} acciones`);
+    // SCRUM-665e: 9 → 8. La factura pierde «Regenerar PDF» por decisión del fundador (SCRUM-665
+    // c.21182 punto 3); el albarán sigue con más. No se relaja el suelo: cuenta una acción que ya no existe.
+    assert.ok(registro.length >= 8, `🔴 «${nombre}» sólo trae ${registro.length} acciones`);
     assert.ok(estados.length >= 3, `🔴 «${nombre}» sólo declara ${estados.length} estados`);
   }
   assert.equal(typeof ley.estadoReconocido, 'function', '🔴 la ley no publica `estadoReconocido`');
@@ -94,17 +96,17 @@ test('SCRUM-707 · ✅ CONTROL POSITIVO: `pending` sigue yendo a secundaria, 0/9
   assert.equal(d.filter((x) => x === undefined).length, 0);
   assert.equal(d[0], 'secundaria', '🔴 la primera acción de `pending` ha dejado de ir a secundaria');
   assert.deepEqual(ofrecidas(R, 'pending'),
-    ['btnPdf', 'btnWhatsApp', 'btnReminder', 'btnRectify', 'btnRegen', 'btnDispute'],
+    ['btnPdf', 'btnWhatsApp', 'btnReminder', 'btnRectify', 'btnDispute'],
     '🔴 ha cambiado lo que se ofrece en `pending`, que es un estado que ya funcionaba');
 });
 
 test('SCRUM-707 · ✅ CONTROL POSITIVO: los estados conocidos ofrecen lo mismo que antes', () => {
   // Enumerado, no contado: un número igual puede ser otro conjunto (SCRUM-727).
   const esperado = {
-    'factura|pending': ['btnPdf', 'btnWhatsApp', 'btnReminder', 'btnRectify', 'btnRegen', 'btnDispute'],
-    'factura|paid': ['btnPdf', 'btnWhatsApp', 'btnTogglePaid', 'btnRectify', 'btnRegen', 'btnDispute'],
-    'factura|annulled': ['btnPdf', 'btnRegen'],
-    'factura|R1': ['btnPdf', 'btnRegen'],
+    'factura|pending': ['btnPdf', 'btnWhatsApp', 'btnReminder', 'btnRectify', 'btnDispute'],
+    'factura|paid': ['btnPdf', 'btnWhatsApp', 'btnTogglePaid', 'btnRectify', 'btnDispute'],
+    'factura|annulled': ['btnPdf'], // SCRUM-665e: «Regenerar PDF» retirado (SCRUM-665 c.21182)
+    'factura|R1': ['btnPdf'],
     'albarán|borrador': ['btnEmitir', 'btnPdf', 'btnEditarLineas', 'btnFoto', 'btnVerTrabajo', 'btnDuplicar'],
     'albarán|emitido': ['btnEnviarFirmar', 'btnFirmarAqui', 'btnPdf', 'btnFoto', 'btnVerTrabajo', 'btnDuplicar'],
     // SCRUM-1215 (c.17494): sin `btnFoto`, que en `firmado` el servidor rechaza siempre (409).
@@ -159,7 +161,8 @@ test('SCRUM-707 · ✅ `estadoReconocido` distingue los DOS casos', () => {
   }
   // 🔴 Y el caso que separa los dos hechos: `annulled` ofrece POCAS acciones y SÍ se reconoce.
   assert.equal(ley.estadoReconocido(inv.INVOICE_ACTION_REGISTRY, 'annulled'), true);
-  assert.equal(ofrecidas(inv.INVOICE_ACTION_REGISTRY, 'annulled').length, 2,
+  // SCRUM-665e: 2 → 1 (se fue «Regenerar PDF», c.21182). Sigue siendo «pocas pero no cero».
+  assert.equal(ofrecidas(inv.INVOICE_ACTION_REGISTRY, 'annulled').length, 1,
     '🔴 SUELO del control: `annulled` tiene que ofrecer POCAS pero no cero, o no separa nada');
 });
 

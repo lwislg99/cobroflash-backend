@@ -30,6 +30,7 @@
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -164,13 +165,41 @@ async function exigirQueNoSale(d, camino, quien) {
 
 // ═══ ① POSITIVO — este banco SÍ sabe sacar un PDF, o los «no sale» de abajo no dicen nada ════════
 
-test('SCRUM-1510 · POSITIVO: la misma factura, sellada entera, SÍ produce su PDF (bytes en disco y `pdfUrl` escrito)', async () => {
+// 🔵 SCRUM-665e (decisión del orquestador J, SCRUM-665 c.21584 punto 1): desde que el PDF se
+// congela AL EMITIR, la escritura de `pdfUrl` ocurre en la emisión y no en la petición. El
+// POSITIVO exige ahora eso, y que pedirlo después no escriba nada y sirva los MISMOS bytes. Su
+// gemelo «sin congelar» es la emisión de antes de 665e (c.21191) y exige lo de antes.
+const sha256 = (b) => crypto.createHash('sha256').update(b).digest('hex');
+
+test('SCRUM-1510 · POSITIVO: la misma factura, sellada entera, congela su PDF AL EMITIR y pedirlo sirve esos bytes sin escribir (665e, c.21584)', async () => {
   assert.equal(ESTADO_AL_NACER, SELLADO_PENDIENTE,
     `🔴 CIEGO: el esquema ya no hace nacer la factura pendiente (@default «${ESTADO_AL_NACER}»)`);
   const d = base({ numero: '2026-CF-0001' });
   const camino = cargar(d);
   const r = await camino.sellarTrasEmision(facturaDe(d.fila), ES, d.cliente);
   await tic();
+  assert.equal(r.estado, SELLADO_HECHO, `🔴 CIEGO: el sellado no llegó a hacerse (${JSON.stringify(r)})`);
+  assert.equal(fs.existsSync(pdfDe(d.fila)), true, '🔴 la emisión no dejó el PDF en disco');
+  const alEmitir = fs.readFileSync(pdfDe(d.fila));
+  assert.equal(alEmitir.subarray(0, 5).toString('latin1'), '%PDF-');
+  assert.equal(d.fila.pdfSha256, sha256(alEmitir), '🔴 la huella guardada no es la del fichero de la emisión');
+  assert.notEqual(d.fila.pdfUrl, 'PENDING_PDF', '🔴 la emisión no escribió `pdfUrl`');
+
+  const antes = d.llamadas.length;
+  const entregado = await camino.ensureInvoicePdf(d.fila.id, d.cliente);
+  assert.equal(entregado.number, d.fila.number);
+  assert.deepEqual(escrituras(d.llamadas.slice(antes)), [], 'regla 29: pedir el PDF congelado escribió en la factura');
+  assert.equal(d.fila.pdfUrl, entregado.pdfUrl);
+  assert.ok(fs.readFileSync(entregado.diskPath).equals(alEmitir), '🔴 el PDF servido no es, byte a byte, el de la emisión');
+});
+
+test('SCRUM-1510 · POSITIVO sin congelar (emitida antes de 665e): SÍ produce su PDF al pedirlo (bytes en disco y `pdfUrl` escrito)', async () => {
+  const d = base({ numero: '2026-CF-0004' });
+  const camino = cargar(d);
+  const r = await camino.sellarTrasEmision(facturaDe(d.fila), ES, d.cliente, { congelarPdf: async () => {} });
+  await tic();
+  assert.equal(fs.existsSync(pdfDe(d.fila)), false, '🔴 CIEGO: la emisión SÍ congeló; no es la factura de antes de 665e');
+  assert.equal(d.fila.pdfUrl, 'PENDING_PDF', '🔴 CIEGO: la emisión escribió `pdfUrl`');
   assert.equal(r.estado, SELLADO_HECHO, `🔴 CIEGO: el sellado no llegó a hacerse (${JSON.stringify(r)})`);
   assert.equal(d.fila.vfEstado, SELLADO_HECHO);
   assert.match(String(d.fila.vfHash), HUELLA);
@@ -217,3 +246,16 @@ test('SCRUM-1510 · 🔴 justificante que se quedó pendiente (la escritura de �
 
   await exigirQueNoSale(d, camino, 'el justificante pendiente');
 });
+
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  // SCRUM-665e (c.21584) · con huella, se regenera al pedir en vez de servir el congelado.
+  { fichero: 'src/lib/invoicing.ts',
+    de: 'if (congelado?.pdfSha256) {',
+    a: 'if (false) {',
+    cae: 'SCRUM-1510 · POSITIVO: la misma factura, sellada entera, congela su PDF AL EMITIR' },
+  // La emisión deja de admitir «sin congelar»: el gemelo deja de ser la factura de antes de 665e.
+  { fichero: 'src/modules/invoicing/domain/selladoEstado.ts',
+    de: 'const congelarPdf = opciones.congelarPdf ?? congelarPdfDeLaCasa;',
+    a: 'const congelarPdf = congelarPdfDeLaCasa;',
+    cae: 'SCRUM-1510 · POSITIVO sin congelar (emitida antes de 665e)' },
+];

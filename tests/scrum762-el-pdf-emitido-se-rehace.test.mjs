@@ -38,6 +38,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -202,20 +203,41 @@ const M = await (async () => {
   const tras2SinDespliegue = llamadasAlGenerador;
 
   // ③ EL DESPLIEGUE, tal cual: el disco se vacía y el código que hay detrás es otro.
+  //    🔄 SCRUM-665e (GO c.21182; decisión c.21592 punto 2): este fichero era el TESTIGO del defecto
+  //    («se rehace») y se INVIERTE: una emitida con PDF congelado ya NO se rehace — falla cerrado.
+  const huellaCongelada = fila.pdfSha256 ?? null;
   limpiar();
   SERVICIO.generateInvoicePdf = espiando(generadorSiguienteVersion);
 
-  const abierta3 = await ensureInvoicePdf(FACTURA_ID, prisma);
+  let error3 = null;
+  const abierta3 = await ensureInvoicePdf(FACTURA_ID, prisma).catch((e) => { error3 = e; return null; });
   const tras3 = llamadasAlGenerador;
-  const doc3 = papel(abierta3.diskPath);
+  const doc3 = papel(DISCO);
+  const huellaTras3 = fila.pdfSha256 ?? null;
+
+  // ③bis EL CASO SIN CONGELAR, que se conserva: una emitida ANTES de 665e (huella NULL) se congela
+  //    la primera vez que se pide (c.21191) — con el generador que haya ese día, y desde ahí no se mueve.
+  fila.pdfSha256 = null;
+  const abiertaSin = await ensureInvoicePdf(FACTURA_ID, prisma);
+  const trasSin = llamadasAlGenerador;
+  const docSin = papel(abiertaSin.diskPath);
+  const huellaSin = fila.pdfSha256 ?? null;
+  const shaSin = docSin.existe ? crypto.createHash('sha256').update(docSin.bytes).digest('hex') : null;
+  limpiar();
+  let errorSinTrasDespliegue = null;
+  await ensureInvoicePdf(FACTURA_ID, prisma).catch((e) => { errorSinTrasDespliegue = e; });
+  const trasSin2 = llamadasAlGenerador;
 
   // ④ SUELO DEL INSTRUMENTO: dos generaciones con el MISMO generador. Si esto diera distinto,
-  //    la diferencia de ③ no probaría nada — mediría ruido.
+  //    la diferencia de ③bis no probaría nada — mediría ruido. Se quita la huella antes de cada
+  //    una: con huella, 665e ya no genera.
   SERVICIO.generateInvoicePdf = GENERADOR_DE_HOY;
   limpiar();
+  fila.pdfSha256 = null;
   const mismoA = await ensureInvoicePdf(FACTURA_ID, prisma);
   const docMismoA = papel(mismoA.diskPath);
   limpiar();
+  fila.pdfSha256 = null;
   const mismoB = await ensureInvoicePdf(FACTURA_ID, prisma);
   const docMismoB = papel(mismoB.diskPath);
 
@@ -230,8 +252,17 @@ const M = await (async () => {
     tras3,
     doc1,
     doc3,
+    abierta3,
+    error3,
+    huellaCongelada,
+    huellaTras3,
+    trasSin,
+    docSin,
+    huellaSin,
+    shaSin,
+    errorSinTrasDespliegue,
+    trasSin2,
     numero1: abierta1.number,
-    numero3: abierta3.number,
     docMismoA,
     docMismoB,
     bytesIgualesMismoGenerador: docMismoA.bytes && docMismoB.bytes
@@ -287,25 +318,34 @@ test('SCRUM-762 · CONTROL DEL CONTROL: con el fichero en disco NO se vuelve a g
 // ② 🔴 EL CONTROL QUE DECIDE — misma fila, mismo número, dos documentos
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-762 · 🔴 tras un despliegue, la MISMA factura emitida sale con OTRO documento', () => {
-  assert.equal(M.tras3, 2,
+// 🔄 INVERTIDO por SCRUM-665e (GO c.21182; decisión c.21592 punto 2). Hasta aquí este control
+// exigía `tras3 === 2` y un papel con la marca del despliegue: era el testigo del defecto. Ahora
+// exige lo contrario. Si vuelve a generarse, el defecto ha vuelto.
+test('SCRUM-762 · 🔄 tras un despliegue, la MISMA factura emitida y CONGELADA NO se rehace: falla cerrado', () => {
+  assert.match(String(M.huellaCongelada ?? ''), /^[0-9a-f]{64}$/,
+    '🔴 CIEGO: la primera apertura no congeló el PDF (sin `pdfSha256`); lo de abajo no mediría el congelado.');
+  assert.equal(M.tras3, 1,
     '🔴 Sin el fichero en disco, `ensureInvoicePdf` ha vuelto a llamar al generador sobre una ' +
-    'factura EMITIDA Y SELLADA. Ese es el defecto: el documento no está congelado, se rehace.');
-
-  assert.equal(M.doc1.existe && M.doc3.existe, true,
-    '🔴 Alguna de las dos aperturas no ha dejado documento en disco. Si es la de después del ' +
-    'despliegue, el PDF ya no se rehace — y eso significa que la factura se ha quedado SIN ' +
-    'documento, que es la salida que el encargo prohíbe explícitamente.');
-  assert.notEqual(M.doc3.texto, null, 'El lector de PDF se declaró CIEGO: no se ha medido nada.');
-  assert.notEqual(M.doc1.texto, M.doc3.texto,
-    '🔴 El texto del documento no ha cambiado. Si esto sale verde, el modelo del defecto está mal.');
-
+    'factura EMITIDA Y CONGELADA. Es el defecto de SCRUM-762 de vuelta: otra copia llamada la original.');
+  assert.equal(M.abierta3, null, '🔴 se devolvió un documento para una emitida cuyo PDF congelado falta');
+  assert.equal(M.error3?.message, 'pdf_congelado_sin_fichero',
+    `🔴 el fallo no es el del congelado sin fichero: ${M.error3?.message}`);
+  assert.equal(M.doc3.existe, false, '🔴 tras el rechazo quedó un PDF en disco: algo lo regeneró');
+  assert.equal(M.huellaTras3, M.huellaCongelada, '🔴 el rechazo movió la huella guardada del PDF');
   assert.equal(contiene(M.doc1.texto, MARCA_DESPLIEGUE), false,
-    'El documento de ANTES del despliegue no puede llevar el marcador; si lo lleva, el escenario ' +
-    'está contaminado y la diferencia no viene de donde se cree.');
-  assert.equal(contiene(M.doc3.texto, MARCA_DESPLIEGUE), true,
-    '🔴 Lo que el cliente descarga DESPUÉS del despliegue lo ha pintado la versión nueva del ' +
-    'generador — sobre una factura que se emitió antes de que esa versión existiera.');
+    'El documento de ANTES del despliegue no puede llevar el marcador; si lo lleva, el escenario está contaminado.');
+});
+
+test('SCRUM-762 · ✅ caso SIN congelar (emitida antes de 665e): se congela la primera vez que se pide, y luego no se mueve', () => {
+  assert.equal(M.trasSin, 2, '🔴 una emitida sin huella no generó su PDF al pedirlo (c.21191)');
+  assert.equal(M.docSin.existe, true, '🔴 la emitida sin huella se quedó SIN documento');
+  assert.notEqual(M.docSin.texto, null, 'El lector de PDF se declaró CIEGO: no se ha medido nada.');
+  assert.equal(contiene(M.docSin.texto, MARCA_DESPLIEGUE), true,
+    'Registro, no defecto: la que no tenía huella se congela con el generador de ESE día (c.21191).');
+  assert.equal(M.huellaSin, M.shaSin, '🔴 la huella guardada no es la del fichero que se congeló');
+  assert.equal(M.trasSin2, 2, '🔴 una vez congelada, otro despliegue la volvió a rehacer');
+  assert.equal(M.errorSinTrasDespliegue?.message, 'pdf_congelado_sin_fichero',
+    '🔴 una vez congelada, sin fichero no falla cerrado');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -313,8 +353,7 @@ test('SCRUM-762 · 🔴 tras un despliegue, la MISMA factura emitida sale con OT
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-762 · ✅ el CONTENIDO canónico no se mueve: número, importe y huella siguen iguales', () => {
-  assert.equal(M.numero1, M.numero3, 'Es la misma factura: el número no cambia.');
-  assert.equal(M.numero3, NUMERO);
+  assert.equal(M.numero1, NUMERO, 'Es la misma factura: el número no cambia.');
   assert.equal(M.fila.total, IMPORTE_TOTAL);
   assert.equal(M.fila.vfHash, VF_HASH,
     'La huella no se toca al rehacer el papel. Es justo lo que hace INVISIBLE al defecto.');
@@ -331,7 +370,8 @@ test('SCRUM-762 · ✅ el CONTENIDO canónico no se mueve: número, importe y hu
 });
 
 test('SCRUM-762 · ✅ rehacer el papel NO escribe ningún campo canónico en la fila', () => {
-  const PERMITIDAS = new Set(['pdfUrl', 'qrData']);
+  // SCRUM-665e: `pdfSha256` es la huella DEL PAPEL, no un campo canónico de la factura.
+  const PERMITIDAS = new Set(['pdfUrl', 'qrData', 'pdfSha256']);
   const escritas = [...new Set(M.escrituras.flatMap((d) => Object.keys(d)))].sort();
   const canonicas = escritas.filter((k) => !PERMITIDAS.has(k));
   assert.deepEqual(canonicas, [],
@@ -370,6 +410,19 @@ function ficherosTs(dir, out = []) {
   return out;
 }
 
+/** SCRUM-665e · ¿la función lee la huella del PDF congelado (`.pdfSha256` o `pdfSha256:`)? */
+function contieneHuellaPdf(nodo) {
+  let hay = false;
+  const v = (n) => {
+    if (hay) return;
+    if ((ts.isPropertyAccessExpression(n) && n.name.text === 'pdfSha256')
+      || (ts.isPropertyAssignment(n) && ts.isIdentifier(n.name) && n.name.text === 'pdfSha256')) { hay = true; return; }
+    ts.forEachChild(n, v);
+  };
+  ts.forEachChild(nodo, v);
+  return hay;
+}
+
 function contieneLlamadaA(nodo, nombre) {
   let hay = false;
   const v = (n) => {
@@ -404,6 +457,7 @@ function censoDeBocas(raiz) {
           linea: sf.getLineAndCharacterOfPosition(n.getStart()).line + 1,
           generador: nombreLlamada(n),
           guardaExistencia: pila.some((fn) => contieneLlamadaA(fn, 'existsSync')),
+          guardaCongelado: pila.some((fn) => contieneHuellaPdf(fn)),
         });
       }
       ts.forEachChild(n, v);
@@ -424,7 +478,7 @@ const CENSO = censoDeBocas(RAIZ);
  * caducan sin que cambie nada de lo que se vigila. Lo que distingue «una boca MÁS en ese fichero»
  * de «la misma, movida» es la CUENTA. La línea vive sólo en el mensaje del rojo.
  */
-const clave = (f) => `${f.fichero} ${f.generador}${f.guardaExistencia ? ' [existsSync]' : ''}`;
+const clave = (f) => `${f.fichero} ${f.generador}${f.guardaExistencia ? ' [existsSync]' : ''}${f.guardaCongelado ? ' [congelado]' : ''}`;
 const pinta = (f) => `${clave(f)}  (línea ${f.linea})`;
 
 /** El censo colapsado a `identidad xN`, que es lo único que se compara. */
@@ -434,13 +488,19 @@ function porIdentidad(filas) {
   return [...m].map(([k, n]) => `${k} x${n}`).sort();
 }
 
-test('SCRUM-762 · TRINQUETE: la factura emitida se rehace cuando falta el fichero — 1 boca', () => {
-  const guardadas = CENSO.filter((f) => f.guardaExistencia);
-  assert.deepEqual(porIdentidad(guardadas), ['src/lib/invoicing.ts generateInvoicePdf [existsSync] x1'],
-    '🔴 El censo de bocas guardadas por `existsSync` ha cambiado.\n' +
-    'Si es porque el PDF ya se CONGELA al emitir (salida ① firmada el 7-sep-2026), esto no se ' +
-    'ajusta: se re-mide y se reescribe `docs/master/SCRUM-762.md`.\n' +
+// SCRUM-665e · RE-MEDIDO (SCRUM-665 c.21608): la salida ① aterrizó. Hasta 665e la boca de la
+// factura la guardaba `!fs.existsSync(diskPath)` y, sin fichero, REGENERABA. Ahora hay UNA sola boca
+// de factura (`ensureInvoicePdf`, que también usa el cobro) y la envuelve la lectura de la huella
+// congelada: con `pdfSha256` no se genera nunca. Registro: `docs/master/SCRUM-762.md`, tramo 665e.
+test('SCRUM-762 · TRINQUETE: la factura emitida tiene UNA boca, y la guarda la huella congelada', () => {
+  const factura = CENSO.filter((f) => f.generador === 'generateInvoicePdf');
+  assert.deepEqual(porIdentidad(factura), ['src/lib/invoicing.ts generateInvoicePdf [congelado] x1'],
+    '🔴 El censo de bocas de factura ha cambiado: o aparece otro generador, o la boca deja de mirar ' +
+    'la huella congelada (`pdfSha256`) y vuelve a poder rehacer una emitida. No se ajusta: se re-mide ' +
+    'y se reescribe `docs/master/SCRUM-762.md`.\n' +
     `Censo actual:\n${CENSO.map(pinta).join('\n')}`);
+  assert.deepEqual(porIdentidad(CENSO.filter((f) => f.guardaExistencia)), [],
+    '🔴 Vuelve una boca guardada sólo por `existsSync`: es la forma de 762 (sin fichero, se rehace).');
 });
 
 test('SCRUM-762 · TRINQUETE: no existe `ensureQuotePdf` — el presupuesto se rehace SIEMPRE', () => {
@@ -459,10 +519,8 @@ test('SCRUM-762 · TRINQUETE: no existe `ensureQuotePdf` — el presupuesto se r
     'presupuesto habrá pasado a comportarse como la factura y esto hay que re-escribirlo.');
 
   assert.deepEqual(porIdentidad(CENSO), [
-    'src/lib/invoicing.ts generateInvoicePdf [existsSync] x1',
-    'src/lib/invoicing.ts generateInvoicePdf x1',
+    'src/lib/invoicing.ts generateInvoicePdf [congelado] x1',
     'src/modules/quotes/app/routes/quotes.routes.ts generateQuotePdf x2',
-    'src/modules/system/app/routes/invoicesAdmin.routes.ts generateInvoicePdf x1',
     'src/modules/system/app/routes/quoteDecisionLanding.routes.ts generateQuotePdf x1',
     'src/modules/system/app/routes/quotesAdmin.routes.ts generateQuotePdf x1',
   ], `El censo entero:\n${CENSO.map(pinta).join('\n')}`);
@@ -474,7 +532,7 @@ test('SCRUM-762 · SUELO del censo: sobre el fichero REAL con un cambio quirúrg
   // repositorio se toca, ni siquiera un instante.
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum762-'));
   try {
-    const copiaCon = (relativo, buscar, poner) => {
+    const copiaCon = (relativo, buscar, poner, todas = false) => {
       const origen = path.join(RAIZ, relativo);
       const texto = fs.readFileSync(origen, 'utf8');
       assert.ok(texto.includes(buscar),
@@ -482,11 +540,11 @@ test('SCRUM-762 · SUELO del censo: sobre el fichero REAL con un cambio quirúrg
         'grafía que no existe, y su verde no significaría nada.');
       const destino = path.join(tmp, relativo);
       fs.mkdirSync(path.dirname(destino), { recursive: true });
-      fs.writeFileSync(destino, texto.replace(buscar, poner));
+      fs.writeFileSync(destino, todas ? texto.split(buscar).join(poner) : texto.replace(buscar, poner));
     };
 
-    // A la factura se le quita el `existsSync` (que es, literalmente, lo que NO hay que hacer).
-    copiaCon('src/lib/invoicing.ts', '!fs.existsSync(diskPath)', '!true');
+    // A la factura se le quita la lectura de la huella congelada (SCRUM-665e: es lo que la guarda).
+    copiaCon('src/lib/invoicing.ts', 'pdfSha256', 'otraColumna', true);
     // Y al presupuesto se le pone uno.
     copiaCon(
       'src/modules/system/app/routes/quotesAdmin.routes.ts',
@@ -497,8 +555,10 @@ test('SCRUM-762 · SUELO del censo: sobre el fichero REAL con un cambio quirúrg
     const roto = censoDeBocas(tmp);
     const factura = roto.find((f) => f.fichero === 'src/lib/invoicing.ts' && f.generador === 'generateInvoicePdf');
     assert.ok(factura, 'El censo no ha encontrado la boca de la factura en el árbol de prueba.');
-    assert.equal(factura.guardaExistencia, false,
-      '🔴 Quitado el `existsSync`, el censo sigue diciendo que la boca está guardada: es CIEGO.');
+    assert.equal(factura.guardaCongelado, false,
+      '🔴 Quitada la huella, el censo sigue diciendo que la boca está guardada: es CIEGO.');
+    const real = CENSO.find((f) => f.fichero === 'src/lib/invoicing.ts' && f.generador === 'generateInvoicePdf');
+    assert.equal(real?.guardaCongelado, true, '🔴 CIEGO: sobre el árbol real la boca de la factura no sale guardada.');
 
     const quote = roto.find((f) => f.fichero.endsWith('quotesAdmin.routes.ts'));
     assert.ok(quote, 'El censo no ha encontrado la boca de presupuesto en el árbol de prueba.');

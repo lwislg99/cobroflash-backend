@@ -68,6 +68,8 @@ const ANCLAS = [PRODUCTOR, 'src/modules/fiscal/verifactu/registro.builder.ts', S
  * la versión, si no cambia cómo se crea o se remite un registro o si el fundador lo dice en su GO.
  * Recongeladas por esa vía: `emission.service.ts` e `invoiceNumber.service.ts` (SCRUM-1585, M, que
  * decide si se emite y no toca sellado ni XML), pegando lo que imprimió el mensaje de error.
+ * Y `selladoEstado.ts` (SCRUM-665e: congelar el PDF al emitir; ni XML, ni huella, ni cuota),
+ * con el GO de SCRUM-665 c.21182 y la orden de recongelar de SCRUM-665 c.21584 ③.
  * Y `registro.builder.ts` + `verifactu.service.ts` (SCRUM-1129e, ClaveRegimen 07 desde el criterio
  * de caja congelado al sellar): ESTE sí cambia el XML, y va por c.21290 porque el fundador lo dijo
  * en su GO (SCRUM-1129 c.21753, punto 3), con la condición de que la primera declaración no esté
@@ -88,7 +90,7 @@ const HUELLAS_CONGELADAS = Object.freeze({
   'src/modules/invoicing/domain/emission.service.ts': 'fb326e3f1fb6f79f',
   'src/modules/invoicing/domain/encolarRemision.ts': '9250c4d15ce607c2',
   'src/modules/invoicing/domain/invoiceNumber.service.ts': '65ff392f155d005b',
-  'src/modules/invoicing/domain/selladoEstado.ts': 'f08728ab84b81ba2',
+  'src/modules/invoicing/domain/selladoEstado.ts': '20d30195b1a909a2',
   'src/modules/invoicing/domain/tipoDocumento.ts': '09a9e00aeb1068de',
   'src/modules/invoicing/domain/vat.service.ts': '91d10ea9159cdc0c',
   'src/modules/invoicing/domain/verifactu.service.ts': '7433c5b8fb3af758',

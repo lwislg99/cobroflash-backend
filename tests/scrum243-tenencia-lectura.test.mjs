@@ -99,7 +99,14 @@ const CENSO_SIN_RED = [
 
   // ── Servicios y crons que reciben ids ya resueltos aguas arriba. [CATEGORÍA DECLARADA, NO
   //    VERIFICADA UNA A UNA — es el trabajo caro que este ticket deja explícitamente pendiente.]
-  ['src/lib/invoicing.ts', 1],
+  // SCRUM-665e · 1 → 2. Registrado por la vía de SCRUM-665 c.21943 punto 3 (GO del camino de
+  //    emisión: c.21182 punto 1). La 2.ª lectura es la de la huella congelada del PDF, en
+  //    `ensureInvoicePdf`: un `findUnique` por el `id` de una factura que la misma función ya leyó
+  //    (y que trae su merchant) unas líneas antes; sólo pide `pdfSha256`. No llega un id nuevo de
+  //    fuera: es la misma fila, releída dentro del cerrojo del PDF. Pasarla a `findFirst` con
+  //    `merchantId` se probó el 16-nov-2026 y rompió 9 casos de los dobles de 665e, 1510b y 762, que sólo
+  //    implementan `findUnique` (apéndice M de docs/master/SCRUM-665.md); se revirtió.
+  ['src/lib/invoicing.ts', 2],
   ['src/modules/jobs/domain/job.service.ts', 6],
   ['src/modules/billing/domain/invoiceReminder.service.ts', 2],
   ['src/modules/messaging/domain/email.service.ts', 2],
@@ -124,7 +131,7 @@ const CENSO_SIN_RED = [
   //    y nada más— y si no hay fila NO SE CREA ninguna.
   ['src/modules/messaging/domain/registroDeEnvios.ts', 1],
 ];
-const TOTAL_SIN_RED = CENSO_SIN_RED.reduce((t, [, n]) => t + n, 0);   // 46 (44 + SCRUM-475 2B + SCRUM-806)
+const TOTAL_SIN_RED = CENSO_SIN_RED.reduce((t, [, n]) => t + n, 0);   // 47 (44 + SCRUM-475 2B + SCRUM-806 + SCRUM-665e)
 const MINIMO_QUE_FILTRAN = 196;
 
 // ── SUELO, EN DOS MITADES ────────────────────────────────────────────────────────────────

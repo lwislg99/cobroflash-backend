@@ -127,10 +127,16 @@ test('1240d · la mención y la 07 del registro no discrepan: misma decisión qu
   assert.equal(conSiete, 5, `🔴 CIEGO: esperaba 5 casos con 07 y salen ${conSiete}`);
 });
 
-// ── Los tres llamadores pasan la columna CONGELADA, nunca el Merchant vivo ─────────────────────
+// ── Los llamadores pasan la columna CONGELADA, nunca el Merchant vivo ──────────────────────────
+// SCRUM-665e (GO SCRUM-665 c.21182 puntos 1 y 3; registrado por la vía de c.21943 punto 3, con la
+// forma de scrum577 en c.21608 (b)): la rama junta los generadores de PDF en UNO, `ensureInvoicePdf`,
+// y retira la ruta «regenerar PDF». Medido el 16-nov-2026 con el AST: en main, 2 llamadas en invoicing.ts y
+// 1 en invoicesAdmin.routes.ts; en la rama, 1 y 0. La lista es un número derivado y se recalcula; la
+// comprobación no se relaja: cada llamada que quede sigue pasando la columna congelada (lo tumba la
+// última mutación del catálogo), y una llamada que vuelva en cualquiera de los dos ficheros lo tumba.
 const LLAMADORES = [
-  ['src/lib/invoicing.ts', 2],
-  ['src/modules/system/app/routes/invoicesAdmin.routes.ts', 1],
+  ['src/lib/invoicing.ts', 1],                                   // ensureInvoicePdf (el único generador)
+  ['src/modules/system/app/routes/invoicesAdmin.routes.ts', 0],   // la ruta «regenerar PDF» se retiró (665e)
 ];
 
 test('1240d · cada llamada a generateInvoicePdf pasa merchantCriterioCaja de la FACTURA, no del merchant', () => {
@@ -154,7 +160,8 @@ test('1240d · cada llamada a generateInvoicePdf pasa merchantCriterioCaja de la
       total += 1;
     }
   }
-  assert.equal(total, 3);
+  assert.equal(total, LLAMADORES.reduce((n, [, e]) => n + e, 0));
+  assert.ok(total > 0, 'CIEGO: ninguna llamada a generateInvoicePdf medida');
 });
 
 test('1240d · pdf.service.ts no lee el criterio de caja vivo (sin `criterioCaja` de un merchant)', () => {
