@@ -190,3 +190,28 @@ Medido el 2026-11-20 hacia las 05:20Z (`gh api -i zen` 05:21:43Z) sobre `origin/
 * **Verde**: 32 ficheros (604, 623, 624c, 624e, 624y, 1763, 1051g, 775 [1179-B], 1179c ×3, 1179d, 723, 667, 903, 1293, 402, 591, 650d, 751, 755, 1771c, 836, 700, 710b, 719, 1294, 267, 273, 525d, 854 y 523d): 296 casos · 296 pass · 0 fail · 0 skip, antes de escribir este tramo. `tsc -p . --noEmit` con tipos: salida 0. Meta-guard `--solo-censo`: salida 0, 327 declarantes · 1.359 declaraciones, sin ejecutar ninguna mutación y con el árbol limpio después.
 
 **NO medido:** la suite entera; el meta-guard con mutaciones (la pasada entera); staging.
+
+# SCRUM-1771d · CIERRES 14: la fila 4 de la aceptación, verificada en staging (20-nov-2026)
+
+**Medido contra:** `origin/main` = `b0b7cf9970e7b4202f547a11e1d09add4ffca971` · 2026-11-20T07:04:31Z (staging `/health` `version` = el mismo sha, `db: up`, 07:03:08Z)
+
+A9: aviso → cicatriz J4 «reescribí `cierres14-antes.json` DESPUÉS de emitir la F1 para enmascarar un teléfono, y mi primera máscara (`/telefono/`) convirtió en «presente» el estado `bizumSinTelefono: no_aplica`» — no se pudo comprobar: la sonda es de un solo ticket y ningún guard sabe qué campo de una respuesta es un teléfono
+
+Sesión J4 `jv-j4bw`, encargo del orquestador `cobroflash-backend-c7`. Solo staging, cuenta QA (`qa@staging.yaqu`, comercio 2), todo por rutas del panel con su sesión; nada de UPDATE, flags ni envíos. Turno de staging tomado (`turno-staging.mjs tomar --base staging --ref SCRUM-1771d`) y soltado; `estado` = LIBRE. Sonda: `evidencias/SCRUM-1771/cierres14.mjs` (fases `antes` · `emitir` · `despues`; se niega a emitir si falla una de las tres comprobaciones de «sin vías»; el secreto del login se lee del `.env` por código y no se escribe).
+
+| # | qué | medido (API de staging) | veredicto |
+|---|---|---|---|
+| 0 | «sin vías» (SCRUM-1732 c.22174/c.22182) | cliente 3936 «Cliente QA sin avisos»: `phone`, `mobile`, `email` vacíos · `notifyEmailOnPaid: false` · `whatsappPhone` vacío (antes y después) | ✅ |
+| ① | SCRUM-624y: PDF de la R1 1976 | 200, 6.774 B, sha256 `9175d872239afb2f4da8a09ae1015e562512a1f60d851b93d182a5bf1d943b88`; «10% -37,05 EUR IVA 10%:-3,70 EUR» · «TOTAL:-84,35 EUR»; detalle `total: "-84.35"` | ✅ |
+| ② | SCRUM-1771c: F1 NUEVA de dos tipos, sin enviar | `POST /admin/invoices` (suelta) → 201, id **1977**, `F260002`, 93,5, `veriFactu: true` (07:03:22Z). PDF 6.502 B, sha256 `b9ee617517dd9e1ea0499404869d291ef4dea9951c7bde0097dd38e790c52016`: `Base imponible por tipo` **1** · `[PENDIENTE` **0** · positivo del lector `Base imponible` 2. Bloque: 21 % 50,00 / IVA 10,50 · 10 % 30,00 / IVA 3,00 · TOTAL 93,50 | ✅ fila 4 |
+| ③ | SCRUM-1732 PR-2: cobro PARCIAL | **NO medido: no hay ruta del panel que apunte un cobro parcial a una F1 suelta** (leído en el código, no intentado): `confirm-bizum` actúa sobre un `charge` y la suelta nace sin él; `PUT …/status` apunta el total (`invoiceAdmin.ts:325`); `/charges` es interno. Sin cobro, la API enseña: libro de noviembre con 3 asientos por EXPEDICIÓN, todos con `cobros: []` (F260001, `2026-QA-R-001`, F260002); 303 2026-T4 casilla 27 = −11,27 (1 asiento, la R1); 303 2027-T4 = 257,83 (7 asientos «no cobrados», en el tope) | ❌ no medido |
+| ④ | SCRUM-1774a / 1777 | `/admin/connect/status` → `bizumEnabled: true`; `/admin/me` → `bizumManualEnabled: false` (SCRUM-1777, de S1: medido, no arreglado) | ✅ (lo esperado) |
+| ⑤ | CSP 1756h/i/j | **no medido**: el MCP de Playwright existe en la sesión; no lo usé por presupuesto de contexto (192k al llegar aquí) | — |
+
+Evidencias: `evidencias/SCRUM-1771/cierres14-antes.json`, `cierres14-emision.json`, `cierres14-despues.json`.
+
+**Lo que digo de mí:** `cierres14-antes.json` NO es una foto anterior a la emisión: lo volví a escribir a las 07:04Z, después de emitir, para enmascarar `bizumPhone` (la primera pasada lo imprimió en mi consola, nunca en git). Lo que contiene son lecturas que la emisión no cambia (vías, R1, Bizum), y la fase `emitir` volvió a comprobar las vías justo antes del `POST` (`cierres14-emision.json` → `sinVias.ok: true`). La primera máscara convirtió `bizumSinTelefono: "no_aplica"` en «presente»; corregida a `/phone$/`.
+
+**NO medido:** ③ entero (los tramos); ⑤; la pantalla del panel (solo API y PDF); SCRUM-624 y SCRUM-1732 no los leí enteros en Jira (sus registros sí).
+
+No se cierra ni se transiciona (A13).

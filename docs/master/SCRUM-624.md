@@ -737,3 +737,5 @@ A9: comprobación → `tests/scrum836-ancla-de-mutacion-viva.test.mjs`
 - verificado por jv-j1fq (relevo de jv-j1fp, que lo dejó en commit local sin empujar): `aplicarUna` del meta-guard sobre la declaración
   reanclada → `ok`, tumba «1051g ① · una F1 sólo S2 imprime P1 en su propia fila» (+1 colateral); pdf.service.ts con el mismo sha256 antes y después.
 Mutaciones: catálogo → `tests/scrum1051g-isp-destinatario-pdf-libro.test.mjs`
+
+- 2026-11-20 · CIERRES 14 (J4, `jv-j4bw`, tramo `# SCRUM-1771d` de `SCRUM-1771.md`): 624y verificado en staging (`b0b7cf997`). El PDF de la R1 1976 imprime «IVA 10%:-3,70 EUR» y «TOTAL:-84,35 EUR»; sha256 `9175d872…`. Evidencia: `evidencias/SCRUM-1771/cierres14-antes.json`.
