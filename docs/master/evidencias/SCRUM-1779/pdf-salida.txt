@@ -1,0 +1,67 @@
+Comercio: id=5304 email=lugo@ejemplo.invalid country=ES taxId=B27000001 flags={"INVOICING_ES_ENABLED":true} llevaLibrosPorSii=false · env SIF_ENABLED=(sin definir)
+Líneas F1: [{"concept":"Arreglo de una fuga","qty":1,"price":36.03,"tax":0.21},{"concept":"Material de fontanería","qty":3,"price":12.35,"tax":0.1}] → calcVatBreakdown total 84.36
+OK   F1 sellada: sello=sellado vfEstado=sellado
+OK   R1 sellada: 2026-CF-R-001 sello=sellado vfEstado=sellado
+
+═══ PDF F1 · comercio NO-demo: F260001 (F1) · status=pending · vfEstado=sellado · total=84.36 · huella=22CC3D1B4D39338F…
+  qrData guardado: https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B27000001&numserie=F260001&fecha=20-11-2026&importe=84.36
+  merchant: id=5304 email=lugo@ejemplo.invalid · isDemoMerchant=false · getEmissionMode=fiscal
+  PDF: 5304-F260001.pdf (6515 B, en <tmp>/storage/invoices)
+  texto leído con lineasDePdf: 22 líneas
+  menciones (4 líneas):
+    L18 [AEAT, verificable] «Factura verificable en la sede electrónica de la AEAT»
+    L19 [VeriFactu / VERI*FACTU, QR, RD 1007/2023 / Real Decreto] «VERI*FACTU — escanea el QR para verificarla (RD 1007/2023).»
+    L20 [Huella] «Huella: 22CC3D1B4D39338F1DB591457200C6BB»
+    L22 [VeriFactu / VERI*FACTU, verificable, RD 1007/2023 / Real Decreto] «Sistema de facturación verificable conforme al RD 1007/2023 (VeriFactu).»
+  imágenes en el PDF: 2 → 200x200 DeviceGray 40000 B | 200x200 DeviceRGB +SMask 120000 B · operadores «/I… Do» en contenido: 1
+  QR: píxeles de una imagen del PDF == QRCode.toBuffer(qrData) (200x200): true · control negativo (QR de otra URL) coincide: false
+
+═══ PDF R1 · comercio NO-demo: 2026-CF-R-001 (R1) · status=paid · vfEstado=sellado · total=-84.35 · huella=D5CEA2AB4D7FF559…
+  qrData guardado: https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B27000001&numserie=2026-CF-R-001&fecha=20-11-2026&importe=-84.35
+  merchant: id=5304 email=lugo@ejemplo.invalid · isDemoMerchant=false · getEmissionMode=fiscal
+  PDF: 5304-2026-CF-R-001.pdf (6856 B, en <tmp>/storage/invoices)
+  texto leído con lineasDePdf: 23 líneas
+  menciones (6 líneas):
+    L01 [rectificativa / artículo] «FACTURA RECTIFICATIVA»
+    L04 [rectificativa / artículo] «Rectifica a la factura Nº F260001»
+    L19 [AEAT, verificable] «Factura verificable en la sede electrónica de la AEAT»
+    L20 [VeriFactu / VERI*FACTU, QR, RD 1007/2023 / Real Decreto] «VERI*FACTU — escanea el QR para verificarla (RD 1007/2023).»
+    L21 [Huella] «Huella: D5CEA2AB4D7FF5591E64ABB1EC0B7145»
+    L23 [VeriFactu / VERI*FACTU, verificable, RD 1007/2023 / Real Decreto] «Sistema de facturación verificable conforme al RD 1007/2023 (VeriFactu).»
+  imágenes en el PDF: 2 → 200x200 DeviceGray 40000 B | 200x200 DeviceRGB +SMask 120000 B · operadores «/I… Do» en contenido: 1
+  QR: píxeles de una imagen del PDF == QRCode.toBuffer(qrData) (200x200): true · control negativo (QR de otra URL) coincide: false
+
+═══ CONTROLES DEL BARRIDO
+OK   F1 · positivo sembrado: el NIF fabricado «B27000001» aparece 1 vez/veces
+OK   F1 · cero: «Z9Z9Z9Z9Q» aparece 0 veces
+OK   F1 · «DEMO» en el comercio no-demo: 0 veces
+OK   F1 · el QR dibujado es el de qrData y no el de otra URL
+OK   R1 · positivo sembrado: el NIF fabricado «B27000001» aparece 1 vez/veces
+OK   R1 · cero: «Z9Z9Z9Z9Q» aparece 0 veces
+OK   R1 · «DEMO» en el comercio no-demo: 0 veces
+OK   R1 · el QR dibujado es el de qrData y no el de otra URL
+
+═══ CONTROL DEMO · misma fila F1; merchant.email = demo@yaqu.app (id sigue 5304)
+
+═══ PDF F1 · comercio DEMO (control): F260001 (F1) · status=pending · vfEstado=sellado · total=84.36 · huella=22CC3D1B4D39338F…
+  qrData guardado: https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B27000001&numserie=F260001&fecha=20-11-2026&importe=84.36
+  merchant: id=5304 email=demo@yaqu.app · isDemoMerchant=true · getEmissionMode=demo
+  PDF: 5304-F260001.pdf (6829 B, en <tmp>/storage/invoices)
+  texto leído con lineasDePdf: 24 líneas
+  menciones (6 líneas):
+    L18 [AEAT, verificable] «Factura verificable en la sede electrónica de la AEAT»
+    L19 [VeriFactu / VERI*FACTU, QR, RD 1007/2023 / Real Decreto] «VERI*FACTU — escanea el QR para verificarla (RD 1007/2023).»
+    L20 [Huella] «Huella: 22CC3D1B4D39338F1DB591457200C6BB»
+    L21 [DEMO] «DEMO — no válida »
+    L23 [VeriFactu / VERI*FACTU, verificable, RD 1007/2023 / Real Decreto] «Sistema de facturación verificable conforme al RD 1007/2023 (VeriFactu).»
+    L24 [fiscal] «fiscalmente»
+  imágenes en el PDF: 2 → 200x200 DeviceGray 40000 B | 200x200 DeviceRGB +SMask 120000 B · operadores «/I… Do» en contenido: 1
+  QR: píxeles de una imagen del PDF == QRCode.toBuffer(qrData) (200x200): true · control negativo (QR de otra URL) coincide: false
+OK   control demo: «DEMO» aparece 1 vez/veces; literal DEMO_WATERMARK 0 (si 0 en ambos el extractor estaría CIEGO a la marca)
+  líneas que están en el control y no en el no-demo: ["DEMO — no válida ","fiscalmente"]
+
+AVISOS del dist (0): (ninguno)
+ajenas: (ninguna)
+ficheros de texto escritos: {"pdf-F1-texto.txt":22,"pdf-R1-texto.txt":23,"pdf-demo-control-texto.txt":24}
+
+RESULTADO: todas las comprobaciones OK
