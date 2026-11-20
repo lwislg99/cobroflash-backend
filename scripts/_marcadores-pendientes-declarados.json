@@ -17,7 +17,6 @@
   "servidor": {
     "_que_es": "Censo de SCRUM-667: marcadores en `src/` (scripts/censo-marcadores.mjs, ámbito `servidor`). Lo vigila tests/scrum667-marcador-visible.test.mjs.",
     "ficheros": {
-      "src/modules/invoicing/infra/pdf/pdf.service.ts": 1,
       "src/modules/invoicing/domain/criterioCaja.ts": 1,
       "src/modules/fiscal/librosAeat/librosAeat.ts": 1,
       "src/modules/jobs/app/routes/albaranes.routes.ts": 1,
@@ -28,9 +27,8 @@
     }
   },
   "papel": {
-    "_que_es": "SCRUM-667 ②: los marcadores que se IMPRIMEN en el papel del cliente, con su condición. Lo vigila tests/scrum667-marcador-visible.test.mjs (el papel trae exactamente tantos como aquí se declaran).",
-    "constantes": {
-      "MARCADOR_MICROCOPY_DESGLOSE": "factura con MÁS DE UN tipo de IVA — el rótulo de la columna de bases"
-    }
+    "_que_es": "SCRUM-667 ②: los marcadores que se IMPRIMEN en el papel del cliente, con su condición. Lo vigila tests/scrum667-marcador-visible.test.mjs (el papel trae exactamente tantos como aquí se declaran). SCRUM-1771c: el último (MARCADOR_MICROCOPY_DESGLOSE, el rótulo de la columna de bases con MÁS DE UN tipo de IVA) salió con el literal firmado «Base imponible por tipo» (SCRUM-1771 c.22164). La sección queda VACÍA y lo DECLARA `_vacia_desde`: sin esa clave, un vacío sigue siendo «no supe leer» (tests/_marcadores-declarados.mjs). Que ningún papel traiga `[PENDIENTE` lo vigila, con positivo sembrado, tests/scrum1771c-pdf-sin-marcador.test.mjs.",
+    "_vacia_desde": "SCRUM-1771 c.22164",
+    "constantes": {}
   }
 }

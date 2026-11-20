@@ -95,7 +95,7 @@ test('SCRUM-624e · ① F1 con dos tipos: las cuotas son las del desglose y el T
   assert.deepEqual({ base: d.base, cuota: d.cuota }, { base: 0.03, cuota: 0 },
     'ha cambiado el desglose de estas líneas: el caso ya no mide lo que dice');
   assert.deepEqual(await bloque('F1', '0.03', lines), [
-    'Base imponible:0,03 EUR', '[PENDIENTE microcopy oficial]',
+    'Base imponible:0,03 EUR', 'Base imponible por tipo',
     '21%0,02 EURIVA 21%:0,00 EUR', '10%0,01 EURIVA 10%:0,00 EUR', 'TOTAL:0,03 EUR',
   ], '🔴 la F1 de dos tipos no imprime el desglose del registro: el de main imprimía TOTAL 0,04.');
 });

@@ -51,7 +51,7 @@ import { resolverDireccionObra, ROTULO_DIRECCION_OBRA_PDF, type ClienteConFactur
  * `INVOICING_ES_ENABLED` está OFF para merchants ES (regla 24) y la demo lleva marca de agua.
  * Aun así, esto hay que apagarlo escribiendo la palabra, no dejándolo correr.
  */
-export const MARCADOR_MICROCOPY_DESGLOSE = '[PENDIENTE microcopy oficial]';
+export const MARCADOR_MICROCOPY_DESGLOSE = 'Base imponible por tipo';
 
 /**
  * SCRUM-593 (DOC-03) · El título del bloque FINAL del documento.
