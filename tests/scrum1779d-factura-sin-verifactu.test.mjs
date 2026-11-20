@@ -25,6 +25,7 @@ delete process.env.INVOICING_ES_ENABLED;
 const { banco, prisma, reiniciar: reiniciarBanco, requiere, rutaDe, asentar, M_ES, CLIENTE } =
   await import('./_banco-emision-con-estado.mjs');
 const { extraerTextoPdf } = await import('./_texto-del-pdf.mjs');
+const { reqDeSesion } = await import('./_arnes-de-router.mjs');
 
 const voces = { log: console.log, warn: console.warn, error: console.error };
 console.log = () => {}; console.warn = () => {}; console.error = () => {};
@@ -80,7 +81,7 @@ async function suelta() {
   const antes = banco.tablas.invoice.length;
   const r = { statusCode: 200, cuerpo: null };
   const res = { status(c) { r.statusCode = c; return res; }, json(x) { r.cuerpo = x; return res; }, setHeader() {}, set() { return res; } };
-  await h({ merchantId: M_ES, teamMemberId: null, role: 'admin', body: { customerId: CLIENTE, lines: LINEAS } }, res, (e) => { if (e) throw e; });
+  await h(reqDeSesion({ rol: 'admin', merchantId: M_ES, teamMemberId: null, body: { customerId: CLIENTE, lines: LINEAS } }), res, (e) => { if (e) throw e; });
   await asentar();
   assert.equal(r.statusCode, 201, `la vía suelta devuelve ${r.statusCode} ${JSON.stringify(r.cuerpo)}`);
   // El cuerpo no siempre lleva el id: se toma la fila nueva, y se comprueba que es UNA.
