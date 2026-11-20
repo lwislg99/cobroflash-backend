@@ -6333,3 +6333,11 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
 .table td.equipo-tasa-sin-envios { color: var(--neutral-400); }
 .table td.equipo-tasa-sin-envios { text-align: right; }
 /* S2: fin del bloque SCRUM-1762c */
+
+/* S2 · SCRUM-915c — «+ Nuevo presupuesto» en la fila del parte firmado (pestaña Partes de la ficha).
+   Al lado del pill de estado; a 390 (cards) baja debajo sin desbordar la tarjeta. */
+.parte-fila-presupuesto { margin-left: 8px; white-space: nowrap; }
+@media (max-width: 640px) {
+  .parte-fila-presupuesto { margin: 8px 0 0; }
+}
+/* S2: fin del bloque SCRUM-915c */
