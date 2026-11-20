@@ -14,6 +14,8 @@
 // levanta solo. Crea un comercio de usar y tirar con `withMerchant`, que lo barre al terminar.
 //
 // 🔴 SU LÍMITE, DICHO: se escribió en una máquina SIN Postgres. Su primera ejecución es la de CI.
+// SCRUM-1779d · este banco AFIRMA el sellado: con SIF_ENABLED en OFF (el defecto) la emisión ya no sella (SCRUM-1779 c.22239), así que se enciende aquí y lo afirmado no cambia.
+process.env.SIF_ENABLED = 'true';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseBDSegura } from '../scripts/_db-guard.mjs';

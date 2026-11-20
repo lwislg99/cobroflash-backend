@@ -26,6 +26,8 @@
 // La excepción declarada (c.20923 P5): el caso C —huella escrita, estado sin marcar— contesta 409
 // «se reintenta solo», y el reintento no lo recoge nunca. Se fija aquí para que deje de ser
 // excepción sólo con una decisión, no por accidente.
+// SCRUM-1779d · este banco AFIRMA el sellado: con SIF_ENABLED en OFF (el defecto) la emisión ya no sella (SCRUM-1779 c.22239), así que se enciende aquí y lo afirmado no cambia.
+process.env.SIF_ENABLED = 'true';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

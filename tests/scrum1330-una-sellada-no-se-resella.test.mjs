@@ -33,6 +33,8 @@
 //   · si esta transcripción cae, hay un choque con lo que `scrum173` fija, y basta para parar;
 //   · si pasa, NO prueba que el test real pase: el banco puede no montar lo que monta Postgres.
 // ⛔ `tests/scrum173-…` no se toca desde este ticket (límite expreso del GO).
+// SCRUM-1779d · este banco AFIRMA el sellado: con SIF_ENABLED en OFF (el defecto) la emisión ya no sella (SCRUM-1779 c.22239), así que se enciende aquí y lo afirmado no cambia.
+process.env.SIF_ENABLED = 'true';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';

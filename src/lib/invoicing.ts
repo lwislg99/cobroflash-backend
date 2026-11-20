@@ -15,7 +15,7 @@ import { exigirDocumentoEmitible, FacturaSinSellarError, qrDelDocumento } from '
 import {
   puedeProducirDocumento,
   sellarTrasEmision,
-  SELLADO_HECHO,
+  SELLADO_HECHO, SELLADO_NO_APLICA, // SCRUM-1779d
   ERROR_PDF_SIN_SELLAR,
 } from '../modules/invoicing/domain/selladoEstado';
 import { exigirLineasFacturables } from '../modules/invoicing/domain/lineasFacturables'; // SCRUM-246
@@ -240,7 +240,7 @@ export async function ensureInvoiceForCharge(
     // fila antes de que la otra la sellara entra igual. A ésa la para la guarda de dentro del
     // cerrojo, en `applyVeriFactu`. Hacen falta las dos.
     let vfEstado: string = inv.vfEstado; // SCRUM-1779d: el estado DESPUÉS de sellar, no el leído antes
-    if (inv.vfEstado !== SELLADO_HECHO) {
+    if (inv.vfEstado !== SELLADO_HECHO && inv.vfEstado !== SELLADO_NO_APLICA) { // SCRUM-1779d · c.22245 ①: emitida sin sello, se queda sin sello
       const resultadoSellado = await sellarTrasEmision(inv, merchant ?? {}, prisma);
       vfEstado = resultadoSellado.estado;
       if (resultadoSellado.estado === SELLADO_HECHO) {

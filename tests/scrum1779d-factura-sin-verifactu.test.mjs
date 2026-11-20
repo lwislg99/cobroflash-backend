@@ -163,6 +163,68 @@ test('SCRUM-1779d · control positivo: con SIF_ENABLED ON en el comercio, sellad
   assert.ok(imagenes >= 1, 'el PDF lleva el QR');
 });
 
+// ── Decisiones del fundador del 20-nov-2026 (SCRUM-1779 c.22245), las dos preguntas de c.22243 ──────
+// ① «Sí se queda sin sello»: una factura emitida sin sello NO se sella después, aunque SIF se encienda.
+//    El camino que lo hacía es la segunda entrega del mismo cobro (`ensureInvoiceForCharge` →
+//    `ensurePdfAndEvent`), que volvía a pasar por `sellarTrasEmision` toda factura no `sellado`.
+// ② «No sin aspecto verifactu, de momento como si fuera un presupuesto»: el DEMO tampoco sella; su
+//    marca de agua se queda como está.
+const { ensureInvoiceForCharge } = requiere(rutaDe('dist/lib/invoicing.js'));
+
+function cobroPagado() {
+  const id = Math.max(0, ...banco.tablas.charge.map((c) => c.id)) + 1;
+  banco.tablas.charge.push({
+    id, merchantId: M_ES, customerId: CLIENTE, status: 'paid', amount: '121.00', currency: 'EUR',
+    concept: 'Arreglo de una fuga', method: 'transfer', reference: null, intentId: null, receiptToken: null, paidAt: new Date(),
+  });
+  return id;
+}
+
+test('SCRUM-1779d · ① emitida sin sello con SIF OFF: la segunda entrega del cobro, ya con SIF ON, NO la sella', async () => {
+  const m = reiniciar({ INVOICING_ES_ENABLED: true });
+  const chargeId = cobroPagado();
+  await ensureInvoiceForCharge(chargeId, prisma);
+  await asentar();
+  const emitidas = banco.tablas.invoice.filter((f) => f.chargeId === chargeId);
+  assert.equal(emitidas.length, 1, 'población: el cobro emite UNA factura');
+  const id = emitidas[0].id;
+  assert.equal(emitidas[0].vfEstado, 'no_aplica', 'nace sin sello (SIF OFF)');
+  // Se enciende SIF en el comercio y llega otra entrega del mismo cobro.
+  m.flags = { ...m.flags, SIF_ENABLED: true };
+  await ensureInvoiceForCharge(chargeId, prisma);
+  await asentar();
+  const f = banco.tablas.invoice.find((x) => x.id === id);
+  assert.equal(banco.tablas.invoice.filter((x) => x.chargeId === chargeId).length, 1, 'sigue siendo UNA factura');
+  assert.equal(f.vfHash ?? null, null, `${f.number}: sigue sin huella`);
+  assert.equal(f.vfEstado, 'no_aplica', `${f.number}: sigue no_aplica`);
+  assert.equal(banco.tablas.vfSubmission.length, 0, '0 altas en VfSubmission');
+  // Control positivo del mismo camino: un cobro NUEVO con SIF ya en ON sí nace sellado.
+  const otro = cobroPagado();
+  await ensureInvoiceForCharge(otro, prisma);
+  await asentar();
+  const nueva = banco.tablas.invoice.find((x) => x.chargeId === otro);
+  assert.equal(nueva?.vfEstado, 'sellado', 'control: con SIF ON en la emisión, el cobro nuevo sale sellado');
+  assert.ok(nueva?.vfHash, 'control: el cobro nuevo lleva huella');
+  // Intentos de encolar (como scrum1330): la alta que llegó o la constancia de no llegar.
+  const intentos = banco.tablas.vfSubmission.length + banco.tablas.auditLog.filter((a) => a.action === 'encolado_fallido').length;
+  assert.equal(intentos, 1, 'control: un intento de encolar, el del cobro nuevo');
+});
+
+test('SCRUM-1779d · ② el comercio DEMO con SIF OFF tampoco sella: sin VeriFactu ni QR, y con su marca de agua', async () => {
+  const m = reiniciar({ INVOICING_ES_ENABLED: true });
+  m.email = 'demo@yaqu.app';
+  const f = await nucleo({ camino: 'C3' });
+  assert.ok(f, 'población: una factura del demo');
+  assert.equal(f.vfHash ?? null, null, `${f.number}: sin huella`);
+  assert.equal(f.vfEstado, 'no_aplica', `${f.number}: no_aplica`);
+  assert.equal(banco.tablas.vfSubmission.length, 0, '0 altas');
+  const { texto, imagenes } = await pdfDe(f);
+  assert.ok(texto.includes(f.number), 'control de lectura: el PDF lleva su número');
+  assert.ok(texto.includes('DEMO'), 'la marca de agua del demo se queda');
+  for (const p of PROHIBIDAS) assert.ok(!texto.includes(p), `${f.number}: el PDF del demo no dice «${p}»`);
+  assert.equal(imagenes, 0, 'sin QR');
+});
+
 test.after(() => { Object.assign(console, voces); });
 
 // Mutaciones (catálogo, `aplicarUna` del meta-guard): cada una tiene que tumbar un caso de arriba.
@@ -194,5 +256,12 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: '  if (!estaSellada(inv) && inv.vfEstado === SELLADO_NO_APLICA) return true;',
     a: '  if (false) return true;',
     cae: 'SCRUM-1779d · SIF_ENABLED OFF: las seis vías emiten SIN huella, SIN alta y con el PDF sin VeriFactu ni QR',
+  },
+  {
+    // ① «sella después lo emitido sin sello»: la segunda entrega vuelve a pasar la no_aplica por el sellado
+    fichero: 'src/lib/invoicing.ts',
+    de: 'if (inv.vfEstado !== SELLADO_HECHO && inv.vfEstado !== SELLADO_NO_APLICA) {',
+    a: 'if (inv.vfEstado !== SELLADO_HECHO) {',
+    cae: 'SCRUM-1779d · ① emitida sin sello con SIF OFF: la segunda entrega del cobro, ya con SIF ON, NO la sella',
   },
 ];
