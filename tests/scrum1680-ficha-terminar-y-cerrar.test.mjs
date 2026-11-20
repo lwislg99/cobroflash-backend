@@ -72,8 +72,11 @@ const esBoton = (x) => String(x.tagName || '').toUpperCase() === 'BUTTON';
 
 test('SCRUM-1680 A · 🔴 en curso: «✅ Marcar terminado» en la cabecera de la ficha, y termina el trabajo', async () => {
   const f = await ficha(trabajo({ status: 'en_curso' }));
-  const b = conTexto(f.cabecera, '✅ Marcar terminado').filter(esBoton);
+  // SCRUM-1762b · el ✅ dejó de ser emoji: es el icono `con-icono--hecho` del set del menú (CSS), y el
+  // rótulo es el mismo sin él. Se exigen las DOS cosas: el texto limpio y el icono puesto.
+  const b = conTexto(f.cabecera, 'Marcar terminado').filter(esBoton);
   assert.equal(b.length, 1, `🔴 la ficha de un trabajo en curso no ofrece terminarlo. Cabecera: ${JSON.stringify(f.cabecera.filter(esBoton).map((x) => x.textContent))}`);
+  assert.match(String(b[0].className || ''), /\bcon-icono--hecho\b/, `🔴 «Marcar terminado» sin su icono: «${b[0].className}»`);
   await b[0].click();
   await new Promise((res) => setTimeout(res, 0));
   assert.deepEqual(f.peticiones, [{ url: '/admin/jobs/79', method: 'PATCH', body: { status: 'terminado' } }]);
@@ -103,7 +106,7 @@ test('SCRUM-1680 A · control: ni terminar ni cerrar donde la FSM no lo admite (
   for (const status of ['agendado', 'cerrado']) {
     const f = await ficha(trabajo({ status }));
     const todo = [...f.cabecera, ...f.enOverflow];
-    assert.equal(conTexto(todo, '✅ Marcar terminado').length, 0, `${status}: ofrece «Marcar terminado»`);
+    assert.equal(conTexto(todo, 'Marcar terminado').length, 0, `${status}: ofrece «Marcar terminado»`); // SCRUM-1762b: sin el emoji
     assert.equal(conTexto(todo, 'Cerrar trabajo').length, 0, `${status}: ofrece «Cerrar trabajo»`);
   }
   // Y en curso no se ofrece cerrar (la FSM sólo cierra desde `terminado`).

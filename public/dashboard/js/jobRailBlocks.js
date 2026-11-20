@@ -67,8 +67,9 @@ function bloqueCliente(job, contacto) {
 
   const lineas = [];
   if (nombre) lineas.push({ texto: nombre, fuerte: true });
-  for (const t of telefonos) lineas.push({ texto: t.texto, icono: '📞', href: t.href });
-  if (wa) lineas.push({ texto: 'WhatsApp', icono: '💬', href: wa.href });
+  // SCRUM-1762b · `icono` es el NOMBRE del icono del set del menú (lo dibuja el CSS), no un emoji.
+  for (const t of telefonos) lineas.push({ texto: t.texto, icono: 'telefono', href: t.href });
+  if (wa) lineas.push({ texto: 'WhatsApp', icono: 'whatsapp', href: wa.href });
   if (nota) lineas.push({ texto: nota, etiqueta: ROTULO_NOTA_DEL_CLIENTE, nota: true });
   return { id: 'cliente', titulo: JOB_RAIL_TITULOS.cliente, lineas };
 }
