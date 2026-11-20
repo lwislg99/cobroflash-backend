@@ -195,6 +195,16 @@ test('SCRUM-1005b · la lista no lleva los bytes y sí el nombre y el tamaño', 
   assert.equal(d.mime, 'application/pdf');
 });
 
+// SCRUM-1005d · la pestaña pinta «{mb}» (c.22192, filas 6 y 7) y la cifra NO se escribe en el panel:
+// la lista trae los topes en BYTES, sacados de las constantes, y el panel los divide.
+test('SCRUM-1005d · la lista trae `limites` en bytes, los de las constantes (porFichero, porCliente)', async () => {
+  sembrar();
+  const r = await pedir('GET', `/admin/customers/${CLI_A}/documentos`);
+  assert.equal(r.status, 200);
+  assert.deepEqual(r.json.limites, { porFichero: ca.DOC_MAX_BYTES, porCliente: ca.DOCS_MAX_BYTES_POR_CLIENTE },
+    '🔴 la lista no trae los topes: el panel tendría que escribir «10» y «100» a mano');
+});
+
 test('SCRUM-1005b · 🔴 tenancy: el comercio B recibe 404 con el cliente y el documento de A', async () => {
   sembrar();
   const lista = await pedir('GET', `/admin/customers/${CLI_A}/documentos`, { merchantId: B });
