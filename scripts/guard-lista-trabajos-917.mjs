@@ -56,7 +56,11 @@ const ESPERADO = {
   paraHoy: [1, 2],
   // Qué ofrece el «⋯» por estado: las seis entradas de hoy, sin perder una (inventario C.2).
   menu: {
-    1: ['Técnicos', '✅ Marcar terminado'],
+    // SCRUM-1725j · CAMBIA DE EXIGENCIA (autorizado con nombre por el orquestador el 20-nov-2026, por
+    // la delegación de SCRUM-1656 c.21978; copia literal en `docs/master/SCRUM-1725.md`, tramo 1725j).
+    // Era ['Técnicos', '✅ Marcar terminado']. P4 (firmado, SCRUM-1725 c.22098): en EN CURSO el
+    // albarán baja de la fila al «⋯» y va PRIMERO, delante de lo que ya había. No se pierde ninguna.
+    1: ['+ Nuevo albarán', 'Técnicos', '✅ Marcar terminado'],
     3: ['Técnicos', 'Reagendar', '▶ Empezar', '📆 Añadir a mi calendario'],
     4: ['Técnicos', 'Agendar'],
     8: ['Técnicos', 'Cerrar trabajo'],
@@ -370,12 +374,17 @@ titulo('B · columnas (B.1) · técnico en la línea del cliente (B.2) · una p�
     if (!c || !c.importe[0] || c.importe[0].t !== '✓ Cobrado' || !(c.importe[1] && c.importe[1].t === tot)) mal(`B.4 cobrado del todo: ${JSON.stringify(c && c.importe)} (esperaba «✓ Cobrado» + «${tot}»)`);
     else bien(`B.4 cobrado del todo: «✓ Cobrado» · «${tot}»`);
   }
-  // B.5 · sin eje → «Sin importe · no hay presupuesto aceptado» (antes «—»)
+  // B.5 · sin eje → «Sin importe», y NADA MÁS en la celda (antes «—»)
+  // SCRUM-1725j · CAMBIA DE EXIGENCIA (autorizado con nombre por el orquestador el 20-nov-2026, por la
+  // delegación de SCRUM-1656 c.21978; copia literal en `docs/master/SCRUM-1725.md`, tramo 1725j). Exigía
+  // además la segunda línea «no hay presupuesto aceptado». P3 (firmado, SCRUM-1725 c.22098): en la
+  // LISTA queda solo «Sin importe»; la frase larga vive en la ficha. Se sigue comparando la celda
+  // ENTERA: una segunda línea, la que sea, vuelve a ser rojo.
   for (const id of [6, 9]) {
     const c = deCliente(id);
     const txt = c ? c.importe.map((x) => x.t) : [];
-    if (JSON.stringify(txt) !== JSON.stringify(['Sin importe', 'no hay presupuesto aceptado'])) mal(`B.5 ${POR_ID.get(id).customer.name} sin eje: ${JSON.stringify(txt)}`);
-    else bien(`B.5 ${POR_ID.get(id).customer.name}: «Sin importe» · «no hay presupuesto aceptado»`);
+    if (JSON.stringify(txt) !== JSON.stringify(['Sin importe'])) mal(`B.5 ${POR_ID.get(id).customer.name} sin eje: ${JSON.stringify(txt)} (esperaba solo «Sin importe»)`);
+    else bien(`B.5 ${POR_ID.get(id).customer.name}: solo «Sin importe»`);
   }
   // B.6 · 🔴 cobrado DE MÁS: NO se construye (esperando a la S1). Se pinta COMO HOY.
   {

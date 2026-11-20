@@ -52,15 +52,23 @@ async function renderJobsView(container) {
   // cuando un cliente acepta un presupuesto, o los abres tú desde aquí.» Mudar el subtítulo allí
   // habría puesto DOS textos aprobados diciendo lo mismo en la misma caja. La explicación ya vive
   // donde hace falta; lo que sobraba era la de arriba.
+  //
+  // ── SCRUM-1725j · UNA TARJETA, COMO LAS HERMANAS (c.22098) ─────────────────────────────────
+  // Presupuestos, Albaranes y Facturas son UNA `.data-card`: cabecera con el título y su «Nuevo…»
+  // dentro, pestañas, barra y tabla. Trabajos eran cuatro cajas sueltas. Mismas piezas, mismos
+  // textos y mismos `id`; cambia quién envuelve a quién. Las dos cifras se quedan ENCIMA, fuera:
+  // contestan «qué hay hoy» y «cuánto me deben» antes de que empiece la lista.
   container.innerHTML = `
     <div class="jobs-pantalla">
-      <div class="customers-card jobs-cabecera">
-        <h2>Trabajos</h2>
-      </div>
-      <div id="jobs-nuevo" class="jobs-nuevo"></div>
       <div id="jobs-cifras" class="jobs-cifras"></div>
-      <div id="jobs-filter" class="jobs-filtros"></div>
-      <div id="jobs-list" class="jobs-lista"></div>
+      <div class="data-card jobs-tarjeta">
+        <div class="data-card-header jobs-cabecera">
+          <h2>Trabajos</h2>
+          <div id="jobs-nuevo" class="jobs-nuevo"></div>
+        </div>
+        <div id="jobs-filter" class="jobs-filtros"></div>
+        <div id="jobs-list" class="jobs-lista"></div>
+      </div>
     </div>
   `;
   const list = document.getElementById('jobs-list');
@@ -1028,7 +1036,8 @@ async function abrirAsignar(j, refrescar) {
  * Los tres casos, con los textos firmados en el comentario 15881 de SCRUM-917:
  *   · falta algo      → «740,00 €» / «de 1.240,00 €»
  *   · no falta nada   → «✓ Cobrado» / «1.240,00 €»
- *   · no hay eje      → «Sin importe» / «no hay presupuesto aceptado» (hoy era un «—» mudo)
+ *   · no hay eje      → «Sin importe» (hoy era un «—» mudo). Llevaba debajo «no hay presupuesto
+ *                       aceptado»: SCRUM-1725j (P3) la deja solo en la ficha.
  *
  * 🔴 Y UN CUARTO QUE NO SE CONSTRUYE: cobrado MAYOR que la referencia. Si cobrar de más es
  * legítimo o un defecto lo decide la Sesión 1, y hasta entonces esas filas se pintan COMO HOY
@@ -1047,8 +1056,10 @@ function celdaImporte(j) {
     td.appendChild(d);
   };
   if (falta === null) {
+    // SCRUM-1725j · P3 (FIRMADO, SCRUM-1725 c.22098 por la delegación de SCRUM-1656 c.21978): en la
+    // LISTA queda solo «Sin importe». La segunda frase («no hay presupuesto aceptado») salía en 8 de
+    // 9 filas y daba tres renglones a una celda que no tenía cifra; el porqué se lee en la ficha.
     linea('jobs-importe-falta jobs-importe-sin', 'Sin importe');
-    linea('jobs-importe-de', 'no hay presupuesto aceptado');
   } else if (!veEstadoDeCobro(window.appUserRole)) {
     // SCRUM-1725 (D1) · el importe, sin lo que falta ni «de»: c.21547 deja el importe y quita el cobro.
     linea('jobs-importe-falta', fmtMoneyEs(j.importeReferencia, cur));
@@ -1113,11 +1124,23 @@ function jobRow(j, container, equipo) {
   // SCRUM-917c · `tituloPropio` es el nombre que puso el profesional, crudo o `null` (servidor,
   // SCRUM-917d). NO se usa `titulo`, que cae al nombre del cliente cuando no hay otro y repetiría
   // la línea de encima. Los técnicos llegan aquí desde su columna, que desaparece.
-  const tdCliente = document.createElement('td');
-  tdCliente.className = 'cell-client';
+  const tdCelda = document.createElement('td');
+  tdCelda.className = 'cell-client';
+  // ── SCRUM-1725j · EL CUERPO DE LA CELDA, Y LA CURA DEL CLIC EN LA FILA ─────────────────────────
+  // Medido (`docs/master/evidencias/SCRUM-1725/c1725j-clic-antes.txt`): en 8 de 16 filas el CENTRO
+  // de esta celda caía sobre el desplegable de técnicos, que no navega (y hace bien). Pulsar una
+  // fila «en medio» abría un desplegable en vez del Trabajo. No se toca el `click` ni el candado:
+  // el desplegable deja de ocupar el centro. Todo lo que la celda decía cuelga ahora de este
+  // cuerpo, en el MISMO orden, y la hoja lo reparte en renglones (bloque «S4 · SCRUM-1725j»):
+  // quién · qué · tipo y dirección en UN renglón gris, y los técnicos al final de ese renglón, en
+  // la mitad derecha. Un `td` no puede ser rejilla sin dejar de ser celda; por eso hay cuerpo.
+  const tdCliente = document.createElement('div');
+  tdCliente.className = 'jobs-fila-cuerpo';
+  tdCelda.appendChild(tdCliente);
   const nombre = document.createElement('b');
   nombre.className = 'jobs-fila-cliente';
   nombre.textContent = j.customer?.name || 'Cliente';
+  nombre.title = nombre.textContent;
   tdCliente.appendChild(nombre);
   // SCRUM-1670c · QUÉ CLASE de trabajo es: el tipo de intervención elegido en el alta, entre el
   // cliente y la tarea. Se pinta el RÓTULO que da el servidor (`/admin/me` → `appTiposIntervencion`),
@@ -1186,7 +1209,7 @@ function jobRow(j, container, equipo) {
     d.title = direccion;
     tdCliente.appendChild(d);
   }
-  tr.appendChild(tdCliente);
+  tr.appendChild(tdCelda);
 
   // ② Importe
   tr.appendChild(celdaImporte(j));
@@ -1210,7 +1233,21 @@ function jobRow(j, container, equipo) {
   // problema. El grupo ya lo dice; la fila no lo repite.
   const tdFecha = document.createElement('td');
   tdFecha.className = 'cell-date';
-  if (j.scheduledAt) tdFecha.textContent = fecha;
+  if (j.scheduledAt) {
+    // SCRUM-1725j · el MISMO texto, en un renglón y con la hora en gris: el día manda, la hora
+    // acompaña. Se parte por la última coma del formato; si un día no la trae, va entero.
+    const corte = fecha.lastIndexOf(', ');
+    const dia = document.createElement('span');
+    dia.className = 'jobs-fecha-dia';
+    dia.textContent = corte > 0 ? fecha.slice(0, corte) : fecha;
+    tdFecha.appendChild(dia);
+    if (corte > 0) {
+      const hora = document.createElement('span');
+      hora.className = 'jobs-fecha-hora';
+      hora.textContent = fecha.slice(corte);
+      tdFecha.appendChild(hora);
+    }
+  }
   tr.appendChild(tdFecha);
 
   // ── SCRUM-1725g · EL ESTADO, EN LA FILA ───────────────────────────────────────────────────
@@ -1255,11 +1292,15 @@ function jobRow(j, container, equipo) {
   const puedeFacturar = typeof window.facturaFiscalDisponible === 'function' && window.facturaFiscalDisponible();
   const cobraAqui = puedeFacturar && j.status === 'terminado' && j.remaining && j.remaining.amount > 0;
   const siguiente = typeof jobNextAction === 'function' ? jobNextAction(j, !isTecnico) : null;
-  // SCRUM-1739 · ¿la rellena de esta fila es la acción de la ESCALERA? Entonces va PRIMERA (abajo, al
-  // montar la celda). «Abrir parte» ya iba primera porque se monta fuera de la escalera.
-  let rellenaEnEscalera = cobraAqui;
+  // (SCRUM-1739 llevaba aquí la cuenta de si la rellena era la de la escalera, para montarla delante
+  // de «Ver detalle». Con el orden fijo de SCRUM-1725j la caja va SIEMPRE delante y la cuenta sobra.)
+  // SCRUM-1725j · P4: la acción de la escalera que BAJA al «⋯» (ver dónde se monta el menú).
+  let escaleraAlMenu = null;
   if (siguiente && !cobraAqui) {
     const bSiguiente = document.createElement('button');
+    // Identidad, no peso ni sitio (como `data-accion="cta"` en la ficha, SCRUM-1725h): es la acción
+    // de la escalera esté en la fila o dentro del «⋯».
+    bSiguiente.dataset.accion = 'escalera';
     // ── SCRUM-917c · SECUNDARIA: UNA SOLA PRIMARIA EN LA LISTA, Y ES LA DEL DINERO ─────────────
     // Medido en staging el 17-sep-2026: doce «Agendar» verdes idénticos en la misma pantalla. Si
     // todo es primario, nada lo es. La acción NO cambia —la misma escalera, el mismo sitio, el
@@ -1281,7 +1322,6 @@ function jobRow(j, container, equipo) {
     // Va en su propia asignación, con el literal entero, para que el censo de SCRUM-412 lo VEA.
     if (siguiente.kind === 'empezar' && grupoDeTrabajo(j, new Date()) === 'hoy') {
       bSiguiente.className = 'btn-primary btn-sm';
-      rellenaEnEscalera = true;
     }
     bSiguiente.textContent = siguiente.label;
     // ── SCRUM-823 · «Agendar» y «▶ Empezar» SE EJECUTAN AQUÍ, no llevan al detalle ─────────
@@ -1311,7 +1351,18 @@ function jobRow(j, container, equipo) {
         if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: j.id });
       });
     }
-    caja.appendChild(bSiguiente);
+    // ── SCRUM-1725j · P4 (c.22098): EN CURSO, EL SEGUNDO BOTÓN BAJA AL «⋯» ─────────────────────
+    // La fila EN CURSO llevaba cuatro controles («Abrir parte» · «Ver detalle» · «+ Nuevo albarán»
+    // o «Emitir albarán» · «⋯») y era la única que partía en dos renglones. El paso de hoy en obra
+    // es el parte (N1, SCRUM-1700): es la rellena y se queda. El albarán sigue a UN gesto, primero
+    // del «⋯», con su mismo rótulo y su mismo destino; para todos los roles. Solo baja ESTE: una
+    // rellena de la escalera (1739) nunca se esconde.
+    if (j.status === 'en_curso') {
+      bSiguiente.className = 'btn-ghost btn-sm';
+      escaleraAlMenu = bSiguiente;
+    } else {
+      caja.appendChild(bSiguiente);
+    }
   }
 
   if (cobraAqui) {
@@ -1347,6 +1398,7 @@ function jobRow(j, container, equipo) {
 
   // ── El «⋯»: TODO lo que modifica el Trabajo vive aquí ────────────────────────────────────
   const menu = [];
+  if (escaleraAlMenu) menu.push(escaleraAlMenu);
   const opcion = (texto, fn) => {
     const b = document.createElement('button');
     b.className = 'btn-ghost btn-sm';
@@ -1477,16 +1529,18 @@ function jobRow(j, container, equipo) {
   // El «⋯» sigue CERRANDO la fila (SCRUM-1562f): en ese caso cuelga de la celda, detrás de «Ver
   // detalle», y no de la caja. Los guards lo buscan por la FILA (`tr .overflow-trigger`) y la
   // escalera sigue siendo `.jobs-acciones > button`: ninguno de los dos cambia.
+  //
+  // ── SCRUM-1725j · ORDEN FIJO: [el paso] · «Ver detalle» · «⋯», SIEMPRE ───────────────────────
+  // Hasta aquí había dos órdenes: con rellena iba la caja delante, y sin ella «Ver detalle» abría
+  // la celda y el «⋯» colgaba de la caja. Fila a fila, «Ver detalle» bailaba de sitio. Ahora la
+  // celda se alinea a la derecha y el orden es uno: «Ver detalle» y «⋯» caen en la misma vertical
+  // en todas las filas, y lo que cambia de ancho —el paso— queda a su izquierda. Sigue siendo el
+  // orden del DOM (el del foco), sin `order` en la hoja. La caja de la escalera se monta aunque
+  // esté vacía (cerrado, o EN CURSO desde P4): los guards cuentan UNA por fila.
   const tresPuntos = menu.length && typeof overflowMenu === 'function' ? overflowMenu(menu) : null;
-  if (rellenaEnEscalera) {
-    celda.appendChild(caja);
-    celda.appendChild(bDetalle);
-    if (tresPuntos) celda.appendChild(tresPuntos);
-  } else {
-    celda.appendChild(bDetalle);
-    celda.appendChild(caja);
-    if (tresPuntos) caja.appendChild(tresPuntos);
-  }
+  celda.appendChild(caja);
+  celda.appendChild(bDetalle);
+  if (tresPuntos) celda.appendChild(tresPuntos);
   tr.appendChild(tdAcc);
 
   // La fila abre el Trabajo. Los controles de dentro NO disparan la navegación (guard por

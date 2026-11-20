@@ -340,3 +340,61 @@ A9: aviso → cicatriz S4 «La tanda de antes del push sale de un git grep de lo
 - 30 ficheros de `tests/` (los del `git grep` de arriba): 322 casos, 322 pass, 0 fail, 0 skip. Los dos caídos, en verde.
 - `c1725i-sonda-local.mjs` en navegador real: VERDE, 0 en rojo de 32 exigencias (2 roles × 2 anchos, 12 trabajos).
 - En ese run cayó también «guards de navegador» (no obligatorio): 40 verdes, 0 ciegos, 1 rojo, `guard:lista-trabajos`, con la firma preexistente de arriba. Se cura en el PR-②.
+
+## El lavado: una tarjeta, filas de tres renglones, P3 y P4 (S4 · 20-nov · SCRUM-1725j)
+
+**Medido contra:** `origin/main` = `0b8b9eda502d9e20c943ab348dd0fd4f26824168` · 2026-11-20T07:42:25Z
+
+A9: comprobación → `tests/scrum811c-skill-ui-declarada.test.mjs`
+Mutaciones: catálogo → `tests/scrum1725j-lista-lavado.test.mjs`
+
+**Skill UI:** cargada (`yaqu-premium-ui`; DESIGN.md única fuente de tokens, ninguno nuevo; Parte AB: una pantalla). La cargó la sesión que escribió la hoja. La sesión de relevo hizo el pulido del 20-nov (cuatro reglas del mismo bloque) ANTES de cargarla y la cargó después, al caer el guard de arriba: es el fallo de la línea A9.
+
+**Por qué.** Es el PR-② de la vuelta 3 (SCRUM-1725 c.22098 y c.22103), tras el veredicto del fundador sobre la lista plana (c.22095). El PR-① (filtros, #3240) ya está en `main`.
+
+**Qué cambia** (`jobsView.js`, bloque `S4 · SCRUM-1725j` de `styles.css`):
+- UNA tarjeta, como Presupuestos, Albaranes y Facturas: cabecera con el título y «Nuevo trabajo», pestañas, barra y tabla dentro de una `.data-card`. Las dos cifras se quedan encima.
+- La fila de escritorio mide tres renglones: quién · qué · tipo y dirección. Medido: de 61 a 69 px (eran de 92 a 121).
+- La cura del clic en la fila (el rojo preexistente de `guard:lista-trabajos`): en 8 de 16 filas el centro de la celda de cliente caía en el desplegable de técnicos, que no navega (`c1725j-clic-antes.txt`). El desplegable ya no pisa el centro: 0 de 16 (`c1725j-clic-despues.txt`). No se toca el `click` ni el candado de SCRUM-727.
+- Orden fijo de las acciones: [el paso] · «Ver detalle» · «⋯», haya rellena o no. «Ver detalle» y «⋯» caen en la misma vertical en todas las filas.
+- P3 (firmado, c.22098): sin importe de referencia la lista dice solo «Sin importe»; la frase «no hay presupuesto aceptado» vive en la ficha.
+- P4 (firmado, c.22098): en EN CURSO el albarán baja de la fila al «⋯», el primero, con su mismo rótulo y destino, para todos los roles. La fila queda en «Abrir parte» · «Ver detalle» · «⋯». El botón lleva `data-accion="escalera"` esté donde esté.
+- Ningún texto nuevo: todos los rótulos existían.
+
+**Cambio de diseño medido** (ratificado por el orquestador, abajo): los técnicos van en el renglón ②, con la tarea, y el ③ queda para tipo · dirección. Con los tres en el ③ la dirección medía 0 px en 4 de 8 filas (la celda de cliente mide unos 256 px a 1280).
+
+**Pulido del 20-nov, a la vista de la captura del banco** (pedido por el orquestador en la sesión, sin número de comentario: Jira estaba caído). Tres cosas que se veían mal a 1280 y que se curan sin tocar la cura del clic:
+- El nombre del técnico salía cortado («Israel Carm…») con hueco a su izquierda. Ahora aprovecha su mitad: 0 de 16 nombres cortados en el banco.
+- En las filas sin tarea propia el técnico quedaba solo a la derecha de un renglón vacío. Ahora abre ese renglón por la izquierda, bajo el cliente, sin pasar de esa mitad.
+- La flecha del desplegable, a 10 px, se leía como un punto. Va a 16 px.
+- Por eso el banco `c1725j-medir-filas.mjs` (nace en esta rama) deja de exigir «el desplegable en la mitad DERECHA» y exige «no pisa el centro de la celda: entero en una mitad». El árbitro del clic es `c1725j-clic-en-fila.mjs`, que no cambia.
+- NO se toca: la caja vacía entre «Técnico» y «Todos los técnicos» es el buscador de SCRUM-816, ya en `main`.
+
+**Cuatro exigencias cambian, y solo ésas.** Cada una se vio en ROJO contra el código nuevo antes de tocarla: en `scrum1739`, «SIN-AGENDAR no tiene rellena y ha cambiado de orden: □Agendar · □Ver detalle · □⋯»; en guard-917, «B.5 … sin eje: ["Sin importe"]» (dos filas) y «C.2 «⋯» de Ana Cuadro: ["+ Nuevo albarán","Técnicos","✅ Marcar terminado"] ≠ ["Técnicos","✅ Marcar terminado"]»; en guard-escalera, «en_curso: la lista propone (ninguna) y el detalle «+ Nuevo albarán»». La autorización, copiada literal (20-nov, ~09:45 local; pendiente de pegar en Jira, que estaba caído):
+
+> «AUTORIZO cambiar exactamente estas CUATRO exigencias y ninguna más, porque el requisito cambió (P3/P4 firmados en c.22098/c.22103, veredicto del fundador c.22095):
+> a) tests/scrum1739-una-rellena-por-tarjeta.test.mjs, caso de L138 (L146-151) → exige el orden fijo [paso]·«Ver detalle»·«⋯» también cuando NO hay rellena.
+> b) scripts/guard-lista-trabajos-917.mjs B.5 (L373-378) → exige solo «Sin importe» en la lista (P3 firmado; la frase larga vive en la ficha).
+> c) guard-917 C.2 (~L57, inventario del «⋯» por estado) → el «⋯» de EN CURSO lleva «+ Nuevo albarán» PRIMERO, delante de Técnicos y Marcar terminado (P4).
+> d) scripts/guard-escalera-por-estado.mjs ① EN CURSO (L116; selectores L178/225/262) → lee el botón por identidad data-accion="escalera" DENTRO del «⋯»; los otros cuatro estados intactos (mismo patrón que c.22107: cambia lo que MIRA, no lo que exige).
+> RATIFICADO además el cambio de diseño medido: técnicos al renglón ② junto a la tarea; el ③ queda para tipo · dirección (con los tres juntos la dirección medía 0px en 4 de 8 filas). Firmado por delegación c.21978; pendiente de pegar en Jira (caído).»
+
+Cómo quedó cada una:
+- a) el tramo de las filas sin rellena exige la lista ENTERA de rótulos, en orden, para sus tres casos. El resto del caso, igual.
+- b) B.5 compara la celda entera con `['Sin importe']`: una segunda línea, la que sea, es rojo.
+- c) la fila 1 del inventario pasa a `['+ Nuevo albarán', 'Técnicos', '✅ Marcar terminado']`. Las otras tres, intactas.
+- d) solo para `en_curso`, el guard abre el «⋯» de la fila y lee dentro `button[data-accion="escalera"]`. Sigue exigiendo el MISMO rótulo que el detalle. Los selectores de ②, ②-bis y ③ (L178/225/262 de entonces) NO se tocaron: siguen leyendo la caja de la fila, que en esos estados sigue llevando el paso. Límite que queda dicho: si un día la acción de otro estado bajara al «⋯», ③ no la vería; hoy solo baja la de EN CURSO.
+
+**Red que corre siempre** (`tests/scrum1725j-lista-lavado.test.mjs`, 4 casos, sin navegador): una tarjeta; P3; P4 con el albarán primero en el «⋯» por su identidad; y P4 para el operario. Declara 5 mutaciones; `scrum1739` declara 1 (vuelven los dos órdenes).
+
+**Las mutaciones, también contra los guards de navegador** (`c1725j-exigencias-mutacion.mjs`, que las toma de los dos catálogos; salida en `c1725j-exigencias-mutacion.txt`): base verde en los 4 instrumentos; 5 mutaciones; 10 caídas exigidas, 10 vistas; árbol restaurado byte a byte. Cada exigencia cambiada cae con su defecto: b) en guard-917, c) en guard-917 (por faltar y por ir el último), d) en guard-escalera (por salir del «⋯» y por perder la identidad), a) en `scrum1739`.
+
+**Medido tras traer `main`** (7 commits, merge sin conflictos; el diff contra `main` son 15 ficheros, todos de esta entrega):
+- `guard:lista-trabajos` salida 0 · `guard:lista-trabajos-917` salida 0, 56 comprobaciones · `guard:escalera-por-estado` salida 0 (los cinco estados dan 4 rótulos distintos; EN CURSO «+ Nuevo albarán» en las dos).
+- Banco `c1725j-medir-filas.mjs`: VERDE, 0 en rojo de 12 exigencias, 20 trabajos de muestra a 1280 y 390 (`c1725j-medir-filas.txt`).
+- Tanda de 279 ficheros de `tests/` (los del `git grep` de lo tocado, más los guards de registro y catálogo): 2147 casos, 2055 pass, 90 skip, 2 fail. Los dos fallos: `scrum811c` (pedía la línea de la skill de este tramo, ya puesta) y `scrum222` «el SQL del censo de producción NO está desfasado respecto al schema», que es del árbol local y no de la rama.
+- NO MEDIDO: `npm run build` sale 2 en este worktree. Son errores de tipos de `customerAdmin.ts` sobre columnas de `Attachment` que trajo `main`: el cliente de Prisma compartido va por detrás del esquema, y no se regenera desde aquí (A1). Esta rama no toca `src/` ni el esquema. El build lo juzga el CI.
+
+**Lo que NO lleva esta entrega:**
+- Capturas en yaqu.app (antes/después, 390 y 1280, operario y admin): no las he intentado. La cookie de QA estaba caducada y esta sesión no tenía contexto para renovarla. Las que van son del BANCO local, con datos de muestra: `c1725j-banco-lavado-1280.png` (mirada) y `c1725j-banco-lavado-390.png` (sin mirar a ojo; sus medidas sí están en el banco).
+- Verificación en yaqu.app: después del despliegue.

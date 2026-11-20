@@ -1,0 +1,19 @@
+﻿población: 16 filas a 1280
+fila  1 · alto 61 · celda 276×61 · en el centro: b.jobs-fila-cliente · navegaría
+fila  2 · alto 61 · celda 276×61 · en el centro: b.jobs-fila-cliente · navegaría
+fila  3 · alto 61 · celda 276×61 · en el centro: b.jobs-fila-cliente · navegaría
+fila  4 · alto 61 · celda 276×61 · en el centro: b.jobs-fila-cliente · navegaría
+fila  5 · alto 61 · celda 276×61 · en el centro: b.jobs-fila-cliente · navegaría
+fila  6 · alto 61 · celda 276×61 · en el centro: b.jobs-fila-cliente · navegaría
+fila  7 · alto 61 · celda 276×61 · en el centro: b.jobs-fila-cliente · navegaría
+fila  8 · alto 61 · celda 276×61 · en el centro: b.jobs-fila-cliente · navegaría
+fila  9 · alto 61 · celda 276×61 · en el centro: b.jobs-fila-cliente · navegaría
+fila 10 · alto 61 · celda 276×61 · en el centro: b.jobs-fila-cliente · navegaría
+fila 11 · alto 61 · celda 276×61 · en el centro: b.jobs-fila-cliente · navegaría
+fila 12 · alto 61 · celda 276×61 · en el centro: b.jobs-fila-cliente · navegaría
+fila 13 · alto 61 · celda 276×61 · en el centro: b.jobs-fila-cliente · navegaría
+fila 14 · alto 61 · celda 276×61 · en el centro: b.jobs-fila-cliente · navegaría
+fila 15 · alto 61 · celda 276×61 · en el centro: b.jobs-fila-cliente · navegaría
+fila 16 · alto 61 · celda 276×61 · en el centro: b.jobs-fila-cliente · navegaría
+resumen: en 0 de 16 filas el centro de la celda de cliente cae en un control que NO navega · 0 fila(s) sin poder mirar
+clic del guard en la primera fila: NAVEGÓ · [{"vista":"jobs-detail","params":{"jobId":3}}]
