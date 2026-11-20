@@ -179,3 +179,37 @@ Antes = fuentes de `origin/main` 5d6114fb1; después = el árbol de la rama; los
 ### Pendiente
 - El «me gusta» del fundador sobre las capturas: lo trae el orquestador, y S4 no cierra.
 - Regla 42 tras el merge: ver el parte en yaqu.app a 1280 y 1920 (cuenta QA, partes #21 y #22) y cotejar con las capturas.
+## PR-2 · INICIO (S2 · 20-nov-2026)
+
+**Medido contra:** `origin/main` = `cde9d2f04da5567dc45233cd9356ddcbf5f7cb9e` · 2026-11-20T11:23:11Z
+**Rama:** `scrum-1762c-hallmark-inicio` (desde PR-1: los dos anexan al final de styles.css)
+**Skill UI:** cargada (`yaqu-premium-ui` + `impeccable`; iconos del set del menú; tokens existentes)
+A9: sin fallo que generalice — el tramo se cortó por límite de uso antes de la tanda entera y se retomó; nada entró sin tanda.
+
+- Estructura: «Para hoy» (franja de la Lista, `pintarCifrasDeLaLista`) arriba también para el admin · «Dinero en juego» debajo · «Completa tu configuración» AL FINAL (ranura `#home-configuracion`; el equipo se inserta antes).
+- Ropa: emojis → iconos del menú (⚙ 💶 ⚡ 👤 💰 🚀 ⚠; 👋 fuera; 🎉 → ✓ en línea) · sin raya lateral en `.home-hero-card` · 16 px bajo los avisos · un solo H1 (saludo → h2).
+- Texto FIRMADO por c.21978: «Cotizaciones» → `appLocale.quotePlural` (el literal del menú) · «0%» con 0 enviados → «—» neutro.
+- Tests: NUEVO `scrum1762c-hallmark-inicio` (4) · CAMBIAN 698 (148→151, delta medido por identidad) y 601 (980→1000).
+  Autorización del orquestador cobroflash-backend-25 (mensaje entre sesiones; Jira caído, la pega él al volver), copiada LITERAL:
+  «AUTORIZO (delegación c.21978, 20-nov ~13:25 local) cambiar exactamente estas exigencias y ninguna más, por el PR-2 de la lavada hallmark de Inicio ordenada por el fundador, rojo-primero visto: ① tests/scrum698-vistas-que-no-se-miden.test.mjs → renderHomeView 148→151, delta MEDIDO por identidad (+div#home-hoy «Para hoy» arriba · +div#home-configuracion ranura final · +span.con-icono--hecho el ✓ del 🎉); las otras tres vistas intactas. ② tests/scrum601-copy-del-documento-vs-flag.test.mjs → re-anclaje por posición de la nota «100% al aceptar» de homeView 980→1000 (medido en main y rama), patrón 1390y/1701/1686/1717.»
+  El orquestador RATIFICA aplicar la firma con `appLocale.quotePlural` (el literal del menú) en vez de la palabra fija. «Cotización #8» y «Sin cotizaciones aceptadas aún» quedan declarados para otra ronda con firma propia.
+
+Mutaciones: catálogo → `tests/scrum1762c-hallmark-inicio.test.mjs`
+
+Capturas (fuera de git, A8): `D:\MILLONARIO\cobroFlash\capturas\SCRUM-1762\c-inicio\despues\` (admin y operario, 390 y 1280); el antes es la auditoría de la mañana (`sondas-s2\evid-hallmark-20nov\inicio-*`). Medido después: 0 emojis, un solo H1 («Inicio»), 0 px de desborde.
+
+### Regla 42 del PR-1 (verificado en yaqu.app)
+#3271 mergeado (11:50Z). yaqu.app sirve el build `5d6114fb18010482abcb7172882b5c0cf8b35760`, que lo contiene. La sonda
+`sondas-s2\capturar-1762.mjs` con `PROD=1` (sin servir nada local, solo GET), trabajo QA 77, admin 390 y 1280, mide
+lo mismo que el «después» local: pestaña abierta sobre rgb(236,253,245), «+ Nuevo parte» 13,5 px × 44 px sobre
+rgb(4,120,87), 0 emojis y 0 px de desborde. Capturas: `D:\MILLONARIO\cobroFlash\capturas\SCRUM-1762\b-ficha\r42-prod\`.
+
+### PR-2 · exigencias que cambian además de 698 y 601 (cazadas por la tanda; AUTORIZADAS)
+- `tests/scrum1341-actividad-del-equipo-sin-importes.test.mjs` L403 y L434: la cabecera «Cotizaciones» pasa a «Presupuestos» (el texto firmado).
+- `tests/scrum1686h4-inicio-operario.test.mjs` ⑥: exigía que el admin NO tuviera «Para hoy»; ahora exige que lo tenga, con la misma franja, sin «Por cobrar» y pidiendo su lista una vez.
+- `tests/scrum1762c-hallmark-inicio.test.mjs`: control hermano de la negación «Cotizaciones» (SCRUM-237), que con `quotePlural` de LatAm tiene que salir «Cotizaciones».
+Rojo-primero: las tres caen con el `homeView.js` de `origin/main`.
+
+Autorización del orquestador cobroflash-backend-25 (mensaje entre sesiones; Jira caído), copiada LITERAL:
+«AUTORIZO (delegación c.21978, 20-nov ~13:50 local) cambiar exactamente estas exigencias y ninguna más, consecuencia directa de lo firmado para el PR-2 (texto «Cotizaciones»→literal del menú y «Para hoy» arriba para todos), rojo-primero visto contra main: ① tests/scrum1341-actividad-del-equipo-sin-importes.test.mjs L403 y L434 → la cabecera esperada pasa a 'Presupuestos'; ② tests/scrum1686h4-inicio-operario.test.mjs ⑥ → el admin SÍ tiene «Para hoy», con la misma franja, sin «Por cobrar» y pidiendo su lista UNA vez (['jobs']).»
+El control hermano de scrum237 va dentro del test propio (no pide firma, dicho por el orquestador). Tanda local: cortada por el sistema por memoria a ~6.400 pruebas; por decisión del orquestador, arbitra el CI.

@@ -26,6 +26,18 @@ async function pintarTrabajoDeHoy(zona) {
   zona.querySelectorAll('.jobs-cifra-dinero').forEach((cifra) => cifra.remove());
 }
 
+// SCRUM-1762c · donde el Inicio decía «Cotizaciones», el MISMO literal que el menú: `appLocale.quotePlural`
+// («Presupuestos» en España; app.js lo pone en `#nav-quotes-label`). Firmado por c.21978.
+function ponerAntesDeLaConfiguracion(container, nodo) {
+  const ranura = document.getElementById('home-configuracion');
+  if (ranura && ranura.parentNode) ranura.parentNode.insertBefore(nodo, ranura);
+  else container.appendChild(nodo);
+}
+
+function pluralDelPresupuesto() {
+  return (window.appLocale && window.appLocale.quotePlural) || 'Presupuestos';
+}
+
 async function renderHomeView(container) {
   const qLabel = (window.appLocale && window.appLocale.quoteNew) || 'Nueva cotización';
   const firstName = String(window.appUserName || '').trim().split(/\s+/)[0] || '';
@@ -40,10 +52,10 @@ async function renderHomeView(container) {
       <!-- Saludo (foco + calidez) + A6.7 Personalizar -->
       <header class="home-greeting" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
         <div>
-          <h1>${greet}${firstName ? ', ' + esc(firstName) : ''} 👋</h1>
+          <h2 class="home-greeting-titulo">${greet}${firstName ? ', ' + esc(firstName) : ''}</h2>
           <p>${veNegocio ? 'Esto es lo que pasa hoy en tu negocio.' : 'Esto es lo que tienes hoy.'}</p>
         </div>
-        ${window.appUserRole === 'admin' ? '<button class="btn-ghost btn-sm" id="btn-home-prefs" title="Elige qué bloques ves en tu Home">⚙ Personalizar</button>' : ''}
+        ${window.appUserRole === 'admin' ? '<button class="btn-ghost btn-sm con-icono con-icono--ajustes" id="btn-home-prefs" title="Elige qué bloques ves en tu Home">Personalizar</button>' : ''}
       </header>
 
       <!-- SCRUM-356 (H2) · Firmas que aún no están a salvo.
@@ -99,15 +111,15 @@ async function renderHomeView(container) {
         <div class="home-section-label">Acciones rápidas</div>
         <div class="home-quick-actions">
           <button class="home-action home-cta" id="btn-quick-quote">
-            <span class="home-action-ico">⚡</span>
+            <span class="home-action-ico con-icono con-icono--presupuesto" aria-hidden="true"></span>
             <span><span class="home-action-title">${qLabel}</span><span class="home-action-sub">en 30 segundos · tecla <kbd>N</kbd></span></span>
           </button>
           <button class="home-action" id="btn-add-customer">
-            <span class="home-action-ico">👤</span>
+            <span class="home-action-ico con-icono con-icono--clientes" aria-hidden="true"></span>
             <span><span class="home-action-title">Añadir cliente</span><span class="home-action-sub">guárdalo una vez</span></span>
           </button>
           <button class="home-action" id="btn-view-pending">
-            <span class="home-action-ico">💰</span>
+            <span class="home-action-ico con-icono con-icono--factura" aria-hidden="true"></span>
             <span><span class="home-action-title">Pendientes de cobro</span><span class="home-action-sub">facturas abiertas</span></span>
           </button>
         </div>
@@ -145,6 +157,9 @@ async function renderHomeView(container) {
           <div id="top-services"><div style="color:var(--neutral-500);font-size:13px">Sin datos aún</div></div>
         </div>
       </div>
+
+      <!-- SCRUM-1762c · «Completa tu configuración» va AL FINAL del Inicio: la pinta renderSetupChecklist. -->
+      <div id="home-configuracion"></div>
     </div>
   `;
 
@@ -173,9 +188,9 @@ async function renderHomeView(container) {
       .forEach((bloque) => bloque.remove());
     pintarTrabajoDeHoy(document.getElementById('home-hoy'));
   } else {
-    // SCRUM-1686 H4 · el Inicio del admin no cambia ni en un nodo (scrum698 lo cuenta).
-    const hoy = document.getElementById('home-hoy');
-    if (hoy) hoy.remove();
+    // SCRUM-1762c · «Para hoy» ARRIBA también en el Inicio del admin: la MISMA franja de la Lista
+    // (`pintarCifrasDeLaLista`), sin texto nuevo. Antes se quitaba (SCRUM-1686 H4).
+    pintarTrabajoDeHoy(document.getElementById('home-hoy'));
   }
 
   // A6.7: aplicar preferencias cacheadas al instante (sin flash en re-renders)
@@ -561,7 +576,7 @@ function renderSetupChecklist(merchant, data) {
   checklist.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <div>
-        <div style="font-weight:700;font-size:14px;color:#166534">🚀 Completa tu configuración</div>
+        <div class="con-icono con-icono--ajustes" style="font-weight:700;font-size:14px;color:#166534">Completa tu configuración</div>
         <div style="font-size:12px;color:#4d7c0f;margin-top:2px">${incomplete.length} paso${incomplete.length!==1?'s':''} restante${incomplete.length!==1?'s':''}</div>
       </div>
       <div style="background:#dcfce7;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;color:#166534">${pasos.filter(s=>s.done).length}/${pasos.length}</div>
@@ -580,8 +595,11 @@ function renderSetupChecklist(merchant, data) {
     </div>
   `;
 
-  // Insertar antes del grid de KPIs
-  container.parentNode.insertBefore(checklist, container);
+  // SCRUM-1762c · al FINAL del Inicio (su ranura), no antes del grid de KPIs. La condición de arriba
+  // (`.kpi-grid` presente = Inicio del admin) no cambia: al operario no se le pinta, como antes.
+  const ranura = document.getElementById('home-configuracion');
+  if (ranura) ranura.appendChild(checklist);
+  else container.parentNode.insertBefore(checklist, container);
 }
 
 function renderHero(data) {
@@ -603,7 +621,7 @@ function renderHero(data) {
     el.innerHTML = `
       <div class="home-hero-card">
         <div>
-          <div class="home-hero-label">💶 Tienes en juego</div>
+          <div class="home-hero-label con-icono con-icono--cobro">Tienes en juego</div>
           <div class="home-hero-amount">${fmtMoney(inPlay)}</div>
           <div class="home-hero-sub">${parts.join(" · ")}</div>
         </div>
@@ -617,9 +635,9 @@ function renderHero(data) {
     el.innerHTML = `
       <div class="home-hero-card">
         <div>
-          <div class="home-hero-label">💶 Dinero en juego</div>
+          <div class="home-hero-label con-icono con-icono--cobro">Dinero en juego</div>
           <div class="home-hero-amount">0,00 €</div>
-          <div class="home-hero-sub">Nada pendiente 🎉 Crea un presupuesto y pon dinero en juego.</div>
+          <div class="home-hero-sub">Nada pendiente <span class="con-icono con-icono--hecho home-hero-hecho" aria-hidden="true"></span> Crea un presupuesto y pon dinero en juego.</div>
         </div>
         <span class="home-hero-ok">Todo cobrado</span>
       </div>
@@ -636,7 +654,7 @@ function renderKpis(data) {
   const hasExpenses = data.expensesThisMonth > 0;
   grid.innerHTML = `
     <div class="kpi-card">
-      <div class="kpi-label">Cotizaciones sin respuesta</div>
+      <div class="kpi-label">${pluralDelPresupuesto()} sin respuesta</div>
       <div class="kpi-value">${data.quotesAwaiting}</div>
       <div class="kpi-sub">esperando decisión</div>
     </div>
@@ -692,7 +710,7 @@ function renderWeekSummary(data) {
   el.innerHTML = `
     <div class="week-summary-card">
       <div class="week-summary-item">
-        <div class="week-summary-label">Cotizaciones esta semana</div>
+        <div class="week-summary-label">${pluralDelPresupuesto()} esta semana</div>
         <div class="week-summary-value">${w.quotesThisWeek ?? 0} ${trendChip(w.quotesThisWeek ?? 0, w.quotesLastWeek ?? 0)}</div>
       </div>
       <div class="week-summary-item">
@@ -840,7 +858,9 @@ async function renderTeamPerformance(container) {
       <tr>
         <td style="font-weight:600">${esc(m.name)}${best}<div style="font-size:11px;color:var(--neutral-500);font-weight:400">${roleLabel}</div></td>
         <td style="text-align:right">${m.sent}</td>
-        <td style="text-align:right;color:${accColor};font-weight:600">${m.acceptanceRate}%</td>
+        ${Number(m.sent) > 0
+          ? `<td style="text-align:right;color:${accColor};font-weight:600">${m.acceptanceRate}%</td>`
+          : '<td class="equipo-tasa-sin-envios">—</td>'}
         <td style="text-align:right;color:var(--green-700);font-weight:600">${fmtMoney(m.collected)}</td>
       </tr>`;
   }).join('');
@@ -891,7 +911,7 @@ async function renderTeamPerformance(container) {
     : '';
 
   const inactiveAlert = (data.inactive && data.inactive.length)
-    ? `<div style="margin-top:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px 14px;font-size:13px;color:#9a3412">⚠️ Sin actividad esta semana: <strong>${data.inactive.map(esc).join(', ')}</strong></div>`
+    ? `<div style="margin-top:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px 14px;font-size:13px;color:#9a3412"><span class="con-icono con-icono--aviso">Sin actividad esta semana: <strong>${data.inactive.map(esc).join(', ')}</strong></span></div>`
     : '';
 
   // SCRUM-136: este panel SE QUEDA — un vistazo en el Inicio es otro trabajo distinto de
@@ -907,7 +927,7 @@ async function renderTeamPerformance(container) {
         <table class="table" style="min-width:420px">
           <thead><tr>
             <th>Miembro</th>
-            <th style="text-align:right">Cotizaciones</th>
+            <th style="text-align:right">${pluralDelPresupuesto()}</th>
             <th style="text-align:right">Aceptación</th>
             <th style="text-align:right">Cobrado</th>
           </tr></thead>
@@ -918,7 +938,7 @@ async function renderTeamPerformance(container) {
       ${inactiveAlert ? `<div style="padding:0 16px 14px">${inactiveAlert}</div>` : ''}
     </div>
   `;
-  container.appendChild(section);
+  ponerAntesDeLaConfiguracion(container, section); // SCRUM-1762c: «Completa tu configuración» queda la última
   section.querySelector('#home-ver-equipo')?.addEventListener('click', () => {
     if (window.renderAppView) window.renderAppView('team');
   });
@@ -1789,7 +1809,7 @@ async function renderTeamActivity(container) {
       <tr>
         <td class="equipo-actividad-miembro">${esc(m.name)}<div class="equipo-actividad-rol">${esc(roleLabel)}</div></td>
         <td class="equipo-actividad-num">${Number(m.sent) || 0}</td>
-        <td class="${tono}">${tasa}%</td>
+        ${Number(m.sent) > 0 ? `<td class="${tono}">${tasa}%</td>` : '<td class="equipo-actividad-num equipo-actividad-sin-tasa">—</td>'}
       </tr>`;
   }).join('');
 
@@ -1800,7 +1820,7 @@ async function renderTeamActivity(container) {
         <table class="table equipo-actividad-tabla">
           <thead><tr>
             <th>Miembro</th>
-            <th class="equipo-actividad-num">Cotizaciones</th>
+            <th class="equipo-actividad-num">${pluralDelPresupuesto()}</th>
             <th class="equipo-actividad-num">Aceptación</th>
           </tr></thead>
           <tbody>${rows}</tbody>
@@ -1808,5 +1828,5 @@ async function renderTeamActivity(container) {
       </div>
     </div>
   `;
-  container.appendChild(section);
+  ponerAntesDeLaConfiguracion(container, section); // SCRUM-1762c: «Completa tu configuración» queda la última
 }

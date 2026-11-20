@@ -400,7 +400,7 @@ test('SCRUM-1341 · ✅ el Inicio del TÉCNICO pinta «Actividad del equipo» co
   const marcado = String(m.bloqueDelTecnico.innerHTML);
   assert.ok(marcado.includes(`>${TITULO_FIRMADO}<`), '🔴 el título no es, letra a letra, el que firmó el fundador');
   const cabeceras = [...marcado.matchAll(/<th[^>]*>([^<]*)<\/th>/g)].map((x) => x[1]);
-  assert.deepEqual(cabeceras, ['Miembro', 'Cotizaciones', 'Aceptación'], '🔴 las cabeceras no son las tres reusadas, en su orden');
+  assert.deepEqual(cabeceras, ['Miembro', 'Presupuestos', 'Aceptación'], '🔴 las cabeceras no son las tres reusadas, en su orden'); // SCRUM-1762c: la palabra del menú (appLocale.quotePlural), firmada c.21978
   const filas = [...marcado.matchAll(/<tr[^>]*>\s*<td[^>]*>([^<]*)<div[^>]*>([^<]*)<\/div><\/td>\s*<td[^>]*>([^<]*)<\/td>\s*<td[^>]*>([^<]*)<\/td>\s*<\/tr>/g)].map((x) => x.slice(1, 5));
   assert.deepEqual(filas, [
     ['Dueña SL', 'Propietario', '1', '100%'],
@@ -431,7 +431,7 @@ test('SCRUM-1341 · ✅ el Inicio del ADMIN sigue siendo el de siempre: su ruta,
   assert.equal(m.bloqueDelTecnico, null, '🔴 al admin se le pinta el bloque del Técnico');
 
   const cabeceras = [...m.marcadoDelEquipo.matchAll(/<th[^>]*>([^<]*)<\/th>/g)].map((x) => x[1]);
-  assert.deepEqual(cabeceras, ['Miembro', 'Cotizaciones', 'Aceptación', 'Cobrado'], '🔴 al admin le ha cambiado la tabla');
+  assert.deepEqual(cabeceras, ['Miembro', 'Presupuestos', 'Aceptación', 'Cobrado'], '🔴 al admin le ha cambiado la tabla'); // SCRUM-1762c: la palabra del menú (appLocale.quotePlural), firmada c.21978
   assert.ok(m.marcadoDelEquipo.includes('>Rendimiento del equipo · este mes<'), '🔴 al admin le ha cambiado el título');
   assert.ok(m.marcadoDelEquipo.includes('Ver equipo →'), '🔴 el admin pierde el botón al hub del equipo');
   assert.equal(m.marcadoDelEquipo.includes(TITULO_FIRMADO), false, '🔴 al admin se le pinta el título del Técnico');
