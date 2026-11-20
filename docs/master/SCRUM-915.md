@@ -1177,3 +1177,138 @@ sale de los datos del cliente. El separador « · » es puntuación de un dato, 
   cliente», restaurar un borrador con cliente): pendiente. Staging: sin recorrer (pide autorización nueva).
 - La suite completa: no corrida en local; la corre el PR.
 - **915f** (la hoja de envío: toca envío y cobro; STOP hasta un GO escrito del fundador).
+
+## SCRUM-915b · del parte firmado, al presupuesto con todo puesto
+
+**Fecha:** 20-nov-2026 · **Carril:** S4 (producto) · **Pedido por:** el fundador, vía el orquestador
+**Medido contra:** `origin/main` = `cde9d2f04da5567dc45233cd9356ddcbf5f7cb9e` · 2026-11-20T07:56:12Z
+**Rama:** `scrum-915b-presupuesto-desde-parte`
+**Skill UI:** cargada (`yaqu-premium-ui`, antes de tocar la hoja y la vista)
+**Ticket:** ticket propio pendiente de abrir (acta §15 del orquestador, Jira caído). Se aloja aquí
+porque es una puerta de entrada al editor de presupuestos (SCRUM-915, En curso).
+
+**El pedido, literal (fundador, 20-nov-2026):** «que de un parte se pueda crear un presupuesto y te
+lleve a la creacion de presupuestos con todo ya relleno y solo tenga que completarlo y emitirlo».
+
+### Lo medido antes de construir
+
+- En `origin/main` la ficha del parte no nombra «presupuesto» ni una vez. El gemelo existe: el albarán
+  que nace del parte firmado (SCRUM-1740).
+- **No hace falta ruta ni cambio de servidor**, y tampoco tocar el editor:
+  - `GET /admin/partes/:id` (`serializeParteParaElTecnico`) ya sirve `jobId`, `customerId` y las
+    líneas `{bloque, unds, descripcion}`.
+  - El editor ya acepta las dos cosas por su argumento `template` (SCRUM-140): `template.deTrabajo`
+    (`{jobId, customerId}`, SCRUM-1274: deja elegido el cliente y manda `job_id`) y `template.lines`
+    (`{concept, qty, price?}`, el camino de las plantillas y de «Duplicar»). Que las dos conviven lo
+    ejecuta ya `tests/scrum1274-presupuesto-desde-el-trabajo.test.mjs`.
+- «+ Nuevo presupuesto» de la ficha del trabajo (`data-presupuesto-del-trabajo`) manda sólo
+  `deTrabajo`, sin líneas. Esta pieza manda lo mismo MÁS las líneas del parte.
+
+### Lo decidido (con el canon de SCRUM-1740; lo declaro para que se pueda revocar)
+
+1. **Sólo en el parte `firmado`.** En borrador las líneas aún se están apuntando; `facturado` no
+   cuenta (misma lectura que 1740). Vale con una firma o con las dos: cualquiera pone `firmado`.
+2. **Sin precios.** El parte que lee esta pantalla es el del técnico y no trae dinero; el precio es
+   lo que el profesional «completa». No se pide `/admin/partes/:id/oficina` (existe y es `admin`):
+   traer los precios de un parte ya valorado es otra decisión, y no la he tomado.
+3. **Sólo con trabajo.** El editor sólo sabe dejar elegido el cliente de un trabajo (`deTrabajo`);
+   un parte sin trabajo necesitaría tocar `quotesView.js` (carril S2). Sin trabajo, no hay botón.
+4. **Sin puerta por rol nueva.** El operario puede crear presupuestos (matriz S1: «quotes crear-ver
+   ✅»; `teamView`: «Operario — puede crear presupuestos»; `quotes-new` no está vedada por rol), así
+   que el botón sale para quien abra el parte firmado. **MI LECTURA:** si se quiere sólo para la
+   oficina, es una condición `window.appUserRole === 'admin'` y un caso más en el test.
+5. **Las líneas, en el orden de la pantalla** (mano de obra y después materiales). Una línea sin
+   descripción no viaja; una cantidad ilegible o ≤ 0 viaja EN BLANCO, no como 1.
+6. **Desplazamientos, kilómetros y horas no viajan:** no son líneas del parte.
+7. **Texto: ninguno nuevo.** El rótulo es `+ ${L.quoteNew}` («+ Nuevo presupuesto»), el mismo
+   literal y la misma forma que la ficha del trabajo (SCRUM-1190, firma del orquestador, 16-oct-2026).
+
+### Qué cambia
+
+- `public/dashboard/js/parteDetailView.js`: `lineasParaElPresupuesto`, `pintarHacerPresupuesto` y
+  `atarHacerPresupuesto`. El botón (`data-parte-presupuesto`, `btn btn-secondary`) va DEBAJO de
+  «Volver al trabajo» y es secundario siempre. Al pulsar: `renderAppView('quotes-new', { template:
+  { deTrabajo: { jobId, customerId }, lines } })`. No escribe nada: ni en el parte ni en el servidor.
+- `public/dashboard/css/styles.css`, bloque `S4 · SCRUM-915b`: hueco y ancho del botón, como clase
+  (`.parte-salida-presupuesto`). La primera versión los llevaba en `style=`, como su vecino, y el
+  trinquete de SCRUM-1773 la tumbó: se arregló el código (regla 41), no el trinquete.
+- `tests/scrum915b-presupuesto-desde-el-parte.test.mjs` (nuevo) y
+  `scripts/capturas-presupuesto-desde-parte.mjs` (nuevo, las capturas y sus medidas).
+- **Sin servidor, sin esquema, sin ruta, sin tocar `quotesView.js`.** Ninguna exigencia existente
+  cambia: no se ha editado ningún test que ya estuviera.
+
+### Rojo primero
+
+`tests/scrum915b-presupuesto-desde-el-parte.test.mjs`, cinco casos en el banco del panel entero, con
+los botones pulsados. Antes del cambio: **5 de 5 en rojo** («el parte firmado no ofrece hacer un
+presupuesto»), con `scrum1677` en verde al lado como control de que el banco pintaba. Después: 5 de 5.
+
+1. firmado (una firma o las dos): hay botón, dice «+ Nuevo presupuesto», es secundario y va debajo
+   de «Volver al trabajo»;
+2. pulsarlo abre `quotes-new` con `{jobId, customerId}` y las líneas en el orden de la pantalla, sin
+   la clave `price`;
+3. **el viaje:** el editor REAL montado con eso abre con el cliente elegido, cada línea con su
+   concepto y su cantidad y el precio vacío; puestos los precios, «Generar» manda un `POST` con
+   `job_id` y las tres líneas del parte;
+4. no sale en borrador, ni facturado, ni sin trabajo, ni sin líneas, ni con líneas sin descripción
+   (con el positivo delante, para que los negativos prueben algo);
+5. una cantidad nula o cero viaja en blanco.
+
+**Por mutación (8 de 8 caen; el fichero se restauró idéntico y el test volvió a verde):** que salga
+en cualquier estado → ④ · materiales antes que mano de obra → ②③⑤ · la cantidad ilegible vuelta 1
+→ ⑤ · sin `jobId` → ②③ · que salga sin trabajo → ④ · que salga sin líneas → ④ · el botón sin atar
+→ ②③⑤ · el botón en primario → ①.
+
+**Tanda en local (TAP a fichero, leído después):** 144 ficheros —los 119 que nombran
+`parteDetailView`, `quotes-new` o barren `public/dashboard`, más 25 guards de registro y de
+scripts—: 1350 casos, 1346 pasan, **0 fallan**, 4 saltan (los cuatro de SCRUM-1403, «sin
+LIBRO_PG_URL»). La primera pasada (119 ficheros) dio 3 rojos y los tres eran míos: los dos casos del
+trinquete de SCRUM-1773 (el `style=` de la primera versión) y `scrum811c` (faltaba este registro).
+
+### Capturas y medidas (banco, navegador de verdad)
+
+`node scripts/capturas-presupuesto-desde-parte.mjs` → `docs/master/evidencias/SCRUM-915b/` (salida 0).
+El «antes» es el `public/` del punto de partida de la rama (`cde9d2f04…`); el «después», el del árbol.
+
+| vista | ancho | antes | después |
+|---|---|---|---|
+| parte firmado | 390 | `parte-antes-390.png` · sin botón · «Volver» 366×44 | `parte-despues-390.png` · botón 366×44 |
+| parte firmado | 1280 | `parte-antes-1280.png` · sin botón · «Volver» 600×36 | `parte-despues-1280.png` · botón 600×36 |
+| editor al aterrizar | 390 | — | `editor-despues-390.png` · cliente elegido · 4 líneas · precio vacío |
+| editor al aterrizar | 1280 | — | `editor-despues-1280.png` · ídem |
+
+La página no se ensancha en ninguno de los seis (desborde 0). El botón mide lo mismo que su vecino:
+a 1280 son 36 px de alto los dos, que es lo que ya medía «Volver al trabajo» en escritorio.
+
+### Lo que NO cubre
+
+- **yaqu.app:** sin verificar; hasta que el PR se mergee y despliegue no hay nada que mirar allí. Las
+  capturas son del banco (scripts reales del panel, datos de muestra), no de producción.
+- **El `build` de este worktree** sale 2 (cliente de Prisma compartido por detrás del esquema): esta
+  pieza no toca `src/` y su test no lee `dist/`. La suite completa la corre el PR.
+- **Los precios de un parte ya valorado** no viajan (decisión 2) y **un parte sin trabajo** no tiene
+  botón (decisión 3): las dos son ampliaciones, con dueño por decidir.
+- El editor abre en su paso 1 («Cliente») con el cliente ya elegido: hay que pulsar «Continuar» para
+  llegar a las líneas. Es lo que ya hace «Hacer presupuesto» desde el trabajo; no se ha tocado.
+
+### Cura tras el primer CI (run 44726761564, rojo en el obligatorio)
+
+Tres rojos, los tres de esta rama y ninguno en mi tanda local de 144 ficheros (no los había elegido):
+
+- **SCRUM-1194d (dos casos):** la condición comparaba el estado con su nombre escrito en la vista, y
+  el trinquete lo leyó como un valor que la pantalla OFRECE a las rutas del parte. Se arregló el
+  código, no la declaración: «firmado y sin facturar» se lee ahora de los dos candados que el
+  servidor manda resueltos (`puedeEditarContenido` cerrado y `puedeEditarPrecios` abierto), y sin
+  un candado la respuesta es NO. El test gana dos negativos (sin cada candado) y su parte facturado
+  lleva el candado de precios cerrado, como lo sirve el servidor. **Corrige la decisión 1 en su
+  forma, no en su alcance:** sigue siendo sólo firmado y no facturado.
+- **SCRUM-1480f:** `scripts/capturas-presupuesto-desde-parte.mjs` nace con su fila en
+  `docs/equipo/dos-equipos.md` §3.3 (S4) y se regeneraron los carriles.
+- **SCRUM-262:** los dos teléfonos de muestra del guion pasan al rango imposible (prefijo 340).
+
+Tras la cura, en local: esos tres ficheros, el test de esta pieza, `scrum1677`, `scrum811c` y
+`scrum1773` → 64 casos, 0 fallos. **Sin rehacer tras la cura:** las 8 mutaciones (la primera
+cambió de ancla) y las capturas (el guion sólo cambió dos teléfonos). El meta-guard y el job de
+navegador del CI no los he reproducido en local.
+
+A9: comprobación → `tests/scrum915b-presupuesto-desde-el-parte.test.mjs`
