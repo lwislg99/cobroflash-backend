@@ -228,3 +228,46 @@ propuestas, literales (la primera con los `import` del fichero; las otras dos ju
 2. **Concepto de la línea:** ¿la descripción del parte TAL CUAL (sin texto nuevo)? Recomiendo ✅. ❌ = dame el literal del prefijo.
 3. **Trabajo con presupuesto:** ¿se puede facturar el parte aunque el trabajo tenga un presupuesto ya facturado? (no medido cuántos casos hay).
 4. **Anular la factura del parte:** ¿el parte se queda `facturado` (lo que hace el diseño: nada lo devuelve) o vuelve a ser facturable? Lo segundo es una transición nueva (Parte L).
+
+## SCRUM-1780c · Factura desde el parte firmado: construida (`facturaDesdeParte.ts`), sin montar (el montaje es de S1)
+
+**Medido contra:** `origin/main` = `60a1260b8bb8c30d7db35ba2f34d987e0d8c7b38` · 2026-11-20T18:13:03Z (cabecera `Date:` de `gh api -i zen`)
+A9: aviso → cicatriz J1 «El encargo pedía rojo primero y escribí `facturaDesdeParte.ts` ANTES que su test; el único rojo previo fue que faltaba `dist/`, que no prueba nada del comportamiento, y lo que sí lo prueba son las mutaciones del catálogo y una sonda que quitó la comprobación de la reclamación» — no se pudo comprobar: el orden en que se escriben dos ficheros del mismo commit no lo ve ningún guard
+Mutaciones: catálogo → `tests/scrum1780c-factura-desde-parte.test.mjs`
+
+Sesión `jv-j1gd` (J1). Decisiones que se aplican, leídas en Jira: GO de la ruta y del origen nuevo (c.22237 ①), la factura nace sin cobro (②), enlace con columna nueva (③), basta `firmado` (④); solo admin, concepto tal cual, se factura aunque el trabajo tenga un presupuesto facturado y al anular el parte se queda `facturado` (c.22244 ①-④). Diseño: c.22242 / tramo 1780b.
+
+### ① A5 ② en dev (staging y producción los aplicó el fundador, c.22244)
+
+`node scripts/aplicar-sql-dev.mjs --file docs/sql/scrum-1780-parte-facturado.sql` primero sin `--go` (ensayo: 2 sentencias de forma conocida, `ADD COLUMN` y `CREATE INDEX`) y después con `--go` (salida 0). Sonda de solo lectura con `information_schema.columns` y `pg_indexes`, sin imprimir la URL:
+
+| momento | `current_database()` | columna `invoice_id` | índice `partes_trabajo_merchant_id_invoice_id_idx` | control positivo (`merchant_id` existe) |
+|---|---|---|---|---|
+| antes | `yaqu_dev_javier` | 0 filas | 0 filas | 1 |
+| después | `yaqu_dev_javier` | `integer`, `is_nullable YES` | `CREATE INDEX … USING btree (merchant_id, invoice_id)` | 1 |
+
+El preview offline (`preview-migracion.mjs --desde` el esquema de `HEAD`) da exactamente las dos sentencias del `.sql`, veredicto aditiva. `generate` desde este árbol (`node_modules` propio, `npm run topologia`) y `_prisma-client-guard.mjs` ✔.
+
+### ② Qué se construyó
+
+- `prisma/schema.prisma`: `invoiceId Int? @map("invoice_id")` y `@@index([merchantId, invoiceId])` en `ParteTrabajo`, sin `@relation`.
+- `src/modules/invoicing/domain/invoiceNumber.service.ts`: `OrigenC7` y `ORIGENES_C7` con `'C7-parte'`.
+- `src/modules/invoicing/domain/facturaDesdeParte.ts` (nuevo): `facturarParteDeMerchant` (dominio) y `facturarParte` (handler). Errores por código y sin `message`: `invalid_id`, `not_found`, `parte_no_firmado`, `parte_ya_facturado`, `parte_sin_cliente`, `parte_sin_precio`, `facturacion_no_disponible`, más los dos portones que ya existían (`factura_sin_lineas`, `tipo_iva_no_emitible`).
+- **Una diferencia con el diseño de 1780b, y por qué:** en la tx, el `updateMany` condicionado (`estado 'firmado'` e `invoiceId null`, exactamente 1 fila) va ANTES de `emitInvoice`, no después, y deja el parte en `facturado`; el `invoiceId` se escribe tras emitir, en la misma tx. Así una segunda petición simultánea se queda en el cerrojo de fila, toca 0 filas y sale sin consumir número de serie. El rollback lo sigue haciendo Postgres si `emitInvoice` falla. La comprobación previa a la tx mira solo el estado: el `invoiceId: null` vive en el WHERE (si no, esa condición sería redundante y su mutación no tumbaría nada).
+- No se crea `Charge`. Sellado con `sellarTrasEmision` después de la tx, como la gemela; no se toca `selladoEstado.ts` (lo de SCRUM-1779d se hereda tal cual). Auditoría: la de `emitInvoice` (`meta.camino` = `C7-parte`).
+
+### ③ Las tres líneas que debe escribir S1 en `src/modules/jobs/app/routes/partes.routes.ts` (literal de c.22242)
+
+```ts
+import { facturarParte } from '../../../invoicing/domain/facturaDesdeParte'; // SCRUM-1780c (J1)
+// SCRUM-1780c · factura desde el parte firmado (GO del fundador, SCRUM-1780 c.22237); la lógica es de J1
+router.post('/:id/facturar', requireRole('admin'), facturarParte);
+```
+
+Hasta entonces la ruta NO existe en la app y el botón de S2 no tiene a qué llamar.
+
+### ④ El test y lo que NO prueba
+
+`tests/scrum1780c-factura-desde-parte.test.mjs`, 11 casos, sobre `_banco-emision-con-estado.mjs` (`emitInvoice` de `dist/` de verdad; la tabla `parteTrabajo` la pone el test, porque el banco es de S3). El handler va montado en un **router de prueba** con el mismo `requireRole('admin')`: el test sigue verde con la ruta sin montar (A10, SCRUM-1344). Casos: caso feliz (F1, líneas tal cual con el IVA en fracción, total 118,25, 0 Charge, `C7-parte` en la auditoría, parte `facturado` con su `invoiceId`), comercio B → 404, borrador → 409, sin precio / sin IVA → 409, sin cliente (nulo o de otro comercio) → 409, doble secuencial y simultánea → 409 con UNA factura y el contador +1, firmado con factura ya enlazada → 409 (lo para el WHERE), flag OFF → 409 con el parte intacto, técnico → 403, trabajo con presupuesto facturado → se factura.
+Sonda de una vez (sin guion en git, por eso no cuenta como mutación): con la comprobación `reclamado.count !== 1` desactivada en `dist/`, caen la simultánea y la de factura ya enlazada (9/11); `dist/` restaurado y comparado con `cmp`.
+**No medido:** la carrera contra Postgres de verdad (el banco no aísla ni deshace; aquí no hay base desechable); ninguna pantalla; la suite entera.
