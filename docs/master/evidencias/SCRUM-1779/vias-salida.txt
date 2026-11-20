@@ -1,0 +1,72 @@
+═══ CONTROL CERO: banco recién reiniciado, sin llamar a nada
+OK   tablas vacías {"invoice":0,"vfSubmission":0,"charge":0}
+
+═══ FLAGS (precedencia merchant > país > env > default, src/core/flags.ts:68-90)
+  env SIF_ENABLED=(sin definir) · env INVOICING_ES_ENABLED=(sin definir)
+  merchant.flags={"INVOICING_ES_ENABLED":true} · llevaLibrosPorSii=false · taxId=B27000001 · country=ES
+OK   INVOICING_ES_ENABLED del merchant = true
+OK   SIF_ENABLED del merchant = false
+OK   SIF_ENABLED global (lo que lee el procesador de la cola) = false
+OK   getEmissionMode = fiscal
+
+═══ PUNTO 1 · las vías 1-6 de SCRUM-1097, flag ON + SII «No» + SIF OFF
+  portón previo C1 quotes.routes.ts:568 (getEmissionMode !== receipt): PASA
+  portón previo C2 jobs.routes.ts:1528 (getEmissionMode === receipt → 409): PASA
+  portón previo C3 quotesAdmin.routes.ts:259 (getEmissionMode === receipt → 409): PASA
+  portón previo C4 quotesAdmin.routes.ts:582 (getEmissionMode === receipt → 409): PASA
+  portón previo C7-suelta invoicesAdmin.routes.ts:143 (modoDocumentoSuelto): PASA
+  portón previo C5 R1 invoicesAdmin (motivoSiiSinEmision null): PASA
+  vía 1 C1 aceptar presupuesto (cliente final): {"numero":"F260001","tipo":"F1","status":"pending","vfEstado":"sellado","huella":"sí (BA755C80F8EF…)","prevHash":"","qr":"https://www2.agenciatributaria.gob.es/wl","chargeId":null} · sellarTrasEmision → sellado · Δfilas {"invoice":1,"vfSubmission":1,"charge":0}
+  vía 2 C2 collect-rest: {"numero":"F260002","tipo":"F1","status":"pending","vfEstado":"sellado","huella":"sí (DCE85CA6A2DE…)","prevHash":"BA755C80F8EF…","qr":"https://www2.agenciatributaria.gob.es/wl","chargeId":null} · sellarTrasEmision → sellado · Δfilas {"invoice":1,"vfSubmission":1,"charge":0}
+  vía 3 C3 quotesAdmin /:id/invoice: {"numero":"F260003","tipo":"F1","status":"pending","vfEstado":"sellado","huella":"sí (93FC4CA2D0E9…)","prevHash":"DCE85CA6A2DE…","qr":"https://www2.agenciatributaria.gob.es/wl","chargeId":null} · sellarTrasEmision → sellado · Δfilas {"invoice":1,"vfSubmission":1,"charge":0}
+  vía 4 C4 quotesAdmin /:id/invoice-manual: {"numero":"F260004","tipo":"F1","status":"pending","vfEstado":"sellado","huella":"sí (4710219B309B…)","prevHash":"93FC4CA2D0E9…","qr":"https://www2.agenciatributaria.gob.es/wl","chargeId":null} · sellarTrasEmision → sellado · Δfilas {"invoice":1,"vfSubmission":1,"charge":0}
+  vía 5 C7-suelta invoicesAdmin POST / (HANDLER ejecutado): HTTP 201 {"ok":true,"factura":{"id":105,"number":"F260005","total":"121.00","currency":"EUR"},"veriFactu":true}
+        fila: {"numero":"F260005","tipo":"F1","status":"pending","vfEstado":"sellado","huella":"sí (47DDB417BE51…)","prevHash":"4710219B309B…","qr":"https://www2.agenciatributaria.gob.es/wl","chargeId":null} · Δfilas {"invoice":1,"vfSubmission":1,"charge":0}
+  vía 6 C5 R1 de F260003: {"numero":"2026-CF-R-001","tipo":"R1","status":"paid","vfEstado":"sellado","huella":"sí (0F76D9DDED6B…)","prevHash":"47DDB417BE51…","qr":"https://www2.agenciatributaria.gob.es/wl","chargeId":null} · sellarTrasEmision → sellado · Δfilas {"invoice":1,"vfSubmission":1,"charge":0}
+  contadores del merchant: nextInvoiceNumber=6 nextRectInvoiceNumber=2 invoiceSeriesYear=2026
+  auditLog (6): factura_emitida · factura_emitida · factura_emitida · factura_emitida · factura_emitida · factura_emitida
+  ajenas (modelos no gobernados por el banco): (ninguna)
+OK   filas charge creadas por las vías 1-6 en el banco: 0
+
+═══ PUNTO 3 · huella / XML / cola con SIF_ENABLED OFF
+  vfSubmission: 6 filas
+    {"invoiceId":101,"status":"(default de esquema: pending)","tipoOperacion":"Alta","obligadoNif":"B27000001","xml":"2788 B, empieza « <sum:RegistroFactura> <»"}
+    {"invoiceId":102,"status":"(default de esquema: pending)","tipoOperacion":"Alta","obligadoNif":"B27000001","xml":"3110 B, empieza « <sum:RegistroFactura> <»"}
+    {"invoiceId":103,"status":"(default de esquema: pending)","tipoOperacion":"Alta","obligadoNif":"B27000001","xml":"3110 B, empieza « <sum:RegistroFactura> <»"}
+    {"invoiceId":104,"status":"(default de esquema: pending)","tipoOperacion":"Alta","obligadoNif":"B27000001","xml":"3110 B, empieza « <sum:RegistroFactura> <»"}
+    {"invoiceId":105,"status":"(default de esquema: pending)","tipoOperacion":"Alta","obligadoNif":"B27000001","xml":"3110 B, empieza « <sum:RegistroFactura> <»"}
+    {"invoiceId":106,"status":"(default de esquema: pending)","tipoOperacion":"Alta","obligadoNif":"B27000001","xml":"3120 B, empieza « <sum:RegistroFactura> <»"}
+OK   facturas con huella: 6/6
+  cadena: cada vfPrevHash = vfHash de la anterior → true; la primera vfPrevHash=
+  procesarObligado(NIF) con SIF_ENABLED global OFF → {"hecho":"pausada"}
+OK   la cola se queda en pausa
+  estado de la cola después del procesador: pending(default), pending(default), pending(default), pending(default), pending(default), pending(default)
+
+═══ CONTROL POSITIVO 1 · mismo comercio con flags {INVOICING_ES_ENABLED:false}
+  getEmissionMode = receipt · modoDocumentoSuelto = no
+OK   allocateInvoiceNumber lanza «invoicing_es_disabled»
+OK   handler suelta → HTTP 409 {"error":"factura_suelta_no_disponible","message":"En este modo no se emiten facturas."}
+OK   filas tras el atajo: {"invoice":0,"vfSubmission":0,"charge":0}; contador nextInvoiceNumber=1
+
+═══ CONTROL POSITIVO 2 · flag ON, llevaLibrosPorSii=null («No consta»)
+OK   allocateInvoiceNumber lanza «sii_no_consta»; filas {"invoice":0,"vfSubmission":0,"charge":0}
+
+═══ CONTROL POSITIVO 3 · procesador con sifEnabled:true (enviar doblado, sin red)
+  resultado {"lanzó":"prisma.vfSubmission.updateMany is not a function"} · llamadas a enviar=0
+OK   con SIF ON el procesador NO se queda en pausa (el banco ve la diferencia)
+
+═══ PUNTO 5 · sellado posterior de una factura emitida sin huella
+  5a emitida con merchant sin NIF: {"numero":"F260001","tipo":"F1","status":"pending","vfEstado":"no_aplica","huella":"no","prevHash":"null","qr":"PENDING_QR","chargeId":null} · sello=no_aplica
+  5a después (NIF puesto, sellarTrasEmision sobre la misma fila): sello=sellado · {"numero":"F260001","tipo":"F1","status":"pending","vfEstado":"sellado","huella":"sí (BA755C80F8EF…)","prevHash":"","qr":"https://www2.agenciatributaria.gob.es/wl","chargeId":null} · createdAt=2026-11-20T17:46:05.327Z vfTimestamp=2026-11-20T17:46:05.358Z · cola=0
+     emisor congelado en la fila: merchantTaxId=(null) · auditLog: factura_emitida · encolado_fallido(excluida)(verifactu_registro_no_emitible:F260001 — el emisor de esta factura no tiene NIF )
+  5b emitida sin sellar (proceso «muere» antes de sellarTrasEmision): {"numero":"F260001","tipo":"F1","status":"pending","vfEstado":"pendiente_de_sellado","huella":"no","prevHash":"null","qr":"PENDING_QR","chargeId":null}
+  fechaDeCorte() = {"desde":"2026-10-26T23:58:57.000Z","motivo":null}
+  reintentarSelladosPendientes({prisma, ahora: +1 h}) → {"activo":true,"motivo":null,"desde":"2026-10-26T23:58:57.000Z","candidatas":1,"truncado":false,"selladas":[{"id":101,"numero":"F260001","merchantId":5304}],"noAplica":[],"siguenPendientes":[],"enEspera":0,"agotadas":[],"conError":[],"conHuellaSinMarcar":[],"fueraDePlazo":[]}
+  5b después del reintento: {"numero":"F260001","tipo":"F1","status":"pending","vfEstado":"sellado","huella":"sí (BA755C80F8EF…)","prevHash":"","qr":"https://www2.agenciatributaria.gob.es/wl","chargeId":null} · cola=1
+OK   5c re-sellar una sellada no cambia la huella (BA755C80F8EF…) · cola=1
+
+AVISOS del dist (2, primeros 120 car. de cada uno):
+  · [verifactu] invoice=F260001 ya estaba sellada: se conserva su huella BA755C80F8EF4191… y no se vuelve a sellar
+  · [verifactu] invoice=F260001 ya tenía su alta en la cola de remisión: no se encola otra
+
+RESULTADO: todas las comprobaciones OK
