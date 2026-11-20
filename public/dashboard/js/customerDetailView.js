@@ -170,7 +170,9 @@ if (typeof window !== 'undefined') window.sitiosCliente = SITIOS_CLIENTE;
  *
  * El servidor es de SCRUM-1005b (`GET/POST /admin/customers/:id/documentos`, `GET …/:docId` descarga
  * como adjunto, `DELETE …/:docId` solo admin) y contesta CÓDIGOS; las frases son estas. Los textos son
- * los FIRMADOS por el fundador en SCRUM-1005 c.22192, byte a byte (registro:
+ * los de SCRUM-1005 c.22192, byte a byte, y cada uno lleva su firma en SU línea: esta cabecera no firma
+ * el objeto entero, porque los métodos de abajo no son textos (SCRUM-1215g: una firma de grupo no cubre
+ * a quien llega después). Registro:
  * `docs/microcopy/2026-11-20-SCRUM-1005-documentos-del-cliente.md`). Los huecos `{n}`, `{mb}` y
  * `{nombre}` son los del propio comentario: `{mb}` sale de `limites` (bytes) que trae la lista, nunca
  * de una cifra escrita aquí. Permisos de c.22192: ver y subir, todo el equipo; borrar, solo admin.

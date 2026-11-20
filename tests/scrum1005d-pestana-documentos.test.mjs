@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 import { constaAprobado } from './_microcopy-aprobada.mjs';
 import { medirTexto } from './scrum1773-trinquete-style-en-innerhtml.test.mjs';
+import { casosEscritos } from './_casos-escritos.mjs'; // SCRUM-1415
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VISTA = 'public/dashboard/js/customerDetailView.js';
@@ -230,8 +231,10 @@ const CODIGOS = [
   ['NOMBRE_NO_VALIDO', 400, 'admin', ''],
   ['CUERPO_ILEGIBLE', 400, 'admin', null], // el genérico que ya existe en el panel
 ];
-for (const [codigo, status, rol, esperado] of CODIGOS) {
-  test(`SCRUM-1005d · el servidor contesta ${codigo} (${rol}) → la pantalla pinta su texto firmado`, async () => {
+// SCRUM-1415: un caso por fila con el nombre ESCRITO (la señal por nombres no ve un nombre construido).
+const casoCodigo = casosEscritos(CODIGOS,
+  ([codigo, , rol]) => `SCRUM-1005d · el servidor contesta ${codigo} (${rol}) → la pantalla pinta su texto firmado`,
+  async ([codigo, status, rol, esperado]) => {
     const f = await montarFicha({ rol, docs: async (metodo) => (metodo === 'POST'
       ? { status, json: { error: codigo } } : { status: 200, json: { documentos: DOCS, limites: LIMITES } }) });
     await f.abrir();
@@ -241,7 +244,14 @@ for (const [codigo, status, rol, esperado] of CODIGOS) {
     assert.equal(avisoVisible(f), esperado === null ? generico : esperado);
     assert.notEqual(f.estado().textContent, 'Documento guardado.');
   });
-}
+test('SCRUM-1005d · el servidor contesta FORMATO_NO_ADMITIDO (admin) → la pantalla pinta su texto firmado', casoCodigo(0));
+test('SCRUM-1005d · el servidor contesta FICHERO_DEMASIADO_GRANDE (admin) → la pantalla pinta su texto firmado', casoCodigo(1));
+test('SCRUM-1005d · el servidor contesta TOPE_DEL_CLIENTE (admin) → la pantalla pinta su texto firmado', casoCodigo(2));
+test('SCRUM-1005d · el servidor contesta TOPE_DEL_CLIENTE (tecnico) → la pantalla pinta su texto firmado', casoCodigo(3));
+test('SCRUM-1005d · el servidor contesta FICHERO_VACIO (admin) → la pantalla pinta su texto firmado', casoCodigo(4));
+test('SCRUM-1005d · el servidor contesta NOMBRE_NO_VALIDO (admin) → la pantalla pinta su texto firmado', casoCodigo(5));
+test('SCRUM-1005d · el servidor contesta CUERPO_ILEGIBLE (admin) → la pantalla pinta su texto firmado', casoCodigo(6));
+casoCodigo.todos();
 
 test('SCRUM-1005d · TÉCNICO: no hay botón de borrar (c.22192: borrar, solo admin), pero sí descargar y subir', async () => {
   const f = await montarFicha({ rol: 'tecnico' });
