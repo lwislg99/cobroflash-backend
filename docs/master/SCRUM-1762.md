@@ -98,8 +98,12 @@ Capturas (fuera de git, A8): `D:\MILLONARIO\cobroFlash\capturas\SCRUM-1762\c-ini
 lo mismo que el «después» local: pestaña abierta sobre rgb(236,253,245), «+ Nuevo parte» 13,5 px × 44 px sobre
 rgb(4,120,87), 0 emojis y 0 px de desborde. Capturas: `D:\MILLONARIO\cobroFlash\capturas\SCRUM-1762\b-ficha\r42-prod\`.
 
-### PR-2 · exigencias que cambian además de 698 y 601 (cazadas por la tanda, PENDIENTES de autorización)
+### PR-2 · exigencias que cambian además de 698 y 601 (cazadas por la tanda; AUTORIZADAS)
 - `tests/scrum1341-actividad-del-equipo-sin-importes.test.mjs` L403 y L434: la cabecera «Cotizaciones» pasa a «Presupuestos» (el texto firmado).
 - `tests/scrum1686h4-inicio-operario.test.mjs` ⑥: exigía que el admin NO tuviera «Para hoy»; ahora exige que lo tenga, con la misma franja, sin «Por cobrar» y pidiendo su lista una vez.
 - `tests/scrum1762c-hallmark-inicio.test.mjs`: control hermano de la negación «Cotizaciones» (SCRUM-237), que con `quotePlural` de LatAm tiene que salir «Cotizaciones».
 Rojo-primero: las tres caen con el `homeView.js` de `origin/main`.
+
+Autorización del orquestador cobroflash-backend-25 (mensaje entre sesiones; Jira caído), copiada LITERAL:
+«AUTORIZO (delegación c.21978, 20-nov ~13:50 local) cambiar exactamente estas exigencias y ninguna más, consecuencia directa de lo firmado para el PR-2 (texto «Cotizaciones»→literal del menú y «Para hoy» arriba para todos), rojo-primero visto contra main: ① tests/scrum1341-actividad-del-equipo-sin-importes.test.mjs L403 y L434 → la cabecera esperada pasa a 'Presupuestos'; ② tests/scrum1686h4-inicio-operario.test.mjs ⑥ → el admin SÍ tiene «Para hoy», con la misma franja, sin «Por cobrar» y pidiendo su lista UNA vez (['jobs']).»
+El control hermano de scrum237 va dentro del test propio (no pide firma, dicho por el orquestador). Tanda local: cortada por el sistema por memoria a ~6.400 pruebas; por decisión del orquestador, arbitra el CI.
