@@ -54,7 +54,7 @@ const medir = () => {
       renglonesDeAcciones: new Set(botones.map((b) => Math.round(b.getBoundingClientRect().top))).size,
       botones: botones.map((b) => ({ t: b.textContent.trim().slice(0, 22), al: r(b).al, an: r(b).an })),
       detalleX: detalle ? r(detalle).x : null,
-      resumen: resumen ? { ...r(resumen), texto: resumen.textContent.slice(0, 30) } : null,
+      resumen: resumen ? { ...r(resumen), texto: resumen.textContent.slice(0, 30), cortado: resumen.scrollWidth > resumen.clientWidth } : null,
       cuerpo: cuerpo ? r(cuerpo) : null,
       direccion: dir ? { an: r(dir).an, texto: dir.textContent.slice(0, 24) } : null,
       estado: tr.querySelector('.cell-status')?.textContent.trim(),
@@ -93,7 +93,12 @@ try {
       exige(Math.min(...altos) >= 61 && Math.max(...altos) <= 69, `${ancho} las filas miden de 61 a 69 px (de ${Math.min(...altos)} a ${Math.max(...altos)})`);
       exige(m.filas.every((f) => f.renglonesDeAcciones === 1), `${ancho} las acciones van en UN renglón en todas las filas (${[...new Set(m.filas.map((f) => f.renglonesDeAcciones))].join('/')})`);
       exige(new Set(m.filas.map((f) => f.detalleX)).size === 1, `${ancho} «Ver detalle» cae en la misma vertical en todas las filas (x: ${[...new Set(m.filas.map((f) => f.detalleX))].join('/')})`);
-      exige(m.filas.every((f) => !f.resumen || f.resumen.x >= f.cuerpo.x + f.cuerpo.an / 2), `${ancho} el desplegable de técnicos queda en la mitad derecha de la celda`);
+      // 20-nov · exigía «en la mitad DERECHA». Con el pulido, en las filas sin tarea propia el
+      // desplegable abre su renglón por la izquierda. Lo que la cura del clic necesita es que NO PISE
+      // EL CENTRO: entero en una mitad, la que sea. El árbitro del clic sigue siendo `c1725j-clic-en-fila.mjs`.
+      exige(m.filas.every((f) => { if (!f.resumen) return true; const centro = f.cuerpo.x + f.cuerpo.an / 2; return f.resumen.x >= centro || f.resumen.x + f.resumen.an <= centro; }), `${ancho} el desplegable de técnicos no pisa el centro de la celda (entero en una mitad)`);
+      // Informativo, no decide: cuántos nombres de técnico salen cortados con elipsis.
+      console.log(`     ${ancho} nombres de técnico cortados: ${m.filas.filter((f) => f.resumen && f.resumen.cortado).length} de ${m.filas.filter((f) => f.resumen).length} · ${[...new Set(m.filas.filter((f) => f.resumen && f.resumen.cortado).map((f) => f.resumen.texto))].join(' | ')}`);
       exige(conDireccion.every((f) => f.direccion.an >= 60), `${ancho} la dirección conserva al menos 60 px en las ${conDireccion.length} filas que la traen (mínimo ${Math.min(...conDireccion.map((f) => f.direccion.an))})`);
     } else {
       exige(m.nuevo && m.tarjeta && m.nuevo.an >= m.tarjeta.an - 2, `${ancho} «Nuevo trabajo» va a todo el ancho (${m.nuevo && m.nuevo.an} de ${m.tarjeta && m.tarjeta.an}; su caja, ${JSON.stringify(m.nuevoCaja)})`);

@@ -5116,7 +5116,7 @@ textarea.parte-linea-desc {
      renglón para ella y el tipo. La tercera columna mide, como mucho, la mitad derecha. */
   .table--trabajos .jobs-fila-cuerpo {
     display: grid; align-items: start;
-    grid-template-columns: auto minmax(0, 1fr) fit-content(calc(50% - 16px));
+    grid-template-columns: auto minmax(0, 1fr) fit-content(calc(50% - 8px));
   }
   .table--trabajos .jobs-fila-linea { display: contents; }
   .table--trabajos .jobs-fila-sep { display: none; }
@@ -5139,7 +5139,7 @@ textarea.parte-linea-desc {
      que se abre debajo; quien corta con elipsis es el resumen. */
   .table--trabajos .jobs-fila-cuerpo .jobs-fila-tecnicos {
     grid-area: 2 / 3; justify-self: end; display: block; min-width: 0; max-width: 100%;
-    margin-left: 12px; font-size: 12.5px; line-height: 1.3; white-space: nowrap; overflow-wrap: normal;
+    margin-left: 0; font-size: 12.5px; line-height: 1.3; white-space: nowrap; overflow-wrap: normal;
   }
   .table--trabajos .jobs-fila-cuerpo .jobs-fila-tecnicos:not(:has(.jobs-tecnicos-menu)) { overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
   /* El desplegable, sin caja: un texto con su flecha, que se marca al pasar o al abrirlo. El
@@ -5148,7 +5148,7 @@ textarea.parte-linea-desc {
      texto, no los 44 px (taparía la tarea del renglón de arriba). */
   .table--trabajos .jobs-fila-cuerpo .jobs-tecnicos-resumen {
     display: block; position: relative; isolation: isolate; box-sizing: border-box;
-    max-width: 100%; min-height: 44px; margin: -14px 0; padding: 14px 20px 14px 8px;
+    max-width: 100%; min-height: 44px; margin: -14px 0; padding: 14px 18px 14px 6px;
     border: 0; background: none; color: var(--body);
     font-size: 12.5px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
@@ -5158,9 +5158,23 @@ textarea.parte-linea-desc {
   }
   .table--trabajos .jobs-fila-cuerpo .jobs-tecnicos-resumen:hover::before,
   .table--trabajos .jobs-fila-cuerpo .jobs-tecnicos-menu[open] > .jobs-tecnicos-resumen::before { background: var(--neutral-100); }
-  .table--trabajos .jobs-fila-cuerpo .jobs-tecnicos-resumen::after { position: absolute; right: 7px; top: 14px; line-height: 16px; }
+  /* La flecha, a 16 px: a los 10 de la casa, tras un nombre a 12,5, se leía como un punto. */
+  .table--trabajos .jobs-fila-cuerpo .jobs-tecnicos-resumen::after { position: absolute; right: 4px; top: 14px; font-size: 16px; line-height: 16px; }
   /* La lista se abre hacia la izquierda desde el borde del resumen: está en la mitad derecha. */
   .table--trabajos .jobs-fila-cuerpo .jobs-tecnicos-lista { left: auto; right: 0; top: calc(100% - 10px); }
+
+  /* Pulido a la vista de la captura (20-nov): el nombre del técnico salía cortado con hueco a su
+     izquierda, y en las filas SIN tarea propia quedaba solo, a la derecha de un renglón vacío.
+     · El nombre aprovecha su mitad: sin margen delante, menos relleno, y la mitad llega hasta 8 px
+       del centro (eran 16 más 12 de margen). El centro de la celda sigue libre: es la cura del clic.
+     · Sin tarea propia, el renglón ② es de los técnicos: empiezan a la izquierda, bajo el cliente,
+       y no pasan de ESA mitad. La lista se abre entonces hacia la derecha. */
+  .table--trabajos .jobs-fila-cuerpo:not(:has(.jobs-fila-tarea, .jobs-fila-trabajo)) .jobs-fila-tecnicos {
+    grid-area: 2 / 1 / 3 / -1; justify-self: start; max-width: calc(50% - 8px);
+  }
+  .table--trabajos .jobs-fila-cuerpo:not(:has(.jobs-fila-tarea, .jobs-fila-trabajo)) .jobs-tecnicos-resumen { padding-left: 0; }
+  .table--trabajos .jobs-fila-cuerpo:not(:has(.jobs-fila-tarea, .jobs-fila-trabajo)) .jobs-tecnicos-resumen::before { left: -6px; }
+  .table--trabajos .jobs-fila-cuerpo:not(:has(.jobs-fila-tarea, .jobs-fila-trabajo)) .jobs-tecnicos-lista { left: 0; right: auto; }
 
   /* La fecha y el importe, sin partir. La celda de cliente pide todo el ancho que haya (sus
      renglones no parten), y sin esto la tabla se lo quitaba al importe: medido, «Sin importe» y
