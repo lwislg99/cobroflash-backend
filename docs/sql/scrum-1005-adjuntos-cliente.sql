@@ -1,0 +1,37 @@
+-- docs/sql/scrum-1005-adjuntos-cliente.sql — SCRUM-1005 (tramo 1005a)
+--
+-- ⛔ PROPUESTO, SIN APLICAR. Ninguna base lo tiene (medido el 2026-11-18T23:46Z en DEV y
+--    STAGING: `attachments` tiene 9 columnas y ninguna de estas tres). Lo aplica Javier en las
+--    TRES bases (orden A5) SOLO si contesta ✅ a la pregunta 6 de `docs/master/SCRUM-1005.md`
+--    (tramo SCRUM-1005a). `prisma/schema.prisma` NO se ha tocado: el cambio va en el PR ③.
+--
+-- DOCUMENTOS ADJUNTOS DEL CLIENTE (CRM-13, D5 de SCRUM-1012 c.16226).
+--
+-- Lo que NO necesita ALTER, medido en las dos bases: `entity_type`, `kind` y `mime` son TEXT
+-- libres (sin enum ni CHECK). `entity_type = 'customer'`, `kind = 'document'` y
+-- `mime = 'application/pdf'` se escriben hoy sin tocar la base: son reglas del CÓDIGO.
+--
+-- Lo que SÍ lo necesita, y por qué cada columna:
+--   file_name   — el nombre con el que se subió («contrato-mantenimiento.pdf»). Una foto de
+--                 solicitud no lo necesita; una lista de documentos sin nombre no se puede leer.
+--   size_bytes  — para comprobar el tope POR CLIENTE con una suma, sin leer los bytea de todos sus
+--                 documentos (el albarán hoy los lee enteros para su tope de 10: con documentos de
+--                 varios MB eso son decenas de MB en memoria por subida).
+--   sha256      — para la subida idempotente (la misma que el albarán, SCRUM-382) sin cargar los
+--                 bytes de los demás.
+-- Las tres anulables y sin DEFAULT: las filas de hoy (fotos) no tienen ese dato, y un valor por
+-- defecto afirmaría uno que nadie ha medido.
+--
+-- SIN clave ajena a `customers`: `attachments` es polimórfica (entity_type + entity_id) y así se
+-- queda. El borrado del cliente lo hace el código en la misma transacción (plan del PR ③), con su
+-- test; una FK con CASCADE haría además que la FUSIÓN borrara documentos en vez de moverlos.
+--
+-- Generado OFFLINE con `previewMigracion({ schema, desde })` de `scripts/preview-migracion.mjs`
+-- (mismo mecanismo que `scrum-1072-activity-kind.sql`): desde = copia de `prisma/schema.prisma`
+-- de origin/main e37a7051f87b195ceeae4852c56a02bc0d218438, schema = esa copia con las tres
+-- líneas de `model Attachment` del registro. Control positivo: ok; `sentenciasDestructivas`: 0;
+-- control negativo (actual → actual): `sin_cambios`. Salida LITERAL de la herramienta:
+-- AlterTable
+ALTER TABLE "attachments" ADD COLUMN     "file_name" TEXT,
+ADD COLUMN     "sha256" TEXT,
+ADD COLUMN     "size_bytes" INTEGER;

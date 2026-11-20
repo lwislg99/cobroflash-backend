@@ -320,3 +320,23 @@ Comparados como conjuntos de NOMBRES: 14 en la rama, 14 en `main`, 14 en la suit
 - `guard:lista-trabajos-917`: 56 de 56.
 - `guard:escalera-por-estado`: VERDE (salida 0, «las dos pantallas dicen y hacen lo mismo en los cinco estados»). Lo curó #3239 (S2), que ya está en `main` y en esta rama.
 - `guard:lista-trabajos`: ROJO PREEXISTENTE, 1 defecto, la misma firma («el clic en la fila NO abrió el Trabajo»). Se cura en el PR-② (c.22103).
+
+### Cura del rojo del CI de #3240 (S4 · 20-nov-2026 07:07Z · run 44364880372)
+
+**Medido contra:** `origin/main` = `b0b7cf9970e7b4202f547a11e1d09add4ffca971` · 2026-11-20T07:07:58Z
+
+El obligatorio cayó con 2 casos. Los dos se arreglan en el código; ni `scrum622` ni `scrum816` se tocan (regla 41).
+
+| caso caído | causa MEDIDA (del log del run) | arreglo |
+|---|---|---|
+| «SCRUM-622 · EL CENSO: queda UNA red benigna…» | `c1725i-sonda-local.mjs` L96 decía `rojos ? 'ROJO' : 'VERDE'`: el censo por AST la cuenta como red con lado benigno por defecto. Y lo era: con cero exigencias habría dicho «VERDE». | La sonda cuenta sus exigencias. Sin ninguna sale 2 (ciega); con rojos sale 1; «VERDE» solo con exigencias y cero rojos. |
+| «SCRUM-816 · el filtro de técnico busca EN CLIENTE…» | Cayó por CIEGO («no acoté el bloque del filtro»), no por una petición nueva: el test acota entre `const tecnicos = tecnicosParaElFiltro` y el `const porCobro` que le sigue, y 1725i había puesto el cruce de filtros (`pintarFilas`) DELANTE de `paint`. | `pintarFilas` se declara después de `paint`, donde iba el cruce en la base (703df1474: L172 y L243). Mismo cuerpo, mismo comportamiento. |
+
+Lo que falló de mi lado: la tanda de antes del push del 18-nov eligió los tests por memoria y dejó fuera estos dos; uno lee `jobsView.js` y el otro barre el árbol entero. Esta vez la lista sale de `git grep -l` sobre `tests/*.test.mjs` (los que nombran `jobsView`, la sonda o `redesBenignas`).
+
+A9: aviso → cicatriz S4 «La tanda de antes del push sale de un git grep de los tests que nombran lo tocado, no de la memoria: el 18-nov dejé fuera los dos que tumbaron #3240.» — no se pudo comprobar: ningún test puede ver qué tanda corrió una sesión antes de empujar
+
+**Medido tras el arreglo**, con `main` traído (111 commits) y `tsc` limpio:
+- 30 ficheros de `tests/` (los del `git grep` de arriba): 322 casos, 322 pass, 0 fail, 0 skip. Los dos caídos, en verde.
+- `c1725i-sonda-local.mjs` en navegador real: VERDE, 0 en rojo de 32 exigencias (2 roles × 2 anchos, 12 trabajos).
+- En ese run cayó también «guards de navegador» (no obligatorio): 40 verdes, 0 ciegos, 1 rojo, `guard:lista-trabajos`, con la firma preexistente de arriba. Se cura en el PR-②.

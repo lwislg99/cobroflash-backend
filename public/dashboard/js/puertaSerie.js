@@ -140,25 +140,25 @@ function renderPuertaSerie(panel, opciones) {
   // ahí…» (SCRUM-1216a).
   const T = SERIE_TEXTOS;
   caja.innerHTML =
-    `<h3 style="margin:0 0 4px;font-size:15px;font-weight:700;color:var(--ink)">${T.titulo(anio)}</h3>` +
-    `<p style="margin:0 0 10px;font-size:13px;color:#6b756f">${T.ayudaTitulo}</p>` +
-    '<div id="ps-elec" style="display:flex;gap:10px;margin:4px 0 16px">' +
-      '<button type="button" id="ps-si" class="btn-secondary" style="flex:1;min-height:44px">Sí</button>' +
-      '<button type="button" id="ps-no" class="btn-secondary" style="flex:1;min-height:44px">No, empiezo ahora</button>' +
+    `<h3 class="j1-ps-titulo">${T.titulo(anio)}</h3>` +
+    `<p class="j1-ps-ayuda">${T.ayudaTitulo}</p>` +
+    '<div id="ps-elec" class="j1-ps-elec">' +
+      '<button type="button" id="ps-si" class="btn-secondary j1-ps-opcion">Sí</button>' +
+      '<button type="button" id="ps-no" class="btn-secondary j1-ps-opcion">No, empiezo ahora</button>' +
     '</div>' +
-    '<div id="ps-detalle" style="display:none">' +
-      `<label for="ps-numero" style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">${T.etiquetaCampo(anio)}</label>` +
-      '<input id="ps-numero" type="number" min="1" step="1" inputmode="numeric" placeholder="41" aria-describedby="ps-numero-ayuda" style="width:100%;min-height:44px;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>' +
-      `<p id="ps-numero-ayuda" style="font-size:12px;color:#6b756f;margin:6px 0 0">${T.ayudaCampo}</p>` +
-      '<div id="ps-previa" aria-live="polite" style="margin-top:14px;background:#f4f7f4;border:1px solid #cdd2cb;border-radius:10px;padding:12px;display:none">' +
-        '<p style="margin:0 0 4px;font-size:13px;color:#333c37">Tu primera factura con YaQu será: ' +
-          '<strong id="ps-previa-numero" style="font-size:15px;white-space:nowrap"></strong></p>' +
-        '<p style="margin:0;font-size:12px;color:#6b756f">Compruébalo bien: cuando emitas esa factura, este número ya no se puede cambiar.</p>' +
+    '<div id="ps-detalle" class="j1-ps-detalle">' +
+      `<label for="ps-numero" class="j1-ps-etiqueta">${T.etiquetaCampo(anio)}</label>` +
+      '<input id="ps-numero" type="number" min="1" step="1" inputmode="numeric" placeholder="41" aria-describedby="ps-numero-ayuda" class="j1-ps-numero"/>' +
+      `<p id="ps-numero-ayuda" class="j1-ps-numero-ayuda">${T.ayudaCampo}</p>` +
+      '<div id="ps-previa" aria-live="polite" class="j1-ps-previa">' +
+        '<p class="j1-ps-previa-texto">Tu primera factura con YaQu será: ' +
+          '<strong id="ps-previa-numero" class="j1-ps-previa-numero"></strong></p>' +
+        '<p class="j1-ps-previa-aviso">Compruébalo bien: cuando emitas esa factura, este número ya no se puede cambiar.</p>' +
       '</div>' +
     '</div>' +
     // Fuera del detalle a propósito: un fallo al guardar «No, empiezo ahora» también se enseña.
-    '<p id="ps-error" role="alert" style="display:none;font-size:13px;color:#b91c1c;margin:10px 0 0"></p>' +
-    '<button type="button" id="ps-guardar" class="btn-primary" style="min-height:44px;margin-top:14px;display:none">Es correcto</button>';
+    '<p id="ps-error" role="alert" class="j1-ps-error"></p>' +
+    '<button type="button" id="ps-guardar" class="btn-primary j1-ps-guardar">Es correcto</button>';
 
   panel.insertBefore(caja, panel.firstChild);
 

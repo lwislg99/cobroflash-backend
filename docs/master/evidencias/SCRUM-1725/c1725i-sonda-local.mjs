@@ -27,7 +27,8 @@ const { srv, puerto } = await servirListas(path.join(RAIZ, 'public'), [
 const { browser } = await abrirNavegador(puppeteer);
 let rojos = 0;
 const di = (s) => console.log(s);
-const exige = (ok, texto) => { di(`${ok ? 'OK  ' : 'ROJO'} ${texto}`); if (!ok) rojos += 1; };
+let exigidas = 0;
+const exige = (ok, texto) => { exigidas += 1; di(`${ok ? 'OK  ' : 'ROJO'} ${texto}`); if (!ok) rojos += 1; };
 
 const medir = () => {
   const caja = (el) => { if (!el) return null; const r = el.getBoundingClientRect(); return { x: Math.round(r.left), y: Math.round(r.top), an: Math.round(r.width), al: Math.round(r.height), der: Math.round(r.right), bajo: Math.round(r.bottom) }; };
@@ -93,5 +94,11 @@ for (const rol of ['admin', 'tecnico']) {
 }
 await browser.close();
 srv.close();
-di(`\n${rojos ? 'ROJO' : 'VERDE'}: ${rojos} en rojo · población: 2 roles × 2 anchos sobre ${TRABAJOS.length} trabajos`);
-process.exit(rojos ? 1 : 0);
+// El veredicto NO tiene lado por defecto (lo cazó el censo de SCRUM-622 en el CI de #3240): decía
+// «verde» con que `rojos` fuese 0, también si no se había exigido NADA. Ahora «verde» se gana: hay
+// exigencias contadas y ninguna cayó. Sin exigencias, la sonda es ciega y sale 2.
+const poblacion = `población: 2 roles × 2 anchos sobre ${TRABAJOS.length} trabajos · ${exigidas} exigencias`;
+if (!exigidas) { console.error(`CIEGO: no se llegó a exigir nada · ${poblacion}`); process.exit(2); }
+if (rojos) { di(`\nROJO: ${rojos} en rojo · ${poblacion}`); process.exit(1); }
+di(`\nVERDE: 0 en rojo · ${poblacion}`);
+process.exit(0);

@@ -116,3 +116,121 @@ Las 20 de los tres ficheros (5 + 7 + 8) tumban su caso con `correr` + `aplicarUn
 **Mis errores, contados:** el encargo me nombraba solo el fichero 1732d, y `scrum836`/`scrum810` no estaban en mi tanda dirigida: los vi al leer el log del job, no corriendo. Mi primer parche del ancla de 1445d escribió un salto de línea real en vez de `\n` dentro del literal (lo vi en el diff antes de correr nada).
 
 **Sin correr:** la suite entera (la corre CI). El job «guards de navegador» (`guard:escalera-por-estado`) cae también en #3201: no es de este PR y no se ha tocado.
+
+## J2 · SCRUM-1732f · la cuenta QA de STAGING se queda sin vías de aviso y con el Bizum manual encendido (operación, no código)
+
+**Medido contra:** `origin/main` = `6cabd3d42c1e0c7ba531a91ab94471c17c288949` · 2026-11-19T18:00:42Z (hora de GitHub; sesión J2 `jv-j2d8`, por encargo del orquestador `cobroflash-backend-c7`)
+
+A9: aviso → cicatriz J2 «leí el fichero de entorno de staging con un regex de claves `[A-Z_]+`, sin dígitos: `E2E_TEST_LOGIN_SECRET` no casó y el login QA salió 404 con el secreto vacío» — no se pudo comprobar: el lector vive en el temporal de la sesión y ningún guard ve cómo una sesión lee su fichero de entorno
+
+Aplica el ✅ del fundador de **c.22165** («OK» a la pregunta de jv-j4bs en c.22158): SOLO staging, SOLO el comercio 2
+(`qa@staging.yaqu`). `src/` no se toca. Staging `/health`: `version` = el mismo sha, `db: up` (17:59:28Z).
+
+### 1 · Antes → después
+
+| dato | ANTES | DESPUÉS | de dónde |
+|---|---|---|---|
+| ① cliente de prueba sin teléfono ni correo | no había (el 49 «Cliente QA» tiene teléfono y correo) | **id 3936 «Cliente QA sin avisos»**: `phone`, `mobile` y `email` vacíos | `GET /admin/customers` |
+| ② `notifyEmailOnPaid` | `true` | **`false`** | `GET /admin/merchant` y columna `notify_email_on_paid` |
+| ③ `merchants.flags` (fila id=2) | `{"INVOICING_ES_ENABLED": true}` | `{"BIZUM_MANUAL_ENABLED": true, "INVOICING_ES_ENABLED": true}` | `SELECT` de la fila |
+| ③ `BIZUM_MANUAL_ENABLED` efectivo | OFF | **ON** | `isFlagEnabled` de `dist/core/flags.js` sobre la fila leída |
+| ④ `whatsappPhone` del comercio | presente (`…001`, 11 caracteres; enmascarado) | **`NULL`** (vaciado el 2.º paso, c.22176) | SELECT de la fila y `GET /admin/merchant` (`vacío`) |
+| `bizumPhone` del comercio | presente | presente (no se tocó: el Bizum se sigue ofreciendo, `bizumPhone \|\| whatsappPhone`) | `GET /admin/merchant` |
+| `whatsappPhone` del comercio | presente | presente (**no se tocó**) | `GET /admin/merchant` |
+| cliente 49 | teléfono y correo | igual (no se tocó) | `GET /admin/customers` |
+
+Evidencias (sin secretos, sin teléfonos: solo «presente/vacío»): `evidencias/SCRUM-1732/1732f-antes.json` y
+`evidencias/SCRUM-1732/1732f-despues.json`.
+
+### 2 · Cómo se hizo (comandos sin secretos)
+
+1. PASO 0: sin ramas `scrum-1732f*` en el remoto ni PR; turno de staging LIBRE.
+2. Login: `POST /auth/test-login` con `qa@staging.yaqu` y el secreto del `.env` del árbol, leído por código: 200 + cookie.
+3. ① El 49 no se podía editar quitándole los datos: `customerUpdateSchema` es `phone/mobile: z.string().min(5).optional()`,
+   `email: z.string().email().optional()`, sin `nullable()` (`schemas.ts:547-565`), así que la ficha no deja borrarlos.
+   Se creó uno nuevo: `POST /admin/customers {"name":"Cliente QA sin avisos"}` → 201, id 3936. `createCustomer` no envía nada (leído).
+4. ② `PUT /admin/merchant {"notifyEmailOnPaid": false}` (nada más: lo ausente no se toca) → 200.
+5. ③ **No hay ruta ni guion para `BIZUM_MANUAL_ENABLED`**: el único escritor de `merchants.flags` en `src/` es
+   `flagFiscal.service.ts:136`, y él y `cambiar-flag-fiscal.mjs` solo admiten `INVOICING_ES_ENABLED|SIF_ENABLED`
+   (`FLAGS_FISCALES`). Por eso, UPDATE del JSONB, con el turno (`turno-staging.mjs tomar --base staging --ref SCRUM-1732f`,
+   17:59:40Z) y la URL de `DATABASE_URL_STAGING` pasada solo a ese proceso, detrás de
+   `exigirDestinoCorrecto('DATABASE_URL_STAGING', …)` (`_clave-vs-destino.mjs`), que dijo `acela…/railway (STAGING) ✅`:
+   `UPDATE merchants SET flags = COALESCE(flags,'{}'::jsonb) || '{"BIZUM_MANUAL_ENABLED": true}'::jsonb WHERE id = <id> AND email = 'qa@staging.yaqu' RETURNING id, flags`
+   - control negativo, antes: con `id = 999999` → **0 filas**;
+   - el real, con `id = 2` → **1 fila**, con el JSON de la tabla. El resto de claves se conserva (`||` fusiona).
+   - Turno soltado (`soltar --base staging`), y `estado` da LIBRE. Mi primer `soltar` fue sin `--base` y apuntó a la base por defecto: no soltó nada ni quitó nada a nadie.
+   - Sin fila de auditoría `cambio_flag`: esa la escribe solo el servicio fiscal. El rastro es este tramo.
+6. ④ Segundo paso, decidido por el orquestador en **c.22176** dentro del alcance de c.22165 («un WhatsApp al profesional es una
+   vía de aviso»), con la misma liturgia: turno (`tomar --base staging`, 18:08:38Z), `exigirDestinoCorrecto` STAGING ✅, SELECT antes
+   (valor guardado ENMASCARADO: solo los 3 últimos dígitos), y
+   `UPDATE merchants SET whatsapp_phone = NULL WHERE id = <id> AND email = 'qa@staging.yaqu' RETURNING id, whatsapp_phone`:
+   control negativo `id = 999999` → **0 filas**; real `id = 2` → **1 fila**, `whatsapp_phone: null`. Turno soltado con
+   `--base staging`, `estado` LIBRE (18:08:56Z, `Date:` de GitHub). La columna es `String?` en el esquema: admite `NULL`.
+   Reversible: el profesional lo vuelve a escribir desde el panel.
+
+### 3 · Lo que NO está hecho o no está medido
+
+- ✅ **Cerrado por ④ (c.22176).** Lo que decía este punto antes del vaciado, para que se lea la cicatriz: **el WhatsApp al PROFESIONAL seguía siendo una vía viva.** `psp.routes.ts:383` llama a `notifyMerchantPaid` sin
+
+### 3 · Lo que NO está hecho o no está medido
+
+- 🔴 **El WhatsApp al PROFESIONAL sigue siendo una vía viva.** `psp.routes.ts:383` llama a `notifyMerchantPaid` sin
+  condición propia, y `notifyMerchantAlert` solo se para si `whatsappPhone` está vacío (`whatsappNotifications.ts`), y en el comercio 2 está presente.
+  No lo quité: no está en la lista ①②③ de c.22165 (aunque su pregunta decía «sin aviso al profesional»), y la ruta
+  del panel no deja vaciarlo (`whatsappPhone: z.string().min(6).max(20).optional()`, `schemas.ts:468`): haría falta otro UPDATE
+  directo. Si staging tiene credenciales de Meta, **no lo sé**: `/health` solo da `ok service version db dbMs`.
+  Con ④ aplicado, `notifyMerchantAlert` sale por `if (!to) return { ok: false, via: 'none' }` y no envía. Al cliente 3936 no
+  le llega nada: ni confirmación (`tieneNumeroDeContacto`) ni reseña.
+- Hallazgo de paso (J2, sin arreglar porque el encargo no toca `src/`): `GET /admin/me` (`app.ts:484`, `:495`) y
+  `GET /admin/connect/status` (`connect.routes.ts:23`) — ya con ticket propio, SCRUM-1774 — calculan `BIZUM_MANUAL_ENABLED` con un `merchant` **sin `flags`**,
+  Hasta que se decida, **un confirm-bizum en la QA puede mandar un WA al número del profesional.** Al cliente 3936 no
+  le llega nada: ni confirmación (`tieneNumeroDeContacto`) ni reseña.
+- Hallazgo de paso (J2, sin arreglar porque el encargo no toca `src/`): `GET /admin/me` (`app.ts:484`, `:495`) y
+  `GET /admin/connect/status` (`connect.routes.ts:23`) calculan `BIZUM_MANUAL_ENABLED` con un `merchant` **sin `flags`**,
+  así que no ven el override por comercio: con ③ aplicado, el panel puede decir que el Bizum está apagado. `confirm-bizum`
+  (`chargesAdmin.routes.ts:74`) sí carga `flags`, y es la puerta que usa CIERRES. Leído en el código, no visto en pantalla.
+- Ninguna factura, cobro ni envío: la F1 nueva con cobro parcial, el libro con `cobros[]` y el 303 por tramos son de CIERRES 14.
+- `dist/` para leer `isFlagEnabled`: `tsc -p . --noCheck` local (no se empuja). Ni `prisma generate` ni nada contra producción.
+
+## J5 · SCRUM-1732e · la R1 de una factura sin cobrar con criterio de caja: lo que dice la norma
+
+**Medido contra:** `origin/main` = `d4a0fc951cd54405d6e9ae908a7b52b12b26c024` · 2026-11-19T17:40:04Z (hora de GitHub; sesión J5 `jv-j5bl`, por encargo del orquestador `cobroflash-backend-c7`)
+
+A9: sin fallo que generalice — lectura de norma con su control positivo y cero por bloque; el único tropiezo fue pasar el tope de contexto del encargo (150k), y lo dije al cruzarlo, no al entregar
+
+Solo documentos. Ni código, ni esquema, ni el camino de emisión. No es respuesta de asesor (reglas 17 y 26). El detalle y los literales están en Jira, SCRUM-1732 c.22167.
+
+**La observación (c.22158):** con caja, la R1 `2026-QA-R-001` de la F1 `F260001`, que está sin cobrar, devenga en el 303 de 4T-2026 (cuota −11,27), y la F1 devenga en 4T-2027, en el tope.
+
+**Fuente:** API de legislación consolidada del BOE. Siete bloques, todos `200`, `Date:` del BOE Thu, 19 Nov 2026 17:39:09 GMT. De cada uno, la última versión:
+
+| bloque | vigente desde | sha256 (16) | positivo | cero (`SCRUM-`) |
+| --- | --- | --- | --- | --- |
+| LIVA `a163terdecies` | 20140101 | `6c48644a55e27cdc` | «31 de diciembre» ×2 | 0 |
+| LIVA `a80` | 20230101 | `ef0f25c43a9fa2ad` | «base imponible» ×19 | 0 |
+| LIVA `a89` | 20150101 | `cc6137a9c5548155` | «rectificaci» ×15 | 0 |
+| LIVA `a163decies` | 20140101 | `87b9970a67d75a41` | «caja» ×3 | 0 |
+| RIVA `a24` | 20240101 | `bf85c50c9e484b03` | «rectificaci» ×2 | 0 |
+| RIVA `a61decies` | 20140101 | `63a6080bbdd08f46` | «cobro» ×3 | 0 |
+| RIVA `a61septies` | 20140101 | `1b530870545e3d5f` | «caja» ×1 | 0 |
+
+**Veredicto: (c). La norma leída no lo fija, y la pregunta es para el asesor.**
+
+- LIVA 89.Cinco b) manda la minoración a la «declaración-liquidación correspondiente al periodo en que deba efectuarse la rectificación», pero habla de «cuotas inicialmente repercutidas».
+- LIVA 163 terdecies.Dos dice que, con caja, la repercusión «se entenderá producida en el momento del devengo de la operación», y para una F1 sin cobrar ese momento no ha llegado.
+- La única regla de caja para modificar la base está en el art. 80, apartado Cuatro: es la de los créditos incobrables, no la de una R1. «caja» sale 0 veces en el RIVA 24, 0 en el LIVA 89, y «rectificativ» 0 en el RIVA 61 decies y 61 septies.
+- **NO leído:** consultas de la DGT, el manual del IVA de la AEAT y sus FAQ del régimen de caja.
+
+**Qué hace hoy el código (leído, no ejecutado):** `tramosDeDevengo` devuelve `null` con un total ≤ 0 (`src/modules/invoicing/domain/devengoPorCaja.ts`), así que la R1 va por `fechaDeDevengo`: su `paidAt` si cae antes del tope, y si no, el tope. En staging la R1 lleva `paidAt` (`asientosCobrados: 1`). **NO medido:** quién se lo pone.
+
+**Lo que queda pendiente:**
+
+- La pregunta, literal, para la fila de SCRUM-1264 (la pone el orquestador): está en c.22167.
+- Las opciones de producto, para cuando conteste el asesor, todas con GO del fundador (regla 38):
+  - O1: como hoy.
+  - O2: la R1 sigue a su F1. Toca `devengoPorCaja` y sus tres consumidores.
+  - O3: mixta.
+- La recomendación de la sesión es O1 hasta que conteste el asesor.
+- ⚠️ Sin juzgar: F1 total 84,36 (cuota 11,28) y su R1 −84,35 (cuota −11,27). Le falta un céntimo para anularla entera.
+
+No se cierra ni se transiciona (A13).

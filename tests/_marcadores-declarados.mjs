@@ -29,8 +29,8 @@ function clavesEscritas(texto, nombre) {
 }
 
 /**
- * Lee y valida. Devuelve `{ ok: true, panel, servidor, papel }` o `{ ok: false, motivo }`.
- * Nunca devuelve una sección vacía como buena.
+ * Lee y valida. Devuelve `{ ok: true, panel, servidor, papel, papelVaciaDesde }` (`undefined` si no se declara) o `{ ok: false, motivo }`.
+ * Nunca devuelve una sección vacía como buena, salvo `papel` con su vacío DECLARADO (SCRUM-1771c).
  */
 export function leerMarcadoresDeclarados(ruta = RUTA_DECLARADOS) {
   let texto;
@@ -50,15 +50,35 @@ export function leerMarcadoresDeclarados(ruta = RUTA_DECLARADOS) {
     ['servidor', 'ficheros', (v) => Number.isInteger(v) && v > 0, 'un entero MAYOR que 0 (una entrada que llega a 0 se BORRA)'],
     ['papel', 'constantes', (v) => typeof v === 'string' && v.trim() !== '', 'la condición en que se imprime, no vacía'],
   ];
-  const out = { ok: true };
+  // `papelVaciaDesde` nace aquí, con su NOMBRE: el censo de suelos (SCRUM-1179-B) sólo ve las
+  // propiedades del literal que se devuelve, y una clave calculada le dejaba `r.papelVaciaDesde`
+  // como «no la fabrica nunca» (SCRUM-1771c, relevo jv-j1fx). `undefined` = vacío NO declarado.
+  const out = { ok: true, papelVaciaDesde: undefined };
   for (const [seccion, bloque, valido, debeSer] of secciones) {
     const obj = json?.[seccion]?.[bloque];
     if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
       return { ok: false, motivo: `falta \`${seccion}.${bloque}\` en ${ruta}` };
     }
     const entradas = Object.entries(obj);
+    // 🔴 SCRUM-1771c (decisión SCRUM-1771 c.22171, P1) · «NO QUEDA NINGUNO» SE DECLARA, NO SE DEDUCE.
+    // Al firmarse el último marcador del papel (c.22164), `papel.constantes` se queda vacío de verdad.
+    // Un vacío a secas sigue siendo «no supe leer» y sale en ROJO; sólo se lee como bueno si la
+    // sección lo DECLARA con `_vacia_desde: "SCRUM-<n> c.<comentario>"` (el ticket y la firma que
+    // retiraron el último). Y la declaración no puede convivir con entradas: sería mentir en un sentido
+    // o en el otro. Sólo vale para `papel`: en panel y servidor un vacío sigue sin poder declararse.
+    const vaciaDesde = seccion === 'papel' ? json[seccion]._vacia_desde : undefined;
+    if (vaciaDesde !== undefined) {
+      if (typeof vaciaDesde !== 'string' || !/^SCRUM-\d+[a-z]? c\.\d+$/.test(vaciaDesde)) {
+        return { ok: false, motivo: `\`${seccion}._vacia_desde\` = ${JSON.stringify(vaciaDesde)}: tiene que ser «SCRUM-<n> c.<comentario>» (el ticket y la firma)` };
+      }
+      if (entradas.length > 0) {
+        return { ok: false, motivo: `\`${seccion}._vacia_desde\` declara la sección VACÍA y \`${seccion}.${bloque}\` trae ${entradas.length}: o se retira la declaración, o las entradas` };
+      }
+    }
     if (entradas.length === 0) {
-      return { ok: false, motivo: `\`${seccion}.${bloque}\` está VACÍO: eso es «no supe leer», no «no queda ninguno»` };
+      if (vaciaDesde === undefined) {
+        return { ok: false, motivo: `\`${seccion}.${bloque}\` está VACÍO: eso es «no supe leer», no «no queda ninguno»` };
+      }
     }
     for (const [k, v] of entradas) {
       if (!valido(v)) {
@@ -66,6 +86,7 @@ export function leerMarcadoresDeclarados(ruta = RUTA_DECLARADOS) {
       }
     }
     out[seccion] = Object.freeze({ ...obj });
+    if (vaciaDesde !== undefined) out.papelVaciaDesde = vaciaDesde;   // sólo `papel` puede declararlo
   }
   // Las repetidas, contadas sobre el texto: `ficheros` aparece dos veces (panel y servidor), así
   // que se trocea por sección antes de buscar el bloque.

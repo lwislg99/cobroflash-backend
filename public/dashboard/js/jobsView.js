@@ -167,13 +167,9 @@ async function renderJobsView(container) {
   // `paint` rehace la barra y la lista; `pintarFilas`, solo la lista. Las pestañas y el desplegable
   // de cobro llaman a `pintarFilas`: rehacer la barra les quitaría el foco a media pulsación y, a
   // 390 px, devolvería la tira de pestañas a su principio, escondiendo la que se acaba de tocar.
-  const pintarFilas = () => {
-    const deEsaPestana = jobsEstadoFilter === 'all' ? jobs : jobs.filter((j) => pestanaDeTrabajo(j) === jobsEstadoFilter);
-    const porCobro = jobsCobroFilter === 'all' ? deEsaPestana : deEsaPestana.filter((j) => j.estadoCobro === jobsCobroFilter);
-    const shown = porCobro.filter((j) => pasaFiltroTecnico(j, jobsTecnicoFilter));
-    // P2 de c.22098: bajo «Todos» los cerrados siguen plegados; la pestaña «Cerrado» los enseña.
-    renderJobRows(list, shown, container, jobs, equipo, jobsEstadoFilter === 'cerrado');
-  };
+  // `pintarFilas` va DESPUÉS de `paint`, como iba el cruce de filtros antes de 1725i: el test de
+  // SCRUM-816 acota el bloque del filtro de técnico entre su primera línea y el cruce por cobro, y
+  // con el cruce delante se quedaba sin bloque que mirar (rojo del CI de #3240).
   const paint = () => {
     const counts = { all: jobs.length, Pendiente: 0, Parcial: 0, Pagado: 0 };
     for (const j of jobs) if (counts[j.estadoCobro] != null) counts[j.estadoCobro]++;
@@ -329,6 +325,13 @@ async function renderJobsView(container) {
     if (enLaBarra) filterBar.appendChild(barra);
 
     pintarFilas();
+  };
+  const pintarFilas = () => {
+    const deEsaPestana = jobsEstadoFilter === 'all' ? jobs : jobs.filter((j) => pestanaDeTrabajo(j) === jobsEstadoFilter);
+    const porCobro = jobsCobroFilter === 'all' ? deEsaPestana : deEsaPestana.filter((j) => j.estadoCobro === jobsCobroFilter);
+    const shown = porCobro.filter((j) => pasaFiltroTecnico(j, jobsTecnicoFilter));
+    // P2 de c.22098: bajo «Todos» los cerrados siguen plegados; la pestaña «Cerrado» los enseña.
+    renderJobRows(list, shown, container, jobs, equipo, jobsEstadoFilter === 'cerrado');
   };
   paint();
 }

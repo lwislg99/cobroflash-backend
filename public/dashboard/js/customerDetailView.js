@@ -376,7 +376,7 @@ async function renderCustomer360View(container, customerId) {
 
   const id = Number(customerId || window.appState?.customerId360);
   if (!id) {
-    container.innerHTML = '<p style="color:var(--neutral-400);padding:24px">Sin cliente seleccionado.</p>';
+    container.innerHTML = '<p class="c360-vacio">Sin cliente seleccionado.</p>';
     return;
   }
 
@@ -451,22 +451,22 @@ async function renderCustomer360View(container, customerId) {
   const whatsappHtml = contacto.whatsapp ? `<span><a class="contacto-link" href="${escC(contacto.whatsapp.href)}" target="_blank" rel="noopener">💬 WhatsApp</a></span>` : '';
   const correoHtml = contacto.correo ? enlaceHtml(contacto.correo, '✉️') : (customer.email ? `<span>✉️ ${escC(customer.email)}</span>` : '');
   header.innerHTML = `
-    <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0">
-      <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--green-500),#22d3ee);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:var(--green-900);flex-shrink:0">${initials}</div>
+    <div class="c360-identidad">
+      <div class="c360-avatar">${initials}</div>
       <div>
-        <h2 style="margin:0 0 4px;font-size:18px;font-weight:800;color:var(--neutral-900)">${escC(customer.name)}</h2>
-        <div style="font-size:13px;color:var(--neutral-500);display:flex;gap:12px;flex-wrap:wrap">
+        <h2 class="c360-nombre">${escC(customer.name)}</h2>
+        <div class="c360-datos">
           ${telefonoHtml}
           ${movilHtml}
           ${whatsappHtml}
           ${correoHtml}
-          <span style="color:var(--neutral-400)">Cliente desde ${new Date(customer.createdAt).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
+          <span class="c360-desde">Cliente desde ${new Date(customer.createdAt).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
         </div>
-        ${customer.notes ? `<div style="font-size:12.5px;color:var(--neutral-500);margin-top:6px;font-style:italic">${escC(customer.notes)}</div>` : ''}
+        ${customer.notes ? `<div class="c360-notas">${escC(customer.notes)}</div>` : ''}
         ${proximaVisita ? `<div class="historial-proxima">${escC(HISTORIAL_CLIENTE.TEXTOS.proxima + proximaVisita)}</div>` : ''}
       </div>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0">
+    <div class="c360-cabecera-acciones">
       <button class="btn-secondary btn-sm" id="btn-edit-360" title="Editar los datos del cliente">✎ Editar</button>
       <button class="btn-secondary btn-sm" id="btn-copy-portal-360" title="Copiar enlace del portal del cliente">
         🔗 Portal
@@ -607,20 +607,20 @@ async function renderCustomer360View(container, customerId) {
     { cifra: 'totalPending', label: 'Pendiente de cobro', value: fmt(debt),
       // SCRUM-1108b: con garantía retenida sin cobrar, «al día ✓» es falso. No se añade texto: se quita.
       sub: debt > 0 ? `${stats.pendingCount ?? invoices.filter(i=>String(i.status).toLowerCase()==='pending').length} sin cobrar` : (stats.garantiaRetenida ? '' : 'al día ✓'),
-      color: debt > 0 ? 'var(--red-600)' : 'var(--green-600)' },
+      tono: debt > 0 ? 'c360-rojo' : 'c360-verde' },
     { label: `${L.quotePlural || 'Presupuestos'}`, value: stats.totalQuotes, sub: `${stats.acceptedQuotes} aceptados` },
     { label: 'Facturas',  value: invoices.length, sub: `${invoices.filter(i=>i.status==='paid').length} pagadas` },
     { cifra: 'totalBilled', label: 'Facturado', value: fmt(stats.totalBilled), sub: '' },
-    { cifra: 'totalPaid', label: 'Cobrado',   value: fmt(stats.totalPaid), sub: '', color: 'var(--green-600)' },
-    { cifra: 'profit', label: 'Beneficio', value: fmt(stats.profit), sub: '', color: stats.profit >= 0 ? 'var(--green-600)' : 'var(--red-600)' },
+    { cifra: 'totalPaid', label: 'Cobrado',   value: fmt(stats.totalPaid), sub: '', tono: 'c360-verde' },
+    { cifra: 'profit', label: 'Beneficio', value: fmt(stats.profit), sub: '', tono: stats.profit >= 0 ? 'c360-verde' : 'c360-rojo' },
   ].filter((k) => !k.cifra || stats[k.cifra] !== undefined);
 
-  kpis.forEach(({ label, value, sub, color }) => {
+  kpis.forEach(({ label, value, sub, tono }) => {
     const k = document.createElement('div');
     k.className = 'kpi-card';
     k.innerHTML = `
       <div class="kpi-label">${label}</div>
-      <div class="kpi-value" style="font-size:18px${color ? ';color:' + color : ''}">${value}</div>
+      <div class="kpi-value c360-kpi-valor${tono ? ' ' + tono : ''}">${value}</div>
       ${sub ? `<div class="kpi-sub">${sub}</div>` : ''}
     `;
     kpiGrid.appendChild(k);
@@ -642,7 +642,7 @@ async function renderCustomer360View(container, customerId) {
   if (Array.isArray(events) && events.length) {
     const actCard = document.createElement('div');
     actCard.className = 'customers-card';
-    actCard.innerHTML = '<h3 style="margin:0 0 14px;font-size:13px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em">Actividad reciente</h3>';
+    actCard.innerHTML = '<h3 class="c360-actividad-titulo">Actividad reciente</h3>';
 
     const EV_ICON = {
       quote_sent: '📤', quote_accepted: '✅', quote_rejected: '✖',
@@ -650,8 +650,8 @@ async function renderCustomer360View(container, customerId) {
       reminder_sent: '🔔', review_requested: '⭐',
     };
     const EV_COLOR = {
-      quote_accepted: 'var(--green-600)', payment_received: 'var(--green-600)',
-      quote_rejected: 'var(--red-600)',
+      quote_accepted: 'c360-verde', payment_received: 'c360-verde',
+      quote_rejected: 'c360-rojo',
     };
 
     const list = document.createElement('div');
@@ -662,12 +662,12 @@ async function renderCustomer360View(container, customerId) {
         (i < events.length - 1 ? ';border-bottom:1px solid var(--neutral-100)' : '');
       const when = new Date(ev.createdAt).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
       row.innerHTML = `
-        <div style="flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--neutral-50);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px">${EV_ICON[ev.type] || '•'}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13.5px;font-weight:600;color:${EV_COLOR[ev.type] || 'var(--ink)'}">${escC(ev.title)}</div>
-          ${ev.detail ? `<div style="font-size:12.5px;color:var(--muted);margin-top:1px">${escC(ev.detail)}</div>` : ''}
+        <div class="c360-evento-icono">${EV_ICON[ev.type] || '•'}</div>
+        <div class="c360-evento-cuerpo">
+          <div class="c360-evento-titulo ${EV_COLOR[ev.type] || 'c360-tinta'}">${escC(ev.title)}</div>
+          ${ev.detail ? `<div class="c360-evento-detalle">${escC(ev.detail)}</div>` : ''}
         </div>
-        <div style="flex-shrink:0;font-size:11.5px;color:var(--muted);white-space:nowrap">${escC(when)}</div>
+        <div class="c360-evento-hora">${escC(when)}</div>
       `;
       list.appendChild(row);
     });
@@ -755,13 +755,13 @@ async function renderCustomer360View(container, customerId) {
       table.innerHTML = `<thead><tr><th>ID</th><th>Fecha</th><th>Total</th><th>Estado</th><th></th></tr></thead>`;
       const tbody = document.createElement('tbody');
       if (quotes.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--neutral-400);padding:24px">Sin ${L.quotePlural||'presupuestos'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="c360-tabla-vacia">Sin ${L.quotePlural||'presupuestos'}</td></tr>`;
       }
       quotes.forEach(q => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td style="font-weight:600">#${q.quoteNumber ?? q.id}</td>
-          <td style="color:var(--muted)">${new Date(q.createdAt).toLocaleDateString('es-ES')}</td>
+          <td class="c360-celda-numero">#${q.quoteNumber ?? q.id}</td>
+          <td class="c360-celda-fecha">${new Date(q.createdAt).toLocaleDateString('es-ES')}</td>
           <td class="amount">${fmt(Number(q.total), q.currency)}</td>
           <td><span class="status-pill ${STATUS_CLASS[q.status]||'status-pill-draft'}">${STATUS_LABELS[q.status]||q.status}</span></td>
           <td><button class="btn-ghost btn-sm">Ver →</button></td>
@@ -783,20 +783,20 @@ async function renderCustomer360View(container, customerId) {
       table.innerHTML = `<thead><tr><th>Nº</th><th>Fecha</th><th>Total</th><th>Estado</th><th></th></tr></thead>`;
       const tbody = document.createElement('tbody');
       if (invoices.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--neutral-400);padding:24px">Sin facturas</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="c360-tabla-vacia">Sin facturas</td></tr>`;
       }
       invoices.forEach(inv => {
         const tr = document.createElement('tr');
         const pdfCell = inv.pdfUrl && inv.pdfUrl !== 'PENDING_PDF'
-          ? `<a href="${inv.pdfUrl}" target="_blank" class="btn-ghost btn-sm" style="text-decoration:none">PDF</a>`
+          ? `<a href="${inv.pdfUrl}" target="_blank" class="btn-ghost btn-sm c360-sin-subrayado">PDF</a>`
           : '';
         tr.innerHTML = `
-          <td style="font-weight:600">${escC(inv.number)}</td>
-          <td style="color:var(--muted)">${new Date(inv.createdAt).toLocaleDateString('es-ES')}</td>
+          <td class="c360-celda-numero">${escC(inv.number)}</td>
+          <td class="c360-celda-fecha">${new Date(inv.createdAt).toLocaleDateString('es-ES')}</td>
           <td class="amount">${fmt(Number(inv.total), inv.currency)}</td>
           <td><span class="status-pill ${STATUS_CLASS[inv.status]||'status-pill-draft'}">${STATUS_LABELS[inv.status]||inv.status}</span></td>
           <td>
-            <div style="display:flex;gap:6px;align-items:center">
+            <div class="c360-celda-acciones">
               ${pdfCell}
               <button class="btn-ghost btn-sm" data-iid="${inv.id}">Ver →</button>
             </div>
@@ -1469,7 +1469,7 @@ function openEdit360Modal(customer, customerId, container) {
   modal.className = 'modal';
   modal.style.maxWidth = '440px';
   modal.innerHTML = `
-    <div class="modal-body" style="flex-direction:column;gap:10px">
+    <div class="modal-body c360-editar-cuerpo">
       <!-- SCRUM-574 (CONT-01): hueco para el switch Empresa/Persona. Va PRIMERO porque decide qué
            campos tienen sentido debajo. El nodo se inserta después: el switch es un componente con
            comportamiento (switchFormaJuridica.js) y una plantilla de texto no puede tenerlo.
@@ -1493,7 +1493,7 @@ function openEdit360Modal(customer, customerId, container) {
           <option value="QUINCENAL">Cada quince días</option>
           <option value="MENSUAL">Mensual</option>
         </select>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px">Solo sirve para avisarte de que toca facturarle. YaQu nunca factura ni envía nada solo — y el plazo legal manda por encima de lo que pactes.</div>
+        <div class="c360-ayuda">Solo sirve para avisarte de que toca facturarle. YaQu nunca factura ni envía nada solo — y el plazo legal manda por encima de lo que pactes.</div>
       </div>
       <div class="field"><label>Tipo de cliente</label>
         <select id="e360-tipodestinatario" class="input">
@@ -1502,11 +1502,11 @@ function openEdit360Modal(customer, customerId, container) {
           <option value="EMPRESARIO">Empresa / profesional</option>
         </select>
       </div>
-      <div class="field"><label>Notas</label><textarea id="e360-notes" rows="3" style="resize:vertical"></textarea></div>
-      <label class="inline-checkbox" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--neutral-600)">
+      <div class="field"><label>Notas</label><textarea id="e360-notes" rows="3" class="c360-redimensionable"></textarea></div>
+      <label class="inline-checkbox c360-casilla">
         <input type="checkbox" id="e360-waoptout"/> Baja de WhatsApp: no enviarle más mensajes (el cliente lo pidió)
       </label>
-      <div class="alert error" id="e360-alert" style="display:none"></div>
+      <div class="alert error c360-oculto" id="e360-alert"></div>
     </div>
     <div class="modal-footer">
       <button type="button" class="btn btn-secondary" id="e360-cancel">Cancelar</button>

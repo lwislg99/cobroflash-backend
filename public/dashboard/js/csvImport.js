@@ -27,9 +27,9 @@ function openImportCsvModal() {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = [
-    '<div class="modal" style="max-width:600px">',
+    '<div class="modal csv-modal">',
     '<div class="modal-body">',
-    '<div class="alert" id="csv-alert" style="display:none"></div>',
+    '<div class="alert csv-oculto" id="csv-alert"></div>',
     '<div id="csv-paso"></div>',
     '</div>',
     '</div>',
@@ -63,20 +63,20 @@ function openImportCsvModal() {
   function pintarElegir() {
     setAlert(null, '');
     paso.innerHTML = [
-      '<p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">',
+      '<p class="csv-guia">',
       'Sube el <strong>.csv</strong> o el <strong>.xlsx</strong> de tu Excel. Da igual el orden de las columnas: ',
       'te diremos qué hemos entendido antes de importar nada.',
       '</p>',
-      '<div id="csv-dropzone" style="border:2px dashed var(--neutral-300);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:border-color .15s;margin-bottom:8px">',
-      '<div style="font-size:13px;color:var(--neutral-500)">',
-      '📂 Arrastra tu fichero o <span style="color:var(--green-600);font-weight:600;text-decoration:underline">haz click para elegirlo</span>',
+      '<div id="csv-dropzone" class="csv-dropzone">',
+      '<div class="csv-dropzone-texto">',
+      '📂 Arrastra tu fichero o <span class="csv-dropzone-enlace">haz click para elegirlo</span>',
       '</div>',
-      '<input type="file" id="csv-file-input" accept=".csv,.txt,.xlsx" style="display:none"/>',
+      '<input type="file" id="csv-file-input" accept=".csv,.txt,.xlsx" hidden/>',
       '</div>',
-      '<div style="text-align:center;font-size:12px;color:var(--neutral-400);margin:4px 0">— o pega el contenido —</div>',
+      '<div class="csv-separador">— o pega el contenido —</div>',
       '<textarea id="csv-paste" rows="4" placeholder="nombre;telefono;email" ',
-      'style="width:100%;padding:8px 10px;border:1.5px solid var(--neutral-200);border-radius:8px;font-size:12px;font-family:monospace;resize:vertical"></textarea>',
-      '<button class="btn-secondary" id="csv-seguir" style="width:100%;margin-top:8px">Continuar</button>',
+      'class="csv-pegar"></textarea>',
+      '<button class="btn-secondary csv-boton-8" id="csv-seguir">Continuar</button>',
     ].join('');
 
     const fileInput = paso.querySelector('#csv-file-input');
@@ -142,12 +142,12 @@ function openImportCsvModal() {
   // sabe qué es Windows-1252, pero sí sabe si su cliente se llama José o Jos<?>.
   function pintarAcentos() {
     paso.innerHTML = [
-      '<h4 style="margin:0 0 6px;font-size:16px;color:var(--neutral-900)">¿Se ven bien los acentos?</h4>',
-      '<p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">Así hemos leído la primera fila de tu archivo:</p>',
-      '<div id="csv-muestra" style="padding:12px 14px;border:1px solid var(--neutral-200);border-radius:12px;background:var(--neutral-50);font-family:monospace;font-size:13px;color:var(--neutral-900);overflow-wrap:break-word"></div>',
-      '<div style="display:flex;gap:8px;margin-top:14px">',
-      '<button class="btn-primary" id="csv-acentos-si" style="flex:1">Sí, continuar</button>',
-      '<button class="btn-secondary" id="csv-acentos-no" style="flex:1">No, prueba de otra forma</button>',
+      '<h4 class="csv-titulo-6">¿Se ven bien los acentos?</h4>',
+      '<p class="csv-guia">Así hemos leído la primera fila de tu archivo:</p>',
+      '<div id="csv-muestra" class="csv-muestra"></div>',
+      '<div class="csv-botonera">',
+      '<button class="btn-primary csv-flex1" id="csv-acentos-si">Sí, continuar</button>',
+      '<button class="btn-secondary csv-flex1" id="csv-acentos-no">No, prueba de otra forma</button>',
       '</div>',
     ].join('');
     // `textContent`, no HTML: la muestra es contenido del usuario y aquí es donde acabaría un
@@ -179,16 +179,16 @@ function openImportCsvModal() {
       ).join('');
       // AB6: 44px de alto minimo — esto se toca con guantes y al sol.
       return [
-        '<div style="padding:8px 0;border-bottom:1px solid var(--neutral-100)">',
-        '<div style="display:flex;align-items:center;gap:10px">',
-        '<span style="font-family:monospace;font-size:12px;color:var(--neutral-900);min-width:0;flex:1;overflow-wrap:break-word">' + escImp(c.columna) + '</span>',
-        '<span style="color:var(--neutral-400)">→</span>',
-        '<select class="csv-campo" data-indice="' + c.indice + '" style="flex:1;min-height:44px;padding:11px 13px;border:1px solid var(--neutral-200);border-radius:12px;font-size:13px">' + opciones + '</select>',
+        '<div class="csv-columna">',
+        '<div class="csv-columna-fila">',
+        '<span class="csv-columna-nombre">' + escImp(c.columna) + '</span>',
+        '<span class="csv-flecha">→</span>',
+        '<select class="csv-campo csv-campo-select" data-indice="' + c.indice + '">' + opciones + '</select>',
         '</div>',
         // El aviso va EN SU FILA, no una vez al final: «esta columna» en singular solo
         // significa algo al lado de la columna a la que se refiere. Con cuatro sin reconocer,
         // un aviso global no dice CUAL.
-        (c.campo ? '' : '<p style="font-size:12px;color:var(--neutral-500);margin:6px 0 0">No sabemos qué es esta columna. Elige un campo o déjala fuera.</p>'),
+        (c.campo ? '' : '<p class="csv-columna-aviso">No sabemos qué es esta columna. Elige un campo o déjala fuera.</p>'),
         '</div>',
       ].join('');
     }).join('');
@@ -196,9 +196,9 @@ function openImportCsvModal() {
 
 
     paso.innerHTML = [
-      '<h4 style="margin:0 0 12px;font-size:16px;color:var(--neutral-900)">Esto es lo que hemos entendido</h4>',
+      '<h4 class="csv-titulo-12">Esto es lo que hemos entendido</h4>',
       '<div>' + filas + '</div>',
-      '<button class="btn-primary" id="csv-importar" style="width:100%;margin-top:14px">Está bien, importar</button>',
+      '<button class="btn-primary csv-boton-14" id="csv-importar">Está bien, importar</button>',
     ].join('');
 
     paso.querySelectorAll('.csv-campo').forEach(function (sel) {
@@ -237,28 +237,28 @@ function openImportCsvModal() {
   // ── PASO 3 · Informe ───────────────────────────────────────────────────────
   function pintarInforme(d) {
     const rechazos = d.rechazos || [];
-    const resumen = '<p style="font-size:14px;color:var(--neutral-900);margin:0 0 4px"><strong>' + d.creados + '</strong> clientes importados'
+    const resumen = '<p class="csv-resumen"><strong>' + d.creados + '</strong> clientes importados'
       + (d.omitidos ? ' · <strong>' + d.omitidos + '</strong> ya estaban' : '') + '.</p>';
 
     if (!rechazos.length) {
-      paso.innerHTML = resumen + '<button class="btn-primary" id="csv-fin" style="width:100%;margin-top:14px">Cerrar</button>';
+      paso.innerHTML = resumen + '<button class="btn-primary csv-boton-14" id="csv-fin">Cerrar</button>';
       paso.querySelector('#csv-fin').onclick = cerrar;
       return;
     }
 
     // Microcopy APROBADA. Y sin capar: se listan TODAS.
     const lista = rechazos.map(function (r) {
-      return '<div style="padding:6px 0;border-bottom:1px solid var(--neutral-100);font-size:13px;color:var(--neutral-700)">'
+      return '<div class="csv-rechazo">'
         + 'Fila ' + r.fila + ' · ' + escImp(r.motivo) + '</div>';
     }).join('');
 
     paso.innerHTML = [
       resumen,
-      '<h4 style="margin:14px 0 6px;font-size:16px;color:var(--neutral-900)">' + rechazos.length + ' filas no han entrado</h4>',
-      '<p style="font-size:13px;color:var(--neutral-500);margin:0 0 10px">Puedes descargarlas, corregirlas y volver a importar.</p>',
-      '<div style="max-height:220px;overflow-y:auto;border:1px solid var(--neutral-200);border-radius:12px;padding:0 12px">' + lista + '</div>',
-      '<button class="btn-primary" id="csv-descargar" style="width:100%;margin-top:12px">Descargar las filas con errores</button>',
-      '<button class="btn-secondary" id="csv-fin" style="width:100%;margin-top:8px">Cerrar</button>',
+      '<h4 class="csv-titulo-rechazos">' + rechazos.length + ' filas no han entrado</h4>',
+      '<p class="csv-guia-10">Puedes descargarlas, corregirlas y volver a importar.</p>',
+      '<div class="csv-rechazos-lista">' + lista + '</div>',
+      '<button class="btn-primary csv-boton-12" id="csv-descargar">Descargar las filas con errores</button>',
+      '<button class="btn-secondary csv-boton-8" id="csv-fin">Cerrar</button>',
     ].join('');
 
     paso.querySelector('#csv-fin').onclick = cerrar;

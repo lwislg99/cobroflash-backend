@@ -1,0 +1,90 @@
+// SCRUM-1756h · guion de la transformación (se guarda como .txt: es evidencia, no un script del árbol).
+// Uso: node docs/master/evidencias/SCRUM-1756/1756h-transformar.mjs.txt <salida-css>
+// 1) Cada `@@S:<declaraciones>@@` (los 7 valores con ${…}, preparados a mano) pasa a su clase.
+// 2) Cada style="<declaraciones>" que el AST de typescript encuentra DENTRO de una cadena o plantilla
+//    pasa a class="<clase>" (o se suma al class="…" que ya tenga la etiqueta).
+// La clase es `j3e-` + 7 hex del sha1 de las declaraciones: el nombre se recalcula, no se elige.
+// Escribe el bloque CSS con las declaraciones byte a byte. Aborta (código 1) ante cualquier etiqueta que no sepa leer.
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+import { createRequire } from 'node:module';
+const require = createRequire(process.cwd() + '/');
+const ts = require('typescript');
+
+export const FICHEROS = ['onboardingView', 'plansView', 'settingsView', 'teamView', 'tutorial'].map((n) => `public/dashboard/js/${n}.js`);
+export const clase = (v) => 'j3e-' + crypto.createHash('sha1').update(v).digest('hex').slice(0, 7);
+
+const reglas = new Map(); // valor -> clase, en orden de aparición
+const registrar = (v) => {
+  if (/["{}<>]/.test(v) || v.includes('${')) throw new Error('declaraciones que no sé mover: ' + v);
+  if (!reglas.has(v)) reglas.set(v, clase(v));
+  return reglas.get(v);
+};
+
+function piezasDeCadena(src, f) {
+  const sf = ts.createSourceFile(f, src, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const K = ts.SyntaxKind, out = [];
+  (function walk(n) {
+    if ([K.StringLiteral, K.NoSubstitutionTemplateLiteral, K.TemplateHead, K.TemplateMiddle, K.TemplateTail].includes(n.kind)) {
+      out.push([n.getStart(sf), n.getEnd()]);
+    }
+    ts.forEachChild(n, walk);
+  })(sf);
+  return out;
+}
+
+// fin de la etiqueta: el primer `>` fuera de ${…}
+function finDeEtiqueta(src, desde) {
+  let prof = 0;
+  for (let i = desde; i < src.length; i++) {
+    if (src[i] === '$' && src[i + 1] === '{') { prof++; i++; continue; }
+    if (prof && src[i] === '{') { prof++; continue; }
+    if (prof && src[i] === '}') { prof--; continue; }
+    if (!prof && src[i] === '>') return i;
+  }
+  return -1;
+}
+
+const informe = [];
+const escrituras = [];
+for (const f of FICHEROS) {
+  let src = fs.readFileSync(f, 'utf8');
+  // 1) marcadores puestos a mano
+  let marcadores = 0;
+  src = src.replace(/@@S:([^@]*)@@/g, (_, v) => { marcadores++; return registrar(v); });
+  // 2) style=" dentro de cadenas, por AST
+  const edits = [];
+  for (const [a, b] of piezasDeCadena(src, f)) {
+    const re = /style="([^"]*)"/g; const trozo = src.slice(a, b); let m;
+    while ((m = re.exec(trozo))) {
+      const pos = a + m.index;
+      // delante va un blanco, o la comilla que abre la cadena cuando la etiqueta viene partida con `+`
+      if (!/\s/.test(src[pos - 1]) && pos - 1 !== a) throw new Error(`${f}@${pos}: style= sin espacio delante`);
+      const ini = src.lastIndexOf('<', pos);
+      const fin = finDeEtiqueta(src, pos);
+      if (ini < 0 || fin < 0 || !/^<[a-zA-Z]/.test(src.slice(ini, ini + 2)) || src.slice(ini, pos).includes('>') && !src.slice(ini, pos).includes('${')) throw new Error(`${f}@${pos}: etiqueta ilegible`);
+      const etiqueta = src.slice(ini, fin);
+      const clases = [...etiqueta.matchAll(/\sclass="/g)];
+      if (clases.length > 1) throw new Error(`${f}@${pos}: dos class=`);
+      const cls = registrar(m[1]);
+      if (clases.length === 1) {
+        const pc = ini + clases[0].index + ' class="'.length;
+        edits.push([pc, pc, cls + ' ']);
+        // quita « style="…"» (o «style="…"» si abre la cadena: el blanco está en la cadena anterior)
+        edits.push([pos - 1 === a ? pos : pos - 1, pos + m[0].length, '']);
+      } else {
+        edits.push([pos, pos + m[0].length, `class="${cls}"`]);
+      }
+    }
+  }
+  edits.sort((x, y) => y[0] - x[0]);
+  for (const [a, b, t] of edits) src = src.slice(0, a) + t + src.slice(b);
+  escrituras.push([f, src]); // se escribe al final: si una etiqueta aborta, no queda ningún fichero a medias
+  informe.push(`${f}: marcadores=${marcadores} style_en_cadena=${edits.filter((e) => e[2] !== '' && !e[2].endsWith(' ')).length + edits.filter((e) => e[2] === '').length}`);
+}
+for (const [f, src] of escrituras) fs.writeFileSync(f, src);
+const SEL = (c) => `.${c}:not(#j3-sin-id):not(#j3-sin-id)`;
+const css = [...reglas].map(([v, c]) => `${SEL(c)}{${v}}`).join('\n') + '\n';
+fs.writeFileSync(process.argv[2], css);
+console.log(informe.join('\n'));
+console.log('reglas', reglas.size);
