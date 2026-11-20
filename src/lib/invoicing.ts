@@ -9,7 +9,7 @@ import { isDemoMerchant, DEMO_WATERMARK } from '../modules/invoicing/domain/emis
 import { generateInvoicePdf } from './pdf';
 import { invoicesDir } from '../core/storage/dirs';
 import { applyVeriFactu } from '../modules/invoicing/domain/verifactu.service';
-import { exigirDocumentoEmitible, FacturaSinSellarError } from '../modules/invoicing/domain/portonDocumento'; // SCRUM-206
+import { exigirDocumentoEmitible, FacturaSinSellarError, qrDelDocumento } from '../modules/invoicing/domain/portonDocumento'; // SCRUM-206 · SCRUM-1779d
 // SCRUM-205: este fichero YA NO SELLA. Solo consulta el estado para decidir si puede
 // producir documento; quien sella es `sellarTrasEmision`, en la emision.
 import {
@@ -101,7 +101,7 @@ export async function ensureInvoicePdf(
     // SCRUM-206 · PORTÓN, al borde de la salida y no al principio de la función: aquí la
     // garantía es local y se lee de un vistazo. Cubre además el caso que el `catch` no ve — una
     // factura que llega sin huella sin haberse intentado sellar en esta llamada.
-    exigirDocumentoEmitible({ number: inv.number, vfHash }, inv.merchant);
+    exigirDocumentoEmitible({ number: inv.number, vfHash, vfEstado: inv.vfEstado }, inv.merchant);
 
     const lines = Array.isArray(inv.lines) ? (inv.lines as any[]) : [];
     // SCRUM-665 · el emisor sale de la COLUMNA, no de la ficha viva — mismo criterio que el
@@ -133,7 +133,7 @@ export async function ensureInvoicePdf(
       customer: clienteDelDocumento(inv, inv.customer),
       currency: inv.currency,
       total: inv.total.toString(),
-      qrData,
+      qrData: qrDelDocumento({ number: inv.number, vfHash, vfEstado: inv.vfEstado }, inv.merchant, qrData), // SCRUM-1779d
       vfHash,
       createdAt: inv.createdAt,
       lines,
@@ -239,8 +239,10 @@ export async function ensureInvoiceForCharge(
     // Esta guarda mira la fila QUE TIENE EN LA MANO, que puede ser vieja: la entrega que leyó la
     // fila antes de que la otra la sellara entra igual. A ésa la para la guarda de dentro del
     // cerrojo, en `applyVeriFactu`. Hacen falta las dos.
+    let vfEstado: string = inv.vfEstado; // SCRUM-1779d: el estado DESPUÉS de sellar, no el leído antes
     if (inv.vfEstado !== SELLADO_HECHO) {
       const resultadoSellado = await sellarTrasEmision(inv, merchant ?? {}, prisma);
+      vfEstado = resultadoSellado.estado;
       if (resultadoSellado.estado === SELLADO_HECHO) {
         const releida = await prisma.invoice.findUnique({
           where: { id: inv.id },
@@ -260,7 +262,7 @@ export async function ensureInvoiceForCharge(
 
     // SCRUM-206 · PORTÓN. Va ANTES del `if (needsPdf)` a propósito: la rama `else` de abajo
     // también escribía `qrData` —el fallback casero— sobre una factura sin sellar.
-    exigirDocumentoEmitible({ number: inv.number, vfHash }, merchant);
+    exigirDocumentoEmitible({ number: inv.number, vfHash, vfEstado }, merchant);
 
     if (needsPdf) {
       const customer = await prisma.customer.findUnique({ where: { id: inv.customerId } });
@@ -294,7 +296,7 @@ export async function ensureInvoiceForCharge(
         customer: clienteDelDocumento(inv, customer),
         currency: inv.currency,
         total: inv.total.toString(),
-        qrData,
+        qrData: qrDelDocumento({ number: inv.number, vfHash, vfEstado }, merchant, qrData), // SCRUM-1779d
         vfHash,
         createdAt: inv.createdAt,
         lines: invLines,
