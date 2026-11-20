@@ -10,6 +10,13 @@ nuevos; todo sale de tokens que ya existían —`--brand-tint`, `--brand-tint-in
 `--neutral-600`, `--danger-ink`, `--ring`—; los 44 px de la barra y el anillo de foco, intactos; iconos dibujados
 con máscara en `currentColor`, con su salida para `forced-colors`.)
 
+A9: comprobación → `tests/scrum836-ancla-de-mutacion-viva.test.mjs`
+
+La primera tanda entera cazó cuatro defectos de FORMA míos en el test y el registro nuevos, todos por guards que ya
+existían: `soloEjecutable` a pelo sin suelo (`tests/scrum719-el-suelo-de-los-doce.test.mjs`), `fichero` de las
+mutaciones como identificador y no como literal (scrum757), `cae` con un nombre parecido y no el título EXACTO del test
+(scrum836) y el ancla de medición sin hora (scrum267). Arreglados antes del push; la tanda se repitió entera.
+
 **Orden del fundador (20-nov, cabecera del orquestador -25):** «con esta nueva skill darle otra lavada de cara... y lo
 que se pueda mejorar dale». El plano es la auditoría hallmark de S2 de esa mañana
 (`sondas-s2\evid-hallmark-20nov\`: `auditoria.json` + `sloplint-static.txt`), no una auditoría nueva.
