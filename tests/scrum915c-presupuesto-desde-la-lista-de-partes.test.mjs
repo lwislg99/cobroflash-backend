@@ -55,7 +55,7 @@ async function montar(j, { helper, rol = 'admin', parteFalla = false } = {}) {
     if (typeof helper === 'function') {
       banco.ctx.partePlantillaDelPresupuesto = (parte) => { llamadas.push(JSON.parse(JSON.stringify(parte))); return helper(parte); };
     } else {
-      delete banco.ctx.partePlantillaDelPresupuesto;
+      banco.ctx.partePlantillaDelPresupuesto = undefined;
     }
   }
   const r = await pintarVista(banco, 'renderJobDetailView');

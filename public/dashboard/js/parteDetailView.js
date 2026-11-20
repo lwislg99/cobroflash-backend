@@ -804,10 +804,16 @@
       (editable ? pintarDictado((leerBorradorDelDictado(parte.id) || {}).texto) : '') +
       pintarBloque('mano_obra', lineas, editable) +
       pintarBloque('materiales', lineas, editable) +
+      // SCRUM-1762d · LA LATERAL DEL ESCRITORIO (patrón de la ficha del trabajo, SCRUM-1768): las firmas
+      // y las salidas del parte firmado van juntas en un contenedor que SOLO es contenedor. Por debajo
+      // de 1200 px se disuelve (`display: contents`, styles.css) y el parte queda como estaba: mismos
+      // nodos, mismo orden, mismo tabulador. Ni texto ni acción nuevos.
+      '<div class="parte-lateral" data-parte-lateral="1">' +
       pintarLasDosFirmas(parte) +
       pintarVolverAlTrabajo(parte, editable) +
       // SCRUM-915b · del parte firmado, al presupuesto con sus líneas. Sólo `firmado` y con trabajo.
       pintarHacerPresupuesto(parte) +
+      '</div>' +
       (editable ? pintarDatosDelParte(parte, editable) : '');
 
     return true;
@@ -942,9 +948,28 @@
     return contenido.ok === false && precios.ok === true;
   }
 
+  /**
+   * SCRUM-915c · UNA SOLA DEFINICIÓN de «este parte da para un presupuesto» y de lo que se le pasa al
+   * editor (canon de SCRUM-831: una regla, un sitio). La usan las dos puertas de 915b —pintar el botón
+   * y atarlo— y, por `window.partePlantillaDelPresupuesto`, quien ofrezca lo mismo desde fuera de esta
+   * pantalla. `null` = no se ofrece. Helper pedido por el orquestador (acta §38); 915b no cambia.
+   */
+  function plantillaDelPresupuesto(parte) {
+    if (!firmadoYSinFacturar(parte) || !tieneTrabajo(parte)) return null;
+    var lines = lineasParaElPresupuesto(parte);
+    if (!lines.length) return null;
+    return {
+      deTrabajo: {
+        jobId: parte.jobId,
+        customerId: parte.customerId !== null && parte.customerId !== undefined ? parte.customerId : null,
+      },
+      lines: lines,
+    };
+  }
+  if (typeof window !== 'undefined') window.partePlantillaDelPresupuesto = plantillaDelPresupuesto;
+
   function pintarHacerPresupuesto(parte) {
-    if (!firmadoYSinFacturar(parte) || !tieneTrabajo(parte)) return '';
-    if (lineasParaElPresupuesto(parte).length === 0) return '';
+    if (!plantillaDelPresupuesto(parte)) return '';
     var L = (typeof window !== 'undefined' && window.appLocale) || {};
     // Secundario SIEMPRE: la acción principal de un parte firmado es la firma que falte o volver.
     // Hueco y ancho, en `styles.css` (bloque S4 · SCRUM-915b): sin `style=` en la cadena (SCRUM-1773).
@@ -962,13 +987,8 @@
       ? o.irAlPresupuesto
       : function (template) { if (window.renderAppView) window.renderAppView('quotes-new', { template: template }); };
     boton.addEventListener('click', function () {
-      ir({
-        deTrabajo: {
-          jobId: parte.jobId,
-          customerId: parte.customerId !== null && parte.customerId !== undefined ? parte.customerId : null,
-        },
-        lines: lineasParaElPresupuesto(parte),
-      });
+      var plantilla = plantillaDelPresupuesto(parte);
+      if (plantilla) ir(plantilla);
     });
   }
 
