@@ -155,6 +155,17 @@ objetivo es su etiqueta). Medidas en `evidencias/SCRUM-1762/d-parte/medidas.json
 - **Ningún test existente cambia de exigencia.** Los 364 ficheros que tocan la ficha del parte, `styles.css` o los bancos
   pasan con el formato nuevo (683b, 1722c, 1693, 1700 y 915b incluidos), salvo dos casos de `scrum1199` que en este
   worktree no encuentran `express` (el árbol no tiene `node_modules` propio) y que no tocan nada de esto.
+- **UNA línea en un test de S2, tras mergear main (entró #3273, la 915c).** `tests/scrum915c-presupuesto-desde-la-lista-de-partes.test.mjs`
+  l.58 simulaba «el helper no existe» con un `delete` hecho desde fuera del contexto `vm` del banco. Medido con una
+  sonda sobre el banco real: recién cargado, dentro = `function`; tras el `delete`, dentro = `function` y fuera =
+  `undefined`; tras asignar `undefined`, dentro = `undefined`. En main pasaba porque la función aún no existía; con el
+  helper real en el árbol, el caso de l.94 caía («botón sin la función de S4»). La exigencia no cambia.
+  Autorización del orquestador `cobroflash-backend-25` (mensaje entre sesiones del 20-nov; Jira caído), copiada LITERAL:
+  «AUTORIZO (delegación c.21978, 20-nov ~17:25) tocar UNA línea del fichero de S2 tests/scrum915c-presupuesto-desde-la-lista-de-partes.test.mjs L58: `delete banco.ctx.partePlantillaDelPresupuesto;` → `banco.ctx.partePlantillaDelPresupuesto = undefined;`. Motivo MEDIDO con sonda: el delete desde fuera del contexto vm no borra lo que ve el código de dentro (dentro seguía function; con undefined asignado, dentro = undefined); en main pasaba solo porque la función no existía aún. La exigencia NO cambia — ahora el caso mide DE VERDAD el fallback que dice medir. jobDetailView.js:1969 pregunta typeof !== 'function', así que undefined dispara el fallback como debe.»
+- Tras el merge de main: 15 ficheros alrededor del parte, la 915b/915c y los guards de forma, en verde; mutaciones 7/7 y
+  sonda 8/8 repetidas. La tanda ENTERA posterior al merge no se tiene: la paró el sistema por falta de memoria en la
+  máquina. La anterior al merge (13.990 casos) dio 23 fallos, todos del entorno de este worktree (cliente de Prisma por
+  detrás del esquema, sin `node_modules` propio, un formato de fecha de Node) y ninguno en ficheros de esta pieza.
 
 Mutaciones: catálogo → `tests/scrum1762d-parte-ancho-y-hallmark.test.mjs`
 
