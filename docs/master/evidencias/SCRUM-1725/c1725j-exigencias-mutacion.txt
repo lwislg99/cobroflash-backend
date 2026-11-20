@@ -1,0 +1,136 @@
+﻿
+── BASE (sin mutar) ──
+1725j · exit 0
+   # tests 4
+   # pass 4
+   # fail 0
+1739 · exit 0
+   # tests 7
+   # pass 7
+   # fail 0
+guard-917 · exit 0
+   población: 56 comprobaciones sobre 12 trabajos + 200 + 2 monedas + sin equipo · a 1280 y 390
+guard-escalera · exit 0
+   en_curso            «+ Nuevo albarán»       «+ Nuevo albarán»
+
+inyección aplicada: SÍ (public/dashboard/js/jobsView.js, tomada del catálogo de tests/scrum1725j-lista-lavado.test.mjs)
+
+── MUTADO · b) vuelve la segunda frase bajo «Sin importe» ──
+1725j · exit 1
+   not ok 2 - SCRUM-1725j ② · P3: sin importe de referencia la celda dice «Sin importe» y NADA MÁS
+   # tests 4
+   # pass 3
+   # fail 1
+1739 · exit 0
+   # tests 7
+   # pass 7
+   # fail 0
+guard-917 · exit 1
+   población: 56 comprobaciones sobre 12 trabajos + 200 + 2 monedas + sin equipo · a 1280 y 390
+   🔴 B.5 Taller Hnos. Vega sin eje: ["Sin importe","no hay presupuesto aceptado"] (esperaba solo «Sin importe»)
+   🔴 B.5 Inmobiliaria Sur sin eje: ["Sin importe","no hay presupuesto aceptado"] (esperaba solo «Sin importe»)
+   🔴 2 de 56 comprobaciones en rojo.
+guard-escalera · exit 0
+   en_curso            «+ Nuevo albarán»       «+ Nuevo albarán»
+restaurado byte a byte: SÍ
+
+inyección aplicada: SÍ (public/dashboard/js/jobsView.js, tomada del catálogo de tests/scrum1725j-lista-lavado.test.mjs)
+
+── MUTADO · c) y d) el albarán vuelve a la fila EN CURSO y sale del «⋯» ──
+1725j · exit 1
+   not ok 3 - SCRUM-1725j ③ · P4: EN CURSO lleva TRES controles y el albarán va PRIMERO en el «⋯», por su identidad
+   not ok 4 - SCRUM-1725j ③ · P4 es para todos los roles: el operario ve la misma fila EN CURSO
+   # tests 4
+   # pass 2
+   # fail 2
+1739 · exit 1
+   not ok 4 - SCRUM-1739 · la rellena va PRIMERA en su tarjeta, «Ver detalle» detrás y el «⋯» cierra
+   # tests 7
+   # pass 6
+   # fail 1
+guard-917 · exit 1
+   población: 56 comprobaciones sobre 12 trabajos + 200 + 2 monedas + sin equipo · a 1280 y 390
+   🔴 C.2 «⋯» de Ana Cuadro: ["Técnicos","✅ Marcar terminado"] ≠ ["+ Nuevo albarán","Técnicos","✅ Marcar terminado"]
+   🔴 1 de 56 comprobaciones en rojo.
+guard-escalera · exit 1
+   en_curso            (ninguna)               «+ Nuevo albarán»   🔴 DISTINTAS
+   🔴 en_curso: la lista propone (ninguna) y el detalle «+ Nuevo albarán».
+   🔴 1 defecto(s).
+   ⟦veredicto⟧ 1 hallazgo · 0 ciegos → salida 1 (hallazgo)
+restaurado byte a byte: SÍ
+
+inyección aplicada: SÍ (public/dashboard/js/jobsView.js, tomada del catálogo de tests/scrum1725j-lista-lavado.test.mjs)
+
+── MUTADO · c) el albarán sigue en el «⋯», pero el ÚLTIMO ──
+1725j · exit 1
+   not ok 3 - SCRUM-1725j ③ · P4: EN CURSO lleva TRES controles y el albarán va PRIMERO en el «⋯», por su identidad
+   not ok 4 - SCRUM-1725j ③ · P4 es para todos los roles: el operario ve la misma fila EN CURSO
+   # tests 4
+   # pass 2
+   # fail 2
+1739 · exit 0
+   # tests 7
+   # pass 7
+   # fail 0
+guard-917 · exit 1
+   población: 56 comprobaciones sobre 12 trabajos + 200 + 2 monedas + sin equipo · a 1280 y 390
+   🔴 C.2 «⋯» de Ana Cuadro: ["Técnicos","✅ Marcar terminado","+ Nuevo albarán"] ≠ ["+ Nuevo albarán","Técnicos","✅ Marcar terminado"]
+   🔴 1 de 56 comprobaciones en rojo.
+guard-escalera · exit 0
+   en_curso            «+ Nuevo albarán»       «+ Nuevo albarán»
+restaurado byte a byte: SÍ
+
+inyección aplicada: SÍ (public/dashboard/js/jobsView.js, tomada del catálogo de tests/scrum1725j-lista-lavado.test.mjs)
+
+── MUTADO · d) la acción pierde su identidad data-accion="escalera" ──
+1725j · exit 1
+   not ok 3 - SCRUM-1725j ③ · P4: EN CURSO lleva TRES controles y el albarán va PRIMERO en el «⋯», por su identidad
+   not ok 4 - SCRUM-1725j ③ · P4 es para todos los roles: el operario ve la misma fila EN CURSO
+   # tests 4
+   # pass 2
+   # fail 2
+1739 · exit 0
+   # tests 7
+   # pass 7
+   # fail 0
+guard-917 · exit 0
+   población: 56 comprobaciones sobre 12 trabajos + 200 + 2 monedas + sin equipo · a 1280 y 390
+guard-escalera · exit 1
+   en_curso            (ninguna)               «+ Nuevo albarán»   🔴 DISTINTAS
+   🔴 en_curso: la lista propone (ninguna) y el detalle «+ Nuevo albarán».
+   🔴 1 defecto(s).
+   ⟦veredicto⟧ 1 hallazgo · 0 ciegos → salida 1 (hallazgo)
+restaurado byte a byte: SÍ
+
+inyección aplicada: SÍ (public/dashboard/js/jobsView.js, tomada del catálogo de tests/scrum1739-una-rellena-por-tarjeta.test.mjs)
+
+── MUTADO · a) vuelven los dos órdenes: «Ver detalle» delante en un sin agendar ──
+1725j · exit 0
+   # tests 4
+   # pass 4
+   # fail 0
+1739 · exit 1
+   not ok 4 - SCRUM-1739 · la rellena va PRIMERA en su tarjeta, «Ver detalle» detrás y el «⋯» cierra
+   # tests 7
+   # pass 6
+   # fail 1
+guard-917 · exit 0
+   población: 56 comprobaciones sobre 12 trabajos + 200 + 2 monedas + sin equipo · a 1280 y 390
+guard-escalera · exit 0
+   en_curso            «+ Nuevo albarán»       «+ Nuevo albarán»
+restaurado byte a byte: SÍ
+
+══ VEREDICTO ══
+base verde: 1725j 0 · 1739 0 · guard-917 0 · guard-escalera 0
+✅ b) vuelve la segunda frase bajo «Sin importe»
+     tenía que tumbar: 1725j, guard-917 · tumbó: 1725j, guard-917
+✅ c) y d) el albarán vuelve a la fila EN CURSO y sale del «⋯»
+     tenía que tumbar: 1725j, guard-917, guard-escalera · tumbó: 1725j, 1739, guard-917, guard-escalera · de más: 1739
+✅ c) el albarán sigue en el «⋯», pero el ÚLTIMO
+     tenía que tumbar: 1725j, guard-917 · tumbó: 1725j, guard-917
+✅ d) la acción pierde su identidad data-accion="escalera"
+     tenía que tumbar: 1725j, guard-escalera · tumbó: 1725j, guard-escalera
+✅ a) vuelven los dos órdenes: «Ver detalle» delante en un sin agendar
+     tenía que tumbar: 1739 · tumbó: 1739
+
+población: 5 mutaciones × 4 instrumentos · 10 caídas exigidas · 10 vistas
