@@ -4602,6 +4602,14 @@ textarea.parte-linea-desc {
 }
 .parte-tarea .detail-tarea { font-size: 1rem; line-height: 1.5; color: var(--ink); }
 /* ══ fin S4 · SCRUM-1662 (d) ══ */
+/* ══ S4 · SCRUM-915b · «+ NUEVO PRESUPUESTO» EN EL PARTE FIRMADO ══
+   El mismo botón secundario del inventario, con el hueco y el ancho de su vecino «Volver al trabajo»
+   (`pintarVolverAlTrabajo`): se leen como dos salidas de la misma familia. Va como clase y no como
+   `style=` en la cadena (trinquete SCRUM-1773). En el escritorio de dos columnas cae en la izquierda,
+   como cualquier hija de la hoja. */
+.parte-salida-presupuesto { margin: 12px 0; }
+.parte-salida-presupuesto > .btn { width: 100%; }
+/* ══ fin S4 · SCRUM-915b ══ */
 /* ══ S4 · SCRUM-1745 · LA HOJA DEL ALBARÁN Y LOS MODALES DE TRABAJOS, AL PULGAR (≤ 768 px) ══
    Medido en yaqu.app a 390 (recorrido H6 de SCRUM-1686, fila 29): en la hoja «Editar albarán» el
    Concepto medía 30 px de ancho con precios (enseñaba 4 px de un texto de 182), los campos de la línea

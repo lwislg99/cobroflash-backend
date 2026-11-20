@@ -806,6 +806,8 @@
       pintarBloque('materiales', lineas, editable) +
       pintarLasDosFirmas(parte) +
       pintarVolverAlTrabajo(parte, editable) +
+      // SCRUM-915b · del parte firmado, al presupuesto con sus líneas. Sólo `firmado` y con trabajo.
+      pintarHacerPresupuesto(parte) +
       (editable ? pintarDatosDelParte(parte, editable) : '');
 
     return true;
@@ -883,6 +885,74 @@
     for (var i = 0; i < botones.length; i++) {
       botones[i].addEventListener('click', function () { ir(parte.jobId); });
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-915b · DEL PARTE FIRMADO, AL PRESUPUESTO CON TODO PUESTO.
+  //
+  // Pedido por el fundador (20-nov-2026): «que de un parte se pueda crear un presupuesto y te lleve
+  // a la creacion de presupuestos con todo ya relleno y solo tenga que completarlo y emitirlo».
+  // El gemelo es el albarán que nace del parte firmado (SCRUM-1740), y se decide igual:
+  //   · SÓLO FIRMADO. En borrador las líneas aún se están apuntando; `facturado` no cuenta (1740).
+  //   · SIN PRECIOS. Este parte es el del técnico (`serializeParteParaElTecnico`): no trae dinero, y
+  //     aquí no se pide. El precio es lo que el profesional «completa» en el editor.
+  //   · CON SU TRABAJO Y SU CLIENTE, por el camino que ya existe (`template.deTrabajo`, SCRUM-1274):
+  //     el presupuesto nace colgado del trabajo (`job_id`) y al aceptarlo no se crea otro. Sin
+  //     trabajo no hay botón: el editor sólo sabe dejar elegido el cliente de un trabajo.
+  //   · LAS LÍNEAS, por el argumento de plantilla que ya existe (`template.lines`, SCRUM-140), en el
+  //     orden en que esta pantalla las pinta: mano de obra y después materiales.
+  //   · NADA SE ESCRIBE: ni en el parte ni en el servidor hasta que el profesional genere.
+  // Rótulo: el de la ficha del trabajo para lo mismo (`+ ${L.quoteNew}`, SCRUM-1190). No es texto nuevo.
+  //
+  // Lo fija `tests/scrum915b-presupuesto-desde-el-parte.test.mjs`.
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  function lineasParaElPresupuesto(parte) {
+    var lineas = lineasOCeguera(parte);
+    if (lineas === null) return [];
+    var bloques = ['mano_obra', 'materiales']; // el orden de `renderParte`
+    var salida = [];
+    for (var b = 0; b < bloques.length; b++) {
+      for (var i = 0; i < lineas.length; i++) {
+        var l = lineas[i];
+        if (!l || l.bloque !== bloques[b]) continue;
+        var concepto = typeof l.descripcion === 'string' ? l.descripcion.trim() : '';
+        if (!concepto) continue;
+        // Una cantidad ilegible NO se convierte en 1: va en blanco y la pone quien hace el presupuesto.
+        var unds = Number(l.unds);
+        salida.push({ concept: concepto, qty: isFinite(unds) && unds > 0 ? unds : '' });
+      }
+    }
+    return salida;
+  }
+
+  function pintarHacerPresupuesto(parte) {
+    if (!parte || parte.estado !== 'firmado' || !tieneTrabajo(parte)) return '';
+    if (lineasParaElPresupuesto(parte).length === 0) return '';
+    var L = (typeof window !== 'undefined' && window.appLocale) || {};
+    // Secundario SIEMPRE: la acción principal de un parte firmado es la firma que falte o volver.
+    // Hueco y ancho, en `styles.css` (bloque S4 · SCRUM-915b): sin `style=` en la cadena (SCRUM-1773).
+    return '<div class="parte-salida-presupuesto" data-parte-salida-presupuesto="1">' +
+      '<button type="button" class="btn btn-secondary" data-parte-presupuesto="1">' +
+      esc('+ ' + (L.quoteNew || 'Nuevo presupuesto')) + '</button></div>';
+  }
+
+  /** `o.irAlPresupuesto` es la costura del test; en el panel es `renderAppView`. */
+  function atarHacerPresupuesto(contenedor, parte, o) {
+    if (!contenedor.querySelector) return;
+    var boton = contenedor.querySelector('[data-parte-presupuesto]');
+    if (!boton) return;
+    var ir = typeof o.irAlPresupuesto === 'function'
+      ? o.irAlPresupuesto
+      : function (template) { if (window.renderAppView) window.renderAppView('quotes-new', { template: template }); };
+    boton.addEventListener('click', function () {
+      ir({
+        deTrabajo: {
+          jobId: parte.jobId,
+          customerId: parte.customerId !== null && parte.customerId !== undefined ? parte.customerId : null,
+        },
+        lines: lineasParaElPresupuesto(parte),
+      });
+    });
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
@@ -1782,6 +1852,7 @@
       return false;
     }
     atarSalidasAlTrabajo(contenedor, parte, o);
+    atarHacerPresupuesto(contenedor, parte, o);
     // SCRUM-1697 · «Visita n de m»: el parte ya trae `visitaN`/`visitaM` del servidor (SCRUM-1697 (b));
     // `parteVisita.js` solo los comprueba y los pinta, sin leer el trabajo.
     if (typeof window.partePintarVisita === 'function') window.partePintarVisita(contenedor, parte);
