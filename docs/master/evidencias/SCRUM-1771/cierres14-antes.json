@@ -1,0 +1,72 @@
+{
+  "fase": "antes",
+  "health": {
+    "ok": true,
+    "service": "yaqu-backend",
+    "version": "b0b7cf9970e7b4202f547a11e1d09add4ffca971",
+    "db": "up",
+    "dbMs": 1.8
+  },
+  "horaHealth": "Fri, 20 Nov 2026 07:03:37 GMT",
+  "login": 200,
+  "sinVias": {
+    "cliente": {
+      "id": 3936,
+      "name": "Cliente QA sin avisos",
+      "phone": "vacío",
+      "mobile": "vacío",
+      "email": "vacío"
+    },
+    "merchant": {
+      "status": 200,
+      "notifyEmailOnPaid": false,
+      "whatsappPhone": "vacío"
+    },
+    "ok": true
+  },
+  "r1": {
+    "id": 1976,
+    "status": 200,
+    "tipo": "application/pdf",
+    "bytes": 6774,
+    "sha256": "9175d872239afb2f4da8a09ae1015e562512a1f60d851b93d182a5bf1d943b88",
+    "lineasTotales": 25,
+    "lineas": [
+      "FACTURA RECTIFICATIVA",
+      "Rectifica a la factura Nº F260001",
+      "CONCEPTOCANT.PRECIO UNITIVA %TOTAL",
+      "Base imponible:-73,08 EUR",
+      "Base imponible por tipo",
+      "21%-36,03 EURIVA 21%:-7,57 EUR",
+      "10%-37,05 EURIVA 10%:-3,70 EUR",
+      "TOTAL:-84,35 EUR"
+    ],
+    "veces": {
+      "Base imponible por tipo": 1,
+      "[PENDIENTE": 0,
+      "Base imponible": 2
+    },
+    "detalle": {
+      "status": 200,
+      "number": "2026-QA-R-001",
+      "type": "R1",
+      "total": "-84.35"
+    }
+  },
+  "bizum": {
+    "connectStatus": {
+      "status": 200,
+      "campos": {
+        "bizumEnabled": true,
+        "bizumPhone": "presente"
+      }
+    },
+    "adminMe": {
+      "status": 200,
+      "campos": {
+        "bizumManualEnabled": false,
+        "bizumSinTelefono": "no_aplica"
+      }
+    }
+  }
+}

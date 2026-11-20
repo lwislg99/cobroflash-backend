@@ -248,3 +248,15 @@ A9: sin fallo que generalice — el defecto no es de esta sesión (lo dejó el m
   `1732g-comprobar.mjs`: una línea quitada que no esté en ninguna parte sale 1, y cero quitadas sale 2 (CIEGO; control corrido).
 
 No se cierra ni se transiciona (A13).
+## J4 · SCRUM-1732g · lo medido de PR-2 en staging (CIERRES 14, 20-nov-2026)
+
+**Medido contra:** `origin/main` = `b0b7cf9970e7b4202f547a11e1d09add4ffca971` · 2026-11-20T07:04:31Z (staging `/health` = el mismo sha)
+
+A9: sin fallo que generalice — el error propio de esta tanda va en el tramo `# SCRUM-1771d` de `SCRUM-1771.md`, con su cicatriz J4
+
+- **Cobro parcial: NO medido.** No hay ruta del panel que apunte un cobro parcial a una F1 suelta (leído en el código, no intentado): `POST /admin/charges/:id/confirm-bizum` actúa sobre un `charge`, la F1 suelta nace sin él, `PUT /admin/invoices/:id/status` apunta el total (`invoiceAdmin.ts:325`) y `/charges` es interno. Medirlo exige una F1 nacida de un cobro: decide el orquestador.
+- **Lo que sí enseña la API** (cuenta QA, sin cobro): libro de noviembre con 3 asientos por EXPEDICIÓN, cada uno con la clave `cobros` (vacía): F260001, `2026-QA-R-001` y la F1 nueva F260002 (id 1977). 303 2026-T4: casilla 27 = −11,27 (1 asiento, la R1). 303 2027-T4: 257,83, 7 asientos «no cobrados» en el tope. El 303 da recuentos, no la lista de asientos.
+- Evidencia: `evidencias/SCRUM-1771/cierres14-despues.json`. Jira: c.22216.
+- De paso, sin tocar (es un tramo de J2): la sección «### 3 · Lo que NO está hecho o no está medido» de 1732f sale DOS veces en este fichero, con frases entrelazadas (un merge sin marcadores).
+
+No se cierra (A13).
