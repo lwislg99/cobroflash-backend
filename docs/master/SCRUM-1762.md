@@ -73,18 +73,21 @@ la mañana) · después = el mismo build con `styles.css`, `jobDetailView.js` y 
 en local (sonda `sondas-s2\capturar-1762.mjs`, solo GET), admin a 390 y 1280. Medido después: 0 emojis visibles,
 0 px de desborde, «+ Nuevo parte» 13,5 px × 44 px sobre rgb(4,120,87), pestaña abierta sobre rgb(236,253,245).
 
-## PR-2 · INICIO (S2 · 20-nov-2026) — COMITEADO EN LOCAL, SIN EMPUJAR
+## PR-2 · INICIO (S2 · 20-nov-2026)
 
 **Medido contra:** `origin/main` = `cde9d2f04da5567dc45233cd9356ddcbf5f7cb9e` · 2026-11-20T11:23:11Z
 **Rama:** `scrum-1762c-hallmark-inicio` (desde PR-1: los dos anexan al final de styles.css)
 **Skill UI:** cargada (`yaqu-premium-ui` + `impeccable`; iconos del set del menú; tokens existentes)
-A9: sin fallo que generalice — el tramo se cortó por límite de uso antes de la tanda entera; queda declarado aquí.
+A9: sin fallo que generalice — el tramo se cortó por límite de uso antes de la tanda entera y se retomó; nada entró sin tanda.
 
 - Estructura: «Para hoy» (franja de la Lista, `pintarCifrasDeLaLista`) arriba también para el admin · «Dinero en juego» debajo · «Completa tu configuración» AL FINAL (ranura `#home-configuracion`; el equipo se inserta antes).
 - Ropa: emojis → iconos del menú (⚙ 💶 ⚡ 👤 💰 🚀 ⚠; 👋 fuera; 🎉 → ✓ en línea) · sin raya lateral en `.home-hero-card` · 16 px bajo los avisos · un solo H1 (saludo → h2).
 - Texto FIRMADO por c.21978: «Cotizaciones» → `appLocale.quotePlural` (el literal del menú) · «0%» con 0 enviados → «—» neutro.
-- Tests: NUEVO `scrum1762c-hallmark-inicio` (4) · CAMBIAN 698 (148→151, delta medido por identidad) y 601 (980→1000). Líneas mandadas al -25; su OK está PENDIENTE.
+- Tests: NUEVO `scrum1762c-hallmark-inicio` (4) · CAMBIAN 698 (148→151, delta medido por identidad) y 601 (980→1000).
+  Autorización del orquestador cobroflash-backend-25 (mensaje entre sesiones; Jira caído, la pega él al volver), copiada LITERAL:
+  «AUTORIZO (delegación c.21978, 20-nov ~13:25 local) cambiar exactamente estas exigencias y ninguna más, por el PR-2 de la lavada hallmark de Inicio ordenada por el fundador, rojo-primero visto: ① tests/scrum698-vistas-que-no-se-miden.test.mjs → renderHomeView 148→151, delta MEDIDO por identidad (+div#home-hoy «Para hoy» arriba · +div#home-configuracion ranura final · +span.con-icono--hecho el ✓ del 🎉); las otras tres vistas intactas. ② tests/scrum601-copy-del-documento-vs-flag.test.mjs → re-anclaje por posición de la nota «100% al aceptar» de homeView 980→1000 (medido en main y rama), patrón 1390y/1701/1686/1717.»
+  El orquestador RATIFICA aplicar la firma con `appLocale.quotePlural` (el literal del menú) en vez de la palabra fija. «Cotización #8» y «Sin cotizaciones aceptadas aún» quedan declarados para otra ronda con firma propia.
 
 Mutaciones: catálogo → `tests/scrum1762c-hallmark-inicio.test.mjs`
 
-PENDIENTE antes del push: `npm run censo:mudez -- --escribir` (test nuevo con `ejecutableDe`) · tanda entera · OK del -25 a las líneas de 698/601 · capturas ya en `D:\MILLONARIO\cobroFlash\capturas\SCRUM-1762\c-inicio\despues\`.
+Capturas (fuera de git, A8): `D:\MILLONARIO\cobroFlash\capturas\SCRUM-1762\c-inicio\despues\` (admin y operario, 390 y 1280); el antes es la auditoría de la mañana (`sondas-s2\evid-hallmark-20nov\inicio-*`). Medido después: 0 emojis, un solo H1 («Inicio»), 0 px de desborde.
