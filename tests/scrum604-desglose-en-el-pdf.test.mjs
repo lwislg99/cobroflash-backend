@@ -123,7 +123,7 @@ test('SCRUM-604 · dos tipos CON cuota: una fila por tipo, con SU BASE (SCRUM-62
   // Cada fila lleva ahora SU BASE además de su cuota. **Ninguna cifra de las que ya se
   // imprimían ha cambiado** —105,00 · 12,60 · 4,50 · 122,10 siguen ahí, en el mismo sitio—:
   // lo único que ocurre es que se añaden las bases por tipo, que antes no salían.
-    assert.equal(bloque, 'Base imponible:105,00 EUR[PENDIENTE microcopy oficial]21%60,00 EURIVA 21%:12,60 EUR10%45,00 EURIVA 10%:4,50 EURTOTAL:122,10 EUR',
+    assert.equal(bloque, 'Base imponible:105,00 EURBase imponible por tipo21%60,00 EURIVA 21%:12,60 EUR10%45,00 EURIVA 10%:4,50 EURTOTAL:122,10 EUR',
     '🔴 cambió el bloque de totales con dos tipos que sí llevan cuota');
 });
 
@@ -136,7 +136,7 @@ test('SCRUM-604 · ✅ DEFECTO ① RESUELTO (SCRUM-623): la base al 0 % ya se im
   // rompió el cálculo». Se arregló, y **el cálculo no se ha tocado**: 105,00 · 12,60 · 117,60
   // son las mismas tres cifras que imprimía antes, en el mismo sitio. Lo que se añade son las
   // dos bases por tipo, que es lo que faltaba para poder cuadrarlo desde el papel.
-    assert.equal(conSuplido, 'Base imponible:105,00 EUR[PENDIENTE microcopy oficial]21%60,00 EURIVA 21%:12,60 EUR0%45,00 EURIVA 0%:0,00 EURTOTAL:117,60 EUR',
+    assert.equal(conSuplido, 'Base imponible:105,00 EURBase imponible por tipo21%60,00 EURIVA 21%:12,60 EUR0%45,00 EURIVA 0%:0,00 EURTOTAL:117,60 EUR',
     'Si esto cambia, o se ha movido la maqueta del desglose (SCRUM-623) o se ha roto el cálculo. '
     + 'Las dos cosas son graves en un documento fiscal y ninguna se hace de paso.');
 
@@ -161,7 +161,7 @@ test('SCRUM-604 · ✅ DEFECTO ② RESUELTO en la F1 (SCRUM-624e): el total IMPR
   // el `ImporteTotal` del XML. Hasta hoy esta cadena acababa en «TOTAL:122,10 EUR», recalculado.
   // Un guardado que no cuadra con sus líneas no lo produce hoy ningún camino de creación de F1
   // (medido en SCRUM-624d §1): este caso lo inyecta para saber quién gana, no porque ocurra.
-  assert.equal(bloque, 'Base imponible:105,00 EUR[PENDIENTE microcopy oficial]21%60,00 EURIVA 21%:12,60 EUR10%45,00 EURIVA 10%:4,50 EURTOTAL:999,99 EUR',
+  assert.equal(bloque, 'Base imponible:105,00 EURBase imponible por tipo21%60,00 EURIVA 21%:12,60 EUR10%45,00 EURIVA 10%:4,50 EURTOTAL:999,99 EUR',
     'CARACTERIZACIÓN: en la F1 el TOTAL del papel es el GUARDADO (999,99), el que declara su '
     + 'registro. Si vuelve a salir 122,10, el papel ha vuelto a recalcular por su cuenta.');
 });

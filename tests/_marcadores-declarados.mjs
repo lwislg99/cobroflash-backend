@@ -29,7 +29,7 @@ function clavesEscritas(texto, nombre) {
 }
 
 /**
- * Lee y valida. Devuelve `{ ok: true, panel, servidor, papel[, papelVaciaDesde] }` o `{ ok: false, motivo }`.
+ * Lee y valida. Devuelve `{ ok: true, panel, servidor, papel, papelVaciaDesde }` (`undefined` si no se declara) o `{ ok: false, motivo }`.
  * Nunca devuelve una sección vacía como buena, salvo `papel` con su vacío DECLARADO (SCRUM-1771c).
  */
 export function leerMarcadoresDeclarados(ruta = RUTA_DECLARADOS) {
@@ -50,7 +50,10 @@ export function leerMarcadoresDeclarados(ruta = RUTA_DECLARADOS) {
     ['servidor', 'ficheros', (v) => Number.isInteger(v) && v > 0, 'un entero MAYOR que 0 (una entrada que llega a 0 se BORRA)'],
     ['papel', 'constantes', (v) => typeof v === 'string' && v.trim() !== '', 'la condición en que se imprime, no vacía'],
   ];
-  const out = { ok: true };
+  // `papelVaciaDesde` nace aquí, con su NOMBRE: el censo de suelos (SCRUM-1179-B) sólo ve las
+  // propiedades del literal que se devuelve, y una clave calculada le dejaba `r.papelVaciaDesde`
+  // como «no la fabrica nunca» (SCRUM-1771c, relevo jv-j1fx). `undefined` = vacío NO declarado.
+  const out = { ok: true, papelVaciaDesde: undefined };
   for (const [seccion, bloque, valido, debeSer] of secciones) {
     const obj = json?.[seccion]?.[bloque];
     if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
@@ -83,7 +86,7 @@ export function leerMarcadoresDeclarados(ruta = RUTA_DECLARADOS) {
       }
     }
     out[seccion] = Object.freeze({ ...obj });
-    if (vaciaDesde !== undefined) out[`${seccion}VaciaDesde`] = vaciaDesde;
+    if (vaciaDesde !== undefined) out.papelVaciaDesde = vaciaDesde;   // sólo `papel` puede declararlo
   }
   // Las repetidas, contadas sobre el texto: `ficheros` aparece dos veces (panel y servidor), así
   // que se trocea por sección antes de buscar el bloque.
