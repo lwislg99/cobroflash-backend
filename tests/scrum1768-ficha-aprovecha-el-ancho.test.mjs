@@ -64,14 +64,16 @@ const esRail = (n) => n.tagName === 'ASIDE' && tiene(n, 'detail-rail');
 const esElTrabajo = (n) => n.dataset && n.dataset.seccion === 'el-trabajo';
 const dentroDe = (n, padre) => { for (let p = n; p; p = p.parentNode) if (p === padre) return true; return false; };
 
-test('① admin con importe aceptado: la lateral es rail → «+ Nuevo presupuesto» → «El trabajo»', async () => {
+// SCRUM-1768 vuelta 2 (20-nov, c.22113): «El trabajo» vuelve a la columna principal como pestaña
+// (tests/scrum1768b-ficha-pestanas.test.mjs ⑥). La lateral se queda con el contexto: rail + botón.
+test('① admin con importe aceptado: la lateral es rail → «+ Nuevo presupuesto»', async () => {
   const f = await ficha(base());
   assert.ok(f.cuerpo, 'CIEGO: no hay rejilla .detail-cuerpo');
   assert.ok(f.lateral, 'la ficha no tiene columna lateral');
   assert.equal(f.lateral.parentNode, f.cuerpo, 'la lateral es columna de la rejilla');
   assert.ok(tiene(f.cuerpo, 'detail-cuerpo--con-rail'), 'la rejilla es de dos columnas');
   assert.deepEqual(f.hijos.map((n) => (esRail(n) ? 'rail' : n === f.boton ? 'presupuesto' : esElTrabajo(n) ? 'el-trabajo' : n.tagName)),
-    ['rail', 'presupuesto', 'el-trabajo']);
+    ['rail', 'presupuesto']);
 });
 
 test('① «+ Nuevo presupuesto» ya no vive en la barra de Albaranes (donde el fundador no lo encontraba)', async () => {
@@ -93,7 +95,7 @@ test('③ operario (sin importe aceptado): la misma lateral, sin el botón', asy
   const f = await ficha(base({ totalAceptado: null, totalCobrado: null, quote: null }), 'tecnico');
   assert.ok(f.lateral, 'la ficha del operario no tiene columna lateral');
   assert.equal(f.boton, undefined);
-  assert.deepEqual(f.hijos.map((n) => (esRail(n) ? 'rail' : esElTrabajo(n) ? 'el-trabajo' : n.tagName)), ['rail', 'el-trabajo']);
+  assert.deepEqual(f.hijos.map((n) => (esRail(n) ? 'rail' : esElTrabajo(n) ? 'el-trabajo' : n.tagName)), ['rail']);
 });
 
 // ── ④ el CSS ─────────────────────────────────────────────────────────────────────────────────────────
@@ -136,10 +138,12 @@ test('④ la ficha deja de centrarse: ancho tope 1680 y pegada a la izquierda', 
   assert.match(sin, /\.detail-page--trabajo \{ max-width: 1680px; margin-inline: 0; \}/);
 });
 
-test('④ a 390 la lateral se disuelve y «El trabajo» vuelve al final', () => {
+// Vuelta 2: «El trabajo» ya no está en la lateral, así que su `order: 1` de móvil se retira (no queda
+// nada a lo que aplicarse). La lateral se sigue disolviendo a 390.
+test('④ a 390 la lateral se disuelve', () => {
   const m = movil(bloque(CSS));
   assert.match(m, /\.detail-cuerpo > \.detail-lateral \{ display: contents; \}/);
-  assert.match(m, /\.detail-lateral > \.detail-section \{ order: 1; \}/);
+  assert.doesNotMatch(m, /\.detail-lateral > \.detail-section/);
 });
 
 test('④ control positivo: sin la regla de móvil, ④ lo caza', () => {
@@ -152,6 +156,11 @@ test('④ todo el bloque cuelga de .detail-page--trabajo y sólo usa tokens', ()
   assert.ok(sels.length >= 8, `el parser ve las reglas del bloque (vio ${sels.length})`);
   assert.deepEqual(sels.filter((s) => !s.startsWith('.detail-page--trabajo')), []);
   const sin = sinComentarios(bloque(CSS));
-  assert.ok(/var\(--/.test(sin), 'control: el bloque usa tokens');
-  assert.deepEqual(sin.match(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/g) || [], []);
+  // Vuelta 2: al retirar las reglas de «El trabajo» en la lateral, el bloque se quedó sin colores (ni
+  // tokens ni crudos). El control deja de ser «usa tokens» y pasa a ser POSITIVO: un color crudo metido
+  // en el bloque, el detector lo caza.
+  const COLOR_CRUDO = /#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/g;
+  assert.ok(COLOR_CRUDO.test(sinComentarios(bloque(CSS).replace('max-width: 1680px;', 'max-width: 1680px; color: #fff;'))), 'control: el detector caza un color crudo');
+  COLOR_CRUDO.lastIndex = 0;
+  assert.deepEqual(sin.match(COLOR_CRUDO) || [], []);
 });

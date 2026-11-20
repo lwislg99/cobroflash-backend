@@ -61,3 +61,67 @@ enseñan la ficha, así que de ellas no se saca nada.
 ## Pendiente
 - El «me gusta» del fundador, sobre las capturas o en vivo: lo trae el orquestador y **S2 no cierra**.
 - Regla 42 tras el merge: repetir la sonda sin `LOCAL_DIR` y comparar con `final/despues.json`.
+- *(20-nov: la FASE 2, #3241, mergeó el 18 y está en vivo.)*
+
+---
+
+## VUELTA 2 · pestañas y el dinero arriba (S2 · 20-nov-2026 · rama `scrum-1768b-ficha-pestanas`)
+
+**Skill UI:** cargada (`yaqu-premium-ui` + `impeccable`, ANTES de dibujar. AB6: sin texto nuevo, ya que los rótulos
+de las pestañas son los `<h3>` que ya existían, y la tira se nombra con el título del Trabajo; sin componente nuevo,
+porque la tira es el control segmentado de la casa (`btn-secondary`/`btn-ghost`, el de `quotesTabs.js` y
+`cobrosView.js`) con el opt-in de 44 px `job-toolbar-btn-44`; anillo de foco `--ring`; sólo tokens; patrón ARIA de pestañas
+con flechas, Inicio y Fin).
+
+Decisiones (de la antecesora, aceptadas; c.22113):
+- **Pestañas = los h3 que ya existen**: Lo que falta · Partes · Albaranes · Facturas (si hay) · El trabajo. Sin
+  «Resumen». Por defecto se abre la que contiene una primaria **que se ve**; si ninguna, la primera. Hay que decir
+  «que se ve» porque Albaranes lleva siempre «Consolidar seleccionados» relleno dentro de una barra con
+  `display: none`. Las secciones NO se envuelven: siguen siendo hijas directas de la columna (el CSS de 1725 cuelga de
+  `.detail-cuerpo > div > .detail-section`) y sólo ganan `role="tabpanel"` y `hidden`. El h3 se aparta de la vista
+  (recorte), pero el lector de pantalla lo sigue leyendo y sigue en `innerText`.
+- **Sin rutas nuevas**: estado de la página. Un `refresh()` del mismo Trabajo vuelve a la pestaña abierta; volver
+  desde otra pantalla abre la de defecto. El hueco de «Lo que falta» abre la pestaña de su sección antes de
+  llevar a ella.
+- **El dinero**: la franja Aceptado/Cobrado (el MISMO nodo `sumSec`, ahora `.detail-head-dinero`) sube a la cabecera,
+  encima de las acciones; el CTA conserva `data-accion="cta"`. Sin franja (SCRUM-651/917i), las acciones suben solas
+  a la primera fila. Sin cabecera fija.
+- **El operario** ve las mismas pestañas menos «Lo que falta», que es cobro y su rol no ve.
+- «El trabajo» vuelve a la columna principal, la última. La lateral queda en rail + «+ Nuevo presupuesto». Se
+  retiran las dos reglas de «El trabajo» en la lateral del bloque CSS de 1768.
+
+De paso, y registrado: el censo de SCRUM-601 propaga «deriva del flag» POR NOMBRE dentro del fichero. La primera
+versión de la función, con nombres genéricos (`n`, `el`, `destino`, `clave`) y leyendo el `textContent` del h3,
+movía «factura creada» y «facturas creadas» de «a pelo» a «flag» sin cambiar una letra. Se arregló en la vista,
+con nombres propios (`pst…`) y la clave por `data-seccion` o por posición. El número del censo no se tocó.
+
+### Tests que CAMBIAN de exigencia (rojo-primero; las líneas, al orquestador ANTES del push)
+- `tests/scrum1768-ficha-aprovecha-el-ancho.test.mjs` ① l.67-78: la lateral es `['rail','presupuesto']` (antes
+  `+ 'el-trabajo'`) · ③ l.98: `['rail']` · ④ l.141-147: a 390 ya no existe `.detail-lateral > .detail-section`
+  (`doesNotMatch`) · ④ l.159-165: el control «usa tokens» pasa a control POSITIVO (un color crudo inyectado se caza),
+  porque el bloque se quedó sin colores.
+- `tests/scrum320-que-falta-para-cobrar.test.mjs` l.191-192: el resumen se monta con
+  `head.insertBefore(sumSec, headRight);` (antes `body.appendChild(sumSec);`).
+- `tests/scrum1740-albaran-desde-parte-firmado.test.mjs` l.107-112: `ficha()` abre la pestaña «Albaranes» antes de
+  contar los «+ Nuevo albarán» a la vista. Sin esto, los «sale UNA vez» pasaban porque la pestaña estaba cerrada, no
+  por la deduplicación.
+- `scrum1190b` no cambia.
+- Nuevo: `tests/scrum1768b-ficha-pestanas.test.mjs` (13 tests, ⑤-⑪). Rojo-primero sobre `b0b7cf997`: 12 en rojo, y
+  uno (⑦ «se abre la primera») pasaba EN VACÍO con cero pestañas: se le puso suelo antes de construir.
+
+### Evidencias
+- Huella de función (`evidencias/SCRUM-1768/prod-1768b-ficha-pestanas.mjs` con `comparar-huella.mjs`; la sonda
+  fotografía la vista real y mide la huella con los paneles desplegados). «Antes» = yaqu.app build 0b8b9eda; «después»
+  = el mismo build sirviendo `jobDetailView.js` y `styles.css` de la rama. Trabajos 77 y 76 × 390/1280/1920 ×
+  operario/admin: **12/12 IDÉNTICAS**, 2.002 palabras, desbordeX 0, 0 cajas fuera, 0 errores
+  (`evidencias/SCRUM-1768/1768b/huella.txt`). Control positivo: quitando «+ Nuevo presupuesto» de una ficha de
+  «después», sale DISTINTA y devuelve 1.
+- Alto de página: 77 admin a 1280 pasa de 1297 a 941 px, y 76 admin a 390 de 2894 a 1093.
+- Cajas (`evidencias/SCRUM-1768/medir-1768b-cabecera.mjs`): a 1280 el título mide 551 px y, a su derecha, el dinero
+  409 px con las acciones debajo; sin franja, las acciones van en la primera fila. Pestañas de 44 px. A 390 se apila
+  título → dinero → acciones; el rail sigue arriba (SCRUM-318) y la tira ocupa 2 filas.
+- Capturas (fuera de git, A8): `D:\MILLONARIO\cobroFlash\capturas\SCRUM-1768b\{antes,despues}-ficha-<id>-<papel>-<ancho>.png` (24).
+
+### Pendiente (vuelta 2)
+- El «me gusta» del fundador: lo trae el orquestador, y **S2 no cierra**.
+- Regla 42 tras el merge: repetir la sonda sin `LOCAL_DIR`, comparar con `1768b/despues.json` y confirmar el build en vivo.

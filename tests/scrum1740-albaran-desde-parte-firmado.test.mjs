@@ -104,6 +104,12 @@ async function ficha(job, rol) {
   assert.equal(r.error, null, `SUELO: la ficha no monta (${r.error && r.error.message})`);
   await respirar(20);
   const doc = banco.ctx.document;
+  // SCRUM-1768 (vuelta 2) · la barra de documentos vive en la pestaña «Albaranes». Se abre, como haría el
+  // profesional, para que «a la vista» mida la deduplicación cabecera + barra y no una pestaña cerrada
+  // (con ella cerrada, «sale UNA vez» pasaría aunque la barra repitiera el botón).
+  const pestanaAlbaranes = todos(doc.body).find((n) => n.tagName === 'BUTTON' && n.getAttribute && n.getAttribute('role') === 'tab' && texto(n) === 'Albaranes');
+  assert.ok(pestanaAlbaranes, 'SUELO: la ficha tiene la pestaña «Albaranes»');
+  pestanaAlbaranes.click();
   const botonesNuevo = () => todos(doc.body).filter((n) => n.tagName === 'BUTTON' && texto(n) === '+ Nuevo albarán');
   return { banco, doc, peticiones, botonesNuevo };
 }

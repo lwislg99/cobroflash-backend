@@ -48,6 +48,109 @@ function mensajeDeFallo(rotulo, err) {
   const detalle = mensajeParaPersona(err, '');
   return detalle ? rotulo + ': ' + detalle : rotulo;
 }
+
+// ── S2 · SCRUM-1768 (vuelta 2, c.22113) · LA FICHA DEL TRABAJO, POR PESTAÑAS ─────────────────────────
+//
+// Las pestañas SON las secciones que ya existen (Lo que falta · Partes · Albaranes · Facturas · El trabajo):
+// el rótulo de cada una es el `<h3>` de su sección, así que no hay ni un texto nuevo (regla 39), y una
+// sección que el rol no ve no se pinta y no tiene pestaña. Las secciones NO se envuelven: siguen siendo
+// hijas directas de la columna (el CSS de SCRUM-1725 cuelga de `.detail-cuerpo > div > .detail-section`);
+// sólo ganan `role="tabpanel"` y `hidden`. Sin rutas nuevas: es estado de la página.
+//
+// `pestanaDeLaFicha` recuerda la abierta ({ jobId, clave }) para que un `refresh()` del mismo Trabajo
+// vuelva a ella; `abrirSeccionDeLaFicha` lo usan los huecos de «Lo que falta» antes de llevar a su sección.
+let pestanaDeLaFicha = null;
+let abrirSeccionDeLaFicha = null;
+
+// ⚠️ NOMBRES PROPIOS DENTRO DE ESTA FUNCIÓN (`pst…`), y no `n`, `el`, `destino` o `clave`: el censo de
+// SCRUM-601 propaga «deriva del flag» POR NOMBRE dentro del fichero, y leer el `textContent` de un h3 con
+// nombres genéricos contagiaba a toasts de facturación que no tienen nada que ver (medido: «factura
+// creada» pasaba de «a pelo» a «flag» sin cambiar una letra). La clave de cada pestaña tampoco sale del
+// texto: es su `data-seccion` o su posición.
+function montarPestanasDeLaFicha(pstColumna, pstJobId, pstTitulo, pstRecordada) {
+  abrirSeccionDeLaFicha = null;
+  const pstTiene = (pstNodo, pstClase) => String((pstNodo && pstNodo.className) || '').split(/\s+/).includes(pstClase);
+  const pstH3De = (pstSec) => [...pstSec.children].find((pstH) => pstH.tagName === 'H3' && pstTiene(pstH, 'detail-section-title'));
+  const pstPaneles = [...pstColumna.children].filter((pstSec) => pstSec.tagName && pstTiene(pstSec, 'detail-section') && pstH3De(pstSec));
+  if (pstPaneles.length < 2) return null;
+  const pstClaves = pstPaneles.map((pstSec, pstI) => (pstSec.dataset && pstSec.dataset.seccion) || `#${pstI}`);
+
+  const pstTira = document.createElement('div');
+  pstTira.className = 'detail-pestanas';
+  pstTira.setAttribute('role', 'tablist');
+  // Se nombra con el título del Trabajo, que ya está en pantalla: ni un rótulo nuevo para el lector.
+  if (pstTitulo) {
+    pstTitulo.id = pstTitulo.id || 'ficha-trabajo-titulo';
+    pstTira.setAttribute('aria-labelledby', pstTitulo.id);
+  }
+  const pstBotones = pstPaneles.map((pstSec, pstI) => {
+    const pstBoton = document.createElement('button');
+    pstBoton.type = 'button';
+    pstBoton.id = `ficha-pestana-${pstI}`;
+    pstBoton.setAttribute('role', 'tab');
+    pstBoton.setAttribute('aria-controls', `ficha-panel-${pstI}`);
+    // El rótulo ES el h3 de la sección (regla 39: ni un texto nuevo).
+    pstBoton.textContent = String(pstH3De(pstSec).textContent || '').trim();
+    pstSec.id = `ficha-panel-${pstI}`;
+    pstSec.setAttribute('role', 'tabpanel');
+    pstSec.setAttribute('aria-labelledby', pstBoton.id);
+    pstTira.appendChild(pstBoton);
+    return pstBoton;
+  });
+
+  const pstAbrir = (pstCual, pstConFoco) => {
+    pstBotones.forEach((pstBoton, pstK) => {
+      const pstSi = pstK === pstCual;
+      // El control segmentado de la casa (quotesTabs, cobrosView): la elegida en relleno, el resto
+      // fantasma; `job-toolbar-btn-44` es el opt-in de 44 px de la ficha (SCRUM-962/1172).
+      pstBoton.className = 'btn-sm job-toolbar-btn-44 detail-pestana ' + (pstSi ? 'btn-secondary' : 'btn-ghost');
+      pstBoton.setAttribute('aria-selected', pstSi ? 'true' : 'false');
+      pstBoton.setAttribute('tabindex', pstSi ? '0' : '-1');
+      pstPaneles[pstK].hidden = !pstSi;
+    });
+    pestanaDeLaFicha = { jobId: pstJobId, pestana: pstClaves[pstCual] };
+    if (pstConFoco && pstBotones[pstCual].focus) pstBotones[pstCual].focus();
+  };
+  pstBotones.forEach((pstBoton, pstI) => pstBoton.addEventListener('click', () => pstAbrir(pstI, false)));
+  // Teclado del patrón ARIA de pestañas: flechas, Inicio y Fin mueven y abren.
+  pstTira.addEventListener('keydown', (pstEv) => {
+    const pstAhora = pstBotones.findIndex((pstBoton) => pstBoton.getAttribute('aria-selected') === 'true');
+    const pstTotal = pstBotones.length;
+    const pstTecla = pstEv && pstEv.key;
+    let pstA = -1;
+    if (pstTecla === 'ArrowRight') pstA = (pstAhora + 1) % pstTotal;
+    else if (pstTecla === 'ArrowLeft') pstA = (pstAhora - 1 + pstTotal) % pstTotal;
+    else if (pstTecla === 'Home') pstA = 0;
+    else if (pstTecla === 'End') pstA = pstTotal - 1;
+    if (pstA < 0) return;
+    if (pstEv.preventDefault) pstEv.preventDefault();
+    pstAbrir(pstA, true);
+  });
+
+  // Cuál se abre: la que estaba (si se repinta este Trabajo) · la que contiene la primaria · la primera.
+  // «Contiene la primaria» = una `.btn-primary` QUE SE VE: Albaranes lleva siempre «Consolidar
+  // seleccionados» relleno dentro de una barra con `display: none`, y ésa no es la primaria de nadie.
+  const pstSeVe = (pstDesde, pstHasta) => {
+    for (let pstN = pstDesde; pstN && pstN !== pstHasta; pstN = pstN.parentNode) {
+      if (pstN.hidden || (pstN.style && (pstN.style.display === 'none' || /(^|;)\s*display\s*:\s*none/.test(pstN.style.cssText || '')))) return false;
+    }
+    return true;
+  };
+  const pstConPrimaria = (pstSec) => (pstSec.querySelectorAll ? [...pstSec.querySelectorAll('.btn-primary')] : [])
+    .some((pstBoton) => pstSeVe(pstBoton, pstSec));
+  let pstInicial = pstRecordada && pstRecordada.jobId === pstJobId ? pstClaves.indexOf(pstRecordada.pestana) : -1;
+  if (pstInicial < 0) pstInicial = pstPaneles.findIndex(pstConPrimaria);
+  if (pstInicial < 0) pstInicial = 0;
+  pstColumna.insertBefore(pstTira, pstColumna.firstChild);
+  pstAbrir(pstInicial, false);
+
+  abrirSeccionDeLaFicha = (pstObjetivo) => {
+    const pstI = pstPaneles.findIndex((pstSec) => pstSec === pstObjetivo || (pstSec.contains && pstSec.contains(pstObjetivo)));
+    if (pstI >= 0) pstAbrir(pstI, false);
+  };
+  return pstTira;
+}
+
 /**
  * SCRUM-318 (G3) · pinta UN bloque del rail a partir de los datos que devuelve su constructor.
  *
@@ -338,6 +441,8 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
       // trabajo que luego se factura.
       const destino = h.accion === 'registrar-cobro' ? '[data-seccion="facturas"]' : '[data-seccion="albaranes"]';
       const el = document.querySelector(destino);
+      // SCRUM-1768 (vuelta 2) · la sección vive en su pestaña: se abre ANTES de llevar a ella.
+      if (el && typeof abrirSeccionDeLaFicha === 'function') abrirSeccionDeLaFicha(el);
       if (!el || !el.scrollIntoView) return;
       // AB6: movimiento sobrio y respetando la preferencia del sistema.
       const quieto = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -621,6 +726,10 @@ function lineasDeQuoteParaAlbaran(lines) {
  *   existe — no crea nada por su cuenta ni cambia lo que se pinta.
  */
 async function renderJobDetailView(container, jobId, altaAlbaran) {
+  // SCRUM-1768 (vuelta 2) · la pestaña abierta se conserva sólo si se repinta ESTA ficha (un `refresh()`
+  // tras guardar algo): el hueco todavía la enseña. Volver al Trabajo desde otra pantalla abre la de
+  // defecto, que es la que cuenta lo que toca hacer ahora.
+  const recordada = container.querySelector && container.querySelector('.detail-page--trabajo') ? pestanaDeLaFicha : null;
   container.innerHTML = '';
   const id = Number(jobId);
 
@@ -929,9 +1038,12 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // (la franja), 318/363 de si hay eje para derivar (el foco).
   const hayEje = aceptado > 0;
   if (job.totalAceptado != null) {
-    // SCRUM-917i · el resumen se cuelga AQUÍ: sólo existe si tiene franja. Entre su creación y este
-    // punto no se añade nada más al cuerpo, así que su sitio en la pantalla es el mismo de antes.
-    body.appendChild(sumSec);
+    // SCRUM-917i · el resumen se cuelga AQUÍ: sólo existe si tiene franja.
+    // SCRUM-1768 (vuelta 2, c.22113) · …y se cuelga en la CABECERA, encima de las acciones: el dinero
+    // es lo primero que se lee de un Trabajo (AB1), no una tarjeta más entre las pestañas. Es el MISMO
+    // nodo con la misma franja dentro; sólo cambia dónde se cuelga.
+    sumSec.classList.add('detail-head-dinero');
+    head.insertBefore(sumSec, headRight);
     const franja = document.createElement('div');
     franja.className = 'detail-dinero';
 
@@ -2843,9 +2955,12 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     botonOtroPresupuesto.hidden = newAlbRow.hidden; // Trabajo cerrado: oculto, como su barra (SCRUM-1190)
     lateral.appendChild(botonOtroPresupuesto);
   }
-  lateral.appendChild(bloqueElTrabajo);
+  // SCRUM-1768 (vuelta 2) · «El trabajo» vuelve a la columna principal, la ÚLTIMA (tras Facturas): es una
+  // pestaña más. Se mueve el mismo nodo; la lateral se queda con el contexto (rail + presupuesto).
+  body.appendChild(bloqueElTrabajo);
   cuerpo.appendChild(lateral);
   cuerpo.classList.add('detail-cuerpo--con-rail');
+  montarPestanasDeLaFicha(body, job.id, h2, recordada);
 
   // ── SCRUM-606 (ALB-01) · SE LLEGA DESDE EL BUSCADOR DE PRESUPUESTO, CON LA HOJA ABIERTA ────
   //
