@@ -302,3 +302,43 @@ Tramos 1-5 de 15 (`tanda-entera-por-tramos.mjs`): `tests/scrum1500-el-cotejo-con
 
 El parte se queda `firmado`; «facturado» es `invoiceId` no nulo (sin cambio de máster; la Parte L sigue `borrador | firmado`). En `facturaDesdeParte.ts`: se emite primero y se enlaza después con `updateMany` where `{ id, merchantId, estado: 'firmado', invoiceId: null }` → `{ invoiceId }`; si `count ≠ 1`, `throw` y la tx deshace factura y número. La precomprobación pasa de `estado === 'facturado'` a `invoiceId != null`. Test: caso feliz y presupuesto ya facturado esperan `firmado` + `invoiceId`; mutación 2 = quitar la escritura de `invoiceId`; mutación 3 = quitar la precomprobación (la de quitar `invoiceId: null` del WHERE solo la ve la simultánea). Verificado: `tsc -p .` 0; 10 ficheros (1780c, 1500, 523d, 347, 1185, 525d, 222, 719, 836, 1610d) = 135 casos, 132 pasan, 3 saltados, 0 fallan.
 **NO HECHO (traspaso):** ① la simultánea va `skip` declarado: falta escribirla contra el Postgres desechable de la casa (gate de scrum814 o el que toque) — el banco en memoria no deshace la tx; ② las mutaciones NO se han corrido con el meta-guard (lo paré a los 600 s y dejó MUTADO `src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts`, carril J2, una línea `decisionChannel: 'pendiente_de_confirmar'` en la línea 487: NO está en el commit; hay que restaurarlo desde HEAD en `cobroflash-jv-j1ge` antes de nada); ③ tramos 6-15 de la suite y `guards:entrada` sobre esto; ④ el empujón: `git push origin HEAD:scrum-1780c-factura-desde-parte`.
+
+## SCRUM-1780e · Tercer relevo de 1780c: la simultánea bajo Postgres, las mutaciones sobre B1 y el empujón (sesión jv-j1gh, J1)
+
+**Medido contra:** `origin/main` = `fea1c00078654d8d617af055de94f2b627df07ce` · 2026-11-20T19:07:02Z (cabecera `Date:` de `gh api -i zen`)
+A9: sin fallo que generalice — la lista de la dirigida la armé con un `sed` que casó también la cadena vacía y añadió un argumento `tests/` a secas: dio un «not ok 1 - tests» que no era de ningún test; lo separé por su error (`MODULE_NOT_FOUND` sobre la carpeta) y por la población (32 ficheros, 356 casos), que es lo que ya pide A3
+Mutaciones: catálogo → `tests/scrum1780c-factura-desde-parte.test.mjs`
+
+Los tres relevos de 1780c, en orden: **jv-j1gd** construyó la ruta (tramo 1780c, commit local `323390f35`); **jv-j1ge** recongeló 523d, arregló 347/1185/222/525d, paró por 1500b y construyó **B1** (tramo 1780d, commit local `f8759325c932e06d31d69cca80368d3fa882835c`); **jv-j1gh** (este tramo) parte de ese commit, que ya contiene `origin/main` `fea1c000` (el `git merge origin/main` sale «Already up to date»), y no trae el fichero mutado sin commitear que quedó en el árbol de jv-j1ge (`whatsappIncoming.routes.ts`): ese fichero no está en ningún commit de esta rama.
+
+**B1 (SCRUM-1780 c.22252):** el parte se queda `firmado` (Parte L intacta) y «facturado» es `invoiceId` no nulo. Se emite y después se enlaza con `updateMany` sobre `{ id, merchantId, estado: 'firmado', invoiceId: null }`; si no toca exactamente una fila, `throw` y la tx deshace factura y número.
+
+### ① La simultánea, contra Postgres: `tests/scrum1780c-simultanea-postgres.test.mjs`
+
+Gateada por `LIBRO_PG_URL` (loopback y base `*_test`, el mismo portón que `scrum1150c`; con una URL que no lo cumpla el fichero lanza y no toca nada). **Dónde corre:** `.github/workflows/ci.yml` pone `LIBRO_PG_URL` en el paso «Tests (incluidos los de banco desechable)» del job `test` («build + tests (con banco desechable)»), con el esquema sacado de `prisma/schema.prisma`; ese es el único check que exige el ruleset de `main` (`gh api repos/…/rules/branches/main`, leído el 20-nov). **En esta máquina NO corre:** no hay ningún Postgres (ni puerto 5432/55432 escuchando, ni `psql`, ni docker): sale SKIP con su motivo declarado. Su verde lo dirá el run del obligatorio, no este registro.
+
+Cómo provoca la carrera, sin esperarla: una tercera transacción bloquea la fila del parte con `FOR UPDATE`; las dos peticiones leen el parte sin factura y entran en su tx; el retén no se suelta hasta que `pg_blocking_pids` ve a las DOS esperando detrás de él (una en la fila del parte, la otra en el cerrojo de serie detrás de la primera). Si no llegan a esperar las dos, el caso cae diciendo que no hubo carrera. Exige: un 201 y un 409 `parte_ya_facturado`, UNA factura del comercio, el parte `firmado` con el `invoiceId` de la ganadora, y el contador de serie subido exactamente uno (`resolveSeriesSeq` de antes + 1).
+
+En el banco en memoria, el caso `skip` de jv-j1ge se sustituye por su mitad determinista, **«lectura vieja»**: el parte se lee sin factura y, al enlazar, ya tiene la de otra petición. Solo lo para el WHERE del enlace (la precomprobación no lo ve).
+
+### ② Mutaciones sobre B1, una a una con `aplicarUna` (no el censo entero)
+
+Driver de una vez: importa `correr` y `aplicarUna` de `scripts/meta-guard-mutaciones.mjs` (el script solo arranca si se ejecuta directamente) y aplica una declaración por proceso. Pasada limpia: 11 pasan, 0 caen, 0 saltados. `git status` después de cada una: solo mis dos ficheros de test.
+
+| mutación (declarada en `MUTACIONES_QUE_ME_TUMBAN`) | veredicto | casos que caen |
+|---|---|---|
+| quitar `merchantId` de la búsqueda del parte | MUERE | comercio B → 404 |
+| quitar la escritura de `invoiceId` (`data: {}`) | MUERE | caso feliz · doble secuencial · trabajo con presupuesto ya facturado |
+| quitar la precomprobación `invoiceId != null` | MUERE | doble secuencial · factura ya enlazada |
+| quitar `invoiceId: null` del WHERE del enlace (nueva) | MUERE | lectura vieja |
+
+Quitar `merchantId` del WHERE del **enlace** no se declara: el `id` ya viene de una búsqueda con tenencia, así que esa mutación no cambia el comportamiento y saldría muda por construcción.
+
+### ③ Verificado
+
+- `node_modules` propio (`npm run topologia`), `prisma generate` en él y guard del cliente ✔; `tsc -p .` con tipos, salida 0.
+- Los dos ficheros de 1780c: 12 casos, 11 pasan, 1 saltado (la simultánea, sin `LIBRO_PG_URL`).
+- Dirigida del encargo (32 ficheros: `scrum1780c-*`, 1500, 523d, 347, 1185, 222, 525d, 1027, 289b, 346, 207×3, `emission`, `albaran`, 836, 700, 710b, 719, 1294, 267, 273, 854, 391, 475×6, 1310b): 356 casos, 349 pasan, 7 saltados (gateados), 0 fallan.
+- `censo:mudez --escribir`: sin cambios en `tests/_veredicto-mudez.json`.
+
+**No medido:** la simultánea contra Postgres (aquí no hay base; la corre el obligatorio); ninguna base del proyecto (no toqué ninguna); ninguna pantalla. **La ruta sigue sin montar:** las tres líneas de `partes.routes.ts` (tramo 1780c ③) son de S1 (Luis).

@@ -9,10 +9,12 @@
 // en un router DE PRUEBA con el mismo `requireRole('admin')` que dice ese montaje. Este test sigue
 // verde con la ruta sin montar: que la ruta real exista lo tiene que vigilar el PR de S1.
 //
-// 🔴 LÍMITES DEL BANCO (dichos en el propio banco): no deshace una tx que lanza y no aísla. Por eso
-// la reclamación del parte va ANTES de pedir número: la segunda petición simultánea sale de la tx
-// antes de emitir, y el banco puede contar «una factura» sin necesitar rollback. Contra Postgres de
-// verdad NO se ha medido la carrera (no hay base desechable en esta máquina).
+// 🔴 LÍMITES DEL BANCO (dichos en el propio banco): no deshace una tx que lanza y no aísla. Con B1
+// (SCRUM-1780 c.22252) se EMITE primero y se ENLAZA después; la segunda petición simultánea la deshace
+// la tx de Postgres, y eso este banco no lo puede mostrar. La carrera de verdad (un 201, un 409, UNA
+// factura, contador +1) vive en `tests/scrum1780c-simultanea-postgres.test.mjs`, gateada por el
+// Postgres desechable (`LIBRO_PG_URL`). Aquí queda su mitad determinista: la LECTURA VIEJA (el parte
+// se leyó sin factura y, al enlazar, ya la tenía), que es lo único que para el WHERE del enlace.
 //
 // La tabla `parteTrabajo` no la gobierna el banco (es de S3 y no se toca): la pone este fichero,
 // con el evaluador de `where` de la casa, envolviendo al `prisma` del banco.
@@ -48,12 +50,28 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: 'if (false) return',
     cae: 'firmado con factura ya enlazada → 409 parte_ya_facturado',
   },
+  {
+    // Sin `invoiceId: null` en el WHERE del enlace, una petición que leyó el parte ANTES de que otra
+    // lo enlazara le pisa el enlace con una segunda factura. Lo ve la lectura vieja de aquí y, contra
+    // Postgres, `scrum1780c-simultanea-postgres` (gateado).
+    fichero: 'src/modules/invoicing/domain/facturaDesdeParte.ts',
+    de: "where: { id: parte.id, merchantId, estado: 'firmado', invoiceId: null },",
+    a: "where: { id: parte.id, merchantId, estado: 'firmado' },",
+    cae: 'lectura vieja → 409 parte_ya_facturado y el enlace de la otra intacto',
+  },
 ];
 
 // ── LA TABLA DEL PARTE, envolviendo al prisma del banco ────────────────────────────────────
 let partes = [];
+// Ids cuyo `findFirst` devuelve la foto de ANTES de que otra petición los enlazara (READ COMMITTED:
+// la lectura previa a la tx no ve lo que otra confirma después). La fila de la tabla sí lo lleva.
+let lecturaVieja = new Set();
 const modeloParte = {
-  findFirst: async (a) => { const f = partes.find((x) => casa(x, a?.where)); return f ? { ...f } : null; },
+  findFirst: async (a) => {
+    const f = partes.find((x) => casa(x, a?.where));
+    if (!f) return null;
+    return lecturaVieja.has(f.id) ? { ...f, invoiceId: null } : { ...f };
+  },
   updateMany: async (a) => {
     const filas = partes.filter((x) => casa(x, a?.where));
     for (const f of filas) Object.assign(f, a.data ?? {});
@@ -123,6 +141,7 @@ const facturas = () => banco.tablas.invoice;
 test.beforeEach(() => {
   reiniciar();
   partes = [];
+  lecturaVieja = new Set();
   banco.tablas.customer.push({ id: CLIENTE_ES, merchantId: M_ES, name: 'Clienta de Lugo', legalName: null, taxId: null, email: null, phone: null });
   const es = banco.tablas.merchant.find((m) => m.id === M_ES);
   es.llevaLibrosPorSii = false; // como scrum1330: sin SII declarado «No», el flag ON sigue en 'receipt'
@@ -201,21 +220,22 @@ test('SCRUM-1780c · doble facturación secuencial → 409 parte_ya_facturado y 
   assert.equal(facturas().length, 1);
 });
 
-// B1 (SCRUM-1780): el enlace va DESPUÉS de emitir y la segunda petición la deshace la tx de Postgres.
-// Este banco no deshace ni aísla: aquí la simultánea no se puede probar. Va bajo el Postgres
-// desechable de la casa (pendiente del relevo, traspaso en SCRUM-1780); aquí queda el salto declarado.
-test('SCRUM-1780c · doble facturación simultánea → un 201 y un 409, UNA factura, contador +1', { skip: 'B1: se mide contra Postgres desechable (pendiente, SCRUM-1780); el banco en memoria no deshace la tx' }, async () => {
-  const p = parte();
-  const antes = banco.tablas.merchant.find((m) => m.id === M_ES).nextInvoiceNumber;
-  const rs = await Promise.all([invocar({ id: p.id }), invocar({ id: p.id })]);
-  assert.deepEqual(rs.map((r) => r.code).sort(), [201, 409]);
-  assert.deepEqual(rs.find((r) => r.code === 409).body, { error: 'parte_ya_facturado' });
-  assert.equal(facturas().length, 1);
-  assert.equal(banco.tablas.merchant.find((m) => m.id === M_ES).nextInvoiceNumber, antes + 1);
-  assert.equal(p.invoiceId, facturas()[0].id);
+// B1 (SCRUM-1780 c.22252): el enlace va DESPUÉS de emitir. La simultánea entera (un 201, un 409, UNA
+// factura, contador +1) solo la puede medir Postgres, porque este banco no deshace la tx: está en
+// `tests/scrum1780c-simultanea-postgres.test.mjs`. Aquí, la mitad determinista: esta petición leyó el
+// parte SIN factura y, cuando va a enlazar, otra ya lo ha enlazado. Solo el WHERE del enlace la para.
+test('SCRUM-1780c · lectura vieja → 409 parte_ya_facturado y el enlace de la otra intacto', async () => {
+  const p = parte({ invoiceId: 4242 });
+  lecturaVieja.add(p.id);
+  const r = await invocar({ id: p.id });
+  assert.deepEqual([r.code, r.body], [409, { error: 'parte_ya_facturado' }]);
+  assert.equal(p.invoiceId, 4242, 'el enlace de la petición que ganó no se pisa');
+  assert.equal(p.estado, 'firmado');
+  // El banco no deshace la tx (dicho arriba): la factura que aquí queda la deshace Postgres, y eso
+  // lo mide el fichero gateado. Aquí solo se exige que la ruta lo haya visto.
 });
 
-test('SCRUM-1780c · firmado con factura ya enlazada → 409 parte_ya_facturado (lo para el WHERE de la tx)', async () => {
+test('SCRUM-1780c · firmado con factura ya enlazada → 409 parte_ya_facturado (lo para la precomprobación)', async () => {
   const p = parte({ invoiceId: 4242 });
   const r = await invocar({ id: p.id });
   assert.deepEqual([r.code, r.body], [409, { error: 'parte_ya_facturado' }]);
