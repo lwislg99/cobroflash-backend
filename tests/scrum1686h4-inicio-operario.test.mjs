@@ -139,9 +139,15 @@ test('SCRUM-1686 H4 ⑤ · si los trabajos no cargan, NO dice «Nada para hoy.»
   assert.ok(!t.includes(VACIO) && !/trabajos?/.test(t), `🔴 con la carga caída el bloque afirma algo: «${t}».`);
 });
 
-test('SCRUM-1686 H4 ⑥ · el admin no cambia: sin bloque de hoy y sin pedir /admin/jobs desde el Inicio', async () => {
+// SCRUM-1762c (20-nov-2026, lavado hallmark del Inicio ordenado por el fundador): «Para hoy» ARRIBA también
+// para el admin, con la MISMA franja y los MISMOS literales que el operario (y que la Lista). Antes ⑥ exigía
+// lo contrario. Sigue sin «Por cobrar» en la franja: el dinero del admin es la tarjeta de debajo.
+test('SCRUM-1686 H4 ⑥ · el admin también ve «Para hoy» arriba (SCRUM-1762c), con la misma franja y sin «Por cobrar»', async () => {
   const { porId, pedidas } = await montar('admin', LISTA);
   const bloque = porId('home-hoy');
-  assert.equal(bloque ? texto(bloque) : '', '', '🔴 el admin ve el bloque del operario.');
-  assert.deepEqual(pedidas, [], `🔴 el Inicio del admin pide /admin/jobs: ${JSON.stringify(pedidas)}.`);
+  const t = bloque ? texto(bloque) : '';
+  assert.match(t, /Para hoy/, `🔴 el Inicio del admin no tiene «Para hoy»: «${t}».`);
+  assert.match(t, /2 trabajos/, `🔴 «Para hoy» del admin no cuenta lo mismo que la Lista: «${t}».`);
+  assert.ok(!/Por cobrar/.test(t), `🔴 la franja del Inicio trae «Por cobrar»: «${t}».`);
+  assert.deepEqual(pedidas, ['jobs'], `🔴 el Inicio del admin no pide su lista una vez: ${JSON.stringify(pedidas)}.`);
 });

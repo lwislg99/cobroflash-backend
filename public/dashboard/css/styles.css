@@ -2938,7 +2938,8 @@ tr.dragging { opacity: .5; background: #f0fdf4; }
 
 /* ── Home: saludo + etiquetas de sección (impeccable critique) ─ */
 .home-greeting { margin-bottom: 20px; }
-.home-greeting h1 { font-size: clamp(1.4rem, 3.5vw, 1.8rem); font-weight: 800; color: var(--ink); letter-spacing: -.02em; margin: 0 0 2px; }
+.home-greeting h1,
+.home-greeting .home-greeting-titulo { font-size: clamp(1.4rem, 3.5vw, 1.8rem); font-weight: 800; color: var(--ink); letter-spacing: -.02em; margin: 0 0 2px; }
 .home-greeting p { font-size: 14px; color: var(--muted); margin: 0; }
 .home-section-label {
   font-size: 11.5px; font-weight: 700; color: var(--muted);
@@ -2973,8 +2974,7 @@ tr.dragging { opacity: .5; background: #f0fdf4; }
 .home-hero-card {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 4px solid var(--brand);
+  border: 1px solid var(--border); /* SCRUM-1762c: sin raya lateral de 4 px (prohibición de DESIGN/impeccable) */
   border-radius: var(--radius-lg);
   padding: 22px 24px;
   box-shadow: var(--shadow-sm);
@@ -6298,6 +6298,42 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
 .con-icono--telefono { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z'/%3E%3C/svg%3E"); }
 .con-icono--whatsapp { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/%3E%3C/svg%3E"); }
 /* S2: fin del bloque SCRUM-1762b */
+
+/* ════════════════════════════════════════════════════════════
+   S2 · SCRUM-1762c · LAVADO HALLMARK DEL INICIO (20-nov-2026)
+   Ropa y orden, no función nueva: ni texto ni color nuevos. Iconos del set del menú con la máquina
+   `con-icono` de SCRUM-1762b (máscara, currentColor).
+   ════════════════════════════════════════════════════════════ */
+.con-icono--presupuesto { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z'/%3E%3Cpolyline points='14 2 14 8 20 8'/%3E%3Cline x1='16' y1='13' x2='8' y2='13'/%3E%3Cline x1='16' y1='17' x2='8' y2='17'/%3E%3Cpolyline points='10 9 9 9 8 9'/%3E%3C/svg%3E"); }
+.con-icono--factura { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z'/%3E%3Cpolyline points='14 2 14 8 20 8'/%3E%3Cline x1='12' y1='18' x2='12' y2='12'/%3E%3Cline x1='9' y1='15' x2='15' y2='15'/%3E%3C/svg%3E"); }
+.con-icono--cobro { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='5' width='20' height='14' rx='2'/%3E%3Cpath d='M2 10h20'/%3E%3C/svg%3E"); }
+.con-icono--clientes { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2'/%3E%3Ccircle cx='9' cy='7' r='4'/%3E%3Cpath d='M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75'/%3E%3C/svg%3E"); }
+.con-icono--ajustes { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z'/%3E%3C/svg%3E"); }
+.con-icono--aviso { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z'/%3E%3Cpath d='M12 9v4M12 17h.01'/%3E%3C/svg%3E"); }
+
+/* Los tres iconos de «Acciones rápidas» a su tamaño de siempre (el emoji iba a 22 px). */
+.home-action-ico.con-icono { gap: 0; }
+.home-action-ico.con-icono::before { width: 22px; height: 22px; }
+/* El ✓ que sustituye al 🎉 dentro de la frase: en línea con el texto, no como bloque. */
+.home-hero-sub .home-hero-hecho { display: inline-flex; vertical-align: -2px; }
+.home-hero-sub .home-hero-hecho::before { width: 14px; height: 14px; }
+
+/* Aire entre los avisos de arriba (albarán sin cobertura, firmas, desalojo, trimestre) y lo que sigue:
+   iban pegados a la tarjeta del dinero. Vacíos no ocupan nada. */
+#home-firmas-pendientes:not(:empty),
+#home-desalojo:not(:empty),
+#home-precarga:not(:empty),
+#home-resumen-trimestre:not(:empty) { margin-bottom: 16px; }
+
+/* «Completa tu configuración», ahora la última del Inicio: el mismo aire que los bloques de encima. */
+#home-configuracion:not(:empty) { margin-top: 24px; }
+
+/* Aceptación sin nada enviado: guion neutro, como las celdas «no aplica» del pie (SCRUM-236). */
+.table td.equipo-actividad-sin-tasa,
+.table td.equipo-tasa-sin-envios { color: var(--neutral-400); }
+.table td.equipo-tasa-sin-envios { text-align: right; }
+/* S2: fin del bloque SCRUM-1762c */
+
 /* S2 · SCRUM-915c — «+ Nuevo presupuesto» en la fila del parte firmado (pestaña Partes de la ficha).
    Al lado del pill de estado; a 390 (cards) baja debajo sin desbordar la tarjeta. */
 .parte-fila-presupuesto { margin-left: 8px; white-space: nowrap; }
