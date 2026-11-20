@@ -1,0 +1,7 @@
+base limpia: pasados 4 · caídos 0
+MUERE (la caza) · public/dashboard/js/puertaSerie.js · SCRUM-1756j · los tres ficheros de J1 llevan 0 style= dentro de sus cadenas
+MUERE (la caza) · public/dashboard/css/styles.css · SCRUM-1756j · cada style= de main tiene su clase y su regla con las mismas declaraciones
+MUERE (la caza) · public/dashboard/css/styles.css · SCRUM-1756j · cada style= de main tiene su clase y su regla con las mismas declaraciones
+MUERE (la caza) · public/dashboard/js/invoiceDetailView.js · SCRUM-1756j · los display:none que enciende el guion siguen pudiendo encenderse
+CONTROL inocua: MUDA (bien)
+VEREDICTO: 4/4 cazadas · 0 no

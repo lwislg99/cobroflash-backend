@@ -764,9 +764,22 @@ _(Las dos filas del equipo: decisión del fundador del 1-oct-2026, literal «1-B
 > `buildVerifactuRegistrosXml()` (`verifactu.service.ts`) — MISMA fuente para el endpoint suelto y el
 > ZIP, cero divergencia posible; `GET /verifactu.xml` pasa a ser gate + llamada al servicio, mismo
 > comportamiento exacto. **Decisión del fundador — un XML por AÑO NATURAL que toque el rango pedido**
-> (no por el rango en sí): el registro RRSIF se organiza por ejercicio y la cadena de huellas es
-> anual — recortar por meses rompería el encadenamiento, mezclar años no representaría un registro
-> válido. **Fail-closed deliberado** (asimetría con los PDF del mismo ZIP, que sí toleran fallos
+> (no por el rango en sí). Es una decisión de PRODUCTO, no una exigencia de la norma: la Orden
+> HAC/1177/2024 solo pide que el sistema permita «exportar todos los registros de facturación
+> generados en un periodo» (art. 8.2), sin fijar qué periodo ni con qué calendario, y YaQu toma el
+> año natural porque es el periodo que manejan el profesional y su asesor. El corte no toca la
+> cadena: cada registro lleva dentro los datos y la huella del inmediatamente anterior (art. 7.a), y
+> la cadena es una sola por obligado y sistema desde su puesta en marcha (art. 7.b-c: «cada sistema
+> informático producirá una única cadena de registros de facturación»); no se reinicia por año, y
+> exportar un año no altera ningún registro. **El año de un registro es el de su fecha de expedición
+> en la zona del emisor**, la misma que imprime `FechaExpedicionFactura` (decisión A del fundador,
+> 19-nov-2026, SCRUM-1761 c.22126; el código la cumplirá con SCRUM-1761c: hasta entonces el filtro es
+> otro). *[Motivo sustituido el 19-nov-2026 por SCRUM-1770. Decía: «el registro RRSIF se organiza por
+> ejercicio y la cadena de huellas es anual — recortar por meses rompería el encadenamiento, mezclar
+> años no representaría un registro válido». Motivo del cambio: ni el RD 1007/2023 ni la Orden
+> HAC/1177/2024 conocen el «ejercicio» de un registro, y la cadena no es anual (Orden arts. 7.a-c y
+> 8.2, BOE leído el 18 y el 19-nov-2026; SCRUM-1761 c.22115 y SCRUM-1770a).]* **Fail-closed
+> deliberado** (asimetría con los PDF del mismo ZIP, que sí toleran fallos
 > parciales con aviso): si la generación del XML falla, el ZIP entero se aborta ANTES de la primera
 > cabecera — "mejor un error que un paquete que dice de más" (cita literal del fundador). El LEEME
 > nombra cada archivo real (`verifactu_AAAA.xml`) en vez de un booleano genérico. Verificado con el

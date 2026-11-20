@@ -93,6 +93,8 @@ con lo contrario en este mismo cambio, como pedía su propio mensaje.
 | M7 · no encolar se registra como un fallo | 4 |
 | M8 · no encola nunca | 12 |
 
+*19-nov-2026 (SCRUM-1765h): el guion `scrum1333/mutar.mjs` se retiró: sus mutaciones M1–M8 viven en el catálogo de `tests/scrum1333-una-factura-se-encola-una-vez.test.mjs`; sus salidas siguen en `docs/master/evidencias/scrum1333/`.*
+
 Las mutaciones se corrieron ANTES de añadir el test de Postgres: ese fichero no entra en ellas.
 
 ## La mitad con Postgres de verdad — y su límite

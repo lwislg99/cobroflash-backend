@@ -290,3 +290,211 @@ La fila nueva de c.22017 (paso 2). Excepción de carril firmada por el fundador 
 | (encargo) capturas 390/1280 idénticas entre main sin política y la rama con la CSP APLICADA, 0 `script-src-elem`, control distinto, banner de precios | `docs/master/evidencias/SCRUM-1756/j3ci-recorrido.salida.txt` (+ `.resultado.json`) |
 
 **NO MEDIDO:** la suite entera por tramos. Corrí los 43 ficheros que leen landing o precios (390 casos) y los guards que se nombran en el comentario de entrega de Jira. Tampoco he mirado el obligatorio, yaqu.app ni otros navegadores.
+
+## SCRUM-1756g · 18-nov: censo final de lo que bloquea el paso 3 de la CSP en el main de hoy (J3, solo medir)
+
+**Medido contra:** `origin/main` = `e37a7051f87b195ceeae4852c56a02bc0d218438` · 2026-11-18T23:45:53Z (hora de GitHub; sesión J3 `jv-j3cj`, por encargo del orquestador `cobroflash-backend-8a`; la rama sale de ese main y no toca `src/` ni `public/`)
+
+A9: aviso → cicatriz J3 «Saqué el dueño de cada fichero con la ÚLTIMA línea de `carriles.mjs de`, y para `teamView.js` esa línea era la de una excepción de S1: el censo lo daba sin carril; lo vi al leer la salida y lo medí aparte (J3).» — no se pudo comprobar: el censo es un guion de evidencias que corre a mano y ningún test lo ejecuta
+
+**Skill UI:** no aplica · solo docs: el tramo no cambia nada de `src/` ni de `public/`.
+
+**Qué mide.** Lo que queda en `src/**` + `public/**` (518 ficheros; fuera los 13 de `src/modules/messaging/**`, el correo: quedan 505) que, con `csp.ts` APLICADA (`script-src 'self'`, `style-src 'self'`), deja CSS sin pintar o un botón mudo: `<style`, `style="`, `<script>` sin `src` y `on*=`. Guion `evidencias/SCRUM-1756/1756g-censo.mjs.txt`; salida entera en `1756g-censo.txt`.
+
+- **Sonda 1, `git grep` por LÍNEA** (como la tabla original del 18-nov sobre `35153debf`): 68 ficheros con algún acierto.
+- **Sonda 2, análisis por OCURRENCIA** sobre los 475 ficheros de texto. Los TS/JS van por el AST de `typescript`, que separa cadena, comentario y código. El HTML va sin `<!-- -->` y con el cuerpo de `<script>` aparte, y el CSS sin `/* */`. Los `<script type="…json">` son datos y no se ejecutan: no cuentan. Salen 68 ficheros, 42 de ellos «vivos». **Los conjuntos de las dos sondas coinciden**: ningún fichero está en una y no en la otra.
+- **Controles:** una siembra fabricada por el guion (`public/siembra.html` y `src/siembra.ts`, con recuentos derivados de su texto) pasa por las dos sondas: CAZA 4/4. El fichero cero, con casi-aciertos (`<link>`, `<script src>`, `class="styles"`), da 0. **Con `--sin-siembra` el censo sale CIEGO, código 2**, no verde. Al acabar, `git status` está limpio.
+- **Navegador** (Chrome 157, página `data:` con las tres directivas de `csp.ts` en un `<meta>`): un `style="…"` y un `onclick="…"` metidos por `innerHTML` **no pintan y no corren**, con informes `style-src-attr` y `script-src-attr`. `elemento.style.x = …` (CSSOM) sí pinta. El control sin política pinta, corre y da 0 informes. Esto importa porque casi todo lo que queda está en cadenas que el panel mete por `innerHTML`.
+
+### 🔴 Lo que la tabla original no tenía
+
+**`public/dashboard/js/*.js`: 36 ficheros con `style="` dentro de las cadenas que pintan el panel.** Hoy son 880 ocurrencias, y 6 `on*=` en 5 de ellos. En `35153debf` ya había 36 ficheros con 856 líneas, y **ninguno estaba en la tabla**: su población fue, en la práctica, `*.ts` + `*.html`. Esto lo deduzco de las filas que tiene; la descripción no da el glob. **Con la tabla original vacía, el paso 3 rompería igualmente el panel entero.**
+
+### Tabla final
+
+| fichero | `<style` | `style="` | `<script>` sin `src` | `on*=` | carril (`carriles.mjs de`) | estado |
+| --- | --- | --- | --- | --- | --- | --- |
+| `receipt.routes.ts` (recibo) | 0 | 0 | 0 | 0 | J2 | **HECHO** · #3205 + #3208 |
+| `customerPortal.routes.ts` (portal) | 0 | 0 | 0 | 0 | J2 | **HECHO** · #3205 + #3208 |
+| `public/index.html` | 0 | 0 | 0 (1 línea es `ld+json`: datos) | 0 | J3 | **HECHO** · #3209 + #3236 |
+| `public/precios.html` | 0 | 0 | 0 | 0 | J3 | **HECHO** · #3209 + #3236 |
+| `public/terminos.html` | 0 | 0 | 0 | 0 | J3 | **HECHO** · #3209 |
+| `legalPages.routes.ts` | 0 | 0 | 0 | 0 | J3 | **HECHO** · #3209 |
+| `invoicesAdmin.routes.ts` (paquete de disputa) | 0 (S1 da 2 líneas: comentario :378-379) | 0 | 0 | 0 | J1 | **HECHO** · #3237 |
+| `src/core/http/publicNotFound.ts` (404 público) | 0 (S1 da 2: comentario :7, :10) | 0 | 0 | 0 | S1 (no medido hoy: no tiene ocurrencias vivas) | **HECHO** por SCRUM-1646 (`32585791d`), no por este ticket |
+| `auth.service.ts` | 0 | 4 (cadena :112-113, :233-234) | 0 | 0 | J3 | **NO APLICA**: correo (`renderEmailLayout` → `sendEmail`), medido en 1756d; las líneas no se han movido |
+| `soporte.ts` | 0 | 1 (cadena :99) | 0 | 0 | J3 | **NO APLICA**: correo (`construirCorreoSoporte` → `enviarCorreo`), 1756d |
+| `altaNavegador.ts` | 0 | 0 (S1 da 2: comentario) | 0 (S1 da 3: comentario) | 0 | J3 | **NO APLICA**: comentarios |
+| `quoteDecisionLanding.routes.ts` | 0 (S1 da 2: comentario :80, :413) | 0 | 0 (`application/json` :596: datos) | 0 | — | **NO APLICA** (c.21849) |
+| `*Estilo.ts`, `*Navegador.ts`, `payBank`, `albaranPublic`, `csp.ts`, `huellaEstaticos.ts`, `sw.js`, `styles.css` | sólo comentarios o bloques JSON | | | | — | **NO APLICA** (lista entera en la salida, sección S2) |
+| `public/privacidad.html` | **1** (:10) | 0 | 0 | 0 | J3 | **PENDIENTE con disparador**: se espera a la edición real de la política (c.22082 ②) |
+| `publicProfile.service.ts` (perfil público) | **1** (cadena :89, HTML servido) | 0 | 0 | 0 | S1 | **PENDIENTE** · Luis |
+| `public/admin.html` | **1** (:7) | **4** (:576-593) | **1** (:613) | 0 | S2 | **PENDIENTE** · Luis |
+| `public/dashboard/index.html` | 0 | **8** | **1** (:402) | 0 | S2 (contenedor) | **PENDIENTE** · Luis |
+| `public/dashboard/js/*`, 22 ficheros: `aiQuoteAssistant`, `api`, `app`, `estadoFirma`, `expensesView`, `exportView`, `facturasRecibidasView`, `globalSearch`, `homeView`, `jobDetailView`, `jobNuevoModal`, `parteOficinaView`, `productsView`, `providersView`, `quoteRequestsView`, `quoteRevisiones`, `quotesDetailView`, `quotesListView`, `quotesView`, `reportsView`, `signaturePad`, `templatesView` | 0 | **543** | 0 | **6** | S2 | **PENDIENTE** · Luis · **NUEVA** |
+| `public/dashboard/js/`: `albaranDetailView` (1), `parteDetailView` (19) | 0 | **20** | 0 | 0 | S4 | **PENDIENTE** · Luis · **NUEVA** |
+| `public/dashboard/js/`: `onboardingView` (54), `plansView` (52), `settingsView` (75, contenedor), `teamView` (32), `tutorial` (15) | 0 | **228** | 0 | 0 | J3 | **PENDIENTE** · J3 · **NUEVA** |
+| `public/dashboard/js/`: `cobrosView` (1), `csvImport` (31), `customerDetailView` (28), `customersView` (1) | 0 | **61** | 0 | 0 | J2 | **PENDIENTE** · J2 · **NUEVA** |
+| `public/dashboard/js/`: `invoiceDetailView` (8), `invoicesView` (5), `puertaSerie` (15) | 0 | **28** | 0 | 0 | J1 | **PENDIENTE** · J1 · **NUEVA** |
+
+Las cifras de `style="` del panel son ocurrencias (sonda 2), no líneas. Los `on*=` vivos son seis: `expensesView.js:726` (`onerror`), `globalSearch.js:160-161` (`onmouseenter` y `onmouseleave`), `homeView.js:577`, `quotesDetailView.js:1342` y `templatesView.js:24` (`onclick`).
+
+**Comprobación de lo HECHO:** las siete filas que dan por hechas los tramos b–f dan 0 VIVOS en las cuatro columnas. En la sonda 1 sólo quedan comentarios (`invoicesAdmin.routes.ts:378-379`) y el `ld+json` de `index.html:27`.
+
+### Qué se rompe si se aplica la política hoy
+
+- **Privacidad** (J3): se pinta sin su hoja. Es lo esperado y está decidido (c.22082 ②).
+- **Perfil público** (S1): se pinta sin CSS.
+- **Admin** (S2): se pinta sin CSS y su guion de `:613` no corre, así que la página no funciona.
+- **Panel** (`dashboard/index.html`, S2): su guion de `:402` no corre y 8 elementos pierden su estilo.
+- **Panel, vistas** (S2, S4, J1, J2, J3): todo lo que pintan por `innerHTML` pierde los estilos en línea (880 ocurrencias en 36 ficheros: márgenes, colores, `display:none`…). Un `display:none` que no se aplica ENSEÑA lo que debía ir oculto. Además, los 6 `on*=` dejan mudos estos controles: el enlace «+ Nuevo presupuesto» de plantillas, el botón del paso de `homeView`, el de gastos de `quotesDetailView`, y el resaltado de la búsqueda global. Y en gastos, una imagen que no carga ya no se oculta (`onerror="this.style.display='none'"`).
+
+**Sin medir:**
+- `setAttribute('style', …)` y `href="javascript:"`. El guion los busca y no salen, pero esos dos patrones no tienen siembra, así que su cero no vale.
+- Qué `display:none` de cada vista cambia lo que se ve.
+- Si `api.js` (10) pinta siempre o sólo en errores.
+- yaqu.app.
+- Si el panel tiene alguna vía, fuera de `innerHTML`, por la que un `style=` se libre. La medí en una página `data:`, no en el panel.
+
+**Propuesta, no hecha:** este censo, convertido en un guard trinquete que no deje subir ninguna columna, impediría que la tabla vuelva a nacer con una población más corta que la real. Es otro ticket (A23), y no lo abro.
+
+# SCRUM-1756j
+
+**Medido contra:** `origin/main` = `3dfeeaa99404dcce83417c5b589bc182eb45c290` · 2026-11-19T00:09:29Z (cabecera `Date:` de GitHub; sesión J1 `jv-j1fk`, por encargo del orquestador `cobroflash-backend-8a`; la rama lleva ese main fusionado)
+
+A9: aviso → A10 «Un bloque al principio de una hoja pierde contra las reglas posteriores: quien elige el sitio del bloque elige también la cascada.» — no se pudo comprobar: dónde va un bloque en un contenedor lo decide quien reparte, y ningún guard lee el reparto
+
+Mutaciones: catálogo → `tests/scrum1756j-panel-j1-sin-style-en-linea.test.mjs` (4/4 cazadas con `correr` + `aplicarUna`; la inocua de control sale MUDA; `evidencias/SCRUM-1756/j1fk-mutar.*`).
+
+**Skill UI:** no cargada · cero cambios visibles: cada `style=` pasa a una clase con las mismas declaraciones, y lo visual lo decide la sonda de navegador de abajo (capturas idénticas byte a byte), no la skill.
+
+**Qué:** la fila J1 del censo 1756g (c.22122): 28 `style="` en cadenas de `innerHTML` de `public/dashboard/js/invoiceDetailView.js` (8), `invoicesView.js` (5) y `puertaSerie.js` (15). Mi recuento con el mismo patrón (`RX.style_attr` de `1756g-censo.mjs.txt`) sobre el AST de las cadenas da 8 + 5 + 15 = 28 en main y 0 en la rama. Cada uno pasa a una clase con sus declaraciones, en el bloque `/* J1: SCRUM-1756j … */ … /* J1: fin del bloque SCRUM-1756j */` de `public/dashboard/css/styles.css`. Es contenedor de S2, así que sólo se añade el bloque marcado, al PRINCIPIO del fichero, por decisión del orquestador (mensaje a jv-j1fk del 19-nov: J1 al principio, J2 tras :5483, J3 al final, para que no choquen los tres PR). Cero textos nuevos o cambiados.
+
+**Por qué `!important` (y dónde no).** Un `style=` gana a toda regla de autor sin `!important`. Al principio de la hoja, una clase de igual especificidad pierde contra las reglas que vienen detrás. La causa es el sitio del bloque, no la receta:
+- **Con `!important`, las 13 de facturas y del modal de anular (13 reglas).** Cada declaración lo lleva, para ganar como ganaba el atributo: `.j1-anul-modal` a `.modal` y a `.modal-overlay .modal` en móvil, `.j1-bulk-cancelar` a `.btn-ghost` y a su `:hover`, `.j1-fac-vacio-cta` a `.btn-primary`, `.j1-fac-col-*` a `th`/`.table`, y las demás por lo mismo. Ningún guion toca estas piezas con `el.style` (medido con grep sobre los dos ficheros), así que el `!important` no le quita nada.
+- **Sin `!important`, las 15 de la puerta de la serie (14 reglas: los dos botones comparten una).** Van bajo `#puerta-serie` (la caja, con id fijo): especificidad (1,1,0), que gana a `.field input`, `.field input:focus`, `.field label` y `.btn-*`. No llevan `!important` porque el guion cambia `display` y `border-color` con `el.style.*`, y eso tiene que seguir ganando.
+- **Sin `!important`, el `display:none` inicial del error de anular**, en su propia regla `.modal .j1-anul-err`, por lo mismo.
+
+**Un cambio de comportamiento, no visible:** el error de anular (`invoiceDetailView.js`, «err») se enseñaba con `err.style.display = ''`, que lo devolvía al `display` de `.alert` (block). Con la clase, `''` lo deja oculto, así que ahora se enseña con `'block'`, que es el valor que salía. Lo cubre el caso ③ del test, y lo tumba la mutación 4.
+
+**Test** `tests/scrum1756j-panel-j1-sin-style-en-linea.test.mjs` (4 casos):
+- ① 0 `style=` en las cadenas de los tres ficheros;
+- ② cada una de las 28 de main, copiada con su línea de `e37a7051f` (las 28 casan con `origin/main`), tiene su marcado nuevo UNA vez y su regla con EXACTAMENTE sus declaraciones;
+- ③ los `display:none` que el guion enciende siguen sin `!important`, y el error se enseña con `'block'`.
+- Control sembrado: 4 `style=` en cadenas más 1 en un comentario dan 4, y el control cero da 0.
+- **Rojo primero** con los cuatro ficheros de main en su sitio: 3/4 caen por su aserción y el control pasa.
+
+**Navegador** (Chromium del MCP de Playwright, `evidencias/SCRUM-1756/j1fk-sonda.cjs.txt`). Cada una de las 28 piezas va montada en el contenedor de su vista (`#puerta-serie.field`, `.modal-overlay .modal .modal-body`, `table.table--cards-mobile thead`, la barra del lote, `.empty-state`), con `tokens.css` y la hoja entera. Tres páginas: A = main sin política, B = rama con `style-src 'self'` APLICADA, C = control, marcado de main con política. Resultado, a 390 y a 1280:
+- **capturas A y B idénticas byte a byte** (6.739 B y 14.409 B);
+- **0 informes en B**;
+- C sale distinta y con 28 informes `style-src-attr`.
+
+Estilos computados, todas las propiedades, A frente a B: dos diferencias, explicadas:
+- `:848` (acciones del modal): mi sonda le fuerza `el.style.display='block'` a todas las piezas, y el `!important` le gana. Es un artefacto de la sonda: ningún guion hace eso con esa pieza.
+- `:824` a 390: opacidad 0,999976 y una traslación de 0,0006 px. Es un fotograma de la animación de entrada del modal; la captura es idéntica.
+
+**NO MEDIDO:**
+- Las vistas reales con datos del servidor (lista, detalle, modal de anular, puerta de la serie dentro de ajustes): en esta máquina no hay Postgres, y doblar las rutas del panel no me cabía en el contexto. La sonda mide las piezas en su contenedor, no la vista entera.
+- `:hover` y `:focus` en navegador; razonado por especificidad, arriba.
+- La suite ENTERA: sólo los guards del encargo y los tests que leen `styles.css` (en la entrega).
+- yaqu.app y el obligatorio.
+
+**Un rojo mío, arreglado antes de empujar:** `scrum737` (cifras sin ancla) cayó por un comentario de mi test que decía «las 28 ocurrencias». Lo reformulé sin número: la población la ata el caso de control (`CAMBIOS.length`). No cambié el guard ni su censo.
+
+**Medido antes del empujón** (rama con main `3dfeeaa99` fusionado, `dist/` compilado con `tsc --noCheck`; no toco `src/`):
+- los 13 guards del encargo y el test: 139/139;
+- los 160 ficheros que leen `styles.css` o los tres ficheros: 1.290 casos, 1.289 pasan, 0 caen, 1 se salta (pide `LIBRO_PG_URL`);
+- `guards:entrada`: 15 guards y 170 casos en verde;
+- los 5 de árbol entero que nombra, más `scrum622`: 50 casos, 50 pasan después del arreglo de arriba;
+- meta-guard `--solo-censo`: salida 0, 1.294 declaraciones. Su listado sólo enseña la frontera `src/`↔`dist/`, así que no nombra este fichero.
+
+**Relevo jv-j1fo, 19-nov (rojo del obligatorio en el run 44432520334, `scrum719` · SCRUM-1395b, «sin ficha»):** relevo jv-j1fo: ficha de mudez regenerada con `censo:mudez --escribir`; A9: comprobación → `tests/scrum719-el-suelo-de-los-doce.test.mjs`. El censo midió 1 de 136 y el diff de `tests/_veredicto-mudez.json` es una línea: este test, `NO APLICA` (4 tests, no llama al filtro de comentarios).
+## SCRUM-1756h · 19-nov: las cinco vistas de J3 del panel sin `style="…"` en las cadenas de `innerHTML` (J3)
+
+**Medido contra:** `origin/main` = `3dfeeaa99404dcce83417c5b589bc182eb45c290` · 2026-11-19T00:07:52Z (cabecera `Date:` de GitHub; sesión J3 `jv-j3ck`, por encargo del orquestador `cobroflash-backend-8a`; la rama lleva ese main fusionado, y entre su base `d86f7ef92` y él main solo cambió este registro)
+
+A9: comprobación → `tests/scrum1756h-panel-j3-sin-style-en-linea.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1756h-panel-j3-sin-style-en-linea.test.mjs` (4/4 cazadas con `correr` + `aplicarUna`; la inocua de control sale MUDA; `evidencias/SCRUM-1756/j3ck-mutar.*`).
+
+**Skill UI:** `yaqu-premium-ui` cargada y leída. No aplica nada más que «cero estilos inline aleatorios»: se mueven las declaraciones byte a byte y no se cambia ningún token, componente ni texto. El aspecto en navegador NO se ha medido (abajo).
+
+| fichero | `style="` en cadenas (AST), antes → después | carril |
+| --- | --- | --- |
+| `public/dashboard/js/onboardingView.js` | 54 → 0 | J3 |
+| `public/dashboard/js/plansView.js` | 52 → 0 | J3 |
+| `public/dashboard/js/settingsView.js` | 76 → 0 | J3 (contenedor) |
+| `public/dashboard/js/teamView.js` | 32 → 0 | J3 (la excepción S1 de `dos-equipos.md:264` es sólo el clic de «+ Añadir miembro», y no se ha tocado) |
+| `public/dashboard/js/tutorial.js` | 15 → 0 | J3 |
+
+- **Son 229 y no 228.** La 229.ª es `settingsView.js:1048`, `'style="width:100%">'`, una cadena que empieza con `style=`. La regex del censo 1756g (`\sstyle\s*=`) exige un blanco delante, y ese blanco está en la cadena anterior, al otro lado del `+`. El caso CONTROL del test siembra justo esa forma.
+- **Dónde va el CSS:** en un bloque `/* J3: SCRUM-1756h … */ … /* J3: fin del bloque SCRUM-1756h */` al final de `public/dashboard/css/styles.css`, que es contenedor de S2. Lo permite la regla de los contenedores (`dos-equipos.md:95-97` y `:150`) y lo decidió el orquestador J al acusar c.22122/c.22127. No hay hoja nueva y `dashboard/index.html` no se ha tocado. Para no chocar: J2 (1756i) pone su bloque detrás de `/* J2: SCRUM-1132 */` y J1 (1756j) al principio.
+- **Cómo se ha hecho:** con el guion `evidencias/SCRUM-1756/1756h-transformar.mjs.txt`, por AST. Cada valor da una regla `.j3e-<7 hex del sha1>:not(#j3-sin-id):not(#j3-sin-id){<declaraciones byte a byte>}`: 181 reglas para 229 atributos. Antes de mover, los 168 valores estáticos de HEAD están todos en el bloque (faltan 0).
+- **Por qué los dos `:not(#…)`:** suben la especificidad a (2,1,0). El máximo medido en `styles.css` es un id (`#home-aviso-sii`). Así la clase gana donde ganaba el atributo, y un `el.style.x` del guion sigue ganando a la clase, como ganaba al atributo.
+- **Los 7 valores con `${…}`:** los 6 ternarios pasan a elegir entre dos o tres clases. `settingsView.js:1275`, `width:${pct}%`, es un dato: lleva `data-j3-ancho` y su ancho se pone por CSSOM tras pintar, que la CSP permite (c.22122). Es la única línea de guion nueva, con el OK del orquestador.
+- **Dos `className =` que habrían borrado la clase nueva:** los botones Sí/No del alta (`onboardingView.js:231`) y `#invite-alert` (`teamView.js:306`). Pasan a `classList`, con el mismo efecto sobre las clases que ya tenían. Sin este cambio, al pulsar Sí/No los botones perdían su estilo. Lo vigila el caso ⑤ del test.
+- **Cero textos nuevos o cambiados.**
+
+| aceptación (literal) | dónde se ve |
+| --- | --- |
+| Cada fila de la tabla tiene su PR mergeado o su «no aplica» medido | fila J3 del panel de c.22122/c.22127: `tests/scrum1756h-panel-j3-sin-style-en-linea.test.mjs` (10 casos) · PR de esta rama, sin mergear |
+| (encargo) 0 `style="` dentro de cadenas (AST) y la hoja contiene cada declaración movida, byte a byte | el mismo test: un caso por fichero, el del hash y el del sha-256 del conjunto. Rojo primero sobre las copias de HEAD: 9 de 10 caen y el control pasa (`evidencias/SCRUM-1756/j3ck-rojo-sobre-head.salida.txt`) |
+| (encargo) mutaciones en el catálogo | `evidencias/SCRUM-1756/j3ck-mutar.salida.txt`: 4/4 cazadas, inocua MUDA |
+| (encargo) capturas 390/1280 idénticas con la política aplicada, 0 informes `style-src`, control distinto | **NO HECHO** → relevo sobre esta punta: no me cabía en el contexto. Las vistas necesitan la sesión del panel y datos del servidor |
+
+**Corrido:** los 138 ficheros de `tests/` que nombran estos cinco ficheros o `styles.css` dan 1.197 casos: 1.196 pasan, 0 caen y 1 saltado. Además, los guards de la lista del encargo (en el comentario de entrega).
+
+**Error mío:** la primera pasada del guion escribía cada fichero según lo acababa. Abortó en `settingsView.js` con dos ficheros ya escritos y sus reglas CSS perdidas. Los devolví a HEAD con `git show` (el hook había parado `git checkout --`, con razón), rehíce a mano sus cuatro marcadores, y ahora el guion escribe todo al final o nada. Me lo encontré yo al ver el `diff --stat`.
+
+**NO MEDIDO:** las capturas 390/1280 y los informes CSP en navegador; la suite entera por tramos (por contexto); otros `className =` de fuera de estos cinco ficheros (`app.js`, S2) que pudieran tocar estos elementos; yaqu.app.
+
+## SCRUM-1756i · 19-nov: las cuatro vistas J2 del panel sin `style="…"` en las cadenas de `innerHTML` (J2)
+
+**Medido contra:** `origin/main` = `fe41e215a8bb090506df192079322c5695581512` · 2026-11-19T00:36:10Z (cabecera `Date:` de GitHub). Sesión J2 `jv-j2d5`, **relevo de jv-j2d4** (paró a 190k con el trabajo en local, c.22134), por encargo del orquestador `cobroflash-backend-8a`. La rama sale del commit local `3949921cf` de jv-j2d4, con `3dfeeaa99` y después `fe41e215a` mergeados (este último trae 1756h, que toca la misma hoja).
+
+A9: comprobación → `tests/scrum1756i-panel-j2-sin-style-en-linea.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1756i-panel-j2-sin-style-en-linea.test.mjs` (4/4 cazadas con `correr` + `aplicarUna`; la inocua de control sale MUDA; `evidencias/SCRUM-1756/j2d5-mutar.*`).
+
+**Skill UI:** no cargada · cero cambios visibles: cada `style=` pasa a una clase con la misma declaración. Lo visual no lo prueba la skill sino el navegador: estilos computados main ↔ rama, elemento a elemento (abajo).
+
+**Qué hay.** Los 62 `style=` de `cobrosView.js` (1), `csvImport.js` (32), `customerDetailView.js` (28) y `customersView.js` (1) pasan a 57 clases en el bloque `/* J2: SCRUM-1756i */` de `public/dashboard/css/styles.css`. Va justo antes del bloque J3 de 1577b, por la regla de los contenedores (`dos-equipos.md:95`). Lo hizo jv-j2d4 (c.22134). Este relevo añade el test, las mutaciones, la medida en el navegador y el arreglo de cuatro clases.
+
+**Corrección al censo 1756g: son 62, no 61.** Se le escapa `csvImport.js:78`, una cadena que EMPIEZA por `style="…"` porque su `<textarea` va en la cadena anterior. El contador por AST del test da **62 contra `3dfeeaa99`** (1 + 32 + 28 + 1), y `git grep -c` también da 62.
+
+**🔴 Lo que encontró el navegador, y por qué.** Un atributo en línea gana a cualquier regla de la hoja; una clase, no. Cuatro clases PERDÍAN:
+
+| clase | contra | qué cambiaba |
+|---|---|---|
+| `.cobros-th-importe` | `.table th { text-align: left }` (:969) | el importe salía a la izquierda |
+| `.c360-celda-fecha` | `.table td` (:980) | el color de la fecha |
+| `.c360-tabla-vacia` | `.table td` | el color y el relleno (24px → 10px) de «Sin presupuestos» / «Sin facturas» |
+| `.csv-modal` | `@media (max-width: 639px) .modal-overlay .modal { max-width: 100% }` (:2568) | a 390 px el modal dejaba de tener 600px de máximo |
+
+Se arreglan subiendo la especificidad con el mismo selector que usa la casa (`.table td.historial-vacio`, :2656): `.table th.cobros-th-importe`, `.table td.c360-celda-fecha`, `.table td.c360-tabla-vacia` y `.modal-overlay .modal.csv-modal`. Sin `!important` y con las declaraciones intactas. Las otras 53 no tenían rival en las propiedades que declaran. Con el selector a secas, el test de especificidad cae (mutación 4).
+
+**Navegador** (`evidencias/SCRUM-1756/j2d5-estilos.*`). Chrome sin interfaz y el panel REAL (`dashboard/index.html`, sus hojas y sus scripts) servido estático desde dos árboles: `main` (extraído con `git archive`) y la rama. Las rutas `/admin/*` las contesta el propio guion con datos sembrados: ni BD, ni red, ni envíos. Hay 12 escenarios: la lista vacía, Cobros, los cuatro pasos del importador CSV (con un fichero de verdad), la ficha 360 (resumen, presupuestos, facturas y sus dos vacíos) y el modal de edición. Se miden a 390 y a 1280. En cada uno se recoge `getComputedStyle` de cada elemento de `#view-container` y de `.modal-overlay`.
+
+- main sin política ↔ rama CON la política de `csp.ts`: **0 diferencias sobre 2.292 elementos**. Antes del arreglo eran 390, todas de las cuatro clases de arriba.
+- main sin ↔ rama sin (hoy, en modo informe): 0.
+- Control, main con política ↔ main sin: **11.812 diferencias**, así que el instrumento ve lo que la política rompe.
+- Informes `style-src` cuyo fichero es uno de los cuatro: **0 en la rama y 570 en main** (control).
+- Página sembrada con un `style=`: da `style-src-attr` y no pinta.
+- Cobertura: 55 de las 57 clases salen en pantalla. Sin ver: `csv-oculto` (el aviso nace oculto y el primer `setAlert` le cambia la clase antes de que pueda verse) y `c360-vacio` (la ficha sin cliente, a la que no se llega desde el hash).
+- Se midió otra vez después de mergear `fe41e215a`, con 1756h dentro: el mismo resultado.
+
+**Test:** `tests/scrum1756i-panel-j2-sin-style-en-linea.test.mjs`, 5 casos con nombres literales.
+- ① Las cadenas de los 4 ficheros, por AST de typescript (literales, plantillas y sus trozos), dan 0 `style=`.
+- ② Los 62 de main están copiados con su línea, y cada uno tiene en el bloque su declaración EXACTA y su clase en el fichero de donde salió. Los dos que se calculaban se parten en una clase base más los modificadores `c360-verde`, `c360-rojo` y `c360-tinta`.
+- ③ Las cuatro especificidades.
+- ④ El índice carga la hoja (`hojasDeLaPagina`, SCRUM-676).
+- El positivo va sembrado: tres formas, y la tercera es la de `:78`.
+- Rojo primero: contra el `public/` de `3dfeeaa99` da 1/5, con `total: 62`.
+
+**Error mío:** pasé por heredoc un trozo de guion con `\n` y `\.` dentro de una expresión regular, y bash se comió las barras. El guion reventó (no dio un falso verde), así que lo vi y lo reescribí con la herramienta de edición. Es la cicatriz de siempre (heredoc), y no es nueva.
+
+**NO MEDIDO:**
+- La suite entera en local: no me cabía en el contexto. La mide el obligatorio de CI.
+- yaqu.app.
+- Con sesión real: los datos son sembrados.
+- Otros estados del panel que no salen en los 12 escenarios: filas de cobros con otros métodos, el modal de fusión y las pestañas de WhatsApp, sitios y notas. Ahí no hay ninguno de los 62.

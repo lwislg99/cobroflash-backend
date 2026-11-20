@@ -754,7 +754,7 @@ function renderCustomersView(container) {
         td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div>'
           + '<div class="empty-state-title">' + (searchText ? 'Sin resultados para tu búsqueda' : 'Añade a tu primer cliente') + '</div>'
           + '<div class="empty-state-desc">' + (searchText ? 'Prueba con otro nombre, teléfono o email.' : 'Guárdalo una vez y podrás enviarle cotizaciones profesionales por WhatsApp en segundos.') + '</div>'
-          + (searchText ? '' : '<button id="customers-empty-cta" class="btn-primary btn-sm" style="margin-top:14px">+ Añadir cliente</button>') + '</div>';
+          + (searchText ? '' : '<button id="customers-empty-cta" class="btn-primary btn-sm clientes-vacio-cta">+ Añadir cliente</button>') + '</div>';
         tr.appendChild(td);
         tbody.appendChild(tr);
         const cta = td.querySelector('#customers-empty-cta');

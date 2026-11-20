@@ -119,7 +119,7 @@ async function fetchInvoiceDetail(id) {
     const stateBlock = document.createElement('div');
     const numLine = document.createElement('div');
     numLine.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px';
-    numLine.innerHTML = `<span style="font-size:16px;font-weight:700;color:var(--ink)">${invoice.number || ''}</span>`;
+    numLine.innerHTML = `<span class="j1-fac-numero">${invoice.number || ''}</span>`;
     if (invoice.vfHash) {
       const badge = document.createElement('span');
       badge.style.cssText = 'font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--brand-tint);color:var(--green-700);border:1px solid var(--green-100)';
@@ -231,7 +231,7 @@ async function fetchInvoiceDetail(id) {
     addDefRow(dl, 'Pagada', invoice.paidAt ? new Date(invoice.paidAt).toLocaleString('es-ES') : null);
     addDefRow(dl, 'Rectifica a', invoice.rectifies ? invoice.rectifies.number : null);
     addDefRow(dl, 'Rectificada por', (invoice.rectifiedBy && invoice.rectifiedBy.length) ? invoice.rectifiedBy.map((r) => r.number).join(', ') : null);
-    if (!dl.children.length) dl.innerHTML = '<dd style="color:var(--muted)">Sin datos.</dd>';
+    if (!dl.children.length) dl.innerHTML = '<dd class="j1-fac-sin-datos">Sin datos.</dd>';
     dataSec.appendChild(dl);
     page.appendChild(dataSec);
 
@@ -821,19 +821,19 @@ async function fetchInvoiceDetail(id) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
-      <div class="modal" style="max-width:460px" role="dialog" aria-modal="true" aria-labelledby="anul-t">
+      <div class="modal j1-anul-modal" role="dialog" aria-modal="true" aria-labelledby="anul-t">
         <div class="modal-body">
           <div class="field">
             <label for="anul-motivo">¿Por qué se anula?</label>
-            <select id="anul-motivo" style="width:100%">
+            <select id="anul-motivo" class="j1-anul-motivo">
               <option value="">Elige un motivo…</option>
               ${MOTIVOS_ANULACION.map((m) => `<option value="${m.valor}">${m.texto}</option>`).join('')}
             </select>
           </div>
 
-          <div class="alert warning" style="margin-top:12px">
+          <div class="alert warning j1-anul-aviso">
             <strong>Qué pasa al anular</strong>
-            <ul style="margin:6px 0 0;padding-left:18px">
+            <ul class="j1-anul-lista">
               <li><strong>No se borra nada.</strong> La factura sigue existiendo, marcada como
                   ANULADA, y conserva su registro y su huella.</li>
               <li>El número <strong>${escAnul(invoice.number)}</strong> queda usado:
@@ -843,9 +843,9 @@ async function fetchInvoiceDetail(id) {
             </ul>
           </div>
 
-          <div class="alert" id="anul-err" style="display:none;margin-top:12px"></div>
+          <div class="alert j1-anul-err" id="anul-err"></div>
 
-          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+          <div class="j1-anul-acciones">
             <button class="btn-ghost btn-sm" id="anul-no">Cancelar</button>
             <button class="btn-danger btn-sm accion-irreversible-btn-44" id="anul-si" disabled>Anular factura</button>
           </div>
@@ -895,7 +895,7 @@ async function fetchInvoiceDetail(id) {
         if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: invoice.id });
       } catch (e) {
         err.textContent = e && e.message ? e.message : 'No se pudo anular la factura.';
-        err.style.display = '';
+        err.style.display = 'block';
         btnSi.disabled = false;
         btnSi.textContent = 'Anular factura';
       }
