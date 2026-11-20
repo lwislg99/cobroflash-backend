@@ -225,8 +225,13 @@ function pintarBloqueRail(bloque) {
     }
 
     const txt = document.createElement('span');
-    if (linea.fuerte) txt.className = 'detail-rail-fuerte';
-    txt.textContent = (linea.icono ? `${linea.icono} ` : '') + linea.texto;
+    // SCRUM-1762b · el icono ya no es un emoji pegado al texto: es una clase del set del menú
+    // (`con-icono--telefono`, `con-icono--whatsapp`) que dibuja el CSS. El texto queda limpio.
+    const txtClases = [];
+    if (linea.fuerte) txtClases.push('detail-rail-fuerte');
+    if (linea.icono) txtClases.push('con-icono', `con-icono--${linea.icono}`);
+    if (txtClases.length) txt.className = txtClases.join(' ');
+    txt.textContent = linea.texto;
     destino.appendChild(txt);
     sec.appendChild(fila);
   }
@@ -1265,8 +1270,10 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   if (job.status === 'en_curso') {
     const terminarBtn = document.createElement('button');
     terminarBtn.type = 'button';
-    terminarBtn.className = 'btn-secondary btn-sm job-toolbar-btn-44'; // SCRUM-962 (AB6), como «+ Añadir gasto»
-    terminarBtn.textContent = '✅ Marcar terminado';
+    // SCRUM-1762b · el ✅ pasa a icono del set del menú (`con-icono--hecho`, dibujado por CSS): el rótulo
+    // es el mismo sin el emoji.
+    terminarBtn.className = 'btn-secondary btn-sm job-toolbar-btn-44 con-icono con-icono--hecho'; // SCRUM-962 (AB6), como «+ Añadir gasto»
+    terminarBtn.textContent = 'Marcar terminado';
     terminarBtn.addEventListener('click', () => patchTrabajo({ status: 'terminado' }, '✅ Trabajo terminado'));
     enCabecera('btnTerminar', terminarBtn);
   }

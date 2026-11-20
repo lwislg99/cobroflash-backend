@@ -500,7 +500,7 @@ html, body { overflow-x: clip; }
   font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: all .12s;
+  transition: background-color .12s, color .12s, border-color .12s, transform .12s; /* SCRUM-1762b: sin `all` ni box-shadow (el foco aparece de golpe) */
   white-space: nowrap;
   min-height: 36px;
   font-family: var(--font);
@@ -603,9 +603,10 @@ html, body { overflow-x: clip; }
   text-transform: uppercase;
 }
 .status-pill-accepted  { background: var(--green-100); color: var(--green-700); }
-.status-pill-rejected  { background: var(--red-50);    color: var(--red-600); }
+/* SCRUM-1762b · contraste AA (≥4,5:1) con tokens que ya existían: rejected 4,41→--danger-ink, draft 4,25→--neutral-600. */
+.status-pill-rejected  { background: var(--red-50);    color: var(--danger-ink); }
 .status-pill-pending   { background: var(--amber-50);  color: #92400e; }
-.status-pill-draft     { background: var(--neutral-100); color: var(--neutral-500); }
+.status-pill-draft     { background: var(--neutral-100); color: var(--neutral-600); }
 
 /* Progress — barra de avance (SCRUM-11, inventario AB3). Componente compartido:
    track neutro + fill con color de estado (verde = avance/Pagado, ámbar = Parcial).
@@ -613,9 +614,10 @@ html, body { overflow-x: clip; }
    Uso: <div class="progress" role="progressbar" aria-valuenow=.. aria-valuemin=0
         aria-valuemax=100 aria-label=".."><div class="progress-fill" style="width:X%"></div></div> */
 .progress { height: 8px; background: var(--neutral-100); border-radius: var(--r-full); overflow: hidden; }
-.progress-fill { height: 100%; border-radius: inherit; background: var(--green-600); transition: width .2s ease; }
+/* SCRUM-1762b · el ancho ya no se anima: es una propiedad de maquetación (repinta en cada fotograma) y
+   la barra se pinta una vez con su dato; animarla no informaba de nada. */
+.progress-fill { height: 100%; border-radius: inherit; background: var(--green-600); }
 .progress-fill--partial { background: var(--amber-500); }
-@media (prefers-reduced-motion: reduce) { .progress-fill { transition: none; } }
 
 /* WA-0b · chip de entrega de WhatsApp (J4, inventario AB3). Mismo lenguaje que las
    status-pill pero en minúscula y con glifo; estados mapeados a tokens existentes. */
@@ -680,7 +682,7 @@ html, body { overflow-x: clip; }
   font-size: 15px;
   color: var(--ink);
   background: var(--surface);
-  transition: border-color .12s, box-shadow .12s;
+  transition: border-color .12s; /* SCRUM-1762b: foco instantáneo */
   line-height: 1.5;
 }
 .field input:focus,
@@ -791,7 +793,7 @@ html, body { overflow-x: clip; }
   font-weight: 600;
   color: var(--muted);
   text-align: center;
-  transition: background-color .12s, color .12s, box-shadow .12s, border-color .12s;
+  transition: background-color .12s, color .12s, border-color .12s; /* SCRUM-1762b: foco instantáneo */
 }
 /* El radio se mantiene VISIBLE (no `display:none`): es lo que anuncia el estado al
    lector de pantalla y lo que recibe el foco del teclado. */
@@ -904,7 +906,7 @@ html, body { overflow-x: clip; }
   font-weight: 600;
   color: var(--muted);
   text-align: center;
-  transition: background-color .12s, color .12s, box-shadow .12s;
+  transition: background-color .12s, color .12s; /* SCRUM-1762b: foco instantáneo */
 }
 .customers-tab:hover { color: var(--ink); }
 .customers-tab[aria-pressed="true"] {
@@ -984,7 +986,7 @@ html, body { overflow-x: clip; }
   font-size: 14px;
   color: var(--neutral-800);
   background: var(--neutral-50) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 12px center;
-  transition: border-color .12s, box-shadow .12s;
+  transition: border-color .12s; /* SCRUM-1762b: foco instantáneo */
 }
 .search-input:focus {
   outline: none;
@@ -1040,7 +1042,7 @@ html, body { overflow-x: clip; }
   border: 1px solid var(--neutral-200);
   padding: 18px 20px;
   box-shadow: var(--shadow-sm);
-  transition: box-shadow .15s, transform .15s;
+  transition: transform .15s; /* SCRUM-1762b: foco instantáneo */
 }
 .kpi-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
 .kpi-label {
@@ -1129,7 +1131,7 @@ html, body { overflow-x: clip; }
   min-height: 50px;
   margin-bottom: 20px;
   font-family: var(--font);
-  transition: background .12s, transform .12s, box-shadow .12s;
+  transition: background .12s, transform .12s; /* SCRUM-1762b: foco instantáneo */
   box-shadow: 0 4px 14px rgba(34,197,94,.3);
   display: flex; align-items: center; justify-content: center; gap: 8px;
 }
@@ -1355,7 +1357,7 @@ html, body { overflow-x: clip; }
   padding: 10px 12px; cursor: pointer; font-family: inherit;
   background: var(--surface); color: var(--neutral-700);
   border: 1px solid var(--neutral-200); border-radius: var(--radius-md);
-  transition: background .12s, border-color .12s, box-shadow .12s;
+  transition: background .12s, border-color .12s; /* SCRUM-1762b: foco instantáneo */
 }
 .qq-mode-btn:hover { border-color: var(--neutral-300); }
 .qq-mode-btn.is-active {
@@ -1945,7 +1947,7 @@ html, body { overflow-x: clip; }
   font-size: 15px;                  /* ≥16px evita el zoom de iOS al enfocar; 15 + el resto del form */
   color: var(--ink, #0f1c17);
   background: var(--surface, #fff);
-  transition: border-color .12s, box-shadow .12s;
+  transition: border-color .12s; /* SCRUM-1762b: foco instantáneo */
 }
 .quote-line input:focus,
 .quote-dto-global__campo input:focus {
@@ -2352,7 +2354,7 @@ html, body { overflow-x: clip; }
   border-radius: var(--radius-lg);
   padding: 18px;
   text-align: center;
-  transition: border-color .15s, box-shadow .15s;
+  transition: border-color .15s; /* SCRUM-1762b: foco instantáneo */
 }
 .plan-card:hover { border-color: var(--neutral-300); box-shadow: var(--shadow); }
 .plan-card.current { border-color: var(--green-500); box-shadow: 0 0 0 3px rgba(34,197,94,.1); }
@@ -2774,13 +2776,13 @@ html, body { overflow-x: clip; }
 
 /* Transiciones suaves en botones */
 .btn, .btn-primary, .btn-secondary, .btn-ghost, .btn-danger, .btn-sm {
-  transition: background .15s ease, transform .08s ease, box-shadow .15s ease;
+  transition: background .15s ease, transform .08s ease; /* SCRUM-1762b: foco instantáneo */
 }
 .btn:active, .btn-primary:active, .btn-secondary:active { transform: translateY(1px); }
 
 /* Hover lift sutil en tarjetas del dashboard */
 .data-card, .customers-card, .kpi-card {
-  transition: box-shadow .18s ease, transform .18s ease;
+  transition: transform .18s ease; /* SCRUM-1762b: foco instantáneo */
 }
 .kpi-card:hover {
   transform: translateY(-2px);
@@ -2865,7 +2867,7 @@ html, body { overflow-x: clip; }
   background: #fff;
   cursor: pointer;
   text-align: left;
-  transition: transform .12s ease, box-shadow .15s ease, border-color .15s;
+  transition: transform .12s ease, border-color .15s; /* SCRUM-1762b: foco instantáneo */
 }
 .home-action:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(15,23,42,.08); border-color: #bbf7d0; }
 .home-action-ico { font-size: 22px; flex-shrink: 0; }
@@ -6237,3 +6239,54 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
 .j3e-39d9474:not(#j3-sin-id):not(#j3-sin-id){margin-top:8px;width:100%;min-height:44px;padding:11px;font:inherit;font-size:15px;font-weight:700;color:#fff;background:#16a34a;border:none;border-radius:10px;cursor:pointer}
 .j3e-dd1c338:not(#j3-sin-id):not(#j3-sin-id){margin:10px 0 0;font-size:13px;line-height:1.5;color:#6b756f}
 /* J3: fin del bloque SCRUM-1756h */
+
+/* ════════════════════════════════════════════════════════════
+   S2 · SCRUM-1762b · LAVADO HALLMARK DE LA FICHA (20-nov-2026)
+   Ropa, no función: ni texto nuevo ni color nuevo. Todo sale de tokens que ya existían.
+   ════════════════════════════════════════════════════════════ */
+
+/* ① La pestaña ABIERTA se ve abierta. Antes era «secundaria» contra «fantasma»: dos grises que a 390
+   px casi no se distinguían (auditoría hallmark, hallazgo de más impacto de la ficha). Lleva la tinta
+   del acento con la MISMA receta de «elegido» que ya usan la lista de presupuestos (`#po-lista …
+   [aria-current]`) y el selector de cliente (`[aria-pressed]`): Verde Tinte + filete de Verde
+   Confianza, texto en --brand-tint-ink (el verde de TEXTO; 5,21:1 sobre el tinte, AA). */
+.detail-page--trabajo .detail-pestanas > [aria-selected="true"],
+.detail-page--trabajo .detail-pestanas > [aria-selected="true"]:hover:not(:disabled) {
+  background: var(--brand-tint);
+  color: var(--brand-tint-ink);
+  border-color: var(--brand);
+  box-shadow: inset 0 0 0 1px var(--brand);
+}
+.detail-page--trabajo .detail-pestanas > [aria-selected="true"]:focus-visible { box-shadow: inset 0 0 0 1px var(--brand), var(--ring); }
+
+/* ② «+ Nuevo parte» a tamaño de botón NORMAL. Es la rellena de la ficha en EN CURSO (SCRUM-1749,
+   c.22041: sin `btn-sm`, y eso NO se toca), pero heredaba los 18,66 px del primario grande
+   (SCRUM-368, vía de texto grande para el blanco sobre --brand) y salía el doble que sus vecinas.
+   Se queda en el tamaño de la barra (44 px de alto, 13,5 px) con la receta AA del primario de
+   tamaño normal que ya existe: blanco sobre --brand-tint-ink, 5,48:1 por la vía normal. */
+.detail-page--trabajo [data-abrir-parte].btn-primary:not(.btn-sm) {
+  min-height: 44px;
+  font-size: 13.5px;
+  font-weight: 600;
+  background: var(--brand-tint-ink);
+}
+.detail-page--trabajo [data-abrir-parte].btn-primary:not(.btn-sm):hover:not(:disabled) { background: var(--brand-ink); }
+
+/* ③ Iconos del set del MENÚ en lugar de emojis (mismo trazo que `.nav-icon`: 24×24, stroke 2,
+   currentColor). Se dibujan con máscara, como `--parte-icono` del parte: no son texto, no leen nada
+   y el rótulo sigue siendo el de siempre. `con-icono--<nombre>` lo pone el JS; el dibujo vive aquí. */
+.con-icono { display: inline-flex; align-items: center; gap: 6px; }
+.con-icono::before {
+  content: "";
+  flex: none;
+  width: 16px;
+  height: 16px;
+  background: currentColor;
+  -webkit-mask: var(--icono-menu) center / contain no-repeat;
+  mask: var(--icono-menu) center / contain no-repeat;
+}
+@media (forced-colors: active) { .con-icono::before { background: CanvasText; forced-color-adjust: none; } }
+.con-icono--hecho { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 11.08V12a10 10 0 1 1-5.93-9.14'/%3E%3Cpath d='M22 4 12 14.01l-3-3'/%3E%3C/svg%3E"); }
+.con-icono--telefono { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z'/%3E%3C/svg%3E"); }
+.con-icono--whatsapp { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/%3E%3C/svg%3E"); }
+/* S2: fin del bloque SCRUM-1762b */
