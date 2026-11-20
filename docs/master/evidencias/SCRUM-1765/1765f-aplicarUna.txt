@@ -1,0 +1,27 @@
+SCRUM-1765f · aplicarUna (scripts/meta-guard-mutaciones.mjs) sobre tests/scrum1326-vale-pregunta-una-vez.test.mjs · árbol en d4a0fc951cd54405d6e9ae908a7b52b12b26c024 + el catálogo sin comitear · driver fuera del árbol
+declaradas: 19
+BASE: pasan 16 · caen 0 · saltados 0 · movidos 0
+1. src/modules/whatsappBot/domain/decisionPorTexto.ts · cae «🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto,» → {"ok":true,"colaterales":10}
+2. src/modules/whatsappBot/domain/decisionPorTexto.ts · cae «🔴 SCRUM-1326 · por efecto: las nueve que aceptan («Acepto»,» → {"ok":true,"colaterales":8}
+3. src/modules/whatsappBot/domain/decisionPorTexto.ts · cae «🔴 SCRUM-1326 · por efecto: las nueve que aceptan («Acepto»,» → {"ok":true,"colaterales":3}
+4. src/modules/whatsappBot/domain/decisionPorTexto.ts · cae «SCRUM-1326 · control: «No» sigue rechazando, y lo que no es » → {"ok":true,"colaterales":1}
+5. src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts · cae «🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto,» → {"ok":true,"colaterales":8}
+6. src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts · cae «🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto,» → {"ok":true,"colaterales":2}
+7. src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts · cae «🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto,» → {"ok":true,"colaterales":2}
+8. src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts · cae «🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto,» → {"ok":true,"colaterales":5}
+9. src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts · cae «🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto,» → {"ok":true,"colaterales":5}
+10. src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts · cae «🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto,» → {"ok":true,"colaterales":5}
+11. src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts · cae «🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto,» → {"ok":true,"colaterales":5}
+12. src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts · cae «🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto,» → {"ok":true,"colaterales":2}
+13. src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts · cae «SCRUM-1326 · la pregunta es una RESPUESTA a quien escribió: » → {"ok":true,"colaterales":0}
+14. src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts · cae «SCRUM-1326 · con el bot encendido: «vale» sobre UN presupues» → {"ok":true,"colaterales":0}
+15. src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts · cae «SCRUM-1326 · con el bot encendido: «vale» sobre UN presupues» → {"ok":true,"colaterales":0}
+16. src/modules/whatsappBot/domain/decisionPorTexto.ts · cae «🔴 SCRUM-1326 · por efecto: las nueve que aceptan («Acepto»,» → {"ok":true,"colaterales":3}
+17. src/modules/whatsappBot/domain/decisionPorTexto.ts · cae «🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto,» → {"ok":true,"colaterales":4}
+18. src/modules/whatsappBot/domain/decisionPorTexto.ts · cae «🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto,» → {"ok":true,"colaterales":3}
+19. src/modules/whatsappBot/domain/decisionPorTexto.ts · cae «🔴 SCRUM-1326 · las que preguntan son OCHO, las firmadas, y » → {"ok":true,"colaterales":1}
+--- control CIEGO (un cae que no existe):
+{"ok":false,"ciego":"el test «CONTROL-cae-que-no-existe-1765f» NO aparece EN VERDE en la pasada limpia, así que no se ha mutado nada. Ese test NO LLEGÓ: ni pasó, ni cayó, ni se salt"}
+--- control MUDA (declarado como «M13», pero el driver la buscó por la subcadena «exentoDelDemo: 'respuesta-a-entrante'», que también está en el ancla unida de M5, y aplicó la nº 5 (M5). Etiqueta corregida a mano el 19-nov; el resultado no se toca: M5 con el cae «las doce flexiones que el reparto no nombra», que M5 no tumba):
+{"ok":false,"mudo":"el guard NO cayó. Test que debía ponerse rojo: «las doce flexiones que el reparto no nombra»\n    → en la pasada MUTADA ese test: PASÓ (corrió y no falló). Recuento: 7 pasados · 9 caídos · 0 saltados. Y en la LIMPIA: 16 pasados · 0 caídos."}
+git status tras la pasada: " M tests/scrum1326-vale-pregunta-una-vez.test.mjs\n"

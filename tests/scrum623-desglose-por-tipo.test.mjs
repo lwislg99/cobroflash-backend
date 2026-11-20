@@ -30,6 +30,8 @@ import { extraerTextoPdf, vecesEnPdf } from './_texto-del-pdf.mjs';
 import { soloCodigo } from './_solo-codigo.mjs';
 
 const MARCADOR = '[PENDIENTE microcopy oficial]';
+// Literal FIRMADO por el fundador para el rótulo de la columna de bases (SCRUM-1771 c.22164).
+const ROTULO_FIRMADO = 'Base imponible por tipo';
 
 async function textoDeFactura(sufijo, lines, total, taxName) {
   const { generateInvoicePdf } = await import('../dist/lib/pdf.js');
@@ -160,10 +162,15 @@ test('SCRUM-623 · el rótulo nuevo va MARCADO, y sólo donde hace falta', async
   const mixta = bloqueDeTotales(await textoDeFactura('M', CON_CERO, '117.60'));
   const simple = bloqueDeTotales(await textoDeFactura('M2', UN_TIPO, '72.60'));
 
-  // Una sola marca: la fila la describen el tipo y el importe, que son dato y no copy.
-  assert.equal(vecesEnPdf(mixta, MARCADOR), 1,
-    '🔴 el rótulo del desglose tiene que salir marcado exactamente UNA vez: la palabra no está '
-    + 'escrita y no me toca escribirla (regla 30).');
+  // Un solo rótulo: la fila la describen el tipo y el importe, que son dato y no copy.
+  // SCRUM-1771c (c.22203): el marcador pasó al literal firmado; el rótulo sigue saliendo
+  // exactamente UNA vez con varios tipos y ninguna con uno, y el marcador ya no sale nunca.
+  assert.equal(vecesEnPdf(mixta, ROTULO_FIRMADO), 1,
+    '🔴 el rótulo del desglose tiene que salir exactamente UNA vez, con el literal firmado '
+    + '(SCRUM-1771 c.22164).');
+  assert.equal(vecesEnPdf(mixta, MARCADOR), 0,
+    '🔴 el marcador de microcopy vuelve a salir en el papel.');
+  assert.equal(vecesEnPdf(simple, ROTULO_FIRMADO), 0);
   assert.equal(vecesEnPdf(simple, MARCADOR), 0);
 });
 
@@ -219,7 +226,7 @@ test('SCRUM-623 · ENMIENDA · con el impuesto puesto desde fuera, «IVA» DESAP
 
   const bloque = bloqueDeTotales(t);
   assert.equal(bloque,
-    'Base imponible:105,00 EUR[PENDIENTE microcopy oficial]7%60,00 EURIGIC 7%:4,20 EUR'
+    'Base imponible:105,00 EURBase imponible por tipo7%60,00 EURIGIC 7%:4,20 EUR'
     + '0%45,00 EURIGIC 0%:0,00 EURTOTAL:109,20 EUR',
     '🔴 el bloque de totales con un impuesto que no es el IVA.');
 });

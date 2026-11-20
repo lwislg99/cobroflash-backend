@@ -117,3 +117,76 @@ Aceptación de SCRUM-1771 → dónde se ve:
 | Literal firmado por el fundador en este ticket. | NO HECHO → fundador (opciones de ④) |
 | Guard en la tanda: ningún PDF emitido por `pdf.service.ts` contiene `[PENDIENTE` (con control positivo sembrado). | NO HECHO → J1, tramo siguiente, tras la firma (⑤) |
 | Verificado en staging con la cuenta QA: F1 nueva sin el marcador. | NO HECHO → tras el despliegue del arreglo |
+
+## SCRUM-1771c · La pieza entera: el literal firmado en el PDF, el último marcador fuera de `papel` y el guard de los papeles con positivo sembrado
+
+**Medido contra:** `origin/main` = `89bb8593b603c84b3413f4c3f90b1c4e4e715329` · 2026-11-19T18:06:33Z (cabecera `Date:` de `gh api -i zen`)
+A9: aviso → cicatriz J1 «Abrí el PDF de la F1 (lo fabriqué y lo leí) antes de cargar la skill `yaqu-verifactu-sif`, que el encargo pedía cargar ANTES de abrirlo por las menciones fiscales; la cargué después, al ir a citar el RD 1619/2012» — no se pudo comprobar: el orden de las herramientas de una sesión no pasa por ningún guard del repositorio (se repitió: en el PASO 0 de 1771c hice un `grep` de dos líneas de `pdf.service.ts` antes de cargar la skill)
+Mutaciones: catálogo → tests/scrum1771c-pdf-sin-marcador.test.mjs
+Mutaciones: catálogo → tests/scrum1293-cargador-de-marcadores.test.mjs
+Mutaciones: catálogo → tests/scrum903-marcador-no-se-imprime.test.mjs
+
+**Firma:** SCRUM-1771 c.22164 (fundador, «A»: `Base imponible por tipo`). **Decisión:** c.22171 (P1 ✅ · P2 ✅ · P3 un PR). Parte de la medición de jv-j1fr (c.22169, 1771b parado sin commits).
+
+### Lo que cambia
+
+* `src/modules/invoicing/infra/pdf/pdf.service.ts:54` — la constante `MARCADOR_MICROCOPY_DESGLOSE` lleva el literal firmado byte a byte. Es la única línea tocada en `src/`. El nombre de la constante y el comentario de `:777` («no me toca escribirlo… va como marcador») quedan viejos: renombrar o reescribir era tocar más camino de emisión que el firmado.
+* `scripts/_marcadores-pendientes-declarados.json` — `papel.constantes` queda `{}` con `papel._vacia_desde: "SCRUM-1771 c.22164"`; la entrada de `pdf.service.ts` en `servidor.ficheros` llegaba a 0 y se BORRA.
+* `tests/_marcadores-declarados.mjs` (P1) — un vacío en `papel` se lee SÓLO con `_vacia_desde` en forma `SCRUM-<n> c.<comentario>`; vacío sin la clave sigue lanzando; la clave con entradas, o mal escrita, también lanza; en `panel`/`servidor` no existe.
+* `tests/scrum1293-cargador-de-marcadores.test.mjs` — caso 7 partido: «`papel` VACÍA SIN declarar» (rojo) y «`papel` VACÍA y DECLARADA» (se lee); dos casos rojos nuevos (firma mal escrita; declaración con entradas). El control positivo del fichero real admite `papel` vacía sólo si la declara.
+* `tests/scrum903-marcador-no-se-imprime.test.mjs:236` (P2) — de «está declarado» a «NO está declarado Y `pdf.service.ts` lleva `'Base imponible por tipo'` Y no lleva el marcador». El nombre del caso de `:74` («la factura SIGUE imprimiendo su marcador») queda viejo: su aserción sólo pide que el PDF se genere, sigue verde, y no estaba autorizado a tocarlo.
+* `tests/scrum1771c-pdf-sin-marcador.test.mjs` — nuevo: nueve papeles del `dist/` (F1/R1/JUST de dos tipos, F1 un tipo, F1 sin líneas, presupuesto de dos tipos, albarán sin valorar, valorado y firmado). Ninguno trae `[PENDIENTE`; los tres de dos tipos traen el literal una vez y los demás cero. Positivo sembrado (pdfkit con el marcador y con el literal): si el detector no los ve, cada caso de papel sale ROJO con «CIEGO».
+* `docs/microcopy/2026-11-19-SCRUM-1771-rotulo-desglose-por-tipo.md` — la microcopy anotada como aplicada (el registro congelado no admite entradas).
+### Medido
+
+* **Rojo primero** con el `dist/` de main: 11 casos · 8 pass · 3 fail (F1, R1 y JUST de dos tipos: imprimen `[PENDIENTE`).
+* **Verde** con el cambio: los 8 ficheros que leen el JSON (402, 591, 650d, 667, 751, 755, 903, 1293; el encargo nombraba 7: `scrum751` también lo lee) + el nuevo: 96 casos · 96 pass · 0 fail · 0 skip.
+* **Mutaciones** con `aplicarUna` de la casa (pasada limpia + mutación + restauración por bytes; `git diff` con el mismo sha1 antes y después): 8 declaradas · 8 tumban. Las cuatro de c.22171: el marcador de vuelta en `:779` tumba F1, R1 y JUST; quitar `_vacia_desde` del JSON tumba el control positivo de `scrum1293`; aceptar vacío sin clave tumba «`papel` VACÍA SIN declarar»; volver la entrada al JSON tumba `scrum903`. Y dos más: el cargador que deja de leer la clave tumba la mitad que se lee, y un detector ciego tumba el positivo sembrado y los nueve papeles.
+* **Hallazgo de paso, no arreglado (no autorizado: `scrum667` no se toca):** el «albarán firmado» de `scrum667` (`pdfDeAlbaran` con `firmadoPorCalidad` y sin `signatureData`) NO pinta el bloque del firmante — `albaranPdf.service.ts` sólo lo pinta con `signatureData` —, así que ese papel no recorre la rama de «En calidad de» que dice medir. Lo medí volcando el texto: sin `signatureData` no sale «Ana Pérez». El test nuevo sí la pasa.
+
+### NO medido
+
+* No existe ningún `tests/scrum624y*`: de la lista del encargo no lo corrí porque no hay fichero.
+* La suite entera: no la corrí (el orquestador lo confirmó: no la pide el encargo).
+* El PDF de staging y la F1 nueva en staging: tras el despliegue.
+* Si `scrum667` queda MUDO con la lista vacía: ver la línea de `censo:mudez` en la entrega.
+
+### Relevo jv-j1fu · (a) y (b) de la decisión P4 (c.22180)
+
+A9: aviso → cicatriz J1 «Lancé `meta-guard-mutaciones.mjs --help` para ver sus opciones: no tiene `--help`, arrancó el censo entero (323 guards), lo maté a mitad y dejó `invoiceAdmin.ts` mutado (`if (false)`); lo restauré a mano contra `HEAD` y recompilé `dist/`» — no se pudo comprobar: ningún guard sabe qué opción no existe en un instrumento que muta
+Mutaciones: una vez → docs/master/evidencias/SCRUM-624/mutaciones-624y.mjs
+
+Medido el 2026-11-19 hacia las 18:30Z (`gh api -i zen` 18:32:42Z) sobre `origin/main` `4081668b2f2aa6a3685324eef234bdd92690d0e6`, con el trabajo de jv-j1fs (`cb3efbf22ee52e29dac9ccee85685b4025ec89c3`) mergeado. jv-j1fs paró en c.22179 (P4) y el orquestador decidió en c.22180: ✅ (a) y ✅ (b), en el mismo PR.
+
+* **(a)** `tests/_cambios-autorizados-de-la-factura.mjs`: una entrada nueva con firma `SCRUM-1771 c.22164` y solo el par `ambito` (el `cuerpo` de `generateInvoicePdf` no cambia: la constante de `:54` está fuera de él). El par que midió jv-j1fs (`508c2018…` → `76f53559…`) **caducó antes de empujar**: mientras tanto entró en `main` el #3250 (SCRUM-624y), que cambia `pdf.service.ts` y añade su propia entrada. Resolví el conflicto conservando las dos entradas y **regeneré** el par con `docs/master/evidencias/SCRUM-1446d/huellas.mjs` sobre la base nueva: `775ce32827dad87ee48cfa9c3c98593570866587ade6e267ea62bf5539f41a2d` → `deb02178fdb8d0346d7127db2f89c6e663a41c9725f7ec1b063c3060f51343a8` (`cuerpo` `7cbda25f…` igual en base y disco). Esta vez el clasificador de permisos no denegó la edición.
+* **(b)** `tests/scrum624e-a-solo-en-f1.test.mjs`: el bloque de la F1 de dos tipos fija `'Base imponible por tipo'` en lugar del marcador. La segunda línea (`:116`, la R1) desapareció con el #3250, que retiró ese caso por c.22137; el conflicto se resolvió con el lado de `main`. El catálogo de 624e no cambia (su mutación es la del justificante), y no hizo falta añadir ninguna.
+* **Diff de `src/` contra `main`**: una línea, `pdf.service.ts:54`.
+* **Verde**: 32 ficheros (723, 624e, 624y, 624c, 1763, 1051g, los 8 lectores del JSON, 1771c, 836, 700, 710b, 719, 1294, 267, 273, 525d, 854, 523d y los cinco de árbol entero de `guards:entrada`: 195, 414, 694, 710b, 737): 314 casos · 314 pass · 0 fail · 0 skip. `npm run guards:entrada`: 15 guards, 170 tests, salida 0. `tsc -p .` con tipos: salida 0.
+* **Mutaciones**: `mutaciones-624y.mjs` (624y + 624e, `aplicarUna` de la casa): 2 declaradas · 2 vivas; `git status` limpio después.
+* **`censo:mudez`**: 136 de 136 · VIVO 124 · MUDO 0 · CIEGO 0 · NO APLICA 11 · YA ROJO 1. Ningún fichero de esta pieza llama al filtro (`_guard-texto`), así que la ficha no cambia y no se escribió. `scrum667` no entra en esa población: con la lista vacía su mudez no la mide este censo, y no se toca (c.22171).
+* **El rojo de (a) y (b) sin el cambio** no lo volví a ver: `guard-dangerous` bloqueó sobrescribir los ficheros con su versión de `HEAD`, y no lo rodeé. Vale el que midió jv-j1fs en c.22179.
+
+**NO medido:** la suite entera; el meta-guard completo (no tiene filtro por fichero, y la pasada entera son 1.321 mutaciones); qué fichero es el YA ROJO de `censo:mudez` (la salida no lo nombra); staging.
+
+| aceptación (literal) | dónde se ve |
+| --- | --- |
+| Clave identificada con fichero:línea y lista de documentos afectados (comentario de J1). | c.22159 · tramo 1771a de este registro |
+| Literal firmado por el fundador en este ticket. | c.22164 · `docs/microcopy/2026-11-19-SCRUM-1771-rotulo-desglose-por-tipo.md` |
+| Guard en la tanda: ningún PDF emitido por `pdf.service.ts` contiene `[PENDIENTE` (con control positivo sembrado). | `tests/scrum1771c-pdf-sin-marcador.test.mjs` |
+| Verificado en staging con la cuenta QA: F1 nueva sin el marcador. | NO HECHO → tras desplegar (CIERRES en staging, J1) |
+
+### Relevo jv-j1fx · los 7 rojos del obligatorio de #3266 (c.22203)
+
+A9: comprobación → `tests/scrum775-suelo-que-no-dispara.test.mjs`
+
+Medido el 2026-11-20 hacia las 05:20Z (`gh api -i zen` 05:21:43Z) sobre `origin/main` `4c5c01e38fd36618fe74692461bec18d41ad2f74`, mergeado en la rama (que seguía en `02c706e80`, sin tocar por ningún bot). El orquestador leyó en el run 44589564673 siete rojos y decidió en c.22203: reanclar al literal firmado los tests que fijan el bloque de totales con el marcador (la decisión (b) de c.22180, extendida a 604 y 623) y resolver `scrum1179-B` por su mecanismo, sin tocar el trinquete.
+
+* **Eran cinco en 604/623, no cuatro.** Corridos en local antes de tocar nada: 16 casos · 11 pass · 5 fail. Los cuatro de c.22203 y además «SCRUM-623 · el rótulo nuevo va MARCADO, y sólo donde hace falta», que exigía el marcador exactamente UNA vez en la factura de dos tipos. Es el mismo mecanismo (fija el rótulo del desglose con el marcador) y lo reanclé igual. Por qué no salía en la lista del orquestador: no lo medí.
+* **`scrum604`** (3 casos) y **`scrum623` ENMIENDA**: en el `expected` del bloque de totales, `[PENDIENTE microcopy oficial]` pasa a `Base imponible por tipo`, byte a byte. Nada más de esas líneas.
+* **`scrum623` «va MARCADO»**: ahora exige el literal firmado exactamente una vez en la de dos tipos y cero en la de uno, y el marcador cero en las dos. El nombre del caso no cambia (no lo cita ningún catálogo, lo comprobé con grep, pero un nombre se cita por identidad). El control negativo de `:104` (un tipo → cero marcadores) no cambia.
+* **`scrum1179-B`** (`tests/scrum775-suelo-que-no-dispara.test.mjs`, casos «trinquete» y «control POSITIVO»): lo que salía era `SUELO NO CONECTADO: tests/scrum1293-cargador-de-marcadores.test.mjs:40 · leerMarcadoresDeclarados · r.papelVaciaDesde`. El cargador fabricaba esa propiedad con una clave CALCULADA (`` out[`${seccion}VaciaDesde`] ``), y `propiedadesQueDevuelve` (`scripts/_censo-suelos.mjs:112`) solo ve las del literal que se devuelve. Para el censo, «no la fabrica nunca». Lo arreglé en el código, no en el guard: en `tests/_marcadores-declarados.mjs` la propiedad nace en el literal (`{ ok: true, papelVaciaDesde: undefined }`) y se asigna por su nombre (solo `papel` puede declarar el vacío). Ni el trinquete ni la lista de declarados se tocan. Rojo con la clave calculada (16 casos · 14 pass · 2 fail) y verde con el cambio (775 + 1293: 37 · 37 · 0), sin cambiar nada más. Ninguna mutación de 1293 se ancla en esas líneas.
+* **`grep -rn 'PENDIENTE microcopy' tests/`** NO da 0, ni puede: el marcador lo usan unos 60 tests de otras pantallas, que no tienen nada que ver con este papel. La pregunta que sí corresponde, `grep -rn 'EUR\[PENDIENTE' tests/` (el bloque de totales con el marcador), da **0**. Control positivo: antes del reanclaje daba 4 (604:126, :139, :164 y 623:222).
+* **Diff de `src/` contra `main`**: una línea, `pdf.service.ts:54`.
+* **Verde**: 32 ficheros (604, 623, 624c, 624e, 624y, 1763, 1051g, 775 [1179-B], 1179c ×3, 1179d, 723, 667, 903, 1293, 402, 591, 650d, 751, 755, 1771c, 836, 700, 710b, 719, 1294, 267, 273, 525d, 854 y 523d): 296 casos · 296 pass · 0 fail · 0 skip, antes de escribir este tramo. `tsc -p . --noEmit` con tipos: salida 0. Meta-guard `--solo-censo`: salida 0, 327 declarantes · 1.359 declaraciones, sin ejecutar ninguna mutación y con el árbol limpio después.
+
+**NO medido:** la suite entera; el meta-guard con mutaciones (la pasada entera); staging.
