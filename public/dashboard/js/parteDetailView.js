@@ -925,8 +925,25 @@
     return salida;
   }
 
+  /**
+   * ¿Firmado y sin facturar? Se lee de los DOS CANDADOS que el servidor manda ya resueltos, no del
+   * nombre del estado: el contenido cerrado (`puedeEditarContenido` sólo abre en borrador) y los
+   * precios aún abiertos (`puedeEditarPrecios` sólo cierra al facturar). Es la regla de esta vista
+   * («la pantalla no vuelve a decidir la regla») y, sin un candado, la respuesta es NO.
+   *
+   * La primera versión comparaba el estado con su nombre escrito aquí, y el trinquete de
+   * SCRUM-1194d la leyó como un valor que esta pantalla le OFRECE a las rutas del parte. No lo es:
+   * esta pantalla no manda el estado a ninguna, y así sigue sin nombrarlo.
+   */
+  function firmadoYSinFacturar(parte) {
+    var contenido = parte && parte.puedeEditarContenido;
+    var precios = parte && parte.puedeEditarPrecios;
+    if (!contenido || !precios) return false;
+    return contenido.ok === false && precios.ok === true;
+  }
+
   function pintarHacerPresupuesto(parte) {
-    if (!parte || parte.estado !== 'firmado' || !tieneTrabajo(parte)) return '';
+    if (!firmadoYSinFacturar(parte) || !tieneTrabajo(parte)) return '';
     if (lineasParaElPresupuesto(parte).length === 0) return '';
     var L = (typeof window !== 'undefined' && window.appLocale) || {};
     // Secundario SIEMPRE: la acción principal de un parte firmado es la firma que falte o volver.

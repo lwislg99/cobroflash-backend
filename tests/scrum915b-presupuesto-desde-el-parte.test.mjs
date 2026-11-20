@@ -46,7 +46,11 @@ const BASE = Object.freeze({
 const CERRADO = { puedeEditarContenido: { ok: false, motivo: 'firmado' } };
 const FIRMADO = { ...CERRADO, estado: 'firmado', firmoElCliente: true, firmoElTecnico: true, firmadoPorNombre: 'Ana', firmadoTecnicoNombre: 'Israel' };
 const FIRMADO_UNO = { ...CERRADO, estado: 'firmado', firmoElTecnico: true, firmadoTecnicoNombre: 'Israel' };
-const FACTURADO = { ...FIRMADO, estado: 'facturado', puedeEditarContenido: { ok: false, motivo: 'facturado' } };
+// Como lo sirve el servidor: al facturar se cierra TAMBIÉN el candado de los precios (`puedeEditarPrecios`).
+const FACTURADO = {
+  ...FIRMADO, estado: 'facturado',
+  puedeEditarContenido: { ok: false, motivo: 'facturado' }, puedeEditarPrecios: { ok: false, motivo: 'facturado' },
+};
 
 const ROTULO = '+ Nuevo presupuesto';
 const EN_PANTALLA = [
@@ -199,6 +203,9 @@ test('SCRUM-915b ④ NO sale en borrador, ni facturado, ni sin trabajo, ni sin l
   const casos = [
     ['borrador (aún se está apuntando)', BASE],
     ['facturado', { ...BASE, ...FACTURADO }],
+    // Sin un candado no se sabe en qué punto está el parte: la respuesta es NO, no «será firmado».
+    ['sin el candado de los precios', { ...BASE, ...FIRMADO, puedeEditarPrecios: undefined }],
+    ['sin el candado del contenido', { ...BASE, ...FIRMADO, puedeEditarContenido: undefined }],
     ['sin trabajo', { ...BASE, ...FIRMADO, jobId: null }],
     ['sin líneas', { ...BASE, ...FIRMADO, lineas: [] }],
     ['con líneas sin descripción', { ...BASE, ...FIRMADO, lineas: [{ bloque: 'mano_obra', unds: 1, descripcion: '   ' }] }],

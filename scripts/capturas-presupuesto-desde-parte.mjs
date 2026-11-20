@@ -24,7 +24,8 @@ import { servirListas, abrirNavegador, abrirVista, arbolDePartida } from './_ban
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DESTINO = path.join(RAIZ, 'docs', 'master', 'evidencias', 'SCRUM-915b');
 
-const CLIENTE = { id: 3, name: 'Comunidad Los Olivos', email: 'admin@losolivos.example', phone: '34600111222', mobile: null };
+// Teléfonos del rango imposible (prefijo 340, SCRUM-262): no pueden ser de nadie.
+const CLIENTE = { id: 3, name: 'Comunidad Los Olivos', email: 'admin@losolivos.example', phone: '34000111222', mobile: null };
 // Lo que sirve `GET /admin/partes/:id` (el del técnico: sin dinero), firmado por los dos.
 const PARTE = {
   id: 13, jobId: 7, customerId: CLIENTE.id, numero: 'PT-2026-013', clienteNombre: CLIENTE.name,
@@ -50,7 +51,7 @@ const datosParte = `(function (ruta) {
   return {};
 })`;
 const datosEditor = `(function (ruta) {
-  if (/\\/admin\\/customers/.test(ruta)) return ${JSON.stringify([CLIENTE, { id: 4, name: 'Bar La Esquina', email: '', phone: '34600333444', mobile: null }])};
+  if (/\\/admin\\/customers/.test(ruta)) return ${JSON.stringify([CLIENTE, { id: 4, name: 'Bar La Esquina', email: '', phone: '34000111333', mobile: null }])};
   if (/\\/admin\\/merchant/.test(ruta)) return ${JSON.stringify(NEGOCIO)};
   if (/\\/admin\\/products/.test(ruta)) return [];
   return {};

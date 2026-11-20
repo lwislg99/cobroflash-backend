@@ -1291,4 +1291,24 @@ a 1280 son 36 px de alto los dos, que es lo que ya medía «Volver al trabajo» 
 - El editor abre en su paso 1 («Cliente») con el cliente ya elegido: hay que pulsar «Continuar» para
   llegar a las líneas. Es lo que ya hace «Hacer presupuesto» desde el trabajo; no se ha tocado.
 
+### Cura tras el primer CI (run 44726761564, rojo en el obligatorio)
+
+Tres rojos, los tres de esta rama y ninguno en mi tanda local de 144 ficheros (no los había elegido):
+
+- **SCRUM-1194d (dos casos):** la condición comparaba el estado con su nombre escrito en la vista, y
+  el trinquete lo leyó como un valor que la pantalla OFRECE a las rutas del parte. Se arregló el
+  código, no la declaración: «firmado y sin facturar» se lee ahora de los dos candados que el
+  servidor manda resueltos (`puedeEditarContenido` cerrado y `puedeEditarPrecios` abierto), y sin
+  un candado la respuesta es NO. El test gana dos negativos (sin cada candado) y su parte facturado
+  lleva el candado de precios cerrado, como lo sirve el servidor. **Corrige la decisión 1 en su
+  forma, no en su alcance:** sigue siendo sólo firmado y no facturado.
+- **SCRUM-1480f:** `scripts/capturas-presupuesto-desde-parte.mjs` nace con su fila en
+  `docs/equipo/dos-equipos.md` §3.3 (S4) y se regeneraron los carriles.
+- **SCRUM-262:** los dos teléfonos de muestra del guion pasan al rango imposible (prefijo 340).
+
+Tras la cura, en local: esos tres ficheros, el test de esta pieza, `scrum1677`, `scrum811c` y
+`scrum1773` → 64 casos, 0 fallos. **Sin rehacer tras la cura:** las 8 mutaciones (la primera
+cambió de ancla) y las capturas (el guion sólo cambió dos teléfonos). El meta-guard y el job de
+navegador del CI no los he reproducido en local.
+
 A9: comprobación → `tests/scrum915b-presupuesto-desde-el-parte.test.mjs`
