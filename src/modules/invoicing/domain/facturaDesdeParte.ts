@@ -7,7 +7,9 @@
 //   · Enlace parte → factura en `ParteTrabajo.invoiceId` (ALTER aditivo, c.22237 ③ y c.22242).
 //   · Basta el estado `firmado` (c.22237 ④).
 //   · Solo admin; concepto del parte TAL CUAL; se factura aunque el trabajo tenga un presupuesto
-//     ya facturado; al anular la factura, el parte se queda `facturado` (c.22244 ①-④).
+//     ya facturado; al anular la factura, el parte se queda facturado (c.22244 ①-④).
+//   · «Facturado» NO es un estado: el parte se queda `firmado` y lo marca `invoiceId` no nulo
+//     (opción B1 del orquestador, SCRUM-1780; la Parte L fija `borrador | firmado`, SCRUM-1529 ②).
 //
 // 🔴 LA RUTA NO SE MONTA AQUÍ. `partes.routes.ts` es del carril S1 (equipo de Luis): las tres líneas
 // del montaje están literales en SCRUM-1780 c.22242. Hasta que S1 las escriba, `facturarParte` no
@@ -83,8 +85,9 @@ export async function facturarParteDeMerchant(args: {
   const parte = await prisma.parteTrabajo.findFirst({ where: { id: parteId, merchantId } });
   if (!parte) return { ok: false, status: 404, error: 'not_found' };
 
-  // Solo el estado. El `invoiceId: null` vive en el WHERE de la reclamación, dentro de la tx.
-  if (parte.estado === 'facturado') return { ok: false, status: 409, error: 'parte_ya_facturado' };
+  // «Ya facturado» es `invoiceId` no nulo (B1, SCRUM-1780; la Parte L no tiene `facturado`). Lo que
+  // lo hace cumplir de verdad es el WHERE del enlace, dentro de la tx.
+  if (parte.invoiceId != null) return { ok: false, status: 409, error: 'parte_ya_facturado' };
   if (parte.estado !== 'firmado') return { ok: false, status: 409, error: 'parte_no_firmado' };
 
   const merchant = await prisma.merchant.findUnique({
@@ -129,16 +132,7 @@ export async function facturarParteDeMerchant(args: {
   let invoice;
   try {
     invoice = await prisma.$transaction(async (tx) => {
-      // 1) RECLAMAR el parte ANTES de pedir número. En Postgres la fila queda bloqueada hasta el
-      //    commit: una segunda petición simultánea espera, vuelve a evaluar el WHERE, toca 0 filas y
-      //    sale sin consumir número de serie. Exactamente 1 fila, o se deshace todo.
-      const reclamado = await tx.parteTrabajo.updateMany({
-        where: { id: parte.id, merchantId, estado: 'firmado', invoiceId: null },
-        data: { estado: 'facturado' },
-      });
-      if (reclamado.count !== 1) throw new Error(YA_FACTURADO_EN_LA_TX);
-
-      // 2) Emitir. Sin presupuesto (`quoteId: null`): el precio es el que la oficina puso al parte.
+      // 1) Emitir. Sin presupuesto (`quoteId: null`): el precio es el que la oficina puso al parte.
       const inv = await emitInvoice(tx, {
         merchantId, customerId, total,
         currency: merchant.defaultCurrency || 'EUR', type: 'F1',
@@ -151,8 +145,16 @@ export async function facturarParteDeMerchant(args: {
       });
       if (isReceiptNumber(inv.number)) throw new Error('facturacion_no_disponible');
 
-      // 3) Enlace parte → factura, en la misma tx.
-      await tx.parteTrabajo.updateMany({ where: { id: parte.id, merchantId }, data: { invoiceId: inv.id } });
+      // 2) ENLAZAR el parte a la factura, en la misma tx y condicionado. El parte se queda `firmado`:
+      //    «está facturado» es `invoiceId` no nulo (la Parte L no tiene `facturado`, SCRUM-1529 ②;
+      //    opción B1 del orquestador, SCRUM-1780). En Postgres, una segunda petición simultánea espera
+      //    al bloqueo de la fila, vuelve a evaluar el WHERE y toca 0 filas: se lanza y la tx deshace
+      //    su factura y su número. Exactamente 1 fila, o se deshace todo.
+      const enlazado = await tx.parteTrabajo.updateMany({
+        where: { id: parte.id, merchantId, estado: 'firmado', invoiceId: null },
+        data: { invoiceId: inv.id },
+      });
+      if (enlazado.count !== 1) throw new Error(YA_FACTURADO_EN_LA_TX);
       return inv;
     });
   } catch (e: any) {

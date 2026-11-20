@@ -34,17 +34,18 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'comercio B → 404',
   },
   {
-    // Sin la transición, el parte se queda `firmado` con su factura: el estado `facturado` no se escribe.
+    // Sin escribir el enlace, el parte sigue facturable con su factura emitida (B1: «facturado» = invoiceId).
     fichero: 'src/modules/invoicing/domain/facturaDesdeParte.ts',
-    de: "data: { estado: 'facturado' },",
+    de: 'data: { invoiceId: inv.id },',
     a: 'data: {},',
     cae: 'caso feliz → F1 con las líneas',
   },
   {
-    // Sin `invoiceId: null` en la reclamación, un parte que ya lleva factura se factura otra vez.
+    // Sin la precomprobación, un parte que ya lleva factura llega a emitir otra (B1). La de quitar
+    // `invoiceId: null` del WHERE del enlace solo la ve la simultánea, que va bajo Postgres (SCRUM-1780).
     fichero: 'src/modules/invoicing/domain/facturaDesdeParte.ts',
-    de: "where: { id: parte.id, merchantId, estado: 'firmado', invoiceId: null },",
-    a: "where: { id: parte.id, merchantId, estado: 'firmado' },",
+    de: 'if (parte.invoiceId != null) return',
+    a: 'if (false) return',
     cae: 'firmado con factura ya enlazada → 409 parte_ya_facturado',
   },
 ];
@@ -148,7 +149,7 @@ test('SCRUM-1780c · caso feliz → F1 con las líneas, C7-parte, 0 Charge, part
   assert.equal(String(f.total), '118.25');
   assert.equal(banco.tablas.charge.length, 0, 'la factura nace SIN cobro (c.22237 ②)');
   assert.ok(JSON.stringify(banco.tablas.auditLog).includes('C7-parte'), 'la auditoría de emitInvoice lleva el origen C7-parte');
-  assert.equal(p.estado, 'facturado');
+  assert.equal(p.estado, 'firmado', 'B1 (SCRUM-1780): el parte se queda firmado; «facturado» es invoiceId no nulo');
   assert.equal(p.invoiceId, f.id);
   assert.equal(r.body.factura.id, f.id);
   assert.equal(r.body.message, undefined, 'ningún texto de usuario (regla 39)');
@@ -200,7 +201,10 @@ test('SCRUM-1780c · doble facturación secuencial → 409 parte_ya_facturado y 
   assert.equal(facturas().length, 1);
 });
 
-test('SCRUM-1780c · doble facturación simultánea → un 201 y un 409, UNA factura, contador +1', async () => {
+// B1 (SCRUM-1780): el enlace va DESPUÉS de emitir y la segunda petición la deshace la tx de Postgres.
+// Este banco no deshace ni aísla: aquí la simultánea no se puede probar. Va bajo el Postgres
+// desechable de la casa (pendiente del relevo, traspaso en SCRUM-1780); aquí queda el salto declarado.
+test('SCRUM-1780c · doble facturación simultánea → un 201 y un 409, UNA factura, contador +1', { skip: 'B1: se mide contra Postgres desechable (pendiente, SCRUM-1780); el banco en memoria no deshace la tx' }, async () => {
   const p = parte();
   const antes = banco.tablas.merchant.find((m) => m.id === M_ES).nextInvoiceNumber;
   const rs = await Promise.all([invocar({ id: p.id }), invocar({ id: p.id })]);
@@ -243,5 +247,5 @@ test('SCRUM-1780c · trabajo con presupuesto ya facturado → se factura igual (
   const r = await invocar({ id: p.id });
   assert.equal(r.code, 201, JSON.stringify(r.body));
   assert.equal(facturas().length, 2);
-  assert.equal(p.estado, 'facturado');
+  assert.equal(p.invoiceId, facturas()[1].id);
 });
