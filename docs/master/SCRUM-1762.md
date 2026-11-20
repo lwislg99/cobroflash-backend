@@ -91,3 +91,15 @@ A9: sin fallo que generalice — el tramo se cortó por límite de uso antes de 
 Mutaciones: catálogo → `tests/scrum1762c-hallmark-inicio.test.mjs`
 
 Capturas (fuera de git, A8): `D:\MILLONARIO\cobroFlash\capturas\SCRUM-1762\c-inicio\despues\` (admin y operario, 390 y 1280); el antes es la auditoría de la mañana (`sondas-s2\evid-hallmark-20nov\inicio-*`). Medido después: 0 emojis, un solo H1 («Inicio»), 0 px de desborde.
+
+### Regla 42 del PR-1 (verificado en yaqu.app)
+#3271 mergeado (11:50Z). yaqu.app sirve el build `5d6114fb18010482abcb7172882b5c0cf8b35760`, que lo contiene. La sonda
+`sondas-s2\capturar-1762.mjs` con `PROD=1` (sin servir nada local, solo GET), trabajo QA 77, admin 390 y 1280, mide
+lo mismo que el «después» local: pestaña abierta sobre rgb(236,253,245), «+ Nuevo parte» 13,5 px × 44 px sobre
+rgb(4,120,87), 0 emojis y 0 px de desborde. Capturas: `D:\MILLONARIO\cobroFlash\capturas\SCRUM-1762\b-ficha\r42-prod\`.
+
+### PR-2 · exigencias que cambian además de 698 y 601 (cazadas por la tanda, PENDIENTES de autorización)
+- `tests/scrum1341-actividad-del-equipo-sin-importes.test.mjs` L403 y L434: la cabecera «Cotizaciones» pasa a «Presupuestos» (el texto firmado).
+- `tests/scrum1686h4-inicio-operario.test.mjs` ⑥: exigía que el admin NO tuviera «Para hoy»; ahora exige que lo tenga, con la misma franja, sin «Por cobrar» y pidiendo su lista una vez.
+- `tests/scrum1762c-hallmark-inicio.test.mjs`: control hermano de la negación «Cotizaciones» (SCRUM-237), que con `quotePlural` de LatAm tiene que salir «Cotizaciones».
+Rojo-primero: las tres caen con el `homeView.js` de `origin/main`.

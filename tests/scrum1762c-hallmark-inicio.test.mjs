@@ -62,9 +62,11 @@ const texto = (x) => String(x.textContent || '');
 // En el banco, el textContent de una tabla montada por innerHTML no agrega a sus celdas: se juntan las de dentro.
 const textoHondo = (x) => [x, ...todos(x)].map((y) => String(y.textContent || '')).join(' ');
 
-async function inicioDelAdmin() {
+async function inicioDelAdmin(locale) {
   const banco = cargarDashboard(RAIZ);
   banco.ctx.appUserRole = 'admin';
+  // Sólo se toca la palabra; el resto del locale del banco se queda como está.
+  if (locale) banco.ctx.appLocale = Object.assign({}, banco.ctx.appLocale || {}, locale);
   banco.ctx.apiRequest = async (u) => {
     const url = String(u);
     if (/\/admin\/metrics\/home/.test(url)) {
@@ -137,4 +139,13 @@ test('1762c ③ · «Presupuestos» como el menú, y «—» neutro donde no se 
   assert.doesNotMatch(textoHondo(dueña), /0%/, '🔴 0 enviados sigue pintando «0%»');
   assert.ok(todos(dueña).some((x) => tag(x) === 'TD' && texto(x) === '—' && /equipo-tasa-sin-envios/.test(clase(x))), '🔴 0 enviados no pinta el guion neutro');
   assert.match(textoHondo(op), /50%/, '🔴 CONTROL: con envíos la tasa tiene que seguir saliendo');
+});
+
+test('1762c ③ · CONTROL: la palabra es la del MENÚ, no una fija — con el locale de LatAm sale «Cotizaciones»', async () => {
+  // Hermano positivo de la negación de arriba (SCRUM-237): el mismo bloque, con `quotePlural` de otro país,
+  // tiene que decir esa palabra. Si «Presupuestos» estuviera escrito a fuego, aquí no saldría «Cotizaciones».
+  const { r, n } = await inicioDelAdmin({ quotePlural: 'Cotizaciones' });
+  assert.match(textoHondo(r.contenedor), /Cotizaciones/, '🔴 con el locale de LatAm el Inicio no dice «Cotizaciones»');
+  assert.ok(n.some((x) => /\bkpi-label\b/.test(clase(x)) && texto(x) === 'Cotizaciones sin respuesta'),
+    '🔴 el rótulo no sigue a appLocale.quotePlural: está escrito a fuego');
 });
