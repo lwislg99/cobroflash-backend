@@ -1,0 +1,754 @@
+{
+  "fase": "despues",
+  "health": {
+    "ok": true,
+    "service": "yaqu-backend",
+    "version": "b0b7cf9970e7b4202f547a11e1d09add4ffca971",
+    "db": "up",
+    "dbMs": 1.9
+  },
+  "horaHealth": "Fri, 20 Nov 2026 07:03:54 GMT",
+  "login": 200,
+  "f1": {
+    "id": 1977,
+    "status": 200,
+    "tipo": "application/pdf",
+    "bytes": 6502,
+    "sha256": "b9ee617517dd9e1ea0499404869d291ef4dea9951c7bde0097dd38e790c52016",
+    "lineasTotales": 23,
+    "lineas": [
+      "CONCEPTOCANT.PRECIO UNITIVA %IMPORTE",
+      "Base imponible:80,00 EUR",
+      "Base imponible por tipo",
+      "21%50,00 EURIVA 21%:10,50 EUR",
+      "10%30,00 EURIVA 10%:3,00 EUR",
+      "TOTAL:93,50 EUR"
+    ],
+    "veces": {
+      "Base imponible por tipo": 1,
+      "[PENDIENTE": 0,
+      "Base imponible": 2
+    },
+    "detalle": {
+      "status": 200,
+      "number": "F260002",
+      "type": "F1",
+      "total": "93.5",
+      "estado": "pending",
+      "chargeId": "(no viene)",
+      "sentVia": "(no viene)"
+    }
+  },
+  "libroY303": {
+    "hoy": "2026-11-20",
+    "libro": {
+      "status": 200,
+      "bytes": 1587,
+      "jsonBytes": 1587,
+      "clavesRaiz": [
+        "asientos",
+        "miradas",
+        "ajenas",
+        "sinNumero",
+        "sinNumeroImporte",
+        "importesIlegibles",
+        "justificantesFuera"
+      ],
+      "filaF1": null,
+      "algunaFilaConCobros": [
+        "numero",
+        "fecha",
+        "tipo",
+        "clienteId",
+        "clienteCongelado",
+        "base",
+        "cuota",
+        "porTipo",
+        "suplidosPorTipo",
+        "total",
+        "cobros",
+        "moneda",
+        "estado",
+        "importeIlegible",
+        "enlaces"
+      ],
+      "mencionaCobros": 3,
+      "cuerpo": {
+        "asientos": [
+          {
+            "numero": "F260001",
+            "fecha": "2026-11-18T23:46:15.252Z",
+            "tipo": "F1",
+            "clienteId": 49,
+            "clienteCongelado": {
+              "name": "Cliente QA",
+              "legalName": null,
+              "taxId": null
+            },
+            "base": 73.08,
+            "cuota": 11.28,
+            "porTipo": [
+              {
+                "tipo": 21,
+                "base": 36.03,
+                "cuota": 7.57
+              },
+              {
+                "tipo": 10,
+                "base": 37.05,
+                "cuota": 3.71
+              }
+            ],
+            "suplidosPorTipo": [],
+            "total": 84.36,
+            "cobros": [],
+            "moneda": "EUR",
+            "estado": "pending",
+            "importeIlegible": false,
+            "enlaces": {
+              "presupuestoId": null,
+              "presupuestoFirmado": null,
+              "albaranes": [],
+              "albaranesNoSellados": 0,
+              "cobroId": null
+            }
+          },
+          {
+            "numero": "2026-QA-R-001",
+            "fecha": "2026-11-18T23:47:03.503Z",
+            "tipo": "R1",
+            "clienteId": 49,
+            "clienteCongelado": {
+              "name": "Cliente QA",
+              "legalName": null,
+              "taxId": null
+            },
+            "base": -73.08,
+            "cuota": -11.27,
+            "porTipo": [
+              {
+                "tipo": 21,
+                "base": -36.03,
+                "cuota": -7.57
+              },
+              {
+                "tipo": 10,
+                "base": -37.05,
+                "cuota": -3.7
+              }
+            ],
+            "suplidosPorTipo": [],
+            "total": -84.35,
+            "cobros": [],
+            "moneda": "EUR",
+            "estado": "paid",
+            "importeIlegible": false,
+            "enlaces": {
+              "presupuestoId": null,
+              "presupuestoFirmado": null,
+              "albaranes": [],
+              "albaranesNoSellados": 0,
+              "cobroId": null
+            }
+          },
+          {
+            "numero": "F260002",
+            "fecha": "2026-11-20T07:03:22.860Z",
+            "tipo": "F1",
+            "clienteId": 3936,
+            "clienteCongelado": {
+              "name": "Cliente QA sin avisos",
+              "legalName": null,
+              "taxId": null
+            },
+            "base": 80,
+            "cuota": 13.5,
+            "porTipo": [
+              {
+                "tipo": 21,
+                "base": 50,
+                "cuota": 10.5
+              },
+              {
+                "tipo": 10,
+                "base": 30,
+                "cuota": 3
+              }
+            ],
+            "suplidosPorTipo": [],
+            "total": 93.5,
+            "cobros": [],
+            "moneda": "EUR",
+            "estado": "pending",
+            "importeIlegible": false,
+            "enlaces": {
+              "presupuestoId": null,
+              "presupuestoFirmado": null,
+              "albaranes": [],
+              "albaranesNoSellados": 0,
+              "cobroId": null
+            }
+          }
+        ],
+        "miradas": 3,
+        "ajenas": 0,
+        "sinNumero": 0,
+        "sinNumeroImporte": 0,
+        "importesIlegibles": [],
+        "justificantesFuera": 0
+      }
+    },
+    "m303_2026T4": {
+      "status": 200,
+      "cuerpo": {
+        "año": 2026,
+        "trimestre": 4,
+        "desde": "2026-09-30T22:00:00.000Z",
+        "hasta": "2026-12-31T22:59:59.999Z",
+        "moneda": "EUR",
+        "casillas": [
+          {
+            "tipo": 4,
+            "casillaBase": 1,
+            "casillaTipo": 2,
+            "casillaCuota": 3,
+            "base": 0,
+            "cuota": 0
+          },
+          {
+            "tipo": 10,
+            "casillaBase": 4,
+            "casillaTipo": 5,
+            "casillaCuota": 6,
+            "base": -37.05,
+            "cuota": -3.7
+          },
+          {
+            "tipo": 21,
+            "casillaBase": 7,
+            "casillaTipo": 8,
+            "casillaCuota": 9,
+            "base": -36.03,
+            "cuota": -7.57
+          }
+        ],
+        "casillaTotalCuota": {
+          "casilla": 27,
+          "valor": -11.27
+        },
+        "totalBase": -73.08,
+        "sinClasificar": [],
+        "informacionAdicional": {
+          "inversionSujetoPasivo": {
+            "casilla": 122,
+            "base": 0,
+            "operaciones": []
+          }
+        },
+        "sinDesglose": [],
+        "cruceConCobros": {
+          "cuotaDeCobradas": -11.27,
+          "cuotaDeNoCobradas": 0,
+          "asientosCobrados": 1,
+          "asientosNoCobrados": 0
+        },
+        "ivaDeducible": {
+          "corrientes": {
+            "casillaBase": 28,
+            "casillaCuota": 29,
+            "base": 0,
+            "cuota": 0
+          },
+          "bienesDeInversion": {
+            "casillaBase": 30,
+            "casillaCuota": 31,
+            "base": 0,
+            "cuota": 0,
+            "vaciaPorque": "sin_dato_de_bien_de_inversion"
+          },
+          "casillaTotalADeducir": {
+            "casilla": 45,
+            "valor": 0
+          },
+          "sinClasificar": [],
+          "noDeducibles": 0,
+          "miradas": 0,
+          "asientos": 0,
+          "gastosSinDatosDeIva": 0,
+          "gastosSinDatosDeIvaImporte": 0
+        },
+        "resultadoRegimenGeneral": {
+          "casilla": 46,
+          "valor": -11.27
+        },
+        "resultadoFinal": {
+          "sumaDeResultados": {
+            "casilla": 64,
+            "valor": -11.27
+          },
+          "vacias": [
+            {
+              "casilla": 65,
+              "motivo": "porcentaje_atribuible_no_consta"
+            },
+            {
+              "casilla": 66,
+              "motivo": "depende_de_la_65"
+            },
+            {
+              "casilla": 68,
+              "motivo": "regularizacion_anual_foral_no_consta"
+            },
+            {
+              "casilla": 69,
+              "motivo": "depende_de_la_66"
+            },
+            {
+              "casilla": 70,
+              "motivo": "autoliquidacion_anterior_no_consta"
+            },
+            {
+              "casilla": 71,
+              "motivo": "depende_de_la_69"
+            }
+          ]
+        },
+        "miradas": 1,
+        "asientos": 1,
+        "motivosParaNoFiarse": [],
+        "avisoObligatorio": "Borrador para tu asesor",
+        "rotulos": [
+          {
+            "casilla": 1,
+            "rotulo": "Régimen general · 4 %",
+            "columna": "Base imponible",
+            "pagina": 1
+          },
+          {
+            "casilla": 2,
+            "rotulo": "Régimen general · 4 %",
+            "columna": "Tipo %",
+            "pagina": 1
+          },
+          {
+            "casilla": 3,
+            "rotulo": "Régimen general · 4 %",
+            "columna": "Cuota",
+            "pagina": 1
+          },
+          {
+            "casilla": 4,
+            "rotulo": "Régimen general · 10 %",
+            "columna": "Base imponible",
+            "pagina": 1
+          },
+          {
+            "casilla": 5,
+            "rotulo": "Régimen general · 10 %",
+            "columna": "Tipo %",
+            "pagina": 1
+          },
+          {
+            "casilla": 6,
+            "rotulo": "Régimen general · 10 %",
+            "columna": "Cuota",
+            "pagina": 1
+          },
+          {
+            "casilla": 7,
+            "rotulo": "Régimen general · 21 %",
+            "columna": "Base imponible",
+            "pagina": 1
+          },
+          {
+            "casilla": 8,
+            "rotulo": "Régimen general · 21 %",
+            "columna": "Tipo %",
+            "pagina": 1
+          },
+          {
+            "casilla": 9,
+            "rotulo": "Régimen general · 21 %",
+            "columna": "Cuota",
+            "pagina": 1
+          },
+          {
+            "casilla": 27,
+            "rotulo": "Total cuota devengada",
+            "pagina": 1
+          },
+          {
+            "casilla": 28,
+            "rotulo": "Por cuotas soportadas en operaciones interiores corrientes",
+            "columna": "Base",
+            "pagina": 1
+          },
+          {
+            "casilla": 29,
+            "rotulo": "Por cuotas soportadas en operaciones interiores corrientes",
+            "columna": "Cuota",
+            "pagina": 1
+          },
+          {
+            "casilla": 30,
+            "rotulo": "Por cuotas soportadas en operaciones interiores con bienes de inversión",
+            "columna": "Base",
+            "pagina": 1
+          },
+          {
+            "casilla": 31,
+            "rotulo": "Por cuotas soportadas en operaciones interiores con bienes de inversión",
+            "columna": "Cuota",
+            "pagina": 1
+          },
+          {
+            "casilla": 45,
+            "rotulo": "Total a deducir",
+            "pagina": 1
+          },
+          {
+            "casilla": 46,
+            "rotulo": "Resultado régimen general",
+            "pagina": 1
+          },
+          {
+            "casilla": 64,
+            "rotulo": "Suma de resultados",
+            "pagina": 3
+          },
+          {
+            "casilla": 65,
+            "rotulo": "Atribuible a la Administración del Estado",
+            "columna": "%",
+            "pagina": 3
+          },
+          {
+            "casilla": 66,
+            "rotulo": "Atribuible a la Administración del Estado",
+            "pagina": 3
+          },
+          {
+            "casilla": 68,
+            "rotulo": "Exclusivamente para sujetos pasivos que tributan conjuntamente a la Administración del Estado y a las Haciendas Forales. Resultado de la regularización anual.",
+            "pagina": 3
+          },
+          {
+            "casilla": 69,
+            "rotulo": "Resultado de la autoliquidación",
+            "pagina": 3
+          },
+          {
+            "casilla": 70,
+            "rotulo": "Resultado a ingresar correspondiente a la anterior autoliquidación o liquidación administrativa del ejercicio y período objeto de la autoliquidación",
+            "pagina": 3
+          },
+          {
+            "casilla": 71,
+            "rotulo": "Resultado",
+            "pagina": 3
+          }
+        ]
+      }
+    },
+    "m303_2027T4": {
+      "status": 200,
+      "cuerpo": {
+        "año": 2027,
+        "trimestre": 4,
+        "desde": "2027-09-30T22:00:00.000Z",
+        "hasta": "2027-12-31T22:59:59.999Z",
+        "moneda": "EUR",
+        "casillas": [
+          {
+            "tipo": 4,
+            "casillaBase": 1,
+            "casillaTipo": 2,
+            "casillaCuota": 3,
+            "base": 0,
+            "cuota": 0
+          },
+          {
+            "tipo": 10,
+            "casillaBase": 4,
+            "casillaTipo": 5,
+            "casillaCuota": 6,
+            "base": 205.43,
+            "cuota": 20.55
+          },
+          {
+            "tipo": 21,
+            "casillaBase": 7,
+            "casillaTipo": 8,
+            "casillaCuota": 9,
+            "base": 1129.87,
+            "cuota": 237.28
+          }
+        ],
+        "casillaTotalCuota": {
+          "casilla": 27,
+          "valor": 257.83
+        },
+        "totalBase": 1335.3,
+        "sinClasificar": [
+          {
+            "numero": "J-20260916-GXNV",
+            "tipo": 0,
+            "base": 380,
+            "cuota": 0,
+            "motivo": "tipo_cero"
+          },
+          {
+            "numero": "J-20260917-3EIF",
+            "tipo": 0,
+            "base": 590,
+            "cuota": 0,
+            "motivo": "tipo_cero"
+          }
+        ],
+        "informacionAdicional": {
+          "inversionSujetoPasivo": {
+            "casilla": 122,
+            "base": 0,
+            "operaciones": []
+          }
+        },
+        "sinDesglose": [],
+        "cruceConCobros": {
+          "cuotaDeCobradas": 0,
+          "cuotaDeNoCobradas": 257.83,
+          "asientosCobrados": 0,
+          "asientosNoCobrados": 7
+        },
+        "ivaDeducible": {
+          "corrientes": {
+            "casillaBase": 28,
+            "casillaCuota": 29,
+            "base": 0,
+            "cuota": 0
+          },
+          "bienesDeInversion": {
+            "casillaBase": 30,
+            "casillaCuota": 31,
+            "base": 0,
+            "cuota": 0,
+            "vaciaPorque": "sin_dato_de_bien_de_inversion"
+          },
+          "casillaTotalADeducir": {
+            "casilla": 45,
+            "valor": 0
+          },
+          "sinClasificar": [],
+          "noDeducibles": 0,
+          "miradas": 0,
+          "asientos": 0,
+          "gastosSinDatosDeIva": 0,
+          "gastosSinDatosDeIvaImporte": 0
+        },
+        "resultadoRegimenGeneral": {
+          "casilla": 46,
+          "valor": 257.83
+        },
+        "resultadoFinal": {
+          "sumaDeResultados": {
+            "casilla": 64,
+            "valor": 257.83
+          },
+          "vacias": [
+            {
+              "casilla": 65,
+              "motivo": "porcentaje_atribuible_no_consta"
+            },
+            {
+              "casilla": 66,
+              "motivo": "depende_de_la_65"
+            },
+            {
+              "casilla": 68,
+              "motivo": "regularizacion_anual_foral_no_consta"
+            },
+            {
+              "casilla": 69,
+              "motivo": "depende_de_la_66"
+            },
+            {
+              "casilla": 70,
+              "motivo": "autoliquidacion_anterior_no_consta"
+            },
+            {
+              "casilla": 71,
+              "motivo": "depende_de_la_69"
+            }
+          ]
+        },
+        "miradas": 7,
+        "asientos": 7,
+        "motivosParaNoFiarse": [
+          "2 operación(es) sin calificación fiscal (exenta / no sujeta / ISP) no entran en ninguna casilla"
+        ],
+        "avisoObligatorio": "Borrador para tu asesor",
+        "rotulos": [
+          {
+            "casilla": 1,
+            "rotulo": "Régimen general · 4 %",
+            "columna": "Base imponible",
+            "pagina": 1
+          },
+          {
+            "casilla": 2,
+            "rotulo": "Régimen general · 4 %",
+            "columna": "Tipo %",
+            "pagina": 1
+          },
+          {
+            "casilla": 3,
+            "rotulo": "Régimen general · 4 %",
+            "columna": "Cuota",
+            "pagina": 1
+          },
+          {
+            "casilla": 4,
+            "rotulo": "Régimen general · 10 %",
+            "columna": "Base imponible",
+            "pagina": 1
+          },
+          {
+            "casilla": 5,
+            "rotulo": "Régimen general · 10 %",
+            "columna": "Tipo %",
+            "pagina": 1
+          },
+          {
+            "casilla": 6,
+            "rotulo": "Régimen general · 10 %",
+            "columna": "Cuota",
+            "pagina": 1
+          },
+          {
+            "casilla": 7,
+            "rotulo": "Régimen general · 21 %",
+            "columna": "Base imponible",
+            "pagina": 1
+          },
+          {
+            "casilla": 8,
+            "rotulo": "Régimen general · 21 %",
+            "columna": "Tipo %",
+            "pagina": 1
+          },
+          {
+            "casilla": 9,
+            "rotulo": "Régimen general · 21 %",
+            "columna": "Cuota",
+            "pagina": 1
+          },
+          {
+            "casilla": 27,
+            "rotulo": "Total cuota devengada",
+            "pagina": 1
+          },
+          {
+            "casilla": 28,
+            "rotulo": "Por cuotas soportadas en operaciones interiores corrientes",
+            "columna": "Base",
+            "pagina": 1
+          },
+          {
+            "casilla": 29,
+            "rotulo": "Por cuotas soportadas en operaciones interiores corrientes",
+            "columna": "Cuota",
+            "pagina": 1
+          },
+          {
+            "casilla": 30,
+            "rotulo": "Por cuotas soportadas en operaciones interiores con bienes de inversión",
+            "columna": "Base",
+            "pagina": 1
+          },
+          {
+            "casilla": 31,
+            "rotulo": "Por cuotas soportadas en operaciones interiores con bienes de inversión",
+            "columna": "Cuota",
+            "pagina": 1
+          },
+          {
+            "casilla": 45,
+            "rotulo": "Total a deducir",
+            "pagina": 1
+          },
+          {
+            "casilla": 46,
+            "rotulo": "Resultado régimen general",
+            "pagina": 1
+          },
+          {
+            "casilla": 64,
+            "rotulo": "Suma de resultados",
+            "pagina": 3
+          },
+          {
+            "casilla": 65,
+            "rotulo": "Atribuible a la Administración del Estado",
+            "columna": "%",
+            "pagina": 3
+          },
+          {
+            "casilla": 66,
+            "rotulo": "Atribuible a la Administración del Estado",
+            "pagina": 3
+          },
+          {
+            "casilla": 68,
+            "rotulo": "Exclusivamente para sujetos pasivos que tributan conjuntamente a la Administración del Estado y a las Haciendas Forales. Resultado de la regularización anual.",
+            "pagina": 3
+          },
+          {
+            "casilla": 69,
+            "rotulo": "Resultado de la autoliquidación",
+            "pagina": 3
+          },
+          {
+            "casilla": 70,
+            "rotulo": "Resultado a ingresar correspondiente a la anterior autoliquidación o liquidación administrativa del ejercicio y período objeto de la autoliquidación",
+            "pagina": 3
+          },
+          {
+            "casilla": 71,
+            "rotulo": "Resultado",
+            "pagina": 3
+          }
+        ]
+      }
+    }
+  },
+  "bizum": {
+    "connectStatus": {
+      "status": 200,
+      "campos": {
+        "bizumEnabled": true,
+        "bizumPhone": "presente"
+      }
+    },
+    "adminMe": {
+      "status": 200,
+      "campos": {
+        "bizumManualEnabled": false,
+        "bizumSinTelefono": "no_aplica"
+      }
+    }
+  },
+  "sinVias": {
+    "cliente": {
+      "id": 3936,
+      "name": "Cliente QA sin avisos",
+      "phone": "vacío",
+      "mobile": "vacío",
+      "email": "vacío"
+    },
+    "merchant": {
+      "status": 200,
+      "notifyEmailOnPaid": false,
+      "whatsappPhone": "vacío"
+    },
+    "ok": true
+  }
+}
