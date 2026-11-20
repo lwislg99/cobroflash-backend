@@ -106,6 +106,16 @@ con nombres propios (`pst…`) y la clave por `data-seccion` o por posición. El
   contar los «+ Nuevo albarán» a la vista. Sin esto, los «sale UNA vez» pasaban porque la pestaña estaba cerrada, no
   por la deduplicación.
 - `scrum1190b` no cambia.
+- **Autorización del orquestador (cobroflash-backend-25, por mensaje entre sesiones, 20-nov; Jira caído, la pega él
+  en SCRUM-1768 cuando vuelva), LITERAL:** «AUTORIZO (delegación c.21978, 20-nov ~10:25 local) cambiar exactamente
+  estas exigencias y ninguna más, porque el requisito cambió con la vuelta 2 aprobada (c.22113 + diseño del
+  traspaso), rojo-primero visto (12 rojos sobre main): ① tests/scrum1768-ficha-aprovecha-el-ancho.test.mjs L67-78
+  (lateral = ['rail','presupuesto']; «El trabajo» pasa a pestaña), L98 (['rail']), L141-147 (a 390 ya no existe la
+  regla order de la lateral), L159-165 (el control «usa tokens» pasa a control POSITIVO con color crudo inyectado —
+  MÁS estricto); ② tests/scrum320-que-falta-para-cobrar.test.mjs L191-192 (el bloque del dinero se monta en la
+  cabecera: head.insertBefore); ③ tests/scrum1740-albaran-desde-parte-firmado.test.mjs L107-112 (ficha() abre la
+  pestaña Albaranes antes de contar — el assert viejo pasaba por la pestaña cerrada, no por la deduplicación: el
+  nuevo mide lo que debía). scrum1190b intacto.»
 - Nuevo: `tests/scrum1768b-ficha-pestanas.test.mjs` (13 tests, ⑤-⑪). Rojo-primero sobre `b0b7cf997`: 12 en rojo, y
   uno (⑦ «se abre la primera») pasaba EN VACÍO con cero pestañas: se le puso suelo antes de construir.
 
