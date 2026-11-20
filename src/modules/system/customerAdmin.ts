@@ -450,6 +450,165 @@ export async function desvincularYBorrar(
 }
 
 export async function deleteCustomer(merchantId: number, id: number) {
-  // `$transaction` y no dos llamadas sueltas: los dos pasos caen juntos o no cae ninguno.
-  return prisma.$transaction((tx) => desvincularYBorrar(tx as any, merchantId, id));
+  // `$transaction` y no dos llamadas sueltas: los pasos caen juntos o no cae ninguno.
+  // SCRUM-1005b: y sus documentos se van con él, en la misma transacción (c.22140).
+  return prisma.$transaction((tx) => borrarClienteYSusDocumentos(tx as any, merchantId, id));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1005b · DOCUMENTOS ADJUNTOS DEL CLIENTE (CRM-13). Decisión del fundador, SCRUM-1005
+// c.22140: 10 MB por fichero, 100 MB por cliente, sólo PDF/JPEG/PNG, y al borrar un cliente se
+// borran sus documentos. Viven en `attachments` (bytea, MEDIA-1) con `entityType: 'customer'` y
+// `kind: 'document'`; `fileName`, `sizeBytes` y `sha256` son las tres columnas del ALTER de
+// `docs/sql/scrum-1005-adjuntos-cliente.sql`. El servidor contesta CÓDIGOS, nunca frases: los
+// textos de la pestaña los firma el fundador (regla 39, 1005c).
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+export const DOC_MAX_BYTES = 10 * 1024 * 1024;
+export const DOCS_MAX_BYTES_POR_CLIENTE = 100 * 1024 * 1024;
+export const DOC_MIME_ADMITIDOS = ['application/pdf', 'image/jpeg', 'image/png'] as const;
+export type DocMime = (typeof DOC_MIME_ADMITIDOS)[number];
+/** Espacio de cerrojos de transacción (los de la casa van de 1748 a 1752). */
+const DOCUMENTOS_CLIENTE_LOCK_NS = 1753;
+/**
+ * La firma de los primeros bytes de cada formato. La cabecera `Content-Type` la escribe quien
+ * sube, así que no basta: un HTML que dice ser PDF se rechaza aquí.
+ */
+const FIRMA_DE: Record<DocMime, number[]> = {
+  'application/pdf': [0x25, 0x50, 0x44, 0x46, 0x2d], // %PDF-
+  'image/jpeg': [0xff, 0xd8, 0xff],
+  'image/png': [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+};
+
+/** El `where` de los documentos de UN cliente. El comercio va SIEMPRE (regla 2). */
+export function whereDocumentosDe(merchantId: number, customerId: number) {
+  return { merchantId, entityType: 'customer', entityId: customerId, kind: 'document' };
+}
+
+export function esMimeAdmitido(m: string): m is DocMime {
+  return (DOC_MIME_ADMITIDOS as readonly string[]).includes(m);
+}
+
+export function bytesCasanConMime(buf: Buffer, mime: DocMime): boolean {
+  const firma = FIRMA_DE[mime];
+  return buf.length >= firma.length && firma.every((b, i) => buf[i] === b);
+}
+
+/**
+ * El nombre con el que se subió, saneado: sin ruta, sin caracteres de control, sin comillas ni
+ * los reservados de Windows, y con 150 caracteres como mucho. `null` si no queda nada.
+ */
+export function sanearNombreDocumento(crudo: unknown): string | null {
+  if (typeof crudo !== 'string' || crudo === '') return null;
+  let s = crudo;
+  try { s = decodeURIComponent(crudo); } catch { /* se queda como vino */ }
+  s = s.split(/[\\/]/).pop() ?? '';
+  s = s.normalize('NFC').replace(/[\x00-\x1f\x7f]/g, '').replace(/["<>:|?*]/g, '').replace(/\s+/g, ' ').trim();
+  s = Array.from(s).slice(0, 150).join('');
+  if (s === '' || s === '.' || s === '..') return null;
+  return s;
+}
+
+/** `Content-Disposition: attachment` con el nombre en ASCII y en UTF-8 (RFC 6266 / 5987). */
+export function contentDispositionAdjunto(nombre: string): string {
+  const ascii = nombre.normalize('NFD').replace(/[^\x20-\x7e]/g, '_').replace(/["\\;]/g, '_');
+  const utf8 = encodeURIComponent(nombre).replace(/['()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase());
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${utf8}`;
+}
+
+async function clienteDelComercio(merchantId: number, customerId: number) {
+  return prisma.customer.findFirst({ where: { id: customerId, merchantId }, select: { id: true } });
+}
+
+const SELECT_DOCUMENTO = { id: true, fileName: true, mime: true, sizeBytes: true, createdAt: true } as const;
+
+/** La lista SIN bytes. `null` si el cliente no es de este comercio. */
+export async function listarDocumentos(merchantId: number, customerId: number) {
+  if (!(await clienteDelComercio(merchantId, customerId))) return null;
+  return prisma.attachment.findMany({
+    where: whereDocumentosDe(merchantId, customerId),
+    select: SELECT_DOCUMENTO,
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+type DocumentoListado = { id: number; fileName: string | null; mime: string | null; sizeBytes: number | null; createdAt: Date };
+export type ResultadoSubida =
+  | { ok: true; creado: boolean; documento: DocumentoListado }
+  | {
+    ok: false;
+    status: 400 | 404 | 409 | 413 | 415;
+    error: 'NO_ENCONTRADO' | 'FICHERO_VACIO' | 'NOMBRE_NO_VALIDO' | 'FORMATO_NO_ADMITIDO' | 'FICHERO_DEMASIADO_GRANDE' | 'TOPE_DEL_CLIENTE';
+  };
+
+/**
+ * Sube un documento. Idempotente por `sha256` dentro del MISMO cliente (como la foto del
+ * albarán, SCRUM-382): la repetida devuelve la que ya estaba y no consume tope. El tope por
+ * cliente se suma con `sizeBytes`, sin leer los bytea, bajo un cerrojo de transacción por cliente
+ * para que dos subidas a la vez no lo pasen entre las dos.
+ */
+export async function subirDocumento(
+  merchantId: number,
+  customerId: number,
+  entrada: { mime: string; nombre: unknown; bytes: Buffer },
+): Promise<ResultadoSubida> {
+  const { mime, bytes } = entrada;
+  if (!esMimeAdmitido(mime)) return { ok: false, status: 415, error: 'FORMATO_NO_ADMITIDO' };
+  if (bytes.length === 0) return { ok: false, status: 400, error: 'FICHERO_VACIO' };
+  if (bytes.length > DOC_MAX_BYTES) return { ok: false, status: 413, error: 'FICHERO_DEMASIADO_GRANDE' };
+  if (!bytesCasanConMime(bytes, mime)) return { ok: false, status: 415, error: 'FORMATO_NO_ADMITIDO' };
+  const fileName = sanearNombreDocumento(entrada.nombre);
+  if (!fileName) return { ok: false, status: 400, error: 'NOMBRE_NO_VALIDO' };
+  if (!(await clienteDelComercio(merchantId, customerId))) return { ok: false, status: 404, error: 'NO_ENCONTRADO' };
+
+  const huella = crypto.createHash('sha256').update(bytes).digest('hex');
+  return prisma.$transaction(async (tx): Promise<ResultadoSubida> => {
+    // Dentro del callback: el filtro de comercio se ve en la función que lee (SCRUM-243).
+    const where = whereDocumentosDe(merchantId, customerId);
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${DOCUMENTOS_CLIENTE_LOCK_NS}::int, ${customerId}::int)`;
+    const ya = await tx.attachment.findFirst({ where: { ...where, sha256: huella }, select: SELECT_DOCUMENTO });
+    if (ya) return { ok: true, creado: false, documento: ya };
+    const suma = await tx.attachment.aggregate({ where, _sum: { sizeBytes: true } });
+    const usado = suma._sum.sizeBytes ?? 0;
+    if (usado + bytes.length > DOCS_MAX_BYTES_POR_CLIENTE) return { ok: false, status: 409, error: 'TOPE_DEL_CLIENTE' };
+    const creado = await tx.attachment.create({
+      data: { ...where, url: '', data: new Uint8Array(bytes), mime, fileName, sizeBytes: bytes.length, sha256: huella },
+      select: { id: true },
+    });
+    const documento = await tx.attachment.update({
+      where: { id: creado.id },
+      data: { url: `/admin/customers/${customerId}/documentos/${creado.id}` },
+      select: SELECT_DOCUMENTO,
+    });
+    return { ok: true, creado: true, documento };
+  });
+}
+
+/** El documento con sus bytes, o `null` si no es de este cliente de este comercio. */
+export async function leerDocumento(merchantId: number, customerId: number, docId: number) {
+  return prisma.attachment.findFirst({
+    where: { id: docId, ...whereDocumentosDe(merchantId, customerId) },
+    select: { id: true, data: true, mime: true, fileName: true },
+  });
+}
+
+export async function borrarDocumento(merchantId: number, customerId: number, docId: number) {
+  const { count } = await prisma.attachment.deleteMany({ where: { id: docId, ...whereDocumentosDe(merchantId, customerId) } });
+  return count > 0;
+}
+
+/**
+ * El borrado del cliente, con sus documentos (c.22140), EN LA MISMA transacción: o se va todo o
+ * no se va nada. Sin FK a `customers` a propósito (la tabla es polimórfica; ver
+ * `docs/sql/scrum-1005-adjuntos-cliente.sql`), así que lo hace el código. Se borran TODOS los
+ * adjuntos del cliente, no sólo `kind: 'document'`: un dato personal no se queda por su `kind`.
+ * Sólo si el cliente se ha borrado de verdad (count > 0): un id ajeno no toca nada.
+ */
+export async function borrarClienteYSusDocumentos(
+  tx: { customer: { updateMany: Function; deleteMany: Function }; attachment: { deleteMany: Function } },
+  merchantId: number,
+  id: number,
+) {
+  const r = await desvincularYBorrar(tx, merchantId, id);
+  if (r.count > 0) await tx.attachment.deleteMany({ where: { merchantId, entityType: 'customer', entityId: id } });
+  return r;
 }
