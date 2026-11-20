@@ -176,6 +176,9 @@ for (const [clave, par] of Object.entries(medidas)) {
   }
   if (d.bajos.length > a.bajos.length) fallo(1, `${clave}: hay más controles por debajo de 44 px que antes: ${d.bajos.join(' | ')}`);
 }
-fs.writeFileSync(path.join(AQUI, 'medidas.json'), JSON.stringify(medidas, null, 1) + '\n');
+// Al fichero van las cajas y los RECUENTOS de la huella (las listas ya se compararon arriba), una medida por línea.
+const corto = (m) => ({ ...m, palabras: m.palabras.length, botones: m.botones.length, casillas: m.casillas.length });
+const lineas = Object.entries(medidas).flatMap(([clave, par]) => Object.entries(par).map(([etiqueta, m]) => ` ${JSON.stringify(`${clave} ${etiqueta}`)}: ${JSON.stringify(corto(m))}`));
+fs.writeFileSync(path.join(AQUI, 'medidas.json'), '{\n' + lineas.join(',\n') + '\n}\n');
 console.log(`\nFotos en ${FOTOS}`);
 process.exit(salida);
