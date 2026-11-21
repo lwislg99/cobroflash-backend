@@ -30,10 +30,10 @@ const { calcTotal } = require('../dist/core/utils/utils.js');
 /** Mutaciones que este test tiene que tumbar (se aplican con `aplicarUna`, scripts/meta-guard-mutaciones.mjs). */
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
-    // La fila desaparece: el cierre del apartado no pinta nada.
+    // La fila desaparece: la función que la pinta vuelve sin pintar nada.
     fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
-    de: '  if (apartadoAbierto) pintarTotalDelApartado(apartadoAbierto);',
-    a: '  if (apartadoAbierto) void apartadoAbierto;',
+    de: 'function pintarTotalDelApartado(lineasDelApartado: typeof params.lines) {',
+    a: 'function pintarTotalDelApartado(lineasDelApartado: typeof params.lines) { if (lineasDelApartado) return;',
     cae: 'cada apartado lleva su Total del apartado',
   },
   {
