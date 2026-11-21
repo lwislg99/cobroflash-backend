@@ -453,7 +453,7 @@ Ninguna base: no sé si alguna tiene ya estas columnas. No corrí ningún test d
 
 **Medido contra:** `origin/main` = `ccb69008b5aaa80d3f7cb712be77ce025c146238` · 2026-11-21T21:43:19Z (cabecera `Date:` de `gh api -i zen`)
 
-A9: aviso → cicatriz J1 «Abrí el PDF de la F1 (lo fabriqué y lo leí) antes de cargar la skill `yaqu-verifactu-sif`» — no se pudo comprobar: el encargo la pedía OBLIGATORIA y leí `pdf.service.ts` y `crearFacturaEmitida.ts` (camino de emisión, sólo lectura) sin cargarla; no la cargué después porque paré antes de construir, y qué skill se ha cargado antes de leer un fichero no lo ve ningún guard del repositorio.
+A9: aviso → cicatriz J1 «Leí el camino de emisión (`pdf.service.ts`, `crearFacturaEmitida.ts`) sin cargar la skill `yaqu-verifactu-sif`, que el encargo marcaba OBLIGATORIA; la segunda vez tras SCRUM-1771a» — no se pudo comprobar: no la cargué después porque paré antes de construir, y qué skill se ha cargado antes de leer un fichero no lo ve ningún guard del repositorio.
 
 Mutaciones: una vez → `docs/master/evidencias/SCRUM-1787/preview-ddl-1787l.mjs`
 
