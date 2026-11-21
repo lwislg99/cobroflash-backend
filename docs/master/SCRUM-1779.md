@@ -181,3 +181,28 @@ A9: aviso → A10 «Una captura bonita no prueba que el botón funcione.» — n
 **Hallazgo (no lo arreglo: es texto que ve el usuario y ruta de emisión, reglas 39 y 40):** con SIF en OFF, `POST /admin/invoices` contesta `message: «Se emitió la factura, pero falló su registro VeriFactu. Revísalo antes de entregarla.»` (`src/modules/system/app/routes/invoicesAdmin.routes.ts:240`; la misma frase en `src/modules/jobs/app/routes/albaranes.routes.ts:1466`), porque decide por `sellada` y no distingue «no falló: no se sella». La pantalla de la factura suelta no lo pinta (no se vio en la prueba); la ficha del Trabajo SÍ pinta un aviso por `veriFactu === false`: «⚠️ Factura emitida, revisa su registro» (`public/dashboard/js/jobDetailView.js:3986`) — leído en el código, no visto en pantalla. Para el piloto, cada factura emitida desde un Trabajo saldría con ese aviso falso.
 
 **Sin medir:** el valor de `SIF_ENABLED` en las variables de Railway de staging; las vías C1–C4 y la R1 en staging (solo la suelta); el correo y el WhatsApp (el cliente no tiene contacto, a propósito); producción.
+
+## SCRUM-1779g · 21-nov: la nota A8 de la regla 24 — `INVOICING_ES_ENABLED` en ON para TODOS los comercios ES antes de SIF-1 (J5, solo docs)
+
+**Medido contra:** `origin/main` = `e24f2828ed68d0159d53e546fe6fb25903f79972` · 2026-11-21T04:50:25Z (cabecera `Date:` de `gh api -i zen`; sesión J5 `jv-j5bo`, por encargo del orquestador `cobroflash-backend-87`; firma del fundador SCRUM-1779 c.22289, literal de c.22288)
+
+A9: sin fallo que generalice — iba a añadir líneas nuevas al máster para las notas y lo medí antes: 77 ficheros de `tests/`, `scripts/` y `docs/master/` lo citan como `YAQU_MASTER.md:<línea>`, así que todo va APENDADO al final de líneas que ya existían (1.951 líneas antes y después); no llegó a escribirse ninguna línea de más
+
+**Qué entra** (solo `docs/YAQU_MASTER.md`; el diff solo AÑADE texto, `git diff --word-diff` sin una sola palabra borrada):
+
+| dónde | qué |
+|---|---|
+| regla 24 (Parte I, línea 246), al final, antes de «25)» | el literal FIRMADO de c.22289, copiado del comentario de Jira por programa (y cotejado con el de c.22288: idénticos, 507 B), con sus corchetes. La frase vieja de la regla 24 sigue entera |
+| Parte P, fila `INVOICING_ES_ENABLED`, columna «Activa» (línea 470) | una nota fechada que apunta a la de la regla 24 y a c.22289. El «Default» de la fila sigue en **OFF**: es el del código (`FLAG_DEFAULTS`, `tests/flags.test.mjs:30`), que no cambia; lo que cambia es la variable de Railway de producción, que pone el fundador |
+| V0-0 (Parte U, línea 1020), al final | una nota fechada que apunta a la de la regla 24 y a c.22289 |
+| THE PIONEER, «La regla general NO cambia» (línea 498), al final | una nota fechada: la regla general ya tiene una excepción para todos. ⚠️ Esta no la pedía el encargo (nombraba V0-0 y la Parte P); la añado porque el párrafo dice «sigue estando off para merchants reales» y, sin la nota, contradice la de la regla 24 |
+
+La nota del piloto de c.22229 no estaba en el máster (c.22289: «no llegó a entrar»): no hay nada que sustituir.
+
+**Desfasado y NO tocado (derivados, regla 35, o fuera de este encargo):**
+
+- `CLAUDE.md`: la cabecera («Antes de SIF-1, en España, ni documento ni cobro por YaQu») y la regla dura 7 («`INVOICING_ES_ENABLED=OFF` para merchants ES reales») ya no dicen lo que dice el máster. Es derivado: lo corrige quien lleve `CLAUDE.md`, citando esta nota.
+- En el propio máster, sin nota: líneas 39, 101, 198, 422, 1108 y 1166 (cobro y emisión «solo con el interruptor en ON» / «post SIF-1»), el resumen de V0-0 en la línea 998 y «El hueco conocido» de la línea 552 (la llave de SCRUM-218 no gobierna el interruptor global, que es justo el que se enciende ahora). Leídas, no editadas: el encargo pedía la nota y, como mucho, un apunte en V0-0 y la Parte P.
+- La acreditación de SCRUM-1097 (c.22288 ③: su guard pasará a dar «todos») y el aviso falso de los albaranes (c.22287, S1/S2): fuera de este tramo.
+
+**Sin medir:** producción (ni la variable de Railway ni `SIF_ENABLED`: los pone y comprueba el fundador); el comportamiento del producto con la variable en ON (lo midió J1 en 1779a y 1779e).
