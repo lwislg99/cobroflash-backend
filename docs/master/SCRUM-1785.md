@@ -109,3 +109,31 @@ salen todas marcadas en la copia. La única escritura de `docFields` es el alta 
 
 La base (que `quotes.routes.ts:207` guarde `docFields`: leído, no corrido), staging y yaqu.app (fuera del
 encargo), qué presupuesto concreto miró el fundador.
+
+# SCRUM-1785b · PDF del presupuesto: «WhatsApp de <nombre comercial>: <número>» (firma c.22281)
+
+**Medido contra:** `origin/main` = `beb63b0dde9597565244c26c66e0e78b7240a765` · 2026-11-21T04:29:30Z (cabecera `Date:` de `gh api -i zen`)
+A9: sin fallo que generalice — la primera pasada de la sonda del caso sin nombre buscaba «la línea» del WhatsApp y el lector de PDF junta el texto sin saltos (salieron páginas enteras); lo vi leyendo la salida fila a fila y corté entre etiquetas vecinas; ya lo cubre A10 «Una salida recortada para leerla cómoda es media salida: el corte cae donde no estabas mirando.»
+Mutaciones: catálogo → `tests/scrum1785b-whatsapp-con-nombre-comercial.test.mjs`
+
+Sesión jv-j1gq (J1). **Supera el «rótulo PENDIENTE DE FIRMA» del tramo anterior:** el fundador firmó en
+SCRUM-1785 c.22281, literal «El nombre comercial sí».
+
+- **Cambio:** `src/modules/invoicing/infra/pdf/pdf.service.ts`, dentro de `generateQuotePdf` (la línea vieja
+  era la 998 de main, «WhatsApp ${whatsappPhone}»). Con nombre comercial (`Merchant.name`, recortado) pinta
+  `WhatsApp de <nombre comercial>: <número>`. «Emisor:» no cambia (`legalName || name`). `generateInvoicePdf`
+  no se toca: el literal sale una sola vez en el fichero y después de la cabecera de `generateQuotePdf`.
+- **Huellas congeladas:** `scrum603b` (cuerpo de `generateInvoicePdf`), `scrum723` (su ámbito) y `scrum523d`
+  en verde con el cambio: no cae en ninguna frontera congelada, no se ha recongelado nada.
+- **Sin nombre comercial — PARA FIRMA APARTE.** Medido con
+  `docs/master/evidencias/scrum1785/sin-nombre-comercial.mjs` (4 casos, 0 ciegos): con `name` vacío o sólo
+  espacios sale el rótulo de siempre, «WhatsApp 611178522» (no cae a la razón social); sin `name` ni
+  `legalName`, «Emisor: —» y el mismo «WhatsApp <número>». No se inventa texto: queda como estaba hasta que
+  se firme. `Merchant.name` es obligatorio en el esquema y el alta rechaza un nombre vacío
+  (`auth.routes.ts:45`, `name_required`); si «Ajustes» deja vaciarlo, NO medido.
+- **Test:** `tests/scrum1785b-whatsapp-con-nombre-comercial.test.mjs`, rojo primero (2 de 4 caían: el literal
+  y el control del fuente), verde 4/4 tras el cambio. Mutación de catálogo (volver a «WhatsApp <número>»)
+  aplicada con `aplicarUna`: VIVA, 1 de 1.
+- **Tanda dirigida:** 62 ficheros (los del encargo + los 40 que llaman a `generateQuotePdf`) · 539 casos ·
+  532 pasan · 0 caen · 7 saltados (gateados por base).
+- **No medido:** base, staging, yaqu.app; la vista previa (`quotesView.js`, S2) sigue con «WhatsApp <número>».
