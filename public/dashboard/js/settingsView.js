@@ -345,7 +345,7 @@ function renderSettingsView(container) {
     foralWrapper.appendChild(foralLabel);
     foralWrapper.appendChild(fDomicilioFiscalForal);
     const fWhatsappPhone = createField(
-      "Teléfono WhatsApp (E.164 sin +)",
+      "Teléfono WhatsApp",
       "whatsappPhone",
       "text",
       true

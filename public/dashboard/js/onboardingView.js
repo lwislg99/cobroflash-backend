@@ -212,7 +212,7 @@ function showOnboardingWizard(onComplete) {
           </div>
           <div>
             <label class="j3e-8149c31">Tu WhatsApp <span class="j3e-84a5aef">(te avisamos ahí cuando te acepten o paguen)</span></label>
-            <input id="ob-phone" type="tel" placeholder="Ej: 34XXXXXXXXX (con código de país)" value="${esc(state.phone)}"
+            <input id="ob-phone" type="tel" value="${esc(state.phone)}"
               class="j3e-336791a"/>
           </div>
         </div>
@@ -455,8 +455,8 @@ function showOnboardingWizard(onComplete) {
                 class="j3e-336791a"/>
             </div>
             <div>
-              <label class="j3e-8149c31">Su WhatsApp <span class="j3e-84a5aef">(con código de país)</span></label>
-              <input id="ob-cust-phone" type="tel" placeholder="Ej: 34XXXXXXXXX" value="${esc(state.customerPhone)}"
+              <label class="j3e-8149c31">Su WhatsApp</label>
+              <input id="ob-cust-phone" type="tel" value="${esc(state.customerPhone)}"
                 class="j3e-336791a"/>
             </div>
           </div>

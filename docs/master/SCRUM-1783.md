@@ -78,3 +78,19 @@ cliente que no llega a ninguna factura**.
 3. Retirar `recargoEquivalencia.ts` y sus tests, o dejarlo aparcado como SCRUM-1053: no tiene llamadores, no es emisión hoy, pero vive en `invoicing/domain` → decisión suya.
 4. Nada que cambiar en emisión, PDF ni libros: no lo usan.
 5. Antes, una pregunta al asesor: ¿algún cliente-tipo de YaQu vende material suelto a comercios en el régimen?
+
+## SCRUM-1783b · Sin selector del recargo en la ficha del cliente; el dato guardado se queda
+
+**Puesto:** J2 (jv-j2dp, relevada por jv-j2dr) · **Rama:** `scrum-1783b-sin-selector-recargo-y-rotulo` · 21-nov-2026
+**Medido contra:** `origin/main` = `beb63b0dde9597565244c26c66e0e78b7240a765` · 2026-11-21T04:44:20Z (cabecera `Date:` de `gh api -i zen`)
+**Skill UI:** cargada · por jv-j2dr al relevar, DESPUÉS de que jv-j2dp editara `customersView.js`; revisé el diff contra ella: es solo una retirada de campo, sin estilos, tokens ni componentes nuevos.
+Mutaciones: catálogo → tests/scrum1783b-sin-selector-recargo.test.mjs
+A9: aviso → cicatriz J2 «pasé texto con acentos graves por node -e y bash se comió un trozo de la mutación inocua sin error; lo cazó leer el fichero después» — no se pudo comprobar: lo que se teclea en la consola no lo ve ningún guard
+
+Decisión del fundador: SCRUM-1783 c.22264 (quitar el selector, dejar la columna y lo que acepta la API, aparcar el cálculo en SCRUM-1053).
+
+- `public/dashboard/js/customersView.js`: fuera el selector «Recargo de equivalencia» y su lectura al editar; el payload del formulario **ya no lleva la clave** `recargoEquivalencia`. Si viajara como `null`, cada guardado borraría lo que el cliente tuviera (medido por jv-j2dm, c.22266). Ausente, el `.partial()` de la API no toca la columna.
+- `tests/scrum294a-recargo-en-cliente.test.mjs` y `tests/scrum692-un-formulario-no-borra-lo-que-no-muestra.test.mjs`: reanclados para exigir que el selector NO está y que el payload NO envía la clave (autorizado en c.22267).
+- `tests/scrum514-aprobado-y-aplicado.test.mjs`: los tres textos del selector («Recargo de equivalencia», «Sí, está en recargo», «No está en recargo») van a `APARCADOS` con el motivo «campo retirado por decisión del fundador, SCRUM-1783 c.22264; no se desaprueba» (autorizado en c.22282; precedente SCRUM-867). Siguen aprobados. Rojo visto antes (36/37, cae «TODO texto APROBADO está aplicado» con esos tres) y verde después (37/37).
+- `tests/scrum1783b-sin-selector-recargo.test.mjs`: test nuevo, 4/4; en rojo 2/4 sobre el código anterior (jv-j2dp). Evidencias de las mutaciones en `docs/master/evidencias/SCRUM-1783/`.
+- NO hecho aquí: el rótulo de SCRUM-1782, que va en otro PR. Sin cambios en `schema.prisma`, la API, emisión, PDF ni libros.
