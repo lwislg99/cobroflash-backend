@@ -42,6 +42,27 @@ import {
 } from './_viajes-de-la-reserva.mjs';
 import { isReceiptNumber } from '../dist/modules/invoicing/domain/invoiceNumber.service.js';
 
+/**
+ * SCRUM-1787j · la mutación que este guard TIENE que ver: UNA lectura más dentro de la transacción
+ * de emisión y FUERA de `allocateInvoiceNumber`, que es justo lo que SCRUM-1787d (#3302) añadió en
+ * `direccionCongelada.ts` sin que este fichero se moviera. La aplica `aplicarUna` del meta-guard y
+ * la restaura; nunca se commitea.
+ */
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    fichero: 'src/modules/invoicing/domain/crearFacturaEmitida.ts',
+    de: 'const direccion = await congelarDireccionAlEmitir(tx, datos);',
+    a: 'const direccion = await congelarDireccionAlEmitir(tx, datos); await tx.merchant.findUnique({ where: { id: datos.merchantId } });',
+    cae: 'EL NÚMERO QUE EL TICKET NO TENÍA',
+  },
+  {
+    fichero: 'src/modules/invoicing/domain/crearFacturaEmitida.ts',
+    de: 'const direccion = await congelarDireccionAlEmitir(tx, datos);',
+    a: 'const direccion = await congelarDireccionAlEmitir(tx, datos); await tx.merchant.findUnique({ where: { id: datos.merchantId } });',
+    cae: 'la rectificativa hace',
+  },
+];
+
 /** Lo que midió la fase A para el ALBARÁN. Aquí es la referencia, no el objetivo. */
 const VIAJES_DEL_ALBARAN = 5;
 
