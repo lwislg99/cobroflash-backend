@@ -1,0 +1,64 @@
+-- docs/sql/scrum-1787-direccion-cliente.sql — SCRUM-1787 (tramo 1787c)
+--
+-- ⛔ PROPUESTO, SIN APLICAR. No se ha medido ninguna base (ni dev, ni staging, ni producción): no
+--    se sabe si alguna tiene ya estas columnas. Lo aplica Javier en staging y en producción, y la
+--    sesión de construcción (1787d) en dev, con la decisión de SCRUM-1787 c.22305 («ok»: guardar la
+--    dirección del cliente en cada factura al emitirla). `prisma/schema.prisma` NO se ha tocado: las
+--    cinco líneas entran en el PR de 1787d, con el congelado al emitir, el PDF y sus tests, DESPUÉS
+--    de este ALTER (orden A5).
+--
+-- QUÉ ES. La dirección de FACTURACIÓN del cliente, congelada en la factura al emitirla, igual que
+-- ya se congelan `customer_name`, `customer_legal_name`, `customer_tax_id`, `customer_email` y
+-- `customer_phone` (SCRUM-729). Son los MISMOS cinco campos que tiene hoy el cliente
+-- (`model Customer`: `billingAddress`, `billingCity`, `billingPostalCode`, `billingProvince`,
+-- `billingCountry`, SCRUM-579), con el prefijo `customer` de sus hermanos congelados.
+-- NO es la dirección de la OBRA (SCRUM-602, `shipping_address`): ésa es del documento.
+--
+-- NULLABLE Y SIN DEFAULT, LOS CINCO, como en el cliente: NULL = «no consta». Las facturas ya
+-- emitidas se quedan a NULL y NO se rellenan nunca (regla 29: una factura emitida no se edita);
+-- el lector NO debe caer a la ficha viva para ellas (ver el registro, docs/master/SCRUM-1787.md).
+--
+-- Generado OFFLINE con `previewMigracion({ schema, desde })` de `scripts/preview-migracion.mjs`
+-- por `docs/master/evidencias/SCRUM-1787/preview-ddl-1787c.mjs`: desde = copia de
+-- `prisma/schema.prisma` de origin/main 41b0e031083b02c35e1a4cf74c4e71756f4d20f5 (el esquema no
+-- cambia entre e24f2828 y ese sha), schema = esa copia con CINCO líneas en `model Invoice`,
+-- detrás de `customerPhone`:
+--     customerBillingAddress    String? @map("customer_billing_address")
+--     customerBillingCity       String? @map("customer_billing_city")
+--     customerBillingPostalCode String? @map("customer_billing_postal_code")
+--     customerBillingProvince   String? @map("customer_billing_province")
+--     customerBillingCountry    String? @map("customer_billing_country")
+-- Control de la herramienta: ok; `sentenciasDestructivas`: 0; lista blanca de
+-- `scripts/_aplicar-sql-dev.mjs` (`clasificarSentencias`): 1 permitida, 0 rechazadas; control
+-- negativo (actual → actual): `sin_cambios`; control positivo sembrado (un DROP fabricado de
+-- `customerEmail` en la factura): destructivas 1, rechazadas 1. Con el sembrado cambiado por algo
+-- no destructivo, el guion sale 2 «CIEGO (un control no se cumple)». Salida en
+-- `preview-ddl-1787c.salida.txt`. Salida LITERAL:
+-- AlterTable
+ALTER TABLE "invoices" ADD COLUMN     "customer_billing_address" TEXT,
+ADD COLUMN     "customer_billing_city" TEXT,
+ADD COLUMN     "customer_billing_country" TEXT,
+ADD COLUMN     "customer_billing_postal_code" TEXT,
+ADD COLUMN     "customer_billing_province" TEXT;
+
+-- ─── VERIFICACIÓN, DESPUÉS DEL ALTER (solo lectura) ───────────────────────────────────────────
+-- Se pega aparte. Resultado esperado: 5 filas, todas `text` y `YES`, y en `base` el nombre de la
+-- base en la que se aplicó (para no confundir staging con producción). 0 filas = el ALTER no se
+-- aplicó en ESTA base; menos de 5 = se aplicó a medias.
+--
+-- SELECT current_database() AS base, column_name, data_type, is_nullable
+--   FROM information_schema.columns
+--  WHERE table_schema = current_schema()
+--    AND table_name = 'invoices'
+--    AND column_name IN ('customer_billing_address', 'customer_billing_city',
+--                        'customer_billing_postal_code', 'customer_billing_province',
+--                        'customer_billing_country')
+--  ORDER BY column_name;
+--
+--  base   | column_name                  | data_type | is_nullable
+-- --------+------------------------------+-----------+-------------
+--  <base> | customer_billing_address     | text      | YES
+--  <base> | customer_billing_city        | text      | YES
+--  <base> | customer_billing_country     | text      | YES
+--  <base> | customer_billing_postal_code | text      | YES
+--  <base> | customer_billing_province    | text      | YES
