@@ -102,6 +102,8 @@ const CENSO = {
   // c.20817). ⚠️ La R1 y el justificante siguen agrupando a mano: esa aritmética NO la cubre este
   // veredicto, y está declarada como REIMPLEMENTACION en scrum627b-censo-declara-reimplementaciones.test.mjs.
   'src/modules/invoicing/infra/pdf/pdf.service.ts': { veredicto: 'DOCUMENTO', nota: 'el bloque de totales de UNA factura F1: imprime el desglose de su registro y su total guardado (SCRUM-624e)' },
+  // SCRUM-1780c · la factura desde el parte firmado (GO del fundador, SCRUM-1780 c.22237).
+  'src/modules/invoicing/domain/facturaDesdeParte.ts': { veredicto: 'DOCUMENTO', nota: 'el total de UNA factura desde las líneas de UN parte, del mismo desglose que se guarda (SCRUM-1780c)' },
 };
 
 test('SCRUM-389 · SUELO: el extractor ENCUENTRA llamadores', () => {

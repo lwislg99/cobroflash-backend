@@ -357,8 +357,16 @@ const EMISOR = 'src/modules/invoicing/domain/invoiceNumber.service.ts';
 // `pg_advisory_xact_lock`, el reinicio anual, los dos contadores, la serie F, las rectificativas y la
 // auditoría NO SE TOCAN. Lo prueba `scrum1585-sii-en-cada-emision`.
 //
-//   nuevo:    0651d86336d084a924e9314c22d39a3d52deb0dabeb9674075de0b5de37be539   (SCRUM-1585)
-const EMISOR_SHA256 = '0651d86336d084a924e9314c22d39a3d52deb0dabeb9674075de0b5de37be539';
+//   anterior: 0651d86336d084a924e9314c22d39a3d52deb0dabeb9674075de0b5de37be539   (SCRUM-1585)
+//
+// ── SCRUM-1780c · 21-nov-2026 · GO del fundador con el diff delante, SCRUM-1780 c.22280 («1-Sí»),
+// sobre el GO de c.22237 (`YAQU_MASTER.md`, regla 40) y la decisión del orquestador J de c.22249 (por SCRUM-1585
+// c.21290). El cambio: un valor nuevo, `'C7-parte'`, en el tipo `OrigenC7` y en `ORIGENES_C7`
+// (factura desde el parte firmado), más el comentario de la lista («Los cuatro» → «Todos»).
+// `allocateInvoiceNumber`, su `pg_advisory_xact_lock`, los contadores y la serie NO SE TOCAN.
+//
+//   nuevo:    8c507415731900d0e774d850d0c023b31d26b6892ab51ba268681ba41ac031e8   (SCRUM-1780c)
+const EMISOR_SHA256 = '8c507415731900d0e774d850d0c023b31d26b6892ab51ba268681ba41ac031e8';
 
 test('SCRUM-291 · el camino de emisión sigue INTACTO (regla 38)', () => {
   // El fundador puso el límite y esto lo COMPRUEBA en vez de prometerlo. Si algún día hace falta

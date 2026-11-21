@@ -1,0 +1,17 @@
+población: esquema prisma\schema.prisma · 108684 B · diff = 2 líneas en model ParteTrabajo
+control de la herramienta (preview): ok
+propuesto: ok=true clase=con_cambios
+--- DDL ---
+-- AlterTable
+ALTER TABLE "partes_trabajo" ADD COLUMN     "invoice_id" INTEGER;
+
+-- CreateIndex
+CREATE INDEX "partes_trabajo_merchant_id_invoice_id_idx" ON "partes_trabajo"("merchant_id", "invoice_id");
+--- fin DDL ---
+destructivas: 0
+lista blanca: permitidas=2 rechazadas=0
+  ✔ ALTER TABLE … ADD COLUMN ← ALTER TABLE "partes_trabajo" ADD COLUMN "invoice_id" INTEGER
+  ✔ CREATE [UNIQUE] INDEX ← CREATE INDEX "partes_trabajo_merchant_id_invoice_id_idx" ON "partes_trabajo"("merchant_id", "invoice_id")
+control negativo (mismo esquema): ok=true clase=sin_cambios
+control positivo sembrado (DROP de «notas»): ok=true clase=con_cambios destructivas=1 rechazadas=1
+VEREDICTO: VERDE (aditivo, 0 destructivas, lista blanca 0 rechazadas, controles ok)
