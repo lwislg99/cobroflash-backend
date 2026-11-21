@@ -194,6 +194,10 @@ const DIVERGENCIA = ['apartado', 'costeUnitario', 'description', 'dto', 'suplido
 const ESTRECHAMIENTOS = Object.freeze({
   'src/lib/invoicing.ts': 1,
   'src/modules/ai/domain/ai.service.ts': 1,
+  // SCRUM-1780c (21-nov-2026) · factura desde el parte firmado: cada línea pasa como
+  // `{concept, qty, price, tax}`. `LineaParte.id`, `bloque` y `datosNoRespaldados` no están en el
+  // vocabulario de la factura; no se pierde nada facturable. Decisión del fundador, SCRUM-1780 c.22280.
+  'src/modules/invoicing/domain/facturaDesdeParte.ts': 1,
   'src/modules/invoicing/domain/facturaSuelta.ts': 1,
   'src/modules/invoicing/domain/finalInvoice.service.ts': 2,
   // SCRUM-887 (17-sep-2026) · la línea NEGATIVA del descuento global (caso B). No reconstruye una

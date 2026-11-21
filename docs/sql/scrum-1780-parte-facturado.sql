@@ -1,0 +1,49 @@
+-- docs/sql/scrum-1780-parte-facturado.sql — SCRUM-1780 (tramo 1780b)
+--
+-- ⛔ PROPUESTO, SIN APLICAR. No se ha medido ninguna base (ni dev, ni staging, ni producción): no
+--    se sabe si alguna tiene ya `partes_trabajo.invoice_id`. Lo aplica Javier en staging y en
+--    producción, y una sesión en dev (orden A5), con el GO de SCRUM-1780 c.22237 punto ③
+--    («enlace parte → factura con columna nueva, ALTER aditivo»). `prisma/schema.prisma` NO se ha
+--    tocado: la línea entra en el PR de 1780c, con la ruta y sus tests, DESPUÉS de este ALTER.
+--
+-- QUÉ ES. El enlace del parte de trabajo con la factura que lo facturó. Lo escribe la ruta nueva
+-- `POST /admin/partes/:id/facturar` (1780c) en la MISMA transacción que `emitInvoice` y que el
+-- paso `firmado → facturado`, con un `updateMany` condicionado a `invoice_id IS NULL`: es lo que
+-- impide facturar dos veces el mismo parte.
+--
+-- POR QUÉ EN EL PARTE Y NO `invoices.parte_id`. (1) Es la forma que ya tiene el esquema para lo
+-- mismo: `albaranes.invoice_id`, anulable, sin FK y con índice (merchant_id, invoice_id). (2) Una
+-- columna en `invoices` la tendría que escribir `emitInvoice` —cambiar `EmitInvoiceInput` es tocar
+-- el camino de emisión más hondo de lo que el GO cubre— o un UPDATE posterior sobre una factura
+-- recién emitida, y una factura emitida no se toca (regla 29). (3) `borradoMerchant` borra
+-- `parteTrabajo` ANTES que `invoice`; con el enlace en la factura quedaría una factura apuntando
+-- a un parte borrado. Con el enlace en el parte, NADIE apunta al parte (sigue siendo cierto lo
+-- medido en SCRUM-674).
+--
+-- SIN CLAVE AJENA, A PROPÓSITO (decisión del fundador del 8-sep-2026, la de `customers.company_id`
+-- y `quotes.job_id`: «servicio de borrado, no cascadas»). Qué pasa al borrar, leído en el código
+-- de origin/main 7f5ea0138d9c7ca683ec903114940cff37613a60, no ejecutado:
+--   · borrar el PARTE: no hay ninguna ruta que lo borre (0 `parteTrabajo.delete*` en `src/`);
+--     sólo `borradoMerchant` (gateado OFF) y el barrido del demo, que lo borran antes que la
+--     factura. La factura no se entera y no se toca.
+--   · borrar la FACTURA: nunca (regla 29). El barrido del demo borra la factura DESPUÉS del parte.
+--   · borrar el CLIENTE: `invoices.customer_id` es relación requerida sin `onDelete` (Restrict),
+--     así que un cliente con factura no se borra; el parte no lleva FK al cliente (como hoy).
+-- Una FK con CASCADE haría que borrar una factura borrara el parte, y con SET NULL que el parte
+-- volviera a ser facturable: ninguna de las dos es lo que se quiere, y ninguna se crea aquí.
+--
+-- Generado OFFLINE con `previewMigracion({ schema, desde })` de `scripts/preview-migracion.mjs`
+-- por `docs/master/evidencias/SCRUM-1780/preview-ddl-1780b.mjs`: desde = copia de
+-- `prisma/schema.prisma` de origin/main 7f5ea0138d9c7ca683ec903114940cff37613a60, schema = esa
+-- copia con DOS líneas en `model ParteTrabajo`:
+--     invoiceId         Int?      @map("invoice_id")
+--     @@index([merchantId, invoiceId])
+-- Control de la herramienta: ok; `sentenciasDestructivas`: 0; lista blanca de
+-- `scripts/_aplicar-sql-dev.mjs` (`clasificarSentencias`): 2 permitidas, 0 rechazadas; control
+-- negativo (actual → actual): `sin_cambios`; control positivo sembrado (un DROP fabricado):
+-- destructivas 1, rechazadas 1. Salida en `preview-ddl-1780b.salida.txt`. Salida LITERAL:
+-- AlterTable
+ALTER TABLE "partes_trabajo" ADD COLUMN     "invoice_id" INTEGER;
+
+-- CreateIndex
+CREATE INDEX "partes_trabajo_merchant_id_invoice_id_idx" ON "partes_trabajo"("merchant_id", "invoice_id");
