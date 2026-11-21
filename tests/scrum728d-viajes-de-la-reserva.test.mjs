@@ -53,13 +53,14 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'src/modules/invoicing/domain/crearFacturaEmitida.ts',
     de: 'const direccion = await congelarDireccionAlEmitir(tx, datos);',
     a: 'const direccion = await congelarDireccionAlEmitir(tx, datos); await tx.merchant.findUnique({ where: { id: datos.merchantId } });',
-    cae: 'EL NÚMERO QUE EL TICKET NO TENÍA',
+    cae: 'LO QUE LA EMISIÓN HACE DENTRO DEL CERROJO',
   },
   {
-    fichero: 'src/modules/invoicing/domain/crearFacturaEmitida.ts',
-    de: 'const direccion = await congelarDireccionAlEmitir(tx, datos);',
-    a: 'const direccion = await congelarDireccionAlEmitir(tx, datos); await tx.merchant.findUnique({ where: { id: datos.merchantId } });',
-    cae: 'la rectificativa hace',
+    // La misma, pero en `emitInvoice`: entre la reserva y `crearFacturaEmitida`, fuera de las dos.
+    fichero: 'src/modules/invoicing/domain/invoicing.service.ts',
+    de: '  return crearFacturaEmitida(tx, input.clienteCongelado, input.emisorCongelado, {',
+    a: '  await tx.customer.findUnique({ where: { id: input.customerId } }); return crearFacturaEmitida(tx, input.clienteCongelado, input.emisorCongelado, {',
+    cae: 'LO QUE LA EMISIÓN HACE DENTRO DEL CERROJO',
   },
 ];
 
@@ -146,6 +147,37 @@ test('SCRUM-728d · 🔴 ROJO: añadir UN viaje a la sección crítica hace caer
     '🔴 el censo NO ha visto el viaje añadido. Un contador que no sube cuando se añade trabajo a '
     + 'la sección crítica no está contando nada.');
   assert.notEqual(conExtra.viajes, 8, '🔴 el conteo no distingue con y sin el viaje extra');
+});
+
+/**
+ * SCRUM-1787j · lo que la emisión pide DESPUÉS de la reserva, dentro de la misma transacción (o
+ * sea, dentro del cerrojo). Declarado sentencia a sentencia: un viaje nuevo aquí no se cuela en un
+ * número, se nombra. Medido el 21-nov-2026 sobre origin/main `ccb69008b5aa`.
+ */
+const DESPUES_DE_LA_RESERVA = {
+  F1: [
+    'customer.findFirst', // SCRUM-1787d · la dirección de la ficha (`direccionCongelada.ts`)
+    'invoice.create',
+  ],
+  R1: [
+    'invoice.findFirst', // SCRUM-1787d · la dirección de la factura que rectifica
+    'invoice.create',
+  ],
+};
+
+test('SCRUM-1787j · 🔴 LO QUE LA EMISIÓN HACE DENTRO DEL CERROJO Y FUERA DE LA RESERVA está declarado, sentencia a sentencia', async () => {
+  // Se DERIVA de lo medido: las sentencias de la emisión entera menos las de la reserva, que tienen
+  // que ser su prefijo exacto. Si no lo son, la reserva ha cambiado de forma dentro de la emisión.
+  for (const [tipo, rectifying] of [['F1', false], ['R1', true]]) {
+    const opts = { merchant: MERCHANTS.fiscal, rectifying, emitidas: [{ number: 'F260001' }] };
+    const reserva = await espiarReserva(opts);
+    const emision = await espiarEmision(opts);
+    assert.deepEqual(emision.sentencias.slice(0, reserva.sentencias.length), reserva.sentencias,
+      `🔴 ${tipo}: la emisión no empieza por la reserva entera`);
+    assert.deepEqual(emision.sentencias.slice(reserva.sentencias.length), DESPUES_DE_LA_RESERVA[tipo],
+      `🔴 ${tipo}: la emisión hace dentro del cerrojo algo que no está declarado (o ha dejado de `
+      + 'hacerlo). Cada viaje aquí se multiplica por N emisiones a la vez: se declara, no se cuela.');
+  }
 });
 
 test('SCRUM-728d · 🔴 SUELO EN ROJO: las dos cegueras lanzan, no devuelven cero', () => {
