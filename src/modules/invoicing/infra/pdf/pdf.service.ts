@@ -413,7 +413,8 @@ export async function generateInvoicePdf(params: {
   const hasLines = Array.isArray(params.lines) && params.lines.length > 0;
 
   const [qrBuf, logoBuf] = await Promise.all([
-    isReceipt ? Promise.resolve(null) : QRCode.toBuffer(params.qrData, { type: 'png', width: 200 }),
+    // SCRUM-1779d · `qrData` vacío = factura sin sello: no se dibuja QR (`qrDelDocumento`).
+    isReceipt || !params.qrData ? Promise.resolve(null) : QRCode.toBuffer(params.qrData, { type: 'png', width: 200 }),
     loadLogoBuffer(params.merchant.logoUrl),
   ]);
 

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<response>
+  <status>
+    <code>200</code>
+    <text>ok</text>
+  </status>
+  <data>
+    <bloque id="a163" tipo="precepto" titulo="Artículo 163">
+      <version id_norma="BOE-A-1992-28740" fecha_publicacion="19921229" fecha_vigencia="19930101">
+        <p class="articulo">Artículo 163. Obligación de acreditar la sujeción al régimen especial del recargo de equivalencia.</p>
+        <p class="parrafo">Las personas o entidades que no sean sociedades mercantiles y realicen habitualmente operaciones de ventas al por menor estarán obligadas a acreditar ante sus proveedores o, en su caso, ante la Aduana, el hecho de estar sometidos o no al régimen especial del recargo de equivalencia en relación con las adquisiciones o importaciones de bienes que realicen.</p>
+      </version>
+    </bloque>
+  </data>
+</response>

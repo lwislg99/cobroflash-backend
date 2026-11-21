@@ -40,6 +40,8 @@
 //   · NO es Postgres. La carrera contra una base real no se ha medido: en esta máquina no hay
 //     ninguna, y darle una en CI es tocar un workflow.
 //   · Se doblan el PDF (no escribe en disco; puede fallar a propósito) y el correo. Nada más.
+// SCRUM-1779d · este banco AFIRMA el sellado: con SIF_ENABLED en OFF (el defecto) la emisión ya no sella (SCRUM-1779 c.22239), así que se enciende aquí y lo afirmado no cambia.
+process.env.SIF_ENABLED = 'true';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 // El banco se importa ANTES de cargar `dist/`: deja el doble de la base, el PDF y el correo.

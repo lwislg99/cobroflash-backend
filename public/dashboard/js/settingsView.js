@@ -350,6 +350,9 @@ function renderSettingsView(container) {
       "text",
       true
     );
+    // [J3] SCRUM-1781b · el prefijo aparte, +34 preseleccionado: el mismo selector que Clientes
+    // (`telefonoConPrefijo`, en `onboardingView.js`). El valor guardado no cambia de formato.
+    const fWhatsappPrefijo = telefonoConPrefijo.montar(fWhatsappPhone.input);
     const fDefaultCurrency = createField(
       "Moneda por defecto",
       "defaultCurrency",
@@ -937,7 +940,7 @@ function renderSettingsView(container) {
           : merchant.llevaLibrosPorSii === false ? "no" : "";
         fDomicilioFiscalForal.value = merchant.domicilioFiscalForal === true ? "si"
           : merchant.domicilioFiscalForal === false ? "no" : "";
-        fWhatsappPhone.input.value = merchant.whatsappPhone || "";
+        telefonoConPrefijo.repartir(merchant.whatsappPhone || "", fWhatsappPhone.input, fWhatsappPrefijo); // [J3] SCRUM-1781b
         fDefaultCurrency.input.value = merchant.defaultCurrency || "EUR";
         fInvoiceSeriesPrefix.input.value = merchant.invoiceSeriesPrefix || "";
         // SCRUM-293 · TRES estados, y el orden de las ramas importa: `declarada` primero.
@@ -1143,7 +1146,7 @@ function renderSettingsView(container) {
         criterioCaja: fCriterioCaja.value === "si" ? true : fCriterioCaja.value === "no" ? false : null,
         llevaLibrosPorSii: fLlevaLibrosPorSii.value === "si" ? true : fLlevaLibrosPorSii.value === "no" ? false : null,
         domicilioFiscalForal: fDomicilioFiscalForal.value === "si" ? true : fDomicilioFiscalForal.value === "no" ? false : null,
-        whatsappPhone: fWhatsappPhone.input.value.trim(),
+        whatsappPhone: telefonoConPrefijo.componer(fWhatsappPhone.input, fWhatsappPrefijo), // [J3] SCRUM-1781b
         defaultCurrency: fDefaultCurrency.input.value.trim() || "EUR",
         invoiceSeriesPrefix: fInvoiceSeriesPrefix.input.value.trim(),
         // SCRUM-293 · se mandan LOS DOS: `declarada` dice SI lo ha dicho, `tipo` QUÉ dijo.

@@ -21,6 +21,61 @@ const OB_COUNTRIES = [
   { value: 'CL', label: 'Chile' },
 ];
 
+// SCRUM-1781b · EL PREFIJO APARTE, CON +34 PRESELECCIONADO — el mismo selector que Clientes.
+//
+// Orden del fundador (SCRUM-1781): el WhatsApp del alta, el del primer cliente y el de
+// Configuración llevan el prefijo en su propio desplegable, como «Nuevo cliente» desde
+// SCRUM-578/590. El selector es el de `prefijosPais.js` tal cual (bandera + nombre + prefijo:
+// ningún texto nuevo) y la fila reutiliza la clase `.campo-telefono` que ya existe.
+//
+// 🔴 EL VALOR GUARDADO NO CAMBIA DE FORMATO: dígitos con el prefijo delante, sin «+», que es lo
+// que `normalizePhone` espera en el servidor. `componer` y `repartir` siguen LA MISMA REGLA que
+// `numeroCompleto` y `repartirNumero` de `customersView.js` (carril J2, no se toca desde aquí):
+// si el número ya trae el prefijo, no se duplica; si lo guardado no empieza por ningún prefijo
+// conocido, se enseña entero con España. Que las dos reglas sigan dando lo mismo no lo garantiza
+// este comentario: lo mide `tests/scrum1781b-prefijo-en-alta-y-ajustes.test.mjs`, que guarda en
+// las dos pantallas y compara.
+//
+// Vive aquí, en una función de nivel superior, porque `settingsView.js` (J3, carga después) la
+// usa al pintar. `prefijosPais` se lee al montar, no al cargar: su script va detrás de éste.
+const telefonoConPrefijo = {
+  /** Pone el selector delante de `input`, los dos en una fila. Devuelve el selector. */
+  montar(input) {
+    const sel = window.prefijosPais.selectorDePrefijo({});
+    // Sin `name`: no es una columna del comercio y no debe parecerlo en ningún formulario.
+    sel.name = '';
+    const fila = document.createElement('div');
+    fila.className = 'campo-telefono';
+    input.parentNode.insertBefore(fila, input);
+    fila.appendChild(sel);
+    fila.appendChild(input);
+    return sel;
+  },
+  /** El número que se guarda: prefijo + lo tecleado, sin duplicar el prefijo si ya va dentro. */
+  componer(input, sel) {
+    const numero = String(input.value || '').trim().replace(/\s/g, '');
+    if (!numero) return '';
+    const prefijo = (sel && sel.value) || window.prefijosPais.ESPANA.prefijo;
+    const yaLoLleva = numero.startsWith(prefijo) || numero.startsWith('+' + prefijo) || numero.startsWith('00' + prefijo);
+    return yaLoLleva ? numero : prefijo + numero;
+  },
+  /** Reparte lo guardado entre el selector y el campo; si no reconoce prefijo, lo deja entero. */
+  repartir(guardado, input, sel) {
+    const limpio = String(guardado || '').replace(/[\s\-()]/g, '').replace(/^\+/, '');
+    const prefijos = window.prefijosPais.listaDePrefijos().map((p) => p.prefijo)
+      .sort((a, b) => b.length - a.length); // el más largo primero: `1` no puede ganarle a `1809`
+    for (const p of prefijos) {
+      if (limpio.length > p.length && limpio.startsWith(p)) {
+        sel.value = p;
+        input.value = limpio.slice(p.length);
+        return;
+      }
+    }
+    sel.value = window.prefijosPais.ESPANA.prefijo;
+    input.value = limpio;
+  },
+};
+
 // SCRUM-1536g · el país se fija en el alta y el asistente sólo lo ENSEÑA (decisión (a), Jira
 // SCRUM-1536 c.20245): ya no hay selector ni se manda al guardar. Hasta que llega el perfil no se
 // pinta nada — pintar el «ES» por defecto le diría «España» a un negocio de otro país. Un país
@@ -162,11 +217,19 @@ function showOnboardingWizard(onComplete) {
           </div>
         </div>
       `,
+      // SCRUM-1781b · el prefijo aparte (+34 si no hay nada), y lo ya tecleado repartido al volver.
+      montar: () => {
+        const input = document.getElementById('ob-phone');
+        if (!input) return;
+        state.phoneSel = telefonoConPrefijo.montar(input);
+        if (state.phone) telefonoConPrefijo.repartir(state.phone, input, state.phoneSel);
+      },
       validate: () => document.getElementById('ob-name')?.value.trim(),
       save: async () => {
         state.name    = document.getElementById('ob-name')?.value.trim() || state.name;
         state.trade   = document.getElementById('ob-trade')?.value || '';
-        state.phone   = document.getElementById('ob-phone')?.value.trim() || '';
+        const obPhone = document.getElementById('ob-phone');
+        state.phone   = obPhone ? telefonoConPrefijo.componer(obPhone, state.phoneSel) : '';
         if (state.phone) await updateMerchantProfile({ whatsappPhone: state.phone }).catch(() => {});
         await updateMerchantProfile({
           name: state.name,
@@ -370,6 +433,13 @@ function showOnboardingWizard(onComplete) {
     {
       title: '¡Envía tu primera cotización ahora! 🚀',
       custom: true,
+      // SCRUM-1781b · «Su WhatsApp» con el prefijo aparte, como «Nuevo cliente» en Clientes.
+      montar: () => {
+        const input = document.getElementById('ob-cust-phone');
+        if (!input) return;
+        state.customerPhoneSel = telefonoConPrefijo.montar(input);
+        if (state.customerPhone) telefonoConPrefijo.repartir(state.customerPhone, input, state.customerPhoneSel);
+      },
       render: () => {
         const productLine = state.firstProduct
           ? `<p class="j3e-ef14aff">Incluiremos <strong>${esc(state.firstProduct.name)}</strong> como primera línea — podrás ajustarla.</p>`
@@ -408,7 +478,8 @@ function showOnboardingWizard(onComplete) {
         `;
         footer.querySelector('#ob-wow').addEventListener('click', async () => {
           state.customerName  = document.getElementById('ob-cust-name')?.value.trim() || '';
-          state.customerPhone = document.getElementById('ob-cust-phone')?.value.trim() || '';
+          const obCustPhone = document.getElementById('ob-cust-phone');
+          state.customerPhone = obCustPhone ? telefonoConPrefijo.componer(obCustPhone, state.customerPhoneSel) : '';
           await complete();
           if (typeof openQuickQuoteModal === 'function') {
             openQuickQuoteModal({
