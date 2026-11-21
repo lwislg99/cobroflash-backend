@@ -1355,7 +1355,7 @@ router.post('/:id/regenerate-pdf', requireRole('admin'), async (req, res) => {
       // otra puerta (un destinatario que depende de por dónde se mire), así que entra aquí y no
       // en un ticket aparte.
       // SCRUM-1787d · idem: NIF y dirección de la columna de la factura.
-      customer: { ...clienteDelDocumento(invoice, invoice.customer), address: direccionEnUnaLinea(direccionDeLaFactura(invoice)) || null },
+      customer: clienteDelDocumento(invoice, invoice.customer), customerAddress: direccionEnUnaLinea(direccionDeLaFactura(invoice)) || null,
       currency: invoice.currency,
       total: invoice.total.toString(),
       qrData,

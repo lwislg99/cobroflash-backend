@@ -132,7 +132,7 @@ export async function ensureInvoicePdf(
       // SCRUM-729 · y ahora sale de la COLUMNA, no de la ficha viva. Hasta hoy, corregir el
       // nombre de un cliente reescribia el PDF de sus facturas ya emitidas.
       // SCRUM-1787d · NIF (ya venía en el congelado) y dirección: de la COLUMNA, nunca de la ficha.
-      customer: { ...clienteDelDocumento(inv, inv.customer), address: direccionEnUnaLinea(direccionDeLaFactura(inv)) || null },
+      customer: clienteDelDocumento(inv, inv.customer), customerAddress: direccionEnUnaLinea(direccionDeLaFactura(inv)) || null,
       currency: inv.currency,
       total: inv.total.toString(),
       qrData: qrDelDocumento({ number: inv.number, vfHash, vfEstado: inv.vfEstado }, inv.merchant, qrData), // SCRUM-1779d
@@ -296,7 +296,7 @@ export async function ensureInvoiceForCharge(
         // SCRUM-577: idem — el segundo camino que arma la factura.
         // SCRUM-729 · idem: la columna manda, la ficha viva sólo si el documento es anterior.
         // SCRUM-1787d · idem.
-        customer: { ...clienteDelDocumento(inv, customer), address: direccionEnUnaLinea(direccionDeLaFactura(inv)) || null },
+        customer: clienteDelDocumento(inv, customer), customerAddress: direccionEnUnaLinea(direccionDeLaFactura(inv)) || null,
         currency: inv.currency,
         total: inv.total.toString(),
         qrData: qrDelDocumento({ number: inv.number, vfHash, vfEstado }, merchant, qrData), // SCRUM-1779d

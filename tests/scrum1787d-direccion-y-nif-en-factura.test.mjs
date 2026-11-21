@@ -34,7 +34,9 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 
 const D = '../dist/modules/invoicing/domain/';
 const { crearFacturaEmitida } = await import(D + 'crearFacturaEmitida.js');
-const { direccionDeLaFactura, direccionEnUnaLinea, CAMPOS_DIRECCION_CONGELADOS } = await import(D + 'direccionCongelada.js');
+const { direccionDeLaFactura, direccionEnUnaLinea } = await import(D + 'direccionCongelada.js');
+// Los cinco nombres salen del ÚNICO lector, no de una lista exportada sólo para el test (scrum1185).
+const CAMPOS_DIRECCION_CONGELADOS = Object.keys(direccionDeLaFactura({}));
 
 const CLIENTE = { customerName: 'Cliente QA', customerLegalName: null, customerTaxId: 'B00000001', customerEmail: null, customerPhone: null };
 const EMISOR = {};
@@ -51,11 +53,11 @@ function txDeEjemplo(ficha, facturas = []) {
     },
   };
 }
-const FICHA = { id: 5, merchantId: 1, billingAddress: 'Calle Falsa 1', billingCity: 'Ciudad QA', billingPostalCode: '00001', billingProvince: 'Provincia QA', billingCountry: 'ES' };
+const FICHA = { id: 5, merchantId: 71, billingAddress: 'Calle Falsa 1', billingCity: 'Ciudad QA', billingPostalCode: '00001', billingProvince: 'Provincia QA', billingCountry: 'ES' };
 
 test('SCRUM-1787d ① emitir congela los cinco de la ficha del cliente', async () => {
   const tx = txDeEjemplo(FICHA);
-  const f = await crearFacturaEmitida(tx, CLIENTE, EMISOR, { merchantId: 1, customerId: 5, number: 'F1', total: '1', type: 'F1' });
+  const f = await crearFacturaEmitida(tx, CLIENTE, EMISOR, { merchantId: 71, customerId: 5, number: 'F1', total: '1', type: 'F1' });
   assert.equal(CAMPOS_DIRECCION_CONGELADOS.length, 5);
   assert.equal(f.customerBillingAddress, 'Calle Falsa 1');
   assert.equal(f.customerBillingCity, 'Ciudad QA');
@@ -66,35 +68,36 @@ test('SCRUM-1787d ① emitir congela los cinco de la ficha del cliente', async (
 
 test('SCRUM-1787d ① regla 2: un cliente de OTRO merchant no se congela (cinco NULL)', async () => {
   const tx = txDeEjemplo({ ...FICHA, merchantId: 2 });
-  const f = await crearFacturaEmitida(tx, CLIENTE, EMISOR, { merchantId: 1, customerId: 5, number: 'F1', total: '1', type: 'F1' });
+  const f = await crearFacturaEmitida(tx, CLIENTE, EMISOR, { merchantId: 71, customerId: 5, number: 'F1', total: '1', type: 'F1' });
   for (const c of CAMPOS_DIRECCION_CONGELADOS) assert.equal(f[c], null, c);
 });
 
 test('SCRUM-1787d ② cambiar la ficha después no cambia la factura', async () => {
   const ficha = { ...FICHA };
   const tx = txDeEjemplo(ficha);
-  const f = await crearFacturaEmitida(tx, CLIENTE, EMISOR, { merchantId: 1, customerId: 5, number: 'F1', total: '1', type: 'F1' });
+  const f = await crearFacturaEmitida(tx, CLIENTE, EMISOR, { merchantId: 71, customerId: 5, number: 'F1', total: '1', type: 'F1' });
   ficha.billingAddress = 'Calle Nueva 2';
   assert.equal(direccionDeLaFactura(f).customerBillingAddress, 'Calle Falsa 1');
 });
 
 test('SCRUM-1787d ③ la R1 hereda la dirección de la original, no la ficha de hoy', async () => {
-  const original = { id: 7, merchantId: 1, customerBillingAddress: 'Calle Vieja 9', customerBillingCity: 'Villa Vieja',
+  const original = { id: 7, merchantId: 71, customerBillingAddress: 'Calle Vieja 9', customerBillingCity: 'Villa Vieja',
     customerBillingPostalCode: '00009', customerBillingProvince: null, customerBillingCountry: 'ES' };
   const tx = txDeEjemplo({ ...FICHA, billingAddress: 'Calle De Hoy 3' }, [original]);
-  const r = await crearFacturaEmitida(tx, CLIENTE, EMISOR, { merchantId: 1, customerId: 5, number: 'R1', total: '-1', type: 'R1', rectifiesId: 7 });
+  const r = await crearFacturaEmitida(tx, CLIENTE, EMISOR, { merchantId: 71, customerId: 5, number: 'R1', total: '-1', type: 'R1', rectifiesId: 7 });
   assert.equal(r.customerBillingAddress, 'Calle Vieja 9');
   assert.equal(r.customerBillingProvince, null);
   // original anterior a 1787d (todo NULL) → la R1 también NULL, no la ficha
-  const tx2 = txDeEjemplo(FICHA, [{ id: 8, merchantId: 1 }]);
-  const r2 = await crearFacturaEmitida(tx2, CLIENTE, EMISOR, { merchantId: 1, customerId: 5, number: 'R2', total: '-1', type: 'R1', rectifiesId: 8 });
+  const tx2 = txDeEjemplo(FICHA, [{ id: 8, merchantId: 71 }]);
+  const r2 = await crearFacturaEmitida(tx2, CLIENTE, EMISOR, { merchantId: 71, customerId: 5, number: 'R2', total: '-1', type: 'R1', rectifiesId: 8 });
   assert.equal(r2.customerBillingAddress, null);
 });
 
 async function textoDelPdf(sufijo, customer) {
+  const { address, ...cliente } = customer; // la dirección viaja en `customerAddress`, hermano de `customer` (scrum577)
   const { generateInvoicePdf } = await import('../dist/lib/pdf.js');
   const { outPath } = await generateInvoicePdf({
-    number: `F-2026-QA1787D${sufijo}`, merchant: { name: 'Emisor QA', taxId: 'B00000000' }, customer,
+    number: `F-2026-QA1787D${sufijo}`, merchant: { name: 'Emisor QA', taxId: 'B00000000' }, customer: cliente, customerAddress: address,
     currency: 'EUR', total: 12.1, qrData: '', type: 'F1',
     lines: [{ concept: 'Mano de obra', qty: 1, unitPrice: 10, vatRate: 21 }],
   });

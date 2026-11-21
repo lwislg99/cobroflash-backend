@@ -383,7 +383,7 @@ export async function generateInvoicePdf(params: {
   customer: { name: string; legalName?: string | null; email?: string | null; phone?: string | null;
     // SCRUM-1787d (GO c.22303) · el NIF y la dirección del cliente, CONGELADOS en la factura: el
     // llamador pasa `direccionEnUnaLinea(direccionDeLaFactura(inv))`, nunca la ficha viva.
-    taxId?: string | null; address?: string | null };
+    taxId?: string | null }; customerAddress?: string | null;
   currency: string;
   total: string;
   qrData: string;
@@ -560,8 +560,8 @@ export async function generateInvoicePdf(params: {
   let cy = clientTextY + 14;
   // SCRUM-1787d · rótulos firmados `NIF` y `Dirección` (c.22303 ③). Vacíos → no se pintan.
   if (params.customer.taxId) { doc.text(`NIF: ${params.customer.taxId}`, col2X, cy, { width: colW }); cy += 13; }
-  if (params.customer.address) {
-    const lineaDir = `Dirección: ${params.customer.address}`;
+  if (params.customerAddress) {
+    const lineaDir = `Dirección: ${params.customerAddress}`;
     doc.text(lineaDir, col2X, cy, { width: colW });
     cy += Math.max(13, doc.heightOfString(lineaDir, { width: colW }) + 2);
   }

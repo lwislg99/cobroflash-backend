@@ -29,14 +29,6 @@ export interface DireccionCongelada {
   customerBillingCountry: string | null;
 }
 
-export const CAMPOS_DIRECCION_CONGELADOS = Object.freeze([
-  'customerBillingAddress',
-  'customerBillingCity',
-  'customerBillingPostalCode',
-  'customerBillingProvince',
-  'customerBillingCountry',
-] as const);
-
 const VACIA: DireccionCongelada = Object.freeze({
   customerBillingAddress: null,
   customerBillingCity: null,

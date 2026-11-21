@@ -123,6 +123,12 @@ const SIN_DECIDIR = Object.freeze({
   'invoice.merchantPhone': EN_DOCUMENTO_SELLABLE('el teléfono del profesional'),
   'invoice.merchantEmail': EN_DOCUMENTO_SELLABLE('el correo del profesional'),
   'invoice.shippingAddress': EN_DOCUMENTO_SELLABLE('la dirección de envío del cliente'),
+  // SCRUM-1787d · la dirección de facturación del cliente, congelada al emitir (c.22305): hermanas de las cinco `invoice.customer*`.
+  'invoice.customerBillingAddress': EN_DOCUMENTO_SELLABLE('la dirección de facturación del cliente'),
+  'invoice.customerBillingCity': EN_DOCUMENTO_SELLABLE('la ciudad de facturación del cliente'),
+  'invoice.customerBillingPostalCode': EN_DOCUMENTO_SELLABLE('el código postal de facturación del cliente'),
+  'invoice.customerBillingProvince': EN_DOCUMENTO_SELLABLE('la provincia de facturación del cliente'),
+  'invoice.customerBillingCountry': EN_DOCUMENTO_SELLABLE('el país de facturación del cliente'),
   'albaran.customerName': EN_DOCUMENTO_SELLABLE('el nombre del cliente'),
   'albaran.customerLegalName': EN_DOCUMENTO_SELLABLE('la razón social del cliente'),
   'albaran.customerTaxId': EN_DOCUMENTO_SELLABLE('el NIF del cliente'),

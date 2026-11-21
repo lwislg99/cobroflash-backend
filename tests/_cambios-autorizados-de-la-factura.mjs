@@ -221,11 +221,11 @@ export const CAMBIOS_AUTORIZADOS = [
     cita: '«1-Sí GO · 2-Ok sí · 3-Firmo · 4-Sí»',
     cuerpo: {
       de: '4daa145e0323e604a3c1a6e591204303466c4546e4b0dee47329a233ba0378d6',
-      a: 'e23347c0eda1ea704610a593ac56e0931ca11b0ac95531d2038b0e1dcf69f4a6',
+      a: '60177ce0b87bb2564937abcb0dd56959186d36056e8714302a0629516558942b',
     },
     ambito: {
       de: '300a3fb3f0a1af3481188846a89e457e8cf4d4b75f71bfcbd9b0e5a1c7ca4b23',
-      a: '640ea801848473fe979224d2e325bd06242816a9334815ae78116bc3534303bb',
+      a: '837928ef82df7eadff7e17edb8887e39b358d0c8da6a3d847547632ae9f1d030',
     },
   },
   {
@@ -237,11 +237,11 @@ export const CAMBIOS_AUTORIZADOS = [
     cita: '«1-Sí GO · 2-Ok sí · 3-Firmo · 4-Sí»',
     cuerpo: {
       de: '44d7d101465e2f0909db25950bf4fc1dae8d729d6e31222924a72aeec310824f',
-      a: 'e23347c0eda1ea704610a593ac56e0931ca11b0ac95531d2038b0e1dcf69f4a6',
+      a: '60177ce0b87bb2564937abcb0dd56959186d36056e8714302a0629516558942b',
     },
     ambito: {
       de: '0c1839e4d2df8ded0228160e90fdfd46eb9549daba2055fe29016bf5e5b13a08',
-      a: '640ea801848473fe979224d2e325bd06242816a9334815ae78116bc3534303bb',
+      a: '837928ef82df7eadff7e17edb8887e39b358d0c8da6a3d847547632ae9f1d030',
     },
   },
 ];
