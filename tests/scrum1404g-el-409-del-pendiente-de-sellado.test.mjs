@@ -26,6 +26,8 @@
 // La excepción declarada (c.20923 P5): el caso C —huella escrita, estado sin marcar— contesta 409
 // «se reintenta solo», y el reintento no lo recoge nunca. Se fija aquí para que deje de ser
 // excepción sólo con una decisión, no por accidente.
+// SCRUM-1779d · este banco AFIRMA el sellado: con SIF_ENABLED en OFF (el defecto) la emisión ya no sella (SCRUM-1779 c.22239), así que se enciende aquí y lo afirmado no cambia.
+process.env.SIF_ENABLED = 'true';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -212,7 +214,25 @@ test('SCRUM-1404g · P · factura ES pendiente de sellado → 409 firmado en las
 test('SCRUM-1404g · F · factura ES que no llegó a la puerta (pendiente) → 409 firmado en las dos rutas', () => es409Firmado(R.F, 'F'));
 test('SCRUM-1404g · D · justificante J- pendiente → SIGUE en 500 (c.20923 P4)', () => sigueEn500(R.D, 'D'));
 test('SCRUM-1404g · E · comercio no español pendiente → SIGUE en 500 (c.20923 P4)', () => sigueEn500(R.E, 'E'));
-test('SCRUM-1404g · G · el 409 del portón de la huella no cambia', () => es409Firmado(R.G, 'G'));
+// SCRUM-1779d · 20-nov-2026 · G REANCLADO: decía «el 409 del portón de la huella no cambia». Por la decisión
+// del fundador SCRUM-1779 c.22245 ① («Sí se queda sin sello»), aplicada como opción A por el orquestador J
+// (mensaje a jv-j1gc de las ~18:20Z): una factura emitida SIN huella —aquí, el comercio no tenía NIF al
+// emitir— es un documento simple, salga el motivo que salga, y su PDF sale sin QR ni VeriFactu.
+test('SCRUM-1404g · G · emitida sin NIF (no_aplica, sin huella): 200 con el PDF sin QR, aunque luego tenga NIF', () => {
+  assert.equal(R.G.fila.vfEstado, K.SELLADO_NO_APLICA, 'G: nace no_aplica');
+  assert.equal(R.G.fila.vfHash ?? null, null, 'G: sin huella');
+  for (const via of ['recibo', 'panel']) {
+    assert.equal(R.G[via].status, 200, `G · ${via}: ${ver(R.G[via])}`);
+    assert.ok(esPdf(R.G[via]), `G · ${via}: no es un PDF`);
+    assert.ok(!/\/Subtype\s*\/Image/.test(R.G[via].texto), `G · ${via}: el PDF lleva una imagen (QR)`);
+  }
+  // Regla 29: el primer PDF escribe su `pdfUrl` (como SELLADA); lo fiscal de la fila no cambia. La fila
+  // del banco recibe cada `update` (Object.assign), así que se lee DESPUÉS de las dos peticiones.
+  assert.ok(R.G.escritasEnFactura <= 1, `G · ${R.G.escritasEnFactura} escrituras en la factura`);
+  assert.equal(R.G.fila.vfHash ?? null, null, 'G · regla 29: pedir el documento le escribió una huella');
+  assert.equal(R.G.fila.vfEstado, K.SELLADO_NO_APLICA, 'G · regla 29: pedir el documento le cambió el estado');
+  assert.equal(R.G.fila.number, '2026-CF-0007', 'G · el número no cambia');
+});
 test('SCRUM-1404g · una factura sellada → 200 con el PDF por las dos rutas', () => {
   assert.equal(R.SELLADA.recibo.status, 200, `recibo: ${ver(R.SELLADA.recibo)}`);
   assert.ok(esPdf(R.SELLADA.recibo), 'recibo: no es un PDF');

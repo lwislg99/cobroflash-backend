@@ -38,7 +38,7 @@
 // El defecto es el patrón, no la línea. Cuatro correcciones con el mismo espíritu divergen en la
 // quinta ocasión; un portón compartido solo puede divergir si alguien lo rodea, y eso se ve.
 import { isReceiptNumber } from './invoiceNumber.service';
-import { ERROR_PDF_SIN_SELLAR } from './selladoEstado'; // SCRUM-1404g
+import { ERROR_PDF_SIN_SELLAR, SELLADO_NO_APLICA } from './selladoEstado'; // SCRUM-1404g · SCRUM-1779d
 
 /** Código único del rechazo. Se ramifica por CÓDIGO, nunca por el texto (SCRUM-151). */
 export const ERROR_SIN_SELLAR = 'invoice_sin_sellar';
@@ -62,6 +62,8 @@ export interface MerchantPorton {
 export interface FacturaPorton {
   number: string;
   vfHash?: string | null;
+  /** SCRUM-1779d · el estado de sellado que dejó la emisión (`selladoEstado.ts`). */
+  vfEstado?: string | null;
 }
 
 export class FacturaSinSellarError extends Error {
@@ -97,7 +99,25 @@ export function estaSellada(inv: FacturaPorton): boolean {
 /** ¿Puede salir un documento de esta factura? */
 export function puedeSalirDocumento(inv: FacturaPorton, merchant: MerchantPorton | null | undefined): boolean {
   if (!debeEstarEnLaCadena(inv.number, merchant)) return true; // J-… y no-ES: no llevan huella y está bien
+  // SCRUM-1779d · la emisión decidió NO sellarla (`SIF_ENABLED` en OFF): sale como documento simple,
+  // sin huella y sin QR (`qrDelDocumento`). Se mira el ESTADO que dejó la emisión, no el flag de hoy:
+  // una factura emitida no cambia de naturaleza porque el flag cambie después (regla 29).
+  if (!estaSellada(inv) && inv.vfEstado === SELLADO_NO_APLICA) return true;
   return estaSellada(inv);
+}
+
+/**
+ * SCRUM-1779d · El QR que lleva el PDF. Una factura que debía entrar en la cadena y que la emisión
+ * dejó SIN SELLO (`no_aplica` sin huella) no lleva QR: ni el de la AEAT —no tiene huella— ni el
+ * casero, que imprime «Escanea el QR para validar la factura.». Lo demás, como antes.
+ */
+export function qrDelDocumento(
+  inv: FacturaPorton,
+  merchant: MerchantPorton | null | undefined,
+  qrData: string,
+): string {
+  if (debeEstarEnLaCadena(inv.number, merchant) && !estaSellada(inv) && inv.vfEstado === SELLADO_NO_APLICA) return '';
+  return qrData;
 }
 
 /**
