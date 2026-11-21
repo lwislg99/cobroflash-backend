@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<response>
+  <status>
+    <code>200</code>
+    <text>ok</text>
+  </status>
+  <data>
+    <bloque id="a154" tipo="precepto" titulo="Artículo 154">
+      <version id_norma="BOE-A-1992-28740" fecha_publicacion="19921229" fecha_vigencia="19930101">
+        <p class="articulo">Artículo 154. Contenido del régimen especial del recargo de equivalencia.</p>
+        <p class="parrafo">Uno. La exacción del Impuesto sobre el Valor Añadido exigible a los comerciantes minoristas a quienes resulte aplicable este régimen especial se efectuará mediante la repercusión del recargo de equivalencia efectuada por sus proveedores.</p>
+        <p class="parrafo">Lo dispuesto en este apartado se entenderá sin perjuicio de la obligación de autoliquidación y pago del impuesto correspondiente a las adquisiciones intracomunitarias de bienes y a las operaciones a que se refiere el artículo 84, apartado uno, número 2.º de esta Ley.</p>
+        <p class="parrafo">Dos. Los sujetos pasivos sometidos a este régimen especial no estarán obligados a efectuar la liquidación ni el pago del impuesto a la Hacienda Pública en relación con las operaciones comerciales por ellos efectuadas a las que resulte aplicable este régimen especial, ni por las transmisiones de los bienes o derechos utilizados exclusivamente en dichas actividades.</p>
+        <p class="parrafo">Tampoco podrán deducir las cuotas soportadas por las adquisiciones o importaciones de bienes de cualquier naturaleza o por los servicios que les hayan sido prestados, en la medida en que dichos bienes o servicios se utilicen en la realización de las actividades a las que afecte este régimen especial.</p>
+        <p class="parrafo">A efectos de la regularización de deducciones por bienes de inversión, la prorrata de deducción aplicable en este sector diferenciado de actividad económica durante el período en que el sujeto pasivo esté sometido a este régimen especial será cero. No procederá efectuar la regularización a que se refiere el artículo 110 de esta Ley en los supuestos de transmisión de bienes de inversión utilizados exclusivamente para la realización de actividades sometidas a este régimen especial.</p>
+        <p class="parrafo">Tres. Los comerciantes minoristas sometidos a este régimen especial repercutirán a sus clientes la cuota resultante de aplicar el tipo tributario del impuesto a la base imponible correspondiente a las ventas y a las demás operaciones gravadas por dicho tributo que realicen, sin que, en ningún caso, puedan incrementar dicho porcentaje en el importe del recargo de equivalencia.</p>
+      </version>
+      <version id_norma="BOE-A-1997-28053" fecha_publicacion="19971231" fecha_vigencia="19980101">
+        <p class="articulo">Artículo 154. Contenido del régimen especial del recargo de equivalencia.</p>
+        <p class="parrafo">Uno. La exacción del Impuesto sobre el Valor Añadido exigible a los comerciantes minoristas a quienes resulte aplicable este régimen especial se efectuará mediante la repercusión del recargo de equivalencia efectuada por sus proveedores.</p>
+        <p class="parrafo">Lo dispuesto en este apartado se entenderá sin perjuicio de la obligación de autoliquidación y pago del impuesto correspondiente a las adquisiciones intracomunitarias de bienes y a las operaciones a que se refiere el artículo 84, apartado uno, número 2.º de esta Ley.</p>
+        <p class="parrafo">Dos. Los sujetos pasivos sometidos a este régimen especial no estarán obligados a efectuar la liquidación ni el pago del impuesto a la Hacienda Pública en relación con las operaciones comerciales por ellos efectuadas a las que resulte aplicable este régimen especial, ni por las transmisiones de los bienes o derechos utilizados exclusivamente en dichas actividades, con exclusión de las entregas de bienes inmuebles por las que el sujeto pasivo haya renunciado a la exención del impuesto, en los términos previstos en el artículo 20, apartado dos de esta Ley, por las que el transmitente habrá de repercutir, liquidar e ingresar las cuotas del impuesto devengadas.</p>
+        <p class="parrafo">Tampoco podrán deducir las cuotas soportadas por las adquisiciones o importaciones de bienes de cualquier naturaleza o por los servicios que les hayan sido prestados, en la medida en que dichos bienes o servicios se utilicen en la realización de las actividades a las que afecte este régimen especial.</p>
+        <p class="parrafo">A efectos de la regularización de deducciones por bienes de inversión, la prorrata de deducción aplicable en este sector diferenciado de actividad económica durante el período en que el sujeto pasivo esté sometido a este régimen especial será cero. No procederá efectuar la regularización a que se refiere el artículo 110 de esta Ley en los supuestos de transmisión de bienes de inversión utilizados exclusivamente para la realización de actividades sometidas a este régimen especial.</p>
+        <p class="parrafo">Tres. Los comerciantes minoristas sometidos a este régimen especial repercutirán a sus clientes la cuota resultante de aplicar el tipo tributario del impuesto a la base imponible correspondiente a las ventas y a las demás operaciones gravadas por dicho tributo que realicen, sin que, en ningún caso, puedan incrementar dicho porcentaje en el importe del recargo de equivalencia.</p>
+        <blockquote>
+          <p class="nota_pie">Se modifica el primer párrafo del apartado 2 por el art. 6.32 de la Ley 66/1997, de 30 de diciembre. <a class="refPost">Ref. BOE-A-1997-28053</a></p>
+        </blockquote>
+      </version>
+      <version id_norma="BOE-A-2014-12329" fecha_publicacion="20141128" fecha_vigencia="20150101">
+        <p class="articulo">Artículo 154. Contenido del régimen especial del recargo de equivalencia.</p>
+        <p class="parrafo">Uno. La exacción del Impuesto sobre el Valor Añadido exigible a los comerciantes minoristas a quienes resulte aplicable este régimen especial se efectuará mediante la repercusión del recargo de equivalencia efectuada por sus proveedores.</p>
+        <p class="parrafo">Lo dispuesto en este apartado se entenderá sin perjuicio de la obligación de autoliquidación y pago del impuesto correspondiente a las adquisiciones intracomunitarias de bienes y a las operaciones a que se refiere el artículo 84, apartado uno, número 2.º de esta Ley.</p>
+        <p class="parrafo">Dos. Los sujetos pasivos sometidos a este régimen especial no estarán obligados a efectuar la liquidación ni el pago del Impuesto a la Hacienda Pública en relación con las operaciones comerciales por ellos efectuadas a las que resulte aplicable este régimen especial, ni por las transmisiones de los bienes o derechos utilizados exclusivamente en dichas actividades, con exclusión de las entregas de bienes inmuebles sujetas y no exentas, por las que el transmitente habrá de repercutir, liquidar e ingresar las cuotas del Impuesto devengadas.</p>
+        <p class="parrafo">Tampoco podrán deducir las cuotas soportadas por las adquisiciones o importaciones de bienes de cualquier naturaleza o por los servicios que les hayan sido prestados, en la medida en que dichos bienes o servicios se utilicen en la realización de las actividades a las que afecte este régimen especial.</p>
+        <p class="parrafo">A efectos de la regularización de deducciones por bienes de inversión, la prorrata de deducción aplicable en este sector diferenciado de actividad económica durante el período en que el sujeto pasivo esté sometido a este régimen especial será cero. No procederá efectuar la regularización a que se refiere el artículo 110 de esta Ley en los supuestos de transmisión de bienes de inversión utilizados exclusivamente para la realización de actividades sometidas a este régimen especial.</p>
+        <p class="parrafo">Tres. Los comerciantes minoristas sometidos a este régimen especial repercutirán a sus clientes la cuota resultante de aplicar el tipo tributario del impuesto a la base imponible correspondiente a las ventas y a las demás operaciones gravadas por dicho tributo que realicen, sin que, en ningún caso, puedan incrementar dicho porcentaje en el importe del recargo de equivalencia.</p>
+        <blockquote>
+          <p class="nota_pie">Se modifica el apartado 2 por el art. 1.32 de la Ley 28/2014, de 27 de noviembre. <a class="refPost">Ref. BOE-A-2014-12329</a>.</p>
+          <p class="nota_pie">Se modifica el primer párrafo del apartado 2 por el art. 6.32 de la Ley 66/1997, de 30 de diciembre. <a class="refPost">Ref. BOE-A-1997-28053</a></p>
+        </blockquote>
+      </version>
+    </bloque>
+  </data>
+</response>
