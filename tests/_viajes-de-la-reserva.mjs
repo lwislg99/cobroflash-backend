@@ -88,7 +88,84 @@ export function exigirSueloDeViajes(viajes) {
 }
 
 /**
- * Ejecuta la reserva con un `tx` que APUNTA cada viaje.
+ * SCRUM-1787j · el `tx` falso, COMPARTIDO por la reserva y por la emisión entera.
+ *
+ * 🔴 Antes era un objeto con SEIS métodos escritos a mano (los que hoy pide `allocateInvoiceNumber`).
+ * Eso tenía dos defectos que se sumaban: lo que la emisión pidiera FUERA de la reserva no pasaba
+ * por aquí, y un modelo nuevo (`tx.customer`, que trajo SCRUM-1787d) no existía en el doble. Ahora
+ * es un `Proxy`: CUALQUIER `tx.<modelo>.<método>(…)` se apunta como un viaje, esté o no en la
+ * lista de respuestas. La lista de abajo sólo decide QUÉ DEVUELVE, nunca SI SE CUENTA.
+ */
+function txQueApunta({ m, emitidas, ocupadas, viajeExtra }) {
+  const viajes = [];
+  const apunta = (q) => viajes.push(q);
+  const RESPUESTAS = {
+    'merchant.findUnique': () => {
+      if (viajeExtra) apunta('⚠️ VIAJE AÑADIDO A LA SECCIÓN CRÍTICA');
+      return m;
+    },
+    'merchant.update': () => m,
+    'invoice.findUnique': ({ where } = {}) => (ocupadas.has(where?.merchantId_number?.number) ? { id: 1 } : null),
+    'invoice.findMany': () => emitidas,
+    'invoice.create': ({ data } = {}) => ({ id: 1, ...data }),
+    'auditLog.create': () => ({ id: 1 }),
+  };
+  // Lo que no está en RESPUESTAS se CUENTA igual y devuelve lo más neutro de su forma: una
+  // lectura de una fila, «no hay»; una de varias, ninguna; una escritura, la fila con lo escrito.
+  const neutro = (metodo, args) => {
+    if (metodo === 'findMany') return [];
+    if (metodo.startsWith('find')) return null;
+    if (metodo === 'count') return 0;
+    return { id: 1, ...(args?.data || {}) };
+  };
+  const ETIQUETA = {
+    'invoice.findUnique': 'invoice.findUnique (¿referencia libre?)',
+    'invoice.findMany': 'invoice.findMany (SERIE F ENTERA — escala con los datos)',
+  };
+  const modelo = (nombre) => new Proxy({}, {
+    get: (_, metodo) => {
+      if (typeof metodo !== 'string') return undefined;
+      return async (args) => {
+        const clave = `${nombre}.${metodo}`;
+        apunta(ETIQUETA[clave] || clave);
+        return RESPUESTAS[clave] ? RESPUESTAS[clave](args) : neutro(metodo, args);
+      };
+    },
+  });
+  const sql = (que) => (trozos) => {
+    const texto = Array.isArray(trozos?.raw) ? trozos.raw.join('?') : String(trozos);
+    apunta(texto.includes('pg_advisory_xact_lock') ? 'pg_advisory_xact_lock' : `${que} ${texto.trim().slice(0, 40)}`);
+    return Promise.resolve(que === '$queryRaw' ? [] : 1);
+  };
+  const tx = new Proxy({}, {
+    get: (_, nombre) => {
+      if (typeof nombre !== 'string' || nombre === 'then') return undefined;
+      if (nombre === '$executeRaw' || nombre === '$queryRaw') return sql(nombre);
+      if (nombre.startsWith('$')) {
+        // `$transaction` anidada, `$executeRawUnsafe`… no las usa hoy la emisión. Si aparecen, se
+        // dice: contarlas como un viaje o como cero sería elegir el número.
+        throw new CensoCiego(`🔴 la emisión ha pedido \`tx.${nombre}\`, que este doble no sabe contar.`);
+      }
+      return modelo(nombre);
+    },
+  });
+  return { tx, viajes };
+}
+
+/** BEGIN y COMMIT no pasan por `tx` —los emite `$transaction`— pero son viajes igual. */
+function totales(viajes) {
+  return {
+    // Total, en el mismo criterio que el ticket usó para los albaranes: + BEGIN + COMMIT.
+    viajes: viajes.length + 2,
+    // Del cerrojo al COMMIT, ambos inclusive: lo que de verdad se serializa. Vale porque
+    // `exigirSueloDeViajes` ya ha comprobado que el cerrojo es lo PRIMERO.
+    dentroDelCerrojo: viajes.length + 1,
+  };
+}
+
+/**
+ * Ejecuta SÓLO la reserva con un `tx` que APUNTA cada viaje. Sirve para lo que es de la reserva
+ * (el cerrojo primero, la serie F leída entera); el número de la emisión lo da `espiarEmision`.
  *
  * @param opts.merchant   uno de `MERCHANTS` (se le añaden los contadores).
  * @param opts.emitidas   lo que devuelve `invoice.findMany` — la serie F ya emitida.
@@ -102,32 +179,7 @@ export async function espiarReserva({
 } = {}) {
   const { allocateInvoiceNumber } = cargarServicio();
   const m = { ...merchant, ...CONTADORES };
-  const viajes = [];
-  const apunta = (q) => viajes.push(q);
-
-  const tx = {
-    $executeRaw: (trozos) => {
-      const sql = Array.isArray(trozos?.raw) ? trozos.raw.join('?') : String(trozos);
-      apunta(sql.includes('pg_advisory_xact_lock') ? 'pg_advisory_xact_lock' : `$executeRaw ${sql.trim().slice(0, 40)}`);
-      return Promise.resolve(1);
-    },
-    merchant: {
-      findUnique: async () => {
-        apunta('merchant.findUnique');
-        if (viajeExtra) apunta('⚠️ VIAJE AÑADIDO A LA SECCIÓN CRÍTICA');
-        return m;
-      },
-      update: async () => { apunta('merchant.update'); return m; },
-    },
-    invoice: {
-      findUnique: async ({ where }) => {
-        apunta('invoice.findUnique (¿referencia libre?)');
-        return ocupadas.has(where?.merchantId_number?.number) ? { id: 1 } : null;
-      },
-      findMany: async () => { apunta('invoice.findMany (SERIE F ENTERA — escala con los datos)'); return emitidas; },
-    },
-    auditLog: { create: async () => { apunta('auditLog.create'); return { id: 1 }; } },
-  };
+  const { tx, viajes } = txQueApunta({ m, emitidas, ocupadas, viajeExtra });
 
   const numero = await allocateInvoiceNumber(
     tx, m.id,
@@ -136,24 +188,64 @@ export async function espiarReserva({
   );
 
   exigirSueloDeViajes(viajes);
+  return { numero, sentencias: viajes, ...totales(viajes) };
+}
 
-  // BEGIN y COMMIT no pasan por `tx` —los emite `$transaction`— pero son viajes igual, y el
-  // desglose de la fase A los cuenta. Se suman DECLARADOS, no escondidos.
-  return {
-    numero,
-    sentencias: viajes,
-    // Total de la función, en el mismo criterio que el ticket usó para los albaranes.
-    viajes: viajes.length + 2,
-    // Del cerrojo al COMMIT, ambos inclusive: lo que de verdad se serializa.
-    dentroDelCerrojo: viajes.length + 1,
-  };
+export const RUTA_EMISION = 'dist/modules/invoicing/domain/invoicing.service.js';
+export const RUTA_CREAR = 'dist/modules/invoicing/domain/crearFacturaEmitida.js';
+
+function cargar(ruta) {
+  try {
+    return requiere(`../${ruta}`);
+  } catch (e) {
+    throw new CensoCiego(`🔴 no he podido cargar ${ruta}: ${e.message}. Compila antes: \`npm run build\`.`);
+  }
 }
 
 /**
- * Los viajes de la TRANSACCIÓN COMPLETA de una emisión: la reserva más el `invoice.create` que
- * hace `emitInvoice` después. Es el número que decide el ticket, porque el cerrojo no se suelta
- * hasta el COMMIT.
+ * SCRUM-1787j · los viajes de la TRANSACCIÓN COMPLETA de una emisión, CONTADOS, no sumados.
+ *
+ * Sustituye a `conElCreateDelLlamador`, que añadía un `+1` FIJO por el `invoice.create`: todo lo
+ * que la emisión hiciera después de la reserva —la lectura de la dirección de SCRUM-1787d, por
+ * ejemplo— quedaba fuera, y el guard seguía en verde (medido: SCRUM-1787 c.22326 y tramo 1787g).
+ *
+ * - F1: corre `emitInvoice` de verdad (reserva + `crearFacturaEmitida`) con el `tx` que apunta.
+ * - R1: no hay función exportada; la ruta (`invoicesAdmin.routes.ts`, `$transaction` de la
+ *   rectificativa) hace `allocateInvoiceNumber(tx, …, { rectifying: true })` y después
+ *   `crearFacturaEmitida(tx, …, { rectifiesId })`. Aquí se llaman ESAS DOS funciones reales, en
+ *   ese orden: lo que cada una haga dentro se cuenta; si la ruta añadiera una tercera llamada en
+ *   su `$transaction`, esto NO la vería (dicho en el registro de 1787j).
+ *
+ * El cliente y el emisor congelados van vacíos: se leen FUERA de la transacción (SCRUM-729/665) y
+ * aquí sólo se derraman en el `data` del `create`.
  */
-export function conElCreateDelLlamador(r) {
-  return { viajes: r.viajes + 1, dentroDelCerrojo: r.dentroDelCerrojo + 1 };
+export async function espiarEmision({
+  merchant, rectifying = false, emitidas = [], ocupadas = new Set(), viajeExtra = false,
+  now = new Date(),
+} = {}) {
+  const m = { ...merchant, ...CONTADORES };
+  const { tx, viajes } = txQueApunta({ m, emitidas, ocupadas, viajeExtra });
+  const actor = { tipo: 'merchant', merchantId: m.id, teamMemberId: null };
+  let factura;
+  if (rectifying) {
+    const { allocateInvoiceNumber } = cargarServicio();
+    const { crearFacturaEmitida } = cargar(RUTA_CREAR);
+    const number = await allocateInvoiceNumber(tx, m.id, { rectifying: true, camino: 'C5', actor }, now);
+    factura = await crearFacturaEmitida(tx, {}, {}, {
+      merchantId: m.id, customerId: 7, number, total: '-121.00', currency: 'EUR', type: 'R1',
+      rectifiesId: 99, pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR', registerId: null,
+    });
+  } else {
+    const { emitInvoice } = cargar(RUTA_EMISION);
+    factura = await emitInvoice(tx, {
+      merchantId: m.id, customerId: 7, total: '121.00', currency: 'EUR',
+      actor, origen: 'C7-suelta', clienteCongelado: {}, emisorCongelado: {},
+    });
+  }
+  exigirSueloDeViajes(viajes);
+  const creates = viajes.filter((v) => v === 'invoice.create').length;
+  if (creates !== 1) {
+    throw new CensoCiego(`🔴 la emisión ha hecho ${creates} \`invoice.create\`: este doble no está viendo una emisión.`);
+  }
+  return { numero: factura.number, sentencias: viajes, ...totales(viajes) };
 }
