@@ -68,7 +68,8 @@ function sustituirPrisma(orig) {
     $executeRaw: async () => [],
     $executeRawUnsafe: async () => [],
     merchant: { findUnique: async () => MERCHANT, update: async () => ({}) },
-    invoice: { create: async ({ data }) => { creado.data = data; return { id: 99, ...data }; } },
+    // SCRUM-1787d · la emisión lee DENTRO de la tx la factura que se rectifica (hereda su dirección).
+    invoice: { findFirst: async () => orig, create: async ({ data }) => { creado.data = data; return { id: 99, ...data }; } },
     auditLog: { create: async () => ({}) },
     customerEvent: { create: async () => ({}) },
   };

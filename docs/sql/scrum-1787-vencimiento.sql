@@ -1,0 +1,67 @@
+-- docs/sql/scrum-1787-vencimiento.sql — SCRUM-1787 (tramo 1787f)
+--
+-- ⛔ PROPUESTO, SIN APLICAR. No se ha medido ninguna base (ni dev, ni staging, ni producción): no
+--    se sabe si alguna tiene ya estas columnas. Lo aplica Javier en staging y en producción, y la
+--    sesión de construcción en dev. `prisma/schema.prisma` NO se ha tocado: la línea entra en el PR
+--    de construcción, con la ruta, el congelado al emitir, el PDF y sus tests, DESPUÉS de este
+--    ALTER (orden A5).
+--
+-- DOS SENTENCIAS, Y NO TIENEN LA MISMA FIRMA (SCRUM-1787 c.22325, literal «1-Sí 2-Sí 3-GO»):
+--
+--   A · `due_date` — EL VENCIMIENTO DE LA FACTURA (rótulo `Vence el`). FIRMADA: ① «la factura
+--       lleva fecha de vencimiento» y ③ «A5 ① para el ALTER aditivo del vencimiento». Va SIN
+--       comentar: es la que se aplica.
+--   B · `pay_methods` — LAS FORMAS DE PAGO QUE VERÁ EL CLIENTE, congeladas en la factura. El GO de
+--       ③ dice «recibir y congelar al emitir las formas de pago y el vencimiento», pero el ALTER
+--       firmado nombra SOLO el vencimiento. Va COMENTADA: se aplica sólo si el fundador dice ✅
+--       (pregunta 1 del registro, docs/master/SCRUM-1787.md, tramo 1787f). Sin ella, la factura
+--       SUELTA no tiene dónde guardar las formas de pago: no tiene presupuesto del que heredarlas.
+--
+-- QUÉ ES `due_date`. Hasta cuándo tiene que pagar el cliente. NO es `charges.vencimiento`
+-- (`Charge.expiresAt`, hasta cuándo vale UN enlace de pago: el comentario de `prisma/schema.prisma`
+-- `model Charge` avisa de esa confusión) y NO cambia el estado de la factura: «vencida» (`expired`)
+-- hoy sólo lo pone el profesional a mano (`PUT /admin/invoices/:id/status`), y los estados son
+-- CERRADOS (Parte L).
+-- `TIMESTAMP(3)` nullable y sin default, como `quotes.valid_until` (`Quote.validUntil`, su hermano
+-- en el presupuesto). NULL = «no consta». Las facturas ya emitidas se quedan a NULL y NO se
+-- rellenan nunca (regla 29: una factura emitida no se edita).
+--
+-- QUÉ ES `pay_methods`. El MISMO `Json?` con `@map("pay_methods")` que ya tienen `quotes` y
+-- `charges` (["card","bizum","transfer"]; NULL = todas las que el profesional tenga activas).
+--
+-- Generado OFFLINE con `previewMigracion({ schema, desde })` de `scripts/preview-migracion.mjs`
+-- por `docs/master/evidencias/SCRUM-1787/preview-ddl-1787f.mjs`: desde = copia de
+-- `prisma/schema.prisma` de origin/main 8de57b45ac4b20bfe14c1d54b37ea47cadc02a32, schema = esa
+-- copia con UNA línea en `model Invoice`, detrás de `stageLabel`, una propuesta cada vez:
+--     A ·  dueDate       DateTime? @map("due_date")
+--     B ·  payMethods    Json?     @map("pay_methods")
+-- Control de la herramienta: ok en las dos; `sentenciasDestructivas`: 0 y 0; lista blanca de
+-- `scripts/_aplicar-sql-dev.mjs` (`clasificarSentencias`): 1 permitida y 0 rechazadas en cada una;
+-- control negativo (actual → actual): `sin_cambios`; control positivo sembrado (un DROP fabricado
+-- de `clientComment` en la factura): destructivas 1, rechazadas 1. Con el sembrado cambiado por
+-- algo no destructivo, el guion sale 2 «CIEGO (un control no se cumple)». Salida en
+-- `preview-ddl-1787f.salida.txt`. Salida LITERAL de A:
+-- AlterTable
+ALTER TABLE "invoices" ADD COLUMN     "due_date" TIMESTAMP(3);
+
+-- Salida LITERAL de B (SÓLO con el ✅ del fundador; se quita el `-- ` de la línea del ALTER):
+-- AlterTable
+-- ALTER TABLE "invoices" ADD COLUMN     "pay_methods" JSONB;
+
+-- ─── VERIFICACIÓN, DESPUÉS DEL ALTER (solo lectura) ───────────────────────────────────────────
+-- Se pega aparte. Resultado esperado: 1 fila (`due_date`, `timestamp without time zone`, `YES`)
+-- si sólo se aplicó A; 2 filas si se aplicaron A y B (`pay_methods`, `jsonb`, `YES`). En `base`,
+-- el nombre de la base en la que se aplicó (para no confundir staging con producción). 0 filas =
+-- no se aplicó nada en ESTA base.
+--
+-- SELECT current_database() AS base, column_name, data_type, is_nullable
+--   FROM information_schema.columns
+--  WHERE table_schema = current_schema()
+--    AND table_name = 'invoices'
+--    AND column_name IN ('due_date', 'pay_methods')
+--  ORDER BY column_name;
+--
+--  base   | column_name | data_type                   | is_nullable
+-- --------+-------------+-----------------------------+-------------
+--  <base> | due_date    | timestamp without time zone | YES
+--  <base> | pay_methods | jsonb                       | YES          ← sólo si se aplicó B

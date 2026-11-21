@@ -71,7 +71,8 @@ function sustituirPrisma(orig) {
     $executeRaw: async () => [],
     $executeRawUnsafe: async () => [],
     merchant: { findUnique: async () => MERCHANT, update: async () => ({}) },
-    invoice: { create: async ({ data }) => ({ id: 99, ...data }) },
+    // SCRUM-1787d · la R1 hereda en SU tx la dirección de la original (`invoice.findFirst`): es la misma.
+    invoice: { create: async ({ data }) => ({ id: 99, ...data }), findFirst: async () => orig },
     // allocateInvoiceNumber AUDITA la reserva del número dentro de la MISMA tx (SCRUM-207): sin esto,
     // el doble de la transacción no tiene `auditLog` y el handler cae a 500 — un doble incompleto
     // mentiría sobre lo que hace /rectify. Se completa para alcanzar el 201 REAL del handler.
