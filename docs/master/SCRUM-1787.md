@@ -252,7 +252,7 @@ Test: `tests/scrum1787e-conceptos-en-movil.test.mjs` — rojo 3/3 con el arreglo
 
 # SCRUM-1787h · La página de pago de la factura enseña sus líneas, como la del presupuesto
 
-**Medido contra:** `origin/main` = `8de57b45ac4b20bfe14c1d54b37ea47cadc02a32` · 2026-11-21T19:46:21Z
+**Medido contra:** `origin/main` = `c27b1dc2513f6abe8ea28f84ad596e0d6aa66b91` · 2026-11-21T19:58:52Z
 
 A9: aviso → cicatriz J2 «edité la ruta de la página de pago antes de cargar la skill `yaqu-premium-ui`, que el encargo ponía antes de la primera edición; la cargué antes de tocar el CSS» — no se pudo comprobar: qué skill se ha cargado antes de un Edit no lo ve ningún hook del repositorio.
 
@@ -283,6 +283,7 @@ Decisión del fundador: SCRUM-1787 c.22327 («1-Sí», pregunta 6 de c.22301). C
 - Cuántas facturas reales cuadran (y por tanto enseñarán líneas): sin base, no lo he intentado.
 - La página en yaqu.app: se ve tras el merge y el despliegue.
 - Una factura con apartados o con descuento de línea en el navegador (el código las trata como la página del presupuesto; el test no las lleva).
+
 # SCRUM-1787f · Vencimiento y formas de pago de la factura: DDL propuesto y diseño (solo docs; se construye en el sprint siguiente, después del ALTER)
 
 **Medido contra:** `origin/main` = `8de57b45ac4b20bfe14c1d54b37ea47cadc02a32` · 2026-11-21T19:39:01Z (cabecera `Date:` de `gh api -i zen`)
