@@ -134,6 +134,7 @@ Mutaciones previstas para su `MUTACIONES_QUE_ME_TUMBAN` (no existen todavía): q
 ## NO medido (1787c)
 
 Ninguna base: no sé si alguna tiene ya las columnas. No corrí ningún test de `src/` ni la tanda del banco de emisión: el plan ⑥ no está probado, sólo leído. No miré cómo arman hoy sus datos los tests de 729 ni si el banco desechable emite una suelta por la ruta. Suite entera: no corrida (solo docs).
+
 # SCRUM-1787b · Ficha de factura con la forma de la ficha del presupuesto (construida)
 
 **Medido contra:** `origin/main` = `41b0e031083b02c35e1a4cf74c4e71756f4d20f5` · 2026-11-21T05:22:07Z
