@@ -64,7 +64,7 @@ Preguntas ✅/❌ para el fundador en Jira, SCRUM-1782 c.22260; las de SCRUM-178
 # SCRUM-1781b · El prefijo aparte, con +34 preseleccionado, en el alta del comercio, su primer cliente y Configuración (J3)
 
 **Medido contra:** `origin/main` = `fea1c00078654d8d617af055de94f2b627df07ce` · 2026-11-21T03:58:13Z (cabecera `Date:` de `gh api -i zen`)
-A9: aviso → cicatriz J3 «Edité la interfaz antes de cargar la skill `yaqu-premium-ui`» — no se pudo comprobar: cargar una skill no deja rastro en el árbol que un test pueda leer
+A9: aviso → cicatriz J3 «Edité la interfaz antes de cargar la skill `yaqu-premium-ui`, que CLAUDE.md y el encargo piden ANTES; la cargué a mitad y revisé el cambio contra ella.» — no se pudo comprobar: cargar una skill no deja rastro en el árbol que un test pueda leer
 
 **Puesto:** J3 (jv-j3cn) · **Rama:** `scrum-1781b-prefijo-en-alta-y-ajustes` (lleva dentro el merge de `scrum-1781-prefijo-y-tipo-de-cliente` @ `c8d5545aa9f3dff4cee641267975db849df13286`, por orden del orquestador, para que este tramo se AÑADA al fichero de J2 y no lo cree otra vez).
 
