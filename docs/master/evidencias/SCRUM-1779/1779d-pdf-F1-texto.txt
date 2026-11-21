@@ -1,0 +1,18 @@
+L01	FACTURA
+L02	Nº F260001
+L03	Fecha: 20/11/2026
+L04	EMISORCLIENTE
+L05	Fontanería de Lugo
+L06	Clienta de prueba SL
+L07	NIF/CIF: B27000001
+L08	Rúa 1
+L09	lugo@ejemplo.invalid
+L10	CONCEPTOCANT.PRECIO UNITIVA %IMPORTE
+L11	Arreglo de una fuga1,0036,0321%36,03
+L12	Material de fontanería3,0012,3510%37,05
+L13	Base imponible:73,08 EUR
+L14	Base imponible por tipo
+L15	21%36,03 EURIVA 21%:7,57 EUR
+L16	10%37,05 EURIVA 10%:3,71 EUR
+L17	TOTAL:84,36 EUR
+L18	Factura generada automáticamente por YaQu · yaqu.app
