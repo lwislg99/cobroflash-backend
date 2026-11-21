@@ -9,6 +9,9 @@ A9: aviso → A10 «Lo que se deduce de NO haber visto algo no vale si algo no s
 Solo docs. `src/`, `public/` y `prisma/schema.prisma` se LEEN (reglas 38 y 40). Nada se quita aquí: quitar
 es el paso 2 y lo decide el fundador. Nada contra staging ni producción. Sin claims (reglas 17 y 26).
 Lo que sigue es una medición de una sesión, **no** una respuesta de asesor (SCRUM-1106).
+Verde en local antes de empujar: los 6 guards del encargo (1294, 267, 273, 525d, 854, 1106; 44/44 en un TAP) y
+`npm run guards:entrada` (15 guards, 170 tests). **La suite entera NO se corrió en local**: no cabía en el contexto
+de la sesión, y el orquestador (cobroflash-backend-87) ordenó empujar solo docs y dejar la suite al obligatorio.
 
 ### ① La norma (LIVA, `BOE-A-1992-28740`, API consolidada; evidencias en `docs/master/evidencias/SCRUM-1783/`)
 
