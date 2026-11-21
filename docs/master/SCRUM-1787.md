@@ -573,6 +573,95 @@ Y `TITULO_OBSERVACIONES` entra en `AMBITO_DECLARADO` de `tests/scrum723-guard-co
 Corrido: el test nuevo 7/7 (rojo primero en ②, ④ y ⑥); la dirigida de 21 ficheros dio 219/230 con 7 rojos, todos huellas de esta rama, arreglados por su vía; `guards:entrada` salida 0 (170 ✔); `tsc -p .` salida 0.
 
 **NO medido:** staging y producción (no los toqué; el ALTER es de c.22346); yaqu.app; la factura desde albarán o parte; 1787i (no está en main); la dirigida NO se repitió tras arreglar las huellas (orden del orquestador: basta el test y `guards:entrada`); las dos mutaciones del catálogo NO las corrí con `aplicarUna`; la suite entera la corre el obligatorio.
+# SCRUM-1787k · La factura suelta acepta por línea la descripción y el descuento, con la función del camino desde presupuesto
+
+**Medido contra:** `origin/main` = `ccb69008b5aaa80d3f7cb712be77ce025c146238` · 2026-11-21T21:55:47Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: comprobación → `tests/scrum1787k-suelta-con-descripcion-y-descuento.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1787k-suelta-con-descripcion-y-descuento.test.mjs`
+
+Decisiones: GO de regla 40 en SCRUM-1787 c.22338 ① («1-Sí»). Medición en c.22339. Confirmación del diseño en c.22341 («1-Ok precio final»): el descuento se aplica al precio, no se guarda y no se enseña.
+
+## Qué se midió (1787k)
+
+- La suelta sólo dejaba pasar `concept`, `qty`, `price`, `tax` y `causa` (`facturaSuelta.ts`, `validarFacturaSuelta`).
+- En el presupuesto el descuento es la clave `dto`: un porcentaje de 0 a 100 con dos decimales como máximo (`src/core/validation/schemas.ts`). Se aplica al precio unitario antes del IVA con `precioConDto` (`src/core/utils/utils.ts`) y no se redondea en la línea: redondea `calcVatBreakdown`, por tipo.
+- El camino desde presupuesto ya existía (SCRUM-887): `lineasParaFacturar` (`invoiceLines.service.ts`) aplica el `dto` al precio y quita la clave. `Invoice.lines` guarda el precio neto; `description` viaja.
+- Desglose, huella y XML leen `qty`, `price` y `tax`. El PDF de factura ya pinta la descripción cuando va en el `concept` tras un salto de línea (`partirConceptoYDescripcion`). La ficha calcula con `importeDeLinea(qty, price, l.dto, tax)`: un `dto` guardado junto a un precio ya neto se aplicaría dos veces.
+
+## Qué se construyó (1787k)
+
+Un solo fichero de `src/`: `src/modules/invoicing/domain/facturaSuelta.ts`. La ruta `invoicesAdmin.routes.ts` no cambia.
+
+- `validarFacturaSuelta` valida `description` y `dto` con los validadores de la línea del presupuesto, leídos de `CreateQuoteSchema` (`schemas.ts` es de S1 y no se toca). Ausente o `null`: la clave no viaja.
+- Las líneas salen por `lineasParaFacturar({ lines, discountGlobalAmount: null })`, la misma función del camino desde presupuesto. Una línea sin `dto` sale siendo el mismo objeto que antes.
+- Un `dto` o una `description` inválidos dan 400 `lineas_invalidas` con el mensaje YA servido de su campo («Cada línea necesita un precio válido.» y «Cada línea necesita un concepto.»). Ningún texto nuevo.
+- No se construyó pintar el descuento (c.22341) ni se tocó el PDF ni la ficha: la descripción sale por el mecanismo que ya existía.
+
+## El fallo propio (A9)
+
+La primera versión devolvía como `message` el del validador del presupuesto, y para un descuento de 150 era de zod y en inglés («Too big: expected number to be <=100»): un texto que habría llegado a la pantalla sin firma. Lo vi imprimiendo los cuatro mensajes antes de empujar, no por un test. Ahora el caso ④ del test exige el mensaje ya servido de cada campo.
+
+## Verde, con población (1787k)
+
+- Rojo primero, con el código sin tocar: 5 casos, 3 caen (①, ② y ④) y los dos controles pasan. Con el cambio: 5 de 5.
+- Dirigida (1779d, 1787b/d/e/h/k, 178, 290, 523d, 291, 603b, 723, 347, 389, 222, 525d, 729, 1763, 624y y los 14 ficheros que nombran la suelta): 36 ficheros, 322 casos, 316 pasan, 0 caen, 6 saltos.
+- Emisión y árbol entero (165 ficheros que nombran la emisión, la suelta o el esquema del presupuesto, más 35 guards de árbol entero; 194 distintos, en dos comandos): 1.916 casos, 1.903 pasan, 0 caen, 13 saltos.
+- `npm run guards:entrada`: salida 0. `tsc -p .` con tipos: salida 0.
+- Mutaciones, con `aplicarUna` (arnés `docs/master/evidencias/SCRUM-1123f/arnes-mutaciones.mjs`): 2 de 2 vivas; `git status` vacío después y `dist/` con el código de vuelta.
+
+## Para Luis (S2): el editor
+
+Dos ficheros suyos, sin tocar aquí. El servidor ya acepta las dos claves; mientras el editor no las mande, nada cambia.
+
+`public/dashboard/js/cuerpoDelDocumentoSuelto.js`, en `cuerpoDelDocumentoSuelto`:
+
+```diff
+-      lines.push({
++      var linea = {
+         concept: concept,
+         qty: Number(f.cantidad),
+         price: Number(precioEscrito),
+         tax: Number(f.iva) / 100,
+-      });
++      };
++      var descripcion = String(f.descripcion == null ? '' : f.descripcion).trim();
++      if (descripcion) linea.description = descripcion;
++      var dtoEscrito = String(f.dto == null ? '' : f.dto).trim();
++      if (dtoEscrito) linea.dto = Number(dtoEscrito);
++      lines.push(linea);
+```
+
+`public/dashboard/js/quotesView.js`, modo suelto (tres sitios):
+
+```diff
+ // el campo del descuento, en los ajustes de la línea
+-    if (!esDocumentoSuelto) ajustesCampos.appendChild(dtoTd);
++    ajustesCampos.appendChild(dtoTd);
+
+ // al volver a pintar las líneas
+-      const descripcion = esDocumentoSuelto ? undefined : l.description;
+-      const dto = esDocumentoSuelto ? undefined : l.dto;
++      const descripcion = l.description;
++      const dto = l.dto;
+
+ // al emitir
+             precio: line.priceInput.value,
+             iva: line.vatInput.value,
++            descripcion: line.descInput ? line.descInput.value : '',
++            dto: line.dtoInput ? line.dtoInput.value : '',
+```
+
+Tres cosas que el diff no resuelve y decide S2: el servidor quiere `dto` como NÚMERO con dos decimales como máximo (una cadena da 400); para que la descripción se VEA en el PDF y en la ficha tiene que ir además en el `concept` tras un salto de línea, como hace el presupuesto con «incluir descripción»; y el campo de la descripción hoy puede estar escondido en el modo suelto por otra línea que no he buscado.
+
+## NO medido (1787k)
+
+- La ruta montada: lo ejecutado es el validador y las funciones del dominio; el caso ⑤ LEE en el fuente que la ruta emite `val.lineas`.
+- El navegador, ninguna base, el PDF generado con una descripción (lo cubren los tests de SCRUM-603, que no cambié) y la suite entera en local (la corre el obligatorio, por orden del orquestador).
+- El suplido, el coste y el descuento global: fuera de este tramo.
+- 🔴 `jv-j1hh` tiene en una rama local sin empujar (1787i, c.22344) otro cambio sobre `validarFacturaSuelta` y sobre la ruta: las dos ramas tocan el mismo fichero y quien entre segundo tendrá que unirlas a mano.
+
 # SCRUM-1787j · `scrum728d` cuenta la transacción ENTERA de la emisión (relevo del ② de 1787g)
 
 **Medido contra:** `origin/main` = `ccb69008b5aaa80d3f7cb712be77ce025c146238` · 2026-11-21T21:44:22Z
