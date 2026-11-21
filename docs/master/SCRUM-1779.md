@@ -122,6 +122,12 @@ Mutaciones: catálogo → tests/scrum1330-una-sellada-no-se-resella.test.mjs
 | `tests/scrum1333-carrera-del-encolado-postgres.test.mjs` | ídem contra Postgres (SKIP sin `LIBRO_PG_URL`) |
 | `tests/scrum1404g-el-409-del-pendiente-de-sellado.test.mjs` | mide el portón; caso G reanclado a c.22246 |
 | `tests/scrum1510b-pendiente-que-el-porton-dejaria-pasar.test.mjs` | mide el pendiente de sellado |
+| `tests/scrum178-emision-manual.test.mjs` | emisión manual contra base: «FACTURA FISCAL SIN SELLAR» (relevo 3.º, `jv-j1gi`) |
+| `tests/scrum290-adicional.test.mjs` | el albarán emite por el handler y, con OFF, `sellarTrasEmision` escribía en una base que el doble no tiene (500 ≠ 201) |
+| `tests/scrum290-endpoint-convertir.test.mjs` | ídem, y el caso de SCRUM-887 «al precio firmado DESPUÉS del dto de línea» |
+
+Relevo 3.º (`jv-j1gi`, 21-nov): el obligatorio de #3282 (run 44798134056, sobre `3784cc57d`) cayó en estos tres con 9 casos, de 14.011 casos y 9 skip. Población de la clase medida antes de empujar: 161 tests nombran el sellado (`SIN SELLAR`, `vfQrUrl`, `vfHash`, `huella`, `VfSubmission`, `vfEstado`, `sellarTrasEmision`, `SELLADO_`); 146 sin `SIF_ENABLED`; 82 de ellos cargan `dist/`. Corridos en local: 672 casos, 0 fail, 31 skip (17 ficheros gateados por base, que en ese run de CI SÍ corrieron y no cayeron). Los tres arreglados + 1779d + 523d + 603b: 40 casos, 38 pass, 0 fail, 2 skip (178 sin base: su verde es el de CI).
+A9: aviso → A10 «Un test gateado que se salta en local es un test que no corriste: su verde no habla de él.» — no se pudo comprobar: la lista de bancos que afirman el sellado la eligió a mano el relevo 2.º, y elegir una población no pasa por ningún guard; la cerró el obligatorio de CI
 
 ### Recongelación y autorización (regla 41: por su mecanismo, sin relajar nada)
 
