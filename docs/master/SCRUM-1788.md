@@ -36,7 +36,9 @@ con el cursor corrido, sin columnas. No se toca.
   ficticio en un rango de móvil real (`+34 600…`). Pasado al rango imposible (`+34 000 000 000`); las dos capturas
   son de ANTES de ese cambio y todavía lo muestran.
 - Suite entera por tramos (`scripts/tanda-entera-por-tramos.mjs`, con `TMP`/`TEMP` sin espacios): 15 de 15 tramos,
-  1.733 ficheros, 14.016 tests, 13.832 pass, 0 fail — VEREDICTO VERDE. Build con tipos (`tsc -p .`): salida 0.
+  1.733 ficheros, 14.016 tests, 13.832 pass, 0 fail — VEREDICTO VERDE. Repetida tras `git merge origin/main`
+  (`be85bc71640bb7a8e8af969e2717d233a223e161`; las huellas de la vía no cambian): 1.738 ficheros, 14.050 tests,
+  13.866 pass, 0 fail — VERDE. Build con tipos (`tsc -p .`): salida 0.
   `npm run guards:entrada`: 15 guards en verde.
 
 ### Para SCRUM-1787 (medido aquí, no construido)
