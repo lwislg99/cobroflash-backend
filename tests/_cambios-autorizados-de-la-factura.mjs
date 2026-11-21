@@ -193,6 +193,23 @@ export const CAMBIOS_AUTORIZADOS = [
       a: '300a3fb3f0a1af3481188846a89e457e8cf4d4b75f71bfcbd9b0e5a1c7ca4b23',
     },
   },
+  {
+    // SCRUM-1788a · la tabla de conceptos empieza debajo del bloque más alto (emisor o cliente):
+    // un emisor de 5+ líneas ya no se pinta encima de la cabecera. Sin texto nuevo ni datos nuevos.
+    // Huellas de `evidencias/SCRUM-1446d/huellas.mjs` sobre origin/main
+    // 53cde1aa49e8b8235b6b562f9a81bb6d175ac571.
+    firma: 'SCRUM-1788 c.22299',
+    registro: 'docs/master/SCRUM-1788.md',
+    cita: '«Sí go»',
+    cuerpo: {
+      de: '4daa145e0323e604a3c1a6e591204303466c4546e4b0dee47329a233ba0378d6',
+      a: '44d7d101465e2f0909db25950bf4fc1dae8d729d6e31222924a72aeec310824f',
+    },
+    ambito: {
+      de: '300a3fb3f0a1af3481188846a89e457e8cf4d4b75f71bfcbd9b0e5a1c7ca4b23',
+      a: '0c1839e4d2df8ded0228160e90fdfd46eb9549daba2055fe29016bf5e5b13a08',
+    },
+  },
 ];
 
 /**
