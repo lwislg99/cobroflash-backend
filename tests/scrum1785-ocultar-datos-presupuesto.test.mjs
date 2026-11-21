@@ -99,19 +99,21 @@ test('SCRUM-1785 · CONTROL POSITIVO del PDF: sin ocultar nada salen los cuatro 
   for (const d of DATOS) assert.ok(t.includes(d.valor), `SUELO: sin ocultar, ${d.rotulo} (${d.valor}) no sale: el resto no mediría nada`);
 });
 
-for (const d of DATOS) {
-  const titulo = d.key === 'phone'
-    ? 'SCRUM-1785 · 🔴 PDF: con «Teléfono» oculto, el teléfono del cliente NO sale'
-    : `SCRUM-1785 · 🔴 PDF: con «${d.rotulo}» oculto, ese dato NO sale y los otros tres sí`;
-  test(titulo, async () => {
-    const t = await textoDelPdf({ [d.key]: false });
-    assert.ok(t.includes(CONCEPTO), 'SUELO: el PDF no se ha leído');
-    assert.equal(t.includes(d.valor), false, `🔴 «${d.rotulo}» desmarcado y el PDF imprime ${d.valor}`);
-    for (const o of DATOS.filter((x) => x.key !== d.key)) {
-      assert.ok(t.includes(o.valor), `🔴 ocultar «${d.rotulo}» se lleva también ${o.rotulo}`);
-    }
-  });
+// Nombres LITERALES, uno por dato: un nombre construido lo tumba `scrum1415` (el catálogo de
+// mutaciones y el `cae` casan por el nombre escrito).
+const dato = (key) => DATOS.find((x) => x.key === key);
+async function pdfOcultaUno(d) {
+  const t = await textoDelPdf({ [d.key]: false });
+  assert.ok(t.includes(CONCEPTO), 'SUELO: el PDF no se ha leído');
+  assert.equal(t.includes(d.valor), false, `🔴 «${d.rotulo}» desmarcado y el PDF imprime ${d.valor}`);
+  for (const o of DATOS.filter((x) => x.key !== d.key)) {
+    assert.ok(t.includes(o.valor), `🔴 ocultar «${d.rotulo}» se lleva también ${o.rotulo}`);
+  }
 }
+test('SCRUM-1785 · 🔴 PDF: con «Teléfono» oculto, el teléfono del cliente NO sale', () => pdfOcultaUno(dato('phone')));
+test('SCRUM-1785 · 🔴 PDF: con «Nombre» oculto, ese dato NO sale y los otros tres sí', () => pdfOcultaUno(dato('name')));
+test('SCRUM-1785 · 🔴 PDF: con «NIF» oculto, ese dato NO sale y los otros tres sí', () => pdfOcultaUno(dato('taxId')));
+test('SCRUM-1785 · 🔴 PDF: con «Email» oculto, ese dato NO sale y los otros tres sí', () => pdfOcultaUno(dato('email')));
 
 test('SCRUM-1785 · PDF: los cuatro ocultos a la vez — no sale ninguno', async () => {
   const t = await textoDelPdf({ name: false, phone: false, taxId: false, email: false });
@@ -226,11 +228,12 @@ test('SCRUM-1785 · 🔴 EDITOR: desmarcar «Teléfono» viaja al servidor como 
   assert.equal(leido.data.docFields.phone, false, '🔴 el esquema del servidor pierde phone=false');
 });
 
-for (const d of DATOS.filter((x) => x.key !== 'phone')) {
-  test(`SCRUM-1785 · EDITOR: desmarcar «${d.rotulo}» viaja como ${d.key}=false y sólo ése`, async () => {
-    const post = await generarCon([d.key]);
-    const leido = CreateQuoteSchema.safeParse(post);
-    assert.ok(leido.success, `🔴 el servidor rechaza el cuerpo: ${leido.error && leido.error.message}`);
-    for (const o of DATOS) assert.equal(leido.data.docFields[o.key], o.key !== d.key, `🔴 ${o.key} viaja mal`);
-  });
+async function editorOcultaUno(d) {
+  const post = await generarCon([d.key]);
+  const leido = CreateQuoteSchema.safeParse(post);
+  assert.ok(leido.success, `🔴 el servidor rechaza el cuerpo: ${leido.error && leido.error.message}`);
+  for (const o of DATOS) assert.equal(leido.data.docFields[o.key], o.key !== d.key, `🔴 ${o.key} viaja mal`);
 }
+test('SCRUM-1785 · EDITOR: desmarcar «Nombre» viaja como name=false y sólo ése', () => editorOcultaUno(dato('name')));
+test('SCRUM-1785 · EDITOR: desmarcar «NIF» viaja como taxId=false y sólo ése', () => editorOcultaUno(dato('taxId')));
+test('SCRUM-1785 · EDITOR: desmarcar «Email» viaja como email=false y sólo ése', () => editorOcultaUno(dato('email')));
