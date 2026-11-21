@@ -60,3 +60,34 @@ Preguntas ✅/❌ para el fundador en Jira, SCRUM-1782 c.22260; las de SCRUM-178
 | «cuando se une un nuevo merchant … el prefijo a parte … preseleccionado +34» | NO HECHO → `onboardingView.js` es de J3; al orquestador (c.22259) |
 | «También cuando crees clientes» | `public/dashboard/js/customersView.js:1348` y `:1745` (ya en main, SCRUM-578/590); presupuesto rápido de Inicio NO HECHO → S2 (Luis), c.22259 |
 | «El tipo de cliente quitalo» (SCRUM-1782) | NO HECHO → STOP fiscal, decisión del fundador en c.22260 |
+
+# SCRUM-1781b · El prefijo aparte, con +34 preseleccionado, en el alta del comercio, su primer cliente y Configuración (J3)
+
+**Medido contra:** `origin/main` = `fea1c00078654d8d617af055de94f2b627df07ce` · 2026-11-21T03:58:13Z (cabecera `Date:` de `gh api -i zen`)
+A9: aviso → cicatriz J3 «Edité la interfaz antes de cargar la skill `yaqu-premium-ui`, que CLAUDE.md y el encargo piden ANTES; la cargué a mitad y revisé el cambio contra ella.» — no se pudo comprobar: cargar una skill no deja rastro en el árbol que un test pueda leer
+**Skill UI:** cargada · después de la primera edición de `onboardingView.js`, no antes (ver la A9). `scrum811c` exige que se DECLARE, no el orden: por eso es aviso y no comprobación.
+
+**Puesto:** J3 (jv-j3cn) · **Rama:** `scrum-1781b-prefijo-en-alta-y-ajustes` (lleva dentro el merge de `scrum-1781-prefijo-y-tipo-de-cliente` @ `c8d5545aa9f3dff4cee641267975db849df13286`, por orden del orquestador, para que este tramo se AÑADA al fichero de J2 y no lo cree otra vez).
+
+**Qué cambia.** Las tres pantallas de J3 que piden un WhatsApp montan el selector de `prefijosPais.selectorDePrefijo` (el de Clientes, SCRUM-578/590) en la fila `.campo-telefono` que ya existe, con +34 por defecto:
+
+- alta, paso 1, «Tu WhatsApp» (`#ob-phone`) — `public/dashboard/js/onboardingView.js`, `montar` del paso 1;
+- alta, último paso, «Su WhatsApp» del primer cliente (`#ob-cust-phone`) — `montar` del paso WOW; lo compuesto es lo que recibe `openQuickQuoteModal`;
+- Configuración, `whatsappPhone` — `public/dashboard/js/settingsView.js` (bloque `[J3] SCRUM-1781b`): reparte lo guardado al abrir y compone al guardar.
+
+La composición y el reparto viven en `telefonoConPrefijo` (nivel superior de `onboardingView.js`, que carga antes que `settingsView.js`) y siguen la regla de `numeroCompleto`/`repartirNumero` de `customersView.js`, que es de J2 y no se ha tocado. **El valor guardado no cambia de formato** (dígitos con el prefijo delante; si ya viene escrito, no se duplica). Sin servidor, sin texto nuevo, sin CSS nuevo, sin `style=` ni `on*=` en cadenas de `innerHTML`.
+
+**Cómo se mide.** `tests/scrum1781b-prefijo-en-alta-y-ajustes.test.mjs` monta las pantallas reales en el banco de vistas y compara lo que guardan con lo que guarda «Nuevo cliente» en Clientes para el mismo prefijo y lo mismo tecleado (3 casos: +34 con el número nacional, +34 con el número ya prefijado, +52), más el reparto al abrir Configuración y al volver atrás en el alta. Rojo antes del cambio (5/5, por «el teléfono no va en una fila .campo-telefono con su prefijo»); verde después (5/5). Una mutación a mano («componer» que siempre antepone el prefijo) tumbó 3 casos; se hizo una vez, sin guion en git, así que por la A3 **no cuenta como evidencia**.
+
+**Dirigida:** 69 ficheros (los diez del encargo —1773, 836, 700, 710b, 719, 1294, 267, 273, 525d, 854— y todo test que nombra `onboardingView`, `settingsView`, `prefijosPais` o `campo-telefono`): 668 casos, 667 verdes, 1 rojo (`scrum854`, por faltar este registro; se repite tras escribirlo). Suite entera: NO corrida (sólo el tramo 1/15, 814 casos, 0 fallos): el orquestador la quitó del encargo por contexto.
+
+**NO medido:** no he visto las pantallas en yaqu.app ni en un navegador (no lo he intentado: sin sesión de comercio), ni capturas antes/después de la checklist AB6. La fila `.campo-telefono` mide 44 px por el CSS que ya existía; el ancho en móvil no lo he comprobado.
+
+**Para el fundador (✅/❌), sin tocar nada hasta que conteste:** los textos de ayuda que dicen que el prefijo va dentro siguen igual porque cambiarlos es texto que ve el usuario (regla 39): el marcador «Ej: 34XXXXXXXXX (con código de país)» de `#ob-phone`, «(con código de país)» y «Ej: 34XXXXXXXXX» del primer cliente, y el rótulo «Teléfono WhatsApp (E.164 sin +)» de Configuración. Con el prefijo aparte dicen algo que ya no hace falta (si alguien teclea el 34, no se duplica). ¿Se quitan? ✅/❌. Y la parte de Inicio (`homeView.js:1018`) es de S2 (Luis): aviso, no tocada.
+
+### Aceptación → dónde se ve (1781b)
+
+| aceptación (literal) | dónde se ve |
+|---|---|
+| «Cuando se une un nuevo merchant y le puda poner número de whatsapp tiene que salir el prefijo a parte para seleccionar y preseleccionado e +34 español» | `tests/scrum1781b-prefijo-en-alta-y-ajustes.test.mjs` ① y ⑤ (alta) y ③ ④ (Configuración); en yaqu.app: NO visto |
+| «También cuando crees clientes» | ② (primer cliente del alta) en el mismo test; Clientes ya en main (fila de arriba); Inicio NO HECHO → S2 (Luis) |
