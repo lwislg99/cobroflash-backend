@@ -34,7 +34,7 @@ const CLIENTE = { name: 'Cliente QA', email: 'cliente@ejemplo.invalid' };
 const EMISOR_LARGO = {
   name: 'Fontanería Ficticia', legalName: 'Fontanería Ficticia del Norte SL', taxId: 'B00000000',
   address: 'Calle Inventada de los Ejemplos Larguísimos 123, Portal 4, Escalera B, 28000 Ciudad Ficticia',
-  phone: '+34 600 000 000', email: 'facturas@ejemplo.invalid',
+  phone: '+34 000 000 000', email: 'facturas@ejemplo.invalid',
 };
 
 async function lineasDeFactura(sufijo, merchant) {
@@ -96,7 +96,7 @@ test('1788a ② · control: con el CLIENTE como bloque más alto, el emisor no m
   // Un emisor de 1 línea y otro de 4 (razón social, NIF, dirección corta, teléfono) son los dos
   // más bajos que el cliente: la tabla tiene que empezar en la MISMA `y`, la de antes del arreglo.
   const soloNombre = { name: 'QA Fontanería', legalName: 'QA SL' };
-  const cuatro = { ...soloNombre, taxId: 'B00000000', address: 'Calle Corta 1', phone: '+34 600 000 000' };
+  const cuatro = { ...soloNombre, taxId: 'B00000000', address: 'Calle Corta 1', phone: '+34 000 000 000' };
   const yUno = yDeLaCabecera(await lineasDeFactura('C1', soloNombre));
   const yCuatro = yDeLaCabecera(await lineasDeFactura('C4', cuatro));
   assert.equal(yCuatro, yUno, `la tabla se movió sin que el emisor fuera el bloque más alto (${yUno} → ${yCuatro})`);

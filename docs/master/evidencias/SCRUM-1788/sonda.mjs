@@ -9,7 +9,7 @@ const largo = process.argv[3] === 'largo';
 const merchant = largo
   ? { name: 'Fontanería Ficticia', legalName: 'Fontanería Ficticia del Norte SL', taxId: 'B00000000',
       address: 'Calle Inventada de los Ejemplos Larguísimos 123, Portal 4, Escalera B, 28000 Ciudad Ficticia',
-      phone: '+34 600 000 000', email: 'facturas@ejemplo.invalid' }
+      phone: '+34 000 000 000', email: 'facturas@ejemplo.invalid' }
   : { name: 'QA Fontanería', legalName: 'QA SL', taxId: 'B00000000' };
 const { outPath } = await generateInvoicePdf({
   number: 'F-2026-QA1788', merchant, customer: { name: 'Cliente QA', email: 'c@ejemplo.invalid' },
