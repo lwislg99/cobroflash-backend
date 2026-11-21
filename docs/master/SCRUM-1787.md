@@ -453,7 +453,7 @@ Ninguna base: no sé si alguna tiene ya estas columnas. No corrí ningún test d
 
 **Medido contra:** `origin/main` = `ccb69008b5aaa80d3f7cb712be77ce025c146238` · 2026-11-21T21:44:22Z
 
-A9: aviso → cicatriz J6 «Fui a cambiar en local las cifras escritas a mano de un guard para medir la mutación antes de que llegara la firma que el encargo exigía, y me paró el clasificador de permisos (SCRUM-1787j)» — no se pudo comprobar: lo paró el clasificador de permisos de la sesión, que no vive en el repositorio.
+A9: aviso → cicatriz J6 «Fui a cambiar en local las cifras escritas a mano de un guard para medir la mutación antes de que llegara la firma que el encargo exigía, y me paró el clasificador de permisos» — no se pudo comprobar: lo paró el clasificador de permisos de la sesión, que no vive en el repositorio.
 
 Mutaciones: catálogo → `tests/scrum728d-viajes-de-la-reserva.test.mjs`
 
