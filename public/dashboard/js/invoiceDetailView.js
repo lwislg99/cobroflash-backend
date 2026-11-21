@@ -309,6 +309,10 @@ async function fetchInvoiceDetail(id) {
     const metodo = invoice.paidVia
       ? (typeof window.etiquetaMetodoCobro === 'function' ? window.etiquetaMetodoCobro(invoice.paidVia) : invoice.paidVia)
       : null;
+    // SCRUM-1787i · «Vence el» (firmado, c.22325 ①): la fecha CONGELADA al emitir, sólo si consta.
+    addDefRow(dlCobro, 'Vence el', invoice.dueDate
+      ? new Date(invoice.dueDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
+      : null);
     addDefRow(dlCobro, 'Método', metodo);
     addDefRow(dlCobro, 'Pagada', invoice.paidAt ? new Date(invoice.paidAt).toLocaleString('es-ES') : null);
     addDefRow(dlCobro, 'Rectifica a', invoice.rectifies ? invoice.rectifies.number : null);

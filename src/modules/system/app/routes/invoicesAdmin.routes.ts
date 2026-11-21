@@ -66,7 +66,7 @@ import { congelarEmisorDesdeFicha } from '../../../invoicing/domain/emisorCongel
 import { puedeRectificarse } from '../../../invoicing/domain/rectificabilidad'; // SCRUM-308
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-289
 import {
-  modoDocumentoSuelto, validarFacturaSuelta,
+  modoDocumentoSuelto, validarFacturaSuelta, vencimientoDeLaSuelta,
   ERROR_MODO_SIN_FACTURA, ERROR_CLIENTE_INVALIDO,
 } from '../../../invoicing/domain/facturaSuelta'; // SCRUM-289 (A0.3)
 import { falloDeEnvioDeFactura } from '../../../invoicing/domain/envioQueNoSale'; // SCRUM-1478
@@ -194,6 +194,9 @@ router.post('/', requireRole('admin'), async (req, res) => {
         origen: 'C7-suelta', // SCRUM-347: nace sin presupuesto ni albarán detrás (A0.5)
         clienteCongelado: congelarDesdeFicha(customer), // SCRUM-729 · sin viaje extra
         emisorCongelado,
+        // SCRUM-1787i (GO c.22325 ③, c.22331) · sin `dueDate` en el cuerpo, expedición + 30 días.
+        dueDate: vencimientoDeLaSuelta(val.dueDate, new Date()),
+        payMethods: val.payMethods,
       }),
     );
 
