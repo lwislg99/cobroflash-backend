@@ -29,7 +29,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     nombre: 'la descripción no viaja',
     fichero: 'src/modules/invoicing/domain/facturaSuelta.ts',
-    de: 'linea.description = descripcion.data;',
+    de: 'if (descripcion?.success) linea.description = descripcion.data;',
     a: '',
     cae: 'SCRUM-1787k ① una suelta con 10 % en una línea',
   },
@@ -121,7 +121,8 @@ test('SCRUM-1787k ④ las reglas del presupuesto: descuento fuera de 0-100, con 
     const v = validarFacturaSuelta({ customerId: 5, lines: [{ ...base, ...malo }] });
     assert.equal(v.ok, false, `se aceptó ${JSON.stringify(malo)}`);
     assert.equal(v.error, ERROR_LINEAS_INVALIDAS);
-    assert.ok(typeof v.message === 'string' && v.message.length > 0);
+    // Ningún texto nuevo ni el inglés del validador: sale el mensaje ya servido de su campo.
+    assert.equal(v.message, 'description' in malo ? 'Cada línea necesita un concepto.' : 'Cada línea necesita un precio válido.');
   }
   // Control: los bordes válidos pasan.
   for (const bueno of [{ dto: 0 }, { dto: 100 }, { dto: 33.33 }, { description: 'Texto' }]) {

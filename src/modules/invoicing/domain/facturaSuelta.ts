@@ -147,13 +147,21 @@ export function validarFacturaSuelta(body: unknown): ResultadoValidacion {
     const qty = Number(l.qty);
     const price = Number(l.price);
     const tax = Number(l.tax);
-    if (!concept) {
+    // SCRUM-1787k (GO regla 40, SCRUM-1787 c.22338 ①) · descripción y descuento de la línea, con las
+    // reglas del PRESUPUESTO: los dos validadores son los suyos (`REGLAS_DE_LINEA`), no una copia.
+    // Ausente o `null` = la línea no lo lleva, como la causa. Un rechazo sale con el mensaje YA
+    // servido del campo al que pertenece (la descripción es del concepto; el descuento, del precio):
+    // el del validador es de zod, en inglés, y aquí no se escribe ningún texto nuevo (regla 39).
+    const descripcion = l.description === undefined || l.description === null
+      ? null : REGLAS_DE_LINEA.description.safeParse(l.description);
+    const dto = l.dto === undefined || l.dto === null ? null : REGLAS_DE_LINEA.dto.safeParse(l.dto);
+    if (!concept || (descripcion && !descripcion.success)) {
       return { ok: false, error: ERROR_LINEAS_INVALIDAS, message: 'Cada línea necesita un concepto.' };
     }
     if (!esNumeroFinito(qty) || qty <= 0) {
       return { ok: false, error: ERROR_LINEAS_INVALIDAS, message: 'Cada línea necesita una cantidad mayor que cero.' };
     }
-    if (!esNumeroFinito(price) || price < 0) {
+    if (!esNumeroFinito(price) || price < 0 || (dto && !dto.success)) {
       return { ok: false, error: ERROR_LINEAS_INVALIDAS, message: 'Cada línea necesita un precio válido.' };
     }
     // Fracción, no porcentaje: 0.21, nunca 21. Es la convención de `Invoice.lines` en todo el
@@ -168,23 +176,9 @@ export function validarFacturaSuelta(body: unknown): ResultadoValidacion {
     // `calcVatBreakdown` comparan con deepEqual.
     const linea: LineaEntrada = { concept, qty, price, tax };
     if (l.causa !== undefined && l.causa !== null) linea.causa = l.causa as Causa;
-    // SCRUM-1787k (GO regla 40, SCRUM-1787 c.22338 ①) · descripción y descuento de la línea, con las
-    // reglas del PRESUPUESTO: los dos validadores son los suyos (`REGLAS_DE_LINEA`), no una copia.
-    // Ausente o `null` = la línea no lo lleva y la clave no viaja, como la causa.
-    if (l.description !== undefined && l.description !== null) {
-      const descripcion = REGLAS_DE_LINEA.description.safeParse(l.description);
-      if (!descripcion.success) {
-        return { ok: false, error: ERROR_LINEAS_INVALIDAS, message: descripcion.error.issues[0].message };
-      }
-      linea.description = descripcion.data;
-    }
-    if (l.dto !== undefined && l.dto !== null) {
-      const dto = REGLAS_DE_LINEA.dto.safeParse(l.dto);
-      if (!dto.success) {
-        return { ok: false, error: ERROR_LINEAS_INVALIDAS, message: dto.error.issues[0].message };
-      }
-      linea.dto = dto.data;
-    }
+    // SCRUM-1787k · sin descripción o sin descuento, la clave no viaja (arriba se validaron).
+    if (descripcion?.success) linea.description = descripcion.data;
+    if (dto?.success) linea.dto = dto.data;
     lineas.push(linea);
   }
 
