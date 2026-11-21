@@ -208,3 +208,61 @@ Test: `tests/scrum1787e-conceptos-en-movil.test.mjs` — rojo 3/3 con el arreglo
 
 - La suite entera: no la pasé, por orden del orquestador (la pasa el obligatorio).
 - El aspecto con un concepto muy largo o importes de 9.999,99 € en las cuatro columnas a 320 px.
+
+# SCRUM-1787g · La ficha de factura, mirada por un guard de navegador (①) · los viajes de 728d, medidos y pendientes (②)
+
+**Medido contra:** `origin/main` = `8de57b45ac4b20bfe14c1d54b37ea47cadc02a32` · 2026-11-21T19:45:26Z
+
+A9: comprobación → `scripts/guard-ficha-de-factura.mjs`
+
+A9: aviso → A10 «El catálogo de mutaciones juzga por nombre de test: un guard de navegador no lo tiene, y su rojo vive en un guion de evidencias o no vive en ninguna parte.» — no se pudo comprobar: `aplicarUna` (scripts/meta-guard-mutaciones.mjs) exige un caso de `node --test` en verde en la pasada limpia, y ningún mecanismo de la casa muta un `guard:*` de navegador; el rojo de éste queda en un guion «una vez».
+
+Mutaciones: una vez → `docs/master/evidencias/SCRUM-1787/mutar-1787g.mjs`
+
+Encargo del orquestador J (`cobroflash-backend-ba`) a J6 (`jv-j6fa`), el 21-nov-2026. Por orden del orquestador (19:4xZ), se empuja ① SOLO; ② va a un relevo con lo medido aquí.
+
+## ① El guard: `npm run guard:ficha-de-factura`
+
+`scripts/guard-ficha-de-factura.mjs`, con la forma de los `guard:*` de la casa (puppeteer-core, `_navegador.mjs`, `_servidor.mjs`, `recorrerCasos` y `veredictoDe` de `_hallazgos-y-ciegos.mjs`). Monta el PANEL REAL (`/dashboard/index.html#invoice-detail/1`) y una factura de EJEMPLO que contesta el propio banco por `/admin/invoices/1`; el resto de `/admin/*`, vacío. Service worker desactivado (`setBypassServiceWorker`, lo que en Playwright es `serviceWorkers:'block'`). Seis casos: pendiente, cobrada y anulada, a 390 y a 1280 px.
+
+| aceptación (encargo) | dónde se ve |
+|---|---|
+| a 390 px no hay scroll horizontal de página | `scripts/guard-ficha-de-factura.mjs` · `MEDIR` (desborde con el clip quitado, ver abajo) |
+| a 390 px la tabla de conceptos enseña sus 5 datos | ídem · cada celda de la primera línea, dentro de la ventana y sin que la esconda un contenedor con scroll propio |
+| en los tres estados se ve la línea de progreso | ídem · `.j1-prog` y sus 3 pasos, a los dos anchos |
+| en escritorio está «Siguiente paso» | ídem · `.detail-next`; el rótulo se LEE de `invoiceDetailView.js`, no se copia |
+| patrón y runner de la casa | `package.json` (`guard:ficha-de-factura`) · `tests/_guards-de-navegador-declarados.mjs` · lo corre `guards:visuales` en `.github/workflows/ci.yml`: `fueraDeLaTanda()` da 42 guards y lo incluye (control: también `guard:contraste`) |
+| rojo primero | `docs/master/evidencias/SCRUM-1787/mutar-1787g.mjs`: base 0; 3 de 3 mutaciones caen con salida 1 |
+
+**Verde:** los 6 casos y las 3 siembras del control positivo, salida 0.
+
+**Rojo** (el guion, sobre el árbol de esta rama; restaura y compara bytes):
+
+| mutación | salida | lo que nombra |
+|---|---|---|
+| sin el bloque `@media` de 1787e (lo que había antes de #3300) | 1 | en los 3 estados a 390: los 5 datos de la línea fuera de la ventana (concepto 35…454 px, total 632…710 px, de 390) |
+| `.j1-prog { display:none` | 1 | la línea de progreso mide 0×0, en los 6 casos |
+| `actionsSec.className = 'detail-next-x'` | 1 | «Siguiente paso» no existe, en los 3 casos de escritorio |
+
+**Hallazgo de paso — el criterio «sin scroll horizontal» se cumple SIEMPRE.** `public/dashboard/css/styles.css:495` dice `html, body { overflow-x: clip; }`: la página del panel nunca hace scroll horizontal, y lo que se sale por la derecha se CORTA sin barra. Mi primera versión medía `scrollWidth − clientWidth` y era ciega: la cazó su propio control positivo (un elemento sembrado de 2000 px y el detector diciendo 0 px). Ahora el desborde se mide quitando el clip un instante y reponiéndolo. No es un defecto de la ficha (hoy no desborda); es que la frase del encargo, medida al pie de la letra, no podía caer.
+
+**Control positivo sembrado** (no prestado del árbol): en una página de 390 aparte, después de medir, se siembran un elemento de 2000 px, la tabla dentro de una caja de 150 px con scroll y la línea de progreso escondida. Si un detector no ve lo suyo, el guard sale 2 (no supe medir). Comprobado: con el detector de scroll ciego salió 2, no 0.
+
+**Error mío:** el guard lo escribí contra el código ya arreglado y lo vi VERDE antes de verlo ROJO; el rojo lo saqué después mutando. El orden no queda en el diff.
+
+## ② `tests/scrum728d-viajes-de-la-reserva.test.mjs` · MEDIDO, NO CONSTRUIDO (va a relevo)
+
+Lo que sé, leído en `tests/_viajes-de-la-reserva.mjs` y el test:
+
+- `espiarReserva` sólo pasa un `tx` falso a `allocateInvoiceNumber` (`dist/modules/invoicing/domain/invoiceNumber.service.js`). Todo lo que la emisión lea o escriba FUERA de esa función, dentro de la misma transacción, no lo ve.
+- `conElCreateDelLlamador` suma `+1` fijo (el `invoice.create`) y `espiarReserva` suma `+2`/`+1` fijos a lo contado. Las cifras F1 8 / dentro del cerrojo 7 / R1 7 son literales.
+- Por eso #3302 (SCRUM-1787d), que añade una lectura en `direccionCongelada.ts` dentro de la tx de emisión, sube la cifra real y el guard NO cae (lo midió jv-j1hd, SCRUM-1787 c.22326).
+- El control «🔴 ROJO: añadir UN viaje» de ese test siembra el viaje DENTRO del doble de `allocateInvoiceNumber` (`viajeExtra`), así que demuestra que el contador cuenta lo que espía, no que espíe el sitio correcto.
+
+NO medido: la cifra que dará con #3302 (hace falta espiar la tx completa de `crearFacturaEmitida`, o derivarla); ni el arreglo ni su rojo. Lo que queda para el relevo: hacer que el guard cuente la transacción entera (o derive la cifra de lo que mide y la compare con una declarada), sembrar una lectura extra en la tx fuera de `allocateInvoiceNumber` y verlo caer, y medir —no elegir— el número nuevo.
+
+## NO medido (1787g)
+
+- 320 px, conceptos de varias líneas, importes de 9.999,99 € y la factura R1 (sólo F1 en los tres estados).
+- El guard en CI: lo dirá el job de `guards:visuales` de este PR.
+- La suite entera, en local, por tramos (`tanda-entera-por-tramos.mjs`, 15 de 15, uno por comando): 1.742 ficheros, 14.075 casos, **10 rojos, ninguno de esta rama**. 8 son del cliente de Prisma COMPARTIDO, que a esa hora llevaba `Invoice.customerBillingAddress` (el esquema de #3302) sin estar en el `schema.prisma` de main: `_prisma-client-guard` salió 1 nombrándolo. Son scrum235 (4), el censo de producción (1), scrum461 (2) y scrum733 (1: el generador escribe 545 columnas frente a 540, que son las 5 `customerBilling*`). Los otros 2 son de scrum1298b (latido), en el tramo 3; aislado sale 8/8 en este árbol y 8/8 en un árbol limpio de `origin/main`. Por el camino, la tanda cazó dos defectos MÍOS que arreglé: scrum1392 (las listas del guard nacían dentro del caso) y scrum1603 (el banco medía sin la letra de la casa: ahora usa `_hojas-del-panel`). Los tramos 1 a 3 y 5 corrieron antes de esos dos arreglos; después volví a pasar 1392, 1603, 1313, 1320, 1327, 1336, 737, 258 y 711 (69 + 30 casos, 0 fallos) y el guion de mutaciones (3 de 3 caen).
