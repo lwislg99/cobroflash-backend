@@ -370,6 +370,8 @@ const MODELOS_DOBLE = {
   $executeRaw: async () => 1,
   merchant: { findUnique: async () => MERCHANT_DOBLE, update: async () => ({}) },
   auditLog: { create: async () => ({ id: 1 }) },
+  // SCRUM-1787d · la emisión lee en SU tx la dirección de la ficha: la misma ficha que ve el router.
+  customer: { findFirst: async () => ({ id: 7 }) },
   invoice: {
     findMany: async () => [],
     findUnique: async () => null,
