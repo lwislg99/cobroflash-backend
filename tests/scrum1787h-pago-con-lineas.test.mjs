@@ -111,7 +111,7 @@ test('SCRUM-1787h · una factura de tres líneas: la página enseña cada concep
   const tabla = filas(html);
   assert.ok(tabla, '🔴 La página de pago no lleva la tabla de líneas de la factura (decisión de SCRUM-1787 c.22327).');
   assert.match(html, /<thead><tr><th>Concepto<\/th><th>Cant\.<\/th><th>Importe<\/th><\/tr><\/thead>/,
-    '🔴 La cabecera no es la de la página del presupuesto (quoteDecisionLanding.routes.ts:272).');
+    '🔴 La cabecera no es la de la página del presupuesto (`renderQuoteDetail` de quoteDecisionLanding.routes.ts).');
   assert.equal(tabla.length, 3, `🔴 Tenía que haber 3 filas y hay ${tabla.length}: ${JSON.stringify(tabla)}`);
   const esperadas = [['Mano de obra fontanería', '2', '90,00'], ['Grifo monomando', '1', '60,00'], ['Desplazamiento', '1', '15,00']];
   esperadas.forEach(([concepto, cant, importe], i) => {
