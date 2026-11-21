@@ -539,6 +539,9 @@ export async function generateInvoicePdf(params: {
   if (params.merchant.address) doc.text(params.merchant.address, { width: colW });
   if (params.merchant.phone)  doc.text(params.merchant.phone, { width: colW });
   if (params.merchant.email)  doc.text(params.merchant.email, { width: colW });
+  // SCRUM-1788a · el final del emisor se guarda AQUÍ: pintar el cliente en su columna mueve `doc.y`
+  // y lo perdía, y la tabla se montaba sobre un emisor más alto que el cliente (c.22299).
+  const finEmisorY = doc.y;
 
   // Columna derecha: cliente (posicionado desde colY)
   const clientY = colY;
@@ -555,8 +558,8 @@ export async function generateInvoicePdf(params: {
   if (params.customer.email) { doc.text(params.customer.email, col2X, cy, { width: colW }); cy += 13; }
   if (params.customer.phone) { doc.text(params.customer.phone, col2X, cy, { width: colW }); }
 
-  // Avanzar cursor por debajo de ambas columnas
-  doc.y = Math.max(doc.y, cy + 16);
+  // Avanzar cursor por debajo de ambas columnas: la tabla empieza bajo el bloque más alto.
+  doc.y = Math.max(doc.y, finEmisorY, cy + 16);
   doc.fillColor('#000').moveDown(0.4);
   hLine();
   doc.moveDown(0.5);
