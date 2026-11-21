@@ -283,3 +283,110 @@ Decisión del fundador: SCRUM-1787 c.22327 («1-Sí», pregunta 6 de c.22301). C
 - Cuántas facturas reales cuadran (y por tanto enseñarán líneas): sin base, no lo he intentado.
 - La página en yaqu.app: se ve tras el merge y el despliegue.
 - Una factura con apartados o con descuento de línea en el navegador (el código las trata como la página del presupuesto; el test no las lleva).
+# SCRUM-1787f · Vencimiento y formas de pago de la factura: DDL propuesto y diseño (solo docs; se construye en el sprint siguiente, después del ALTER)
+
+**Medido contra:** `origin/main` = `8de57b45ac4b20bfe14c1d54b37ea47cadc02a32` · 2026-11-21T19:39:01Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: sin fallo que generalice — el diff para Luis lo tenía pensado reutilizando `validWrapper` con el rótulo cambiado, y al leer el guard de 600e antes de escribirlo vi que ése sale rojo con la columna `due_date` (⑤); no llegó a ningún fichero, y lo que lo cazó ya existe: el propio guard, que cae al construir.
+
+Mutaciones: una vez → `docs/master/evidencias/SCRUM-1787/preview-ddl-1787f.mjs`
+
+Carril J1, sesión `jv-j1he`. Nada en `src/`, `public/` ni `prisma/` (regla 40: el esquema se LEE). **Decisión de partida:** SCRUM-1787 c.22325, literal de Javier **«1-Sí 2-Sí 3-GO»** a las tres preguntas de c.22324: ① la factura lleva fecha de vencimiento, rótulo `Vence el` («se confirma al construir»); ② el paso «Condiciones» de la factura lleva formas de pago, vencimiento y ajustes del documento, y NO «Condiciones de pago»; ③ GO (regla 40) para recibir y congelar al emitir las formas de pago y el vencimiento, y A5 ① para el ALTER del vencimiento.
+
+## ① El vencimiento: NO existe hoy
+
+- `model Invoice` (`prisma/schema.prisma:775-997`) no tiene ningún campo de vencimiento. El propio esquema lo avisa en `model Charge` (`:484-489`): `expiresAt @map("vencimiento")` es hasta cuándo vale UN enlace de pago, no la factura (SCRUM-605, SCRUM-722).
+- **El estado «vencida» no sale de ninguna fecha.** Es `status = 'expired'` (`:862`), lo pinta `api.js:1192` (`VENCIDA`) y lo filtra `invoicesView.js:407`, pero sólo lo escribe el profesional a mano: `PUT /admin/invoices/:id/status` (`invoicesAdmin.routes.ts:644`, acepta `pending|paid|expired` en `:652`) → `invoiceAdmin.ts:287` («para 'expired' dejamos paidAt como esté»). No hay cron que lo ponga: los `'expired'` de `src/` por fecha son de presupuestos (`expire.service.ts:2-17`) y de cobros.
+- Conclusión: **hace falta ALTER.** El vencimiento nuevo NO cambia ese estado (los estados son CERRADOS, Parte L): pasarlo a `expired` solo al llegar la fecha sería cambio de máster.
+
+## ② Las formas de pago: el presupuesto y el cobro las guardan; la factura no
+
+- **Presupuesto:** `Quote.payMethods Json? @map("pay_methods")` (`schema.prisma:670-672`). El editor las pinta en `quotesView.js:1228-1264` («Formas de pago que verá el cliente», tres casillas `card|bizum|transfer`), `selectedPayMethods()` `:1267` devuelve `undefined` si van todas, y viajan en `:5943`. Validación: `schemas.ts:258`.
+- **Cobro:** `Charge.payMethods` (`schema.prisma:493-495`), lo escribe `charges.routes.ts:63` desde `pay_methods`.
+- **Página de pago de la factura** (`payInvoice.routes.ts`, J2): lee SÓLO `charge.payMethods` (`:104-107`; `null` = todas las activas). No lee la factura.
+- **Quién le pone las formas al cobro de una factura:** un solo sitio, `invoiceWhatsApp.service.ts:56-85` (J1), al ENVIAR, no al emitir. Si la factura tiene `quoteId` lee `quote.payMethods` en ese momento (`:60-64`); si no, no manda nada (`:80`) y el cliente ve todas. Otro creador de cobros (`chargesAdmin.routes.ts:260`) no es de facturas.
+- **La factura suelta** (`POST /admin/invoices`) no tiene presupuesto: hoy no tiene DÓNDE guardar las formas de pago. Y el guard de 600e ya lo sabía: `tests/_asignacion-bloques-presupuesto.mjs:60` asigna `payMethods` al bloque `blockConditions`, y `tests/_condiciones-vs-emisor.mjs:350-354` pone rojo cualquier control de ese bloque que se pinte en el documento suelto sin columna en `model Invoice` ni clave que sobreviva a `validarFacturaSuelta`.
+- Conclusión: **congelar las formas de pago (③ GO) necesita una columna en `invoices`.** El ALTER firmado nombra sólo el vencimiento, así que va aparte y comentado: pregunta 1.
+
+## ③ El DDL
+
+`docs/sql/scrum-1787-vencimiento.sql`, marcado PROPUESTO. Sacado OFFLINE por `docs/master/evidencias/SCRUM-1787/preview-ddl-1787f.mjs` (`previewMigracion({ schema, desde })` sobre copias en un temporal fuera del árbol, una propuesta cada vez; salida en `preview-ddl-1787f.salida.txt`). Líneas PROPUESTAS en `model Invoice`, detrás de `stageLabel` (`:876`):
+
+    dueDate       DateTime? @map("due_date")       ← A, firmada
+    payMethods    Json?     @map("pay_methods")    ← B, pendiente de ✅
+
+`DateTime?` y no `@db.Date`: es el tipo de su hermano del presupuesto (`Quote.validUntil`, `:597`) y el esquema no usa `@db.Date` en ningún modelo (0 en `grep "@db.Date\b"`). `payMethods` es el mismo `Json?` y el mismo nombre de columna que `quotes` y `charges`.
+
+| control | A · `due_date` | B · `pay_methods` |
+|---|---|---|
+| la herramienta respondió | ok | ok |
+| DDL | `ALTER TABLE "invoices" ADD COLUMN "due_date" TIMESTAMP(3);` | `ALTER TABLE "invoices" ADD COLUMN "pay_methods" JSONB;` |
+| destructivas | 0 | 0 |
+| lista blanca de `_aplicar-sql-dev.mjs` | 1 permitida · 0 rechazadas | 1 · 0 |
+
+Control negativo (actual → actual): `sin_cambios`. Control positivo SEMBRADO (DROP fabricado de `clientComment` en la factura): destructivas 1, rechazadas 1. **Quitado el sembrado** (su línea cambiada por `const sembrado = propuestoA;` con `sed` en una copia, borrada después): sale 2, «CIEGO (un control no se cumple)». `revisar()` sobre el `.sql` entero: `ok: true`, 1 permitida (la de A; la de B va comentada y no cuenta).
+
+## Verificación después del ALTER
+
+En el mismo `.sql`, comentada: `current_database()` + `information_schema.columns` de `invoices` con `due_date` y `pay_methods`. Esperado: **1 fila** (`due_date`, `timestamp without time zone`, `YES`) si sólo se aplicó A; **2** si también B (`pay_methods`, `jsonb`, `YES`). 0 filas = no aplicado en ESA base.
+
+## ④ Dónde se recibe y dónde se congela
+
+**Recibir (sólo la factura suelta, que es la única que nace del editor):**
+
+| pieza | qué cambia | carril |
+|---|---|---|
+| `src/modules/invoicing/domain/facturaSuelta.ts:114` `validarFacturaSuelta` | acepta `payMethods` (mismo `z.enum(['card','bizum','transfer']).min(1)` que `schemas.ts:258`; ausente = NULL = todas) y `dueDate` (fecha válida, ausente = NULL); devuelve los dos en `val` | J1 |
+| `src/modules/system/app/routes/invoicesAdmin.routes.ts:184-196` | pasa `val.dueDate` y `val.payMethods` a `emitInvoice` | J1 |
+| `src/modules/invoicing/domain/invoicing.service.ts:109-125` `emitInvoice` | dos entradas OPCIONALES más en `EmitInvoiceInput` → `dueDate: input.dueDate ?? null`, `payMethods: input.payMethods ?? undefined` | J1 |
+| `src/modules/invoicing/domain/crearFacturaEmitida.ts:65` | nada: `DatosDeFacturaEmitida` (`:44`) sale de `Prisma.InvoiceUncheckedCreateInput`, así que los dos campos entran solos con el `prisma generate` | J1 |
+
+**Los demás caminos NO reciben nada nuevo y escriben NULL** (no hay pantalla que mande vencimiento ni formas): desde presupuesto `quotesAdmin.routes.ts:363` y `:656`, `quotes.routes.ts:658`, trabajo `jobs.routes.ts:1634`, albarán `albaranes.routes.ts:1421`, parcial `:1703`, recapitulativa `recapitulativa.service.ts:109` (los siete, S1); cobro `src/lib/invoicing.ts:424` (J1, el cobro ya lleva sus formas); parte `facturaDesdeParte.ts:139` (J1); R1 `invoicesAdmin.routes.ts:1220` (J1). Carriles con `node scripts/carriles.mjs de` el 21-nov.
+
+**Cómo llegan las formas al cliente sin tocar a S1 ni a J2:** en `invoiceWhatsApp.service.ts:58-64` (J1), el cobro hereda `invoice.payMethods` si es un array, y si es NULL, `quote.payMethods` como hoy. Las facturas desde presupuesto siguen leyendo las del presupuesto (como hoy, en el momento del envío); congelarlas también al emitir pediría tocar los tres ficheros S1 de arriba, y c.22325 no lo pide. `payInvoice.routes.ts` (J2) no cambia: ya lee `charge.payMethods`.
+
+🔴 **El vencimiento NO va a `Charge.expiresAt`**: ése cierra el enlace de pago, y una factura vencida se tiene que poder seguir pagando.
+
+## ⑤ Lo que tiene que hacer Luis (S2) en el editor
+
+Hoy la puerta es `quotesView.js:553`: `if (!esDocumentoSuelto) leftCard.appendChild(blockConditions);`. El paso tiene tres filas: `filaCobro` (`:577`, condiciones de pago y tramos), `filaPagos` (`:600`, formas de pago) y `filaValidez` (`:623`, «Válido hasta»). Los ajustes del documento suelto viven hoy en el último paso (`ajustesSuelto`, `:932`, SCRUM-915g). Diff propuesto, en prosa porque no se escribe en `public/`:
+
+1. Colgar `blockConditions` también en el documento suelto (quitar el `if` de `:553`), y NO colgar en él `filaCobro` (`if (!esDocumentoSuelto) blockConditions.appendChild(filaCobro);` en `:579`): c.22325 ② quita «Condiciones de pago».
+2. «Vence el»: en el documento suelto, `filaValidezTitulo.textContent` (`:631`) y `validLabel.textContent` (`:1125`) dicen `Vence el`; el valor por defecto es la pregunta 2.
+3. Ajustes del documento: c.22325 ② los pone en el paso Condiciones; hoy el suelto los tiene en «Revisar y emitir» (915g). Moverlos es de S2.
+4. Paso «Revisar y emitir» pasa a ser el 4 también en el suelto (`data-numero`).
+5. `cuerpoDelDocumentoSuelto.js:42`: un tercer parámetro opcional `condiciones` → el cuerpo lleva además `payMethods` (si no van todas) y `dueDate` (`new Date(validInput.value + "T23:59:59").toISOString()`, la misma conversión que `validUntil` en `quotesView.js:5975`). Sin el tercer parámetro, el cuerpo sale EXACTAMENTE como hoy (`tests/scrum632-los-dos-cortes-de-la-linea.test.mjs:127` lo llama con dos).
+6. La llamada de `quotesView.js:5692` pasa `{ payMethods: selectedPayMethods(), dueDate: … }`.
+
+⚠️ **Los guards que deciden la forma, leídos y no corridos:** `tests/scrum600e-condiciones-contra-el-emisor.test.mjs` mapea `validWrapper` → `validUntil` (`_asignacion-bloques-presupuesto.mjs:58`): con la columna llamada `due_date`, reutilizar `validWrapper` en el suelto le sale ROJO ①. Las dos salidas honradas son un control propio del suelto asignado a `dueDate` en `CAMPO_A_BLOQUE` (que también lee `tests/scrum286-bloques-orden.test.mjs`), o enseñarle al guard qué campo guarda cada control en cada modo. Las dos tocan un guard (A23): se decide al construir, nunca relajándolo (regla 41). Y `payMethodsWrapper` → `payMethods` sale verde sólo con B aplicada.
+
+## ⑥ Qué pintan la ficha y el PDF
+
+- **PDF de la factura** (`generateInvoicePdf`, `pdf.service.ts`, J1): `Vence el {fecha larga}` debajo del número, igual que «Válido hasta el …» del presupuesto (`pdf.service.ts:986-988`). La frase llega COMPUESTA, en la zona del profesional, por un `vencimiento.ts` gemelo de `src/modules/quotes/domain/validez.ts` (rótulo `:35`, frase `:75`). Con `due_date` NULL, el PDF sale EXACTAMENTE como hoy. Cambia el cuerpo de `generateInvoicePdf`: entrada en `CAMBIOS_AUTORIZADOS` (603b/723), como en 1787c ⑦.
+- **Ficha de factura** (`invoiceDetailView.js`, J1): la misma frase `Vence el {fecha}` en la cabecera de 1787b, sólo si consta.
+- **Formas de pago: ni en la ficha ni en el PDF.** No hay rótulo firmado para ellas en la factura, y la ficha y el PDF del presupuesto tampoco las pintan (0 en `quotesDetailView.js`, 0 en `pdf.service.ts`). El cliente las ve donde paga.
+- Rótulo firmado: sólo `Vence el` (c.22325 ①). El resto de la frase es la fecha.
+
+## ⑦ Plan del test (rojo primero, contra la RUTA montada en `app`)
+
+| caso | espera |
+|---|---|
+| `POST /admin/invoices` con `dueDate` y `payMethods: ['bizum']` | la fila `invoices` lleva `due_date` y `pay_methods = ["bizum"]` |
+| el mismo cuerpo sin los dos | `due_date` NULL, `pay_methods` NULL: la factura de hoy, sin cambios |
+| `payMethods: []` o `['cheque']` | 400 ANTES de pedir número (la serie no se entera, como SCRUM-246) |
+| `dueDate: 'no-es-fecha'` | 400 antes de pedir número |
+| enviar por WhatsApp la factura suelta con `["bizum"]` | el cobro creado lleva `payMethods = ["bizum"]` |
+| factura desde presupuesto (`pay_methods` NULL) | el cobro sigue heredando `quote.payMethods` |
+| PDF con `due_date` | el texto lleva `Vence el` y la fecha larga en la zona del profesional; sin `due_date`, el PDF no cambia |
+| `cuerpoDelDocumentoSuelto(c, filas)` con dos parámetros | el cuerpo es el de hoy, byte a byte |
+
+Mutaciones previstas para su `MUTACIONES_QUE_ME_TUMBAN` (no existen todavía): quitar `dueDate` del paso a `emitInvoice` (cae el 1º); `invoiceWhatsApp` sin leer `invoice.payMethods` (cae el 5º); validar después de pedir número (cae el 3º); quitar la línea del PDF (cae el 7º).
+
+## Preguntas para el fundador — ✅/❌
+
+1. **¿Aplicamos también la columna de las formas de pago (B)?** Sin ella, la factura suelta no puede guardar las que elijas en el paso «Condiciones», y el cliente vería siempre todas. Recomiendo que sí: c.22325 ③ pide congelarlas.
+2. **¿Qué fecha sale puesta en «Vence el»?** En el presupuesto «Válido hasta» sale a 30 días. Recomiendo vacía (sin vencimiento si no lo pones), para no poner un plazo que no has decidido.
+
+## NO medido (1787f)
+
+Ninguna base: no sé si alguna tiene ya estas columnas. No corrí ningún test de `src/` ni de `public/`: el plan ⑦ y lo de los guards de ⑤ están leídos, no probados. No miré cómo pinta la cabecera de 1787b una línea más en móvil.
