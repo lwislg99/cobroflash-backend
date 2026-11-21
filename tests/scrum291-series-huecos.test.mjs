@@ -360,7 +360,7 @@ const EMISOR = 'src/modules/invoicing/domain/invoiceNumber.service.ts';
 //   anterior: 0651d86336d084a924e9314c22d39a3d52deb0dabeb9674075de0b5de37be539   (SCRUM-1585)
 //
 // ── SCRUM-1780c · 21-nov-2026 · GO del fundador con el diff delante, SCRUM-1780 c.22280 («1-Sí»),
-// sobre el GO de regla 40 de c.22237 y la decisión del orquestador J de c.22249 (por SCRUM-1585
+// sobre el GO de c.22237 (`YAQU_MASTER.md`, regla 40) y la decisión del orquestador J de c.22249 (por SCRUM-1585
 // c.21290). El cambio: un valor nuevo, `'C7-parte'`, en el tipo `OrigenC7` y en `ORIGENES_C7`
 // (factura desde el parte firmado), más el comentario de la lista («Los cuatro» → «Todos»).
 // `allocateInvoiceNumber`, su `pg_advisory_xact_lock`, los contadores y la serie NO SE TOCAN.
