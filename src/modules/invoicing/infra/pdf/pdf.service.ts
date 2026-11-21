@@ -10,8 +10,8 @@ import { getLocale } from '../../../../core/i18n/locales';
 import { formatImporteEs, tipoEnPorcentaje, rotuloDeTipo, calcTotal } from '../../../../core/utils/utils'; // SCRUM-636: el sitio unico
 import { nombreParaDocumento } from '../../../../core/documentos/nombreParaDocumento'; // SCRUM-577
 import { partirConceptoYDescripcion } from './conceptoLinea'; // SCRUM-603 (DOC-13)
-// SCRUM-656 (T7): CÓMO se presenta el IVA de un PRESUPUESTO y sus cláusulas de cierre. El
-// cálculo sigue siendo `calcVatBreakdown`; estos módulos solo deciden qué se pinta.
+// SCRUM-656 (T7): CÓMO se presenta el IVA de un PRESUPUESTO y sus cláusulas de cierre. El cálculo sigue siendo `calcVatBreakdown`; estos módulos solo deciden qué se pinta.
+import { lineasQueSuman as lineasQueSumanDelDominio } from '../../../quotes/domain/apartados'; // SCRUM-1786f1 · qué línea es cabecera de apartado
 import { pieDePresupuesto, leerModoIva } from '../../../quotes/domain/presentacionIva';
 import { clausulasParaDocumento } from '../../../quotes/domain/clausulas';
 // SCRUM-688 · el número con su revisión lo forma el DOMINIO, no este documento.
@@ -1206,8 +1206,41 @@ function drawTableHeader() {
 
 drawTableHeader();
 
+// ── SCRUM-1786f1 · «Total del apartado» bajo cada apartado ────────────────────────────────────
+// Literal FIRMADO por el fundador en SCRUM-1786 c.22269; lanzado en c.22329. Una cabecera de
+// apartado es la línea que `lineasQueSuman` deja fuera (el criterio vive en `apartados.ts` y no se
+// copia aquí); sus líneas son las que la siguen hasta la próxima cabecera. La cifra es la suma de la
+// columna IMPORTE de esas líneas (sin IVA y sin el `dto` de línea, SCRUM-1446e), y sale de
+// `calcVatBreakdown(...).base`: la MISMA primitiva y el mismo redondeo que la base del pie. Sin
+// cabeceras no entra nunca aquí, y el papel sale como salía. Deuda: cuando exista `capitulos()`
+// (tramo c, S1) este recorrido pasa a usarla.
+const lineasQueSumanDelPapel = new Set<unknown>(lineasQueSumanDelDominio(params.lines as any));
+let apartadoAbierto: typeof params.lines | null = null;
+function pintarTotalDelApartado(lineasDelApartado: typeof params.lines) {
+  const importe = calcVatBreakdown(lineasDelApartado as any).base;
+  const rowH = 18;
+  if (doc.y + rowH > PAGE_BOTTOM) {
+    doc.addPage();
+    doc.font('Helvetica').fontSize(12).fillColor('black').text(`Detalle del ${locale.quoteVerb}:`);
+    doc.moveDown(0.5);
+    drawTableHeader();
+  }
+  const y = doc.y;
+  doc.font('Helvetica-Bold').fontSize(10).fillColor('black')
+    .text('Total del apartado', X_QTY, y, { width: X_VAT + W_VAT - X_QTY, align: 'right' })
+    .text(fmtImporte(importe), X_TOTAL, y, { width: W_TOTAL, align: 'right' });
+  doc.font('Helvetica');
+  doc.y = y + rowH;
+}
 
 params.lines.forEach((l) => {
+  if (!lineasQueSumanDelPapel.has(l)) {
+    if (apartadoAbierto) pintarTotalDelApartado(apartadoAbierto); // cierra el apartado anterior
+    apartadoAbierto = [];
+  } else if (apartadoAbierto) {
+    apartadoAbierto.push(l);
+  }
+
   // SCRUM-1446e · la columna de cada línea va SIN IVA, como en la factura (decisión del fundador:
   // SCRUM-1446 comentario 20917, P4). Antes sólo en `no_incluido`; ahora en los dos modos, y así
   // las líneas suman lo que el pie llama base. El Total sigue siendo el guardado.
@@ -1270,7 +1303,7 @@ params.lines.forEach((l) => {
   // avanzar el cursor al final de la fila
   doc.y = y + rowH;
 });
-
+  if (apartadoAbierto) pintarTotalDelApartado(apartadoAbierto);
 
 
 doc.moveDown();
