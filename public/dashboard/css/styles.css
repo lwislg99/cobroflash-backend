@@ -58,6 +58,18 @@
 .j1-prog-paso--pendiente .j1-prog-rotulo { color:var(--muted); }
 .j1-prog-paso--final .j1-prog-rotulo { color:var(--red-600); font-weight:700; letter-spacing:.02em; }
 .j1-prog-fecha { font-size:11px; color:var(--muted); }
+/* SCRUM-1787e · CONCEPTOS de la ficha de factura en móvil: a ≤640 px (el umbral de `.table--cards-mobile`
+   y `.table--stack-mobile`) cada línea es un bloque: el concepto a todo el ancho y debajo Cant., Precio,
+   IVA y Total en cuatro columnas, cada uno con su rótulo (`data-label`, leído de la cabecera). Sin scroll
+   lateral: medido a 390 px antes, 2 de 5 columnas a la vista y 197 px tras el scroll de la tabla. */
+@media (max-width: 640px) {
+  .j1-fac-conceptos thead { display:none; }
+  .j1-fac-conceptos tbody { display:block; }
+  .j1-fac-conceptos tbody tr { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:4px 8px; padding:10px 0; border-bottom:1px solid var(--border); }
+  .j1-fac-conceptos tbody td { display:block; min-width:0; padding:0; border:0; white-space:normal; overflow-wrap:anywhere; }
+  .j1-fac-conceptos tbody td:first-child { grid-column:1 / -1; }
+  .j1-fac-conceptos tbody td[data-label]::before { content:attr(data-label); display:block; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+}
 /* J1: fin del bloque SCRUM-1787b */
 
 /* ── SCRUM-731 · `hidden` TIENE QUE APAGAR. SIEMPRE. ───────────────────────────────────────

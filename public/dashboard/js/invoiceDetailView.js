@@ -376,9 +376,14 @@ async function fetchInvoiceDetail(id) {
       concSec.className = 'detail-section';
       concSec.innerHTML = '<h3 class="detail-section-title">Conceptos</h3>';
       const tablaConc = document.createElement('table');
-      tablaConc.className = 'table';
+      // SCRUM-1787e · `j1-fac-conceptos`: a ≤640 px la tabla se APILA (bloque J1 de styles.css): el
+      // concepto a todo el ancho y Cant./Precio/IVA/Total debajo, cada uno con su rótulo. Medido a 390 px
+      // antes del arreglo: 2 de 5 columnas a la vista y 197 px escondidos tras el scroll de la tabla.
+      tablaConc.className = 'table j1-fac-conceptos';
       tablaConc.innerHTML = '<thead><tr><th>Concepto</th><th>Cant.</th><th>Precio</th><th>IVA</th>'
         + '<th class="j1-fac-col-total">Total</th></tr></thead>';
+      // El rótulo de cada celda apilada se LEE de la cabecera: ni un texto nuevo, ni dos copias del mismo.
+      const rotulosConc = [...tablaConc.querySelectorAll('thead th')].map((th) => th.textContent);
       const tbodyConc = document.createElement('tbody');
       tablaConc.appendChild(tbodyConc);
       const numeracion = numerarLineas(lineasFac);
@@ -406,6 +411,7 @@ async function fetchInvoiceDetail(id) {
           + `<td>${fmtInvMoney(price, invoice.currency)}</td>`
           + `<td>${fmtTipoIvaEs(tax)} %</td>`
           + `<td class="amount j1-fac-col-total">${fmtInvMoney(importe.total, invoice.currency)}</td>`;
+        [...tr.children].forEach((td, k) => { if (k > 0) td.dataset.label = rotulosConc[k]; });
         const celda = tr.querySelector('.quote-line-cel');
         if (num.numero) {
           const n = document.createElement('span');
