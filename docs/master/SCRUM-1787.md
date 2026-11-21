@@ -448,3 +448,90 @@ Mutaciones previstas para su `MUTACIONES_QUE_ME_TUMBAN` (no existen todavía): q
 ## NO medido (1787f)
 
 Ninguna base: no sé si alguna tiene ya estas columnas. No corrí ningún test de `src/` ni de `public/`: el plan ⑦ y lo de los guards de ⑤ están leídos, no probados. No miré cómo pinta la cabecera de 1787b una línea más en móvil.
+
+# SCRUM-1787l · Las Observaciones del presupuesto pasan a la factura: la factura no tiene dónde guardarlas, DDL propuesto (solo docs; se construye después del ALTER)
+
+**Medido contra:** `origin/main` = `ccb69008b5aaa80d3f7cb712be77ce025c146238` · 2026-11-21T21:43:19Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: aviso → cicatriz J1 «Abrí el PDF de la F1 (lo fabriqué y lo leí) antes de cargar la skill `yaqu-verifactu-sif`» — no se pudo comprobar: el encargo la pedía OBLIGATORIA y leí `pdf.service.ts` y `crearFacturaEmitida.ts` (camino de emisión, sólo lectura) sin cargarla; no la cargué después porque paré antes de construir, y qué skill se ha cargado antes de leer un fichero no lo ve ningún guard del repositorio.
+
+Mutaciones: una vez → `docs/master/evidencias/SCRUM-1787/preview-ddl-1787l.mjs`
+
+Carril J1, sesión `jv-j1hj`, rama `scrum-1787l-notas-del-presupuesto-a-la-factura`. Nada en `src/`, `public/` ni `prisma/` (regla 40: el esquema se LEE). **Decisión de partida:** SCRUM-1787 c.22338 ②, respuesta literal del fundador **«1-Sí 2-Sí 3-GO»** a «¿Al facturar un presupuesto se pasan a la factura sus notas o el texto del pie? Las cláusulas de aceptación no pasarían.» Contexto: c.22301, filas 6 y 7. **Paro en el punto 3 del encargo: hace falta ALTER.**
+
+## ① Los textos del presupuesto: cuál es nota y cuál es cláusula
+
+| texto | dónde se guarda | qué pinta el PDF del presupuesto | ¿pasa a la factura? |
+|---|---|---|---|
+| Texto del pie | `Quote.docFooterText` (`prisma/schema.prisma:616`, `doc_footer_text`) | bloque final con el rótulo **`Observaciones`** (`pdf.service.ts:1410-1415`, `TITULO_OBSERVACIONES` `:62`, aprobado el 2-sep-2026 «en los tres documentos», `:59`) | **SÍ** (c.22338 ②: «notas o texto del pie») |
+| Texto de cabecera | `Quote.docHeaderText` (`schema.prisma:615`) | bajo la cabecera, sin rótulo (`pdf.service.ts:1065-1069`) | **sin decidir**: pregunta 1 |
+| Notas internas | `Quote.internalNotes` (`schema.prisma:703`, «nunca visibles al cliente») | no se imprimen | NO: son privadas |
+| Cláusulas de cierre (aceptación) | en el COMERCIO, no en el presupuesto: `Merchant.clausulasPresupuesto` (`schema.prisma:197`, SCRUM-656); el presupuesto sólo guarda las que excluye, `Quote.clausulasExcluidas` (`:754`) | tras las Observaciones (`pdf.service.ts:1521-1525`, `clausulasParaDocumento`) | **NO** (c.22338 ②) |
+
+Todo lo de esta tabla lo pinta `generateQuotePdf` (`pdf.service.ts:920`). En el editor, cabecera y pie salen juntos de `quotesView.js:1582` y viajan en `:5966` (S2, sólo leído).
+
+## ② La factura NO tiene campo de texto libre → hace falta ALTER
+
+`model Invoice` (`prisma/schema.prisma:775-1005`): sus campos de texto son cliente y emisor congelados, `number`, dirección de obra, `currency`, `pdfUrl`, `qrData`, `registerId`, `status`, `paidVia`, `clientComment` (`:883`, el comentario del CLIENTE al pagar) y `stageLabel` (`:884`, la etiqueta del tramo); `lines`, `tags`, `albaranRefs`, `deductsRefs` son `Json`; el resto son de VeriFactu. **Ninguno es un texto del profesional para el cliente.** Meter el pie en `lines`, `tags` o `stageLabel` sería inventar un uso (regla 27). El propio esquema lo dice en el comentario de SCRUM-593 (`:612-614`): «LA FACTURA NO LOS TIENE, y no es un olvido» — por SCRUM-665: `ensureInvoicePdf` regenera el PDF con el código de hoy y un bloque nuevo cambiaría facturas ya emitidas. **Con la columna nullable esa objeción no se activa:** las emitidas se quedan a NULL, y el bloque sólo se pinta con texto (como en el presupuesto, `:1410`), así que una regenerada sale igual que hoy.
+
+## ③ El DDL
+
+`docs/sql/scrum-1787-observaciones-factura.sql`, marcado PROPUESTO. Sacado OFFLINE por `docs/master/evidencias/SCRUM-1787/preview-ddl-1787l.mjs` (`previewMigracion({ schema, desde })` sobre copias en un temporal fuera del árbol; salida en `preview-ddl-1787l.salida.txt`). Línea PROPUESTA en `model Invoice`, detrás de `stageLabel` (`:884`), con el mismo nombre y tipo que su hermano del presupuesto:
+
+    docFooterText String?   @map("doc_footer_text") @db.Text
+
+| control | resultado |
+|---|---|
+| la herramienta respondió | ok |
+| DDL | `ALTER TABLE "invoices" ADD COLUMN "doc_footer_text" TEXT;` |
+| destructivas | 0 |
+| lista blanca de `_aplicar-sql-dev.mjs` | 1 permitida · 0 rechazadas |
+| control negativo (actual → actual) | `sin_cambios` |
+| control positivo SEMBRADO (DROP fabricado de `clientComment` en la factura) | destructivas 1, rechazadas 1 |
+| quitado el sembrado (su línea cambiada por `const sembrado = propuesto;` con `sed` en una copia, borrada después) | sale 2, «CIEGO (un control no se cumple)» |
+
+Verificación después del ALTER, comentada en el mismo `.sql`: 1 fila (`doc_footer_text`, `text`, `YES`); 0 filas = no aplicado en ESA base.
+
+## ④ Dónde se congela al emitir, y qué es de quién
+
+- **S1 (Luis):** la factura desde presupuesto nace en DOS rutas de `src/modules/system/app/routes/quotesAdmin.routes.ts`, y el encargo sólo nombraba la primera: `POST /:id/invoice` (`:232`, por tramos; `crearFacturaEmitida` en `:363-375`) y `POST /:id/invoice-manual` (`:561`, el documento entero; `:656-668`). Las dos leen el presupuesto con `include` (`:239-246` y `:568-571`), así que `quote.docFooterText` ya está cargado: no hace falta tocar las consultas.
+- **J1 (emisión, GO c.22338):** `crearFacturaEmitida` (`src/modules/invoicing/domain/crearFacturaEmitida.ts:60-70`) hace `tx.invoice.create({ data: { ...datos, … } })` y su tipo `DatosDeFacturaEmitida` (`:45-48`) es `InvoiceUncheckedCreateInput` menos cliente, emisor y dirección: **con la columna en el esquema, el texto se congela sin tocar esa función**. Lo que sí es J1: el PDF de factura (`generateInvoicePdf`, mismo fichero) y la ficha (`invoiceDetailView.js`), que lo pintan con el rótulo `Observaciones`. Ningún texto nuevo.
+- La huella y el XML no cambian: no llevan texto libre.
+
+**Diff literal para Luis (S1)**, a aplicar en el PR de construcción, después del ALTER:
+
+```diff
+--- a/src/modules/system/app/routes/quotesAdmin.routes.ts
++++ b/src/modules/system/app/routes/quotesAdmin.routes.ts
+@@ crearFacturaEmitida(tx, clienteCongelado, emisorCongelado, {
+         stageLabel: isCustomPlan ? tramo.stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
++        docFooterText: quote.docFooterText ?? null, // SCRUM-1787l (c.22338 ②): las Observaciones del presupuesto; las cláusulas NO
+         currency: quote.currency,
+@@ return crearFacturaEmitida(tx, clienteCongeladoEntera, emisorCongeladoEntera, {
+         stageLabel: null, // no es un tramo: es el documento entero
++        docFooterText: quote.docFooterText ?? null, // SCRUM-1787l (c.22338 ②): las Observaciones del presupuesto; las cláusulas NO
+         currency: quote.currency,
+```
+
+Pregunta abierta para el plan: si un presupuesto por tramos se factura en varias facturas, con este diff **cada una** lleva las Observaciones (pregunta 4).
+
+## ⑤ Plan del test (rojo primero, contra la RUTA montada en `app`)
+
+| caso | espera |
+|---|---|
+| facturar un presupuesto con `docFooterText` | la fila `invoices` lleva `doc_footer_text` igual; el PDF lleva `Observaciones` y el texto; la ficha también |
+| el mismo presupuesto con cláusulas de cierre en el comercio | ni el PDF de la factura ni la fila llevan el título ni el texto de ninguna cláusula |
+| control: presupuesto sin pie | `doc_footer_text` NULL y el PDF de factura igual que hoy |
+
+Huellas que saltarán al construir, por su vía: `tests/scrum222-deriva-arranque.test.mjs` (`node scripts/generar-sql-deriva.mjs`) y la entrada de `generateInvoicePdf` en `CAMBIOS_AUTORIZADOS` (603b/723), con cita a c.22338, como 1787c ⑦.
+
+## Preguntas para el fundador — ✅/❌
+
+1. **¿Pasa también el texto de CABECERA del presupuesto?** c.22338 dice «notas o texto del pie». Recomiendo que NO por ahora: sólo el pie, que es lo que firmaste.
+2. **¿Aplicamos el ALTER de `doc_footer_text` (A5 ①)?** Es aditivo, nullable y sin default; las facturas ya emitidas no cambian.
+3. **¿La rectificativa (R1) hereda las Observaciones de su factura original?** Recomiendo que NO: es otro documento, y lo que diga el original ya no aplica.
+4. **Un presupuesto cobrado por tramos da varias facturas: ¿llevan TODAS las Observaciones?** Recomiendo que sí: cada factura es un documento que el cliente lee suelto.
+
+## NO medido (1787l)
+
+Ninguna base: no sé si alguna tiene ya `invoices.doc_footer_text`. No corrí ningún test de `src/` ni de `public/`: el plan ⑤ está leído, no probado. No miré la factura desde albarán ni desde parte (¿deben llevar las `notas` del albarán?): fuera del GO. No cargué la skill `yaqu-verifactu-sif` (ver la línea A9).
