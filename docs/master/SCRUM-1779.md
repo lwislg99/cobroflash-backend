@@ -149,3 +149,86 @@ PDF fabricado con el `dist/` de esta rama por `evidencias/SCRUM-1779/pdf-banco.m
 - La suite entera por tramos: no cupo en el contexto de la sesión; la corre el obligatorio de CI (orden del orquestador).
 - Postgres (no hay ninguno en la máquina), los handlers HTTP de C1–C4 y de la R1.
 - **Para Luis (S1, exportaciones):** qué hacen el XML y el ZIP de VeriFactu con una factura emitida sin huella.
+
+## SCRUM-1779e · 21-nov: prueba en STAGING con la cuenta QA y Playwright — la factura con SIF apagado sale sin VeriFactu (J1, solo docs)
+
+**Medido contra:** `origin/main` = `beb63b0dde9597565244c26c66e0e78b7240a765` · 2026-11-21T04:25:33Z (cabecera `Date:` de `gh api -i zen`; sesión J1 `jv-j1go`, por encargo del orquestador `cobroflash-backend-87`; orden del fundador SCRUM-1779 c.22279)
+
+A9: aviso → A10 «Una captura bonita no prueba que el botón funcione.» — no se pudo comprobar: mi primera captura de la ficha era la LISTA (sha-256 idéntico, `a76fd53a…`): cambiar solo el `#hash` con `goto` no re-pintó, y mi comprobación («F260003» y «12,10» en el DOM) la cumplía también la fila de la lista; el conductor de Playwright vive fuera del repositorio y ningún guard lo ve. Rehecha entrando por «Ver detalle» y exigiendo «Anular factura…», la URL `#invoice-detail/1978` y 0 apariciones de `F260002`.
+
+**PASO 0.** `https://yaqu-staging-production.up.railway.app/health` → `version` `beb63b0dd…` (= `origin/main`; contiene `6bb74a248`, comprobado con `merge-base --is-ancestor`). Turno de staging (`turno-staging.mjs --base staging`): TOMADO a las 04:18:06Z, SOLTADO a las 04:25Z y comprobado LIBRE.
+
+**Flags del comercio QA (#2, `qa@staging.yaqu`, staging), leídos ANTES de tocar nada:** `merchants.flags` = `{"BIZUM_MANUAL_ENABLED":true,"INVOICING_ES_ENABLED":true}` — `INVOICING_ES_ENABLED` ya estaba en ON por override; `SIF_ENABLED` sin override (el valor de la variable en Railway: sin medir). Para no depender de esa variable, `SIF_ENABLED` → override **OFF** con `scripts/cambiar-flag-fiscal.mjs --merchant 2 --flag SIF_ENABLED --valor off --email qa@staging.yaqu` y `FLAG_CONFIRM=DATABASE_URL_STAGING` (auditoría `cambio_flag` id=1659, 04:19:59Z). **Se queda en OFF:** el script no sabe quitar un override, OFF es el valor por defecto de `flags.ts` y es lo que pide c.22279. `INVOICING_ES_ENABLED` no se tocó. Nada global, nada en producción.
+
+**Lo que se hizo (Playwright 1.x sobre Edge, contexto nuevo con `serviceWorkers:'block'`; sesión por `/auth/test-login`, el secreto leído del `.env` y nunca impreso):** Nueva factura → cliente «Cliente QA sin avisos» (#3936: `phone` y `email` NULL en la base, así que no hay a quién enviar nada) → un concepto «Prueba SCRUM-1779e · factura sin VeriFactu», 1 × 10,00 € + IVA 21 % → Emitir. Tras cada clic se exigió el bloque siguiente en el DOM (el total «12,10 €» antes de seguir; «Emitir factura» en la revisión). Respuesta: `POST /admin/invoices` 201, `factura.id` 1978, `number` **F260003**, `veriFactu:false`. Ningún envío: ni WhatsApp ni correo.
+
+**Base (staging, solo lectura, después de bajar el PDF):** F260003 `vfEstado` = `no_aplica`, `vfHash`/`vfPrevHash`/`vfTimestamp` = null; **0 filas en `VfSubmission`** para la factura 1978 y 0 para el comercio. Bajar el PDF no la selló (decisión ① de c.22245).
+
+**PDF, texto extraído con el lector de la casa** (`tests/_texto-del-pdf.mjs`, vía `docs/master/evidencias/SCRUM-1779/1779e-pdf-staging.mjs`; salida en `1779e-pdf-staging-salida.txt`): 15 líneas, con su número y su total (positivo sembrado); 0 de «VERI*FACTU», «VeriFactu», «verificable», «AEAT», «agenciatributaria», «Huella», «QR», «RD 1007/2023»; 0 imágenes y 0 operadores `Do`. **Control positivo:** el mismo lector sobre el PDF de **F260002** (id 1977, del mismo comercio en staging, sellada el 20-nov ANTES de 1779d) ve «VERI*FACTU» 1, «AEAT» 1, «Huella» 1 y 2 imágenes. Sin control el instrumento sale 2 (CIEGO); con la sellada en el lugar de la nueva sale 1 (ROJO). ⚠️ Error mío: el concepto que tecleé lleva la palabra «VeriFactu», y el lector la contó (1). Se excluye SOLO esa línea, por su prefijo, y el recuento bruto se imprime al lado.
+
+**Capturas** (`docs/master/evidencias/SCRUM-1779/`):
+
+| fichero | qué enseña |
+|---|---|
+| `1779e-01-lista-facturas.png` | la lista de Facturas con F260003 · Cliente QA sin avisos · 12,10 € · PENDIENTE |
+| `1779e-02-ficha-F260003.png` | la ficha de F260003 (escritorio): datos, «Descargar PDF», «Anular factura…»; sin VeriFactu, AEAT ni QR |
+| `1779e-03-pdf-F260003-sif-off.png` | el PDF de F260003 pintado con pdf.js: sin leyenda, sin huella, sin QR |
+| `1779e-04-pdf-F260002-control-sellada.png` | el control: el PDF de F260002, sellada, con la leyenda VERI*FACTU, la huella y el QR |
+| `1779e-05-ficha-F260003-movil.png` | la ficha en móvil (390 px) |
+| `1779e-06-pdf-F260003-movil.png` | el PDF de F260003 a 390 px |
+| `1779e-F260003-sif-off.pdf` · `1779e-F260002-control-sellada.pdf` | los dos PDF tal como los sirvió staging (datos del comercio QA, inventados) |
+
+**Hallazgo (no lo arreglo: es texto que ve el usuario y ruta de emisión, reglas 39 y 40):** con SIF en OFF, `POST /admin/invoices` contesta `message: «Se emitió la factura, pero falló su registro VeriFactu. Revísalo antes de entregarla.»` (`src/modules/system/app/routes/invoicesAdmin.routes.ts:240`; la misma frase en `src/modules/jobs/app/routes/albaranes.routes.ts:1466`), porque decide por `sellada` y no distingue «no falló: no se sella». La pantalla de la factura suelta no lo pinta (no se vio en la prueba); la ficha del Trabajo SÍ pinta un aviso por `veriFactu === false`: «⚠️ Factura emitida, revisa su registro» (`public/dashboard/js/jobDetailView.js:3986`) — leído en el código, no visto en pantalla. Para el piloto, cada factura emitida desde un Trabajo saldría con ese aviso falso.
+
+**Sin medir:** el valor de `SIF_ENABLED` en las variables de Railway de staging; las vías C1–C4 y la R1 en staging (solo la suelta); el correo y el WhatsApp (el cliente no tiene contacto, a propósito); producción.
+
+## SCRUM-1779f · 21-nov: con `SIF_ENABLED` en OFF la emisión suelta no avisa de un fallo de VeriFactu que no ha ocurrido (J1, GO c.22285)
+
+**Medido contra:** `origin/main` = `e24f2828ed68d0159d53e546fe6fb25903f79972` · 2026-11-21T04:44:20Z (cabecera `Date:` de `gh api -i zen`; sesión J1 `jv-j1gr`, por encargo del orquestador `cobroflash-backend-87`)
+
+A9: comprobación → `tests/scrum1779f-sin-aviso-falso-con-sif-off.test.mjs`
+Mutaciones: catálogo → tests/scrum1779f-sin-aviso-falso-con-sif-off.test.mjs
+
+### Qué cambia
+
+- `src/modules/system/app/routes/invoicesAdmin.routes.ts` (POST `/admin/invoices`, J1): el `message` de fallo sale SOLO con `pendiente_de_sellado`, el criterio de `quotesAdmin.routes.ts` («`no_aplica` NO es un fallo»). `veriFactu` sigue siendo «tiene sello»: `false` sin sello, nunca `true` sin él (decisión del orquestador ③, sobre la medición de Jira c.22286). Sin texto nuevo.
+- El ORIGEN (`sellarTrasEmision`) no se toca: que dejara de avisar sin tocar las rutas exigía devolver `sellado` sin sello (mentira, rompe `reintentoSellado.ts` e `invoicing.ts`, y `veriFactu:true` sería un claim fiscal). Medición de las rutas y de los lectores de `veriFactu`: Jira c.22286.
+- De paso, el mismo arreglo quita el aviso falso que ya salía antes de 1779d con un comercio no-ES o sin NIF (`no_aplica`): leído en el código, no ejecutado.
+
+### Medido
+
+- Rojo primero contra el `dist/` sin el cambio: 3 casos, 1 fail (el de SIF OFF), 2 pass (los controles). Con el cambio: 3/3.
+- `tsc -p .` con tipos: salida 0.
+- Dirigida (18 ficheros: 1779f, 1779d, 178, 290 ×3, 887, 523d, 291, 347, 1185, 222, 525d, 419, 1344, 836, 603b, 723): 191 casos, 187 pass, 0 fail, 4 skip (178 y 222 sin base). `scrum456`: no existe ningún fichero con ese prefijo.
+- Mutación con `aplicarUna` (driver `docs/master/evidencias/SCRUM-1779/mutaciones-1779d.mjs`): «con SIF OFF vuelve a decir que falló» TUMBA, 0 colaterales; control sembrado (un `cae` que no existe) sale CIEGO. `git status` limpio después.
+- Error mío: medí las rutas antes de cargar la skill `yaqu-verifactu-sif`, que es obligatoria; la cargué antes de escribir código.
+
+### Para Luis (S1 y S2) · diff literal, sin texto nuevo
+
+Sin esto, la ficha del Trabajo sigue pintando «⚠️ Factura emitida, revisa su registro» con SIF OFF (medido por `jv-j1go`, c.22283).
+
+S1 · `src/modules/jobs/app/routes/albaranes.routes.ts` (facturar-parcial, hoy `:1451` y `:1466`):
+
+```
+-    const sellada = (await sellarTrasEmision(invoice, merchant, prisma)).estado === SELLADO_HECHO;
++    const estadoSellado = (await sellarTrasEmision(invoice, merchant, prisma)).estado;
++    const sellada = estadoSellado === SELLADO_HECHO;
+...
+-      ...(sellada ? {} : { message: 'Se emitió la factura, pero falló su registro VeriFactu. Revísalo antes de entregarla.' }),
++      ...(estadoSellado === SELLADO_PENDIENTE ? { message: 'Se emitió la factura, pero falló su registro VeriFactu. Revísalo antes de entregarla.' } : {}),
+```
+
+Y en convertir-en-factura (`:1731`, `:1784`) el mismo criterio si `MICROCOPY_PENDIENTE_290` también dice «falló» (sin leer).
+
+S2 · `public/dashboard/js/jobDetailView.js:3986` (hace falta aunque S1 esté arreglado, porque `veriFactu` sigue siendo `false` sin sello):
+
+```
+-      showToast(d && d.veriFactu === false ? '⚠️ Factura emitida, revisa su registro' : '✓ Factura emitida.');
++      showToast(d && d.message ? '⚠️ Factura emitida, revisa su registro' : '✓ Factura emitida.');
+```
+
+### Sin medir
+
+- La suite entera por tramos: no cabe en el contexto de esta sesión (182k al empezar el registro); la corre el obligatorio de CI.
+- SCRUM-1780 (`facturaDesdeParte.ts`, de `jv-j1gp`): el fichero no está ni en `origin/main` ni en `scrum-1780b-ddl-y-diseno-factura-desde-parte` @ `df75c91fbe4b4ffb124ce45ea078170959760186`; no sé si devuelve el mismo `message`. No se toca desde aquí.
+- Postgres, staging y producción: nada.
