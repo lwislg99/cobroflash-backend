@@ -396,6 +396,12 @@ const GATEADOS_DECLARADOS = Object.freeze({
   'scrum127-paywall-bloquea.test.mjs': 1,
   'scrum173-cadena-verifactu-serializada.test.mjs': 7,
   'scrum178-emision-manual.test.mjs': 2,
+  // SCRUM-1780c: el que mira que dos «facturar este parte» a la vez dejan UNA factura, un 409 y el
+  // contador subido uno. Necesita banco porque lo que vigila es del MOTOR: que la tx perdedora se
+  // deshace entera (factura y número) y que su UPDATE espera al bloqueo de la fila y vuelve a evaluar
+  // `invoiceId: null` (READ COMMITTED; se mira en `pg_blocking_pids`). Los once casos del banco en
+  // memoria (`scrum1780c-factura-desde-parte`) corren siempre.
+  'scrum1780c-simultanea-postgres.test.mjs': 1,
   'scrum92-login-operario.test.mjs': 1,
   'scrum814-carrera-del-tramo.gated.test.mjs': 3,
   'scrum592-concurrencia-serie.test.mjs': 4,
