@@ -51,6 +51,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: 'dfDefs.forEach(function (d) { out[d.key] = d.key === "phone" ? true : dfChecks[d.key].checked; });',
     cae: 'SCRUM-1785 · 🔴 EDITOR: desmarcar «Teléfono» viaja al servidor como phone=false',
   },
+  {
+    // Ocultar el del cliente NO debe llevarse el del comercio (relevo jv-j1gm).
+    fichero: 'src/modules/quotes/domain/presupuestoParaPdf.ts',
+    de: 'whatsappPhone: merchant.whatsappPhone ?? null,',
+    a: 'whatsappPhone: (quote.docFields as any)?.phone === false ? null : merchant.whatsappPhone ?? null,',
+    cae: 'PDF: con «Teléfono» oculto sale el WhatsApp del COMERCIO en el bloque del emisor',
+  },
 ];
 
 // Tokens SIN espacios e improbables: si aparecen en el papel no es coincidencia, y el salto de
@@ -110,6 +117,37 @@ test('SCRUM-1785 · PDF: los cuatro ocultos a la vez — no sale ninguno', async
   const t = await textoDelPdf({ name: false, phone: false, taxId: false, email: false });
   assert.ok(t.includes(CONCEPTO), 'SUELO: el PDF no se ha leído');
   for (const d of DATOS) assert.equal(t.includes(d.valor), false, `🔴 todo oculto y el PDF imprime ${d.rotulo}`);
+});
+
+// ── ①bis · EL OTRO NÚMERO DEL PAPEL: el WhatsApp DEL COMERCIO (relevo jv-j1gm) ────────────────
+// Respuesta del fundador (SCRUM-1785 c.22271): el que no se oculta es «el del cliente, creo»; si el
+// que sale es el del comercio, que vaya rotulado como WhatsApp de la empresa. Medido con
+// `docs/master/evidencias/scrum1785/pdf-telefonos.mjs`: con «Teléfono» oculto el del cliente NO
+// sale y el del comercio SÍ, en el bloque del emisor (antes de «Cliente:»). Este caso fija las DOS
+// mitades: que ocultar no se lleve el del comercio es tan comportamiento como que quite el del
+// cliente. El rótulo (hoy «WhatsApp <número>», sin nombre) espera la firma del fundador: aquí NO se
+// fija su texto, sólo de quién es el número y en qué bloque cae.
+const TEL_COMERCIO = '611178522';
+
+test('SCRUM-1785 · PDF: con «Teléfono» oculto sale el WhatsApp del COMERCIO en el bloque del emisor, y el del cliente no', async () => {
+  const quote = {
+    id: 17852, quoteNumber: 1785, currency: 'EUR', total: '121.00',
+    lines: [{ concept: CONCEPTO, qty: 1, price: 100, tax: 0.21 }], docFields: { phone: false },
+  };
+  const { generateQuotePdf } = await import('../dist/lib/pdf.js');
+  const { outPath } = await generateQuotePdf(paramsDePresupuestoParaPdf({
+    quote, merchant: { ...MERCHANT, whatsappPhone: TEL_COMERCIO }, customer: CLIENTE,
+  }));
+  let leido;
+  try { leido = extraerTextoPdf(fs.readFileSync(outPath)); } finally { fs.rmSync(outPath, { force: true }); }
+  assert.equal(leido.ok, true, `CIEGO: el lector no sabe leer este PDF (${leido.motivo})`);
+  const t = leido.texto;
+  assert.ok(t.includes(CONCEPTO), 'SUELO: el PDF no se ha leído');
+  assert.equal(t.includes(CLIENTE.phone), false, '🔴 «Teléfono» oculto y el PDF imprime el del cliente');
+  const iCom = t.indexOf(TEL_COMERCIO);
+  const iCli = t.indexOf('Cliente:');
+  assert.ok(iCom >= 0, '🔴 ocultar el teléfono del cliente se ha llevado el WhatsApp del comercio');
+  assert.ok(iCli > iCom, `🔴 el WhatsApp del comercio no cae en el bloque del emisor (pos ${iCom}, «Cliente:» en ${iCli})`);
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════
