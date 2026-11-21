@@ -154,8 +154,8 @@ SCRUM-1785 c.22281, literal «El nombre comercial sí».
 
 # SCRUM-1785c · PDF del presupuesto, comercio sin nombre comercial: «WhatsApp de <razón social>: <número>» (firma c.22328)
 
-**Medido contra:** `origin/main` = `8de57b45ac4b20bfe14c1d54b37ea47cadc02a32` · 2026-11-21T19:40:48Z (cabecera `Date:` de `gh api -i zen`)
-A9: sin fallo que generalice — el rojo se vio antes del cambio (2 de 3 casos nuevos caían) y las dos mutaciones del catálogo salieron VIVAS con el árbol restaurado; el único rojo de la dirigida fue `scrum854` por correrla antes de escribir este tramo, que es su trabajo
+**Medido contra:** `origin/main` = `c4981dc8f072ab1cbbfc5ab8872b95c81c4cb339` · 2026-11-21T20:40:12Z (cabecera `Date:` de `gh api -i zen`)
+A9: aviso → cicatriz J1 «Lancé la suite con la TEMP de la máquina, que lleva un espacio, aunque el encargo pedía TEMP sin espacios: cayó `scrum1289b`; y la ruta corta 8.3 (`JAVIER~1`) tampoco vale, porque tumba `scrum1298b`; las dos pasan con una carpeta real sin espacios» — no se pudo comprobar: la TEMP con la que una sesión lanza la suite no pasa por ningún guard del repositorio
 Mutaciones: catálogo → `tests/scrum1785b-whatsapp-con-nombre-comercial.test.mjs`
 
 Sesión jv-j1hf (J1). **Supera el «Sin nombre comercial — PARA FIRMA APARTE» del tramo 1785b:** el fundador firmó en
@@ -178,7 +178,21 @@ SCRUM-1785 c.22328, respuesta literal «2-Sí» a «¿Usamos ahí la razón soci
   tumbando el mismo caso. Árbol restaurado tras las dos (src y dist con el arreglo, comprobado con `grep`).
 - **Huellas congeladas:** `scrum603b`, `scrum723` y `scrum523d` en verde con el cambio; nada recongelado.
 - **Tanda dirigida** (24 ficheros: `scrum1785*`, 262, 603b, 723, 523d, 1157/1215*/1415, 836, 719, 1294, 267, 273,
-  525d, 854): 204 casos · 203 pasan · 1 cae (`scrum854` ②, este tramo aún no escrito) · 0 saltados.
+  525d, 854): 204 casos · 203 pasan · 1 cae (`scrum854` ②, este tramo aún no escrito) · 0 saltados. Con el tramo
+  escrito, más los 5 de árbol entero (195, 414, 694, 710b, 737): 242/242. Tipos: `tsc -p . --noEmit` salida 0.
+- **Main se movió dos veces mientras medía; se trajo con `git merge origin/main`, sin conflictos:** ① a `c27b1dc2`
+  (1787d/1787f, con columnas nuevas: el cliente compartido ya regenerado tumbaba `scrum461` en mi árbol viejo);
+  sobre ese árbol fusionado, dirigida + 5 de árbol entero + `scrum1787d` + `scrum461`: 259/259, y **suite entera
+  por tramos: VERDE, 15 de 15, 1743 ficheros · 14.085 tests · 13.900 pasan · 0 caen** (el resto, saltados).
+  ② a `c4981dc8` (#3305, 1786f1, que también toca `generateQuotePdf`): tras ese merge se repitió sólo la dirigida,
+  no la suite entera: los 24 + 5 de árbol entero + `scrum1787d` + `scrum1786f1` + `scrum461`, 263 casos, 262 pasan
+  y 1 cae (`scrum1294`: mi A9 citaba un trozo de la cicatriz y pide la frase entera; corregido, los 6 del registro
+  43/43); `guards:entrada` 15 en verde; tipos `tsc -p . --noEmit` salida 0.
+- **La TEMP de la suite (fallo mío):** los tramos 1–3 de la primera pasada corrieron con la TEMP de la máquina, que
+  lleva un espacio, y cayeron 2 casos de `scrum1289b` (lo mismo que midió 1785b). Con la ruta corta 8.3
+  (`C:\Users\JAVIER~1\…`) pasa `scrum1289b` pero caen 2 de `scrum1298b` (compara la ruta con la que devuelve git,
+  que es la larga). Con una carpeta real sin espacios (`C:\Users\Public\tmp-jv-j1hf`) pasan los dos; la pasada
+  entera que vale es la de esa TEMP.
 - La sonda `docs/master/evidencias/scrum1785/sin-nombre-comercial.mjs` describe lo que pintaba el PDF ANTES de esta
   firma (rótulo sin nombre con `name` vacío); no se reescribe: es la medición de partida de 1785b.
 - **No medido:** base, staging, yaqu.app (si «Ajustes» deja vaciar el nombre comercial sigue sin medir); la vista
