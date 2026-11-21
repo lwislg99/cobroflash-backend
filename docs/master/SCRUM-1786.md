@@ -132,3 +132,49 @@ Ninguna base de datos (ni cuántos presupuestos o facturas llevan cabeceras). La
 una cabecera con descripción. Los PDF pintados (solo leídos). La página de firma y el portal con
 cabeceras. El paso presupuesto → albarán línea a línea (solo su forma en el esquema). El BOE para la
 factura agrupada.
+
+## SCRUM-1786b · Las cabeceras de apartado no pasan a `Invoice.lines` al facturar (camino de emisión, con GO)
+
+**Puesto:** J1 (jv-j1gn) · **Rama:** `scrum-1786b-cabeceras-fuera-de-factura` · 21-nov-2026
+**Medido contra:** `origin/main` = `db789fd0fb7d604b718529ca1d861e351fc2e756` · 2026-11-21T04:09:21Z (cabecera `Date:` de `gh api -i zen`)
+A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
+Mutaciones: catálogo → `tests/scrum1786b-cabeceras-fuera-de-factura.test.mjs`
+
+GO del fundador (regla 40): SCRUM-1786 c.22269, P1. Defecto medido en 1786a (§2) y reproducido aquí,
+corriéndolo contra el `dist/` de antes del arreglo: con una cabecera, la factura de un tramo lleva 2
+líneas, el desglose `[{rate:21,…},{rate:0,base:0,cuota:0}]`, y `clasificarDetalleDesglose` lanza
+`DesgloseNoClasificableError` («tramo de IVA al 0%»). Con el arreglo: 1 línea, 1 tramo, no lanza.
+
+**Dónde se quitan (medidos los 7 llamadores de `lineasParaFacturar`).** NO dentro de `lineasParaFacturar`:
+el albarán (`albaranes.routes.ts:1631` → `casarLineas`) busca en su salida la línea firmada POR POSICIÓN
+(`quoteLineIndex`), y quitar ahí las cabeceras correría los índices y facturaría el precio de otra línea.
+Allí una cabecera ya no llegaba a factura (sin precio, va al adicional). Se quitan en:
+- `stageLines` (`invoiceLines.service.ts`, J1): el embudo de los cuatro caminos de tramos (`quotes.routes`,
+  `jobs.routes`, `quotesAdmin.routes` ×2, todos S1 y sin tocar) y de la vista del plan (`billingPlanView`,
+  vía `stageAmountsFromLines`), que así sigue prometiendo lo mismo que factura.
+- `src/lib/invoicing.ts` (J1, factura desde el cobro): `lineasQueSuman(lineasParaFacturar(…))`.
+El criterio de «cabecera» es `lineasQueSuman` de `apartados.ts` (S1, solo importado, no editado).
+Cambio NEUTRO EN LÍNEAS (5+/5−): hay anclas `fichero:línea` hacia los dos ficheros en docs.
+
+**Sin apartados, nada cambia:** huella sha256 de todas las salidas (las líneas, los tramos de los planes
+entero, 50/50 y 30/70 y la vista del plan) sobre 6 presupuestos sin cabeceras, con dto de línea, con global
+de un IVA y de dos, y vacío. Se tomó del `dist/` de 609a46472 (antes del arreglo) y sale idéntica después.
+No cambian ni importes, ni IVA, ni XML, ni huella. No se ha tocado ninguna factura emitida (regla 29). Los
+ficheros congelados de 523d no se tocan (523d en verde).
+
+**Pruebas:** test nuevo, 10 casos: ROJO antes del arreglo (7 caídos, por la cabecera en la factura) y verde
+después. Dirigida: 188 casos, 178 pasan, 0 caen y 10 saltados; los 10 son gateados por base
+(`QA_DB_TEST`/`LIBRO_PG_URL`/`TRAMOS_PG_URL`: 178, 207, 222, 814), así que NO se corrieron. Incluye 523d,
+347, 1185, 222, 525d, 419, 887, 887b, 141, 246, 655, 814, 1054, 1585, 1669b, 1717, 178, 207 y `verifactu`.
+`scrum456` no existe en `tests/` con ese prefijo. Build con tipos (`tsc -p .`): salida 0.
+🔴 **NO se han corrido la suite entera ni los tramos de emisión de la suite:** no cabían en el contexto (aviso
+de 200k). Lo verá el check obligatorio del PR.
+
+**Mutaciones** (`aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, solo este guard, `git status` vacío
+después): «las cabeceras vuelven a pasar por `stageLines`» → VIVA; «vuelven a pasar por `lib/invoicing.ts`» → VIVA.
+
+**Errores míos, cazados por guards que ya existían:** ① primero envolví la llamada del cobro en una función
+nueva (`lineasDeLaFactura`), y `scrum887` cayó porque ya no veía `lineasParaFacturar` en `lib/invoicing.ts`.
+Se cambió el código, no el guard (regla 41). ② Una línea de import de más movió dos anclas con testigo de
+`docs/legal/AUDITORIA_CAMINO_EMISION.md:148`, y `scrum525d` cayó. Se dejó el cambio neutro en líneas, en vez
+de reanclar.
