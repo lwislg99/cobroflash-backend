@@ -313,6 +313,13 @@ async function fetchInvoiceDetail(id) {
     addDefRow(dlCobro, 'Vence el', invoice.dueDate
       ? new Date(invoice.dueDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
       : null);
+    // SCRUM-1787i · «Formas de pago» (firmado, c.22345 ①): una por cada forma CONGELADA al emitir, sólo
+    // si constan. Una clave fuera del conjunto no se pinta en crudo: no tiene literal firmado.
+    const FORMAS_DE_PAGO_FIRMADAS = { card: 'Tarjeta', bizum: 'Bizum', transfer: 'Transferencia' };
+    const formas = Array.isArray(invoice.payMethods)
+      ? invoice.payMethods.map((f) => FORMAS_DE_PAGO_FIRMADAS[f]).filter(Boolean)
+      : [];
+    addDefRow(dlCobro, 'Formas de pago', formas.length ? formas.join(', ') : null);
     addDefRow(dlCobro, 'Método', metodo);
     addDefRow(dlCobro, 'Pagada', invoice.paidAt ? new Date(invoice.paidAt).toLocaleString('es-ES') : null);
     addDefRow(dlCobro, 'Rectifica a', invoice.rectifies ? invoice.rectifies.number : null);

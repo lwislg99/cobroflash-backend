@@ -17,6 +17,8 @@
 // ⑥ control: los caminos que no cambian (los otros orígenes de `emitInvoice`) quedan a NULL
 // ⑦ la ruta de la suelta pasa los dos campos (leído en el fuente)
 // ⑧ la ficha pinta `Vence el` con la fecha, y no lo pinta si no consta
+// ⑨ la ficha pinta `Formas de pago` con los literales firmados en c.22345 ① (`Tarjeta`, `Bizum`,
+//    `Transferencia`), una por cada forma congelada, y no la pinta si no consta ninguna
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -40,6 +42,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: "addDefRow(dlCobro, 'Vence el',",
     a: "void (",
     cae: 'SCRUM-1787i ⑧ la ficha pinta «Vence el» con la fecha congelada',
+  },
+  {
+    // La ficha deja de pintar la fila de las formas de pago.
+    fichero: 'public/dashboard/js/invoiceDetailView.js',
+    de: "addDefRow(dlCobro, 'Formas de pago',",
+    a: "void (",
+    cae: 'SCRUM-1787i ⑨ la ficha pinta «Formas de pago» con los literales firmados',
   },
 ];
 
@@ -224,4 +233,32 @@ test('SCRUM-1787i ⑧ una factura sin vencimiento no pinta «Vence el»', async 
   const sin = await fichaDe({ dueDate: null });
   assert.ok(sin.rotulos.includes('Cliente'), '🔴 CIEGO: la ficha no pinta ni «Cliente»');
   assert.equal(sin.rotulos.includes('Vence el'), false, '🔴 la ficha pinta «Vence el» sin fecha');
+});
+
+// ── ⑨ «Formas de pago» en la ficha (literales FIRMADOS en c.22345 ①) ───────────────────────────
+const FORMAS_FIRMADAS = Object.freeze({ card: 'Tarjeta', bizum: 'Bizum', transfer: 'Transferencia' });
+
+test('SCRUM-1787i ⑨ la ficha pinta «Formas de pago» con los literales firmados', async () => {
+  // Las claves salen del esquema del presupuesto: si mañana acepta una forma más sin literal, esto cae.
+  const delPresupuesto = CreateQuoteSchema.shape.payMethods.unwrap().element.options;
+  assert.deepEqual([...delPresupuesto].sort(), Object.keys(FORMAS_FIRMADAS).sort(), '🔴 hay una forma de pago sin literal firmado');
+  const todas = await fichaDe({ payMethods: ['card', 'bizum', 'transfer'] });
+  assert.ok(todas.rotulos.includes('Cliente'), '🔴 CIEGO: la ficha no pinta ni «Cliente»');
+  assert.ok(todas.rotulos.includes('Formas de pago'), `🔴 la ficha no pinta «Formas de pago» (rótulos: ${todas.rotulos.join(' | ')})`);
+  const valor = todas.valorDe('Formas de pago');
+  for (const literal of Object.values(FORMAS_FIRMADAS)) {
+    assert.ok(valor.split(', ').includes(literal), `🔴 falta el literal «${literal}» en «${valor}»`);
+  }
+  assert.doesNotMatch(valor, /card|bizum\b|transfer\b/, `🔴 la ficha pinta claves crudas: «${valor}»`);
+  // Sólo las congeladas: una factura con una forma enseña esa y ninguna más.
+  const una = await fichaDe({ payMethods: ['bizum'] });
+  assert.equal(una.valorDe('Formas de pago'), 'Bizum');
+});
+
+test('SCRUM-1787i ⑨ una factura sin formas de pago congeladas no pinta «Formas de pago»', async () => {
+  for (const payMethods of [null, undefined, [], ['cheque']]) {
+    const sin = await fichaDe({ payMethods });
+    assert.ok(sin.rotulos.includes('Cliente'), '🔴 CIEGO: la ficha no pinta ni «Cliente»');
+    assert.equal(sin.rotulos.includes('Formas de pago'), false, `🔴 pinta «Formas de pago» con ${JSON.stringify(payMethods)}`);
+  }
 });
