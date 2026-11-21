@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<response>
+  <status>
+    <code>200</code>
+    <text>ok</text>
+  </status>
+  <data>
+    <bloque id="a156" tipo="precepto" titulo="Artículo 156">
+      <version id_norma="BOE-A-1992-28740" fecha_publicacion="19921229" fecha_vigencia="19930101">
+        <p class="articulo">Artículo 156. Recargo de equivalencia.</p>
+        <p class="parrafo">El recargo de equivalencia se exigirá en las siguientes operaciones que estén sujetas y no exentas del Impuesto sobre el Valor Añadido:</p>
+        <p class="parrafo_2">1.º Las entregas de bienes muebles o semovientes que los empresarios efectúen a comerciantes minoristas que no sean sociedades mercantiles.</p>
+        <p class="parrafo">2.º Las adquisiciones intracomunitarias o importaciones de bienes realizadas por los comerciantes a que se refiere el número anterior.</p>
+        <p class="parrafo">3.º Las adquisiciones de bienes realizadas por los citados comerciantes a que se refiere el artículo 84, apartado uno, número 2.º de esta Ley.</p>
+      </version>
+    </bloque>
+  </data>
+</response>

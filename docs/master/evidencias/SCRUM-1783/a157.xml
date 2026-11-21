@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<response>
+  <status>
+    <code>200</code>
+    <text>ok</text>
+  </status>
+  <data>
+    <bloque id="a157" tipo="precepto" titulo="Artículo 157">
+      <version id_norma="BOE-A-1992-28740" fecha_publicacion="19921229" fecha_vigencia="19930101">
+        <p class="articulo">Artículo 157. Supuestos de no aplicación del recargo de equivalencia.</p>
+        <p class="parrafo">Se exceptúan de lo dispuesto en el artículo anterior las siguientes operaciones:</p>
+        <p class="parrafo_2">1.º Las entregas efectuadas a comerciantes que acrediten, en la forma que reglamentariamente se determine, no estar sometidos al régimen especial del recargo de equivalencia.</p>
+        <p class="parrafo">2.º Las entregas efectuadas por los sujetos pasivos acogidos al régimen especial de la agricultura, ganadería y pesca con sujeción a las normas que regulan dicho régimen especial.</p>
+        <p class="parrafo">3.º Las entregas, adquisiciones intracomunitarias e importaciones de bienes de cualquier naturaleza que no sean objeto de comercio por el adquirente.</p>
+        <p class="parrafo">4.º Las operaciones del número anterior relativas a artículos excluidos de la aplicación del régimen especial del recargo de equivalencia.</p>
+      </version>
+    </bloque>
+  </data>
+</response>

@@ -13,6 +13,8 @@
 // Es trabajo NUEVO: no hay ninguna referencia firmada de la que sacar su importe. Ponerle precio
 // aquí sería inventarlo. Nace en `draft` y no se manda solo: el profesional le pone importe y lo
 // envía. Mandarlo a 0 € para que lo firmen sería pedir que firmen la nada por otra vía.
+// SCRUM-1779d · este banco AFIRMA el sellado: con SIF_ENABLED en OFF (el defecto) la emisión ya no sella (SCRUM-1779 c.22239), así que se enciende aquí y lo afirmado no cambia.
+process.env.SIF_ENABLED = 'true';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
