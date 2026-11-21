@@ -1,0 +1,57 @@
+   líneas excluidas por ser el concepto tecleado: 1 · recuento BRUTO: {"VERI*FACTU":0,"VeriFactu":1,"verificable":0,"AEAT":0,"agenciatributaria":0,"Huella":0,"QR":0,"RD 1007/2023":0}
+── F260003 · SIF OFF (la nueva) · 2366 B · lineasDePdf · 15 líneas
+   | FACTURA
+   | Nº F260003
+   | Fecha: 21/11/2026
+   | EMISORCLIENTE
+   | QA Staging S.L.
+   | Cliente QA sin avisos
+   | NIF/CIF: B12345674
+   | C/ Staging 1, 28000 Madrid
+   | qa@staging.yaqu
+   | CONCEPTOCANT.PRECIO UNITIVA %IMPORTE
+   | Prueba SCRUM-1779e · factura sin VeriFactu1,0010,0021%10,00
+   | Base imponible:10,00 EUR
+   | IVA 21%:2,10 EUR
+   | TOTAL:12,10 EUR
+   | Factura generada automáticamente por YaQu · yaqu.app
+   menciones: {"VERI*FACTU":0,"VeriFactu":0,"verificable":0,"AEAT":0,"agenciatributaria":0,"Huella":0,"QR":0,"RD 1007/2023":0} · imágenes: 0 · operadores Do: 0
+OK    población: la nueva se lee (15 líneas) y lleva su número F260003
+OK    positivo sembrado en la propia nueva: el total «12,10» aparece
+OK    la nueva NO lleva «VERI*FACTU» (0)
+OK    la nueva NO lleva «VeriFactu» (0)
+OK    la nueva NO lleva «verificable» (0)
+OK    la nueva NO lleva «AEAT» (0)
+OK    la nueva NO lleva «agenciatributaria» (0)
+OK    la nueva NO lleva «Huella» (0)
+OK    la nueva NO lleva «QR» (0)
+OK    la nueva NO lleva «RD 1007/2023» (0)
+OK    la nueva no lleva imagen (QR): 0 objetos imagen, 0 Do
+   líneas excluidas por ser el concepto tecleado: 0 · recuento BRUTO: {"VERI*FACTU":1,"VeriFactu":1,"verificable":2,"AEAT":1,"agenciatributaria":0,"Huella":1,"QR":1,"RD 1007/2023":2}
+── F260002 · sellada (CONTROL POSITIVO) · 6502 B · lineasDePdf · 23 líneas
+   | FACTURA
+   | Nº F260002
+   | Fecha: 20/11/2026
+   | EMISORCLIENTE
+   | QA Staging S.L.
+   | Cliente QA sin avisos
+   | NIF/CIF: B12345674
+   | C/ Staging 1, 28000 Madrid
+   | qa@staging.yaqu
+   | CONCEPTOCANT.PRECIO UNITIVA %IMPORTE
+   | CIERRES 14 · línea al 21 %1,0050,0021%50,00
+   | CIERRES 14 · línea al 10 %1,0030,0010%30,00
+   | Base imponible:80,00 EUR
+   | Base imponible por tipo
+   | 21%50,00 EURIVA 21%:10,50 EUR
+   | 10%30,00 EURIVA 10%:3,00 EUR
+   | TOTAL:93,50 EUR
+   | Régimen especial del criterio de caja
+   | Factura verificable en la sede electrónica de la AEAT
+   | VERI*FACTU — escanea el QR para verificarla (RD 1007/2023).
+   | Huella: F9CCD976227E1514030BAD441F5A12B9
+   | Factura generada automáticamente por YaQu · yaqu.app
+   | Sistema de facturación verificable conforme al RD 1007/2023 (VeriFactu).
+   menciones: {"VERI*FACTU":1,"VeriFactu":1,"verificable":2,"AEAT":1,"agenciatributaria":0,"Huella":1,"QR":1,"RD 1007/2023":2} · imágenes: 2 · operadores Do: 1
+OK    control: el mismo lector SÍ ve en la sellada «VERI*FACTU»=1, «AEAT»=1, imágenes=2
+VERDE · la nueva sale sin VeriFactu y el control lo ve
