@@ -206,3 +206,5 @@ La nota del piloto de c.22229 no estaba en el máster (c.22289: «no llegó a en
 - La acreditación de SCRUM-1097 (c.22288 ③: su guard pasará a dar «todos») y el aviso falso de los albaranes (c.22287, S1/S2): fuera de este tramo.
 
 **Sin medir:** producción (ni la variable de Railway ni `SIF_ENABLED`: los pone y comprueba el fundador); el comportamiento del producto con la variable en ON (lo midió J1 en 1779a y 1779e).
+
+**Tests en local, con su población:** `npm run guards:entrada` 170/170 (15 guards, EXIT 0). Los del máster y de árbol entero (`scrum267`, `scrum273`, `scrum525d`, `scrum854`, `scrum921c`, `scrum1294`, `scrum1500`, `scrum195-url-bd-sin-fuga`, `scrum414`, `scrum694`, `scrum710b`, `scrum737`), lanzados por prefijo: 109 casos, 106 ok y 3 not ok; los 3 son `scrum195-lectura-serializacion`, `scrum195-loop-adicional` y `scrum195-pertenencia-por-job`, que el prefijo `scrum195-` arrastró de más y caen por `ERR_MODULE_NOT_FOUND` de `dist/` (este árbol no tiene `dist/`), no por este cambio. **La suite entera NO corrió en local:** no cabía en el contexto (145k medidos); se lo dije al orquestador antes de empujar y la corre el obligatorio de CI.
