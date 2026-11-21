@@ -91,3 +91,35 @@ La composición y el reparto viven en `telefonoConPrefijo` (nivel superior de `o
 |---|---|
 | «Cuando se une un nuevo merchant y le puda poner número de whatsapp tiene que salir el prefijo a parte para seleccionar y preseleccionado e +34 español» | `tests/scrum1781b-prefijo-en-alta-y-ajustes.test.mjs` ① y ⑤ (alta) y ③ ④ (Configuración); en yaqu.app: NO visto |
 | «También cuando crees clientes» | ② (primer cliente del alta) en el mismo test; Clientes ya en main (fila de arriba); Inicio NO HECHO → S2 (Luis) |
+
+# SCRUM-1781c · Fuera los textos de ayuda que dicen que el prefijo va dentro del número (J3)
+
+**Medido contra:** `origin/main` = `db789fd0fb7d604b718529ca1d861e351fc2e756` · 2026-11-21T04:13:22Z (cabecera `Date:` de `gh api -i zen`)
+A9: comprobación → `tests/scrum1781c-sin-ayuda-de-prefijo.test.mjs`
+**Skill UI:** cargada · antes de la primera edición de `onboardingView.js` y `settingsView.js`.
+
+**Puesto:** J3 (jv-j3co) · **Rama:** `scrum-1781c-sin-ayuda-de-prefijo`, nacida de `scrum-1781b-prefijo-en-alta-y-ajustes` @ `28b7a0d71aa9d40903dd6569feac3f6c9a9e919b` (PR #3287, abierto al empezar), con `origin/main` ya dentro.
+
+**Firma (regla 39):** SCRUM-1781 c.22275, respuesta literal del fundador «1-Sí quitalo» a la pregunta de c.22274. Solo QUITAR, ningún texto nuevo.
+
+**Qué cambia (solo se quita):**
+
+- alta, paso 1, «Tu WhatsApp» (`#ob-phone`, `public/dashboard/js/onboardingView.js`): fuera el marcador «Ej: 34XXXXXXXXX (con código de país)». El campo queda sin marcador; el rótulo y su aclaración «(te avisamos ahí cuando te acepten o paguen)» no se tocan.
+- alta, primer cliente, «Su WhatsApp» (`#ob-cust-phone`, mismo fichero): fuera «(con código de país)» del rótulo y el marcador «Ej: 34XXXXXXXXX». El rótulo queda «Su WhatsApp».
+- Configuración (`public/dashboard/js/settingsView.js`): el rótulo «Teléfono WhatsApp (E.164 sin +)» queda «Teléfono WhatsApp».
+
+Ningún hueco pide texto: los dos campos sin marcador llevan al lado el desplegable con «🇪🇸 España +34» (SCRUM-1781b). Ningún censo de microcopy exigía esos literales (barrido de `tests/`, `scripts/` y `docs/microcopy/` por «34XXXXXXXXX», «con código de país» y «E.164 sin +»: solo comentarios en `scrum402`, `scrum575b` y `scrum578` sobre el rótulo VIEJO de Clientes, y un `scrum578` que exige que NO esté; ninguno tocado).
+
+**Cómo se mide.** `tests/scrum1781c-sin-ayuda-de-prefijo.test.mjs` monta las tres pantallas en el banco de vistas y busca los tres literales en el texto, el `placeholder` y el `title` de cada nodo, declarando cuántos nodos miró (263 paso 1 · 252 primer cliente · 411 Configuración). Control positivo SEMBRADO: el mismo buscador, sobre nodos fabricados con cada literal, lo caza. Control positivo de la pantalla: el rótulo sigue y el desplegable de prefijo sigue con +34. Rojo antes del cambio 3/4 (el sembrado pasa; los tres de pantalla caen por «quedan textos de ayuda del prefijo», no por CIEGO); verde después 4/4.
+
+**Dirigida:** 290 ficheros (los del encargo —1773, 836, 700, 710b, 719, 1294, 267, 273, 525d, 854—, 1781b, 402, 575b, 578, los censos 1157/1215/1415 que existan y todo test que nombra `onboardingView`, `settingsView` o `microcopy`): 2.794 casos, 2.785 pass · 0 fail · 9 skipped (suman). Suite entera: ver la entrega.
+
+**NO medido:** no he visto las pantallas en yaqu.app ni en un navegador (no lo he intentado: sin sesión de comercio); sin capturas AB6.
+
+### Aceptación → dónde se ve (1781c)
+
+| aceptación (literal, c.22275) | dónde se ve |
+|---|---|
+| «fuera el marcador «Ej: 34XXXXXXXXX (con código de país)» del alta» | `tests/scrum1781c-sin-ayuda-de-prefijo.test.mjs` ①; en yaqu.app: NO visto |
+| «(con código de país)» y «Ej: 34XXXXXXXXX» del primer cliente del alta | ② del mismo test |
+| «(E.164 sin +)» del rótulo de Configuración, que queda «Teléfono WhatsApp» | ③ del mismo test |
