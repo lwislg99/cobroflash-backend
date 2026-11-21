@@ -28,6 +28,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import ts from 'typescript';
+import { casosEscritos } from './_casos-escritos.mjs'; // SCRUM-1415 · un caso por fila, con su nombre escrito
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = pathToFileURL(path.join(RAIZ, 'dist')).href + '/';
@@ -88,8 +89,12 @@ function desgloseClasificado(lines) {
   return calcVatBreakdown(lines).entries.map((e) => clasificarDetalleDesglose(e, 'T-1786b'));
 }
 
-for (const [nombre, plan] of Object.entries(PLANES)) {
-  test(`1786b · plan ${nombre}: los caminos de tramos no meten la cabecera en la factura`, () => {
+// SCRUM-1415: un caso por plan con su nombre ESCRITO (no construido en un bucle).
+const FILAS_PLANES = Object.entries(PLANES);
+
+const sinCabeceraEnTramos = casosEscritos(FILAS_PLANES,
+  ([nombre]) => `1786b · plan ${nombre}: los caminos de tramos no meten la cabecera en la factura`,
+  ([, plan]) => {
     const facturas = tramos(CON_APARTADO, plan);
     const sinCabecera = tramos(SIN_APARTADO, plan);
     facturas.forEach((f, i) => {
@@ -105,11 +110,21 @@ for (const [nombre, plan] of Object.entries(PLANES)) {
     assert.equal(Math.round(suma * 100), Math.round(tramos(SIN_APARTADO, plan).reduce((a, f) => a + grossOfLines(f), 0) * 100));
   });
 
-  test(`1786b · plan ${nombre}: la vista del plan promete lo mismo que factura`, () => {
+const vistaDelPlan = casosEscritos(FILAS_PLANES,
+  ([nombre]) => `1786b · plan ${nombre}: la vista del plan promete lo mismo que factura`,
+  ([, plan]) => {
     const prometido = stageAmountsFromLines(lineasParaFacturar(CON_APARTADO), plan, distributeStageAmounts(CON_APARTADO.total, plan));
     assert.deepEqual(prometido, tramos(CON_APARTADO, plan).map(grossOfLines));
   });
-}
+
+test('1786b · plan entero: los caminos de tramos no meten la cabecera en la factura', sinCabeceraEnTramos(0));
+test('1786b · plan entero: la vista del plan promete lo mismo que factura', vistaDelPlan(0));
+test('1786b · plan 50/50: los caminos de tramos no meten la cabecera en la factura', sinCabeceraEnTramos(1));
+test('1786b · plan 50/50: la vista del plan promete lo mismo que factura', vistaDelPlan(1));
+test('1786b · plan 30/70: los caminos de tramos no meten la cabecera en la factura', sinCabeceraEnTramos(2));
+test('1786b · plan 30/70: la vista del plan promete lo mismo que factura', vistaDelPlan(2));
+sinCabeceraEnTramos.todos();
+vistaDelPlan.todos();
 
 /** Las llamadas por nombre de `src/lib/invoicing.ts`, con el nombre de la llamada que las envuelve. */
 function llamadasDeInvoicing() {

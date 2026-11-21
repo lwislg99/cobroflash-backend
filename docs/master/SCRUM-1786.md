@@ -138,7 +138,12 @@ factura agrupada.
 **Puesto:** J1 (jv-j1gn) · **Rama:** `scrum-1786b-cabeceras-fuera-de-factura` · 21-nov-2026
 **Medido contra:** `origin/main` = `db789fd0fb7d604b718529ca1d861e351fc2e756` · 2026-11-21T04:09:21Z (cabecera `Date:` de `gh api -i zen`)
 A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
+A9: comprobación → `tests/scrum1415-nombres-construidos.test.mjs`
 Mutaciones: catálogo → `tests/scrum1786b-cabeceras-fuera-de-factura.test.mjs`
+
+Relevo (jv-j1gs, 21-nov): el obligatorio del PR #3288 cayó en `scrum1415` porque el test nuevo registraba
+6 casos con nombre construido en un `for`; no se vio en local porque la tanda dirigida no incluía ese guard.
+Ahora los escribe literales con `casosEscritos`: 10 casos antes y 10 después, con los mismos nombres.
 
 GO del fundador (regla 40): SCRUM-1786 c.22269, P1. Defecto medido en 1786a (§2) y reproducido aquí,
 corriéndolo contra el `dist/` de antes del arreglo: con una cabecera, la factura de un tramo lleva 2
