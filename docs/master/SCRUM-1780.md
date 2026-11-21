@@ -360,3 +360,19 @@ A9: comprobación → `scripts/tanda-entera-por-tramos.mjs`
 - `tsc -p .` con tipos, salida 0. Dirigida (20 ficheros): 195 casos, 186 pasan, 7 saltados, **2 fallan (291 y 619)**. `guards:entrada` 15/15; los 5 de árbol entero, 38/38.
 
 **Sin empujar.** Falta: la decisión sobre 291 y 619 → aplicarlas → `git merge origin/main` (main va 16 commits por delante a las 04:12Z) → los tramos otra vez → UN empujón `git push origin HEAD:scrum-1780c-factura-desde-parte`.
+
+## SCRUM-1780g · Quinto relevo de 1780c: merge de main (1779d), 291 y 619 por decisión del fundador, y el empujón (sesión jv-j1gp, J1)
+
+**Medido contra:** `origin/main` = `53cde1aa49e8b8235b6b562f9a81bb6d175ac571` · 2026-11-21T05:18:46Z (cabecera `Date:` de `gh api -i zen`)
+A9: comprobación → `tests/scrum189-citas-con-destino.test.mjs`
+
+- **Merge** de `origin/main` sobre `1ea83c38` (jv-j1gl). Antes, `git diff origin/main -- src/modules/invoicing/domain/invoiceNumber.service.ts`: solo `'C7-parte'` en `OrigenC7`/`ORIGENES_C7` y el comentario de la lista. Dos conflictos:
+  - `tests/scrum523d-version-del-sif.test.mjs`: los dos párrafos se conservan (1779d y 1780c). `selladoEstado.ts` toma la huella de main (`ac1bda6897b46219`). La de `invoiceNumber.service.ts` se puso a la de main y el guard cayó nombrando SOLO ese fichero; se pegó la que imprimió (`703674abecd33799`), con las citas c.22237, c.22249 y c.22280.
+  - `docs/legal/AUDITORIA_CAMINO_EMISION.md:40`: la línea de main (`selladoEstado.ts:199`, de 1779d) con la cita del esquema de 1780c (`prisma/schema.prisma:1887`, medida en el árbol fusionado).
+- **scrum291** (SCRUM-1780 c.22280, «1-Sí»): rojo visto (`leído: 8c507415…`) → `EMISOR_SHA256` = `8c507415731900d0e774d850d0c023b31d26b6892ab51ba268681ba41ac031e8`, con su bloque fechado. Nada más del guard.
+- **scrum619** (c.22280, «2-Sí»): rojo visto («SITIO NUEVO … facturaDesdeParte.ts») → `'src/modules/invoicing/domain/facturaDesdeParte.ts': 1` en `ESTRECHAMIENTOS` con el motivo y la cita. Nada más del guard. El clasificador de permisos no bloqueó ninguna de las dos ediciones.
+- **Error mío, cazado por la suite:** en el comentario nuevo de 291 escribí «GO de regla 40 de c.22237», y `scrum189` cayó en el tramo 8 (una cita numerada sin su fichero). Cambiado MI texto, no el guard; 17/17.
+- `prisma generate` en el `node_modules` propio, guard del cliente ✔. `tsc -p .` con tipos: salida 0, dos veces (tras cada merge).
+- **Suite entera** (15 tramos, sobre `17bb5378`, TEMP `C:\tmp\j1gp`): 1.733 ficheros · 14.023 tests · 13.834 pass · **4 fail, los cuatro de `scrum932`** (AMBIENTE: el `.env` del árbol; 8/12 con él, 12/12 apartándolo y restaurándolo). Resumen de la pasada: ROJO solo por esos cuatro.
+- Main se movió 12 commits; volví a mergear (sin conflictos; `invoicesAdmin.routes.ts` y un test de 1779f, ninguno mío). Sobre ese merge: dirigida de 19 ficheros, 170 casos, 165 pasan, 5 saltados (gateados), 0 fallan; `guards:entrada` 15/15; los 185 ficheros que lista `guards:entrada`, 1.637 casos, 4 fallan (los mismos de `scrum932`). **No he repetido la suite entera sobre el segundo merge.**
+- **No medido:** la simultánea contra Postgres (en esta máquina sale SKIP; la corre el CI).
