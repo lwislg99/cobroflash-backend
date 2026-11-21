@@ -90,11 +90,13 @@ test('SCRUM-728d · 🔴 EL NÚMERO QUE EL TICKET NO TENÍA: la factura hace 8 v
   const f1 = await espiarEmision({
     merchant: MERCHANTS.fiscal, emitidas: [{ number: 'F260001' }, { number: 'F260002' }],
   });
-  assert.equal(f1.viajes, 8,
+  // SCRUM-1787j (21-nov-2026): 8 → 9 y 7 → 8, la lectura de la dirección congelada (1787d), que el
+  // doble de antes no veía; decisión del fundador en SCRUM-1787 c.22343.
+  assert.equal(f1.viajes, 9,
     `🔴 la emisión de una factura F1 hace ${f1.viajes} viajes (el ticket dimensionó con `
     + `${VIAJES_DEL_ALBARAN}, que son los del ALBARÁN). Si este número cambia, el tamaño del `
     + 'ticket cambia con él y hay que rehacer la proyección del parte.');
-  assert.equal(f1.dentroDelCerrojo, 7,
+  assert.equal(f1.dentroDelCerrojo, 8,
     '🔴 el cerrojo es `xact`: se suelta en el COMMIT, así que TODO lo que va detrás se serializa. '
     + 'Este es el número que multiplica por N cuando hay N emisiones a la vez.');
 });
@@ -114,7 +116,8 @@ test('SCRUM-1027 · el camino del ESPAÑOL REAL YA NO RESERVA NADA (antes: 7 via
 
 test('SCRUM-728d · la rectificativa hace 7 — un viaje menos que la F1, y se ve por qué', async () => {
   const r = await espiarEmision({ merchant: MERCHANTS.fiscal, rectifying: true });
-  assert.equal(r.viajes, 7);
+  // SCRUM-1787j (21-nov-2026): 7 → 8, la dirección de la factura rectificada (1787d); c.22343.
+  assert.equal(r.viajes, 8);
   assert.ok(!r.sentencias.some((s) => s.includes('findMany')),
     '🔴 la rectificativa ha empezado a leer la serie F entera. Ese viaje es el que escala con los '
     + 'datos, y hasta hoy sólo lo pagaba la F1.');
@@ -143,10 +146,11 @@ test('SCRUM-728d · 🔴 ROJO: añadir UN viaje a la sección crítica hace caer
   const conExtra = await espiarEmision({
     merchant: MERCHANTS.fiscal, emitidas: [], viajeExtra: true,
   });
-  assert.equal(conExtra.viajes, 9,
+  // SCRUM-1787j (21-nov-2026): 9 → 10 y 8 → 9, la base pasó de 8 a 9; c.22343.
+  assert.equal(conExtra.viajes, 10,
     '🔴 el censo NO ha visto el viaje añadido. Un contador que no sube cuando se añade trabajo a '
     + 'la sección crítica no está contando nada.');
-  assert.notEqual(conExtra.viajes, 8, '🔴 el conteo no distingue con y sin el viaje extra');
+  assert.notEqual(conExtra.viajes, 9,'🔴 el conteo no distingue con y sin el viaje extra');
 });
 
 /**
