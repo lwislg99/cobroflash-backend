@@ -45,6 +45,7 @@ function fakeTx() {
       update: async () => ({}),
     },
     auditLog: { create: async (args) => { auditados.push(args); return {}; } },
+    customer: { findFirst: async () => null }, // SCRUM-1787d · la emisión lee la ficha dentro de la tx; sin ficha → dirección NULL
     invoice: { findMany: async () => [], create: async (args) => ({ id: 1, number: args.data.number, ...args.data }) },
   };
 }
