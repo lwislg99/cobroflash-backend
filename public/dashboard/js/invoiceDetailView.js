@@ -40,13 +40,22 @@ async function fetchInvoiceDetail(id) {
     const headTitle = left.querySelector('h2');
     const headSub = left.querySelector('.detail-sub');
 
+    // SCRUM-1787b · la cabecera lleva sus acciones en `.detail-head-acciones`, como el presupuesto.
+    // Sin «Duplicar»: una factura emitida no se copia (c.22303 ④). El PDF NO sube aquí todavía: un
+    // botón nuevo en la cabecera cambia el censo de scrum283 (cabecera = navegación) y su rótulo es
+    // microcopy que vigila scrum600d. Es una decisión, no un descuido: queda preguntada en SCRUM-1787,
+    // y mientras tanto «Descargar PDF» sigue en «Siguiente paso», justo debajo del total.
+    const headAcc = document.createElement('div');
+    headAcc.className = 'detail-head-acciones';
+    header.appendChild(headAcc);
+
     const btnBack = document.createElement('button');
     btnBack.className = 'btn-secondary btn-sm';
     btnBack.textContent = '← Volver a facturas';
     btnBack.addEventListener('click', () => {
       if (window.renderAppView) window.renderAppView('invoices');
     });
-    header.appendChild(btnBack);
+    headAcc.appendChild(btnBack);
 
     const statusBox = document.createElement('div');
     statusBox.className = 'alert';
@@ -93,6 +102,8 @@ async function fetchInvoiceDetail(id) {
       if (headTitle) headTitle.textContent = 'Justificante de cobro';
       if (headSub) headSub.textContent = 'Detalle y acciones del justificante.';
     }
+    // SCRUM-1787b · el número de serie en el título, como «Presupuesto #N».
+    if (headTitle && invoice.number) headTitle.textContent = `${headTitle.textContent} ${invoice.number}`;
 
     // V0-0: marca de agua DEMO en pantalla (merchant demo)
     if (invoice.demo) {
@@ -216,23 +227,99 @@ async function fetchInvoiceDetail(id) {
       summarySec.appendChild(remDiv);
     }
 
+    // ── SCRUM-1787b · LÍNEA DE PROGRESO: Emitida → Enviada → Cobrada ───────────────────────
+    // La misma idea que `buildStatusTimeline` del presupuesto, pero con CLASES (bloque J1 de
+    // styles.css) y no con `style.cssText`. Textos firmados en SCRUM-1787 c.22303 ③; el final
+    // ANULADA / RECTIFICATIVA reutiliza lo que esta ficha y `invoiceStatusMeta` ya pintan.
+    // ⚠️ «Enviada» solo sabe del WhatsApp: el envío por CORREO no llega a esta vista (no hay campo),
+    // así que una factura mandada solo por correo sale con «Enviada» como paso actual.
+    {
+      const fmtPaso = (v) => {
+        if (!v) return '';
+        try { return new Date(v).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }); } catch { return ''; }
+      };
+      const cobrada = st === 'paid';
+      const waSt = String((invoice.waDelivery && invoice.waDelivery.status) || '').toLowerCase();
+      const enviada = cobrada || ['sent', 'delivered', 'read'].includes(waSt)
+        || (invoice.envioDocumento && invoice.envioDocumento.whatsapp === 'enviado');
+      const pasos = [
+        { label: 'Emitida', estado: 'hecho', fecha: fmtPaso(invoice.createdAt) },
+        { label: 'Enviada', estado: enviada ? 'hecho' : 'actual', fecha: '' },
+      ];
+      if (st === 'annulled') pasos.push({ label: 'ANULADA', estado: 'final', fecha: '' });
+      else if (invoice.type === 'R1') pasos.push({ label: 'RECTIFICATIVA', estado: 'final', fecha: '' });
+      else pasos.push({ label: 'Cobrada', estado: cobrada ? 'hecho' : 'pendiente', fecha: cobrada ? fmtPaso(invoice.paidAt) : '' });
+
+      const prog = document.createElement('ol');
+      prog.className = 'j1-prog';
+      pasos.forEach((p) => {
+        const li = document.createElement('li');
+        li.className = `j1-prog-paso j1-prog-paso--${p.estado}`;
+        li.dataset.estado = p.estado;
+        if (p.estado === 'actual') li.setAttribute('aria-current', 'step');
+        const punto = document.createElement('span');
+        punto.className = 'j1-prog-punto';
+        punto.setAttribute('aria-hidden', 'true');
+        li.appendChild(punto);
+        const rot = document.createElement('span');
+        rot.className = 'j1-prog-rotulo';
+        rot.textContent = p.label;
+        li.appendChild(rot);
+        if (p.fecha) {
+          const f = document.createElement('span');
+          f.className = 'j1-prog-fecha';
+          f.textContent = p.fecha;
+          li.appendChild(f);
+        }
+        prog.appendChild(li);
+      });
+      summarySec.appendChild(prog);
+    }
+
     // --- Sección: datos ---
+    // SCRUM-1787b · «Datos» pasa a ser CLIENTE + COBRO en dos columnas, como CLIENTE + DECISIÓN del
+    // presupuesto. «Creada» sale: su fecha va en el paso «Emitida». «Dirección» NO se pinta: la
+    // factura no la guarda todavía (SCRUM-1787 c.22304/c.22305, llega en 1787d).
     const dataSec = document.createElement('div');
     dataSec.className = 'detail-section';
-    dataSec.innerHTML = '<h3 class="detail-section-title">Datos</h3>';
-    const dl = document.createElement('dl');
-    dl.className = 'detail-dl';
+    const dosCol = document.createElement('div');
+    dosCol.className = 'detail-2col';
+    dataSec.appendChild(dosCol);
+
     // SCRUM-1576b · el cliente congelado al emitir (`customerName`); la ficha viva sólo si la
     // factura es anterior al escritor. La misma regla que `clienteDelDocumento` (clienteCongelado.ts).
-    // El teléfono y el email de esta ficha siguen siendo los de HOY a propósito: son el destino de
-    // los envíos, no el documento (SCRUM-1576, clase c).
-    addDefRow(dl, 'Cliente', invoice.customerName != null ? invoice.customerName : invoice.customer?.name);
-    addDefRow(dl, 'Creada', invoice.createdAt ? new Date(invoice.createdAt).toLocaleString('es-ES') : null);
-    addDefRow(dl, 'Pagada', invoice.paidAt ? new Date(invoice.paidAt).toLocaleString('es-ES') : null);
-    addDefRow(dl, 'Rectifica a', invoice.rectifies ? invoice.rectifies.number : null);
-    addDefRow(dl, 'Rectificada por', (invoice.rectifiedBy && invoice.rectifiedBy.length) ? invoice.rectifiedBy.map((r) => r.number).join(', ') : null);
+    const congelado = invoice.customerName != null;
+    const cli = invoice.customer || {};
+    const colCli = document.createElement('div');
+    colCli.innerHTML = '<h3 class="detail-section-title">Cliente</h3>';
+    const dl = document.createElement('dl');
+    dl.className = 'detail-dl';
+    // El rótulo del nombre sigue siendo «Cliente»: es la fila que vigila scrum1576b.
+    addDefRow(dl, 'Cliente', congelado ? invoice.customerName : cli.name);
+    addDefRow(dl, 'NIF', congelado ? invoice.customerTaxId : null);
+    addDefRow(dl, 'Teléfono', congelado ? invoice.customerPhone : cli.phone);
+    addDefRow(dl, 'Email', congelado ? invoice.customerEmail : cli.email);
     if (!dl.children.length) dl.innerHTML = '<dd class="j1-fac-sin-datos">Sin datos.</dd>';
-    dataSec.appendChild(dl);
+    colCli.appendChild(dl);
+    dosCol.appendChild(colCli);
+
+    // «Cobro» (firmado, c.22303 ③): «Método» es el rótulo de Cobros y «Pagada» el de esta ficha.
+    const dlCobro = document.createElement('dl');
+    dlCobro.className = 'detail-dl';
+    const metodo = invoice.paidVia
+      ? (typeof window.etiquetaMetodoCobro === 'function' ? window.etiquetaMetodoCobro(invoice.paidVia) : invoice.paidVia)
+      : null;
+    addDefRow(dlCobro, 'Método', metodo);
+    addDefRow(dlCobro, 'Pagada', invoice.paidAt ? new Date(invoice.paidAt).toLocaleString('es-ES') : null);
+    addDefRow(dlCobro, 'Rectifica a', invoice.rectifies ? invoice.rectifies.number : null);
+    addDefRow(dlCobro, 'Rectificada por', (invoice.rectifiedBy && invoice.rectifiedBy.length) ? invoice.rectifiedBy.map((r) => r.number).join(', ') : null);
+    // Sin filas no se pinta la columna: un «Cobro» vacío se lee como un fallo de carga.
+    if (dlCobro.children.length) {
+      const colCobro = document.createElement('div');
+      colCobro.innerHTML = '<h3 class="detail-section-title">Cobro</h3>';
+      colCobro.appendChild(dlCobro);
+      dosCol.appendChild(colCobro);
+    }
     page.appendChild(dataSec);
 
     // --- Sección: etiquetas (SCRUM-595, DOC-05) ---
@@ -277,15 +364,81 @@ async function fetchInvoiceDetail(id) {
       });
     }
 
+    // ── SCRUM-1787b · CONCEPTOS: la misma tabla que la ficha del presupuesto ────────────────
+    // Solo LEE las líneas ya guardadas en la factura (no toca la emisión). Usa los helpers
+    // COMPARTIDOS sin tocarlos: `numerarLineas`/`celdaConcepto` (quoteApartados.js),
+    // `quoteDescuentos.importeDeLinea` y `fmtTipoIvaEs` (api.js). El concepto va como NODOS, no
+    // como cadena: la descripción larga lleva saltos de línea y el texto no puede inyectar marcado.
+    // Sin líneas no se pinta la sección.
+    const lineasFac = Array.isArray(invoice.lines) ? invoice.lines : [];
+    if (lineasFac.length && typeof numerarLineas === 'function' && typeof celdaConcepto === 'function') {
+      const concSec = document.createElement('div');
+      concSec.className = 'detail-section';
+      concSec.innerHTML = '<h3 class="detail-section-title">Conceptos</h3>';
+      const tablaConc = document.createElement('table');
+      // SCRUM-1787e · `j1-fac-conceptos`: a ≤640 px la tabla se APILA (bloque J1 de styles.css): el
+      // concepto a todo el ancho y Cant./Precio/IVA/Total debajo, cada uno con su rótulo. Medido a 390 px
+      // antes del arreglo: 2 de 5 columnas a la vista y 197 px escondidos tras el scroll de la tabla.
+      tablaConc.className = 'table j1-fac-conceptos';
+      tablaConc.innerHTML = '<thead><tr><th>Concepto</th><th>Cant.</th><th>Precio</th><th>IVA</th>'
+        + '<th class="j1-fac-col-total">Total</th></tr></thead>';
+      // El rótulo de cada celda apilada se LEE de la cabecera: ni un texto nuevo, ni dos copias del mismo.
+      const rotulosConc = [...tablaConc.querySelectorAll('thead th')].map((th) => th.textContent);
+      const tbodyConc = document.createElement('tbody');
+      tablaConc.appendChild(tbodyConc);
+      const numeracion = numerarLineas(lineasFac);
+      lineasFac.forEach((linea, i) => {
+        const l = linea || {};
+        const num = numeracion[i] || { cabecera: false, numero: null };
+        if (num.cabecera) {
+          const trA = document.createElement('tr');
+          trA.className = 'quote-apartado';
+          const td = document.createElement('td');
+          td.colSpan = 5;
+          td.appendChild(celdaConcepto(document, `${num.numero}. ${l.concept || ''}`));
+          trA.appendChild(td);
+          tbodyConc.appendChild(trA);
+          return;
+        }
+        const qty = Number(l.qty) || 0;
+        const price = Number(l.price) || 0;
+        const tax = Number(l.tax ?? 0);
+        const importe = window.quoteDescuentos.importeDeLinea(qty, price, l.dto, tax);
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td class="quote-line-cel"></td>'
+          + `<td>${qty}</td>`
+          + `<td>${fmtInvMoney(price, invoice.currency)}</td>`
+          + `<td>${fmtTipoIvaEs(tax)} %</td>`
+          + `<td class="amount j1-fac-col-total">${fmtInvMoney(importe.total, invoice.currency)}</td>`;
+        [...tr.children].forEach((td, k) => { if (k > 0) td.dataset.label = rotulosConc[k]; });
+        const celda = tr.querySelector('.quote-line-cel');
+        if (num.numero) {
+          const n = document.createElement('span');
+          n.className = 'quote-line-num';
+          n.textContent = num.numero;
+          celda.appendChild(n);
+        }
+        celda.appendChild(celdaConcepto(document, l.concept || ''));
+        tbodyConc.appendChild(tr);
+      });
+      concSec.appendChild(tablaConc);
+      page.appendChild(concSec);
+    }
+
     // --- Sección: acciones (SCRUM-283 · la LEY del patrón: 1 primaria + ≤2 secundarias + ⋮) ---
     // Se PINTA desde el registro declarativo (invoiceActionsRegistry.js), la MISMA fuente que el
     // guard verifica: nadie escribe la tabla dos veces. El estado decide el destino de cada acción;
     // el rótulo es microcopy sin aprobar y sale con el marcador (regla 30). ANULAR no pasa por aquí:
     // se queda en su propia sección, con su código y su rótulo intactos (excepción de la regla 5).
+    //
+    // SCRUM-1787b · el bloque se llama «Siguiente paso» y cuelga del resumen (estado + total +
+    // progreso), como en la ficha del presupuesto. Lo que cambia es el SITIO en el DOM, que lo
+    // decide `appendChild`; este marcador se queda aquí por el orden que vigila scrum597.
     const actionsSec = document.createElement('div');
-    actionsSec.className = 'detail-section';
-    actionsSec.innerHTML = '<h3 class="detail-section-title">Acciones</h3>';
-    page.appendChild(actionsSec);
+    actionsSec.className = 'detail-next';
+    actionsSec.innerHTML = '<div class="detail-next-label">Siguiente paso</div>';
+    summarySec.appendChild(actionsSec);
 
     const actions = document.createElement('div');
     actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center';
