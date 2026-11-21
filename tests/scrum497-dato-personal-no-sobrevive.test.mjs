@@ -328,8 +328,11 @@ test('SCRUM-497 · 🔴 TRINQUETE: noventa datos personales siguen sin anonimiza
     + '  o a `FUERA_DE_ANONIMIZADO` y baja este número a mano, en el mismo commit.\n'
     + '  Si no, el censo ha dejado de verlos y «cero pendientes» significa «no supe mirar».');
 
-  assert.equal(reparto.sinDecidir.length, 92,
-    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 92 (SCRUM-1005b sumó, el 20-nov-2026 y sobre 91, ` +
+  assert.equal(reparto.sinDecidir.length, 97,
+    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 97 (` +
+    'SCRUM-1787d sumó, el 21-nov-2026 y sobre 92, 5 columnas `invoice.customerBilling*` en SIN_DECIDIR ' +
+    '(EN_DOCUMENTO_SELLABLE); decisión del fundador en SCRUM-1787 c.22322; ' +
+    `SCRUM-1005b sumó, el 20-nov-2026 y sobre 91, ` +
     '`attachment.fileName`, el nombre del documento de un cliente: columna nueva, SIN decidir —decide el fundador—; ' +
     `SCRUM-1662 sumó, el 12-nov-2026 y sobre 90, ` +
     '`job.queHayQueHacer`, columna nueva de texto libre: misma pregunta que `job.notes`, SIN decidir —decide el fundador—; ' +
