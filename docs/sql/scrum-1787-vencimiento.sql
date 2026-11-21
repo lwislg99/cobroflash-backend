@@ -44,9 +44,9 @@
 -- AlterTable
 ALTER TABLE "invoices" ADD COLUMN     "due_date" TIMESTAMP(3);
 
--- Salida LITERAL de B (SÓLO con el ✅ del fundador; se quita el `-- ` de la línea del ALTER):
+-- Salida LITERAL de B (✅ del fundador en SCRUM-1787 c.22331 «1-Sí»; activada en 1787i, jv-j1hh):
 -- AlterTable
--- ALTER TABLE "invoices" ADD COLUMN     "pay_methods" JSONB;
+ALTER TABLE "invoices" ADD COLUMN     "pay_methods" JSONB;
 
 -- ─── VERIFICACIÓN, DESPUÉS DEL ALTER (solo lectura) ───────────────────────────────────────────
 -- Se pega aparte. Resultado esperado: 1 fila (`due_date`, `timestamp without time zone`, `YES`)

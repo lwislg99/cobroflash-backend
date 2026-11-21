@@ -882,6 +882,12 @@ model Invoice {
   paidVia       String?   @map("paid_via")
   clientComment String?   @map("client_comment")
   stageLabel    String?   @map("stage_label") // SCRUM-27: etiqueta del tramo, congelada al crear la factura
+  // SCRUM-1787i (GO de c.22325 ③ y c.22331; ALTER de 1787f aplicado, c.22332/c.22333) · congelados al
+  // emitir la factura SUELTA; los demás caminos escriben NULL. `dueDate` es hasta cuándo paga el
+  // cliente: NO es `Charge.expiresAt` (hasta cuándo vale UN enlace) y NO cambia el estado `expired`.
+  // `payMethods`: el mismo Json que `quotes` y `charges` (NULL = todas las que estén activas).
+  dueDate       DateTime? @map("due_date")
+  payMethods    Json?     @map("pay_methods")
 
   // Líneas de detalle (copiadas del Quote o del Charge al crear la factura)
   lines Json?
