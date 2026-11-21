@@ -93,16 +93,16 @@ async function pagina(facturas, cobro = {}) {
 
 /** Las filas de la tabla de líneas, como [concepto, cantidad, importe] en texto. */
 function filas(html) {
-  const tabla = /<table class="lines-table">([\s\S]*?)<\/table>/.exec(html);
+  const tabla = /<table class="lines-table"[^>]*>([\s\S]*?)<\/table>/.exec(html);
   if (!tabla) return null;
-  return [...tabla[1].matchAll(/<tr>([\s\S]*?)<\/tr>/g)]
-    .map((tr) => [...tr[1].matchAll(/<td>([\s\S]*?)<\/td>/g)].map((td) => td[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()))
+  return [...tabla[1].matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)]
+    .map((tr) => [...tr[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((td) => td[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()))
     .filter((celdas) => celdas.length > 0);
 }
 
 /** Los importes de las filas del bloque de totales, en número. */
 function totales(html) {
-  return [...html.matchAll(/<div class="totals-row"><span>([^<]*)<\/span><span>([^<]*)<\/span><\/div>/g)]
+  return [...html.matchAll(/<div class="totals-row"[^>]*>\s*<span[^>]*>([^<]*)<\/span>\s*<span[^>]*>([^<]*)<\/span>\s*<\/div>/g)]
     .map((m) => ({ rotulo: m[1], importe: Number(m[2].replace(/[^\d,-]/g, '').replace(',', '.')) }));
 }
 
@@ -110,7 +110,7 @@ test('SCRUM-1787h · una factura de tres líneas: la página enseña cada concep
   const html = await pagina([facturaDe()]);
   const tabla = filas(html);
   assert.ok(tabla, '🔴 La página de pago no lleva la tabla de líneas de la factura (decisión de SCRUM-1787 c.22327).');
-  assert.match(html, /<thead><tr><th>Concepto<\/th><th>Cant\.<\/th><th>Importe<\/th><\/tr><\/thead>/,
+  assert.match(html, /<thead[^>]*>\s*<tr[^>]*>\s*<th[^>]*>Concepto<\/th>\s*<th[^>]*>Cant\.<\/th>\s*<th[^>]*>Importe<\/th>\s*<\/tr>\s*<\/thead>/,
     '🔴 La cabecera no es la de la página del presupuesto (`renderQuoteDetail` de quoteDecisionLanding.routes.ts).');
   assert.equal(tabla.length, 3, `🔴 Tenía que haber 3 filas y hay ${tabla.length}: ${JSON.stringify(tabla)}`);
   const esperadas = [['Mano de obra fontanería', '2', '90,00'], ['Grifo monomando', '1', '60,00'], ['Desplazamiento', '1', '15,00']];

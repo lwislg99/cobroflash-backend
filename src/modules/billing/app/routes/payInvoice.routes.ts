@@ -53,8 +53,12 @@ function detalleDeLaFactura(
   if (!cuadra(sumaDelDesglose, totalFactura) || !cuadra(importeDelCobro, totalFactura)) return '';
 
   const rotuloEnLaPagina = (etiqueta: string) => {
-    const iva = /^IVA (\d+(?:,\d+)?)%:$/.exec(etiqueta);
-    return iva ? `IVA (${iva[1]}%)` : etiqueta.replace(/:$/, '');
+    // «IVA 21%:» → «IVA (21%)», sin expresión regular (SCRUM-1325: ninguna mira texto sin declarar).
+    const sinDosPuntos = etiqueta.endsWith(':') ? etiqueta.slice(0, -1) : etiqueta;
+    if (sinDosPuntos.startsWith('IVA ') && sinDosPuntos.endsWith('%')) {
+      return `IVA (${sinDosPuntos.slice(4)})`;
+    }
+    return sinDosPuntos;
   };
   // Una cabecera de apartado (SCRUM-655) viaja sin cantidad ni precio: concepto sí, importe vacío.
   const importeDeLinea = (l: any) => {
