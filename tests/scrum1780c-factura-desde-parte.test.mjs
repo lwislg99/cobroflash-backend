@@ -31,8 +31,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // Sin el comercio en la búsqueda, el parte de OTRO comercio se factura con el emisor de éste.
     fichero: 'src/modules/invoicing/domain/facturaDesdeParte.ts',
-    de: 'const parte = await prisma.parteTrabajo.findFirst({ where: { id: parteId, merchantId } });',
-    a: 'const parte = await prisma.parteTrabajo.findFirst({ where: { id: parteId } });',
+    de: 'where: { id: parteId, merchantId },',
+    a: 'where: { id: parteId },',
     cae: 'comercio B → 404',
   },
   {

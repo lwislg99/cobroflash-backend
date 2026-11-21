@@ -342,3 +342,21 @@ Quitar `merchantId` del WHERE del **enlace** no se declara: el `id` ya viene de 
 - `censo:mudez --escribir`: sin cambios en `tests/_veredicto-mudez.json`.
 
 **No medido:** la simultánea contra Postgres (aquí no hay base; la corre el obligatorio); ninguna base del proyecto (no toqué ninguna); ninguna pantalla. **La ruta sigue sin montar:** las tres líneas de `partes.routes.ts` (tramo 1780c ③) son de S1 (Luis).
+
+## SCRUM-1780f · Cuarto relevo de 1780c: scrum411 por decisión del fundador, y la suite entera saca cuatro rojos más (sesión jv-j1gl, J1)
+
+**Medido contra:** `origin/main` = `fea1c00078654d8d617af055de94f2b627df07ce` · 2026-11-21T04:12:50Z (cabecera `Date:` de `gh api -i zen`)
+A9: comprobación → `scripts/tanda-entera-por-tramos.mjs`
+
+- **scrum411:** `MODULOS_DOMINIO_INALCANZABLES_MAX` 4 → 5 con su línea fechada, por la decisión del fundador «1-A ok» (SCRUM-1780 c.22257). Rojo visto antes (25 casos, 1 falla: «5 módulos y el tope es 4»), verde después (25/25). Baja a 4 el PR de S1 que monte la ruta.
+- **scrum1289b** (rojo del tramo 3 de j1gh): es la trampa del TEMP con espacio (SCRUM-1772). Con el TEMP de la sesión, 7/9; con `TEMP=C:\tmp\j1gl`, 9/9.
+- La suite entera (15 tramos, 1.731 ficheros, TEMP sin espacio) sacó **cinco rojos que la dirigida de los relevos anteriores no tenía**:
+  - `scrum389`: `facturaDesdeParte.ts` llama a `calcVatBreakdown` sin clasificar → clasificado DOCUMENTO con su motivo (es lo que pide el propio guard). 4/4.
+  - `scrum860`: la lectura del parte iba sin `select` → arreglado el CÓDIGO (`select` de las cinco columnas que usa). La mutación 1 del catálogo se re-ancló al `where` nuevo; las 4 MUEREN otra vez con `aplicarUna`, árbol limpio tras cada una.
+  - `scrum921c`: una marca «el fundador decidió (c.22252)» sin `SCRUM-<n>` en `tests/scrum1780c-simultanea-postgres.test.mjs` → añadido `SCRUM-1780`. 16/16.
+  - `scrum932` (4 casos): AMBIENTE. Este árbol tiene un `.env` con claves de base; apartado durante la corrida, 12/12; con él, 8/12. No toca ficheros de la rama.
+  - 🔴 **`scrum291` «el camino de emisión sigue INTACTO»:** congela la huella de `invoiceNumber.service.ts` (`0651d863…` → `8c507415…`, el mismo cambio `'C7-parte'` que 523d recongeló por c.22249) y dice «Tocarlo exige GO del fundador con el diff delante (regla 38)». **STOP: no lo recongelo sin esa decisión.**
+  - 🔴 **`scrum619` «no aparece un estrechamiento NUEVO»:** `facturaDesdeParte.ts` reconstruye la línea con `{concept, qty, price, tax}`. La `LineaParte` trae además `id`, `bloque` y `datosNoRespaldados`; ninguna está en el vocabulario de la factura, así que no se pierde nada facturable. Declararlo en `ESTRECHAMIENTOS` lo **bloqueó el clasificador de permisos**; no lo he rodeado.
+- `tsc -p .` con tipos, salida 0. Dirigida (20 ficheros): 195 casos, 186 pasan, 7 saltados, **2 fallan (291 y 619)**. `guards:entrada` 15/15; los 5 de árbol entero, 38/38.
+
+**Sin empujar.** Falta: la decisión sobre 291 y 619 → aplicarlas → `git merge origin/main` (main va 16 commits por delante a las 04:12Z) → los tramos otra vez → UN empujón `git push origin HEAD:scrum-1780c-factura-desde-parte`.

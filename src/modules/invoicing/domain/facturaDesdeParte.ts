@@ -82,7 +82,10 @@ export async function facturarParteDeMerchant(args: {
   if (!cabeEnColumnaInt(parteId)) return { ok: false, status: 400, error: 'invalid_id' };
 
   // Tenancy (regla 2): 404 y no 403, como el albarán.
-  const parte = await prisma.parteTrabajo.findFirst({ where: { id: parteId, merchantId } });
+  const parte = await prisma.parteTrabajo.findFirst({
+    where: { id: parteId, merchantId },
+    select: { id: true, estado: true, invoiceId: true, customerId: true, lineas: true },
+  });
   if (!parte) return { ok: false, status: 404, error: 'not_found' };
 
   // «Ya facturado» es `invoiceId` no nulo (B1, SCRUM-1780; la Parte L no tiene `facturado`). Lo que

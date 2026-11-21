@@ -112,7 +112,7 @@ test('SCRUM-1780c · POSTGRES · doble facturación simultánea → un 201 y un 
         `🔴 NO HA HABIDO CARRERA: detrás del retén esperaban ${JSON.stringify(visto)} (hacen falta 2). `
         + `Respuestas: ${JSON.stringify(rs)}. Un «una factura» aquí no mediría la concurrencia.`);
 
-      // ── Lo que el fundador decidió (c.22252) ─────────────────────────────────────────────────
+      // ── Lo que el fundador decidió (SCRUM-1780 c.22252) ─────────────────────────────────────────────
       const codigos = rs.map((r) => (r.ok ? 201 : r.status)).sort();
       assert.deepEqual(codigos, [201, 409], `respuestas: ${JSON.stringify(rs)}`);
       assert.deepEqual(rs.find((r) => !r.ok), { ok: false, status: 409, error: 'parte_ya_facturado' });
