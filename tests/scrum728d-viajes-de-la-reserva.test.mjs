@@ -38,7 +38,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  espiarReserva, conElCreateDelLlamador, cargarServicio, exigirSueloDeViajes, MERCHANTS, CensoCiego,
+  espiarReserva, espiarEmision, cargarServicio, exigirSueloDeViajes, MERCHANTS, CensoCiego,
 } from './_viajes-de-la-reserva.mjs';
 import { isReceiptNumber } from '../dist/modules/invoicing/domain/invoiceNumber.service.js';
 
@@ -86,9 +86,9 @@ test('SCRUM-728d · SUELO: el cerrojo sigue siendo la PRIMERA sentencia (si no, 
 });
 
 test('SCRUM-728d · 🔴 EL NÚMERO QUE EL TICKET NO TENÍA: la factura hace 8 viajes, no 5', async () => {
-  const f1 = conElCreateDelLlamador(await espiarReserva({
+  const f1 = await espiarEmision({
     merchant: MERCHANTS.fiscal, emitidas: [{ number: 'F260001' }, { number: 'F260002' }],
-  }));
+  });
   assert.equal(f1.viajes, 8,
     `🔴 la emisión de una factura F1 hace ${f1.viajes} viajes (el ticket dimensionó con `
     + `${VIAJES_DEL_ALBARAN}, que son los del ALBARÁN). Si este número cambia, el tamaño del `
@@ -112,8 +112,8 @@ test('SCRUM-1027 · el camino del ESPAÑOL REAL YA NO RESERVA NADA (antes: 7 via
 });
 
 test('SCRUM-728d · la rectificativa hace 7 — un viaje menos que la F1, y se ve por qué', async () => {
-  const r = await espiarReserva({ merchant: MERCHANTS.fiscal, rectifying: true });
-  assert.equal(conElCreateDelLlamador(r).viajes, 7);
+  const r = await espiarEmision({ merchant: MERCHANTS.fiscal, rectifying: true });
+  assert.equal(r.viajes, 7);
   assert.ok(!r.sentencias.some((s) => s.includes('findMany')),
     '🔴 la rectificativa ha empezado a leer la serie F entera. Ese viaje es el que escala con los '
     + 'datos, y hasta hoy sólo lo pagaba la F1.');
@@ -139,9 +139,9 @@ test('SCRUM-728d · 🔴 ROJO: añadir UN viaje a la sección crítica hace caer
   // El guard tiene que doler cuando alguien mete una consulta más entre el cerrojo y el COMMIT —
   // que es exactamente cómo este defecto creció hasta aquí. Se simula con el doble porque
   // MODIFICAR `invoiceNumber.service.ts` es STOP: el rojo no puede costar tocar el emisor.
-  const conExtra = conElCreateDelLlamador(await espiarReserva({
+  const conExtra = await espiarEmision({
     merchant: MERCHANTS.fiscal, emitidas: [], viajeExtra: true,
-  }));
+  });
   assert.equal(conExtra.viajes, 9,
     '🔴 el censo NO ha visto el viaje añadido. Un contador que no sube cuando se añade trabajo a '
     + 'la sección crítica no está contando nada.');
