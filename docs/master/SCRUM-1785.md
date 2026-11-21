@@ -113,7 +113,7 @@ encargo), qué presupuesto concreto miró el fundador.
 # SCRUM-1785b · PDF del presupuesto: «WhatsApp de <nombre comercial>: <número>» (firma c.22281)
 
 **Medido contra:** `origin/main` = `beb63b0dde9597565244c26c66e0e78b7240a765` · 2026-11-21T04:29:30Z (cabecera `Date:` de `gh api -i zen`)
-A9: aviso → cicatriz J1 «Comiteé en mi árbol a mitad de la suite entera» — no se pudo comprobar: lo que una sesión hace en su árbol mientras corre su propia tanda no pasa por ningún guard del repositorio
+A9: aviso → cicatriz J1 «Comiteé en mi árbol a mitad de la suite entera que un subagente corría sobre él: la huella del árbol partió la tanda en dos y el resumen salió CIEGO» — no se pudo comprobar: lo que una sesión hace en su árbol mientras corre su propia tanda no pasa por ningún guard del repositorio
 Mutaciones: catálogo → `tests/scrum1785b-whatsapp-con-nombre-comercial.test.mjs`
 
 Sesión jv-j1gq (J1). **Supera el «rótulo PENDIENTE DE FIRMA» del tramo anterior:** el fundador firmó en
@@ -147,7 +147,7 @@ SCRUM-1785 c.22281, literal «El nombre comercial sí».
   memoria baja y 12–15 no se lanzaron; `--resumen 15` salió CIEGO. Además comiteé el arreglo de `scrum262` en
   este árbol a mitad de la tanda, y la huella del árbol la partió en dos (1–7 contra el árbol viejo, 8–10 contra
   el nuevo). Caen 2 casos de `tests/scrum1289b-reporters-como-argumentos.test.mjs` (tramo 3; sueltos, igual): el
-  hijo muere con EPERM al abrir `C:SERSJAVIER`, la ruta TEMP con espacio de esta máquina; no lo toca este
+  hijo muere con EPERM al abrir `C:\Users\Javier`, la ruta TEMP con espacio de esta máquina; no lo toca este
   cambio. Por orden del orquestador J se empuja una vez y la tanda completa la corre el obligatorio. El
   `scrum262` lo cazó el obligatorio de #3289 (`tests/scrum262-telefonos-de-prueba.test.mjs`).
 - **No medido:** base, staging, yaqu.app; la vista previa (`quotesView.js`, S2) sigue con «WhatsApp <número>».
