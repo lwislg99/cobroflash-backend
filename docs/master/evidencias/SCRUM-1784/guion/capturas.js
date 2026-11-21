@@ -1,5 +1,10 @@
-// SCRUM-1784 · capturas de la pantalla REAL de Trabajos (código de main) con datos de EJEMPLO.
+// SCRUM-1784 · capturas de la pantalla REAL de Trabajos (código de main fea1c0007) con datos de EJEMPLO.
 // Contexto nuevo con service worker BLOQUEADO: el SW del panel cachea /admin/* y se saltaba las rutas.
+//
+// jv-j2do (relevo): ningún paso va dentro de un `catch` mudo. jv-j2dn hizo `.click().catch(() => {})`
+// sobre la pestaña «El trabajo» con `getByRole('button')`, y las pestañas de la ficha son `role="tab"`
+// (jobDetailView.js:90): el clic fallaba en silencio y la captura 5 salía igual que la 4. Ahora, tras
+// cada clic, se ESPERA el bloque que la captura dice enseñar y, si no aparece, el guion lanza.
 async (page) => {
   const equipo = [
     { id: null, name: 'Ana (propietaria)', role: 'admin', status: 'active' },
@@ -23,14 +28,17 @@ async (page) => {
   ];
   const me = { merchantId: 1, userRole: 'admin', name: 'Ana', teamMemberId: null, plan: 'pro', merchantName: 'Reformas Ejemplo', onboardingCompleted: true, country: 'ES' };
   const json = (route, body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
-  const DIR = 'docs/master/evidencias/SCRUM-1784/';
+  // Ruta absoluta del árbol que captura: la relativa se resuelve contra el cwd del servidor de Playwright, no contra el árbol.
+  const DIR = (globalThis.__dir1784 || 'C:/Users/Javier Pereira/cobroflash-jv-j2do') + '/docs/master/evidencias/SCRUM-1784/';
   const PIE = 'SCRUM-1784 · código real de main fea1c0007 con datos de ejemplo, no la app viva';
-  const hechas = []; const patches = [];
+  const hechas = []; const patches = []; const fuera = []; const comprobado = {}; const otras = [];
 
   async function abrir(viewport, isMobile) {
     const ctx = await page.context().browser().newContext({ viewport, isMobile, hasTouch: isMobile, serviceWorkers: 'block', locale: 'es-ES' });
-    await ctx.route('http://127.0.0.1:5784/**', async (route) => {
-      const req = route.request(); const p = new URL(req.url()).pathname;
+    await ctx.route('**/*', async (route) => {
+      const req = route.request(); const u = new URL(req.url()); const p = u.pathname;
+      // Nada sale de 127.0.0.1:5784: lo demás (fuentes, CDN) se anota y se corta.
+      if (u.host !== '127.0.0.1:5784') { fuera.push(req.method() + ' ' + u.host + p); return route.abort(); }
       if (/\.(js|css|html|svg|png|ico|woff2?|webmanifest|json)$/.test(p) || p.endsWith('/')) return route.continue();
       if (p === '/admin/me') return json(route, me);
       if (p === '/admin/merchant') return json(route, { id: 1, name: me.merchantName, country: 'ES', onboardingCompleted: true });
@@ -38,7 +46,9 @@ async (page) => {
       if (p === '/admin/jobs' && req.method() === 'GET') return json(route, jobs);
       const m = p.match(/^\/admin\/jobs\/(\d+)$/);
       if (m && req.method() === 'GET') { const j = jobs.find((x) => x.id === Number(m[1])); return json(route, { ...j, invoices: [], charge: null, albaranes: [], partes: [], entregaPendiente: null }); }
-      if (m && req.method() === 'PATCH') { patches.push(req.postData()); return json(route, jobs.find((x) => x.id === Number(m[1])) || {}); }
+      // Toda escritura se contesta AQUÍ (no hay servidor detrás). Las de un trabajo van a `patches`, que
+      // tiene que salir vacío; las demás (el panel manda `POST /admin/entorno` al arrancar) se listan.
+      if (req.method() !== 'GET') { (/^\/admin\/jobs/.test(p) ? patches : otras).push(req.method() + ' ' + p + ' ' + (req.postData() || '')); return json(route, {}); }
       if (p === '/version') return json(route, { version: 'fea1c0007' });
       if (/^\/admin\/(partes|quote-requests|precarga|metrics)/.test(p)) return json(route, []);
       return json(route, {});
@@ -49,33 +59,82 @@ async (page) => {
   async function pie(pg) {
     await pg.evaluate((t) => { if (document.getElementById('pie-1784')) return; const d = document.createElement('div'); d.id = 'pie-1784'; d.textContent = t; Object.assign(d.style, { position: 'fixed', left: '0', right: '0', bottom: '0', zIndex: 99999, background: '#111827', color: '#fff', font: '600 12px system-ui', padding: '6px 10px', textAlign: 'center' }); document.body.appendChild(d); }, PIE);
   }
-  async function foto(pg, nombre, opts = {}) { await pie(pg); await pg.screenshot({ path: DIR + nombre, ...opts }); hechas.push(nombre); }
+  // jv-j2do: la 4 salía desvaída (fundido de entrada a medias). Antes de cada foto, se ESPERA a que no
+  // quede ninguna animación corriendo; si no acaban en 5 s, lanza.
+  async function quieta(pg, nombre) {
+    try { await pg.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'), null, { timeout: 5000 }); }
+    catch (e) { throw new Error(`[${nombre}] sigue habiendo animaciones corriendo`); }
+  }
+  async function foto(pg, nombre) { await quieta(pg, nombre); await pie(pg); await pg.screenshot({ path: DIR + nombre }); hechas.push(nombre); }
+  // Espera el bloque que la captura promete; si no está VISIBLE, lanza con el nombre de la captura.
+  async function exige(pg, sel, nombre) {
+    try { await pg.locator(sel).first().waitFor({ state: 'visible', timeout: 6000 }); }
+    catch (e) { throw new Error(`[${nombre}] NO está en pantalla: ${sel} — no se captura`); }
+  }
+  async function aLaLista(pg) {
+    await pg.goto('http://127.0.0.1:5784/dashboard/#jobs', { waitUntil: 'networkidle' });
+    await exige(pg, 'text=Comunidad Alcalá 120', 'lista');
+    await pg.waitForTimeout(400);
+  }
 
   for (const [sufijo, viewport, movil] of [['escritorio', { width: 1440, height: 900 }, false], ['movil', { width: 390, height: 844 }, true]]) {
     const { ctx, pg } = await abrir(viewport, movil);
-    await pg.goto('http://127.0.0.1:5784/dashboard/#jobs', { waitUntil: 'networkidle' });
-    await pg.waitForTimeout(700);
-    await foto(pg, `1-lista-${sufijo}.png`);
-    // desplegable de casillas de la fila con 3 técnicos
-    const menu = pg.locator('.jobs-tecnicos-menu').first();
-    if (await menu.count()) { await menu.locator('summary, .jobs-tecnicos-resumen').first().click(); await pg.waitForTimeout(300); await foto(pg, `2-lista-casillas-${sufijo}.png`); await pg.keyboard.press('Escape'); await pg.goto('http://127.0.0.1:5784/dashboard/#jobs', { waitUntil: 'networkidle' }); await pg.waitForTimeout(500); }
-    // filtro por técnico: Israel
+    const n = (k) => `${k}-${sufijo}.png`;
+
+    // 1 · la lista con la columna/los nombres de los técnicos
+    await aLaLista(pg);
+    await exige(pg, '.jobs-tecnicos-resumen', n('1-lista'));
+    comprobado[n('1-lista')] = await pg.locator('.jobs-tecnicos-resumen').allTextContents();
+    await foto(pg, n('1-lista'));
+
+    // 2 · desplegable de casillas de la fila con TRES técnicos (jv-j2do: con `.first()` abría la de uno)
+    const menu = pg.locator('.jobs-tecnicos-menu', { hasText: 'Israel Gómez, Miguel Sanz' }).first();
+    if (!(await menu.count())) throw new Error(`[${n('2-lista-casillas')}] no hay .jobs-tecnicos-menu`);
+    await menu.locator('summary, .jobs-tecnicos-resumen').first().click();
+    await exige(pg, '.jobs-tecnicos-menu[open] input[type="checkbox"]', n('2-lista-casillas'));
+    comprobado[n('2-lista-casillas')] = { casillas: await pg.locator('.jobs-tecnicos-menu[open] input[type="checkbox"]').count(), marcadas: await pg.locator('.jobs-tecnicos-menu[open] input[type="checkbox"]:checked').count() };
+    if (comprobado[n('2-lista-casillas')].marcadas < 3) throw new Error(`[${n('2-lista-casillas')}] el desplegable abierto no es el de tres técnicos`);
+    await foto(pg, n('2-lista-casillas'));
+    await pg.keyboard.press('Escape');
+
+    // 3 · filtro por técnico (Israel): tienen que quedar menos filas, y la de Marta Ruiz (sin Israel) fuera
+    await aLaLista(pg);
     const sel = pg.locator('#jobs-filtro-tecnico-select');
-    if (await sel.count()) { await sel.selectOption('11').catch(() => {}); await pg.waitForTimeout(400); await foto(pg, `3-lista-filtro-tecnico-${sufijo}.png`); }
-    // ficha del trabajo con 3 técnicos
-    await pg.goto('http://127.0.0.1:5784/dashboard/#jobs', { waitUntil: 'networkidle' }); await pg.waitForTimeout(400);
-    await pg.evaluate(() => { window.appState = window.appState || {}; });
-    const fila = pg.locator('text=Comunidad Alcalá 120').first();
-    await fila.click().catch(() => {});
-    await pg.waitForTimeout(900);
-    await foto(pg, `4-ficha-${sufijo}.png`);
-    await pg.getByRole('button', { name: 'El trabajo', exact: true }).first().click({ timeout: 5000 }).catch(() => {});
-    await pg.waitForTimeout(600);
-    const quien = pg.locator('[data-seccion="asignados"]:visible').first();
-    if (await quien.count()) await quien.scrollIntoViewIfNeeded({ timeout: 5000 }).catch(() => {});
+    if (!(await sel.count())) throw new Error(`[${n('3-lista-filtro-tecnico')}] no hay #jobs-filtro-tecnico-select`);
+    await sel.selectOption('11');
+    await pg.waitForTimeout(400);
+    if (await pg.locator('text=Marta Ruiz').first().isVisible()) throw new Error(`[${n('3-lista-filtro-tecnico')}] el filtro no filtró: Marta Ruiz sigue visible`);
+    await exige(pg, 'text=Bar La Esquina', n('3-lista-filtro-tecnico'));
+    await foto(pg, n('3-lista-filtro-tecnico'));
+
+    // 4 · la ficha del trabajo 101 (tres técnicos), por su botón «Ver detalle»
+    await aLaLista(pg);
+    const fila = pg.locator('tr, .job-card, .jobs-card, li, article', { hasText: 'Comunidad Alcalá 120' }).filter({ has: pg.getByRole('button', { name: 'Ver detalle' }) }).last();
+    if (!(await fila.count())) throw new Error(`[${n('4-ficha')}] no encuentro la fila de Comunidad Alcalá 120 con «Ver detalle»`);
+    await fila.getByRole('button', { name: 'Ver detalle' }).first().click();
+    await exige(pg, '.detail-pestanas [role="tab"]', n('4-ficha'));
+    await exige(pg, 'text=Reforma de baño completa', n('4-ficha'));
+    await foto(pg, n('4-ficha'));
+
+    // 5 · pestaña «El trabajo» → línea «Quién lo ejecuta» abierta → sus casillas, tres marcadas
+    await pg.getByRole('tab', { name: 'El trabajo', exact: true }).click();
+    await exige(pg, 'details.detail-plega[data-linea="quien"]', n('5-ficha-quien-ejecuta'));
+    const linea = pg.locator('details.detail-plega[data-linea="quien"]').first();
+    if (!(await linea.evaluate((d) => d.open))) await linea.locator('summary').click();
+    // El título «Quién ejecuta este trabajo» NO se pinta en la ficha desde SCRUM-917g (`sinTitulo: true`,
+    // jobDetailView.js:1522): el rótulo es el de la línea, «Quién lo ejecuta» (jobTrabajoPlegable.js:36).
+    await exige(pg, 'details.detail-plega[data-linea="quien"][open] summary:has-text("Quién lo ejecuta")', n('5-ficha-quien-ejecuta'));
+    await exige(pg, 'details.detail-plega[data-linea="quien"][open] .job-asignados input[type="checkbox"]', n('5-ficha-quien-ejecuta'));
+    const marcadas = await pg.locator('.job-asignados input[type="checkbox"]:checked').count();
+    const total = await pg.locator('.job-asignados input[type="checkbox"]').count();
+    if (marcadas < 2) throw new Error(`[${n('5-ficha-quien-ejecuta')}] sólo ${marcadas} casillas marcadas de ${total}`);
+    comprobado[n('5-ficha-quien-ejecuta')] = { marcadas, total };
+    await pg.locator('.job-asignados').first().scrollIntoViewIfNeeded();
+    await pg.evaluate(() => window.scrollBy(0, 120));
     await pg.waitForTimeout(300);
-    await foto(pg, `5-ficha-quien-ejecuta-${sufijo}.png`);
+    await foto(pg, n('5-ficha-quien-ejecuta'));
     await ctx.close();
   }
-  return { hechas, patches };
+  if (patches.length) throw new Error('Se intentó escribir en un trabajo: ' + patches.join(' | '));
+  return { hechas, patches, otras, comprobado, fuera: [...new Set(fuera)] };
 }
