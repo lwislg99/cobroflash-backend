@@ -16,8 +16,71 @@ import { bizumAutoDisponible } from '../../domain/bizumCharge'; // SCRUM-3
 import { cardChargeMode } from '../../domain/cardCharge'; // SCRUM-893
 import { transferenciaDisponible } from '../../domain/transferenciaDisponible'; // SCRUM-910
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { pieDePresupuesto } from '../../../quotes/domain/presentacionIva'; // SCRUM-1787h: el desglose de la página del presupuesto
 
 const router = Router();
+
+/**
+ * SCRUM-1787h · EL DETALLE DE LÍNEAS DE LA FACTURA, COMO EN LA PÁGINA DEL PRESUPUESTO.
+ *
+ * Decisión del fundador (SCRUM-1787 c.22327, «1-Sí»): el cliente que abre el enlace de pago ve las
+ * líneas de la factura. Se LEEN de la factura emitida (`Invoice.lines`); la emisión no se toca.
+ *
+ * Rótulos: ninguno nuevo. La tabla y el desglose son los de `quoteDecisionLanding.routes.ts`
+ * (`renderQuoteDetail`): cabecera «Concepto · Cant. · Importe», importe de línea = cantidad × precio
+ * (neto, el IVA va debajo), y las filas de `pieDePresupuesto` («Base imponible», «IVA (21%)» y, si hay
+ * descuento, «Suma de líneas» y «Descuento») con el mismo `rotuloEnLaPagina`.
+ *
+ * 🔴 SÓLO SI CUADRA. La página dice «Importe a pagar» con el importe del COBRO. Si la suma del
+ * desglose no es el total de la factura (suplidos, otro motor de redondeo: SCRUM-624) o el cobro no
+ * es la factura entera, una tabla debajo diría otra cifra que la de arriba, y explicarlo pediría un
+ * texto sin firmar (regla 39). En esos casos la página queda como estaba.
+ */
+function detalleDeLaFactura(
+  invoice: { total: unknown; lines: unknown } | null,
+  importeDelCobro: number,
+  currency: string,
+): string {
+  const lineas: any[] = Array.isArray(invoice?.lines) ? (invoice!.lines as any[]) : [];
+  if (lineas.length === 0) return '';
+  const money = (n: number) => esc(formatMoneyEs(n, currency));
+  const pie = pieDePresupuesto({ lineas, modo: 'sumar', nombreImpuesto: 'IVA' });
+  const desdeBase = pie.filas.findIndex((f) => f.etiqueta === 'Base imponible:');
+  if (desdeBase < 0) return '';
+  const sumaDelDesglose = pie.filas.slice(desdeBase).reduce((s, f) => s + f.importe, 0);
+  const totalFactura = Number(invoice!.total);
+  const cuadra = (a: number, b: number) => Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) < 0.005;
+  if (!cuadra(sumaDelDesglose, totalFactura) || !cuadra(importeDelCobro, totalFactura)) return '';
+
+  const rotuloEnLaPagina = (etiqueta: string) => {
+    // «IVA 21%:» → «IVA (21%)», sin expresión regular (SCRUM-1325: ninguna mira texto sin declarar).
+    const sinDosPuntos = etiqueta.endsWith(':') ? etiqueta.slice(0, -1) : etiqueta;
+    if (sinDosPuntos.startsWith('IVA ') && sinDosPuntos.endsWith('%')) {
+      return `IVA (${sinDosPuntos.slice(4)})`;
+    }
+    return sinDosPuntos;
+  };
+  // Una cabecera de apartado (SCRUM-655) viaja sin cantidad ni precio: concepto sí, importe vacío.
+  const importeDeLinea = (l: any) => {
+    const neto = Number(l?.qty) * Number(l?.price);
+    return l?.qty != null && l?.price != null && Number.isFinite(neto) ? money(neto) : '';
+  };
+  return `
+    <table class="lines-table">
+      <thead><tr><th>Concepto</th><th>Cant.</th><th>Importe</th></tr></thead>
+      <tbody>${lineas.map((l: any) => `
+        <tr>
+          <td>${esc(l?.concept ?? '')}</td>
+          <td>${esc(l?.qty ?? '')}</td>
+          <td>${importeDeLinea(l)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <div class="totals-block">
+      ${pie.filas.map((f) => `
+      <div class="totals-row"><span>${esc(rotuloEnLaPagina(f.etiqueta))}</span><span>${money(f.importe)}</span></div>`).join('')}
+    </div>`;
+}
 
 // SCRUM-1647 · el guion de las tres páginas de pago, servido desde 'self' (`script-src 'self'`). Dos
 // tramos de ruta: ningún `/<algo>/:token` de los routers de /pay lo pisa. `immutable` sólo con la huella buena.
@@ -55,9 +118,14 @@ router.get('/invoice/:token', async (req, res) => {
     return res.redirect(303, `/recibo/${token}`);
   }
 
-  // Nº de factura asociada (si existe), para dar contexto
+  // Nº de factura asociada (si existe), para dar contexto. SCRUM-1787h: también sus líneas y su total,
+  // y SIEMPRE del comercio del cobro: sin `merchantId`, una factura de otro comercio con el mismo
+  // `chargeId` pintaría aquí su número y, desde este ticket, sus líneas.
   const invoice = await prisma.invoice
-    .findFirst({ where: { chargeId: id }, select: { number: true } })
+    .findFirst({
+      where: { chargeId: id, merchantId: charge.merchantId },
+      select: { number: true, total: true, lines: true },
+    })
     .catch(() => null);
 
   const m = charge.merchant;
@@ -74,6 +142,8 @@ router.get('/invoice/:token', async (req, res) => {
   const subline = conceptIsInvoiceRef
     ? invRef
     : [concept, invRef].filter(Boolean).join(' · ');
+
+  const detalleHtml = detalleDeLaFactura(invoice, Number(charge.amount), charge.currency);
 
   // ── A2.1: métodos disponibles + orden por la matriz W4 (por importe) ──
   const amountNum = Number(charge.amount);
@@ -212,6 +282,7 @@ router.get('/invoice/:token', async (req, res) => {
       <div class="amount">${amount}</div>
       ${subline ? `<div class="subline">${subline}</div>` : ''}
     </div>
+    ${detalleHtml}
 
     <div class="methods-label">Elige cómo pagar</div>
     ${methodsHtml || `
