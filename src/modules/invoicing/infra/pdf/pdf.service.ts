@@ -380,7 +380,10 @@ export async function generateInvoicePdf(params: {
   // «la factura quiere la denominación legal».
   //
   // Opcional a propósito: quien no lo pase sigue funcionando exactamente igual que antes.
-  customer: { name: string; legalName?: string | null; email?: string | null; phone?: string | null };
+  customer: { name: string; legalName?: string | null; email?: string | null; phone?: string | null;
+    // SCRUM-1787d (GO c.22303) · el NIF y la dirección del cliente, CONGELADOS en la factura: el
+    // llamador pasa `direccionEnUnaLinea(direccionDeLaFactura(inv))`, nunca la ficha viva.
+    taxId?: string | null; address?: string | null };
   currency: string;
   total: string;
   qrData: string;
@@ -555,6 +558,13 @@ export async function generateInvoicePdf(params: {
   doc.fontSize(10).font('Helvetica-Bold').fillColor(INK).text(nombreCliente, col2X, clientTextY, { width: colW });
   doc.font('Helvetica').fontSize(9).fillColor(BODY);
   let cy = clientTextY + 14;
+  // SCRUM-1787d · rótulos firmados `NIF` y `Dirección` (c.22303 ③). Vacíos → no se pintan.
+  if (params.customer.taxId) { doc.text(`NIF: ${params.customer.taxId}`, col2X, cy, { width: colW }); cy += 13; }
+  if (params.customer.address) {
+    const lineaDir = `Dirección: ${params.customer.address}`;
+    doc.text(lineaDir, col2X, cy, { width: colW });
+    cy += Math.max(13, doc.heightOfString(lineaDir, { width: colW }) + 2);
+  }
   if (params.customer.email) { doc.text(params.customer.email, col2X, cy, { width: colW }); cy += 13; }
   if (params.customer.phone) { doc.text(params.customer.phone, col2X, cy, { width: colW }); }
 
