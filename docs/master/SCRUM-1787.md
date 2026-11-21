@@ -307,6 +307,39 @@ NO medido: la cifra que dará con #3302 (hace falta espiar la tx completa de `cr
 - 320 px, conceptos de varias líneas, importes de 9.999,99 € y la factura R1 (sólo F1 en los tres estados).
 - El guard en CI: lo dirá el job de `guards:visuales` de este PR.
 - La suite entera, en local, por tramos (`tanda-entera-por-tramos.mjs`, 15 de 15, uno por comando): 1.742 ficheros, 14.075 casos, **10 rojos, ninguno de esta rama**. 8 son del cliente de Prisma COMPARTIDO, que a esa hora llevaba `Invoice.customerBillingAddress` (el esquema de #3302) sin estar en el `schema.prisma` de main: `_prisma-client-guard` salió 1 nombrándolo. Son scrum235 (4), el censo de producción (1), scrum461 (2) y scrum733 (1: el generador escribe 545 columnas frente a 540, que son las 5 `customerBilling*`). Los otros 2 son de scrum1298b (latido), en el tramo 3; aislado sale 8/8 en este árbol y 8/8 en un árbol limpio de `origin/main`. Por el camino, la tanda cazó dos defectos MÍOS que arreglé: scrum1392 (las listas del guard nacían dentro del caso) y scrum1603 (el banco medía sin la letra de la casa: ahora usa `_hojas-del-panel`). Los tramos 1 a 3 y 5 corrieron antes de esos dos arreglos; después volví a pasar 1392, 1603, 1313, 1320, 1327, 1336, 737, 258 y 711 (69 + 30 casos, 0 fallos) y el guion de mutaciones (3 de 3 caen).
+# SCRUM-1787h · La página de pago de la factura enseña sus líneas, como la del presupuesto
+
+**Medido contra:** `origin/main` = `c27b1dc2513f6abe8ea28f84ad596e0d6aa66b91` · 2026-11-21T19:58:52Z
+
+A9: aviso → cicatriz J2 «edité la ruta de la página de pago antes de cargar la skill `yaqu-premium-ui`, que el encargo ponía antes de la primera edición; la cargué antes de tocar el CSS» — no se pudo comprobar: qué skill se ha cargado antes de un Edit no lo ve ningún hook del repositorio.
+
+Mutaciones: catálogo → `tests/scrum1787h-pago-con-lineas.test.mjs`
+
+Decisión del fundador: SCRUM-1787 c.22327 («1-Sí», pregunta 6 de c.22301). Carril J2 (`payInvoice.routes.ts`, `pagoEstilo.ts`). Sin emisión, sin esquema, sin texto nuevo.
+
+## Lo que había
+
+`GET /pay/invoice/:token` pintaba el importe del cobro, el concepto del cobro y «Factura <nº»>, sin líneas. La factura se buscaba por `chargeId` SOLO: una factura de otro comercio con el mismo `chargeId` habría puesto aquí su número (el control de comercio del test cayó contra el código de antes).
+
+## El cambio
+
+- La factura se lee con `where: { chargeId, merchantId: charge.merchantId }` y trae `number`, `total` y `lines` (las de la factura EMITIDA; nada se escribe).
+- `detalleDeLaFactura` pinta, entre el importe y «Elige cómo pagar», la tabla y el desglose de `renderQuoteDetail` (`quoteDecisionLanding.routes.ts`, S1, sólo leído): cabecera «Concepto · Cant. · Importe», importe de línea = cantidad × precio, y las filas de `pieDePresupuesto` («Base imponible», «IVA (21%)»; con descuento de línea, «Suma de líneas» y «Descuento»), con el mismo cambio de rótulo de la página del presupuesto. Ningún rótulo nuevo.
+- 🔴 Sólo se pinta si CUADRA: base + IVA = total de la factura, y total de la factura = importe del cobro. Si no (suplidos, otro motor de redondeo —SCRUM-624—, un cobro parcial), una tabla debajo de «Importe a pagar» diría otra cifra, y explicarlo pediría un texto sin firmar: la página queda como antes. Es decisión mía, y la digo en la entrega.
+- No lleva el icono por línea de la página del presupuesto (`lineIcon` es privado de un fichero de S1; copiarlo era una segunda copia del criterio). Ni la columna «Precio»: la página del presupuesto no la tiene.
+- CSS en la hoja `factura` de `pagoEstilo.ts` (servida desde 'self', sin `style=`), con las medidas de `.lines-table`/`.totals-block` de `quoteDecisionEstilo.ts` y las variables de esa hoja.
+
+## Evidencia
+
+- Test: `tests/scrum1787h-pago-con-lineas.test.mjs`, ruta REAL con dobles que filtran por el `where`. ROJO antes del cambio (2 de 4: sin tabla; y la factura de otro comercio se colaba), VERDE después (4 de 4).
+- Mutaciones (`docs/master/evidencias/SCRUM-1787/pago-con-lineas/mutar.mjs`, `aplicarUna`): quitar `${detalleHtml}` tumba el caso de las tres líneas; quitar `merchantId` del `where` tumba el control de comercio. Árbol limpio después.
+- Capturas en local, código real, datos de EJEMPLO (`pago-con-lineas/servir.mjs`): `pago-con-lineas/movil-390.png` y `pago-con-lineas/escritorio-1280.png`. Miradas: el concepto largo envuelve y los importes quedan alineados; 165,00 + 34,65 = 199,65.
+
+## NO medido
+
+- Cuántas facturas reales cuadran (y por tanto enseñarán líneas): sin base, no lo he intentado.
+- La página en yaqu.app: se ve tras el merge y el despliegue.
+- Una factura con apartados o con descuento de línea en el navegador (el código las trata como la página del presupuesto; el test no las lleva).
 
 # SCRUM-1787f · Vencimiento y formas de pago de la factura: DDL propuesto y diseño (solo docs; se construye en el sprint siguiente, después del ALTER)
 
