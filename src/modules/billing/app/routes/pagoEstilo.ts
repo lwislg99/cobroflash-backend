@@ -214,6 +214,19 @@ export const PAGO_CSS: Readonly<Record<PaginaDePago, string>> = {
     :focus-visible{outline:none;box-shadow:0 0 0 3px rgba(34,197,94,.30)}
     /* SCRUM-1723 · los atributos style= que llevaba el marcado, copiados tal cual a una clase. */
     .pago-sin-metodos{text-align:center;font-size:.85rem;color:var(--muted);padding:.8rem 0;line-height:1.5}
+    /* SCRUM-1787h · las líneas de la factura: las medidas de la tabla y el desglose de la página del
+       presupuesto (quoteDecisionEstilo.ts, .lines-table/.totals-block), con las variables de esta hoja. */
+    .lines-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:14px;margin:1rem 0 .4rem}
+    .lines-table th{text-align:left;padding:4px 6px;color:var(--muted);font-size:12px;font-weight:600;border-bottom:1px solid var(--border)}
+    .lines-table td{padding:6px 6px;border-bottom:1px solid var(--slate-50);color:var(--ink)}
+    .lines-table td:first-child{overflow-wrap:break-word}
+    .lines-table th:nth-child(2),.lines-table td:nth-child(2){width:44px;text-align:right}
+    .lines-table th:nth-child(3),.lines-table td:nth-child(3){width:100px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+    @media (max-width:420px){.lines-table{font-size:13px}
+      .lines-table th:nth-child(3),.lines-table td:nth-child(3){width:92px}}
+    .totals-block{margin:0 0 .2rem}
+    .totals-row{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;color:var(--muted);padding:3px 6px;font-variant-numeric:tabular-nums}
+    .totals-row span:last-child{color:var(--body);font-weight:600}
   `,
 };
 
