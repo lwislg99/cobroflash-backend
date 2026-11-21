@@ -2,7 +2,7 @@
 
 **Medido contra:** `origin/main` = `fea1c00078654d8d617af055de94f2b627df07ce` · 2026-11-21T03:53:14Z
 
-A9: aviso → cicatriz J2 «un clic que falla dentro de un catch mudo produce una captura igual a la anterior» — no se pudo comprobar: el guion de capturas vive en evidencias y ningún test lo ejecuta, así que no hay guard que pueda cazar un clic tragado; lo que sí queda es que el propio guion ya no traga nada: cada paso exige su bloque visible y sin animaciones, o lanza
+A9: aviso → cicatriz J2 «un clic que falla dentro de un catch mudo produce una captura igual a la anterior: la pestaña El trabajo se buscó con el rol button (es tab) y la captura 5 salió idéntica a la 4, y la 4 salió a mitad de un fundido de entrada» — no se pudo comprobar: el guion de capturas vive en evidencias y ningún test lo ejecuta, así que no hay guard que pueda cazar un clic tragado; lo que sí queda es que el propio guion ya no traga nada: cada paso exige su bloque visible y sin animaciones, o lanza
 
 Carril J2 (solo documentos y evidencias: nada en `src/`, `public/` ni `prisma/`). Encargo del orquestador J (`cobroflash-backend-87`), 21-nov-2026. Sesiones `jv-j2dn` (medición y primeras capturas) y `jv-j2do` (relevo: captura 5, revisión de las 10 y este registro), rama `scrum-1784a-relevo-j2do`. La hora del ancla es la cabecera `Date:` de GitHub (`gh api -i zen`).
 
