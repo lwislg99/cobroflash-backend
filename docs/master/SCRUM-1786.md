@@ -183,3 +183,56 @@ nueva (`lineasDeLaFactura`), y `scrum887` cayó porque ya no veía `lineasParaFa
 Se cambió el código, no el guard (regla 41). ② Una línea de import de más movió dos anclas con testigo de
 `docs/legal/AUDITORIA_CAMINO_EMISION.md:148`, y `scrum525d` cayó. Se dejó el cambio neutro en líneas, en vez
 de reanclar.
+
+## SCRUM-1786f1 · «Total del apartado» bajo cada apartado, en el PDF del presupuesto
+
+**Puesto:** J1 (jv-j1hg) · **Rama:** `scrum-1786f1-total-del-apartado` · 21-nov-2026
+**Medido contra:** `origin/main` = `c27b1dc2513f6abe8ea28f84ad596e0d6aa66b91` · 2026-11-21T20:01:13Z (cabecera `Date:` de `gh api -i zen`)
+A9: comprobación → `scripts/meta-guard-mutaciones.mjs`
+Mutaciones: catálogo → `tests/scrum1786f1-total-del-apartado.test.mjs`
+
+**Decisión:** SCRUM-1786 c.22329 («1-Sí lánzalo»). Literal firmado en c.22269: `Total del apartado`.
+Solo `generateQuotePdf`, modo clásico. El PDF de factura, las tarjetas de opciones y el modo agrupado no se tocan.
+
+**Lo medido antes de tocar** (PDF real leído con `lineasDePdf`): la cabecera de apartado salía como una fila
+con su concepto y las celdas vacías (`pdf.service.ts`, bucle `params.lines.forEach` del modo clásico); no había
+subtotal. La base del pie sale de `calcVatBreakdown` dentro de `pieDePresupuesto` (`presentacionIva.ts`), y la
+columna IMPORTE de cada línea es `qty × price`: sin IVA y sin el `dto` de línea (SCRUM-1446e). El documento no
+imprime fecha, así que texto y posiciones son reproducibles.
+
+**El cambio:** cuál es cabecera lo decide `lineasQueSuman` de `apartados.ts` (S1, solo se importa; el criterio no
+se copia). Al cerrar cada apartado (llega la siguiente cabecera o se acaba la tabla) se pinta una fila
+`Total del apartado` con `calcVatBreakdown(<líneas del apartado>).base` en la columna IMPORTE. Es la misma
+primitiva y el mismo redondeo que la base del pie, así que no hay aritmética nueva. Sin descuentos, los totales
+suman la «Base imponible»; con `dto` o descuento global, suman la «Suma de líneas», que es la fila del pie
+anterior a restarlos, igual que la columna que tienen encima (caso ④ del test). El import entra en la línea
+de un comentario que se juntó con la siguiente: el fichero no mueve ninguna línea por encima del bucle, y el
+ancla `pdf.service.ts:121` de `docs/legal/AUDITORIA_CAMINO_EMISION.md` sigue donde estaba.
+
+**Captura** (PDF fabricado: dos apartados, 3 y 2 líneas, IVA del 21 % y del 10 %):
+`docs/master/evidencias/SCRUM-1786/captura-1786f1-total-del-apartado.png`. Salón 287,25 + Cocina 330,00 = base
+617,25. Mirada: la fila va en negrita, alineada a la columna IMPORTE, debajo de la última línea de cada apartado.
+
+**Pruebas:** `tests/scrum1786f1-total-del-apartado.test.mjs`, 4 casos. ROJO sobre el código de antes en ①②④
+(no había filas) y verde ③, cuya huella (texto y posición de las 17 líneas) se tomó de ese código. Después, 4/4.
+Tanda dirigida (66 ficheros: los que nombran `generateQuotePdf`, 1785, 1785b, 262, 603b, 723, 523d, 1157, 1215,
+1415, 836, 719, 1294, 267, 273, 525d, 854, 655 y el nuevo): 577 casos, 569 pasan, 7 saltados y 1 cae. El que cae
+es `scrum854` («esta rama, si toca código, trae su entrada de registro»), porque este tramo aún no estaba
+escrito. Se vuelve a correr después de escribirlo (ver la entrega en Jira).
+🔴 **NO corrida la suite entera**, por orden del orquestador (la máquina iba justa de RAM): la corre el obligatorio.
+
+**Mutaciones** (`correr` + `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, `git status` sin cambios en
+`src/` después): «la fila desaparece» → VIVA; «suma mal» (el total deja fuera su última línea) → VIVA.
+
+**Error mío, cazado por un guard que ya existía:** la primera ancla de «la fila desaparece» era la llamada de
+cierre de después del bucle, y la del bucle la contiene como subcadena. `aplicarUna` contestó CIEGO («el ancla
+aparece 2 veces») y no mutó nada. La cambié por la firma de la función, que es única.
+
+**Deuda declarada (c.22329):** cuando S1 escriba `capitulos()` (tramo c), este recorrido pasa a usarla y queda uno
+solo. Hasta entonces el PDF agrupa por su cuenta, con el criterio de `lineasQueSuman`.
+
+**Sin medir:** ninguna base de datos, yaqu.app (aún no está en main), un apartado que salta de página (el salto
+de página de la fila está escrito como el de las líneas, pero no lo ha ejercitado ningún test), un apartado sin
+líneas (pinta `0,00`) y unas líneas con céntimos fraccionarios. Con ese último caso, el redondeo por tipo dentro de
+cada apartado puede no sumar al céntimo la base del documento, que redondea por tipo sobre todas las líneas. Es la
+misma diferencia que ya hay hoy entre la columna IMPORTE y la base.
