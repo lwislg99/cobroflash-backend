@@ -34,9 +34,9 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 
 const COMERCIAL = 'QAComercial1785b';
 const RAZON = 'QARazon1785bSL';
-const TEL_COMERCIO = '611178522';
+const TEL_COMERCIO = '34000178522';
 const CONCEPTO = 'Bajante1785b';
-const CLIENTE = { id: 5, name: 'QA1785bCLIENTE', phone: '600178511', mobile: '600178511', email: 'qa1785b@correo.es' };
+const CLIENTE = { id: 5, name: 'QA1785bCLIENTE', phone: '34000178511', mobile: '34000178511', email: 'qa1785b@correo.es' };
 const MERCHANT = { name: COMERCIAL, legalName: RAZON, taxId: 'B00000000', country: 'ES', whatsappPhone: TEL_COMERCIO };
 
 async function textoDelPresupuesto(merchant) {

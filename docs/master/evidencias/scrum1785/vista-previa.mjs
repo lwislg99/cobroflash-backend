@@ -13,7 +13,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
 const { cargarDashboard, pintarVista, todos } = await import(pathToFileURL(path.join(RAIZ, 'tests/_banco-vistas.mjs')).href);
 
-const CLIENTE = { id: 5, name: 'QA1785NOMBRE', phone: '600178511', mobile: '600178511', email: 'qa1785@correo.es', taxId: 'X1785000Z' };
+const CLIENTE = { id: 5, name: 'QA1785NOMBRE', phone: '34000178511', mobile: '34000178511', email: 'qa1785@correo.es', taxId: 'X1785000Z' };
 const DATOS = [
   { key: 'name', rotulo: 'Nombre', valor: CLIENTE.name },
   { key: 'phone', rotulo: 'Teléfono', valor: CLIENTE.phone },

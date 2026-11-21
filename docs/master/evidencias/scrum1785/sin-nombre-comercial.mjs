@@ -12,7 +12,7 @@ const { paramsDePresupuestoParaPdf } = await imp('dist/modules/quotes/domain/pre
 const { generateQuotePdf } = await imp('dist/lib/pdf.js');
 const { extraerTextoPdf } = await imp('tests/_texto-del-pdf.mjs');
 
-const TEL = '611178522';
+const TEL = '34000178522';
 const CASOS = [
   { caso: 'CONTROL: con nombre comercial', merchant: { name: 'QAComercial1785b', legalName: 'QARazon1785bSL' } },
   { caso: 'name vacío, con razón social', merchant: { name: '', legalName: 'QARazon1785bSL' } },

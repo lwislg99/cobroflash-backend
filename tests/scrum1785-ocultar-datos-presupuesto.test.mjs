@@ -63,7 +63,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 // Tokens SIN espacios e improbables: si aparecen en el papel no es coincidencia, y el salto de
 // línea de pdfkit no los puede partir.
 const CLIENTE = {
-  id: 5, name: 'QA1785NOMBRE', phone: '600178511', mobile: '600178511',
+  id: 5, name: 'QA1785NOMBRE', phone: '34000178511', mobile: '34000178511',
   email: 'qa1785@correo.es', taxId: 'X1785000Z',
 };
 const DATOS = [
@@ -129,7 +129,7 @@ test('SCRUM-1785 · PDF: los cuatro ocultos a la vez — no sale ninguno', async
 // mitades: que ocultar no se lleve el del comercio es tan comportamiento como que quite el del
 // cliente. El rótulo (hoy «WhatsApp <número>», sin nombre) espera la firma del fundador: aquí NO se
 // fija su texto, sólo de quién es el número y en qué bloque cae.
-const TEL_COMERCIO = '611178522';
+const TEL_COMERCIO = '34000178522';
 
 test('SCRUM-1785 · PDF: con «Teléfono» oculto sale el WhatsApp del COMERCIO en el bloque del emisor, y el del cliente no', async () => {
   const quote = {

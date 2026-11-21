@@ -18,8 +18,8 @@ const { paramsDePresupuestoParaPdf } = await imp('dist/modules/quotes/domain/pre
 const { generateQuotePdf } = await imp('dist/lib/pdf.js');
 const { extraerTextoPdf } = await imp('tests/_texto-del-pdf.mjs');
 
-const TEL_CLIENTE = '600178511';
-const TEL_COMERCIO = '611178522';
+const TEL_CLIENTE = '34000178511';
+const TEL_COMERCIO = '34000178522';
 const COMERCIAL = 'QAComercial1785';
 const FISCAL = 'QARazon1785SL';
 const CONCEPTO = 'Bajante1785';

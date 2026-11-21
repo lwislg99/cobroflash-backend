@@ -14,8 +14,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
 const { cargarDashboard, pintarVista, todos } = await import(pathToFileURL(path.join(RAIZ, 'tests/_banco-vistas.mjs')).href);
 
-const TEL_CLIENTE = '600178511';
-const TEL_COMERCIO = '611178522';
+const TEL_CLIENTE = '34000178511';
+const TEL_COMERCIO = '34000178522';
 const CLIENTE = { id: 5, name: 'QA1785NOMBRE', phone: TEL_CLIENTE, mobile: TEL_CLIENTE, email: 'qa1785@correo.es', taxId: 'X1785000Z' };
 const MERCHANT = { id: 1, name: 'QAComercial1785', legalName: 'QARazon1785SL', whatsappPhone: TEL_COMERCIO, defaultCurrency: 'EUR', clausulasPresupuesto: [] };
 const respirar = (ms = 0) => new Promise((r) => setTimeout(r, ms));
