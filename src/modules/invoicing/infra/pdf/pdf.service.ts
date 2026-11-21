@@ -997,8 +997,14 @@ export async function generateQuotePdf(params: ParamsPdfPresupuesto) {
   doc.fontSize(12).text(`Emisor: ${merchantName}`);
   if (params.merchant.taxId) doc.text(`NIF: ${params.merchant.taxId}`);
   if (params.merchant.address) doc.text(params.merchant.address);
-  if (params.merchant.whatsappPhone)
-    doc.text(`WhatsApp ${params.merchant.whatsappPhone}`);
+  // SCRUM-1785b · literal firmado (SCRUM-1785 c.22281): «WhatsApp de <nombre comercial>: <número>», con
+  // el nombre COMERCIAL (`name`), no la razón social, que sigue en «Emisor:». Sin nombre comercial
+  // se deja el rótulo de siempre: ese caso no está firmado (se firma aparte).
+  const nombreComercial = String(params.merchant.name ?? '').trim();
+  if (params.merchant.whatsappPhone) {
+    if (nombreComercial) doc.text(`WhatsApp de ${nombreComercial}: ${params.merchant.whatsappPhone}`);
+    else doc.text(`WhatsApp ${params.merchant.whatsappPhone}`);
+  }
   doc.moveDown();
 
   // A20.4: el pro elige qué datos del cliente van en el documento (docFields;

@@ -19,7 +19,7 @@ import {
   ERROR_PDF_SIN_SELLAR,
 } from '../modules/invoicing/domain/selladoEstado';
 import { exigirLineasFacturables } from '../modules/invoicing/domain/lineasFacturables'; // SCRUM-246
-import { lineasParaFacturar } from '../modules/invoicing/domain/invoiceLines.service'; // SCRUM-887
+import { lineasParaFacturar } from '../modules/invoicing/domain/invoiceLines.service'; import { lineasQueSuman } from '../modules/quotes/domain/apartados'; // SCRUM-887 · SCRUM-1786b (una línea: anclas fichero:línea)
 import { exigirTiposDeIvaEmitibles } from '../core/validation/tiposIvaEmitibles'; // SCRUM-771
 import { exigirCausaLineaEmitible } from '../core/validation/causaLineaEmitible'; import { exigirDestinatarioParaIsp } from '../modules/invoicing/domain/destinatarioIsp'; // SCRUM-1051 · 1051g (en una línea: la auditoría cita este fichero por número de línea, scrum525d)
 import { crearFacturaEmitida } from '../modules/invoicing/domain/crearFacturaEmitida'; // SCRUM-729
@@ -350,8 +350,8 @@ export async function ensureInvoiceForCharge(
   const quoteLines = quote
     ? await prisma.quote.findUnique({ where: { id: quote.id }, select: { lines: true, discountGlobalAmount: true } })
     : null;
-  // SCRUM-887 · las líneas del presupuesto con su dto de línea YA aplicado, como en los demás caminos.
-  const lineasDelPresupuesto = quoteLines ? lineasParaFacturar(quoteLines) : [];
+  // SCRUM-887 · dto de línea YA aplicado · SCRUM-1786b · sin cabeceras de apartado (títulos, no líneas).
+  const lineasDelPresupuesto = quoteLines ? lineasQueSuman(lineasParaFacturar(quoteLines)) : [];
   const invoiceLines: any[] = lineasDelPresupuesto.length > 0
     ? lineasDelPresupuesto
     : [{ concept: ch.concept, qty: 1, price: Number(ch.amount), tax: 0 }];

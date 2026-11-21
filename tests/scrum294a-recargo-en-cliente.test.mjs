@@ -101,28 +101,33 @@ test('SCRUM-294-a · la validación admite los TRES estados y ninguno más', () 
     + '«no se toca» (ausente) de «no consta» (null) de «declarado» (true/false).');
 });
 
-test('SCRUM-294-a · 🔴 la ficha NO degrada a `false` una lectura que no consta', () => {
+// 🔴 SCRUM-1783b (21-nov-2026) · ESTE CASO SE REANCLÓ, con autorización del fundador (SCRUM-1783
+// c.22267, «1-Sí»): el selector salió de la ficha (c.22264). Antes exigía que la ficha leyera y
+// escribiera los TRES estados sin degradar a `false`; ahora exige que la ficha NO lea ni escriba el
+// recargo. La lección de SCRUM-271 no se pierde, cambia de forma: el peor fallo ya no es mandar
+// `false` en vez de `null`, sino mandar CUALQUIER valor — sin control en pantalla, un `null` en el
+// payload borraría el dato guardado en cada guardado (medido por jv-j2dm, c.22266).
+test('SCRUM-294-a · 🔴 la ficha ya NO lee ni envía el recargo (SCRUM-1783b): no puede borrar el dato', () => {
   const vista = soloEjecutable(leer(VISTA));
 
-  // Al LEER: `|| ""` habría mandado el `false` a la opción «no consta».
-  assert.match(vista, /editingCustomer\.recargoEquivalencia === true \? "si"/,
-    '🔴 la ficha ya no distingue `true` de `false` al abrir: un cliente que declaró que NO lleva '
-    + 'recargo aparecería como «no consta», y al guardar se perdería lo que había declarado.');
-  assert.match(vista, /=== false \? "no"/,
-    '🔴 falta la rama de `false`. Con `|| ""`, «declara que no» y «no consta» se leen igual — y son '
-    + 'cosas distintas.');
+  // Control positivo: la vista que se lee es la del modal (el payload de sus vecinos sigue ahí).
+  assert.match(vista, /tipoDestinatario: fieldTipoDestinatario\.value \|\| null/,
+    '🔴 CIEGO: no encuentro el payload del modal en la vista; «no lo envía» sería cierto sobre nada.');
 
-  // Al ESCRIBIR: vacío → null explícito, nunca false.
-  assert.match(vista, /recargoEquivalencia: fieldRecargo\.value === "si" \? true : fieldRecargo\.value === "no" \? false : null/,
-    '🔴 EL VACÍO YA NO VIAJA COMO `null`.\n\n'
-    + '  Si «no consta» se manda como `false`, el producto DECLARA por el profesional que su cliente\n'
-    + '  no lleva recargo. `false` es un valor legítimo, así que nadie notaría el fallo: es el peor\n'
-    + '  sitio donde degradar (SCRUM-271).');
+  // Al LEER: la ficha ya no rellena ningún control con el recargo.
+  assert.ok(!/editingCustomer\.recargoEquivalencia/.test(vista),
+    '🔴 la ficha vuelve a LEER el recargo del cliente, pero ya no tiene control que lo enseñe '
+    + '(SCRUM-1783 c.22264).');
 
-  // Y es un SELECT, no una casilla: una casilla no sabe decir «no consta».
-  assert.ok(!/fieldRecargo\.checked/.test(vista),
-    '🔴 el campo ha vuelto a ser una casilla. Una casilla solo tiene dos estados, así que «no '
-    + 'consta» se leería como «declara que no».');
+  // Al ESCRIBIR: la clave no viaja. Ausente = Zod `.partial()` no la produce y Prisma no la toca.
+  assert.ok(!/recargoEquivalencia\s*:/.test(vista),
+    '🔴 EL PAYLOAD VUELVE A LLEVAR `recargoEquivalencia`.\n\n'
+    + '  La ficha ya no muestra el recargo, así que cualquier valor que mande no lo ha escrito el\n'
+    + '  profesional: con `null`, cada guardado BORRARÍA el dato guardado (SCRUM-1783 c.22266).');
+
+  // Y no ha vuelto como casilla por otro lado.
+  assert.ok(!/fieldRecargo/.test(vista),
+    '🔴 ha vuelto un control del recargo (`fieldRecargo`) a la ficha.');
 });
 
 // ── 3 · SE LEE Y SE ESCRIBE DE VERDAD ─────────────────────────────────────────────────────
@@ -146,25 +151,19 @@ test('SCRUM-294-a · el rótulo es un MARCADOR sin aprobar, no microcopy inventa
   // exigiendo el marcador y ahora exige el TEXTO APROBADO, así que un renombre sigue cayendo. Y se
   // mantiene su lección original —se comprueba el RÓTULO, no «que quede algún marcador»—: por eso
   // debajo se cuentan las CUATRO ranuras una a una y no basta con que acierte una.
-  assert.match(vista, /recargoLabel\.textContent = "Recargo de equivalencia"/,
-    '🔴 el RÓTULO del campo ya no es el aprobado («Recargo de equivalencia»).');
-  const bloque = vista.slice(vista.indexOf('recargoWrapper'), vista.indexOf('body.appendChild(recargoWrapper)'));
-  for (const t of ['No consta', 'Sí, está en recargo', 'No está en recargo']) {
-    assert.ok(bloque.includes('>' + t + '<'),
-      `🔴 falta la opción aprobada «${t}» en el selector de recargo.`);
+  // 🔴 SCRUM-1783b (21-nov-2026) · REANCLADO con autorización del fundador (SCRUM-1783 c.22267):
+  // el campo salió de la ficha (c.22264), así que ahora se exige que NINGUNO de los cuatro textos
+  // aprobados quede en la vista. Si el selector vuelve, vuelve con decisión nueva, no de refilón.
+  const ejecutable = soloEjecutable(vista);
+  for (const t of ['Recargo de equivalencia', 'No consta', 'Sí, está en recargo', 'No está en recargo']) {
+    assert.ok(!ejecutable.includes('"' + t + '"') && !ejecutable.includes('>' + t + '<'),
+      `🔴 «${t}» ha vuelto a la ficha del cliente: el selector del recargo se quitó (SCRUM-1783 c.22264).`);
   }
-  assert.equal((bloque.match(/\[PENDIENTE microcopy oficial/g) || []).length, 0,
-    '🔴 han cambiado los marcadores de este campo: eran CUATRO (el rótulo y las tres opciones). Si '
-    + 'alguno lleva ya texto aprobado, quítalo de la cuenta a propósito — no de refilón.');
-  // 🔴 ESTA COMPROBACIÓN SE DA LA VUELTA, y conviene entender por qué no es aflojar.
-  //
-  // Exigía que quedara marcador «para que nadie escriba el texto», y su motivo era bueno: decirle
-  // en pantalla a qué RÉGIMEN FISCAL pertenece su cliente es ASESORARLE. Ese motivo sigue vivo — y
-  // por eso lo aprobado NO explica nada: el rótulo nombra el campo y las tres opciones solo
-  // PREGUNTAN. El dato se pide; no se explica, que era justo la línea que no se podía cruzar.
-  for (const prohibido of ['te conviene', 'deberías', 'recomendamos', 'si facturas a']) {
-    assert.ok(!bloque.toLowerCase().includes(prohibido),
-      `🔴 el campo ha empezado a ACONSEJAR («${prohibido}»). Eso es dictamen del asesor, no `
-      + 'producto: el dato se pide, no se explica (regla 30).');
-  }
+  // Control positivo del mismo instrumento: un texto que SÍ sigue en la ficha se ve con él.
+  assert.ok(ejecutable.includes('>Sin clasificar<'),
+    '🔴 CIEGO: el instrumento no ve «>Sin clasificar<», que sigue en la ficha; «no está» no vale nada.');
+  // Lo que había aquí debajo (cuenta de marcadores y «el campo no aconseja») medía el BLOQUE del
+  // selector. Sin selector no hay bloque, y medirlo sobre una cadena vacía sería una tautología con
+  // forma de prueba (A3), así que se quitó en SCRUM-1783b en vez de dejarlo verde sobre nada. Si el
+  // campo vuelve, vuelve con decisión nueva y esas comprobaciones vuelven con él.
 });
