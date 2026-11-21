@@ -33,7 +33,7 @@
 // 2 céntimos). Es visible, explicable y NO toca la cadena de huellas. Ver también
 // `docs/COMO_FUNCIONA_YAQU.md` (explicación para el usuario) y la nota de SCRUM-32 en el máster.
 import { calcVatBreakdown, type VatLine, cantidadDeLinea } from './vat.service';
-import { precioConDto, descuentoGlobalEnCentimos } from '../../../core/utils/utils';
+import { precioConDto, descuentoGlobalEnCentimos } from '../../../core/utils/utils'; import { lineasQueSuman } from '../../quotes/domain/apartados'; // SCRUM-1786b
 
 /** Línea de factura: `tax` en FRACCIÓN (0.21), igual que en `Quote.lines`/`Invoice.lines`. */
 export type InvoiceLine = VatLine & { [key: string]: unknown };
@@ -172,7 +172,7 @@ export function stageLines<T extends InvoiceLine>(
   plan: StageLike[],
   stageIndex: number,
 ): T[] {
-  const src = Array.isArray(lines) ? lines : [];
+  const src = lineasQueSuman(Array.isArray(lines) ? lines : []); // SCRUM-1786b · sin cabeceras de apartado
   if (src.length === 0 || !Array.isArray(plan) || plan.length === 0) return [];
   if (stageIndex < 0 || stageIndex >= plan.length) return [];
 
