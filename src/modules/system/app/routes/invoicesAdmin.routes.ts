@@ -48,7 +48,7 @@ import { ensureInvoicePdf, ensureChargeReceiptToken } from '../../../../lib/invo
 import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } from '../../../invoicing/domain/cerrojoSaturado';
 import { sendSuccessBody, SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 import { esErrorSinSellar, ERROR_SIN_SELLAR, type MerchantPorton } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206
-import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
+import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, SELLADO_PENDIENTE, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { resolverFechaDeCobro } from '../../../billing/domain/fechaDeCobro'; // SCRUM-397
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1093 (bulk-paid)
 import { apuntarCobroDeFactura } from '../../../billing/domain/cobrosDeFactura'; // SCRUM-1732 (bulk-paid)
@@ -216,7 +216,11 @@ router.post('/', requireRole('admin'), async (req, res) => {
     // Sellado FUERA de la transacción y por el punto ÚNICO (SCRUM-205). No lanza: si falla, la
     // factura se queda `pendiente_de_sellado` y en ese estado no produce PDF ni QR (SCRUM-206).
     // Un fallo aquí NO revierte la emisión — deshacerla iría contra la regla 29.
-    const sellada = (await sellarTrasEmision(invoice, merchant, prisma)).estado === SELLADO_HECHO;
+    // SCRUM-1779f · el AVISO de fallo sale SOLO con `pendiente_de_sellado` (GO SCRUM-1779 c.22285), el
+    // criterio de `quotesAdmin.routes.ts`: `no_aplica` (SIF OFF, sin NIF, fuera de ES) NO es un fallo.
+    // `veriFactu` sigue siendo «tiene sello»: false sin sello, nunca true sin él.
+    const estadoSellado = (await sellarTrasEmision(invoice, merchant, prisma)).estado;
+    const sellada = estadoSellado === SELLADO_HECHO;
 
     // ⚠️ AQUÍ NO SE AUDITA, Y ES DELIBERADO. `factura_emitida` es acción BLOQUEANTE y la escribe
     // `allocateInvoiceNumber` DENTRO de la transacción (SCRUM-207: «aquí se escribe, y no es un
@@ -237,7 +241,7 @@ router.post('/', requireRole('admin'), async (req, res) => {
         currency: invoice.currency,
       },
       veriFactu: sellada,
-      ...(sellada ? {} : { message: 'Se emitió la factura, pero falló su registro VeriFactu. Revísalo antes de entregarla.' }),
+      ...(estadoSellado === SELLADO_PENDIENTE ? { message: 'Se emitió la factura, pero falló su registro VeriFactu. Revísalo antes de entregarla.' } : {}),
     });
   } catch (err: any) {
     if (esErrorSinLineas(err)) {
