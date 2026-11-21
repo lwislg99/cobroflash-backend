@@ -151,3 +151,35 @@ SCRUM-1785 c.22281, literal «El nombre comercial sí».
   cambio. Por orden del orquestador J se empuja una vez y la tanda completa la corre el obligatorio. El
   `scrum262` lo cazó el obligatorio de #3289 (`tests/scrum262-telefonos-de-prueba.test.mjs`).
 - **No medido:** base, staging, yaqu.app; la vista previa (`quotesView.js`, S2) sigue con «WhatsApp <número>».
+
+# SCRUM-1785c · PDF del presupuesto, comercio sin nombre comercial: «WhatsApp de <razón social>: <número>» (firma c.22328)
+
+**Medido contra:** `origin/main` = `8de57b45ac4b20bfe14c1d54b37ea47cadc02a32` · 2026-11-21T19:40:48Z (cabecera `Date:` de `gh api -i zen`)
+A9: sin fallo que generalice — el rojo se vio antes del cambio (2 de 3 casos nuevos caían) y las dos mutaciones del catálogo salieron VIVAS con el árbol restaurado; el único rojo de la dirigida fue `scrum854` por correrla antes de escribir este tramo, que es su trabajo
+Mutaciones: catálogo → `tests/scrum1785b-whatsapp-con-nombre-comercial.test.mjs`
+
+Sesión jv-j1hf (J1). **Supera el «Sin nombre comercial — PARA FIRMA APARTE» del tramo 1785b:** el fundador firmó en
+SCRUM-1785 c.22328, respuesta literal «2-Sí» a «¿Usamos ahí la razón social, "WhatsApp de <razón social>: <número>"?».
+
+- **Cambio:** `src/modules/invoicing/infra/pdf/pdf.service.ts`, dentro de `generateQuotePdf` (la misma línea que
+  cambió 1785b). El rótulo toma `nombreDelRotulo` = nombre comercial (`Merchant.name`, recortado) o, si está vacío o
+  en blanco, la razón social (`legalName`, recortada). Con alguno de los dos: `WhatsApp de <nombre>: <número>`; sin
+  ninguno: `WhatsApp <número>`, como antes. «Emisor:» no cambia. `generateInvoicePdf` no se toca: el literal
+  `WhatsApp de ${` sigue saliendo una sola vez en el fichero, después de la cabecera de `generateQuotePdf` (caso ④
+  del test).
+- **Test:** `tests/scrum1785b-whatsapp-con-nombre-comercial.test.mjs`, ampliado con tres casos 1785c sobre el texto
+  extraído del PDF real: sin nombre comercial → literal nuevo; nombre comercial sólo espacios → razón social; sin
+  ninguno → «WhatsApp <número>». El caso «con nombre comercial» es el primero del fichero (1785b), sin tocar.
+  Rojo primero: 7 casos, 5 pasan, 2 caen (los dos que piden la razón social; el de «sin ninguno» ya pasaba, es el
+  comportamiento de siempre). Verde 7/7 tras el cambio.
+- **Mutaciones (`aplicarUna`, catálogo del test):** base 7 pasan · 0 caen. ① volver a «WhatsApp <número>»: VIVA
+  (+3 colaterales). ② quitar la vuelta a la razón social (`nombreDelRotulo = nombreComercial`): VIVA (+1). El ancla
+  `de` de la mutación de 1785b se ha reescrito a `${nombreDelRotulo}` porque la variable cambió de nombre; sigue
+  tumbando el mismo caso. Árbol restaurado tras las dos (src y dist con el arreglo, comprobado con `grep`).
+- **Huellas congeladas:** `scrum603b`, `scrum723` y `scrum523d` en verde con el cambio; nada recongelado.
+- **Tanda dirigida** (24 ficheros: `scrum1785*`, 262, 603b, 723, 523d, 1157/1215*/1415, 836, 719, 1294, 267, 273,
+  525d, 854): 204 casos · 203 pasan · 1 cae (`scrum854` ②, este tramo aún no escrito) · 0 saltados.
+- La sonda `docs/master/evidencias/scrum1785/sin-nombre-comercial.mjs` describe lo que pintaba el PDF ANTES de esta
+  firma (rótulo sin nombre con `name` vacío); no se reescribe: es la medición de partida de 1785b.
+- **No medido:** base, staging, yaqu.app (si «Ajustes» deja vaciar el nombre comercial sigue sin medir); la vista
+  previa (`quotesView.js`, S2) no entra en esta firma.

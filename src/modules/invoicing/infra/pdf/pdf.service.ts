@@ -998,11 +998,13 @@ export async function generateQuotePdf(params: ParamsPdfPresupuesto) {
   if (params.merchant.taxId) doc.text(`NIF: ${params.merchant.taxId}`);
   if (params.merchant.address) doc.text(params.merchant.address);
   // SCRUM-1785b · literal firmado (SCRUM-1785 c.22281): «WhatsApp de <nombre comercial>: <número>», con
-  // el nombre COMERCIAL (`name`), no la razón social, que sigue en «Emisor:». Sin nombre comercial
-  // se deja el rótulo de siempre: ese caso no está firmado (se firma aparte).
+  // el nombre COMERCIAL (`name`), no la razón social, que sigue en «Emisor:».
+  // SCRUM-1785c · literal firmado (SCRUM-1785 c.22328): sin nombre comercial, «WhatsApp de <razón
+  // social>: <número>». Sin ninguno de los dos, el rótulo de siempre, «WhatsApp <número>».
   const nombreComercial = String(params.merchant.name ?? '').trim();
+  const nombreDelRotulo = nombreComercial || String(params.merchant.legalName ?? '').trim();
   if (params.merchant.whatsappPhone) {
-    if (nombreComercial) doc.text(`WhatsApp de ${nombreComercial}: ${params.merchant.whatsappPhone}`);
+    if (nombreDelRotulo) doc.text(`WhatsApp de ${nombreDelRotulo}: ${params.merchant.whatsappPhone}`);
     else doc.text(`WhatsApp ${params.merchant.whatsappPhone}`);
   }
   doc.moveDown();

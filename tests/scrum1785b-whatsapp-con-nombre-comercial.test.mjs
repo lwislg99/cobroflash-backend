@@ -26,9 +26,17 @@ const { paramsDePresupuestoParaPdf } = await import('../dist/modules/quotes/doma
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
-    de: 'doc.text(`WhatsApp de ${nombreComercial}: ${params.merchant.whatsappPhone}`);',
+    // SCRUM-1785c: el rótulo toma `nombreDelRotulo` (nombre comercial o, sin él, razón social).
+    de: 'doc.text(`WhatsApp de ${nombreDelRotulo}: ${params.merchant.whatsappPhone}`);',
     a: 'doc.text(`WhatsApp ${params.merchant.whatsappPhone}`);',
     cae: 'SCRUM-1785b · 🔴 PDF del presupuesto: el WhatsApp del comercio sale como «WhatsApp de <nombre comercial>: <número>»',
+  },
+  {
+    // SCRUM-1785c · quitar la vuelta a la razón social deja sin nombre el rótulo del comercio sin nombre comercial.
+    fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
+    de: "const nombreDelRotulo = nombreComercial || String(params.merchant.legalName ?? '').trim();",
+    a: 'const nombreDelRotulo = nombreComercial;',
+    cae: 'SCRUM-1785c · 🔴 PDF del presupuesto, sin nombre comercial: sale «WhatsApp de <razón social>: <número>»',
   },
 ];
 
@@ -86,4 +94,27 @@ test('SCRUM-1785b · CONTROL: el rótulo nuevo vive sólo en generateQuotePdf, n
   const i = src.indexOf('WhatsApp de ${');
   assert.ok(i > iPre, '🔴 el rótulo nuevo cae fuera de generateQuotePdf (antes de su cabecera: zona de la factura)');
   assert.equal(src.slice(iFac, iPre).includes('WhatsApp de'), false, '🔴 el cuerpo de generateInvoicePdf contiene el rótulo');
+});
+
+// ─── SCRUM-1785c · comercio SIN nombre comercial (firma del fundador, SCRUM-1785 c.22328: «2-Sí») ───
+// Literal firmado: `WhatsApp de <razón social>: <número>` cuando el comercio no tiene nombre comercial.
+// Si tampoco hay razón social, se queda `WhatsApp <número>`, como antes. Sólo el PDF del PRESUPUESTO.
+// El caso «con nombre comercial» es el primero de este fichero (1785b), sin cambios.
+
+test('SCRUM-1785c · 🔴 PDF del presupuesto, sin nombre comercial: sale «WhatsApp de <razón social>: <número>»', async () => {
+  const t = await textoDelPresupuesto({ ...MERCHANT, name: '' });
+  const literal = `WhatsApp de ${RAZON}: ${TEL_COMERCIO}`;
+  assert.ok(t.includes(literal), `🔴 no sale el literal firmado «${literal}» (c.22328)`);
+  assert.equal(t.includes(`WhatsApp ${TEL_COMERCIO}`), false, '🔴 sigue saliendo el rótulo sin nombre «WhatsApp <número>»');
+});
+
+test('SCRUM-1785c · PDF del presupuesto, nombre comercial en blanco (solo espacios): cuenta como sin nombre y sale la razón social', async () => {
+  const t = await textoDelPresupuesto({ ...MERCHANT, name: '   ' });
+  assert.ok(t.includes(`WhatsApp de ${RAZON}: ${TEL_COMERCIO}`), '🔴 con el nombre comercial en blanco no sale la razón social en el rótulo');
+});
+
+test('SCRUM-1785c · PDF del presupuesto, sin nombre comercial ni razón social: se queda «WhatsApp <número>»', async () => {
+  const t = await textoDelPresupuesto({ ...MERCHANT, name: '', legalName: null });
+  assert.ok(t.includes(`WhatsApp ${TEL_COMERCIO}`), '🔴 sin ningún nombre no sale «WhatsApp <número>»');
+  assert.equal(t.includes('WhatsApp de'), false, '🔴 sin ningún nombre sale un «WhatsApp de …» que no tiene nombre que poner');
 });
