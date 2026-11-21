@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<response>
+  <status>
+    <code>200</code>
+    <text>ok</text>
+  </status>
+  <data>
+    <bloque id="a158" tipo="precepto" titulo="Artículo 158">
+      <version id_norma="BOE-A-1992-28740" fecha_publicacion="19921229" fecha_vigencia="19930101">
+        <p class="articulo">Artículo 158. Sujetos pasivos del recargo de equivalencia.</p>
+        <p class="parrafo">Estarán obligados al pago del recargo de equivalencia:</p>
+        <p class="parrafo_2">1.º Los sujetos pasivos del impuesto que efectúen las entregas sometidas al mismo.</p>
+        <p class="parrafo">2.º Los propios comerciantes sometidos a este régimen especial en las adquisiciones intracomunitarias de bienes e importaciones que efectúen, así como en los supuestos contemplados en el artículo 84, apartado uno, número 2.º de esta Ley.</p>
+      </version>
+    </bloque>
+  </data>
+</response>

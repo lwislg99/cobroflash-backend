@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<response>
+  <status>
+    <code>200</code>
+    <text>ok</text>
+  </status>
+  <data>
+    <bloque id="a151" tipo="precepto" titulo="Artículo 151">
+      <version id_norma="BOE-A-1992-28740" fecha_publicacion="19921229" fecha_vigencia="19930101">
+        <p class="articulo">Artículo 151. Exclusiones del régimen especial de determinación proporcional de las bases imponibles.</p>
+        <p class="parrafo">Quedarán excluidos del régimen especial de determinación proporcional de las bases imponibles los comerciantes minoristas sometidos al régimen especial del recargo de equivalencia.</p>
+      </version>
+      <version id_norma="BOE-A-1997-28053" fecha_publicacion="19971231" fecha_vigencia="19980101">
+        <p class="articulo">Artículo 151. Exclusiones del régimen especial de determinación proporcional de las bases imponibles.</p>
+        <p class="parrafo">Quedarán excluidos del régimen especial de determinación proporcional de las bases imponibles los siguientes comerciantes minoristas:</p>
+        <p class="parrafo">1.º Los sometidos al régimen especial del recargo de equivalencia.</p>
+        <p class="parrafo">2.º Los comerciantes minoristas cuyo volumen de operaciones correspondiente a todas sus actividades empresariales o profesionales del año natural precedente haya excedido de 100 millones de pesetas.</p>
+        <blockquote>
+          <p class="nota_pie">Se modifica por el art. 6.24 de la Ley 66/1997, de 30 de diciembre. <a class="refPost">Ref. BOE-A-1997-28053</a></p>
+        </blockquote>
+      </version>
+      <version id_norma="BOE-A-1999-24786" fecha_publicacion="19991230" fecha_vigencia="20000101">
+        <p class="articulo">Artículo 151. Exclusiones del régimen especial de determinación proporcional de las bases imponibles.</p>
+        <p class="parrafo">
+          <strong>(Derogado)</strong>
+        </p>
+        <blockquote>
+          <p class="nota_pie">Se deroga por el art. 6.16 de la Ley 55/1999, de 29 de diciembre. <a class="refPost">Ref. BOE-A-1999-24786</a>.</p>
+          <p class="nota_pie">Se modifica por el art. 6.24 de la Ley 66/1997, de 30 de diciembre. <a class="refPost">Ref. BOE-A-1997-28053</a></p>
+        </blockquote>
+      </version>
+    </bloque>
+  </data>
+</response>
