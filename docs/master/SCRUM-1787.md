@@ -307,6 +307,52 @@ NO medido: la cifra que dará con #3302 (hace falta espiar la tx completa de `cr
 - 320 px, conceptos de varias líneas, importes de 9.999,99 € y la factura R1 (sólo F1 en los tres estados).
 - El guard en CI: lo dirá el job de `guards:visuales` de este PR.
 - La suite entera, en local, por tramos (`tanda-entera-por-tramos.mjs`, 15 de 15, uno por comando): 1.742 ficheros, 14.075 casos, **10 rojos, ninguno de esta rama**. 8 son del cliente de Prisma COMPARTIDO, que a esa hora llevaba `Invoice.customerBillingAddress` (el esquema de #3302) sin estar en el `schema.prisma` de main: `_prisma-client-guard` salió 1 nombrándolo. Son scrum235 (4), el censo de producción (1), scrum461 (2) y scrum733 (1: el generador escribe 545 columnas frente a 540, que son las 5 `customerBilling*`). Los otros 2 son de scrum1298b (latido), en el tramo 3; aislado sale 8/8 en este árbol y 8/8 en un árbol limpio de `origin/main`. Por el camino, la tanda cazó dos defectos MÍOS que arreglé: scrum1392 (las listas del guard nacían dentro del caso) y scrum1603 (el banco medía sin la letra de la casa: ahora usa `_hojas-del-panel`). Los tramos 1 a 3 y 5 corrieron antes de esos dos arreglos; después volví a pasar 1392, 1603, 1313, 1320, 1327, 1336, 737, 258 y 711 (69 + 30 casos, 0 fallos) y el guion de mutaciones (3 de 3 caen).
+# SCRUM-1787i · La factura suelta congela vencimiento y formas de pago, y la ficha pinta «Vence el» y «Formas de pago»
+
+**Medido contra:** `origin/main` = `ccb69008b5aaa80d3f7cb712be77ce025c146238` · 2026-11-21T21:57:37Z
+
+A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1787i-vencimiento-y-formas-de-pago.test.mjs`
+
+**Skill UI:** no cargada · jv-j1hk la cargó DESPUÉS de escribir la fila `Formas de pago` (la cazó `scrum811c` en `guards:entrada`), y revisó el cambio contra ella: una fila más con `addDefRow` en el bloque «Cobro» que ya existe, sin clases, estilos ni tokens nuevos. Del checklist AB6 no hay capturas ni matriz de dispositivos: no medidas.
+
+Decisiones del fundador: SCRUM-1787 c.22325 ③ (GO de regla 40: recibir y congelar al emitir), c.22331 (guardar las formas de pago; «Vence el» por defecto a 30 días), c.22345 ① (literales firmados `Formas de pago` · `Tarjeta` · `Bizum` · `Transferencia`) y c.22349 (mover las tres expectativas de `scrum600e`). Carril J1. Construido por `jv-j1hh` (commits `59cdd240e` y `d0e4e00f1`, traspaso en c.22344) y terminado por `jv-j1hk`.
+
+## El cambio
+
+- `prisma/schema.prisma`: `dueDate` (`due_date`) y `payMethods` (`pay_methods`) en `model Invoice`, con el ALTER de `docs/sql/scrum-1787-vencimiento.sql` aplicado antes en dev (A y B; verificación en `docs/master/evidencias/SCRUM-1787/verificar-1787i.mjs`). Staging y producción los aplica el fundador.
+- `facturaSuelta.ts`: el validador acepta `dueDate` (ausente, `null` o fecha) y `payMethods` con el conjunto del presupuesto (`CreateQuoteSchema.shape.payMethods`, sin segunda lista). Lo que no vale se rechaza antes de pedir número, con código y sin texto. `vencimientoDeLaSuelta`: ausente → expedición + 30 días.
+- `invoicesAdmin.routes.ts` pasa los dos campos a `emitInvoice`, que los escribe en el mismo INSERT. Los demás orígenes escriben NULL.
+- `invoiceDetailView.js`, bloque «Cobro»: `Vence el` con la fecha congelada, y `Formas de pago` con un literal firmado por cada forma congelada, separados por «, » como «Rectificada por» en el mismo bloque. Las dos filas solo salen si hay dato; una clave fuera del conjunto no se pinta en crudo.
+- `tests/scrum600e-condiciones-contra-el-emisor.test.mjs`: sus tres expectativas escritas a mano dependían de que la factura no guardara formas de pago. Se cambian con la firma de c.22349 y una nota fechada en cada una: lo que sobrevive al emisor, `payMethods` como único campo de «3. Condiciones» con columna, y 3 campos en vez de 4 en ROJO ①. Nada más del guard.
+- `docs/sql/deriva-prod.sql` se regenera con `scripts/generar-sql-deriva.mjs` (547 columnas). Las tres coordenadas de `docs/legal/AUDITORIA_CAMINO_EMISION.md` que movieron estas líneas se actualizan en su sitio, con nota fechada.
+
+## Evidencia
+
+- `tests/scrum1787i-vencimiento-y-formas-de-pago.test.mjs`: **11/11**. Rojo primero (jv-j1hh, c.22344): 8 de 9 contra el código sin tocar. Los dos casos ⑨ de `Formas de pago` los cae su mutación.
+- Mutaciones con el `aplicarUna` de la casa (`docs/master/evidencias/SCRUM-1787/vencimiento/mutar.mjs`): **3 de 3 vivas** (emisión sin `dueDate` → ①; sin fila `Vence el` → ⑧; sin fila `Formas de pago` → ⑨). Después, `git status` solo con los cambios del ticket.
+- Batería dirigida de c.22344 + 1787i (27 ficheros): 336 casos, 327 pass, 5 fail y 4 skip (gateados por QA_DB_TEST), y la suma da 336. Los 5 fail eran 222 (deriva), 525d (coordenadas) y 600e ×3; arreglados como se cuenta arriba y vueltos a correr en verde.
+- Build con tipos (`tsc -p .`): salida 0.
+
+## Error propio (A9)
+
+Al actualizar las coordenadas de la auditoría escribí la nota de por qué se movían con los nombres de las columnas entre comillas invertidas, y `scrum525d` los leyó como testigos nuevos del ancla: un rojo más. Lo cazó el propio guard, y la nota quedó en prosa. Por eso la línea A9 apunta a ese test.
+
+Segundo error: escribí la fila de la ficha sin haber cargado antes `yaqu-premium-ui`, que CLAUDE.md pide antes de tocar UI. Lo cazó `tests/scrum811c-skill-ui-declarada.test.mjs`, y queda declarado arriba como «no cargada». Ese guard pide que se declare, no comprueba el orden.
+
+## NO hecho (espera decisión)
+
+- Que el cobro de la factura herede `invoice.payMethods` (`invoiceWhatsApp.service.ts`). Sin eso, lo guardado todavía no cambia lo que ve el cliente al pagar.
+- El editor que manda los dos campos (S2, Luis: `quotesView.js` / `cuerpoDelDocumentoSuelto.js`), el PDF y la página de pago.
+
+## NO medido
+
+- La ruta montada en `app`: el caso ⑦ la lee en el fuente; lo que se ejecuta es el validador y `emitInvoice` contra una transacción fabricada.
+- La suite entera en local: la corre el obligatorio.
+- El navegador y yaqu.app: se ven tras el merge y el despliegue. Staging y producción: no tocados.
+- El texto de c.22349: lo cito por el mensaje del orquestador, no lo he leído en Jira.
+
 # SCRUM-1787h · La página de pago de la factura enseña sus líneas, como la del presupuesto
 
 **Medido contra:** `origin/main` = `c27b1dc2513f6abe8ea28f84ad596e0d6aa66b91` · 2026-11-21T19:58:52Z

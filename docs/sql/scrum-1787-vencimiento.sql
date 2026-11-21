@@ -1,5 +1,10 @@
 -- docs/sql/scrum-1787-vencimiento.sql — SCRUM-1787 (tramo 1787f)
 --
+-- ✅ 21-nov-2026 (SCRUM-1787i): A y B APLICADAS en DEV (`yaqu_dev_javier`) por jv-j1hh, con su
+--    verificación (`docs/master/evidencias/SCRUM-1787/verificar-1787i.mjs`: 2 de 2 columnas); B,
+--    con el ✅ de c.22331. Staging y producción: las aplica el fundador; esta sesión NO las ha medido.
+--    `prisma/schema.prisma` ya lleva las dos líneas (rama de SCRUM-1787i).
+-- (Texto original de 1787f, que vale para staging y producción:)
 -- ⛔ PROPUESTO, SIN APLICAR. No se ha medido ninguna base (ni dev, ni staging, ni producción): no
 --    se sabe si alguna tiene ya estas columnas. Lo aplica Javier en staging y en producción, y la
 --    sesión de construcción en dev. `prisma/schema.prisma` NO se ha tocado: la línea entra en el PR
