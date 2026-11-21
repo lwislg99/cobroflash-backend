@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<response>
+  <status>
+    <code>200</code>
+    <text>ok</text>
+  </status>
+  <data>
+    <bloque id="a162" tipo="precepto" titulo="Artículo 162">
+      <version id_norma="BOE-A-1992-28740" fecha_publicacion="19921229" fecha_vigencia="19930101">
+        <p class="articulo">Artículo 162. Liquidación e ingreso.</p>
+        <p class="parrafo">La liquidación y el ingreso del recargo de equivalencia se efectuarán conjuntamente con el Impuesto sobre el Valor Añadido y ajustándose a la mismas normas establecidas para la exacción de dicho impuesto.</p>
+      </version>
+    </bloque>
+  </data>
+</response>

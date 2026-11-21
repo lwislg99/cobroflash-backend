@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<response>
+  <status>
+    <code>200</code>
+    <text>ok</text>
+  </status>
+  <data>
+    <bloque id="a160" tipo="precepto" titulo="Artículo 160">
+      <version id_norma="BOE-A-1992-28740" fecha_publicacion="19921229" fecha_vigencia="19930101">
+        <p class="articulo">Artículo 160. Base imponible.</p>
+        <p class="parrafo">La base imponible del recargo de equivalencia será la misma que resulte para el Impuesto sobre el Valor Añadido.</p>
+      </version>
+    </bloque>
+  </data>
+</response>

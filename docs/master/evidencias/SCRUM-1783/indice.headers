@@ -1,0 +1,13 @@
+HTTP/1.1 200 OK
+Date: Sat, 21 Nov 2026 03:39:46 GMT
+Content-Type: application/xml
+Vary: Accept
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+Access-Control-Allow-Headers: DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range
+Access-Control-Expose-Headers: Content-Length,Content-Range
+Age: 0
+Accept-Ranges: bytes
+Transfer-Encoding: chunked
+Strict-Transport-Security: max-age=31536000
+

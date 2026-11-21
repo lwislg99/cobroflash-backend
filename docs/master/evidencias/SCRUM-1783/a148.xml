@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<response>
+  <status>
+    <code>200</code>
+    <text>ok</text>
+  </status>
+  <data>
+    <bloque id="a148" tipo="precepto" titulo="Artículo 148">
+      <version id_norma="BOE-A-1992-28740" fecha_publicacion="19921229" fecha_vigencia="19930101">
+        <p class="articulo">Artículo 148. Regímenes especiales del comercio minorista.</p>
+        <p class="parrafo">Uno. Los regímenes especiales del comercio minorista serán los siguientes:</p>
+        <p class="parrafo_2">1.º Régimen de determinación proporcional de las bases imponibles.</p>
+        <p class="parrafo">2.º Régimen de recargo de equivalencia.</p>
+        <p class="parrafo_2">Dos. Los regímenes especiales a que se refiere el apartado anterior serán aplicables exclusivamente a los comerciantes minoristas definidos en el artículo 149 de esta Ley.</p>
+        <p class="parrafo">Tres. Reglamentariamente podrán determinarse los artículos o productos cuya comercialización quedará excluida de los regímenes especiales del comercio minorista.</p>
+      </version>
+      <version id_norma="BOE-A-1999-24786" fecha_publicacion="19991230" fecha_vigencia="20000101">
+        <p class="articulo">Artículo 148. Régimen especial del recargo de equivalencia.</p>
+        <p class="parrafo">Uno. El régimen especial del recargo de equivalencia se aplicará a los comerciantes minoristas que sean personas físicas o entidades en régimen de atribución de rentas en el Impuesto sobre la Renta de las Personas Físicas, que desarrollen su actividad en los sectores económicos y cumplan los requisitos que se determinen reglamentariamente.</p>
+        <p class="parrafo">Dos. En el supuesto de que el sujeto pasivo a quien sea de aplicación este régimen especial realizase otras actividades empresariales o profesionales sujetas al Impuesto sobre el Valor Añadido, la de comercio minorista sometida a dicho régimen especial tendrá, en todo caso, la consideración de sector diferenciado de la actividad económica.</p>
+        <p class="parrafo">Tres. Reglamentariamente podrán determinarse los artículos o productos cuya comercialización quedará excluida de este régimen especial.</p>
+        <blockquote>
+          <p class="nota_pie">Se modifica por el art. 6.15.3º de la Ley 55/1999, de 29 de diciembre. <a class="refPost">Ref. BOE-A-1999-24786</a>.</p>
+        </blockquote>
+      </version>
+    </bloque>
+  </data>
+</response>

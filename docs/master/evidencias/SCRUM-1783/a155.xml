@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<response>
+  <status>
+    <code>200</code>
+    <text>ok</text>
+  </status>
+  <data>
+    <bloque id="a155" tipo="precepto" titulo="Artículo 155">
+      <version id_norma="BOE-A-1992-28740" fecha_publicacion="19921229" fecha_vigencia="19930101">
+        <p class="articulo">Artículo 155. Comienzo o cese de actividades sujetas al régimen especial del recargo de equivalencia.</p>
+        <p class="parrafo">En los supuestos de iniciación o cese en el régimen especial del recargo de equivalencia serán de aplicación las siguientes reglas:</p>
+        <p class="parrafo_2">1.º En los casos de iniciación los sujetos pasivos deberán efectuar la liquidación e ingreso de la cantidad resultante de aplicar al valor de adquisición de las existencias inventariadas, Impuesto sobre el Valor Añadido excluido, los tipos del citado impuesto y del recargo de equivalencia vigentes en la fecha de iniciación.</p>
+        <p class="parrafo">Lo dispuesto en el párrafo anterior no será de aplicación cuando las existencias hubiesen sido adquiridas a un comerciante sometido igualmente a dicho régimen especial en virtud de la transmisión de la totalidad o parte de un patrimonio empresarial no sujeta al Impuesto sobre el Valor Añadido en virtud de lo establecido en el artículo 7, número 1.º de esta Ley.</p>
+        <p class="parrafo">2.º En los casos de cese debido a la falta de concurrencia de los requisitos previstos en el artículo 149 de esta Ley, los sujetos pasivos podrán efectuar la deducción de la cuota resultante de aplicar al valor de adquisición de sus existencias inventariadas en la fecha del cese, Impuesto sobre el Valor Añadido y recargo de equivalencia excluidos, los tipos de dicho impuesto y recargo que estuviesen vigentes en la misma fecha.</p>
+        <p class="parrafo">Si el cese se produjese como consecuencia de la transmisión, total o parcial, del patrimonio empresarial no sujeta al impuesto a comerciantes no sometidos al régimen especial del recargo de equivalencia, los adquirentes podrán deducir la cuota resultante de aplicar los tipos del impuesto que estuviesen vigentes el día de la transmisión al valor del mercado de las existencias en dicha fecha.</p>
+        <p class="parrafo">3.º A los efectos de lo dispuesto en las dos reglas anteriores, los sujetos pasivos deberán confeccionar, en la forma que reglamentariamente se determine, inventarios de sus existencias con referencia a los días de iniciación y cese en la aplicación de este régimen.</p>
+      </version>
+    </bloque>
+  </data>
+</response>
