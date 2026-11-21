@@ -538,3 +538,39 @@ Tres cosas que el diff no resuelve y decide S2: el servidor quiere `dto` como N�
 - El suplido, el coste y el descuento global: fuera de este tramo.
 - 🔴 `jv-j1hh` tiene en una rama local sin empujar (1787i, c.22344) otro cambio sobre `validarFacturaSuelta` y sobre la ruta: las dos ramas tocan el mismo fichero y quien entre segundo tendrá que unirlas a mano.
 
+# SCRUM-1787j · `scrum728d` cuenta la transacción ENTERA de la emisión (relevo del ② de 1787g)
+
+**Medido contra:** `origin/main` = `ccb69008b5aaa80d3f7cb712be77ce025c146238` · 2026-11-21T21:44:22Z
+
+A9: aviso → cicatriz J6 «Fui a cambiar en local las cifras escritas a mano de un guard para medir la mutación antes de que llegara la firma que el encargo exigía, y me paró el clasificador de permisos» — no se pudo comprobar: lo paró el clasificador de permisos de la sesión, que no vive en el repositorio.
+
+Mutaciones: catálogo → `tests/scrum728d-viajes-de-la-reserva.test.mjs`
+
+Encargo del orquestador J (`cobroflash-backend-ba`) a J6 (`jv-j6fb`), el 21-nov-2026. Cifras firmadas por el fundador en SCRUM-1787 c.22343 («1-Ok sí»), a partir de la tabla de c.22340.
+
+## El mudo, demostrado
+
+Con el guard de `origin/main`, una lectura de más sembrada con `aplicarUna` en `crearFacturaEmitida.ts`, justo después de `congelarDireccionAlEmitir`, **no lo tumbaba**: 2 de 2 MUDAS, con 9 de 9 en verde con la mutación y sin ella (guion `docs/master/evidencias/SCRUM-1787/mutar-1787j.mjs`, sobre el commit `af6788de81501c3ec4d460ac7be0c14edd062a68`). La causa: el doble sólo se le pasaba a `allocateInvoiceNumber`, y `conElCreateDelLlamador` sumaba un `+1` fijo por el `invoice.create`.
+
+## El arreglo (sólo `tests/`; nada en `src/`)
+
+- `tests/_viajes-de-la-reserva.mjs`: el `tx` falso es un `Proxy`. **Cualquier** `tx.<modelo>.<método>` se apunta como un viaje; la lista de respuestas sólo decide qué devuelve. Un `tx.$…` que no sabe contar da `CensoCiego`.
+- `espiarEmision`: en la F1 corre `emitInvoice` real; en la R1, `allocateInvoiceNumber` y luego `crearFacturaEmitida`, en el orden de la `$transaction` de `invoicesAdmin.routes.ts`. Exige exactamente un `invoice.create`. Se quita `conElCreateDelLlamador`.
+- Caso nuevo `SCRUM-1787j · LO QUE LA EMISIÓN HACE DENTRO DEL CERROJO…`: las sentencias de la emisión menos las de la reserva (que tienen que ser su prefijo) se comparan con `DESPUES_DE_LA_RESERVA`, declarada sentencia a sentencia: F1 `customer.findFirst`, `invoice.create`; R1 `invoice.findFirst`, `invoice.create`.
+- Cifras, con nota fechada que cita c.22343 (nada más del guard): F1 8 → 9, dentro del cerrojo 7 → 8, R1 7 → 8, caso ROJO 9 → 10 y 8 → 9.
+
+Medido sobre esta rama: F1 = cerrojo · merchant.findUnique · invoice.findMany · merchant.update · auditLog.create · **customer.findFirst** · invoice.create (+ BEGIN/COMMIT = 9). R1 = cerrojo · merchant.findUnique · merchant.update · auditLog.create · **invoice.findFirst** · invoice.create (= 8). Es el precio que ya declaraba `direccionCongelada.ts`.
+
+| aceptación (encargo) | dónde se ve |
+|---|---|
+| con una lectura extra en la tx de emisión, el guard de hoy NO cae | `docs/master/evidencias/SCRUM-1787/mutar-1787j.mjs` sobre `af6788de`: 2 de 2 MUDAS |
+| con la lectura sembrada cae; sin ella, verde | catálogo de `tests/scrum728d-viajes-de-la-reserva.test.mjs` (una lectura en `crearFacturaEmitida`, otra en `emitInvoice`): 2 de 2 VIVAS; limpia 10/10; `git status` vacío después |
+| el número se mide, no se elige | las cifras salen de `espiarEmision`; firmadas en c.22343 |
+
+## NO medido (1787j)
+
+- La mutación de `emitInvoice` contra el guard viejo (sólo pasé la de `crearFacturaEmitida`).
+- En la R1 se reproduce el orden de la ruta: una tercera llamada dentro de esa `$transaction` no se vería.
+- Los demás caminos que llaman a `crearFacturaEmitida` (desde presupuesto, albarán, parte) no se cuentan uno a uno.
+- Los títulos de dos casos siguen diciendo «hace 8 viajes» y «hace 7». La firma dice «nada más del guard», así que no los he tocado.
+- La suite entera en local: la corre el obligatorio (orden del orquestador).
