@@ -130,3 +130,5 @@ Una herramienta que contesta por patrón contesta también por un fichero que no
 Un test gateado que se salta en local es un test que no corriste: su verde no habla de él. (SCRUM-1509i)
 Negar las líneas no niega el total: `Math.round` sube el medio céntimo negativo, y la R1 no suma lo que resta. (SCRUM-624d)
 Un bloque al principio de una hoja pierde contra las reglas posteriores: quien elige el sitio del bloque elige también la cascada. (SCRUM-1756j)
+Un recorte que no deja barra no se mide con la barra: con `overflow-x: clip` la página nunca hace scroll, y lo que se sale se pierde sin avisar. (SCRUM-1787g)
+El catálogo de mutaciones juzga por nombre de test: un guard de navegador no lo tiene, y su rojo vive en un guion de evidencias o no vive en ninguna parte. (SCRUM-1787g)
