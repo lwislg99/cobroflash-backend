@@ -79,3 +79,45 @@ Qué cambia, solo en `public/dashboard/js/invoiceDetailView.js` (J1) y en un blo
 - La suite entera y la tanda de guards de navegador: no me cabían en el contexto.
 - «Enviada» no sabe del envío por correo, porque la vista no recibe ese dato.
 - En móvil, la tabla de Conceptos deja Precio, IVA y Total fuera de vista. No he mirado si a la del presupuesto le pasa lo mismo.
+
+# SCRUM-1787e · En móvil, la tabla de Conceptos de la ficha de factura se apila (Precio, IVA y Total a la vista)
+
+**Medido contra:** `origin/main` = `be85bc71640bb7a8e8af969e2717d233a223e161` · 2026-11-21T05:44:27Z
+
+A9: aviso → cicatriz J1 «Escribí el arreglo de la tabla antes del test rojo que pedía el encargo; el rojo lo saqué después devolviendo el arreglo con `git apply -R` del parche guardado» — no se pudo comprobar: el orden en que una sesión escribe test y arreglo no queda en el diff, y ningún guard lo ve.
+
+Mutaciones: catálogo → `tests/scrum1787e-conceptos-en-movil.test.mjs`
+
+Orden del fundador: SCRUM-1787 c.22314 («2-Ok sí»). Rama `scrum-1787e-conceptos-en-movil`, nacida de `scrum-1787b-ficha-de-factura` (PR #3299, sin mergear al empezar).
+
+## Lo medido (sonda `evidencias/SCRUM-1787/guion/sonda-1787e.js`, datos de EJEMPLO, `serviceWorkers: 'block'`)
+
+`public/` de este árbol servido con `guion/servidor-estatico.mjs` en 127.0.0.1:5788 (el 5787 lo ocupaba el servidor de OTRO árbol: medir contra él habría sido medir otro código). Primera línea con importe; `visibles` = celdas enteras dentro de la ventana y de la tabla; `carril` = px escondidos tras el scroll propio de la tabla. 0 peticiones fuera de 127.0.0.1.
+
+| vista · anchura | antes | después |
+|---|---|---|
+| factura · 390 px | 2 de 5 · carril 197 px · página 0 | **5 de 5** · carril 0 · página 0 |
+| presupuesto · 390 px | 2 de 5 · carril 197 px · página 0 | igual (no se toca: S2) |
+| factura · 1280 px | 5 de 5 | 5 de 5, mismas coordenadas (control) |
+| presupuesto · 1280 px | 5 de 5 | igual |
+
+Causa: la regla global de ≤768 px `.table { display:block; overflow-x:auto }` con `white-space:nowrap` en las celdas: la tabla scrollea en su propio carril y nada avisa de que hay más columnas. Capturas: `evidencias/SCRUM-1787/1787e-{antes,despues}-{factura,presupuesto}-{movil,escritorio}.png`, miradas.
+
+## El arreglo (solo `invoiceDetailView.js` y el bloque J1 de `styles.css`)
+
+A ≤640 px (el umbral de `.table--cards-mobile` y `.table--stack-mobile`), la tabla `.j1-fac-conceptos` oculta la cabecera y cada línea es una rejilla: el concepto a todo el ancho y Cant., Precio, IVA y Total debajo, en cuatro columnas, cada uno con su rótulo por `::before { content: attr(data-label) }`. El `data-label` se LEE de la cabecera de la propia tabla: ningún texto nuevo. Sin `style=` ni `on*=`. Escritorio: ninguna regla de la clase fuera del `@media`.
+
+Test: `tests/scrum1787e-conceptos-en-movil.test.mjs` — rojo 3/3 con el arreglo quitado (`git apply -R`), verde 3/3 con él. Suelos: el banco ve ≥3 filas de 5 celdas; el parser ve `.j1-prog-paso`; ≥5 reglas de la clase.
+
+## Para Luis (S2): el presupuesto tiene el mismo defecto
+
+`quotesDetailView.js:703-707` pinta la misma tabla (`table.className = 'table'`, cabecera Concepto/Cant./Precio/IVA/Total) y a 390 px enseña 2 de 5 columnas, con 197 px tras el scroll de la tabla (captura `1787e-antes-presupuesto-movil.png`). El arreglo literal, el mismo que el de la factura:
+
+1. `table.className = 'table quote-conceptos-tabla';` y, tras el `innerHTML` de la cabecera, `const rotulos = [...table.querySelectorAll('thead th')].map((th) => th.textContent);`; en cada fila con importe, `[...tr.children].forEach((td, k) => { if (k > 0) td.dataset.label = rotulos[k]; });`.
+2. En el bloque S2 de `styles.css`, dentro de `@media (max-width: 640px)`, las seis reglas del bloque J1 `SCRUM-1787e` cambiando `.j1-fac-conceptos` por `.quote-conceptos-tabla`.
+3. De paso: el `<th style="text-align:right">Total</th>` de `:707` es un `style=` en `innerHTML` (CSP); en la factura va a la clase `j1-fac-col-total`.
+
+## NO medido
+
+- La suite entera: no la pasé, por orden del orquestador (la pasa el obligatorio).
+- El aspecto con un concepto muy largo o importes de 9.999,99 € en las cuatro columnas a 320 px.
