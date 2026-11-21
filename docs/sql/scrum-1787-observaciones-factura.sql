@@ -1,10 +1,11 @@
 -- docs/sql/scrum-1787-observaciones-factura.sql — SCRUM-1787 (tramo 1787l)
 --
--- ⛔ PROPUESTO, SIN APLICAR. No se ha medido ninguna base (ni dev, ni staging, ni producción): no
---    se sabe si alguna tiene ya esta columna. Lo aplica Javier en staging y en producción, y la
---    sesión de construcción en dev. `prisma/schema.prisma` NO se ha tocado: la línea entra en el PR
---    de construcción, con el congelado al emitir, el PDF, la ficha y sus tests, DESPUÉS de este
---    ALTER (orden A5).
+-- ✅ APLICADO (21-nov-2026). Staging y producción: el fundador, SCRUM-1787 c.22346 («Aplicado en
+--    las dos, 1 fila»; GO en c.22345 ③). Dev (`yaqu_dev_javier`): jv-j1hl con
+--    `scripts/aplicar-sql-dev.mjs --go`; verificación de abajo ANTES 0 filas, DESPUÉS 1 fila
+--    (`doc_footer_text`, `text`, `YES`), control positivo `stage_label` 1 en las dos. La línea de
+--    `prisma/schema.prisma` entra en el PR de construcción (orden A5).
+--    (Hasta el ALTER decía «PROPUESTO, SIN APLICAR».)
 --
 -- POR QUÉ. SCRUM-1787 c.22338 ② (literal del fundador «2-Sí»): al facturar un presupuesto, sus
 -- notas o texto del pie pasan a la factura; las cláusulas de aceptación NO. Hoy `model Invoice` no

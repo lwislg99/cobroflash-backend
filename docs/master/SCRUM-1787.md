@@ -535,3 +535,41 @@ Huellas que saltarán al construir, por su vía: `tests/scrum222-deriva-arranque
 ## NO medido (1787l)
 
 Ninguna base: no sé si alguna tiene ya `invoices.doc_footer_text`. No corrí ningún test de `src/` ni de `public/`: el plan ⑤ está leído, no probado. No miré la factura desde albarán ni desde parte (¿deben llevar las `notas` del albarán?): fuera del GO. No cargué la skill `yaqu-verifactu-sif` (ver la línea A9).
+
+# SCRUM-1787l (construcción) · Las Observaciones del presupuesto en la factura: columna, PDF y ficha
+
+**Medido contra:** `origin/main` = `ccb69008b5aaa80d3f7cb712be77ce025c146238` · 2026-11-21T21:52:38Z (cabecera `Date:` de `gh api -i zen`)
+
+**Skill UI:** no cargada · la ficha reutiliza tal cual la sección de Observaciones de la ficha del presupuesto (`detail-section` + `quote-doc-texto`, rótulo y pintado de `textoDelDocumento.js`), sin CSS ni texto nuevo; la confieso en la línea A9.
+
+A9: aviso → cicatriz J1 «Edité `invoiceDetailView.js` sin cargar la skill `yaqu-premium-ui`, obligatoria antes de tocar UI; lo cazó `scrum811c` al correr la dirigida» — no se pudo comprobar: qué skill se ha cargado antes de un Edit no lo ve ningún hook del repositorio.
+
+Mutaciones: catálogo → `tests/scrum1787l-observaciones-en-la-factura.test.mjs`
+
+Carril J1, sesión `jv-j1hl`. Decisión: SCRUM-1787 c.22345, literal **«1-Sí 2-Solo pie 3-GO 4-No 5-Sí»**; ALTER aplicado en staging y producción, c.22346.
+
+| aceptación | dónde se ve |
+|---|---|
+| esquema `Invoice.docFooterText` (`doc_footer_text`) | `prisma/schema.prisma`; dev aplicado con `aplicar-sql-dev.mjs --go`: antes 0 filas, después 1 (`text`, `YES`), control `stage_label` 1 |
+| la emisión congela el campo (spread de `datos`, `crearFacturaEmitida` sin tocar) | `tests/scrum1787l-observaciones-en-la-factura.test.mjs` ① |
+| PDF de factura: «Observaciones» + texto, sólo con texto, nunca en justificantes | ② y ③ (null, '' y espacios dan las MISMAS líneas que sin el campo) |
+| ficha de factura: misma sección que el presupuesto | ④ y su control |
+| la R1 no hereda (c.22345 ④) | ⑤ (AST de la ruta de rectificar: sin `docFooterText` ni spread) |
+| los tres generadores del PDF pasan el campo de la fila | ⑥; `docFooterText` es obligatorio en `generateInvoicePdf` (no compila sin él) |
+| las rutas que crean la factura desde presupuesto lo pasan | NO HECHO → S1 (Luis): diff de abajo |
+
+**Diff para Luis (S1) — TRES rutas, no dos.** Al construir apareció una tercera: `src/modules/quotes/app/routes/quotes.routes.ts:658` (camino C1, el cliente acepta desde WhatsApp y se emite el tramo). Por c.22345 ⑤ cada tramo lleva las Observaciones, así que las tres llevan la misma línea, detrás de `stageLabel`:
+
+```diff
++        docFooterText: quote.docFooterText ?? null, // SCRUM-1787l (c.22345 ②⑤): las Observaciones; la cabecera NO
+```
+
+en `quotesAdmin.routes.ts` `/:id/invoice` y `/:id/invoice-manual`, y en `quotes.routes.ts` (C1). Hasta que entre, el texto sólo llega si alguien lo pasa a la emisión.
+
+Huellas por su vía: `tests/_cambios-autorizados-de-la-factura.mjs` (603b/723, con `huellas.mjs`, firma c.22345); `docs/sql/deriva-prod.sql` regenerado (`generar-sql-deriva.mjs`, 222); tres coordenadas de `docs/legal/AUDITORIA_CAMINO_EMISION.md` movidas a donde está hoy su testigo (525d: `schema.prisma:964-965`, `:1902`, `invoicing.ts:268`). La línea nueva de `src/lib/invoicing.ts` va ANTES de `merchantCriterioCaja` para no dejar ciega la mutación de `scrum1240d`.
+
+Y `TITULO_OBSERVACIONES` entra en `AMBITO_DECLARADO` de `tests/scrum723-guard-contra-su-base.test.mjs`, con su motivo (lo pide el propio guard: es un nombre, no un número).
+
+Corrido: el test nuevo 7/7 (rojo primero en ②, ④ y ⑥); la dirigida de 21 ficheros dio 219/230 con 7 rojos, todos huellas de esta rama, arreglados por su vía; `guards:entrada` salida 0 (170 ✔); `tsc -p .` salida 0.
+
+**NO medido:** staging y producción (no los toqué; el ALTER es de c.22346); yaqu.app; la factura desde albarán o parte; 1787i (no está en main); la dirigida NO se repitió tras arreglar las huellas (orden del orquestador: basta el test y `guards:entrada`); las dos mutaciones del catálogo NO las corrí con `aplicarUna`; la suite entera la corre el obligatorio.

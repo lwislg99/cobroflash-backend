@@ -200,6 +200,10 @@ const AMBITO_DECLARADO = [
   // imprime la F1, así que tienen que estar DENTRO de lo que vigilan 603b y este guard.
   'MENCION_CRITERIO_CAJA',
   'NOMBRE_IMPUESTO_POR_DEFECTO',
+  // SCRUM-1787l (21-nov-2026) · entra `TITULO_OBSERVACIONES`: el rótulo firmado del bloque de
+  // Observaciones, que la factura pinta ahora con `Invoice.docFooterText` (SCRUM-1787 c.22345 ②;
+  // ALTER c.22346). Decide qué imprime la F1, así que tiene que estar DENTRO de lo que se vigila.
+  'TITULO_OBSERVACIONES',
   'fmtImporte',
   'generateInvoicePdf',
   // SCRUM-1446g (26-oct-2026) · entra `importesDeLaColumnaSinIva`: el céntimo de un tramo va a la
