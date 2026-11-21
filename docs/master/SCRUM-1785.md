@@ -151,3 +151,49 @@ SCRUM-1785 c.22281, literal «El nombre comercial sí».
   cambio. Por orden del orquestador J se empuja una vez y la tanda completa la corre el obligatorio. El
   `scrum262` lo cazó el obligatorio de #3289 (`tests/scrum262-telefonos-de-prueba.test.mjs`).
 - **No medido:** base, staging, yaqu.app; la vista previa (`quotesView.js`, S2) sigue con «WhatsApp <número>».
+
+# SCRUM-1785c · PDF del presupuesto, comercio sin nombre comercial: «WhatsApp de <razón social>: <número>» (firma c.22328)
+
+**Medido contra:** `origin/main` = `c4981dc8f072ab1cbbfc5ab8872b95c81c4cb339` · 2026-11-21T20:40:12Z (cabecera `Date:` de `gh api -i zen`)
+A9: aviso → cicatriz J1 «Lancé la suite con la TEMP de la máquina, que lleva un espacio, aunque el encargo pedía TEMP sin espacios: cayó `scrum1289b`; y la ruta corta 8.3 (`JAVIER~1`) tampoco vale, porque tumba `scrum1298b`; las dos pasan con una carpeta real sin espacios» — no se pudo comprobar: la TEMP con la que una sesión lanza la suite no pasa por ningún guard del repositorio
+Mutaciones: catálogo → `tests/scrum1785b-whatsapp-con-nombre-comercial.test.mjs`
+
+Sesión jv-j1hf (J1). **Supera el «Sin nombre comercial — PARA FIRMA APARTE» del tramo 1785b:** el fundador firmó en
+SCRUM-1785 c.22328, respuesta literal «2-Sí» a «¿Usamos ahí la razón social, "WhatsApp de <razón social>: <número>"?».
+
+- **Cambio:** `src/modules/invoicing/infra/pdf/pdf.service.ts`, dentro de `generateQuotePdf` (la misma línea que
+  cambió 1785b). El rótulo toma `nombreDelRotulo` = nombre comercial (`Merchant.name`, recortado) o, si está vacío o
+  en blanco, la razón social (`legalName`, recortada). Con alguno de los dos: `WhatsApp de <nombre>: <número>`; sin
+  ninguno: `WhatsApp <número>`, como antes. «Emisor:» no cambia. `generateInvoicePdf` no se toca: el literal
+  `WhatsApp de ${` sigue saliendo una sola vez en el fichero, después de la cabecera de `generateQuotePdf` (caso ④
+  del test).
+- **Test:** `tests/scrum1785b-whatsapp-con-nombre-comercial.test.mjs`, ampliado con tres casos 1785c sobre el texto
+  extraído del PDF real: sin nombre comercial → literal nuevo; nombre comercial sólo espacios → razón social; sin
+  ninguno → «WhatsApp <número>». El caso «con nombre comercial» es el primero del fichero (1785b), sin tocar.
+  Rojo primero: 7 casos, 5 pasan, 2 caen (los dos que piden la razón social; el de «sin ninguno» ya pasaba, es el
+  comportamiento de siempre). Verde 7/7 tras el cambio.
+- **Mutaciones (`aplicarUna`, catálogo del test):** base 7 pasan · 0 caen. ① volver a «WhatsApp <número>»: VIVA
+  (+3 colaterales). ② quitar la vuelta a la razón social (`nombreDelRotulo = nombreComercial`): VIVA (+1). El ancla
+  `de` de la mutación de 1785b se ha reescrito a `${nombreDelRotulo}` porque la variable cambió de nombre; sigue
+  tumbando el mismo caso. Árbol restaurado tras las dos (src y dist con el arreglo, comprobado con `grep`).
+- **Huellas congeladas:** `scrum603b`, `scrum723` y `scrum523d` en verde con el cambio; nada recongelado.
+- **Tanda dirigida** (24 ficheros: `scrum1785*`, 262, 603b, 723, 523d, 1157/1215*/1415, 836, 719, 1294, 267, 273,
+  525d, 854): 204 casos · 203 pasan · 1 cae (`scrum854` ②, este tramo aún no escrito) · 0 saltados. Con el tramo
+  escrito, más los 5 de árbol entero (195, 414, 694, 710b, 737): 242/242. Tipos: `tsc -p . --noEmit` salida 0.
+- **Main se movió dos veces mientras medía; se trajo con `git merge origin/main`, sin conflictos:** ① a `c27b1dc2`
+  (1787d/1787f, con columnas nuevas: el cliente compartido ya regenerado tumbaba `scrum461` en mi árbol viejo);
+  sobre ese árbol fusionado, dirigida + 5 de árbol entero + `scrum1787d` + `scrum461`: 259/259, y **suite entera
+  por tramos: VERDE, 15 de 15, 1743 ficheros · 14.085 tests · 13.900 pasan · 0 caen** (el resto, saltados).
+  ② a `c4981dc8` (#3305, 1786f1, que también toca `generateQuotePdf`): tras ese merge se repitió sólo la dirigida,
+  no la suite entera: los 24 + 5 de árbol entero + `scrum1787d` + `scrum1786f1` + `scrum461`, 263 casos, 262 pasan
+  y 1 cae (`scrum1294`: mi A9 citaba un trozo de la cicatriz y pide la frase entera; corregido, los 6 del registro
+  43/43); `guards:entrada` 15 en verde; tipos `tsc -p . --noEmit` salida 0.
+- **La TEMP de la suite (fallo mío):** los tramos 1–3 de la primera pasada corrieron con la TEMP de la máquina, que
+  lleva un espacio, y cayeron 2 casos de `scrum1289b` (lo mismo que midió 1785b). Con la ruta corta 8.3
+  (`C:\Users\JAVIER~1\…`) pasa `scrum1289b` pero caen 2 de `scrum1298b` (compara la ruta con la que devuelve git,
+  que es la larga). Con una carpeta real sin espacios (`C:\Users\Public\tmp-jv-j1hf`) pasan los dos; la pasada
+  entera que vale es la de esa TEMP.
+- La sonda `docs/master/evidencias/scrum1785/sin-nombre-comercial.mjs` describe lo que pintaba el PDF ANTES de esta
+  firma (rótulo sin nombre con `name` vacío); no se reescribe: es la medición de partida de 1785b.
+- **No medido:** base, staging, yaqu.app (si «Ajustes» deja vaciar el nombre comercial sigue sin medir); la vista
+  previa (`quotesView.js`, S2) no entra en esta firma.
