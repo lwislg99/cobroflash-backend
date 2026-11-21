@@ -387,6 +387,14 @@ const APARCADOS = [
     motivo: 'La otra mitad del mismo respaldo (`settingsView.js:219`). Mismo motivo y mismo '
       + 'desbloqueo: regla 26.',
   },
+  // SCRUM-1783b (21-nov-2026): el selector del recargo de equivalencia sale de la ficha del cliente.
+  // Aparcarlos lo autorizó el fundador en SCRUM-1783 c.22282. Registro: docs/master/SCRUM-1783.md.
+  ...['Recargo de equivalencia', 'Sí, está en recargo', 'No está en recargo'].map((texto) => ({
+    texto,
+    motivo: 'campo retirado por decisión del fundador, SCRUM-1783 c.22264; no se desaprueba. '
+      + 'Aparcado con autorización del fundador en SCRUM-1783 c.22282 (antes, la etiqueta y dos '
+      + 'opciones del selector de `customersView.js`). Registro: `docs/master/SCRUM-1783.md`.',
+  })),
 ];
 
 /**

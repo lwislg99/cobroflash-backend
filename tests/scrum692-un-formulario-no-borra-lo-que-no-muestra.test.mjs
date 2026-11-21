@@ -166,9 +166,16 @@ test('SCRUM-692 · 🔴 CONTROL POSITIVO: cada formulario SÍ envía lo suyo', (
   const modal = clavesDelPayload(MODAL).map((c) => c.clave);
   const ficha = clavesDelPayload(FICHA).map((c) => c.clave);
 
-  for (const k of ['internalRef', 'billingAddress', 'recargoEquivalencia']) {
+  for (const k of ['internalRef', 'billingAddress']) {
     assert.ok(modal.includes(k), `🔴 el modal ha dejado de enviar «${k}»: entonces ya no se puede editar.`);
   }
+  // 🔴 SCRUM-1783b (21-nov-2026) · `recargoEquivalencia` SALE de esta lista y pasa a la contraria,
+  // con autorización del fundador (SCRUM-1783 c.22267): el selector se quitó de la ficha (c.22264),
+  // así que ya NO se muestra, y por la propiedad de este mismo fichero ya NO se envía. Si viajara
+  // como null, cada guardado borraría el dato guardado (medido por jv-j2dm, c.22266).
+  assert.ok(!modal.includes('recargoEquivalencia'),
+    '🔴 el modal vuelve a enviar «recargoEquivalencia» sin control que la muestre: cada guardado '
+    + 'podría borrar el recargo guardado del cliente (SCRUM-1783 c.22266).');
   assert.ok(ficha.includes('billingPeriodicity'),
     '🔴 la ficha 360 ha dejado de enviar «billingPeriodicity», que es el ÚNICO campo que sólo se ' +
     'edita ahí: nadie podría configurarlo.');
@@ -199,9 +206,11 @@ test('SCRUM-692 · la asimetría medida sigue siendo la que se declaró', () => 
   // asimetría crece y tiene que constar, que es exactamente lo que pasó con `tags` el día que
   // nació el guard. Si algún día la ficha 360 tiene que poder editarlo, se decide arriba: aquí
   // sólo queda anotado que hoy NO puede.
+  // 🔴 SCRUM-1783b (21-nov-2026) · SALE `recargoEquivalencia`: el selector se quitó de la ficha
+  // (SCRUM-1783 c.22264) y el modal ya no lo envía. Reanclado con autorización, c.22267.
   assert.deepEqual(soloModal,
     ['billingAddress', 'billingCity', 'billingCountry', 'billingPostalCode', 'billingProvince',
-      'dtoPorDefecto', 'internalRef', 'recargoEquivalencia', 'tags'],
+      'dtoPorDefecto', 'internalRef', 'tags'],
     '🔴 ha cambiado la lista de campos que SÓLO se editan en el modal:\n    ' + soloModal.join(', ') +
     '\n\n  Si has añadido uno, la ficha 360 no lo muestra: el profesional no podrá editarlo desde ' +
     'ahí. No es un fallo —el guardado es parcial y no se borra— pero tiene que constar.');
