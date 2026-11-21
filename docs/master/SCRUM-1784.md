@@ -29,7 +29,7 @@ Están en `docs/master/evidencias/SCRUM-1784/`, en escritorio (1440×900) y en m
 - 0 peticiones fuera de 127.0.0.1;
 - 2 `POST /admin/entorno`, que manda el panel al arrancar y que contestó el guion, sin servidor detrás.
 
-`guion/maqueta-api.js` es la maqueta de la primera pasada de jv-j2dn. `capturas.js` ya no la usa (lleva la suya dentro) y se deja como estaba.
+La maqueta de la primera pasada (`maqueta-api.js`) se ha BORRADO: `capturas.js` ya no la usaba (lleva la suya dentro, con `serviceWorkers: 'block'`) y `tests/scrum1233g-banco-bloquea-el-sw.test.mjs` la daba en rojo por llamar a `.route(` sin abrir su contexto.
 
 **Corrección a c.22258 y al encargo:** en la ficha, el selector ya no lleva el título «Quién ejecuta este trabajo». Desde SCRUM-917g se pinta con `sinTitulo: true` (`public/dashboard/js/jobDetailView.js:1522`), y el rótulo que se ve es el de la línea, «Quién lo ejecuta» (`public/dashboard/js/jobTrabajoPlegable.js:36`).
 
