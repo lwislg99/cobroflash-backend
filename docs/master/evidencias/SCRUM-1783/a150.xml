@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<response>
+  <status>
+    <code>200</code>
+    <text>ok</text>
+  </status>
+  <data>
+    <bloque id="a150" tipo="precepto" titulo="Artículo 150">
+      <version id_norma="BOE-A-1992-28740" fecha_publicacion="19921229" fecha_vigencia="19930101">
+        <p class="articulo">Artículo 150. Régimen especial de determinación proporcional de las bases imponibles.</p>
+        <p class="parrafo">Los comerciantes minoristas que realicen con habitualidad entregas de bienes a los que corresponda aplicar tipos impositivos diferentes podrán optar por el régimen especial de determinación proporcional de las bases imponibles en los plazos y forma que se determinen reglamentariamente.</p>
+      </version>
+      <version id_norma="BOE-A-1999-24786" fecha_publicacion="19991230" fecha_vigencia="20000101">
+        <p class="articulo">Artículo 150. Régimen especial de determinación proporcional de las bases imponibles.</p>
+        <p class="parrafo">
+          <strong>(Derogado)</strong>
+        </p>
+        <blockquote>
+          <p class="nota_pie">Se deroga por el art. 6.16 de la Ley 55/1999, de 29 de diciembre. <a class="refPost">Ref. BOE-A-1999-24786</a>.</p>
+        </blockquote>
+      </version>
+    </bloque>
+  </data>
+</response>

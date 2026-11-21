@@ -35,6 +35,8 @@
 //   · RETIRADO + defecto presente → ROJO: retirar la declaración no es arreglarlo.
 //   · RETIRADO + arreglado → verde.
 //   · el control sembrado (la MISMA factura sin el suplido se sella Y se encola) no sale → CIEGO, ROJO.
+// SCRUM-1779d · este banco AFIRMA el sellado: con SIF_ENABLED en OFF (el defecto) la emisión ya no sella (SCRUM-1779 c.22239), así que se enciende aquí y lo afirmado no cambia.
+process.env.SIF_ENABLED = 'true';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';

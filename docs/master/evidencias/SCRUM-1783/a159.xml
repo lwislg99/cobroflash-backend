@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<response>
+  <status>
+    <code>200</code>
+    <text>ok</text>
+  </status>
+  <data>
+    <bloque id="a159" tipo="precepto" titulo="Artículo 159">
+      <version id_norma="BOE-A-1992-28740" fecha_publicacion="19921229" fecha_vigencia="19930101">
+        <p class="articulo">Artículo 159. Repercusión del recargo de equivalencia.</p>
+        <p class="parrafo">Los sujetos pasivos indicados en el número 1.º del artículo anterior están obligados a efectuar la repercusión del recargo de equivalencia sobre los respectivos adquirentes en la forma establecida en el artículo 88 de esta Ley.</p>
+      </version>
+    </bloque>
+  </data>
+</response>
