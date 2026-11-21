@@ -50,7 +50,7 @@ no. El texto del rótulo NO se fija: espera firma. Verde 12/12; con la mutación
 quita el WhatsApp del comercio si se oculta el teléfono), 11/12 y cae exactamente ese caso (mutación equivalente
 aplicada a `dist/`, no por el meta-guard; `--solo-censo` lista las entradas del fichero).
 
-### PARADO — el rótulo que pide el fundador es texto nuevo (regla 39)
+### PENDIENTE DE FIRMA — el rótulo del WhatsApp del comercio (regla 39; lo lleva el orquestador al fundador)
 
 «que salga específico whatsapp de la empresa (el nombre de empresa del merchant)» cambia lo que ve el cliente
 en dos sitios. Literal propuesto, para firma:
@@ -62,7 +62,18 @@ en dos sitios. Literal propuesto, para firma:
 Preguntas ✅/❌ para el fundador: ① ¿ese literal? ② ¿<nombre> es el **comercial** (`name`, el que enseña la
 cabecera de la vista previa) o la **razón social** (`legalName`, la que el PDF pone en «Emisor:»)? ③
 `pdf.service.ts` aloja también `generateInvoicePdf` (camino de emisión): el cambio va SOLO en
-`generateQuotePdf`; ¿se da por no-STOP (regla 38: no toca la emisión) o se pide GO?
+`generateQuotePdf`; ¿se da por no-STOP (regla 38: no toca la emisión) o se pide GO? **Pregunta abierta.** Lo
+único medido: `tests/scrum523d-version-del-sif.test.mjs` no nombra `pdf.service.ts` (grep de `pdf` en ese
+fichero: 0), así que su frontera no dice nada de este fichero; qué otra frontera lo cubra, no lo he medido.
+
+### Tanda
+
+Dirigida (11 ficheros: el mío, 836, 700, 710b, 719, 1294, 267, 273, 525d, 854, 622): 133/133. `npm run
+guards:entrada`: 170/170. Suite entera por tramos: **7 de 15 corridos**, parada por orden del orquestador
+(los tramos 8-15, NO corridos). En el 3, `scrum1289b` 2 rojos por `EPERM … open 'C:\Users\Javier'` (la ruta con
+espacio de esta máquina; la rama no toca ese test ni `scripts/`). En el 5, `scrum1415` cayó por DOS `test()`
+con nombre construido en mi fichero (heredados del commit de jv-j1gj): arreglado en el test (nombres
+literales), 1785 + 1415 = 18/18.
 
 ### Para Luis (S2) — `public/dashboard/js/quotesView.js`
 
