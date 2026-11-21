@@ -242,7 +242,9 @@ const R = analizar(RAIZ);
 // `totalSuplidos` se declaran (MOTOR_EN_ESPERA), y `MARCA_SUPLIDO`, `leerMarcaSuplido` e
 // `importeSuplido` pierden el `export` (su consumidor está dentro; los tests miden por la
 // superficie pública).
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 4;
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// 🔴 21-nov-2026 · SCRUM-1780c: `facturaDesdeParte.ts` sin llamador hasta que S1 monte las tres líneas de c.22242; baja a 4 el PR de S1 que las monte; decisión del fundador en este comentario (SCRUM-1780 c.22257, «1-A ok»).
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 5;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 

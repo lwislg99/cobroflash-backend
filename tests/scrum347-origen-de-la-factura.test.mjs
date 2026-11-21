@@ -84,8 +84,8 @@ test('SCRUM-347 · SUELO: la unión se deriva del tipo y la constante la refleja
       'un conjunto vacío y pasaría sin comprobar nada.',
   );
   assert.equal(
-    delTipo.length, 4,
-    `🔴 el tipo declara ${delTipo.length} orígenes y emitInvoice tiene 4 llamadores medidos`,
+    delTipo.length, 5, // 5.º: 'C7-parte', facturaDesdeParte.ts (SCRUM-1780c, GO SCRUM-1780 c.22237)
+    `🔴 el tipo declara ${delTipo.length} orígenes y emitInvoice tiene 5 llamadores medidos`,
   );
   // La constante que consumen los guards NO puede desviarse del tipo. Si una crece y la otra no,
   // el guard mediría una lista que ya no es la de verdad.
@@ -137,8 +137,8 @@ test('SCRUM-347 · SUELO del censo: hay llamadores de `emitInvoice` y todos decl
   const { llamadores, barridos } = llamadoresDeEmitInvoice();
   assert.ok(barridos >= 150, `🔴 ESCÁNER CIEGO: solo ${barridos} ficheros .ts barridos`);
   assert.ok(
-    llamadores.length >= 4,
-    `🔴 ESCÁNER CIEGO: el censo ve ${llamadores.length} llamadores de \`emitInvoice\` y hay 4. ` +
+    llamadores.length >= 5, // SCRUM-1780c: facturaDesdeParte.ts es el 5.º
+    `🔴 ESCÁNER CIEGO: el censo ve ${llamadores.length} llamadores de \`emitInvoice\` y hay 5. ` +
       '«Ninguno sin origen» y «no supe encontrarlos» son el mismo verde.',
   );
   const sinOrigen = llamadores.filter((l) => !l.origen);

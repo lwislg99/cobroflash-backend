@@ -1729,6 +1729,10 @@ model ParteTrabajo {
   /// borrador | firmado | facturado (ESTADOS_PARTE)
   estado String @default("borrador")
 
+  /// SCRUM-1780c · la factura que nació de este parte (`facturaDesdeParte.ts`). Sin @relation ni FK,
+  /// igual que `Albaran.invoiceId`. ALTER previo: `docs/sql/scrum-1780-parte-facturado.sql` (regla 40).
+  invoiceId Int? @map("invoice_id")
+
   firmadoAt         DateTime? @map("firmado_at")
   firmadoPorNombre  String?   @map("firmado_por_nombre")
   firmadoPorCalidad String?   @map("firmado_por_calidad")
@@ -1788,6 +1792,7 @@ model ParteTrabajo {
   @@unique([merchantId, numero])
   @@index([merchantId, fecha])
   @@index([merchantId, estado])
+  @@index([merchantId, invoiceId]) // SCRUM-1780c
   @@map("partes_trabajo")
 }
 
