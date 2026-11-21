@@ -208,3 +208,53 @@ La nota del piloto de c.22229 no estaba en el máster (c.22289: «no llegó a en
 **Sin medir:** producción (ni la variable de Railway ni `SIF_ENABLED`: los pone y comprueba el fundador); el comportamiento del producto con la variable en ON (lo midió J1 en 1779a y 1779e).
 
 **Tests en local, con su población:** `npm run guards:entrada` 170/170 (15 guards, EXIT 0). Los del máster y de árbol entero (`scrum267`, `scrum273`, `scrum525d`, `scrum854`, `scrum921c`, `scrum1294`, `scrum1500`, `scrum195-url-bd-sin-fuga`, `scrum414`, `scrum694`, `scrum710b`, `scrum737`), lanzados por prefijo: 109 casos, 106 ok y 3 not ok; los 3 son `scrum195-lectura-serializacion`, `scrum195-loop-adicional` y `scrum195-pertenencia-por-job`, que el prefijo `scrum195-` arrastró de más y caen por `ERR_MODULE_NOT_FOUND` de `dist/` (este árbol no tiene `dist/`), no por este cambio. **La suite entera NO corrió en local:** no cabía en el contexto (145k medidos); se lo dije al orquestador antes de empujar y la corre el obligatorio de CI.
+## SCRUM-1779f · 21-nov: con `SIF_ENABLED` en OFF la emisión suelta no avisa de un fallo de VeriFactu que no ha ocurrido (J1, GO c.22285)
+
+**Medido contra:** `origin/main` = `e24f2828ed68d0159d53e546fe6fb25903f79972` · 2026-11-21T04:44:20Z (cabecera `Date:` de `gh api -i zen`; sesión J1 `jv-j1gr`, por encargo del orquestador `cobroflash-backend-87`)
+
+A9: comprobación → `tests/scrum1779f-sin-aviso-falso-con-sif-off.test.mjs`
+Mutaciones: catálogo → tests/scrum1779f-sin-aviso-falso-con-sif-off.test.mjs
+
+### Qué cambia
+
+- `src/modules/system/app/routes/invoicesAdmin.routes.ts` (POST `/admin/invoices`, J1): el `message` de fallo sale SOLO con `pendiente_de_sellado`, el criterio de `quotesAdmin.routes.ts` («`no_aplica` NO es un fallo»). `veriFactu` sigue siendo «tiene sello»: `false` sin sello, nunca `true` sin él (decisión del orquestador ③, sobre la medición de Jira c.22286). Sin texto nuevo.
+- El ORIGEN (`sellarTrasEmision`) no se toca: que dejara de avisar sin tocar las rutas exigía devolver `sellado` sin sello (mentira, rompe `reintentoSellado.ts` e `invoicing.ts`, y `veriFactu:true` sería un claim fiscal). Medición de las rutas y de los lectores de `veriFactu`: Jira c.22286.
+- De paso, el mismo arreglo quita el aviso falso que ya salía antes de 1779d con un comercio no-ES o sin NIF (`no_aplica`): leído en el código, no ejecutado.
+
+### Medido
+
+- Rojo primero contra el `dist/` sin el cambio: 3 casos, 1 fail (el de SIF OFF), 2 pass (los controles). Con el cambio: 3/3.
+- `tsc -p .` con tipos: salida 0.
+- Dirigida (18 ficheros: 1779f, 1779d, 178, 290 ×3, 887, 523d, 291, 347, 1185, 222, 525d, 419, 1344, 836, 603b, 723): 191 casos, 187 pass, 0 fail, 4 skip (178 y 222 sin base). `scrum456`: no existe ningún fichero con ese prefijo.
+- Mutación con `aplicarUna` (driver `docs/master/evidencias/SCRUM-1779/mutaciones-1779d.mjs`): «con SIF OFF vuelve a decir que falló» TUMBA, 0 colaterales; control sembrado (un `cae` que no existe) sale CIEGO. `git status` limpio después.
+- Error mío: medí las rutas antes de cargar la skill `yaqu-verifactu-sif`, que es obligatoria; la cargué antes de escribir código.
+
+### Para Luis (S1 y S2) · diff literal, sin texto nuevo
+
+Sin esto, la ficha del Trabajo sigue pintando «⚠️ Factura emitida, revisa su registro» con SIF OFF (medido por `jv-j1go`, c.22283).
+
+S1 · `src/modules/jobs/app/routes/albaranes.routes.ts` (facturar-parcial, hoy `:1451` y `:1466`):
+
+```
+-    const sellada = (await sellarTrasEmision(invoice, merchant, prisma)).estado === SELLADO_HECHO;
++    const estadoSellado = (await sellarTrasEmision(invoice, merchant, prisma)).estado;
++    const sellada = estadoSellado === SELLADO_HECHO;
+...
+-      ...(sellada ? {} : { message: 'Se emitió la factura, pero falló su registro VeriFactu. Revísalo antes de entregarla.' }),
++      ...(estadoSellado === SELLADO_PENDIENTE ? { message: 'Se emitió la factura, pero falló su registro VeriFactu. Revísalo antes de entregarla.' } : {}),
+```
+
+Y en convertir-en-factura (`:1731`, `:1784`) el mismo criterio si `MICROCOPY_PENDIENTE_290` también dice «falló» (sin leer).
+
+S2 · `public/dashboard/js/jobDetailView.js:3986` (hace falta aunque S1 esté arreglado, porque `veriFactu` sigue siendo `false` sin sello):
+
+```
+-      showToast(d && d.veriFactu === false ? '⚠️ Factura emitida, revisa su registro' : '✓ Factura emitida.');
++      showToast(d && d.message ? '⚠️ Factura emitida, revisa su registro' : '✓ Factura emitida.');
+```
+
+### Sin medir
+
+- La suite entera por tramos: no cabe en el contexto de esta sesión (182k al empezar el registro); la corre el obligatorio de CI.
+- SCRUM-1780 (`facturaDesdeParte.ts`, de `jv-j1gp`): el fichero no está ni en `origin/main` ni en `scrum-1780b-ddl-y-diseno-factura-desde-parte` @ `df75c91fbe4b4ffb124ce45ea078170959760186`; no sé si devuelve el mismo `message`. No se toca desde aquí.
+- Postgres, staging y producción: nada.
