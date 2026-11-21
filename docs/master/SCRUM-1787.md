@@ -134,3 +134,37 @@ Mutaciones previstas para su `MUTACIONES_QUE_ME_TUMBAN` (no existen todavía): q
 ## NO medido (1787c)
 
 Ninguna base: no sé si alguna tiene ya las columnas. No corrí ningún test de `src/` ni la tanda del banco de emisión: el plan ⑥ no está probado, sólo leído. No miré cómo arman hoy sus datos los tests de 729 ni si el banco desechable emite una suelta por la ruta. Suite entera: no corrida (solo docs).
+
+# SCRUM-1787d · La factura congela al emitir la dirección de facturación del cliente, y su PDF imprime NIF y dirección
+
+**Medido contra:** `origin/main` = `c10a80edd301ed2a320f758f33fcd5814991c850` · 2026-11-21T06:15:22Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: comprobación → `scripts/meta-guard-mutaciones.mjs`
+
+Los dos fallos que cubre: (jv-j1gz) el código se escribió ANTES del test rojo; el rojo se sacó después con las dos mutaciones del catálogo pasadas por `aplicarUna`, y el meta-guard es lo que dice MUDA si una mutación declarada no tumba su test. (jv-j1hb) el catálogo heredado declaraba `buscar`/`poner` en vez de `de`/`a`, y `cae: '①'`; `aplicarUna` lo devolvió CIEGO («el ancla no está…: la declaración caducó») sin mutar nada.
+
+Mutaciones: catálogo → `tests/scrum1787d-direccion-y-nif-en-factura.test.mjs`
+
+Decisiones: GO del PDF y literales `NIF` / `Dirección` en c.22303, cuya respuesta literal es «1-Sí GO · 2-Ok sí · 3-Firmo · 4-Sí»; guardar la dirección, c.22305; ALTER aplicado en staging y producción y el albarán sin dirección, c.22311. Vía J1 pura (orquestador J): `crearFacturaEmitida` lee la dirección DENTRO de su transacción (`direccionCongelada.ts`, filtrando por `merchantId`); el albarán, `congelarCliente` y los 7 llamadores de S1 no cambian. La R1 hereda la dirección de su original (NULL si es anterior). Las facturas ya emitidas se quedan sin dirección (regla 29).
+
+## Hecho
+
+- Esquema: 5 columnas `customerBilling*` en `Invoice`. ALTER en dev aplicado por jv-j1gz (`yaqu_dev_javier`, 5 filas `text`/`YES`); staging y producción, el fundador (c.22311).
+- PDF de factura: `NIF:` y `Dirección:` desde las columnas de la factura, en sus 3 llamadores (`src/lib/invoicing.ts` x2, `invoicesAdmin.routes.ts`).
+- Huellas: `docs/sql/deriva-prod.sql` regenerado con `scripts/generar-sql-deriva.mjs` (545 columnas). 603b/723: DOS pares en `tests/_cambios-autorizados-de-la-factura.mjs` con firma c.22303, salidos de `docs/master/evidencias/SCRUM-1446d/huellas.mjs`: uno con la base en main sin 1788a y otro con la base en 1788a (PR #3301, sin mergear al medir), porque la rama lleva 1788a dentro y cualquiera de los dos puede entrar primero.
+- `CAMPOS_DIRECCION_CONGELADOS` declarado en `tests/_huerfanos-declarados.mjs` como `VOCABULARIO_DEL_MODULO`, igual que `CAMPOS_CONGELADOS` y `CAMPOS_CONGELADOS_EMISOR` (scrum411).
+- Bancos con tx falso, SIN tocar ninguna aserción: `scrum729-el-escritor-del-cliente` (añadido `customer.findFirst` y el emisor en su hueco: desde SCRUM-665 llamaba con los datos en el hueco del emisor), `scrum771` (`customer.findFirst` dentro del tx), `scrum1260b` (`customer.findFirst` → null), `scrum308-caracterizacion-rectify` y `scrum308-bloqueo-rectify` (`invoice.findFirst` → la misma original, para la R1).
+- 21-nov-2026 · `docs/legal/AUDITORIA_CAMINO_EMISION.md`: 4 coordenadas recolocadas en sitio, sin mover líneas (scrum525d): `schema.prisma:949-950`→`957-958`, `:1887`→`:1895`, `invoicing.ts:104`/`:265`→`:105`/`:267`. Las movió el propio esquema (+8) y el PDF de esta rama.
+- Mutaciones por `aplicarUna`, una por proceso: «no congela la dirección» tumba ① (+3 colaterales: ① regla 2, ②, ③); «el PDF no pinta el NIF» tumba ④. Las dos VIVAS; `git status` sin cambios en `src/` tras cada pasada.
+
+## Verde medido
+
+- Los 4 rojos heredados (222, 603b, 723, 729) + 1787d + 1446d: verdes; 2 saltos gateados de 222 (`QA_DB_TEST`/`LIBRO_PG_URL`).
+- Los 13 ficheros que llaman a `crearFacturaEmitida` + 308 x2 + 729 x2: 168/168, 0 fail, 0 skip.
+
+## NO hecho / NO medido
+
+- Capturas del PDF: NO hechas (tope de contexto). Lo que hay es la extracción de texto del PDF fabricado en el test ④.
+- Suite entera y tramos de emisión: NO corridos (orden del orquestador: la entera la corre el obligatorio). Corrida solo la dirigida de arriba y `guards:entrada`.
+- `scrum728d`: su cifra de viajes dentro del cerrojo queda desfasada en silencio (F1 7→8, R1 6→7) porque simula el `create`; no lo he cambiado.
+- Ni staging ni producción (no tocados).

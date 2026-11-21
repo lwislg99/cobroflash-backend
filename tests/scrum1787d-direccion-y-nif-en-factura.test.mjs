@@ -19,16 +19,16 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     nombre: 'no congela la dirección',
     fichero: 'src/modules/invoicing/domain/crearFacturaEmitida.ts',
-    buscar: '...emisor, ...direccion }',
-    poner: '...emisor }',
-    cae: '①',
+    de: '...emisor, ...direccion }',
+    a: '...emisor }',
+    cae: 'SCRUM-1787d ① emitir congela los cinco de la ficha del cliente',
   },
   {
     nombre: 'el PDF no pinta el NIF',
     fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
-    buscar: 'if (params.customer.taxId) {',
-    poner: 'if (false && params.customer.taxId) {',
-    cae: '④',
+    de: 'if (params.customer.taxId) {',
+    a: 'if (false && params.customer.taxId) {',
+    cae: 'SCRUM-1787d ④ el PDF de factura pinta NIF y Dirección del cliente',
   },
 ];
 
