@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<response>
+  <status>
+    <code>200</code>
+    <text>ok</text>
+  </status>
+  <data>
+    <bloque id="a153" tipo="precepto" titulo="Artículo 153">
+      <version id_norma="BOE-A-1992-28740" fecha_publicacion="19921229" fecha_vigencia="19930101">
+        <p class="articulo">Artículo 153. Régimen especial del recargo de equivalencia.</p>
+        <p class="parrafo">Uno. El régimen especial del recargo de equivalencia se aplicará a los comerciantes minoristas que sean personas físicas o entidades en régimen de atribución de rentas en el Impuesto sobre la Renta de las Personas Físicas, que desarrollen su actividad en los sectores económicos y cumplan los requisitos que se determinen reglamentariamente.</p>
+        <p class="parrafo">Dos. En el supuesto de que el sujeto pasivo a quien sea de aplicación este régimen especial realizase otras actividades empresariales o profesionales sujetas al Impuesto sobre el Valor Añadido, la de comercio minorista sometida a dicho régimen especial tendrá, en todo caso, la consideración de sector diferenciado de la actividad económica.</p>
+      </version>
+      <version id_norma="BOE-A-1999-24786" fecha_publicacion="19991230" fecha_vigencia="20000101">
+        <p class="articulo">Artículo 153. Régimen especial del recargo de equivalencia.</p>
+        <p class="parrafo">
+          <strong>(Derogado)</strong>
+        </p>
+        <blockquote>
+          <p class="nota_pie">Se deroga por el art. 6.16 de la Ley 55/1999, de 29 de diciembre. <a class="refPost">Ref. BOE-A-1999-24786</a>.</p>
+        </blockquote>
+      </version>
+    </bloque>
+  </data>
+</response>
