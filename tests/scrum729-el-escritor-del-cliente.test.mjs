@@ -42,6 +42,7 @@ const {
   CAMPOS_CONGELADOS,
 } = await import('../dist/modules/invoicing/domain/clienteCongelado.js');
 const { crearFacturaEmitida } = await import('../dist/modules/invoicing/domain/crearFacturaEmitida.js');
+const { congelarEmisorDesdeFicha } = await import('../dist/modules/invoicing/domain/emisorCongelado.js'); // SCRUM-1787d: el emisor, en su hueco
 const { ensureInvoicePdf } = await import('../dist/lib/invoicing.js');
 const { buildVerifactuRegistrosXml } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
 
@@ -236,11 +237,18 @@ test('SCRUM-729 · ② CONTROL NEGATIVO: una factura ANTERIOR (cinco columnas a 
 
 test('SCRUM-729 · 🔴 el envoltorio escribe los CINCO campos en el MISMO insert', async () => {
   let visto = null;
-  const tx = { invoice: { create: async ({ data }) => { visto = data; return { id: 1 }; } } };
+  // SCRUM-1787d · el banco: `crearFacturaEmitida` lee en su tx la dirección de la ficha (`customer.findFirst`).
+  // Sin ficha → la dirección sale NULL; las aserciones de abajo no cambian.
+  const tx = {
+    invoice: { create: async ({ data }) => { visto = data; return { id: 1 }; } },
+    customer: { findFirst: async () => null },
+  };
 
   // ⚠️ `merchantId` NO es 1: el 1 es el merchant DEMO (regla 8) y un fixture ahí desactiva
   // comprobaciones sin tocar ningún guard. Lo cazó SCRUM-409 sobre este mismo fichero.
-  await crearFacturaEmitida(tx, congelarDesdeFicha(FICHA_DE_ENTONCES), {
+  // SCRUM-1787d · cada dato en su hueco: desde SCRUM-665 el tercero es el EMISOR y el cuarto los datos
+  // (antes los datos iban en el hueco del emisor y se colaban por el `...emisor`).
+  await crearFacturaEmitida(tx, congelarDesdeFicha(FICHA_DE_ENTONCES), congelarEmisorDesdeFicha(MERCHANT), {
     merchantId: MERCHANT.id, customerId: 7, number: 'F260003', total: '121.00', currency: 'EUR',
   });
 

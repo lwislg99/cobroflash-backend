@@ -1,4 +1,5 @@
 // src/modules/system/app/routes/invoicesAdmin.routes.ts
+import { direccionDeLaFactura, direccionEnUnaLinea } from '../../../invoicing/domain/direccionCongelada'; // SCRUM-1787d
 import { Router, type Request } from 'express';
 import { formatMoneyEs, formatImporteEs } from '../../../../core/utils/utils'; // SCRUM-931: la forma de la casa (A6.6)
 // SCRUM-1397 · qué facturas ve quien pregunta: UNA puerta para la lista, la ficha y el PDF.
@@ -1353,7 +1354,8 @@ router.post('/:id/regenerate-pdf', requireRole('admin'), async (req, res) => {
       // denominación legal y este botón el nombre comercial—. Es el mismo defecto del ticket por
       // otra puerta (un destinatario que depende de por dónde se mire), así que entra aquí y no
       // en un ticket aparte.
-      customer: clienteDelDocumento(invoice, invoice.customer),
+      // SCRUM-1787d · idem: NIF y dirección de la columna de la factura.
+      customer: clienteDelDocumento(invoice, invoice.customer), customerAddress: direccionEnUnaLinea(direccionDeLaFactura(invoice)) || null,
       currency: invoice.currency,
       total: invoice.total.toString(),
       qrData,
