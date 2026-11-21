@@ -47,3 +47,90 @@ Editor (filas 1-6), factura desde presupuesto (7), lista (10-11), PDF (12-15), e
 ## NO medido
 
 Editor, lista, PDF y página del cliente sin captura (no cabían en el contexto; su comparación es por código). Si las cabeceras de apartado llegan a `Invoice.lines` al facturar: un subagente lo afirmó y mi grep en `invoiceLines.service.ts` no lo confirma. Factura desde albarán y desde parte más allá de sus rutas. Ningún dato real ni base. BOE no releído. Suite entera: no corrida (solo docs; el orquestador pidió guards de docs y `guards:entrada`).
+
+# SCRUM-1787c · La dirección del cliente congelada en la factura: DDL propuesto y diseño (solo docs; se construye en 1787d, después del ALTER)
+
+**Medido contra:** `origin/main` = `41b0e031083b02c35e1a4cf74c4e71756f4d20f5` · 2026-11-21T05:20:39Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: sin fallo que generalice — un guion temporal mío pasado por heredoc de bash perdió una barra invertida y no llegó a correr (SyntaxError); se reescribió con la herramienta de escritura, que es lo que ya dice la memoria del equipo «No pasar texto a node por bash», y no cambió ningún resultado.
+
+Mutaciones: una vez → `docs/master/evidencias/SCRUM-1787/preview-ddl-1787c.mjs`
+
+Carril J1, sesión `jv-j1gx`. Nada en `src/`, `public/` ni `prisma/` (regla 40: el esquema se LEE). **Decisión de partida:** SCRUM-1787 c.22305, literal de Javier **«ok»** a «¿Guardamos la dirección del cliente en cada factura al emitirla?» (A5 ①). GO del PDF con NIF y dirección: c.22303 ①; rótulos firmados `NIF` y `Dirección`: c.22303 ③.
+
+## ① Los campos
+
+Los del cliente hoy, `prisma/schema.prisma:434-438` (`model Customer`, SCRUM-579): `billingAddress`, `billingCity`, `billingPostalCode`, `billingProvince`, `billingCountry`, todos `String?` sin `@default`. La factura congela hoy cinco hermanos, `:781-785` (`customerName`…`customerPhone`, SCRUM-729). Líneas PROPUESTAS en `model Invoice`, detrás de `customerPhone` (`:785`):
+
+    customerBillingAddress    String? @map("customer_billing_address")
+    customerBillingCity       String? @map("customer_billing_city")
+    customerBillingPostalCode String? @map("customer_billing_postal_code")
+    customerBillingProvince   String? @map("customer_billing_province")
+    customerBillingCountry    String? @map("customer_billing_country")
+
+Se conserva `Billing` en el nombre: el comentario del cliente (`:424-425`) dice que ese prefijo es lo que impide confundirla con la dirección de la OBRA (`shippingAddress`, `:842`, SCRUM-602). Nullable y sin default por el mismo motivo que en el cliente (`:428-433`).
+
+## ② El DDL
+
+`docs/sql/scrum-1787-direccion-cliente.sql`, marcado PROPUESTO. Sacado OFFLINE por `docs/master/evidencias/SCRUM-1787/preview-ddl-1787c.mjs` (`previewMigracion({ schema, desde })` sobre copias en un temporal fuera del árbol; salida en `preview-ddl-1787c.salida.txt`): control de la herramienta ok · 1 sentencia (`ALTER TABLE "invoices"` con 5 `ADD COLUMN … TEXT`) · destructivas 0 · lista blanca de `scripts/_aplicar-sql-dev.mjs` 1 permitida / 0 rechazadas, y `revisar()` sobre el `.sql` entero (verificación comentada incluida): `ok: true` · control negativo (actual → actual) `sin_cambios` · control positivo SEMBRADO (DROP fabricado de `customerEmail` en la factura): destructivas 1, rechazadas 1 (y `revisar()` de ese DROP: `ok: false`). **Quitado el sembrado** (cambiando su línea por `const sembrado = propuesto;` con `sed` en una copia, borrada después): sale 2, «CIEGO (un control no se cumple)». Esquema idéntico en `e24f2828` y `41b0e031` (`git diff --quiet`: 0).
+
+## ③ Verificación después del ALTER
+
+En el mismo `.sql`, comentada: `current_database()` + `information_schema.columns` de `invoices` con los cinco nombres. Esperado: **5 filas**, `text`, `is_nullable = YES`, y el nombre de la base en cada una. 0 filas = no aplicado en ESA base; menos de 5 = a medias.
+
+## ④ Dónde se congela al emitir
+
+Hoy TODO pasa por `src/modules/invoicing/domain/clienteCongelado.ts` (J1): `congelarCliente` `:154` (su `select` `:167` trae los cinco y NO la dirección), `congelarDesdeFicha` `:129`, `congelarParaRectificativa` `:193`. `crearFacturaEmitida.ts:65` (J1) derrama el objeto entero en `tx.invoice.create`. Censo con `grep -E '\b(congelarCliente|congelarParaRectificativa|congelarDesdeFicha|emitInvoice|crearFacturaEmitida)\('` sobre `src/` (30 líneas, leídas una a una; quitadas las 5 definiciones):
+
+| origen | congela en | emite en | cliente | carril |
+|---|---|---|---|---|
+| suelta (`POST /admin/invoices`) | `invoicesAdmin.routes.ts:194` `congelarDesdeFicha(customer)` | `:184` `emitInvoice` | ya leído, `select` `:157` SIN `billing*` → hay que añadirlos | J1 |
+| rectificativa R1 | `invoicesAdmin.routes.ts:1200` `congelarParaRectificativa` | `:1220` | hereda de la original | J1 |
+| cobro (`Charge`) | `src/lib/invoicing.ts:382` `congelarDesdeFicha(ch.customer)` | `:424` | ya leído entero (`include: { customer: true }`, comentario `:374`) | J1 |
+| desde presupuesto (admin) | `quotesAdmin.routes.ts:325` | `:363` | `congelarCliente` lo lee | S1 |
+| desde presupuesto, entera | `quotesAdmin.routes.ts:647` | `:656` | `congelarCliente` | S1 |
+| desde presupuesto (público) | `quotes.routes.ts:623` | `:658` | `congelarCliente` | S1 |
+| trabajo | `jobs.routes.ts:1599` | `:1634` | `congelarCliente` | S1 |
+| albarán | `albaranes.routes.ts:1416` | `:1421` `emitInvoice` | `congelarCliente` | S1 |
+| parcial (albarán) | `albaranes.routes.ts:1698` | `:1703` | `congelarCliente` | S1 |
+| recapitulativa | `recapitulativa.service.ts:78` | `:109` | `congelarCliente` | S1 |
+| parte (1780c) | — | — | NO EXISTE en main (0 `partes/:id/facturar` en `src/`); nacerá con `congelarCliente` | J1 (1780b) |
+
+**Consecuencia:** cambiando `clienteCongelado.ts` (J1) y el `select` de `invoicesAdmin.routes.ts:157` (J1), las siete bocas de S1 congelan la dirección **sin tocar sus ficheros**. Carriles con `node scripts/carriles.mjs de` el 21-nov.
+
+🔴 **La trampa:** el MISMO `ClienteCongelado` se derrama también en el ALBARÁN: `albaranes.routes.ts:1021` → `datosDeAlbaranEmitido` (`src/modules/jobs/domain/albaranEmision.ts:74-75`, `{ estado, ...cliente }`), y `albaranes` NO tendrá las columnas nuevas. Añadir los cinco al tipo `ClienteCongelado` (`:73`) y a `CAMPOS_CONGELADOS` (`:86`) rompería la emisión del albarán y el censo de `tests/scrum841-el-escritor-del-albaran.test.mjs` (lee `CAMPOS_CONGELADOS`). **Diseño propuesto:** un tipo aparte `DireccionCongelada` con su lista `CAMPOS_DIRECCION_CONGELADOS`; `congelarCliente`/`congelarDesdeFicha` devuelven `ClienteCongelado & DireccionCongelada`; `crearFacturaEmitida` pide ese tipo; `datosDeAlbaranEmitido` coge SÓLO los cinco por nombre (hoy derrama todo, y TypeScript deja pasar propiedades de más en un spread).
+
+**Lectura:** la dirección se lee SIEMPRE de las columnas de la factura, nunca de la ficha viva, también cuando `congelado: false` (`clienteDelDocumento` `:215`): c.22305 «las facturas ya emitidas se quedan sin dirección». **R1:** hereda la de la original tal cual (NULL si la original es anterior a 1787d); sólo si la original es anterior a SCRUM-729 (`customerName` NULL) congela la ficha viva, como hoy los cinco.
+
+## ⑤ Qué pinta el PDF
+
+`generateInvoicePdf` (`src/modules/invoicing/infra/pdf/pdf.service.ts:366`, J1): el tipo `customer` (`:383`) sólo tiene `name`, `legalName`, `email`, `phone`; el bloque CLIENTE (`:551-556`) pinta nombre, correo y teléfono. El presupuesto sí pinta `NIF:` (`:1016`). Llamadores, los tres con `clienteDelDocumento`: `src/lib/invoicing.ts:123` (cliente `:133`), `:289` (`:296`), `invoicesAdmin.routes.ts:1338` (`:1356`). 1787d: ampliar `ClienteDelDocumento` con `taxId` (ya está) y la dirección, el tipo `:383` con `taxId` y la dirección, y dos líneas en el bloque con los rótulos firmados `NIF` y `Dirección` (c.22303 ③). `verifactu.service.ts:1131` también lee `clienteDelDocumento`, pero el XML no lleva domicilio: no se toca.
+
+## ⑥ Plan del test (1787d; rojo primero, contra la RUTA montada en `app`)
+
+| caso | espera |
+|---|---|
+| emitir suelta con cliente con dirección | la fila `invoices` lleva los cinco `customer_billing_*` = los de la ficha |
+| cambiar después la dirección del cliente | la factura y su PDF conservan la vieja |
+| factura «anterior» (cinco hermanos llenos, dirección NULL) con ficha que sí tiene dirección | el PDF NO pinta dirección (no cae a la viva) |
+| PDF de una emitida con NIF y dirección | el texto del PDF lleva `NIF` y `Dirección` con sus valores |
+| R1 de una original con dirección, y ficha cambiada | la R1 lleva la de la original |
+| emitir un albarán | sigue 200 y no escribe nada de dirección (`datosDeAlbaranEmitido` sólo los cinco) |
+| censo: cada boca de la tabla ④ | pasa por `congelarCliente`/`congelarDesdeFicha`/`congelarParaRectificativa` (ampliar el de `tests/scrum729-el-escritor-del-cliente.test.mjs`) |
+
+Mutaciones previstas para su `MUTACIONES_QUE_ME_TUMBAN` (no existen todavía): quitar `billing*` del `select` de `congelarCliente` (cae el 1º); lector que cae a la ficha viva (cae el 3º); R1 que congela la ficha de hoy (cae el 5º); quitar las dos líneas del PDF (cae el 4º); `datosDeAlbaranEmitido` que vuelve a derramar todo (cae el 6º).
+
+## ⑦ Huellas que saltarán en 1787d y su vía
+
+| guard | por qué salta | cómo se recongela |
+|---|---|---|
+| `tests/scrum523d-version-del-sif.test.mjs` | `clienteCongelado.ts` está en `HUELLAS_CONGELADAS` (`:90`); `crearFacturaEmitida.ts` no está | en el mismo PR, pegando la huella que trae su mensaje, citando c.22305 (precedente: comentario `:75-78`) |
+| `tests/scrum603b-descripcion-en-el-albaran.test.mjs` y `tests/scrum723-guard-contra-su-base.test.mjs` | cambia el cuerpo de `generateInvoicePdf` frente a la base de la rama | entrada nueva en `CAMBIOS_AUTORIZADOS` de `tests/_cambios-autorizados-de-la-factura.mjs`, generada con `docs/master/evidencias/SCRUM-1446d/huellas.mjs` (nunca a mano), firma c.22303 ① |
+| `tests/scrum222-deriva-arranque.test.mjs` | `docs/sql/deriva-prod.sql` se genera del esquema | `node scripts/generar-sql-deriva.mjs` en el mismo PR; sus casos gateados contra staging necesitan el ALTER aplicado antes |
+| `tests/scrum291-series-huecos.test.mjs` | **no salta**: hashea sólo `invoiceNumber.service.ts` y mira que no haya `model Serie` | — |
+
+⚠️ 1788a (jv-j1gv) toca la misma función del PDF: el par base → disco de 603b/723 depende de cuál entre antes; la segunda regenera su entrada. A las 05:20Z no había ninguna rama `scrum-1788*` en el remoto.
+
+## NO medido (1787c)
+
+Ninguna base: no sé si alguna tiene ya las columnas. No corrí ningún test de `src/` ni la tanda del banco de emisión: el plan ⑥ no está probado, sólo leído. No miré cómo arman hoy sus datos los tests de 729 ni si el banco desechable emite una suelta por la ruta. Suite entera: no corrida (solo docs).
