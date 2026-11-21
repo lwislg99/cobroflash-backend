@@ -783,6 +783,14 @@ model Invoice {
   customerTaxId     String? @map("customer_tax_id")
   customerEmail     String? @map("customer_email")
   customerPhone     String? @map("customer_phone")
+  /// SCRUM-1787d · la dirección de FACTURACIÓN del cliente, congelada al emitir (c.22305; ALTER
+  /// aplicado en staging y producción, c.22311). NO es la de la obra (`shippingAddress`). NULL en
+  /// toda factura anterior: no se rellena nunca y el lector no cae a la ficha viva (regla 29).
+  customerBillingAddress    String? @map("customer_billing_address")
+  customerBillingCity       String? @map("customer_billing_city")
+  customerBillingPostalCode String? @map("customer_billing_postal_code")
+  customerBillingProvince   String? @map("customer_billing_province")
+  customerBillingCountry    String? @map("customer_billing_country")
 
   /// SCRUM-665 (B) · EL EMISOR CONGELADO. La otra mitad del documento, con el mismo patrón que
   /// las cinco de arriba (el cliente congelado, SCRUM-729): columnas + escritor al emitir + lector
