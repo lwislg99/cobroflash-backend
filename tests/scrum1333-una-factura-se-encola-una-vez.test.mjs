@@ -24,6 +24,8 @@
 // España, cliente con NIF, líneas con IVA). Con el cobro pelado del banco el registro no se monta,
 // el intento acaba en `encolado_fallido` y la cola se queda en 0: no se vería nada. Por eso todos
 // los casos montan la factura declarable y comprueban, antes de medir, que llegó UNA fila.
+// SCRUM-1779d · este banco AFIRMA el sellado: con SIF_ENABLED en OFF (el defecto) la emisión ya no sella (SCRUM-1779 c.22239), así que se enciende aquí y lo afirmado no cambia.
+process.env.SIF_ENABLED = 'true';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';

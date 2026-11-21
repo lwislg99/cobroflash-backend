@@ -33,6 +33,8 @@
 //   · si esta transcripción cae, hay un choque con lo que `scrum173` fija, y basta para parar;
 //   · si pasa, NO prueba que el test real pase: el banco puede no montar lo que monta Postgres.
 // ⛔ `tests/scrum173-…` no se toca desde este ticket (límite expreso del GO).
+// SCRUM-1779d · este banco AFIRMA el sellado: con SIF_ENABLED en OFF (el defecto) la emisión ya no sella (SCRUM-1779 c.22239), así que se enciende aquí y lo afirmado no cambia.
+process.env.SIF_ENABLED = 'true';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -79,7 +81,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // MA · la guarda del punto de llamada no decide (la de dentro del cerrojo sigue puesta).
     fichero: 'src/lib/invoicing.ts',
-    de: '    if (inv.vfEstado !== SELLADO_HECHO) {',
+    // SCRUM-1779d · ancla re-copiada: la guarda ahora deja fuera también la `no_aplica` (c.22245 ①).
+    de: '    if (inv.vfEstado !== SELLADO_HECHO && inv.vfEstado !== SELLADO_NO_APLICA) {',
     a: '    if (true as boolean) {',
     cae: 'SCRUM-1330 · 🔴 A · con la fila ya `sellado`, `ensurePdfAndEvent` NO entra en `sellarTrasEmision`',
   },
