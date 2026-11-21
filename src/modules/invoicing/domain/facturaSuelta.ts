@@ -47,6 +47,8 @@
 // esto: se endurece el ÚNICO punto que ya decidía (regla 38).
 import { getEmissionMode, type MerchantLike } from './emission.service';
 import { type Causa } from './vat.service'; // SCRUM-1051d
+import { lineasParaFacturar } from './invoiceLines.service'; // SCRUM-1787k
+import { CreateQuoteSchema } from '../../../core/validation/schemas'; // SCRUM-1787k
 
 /** Error nombrado del gate. Un 500 no prueba nada: quien lo reciba tiene que poder ramificar. */
 export const ERROR_MODO_SIN_FACTURA = 'factura_suelta_no_disponible';
@@ -97,7 +99,21 @@ export interface LineaEntrada {
   tax: number;
   /** SCRUM-1051d · por qué la línea no repercute IVA (hoy sólo 'S2'). La valida la ruta, no esto. */
   causa?: Causa;
+  /** SCRUM-1787k · la descripción de la línea, como en `Quote.lines`. Texto: no mueve importes. */
+  description?: string;
+  /**
+   * SCRUM-1787k · el descuento de la línea en PORCENTAJE, como en `Quote.lines`. Sólo existe ENTRE
+   * la entrada y `lineasParaFacturar`: lo que devuelve `validarFacturaSuelta` ya no lo lleva.
+   */
+  dto?: number;
 }
+
+/**
+ * SCRUM-1787k · las reglas de `description` y `dto` son las de la línea del presupuesto, leídas de
+ * su esquema (`CreateQuoteSchema`, que es de S1 y aquí sólo se lee). Si el presupuesto cambia la
+ * regla, la suelta cambia con él.
+ */
+const REGLAS_DE_LINEA = CreateQuoteSchema.shape.lines.unwrap().element.shape;
 
 export type ResultadoValidacion =
   | { ok: true; customerId: number; lineas: LineaEntrada[] }
@@ -131,13 +147,21 @@ export function validarFacturaSuelta(body: unknown): ResultadoValidacion {
     const qty = Number(l.qty);
     const price = Number(l.price);
     const tax = Number(l.tax);
-    if (!concept) {
+    // SCRUM-1787k (GO regla 40, SCRUM-1787 c.22338 ①) · descripción y descuento de la línea, con las
+    // reglas del PRESUPUESTO: los dos validadores son los suyos (`REGLAS_DE_LINEA`), no una copia.
+    // Ausente o `null` = la línea no lo lleva, como la causa. Un rechazo sale con el mensaje YA
+    // servido del campo al que pertenece (la descripción es del concepto; el descuento, del precio):
+    // el del validador es de zod, en inglés, y aquí no se escribe ningún texto nuevo (regla 39).
+    const descripcion = l.description === undefined || l.description === null
+      ? null : REGLAS_DE_LINEA.description.safeParse(l.description);
+    const dto = l.dto === undefined || l.dto === null ? null : REGLAS_DE_LINEA.dto.safeParse(l.dto);
+    if (!concept || (descripcion && !descripcion.success)) {
       return { ok: false, error: ERROR_LINEAS_INVALIDAS, message: 'Cada línea necesita un concepto.' };
     }
     if (!esNumeroFinito(qty) || qty <= 0) {
       return { ok: false, error: ERROR_LINEAS_INVALIDAS, message: 'Cada línea necesita una cantidad mayor que cero.' };
     }
-    if (!esNumeroFinito(price) || price < 0) {
+    if (!esNumeroFinito(price) || price < 0 || (dto && !dto.success)) {
       return { ok: false, error: ERROR_LINEAS_INVALIDAS, message: 'Cada línea necesita un precio válido.' };
     }
     // Fracción, no porcentaje: 0.21, nunca 21. Es la convención de `Invoice.lines` en todo el
@@ -152,8 +176,19 @@ export function validarFacturaSuelta(body: unknown): ResultadoValidacion {
     // `calcVatBreakdown` comparan con deepEqual.
     const linea: LineaEntrada = { concept, qty, price, tax };
     if (l.causa !== undefined && l.causa !== null) linea.causa = l.causa as Causa;
+    // SCRUM-1787k · sin descripción o sin descuento, la clave no viaja (arriba se validaron).
+    if (descripcion?.success) linea.description = descripcion.data;
+    if (dto?.success) linea.dto = dto.data;
     lineas.push(linea);
   }
 
-  return { ok: true, customerId, lineas };
+  // El descuento se aplica AQUÍ, con la función del camino desde presupuesto (SCRUM-887): el precio
+  // sale neto y la clave `dto` no se guarda, así que una suelta y una factura de presupuesto con las
+  // mismas líneas dan el mismo `Invoice.lines`. Una línea sin `dto` sale siendo el mismo objeto. La
+  // ruta no cambia: desglose, portones y emisión leen `val.lineas`, que ya es lo que se congela.
+  return {
+    ok: true,
+    customerId,
+    lineas: lineasParaFacturar({ lines: lineas, discountGlobalAmount: null }) as LineaEntrada[],
+  };
 }
