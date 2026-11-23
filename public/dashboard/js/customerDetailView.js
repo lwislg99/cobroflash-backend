@@ -1459,6 +1459,62 @@ function abrirFusionDeClientes(customer, customerId, container) {
   if (typeof buscar.focus === 'function') buscar.focus();
 }
 
+// ── SCRUM-1781d · el prefijo aparte en «Editar cliente», como en «Nuevo cliente» ──────────
+//
+// Decisión del fundador: SCRUM-1781 c.22392 (revisa la de SCRUM-590 que dejaba esta pantalla sin
+// selector). Lo GUARDADO no cambia de formato: dígitos con el prefijo delante, sin «+».
+//
+// 🔴 LA REGLA ES UNA COPIA LITERAL de `numeroCompleto` y `repartirNumero` (`customersView.js`), y
+// no un import, a propósito: allí viven DENTRO de la vista (no se exportan), y los guards de
+// SCRUM-578 leen EXACTAMENTE esa región de aquel fichero; sacarla a un módulo los dejaría vigilando
+// un delegador vacío. Que las dos copias digan lo mismo NO se confía a este comentario: lo mide
+// `tests/scrum1781d-editar-cliente-con-prefijo.test.mjs`, que guarda en las dos pantallas con el
+// mismo prefijo y lo mismo tecleado y compara el cuerpo. Es lo mismo que hizo J3 en
+// `onboardingView.js` (SCRUM-1781b).
+
+/** Mete el campo en una fila `.campo-telefono` con su propio selector de prefijo (+34). */
+function filaConPrefijo(input, nombre) {
+  const sel = window.prefijosPais.selectorDePrefijo({});
+  sel.name = nombre;
+  const fila = document.createElement('div');
+  fila.className = 'campo-telefono';
+  const campo = input.parentNode;
+  // Se MUEVE el campo, no se quita: conserva su id y sus oyentes.
+  fila.appendChild(sel);
+  fila.appendChild(input);
+  campo.appendChild(fila);
+  return sel;
+}
+
+/** Junta prefijo + número, sin duplicar el prefijo si ya va escrito (copia de `numeroCompleto`). */
+function numeroConPrefijo(input, sel) {
+  const numero = input.value.trim().replace(/\s/g, '');
+  if (!numero) return '';
+  const prefijo = (sel && sel.value) || window.prefijosPais.ESPANA.prefijo;
+  const yaLoLleva = numero.startsWith(prefijo) || numero.startsWith('+' + prefijo) || numero.startsWith('00' + prefijo);
+  return yaLoLleva ? numero : prefijo + numero;
+}
+
+/**
+ * Reparte lo guardado entre el selector y el campo (copia de `repartirNumero`). Si no empieza por
+ * ningún prefijo conocido, el número se deja ENTERO y el selector en España: nunca se trocea a
+ * ciegas.
+ */
+function repartirConPrefijo(guardado, input, sel) {
+  const limpio = String(guardado || '').replace(/[\s\-()]/g, '').replace(/^\+/, '');
+  const prefijos = window.prefijosPais.listaDePrefijos().map((p) => p.prefijo)
+    .sort((a, b) => b.length - a.length); // el más largo primero: `1` no puede ganarle a `1809`
+  for (const p of prefijos) {
+    if (limpio.length > p.length && limpio.startsWith(p)) {
+      sel.value = p;
+      input.value = limpio.slice(p.length);
+      return;
+    }
+  }
+  sel.value = window.prefijosPais.ESPANA.prefijo;
+  input.value = limpio;
+}
+
 // ── Modal de edición desde la ficha 360 ─────────────────────────────────────
 // Mismos campos que el modal de la lista (nombre/teléfono/email/notas/baja WA).
 function openEdit360Modal(customer, customerId, container) {
@@ -1478,7 +1534,7 @@ function openEdit360Modal(customer, customerId, container) {
            exportView que la suite vigila en «② ROJO: backtick dentro del template». -->
       <div id="e360-forma"></div>
       <div class="field"><label>Nombre</label><input type="text" id="e360-name"/></div>
-      <div class="field"><label>Teléfono (E.164 sin +)</label><input type="text" id="e360-phone"/></div>
+      <div class="field"><label>Teléfono</label><input type="text" id="e360-phone"/></div>
       <div class="field"><label>Móvil (WhatsApp)</label><input type="text" id="e360-mobile"/></div>
       <div class="field"><label>Email</label><input type="email" id="e360-email"/></div>
       <div class="field"><label>Razón social (empresa, opcional)</label><input type="text" id="e360-legalname"/></div>
@@ -1521,11 +1577,16 @@ function openEdit360Modal(customer, customerId, container) {
 
   const $ = (sel) => modal.querySelector(sel);
   $('#e360-name').value = customer.name || '';
-  $('#e360-phone').value = customer.phone || '';
+  // SCRUM-1781d · el prefijo en su propio desplegable, +34 por defecto, como «Nuevo cliente». Cada
+  // número lleva SU selector (la razón está en `customersView.js`, SCRUM-590: compartirlo haría
+  // que el móvil se recompusiera con el prefijo del fijo).
+  const selPrefijoTelefono = filaConPrefijo($('#e360-phone'), 'prefijoPais');
+  const selPrefijoMovil = filaConPrefijo($('#e360-mobile'), 'prefijoPaisMovil');
+  repartirConPrefijo(customer.phone || '', $('#e360-phone'), selPrefijoTelefono);
   // SCRUM-590 (CONT-19): sin esta línea, editar un cliente que TIENE móvil lo enseñaría vacío.
   // Y como el vacío no viaja (ver el guardado), el profesional creería haberlo borrado sin
   // haberlo borrado — que es peor que perderlo: es mentir sobre él.
-  $('#e360-mobile').value = customer.mobile || '';
+  repartirConPrefijo(customer.mobile || '', $('#e360-mobile'), selPrefijoMovil);
   $('#e360-email').value = customer.email || '';
   $('#e360-notes').value = customer.notes || '';
   $('#e360-legalname').value = customer.legalName || ''; // A20.4
@@ -1551,23 +1612,14 @@ function openEdit360Modal(customer, customerId, container) {
   // conserva lo elegido, así que llegar tarde no desvincula a nadie.
   const selectorEmpresa = switchFormaJuridica.selectorDeEmpresa({ valor: customer.companyId ?? null });
   $('#e360-empresa').appendChild(selectorEmpresa.nodo);
-  // ═══ SCRUM-590 (CONT-19) · POR QUÉ EL MÓVIL DE ESTA PANTALLA NO LLEVA SELECTOR DE PREFIJO
+  // ═══ SCRUM-590 (CONT-19) → SCRUM-1781d · EL PREFIJO DE ESTA PANTALLA
   //
-  // El modal de la lista sí lo lleva (SCRUM-578). Aquí NO, y es una decisión con su motivo:
-  //
-  //  · La regla que junta y reparte prefijo + número vive DENTRO de `customersView.js`, y los
-  //    guards de SCRUM-578 leen esa región del fichero para comprobarla. Sacarla a un módulo
-  //    compartido los dejaría vigilando un delegador vacío —verdes sin medir— y arreglar un
-  //    guard bajando lo que exige está prohibido. Copiarla aquí serían DOS sitios donde
-  //    divergir, que es justo lo que este ticket ha evitado en el backend.
-  //  · Y el fijo de AL LADO tampoco lo lleva: darle selector sólo al móvil dejaría dos campos
-  //    del mismo tipo con dos controles distintos en el mismo formulario.
-  //
-  // ⚠️ LO QUE ESTO CUESTA, dicho y no escondido: aquí se puede guardar «600111222» sin prefijo, y
-  // ése es un número que WhatsApp no sabe encaminar. **No es un riesgo nuevo**: es exactamente el
-  // que este formulario ya tiene con `phone`, que HOY es el canal de todos los documentos. Es la
-  // divergencia entre los dos formularios ya medida en `docs/CONTACTOS_CAMPOS_POR_LADO.md` §2 —
-  // reportada, y de otro carril (regla 37).
+  // SCRUM-590 dejó esta pantalla SIN selector de prefijo: la regla vivía sólo en
+  // `customersView.js` y copiarla abría dos sitios donde divergir. El fundador lo revisó
+  // (SCRUM-1781 c.22392): ahora el fijo y el móvil llevan cada uno su selector, y la copia de la
+  // regla (arriba, `numeroConPrefijo`/`repartirConPrefijo`) la vigila un test que compara las dos
+  // pantallas por efecto, que es lo que faltaba entonces. Con eso deja de poder guardarse aquí un
+  // «600111222» sin prefijo cuando el selector está en España.
   //
   // 🔴 EL CAMPO SE VE EN LOS DOS LADOS (Empresa/Persona), y por eso NO entra en este mapa:
   // `SOLO_EMPRESA` es `['legalName']` y §3.1 pone `phone` entre los comunes. Un móvil es canal
@@ -1615,8 +1667,8 @@ function openEdit360Modal(customer, customerId, container) {
   $('#e360-save').onclick = async () => {
     const name = $('#e360-name').value.trim();
     if (!name) { showErr('El nombre es obligatorio.'); return; }
-    const phone = $('#e360-phone').value.trim();
-    const mobile = $('#e360-mobile').value.trim(); // SCRUM-590 (CONT-19)
+    const phone = numeroConPrefijo($('#e360-phone'), selPrefijoTelefono);
+    const mobile = numeroConPrefijo($('#e360-mobile'), selPrefijoMovil); // SCRUM-590 (CONT-19)
     const email = $('#e360-email').value.trim();
     // El schema del backend valida formato: omitir vacíos en vez de mandar ""
     const payload = {

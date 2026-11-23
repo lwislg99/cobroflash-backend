@@ -279,6 +279,23 @@ export const CAMBIOS_AUTORIZADOS = [
       a: '0fbb6f5bf50aa18f400151930edf508f199df754f619062d4eee6fee94fdf739',
     },
   },
+  {
+    // SCRUM-1787t · SOLO la línea «Vence el» del PDF de factura pasa a la fecha LARGA es-ES (zona del
+    // negocio), con las opciones de la página de pago (1787q); la «Fecha:» no cambia. Decisión
+    // c.22390 ③; GO de regla 40 en c.22408. Huellas de `evidencias/SCRUM-1446d/huellas.mjs` sobre
+    // origin/main 57cc6d45bca6debe92bd55d6a55e7232c21985d4 (el `de` es el `a` de 1787m).
+    firma: 'SCRUM-1787 c.22408',
+    registro: 'docs/master/SCRUM-1787.md',
+    cita: 'Respuesta literal: «go»',
+    cuerpo: {
+      de: 'a83c6654bb5840ddd838a5d571c21c3f08f5f9dca2033f2876368c35c9f34d7a',
+      a: '2b62a73e67001b850f2005f950480cf0a9e7a603d83e4325bd7acbb7cc9346ce',
+    },
+    ambito: {
+      de: '0fbb6f5bf50aa18f400151930edf508f199df754f619062d4eee6fee94fdf739',
+      a: 'a8bd2fb9e99037e52b07fcbdf3133bfcc4adf32100d4b50b8ea4796e2e8b3857',
+    },
+  },
 ];
 
 /**
