@@ -780,6 +780,8 @@ Tres conflictos con 1787l (#3308), los tres derivados. `prisma/schema.prisma`: e
 A9: comprobación → `tests/scrum700-filtros-de-comentario.test.mjs`
 
 El test ⑦ de 1787i limpiaba la ruta con un filtro propio (`.replace(/\/\/.*/, '')`) en vez del de la casa, y el censo de SCRUM-700 lo contó como el octavo filtro que ciega (run 45113237157, censo 7). Ahora usa `soloEjecutable` de `tests/_guard-texto.mjs` (`almohadillaEsComentario: false`, es TypeScript). El censo (7) no se toca (SCRUM-1787 c.22377). Verde: `scrum700` + `scrum1787i`, 16 de 16 en 2 ficheros. El fallo es del puesto: el filtro de la casa existía y el guard que lo exige también; lo cazó el guard en CI, que es su sitio.
+
+**Y un fallo mío encima (jv-j1hu):** empujé ese arreglo (`ad1a14ce0`) sin correr `tests/scrum719-el-suelo-de-los-doce.test.mjs`, y lo tumbaba dos veces: la llamada nueva a `soloEjecutable` no tenía suelo (SCRUM-1395 ②) y el test no tenía ficha en `tests/_veredicto-mudez.json` (SCRUM-1395b ①). Lo cacé en la rama de 1787m, antes de que lo dijera CI. Ahora es `ejecutableDe` con ancla `origen: 'C7-suelta'`, y la ficha sale de `npm run censo:mudez -- --escribir` (1 medido, VIVO). Coste: un segundo empujón a 1787i y a 1787p. El guard existía y el aviso también (cambiar un test que filtra = correr 719); falló correrlo, y eso ningún test lo puede obligar.
 # SCRUM-1787n · La lista de facturas con las columnas, el orden y los rótulos de la lista de presupuestos
 
 **Medido contra:** `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740` · 2026-11-23T03:55:05Z (cabecera `Date:` de `gh api -i zen`)
