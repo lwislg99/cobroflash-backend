@@ -15,6 +15,7 @@ import { buildPaymentRequest } from '../../../integrations/whatsappTemplates';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
 import { isReceiptNumber, appendStageLabel } from '../../invoicing/domain/invoiceNumber.service';
 import { ensureChargeReceiptToken } from '../../../lib/invoicing';
+import { CreateQuoteSchema } from '../../../core/validation/schemas'; // SCRUM-1787p: el conjunto cerrado de formas de pago
 
 export type SendInvoiceWAResult = {
   ok: boolean;
@@ -56,8 +57,13 @@ export async function sendInvoicePaymentRequest(
   let chargeId: number | null = invoice.chargeId ?? null;
   if (!chargeId) {
     try {
-      // A2.1: heredar los métodos de pago del presupuesto de origen (selector al crear)
-      const quotePayMethods = invoice.quoteId
+      // SCRUM-1787p (GO c.22362): si la factura congeló sus formas de pago (1787i), el cobro nace
+      // con ellas y la página de pago (que lee `charge.payMethods`) solo enseña esas. Se validan con
+      // el MISMO conjunto cerrado del presupuesto, sin segunda lista: vacías o fuera de él → como hoy.
+      const formasDeLaFactura = CreateQuoteSchema.shape.payMethods.safeParse(invoice.payMethods);
+      const facturaPayMethods = formasDeLaFactura.success && formasDeLaFactura.data?.length ? [...formasDeLaFactura.data] : null;
+      // A2.1: si no, heredar los métodos de pago del presupuesto de origen (selector al crear)
+      const quotePayMethods = !facturaPayMethods && invoice.quoteId
         ? await prisma.quote
             .findUnique({ where: { id: invoice.quoteId }, select: { payMethods: true } })
             .then((q) => (Array.isArray(q?.payMethods) ? q!.payMethods : null))
@@ -77,7 +83,7 @@ export async function sendInvoicePaymentRequest(
           amount: Number(invoice.total),
           currency: invoice.currency || 'EUR',
           method_preference: 'card',
-          ...(quotePayMethods ? { pay_methods: quotePayMethods } : {}),
+          ...(facturaPayMethods ? { pay_methods: facturaPayMethods } : quotePayMethods ? { pay_methods: quotePayMethods } : {}),
           meta: { invoice_id: invoice.id, quote_id: invoice.quoteId },
         }),
       });
