@@ -994,6 +994,7 @@ A9: aviso → cicatriz J1 «Le pasé a Playwright MCP un fichero con el secreto 
 **Errores míos.** ① El secreto del login de test de staging quedó en el transcript local de mi sesión, por la cicatriz de arriba. No está en git, Jira ni ningún fichero comiteado, y se ha pedido al fundador que lo rote. ② Crucé los 200k (200.250) con un tope de encargo de 180k: cicatriz J1 del 23-nov.
 
 **NO hecho / NO visto:** yaqu.app; la página de pago; una imagen del PDF renderizado (Chromium sin interfaz no pinta PDF); la segunda factura por API con `payMethods`, que autorizó el orquestador y DENEGÓ el clasificador de permisos antes de ejecutarse (no se emitió nada); los logs de staging (dry-run de WhatsApp). La suite entera no la he corrido: cambio solo de docs; corrí `guards:entrada` y la corre el obligatorio.
+
 # SCRUM-1787q · La página de pago de la factura dice «Vence el» y la fecha
 
 **Medido contra:** `origin/main` = `0b2f6451af74f2142cf27e18c9a4c42fb56c1e65` · 2026-11-23T08:20:48Z (cabecera `Date:` de `gh api -i zen`)
