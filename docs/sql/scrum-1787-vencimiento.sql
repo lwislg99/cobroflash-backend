@@ -1,5 +1,10 @@
 -- docs/sql/scrum-1787-vencimiento.sql — SCRUM-1787 (tramo 1787f)
 --
+-- ✅ 21-nov-2026 (SCRUM-1787i): A y B APLICADAS en DEV (`yaqu_dev_javier`) por jv-j1hh, con su
+--    verificación (`docs/master/evidencias/SCRUM-1787/verificar-1787i.mjs`: 2 de 2 columnas); B,
+--    con el ✅ de c.22331. Staging y producción: las aplica el fundador; esta sesión NO las ha medido.
+--    `prisma/schema.prisma` ya lleva las dos líneas (rama de SCRUM-1787i).
+-- (Texto original de 1787f, que vale para staging y producción:)
 -- ⛔ PROPUESTO, SIN APLICAR. No se ha medido ninguna base (ni dev, ni staging, ni producción): no
 --    se sabe si alguna tiene ya estas columnas. Lo aplica Javier en staging y en producción, y la
 --    sesión de construcción en dev. `prisma/schema.prisma` NO se ha tocado: la línea entra en el PR
@@ -44,9 +49,9 @@
 -- AlterTable
 ALTER TABLE "invoices" ADD COLUMN     "due_date" TIMESTAMP(3);
 
--- Salida LITERAL de B (SÓLO con el ✅ del fundador; se quita el `-- ` de la línea del ALTER):
+-- Salida LITERAL de B (✅ del fundador en SCRUM-1787 c.22331 «1-Sí»; activada en 1787i, jv-j1hh):
 -- AlterTable
--- ALTER TABLE "invoices" ADD COLUMN     "pay_methods" JSONB;
+ALTER TABLE "invoices" ADD COLUMN     "pay_methods" JSONB;
 
 -- ─── VERIFICACIÓN, DESPUÉS DEL ALTER (solo lectura) ───────────────────────────────────────────
 -- Se pega aparte. Resultado esperado: 1 fila (`due_date`, `timestamp without time zone`, `YES`)

@@ -411,6 +411,12 @@ export async function generateInvoicePdf(params: {
   // (`Invoice.docFooterText`). Obligatorio a propósito, como `zona`: un llamador que no lo pase no
   // compila. NULL o vacío = no se pinta nada, y el documento sale como hasta hoy (SCRUM-665).
   docFooterText: string | null;
+  // SCRUM-1787m (GO de regla 40, c.22338 ③) · el vencimiento y las formas de pago CONGELADOS en la
+  // factura (`Invoice.dueDate` e `Invoice.payMethods`, SCRUM-1787i), nunca los del comercio ni los
+  // del presupuesto: este PDF se regenera, y una factura emitida no cambia (regla 29). Obligatorios
+  // a propósito, como `zona`: un llamador que no los pase no compila. NULL = no consta = no se pinta.
+  dueDate: Date | null;
+  payMethods: unknown;
 }) {
   const fileName = `${params.merchantId}-${params.number}.pdf`; // SCRUM-72
   const outPath  = path.join(invoicesDir, fileName);
@@ -515,6 +521,15 @@ export async function generateInvoicePdf(params: {
   doc.fontSize(10).font('Helvetica').fillColor(MUTED)
     .text(isReceipt ? `Ref. ${params.number}` : `Nº ${params.number}`, { align: 'right' });
   doc.text(`Fecha: ${dateStr(params.createdAt)}`, { align: 'right' });
+  // SCRUM-1787m · «Vence el» (firmado, c.22325 ①) con el formato y la zona de la «Fecha:», y «Formas
+  // de pago» con los literales firmados en c.22345 ① —los de la ficha—, una por cada forma congelada.
+  // Sólo si constan: una factura sin ellos sale como salía. Una clave que no esté firmada no se pinta.
+  if (params.dueDate) doc.text(`Vence el ${dateStr(params.dueDate)}`, { align: 'right' });
+  const FORMAS_DE_PAGO_FIRMADAS = { card: 'Tarjeta', bizum: 'Bizum', transfer: 'Transferencia' } as const;
+  const formasDePago = (Array.isArray(params.payMethods) ? params.payMethods : [])
+    .map((f) => (typeof f === 'string' && Object.hasOwn(FORMAS_DE_PAGO_FIRMADAS, f) ? FORMAS_DE_PAGO_FIRMADAS[f as keyof typeof FORMAS_DE_PAGO_FIRMADAS] : null))
+    .filter((f): f is NonNullable<typeof f> => f !== null);
+  if (formasDePago.length) doc.text(`Formas de pago: ${formasDePago.join(', ')}`, { align: 'right' });
   if (isRect && params.rectifiesNumber) {
     doc.text(`Rectifica a la factura Nº ${params.rectifiesNumber}`, { align: 'right' });
   }

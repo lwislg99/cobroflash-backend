@@ -261,6 +261,24 @@ export const CAMBIOS_AUTORIZADOS = [
       a: '9eecc6a9d13680f109b6f384d03b42a0f98bfc98c5b296a47a73e494e5517432',
     },
   },
+  {
+    // SCRUM-1787m · el PDF de factura imprime «Vence el <fecha>» y «Formas de pago: …» con el
+    // vencimiento y las formas de pago CONGELADOS en la factura (`dueDate` y `payMethods`, de
+    // SCRUM-1787i), sólo si constan: una factura sin ellos sale igual. GO de regla 40 en c.22338 ③.
+    // Huellas de `evidencias/SCRUM-1446d/huellas.mjs` sobre origin/main
+    // d5bec9526fe9165e38598f6eb054d0717e788740 (el `de` es el `a` de 1787l).
+    firma: 'SCRUM-1787 c.22338',
+    registro: 'docs/master/SCRUM-1787.md',
+    cita: '«1-Sí 2-Sí 3-GO»',
+    cuerpo: {
+      de: '1a4bd416a2c0231ed8b7fa4b64c6f21f6c1bf91a3c73ca4075af714d1cc3656e',
+      a: 'a83c6654bb5840ddd838a5d571c21c3f08f5f9dca2033f2876368c35c9f34d7a',
+    },
+    ambito: {
+      de: '9eecc6a9d13680f109b6f384d03b42a0f98bfc98c5b296a47a73e494e5517432',
+      a: '0fbb6f5bf50aa18f400151930edf508f199df754f619062d4eee6fee94fdf739',
+    },
+  },
 ];
 
 /**
