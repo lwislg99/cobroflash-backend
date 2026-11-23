@@ -1032,6 +1032,7 @@ Encargo del orquestador J a jv-j2dv (J2). Literal «Vence el» firmado en SCRUM-
 **Medido contra:** `origin/main` = `19859bf0b2d83c76598233b6814c2106d1630cfd` · 2026-11-23T09:28:16Z (cabecera `Date:` de `gh api -i zen`)
 
 A9: aviso → cicatriz J2 «reescribí un bloque de la página de pago con `node -e "…"` y bash ejecutó los acentos graves: seis huecos vacíos en el `.ts`, sin error; lo vi en la salida de bash, el `git checkout` lo paró `guard-dangerous` y lo arreglé con Edit» — no se pudo comprobar: lo que se teclea en la consola no lo ve ningún guard del repositorio.
+A9: comprobación → `tests/scrum757-la-declaracion-que-nadie-lee.test.mjs` — relevo jv-j2dy: el campo `a` de la mutación ③ iba como array con `.join` y el lector no lo evalúa (cayeron 757, 745, 765 y el censo salió 2); ahora es un solo literal. Y dos extractores con el `>` pegado subieron `scrum553` a 22 de 20: ahora dejan hueco a los atributos.
 
 **Skill UI:** no cargada · no cambia nada de lo que se pinta: mismos rótulos, rutas, iconos y orden; sólo mueve el cálculo a otro fichero
 
