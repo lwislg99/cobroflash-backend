@@ -31,3 +31,35 @@ No se ha relajado ningún guard: ninguno ha cambiado su exigencia, sus números 
 ## Propuesta (no se construye aquí)
 
 Que `scripts/guards-visuales.mjs` diga ROJO, y no sólo CIEGO, cuando un mismo guard lleva CIEGO N runs seguidos de `main`. Hoy un CIEGO estable tiene el mismo aspecto un día que al tercero, y estos siete llevaban así desde el 20-nov (1768) y el 21-nov (1781b) sin que nadie lo leyera. Necesita memoria entre runs (artefacto o el Issue del vigía de main): es una decisión de diseño de S5/J6, no un parche.
+
+# SCRUM-1789b
+
+**Medido contra:** `origin/main` = `7b9ff0ef313b2bf919ea12b21a5046c9e3a92ae1` · 2026-11-23T04:11:22Z
+
+A9: sin fallo que generalice — el encargo partía de que el CIEGO «no tumba nada»; medido, la puerta ya sale ≠ 0 con un CIEGO, y lo que lo esconde es el job, que no es obligatorio y está en rojo permanente: eso es una decisión de S5/fundador, no un defecto de esta sesión
+
+Mutaciones: una vez → `docs/master/evidencias/SCRUM-1789/veredicto-con-un-ciego.mjs`
+
+## PASO 0: la premisa no se sostiene, y por eso no se construye nada
+
+El encargo: «hoy el CIEGO no tumba nada; que un guard CIEGO cuente como ROJO del job». Medido:
+
+1. **La puerta YA sale ≠ 0 con un CIEGO.** `scripts/guards-visuales.mjs` suma un fallo por cada guard no verde (línea «CIEGO cuenta como fallo», en `puerta()`) y sale con `veredicto(filas).codigo`. El guion de arriba, con un guard SEMBRADO en CIEGO: sólo ciego → **salida 2** («NO MEDIDO»); ciego + un rojo → **salida 1**, y el detalle lo nombra («Y ADEMÁS 1 guard(s) NO llegaron a medir (guard:sembrado-sin-pagina: CIEGO)»); todo verde → 0. Control negativo: cambiando el esperado del primer caso a 0, el guion sale 1 y dice `MAL`.
+2. **El job de CI SÍ lee ese código.** `.github/workflows/ci.yml`, paso «Guards de navegador»: `run: npm run guards:visuales`, sin `continue-on-error`. En el run 44956622872 (#3308) el job «guards de navegador (fuera de la tanda)» acabó en `failure`.
+3. **Lo que lo esconde, medido:**
+   - **El job no es obligatorio.** Las reglas de la rama `main` (`gh api repos/…/rules/branches/main`, `required_status_checks`) piden UN contexto: «build + tests (con banco desechable)». Positivo: la consulta devuelve ese nombre, así que no es una lista vacía. El propio `ci.yml` lo dice en el comentario del censo táctil: «este job no es obligatorio».
+   - **Está en rojo permanente en `main`.** Los 15 últimos runs de `ci.yml` en `main` (del 21-nov 05:40Z al 23-nov 04:08Z): **11 con el job en `failure`, 0 en `success`**, 4 sin ese job (alcance «solo docs» o aún corriendo; no lo distinguí). El rojo fijo es `guard:detalle-trabajo-917` (S4, 42 hallazgos): con él, la salida es 1 tenga o no ciegos, y el rojo de un CIEGO nuevo se lee igual que el de ayer.
+
+Un detector que acierta y publica donde nadie lee: aquí el detector ya publica bien (código y nombre); lo que no lee nadie es el job. Cambiar el runner no lo arreglaría.
+
+## Lo que hace falta, y de quién es (no se toca aquí)
+
+- **Que el job sea obligatorio**, o que su rojo llegue a donde se lea (el avisador de main): reglas de la rama y `.github/workflows/`, **S5 y fundador**. Antes, `guard:detalle-trabajo-917` tiene que estar verde o declarado: si se hace obligatorio hoy, bloquea todos los PR.
+- **Distinguir un rojo NUEVO de uno conocido**, que es lo que de verdad faltó con los siete: o una lista de no-verdes declarados con ticket que sólo baja (estilo `_sin-consumir-declarados`), o la propuesta de 1789 (rojo tras N runs seguidos). Una lista así **relaja** el job para 917 (deja de tumbarlo), así que es una decisión, no un arreglo: no la construyo sin que la firme quien decide (regla 41).
+- Mientras tanto, la puerta ya no tiene ciegos que esconder: los siete los arregló el tramo de arriba. Sin medir aún en el CI de #3315.
+
+## Población y lo que NO se ha medido
+
+- Guion: 3 casos sobre `veredicto`, la función pura de la que sale el `process.exit` del runner. **No he corrido el runner entero con un guard sembrado en disco**: que `puerta()` sale con `veredicto(filas).codigo` está leído en el código, no ejecutado.
+- Historial de `main`: 15 runs, leídos con `gh run view --json jobs`. Los 4 «sin job» no los he abierto.
+- No he cambiado código: no hay tanda que correr más allá de los guards del registro.
