@@ -1,0 +1,12 @@
+población: esquema prisma\schema.prisma · 109617 B · diff = 1 línea en model Invoice
+control de la herramienta (preview): ok · ok=true clase=con_cambios
+--- DDL ---
+-- AlterTable
+ALTER TABLE "invoices" ADD COLUMN     "doc_footer_text" TEXT;
+--- fin DDL ---
+destructivas: 0
+lista blanca: permitidas=1 rechazadas=0
+  ✔ ALTER TABLE … ADD COLUMN ← ALTER TABLE "invoices" ADD COLUMN "doc_footer_text" TEXT
+control negativo (mismo esquema): ok=true clase=sin_cambios
+control positivo sembrado (DROP de «clientComment» en Invoice): ok=true clase=con_cambios destructivas=1 rechazadas=1
+VEREDICTO: VERDE (aditivo, 0 destructivas, lista blanca 0 rechazadas, controles ok)

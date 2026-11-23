@@ -160,7 +160,8 @@ export async function ensureInvoicePdf(
       watermark: isDemoMerchant(inv.merchant) ? DEMO_WATERMARK : null,
       stageLabel: inv.stageLabel, // SCRUM-33
       zona: inv.merchant.timezone, // SCRUM-1470c: el día de la «Fecha:», el de su registro
-      merchantCriterioCaja: inv.merchantCriterioCaja, // SCRUM-1240d: el CONGELADO, nunca el vivo
+      docFooterText: inv.docFooterText ?? null, // SCRUM-1787l: las Observaciones congeladas al emitir
+      merchantCriterioCaja: inv.merchantCriterioCaja, dueDate: inv.dueDate, payMethods: inv.payMethods, // SCRUM-1240d y SCRUM-1787m: los CONGELADOS, nunca los vivos
     });
     // SCRUM-665e · la huella del fichero TAL COMO QUEDÓ EN DISCO, no la de un buffer: es lo
     // que se servirá y lo que se comprobará en cada lectura.

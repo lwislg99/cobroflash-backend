@@ -176,6 +176,7 @@ Decisiones: GO del PDF y literales `NIF` / `Dirección` en c.22303, cuya respues
 - jv-j1hc arregló 11 de los 12 rojos del obligatorio (detalle y causas en SCRUM-1787 c.22323): `invoice.findFirst` y `customer.findFirst` en los `tx` falsos de 1763, 624y y 347 (ninguna aserción tocada); en `generateInvoicePdf` la dirección viaja en `customerAddress`, hermano de `customer`, para que el llamador siga escribiendo `customer: clienteDelDocumento(` (scrum577), con las huellas de 603b/723 recalculadas por `evidencias/SCRUM-1446d/huellas.mjs`; fuera el export sin consumidor (scrum1185); el test de 1787d pasa del merchant 1 al 71 (scrum409); las 5 columnas `invoice.customerBilling*` en `SIN_DECIDIR` con `EN_DOCUMENTO_SELLABLE`; ficha de mudez regenerada (scrum1395b).
 - jv-j1hd: el trinquete de `tests/scrum497-dato-personal-no-sobrevive.test.mjs` pasa de 92 a 97 con su nota fechada, por la decisión del fundador de SCRUM-1787 c.22322 («1-Ok sí»). Nada más del guard. Queda ABIERTA para el fundador (c.22322): si la dirección congelada se redacta en una supresión de datos.
 - `scrum728d` **sigue pendiente, medido:** sus cifras (F1 8 viajes / 7 dentro del cerrojo; R1 7) son literales escritos a mano en `tests/scrum728d-viajes-de-la-reserva.test.mjs`, y `conElCreateDelLlamador` (`tests/_viajes-de-la-reserva.mjs`) suma un +1 fijo por el `create`. El guard espía `allocateInvoiceNumber`, no `crearFacturaEmitida`, así que no ve la lectura de `direccionCongelada.ts` y sigue verde con el número viejo. No es un número derivado por su mecanismo: no se toca (regla 41). El viaje real, según el diseño de jv-j1gz, es uno más (F1 9 / 8 dentro; R1 8): sin medir con un espía de `crearFacturaEmitida`.
+
 # SCRUM-1787b · Ficha de factura con la forma de la ficha del presupuesto (construida)
 
 **Medido contra:** `origin/main` = `41b0e031083b02c35e1a4cf74c4e71756f4d20f5` · 2026-11-21T05:22:07Z
@@ -307,6 +308,7 @@ NO medido: la cifra que dará con #3302 (hace falta espiar la tx completa de `cr
 - 320 px, conceptos de varias líneas, importes de 9.999,99 € y la factura R1 (sólo F1 en los tres estados).
 - El guard en CI: lo dirá el job de `guards:visuales` de este PR.
 - La suite entera, en local, por tramos (`tanda-entera-por-tramos.mjs`, 15 de 15, uno por comando): 1.742 ficheros, 14.075 casos, **10 rojos, ninguno de esta rama**. 8 son del cliente de Prisma COMPARTIDO, que a esa hora llevaba `Invoice.customerBillingAddress` (el esquema de #3302) sin estar en el `schema.prisma` de main: `_prisma-client-guard` salió 1 nombrándolo. Son scrum235 (4), el censo de producción (1), scrum461 (2) y scrum733 (1: el generador escribe 545 columnas frente a 540, que son las 5 `customerBilling*`). Los otros 2 son de scrum1298b (latido), en el tramo 3; aislado sale 8/8 en este árbol y 8/8 en un árbol limpio de `origin/main`. Por el camino, la tanda cazó dos defectos MÍOS que arreglé: scrum1392 (las listas del guard nacían dentro del caso) y scrum1603 (el banco medía sin la letra de la casa: ahora usa `_hojas-del-panel`). Los tramos 1 a 3 y 5 corrieron antes de esos dos arreglos; después volví a pasar 1392, 1603, 1313, 1320, 1327, 1336, 737, 258 y 711 (69 + 30 casos, 0 fallos) y el guion de mutaciones (3 de 3 caen).
+
 # SCRUM-1787h · La página de pago de la factura enseña sus líneas, como la del presupuesto
 
 **Medido contra:** `origin/main` = `c27b1dc2513f6abe8ea28f84ad596e0d6aa66b91` · 2026-11-21T19:58:52Z
@@ -449,6 +451,146 @@ Mutaciones previstas para su `MUTACIONES_QUE_ME_TUMBAN` (no existen todavía): q
 
 Ninguna base: no sé si alguna tiene ya estas columnas. No corrí ningún test de `src/` ni de `public/`: el plan ⑦ y lo de los guards de ⑤ están leídos, no probados. No miré cómo pinta la cabecera de 1787b una línea más en móvil.
 
+# SCRUM-1787l · Las Observaciones del presupuesto pasan a la factura: la factura no tiene dónde guardarlas, DDL propuesto (solo docs; se construye después del ALTER)
+
+**Medido contra:** `origin/main` = `ccb69008b5aaa80d3f7cb712be77ce025c146238` · 2026-11-21T21:43:19Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: aviso → cicatriz J1 «Leí el camino de emisión (`pdf.service.ts`, `crearFacturaEmitida.ts`) sin cargar la skill `yaqu-verifactu-sif`, que el encargo marcaba OBLIGATORIA; la segunda vez tras SCRUM-1771a» — no se pudo comprobar: no la cargué después porque paré antes de construir, y qué skill se ha cargado antes de leer un fichero no lo ve ningún guard del repositorio.
+
+Mutaciones: una vez → `docs/master/evidencias/SCRUM-1787/preview-ddl-1787l.mjs`
+
+Carril J1, sesión `jv-j1hj`, rama `scrum-1787l-notas-del-presupuesto-a-la-factura`. Nada en `src/`, `public/` ni `prisma/` (regla 40: el esquema se LEE). **Decisión de partida:** SCRUM-1787 c.22338 ②, respuesta literal del fundador **«1-Sí 2-Sí 3-GO»** a «¿Al facturar un presupuesto se pasan a la factura sus notas o el texto del pie? Las cláusulas de aceptación no pasarían.» Contexto: c.22301, filas 6 y 7. **Paro en el punto 3 del encargo: hace falta ALTER.**
+
+## ① Los textos del presupuesto: cuál es nota y cuál es cláusula
+
+| texto | dónde se guarda | qué pinta el PDF del presupuesto | ¿pasa a la factura? |
+|---|---|---|---|
+| Texto del pie | `Quote.docFooterText` (`prisma/schema.prisma:616`, `doc_footer_text`) | bloque final con el rótulo **`Observaciones`** (`pdf.service.ts:1410-1415`, `TITULO_OBSERVACIONES` `:62`, aprobado el 2-sep-2026 «en los tres documentos», `:59`) | **SÍ** (c.22338 ②: «notas o texto del pie») |
+| Texto de cabecera | `Quote.docHeaderText` (`schema.prisma:615`) | bajo la cabecera, sin rótulo (`pdf.service.ts:1065-1069`) | **sin decidir**: pregunta 1 |
+| Notas internas | `Quote.internalNotes` (`schema.prisma:703`, «nunca visibles al cliente») | no se imprimen | NO: son privadas |
+| Cláusulas de cierre (aceptación) | en el COMERCIO, no en el presupuesto: `Merchant.clausulasPresupuesto` (`schema.prisma:197`, SCRUM-656); el presupuesto sólo guarda las que excluye, `Quote.clausulasExcluidas` (`:754`) | tras las Observaciones (`pdf.service.ts:1521-1525`, `clausulasParaDocumento`) | **NO** (c.22338 ②) |
+
+Todo lo de esta tabla lo pinta `generateQuotePdf` (`pdf.service.ts:920`). En el editor, cabecera y pie salen juntos de `quotesView.js:1582` y viajan en `:5966` (S2, sólo leído).
+
+## ② La factura NO tiene campo de texto libre → hace falta ALTER
+
+`model Invoice` (`prisma/schema.prisma:775-1005`): sus campos de texto son cliente y emisor congelados, `number`, dirección de obra, `currency`, `pdfUrl`, `qrData`, `registerId`, `status`, `paidVia`, `clientComment` (`:883`, el comentario del CLIENTE al pagar) y `stageLabel` (`:884`, la etiqueta del tramo); `lines`, `tags`, `albaranRefs`, `deductsRefs` son `Json`; el resto son de VeriFactu. **Ninguno es un texto del profesional para el cliente.** Meter el pie en `lines`, `tags` o `stageLabel` sería inventar un uso (regla 27). El propio esquema lo dice en el comentario de SCRUM-593 (`:612-614`): «LA FACTURA NO LOS TIENE, y no es un olvido» — por SCRUM-665: `ensureInvoicePdf` regenera el PDF con el código de hoy y un bloque nuevo cambiaría facturas ya emitidas. **Con la columna nullable esa objeción no se activa:** las emitidas se quedan a NULL, y el bloque sólo se pinta con texto (como en el presupuesto, `:1410`), así que una regenerada sale igual que hoy.
+
+## ③ El DDL
+
+`docs/sql/scrum-1787-observaciones-factura.sql`, marcado PROPUESTO. Sacado OFFLINE por `docs/master/evidencias/SCRUM-1787/preview-ddl-1787l.mjs` (`previewMigracion({ schema, desde })` sobre copias en un temporal fuera del árbol; salida en `preview-ddl-1787l.salida.txt`). Línea PROPUESTA en `model Invoice`, detrás de `stageLabel` (`:884`), con el mismo nombre y tipo que su hermano del presupuesto:
+
+    docFooterText String?   @map("doc_footer_text") @db.Text
+
+| control | resultado |
+|---|---|
+| la herramienta respondió | ok |
+| DDL | `ALTER TABLE "invoices" ADD COLUMN "doc_footer_text" TEXT;` |
+| destructivas | 0 |
+| lista blanca de `_aplicar-sql-dev.mjs` | 1 permitida · 0 rechazadas |
+| control negativo (actual → actual) | `sin_cambios` |
+| control positivo SEMBRADO (DROP fabricado de `clientComment` en la factura) | destructivas 1, rechazadas 1 |
+| quitado el sembrado (su línea cambiada por `const sembrado = propuesto;` con `sed` en una copia, borrada después) | sale 2, «CIEGO (un control no se cumple)» |
+
+Verificación después del ALTER, comentada en el mismo `.sql`: 1 fila (`doc_footer_text`, `text`, `YES`); 0 filas = no aplicado en ESA base.
+
+## ④ Dónde se congela al emitir, y qué es de quién
+
+- **S1 (Luis):** la factura desde presupuesto nace en DOS rutas de `src/modules/system/app/routes/quotesAdmin.routes.ts`, y el encargo sólo nombraba la primera: `POST /:id/invoice` (`:232`, por tramos; `crearFacturaEmitida` en `:363-375`) y `POST /:id/invoice-manual` (`:561`, el documento entero; `:656-668`). Las dos leen el presupuesto con `include` (`:239-246` y `:568-571`), así que `quote.docFooterText` ya está cargado: no hace falta tocar las consultas.
+- **J1 (emisión, GO c.22338):** `crearFacturaEmitida` (`src/modules/invoicing/domain/crearFacturaEmitida.ts:60-70`) hace `tx.invoice.create({ data: { ...datos, … } })` y su tipo `DatosDeFacturaEmitida` (`:45-48`) es `InvoiceUncheckedCreateInput` menos cliente, emisor y dirección: **con la columna en el esquema, el texto se congela sin tocar esa función**. Lo que sí es J1: el PDF de factura (`generateInvoicePdf`, mismo fichero) y la ficha (`invoiceDetailView.js`), que lo pintan con el rótulo `Observaciones`. Ningún texto nuevo.
+- La huella y el XML no cambian: no llevan texto libre.
+
+**Diff literal para Luis (S1)**, a aplicar en el PR de construcción, después del ALTER:
+
+```diff
+--- a/src/modules/system/app/routes/quotesAdmin.routes.ts
++++ b/src/modules/system/app/routes/quotesAdmin.routes.ts
+@@ crearFacturaEmitida(tx, clienteCongelado, emisorCongelado, {
+         stageLabel: isCustomPlan ? tramo.stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
++        docFooterText: quote.docFooterText ?? null, // SCRUM-1787l (c.22338 ②): las Observaciones del presupuesto; las cláusulas NO
+         currency: quote.currency,
+@@ return crearFacturaEmitida(tx, clienteCongeladoEntera, emisorCongeladoEntera, {
+         stageLabel: null, // no es un tramo: es el documento entero
++        docFooterText: quote.docFooterText ?? null, // SCRUM-1787l (c.22338 ②): las Observaciones del presupuesto; las cláusulas NO
+         currency: quote.currency,
+```
+
+Pregunta abierta para el plan: si un presupuesto por tramos se factura en varias facturas, con este diff **cada una** lleva las Observaciones (pregunta 4).
+
+## ⑤ Plan del test (rojo primero, contra la RUTA montada en `app`)
+
+| caso | espera |
+|---|---|
+| facturar un presupuesto con `docFooterText` | la fila `invoices` lleva `doc_footer_text` igual; el PDF lleva `Observaciones` y el texto; la ficha también |
+| el mismo presupuesto con cláusulas de cierre en el comercio | ni el PDF de la factura ni la fila llevan el título ni el texto de ninguna cláusula |
+| control: presupuesto sin pie | `doc_footer_text` NULL y el PDF de factura igual que hoy |
+
+Huellas que saltarán al construir, por su vía: `tests/scrum222-deriva-arranque.test.mjs` (`node scripts/generar-sql-deriva.mjs`) y la entrada de `generateInvoicePdf` en `CAMBIOS_AUTORIZADOS` (603b/723), con cita a c.22338, como 1787c ⑦.
+
+## Preguntas para el fundador — ✅/❌
+
+1. **¿Pasa también el texto de CABECERA del presupuesto?** c.22338 dice «notas o texto del pie». Recomiendo que NO por ahora: sólo el pie, que es lo que firmaste.
+2. **¿Aplicamos el ALTER de `doc_footer_text` (A5 ①)?** Es aditivo, nullable y sin default; las facturas ya emitidas no cambian.
+3. **¿La rectificativa (R1) hereda las Observaciones de su factura original?** Recomiendo que NO: es otro documento, y lo que diga el original ya no aplica.
+4. **Un presupuesto cobrado por tramos da varias facturas: ¿llevan TODAS las Observaciones?** Recomiendo que sí: cada factura es un documento que el cliente lee suelto.
+
+## NO medido (1787l)
+
+Ninguna base: no sé si alguna tiene ya `invoices.doc_footer_text`. No corrí ningún test de `src/` ni de `public/`: el plan ⑤ está leído, no probado. No miré la factura desde albarán ni desde parte (¿deben llevar las `notas` del albarán?): fuera del GO. No cargué la skill `yaqu-verifactu-sif` (ver la línea A9).
+
+# SCRUM-1787l (construcción) · Las Observaciones del presupuesto en la factura: columna, PDF y ficha
+
+**Medido contra:** `origin/main` = `ccb69008b5aaa80d3f7cb712be77ce025c146238` · 2026-11-21T21:52:38Z (cabecera `Date:` de `gh api -i zen`)
+
+**Skill UI:** no cargada · la ficha reutiliza tal cual la sección de Observaciones de la ficha del presupuesto (`detail-section` + `quote-doc-texto`, rótulo y pintado de `textoDelDocumento.js`), sin CSS ni texto nuevo; la confieso en la línea A9.
+
+A9: aviso → cicatriz J1 «Edité `invoiceDetailView.js` sin cargar la skill `yaqu-premium-ui`, obligatoria antes de tocar UI; lo cazó `scrum811c` al correr la dirigida» — no se pudo comprobar: qué skill se ha cargado antes de un Edit no lo ve ningún hook del repositorio.
+
+Mutaciones: catálogo → `tests/scrum1787l-observaciones-en-la-factura.test.mjs`
+
+Carril J1, sesión `jv-j1hl`. Decisión: SCRUM-1787 c.22345, literal **«1-Sí 2-Solo pie 3-GO 4-No 5-Sí»**; ALTER aplicado en staging y producción, c.22346.
+
+| aceptación | dónde se ve |
+|---|---|
+| esquema `Invoice.docFooterText` (`doc_footer_text`) | `prisma/schema.prisma`; dev aplicado con `aplicar-sql-dev.mjs --go`: antes 0 filas, después 1 (`text`, `YES`), control `stage_label` 1 |
+| la emisión congela el campo (spread de `datos`, `crearFacturaEmitida` sin tocar) | `tests/scrum1787l-observaciones-en-la-factura.test.mjs` ① |
+| PDF de factura: «Observaciones» + texto, sólo con texto, nunca en justificantes | ② y ③ (null, '' y espacios dan las MISMAS líneas que sin el campo) |
+| ficha de factura: misma sección que el presupuesto | ④ y su control |
+| la R1 no hereda (c.22345 ④) | ⑤ (AST de la ruta de rectificar: sin `docFooterText` ni spread) |
+| los tres generadores del PDF pasan el campo de la fila | ⑥; `docFooterText` es obligatorio en `generateInvoicePdf` (no compila sin él) |
+| las rutas que crean la factura desde presupuesto lo pasan | NO HECHO → S1 (Luis): diff de abajo |
+
+**Diff para Luis (S1) — TRES rutas, no dos.** Al construir apareció una tercera: `src/modules/quotes/app/routes/quotes.routes.ts:658` (camino C1, el cliente acepta desde WhatsApp y se emite el tramo). Por c.22345 ⑤ cada tramo lleva las Observaciones, así que las tres llevan la misma línea, detrás de `stageLabel`:
+
+```diff
++        docFooterText: quote.docFooterText ?? null, // SCRUM-1787l (c.22345 ②⑤): las Observaciones; la cabecera NO
+```
+
+en `quotesAdmin.routes.ts` `/:id/invoice` y `/:id/invoice-manual`, y en `quotes.routes.ts` (C1). Hasta que entre, el texto sólo llega si alguien lo pasa a la emisión.
+
+Huellas por su vía: `tests/_cambios-autorizados-de-la-factura.mjs` (603b/723, con `huellas.mjs`, firma c.22345); `docs/sql/deriva-prod.sql` regenerado (`generar-sql-deriva.mjs`, 222); tres coordenadas de `docs/legal/AUDITORIA_CAMINO_EMISION.md` movidas a donde está hoy su testigo (525d: `schema.prisma:964-965`, `:1902`, `invoicing.ts:268`). La línea nueva de `src/lib/invoicing.ts` va ANTES de `merchantCriterioCaja` para no dejar ciega la mutación de `scrum1240d`.
+
+Y `TITULO_OBSERVACIONES` entra en `AMBITO_DECLARADO` de `tests/scrum723-guard-contra-su-base.test.mjs`, con su motivo (lo pide el propio guard: es un nombre, no un número).
+
+Corrido: el test nuevo 7/7 (rojo primero en ②, ④ y ⑥); la dirigida de 21 ficheros dio 219/230 con 7 rojos, todos huellas de esta rama, arreglados por su vía; `guards:entrada` salida 0 (170 ✔); `tsc -p .` salida 0.
+
+**NO medido:** staging y producción (no los toqué; el ALTER es de c.22346); yaqu.app; la factura desde albarán o parte; 1787i (no está en main); la dirigida NO se repitió tras arreglar las huellas (orden del orquestador: basta el test y `guards:entrada`); las dos mutaciones del catálogo NO las corrí con `aplicarUna`; la suite entera la corre el obligatorio.
+
+## Relevo jv-j1hn (23-nov-2026 03:25Z, `origin/main` = `90e8e3774f86ff6ef393e7f25f0c6bdedb95765e`) · los tres rojos del run 44956622872
+
+A9: comprobación → `tests/scrum593c-todas-las-puertas-del-documento.test.mjs`
+
+Decisión: SCRUM-1787 c.22353, literal **«1-Sí»**. Carril de SCRUM-593 sin etiqueta area-: indeterminable (labels vacías en Jira el 23-nov); la cerradura no paró la escritura, y el orquestador dio el «sigue».
+
+- ① `scrum593c`: el último caso ya no prohíbe todo `docFooterText` en `src/lib/invoicing.ts`. Por AST, en las 3 llamadas a `generateInvoicePdf` de la emisión (`invoicing.ts` ×2, `invoicesAdmin.routes.ts` ×1), `docFooterText` sólo puede ser `inv.`/`invoice.docFooterText`, y `docHeaderText` sigue prohibido. Nota fechada en el test con la cita a c.22353. Control positivo en su `MUTACIONES_QUE_ME_TUMBAN`: pasar `(inv as any).quote?.docFooterText` → VIVA con `aplicarUna` (base 6/6).
+- ② `scrum409`: el fixture del PDF de `scrum1787l` pasa de `merchantId: 1` a `71`.
+- ③ `scrum1547`: primero PARADO. `quote.docFooterText` está en `SIN_DECIDIR` de `tests/scrum497-dato-personal-no-sobrevive.test.mjs`, y declarar `invoice.docFooterText` igual tumbaba el trinquete de SCRUM-497 («da 98 pendientes y eran 97»): había que mover un número escrito a mano. Pregunta en c.22359; decisión del fundador en c.22360, literal **«1-Ok sí»**. Hecho: `invoice.docFooterText` entra en `SIN_DECIDIR` (`EN_DOCUMENTO_SELLABLE`) y el trinquete pasa de 97 a 98 con nota fechada que cita c.22360. Nada más del guard.
+
+Mutaciones de 1787l con `aplicarUna`: las dos VIVAS (base 7/7). Dirigida tras ③ (593c, 409, 497, 1787l, 1787d, 1779d, 523d, 291, 603b, 723, 222, 525d y 1294): 125 casos, 123 ok, 0 rojos, 2 saltados declarados (los gateados de 222). `guards:entrada` salida 0 (15 guards). `tsc -p .` salida 0, cliente regenerado en `node_modules` propio y guard ✔.
+
+Fallo propio: al retirar la prueba de ③ mi edición se comió un salto de línea; lo cazó `git diff` y lo devolví antes del commit.
+
+**NO medido:** la suite entera (no corrida: el encargo prohíbe los tramos; la corre el obligatorio); yaqu.app; staging y producción.
 # SCRUM-1787k · La factura suelta acepta por línea la descripción y el descuento, con la función del camino desde presupuesto
 
 **Medido contra:** `origin/main` = `ccb69008b5aaa80d3f7cb712be77ce025c146238` · 2026-11-21T21:55:47Z (cabecera `Date:` de `gh api -i zen`)
@@ -574,3 +716,249 @@ Medido sobre esta rama: F1 = cerrojo · merchant.findUnique · invoice.findMany 
 - Los demás caminos que llaman a `crearFacturaEmitida` (desde presupuesto, albarán, parte) no se cuentan uno a uno.
 - Los títulos de dos casos siguen diciendo «hace 8 viajes» y «hace 7». La firma dice «nada más del guard», así que no los he tocado.
 - La suite entera en local: la corre el obligatorio (orden del orquestador).
+
+# SCRUM-1787i · La factura suelta congela vencimiento y formas de pago, y la ficha pinta «Vence el» y «Formas de pago»
+
+**Medido contra:** `origin/main` = `ccb69008b5aaa80d3f7cb712be77ce025c146238` · 2026-11-21T21:57:37Z
+
+A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1787i-vencimiento-y-formas-de-pago.test.mjs`
+
+**Skill UI:** no cargada · jv-j1hk la cargó DESPUÉS de escribir la fila `Formas de pago` (la cazó `scrum811c` en `guards:entrada`), y revisó el cambio contra ella: una fila más con `addDefRow` en el bloque «Cobro» que ya existe, sin clases, estilos ni tokens nuevos. Del checklist AB6 no hay capturas ni matriz de dispositivos: no medidas.
+
+Decisiones del fundador: SCRUM-1787 c.22325 ③ (GO de regla 40: recibir y congelar al emitir), c.22331 (guardar las formas de pago; «Vence el» por defecto a 30 días), c.22345 ① (literales firmados `Formas de pago` · `Tarjeta` · `Bizum` · `Transferencia`) y c.22349 (mover las tres expectativas de `scrum600e`). Carril J1. Construido por `jv-j1hh` (commits `59cdd240e` y `d0e4e00f1`, traspaso en c.22344) y terminado por `jv-j1hk`.
+
+## El cambio
+
+- `prisma/schema.prisma`: `dueDate` (`due_date`) y `payMethods` (`pay_methods`) en `model Invoice`, con el ALTER de `docs/sql/scrum-1787-vencimiento.sql` aplicado antes en dev (A y B; verificación en `docs/master/evidencias/SCRUM-1787/verificar-1787i.mjs`). Staging y producción los aplica el fundador.
+- `facturaSuelta.ts`: el validador acepta `dueDate` (ausente, `null` o fecha) y `payMethods` con el conjunto del presupuesto (`CreateQuoteSchema.shape.payMethods`, sin segunda lista). Lo que no vale se rechaza antes de pedir número, con código y sin texto. `vencimientoDeLaSuelta`: ausente → expedición + 30 días.
+- `invoicesAdmin.routes.ts` pasa los dos campos a `emitInvoice`, que los escribe en el mismo INSERT. Los demás orígenes escriben NULL.
+- `invoiceDetailView.js`, bloque «Cobro»: `Vence el` con la fecha congelada, y `Formas de pago` con un literal firmado por cada forma congelada, separados por «, » como «Rectificada por» en el mismo bloque. Las dos filas solo salen si hay dato; una clave fuera del conjunto no se pinta en crudo.
+- `tests/scrum600e-condiciones-contra-el-emisor.test.mjs`: sus tres expectativas escritas a mano dependían de que la factura no guardara formas de pago. Se cambian con la firma de c.22349 y una nota fechada en cada una: lo que sobrevive al emisor, `payMethods` como único campo de «3. Condiciones» con columna, y 3 campos en vez de 4 en ROJO ①. Nada más del guard.
+- `docs/sql/deriva-prod.sql` se regenera con `scripts/generar-sql-deriva.mjs` (547 columnas). Las tres coordenadas de `docs/legal/AUDITORIA_CAMINO_EMISION.md` que movieron estas líneas se actualizan en su sitio, con nota fechada.
+
+## Evidencia
+
+- `tests/scrum1787i-vencimiento-y-formas-de-pago.test.mjs`: **11/11**. Rojo primero (jv-j1hh, c.22344): 8 de 9 contra el código sin tocar. Los dos casos ⑨ de `Formas de pago` los cae su mutación.
+- Mutaciones con el `aplicarUna` de la casa (`docs/master/evidencias/SCRUM-1787/vencimiento/mutar.mjs`): **3 de 3 vivas** (emisión sin `dueDate` → ①; sin fila `Vence el` → ⑧; sin fila `Formas de pago` → ⑨). Después, `git status` solo con los cambios del ticket.
+- Batería dirigida de c.22344 + 1787i (27 ficheros): 336 casos, 327 pass, 5 fail y 4 skip (gateados por QA_DB_TEST), y la suma da 336. Los 5 fail eran 222 (deriva), 525d (coordenadas) y 600e ×3; arreglados como se cuenta arriba y vueltos a correr en verde.
+- Build con tipos (`tsc -p .`): salida 0.
+
+## Error propio (A9)
+
+Al actualizar las coordenadas de la auditoría escribí la nota de por qué se movían con los nombres de las columnas entre comillas invertidas, y `scrum525d` los leyó como testigos nuevos del ancla: un rojo más. Lo cazó el propio guard, y la nota quedó en prosa. Por eso la línea A9 apunta a ese test.
+
+Segundo error: escribí la fila de la ficha sin haber cargado antes `yaqu-premium-ui`, que CLAUDE.md pide antes de tocar UI. Lo cazó `tests/scrum811c-skill-ui-declarada.test.mjs`, y queda declarado arriba como «no cargada». Ese guard pide que se declare, no comprueba el orden.
+
+## NO hecho (espera decisión)
+
+- Que el cobro de la factura herede `invoice.payMethods` (`invoiceWhatsApp.service.ts`). Sin eso, lo guardado todavía no cambia lo que ve el cliente al pagar.
+- El editor que manda los dos campos (S2, Luis: `quotesView.js` / `cuerpoDelDocumentoSuelto.js`), el PDF y la página de pago.
+
+## NO medido
+
+- La ruta montada en `app`: el caso ⑦ la lee en el fuente; lo que se ejecuta es el validador y `emitInvoice` contra una transacción fabricada.
+- La suite entera en local: la corre el obligatorio.
+- El navegador y yaqu.app: se ven tras el merge y el despliegue. Staging y producción: no tocados.
+- El texto de c.22349: lo cito por el mensaje del orquestador, no lo he leído en Jira.
+
+## Merge con main (relevo jv-j1hm, 2026-11-23T03:20:10Z, sobre `origin/main` = `90e8e3774f86ff6ef393e7f25f0c6bdedb95765e`)
+
+A9: comprobación → `tests/scrum1787k-suelta-con-descripcion-y-descuento.test.mjs`
+
+El merge chocó con 1787k en `validarFacturaSuelta` y se juntaron las dos: las líneas salen por `lineasParaFacturar` (1787k) y el resultado lleva `dueDate` y `payMethods` (1787i); quitar una mitad en `dist/` tumba este test o `tests/scrum1787i-vencimiento-y-formas-de-pago.test.mjs` (sin 1787i: 4 caen; sin 1787k: 3 caen; base 16/16), mutación hecha una vez y sin guion en git, así que no cuenta como evidencia repetible.
+
+## Segundo merge con main (relevo jv-j1ht, 2026-11-23T03:58:22Z, sobre `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740`)
+
+A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
+
+Tres conflictos con 1787l (#3308), los tres derivados. `prisma/schema.prisma`: en `model Invoice` se quedan las tres columnas (`dueDate`, `payMethods` de 1787i y `docFooterText` de 1787l), sin elegir lado. `docs/sql/deriva-prod.sql`: regenerado con `scripts/generar-sql-deriva.mjs` sobre el esquema unido (548 columnas). `docs/legal/AUDITORIA_CAMINO_EMISION.md`: anclas recolocadas en sitio (eslabón 4 → `schema.prisma:970-971`, eslabón 8 → `:1908`). Con la ancla vieja del eslabón 4 (963-964), 525d cae 1 de 8; con la nueva, 8 de 8; mutación hecha una vez y sin guion en git. Ninguna aserción cambia.
+
+## Rojo de SCRUM-700 tras el merge de main `141baada` (relevo jv-j1hu, 2026-11-23T05:48:03Z, sobre `origin/main` = `141baada7559c8ab18bd9a572383a40d3d5b6164`)
+
+A9: comprobación → `tests/scrum700-filtros-de-comentario.test.mjs`
+
+El test ⑦ de 1787i limpiaba la ruta con un filtro propio (`.replace(/\/\/.*/, '')`) en vez del de la casa, y el censo de SCRUM-700 lo contó como el octavo filtro que ciega (run 45113237157, censo 7). Ahora usa `soloEjecutable` de `tests/_guard-texto.mjs` (`almohadillaEsComentario: false`, es TypeScript). El censo (7) no se toca (SCRUM-1787 c.22377). Verde: `scrum700` + `scrum1787i`, 16 de 16 en 2 ficheros. El fallo es del puesto: el filtro de la casa existía y el guard que lo exige también; lo cazó el guard en CI, que es su sitio.
+
+# SCRUM-1787p · El cobro del envío por WhatsApp de la factura hereda sus formas de pago congeladas
+
+**Medido contra:** `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740` · 2026-11-23T03:59:03Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: comprobación → `tests/scrum1787p-cobro-hereda-formas-de-pago.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1787p-cobro-hereda-formas-de-pago.test.mjs`
+
+**GO:** SCRUM-1787 c.22362 («1-GO», flujo de cobro). Sesión jv-j1hs (J1). Rama `scrum-1787p-cobro-hereda-formas-de-pago`, nacida de 1787i (#3311, `a9b26ff4`) y con `origin/main` mergeado.
+
+**Medición.** ① El cobro lo crea `sendInvoicePaymentRequest` (`src/modules/billing/domain/invoiceWhatsApp.service.ts`, J1) con un POST interno a `/charges`; antes solo le pasaba las formas del PRESUPUESTO de origen, así que una factura suelta (sin presupuesto) creaba un cobro sin selector y el cliente veía todas. ② Otros caminos: en `src/` hay dos `prisma.charge.create`, el de `/charges` (su único llamador por `fetch` es este servicio) y la liberación de la garantía de obra (`chargesAdmin.routes.ts`, nace PAGADO: no es un enlace de pago). Los tres que envían la factura (reenvío `invoicesAdmin.routes.ts`, aceptación pública `quotes.routes.ts`, `collect-rest` de `jobs.routes.ts`) llaman a este mismo servicio, y si la factura ya tiene cobro lo reutilizan. Correo y portal no crean cobro. ③ `charge.payMethods` y `quote.payMethods` aceptan el mismo conjunto (`card`, `bizum`, `transfer`), pero escrito DOS veces en `src/core/validation/schemas.ts` (S1): el cambio no añade una tercera, valida con `CreateQuoteSchema.shape.payMethods`, y el caso ⑦ del test cae si las dos listas divergen.
+
+**Cambio.** Si `invoice.payMethods` pasa esa validación y no está vacío, el cobro nace con esas formas; si no, exactamente lo de antes (las del presupuesto o ninguna). Una forma fuera del conjunto no bloquea el envío: sale como antes. Sin texto nuevo, sin esquema, la página de pago (J2) no cambia.
+
+**Merge con main.** Conflicto en `prisma/schema.prisma` con 1787l: se quedan las tres columnas de la factura (`dueDate`, `payMethods`, `docFooterText`); `prisma generate` en `node_modules` propio + guard ✔; `docs/sql/deriva-prod.sql` regenerado (548 columnas); anclas de `docs/legal/AUDITORIA_CAMINO_EMISION.md` recolocadas en sitio (970-971 y 1908).
+
+**Error mío.** La segunda mutación salió MUDA con `aplicarUna`: había puesto la prioridad «la factura manda» en dos sitios (no leer el presupuesto si la factura tiene formas, y el orden del spread), y quitar uno no cambiaba nada. Lo dejé en un solo punto (`formasDelCobro`) y las dos mutaciones caen.
+
+**NO medido:** la suite entera en local (la corre el obligatorio, por orden del orquestador) · navegador, yaqu.app, staging y producción · ningún envío real (Meta en `WHATSAPP_DRY_RUN`).
+
+**Y un fallo mío encima (jv-j1hu):** empujé ese arreglo (`ad1a14ce0`) sin correr `tests/scrum719-el-suelo-de-los-doce.test.mjs`, y lo tumbaba dos veces: la llamada nueva a `soloEjecutable` no tenía suelo (SCRUM-1395 ②) y el test no tenía ficha en `tests/_veredicto-mudez.json` (SCRUM-1395b ①). Lo cacé en la rama de 1787m, antes de que lo dijera CI. Ahora es `ejecutableDe` con ancla `origen: 'C7-suelta'`, y la ficha sale de `npm run censo:mudez -- --escribir` (1 medido, VIVO). Coste: un segundo empujón a 1787i y a 1787p. El guard existía y el aviso también (cambiar un test que filtra = correr 719); falló correrlo, y eso ningún test lo puede obligar.
+
+# SCRUM-1787m · El PDF de factura imprime «Vence el» y «Formas de pago» con lo congelado en la factura
+
+**Medido contra:** `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740` · 2026-11-23T04:01:47Z
+
+A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1787m-pdf-vence-y-formas-de-pago.test.mjs`
+
+Decisión del fundador: SCRUM-1787 c.22338 ③ («3-GO», regla 40: el PDF de factura muestra «Vence el» y las formas de pago). Literales firmados: `Vence el` (c.22325 ①) y `Formas de pago` con `Tarjeta` · `Bizum` · `Transferencia` (c.22345 ①), los mismos de la ficha. Carril J1. Construido por `jv-j1hp` sobre la rama de 1787i (`a9b26ff40`, PR #3311), que trae las columnas.
+
+**Qué cambia**
+
+- `src/modules/invoicing/infra/pdf/pdf.service.ts`, solo `generateInvoicePdf`: dos parámetros nuevos y obligatorios (`dueDate` y `payMethods`; un llamador que no los pase no compila) y dos líneas en la cabecera, a la derecha, debajo de `Fecha:`. `Vence el dd/mm/aaaa` usa la misma función de fecha que `Fecha:` (el día en la zona del negocio, SCRUM-1470c) y solo sale si la factura tiene vencimiento. `Formas de pago: Tarjeta, Bizum` nombra cada forma congelada, en su orden, y solo sale si queda alguna conocida: una clave que no sea `card`, `bizum` o `transfer` no se pinta. `generateQuotePdf` no se toca.
+- Los llamadores: medido, hacía falta. `generateInvoicePdf` no recibe la factura sino sus campos sueltos, así que los tres llamadores (dos en `src/lib/invoicing.ts` y el de regenerar en `invoicesAdmin.routes.ts`, los tres de J1) pasan `dueDate` y `payMethods` de la fila de la factura. Nada sale del comercio ni del presupuesto (regla 29).
+- `tests/_cambios-autorizados-de-la-factura.mjs`: una entrada con las huellas de `docs/master/evidencias/SCRUM-1446d/huellas.mjs` y la cita de c.22338. Ningún número escrito a mano.
+
+**Cómo se ve que una factura sin estos datos sale igual**
+
+`docs/master/evidencias/SCRUM-1787/pdf-vence/lineas.mjs` fabrica la misma factura y da la huella de sus líneas (texto y posición). Sin vencimiento ni formas de pago: 15 líneas y huella `5a4ceaa8c7689611829f3249539428f656aac98a77e67be1d7ac4f61d4eeb009` antes del cambio y después. Con los dos datos: 17 líneas. El caso ⑤ del test lo sujeta dentro del código nuevo (ausentes, `null`, lista vacía y clave desconocida dan las mismas líneas); la comparación contra el código anterior es la de ese guion, hecha una vez. El PDF fabricado con los dos datos está en `docs/master/evidencias/SCRUM-1787/pdf-vence/1787m-con-datos.pdf` y se leyó: las dos líneas salen bajo `Fecha:`, sin pisar el emisor.
+
+**Medido**
+
+- Rojo primero: con el test escrito y el código sin tocar, 7 de 8 caían. Uno de los siete (⑦, el control del presupuesto) caía por un error del propio banco y no por el defecto: ver abajo.
+- `tsc -p .` con tipos: salida 0. `node_modules` propio, `prisma generate` y guard del cliente ✔.
+- Dirigida del encargo (19 ficheros, cada prefijo con al menos uno: 1787m, 1787i, 1787d, 1788a, 1779d, 178, 290, 523d, 291, 603b, 723, 347, 525d, 1157, 1215, 1415, 262): 147 casos, 145 pasan, 0 caen, 2 saltos; 145 + 2 = 147.
+- Mutaciones con el `aplicarUna` de la casa (`docs/master/evidencias/SCRUM-1787/pdf-vence/mutar.mjs`): 2 de 2 vivas (sin la línea del vencimiento cae ①; sin la de las formas de pago cae ③). Después, `git status` solo con los cambios del ticket.
+
+**Errores míos (A9)**
+
+- Añadí una línea nueva en el primer llamador de `src/lib/invoicing.ts` y moví de la 267 a la 268 la puerta que cita `docs/legal/AUDITORIA_CAMINO_EMISION.md`. Lo cazó `tests/scrum525d-anclas-que-apuntan.test.mjs`. Se arregló en el código: los dos campos van en la línea que ya existía y el documento no se toca.
+- Declaré el diccionario de literales fuera de la función y cambió el ámbito que vigila `scrum723`. Se metió dentro de `generateInvoicePdf`; la lista declarada del guard no se toca.
+- El banco del control ⑦ fabricaba un presupuesto con una sola opción y el esquema pide tres: el caso caía por su propio suelo (CIEGO), no por el defecto. Corregido antes del cambio.
+
+**NO medido**
+
+- Los tramos de emisión de la suite y la suite entera en local: los corre el obligatorio (orden del orquestador del 23-nov).
+- Los 2 saltos de la dirigida, gateados por base de datos.
+- Captura en PNG: el navegador de la sesión bloquea `file:`. Queda el PDF fabricado.
+- Los tres llamadores con una factura real: se leyó el fuente (caso ⑧), no se emitió ni se regeneró ninguna. Navegador, yaqu.app, staging y producción.
+
+**Merge con la rama de 1787i ya al día (`cf9f6e1c9`, con main `d5bec9526` y 1787l dentro)**
+
+Cuatro conflictos, los cuatro con 1787l (#3308, Observaciones) y resueltos con los dos lados: el tipo de `generateInvoicePdf` lleva `docFooterText` y, detrás, `dueDate` y `payMethods`; los dos llamadores en conflicto pasan los tres campos; y el catálogo de cambios autorizados lleva la entrada de 1787l y, detrás, la de 1787m. Las huellas de la entrada de 1787m se volvieron a sacar con `huellas.mjs` después del merge: su `de` es ahora el `a` de 1787l. Las cifras de «Medido» de arriba (147 casos, la huella de 15 líneas) son de antes del merge, contra `90e8e377`; lo que se repitió después está en el comentario de entrega de Jira. El párrafo «Segundo merge con main» de 1787i, que git dejó detrás de este tramo, se devolvió a su sitio sin cambiarle una letra.
+
+## Rojos de SCRUM-586 y SCRUM-836 tras el merge de main `141baada` (relevo jv-j1hu, 2026-11-23T05:54:28Z, sobre `origin/main` = `141baada7559c8ab18bd9a572383a40d3d5b6164`)
+
+A9: comprobación → `tests/scrum836-ancla-de-mutacion-viva.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum586-forma-de-pago-por-cliente.test.mjs`
+
+Run 45113232031 (#3316). **586** (`payMethods` NO llega al PDF) prohibía la palabra en todo el camino del PDF, y 1787m la metió a propósito. Decisión del fundador, SCRUM-1787 c.22377 (regla 41): se distingue `invoice.payMethods` (congelado al emitir; GO c.22338 ③) de `quote.payMethods` y de la preferencia del comercio, que siguen prohibidas. El test ⑧ ahora lo mide por AST: fuera de `generateInvoicePdf` la palabra sigue a cero en los cinco ficheros, y dentro sólo vale `params.payMethods` o su firma. Caso nuevo: cada llamada a `generateInvoicePdf` de `src/` (población derivada; 3 hoy) pasa `<x>.payMethods` del mismo objeto que da `merchantCriterioCaja`, columna que sólo tiene la factura. Nota fechada en el test que cita c.22377. Tres mutaciones nuevas en su catálogo (⑦ el PDF recibe las del presupuesto en `src/lib/invoicing.ts`, ⑧ la del comercio en `invoicesAdmin.routes.ts`, ⑨ el PDF del presupuesto las pinta): con `aplicarUna`, 9 de 9 VIVAS. **836**: la mutación de `scrum1240d` sobre `src/lib/invoicing.ts` llevaba un `de` que 1787m cambió (puso `dueDate` y `payMethods` en esa línea para no mover el ancla :267 de la auditoría). Se reancla al texto nuevo; muta lo mismo (`inv.merchantCriterioCaja` → `inv.merchant.criterioCaja`) y promete lo mismo: con `aplicarUna`, 5 de 5 VIVAS. Las de 1787m, 2 de 2 VIVAS. `git status` sin cambios en `src/` tras cada pasada. Verde: 12 ficheros (700, 586, 836, 1240d, 1787m, 1787i, 603b, 723, 523d, 291, 1294, 745), 128 de 128. El fallo es del puesto: los dos rojos los dio CI y no una tanda local antes del empujón de 1787m; si allí se corrieron 586 y 836, no lo he medido.
+
+# SCRUM-1787n · La lista de facturas con las columnas, el orden y los rótulos de la lista de presupuestos
+
+**Medido contra:** `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740` · 2026-11-23T03:55:05Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: aviso → A10 «Una operación que no se ejecutó se lee exactamente igual que un éxito.» — no se pudo comprobar: el guion de capturas leía la fase de un global (`globalThis.__fase1787`) que el MCP de Playwright no conserva entre llamadas; la pasada «después» salió con nombre «antes» y pisó las fotos ANTES sin dar error. Lo cacé al ver el nombre en la salida, recuperé las ANTES del commit `b4c2cb610f6168a92eba7d9144bfa6d38d6442e0` y el guion ahora deduce la fase de lo que pinta (rótulo «Importe»); un test no puede obligar a un guion de evidencias a no depender de estado del MCP.
+
+Mutaciones: catálogo → `tests/scrum1787n-lista-de-facturas-como-presupuestos.test.mjs`
+
+**Skill UI:** cargada (`yaqu-premium-ui`); de `DESIGN.md` y la Parte AB solo consulté lo que uso (clases ya existentes: `cell-date`, `cell-amount`, `cell-id`, `cell-status`; ningún token nuevo), no los leí enteros.
+
+**La orden:** SCRUM-1787, descripción («igual, o solamente lo estrictamente necesario diferente, que presupuestos»); clasificación en c.22301 fila 10: diferencia necesaria, sólo el número de serie (art. 6.1 a).
+
+## Columna a columna (antes → después)
+
+| presupuestos (`quotesListView.js:156-163`, S2, sólo leído) | facturas antes (`invoicesView.js:491-498`) | facturas después |
+|---|---|---|
+| — | casilla del lote | casilla del lote (se QUEDA: es una función) |
+| ID | Nº factura | Nº factura (`rotulosDelDocumento.columnaNumero()`; NECESARIA) |
+| Cliente | Cliente | Cliente |
+| Fecha (dd/mm/aa, hh:mm; visible en móvil, `cell-date`) | Total | Fecha, con la clase y el formato de presupuestos |
+| Importe | Estado | Importe (rótulo de `quotesListView.js:159`) |
+| Estado | Fecha (solo escritorio, dd/mm/aaaa) | Estado (los de la factura, Parte L: sin cambios) |
+| Método | — | Método (`paidVia` con `etiquetaMetodoCobro`, la etiqueta de la ficha `invoiceDetailView.js:309-310`; sin cobro, «—» como presupuestos) |
+| Etiquetas | Etiquetas | Etiquetas |
+| Acciones | (cabecera vacía) | Acciones (rótulo de `quotesListView.js:163`) |
+
+Dato de la API: `paidVia` ya viaja (`GET /admin/invoices` devuelve la fila entera, `invoicesAdmin.routes.ts:84-97`). Nada en `src/`. Ningún texto nuevo: los cuatro rótulos son los que ya sirve `quotesListView.js`, y el del método, `paidViaEtiquetas.js`.
+
+## Lo que se queda distinto, y por qué
+
+- La casilla del lote: función (marcar pagadas en bloque), orden del encargo. La miran scrum845 y el control ④ del test.
+- «Ver detalle» con `btn-ghost` (presupuestos lleva `btn-secondary`): lo exige `tests/scrum1562g-facturas-con-teclado.test.mjs` («pesa como mirar, no como actuar», SCRUM-1562 c.21125). Regla 41: no se toca. Si el fundador lo quiere igual, es decisión sobre 1562.
+- «hace N días» bajo el número en las pendientes (A18.2): se deja; es dato de cobro. Pregunta abierta abajo.
+- Los estados (Parte L).
+
+## Escritorio: el corte de línea
+
+Con una columna más, a 1280 px el número de serie, el importe, la fecha y la píldora de estado se partían en dos líneas («PENDIENT/E», «F2026-/0010»). Bloque J1 en `public/dashboard/css/styles.css`, junto al de 1787b: `.j1-fac-lista` con `white-space:nowrap` en esas cuatro celdas. Sin tokens nuevos.
+
+## Anclas que el cambio dejó viejas (tests de tickets J1 sobre este fichero)
+
+- `tests/scrum1756j-panel-j1-sin-style-en-linea.test.mjs:100`: el «ahora» de `j1-fac-col-total` pasa de «Total» a «Importe». Sigue exigiendo la clase en lugar del `style=`.
+- `tests/scrum1562g-facturas-con-teclado.test.mjs:39`: la mutación «la tabla cuadra» quita `<th>Acciones</th>` en vez de `<th></th>`. Verificada VIVA.
+
+## Evidencias
+
+`evidencias/SCRUM-1787/1787n-listas-{antes,despues}-{escritorio,movil}.png` (presupuestos a la izquierda, facturas a la derecha). Guion `evidencias/SCRUM-1787/guion/capturas-1787n.js`: `public/` de este árbol servido con `guion/servidor-estatico.mjs 5789`, `serviceWorkers: 'block'`, `/admin/*` contestado por el guion con datos de EJEMPLO; 0 peticiones fuera de 127.0.0.1:5789; las únicas escrituras, `POST /admin/entorno` del arranque del panel, contestadas por el guion. Cabeceras leídas del DOM en cada pasada. Las cuatro fotos, miradas.
+
+## Test y mutaciones
+
+`tests/scrum1787n-lista-de-facturas-como-presupuestos.test.mjs` pinta las DOS listas en `_banco-vistas.mjs` y compara (no copia la referencia). Antes del cambio: 3 rojos (①②③) y el control ④ verde; después, 4/4. Con `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`: sus 3 mutaciones VIVAS y las 5 de 1562g VIVAS; árbol limpio después (`git status`).
+
+Dirigida (50 ficheros: los que nombran `invoicesView` + 283, 600d, 1562g, 1773, 836, 719, 1294, 267, 273, 525d, 854): ver la entrega en Jira con su recuento.
+
+## NO medido
+
+- La suite entera: la corre el obligatorio (orden del orquestador).
+- 710b, 1157/1215/1415, 700 y la tanda de guards de navegador: no corridos.
+- yaqu.app: no verificado (no está desplegado).
+- Tablet y Android/iPhone reales (matriz AB6): sólo 1280 y 390 px en Chromium.
+- El nombre del cliente aún se parte en dos líneas en escritorio cuando es largo (texto libre, igual que en presupuestos con menos ancho).
+
+## Para el fundador ✅/❌
+
+1. ¿«Ver detalle» con el mismo peso que en presupuestos? Hoy lo impide 1562g (firma de c.21125).
+2. ¿Se quita «hace N días» bajo el número de la factura pendiente, para que sea igual que presupuestos?
+# SCRUM-1787o · «Enviada» de la ficha de factura sabe también del envío por correo
+
+**Medido contra:** `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740` · 2026-11-23T03:50:55Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: comprobación → `tests/scrum1787o-enviada-tambien-por-correo.test.mjs`
+
+**Skill UI:** cargada
+
+Mutaciones: catálogo → `tests/scrum1787o-enviada-tambien-por-correo.test.mjs`
+
+Encargo del orquestador J a jv-j1hr. Defecto medido por jv-j1gy en c.22312. Medición previa en SCRUM-1787 c.22364. Literal «Enviada» firmado en c.22303 ③: no hay texto nuevo.
+
+## Qué se midió (1787o)
+
+- La ficha decidía «Enviada» solo con el WhatsApp (`waDelivery.status` y `envioDocumento.whatsapp`, `public/dashboard/js/invoiceDetailView.js`).
+- Todo correo de factura pasa por `sendInvoiceEmail` (`src/modules/messaging/domain/email.service.ts`, carril S1, solo leído), que deja una fila en `email_messages` por intento con `relatedType: 'invoice'` y `relatedId` = la factura: el automático al cobrar (`psp.routes.ts`), MercadoPago (`mpWebhook.routes.ts`) y el botón manual (`invoicesAdmin.routes.ts`). El evento `emailed` de `correoDeFacturaEnviado.ts` solo lo escribe psp: no ve el envío manual.
+- El GET de la ficha no devolvía ese dato. La tabla y su índice `(relatedType, relatedId)` ya existen: sin esquema.
+
+## Qué se construyó (1787o)
+
+- `correoDelDocumentoSalio` en `src/modules/billing/domain/envioDelDocumento.ts`: cuentan `aceptado_sin_confirmacion`, `aceptado_sin_identificador`, `entregado` y `reclamado`; no cuentan `fallo_envio` ni `rebotado` (igual que el WhatsApp que Meta marca fallido después), ni un estado fuera del embudo.
+- `GET /admin/invoices/:id` devuelve `correoEnviado`, leído de las filas de esa factura con `merchantId` (regla 2). Solo lectura; la emisión no se toca.
+- La línea de progreso marca «Enviada» si salió por WhatsApp O por correo.
+
+## El fallo propio (A9)
+
+Mi primer driver de `aplicarUna` le pasó a `correr` la ruta con `tests/` delante: la pasada limpia salió 0 pasados y 1 caído, y las dos mutaciones salieron CIEGAS, no verdes. El propio instrumento lo dijo. Además mi primera regex del test ② cortaba en la llave de `{ id: req.merchantId }` y daba un rojo falso con el código ya escrito. Ninguno de los dos generaliza más allá de lo que el instrumento ya caza.
+
+## Verde, con población (1787o)
+
+- Test nuevo: rojo visto antes del código (4 de 6 caen; los 2 controles en verde), después 6/6.
+- Mutaciones con `aplicarUna` (limpia 6/6): las dos tumban su test.
+- Dirigida antes del merge con main: 115 ficheros, 1021 casos, 1014 pass, 6 skip, 1 fail (scrum854, que pedía este tramo).
+- Build con tipos antes del merge: salida 0. Después del merge: 2 errores, los dos por `Invoice.docFooterText` (columna de 1787l que trajo main) que el cliente de Prisma compartido no tiene; `_prisma-client-guard.mjs` lo nombra. No regenero: mi `node_modules` cuelga del compartido (A1).
+
+## NO medido (1787o)
+
+- La suite entera NO la corrí: no me cabía en el contexto (aviso al orquestador a 185k; OK suyo para empujar y que la corra el obligatorio).
+- Ninguna fila real de `email_messages`: nada contra staging ni producción. Que Resend reescriba `aceptado_*` a `rebotado` lo leí en `registroDeEnvios.ts`, no lo vi pasar.
+- El handler del GET se comprueba leyendo el fuente, no corriéndolo (pediría base): si alguien sacara la llamada del handler, el test ② lo caza; si la consulta devolviera filas de otra factura, solo lo cazaría el texto del `where`.
+- Ni capturas ni guards de navegador: el cambio no toca CSS ni textos.

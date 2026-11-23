@@ -231,8 +231,8 @@ async function fetchInvoiceDetail(id) {
     // La misma idea que `buildStatusTimeline` del presupuesto, pero con CLASES (bloque J1 de
     // styles.css) y no con `style.cssText`. Textos firmados en SCRUM-1787 c.22303 ③; el final
     // ANULADA / RECTIFICATIVA reutiliza lo que esta ficha y `invoiceStatusMeta` ya pintan.
-    // ⚠️ «Enviada» solo sabe del WhatsApp: el envío por CORREO no llega a esta vista (no hay campo),
-    // así que una factura mandada solo por correo sale con «Enviada» como paso actual.
+    // SCRUM-1787o · «Enviada» si salió por WhatsApp O por correo: `correoEnviado` lo pone el GET de
+    // la ficha a partir de las filas de `email_messages` de esta factura.
     {
       const fmtPaso = (v) => {
         if (!v) return '';
@@ -241,7 +241,8 @@ async function fetchInvoiceDetail(id) {
       const cobrada = st === 'paid';
       const waSt = String((invoice.waDelivery && invoice.waDelivery.status) || '').toLowerCase();
       const enviada = cobrada || ['sent', 'delivered', 'read'].includes(waSt)
-        || (invoice.envioDocumento && invoice.envioDocumento.whatsapp === 'enviado');
+        || (invoice.envioDocumento && invoice.envioDocumento.whatsapp === 'enviado')
+        || invoice.correoEnviado === true;
       const pasos = [
         { label: 'Emitida', estado: 'hecho', fecha: fmtPaso(invoice.createdAt) },
         { label: 'Enviada', estado: enviada ? 'hecho' : 'actual', fecha: '' },
@@ -309,6 +310,17 @@ async function fetchInvoiceDetail(id) {
     const metodo = invoice.paidVia
       ? (typeof window.etiquetaMetodoCobro === 'function' ? window.etiquetaMetodoCobro(invoice.paidVia) : invoice.paidVia)
       : null;
+    // SCRUM-1787i · «Vence el» (firmado, c.22325 ①): la fecha CONGELADA al emitir, sólo si consta.
+    addDefRow(dlCobro, 'Vence el', invoice.dueDate
+      ? new Date(invoice.dueDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
+      : null);
+    // SCRUM-1787i · «Formas de pago» (firmado, c.22345 ①): una por cada forma CONGELADA al emitir, sólo
+    // si constan. Una clave fuera del conjunto no se pinta en crudo: no tiene literal firmado.
+    const FORMAS_DE_PAGO_FIRMADAS = { card: 'Tarjeta', bizum: 'Bizum', transfer: 'Transferencia' };
+    const formas = Array.isArray(invoice.payMethods)
+      ? invoice.payMethods.map((f) => FORMAS_DE_PAGO_FIRMADAS[f]).filter(Boolean)
+      : [];
+    addDefRow(dlCobro, 'Formas de pago', formas.length ? formas.join(', ') : null);
     addDefRow(dlCobro, 'Método', metodo);
     addDefRow(dlCobro, 'Pagada', invoice.paidAt ? new Date(invoice.paidAt).toLocaleString('es-ES') : null);
     addDefRow(dlCobro, 'Rectifica a', invoice.rectifies ? invoice.rectifies.number : null);
@@ -425,6 +437,30 @@ async function fetchInvoiceDetail(id) {
       concSec.appendChild(tablaConc);
       page.appendChild(concSec);
     }
+
+    // SCRUM-1787l (c.22345 ②) · las Observaciones congeladas al emitir, debajo de los conceptos como
+    // en el papel, con el MISMO rótulo y la misma forma que la ficha del presupuesto
+    // (`quotesDetailView.js`, `seccionDeTexto`): rótulo y pintado salen de `textoDelDocumento.js`,
+    // ningún texto nuevo. Sin texto, o sin la pieza, no se pinta nada.
+    const obsFac = invoice.docFooterText;
+    const secObsFac = (obsFac != null && String(obsFac).trim() !== ''
+      && window.TD_TITULO_OBSERVACIONES && typeof window.textoDelDocumentoPintado === 'function')
+      ? (() => {
+        const sec = document.createElement('div');
+        sec.className = 'detail-section';
+        sec.dataset.seccion = 'observaciones';
+        const h = document.createElement('h3');
+        h.className = 'detail-section-title';
+        h.textContent = window.TD_TITULO_OBSERVACIONES;
+        sec.appendChild(h);
+        const caja = document.createElement('div');
+        caja.className = 'quote-doc-texto';
+        caja.appendChild(window.textoDelDocumentoPintado(obsFac));
+        sec.appendChild(caja);
+        return sec;
+      })()
+      : null;
+    if (secObsFac) page.appendChild(secObsFac);
 
     // --- Sección: acciones (SCRUM-283 · la LEY del patrón: 1 primaria + ≤2 secundarias + ⋮) ---
     // Se PINTA desde el registro declarativo (invoiceActionsRegistry.js), la MISMA fuente que el

@@ -24,7 +24,7 @@
 -- ajenas ni valores de enum. Y no reporta columnas de MÁS en la base: que la base vaya por
 -- delante del código es el orden seguro de un cambio aditivo, no un problema.
 --
--- Columnas esperadas: 546. Tablas: 35.
+-- Columnas esperadas: 549. Tablas: 35.
 
 WITH esperado (tabla, columna) AS (
   VALUES
@@ -259,6 +259,8 @@ WITH esperado (tabla, columna) AS (
     ('invoices','customerId'),
     ('invoices','deducts_refs'),
     ('invoices','discount_global_amount'),
+    ('invoices','doc_footer_text'),
+    ('invoices','due_date'),
     ('invoices','id'),
     ('invoices','lines'),
     ('invoices','merchant_address'),
@@ -273,6 +275,7 @@ WITH esperado (tabla, columna) AS (
     ('invoices','number'),
     ('invoices','paid_at'),
     ('invoices','paid_via'),
+    ('invoices','pay_methods'),
     ('invoices','pdf_sha256'),
     ('invoices','pdfUrl'),
     ('invoices','qrData'),

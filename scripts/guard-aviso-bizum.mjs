@@ -72,6 +72,12 @@ let PUERTO = Number(process.env.BIZUM_PUERTO || 0);
 
 /** Lo que la pantalla necesita del árbol, en el orden en que lo carga `index.html`. */
 const JS = [
+  // SCRUM-1789 · desde 6727eb7e0 (SCRUM-1781b) `settingsView.js` monta el teléfono con
+  // `telefonoConPrefijo` (nivel superior de `onboardingView.js`) y `window.prefijosPais`.
+  // Sin ellos, renderSettingsView lanzaba y este guard salía CIEGO en cada run de CI.
+  // Mismo orden que `index.html` (272 y 275, antes que 362-364).
+  '/dashboard/js/onboardingView.js',
+  '/dashboard/js/prefijosPais.js',
   '/dashboard/js/settingsSubmenus.js',
   '/dashboard/js/puertaSerie.js',
   '/dashboard/js/settingsView.js',
