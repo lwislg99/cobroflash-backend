@@ -1508,7 +1508,7 @@ function renderCustomersView(container) {
     // el criterio más seguro, pero sin escribirlo en la BD hasta que el usuario lo confirme).
     const tipoWrapper = createElement("div", "field");
     const tipoLabel = document.createElement("label");
-    tipoLabel.textContent = "Tipo de cliente";
+    tipoLabel.textContent = "¿Factura como empresa o autónomo (IVA)?";
     fieldTipoDestinatario = document.createElement("select");
     fieldTipoDestinatario.name = "tipoDestinatario";
     fieldTipoDestinatario.className = "input";
