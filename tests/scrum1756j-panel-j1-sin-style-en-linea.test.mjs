@@ -97,7 +97,8 @@ const CAMBIOS = [
   C(DETALLE, 846, '<div class="alert" id="anul-err" style="display:none;margin-top:12px"></div>', '<div class="alert j1-anul-err" id="anul-err"></div>', '.j1-anul-err', 'display:none;margin-top:12px', true),
   C(DETALLE, 848, '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">', '<div class="j1-anul-acciones">', '.j1-anul-acciones', 'display:flex;gap:8px;justify-content:flex-end;margin-top:16px', true),
   C(LISTA, 491, '<th style="width:36px" class="col-hide-mobile">', '<th class="col-hide-mobile j1-fac-col-check">', '.j1-fac-col-check', 'width:36px', true),
-  C(LISTA, 494, '<th style="text-align:right">Total</th>', '<th class="j1-fac-col-total">Total</th>', '.j1-fac-col-total', 'text-align:right', true),
+  C(LISTA, 495, '<th style="text-align:right">Total</th>', '<th class="j1-fac-col-total">Importe</th>', // SCRUM-1787n: el rótulo pasa a «Importe», el de presupuestos (quotesListView.js:159)
+    '.j1-fac-col-total', 'text-align:right', true),
   C(LISTA, 515, '<span id="bulk-count" style="font-size:13.5px;font-weight:600"></span>', '<span id="bulk-count" class="j1-bulk-count"></span>', '.j1-bulk-count', 'font-size:13.5px;font-weight:600', true),
   C(LISTA, 517, '<button id="bulk-cancel-btn" class="btn-ghost btn-sm" style="color:rgba(255,255,255,.7)">', '<button id="bulk-cancel-btn" class="btn-ghost btn-sm j1-bulk-cancelar">', '.j1-bulk-cancelar', 'color:rgba(255,255,255,.7)', true),
   C(LISTA, 658, '<button id="inv-empty-cta" class="btn-primary btn-sm" style="margin-top:14px">', '<button id="inv-empty-cta" class="btn-primary btn-sm j1-fac-vacio-cta">', '.j1-fac-vacio-cta', 'margin-top:14px', true),

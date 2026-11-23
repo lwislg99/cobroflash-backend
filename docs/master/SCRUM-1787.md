@@ -774,6 +774,72 @@ El merge chocó con 1787k en `validarFacturaSuelta` y se juntaron las dos: las l
 A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
 
 Tres conflictos con 1787l (#3308), los tres derivados. `prisma/schema.prisma`: en `model Invoice` se quedan las tres columnas (`dueDate`, `payMethods` de 1787i y `docFooterText` de 1787l), sin elegir lado. `docs/sql/deriva-prod.sql`: regenerado con `scripts/generar-sql-deriva.mjs` sobre el esquema unido (548 columnas). `docs/legal/AUDITORIA_CAMINO_EMISION.md`: anclas recolocadas en sitio (eslabón 4 → `schema.prisma:970-971`, eslabón 8 → `:1908`). Con la ancla vieja del eslabón 4 (963-964), 525d cae 1 de 8; con la nueva, 8 de 8; mutación hecha una vez y sin guion en git. Ninguna aserción cambia.
+# SCRUM-1787n · La lista de facturas con las columnas, el orden y los rótulos de la lista de presupuestos
+
+**Medido contra:** `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740` · 2026-11-23T03:55:05Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: aviso → A10 «Una operación que no se ejecutó se lee exactamente igual que un éxito.» — no se pudo comprobar: el guion de capturas leía la fase de un global (`globalThis.__fase1787`) que el MCP de Playwright no conserva entre llamadas; la pasada «después» salió con nombre «antes» y pisó las fotos ANTES sin dar error. Lo cacé al ver el nombre en la salida, recuperé las ANTES del commit `b4c2cb610f6168a92eba7d9144bfa6d38d6442e0` y el guion ahora deduce la fase de lo que pinta (rótulo «Importe»); un test no puede obligar a un guion de evidencias a no depender de estado del MCP.
+
+Mutaciones: catálogo → `tests/scrum1787n-lista-de-facturas-como-presupuestos.test.mjs`
+
+**Skill UI:** cargada (`yaqu-premium-ui`); de `DESIGN.md` y la Parte AB solo consulté lo que uso (clases ya existentes: `cell-date`, `cell-amount`, `cell-id`, `cell-status`; ningún token nuevo), no los leí enteros.
+
+**La orden:** SCRUM-1787, descripción («igual, o solamente lo estrictamente necesario diferente, que presupuestos»); clasificación en c.22301 fila 10: diferencia necesaria, sólo el número de serie (art. 6.1 a).
+
+## Columna a columna (antes → después)
+
+| presupuestos (`quotesListView.js:156-163`, S2, sólo leído) | facturas antes (`invoicesView.js:491-498`) | facturas después |
+|---|---|---|
+| — | casilla del lote | casilla del lote (se QUEDA: es una función) |
+| ID | Nº factura | Nº factura (`rotulosDelDocumento.columnaNumero()`; NECESARIA) |
+| Cliente | Cliente | Cliente |
+| Fecha (dd/mm/aa, hh:mm; visible en móvil, `cell-date`) | Total | Fecha, con la clase y el formato de presupuestos |
+| Importe | Estado | Importe (rótulo de `quotesListView.js:159`) |
+| Estado | Fecha (solo escritorio, dd/mm/aaaa) | Estado (los de la factura, Parte L: sin cambios) |
+| Método | — | Método (`paidVia` con `etiquetaMetodoCobro`, la etiqueta de la ficha `invoiceDetailView.js:309-310`; sin cobro, «—» como presupuestos) |
+| Etiquetas | Etiquetas | Etiquetas |
+| Acciones | (cabecera vacía) | Acciones (rótulo de `quotesListView.js:163`) |
+
+Dato de la API: `paidVia` ya viaja (`GET /admin/invoices` devuelve la fila entera, `invoicesAdmin.routes.ts:84-97`). Nada en `src/`. Ningún texto nuevo: los cuatro rótulos son los que ya sirve `quotesListView.js`, y el del método, `paidViaEtiquetas.js`.
+
+## Lo que se queda distinto, y por qué
+
+- La casilla del lote: función (marcar pagadas en bloque), orden del encargo. La miran scrum845 y el control ④ del test.
+- «Ver detalle» con `btn-ghost` (presupuestos lleva `btn-secondary`): lo exige `tests/scrum1562g-facturas-con-teclado.test.mjs` («pesa como mirar, no como actuar», SCRUM-1562 c.21125). Regla 41: no se toca. Si el fundador lo quiere igual, es decisión sobre 1562.
+- «hace N días» bajo el número en las pendientes (A18.2): se deja; es dato de cobro. Pregunta abierta abajo.
+- Los estados (Parte L).
+
+## Escritorio: el corte de línea
+
+Con una columna más, a 1280 px el número de serie, el importe, la fecha y la píldora de estado se partían en dos líneas («PENDIENT/E», «F2026-/0010»). Bloque J1 en `public/dashboard/css/styles.css`, junto al de 1787b: `.j1-fac-lista` con `white-space:nowrap` en esas cuatro celdas. Sin tokens nuevos.
+
+## Anclas que el cambio dejó viejas (tests de tickets J1 sobre este fichero)
+
+- `tests/scrum1756j-panel-j1-sin-style-en-linea.test.mjs:100`: el «ahora» de `j1-fac-col-total` pasa de «Total» a «Importe». Sigue exigiendo la clase en lugar del `style=`.
+- `tests/scrum1562g-facturas-con-teclado.test.mjs:39`: la mutación «la tabla cuadra» quita `<th>Acciones</th>` en vez de `<th></th>`. Verificada VIVA.
+
+## Evidencias
+
+`evidencias/SCRUM-1787/1787n-listas-{antes,despues}-{escritorio,movil}.png` (presupuestos a la izquierda, facturas a la derecha). Guion `evidencias/SCRUM-1787/guion/capturas-1787n.js`: `public/` de este árbol servido con `guion/servidor-estatico.mjs 5789`, `serviceWorkers: 'block'`, `/admin/*` contestado por el guion con datos de EJEMPLO; 0 peticiones fuera de 127.0.0.1:5789; las únicas escrituras, `POST /admin/entorno` del arranque del panel, contestadas por el guion. Cabeceras leídas del DOM en cada pasada. Las cuatro fotos, miradas.
+
+## Test y mutaciones
+
+`tests/scrum1787n-lista-de-facturas-como-presupuestos.test.mjs` pinta las DOS listas en `_banco-vistas.mjs` y compara (no copia la referencia). Antes del cambio: 3 rojos (①②③) y el control ④ verde; después, 4/4. Con `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`: sus 3 mutaciones VIVAS y las 5 de 1562g VIVAS; árbol limpio después (`git status`).
+
+Dirigida (50 ficheros: los que nombran `invoicesView` + 283, 600d, 1562g, 1773, 836, 719, 1294, 267, 273, 525d, 854): ver la entrega en Jira con su recuento.
+
+## NO medido
+
+- La suite entera: la corre el obligatorio (orden del orquestador).
+- 710b, 1157/1215/1415, 700 y la tanda de guards de navegador: no corridos.
+- yaqu.app: no verificado (no está desplegado).
+- Tablet y Android/iPhone reales (matriz AB6): sólo 1280 y 390 px en Chromium.
+- El nombre del cliente aún se parte en dos líneas en escritorio cuando es largo (texto libre, igual que en presupuestos con menos ancho).
+
+## Para el fundador ✅/❌
+
+1. ¿«Ver detalle» con el mismo peso que en presupuestos? Hoy lo impide 1562g (firma de c.21125).
+2. ¿Se quita «hace N días» bajo el número de la factura pendiente, para que sea igual que presupuestos?
 # SCRUM-1787o · «Enviada» de la ficha de factura sabe también del envío por correo
 
 **Medido contra:** `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740` · 2026-11-23T03:50:55Z (cabecera `Date:` de `gh api -i zen`)

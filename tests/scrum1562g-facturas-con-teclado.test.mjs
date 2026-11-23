@@ -35,8 +35,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: "if (window.renderAppView) window.renderAppView('invoice-detail'", cae: 'navega UNA vez' },
   // La casilla del lote vuelve a abrir la factura.
   { fichero: 'public/dashboard/js/invoicesView.js', de: 'if (e.target === cb) return;', a: '', cae: 'la casilla del lote sigue sin abrir' },
-  // La columna nueva se queda sin cabecera.
-  { fichero: 'public/dashboard/js/invoicesView.js', de: '        <th></th>\n', a: '', cae: 'la tabla cuadra' },
+  // La columna nueva se queda sin cabecera. (SCRUM-1787n: la cabecera vacía pasó a «Acciones», el rótulo de presupuestos.)
+  { fichero: 'public/dashboard/js/invoicesView.js', de: '        <th>Acciones</th>\n', a: '', cae: 'la tabla cuadra' },
   // «Ver detalle» pasa a pesar como una acción.
   { fichero: 'public/dashboard/js/invoicesView.js', de: "bDetalle.className = 'btn-ghost btn-sm';", a: "bDetalle.className = 'btn-primary btn-sm';", cae: 'pesa como mirar' },
 ];
