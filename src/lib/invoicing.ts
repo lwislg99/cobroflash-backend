@@ -23,7 +23,7 @@ import { exigirLineasFacturables } from '../modules/invoicing/domain/lineasFactu
 import { lineasParaFacturar } from '../modules/invoicing/domain/invoiceLines.service'; import { lineasQueSuman } from '../modules/quotes/domain/apartados'; // SCRUM-887 · SCRUM-1786b (una línea: anclas fichero:línea)
 import { exigirTiposDeIvaEmitibles } from '../core/validation/tiposIvaEmitibles'; // SCRUM-771
 import { exigirCausaLineaEmitible } from '../core/validation/causaLineaEmitible'; import { exigirDestinatarioParaIsp } from '../modules/invoicing/domain/destinatarioIsp'; // SCRUM-1051 · 1051g (en una línea: la auditoría cita este fichero por número de línea, scrum525d)
-import { crearFacturaEmitida } from '../modules/invoicing/domain/crearFacturaEmitida'; // SCRUM-729
+import { crearFacturaEmitida } from '../modules/invoicing/domain/crearFacturaEmitida'; import { formasDePagoACongelar } from '../modules/invoicing/domain/formasDePagoACongelar'; // SCRUM-729 · SCRUM-1787s-bis (en una línea: scrum525d)
 import { congelarDesdeFicha, clienteDelDocumento } from '../modules/invoicing/domain/clienteCongelado'; // SCRUM-729
 import { congelarEmisor, emisorDelDocumento } from '../modules/invoicing/domain/emisorCongelado'; // SCRUM-665
 import { tomarCerrojoDeSerie } from '../modules/jobs/domain/albaranIdempotencia'; // SCRUM-1304
@@ -442,7 +442,7 @@ export async function ensureInvoiceForCharge(
       chargeId: ch.id,
       merchantId: ch.merchantId,
       customerId: ch.customerId ?? (() => { throw new Error('missing_customer_in_charge'); })(),
-      quoteId: quote?.id ?? null,
+      quoteId: quote?.id ?? null, payMethods: formasDePagoACongelar({ presupuesto: quote, merchant: ch.merchant, importe: Number(ch.amount), moneda: ch.currency.toUpperCase() }) ?? undefined, // SCRUM-1787s-bis (c.22401 ③, c.22404)
       number,
       type: 'F1',
       total: ch.amount.toString(),
