@@ -967,7 +967,7 @@ Mi primer driver de `aplicarUna` le pasó a `correr` la ruta con `tests/` delant
 
 **Medido contra:** `origin/main` = `4d408128ddd116764359d286918e759247189fd7` · 2026-11-23T09:01:48Z (cabecera `Date:` de `gh api -i zen`)
 
-A9: aviso → cicatriz J1 «Le pasé a Playwright MCP un fichero con el secreto del login de test de staging dentro (`filename`), creyendo que así no salía en el chat» — no se pudo comprobar: la salida de una herramienta MCP no pasa por ningún guard del repositorio, y un filtro por el valor de las variables `*_SECRET` sería un hook de sesión, que no es de este puesto
+A9: aviso → cicatriz J1 «Le pasé a Playwright MCP un fichero con el secreto del login de test de staging dentro (`filename`), creyendo que así no salía en el chat; la herramienta devuelve el código que ejecuta y el secreto quedó en el transcript, y hubo que pedir rotarlo» — no se pudo comprobar: la salida de una herramienta MCP no pasa por ningún guard del repositorio, y un filtro por el valor de las variables `*_SECRET` sería un hook de sesión, que no es de este puesto
 
 **Orden:** SCRUM-1787 c.22390 punto 2 («2-Que lo pruebe una sesión»). Sesión jv-j1hx (J1), solo docs. Comentario de entrega: c.22398. **Lo medido es STAGING** (`yaqu-staging-production`, `/health` = `4d408128…`, que contiene `0b2f6451a`), **no yaqu.app**: el login de test solo existe en staging. Cuenta QA (comercio id 2). Turno de `railway` tomado a las 09:02:59Z y soltado a las 09:09:06Z. Flags del comercio leídos antes y después y sin tocar: override `INVOICING_ES_ENABLED=true`, `SIF_ENABLED=false`.
 
