@@ -278,7 +278,15 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // (`TEXTO_GARANTIA_NO_CUADRA`, el 409 de `/garantia`). Recalculado con `censoCopy` sobre el árbol FUSIONADO
 // (origin/main 6c5327559 + la rama): { flag: 8, tipo: 11, aPelo: 163 }, suman 182 de 182; es el único
 // literal nuevo de ③. Re-anclaje autorizado por el fundador en SCRUM-1732 c.22001.
-const VEREDICTO_AL_MEDIR = { flag: 8, tipo: 11, aPelo: 163 };
+// 163 → 164 · 23-nov-2026 (SCRUM-1782b) · cuál entró y por qué no es regresión: el rótulo del campo
+// `tipoDestinatario` en el modal de cliente, `public/dashboard/js/customersView.js:1511`,
+// «¿Factura como empresa o autónomo (IVA)?», firmado por el fundador en SCRUM-1782 c.22268/c.22272. Entra
+// por la diana («Factura») y cae en ③ porque no lo elige ningún flag: pregunta cómo factura el CLIENTE, no
+// nombra el documento que emite YaQu. (El de `customerDetailView.js:1498` va dentro de la plantilla del
+// modal, que ya contaba.) Recalculado con `censoCopy` sobre el árbol FUSIONADO (origin/main d5bec9526 + la
+// rama): { flag: 8, tipo: 11, aPelo: 164 }; es la única fila nueva de ③. Re-anclaje autorizado por el
+// fundador en SCRUM-1782 c.22373.
+const VEREDICTO_AL_MEDIR = { flag: 8, tipo: 11, aPelo: 164 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA

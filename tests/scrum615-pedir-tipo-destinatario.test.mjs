@@ -162,7 +162,10 @@ test('SCRUM-615 · 🔴 los cuatro textos del campo son los que YA existen, letr
   const fuenteLista = readFuente('public/dashboard/js/customersView.js');
   const fuenteFicha = readFuente('public/dashboard/js/customerDetailView.js');
 
-  assert.equal(mod.ETIQUETA, 'Tipo de cliente');
+  // 23-nov-2026 · SCRUM-1782b · REANCLADO con autorización del fundador (SCRUM-1782 c.22373): el rótulo
+  // firmado en c.22268/c.22272 sustituye a «Tipo de cliente» en los TRES sitios. El guard sigue exigiendo
+  // los tres iguales; queda rojo hasta que S2 cambie `tipoDestinatarioPendiente.js:58`.
+  assert.equal(mod.ETIQUETA, '¿Factura como empresa o autónomo (IVA)?');
   assert.deepEqual(mod.OPCIONES.map((o) => o.texto), ['Sin clasificar', 'Particular', 'Empresa / profesional']);
 
   // Y que esos textos SIGAN estando en los dos formularios: si alguien los cambia allí y no aquí,

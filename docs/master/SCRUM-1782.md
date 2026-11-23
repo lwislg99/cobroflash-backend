@@ -42,9 +42,21 @@ tercero es de S2). **No se ha tocado** (regla 41).
 a mano, `assert.equal(mod.ETIQUETA, 'Tipo de cliente');`. Para que pase, alguien tiene que cambiar esa
 constante al literal firmado. Eso es **reanclar un guard** (regla 41): sigue exigiendo los tres sitios
 iguales, pero cambia lo que exige. Pide la misma autorización que tuvo scrum294a en SCRUM-1783 c.22267.
-c.22272 dice «scrum615 NO se relaja», y no dice si se puede reanclar. **Decide el fundador o el
-orquestador; esta rama no lo hace.** El test es de SCRUM-615 y `carriles.mjs` no le da puesto
-(NO-PUDE-MIRAR: depende de la etiqueta `area-` de SCRUM-615).
+c.22272 dice «scrum615 NO se relaja», y no dice si se puede reanclar. El test es de SCRUM-615 y
+`carriles.mjs` no le da puesto (NO-PUDE-MIRAR: depende de la etiqueta `area-` de SCRUM-615).
+
+**✅ Lo decidió el fundador en SCRUM-1782 c.22373 («1-Ok sí 2-Ok sí»), y está hecho en esta rama:**
+- ① `scrum615:165` compara ahora con el literal nuevo, con una nota fechada. El guard sigue exigiendo los
+  tres sitios iguales: **queda ROJO, declarado, hasta que S2 cambie la línea 58** («Tipo de cliente» ya
+  no está en las dos fichas, y `mod.ETIQUETA` sigue diciendo lo viejo).
+- ② `scrum601` «EL VEREDICTO»: `aPelo` 163 → 164, con una entrada comentada. La fila nueva es
+  `customersView.js:1511`, medida con `censoCopy` sobre el árbol fusionado (origin/main d5bec9526 + la
+  rama); es la única fila nueva de ③. No es regresión: pregunta cómo factura el cliente, no nombra el
+  documento que emite YaQu.
+
+Suite entera por tramos (15), antes de estos dos cambios: los únicos rojos fueron scrum615 (declarado),
+scrum601 (resuelto arriba) y dos de `scrum1289b`, que caen en local por el ENTORNO (`EPERM … open
+'C:\Users\Javier'`: el banco de juguete parte la ruta del árbol por el espacio; sin relación con este diff).
 
 ### Para Luis (S2) — el diff literal de `public/dashboard/js/tipoDestinatarioPendiente.js:58`
 
@@ -53,13 +65,10 @@ orquestador; esta rama no lo hace.** El test es de SCRUM-615 y `carriles.mjs` no
 +  var ETIQUETA = '¿Factura como empresa o autónomo (IVA)?';
 ```
 
-Literal copiado de SCRUM-1782 c.22268 / c.22272. `OPCIONES` no cambia. Va ENCIMA de esta rama. Y, si se
-autoriza el reanclaje, la línea 165 de `tests/scrum615-pedir-tipo-destinatario.test.mjs`:
-
-```diff
--  assert.equal(mod.ETIQUETA, 'Tipo de cliente');
-+  assert.equal(mod.ETIQUETA, '¿Factura como empresa o autónomo (IVA)?');
-```
+Literal copiado de SCRUM-1782 c.22268 / c.22272. `OPCIONES` no cambia. Va ENCIMA de esta rama; con esa
+línea, `scrum615` se pone verde (el reanclaje de su línea 165 ya está en esta rama, c.22373). Medido: con
+esa línea aplicada en local, de forma temporal, `scrum615` da 12/12; sin ella, 11/12. La línea se devolvió
+después y `tipoDestinatarioPendiente.js` NO va en esta rama.
 
 **No medido:** en yaqu.app (no ha entrado en main); con base de datos (el caso de `scrum692` gateado por
 `QA_DB_TEST` salió SKIP en local).
