@@ -37,13 +37,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 ];
 
 // ① El caso real de staging: factura cobrada a mano como Bizum, cargo de tarjeta sin pagar.
-for (const status of ['pending', 'failed', 'expired']) {
-  test(`SCRUM-1316k · ① cargo de tarjeta NO pagado y Bizum declarado → Bizum (cargo ${status})`, () => {
+test('SCRUM-1316k · ① cargo de tarjeta NO pagado y Bizum declarado → Bizum (pending, failed, expired)', () => {
+  for (const status of ['pending', 'failed', 'expired']) {
     const factura = { paidVia: 'bizum_manual', charge: { method: 'card', status } };
     assert.equal(metodoDeUnCobro(factura), 'bizum_manual',
       `🔴 un cargo «${status}» manda sobre lo declarado: el recibo diría tarjeta.`);
-  });
-}
+  }
+});
 
 // ② Control: el cargo PAGADO sigue mandando (el hecho consumado gana a lo declarado).
 test('SCRUM-1316k · ② control: cargo de tarjeta PAGADO → tarjeta, como hoy', () => {

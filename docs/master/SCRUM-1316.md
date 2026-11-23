@@ -1271,15 +1271,27 @@ comportamiento. Diseño acordado con el orquestador por mensaje, 23-nov.
 
 ## ⓚ3 Corrido
 
-- Test nuevo, **en ROJO antes del cambio**: 7 casos, 3 pasan y 4 caen (los tres ① y el ③).
-- Después: 7 de 7. Build con tipos (`tsc -p .`, sin `--noCheck`): salida 0, 0 bytes de salida.
-- Mutación con `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`. «Vuelve a preferir el cargo no pagado»
-  hace caer los 3 casos ① que la nombran, más el ③ como colateral. ②, ④ y ⑤ siguen en verde. Después se
-  comprobó el árbol (`git status` y el contenido de `src/` y `dist/`).
+- Test nuevo, **en ROJO antes del cambio**. Primera versión: 7 casos, 3 pasan y 4 caen (los tres ① y el ③).
+- Después del cambio, 7 de 7. Build con tipos (`tsc -p .`, sin `--noCheck`): salida 0, 0 bytes de salida.
+- Versión final: 5 casos, 5 de 5. Los tres ① pasan a ser uno solo con un bucle dentro (ver ⓚ5).
+- Mutación con `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, «vuelve a preferir el cargo no pagado»,
+  corrida sobre la versión final. Esa mutación es la regla anterior al cambio, así que esta pasada es también
+  el rojo de la versión final: caen el ① que la nombra y el ③ como colateral (2), y ②, ④ y ⑤ siguen en
+  verde (3). Después se comprobó el árbol (`git status`, y en `src/` y `dist/` sigue el código del cambio).
 - Dirigida, antes de escribir este tramo: 28 ficheros. Son los que nombran `metodoDeCobro`/`metodoDeUnCobro`,
   más 441 (4), 1773, 836, 700, 710b, 719, 810, 1294, 267, 273, 525d y 854. Resultado: 273 casos, 272 pasan y
   1 cae (pass + fail = total). El que cae es `scrum854` ②, «esta rama trae su entrada de registro», y lo
   arregla este tramo.
+- Después del commit: los guards del registro (854, 1294, 267, 273, 525d) más el test nuevo dan 45 de 45.
+  Los vecinos de mis cicatrices (1387, 411, 737, 553, 1415, 1177, 747, 709, 499, 503, 506, 491) son 14
+  ficheros y 124 casos: 123 pasan y cae 1, `scrum1415` (ver ⓚ5). `npm run guards:entrada` da 170 de 170.
+
+## ⓚ5 Lo que me salió mal
+
+Construí los nombres de los tres casos ① con un bucle y una plantilla. Es justo lo que prohíbe
+`tests/scrum1415-nombres-construidos.test.mjs`, y una cicatriz de J2 del 13-oct ya lo cuenta. Lo cazó ese
+guard en la pasada local, antes del empujón. Lo arreglé en el código del test, no en el guard: ahora es un
+solo caso con el bucle dentro.
 
 ## ⓚ4 Lo que NO está medido
 
