@@ -1026,3 +1026,30 @@ Encargo del orquestador J a jv-j2dv (J2). Literal «Vence el» firmado en SCRUM-
 - En yaqu.app: no visto; se ve tras el merge y el despliegue, con una factura suelta emitida después de 1787i (las anteriores tienen `dueDate` NULL y no enseñan nada, como debe ser).
 - Cuántas facturas reales llevan `dueDate`: nada contra staging ni producción.
 - El correo y el recibo no se tocan; el recibo no dice «Vence el» (ya está pagado).
+
+# SCRUM-1787t · En el PDF de la factura, «Vence el» lleva la fecha larga, como la página de pago
+
+**Medido contra:** `origin/main` = `57cc6d45bca6debe92bd55d6a55e7232c21985d4` · 2026-11-23T09:57:36Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: sin fallo que generalice — el driver de mutación de SCRUM-1339 devolvió «POBLACION guards=0» porque le pasé las rutas con `tests/` y el censo nombra por fichero sin carpeta; lo leí como CIEGO, no como verde, y lo repetí con el nombre del censo (3 de 3 VIVAS). Ya lo cubre la frase de A10 «Un instrumento declara su población, no sólo su resultado».
+
+Mutaciones: catálogo → `tests/scrum1787t-pdf-vence-fecha-larga.test.mjs`
+
+Encargo del orquestador J a jv-j1ia (J1). Decisión del fundador: SCRUM-1787 c.22390, punto 3 (literal «1-Ok todos si»: «unificar al formato largo en la página de pago y el PDF»). GO de regla 40 para tocar `generateInvoicePdf`: SCRUM-1787 c.22408 («Respuesta literal: «go»», copiado del comentario). Sustituye el formato de c.22325 ① SOLO para la línea «Vence el». No hay texto nuevo: «Vence el» es el literal firmado.
+
+## Qué se construyó (1787t)
+
+- `pdf.service.ts` (J1), `generateInvoicePdf`: la línea `Vence el …` pasa de `dateStr` (dd/mm/aaaa) a `toLocaleDateString('es-ES', { timeZone: zonaDelMerchant({ timezone: params.zona }), day: '2-digit', month: 'long', year: 'numeric' })`. Las opciones están COPIADAS de `payInvoice.routes.ts:154` (J2, 1787q), que las tiene en línea y no exporta función: no hay nada que importar. Para que no diverjan, el caso ⑤ del test nuevo lee las dos fuentes y cae si cualquiera de las dos cambia de opciones. La `Fecha:` de expedición, las formas de pago y el PDF del presupuesto no cambian.
+- Recongelada la huella de `scrum603b`/`scrum723` por la vía de SCRUM-1446d: entrada nueva en `tests/_cambios-autorizados-de-la-factura.mjs` con firma `SCRUM-1787 c.22408` y cita `Respuesta literal: «go»` (el test 1446d ③ pide al menos 5 caracteres, y «go» a secas tiene 4), huellas sacadas con `docs/master/evidencias/SCRUM-1446d/huellas.mjs` sobre `57cc6d45` (cuerpo `a83c6654…` → `2b62a73e…`; ámbito `0fbb6f5b…` → `a8bd2fb9…`; el `de` es el `a` de 1787m).
+- `tests/scrum1787m-…`: ① y ② esperaban `Vence el 05/12/2026` (formato de c.22325 ①); ahora esperan la fecha larga. No se relaja nada: siguen comprobando el texto exacto, la posición y la zona.
+
+## Cómo se ve
+
+- `tests/scrum1787t-pdf-vence-fecha-larga.test.mjs` (5 casos, sobre el texto extraído del PDF real): ① `dueDate` 2026-12-23 → `Vence el 23 de diciembre de 2026` y `Fecha: 05/11/2026` · ② zona del negocio (23:30Z del 23 → 24 en Madrid; sin zona, 23) · ③ el mes más largo, `Vence el 30 de septiembre de 2026`, en UNA línea, alineada a la derecha, empieza en x > 170 (no pisa la columna del logo) y no hay otro texto a su altura · ④ control: sin `dueDate`, ninguna línea «Vence el» · ⑤ las opciones del PDF son las de la página de pago.
+- Rojo primero: 4 de 5 en rojo (`actual: 'Vence el 23/12/2026'`), con el control ④ en verde. Después, 5 de 5 en verde.
+- Captura del PDF pintado con pdf.js (mirada): `docs/master/evidencias/SCRUM-1787/1787t/01-pdf-cabecera-30-sep.png`, sacada de `02-factura-vence-30-sep.pdf`, que fabrica `generar-pdf.mjs` con datos ficticios.
+
+## NO hecho / NO visto
+
+- yaqu.app: no visto. Se ve tras el merge y el despliegue, en una factura con vencimiento. La prueba en producción con la cuenta QA (c.22390 punto 2) es otra tarea.
+- El día va con dos cifras (`day: '2-digit'`), igual que la página de pago: el 5 de diciembre sale «05 de diciembre de 2026». Lo dejo así porque el encargo pide las MISMAS opciones. Si se quiere «5 de diciembre», hay que cambiarlo en las dos superficies a la vez, y eso es decisión del fundador.

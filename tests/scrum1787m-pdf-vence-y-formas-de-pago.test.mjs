@@ -8,7 +8,7 @@
 // CÓMO SE MIDE: sobre el TEXTO y las POSICIONES leídos del PDF fabricado (`lineasDePdf`), no sobre el
 // fuente. En el PDF la `y` crece hacia ARRIBA.
 //
-// ① con vencimiento → una línea `Vence el dd/mm/aaaa`, debajo de `Fecha:` y por encima del emisor
+// ① con vencimiento → una línea `Vence el <fecha larga>` (SCRUM-1787t; antes dd/mm/aaaa), debajo de `Fecha:` y por encima del emisor
 // ② el día del vencimiento es el de la ZONA del negocio, como el de `Fecha:` (SCRUM-1470c)
 // ③ con formas de pago → una línea `Formas de pago: Tarjeta, Bizum`, en el orden congelado
 // ④ una clave desconocida no se pinta; si no queda ninguna conocida, no hay línea
@@ -88,7 +88,8 @@ test('SCRUM-1787m ① con vencimiento, el PDF imprime «Vence el» debajo de la 
   const lineas = await lineasDeFactura({ dueDate: VENCE });
   const fecha = laLinea(lineas, 'Fecha: 05/11/2026'); // positivo: la fecha de expedición está y se lee
   const vence = laLinea(lineas, 'Vence el');
-  assert.equal(vence.texto.trim(), 'Vence el 05/12/2026', '🔴 el vencimiento no sale con el formato de la fecha de expedición');
+  // SCRUM-1787t: desde c.22390 ③ el vencimiento va en fecha LARGA (la «Fecha:» sigue en dd/mm/aaaa).
+  assert.equal(vence.texto.trim(), 'Vence el 05 de diciembre de 2026', '🔴 el vencimiento no sale con la fecha larga de SCRUM-1787t');
   assert.ok(vence.y < fecha.y, `🔴 «Vence el» (y=${vence.y}) no está debajo de «Fecha:» (y=${fecha.y})`);
   const emisor = laLinea(lineas, 'EMISOR');
   assert.ok(vence.y > emisor.y, `🔴 «Vence el» (y=${vence.y}) no está en la cabecera: cae a la altura del emisor (y=${emisor.y}) o por debajo`);
@@ -98,9 +99,9 @@ test('SCRUM-1787m ② el día del vencimiento es el de la zona del negocio, como
   // 23:30Z del día 5 ya es día 6 en Madrid, y sigue siendo día 5 en UTC.
   const instante = new Date('2026-12-05T23:30:00.000Z');
   const madrid = await lineasDeFactura({ dueDate: instante, zona: 'Europe/Madrid' });
-  assert.equal(laLinea(madrid, 'Vence el').texto.trim(), 'Vence el 06/12/2026');
+  assert.equal(laLinea(madrid, 'Vence el').texto.trim(), 'Vence el 06 de diciembre de 2026');
   const sinZona = await lineasDeFactura({ dueDate: instante, zona: null });
-  assert.equal(laLinea(sinZona, 'Vence el').texto.trim(), 'Vence el 05/12/2026');
+  assert.equal(laLinea(sinZona, 'Vence el').texto.trim(), 'Vence el 05 de diciembre de 2026');
 });
 
 test('SCRUM-1787m ③ con formas de pago, el PDF imprime «Formas de pago» con los literales firmados', async () => {
