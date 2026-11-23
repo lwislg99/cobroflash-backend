@@ -768,3 +768,23 @@ Segundo error: escribí la fila de la ficha sin haber cargado antes `yaqu-premiu
 A9: comprobación → `tests/scrum1787k-suelta-con-descripcion-y-descuento.test.mjs`
 
 El merge chocó con 1787k en `validarFacturaSuelta` y se juntaron las dos: las líneas salen por `lineasParaFacturar` (1787k) y el resultado lleva `dueDate` y `payMethods` (1787i); quitar una mitad en `dist/` tumba este test o `tests/scrum1787i-vencimiento-y-formas-de-pago.test.mjs` (sin 1787i: 4 caen; sin 1787k: 3 caen; base 16/16), mutación hecha una vez y sin guion en git, así que no cuenta como evidencia repetible.
+
+# SCRUM-1787p · El cobro del envío por WhatsApp de la factura hereda sus formas de pago congeladas
+
+**Medido contra:** `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740` · 2026-11-23T03:59:03Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: comprobación → `tests/scrum1787p-cobro-hereda-formas-de-pago.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1787p-cobro-hereda-formas-de-pago.test.mjs`
+
+**GO:** SCRUM-1787 c.22362 («1-GO», flujo de cobro). Sesión jv-j1hs (J1). Rama `scrum-1787p-cobro-hereda-formas-de-pago`, nacida de 1787i (#3311, `a9b26ff4`) y con `origin/main` mergeado.
+
+**Medición.** ① El cobro lo crea `sendInvoicePaymentRequest` (`src/modules/billing/domain/invoiceWhatsApp.service.ts`, J1) con un POST interno a `/charges`; antes solo le pasaba las formas del PRESUPUESTO de origen, así que una factura suelta (sin presupuesto) creaba un cobro sin selector y el cliente veía todas. ② Otros caminos: en `src/` hay dos `prisma.charge.create`, el de `/charges` (su único llamador por `fetch` es este servicio) y la liberación de la garantía de obra (`chargesAdmin.routes.ts`, nace PAGADO: no es un enlace de pago). Los tres que envían la factura (reenvío `invoicesAdmin.routes.ts`, aceptación pública `quotes.routes.ts`, `collect-rest` de `jobs.routes.ts`) llaman a este mismo servicio, y si la factura ya tiene cobro lo reutilizan. Correo y portal no crean cobro. ③ `charge.payMethods` y `quote.payMethods` aceptan el mismo conjunto (`card`, `bizum`, `transfer`), pero escrito DOS veces en `src/core/validation/schemas.ts` (S1): el cambio no añade una tercera, valida con `CreateQuoteSchema.shape.payMethods`, y el caso ⑦ del test cae si las dos listas divergen.
+
+**Cambio.** Si `invoice.payMethods` pasa esa validación y no está vacío, el cobro nace con esas formas; si no, exactamente lo de antes (las del presupuesto o ninguna). Una forma fuera del conjunto no bloquea el envío: sale como antes. Sin texto nuevo, sin esquema, la página de pago (J2) no cambia.
+
+**Merge con main.** Conflicto en `prisma/schema.prisma` con 1787l: se quedan las tres columnas de la factura (`dueDate`, `payMethods`, `docFooterText`); `prisma generate` en `node_modules` propio + guard ✔; `docs/sql/deriva-prod.sql` regenerado (548 columnas); anclas de `docs/legal/AUDITORIA_CAMINO_EMISION.md` recolocadas en sitio (970-971 y 1908).
+
+**Error mío.** La segunda mutación salió MUDA con `aplicarUna`: había puesto la prioridad «la factura manda» en dos sitios (no leer el presupuesto si la factura tiene formas, y el orden del spread), y quitar uno no cambiaba nada. Lo dejé en un solo punto (`formasDelCobro`) y las dos mutaciones caen.
+
+**NO medido:** la suite entera en local (la corre el obligatorio, por orden del orquestador) · navegador, yaqu.app, staging y producción · ningún envío real (Meta en `WHATSAPP_DRY_RUN`).
