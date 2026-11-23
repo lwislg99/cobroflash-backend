@@ -628,3 +628,43 @@ Segundo error: escribí la fila de la ficha sin haber cargado antes `yaqu-premiu
 A9: comprobación → `tests/scrum1787k-suelta-con-descripcion-y-descuento.test.mjs`
 
 El merge chocó con 1787k en `validarFacturaSuelta` y se juntaron las dos: las líneas salen por `lineasParaFacturar` (1787k) y el resultado lleva `dueDate` y `payMethods` (1787i); quitar una mitad en `dist/` tumba este test o `tests/scrum1787i-vencimiento-y-formas-de-pago.test.mjs` (sin 1787i: 4 caen; sin 1787k: 3 caen; base 16/16), mutación hecha una vez y sin guion en git, así que no cuenta como evidencia repetible.
+
+# SCRUM-1787m · El PDF de factura imprime «Vence el» y «Formas de pago» con lo congelado en la factura
+
+**Medido contra:** `origin/main` = `90e8e3774f86ff6ef393e7f25f0c6bdedb95765e` · 2026-11-23T03:51:55Z
+
+A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1787m-pdf-vence-y-formas-de-pago.test.mjs`
+
+Decisión del fundador: SCRUM-1787 c.22338 ③ («3-GO», regla 40: el PDF de factura muestra «Vence el» y las formas de pago). Literales firmados: `Vence el` (c.22325 ①) y `Formas de pago` con `Tarjeta` · `Bizum` · `Transferencia` (c.22345 ①), los mismos de la ficha. Carril J1. Construido por `jv-j1hp` sobre la rama de 1787i (`a9b26ff40`, PR #3311), que trae las columnas.
+
+**Qué cambia**
+
+- `src/modules/invoicing/infra/pdf/pdf.service.ts`, solo `generateInvoicePdf`: dos parámetros nuevos y obligatorios (`dueDate` y `payMethods`; un llamador que no los pase no compila) y dos líneas en la cabecera, a la derecha, debajo de `Fecha:`. `Vence el dd/mm/aaaa` usa la misma función de fecha que `Fecha:` (el día en la zona del negocio, SCRUM-1470c) y solo sale si la factura tiene vencimiento. `Formas de pago: Tarjeta, Bizum` nombra cada forma congelada, en su orden, y solo sale si queda alguna conocida: una clave que no sea `card`, `bizum` o `transfer` no se pinta. `generateQuotePdf` no se toca.
+- Los llamadores: medido, hacía falta. `generateInvoicePdf` no recibe la factura sino sus campos sueltos, así que los tres llamadores (dos en `src/lib/invoicing.ts` y el de regenerar en `invoicesAdmin.routes.ts`, los tres de J1) pasan `dueDate` y `payMethods` de la fila de la factura. Nada sale del comercio ni del presupuesto (regla 29).
+- `tests/_cambios-autorizados-de-la-factura.mjs`: una entrada con las huellas de `docs/master/evidencias/SCRUM-1446d/huellas.mjs` y la cita de c.22338. Ningún número escrito a mano.
+
+**Cómo se ve que una factura sin estos datos sale igual**
+
+`docs/master/evidencias/SCRUM-1787/pdf-vence/lineas.mjs` fabrica la misma factura y da la huella de sus líneas (texto y posición). Sin vencimiento ni formas de pago: 15 líneas y huella `5a4ceaa8c7689611829f3249539428f656aac98a77e67be1d7ac4f61d4eeb009` antes del cambio y después. Con los dos datos: 17 líneas. El caso ⑤ del test lo sujeta dentro del código nuevo (ausentes, `null`, lista vacía y clave desconocida dan las mismas líneas); la comparación contra el código anterior es la de ese guion, hecha una vez. El PDF fabricado con los dos datos está en `docs/master/evidencias/SCRUM-1787/pdf-vence/1787m-con-datos.pdf` y se leyó: las dos líneas salen bajo `Fecha:`, sin pisar el emisor.
+
+**Medido**
+
+- Rojo primero: con el test escrito y el código sin tocar, 7 de 8 caían. Uno de los siete (⑦, el control del presupuesto) caía por un error del propio banco y no por el defecto: ver abajo.
+- `tsc -p .` con tipos: salida 0. `node_modules` propio, `prisma generate` y guard del cliente ✔.
+- Dirigida del encargo (19 ficheros, cada prefijo con al menos uno: 1787m, 1787i, 1787d, 1788a, 1779d, 178, 290, 523d, 291, 603b, 723, 347, 525d, 1157, 1215, 1415, 262): 147 casos, 145 pasan, 0 caen, 2 saltos; 145 + 2 = 147.
+- Mutaciones con el `aplicarUna` de la casa (`docs/master/evidencias/SCRUM-1787/pdf-vence/mutar.mjs`): 2 de 2 vivas (sin la línea del vencimiento cae ①; sin la de las formas de pago cae ③). Después, `git status` solo con los cambios del ticket.
+
+**Errores míos (A9)**
+
+- Añadí una línea nueva en el primer llamador de `src/lib/invoicing.ts` y moví de la 267 a la 268 la puerta que cita `docs/legal/AUDITORIA_CAMINO_EMISION.md`. Lo cazó `tests/scrum525d-anclas-que-apuntan.test.mjs`. Se arregló en el código: los dos campos van en la línea que ya existía y el documento no se toca.
+- Declaré el diccionario de literales fuera de la función y cambió el ámbito que vigila `scrum723`. Se metió dentro de `generateInvoicePdf`; la lista declarada del guard no se toca.
+- El banco del control ⑦ fabricaba un presupuesto con una sola opción y el esquema pide tres: el caso caía por su propio suelo (CIEGO), no por el defecto. Corregido antes del cambio.
+
+**NO medido**
+
+- Los tramos de emisión de la suite y la suite entera en local: los corre el obligatorio (orden del orquestador del 23-nov).
+- Los 2 saltos de la dirigida, gateados por base de datos.
+- Captura en PNG: el navegador de la sesión bloquea `file:`. Queda el PDF fabricado.
+- Los tres llamadores con una factura real: se leyó el fuente (caso ⑧), no se emitió ni se regeneró ninguna. Navegador, yaqu.app, staging y producción.
