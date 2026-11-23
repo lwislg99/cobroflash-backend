@@ -296,7 +296,9 @@ router.get('/:id', async (req, res) => {
     const envioDocumento = await envioDelDocumentoDeLaFactura(req.merchantId!, invoice.chargeId);
     // SCRUM-1787o · ¿salió ESTA factura por correo? Para que «Enviada» no sepa solo del WhatsApp.
     const correoEnviado = await correoDeLaFacturaSalio(req.merchantId!, id);
-    const cuerpo = { ...invoice, demo: isDemoMerchant({ id: req.merchantId }), waDelivery, payToken, asignados, envioDocumento, correoEnviado };
+    // SCRUM-1532d · la ficha solo ofrece «Cancelar cobro» con el cobro `pending`: necesita saber su estado.
+    const estadoDelCobro = await estadoDelCobroDeLaFactura(req.merchantId!, invoice.chargeId);
+    const cuerpo = { ...invoice, demo: isDemoMerchant({ id: req.merchantId }), waDelivery, payToken, asignados, envioDocumento, correoEnviado, estadoDelCobro };
     // `sinCosteEnDocumento` tapa TAMBIÉN `quote.lines`: este detalle arrastra el presupuesto de
     // origen entero (`include: { quote: true }`), y por ahí salía el mismo coste.
     res.json(veEconomiaDelNegocio(req.userRole) ? cuerpo : sinCosteEnDocumento(cuerpo as unknown as Record<string, unknown>));
@@ -322,6 +324,19 @@ async function envioDelDocumentoDeLaFactura(merchantId: number, chargeId: number
     select: { status: true, createdAt: true },
   });
   return envioDelDocumento({ clienteEmail: cobro.customer?.email, filasWhatsapp });
+}
+
+/**
+ * SCRUM-1532d · el estado del cobro de la factura, o `null` si no tiene. Sólo lectura, con `select` y
+ * filtrado por `merchantId` (regla 2).
+ */
+async function estadoDelCobroDeLaFactura(merchantId: number, chargeId: number | null): Promise<string | null> {
+  if (chargeId == null) return null;
+  const cobro = await prisma.charge.findFirst({
+    where: { id: chargeId, merchantId }, // regla 2
+    select: { status: true },
+  });
+  return cobro?.status ?? null;
 }
 
 /**

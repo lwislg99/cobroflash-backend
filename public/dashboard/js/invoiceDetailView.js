@@ -796,6 +796,35 @@ async function fetchInvoiceDetail(id) {
       ubicarAccion(btnBizum, 'btnBizum');
     }
 
+    // SCRUM-1532d · «Cancelar cobro» (GO y literales firmados: SCRUM-1532 c.22430). Solo con el cobro
+    // `pending` —la única transición del máster— y en el «⋯» (un acto que no se deshace no es la
+    // primaria). Tras cancelar, la ficha se repinta y el botón ya no está; la factura sigue pendiente y
+    // el reenvío le crea otro cobro (decisión 2). Los mensajes de error reutilizan los de esta ficha.
+    if (invoice.chargeId && invoice.estadoDelCobro === 'pending') {
+      const CONFIRMAR_CANCELAR_COBRO = '¿Cancelar este cobro? El cliente ya no podrá pagarlo con este enlace.';
+      const btnCancelarCobro = document.createElement('button');
+      btnCancelarCobro.className = 'btn-secondary btn-sm';
+      btnCancelarCobro.textContent = 'Cancelar cobro';
+      btnCancelarCobro.addEventListener('click', async () => {
+        if (!window.confirm(CONFIRMAR_CANCELAR_COBRO)) return;
+        btnCancelarCobro.disabled = true;
+        try {
+          const r = await fetch(`/admin/charges/${invoice.chargeId}/cancel`, { method: 'POST' });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            throw new Error(d.error === 'charge_not_pending'
+              ? 'Este cobro ya no está pendiente.'
+              : 'Error actualizando estado: inténtalo de nuevo');
+          }
+          if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: invoice.id });
+        } catch (e) {
+          setStatus('error', e.message);
+          btnCancelarCobro.disabled = false;
+        }
+      });
+      ubicarAccion(btnCancelarCobro, 'btnCancelarCobro');
+    }
+
     // Recordar pago: el estado (solo pending) lo decide el registro; aquí queda el dato (teléfono).
     if (invoice.customer?.phone) {
       const btnReminder = document.createElement('button');
