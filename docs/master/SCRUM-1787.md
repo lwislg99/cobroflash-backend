@@ -962,3 +962,35 @@ Mi primer driver de `aplicarUna` le pasó a `correr` la ruta con `tests/` delant
 - Ninguna fila real de `email_messages`: nada contra staging ni producción. Que Resend reescriba `aceptado_*` a `rebotado` lo leí en `registroDeEnvios.ts`, no lo vi pasar.
 - El handler del GET se comprueba leyendo el fuente, no corriéndolo (pediría base): si alguien sacara la llamada del handler, el test ② lo caza; si la consulta devolviera filas de otra factura, solo lo cazaría el texto del `where`.
 - Ni capturas ni guards de navegador: el cambio no toca CSS ni textos.
+
+# SCRUM-1787r · Prueba en STAGING: «Vence el» sí, «Formas de pago» no (la pantalla no las manda)
+
+**Medido contra:** `origin/main` = `4d408128ddd116764359d286918e759247189fd7` · 2026-11-23T09:01:48Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: aviso → cicatriz J1 «Le pasé a Playwright MCP un fichero con el secreto del login de test de staging dentro (`filename`), creyendo que así no salía en el chat» — no se pudo comprobar: la salida de una herramienta MCP no pasa por ningún guard del repositorio, y un filtro por el valor de las variables `*_SECRET` sería un hook de sesión, que no es de este puesto
+
+**Orden:** SCRUM-1787 c.22390 punto 2 («2-Que lo pruebe una sesión»). Sesión jv-j1hx (J1), solo docs. Comentario de entrega: c.22398. **Lo medido es STAGING** (`yaqu-staging-production`, `/health` = `4d408128…`, que contiene `0b2f6451a`), **no yaqu.app**: el login de test solo existe en staging. Cuenta QA (comercio id 2). Turno de `railway` tomado a las 09:02:59Z y soltado a las 09:09:06Z. Flags del comercio leídos antes y después y sin tocar: override `INVOICING_ES_ENABLED=true`, `SIF_ENABLED=false`.
+
+**Qué se hizo.** Desde el panel (Nueva factura → Cliente → Conceptos → Revisar y emitir) se emitió F260004 (id 1979): cliente «Cliente QA sin avisos» (id 3936, sin teléfono ni correo) y una línea de 100 € + 21 %. Respuesta 201, `veriFactu:false`. Durante la emisión solo hubo `POST /admin/invoices`, `GET /admin/invoices/1979` y `GET /admin/team`: ningún envío.
+
+| qué | resultado |
+|---|---|
+| Ficha · «Vence el» | ✅ «23 dic 2026»; `dueDate` 2026-12-23T09:06:14Z = `createdAt` + 30 días |
+| Ficha · «Formas de pago» | ❌ no sale: `payMethods = null` |
+| PDF (texto extraído con `tests/_texto-del-pdf.mjs`, 16 líneas) | ✅ «Fecha: 23/11/2026» y «Vence el 23/12/2026» · ❌ sin «Formas de pago» |
+| Página pública de pago | página de pago no vista: exige pulsar Enviar por WhatsApp |
+| Control: F260003 (21-nov, anterior a 1787i) | ✅ sin «Vence el» ni «Formas de pago»: la columna COBRO no se pinta |
+
+**Hallazgo.** Hoy ninguna factura emitida desde la pantalla lleva formas de pago. 1787i las congela solo si el cuerpo las trae (`facturaSuelta.ts:230`), sin defecto, y el editor que las manda es la parte de S2, pendiente: el editor de staging no tiene paso «Condiciones». El comercio QA tiene IBAN y móvil Bizum, y no tiene Connect. El defecto «las del comercio» es 1787s (GO en c.22397).
+
+**Página de pago.** El cobro de una factura suelta solo lo crea `sendInvoicePaymentRequest` (`POST /admin/invoices/:id/resend-whatsapp`): sin teléfono corta antes de crear el cobro, y con teléfono intenta el envío. El orquestador decidió no enviar. #3323 (1787q) sigue sin mergear.
+
+**Evidencias** (`docs/master/evidencias/SCRUM-1787/1787r/`), revisadas una a una:
+- `01-ficha-1280.png`: ficha de F260004, COBRO · «Vence el 23 dic 2026», sin formas de pago.
+- `02-ficha-390.png`: la misma ficha a 390, centrada en CLIENTE/COBRO. La primera toma la tapaba el aviso «Hay una versión nueva de YaQu» y la rehice.
+- `03-F260004.pdf`: el PDF (2.376 B).
+- `04-control-F260003-1280.png`: F260003 sin columna COBRO.
+
+**Errores míos.** ① El secreto del login de test de staging quedó en el transcript local de mi sesión, por la cicatriz de arriba. No está en git, Jira ni ningún fichero comiteado, y se ha pedido al fundador que lo rote. ② Crucé los 200k (200.250) con un tope de encargo de 180k: cicatriz J1 del 23-nov.
+
+**NO hecho / NO visto:** yaqu.app; la página de pago; una imagen del PDF renderizado (Chromium sin interfaz no pinta PDF); la segunda factura por API con `payMethods`, que autorizó el orquestador y DENEGÓ el clasificador de permisos antes de ejecutarse (no se emitió nada); los logs de staging (dry-run de WhatsApp). La suite entera no la he corrido: cambio solo de docs; corrí `guards:entrada` y la corre el obligatorio.
