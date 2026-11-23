@@ -236,3 +236,48 @@ de página de la fila está escrito como el de las líneas, pero no lo ha ejerci
 líneas (pinta `0,00`) y unas líneas con céntimos fraccionarios. Con ese último caso, el redondeo por tipo dentro de
 cada apartado puede no sumar al céntimo la base del documento, que redondea por tipo sobre todas las líneas. Es la
 misma diferencia que ya hay hoy entre la columna IMPORTE y la base.
+
+## SCRUM-1786g · «Total del apartado» bajo cada apartado, en el PORTAL del cliente (parte J2)
+
+**Puesto:** J2 (jv-j2du) · **Rama:** `scrum-1786g-portal-total-del-apartado` · 23-nov-2026
+**Medido contra:** `origin/main` = `0b2f6451af74f2142cf27e18c9a4c42fb56c1e65` · 2026-11-23T08:23:27Z (cabecera `Date:` de `gh api -i zen`)
+A9: sin fallo que generalice — el único tropiezo (la carpeta `.playwright-mcp` que el navegador de las capturas dejó dentro del árbol) lo enseñó `git status` antes de añadir nada, y se borró.
+Mutaciones: catálogo → `tests/scrum1786g-portal-total-del-apartado.test.mjs`
+
+**Decisión:** SCRUM-1786 c.22269 (literal firmado `Total del apartado`) y c.22329 (la suma de sus líneas, igual
+que el total del documento; sin apartados no cambia nada; deuda `capitulos()`). Solo el portal
+(`customerPortal.routes.ts`, J2). La página de firma (`quoteDecisionLanding.routes.ts`) es de S1 y no se toca.
+
+**Lo medido antes de tocar:** el portal SÍ pinta las líneas del presupuesto, en el desplegable «Ver detalles
+(N líneas)» de cada tarjeta (`customerPortal.routes.ts`, bucle `lineasDelPresupuesto.map` dentro de `quotesHtml`).
+Cada línea lleva su importe CON IVA y con el descuento de línea (`importeDeLineaDelPresupuesto` = `calcTotal` de la
+línea sola, SCRUM-1568); una cabecera de apartado sale con el importe vacío (`lineasQueSuman`). No había subtotal.
+
+**El cambio:** el criterio es el del PDF (1786f1): cabecera = la línea que `lineasQueSuman` deja fuera; sus líneas,
+las que la siguen hasta la próxima cabecera; las de antes de la primera, de ningún apartado. El recorrido está
+COPIADO del PDF (vive dentro de `generateQuotePdf` y no se puede importar), en `filasConTotalDelApartado`. La cifra
+NO es la del PDF: allí es `calcVatBreakdown(...).base` porque su columna va sin IVA; aquí es `calcTotal` de las
+líneas del apartado, porque la columna del portal va con IVA y el total de la tarjeta es `calcTotal` de todas. Así
+la fila suma lo que el cliente ve encima, con la misma función que el total del documento (c.22329). Estilo: tres
+clases nuevas en la hoja del portal (`reciboPortalEstilo.ts`, J2), con tokens que ya usa la hoja; sin `style=`.
+Clases propias, no `pf-line-amount`, para que un lector que suma las filas de línea no cuente dos veces.
+
+**Capturas** (datos de EJEMPLO, servidor local con Prisma de mentira, miradas):
+`docs/master/evidencias/SCRUM-1786/captura-1786g-portal-movil.png` (390 px) y
+`docs/master/evidencias/SCRUM-1786/captura-1786g-portal-escritorio.png` (1280 px). Salón 278,30 + Cocina 297,00 =
+total de la tarjeta 575,30 €.
+
+**Pruebas:** `tests/scrum1786g-portal-total-del-apartado.test.mjs`, 6 casos. ROJO sobre el código de antes en los
+tres que piden la fila (posición e importe, cuadre, líneas antes de la primera cabecera); verde el control sin
+apartados, cuya huella sha256 de la tarjeta se tomó de ese código. Después, 6/6. La tanda dirigida y su recuento,
+en la entrega de Jira.
+
+**Mutaciones** (`correr` + `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`; `git status` sin cambios en `src/`
+después): «la fila del último apartado desaparece» → VIVA; «suma mal» (el total arrastra los apartados anteriores)
+→ VIVA.
+
+**Deuda declarada (c.22329):** cuando S1 escriba `capitulos()` (tramo c), este recorrido pasa a usarla.
+
+**Sin medir:** ninguna base de datos, yaqu.app (aún no está en main), un apartado sin líneas (pinta `0,00 €`,
+igual que el PDF) y unas líneas con céntimos fraccionarios: `calcTotal` del apartado redondea la suma y cada fila
+redondea la suya, así que el total puede no cuadrar al céntimo con las filas de encima.
