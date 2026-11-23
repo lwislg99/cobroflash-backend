@@ -35,8 +35,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // La factura deja de MANDAR sobre el presupuesto: el de origen vuelve a ganar.
     fichero: 'src/modules/billing/domain/invoiceWhatsApp.service.ts',
-    de: 'const quotePayMethods = !facturaPayMethods && invoice.quoteId',
-    a: 'const quotePayMethods = invoice.quoteId',
+    de: 'const formasDelCobro = facturaPayMethods ?? quotePayMethods;',
+    a: 'const formasDelCobro = quotePayMethods ?? facturaPayMethods;',
     cae: 'SCRUM-1787p ② la factura manda sobre el presupuesto de origen',
   },
 ];
