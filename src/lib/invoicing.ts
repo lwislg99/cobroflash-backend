@@ -442,7 +442,7 @@ export async function ensureInvoiceForCharge(
       chargeId: ch.id,
       merchantId: ch.merchantId,
       customerId: ch.customerId ?? (() => { throw new Error('missing_customer_in_charge'); })(),
-      quoteId: quote?.id ?? null, payMethods: formasDePagoACongelar({ presupuesto: quote, merchant: ch.merchant, importe: Number(ch.amount), moneda: ch.currency.toUpperCase() }) ?? undefined, // SCRUM-1787s-bis (c.22401 ③, c.22404)
+      quoteId: quote?.id ?? null, payMethods: formasDePagoACongelar({ cobro: ch, presupuesto: quote, merchant: ch.merchant, importe: Number(ch.amount), moneda: ch.currency.toUpperCase() }) ?? undefined, // SCRUM-1787s-bis (c.22401 ③, c.22404, c.22423: cobro > presupuesto > activas)
       number,
       type: 'F1',
       total: ch.amount.toString(),

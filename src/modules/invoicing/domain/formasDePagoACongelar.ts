@@ -3,6 +3,8 @@
 // QUÉ FORMAS DE PAGO SE CONGELAN EN UNA FACTURA AL EMITIRSE. GO del fundador (regla 40, los dos
 // caminos): SCRUM-1787 c.22401 («1-GO») y c.22404 («1-Sí a las dos»).
 //
+//   · en la factura tras cobrar, si el COBRO trae lista (`Charge.payMethods`), ESA lista, antes que la del
+//     presupuesto (decisión del orquestador, SCRUM-1787 c.22423, lectura de c.22404);
 //   · si el presupuesto trae lista (`Quote.payMethods` = ['card', …]), ESA lista (c.22404 b);
 //   · si trae `null` («todas») o no hay presupuesto, las ACTIVAS HOY para el comercio y el total de
 //     la factura, según la función de J2 (`formasDePagoActivas`, SCRUM-1787u), traducidas al
@@ -32,6 +34,8 @@ const VOCABULARIO: ReadonlySet<string> = new Set(
 );
 
 export interface FormasDePagoACongelarOpts {
+  /** El cobro del que nace la factura (basta su `payMethods`): su lista manda sobre la del presupuesto (c.22423). */
+  cobro?: { payMethods?: unknown } | null;
   /** El presupuesto del que sale la factura (basta su `payMethods`); `null`/ausente = factura sin presupuesto. */
   presupuesto?: { payMethods?: unknown } | null;
   /** El comercio que emite: los campos que mira `formasDePagoActivas` (el `Merchant` de Prisma vale). */
@@ -57,9 +61,15 @@ function enVocabulario(valores: readonly unknown[]): FormaDePagoCongelada[] {
 /**
  * Las formas de pago a CONGELAR en la factura, o `null` si no queda ninguna.
  *
- * Firma: `formasDePagoACongelar({ presupuesto, merchant, importe, moneda }): FormaDePagoCongelada[] | null`
+ * Firma: `formasDePagoACongelar({ cobro?, presupuesto, merchant, importe, moneda }): FormaDePagoCongelada[] | null`
  */
-export function formasDePagoACongelar({ presupuesto, merchant, importe, moneda }: FormasDePagoACongelarOpts): FormaDePagoCongelada[] | null {
+export function formasDePagoACongelar({ cobro, presupuesto, merchant, importe, moneda }: FormasDePagoACongelarOpts): FormaDePagoCongelada[] | null {
+  // La lista del cobro, si el profesional lo limitó, manda (c.22423). Solo `null`/ausente sigue adelante.
+  const delCobro = cobro?.payMethods;
+  if (Array.isArray(delCobro)) {
+    const lista = enVocabulario(delCobro);
+    return lista.length > 0 ? lista : null;
+  }
   const delPresupuesto = presupuesto?.payMethods;
   // Una lista del presupuesto manda tal cual (c.22404 b). Solo `null`/ausente significa «todas».
   if (Array.isArray(delPresupuesto)) {

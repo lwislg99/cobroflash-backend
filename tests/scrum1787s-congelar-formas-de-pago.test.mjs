@@ -62,6 +62,20 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: 'presupuesto: null,',
     cae: 'SCRUM-1787s ⑦ ensureInvoiceForCharge congela la lista del presupuesto',
   },
+  {
+    // La factura tras cobrar no le pasa el cobro al ayudante (c.22423).
+    fichero: 'src/lib/invoicing.ts',
+    de: 'formasDePagoACongelar({ cobro: ch,',
+    a: 'formasDePagoACongelar({ cobro: null,',
+    cae: 'SCRUM-1787s ⑨ ensureInvoiceForCharge congela la lista del COBRO',
+  },
+  {
+    // El ayudante ignora la lista del cobro.
+    fichero: 'src/modules/invoicing/domain/formasDePagoACongelar.ts',
+    de: 'if (Array.isArray(delCobro)) {',
+    a: 'if (false) {',
+    cae: 'SCRUM-1787s ⑨ ensureInvoiceForCharge congela la lista del COBRO',
+  },
 ];
 
 // ── Comercios fabricados (la forma de 1787u: los flags SIEMPRE explícitos por comercio) ──────────
@@ -196,11 +210,12 @@ function prepararComercio(campos) {
   reiniciar();
   Object.assign(banco.tablas.merchant.find((m) => m.id === M_PT), campos);
 }
-function nuevoCobro({ presupuesto } = {}) {
+function nuevoCobro({ presupuesto, delCobro = null } = {}) {
   const id = nuevoId('charge');
   banco.tablas.charge.push({
     id, merchantId: M_PT, customerId: CLIENTE, status: 'paid', amount: '121.00', currency: 'EUR',
     concept: 'Arreglo de una fuga', method: 'card', reference: null, intentId: null, receiptToken: null, paidAt: null,
+    payMethods: delCobro,
   });
   if (presupuesto !== undefined) {
     banco.tablas.quote.push({ id: nuevoId('quote'), merchantId: M_PT, chargeId: id, payMethods: presupuesto, lines: [], discountGlobalAmount: null });
@@ -210,9 +225,9 @@ function nuevoCobro({ presupuesto } = {}) {
 const ACTIVAS_PT = { iban: 'PT50000201231234567890154', bizumPhone: '+34600111222', connectStatus: 'none', stripeAccountId: null,
   flags: { PAYMENTS_CONNECT_ENABLED: false, BIZUM_MANUAL_ENABLED: true, BIZUM_AUTO_ENABLED: false } };
 
-async function facturaTrasCobrar(campos, presupuesto) {
+async function facturaTrasCobrar(campos, presupuesto, delCobro = null) {
   prepararComercio(campos);
-  const cobro = nuevoCobro({ presupuesto });
+  const cobro = nuevoCobro({ presupuesto, delCobro });
   await ensureInvoiceForCharge(cobro, prisma);
   await asentar();
   const fs_ = banco.tablas.invoice.filter((f) => f.chargeId === cobro);
@@ -250,4 +265,15 @@ test('SCRUM-1787s ⑧ el PDF de una factura con las formas por defecto lleva «F
   } finally {
     fs.rmSync(outPath, { force: true });
   }
+});
+
+// ⑨ SCRUM-1787s-bis · decisión del orquestador (SCRUM-1787 c.22423, lectura de c.22404): en la factura
+// tras cobrar manda la lista del COBRO si el profesional la limitó; si no, la del presupuesto; si no,
+// las activas; si ninguna, null.
+test('SCRUM-1787s ⑨ ensureInvoiceForCharge congela la lista del COBRO antes que la del presupuesto y que las activas', async () => {
+  // El comercio tiene IBAN y Bizum activos: sin la regla, la factura congelaría las dos.
+  assert.deepEqual((await facturaTrasCobrar(ACTIVAS_PT, undefined, ['bizum'])).payMethods, ['bizum']);
+  assert.deepEqual((await facturaTrasCobrar(ACTIVAS_PT, ['transfer'], ['bizum'])).payMethods, ['bizum']);
+  // Control: con el cobro en «todas» (null), sigue mandando el presupuesto.
+  assert.deepEqual((await facturaTrasCobrar(ACTIVAS_PT, ['transfer'], null)).payMethods, ['transfer']);
 });
