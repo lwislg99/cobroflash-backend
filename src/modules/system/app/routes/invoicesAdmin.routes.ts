@@ -31,7 +31,7 @@ import { applyVeriFactu, applyVeriFactuAnulacion } from '../../../invoicing/doma
 import { allocateInvoiceNumber, isReceiptNumber, appendStageLabel } from '../../../invoicing/domain/invoiceNumber.service';
 import { isDemoMerchant, DEMO_WATERMARK, motivoSiiSinEmision } from '../../../invoicing/domain/emission.service';
 import { getDeliveryStatus } from '../../../messaging/domain/whatsappLog.service';
-import { envioDelDocumento } from '../../../billing/domain/envioDelDocumento'; // SCRUM-885b
+import { envioDelDocumento, correoDelDocumentoSalio } from '../../../billing/domain/envioDelDocumento'; // SCRUM-885b · 1787o
 // SCRUM-499 · la MISMA lectura del método que Cobros e Informes, y el rótulo del «no consta» que
 // ya vive una sola vez (SCRUM-474, aprobado por el asesor el 10-ago-2026).
 import { metodoDeUnCobro, ROTULO_SIN_METODO } from '../../../billing/domain/metodoDeCobro';
@@ -294,7 +294,9 @@ router.get('/:id', async (req, res) => {
     // SCRUM-885b · ¿le llegó al cliente el documento de ESTE cobro? Los mismos hechos que la fila del
     // trabajo, para que la ficha deje el aviso FIJO: el toast de «Confirmar Bizum» dura 3 s.
     const envioDocumento = await envioDelDocumentoDeLaFactura(req.merchantId!, invoice.chargeId);
-    const cuerpo = { ...invoice, demo: isDemoMerchant({ id: req.merchantId }), waDelivery, payToken, asignados, envioDocumento };
+    // SCRUM-1787o · ¿salió ESTA factura por correo? Para que «Enviada» no sepa solo del WhatsApp.
+    const correoEnviado = await correoDeLaFacturaSalio(req.merchantId!, id);
+    const cuerpo = { ...invoice, demo: isDemoMerchant({ id: req.merchantId }), waDelivery, payToken, asignados, envioDocumento, correoEnviado };
     // `sinCosteEnDocumento` tapa TAMBIÉN `quote.lines`: este detalle arrastra el presupuesto de
     // origen entero (`include: { quote: true }`), y por ahí salía el mismo coste.
     res.json(veEconomiaDelNegocio(req.userRole) ? cuerpo : sinCosteEnDocumento(cuerpo as unknown as Record<string, unknown>));
@@ -320,6 +322,19 @@ async function envioDelDocumentoDeLaFactura(merchantId: number, chargeId: number
     select: { status: true, createdAt: true },
   });
   return envioDelDocumento({ clienteEmail: cobro.customer?.email, filasWhatsapp });
+}
+
+/**
+ * SCRUM-1787o · las filas que `sendInvoiceEmail` deja en `email_messages` por cada intento de
+ * mandar ESTA factura (automático al cobrar o el botón manual). Sólo lectura, filtrado por
+ * `merchantId` (regla 2). La regla de qué cuenta como «salió» vive en `correoDelDocumentoSalio`.
+ */
+async function correoDeLaFacturaSalio(merchantId: number, invoiceId: number): Promise<boolean> {
+  const filas = await prisma.emailMessage.findMany({
+    where: { merchantId, relatedType: 'invoice', relatedId: invoiceId }, // regla 2
+    select: { status: true },
+  });
+  return correoDelDocumentoSalio(filas);
 }
 
 /**
