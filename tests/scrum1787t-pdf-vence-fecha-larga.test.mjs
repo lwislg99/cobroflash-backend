@@ -33,6 +33,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: 'doc.text(`Vence el ${dateStr(params.dueDate)}`',
     cae: 'SCRUM-1787t ① «Vence el» sale con la fecha larga y la «Fecha:» sigue en dd/mm/aaaa',
   },
+  {
+    // SCRUM-1787x: el día vuelve a llevar cero a la izquierda («05 de diciembre»).
+    fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
+    de: "zonaDelMerchant({ timezone: params.zona }), day: 'numeric', month: 'long'",
+    a: "zonaDelMerchant({ timezone: params.zona }), day: '2-digit', month: 'long'",
+    cae: 'SCRUM-1787x ⑥ un día de una cifra sale sin cero a la izquierda',
+  },
 ];
 
 const { generateInvoicePdf } = await import('../dist/modules/invoicing/infra/pdf/pdf.service.js');
@@ -100,6 +107,15 @@ test('SCRUM-1787t ④ control: sin vencimiento no hay línea «Vence el»', asyn
   const lineas = await lineasDeFactura({});
   assert.equal(laLinea(lineas, 'Fecha:').texto.trim(), 'Fecha: 05/11/2026'); // positivo: el lector ve la cabecera
   assert.equal(lineas.filter((l) => l.texto.includes('Vence el')).length, 0, '🔴 una factura sin vencimiento imprime «Vence el»');
+});
+
+// SCRUM-1787x (decisión del fundador, SCRUM-1787 c.22431: «4-Sí ok quita el 0»; dentro del GO c.22408):
+// el día va SIN cero a la izquierda. ① (23), ② (24) y ③ (30) llevan días de dos cifras y no cambian; este
+// caso es el único que lo distingue: con `day: '2-digit'` sale «05 de diciembre».
+test('SCRUM-1787x ⑥ un día de una cifra sale sin cero a la izquierda', async () => {
+  const lineas = await lineasDeFactura({ dueDate: new Date('2026-12-05T12:00:00.000Z') });
+  assert.equal(laLinea(lineas, 'Fecha:').texto.trim(), 'Fecha: 05/11/2026', '🔴 la «Fecha:» de expedición ha cambiado de formato');
+  assert.equal(laLinea(lineas, 'Vence el').texto.trim(), 'Vence el 5 de diciembre de 2026', '🔴 el día del vencimiento sale con cero a la izquierda');
 });
 
 test('SCRUM-1787t ⑤ las opciones son las de la página de pago (SCRUM-1787q)', () => {
