@@ -231,6 +231,10 @@ cupo en contexto. La suite entera no se corrió en local: la corre el obligatori
 | recibo `Este cobro se ha cancelado.` | mismo test (③ recibo; mutación lo tumba) |
 | auditoría | NO HECHO → 1532c, tras la clave de S1 (caso «FALTA DECLARADA») |
 
+**Trinquete SCRUM-1185:** la ruta nueva no la consume ninguna pantalla todavía (el botón es de J1/S2), así que
+queda declarada en `scripts/_sin-consumir-declarados.json` (carril J2, SCRUM-1532); se mueve a `retiradas`
+cuando entre el botón.
+
 **Lo que me salió mal:** declaré la mutación del `where` con un `cae` que no era subcadena del nombre
 del test y `aplicarUna` la dio CIEGA; corregido y repetido (las dos tumban). Y crucé el tope de
 contexto del encargo (190k) sin dejar la vista traspasada a tiempo: me medí a 188.918.
