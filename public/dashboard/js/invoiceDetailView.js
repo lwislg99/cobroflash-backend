@@ -231,8 +231,8 @@ async function fetchInvoiceDetail(id) {
     // La misma idea que `buildStatusTimeline` del presupuesto, pero con CLASES (bloque J1 de
     // styles.css) y no con `style.cssText`. Textos firmados en SCRUM-1787 c.22303 ③; el final
     // ANULADA / RECTIFICATIVA reutiliza lo que esta ficha y `invoiceStatusMeta` ya pintan.
-    // ⚠️ «Enviada» solo sabe del WhatsApp: el envío por CORREO no llega a esta vista (no hay campo),
-    // así que una factura mandada solo por correo sale con «Enviada» como paso actual.
+    // SCRUM-1787o · «Enviada» si salió por WhatsApp O por correo: `correoEnviado` lo pone el GET de
+    // la ficha a partir de las filas de `email_messages` de esta factura.
     {
       const fmtPaso = (v) => {
         if (!v) return '';
@@ -241,7 +241,8 @@ async function fetchInvoiceDetail(id) {
       const cobrada = st === 'paid';
       const waSt = String((invoice.waDelivery && invoice.waDelivery.status) || '').toLowerCase();
       const enviada = cobrada || ['sent', 'delivered', 'read'].includes(waSt)
-        || (invoice.envioDocumento && invoice.envioDocumento.whatsapp === 'enviado');
+        || (invoice.envioDocumento && invoice.envioDocumento.whatsapp === 'enviado')
+        || invoice.correoEnviado === true;
       const pasos = [
         { label: 'Emitida', estado: 'hecho', fecha: fmtPaso(invoice.createdAt) },
         { label: 'Enviada', estado: enviada ? 'hecho' : 'actual', fecha: '' },
