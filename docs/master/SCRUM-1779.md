@@ -278,8 +278,8 @@ Desde el panel (Nueva factura → «Cliente QA sin avisos» → una línea de 10
 | Control: F260004 (de esta mañana, 1787r) | sigue SIN formas de pago (regla 29) | `payMethods = null`; ficha sin la fila; PDF de 16 líneas sin «Formas de pago» |
 | Página pública de pago | — | NO vista: exige Enviar (encargo) |
 
-**Evidencias** (`docs/master/evidencias/SCRUM-1779/1779i/`), miradas una a una: `01-ficha-F260005-1280.png` y `02-ficha-F260005-390.png` (COBRO con «Vence el» y «Formas de pago»), `03-F260005.pdf` y su texto `03-F260005-texto.txt`, `04-control-F260004-1280.png` (COBRO solo con «Vence el») y `05-control-F260004-pdf-texto.txt`.
+**Evidencias** (`docs/master/evidencias/SCRUM-1779/1779i/`), miradas una a una: `01-ficha-F260005-1280.png` y `02-ficha-F260005-390.png` (COBRO con «Vence el» y «Formas de pago»), el texto del PDF de F260005 `03-F260005-texto.txt` (el `.pdf` no se versiona: su cuerpo comprimido trae `\r` sin ningún NUL y `tests/scrum480-fin-de-linea.test.mjs` lo cuenta como blob de texto con CR; se arregla el fichero, no el guard), `04-control-F260004-1280.png` (COBRO solo con «Vence el») y `05-control-F260004-pdf-texto.txt`.
 
 **Visto de paso, no es de este encargo:** la barra de estado de las dos facturas marca «Enviada» como paso actual aunque ninguna se ha enviado. No lo he investigado ni tocado; se lo paso al orquestador.
 
-**NO medido:** yaqu.app (el login de test solo existe en staging); la página de pago; una imagen del PDF renderizado (va el fichero y su texto); los otros caminos de 1787s (factura tras cobrar, presupuesto con lista, los cinco de S1); la suite de tests: cambio solo de docs, corrí los guards de docs y `guards:entrada`.
+**NO medido:** yaqu.app (el login de test solo existe en staging); la página de pago; una imagen del PDF renderizado (va solo su texto; el `.pdf` se retiró del PR por el guard SCRUM-480); los otros caminos de 1787s (factura tras cobrar, presupuesto con lista, los cinco de S1); la suite de tests: cambio solo de docs, corrí los guards de docs y `guards:entrada`.
