@@ -4,6 +4,8 @@
 
 A9: comprobación → `docs/master/evidencias/SCRUM-1790/mutar-1790.mjs`
 
+**Skill UI:** cargada (`yaqu-premium-ui`), antes de la primera edición; `DESIGN.md` no se leyó: el cambio no usa tokens, clases ni estilos (sólo un desplazamiento sin animación).
+
 Carril J3 (`public/dashboard/js/settingsView.js`, contenedor J3 según `node scripts/carriles.mjs de <ruta>`). Encargo del orquestador J (`cobroflash-backend-2d`), sesión `jv-j3cq`, relevo de `jv-j3cp` (medición en SCRUM-1790 c.22374). Ningún texto nuevo; el guard no se toca.
 
 ## La causa medida no es la que se proponía
