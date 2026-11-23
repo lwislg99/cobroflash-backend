@@ -276,6 +276,8 @@ router.get('/:token', async (req, res) => {
     pending: { icon: '⏳', title: 'Pago pendiente',  cls: 'pending' },
     failed:  { icon: '✕', title: 'Pago fallido',    cls: 'failed' },
     expired: { icon: '⏰', title: 'Enlace caducado', cls: 'expired' },
+    // SCRUM-1532b · literal FIRMADO en SCRUM-1532 c.22430. Sin esta fila caía a «Pago pendiente».
+    cancelled: { icon: '✕', title: 'Este cobro se ha cancelado.', cls: 'expired' },
   };
   const sh = SH[ch.status] || SH.pending;
   const business = esc((ch as any).merchant?.legalName || (ch as any).merchant?.name || '');

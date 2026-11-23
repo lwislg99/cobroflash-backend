@@ -34,6 +34,9 @@ router.get('/bank/:token', async (req, res) => {
   });
   if (!charge) return res.status(404).send(documentNotFoundHtml());
   if (comercioSuprimido(charge.merchant)) return res.status(404).send(documentNotFoundHtml()); // SCRUM-1573b
+  // SCRUM-1532b: un cobro cancelado no enseña el IBAN; el recibo dice por qué. (Los demás estados,
+  // como hasta ahora: esta página no mira el estado — SCRUM-1532 §1.)
+  if (charge.status === 'cancelled') return res.redirect(303, `/recibo/${token}`);
   const id = charge.id;
 
   const merchant = charge.merchant as any;

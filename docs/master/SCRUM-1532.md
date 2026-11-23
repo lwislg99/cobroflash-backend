@@ -189,3 +189,47 @@ completa no se corrió: no hay código ni test nuevo.
 | ⑤ qué existe que se parezca | apartado 4 ⑤ |
 | un positivo y un cero derivado | «Los controles» y `docs/master/evidencias/scrum1532/puertas-salida.txt` |
 | construir la cancelación | NO HECHO → pide GO del fundador y dos decisiones suyas (apartado 4 ④) |
+
+# SCRUM-1532b · Cancelar un cobro: la ruta, el recibo y las páginas públicas
+
+**Medido contra:** `origin/main` = `4aeac0f6c1f5a63b97b009a1c1b3ebc93c973e3e` · 2026-11-23T21:04:07Z
+
+A9: comprobación → `tests/scrum1532b-cancelar-cobro.test.mjs`
+Mutaciones: catálogo → `tests/scrum1532b-cancelar-cobro.test.mjs`
+
+23-nov-2026 · sesión `jv-j2ea` (J2). GO, dos decisiones y tres textos firmados: SCRUM-1532 `c.22430`;
+auditoría y vista: `c.22435`. [Escrito por la sesión, no por Javier.]
+
+**Qué entra.** `POST /admin/charges/:id/cancel` (`chargesAdmin.routes.ts`): sólo administrador, sólo
+desde `pending`, idempotente (`cancelled` → 200 `yaEstaba`), 409 `charge_not_pending` desde cualquier
+otro estado, `pending` y el comercio DENTRO del `where` (P2025 → el mismo 409), no toca la factura ni
+crea `Event` (el recibo pinta los tipos de evento: sería texto sin firma). El recibo de un cobro
+`cancelled` dice `Este cobro se ha cancelado.` y no ofrece pagar (antes caía a «Pago pendiente»).
+`/pay/invoice`, `/pay/bizum`, `/pay/bank` y `/pay/mp` mandan un cobro cancelado al recibo.
+
+**Decisiones de c.22430, medidas:** ① un `payment.confirmed` sobre un cobro `cancelled` lo deja
+pagado, como hoy (`psp.routes.ts` no mira el estado anterior); no hace falta aviso nuevo para que
+ocurra. ② cancelar no escribe la factura: se queda pendiente. ⚠️ **Pero «el profesional puede crear
+otro cobro» NO se cumple hoy:** el reenvío reutiliza `invoice.chargeId` sin mirar su estado
+(`invoiceWhatsApp.service.ts:56`, carril J1), así que mandaría el enlace cancelado. Cambiar la
+factura para soltar el cobro sería editar una factura emitida (regla 29): no lo hago.
+
+**Lo que NO entra:** la fila de auditoría (clave `cobro_cancelado` aprobada en c.22435, la añade S1 en
+`audit.service.ts`; el test la declara como falta y cae cuando exista → 1532c); el botón y su
+confirmación (`invoiceDetailView.js` es de J1, `jobDetailView.js` de S2); el recordatorio de 7/14
+días y el portal, que miran la factura (§1). Sin capturas: lo único visual de J2 es el recibo y no me
+cupo en contexto. La suite entera no se corrió en local: la corre el obligatorio.
+
+| aceptación (c.22430) | dónde se ve |
+| --- | --- |
+| GO: única transición `pending → cancelled`; `failed`/`expired` no | `tests/scrum1532b-cancelar-cobro.test.mjs` (① desde `pending`; 409 desde `paid`, `failed`, `expired`) |
+| idempotente, estado en el `where` | mismo test (idempotente; P2025; mutación del `where` lo tumba) |
+| decisión 1: dinero en un cobro cancelado → pagado | mismo test (④ decisión 1) |
+| decisión 2: la factura se queda pendiente | mismo test (④ decisión 2) · «crear otro cobro»: NO HECHO → J1 (`invoiceWhatsApp.service.ts:56`) |
+| botón `Cancelar cobro` y su confirmación | NO HECHO → J1 (`invoiceDetailView.js`) y S2 (`jobDetailView.js`) |
+| recibo `Este cobro se ha cancelado.` | mismo test (③ recibo; mutación lo tumba) |
+| auditoría | NO HECHO → 1532c, tras la clave de S1 (caso «FALTA DECLARADA») |
+
+**Lo que me salió mal:** declaré la mutación del `where` con un `cae` que no era subcadena del nombre
+del test y `aplicarUna` la dio CIEGA; corregido y repetido (las dos tumban). Y crucé el tope de
+contexto del encargo (190k) sin dejar la vista traspasada a tiempo: me medí a 188.918.
