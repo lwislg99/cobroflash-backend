@@ -481,7 +481,7 @@ async function fetchInvoices(options = {}) {
     tableScroll.className = 'table-scroll';
     panelEmitidas.appendChild(tableScroll);
     const table = document.createElement('table');
-    table.className = 'table table--cards-mobile'; // feedback fundador 6-jul: cards en móvil
+    table.className = 'table table--cards-mobile j1-fac-lista'; // feedback fundador 6-jul: cards en móvil · j1-fac-lista: SCRUM-1787n
     tableScroll.appendChild(table);
 
     // Checkbox "seleccionar todo" en cabecera
@@ -491,11 +491,12 @@ async function fetchInvoices(options = {}) {
         <th class="col-hide-mobile j1-fac-col-check"><input type="checkbox" id="inv-check-all" title="Seleccionar todas"/></th>
         <th>${window.rotulosDelDocumento.columnaNumero()}</th>
         <th>Cliente</th>
-        <th class="j1-fac-col-total">Total</th>
+        <th>Fecha</th>
+        <th class="j1-fac-col-total">Importe</th>
         <th>Estado</th>
-        <th class="col-hide-mobile">Fecha</th>
+        <th class="col-hide-mobile">Método</th>
         <th class="col-hide-mobile">${FC.TEXTOS_ETIQUETAS.columna}</th>
-        <th></th>
+        <th>Acciones</th>
       </tr>
     `;
     table.appendChild(thead);
@@ -753,7 +754,6 @@ async function fetchInvoices(options = {}) {
           tdTotal.className = 'amount cell-amount';
           tdTotal.style.textAlign = 'right';
           tdTotal.textContent = fmtInvMoney(inv.total, inv.currency);
-          tr.appendChild(tdTotal);
 
           const tdStatus = document.createElement('td');
           tdStatus.className = 'cell-status';
@@ -764,13 +764,31 @@ async function fetchInvoices(options = {}) {
           span.className = `status-pill ${metaSt.pillClass}`;
           span.textContent = metaSt.label;
           tdStatus.appendChild(span);
+
+          // ── SCRUM-1787n · LAS COLUMNAS Y SU ORDEN, LOS DE LA LISTA DE PRESUPUESTOS ─────────────
+          // Orden del fundador (SCRUM-1787): «igual, o solamente lo estrictamente necesario
+          // diferente, que presupuestos». La referencia es `quotesListView.js` (S2): Nº · Cliente ·
+          // Fecha · Importe · Estado · Método · Etiquetas · Acciones. Lo que se queda distinto, con
+          // su porqué, está en la cabecera de `tests/scrum1787n-lista-de-facturas-como-presupuestos.test.mjs`
+          // (casilla del lote, rótulo del número de serie, peso de «Ver detalle», estados).
+          // La fecha, con la clase y el formato de la de presupuestos: en móvil entra en la tarjeta.
+          const tdDate = document.createElement('td');
+          tdDate.className = 'cell-date';
+          tdDate.style.color = 'var(--muted)';
+          tdDate.textContent = inv.createdAt
+            ? new Date(inv.createdAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
+            : '';
+          tr.appendChild(tdDate);
+          tr.appendChild(tdTotal);
           tr.appendChild(tdStatus);
 
-          const tdDate = document.createElement('td');
-          tdDate.className = 'col-hide-mobile';
-          tdDate.style.color = 'var(--muted)';
-          tdDate.textContent = inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('es-ES') : '—';
-          tr.appendChild(tdDate);
+          // «Método»: cómo se cobró, con la etiqueta de la casa (`paidViaEtiquetas.js`, la misma de
+          // la ficha, `invoiceDetailView.js`). Sin cobro, el «—» de presupuestos sin método.
+          const tdMetodo = document.createElement('td');
+          tdMetodo.className = 'col-hide-mobile';
+          tdMetodo.style.color = 'var(--muted)';
+          tdMetodo.textContent = inv.paidVia ? window.etiquetaMetodoCobro(inv.paidVia) : '—';
+          tr.appendChild(tdMetodo);
 
           // SCRUM-595 · las etiquetas, con `.badge .badge-slate` del inventario (AB3): cero
           // tokens nuevos. `textContent` por etiqueta, nunca `innerHTML`: la escribe el
