@@ -612,6 +612,8 @@ model Quote {
   // 🔴 LA FACTURA NO LOS TIENE, y no es un olvido: `ensureInvoicePdf` REGENERA el PDF con el
   // código de hoy (el fs de Railway es efímero), así que un bloque nuevo cambiaría el aspecto de
   // facturas YA EMITIDAS — regla 29. Es SCRUM-665.
+  // Excepción posterior: el PIE sí pasa (`Invoice.docFooterText`, SCRUM-1787l, c.22345 ②),
+  // nullable para que las emitidas antes sigan saliendo igual. La cabecera NO pasa.
   docHeaderText String? @map("doc_header_text") @db.Text
   docFooterText String? @map("doc_footer_text") @db.Text
 
@@ -882,6 +884,11 @@ model Invoice {
   paidVia       String?   @map("paid_via")
   clientComment String?   @map("client_comment")
   stageLabel    String?   @map("stage_label") // SCRUM-27: etiqueta del tramo, congelada al crear la factura
+  // SCRUM-1787l (c.22345 ②⑤, ALTER aplicado c.22346): las Observaciones (el pie) del presupuesto,
+  // congeladas al emitir. Mismo nombre y tipo que `Quote.docFooterText`. NULL en las emitidas antes
+  // (regla 29: no se rellenan) y el PDF sólo pinta el bloque con texto, así que una regenerada por
+  // `ensureInvoicePdf` sale igual que antes (SCRUM-665). La R1 NO lo hereda (c.22345 ④).
+  docFooterText String?   @map("doc_footer_text") @db.Text
 
   // Líneas de detalle (copiadas del Quote o del Charge al crear la factura)
   lines Json?

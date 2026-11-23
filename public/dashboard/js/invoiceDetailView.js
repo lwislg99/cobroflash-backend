@@ -426,6 +426,30 @@ async function fetchInvoiceDetail(id) {
       page.appendChild(concSec);
     }
 
+    // SCRUM-1787l (c.22345 ②) · las Observaciones congeladas al emitir, debajo de los conceptos como
+    // en el papel, con el MISMO rótulo y la misma forma que la ficha del presupuesto
+    // (`quotesDetailView.js`, `seccionDeTexto`): rótulo y pintado salen de `textoDelDocumento.js`,
+    // ningún texto nuevo. Sin texto, o sin la pieza, no se pinta nada.
+    const obsFac = invoice.docFooterText;
+    const secObsFac = (obsFac != null && String(obsFac).trim() !== ''
+      && window.TD_TITULO_OBSERVACIONES && typeof window.textoDelDocumentoPintado === 'function')
+      ? (() => {
+        const sec = document.createElement('div');
+        sec.className = 'detail-section';
+        sec.dataset.seccion = 'observaciones';
+        const h = document.createElement('h3');
+        h.className = 'detail-section-title';
+        h.textContent = window.TD_TITULO_OBSERVACIONES;
+        sec.appendChild(h);
+        const caja = document.createElement('div');
+        caja.className = 'quote-doc-texto';
+        caja.appendChild(window.textoDelDocumentoPintado(obsFac));
+        sec.appendChild(caja);
+        return sec;
+      })()
+      : null;
+    if (secObsFac) page.appendChild(secObsFac);
+
     // --- Sección: acciones (SCRUM-283 · la LEY del patrón: 1 primaria + ≤2 secundarias + ⋮) ---
     // Se PINTA desde el registro declarativo (invoiceActionsRegistry.js), la MISMA fuente que el
     // guard verifica: nadie escribe la tabla dos veces. El estado decide el destino de cada acción;
