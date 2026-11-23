@@ -818,6 +818,11 @@ Decisión del fundador: SCRUM-1787 c.22338 ③ («3-GO», regla 40: el PDF de fa
 **Merge con la rama de 1787i ya al día (`cf9f6e1c9`, con main `d5bec9526` y 1787l dentro)**
 
 Cuatro conflictos, los cuatro con 1787l (#3308, Observaciones) y resueltos con los dos lados: el tipo de `generateInvoicePdf` lleva `docFooterText` y, detrás, `dueDate` y `payMethods`; los dos llamadores en conflicto pasan los tres campos; y el catálogo de cambios autorizados lleva la entrada de 1787l y, detrás, la de 1787m. Las huellas de la entrada de 1787m se volvieron a sacar con `huellas.mjs` después del merge: su `de` es ahora el `a` de 1787l. Las cifras de «Medido» de arriba (147 casos, la huella de 15 líneas) son de antes del merge, contra `90e8e377`; lo que se repitió después está en el comentario de entrega de Jira. El párrafo «Segundo merge con main» de 1787i, que git dejó detrás de este tramo, se devolvió a su sitio sin cambiarle una letra.
+## Rojo de SCRUM-700 tras el merge de main `141baada` (relevo jv-j1hu, 2026-11-23T05:48:03Z, sobre `origin/main` = `141baada7559c8ab18bd9a572383a40d3d5b6164`)
+
+A9: comprobación → `tests/scrum700-filtros-de-comentario.test.mjs`
+
+El test ⑦ de 1787i limpiaba la ruta con un filtro propio (`.replace(/\/\/.*/, '')`) en vez del de la casa, y el censo de SCRUM-700 lo contó como el octavo filtro que ciega (run 45113237157, censo 7). Ahora usa `soloEjecutable` de `tests/_guard-texto.mjs` (`almohadillaEsComentario: false`, es TypeScript). El censo (7) no se toca (SCRUM-1787 c.22377). Verde: `scrum700` + `scrum1787i`, 16 de 16 en 2 ficheros. El fallo es del puesto: el filtro de la casa existía y el guard que lo exige también; lo cazó el guard en CI, que es su sitio.
 # SCRUM-1787n · La lista de facturas con las columnas, el orden y los rótulos de la lista de presupuestos
 
 **Medido contra:** `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740` · 2026-11-23T03:55:05Z (cabecera `Date:` de `gh api -i zen`)
