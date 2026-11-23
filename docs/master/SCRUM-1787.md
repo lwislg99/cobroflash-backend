@@ -1024,7 +1024,13 @@ Encargo del orquestador J a jv-j2dx (J2). GO del fundador: SCRUM-1787 c.22401 (�
 
 Mutación por el `aplicarUna` de la casa (`docs/master/evidencias/SCRUM-1787/formas-de-pago/mutar.mjs`): «la página vuelve a decidir en línea» (copia local del cálculo en lugar del import) tumba ③, sin colaterales; «Bizum también por encima de 1.000 €» tumba ②, y ① de colateral. El `git diff --stat` era igual antes y después.
 
+## `scrum3b` lee los dos ficheros (1787u)
+
+`tests/scrum3b-selector-bizum.test.mjs` (SCRUM-3) fija por su TEXTO el tope de 1.000 €, los tramos W4, que el automático vaya justo detrás del manual y que herede el permiso de `bizum`. Con la extracción cayó en 3 casos. La regla se movió de fichero; la población del guard la sigue (GO SCRUM-1787 c.22401): ahora lee `payInvoice.routes.ts` + `formasDePagoActivas.ts`, y el módulo conserva LITERALES las formas que exige (`amountNum`, `mm.key === …`). Ninguna exigencia se quita ni se afloja (OK del orquestador J con tres condiciones). Control negativo medido: quitar del módulo cada uno de los cuatro literales tumba el guard (1 de 5 cada vez); restaurado después.
+
 ## NO medido (1787u)
+
+- Suite entera: corridos en local los tramos 1 a 10 de 15. Rojos: `scrum1289b` (2, en el tramo 3) es del entorno: EPERM al abrir `C:\Users\Javier`, por el espacio de la ruta, y no toca nada de este cambio. Los 3 de `scrum3b` (tramo 10) son los de arriba, ya arreglados. Los tramos 11 a 15 no los corrí: por orden del orquestador, los corre el check obligatorio del PR.
 
 - En yaqu.app: no visto. Lo que pinta la página no cambia; tras el despliegue se puede abrir cualquier enlace de pago y ver las mismas formas.
 - Los comercios demo (`cardChargeMode` → `demo_platform`) no están en el oro: lo decide el mismo `cardChargeMode` que antes, sin tocar.

@@ -59,7 +59,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // «Bizum también por encima de 1.000 €»: el tope del banco del pagador (W4) desaparece.
     fichero: 'src/modules/billing/app/routes/formasDePagoActivas.ts',
-    de: '!!bizumPhone && importe <= 1000;',
+    de: '!!bizumPhone && amountNum <= 1000;',
     a: '!!bizumPhone;',
     cae: 'SCRUM-1787u · ② la función devuelve el oro, caso a caso',
   },
