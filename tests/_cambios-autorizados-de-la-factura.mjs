@@ -296,6 +296,23 @@ export const CAMBIOS_AUTORIZADOS = [
       a: 'a8bd2fb9e99037e52b07fcbdf3133bfcc4adf32100d4b50b8ea4796e2e8b3857',
     },
   },
+  {
+    // SCRUM-1787w · el PDF de factura pasa al dibujo del presupuesto (una columna emisor/cliente,
+    // rótulos y cabecera de tabla del presupuesto, sin banda), con los literales firmados en
+    // c.22428. GO de regla 40 en c.22416. Huellas de `evidencias/SCRUM-1446d/huellas.mjs` sobre
+    // origin/main 97e196f930334971538b5c0ba13e0224cbe7d184 (el `de` es el `a` de 1787t).
+    firma: 'SCRUM-1787 c.22416',
+    registro: 'docs/master/SCRUM-1787.md',
+    cita: '«1-GO»',
+    cuerpo: {
+      de: '2b62a73e67001b850f2005f950480cf0a9e7a603d83e4325bd7acbb7cc9346ce',
+      a: 'fbc271a51e98bc855eb24ec99c17e54003e3557c64fa6e5aaad08146cf9e26b5',
+    },
+    ambito: {
+      de: 'a8bd2fb9e99037e52b07fcbdf3133bfcc4adf32100d4b50b8ea4796e2e8b3857',
+      a: '89d98baab58160ea821c34495471ff81fe413efe8a17842d3a38a81ba51359d0',
+    },
+  },
 ];
 
 /**
