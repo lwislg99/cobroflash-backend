@@ -1122,3 +1122,33 @@ Para igualar, la factura tendría que imprimir rótulos del presupuesto que hoy 
 - No se construyó nada: esta rama no cambia `src/`, `public/` ni `prisma/`. Ni test rojo, ni cambio, ni mutaciones: dependen de la firma.
 - No se ejercieron con datos, solo se leyeron en el fuente: «Total del apartado», cláusulas, firma, QR con SIF encendido y marca de agua.
 - yaqu.app: no visto, porque no ha cambiado nada.
+
+# SCRUM-1787x · En el PDF de la factura, «Vence el» lleva el día sin cero a la izquierda
+
+**Medido contra:** `origin/main` = `97e196f930334971538b5c0ba13e0224cbe7d184` · 2026-11-23T21:10:02Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: sin fallo que generalice — el caso ⑤ de 1787t exigía un literal fijo en dos ficheros de dos carriles, y ningún PR de un solo carril podía cambiarlo sin dejarlo en rojo; lo avisé antes de empujar y el orquestador lo partió (c.22436). Ya lo cubre la frase de A10 «Una dependencia entre dos PR escrita en el prompt de UNA sesión no existe para la otra: o es un guard, o no es nada.»
+
+Mutaciones: catálogo → `tests/scrum1787t-pdf-vence-fecha-larga.test.mjs`
+
+Encargo del orquestador J a jv-j1ig (J1). Decisión del fundador: SCRUM-1787 c.22431 (pregunta: «¿«5 de diciembre» en vez de «05 de diciembre» en el PDF y en la página de pago (1787)?»; respuesta literal: «4-Sí ok quita el 0»). Es la misma línea y el mismo literal firmado de 1787t, dentro de su GO de regla 40 (c.22408): sólo el día pasa de `2-digit` a `numeric`. La página de pago (`payInvoice.routes.ts`, J2) la cambia el tramo 1787y; aquí no se toca. Ningún texto nuevo.
+
+## Qué se construyó (1787x)
+
+- `pdf.service.ts` (J1), `generateInvoicePdf`, la línea `Vence el …`: `day: '2-digit'` → `day: 'numeric'`, y una línea de comentario que cita c.22431. Nada más cambia: la `Fecha:` sigue en dd/mm/aaaa.
+- Recongelada la huella de `scrum603b`/`scrum723` por la vía de SCRUM-1446d: entrada nueva en `tests/_cambios-autorizados-de-la-factura.mjs` con firma `SCRUM-1787 c.22431` y cita `Respuesta literal: «4-Sí ok quita el 0»`, huellas de `docs/master/evidencias/SCRUM-1446d/huellas.mjs` sobre `4aeac0f6c1f5a63b97b009a1c1b3ebc93c973e3e` (cuerpo `2b62a73e…` → `3cc5a0bd…`; ámbito `a8bd2fb9…` → `7685e52d…`; el `de` es el `a` de 1787t). El merge de `97e196f9` sólo trajo documentos (1787v): `pdf.service.ts` no cambió entre las dos bases.
+- `tests/scrum1787t-…`: caso nuevo ⑥ (`dueDate` 2026-12-05 → `Vence el 5 de diciembre de 2026`) y su mutación en el catálogo («vuelve a `2-digit`»). ①, ② y ③ llevan días de dos cifras (23, 24, 30) y no cambian.
+- `tests/scrum1787t-…` ⑤ **partido por decisión del orquestador, SCRUM-1787 c.22436**: comparaba en los dos ficheros el literal fijo `day: '2-digit', month: 'long', year: 'numeric' })`, y el cambio firmado cruza dos carriles que no caben en un PR. Sigue exigiendo a las DOS superficies `es-ES`, `timeZone: zonaDelMerchant(`, `month: 'long'` y `year: 'numeric'`, y que el día vaya delante del mes; el valor del día se comprueba por superficie: el del PDF en ⑥, el de la página en el test de 1787y (J2). No es relajar un guard: es partir una exigencia que un solo carril no puede cumplir (c.22436). Cuando 1787y esté en main, el tramo 1787z (J1) vuelve a fijar `day: 'numeric'` en las dos.
+- `tests/scrum1787m-…`: ① y ② esperaban `Vence el 05 de diciembre de 2026` / `06 de diciembre`; ahora `5` / `6`. Siguen comprobando el texto exacto, la posición y la zona.
+
+## Cómo se ve
+
+- Texto extraído del PDF real (`lineasDePdf`), `dueDate` 2026-12-05: antes `Vence el 05 de diciembre de 2026` (rojo primero de ⑥, con `src/` sin tocar: 5 de 6 en verde, `actual: 'Vence el 05 de diciembre de 2026'`); después `Vence el 5 de diciembre de 2026` (6 de 6).
+- Mutaciones por `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, con la pasada limpia delante: «vuelve a `dateStr`» tumba ① (+3 colaterales: ②, ③, ⑥); «vuelve a `2-digit`» tumba ⑥ y sólo ⑥ (①–⑤ siguen en verde: ⑤ ya no mira el valor del día, c.22436). Las dos VIVAS; `git status` sin cambios tras las dos.
+- Dirigida: 1787t, 1446d, 1787m, 1788a, 603, 603b, 723, 523d, 810, 810b, 1294, 267, 273, 525d y 854 (cifras en la entrega de Jira).
+
+## NO hecho / NO visto
+
+- La suite entera NO se corrió en local (lo pide así el encargo): la corre el check obligatorio del PR.
+- yaqu.app: no visto. Se ve tras el merge y el despliegue, en una factura con vencimiento de día menor que 10.
+- La página de pago sigue con «05 de diciembre» hasta que entre 1787y (J2); mientras, las dos superficies divergen en el día, y sólo en el día. Es lo que decidió c.22436, con 1787x primero.
