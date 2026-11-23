@@ -55,14 +55,16 @@ async function lineasDeFactura(sufijo, merchant) {
 
 /** La `y` de la cabecera de la tabla. Exactamente una línea la lleva: si no, no sé dónde está la tabla. */
 function yDeLaCabecera(lineas) {
-  const cab = lineas.filter((l) => l.texto.includes('CONCEPTO') && l.texto.includes('PRECIO UNIT'));
+  // SCRUM-1787w · literal FIRMADO en SCRUM-1787 c.22428 (GO c.22416): cabecera «Concepto · Cant. · Precio · IVA% · IMPORTE».
+  const cab = lineas.filter((l) => /^(IMPORTE|TOTAL)IVA%PrecioCant\.$/.test(l.texto));
   assert.equal(cab.length, 1, `🔴 CIEGO: esperaba 1 cabecera de tabla y hay ${cab.length}`);
   return cab[0].y;
 }
 
 /** Las líneas que imprime el emisor, buscadas por su CONTENIDO. Cada dato tiene que aparecer. */
 function lineasDelEmisor(lineas, merchant) {
-  const datos = [merchant.legalName, `NIF/CIF: ${merchant.taxId}`, merchant.phone, merchant.email].filter(Boolean);
+  // SCRUM-1787w · literal FIRMADO en SCRUM-1787 c.22428 (GO c.22416): «NIF: » sustituye a «NIF/CIF: » en el emisor.
+  const datos = [merchant.legalName, `NIF: ${merchant.taxId}`, merchant.phone, merchant.email].filter(Boolean);
   const out = [];
   for (const d of datos) {
     const l = lineas.filter((x) => x.texto.includes(d));
@@ -107,11 +109,13 @@ test('1788a ② · control: con el CLIENTE como bloque más alto, el emisor no m
 });
 
 // Mutación que tiene que tumbar ①: la tabla vuelve a colocarse sólo por debajo del CLIENTE.
+// SCRUM-1787w · desde la columna única (c.22426 fila 5, GO c.22416) no hay `finEmisorY`: el defecto
+// vuelve si el cliente se pinta otra vez arriba, a la altura de la cabecera, en vez de en flujo.
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
-    de: '  doc.y = Math.max(doc.y, finEmisorY, cy + 16);\n',
-    a: '  doc.y = Math.max(doc.y, cy + 16);\n',
+    de: '  doc.text(`Cliente: ${nombreCliente}`);\n',
+    a: '  doc.text(`Cliente: ${nombreCliente}`, M + 300, headerY);\n',
     cae: '1788a ① · un emisor de 6 líneas termina POR ENCIMA de la cabecera de la tabla',
   },
 ];

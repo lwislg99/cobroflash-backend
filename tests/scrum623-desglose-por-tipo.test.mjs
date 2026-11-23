@@ -52,6 +52,7 @@ async function textoDeFactura(sufijo, lines, total, taxName) {
 }
 
 /** El bloque de totales, recortado igual que en SCRUM-604, para comparar ENTERO con `===`. */
+// SCRUM-1787w · literal FIRMADO en SCRUM-1787 c.22428 (GO c.22416): «Total factura:» sustituye a «TOTAL:» en los bloques de abajo.
 function bloqueDeTotales(texto) {
   const ini = texto.indexOf('Base imponible');
   if (ini === -1) return '(NO HAY BLOQUE DE TOTALES)';
@@ -101,7 +102,7 @@ test('SCRUM-623 · 🔴 CONTROL NEGATIVO: con UN SOLO tipo el papel no ha cambia
   // La cadena ENTERA, con `===` y fijada a lo que imprimía ANTES de este ticket. Si aparece
   // aquí una fila de desglose o el marcador, se ha movido algo que ya estaba bien: con un solo
   // tipo el papel YA era reconstruible (60,00 × 21 % = 12,60) y no había nada que arreglar.
-  assert.equal(bloque, 'Base imponible:60,00 EURIVA 21%:12,60 EURTOTAL:72,60 EUR',
+  assert.equal(bloque, 'Base imponible:60,00 EURIVA 21%:12,60 EURTotal factura:72,60 EUR',
     '🔴 la factura de UN SOLO tipo ya no se imprime como antes.');
   assert.equal(vecesEnPdf(bloque, MARCADOR), 0,
     '🔴 el marcador de microcopy sale en una factura que no lo necesita.');
@@ -122,7 +123,7 @@ test('SCRUM-623 · con un tipo al 0 %, su base YA SE IMPRIME', async () => {
   // era de REPRESENTACIÓN. Si alguna de estas tres se mueve, se ha tocado el cálculo.
   assert.equal(vecesEnPdf(bloque, 'Base imponible:105,00 EUR'), 1);
   assert.equal(vecesEnPdf(bloque, 'IVA 21%:12,60 EUR'), 1);
-  assert.equal(vecesEnPdf(bloque, 'TOTAL:117,60 EUR'), 1);
+  assert.equal(vecesEnPdf(bloque, 'Total factura:117,60 EUR'), 1);
 });
 
 test('SCRUM-623 · 🔴 LA PROPIEDAD: el papel se puede CUADRAR sin abrir el sistema', async () => {
@@ -227,7 +228,7 @@ test('SCRUM-623 · ENMIENDA · con el impuesto puesto desde fuera, «IVA» DESAP
   const bloque = bloqueDeTotales(t);
   assert.equal(bloque,
     'Base imponible:105,00 EURBase imponible por tipo7%60,00 EURIGIC 7%:4,20 EUR'
-    + '0%45,00 EURIGIC 0%:0,00 EURTOTAL:109,20 EUR',
+    + '0%45,00 EURIGIC 0%:0,00 EURTotal factura:109,20 EUR',
     '🔴 el bloque de totales con un impuesto que no es el IVA.');
 });
 
