@@ -17,6 +17,7 @@ import { envioDelDocumento } from '../../domain/envioDelDocumento'; // SCRUM-885
 import { tieneNumeroDeContacto } from '../../../../core/contacto/canalDeWhatsApp';
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-1107 (D2: admin-only)
 import { PAID_VIA } from '../../domain/paidVia'; // SCRUM-1107
+import { esFilaQueNoCasa } from '../../domain/estadoDelCobro'; // SCRUM-1532b
 import {
   calcularSplitRetencion, tieneRetencionDeclarada, retencionPendiente,
   datosParaDeclararRetencion, datosParaMarcarCobrada,
@@ -53,6 +54,51 @@ const ESPERA_WHATSAPP_MS = 3_000;
 const PASO_ESPERA_MS = 250;
 
 const router = Router();
+
+/**
+ * POST /admin/charges/:id/cancel — SCRUM-1532b · CANCELAR UN COBRO.
+ *
+ * La única transición del máster: `pending → cancelled` (GO del fundador, SCRUM-1532 c.22430).
+ * Cancelar desde `failed` o `expired` NO entra: sería cambio de máster. El molde es «Anular factura»
+ * (`invoicesAdmin.routes.ts`, `/:id/annul`): sólo administrador, idempotente, sólo desde `pending`, y
+ * el estado DENTRO del `where` — entre leer y escribir cabe un pago, y dentro de la misma sentencia no
+ * (las dos barreras de `estadoDelCobro.ts`). Si el pago gana la carrera, P2025 y el mismo 409.
+ *
+ * Lo que NO hace, a propósito:
+ *  · no toca la factura: se queda pendiente de cobro (decisión 2 de c.22430);
+ *  · no impide que un pago que llegue después lo deje pagado (decisión 1): el dinero es real;
+ *  · no deja fila de auditoría TODAVÍA: la clave `cobro_cancelado` está aprobada (c.22435) y la añade
+ *    S1 en `audit.service.ts`; la fila entra en 1532c. Lo declara `tests/scrum1532b-cancelar-cobro.test.mjs`.
+ *  · no crea un `Event`: el recibo público pinta los tipos de evento, y sería texto sin firma.
+ */
+router.post('/:id/cancel', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
+
+    const charge = await prisma.charge.findFirst({
+      where: { id, merchantId: req.merchantId },
+      select: { status: true },
+    });
+    if (!charge) return res.status(404).json({ error: 'not_found' });
+    if (charge.status === 'cancelled') return res.json({ ok: true, status: 'cancelled', yaEstaba: true });
+    if (charge.status !== 'pending') return res.status(409).json({ error: 'charge_not_pending' });
+
+    try {
+      await prisma.charge.update({
+        where: { id, merchantId: req.merchantId, status: 'pending' },
+        data: { status: 'cancelled' },
+      });
+    } catch (e) {
+      if (esFilaQueNoCasa(e)) return res.status(409).json({ error: 'charge_not_pending' });
+      throw e;
+    }
+    return res.json({ ok: true, status: 'cancelled' });
+  } catch (err: any) {
+    console.error('[POST /admin/charges/:id/cancel]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
 
 router.post('/:id/confirm-bizum', async (req, res) => {
   try {
