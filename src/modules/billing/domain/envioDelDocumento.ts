@@ -57,6 +57,19 @@ function estadoWhatsappDeFilas(filas: ReadonlyArray<FilaWhatsappDelDocumento>, a
   return enColaATiempo ? 'en_curso' : 'no_enviado';
 }
 
+/**
+ * SCRUM-1787o · ¿SALIÓ POR CORREO el documento? Lee las filas de `email_messages` que deja
+ * `sendInvoiceEmail` por cada intento (relatedType 'invoice'). Cuenta lo que el proveedor ACEPTÓ o
+ * dio por entregado; `reclamado` también (llegó y el cliente lo marcó como spam). NO cuentan
+ * `fallo_envio` (no salió) ni `rebotado` (no llegó): igual que el WhatsApp que Meta marca fallido
+ * después. Un estado fuera de esta lista no cuenta: el embudo es cerrado (`constanciaCorreo.ts`).
+ */
+const ESTADOS_DE_CORREO_QUE_SALIO = new Set(['aceptado_sin_confirmacion', 'aceptado_sin_identificador', 'entregado', 'reclamado']);
+
+export function correoDelDocumentoSalio(filas: ReadonlyArray<{ status: string | null | undefined }>): boolean {
+  return filas.some((f) => ESTADOS_DE_CORREO_QUE_SALIO.has(String(f.status)));
+}
+
 export function envioDelDocumento(args: {
   clienteEmail: string | null | undefined;
   filasWhatsapp: ReadonlyArray<FilaWhatsappDelDocumento>;
