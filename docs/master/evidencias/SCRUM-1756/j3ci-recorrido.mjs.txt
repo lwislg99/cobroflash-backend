@@ -1,0 +1,225 @@
+// SCRUM-1756f (jv-j3ci) · copia de `j3d-recorrido.mjs.txt` (1756d) para los `<script>` de landing y precios.
+// Cambios: sin el escenario I (aislada, que sólo existía para separar el CSS del guion en línea); CUMPLE si
+// A↔C (rama con la política APLICADA entera) y A↔D son idénticas byte a byte, C da 0 informes `script-src-elem`,
+// precios con plazas destapa banner y tachado en C igual que en A, y el CONTROL B (main aplicada) da `script-src-elem`.
+// Privacidad conserva su `<style>` por decisión del fundador (SCRUM-1756 c.22082 ②): en C se mide y se declara
+// aparte, fuera del criterio. Servidor: `j3d-servidor.cjs.txt`, sin cambios.
+//
+// SCRUM-1756d · Landing, precios, privacidad, términos y /legal/alcance-beta en Edge, con la CSP de SCRUM-1637.
+// (Guardado como .txt. Para correrlo se copia a un .mjs fuera del árbol y se lanza DESDE LA RAÍZ del repo.)
+// Base: `evidencias/SCRUM-1723/j3d-recorrido-login.mjs.txt`. Servidor: `j3d-servidor.cjs.txt` (copia del de 1647d
+// con el modo `aislada`, que sólo deja pasar el `<script>` en línea).
+//
+// Escenarios:  A = main sin política        B = main con política (CONTROL: tiene que romperse)
+//              C = rama con política         I = rama con política salvo `script-src 'unsafe-inline'`
+//              D = rama sin política
+// Vistas a 390 y 1280 px, con `prefers-reduced-motion: reduce` (la landing anima al hacer scroll y la demo
+// rellena filas con temporizadores; reducido, todo se pinta al momento y la captura es estable):
+//   las cinco páginas · landing y precios con `/public/founding-status` contestando plazas (el guion destapa
+//   el banner, la barra y el precio tachado) · la landing con la demo en la pantalla de firma (la clase nueva).
+// CUMPLE si A↔I son IDÉNTICAS byte a byte en todas, A↔D también, e I da 0 informes de cualquier directiva.
+// C se mide y se declara: lo que cambie en C y no en I es del `<script>` en línea, no de este tramo.
+// Uso:  node <copia>.mjs <distMain> <distRama> <dirSalida>     Salida: 0 cumple · 1 no · 2 CIEGO.
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import net from 'node:net';
+import { spawn } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
+
+const RAIZ = process.cwd();
+if (!fs.existsSync(path.join(RAIZ, 'scripts/_navegador.mjs'))) { console.error('CIEGO: cwd no es la raíz del repo'); process.exit(2); }
+const { lanzarNavegador, resolverNavegador } = await import(pathToFileURL(path.join(RAIZ, 'scripts/_navegador.mjs')).href);
+const puppeteer = createRequire(path.join(RAIZ, 'package.json'))('puppeteer-core');
+
+const [distMain, distRama, salida, servidorArg] = process.argv.slice(2);
+if (!distMain || !distRama || !salida || !servidorArg) { console.error('uso: <distMain> <distRama> <dirSalida> <servidor.cjs>'); process.exit(2); }
+fs.mkdirSync(path.join(salida, 'capturas'), { recursive: true });
+const SERVIDOR = path.resolve(servidorArg);
+
+const puertoLibre = () => new Promise((ok, mal) => {
+  const s = net.createServer().once('error', mal).listen(0, '127.0.0.1', () => { const { port } = s.address(); s.close(() => ok(port)); });
+});
+const ESCENARIOS = [
+  { id: 'A-main-sin', dist: distMain, modo: 'sin' },
+  { id: 'A2-main-sin', dist: distMain, modo: 'sin' }, // REPETICIÓN de A: si A↔A2 no salen idénticas, la captura no es estable (CIEGO)
+  { id: 'B-main-aplicada', dist: distMain, modo: 'aplicada' },
+  { id: 'C-rama-aplicada', dist: distRama, modo: 'aplicada' },
+  { id: 'D-rama-sin', dist: distRama, modo: 'sin' },
+];
+for (const esc of ESCENARIOS) esc.puerto = await puertoLibre();
+const PLAZAS = JSON.stringify({ seatsLeft: 5, taken: 3, seatsTotal: 20 });
+const VISTAS = [
+  { id: 'landing', ruta: '/' },
+  { id: 'precios', ruta: '/precios' },
+  { id: 'privacidad', ruta: '/privacidad' },
+  { id: 'terminos', ruta: '/terminos' },
+  { id: 'legal-alcance', ruta: '/legal/alcance-beta' },
+  { id: 'landing-plazas', ruta: '/', plazas: true },
+  { id: 'precios-plazas', ruta: '/precios', plazas: true },
+  { id: 'landing-firma', ruta: '/', firma: true },
+];
+const BASE = ['landing', 'precios', 'privacidad', 'terminos', 'legal-alcance'];
+const ANCHOS = [390, 1280];
+
+function entornoHijo() {
+  const e = { ...process.env, DISABLE_CRONS: 'true', NODE_ENV: 'test' };
+  for (const k of Object.keys(e)) if (/^DATABASE_URL/.test(k) || k === 'NODE_TEST_CONTEXT' || k === 'NODE_OPTIONS') delete e[k];
+  for (const k of ['DATABASE_URL', 'DATABASE_URL_STAGING', 'DATABASE_URL_DEV', 'DATABASE_URL_TESTS']) e[k] = '';
+  e.NODE_PATH = path.join(RAIZ, 'node_modules');
+  return e;
+}
+function arrancar(esc) {
+  return new Promise((ok, mal) => {
+    const h = spawn(process.execPath, [SERVIDOR, esc.dist, String(esc.puerto), esc.modo],
+      { cwd: path.dirname(path.resolve(esc.dist)), env: entornoHijo(), stdio: ['ignore', 'pipe', 'pipe'] });
+    let log = '';
+    const t = setTimeout(() => mal(new Error(`${esc.id}: el servidor no dijo LISTO en 60 s\n${log}`)), 60_000);
+    h.stdout.on('data', (d) => { log += d; if (log.includes('LISTO')) { clearTimeout(t); ok(h); } });
+    h.stderr.on('data', (d) => { log += d; });
+    h.on('exit', (c) => { clearTimeout(t); mal(new Error(`${esc.id}: el servidor salió con ${c}\n${log}`)); });
+  });
+}
+
+const recursosQueFaltan = [];
+const sha = (f) => crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
+const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function abrir(nav, origen, v, ancho) {
+  const ctx = await nav.createBrowserContext();
+  const p = await ctx.newPage();
+  const csp = [];
+  p.on('response', (r) => {
+    const tipo = r.request().resourceType();
+    if (r.status() >= 400 && ['stylesheet', 'font', 'script', 'image'].includes(tipo)
+      && !r.url().includes('/no-existe/') && !r.url().endsWith('/favicon.ico')) recursosQueFaltan.push(`${r.status()} ${tipo} ${r.url()}`);
+  });
+  p.on('console', (m) => { const t = m.text(); if (t.startsWith('⟦csp⟧')) csp.push(JSON.parse(t.slice(5))); });
+  await p.evaluateOnNewDocument(() => {
+    document.addEventListener('securitypolicyviolation', (e) => {
+      console.log('⟦csp⟧' + JSON.stringify({ directiva: e.effectiveDirective, bloqueado: e.blockedURI, linea: e.lineNumber }));
+    });
+  });
+  await p.setRequestInterception(true);
+  p.on('request', (rq) => {
+    if (rq.url().endsWith('/public/founding-status')) {
+      if (v.plazas) return rq.respond({ status: 200, contentType: 'application/json', body: PLAZAS });
+      return rq.respond({ status: 503, contentType: 'application/json', body: '{}' });
+    }
+    return rq.continue();
+  });
+  await p.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+  await p.setViewport({ width: ancho, height: 900, deviceScaleFactor: 1 });
+  const r = await p.goto(origen + v.ruta, { waitUntil: 'networkidle0' });
+  if (v.firma) await p.evaluate(() => { const b = document.querySelector('[data-go="2"]'); if (b) b.click(); });
+  await espera(400);
+  // La landing lleva animaciones infinitas que `prefers-reduced-motion` no para (`pulse` del punto del hero):
+  // medido en la primera pasada, una caja de 27×27 px cambiaba entre dos cargas del MISMO código. Se congelan
+  // en su instante 0, igual en todos los escenarios; cuántas se congelan va al resultado.
+  const congeladas = await p.evaluate(() => { const an = document.getAnimations(); an.forEach((a) => { a.pause(); a.currentTime = 0; }); return an.length; });
+  await espera(100);
+  const estado = await p.evaluate(() => {
+    const vis = (id) => { const el = document.getElementById(id); return el ? getComputedStyle(el).display !== 'none' && !el.hidden : null; };
+    const firma = document.querySelector('.iscr[data-scr="2"]');
+    return { banner: vis('founding-banner'), tachado: vis('price-old'), pantallaFirma: firma ? firma.classList.contains('on') : null };
+  });
+  estado.congeladas = congeladas;
+  return { ctx, p, csp, estado, status: r.status(), cabeceras: r.headers() };
+}
+const resumen = (ev) => {
+  const porDirectiva = {};
+  for (const e of ev) porDirectiva[e.directiva] = (porDirectiva[e.directiva] || 0) + 1;
+  return { eventos: ev.length, porDirectiva };
+};
+
+const informe = { navegador: resolverNavegador(), escenarios: {} };
+const hijos = [];
+let nav;
+try {
+  for (const esc of ESCENARIOS) hijos.push(await arrancar(esc));
+  nav = await lanzarNavegador(puppeteer, { headless: true });
+  if (!nav) throw new Error('el navegador no arrancó');
+  informe.version = await nav.version();
+  for (const esc of ESCENARIOS) {
+    const origen = `http://127.0.0.1:${esc.puerto}`;
+    const res = { vistas: {} };
+    {
+      const { ctx, csp } = await abrir(nav, origen, { id: 'sembrado', ruta: '/__sembrado' }, 1280);
+      res.sembrado = resumen(csp);
+      await ctx.close();
+    }
+    for (const v of VISTAS) {
+      const r = { capturas: {}, csp: {} };
+      for (const ancho of ANCHOS) {
+        const { ctx, p, csp, estado, status, cabeceras } = await abrir(nav, origen, v, ancho);
+        r.status = status;
+        r.politica = cabeceras['content-security-policy'] ? 'aplicada' : cabeceras['content-security-policy-report-only'] ? 'Report-Only' : 'ninguna';
+        const f = path.join(salida, 'capturas', `${esc.id}-${v.id}-${ancho}.png`);
+        await p.screenshot({ path: f, fullPage: true });
+        r.capturas[ancho] = { fichero: path.basename(f), sha256: sha(f) };
+        r.csp[ancho] = resumen(csp);
+        r.estado = estado;
+        await ctx.close();
+      }
+      res.vistas[v.id] = r;
+    }
+    res.lecturasDelDoble = Number(await (await fetch(`${origen}/__lecturas`)).text());
+    informe.escenarios[esc.id] = res;
+  }
+  informe.comparacionVisual = [];
+  const PARES = [['A-main-sin', 'A2-main-sin'], ['A-main-sin', 'D-rama-sin'], ['A-main-sin', 'C-rama-aplicada'], ['A-main-sin', 'B-main-aplicada']];
+  for (const [x, y] of PARES) for (const v of VISTAS) for (const ancho of ANCHOS) {
+    informe.comparacionVisual.push({ par: `${x} → ${y}`, vista: v.id, ancho,
+      identicas: informe.escenarios[x].vistas[v.id].capturas[ancho].sha256 === informe.escenarios[y].vistas[v.id].capturas[ancho].sha256 });
+  }
+  informe.recursosQueFaltan = [...new Set(recursosQueFaltan)];
+} finally {
+  if (nav) await nav.close().catch(() => {});
+  for (const h of hijos) h.kill();
+}
+
+fs.writeFileSync(path.join(salida, 'resultado.json'), JSON.stringify(informe, null, 2) + '\n');
+const E = informe.escenarios;
+const informesDe = (id, vistas = VISTAS.map((v) => v.id)) => {
+  const t = {};
+  for (const v of vistas) for (const c of Object.values(E[id].vistas[v].csp)) for (const [d, n] of Object.entries(c.porDirectiva)) t[d] = (t[d] || 0) + n;
+  return t;
+};
+const total = (o) => Object.values(o).reduce((s, n) => s + n, 0);
+const par = (p, vistas) => informe.comparacionVisual.filter((c) => c.par === p && (!vistas || vistas.includes(c.vista)));
+const ciegos = [];
+if (par('A-main-sin → A2-main-sin').some((c) => !c.identicas)) ciegos.push('main contra main sale distinto: la captura no es estable y ninguna igualdad vale');
+if (E['A-main-sin'].sembrado.eventos !== 0 || E['D-rama-sin'].sembrado.eventos !== 0) ciegos.push('el sembrado da informes SIN política');
+for (const id of ['B-main-aplicada', 'C-rama-aplicada']) if (!E[id].sembrado.porDirectiva['script-src-elem'] || !E[id].sembrado.porDirectiva['style-src-elem']) ciegos.push(`${id}: el sembrado no da script-src-elem y style-src-elem`);
+// 1756f: el control de 1756d miraba las vistas BASE (su CSS en línea). Con el CSS ya en main (#3209), B sólo se rompe
+// donde manda el guion en línea: las vistas que lo necesitan (plazas y demo). Medido en la 1.ª pasada: B↔A iguales en precios, términos y legal.
+const DEL_GUION = ['landing-plazas', 'precios-plazas', 'landing-firma'];
+if (par('A-main-sin → B-main-aplicada', DEL_GUION).some((c) => c.identicas)) ciegos.push('CONTROL: main con la política se pinta igual que sin ella en alguna vista que depende del guion');
+if (!informesDe('B-main-aplicada')['style-src-elem']) ciegos.push('CONTROL: main con la política no da style-src-elem');
+if (!informesDe('B-main-aplicada')['script-src-elem']) ciegos.push('CONTROL: main con la política no da script-src-elem');
+if (informe.recursosQueFaltan.length) ciegos.push(`faltan recursos propios: ${informe.recursosQueFaltan.join(', ')}`);
+const A = E['A-main-sin'].vistas;
+if (!A['precios-plazas'].estado.banner || !A['precios-plazas'].estado.tachado) ciegos.push('precios con plazas no destapa banner y tachado en main: la vista no mide ese estado');
+if (!A['landing-plazas'].estado.banner) ciegos.push('landing con plazas no destapa el banner en main');
+if (A['precios'].estado.banner || A['precios'].estado.tachado) ciegos.push('precios SIN plazas enseña banner o tachado en main: la vista no mide el oculto');
+if (!A['landing-firma'].estado.pantallaFirma) ciegos.push('la demo no llegó a la pantalla de firma en main');
+const SIN_PRIVACIDAD = VISTAS.map((v) => v.id).filter((v) => v !== 'privacidad');
+const C = E['C-rama-aplicada'].vistas;
+const cumple = par('A-main-sin → C-rama-aplicada', SIN_PRIVACIDAD).every((c) => c.identicas) && par('A-main-sin → D-rama-sin').every((c) => c.identicas)
+  && !informesDe('C-rama-aplicada')['script-src-elem'] && total(informesDe('C-rama-aplicada', SIN_PRIVACIDAD)) === 0 && total(informesDe('D-rama-sin')) === 0
+  && C['precios-plazas'].estado.banner === true && C['precios-plazas'].estado.tachado === true && C['landing-plazas'].estado.banner === true
+  && C['landing-firma'].estado.pantallaFirma === true;
+console.log(`C privacidad (fuera del criterio, c.22082 ②): informes ${JSON.stringify(informesDe('C-rama-aplicada', ['privacidad']))}`);
+console.log(`estado C: precios-plazas ${JSON.stringify(C['precios-plazas'].estado)} · landing-plazas ${JSON.stringify(C['landing-plazas'].estado)} · landing-firma ${JSON.stringify(C['landing-firma'].estado)}`);
+for (const [id, e] of Object.entries(E)) {
+  console.log(`${id.padEnd(16)} sembrado ${JSON.stringify(e.sembrado.porDirectiva)} · informes ${JSON.stringify(informesDe(id))} · lecturas ${e.lecturasDelDoble}`);
+  for (const v of VISTAS) console.log(`   ${v.id.padEnd(15)} ${e.vistas[v.id].status} ${e.vistas[v.id].politica} · 390 ${JSON.stringify(e.vistas[v.id].csp[390].porDirectiva)} · 1280 ${JSON.stringify(e.vistas[v.id].csp[1280].porDirectiva)} · ${JSON.stringify(e.vistas[v.id].estado)}`);
+}
+for (const p of [...new Set(informe.comparacionVisual.map((c) => c.par))]) {
+  const cs = par(p);
+  console.log(`visual ${p}: ${cs.filter((c) => c.identicas).length}/${cs.length} idénticas · distintas: ${cs.filter((c) => !c.identicas).map((c) => `${c.vista}@${c.ancho}`).join(' ') || '—'}`);
+}
+console.log(`navegador: ${informe.version}`);
+if (ciegos.length) { console.log('CIEGO:\n  ' + ciegos.join('\n  ')); process.exitCode = 2; }
+else { console.log(cumple ? 'CUMPLE (A↔C sin privacidad y A↔D idénticas, 0 script-src-elem en C, banner destapado en C)' : 'NO CUMPLE'); process.exitCode = cumple ? 0 : 1; }

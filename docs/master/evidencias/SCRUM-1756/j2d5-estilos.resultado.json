@@ -1,0 +1,484 @@
+{
+ "politica": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+ "escenarios": [
+  {
+   "ancho": 390,
+   "escenario": "clientes-vacio",
+   "elementos": 89,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 34,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 1
+   },
+   "violStyleTodas": {
+    "rama": 50,
+    "main": 51
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 390,
+   "escenario": "cobros",
+   "elementos": 24,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 1,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 1
+   },
+   "violStyleTodas": {
+    "rama": 8,
+    "main": 9
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 390,
+   "escenario": "csv-paso1",
+   "elementos": 108,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 286,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 17
+   },
+   "violStyleTodas": {
+    "rama": 50,
+    "main": 67
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 390,
+   "escenario": "csv-acentos",
+   "elementos": 104,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 159,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 23
+   },
+   "violStyleTodas": {
+    "rama": 50,
+    "main": 73
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 390,
+   "escenario": "csv-mapeo",
+   "elementos": 138,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 410,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 36
+   },
+   "violStyleTodas": {
+    "rama": 50,
+    "main": 86
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 390,
+   "escenario": "csv-informe",
+   "elementos": 108,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 271,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 45
+   },
+   "violStyleTodas": {
+    "rama": 50,
+    "main": 95
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 390,
+   "escenario": "c360-resumen",
+   "elementos": 94,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 904,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 30
+   },
+   "violStyleTodas": {
+    "rama": 8,
+    "main": 38
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 390,
+   "escenario": "c360-presupuestos",
+   "elementos": 94,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 904,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 32
+   },
+   "violStyleTodas": {
+    "rama": 8,
+    "main": 40
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 390,
+   "escenario": "c360-facturas",
+   "elementos": 96,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 926,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 34
+   },
+   "violStyleTodas": {
+    "rama": 8,
+    "main": 42
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 390,
+   "escenario": "c360-vacio-presupuestos",
+   "elementos": 68,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 491,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 15
+   },
+   "violStyleTodas": {
+    "rama": 8,
+    "main": 23
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 390,
+   "escenario": "c360-vacio-facturas",
+   "elementos": 68,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 491,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 15
+   },
+   "violStyleTodas": {
+    "rama": 8,
+    "main": 23
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 390,
+   "escenario": "c360-editar",
+   "elementos": 155,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 965,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 36
+   },
+   "violStyleTodas": {
+    "rama": 8,
+    "main": 44
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 1280,
+   "escenario": "clientes-vacio",
+   "elementos": 89,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 30,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 1
+   },
+   "violStyleTodas": {
+    "rama": 50,
+    "main": 51
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 1280,
+   "escenario": "cobros",
+   "elementos": 24,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 1,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 1
+   },
+   "violStyleTodas": {
+    "rama": 8,
+    "main": 9
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 1280,
+   "escenario": "csv-paso1",
+   "elementos": 108,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 300,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 17
+   },
+   "violStyleTodas": {
+    "rama": 50,
+    "main": 67
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 1280,
+   "escenario": "csv-acentos",
+   "elementos": 104,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 183,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 23
+   },
+   "violStyleTodas": {
+    "rama": 50,
+    "main": 73
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 1280,
+   "escenario": "csv-mapeo",
+   "elementos": 138,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 432,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 36
+   },
+   "violStyleTodas": {
+    "rama": 50,
+    "main": 86
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 1280,
+   "escenario": "csv-informe",
+   "elementos": 108,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 287,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 45
+   },
+   "violStyleTodas": {
+    "rama": 50,
+    "main": 95
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 1280,
+   "escenario": "c360-resumen",
+   "elementos": 94,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 920,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 30
+   },
+   "violStyleTodas": {
+    "rama": 8,
+    "main": 38
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 1280,
+   "escenario": "c360-presupuestos",
+   "elementos": 94,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 920,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 32
+   },
+   "violStyleTodas": {
+    "rama": 8,
+    "main": 40
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 1280,
+   "escenario": "c360-facturas",
+   "elementos": 96,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 934,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 34
+   },
+   "violStyleTodas": {
+    "rama": 8,
+    "main": 42
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 1280,
+   "escenario": "c360-vacio-presupuestos",
+   "elementos": 68,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 491,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 15
+   },
+   "violStyleTodas": {
+    "rama": 8,
+    "main": 23
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 1280,
+   "escenario": "c360-vacio-facturas",
+   "elementos": 68,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 491,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 15
+   },
+   "violStyleTodas": {
+    "rama": 8,
+    "main": 23
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  },
+  {
+   "ancho": 1280,
+   "escenario": "c360-editar",
+   "elementos": 155,
+   "objetivo": 0,
+   "hoy": 0,
+   "control": 981,
+   "violStyleJ2": {
+    "rama": 0,
+    "main": 36
+   },
+   "violStyleTodas": {
+    "rama": 8,
+    "main": 44
+   },
+   "errores": [],
+   "muestraObjetivo": [],
+   "muestraHoy": []
+  }
+ ],
+ "cobertura": {
+  "clases": 57,
+  "sinVer": [
+   "csv-oculto",
+   "c360-vacio"
+  ]
+ },
+ "total": {
+  "elementos": 2292,
+  "difsObjetivo": 0,
+  "difsHoy": 0,
+  "difsControl": 11812,
+  "violJ2Rama": 0,
+  "violJ2Main": 570,
+  "estructura": 0,
+  "errores": 0
+ },
+ "sembrado": {
+  "v": [
+   "style-src-attr"
+  ],
+  "color": "rgb(0, 0, 0)"
+ }
+}

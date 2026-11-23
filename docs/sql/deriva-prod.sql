@@ -24,7 +24,7 @@
 -- ajenas ni valores de enum. Y no reporta columnas de MÁS en la base: que la base vaya por
 -- delante del código es el orden seguro de un cambio aditivo, no un problema.
 --
--- Columnas esperadas: 537. Tablas: 35.
+-- Columnas esperadas: 546. Tablas: 35.
 
 WITH esperado (tabla, columna) AS (
   VALUES
@@ -70,10 +70,13 @@ WITH esperado (tabla, columna) AS (
     ('attachments','data'),
     ('attachments','entity_id'),
     ('attachments','entity_type'),
+    ('attachments','file_name'),
     ('attachments','id'),
     ('attachments','kind'),
     ('attachments','merchant_id'),
     ('attachments','mime'),
+    ('attachments','sha256'),
+    ('attachments','size_bytes'),
     ('attachments','url'),
     ('audit_log','action'),
     ('audit_log','created_at'),
@@ -243,6 +246,11 @@ WITH esperado (tabla, columna) AS (
     ('invoices','client_comment'),
     ('invoices','createdAt'),
     ('invoices','currency'),
+    ('invoices','customer_billing_address'),
+    ('invoices','customer_billing_city'),
+    ('invoices','customer_billing_country'),
+    ('invoices','customer_billing_postal_code'),
+    ('invoices','customer_billing_province'),
     ('invoices','customer_email'),
     ('invoices','customer_legal_name'),
     ('invoices','customer_name'),
@@ -409,6 +417,7 @@ WITH esperado (tabla, columna) AS (
     ('partes_trabajo','firmado_tecnico_at'),
     ('partes_trabajo','firmado_tecnico_nombre'),
     ('partes_trabajo','id'),
+    ('partes_trabajo','invoice_id'),
     ('partes_trabajo','job_id'),
     ('partes_trabajo','kilometros'),
     ('partes_trabajo','lineas'),

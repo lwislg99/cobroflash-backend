@@ -147,6 +147,103 @@ export const CAMBIOS_AUTORIZADOS = [
       a: '508c20188d476ab2bc19c82f37180201f2692fd881563ba73b2e185d132af3c0',
     },
   },
+  {
+    // SCRUM-624y · el arreglo A también en la R1: su bloque de totales imprime el desglose de
+    // `calcVatBreakdown` y su total guardado, como la F1 (revoca c.20817 para la R1). El
+    // justificante, como hasta hoy. Huellas de `evidencias/SCRUM-1446d/huellas.mjs` sobre
+    // origin/main 0c787556f6eaf44531b76bbe0b59b076ef744386.
+    firma: 'SCRUM-624 c.22137',
+    registro: 'docs/master/SCRUM-624.md',
+    cita: '«A en la R1»',
+    cuerpo: {
+      de: '3967c7ef8e699f0e46167c4c04dbb6b11daa51745b78a23317416aa7d6bd96b1',
+      a: '7cbda25fd230c4f65873e4549c1a93ba0f98ee3b212cad922a0abcf12b7855e5',
+    },
+    ambito: {
+      de: '508c20188d476ab2bc19c82f37180201f2692fd881563ba73b2e185d132af3c0',
+      a: '775ce32827dad87ee48cfa9c3c98593570866587ade6e267ea62bf5539f41a2d',
+    },
+  },
+  {
+    // SCRUM-1771c · el rótulo de la columna de bases del desglose (≥ 2 tipos) deja de ser el
+    // marcador `[PENDIENTE microcopy oficial]` y pasa al literal firmado. Solo cambia la constante
+    // de `pdf.service.ts:54`, que está en el ámbito y no en el cuerpo: por eso no hay par `cuerpo`.
+    firma: 'SCRUM-1771 c.22164',
+    registro: 'docs/master/SCRUM-1771.md',
+    cita: '«Base imponible por tipo»',
+    ambito: {
+      de: '775ce32827dad87ee48cfa9c3c98593570866587ade6e267ea62bf5539f41a2d',
+      a: 'deb02178fdb8d0346d7127db2f89c6e663a41c9725f7ec1b063c3060f51343a8',
+    },
+  },
+  {
+    // SCRUM-1779d · una factura que la emisión dejó sin sello (`SIF_ENABLED` en OFF) no dibuja QR:
+    // `qrData` vacío → sin imagen. SCRUM-1779 c.22239 por SCRUM-1585 c.21290 (decisión de
+    // autorizar: SCRUM-1779 c.22253). Huellas de `evidencias/SCRUM-1446d/huellas.mjs` sobre
+    // origin/main fea1c00078654d8d617af055de94f2b627df07ce.
+    firma: 'SCRUM-1779 c.22239',
+    registro: 'docs/master/SCRUM-1779.md',
+    cita: '«no linkado a verifactu»',
+    cuerpo: {
+      de: '7cbda25fd230c4f65873e4549c1a93ba0f98ee3b212cad922a0abcf12b7855e5',
+      a: '4daa145e0323e604a3c1a6e591204303466c4546e4b0dee47329a233ba0378d6',
+    },
+    ambito: {
+      de: 'deb02178fdb8d0346d7127db2f89c6e663a41c9725f7ec1b063c3060f51343a8',
+      a: '300a3fb3f0a1af3481188846a89e457e8cf4d4b75f71bfcbd9b0e5a1c7ca4b23',
+    },
+  },
+  {
+    // SCRUM-1788a · la tabla de conceptos empieza debajo del bloque más alto (emisor o cliente):
+    // un emisor de 5+ líneas ya no se pinta encima de la cabecera. Sin texto nuevo ni datos nuevos.
+    // Huellas de `evidencias/SCRUM-1446d/huellas.mjs` sobre origin/main
+    // 53cde1aa49e8b8235b6b562f9a81bb6d175ac571.
+    firma: 'SCRUM-1788 c.22299',
+    registro: 'docs/master/SCRUM-1788.md',
+    cita: '«Sí go»',
+    cuerpo: {
+      de: '4daa145e0323e604a3c1a6e591204303466c4546e4b0dee47329a233ba0378d6',
+      a: '44d7d101465e2f0909db25950bf4fc1dae8d729d6e31222924a72aeec310824f',
+    },
+    ambito: {
+      de: '300a3fb3f0a1af3481188846a89e457e8cf4d4b75f71bfcbd9b0e5a1c7ca4b23',
+      a: '0c1839e4d2df8ded0228160e90fdfd46eb9549daba2055fe29016bf5e5b13a08',
+    },
+  },
+  {
+    // SCRUM-1787d · el PDF de factura imprime «NIF:» y «Dirección:» del cliente, leídos de las
+    // columnas congeladas de la factura (nunca de la ficha viva). GO c.22303 ①; ALTER aplicado
+    // c.22311. La rama lleva 1788a (PR #3301) sin mergear: este par vale con la base en main
+    // SIN 1788a (origin/main c10a80edd301ed2a320f758f33fcd5814991c850). Huellas de
+    // `evidencias/SCRUM-1446d/huellas.mjs`.
+    firma: 'SCRUM-1787 c.22303',
+    registro: 'docs/master/SCRUM-1787.md',
+    cita: '«1-Sí GO · 2-Ok sí · 3-Firmo · 4-Sí»',
+    cuerpo: {
+      de: '4daa145e0323e604a3c1a6e591204303466c4546e4b0dee47329a233ba0378d6',
+      a: '60177ce0b87bb2564937abcb0dd56959186d36056e8714302a0629516558942b',
+    },
+    ambito: {
+      de: '300a3fb3f0a1af3481188846a89e457e8cf4d4b75f71bfcbd9b0e5a1c7ca4b23',
+      a: '837928ef82df7eadff7e17edb8887e39b358d0c8da6a3d847547632ae9f1d030',
+    },
+  },
+  {
+    // SCRUM-1787d · el MISMO cambio, si 1788a (PR #3301) entra antes en main: la base es entonces
+    // el `a` de 1788a (calculado sobre su punta e8b19bd74636e82bd6fa0c556aab5ffb79689ccb con
+    // `huella` y `ambitoDeLaFactura`; coincide con lo que declaró 1788a). Mismo disco.
+    firma: 'SCRUM-1787 c.22303',
+    registro: 'docs/master/SCRUM-1787.md',
+    cita: '«1-Sí GO · 2-Ok sí · 3-Firmo · 4-Sí»',
+    cuerpo: {
+      de: '44d7d101465e2f0909db25950bf4fc1dae8d729d6e31222924a72aeec310824f',
+      a: '60177ce0b87bb2564937abcb0dd56959186d36056e8714302a0629516558942b',
+    },
+    ambito: {
+      de: '0c1839e4d2df8ded0228160e90fdfd46eb9549daba2055fe29016bf5e5b13a08',
+      a: '837928ef82df7eadff7e17edb8887e39b358d0c8da6a3d847547632ae9f1d030',
+    },
+  },
 ];
 
 /**

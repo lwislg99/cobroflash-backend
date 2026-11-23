@@ -804,8 +804,16 @@
       (editable ? pintarDictado((leerBorradorDelDictado(parte.id) || {}).texto) : '') +
       pintarBloque('mano_obra', lineas, editable) +
       pintarBloque('materiales', lineas, editable) +
+      // SCRUM-1762d · LA LATERAL DEL ESCRITORIO (patrón de la ficha del trabajo, SCRUM-1768): las firmas
+      // y las salidas del parte firmado van juntas en un contenedor que SOLO es contenedor. Por debajo
+      // de 1200 px se disuelve (`display: contents`, styles.css) y el parte queda como estaba: mismos
+      // nodos, mismo orden, mismo tabulador. Ni texto ni acción nuevos.
+      '<div class="parte-lateral" data-parte-lateral="1">' +
       pintarLasDosFirmas(parte) +
       pintarVolverAlTrabajo(parte, editable) +
+      // SCRUM-915b · del parte firmado, al presupuesto con sus líneas. Sólo `firmado` y con trabajo.
+      pintarHacerPresupuesto(parte) +
+      '</div>' +
       (editable ? pintarDatosDelParte(parte, editable) : '');
 
     return true;
@@ -883,6 +891,105 @@
     for (var i = 0; i < botones.length; i++) {
       botones[i].addEventListener('click', function () { ir(parte.jobId); });
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-915b · DEL PARTE FIRMADO, AL PRESUPUESTO CON TODO PUESTO.
+  //
+  // Pedido por el fundador (20-nov-2026): «que de un parte se pueda crear un presupuesto y te lleve
+  // a la creacion de presupuestos con todo ya relleno y solo tenga que completarlo y emitirlo».
+  // El gemelo es el albarán que nace del parte firmado (SCRUM-1740), y se decide igual:
+  //   · SÓLO FIRMADO. En borrador las líneas aún se están apuntando; `facturado` no cuenta (1740).
+  //   · SIN PRECIOS. Este parte es el del técnico (`serializeParteParaElTecnico`): no trae dinero, y
+  //     aquí no se pide. El precio es lo que el profesional «completa» en el editor.
+  //   · CON SU TRABAJO Y SU CLIENTE, por el camino que ya existe (`template.deTrabajo`, SCRUM-1274):
+  //     el presupuesto nace colgado del trabajo (`job_id`) y al aceptarlo no se crea otro. Sin
+  //     trabajo no hay botón: el editor sólo sabe dejar elegido el cliente de un trabajo.
+  //   · LAS LÍNEAS, por el argumento de plantilla que ya existe (`template.lines`, SCRUM-140), en el
+  //     orden en que esta pantalla las pinta: mano de obra y después materiales.
+  //   · NADA SE ESCRIBE: ni en el parte ni en el servidor hasta que el profesional genere.
+  // Rótulo: el de la ficha del trabajo para lo mismo (`+ ${L.quoteNew}`, SCRUM-1190). No es texto nuevo.
+  //
+  // Lo fija `tests/scrum915b-presupuesto-desde-el-parte.test.mjs`.
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  function lineasParaElPresupuesto(parte) {
+    var lineas = lineasOCeguera(parte);
+    if (lineas === null) return [];
+    var bloques = ['mano_obra', 'materiales']; // el orden de `renderParte`
+    var salida = [];
+    for (var b = 0; b < bloques.length; b++) {
+      for (var i = 0; i < lineas.length; i++) {
+        var l = lineas[i];
+        if (!l || l.bloque !== bloques[b]) continue;
+        var concepto = typeof l.descripcion === 'string' ? l.descripcion.trim() : '';
+        if (!concepto) continue;
+        // Una cantidad ilegible NO se convierte en 1: va en blanco y la pone quien hace el presupuesto.
+        var unds = Number(l.unds);
+        salida.push({ concept: concepto, qty: isFinite(unds) && unds > 0 ? unds : '' });
+      }
+    }
+    return salida;
+  }
+
+  /**
+   * ¿Firmado y sin facturar? Se lee de los DOS CANDADOS que el servidor manda ya resueltos, no del
+   * nombre del estado: el contenido cerrado (`puedeEditarContenido` sólo abre en borrador) y los
+   * precios aún abiertos (`puedeEditarPrecios` sólo cierra al facturar). Es la regla de esta vista
+   * («la pantalla no vuelve a decidir la regla») y, sin un candado, la respuesta es NO.
+   *
+   * La primera versión comparaba el estado con su nombre escrito aquí, y el trinquete de
+   * SCRUM-1194d la leyó como un valor que esta pantalla le OFRECE a las rutas del parte. No lo es:
+   * esta pantalla no manda el estado a ninguna, y así sigue sin nombrarlo.
+   */
+  function firmadoYSinFacturar(parte) {
+    var contenido = parte && parte.puedeEditarContenido;
+    var precios = parte && parte.puedeEditarPrecios;
+    if (!contenido || !precios) return false;
+    return contenido.ok === false && precios.ok === true;
+  }
+
+  /**
+   * SCRUM-915c · UNA SOLA DEFINICIÓN de «este parte da para un presupuesto» y de lo que se le pasa al
+   * editor (canon de SCRUM-831: una regla, un sitio). La usan las dos puertas de 915b —pintar el botón
+   * y atarlo— y, por `window.partePlantillaDelPresupuesto`, quien ofrezca lo mismo desde fuera de esta
+   * pantalla. `null` = no se ofrece. Helper pedido por el orquestador (acta §38); 915b no cambia.
+   */
+  function plantillaDelPresupuesto(parte) {
+    if (!firmadoYSinFacturar(parte) || !tieneTrabajo(parte)) return null;
+    var lines = lineasParaElPresupuesto(parte);
+    if (!lines.length) return null;
+    return {
+      deTrabajo: {
+        jobId: parte.jobId,
+        customerId: parte.customerId !== null && parte.customerId !== undefined ? parte.customerId : null,
+      },
+      lines: lines,
+    };
+  }
+  if (typeof window !== 'undefined') window.partePlantillaDelPresupuesto = plantillaDelPresupuesto;
+
+  function pintarHacerPresupuesto(parte) {
+    if (!plantillaDelPresupuesto(parte)) return '';
+    var L = (typeof window !== 'undefined' && window.appLocale) || {};
+    // Secundario SIEMPRE: la acción principal de un parte firmado es la firma que falte o volver.
+    // Hueco y ancho, en `styles.css` (bloque S4 · SCRUM-915b): sin `style=` en la cadena (SCRUM-1773).
+    return '<div class="parte-salida-presupuesto" data-parte-salida-presupuesto="1">' +
+      '<button type="button" class="btn btn-secondary" data-parte-presupuesto="1">' +
+      esc('+ ' + (L.quoteNew || 'Nuevo presupuesto')) + '</button></div>';
+  }
+
+  /** `o.irAlPresupuesto` es la costura del test; en el panel es `renderAppView`. */
+  function atarHacerPresupuesto(contenedor, parte, o) {
+    if (!contenedor.querySelector) return;
+    var boton = contenedor.querySelector('[data-parte-presupuesto]');
+    if (!boton) return;
+    var ir = typeof o.irAlPresupuesto === 'function'
+      ? o.irAlPresupuesto
+      : function (template) { if (window.renderAppView) window.renderAppView('quotes-new', { template: template }); };
+    boton.addEventListener('click', function () {
+      var plantilla = plantillaDelPresupuesto(parte);
+      if (plantilla) ir(plantilla);
+    });
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
@@ -1782,6 +1889,7 @@
       return false;
     }
     atarSalidasAlTrabajo(contenedor, parte, o);
+    atarHacerPresupuesto(contenedor, parte, o);
     // SCRUM-1697 · «Visita n de m»: el parte ya trae `visitaN`/`visitaM` del servidor (SCRUM-1697 (b));
     // `parteVisita.js` solo los comprueba y los pinta, sin leer el trabajo.
     if (typeof window.partePintarVisita === 'function') window.partePintarVisita(contenedor, parte);

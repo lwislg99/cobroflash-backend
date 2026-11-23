@@ -783,6 +783,14 @@ model Invoice {
   customerTaxId     String? @map("customer_tax_id")
   customerEmail     String? @map("customer_email")
   customerPhone     String? @map("customer_phone")
+  /// SCRUM-1787d · la dirección de FACTURACIÓN del cliente, congelada al emitir (c.22305; ALTER
+  /// aplicado en staging y producción, c.22311). NO es la de la obra (`shippingAddress`). NULL en
+  /// toda factura anterior: no se rellena nunca y el lector no cae a la ficha viva (regla 29).
+  customerBillingAddress    String? @map("customer_billing_address")
+  customerBillingCity       String? @map("customer_billing_city")
+  customerBillingPostalCode String? @map("customer_billing_postal_code")
+  customerBillingProvince   String? @map("customer_billing_province")
+  customerBillingCountry    String? @map("customer_billing_country")
 
   /// SCRUM-665 (B) · EL EMISOR CONGELADO. La otra mitad del documento, con el mismo patrón que
   /// las cinco de arriba (el cliente congelado, SCRUM-729): columnas + escritor al emitir + lector
@@ -1495,12 +1503,15 @@ model AuditLog {
 model Attachment {
   id         Int      @id @default(autoincrement())
   merchantId Int      @map("merchant_id")
-  entityType String   @map("entity_type") // a qué cuelga el adjunto. Lo escriben attachment.service.ts (solicitud) y albaranes.routes.ts (albarán); el de Trabajo (MEDIA-1 c) no está construido.
+  entityType String   @map("entity_type") // a qué cuelga el adjunto. Lo escriben attachment.service.ts (solicitud), albaranes.routes.ts (albarán) y customerAdmin.ts (cliente, SCRUM-1005b); el de Trabajo (MEDIA-1 c) no está construido.
   entityId   Int      @map("entity_id")
   url        String
-  kind       String   @default("photo") // photo | audio (audio = F2, no F1)
+  kind       String   @default("photo") // photo | audio (audio = F2, no F1) | document (documento del cliente, SCRUM-1005b)
   data       Bytes? // MEDIA-1: bytes del fichero en Postgres (bytea) — fallback persistente sin R2
-  mime       String? // MEDIA-1: content-type (image/jpeg, image/png…)
+  mime       String? // MEDIA-1: content-type (image/jpeg, image/png…; application/pdf en documentos del cliente)
+  fileName   String?  @map("file_name") // SCRUM-1005b: nombre con el que se subió el documento
+  sizeBytes  Int?     @map("size_bytes") // SCRUM-1005b: tope por cliente con una suma, sin leer los bytea
+  sha256     String? // SCRUM-1005b: subida idempotente sin cargar los bytes
   createdAt  DateTime @default(now()) @map("created_at")
 
   @@index([merchantId, entityType, entityId])
@@ -1731,6 +1742,10 @@ model ParteTrabajo {
   /// borrador | firmado | facturado (ESTADOS_PARTE)
   estado String @default("borrador")
 
+  /// SCRUM-1780c · la factura que nació de este parte (`facturaDesdeParte.ts`). Sin @relation ni FK,
+  /// igual que `Albaran.invoiceId`. ALTER previo: `docs/sql/scrum-1780-parte-facturado.sql` (regla 40).
+  invoiceId Int? @map("invoice_id")
+
   firmadoAt         DateTime? @map("firmado_at")
   firmadoPorNombre  String?   @map("firmado_por_nombre")
   firmadoPorCalidad String?   @map("firmado_por_calidad")
@@ -1790,6 +1805,7 @@ model ParteTrabajo {
   @@unique([merchantId, numero])
   @@index([merchantId, fecha])
   @@index([merchantId, estado])
+  @@index([merchantId, invoiceId]) // SCRUM-1780c
   @@map("partes_trabajo")
 }
 

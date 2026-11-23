@@ -36,6 +36,96 @@ const {
   CAMPOS, PARADOS, cotejar, juzgar, pintaJuicio,
 } = require('../docs/master/evidencias/scrum1500/cotejo.cjs');
 
+// SCRUM-1500i · cada una de estas cambia UN literal del instrumento y tiene que tumbar el caso que
+// nombra `cae`. Las corre el meta-guard (`node scripts/meta-guard-mutaciones.mjs <este fichero>`).
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  { // vuelve la pregunta vieja: el código se compara con el COMENTARIO, no con el máster
+    fichero: 'docs/master/evidencias/scrum1500/cotejo.cjs',
+    de: 'const sobran = menos(D, M);\n  const faltan = menos(M, D);',
+    a: 'const sobran = menos(D, C || M);\n  const faltan = menos(C || M, D);',
+    cae: 'CAE: un comentario que coincide con el CÓDIGO y no con el MÁSTER sale nombrado' },
+  { // se apaga «el código tiene un valor que el máster no»
+    fichero: 'docs/master/evidencias/scrum1500/cotejo.cjs',
+    de: 'if (sobran.length > 0) return {',
+    a: 'if (false) return {',
+    cae: 'EL CONTROL QUE LO SEPARA DE SU PADRE' },
+  { // lo que se para y no tiene excepción deja de nombrarse
+    fichero: 'docs/master/evidencias/scrum1500/cotejo.cjs',
+    de: 'if (!e) { di(f.campo, f.veredicto, f.noExistePorque || f.porque); continue; }',
+    a: 'if (!e) { continue; }',
+    cae: 'EL PARADO no es un agujero: sin su excepción cae' },
+  { // CODIGO_FUERA_DEL_MASTER deja de ser un veredicto que para
+    fichero: 'docs/master/evidencias/scrum1500/cotejo.cjs',
+    de: "const SE_PARA = new Set(['NO_EXISTE', 'CIEGO', 'CODIGO_FUERA_DEL_MASTER',",
+    a: "const SE_PARA = new Set(['NO_EXISTE', 'CIEGO',",
+    cae: 'EL ÁRBOL: ningún comentario de la tabla se sale del máster' },
+  { // la excepción ampara cualquier veredicto que pare
+    fichero: 'docs/master/evidencias/scrum1500/cotejo.cjs',
+    de: 'if (f.veredicto !== e.veredicto) rota(',
+    a: 'if (false) rota(',
+    cae: 'la excepción cubre lo que se decidió y nada más' },
+  { // la excepción ampara cualquier valor nuevo del código
+    fichero: 'docs/master/evidencias/scrum1500/cotejo.cjs',
+    de: 'if (!mismos(f.D, e.D)) rota(',
+    a: 'if (false) rota(',
+    cae: 'la excepción cubre lo que se decidió y nada más' },
+  { // la excepción ampara cualquier lista del máster
+    fichero: 'docs/master/evidencias/scrum1500/cotejo.cjs',
+    de: 'if (!mismos(f.M, e.M)) rota(',
+    a: 'if (false) rota(',
+    cae: 'la excepción cubre lo que se decidió y nada más' },
+  { // la excepción no comprueba que siga montada en src/
+    fichero: 'docs/master/evidencias/scrum1500/cotejo.cjs',
+    de: 'if (f.cierre.length === 0 && f.sitios.length === 0) rota(',
+    a: 'if (false) rota(',
+    cae: 'la excepción cubre lo que se decidió y nada más' },
+  { // la excepción no mira las líneas nuevas del máster que juntan sus valores
+    fichero: 'docs/master/evidencias/scrum1500/cotejo.cjs',
+    de: 'if (sinLeer.length > 0) rota(',
+    a: 'if (false) rota(',
+    cae: '«el máster no lo fija» lo declara la tabla, y no se cree a ciegas' },
+  { // una excepción que sobra no se dice
+    fichero: 'docs/master/evidencias/scrum1500/cotejo.cjs',
+    de: "if (e) { usadas.add(e); di(f.campo, 'EXCEPCION_SOBRANTE',",
+    a: "if (e) { usadas.add(e); (() => {})(f.campo, 'EXCEPCION_SOBRANTE',",
+    cae: 'la excepción cubre lo que se decidió y nada más' },
+  { // una excepción huérfana no se dice
+    fichero: 'docs/master/evidencias/scrum1500/cotejo.cjs',
+    de: 'for (const e of parados) if (!usadas.has(e)) di(',
+    a: 'for (const e of parados) if (false) di(',
+    cae: 'la excepción cubre lo que se decidió y nada más' },
+  { // una excepción sin papeles no se dice
+    fichero: 'docs/master/evidencias/scrum1500/cotejo.cjs',
+    de: "if (!e[k] || !String(e[k]).trim()) di(e.campo, 'EXCEPCION_SIN_PAPELES',",
+    a: "if (false) di(e.campo, 'EXCEPCION_SIN_PAPELES',",
+    cae: 'la excepción cubre lo que se decidió y nada más' },
+  { // «el máster no lo fija» se cree a ciegas
+    fichero: 'docs/master/evidencias/scrum1500/cotejo.cjs',
+    de: "if (f.rastro && f.rastro.juntas.length > 0) di(f.campo, 'POSIBLE_LISTA_EN_EL_MASTER',",
+    a: "if (false) di(f.campo, 'POSIBLE_LISTA_EN_EL_MASTER',",
+    cae: '«el máster no lo fija» lo declara la tabla, y no se cree a ciegas' },
+  { // un comentario que deja de enumerar no se dice
+    fichero: 'docs/master/evidencias/scrum1500/cotejo.cjs',
+    de: "if (f.veredicto !== 'NO_EXISTE' && (f.C || []).length > 0 === f.sinLista) {",
+    a: 'if (false) {',
+    cae: 'el comentario se localiza por modelo y campo' },
+  { // un control que sale mal no se dice
+    fichero: 'docs/master/evidencias/scrum1500/cotejo.cjs',
+    de: 'if (f.veredicto !== f.control) di(',
+    a: 'if (false) di(',
+    cae: 'la excepción cubre lo que se decidió y nada más' },
+  { // el comentario vuelve a localizarse por posición, siempre el mismo bloque de líneas
+    fichero: 'docs/master/evidencias/scrum1500/cotejo.cjs',
+    de: "if (c.comentario === 'cabecera') rango = bloqueSobre(abre[0]);",
+    a: "if (c.comentario === 'cabecera') rango = [1420, 1425];",
+    cae: 'el comentario se localiza por modelo y campo' },
+  { // un campo que no está en su modelo se da por existente
+    fichero: 'docs/master/evidencias/scrum1500/cotejo.cjs',
+    de: 'if (suyas.length !== 1) return { existe: false,',
+    a: 'if (suyas.length > 1) return { existe: false,',
+    cae: 'EL ÁRBOL: ningún comentario de la tabla se sale del máster' },
+];
+
 const S = (...v) => new Set(v);
 const base = { existe: true, masterDeclarado: true, masterMotivo: null, campo: 'Modelo.status' };
 

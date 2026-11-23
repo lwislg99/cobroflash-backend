@@ -19,9 +19,12 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { paginaConSusHojas } from './_pagina-con-sus-hojas.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const LANDING = fs.readFileSync(path.join(RAIZ, 'public', 'index.html'), 'utf8');
+// SCRUM-1756d: el CSS de la landing vive en la hoja que enlaza (`public/landing.css`); se lee
+// la página CON sus hojas. Cambia dónde se lee, no qué se exige.
+const LANDING = paginaConSusHojas(RAIZ, 'public/index.html');
 
 /**
  * Cada celda con su columna, su fila y el trozo de HTML que la forma.

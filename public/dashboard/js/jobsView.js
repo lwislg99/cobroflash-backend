@@ -13,6 +13,12 @@
 
 // SCRUM-11: filtro de cobro persistente entre re-renders (una acción FSM recarga la vista).
 let jobsCobroFilter = 'all';
+// SCRUM-1725i: y el de ESTADO (las pestañas), por el mismo motivo: empezar un trabajo desde la
+// pestaña «Agendado» recarga la vista, y no puede devolver a «Todos» a quien estaba acotando.
+let jobsEstadoFilter = 'all';
+// Los cinco estados del Trabajo, en el orden de su vida. Aquí van solo las CLAVES: la etiqueta de
+// cada pestaña sale de `jobStatusMeta` (api.js), la única copia, que es también la de la píldora.
+const JOBS_ESTADOS_DE_LA_LISTA = ['pendiente_agendar', 'agendado', 'en_curso', 'terminado', 'cerrado'];
 // SCRUM-727b: y el de técnico, por el mismo motivo — asignar recarga la lista, y perder el
 // filtro justo después de asignar sería devolverle al jefe las 19 filas que acababa de acotar.
 let jobsTecnicoFilter = 'all';
@@ -46,15 +52,23 @@ async function renderJobsView(container) {
   // cuando un cliente acepta un presupuesto, o los abres tú desde aquí.» Mudar el subtítulo allí
   // habría puesto DOS textos aprobados diciendo lo mismo en la misma caja. La explicación ya vive
   // donde hace falta; lo que sobraba era la de arriba.
+  //
+  // ── SCRUM-1725j · UNA TARJETA, COMO LAS HERMANAS (c.22098) ─────────────────────────────────
+  // Presupuestos, Albaranes y Facturas son UNA `.data-card`: cabecera con el título y su «Nuevo…»
+  // dentro, pestañas, barra y tabla. Trabajos eran cuatro cajas sueltas. Mismas piezas, mismos
+  // textos y mismos `id`; cambia quién envuelve a quién. Las dos cifras se quedan ENCIMA, fuera:
+  // contestan «qué hay hoy» y «cuánto me deben» antes de que empiece la lista.
   container.innerHTML = `
     <div class="jobs-pantalla">
-      <div class="customers-card jobs-cabecera">
-        <h2>Trabajos</h2>
-      </div>
-      <div id="jobs-nuevo" class="jobs-nuevo"></div>
       <div id="jobs-cifras" class="jobs-cifras"></div>
-      <div id="jobs-filter" class="jobs-filtros"></div>
-      <div id="jobs-list" class="jobs-lista"></div>
+      <div class="data-card jobs-tarjeta">
+        <div class="data-card-header jobs-cabecera">
+          <h2>Trabajos</h2>
+          <div id="jobs-nuevo" class="jobs-nuevo"></div>
+        </div>
+        <div id="jobs-filter" class="jobs-filtros"></div>
+        <div id="jobs-list" class="jobs-lista"></div>
+      </div>
     </div>
   `;
   const list = document.getElementById('jobs-list');
@@ -139,21 +153,88 @@ async function renderJobsView(container) {
   if (!veCobro) jobsCobroFilter = 'all';
   pintarCifrasDeLaLista(document.getElementById('jobs-cifras'), jobs, veCobro);
 
-  // SCRUM-11: filtro por estado de cobro (segmentado; reutiliza botones del inventario,
-  // NO crea componente nuevo). Filtra el array ANTES del agrupado → no rompe los grupos.
+  // ══ SCRUM-1725i · LOS FILTROS, COMO EN ALBARANES: DOS EJES, DOS CONTROLES ═══════════════════════
+  //
+  // Orden del fundador (SCRUM-1725 c.22095) y decisiones de c.22098: la lista plana no tenía con qué
+  // filtrar por ESTADO, y las cuatro píldoras de arriba («Todos · N», «Pendiente · N»…) eran del eje
+  // de COBRO, que solo ve el admin. Se espeja `albaranesView.js`, que ya resuelve los dos ejes:
+  //   · el ESTADO del trabajo, en PESTAÑAS con contador (`data-card-tabs`), para todos los roles;
+  //   · el COBRO, en un DESPLEGABLE de la barra (`data-card-toolbar`): es otra pregunta, no una
+  //     pestaña más. Solo para quien pasa `veEstadoDeCobro`, como hasta hoy.
+  // Los tres filtros se cruzan (estado Y cobro Y técnico) y filtran el array ANTES de ordenarlo.
+  // Los contadores son de la lista ENTERA, como los de Albaranes: no bailan al mover otro filtro.
+  //
+  // `paint` rehace la barra y la lista; `pintarFilas`, solo la lista. Las pestañas y el desplegable
+  // de cobro llaman a `pintarFilas`: rehacer la barra les quitaría el foco a media pulsación y, a
+  // 390 px, devolvería la tira de pestañas a su principio, escondiendo la que se acaba de tocar.
+  // `pintarFilas` va DESPUÉS de `paint`, como iba el cruce de filtros antes de 1725i: el test de
+  // SCRUM-816 acota el bloque del filtro de técnico entre su primera línea y el cruce por cobro, y
+  // con el cruce delante se quedaba sin bloque que mirar (rojo del CI de #3240).
   const paint = () => {
     const counts = { all: jobs.length, Pendiente: 0, Parcial: 0, Pagado: 0 };
     for (const j of jobs) if (counts[j.estadoCobro] != null) counts[j.estadoCobro]++;
+    const porEstado = new Map(JOBS_ESTADOS_DE_LA_LISTA.map((estado) => [estado, 0]));
+    for (const j of jobs) porEstado.set(pestanaDeTrabajo(j), porEstado.get(pestanaDeTrabajo(j)) + 1);
+    if (jobsEstadoFilter !== 'all' && !porEstado.has(jobsEstadoFilter)) jobsEstadoFilter = 'all';
 
     filterBar.innerHTML = '';
-    (veCobro ? [['all', 'Todos'], ['Pendiente', 'Pendiente'], ['Parcial', 'Parcial'], ['Pagado', 'Pagado']] : []).forEach(([key, label]) => {
-      const b = document.createElement('button');
-      b.className = 'btn-sm ' + (jobsCobroFilter === key ? 'btn-secondary' : 'btn-ghost');
-      b.textContent = `${label} · ${key === 'all' ? counts.all : counts[key]}`;
-      b.setAttribute('aria-pressed', jobsCobroFilter === key ? 'true' : 'false');
-      b.addEventListener('click', () => { jobsCobroFilter = key; paint(); });
-      filterBar.appendChild(b);
-    });
+
+    // ── Eje 1 · el ESTADO, en pestañas ────────────────────────────────────────────────────────
+    // «Todos» es el literal de las listas hermanas; las otras cinco, las etiquetas de la ficha.
+    const pestanas = document.createElement('div');
+    pestanas.className = 'data-card-tabs';
+    filterBar.appendChild(pestanas);
+    const marcarPestanas = () => {
+      for (const b of botones) {
+        const activa = b.dataset.tab === jobsEstadoFilter;
+        b.classList.toggle('active', activa);
+        // Son filtros que se pulsan, no pestañas con panel: quien no ve el subrayado lo oye aquí.
+        b.setAttribute('aria-pressed', activa ? 'true' : 'false');
+        if (activa) pestanaALaVista(pestanas, b);
+      }
+    };
+    const botones = [['all', 'Todos', jobs.length]]
+      .concat(JOBS_ESTADOS_DE_LA_LISTA.map((estado) => [estado, jobStatusMeta(estado).label, porEstado.get(estado)]))
+      .map(([clave, rotulo, cuantos]) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'data-card-tab';
+        b.dataset.tab = clave;
+        b.textContent = rotulo;
+        const cuenta = document.createElement('span');
+        cuenta.className = 'badge badge-slate';
+        cuenta.textContent = String(cuantos);
+        b.appendChild(cuenta);
+        b.addEventListener('click', () => { jobsEstadoFilter = clave; marcarPestanas(); pintarFilas(); });
+        pestanas.appendChild(b);
+        return b;
+      });
+    marcarPestanas();
+
+    // ── La barra · eje 2 (el COBRO) y el técnico ──────────────────────────────────────────────
+    // Solo se cuelga si lleva algo: una franja vacía bajo las pestañas sería un hueco con borde.
+    const barra = document.createElement('div');
+    barra.className = 'data-card-toolbar jobs-barra';
+    let enLaBarra = 0;
+    if (veCobro) {
+      const selCobro = document.createElement('select');
+      selCobro.className = 'input jobs-filtro-cobro';
+      // El nombre del control es el arranque de su primera opción, como «Facturación» en Albaranes.
+      selCobro.setAttribute('aria-label', 'Cobro');
+      // «Cobro: todos» · FIRMADO por el orquestador por delegación del fundador (SCRUM-1656 c.21978)
+      // en SCRUM-1725 c.22098; registrado en `docs/microcopy/`. Las otras tres son las de siempre.
+      for (const [clave, rotulo] of [['all', 'Cobro: todos'], ['Pendiente', 'Pendiente'], ['Parcial', 'Parcial'], ['Pagado', 'Pagado']]) {
+        const o = document.createElement('option');
+        o.value = clave;
+        o.textContent = `${rotulo} (${counts[clave]})`;
+        if (jobsCobroFilter === clave) o.selected = true;
+        selCobro.appendChild(o);
+      }
+      selCobro.value = jobsCobroFilter;
+      selCobro.addEventListener('change', () => { jobsCobroFilter = selCobro.value; pintarFilas(); });
+      barra.appendChild(selCobro);
+      enLaBarra++;
+    }
 
     // ── SCRUM-727b · EL FILTRO POR TÉCNICO ────────────────────────────────────────────────
     //
@@ -237,26 +318,58 @@ async function renderJobsView(container) {
       caja.appendChild(lab);
       caja.appendChild(buscador);
       caja.appendChild(sel);
-      filterBar.appendChild(caja);
+      // SCRUM-1725i · el filtro de técnico entra en la barra, tal cual: mismo nodo, mismo comportamiento.
+      barra.appendChild(caja);
+      enLaBarra++;
     }
+    if (enLaBarra) filterBar.appendChild(barra);
 
-    const porCobro = jobsCobroFilter === 'all' ? jobs : jobs.filter((j) => j.estadoCobro === jobsCobroFilter);
+    pintarFilas();
+  };
+  const pintarFilas = () => {
+    const deEsaPestana = jobsEstadoFilter === 'all' ? jobs : jobs.filter((j) => pestanaDeTrabajo(j) === jobsEstadoFilter);
+    const porCobro = jobsCobroFilter === 'all' ? deEsaPestana : deEsaPestana.filter((j) => j.estadoCobro === jobsCobroFilter);
     const shown = porCobro.filter((j) => pasaFiltroTecnico(j, jobsTecnicoFilter));
-    renderJobRows(list, shown, container, jobs, equipo);
+    // P2 de c.22098: bajo «Todos» los cerrados siguen plegados; la pestaña «Cerrado» los enseña.
+    renderJobRows(list, shown, container, jobs, equipo, jobsEstadoFilter === 'cerrado');
   };
   paint();
 }
 
+/**
+ * SCRUM-1725i · en qué pestaña cae un Trabajo: la que lleva la MISMA etiqueta que su píldora.
+ *
+ * No se compara `j.status` a pelo: `jobStatusMeta` manda un estado que no conoce a «Sin agendar», y
+ * la pestaña tiene que decir lo mismo que la fila. Con la regla en un solo sitio, las cinco pestañas
+ * suman siempre lo que dice «Todos», y ningún Trabajo se queda sin pestaña.
+ */
+function pestanaDeTrabajo(j) {
+  const etiqueta = jobStatusMeta(j && j.status).label;
+  return JOBS_ESTADOS_DE_LA_LISTA.find((estado) => jobStatusMeta(estado).label === etiqueta) || JOBS_ESTADOS_DE_LA_LISTA[0];
+}
+
+/**
+ * SCRUM-1725i · trae la pestaña activa a la vista, SOLO en horizontal.
+ *
+ * A 390 px la tira de pestañas desplaza (seis no caben). Albaranes usa `scrollIntoView`, que vale al
+ * pulsar; aquí además hay que recolocarla cuando la barra se rehace (elegir técnico, o una acción que
+ * recarga la vista con la pestaña «Cerrado» puesta), y `scrollIntoView` movería también la PÁGINA,
+ * sacando de debajo del dedo la fila que se acababa de tocar. Se mueve la tira y nada más.
+ */
+function pestanaALaVista(tira, boton) {
+  if (typeof boton.getBoundingClientRect !== 'function' || typeof tira.getBoundingClientRect !== 'function') return;
+  const t = tira.getBoundingClientRect();
+  const b = boton.getBoundingClientRect();
+  if (b.left < t.left) tira.scrollLeft -= t.left - b.left;
+  else if (b.right > t.right) tira.scrollLeft += b.right - t.right;
+}
+
 // Agrupado de LISTA (spec: lista simple por fecha). Extraído (SCRUM-11) para reutilizarlo
 // con el filtro de cobro; el agrupado y su lógica NO cambian.
-// SCRUM-436 · el formato de la casa, y NO una copia. Este fichero ya usaba `fmtMoneyEs` en cuatro
-// sitios (`:188`, `:261`, `:347`, `:356`) cuando SCRUM-428 le añadió este formateador local: la
-// misma pantalla imprimía «1000,00 €» en la cabecera del grupo y «1.000,00 €» en las filas de
-// debajo. El censo que lo denunció era mío y estaba MAL: sí había un formateador compartido
-// (`fmtMoneyEs`, api.js:190, 66 usos), y no lo busqué antes de escribir el quinto.
-function eurosJobs(n) {
-  return fmtMoneyEs(n);
-}
+// SCRUM-436 · el formato de la casa es `fmtMoneyEs` (api.js), y NO una copia local. Aquí vivía
+// `eurosJobs`, el formateador que SCRUM-428 añadió para el subtotal de la cabecera «Terminados»;
+// SCRUM-1725g quitó esa cabecera y con ella su único llamador, así que se va (lo cazó el trinquete
+// de SCRUM-1185: una función sin llamador no se deja en el fichero).
 
 // ══ SCRUM-917c · LA LISTA CONTESTA LAS DOS PREGUNTAS ANTES DE ENSEÑAR FILAS ═══════════════════
 //
@@ -648,7 +761,7 @@ function pasaFiltroTecnico(j, filtro) {
   return (Array.isArray(j.asignados) ? j.asignados : []).some((a) => a && String(a.id) === String(filtro));
 }
 
-function renderJobRows(list, jobs, container, todos, equipo) {
+function renderJobRows(list, jobs, container, todos, equipo, cerradosALaVista = false) {
   list.innerHTML = '';
 
   // 🔴 CONTROL NEGATIVO DEL FILTRO, escrito en el propio camino: si el filtro no encuentra nada,
@@ -664,21 +777,40 @@ function renderJobRows(list, jobs, container, todos, equipo) {
     return;
   }
 
-  // SCRUM-917c · entra «📅 Hoy» (texto firmado, comentario 15881), separado de «Esta semana»: lo
-  // que el fundador quiere ver primero es lo de hoy. El criterio vive en `grupoDeTrabajo`, que es
-  // el mismo que cuenta la cifra «Para hoy» de arriba.
+  // ══ SCRUM-1725g · LA LISTA ES PLANA: UNA FILA POR TRABAJO, SIN CABECERAS DE GRUPO ═══════════════
+  //
+  // Veredicto del fundador sobre la vuelta anterior (SCRUM-1725 c.22073): quiere «un listado normal
+  // como los que tenemos en otros sitios». Medido en yaqu.app el 18-nov-2026
+  // (`docs/master/evidencias/SCRUM-1725/g1-patron-listas.mjs`): Presupuestos y Albaranes pintan UN
+  // `tbody`, CERO filas de cabecera y el estado como píldora en 10 de 10 y 12 de 12 filas; Trabajos
+  // pintaba 5 `tbody`, 7 filas de cabecera y ninguna píldora. Se espeja ese patrón.
+  //
+  // LO QUE SE VA: los rótulos de grupo («🔨 En curso», «📅 Hoy», «📅 Esta semana», «⏳ Sin agendar»,
+  // «🗓 Más adelante», «✅ Terminados…», «🔒 Cerrados») y, con el de Terminados, su subtotal «por
+  // cobrar» y su salvedad larga. Decisión firmada por el orquestador por delegación del fundador
+  // (SCRUM-1656 c.21978), registrada en SCRUM-1725 c.22076: el cobro queda en la tarjeta «Por
+  // cobrar» de arriba (importe + «N sin importe de referencia») y fila a fila («💰 Cobrar el
+  // resto (importe)» y «X de Y»). M1 (c.22052, «✅ Terminados» a secas para quien no ve el cobro)
+  // queda superado: no hay cabecera para ningún rol.
+  //
+  // LO QUE SE QUEDA:
+  //   · EL ORDEN. La misma secuencia que tenían los grupos, sin sus rótulos: en curso → hoy → esta
+  //     semana → sin agendar → más adelante → terminados (c.22076, P2). Trabajos es la cola del día:
+  //     los N de la cifra «Para hoy» son las N primeras filas, y la rellena del operario queda
+  //     arriba. Dentro de cada tramo manda el orden del servidor (fecha agendada), como antes.
+  //   · `grupoDeTrabajo` sigue siendo la ÚNICA regla: ordena aquí, cuenta la cifra «Para hoy» y
+  //     decide qué «▶ Empezar» va relleno (SCRUM-1739).
+  //   · LOS CERRADOS, PLEGADOS (c.22076, P3): «Ver N cerrados» —el literal de siempre— es la última
+  //     fila; al pulsarla se añaden con su píldora «Cerrado». Sin eso la lista crecería para siempre
+  //     con lo que ya no pide nada. La fila conserva su clase (`jobs-grupo-abrir`): la buscan por
+  //     ella `guard:escalera-por-estado` y `censo:clics-del-80`.
+  //   · El ESTADO ya no lo dice un rótulo: lo dice cada fila, con la píldora de la ficha (`jobRow`).
   const ahora = new Date();
-  const groups = [
-    { key: 'en_curso',  title: '🔨 En curso',         items: [] },
-    { key: 'hoy',       title: '📅 Hoy',               items: [] },
-    { key: 'semana',    title: '📅 Esta semana',       items: [] },
-    { key: 'sin',       title: '⏳ Sin agendar',       items: [] },
-    { key: 'adelante',  title: '🗓 Más adelante',      items: [] },
-    { key: 'terminado', title: '✅ Terminados — cobra el resto', items: [] },
-    { key: 'cerrado',   title: '🔒 Cerrados', items: [], collapsed: true },
-  ];
-  const porClave = new Map(groups.map((g) => [g.key, g]));
-  for (const j of jobs) porClave.get(grupoDeTrabajo(j, ahora)).items.push(j);
+  const SECUENCIA = ['en_curso', 'hoy', 'semana', 'sin', 'adelante', 'terminado'];
+  const porTramo = new Map([...SECUENCIA, 'cerrado'].map((clave) => [clave, []]));
+  for (const j of jobs) porTramo.get(grupoDeTrabajo(j, ahora)).push(j);
+  const vivos = SECUENCIA.flatMap((clave) => porTramo.get(clave));
+  const cerrados = porTramo.get('cerrado');
 
   const card = document.createElement('div');
   card.className = 'customers-card jobs-card';
@@ -697,85 +829,48 @@ function renderJobRows(list, jobs, container, todos, equipo) {
   // Los rótulos son los que ya usan las listas hermanas en producción; «Técnicos» lo firmó el
   // fundador el 4-sep-2026 (regla 30, `docs/microcopy/`).
   //
-  // ── SCRUM-816 · «ESTADO» Y «FECHA» ERAN LA MISMA PREGUNTA ─────────────────────────────────
+  // ── SCRUM-816 · «ESTADO» Y «FECHA» ERAN LA MISMA PREGUNTA… MIENTRAS HUBO CABECERAS DE GRUPO ──
+  // SCRUM-816 retiró el `<th>Estado</th>` porque el estado ya lo decía la cabecera del grupo, y
+  // SCRUM-917c retiró la píldora «Sin agendar» por lo mismo (salía en 12 de 13 filas, todas bajo
+  // «⏳ Sin agendar · 12»). Las dos decisiones descansaban en esas cabeceras. SCRUM-1725g las quita,
+  // así que el estado VUELVE a la fila: sin rótulo y sin píldora no lo diría nadie.
   //
-  // Se funden en una. Y no es que quepan juntas: es que **contestan lo mismo** —«¿cuándo se hace
-  // esto?»—, y separadas se contradecían a media pantalla. FECHA estaba vacía («—») en 11 de 12
-  // filas de la captura de producción: una columna que no dice nada el 92% del tiempo gasta ancho
-  // y no informa. Y la insignia que iba al lado repetía en una palabra lo que la fecha ya decía.
+  // «Estado» es el `<th>` de Presupuestos y Albaranes. FIRMADO por el orquestador por delegación
+  // del fundador (SCRUM-1656 c.21978), SCRUM-1725 c.22076, y registrado en `docs/microcopy/`.
   //
-  // 🔴 LO QUE SE PODÍA PERDER Y NO SE PIERDE. La FSM tiene cinco estados y sólo dos hablan de
-  // agenda; «En curso», «Terminado» y «Cerrado» no responden a «cuándo». Pero **cada fila vive
-  // bajo una cabecera de grupo que ya los nombra** (🔨 En curso · ✅ Terminados · 🔒 Cerrados), y
-  // esas cabeceras llevan microcopy aprobada de SCRUM-428. Así que la fusión no borra el estado:
-  // lo deja donde ya estaba dicho, en vez de repetirlo veinte veces.
-  //
-  // Se retira el `<th>Estado</th>`. No se estrena ni un rótulo: «Fecha» ya estaba.
-  //
-  // ── SCRUM-917c · Y SE RETIRA «Técnicos» COMO COLUMNA ──────────────────────────────────────
-  // Baja a la línea del cliente (ver `celdaTecnicos`). La alineación del importe pasa a la hoja:
-  // el `style=` en línea que llevaba este `<th>` se va con él.
+  // ── SCRUM-917c · «Técnicos» NO ES COLUMNA ─────────────────────────────────────────────────
+  // Vive en la línea del cliente (ver `celdaTecnicos`). La alineación del importe está en la hoja.
   thead.innerHTML =
     '<tr><th>Cliente</th><th class="jobs-th-importe">Importe</th>'
-    + '<th>Fecha</th><th>Acciones</th></tr>';
+    + '<th>Fecha</th><th>Estado</th><th>Acciones</th></tr>';
   table.appendChild(thead);
-  // El `colSpan` de las filas de grupo se CUENTA de esta cabecera, no se escribe: dos números a
-  // mano para lo mismo se descuadran (los dos `colSpan = 8` de SCRUM-584). Aquí pasa de 5 a 4.
+  // El `colSpan` de la fila «Ver N cerrados» se CUENTA de esta cabecera, no se escribe: dos números
+  // a mano para lo mismo se descuadran (los dos `colSpan = 8` de SCRUM-584).
   const columnas = thead.querySelectorAll('th').length;
 
-  for (const g of groups) {
-    if (!g.items.length) continue;
-    const tbody = document.createElement('tbody');
-    tbody.className = 'jobs-grupo';
-
-    // La cabecera del grupo, con su importe y su salvedad: microcopy aprobada que NO se toca.
-    // SCRUM-1725 (D1) · el importe «por cobrar» y su salvedad son estado de cobro: no para quien no lo ve.
-    const resumen = g.key === 'terminado' && veEstadoDeCobro(window.appUserRole) && typeof resumenTerminadoSinCobrar === 'function'
-      ? resumenTerminadoSinCobrar(g.items)
-      : null;
-    // SCRUM-917c · «por cobrar» junto a la suma (dos palabras firmadas, comentario 15881): sin
-    // ellas el importe de la cabecera no decía de qué era.
-    const importe = resumen && resumen.cuantos > 0 ? ` · ${eurosJobs(resumen.importe)} por cobrar` : '';
-    const trTitulo = document.createElement('tr');
-    trTitulo.className = 'jobs-grupo-titulo';
-    const tdTitulo = document.createElement('td');
-    tdTitulo.colSpan = columnas;
-    tdTitulo.textContent = `${g.title} · ${g.items.length}${importe}`;
-    trTitulo.appendChild(tdTitulo);
-    tbody.appendChild(trTitulo);
-
-    if (resumen && resumen.sinImporte > 0) {
-      const trSalvedad = document.createElement('tr');
-      trSalvedad.className = 'jobs-grupo-salvedad';
-      const tdSalvedad = document.createElement('td');
-      tdSalvedad.colSpan = columnas;
-      // ⚠️ TEXTO OFICIAL APROBADO (regla 30, fundador 10-ago-2026). Ni se reescribe ni se «mejora».
-      tdSalvedad.textContent =
-        `${resumen.sinImporte} sin importe de referencia: no se sabe cuánto falta y no entran en el total.`;
-      trSalvedad.appendChild(tdSalvedad);
-      tbody.appendChild(trSalvedad);
-    }
-
-    if (g.collapsed) {
-      const tr = document.createElement('tr');
-      tr.className = 'jobs-grupo-abrir';
-      const td = document.createElement('td');
-      td.colSpan = columnas;
-      const btn = document.createElement('button');
-      btn.className = 'btn-ghost btn-sm';
-      btn.textContent = `Ver ${g.items.length} cerrado${g.items.length !== 1 ? 's' : ''}`;
-      btn.addEventListener('click', () => {
-        tr.remove();
-        g.items.forEach((j) => tbody.appendChild(jobRow(j, container, equipo)));
-      });
-      td.appendChild(btn);
-      tr.appendChild(td);
-      tbody.appendChild(tr);
-    } else {
-      g.items.forEach((j) => tbody.appendChild(jobRow(j, container, equipo)));
-    }
-    table.appendChild(tbody);
+  const tbody = document.createElement('tbody');
+  vivos.forEach((j) => tbody.appendChild(jobRow(j, container, equipo)));
+  // SCRUM-1725i (P2 de c.22098) · quien pulsa la pestaña «Cerrado» ya ha pedido los cerrados: se
+  // pintan directos. Detrás de «Ver N cerrados» le costarían dos pulsaciones para ver una lista.
+  if (cerrados.length && cerradosALaVista) {
+    cerrados.forEach((j) => tbody.appendChild(jobRow(j, container, equipo)));
+  } else if (cerrados.length) {
+    const tr = document.createElement('tr');
+    tr.className = 'jobs-grupo-abrir';
+    const td = document.createElement('td');
+    td.colSpan = columnas;
+    const btn = document.createElement('button');
+    btn.className = 'btn-ghost btn-sm';
+    btn.textContent = `Ver ${cerrados.length} cerrado${cerrados.length !== 1 ? 's' : ''}`;
+    btn.addEventListener('click', () => {
+      tr.remove();
+      cerrados.forEach((j) => tbody.appendChild(jobRow(j, container, equipo)));
+    });
+    td.appendChild(btn);
+    tr.appendChild(td);
+    tbody.appendChild(tr);
   }
+  table.appendChild(tbody);
 
   list.appendChild(card);
 }
@@ -941,7 +1036,8 @@ async function abrirAsignar(j, refrescar) {
  * Los tres casos, con los textos firmados en el comentario 15881 de SCRUM-917:
  *   · falta algo      → «740,00 €» / «de 1.240,00 €»
  *   · no falta nada   → «✓ Cobrado» / «1.240,00 €»
- *   · no hay eje      → «Sin importe» / «no hay presupuesto aceptado» (hoy era un «—» mudo)
+ *   · no hay eje      → «Sin importe» (hoy era un «—» mudo). Llevaba debajo «no hay presupuesto
+ *                       aceptado»: SCRUM-1725j (P3) la deja solo en la ficha.
  *
  * 🔴 Y UN CUARTO QUE NO SE CONSTRUYE: cobrado MAYOR que la referencia. Si cobrar de más es
  * legítimo o un defecto lo decide la Sesión 1, y hasta entonces esas filas se pintan COMO HOY
@@ -960,8 +1056,10 @@ function celdaImporte(j) {
     td.appendChild(d);
   };
   if (falta === null) {
+    // SCRUM-1725j · P3 (FIRMADO, SCRUM-1725 c.22098 por la delegación de SCRUM-1656 c.21978): en la
+    // LISTA queda solo «Sin importe». La segunda frase («no hay presupuesto aceptado») salía en 8 de
+    // 9 filas y daba tres renglones a una celda que no tenía cifra; el porqué se lee en la ficha.
     linea('jobs-importe-falta jobs-importe-sin', 'Sin importe');
-    linea('jobs-importe-de', 'no hay presupuesto aceptado');
   } else if (!veEstadoDeCobro(window.appUserRole)) {
     // SCRUM-1725 (D1) · el importe, sin lo que falta ni «de»: c.21547 deja el importe y quita el cobro.
     linea('jobs-importe-falta', fmtMoneyEs(j.importeReferencia, cur));
@@ -1026,11 +1124,23 @@ function jobRow(j, container, equipo) {
   // SCRUM-917c · `tituloPropio` es el nombre que puso el profesional, crudo o `null` (servidor,
   // SCRUM-917d). NO se usa `titulo`, que cae al nombre del cliente cuando no hay otro y repetiría
   // la línea de encima. Los técnicos llegan aquí desde su columna, que desaparece.
-  const tdCliente = document.createElement('td');
-  tdCliente.className = 'cell-client';
+  const tdCelda = document.createElement('td');
+  tdCelda.className = 'cell-client';
+  // ── SCRUM-1725j · EL CUERPO DE LA CELDA, Y LA CURA DEL CLIC EN LA FILA ─────────────────────────
+  // Medido (`docs/master/evidencias/SCRUM-1725/c1725j-clic-antes.txt`): en 8 de 16 filas el CENTRO
+  // de esta celda caía sobre el desplegable de técnicos, que no navega (y hace bien). Pulsar una
+  // fila «en medio» abría un desplegable en vez del Trabajo. No se toca el `click` ni el candado:
+  // el desplegable deja de ocupar el centro. Todo lo que la celda decía cuelga ahora de este
+  // cuerpo, en el MISMO orden, y la hoja lo reparte en renglones (bloque «S4 · SCRUM-1725j»):
+  // quién · qué · tipo y dirección en UN renglón gris, y los técnicos al final de ese renglón, en
+  // la mitad derecha. Un `td` no puede ser rejilla sin dejar de ser celda; por eso hay cuerpo.
+  const tdCliente = document.createElement('div');
+  tdCliente.className = 'jobs-fila-cuerpo';
+  tdCelda.appendChild(tdCliente);
   const nombre = document.createElement('b');
   nombre.className = 'jobs-fila-cliente';
   nombre.textContent = j.customer?.name || 'Cliente';
+  nombre.title = nombre.textContent;
   tdCliente.appendChild(nombre);
   // SCRUM-1670c · QUÉ CLASE de trabajo es: el tipo de intervención elegido en el alta, entre el
   // cliente y la tarea. Se pinta el RÓTULO que da el servidor (`/admin/me` → `appTiposIntervencion`),
@@ -1099,7 +1209,7 @@ function jobRow(j, container, equipo) {
     d.title = direccion;
     tdCliente.appendChild(d);
   }
-  tr.appendChild(tdCliente);
+  tr.appendChild(tdCelda);
 
   // ② Importe
   tr.appendChild(celdaImporte(j));
@@ -1123,8 +1233,41 @@ function jobRow(j, container, equipo) {
   // problema. El grupo ya lo dice; la fila no lo repite.
   const tdFecha = document.createElement('td');
   tdFecha.className = 'cell-date';
-  if (j.scheduledAt) tdFecha.textContent = fecha;
+  if (j.scheduledAt) {
+    // SCRUM-1725j · el MISMO texto, en un renglón y con la hora en gris: el día manda, la hora
+    // acompaña. Se parte por la última coma del formato; si un día no la trae, va entero.
+    const corte = fecha.lastIndexOf(', ');
+    const dia = document.createElement('span');
+    dia.className = 'jobs-fecha-dia';
+    dia.textContent = corte > 0 ? fecha.slice(0, corte) : fecha;
+    tdFecha.appendChild(dia);
+    if (corte > 0) {
+      const hora = document.createElement('span');
+      hora.className = 'jobs-fecha-hora';
+      hora.textContent = fecha.slice(corte);
+      tdFecha.appendChild(hora);
+    }
+  }
   tr.appendChild(tdFecha);
+
+  // ── SCRUM-1725g · EL ESTADO, EN LA FILA ───────────────────────────────────────────────────
+  // «El grupo ya lo dice» dejó de ser verdad: la lista es plana y no hay grupo que lo diga. La
+  // píldora vuelve, y es LA DE LA FICHA —`jobStatusMeta` (api.js), la única copia de la etiqueta y
+  // de su clase—: «Sin agendar», «Agendado», «En curso», «Terminado», «Cerrado». Ni un literal
+  // escrito aquí. Es el estado de la FSM, no el de cobro: el cobro sigue en la celda de IMPORTE
+  // («X de Y»), que es donde SCRUM-816 lo dejó dicho con las dos cifras.
+  // Misma celda y misma clase que Presupuestos y Albaranes (`cell-status`): la rejilla compartida
+  // de la tarjeta de móvil ya sabe dónde va.
+  const tdEstado = document.createElement('td');
+  tdEstado.className = 'cell-status';
+  const metaDelEstado = typeof jobStatusMeta === 'function' ? jobStatusMeta(j.status) : null;
+  if (metaDelEstado) {
+    const pildora = document.createElement('span');
+    pildora.className = 'status-pill ' + metaDelEstado.pillClass;
+    pildora.textContent = metaDelEstado.label;
+    tdEstado.appendChild(pildora);
+  }
+  tr.appendChild(tdEstado);
 
   // ⑤ Acción principal + el «⋯»
   const tdAcc = document.createElement('td');
@@ -1149,11 +1292,15 @@ function jobRow(j, container, equipo) {
   const puedeFacturar = typeof window.facturaFiscalDisponible === 'function' && window.facturaFiscalDisponible();
   const cobraAqui = puedeFacturar && j.status === 'terminado' && j.remaining && j.remaining.amount > 0;
   const siguiente = typeof jobNextAction === 'function' ? jobNextAction(j, !isTecnico) : null;
-  // SCRUM-1739 · ¿la rellena de esta fila es la acción de la ESCALERA? Entonces va PRIMERA (abajo, al
-  // montar la celda). «Abrir parte» ya iba primera porque se monta fuera de la escalera.
-  let rellenaEnEscalera = cobraAqui;
+  // (SCRUM-1739 llevaba aquí la cuenta de si la rellena era la de la escalera, para montarla delante
+  // de «Ver detalle». Con el orden fijo de SCRUM-1725j la caja va SIEMPRE delante y la cuenta sobra.)
+  // SCRUM-1725j · P4: la acción de la escalera que BAJA al «⋯» (ver dónde se monta el menú).
+  let escaleraAlMenu = null;
   if (siguiente && !cobraAqui) {
     const bSiguiente = document.createElement('button');
+    // Identidad, no peso ni sitio (como `data-accion="cta"` en la ficha, SCRUM-1725h): es la acción
+    // de la escalera esté en la fila o dentro del «⋯».
+    bSiguiente.dataset.accion = 'escalera';
     // ── SCRUM-917c · SECUNDARIA: UNA SOLA PRIMARIA EN LA LISTA, Y ES LA DEL DINERO ─────────────
     // Medido en staging el 17-sep-2026: doce «Agendar» verdes idénticos en la misma pantalla. Si
     // todo es primario, nada lo es. La acción NO cambia —la misma escalera, el mismo sitio, el
@@ -1175,7 +1322,6 @@ function jobRow(j, container, equipo) {
     // Va en su propia asignación, con el literal entero, para que el censo de SCRUM-412 lo VEA.
     if (siguiente.kind === 'empezar' && grupoDeTrabajo(j, new Date()) === 'hoy') {
       bSiguiente.className = 'btn-primary btn-sm';
-      rellenaEnEscalera = true;
     }
     bSiguiente.textContent = siguiente.label;
     // ── SCRUM-823 · «Agendar» y «▶ Empezar» SE EJECUTAN AQUÍ, no llevan al detalle ─────────
@@ -1205,7 +1351,18 @@ function jobRow(j, container, equipo) {
         if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: j.id });
       });
     }
-    caja.appendChild(bSiguiente);
+    // ── SCRUM-1725j · P4 (c.22098): EN CURSO, EL SEGUNDO BOTÓN BAJA AL «⋯» ─────────────────────
+    // La fila EN CURSO llevaba cuatro controles («Abrir parte» · «Ver detalle» · «+ Nuevo albarán»
+    // o «Emitir albarán» · «⋯») y era la única que partía en dos renglones. El paso de hoy en obra
+    // es el parte (N1, SCRUM-1700): es la rellena y se queda. El albarán sigue a UN gesto, primero
+    // del «⋯», con su mismo rótulo y su mismo destino; para todos los roles. Solo baja ESTE: una
+    // rellena de la escalera (1739) nunca se esconde.
+    if (j.status === 'en_curso') {
+      bSiguiente.className = 'btn-ghost btn-sm';
+      escaleraAlMenu = bSiguiente;
+    } else {
+      caja.appendChild(bSiguiente);
+    }
   }
 
   if (cobraAqui) {
@@ -1241,6 +1398,7 @@ function jobRow(j, container, equipo) {
 
   // ── El «⋯»: TODO lo que modifica el Trabajo vive aquí ────────────────────────────────────
   const menu = [];
+  if (escaleraAlMenu) menu.push(escaleraAlMenu);
   const opcion = (texto, fn) => {
     const b = document.createElement('button');
     b.className = 'btn-ghost btn-sm';
@@ -1371,16 +1529,18 @@ function jobRow(j, container, equipo) {
   // El «⋯» sigue CERRANDO la fila (SCRUM-1562f): en ese caso cuelga de la celda, detrás de «Ver
   // detalle», y no de la caja. Los guards lo buscan por la FILA (`tr .overflow-trigger`) y la
   // escalera sigue siendo `.jobs-acciones > button`: ninguno de los dos cambia.
+  //
+  // ── SCRUM-1725j · ORDEN FIJO: [el paso] · «Ver detalle» · «⋯», SIEMPRE ───────────────────────
+  // Hasta aquí había dos órdenes: con rellena iba la caja delante, y sin ella «Ver detalle» abría
+  // la celda y el «⋯» colgaba de la caja. Fila a fila, «Ver detalle» bailaba de sitio. Ahora la
+  // celda se alinea a la derecha y el orden es uno: «Ver detalle» y «⋯» caen en la misma vertical
+  // en todas las filas, y lo que cambia de ancho —el paso— queda a su izquierda. Sigue siendo el
+  // orden del DOM (el del foco), sin `order` en la hoja. La caja de la escalera se monta aunque
+  // esté vacía (cerrado, o EN CURSO desde P4): los guards cuentan UNA por fila.
   const tresPuntos = menu.length && typeof overflowMenu === 'function' ? overflowMenu(menu) : null;
-  if (rellenaEnEscalera) {
-    celda.appendChild(caja);
-    celda.appendChild(bDetalle);
-    if (tresPuntos) celda.appendChild(tresPuntos);
-  } else {
-    celda.appendChild(bDetalle);
-    celda.appendChild(caja);
-    if (tresPuntos) caja.appendChild(tresPuntos);
-  }
+  celda.appendChild(caja);
+  celda.appendChild(bDetalle);
+  if (tresPuntos) celda.appendChild(tresPuntos);
   tr.appendChild(tdAcc);
 
   // La fila abre el Trabajo. Los controles de dentro NO disparan la navegación (guard por

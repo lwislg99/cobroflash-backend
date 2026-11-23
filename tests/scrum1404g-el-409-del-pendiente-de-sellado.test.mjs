@@ -32,7 +32,9 @@
 // pedirlo». Un documento que ya tiene su PDF congelado se sirve TAL CUAL, byte a byte igual al de
 // la emisión, aunque después cambie el emisor (regla 29). La protección vieja no se pierde: G0 y
 // X0 son los mismos documentos emitidos SIN congelar (lo emitido antes de 665e, que se genera la
-// primera vez que se pide, c.21191), y siguen exigiendo lo de antes: 409 firmado y 500.
+// primera vez que se pide, c.21191): X0 sigue en 500, y G0 sigue a SCRUM-1779d (200 sin QR, c.22245).
+// SCRUM-1779d · este banco AFIRMA el sellado: con SIF_ENABLED en OFF (el defecto) la emisión ya no sella (SCRUM-1779 c.22239), así que se enciende aquí y lo afirmado no cambia.
+process.env.SIF_ENABLED = 'true';
 import { test, after } from 'node:test';
 import crypto from 'node:crypto';
 import http from 'node:http';
@@ -272,9 +274,25 @@ test('SCRUM-1404g · F · factura ES que no llegó a la puerta (pendiente) → 4
 test('SCRUM-1404g · D · justificante J- pendiente → SIGUE en 500 (c.20923 P4)', () => sigueEn500(R.D, 'D'));
 test('SCRUM-1404g · E · comercio no español pendiente → SIGUE en 500 (c.20923 P4)', () => sigueEn500(R.E, 'E'));
 test('SCRUM-1404g · G · emitido sin NIF y con su PDF congelado: tras ponerle NIF se sirve el congelado, byte a byte (665e, c.21584)', () => sirveElCongelado(R.G, 'G'));
-test('SCRUM-1404g · G0 · el mismo documento SIN PDF congelado (anterior a 665e): el 409 del portón de la huella no cambia', () => {
+// SCRUM-1779d · 20-nov-2026 · G0 REANCLADO al juntar main en SCRUM-665e (23-nov-2026): decía «el 409 del portón de
+// la huella no cambia». Por la decisión del fundador SCRUM-1779 c.22245 ① («Sí se queda sin sello»), aplicada como
+// opción A por el orquestador J: una factura emitida SIN huella —aquí, el comercio no tenía NIF al emitir— es un
+// documento simple, y su PDF sale sin QR ni VeriFactu. G0 es ese documento SIN PDF congelado (anterior a 665e).
+test('SCRUM-1404g · G0 · el mismo documento SIN PDF congelado (anterior a 665e): 200 con el PDF sin QR, aunque luego tenga NIF', () => {
   sinCongeladoAlEmitir(R.G0, 'G0');
-  es409Firmado(R.G0, 'G0');
+  assert.equal(R.G0.fila.vfEstado, K.SELLADO_NO_APLICA, 'G0: nace no_aplica');
+  assert.equal(R.G0.fila.vfHash ?? null, null, 'G0: sin huella');
+  for (const via of ['recibo', 'panel']) {
+    assert.equal(R.G0[via].status, 200, `G0 · ${via}: ${ver(R.G0[via])}`);
+    assert.ok(esPdf(R.G0[via]), `G0 · ${via}: no es un PDF`);
+    assert.ok(!/\/Subtype\s*\/Image/.test(R.G0[via].texto), `G0 · ${via}: el PDF lleva una imagen (QR)`);
+  }
+  // Regla 29: el primer PDF escribe su `pdfUrl` (y, desde 665e, su `pdf_sha256`) en UNA escritura; lo fiscal de
+  // la fila no cambia. La fila del banco recibe cada `update` (Object.assign), así que se lee DESPUÉS.
+  assert.ok(R.G0.escritasEnFactura <= 1, `G0 · ${R.G0.escritasEnFactura} escrituras en la factura`);
+  assert.equal(R.G0.fila.vfHash ?? null, null, 'G0 · regla 29: pedir el documento le escribió una huella');
+  assert.equal(R.G0.fila.vfEstado, K.SELLADO_NO_APLICA, 'G0 · regla 29: pedir el documento le cambió el estado');
+  assert.equal(R.G0.fila.number, '2026-CF-0009', 'G0 · el número no cambia');
 });
 test('SCRUM-1404g · una factura sellada → 200 con el PDF por las dos rutas', () => {
   assert.equal(R.SELLADA.recibo.status, 200, `recibo: ${ver(R.SELLADA.recibo)}`);
@@ -337,7 +355,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   { fichero: 'src/modules/invoicing/domain/selladoEstado.ts',
     de: 'const congelarPdf = opciones.congelarPdf ?? congelarPdfDeLaCasa;',
     a: 'const congelarPdf = congelarPdfDeLaCasa;',
-    cae: 'SCRUM-1404g · G0 · el mismo documento SIN PDF congelado (anterior a 665e): el 409 del portón de la huella no cambia' },
+    cae: 'SCRUM-1404g · G0 · el mismo documento SIN PDF congelado (anterior a 665e): 200 con el PDF sin QR, aunque luego tenga NIF' },
   // Encendido (c.20923): la fecha escrita vuelve a `null` con el 409 puesto → cae el guard de J5.
   { fichero: 'src/modules/invoicing/domain/reintentoSellado.ts',
     de: "export const REINTENTO_ACTIVO_DESDE: string | null = '2026-10-26T23:58:57Z';",

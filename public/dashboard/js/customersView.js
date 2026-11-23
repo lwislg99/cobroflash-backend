@@ -754,7 +754,7 @@ function renderCustomersView(container) {
         td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div>'
           + '<div class="empty-state-title">' + (searchText ? 'Sin resultados para tu búsqueda' : 'Añade a tu primer cliente') + '</div>'
           + '<div class="empty-state-desc">' + (searchText ? 'Prueba con otro nombre, teléfono o email.' : 'Guárdalo una vez y podrás enviarle cotizaciones profesionales por WhatsApp en segundos.') + '</div>'
-          + (searchText ? '' : '<button id="customers-empty-cta" class="btn-primary btn-sm" style="margin-top:14px">+ Añadir cliente</button>') + '</div>';
+          + (searchText ? '' : '<button id="customers-empty-cta" class="btn-primary btn-sm clientes-vacio-cta">+ Añadir cliente</button>') + '</div>';
         tr.appendChild(td);
         tbody.appendChild(tr);
         const cta = td.querySelector('#customers-empty-cta');
@@ -1163,7 +1163,6 @@ function renderCustomersView(container) {
   // SCRUM-579 (CONT-06): los cinco campos de la direccion de FACTURACION (no la de obra).
   let fieldBillingAddress, fieldBillingCity, fieldBillingPostalCode, fieldBillingProvince;
   let fieldBillingCountry = null;
-  let fieldRecargo = null; // SCRUM-294-a: recargo de equivalencia del cliente (tres estados)
   let modalTitleEl = null;
   let modalSaveBtn = null;
 
@@ -1521,30 +1520,10 @@ function renderCustomersView(container) {
     tipoWrapper.appendChild(tipoLabel);
     tipoWrapper.appendChild(fieldTipoDestinatario);
 
-    // SCRUM-294-a (A3) · EL RECARGO DE EQUIVALENCIA ES UNA PROPIEDAD DEL CLIENTE, no una casilla
-    // que alguien marca en cada factura: un cliente en recargo lo esta SIEMPRE, y preguntarlo por
-    // factura es pedirle al profesional que recuerde el regimen fiscal de su cliente.
-    //
-    // 🔴 UN SELECT DE TRES ESTADOS, Y NO UNA CASILLA. Una casilla solo sabe decir si/no, asi que
-    // «no consta» se leeria como «declara que no» — y false es un valor LEGITIMO, el peor sitio
-    // donde degradar en silencio (SCRUM-271: la casilla que se lee mal no puede caer a false).
-    // Con el select, «no consta» es una opcion explicita y NULL viaja como NULL.
-    //
-    // MICROCOPY: marcador. Decirle en pantalla a que regimen pertenece su cliente es asesorarle, y
-    // eso es dictamen del asesor, no producto. El dato se PIDE, no se explica.
-    const recargoWrapper = createElement("div", "field");
-    const recargoLabel = document.createElement("label");
-    recargoLabel.textContent = "Recargo de equivalencia";
-    fieldRecargo = document.createElement("select");
-    fieldRecargo.name = "recargoEquivalencia";
-    fieldRecargo.className = "input";
-    fieldRecargo.innerHTML = `
-      <option value="">No consta</option>
-      <option value="si">Sí, está en recargo</option>
-      <option value="no">No está en recargo</option>
-    `;
-    recargoWrapper.appendChild(recargoLabel);
-    recargoWrapper.appendChild(fieldRecargo);
+    // SCRUM-1783b · EL RECARGO DE EQUIVALENCIA YA NO SE PREGUNTA EN LA FICHA (fundador, SCRUM-1783
+    // c.22264). El dato guardado (`Customer.recargoEquivalencia`) y lo que acepta la API se QUEDAN:
+    // por eso el payload de abajo NO lleva la clave — si viajara como null, cada guardado borraría
+    // lo que el cliente tuviera (c.22266). Lo vigila tests/scrum1783b-sin-selector-recargo.test.mjs.
 
     // SCRUM-574 (CONT-01): el switch va PRIMERO — es la pregunta que decide qué campos tienen
     // sentido debajo, así que preguntarla después sería pedir el dato y luego cambiarle el
@@ -1599,7 +1578,6 @@ function renderCustomersView(container) {
     body.appendChild(fieldBillingProvince.wrapper);
     body.appendChild(paisWrapper);
     body.appendChild(tipoWrapper);
-    body.appendChild(recargoWrapper);
     // SCRUM-588 (CONT-16): la referencia interna va JUSTO ENCIMA de «Notas», que es donde el
     // profesional la metía hasta hoy por no tener sitio propio.
     body.appendChild(fieldInternalRef.wrapper);
@@ -1783,9 +1761,6 @@ function renderCustomersView(container) {
       selectorEmpresa.escribir(editingCustomer.companyId ?? null); // SCRUM-576
       fieldWaOptOut.checked = !!editingCustomer.waOptOut;
       fieldTipoDestinatario.value = editingCustomer.tipoDestinatario || ""; // SCRUM-69
-      // SCRUM-294-a: los tres estados NO colapsan. `|| ""` habria mandado el `false` a «no consta».
-      fieldRecargo.value = editingCustomer.recargoEquivalencia === true ? "si"
-        : editingCustomer.recargoEquivalencia === false ? "no" : "";
       // SCRUM-574: la FORMA JURÍDICA sale de `contactKind` y de NADA MÁS. Nunca se deduce de
       // `tipoDestinatario` ni de si hay razón social — deducirla es el defecto que este ticket
       // cierra, y está prohibido expresamente (fundador, 24-ago-2026).
@@ -1951,9 +1926,8 @@ function renderCustomersView(container) {
       contactKind: switchForma.leer(),
       waOptOut: !!(fieldWaOptOut && fieldWaOptOut.checked), // J3
       tipoDestinatario: fieldTipoDestinatario.value || null, // SCRUM-69
-      // SCRUM-294-a: «» → null (no consta). NUNCA false por defecto: eso seria DECLARAR por el
-      // profesional que su cliente no lleva recargo, y eso no lo ha dicho nadie.
-      recargoEquivalencia: fieldRecargo.value === "si" ? true : fieldRecargo.value === "no" ? false : null,
+      // SCRUM-1783b: `recargoEquivalencia` NO va aquí, a propósito: la ficha ya no lo muestra, y
+      // un formulario sólo envía lo que muestra (SCRUM-692). Ausente = no se toca el dato guardado.
       // SCRUM-579 (CONT-06): la dirección de FACTURACIÓN. La regla vive en
       // `direccionParaPayload`, que la suite ejecuta: vacío → `null`, nunca `""`.
       // SCRUM-580 (CONT-07): «ausente ≠ vacío». Sin etiquetas viaja `null`, nunca `[]` ni `""`.

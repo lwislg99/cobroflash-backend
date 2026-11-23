@@ -1,0 +1,13 @@
+﻿390 operario #77: IDÉNTICA · desbordeX 0→0 · fuera 0 · alto 2069→1713 · errores 0
+390 operario #76: IDÉNTICA · desbordeX 0→0 · fuera 0 · alto 2597→1140 · errores 0
+390 admin #77: IDÉNTICA · desbordeX 0→0 · fuera 0 · alto 2323→1811 · errores 0
+390 admin #76: IDÉNTICA · desbordeX 0→0 · fuera 0 · alto 2894→1093 · errores 0
+1280 operario #77: IDÉNTICA · desbordeX 0→0 · fuera 0 · alto 1138→941 · errores 0
+1280 operario #76: IDÉNTICA · desbordeX 0→0 · fuera 0 · alto 1512→900 · errores 0
+1280 admin #77: IDÉNTICA · desbordeX 0→0 · fuera 0 · alto 1297→941 · errores 0
+1280 admin #76: IDÉNTICA · desbordeX 0→0 · fuera 0 · alto 1701→900 · errores 0
+1920 operario #77: IDÉNTICA · desbordeX 0→0 · fuera 0 · alto 1138→949 · errores 0
+1920 operario #76: IDÉNTICA · desbordeX 0→0 · fuera 0 · alto 1388→900 · errores 0
+1920 admin #77: IDÉNTICA · desbordeX 0→0 · fuera 0 · alto 1321→949 · errores 0
+1920 admin #76: IDÉNTICA · desbordeX 0→0 · fuera 0 · alto 1585→900 · errores 0
+población: 12 fichas, 2002 palabras «antes» · distintas o ciegas: 0

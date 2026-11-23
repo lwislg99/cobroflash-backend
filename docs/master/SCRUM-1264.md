@@ -569,3 +569,150 @@ recomendación de diseño:** el coste y los consumidores (303, evidencias, panta
 1. Mi primera pasada de `x.mjs` sobre el 69 no escribió el fichero de texto (lo leí por consola y no lo
    guardé), y el primer recuento de espacios duros cayó con `ENOENT` en ese bloque. Lo rehice antes de
    copiar nada; no llegó al registro.
+
+---
+
+# SCRUM-1264w · Lo que 1264v dejó sin leer para el libro con caja: la Orden HAC/773/2019 es del IRPF, y LIVA 164 y 167 y RIVA 71 no añaden plazo ni forma que cambie U′
+
+**Medido contra:** `origin/main` = `bcff9d8b1ea465938ef797c17548cb5217de02bc` · 2026-11-18T15:37:05Z (cabecera `Date:` de GitHub)
+
+A9: aviso → cicatriz J5 «Leí la orden que nombraba el encargo y era la de otro impuesto: la HAC/773/2019 es del IRPF, y la de los libros del IVA en sede es la HFP/417/2017» — no se pudo comprobar: ningún guard sabe qué norma quería leer una sesión; lo que lo para es leer el título del BOE antes que el articulado.
+
+Sesión J5 (IA, `jv-j5bf`), 18-nov-2026, por encargo del orquestador del equipo de Javier
+(`cobroflash-backend-ee`). **Solo docs.** No toca `src/`, ni el esquema, ni el camino de emisión.
+**Esto NO es respuesta de asesor ni decisión de producto** (reglas 17 y 26). El encargo pedía un «Ⓕ al
+final»; 1264v ya tiene un Ⓕ («Lo que me salió mal»), así que va como tramo nuevo, como hizo 1264v.
+Comentario en Jira: SCRUM-1732 c.22054.
+
+## Ⓐ Qué se leyó, y la corrección al encargo
+
+API de legislación consolidada del BOE, 18-nov-2026, 15:33:57Z–15:36:05Z (cabecera `Date:` del BOE),
+todas `200`. De cada bloque se toma la última versión, y en los cinco es la de `fecha_vigencia` mayor.
+
+| bloque | norma | versiones | la vigente |
+| --- | --- | --- | --- |
+| texto entero | Orden HAC/773/2019 (`BOE-A-2019-10487`) | — | `estado_consolidacion` «Finalizado», `vigencia_agotada` N, vigente desde 20200101 |
+| `a1-4` (art. 12) | ídem | 2 | `BOE-A-2020-15598`, vigente desde 20210101 |
+| `a164` | LIVA (`BOE-A-1992-28740`) | 7 | `BOE-A-2023-11022`, vigente desde 20240101 |
+| `a167` | LIVA | 4 | `BOE-A-2022-22128`, vigente desde 20230101 |
+| `a71` | RIVA (`BOE-A-1992-28925`) | 14 | `BOE-A-2024-26694`, vigente desde 20241222 |
+| `a62` | RIVA | 7 | `BOE-A-2021-10026` (la misma que en 1264v) |
+| índice, `a1`, `ai` | Orden HFP/417/2017 (`BOE-A-2017-5312`) | `ai`: 6 | `ai`: `BOE-A-2026-1761`, vigente desde 20260127 |
+
+🔴 **Corrección al encargo, medida:** el encargo describía la Orden HAC/773/2019 como la que «regula la
+llevanza de los libros registro del IVA a través de la sede electrónica y el formato normalizado». Su
+título en el BOE es otro: «Orden HAC/773/2019, de 28 de junio, por la que se regula la llevanza de los
+libros registros en el Impuesto sobre la Renta de las Personas Físicas.» En el texto entero, «caja»
+aparece **0** veces y «cobro» **0**. El control, «valor añadido», aparece **11**, así que el recuento
+funciona. La orden que corresponde a lo que el encargo describía es la **HFP/417/2017**, que es la del SII.
+Su título: «…por la que se regulan las especificaciones normativas y técnicas que desarrollan la llevanza
+de los Libros registro del Impuesto sobre el Valor Añadido a través de la Sede electrónica de la Agencia
+Estatal de Administración Tributaria establecida en el artículo 62.6…». Su identificador lo saqué de la
+URL ELI del BOE, que sí introduje de memoria, y lo comprobé leyendo el `<title>` de la página.
+
+## Ⓑ Literales vigentes
+
+Sin espacios duros en los bloques citados (recuento: 0 en 164, 167 y la Orden; 2 en el 71, fuera de los
+párrafos citados). Se quitan las notas de modificación.
+
+**Orden HAC/773/2019, art. 12** (`a1-4`, versión `BOE-A-2020-15598`), primer párrafo:
+
+> Los libros registros regulados en esta orden podrán ser utilizados a efectos del Impuesto sobre el Valor Añadido, siempre que se ajusten a los requisitos que se establecen en el Reglamento del Impuesto sobre el Valor Añadido aprobado por Real Decreto 1624/1992, de 29 de diciembre.
+
+**Orden HAC/773/2019, preámbulo** (el formato de la AEAT):
+
+> …la Agencia Estatal de Administración Tributaria publicará en su página web un formato tipo de libros registros. La puesta a disposición de este formato de libros trata de asistir en el cumplimiento de las obligaciones tributarias formales registrales y pretende ofrecer seguridad jurídica y certeza en el contenido mínimo que pueda exigirse sobre los mismos.
+
+**Orden HAC/773/2019, art. 2.1.e)** (el libro de ventas e ingresos; los demás apartados del 2.1 piden número, fechas, destinatario, concepto y retención, y ninguno pide cobros):
+
+> e) Importe de la operación o, si la operación está sujeta al Impuesto sobre el Valor Añadido, la base imponible de las operaciones determinada conforme a los artículos 78 y 79 de la Ley 37/1992, de 28 de diciembre, del Impuesto sobre el Valor Añadido y, en su caso, el tipo impositivo aplicado y la cuota tributaria. Igualmente será válida la anotación de una misma factura en varios asientos correlativos cuando incluya operaciones que tributen a distintos tipos impositivos.
+
+**Orden HAC/773/2019, art. 10.1** (plazo, IRPF):
+
+> 1. Las operaciones que hayan de ser objeto de anotación registral deberán hallarse asentadas en los correspondientes libros registros antes de que finalice el plazo para realizar la declaración e ingreso de los pagos fraccionados a que se refieren los artículos 109 a 112 del Reglamento del Impuesto sobre la Renta de las Personas Físicas.
+
+**LIVA art. 164.Uno, 4.º y 6.º** (`a164`, versión `BOE-A-2023-11022`):
+
+> Uno. Sin perjuicio de lo establecido en el título anterior, los sujetos pasivos del Impuesto estarán obligados, con los requisitos, límites y condiciones que se determinen reglamentariamente, a:
+>
+> 4.º) Llevar la contabilidad y los registros que se establezcan en la forma definida reglamentariamente, sin perjuicio de lo dispuesto en el Código de Comercio y demás normas contables.
+>
+> 6.º) Presentar las declaraciones-liquidaciones correspondientes e ingresar el importe del Impuesto resultante.
+
+**LIVA art. 167.Uno** (`a167`, versión `BOE-A-2022-22128`):
+
+> Uno. Salvo lo dispuesto en el apartado siguiente, los sujetos pasivos deberán determinar e ingresar la deuda tributaria en el lugar, forma, plazos e impresos que establezca el Ministro de Economía y Hacienda.
+
+**RIVA art. 71.3, primer párrafo, y 71.4, dos primeros** (`a71`, versión `BOE-A-2024-26694`; en el 71.3, la
+lista de quienes liquidan por mes se resume: más de 6.010.121,04 € de volumen, adquirentes de patrimonio,
+inscritos en el registro de devolución mensual del art. 30, grupos de entidades y depósitos fiscales):
+
+> 3. El período de liquidación coincidirá con el trimestre natural.
+>
+> No obstante, dicho período de liquidación coincidirá con el mes natural, cuando se trate de los empresarios o profesionales que a continuación se relacionan:
+>
+> 4. La declaración-liquidación deberá cumplimentarse y ajustarse al modelo que, para cada supuesto, determine el Ministro de Hacienda y Función Pública y presentarse durante los veinte primeros días naturales del mes siguiente al correspondiente período de liquidación trimestral.
+>
+> Sin embargo, la declaración-liquidación correspondiente al último período del año deberá presentarse durante los treinta primeros días naturales del mes de enero.
+
+En el RIVA 71 entero, «caja» aparece **0** veces.
+
+**Orden HFP/417/2017, art. 1.1** (`a1`, versión única):
+
+> 1. Los empresarios o profesionales y otros sujetos pasivos del Impuesto sobre el Valor Añadido obligados a la llevanza de los libros registro del Impuesto través de la Sede electrónica de la Agencia Estatal de Administración Tributaria son los establecidos en el artículo 62.6 del Reglamento del Impuesto sobre el Valor Añadido, aprobado por el Real Decreto 1624/1992, de 29 de diciembre.
+
+Su **Anexo I** (los campos de registro) lo sustituyó el Anexo V de la Orden HAC/27/2026 (`BOE-A-2026-1761`),
+que se aplica a «operaciones realizadas a partir de 1 de febrero de 2026». En el BOE son **62 imágenes**,
+sin texto. **No leído.** Vi la primera imagen del Anexo V de la 417/2017, que es el modelo 303 de 2017, y no
+seguí por contexto.
+
+## Ⓒ La tabla
+
+| campo o requisito que exige la norma | fuente | ¿lo cubre `cobros[]` de U′ (SCRUM-1732 c.22012, ✅ c.22014)? |
+| --- | --- | --- |
+| fecha de cada cobro, parcial o total | RIVA 61 decies.1.1.º (literal en 1264v Ⓑ) | **sí** · `fecha` |
+| importe de cada cobro, «por separado» | ídem | **sí** · `importe` |
+| «la cuenta bancaria o del medio de cobro utilizado, que pueda acreditar el cobro» | RIVA 61 decies.1.2.º | **en parte** · `metodo` es un valor de `PAID_VIA` (`card`, `bizum_auto`, `bizum_manual`, `transfer`, `cash`; `src/modules/billing/domain/paidVia.ts:23`), y no guarda ninguna cuenta. Si ese medio «puede acreditar» el cobro, **la norma no lo dice** → pregunta 50 |
+| la indicación de «si la operación se ha efectuado conforme al régimen especial del criterio de caja» | RIVA 63.3 | **no es un campo de `cobros[]`**. Si el asiento la lleva en otro campo: **no leído** |
+| libro de ventas e ingresos del IRPF | Orden 773/2019 art. 2 | **la norma no dice nada de cobros** |
+| campos de cobros del SII | Orden 417/2017 Anexo I | **no leído** (imágenes) |
+| formato tipo de libros de la web de la AEAT | Orden 773/2019, preámbulo | **no leído** (no está en el BOE) |
+
+| obligación de plazo o forma | cambia U′ |
+| --- | --- |
+| LIVA 164.Uno.4.º · los registros «en la forma definida reglamentariamente» | **no** · remite al RIVA, cuyo 61 decies, 63 y 69 ya leyó 1264v |
+| LIVA 164.Uno.6.º · presentar las declaraciones-liquidaciones | **no** |
+| LIVA 167.Uno · «lugar, forma, plazos e impresos que establezca el Ministro» | **no** · remite a orden |
+| RIVA 71.3 · periodo trimestral, y mensual solo en los casos que enumera | **no** para un trimestral. Si un comercio liquida por mes, entra en el SII (62.6) y en los cuatro días por cobro del 69 bis.2, y U′ no remite nada |
+| RIVA 71.4 · el 303, en los veinte primeros días del mes siguiente (enero, treinta) | **no** · es el plazo de la declaración, no del libro |
+| Orden 773/2019 art. 10 · plazo del IRPF | **no** · para el IVA manda el RIVA 69 (1264v) |
+
+## Ⓓ Lectura, no decisión: qué implica para PR-2
+
+> No elige diseño, no contesta al asesor y no dice qué está bien en el código.
+
+- Ninguna norma de las leídas añade un plazo o una forma que cambie U′ para un comercio trimestral
+  fuera del SII. Lo que la norma pide sobre cobros sigue siendo el 61 decies.1.
+- `cobros[]` cubre fecha e importe. El medio, en parte: no hay cuenta, y no sé si un `metodo` de un
+  conjunto cerrado basta para «pueda acreditar» (pregunta 50). Q3 de c.22007 decide qué se hace si falta
+  el medio, pero no si el que hay es suficiente.
+- La marca de criterio de caja del 63.3 no la trae `cobros[]`. Si el asiento la lleva, se ve en el
+  código de PR-2, que no he leído.
+- Si algún comercio liquida por mes, el formato que manda es el del SII (Anexo I), y está sin leer.
+
+## Ⓔ Lo que NO está medido
+
+- El Anexo I de la Orden 417/2017, en la versión de la HAC/27/2026 (62 imágenes).
+- El formato tipo de libros de la AEAT, en su web, y las FAQ de la AEAT sobre caja.
+- El código de PR-2 (`scrum-1732d-libro-por-tramos-u`), y si el asiento lleva la marca del 63.3.
+- Si algún comercio de YaQu liquida por mes: no he consultado ninguna base.
+- RIVA 61 septies a nonies: siguen sin leer.
+
+## Ⓕ Lo que me salió mal
+
+1. Empecé por la orden que nombraba el encargo y leí su articulado antes de mirar el título. Era la del
+   IRPF. No llegó a ningún sitio porque el recuento de «caja» dio 0 y el control dio 11, y eso me hizo
+   leer el título. Va como cicatriz de J5 en este mismo PR.
+2. En SCRUM-1732 c.22054, Jira movió dos negritas que rodeaban un código: el texto se lee bien, pero
+   no es exactamente lo que envié.
+3. Me quedé sin contexto antes de leer el Anexo I. Lo digo en Ⓔ, y no relleno lo que no he leído.

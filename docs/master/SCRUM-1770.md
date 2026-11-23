@@ -1,0 +1,122 @@
+# SCRUM-1770a · Literal propuesto para el MOTIVO de «un XML por año natural» (máster 766-768) — propuesta, sin tocar el máster
+
+**Medido contra:** `origin/main` = `f44a597a66759373fefb06c46d5e77fcfc6add50` · 2026-11-19T00:04:56Z
+
+A9: aviso → A10 «Cero resultados con tu vocabulario no es silencio del documento.» — no se pudo comprobar: la frase «la cadena de huellas es anual» del máster está partida entre las líneas 767 y 768 por el ajuste de línea, y un grep por línea no la casa; ningún guard sabe dónde corta el ajuste un fichero
+
+Carril J5 (solo documentos). Encargo del orquestador J (`cobroflash-backend-8a`), 19-nov-2026, sobre el «Ok ábrelo» del fundador (descripción de SCRUM-1770). **`docs/YAQU_MASTER.md` NO se toca aquí** (reglas 27 y 35): esto es la propuesta; la firma el fundador en Jira y se aplica en otro PR. Solo norma literal con fuente; no es respuesta de asesor (reglas 17 y 26). **La DECISIÓN no se propone cambiar** («un XML por año natural que toque el rango pedido», fail-closed): solo su motivo y una frase con el criterio del año.
+
+## 1 · El literal propuesto
+
+**Texto de hoy** (`docs/YAQU_MASTER.md:766-768` en `origin/main` `f44a597a6`, dentro de la cita `>`):
+
+> **Decisión del fundador — un XML por AÑO NATURAL que toque el rango pedido** (no por el rango en sí): el registro RRSIF se organiza por ejercicio y la cadena de huellas es anual — recortar por meses rompería el encadenamiento, mezclar años no representaría un registro válido.
+
+**Propuesto** (sustituye esa frase; el resto del párrafo —fail-closed, LEEME, verificación en staging— queda igual):
+
+> **Decisión del fundador — un XML por AÑO NATURAL que toque el rango pedido** (no por el rango en sí). Es una decisión de PRODUCTO, no una exigencia de la norma: la Orden HAC/1177/2024 solo pide que el sistema permita «exportar todos los registros de facturación generados en un periodo» (art. 8.2), sin fijar qué periodo ni con qué calendario, y YaQu toma el año natural porque es el periodo que manejan el profesional y su asesor y el de la exportación para una inspección (R13). El corte no toca la cadena: cada registro lleva dentro los datos y la huella del inmediatamente anterior (art. 7.a), y la cadena es una sola por obligado y sistema desde su puesta en marcha (art. 7.b-c: «cada sistema informático producirá una única cadena de registros de facturación»); no se reinicia por año, y exportar un año no altera ningún registro. **El año de un registro es el de su fecha de expedición en la zona del emisor**, la misma que imprime `FechaExpedicionFactura` (decisión A del fundador, 19-nov-2026, [SCRUM-1761 c.22126](https://yaqu.atlassian.net/browse/SCRUM-1761?focusedCommentId=22126); el código la cumplirá con SCRUM-1761c: hasta entonces el filtro es otro). *[Motivo sustituido el 19-nov-2026 por SCRUM-1770. Decía: «el registro RRSIF se organiza por ejercicio y la cadena de huellas es anual — recortar por meses rompería el encadenamiento, mezclar años no representaría un registro válido». Motivo del cambio: ni el RD 1007/2023 ni la Orden HAC/1177/2024 conocen el «ejercicio» de un registro, y la cadena no es anual (Orden arts. 7.a-c y 8.2, BOE leído el 18 y el 19-nov-2026; SCRUM-1761 c.22115 y este registro).]*
+
+Qué cumple de lo pedido:
+- (a) la decisión sale tal cual, con su «(no por el rango en sí)»;
+- (b) el porqué del año natural se da como elección de YaQu, y la frase dice que la norma no lo exige; «el periodo que manejan el profesional y su asesor» es motivo de producto, **no lo he leído en ninguna norma**, y así lo dice la frase;
+- (c) cita el art. 7 (a, b y c) y el 8.2; las descargas, en §3;
+- (d) recoge la decisión A con su enlace, y avisa de que el código aún no la cumple (el filtro de hoy es `createdAt` con el calendario del proceso: SCRUM-1761 c.22059);
+- la frase vieja queda entre corchetes con su fecha y su motivo (A8: no se borra, se fecha).
+
+⚠️ «el de la exportación para una inspección (R13)» lo tomo de c.22115 §3 (`docs/RUNBOOKS.md` R13, máster `:461`), **no lo he vuelto a leer hoy**. Si el fundador prefiere no dar ese segundo motivo, la frase se sostiene sin él.
+
+## 2 · Qué más repite el motivo caducado
+
+Medido con `git grep -n -i` sobre `origin/main` `f44a597a6`, población `docs/`, `src/` y `.claude/` (6.247 ficheros):
+
+- Patrón del encargo, `cadena de huellas es anual\|se organiza por ejercicio\|encadenamiento.*anual`: **4 líneas**. Control positivo: la propia `docs/YAQU_MASTER.md:767` sale, pero **solo por «se organiza por ejercicio»**: «la cadena de huellas es / anual» está partida entre la 767 y la 768 y la primera alternativa no la casa (por eso la línea `A9:`).
+- Patrón derivado (`cadena de huellas es`, `organiza por ejercicio`, `rompería el encadenamiento`, `cadena … por año/ejercicio`, `registro v.lido`, y otras): sale además la 768; el resto de lo que casa habla de otra cosa (cadena factura→paid, «romper la cadena» en VeriFactu, la condición de entrada en la cadena de SCRUM-328). Control cero: un término fabricado, `zzqx-cadena-anual`, da 0 ficheros.
+
+Las que repiten el motivo:
+
+| fichero:línea | qué dice | de quién | adónde va |
+|---|---|---|---|
+| `docs/YAQU_MASTER.md:766-768` | el motivo entero | máster (firma del fundador) | este cambio de máster |
+| `docs/legal/AUDITLOG_FISCAL_CONTRATO.md:450` | «el registro RRSIF se organiza por año natural y la cadena de huellas es anual» (por qué el `rango` del XML suelto es `ejercicio`) | doc derivado; `carriles.mjs de` → sin cerradura, propone J4 | su registro, en el mismo PR que aplique el máster o detrás; la decisión de las dos formas de `rango` no cambia, solo el motivo |
+| `src/modules/exports/app/routes/exports.routes.ts:233-235` | comentario de código: el mismo motivo, palabra por palabra | **S1** (equipo de Luis), `carriles.mjs de` | «Para Luis»: no se toca desde aquí |
+| `docs/master/SCRUM-1761.md:59` | es la medición que señala el defecto, no lo repite | — | nada |
+
+## 3 · Las citas del BOE
+
+API de legislación consolidada (`https://www.boe.es/datosabiertos/api/legislacion-consolidada/id/<id>/texto`, `Accept: application/xml`), las dos con `HTTP/1.1 200 OK` y `Date: Thu, 19 Nov 2026 00:04:02 GMT`:
+
+| norma | id | B | sha256 | ¿igual que c.22115? |
+|---|---|---|---|---|
+| Orden HAC/1177/2024 | BOE-A-2024-22138 | 119.057 | `284db49ed40e17ad47fb2447a6e37ef087c192d68336df9bd465fdfcbfd4a4ff` | sí, byte a byte |
+| RD 1007/2023 (RRSIF) | BOE-A-2023-24840 | 88.577 | `20d704afa2d24e91cf97e8ec83c41038f1eef964a1ba724ff6f0958425a8ca38` | sí, byte a byte |
+
+Literales (texto quitadas las etiquetas; 596 párrafos en la Orden; el art. 7 va del párrafo 81 al 102 y el 8 del 103 al 112):
+
+1. **Orden, art. 7.c)** (párrafo 91): «c) Para un determinado obligado tributario, cada sistema informático producirá una única cadena de registros de facturación, es decir, todos los registros de facturación de un mismo obligado tributario generados por un mismo sistema informático deberán formar parte de la misma cadena.»
+   Y **7.b)** (párrafo 90): «…primer registro de facturación generado en el sistema informático desde su instalación o puesta en marcha inicial…»; y **7.a)** (párrafo 84): «Cada registro de facturación, de alta o de anulación, contendrá el siguiente conjunto de datos referido al registro de facturación, de alta o de anulación, inmediatamente anterior por orden cronológico de fecha de generación:» (4.º: «Los primeros 64 caracteres de la huella o «hash» del registro de facturación inmediatamente anterior.»).
+2. **Orden, art. 8.2** (párrafos 105-106; el 105 empieza «2. Los registros de facturación podrán ser conservados fuera del sistema informático que los generó.»): «A este respecto, deberá ofrecer, al menos, la posibilidad de exportar todos los registros de facturación generados en un periodo.»
+
+Controles: `zzqx` da 0 en los dos textos (cero); «huso horario» da 4 en la Orden (positivo, el mismo recuento que c.22115). En el RRSIF, «ejercicio» casa 5 veces y ninguna se refiere a un registro («en el ejercicio de su actividad», «de responsabilidad», «de las habilitaciones», «de su actividad económica», «de sus competencias»): lo mismo que midió c.22115.
+
+**Sin medir:** las tablas del anexo de la Orden (son imágenes en el BOE, c.22115); `docs/RUNBOOKS.md` R13, que cito de c.22115; nada en yaqu.app (no hay superficie: es el máster).
+
+# SCRUM-1770b · Aplicado en el máster el literal FIRMADO del motivo de «un XML por año natural» (sin la media frase de R13)
+
+**Medido contra:** `origin/main` = `74b3b64f17008449d086008358436f0cb884a8d8` · 2026-11-19T00:41:02Z
+
+A9: sin fallo que generalice — mi único tropiezo fue de este reflow: tomé el ancho de línea de una ventana del máster que incluía una línea de 171 caracteres y el primer ajuste salió a ese ancho; lo vi en la salida, lo deshice antes del commit y el ancho final (101) sale del propio párrafo
+
+Carril J5 (solo documentos). Encargo del orquestador J (`cobroflash-backend-8a`), 19-nov-2026. Rama `scrum-1770b-master-motivo-firmado`, que sale de `scrum-1770a-literal-del-motivo` (PR #3251, abierto al empezar).
+
+## 1 · La firma
+
+SCRUM-1770 c.22156 (publicada por el orquestador J, no por el fundador): respuesta literal de Javier **«Firmo»** sobre el párrafo «Propuesto» de c.22139 §1, «byte a byte, incluido el corchete fechado con la frase vieja y su motivo». Única excepción autorizada en el mismo comentario: «quien aplique el máster lo relee y, si R13 no dice eso, quita esa media frase y lo deja dicho en el registro; el resto del literal no se toca».
+
+## 2 · R13, releído: la media frase se QUITA
+
+`docs/RUNBOOKS.md` en `origin/main` `74b3b64f1`, «## R13 · "Mi cliente tiene una inspección"» (7 líneas de contenido): dice QUÉ se entrega en una inspección (export XML RRSIF + facturas en PDF + declaración responsable + guía del pack gestoría). **No dice nada del periodo**: ni año, ni ejercicio, ni periodo aparecen en la sección. La media frase afirmaba que el año natural es «el de la exportación para una inspección (R13)», y R13 no lo sostiene. Quitado del literal exactamente « y el de la exportación para una inspección (R13)»; la frase queda «…porque es el periodo que manejan el profesional y su asesor.» Nada más del literal cambia.
+
+## 3 · El diff del máster
+
+Solo `docs/YAQU_MASTER.md`, 16 líneas añadidas y 3 quitadas (`git diff --numstat`), todas dentro de la cita `>` del párrafo de los ZIP de exportación.
+
+- **Antes** (766-769): la línea 766 hasta «…que toque el rango pedido**», y luego «(no por el rango en sí): el registro RRSIF se organiza por ejercicio y la cadena de huellas es / anual — recortar por meses rompería el encadenamiento, mezclar años no representaría un registro / válido. **Fail-closed deliberado** (asimetría con los PDF del mismo ZIP, que sí toleran fallos».
+- **Después** (766-782): la 766 sin tocar; en 767-781, el literal firmado (§2 aparte) con su corchete fechado en cursiva, que guarda la frase vieja; y en 781-782, «**Fail-closed / deliberado** (asimetría con los PDF del mismo ZIP, que sí toleran fallos». Desde la 783 («parciales con aviso)…»), nada se mueve más que el número de línea.
+- Ajuste: los saltos de línea del máster no son texto; reajusté el párrafo al ancho de su propia línea más larga (101 caracteres), finales LF, último byte del fichero igual que antes.
+
+**Cotejo byte a byte** (guion de un solo uso en el temporal de la sesión, no en git): junta 766-782 quitando `> ` y los saltos, y lo compara con la línea «Propuesto» de §1 de este registro tras aplicarle sus tres diferencias conocidas con Jira, cada una obligada a aparecer UNA vez o sale CIEGO: la media frase de R13 (§2), el enlace `[SCRUM-1761 c.22126](…)` (en c.22139 va sin enlace, leído en ADF) y «y este registro» (en c.22139 dice «y SCRUM-1770a»). Resultado: **IDÉNTICOS, 1.506 caracteres**. Control rojo: el mismo cotejo sobre el máster sin tocar sale «DIFIEREN en 100». Control CIEGO: la primera pasada eligió la línea «Hoy» del registro, la sustitución de R13 dio 0 ocurrencias y el guion salió CIEGO (código 2), no verde.
+
+## 4 · Lo que NO se toca aquí
+
+Los dos ecos del motivo caducado van por su carril, según c.22156: `docs/legal/AUDITLOG_FISCAL_CONTRATO.md:450` (J4, nota fechada A8) y `src/modules/exports/app/routes/exports.routes.ts:233-235` (S1, Para Luis). Ningún código, ningún guard.
+
+**Sin medir:** yaqu.app (no hay superficie: es el máster); el obligatorio de este PR (lo abre y arma el bot).
+
+# SCRUM-1770c · Nota fechada (A8) en el eco del motivo caducado de `AUDITLOG_FISCAL_CONTRATO.md:450`
+
+**Medido contra:** `origin/main` = `d4a0fc951cd54405d6e9ae908a7b52b12b26c024` · 2026-11-19T17:37:48Z
+
+A9: sin fallo que generalice — la única forma de romper algo aquí era mover las líneas que otros citan por fichero:línea (A6), y lo comprobé por recuento antes de escribir este tramo: el fichero tiene 800 líneas antes y después, y la nota va dentro de la misma línea física
+
+Carril J4 (solo documentos: `docs/legal/` sin cerradura, propone J4, `dos-equipos.md:207`). Encargo del orquestador J, 19-nov-2026. Rama `scrum-1770c-auditlog-nota-fechada`.
+
+## 1 · Qué se hace
+
+`docs/legal/AUDITLOG_FISCAL_CONTRATO.md:450` daba como motivo del `rango` tipo `ejercicio` que «el registro RRSIF se organiza por año natural y la cadena de huellas es anual»: el mismo motivo que el máster sustituyó con SCRUM-1770b (`docs/YAQU_MASTER.md:766-782`, literal firmado en c.22156). Según c.22156 y c.22139 §3, este eco es de J4 y lleva **nota fechada (A8)**, no reescritura: la frase vieja se queda como estaba y a su lado, dentro de la misma línea, va una nota en cursiva entre corchetes que dice que el motivo caducó el 19-nov-2026, que el máster lo sustituyó por SCRUM-1770 en 766-782, el motivo nuevo en una frase (decisión de producto, no exigencia de la norma; la cadena es una sola por obligado y sistema, Orden HAC/1177/2024 arts. 7.a-c y 8.2) y que **la decisión de las dos formas de `rango` no cambia**.
+
+La nota no es un literal firmado nuevo: resume el párrafo firmado del máster y lo cita por sus líneas; quien quiera el texto, lo lee allí.
+
+## 2 · Controles
+
+- Líneas: `wc -l` = 800 antes (`origin/main`) y después; `git diff --numstat` = 1 añadida / 1 quitada, la 450.
+- Citas por fichero:línea a este documento (`git grep -n "AUDITLOG_FISCAL_CONTRATO.md:[0-9]"`): 129, 130, 287, 300, 450, 639, 777 y 94-95; ninguna se mueve. Las dos a la 450 son de este registro (tramos a y b) y siguen apuntando a la frase vieja, que sigue ahí.
+- Frase vieja: «la cadena de huellas es anual» casa 1 vez en el fichero (no se ha reescrito). Positivo: «SCRUM-1770c» casa 1 vez en el fichero de la rama y 0 en el de `origin/main`.
+- La cita al máster lleva testigo (`Motivo sustituido el 19-nov-2026 por SCRUM-1770`, que está en 766-782): sin él, `tests/scrum525d-anclas-que-apuntan.test.mjs` cayó con «1 par(es) documento↔fichero NUEVOS que citan sin testigo»; con él, verde.
+- Guards: 1294 + 267 + 273 + 525d + 854 → 38/38; `guards:entrada` 15 guards / 170 tests verdes; los 5 de árbol entero (SCRUM-1560) 38/38.
+- Suite entera por tramos (`dist/` con `tsc --noCheck`, no toco `src/`): 15/15 tramos, 1.716 ficheros, 13.906 tests, 13.722 pass, **2 fail**, los dos de `scrum1289b-reporters-como-argumentos` por la ruta temporal con espacio (c.22154); con `TEMP` en la ruta corta 8.3, 9/9. Los 182 sin pass ni fail no los he desglosado.
+
+## 3 · Lo que NO se toca aquí
+
+El otro eco, `src/modules/exports/app/routes/exports.routes.ts:233-235` (S1, equipo de Luis), va por «Para Luis» según c.22156. Ningún código, ningún guard.
+
+**Sin medir:** yaqu.app (no hay superficie: es un documento); el obligatorio de este PR (lo abre y arma el bot).

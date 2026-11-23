@@ -1,0 +1,105 @@
+URL https://yaqu.app/dashboard/#jobs
+ROL pedido=tecnico · en la página=tecnico · recorte copiado de origin/main @ 4e2aaab3a55ed4779d9b6272751767940de39f38 (trabajoParaElRol + albaranParaElRol, #3153 dentro)
+--- CUENTAS
+{"porCobrar":0,"cobrado":0,"teFalta":0,"pendiente":0,"parcial":0,"pagado":0,"factura":0,"euros":1,"ceroEuros":0,"deImporte":0,"notasInternas":0,"queHayQueHacer":0,"basura":0}
+--- TEXTO
+Trabajos
+Operario
+P
+Trabajos
+Nuevo trabajo
+PARA HOY
+2 trabajos
+Cliente de pruebas QA · Marta Prieto (PILOTO-1 QA)
+Técnico
+Todos los técnicos
+Operario QA
+Sin asignar
+🔨 En curso · 2
+Cliente de pruebas QA
+Operario QA
+1,21 €
+mié, 11 nov, 16:54
+Abrir parte
+Ver detalle
++ Nuevo albarán
+⋯
+Marta Prieto (PILOTO-1 QA)
+Reparación / Asistencia técnica
+(prueba) Recorrido H6 del 16-nov: cambiar el termostato de la caldera y purgar los radiadores del salón. Segundo párrafo: la llave de paso está en el patio. Referenciadelfabricantesinespaciosparaverquenosesaledelatarj
+Operario QA
+Calle Mayor 14, 3º B, 28801 Alcalá de Henares
+Sin importe
+no hay presupuesto aceptado
+lun, 16 nov, 18:30
+Abrir parte
+Ver detalle
+Emitir albarán
+⋯
+⏳ Sin agendar · 1
+luis
+Reparación / Asistencia técnica
+calle alerce
+Sin importe
+no hay presupuesto aceptado
+Ver detalle
+Agendar
+⋯
+--- MODAL
+
+--- PULSABLES
+button[submit] «Inicio» 228x34 @-238,85
+button[submit] «Solicitudes» 228x34 @-238,121
+button[submit] «Trabajos» 228x34 @-238,157
+button[button] «Presupuestos» 228x34 @-238,227
+button[submit] «Albaranes» 228x34 @-238,263
+button[submit] «Clientes» 228x34 @-238,332
+button[submit] «Productos» 228x34 @-238,368
+button[submit] «Salir» 39x22 @-61,795
+button[submit] «Menú» 36x36 @12,12
+button[submit] «Nuevo trabajo» 160x44 @12,76
+input[search] «Técnico» 151x44 @68,257
+select[select-one] «Todos los técnicos Operario QA Sin asignar» 151x44 @227,257
+button[submit] «Abrir parte» 332x44 @29,471
+button[submit] «Ver detalle» 89x44 @29,523
+button[submit] «+ Nuevo albarán» 125x44 @126,523
+button[button] «⋯» 44x44 @317,523
+button[submit] «Abrir parte» 332x44 @29,847
+button[submit] «Ver detalle» 89x44 @29,899
+button[submit] «Emitir albarán» 109x44 @126,899
+button[button] «⋯» 44x44 @317,899
+button[submit] «Ver detalle» 89x44 @29,1156
+button[submit] «Agendar» 78x44 @126,1156
+button[button] «⋯» 44x44 @317,1156
+button[submit] «?» 48x48 @322,776
+--- DESBORDES
+--- <44px
+button «Menú» 36x36
+--- ESCRITURAS
+POST /admin/entorno → 200
+POST /admin/entorno → 200
+--- RECORTES
+GET /admin/jobs
+GET /admin/jobs
+--- LOG
+[warning] Service Worker registration blocked by Playwright
+[http 403] GET /admin/team
+[error] Failed to load resource: the server responded with a status of 403 (Forbidden)
+[warning] Service Worker registration blocked by Playwright
+[http 403] GET /admin/team
+[error] Failed to load resource: the server responded with a status of 403 (Forbidden)
+--- NOTAS
+LOCAL js/jobsView.js ← D:\MILLONARIO\cobroFlash\cobroflash-backend\.claude\worktrees\s4-18nov-r42\public\dashboard\js\jobsView.js (72812 caracteres)
+LOCAL css/styles.css ← D:\MILLONARIO\cobroFlash\cobroflash-backend\.claude\worktrees\s4-18nov-r42\public\dashboard\css\styles.css (287362 caracteres)
+PAGINA @390: ancho 390 · ancho de scroll 390 · desborde 0 · alto 1305
+CABECERA título 1x1@(12,646) · nuevo 366x44@(12,76) · cifras 366x105@(12,136) · filtros 366x44@(12,257) · lista 366x899@(12,317)
+ROPA título {"fondo":"rgba(0, 0, 0, 0)","borde":"0px rgb(63, 74, 69)","radio":"0px","sombra":"none","letra":"15px/400","color":"rgb(63, 74, 69)"} · h2 {"fondo":"rgba(0, 0, 0, 0)","borde":"0px rgb(15, 28, 23)","radio":"0px","sombra":"none","letra":"20px/700","color":"rgb(15, 28, 23)"} · contenedor de la lista {"fondo":"rgba(0, 0, 0, 0)","borde":"0px rgb(63, 74, 69)","radio":"0px","sombra":"none","letra":"15px/400","color":"rgb(63, 74, 69)"}
+GRUPO «🔨 En curso · 2» 354x22@(12,317) letra 17px/700 fondo rgba(0, 0, 0, 0) borde 0px rgb(63, 74, 69) · 2 tarjetas
+GRUPO «⏳ Sin agendar · 1» 354x22@(12,984) letra 17px/700 fondo rgba(0, 0, 0, 0) borde 0px rgb(63, 74, 69) · 1 tarjetas
+TARJETA [🔨 En curso] Cliente de pruebas QA | tipo= | tarea= | dir= | importe=1,21 € | fecha=mié, 11 nov, 16:54 → ■Abrir parte · □Ver detalle · □+ Nuevo albarán · □⋯
+TARJETA [🔨 En curso] Marta Prieto (PILOTO-1 QA) | tipo=Reparación / Asistencia técnica | tarea=(prueba) Recorrido H6 del 16-nov: cambiar el termostato de la caldera y purgar los radiadores del salón. Segundo párrafo: la llave de paso está en el patio. Referenciadelfabricantesinespaciosparaverquenosesaledelatarj | dir=Calle Mayor 14, 3º B, 28801 Alcalá de Henares | importe=Sin importeno hay presupuesto aceptado | fecha=lun, 16 nov, 18:30 → ■Abrir parte · □Ver detalle · □Emitir albarán · □⋯
+TARJETA [⏳ Sin agendar] luis | tipo=Reparación / Asistencia técnica | tarea= | dir=calle alerce | importe=Sin importeno hay presupuesto aceptado | fecha= → □Ver detalle · □Agendar · □⋯
+ROPA-TARJETA Cliente de pruebas QA: 366x234@(12,349) {"fondo":"rgb(255, 255, 255)","borde":"1px rgb(141, 143, 139)","radio":"16px","sombra":"rgba(16, 24, 40, 0.04) 0px 1px 2px 0px","letra":"13px/400","color":"rgb(63, 74, 69)"}
+ROPA-TARJETA Marta Prieto (PILOTO-1 QA): 366x366@(12,594) {"fondo":"rgb(255, 255, 255)","borde":"1px rgb(141, 143, 139)","radio":"16px","sombra":"rgba(16, 24, 40, 0.04) 0px 1px 2px 0px","letra":"13px/400","color":"rgb(63, 74, 69)"}
+ROPA-TARJETA luis: 366x201@(12,1016) {"fondo":"rgb(255, 255, 255)","borde":"1px rgb(141, 143, 139)","radio":"16px","sombra":"rgba(16, 24, 40, 0.04) 0px 1px 2px 0px","letra":"13px/400","color":"rgb(63, 74, 69)"}
+TESTIGO @390: 2 grupos · 3 tarjetas · con tipo 2 · con tarea 1 · con dirección 2 · rellenas 2 · tarjetas con DOS rellenas 0 · rellena NO primera 0 · botones de tarjeta <44 px 0

@@ -1,4 +1,5 @@
 // src/modules/system/app/routes/invoicesAdmin.routes.ts
+import { direccionDeLaFactura, direccionEnUnaLinea } from '../../../invoicing/domain/direccionCongelada'; // SCRUM-1787d
 import { Router, type Request } from 'express';
 import { formatMoneyEs, formatImporteEs } from '../../../../core/utils/utils'; // SCRUM-931: la forma de la casa (A6.6)
 // SCRUM-1397 · qué facturas ve quien pregunta: UNA puerta para la lista, la ficha y el PDF.
@@ -47,7 +48,7 @@ import { ensureInvoicePdf, ensureChargeReceiptToken } from '../../../../lib/invo
 import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } from '../../../invoicing/domain/cerrojoSaturado';
 import { sendSuccessBody, SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 import { esErrorSinSellar, ERROR_SIN_SELLAR, type MerchantPorton } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206
-import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
+import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, SELLADO_PENDIENTE, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { resolverFechaDeCobro } from '../../../billing/domain/fechaDeCobro'; // SCRUM-397
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1093 (bulk-paid)
 import { apuntarCobroDeFactura } from '../../../billing/domain/cobrosDeFactura'; // SCRUM-1732 (bulk-paid)
@@ -215,7 +216,11 @@ router.post('/', requireRole('admin'), async (req, res) => {
     // Sellado FUERA de la transacción y por el punto ÚNICO (SCRUM-205). No lanza: si falla, la
     // factura se queda `pendiente_de_sellado` y en ese estado no produce PDF ni QR (SCRUM-206).
     // Un fallo aquí NO revierte la emisión — deshacerla iría contra la regla 29.
-    const sellada = (await sellarTrasEmision(invoice, merchant, prisma)).estado === SELLADO_HECHO;
+    // SCRUM-1779f · el AVISO de fallo sale SOLO con `pendiente_de_sellado` (GO SCRUM-1779 c.22285), el
+    // criterio de `quotesAdmin.routes.ts`: `no_aplica` (SIF OFF, sin NIF, fuera de ES) NO es un fallo.
+    // `veriFactu` sigue siendo «tiene sello»: false sin sello, nunca true sin él.
+    const estadoSellado = (await sellarTrasEmision(invoice, merchant, prisma)).estado;
+    const sellada = estadoSellado === SELLADO_HECHO;
 
     // ⚠️ AQUÍ NO SE AUDITA, Y ES DELIBERADO. `factura_emitida` es acción BLOQUEANTE y la escribe
     // `allocateInvoiceNumber` DENTRO de la transacción (SCRUM-207: «aquí se escribe, y no es un
@@ -236,7 +241,7 @@ router.post('/', requireRole('admin'), async (req, res) => {
         currency: invoice.currency,
       },
       veriFactu: sellada,
-      ...(sellada ? {} : { message: 'Se emitió la factura, pero falló su registro VeriFactu. Revísalo antes de entregarla.' }),
+      ...(estadoSellado === SELLADO_PENDIENTE ? { message: 'Se emitió la factura, pero falló su registro VeriFactu. Revísalo antes de entregarla.' } : {}),
     });
   } catch (err: any) {
     if (esErrorSinLineas(err)) {
@@ -374,6 +379,34 @@ router.get(RUTA_IMPRIMIR_JS, requireRole('admin'), (_req, res) => {
   return res.send(IMPRIMIR_JS);
 });
 
+// SCRUM-1756e (CSP paso 3, fila J1) · el paquete de disputa llevaba un `<style>` y cuatro `style=` en
+// línea: con `style-src 'self'` aplicada se pintaría sin ese CSS. La hoja es el `<style>` de antes TAL
+// CUAL, más una clase por cada `style=` con las mismas declaraciones, al final para que ganen a `th` y
+// `.sub` como ganaba el atributo. Mismo patrón que el guion de arriba: constante, servida por ESTE
+// router, con el MISMO `requireRole('admin')` que la página y `private, no-cache`.
+export const DISPUTA_CSS = `
+  body{font-family:Inter,system-ui,sans-serif;color:#0f1c17;margin:0;padding:32px;max-width:820px;margin:0 auto}
+  h1{font-size:22px;margin:0 0 2px} .sub{color:#6b756f;font-size:13px;margin:0 0 22px}
+  h2{font-size:15px;border-bottom:2px solid #e7e9e5;padding-bottom:6px;margin:26px 0 10px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  td,th{padding:6px 8px;border-bottom:1px solid #f1f2ee;text-align:left;vertical-align:top}
+  th{color:#6b756f;font-weight:600;width:220px}
+  .sig{max-width:340px;border:1px solid #e7e9e5;border-radius:8px;padding:8px;background:#fff}
+  .badge{display:inline-block;background:#ecfdf5;color:#166534;font-weight:700;border-radius:999px;padding:3px 12px;font-size:12px}
+  .print{position:fixed;top:16px;right:16px;background:#16a34a;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-weight:700;cursor:pointer}
+  @media print{.print{display:none} body{padding:0}}
+  .disputa-col-fecha{width:170px}
+  .disputa-col-tipo{width:110px}
+  .disputa-col-estado{width:110px}
+  .disputa-pie{margin-top:26px}
+`;
+export const RUTA_DISPUTA_CSS = '/css/disputa.css';
+router.get(RUTA_DISPUTA_CSS, requireRole('admin'), (_req, res) => {
+  res.setHeader('Content-Type', 'text/css; charset=utf-8');
+  res.setHeader('Cache-Control', 'private, no-cache');
+  return res.send(DISPUTA_CSS);
+});
+
 /**
  * GET /admin/invoices/:id/dispute-package — A21.1 (R14)
  * Paquete de evidencia de disputa en 1 clic: HTML imprimible (→ PDF con el
@@ -429,18 +462,7 @@ router.get('/:id/dispute-package', requireRole('admin'), async (req, res) => {
 
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"/>
 <title>Paquete de disputa · ${esc(invoice.number)}</title>
-<style>
-  body{font-family:Inter,system-ui,sans-serif;color:#0f1c17;margin:0;padding:32px;max-width:820px;margin:0 auto}
-  h1{font-size:22px;margin:0 0 2px} .sub{color:#6b756f;font-size:13px;margin:0 0 22px}
-  h2{font-size:15px;border-bottom:2px solid #e7e9e5;padding-bottom:6px;margin:26px 0 10px}
-  table{width:100%;border-collapse:collapse;font-size:13px}
-  td,th{padding:6px 8px;border-bottom:1px solid #f1f2ee;text-align:left;vertical-align:top}
-  th{color:#6b756f;font-weight:600;width:220px}
-  .sig{max-width:340px;border:1px solid #e7e9e5;border-radius:8px;padding:8px;background:#fff}
-  .badge{display:inline-block;background:#ecfdf5;color:#166534;font-weight:700;border-radius:999px;padding:3px 12px;font-size:12px}
-  .print{position:fixed;top:16px;right:16px;background:#16a34a;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-weight:700;cursor:pointer}
-  @media print{.print{display:none} body{padding:0}}
-</style>
+<link rel="stylesheet" href="/admin/invoices${RUTA_DISPUTA_CSS}"/>
 <script src="/admin/invoices${RUTA_IMPRIMIR_JS}"></script></head><body>
 <button class="print" data-accion="imprimir">🖨 Imprimir / PDF</button>
 <h1>Paquete de evidencia de disputa</h1>
@@ -474,14 +496,14 @@ router.get('/:id/dispute-package', requireRole('admin'), async (req, res) => {
 
 <h2>4 · Registro de mensajes WhatsApp (entrega y lectura)</h2>
 <table>
-  <tr><th style="width:170px">Fecha</th><th style="width:110px">Tipo</th><th>Plantilla / doc</th><th style="width:110px">Estado</th></tr>
+  <tr><th class="disputa-col-fecha">Fecha</th><th class="disputa-col-tipo">Tipo</th><th>Plantilla / doc</th><th class="disputa-col-estado">Estado</th></tr>
   ${messages.length ? messages.map((m) => `<tr>
     <td>${fD(m.createdAt)}</td><td>${esc(m.type)}</td>
     <td>${esc(m.templateName ?? '—')} · ${esc(m.relatedType ?? '')} ${esc(m.relatedId ?? '')}</td>
     <td><strong>${esc(m.status)}</strong></td></tr>`).join('') : '<tr><td colspan="4">Sin mensajes registrados</td></tr>'}
 </table>
 
-<p class="sub" style="margin-top:26px">La aceptación queda registrada con marca de tiempo, IP y dispositivo en el momento de la firma.
+<p class="sub disputa-pie">La aceptación queda registrada con marca de tiempo, IP y dispositivo en el momento de la firma.
 ${pieDeLaHoja}</p>
 </body></html>`;
 
@@ -1165,6 +1187,14 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
     // que sea positivo: una R1 mueve dinero en la otra dirección, pero lo mueve.
     exigirLineasFacturables(negLines);
 
+    // SCRUM-1763 (GO del fundador, c.22062) · el total de la R1 sale de SU PROPIO desglose, como
+    // el de la F1 desde SCRUM-624: su XML lleva `ImporteTotal` = este total y `Desglose`/`CuotaTotal`
+    // = `calcVatBreakdown` de estas mismas líneas, así que cuadran por construcción. Con
+    // `−original.total` no cuadraban: 12,50 al 21 % guarda 15,13 y su R1 desglosa −15,12.
+    // El redondeo de las cuotas negativas NO se decide aquí (SCRUM-1264, fila 11).
+    const bdRect = calcVatBreakdown(negLines);
+    const totalRect = (bdRect.base + bdRect.cuota).toFixed(2);
+
     // SCRUM-729 · la R1 HEREDA el destinatario de la factura que rectifica. Fuera de la
     // transacción, como todos: sólo viaja a la base si la original es anterior al escritor.
     const clienteCongelado = await congelarParaRectificativa(prisma, original);
@@ -1192,7 +1222,7 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
         customerId: original.customerId,
         quoteId: original.quoteId,
         number,
-        total: (-Number(original.total)).toFixed(2),
+        total: totalRect,
         currency: original.currency,
         lines: negLines,
         type: 'R1',

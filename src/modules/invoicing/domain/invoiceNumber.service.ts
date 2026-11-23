@@ -64,11 +64,12 @@ export type OrigenC7 =
   | 'C7-parcial'         // parcial de un albarán
   | 'C7-albaran'         // albarán → factura (A0.4)
   | 'C7-recapitulativa'  // recapitulativa mensual
-  | 'C7-suelta';         // factura suelta desde admin (A0.5)
+  | 'C7-suelta'          // factura suelta desde admin (A0.5)
+  | 'C7-parte';          // SCRUM-1780c · parte de trabajo firmado → factura (GO SCRUM-1780 c.22237)
 
-/** Los cuatro, para que un guard los DERIVE en vez de reescribir la lista. */
+/** Todos, para que un guard los DERIVE en vez de reescribir la lista. */
 export const ORIGENES_C7: readonly OrigenC7[] = [
-  'C7-parcial', 'C7-albaran', 'C7-recapitulativa', 'C7-suelta',
+  'C7-parcial', 'C7-albaran', 'C7-recapitulativa', 'C7-suelta', 'C7-parte',
 ] as const;
 
 /**

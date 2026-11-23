@@ -188,7 +188,8 @@ test('SCRUM-320 · CONTROL POSITIVO: todo cobrado → la sección NO se pinta, y
       'lo que venga detrás.',
   );
   assert.ok(
-    /body\.appendChild\(sumSec\);/.test(VISTA),
+    // SCRUM-1768 vuelta 2: el resumen se cuelga en la CABECERA, antes de las acciones.
+    /head\.insertBefore\(sumSec, headRight\);/.test(VISTA),
     '🔴 ESCÁNER CIEGO: el resumen ya no se monta — el guard mediría una pantalla que no existe.',
   );
 });

@@ -2,6 +2,78 @@
    YaQu Design System v2
    ============================================================ */
 
+/* J1: SCRUM-1756j · los style="…" de las vistas de facturas, pasados a clases (CSP paso 3).
+   Con `style-src 'self'` aplicada, un style= metido por innerHTML no se pinta. Cada clase lleva
+   las MISMAS declaraciones que su atributo en invoiceDetailView.js, invoicesView.js y puertaSerie.js.
+   Un style= gana a toda regla de autor sin !important, y este bloque va al PRINCIPIO del fichero
+   (reparto del orquestador J para que no choquen tres PR), así que el orden no le ayuda:
+   · facturas y modal de anular: cada declaración con !important, para ganar a .btn-*, .modal, th…
+     igual que el atributo;
+   · puerta de la serie: bajo #puerta-serie (la caja, id fijo) y SIN !important, porque el guion
+     cambia display y border-color con el.style.*, y eso tiene que seguir ganando;
+   · el display:none inicial del error de anular, SIN !important por lo mismo. */
+.j1-fac-numero { font-size:16px !important; font-weight:700 !important; color:var(--ink) !important; }
+.j1-fac-sin-datos { color:var(--muted) !important; }
+.j1-fac-col-check { width:36px !important; }
+.j1-fac-col-total { text-align:right !important; }
+.j1-fac-vacio-cta { margin-top:14px !important; }
+.j1-bulk-count { font-size:13.5px !important; font-weight:600 !important; }
+.j1-bulk-cancelar { color:rgba(255,255,255,.7) !important; }
+.j1-anul-modal { max-width:460px !important; }
+.j1-anul-motivo { width:100% !important; }
+.j1-anul-aviso { margin-top:12px !important; }
+.j1-anul-lista { margin:6px 0 0 !important; padding-left:18px !important; }
+.modal .j1-anul-err { display:none; }
+.j1-anul-err { margin-top:12px !important; }
+.j1-anul-acciones { display:flex !important; gap:8px !important; justify-content:flex-end !important; margin-top:16px !important; }
+#puerta-serie .j1-ps-titulo { margin:0 0 4px; font-size:15px; font-weight:700; color:var(--ink); }
+#puerta-serie .j1-ps-ayuda { margin:0 0 10px; font-size:13px; color:#6b756f; }
+#puerta-serie .j1-ps-elec { display:flex; gap:10px; margin:4px 0 16px; }
+#puerta-serie .j1-ps-opcion { flex:1; min-height:44px; }
+#puerta-serie .j1-ps-detalle { display:none; }
+#puerta-serie .j1-ps-etiqueta { font-size:13px; font-weight:600; color:#333c37; display:block; margin-bottom:5px; }
+#puerta-serie .j1-ps-numero { width:100%; min-height:44px; padding:11px 13px; border:1px solid #cdd2cb; border-radius:9px; font-size:14px; }
+#puerta-serie .j1-ps-numero-ayuda { font-size:12px; color:#6b756f; margin:6px 0 0; }
+#puerta-serie .j1-ps-previa { margin-top:14px; background:#f4f7f4; border:1px solid #cdd2cb; border-radius:10px; padding:12px; display:none; }
+#puerta-serie .j1-ps-previa-texto { margin:0 0 4px; font-size:13px; color:#333c37; }
+#puerta-serie .j1-ps-previa-numero { font-size:15px; white-space:nowrap; }
+#puerta-serie .j1-ps-previa-aviso { margin:0; font-size:12px; color:#6b756f; }
+#puerta-serie .j1-ps-error { display:none; font-size:13px; color:#b91c1c; margin:10px 0 0; }
+#puerta-serie .j1-ps-guardar { min-height:44px; margin-top:14px; display:none; }
+/* J1: fin del bloque SCRUM-1756j */
+
+/* J1: SCRUM-1787b · línea de progreso de la ficha de factura (Emitida → Enviada → Cobrada).
+   La misma forma que `buildStatusTimeline` del presupuesto, con clases y no con style= (CSP).
+   Hecho = verde de marca; actual = anillo info; pendiente = neutro; final (ANULADA / RECTIFICATIVA)
+   = peligro. El estado va también en el texto y en aria-current: el color no es el único canal. */
+/* SCRUM-1787e · CONCEPTOS de la ficha de factura en móvil: a ≤640 px (el umbral de `.table--cards-mobile`
+   y `.table--stack-mobile`) cada línea es un bloque: el concepto a todo el ancho y debajo Cant., Precio,
+   IVA y Total en cuatro columnas, cada uno con su rótulo (`data-label`, leído de la cabecera). Sin scroll
+   lateral: medido a 390 px antes, 2 de 5 columnas a la vista y 197 px tras el scroll de la tabla.
+   (Va ANTES de las reglas de una línea: el trinquete de SCRUM-731 lee un `}` suelto delante de la
+   regla global `[hidden]` como un selector.) */
+@media (max-width: 640px) {
+  .j1-fac-conceptos thead { display:none; }
+  .j1-fac-conceptos tbody { display:block; }
+  .j1-fac-conceptos tbody tr { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:4px 8px; padding:10px 0; border-bottom:1px solid var(--border); }
+  .j1-fac-conceptos tbody td { display:block; min-width:0; padding:0; border:0; white-space:normal; overflow-wrap:anywhere; }
+  .j1-fac-conceptos tbody td:first-child { grid-column:1 / -1; }
+  .j1-fac-conceptos tbody td[data-label]::before { content:attr(data-label); display:block; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+}
+.j1-prog { display:flex; align-items:flex-start; justify-content:space-between; gap:4px; margin:16px 0 0; padding:0; list-style:none; }
+.j1-prog-paso { flex:1; display:flex; flex-direction:column; align-items:center; text-align:center; position:relative; min-width:0; }
+.j1-prog-paso + .j1-prog-paso::before { content:""; position:absolute; top:7px; left:-50%; width:100%; height:3px; background:var(--neutral-200); z-index:0; }
+.j1-prog-paso--hecho + .j1-prog-paso::before { background:var(--brand-bright); }
+.j1-prog-punto { width:16px; height:16px; border-radius:50%; background:var(--neutral-200); position:relative; z-index:1; }
+.j1-prog-paso--hecho .j1-prog-punto { background:var(--brand-bright); }
+.j1-prog-paso--actual .j1-prog-punto { background:var(--blue-600); box-shadow:0 0 0 4px rgba(37,99,235,.18); }
+.j1-prog-paso--final .j1-prog-punto { background:var(--red-500); }
+.j1-prog-rotulo { margin-top:6px; font-size:12px; font-weight:600; color:var(--neutral-700); overflow-wrap:anywhere; }
+.j1-prog-paso--pendiente .j1-prog-rotulo { color:var(--muted); }
+.j1-prog-paso--final .j1-prog-rotulo { color:var(--red-600); font-weight:700; letter-spacing:.02em; }
+.j1-prog-fecha { font-size:11px; color:var(--muted); }
+/* J1: fin del bloque SCRUM-1787b */
+
 /* ── SCRUM-731 · `hidden` TIENE QUE APAGAR. SIEMPRE. ───────────────────────────────────────
    Esto NO es una regla de estilo: es la que impide una clase entera de defecto silencioso.
 
@@ -460,7 +532,7 @@ html, body { overflow-x: clip; }
   font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: all .12s;
+  transition: background-color .12s, color .12s, border-color .12s, transform .12s; /* SCRUM-1762b: sin `all` ni box-shadow (el foco aparece de golpe) */
   white-space: nowrap;
   min-height: 36px;
   font-family: var(--font);
@@ -563,9 +635,10 @@ html, body { overflow-x: clip; }
   text-transform: uppercase;
 }
 .status-pill-accepted  { background: var(--green-100); color: var(--green-700); }
-.status-pill-rejected  { background: var(--red-50);    color: var(--red-600); }
+/* SCRUM-1762b · contraste AA (≥4,5:1) con tokens que ya existían: rejected 4,41→--danger-ink, draft 4,25→--neutral-600. */
+.status-pill-rejected  { background: var(--red-50);    color: var(--danger-ink); }
 .status-pill-pending   { background: var(--amber-50);  color: #92400e; }
-.status-pill-draft     { background: var(--neutral-100); color: var(--neutral-500); }
+.status-pill-draft     { background: var(--neutral-100); color: var(--neutral-600); }
 
 /* Progress — barra de avance (SCRUM-11, inventario AB3). Componente compartido:
    track neutro + fill con color de estado (verde = avance/Pagado, ámbar = Parcial).
@@ -573,9 +646,10 @@ html, body { overflow-x: clip; }
    Uso: <div class="progress" role="progressbar" aria-valuenow=.. aria-valuemin=0
         aria-valuemax=100 aria-label=".."><div class="progress-fill" style="width:X%"></div></div> */
 .progress { height: 8px; background: var(--neutral-100); border-radius: var(--r-full); overflow: hidden; }
-.progress-fill { height: 100%; border-radius: inherit; background: var(--green-600); transition: width .2s ease; }
+/* SCRUM-1762b · el ancho ya no se anima: es una propiedad de maquetación (repinta en cada fotograma) y
+   la barra se pinta una vez con su dato; animarla no informaba de nada. */
+.progress-fill { height: 100%; border-radius: inherit; background: var(--green-600); }
 .progress-fill--partial { background: var(--amber-500); }
-@media (prefers-reduced-motion: reduce) { .progress-fill { transition: none; } }
 
 /* WA-0b · chip de entrega de WhatsApp (J4, inventario AB3). Mismo lenguaje que las
    status-pill pero en minúscula y con glifo; estados mapeados a tokens existentes. */
@@ -640,7 +714,7 @@ html, body { overflow-x: clip; }
   font-size: 15px;
   color: var(--ink);
   background: var(--surface);
-  transition: border-color .12s, box-shadow .12s;
+  transition: border-color .12s; /* SCRUM-1762b: foco instantáneo */
   line-height: 1.5;
 }
 .field input:focus,
@@ -751,7 +825,7 @@ html, body { overflow-x: clip; }
   font-weight: 600;
   color: var(--muted);
   text-align: center;
-  transition: background-color .12s, color .12s, box-shadow .12s, border-color .12s;
+  transition: background-color .12s, color .12s, border-color .12s; /* SCRUM-1762b: foco instantáneo */
 }
 /* El radio se mantiene VISIBLE (no `display:none`): es lo que anuncia el estado al
    lector de pantalla y lo que recibe el foco del teclado. */
@@ -864,7 +938,7 @@ html, body { overflow-x: clip; }
   font-weight: 600;
   color: var(--muted);
   text-align: center;
-  transition: background-color .12s, color .12s, box-shadow .12s;
+  transition: background-color .12s, color .12s; /* SCRUM-1762b: foco instantáneo */
 }
 .customers-tab:hover { color: var(--ink); }
 .customers-tab[aria-pressed="true"] {
@@ -944,7 +1018,7 @@ html, body { overflow-x: clip; }
   font-size: 14px;
   color: var(--neutral-800);
   background: var(--neutral-50) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 12px center;
-  transition: border-color .12s, box-shadow .12s;
+  transition: border-color .12s; /* SCRUM-1762b: foco instantáneo */
 }
 .search-input:focus {
   outline: none;
@@ -1000,7 +1074,7 @@ html, body { overflow-x: clip; }
   border: 1px solid var(--neutral-200);
   padding: 18px 20px;
   box-shadow: var(--shadow-sm);
-  transition: box-shadow .15s, transform .15s;
+  transition: transform .15s; /* SCRUM-1762b: foco instantáneo */
 }
 .kpi-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
 .kpi-label {
@@ -1089,7 +1163,7 @@ html, body { overflow-x: clip; }
   min-height: 50px;
   margin-bottom: 20px;
   font-family: var(--font);
-  transition: background .12s, transform .12s, box-shadow .12s;
+  transition: background .12s, transform .12s; /* SCRUM-1762b: foco instantáneo */
   box-shadow: 0 4px 14px rgba(34,197,94,.3);
   display: flex; align-items: center; justify-content: center; gap: 8px;
 }
@@ -1315,7 +1389,7 @@ html, body { overflow-x: clip; }
   padding: 10px 12px; cursor: pointer; font-family: inherit;
   background: var(--surface); color: var(--neutral-700);
   border: 1px solid var(--neutral-200); border-radius: var(--radius-md);
-  transition: background .12s, border-color .12s, box-shadow .12s;
+  transition: background .12s, border-color .12s; /* SCRUM-1762b: foco instantáneo */
 }
 .qq-mode-btn:hover { border-color: var(--neutral-300); }
 .qq-mode-btn.is-active {
@@ -1905,7 +1979,7 @@ html, body { overflow-x: clip; }
   font-size: 15px;                  /* ≥16px evita el zoom de iOS al enfocar; 15 + el resto del form */
   color: var(--ink, #0f1c17);
   background: var(--surface, #fff);
-  transition: border-color .12s, box-shadow .12s;
+  transition: border-color .12s; /* SCRUM-1762b: foco instantáneo */
 }
 .quote-line input:focus,
 .quote-dto-global__campo input:focus {
@@ -2312,7 +2386,7 @@ html, body { overflow-x: clip; }
   border-radius: var(--radius-lg);
   padding: 18px;
   text-align: center;
-  transition: border-color .15s, box-shadow .15s;
+  transition: border-color .15s; /* SCRUM-1762b: foco instantáneo */
 }
 .plan-card:hover { border-color: var(--neutral-300); box-shadow: var(--shadow); }
 .plan-card.current { border-color: var(--green-500); box-shadow: 0 0 0 3px rgba(34,197,94,.1); }
@@ -2734,13 +2808,13 @@ html, body { overflow-x: clip; }
 
 /* Transiciones suaves en botones */
 .btn, .btn-primary, .btn-secondary, .btn-ghost, .btn-danger, .btn-sm {
-  transition: background .15s ease, transform .08s ease, box-shadow .15s ease;
+  transition: background .15s ease, transform .08s ease; /* SCRUM-1762b: foco instantáneo */
 }
 .btn:active, .btn-primary:active, .btn-secondary:active { transform: translateY(1px); }
 
 /* Hover lift sutil en tarjetas del dashboard */
 .data-card, .customers-card, .kpi-card {
-  transition: box-shadow .18s ease, transform .18s ease;
+  transition: transform .18s ease; /* SCRUM-1762b: foco instantáneo */
 }
 .kpi-card:hover {
   transform: translateY(-2px);
@@ -2825,7 +2899,7 @@ html, body { overflow-x: clip; }
   background: #fff;
   cursor: pointer;
   text-align: left;
-  transition: transform .12s ease, box-shadow .15s ease, border-color .15s;
+  transition: transform .12s ease, border-color .15s; /* SCRUM-1762b: foco instantáneo */
 }
 .home-action:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(15,23,42,.08); border-color: #bbf7d0; }
 .home-action-ico { font-size: 22px; flex-shrink: 0; }
@@ -2896,7 +2970,8 @@ tr.dragging { opacity: .5; background: #f0fdf4; }
 
 /* ── Home: saludo + etiquetas de sección (impeccable critique) ─ */
 .home-greeting { margin-bottom: 20px; }
-.home-greeting h1 { font-size: clamp(1.4rem, 3.5vw, 1.8rem); font-weight: 800; color: var(--ink); letter-spacing: -.02em; margin: 0 0 2px; }
+.home-greeting h1,
+.home-greeting .home-greeting-titulo { font-size: clamp(1.4rem, 3.5vw, 1.8rem); font-weight: 800; color: var(--ink); letter-spacing: -.02em; margin: 0 0 2px; }
 .home-greeting p { font-size: 14px; color: var(--muted); margin: 0; }
 .home-section-label {
   font-size: 11.5px; font-weight: 700; color: var(--muted);
@@ -2931,8 +3006,7 @@ tr.dragging { opacity: .5; background: #f0fdf4; }
 .home-hero-card {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 4px solid var(--brand);
+  border: 1px solid var(--border); /* SCRUM-1762c: sin raya lateral de 4 px (prohibición de DESIGN/impeccable) */
   border-radius: var(--radius-lg);
   padding: 22px 24px;
   box-shadow: var(--shadow-sm);
@@ -3949,7 +4023,7 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   font-weight: 600;
   line-height: 1;
   cursor: pointer;
-  transition: all .12s;
+  transition: background-color .12s, color .12s, border-color .12s, transform .12s; /* SCRUM-1762d: sin `all` ni box-shadow (el anillo de foco aparece de golpe, como en `.btn`) */
   background: var(--surface);
   color: var(--ink);
 }
@@ -4525,7 +4599,9 @@ textarea.parte-linea-desc {
   }
   *:has(> header.parte-cabecera) > * { grid-column: 1; min-width: 0; }
   *:has(> header.parte-cabecera) > header.parte-cabecera { grid-column: 1 / -1; }
-  *:has(> header.parte-cabecera) > .parte-firmas {
+  /* SCRUM-1762d · la casilla de la derecha ya no es la tarjeta de firmas sino la LATERAL que la contiene
+     (`.parte-lateral`: firmas + salidas del parte firmado). Su forma, en el bloque S4 · SCRUM-1762d. */
+  *:has(> header.parte-cabecera) > .parte-lateral {
     grid-column: 2;
     grid-row: 2 / span 40;
     position: sticky;
@@ -4562,6 +4638,14 @@ textarea.parte-linea-desc {
 }
 .parte-tarea .detail-tarea { font-size: 1rem; line-height: 1.5; color: var(--ink); }
 /* ══ fin S4 · SCRUM-1662 (d) ══ */
+/* ══ S4 · SCRUM-915b · «+ NUEVO PRESUPUESTO» EN EL PARTE FIRMADO ══
+   El mismo botón secundario del inventario, con el hueco y el ancho de su vecino «Volver al trabajo»
+   (`pintarVolverAlTrabajo`): se leen como dos salidas de la misma familia. Va como clase y no como
+   `style=` en la cadena (trinquete SCRUM-1773). En el escritorio de dos columnas cae en la izquierda,
+   como cualquier hija de la hoja. */
+.parte-salida-presupuesto { margin: 12px 0; }
+.parte-salida-presupuesto > .btn { width: 100%; }
+/* ══ fin S4 · SCRUM-915b ══ */
 /* ══ S4 · SCRUM-1745 · LA HOJA DEL ALBARÁN Y LOS MODALES DE TRABAJOS, AL PULGAR (≤ 768 px) ══
    Medido en yaqu.app a 390 (recorrido H6 de SCRUM-1686, fila 29): en la hoja «Editar albarán» el
    Concepto medía 30 px de ancho con precios (enseñaba 4 px de un texto de 182), los campos de la línea
@@ -4873,6 +4957,301 @@ textarea.parte-linea-desc {
   .table--trabajos .jobs-grupo-titulo td,
   .table--trabajos .jobs-grupo-salvedad td { white-space: normal; }
 }
+
+/* ══ S4 · SCRUM-1725e · LA LISTA DE TRABAJOS, LAVADO DE CARA (orden del fundador, 18-nov-2026) ══
+   «clean nuevo elegante facil de usar intuitivo bien ordenadas las cosas». El mismo lenguaje que el
+   parte de SCRUM-1722: una tarjeta por bloque, títulos que mandan, acciones que parecen botones, y
+   390 px primero. SOLO ROPA: ni un texto, ni un botón, ni una cifra cambian de sitio en el DOM ni de
+   significado (la escalera de SCRUM-1739 y el contenido de 1679/1670c, intactos).
+   Medido en yaqu.app antes de tocar (390, cuenta QA):
+     ① el título «Trabajos» gastaba una tarjeta de 70 px para repetir la barra de arriba;
+     ② la lista era una tarjeta con tarjetas dentro, y cada rótulo de grupo, OTRA tarjeta (65 px);
+     ③ «🔒 Cerrados» gastaba dos: su rótulo y, debajo, la de «Ver 2 cerrados» (88 px);
+     ④ «Sin importe / no hay presupuesto aceptado» se llevaba media tarjeta y dejaba al cliente
+        en 19 letras por línea (el nombre en dos renglones, la tarea cortada a tres de 12 letras);
+     ⑤ en la tarjeta EN CURSO los cuatro botones caían en dos filas sin orden.
+   Tokens de `tokens.css` (DESIGN.md), ninguno nuevo. Todo acotado a `.jobs-pantalla`, que solo
+   existe en `jobsView.js`, o a `.table--trabajos`: las listas hermanas no se mueven. */
+/* ── S4 · SCRUM-1725g · Y LA LISTA, PLANA (veredicto del fundador, SCRUM-1725 c.22073) ──────────
+   «un listado normal como los que tenemos en otros sitios». Los rótulos de grupo desaparecen del
+   DOM (`jobsView.js`, `renderJobRows`): queda UN `tbody`, una fila por trabajo y el estado como
+   píldora en la fila, igual que Presupuestos y Albaranes (medido en yaqu.app el 18-nov-2026:
+   1 `tbody`, 0 cabeceras y píldora en el 100 % de sus filas). De este bloque se van, con ellos, las
+   reglas que vestían `tbody.jobs-grupo` y `tr.jobs-grupo-titulo|salvedad`; lo demás del lavado de
+   cara (cabecera, cifras, filtros, la tarjeta del trabajo, «Sin importe» en su renglón, la franja de
+   acciones) NO cambia, solo deja de colgar de `tbody.jobs-grupo`. */
+.jobs-pantalla { --jobs-lavado: 1725g; }   /* testigo: el banco comprueba que ESTA hoja es la que pinta */
+
+/* ① La cabecera: el título y «Nuevo trabajo» comparten renglón. Desde SCRUM-1725j viven DENTRO de
+   la tarjeta de la lista (`.data-card-header`), así que la rejilla que los juntaba desde
+   `.jobs-pantalla` se fue con ellos; lo que queda aquí es la letra del título. */
+.jobs-pantalla .jobs-cabecera h2 { font-size: 1.25rem; line-height: 1.2; letter-spacing: -.01em; }   /* Headline */
+.jobs-pantalla .jobs-cifra { padding: 16px; }   /* el mismo relleno que la tarjeta del trabajo: los textos caen en la misma vertical */
+/* (La caja de filtros la viste el bloque «S4 · SCRUM-1725i», más abajo.) */
+
+/* SCRUM-1725g · Escritorio: la columna «Estado» no parte su píldora («SIN AGENDAR» en dos renglones
+   haría la fila más alta que la de Presupuestos), y «Ver N cerrados» cierra la tabla sin raya debajo. */
+@media (min-width: 641px) {
+  .table--trabajos td.cell-status { white-space: nowrap; }
+  .table--trabajos tr.jobs-grupo-abrir td { padding: 10px 14px 12px; }
+}
+/* (Aquí se le aseguraba un ancho a la celda de acciones para que su trío no partiera. Desde
+   SCRUM-1725j las acciones van en UN renglón por construcción: bloque «S4 · SCRUM-1725j».) */
+
+@media (max-width: 640px) {
+  /* ① (El título oculto a la vista y «Nuevo trabajo» abriendo la pantalla: bloque «S4 · SCRUM-1725j».) */
+
+  /* El filtro de técnico, a todo el ancho de la barra: la caja y el desplegable se reparten el renglón.
+     (Las cuatro píldoras de cobro que se repartían aquí pasaron al desplegable: SCRUM-1725i.) */
+  .jobs-pantalla .jobs-filtro-tecnico { gap: 8px; }
+  .jobs-pantalla .jobs-filtro-tecnico-buscar,
+  .jobs-pantalla .jobs-filtro-tecnico select { flex: 1 1 0; width: auto; min-width: 0; }
+
+  /* ② La lista deja de ser una tarjeta: las tarjetas son los TRABAJOS. */
+  .jobs-pantalla .jobs-card { background: none; border: 0; border-radius: 0; box-shadow: none; overflow: visible; }
+
+  /* SCRUM-1725g · «Ver N cerrados», la última fila: un botón suelto al pie de la pila, no una
+     tarjeta más (la rejilla compartida viste de tarjeta a todo `tbody tr`). */
+  .table--trabajos tbody > tr.jobs-grupo-abrir {
+    display: block; margin: 2px 0 0; padding: 0;
+    background: none; border: 0; border-radius: 0; box-shadow: none;
+  }
+  .table--trabajos .jobs-grupo-abrir td { padding: 0; }
+
+  /* La tarjeta del trabajo: la de la casa (DESIGN.md §5: borde 1 px + Reposo, radio lg).
+     SCRUM-1725g · gana el área `status` que SCRUM-816 le quitó: el estado vuelve a la fila y va
+     donde lo llevan Presupuestos y Albaranes, a la derecha del renglón de la fecha. */
+  .table--trabajos tbody > tr.jobs-fila {
+    grid-template-areas:
+      "client  amount"
+      "date    status"
+      "actions actions";
+    gap: 4px 12px; margin: 0 0 10px; padding: 16px;
+    border-radius: var(--r-lg); box-shadow: var(--shadow-sm);
+  }
+  .table--trabajos tbody > tr.jobs-fila:last-child { margin-bottom: 0; }
+  .table--trabajos tr.jobs-fila td.cell-status { align-self: center; margin-top: 4px; }
+  /* Jerarquía dentro de la tarjeta: quién (Title) › qué hay que hacer › el resto, en gris. */
+  .table--trabajos .jobs-fila-cliente { font-size: 1rem; line-height: 1.3; }
+  .table--trabajos .jobs-fila-tarea { margin-top: 4px; font-size: 14px; line-height: 1.4; }
+  .table--trabajos .jobs-fila-linea { margin-top: 6px; }
+  .table--trabajos .jobs-fila-direccion { margin-top: 6px; }
+  .table--trabajos tr.jobs-fila td.cell-date { margin-top: 4px; font-size: 13px; font-weight: 600; color: var(--body); }
+
+  /* ④ (SIN IMPORTE bajaba a un renglón propio porque eran dos frases. Desde SCRUM-1725j la lista
+     dice solo «Sin importe», que cabe en la esquina de siempre, a la derecha del cliente.) */
+
+  /* ⑤ Las acciones, en su franja: la rellena (el paso de hoy, SCRUM-1739) a todo el ancho y al
+     pulgar; debajo, las demás en un renglón, con el «⋯» cerrando a la derecha. El orden es el del
+     DOM, que es el del teclado: aquí no hay ningún `order`. */
+  .table--trabajos tr.jobs-fila td.cell-actions { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--neutral-200); }
+  .table--trabajos .jobs-celda-acciones > .btn-primary,
+  .table--trabajos .jobs-celda-acciones > .jobs-acciones:first-child { flex: 1 0 100%; }
+  .table--trabajos .jobs-celda-acciones > .jobs-acciones:first-child > .btn-primary { flex: 1 1 auto; }
+  .table--trabajos .jobs-celda-acciones > .jobs-acciones:not(:first-child) { flex: 1 1 auto; }
+  .table--trabajos .jobs-celda-acciones .overflow-trigger { margin-left: auto; }
+}
+/* ══ fin S4 · SCRUM-1725e ══ */
+
+/* ══ S4 · SCRUM-1725i · LOS FILTROS DE LA LISTA DE TRABAJOS: PESTAÑAS DE ESTADO Y BARRA ══════════
+   Orden del fundador (SCRUM-1725 c.22095) y decisiones de c.22098 y c.22103 (PR-① de la vuelta 3).
+   Es el patrón de Albaranes, con sus mismas piezas (`.data-card-tabs`, `.data-card-tab`,
+   `.badge-slate`, `.data-card-toolbar`): el ESTADO en pestañas con contador y el COBRO en un
+   desplegable de la barra, junto al técnico. Ninguna regla compartida cambia: todo va acotado a
+   `.jobs-pantalla`, que solo existe en `jobsView.js`. Tokens de `tokens.css`, ninguno nuevo.
+   La tarjeta única con la cabecera dentro es del PR-② (el lavado): aquí la caja de filtros solo se
+   pega a la lista para que las pestañas tengan debajo lo que filtran. */
+.jobs-pantalla { --jobs-filtros: 1725i; }   /* testigo: el banco comprueba que ESTA hoja es la que pinta */
+
+/* La caja deja de ser un renglón de píldoras: dos franjas apiladas (pestañas, barra). Vacía —mientras
+   carga, o sin ningún trabajo— no pinta ni su borde. */
+.jobs-pantalla .jobs-filtros {
+  display: block; margin-bottom: 0; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--neutral-200);
+}
+.jobs-pantalla .jobs-filtros:empty { display: none; }
+
+/* Las pestañas no se parten ni se encogen: si no caben, la tira desplaza (a 390 px, seis no caben)
+   y la que asoma cortada al borde es la pista de que hay más. Es lo que Albaranes hace en móvil
+   (SCRUM-1659), aquí a cualquier ancho porque esta tira lleva seis. `overflow-y: hidden`: al
+   desplazar en X el eje Y pasa a `auto`, y el `margin-bottom: -1px` del subrayado dejaría 1 px de
+   desplazamiento vertical.
+   Y por ese recorte la raya de la tira NO puede ser su borde: el subrayado verde de la pestaña
+   activa monta 1 px sobre él (`margin-bottom: -1px`), y una tira que recorta se lo comería,
+   dejándolo en 1 px. La raya pasa a ser una sombra interior y la pestaña se queda dentro: el verde
+   pinta encima, los mismos 2 px sobre la misma raya que en Albaranes. */
+.jobs-pantalla .data-card-tabs {
+  overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none;
+  border-bottom: 0; box-shadow: inset 0 -1px 0 var(--neutral-100);
+}
+.jobs-pantalla .data-card-tabs::-webkit-scrollbar { display: none; }
+.jobs-pantalla .data-card-tab { flex-shrink: 0; margin-bottom: 0; white-space: nowrap; }
+/* El anillo de foco, hacia DENTRO: el de la casa va por fuera y esta tira lo recortaría por arriba. */
+.jobs-pantalla .data-card-tab:focus-visible { box-shadow: inset var(--ring); }
+
+/* UNA vertical a la izquierda para las tres franjas. Medido a 1280 con los rellenos compartidos: el
+   rótulo de la primera pestaña caía en x 299, el desplegable en 293 y «CLIENTE» en 287. La tira y la
+   barra toman el relleno de la celda de la tabla (14 px; la pestaña pone 6 de los suyos). */
+.jobs-pantalla .data-card-tabs { padding: 0 8px; }
+/* La barra: el cobro y el técnico, seguidos y a la izquierda, con la misma letra y los 44 px de AB6. */
+.jobs-pantalla .jobs-barra { padding: 10px 14px; gap: 12px; }
+.jobs-pantalla .jobs-filtro-cobro { width: auto; min-height: 44px; padding: 4px 10px; font-size: 12.5px; }
+.jobs-pantalla .jobs-barra .jobs-filtro-tecnico { margin-left: 0; }
+
+@media (min-width: 641px) {
+  /* Escritorio: la caja es la CABEZA de la tarjeta de la lista. Se queda con las esquinas de arriba
+     y la lista (o su «No hay trabajos con ese filtro.») con las de abajo; entre las dos, UNA raya:
+     la de la última franja de la caja (la barra, o las pestañas si no hay barra). */
+  .jobs-pantalla .jobs-filtros { border-bottom: 0; border-radius: var(--r-lg) var(--r-lg) 0 0; }
+  .jobs-pantalla .jobs-filtros:not(:empty) + .jobs-lista > .customers-card { border-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; }
+}
+
+@media (max-width: 640px) {
+  /* Móvil: las tarjetas son los TRABAJOS (SCRUM-1725e), así que los filtros van en la suya, encima.
+     La última franja no lleva raya: debajo ya está el borde de la tarjeta. */
+  .jobs-pantalla .jobs-filtros { margin-bottom: 12px; border-radius: var(--r-lg); box-shadow: var(--shadow-sm); }
+  .jobs-pantalla .jobs-filtros > .jobs-barra:last-child { border-bottom: 0; }
+  .jobs-pantalla .jobs-filtros > .data-card-tabs:last-child { box-shadow: none; }
+  /* Y aquí la vertical es la de la tarjeta del trabajo (16 px de relleno). */
+  .jobs-pantalla .data-card-tabs { padding: 0 10px; }
+  .jobs-pantalla .jobs-barra { padding: 12px 16px; gap: 8px; }
+  .jobs-pantalla .jobs-filtro-cobro { flex: 1 1 100%; width: 100%; }
+}
+/* ══ fin S4 · SCRUM-1725i ══ */
+
+/* ══ S4 · SCRUM-1725j · EL LAVADO DE LA LISTA: UNA TARJETA Y FILAS DE TRES RENGLONES ═══════════════
+   PR-② de la vuelta 3 (SCRUM-1725 c.22098 y c.22103). Lo que cambia, y por qué:
+     ① UNA tarjeta, como Presupuestos, Albaranes y Facturas: cabecera con el título y «Nuevo
+        trabajo», pestañas, barra y tabla. Las dos cifras se quedan encima.
+     ② La fila de escritorio mide tres renglones (quién · qué y los técnicos · tipo y dirección),
+        no los 92-121 px de antes. Y con eso se cura el clic: medido el 18-nov, en 8 de 16 filas el
+        centro de la celda de cliente caía en el desplegable de técnicos, que no navega. El
+        desplegable pasa a la MITAD DERECHA de su renglón y el centro queda libre.
+     ③ Las acciones, en un renglón y a la derecha: «Ver detalle» y «⋯» en la misma vertical.
+     ④ La barra, con la letra de la casa para un control (13,5 px) y sitio para la flecha.
+   Todo acotado a `.jobs-pantalla` o `.table--trabajos`. Tokens de `tokens.css`, ninguno nuevo. */
+.jobs-pantalla { --jobs-lista: 1725j; }   /* testigo: el banco comprueba que ESTA hoja es la que pinta */
+
+/* ① La cabecera toma el relleno de la celda de la tabla: título, pestañas y «CLIENTE», en una vertical. */
+.jobs-pantalla .jobs-tarjeta > .jobs-cabecera { padding: 16px 14px; }
+.jobs-pantalla .jobs-cabecera h2 { margin: 0; }
+
+/* ③ La caja de la escalera se monta siempre (los guards cuentan UNA por fila); vacía, no ocupa. */
+.table--trabajos .jobs-acciones:empty { display: none; }
+/* La hora acompaña al día: mismo renglón, en gris. */
+.table--trabajos .jobs-fecha-hora { color: var(--muted); font-weight: 400; }
+
+/* ④ La barra. El desplegable guarda sitio para su flecha: a 390 «Todos los técnicos» la pisaba. */
+.jobs-pantalla .jobs-barra select,
+.jobs-pantalla .jobs-barra .input { font-size: 13.5px; }
+.jobs-pantalla .jobs-barra select { padding-right: 28px; text-overflow: ellipsis; }
+
+@media (min-width: 641px) {
+  /* ① Dentro de la tarjeta, las piezas no llevan caja propia: el borde y las esquinas son de ella. */
+  .jobs-pantalla .jobs-tarjeta .jobs-filtros { border: 0; border-radius: 0; }
+  .jobs-pantalla .jobs-tarjeta .jobs-lista > .customers-card { border: 0; border-radius: 0; box-shadow: none; }
+
+  /* ② La fila. 8 px arriba y abajo; dentro, tres renglones sin márgenes (14 / 13 / 12,5 px a 1.3). */
+  .table--trabajos tr.jobs-fila > td { padding-top: 8px; padding-bottom: 8px; }
+  /* Los renglones: ① quién · ② qué, y al final los técnicos · ③ tipo y dirección.
+     Los técnicos van en el SEGUNDO y no en el tercero, y es una medida: a 1280 la celda de cliente
+     se queda en unos 256 px, y con tipo, dirección y técnicos en un renglón la dirección medía
+     0 px en 4 de 8 filas. La tarea es texto largo que se corta igual; la dirección pasa a tener el
+     renglón para ella y el tipo. La tercera columna mide, como mucho, la mitad derecha. */
+  .table--trabajos .jobs-fila-cuerpo {
+    display: grid; align-items: start;
+    grid-template-columns: auto minmax(0, 1fr) fit-content(calc(50% - 8px));
+  }
+  .table--trabajos .jobs-fila-linea { display: contents; }
+  .table--trabajos .jobs-fila-sep { display: none; }
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-cliente,
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-tarea,
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-trabajo,
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-tipo,
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-direccion {
+    display: block; min-width: 0; max-width: none; margin: 0;
+    line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-cliente { grid-area: 1 / 1 / 2 / -1; font-size: 14px; }
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-tarea,
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-trabajo { grid-area: 2 / 1 / 3 / 3; font-size: 13px; color: var(--ink); }
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-tipo { grid-area: 3 / 1; font-size: 12.5px; }
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-tipo:has(~ .jobs-fila-direccion)::after { content: "·"; margin: 0 6px; }
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-direccion { grid-area: 3 / 2 / 4 / -1; font-size: 12.5px; }
+
+  /* Los técnicos: al final del segundo renglón. Sin `overflow` en la caja, que recortaría la lista
+     que se abre debajo; quien corta con elipsis es el resumen. */
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-tecnicos {
+    grid-area: 2 / 3; justify-self: end; display: block; min-width: 0; max-width: 100%;
+    margin-left: 0; font-size: 12.5px; line-height: 1.3; white-space: nowrap; overflow-wrap: normal;
+  }
+  .table--trabajos .jobs-fila-cuerpo .jobs-fila-tecnicos:not(:has(.jobs-tecnicos-menu)) { overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+  /* El desplegable, sin caja: un texto con su flecha, que se marca al pasar o al abrirlo. El
+     objetivo sigue midiendo 44 px (AB6); el relleno que lo da se compensa con margen negativo para
+     que el renglón no engorde, y el fondo de «pasar por encima» lo pinta una pieza del alto del
+     texto, no los 44 px (taparía la tarea del renglón de arriba). */
+  .table--trabajos .jobs-fila-cuerpo .jobs-tecnicos-resumen {
+    display: block; position: relative; isolation: isolate; box-sizing: border-box;
+    max-width: 100%; min-height: 44px; margin: -14px 0; padding: 14px 18px 14px 6px;
+    border: 0; background: none; color: var(--body);
+    font-size: 12.5px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .table--trabajos .jobs-fila-cuerpo .jobs-tecnicos-resumen:hover { background: none; }
+  .table--trabajos .jobs-fila-cuerpo .jobs-tecnicos-resumen::before {
+    content: ""; position: absolute; z-index: -1; inset: 11px 0; border-radius: var(--radius-sm);
+  }
+  .table--trabajos .jobs-fila-cuerpo .jobs-tecnicos-resumen:hover::before,
+  .table--trabajos .jobs-fila-cuerpo .jobs-tecnicos-menu[open] > .jobs-tecnicos-resumen::before { background: var(--neutral-100); }
+  /* La flecha, a 16 px: a los 10 de la casa, tras un nombre a 12,5, se leía como un punto. */
+  .table--trabajos .jobs-fila-cuerpo .jobs-tecnicos-resumen::after { position: absolute; right: 4px; top: 14px; font-size: 16px; line-height: 16px; }
+  /* La lista se abre hacia la izquierda desde el borde del resumen: está en la mitad derecha. */
+  .table--trabajos .jobs-fila-cuerpo .jobs-tecnicos-lista { left: auto; right: 0; top: calc(100% - 10px); }
+
+  /* Pulido a la vista de la captura (20-nov): el nombre del técnico salía cortado con hueco a su
+     izquierda, y en las filas SIN tarea propia quedaba solo, a la derecha de un renglón vacío.
+     · El nombre aprovecha su mitad: sin margen delante, menos relleno, y la mitad llega hasta 8 px
+       del centro (eran 16 más 12 de margen). El centro de la celda sigue libre: es la cura del clic.
+     · Sin tarea propia, el renglón ② es de los técnicos: empiezan a la izquierda, bajo el cliente,
+       y no pasan de ESA mitad. La lista se abre entonces hacia la derecha. */
+  .table--trabajos .jobs-fila-cuerpo:not(:has(.jobs-fila-tarea, .jobs-fila-trabajo)) .jobs-fila-tecnicos {
+    grid-area: 2 / 1 / 3 / -1; justify-self: start; max-width: calc(50% - 8px);
+  }
+  .table--trabajos .jobs-fila-cuerpo:not(:has(.jobs-fila-tarea, .jobs-fila-trabajo)) .jobs-tecnicos-resumen { padding-left: 0; }
+  .table--trabajos .jobs-fila-cuerpo:not(:has(.jobs-fila-tarea, .jobs-fila-trabajo)) .jobs-tecnicos-resumen::before { left: -6px; }
+  .table--trabajos .jobs-fila-cuerpo:not(:has(.jobs-fila-tarea, .jobs-fila-trabajo)) .jobs-tecnicos-lista { left: 0; right: auto; }
+
+  /* La fecha y el importe, sin partir. La celda de cliente pide todo el ancho que haya (sus
+     renglones no parten), y sin esto la tabla se lo quitaba al importe: medido, «Sin importe» y
+     «de 1.194,27 €» caían en dos renglones cada uno y la fila se iba a 76-96 px. */
+  .table--trabajos tr.jobs-fila > td.cell-date,
+  .table--trabajos tr.jobs-fila > td.cell-amount { white-space: nowrap; }
+
+  /* ③ Las acciones: un renglón, a la derecha, y su rótulo de columna encima de ellas. */
+  .table--trabajos thead th:last-child { text-align: right; }
+  .table--trabajos .jobs-celda-acciones { justify-content: flex-end; flex-wrap: nowrap; }
+  .table--trabajos .jobs-celda-acciones .jobs-acciones { flex-wrap: nowrap; }
+  .table--trabajos .jobs-celda-acciones button { white-space: nowrap; }
+}
+
+@media (max-width: 640px) {
+  /* ① Móvil: las tarjetas son los TRABAJOS (SCRUM-1725e), así que la de la lista no se pinta. La
+     barra de arriba YA dice «Trabajos»: el `h2` se queda para quien lo oye. «Nuevo trabajo» abre
+     la pantalla, a todo el ancho. */
+  .jobs-pantalla .jobs-tarjeta { background: none; border: 0; border-radius: 0; box-shadow: none; overflow: visible; }
+  .jobs-pantalla .jobs-tarjeta > .jobs-cabecera { padding: 0 0 12px; border-bottom: 0; }
+  .jobs-pantalla .jobs-tarjeta > .jobs-cabecera:has(.jobs-nuevo:empty) { padding: 0; }
+  .jobs-pantalla .jobs-cabecera h2 {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap;
+  }
+  .jobs-pantalla .jobs-cabecera .jobs-nuevo { flex: 1 1 100%; align-self: stretch; width: 100%; }
+  .jobs-pantalla .jobs-cabecera .jobs-nuevo > .btn-primary { flex: 1 1 auto; justify-content: center; }
+
+  /* ③ Con el orden fijo, la caja del paso va siempre delante. Solo se lleva el renglón entero
+     cuando el paso es la rellena; si no, comparte renglón con «Ver detalle» y el «⋯». */
+  .table--trabajos .jobs-celda-acciones > .jobs-acciones:first-child:not(:has(> .btn-primary)) { flex: 0 1 auto; }
+}
+/* ══ fin S4 · SCRUM-1725j ══ */
 
 /* ═══ SCRUM-831 · LA LISTA DE ALBARANES RECUPERA SU RANURA DE ACCIONES ═══════════════════════
    Medido en el censo de las cinco listas (8-sep-2026): era la ÚNICA con `.cell-actions` ocupada
@@ -5404,6 +5783,69 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
   .sitios-cliente__form { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* J2: SCRUM-1756i · los `style="…"` que cobrosView.js, csvImport.js, customerDetailView.js y
+   customersView.js metían por innerHTML, pasados a clases con las MISMAS declaraciones (cada cuerpo es
+   el texto literal del atributo de main). Con la CSP aplicada (`style-src 'self'`) un atributo `style`
+   no pinta; una clase de esta hoja, sí. Cero cambios visibles: medido con los estilos computados de cada
+   elemento, main contra rama. Lo ata `tests/scrum1756i-panel-j2-sin-style-en-linea.test.mjs`. */
+.table th.cobros-th-importe { text-align:right }
+.clientes-vacio-cta { margin-top:14px }
+.modal-overlay .modal.csv-modal { max-width:600px }
+.csv-oculto { display:none }
+.csv-guia { font-size:13px;color:var(--neutral-500);margin:0 0 12px }
+.csv-dropzone { border:2px dashed var(--neutral-300);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:border-color .15s;margin-bottom:8px }
+.csv-dropzone-texto { font-size:13px;color:var(--neutral-500) }
+.csv-dropzone-enlace { color:var(--green-600);font-weight:600;text-decoration:underline }
+.csv-separador { text-align:center;font-size:12px;color:var(--neutral-400);margin:4px 0 }
+.csv-pegar { width:100%;padding:8px 10px;border:1.5px solid var(--neutral-200);border-radius:8px;font-size:12px;font-family:monospace;resize:vertical }
+.csv-boton-8 { width:100%;margin-top:8px }
+.csv-boton-12 { width:100%;margin-top:12px }
+.csv-boton-14 { width:100%;margin-top:14px }
+.csv-titulo-6 { margin:0 0 6px;font-size:16px;color:var(--neutral-900) }
+.csv-titulo-12 { margin:0 0 12px;font-size:16px;color:var(--neutral-900) }
+.csv-titulo-rechazos { margin:14px 0 6px;font-size:16px;color:var(--neutral-900) }
+.csv-muestra { padding:12px 14px;border:1px solid var(--neutral-200);border-radius:12px;background:var(--neutral-50);font-family:monospace;font-size:13px;color:var(--neutral-900);overflow-wrap:break-word }
+.csv-botonera { display:flex;gap:8px;margin-top:14px }
+.csv-flex1 { flex:1 }
+.csv-columna { padding:8px 0;border-bottom:1px solid var(--neutral-100) }
+.csv-columna-fila { display:flex;align-items:center;gap:10px }
+.csv-columna-nombre { font-family:monospace;font-size:12px;color:var(--neutral-900);min-width:0;flex:1;overflow-wrap:break-word }
+.csv-flecha { color:var(--neutral-400) }
+.csv-campo-select { flex:1;min-height:44px;padding:11px 13px;border:1px solid var(--neutral-200);border-radius:12px;font-size:13px }
+.csv-columna-aviso { font-size:12px;color:var(--neutral-500);margin:6px 0 0 }
+.csv-resumen { font-size:14px;color:var(--neutral-900);margin:0 0 4px }
+.csv-rechazo { padding:6px 0;border-bottom:1px solid var(--neutral-100);font-size:13px;color:var(--neutral-700) }
+.csv-guia-10 { font-size:13px;color:var(--neutral-500);margin:0 0 10px }
+.csv-rechazos-lista { max-height:220px;overflow-y:auto;border:1px solid var(--neutral-200);border-radius:12px;padding:0 12px }
+.c360-vacio { color:var(--neutral-400);padding:24px }
+.c360-identidad { display:flex;align-items:center;gap:14px;flex:1;min-width:0 }
+.c360-avatar { width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--green-500),#22d3ee);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:var(--green-900);flex-shrink:0 }
+.c360-nombre { margin:0 0 4px;font-size:18px;font-weight:800;color:var(--neutral-900) }
+.c360-datos { font-size:13px;color:var(--neutral-500);display:flex;gap:12px;flex-wrap:wrap }
+.c360-desde { color:var(--neutral-400) }
+.c360-notas { font-size:12.5px;color:var(--neutral-500);margin-top:6px;font-style:italic }
+.c360-cabecera-acciones { display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0 }
+.c360-kpi-valor { font-size:18px }
+.c360-verde { color:var(--green-600) }
+.c360-rojo { color:var(--red-600) }
+.c360-tinta { color:var(--ink) }
+.c360-actividad-titulo { margin:0 0 14px;font-size:13px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em }
+.c360-evento-icono { flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--neutral-50);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px }
+.c360-evento-cuerpo { flex:1;min-width:0 }
+.c360-evento-titulo { font-size:13.5px;font-weight:600 }
+.c360-evento-detalle { font-size:12.5px;color:var(--muted);margin-top:1px }
+.c360-evento-hora { flex-shrink:0;font-size:11.5px;color:var(--muted);white-space:nowrap }
+.table td.c360-tabla-vacia { text-align:center;color:var(--neutral-400);padding:24px }
+.c360-celda-numero { font-weight:600 }
+.table td.c360-celda-fecha { color:var(--muted) }
+.c360-sin-subrayado { text-decoration:none }
+.c360-celda-acciones { display:flex;gap:6px;align-items:center }
+.c360-editar-cuerpo { flex-direction:column;gap:10px }
+.c360-ayuda { font-size:12px;color:var(--muted);margin-top:4px }
+.c360-redimensionable { resize:vertical }
+.c360-casilla { display:flex;align-items:center;gap:8px;font-size:13px;color:var(--neutral-600) }
+.c360-oculto { display:none }
+
 /* ── J3 · SCRUM-1577b (AB6) ── Configuración (settingsView.js, de J3): los dos `select` de
    Facturación y el selector de color de marca, a 44 px de toque en TODAS las anchuras, como el
    «Criterio de caja» de la misma pestaña. Medido con `docs/master/evidencias/scrum1577/banco-44.mjs`
@@ -5443,3 +5885,559 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
 .paquete-trimestre__texto { margin: 0 0 4px; font-size: 13px; color: var(--muted); }
 .paquete-trimestre__ayuda { margin: 0 0 12px; font-size: 12px; color: var(--muted); }
 .paquete-trimestre__info { margin: 12px 0 0; font-size: 12px; color: var(--muted); }
+
+/* ══ S2 · SCRUM-1725 · LA FICHA DEL TRABAJO, CON EL LENGUAJE DEL PARTE (1722) ══════════════════════════
+   Orden del fundador (12-nov, reactivada el 18-nov): «los trabajos siguen feos por dentro y por fuera, el
+   parte está mejor por dentro»; y hoy, «clean, nuevo, elegante, fácil de usar, bien ordenadas las cosas».
+   Medido a 390 y 1280 en yaqu.app (build bcff9d8b1, sonda prod-1725-ficha-visual.mjs): la ficha era UNA
+   tarjeta partida por rayas, con títulos de bloque en versalitas de 11,5 px y las acciones secundarias como
+   pastillas blancas con contorno, iguales que una casilla. El parte ya se lee de otra forma, y ésta copia su
+   gramática: **una tarjeta por bloque · título de bloque en Tinta, 18 px, 700 · contorno = se escribe,
+   relleno = se pulsa**. FORMA, NO FUNCIÓN: cero textos, el DOM y su orden intactos (la sonda compara el
+   texto y las acciones de la ficha antes y después, y salen iguales), sólo tokens de DESIGN.md.
+   Todo cuelga de `.detail-page--trabajo` (jobDetailView.js): `.detail-page` lo comparten cinco fichas. */
+
+/* La hoja deja de ser una tarjeta: las tarjetas son sus bloques, sobre el lienzo, como en el parte. */
+.detail-page--trabajo {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+  width: 100%;
+  max-width: 1120px;
+  margin-inline: auto;
+}
+/* Cabecera sobre el lienzo, sin raya: el título manda (el tamaño del número del parte). */
+.detail-page--trabajo .detail-head { padding: 4px 0 20px; border-bottom: 0; }
+.detail-page--trabajo .detail-head h2 {
+  font-size: 1.375rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+.detail-page--trabajo .detail-head .detail-sub { font-size: 14px; color: var(--body); }
+.detail-page--trabajo .detail-head .detail-cita { color: var(--ink); font-weight: 600; margin-top: 2px; }
+.detail-page--trabajo .detail-head-chips { margin-top: 10px; }
+
+/* Columna principal y rail: dos pilas de tarjetas con el mismo aire entre ellas (16 px, spacing.md). */
+.detail-page--trabajo .detail-cuerpo { gap: 16px; align-items: start; }
+.detail-page--trabajo .detail-cuerpo > div { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+/* Cada bloque, su tarjeta (borde 1 px + Reposo, radio lg). Sólo los bloques de la ficha: las secciones
+   que viven DENTRO de una línea plegable de «El trabajo» siguen sin caja (no hay tarjeta dentro de tarjeta). */
+.detail-page--trabajo .detail-cuerpo > div > .detail-section,
+.detail-page--trabajo .detail-rail {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.detail-page--trabajo .detail-cuerpo > div > .detail-section { padding: 16px; }
+@media (min-width: 560px) {
+  .detail-page--trabajo .detail-cuerpo > div > .detail-section { padding: 20px; }
+}
+/* El rail es UNA tarjeta de contexto (cliente, dónde, presupuesto, responsable): sus bloques se separan con
+   la raya fina de dentro, no con cajas. A 390 sigue ARRIBA (SCRUM-318: a quién llamo y adónde voy). */
+.detail-page--trabajo .detail-rail { overflow: hidden; }
+.detail-page--trabajo .detail-rail > * { padding: 16px 20px; border-bottom: 1px solid var(--neutral-100); }
+.detail-page--trabajo .detail-rail > *:last-child { border-bottom: 0; }
+@media (max-width: 720px) {
+  .detail-page--trabajo .detail-rail { border: 1px solid var(--border); }
+  .detail-page--trabajo .detail-rail > * { padding: 14px 16px; }
+}
+
+/* Título de bloque: Tinta, 18 px, 700, sin versalitas (el del parte). En el rail, un escalón menos. */
+.detail-page--trabajo .detail-section-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--ink);
+  margin: 0 0 12px;
+}
+/* En el rail, el estilo Label de DESIGN.md §3 (12 px, 600, 0,04em, Apagado). Sus títulos son literales EN
+   MAYÚSCULAS (`JOB_RAIL_TITULOS`, jobRailBlocks.js) y no se reescriben (regla 39): a 18 px gritaban. Es el
+   rótulo de una ficha de contexto, un escalón por debajo de los bloques de trabajo. */
+.detail-page--trabajo .detail-rail .detail-section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.detail-page--trabajo .detail-trabajo .detail-section-title { margin-bottom: 4px; }
+
+/* Relleno = se pulsa. Las secundarias eran blancas con contorno, como una casilla: pasan al relleno neutro
+   del parte. La única voz verde sigue siendo la primaria (Regla de Una Sola Voz). */
+.detail-page--trabajo .btn-secondary {
+  background: var(--neutral-100);
+  border-color: transparent;
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: none;
+}
+.detail-page--trabajo .btn-secondary:hover:not(:disabled) { background: var(--neutral-200); border-color: transparent; }
+.detail-page--trabajo .btn-secondary:focus-visible { outline: none; box-shadow: var(--ring); }
+
+/* Partes y albaranes a 390: cada fila era una tarjeta DENTRO de la tarjeta del bloque. Ahora son filas de la
+   tarjeta, separadas por la raya fina; la rejilla de áreas de `.table--cards-mobile` no se toca. */
+@media (max-width: 640px) {
+  .detail-page--trabajo .table--cards-mobile tbody tr {
+    margin: 0;
+    padding: 12px 0;
+    background: transparent;
+    border: 0;
+    border-top: 1px solid var(--neutral-100);
+    border-radius: 0;
+  }
+  .detail-page--trabajo .table--cards-mobile tbody tr:first-child { border-top: 0; padding-top: 4px; }
+  .detail-page--trabajo .table--cards-mobile tbody tr:last-child { padding-bottom: 0; }
+  .detail-page--trabajo .table--cards-mobile tbody tr:hover { background: transparent; }
+}
+/* De paso, en esta misma pantalla: a 1280 la celda «Estado» del albarán era `display: flex` (para apilar
+   pill + «Sin precios» en móvil) y, fuera de la tabla, su raya quedaba 20 px más arriba que la de sus
+   vecinas. En la tabla vuelve a ser celda; entre las dos pastillas va el espacio que ahora escribe la vista
+   (jobDetailView.js, «EMITIDOSin precios») y 2 px de margen: los 6 px del `gap` de antes. */
+@media (min-width: 641px) {
+  .detail-page--trabajo td.jobdet-alb-estado { display: table-cell; vertical-align: middle; }
+  .detail-page--trabajo td.jobdet-alb-estado > * + * { margin-left: 2px; }
+  /* La tabla, de borde a borde de su tarjeta (DESIGN.md §5, Cards: «las tablas van edge-to-edge»), con la
+     primera y la última columna alineadas al título. Con los 20 px de relleno, a 1280 partía el número
+     («AB26000 / 2»), la fecha y las pastillas (medido con la sonda). Y esos tres no se parten: si un día no
+     caben, la tabla se desplaza DENTRO de su `.table-scroll`, el patrón de la casa (SCRUM-1559i). */
+  .detail-page--trabajo .detail-cuerpo > div > .detail-section > .table-scroll { margin-inline: -20px; }
+  .detail-page--trabajo .detail-section > .table-scroll :is(th, td):first-child { padding-left: 20px; }
+  .detail-page--trabajo .detail-section > .table-scroll :is(th, td):last-child { padding-right: 20px; }
+  .detail-page--trabajo .detail-section > .table-scroll :is(td.cell-id, td.cell-date, td.cell-status) { white-space: nowrap; word-break: normal; }
+}
+/* A 390 la barra de acciones baja entera debajo del título: empieza a la izquierda, bajo el título, y no
+   colgada a la derecha por el `margin-left: auto` del escritorio. */
+@media (max-width: 720px) {
+  .detail-page--trabajo .detail-head-acciones { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .detail-page--trabajo .btn-secondary { transition: none; }
+}
+/* ══ fin S2 · SCRUM-1725 ══ */
+
+/* ══ S2 · SCRUM-1768 · LA FICHA DEL TRABAJO APROVECHA EL ANCHO ══════════════════════════════════════════
+   Orden del fundador (18-nov): «en desktop se ve raro, todo en el medio sin aprovechar el espacio».
+   Medido en yaqu.app (build 738ecbef8, sonda prod-1768-ficha-formato.mjs): a 1920 la ficha ocupaba 1120 px
+   centrados (276 px muertos a cada lado) y el rail acababa a 700 px de alto con la columna principal en 1800.
+   Referencia (docs/competencia/capturas): ServiceM8 parte la ficha del job en datos | documentos con el total
+   y la acción arriba a la derecha; Housecall Pro, cabecera a todo el ancho + columna de resumen + columna ancha.
+   Aquí: cabecera a todo el ancho, columna principal fluida (lo que se hace) y columna lateral fija (contexto y
+   datos del trabajo). FORMA, NO FUNCIÓN: cero textos nuevos; sólo tokens de DESIGN.md. */
+.detail-page--trabajo { max-width: 1680px; margin-inline: 0; }
+.detail-page--trabajo .detail-cuerpo--con-rail { grid-template-columns: minmax(0, 1fr) minmax(300px, 340px); }
+@media (min-width: 1440px) {
+  .detail-page--trabajo .detail-cuerpo--con-rail { grid-template-columns: minmax(0, 1fr) 380px; gap: 24px; }
+  .detail-page--trabajo .detail-cuerpo > div { gap: 24px; }
+}
+.detail-page--trabajo .detail-cuerpo > .detail-lateral { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+/* «+ Nuevo presupuesto», a todo el ancho de la columna y pegado al bloque PRESUPUESTO del rail. */
+.detail-page--trabajo .detail-lateral > [data-presupuesto-del-trabajo] { width: 100%; justify-content: center; }
+/* Vuelta 2 (SCRUM-1768b, abajo): «El trabajo» volvió a la columna principal como pestaña, así que aquí se
+   retiraron sus dos reglas de la lateral (el valor bajo el rótulo y su `order: 1` de móvil). */
+/* A 390 la columna lateral se disuelve: rail y «+ Nuevo presupuesto» arriba, las pestañas debajo. */
+@media (max-width: 720px) {
+  .detail-page--trabajo .detail-cuerpo--con-rail { display: flex; flex-direction: column; gap: 16px; }
+  .detail-page--trabajo .detail-cuerpo > .detail-lateral { display: contents; }
+  .detail-page--trabajo .detail-lateral > [data-presupuesto-del-trabajo] { order: -1; }
+}
+/* ══ fin S2 · SCRUM-1768 ══ */
+
+/* ══ S2 · SCRUM-1768b · LA FICHA POR PESTAÑAS Y EL DINERO ARRIBA ═════════════════════════════════════════
+   Vuelta 2 del formato (c.22113). Las pestañas son las secciones que ya existían (jobDetailView.js,
+   `montarPestanasDeLaFicha`): la tira es el control segmentado de la casa (btn-secondary / btn-ghost, el de
+   quotesTabs y cobrosView) y cada sección sigue siendo su tarjeta. La franja del dinero sube a la cabecera,
+   encima de las acciones, con la misma tarjeta que tenía en el cuerpo. Sin cabecera fija. Sólo tokens. */
+.detail-page--trabajo .detail-head > .detail-head-dinero {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+}
+@media (min-width: 721px) {
+  /* Dos columnas: el título a la izquierda; a la derecha, el dinero y debajo las acciones. Sin franja (un
+     Trabajo sin importe que conste), las acciones suben a la primera fila: la colocación es automática. */
+  .detail-page--trabajo .detail-head {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 24px; row-gap: 12px; align-items: start;
+  }
+  .detail-page--trabajo .detail-head > .detail-head-izq { grid-column: 1; grid-row: 1 / span 2; }
+  .detail-page--trabajo .detail-head > .detail-head-dinero { grid-column: 2; grid-row: 1; min-width: 320px; padding: 16px 20px; }
+  .detail-page--trabajo .detail-head > .detail-head-acciones { grid-column: 2; justify-content: flex-end; margin-left: 0; }
+}
+/* A 390 todo se apila en el orden del documento: título, dinero, acciones. */
+@media (max-width: 720px) {
+  .detail-page--trabajo .detail-head > .detail-head-dinero { flex: 1 1 100%; }
+}
+
+/* La tira: los rótulos se parten en dos filas antes que esconder una pestaña tras un desplazamiento. */
+.detail-page--trabajo .detail-pestanas { display: flex; flex-wrap: wrap; gap: 8px; }
+/* El 44 px lo da `job-toolbar-btn-44` (SCRUM-962); el panel oculto lo esconde la regla global de `[hidden]`
+   (SCRUM-731: no se añaden reglas `[hidden]` por clase). */
+.detail-page--trabajo .detail-pestanas > [role="tab"] { padding-inline: 14px; }
+.detail-page--trabajo .detail-pestanas > [aria-selected="true"] { font-weight: 700; }
+.detail-page--trabajo .detail-pestanas > [role="tab"]:focus-visible { outline: none; box-shadow: var(--ring); }
+/* El `<h3>` de cada sección ya es el rótulo de su pestaña, justo encima: se aparta de la vista y lo sigue
+   leyendo el lector de pantalla (es el nombre del panel, y su texto no cambia). */
+.detail-page--trabajo .detail-cuerpo > div > [role="tabpanel"] > .detail-section-title {
+  position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+/* ══ fin S2 · SCRUM-1768b ══ */
+
+/* J3: SCRUM-1756h · las vistas de J3 del panel (onboardingView, plansView, settingsView, teamView, tutorial)
+   sin style="…" en las cadenas de innerHTML: la CSP del paso 3 (style-src 'self') no los pinta (c.22122).
+   Cada regla lleva las declaraciones del atributo BYTE A BYTE; el nombre es j3e- + 7 hex del sha1 de ellas.
+   Los dos :not(#j3-sin-id) suben la especificidad a (2,1,0), por encima de cualquier regla de esta hoja
+   (máximo medido: un id), para ganar donde ganaba el atributo; un el.style.x del guion sigue ganando.
+   Bloque decidido por el orquestador J (c.22127) por la regla de los contenedores (dos-equipos.md:95-97). */
+.j3e-1e65d7a:not(#j3-sin-id):not(#j3-sin-id){width:8px;height:8px;border-radius:50%;background:#22c55e}
+.j3e-9ece05a:not(#j3-sin-id):not(#j3-sin-id){width:8px;height:8px;border-radius:50%;background:#e7e9e5}
+.j3e-669b172:not(#j3-sin-id):not(#j3-sin-id){background:#fff;border-radius:20px;padding:28px 24px;width:100%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.j3e-0c14200:not(#j3-sin-id):not(#j3-sin-id){display:flex;align-items:center;gap:8px;margin-bottom:24px}
+.j3e-d665c46:not(#j3-sin-id):not(#j3-sin-id){width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#22d3ee);display:flex;align-items:center;justify-content:center;font-weight:800;color:#052e16;font-size:14px}
+.j3e-fc1f615:not(#j3-sin-id):not(#j3-sin-id){font-weight:700;font-size:18px;color:#0f1c17}
+.j3e-cd3a3be:not(#j3-sin-id):not(#j3-sin-id){display:flex;justify-content:space-between;margin-top:24px;gap:8px}
+.j3e-128cec4:not(#j3-sin-id):not(#j3-sin-id){display:flex;justify-content:center;gap:6px;margin-top:16px}
+.j3e-8218703:not(#j3-sin-id):not(#j3-sin-id){font-size:14px;color:#6b756f;margin:0 0 16px}
+.j3e-e12feb9:not(#j3-sin-id):not(#j3-sin-id){display:flex;flex-direction:column;gap:12px}
+.j3e-8149c31:not(#j3-sin-id):not(#j3-sin-id){font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px}
+.j3e-336791a:not(#j3-sin-id):not(#j3-sin-id){width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px}
+.j3e-75d623a:not(#j3-sin-id):not(#j3-sin-id){width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px;background:#fff}
+.j3e-84a5aef:not(#j3-sin-id):not(#j3-sin-id){font-weight:400;color:#6b756f}
+.j3e-1d75021:not(#j3-sin-id):not(#j3-sin-id){font-size:13px;color:#6b756f;margin:-2px 0 12px}
+.j3e-eb659eb:not(#j3-sin-id):not(#j3-sin-id){display:flex;gap:10px;margin:4px 0 16px}
+.j3e-d5a522d:not(#j3-sin-id):not(#j3-sin-id){flex:1;min-height:44px}
+.j3e-6b99de8:not(#j3-sin-id):not(#j3-sin-id){display:none}
+.j3e-3f6c4b1:not(#j3-sin-id):not(#j3-sin-id){font-size:12px;color:#6b756f;margin:6px 0 0}
+.j3e-f00a578:not(#j3-sin-id):not(#j3-sin-id){margin-top:14px;background:#f4f7f4;border:1px solid #cdd2cb;border-radius:10px;padding:12px;display:none}
+.j3e-ad5973b:not(#j3-sin-id):not(#j3-sin-id){margin:0 0 4px;font-size:13px;color:#333c37}
+.j3e-01b0aae:not(#j3-sin-id):not(#j3-sin-id){font-size:15px;white-space:nowrap}
+.j3e-ace8d82:not(#j3-sin-id):not(#j3-sin-id){margin:0;font-size:12px;color:#6b756f}
+.j3e-fac7438:not(#j3-sin-id):not(#j3-sin-id){display:none;font-size:13px;color:#b91c1c;margin:10px 0 0}
+.j3e-f4b46a1:not(#j3-sin-id):not(#j3-sin-id){display:flex;align-items:center;gap:10px;cursor:pointer;background:#f7f8f6;border:1px solid #e7e9e5;border-radius:12px;padding:12px 14px}
+.j3e-6a934cf:not(#j3-sin-id):not(#j3-sin-id){width:18px;height:18px;accent-color:#22c55e;flex-shrink:0}
+.j3e-801fd0e:not(#j3-sin-id):not(#j3-sin-id){font-size:14px;color:#333c37}
+.j3e-1cc8c8a:not(#j3-sin-id):not(#j3-sin-id){font-size:12px;color:#6b756f;margin:10px 0 0}
+.j3e-abd769d:not(#j3-sin-id):not(#j3-sin-id){font-size:14px;color:#6b756f;margin:0 0 8px}
+.j3e-9ab2346:not(#j3-sin-id):not(#j3-sin-id){font-size:13px;color:#6b756f;margin:0}
+.j3e-ef14aff:not(#j3-sin-id):not(#j3-sin-id){margin:0;font-size:13px;color:#065f46}
+.j3e-5cf82cd:not(#j3-sin-id):not(#j3-sin-id){font-size:14px;color:#6b756f;margin:0 0 14px}
+.j3e-b514ddb:not(#j3-sin-id):not(#j3-sin-id){display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.j3e-a3d290d:not(#j3-sin-id):not(#j3-sin-id){background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:14px 16px;margin-bottom:8px}
+.j3e-f287a21:not(#j3-sin-id):not(#j3-sin-id){margin:0 0 4px;font-size:14px;font-weight:700;color:#047857}
+.j3e-0e6b950:not(#j3-sin-id):not(#j3-sin-id){width:100%;padding:13px;border-radius:12px;border:none;background:#22c55e;color:#052e16;font-weight:800;font-size:15px;cursor:pointer}
+.j3e-9b47678:not(#j3-sin-id):not(#j3-sin-id){width:100%;padding:11px;border-radius:10px;border:1px solid #e7e9e5;background:#fff;font-size:14px;cursor:pointer;color:#6b756f;margin-top:8px}
+.j3e-a311fde:not(#j3-sin-id):not(#j3-sin-id){margin:0 0 8px;font-size:17px;color:#0f1c17}
+.j3e-db72112:not(#j3-sin-id):not(#j3-sin-id){flex:1;padding:11px;border-radius:10px;border:1px solid #e7e9e5;background:#fff;font-size:14px;cursor:pointer;color:#6b756f}
+.j3e-461f267:not(#j3-sin-id):not(#j3-sin-id){flex:2;padding:11px;border-radius:10px;border:none;background:#22c55e;color:#052e16;font-weight:700;font-size:15px;cursor:pointer}
+.j3e-fbb8fe6:not(#j3-sin-id):not(#j3-sin-id){padding:6px 16px;border-radius:6px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;background:#fff;color:var(--neutral-900);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.j3e-c3d1d19:not(#j3-sin-id):not(#j3-sin-id){padding:6px 16px;border-radius:6px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;background:transparent;color:var(--neutral-400)}
+.j3e-7130325:not(#j3-sin-id):not(#j3-sin-id){text-align:center;margin-bottom:20px;border:2px solid var(--green-500);border-radius:12px;padding:16px;background:var(--neutral-50)}
+.j3e-9f77f85:not(#j3-sin-id):not(#j3-sin-id){text-align:center;margin-bottom:20px;}
+.j3e-04391f0:not(#j3-sin-id):not(#j3-sin-id){max-width:520px}
+.j3e-d7275d8:not(#j3-sin-id):not(#j3-sin-id){color:var(--neutral-400);font-size:13px}
+.j3e-480940b:not(#j3-sin-id):not(#j3-sin-id){display:flex;align-items:center;gap:12px;margin-bottom:20px;border-color:#fde68a;background:#fffbeb}
+.j3e-a2600b0:not(#j3-sin-id):not(#j3-sin-id){font-size:28px}
+.j3e-626dca9:not(#j3-sin-id):not(#j3-sin-id){font-weight:700;font-size:15px;color:var(--ink)}
+.j3e-e627574:not(#j3-sin-id):not(#j3-sin-id){font-size:13px;color:var(--body);margin-top:2px}
+.j3e-d56471a:not(#j3-sin-id):not(#j3-sin-id){font-size:12.5px;color:var(--muted);margin-top:6px}
+.j3e-4a12b6e:not(#j3-sin-id):not(#j3-sin-id){color:#15803d}
+.j3e-857bdd4:not(#j3-sin-id):not(#j3-sin-id){display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.j3e-b6de9e3:not(#j3-sin-id):not(#j3-sin-id){font-weight:700;font-size:15px;color:var(--neutral-900)}
+.j3e-8ad4db4:not(#j3-sin-id):not(#j3-sin-id){font-size:13px;color:var(--neutral-400);margin-top:2px}
+.j3e-18b030c:not(#j3-sin-id):not(#j3-sin-id){font-size:12px;color:var(--green-600);font-weight:600;margin-top:4px}
+.j3e-0855863:not(#j3-sin-id):not(#j3-sin-id){font-size:12.5px;color:var(--neutral-500);margin-top:8px}
+.j3e-58d699c:not(#j3-sin-id):not(#j3-sin-id){margin-bottom:14px;background:linear-gradient(135deg,var(--brand) 0%,var(--logo-cyan) 100%);border:none;color:var(--brand-ink)}
+.j3e-9cea5ce:not(#j3-sin-id):not(#j3-sin-id){display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+.j3e-a1b26d5:not(#j3-sin-id):not(#j3-sin-id){font-size:14px;font-weight:700}
+.j3e-3131eb0:not(#j3-sin-id):not(#j3-sin-id){text-decoration:line-through;opacity:.7}
+.j3e-4ff818f:not(#j3-sin-id):not(#j3-sin-id){font-size:18px}
+.j3e-867572a:not(#j3-sin-id):not(#j3-sin-id){font-size:12px;font-weight:700;background:rgba(255,255,255,.35);border-radius:999px;padding:4px 12px;white-space:nowrap}
+.j3e-3350dfb:not(#j3-sin-id):not(#j3-sin-id){margin-top:12px;width:100%;font-size:14px;font-weight:700;padding:11px;border:none;border-radius:999px;cursor:pointer;background:#fff;color:var(--brand-700)}
+.j3e-5521062:not(#j3-sin-id):not(#j3-sin-id){max-width:440px}
+.j3e-e791a2c:not(#j3-sin-id):not(#j3-sin-id){display:flex;justify-content:center;margin-bottom:20px}
+.j3e-3fe60ac:not(#j3-sin-id):not(#j3-sin-id){display:flex;background:var(--neutral-100);border-radius:8px;padding:3px;gap:3px}
+.j3e-5c97094:not(#j3-sin-id):not(#j3-sin-id){color:var(--green-600);font-size:11px}
+.j3e-2d05b1d:not(#j3-sin-id):not(#j3-sin-id){display:inline-block;background:var(--green-500);color:#fff;font-size:10px;font-weight:700;padding:2px 10px;border-radius:var(--radius-full);margin-bottom:10px}
+.j3e-69e7d1c:not(#j3-sin-id):not(#j3-sin-id){font-weight:700;font-size:18px;color:var(--neutral-800);margin-bottom:6px}
+.j3e-9a17a94:not(#j3-sin-id):not(#j3-sin-id){font-size:40px;font-weight:800;color:var(--neutral-900);letter-spacing:-.5px;line-height:1}
+.j3e-80cddd9:not(#j3-sin-id):not(#j3-sin-id){font-size:16px;font-weight:400;color:var(--neutral-400)}
+.j3e-a83343d:not(#j3-sin-id):not(#j3-sin-id){font-size:12px;color:var(--neutral-400);margin-top:8px}
+.j3e-2a5a0b5:not(#j3-sin-id):not(#j3-sin-id){list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px}
+.j3e-3cc20a6:not(#j3-sin-id):not(#j3-sin-id){display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--neutral-700)}
+.j3e-3999e17:not(#j3-sin-id):not(#j3-sin-id){color:var(--green-500);font-weight:700;flex-shrink:0}
+.j3e-bc1a03e:not(#j3-sin-id):not(#j3-sin-id){width:100%;font-size:15px;padding:12px}
+.j3e-85eb928:not(#j3-sin-id):not(#j3-sin-id){text-align:center;font-size:12px;color:var(--neutral-400);margin:10px 0 0}
+.j3e-0466783:not(#j3-sin-id):not(#j3-sin-id){width:100%}
+.j3e-cfd7bd7:not(#j3-sin-id):not(#j3-sin-id){margin-top:12px;text-align:center}
+.j3e-765d57b:not(#j3-sin-id):not(#j3-sin-id){max-width:560px}
+.j3e-36a245b:not(#j3-sin-id):not(#j3-sin-id){width:100%;height:320px;border:1px solid var(--neutral-200);border-radius:10px;background:#fff}
+.j3e-b37c531:not(#j3-sin-id):not(#j3-sin-id){margin:10px 0 0;font-size:12.5px;color:var(--muted)}
+.j3e-2ddb7ed:not(#j3-sin-id):not(#j3-sin-id){display:flex;align-items:flex-start;gap:10px;margin-top:14px;cursor:pointer;font-size:14px;color:var(--ink)}
+.j3e-8640d47:not(#j3-sin-id):not(#j3-sin-id){width:18px;height:18px;margin-top:1px;accent-color:#16a34a;flex-shrink:0}
+.j3e-ec4c999:not(#j3-sin-id):not(#j3-sin-id){width:100%;margin-top:14px;opacity:.5}
+.j3e-bdd795e:not(#j3-sin-id):not(#j3-sin-id){height:100%;border-radius:6px;background:#f59e0b}
+.j3e-deec7a5:not(#j3-sin-id):not(#j3-sin-id){height:100%;border-radius:6px;background:var(--green-600)}
+.j3e-7f88bb8:not(#j3-sin-id):not(#j3-sin-id){flex:none;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:800;color:#fff;background:var(--green-600,#16a34a)}
+.j3e-be23340:not(#j3-sin-id):not(#j3-sin-id){flex:none;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:800;color:#fff;background:#f59e0b}
+.j3e-e9a537d:not(#j3-sin-id):not(#j3-sin-id){flex:none;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:800;color:#fff;background:var(--neutral-300,#cdd2cb)}
+.j3e-fc83829:not(#j3-sin-id):not(#j3-sin-id){display:block;font-size:12.5px;color:var(--neutral-600)}
+.j3e-12c34af:not(#j3-sin-id):not(#j3-sin-id){display:block;font-size:12.5px;color:var(--muted)}
+.j3e-410b62f:not(#j3-sin-id):not(#j3-sin-id){font-size:12px;color:var(--muted);margin:2px 0 4px}
+.j3e-511ddb1:not(#j3-sin-id):not(#j3-sin-id){font-size:12px;color:var(--muted);margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.j3e-15e2000:not(#j3-sin-id):not(#j3-sin-id){font-size:13px;color:var(--body)}
+.j3e-de7fbe3:not(#j3-sin-id):not(#j3-sin-id){display:inline-flex;align-items:center;gap:6px;background:var(--brand-tint,#ecfdf5);color:#166534;padding:6px 12px;border-radius:999px;font-weight:600;font-size:12.5px}
+.j3e-a9ae080:not(#j3-sin-id):not(#j3-sin-id){font-size:12px;color:var(--muted);margin:8px 0 0}
+.j3e-cf446ed:not(#j3-sin-id):not(#j3-sin-id){font-size:12.5px;color:var(--body);margin:0 0 10px}
+.j3e-91eb251:not(#j3-sin-id):not(#j3-sin-id){font-size:12px;color:#b45309;margin:0 0 10px}
+.j3e-feec793:not(#j3-sin-id):not(#j3-sin-id){font-weight:600;font-size:13.5px;color:var(--neutral-700)}
+.j3e-7fc448e:not(#j3-sin-id):not(#j3-sin-id){font-size:12px;color:var(--muted)}
+.j3e-cfaa63c:not(#j3-sin-id):not(#j3-sin-id){font-weight:700;font-size:13.5px;color:var(--ink);margin-bottom:10px}
+.j3e-2c7f34e:not(#j3-sin-id):not(#j3-sin-id){display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:4px 0;border-bottom:1px solid var(--border)}
+.j3e-57f9e31:not(#j3-sin-id):not(#j3-sin-id){color:var(--muted)}
+.j3e-eded475:not(#j3-sin-id):not(#j3-sin-id){color:var(--body);font-weight:600}
+.j3e-a0c3819:not(#j3-sin-id):not(#j3-sin-id){font-size:12px;color:var(--muted);margin:2px 0 6px}
+.j3e-b87ca32:not(#j3-sin-id):not(#j3-sin-id){display:flex;align-items:center;gap:10px}
+.j3e-17d902b:not(#j3-sin-id):not(#j3-sin-id){font-size:13px;color:var(--muted)}
+.j3e-761d3ad:not(#j3-sin-id):not(#j3-sin-id){margin-bottom:10px}
+.j3e-17ddae7:not(#j3-sin-id):not(#j3-sin-id){width:100%;margin-bottom:4px}
+.j3e-9390c33:not(#j3-sin-id):not(#j3-sin-id){color:var(--muted);font-size:13px}
+.j3e-3661921:not(#j3-sin-id):not(#j3-sin-id){display:block;font-weight:600;margin-bottom:2px}
+.j3e-96e52bd:not(#j3-sin-id):not(#j3-sin-id){margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)}
+.j3e-89d44d5:not(#j3-sin-id):not(#j3-sin-id){margin:0 0 14px;font-size:13px;color:var(--neutral-400)}
+.j3e-08dcbcf:not(#j3-sin-id):not(#j3-sin-id){display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+.j3e-bcca52c:not(#j3-sin-id):not(#j3-sin-id){color:var(--neutral-600);font-weight:600}
+.j3e-8becc56:not(#j3-sin-id):not(#j3-sin-id){background:var(--neutral-100);border-radius:6px;height:12px;overflow:hidden;margin-bottom:10px}
+.j3e-4ac84be:not(#j3-sin-id):not(#j3-sin-id){display:block;margin:0 0 10px;font-size:13px}
+.j3e-323ce1f:not(#j3-sin-id):not(#j3-sin-id){margin:0;font-size:12.5px;color:var(--muted)}
+.j3e-be26537:not(#j3-sin-id):not(#j3-sin-id){display:flex;flex-direction:column;gap:8px}
+.j3e-3922d32:not(#j3-sin-id):not(#j3-sin-id){min-width:0}
+.j3e-2e36581:not(#j3-sin-id):not(#j3-sin-id){display:block;font-size:13.5px;font-weight:600;color:var(--ink)}
+.j3e-7ca806b:not(#j3-sin-id):not(#j3-sin-id){display:block;font-size:12px;color:var(--neutral-400);margin-top:2px}
+.j3e-c104ac3:not(#j3-sin-id):not(#j3-sin-id){margin-left:auto;flex:none;font-size:12.5px;font-weight:600;color:var(--green-700,#15803d)}
+.j3e-fabcc96:not(#j3-sin-id):not(#j3-sin-id){display:block;margin:0 0 14px;font-size:13px}
+.j3e-2d79b37:not(#j3-sin-id):not(#j3-sin-id){display:block;margin:0 0 14px;font-size:13px;background:var(--neutral-50);border:1px solid var(--border);color:var(--neutral-600)}
+.j3e-da12f28:not(#j3-sin-id):not(#j3-sin-id){margin-bottom:12px}
+.j3e-f560a56:not(#j3-sin-id):not(#j3-sin-id){display:flex;align-items:center;gap:0}
+.j3e-4c7b27e:not(#j3-sin-id):not(#j3-sin-id){padding:11px 10px;border:1px solid var(--border);border-right:none;border-radius:10px 0 0 10px;background:var(--neutral-50);font-size:13px;color:var(--muted);white-space:nowrap}
+.j3e-4b78af7:not(#j3-sin-id):not(#j3-sin-id){flex:1;min-width:0;border-radius:0 10px 10px 0;border:1px solid var(--border);padding:11px 13px;font-size:14px}
+.j3e-2eadaff:not(#j3-sin-id):not(#j3-sin-id){font-size:12px;color:var(--muted);margin:4px 0 0}
+.j3e-d1af971:not(#j3-sin-id):not(#j3-sin-id){margin-bottom:14px;max-width:220px}
+.j3e-0e184ba:not(#j3-sin-id):not(#j3-sin-id){display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.j3e-7a35b96:not(#j3-sin-id):not(#j3-sin-id){font-size:12.5px;color:var(--muted)}
+.j3e-2aa2a49:not(#j3-sin-id):not(#j3-sin-id){margin:0 0 16px;font-size:13px;color:var(--neutral-400)}
+.j3e-033e7ec:not(#j3-sin-id):not(#j3-sin-id){display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.j3e-a636e53:not(#j3-sin-id):not(#j3-sin-id){flex:1;min-width:220px;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:13px;background:var(--neutral-50);color:var(--body)}
+.j3e-86abdab:not(#j3-sin-id):not(#j3-sin-id){white-space:nowrap}
+.j3e-489e724:not(#j3-sin-id):not(#j3-sin-id){display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}
+.j3e-b9199e2:not(#j3-sin-id):not(#j3-sin-id){font-size:20px}
+.j3e-e789f74:not(#j3-sin-id):not(#j3-sin-id){font-size:20px;color:var(--green-600)}
+.j3e-3d68052:not(#j3-sin-id):not(#j3-sin-id){margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--brand-tint);border:1px solid #bbf7d0;border-radius:12px;padding:12px 14px}
+.j3e-8c7b852:not(#j3-sin-id):not(#j3-sin-id){font-size:13px;color:var(--ink)}
+.j3e-173480f:not(#j3-sin-id):not(#j3-sin-id){font-size:12.5px;color:var(--muted);margin-top:8px;min-height:16px}
+.j3e-d84af8f:not(#j3-sin-id):not(#j3-sin-id){max-width:460px}
+.j3e-cfca14c:not(#j3-sin-id):not(#j3-sin-id){margin:0;font-size:13px;color:var(--neutral-400)}
+.j3e-cbd0db6:not(#j3-sin-id):not(#j3-sin-id){display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.j3e-59eddc6:not(#j3-sin-id):not(#j3-sin-id){flex:1;min-width:0}
+.j3e-a18b13b:not(#j3-sin-id):not(#j3-sin-id){font-weight:700;color:var(--ink);font-size:15px}
+.j3e-7e7db4c:not(#j3-sin-id):not(#j3-sin-id){font-size:12.5px;color:var(--neutral-500);margin-top:2px;word-break:break-all}
+.j3e-fe7b497:not(#j3-sin-id):not(#j3-sin-id){margin-top:6px}
+.j3e-eaf29aa:not(#j3-sin-id):not(#j3-sin-id){flex:none;text-align:right}
+.j3e-4cd37f7:not(#j3-sin-id):not(#j3-sin-id){font-weight:700;color:var(--ink);font-size:16px;font-variant-numeric:tabular-nums}
+.j3e-dda368b:not(#j3-sin-id):not(#j3-sin-id){display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);border-top:1px solid var(--neutral-100);padding-top:10px}
+.j3e-8f90438:not(#j3-sin-id):not(#j3-sin-id){color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.j3e-eb43d1f:not(#j3-sin-id):not(#j3-sin-id){color:var(--neutral-400)}
+.j3e-0fd8744:not(#j3-sin-id):not(#j3-sin-id){max-width:420px}
+.j3e-c7da915:not(#j3-sin-id):not(#j3-sin-id){display:flex;flex-direction:column;gap:14px}
+.j3e-b4a851b:not(#j3-sin-id):not(#j3-sin-id){max-width:380px}
+.j3e-b927614:not(#j3-sin-id):not(#j3-sin-id){font-size:13px;font-weight:600;color:#6b756f;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em}
+.j3e-eec70bf:not(#j3-sin-id):not(#j3-sin-id){font-size:12px;color:var(--neutral-400);margin:-4px 0 8px}
+.j3e-809faf4:not(#j3-sin-id):not(#j3-sin-id){text-align:center;color:var(--muted);font-size:13px;padding:18px}
+.j3e-22c45d3:not(#j3-sin-id):not(#j3-sin-id){font-weight:600;color:var(--ink);font-size:14px}
+.j3e-fc85ba5:not(#j3-sin-id):not(#j3-sin-id){font-size:12px;color:var(--muted);margin-top:2px}
+.j3e-f38982b:not(#j3-sin-id):not(#j3-sin-id){flex:none;text-align:right;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.j3e-645af21:not(#j3-sin-id):not(#j3-sin-id){margin-top:10px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:var(--radius-full);padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer}
+.j3e-683659d:not(#j3-sin-id):not(#j3-sin-id){display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.j3e-76754cd:not(#j3-sin-id):not(#j3-sin-id){margin:0;font-size:18px;color:#0f1c17}
+.j3e-944b01d:not(#j3-sin-id):not(#j3-sin-id){border:none;background:none;font-size:24px;cursor:pointer;color:#6b756f}
+.j3e-9f332cc:not(#j3-sin-id):not(#j3-sin-id){border:1px solid #e7e9e5;border-radius:12px;margin-bottom:10px;overflow:hidden}
+.j3e-bf35b15:not(#j3-sin-id):not(#j3-sin-id){width:100%;text-align:left;padding:13px 14px;background:#f7f8f6;border:none;cursor:pointer;font-size:14px;font-weight:600;color:#0f1c17;display:flex;justify-content:space-between;align-items:center}
+.j3e-f918b2a:not(#j3-sin-id):not(#j3-sin-id){color:#22c55e}
+.j3e-809b4d7:not(#j3-sin-id):not(#j3-sin-id){display:none;padding:12px 16px}
+.j3e-2271d1c:not(#j3-sin-id):not(#j3-sin-id){margin:0;padding-left:18px;color:#333c37;font-size:14px;line-height:1.7}
+.j3e-bc600bf:not(#j3-sin-id):not(#j3-sin-id){margin-top:18px;border-top:1px solid #e7e9e5;padding-top:16px}
+.j3e-76e3b97:not(#j3-sin-id):not(#j3-sin-id){margin:0 0 8px;font-size:15px;font-weight:700;color:#0f1c17}
+.j3e-241285f:not(#j3-sin-id):not(#j3-sin-id){display:block;font-size:13px;color:#6b756f;margin-bottom:6px}
+.j3e-1d0e748:not(#j3-sin-id):not(#j3-sin-id){width:100%;box-sizing:border-box;padding:10px 12px;font:inherit;font-size:14px;color:#0f1c17;background:#fff;border:1px solid #cdd2cb;border-radius:10px;resize:vertical}
+.j3e-39d9474:not(#j3-sin-id):not(#j3-sin-id){margin-top:8px;width:100%;min-height:44px;padding:11px;font:inherit;font-size:15px;font-weight:700;color:#fff;background:#16a34a;border:none;border-radius:10px;cursor:pointer}
+.j3e-dd1c338:not(#j3-sin-id):not(#j3-sin-id){margin:10px 0 0;font-size:13px;line-height:1.5;color:#6b756f}
+/* J3: fin del bloque SCRUM-1756h */
+
+/* ════════════════════════════════════════════════════════════
+   S2 · SCRUM-1762b · LAVADO HALLMARK DE LA FICHA (20-nov-2026)
+   Ropa, no función: ni texto nuevo ni color nuevo. Todo sale de tokens que ya existían.
+   ════════════════════════════════════════════════════════════ */
+
+/* ① La pestaña ABIERTA se ve abierta. Antes era «secundaria» contra «fantasma»: dos grises que a 390
+   px casi no se distinguían (auditoría hallmark, hallazgo de más impacto de la ficha). Lleva la tinta
+   del acento con la MISMA receta de «elegido» que ya usan la lista de presupuestos (`#po-lista …
+   [aria-current]`) y el selector de cliente (`[aria-pressed]`): Verde Tinte + filete de Verde
+   Confianza, texto en --brand-tint-ink (el verde de TEXTO; 5,21:1 sobre el tinte, AA). */
+.detail-page--trabajo .detail-pestanas > [aria-selected="true"],
+.detail-page--trabajo .detail-pestanas > [aria-selected="true"]:hover:not(:disabled) {
+  background: var(--brand-tint);
+  color: var(--brand-tint-ink);
+  border-color: var(--brand);
+  box-shadow: inset 0 0 0 1px var(--brand);
+}
+.detail-page--trabajo .detail-pestanas > [aria-selected="true"]:focus-visible { box-shadow: inset 0 0 0 1px var(--brand), var(--ring); }
+
+/* ② «+ Nuevo parte» a tamaño de botón NORMAL. Es la rellena de la ficha en EN CURSO (SCRUM-1749,
+   c.22041: sin `btn-sm`, y eso NO se toca), pero heredaba los 18,66 px del primario grande
+   (SCRUM-368, vía de texto grande para el blanco sobre --brand) y salía el doble que sus vecinas.
+   Se queda en el tamaño de la barra (44 px de alto, 13,5 px) con la receta AA del primario de
+   tamaño normal que ya existe: blanco sobre --brand-tint-ink, 5,48:1 por la vía normal. */
+.detail-page--trabajo [data-abrir-parte].btn-primary:not(.btn-sm) {
+  min-height: 44px;
+  font-size: 13.5px;
+  font-weight: 600;
+  background: var(--brand-tint-ink);
+}
+.detail-page--trabajo [data-abrir-parte].btn-primary:not(.btn-sm):hover:not(:disabled) { background: var(--brand-ink); }
+
+/* ③ Iconos del set del MENÚ en lugar de emojis (mismo trazo que `.nav-icon`: 24×24, stroke 2,
+   currentColor). Se dibujan con máscara, como `--parte-icono` del parte: no son texto, no leen nada
+   y el rótulo sigue siendo el de siempre. `con-icono--<nombre>` lo pone el JS; el dibujo vive aquí. */
+.con-icono { display: inline-flex; align-items: center; gap: 6px; }
+.con-icono::before {
+  content: "";
+  flex: none;
+  width: 16px;
+  height: 16px;
+  background: currentColor;
+  -webkit-mask: var(--icono-menu) center / contain no-repeat;
+  mask: var(--icono-menu) center / contain no-repeat;
+}
+@media (forced-colors: active) { .con-icono::before { background: CanvasText; forced-color-adjust: none; } }
+.con-icono--hecho { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 11.08V12a10 10 0 1 1-5.93-9.14'/%3E%3Cpath d='M22 4 12 14.01l-3-3'/%3E%3C/svg%3E"); }
+.con-icono--telefono { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z'/%3E%3C/svg%3E"); }
+.con-icono--whatsapp { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/%3E%3C/svg%3E"); }
+/* S2: fin del bloque SCRUM-1762b */
+
+/* ════════════════════════════════════════════════════════════
+   S2 · SCRUM-1762c · LAVADO HALLMARK DEL INICIO (20-nov-2026)
+   Ropa y orden, no función nueva: ni texto ni color nuevos. Iconos del set del menú con la máquina
+   `con-icono` de SCRUM-1762b (máscara, currentColor).
+   ════════════════════════════════════════════════════════════ */
+.con-icono--presupuesto { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z'/%3E%3Cpolyline points='14 2 14 8 20 8'/%3E%3Cline x1='16' y1='13' x2='8' y2='13'/%3E%3Cline x1='16' y1='17' x2='8' y2='17'/%3E%3Cpolyline points='10 9 9 9 8 9'/%3E%3C/svg%3E"); }
+.con-icono--factura { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z'/%3E%3Cpolyline points='14 2 14 8 20 8'/%3E%3Cline x1='12' y1='18' x2='12' y2='12'/%3E%3Cline x1='9' y1='15' x2='15' y2='15'/%3E%3C/svg%3E"); }
+.con-icono--cobro { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='5' width='20' height='14' rx='2'/%3E%3Cpath d='M2 10h20'/%3E%3C/svg%3E"); }
+.con-icono--clientes { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2'/%3E%3Ccircle cx='9' cy='7' r='4'/%3E%3Cpath d='M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75'/%3E%3C/svg%3E"); }
+.con-icono--ajustes { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z'/%3E%3C/svg%3E"); }
+.con-icono--aviso { --icono-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z'/%3E%3Cpath d='M12 9v4M12 17h.01'/%3E%3C/svg%3E"); }
+
+/* Los tres iconos de «Acciones rápidas» a su tamaño de siempre (el emoji iba a 22 px). */
+.home-action-ico.con-icono { gap: 0; }
+.home-action-ico.con-icono::before { width: 22px; height: 22px; }
+/* El ✓ que sustituye al 🎉 dentro de la frase: en línea con el texto, no como bloque. */
+.home-hero-sub .home-hero-hecho { display: inline-flex; vertical-align: -2px; }
+.home-hero-sub .home-hero-hecho::before { width: 14px; height: 14px; }
+
+/* Aire entre los avisos de arriba (albarán sin cobertura, firmas, desalojo, trimestre) y lo que sigue:
+   iban pegados a la tarjeta del dinero. Vacíos no ocupan nada. */
+#home-firmas-pendientes:not(:empty),
+#home-desalojo:not(:empty),
+#home-precarga:not(:empty),
+#home-resumen-trimestre:not(:empty) { margin-bottom: 16px; }
+
+/* «Completa tu configuración», ahora la última del Inicio: el mismo aire que los bloques de encima. */
+#home-configuracion:not(:empty) { margin-top: 24px; }
+
+/* Aceptación sin nada enviado: guion neutro, como las celdas «no aplica» del pie (SCRUM-236). */
+.table td.equipo-actividad-sin-tasa,
+.table td.equipo-tasa-sin-envios { color: var(--neutral-400); }
+.table td.equipo-tasa-sin-envios { text-align: right; }
+/* S2: fin del bloque SCRUM-1762c */
+
+/* S2 · SCRUM-915c — «+ Nuevo presupuesto» en la fila del parte firmado (pestaña Partes de la ficha).
+   Al lado del pill de estado; a 390 (cards) baja debajo sin desbordar la tarjeta. */
+.parte-fila-presupuesto { margin-left: 8px; white-space: nowrap; }
+@media (max-width: 640px) {
+  .parte-fila-presupuesto { margin: 8px 0 0; }
+}
+/* S2: fin del bloque SCRUM-915c */
+
+/* ══ S4 · SCRUM-1762d · EL PARTE EN ESCRITORIO APROVECHA EL ANCHO + PASADA HALLMARK (20-nov-2026) ══
+   Orden del fundador (20-nov): «el parte en escritorio tiene demasiado espacio por los lados».
+   Medido con la sonda (docs/master/evidencias/SCRUM-1762/d-parte/capturar-parte.mjs): a 1920 la hoja
+   ocupaba 1120 px centrados, con 276 px muertos a cada lado, y la página medía 1844 px de alto.
+   El patrón es el de la ficha del trabajo (S2 · SCRUM-1768): tope de 1680 px sin centrar, columna
+   principal fluida y una LATERAL fija con lo que cierra el documento. FORMA, NO FUNCIÓN: cero textos
+   nuevos, cero acciones nuevas, sólo tokens. EL MÓVIL NO SE TOCA: por debajo de 1200 px la lateral se
+   disuelve y el parte queda como estaba (la sonda compara sus cajas a 390 y sale con 1 si se mueven). */
+.parte-lateral { display: contents; }
+
+@media (min-width: 1200px) {
+  /* ① Sin pasillos: la hoja se alinea con el título de la barra de arriba, como la ficha del trabajo.
+     No lleva `width` (lo pide la regla base, SCRUM-1722c) ni márgenes `auto`. */
+  *:has(> header.parte-cabecera) { max-width: 1680px; margin-inline: 0; align-content: start; }
+  /* `align-content: start`: cuando el parte es más corto que la pantalla (ahora lo es casi siempre), la
+     hoja mide el alto de la ventana y la rejilla repartía lo que sobraba entre sus 41 filas: 6 px de más
+     sobre cada tarjeta (medido a 1920×1080 con el parte firmado). */
+  /* ② La lateral: las firmas y, en el parte firmado, sus dos salidas debajo, a la vista sin bajar.
+     En bloque y no en flex para que los márgenes se fundan igual que en el móvil. */
+  *:has(> header.parte-cabecera) > .parte-lateral { display: block; }
+  /* ③ Hallmark · las salidas, a tamaño de botón NORMAL. «Volver al trabajo» heredaba los 18,66 px del
+     primario grande (SCRUM-368) en una barra de 36 px de alto y 600-688 de ancho: lo más grande de la
+     pantalla era salir de ella. En la lateral mide lo que su columna, 44 px de alto y 15 px, que es
+     el escalón de las acciones del parte (SCRUM-1722). Con letra normal, el blanco sobre --brand no
+     llega a AA (3,3:1): lleva la receta del primario de tamaño normal que ya existe (S2 · SCRUM-1762b),
+     blanco sobre --brand-tint-ink, 5,48:1. */
+  .parte-lateral :is([data-parte-volver-al-trabajo], [data-parte-presupuesto]) { min-height: 44px; font-size: 15px; font-weight: 600; }
+  .parte-lateral [data-parte-volver-al-trabajo].btn-primary { background: var(--brand-tint-ink); }
+  .parte-lateral [data-parte-volver-al-trabajo].btn-primary:hover:not(:disabled) { background: var(--brand-ink); }
+  .parte-lateral :is([data-parte-volver-al-trabajo], [data-parte-presupuesto]):focus-visible { outline: none; box-shadow: var(--ring); }
+  /* Un solo verde de primario en la lateral: la firma del cliente llevaba blanco de 15 px sobre --brand
+     (3,3:1, medido por la sonda; no es texto grande, así que no llega a AA). Misma receta que la salida.
+     Con el parte vacío sigue siendo el recuadro blanco de raya discontinua (SCRUM-1676). */
+  .parte-lateral .parte-firma-caja [data-parte-firmar]:not([data-parte-firma-en-espera]) { background: var(--brand-tint-ink); }
+  .parte-lateral .parte-firma-caja [data-parte-firmar]:not([data-parte-firma-en-espera]):hover:not(:disabled) { background: var(--brand-ink); }
+  /* La tarea es lectura: su renglón no pasa de 75 caracteres aunque la tarjeta sea más ancha. */
+  .parte-tarea .detail-tarea { max-width: 75ch; }
+  /* Las unidades, bajo su cabecera: «UNDS» va a la derecha de su columna y, en el parte firmado, la
+     cifra se quedaba a la izquierda, a 60 px de su rótulo. */
+  .parte-bloque td.parte-col-unds { text-align: right; font-variant-numeric: tabular-nums; }
+}
+@media (min-width: 1440px) {
+  *:has(> header.parte-cabecera) { grid-template-columns: minmax(0, 1fr) 380px; }
+}
+/* ④ Desde 1500 px la columna principal son DOS: los pasos se leen por parejas, en el orden del
+   documento (horas | dictado, mano de obra | materiales; firmado: datos | horas), y el parte entero
+   cabe en una pantalla. La lateral pasa a la tercera pista. Lo que no es un paso (la tarea, un aviso)
+   ocupa las dos. El tabulador sigue el orden del DOM, que es el de lectura por filas.
+   El corte está en 1500 y no en 1600 para que entre el portátil de 1536: allí cada columna mide 406 px,
+   más que la hoja entera del móvil (366), que es el ancho para el que se dibujó cada paso. */
+@media (min-width: 1500px) {
+  *:has(> header.parte-cabecera) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 380px; }
+  *:has(> header.parte-cabecera) > * { grid-column: 1 / 3; }
+  *:has(> header.parte-cabecera) > header.parte-cabecera { grid-column: 1 / -1; }
+  *:has(> header.parte-cabecera) > .parte-lateral { grid-column: 3; }
+  *:has(> header.parte-cabecera) > :is(.parte-horas, .parte-dictado, .parte-bloque),
+  *:has(> header.parte-cabecera) > .parte-datos-del-parte:not(:last-child) { grid-column: auto; align-self: stretch; }
+  /* En borrador los datos van al final, plegados, y ocupan las dos columnas: sus cuatro renglones se
+     reparten en dos para que el valor no quede a 1.200 px de su rótulo. */
+  *:has(> header.parte-cabecera) > .parte-datos-del-parte:last-child {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; align-items: start;
+  }
+  *:has(> header.parte-cabecera) > .parte-datos-del-parte:last-child > .parte-datos-del-parte-titulo { grid-column: 1 / -1; }
+}
+/* ══ fin S4 · SCRUM-1762d ══ */

@@ -984,3 +984,173 @@ decreto-ley». La lectura sabe ver un resultado. La 130/000059 (RDL 28/2026, mis
    paso, un hash distinto se habría leído como novedad jurídica.
 2. **No me medí el contexto al acabar la lectura de arranque por separado**, como pedía el encargo:
    la lectura de Jira fue seguida y la primera cifra (115.484) es arranque + Jira.
+
+# SCRUM-1316h · El RDL 29/2026 se CONVALIDÓ el 12-nov (Diputación Permanente, 35-34); no consta tramitación como proyecto de ley
+
+**Medido contra:** `origin/main` = `34939a6ad7c0ad7abc4f06e34e92b43fd519400b` · 2026-11-18T16:00:04Z (cabecera `Date:` de GitHub)
+
+A9: aviso → cicatriz J5 «Medí si un real decreto-ley estaba convalidado sin leer el orden del día del órgano que lo vota, y lo estaba votando esa misma mañana: 1316g dijo «no convalidado» a las 11:22Z del 12-nov con la Diputación Permanente reunida de 08:10Z a 13:22Z (DS núm. 213), y dejó la siguiente medición para después del plazo» — no se pudo comprobar: ningún guard lee el calendario del Congreso ni sabe a qué hora mide una sesión (la tanda de CI no sale a la red).
+
+Sesión J5 (IA, `jv-j5bg`), 18-nov-2026, por encargo del orquestador del equipo de Javier
+(`cobroflash-backend-ee`): la re-medición que P1 de c.20890 pedía «antes del 20-nov». **Sólo se mide.**
+No se toca `src/`, ni `public/`, ni el esquema, ni el camino de emisión, ni `docs/legal/`; no se redacta
+el aviso de P1 (regla 39, claims fiscales); nada de esto es respuesta de asesor. **Lectura, no decisión.**
+Lo de arriba no se toca. Comentario en Jira: SCRUM-1316 c.22068.
+
+⚠️ El encargo decía «RDL 26/2026»: está derogado desde el 2-oct (§Ⓙ). Lo medido es el **29/2026**, que
+repite el párrafo del medio de pago (§Ⓚ). Y citaba «c.20892», que no es comentario de este ticket; la
+decisión que aplica es c.20890.
+
+## Veredicto
+
+1. **El RDL 29/2026 (`BOE-A-2026-20823`) está CONVALIDADO.** Lo acordó la Diputación Permanente el
+   12-nov-2026 (69 votos: 35 a favor, 34 en contra) y lo publica el BOE núm. 283 del 13-nov
+   (`BOE-A-2026-23755`). La ficha del Congreso dice «Concluido - (Convalidado)» (§ⓗ1, §ⓗ2).
+2. **No consta tramitación como proyecto de ley.** En el Diario de Sesiones, tras «Queda convalidado» se
+   pasa a la comparecencia siguiente, sin la pregunta del art. 151.4 del Reglamento (§ⓗ2). Límite: sin
+   caso de control con tramitación.
+3. **El 1-dic sigue.** El art. 91 de la LIVA consolidada no ha cambiado: la versión del 29/2026 con la
+   condición del medio de pago y «1 de diciembre de 2026» (§ⓗ1).
+4. **P1 de c.20890 se cumple** («Si la Diputación Permanente convalida el RDL 29/2026, se trae al
+   fundador un texto de aviso para firmar…»). No lo redacto: lo asigna el orquestador.
+5. **A6 de §ⓓ («si no se vota en plazo, ¿decae?») queda sin objeto.** A1–A5 siguen, con fecha 1-dic y
+   su condición cumplida; sin asesor hasta la SL (SCRUM-1264 c.22060), el 1-dic llega sin respuesta.
+
+## ⓗ1 El BOE
+
+API de datos abiertos, `Accept: application/xml`; todas 200 entre las 15:54:43Z y las 15:59:12Z.
+
+| qué | identificador | sha256 (18-nov) | lo que dice |
+|---|---|---|---|
+| RDL 29/2026, metadatos | `BOE-A-2026-20823` | `8b3a0679954a65ff…` | `fecha_actualizacion` = `20261113T084620Z`; `estatus_derogacion` = `N`; `vigencia_agotada` = `N` |
+| RDL 29/2026, análisis | ídem | `b74982788a78469f…` (antes `0b97a3c4…`) | posterior nueva: «SE PUBLICA Acuerdo de convalidación, por Resolución de 12 de noviembre de 2026» → `BOE-A-2026-23755` |
+| Resolución | `BOE-A-2026-23755` | `0d09e1e6356fdd93d1b0ddec1ac76527376698989c8a56a6eba4d95487c06653` | «la Diputación Permanente del Congreso de los Diputados, en su sesión del día de hoy, acordó convalidar el Real Decreto-ley 29/2026, de 6 de octubre»; BOE 13-nov, núm. 283, pág. 152985 |
+| Resolución | `BOE-A-2026-23754` | `fff441b77485894e651b625d0e3b6224c36379cc6e678f9c1e22d301340c34a3` | el mismo día, «acordó derogar el Real Decreto-ley 28/2026» (alquileres); deja sin efecto su relación con la disp. final 5 del 29/2026; no toca el art. 7 |
+| RDL 26/2026, metadatos y análisis | `BOE-A-2026-20266` | `d92367a0…`, `23de3cbe…` | iguales que el 12-nov: sigue derogado |
+| LIVA, metadatos | `BOE-A-1992-28740` | `0b953b4214e62c19…` | igual que el 26-oct y el 12-nov (`20261007T092353Z`) |
+| LIVA, bloque `a91` | ídem | — (1.051.987 B) | última versión `BOE-A-2026-20823`, `fecha_vigencia=20261008`; «tarjeta de crédito o débito, transferencia bancaria, cheque nominativo» 1; «1 de diciembre de 2026» 2; «zzqx» 0 |
+
+- **Sumario del 13-nov:** 271 ítems; `BOE-A-2026-23755` 4, «Acuerdo de convalidación» 1, «Real
+  Decreto-ley 29/2026» 1, «zzqx» 0. **Sumario del 18-nov:** 145 ítems, los tres a 0 (no hay nada nuevo hoy).
+- El sumario es el positivo de la lectura del análisis: lo que el análisis dice, el diario lo trae.
+- **Del 14 al 17-nov no se ha bajado cada sumario.** Lo que cubre esos días es la lista de posteriores del
+  consolidado (3 entradas, ninguna posterior al 13-nov).
+
+## ⓗ2 El Congreso
+
+**Ficha 130/000060** (15:57:02Z). La primera petición, sin cabeceras de navegador, dio **403 de 410 B**;
+con ellas, 200 de 95.553 B. Literal tras quitar el HTML:
+
+> «Situación actual Concluido - (Convalidado) Tramitación seguida por la iniciativa Diputación Permanente
+> Convalidación desde 13/10/2026 hasta 12/11/2026 Concluido - (Convalidado) desde 12/11/2026 Diarios de
+> Sesiones DS. Congreso de los Diputados Núm.213 de 12/11/2026 Pág: 31 Diputación Permanente Debate de
+> convalidación o derogación de real decreto-ley»
+
+«proyecto de ley» 0, «121/» 0, «Derogado» 0, «zzqx» 0. Control con la 130/000058 (RDL 25/2026, ya
+convalidada el 16-oct): «Convalidado» 2, también sin «proyecto de ley».
+
+**Diario de Sesiones núm. 213** (`https://www.congreso.es/public_oficiales/L15/CONG/DS/PL/DSCD-15-PL-213.PDF`,
+15:57:44Z, 635.470 B, sha256 `f5e128a3b6656f2280223da767ce6b3882778fb4eb486999675e2661c29a0be5`; texto con
+`pdftotext`). «Sesión de la Diputación Permanente núm. 10 celebrada el jueves 12 de noviembre de 2026»;
+«Se abre la sesión a las nueve y diez minutos de la mañana» y «Eran las dos y veintidós minutos de la tarde».
+
+> «Votamos ahora la convalidación o derogación del Real Decreto Ley 29/2026 … Efectuada la votación, dio el
+> siguiente resultado: votos emitidos, 69; a favor, 35; en contra, 34. La señora PRESIDENTA: Queda
+> convalidado el real decreto ley. (Aplausos).»
+
+La línea siguiente es «COMPARECENCIA DEL GOBIERNO ANTE LA DIPUTACIÓN PERMANENTE». En el DS, «como
+proyecto de ley» da 0; «proyecto de ley» da 1, en una intervención del debate («¿por qué no ha traído…
+un proyecto de ley de tramitación urgente…?»), no en una votación. **Antes de votar, un grupo dice: «ya
+de hecho se ha presentado un recurso»**; objeto, órgano y efecto: no medidos.
+
+## ⓗ3 El plazo del art. 86.2 CE, con el criterio del propio Congreso
+
+Reglamento del Congreso, consolidado (`BOE-A-1982-5196`), bloques `art90` y `art151`, 15:58:43-44Z:
+
+> **Art. 90.1:** «Salvo disposición en contrario, los plazos señalados por días en este Reglamento se
+> computarán en días hábiles, y los señalados por meses de fecha a fecha.» **90.2:** «Se excluirán del
+> cómputo los períodos en los que el Congreso no celebre sesiones…»
+> **Art. 151.1:** «…antes de transcurrir los treinta días siguientes a su promulgación…» **151.4:**
+> «Convalidado un Real Decreto-ley, la Presidencia preguntará si algún grupo parlamentario desea que se
+> tramite como proyecto de ley.» **151.5:** «La Diputación Permanente podrá, en su caso, tramitar como
+> proyectos de ley por el procedimiento de urgencia los Decretos-leyes que el Gobierno dicte durante los
+> períodos entre legislaturas.»
+
+Así que el criterio es «hábiles», lo que descarta las variantes de días naturales de §Ⓥ. **Qué días son
+hábiles (¿el sábado?) el art. 90 no lo dice, y no lo he medido.** Cálculo (festivo: sólo el 12-oct; sin
+festivos de Madrid ni la exclusión del 90.2):
+
+| desde | hábiles | día 1 | día 10 | día 20 | día 30 | el 12-nov es el día |
+|---|---|---|---|---|---|---|
+| promulgación 6-oct (art. 151.1) | L-V | 7-oct | 21-oct | 4-nov | 18-nov | 26 |
+| promulgación 6-oct | L-S | 7-oct | 19-oct | 30-oct | 11-nov | 31 |
+| publicación 7-oct | L-V | 8-oct | 22-oct | 5-nov | 19-nov | 25 |
+| publicación 7-oct | L-S | 8-oct | 20-oct | 31-oct | 12-nov | 30 |
+
+El voto cae dentro en tres de cuatro; en «sábado hábil, desde la promulgación», es el día 31. **Si eso
+tiene efecto jurídico no lo afirmo**: el BOE publica el acuerdo y la ficha dice «Concluido (Convalidado)».
+
+## ⓗ4 Qué cambia (lectura, no decisión)
+
+- **Convalidado → el 1-dic sigue**, con el texto de §Ⓛ/§Ⓩ.
+- **Derogado → no ha pasado.** Lo derogado el 12-nov es el 28/2026.
+- **Tramitación como ley → no consta** (§ⓗ2). Si la hubiera, el art. 151.4-5 no dice que suspenda el RDL
+  mientras se tramita; es lectura, no medido.
+- **P1 de c.20890 se activa:** aviso para firmar al elegir el 10 %, pantalla de S2 (`tiposDeIva.js`). No
+  se redacta aquí; quién y cuándo, el orquestador; fecha útil, antes del 1-dic.
+- **Fila 23 del índice del asesor (SCRUM-1264):** A6 sin objeto; A1–A5 siguen a 1-dic. Literal propuesto
+  al orquestador en c.22068. El encabezado de `docs/legal/PREGUNTAS_ASESOR.md:1708` repite «⏰ A6:
+  18/19-nov (cálculo)» y no lo he tocado (no era el encargo).
+
+## ⓗ5 Lo que NO está medido
+
+Si el sábado es hábil para el Congreso; si el art. 90.2 aplica con las Cortes disueltas; el recurso; la
+hora exacta de la votación dentro de la sesión; cada sumario del 14 al 17-nov. Nada se ha ejecutado contra
+ninguna base; `src/` y `public/` no releídos. **Para mañana no queda medición de la votación**: queda la
+decisión de P1 y, si se quiere, el recurso.
+
+## ⓗ6 Lo que me salió mal
+
+1. **La medición 1316g de mi puesto se hizo dentro de la sesión que votó el decreto** (11:19-11:22Z;
+   sesión 08:10Z-13:22Z) y fijó la siguiente para «después del 19-nov», con el orden del día sin leer
+   (§Ⓖ3). Correcta para su hora; seis días desfasada. Cicatriz J5 del 18-nov.
+2. **La ficha del Congreso dio 403 de 410 B a la primera.** Lo separó mirar el tamaño y el código antes
+   de contar nada: un 403 contado como texto daba «0 Convalidado», que es lo que decía el 12-nov.
+
+# SCRUM-1316i · La cabecera 1708 de PREGUNTAS_ASESOR deja de decir «⏰ A6: 18/19-nov»
+
+**Medido contra:** `origin/main` = `dd26ef66fa8d9e92cbefc116e6f55da900db6fb0` · 2026-11-18T16:44:42Z (cabecera `Date:` de GitHub)
+
+A9: sin fallo que generalice — es corregir una cabecera caducada por un hecho nuevo (convalidación del 12-nov, medida en 1316h); el desfase de la medición 1316g ya lo apuntó jv-j5bg en su tramo.
+
+Sesión J5 (IA, `jv-j5bh`), 18-nov-2026, por encargo del orquestador del equipo de Javier
+(`cobroflash-backend-ee`). **Sólo documentos.** Ni `src/`, ni `public/`, ni el esquema, ni el máster, ni
+la emisión. **No se redacta el aviso de P1** (c.20890): eso es regla 39 y pantalla de S2; el orquestador
+dice que ya tiene texto firmado (c.22084) y ticket de construcción (SCRUM-1766), y aquí no se copia.
+
+## Qué cambia en `docs/legal/PREGUNTAS_ASESOR.md` (en sitio: 2044 líneas antes y después)
+
+1. **Línea 1708 (cabecera del bloque 23):** pasa a decir lo de la fila 23 del índice de SCRUM-1264
+   (c.22074, que copia el literal que propuso jv-j5bg en c.22068): «34 (E6) + A1–A5 · … · ✅ A6 sin
+   objeto: el RDL 29/2026 se convalidó el 12-nov (BOE-A-2026-23755, BOE 13-nov; DS 213) · ⏰ A1–A5: 1-dic
+   (condición cumplida)». El título del bloque («El 10 % de obras y el medio de pago») se conserva.
+2. **Línea 1714 (el aviso ⚠️ del bloque):** se le añade al final una nota fechada el 18-nov-2026 con la
+   fuente (`BOE-A-2026-23755`, DS 213, SCRUM-1316 c.22068) y «Sin respuesta de asesor».
+3. **Línea 1741 (A1–A6):** A6 se **marca** sin objeto desde el 12-nov, con fecha y fuente; **la pregunta
+   no se borra** y el estado medido el 12-nov (c.21629) se deja como se escribió.
+
+## Las citas a esas líneas
+
+`git grep` de `PREGUNTAS_ASESOR(.md)?:<n>` en el árbol: 43 ficheros, 130 citas; la más alta apunta a
+`:1327`. **Ninguna apunta a 1690-1750** (control positivo: las de `:978` salen 17 veces). Como no se
+mueve ninguna línea, las de fuera del bloque siguen apuntando a lo mismo. Las de Jira (`:1708` y `:1740`
+en c.21854) siguen cayendo en la cabecera y en la línea «34 (E6), completada».
+
+## Lo que NO está medido
+
+- La descripción de SCRUM-1264 no la he leído entera: el literal de la fila 23 lo confirmó el
+  orquestador por mensaje (c.22074 = el de c.22068, sin cambios).
+- El «_Origen: c.20892_» de la línea 1710 cita un comentario que, según jv-j5bg (c.22068), no es de
+  SCRUM-1316; no lo he tocado porque no estaba en el encargo y no he medido de qué ticket es.
+
+**Corrido:** scrum1294, scrum267, scrum273 y scrum525d, 32 de 32 en verde; `guards:entrada`, 170 de 170. **Suite entera no corrida: sólo documentos; la corre CI** (decisión del orquestador por mensaje, 18-nov, para que la suite entera vaya una vez en SCRUM-1500i, que toca `tests/`).

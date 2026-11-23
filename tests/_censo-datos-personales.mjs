@@ -268,6 +268,7 @@ export const NO_PERSONALES = Object.freeze({
   'attachment.entityType': ESTADO,
   'attachment.kind': ESTADO,
   'attachment.mime': 'el tipo de fichero (image/jpeg…): formato, no contenido',
+  'attachment.sha256': 'la huella SHA-256 de los bytes del fichero (SCRUM-1005b, idempotencia de la subida): 64 hex, no se lee ni se invierte a una persona',
   // albaran
   'albaran.numero': NUMERO_DOC,
   'albaran.modoValoracion': ESTADO,

@@ -1,0 +1,48 @@
+navegador: Edge (Windows)
+
+══════════════════════════════════════════════════════════════════════════════════════
+① LA LISTA Y EL DETALLE DICEN LO MISMO, ESTADO POR ESTADO
+══════════════════════════════════════════════════════════════════════════════════════
+estado              LISTA                   DETALLE
+──────────────────────────────────────────────────────────────────────────────────────
+pendiente_agendar   «Agendar»               «Agendar (mutado)»   🔴 DISTINTAS
+   🔴 pendiente_agendar: la lista propone «Agendar» y el detalle «Agendar (mutado)».
+      Es el defecto que SCRUM-366 cerró, otra vez: dos pantallas diciendo cosas distintas
+      del mismo Trabajo.
+agendado            «▶ Empezar»             «▶ Empezar (mutado)»   🔴 DISTINTAS
+   🔴 agendado: la lista propone «▶ Empezar» y el detalle «▶ Empezar (mutado)».
+      Es el defecto que SCRUM-366 cerró, otra vez: dos pantallas diciendo cosas distintas
+      del mismo Trabajo.
+en_curso            «+ Nuevo albarán»       «+ Nuevo albarán (mutado)»   🔴 DISTINTAS
+   🔴 en_curso: la lista propone «+ Nuevo albarán» y el detalle «+ Nuevo albarán (mutado)».
+      Es el defecto que SCRUM-366 cerró, otra vez: dos pantallas diciendo cosas distintas
+      del mismo Trabajo.
+terminado           «+ Nuevo albarán»       «+ Nuevo albarán (mutado)»   🔴 DISTINTAS
+   🔴 terminado: la lista propone «+ Nuevo albarán» y el detalle «+ Nuevo albarán (mutado)».
+      Es el defecto que SCRUM-366 cerró, otra vez: dos pantallas diciendo cosas distintas
+      del mismo Trabajo.
+cerrado             (ninguna)               (ninguna)
+
+   ✅ SUELO · los cinco estados dan 4 rótulos distintos: hay algo que comparar
+
+══════════════════════════════════════════════════════════════════════════════════════
+② «Agendar» SE PUEDE EJECUTAR EN LAS DOS — y no navega, y no deja el botón colgado
+══════════════════════════════════════════════════════════════════════════════════════
+   LISTA: modal ✅ · campo de fecha ✅ · navegó no ✅ · botón «Agendar» ✅ · escrituras 0
+   🔴 DETALLE: el primario de un Trabajo sin fecha dice «Agendar (mutado)».
+
+══════════════════════════════════════════════════════════════════════════════════════
+②-bis «▶ Empezar» ESCRIBE en las dos — y escribe la transición que la FSM admite
+══════════════════════════════════════════════════════════════════════════════════════
+   LISTA: PATCH /admin/jobs/1 {"status":"en_curso"} · navegó no ✅
+   🔴 DETALLE: el primario de un Trabajo agendado dice «▶ Empezar (mutado)».
+
+══════════════════════════════════════════════════════════════════════════════════════
+③ UN TRABAJO CERRADO NO PROPONE NADA — en ninguna de las dos
+══════════════════════════════════════════════════════════════════════════════════════
+   ✅ LISTA: sin acción principal (71 nodos pintados, o sea la pantalla está ahí)
+   ✅ DETALLE: sin acción principal (137 nodos pintados, o sea la pantalla está ahí)
+   ✅ la barra de «+ Nuevo albarán»: se ve en EN CURSO y no en CERRADO (control positivo incluido)
+
+🔴 6 defecto(s).
+⟦veredicto⟧ 6 hallazgos · 0 ciegos → salida 1 (hallazgo)

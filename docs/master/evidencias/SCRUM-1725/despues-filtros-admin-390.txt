@@ -1,0 +1,253 @@
+URL https://yaqu.app/dashboard/#jobs
+ROL pedido=admin · en la página=admin · recorte copiado de origin/main @ 4e2aaab3a55ed4779d9b6272751767940de39f38 (trabajoParaElRol + albaranParaElRol, #3153 dentro)
+--- CUENTAS
+{"porCobrar":1,"cobrado":0,"teFalta":0,"pendiente":1,"parcial":1,"pagado":1,"factura":0,"euros":3,"ceroEuros":0,"deImporte":1,"notasInternas":0,"queHayQueHacer":0,"basura":0}
+--- TEXTO
+Trabajos
+P
+Trabajos
+Nuevo trabajo
+PARA HOY
+3 trabajos
+Cliente de pruebas QA · Marta Prieto (PILOTO-1 QA) · Marta Prieto (PILOTO-1 QA)
+POR COBRAR
+1,21 €
+en 1 trabajo sin cerrar · 8 sin importe de referencia, no entran
+Todos
+11
+Sin agendar
+4
+Agendado
+1
+En curso
+2
+Terminado
+2
+Cerrado
+2
+Cobro: todos (11)
+Pendiente (1)
+Parcial (0)
+Pagado (0)
+Técnico
+Todos los técnicos
+Operario QA
+Sin asignar
+Cliente de pruebas QA
+Operario QA
+1,21 €
+de 1,21 €
+mié, 11 nov, 16:54
+EN CURSO
+Abrir parte
+Ver detalle
++ Nuevo albarán
+⋯
+Marta Prieto (PILOTO-1 QA)
+Reparación / Asistencia técnica
+(prueba) Recorrido H6 del 16-nov: cambiar el termostato de la caldera y purgar los radiadores del salón. Segundo párrafo: la llave de paso está en el patio. Referenciadelfabricantesinespaciosparaverquenosesaledelatarj
+Operario QA
+Calle Mayor 14, 3º B, 28801 Alcalá de Henares
+Sin importe
+no hay presupuesto aceptado
+lun, 16 nov, 18:30
+EN CURSO
+Abrir parte
+Ver detalle
+Emitir albarán
+⋯
+Marta Prieto (PILOTO-1 QA)
+Reparación / Asistencia técnica
+(prueba) Regla 42 de SCRUM-1679 del 18-nov: revisar la presión de la caldera y cambiar la válvula de seguridad.
+Sin asignar
+Calle de la Regla 42, n.º 18, 1.º A, 28801 Alcalá de Henares
+Sin importe
+no hay presupuesto aceptado
+mié, 18 nov, 18:30
+AGENDADO
+▶ Empezar
+Ver detalle
+⋯
+luis
+Reparación / Asistencia técnica
+Sin asignar
+calle alerce
+Sin importe
+no hay presupuesto aceptado
+SIN AGENDAR
+Ver detalle
+Agendar
+⋯
+Marta Prieto (PILOTO-1 QA)
+[QA-1674] sin obra ni tipo
+·
+Sin asignar
+Sin importe
+no hay presupuesto aceptado
+SIN AGENDAR
+Ver detalle
+Agendar
+⋯
+Marta Prieto (PILOTO-1 QA)
+Mantenimiento
+[QA-1674] con obra y tipo
+·
+Sin asignar
+Calle Obra QA 1674, 5º A
+Sin importe
+no hay presupuesto aceptado
+SIN AGENDAR
+Ver detalle
+Agendar
+⋯
+luis
+Sin asignar
+Calle de Prueba QA 17
+Sin importe
+no hay presupuesto aceptado
+SIN AGENDAR
+Ver detalle
+Agendar
+⋯
+Cliente de pruebas QA
+Trabajo de pruebas QA
+·
+Sin asignar
+Sin importe
+no hay presupuesto aceptado
+jue, 12 nov, 09:00
+TERMINADO
+Ver detalle
+Enviar para firmar
+⋯
+Marta Prieto (PILOTO-1 QA)
+Reparación / Asistencia técnica
+(prueba) Estados de oficina 6.2 del 17-nov: revisar la caldera. Trabajo desechable, se puede cerrar.
+Sin asignar
+Calle de la Prueba 14, 2.º B
+Sin importe
+no hay presupuesto aceptado
+mié, 18 nov, 09:00
+TERMINADO
+Ver detalle
+Enviar para firmar
+⋯
+Ver 2 cerrados
+--- MODAL
+
+--- PULSABLES
+button[submit] «Inicio» 228x34 @-238,85
+button[submit] «Solicitudes» 228x34 @-238,121
+button[submit] «Trabajos» 228x34 @-238,157
+button[button] «Presupuestos» 228x34 @-238,227
+button[submit] «Albaranes» 228x34 @-238,263
+button[submit] «Partes por valorar · 4» 228x34 @-238,299
+button[submit] «Clientes» 228x34 @-238,368
+button[submit] «Productos» 228x34 @-238,404
+button[submit] «Proveedores» 228x34 @-238,440
+button[submit] «Gastos» 228x34 @-238,476
+button[submit] «Informes» 228x34 @-238,512
+button[submit] «Equipo» 228x34 @-238,582
+button[submit] «Planes» 228x34 @-238,618
+button[submit] «Configuración» 228x34 @-238,654
+button[submit] «Salir» 39x22 @-61,795
+button[submit] «Menú» 36x36 @12,12
+button[submit] «Nuevo trabajo» 160x44 @12,76
+button[button] «Todos 11» 89x52 @23,413
+button[button] «Sin agendar 4» 125x52 @116,413
+button[button] «Agendado 1» 111x52 @245,413
+button[button] «En curso 2» 103x52 @360,413
+button[button] «Terminado 2» 116x52 @467,413
+button[button] «Cerrado 2» 99x52 @587,413
+select[select-one] «Cobro: todos (11) Pendiente (1) Parcial (0) Pagado (0)» 332x44 @29,477
+input[search] «Técnico» 134x44 @85,529
+select[select-one] «Todos los técnicos Operario QA Sin asignar» 134x44 @227,529
+summary «Operario QA» 105x44 @29,641
+input[checkbox] «30» 13x13 @42,712
+button[submit] «Abrir parte» 332x44 @29,746
+button[submit] «Ver detalle» 89x44 @29,798
+button[submit] «+ Nuevo albarán» 125x44 @126,798
+button[button] «⋯» 44x44 @317,798
+summary «Operario QA» 105x44 @29,995
+input[checkbox] «30» 13x13 @42,1066
+button[submit] «Abrir parte» 332x44 @29,1150
+button[submit] «Ver detalle» 89x44 @29,1202
+button[submit] «Emitir albarán» 109x44 @126,1202
+button[button] «⋯» 44x44 @317,1202
+summary «Sin asignar» 98x44 @29,1399
+input[checkbox] «30» 13x13 @42,1469
+button[submit] «▶ Empezar» 332x44 @29,1571
+button[submit] «Ver detalle» 89x44 @29,1623
+button[button] «⋯» 44x44 @317,1623
+summary «Sin asignar» 98x44 @29,1757
+input[checkbox] «30» 13x13 @42,1828
+button[submit] «Ver detalle» 89x44 @29,1912
+button[submit] «Agendar» 78x44 @126,1912
+button[button] «⋯» 44x44 @317,1912
+summary «Sin asignar» 98x44 @205,2027
+input[checkbox] «30» 13x13 @218,2097
+button[submit] «Ver detalle» 89x44 @29,2158
+button[submit] «Agendar» 78x44 @126,2158
+button[button] «⋯» 44x44 @317,2158
+summary «Sin asignar» 98x44 @207,2292
+input[checkbox] «30» 13x13 @220,2363
+button[submit] «Ver detalle» 89x44 @29,2447
+button[submit] «Agendar» 78x44 @126,2447
+button[button] «⋯» 44x44 @317,2447
+summary «Sin asignar» 98x44 @29,2561
+input[checkbox] «30» 13x13 @42,2632
+button[submit] «Ver detalle» 89x44 @29,2716
+button[submit] «Agendar» 78x44 @126,2716
+button[button] «⋯» 44x44 @317,2716
+summary «Sin asignar» 98x44 @190,2831
+input[checkbox] «30» 13x13 @203,2901
+button[submit] «Ver detalle» 89x44 @29,2962
+button[submit] «Enviar para firmar» 134x44 @126,2962
+button[button] «⋯» 44x44 @317,2962
+summary «Sin asignar» 98x44 @29,3159
+input[checkbox] «30» 13x13 @42,3229
+button[submit] «Ver detalle» 89x44 @29,3313
+button[submit] «Enviar para firmar» 134x44 @126,3313
+button[button] «⋯» 44x44 @317,3313
+button[submit] «Ver 2 cerrados» 113x44 @12,3384
+button[submit] «?» 48x48 @322,776
+--- DESBORDES
+--- <44px
+button «Menú» 36x36
+input «30» 13x13
+input «30» 13x13
+input «30» 13x13
+input «30» 13x13
+input «30» 13x13
+input «30» 13x13
+input «30» 13x13
+input «30» 13x13
+input «30» 13x13
+--- ESCRITURAS
+POST /admin/entorno → 200
+POST /admin/entorno → 200
+--- RECORTES
+--- LOG
+[warning] Service Worker registration blocked by Playwright
+[warning] Service Worker registration blocked by Playwright
+--- NOTAS
+LOCAL js/jobsView.js ← D:\MILLONARIO\cobroFlash\cobroflash-backend\.claude\worktrees\s4-18nov-r42\public\dashboard\js\jobsView.js (79268 caracteres)
+LOCAL css/styles.css ← D:\MILLONARIO\cobroFlash\cobroflash-backend\.claude\worktrees\s4-18nov-r42\public\dashboard\css\styles.css (299893 caracteres)
+PAGINA @390: ancho 390 · ancho de scroll 390 · desborde 0 · alto 3516
+CIFRA PARA HOY 3 trabajos Cliente de pruebas QA · Marta Prieto (PILOTO-1 QA) · Marta Prieto (PILOTO-1 QA)
+CIFRA POR COBRAR 1,21 € en 1 trabajo sin cerrar · 8 sin importe de referencia, no entran
+FILTROS-ANTES (píldoras de cobro) —
+PESTAÑAS ▣Todos 11 (alto 52) ‖ □Sin agendar 4 (alto 52) ‖ □Agendado 1 (alto 52) ‖ □En curso 2 (alto 52) ‖ □Terminado 2 (alto 52) ‖ □Cerrado 2 (alto 52)
+TIRA @390: pide 684 px en 364 · desplaza
+COBRO (desplegable) Cobro: todos (11) ‖ Pendiente (1) ‖ Parcial (0) ‖ Pagado (0)
+BARRA input jobs-filtro-cobro 44px ‖ jobs-filtro-tecnico-buscar 44px ‖ jobs-filtro-tecnico-select 44px
+TARJETA Cliente de pruebas QA | tipo= | tarea= | trabajo= | tec=Operario QAOperario QA | dir= | importe=1,21 €de 1,21 € | fecha=mié, 11 nov, 16:54 → ■Abrir parte · □Ver detalle · □+ Nuevo albarán · □⋯
+TARJETA Marta Prieto (PILOTO-1 QA) | tipo=Reparación / Asistencia técnica | tarea=(prueba) Recorrido H6 del 16-nov: cambiar el termostato de la caldera y purgar los radiadores del salón. Segundo párrafo: la llave de paso está en el patio. Referenciadelfabricantesinespaciosparaverquenosesaledelatarj | trabajo= | tec=Operario QAOperario QA | dir=Calle Mayor 14, 3º B, 28801 Alcalá de Henares | importe=Sin importeno hay presupuesto aceptado | fecha=lun, 16 nov, 18:30 → ■Abrir parte · □Ver detalle · □Emitir albarán · □⋯
+TARJETA Marta Prieto (PILOTO-1 QA) | tipo=Reparación / Asistencia técnica | tarea=(prueba) Regla 42 de SCRUM-1679 del 18-nov: revisar la presión de la caldera y cambiar la válvula de seguridad. | trabajo= | tec=Sin asignarOperario QA | dir=Calle de la Regla 42, n.º 18, 1.º A, 28801 Alcalá de Henares | importe=Sin importeno hay presupuesto aceptado | fecha=mié, 18 nov, 18:30 → ■▶ Empezar · □Ver detalle · □⋯
+TARJETA luis | tipo=Reparación / Asistencia técnica | tarea= | trabajo= | tec=Sin asignarOperario QA | dir=calle alerce | importe=Sin importeno hay presupuesto aceptado | fecha= → □Ver detalle · □Agendar · □⋯
+TARJETA Marta Prieto (PILOTO-1 QA) | tipo= | tarea= | trabajo=[QA-1674] sin obra ni tipo | tec=Sin asignarOperario QA | dir= | importe=Sin importeno hay presupuesto aceptado | fecha= → □Ver detalle · □Agendar · □⋯
+TARJETA Marta Prieto (PILOTO-1 QA) | tipo=Mantenimiento | tarea= | trabajo=[QA-1674] con obra y tipo | tec=Sin asignarOperario QA | dir=Calle Obra QA 1674, 5º A | importe=Sin importeno hay presupuesto aceptado | fecha= → □Ver detalle · □Agendar · □⋯
+TARJETA luis | tipo= | tarea= | trabajo= | tec=Sin asignarOperario QA | dir=Calle de Prueba QA 17 | importe=Sin importeno hay presupuesto aceptado | fecha= → □Ver detalle · □Agendar · □⋯
+TARJETA Cliente de pruebas QA | tipo= | tarea= | trabajo=Trabajo de pruebas QA | tec=Sin asignarOperario QA | dir= | importe=Sin importeno hay presupuesto aceptado | fecha=jue, 12 nov, 09:00 → □Ver detalle · □Enviar para firmar · □⋯
+TARJETA Marta Prieto (PILOTO-1 QA) | tipo=Reparación / Asistencia técnica | tarea=(prueba) Estados de oficina 6.2 del 17-nov: revisar la caldera. Trabajo desechable, se puede cerrar. | trabajo= | tec=Sin asignarOperario QA | dir=Calle de la Prueba 14, 2.º B | importe=Sin importeno hay presupuesto aceptado | fecha=mié, 18 nov, 09:00 → □Ver detalle · □Enviar para firmar · □⋯
+TESTIGO @390: 9 filas bajo «Todos» · pie «Ver 2 cerrados» · ve el cobro: sí

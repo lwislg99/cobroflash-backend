@@ -223,9 +223,21 @@ function tituladosQueDeclaran() {
  * job `build + tests` del run 43213903214 (rama sobre `c8195b2608c3`: «HA SUBIDO a 39 (el suelo decía
  * 38)», con scrum497 en la lista) y en local tras `git merge origin/main` = `ff2af3368930`: «LA
  * COBERTURA HA SUBIDO a 40 (el suelo decía 39)».
+ *
+ * ⬆️ **41** (SCRUM-1765a, 18-nov-2026, J6): entra `scrum1324-nadie-vigila-el-silencio.test.mjs`, que
+ * declara las quince mutaciones del banco retirado `evidencias/SCRUM-1324/mutar.mjs`. Medido en local
+ * con este mismo test sobre la rama `scrum-1765a-banco-1324-al-catalogo`, fundida con `origin/main` =
+ * `29f570bba0b8d45540f14065f029571b13080b37`: «LA COBERTURA HA SUBIDO a 41 (el suelo decía 40)», con el
+ * fichero nuevo en la lista.
+ *
+ * ⬆️ **42** (SCRUM-1765c, 19-nov-2026, J6): entra `scrum1392-un-hallazgo-visto-no-caduca.test.mjs`, que
+ * declara las seis mutaciones del banco retirado `evidencias/scrum1392/mutar.mjs`. Medido en local con
+ * este mismo test sobre la rama `scrum-1765c-banco-1392-al-catalogo`, sobre `origin/main` =
+ * `e37a7051f87b195ceeae4852c56a02bc0d218438`: «LA COBERTURA HA SUBIDO a 42 (el suelo decía 41)», con el
+ * fichero nuevo en la lista.
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
-export const SUELO_GUARD_QUE_DECLARAN = 40;
+export const SUELO_GUARD_QUE_DECLARAN = 42;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // ① SUELO · ¿he mirado algo? Un cero de población no es «no hay»: es «no he mirado».
@@ -426,8 +438,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // ④ El trinquete se afloja una unidad: deja hueco para que la cobertura baje sin aviso.
     fichero: 'tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs',
-    de: 'export const SUELO_GUARD_QUE_DECLARAN = 40;',
-    a: 'export const SUELO_GUARD_QUE_DECLARAN = 39;',
+    de: 'export const SUELO_GUARD_QUE_DECLARAN = 42;',
+    a: 'export const SUELO_GUARD_QUE_DECLARAN = 41;',
     cae: 'SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA',
   },
   {

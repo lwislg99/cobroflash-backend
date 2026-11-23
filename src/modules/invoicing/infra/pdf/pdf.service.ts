@@ -10,8 +10,8 @@ import { getLocale } from '../../../../core/i18n/locales';
 import { formatImporteEs, tipoEnPorcentaje, rotuloDeTipo, calcTotal } from '../../../../core/utils/utils'; // SCRUM-636: el sitio unico
 import { nombreParaDocumento } from '../../../../core/documentos/nombreParaDocumento'; // SCRUM-577
 import { partirConceptoYDescripcion } from './conceptoLinea'; // SCRUM-603 (DOC-13)
-// SCRUM-656 (T7): CÓMO se presenta el IVA de un PRESUPUESTO y sus cláusulas de cierre. El
-// cálculo sigue siendo `calcVatBreakdown`; estos módulos solo deciden qué se pinta.
+// SCRUM-656 (T7): CÓMO se presenta el IVA de un PRESUPUESTO y sus cláusulas de cierre. El cálculo sigue siendo `calcVatBreakdown`; estos módulos solo deciden qué se pinta.
+import { lineasQueSuman as lineasQueSumanDelDominio } from '../../../quotes/domain/apartados'; // SCRUM-1786f1 · qué línea es cabecera de apartado
 import { pieDePresupuesto, leerModoIva } from '../../../quotes/domain/presentacionIva';
 import { clausulasParaDocumento } from '../../../quotes/domain/clausulas';
 // SCRUM-688 · el número con su revisión lo forma el DOMINIO, no este documento.
@@ -51,7 +51,7 @@ import { resolverDireccionObra, ROTULO_DIRECCION_OBRA_PDF, type ClienteConFactur
  * `INVOICING_ES_ENABLED` está OFF para merchants ES (regla 24) y la demo lleva marca de agua.
  * Aun así, esto hay que apagarlo escribiendo la palabra, no dejándolo correr.
  */
-export const MARCADOR_MICROCOPY_DESGLOSE = '[PENDIENTE microcopy oficial]';
+export const MARCADOR_MICROCOPY_DESGLOSE = 'Base imponible por tipo';
 
 /**
  * SCRUM-593 (DOC-03) · El título del bloque FINAL del documento.
@@ -380,7 +380,10 @@ export async function generateInvoicePdf(params: {
   // «la factura quiere la denominación legal».
   //
   // Opcional a propósito: quien no lo pase sigue funcionando exactamente igual que antes.
-  customer: { name: string; legalName?: string | null; email?: string | null; phone?: string | null };
+  customer: { name: string; legalName?: string | null; email?: string | null; phone?: string | null;
+    // SCRUM-1787d (GO c.22303) · el NIF y la dirección del cliente, CONGELADOS en la factura: el
+    // llamador pasa `direccionEnUnaLinea(direccionDeLaFactura(inv))`, nunca la ficha viva.
+    taxId?: string | null }; customerAddress?: string | null;
   currency: string;
   total: string;
   qrData: string;
@@ -413,7 +416,8 @@ export async function generateInvoicePdf(params: {
   const hasLines = Array.isArray(params.lines) && params.lines.length > 0;
 
   const [qrBuf, logoBuf] = await Promise.all([
-    isReceipt ? Promise.resolve(null) : QRCode.toBuffer(params.qrData, { type: 'png', width: 200 }),
+    // SCRUM-1779d · `qrData` vacío = factura sin sello: no se dibuja QR (`qrDelDocumento`).
+    isReceipt || !params.qrData ? Promise.resolve(null) : QRCode.toBuffer(params.qrData, { type: 'png', width: 200 }),
     loadLogoBuffer(params.merchant.logoUrl),
   ]);
 
@@ -538,6 +542,9 @@ export async function generateInvoicePdf(params: {
   if (params.merchant.address) doc.text(params.merchant.address, { width: colW });
   if (params.merchant.phone)  doc.text(params.merchant.phone, { width: colW });
   if (params.merchant.email)  doc.text(params.merchant.email, { width: colW });
+  // SCRUM-1788a · el final del emisor se guarda AQUÍ: pintar el cliente en su columna mueve `doc.y`
+  // y lo perdía, y la tabla se montaba sobre un emisor más alto que el cliente (c.22299).
+  const finEmisorY = doc.y;
 
   // Columna derecha: cliente (posicionado desde colY)
   const clientY = colY;
@@ -551,11 +558,18 @@ export async function generateInvoicePdf(params: {
   doc.fontSize(10).font('Helvetica-Bold').fillColor(INK).text(nombreCliente, col2X, clientTextY, { width: colW });
   doc.font('Helvetica').fontSize(9).fillColor(BODY);
   let cy = clientTextY + 14;
+  // SCRUM-1787d · rótulos firmados `NIF` y `Dirección` (c.22303 ③). Vacíos → no se pintan.
+  if (params.customer.taxId) { doc.text(`NIF: ${params.customer.taxId}`, col2X, cy, { width: colW }); cy += 13; }
+  if (params.customerAddress) {
+    const lineaDir = `Dirección: ${params.customerAddress}`;
+    doc.text(lineaDir, col2X, cy, { width: colW });
+    cy += Math.max(13, doc.heightOfString(lineaDir, { width: colW }) + 2);
+  }
   if (params.customer.email) { doc.text(params.customer.email, col2X, cy, { width: colW }); cy += 13; }
   if (params.customer.phone) { doc.text(params.customer.phone, col2X, cy, { width: colW }); }
 
-  // Avanzar cursor por debajo de ambas columnas
-  doc.y = Math.max(doc.y, cy + 16);
+  // Avanzar cursor por debajo de ambas columnas: la tabla empieza bajo el bloque más alto.
+  doc.y = Math.max(doc.y, finEmisorY, cy + 16);
   doc.fillColor('#000').moveDown(0.4);
   hLine();
   doc.moveDown(0.5);
@@ -659,11 +673,14 @@ export async function generateInvoicePdf(params: {
     // XML de VeriFactu, y el TOTAL es el GUARDADO, el que ese XML declara como `ImporteTotal`. Así
     // el papel y el registro coinciden por construcción. A no elige convención de redondeo: imprime
     // la que ya tiene el registro (cuál gobierna es pregunta del asesor, SCRUM-1264 c.20774).
-    // ⛔ La R1 y el justificante siguen sumando aquí abajo, como hasta hoy. La R1 guarda
-    // −original.total y su desglose no siempre lo suma (`Math.round(-262.5)` es −262, SCRUM-624d):
-    // con A su papel dejaría de cuadrar consigo mismo. Cambiar cómo se crea es otro GO (regla 40).
-    // Lo fija `tests/scrum624e-a-solo-en-f1.test.mjs`.
-    const leeElRegistro = (params.type ?? 'F1') === 'F1';
+    // 🔴 SCRUM-624y · Y DESDE EL GO DE SCRUM-624 c.22137 («A en la R1»), TAMBIÉN EN LA R1. Desde
+    // SCRUM-1763 la R1 guarda Σ(base + cuota) de `calcVatBreakdown` de sus líneas negadas, así que
+    // su total guardado y este desglose cuadran por construcción. Antes iba por la rama de abajo y
+    // su papel no cuadraba: la R1 de staging imprimía IVA 10 % −3,71 y TOTAL −84,35 (c.22119).
+    // Lo fija `tests/scrum624y-pdf-r1-total-del-desglose.test.mjs`.
+    // ⛔ El justificante sigue sumando aquí abajo, como hasta hoy (`tests/scrum624e-a-solo-en-f1.test.mjs`).
+    const tipoDoc = params.type ?? 'F1';
+    const leeElRegistro = tipoDoc === 'F1' || tipoDoc === 'R1';
     // Agrupar IVA por tipo
     type VatGroup = { base: number; vat: number };
     const vatMap: Record<string, VatGroup> = {};
@@ -678,7 +695,9 @@ export async function generateInvoicePdf(params: {
       // Una fila por TIPO, como hasta hoy. SCRUM-1051g: las entradas S2 salen de aquí y van a la
       // fila de P1, abajo (GO de regla 40, c.21750 punto 2).
       desglose.entries.forEach((e) => {
-        if (e.causa === 'S2') { baseIsp = (baseIsp ?? 0) + e.base; return; }
+        // SCRUM-624y: la fila de P1 sigue siendo sólo de la F1; en la R1 la base S2 va en la fila
+        // de su tipo, como iba antes (ningún texto nuevo en el papel de la R1, regla 39).
+        if (e.causa === 'S2' && tipoDoc === 'F1') { baseIsp = (baseIsp ?? 0) + e.base; return; }
         const key = `${rotuloDeTipo(e.rate)}%`;
         if (!vatMap[key]) vatMap[key] = { base: 0, vat: 0 };
         vatMap[key].base += e.base;
@@ -742,7 +761,7 @@ export async function generateInvoicePdf(params: {
     // porque aquella redondea base y cuota POR SEPARADO y ésta no redondea hasta `fmt`.
     // Cambiar una cifra de una factura no es este ticket. Queda escrito en docs/master/SCRUM-623.md.
     // (SCRUM-624e: desde el GO de SCRUM-624 c.20817, en la F1 SÍ se consume —ver arriba—; esto
-    // sigue valiendo para la R1 y el justificante.)
+    // sigue valiendo para el justificante; SCRUM-624y, c.22137: la R1 ya no va por aquí.)
     //
     // Así que las cifras salen del MISMO `vatMap` de arriba, que ya venía acumulando `base` por
     // tipo sin imprimirla nunca. **Ni una operación aritmética nueva.**
@@ -988,8 +1007,16 @@ export async function generateQuotePdf(params: ParamsPdfPresupuesto) {
   doc.fontSize(12).text(`Emisor: ${merchantName}`);
   if (params.merchant.taxId) doc.text(`NIF: ${params.merchant.taxId}`);
   if (params.merchant.address) doc.text(params.merchant.address);
-  if (params.merchant.whatsappPhone)
-    doc.text(`WhatsApp ${params.merchant.whatsappPhone}`);
+  // SCRUM-1785b · literal firmado (SCRUM-1785 c.22281): «WhatsApp de <nombre comercial>: <número>», con
+  // el nombre COMERCIAL (`name`), no la razón social, que sigue en «Emisor:».
+  // SCRUM-1785c · literal firmado (SCRUM-1785 c.22328): sin nombre comercial, «WhatsApp de <razón
+  // social>: <número>». Sin ninguno de los dos, el rótulo de siempre, «WhatsApp <número>».
+  const nombreComercial = String(params.merchant.name ?? '').trim();
+  const nombreDelRotulo = nombreComercial || String(params.merchant.legalName ?? '').trim();
+  if (params.merchant.whatsappPhone) {
+    if (nombreDelRotulo) doc.text(`WhatsApp de ${nombreDelRotulo}: ${params.merchant.whatsappPhone}`);
+    else doc.text(`WhatsApp ${params.merchant.whatsappPhone}`);
+  }
   doc.moveDown();
 
   // A20.4: el pro elige qué datos del cliente van en el documento (docFields;
@@ -1179,8 +1206,41 @@ function drawTableHeader() {
 
 drawTableHeader();
 
+// ── SCRUM-1786f1 · «Total del apartado» bajo cada apartado ────────────────────────────────────
+// Literal FIRMADO por el fundador en SCRUM-1786 c.22269; lanzado en c.22329. Una cabecera de
+// apartado es la línea que `lineasQueSuman` deja fuera (el criterio vive en `apartados.ts` y no se
+// copia aquí); sus líneas son las que la siguen hasta la próxima cabecera. La cifra es la suma de la
+// columna IMPORTE de esas líneas (sin IVA y sin el `dto` de línea, SCRUM-1446e), y sale de
+// `calcVatBreakdown(...).base`: la MISMA primitiva y el mismo redondeo que la base del pie. Sin
+// cabeceras no entra nunca aquí, y el papel sale como salía. Deuda: cuando exista `capitulos()`
+// (tramo c, S1) este recorrido pasa a usarla.
+const lineasQueSumanDelPapel = new Set<unknown>(lineasQueSumanDelDominio(params.lines as any));
+let apartadoAbierto: typeof params.lines | null = null;
+function pintarTotalDelApartado(lineasDelApartado: typeof params.lines) {
+  const importe = calcVatBreakdown(lineasDelApartado as any).base;
+  const rowH = 18;
+  if (doc.y + rowH > PAGE_BOTTOM) {
+    doc.addPage();
+    doc.font('Helvetica').fontSize(12).fillColor('black').text(`Detalle del ${locale.quoteVerb}:`);
+    doc.moveDown(0.5);
+    drawTableHeader();
+  }
+  const y = doc.y;
+  doc.font('Helvetica-Bold').fontSize(10).fillColor('black')
+    .text('Total del apartado', X_QTY, y, { width: X_VAT + W_VAT - X_QTY, align: 'right' })
+    .text(fmtImporte(importe), X_TOTAL, y, { width: W_TOTAL, align: 'right' });
+  doc.font('Helvetica');
+  doc.y = y + rowH;
+}
 
 params.lines.forEach((l) => {
+  if (!lineasQueSumanDelPapel.has(l)) {
+    if (apartadoAbierto) pintarTotalDelApartado(apartadoAbierto); // cierra el apartado anterior
+    apartadoAbierto = [];
+  } else if (apartadoAbierto) {
+    apartadoAbierto.push(l);
+  }
+
   // SCRUM-1446e · la columna de cada línea va SIN IVA, como en la factura (decisión del fundador:
   // SCRUM-1446 comentario 20917, P4). Antes sólo en `no_incluido`; ahora en los dos modos, y así
   // las líneas suman lo que el pie llama base. El Total sigue siendo el guardado.
@@ -1243,7 +1303,7 @@ params.lines.forEach((l) => {
   // avanzar el cursor al final de la fila
   doc.y = y + rowH;
 });
-
+  if (apartadoAbierto) pintarTotalDelApartado(apartadoAbierto);
 
 
 doc.moveDown();

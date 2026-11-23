@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<response>
+  <status>
+    <code>200</code>
+    <text>ok</text>
+  </status>
+  <data>
+    <bloque id="a152" tipo="precepto" titulo="Artículo 152">
+      <version id_norma="BOE-A-1992-28740" fecha_publicacion="19921229" fecha_vigencia="19930101">
+        <p class="articulo">Artículo 152. Contenido del régimen especial de determinación proporcional de las bases imponibles.</p>
+        <p class="parrafo">Uno. Los sujetos pasivos acogidos a este régimen especial, a los efectos de cumplimentar sus declaraciones-liquidaciones por este impuesto, determinarán las bases imponibles globales a las que resulten aplicables cada uno de los tipos impositivos, con arreglo al siguiente procedimiento:</p>
+        <p class="parrafo_2">1.º En función del importe total de las adquisiciones e importaciones de bienes destinados a ser objeto de su actividad comercial acogida al régimen especial realizadas durante el año natural, incluido el IVA soportado o satisfecho, se hallará el porcentaje de compras relativo a cada grupo de operaciones a las que hubiese resultado aplicable un tipo de gravamen diferente.</p>
+        <p class="parrafo">2.º Los porcentajes resultantes se imputarán al volumen total de ventas a las que resulten aplicable este régimen especial, incluido el IVA repercutido, realizadas por el sujeto pasivo durante cada período de liquidación para determinar las cantidades que, de dicho volumen global, corresponden a cada tipo tributario.</p>
+        <p class="parrafo">3.º Las respectivas bases imponibles globales se hallarán multiplicando por 100 cada una de las cantidades a que se refiere el número anterior y dividiendo el producto por 100 más el tipo de gravamen respectivo.</p>
+        <p class="parrafo">4.º Los porcentajes provisionalmente aplicables cada año natural serán los determinados en base a las operaciones del año precedente.</p>
+        <p class="parrafo_2">Cuando no se pueda calcular dicho porcentaje, se aplicará provisionalmente el que proponga el sujeto pasivo a la Administración, salvo que ésta fijase uno distinto en atención a las características de las correspondientes actividades empresariales.</p>
+        <p class="parrafo">En la última declaración-liquidación del impuesto correspondiente a cada año natural, el sujeto pasivo calculará el porcentaje definitivo en función de las adquisiciones o importaciones efectuadas en dicho período y practicará la consiguiente regularización de las declaraciones–liquidaciones referidas a todo el año natural.</p>
+        <p class="parrafo">Dos. A los efectos de lo dispuesto en este artículo, sólo se computarán las adquisiciones, importaciones o ventas de artículos o productos comercializados habitualmente por el sujeto pasivo a los que resulte de aplicación este régimen especial.</p>
+      </version>
+      <version id_norma="BOE-A-1999-24786" fecha_publicacion="19991230" fecha_vigencia="20000101">
+        <p class="articulo">Artículo 152. Contenido del régimen especial de determinación proporcional de las bases imponibles.</p>
+        <p class="parrafo">
+          <strong>(Derogado)</strong>
+        </p>
+        <blockquote>
+          <p class="nota_pie">Se deroga por el art. 6.16 de la Ley 55/1999, de 29 de diciembre. <a class="refPost">Ref. BOE-A-1999-24786</a>.</p>
+        </blockquote>
+      </version>
+    </bloque>
+  </data>
+</response>

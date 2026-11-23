@@ -42,6 +42,7 @@
  * la numeración fiscal garantiza. Un hueco en la serie es peor que una factura pendiente.
  */
 import { prisma as defaultPrisma } from '../../../core/db/prisma';
+import { isFlagEnabled } from '../../../core/flags';
 import { recordAudit } from '../../system/audit.service';
 import { isReceiptNumber } from './invoiceNumber.service';
 import { applyVeriFactu, applyVeriFactuAnulacion } from './verifactu.service';
@@ -136,6 +137,31 @@ export async function sellarTrasEmision(
       data: { vfEstado: SELLADO_NO_APLICA },
     });
     await congelarTrasEmitir(invoice, prismaClient, congelarPdf);
+    return { estado: SELLADO_NO_APLICA };
+  }
+
+  // SCRUM-1779d · CON `SIF_ENABLED` EN OFF NO SE SELLA (GO del fundador, SCRUM-1779 c.22239).
+  // La factura sale como documento simple: sin huella, sin QR de la AEAT y sin alta en la cola.
+  // Se decide AQUÍ, en el único punto por el que la emisión entra en la cadena, y no en
+  // `verifactu.service.ts`. El flag se lee del COMERCIO de la factura en la base, porque varios
+  // llamadores pasan un comercio recortado (`{ country, taxId }`) sin `flags`, y con él la
+  // precedencia merchant > env > defecto daría el valor del entorno. Si no se puede leer, la
+  // factura se queda `pendiente_de_sellado` (fail-closed: ni sello ni documento).
+  let sifEncendido: boolean;
+  try {
+    const conFlags = await prismaClient.merchant.findUnique({
+      where: { id: invoice.merchantId },
+      select: { country: true, flags: true },
+    });
+    sifEncendido = isFlagEnabled('SIF_ENABLED', { merchant: conFlags ?? merchant });
+  } catch (e: any) {
+    return { estado: SELLADO_PENDIENTE, error: String(e?.message ?? e).slice(0, 300) };
+  }
+  if (!sifEncendido) {
+    await prismaClient.invoice.update({
+      where: { id: invoice.id },
+      data: { vfEstado: SELLADO_NO_APLICA },
+    });
     return { estado: SELLADO_NO_APLICA };
   }
 

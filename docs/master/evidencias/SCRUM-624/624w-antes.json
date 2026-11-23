@@ -1,0 +1,23 @@
+{
+  "lectura": {
+    "me": {
+      "status": 200,
+      "merchantId": 2,
+      "modoEmision": "receipt",
+      "motivoSinEmision": null,
+      "documentoSuelto": "no",
+      "flag_INVOICING_ES_ENABLED_en_fila": null
+    },
+    "merchant": {
+      "status": 200,
+      "id": 2,
+      "country": "ES",
+      "criterioCaja": null,
+      "llevaLibrosPorSii": null,
+      "domicilioFiscalForal": null,
+      "flag_INVOICING_ES_ENABLED_en_fila": null
+    }
+  },
+  "medido": "entre 2026-11-18T23:30:06Z y 23:32:13Z (Date de gh api -i zen antes; toma del turno después)",
+  "nota": "Cuenta QA de STAGING (comercio 2), leída por GET /admin/me y GET /admin/merchant con su sesión. Sin secretos ni cookies. SCRUM-624w."
+}

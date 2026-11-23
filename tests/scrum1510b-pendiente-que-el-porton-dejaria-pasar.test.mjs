@@ -28,6 +28,8 @@
 //
 // ⛔ Ni una base, ni un byte de red. Los PDF van a un directorio temporal, nunca al árbol.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1779d · este banco AFIRMA el sellado: con SIF_ENABLED en OFF (el defecto) la emisión ya no sella (SCRUM-1779 c.22239), así que se enciende aquí y lo afirmado no cambia.
+process.env.SIF_ENABLED = 'true';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';

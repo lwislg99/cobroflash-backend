@@ -1,0 +1,7 @@
+base limpia: pasados 5 · caídos 0
+MUERE (la caza) · public/dashboard/js/csvImport.js · SCRUM-1756i · las cadenas de las cuatro vistas J2 llevan 0 style=
+MUERE (la caza) · public/dashboard/js/customerDetailView.js · SCRUM-1756i · las cadenas de las cuatro vistas J2 llevan 0 style=
+MUERE (la caza) · public/dashboard/css/styles.css · SCRUM-1756i · cada style= de main tiene en la hoja su declaración exacta y su clase en el fichero
+MUERE (la caza) · public/dashboard/css/styles.css · SCRUM-1756i · las cuatro clases que perdían contra la cascada llevan el selector que les gana
+CONTROL inocua: MUDA (bien)
+VEREDICTO: 4/4 cazadas · 0 no

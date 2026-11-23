@@ -1,0 +1,12 @@
+ℹ fail 9
+ℹ pass 1
+ℹ tests 10
+✖ SCRUM-1756h · cada clase j3e- usada tiene su regla y su hash casa
+✖ SCRUM-1756h · las declaraciones del bloque son las 181 medidas antes de mover
+✖ SCRUM-1756h · ningún className = pisa un elemento con clase j3e-
+✖ SCRUM-1756h · onboardingView.js: 0 style= dentro de cadenas
+✖ SCRUM-1756h · plansView.js: 0 style= dentro de cadenas
+✖ SCRUM-1756h · settingsView.js: 0 style= dentro de cadenas
+✖ SCRUM-1756h · settingsView.js: el ancho de la barra va por CSSOM
+✖ SCRUM-1756h · teamView.js: 0 style= dentro de cadenas
+✖ SCRUM-1756h · tutorial.js: 0 style= dentro de cadenas

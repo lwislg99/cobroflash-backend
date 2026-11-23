@@ -1,0 +1,8 @@
+base limpia: pasados 5 · caídos 0
+MUERE (la caza) · src/modules/system/app/routes/invoicesAdmin.routes.ts · SCRUM-1756e · el paquete de disputa sale con 0 <style>, 0 style= y una sola hoja enlazada, la suya
+MUERE (la caza) · src/modules/system/app/routes/invoicesAdmin.routes.ts · SCRUM-1756e · el paquete de disputa sale con 0 <style>, 0 style= y una sola hoja enlazada, la suya
+MUERE (la caza) · src/modules/system/app/routes/invoicesAdmin.routes.ts · SCRUM-1756e · la hoja contiene byte a byte el cuerpo del <style> de main
+MUERE (la caza) · src/modules/system/app/routes/invoicesAdmin.routes.ts · SCRUM-1756e · cada clase nueva está donde estaba su style= y la hoja le da la misma declaración
+MUERE (la caza) · src/modules/system/app/routes/invoicesAdmin.routes.ts · SCRUM-1756e · la hoja: ruta propia con el gate de admin, CSS y sin caché compartida
+CONTROL inocua: MUDA (bien)
+VEREDICTO: 5/5 cazadas · 0 no

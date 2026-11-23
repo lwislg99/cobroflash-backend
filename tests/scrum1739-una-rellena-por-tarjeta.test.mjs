@@ -143,11 +143,22 @@ test('SCRUM-1739 · la rellena va PRIMERA en su tarjeta, «Ver detalle» detrás
     assert.equal(cs[1].rotulo, 'Ver detalle', `🔴 «${clave}»: detrás de la rellena va «${cs[1].rotulo}»: ${pinta(cs)}`);
     assert.equal(cs.at(-1).rotulo, '⋯', `🔴 «${clave}»: el «⋯» ya no cierra la tarjeta: ${pinta(cs)}`);
   }
-  // …y donde NO hay rellena de la escalera, nada se mueve: «Ver detalle» delante, como en Presupuestos.
-  for (const clave of ['SIN-AGENDAR', 'AGENDADO-OTRO-DIA', 'TERMINADO-SIN-IMPORTE']) {
+  // …y donde NO hay rellena de la escalera, EL MISMO ORDEN: [el paso] · «Ver detalle» · «⋯».
+  // SCRUM-1725j · CAMBIA DE EXIGENCIA (autorizado con nombre por el orquestador el 20-nov-2026, por la
+  // delegación de SCRUM-1656 c.21978; copia literal en `docs/master/SCRUM-1725.md`, tramo 1725j). Exigía
+  // «Ver detalle» DELANTE cuando no había rellena («nada se mueve»): eran dos órdenes, y fila a fila
+  // «Ver detalle» bailaba de sitio. El requisito cambió (SCRUM-1725 c.22098/c.22103, veredicto del
+  // fundador c.22095): el orden es UNO, haya rellena o no. Se exige la lista ENTERA de rótulos, no solo
+  // los extremos: un cuarto control en la tarjeta también la descoloca.
+  const SIN_RELLENA = {
+    'SIN-AGENDAR': ['Agendar', 'Ver detalle', '⋯'],
+    'AGENDADO-OTRO-DIA': ['▶ Empezar', 'Ver detalle', '⋯'],
+    // Terminado sin nada que cobrar: la escalera sigue (el Trabajo del censo no tiene albarán).
+    'TERMINADO-SIN-IMPORTE': ['+ Nuevo albarán', 'Ver detalle', '⋯'],
+  };
+  for (const [clave, orden] of Object.entries(SIN_RELLENA)) {
     const cs = controles(fila[clave]);
-    assert.equal(cs[0].rotulo, 'Ver detalle', `🔴 «${clave}» no tiene rellena y ha cambiado de orden: ${pinta(cs)}`);
-    assert.equal(cs.at(-1).rotulo, '⋯', `🔴 «${clave}»: el «⋯» ya no cierra la tarjeta: ${pinta(cs)}`);
+    assert.deepEqual(cs.map((c) => c.rotulo), orden, `🔴 «${clave}» no tiene rellena y no sigue el orden fijo [el paso] · «Ver detalle» · «⋯»: ${pinta(cs)}`);
   }
 });
 
@@ -180,3 +191,15 @@ test('SCRUM-1739 · el OPERARIO ve lo mismo: «▶ Empezar» de hoy rellena y pr
   assert.ok(cs[0].rellena && cs[0].rotulo === '▶ Empezar', `🔴 tarjeta de hoy del operario: ${pinta(cs)}`);
   assert.equal(cs.filter((c) => c.rellena).length, 1, `🔴 el operario ve ${cs.filter((c) => c.rellena).length} rellenas en la tarjeta de hoy`);
 });
+
+// Las mutaciones que tumban los casos de arriba (SCRUM-745: las ejecuta `scripts/meta-guard-mutaciones.mjs`).
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // SCRUM-1725j · vuelven los DOS órdenes: en un Trabajo sin agendar «Ver detalle» pasa delante de
+    // su paso. Las filas con rellena no se mueven, así que solo lo ve el tramo del orden fijo.
+    fichero: 'public/dashboard/js/jobsView.js',
+    de: '  celda.appendChild(bDetalle);',
+    a: "  if (j.status === 'pendiente_agendar') celda.insertBefore(bDetalle, caja); else celda.appendChild(bDetalle);",
+    cae: 'SCRUM-1739 · la rellena va PRIMERA en su tarjeta, «Ver detalle» detrás y el «⋯» cierra',
+  },
+];

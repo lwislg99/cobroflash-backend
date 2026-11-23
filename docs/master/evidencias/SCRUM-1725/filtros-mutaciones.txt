@@ -1,0 +1,36 @@
+catálogo: 9 declaraciones
+BASE · salida 0 · pasan 7 · caen 0
+#1 VIVO · salida 1 · pasan 3 · caen 4
+     de: vivos.forEach((j) => tbody.appendChild(jobRow(j, container, equipo)));
+     cae declarado: SCRUM-1725g · la lista es PLANA para los tres roles: sin cabeceras de … → CAYÓ
+     colateral: SCRUM-1725 ①② · rol «tecnico»: sin «Por cobrar», sin filtros de cobro,…
+     colateral: SCRUM-1725 ①② · rol «contable»: sin «Por cobrar», sin filtros de cobro…
+     colateral: SCRUM-1725 ③ · CONTROL POSITIVO: el admin sigue viendo «Por cobrar», l…
+#2 VIVO · salida 1 · pasan 6 · caen 1
+     de: const SECUENCIA = ['en_curso', 'hoy', 'semana', 'sin', 'adelante', 'terminado'];
+     cae declarado: SCRUM-1725g · la lista es PLANA para los tres roles: sin cabeceras de … → CAYÓ
+#3 VIVO · salida 1 · pasan 5 · caen 2
+     de: pildora.textContent = metaDelEstado.label;
+     cae declarado: SCRUM-1725g · la lista es PLANA para los tres roles: sin cabeceras de … → CAYÓ
+     colateral: SCRUM-1725i ② · cada pestaña enseña SU estado; «Cerrado» enseña los ce…
+#4 🔴 CIEGO: la inyección no se aplicó
+#5 VIVO · salida 1 · pasan 4 · caen 3
+     de: .concat(JOBS_ESTADOS_DE_LA_LISTA.map((estado) => [estado, jobStatusMeta(estado).label, por
+     cae declarado: SCRUM-1725i ① · pestañas de ESTADO con contador para los tres roles: «… → CAYÓ
+     colateral: SCRUM-1725i ② · cada pestaña enseña SU estado; «Cerrado» enseña los ce…
+     colateral: SCRUM-1725i ③ · el COBRO es un desplegable («Cobro: todos»), sin píldo…
+#6 VIVO · salida 1 · pasan 5 · caen 2
+     de: const deEsaPestana = jobsEstadoFilter === 'all' ? jobs : jobs.filter((j) => pestanaDeTraba
+     cae declarado: SCRUM-1725i ② · cada pestaña enseña SU estado; «Cerrado» enseña los ce… → CAYÓ
+     colateral: SCRUM-1725i ③ · el COBRO es un desplegable («Cobro: todos»), sin píldo…
+#7 VIVO · salida 1 · pasan 6 · caen 1
+     de: if (cerrados.length && cerradosALaVista) {
+     cae declarado: SCRUM-1725i ② · cada pestaña enseña SU estado; «Cerrado» enseña los ce… → CAYÓ
+#8 VIVO · salida 1 · pasan 6 · caen 1
+     de: const porCobro = jobsCobroFilter === 'all' ? deEsaPestana : deEsaPestana.filter((j) => j.e
+     cae declarado: SCRUM-1725i ③ · el COBRO es un desplegable («Cobro: todos»), sin píldo… → CAYÓ
+#9 VIVO · salida 1 · pasan 5 · caen 2
+     de: if (veCobro) {
+     cae declarado: SCRUM-1725 ①② · rol «tecnico»: sin «Por cobrar», sin filtros de cobro,… → CAYÓ
+     colateral: SCRUM-1725 ①② · rol «contable»: sin «Por cobrar», sin filtros de cobro…
+🔴 1 declaración(es) sin su rojo

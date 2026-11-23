@@ -54,10 +54,13 @@ const ESPERADO = {
   sinImporte: VIVOS.filter((j) => j.importeReferencia == null).length,
   // «Para hoy» = lo que está en marcha + lo agendado para hoy (prototipo, `deHoy`).
   paraHoy: [1, 2],
-  grupos: ['🔨 En curso', '📅 Hoy', '📅 Esta semana', '⏳ Sin agendar', '🗓 Más adelante', '✅ Terminados — cobra el resto', '🔒 Cerrados'],
   // Qué ofrece el «⋯» por estado: las seis entradas de hoy, sin perder una (inventario C.2).
   menu: {
-    1: ['Técnicos', '✅ Marcar terminado'],
+    // SCRUM-1725j · CAMBIA DE EXIGENCIA (autorizado con nombre por el orquestador el 20-nov-2026, por
+    // la delegación de SCRUM-1656 c.21978; copia literal en `docs/master/SCRUM-1725.md`, tramo 1725j).
+    // Era ['Técnicos', '✅ Marcar terminado']. P4 (firmado, SCRUM-1725 c.22098): en EN CURSO el
+    // albarán baja de la fila al «⋯» y va PRIMERO, delante de lo que ya había. No se pierde ninguna.
+    1: ['+ Nuevo albarán', 'Técnicos', '✅ Marcar terminado'],
     3: ['Técnicos', 'Reagendar', '▶ Empezar', '📆 Añadir a mi calendario'],
     4: ['Técnicos', 'Agendar'],
     8: ['Técnicos', 'Cerrar trabajo'],
@@ -160,7 +163,16 @@ titulo('A · arriba: título y botones (A.1) · las DOS cifras (A.2) · filtros 
       // cabecera se RETIRA; «Partes por valorar» vive en el menú (#nav-partes-oficina), que este
       // banco no monta: el número del menú lo mide tests/scrum1700-abrir-parte-y-partes-por-valorar.
       valorar: !!document.getElementById('jobs-partes-valorar'),
-      filtros: [...document.querySelectorAll('#jobs-filter > button')].map((b) => b.textContent.trim()),
+      // SCRUM-1725i · el eje de COBRO vive en un desplegable de la barra («Cobro: todos (N)», c.22098) y
+      // el de ESTADO en pestañas con contador (patrón de Albaranes). Se leen los dos, y las píldoras de
+      // antes (`#jobs-filter > button`) se cuentan para exigir que ya no estén.
+      filtros: [...document.querySelectorAll('#jobs-filter select.jobs-filtro-cobro option')].map((o) => o.textContent.trim()),
+      pildorasDeCobro: document.querySelectorAll('#jobs-filter > button').length,
+      pestanas: [...document.querySelectorAll('#jobs-filter .data-card-tab')].map((b) => ({
+        rotulo: (b.firstChild && b.firstChild.nodeType === 3 ? b.firstChild.textContent : '').trim(),
+        n: (b.querySelector('.badge') || {}).textContent || null,
+        pulsada: b.getAttribute('aria-pressed'),
+      })),
       tecnico: !!document.getElementById('jobs-filtro-tecnico-select'),
       cifras,
     };
@@ -172,9 +184,20 @@ titulo('A · arriba: título y botones (A.1) · las DOS cifras (A.2) · filtros 
   // A.2 · los filtros por cobro, en cuentas: igual
   const cuentas = { Pendiente: 0, Parcial: 0, Pagado: 0 };
   for (const j of TRABAJOS) if (cuentas[j.estadoCobro] != null) cuentas[j.estadoCobro]++;
-  const filtrosEsperados = [`Todos · ${TRABAJOS.length}`, `Pendiente · ${cuentas.Pendiente}`, `Parcial · ${cuentas.Parcial}`, `Pagado · ${cuentas.Pagado}`];
+  // SCRUM-1725i (c.22098) · las mismas cuatro cuentas, ahora como opciones de UN desplegable:
+  // «Todos · N» pasa a «Cobro: todos (N)» (el «Todos» a secas es ya la pestaña de estado).
+  const filtrosEsperados = [`Cobro: todos (${TRABAJOS.length})`, `Pendiente (${cuentas.Pendiente})`, `Parcial (${cuentas.Parcial})`, `Pagado (${cuentas.Pagado})`];
   if (JSON.stringify(arriba.filtros) === JSON.stringify(filtrosEsperados)) bien(`A.2 filtros de cobro, en cuentas: ${arriba.filtros.join(' · ')}`);
   else mal(`A.2 filtros: ${JSON.stringify(arriba.filtros)} ≠ ${JSON.stringify(filtrosEsperados)}`);
+  if (arriba.pildorasDeCobro === 0) bien('A.2 el cobro va en el desplegable: ninguna píldora suelta en la barra');
+  else mal(`A.2 siguen ${arriba.pildorasDeCobro} píldoras de filtro sueltas en la barra (c.22098: el cobro va en el desplegable)`);
+
+  // A.4 (SCRUM-1725i) · las pestañas de ESTADO: «Todos» + las cinco de la ficha, con su cuenta.
+  const ESTADOS_DE_LA_FICHA = [['pendiente_agendar', 'Sin agendar'], ['agendado', 'Agendado'], ['en_curso', 'En curso'], ['terminado', 'Terminado'], ['cerrado', 'Cerrado']];
+  const pestanasEsperadas = [{ rotulo: 'Todos', n: String(TRABAJOS.length), pulsada: 'true' }]
+    .concat(ESTADOS_DE_LA_FICHA.map(([estado, rotulo]) => ({ rotulo, n: String(TRABAJOS.filter((j) => j.status === estado).length), pulsada: 'false' })));
+  if (JSON.stringify(arriba.pestanas) === JSON.stringify(pestanasEsperadas)) bien(`A.4 pestañas de estado, en cuentas: ${arriba.pestanas.map((p) => `${p.rotulo} ${p.n}`).join(' · ')}`);
+  else mal(`A.4 pestañas de estado: ${JSON.stringify(arriba.pestanas)} ≠ ${JSON.stringify(pestanasEsperadas)}`);
 
   // A.2 · 🔴 LAS DOS CIFRAS — lo que estaba MAL DECIDIDO: la pantalla no decía en euros cuánto falta.
   const hoy = arriba.cifras.find((c) => c.rotulo === 'Para hoy');
@@ -196,21 +219,62 @@ titulo('A · arriba: título y botones (A.1) · las DOS cifras (A.2) · filtros 
   else mal('A.3 falta el filtro por técnico con equipo dado de alta');
 
   // A.2 · y el filtro FILTRA: se pulsa y se mira qué filas quedan.
-  const bPend = await page.evaluateHandle(() => [...document.querySelectorAll('#jobs-filter > button')].find((b) => b.textContent.startsWith('Pendiente')) || null);
-  if (!bPend.asElement()) nosupe('no encontré el filtro «Pendiente» para pulsarlo');
+  // SCRUM-1725i · antes se PULSABA la píldora «Pendiente»; ahora se ELIGE en el desplegable, como lo
+  // hace una persona (`page.select` dispara `input` y `change`). Lo que se exige es lo mismo: quedan
+  // las filas pendientes, el control dice lo elegido y la cifra de arriba no se mueve.
+  const SEL_COBRO = '#jobs-filter select.jobs-filtro-cobro';
+  if (!(await page.$(SEL_COBRO))) nosupe('no encontré el desplegable de cobro para elegir «Pendiente»');
   else {
-    await pulsar(bPend.asElement());
-    const tras = await page.evaluate((sel) => ({
+    await page.select(SEL_COBRO, 'Pendiente');
+    await espera(120);
+    const tras = await page.evaluate((sel, selCobro) => ({
       filas: document.querySelectorAll(sel).length,
-      pulsado: ([...document.querySelectorAll('#jobs-filter > button')].find((b) => b.textContent.startsWith('Pendiente')) || {}).getAttribute?.('aria-pressed'),
+      elegido: (document.querySelector(selCobro) || {}).value,
       cifra: ([...document.querySelectorAll('.jobs-cifra')].find((c) => /Por cobrar/.test(c.textContent)) || {}).textContent || null,
-    }), SEL_FILA);
+    }), SEL_FILA, SEL_COBRO);
     const pendientesVisibles = TRABAJOS.filter((j) => j.estadoCobro === 'Pendiente' && j.status !== 'cerrado').length;
-    if (tras.filas !== pendientesVisibles || tras.pulsado !== 'true') mal(`A.2 pulsar «Pendiente» deja ${tras.filas} filas (esperaba ${pendientesVisibles}) · aria-pressed ${tras.pulsado}`);
-    else bien(`A.2 pulsar «Pendiente» deja ${tras.filas} filas y queda pulsado`);
+    if (tras.filas !== pendientesVisibles || tras.elegido !== 'Pendiente') mal(`A.2 elegir «Pendiente» deja ${tras.filas} filas (esperaba ${pendientesVisibles}) · el desplegable dice «${tras.elegido}»`);
+    else bien(`A.2 elegir «Pendiente» deja ${tras.filas} filas y el desplegable lo dice`);
     // La cifra de arriba contesta «cuánto me deben», no «cuánto hay en este filtro»: no se mueve.
     if (!tras.cifra || !tras.cifra.includes(valorEsperado)) mal(`A.2 con el filtro puesto, «Por cobrar» cambió: «${tras.cifra}»`);
     else bien('A.2 con el filtro puesto, «Por cobrar» sigue siendo el total');
+    // Se deja como estaba: lo de abajo (A.4, A.1) mide la lista entera.
+    await page.select(SEL_COBRO, 'all');
+    await espera(120);
+  }
+
+  // A.4 (SCRUM-1725i) · y las pestañas FILTRAN, pulsadas con el ratón. «Cerrado» enseña los cerrados
+  // DIRECTOS (sin «Ver N cerrados»); «Todos» los vuelve a plegar (P2 de c.22098).
+  const pestana = (rotulo) => page.evaluateHandle((r) => [...document.querySelectorAll('#jobs-filter .data-card-tab')]
+    .find((b) => b.firstChild && b.firstChild.textContent.trim() === r) || null, rotulo);
+  const loQueSeVe = () => page.evaluate((sel) => ({
+    pildoras: [...document.querySelectorAll(sel)].map((tr) => (tr.querySelector('td.cell-status .status-pill') || {}).textContent || ''),
+    plegados: !!document.querySelector('tr.jobs-grupo-abrir button'),
+    pulsadas: [...document.querySelectorAll('#jobs-filter .data-card-tab[aria-pressed="true"]')].map((b) => b.firstChild.textContent.trim()),
+  }), SEL_FILA);
+  const cerradosEsperados = TRABAJOS.filter((j) => j.status === 'cerrado').length;
+  const terminadosEsperados = TRABAJOS.filter((j) => j.status === 'terminado').length;
+  const bCerrado = (await pestana('Cerrado')).asElement();
+  const bTerminado = (await pestana('Terminado')).asElement();
+  const bTodos = (await pestana('Todos')).asElement();
+  if (!bCerrado || !bTerminado || !bTodos) nosupe('no encontré las pestañas «Cerrado», «Terminado» y «Todos» para pulsarlas');
+  else if (!cerradosEsperados || !terminadosEsperados) nosupe('el fixture no trae ni un cerrado o ni un terminado: pulsar esas pestañas no probaría nada');
+  else {
+    await pulsar(bCerrado);
+    await espera(120);
+    const enCerrado = await loQueSeVe();
+    if (enCerrado.pildoras.length === cerradosEsperados && enCerrado.pildoras.every((p) => p === 'Cerrado') && !enCerrado.plegados && enCerrado.pulsadas.join() === 'Cerrado') bien(`A.4 la pestaña «Cerrado» enseña sus ${cerradosEsperados} directamente, sin «Ver N cerrados»`);
+    else mal(`A.4 pestaña «Cerrado»: ${JSON.stringify(enCerrado)} (esperaba ${cerradosEsperados} filas «Cerrado», sin botón de plegados)`);
+    await pulsar(bTerminado);
+    await espera(120);
+    const enTerminado = await loQueSeVe();
+    if (enTerminado.pildoras.length === terminadosEsperados && enTerminado.pildoras.every((p) => p === 'Terminado') && !enTerminado.plegados) bien(`A.4 la pestaña «Terminado» enseña sus ${terminadosEsperados} y nada más`);
+    else mal(`A.4 pestaña «Terminado»: ${JSON.stringify(enTerminado)} (esperaba ${terminadosEsperados} filas «Terminado»)`);
+    await pulsar(bTodos);
+    await espera(120);
+    const enTodos = await loQueSeVe();
+    if (enTodos.pildoras.length === TRABAJOS.length - cerradosEsperados && enTodos.plegados && enTodos.pulsadas.join() === 'Todos') bien(`A.4 «Todos» vuelve a las ${enTodos.pildoras.length} filas sin cerrar, con los cerrados plegados`);
+    else mal(`A.4 «Todos»: ${JSON.stringify({ filas: enTodos.pildoras.length, plegados: enTodos.plegados, pulsadas: enTodos.pulsadas })} (esperaba ${TRABAJOS.length - cerradosEsperados} filas y los cerrados plegados)`);
   }
 
   // A.1 · y el botón de arriba HACE lo suyo. («Partes por valorar» ya no está aquí: SCRUM-1700.)
@@ -236,13 +300,15 @@ for (const [ruta, motivo] of [['/t-200', 'la lista llega truncada (200 filas)'],
 }
 
 // ═══ B · LAS COLUMNAS ═══════════════════════════════════════════════════════════════════════
-titulo('B · columnas (B.1) · técnico en la línea del cliente (B.2) · sin píldora (B.3) · la cifra grande es lo que falta (B.4-B.6)');
+titulo('B · columnas (B.1) · técnico en la línea del cliente (B.2) · una píldora por fila (B.3) · la cifra grande es lo que falta (B.4-B.6)');
 {
   const { page } = await abrirVista(browser, puerto, '/t', 1280);
   const fmt = (n) => page.evaluate((x) => window.fmtMoneyEs(x, 'EUR'), n);
   const th = await page.evaluate(() => [...document.querySelectorAll('#view-container table thead th')].map((x) => x.textContent.trim()));
-  if (JSON.stringify(th) === JSON.stringify(['Cliente', 'Importe', 'Fecha', 'Acciones'])) bien('B.1 cuatro columnas: ' + th.join(' · '));
-  else mal(`B.1 columnas ${JSON.stringify(th)} (esperaba Cliente · Importe · Fecha · Acciones: «Técnicos» deja de ser columna)`);
+  // SCRUM-1725g · entra «Estado» (firmado, SCRUM-1725 c.22076; cambio de exigencia autorizado en
+  // c.22078): la lista es plana y el estado lo dice la fila. «Técnicos» sigue sin ser columna.
+  if (JSON.stringify(th) === JSON.stringify(['Cliente', 'Importe', 'Fecha', 'Estado', 'Acciones'])) bien('B.1 cinco columnas: ' + th.join(' · '));
+  else mal(`B.1 columnas ${JSON.stringify(th)} (esperaba Cliente · Importe · Fecha · Estado · Acciones: «Técnicos» deja de ser columna)`);
 
   const celdas = await page.evaluate((sel) => [...document.querySelectorAll(sel)].map((tr) => {
     const imp = tr.querySelector('td.cell-amount');
@@ -254,7 +320,9 @@ titulo('B · columnas (B.1) · técnico en la línea del cliente (B.2) · sin p�
       desplegable: !!(cli && cli.querySelector('details.jobs-tecnicos-menu')),
       celdaTecnicos: !!tr.querySelector('td.cell-tecnicos'),
       fecha: (tr.querySelector('td.cell-date') || {}).textContent?.trim() ?? null,
-      pildora: !!tr.querySelector('.jobs-estado-pill'),
+      // `.jobs-estado-pill` es la clase de la píldora que 917c quitó: se cuenta también, para que
+      // su vuelta al lado de la nueva sea «dos», no «una».
+      pildoras: tr.querySelectorAll('.status-pill, .jobs-estado-pill').length,
       importe: partes,
     };
   }), SEL_FILA);
@@ -272,10 +340,16 @@ titulo('B · columnas (B.1) · técnico en la línea del cliente (B.2) · sin p�
   if (!f4 || f4.linea.startsWith('Lucía Romero')) mal(`B.2 sin nombre propio, la línea repite el cliente: «${f4 && f4.linea}»`);
   else bien(`B.2 sin nombre propio no se repite el cliente · «${f4.linea}»`);
 
-  // B.3 · Fecha: la fecha o nada; ninguna píldora que repita su cabecera
-  const conPildora = celdas.filter((c) => c.pildora).length;
-  if (conPildora) mal(`B.3 ${conPildora} filas siguen con la píldora «Sin agendar» debajo de su cabecera`);
-  else bien('B.3 cero píldoras «Sin agendar» en las filas');
+  // B.3 · Fecha: la fecha o nada. Y la píldora: EXACTAMENTE UNA por fila, nunca dos apiladas.
+  // SCRUM-1725g · CAMBIA DE EXIGENCIA (autorizado con nombre: SCRUM-1725 c.22081). Exigía «cero
+  // píldoras "Sin agendar" debajo de su cabecera» buscando `.jobs-estado-pill`; desde la lista
+  // plana esa clase no existe y la comprobación daba verde sin mirar nada. No se retira: C.4 lee
+  // SOLO la primera píldora de la celda de estado (`querySelector`), así que dos apiladas le
+  // pasarían. Aquí se cuentan TODAS las de la fila, estén en la celda que estén.
+  const sinUna = celdas.filter((c) => c.pildoras !== 1);
+  if (!celdas.length) nosupe('B.3 el banco no pinta ninguna fila: no se puede contar píldoras.');
+  else if (sinUna.length) mal(`B.3 ${sinUna.length} de ${celdas.length} filas no llevan exactamente UNA píldora: ${sinUna.map((c) => `${c.cliente} ×${c.pildoras}`).join(' · ')}`);
+  else bien(`B.3 exactamente una píldora por fila en ${celdas.length} de ${celdas.length} filas`);
   if (!f4 || f4.fecha !== '') mal(`B.3 un Trabajo sin fecha enseña «${f4 && f4.fecha}» en Fecha (esperaba nada)`);
   else bien('B.3 sin fecha, la celda Fecha está vacía');
   const f3 = deCliente(3);
@@ -300,12 +374,17 @@ titulo('B · columnas (B.1) · técnico en la línea del cliente (B.2) · sin p�
     if (!c || !c.importe[0] || c.importe[0].t !== '✓ Cobrado' || !(c.importe[1] && c.importe[1].t === tot)) mal(`B.4 cobrado del todo: ${JSON.stringify(c && c.importe)} (esperaba «✓ Cobrado» + «${tot}»)`);
     else bien(`B.4 cobrado del todo: «✓ Cobrado» · «${tot}»`);
   }
-  // B.5 · sin eje → «Sin importe · no hay presupuesto aceptado» (antes «—»)
+  // B.5 · sin eje → «Sin importe», y NADA MÁS en la celda (antes «—»)
+  // SCRUM-1725j · CAMBIA DE EXIGENCIA (autorizado con nombre por el orquestador el 20-nov-2026, por la
+  // delegación de SCRUM-1656 c.21978; copia literal en `docs/master/SCRUM-1725.md`, tramo 1725j). Exigía
+  // además la segunda línea «no hay presupuesto aceptado». P3 (firmado, SCRUM-1725 c.22098): en la
+  // LISTA queda solo «Sin importe»; la frase larga vive en la ficha. Se sigue comparando la celda
+  // ENTERA: una segunda línea, la que sea, vuelve a ser rojo.
   for (const id of [6, 9]) {
     const c = deCliente(id);
     const txt = c ? c.importe.map((x) => x.t) : [];
-    if (JSON.stringify(txt) !== JSON.stringify(['Sin importe', 'no hay presupuesto aceptado'])) mal(`B.5 ${POR_ID.get(id).customer.name} sin eje: ${JSON.stringify(txt)}`);
-    else bien(`B.5 ${POR_ID.get(id).customer.name}: «Sin importe» · «no hay presupuesto aceptado»`);
+    if (JSON.stringify(txt) !== JSON.stringify(['Sin importe'])) mal(`B.5 ${POR_ID.get(id).customer.name} sin eje: ${JSON.stringify(txt)} (esperaba solo «Sin importe»)`);
+    else bien(`B.5 ${POR_ID.get(id).customer.name}: solo «Sin importe»`);
   }
   // B.6 · 🔴 cobrado DE MÁS: NO se construye (esperando a la S1). Se pinta COMO HOY.
   {
@@ -476,24 +555,70 @@ titulo('C · nunca dos primarias en la misma fila (C.1, SCRUM-1700) · el «⋯�
     else bien('C.3 el clic en la fila abre el Trabajo 4 y no escribe');
   }
 
-  // C.4 · grupos, en su orden, con «📅 Hoy» separado de «Esta semana»
-  const grupos = await page.evaluate(() => [...document.querySelectorAll('tr.jobs-grupo-titulo td')].map((t) => t.textContent.trim()));
-  const orden = grupos.map((g) => ESPERADO.grupos.find((e) => g.startsWith(e + ' ·')) || '?' + g);
-  if (JSON.stringify(orden) !== JSON.stringify(ESPERADO.grupos)) mal(`C.4 grupos ${JSON.stringify(grupos)} (esperaba ${ESPERADO.grupos.join(' · ')})`);
-  else bien('C.4 grupos: ' + orden.join(' · '));
-  const hoyG = grupos.find((g) => g.startsWith('📅 Hoy'));
-  if (hoyG !== '📅 Hoy · 1') mal(`C.4 el grupo «📅 Hoy» dice «${hoyG}» (esperaba «📅 Hoy · 1»: el en curso va en su grupo)`);
-  else bien('C.4 «📅 Hoy · 1»');
+  // ── SCRUM-1725g · C.4 y C.5 CAMBIAN DE EXIGENCIA (autorizado con nombre: SCRUM-1725 c.22078) ──
+  // Exigían los siete rótulos de grupo en su orden, «📅 Hoy · 1», la cabecera «✅ Terminados — cobra
+  // el resto · 4 · 740,00 € por cobrar» y su salvedad larga. El requisito cambió: veredicto del
+  // fundador (c.22073, «un listado normal como los que tenemos en otros sitios») y P1-P4 firmadas
+  // (c.22076). La lista es PLANA. Lo que queda de la intención de cada una:
+  //   C.4 · ni una cabecera de grupo; las filas van en el ORDEN de la cola (en curso → hoy → esta
+  //         semana → sin agendar → más adelante → terminados), con lo de hoy justo detrás de lo que
+  //         está en curso; y cada fila dice su estado con la etiqueta de `jobStatusMeta`.
+  //   C.5 · no hay cabecera de Terminados ni salvedad larga; el terminado con saldo lleva su
+  //         «💰 Cobrar el resto», que es donde queda dicho lo que falta.
+  // El tramo de cada Trabajo se calcula AQUÍ, con los datos del banco, y no se le pregunta a la
+  // página: si se lo preguntara, el orden se compararía consigo mismo.
+  const plana = await page.evaluate((sel) => ({
+    cabeceras: [...document.querySelectorAll('tr.jobs-grupo-titulo, tr.jobs-grupo-salvedad')].map((t) => t.textContent.trim()),
+    cuerpos: document.querySelectorAll('table.table--trabajos tbody').length,
+    etiquetas: Object.fromEntries(['pendiente_agendar', 'agendado', 'en_curso', 'terminado', 'cerrado'].map((s) => [s, window.jobStatusMeta(s).label])),
+    filas: [...document.querySelectorAll(sel)].map((tr) => {
+      const cli = tr.querySelector('td.cell-client');
+      return {
+        cliente: (cli && cli.querySelector('b') || cli || {}).textContent?.trim() || '',
+        pildora: (tr.querySelector('td.cell-status .status-pill') || {}).textContent?.trim() ?? null,
+        cobrarElResto: [...tr.querySelectorAll('button')].some((b) => b.textContent.trim().startsWith('💰 Cobrar el resto (')),
+      };
+    }),
+  }), SEL_FILA);
+  const ahoraC4 = new Date();
+  const TRAMOS = ['en curso', 'hoy', 'esta semana', 'sin agendar', 'más adelante', 'terminados'];
+  const tramoDe = (j) => {
+    if (j.status === 'en_curso') return 0;
+    if (j.status === 'terminado') return 5;
+    const d = j.scheduledAt ? new Date(j.scheduledAt) : null;
+    if (j.status === 'agendado' && d && d.toDateString() === ahoraC4.toDateString()) return 1;
+    if (j.status === 'agendado' && d && d.getTime() <= ahoraC4.getTime() + 7 * 86400000) return 2;
+    if (j.status === 'pendiente_agendar') return 3;
+    return 4;
+  };
+  const conSuTrabajo = plana.filas.map((f) => ({ ...f, job: TRABAJOS.find((j) => j.customer && j.customer.name === f.cliente) || null }));
+  const sinTrabajo = conSuTrabajo.filter((f) => !f.job);
+  if (!conSuTrabajo.length || sinTrabajo.length) nosupe(`C.4 ${sinTrabajo.length} de ${conSuTrabajo.length} filas no casan con ningún Trabajo del banco: sin eso, el orden y la píldora no se pueden comprobar.`);
+  else {
+    if (plana.cabeceras.length || plana.cuerpos !== 1) mal(`C.4 la lista no es plana: ${plana.cabeceras.length} fila(s) de cabecera ${JSON.stringify(plana.cabeceras)} y ${plana.cuerpos} tbody (esperaba 0 y 1)`);
+    else bien(`C.4 lista plana: 0 cabeceras de grupo, 1 tbody, ${conSuTrabajo.length} filas`);
+    const tramos = conSuTrabajo.map((f) => tramoDe(f.job));
+    const vistos = [...new Set(tramos)].sort();
+    const enOrden = tramos.every((t, i) => i === 0 || tramos[i - 1] <= t);
+    // SUELO del orden: con un solo tramo en el banco, «en orden» sería cierto sin ordenar nada.
+    if (vistos.length !== TRAMOS.length) nosupe(`C.4 el banco pinta ${vistos.length} de los ${TRAMOS.length} tramos (${vistos.map((t) => TRAMOS[t]).join(' · ')}): el orden no queda probado.`);
+    else if (!enOrden) mal(`C.4 las filas no van en el orden de la cola: ${tramos.map((t) => TRAMOS[t]).join(' → ')}`);
+    else bien('C.4 orden de la cola: ' + TRAMOS.map((n, t) => `${n} ×${tramos.filter((x) => x === t).length}`).join(' → '));
+    const deHoy = tramos.filter((t) => t === 1).length;
+    if (deHoy !== 1 || tramos[tramos.lastIndexOf(0) + 1] !== 1) mal(`C.4 esperaba 1 agendado para hoy, justo detrás de los en curso; hay ${deHoy} y los tramos van ${tramos.join(',')}`);
+    else bien('C.4 lo de hoy (1) va justo detrás de lo que está en curso');
+    const malDichas = conSuTrabajo.filter((f) => f.pildora !== plana.etiquetas[f.job.status]);
+    if (malDichas.length) mal(`C.4 ${malDichas.length} fila(s) no dicen su estado con la etiqueta de la ficha: ${malDichas.map((f) => `${f.cliente} «${f.pildora}» ≠ «${plana.etiquetas[f.job.status]}»`).join(' · ')}`);
+    else bien(`C.4 las ${conSuTrabajo.length} filas dicen su estado (${[...new Set(conSuTrabajo.map((f) => f.pildora))].join(' · ')})`);
 
-  // C.5 · la cabecera de Terminados: microcopy aprobada + «por cobrar» junto a la suma
-  const term = grupos.find((g) => g.startsWith('✅ Terminados'));
-  const sumaT = await page.evaluate(() => window.fmtMoneyEs(740, 'EUR'));
-  const cabT = `✅ Terminados — cobra el resto · 4 · ${sumaT} por cobrar`;
-  if (term !== cabT) mal(`C.5 cabecera de Terminados «${term}» ≠ «${cabT}»`);
-  else bien(`C.5 «${term}»`);
-  const salvedad = await page.evaluate(() => (document.querySelector('tr.jobs-grupo-salvedad td') || {}).textContent || null);
-  if (salvedad !== '1 sin importe de referencia: no se sabe cuánto falta y no entran en el total.') mal(`C.5 la salvedad aprobada cambió o falta: «${salvedad}»`);
-  else bien('C.5 salvedad aprobada, palabra por palabra');
+    // C.5 · sin cabecera de Terminados ni salvedad larga; el cobro, en la fila
+    const dichoArriba = plana.cabeceras.filter((c) => /Terminados|sin importe de referencia: /.test(c));
+    if (dichoArriba.length) mal(`C.5 vuelve la cabecera de Terminados o su salvedad: ${JSON.stringify(dichoArriba)}`);
+    else bien('C.5 sin cabecera de Terminados ni salvedad larga');
+    const terminadosConBoton = conSuTrabajo.filter((f) => f.job.status === 'terminado' && f.cobrarElResto);
+    if (!terminadosConBoton.length) mal('C.5 ningún terminado trae «💰 Cobrar el resto (…)»: sin la cabecera, lo que falta por cobrar ya no lo dice nadie en la lista');
+    else bien(`C.5 ${terminadosConBoton.length} terminado(s) con «💰 Cobrar el resto (…)» en su fila`);
+  }
   await page.close();
 }
 {

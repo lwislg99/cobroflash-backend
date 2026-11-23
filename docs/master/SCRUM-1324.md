@@ -130,6 +130,9 @@ runs reales seguidos; con 21 no avisa. El silencio del check obligatorio tambié
   verde antes y después; **15 de 15 muertas**; el fichero mutado queda idéntico por sha256. Las dos
   de umbral de silencio (22 → 23, 10 → 11) las caza sólo el caso ②: los bordes de ⑤ y ⑥ salen de la
   constante, así que se mueven con ella.
+- **El guion `mutar.mjs` se retiró el 18-nov-2026 (SCRUM-1765a):** sus 15 mutaciones viven en el catálogo de
+  `tests/scrum1324-nadie-vigila-el-silencio.test.mjs` y las repite el meta-guard (15 de 15 tumban su caso con
+  `aplicarUna`). Su salida sigue en `evidencias/SCRUM-1324/mutaciones.txt`.
 - **Repetido desde cero:** una segunda recogida de GitHub, la misma noche. De las 1.084 líneas del
   historial, **1.082 idénticas**; las 2 que cambian son el run que dio 502 (ahora leído: `success`) y
   el que estaba en marcha (ya terminado). Reducir dos veces la misma recogida da el mismo sha256, y
@@ -142,7 +145,6 @@ Reproducir, desde la raíz:
     node docs/master/evidencias/SCRUM-1324/recoger.mjs <dir fuera del árbol> 2026-09-20
     node docs/master/evidencias/SCRUM-1324/reducir.mjs <dir>/runs.json <salida.jsonl>
     node docs/master/evidencias/SCRUM-1324/barrido.mjs
-    node docs/master/evidencias/SCRUM-1324/mutar.mjs
     node scripts/vigia-silencio-de-main.mjs
 
 `recoger.mjs` hace unas 2.800 peticiones de sólo lectura con `gh`; el vigía, unas 270.

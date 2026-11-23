@@ -55,6 +55,11 @@
       "ticket": "SCRUM-1732",
       "equipo": "javier",
       "motivo": "Lo crea J2 (equipo de Javier) en el PR-1 de SCRUM-1732 (tabla invoice_payments: verifica el ALTER en cada base), y J2 no edita la tabla de §3.3; la S0 le da fila cuando su orquestador diga el puesto."
+    },
+    "scripts/guard-ficha-de-factura.mjs": {
+      "ticket": "SCRUM-1787",
+      "equipo": "javier",
+      "motivo": "Lo crea J6 (equipo de Javier) en SCRUM-1787g, de un ticket con area-j1: el guard de navegador de la ficha de factura. El equipo de Javier no edita la tabla de §3.3; la S0 le da fila cuando su orquestador diga el puesto."
     }
   }
 }

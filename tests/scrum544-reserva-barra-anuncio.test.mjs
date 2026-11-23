@@ -14,10 +14,16 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { paginaConSusHojas } from './_pagina-con-sus-hojas.mjs';
+import { guionesDeLaPagina } from './_pagina-con-sus-guiones.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const LANDING = path.join(RAIZ, 'public', 'index.html');
-const html = fs.readFileSync(LANDING, 'utf8');
+// SCRUM-1756d: el CSS de la landing vive en la hoja que enlaza (`public/landing.css`); se lee
+// la página CON sus hojas. Cambia dónde se lee, no qué se exige.
+// SCRUM-1756f: y el guion del contador, en el `.js` que enlaza (`/landing.js`): se suma también.
+const html = paginaConSusHojas(RAIZ, 'public/index.html')
+  + '\n' + guionesDeLaPagina(RAIZ, 'public/index.html');
 
 /** Las reglas CSS que mencionan `.announce`, sin comentarios (que es donde se explica la regla). */
 function reglasDeLaBarra(texto = html) {

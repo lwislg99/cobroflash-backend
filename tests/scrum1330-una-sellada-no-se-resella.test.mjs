@@ -33,6 +33,8 @@
 //   · si esta transcripción cae, hay un choque con lo que `scrum173` fija, y basta para parar;
 //   · si pasa, NO prueba que el test real pase: el banco puede no montar lo que monta Postgres.
 // ⛔ `tests/scrum173-…` no se toca desde este ticket (límite expreso del GO).
+// SCRUM-1779d · este banco AFIRMA el sellado: con SIF_ENABLED en OFF (el defecto) la emisión ya no sella (SCRUM-1779 c.22239), así que se enciende aquí y lo afirmado no cambia.
+process.env.SIF_ENABLED = 'true';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -109,6 +111,38 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: '    if (yaSellada?.vfHash) {',
     a: '    if (false) {',
     cae: 'SCRUM-1330 · 🔴 B · `applyVeriFactu` sobre una factura YA sellada, con otra encadenada detrás → la cadena queda BYTE A BYTE',
+  },
+  // SCRUM-1765g · las del banco retirado `docs/master/evidencias/scrum1330/mutar.mjs` (MA, MB-lanza,
+  // MB-anterior, MB-calla). Su MB es la de arriba; su MAB (A y B a la vez, en dos ficheros) no cabe
+  // en una declaración de un fichero y la cubren MA y MB por separado: dicho en docs/master/SCRUM-1765.md.
+  {
+    // MA · la guarda del punto de llamada no decide (la de dentro del cerrojo sigue puesta).
+    fichero: 'src/lib/invoicing.ts',
+    // SCRUM-1779d · ancla re-copiada: la guarda ahora deja fuera también la `no_aplica` (c.22245 ①).
+    de: '    if (inv.vfEstado !== SELLADO_HECHO && inv.vfEstado !== SELLADO_NO_APLICA) {',
+    a: '    if (true as boolean) {',
+    cae: 'SCRUM-1330 · 🔴 A · con la fila ya `sellado`, `ensurePdfAndEvent` NO entra en `sellarTrasEmision`',
+  },
+  {
+    // MB-lanza · la guarda de dentro LANZA en vez de devolver el sello persistido.
+    fichero: 'src/modules/invoicing/domain/verifactu.service.ts',
+    de: "      return { vfHash: yaSellada.vfHash, prevHash: yaSellada.vfPrevHash ?? '', qrUrl: yaSellada.qrData, conservada: true };",
+    a: "      throw new Error('verifactu_ya_sellada');",
+    cae: 'SCRUM-1330 · ✅ B · una fila con huella que se quedó `pendiente_de_sellado` se TERMINA sin tocarle la huella',
+  },
+  {
+    // MB-anterior · la guarda de dentro devuelve como anterior la PROPIA huella.
+    fichero: 'src/modules/invoicing/domain/verifactu.service.ts',
+    de: "      return { vfHash: yaSellada.vfHash, prevHash: yaSellada.vfPrevHash ?? '', qrUrl: yaSellada.qrData, conservada: true };",
+    a: '      return { vfHash: yaSellada.vfHash, prevHash: yaSellada.vfHash, qrUrl: yaSellada.qrData, conservada: true };',
+    cae: 'SCRUM-1330 · transcripción de scrum173 (SCRUM-177, excluirId): «resellar» un alta no la encadena a sí misma',
+  },
+  {
+    // MB-calla · lo conservado se anuncia como un sellado.
+    fichero: 'src/modules/invoicing/domain/verifactu.service.ts',
+    de: '  if (sellado.conservada) {',
+    a: '  if ((false as boolean) && sellado.conservada) {',
+    cae: 'SCRUM-1330 · ⚠️ B · conservar la huella NO es mudo, y NO se anuncia como un sellado',
   },
 ];
 
