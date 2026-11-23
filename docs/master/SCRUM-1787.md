@@ -1035,12 +1035,12 @@ A9: sin fallo que generalice — el driver de mutación de SCRUM-1339 devolvió 
 
 Mutaciones: catálogo → `tests/scrum1787t-pdf-vence-fecha-larga.test.mjs`
 
-Encargo del orquestador J a jv-j1ia (J1). Decisión del fundador: SCRUM-1787 c.22390, punto 3 (literal «1-Ok todos si»: «unificar al formato largo en la página de pago y el PDF»). GO de regla 40 para tocar `generateInvoicePdf`: SCRUM-1787 c.22408, respuesta literal «go». Sustituye el formato de c.22325 ① SOLO para la línea «Vence el». No hay texto nuevo: «Vence el» es el literal firmado.
+Encargo del orquestador J a jv-j1ia (J1). Decisión del fundador: SCRUM-1787 c.22390, punto 3 (literal «1-Ok todos si»: «unificar al formato largo en la página de pago y el PDF»). GO de regla 40 para tocar `generateInvoicePdf`: SCRUM-1787 c.22408 («Respuesta literal: «go»», copiado del comentario). Sustituye el formato de c.22325 ① SOLO para la línea «Vence el». No hay texto nuevo: «Vence el» es el literal firmado.
 
 ## Qué se construyó (1787t)
 
 - `pdf.service.ts` (J1), `generateInvoicePdf`: la línea `Vence el …` pasa de `dateStr` (dd/mm/aaaa) a `toLocaleDateString('es-ES', { timeZone: zonaDelMerchant({ timezone: params.zona }), day: '2-digit', month: 'long', year: 'numeric' })`. Las opciones están COPIADAS de `payInvoice.routes.ts:154` (J2, 1787q), que las tiene en línea y no exporta función: no hay nada que importar. Para que no diverjan, el caso ⑤ del test nuevo lee las dos fuentes y cae si cualquiera de las dos cambia de opciones. La `Fecha:` de expedición, las formas de pago y el PDF del presupuesto no cambian.
-- Recongelada la huella de `scrum603b`/`scrum723` por la vía de SCRUM-1446d: entrada nueva en `tests/_cambios-autorizados-de-la-factura.mjs` con firma `SCRUM-1787 c.22408` y cita «go», huellas sacadas con `docs/master/evidencias/SCRUM-1446d/huellas.mjs` sobre `57cc6d45` (cuerpo `a83c6654…` → `2b62a73e…`; ámbito `0fbb6f5b…` → `a8bd2fb9…`; el `de` es el `a` de 1787m).
+- Recongelada la huella de `scrum603b`/`scrum723` por la vía de SCRUM-1446d: entrada nueva en `tests/_cambios-autorizados-de-la-factura.mjs` con firma `SCRUM-1787 c.22408` y cita `Respuesta literal: «go»` (el test 1446d ③ pide al menos 5 caracteres, y «go» a secas tiene 4), huellas sacadas con `docs/master/evidencias/SCRUM-1446d/huellas.mjs` sobre `57cc6d45` (cuerpo `a83c6654…` → `2b62a73e…`; ámbito `0fbb6f5b…` → `a8bd2fb9…`; el `de` es el `a` de 1787m).
 - `tests/scrum1787m-…`: ① y ② esperaban `Vence el 05/12/2026` (formato de c.22325 ①); ahora esperan la fecha larga. No se relaja nada: siguen comprobando el texto exacto, la posición y la zona.
 
 ## Cómo se ve

@@ -286,7 +286,7 @@ export const CAMBIOS_AUTORIZADOS = [
     // origin/main 57cc6d45bca6debe92bd55d6a55e7232c21985d4 (el `de` es el `a` de 1787m).
     firma: 'SCRUM-1787 c.22408',
     registro: 'docs/master/SCRUM-1787.md',
-    cita: '«go»',
+    cita: 'Respuesta literal: «go»',
     cuerpo: {
       de: 'a83c6654bb5840ddd838a5d571c21c3f08f5f9dca2033f2876368c35c9f34d7a',
       a: '2b62a73e67001b850f2005f950480cf0a9e7a603d83e4325bd7acbb7cc9346ce',
