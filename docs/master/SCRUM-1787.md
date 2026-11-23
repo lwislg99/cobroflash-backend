@@ -775,6 +775,12 @@ A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
 
 Tres conflictos con 1787l (#3308), los tres derivados. `prisma/schema.prisma`: en `model Invoice` se quedan las tres columnas (`dueDate`, `payMethods` de 1787i y `docFooterText` de 1787l), sin elegir lado. `docs/sql/deriva-prod.sql`: regenerado con `scripts/generar-sql-deriva.mjs` sobre el esquema unido (548 columnas). `docs/legal/AUDITORIA_CAMINO_EMISION.md`: anclas recolocadas en sitio (eslabón 4 → `schema.prisma:970-971`, eslabón 8 → `:1908`). Con la ancla vieja del eslabón 4 (963-964), 525d cae 1 de 8; con la nueva, 8 de 8; mutación hecha una vez y sin guion en git. Ninguna aserción cambia.
 
+## Rojo de SCRUM-700 tras el merge de main `141baada` (relevo jv-j1hu, 2026-11-23T05:48:03Z, sobre `origin/main` = `141baada7559c8ab18bd9a572383a40d3d5b6164`)
+
+A9: comprobación → `tests/scrum700-filtros-de-comentario.test.mjs`
+
+El test ⑦ de 1787i limpiaba la ruta con un filtro propio (`.replace(/\/\/.*/, '')`) en vez del de la casa, y el censo de SCRUM-700 lo contó como el octavo filtro que ciega (run 45113237157, censo 7). Ahora usa `soloEjecutable` de `tests/_guard-texto.mjs` (`almohadillaEsComentario: false`, es TypeScript). El censo (7) no se toca (SCRUM-1787 c.22377). Verde: `scrum700` + `scrum1787i`, 16 de 16 en 2 ficheros. El fallo es del puesto: el filtro de la casa existía y el guard que lo exige también; lo cazó el guard en CI, que es su sitio.
+
 # SCRUM-1787m · El PDF de factura imprime «Vence el» y «Formas de pago» con lo congelado en la factura
 
 **Medido contra:** `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740` · 2026-11-23T04:01:47Z
@@ -818,11 +824,15 @@ Decisión del fundador: SCRUM-1787 c.22338 ③ («3-GO», regla 40: el PDF de fa
 **Merge con la rama de 1787i ya al día (`cf9f6e1c9`, con main `d5bec9526` y 1787l dentro)**
 
 Cuatro conflictos, los cuatro con 1787l (#3308, Observaciones) y resueltos con los dos lados: el tipo de `generateInvoicePdf` lleva `docFooterText` y, detrás, `dueDate` y `payMethods`; los dos llamadores en conflicto pasan los tres campos; y el catálogo de cambios autorizados lleva la entrada de 1787l y, detrás, la de 1787m. Las huellas de la entrada de 1787m se volvieron a sacar con `huellas.mjs` después del merge: su `de` es ahora el `a` de 1787l. Las cifras de «Medido» de arriba (147 casos, la huella de 15 líneas) son de antes del merge, contra `90e8e377`; lo que se repitió después está en el comentario de entrega de Jira. El párrafo «Segundo merge con main» de 1787i, que git dejó detrás de este tramo, se devolvió a su sitio sin cambiarle una letra.
-## Rojo de SCRUM-700 tras el merge de main `141baada` (relevo jv-j1hu, 2026-11-23T05:48:03Z, sobre `origin/main` = `141baada7559c8ab18bd9a572383a40d3d5b6164`)
 
-A9: comprobación → `tests/scrum700-filtros-de-comentario.test.mjs`
+## Rojos de SCRUM-586 y SCRUM-836 tras el merge de main `141baada` (relevo jv-j1hu, 2026-11-23T05:54:28Z, sobre `origin/main` = `141baada7559c8ab18bd9a572383a40d3d5b6164`)
 
-El test ⑦ de 1787i limpiaba la ruta con un filtro propio (`.replace(/\/\/.*/, '')`) en vez del de la casa, y el censo de SCRUM-700 lo contó como el octavo filtro que ciega (run 45113237157, censo 7). Ahora usa `soloEjecutable` de `tests/_guard-texto.mjs` (`almohadillaEsComentario: false`, es TypeScript). El censo (7) no se toca (SCRUM-1787 c.22377). Verde: `scrum700` + `scrum1787i`, 16 de 16 en 2 ficheros. El fallo es del puesto: el filtro de la casa existía y el guard que lo exige también; lo cazó el guard en CI, que es su sitio.
+A9: comprobación → `tests/scrum836-ancla-de-mutacion-viva.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum586-forma-de-pago-por-cliente.test.mjs`
+
+Run 45113232031 (#3316). **586** (`payMethods` NO llega al PDF) prohibía la palabra en todo el camino del PDF, y 1787m la metió a propósito. Decisión del fundador, SCRUM-1787 c.22377 (regla 41): se distingue `invoice.payMethods` (congelado al emitir; GO c.22338 ③) de `quote.payMethods` y de la preferencia del comercio, que siguen prohibidas. El test ⑧ ahora lo mide por AST: fuera de `generateInvoicePdf` la palabra sigue a cero en los cinco ficheros, y dentro sólo vale `params.payMethods` o su firma. Caso nuevo: cada llamada a `generateInvoicePdf` de `src/` (población derivada; 3 hoy) pasa `<x>.payMethods` del mismo objeto que da `merchantCriterioCaja`, columna que sólo tiene la factura. Nota fechada en el test que cita c.22377. Tres mutaciones nuevas en su catálogo (⑦ el PDF recibe las del presupuesto en `src/lib/invoicing.ts`, ⑧ la del comercio en `invoicesAdmin.routes.ts`, ⑨ el PDF del presupuesto las pinta): con `aplicarUna`, 9 de 9 VIVAS. **836**: la mutación de `scrum1240d` sobre `src/lib/invoicing.ts` llevaba un `de` que 1787m cambió (puso `dueDate` y `payMethods` en esa línea para no mover el ancla :267 de la auditoría). Se reancla al texto nuevo; muta lo mismo (`inv.merchantCriterioCaja` → `inv.merchant.criterioCaja`) y promete lo mismo: con `aplicarUna`, 5 de 5 VIVAS. Las de 1787m, 2 de 2 VIVAS. `git status` sin cambios en `src/` tras cada pasada. Verde: 12 ficheros (700, 586, 836, 1240d, 1787m, 1787i, 603b, 723, 523d, 291, 1294, 745), 128 de 128. El fallo es del puesto: los dos rojos los dio CI y no una tanda local antes del empujón de 1787m; si allí se corrieron 586 y 836, no lo he medido.
+
 # SCRUM-1787n · La lista de facturas con las columnas, el orden y los rótulos de la lista de presupuestos
 
 **Medido contra:** `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740` · 2026-11-23T03:55:05Z (cabecera `Date:` de `gh api -i zen`)
