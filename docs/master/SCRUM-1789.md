@@ -63,3 +63,101 @@ Un detector que acierta y publica donde nadie lee: aquí el detector ya publica 
 - Guion: 3 casos sobre `veredicto`, la función pura de la que sale el `process.exit` del runner. **No he corrido el runner entero con un guard sembrado en disco**: que `puerta()` sale con `veredicto(filas).codigo` está leído en el código, no ejecutado.
 - Historial de `main`: 15 runs, leídos con `gh run view --json jobs`. Los 4 «sin job» no los he abierto.
 - No he cambiado código: no hay tanda que correr más allá de los guards del registro.
+
+# SCRUM-1789c
+
+**Medido contra:** `origin/main` = `0b2f6451af74f2142cf27e18c9a4c42fb56c1e65` · 2026-11-23T08:23:19Z
+
+A9: aviso → cicatriz J6 «Pasé una sonda a node por `node -e` desde bash con una barra invertida dentro, y no compiló: la de SCRUM-1252h otra vez, con la cicatriz delante» — no se pudo comprobar: ningún hook de este árbol para un `node -e` que lleva barras invertidas
+
+Mutaciones: una vez → `docs/master/evidencias/SCRUM-1789/navegador-en-el-catalogo.mjs`
+
+Dos cosas en este tramo: ① la rama de 1789b (#3318) estaba en conflicto con `main` y se ha unido con `git merge origin/main`, sin tocar ningún tramo; ② la medición de por qué el catálogo de mutaciones no llega a los guards de navegador, con el cambio propuesto. **El cambio no se ha hecho:** `node scripts/carriles.mjs de scripts/meta-guard-mutaciones.mjs` → **S3** (`dos-equipos.md:177`). El encargo decía que, si el driver es de S3 o S5, se para con el diff propuesto.
+
+## ① #3318 unido
+
+`git merge origin/main` sin conflictos en texto: los tramos `# SCRUM-1789` y `# SCRUM-1789b` quedan en ese orden, con su línea en blanco, y ninguno cambia. En verde en local: scrum1294, 267, 273, 525d y 854 (38 de 38, 0 `not ok`) y `npm run guards:entrada` (15 guards, salida 0).
+
+## ② Qué le falta al catálogo para un guard de navegador
+
+Medido con el guion de arriba, que importa `correr()` y `cayo()` del propio meta-guard (no los copia):
+
+1. **No los ve.** `censoConPoblacion()` lee `tests/` y filtra `.test.mjs`. Con `scripts/` da **población 0 y censo 0**. Con `tests/` da población 1752 y 355 declarantes, que es el control positivo. Los 45 `scripts/guard-*.mjs` no entran en la población, y ninguno declara `MUTACIONES_QUE_ME_TUMBAN` (0 de 45).
+2. **Si los viera, juzgaría mal.** `correr()` usa `run()` de `node:test`. Sobre un script que no es de `node:test`, eso da **UN caso con el nombre del fichero**, y lo que imprime no llega:
+   - salida 1 (hallazgo) → `caidos: ["…guard-rojo.mjs"]`;
+   - salida 2 (CIEGO) → `caidos: ["…guard-ciego.mjs"]`.
+
+   En los dos casos el error es `ERR_TEST_FAILURE`, «test failed». **Son indistinguibles.** Una declaración con `cae: '<nombre del fichero>'` contaría un CIEGO como VIVA: un verde falso. Y con `cae: '<texto del hallazgo>'` saldría siempre CIEGO en la PUERTA 1, porque `paso(limpia, cae)` busca ese texto en la pasada limpia y no está.
+3. **La base es otra cosa.** En un test, la base es «el caso `cae` pasó». En un guard de navegador es «el guard salió 0». La salida 1 quiere decir que ha visto algo, y la salida ≥ 2 que no supo medir: lo que aquí es un CIEGO, no un caído.
+
+## La propuesta: mínima, en el driver y no en los guards
+
+El juicio, tal cual, está en el guion (`esGuardDeNavegador`, `resultadoDeNavegador`, `juicioDeNavegador`). En `scripts/meta-guard-mutaciones.mjs`:
+
+```diff
++// SCRUM-1789c · un guard de navegador NO es un fichero de node:test: su veredicto es su CÓDIGO.
++export const esGuardDeNavegador = (g) => /^scripts[\\/]guard-[^\\/]+\.mjs$/.test(g);
++export function resultadoDeNavegador({ status, stdout = '', stderr = '' }) {
++  const lineas = `${stdout}\n${stderr}`.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
++  const vacio = { pasados: [], caidos: [], saltados: [], errores: {} };
++  if (status === 0) return { ...vacio, codigo: 0, pasados: ['(salida 0)'] };
++  if (status === 1) return { ...vacio, codigo: 1, caidos: lineas };   // cada línea, un «caído»
++  return { ...vacio, codigo: status, ciegoDelGuard: `salió ${status ?? 'sin código'}: NO SUPO MEDIR` };
++}
+ export async function correr(guard, propias = null) {
+   …   // la vigilancia de SCRUM-754 se abre igual
++  if (esGuardDeNavegador(guard)) {
++    const r = spawnSync(process.execPath, [path.join(RAIZ, guard)], { cwd: RAIZ, encoding: 'utf8', timeout: TIMEOUT_MS });
++    return { ...resultadoDeNavegador(r), movidos: /* el mismo cierre de vigia que tras run() */ };
++  }
+   const flujo = run({ … });
+ export async function aplicarUna(mut, guard, limpia) {
++  const nav = esGuardDeNavegador(guard);
+   …
+-  if (!paso(limpia, mut.cae)) {
++  if (nav ? limpia.codigo !== 0 : !paso(limpia, mut.cae)) {   // base: el guard sale 0
+   …
+-  const absGuard = path.isAbsolute(guard) ? guard : path.join(DIR_TESTS, guard);
++  const absGuard = path.isAbsolute(guard) ? guard : path.join(nav ? RAIZ : DIR_TESTS, guard);
+   …
+     const tras = await correr(guard, propias);
++    if (nav && tras.ciegoDelGuard) return { ok: false, ciego: tras.ciegoDelGuard };   // (el finally restaura)
+     // de aquí en adelante, `cayo(tras, mut.cae)` busca el texto del hallazgo en las líneas: igual que hoy
++export function censoDeGuardsDeNavegador(dir = path.join(RAIZ, 'scripts')) {
++  return fs.readdirSync(dir).filter((f) => /^guard-.*\.mjs$/.test(f)).flatMap((f) => {
++    const { buenas, incompletas } = lecturaDeDeclaraciones(fs.readFileSync(path.join(dir, f), 'utf8'), f);
++    return buenas.length || incompletas.length ? [{ guard: `scripts/${f}`, mutaciones: buenas, incompletas }] : [];
++  });
++}
+   // en el arranque: enJuego = parteDelCenso([...censo, ...censoDeGuardsDeNavegador()], parte)
+```
+
+Y el contrato no cambia. El guard declara en su fichero `export const MUTACIONES_QUE_ME_TUMBAN = [{ fichero: 'public/…', de, a, cae: '<texto de la línea del hallazgo>' }]`, y el meta-guard lo lee por AST, así que no ejecuta el guard al leerlo.
+
+**Lo que S3 tiene que decidir (A12: cambia una población que otros miden):**
+
+- La población de `tests/` **no se toca**. Los guards de navegador van como segunda población, con su propia línea en el rótulo, para que `SUELO_GUARDS` y `SUELO_DECLARACIONES` y los que los miden no se muevan: scrum745, 753, 757, 765, 812, 836, `_catalogo-obligatorio.mjs` y `censo-guards-gateados.mjs`, que leen `censoConPoblacion`/`censoDeDeclaraciones`.
+- `scrum836` (ancla única) tendría que leer también `scripts/guard-*.mjs`. Si no, la criba barata no llega a la declaración nueva y la ve sólo la PUERTA 1b.
+- **El job `meta-mutaciones` de CI no instala navegador**, igual que el de `guards-visuales`, que usa el Chrome del runner vía `_navegador.mjs`. **No sé si en ese job lo encuentra: no lo he medido.** Si no lo encuentra, la base sale 3 y la declaración queda CIEGA, que es lo honrado, pero el job se pondría en rojo por ella.
+- Coste: una pasada de `guard-ficha-de-factura` tarda **13 s** en local, así que base + 1 mutación son unos 26 s por declaración, dentro de los 30 min de la parte.
+
+## Rojo primero, sobre el guard real (fuera del driver)
+
+`node docs/master/evidencias/SCRUM-1789/navegador-en-el-catalogo.mjs` → salida 0, en 53 s:
+
+| caso | salida del guard | veredicto | esperado |
+|---|---|---|---|
+| hoy: `correr()` con un sembrado que sale 1 y otro que sale 2 | 1 · 2 | un caído con el nombre del fichero en los dos: indistinguibles | indistinguibles |
+| base sin mutar | 0 | — | 0 |
+| declarada: `.j1-prog { display:flex;` → `display:none;` | 1 | **VIVO** («pending · movil → la línea de progreso no se ve: mide 0 (0×0)») | VIVO |
+| inocua: un espacio más en la misma regla | 0 | **MUDO** | MUDO |
+| sembrado que sale 2 | 2 | **CIEGO** | CIEGO |
+
+Control negativo del guion: con una copia, fuera del árbol, que espera VIVO en el caso inocuo, sale **1** y marca ese caso con ✖. Después de cada pasada `git status` sólo enseña el guion nuevo: `public/` vuelve a quedar igual byte a byte, y el guion lo comprueba.
+
+## Sin medir
+
+- El cambio en el driver **no está hecho**: es de S3. Lo que está probado es el juicio, fuera del driver y con `cayo()` del propio driver. La vigilancia de SCRUM-754, la marca de SCRUM-808 y el reparto por partes **no se han ejercitado** con un guard de navegador.
+- `guard-ficha-de-factura.mjs` **no declara** su mutación. Declararla hoy no sirve de nada (el censo no la lee). Además, se toca el guard, y el encargo lo pedía sólo si el driver era de este carril.
+- No sé si el job de CI del meta-guard encuentra Chrome.
+- La suite entera no se ha corrido. En este tramo no cambia ningún fichero de `src/`, `public/`, `scripts/` ni `tests/`: sólo `docs/`.
