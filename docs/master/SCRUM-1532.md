@@ -233,3 +233,49 @@ cupo en contexto. La suite entera no se corrió en local: la corre el obligatori
 **Lo que me salió mal:** declaré la mutación del `where` con un `cae` que no era subcadena del nombre
 del test y `aplicarUna` la dio CIEGA; corregido y repetido (las dos tumban). Y crucé el tope de
 contexto del encargo (190k) sin dejar la vista traspasada a tiempo: me medí a 188.918.
+
+# SCRUM-1532d · Cancelar un cobro: el botón en la ficha de factura y el reenvío con cobro cancelado
+
+**Medido contra:** `origin/main` = `27656eae71e62369a5e87f27ae40e82e5764211d` · 2026-11-23T21:36:19Z
+
+A9: comprobación → `tests/scrum1532d-cancelar-cobro-ficha-y-reenvio.test.mjs`
+**Skill UI:** cargada
+
+23-nov-2026 · sesión `jv-j1ik` (J1). GO, decisiones y literales: SCRUM-1532 `c.22430`; reparto: `c.22435`;
+la ruta de J2: `c.22441` (rama `scrum-1532b-cancelar-cobro`, fusionada en esta). [Escrito por la sesión, no por Javier.]
+
+**Qué entra.**
+- Ficha de factura (`invoiceDetailView.js`): `Cancelar cobro` en el «⋯», SOLO con la factura `pending` y su
+  cobro `pending`; pide `¿Cancelar este cobro? El cliente ya no podrá pagarlo con este enlace.` y llama a
+  `POST /admin/charges/:id/cancel`. Tras cancelar, la ficha se repinta y el botón ya no está. Registro de
+  acciones: `btnCancelarCobro` (overflow en `pending`, oculta en el resto).
+- `GET /admin/invoices/:id` lleva `estadoDelCobro` (solo lectura, `findFirst` con `merchantId`, regla 2).
+- Reenvío (`invoiceWhatsApp.service.ts`): si el cobro de la factura está `cancelled`, crea OTRO y la factura
+  apunta al nuevo (decisión 2). Con `pending`, `paid`, `expired` o `failed`, como hoy (reutiliza). La escritura
+  `invoice.update({ chargeId })` es la que ya existía para una factura sin cobro: no se añade ninguna.
+- `scrum283-censo-acciones-factura` (9 → 10) y `scrum283-microcopy-marcador` (rótulo aprobado): una acción
+  nueva es una decisión, y está firmada en `c.22430`. Se cambia el VALOR esperado; los nombres de los tests no.
+
+**Textos.** Solo los firmados. Los errores reutilizan dos que la ficha ya pinta: `Este cobro ya no está
+pendiente.` (409) y `Error actualizando estado: inténtalo de nuevo` (el resto).
+
+| aceptación (c.22430 / encargo) | dónde se ve |
+| --- | --- |
+| botón `Cancelar cobro` SOLO con el cobro `pending` | `tests/scrum1532d-cancelar-cobro-ficha-y-reenvio.test.mjs` ① · capturas `evidencias/scrum1532/1532d-menu-con-cancelar-{escritorio,movil}.png` |
+| confirmación literal y llamada a la ruta | mismo test ① · guion `evidencias/scrum1532/capturas-1532d.js` (exige el diálogo literal y el POST) |
+| tras cancelar, la ficha refleja el estado | el botón desaparece: `1532d-menu-tras-cancelar-{escritorio,movil}.png`. **Sin texto nuevo:** la ficha no pinta nada propio para un cobro no vivo (tampoco hoy para `expired`/`failed`); el bloque «Cobro» sigue con su importe. NO HECHO → pregunta al fundador |
+| decisión 2: «puede crear otro cobro» (reenvío) | mismo test ② |
+| con cobro `pending` el reenvío reutiliza, como hoy | mismo test ② control |
+
+**Medido:** test nuevo 8/8 (visto ROJO antes: 5 de 8; los 3 verdes eran los controles de «como hoy») ·
+dirigida corta 115 casos (1532d, 1532b, 1787b, 1787p, 1514, 1304, 283×3, 1773, 878, 1185): 113/115 con los
+dos de 283 en rojo, arreglados arriba; repetidos con 402 y 412: 43/43, 0 saltados · `tsc -p .` con tipos,
+salida 0 · capturas a 1280 y 390, miradas.
+**No medido:** las mutaciones (declaradas en `MUTACIONES_QUE_ME_TUMBAN`, NO corridas con `aplicarUna`: no
+cupo en contexto; las juzga el meta-guard de CI) · la dirigida larga del encargo (836, 700, 710b, 719,
+1157/1215/1415, 810, 1294, 267, 273, 525d, 854) salvo lo que corra `guards:entrada` · la suite entera (la
+corre el obligatorio) · yaqu.app.
+
+**Lo que me salió mal:** crucé 190k (el tope del encargo) y 200k antes de cerrar: avisé a 202.740.
+Mi primer banco de la vista no veía el «⋯» (sus acciones se pintan al abrirlo) y daba «no se pinta» en
+verde por vacío; lo cazó el caso positivo, y el test ahora abre el menú y exige ver «Ver la reclamación del banco».
