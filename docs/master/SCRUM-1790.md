@@ -38,6 +38,8 @@ Lo que cambia en escritorio: el aviso se ve desde el primer cuadro (antes, a par
 
 ## Lo que no se ha medido
 
+- **Suite entera, NO corrida en local**: por orden del orquestador J (contexto de la sesión a 187k, sobre un tope de 180k), la corre el check obligatorio del PR. En local: 14 ficheros dirigidos (1781b/c, 1773, 836, 700, 710b, 719, 1294, 267, 273, 525d, 854, 894, 811c) 159/159 y `npm run guards:entrada` 170/170.
+
 - En yaqu.app, no (sin desplegar al escribir esto).
 - Con `prefers-reduced-motion` el CSS pone `scroll-behavior: auto` y el defecto no debería darse; no lo he medido.
 - El globo nativo «Rellene este campo.» tapa parte del aviso al enfocarse el campo (se ve en la captura «después»). Ya pasaba antes; no es de este ticket y no lo toco.
