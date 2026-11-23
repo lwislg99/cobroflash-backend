@@ -78,3 +78,82 @@ SCRUM-244). El ③ no se cierra sin:
 ## Qué desbloquea
 
 SCRUM-1019 (espera a 914). El ③ de 914 y las pantallas de S4 esperan al ALTER aplicado.
+
+## SCRUM-914d · J3 · el ③: `model Equipment` en el esquema, y los equipos en el borrado y el anonimizado
+
+**Medido contra:** `origin/main` = `97e196f930334971538b5c0ba13e0224cbe7d184` · 2026-11-23T21:16:58Z
+
+**Escribe:** J3 (`jv-j3cr`) · **Rama:** `scrum-914d-equipos-en-borrado-y-anonimizado` · **Carril:** J3
+(`borradoMerchant.ts`, `anonimizarMerchant.ts`); sin cerradura: `prisma/schema.prisma` (sólo el modelo y
+sus relaciones, regla 40, con el ALTER aplicado: c.22434), `tests/_censo-datos-personales.mjs`,
+`tests/_merchant-fixture.mjs`, `docs/MIGRATIONS_PENDING.md`; fila general de `scripts/`:
+`scripts/backup-dump.mjs` (una línea, `'equipments'`: sin ella cae `tests/scrum241-backup-tablas.test.mjs`,
+medido quitándola).
+
+A9: comprobación → `tests/scrum914-equipos-borrado-y-anonimizado.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum914-equipos-borrado-y-anonimizado.test.mjs`
+
+### De dónde sale
+
+Retomado POR CONTENIDO de `origin/scrum-914c-esquema-de-equipos` (#3014) y
+`origin/scrum-914-j3-borrado-y-anonimizado-equipos` (#2621, contenido dentro de la otra), los dos DIRTY y
+sin reabrir: aplicado con `git apply --3way` fichero a fichero. Dos conflictos, los dos por
+`fiscalPlazoEstado` (entró en `main` después): se conserva y se añade `equipment` detrás. Lo que NO se trae:
+`fusionClientes.ts` y `albaranDuplicado.ts` (S1, abajo) y el tramo de registro viejo (es de esas ramas).
+`docs/sql/deriva-prod.sql` NO se trae: se REGENERA con `node scripts/generar-sql-deriva.mjs` sobre este
+esquema (548 → 565 columnas, 35 → 36 tablas; las 17 líneas añadidas son todas de equipos), y scrum222, 461 y
+733 en verde (68 = 66 pass + 2 skip, junto a 1294, 267 y 854). En `docs/legal/AUDITORIA_CAMINO_EMISION.md`
+(líneas 36 y 40) se ponen al día EN SITIO las dos coordenadas del esquema que el modelo desplaza (970-971 →
+972-973, 1908 → 1957), sin cambiar la afirmación; scrum525d, 8 de 8.
+
+⚠️ **Error mío, cazado antes de empujar:** la primera versión de este tramo decía que la auditoría y
+`deriva-prod.sql` no hacían falta porque «sus guards no cayeron en la tanda dirigida»; no estaban EN esa
+tanda. Lo cazó scrum525d al correr los guards del registro, y por el mismo motivo regeneré la deriva
+(#3014 ya había caído en 222/461/733). Lo que no corrí no puede haber quedado en verde.
+
+### Lo que cambia
+
+- `prisma/schema.prisma`: `model Equipment` (`@@map("equipments")`) y `equipmentId Int? @map("equipment_id")`
+  + `@@index([equipmentId])` en `Job`, `MaintenancePlan`, `Albaran` y `ParteTrabajo`; relaciones inversas en
+  `Merchant` y `Customer`. Offline (`preview-migracion.mjs --desde` el esquema de `origin/main`) da EXACTAMENTE
+  el DDL de `docs/sql/scrum-914-equipos-del-cliente.sql`, veredicto «aditiva». Contra dev: 0 sentencias de
+  equipos (12 `DROP` de otros tickets que dev ya tiene; `docs/MIGRATIONS_PENDING.md`).
+- `borradoMerchant.ts`: `'equipment', 'customerSite'` justo antes de `'customer'` (le apuntan los cuatro
+  documentos sin FK; él apunta al sitio sin FK y al cliente con RESTRICT).
+- `anonimizarMerchant.ts`: `equipment: ['name', 'serialNumber']`. `type` y `brand` → `NO_PERSONALES` del censo
+  con motivo; `modelName` → `FUERA_DE_ANONIMIZADO` de scrum497 con motivo (la clasificación del tramo J3 de
+  #2621: catálogo). `serialNumber` entra en `VOCABULARIO_PERSONAL`.
+- Tests: `scrum914` nuevo (2 sin base + 2 contra Postgres desechable, saltados en local), y 244, 440
+  (fakes con `equipment.updateMany`), 419 (gateados del 914: 2), 411 (13 → 14 llamadas a `borrarMerchant` y el
+  4.º fichero: **decisión del orquestador, SCRUM-914 c.22443**), fixture (`equipment` antes de `customer`).
+
+### Rojo primero, y verde con recuento
+
+- **Rojo** (código sin tocar, esquema ya con el modelo; 5 ficheros): 57 = 46 pass + 8 fail + 3 skip. Los 8:
+  scrum172 ×2 (fixture), scrum192 (orden), scrum497 + 1547 ×2 (columnas sin clasificar), scrum914 ×2.
+- **Verde** (después; 26 ficheros: 914, 244 ×6, 411, 419, 440, 497, 192, 1291, 302-duplicar, 1157, 1215 ×10,
+  1415, 810, 810b, 854, 1307): 234 = 227 pass + 4 fail + 3 skip. Los 4 rojos: `scrum1291` ① y ③ y
+  `scrum302` (S1, abajo) y `scrum854` ② (pedía este tramo). Los 3 saltos: `LIBRO_PG_URL` (no hay Postgres
+  desechable en esta máquina: 0 escuchas en 5432) → **los dos casos contra Postgres de scrum914 NO los he
+  corrido**; los juzga el CI.
+- `tsc -p .` CON tipos, con el cliente regenerado en el `node_modules` propio del árbol: salida 0.
+- Mutaciones (`aplicarUna` de la casa, guion `docs/master/evidencias/SCRUM-914d/mutar-914d.mjs.txt`): «el
+  borrado se salta los equipos» y «el anonimizado se salta los equipos» → las dos VIVAS, 0 colaterales; el
+  ancla vuelve a estar después.
+- **La suite entera NO se ha corrido en local**: la corre el obligatorio.
+
+### 🔴 EL PR NACE ROJO, A PROPÓSITO (c.22443): dos ficheros de S1, medidos y sin tocar (`aviso-a-luis`)
+
+| rojo | causa | qué haría falta (S1) |
+|---|---|---|
+| `tests/scrum1291-fusion-mueve-direcciones-de-obra.test.mjs` ① y ③ (`{"error":"internal_error"}`) | deriva del esquema todo modelo con `customerId`; `equipments.customer_id` tiene FK RESTRICT y `fusionarClientes` no mueve los equipos → el `DELETE` del fusionado falla, 500. **Defecto real y latente**: nada da de alta equipos todavía | `src/modules/system/domain/fusionClientes.ts:191`, detrás del `customerSite.updateMany`: `await tx.equipment.updateMany({ where: { merchantId, customerId: fusionadoId }, data: { customerId: principalId } });` (lo escribió S1 en #3014, `d5d29ee22`) |
+| `tests/scrum302-duplicar.test.mjs:59` (`equipmentId` sin cubo) | `Albaran.equipmentId` sin clasificar en `CAMPOS_QUE_VIAJAN` / no viaja | `src/modules/jobs/domain/albaranDuplicado.ts:54`, en `CAMPOS_QUE_VIAJAN`: `equipmentId` con su motivo (S1 lo puso en «viaja» en #3014, con un testigo en scrum302) |
+
+### Aceptación del ③ (registro, arriba): qué cubre esta rama
+
+Esta rama cubre el **3** («`equipment` entra en `borradoMerchant.ts` y en `anonimizarMerchant.ts`, con su
+test»). Los **1, 2, 4 y 5** son del día en que haya rutas que creen, asignen o borren equipos y sitios: hoy no
+existe ninguna (0 `equipment` en `src/` fuera de estos dos ficheros). El **6** se cumple sin tocar nada: ni
+el canónico del albarán ni el del parte leen `equipmentId` (lo dice el comentario del esquema; el test de
+sellado no se ha tocado).

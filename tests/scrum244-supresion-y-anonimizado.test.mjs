@@ -227,6 +227,8 @@ test('SCRUM-244 · con el nombre escrito: ANOTA primero y redacta despues, en es
     'customerSite.updateMany': async () => ({ count: 2 }),
     // SCRUM-529: y el número al que se mandó cada WhatsApp (la fila se conserva).
     'whatsAppMessage.updateMany': async () => ({ count: 4 }),
+    // SCRUM-914: y el nombre y el número de serie de cada equipo del cliente (la fila se conserva).
+    'equipment.updateMany': async () => ({ count: 6 }),
   });
   try {
     const res = resFalso();
@@ -243,6 +245,7 @@ test('SCRUM-244 · con el nombre escrito: ANOTA primero y redacta despues, en es
       { modelo: 'merchant', filas: 1 }, { modelo: 'customer', filas: 3 }, { modelo: 'emailMessage', filas: 5 },
       { modelo: 'customerSite', filas: 2 },
       { modelo: 'whatsAppMessage', filas: 4 },
+      { modelo: 'equipment', filas: 6 },
     ]);
   } finally { restaurar(); delete process.env.MERCHANT_DELETE_ENABLED; }
 });
