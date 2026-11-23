@@ -769,9 +769,15 @@ A9: comprobación → `tests/scrum1787k-suelta-con-descripcion-y-descuento.test.
 
 El merge chocó con 1787k en `validarFacturaSuelta` y se juntaron las dos: las líneas salen por `lineasParaFacturar` (1787k) y el resultado lleva `dueDate` y `payMethods` (1787i); quitar una mitad en `dist/` tumba este test o `tests/scrum1787i-vencimiento-y-formas-de-pago.test.mjs` (sin 1787i: 4 caen; sin 1787k: 3 caen; base 16/16), mutación hecha una vez y sin guion en git, así que no cuenta como evidencia repetible.
 
+## Segundo merge con main (relevo jv-j1ht, 2026-11-23T03:58:22Z, sobre `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740`)
+
+A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
+
+Tres conflictos con 1787l (#3308), los tres derivados. `prisma/schema.prisma`: en `model Invoice` se quedan las tres columnas (`dueDate`, `payMethods` de 1787i y `docFooterText` de 1787l), sin elegir lado. `docs/sql/deriva-prod.sql`: regenerado con `scripts/generar-sql-deriva.mjs` sobre el esquema unido (548 columnas). `docs/legal/AUDITORIA_CAMINO_EMISION.md`: anclas recolocadas en sitio (eslabón 4 → `schema.prisma:970-971`, eslabón 8 → `:1908`). Con la ancla vieja del eslabón 4 (963-964), 525d cae 1 de 8; con la nueva, 8 de 8; mutación hecha una vez y sin guion en git. Ninguna aserción cambia.
+
 # SCRUM-1787m · El PDF de factura imprime «Vence el» y «Formas de pago» con lo congelado en la factura
 
-**Medido contra:** `origin/main` = `90e8e3774f86ff6ef393e7f25f0c6bdedb95765e` · 2026-11-23T03:51:55Z
+**Medido contra:** `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740` · 2026-11-23T04:01:47Z
 
 A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
 
@@ -808,8 +814,7 @@ Decisión del fundador: SCRUM-1787 c.22338 ③ («3-GO», regla 40: el PDF de fa
 - Los 2 saltos de la dirigida, gateados por base de datos.
 - Captura en PNG: el navegador de la sesión bloquea `file:`. Queda el PDF fabricado.
 - Los tres llamadores con una factura real: se leyó el fuente (caso ⑧), no se emitió ni se regeneró ninguna. Navegador, yaqu.app, staging y producción.
-## Segundo merge con main (relevo jv-j1ht, 2026-11-23T03:58:22Z, sobre `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740`)
 
-A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
+**Merge con la rama de 1787i ya al día (`cf9f6e1c9`, con main `d5bec9526` y 1787l dentro)**
 
-Tres conflictos con 1787l (#3308), los tres derivados. `prisma/schema.prisma`: en `model Invoice` se quedan las tres columnas (`dueDate`, `payMethods` de 1787i y `docFooterText` de 1787l), sin elegir lado. `docs/sql/deriva-prod.sql`: regenerado con `scripts/generar-sql-deriva.mjs` sobre el esquema unido (548 columnas). `docs/legal/AUDITORIA_CAMINO_EMISION.md`: anclas recolocadas en sitio (eslabón 4 → `schema.prisma:970-971`, eslabón 8 → `:1908`). Con la ancla vieja del eslabón 4 (963-964), 525d cae 1 de 8; con la nueva, 8 de 8; mutación hecha una vez y sin guion en git. Ninguna aserción cambia.
+Cuatro conflictos, los cuatro con 1787l (#3308, Observaciones) y resueltos con los dos lados: el tipo de `generateInvoicePdf` lleva `docFooterText` y, detrás, `dueDate` y `payMethods`; los dos llamadores en conflicto pasan los tres campos; y el catálogo de cambios autorizados lleva la entrada de 1787l y, detrás, la de 1787m. Las huellas de la entrada de 1787m se volvieron a sacar con `huellas.mjs` después del merge: su `de` es ahora el `a` de 1787l. Las cifras de «Medido» de arriba (147 casos, la huella de 15 líneas) son de antes del merge, contra `90e8e377`; lo que se repitió después está en el comentario de entrega de Jira. El párrafo «Segundo merge con main» de 1787i, que git dejó detrás de este tramo, se devolvió a su sitio sin cambiarle una letra.

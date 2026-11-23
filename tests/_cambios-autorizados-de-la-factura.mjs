@@ -266,17 +266,17 @@ export const CAMBIOS_AUTORIZADOS = [
     // vencimiento y las formas de pago CONGELADOS en la factura (`dueDate` y `payMethods`, de
     // SCRUM-1787i), sólo si constan: una factura sin ellos sale igual. GO de regla 40 en c.22338 ③.
     // Huellas de `evidencias/SCRUM-1446d/huellas.mjs` sobre origin/main
-    // 90e8e3774f86ff6ef393e7f25f0c6bdedb95765e (el `de` es el `a` de 1787d).
+    // d5bec9526fe9165e38598f6eb054d0717e788740 (el `de` es el `a` de 1787l).
     firma: 'SCRUM-1787 c.22338',
     registro: 'docs/master/SCRUM-1787.md',
     cita: '«1-Sí 2-Sí 3-GO»',
     cuerpo: {
-      de: '60177ce0b87bb2564937abcb0dd56959186d36056e8714302a0629516558942b',
-      a: 'e95dc27a938fa8d7a3d21c13bbcfc2cfbcdd980be01812b93f2a0d481268899e',
+      de: '1a4bd416a2c0231ed8b7fa4b64c6f21f6c1bf91a3c73ca4075af714d1cc3656e',
+      a: 'a83c6654bb5840ddd838a5d571c21c3f08f5f9dca2033f2876368c35c9f34d7a',
     },
     ambito: {
-      de: '837928ef82df7eadff7e17edb8887e39b358d0c8da6a3d847547632ae9f1d030',
-      a: '44519788313b7f27038a5a7cc6cb1559a077148f10f7869dbee9468bfdd0a137',
+      de: '9eecc6a9d13680f109b6f384d03b42a0f98bfc98c5b296a47a73e494e5517432',
+      a: '0fbb6f5bf50aa18f400151930edf508f199df754f619062d4eee6fee94fdf739',
     },
   },
 ];
