@@ -781,6 +781,26 @@ A9: comprobación → `tests/scrum700-filtros-de-comentario.test.mjs`
 
 El test ⑦ de 1787i limpiaba la ruta con un filtro propio (`.replace(/\/\/.*/, '')`) en vez del de la casa, y el censo de SCRUM-700 lo contó como el octavo filtro que ciega (run 45113237157, censo 7). Ahora usa `soloEjecutable` de `tests/_guard-texto.mjs` (`almohadillaEsComentario: false`, es TypeScript). El censo (7) no se toca (SCRUM-1787 c.22377). Verde: `scrum700` + `scrum1787i`, 16 de 16 en 2 ficheros. El fallo es del puesto: el filtro de la casa existía y el guard que lo exige también; lo cazó el guard en CI, que es su sitio.
 
+# SCRUM-1787p · El cobro del envío por WhatsApp de la factura hereda sus formas de pago congeladas
+
+**Medido contra:** `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740` · 2026-11-23T03:59:03Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: comprobación → `tests/scrum1787p-cobro-hereda-formas-de-pago.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1787p-cobro-hereda-formas-de-pago.test.mjs`
+
+**GO:** SCRUM-1787 c.22362 («1-GO», flujo de cobro). Sesión jv-j1hs (J1). Rama `scrum-1787p-cobro-hereda-formas-de-pago`, nacida de 1787i (#3311, `a9b26ff4`) y con `origin/main` mergeado.
+
+**Medición.** ① El cobro lo crea `sendInvoicePaymentRequest` (`src/modules/billing/domain/invoiceWhatsApp.service.ts`, J1) con un POST interno a `/charges`; antes solo le pasaba las formas del PRESUPUESTO de origen, así que una factura suelta (sin presupuesto) creaba un cobro sin selector y el cliente veía todas. ② Otros caminos: en `src/` hay dos `prisma.charge.create`, el de `/charges` (su único llamador por `fetch` es este servicio) y la liberación de la garantía de obra (`chargesAdmin.routes.ts`, nace PAGADO: no es un enlace de pago). Los tres que envían la factura (reenvío `invoicesAdmin.routes.ts`, aceptación pública `quotes.routes.ts`, `collect-rest` de `jobs.routes.ts`) llaman a este mismo servicio, y si la factura ya tiene cobro lo reutilizan. Correo y portal no crean cobro. ③ `charge.payMethods` y `quote.payMethods` aceptan el mismo conjunto (`card`, `bizum`, `transfer`), pero escrito DOS veces en `src/core/validation/schemas.ts` (S1): el cambio no añade una tercera, valida con `CreateQuoteSchema.shape.payMethods`, y el caso ⑦ del test cae si las dos listas divergen.
+
+**Cambio.** Si `invoice.payMethods` pasa esa validación y no está vacío, el cobro nace con esas formas; si no, exactamente lo de antes (las del presupuesto o ninguna). Una forma fuera del conjunto no bloquea el envío: sale como antes. Sin texto nuevo, sin esquema, la página de pago (J2) no cambia.
+
+**Merge con main.** Conflicto en `prisma/schema.prisma` con 1787l: se quedan las tres columnas de la factura (`dueDate`, `payMethods`, `docFooterText`); `prisma generate` en `node_modules` propio + guard ✔; `docs/sql/deriva-prod.sql` regenerado (548 columnas); anclas de `docs/legal/AUDITORIA_CAMINO_EMISION.md` recolocadas en sitio (970-971 y 1908).
+
+**Error mío.** La segunda mutación salió MUDA con `aplicarUna`: había puesto la prioridad «la factura manda» en dos sitios (no leer el presupuesto si la factura tiene formas, y el orden del spread), y quitar uno no cambiaba nada. Lo dejé en un solo punto (`formasDelCobro`) y las dos mutaciones caen.
+
+**NO medido:** la suite entera en local (la corre el obligatorio, por orden del orquestador) · navegador, yaqu.app, staging y producción · ningún envío real (Meta en `WHATSAPP_DRY_RUN`).
+
 **Y un fallo mío encima (jv-j1hu):** empujé ese arreglo (`ad1a14ce0`) sin correr `tests/scrum719-el-suelo-de-los-doce.test.mjs`, y lo tumbaba dos veces: la llamada nueva a `soloEjecutable` no tenía suelo (SCRUM-1395 ②) y el test no tenía ficha en `tests/_veredicto-mudez.json` (SCRUM-1395b ①). Lo cacé en la rama de 1787m, antes de que lo dijera CI. Ahora es `ejecutableDe` con ancla `origen: 'C7-suelta'`, y la ficha sale de `npm run censo:mudez -- --escribir` (1 medido, VIVO). Coste: un segundo empujón a 1787i y a 1787p. El guard existía y el aviso también (cambiar un test que filtra = correr 719); falló correrlo, y eso ningún test lo puede obligar.
 
 # SCRUM-1787m · El PDF de factura imprime «Vence el» y «Formas de pago» con lo congelado en la factura
