@@ -217,7 +217,7 @@ test('SCRUM-593c · 🔴 la FACTURA solo recibe el pie CONGELADO en ella, nunca 
       vistas += 1;
     }
   }
-  assert.equal(vistas, 3, `🔴 CIEGO: he juzgado ${vistas} llamadas a generateInvoicePdf y son 3.`);
+  assert.equal(vistas, 1, `🔴 CIEGO: he juzgado ${vistas} llamadas a generateInvoicePdf y es 1.`); // 23-nov-2026, SCRUM-665e: de 3 a 1, el total de la tabla de arriba (SCRUM-665 c.22382, con c.21182 y c.22358)
   assert.deepEqual(malas, [],
     '🔴 la emisión recibe un texto que NO es el congelado en la factura. Solo vale '
     + '`inv.docFooterText` / `invoice.docFooterText` (la columna sellada al emitir, c.22353): el '
