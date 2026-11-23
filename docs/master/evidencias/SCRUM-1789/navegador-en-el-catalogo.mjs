@@ -20,7 +20,6 @@
 // Salidas: 0 los cuatro veredictos son los esperados · 1 alguno no · 2 la base no sale 0 o un ancla
 // no está · 3 no se pudo restaurar un fichero (hay que mirar el árbol a mano).
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
@@ -48,7 +47,9 @@ const correrNavegador = (guard) => resultadoDeNavegador(
   spawnSync(process.execPath, [path.join(RAIZ, guard)], { cwd: RAIZ, encoding: 'utf8', timeout: 300_000 }));
 
 // ── ① LO DE HOY ────────────────────────────────────────────────────────────────────────────────────
-const dirSembrado = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1789c-'));
+// El helper de la casa lo borra al salir el proceso, salga como salga (scrum864c).
+const { temporal } = await import(pathToFileURL(path.join(RAIZ, 'tests', '_temporal.mjs')).href);
+const dirSembrado = temporal('scrum1789c-');
 const sembrado = (n, cod, txt) => {
   const f = path.join(dirSembrado, `guard-${n}.mjs`);
   fs.writeFileSync(f, `console.error(${JSON.stringify(txt)}); process.exit(${cod});\n`);
@@ -102,7 +103,6 @@ const jCiego = juicioDeNavegador(resultadoDeNavegador(spawnSync(process.execPath
 const bienCiego = jCiego.veredicto === 'CIEGO';
 if (!bienCiego) malos += 1;
 console.log(`   ${bienCiego ? '✔' : '✖'} sembrado que sale 2 → ${jCiego.veredicto} (esperado CIEGO) · ${jCiego.por}`);
-fs.rmSync(dirSembrado, { recursive: true, force: true });
 if (!igualesHoy) malos += 1;
 console.log(`${CASOS.length + 2} comprobaciones · ${malos} distintas de lo esperado`);
 process.exit(malos ? 1 : 0);

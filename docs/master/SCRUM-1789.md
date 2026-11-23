@@ -160,4 +160,11 @@ Control negativo del guion: con una copia, fuera del árbol, que espera VIVO en 
 - El cambio en el driver **no está hecho**: es de S3. Lo que está probado es el juicio, fuera del driver y con `cayo()` del propio driver. La vigilancia de SCRUM-754, la marca de SCRUM-808 y el reparto por partes **no se han ejercitado** con un guard de navegador.
 - `guard-ficha-de-factura.mjs` **no declara** su mutación. Declararla hoy no sirve de nada (el censo no la lee). Además, se toca el guard, y el encargo lo pedía sólo si el driver era de este carril.
 - No sé si el job de CI del meta-guard encuentra Chrome.
-- La suite entera no se ha corrido. En este tramo no cambia ningún fichero de `src/`, `public/`, `scripts/` ni `tests/`: sólo `docs/`.
+- En este tramo no cambia ningún fichero de `src/`, `public/`, `scripts/` ni `tests/`: sólo `docs/`.
+
+## Suite entera en local (15 tramos, `tanda-entera-por-tramos.mjs`, uno por comando)
+
+13 de 15 en verde. Los dos rojos:
+
+- **Tramo 14, `scrum864c` ③. Era MÍO:** la primera versión del guion creaba su temporal con `mkdtempSync` y lo borraba al final, así que una excepción se saltaba el borrado. Ahora usa `temporal()` de `tests/_temporal.mjs`. Después del arreglo, `scrum864c` + `scrum1294` salen en verde y el guion vuelve a dar 0. Lo cazó el guard, que es la comprobación (A9).
+- **Tramo 3, `scrum1289b` (2 casos): ajeno.** Su tanda de juguete muere con `EPERM … open 'C:\Users\Javier'`: la ruta de esta máquina, que tiene un espacio, se parte. No toca nada de `docs/`. Esto está leído del error: no lo he corrido sobre `main` para compararlo.
