@@ -14,8 +14,9 @@
 // ③ el mes más largo (septiembre, día 30) cabe en UNA línea, alineada a la derecha y sin pisar la
 //    columna del logo (x > M + 120, el ancho máximo del logo de la cabecera)
 // ④ control: sin `dueDate`, no hay línea `Vence el`
-// ⑤ la cadena es la de la página de pago: mismas opciones (`es-ES`, día 2 cifras, mes largo, año),
-//    leídas del fuente de J2 y aplicadas al mismo instante
+// ⑤ la cadena es la de la página de pago: mismas opciones (`es-ES`, zona, mes largo, año), leídas del
+//    fuente de J2; el día, por superficie (c.22436): el del PDF en ⑥
+// ⑥ SCRUM-1787x (c.22431): un día de una cifra sale sin cero («Vence el 5 de diciembre de 2026»)
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -118,14 +119,20 @@ test('SCRUM-1787x ⑥ un día de una cifra sale sin cero a la izquierda', async 
   assert.equal(laLinea(lineas, 'Vence el').texto.trim(), 'Vence el 5 de diciembre de 2026', '🔴 el día del vencimiento sale con cero a la izquierda');
 });
 
+// ⑤ partido por SCRUM-1787 c.22436 (orquestador J): el DÍA cambia en dos carriles (PDF J1 → 1787x; página de
+// pago J2 → 1787y) que no pueden entrar en el mismo PR. ⑤ sigue exigiendo a las DOS superficies la misma zona,
+// el mismo mes y el mismo año; el día se comprueba por superficie: el PDF en ⑥ («Vence el 5 de diciembre de
+// 2026»), la página en el test de 1787y. Cuando 1787y esté en main, 1787z vuelve a fijar `day: 'numeric'` aquí.
 test('SCRUM-1787t ⑤ las opciones son las de la página de pago (SCRUM-1787q)', () => {
   const OPCIONES = "toLocaleDateString('es-ES', { timeZone: zonaDelMerchant(";
-  const RESTO = "day: '2-digit', month: 'long', year: 'numeric' })";
+  const RESTO = "month: 'long', year: 'numeric' })";
   const pago = fs.readFileSync(path.join(RAIZ, 'src/modules/billing/app/routes/payInvoice.routes.ts'), 'utf8');
   const pdf = fs.readFileSync(path.join(RAIZ, 'src/modules/invoicing/infra/pdf/pdf.service.ts'), 'utf8');
   for (const [nombre, src] of [['payInvoice.routes.ts', pago], ['pdf.service.ts', pdf]]) {
     const i = src.indexOf(OPCIONES);
     assert.ok(i >= 0, `🔴 ${nombre} ya no formatea con «${OPCIONES}»: las dos superficies pueden divergir`);
-    assert.ok(src.slice(i, i + 200).includes(RESTO), `🔴 ${nombre}: las opciones de la fecha larga no son «${RESTO}»`);
+    const trozo = src.slice(i, i + 200);
+    assert.ok(trozo.includes(RESTO), `🔴 ${nombre}: las opciones de la fecha larga no son «${RESTO}»`);
+    assert.match(trozo, /\bday: '(?:numeric|2-digit)', month: 'long'/, `🔴 ${nombre}: la fecha larga ya no lleva el día delante del mes`);
   }
 });
