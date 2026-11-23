@@ -407,6 +407,10 @@ export async function generateInvoicePdf(params: {
   // (regla 29). Obligatorio a propósito, como `zona`: un llamador que no lo pase no compila.
   // NULL = sin mención, que es con lo que se selló.
   merchantCriterioCaja: boolean | null;
+  // SCRUM-1787l (c.22345 ②) · las Observaciones del presupuesto, CONGELADAS en la factura
+  // (`Invoice.docFooterText`). Obligatorio a propósito, como `zona`: un llamador que no lo pase no
+  // compila. NULL o vacío = no se pinta nada, y el documento sale como hasta hoy (SCRUM-665).
+  docFooterText: string | null;
   // SCRUM-1787m (GO de regla 40, c.22338 ③) · el vencimiento y las formas de pago CONGELADOS en la
   // factura (`Invoice.dueDate` e `Invoice.payMethods`, SCRUM-1787i), nunca los del comercio ni los
   // del presupuesto: este PDF se regenera, y una factura emitida no cambia (regla 29). Obligatorios
@@ -866,6 +870,19 @@ export async function generateInvoicePdf(params: {
     doc.fontSize(9).font('Helvetica').fillColor(BODY)
       .text(MENCION_CRITERIO_CAJA, M, doc.y, { width: W });
     doc.fillColor('#000').moveDown(0.8);
+  }
+
+  // ── 4ter. OBSERVACIONES (SCRUM-1787l · c.22345 ②) ───────────────────────────────────────────
+  // El mismo bloque, rótulo y forma que el PDF del presupuesto (SCRUM-593, `generateQuotePdf`):
+  // rótulo firmado `TITULO_OBSERVACIONES`, alineado a la izquierda y SOLO si hay texto. Las
+  // emitidas antes del ALTER tienen NULL: al regenerarlas salen igual que hoy. Nunca en
+  // justificantes, que no son factura.
+  if (!isReceipt && params.docFooterText && String(params.docFooterText).trim() !== '') {
+    doc.fontSize(10).font('Helvetica-Bold').fillColor('black')
+      .text(TITULO_OBSERVACIONES, M, doc.y, { width: W, align: 'left' });
+    doc.font('Helvetica')
+      .text(String(params.docFooterText), M, doc.y, { width: W, align: 'left' });
+    doc.fillColor('#000').moveDown(1);
   }
 
   // ── 5. VERIFACTU QR (nunca en justificantes — V0-0) ──────────────────────
