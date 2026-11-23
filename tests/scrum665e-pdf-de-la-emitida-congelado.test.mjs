@@ -11,6 +11,8 @@
 // El generador real se sustituye por uno que escribe bytes DISTINTOS en cada llamada, para que
 // una regeneración se vea en el recuento y en la huella. Lo que se prueba es `ensureInvoicePdf`
 // entera, desde `dist/`, con un Prisma falso que guarda el estado de la fila entre llamadas.
+// SCRUM-1779d · este banco AFIRMA el sellado: con SIF_ENABLED en OFF (el defecto) la emisión ya no sella (SCRUM-1779 c.22239), así que se enciende aquí y lo afirmado no cambia (puesto al juntar main en 665e, 23-nov-2026).
+process.env.SIF_ENABLED = 'true';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
