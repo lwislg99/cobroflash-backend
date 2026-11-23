@@ -36,24 +36,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     // cálculo (la misma regla). El oro sigue saliendo; lo que cae es ③.
     fichero: 'src/modules/billing/app/routes/payInvoice.routes.ts',
     de: "import { formasDePagoActivas, type FormaDePago } from './formasDePagoActivas'; // SCRUM-1787u",
-    a: [
-      "import type { FormaDePago } from './formasDePagoActivas';",
-      "import { isFlagEnabled } from '../../../../core/flags';",
-      "import { bizumAutoDisponible } from '../../domain/bizumCharge';",
-      "import { cardChargeMode } from '../../domain/cardCharge';",
-      "import { transferenciaDisponible } from '../../domain/transferenciaDisponible';",
-      'function formasDePagoActivas(o: any): FormaDePago[] {',
-      '  const m = o.merchant;',
-      '  const tel = m?.bizumPhone || m?.whatsappPhone || null;',
-      "  const bizum = isFlagEnabled('BIZUM_MANUAL_ENABLED', { merchant: m }) && !!tel && o.importe <= 1000;",
-      "  const auto = bizumAutoDisponible({ flagOn: isFlagEnabled('BIZUM_AUTO_ENABLED', { merchant: m }), useConnect: m?.connectStatus === 'active' && !!m?.stripeAccountId, currency: o.moneda, amountCents: Math.round(o.importe * 100) }) === 'ok';",
-      '  const p = (k: string) => !o.permitidas || o.permitidas.includes(k);',
-      "  const base: FormaDePago[] = o.importe <= 500 ? ['bizum', 'card', 'transfer'] : ['card', 'bizum', 'transfer'];",
-      "  return (auto ? base.flatMap((k) => (k === 'bizum' ? ['bizum', 'bizum_auto'] as FormaDePago[] : [k])) : base).filter((k) =>",
-      "    (k === 'card' && cardChargeMode(m) !== 'refuse' && p('card')) || (k === 'bizum' && bizum && p('bizum')) ||",
-      "    (k === 'bizum_auto' && p('bizum')) || (k === 'transfer' && transferenciaDisponible(m) && p('transfer')));",
-      '}',
-    ].join('\n'),
+    a: "import type { FormaDePago } from './formasDePagoActivas';\nimport { isFlagEnabled } from '../../../../core/flags';\nimport { bizumAutoDisponible } from '../../domain/bizumCharge';\nimport { cardChargeMode } from '../../domain/cardCharge';\nimport { transferenciaDisponible } from '../../domain/transferenciaDisponible';\nfunction formasDePagoActivas(o: any): FormaDePago[] {\n  const m = o.merchant;\n  const tel = m?.bizumPhone || m?.whatsappPhone || null;\n  const bizum = isFlagEnabled('BIZUM_MANUAL_ENABLED', { merchant: m }) && !!tel && o.importe <= 1000;\n  const auto = bizumAutoDisponible({ flagOn: isFlagEnabled('BIZUM_AUTO_ENABLED', { merchant: m }), useConnect: m?.connectStatus === 'active' && !!m?.stripeAccountId, currency: o.moneda, amountCents: Math.round(o.importe * 100) }) === 'ok';\n  const p = (k: string) => !o.permitidas || o.permitidas.includes(k);\n  const base: FormaDePago[] = o.importe <= 500 ? ['bizum', 'card', 'transfer'] : ['card', 'bizum', 'transfer'];\n  return (auto ? base.flatMap((k) => (k === 'bizum' ? ['bizum', 'bizum_auto'] as FormaDePago[] : [k])) : base).filter((k) =>\n    (k === 'card' && cardChargeMode(m) !== 'refuse' && p('card')) || (k === 'bizum' && bizum && p('bizum')) ||\n    (k === 'bizum_auto' && p('bizum')) || (k === 'transfer' && transferenciaDisponible(m) && p('transfer')));\n}",
     cae: 'SCRUM-1787u · ③ la página pinta lo que devuelve la función, en su orden (no decide en línea)',
   },
   {
@@ -203,7 +186,7 @@ async function pedir({ merchant, importe, moneda, payMethods }) {
 /** Las formas que la página PINTA, en su orden, leídas de los `<a class="method">`. */
 function formasPintadas(html) {
   const out = [];
-  const re = /<a class="method" href="([^"]+)">[\s\S]*?<span class="method-title">([^<]*)<\/span>/g;
+  const re = /<a[^>]*class="method"[^>]*href="([^"]+)"[^>]*>[\s\S]*?<span[^>]*class="method-title"[^>]*>([^<]*)<\/span>/g;
   for (const [, href, titulo] of html.matchAll(re)) {
     if (href.startsWith('/pay/bizum/')) out.push('bizum');
     else if (href.startsWith('/pay/bank/')) out.push('transfer');
