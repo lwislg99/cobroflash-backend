@@ -1154,3 +1154,86 @@ en c.21854) siguen cayendo en la cabecera y en la línea «34 (E6), completada»
   SCRUM-1316; no lo he tocado porque no estaba en el encargo y no he medido de qué ticket es.
 
 **Corrido:** scrum1294, scrum267, scrum273 y scrum525d, 32 de 32 en verde; `guards:entrada`, 170 de 170. **Suite entera no corrida: sólo documentos; la corre CI** (decisión del orquestador por mensaje, 18-nov, para que la suite entera vaya una vez en SCRUM-1500i, que toca `tests/`).
+
+# SCRUM-1316j · A 23-nov el BOE no ha cambiado nada; propuesta del aviso P1 para firma; lo que el fundador decide antes del 1-dic
+
+**Medido contra:** `origin/main` = `1acb5e4ea4f5f5b026b84a462a98bd7ae4ae3744` · 2026-11-23T20:35:29Z (cabecera `Date:` de GitHub)
+
+A9: sin fallo que generalice — en el primer mensaje al orquestador di mi contexto «~125k» estimado, y A19 ya dice que estimarlo no vale; medido después en mi jsonl era 145k (143.585 + 1.717 + 2). La regla existe; el fallo fue no aplicarla, y aquí va la cifra medida.
+
+Sesión J5 (IA, `jv-j5bp`), 23-nov-2026, por encargo del orquestador del equipo de Javier
+(`cobroflash-backend-2d`). Solo documentos. No se toca `src/`, `public/`, el esquema, el camino de emisión
+ni `docs/legal/`. **Nada de este tramo es respuesta de asesor.** El texto de ② es una PROPUESTA para que la
+firme el fundador (regla 39, y es un texto fiscal: STOP condition de CLAUDE.md); no está en ningún fichero de
+código.
+
+## ⓙ1 El BOE, re-medido hoy
+
+Instrumento: `docs/master/evidencias/scrum1316/remedida-boe-1316j.mjs` (API de datos abiertos,
+`Accept: application/xml`). Salida entera, con el sha256 y la cabecera `Date` de cada recurso:
+`docs/master/evidencias/scrum1316/remedida-boe-1316j.txt`. Población: 9 recursos, los 9 HTTP 200.
+
+| qué | sha256 hoy | comparado con 1316h (18-nov) |
+|---|---|---|
+| LIVA, metadatos (`BOE-A-1992-28740`) | `0b953b4214e62c19…` | **igual**; `fecha_actualizacion` = `20261007T092353Z` |
+| LIVA, bloque `a91` (1.051.987 B) | `03898893f793534b…` | mismo tamaño que el 18-nov (ese día no se guardó el hash); 44 versiones, la última `BOE-A-2026-20823@20261008`; la frase del medio de pago 2, «1 de diciembre de 2026» 7 |
+| RDL 29/2026, metadatos | `8b3a0679954a65ff…` | **igual**; `fecha_actualizacion` = `20261113T084620Z`, sin derogar, vigencia no agotada |
+| RDL 29/2026, análisis | `b74982788a78469f…` | **igual**: no hay posterior nueva después de la convalidación (`BOE-A-2026-23755`) |
+| Sumarios 19, 20, 21 y 23-nov | ver el `.txt` | «Real Decreto-ley 29/2026» 0, `BOE-A-2026-20823` 0 en los cuatro |
+
+- **Control de método** (el art. 91 viene en su versión nueva): la última versión del bloque es la del
+  29/2026, con la condición del medio de pago. Es la API consolidada, no `buscar/xml.php`.
+- **Control positivo del lector de sumarios**, sembrado por el propio instrumento: el sumario del 13-nov
+  trae `BOE-A-2026-23755` 4 veces y «Real Decreto-ley 29/2026» 1. **Negativo:** «zzqx» 0 en los 9.
+- **Corrección de errores del 29/2026: no consta.** Los sumarios traen correcciones de errores (2, 2, 0 y
+  5), y ninguna nombra el 29/2026; el análisis tampoco tiene posterior nueva.
+- **Tramitación como proyecto de ley: no consta en el BOE.** No se ha mirado la ficha del Congreso hoy.
+
+**Veredicto:** nada ha cambiado desde 1316h. **El 1-dic sigue**, con el texto de §Ⓛ/§Ⓩ.
+
+## ⓙ2 Propuesta del aviso P1 (para firma del fundador; NO es texto en código)
+
+P1 de c.20890, citado de §ⓗ (no lo he vuelto a leer en Jira): «Si la Diputación Permanente convalida el
+RDL 29/2026, se trae al fundador un texto de aviso para firmar…». Se convalidó el 12-nov.
+
+**Dónde saldría:** al elegir 10 % en el selector de la línea (`public/dashboard/js/tiposDeIva.js`, carril S2,
+del equipo de Luis), solo para comercios de España peninsular y Baleares. ⚠️ El propio fichero dice que el
+10 % entra también por el campo libre «IVA por defecto» del documento (`quotesView.js:385`), por el catálogo y
+por plantillas o IA. Eso lo he leído en el comentario del fichero; no lo he ejecutado. **Un aviso que solo
+esté en el selector no ve esas otras entradas.**
+
+**Literal A (corto, recomendado por la IA):**
+
+> Desde el 1 de diciembre de 2026, el IVA del 10 % en obras de vivienda solo se aplica si el cliente paga con tarjeta, transferencia bancaria, cheque nominativo o ingreso en cuenta. Si cobras en efectivo, consúltalo con tu asesor.
+
+**Literal B (con la norma):**
+
+> Desde el 1 de diciembre de 2026 (Real Decreto-ley 29/2026), el tipo del 10 % en renovación y reparación de viviendas exige cobrar con tarjeta, transferencia bancaria, cheque nominativo o ingreso en cuenta. YaQu no comprueba cómo te pagan.
+
+Qué NO dicen, y por qué: no dicen si **Bizum** cuenta (A2, sin respuesta), ni qué pasa con una **obra
+empezada o una señal cobrada antes del 1-dic** (A3), ni **cómo se acredita** (A4). Contestar cualquiera de esas
+tres en pantalla sería dar una conclusión de IA como si fuera del asesor. La enumeración de medios de pago es
+la del BOE, literal.
+
+## ⓙ3 Lo que el fundador tiene que decidir antes del 1-dic (recomendaciones de IA, no del asesor)
+
+1. **D1 · ¿Firmas el aviso: A, B o otro?** Fecha útil: con margen para que S2 lo monte antes del 1-dic.
+   *IA recomienda A.*
+2. **D2 · ¿Dónde sale el aviso: solo en el selector de la línea, o también en «IVA por defecto»?**
+   *IA recomienda los dos*: son las dos entradas en las que el profesional teclea el 10 %.
+3. **D3 · = P3 de §ⓒ: ¿confirmas que el programa nunca elegirá el tipo según el medio de cobro?**
+   *IA recomienda ✅*: el tipo se fija al emitir y una factura emitida no se edita (regla 29).
+4. **D4 · ¿Aceptas que el 1-dic llegue sin respuesta del asesor a A1–A5?** Según §ⓗ, no hay asesor hasta la
+   SL (SCRUM-1264 c.22060). *IA recomienda ✅, con el aviso de D1*: cita la ley sin interpretarla.
+5. **P2 de §ⓒ** (hacer obligatorio el medio de cobro) **no es de antes del 1-dic**: su fecha es la de
+   encender `INVOICING_ES_ENABLED` para un comercio español real. *IA recomienda dejarla para el asesor.*
+
+## ⓙ4 Lo que NO está medido
+
+- La ficha del Congreso del 29/2026 hoy (la tramitación como ley se mira solo en el BOE).
+- El sumario del 22-nov (domingo, no se bajó) y el del 18-nov (ya en 1316h).
+- El literal de c.20890 en Jira: lo cito de §ⓗ, no lo he releído.
+- Que las cuatro entradas del 10 % que nombra `tiposDeIva.js` sigan siendo así: leído en un comentario, no
+  ejecutado.
+
+**Corrido:** ver el comentario de entrega en SCRUM-1316. Suite entera no corrida: solo documentos.
