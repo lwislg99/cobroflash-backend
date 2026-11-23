@@ -116,6 +116,35 @@ function filaDescuentoGlobalDelPresupuesto(lineas: QuoteLine[], global: unknown)
   return { concepto: 'Descuento global', importe: Math.round((conGlobal - sinGlobal) * 100) / 100 };
 }
 
+/**
+ * SCRUM-1786g · las filas de la tarjeta del presupuesto, con «Total del apartado» bajo cada apartado.
+ *
+ * Literal firmado en SCRUM-1786 c.22269; lanzado como en el PDF (1786f1, c.22329). El criterio es
+ * el del PDF (`pdf.service.ts`, `generateQuotePdf`): una cabecera es la línea que `lineasQueSuman`
+ * deja fuera, y sus líneas son las que la siguen hasta la próxima cabecera; las de antes de la
+ * primera no son de ningún apartado. El recorrido está COPIADO de allí (vive dentro de la función
+ * del PDF y no se puede importar). La cifra es `calcTotal` de esas líneas: en el portal cada línea
+ * va CON IVA y con su descuento de línea, y el total de la tarjeta es `calcTotal` de todas, así que
+ * la fila suma lo que el cliente ve encima. Sin cabeceras devuelve las líneas tal cual.
+ * Deuda: cuando exista `capitulos()` (tramo c, S1), este recorrido pasa a usarla.
+ */
+function filasConTotalDelApartado(lineas: QuoteLine[]): Array<{ linea: QuoteLine } | { totalDelApartado: number }> {
+  const suman = new Set<unknown>(lineasQueSuman(lineas));
+  const filas: Array<{ linea: QuoteLine } | { totalDelApartado: number }> = [];
+  let abierto: QuoteLine[] | null = null;
+  for (const l of lineas) {
+    if (!suman.has(l)) {
+      if (abierto) filas.push({ totalDelApartado: calcTotal(abierto) });
+      abierto = [];
+    } else if (abierto) {
+      abierto.push(l);
+    }
+    filas.push({ linea: l });
+  }
+  if (abierto) filas.push({ totalDelApartado: calcTotal(abierto) });
+  return filas;
+}
+
 // ── GET /cliente/:token ──────────────────────────────────────────────────
 router.get('/:token', async (req, res) => {
   const { token } = req.params;
@@ -246,7 +275,14 @@ router.get('/:token', async (req, res) => {
                     <span class="pf-line-concept">${esc(filaDescuentoGlobal.concepto)}</span>
                     <span class="pf-line-amount">${formatMoneyEs(filaDescuentoGlobal.importe, q.currency)}</span>
                   </div>` : ''}
-                ${lineasDelPresupuesto.map((l: any) => {
+                ${filasConTotalDelApartado(lineasDelPresupuesto).map((f) => {
+                  if ('totalDelApartado' in f) {
+                    return `<div class="pf-line-row pf-apartado-total">
+                    <span class="pf-apartado-total-concepto">Total del apartado</span>
+                    <span class="pf-apartado-total-importe">${formatMoneyEs(f.totalDelApartado, q.currency)}</span>
+                  </div>`;
+                  }
+                  const l: any = f.linea;
                   return `<div class="pf-line-row">
                     <span class="pf-line-concept">${esc(l.concept||'')}</span>
                     <span class="pf-line-amount">${importeDeLineaDelPresupuesto(l, q.currency)}</span>
