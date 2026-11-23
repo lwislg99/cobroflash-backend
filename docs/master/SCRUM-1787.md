@@ -788,3 +788,8 @@ Mutaciones: catálogo → `tests/scrum1787p-cobro-hereda-formas-de-pago.test.mjs
 **Error mío.** La segunda mutación salió MUDA con `aplicarUna`: había puesto la prioridad «la factura manda» en dos sitios (no leer el presupuesto si la factura tiene formas, y el orden del spread), y quitar uno no cambiaba nada. Lo dejé en un solo punto (`formasDelCobro`) y las dos mutaciones caen.
 
 **NO medido:** la suite entera en local (la corre el obligatorio, por orden del orquestador) · navegador, yaqu.app, staging y producción · ningún envío real (Meta en `WHATSAPP_DRY_RUN`).
+## Segundo merge con main (relevo jv-j1ht, 2026-11-23T03:58:22Z, sobre `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740`)
+
+A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
+
+Tres conflictos con 1787l (#3308), los tres derivados. `prisma/schema.prisma`: en `model Invoice` se quedan las tres columnas (`dueDate`, `payMethods` de 1787i y `docFooterText` de 1787l), sin elegir lado. `docs/sql/deriva-prod.sql`: regenerado con `scripts/generar-sql-deriva.mjs` sobre el esquema unido (548 columnas). `docs/legal/AUDITORIA_CAMINO_EMISION.md`: anclas recolocadas en sitio (eslabón 4 → `schema.prisma:970-971`, eslabón 8 → `:1908`). Con la ancla vieja del eslabón 4 (963-964), 525d cae 1 de 8; con la nueva, 8 de 8; mutación hecha una vez y sin guion en git. Ninguna aserción cambia.
