@@ -11,10 +11,7 @@ import { comercioSuprimido } from '../../domain/comercioSuprimido'; // SCRUM-157
 import { esc, formatMoneyEs } from '../../../../core/utils/utils';
 import { PAGO_JS, RUTA_PAGO_JS, cacheDelGuionDePago, etiquetaGuionDePago } from './pagoNavegador'; // SCRUM-1647 (CSP paso 2)
 import { cssDeHoja, RUTA_PAGO_CSS, cacheDelEstiloDePago, etiquetaEstiloDePago, paginaDeEstilo } from './pagoEstilo'; // SCRUM-1723 (style-src 'self')
-import { isFlagEnabled } from '../../../../core/flags';
-import { bizumAutoDisponible } from '../../domain/bizumCharge'; // SCRUM-3
-import { cardChargeMode } from '../../domain/cardCharge'; // SCRUM-893
-import { transferenciaDisponible } from '../../domain/transferenciaDisponible'; // SCRUM-910
+import { formasDePagoActivas, type FormaDePago } from './formasDePagoActivas'; // SCRUM-1787u
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { pieDePresupuesto } from '../../../quotes/domain/presentacionIva'; // SCRUM-1787h: el desglose de la página del presupuesto
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1787q: «Vence el» en la zona del negocio
@@ -155,89 +152,28 @@ router.get('/invoice/:token', async (req, res) => {
     : '';
 
   // ── A2.1: métodos disponibles + orden por la matriz W4 (por importe) ──
+  // SCRUM-1787u · el CÁLCULO (qué vías están activas para este comercio y este importe, y en qué
+  // orden) vive en `formasDePagoActivas`, que también usa J1 al emitir (GO SCRUM-1787 c.22401).
+  // Aquí sólo se pinta. Las razones de cada condición (SCRUM-3, 893, 910, W4) viajaron con él.
   const amountNum = Number(charge.amount);
-  // SCRUM-910 · la condición era `!!(m?.iban || m?.clabe)` y NO MIRABA EL PAÍS. Un negocio ES con
-  // sólo CLABE veía «Transferencia bancaria» y aterrizaba en `/pay/bank`, que sólo pinta la CLABE
-  // si el país es MX — así que le decía que el profesional no había configurado su cuenta. Se
-  // pregunta al dominio, que replica la regla de la página destino y está atado a ella por test.
-  const hasTransfer = transferenciaDisponible(m);
-
-  // SCRUM-893 · SE PREGUNTA, NO SE SUPONE. Hasta hoy esto era
-  //     `!connectFlag ? true : (connectStatus === 'active' || isDemoMerchant(m))`
-  // y con `PAYMENTS_CONNECT_ENABLED` OFF —su valor por defecto— la primera rama ganaba SIEMPRE:
-  // la tarjeta se ofrecía a todos, incluidos los merchants que se comen un 409 al pulsarla. La
-  // clienta se quedaba en un bucle: única opción, RECOMENDADO, 409, «ver otras formas» → aquí.
-  //
-  // Ahora se le pregunta al MISMO dominio que decide en la puerta de cobro, con su vocabulario
-  // (`connect` / `demo_platform` / `refuse`). No es «una condición más estricta»: es que ofrecer
-  // y cobrar han dejado de ser dos preguntas. Reglas 18 y 23, y la 8 para el demo, viven allí y
-  // no se reescriben aquí — reescribirlas sería crear la tercera copia del criterio.
-  const hasCard = cardChargeMode(m) !== 'refuse';
-
-  // Bizum manual: flag + móvil del PRO + límites bancarios del pagador (W4:
-  // >1.000 € se oculta).
-  const bizumPhone = m?.bizumPhone || m?.whatsappPhone || null;
-  const hasBizum =
-    isFlagEnabled('BIZUM_MANUAL_ENABLED', { merchant: m }) && !!bizumPhone && amountNum <= 1000;
-
-  // Selector al crear (quote/charge.payMethods): si el PRO limitó los métodos
-  // para ESTE cobro, se respeta (null = todos los disponibles).
+  // Selector al crear (quote/charge.payMethods): si el PRO limitó los métodos para ESTE cobro.
   const allowed = Array.isArray(charge.payMethods) ? (charge.payMethods as string[]) : null;
-  const permits = (key: string) => !allowed || allowed.includes(key);
 
-  // SCRUM-3 · Bizum AUTOMÁTICO (vía PSP), que convive con el manual — decisión del fundador
-  // del 28-jul-2026: **los dos visibles, el manual primero**. El motivo, y conviene que no se
-  // pierda: no se decide por el fontanero si prefiere ahorrarse el 0,9 % o tener confirmación
-  // automática. Es su dinero y su tiempo. El manual va delante porque es GRATIS y es el que ya
-  // conoce; el automático se etiqueta con su ventaja real —«se confirma solo»—, que es
-  // exactamente lo que el manual no puede garantizar (es la única vía de la casa que puede
-  // mentir sobre si el dinero llegó: la confirma el merchant a mano).
-  //
-  // Y esto NO contradice la regla 22 («el selector se ordena por probabilidad de cobro del
-  // MERCHANT, no por el fee de YaQu»): poner delante el gratuito es justo lo contrario de
-  // ordenar por nuestro fee — el manual no nos deja nada.
-  const bizumAuto: Method | null =
-    bizumAutoDisponible({
-      flagOn: isFlagEnabled('BIZUM_AUTO_ENABLED', { merchant: m }),
-      useConnect: m?.connectStatus === 'active' && !!m?.stripeAccountId,
-      currency: charge.currency,
-      amountCents: Math.round(amountNum * 100),
-    }) === 'ok'
-      ? {
-          key: 'bizum_auto',
-          // Comparte ruta con la tarjeta A PROPÓSITO: el Bizum automático vive DENTRO del
-          // mismo Checkout de Stripe (dynamic payment methods), no en una pantalla propia.
-          // Darle una ruta suya obligaría a fijar `payment_method_types`, que Stripe
-          // desaconseja y que congelaría la lista de métodos (ver bizumCharge.ts).
-          href: `/pay/card/${token}`,
-          ico: '⚡',
-          title: 'Bizum al instante',
-          sub: 'Se confirma solo, sin esperar',
-        }
-      : null;
+  type Method = { key: FormaDePago; href: string; ico: string; title: string; sub: string };
+  const metodo: Record<FormaDePago, Method> = {
+    card: { key: 'card', href: `/pay/card/${token}`, ico: '💳', title: 'Pagar con tarjeta', sub: 'Visa · Mastercard · al instante' },
+    bizum: { key: 'bizum', href: `/pay/bizum/${token}`, ico: '📲', title: 'Pagar por Bizum', sub: 'Desde la app de tu banco' },
+    // Comparte ruta con la tarjeta A PROPÓSITO: el Bizum automático vive DENTRO del
+    // mismo Checkout de Stripe (dynamic payment methods), no en una pantalla propia.
+    // Darle una ruta suya obligaría a fijar `payment_method_types`, que Stripe
+    // desaconseja y que congelaría la lista de métodos (ver bizumCharge.ts).
+    bizum_auto: { key: 'bizum_auto', href: `/pay/card/${token}`, ico: '⚡', title: 'Bizum al instante', sub: 'Se confirma solo, sin esperar' },
+    // SCRUM-90: /pay/bank tokenizado (mismo Charge.receiptToken).
+    transfer: { key: 'transfer', href: `/pay/bank/${token}`, ico: '🏦', title: 'Transferencia bancaria', sub: 'Con los datos y el concepto exacto' },
+  };
 
-  type Method = { key: string; href: string; ico: string; title: string; sub: string };
-  const card: Method = { key: 'card', href: `/pay/card/${token}`, ico: '💳', title: 'Pagar con tarjeta', sub: 'Visa · Mastercard · al instante' };
-  const bizum: Method = { key: 'bizum', href: `/pay/bizum/${token}`, ico: '📲', title: 'Pagar por Bizum', sub: 'Desde la app de tu banco' };
-  // SCRUM-90: /pay/bank tokenizado (mismo Charge.receiptToken).
-  const transfer: Method = { key: 'transfer', href: `/pay/bank/${token}`, ico: '🏦', title: 'Transferencia bancaria', sub: 'Con los datos y el concepto exacto' };
-
-  // Orden W4: ≤500 → Bizum + Tarjeta (transferencia detrás) · 500-1.000 →
-  // Tarjeta principal, Bizum secundario · >1.000 → Tarjeta + transferencia.
-  // Los TRAMOS no cambian con el Bizum automático (SCRUM-8): el techo de 1.000 € no lo pone
-  // Stripe —que admite 5.000— sino el banco DEL PAGADOR (500-1.000 €/op, 2.000 €/día).
-  // El automático se coloca SIEMPRE justo detrás del manual, en el hueco que ocupe Bizum.
-  const conBizumAuto = (lista: Method[]): Method[] =>
-    bizumAuto ? lista.flatMap((mm) => (mm.key === 'bizum' ? [mm, bizumAuto] : [mm])) : lista;
-
-  const ordered = conBizumAuto(amountNum <= 500 ? [bizum, card, transfer] : [card, bizum, transfer])
-    .filter((mm) =>
-      (mm.key === 'card' && hasCard && permits('card')) ||
-      (mm.key === 'bizum' && hasBizum && permits('bizum')) ||
-      // El automático hereda el permiso de 'bizum' (el PRO limitó "Bizum", no la fontanería
-      // de cómo se confirma) y su propia disponibilidad ya la resolvió bizumAutoDisponible.
-      (mm.key === 'bizum_auto' && permits('bizum')) ||
-      (mm.key === 'transfer' && hasTransfer && permits('transfer')));
+  const ordered = formasDePagoActivas({ merchant: m, importe: amountNum, moneda: charge.currency, permitidas: allowed })
+    .map((k) => metodo[k]);
 
   const methodsHtml = ordered.map((mm, i) => `
     <a class="method" href="${mm.href}">
