@@ -1280,3 +1280,68 @@ T3 detrás. T3 dice «en esta factura» aunque el lote tenga varias: es el liter
 - La suite entera: no corrida en local; la corre el obligatorio.
 - Capturas 390/1280 de la ficha con el aviso: NO hechas.
 - yaqu.app: no verificado (no está mergeado).
+# SCRUM-1316k · Un cargo NO pagado ya no manda sobre el método declarado (`metodoDeUnCobro`)
+
+**Medido contra:** `origin/main` = `97e196f930334971538b5c0ba13e0224cbe7d184` · 2026-11-23T21:18:12Z (cabecera `Date:` de GitHub)
+
+A9: comprobación → `tests/scrum1316k-cargo-no-pagado-no-manda.test.mjs`
+Mutaciones: catálogo → `tests/scrum1316k-cargo-no-pagado-no-manda.test.mjs`
+
+Sesión J2 (IA, `jv-j2ed`), 23-nov-2026, por encargo del orquestador del equipo de Javier
+(`cobroflash-backend-2d`). Decisión del fundador: SCRUM-1316 c.22438, punto 2 («1-Sí a las 5»). Hallazgo:
+c.22437 (jv-j2eb). Sin texto nuevo para el usuario, sin esquema y sin camino de emisión.
+
+## ⓚ1 El cambio
+
+`src/modules/billing/domain/metodoDeCobro.ts` (carril J2): `metodoDeUnCobro` solo toma `Charge.method` si el
+cargo está **pagado** (`status === 'paid'`). Si no lo está, manda `Invoice.paidVia` (lo declarado); si no hay
+nada, `null` = «no consta» (la política de siempre, sin cambios). `CobroConMetodo.charge` lleva ahora
+`status?` **opcional**: si un llamador no trae el estado, la regla es la de antes (el cargo manda).
+
+## ⓚ2 Quién llama (medido con `grep`, 3 llamadores en `src/`)
+
+| llamador | carril | ¿trae `charge.status`? | efecto |
+|---|---|---|---|
+| Cobros, `cobros.service.ts:333` | J2 | pasa facturas sin `charge` (`include` solo `customer`, :230-232) | ninguno |
+| Recibo HTML, `invoicesAdmin.routes.ts:511` | J1 | sí, `:447` selecciona `status: true` | **arreglado** sin tocar el fichero |
+| Informe X2, `reports.routes.ts:182` → `cobrosPorCubo.ts:222` | **S1** | **no**, solo `charge: { method: true }` | **sin cambio**: falta `status: true` en `reports.routes.ts:182` |
+
+Por qué «estado ausente = como antes» y no «= no pagado»: en dev hay 9 facturas pagadas con cargo pagado y
+`paid_via` NULL (c.22437 ④). Si el estado ausente contara como «no pagado», el informe las pasaría a «no consta».
+La línea de S1, según el orquestador, está apuntada como pieza de Luis en SCRUM-1316 c.22445 (no lo he leído yo). El caso ⑤ del test fija este
+comportamiento. Diseño acordado con el orquestador por mensaje, 23-nov.
+
+## ⓚ3 Corrido
+
+- Test nuevo, **en ROJO antes del cambio**. Primera versión: 7 casos, 3 pasan y 4 caen (los tres ① y el ③).
+- Después del cambio, 7 de 7. Build con tipos (`tsc -p .`, sin `--noCheck`): salida 0, 0 bytes de salida.
+- Versión final: 5 casos, 5 de 5. Los tres ① pasan a ser uno solo con un bucle dentro (ver ⓚ5).
+- Mutación con `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, «vuelve a preferir el cargo no pagado»,
+  corrida sobre la versión final. Esa mutación es la regla anterior al cambio, así que esta pasada es también
+  el rojo de la versión final: caen el ① que la nombra y el ③ como colateral (2), y ②, ④ y ⑤ siguen en
+  verde (3). Después se comprobó el árbol (`git status`, y en `src/` y `dist/` sigue el código del cambio).
+- Dirigida, antes de escribir este tramo: 28 ficheros. Son los que nombran `metodoDeCobro`/`metodoDeUnCobro`,
+  más 441 (4), 1773, 836, 700, 710b, 719, 810, 1294, 267, 273, 525d y 854. Resultado: 273 casos, 272 pasan y
+  1 cae (pass + fail = total). El que cae es `scrum854` ②, «esta rama trae su entrada de registro», y lo
+  arregla este tramo.
+- Después del commit: los guards del registro (854, 1294, 267, 273, 525d) más el test nuevo dan 45 de 45.
+  Los vecinos de mis cicatrices (1387, 411, 737, 553, 1415, 1177, 747, 709, 499, 503, 506, 491) son 14
+  ficheros y 124 casos: 123 pasan y cae 1, `scrum1415` (ver ⓚ5). `npm run guards:entrada` da 170 de 170.
+
+## ⓚ5 Lo que me salió mal
+
+Construí los nombres de los tres casos ① con un bucle y una plantilla. Es justo lo que prohíbe
+`tests/scrum1415-nombres-construidos.test.mjs`, y una cicatriz de J2 del 13-oct ya lo cuenta. Lo cazó ese
+guard en la pasada local, antes del empujón. Lo arreglé en el código del test, no en el guard: ahora es un
+solo caso con el bucle dentro.
+
+## ⓚ4 Lo que NO está medido
+
+- **La suite entera no se ha corrido en local**: la corre el check obligatorio.
+- Nada contra staging ni producción: la fila de staging (c.22437) no se ha vuelto a leer, y la función no se
+  ha ejecutado contra ella. El test reproduce su forma: `paid_via = bizum_manual` y un cargo `card` en
+  `pending`.
+- El informe X2 sigue diciendo «tarjeta» en ese caso hasta que entre la línea de S1.
+- `seRegistroAMano` (`cobrosPorCubo.ts:234`, S1) cuenta como «a mano» solo las facturas **sin** cargo. Una
+  factura marcada a mano que tiene un cargo sin pagar no entra en el registro. Esto es leído en el código y no
+  medido. Es de S1, y aquí no se toca.

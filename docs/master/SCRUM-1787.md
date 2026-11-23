@@ -1094,6 +1094,69 @@ Encargo del orquestador J a jv-j1ia (J1). Decisión del fundador: SCRUM-1787 c.2
 - yaqu.app: no visto. Se ve tras el merge y el despliegue, en una factura con vencimiento. La prueba en producción con la cuenta QA (c.22390 punto 2) es otra tarea.
 - El día va con dos cifras (`day: '2-digit'`), igual que la página de pago: el 5 de diciembre sale «05 de diciembre de 2026». Lo dejo así porque el encargo pide las MISMAS opciones. Si se quiere «5 de diciembre», hay que cambiarlo en las dos superficies a la vez, y eso es decisión del fundador.
 
+# SCRUM-1787s · La factura congela al emitirse las formas de pago que ofrece
+
+**Medido contra:** `origin/main` = `1acb5e4ea4f5f5b026b84a462a98bd7ae4ae3744` · 2026-11-23T20:52:35Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: aviso → cicatriz J1 «Escribí el ayudante formasDePagoACongelar antes de ver su test en rojo (SCRUM-1787s, jv-j1ib)» — no se pudo comprobar: el orden entre un Edit de `src/` y la primera corrida roja de su test no lo ve ningún guard del repositorio
+A9: aviso → cicatriz J1 «No me medí el contexto después de cada tanda de tests, como pide el encargo (SCRUM-1787s, jv-j1ib)» — no se pudo comprobar: lo vería un hook de sesión que lea el usage del jsonl, y los hooks no son de este puesto
+A9: aviso → cicatriz J1 «Llevé la dirigida de 1787s sin scrum810, que el encargo nombraba (SCRUM-1787s, jv-j1hw)» — no se pudo comprobar: la lista de la dirigida vive en el prompt del orquestador y ningún guard compara lo corrido con lo encargado
+
+Mutaciones: catálogo → `tests/scrum1787s-congelar-formas-de-pago.test.mjs`
+
+Trabajo de cuatro sesiones J1: jv-j1hw y jv-j1ib (commit `bc6dc30e2aec383b2f05b520acaff4abf528802b`), jv-j1id (1787s-bis, commit `95dad50af3806bf85c0ba17e927cd337b588f3f9`, traspaso c.22427) y jv-j1ie (dirigida, registro y empujón). GO del fundador para tocar el camino de emisión (regla 40): SCRUM-1787 c.22401 («1-GO») y c.22404 («1-Sí a las dos»); el select del comercio se ensancha dentro de ese GO por c.22415. Los literales de esos comentarios se leen en Jira: aquí van resumidos.
+
+## Qué se construyó (1787s)
+
+- `src/modules/invoicing/domain/formasDePagoACongelar.ts` (nuevo, J1): **`formasDePagoACongelar({ cobro?, presupuesto, merchant, importe, moneda }): ('card'|'bizum'|'transfer')[] | null`**. Lista del presupuesto si la trae; con `null` («todas») o sin presupuesto, las activas hoy según `formasDePagoActivas` (J2, 1787u; se importa, no se toca) traducidas a `card|bizum|transfer` (`bizum_auto` se congela como `bizum`, sin duplicados); ninguna activa → `null`.
+- Factura suelta (`invoicesAdmin.routes.ts:199`): mandan las formas del cuerpo; si no vienen, el ayudante. El select del comercio suma `iban`, `clabe`, `bizumPhone`, `connectStatus` y `stripeAccountId`, que es lo que mira `formasDePagoActivas` (c.22415).
+- Factura tras cobrar (`src/lib/invoicing.ts:445`, `ensureInvoiceForCharge`): el ayudante con el presupuesto (ampliado en 1787s-bis, abajo).
+- Ediciones en línea, sin mover números de línea (`scrum525d`).
+
+## Cómo se ve
+
+- `tests/scrum1787s-congelar-formas-de-pago.test.mjs`, 10 casos: ① presupuesto con lista → esa lista · ② «todas» o sin presupuesto → las activas · ③ `bizum_auto` → `bizum` sin duplicados · ④ ninguna activa → `null` · ⑤ la suelta lee del comercio lo que mira la función · ⑥ la suelta: mandan las del cuerpo y, sin ellas, el ayudante · ⑦ (dos casos) `ensureInvoiceForCharge` congela la lista del presupuesto, y las activas con «todas» o sin presupuesto · ⑧ el PDF de una factura con las formas por defecto lleva «Formas de pago» · ⑨ (1787s-bis).
+- Corrido por jv-j1ie el 23-nov sobre `95dad50a`: 10/10. Mutaciones del catálogo: 5, las 5 tumban (medido por jv-j1id con `aplicarUna`, c.22427; no re-medido).
+
+## NO hecho / NO visto
+
+- Los cinco caminos de S1 que también emiten (c.22405: `quotesAdmin.routes.ts:363` y `:656`, `quotes.routes.ts:658`, `jobs.routes.ts:1634`, `albaranes.routes.ts:1703`) NO se tocan: son de Luis, que llama al ayudante.
+- yaqu.app: no visto. Ninguna base, ningún CI todavía.
+
+# SCRUM-1787s-bis · En la factura tras cobrar manda la lista del COBRO
+
+**Medido contra:** `origin/main` = `1acb5e4ea4f5f5b026b84a462a98bd7ae4ae3744` · 2026-11-23T20:52:35Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: aviso → cicatriz J1 «El arranque me dejó en 103.630 con un tope de encargo de 140k y no dije ANTES de empezar que el encargo no cabía (SCRUM-1787s-bis, jv-j1id)» — no se pudo comprobar: comparar la medida del arranque con el tope del encargo pide un hook de sesión, y los hooks no son de este puesto
+A9: sin fallo que generalice — jv-j1ie (este relevo) midió el arranque (105.546) y Jira (109.382) contra un tope de 195k antes de empezar, corrió la dirigida fichero a fichero con su recuento y no tocó código
+
+Mutaciones: catálogo → `tests/scrum1787s-congelar-formas-de-pago.test.mjs`
+
+Decisión: c.22423 (lectura del orquestador de c.22404; el fundador puede vetarla antes del merge). En `ensureInvoiceForCharge` las formas a congelar son, por este orden: la lista del cobro (`Charge.payMethods`) si la trae; si no, la del presupuesto; si no, las activas; si ninguna, `null`.
+
+## Qué se construyó (1787s-bis)
+
+- El ayudante acepta `cobro` (opcional) y lo mira el primero; `invoicing.ts:445` le pasa `cobro: ch` (edición en línea).
+- Catálogo `MUTACIONES_QUE_ME_TUMBAN`: +2 (`cobro: ch` → `cobro: null`; `Array.isArray(delCobro)` → `false`).
+
+## Cómo se ve
+
+- Caso ⑨ del mismo test, rojo primero (cobro `['bizum']` con IBAN+Bizum activos daba `['bizum','transfer']`); después: cobro `['bizum']` sin presupuesto → `['bizum']`; cobro `['bizum']` + presupuesto `['transfer']` → `['bizum']`; control: cobro `null` + presupuesto `['transfer']` → `['transfer']`.
+
+## Tabla de aceptación
+
+| aceptación | dónde se ve |
+|---|---|
+| c.22401 («1-GO»): la factura suelta congela las formas activas si el cuerpo no trae ninguna | `tests/scrum1787s-congelar-formas-de-pago.test.mjs` ⑤ y ⑥ |
+| c.22401 / c.22404 («1-Sí a las dos»): la factura tras cobrar congela la lista del presupuesto, o las activas con «todas» o sin presupuesto | `tests/scrum1787s-congelar-formas-de-pago.test.mjs` ①, ②, ③, ④ y los dos ⑦ |
+| c.22415: el select del comercio de la suelta trae lo que mira `formasDePagoActivas` | `tests/scrum1787s-congelar-formas-de-pago.test.mjs` ⑤ |
+| c.22423: tras cobrar, manda la lista del cobro antes que la del presupuesto y que las activas | `tests/scrum1787s-congelar-formas-de-pago.test.mjs` ⑨ |
+| c.22405: los cinco caminos de S1 llaman al ayudante | NO HECHO → Luis (S1), con la firma de arriba; no es de este carril |
+| verlo en yaqu.app | NO HECHO → tras el merge y el despliegue |
+
+## Dirigida (jv-j1ie, 23-nov, un fichero por comando, sobre `95dad50a` compilado con tipos)
+
+1787s 10/10 · 1787i 11/11 · 1787m 8/8 · 1787p 7/7 · 1787u 4/4 · 586 23/23 · 497 19/19 · 523d 7/7 · 603b 9/9 · 723 8/8 · 887 10/10 · 1240d 10/10 · 810 6/6. Ninguno de 523d/603b/723 pidió recongelar. Los de registro (1294, 267, 273, 525d, 854) y `npm run guards:entrada`, tras escribir este tramo: en el comentario de entrega. `npm run build` (`tsc`, con tipos): salida 0. La suite entera NO se corrió en local (orden del encargo): la corre el obligatorio del PR.
 # SCRUM-1787v · T4: el PDF de la factura con el dibujo del presupuesto — medición y parada para firma (solo docs; no se construye)
 
 **Medido contra:** `origin/main` = `1acb5e4ea4f5f5b026b84a462a98bd7ae4ae3744` · 2026-11-23T20:44:12Z (cabecera `Date:` de `gh api -i zen`)
@@ -1122,3 +1185,33 @@ Para igualar, la factura tendría que imprimir rótulos del presupuesto que hoy 
 - No se construyó nada: esta rama no cambia `src/`, `public/` ni `prisma/`. Ni test rojo, ni cambio, ni mutaciones: dependen de la firma.
 - No se ejercieron con datos, solo se leyeron en el fuente: «Total del apartado», cláusulas, firma, QR con SIF encendido y marca de agua.
 - yaqu.app: no visto, porque no ha cambiado nada.
+
+# SCRUM-1787x · En el PDF de la factura, «Vence el» lleva el día sin cero a la izquierda
+
+**Medido contra:** `origin/main` = `97e196f930334971538b5c0ba13e0224cbe7d184` · 2026-11-23T21:10:02Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: sin fallo que generalice — el caso ⑤ de 1787t exigía un literal fijo en dos ficheros de dos carriles, y ningún PR de un solo carril podía cambiarlo sin dejarlo en rojo; lo avisé antes de empujar y el orquestador lo partió (c.22436). Ya lo cubre la frase de A10 «Una dependencia entre dos PR escrita en el prompt de UNA sesión no existe para la otra: o es un guard, o no es nada.»
+
+Mutaciones: catálogo → `tests/scrum1787t-pdf-vence-fecha-larga.test.mjs`
+
+Encargo del orquestador J a jv-j1ig (J1). Decisión del fundador: SCRUM-1787 c.22431 (pregunta: «¿«5 de diciembre» en vez de «05 de diciembre» en el PDF y en la página de pago (1787)?»; respuesta literal: «4-Sí ok quita el 0»). Es la misma línea y el mismo literal firmado de 1787t, dentro de su GO de regla 40 (c.22408): sólo el día pasa de `2-digit` a `numeric`. La página de pago (`payInvoice.routes.ts`, J2) la cambia el tramo 1787y; aquí no se toca. Ningún texto nuevo.
+
+## Qué se construyó (1787x)
+
+- `pdf.service.ts` (J1), `generateInvoicePdf`, la línea `Vence el …`: `day: '2-digit'` → `day: 'numeric'`, y una línea de comentario que cita c.22431. Nada más cambia: la `Fecha:` sigue en dd/mm/aaaa.
+- Recongelada la huella de `scrum603b`/`scrum723` por la vía de SCRUM-1446d: entrada nueva en `tests/_cambios-autorizados-de-la-factura.mjs` con firma `SCRUM-1787 c.22431` y cita `Respuesta literal: «4-Sí ok quita el 0»`, huellas de `docs/master/evidencias/SCRUM-1446d/huellas.mjs` sobre `4aeac0f6c1f5a63b97b009a1c1b3ebc93c973e3e` (cuerpo `2b62a73e…` → `3cc5a0bd…`; ámbito `a8bd2fb9…` → `7685e52d…`; el `de` es el `a` de 1787t). El merge de `97e196f9` sólo trajo documentos (1787v): `pdf.service.ts` no cambió entre las dos bases.
+- `tests/scrum1787t-…`: caso nuevo ⑥ (`dueDate` 2026-12-05 → `Vence el 5 de diciembre de 2026`) y su mutación en el catálogo («vuelve a `2-digit`»). ①, ② y ③ llevan días de dos cifras (23, 24, 30) y no cambian.
+- `tests/scrum1787t-…` ⑤ **partido por decisión del orquestador, SCRUM-1787 c.22436**: comparaba en los dos ficheros el literal fijo `day: '2-digit', month: 'long', year: 'numeric' })`, y el cambio firmado cruza dos carriles que no caben en un PR. Sigue exigiendo a las DOS superficies `es-ES`, `timeZone: zonaDelMerchant(`, `month: 'long'` y `year: 'numeric'`, y que el día vaya delante del mes; el valor del día se comprueba por superficie: el del PDF en ⑥, el de la página en el test de 1787y (J2). No es relajar un guard: es partir una exigencia que un solo carril no puede cumplir (c.22436). Cuando 1787y esté en main, el tramo 1787z (J1) vuelve a fijar `day: 'numeric'` en las dos.
+- `tests/scrum1787m-…`: ① y ② esperaban `Vence el 05 de diciembre de 2026` / `06 de diciembre`; ahora `5` / `6`. Siguen comprobando el texto exacto, la posición y la zona.
+
+## Cómo se ve
+
+- Texto extraído del PDF real (`lineasDePdf`), `dueDate` 2026-12-05: antes `Vence el 05 de diciembre de 2026` (rojo primero de ⑥, con `src/` sin tocar: 5 de 6 en verde, `actual: 'Vence el 05 de diciembre de 2026'`); después `Vence el 5 de diciembre de 2026` (6 de 6).
+- Mutaciones por `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, con la pasada limpia delante: «vuelve a `dateStr`» tumba ① (+3 colaterales: ②, ③, ⑥); «vuelve a `2-digit`» tumba ⑥ y sólo ⑥ (①–⑤ siguen en verde: ⑤ ya no mira el valor del día, c.22436). Las dos VIVAS; `git status` sin cambios tras las dos.
+- Dirigida: 1787t, 1446d, 1787m, 1788a, 603, 603b, 723, 523d, 810, 810b, 1294, 267, 273, 525d y 854 (cifras en la entrega de Jira).
+
+## NO hecho / NO visto
+
+- La suite entera NO se corrió en local (lo pide así el encargo): la corre el check obligatorio del PR.
+- yaqu.app: no visto. Se ve tras el merge y el despliegue, en una factura con vencimiento de día menor que 10.
+- La página de pago sigue con «05 de diciembre» hasta que entre 1787y (J2); mientras, las dos superficies divergen en el día, y sólo en el día. Es lo que decidió c.22436, con 1787x primero.
