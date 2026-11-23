@@ -801,6 +801,7 @@ Mutaciones: catálogo → `tests/scrum1787p-cobro-hereda-formas-de-pago.test.mjs
 
 **NO medido:** la suite entera en local (la corre el obligatorio, por orden del orquestador) · navegador, yaqu.app, staging y producción · ningún envío real (Meta en `WHATSAPP_DRY_RUN`).
 
+**Y un fallo mío encima (jv-j1hu):** empujé ese arreglo (`ad1a14ce0`) sin correr `tests/scrum719-el-suelo-de-los-doce.test.mjs`, y lo tumbaba dos veces: la llamada nueva a `soloEjecutable` no tenía suelo (SCRUM-1395 ②) y el test no tenía ficha en `tests/_veredicto-mudez.json` (SCRUM-1395b ①). Lo cacé en la rama de 1787m, antes de que lo dijera CI. Ahora es `ejecutableDe` con ancla `origen: 'C7-suelta'`, y la ficha sale de `npm run censo:mudez -- --escribir` (1 medido, VIVO). Coste: un segundo empujón a 1787i y a 1787p. El guard existía y el aviso también (cambiar un test que filtra = correr 719); falló correrlo, y eso ningún test lo puede obligar.
 # SCRUM-1787n · La lista de facturas con las columnas, el orden y los rótulos de la lista de presupuestos
 
 **Medido contra:** `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740` · 2026-11-23T03:55:05Z (cabecera `Date:` de `gh api -i zen`)
