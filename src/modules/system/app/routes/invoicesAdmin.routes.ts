@@ -69,7 +69,7 @@ import {
   modoDocumentoSuelto, validarFacturaSuelta, vencimientoDeLaSuelta,
   ERROR_MODO_SIN_FACTURA, ERROR_CLIENTE_INVALIDO,
 } from '../../../invoicing/domain/facturaSuelta'; // SCRUM-289 (A0.3)
-import { falloDeEnvioDeFactura } from '../../../invoicing/domain/envioQueNoSale'; // SCRUM-1478
+import { falloDeEnvioDeFactura } from '../../../invoicing/domain/envioQueNoSale'; import { formasDePagoACongelar } from '../../../invoicing/domain/formasDePagoACongelar'; // SCRUM-1478 · SCRUM-1787s
 
 const router = Router();
 
@@ -125,7 +125,7 @@ router.post('/', requireRole('admin'), async (req, res) => {
         id: true, email: true, country: true, flags: true, defaultCurrency: true,
         // SCRUM-1585: el modo mira el SII; obligatorio en `MerchantLike`.
         llevaLibrosPorSii: true,
-        name: true, legalName: true, taxId: true, address: true, logoUrl: true, whatsappPhone: true,
+        name: true, legalName: true, taxId: true, address: true, logoUrl: true, whatsappPhone: true, iban: true, clabe: true, bizumPhone: true, connectStatus: true, stripeAccountId: true, // SCRUM-1787s (c.22415): + los cinco que mira `formasDePagoActivas`
       },
     });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
@@ -196,7 +196,7 @@ router.post('/', requireRole('admin'), async (req, res) => {
         emisorCongelado,
         // SCRUM-1787i (GO c.22325 ③, c.22331) · sin `dueDate` en el cuerpo, expedición + 30 días.
         dueDate: vencimientoDeLaSuelta(val.dueDate, new Date()),
-        payMethods: val.payMethods,
+        payMethods: val.payMethods ?? formasDePagoACongelar({ presupuesto: null, merchant, importe: Number(total), moneda: merchant.defaultCurrency || 'EUR' }) ?? undefined, // SCRUM-1787s (c.22401 ②): sin las del cuerpo, las activas hoy
       }),
     );
 
