@@ -74,6 +74,12 @@
 .j1-prog-fecha { font-size:11px; color:var(--muted); }
 /* J1: fin del bloque SCRUM-1787b */
 
+/* J1: SCRUM-1787n · lista de facturas con las columnas de la de presupuestos. Lleva una columna más
+   (la casilla del lote) y a 1280 px el número de serie, el importe, la fecha y la píldora de estado se partían en dos
+   líneas («PENDIENT/E»): medido en `evidencias/SCRUM-1787/1787n-listas-despues-escritorio.png`. */
+.j1-fac-lista td.cell-id, .j1-fac-lista td.cell-amount, .j1-fac-lista td.cell-date, .j1-fac-lista td.cell-status { white-space:nowrap; }
+/* J1: fin del bloque SCRUM-1787n */
+
 /* ── SCRUM-731 · `hidden` TIENE QUE APAGAR. SIEMPRE. ───────────────────────────────────────
    Esto NO es una regla de estilo: es la que impide una clase entera de defecto silencioso.
 

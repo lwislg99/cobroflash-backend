@@ -132,10 +132,12 @@ function cerrar() {
 // silencio — que es justo el modo de fallo que viene a cerrar.
 function construirBanco() {
   const indice = fs.readFileSync(path.join(PANEL, 'index.html'), 'utf8');
-  const scripts = [...new Set([...indice.matchAll(/js\/([A-Za-z0-9]+\.js)/g)].map((m) => m[1]))]
-    // El asistente de alta se planta encima de todo cuando cree que el merchant es nuevo, y aquí
-    // taparía las vistas que se miden. Se excluye DECLARADO, no en silencio.
-    .filter((f) => f !== 'onboardingView.js');
+  // SCRUM-1789 · `onboardingView.js` ya NO se excluye. Se excluía porque el asistente de alta se
+  // planta encima de todo cuando cree que el merchant es nuevo; pero desde 6727eb7e0 (SCRUM-1781b)
+  // `settingsView.js` usa `telefonoConPrefijo`, que vive en él, y sin él `operarios` salía CIEGO
+  // en sus tres estados. El asistente se apaga ahora por el DATO, como en el panel de verdad:
+  // `onboardingCompleted: true` en la respuesta falsa de abajo (app.js sólo lo abre si es falso).
+  const scripts = [...new Set([...indice.matchAll(/js\/([A-Za-z0-9]+\.js)/g)].map((m) => m[1]))];
   if (scripts.length < 40) {
     noSupeMirar(`🔴 CIEGO: sólo ${scripts.length} scripts derivados de index.html. El banco no es el panel.`);
     cerrar();
@@ -151,7 +153,7 @@ function construirBanco() {
 localStorage.setItem('token','guard');
 window.fetch = function(){ return Promise.resolve(new Response(JSON.stringify({
   ok:true,id:7,name:'Negocio',role:'admin',plan:'pro',documentoSuelto:'factura',
-  modoDocumentoSuelto:'factura',merchantId:7,version:'1'
+  modoDocumentoSuelto:'factura',merchantId:7,version:'1',onboardingCompleted:true
 }),{status:200,headers:{'content-type':'application/json'}})); };
 </script>
 ${scripts.map((s) => `<script src="${url('js/' + s)}"></script>`).join('\n')}
