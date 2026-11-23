@@ -25,7 +25,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
-import { soloEjecutable } from './_guard-texto.mjs';
+import { ejecutableDe } from './_guard-texto.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -188,9 +188,10 @@ test('SCRUM-1787i ⑥ control: los caminos que no cambian quedan a NULL', async 
 
 test('SCRUM-1787i ⑦ la ruta de la suelta pasa los dos campos a la emisión (leído en el fuente)', () => {
   // SCRUM-700: el filtro es el de la casa; uno propio que corta en `//` ciega lo que va tras una URL.
-  const sinComentarios = soloEjecutable(
+  // SCRUM-1395: con ancla, para que un filtro ciego dé rojo y no una búsqueda sobre la nada.
+  const sinComentarios = ejecutableDe(
     fs.readFileSync(path.join(RAIZ, 'src/modules/system/app/routes/invoicesAdmin.routes.ts'), 'utf8'),
-    { almohadillaEsComentario: false });
+    { ancla: "origen: 'C7-suelta'", donde: 'invoicesAdmin.routes.ts', almohadillaEsComentario: false });
   const desde = sinComentarios.indexOf("origen: 'C7-suelta'");
   assert.ok(desde > 0, '🔴 CIEGO: no encuentro la emisión de la suelta en la ruta');
   const llamada = sinComentarios.slice(sinComentarios.lastIndexOf('emitInvoice(tx', desde), sinComentarios.indexOf('}),', desde));
