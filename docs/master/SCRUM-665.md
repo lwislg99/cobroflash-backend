@@ -2091,3 +2091,35 @@ Encargo del orquestador J. No toca el diseño de 665e ni el camino de emisión: 
 **Error propio:** para dejar el `.sql` en la versión de main antes de regenerarlo probé dos órdenes de shell, primero un `>` y luego `git checkout --theirs`. El hook las paró las dos porque truncaban o descartaban un fichero en conflicto. Lo resolví leyendo la base desde `git show` a un fichero de tmp, sin la llave `allow-destructivo`.
 
 A9: comprobación → `.claude/hooks/guard-dangerous.sh`
+
+# APÉNDICE (P) · SCRUM-665e · 23-nov-2026 · J1 (jv-j1ho) · main mergeado tras cinco días DIRTY, 6 conflictos juntados y suite entera corrida
+
+**Medido contra:** `origin/main` = `90e8e3774f86ff6ef393e7f25f0c6bdedb95765e` · 2026-11-23T03:22:22Z (hora de GitHub; mergeado en la rama, sin rebase ni force)
+
+Encargo del orquestador J. El fundador decidió que #3201 entra ya (SCRUM-665 c.22358, por boca del orquestador; no lo he leído en Jira). No se ha tocado el diseño de 665e. Antes del merge, la punta remota seguía en `9c192c750` y el PR estaba `DIRTY`. S1 no había empujado nada encima: los cinco últimos commits de la rama son de J1 y del bot.
+
+- **Conflictos: 6.** La regla fue juntar: lo de main entero, y encima 665e.
+  - `src/lib/invoicing.ts`, en `ensureInvoiceForCharge`. Main había puesto al día el SEGUNDO generador con 1787d (`customerAddress`), 1779d (`qrDelDocumento`) y el emisor congelado. 665e lo sustituye por `ensureInvoicePdf`, y lo que main trae en ese generador ya está en `ensureInvoicePdf`, que se fusionó sin conflicto (`src/lib/invoicing.ts:151` `customerAddress`, `:154` `qrDelDocumento`, emisor por `emisorDelDocumento`). Se queda el lado de 665e y no se pierde nada de main.
+  - `src/modules/system/app/routes/invoicesAdmin.routes.ts`: `regenerate-pdf`. Main le había añadido 1787d (`customerAddress`), pero la ruta se retira por c.21182 punto 3, así que se queda el lado de 665e.
+  - `tests/scrum1404g-…`: **choque de semántica con SCRUM-1779d.** Main reancló G a «200 sin QR» (decisión del fundador SCRUM-1779 c.22245 ①: una emitida sin huella es un documento simple). En la rama, G es el documento CONGELADO al emitir (se sirve byte a byte) y G0 es el mismo documento SIN congelar, que esperaba el 409 de antes. Al juntar: G sigue como en 665e, y G0 pasa a la regla de 1779d (200, PDF sin QR, sin huella, `no_aplica`, ≤1 escritura). Se renombró el `cae` de su mutación y se puso la línea `SIF_ENABLED` de main.
+  - `tests/scrum523d-…`: `invoiceNumber.service.ts` se queda con la huella de main, porque la rama no lo toca. `selladoEstado.ts` (665e + 1779d) se recongela a `d7419e27e7450aa1`, pegado del mensaje de error, por la vía de SCRUM-1585 c.21290 con el GO c.21182, c.21584 ③ y c.21943. Es el único fichero que el guard nombró como cambiado. La cita va en la misma línea, para no mover líneas.
+  - `docs/legal/AUDITORIA_CAMINO_EMISION.md`: se tomó el texto de main y se recalcularon sus anclas sobre el árbol fusionado: `prisma/schema.prisma:957-963` (`vf_hash` 957, `pdf_sha256` 962, `vf_prev_hash` 963), `:1900` (`model VfSubmission`) y `src/lib/invoicing.ts:121` y `:324` (`exigirDocumentoEmitible`). Las anclas `:931-932` y `:921` de la tabla de abajo ya están mal en main, y la rama no las mueve. No las he tocado.
+  - `docs/sql/deriva-prod.sql`: se regeneró con `node scripts/generar-sql-deriva.mjs` sobre el texto de main. Salen 546 columnas en 35 tablas, que son las 545 de main más `invoices.pdf_sha256`. No se editó a mano.
+- **Dos tests adaptados al juntar con 1779d, sin tocar código.** Con `SIF_ENABLED` en OFF por defecto la emisión ya no sella. Por eso `scrum665e-pdf-de-la-emitida-congelado` ⑧ y ⑫ caían (nacía `no_aplica`, y el portón no tenía nada que rechazar), y se les enciende `SIF_ENABLED` igual que main hizo en 1404g, 1330 y otros. `scrum1779d` ① caía con `missing_relations`, porque la segunda entrega del cobro ya pasa por `ensureInvoicePdf`, que pide las relaciones. Se le pasa el `prismaConRelaciones` que el mismo fichero ya tenía para eso. Lo que afirman no cambia.
+- **Cliente de Prisma** regenerado en el `node_modules` PROPIO de este árbol (`npm run topologia`: directorio propio), con el guard en ✔. `tsc -p .` con tipos da salida 0.
+- **ALTER `pdf_sha256` en dev:** el registro se contradice. El apéndice F dice que se aplicó en `yaqu_dev_javier`, y el L, «no aplicada». Lo medí con `scripts/aplicar-sql-dev.mjs --go`, con destino `DATABASE_URL_DEV` → `yaqu_dev_javier` (DESARROLLO) ✅, y Postgres contestó `column "pdf_sha256" of relation "invoices" already exists`. Ya estaba, así que no se cambió nada. Staging y producción no se han tocado.
+- **Dirigida** (665e ×2, 762, 878, 707, 1304, 1240d, 1470c, 577, 243, 497, 1787d, 1788a, 1779d, 178, 290 ×3, 523d, 291, 603b, 723, 222, 347, 525d, 729 ×2, 728d ×2, 1404g, 55, 824 ×3, 219, y los 5 de árbol entero de `guards:entrada`): 343 tests, 333 pasan, 2 caen y 8 saltan. Los que caen son `scrum55` y `scrum824`. `scrum1547` y `scrum1787i` no tienen fichero en este árbol. `npm run guards:entrada`: salida 0, 15 guards.
+- **Suite entera por tramos** (`tanda-entera-por-tramos.mjs`, 15 de 15): 1747 ficheros, 14113 tests, 13922 pasan y 8 caen.
+  - Del parche S1 (`42655871`, c.21680): `scrum55` (tramo 11) y `scrum824` (tramo 14). A12.1+A12.4 no salió como rojo en esta pasada.
+  - Del entorno, en ficheros que la rama no toca (`git diff origin/main` vacío): `scrum932` ×4, porque este árbol trae un `.env` (igual que en el apéndice N), y `scrum1289b` ×2, con `EPERM … open 'C:\Users\Javier'`: la ruta con espacio parte el destino del reporter. No lo he corrido contra un main limpio.
+- **Medición pedida por el orquestador (solo lectura): ¿qué pasa si la factura tiene `pdf_sha256` pero el fichero NO está en el volumen?** **Falla cerrado, no regenera y avisa solo en el log.**
+  - `src/lib/invoicing.ts:90` llama a `exigirPdfCongelado`.
+  - `:184-187` hace `console.error('[SCRUM-665e] PDF congelado SIN FICHERO …')` y lanza `pdf_congelado_sin_fichero`.
+  - El recibo público lo recoge en `src/modules/billing/app/routes/receipt.routes.ts:440-449`, con un segundo `console.error` y un **500** con `documentNotFoundHtml()`.
+  - El panel lo recoge en `src/modules/system/app/routes/invoicesAdmin.routes.ts:1337-1350`, con un `console.error` y un **500** `{ error: 'pdf_generation_failed' }`.
+  - No escribe en `auditLog`, no notifica y la respuesta no distingue «fichero perdido» de cualquier otro fallo de generación.
+  - Con la función a secas lo prueba `tests/scrum665e-pdf-de-la-emitida-congelado.test.mjs` caso ③. Por la RUTA no lo prueba ningún test: los 500 se han leído en el código y no se han intentado.
+
+**Error propio:** al hacer la lista de la dirigida di por hecho que `scrum1547` tenía fichero, y no lo tiene. El recuento lo destapó (0 ficheros con ese prefijo), y aquí se dice en vez de contarlo como verde.
+
+A9: sin fallo que generalice — el único tropiezo (dar por existente un fichero de la lista) lo cazó el propio recuento de la lista en el momento, que es ya el mecanismo («Cero no es está limpio: es no he mirado»).
