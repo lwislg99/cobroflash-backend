@@ -782,6 +782,59 @@ A9: comprobación → `tests/scrum700-filtros-de-comentario.test.mjs`
 El test ⑦ de 1787i limpiaba la ruta con un filtro propio (`.replace(/\/\/.*/, '')`) en vez del de la casa, y el censo de SCRUM-700 lo contó como el octavo filtro que ciega (run 45113237157, censo 7). Ahora usa `soloEjecutable` de `tests/_guard-texto.mjs` (`almohadillaEsComentario: false`, es TypeScript). El censo (7) no se toca (SCRUM-1787 c.22377). Verde: `scrum700` + `scrum1787i`, 16 de 16 en 2 ficheros. El fallo es del puesto: el filtro de la casa existía y el guard que lo exige también; lo cazó el guard en CI, que es su sitio.
 
 **Y un fallo mío encima (jv-j1hu):** empujé ese arreglo (`ad1a14ce0`) sin correr `tests/scrum719-el-suelo-de-los-doce.test.mjs`, y lo tumbaba dos veces: la llamada nueva a `soloEjecutable` no tenía suelo (SCRUM-1395 ②) y el test no tenía ficha en `tests/_veredicto-mudez.json` (SCRUM-1395b ①). Lo cacé en la rama de 1787m, antes de que lo dijera CI. Ahora es `ejecutableDe` con ancla `origen: 'C7-suelta'`, y la ficha sale de `npm run censo:mudez -- --escribir` (1 medido, VIVO). Coste: un segundo empujón a 1787i y a 1787p. El guard existía y el aviso también (cambiar un test que filtra = correr 719); falló correrlo, y eso ningún test lo puede obligar.
+
+# SCRUM-1787m · El PDF de factura imprime «Vence el» y «Formas de pago» con lo congelado en la factura
+
+**Medido contra:** `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740` · 2026-11-23T04:01:47Z
+
+A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1787m-pdf-vence-y-formas-de-pago.test.mjs`
+
+Decisión del fundador: SCRUM-1787 c.22338 ③ («3-GO», regla 40: el PDF de factura muestra «Vence el» y las formas de pago). Literales firmados: `Vence el` (c.22325 ①) y `Formas de pago` con `Tarjeta` · `Bizum` · `Transferencia` (c.22345 ①), los mismos de la ficha. Carril J1. Construido por `jv-j1hp` sobre la rama de 1787i (`a9b26ff40`, PR #3311), que trae las columnas.
+
+**Qué cambia**
+
+- `src/modules/invoicing/infra/pdf/pdf.service.ts`, solo `generateInvoicePdf`: dos parámetros nuevos y obligatorios (`dueDate` y `payMethods`; un llamador que no los pase no compila) y dos líneas en la cabecera, a la derecha, debajo de `Fecha:`. `Vence el dd/mm/aaaa` usa la misma función de fecha que `Fecha:` (el día en la zona del negocio, SCRUM-1470c) y solo sale si la factura tiene vencimiento. `Formas de pago: Tarjeta, Bizum` nombra cada forma congelada, en su orden, y solo sale si queda alguna conocida: una clave que no sea `card`, `bizum` o `transfer` no se pinta. `generateQuotePdf` no se toca.
+- Los llamadores: medido, hacía falta. `generateInvoicePdf` no recibe la factura sino sus campos sueltos, así que los tres llamadores (dos en `src/lib/invoicing.ts` y el de regenerar en `invoicesAdmin.routes.ts`, los tres de J1) pasan `dueDate` y `payMethods` de la fila de la factura. Nada sale del comercio ni del presupuesto (regla 29).
+- `tests/_cambios-autorizados-de-la-factura.mjs`: una entrada con las huellas de `docs/master/evidencias/SCRUM-1446d/huellas.mjs` y la cita de c.22338. Ningún número escrito a mano.
+
+**Cómo se ve que una factura sin estos datos sale igual**
+
+`docs/master/evidencias/SCRUM-1787/pdf-vence/lineas.mjs` fabrica la misma factura y da la huella de sus líneas (texto y posición). Sin vencimiento ni formas de pago: 15 líneas y huella `5a4ceaa8c7689611829f3249539428f656aac98a77e67be1d7ac4f61d4eeb009` antes del cambio y después. Con los dos datos: 17 líneas. El caso ⑤ del test lo sujeta dentro del código nuevo (ausentes, `null`, lista vacía y clave desconocida dan las mismas líneas); la comparación contra el código anterior es la de ese guion, hecha una vez. El PDF fabricado con los dos datos está en `docs/master/evidencias/SCRUM-1787/pdf-vence/1787m-con-datos.pdf` y se leyó: las dos líneas salen bajo `Fecha:`, sin pisar el emisor.
+
+**Medido**
+
+- Rojo primero: con el test escrito y el código sin tocar, 7 de 8 caían. Uno de los siete (⑦, el control del presupuesto) caía por un error del propio banco y no por el defecto: ver abajo.
+- `tsc -p .` con tipos: salida 0. `node_modules` propio, `prisma generate` y guard del cliente ✔.
+- Dirigida del encargo (19 ficheros, cada prefijo con al menos uno: 1787m, 1787i, 1787d, 1788a, 1779d, 178, 290, 523d, 291, 603b, 723, 347, 525d, 1157, 1215, 1415, 262): 147 casos, 145 pasan, 0 caen, 2 saltos; 145 + 2 = 147.
+- Mutaciones con el `aplicarUna` de la casa (`docs/master/evidencias/SCRUM-1787/pdf-vence/mutar.mjs`): 2 de 2 vivas (sin la línea del vencimiento cae ①; sin la de las formas de pago cae ③). Después, `git status` solo con los cambios del ticket.
+
+**Errores míos (A9)**
+
+- Añadí una línea nueva en el primer llamador de `src/lib/invoicing.ts` y moví de la 267 a la 268 la puerta que cita `docs/legal/AUDITORIA_CAMINO_EMISION.md`. Lo cazó `tests/scrum525d-anclas-que-apuntan.test.mjs`. Se arregló en el código: los dos campos van en la línea que ya existía y el documento no se toca.
+- Declaré el diccionario de literales fuera de la función y cambió el ámbito que vigila `scrum723`. Se metió dentro de `generateInvoicePdf`; la lista declarada del guard no se toca.
+- El banco del control ⑦ fabricaba un presupuesto con una sola opción y el esquema pide tres: el caso caía por su propio suelo (CIEGO), no por el defecto. Corregido antes del cambio.
+
+**NO medido**
+
+- Los tramos de emisión de la suite y la suite entera en local: los corre el obligatorio (orden del orquestador del 23-nov).
+- Los 2 saltos de la dirigida, gateados por base de datos.
+- Captura en PNG: el navegador de la sesión bloquea `file:`. Queda el PDF fabricado.
+- Los tres llamadores con una factura real: se leyó el fuente (caso ⑧), no se emitió ni se regeneró ninguna. Navegador, yaqu.app, staging y producción.
+
+**Merge con la rama de 1787i ya al día (`cf9f6e1c9`, con main `d5bec9526` y 1787l dentro)**
+
+Cuatro conflictos, los cuatro con 1787l (#3308, Observaciones) y resueltos con los dos lados: el tipo de `generateInvoicePdf` lleva `docFooterText` y, detrás, `dueDate` y `payMethods`; los dos llamadores en conflicto pasan los tres campos; y el catálogo de cambios autorizados lleva la entrada de 1787l y, detrás, la de 1787m. Las huellas de la entrada de 1787m se volvieron a sacar con `huellas.mjs` después del merge: su `de` es ahora el `a` de 1787l. Las cifras de «Medido» de arriba (147 casos, la huella de 15 líneas) son de antes del merge, contra `90e8e377`; lo que se repitió después está en el comentario de entrega de Jira. El párrafo «Segundo merge con main» de 1787i, que git dejó detrás de este tramo, se devolvió a su sitio sin cambiarle una letra.
+
+## Rojos de SCRUM-586 y SCRUM-836 tras el merge de main `141baada` (relevo jv-j1hu, 2026-11-23T05:54:28Z, sobre `origin/main` = `141baada7559c8ab18bd9a572383a40d3d5b6164`)
+
+A9: comprobación → `tests/scrum836-ancla-de-mutacion-viva.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum586-forma-de-pago-por-cliente.test.mjs`
+
+Run 45113232031 (#3316). **586** (`payMethods` NO llega al PDF) prohibía la palabra en todo el camino del PDF, y 1787m la metió a propósito. Decisión del fundador, SCRUM-1787 c.22377 (regla 41): se distingue `invoice.payMethods` (congelado al emitir; GO c.22338 ③) de `quote.payMethods` y de la preferencia del comercio, que siguen prohibidas. El test ⑧ ahora lo mide por AST: fuera de `generateInvoicePdf` la palabra sigue a cero en los cinco ficheros, y dentro sólo vale `params.payMethods` o su firma. Caso nuevo: cada llamada a `generateInvoicePdf` de `src/` (población derivada; 3 hoy) pasa `<x>.payMethods` del mismo objeto que da `merchantCriterioCaja`, columna que sólo tiene la factura. Nota fechada en el test que cita c.22377. Tres mutaciones nuevas en su catálogo (⑦ el PDF recibe las del presupuesto en `src/lib/invoicing.ts`, ⑧ la del comercio en `invoicesAdmin.routes.ts`, ⑨ el PDF del presupuesto las pinta): con `aplicarUna`, 9 de 9 VIVAS. **836**: la mutación de `scrum1240d` sobre `src/lib/invoicing.ts` llevaba un `de` que 1787m cambió (puso `dueDate` y `payMethods` en esa línea para no mover el ancla :267 de la auditoría). Se reancla al texto nuevo; muta lo mismo (`inv.merchantCriterioCaja` → `inv.merchant.criterioCaja`) y promete lo mismo: con `aplicarUna`, 5 de 5 VIVAS. Las de 1787m, 2 de 2 VIVAS. `git status` sin cambios en `src/` tras cada pasada. Verde: 12 ficheros (700, 586, 836, 1240d, 1787m, 1787i, 603b, 723, 523d, 291, 1294, 745), 128 de 128. El fallo es del puesto: los dos rojos los dio CI y no una tanda local antes del empujón de 1787m; si allí se corrieron 586 y 836, no lo he medido.
+
 # SCRUM-1787n · La lista de facturas con las columnas, el orden y los rótulos de la lista de presupuestos
 
 **Medido contra:** `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740` · 2026-11-23T03:55:05Z (cabecera `Date:` de `gh api -i zen`)

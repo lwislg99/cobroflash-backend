@@ -191,8 +191,10 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     fichero: 'src/lib/invoicing.ts',
-    de: '      merchantCriterioCaja: inv.merchantCriterioCaja, // SCRUM-1240d: el CONGELADO, nunca el vivo\n    });',
-    a: '      merchantCriterioCaja: inv.merchant.criterioCaja, // SCRUM-1240d: el CONGELADO, nunca el vivo\n    });',
+    // 23-nov-2026 · reanclada (SCRUM-1787 c.22377): 1787m puso `dueDate` y `payMethods` en esta
+    // misma línea para no mover el ancla :267 de la auditoría. Muta lo mismo que antes.
+    de: '      merchantCriterioCaja: inv.merchantCriterioCaja, dueDate: inv.dueDate, payMethods: inv.payMethods, // SCRUM-1240d y SCRUM-1787m: los CONGELADOS, nunca los vivos\n    });',
+    a: '      merchantCriterioCaja: inv.merchant.criterioCaja, dueDate: inv.dueDate, payMethods: inv.payMethods, // SCRUM-1240d y SCRUM-1787m: los CONGELADOS, nunca los vivos\n    });',
     cae: '1240d · cada llamada a generateInvoicePdf pasa merchantCriterioCaja de la FACTURA',
   },
 ];
