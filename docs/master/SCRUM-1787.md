@@ -1122,3 +1122,31 @@ Para igualar, la factura tendría que imprimir rótulos del presupuesto que hoy 
 - No se construyó nada: esta rama no cambia `src/`, `public/` ni `prisma/`. Ni test rojo, ni cambio, ni mutaciones: dependen de la firma.
 - No se ejercieron con datos, solo se leyeron en el fuente: «Total del apartado», cláusulas, firma, QR con SIF encendido y marca de agua.
 - yaqu.app: no visto, porque no ha cambiado nada.
+
+# SCRUM-1787y · En la página de pago, «Vence el 5 de diciembre», sin el cero del día
+
+**Medido contra:** `origin/main` = `97e196f930334971538b5c0ba13e0224cbe7d184` · 2026-11-23T21:07:40Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: sin fallo que generalice — el cambio es una opción de formato y su rojo se vio antes del arreglo. Lo que no pude hacer lo digo abajo: leer c.22431 en Jira (la lectura de SCRUM-1787 con comentarios la denegó el clasificador de permisos de la sesión); trabajé con la cita del encargo del orquestador («4-Sí ok quita el 0»).
+
+Mutaciones: catálogo → `tests/scrum1787q-pago-vence-el.test.mjs`
+
+Encargo del orquestador J a jv-j2ec (J2). Decisión del fundador: SCRUM-1787 c.22431 («4-Sí ok quita el 0», citada por el orquestador; no leída por mí en Jira). Ningún texto nuevo: cambia solo cómo se escribe el día.
+
+## Qué se construyó (1787y)
+
+- `payInvoice.routes.ts` (J2), la línea de «Vence el» de 1787q: `day: '2-digit'` → `day: 'numeric'`. Sale «Vence el 5 de diciembre de 2026» (antes «05»). Los días de dos cifras no cambian. Zona del negocio, mes largo y año, igual que antes.
+- **¿Hay otra página pública de J2 con la MISMA fecha?** Medido con `grep` de `toLocaleDateString`/`2-digit` en `src/modules/billing/app/routes/` y de `Vence el` en `src/` y `public/`: el recibo (`receipt.routes.ts:311`) usa el mismo formato, pero para «Pagado el …», la fecha del PAGO, no la de vencimiento: no se toca. «Vence el» sale además en `public/dashboard/js/invoiceDetailView.js` (la ficha, panel privado, mes corto), `facturaSuelta.ts` y `pdf.service.ts` (PDF, lo cambia J1 en 1787x): ninguno es una página pública de J2, no se tocan.
+
+## Test (1787y)
+
+`tests/scrum1787q-pago-vence-el.test.mjs`, caso nuevo «un día de una cifra sale sin el cero»: `dueDate` 2026-12-05 → «Vence el 5 de diciembre de 2026» y no «Vence el 05 »; control: 2026-12-10 sigue «Vence el 10 de diciembre de 2026». ROJO antes del cambio (1 de 6, la página decía «Vence el 05 de diciembre de 2026»), VERDE 6 de 6 después.
+- Mutación por `aplicarUna` (catálogo del fichero, nueva entrada «vuelve a `2-digit`»): tumba el caso nuevo, `ok: true`. La de 1787q sigue viva (tumba su caso + 2 colaterales). `git status` tras las dos pasadas: solo mis dos ficheros.
+- Dirigida (1787q, 1787h, 1787p, 1723, 1647, 1773, 836, 700, 710b, 719, 810, 1294, 267, 273, 525d, 854 y 1787t), 17 ficheros: 165 casos, 163 pasan, 2 caen, 0 saltados. Caen: `scrum854` ② (pedía esta entrada de registro; se repite tras escribirla) y **`scrum1787t` ⑤ (J1) «las opciones son las de la página de pago»**: compara un literal fijo del formato en los dos ficheros y queda rojo hasta que entre 1787x (J1), que lo reescribe. Decisión del orquestador en SCRUM-1787 c.22436: se empuja con ⑤ en rojo, sin tocar ese test.
+- `npm run build` (tsc con tipos): salida 0.
+
+## NO medido (1787y)
+
+- La suite entera NO se corrió en local: la corre el obligatorio.
+- En yaqu.app: no visto; se ve tras el merge y el despliegue, con una factura suelta con vencimiento de día < 10.
+- Nada contra staging ni producción.
