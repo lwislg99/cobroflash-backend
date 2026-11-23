@@ -22,6 +22,9 @@ import {
   updateInvoiceStatusAdmin,
   NO_SE_MARCAN_PAGADAS_EN_LOTE,
   setInvoiceTags,
+  MetodoDeCobroObligatorioError, // SCRUM-1316l
+  llevaLineaAlDiez, // SCRUM-1316l
+  COPY_METODO_OBLIGATORIO_IVA_10, // SCRUM-1316l
 } from '../../invoiceAdmin';
 
 import { BASE_URL } from '../../../../core/config/env';
@@ -570,12 +573,19 @@ router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
     // charge_id) y la relectura de abajo impiden apuntar lo que no se marcó.
     const aMarcar = await prisma.invoice.findMany({
       where: { id: { in: ids }, merchantId: req.merchantId, status: { notIn: [...NO_SE_MARCAN_PAGADAS_EN_LOTE] } },
-      select: { id: true },
+      select: { id: true, lines: true },
     });
+
+    // SCRUM-1316l · el lote no lleva medio de cobro, y con una línea al 10 % declararlo es obligatorio
+    // (SCRUM-1316 c.22438). Esas facturas se QUEDAN FUERA y se devuelven con el T3 firmado: el resto se
+    // marca como siempre. Las líneas de una factura emitida no cambian (regla 29), así que leerlas antes
+    // de escribir no abre carrera.
+    const sinMetodo = aMarcar.filter((x) => llevaLineaAlDiez((x as { lines?: unknown }).lines)).map((x) => x.id);
+    const idsDelLote = ids.filter((id) => !sinMetodo.includes(id));
 
     const result = await prisma.invoice.updateMany({
       where: {
-        id: { in: ids },
+        id: { in: idsDelLote },
         merchantId: req.merchantId,
         // SCRUM-496 · ANTES decia `{ not: 'paid' }`, y eso INCLUIA `annulled`: una factura dada de
         // baja ante la AEAT —con su registro de anulacion sellado y encadenado— podia volver a
@@ -592,7 +602,7 @@ router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
     // SCRUM-1732 · una fila por factura marcada, releída: solo las que quedaron `paid` con ESTA fecha.
     if (aMarcar.length) {
       const marcadas = await prisma.invoice.findMany({
-        where: { id: { in: aMarcar.map((x) => x.id) }, merchantId: req.merchantId, status: 'paid', paidAt: fecha.fecha },
+        where: { id: { in: aMarcar.map((x) => x.id).filter((id) => !sinMetodo.includes(id)) }, merchantId: req.merchantId, status: 'paid', paidAt: fecha.fecha },
         select: { id: true, total: true, chargeId: true },
       });
       for (const inv of marcadas) {
@@ -610,10 +620,12 @@ router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
       action: 'marcar_pagado_manual', entityType: 'invoice',
       // SCRUM-397: queda escrito que la fecha la AFIRMO una persona (y si la eligio o la heredo
       // de por defecto), no que el sistema la dedujo.
-      meta: { ids, updated: result.count, via: 'bulk', paidAt: fecha.fecha.toISOString(), fechaOrigen: fecha.origen }, ip: requestIp(req),
+      meta: { ids, ...(sinMetodo.length ? { sinMetodo } : {}), updated: result.count, via: 'bulk', paidAt: fecha.fecha.toISOString(), fechaOrigen: fecha.origen }, ip: requestIp(req),
     });
 
-    return res.json({ ok: true, updated: result.count });
+    return res.json(sinMetodo.length
+      ? { ok: true, updated: result.count, sinMetodo, message: COPY_METODO_OBLIGATORIO_IVA_10 }
+      : { ok: true, updated: result.count });
   } catch (err) {
     console.error('[POST /admin/invoices/bulk-paid]', err);
     return res.status(500).json({ error: 'internal_error' });
@@ -719,6 +731,10 @@ router.put('/:id/status', requireRole('admin'), async (req, res) => {
   } catch (err) {
     if (err instanceof UnpayNotAllowedError) {
       return res.status(409).json({ error: 'unpay_not_allowed', message: err.message });
+    }
+    // SCRUM-1316l · con una línea al 10 %, sin medio de cobro no se marca cobrada: T3 firmado.
+    if (err instanceof MetodoDeCobroObligatorioError) {
+      return res.status(422).json({ error: 'metodo_de_cobro_obligatorio', message: err.message });
     }
     console.error('[PUT /admin/invoices/:id/status]', err);
     res.status(500).json({ error: 'internal_error' });
