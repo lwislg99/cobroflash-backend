@@ -165,19 +165,34 @@ test('SCRUM-1787w ② la factura conserva lo NECESARIO (número, fecha, vence, N
 });
 
 test('SCRUM-1787w ③ cabecera de tabla y columnas iguales a las del presupuesto con los mismos datos', () => {
-  const cabQ = una(presupuesto, (l) => l.texto.startsWith('Concepto'), 'de cabecera en el presupuesto');
-  const cabF = una(factura, (l) => l.texto.startsWith('Concepto'), 'de cabecera en la factura');
-  assert.equal(cabQ.texto, 'ConceptoCant.PrecioIVA%IMPORTE', '🔴 CIEGO: la cabecera del presupuesto no es la medida');
-  assert.equal(cabF.texto, cabQ.texto, '🔴 la cabecera de la factura no es la del presupuesto');
-  assert.equal(cabF.x, cabQ.x, '🔴 la cabecera de la factura no empieza donde la del presupuesto');
+  // La cabecera sale en DOS líneas del lector: «Concepto» y, 12 pt más arriba según pdfkit, el resto
+  // (`doc.y - 12`). Se compara la cabecera ENTERA: cada trozo con su texto, su x y su y relativa.
+  const cabecera = (d, que) => {
+    const c = una(d, (l) => l.texto === 'Concepto', `«Concepto» en ${que}`);
+    return d.lineas.filter((l) => Math.abs(l.y - c.y) <= 14)
+      .map((l) => [l.texto, l.x.toFixed(2), (l.y - c.y).toFixed(2)])
+      .sort((a, b) => Number(a[1]) - Number(b[1]));
+  };
+  const cabQ = cabecera(presupuesto, 'el presupuesto');
+  const cabF = cabecera(factura, 'la factura');
+  // El lector junta los cuatro rótulos alineados a la derecha en UNA línea y en orden inverso
+  // («IMPORTEIVA%PrecioCant.», medido el 23-nov; por qué invierte, sin medir): se exige cada rótulo.
+  const juntos = cabQ.map((t) => t[0]).join('|');
+  for (const r of ['Concepto', 'Cant.', 'Precio', 'IVA%', 'IMPORTE']) {
+    assert.ok(juntos.includes(r), `🔴 CIEGO: la cabecera del presupuesto no trae «${r}»: ${juntos}`);
+  }
+  assert.deepEqual(cabF, cabQ, '🔴 la cabecera de la factura no es la del presupuesto (texto, orden o posición)');
   // Una fila con los mismos datos: mismo concepto, misma cantidad y mismo tipo, en la misma columna.
   const filaQ = una(presupuesto, (l) => l.texto.startsWith('Material de fontanería'), 'de fila en el presupuesto');
   const filaF = una(factura, (l) => l.texto.startsWith('Material de fontanería'), 'de fila en la factura');
   assert.equal(filaF.texto, filaQ.texto, '🔴 la fila no se pinta igual en los dos');
   assert.equal(filaF.x, filaQ.x);
   // La descripción de línea va en su propia línea, como en el presupuesto.
-  const desc = 'Grifo monomando de cocina, incluye desmontaje del antiguo';
-  assert.equal(una(factura, (l) => l.texto === desc, 'con la descripción').x, una(presupuesto, (l) => l.texto === desc, 'con la descripción').x);
+  // (a 9 pt y 240 de ancho se parte en dos líneas: se compara la primera, texto y x)
+  const descQ = una(presupuesto, (l) => l.texto.startsWith('Grifo monomando'), 'con la descripción');
+  const descF = una(factura, (l) => l.texto.startsWith('Grifo monomando'), 'con la descripción');
+  assert.equal(descF.texto, descQ.texto);
+  assert.equal(descF.x, descQ.x);
 });
 
 // Huella medida sobre el código ANTES del cambio (registro, tramo SCRUM-1787w).
