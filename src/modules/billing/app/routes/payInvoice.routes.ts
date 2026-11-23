@@ -17,6 +17,7 @@ import { cardChargeMode } from '../../domain/cardCharge'; // SCRUM-893
 import { transferenciaDisponible } from '../../domain/transferenciaDisponible'; // SCRUM-910
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { pieDePresupuesto } from '../../../quotes/domain/presentacionIva'; // SCRUM-1787h: el desglose de la página del presupuesto
+import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1787q: «Vence el» en la zona del negocio
 
 const router = Router();
 
@@ -124,7 +125,7 @@ router.get('/invoice/:token', async (req, res) => {
   const invoice = await prisma.invoice
     .findFirst({
       where: { chargeId: id, merchantId: charge.merchantId },
-      select: { number: true, total: true, lines: true },
+      select: { number: true, total: true, lines: true, dueDate: true },
     })
     .catch(() => null);
 
@@ -144,6 +145,14 @@ router.get('/invoice/:token', async (req, res) => {
     : [concept, invRef].filter(Boolean).join(' · ');
 
   const detalleHtml = detalleDeLaFactura(invoice, Number(charge.amount), charge.currency);
+
+  // SCRUM-1787q · «Vence el» (firmado, SCRUM-1787 c.22325 ①): la fecha CONGELADA al emitir la factura
+  // (1787i), sólo si consta; nunca la del presupuesto. Formato y zona, los del recibo, la otra página
+  // pública de esta familia («Pagado el …», receipt.routes.ts): día y mes largo, en la zona del negocio.
+  const vence = invoice?.dueDate ? new Date(invoice.dueDate) : null;
+  const venceHtml = vence && !Number.isNaN(vence.getTime())
+    ? `<div class="subline">Vence el ${esc(vence.toLocaleDateString('es-ES', { timeZone: zonaDelMerchant(m), day: '2-digit', month: 'long', year: 'numeric' }))}</div>`
+    : '';
 
   // ── A2.1: métodos disponibles + orden por la matriz W4 (por importe) ──
   const amountNum = Number(charge.amount);
@@ -281,6 +290,7 @@ router.get('/invoice/:token', async (req, res) => {
       <div class="amount-label">Importe a pagar</div>
       <div class="amount">${amount}</div>
       ${subline ? `<div class="subline">${subline}</div>` : ''}
+      ${venceHtml}
     </div>
     ${detalleHtml}
 
