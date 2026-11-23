@@ -73,7 +73,7 @@ test('SCRUM-1787l ① emitir con docFooterText lo guarda en la fila', async () =
 async function lineasDelPdf(sufijo, extra) {
   const { generateInvoicePdf } = await import('../dist/lib/pdf.js');
   const { outPath } = await generateInvoicePdf({
-    number: `F-2026-QA1787L${sufijo}`, invoiceId: 1, merchantId: 1,
+    number: `F-2026-QA1787L${sufijo}`, invoiceId: 1, merchantId: 71,
     merchant: { name: 'Emisor QA', taxId: 'B00000000' }, customer: { name: 'Cliente QA' },
     currency: 'EUR', total: '12.10', qrData: '', type: 'F1', zona: null, merchantCriterioCaja: null,
     lines: [{ concept: 'Mano de obra', qty: 1, price: 10, tax: 0.21 }],
