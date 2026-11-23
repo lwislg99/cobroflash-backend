@@ -20,6 +20,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { reqDeSesion } from './_arnes-de-router.mjs';
+import { casosEscritos } from './_casos-escritos.mjs'; // SCRUM-1415 · un caso por fila, con su nombre escrito
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const require_ = createRequire(path.join(RAIZ, 'package.json'));
@@ -110,14 +111,18 @@ test('SCRUM-1532b · ① desde `pending` cancela: escribe `cancelled` con `pendi
   assert.equal(esc[0].args.where.merchantId, MERCHANT);
 });
 
-for (const estado of ['paid', 'failed', 'expired', 'otro_que_no_existe']) {
-  test(`SCRUM-1532b · ① desde \`${estado}\` → 409 y no escribe nada`, async () => {
-    const r = await cancelar({ estado });
-    assert.equal(r.status, 409);
-    assert.equal(r.data?.error, 'charge_not_pending');
-    assert.equal(r.llamadas.filter((c) => /\.(update|updateMany|create|delete)/.test(c.q)).length, 0);
-  });
-}
+const NO_PENDIENTES = ['paid', 'failed', 'expired', 'otro_que_no_existe'];
+const desdeNoPendiente = casosEscritos(NO_PENDIENTES, (estado) => `SCRUM-1532b · ① desde \`${estado}\` → 409 y no escribe nada`, async (estado) => {
+  const r = await cancelar({ estado });
+  assert.equal(r.status, 409);
+  assert.equal(r.data?.error, 'charge_not_pending');
+  assert.equal(r.llamadas.filter((c) => /\.(update|updateMany|create|delete)/.test(c.q)).length, 0);
+});
+test('SCRUM-1532b · ① desde `paid` → 409 y no escribe nada', desdeNoPendiente(0));
+test('SCRUM-1532b · ① desde `failed` → 409 y no escribe nada', desdeNoPendiente(1));
+test('SCRUM-1532b · ① desde `expired` → 409 y no escribe nada', desdeNoPendiente(2));
+test('SCRUM-1532b · ① desde `otro_que_no_existe` → 409 y no escribe nada', desdeNoPendiente(3));
+desdeNoPendiente.todos();
 
 test('SCRUM-1532b · ① idempotente: un cobro ya cancelado contesta 200 y no vuelve a escribir', async () => {
   const r = await cancelar({ estado: 'cancelled' });
@@ -242,15 +247,18 @@ const PAGINAS = [
   ['transferencia', R_BANK, '/pay', '/pay/bank/tok1532'],
   ['Mercado Pago', R_MP, '/pay', '/pay/mp/tok1532'],
 ];
-for (const [nombre, modulo, montaje, url] of PAGINAS) {
-  test(`SCRUM-1532b · ③ la página de pago (${nombre}) de un cobro cancelado manda al recibo`, async () => {
-    const r = await pedirPublica(modulo, montaje, url, 'cancelled');
-    assert.ok([302, 303].includes(r.status), `🔴 ${url} con el cobro cancelado contesta ${r.status}: sigue abierta`);
-    assert.match(String(r.location), /\/recibo\/tok1532$/);
-    const p = await pedirPublica(modulo, montaje, url, 'pending');
-    assert.ok(!/\/recibo\/tok1532$/.test(String(p.location || '')), 'control: con el cobro pendiente no manda al recibo');
-  });
-}
+const paginaCancelada = casosEscritos(PAGINAS, ([nombre]) => `SCRUM-1532b · ③ la página de pago (${nombre}) de un cobro cancelado manda al recibo`, async ([, modulo, montaje, url]) => {
+  const r = await pedirPublica(modulo, montaje, url, 'cancelled');
+  assert.ok([302, 303].includes(r.status), `🔴 ${url} con el cobro cancelado contesta ${r.status}: sigue abierta`);
+  assert.match(String(r.location), /\/recibo\/tok1532$/);
+  const p = await pedirPublica(modulo, montaje, url, 'pending');
+  assert.ok(!/\/recibo\/tok1532$/.test(String(p.location || '')), 'control: con el cobro pendiente no manda al recibo');
+});
+test('SCRUM-1532b · ③ la página de pago (selector) de un cobro cancelado manda al recibo', paginaCancelada(0));
+test('SCRUM-1532b · ③ la página de pago (Bizum) de un cobro cancelado manda al recibo', paginaCancelada(1));
+test('SCRUM-1532b · ③ la página de pago (transferencia) de un cobro cancelado manda al recibo', paginaCancelada(2));
+test('SCRUM-1532b · ③ la página de pago (Mercado Pago) de un cobro cancelado manda al recibo', paginaCancelada(3));
+paginaCancelada.todos();
 
 // ── LA FALTA DECLARADA (SCRUM-1532 c.22435) ────────────────────────────────────────────────────
 // La fila de auditoría necesita la clave `cobro_cancelado`, aprobada como clave interna, que añade S1

@@ -195,6 +195,7 @@ completa no se corrió: no hay código ni test nuevo.
 **Medido contra:** `origin/main` = `4aeac0f6c1f5a63b97b009a1c1b3ebc93c973e3e` · 2026-11-23T21:04:07Z
 
 A9: comprobación → `tests/scrum1532b-cancelar-cobro.test.mjs`
+A9: comprobación → `tests/scrum1415-nombres-construidos.test.mjs`
 Mutaciones: catálogo → `tests/scrum1532b-cancelar-cobro.test.mjs`
 
 23-nov-2026 · sesión `jv-j2ea` (J2). GO, dos decisiones y tres textos firmados: SCRUM-1532 `c.22430`;
