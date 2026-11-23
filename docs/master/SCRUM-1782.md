@@ -3,6 +3,7 @@
 ## SCRUM-1782b · El rótulo de `tipoDestinatario` pasa a «¿Factura como empresa o autónomo (IVA)?» en las dos fichas (J2)
 
 **Puesto:** J2 (jv-j2dt) · **Rama:** `scrum-1782b-rotulo-factura-como` · 23-nov-2026
+**Skill UI:** cargada
 **Medido contra:** `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740` · 2026-11-23T03:48:04Z (cabecera `Date:` de `gh api -i zen`)
 Mutaciones: catálogo → tests/scrum1782b-rotulo-factura-como.test.mjs
 A9: aviso → A10 «Un rojo sin población no es un hallazgo: es un instrumento que no llegó a arrancar.» — no se pudo comprobar: mi primer «rojo» del test nuevo cayó por `Cannot find module '../dist/…'` (árbol sin `dist/`), no por el rótulo, y salió con la misma cruz; lo cazó leer el mensaje del fallo antes de dar el rojo por bueno. Ningún guard distingue un rojo del entorno de un rojo del defecto en una pasada que corre una sesión.
