@@ -296,6 +296,23 @@ export const CAMBIOS_AUTORIZADOS = [
       a: 'a8bd2fb9e99037e52b07fcbdf3133bfcc4adf32100d4b50b8ea4796e2e8b3857',
     },
   },
+  {
+    // SCRUM-1787x · la misma línea «Vence el» de 1787t (dentro del GO c.22408): SOLO el día pasa de
+    // `2-digit` a `numeric` («5 de diciembre de 2026»). Decisión del fundador c.22431. Huellas de
+    // `evidencias/SCRUM-1446d/huellas.mjs` sobre origin/main 4aeac0f6c1f5a63b97b009a1c1b3ebc93c973e3e
+    // (el `de` es el `a` de 1787t).
+    firma: 'SCRUM-1787 c.22431',
+    registro: 'docs/master/SCRUM-1787.md',
+    cita: 'Respuesta literal: «4-Sí ok quita el 0»',
+    cuerpo: {
+      de: '2b62a73e67001b850f2005f950480cf0a9e7a603d83e4325bd7acbb7cc9346ce',
+      a: '3cc5a0bd8afcc8d7b9a69bff74fd60059271779970c09cc76b72bbdb204b2f24',
+    },
+    ambito: {
+      de: 'a8bd2fb9e99037e52b07fcbdf3133bfcc4adf32100d4b50b8ea4796e2e8b3857',
+      a: '7685e52da0bab2674ea7211a022a592b929598f1974b4528108aba98389c7676',
+    },
+  },
 ];
 
 /**
