@@ -1215,6 +1215,7 @@ Encargo del orquestador J a jv-j1ig (J1). Decisión del fundador: SCRUM-1787 c.2
 - La suite entera NO se corrió en local (lo pide así el encargo): la corre el check obligatorio del PR.
 - yaqu.app: no visto. Se ve tras el merge y el despliegue, en una factura con vencimiento de día menor que 10.
 - La página de pago sigue con «05 de diciembre» hasta que entre 1787y (J2); mientras, las dos superficies divergen en el día, y sólo en el día. Es lo que decidió c.22436, con 1787x primero.
+
 # SCRUM-1787y · En la página de pago, «Vence el 5 de diciembre», sin el cero del día
 
 **Medido contra:** `origin/main` = `97e196f930334971538b5c0ba13e0224cbe7d184` · 2026-11-23T21:07:40Z (cabecera `Date:` de `gh api -i zen`)
@@ -1241,4 +1242,34 @@ Encargo del orquestador J a jv-j2ec (J2). Decisión del fundador: SCRUM-1787 c.2
 
 - La suite entera NO se corrió en local: la corre el obligatorio.
 - En yaqu.app: no visto; se ve tras el merge y el despliegue, con una factura suelta con vencimiento de día < 10.
+- Nada contra staging ni producción.
+
+# SCRUM-1787z · El guard ⑤ de 1787t vuelve a ser ENTERO: «Vence el» dice lo mismo en el PDF y en la página de pago, día incluido
+
+**Medido contra:** `origin/main` = `27656eae71e62369a5e87f27ae40e82e5764211d` · 2026-11-23T21:34:23Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: comprobación → `tests/scrum1787t-pdf-vence-fecha-larga.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1787t-pdf-vence-fecha-larga.test.mjs`
+
+Encargo del orquestador J a jv-j1il (J1). Decisión del orquestador, SCRUM-1787 c.22436 ③: «Cuando los dos estén en main, un tramo 1787z (J1) vuelve a fijar en ⑤ que el día es `numeric` en las DOS, recuperando la exigencia completa». El día sin cero es decisión del fundador, c.22431 («4-Sí ok quita el 0»). Sólo cambia un test: nada en `src/`, `public/` ni `prisma/`, y ningún texto nuevo.
+
+## Qué había al empezar
+
+- 1787x (`scrum-1787x-vence-el-sin-cero`, PR #3333, PDF) y 1787y (`scrum-1787y-pago-vence-el-sin-cero`, PR #3331, página de pago) **NO estaban en main**: los dos PR abiertos y `BLOCKED` a las 21:3xZ. Los dos ya traían `day: 'numeric'` (leído en sus ramas). Como manda el encargo, `git merge` de las dos ramas remotas en ésta, sin conflictos: este PR las contiene hasta que entren.
+- Los dos tramos de registro (1787x y 1787y) quedaron pegados sin línea en blanco entre el último punto de 1787x y la cabecera de 1787y; se añade esa línea, sin tocar su texto.
+
+## Qué se construyó (1787z)
+
+- `tests/scrum1787t-…` ⑤, mismo nombre. **Por EFECTO:** pinta el PDF (`generateInvoicePdf`) y la página `/pay/invoice/<token>` (montada con una base en memoria, como `scrum1787q`, que no se importa porque registraría sus casos) con el mismo vencimiento, y exige que las dos líneas «Vence el …» sean iguales y además iguales a un literal escrito a mano: `2026-12-04T23:30Z` → «Vence el 5 de diciembre de 2026» (día de una cifra, y en el borde de la zona: en Madrid ya es el 5) y `2026-12-23T12:00Z` → «Vence el 23 de diciembre de 2026». El literal a mano es lo que caza que las dos cambien a la vez. **Por FUENTE:** los dos ficheros llevan el literal ENTERO `), day: 'numeric', month: 'long', year: 'numeric' })` tras `toLocaleDateString('es-ES', { timeZone: zonaDelMerchant(`; desaparece la expresión regular que admitía `numeric|2-digit` (la que puso 1787x al partirlo).
+- Catálogo del fichero: mutación nueva «la página de pago vuelve a `2-digit`» → tumba ⑤.
+
+## Cómo se ve
+
+- Mutaciones por `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, con la pasada limpia delante (6 de 6): «PDF vuelve a `dateStr`» tumba ① (+4 colaterales, ⑤ incluido); «PDF vuelve a `2-digit`» tumba ⑥ (+1: ⑤); «página vuelve a `2-digit`» tumba ⑤ y sólo ⑤, con el mensaje «el PDF dice «Vence el 5 de diciembre de 2026» y la página de pago «Vence el 05 de diciembre de 2026»: las dos superficies divergen». Las tres VIVAS; `git status` tras las tres: sólo mi test.
+- Dirigida (1787t, 1787q, 1787m, 810, 1294, 267, 273, 525d y 854), 9 ficheros: cifras en la entrega de Jira. `npm run build` (tsc con tipos): salida 0.
+
+## NO hecho / NO visto
+
+- yaqu.app: no visto; no cambia nada que se vea (sólo un test). Lo que se ve es de 1787x y 1787y.
 - Nada contra staging ni producción.
