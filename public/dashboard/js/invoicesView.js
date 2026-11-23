@@ -481,7 +481,7 @@ async function fetchInvoices(options = {}) {
     tableScroll.className = 'table-scroll';
     panelEmitidas.appendChild(tableScroll);
     const table = document.createElement('table');
-    table.className = 'table table--cards-mobile'; // feedback fundador 6-jul: cards en móvil
+    table.className = 'table table--cards-mobile j1-fac-lista'; // feedback fundador 6-jul: cards en móvil · j1-fac-lista: SCRUM-1787n
     tableScroll.appendChild(table);
 
     // Checkbox "seleccionar todo" en cabecera

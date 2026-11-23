@@ -5,12 +5,13 @@
 // Antes de cada foto se EXIGE en el DOM la tabla con sus filas; si falta, el guion lanza y no captura.
 // Lo que devuelve: las cabeceras leídas del DOM de cada lista (la comparación que la foto enseña).
 // Uso (MCP de Playwright, `browser_run_code_unsafe`): globalThis.__dir1787 = <raíz del árbol>;
-// globalThis.__puerto1787 = <puerto>; globalThis.__fase1787 = 'antes' | 'despues'.
+// globalThis.__puerto1787 = <puerto>.
 async (page) => {
   const RAIZ = globalThis.__dir1787 || 'C:/Users/Javier Pereira/cobroflash-jv-j1hq';
   const DIR = RAIZ + '/docs/master/evidencias/SCRUM-1787/';
   const PUERTO = globalThis.__puerto1787 || 5789;
-  const FASE = globalThis.__fase1787 || 'antes';
+  // La fase NO va en un global: en el MCP no sobrevive entre llamadas (medido: una pasada «despues»
+  // escribió sobre las «antes»). Se deduce de lo que pinta la lista de facturas (rótulo «Importe»).
   const HOST = '127.0.0.1:' + PUERTO;
   const me = { merchantId: 1, userRole: 'admin', name: 'Ana', plan: 'pro', merchantName: 'Reformas Ejemplo', onboardingCompleted: true, country: 'ES' };
   const presupuestos = [
@@ -74,6 +75,7 @@ async (page) => {
     await lp.setContent(`<body style="margin:0;background:#e5e7eb;display:flex;gap:24px;font:13px sans-serif">
       <figure style="margin:0"><figcaption style="padding:6px">Presupuestos</figcaption><img src="data:image/png;base64,${izq}" width="${viewport.width}"></figure>
       <figure style="margin:0"><figcaption style="padding:6px">Facturas</figcaption><img src="data:image/png;base64,${der}" width="${viewport.width}"></figure></body>`);
+    const FASE = dom[`facturas-${sufijo}`].cabeceras.includes('Importe') ? 'despues' : 'antes';
     const nombre = `1787n-listas-${FASE}-${sufijo}.png`;
     await lp.screenshot({ path: DIR + nombre, fullPage: true });
     hechas.push(nombre);
