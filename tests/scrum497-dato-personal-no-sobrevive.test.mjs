@@ -185,6 +185,8 @@ const SIN_DECIDIR = Object.freeze({
   'quote.docHeaderText': 'texto libre de cabecera del presupuesto, que puede estar sellado (regla 29): ¿puede llevar datos del cliente?',
   'quote.docFooterText': 'texto libre de pie del presupuesto, que puede estar sellado (regla 29): misma pregunta que quote.docHeaderText',
   'albaran.docHeaderText': 'texto libre de cabecera del albarán: misma pregunta que quote.docHeaderText',
+  // SCRUM-1787l · 23-nov-2026 · decisión del fundador en SCRUM-1787 c.22360: misma clasificación que quote.docFooterText.
+  'invoice.docFooterText': EN_DOCUMENTO_SELLABLE('las Observaciones del presupuesto, texto libre: misma pregunta que quote.docFooterText'),
   'quote.pdfUrl': 'el PDF del presupuesto, que lleva los datos del cliente: ¿se borra el fichero o lo conserva el documento?',
   'invoice.pdfUrl': EN_DOCUMENTO_SELLABLE('el PDF de la factura, con los datos del cliente dentro'),
   'albaran.pdfUrl': 'el PDF del albarán, que lleva los datos del cliente: misma pregunta que quote.pdfUrl',
@@ -328,8 +330,10 @@ test('SCRUM-497 · 🔴 TRINQUETE: noventa datos personales siguen sin anonimiza
     + '  o a `FUERA_DE_ANONIMIZADO` y baja este número a mano, en el mismo commit.\n'
     + '  Si no, el censo ha dejado de verlos y «cero pendientes» significa «no supe mirar».');
 
-  assert.equal(reparto.sinDecidir.length, 97,
-    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 97 (` +
+  assert.equal(reparto.sinDecidir.length, 98,
+    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 98 (` +
+    'SCRUM-1787l sumó, el 23-nov-2026 y sobre 97, `invoice.docFooterText` en SIN_DECIDIR ' +
+    '(EN_DOCUMENTO_SELLABLE, misma clasificación que `quote.docFooterText`); decisión del fundador en SCRUM-1787 c.22360; ' +
     'SCRUM-1787d sumó, el 21-nov-2026 y sobre 92, 5 columnas `invoice.customerBilling*` en SIN_DECIDIR ' +
     '(EN_DOCUMENTO_SELLABLE); decisión del fundador en SCRUM-1787 c.22322; ' +
     `SCRUM-1005b sumó, el 20-nov-2026 y sobre 91, ` +

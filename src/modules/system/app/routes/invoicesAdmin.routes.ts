@@ -1383,6 +1383,7 @@ router.post('/:id/regenerate-pdf', requireRole('admin'), async (req, res) => {
       stageLabel: invoice.stageLabel, // SCRUM-33
       zona: merchant.timezone, // SCRUM-1470c: el día de la «Fecha:», el de su registro
       merchantCriterioCaja: invoice.merchantCriterioCaja, // SCRUM-1240d: el CONGELADO, nunca el vivo
+      docFooterText: invoice.docFooterText ?? null, // SCRUM-1787l: las Observaciones congeladas al emitir
     });
 
     await prisma.invoice.update({
