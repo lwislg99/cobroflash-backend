@@ -2,7 +2,7 @@
 
 **Medido contra:** `origin/main` = `90e8e3774f86ff6ef393e7f25f0c6bdedb95765e` · 2026-11-23T03:44:00Z
 
-A9: aviso → cicatriz J6 «Lancé cinco guards de navegador encadenados en un bucle sin cronometrar antes uno» — no se pudo comprobar: ningún hook multiplica pasadas por duración antes de lanzar, y un guard que sale de CIEGO cambia de duración (0,9 s → 139 s)
+A9: aviso → cicatriz J6 «Lancé cinco guards de navegador encadenados en un bucle sin cronometrar antes uno, y el arnés lo mandó a segundo plano: completar-lleva-al-campo tarda 139 s cuando mide, 0,9 s cuando está ciego» — no se pudo comprobar: ningún hook multiplica pasadas por duración antes de lanzar, y un guard que sale de CIEGO cambia de duración (0,9 s → 139 s)
 
 Carril J6 (sólo `scripts/guard-*.mjs`, que según `node scripts/carriles.mjs de <ruta>` sólo cubre la fila general de `scripts/`: no tienen dueño declarado y nadie los reclama). Nada en `src/` ni en `public/`. Encargo del orquestador J (`cobroflash-backend-2d`), sesión `jv-j6fc`. Ticket abierto por esta sesión (no existía; búsqueda en Jira por «guards de navegador» y «CIEGO» sin duplicado).
 
