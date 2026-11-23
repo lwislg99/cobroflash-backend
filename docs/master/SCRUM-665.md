@@ -2123,3 +2123,37 @@ Encargo del orquestador J. El fundador decidió que #3201 entra ya (SCRUM-665 c.
 **Error propio:** al hacer la lista de la dirigida di por hecho que `scrum1547` tenía fichero, y no lo tiene. El recuento lo destapó (0 ficheros con ese prefijo), y aquí se dice en vez de contarlo como verde.
 
 A9: sin fallo que generalice — el único tropiezo (dar por existente un fichero de la lista) lo cazó el propio recuento de la lista en el momento, que es ya el mecanismo («Cero no es está limpio: es no he mirado»).
+
+# APÉNDICE (Q) · SCRUM-665e · 23-nov-2026 · J1 (jv-j1hw) · main mergeado otra vez (1787i/l/m/n/o/p), 4 conflictos juntados y cuatro guards a la cuenta real de llamadores
+
+**Medido contra:** `origin/main` = `0b2f6451af74f2142cf27e18c9a4c42fb56c1e65` · 2026-11-23T08:36:14Z (hora de GitHub; mergeado en la rama, sin rebase ni force)
+
+Encargo del orquestador J. El fundador decidió que #3201 entra ya (SCRUM-665 c.22358, leído en Jira). Antes del merge la punta remota era `e332cc6e4` y el PR estaba `DIRTY`; S1 no había empujado nada encima. No se ha tocado el diseño de 665e. De Jira se leyeron c.22358, c.22363, c.22379 y c.22382, y ningún otro comentario.
+
+- **Conflictos: 4.**
+  - `src/lib/invoicing.ts`, en `ensureInvoiceForCharge`: se queda el lado de 665e (el segundo generador pasa por `ensureInvoicePdf`). Lo que main añadió a ese generador (1787l `docFooterText`, 1787m `dueDate` y `payMethods`) ya había entrado sin conflicto en `ensureInvoicePdf` (`src/lib/invoicing.ts:163-164`). Queda UNA llamada a `generateInvoicePdf` en `src/` (`src/lib/invoicing.ts:140`), contada con grep fuera del fichero que la define.
+  - `src/modules/system/app/routes/invoicesAdmin.routes.ts`: `regenerate-pdf` sigue retirada (c.21182 punto 3); el resto del fichero trae lo de main.
+  - `docs/legal/AUDITORIA_CAMINO_EMISION.md`: texto de main, con tres anclas recalculadas sobre el árbol fusionado: `prisma/schema.prisma:970-976`, `:1913` (`model VfSubmission`) y `src/lib/invoicing.ts:121` y `:325`.
+  - `docs/sql/deriva-prod.sql`: regenerado con `node scripts/generar-sql-deriva.mjs`. Salen 549 columnas en 35 tablas: las 548 de main más `invoices.pdf_sha256` (diff contra el de main: esas dos líneas y ninguna más).
+- **Cuatro guards de main contaban llamadas a `generateInvoicePdf`** y con el generador único se quedaban CIEGOS. Pasan a la cifra real por decisión del fundador (c.22379 para los dos primeros; c.22382, general, para los otros dos), con fecha y cita en la misma línea y sin cambiar ninguna otra aserción:
+
+  | guard | antes | después |
+  |---|---|---|
+  | `tests/scrum1787m-pdf-vence-y-formas-de-pago.test.mjs` ⑧ | suelo ≥ 3 | suelo ≥ 1 |
+  | `tests/scrum586-forma-de-pago-por-cliente.test.mjs` | suelo ≥ 2; mutación ⑦ anclada al segundo generador; mutación ⑧ anclada a `regenerate-pdf` | suelo ≥ 1; ⑦ reanclada a `ensureInvoicePdf`; ⑧ retirada con su motivo |
+  | `tests/scrum593c-todas-las-puertas-del-documento.test.mjs` | tabla 2 + 1, total 3 | tabla 1 (sin fila de `invoicesAdmin.routes.ts`), total 1 |
+  | `tests/scrum1787l-observaciones-en-la-factura.test.mjs` ⑥ | exactamente 3 | exactamente 1 |
+
+  De los 16 tests que main trajo desde `e332cc6e4`, ocho nombran el generador o la ruta retirada; cuentan llamadores estos cuatro, y los otros cuatro (1240d, 1787i, 1787o y 723) pasan sin tocar. Los tests anteriores a `e332cc6e4` no se han vuelto a censar.
+- La mutación ⑦ de 586, reanclada, sigue VIVA con `aplicarUna`: pasada limpia 23 de 23; mutada, 22 de 23, y cae el test que declara. El árbol quedó idéntico (`git status` vacío antes y después). La mutación de 593c no se ha vuelto a pasar: su ancla no se tocó.
+- La ficha de mudez de 586 se re-midió con `npm run censo:mudez -- --escribir` (VIVO, 143 fichas).
+- **Sin recongelar nada:** 523d, 291, 603b y 723 pasan tal como venían.
+- Cliente de Prisma regenerado en el `node_modules` propio (`npm run topologia`: directorio propio), guard en ✔. `tsc -p .` con tipos: salida 0.
+- **Dirigida** (37 ficheros: 665e, 762, 878, 707, 1304, 1240d, 1470c, 577, 586, 243, 497, 1787d/i/m/p, 1788a, 1779d, 178, 290, 523d, 291, 603b, 723, 222, 347, 525d, 729, 728d, 1404g, 55, 824 y 219): 347 tests, 334 pasan, 8 saltan y 5 caen. Tres eran los de 1787m y 586 de la tabla, ya en verde; los otros dos, `scrum55` y `scrum824`, los cubre el parche de S1 `42655871` y no se tocan. `scrum1547` no tiene fichero. Después, los cuatro guards de la tabla con 719, 737, 694, 710b, 195, 414, 525d y 1240d: 172 tests, 0 caen. `npm run guards:entrada`: salida 0, 15 guards.
+- **Suite entera: NO corrida.** Solo los tramos 12 de 15 (1166 tests, 0 caen) y 8 de 15 (820 tests, 0 caen), que son los que destaparon 593c y 1787l. Los otros trece los corre el obligatorio; pedidos y sin hacer por contexto quedaron el 3, 4, 5, 7 y 13. A12.1+A12.4 no se ha visto en ninguna pasada de este relevo.
+
+**Error propio:** al poner al día dos anclas de la auditoría escribí la columna entre acentos graves justo detrás de la coordenada, y `scrum525d` la tomó como TESTIGO de `:1913`: la primera dirigida cayó por mi nota. Se reescribió sin acentos. Y la dirigida del encargo no listaba 593c ni 1787l: los destaparon los tramos, no la lista.
+
+Mutaciones: catálogo → `tests/scrum586-forma-de-pago-por-cliente.test.mjs`
+
+A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
