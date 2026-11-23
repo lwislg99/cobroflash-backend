@@ -582,13 +582,13 @@ Decisión: SCRUM-1787 c.22353, literal **«1-Sí»**. Carril de SCRUM-593 sin et
 
 - ① `scrum593c`: el último caso ya no prohíbe todo `docFooterText` en `src/lib/invoicing.ts`. Por AST, en las 3 llamadas a `generateInvoicePdf` de la emisión (`invoicing.ts` ×2, `invoicesAdmin.routes.ts` ×1), `docFooterText` sólo puede ser `inv.`/`invoice.docFooterText`, y `docHeaderText` sigue prohibido. Nota fechada en el test con la cita a c.22353. Control positivo en su `MUTACIONES_QUE_ME_TUMBAN`: pasar `(inv as any).quote?.docFooterText` → VIVA con `aplicarUna` (base 6/6).
 - ② `scrum409`: el fixture del PDF de `scrum1787l` pasa de `merchantId: 1` a `71`.
-- ③ `scrum1547`: **NO HECHO, PARADO.** `quote.docFooterText` está en `SIN_DECIDIR` de `tests/scrum497-dato-personal-no-sobrevive.test.mjs`; declarar `invoice.docFooterText` igual pone verdes los dos casos de 1547 y tumba el trinquete de SCRUM-497 («da 98 pendientes y eran 97»): pide mover un número escrito a mano, condición de parada del encargo. Retirada la prueba; el fichero queda byte a byte como en la rama (`git hash-object` = `9dd1f6cb`).
+- ③ `scrum1547`: primero PARADO. `quote.docFooterText` está en `SIN_DECIDIR` de `tests/scrum497-dato-personal-no-sobrevive.test.mjs`, y declarar `invoice.docFooterText` igual tumbaba el trinquete de SCRUM-497 («da 98 pendientes y eran 97»): había que mover un número escrito a mano. Pregunta en c.22359; decisión del fundador en c.22360, literal **«1-Ok sí»**. Hecho: `invoice.docFooterText` entra en `SIN_DECIDIR` (`EN_DOCUMENTO_SELLABLE`) y el trinquete pasa de 97 a 98 con nota fechada que cita c.22360. Nada más del guard.
 
-Mutaciones de 1787l con `aplicarUna`: las dos VIVAS (base 7/7). Dirigida (593c, 409, 497, 1787l, 1787d, 1779d, 523d, 291, 603b, 723, 222, 525d): 121 casos, 117 ok, 2 saltados declarados (los gateados de 222), 2 rojos = los dos de 1547. `guards:entrada` salida 0 (15 guards). `tsc -p .` salida 0, cliente regenerado en `node_modules` propio y guard ✔.
+Mutaciones de 1787l con `aplicarUna`: las dos VIVAS (base 7/7). Dirigida tras ③ (593c, 409, 497, 1787l, 1787d, 1779d, 523d, 291, 603b, 723, 222, 525d y 1294): 125 casos, 123 ok, 0 rojos, 2 saltados declarados (los gateados de 222). `guards:entrada` salida 0 (15 guards). `tsc -p .` salida 0, cliente regenerado en `node_modules` propio y guard ✔.
 
 Fallo propio: al retirar la prueba de ③ mi edición se comió un salto de línea; lo cazó `git diff` y lo devolví antes del commit.
 
-**NO medido:** la suite entera (no corrida: el encargo prohíbe los tramos y no empujo con un rojo conocido); yaqu.app; staging y producción.
+**NO medido:** la suite entera (no corrida: el encargo prohíbe los tramos; la corre el obligatorio); yaqu.app; staging y producción.
 # SCRUM-1787k · La factura suelta acepta por línea la descripción y el descuento, con la función del camino desde presupuesto
 
 **Medido contra:** `origin/main` = `ccb69008b5aaa80d3f7cb712be77ce025c146238` · 2026-11-21T21:55:47Z (cabecera `Date:` de `gh api -i zen`)
