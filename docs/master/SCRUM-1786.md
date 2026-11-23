@@ -269,8 +269,13 @@ total de la tarjeta 575,30 €.
 
 **Pruebas:** `tests/scrum1786g-portal-total-del-apartado.test.mjs`, 6 casos. ROJO sobre el código de antes en los
 tres que piden la fila (posición e importe, cuadre, líneas antes de la primera cabecera); verde el control sin
-apartados, cuya huella sha256 de la tarjeta se tomó de ese código. Después, 6/6. La tanda dirigida y su recuento,
-en la entrega de Jira.
+apartados, cuya huella sha256 de la tarjeta se tomó de ese código. Después, 6/6. Build con tipos (`tsc -p .`):
+salida 0. Tanda dirigida (37 ficheros: el nuevo, 1786b, 1786f1, los del portal, los que nombran
+`customerPortal.routes`, `reciboPortalEstilo` o `pagoEstilo`, 1773, 836, 700, 710b, 719, 1157, 1215, 1415, 1294,
+267, 273, 525d y 854): 285 casos, 279 pasan, 5 saltados y 1 «cae», que es `tests/_sonda-fecha-impresa.mjs`: no es un
+test (no casa con `*.test.mjs`), lo coló en la lista mi `git grep`. `guards:entrada`: 170 de 170.
+🔴 **NO corrida la suite entera**, por orden del orquestador (c. el mensaje de `cobroflash-backend-2d`): la corre el
+obligatorio.
 
 **Mutaciones** (`correr` + `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`; `git status` sin cambios en `src/`
 después): «la fila del último apartado desaparece» → VIVA; «suma mal» (el total arrastra los apartados anteriores)
