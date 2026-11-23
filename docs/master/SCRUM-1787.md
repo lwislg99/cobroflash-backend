@@ -793,3 +793,44 @@ Mutaciones: catálogo → `tests/scrum1787p-cobro-hereda-formas-de-pago.test.mjs
 A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
 
 Tres conflictos con 1787l (#3308), los tres derivados. `prisma/schema.prisma`: en `model Invoice` se quedan las tres columnas (`dueDate`, `payMethods` de 1787i y `docFooterText` de 1787l), sin elegir lado. `docs/sql/deriva-prod.sql`: regenerado con `scripts/generar-sql-deriva.mjs` sobre el esquema unido (548 columnas). `docs/legal/AUDITORIA_CAMINO_EMISION.md`: anclas recolocadas en sitio (eslabón 4 → `schema.prisma:970-971`, eslabón 8 → `:1908`). Con la ancla vieja del eslabón 4 (963-964), 525d cae 1 de 8; con la nueva, 8 de 8; mutación hecha una vez y sin guion en git. Ninguna aserción cambia.
+# SCRUM-1787o · «Enviada» de la ficha de factura sabe también del envío por correo
+
+**Medido contra:** `origin/main` = `d5bec9526fe9165e38598f6eb054d0717e788740` · 2026-11-23T03:50:55Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: comprobación → `tests/scrum1787o-enviada-tambien-por-correo.test.mjs`
+
+**Skill UI:** cargada
+
+Mutaciones: catálogo → `tests/scrum1787o-enviada-tambien-por-correo.test.mjs`
+
+Encargo del orquestador J a jv-j1hr. Defecto medido por jv-j1gy en c.22312. Medición previa en SCRUM-1787 c.22364. Literal «Enviada» firmado en c.22303 ③: no hay texto nuevo.
+
+## Qué se midió (1787o)
+
+- La ficha decidía «Enviada» solo con el WhatsApp (`waDelivery.status` y `envioDocumento.whatsapp`, `public/dashboard/js/invoiceDetailView.js`).
+- Todo correo de factura pasa por `sendInvoiceEmail` (`src/modules/messaging/domain/email.service.ts`, carril S1, solo leído), que deja una fila en `email_messages` por intento con `relatedType: 'invoice'` y `relatedId` = la factura: el automático al cobrar (`psp.routes.ts`), MercadoPago (`mpWebhook.routes.ts`) y el botón manual (`invoicesAdmin.routes.ts`). El evento `emailed` de `correoDeFacturaEnviado.ts` solo lo escribe psp: no ve el envío manual.
+- El GET de la ficha no devolvía ese dato. La tabla y su índice `(relatedType, relatedId)` ya existen: sin esquema.
+
+## Qué se construyó (1787o)
+
+- `correoDelDocumentoSalio` en `src/modules/billing/domain/envioDelDocumento.ts`: cuentan `aceptado_sin_confirmacion`, `aceptado_sin_identificador`, `entregado` y `reclamado`; no cuentan `fallo_envio` ni `rebotado` (igual que el WhatsApp que Meta marca fallido después), ni un estado fuera del embudo.
+- `GET /admin/invoices/:id` devuelve `correoEnviado`, leído de las filas de esa factura con `merchantId` (regla 2). Solo lectura; la emisión no se toca.
+- La línea de progreso marca «Enviada» si salió por WhatsApp O por correo.
+
+## El fallo propio (A9)
+
+Mi primer driver de `aplicarUna` le pasó a `correr` la ruta con `tests/` delante: la pasada limpia salió 0 pasados y 1 caído, y las dos mutaciones salieron CIEGAS, no verdes. El propio instrumento lo dijo. Además mi primera regex del test ② cortaba en la llave de `{ id: req.merchantId }` y daba un rojo falso con el código ya escrito. Ninguno de los dos generaliza más allá de lo que el instrumento ya caza.
+
+## Verde, con población (1787o)
+
+- Test nuevo: rojo visto antes del código (4 de 6 caen; los 2 controles en verde), después 6/6.
+- Mutaciones con `aplicarUna` (limpia 6/6): las dos tumban su test.
+- Dirigida antes del merge con main: 115 ficheros, 1021 casos, 1014 pass, 6 skip, 1 fail (scrum854, que pedía este tramo).
+- Build con tipos antes del merge: salida 0. Después del merge: 2 errores, los dos por `Invoice.docFooterText` (columna de 1787l que trajo main) que el cliente de Prisma compartido no tiene; `_prisma-client-guard.mjs` lo nombra. No regenero: mi `node_modules` cuelga del compartido (A1).
+
+## NO medido (1787o)
+
+- La suite entera NO la corrí: no me cabía en el contexto (aviso al orquestador a 185k; OK suyo para empujar y que la corra el obligatorio).
+- Ninguna fila real de `email_messages`: nada contra staging ni producción. Que Resend reescriba `aceptado_*` a `rebotado` lo leí en `registroDeEnvios.ts`, no lo vi pasar.
+- El handler del GET se comprueba leyendo el fuente, no corriéndolo (pediría base): si alguien sacara la llamada del handler, el test ② lo caza; si la consulta devolviera filas de otra factura, solo lo cazaría el texto del `where`.
+- Ni capturas ni guards de navegador: el cambio no toca CSS ni textos.
