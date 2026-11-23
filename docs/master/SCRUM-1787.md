@@ -1122,3 +1122,44 @@ Para igualar, la factura tendría que imprimir rótulos del presupuesto que hoy 
 - No se construyó nada: esta rama no cambia `src/`, `public/` ni `prisma/`. Ni test rojo, ni cambio, ni mutaciones: dependen de la firma.
 - No se ejercieron con datos, solo se leyeron en el fuente: «Total del apartado», cláusulas, firma, QR con SIF encendido y marca de agua.
 - yaqu.app: no visto, porque no ha cambiado nada.
+
+# SCRUM-1787w · El PDF de la factura con el dibujo del presupuesto (T4)
+
+**Medido contra:** `origin/main` = `97e196f930334971538b5c0ba13e0224cbe7d184` · 2026-11-23T21:22:08Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: comprobación → `scripts/meta-guard-mutaciones.mjs`
+
+Por qué: las dos mutaciones de `scrum1787w` (heredadas de jv-j1if) declaraban `fichero: FUENTE` con una constante; el censo del meta-guard sólo lee literales y las contaba como 0 declaraciones buenas (lo vi con mi driver: «scrum1787w…:0»). Las pasé a literal y las dos salen VIVAS. El meta-guard ya las marca como declaración que no se puede evaluar (CIEGO), así que no hace falta otra comprobación. Heredadas sin línea propia: jv-j1if y jv-j1ih no llegaron a escribir su tramo (traspaso c.22440: 4 anclas de mutación caducadas en 1446e ×2, 1787d y 1788a, reapuntadas; el error lo cuenta allí).
+
+Mutaciones: catálogo → `tests/scrum1787w-pdf-factura-dibujo-del-presupuesto.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1788a-emisor-no-pisa-la-tabla.test.mjs`
+
+Encargo del orquestador J: construir T4 en tres relevos J1 (jv-j1if → jv-j1ih → jv-j1ij). GO de regla 40 del fundador para tocar `generateInvoicePdf`: SCRUM-1787 c.22416 («1-GO», ya citado en el tramo 1787v). Literales del dibujo firmados en c.22428; tabla de diferencias en c.22426 (1787v). Decisión sobre `scrum1788a`: c.22442 del orquestador.
+
+**Qué cambia:** `src/modules/invoicing/infra/pdf/pdf.service.ts`, sólo `generateInvoicePdf` y dos piezas del presupuesto que ahora comparte (`TABLA_DEL_DOCUMENTO`, `pintarCabeceraDeTabla`): una columna emisor/cliente, «Emisor:», «Cliente:», «Email:», «NIF:», «Detalle de la factura:», cabecera «Concepto · Cant. · Precio · IVA% · IMPORTE» con las columnas del presupuesto, «Total factura:», sin banda verde. El PDF del presupuesto no cambia (caso ④ del test, huella de texto y posiciones).
+
+**Tests recongelados** (jv-j1ih, 11, citando c.22428 en cada cambio; ninguno relajado): 1051g, 1240d, 1446, 1446e, 1787d, 1787m, 1788a, 604, 623, 624e, 624y. **Esta sesión:** 
+- `scrum1788a`: retirado el caso ② y recongelado el ① a la nueva geometría (c.22442). Se queda «la tabla empieza debajo del bloque más alto y nada se pisa». La dirección larga ahora parte por «Ciudad | Ficticia»: el final se busca como la única línea que es cola de la dirección, no con un trozo fijo.
+- `scrum603b`/`scrum723`: entrada nueva en `tests/_cambios-autorizados-de-la-factura.mjs` (vía 1446d), huellas de `evidencias/SCRUM-1446d/huellas.mjs` (el `de` es el `a` de 1787t). Control negativo: con una huella cambiada, 603b cae (8 pass, 1 fail). `scrum723` declara `TABLA_DEL_DOCUMENTO` y `pintarCabeceraDeTabla` en su ámbito, con motivo.
+
+**Mutaciones** (`aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, árbol limpio después): «vuelve el rótulo viejo» (`'Total factura:'` → `'TOTAL:'`) VIVA; «vuelve la banda» VIVA; 1788a «el cliente vuelve arriba, a la altura de la cabecera» VIVA. 3/3.
+
+**Captura:** `docs/master/evidencias/SCRUM-1787/1787w/lado-a-lado.png` (presupuesto a la izquierda, factura a la derecha, render con pdf.js; la he mirado), con `quote.pdf`, `invoice.pdf` y sus líneas en `.json`. Guion de datos: el de 1787v (`evidencias/SCRUM-1787/1787v/generar-pdfs.mjs`), sin copiarlo. Lo que se ve distinto y es NECESARIO: «Nº», «Fecha:», «Vence el», «Formas de pago» arriba (por eso todo baja ~30 px), «Dirección:» en vez de «Dirección de la obra:», la base imponible por tipo y «Total factura:». Lo que se ve distinto y NO he decidido yo: la factura no lleva el bloque «GARANTÍA» ni «Suma de líneas / Descuento»; el precio de «Mano de obra» sale 31,50 (descuento repartido en la línea, como en 1787v).
+
+**Aceptación → dónde se ve** (puntos del test, que traducen c.22428; c.22428 y c.22426 NO los he releído en Jira: el encargo me limitaba a c.22440 y c.22442):
+
+| aceptación | dónde se ve |
+|---|---|
+| la factura imprime los literales firmados de c.22428 y no los viejos | `tests/scrum1787w-pdf-factura-dibujo-del-presupuesto.test.mjs` ① · `1787w/lado-a-lado.png` |
+| conserva lo NECESARIO (número, fecha, vence, NIF, dirección, formas de pago, base por tipo) | mismo test ② · captura |
+| cabecera y columnas iguales a las del presupuesto con los mismos datos | mismo test ③ · captura |
+| el PDF del presupuesto no cambia | mismo test ④ |
+| sin banda verde de marca | mismo test ⑤ · captura |
+| con SIF encendido siguen la leyenda VERI*FACTU y el QR | mismo test ⑥ (en el fuente; no ejercido con SIF encendido) |
+| el emisor no se monta sobre la tabla | `tests/scrum1788a-emisor-no-pisa-la-tabla.test.mjs` ① |
+| filas de c.22426 construidas: 1, 2, 5-10, 13, 19 (según el commit `041a1ee6c` de jv-j1if) | test 1787w y captura |
+| resto de filas de c.22426 | NO HECHO / no verificado por mí → orquestador J, contra c.22426 |
+| visto en yaqu.app | NO HECHO → tras el merge y el despliegue |
+
+**Dirigida** (un fichero por proceso): 1787w 6/6, 1788a 1/1, 1051g 13/13, 1240d 10/10, 1446 9/9, 1446e 11/11, 1787d 7/7, 1787m 8/8, 604 6/6, 623 10/10, 624e 6/6, 624y 3/3, 1787t 5/5, 1785b 7/7, 1786f1 4/4, 1787k 5/5, 603 8/8, 603b 9/9, 723 8/8, 523d 7/7, 1446d 3/3; los guards del registro, en la entrega. `npm run build` (tsc con tipos): salida 0. **La suite entera NO se ha corrido en local**: la corre el check obligatorio.
