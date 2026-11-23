@@ -1,0 +1,7 @@
+BASE DEV
+## control_total_facturas [{"n":12}]
+## control_total_cobros [{"n":15}]
+## facturas_por_estado [{"status":"paid","n":9},{"status":"pending","n":3}]
+## pagadas_por_origen [{"origen":"cargo_pagado","pv":"paid_via_NULL","metodo_cargo":"bizum_manual","n":6},{"origen":"cargo_pagado","pv":"paid_via_NULL","metodo_cargo":"card","n":2},{"origen":"cargo_pagado","pv":"paid_via_NULL","metodo_cargo":"transfer","n":1}]
+## cobros_pagados_por_metodo [{"method":"bizum_manual","n":6},{"method":"card","n":5},{"method":"transfer","n":1}]
+## apuntes_por_metodo []
