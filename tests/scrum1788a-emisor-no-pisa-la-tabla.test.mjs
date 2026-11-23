@@ -14,6 +14,14 @@
 //
 // El PDF del PRESUPUESTO (`generateQuotePdf`) no comparte el defecto: pinta emisor y cliente uno
 // DEBAJO del otro con el cursor corrido (`doc.text` sin coordenadas), no en dos columnas.
+//
+// SCRUM-1787w (24-nov-2026) · la FACTURA pasa al dibujo del presupuesto, firmado en SCRUM-1787
+// c.22428 (GO c.22416): emisor y cliente en UNA columna. Decisión del orquestador en SCRUM-1787
+// c.22442: se RETIRA el antiguo caso ② («con el cliente como bloque más alto, el emisor no mueve la
+// tabla»), que era una propiedad del dibujo de DOS columnas: en una columna, un emisor más largo baja
+// la tabla por definición. Lo que este test protege se queda: la tabla empieza SIEMPRE debajo del
+// bloque más alto y nada se pisa (SCRUM-1788 c.22321). El caso ① se recongela a la nueva geometría:
+// la dirección larga ahora parte por «Ciudad | Ficticia» (12 pt, ancho entero), no por donde partía.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -73,11 +81,15 @@ function lineasDelEmisor(lineas, merchant) {
   }
   if (merchant.address) {
     // La dirección larga parte en dos: se buscan su principio y su final.
-    for (const trozo of [merchant.address.slice(0, 20), merchant.address.slice(-15)]) {
-      const l = lineas.filter((x) => x.texto.includes(trozo));
-      assert.equal(l.length, 1, `🔴 CIEGO: el trozo de dirección «${trozo}» sale en ${l.length} líneas`);
-      out.push(l[0]);
-    }
+    // SCRUM-1787w (c.22428, decisión c.22442): el corte no se adivina con un trozo fijo; el final es
+    // la ÚNICA línea que no lleva el principio y cuyo texto entero es la cola de la dirección.
+    const inicio = merchant.address.slice(0, 20);
+    const l1 = lineas.filter((x) => x.texto.includes(inicio));
+    assert.equal(l1.length, 1, `🔴 CIEGO: el principio de dirección «${inicio}» sale en ${l1.length} líneas`);
+    out.push(l1[0]);
+    const l2 = lineas.filter((x) => x.texto.trim() && !x.texto.includes(inicio) && merchant.address.endsWith(x.texto.trim()));
+    assert.equal(l2.length, 1, `🔴 CIEGO: el final de la dirección sale en ${l2.length} líneas; esperaba 1`);
+    out.push(l2[0]);
   }
   return out;
 }
@@ -94,19 +106,8 @@ test('1788a ① · un emisor de 6 líneas termina POR ENCIMA de la cabecera de l
   assert.deepEqual(solapadas, [], '🔴 el emisor se monta sobre la cabecera de la tabla (SCRUM-1788)');
 });
 
-test('1788a ② · control: con el CLIENTE como bloque más alto, el emisor no mueve la tabla', async () => {
-  // Un emisor de 1 línea y otro de 4 (razón social, NIF, dirección corta, teléfono) son los dos
-  // más bajos que el cliente: la tabla tiene que empezar en la MISMA `y`, la de antes del arreglo.
-  const soloNombre = { name: 'QA Fontanería', legalName: 'QA SL' };
-  const cuatro = { ...soloNombre, taxId: 'B00000000', address: 'Calle Corta 1', phone: '+34 000 000 000' };
-  const yUno = yDeLaCabecera(await lineasDeFactura('C1', soloNombre));
-  const yCuatro = yDeLaCabecera(await lineasDeFactura('C4', cuatro));
-  assert.equal(yCuatro, yUno, `la tabla se movió sin que el emisor fuera el bloque más alto (${yUno} → ${yCuatro})`);
-  // Y el positivo de ①: en ESTE caso el hueco sí es amplio, así que el umbral no da rojo por sí solo.
-  const lineas = await lineasDeFactura('C4b', cuatro);
-  const peor = Math.min(...lineasDelEmisor(lineas, cuatro).map((l) => l.y - yDeLaCabecera(lineas)));
-  assert.ok(peor >= HUECO_MINIMO, `el caso corto ya pisa la banda (${peor.toFixed(2)}): el umbral está mal`);
-});
+// (El antiguo caso ② se retiró en SCRUM-1787w por decisión de SCRUM-1787 c.22442: medía una
+// propiedad del dibujo de dos columnas, que la firma de c.22428 retiró. Ver la cabecera.)
 
 // Mutación que tiene que tumbar ①: la tabla vuelve a colocarse sólo por debajo del CLIENTE.
 // SCRUM-1787w · desde la columna única (c.22426 fila 5, GO c.22416) no hay `finEmisorY`: el defecto
