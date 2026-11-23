@@ -983,7 +983,7 @@ A9: aviso → cicatriz J1 «Le pasé a Playwright MCP un fichero con el secreto 
 
 **Hallazgo.** Hoy ninguna factura emitida desde la pantalla lleva formas de pago. 1787i las congela solo si el cuerpo las trae (`facturaSuelta.ts:230`), sin defecto, y el editor que las manda es la parte de S2, pendiente: el editor de staging no tiene paso «Condiciones». El comercio QA tiene IBAN y móvil Bizum, y no tiene Connect. El defecto «las del comercio» es 1787s (GO en c.22397).
 
-**Página de pago.** El cobro de una factura suelta solo lo crea `sendInvoicePaymentRequest` (`POST /admin/invoices/:id/resend-whatsapp`): sin teléfono corta antes de crear el cobro, y con teléfono intenta el envío. El orquestador decidió no enviar. #3323 (1787q) sigue sin mergear.
+**Página de pago.** El cobro de una factura suelta solo lo crea `sendInvoicePaymentRequest` (`POST /admin/invoices/:id/resend-whatsapp`): sin teléfono corta antes de crear el cobro, y con teléfono intenta el envío. El orquestador decidió no enviar. #3323 (1787q, «Vence el» en la página de pago) estaba OPEN cuando medí staging (09:01Z) y se mergeó a las 09:04:00Z (`mergedAt` de GitHub). No he medido si staging lo sirve ya.
 
 **Evidencias** (`docs/master/evidencias/SCRUM-1787/1787r/`), revisadas una a una:
 - `01-ficha-1280.png`: ficha de F260004, COBRO · «Vence el 23 dic 2026», sin formas de pago.
