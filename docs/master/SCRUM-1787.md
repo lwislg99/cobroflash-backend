@@ -1157,3 +1157,31 @@ Decisión: c.22423 (lectura del orquestador de c.22404; el fundador puede vetarl
 ## Dirigida (jv-j1ie, 23-nov, un fichero por comando, sobre `95dad50a` compilado con tipos)
 
 1787s 10/10 · 1787i 11/11 · 1787m 8/8 · 1787p 7/7 · 1787u 4/4 · 586 23/23 · 497 19/19 · 523d 7/7 · 603b 9/9 · 723 8/8 · 887 10/10 · 1240d 10/10 · 810 6/6. Ninguno de 523d/603b/723 pidió recongelar. Los de registro (1294, 267, 273, 525d, 854) y `npm run guards:entrada`, tras escribir este tramo: en el comentario de entrega. `npm run build` (`tsc`, con tipos): salida 0. La suite entera NO se corrió en local (orden del encargo): la corre el obligatorio del PR.
+# SCRUM-1787v · T4: el PDF de la factura con el dibujo del presupuesto — medición y parada para firma (solo docs; no se construye)
+
+**Medido contra:** `origin/main` = `1acb5e4ea4f5f5b026b84a462a98bd7ae4ae3744` · 2026-11-23T20:44:12Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: aviso → A10 «Una captura bonita no prueba que el botón funcione.» — no se pudo comprobar: la primera tabla del subagente decía que el PDF del presupuesto «no lleva fecha», y la captura enseña «Válido hasta el 05 de diciembre de 2026». Lo cacé al mirar la PNG, no por ningún control, y lo corregí antes de publicar (c.22426, fila 3). Una tabla sacada del fuente no se publica sin mirar el render, pero ningún guard puede exigir que una sesión mire una imagen.
+
+Encargo del orquestador J a jv-j1ic (J1). GO del fundador (regla 40): SCRUM-1787 c.22416 («1-GO»). Antes de construir, ese GO pide la tabla NECESARIA / NO NECESARIA con dos PDF reales lado a lado, y PARAR si para igualar hace falta un rótulo que la factura no tiene.
+
+## Qué se midió
+
+- Con los mismos datos fabricados, dos PDF reales: `generateQuotePdf` y `generateInvoicePdf` (`src/modules/invoicing/infra/pdf/pdf.service.ts`, carril J1). Los datos: 3 líneas, IVA al 21 % y al 10 %, descripción y dto de línea, NIF y dirección del cliente, vencimiento, formas de pago, observaciones, SIF apagado.
+- Evidencias en `docs/master/evidencias/SCRUM-1787/1787v/`: `lado-a-lado.png` (render con pdf.js; presupuesto a la izquierda; la he mirado), `presupuesto.pdf`, `factura.pdf`, y el texto y las posiciones en `presupuesto-lineas.json` y `factura-lineas.json`. Guion: `generar-pdfs.mjs`. Lo volví a ejecutar desde su ubicación en el repo: salida 0, y los dos JSON salen idénticos byte a byte (`cmp`).
+- La tabla de 20 filas (fichero:línea, ¿necesaria?, cómo igualarlo) está en Jira, **SCRUM-1787 c.22426**. No la copio aquí: dos copias de una tabla son dos tablas. Solo una fila es igual hoy: Observaciones (:1447-1453 y :885-891).
+
+## Por qué se para
+
+Para igualar, la factura tendría que imprimir rótulos del presupuesto que hoy no tiene: «Emisor:», «Cliente:», «Email:», la cabecera de tabla en minúsculas, el «Detalle del …» y la fila de totales del presupuesto. Dos de ellos ni siquiera existen y habría que escribirlos: «Detalle de la factura:» y «Total factura:». Lo que el GO dice para este caso es parar. Las seis preguntas ✅/❌ están en c.22426.
+
+## Para el relevo que construya
+
+- `drawTableHeader` (:1225) y `pintarTotalDelApartado` (:1256) son funciones internas de `generateQuotePdf`: usan `doc`, `params`, `impuesto` y las constantes X_* de :1201-1210. Extraerlas toca el generador del presupuesto, así que su huella de texto y posiciones tiene que vigilarse antes y después (como en 1786f1). Si se recongela `scrum603b`/`scrum723`/`scrum523d`, se cita c.22416.
+- Fila 11 (dto de línea): es el DATO, no el dibujo. La factura guarda el precio neto (`facturaSuelta.ts:237`), así que T4 no la iguala.
+
+## NO hecho / NO visto
+
+- No se construyó nada: esta rama no cambia `src/`, `public/` ni `prisma/`. Ni test rojo, ni cambio, ni mutaciones: dependen de la firma.
+- No se ejercieron con datos, solo se leyeron en el fuente: «Total del apartado», cláusulas, firma, QR con SIF encendido y marca de agua.
+- yaqu.app: no visto, porque no ha cambiado nada.
