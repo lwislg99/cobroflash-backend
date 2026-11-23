@@ -29,14 +29,14 @@ const FUENTE = 'src/modules/invoicing/infra/pdf/pdf.service.ts';
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // Vuelve el rótulo viejo del total.
-    fichero: FUENTE,
+    fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
     de: "'Total factura:'",
     a: "'TOTAL:'",
     cae: 'SCRUM-1787w ① la factura imprime los literales firmados de c.22428 y no los viejos',
   },
   {
     // Vuelve la banda verde de arriba.
-    fichero: FUENTE,
+    fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
     de: '// SCRUM-1787w · sin banda de marca arriba',
     a: "doc.rect(0, 0, doc.page.width, 5).fill('#16a34a'); //",
     cae: 'SCRUM-1787w ⑤ la banda verde de marca ya no se pinta',
