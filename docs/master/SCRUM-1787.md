@@ -994,3 +994,34 @@ A9: aviso → cicatriz J1 «Le pasé a Playwright MCP un fichero con el secreto 
 **Errores míos.** ① El secreto del login de test de staging quedó en el transcript local de mi sesión, por la cicatriz de arriba. No está en git, Jira ni ningún fichero comiteado, y se ha pedido al fundador que lo rote. ② Crucé los 200k (200.250) con un tope de encargo de 180k: cicatriz J1 del 23-nov.
 
 **NO hecho / NO visto:** yaqu.app; la página de pago; una imagen del PDF renderizado (Chromium sin interfaz no pinta PDF); la segunda factura por API con `payMethods`, que autorizó el orquestador y DENEGÓ el clasificador de permisos antes de ejecutarse (no se emitió nada); los logs de staging (dry-run de WhatsApp). La suite entera no la he corrido: cambio solo de docs; corrí `guards:entrada` y la corre el obligatorio.
+# SCRUM-1787q · La página de pago de la factura dice «Vence el» y la fecha
+
+**Medido contra:** `origin/main` = `0b2f6451af74f2142cf27e18c9a4c42fb56c1e65` · 2026-11-23T08:20:48Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: sin fallo que generalice — el único tropiezo fue un guion de evidencias copiado con `sed` que conservó en su comentario de uso la ruta del de 1787h; lo vi al leer la salida y lo corregí antes de correrlo. La premisa errónea del encargo («el mismo formato de fecha que la página ya usa»: la página de pago no pintaba ninguna fecha) se dice abajo, no es un fallo del puesto.
+
+**Skill UI:** cargada
+
+Mutaciones: catálogo → `tests/scrum1787q-pago-vence-el.test.mjs`
+
+Encargo del orquestador J a jv-j2dv (J2). Literal «Vence el» firmado en SCRUM-1787 c.22325 ①; ya lo pintan la ficha (1787i) y el PDF (1787m). Lectura de la factura en la página de pago: la de 1787h (c.22334). No hay texto nuevo.
+
+## Qué se construyó (1787q)
+
+- `payInvoice.routes.ts` (J2): la consulta de la factura del cobro (ya filtrada por `chargeId` y `merchantId` del cobro desde 1787h) lee también `dueDate`. Si consta, debajo de la referencia («Reparación de bajante · Factura F-…») va `Vence el <fecha>` con la misma clase `subline`. Sin `dueDate`, o sin factura, no se pinta nada. Nunca se lee del presupuesto. Sin CSS nuevo, sin `style=` ni manejadores en línea (CSP de 1723/1773).
+- **Formato de la fecha.** El encargo pedía «el mismo formato que la página ya usa», y la página de pago NO pintaba ninguna fecha (medido: `grep` de `toLocaleDateString`/`DateTimeFormat` en el fichero, 0). Se tomó el de la otra página pública de la misma familia, el recibo (`receipt.routes.ts`, «Pagado el …»): `es-ES`, día de dos cifras, mes largo, año, en la zona del negocio (`zonaDelMerchant`). Sale «Vence el 21 de diciembre de 2026». La ficha usa mes corto («21 dic 2026») y el PDF `21/12/2026`: son tres formatos para la misma fecha, y aquí se eligió el de la página pública hermana.
+
+## Evidencias (1787q)
+
+- Capturas con datos de EJEMPLO, código real, en local, sin base: `docs/master/evidencias/SCRUM-1787/pago-vence/movil-390.png` y `escritorio-1280.png`, servidas por `pago-vence/servir.mjs`. Miradas: la línea sale centrada, en gris de `subline`, entre la referencia y la tabla de líneas; sin desbordes a 390 px.
+- Mutación por el `aplicarUna` de la casa: `docs/master/evidencias/SCRUM-1787/pago-vence/mutar.mjs`. Quitar `${venceHtml}` tumba el caso «una factura con vencimiento» (`ok: true`) y también el de la zona (1 colateral); el árbol quedó igual después (`git diff --stat` comparado antes y después).
+
+## Test (1787q)
+
+`tests/scrum1787q-pago-vence-el.test.mjs`, ruta real contra dobles: ROJO 2 de 5 antes del cambio (los dos que piden «Vence el»), VERDE 5 de 5 después. Casos: con `dueDate` sale «Vence el 21 de diciembre de 2026» dentro del bloque del importe y una sola vez; en `America/New_York` sale el 20 (zona del negocio); sin `dueDate` (null y ausente) o sin factura, no sale, con positivo de que la factura sí se leyó; la factura de OTRO comercio con el mismo cobro no presta su vencimiento; un token que no es de ningún cobro da 404 sin fecha ni número.
+
+## NO medido (1787q)
+
+- En yaqu.app: no visto; se ve tras el merge y el despliegue, con una factura suelta emitida después de 1787i (las anteriores tienen `dueDate` NULL y no enseñan nada, como debe ser).
+- Cuántas facturas reales llevan `dueDate`: nada contra staging ni producción.
+- El correo y el recibo no se tocan; el recibo no dice «Vence el» (ya está pagado).
