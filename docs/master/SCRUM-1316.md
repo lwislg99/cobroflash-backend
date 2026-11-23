@@ -1238,6 +1238,116 @@ la del BOE, literal.
 
 **Corrido:** ver el comentario de entrega en SCRUM-1316. Suite entera no corrida: solo documentos.
 
+# SCRUM-1316m · P2 medido: cómo se marca pagado un cobro a mano y qué medio queda guardado; las cinco decisiones del fundador
+
+**Medido contra:** `origin/main` = `4aeac0f6c1f5a63b97b009a1c1b3ebc93c973e3e` · 2026-11-23T21:06Z (cabecera `Date:` de GitHub, la que cita c.22437; la medición la hizo jv-j2eb)
+
+A9: aviso → cicatriz J2 «el encargo de P2 decía que un cobro a mano se marca pagado sin declarar el medio, y el selector ¿Cómo lo has cobrado? de este mismo puesto existe desde SCRUM-441 (opcional, en 2 de los 5 caminos de marcado a mano); lo cazó jv-j2eb leyendo el código antes de medir» — no se pudo comprobar: la premisa llega en el texto del encargo, que ningún guard del repositorio lee; lo que la caza es buscar el concepto en el código del propio carril antes de medir, y eso lo hace la sesión.
+
+Registro escrito por un relevo de documentos (J2, `jv-j2ee`, 23-nov-2026) por encargo del orquestador del equipo de
+Javier (`cobroflash-backend-2d`), porque a jv-j2eb, que midió, no le cupo el registro en contexto (c.22445). **Las
+mediciones de ①–④ son de jv-j2eb (SCRUM-1316 c.22437); yo no las he repetido.** Lo que sí he hecho: copiar su
+instrumento y sus salidas a `docs/master/evidencias/scrum1316/` y comprobar que solo llevan recuentos. Nada en
+`src/`, `public/` ni `prisma/`.
+
+**Construcción de esta medición** (otras ramas, otros tramos): **1316k** (J2, `jv-j2ed`, c.22446: el arreglo de
+`metodoDeUnCobro`) y **1316l** (J1, `jv-j1ii`, c.22447: medio obligatorio con línea al 10 % en servidor, ficha y
+lote). En c.22438 se llamaron «1316e» y «1316f»; c.22445 lo corrige porque esas letras ya eran de J5.
+
+## ⓜ1 Lo medido (c.22437, sobre `4aeac0f6c`)
+
+Corrección a la premisa del encargo (c.22432): no es del todo verdad que un cobro manual se marque pagado sin
+decir el medio. Desde SCRUM-441 hay un selector «¿Cómo lo has cobrado?» con «Sin especificar» por defecto: es
+**opcional**, y solo está en 2 de los 5 caminos de marcado a mano.
+
+| # | Qué | Dónde (fichero:línea) | Qué guarda el medio |
+|---|---|---|---|
+| ① | «Confirmar Bizum recibido» (cobro con cargo) | `POST /admin/charges/:id/confirm-bizum`, `chargesAdmin.routes.ts:57`, escribe `bizum_manual` en :115. Botón en `invoiceDetailView.js:773` y `jobDetailView.js:2770` | Lo sabe: `Charge.method = bizum_manual` |
+| ① | Liberar garantía | `chargesAdmin.routes.ts:220`, método obligatorio del conjunto cerrado (:240) | Lo sabe |
+| ① | «Marcar como cobrada» (detalle de factura) | `invoiceDetailView.js:643` → `PUT /admin/invoices/:id/status` (`invoicesAdmin.routes.ts:663`) → `invoiceAdmin.ts:301` `campoPaidViaAlMarcar` | `Invoice.paidVia` solo si lo elige; «Sin especificar» no escribe (`metodoDeCobro.ts:335`) |
+| ① | «Marcar como pagada» (presupuesto) | `quotesDetailView.js:1101`, con selector (:1137) | Igual: opcional |
+| ① | «Marcar como PAGADA» (trabajo) | `jobDetailView.js:2726` → mismo PUT sin selector (:2743) | Nada |
+| ① | «✓ Marcar como pagadas» (lote) | `invoicesView.js:517` → `POST /admin/invoices/bulk-paid` (`invoicesAdmin.routes.ts:550`, escribe :589) | Nada (y su apunte va con `metodo: null`, :602) |
+| ① | `paid-webhook` interno (con secreto, no es pantalla) | `invoice.routes.ts:62` | Nada (`metodo: null`, :131) |
+| ② | Campos que existen | `Charge.method` `String` obligatorio (`schema.prisma:482`); `Invoice.paidVia` `String?` (`schema.prisma:884`); `InvoicePayment.metodo` `String?` (`schema.prisma:1047`, SCRUM-1732) | Vocabulario cerrado `PAID_VIA` = card, bizum_auto, bizum_manual, transfer, cash (`paidVia.ts:23`) + `desconocido` |
+| ② | Quién escribe `Invoice.paidVia` | 1 sitio: `invoiceAdmin.ts:311` (vía `campoPaidViaAlMarcar`) | — |
+| ② | Quién lo lee | `metodoDeUnCobro` (`metodoDeCobro.ts:250`) y sus 3 llamadas: `cobros.service.ts:333`, `cobrosPorCubo.ts:222` (informe, `reports.routes.ts:181`), recibo HTML `invoicesAdmin.routes.ts:511`. 12 ficheros de `src/` y 8 de `public/` nombran `paidVia`/`paid_via` | — |
+| ③ | No necesitan declararlo | Tarjeta y Bizum por pasarela: `connectWebhook.routes.ts:76` (`paidViaDesdeStripe`), `stripe.routes.ts:123/163/254` (`card:stripe`), MercadoPago `metodoDesdeMercadoPago`; Bizum confirmado a mano (`bizum_manual`) | Lo escriben ellos |
+| ④ | Staging (SELECT en transacción READ ONLY) | 14 facturas (control), 9 cargos. 5 pagadas: 4 marcadas a mano con cargo no pagado (3 con `paid_via` NULL, 1 con `bizum_manual`) + 1 sin cargo y NULL → **4 de 5 sin medio**. 0 cargos pagados. 0 filas en `invoice_payments` | `out-STAGING.txt` |
+| ④ | Dev | 12 facturas (control), 15 cargos. 9 pagadas, las 9 con cargo pagado (6 `bizum_manual`, 2 `card`, 1 `transfer`) y `paid_via` NULL en las 9 → **0 marcadas a mano**. 0 filas en `invoice_payments` | `out-DEV.txt` |
+
+Producción: **no medida** (prohibido). Los recuentos son de cuentas de prueba: no dicen nada de comercios reales.
+
+Nota de lectura (mía, sobre `out-STAGING.txt`): c.22437 resume staging como «4 marcadas a mano sin cargo pagado,
+de ellas 3 con `paid_via` NULL + 1 sin cargo y NULL»; la salida dice 4 con cargo **no** pagado (`card`) —3 NULL y
+1 `bizum_manual`— y 1 sin cargo con NULL. El total «4 de 5 sin medio» casa con la salida; arriba va lo que dice la
+salida.
+
+**Hallazgo de paso** (carril J2; no se arregló en la medición porque el encargo prohibía `src/`): `metodoDeUnCobro`
+da prioridad a `Charge.method` aunque el cargo no esté pagado (`metodoDeCobro.ts:251`; `reports.routes.ts:182`
+selecciona `charge.method` sin mirar su estado). En staging hay 1 factura marcada a mano con
+`paid_via = bizum_manual` cuyo cargo sigue `pending` con `method = card`: informe, Cobros y recibo dirían «tarjeta».
+Leído en el código y medido en la fila; la función no se ejecutó. Lo arregla **1316k**.
+
+## ⓜ2 La propuesta ⑤ (IA, no asesor; c.22437)
+
+- **Pantalla:** el selector que ya existe en el detalle de factura (Bizum · tarjeta · transferencia · efectivo),
+  la fecha de cobro y «Marcar como cobrada»; si la factura lleva alguna línea al 10 % y se elige efectivo, un aviso.
+- **Lista cerrada:** la que ya hay, derivada de `PAID_VIA` (`opcionesDeMetodoDeclarable`, `metodoDeCobro.ts:300`).
+  «Otro», «cheque nominativo» e «ingreso en cuenta» no existen en el conjunto cerrado (regla 22).
+- **Cobros antiguos:** sin relleno. `NULL` = «no consta» (`metodoDeCobro.ts:243`), con el rótulo que ya existe,
+  «Método no registrado» (`metodoDeCobro.ts:88`).
+- **Caminos que habría que cubrir:** la ficha del trabajo (`jobDetailView.js`, carril S2) y el lote
+  (`invoicesView.js` + `bulk-paid`, J1). Validación en servidor en `invoiceAdmin.ts` (J1) y `metodoDeCobro.ts` (J2).
+- **Marcar cobrada no es camino de emisión** según lo leído: el `update` escribe `status`, `paidAt`, `paidVia`
+  (`invoiceAdmin.ts:308-312`) y el fichero no llama a la numeración ni a la creación de factura;
+  `AUDITORIA_CAMINO_EMISION.md` no lo nombra (control: sí nombra `crearFacturaEmitida`).
+
+## ⓜ3 Las cinco decisiones del fundador (c.22438: «1-Sí a las 5», a lo recomendado en cada una)
+
+1. **Obligatorio declarar el medio al marcar cobrada a mano SOLO cuando la factura lleva alguna línea al 10 %**
+   (opción a). El resto sigue opcional.
+2. **Se arregla antes el hallazgo:** un cargo no pagado no manda sobre el método declarado. J2, sin texto nuevo,
+   con test rojo primero → **1316k**. c.22445 añade: el estado del cargo es opcional para `metodoDeUnCobro`; si
+   llega y no es `paid`, manda `paidVia`; si no llega, se queda como hoy. El informe X2 (`reports.routes.ts:182`,
+   `cobrosPorCubo.ts:203`) es de S1 y necesita `status: true` en su selección → `aviso-a-luis`.
+3. **Literales firmados (regla 39)**, copiados de c.22438:
+   - **T3**, error si no elige en una factura con línea al 10 %: `Elige cómo lo has cobrado: en esta factura hay IVA al 10 %.`
+   - **T4**, aviso al elegir efectivo con línea al 10 %: el mismo texto firmado en c.22424, «Desde el 1 de
+     diciembre de 2026, el IVA del 10 % en obras de vivienda solo se aplica si el cliente paga con tarjeta,
+     transferencia bancaria, cheque nominativo o ingreso en cuenta. Si cobras en efectivo, consúltalo con tu
+     asesor.» (c.22424 no lo he leído: el literal va como lo copia c.22438).
+   - T1 («¿Cómo lo has cobrado?») y T2 (Bizum · tarjeta · transferencia · efectivo) ya están en código.
+4. **No se añaden** «cheque nominativo» ni «ingreso en cuenta» a la lista cerrada (cambio de máster; A2 del asesor
+   sin responder).
+5. **El lote y la ficha del trabajo entran en el mismo encargo:** el lote (J1) → **1316l**; la ficha del trabajo
+   (`jobDetailView.js`, S2) la hace el equipo de Luis → `aviso-a-luis`.
+
+Fecha objetivo (c.22438): antes del 1-dic-2026.
+
+## ⓜ4 Evidencias
+
+En `docs/master/evidencias/scrum1316/` (la carpeta que ya usa este ticket; el encargo decía `SCRUM-1316/`, y una
+segunda carpeta para el mismo ticket serían dos anclas):
+
+- `medir-metodo.cjs` — el instrumento de jv-j2eb, **byte a byte** (comprobado con `cmp`). Solo lee: transacción
+  `READ ONLY`, la URL la toma del entorno y no la escribe. Lleva la ruta del árbol de jv-j2eb en `raiz`: para
+  repetirlo hay que cambiarla.
+- `out-STAGING.txt`, `out-DEV.txt` — sus salidas, **recortadas en una línea cada una**: quité la línea de `dotenv`
+  que imprime la ruta local del `.env`. El resto, idéntico (comprobado con `diff`). Ni URLs de base, ni claves, ni
+  secretos: `grep -ciE 'postgres|://|password|secret|token'` da 0 en los tres ficheros, con control positivo
+  (`postgres://x` da 1).
+
+## ⓜ5 Lo que NO está medido
+
+- Nada de ①–④ lo he repetido: es de jv-j2eb, sobre `4aeac0f6c`. Los `fichero:línea` pueden haberse movido.
+- Producción; la vista en el banco de vistas; el texto de c.22424; si T1/T2 tienen firma registrada en
+  `docs/microcopy/` (los cuatro, «no medido» ya en c.22437).
+- Los tramos 1316k y 1316l: solo enlazados por su número de comentario (c.22446, c.22447), que no he leído.
+- Las horas: c.22438 dice «24-nov-2026 ~00:40Z» y c.22445 «~01:15Z»; Jira les pone de creación
+  2026-11-23T21:08:49Z y 2026-11-23T21:15:08Z. Aquí va la fecha de Jira.
+
+**Corrido:** ver el comentario de entrega en SCRUM-1316. Solo documentos.
 # SCRUM-1316k · Un cargo NO pagado ya no manda sobre el método declarado (`metodoDeUnCobro`)
 
 **Medido contra:** `origin/main` = `97e196f930334971538b5c0ba13e0224cbe7d184` · 2026-11-23T21:18:12Z (cabecera `Date:` de GitHub)
