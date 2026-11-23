@@ -994,3 +994,37 @@ Encargo del orquestador J a jv-j2dv (J2). Literal «Vence el» firmado en SCRUM-
 - En yaqu.app: no visto; se ve tras el merge y el despliegue, con una factura suelta emitida después de 1787i (las anteriores tienen `dueDate` NULL y no enseñan nada, como debe ser).
 - Cuántas facturas reales llevan `dueDate`: nada contra staging ni producción.
 - El correo y el recibo no se tocan; el recibo no dice «Vence el» (ya está pagado).
+
+# SCRUM-1787u · «Qué formas de pago están activas» sale de la página de pago a una función de J2
+
+**Medido contra:** `origin/main` = `19859bf0b2d83c76598233b6814c2106d1630cfd` · 2026-11-23T09:28:16Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: aviso → cicatriz J2 «reescribí un bloque de la página de pago con `node -e "…"` y bash ejecutó los acentos graves» — no se pudo comprobar: lo que se teclea en la consola no lo ve ningún guard del repositorio.
+
+**Skill UI:** no cargada · no cambia nada de lo que se pinta: mismos rótulos, rutas, iconos y orden; sólo mueve el cálculo a otro fichero
+
+Mutaciones: catálogo → `tests/scrum1787u-formas-de-pago-activas.test.mjs`
+
+Encargo del orquestador J a jv-j2dx (J2). GO del fundador: SCRUM-1787 c.22401 («1-GO», opción A); medición de partida: c.22400 (jv-j1hy).
+
+## Qué se midió (1787u)
+
+- La página es `src/modules/billing/app/routes/payInvoice.routes.ts` (la ruta del encargo era la buena). La decisión NO ocupaba sólo `163-185`: iba de la 157 (`// ── A2.1`) a la 240, porque además del IBAN, la tarjeta y el Bizum manual decidía el **Bizum automático** (SCRUM-3), la **lista que el PRO limitó para ESE cobro** (`charge.payMethods`) y el **orden** (≤ 500 € Bizum delante; si no, tarjeta delante; el automático justo detrás del manual).
+- Datos de los que depende: del comercio, `iban`, `clabe` y `country` (`transferenciaDisponible`, SCRUM-910); `id`, `country`, `flags`, `connectStatus` y `stripeAccountId` (`cardChargeMode`, SCRUM-893); `bizumPhone` o, si no, `whatsappPhone`; flags `BIZUM_MANUAL_ENABLED` y `BIZUM_AUTO_ENABLED` leídos con `isFlagEnabled` y el comercio; del cobro, el importe, la moneda y `payMethods`.
+
+## Qué se construyó (1787u)
+
+- `src/modules/billing/app/routes/formasDePagoActivas.ts` (J2, nuevo, `carriles.mjs de --nueva` → J2): `formasDePagoActivas({ merchant, importe, moneda, permitidas? }): FormaDePago[]`, con `FormaDePago = 'bizum' | 'bizum_auto' | 'card' | 'transfer'`. Pura respecto a la decisión (ni base ni reloj); los flags, con el MISMO `isFlagEnabled`. Los comentarios con el porqué de cada condición viajaron con el código.
+- `payInvoice.routes.ts`: llama a la función y sólo traduce cada clave a su enlace (mismos rótulos, iconos y rutas). Ningún texto nuevo; ningún cambio de lo que decide.
+- Para J1 (1787s y 1787s-bis): `bizum_auto` no es un valor de `payMethods`; hereda el permiso de `bizum`. Si la factura congela vocabulario de `payMethods`, se quedan `card`, `bizum` y `transfer`.
+
+## Test y mutaciones (1787u)
+
+`tests/scrum1787u-formas-de-pago-activas.test.mjs`. El oro son 58 casos: la matriz del encargo (IBAN × Bizum activado × teléfono × Connect × 999,99 / 1.000,00 / 1.000,01 = 48) más 10 extras (500,00 y 500,01; Bizum automático a 999,99, a 1.000,01 y en USD; cobro limitado a transferencia; cobro limitado a tarjeta y transferencia con Bizum automático; MX y ES con sólo CLABE; Bizum con el móvil de WhatsApp). Se grabó corriendo la ruta REAL con el código de antes. Con ese código: ① (la página da el oro) VERDE y control VERDE; ② (la función da el oro) y ③ (la página pinta lo que devuelve la función, con un doble que contesta otra cosa) ROJOS. Después de extraer: 4 de 4. No usa `_arnes-de-router.mjs`: ese arnés monta una sesión de `/admin`, y esta ruta es pública y la manda el token.
+
+Mutación por el `aplicarUna` de la casa (`docs/master/evidencias/SCRUM-1787/formas-de-pago/mutar.mjs`): «la página vuelve a decidir en línea» (copia local del cálculo en lugar del import) tumba ③, sin colaterales; «Bizum también por encima de 1.000 €» tumba ②, y ① de colateral. El `git diff --stat` era igual antes y después.
+
+## NO medido (1787u)
+
+- En yaqu.app: no visto. Lo que pinta la página no cambia; tras el despliegue se puede abrir cualquier enlace de pago y ver las mismas formas.
+- Los comercios demo (`cardChargeMode` → `demo_platform`) no están en el oro: lo decide el mismo `cardChargeMode` que antes, sin tocar.
