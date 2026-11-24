@@ -122,7 +122,12 @@ export type AuditAction =
   // es dato anterior a cerrar las puertas o un agujero sin encontrar: en los dos casos hay que
   // enterarse. La regla 5 se levanta para ESTA acción y ninguna más.
   // APROBADO · SCRUM-1519 comentario 19913
-  | 'trabajo_omitido_cliente_ajeno';
+  | 'trabajo_omitido_cliente_ajeno'
+  // SCRUM-1808 · la fila de `POST /admin/charges/:id/cancel` (SCRUM-1532b): un cobro `pending` pasa a
+  // `cancelled`. Clave interna, fire-safe (no va en ACCIONES_BLOQUEANTES). La escribe 1532c, no esta línea.
+  // La regla 5 se levanta para ESTA acción y ninguna más.
+  // APROBADO · SCRUM-1532 comentario 22435
+  | 'cobro_cancelado';
 
 /**
  * Las que EXIGEN constancia: si no se pueden registrar, la acción NO ocurre.
