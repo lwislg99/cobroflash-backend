@@ -121,9 +121,12 @@ test('SCRUM-1055b · ① un cobro declarado el 31-mar y confirmado el 2-abr deve
   // Emitida en diciembre de 2025: por emisión NO está en 2026, así que «sale en el T1» sólo puede
   // venir del cobro. Sin esto, una caja desconectada saldría igual (lo midió jv-j1eo en 1732).
   const f = factura('F-10551', new Date('2025-12-10T11:00:00Z'), r.fecha);
+  // SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora. La copia va a la
+  // lectura por caja; `f` se queda sin marca (NULL = por emisión) para el control por emisión.
+  const fCaja = { ...f, merchantCriterioCaja: true };
   for (const tz of ['UTC', 'Europe/Madrid', 'Atlantic/Canary']) {
     await enZona(tz, async () => {
-      const conCaja = await porTrimestre([f]);
+      const conCaja = await porTrimestre([fCaja]);
       assert.deepEqual(trimestresDe(conCaja, 'F-10551'), [1],
         `🔴 [proceso ${tz}] el cobro del ${r.fecha.toISOString()} tenía que devengar en el T1 y sólo en el T1: ${JSON.stringify(conCaja)}`);
       assert.deepEqual(trimestresDe(await porTrimestre([f], { caja: false }), 'F-10551'), [],
@@ -133,7 +136,8 @@ test('SCRUM-1055b · ① un cobro declarado el 31-mar y confirmado el 2-abr deve
 });
 
 test('SCRUM-1055b · ① control: el último minuto del 31-mar de Madrid es T1 en cualquier zona del proceso', async () => {
-  const f = factura('F-10552', new Date('2025-12-10T11:00:00Z'), new Date('2026-03-31T21:59:00Z'));
+  // SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora
+  const f = { ...factura('F-10552', new Date('2025-12-10T11:00:00Z'), new Date('2026-03-31T21:59:00Z')), merchantCriterioCaja: true };
   for (const tz of ['UTC', 'Europe/Madrid', 'Atlantic/Canary']) {
     await enZona(tz, async () => {
       assert.deepEqual(trimestresDe(await porTrimestre([f]), 'F-10552'), [1], `[proceso ${tz}]`);
@@ -147,7 +151,8 @@ test('SCRUM-1055b · ① control: el último minuto del 31-mar de Madrid es T1 e
 const BORDE = new Date('2026-03-31T22:30:00Z');
 
 export async function medirBorde(paidAt = BORDE) {
-  const f = factura('F-10553', new Date('2025-12-10T11:00:00Z'), paidAt);
+  // SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora
+  const f = { ...factura('F-10553', new Date('2025-12-10T11:00:00Z'), paidAt), merchantCriterioCaja: true };
   const enUtc = await enZona('UTC', async () => trimestresDe(await porTrimestre([f]), 'F-10553'));
   const enMadrid = await enZona('Europe/Madrid', async () => trimestresDe(await porTrimestre([f]), 'F-10553'));
   const poblacion = `1 factura cobrada el ${paidAt.toISOString()} · proceso UTC → T[${enUtc}] · proceso Europe/Madrid → T[${enMadrid}]`;
@@ -250,8 +255,10 @@ test('SCRUM-1055b · ③ la R1 nace cobrada con el reloj de su emisión (leído,
 
 test('SCRUM-1055b · ③ en el libro de caja, la R1 resta en el trimestre de su emisión y la F1 no se mueve', async () => {
   // F1 emitida el 15-feb y cobrada el 20-mar; R1 emitida (y por tanto «cobrada») el 10-may.
-  const f1 = factura('F-10554', new Date('2026-02-15T11:00:00Z'), new Date('2026-03-20T11:00:00Z'));
-  const r1 = factura('R-10555', new Date('2026-05-10T10:00:00Z'), new Date('2026-05-10T10:00:00Z'), { type: 'R1', signo: -1 });
+  // SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora
+  const f1 = { ...factura('F-10554', new Date('2026-02-15T11:00:00Z'), new Date('2026-03-20T11:00:00Z')), merchantCriterioCaja: true };
+  // SCRUM-1730e: la R1 hereda el congelado de la F1 que rectifica, por `rectifiesId` (c.22620); hoy el libro lo ignora
+  const r1 = { ...factura('R-10555', new Date('2026-05-10T10:00:00Z'), new Date('2026-05-10T10:00:00Z'), { type: 'R1', signo: -1 }), rectifiesId: f1.id };
   const q = await enZona('UTC', () => porTrimestre([f1, r1]));
   assert.deepEqual(trimestresDe(q, 'F-10554'), [1], `la F1 devenga en el trimestre de su cobro: ${JSON.stringify(q)}`);
   assert.deepEqual(trimestresDe(q, 'R-10555'), [2], `la R1 devenga en el de su emisión: ${JSON.stringify(q)}`);

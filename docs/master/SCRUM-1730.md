@@ -162,3 +162,30 @@ A9: sin fallo que generalice — tramo sólo de fixtures de test, con el mismo c
 **Verde antes de empujar:** los 5 ficheros de arriba (47/47, antes y después) · `scrum1415`, `scrum1294`, `scrum267`, `scrum854` y `scrum719`: 67 casos, 67 pass, 0 fail, 0 saltados · `npm run guards:entrada`: 16 guards, 177 casos, 177 pass, 0 fail, salida 0. TAP y salidas a fichero fuera del árbol, leídos en un segundo comando.
 
 **Sin medir:** el arreglo (1730f, NO HECHO), así que nada aquí demuestra que estos fixtures basten con él; la suite entera (NO CORRIDA: el encargo dice no correrla); 1055b y 1445d (PARTE 2).
+
+### Parte 2 de 2: 1055b y 1445d (sesión J1 `jv-j1kb`, sin tocar `src/`)
+
+Medido sobre `origin/main` = `2ee08d25c7bee09a3f8cb3a63b98e42868a56426` · 2026-11-24T12:40:23Z (hora de GitHub). La rama nace de la punta de la parte 1 (`26049dce877c61273d2fd7b87a52152db03e4aa3`).
+
+A9: aviso → cicatriz J1 «Con la orden de empujar a 130k, me medí al acabar la primera tanda y ya estaba en 132k sin haber empujado: del arranque (103,5k) a esa tanda subí 29k sin medirme» — no se pudo comprobar: el umbral de un encargo vive en su prompt y ningún hook ni guard lo lee.
+
+**Control:** los 2 ficheros, 15 casos, 15 pass, 0 fail, 0 saltados, antes y después, con el MISMO conjunto de nombres (`diff` de los nombres; su control: quitar un nombre da «distinto»). 0 líneas con `assert` en el diff (positivo: 6 con `merchantCriterioCaja`).
+
+**Fixture por fichero** (mismo comentario que en la parte 1):
+| fichero | fixture | cambio |
+|---|---|---|
+| `tests/scrum1055b-caja-31mar-zona-y-devolucion.test.mjs` | `F-10551` (caso ①) | `f` NO se toca: la lee el control por emisión (`caja: false`); `fCaja` nuevo, copia con `true`, para la lectura por caja |
+| ídem | `F-10552` (① control) y `F-10553` (`medirBorde`, ②) | `true`: sólo se leen por caja |
+| ídem | `F-10554` (③, la F1) | `true` |
+| ídem | `R-10555` (③, la R1) | `rectifiesId: f1.id`, sin congelado propio: hereda el de su F1 (c.22620) |
+| `tests/scrum1445d-bordes-fiscales-en-la-zona.test.mjs` | `A-1` y `N-2` | `true`: `numerosEn` siempre lee con `criterioCaja: true` |
+
+**Quién lee `rectifiesId` hoy en ese camino:** nadie. El cierre de imports relativos de `libroRegistro.repo.ts` son 9 ficheros de `src/`, y 0 contienen `rectifiesId` (positivo: 3 contienen `paidAt`; desde `invoicesAdmin.routes.ts` el mismo barrido encuentra 3 con `rectifiesId`). Tampoco `merchantCriterioCaja`: 0 de 9. Los casos de des-pagar (③) no pasan sus facturas por el libro.
+
+**Casos dudosos (③ del encargo):** ninguno. En los dos ficheros, cada lectura dice si va con `criterioCaja` o sin él.
+
+**Para quien construya 1730f.** En ③ de 1055b, la R1 cae en el T2 tanto por caja como por emisión (su `paidAt` es su `createdAt`), y la F1 cae en el T1 de las dos maneras. Así que ese caso NO mide la herencia por `rectifiesId`: hace falta un caso propio en el que caja y emisión den trimestres distintos.
+
+**Verde antes de empujar:** los 2 (15/15, antes y después) · los 5 de la parte 1 más 1415, 1294, 267, 854 y 719: 10 ficheros, 114 casos, 114 pass, 0 fail, 0 saltados · `npm run guards:entrada`: 16 guards, salida 0.
+
+**Sin medir:** la suite entera (NO CORRIDA, por encargo) y el arreglo 1730f (NO HECHO).
