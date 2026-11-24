@@ -1,0 +1,109 @@
+{
+ "ficheros": 310,
+ "tandas": [
+  {
+   "desde": 0,
+   "n": 30,
+   "exit": 0,
+   "tests": 231,
+   "pass": 230,
+   "fail": 0,
+   "skipped": 1
+  },
+  {
+   "desde": 30,
+   "n": 30,
+   "exit": 0,
+   "tests": 156,
+   "pass": 156,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 60,
+   "n": 30,
+   "exit": 0,
+   "tests": 203,
+   "pass": 203,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 90,
+   "n": 30,
+   "exit": 0,
+   "tests": 284,
+   "pass": 280,
+   "fail": 0,
+   "skipped": 4
+  },
+  {
+   "desde": 120,
+   "n": 30,
+   "exit": 0,
+   "tests": 169,
+   "pass": 169,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 150,
+   "n": 30,
+   "exit": 0,
+   "tests": 189,
+   "pass": 189,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 180,
+   "n": 30,
+   "exit": 0,
+   "tests": 236,
+   "pass": 236,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 210,
+   "n": 30,
+   "exit": 0,
+   "tests": 373,
+   "pass": 373,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 240,
+   "n": 30,
+   "exit": 0,
+   "tests": 316,
+   "pass": 316,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 270,
+   "n": 30,
+   "exit": 0,
+   "tests": 224,
+   "pass": 224,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 300,
+   "n": 10,
+   "exit": 0,
+   "tests": 93,
+   "pass": 93,
+   "fail": 0,
+   "skipped": 0
+  }
+ ],
+ "tests": 2474,
+ "pass": 2469,
+ "fail": 0,
+ "skipped": 5,
+ "fallos": []
+}
