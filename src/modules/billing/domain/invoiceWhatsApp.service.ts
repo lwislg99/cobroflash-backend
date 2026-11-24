@@ -55,6 +55,15 @@ export async function sendInvoicePaymentRequest(
 
   // Asegurar cobro (idempotente): reutiliza el existente o crea uno nuevo.
   let chargeId: number | null = invoice.chargeId ?? null;
+  // SCRUM-1532d (decisión 2 de SCRUM-1532 c.22430): un cobro CANCELADO no se reutiliza —su enlace ya no
+  // cobra—: la factura sigue pendiente y el reenvío le crea otro. Solo `cancelled`; los demás, como hoy.
+  if (chargeId) {
+    const cobroVigente = await prisma.charge.findFirst({
+      where: { id: chargeId, merchantId: invoice.merchantId }, // regla 2
+      select: { status: true },
+    });
+    if (cobroVigente?.status === 'cancelled') chargeId = null;
+  }
   if (!chargeId) {
     try {
       // SCRUM-1787p (GO c.22362): si la factura congeló sus formas de pago (1787i), el cobro nace

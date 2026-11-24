@@ -1,0 +1,23 @@
+arbol	rama	fuera_de_origin	sucio	node_modules	destino_nm	otros_enlaces	viva	bloqueado	existe	veredicto
+cobroflash-jv-j1cg	scrum-1330d-scrum173-en-staging	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1cj	scrum-1609-fecha-de-cobro-de-una-en-una	1	0	no-existe			False	False	True	NO borrado: commits fuera de origin: 1
+cobroflash-jv-j1cp	(detached)	0	4	no-existe			False	False	True	NO borrado: sucio: 4
+cobroflash-jv-j1cz	scrum-1566d-empate	3	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	NO borrado: commits fuera de origin: 3
+cobroflash-jv-j1dr	conjunto-1566-b-y-c	6	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	NO borrado: commits fuera de origin: 6
+cobroflash-jv-j1ew	scrum-1054b-porton-cero	1	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	NO borrado: commits fuera de origin: 1
+cobroflash-jv-j1gw	scrum-1787b-ficha-de-factura	1	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	NO borrado: commits fuera de origin: 1
+cobroflash-jv-j1in	scrum-1532d-relevo-j1in	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		True	False	True	NO borrado: sesion viva
+cobroflash-jv-j1io	scrum-1787w-relevo-j1io	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		True	False	True	NO borrado: sesion viva
+cobroflash-jv-j1ip	scrum-1316l-relevo-j1ip	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		True	False	True	NO borrado: sesion viva
+cobroflash-jv-j1iq	scrum-1795-barra-enviada-sin-enviar	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ir	scrum-1787aa-pdf-factura-filas-restantes	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1is	scrum-1787w-relevo-j1is	0	2	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	NO borrado: sucio: 2
+cobroflash-jv-j1it	scrum-1532d-relevo-j1it	1	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	NO borrado: commits fuera de origin: 1
+cobroflash-jv-j1iu	scrum-1316l-relevo-j1iu	0	1	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	NO borrado: sucio: 1
+cobroflash-jv-j1iv	scrum-1779j-staging-cinco-de-diciembre-y-cancelar	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2eg	scrum-1794-correo-con-lineas	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		True	False	True	NO borrado: sesion viva
+cobroflash-jv-j2eh	scrum-1794b-detalle-de-la-factura-exportado	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4cc	scrum-1566f-decisiones-traducidas	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		True	False	True	NO borrado: sesion viva
+cobroflash-jv-j4cd	scrum-1264a-preguntas-del-sprint-21nov	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4ce	scrum-1791b-cierre-segunda-auditoria	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6fg	scrum-1793-borrar-arboles-viejos	1	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		True	False	True	NO borrado: sesion viva + commits fuera de origin: 1

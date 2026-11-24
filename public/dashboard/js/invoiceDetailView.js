@@ -197,12 +197,20 @@ async function fetchInvoiceDetail(id) {
       cobroBlock.style.textAlign = 'right';
       cobroBlock.style.marginTop = '10px';
       const cuando = invoice.paidAt
-        ? new Date(invoice.paidAt).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' })
+        ? new Date(invoice.paidAt).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })
         : '';
       cobroBlock.innerHTML =
         '<div class="detail-total-label">Cobro</div>'
         + `<div class="detail-cobro-importe">${fmtInvMoney(invoice.total, invoice.currency)}</div>`
         + (cuando ? `<div class="detail-cobro-fecha">${cuando}</div>` : '');
+      // SCRUM-1532e · etiqueta de estado de un cobro cancelado (literal firmado: SCRUM-1532 c.22455).
+      // Pill neutra del inventario: cancelar no es un error, y la factura sigue pendiente.
+      if (invoice.estadoDelCobro === 'cancelled') {
+        const pillCobro = document.createElement('span');
+        pillCobro.className = 'status-pill status-pill-draft detail-cobro-estado';
+        pillCobro.textContent = 'Cobro cancelado';
+        cobroBlock.appendChild(pillCobro);
+      }
       summaryRow.appendChild(cobroBlock);
     }
     // Si NO hay cobro no se pinta nada: un bloque «Cobro» vacío en la pantalla del dinero se lee
@@ -236,7 +244,7 @@ async function fetchInvoiceDetail(id) {
     {
       const fmtPaso = (v) => {
         if (!v) return '';
-        try { return new Date(v).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }); } catch { return ''; }
+        try { return new Date(v).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }); } catch { return ''; }
       };
       const cobrada = st === 'paid';
       const waSt = String((invoice.waDelivery && invoice.waDelivery.status) || '').toLowerCase();
@@ -312,7 +320,7 @@ async function fetchInvoiceDetail(id) {
       : null;
     // SCRUM-1787i · «Vence el» (firmado, c.22325 ①): la fecha CONGELADA al emitir, sólo si consta.
     addDefRow(dlCobro, 'Vence el', invoice.dueDate
-      ? new Date(invoice.dueDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
+      ? new Date(invoice.dueDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
       : null);
     // SCRUM-1787i · «Formas de pago» (firmado, c.22345 ①): una por cada forma CONGELADA al emitir, sólo
     // si constan. Una clave fuera del conjunto no se pinta en crudo: no tiene literal firmado.
@@ -804,6 +812,42 @@ async function fetchInvoiceDetail(id) {
         }
       });
       ubicarAccion(btnBizum, 'btnBizum');
+    }
+
+    // SCRUM-1532d · «Cancelar cobro» (GO y literales firmados: SCRUM-1532 c.22430). Solo con el cobro
+    // `pending` —la única transición del máster— y en el «⋯» (un acto que no se deshace no es la
+    // primaria). Tras cancelar, la ficha se repinta y el botón ya no está; la factura sigue pendiente y
+    // el reenvío le crea otro cobro (decisión 2). Los mensajes de error reutilizan los de esta ficha.
+    if (invoice.chargeId && invoice.estadoDelCobro === 'pending') {
+      const CONFIRMAR_CANCELAR_COBRO = '¿Cancelar este cobro? El cliente ya no podrá pagarlo con este enlace.';
+      const btnCancelarCobro = document.createElement('button');
+      btnCancelarCobro.className = 'btn-secondary btn-sm';
+      btnCancelarCobro.textContent = 'Cancelar cobro';
+      btnCancelarCobro.addEventListener('click', async () => {
+        if (!window.confirm(CONFIRMAR_CANCELAR_COBRO)) return;
+        btnCancelarCobro.disabled = true;
+        // SCRUM-644: el fallo NO pinta nada que venga del servidor ni de una excepción; solo uno de los
+        // dos literales que esta ficha ya usa para un error de cobro.
+        let aviso = null;
+        try {
+          const r = await fetch(`/admin/charges/${invoice.chargeId}/cancel`, { method: 'POST' });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            aviso = d.error === 'charge_not_pending'
+              ? 'Este cobro ya no está pendiente.'
+              : 'Error actualizando estado: inténtalo de nuevo';
+          }
+        } catch (_) {
+          aviso = 'Error actualizando estado: inténtalo de nuevo';
+        }
+        if (aviso) {
+          setStatus('error', aviso);
+          btnCancelarCobro.disabled = false;
+          return;
+        }
+        if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: invoice.id });
+      });
+      ubicarAccion(btnCancelarCobro, 'btnCancelarCobro');
     }
 
     // Recordar pago: el estado (solo pending) lo decide el registro; aquí queda el dato (teléfono).
