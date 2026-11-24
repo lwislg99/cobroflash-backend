@@ -291,6 +291,7 @@ verde por vacío; lo cazó el caso positivo, y el test ahora abre el menú y exi
 
 A9: comprobación → `tests/scrum644-trinquete-mensaje-crudo.test.mjs`
 A9: comprobación → `tests/scrum719-el-suelo-de-los-doce.test.mjs`
+A9: comprobación → `tests/scrum289-censo-origen-factura.test.mjs`
 Mutaciones: catálogo → `tests/scrum1532d-cancelar-cobro-ficha-y-reenvio.test.mjs`
 Mutaciones: una vez → `docs/master/evidencias/scrum1532/mutar-1532e.mjs`
 **Skill UI:** cargada
@@ -332,3 +333,12 @@ capturas de la etiqueta · yaqu.app.
 **Lo que me salió mal:** edité `invoiceDetailView.js` antes de cargar la skill `yaqu-premium-ui` (la cargué tras
 el primer Edit; la misma forma que la cicatriz de SCRUM-1787l). Y pasé el 170k del encargo sin medirme entre
 Jira (134.316) y el primer test: avisé a 181.256.
+
+**24-nov-2026 · relevo `jv-j1jb` (J1): merge de main resuelto en `invoicesAdmin.routes.ts`.** #3340 estaba DIRTY tras
+#3336 (1316l) y #3343. El encargo decía main `44007fdaa`; al hacer `git fetch` main era
+`7375ae8b929fd7d67207d07938a46a70d9c1f13c`, y es el que se fusionó. Único conflicto: el `GET /:id`, donde 1532d añade
+`estadoDelCobro` y 1316l `metodosConAvisoIvaAlDiez`; se quedan los dos en `cuerpo`. El `where` literal del `updateMany`
+de `bulk-paid` (1316l) queda byte a byte como en main (`git diff origin/main` no lo toca). 0 marcadores en el árbol.
+`invoiceDetailView.js` se auto-mezcló. **Medido:** `tsc -p .` con tipos, salida 0 · 289, 397, 441, 1316l (14/14),
+1532b/1532d, 707, 285, 644, 719, 1294, 854: 219/219 en 20 ficheros, 0 saltados · `guards:entrada` 15/15 (170 tests).
+**No medido:** la suite entera en local (la corre el obligatorio) · yaqu.app.
