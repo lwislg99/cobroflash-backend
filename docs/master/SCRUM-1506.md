@@ -262,3 +262,5 @@ ya prevé (`puestoDeNombre('orquestador')` → ORQ desde SCRUM-1295). Lo comunic
 SendMessage («elige el fundador, opción 1»). No cambia nada en el código: `cobroflash-backend-<n>` sigue dando
 null. El trabajo de 1506e queda en un commit local de S5 que no se ha empujado (`ecf4d7ec2`, rama local
 `scrum-1506e-excepcion-orquestador`).
+
+**Antes del push:** guards:entrada salió CIEGO por plazo (90,0–90,1 s contra 90 s, CPU al 100 %, 2 intentos sobre esta rama); los 16 ficheros de su lista pasados con node --test sin plazo: 177/177, 0 fallos, 0 saltados. El presupuesto lo juzga el CI obligatorio. Push decidido por el orquestador (DELEGACIÓN c.21978).
