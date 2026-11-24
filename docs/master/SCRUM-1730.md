@@ -92,3 +92,36 @@ Con esto, `criterioDelMerchant.ts` y sus tres llamadores dejan de decidir. Queda
 **Errores míos.** ① Mi primera medida, 102k al acabar el arranque, ya decía que con un tope de 160k no cabía construir el arreglo. No lo dije hasta llegar a 131k. ② Puse la rama al día con `--ff-only` antes de mirar el cliente de Prisma. El avance traía 914d (`Equipment`), que el cliente compartido no tiene, y desde entonces `_prisma-client-guard` sale con código 1 en este árbol. A esta medición no le afecta, pero un `tsc` con tipos aquí fallaría por algo que no es de esta rama.
 
 **Sin medir:** nada ejecutado, ni el libro ni el 303, con un comercio que cambia de criterio · ninguna base · la suite (NO CORRIDA, porque el tramo es solo de documentos) · el test rojo y el arreglo (NO HECHOS: quedan para la siguiente sesión, con este tramo como plan).
+
+## J1 · SCRUM-1730d · (iii) el diseño cerrado y lo que el plan no contaba (el arreglo NO se ha construido)
+
+**Medido contra:** `origin/main` = `fc51ec7a2f11dd93e34141fae48b4357b72d9990` · 2026-11-24T12:16:52Z (hora de GitHub; sesión J1 `jv-j1jv`, por encargo del orquestador `cobroflash-backend-2d`)
+
+A9: sin fallo que generalice — tramo sólo de medición y diseño, leído en el código; el arreglo no cupo en el tope de 160k del encargo (medido: 104k al acabar el arranque, 137k tras leer el registro, el libro y los fixtures), y se avisó al orquestador antes de empezar a construir.
+
+**Permisos.** GO del fundador SCRUM-1730 c.21789, punto 3: el libro lee el criterio congelado de cada factura, y NULL = por emisión, sin caer al vivo. Decisión c.22620, lo elegido: «La R1 hereda de su F1 (Recomendado)». Los literales están en Jira; aquí van el número y lo que se construye.
+
+**① Cómo enlaza una R1 con su original. Leído en `prisma/schema.prisma`, no tocado.** `Invoice.rectifiesId Int? @map("rectifies_id")`, comentado «factura original a la que rectifica (solo R1)». La herencia se resuelve AL LEER: para cada R1 con `merchantCriterioCaja` NULL, el libro busca la factura `rectifiesId` (con `merchantId` en el `where`, regla 2) y toma su congelado. Si `rectifiesId` es NULL, o la original no aparece, NULL = por emisión. No toca el sellado ni el esquema: no es STOP. **Sin medir:** si alguna R1 apunta a otra R1 (cadena), y cuántas R1 hay sin `rectifiesId`.
+
+**② El paso 3 del plan: se pregunta antes.** Con `devengo` y un rango, antes de elegir camino el libro pide `invoice.findMany({ where: { merchantId, merchantCriterioCaja: true }, select: { id: true }, take: 1 })`. Si no hay ninguna, va por emisión, como hoy. Si hay una, corre `leerPorCaja`, y cada candidata decide por su congelado. Por qué esta y no leer `invoice_payments` para todos:
+- **No da falsos negativos.** Para que una factura devengue por caja, ella o la F1 que rectifica tiene que tener el congelado en `true`, y esa F1 es del mismo comercio. Si no hay ninguna, nada devenga por caja, y el camino de emisión da el mismo conjunto en el mismo orden (`createdAt`, después `number`).
+- **Es la más barata.** El comercio sin caja, que hoy es la inmensa mayoría, paga una consulta de una fila y sigue por el camino de una sola consulta. Leer `invoice_payments` siempre le añadiría a cada 303 tres consultas de candidatas y una de cobros.
+- **Un doble que ignore el filtro sólo da falsos positivos**, y con ellos corre `leerPorCaja`, que sigue decidiendo bien factura por factura.
+
+`campoDeDevengo(rango.criterioCaja)` se queda como comprobación de que el vivo se pudo leer (lanza si no), pero deja de decidir. `'criterioCaja' in rango` sigue marcando qué llamadores preguntan por el criterio (303, libros AEAT, evidencias). Los que no preguntan (pantalla del libro, informes, 130, 347) siguen por emisión y sin cobros: cambiarlos queda fuera de este GO. `cobrosPorFactura` sale sólo de las facturas que devengan por caja, con la R1 heredada incluida.
+
+**③ Lo que el plan de 1730c no contaba: siete tests cambian de lado.** Estos leen el libro, el 303 o los libros AEAT con `criterioCaja: true`, y sus facturas de prueba **no llevan `merchantCriterioCaja`**: `scrum1730-criterio-caja-huecos-declarados`, `scrum1732-cobro-parcial-defecto-declarado`, `scrum1732d-libro-por-tramos`, `scrum294b-devengo-por-cobro`, `scrum294c-criterio-del-merchant`, `scrum1055b-caja-31mar-zona-y-devolucion` y `scrum1445d-bordes-fiscales-en-la-zona`. Con el arreglo, sus facturas llegan con el congelado ausente, que es NULL, y van por emisión: los casos que esperan caja se ponen en ROJO. El arreglo les da `merchantCriterioCaja: true` en la fábrica de facturas, que es lo que la fila real trae desde 1129 para una F1 de un comercio con caja. Así no cambia ningún `assert`, y se declara así en el registro de quien lo construya (regla 41: se cambia el dato que el doble no traía, no lo que el test exige). Recuento: `grep -l criterioCaja` en `tests/` da 21 ficheros, y de ellos 7 llaman al libro con caja. **Sin medir:** que sean los únicos. El recuento casa por nombre de función, y un test que llegue al libro por otra puerta no sale.
+
+**Los casos del test rojo, para quien lo construya** (encargo de hoy; ninguno escrito):
+| caso | esperado |
+|---|---|
+| F1 sellada `true`, comercio hoy `false` | por caja: devenga al cobro, con sus cobros |
+| F1 sellada `false`, comercio hoy `true` | por emisión |
+| F1 con el congelado NULL | por emisión |
+| R1 (NULL) cuya F1 `rectifiesId` está en `true` | por caja, como su F1 |
+| R1 (NULL) sin `rectifiesId`, o con una original que no aparece | por emisión |
+Con el control positivo sembrado: una F1 `true` cobrada en otro trimestre tiene que moverse. Si no se mueve, el test dice CIEGO. Mutación de catálogo propuesta: en la herencia, devolver siempre NULL; tiene que tumbar el caso de la R1 heredada.
+
+**Errores míos.** ① Leí el libro y los fixtures antes de medirme otra vez. El 137k lo vi después de leer, y no antes, que es cuando se decide si cabe. ② La skill `yaqu-verifactu-sif` se cargó, pero sus tres lecturas previas (`docs/SIF_SPEC_NOTES.md`, U1.3, `docs/AUDITORIA_RRSIF.md`) NO se leyeron, porque no cabían. No hacen falta para este tramo, que no toca código, pero quien construya el arreglo tiene que leerlas antes de tocar `invoicing/`.
+
+**Sin medir:** nada ejecutado · ninguna base · ni el test rojo ni el arreglo (NO HECHOS) · la suite (NO CORRIDA: el tramo es solo de documentos) · si `construirLibroRegistro` trata igual `cobrosPorFactura` ausente que un `Map` vacío. Es lo que decide si el camino «sin ninguna `true`» es idéntico al de hoy para libros AEAT y evidencias.
