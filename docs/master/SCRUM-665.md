@@ -2167,6 +2167,10 @@ A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
 - **Dirigida local** (4 ficheros: scrum55, scrum810, scrum824, tenancy-permisos), con `npm ci` y `npm run build` propios: 22 tests, 19 pasan, 1 cae, 2 saltan. `scrum55` y `scrum810` pasan a verde. `tenancy-permisos` se salta sin `QA_DB_TEST` ni `LIBRO_PG_URL`: su rojo del CI era el 404 de `regenerate-pdf` en `ADMIN_ONLY_ROUTES`, que el parche retira; lo ve el obligatorio.
 - 🔴 **`scrum824` NO lo cubre el parche S1**, contra lo que dice el tramo (Q). Sigue en rojo, con los mismos tres ficheros nuevos que en el CI del 23-nov: `scrum1304-un-cobro-una-factura`, `scrum1330-una-sellada-no-se-resella` y `scrum665e-pdf-de-la-emitida-congelado`. Causa leída en el código: los tres escriben el PDF en `invoicesDir`, que en un test es `<árbol>/storage/invoices` (por ejemplo `scrum665e-…:38-41`, `mkdirSync(invoicesDir)` + `writeFileSync`). Es un temporal dentro del árbol, justo lo que mide SCRUM-824. Se arregla en los tests de J1 (llevar el directorio a `os.tmpdir()`, por ejemplo con `RAILWAY_VOLUME_MOUNT_PATH` antes de cargar `dirs.js`) o se declara en `SIN_PROBAR_CONOCIDOS` (carril S3). No es de S1, y no se ha tocado.
 
+*(Puesto por J1 en el tramo (S): este tramo entró sin ancla en forma y sin línea `A9:`, y los dos guards de entrada lo tumbaban; el fallo es ése, y lo caza `npm run guards:entrada` antes de empujar.)*
+
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
 # APÉNDICE (S) · SCRUM-665e · 24-nov-2026 · J1 (jv-j1jp) · los tres tests de J1 al disco temporal; scrum824 en verde
 
 **Medido contra:** `origin/main` = `8e0d408168865aab0c7862d7c004cf864450aa71` · 2026-11-24T11:33:05Z (hora de GitHub). Rama `scrum-665e-pdf-persistente`, punta de partida `50fe1cd422f187a3a2aa6e31ac7d79c4afe70380`. **Sin merge de main** (último punto).
