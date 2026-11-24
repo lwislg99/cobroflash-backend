@@ -52,4 +52,6 @@ Esto supone un `actions/checkout` antes del paso. Si el candado actual corre sin
 
 ## Qué no corrí
 
-La suite ENTERA no se corrió antes del empujón: el tope de contexto del encargo (170k) no la admitía, y se avisó al orquestador antes de empujar. La lista de lo que sí corrió va en el comentario de entrega de Jira.
+- **Corrido y en verde:** el test nuevo (7/7); `npm run guards:entrada` (15 guards, salida 0, entre ellos 237, 267, 273, 723 y 1294); en una sola tanda, 1415, 854, 976, 1185, 411, 1387, 804 y los cinco de árbol entero que nombra guards:entrada (195, 414, 694, 710b y 737): 116 tests, 116 pass, 0 skipped. `tsc -p . --noEmit` con tipos: salida 0.
+- **scrum723 lo cazó en la primera versión:** el guard comparaba con los literales de la rama principal y de la cabeza suelta en un fichero que llama a git. Se cambió el código, no la lista: la exclusión la decide `agruparRamas` y la cabeza suelta, `git symbolic-ref -q`. La mutación se volvió a pasar sobre `d003590126bbc8cac0abfa4478b1e0f13d24312d`: VIVA, y el árbol quedó limpio.
+- **No corrido:** la suite ENTERA y 719 (`npm run censo:mudez -- --escribir`). El tope de contexto del encargo (170k) no los admitía, y se avisó al orquestador antes de empujar.
