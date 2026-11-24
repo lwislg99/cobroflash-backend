@@ -63,6 +63,10 @@ correr, ninguno cae por la cura; de los 88 ciegos no se sabe nada.
 - **suite con dist: NO CORRIDA (cliente Prisma compartido 18 campos por detrás,
   `scripts/_prisma-client-guard.mjs`); la corre el CI.** Decisión del orquestador del 24-nov: el
   `node_modules` compartido no se regenera con sesiones corriendo.
+- **guards:entrada: CIEGO ×3 por carga de máquina (corte a 90 s, CPU saturada); los 16 guards de su
+  lista con `node --test` sueltos: 177/177, 0 fallos.** La primera pasada suelta dio 176/177:
+  `scrum811c` cazó que a este registro le faltaba la línea `**Skill UI:**`; se añadió y se repitió.
+  Empujar así lo decidió el orquestador (SCRUM-1656 c.22684 ①): el juez es el check obligatorio del CI.
 - `reproducir.mjs` lo corrió la sesión anterior (commits `cc8efa0ce` y `b21e4b7c3`); en este tramo
   NO se ha vuelto a correr: lo re-medido aquí es el banco vm.
 - No se ha visto en yaqu.app ni en un teléfono de verdad (teclado en pantalla). Eso es posterior al
