@@ -1,6 +1,6 @@
 // tests/scrum1831-regla4-banderas-por-significado.test.mjs — SCRUM-1831
 //
-// La regla 4 de `.claude/hooks/guard-dangerous.mjs` («rm -rf fuera del workspace») casaba una
+// En `.claude/hooks/guard-dangerous.mjs`, la regla 4 («rm -rf fuera del workspace») casaba una
 // FORMA DE TECLEAR, no una acción: `rm +-[…]*r[…]*f[…]* +ruta-absoluta`. Exigía la r ANTES que la
 // f y las dos en el MISMO grupo de letras. Medido con sonda por jv-j6fq (SCRUM-1792 c.22619) y
 // repetido aquí en rojo antes de tocar el hook: `rm -fr "/c/…"`, `rm -r -f "/c/…"`,
