@@ -65,3 +65,55 @@ qué ids existen en el negocio, aunque no se pueda abrir ninguno. Ahora las dos 
 `FUGAS_CONOCIDAS` queda vacía.
 
 **NO medido:** en yaqu.app (haría falta una cuenta de Técnico en la cuenta QA).
+
+# SCRUM-1555b · El login de pruebas abre sesión también como miembro de equipo
+
+**Medido contra:** `origin/main` = `6fbcde28651d2eed9190ced9efbc7663d8cdac7a` · 2026-11-24T11:51:37Z
+A9: aviso → cicatriz J3 «Llegué a 122.860 tras leer Jira con un tope de 160k y no dije que el encargo no cabía; lo dije a 142k, con nada escrito.» — no se pudo comprobar: cuándo se mide y se avisa una sesión no deja rastro en el árbol
+
+Decisión del fundador: SCRUM-1555 c.22569 («Login de pruebas con rol»). Puesto J3 (`jv-j3cu`), carril J3 (`src/modules/auth/**`).
+
+**Qué.** `POST /auth/test-login` (`src/modules/auth/app/routes/auth.routes.ts`) admite un campo OPCIONAL `miembro`: el correo de un miembro de equipo YA EXISTENTE del comercio de la propietaria de la allowlist. La sesión se escribe con su `teamMemberId`, y `requireAuth` saca el rol de esa fila (`session.teamMember.role`). Sin `miembro`, todo igual que antes. Las tres cerraduras (flag, secreto y allowlist del correo de la propietaria) no cambian y van ANTES; fuera de staging la ruta sigue sin existir. No crea usuarios, no activa invitados, no manda correos. Miembro inexistente, de otro comercio o suspendido: `404 {"error":"team_member_not_found"}` y no se escribe ninguna sesión. `src/core/http/publicAccessDeclarations.ts` NO se toca: su motivo («triple cerradura») sigue siendo verdad.
+
+**Esperado · visto** (`tests/scrum1555b-test-login-con-rol.test.mjs`, la app real de `dist/app.js` con el doble de Prisma de SCRUM-597):
+
+| caso | esperado | visto ANTES del arreglo | visto DESPUÉS |
+|---|---|---|---|
+| con `miembro` = Técnico | sesión con su `teamMemberId`; `GET /admin/team` → 403 `forbidden` | ROJO: la sesión sale sin `teamMemberId` (propietaria) | verde |
+| cuerpo de hoy | propietaria; `/admin/team` sin 401/403 | verde | verde |
+| `miembro` que no es del comercio | 404 `team_member_not_found`, 0 sesiones | ROJO: 200 y sesión de propietaria | verde |
+| gate apagado | 404, 0 sesiones | verde | verde |
+
+Tanda dirigida (este test, `scrum1430`, `scrum334`, `scrum1555*`, `scrum1185*`, `scrum1294*`, `scrum267*`, `scrum854*`, `scrum719*`): 91 casos; antes de este registro, 90 verdes y `scrum854 ②` rojo por falta del registro. Build con tipos (`tsc -p .`): salida 0.
+
+**NO HECHO** (el contexto no daba, se dice aquí y en la entrega): la mutación del catálogo (`MUTACIONES_QUE_ME_TUMBAN`), la suite entera y `censo:mudez`. El rojo de arriba es una pasada a mano sobre el código sin arreglo, no una mutación repetible.
+
+**Cómo lo usa la sesión de QA en staging** (sin valores: el secreto lo tiene el entorno):
+
+1. Con la propietaria QA, ver en el equipo (`GET /admin/team`) que exista un miembro con rol `tecnico`. Si no hay, crearlo NO es de este cambio: hace falta que lo dé de alta alguien (la invitación manda correo).
+2. `POST /auth/test-login` con `{ "email": <propietaria de la allowlist>, "secret": <el de staging>, "miembro": <correo del Técnico> }` → 200 y la cookie `pf_session` es la del Técnico.
+3. Con esa cookie, las 8 rutas de SCRUM-1555 sobre un presupuesto de la PROPIETARIA (o de otro miembro): PDF, aceptar, rechazar, enviar por WhatsApp, enviar por correo y notas → 404; Inicio y el buscador del albarán no lo listan. Y `GET /admin/team` → 403 como control de que la sesión es de Técnico.
+
+# SCRUM-1555c · El 404 de `POST /auth/test-login` con un `miembro` inexistente lleva texto humano
+
+**Medido contra:** `origin/main` = `3099fcbb78a4b1e6a4a009011847a4eb10e907f8` · 2026-11-24T13:34:07Z
+A9: comprobación → `tests/scrum275-message-en-superficie-publica.test.mjs`
+
+Decisión del fundador: SCRUM-1555 c.22642 (opción «Texto propuesto (Recomendado)»; descartada «Sacar la ruta del vigilante», que cambiaba un guard, regla 41). La escribe el orquestador J. Puesto J3 (`jv-j3da`), carril J3 (`src/modules/auth/**`), encima de `scrum-1555b-test-login-con-rol` (#3379). El test de 1555b: `carriles.mjs` dice NO-PUDE-MIRAR (lo da a la etiqueta `area-s1` del ticket); lo creó J3 en #3379 y aquí solo gana una aserción.
+
+**Literal firmado** (regla 39), copiado del ADF de c.22642 y cotejado por bytes contra los dos ficheros (64 B, una aparición en cada uno):
+
+> No hay ningún miembro del equipo con ese correo en esta cuenta.
+
+**Qué.** Solo la respuesta 404 `team_member_not_found` de `POST /auth/test-login` (miembro inexistente o suspendido) gana `message` con ese literal. El 500 `internal_error` de la misma ruta y todas las demás, sin tocar: no están firmadas para esto. `tests/scrum1555b-test-login-con-rol.test.mjs` exige ese `message` exacto en el caso del miembro inexistente. `tests/scrum275-message-en-superficie-publica.test.mjs`, sin tocar (regla 41).
+
+**Rojo antes · verde después.**
+
+| | antes · `11607c85298bf65fcdc47c61ac2207cefecc20b9` (CI de #3379; lo leyó el orquestador, yo no) | después · este árbol, local |
+|---|---|---|
+| SCRUM-275 · TRINQUETE | rojo: «HAY 19 RESPUESTAS PÚBLICAS SIN TEXTO HUMANO y el tope es 18» | verde: 18, tope 18 |
+| 1555b · miembro inexistente | verde, sin mirar el texto | verde, exige el literal |
+
+Control en rojo, una vez y sin guion en git (por eso no lleva línea de mutaciones y no cuenta como evidencia de mutación, A3): quitado el `message` de `src` y de `dist`, cayeron 2 de 7 casos, el TRINQUETE de 275 («HAY 19 … el tope es 18») y el del miembro inexistente de 1555b («el 404 no lleva el texto firmado»). Restaurado, `git status` limpio.
+
+Verde dirigido (TAP a fichero fuera del árbol): 23 ficheros (275, 1555b, los 10 que nombran `auth.routes` o `test-login`, 264, 644, 709, 715, 726, 861, 921, 921c, 1415, 1294, 267, 854, 719): 220 casos · 219 pass · 0 fail · 1 skip (`scrum94`, gateado por `QA_DB_TEST`: no corrió). Ningún censo de microcopy pidió registrar el literal. Build con tipos (`tsc`): salida 0. Suite entera: NO corrida (tope de contexto del encargo, 140k).

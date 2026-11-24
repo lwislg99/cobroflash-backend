@@ -179,7 +179,7 @@ router.get('/x2', async (req, res) => {
         // SCRUM-491 · lo que el profesional DECLARA al marcar la factura cobrada a mano
         // (SCRUM-441 lo escribe). Sin esta línea el dato se escribía y no lo leía nadie.
         paidVia: true,
-        charge: { select: { method: true } },
+        charge: { select: { method: true, status: true } },
       },
     });
 

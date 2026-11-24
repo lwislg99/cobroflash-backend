@@ -21,11 +21,21 @@
 //
 // SALIDAS: 0 verde · 1 ROJO (rama de ticket sin número) · 2 CIEGO (no sé qué rama es).
 // Siempre imprime su población: «1 rama mirada: <nombre>». Un guard que calla no es un guard.
+//
+// 🔴 SCRUM-1827 · ARRANCA SIN `node_modules`. `pr-automatico.yml` (SCRUM-1809) lo corre sin
+// instalar nada. Importaba `ejecutadoDirectamente` de `_puerta-de-entrada.mjs`, que carga
+// `typescript` para su censo de puertas (no para la puerta): en limpio salía 1 con
+// `ERR_MODULE_NOT_FOUND` para TODA rama. Ese fichero no es de J6 y no se toca: la puerta va aquí,
+// con el MISMO mecanismo (`realpath` a los dos lados, SCRUM-765), y
+// `tests/scrum1827-guard-rama-sin-typescript.test.mjs` la ata a la de la casa por comportamiento y
+// corre el guard en un `mkdtemp` sin `node_modules`. Nada de lo que se importa aquí puede cargar
+// un paquete: solo `node:` y ficheros hermanos que no importan nada de fuera.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { numeroDeRama } from './_numero-de-rama.mjs';
 import { agruparRamas } from './_censo-reparto.mjs';
-import { ejecutadoDirectamente } from './_puerta-de-entrada.mjs';
 import {
   veredictoDe, SALIDA_VERDE as VERDE_DE_LA_CASA, SALIDA_HALLAZGO, SALIDA_NO_SUPE_MEDIR,
 } from './_hallazgos-y-ciegos.mjs';
@@ -85,7 +95,20 @@ export function veredicto(nombre) {
   };
 }
 
-if (ejecutadoDirectamente(import.meta.url)) {
+/**
+ * ¿Este módulo es el punto de entrada? El mecanismo de `ejecutadoDirectamente` (SCRUM-765): el
+ * mismo FICHERO DE DISCO a los dos lados, por `realpath`. Copia atada por el test de SCRUM-1827.
+ */
+export function esPrincipal(metaUrl, argv1 = process.argv[1]) {
+  if (!argv1) return false;
+  try {
+    return fs.realpathSync(fileURLToPath(metaUrl)) === fs.realpathSync(argv1);
+  } catch {
+    return false;
+  }
+}
+
+if (esPrincipal(import.meta.url, process.argv[1])) {
   const { nombre, origen } = ramaActual();
   const v = veredicto(nombre);
   const linea = `guard-rama-con-numero · 1 rama mirada: ${nombre ?? '(ninguna)'} (de ${origen}) · ${v.texto}`;

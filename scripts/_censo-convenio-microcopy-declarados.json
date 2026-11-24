@@ -59,39 +59,7 @@
       "clase": "SIN_COMENTARIO",
       "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
     },
-    "public/dashboard/js/libroRegistroView.js · COPY.colBase": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/libroRegistroView.js · COPY.colCuota": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/libroRegistroView.js · COPY.colEstado": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/libroRegistroView.js · COPY.colFecha": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/libroRegistroView.js · COPY.colNumero": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/libroRegistroView.js · COPY.colTipo": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/libroRegistroView.js · COPY.colTotal": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
     "public/dashboard/js/libroRegistroView.js · COPY.descuadre": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/libroRegistroView.js · COPY.error": {
       "clase": "SIN_COMENTARIO",
       "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
     },
@@ -99,35 +67,7 @@
       "clase": "SIN_COMENTARIO",
       "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
     },
-    "public/dashboard/js/libroRegistroView.js · COPY.recuento": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/libroRegistroView.js · COPY.titulo": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/libroRegistroView.js · COPY.trazaAlbaran": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/libroRegistroView.js · COPY.trazaCobro": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
     "public/dashboard/js/libroRegistroView.js · COPY.trazaNoSellado": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/libroRegistroView.js · COPY.trazaPresupuestoFirmado": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/libroRegistroView.js · COPY.trazaPresupuestoSinFirmar": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/libroRegistroView.js · COPY.vacioDeVerdad": {
       "clase": "SIN_COMENTARIO",
       "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
     },
@@ -368,6 +308,66 @@
     {
       "id": "public/dashboard/js/invoicesView.js · COPY_BULK_PAGADAS.recargaFallida",
       "motivo": "SCRUM-1640: firmado por el fundador en SCRUM-1640 comentario 21292 (30-oct-2026); ficha en docs/microcopy/2026-10-30-SCRUM-1640-lote-marca-cero.md."
+    },
+    {
+      "id": "public/dashboard/js/libroRegistroView.js · COPY.titulo",
+      "motivo": "SCRUM-1428: firmada por el fundador el 19-ago-2026 en el registro congelado (SCRUM-709), docs/MICROCOPY_APROBADA_SIN_APLICAR.md:362 (addendum); la marca va ya en su misma línea. Acusada en falso desde el censo inicial: la firma vivía en el registro y no en el fuente."
+    },
+    {
+      "id": "public/dashboard/js/libroRegistroView.js · COPY.recuento",
+      "motivo": "SCRUM-1428: firmada por el fundador el 19-ago-2026 en el registro congelado (SCRUM-709), docs/MICROCOPY_APROBADA_SIN_APLICAR.md:364 (addendum); la marca va ya en su misma línea. Acusada en falso desde el censo inicial: la firma vivía en el registro y no en el fuente."
+    },
+    {
+      "id": "public/dashboard/js/libroRegistroView.js · COPY.error",
+      "motivo": "SCRUM-1428: firmada por el fundador el 19-ago-2026 en el registro congelado (SCRUM-709), docs/MICROCOPY_APROBADA_SIN_APLICAR.md:432 (tanda final); la marca va ya en su misma línea. Acusada en falso desde el censo inicial: la firma vivía en el registro y no en el fuente."
+    },
+    {
+      "id": "public/dashboard/js/libroRegistroView.js · COPY.vacioDeVerdad",
+      "motivo": "SCRUM-1428: firmada por el fundador el 19-ago-2026 en el registro congelado (SCRUM-709), docs/MICROCOPY_APROBADA_SIN_APLICAR.md:433 (tanda final); la marca va ya en su misma línea. Acusada en falso desde el censo inicial: la firma vivía en el registro y no en el fuente."
+    },
+    {
+      "id": "public/dashboard/js/libroRegistroView.js · COPY.colNumero",
+      "motivo": "SCRUM-1428: firmada por el fundador el 19-ago-2026 en el registro congelado (SCRUM-709), docs/MICROCOPY_APROBADA_SIN_APLICAR.md:365 (addendum); la marca va ya en su misma línea. Acusada en falso desde el censo inicial: la firma vivía en el registro y no en el fuente."
+    },
+    {
+      "id": "public/dashboard/js/libroRegistroView.js · COPY.colFecha",
+      "motivo": "SCRUM-1428: firmada por el fundador el 19-ago-2026 en el registro congelado (SCRUM-709), docs/MICROCOPY_APROBADA_SIN_APLICAR.md:366 (addendum); la marca va ya en su misma línea. Acusada en falso desde el censo inicial: la firma vivía en el registro y no en el fuente."
+    },
+    {
+      "id": "public/dashboard/js/libroRegistroView.js · COPY.colTipo",
+      "motivo": "SCRUM-1428: firmada por el fundador el 19-ago-2026 en el registro congelado (SCRUM-709), docs/MICROCOPY_APROBADA_SIN_APLICAR.md:367 (addendum); la marca va ya en su misma línea. Acusada en falso desde el censo inicial: la firma vivía en el registro y no en el fuente."
+    },
+    {
+      "id": "public/dashboard/js/libroRegistroView.js · COPY.colBase",
+      "motivo": "SCRUM-1428: firmada por el fundador el 19-ago-2026 en el registro congelado (SCRUM-709), docs/MICROCOPY_APROBADA_SIN_APLICAR.md:368 (addendum); la marca va ya en su misma línea. Acusada en falso desde el censo inicial: la firma vivía en el registro y no en el fuente."
+    },
+    {
+      "id": "public/dashboard/js/libroRegistroView.js · COPY.colCuota",
+      "motivo": "SCRUM-1428: firmada por el fundador el 19-ago-2026 en el registro congelado (SCRUM-709), docs/MICROCOPY_APROBADA_SIN_APLICAR.md:369 (addendum); la marca va ya en su misma línea. Acusada en falso desde el censo inicial: la firma vivía en el registro y no en el fuente."
+    },
+    {
+      "id": "public/dashboard/js/libroRegistroView.js · COPY.colTotal",
+      "motivo": "SCRUM-1428: firmada por el fundador el 19-ago-2026 en el registro congelado (SCRUM-709), docs/MICROCOPY_APROBADA_SIN_APLICAR.md:370 (addendum); la marca va ya en su misma línea. Acusada en falso desde el censo inicial: la firma vivía en el registro y no en el fuente."
+    },
+    {
+      "id": "public/dashboard/js/libroRegistroView.js · COPY.colEstado",
+      "motivo": "SCRUM-1428: firmada por el fundador el 19-ago-2026 en el registro congelado (SCRUM-709), docs/MICROCOPY_APROBADA_SIN_APLICAR.md:371 (addendum); la marca va ya en su misma línea. Acusada en falso desde el censo inicial: la firma vivía en el registro y no en el fuente."
+    },
+    {
+      "id": "public/dashboard/js/libroRegistroView.js · COPY.trazaPresupuestoFirmado",
+      "motivo": "SCRUM-1428: firmada por el fundador el 19-ago-2026 en el registro congelado (SCRUM-709), docs/MICROCOPY_APROBADA_SIN_APLICAR.md:402 (segunda tanda); la marca va ya en su misma línea. Acusada en falso desde el censo inicial: la firma vivía en el registro y no en el fuente."
+    },
+    {
+      "id": "public/dashboard/js/libroRegistroView.js · COPY.trazaPresupuestoSinFirmar",
+      "motivo": "SCRUM-1428: firmada por el fundador el 19-ago-2026 en el registro congelado (SCRUM-709), docs/MICROCOPY_APROBADA_SIN_APLICAR.md:403 (segunda tanda); la marca va ya en su misma línea. Acusada en falso desde el censo inicial: la firma vivía en el registro y no en el fuente."
+    },
+    {
+      "id": "public/dashboard/js/libroRegistroView.js · COPY.trazaAlbaran",
+      "motivo": "SCRUM-1428: firmada por el fundador el 19-ago-2026 en el registro congelado (SCRUM-709), docs/MICROCOPY_APROBADA_SIN_APLICAR.md:435 (tanda final); la marca va ya en su misma línea. Acusada en falso desde el censo inicial: la firma vivía en el registro y no en el fuente."
+    },
+    {
+      "id": "public/dashboard/js/libroRegistroView.js · COPY.trazaCobro",
+      "motivo": "SCRUM-1428: firmada por el fundador el 19-ago-2026 en el registro congelado (SCRUM-709), docs/MICROCOPY_APROBADA_SIN_APLICAR.md:372 (addendum); la marca va ya en su misma línea. Acusada en falso desde el censo inicial: la firma vivía en el registro y no en el fuente."
     }
   ],
   "porGrupo": {

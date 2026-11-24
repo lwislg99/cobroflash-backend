@@ -342,3 +342,35 @@ de `bulk-paid` (1316l) queda byte a byte como en main (`git diff origin/main` no
 `invoiceDetailView.js` se auto-mezcló. **Medido:** `tsc -p .` con tipos, salida 0 · 289, 397, 441, 1316l (14/14),
 1532b/1532d, 707, 285, 644, 719, 1294, 854: 219/219 en 20 ficheros, 0 saltados · `guards:entrada` 15/15 (170 tests).
 **No medido:** la suite entera en local (la corre el obligatorio) · yaqu.app.
+
+# SCRUM-1532c
+
+**Medido contra:** `origin/main` = `8e0d408168865aab0c7862d7c004cf864450aa71` · 2026-11-24T11:32:20Z
+
+**Qué (J2, jv-j2eo):** la fila de auditoría `cobro_cancelado` en `POST /admin/charges/:id/cancel`
+(`src/modules/billing/app/routes/chargesAdmin.routes.ts`), APILADA sobre `scrum-1808-cobro-cancelado-s1` de S1
+(punta `0d90b145f7cbfe68814158994260d1668d038ea5`; c.22562 citaba `33fd66e3f`, que no existe en el repo).
+Autorización para empujar a esa rama: la propuesta de Luis en SCRUM-1532 c.22562 (patrón #3335). Clave aprobada en c.22435.
+`recordAudit` (fire-safe, patrón de `albaranes.routes.ts`) con `merchantId`, `teamMemberId`, `meta.actor` (`actorDeRequest`),
+`entityType: 'charge'`, `entityId` e IP; SÓLO tras el `update` que cancela. Dentro de un `try`: el cobro ya está cancelado
+y un 500 diría que no. `audit.service.ts` (S1) no se toca.
+
+| qué | esperado | visto |
+|---|---|---|
+| rojo primero (`scrum1532b`, antes del arreglo) | cae el caso nuevo | 18 casos · 17 pass · 1 fail (el de la fila) |
+| `scrum1532b` tras el arreglo | 18/18 | 18/18, 0 saltados |
+| pendiente → fila | 1 `auditLog.create` con `cobro_cancelado`, comercio, cobro 7, actor | sí |
+| `yaEstaba` · 409 · 409 de la carrera (P2025) | 0 filas | 0 |
+| centinela de la falta (antes `:267`) | pasa a EXIGIR clave y fila | reescrito: exige `'cobro_cancelado'` en la unión y la fila |
+| decisión 2 (no toca la factura) | fuera del cobro, sólo su fila | `['auditLog.create']` exacto (no se filtra: se exige) |
+| `tsc -p .` con tipos | 0 | `npm run build`: salida 0 |
+
+Mutaciones: catálogo → `tests/scrum1532b-cancelar-cobro.test.mjs`
+(«la ruta deja de auditar»: `recordAudit({` → `void ({`; declarada en `MUTACIONES_QUE_ME_TUMBAN`, NO corrida con el mutador de la casa en esta tanda).
+
+**Desviación del encargo, dicha:** el test NO monta la ruta en `app`: usa el arnés del propio fichero, que recorre TODAS las
+capas de la ruta (`requireRole` incluido) sobre el router de `chargesAdmin`. El montaje en `app` no se midió.
+**No medido:** la suite entera en local (no me cabía en el tope de contexto del encargo, dicho antes de empujar) · yaqu.app
+(la ruta no tiene botón en `main` fuera de las fichas de 1532d/1808) · la mutación corrida.
+
+A9: sin fallo que generalice — el 500 del arnés (sin `headers`) lo vi en la tanda, antes de empujar: el `req` de prueba no los traía y Express siempre los trae; se añadió `headers: {}` al arnés y el `try` a la ruta.
