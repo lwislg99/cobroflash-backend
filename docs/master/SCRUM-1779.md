@@ -258,3 +258,28 @@ S2 · `public/dashboard/js/jobDetailView.js:3986` (hace falta aunque S1 esté ar
 - La suite entera por tramos: no cabe en el contexto de esta sesión (182k al empezar el registro); la corre el obligatorio de CI.
 - SCRUM-1780 (`facturaDesdeParte.ts`, de `jv-j1gp`): el fichero no está ni en `origin/main` ni en `scrum-1780b-ddl-y-diseno-factura-desde-parte` @ `df75c91fbe4b4ffb124ce45ea078170959760186`; no sé si devuelve el mismo `message`. No se toca desde aquí.
 - Postgres, staging y producción: nada.
+
+## SCRUM-1779i · 23-nov: prueba en STAGING — la factura emitida hoy desde el panel lleva «Formas de pago» en la ficha y en el PDF (J1, solo docs)
+
+**Medido contra:** `origin/main` = `27656eae71e62369a5e87f27ae40e82e5764211d` · 2026-11-23T21:30:30Z (cabecera `Date:` de `gh api -i zen`; sesión J1 `jv-j1im`, por encargo del orquestador `cobroflash-backend-2d`)
+
+A9: aviso → A10 «Una operación que no se ejecutó se lee exactamente igual que un éxito.» — no se pudo comprobar: mi guion de la emisión buscaba el id en `respuesta.invoice.id` y la respuesta lo trae en `factura.id`; imprimió `id undefined` y terminó sin error, sin capturas ni PDF. Lo vi al leer la salida y saqué las evidencias en una segunda pasada SIN emitir. Un guion de un solo uso contra staging no pasa por ningún guard del repositorio.
+
+**Qué se probó.** Staging (`yaqu-staging-production`) sirve `/health` = `27656eae…` = `origin/main`, que contiene `d05a4522` (1787s) y 1787t (#3327); 1787x no está en `main`. Cuenta QA (comercio 2) con el login de test por `page.request`, el secreto leído de `process.env` dentro de un guion de `node` (no pasó por el MCP de Playwright ni por ningún fichero que una herramienta devolviera). Chrome con contexto nuevo (`serviceWorkers:'block'`). Turno de staging (`turno-staging.mjs --base staging`, base `railway`) tomado a las 21:31:38Z y soltado a las 21:34:23Z; `estado` después: LIBRE. Flags del comercio leídos en la base, solo lectura, antes y después, idénticos y sin tocar: `INVOICING_ES_ENABLED=true`, `SIF_ENABLED=false`, `BIZUM_MANUAL_ENABLED=true`; IBAN sí, móvil Bizum sí, `connectStatus=none`.
+
+Desde el panel (Nueva factura → «Cliente QA sin avisos» → una línea de 100 € + 21 % → «Emitir factura») se emitió **F260005** (id 1980): `POST /admin/invoices` 201, `veriFactu:false`. El cuerpo de la petición NO traía `payMethods` (`{customerId, lines}`): las formas las congeló el servidor. Peticiones de escritura en las tres pasadas cuyo registro leí (la última exploración, la emisión y la de capturas): ese `POST` y el `POST /admin/entorno` que hace el panel al cargar. Las dos primeras exploraciones (sin pulsar «Emitir») no las leí: su registro se sobrescribió. **Ningún envío por WhatsApp ni correo.**
+
+| qué | esperado | visto |
+|---|---|---|
+| `payMethods` de F260005 (API y base) | las activas del comercio QA, sin `card` | `["bizum","transfer"]` |
+| Ficha · «Formas de pago» (1280 y 390) | sale, con Bizum y transferencia | «Formas de pago · Bizum, Transferencia» |
+| Ficha · «Vence el» | sale | «23 dic 2026»; `dueDate` 2026-12-23T21:33:37Z = `createdAt` + 30 días |
+| PDF · texto (`tests/_texto-del-pdf.mjs`, 17 líneas) | «Formas de pago» y «Vence el 23 de diciembre de 2026» | «Formas de pago: Bizum, Transferencia» y «Vence el 23 de diciembre de 2026» (fecha larga de 1787t; sin 1787x, así que no se pudo ver el día sin cero) |
+| Control: F260004 (de esta mañana, 1787r) | sigue SIN formas de pago (regla 29) | `payMethods = null`; ficha sin la fila; PDF de 16 líneas sin «Formas de pago» |
+| Página pública de pago | — | NO vista: exige Enviar (encargo) |
+
+**Evidencias** (`docs/master/evidencias/SCRUM-1779/1779i/`), miradas una a una: `01-ficha-F260005-1280.png` y `02-ficha-F260005-390.png` (COBRO con «Vence el» y «Formas de pago»), el texto del PDF de F260005 `03-F260005-texto.txt` (el `.pdf` no se versiona: su cuerpo comprimido trae `\r` sin ningún NUL y `tests/scrum480-fin-de-linea.test.mjs` lo cuenta como blob de texto con CR; se arregla el fichero, no el guard), `04-control-F260004-1280.png` (COBRO solo con «Vence el») y `05-control-F260004-pdf-texto.txt`.
+
+**Visto de paso, no es de este encargo:** la barra de estado de las dos facturas marca «Enviada» como paso actual aunque ninguna se ha enviado. No lo he investigado ni tocado; se lo paso al orquestador.
+
+**NO medido:** yaqu.app (el login de test solo existe en staging); la página de pago; una imagen del PDF renderizado (va solo su texto; el `.pdf` se retiró del PR por el guard SCRUM-480); los otros caminos de 1787s (factura tras cobrar, presupuesto con lista, los cinco de S1); la suite de tests: cambio solo de docs, corrí los guards de docs y `guards:entrada`.

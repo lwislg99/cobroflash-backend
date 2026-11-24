@@ -112,7 +112,8 @@ router.get('/invoice/:token', async (req, res) => {
   const id = charge.id;
 
   // Pagado o vencido → recibo
-  if (charge.status === 'paid' || charge.status === 'expired') {
+  // SCRUM-1532b: un cobro cancelado tampoco se paga; el recibo dice por qué.
+  if (charge.status === 'paid' || charge.status === 'expired' || charge.status === 'cancelled') {
     return res.redirect(303, `/recibo/${token}`);
   }
 
