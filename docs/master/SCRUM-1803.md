@@ -76,3 +76,67 @@ A9: aviso → A10 «Un prefijo no es un nombre, y una subcadena tampoco.» — n
 Mío (jv-j1je): el primer borrador del test generaba los dos casos «queda intacto» en un `for` con el nombre
 en plantilla, contra lo que pedía el encargo (nombres literales); lo desenrollé antes de correrlo.
 A9: comprobación → `tests/scrum1415-nombres-construidos.test.mjs`
+
+# SCRUM-1803b · El aviso `paid-webhook` cierra el cobro y `deshacer_pago` lo reabre
+
+**Medido contra:** `origin/main` = `093a128766d1d45c01c0f1cef3557c8680b1463c` · 2026-11-24T06:54:34Z
+
+Carril J1 (jv-j1jh). Decisiones del fundador: SCRUM-1803 c.22506 b) y c), sobre el plan de jv-j1jd
+(c.22499). Nace sobre la rama de #3353, que ya estaba en `main` al arrancar: este PR no lleva sus commits.
+
+## ① Medición
+
+- La ruta es `POST /invoice/:id/paid-webhook` (`invoice.routes.ts`), montada en `src/app.ts` como
+  `app.use('/invoice', requireInternalSecret, invoiceRouter)`, no `/invoices` ni la línea 83 que citaba el
+  encargo. Autentica SOLO el secreto interno (sin sesión ni comercio). Llamadores: 0 en `src/`, `public/`,
+  `scripts/` y `.github/` (solo comentarios; `app.ts` la llama «legacy n8n»). Ruta muerta: construida igual.
+- El webhook no lee el cuerpo: no trae medio, así que `method` se conserva.
+- `Event.type` es un `String` libre (`model Event`). Ningún evento de cobro de la casa des-paga: `unpaid` no
+  existía. Lo nombra literal la decisión firmada c.22506 c), y es el que se escribe.
+- Cómo distingue la casa el origen del `paid`: por el `payload` del evento. El marcado manual (SCRUM-1803)
+  deja `{ origen: 'marcar_pagado_manual', via, invoiceId }`; `psp.routes.ts` guarda el cuerpo del webhook,
+  `mpWebhook.routes.ts` el pago de MP, la liberación de garantía `{ tipo: … }`. No hay campo `source`.
+
+## ② Lo construido
+
+- b) `invoice.routes.ts`: tras marcar la factura, `cerrarCobroDeFacturaPagada` (la de 1803, `where`
+  con `status: 'pending'`) con `updated.paidAt`, sin medio y `payload { origen: 'paid_webhook', invoiceId }`.
+- c) `invoiceAdmin.ts`: `reabrirCobroDeJustificanteDespagado`, llamada en `updateInvoiceStatusAdmin` al pasar
+  de `paid` a `pending` (solo un justificante llega ahí). Lee el cobro `paid` y sus eventos `paid`; si
+  TODOS son del marcado manual de ESA factura (`esPagoDelMarcadoManual`), lo pasa a `pending`, `paidAt`
+  null y evento `unpaid` `{ origen: 'deshacer_pago', invoiceId }`. El `where` lleva `status: 'paid'` y
+  «ningún evento `paid` fuera de los leídos»: un pago que entre en medio da P2025 y no se escribe nada.
+  Un pago del aviso `paid-webhook` NO es manual: `deshacer_pago` no lo reabre.
+- Un fallo al cerrar o reabrir el cobro se loguea y no rompe el marcado (como 1803).
+- Regla 29: ninguna factura emitida se edita; las escrituras nuevas son sobre `Charge`. Regla 40: no se
+  ha tocado `crearFacturaEmitida`, `sellarTrasEmision` ni el PDF.
+
+## ③ Qué · esperado · visto
+
+| qué | esperado | visto |
+|---|---|---|
+| `paid-webhook` con cobro `pending` | cobro `paid`, misma fecha que la factura, evento `paid`, `method` sin escribir | ✔ `tests/scrum1803b-webhook-y-deshacer-pago.test.mjs` |
+| `paid-webhook`, factura sin `chargeId` | ningún `Charge` escrito | ✔ mismo test |
+| `paid-webhook`, cobro `cancelled` | intacto | ✔ mismo test |
+| `deshacer_pago` tras marcado manual | cobro `pending`, `paidAt` null, evento `unpaid` | ✔ mismo test |
+| `deshacer_pago`, cobro pagado por pasarela | intacto, 0 escrituras de `Charge` | ✔ mismo test |
+| `deshacer_pago`, pago manual + pasarela | intacto | ✔ mismo test |
+| `deshacer_pago`, justificante sin `chargeId` | ningún `Charge` escrito | ✔ mismo test |
+| rojo primero (antes del cambio) | caen los 2 positivos | ✔ 7 casos: 2 fail (por su aserción) · 5 pass |
+| mutación: `esPagoDelMarcadoManual` devuelve `true` | cae «cobro pagado por una pasarela» | ✔ VIVA (`aplicarUna` de la casa; colateral: el caso mixto) |
+| build con tipos (`tsc -p .`) | salida 0 | ✔ 0 |
+| suite entera | — | NO corrida en local (orden del encargo) |
+| yaqu.app | — | NO verificado: antes del merge no hay nada que ver |
+
+Mutaciones: catálogo → `tests/scrum1803b-webhook-y-deshacer-pago.test.mjs`
+
+## ④ A9
+
+El encargo citaba la ruta como `/invoices/:id/paid-webhook` en `app.ts:83`: es `/invoice` y la línea era
+otra. Lo cacé leyendo el montaje antes de escribir el test; una ruta mal copiada habría dado un 404 en
+un test con suelo, no un verde falso.
+A9: aviso → A10 «Referenciar por posición caduca. Referenciar por identidad no.» — no se pudo comprobar: la posición venía en el texto de un encargo, que no pasa por ningún guard
+
+Mío (jv-j1jh): en los comentarios de `invoiceAdmin.ts` nombré la ruta por su nombre, y `scrum1455c ②` censa
+esa palabra en `src/` como «alguien la llama»: rojo en la tanda dirigida. Cambié mi texto, no el guard.
+A9: comprobación → `tests/scrum1455c-anomalia-y-webhook-id-que-cabe.test.mjs`

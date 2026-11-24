@@ -249,6 +249,59 @@ export async function cerrarCobroDeFacturaPagada(
 }
 
 /**
+ * SCRUM-1803b · ¿Este evento `paid` lo escribió el marcado manual de ESTA factura? Es la marca que
+ * deja `cerrarCobroDeFacturaPagada` desde SCRUM-1803 (`origen` + `invoiceId`). Una pasarela guarda
+ * otro payload (el cuerpo del webhook, `mp_payment_id`…), y el aviso de pago interno (`invoice.routes.ts`) deja su propio
+ * `origen`: ninguno de los dos casa. PURA.
+ */
+export function esPagoDelMarcadoManual(payload: unknown, invoiceId: number): boolean {
+  const p = payload as { origen?: unknown; invoiceId?: unknown } | null | undefined;
+  return p?.origen === 'marcar_pagado_manual' && p?.invoiceId === invoiceId;
+}
+
+/**
+ * SCRUM-1803b (decisión del fundador SCRUM-1803 c.22506 c) · DESHACER EL PAGO DE UN JUSTIFICANTE
+ * REABRE SU COBRO, pero solo el que el marcado manual de ESE justificante había cerrado: vuelve a
+ * `pending`, `paidAt` null y un evento `unpaid` (el nombre lo firma c.22506 c; antes no existía).
+ *
+ * Se mira CADA evento `paid` del cobro: si alguno no es del marcado manual de esta factura (una
+ * pasarela, el aviso de pago interno, otra factura), el cobro no se toca: el dinero de una pasarela no
+ * se des-cobra a mano. Lo leído va al `where` (`status: 'paid'` y «ningún evento `paid` fuera de los
+ * que he leído»): si entre la lectura y la escritura entra otro pago, la fila no casa (P2025) y no se
+ * escribe nada. Devuelve si reabrió alguno.
+ */
+export async function reabrirCobroDeJustificanteDespagado(
+  merchantId: number,
+  chargeId: number | null | undefined,
+  invoiceId: number,
+): Promise<boolean> {
+  if (chargeId == null) return false;
+  const cobro = await prisma.charge.findFirst({
+    where: { id: chargeId, merchantId, status: 'paid' },
+    include: { events: { where: { type: 'paid' } } },
+  });
+  const pagos = cobro?.events ?? [];
+  if (!pagos.length || !pagos.every((e) => esPagoDelMarcadoManual(e.payload, invoiceId))) return false;
+  try {
+    await prisma.charge.update({
+      where: {
+        id: chargeId, merchantId, status: 'paid',
+        events: { none: { type: 'paid', id: { notIn: pagos.map((e) => e.id) } } },
+      },
+      data: {
+        status: 'pending',
+        paidAt: null,
+        events: { create: { type: 'unpaid', payload: { origen: 'deshacer_pago', invoiceId } } },
+      },
+    });
+    return true;
+  } catch (e) {
+    if (esFilaQueNoCasa(e)) return false;
+    throw e;
+  }
+}
+
+/**
  * SCRUM-1316l · ¿Lleva esta factura ALGUNA línea al 10 % de IVA? PURA: se prueba con filas de verdad.
  *
  * Las líneas guardan `tax` como FRACCIÓN (0.10 = 10 %, `vat.service.ts`). Se compara en porcentaje
@@ -423,6 +476,11 @@ export async function updateInvoiceStatusAdmin(
       updated.merchantId, updated.chargeId, updated.paidAt,
       (campoMetodo as { paidVia?: string }).paidVia ?? null, { origen: 'marcar_pagado_manual', via: 'status', invoiceId: updated.id },
     ).catch((e) => console.error('[invoiceAdmin] SCRUM-1803 no se pudo cerrar el cobro:', (e as any)?.message || 'error desconocido'));
+  }
+  // SCRUM-1803b · des-pagar (solo un justificante llega aquí) reabre el cobro que su marcado manual cerró.
+  if (status === 'pending' && existing.status === 'paid') {
+    await reabrirCobroDeJustificanteDespagado(updated.merchantId, updated.chargeId, updated.id)
+      .catch((e) => console.error('[invoiceAdmin] SCRUM-1803b no se pudo reabrir el cobro:', (e as any)?.message || 'error desconocido'));
   }
   // SCRUM-28 (COBROS-2): el cobro MANUAL (Bizum/transferencia) también materializa
   // Job.totalCobrado. Reutiliza el núcleo de SCRUM-13 (suma Invoices paid, idempotente).
