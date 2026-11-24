@@ -43,6 +43,7 @@ el caso de J2 (sería tocar su test sin su firma) y descartado esperar (la clave
 
 **Medido contra:** `origin/main` = `db0a6c04541c258eda6499e1088cf16db9f1836b` · 2026-11-24T18:13:08Z
 A9: comprobación → `tests/scrum1808b-cancelar-cobro-en-ficha-trabajo.test.mjs`
+A9: comprobación → `tests/scrum811c-skill-ui-declarada.test.mjs`
 Mutaciones: catálogo → `tests/scrum1808b-cancelar-cobro-en-ficha-trabajo.test.mjs`
 **Skill UI:** cargada · DESPUÉS de escribir el cambio, no antes (lo cazó `scrum811c`); con ella repasé el diff con
 el checklist AB6: cero `style=` nuevos, solo inventario AB3 (`mkBtn` con `job-toolbar-btn-44`, el «⋯» de
