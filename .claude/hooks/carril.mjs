@@ -10,8 +10,9 @@
 //     transcript lleva `{"type":"agent-name",…}` desde la primera llamada, también en subagentes.
 // Si las dos dicen puestos distintos, la discrepancia ES el dato: se para.
 //
-// Con `--exigir-identidad` (se arma en settings.json SOLO al migrar a mesas fijas; hoy pararía a
-// todas): sin identidad, o con una carpeta rota, no se edita ni se ejecuta nada.
+// FALLA CERRADA (SCRUM-1506d, decisión c.22577): una EDICIÓN dentro del repo sin identidad, con la carpeta
+// rota, o con un error del propio hook, se para (salida 2) y dice cómo identificarse. Leer y editar fuera del
+// repo siguen libres. Con `--exigir-identidad` (no armado en settings.json) se para además TODA herramienta.
 //
 // LÍMITE declarado: esto ve Edit/Write/NotebookEdit. Una escritura por Bash/PowerShell no pasa por
 // aquí; el carril de esas la sigue cuidando la revisión.
@@ -56,15 +57,28 @@ function raizDelRepo(fichero) {
   }
 }
 
+// SCRUM-1506d (decisión c.22577): sin identidad la cerradura FALLA CERRADA. El mensaje dice cómo se arregla,
+// porque «para» sin «cómo» deja a la sesión parada sin salida.
+const sinIdentidad = (id) => `⛔ SIN IDENTIDAD: ${id.carpetaRota ? `el .yaqu-puesto.json de tu carpeta está roto (${id.carpetaRota})` : `ni tu carpeta (.yaqu-puesto.json) ni tu nombre de sesión${id.nombre ? ` «${id.nombre}»` : ''} dicen qué puesto eres`}.
+   Sin saber quién eres, la cerradura no deja editar el repo (falla cerrada, SCRUM-1506).
+   Cómo identificarte, una de dos:
+   · por el NOMBRE: \`/rename <nombre>\` con la forma de tu puesto — sesion-N o sN-<algo> (S0…S5), jv-jN o jN-<algo> (J1…J6), orquestador;
+   · por la MESA: lanzar desde la carpeta del puesto, con su .yaqu-puesto.json (node scripts/carriles.mjs mesa <PUESTO> <carpeta> --nombre <nombre>).
+   Si no sabes qué puesto eres: para y avisa al orquestador.`;
+
 function principal(s, exigir) {
   const id = identidad({ proyecto: process.env.CLAUDE_PROJECT_DIR || s.cwd, transcript: s.transcript_path });
   if (id.discrepa) bloquear(`⛔ Identidad en DISCREPANCIA: tu carpeta dice ${id.carpeta} y tu nombre de sesión «${id.nombre}» dice ${id.porNombre}. La discrepancia ES el dato: no elijas una; para y avisa al orquestador.`);
-  if (exigir && (id.carpetaRota || !id.puesto)) bloquear(`⛔ SIN IDENTIDAD: ${id.carpetaRota ? `el .yaqu-puesto.json de tu carpeta está roto (${id.carpetaRota})` : 'ni tu carpeta (.yaqu-puesto.json) ni tu nombre de sesión dicen qué puesto eres'}. O sabes quién eres, o no trabajas: para y avisa. Se arregla lanzando desde la mesa del puesto (sesion.mjs).`);
+  if (exigir && (id.carpetaRota || !id.puesto)) bloquear(sinIdentidad(id));
   if (!EDICION.has(s.tool_name)) return;
   const fichero = s.tool_input?.file_path ?? s.tool_input?.notebook_path;
-  if (!fichero || !id.puesto || id.puesto === 'ORQ') return;
+  if (!fichero) return;
   const raiz = raizDelRepo(fichero);
   if (!raiz || !fs.existsSync(path.join(raiz, FUENTE))) return; // fuera del repo de YaQu: no es de nadie
+  // Dentro del repo, una mesa rota o ninguna identidad PARAN (antes: salía sin mirar).
+  if (id.carpetaRota) bloquear(sinIdentidad(id));
+  if (!id.puesto) bloquear(sinIdentidad(id));
+  if (id.puesto === 'ORQ') return;
   const rel = path.relative(raiz, path.resolve(fichero)).split(path.sep).join('/');
   let mapa;
   try { mapa = JSON.parse(fs.readFileSync(path.join(AQUI, '..', 'carriles.json'), 'utf8')); }
@@ -86,7 +100,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   process.stdin.on('end', () => {
     let s;
     try { s = JSON.parse(d.replace(/^﻿/, '') || '{}'); } catch { bloquear('⛔ Cerradura de carril: stdin no es JSON. NO-PUDE-MIRAR.'); }
-    principal(s, process.argv.includes('--exigir-identidad'));
+    // Un error aquí dentro saldría 1, y Claude Code sólo bloquea con 2: sin esto, un fallo del hook deja pasar.
+    try { principal(s, process.argv.includes('--exigir-identidad')); }
+    catch (e) { bloquear(`⛔ Cerradura de carril: error dentro del hook (${e?.message ?? e}). NO-PUDE-MIRAR no es un permiso: avisa al orquestador (SCRUM-1506).`); }
     process.exit(0);
   });
 }
