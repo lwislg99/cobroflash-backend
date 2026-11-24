@@ -157,3 +157,33 @@ test»). Los **1, 2, 4 y 5** son del día en que haya rutas que creen, asignen o
 existe ninguna (0 `equipment` en `src/` fuera de estos dos ficheros). El **6** se cumple sin tocar nada: ni
 el canónico del albarán ni el del parte leen `equipmentId` (lo dice el comentario del esquema; el test de
 sellado no se ha tocado).
+
+---
+
+## APÉNDICE · SCRUM-914 · 24-nov-2026 · S1 (encargo SCRUM-1817 pieza ③) · las dos líneas de S1, ENCIMA de la rama de #3335
+
+**CRUCE DECLARADO.** Este tramo va en la rama `scrum-914d-equipos-en-borrado-y-anonimizado` (PR #3335, de J3),
+encima de su punta `8ad26800d`, porque así lo diseñó su decisión c.22443 («Con esas dos líneas de S1 el PR
+entra; sin ellas, no»). Los dos ficheros que toco son de S1; lo demás de la rama es de J3 y no lo toco.
+`prisma/schema.prisma` se ha LEÍDO, no tocado; ni `migrate` ni `db push`. [Escrito por la sesión, no por Luis.]
+
+- `src/modules/system/domain/fusionClientes.ts`, detrás del `customerSite.updateMany`:
+  `tx.equipment.updateMany({ where: { merchantId, customerId: fusionadoId }, data: { customerId: principalId } })`.
+- `src/modules/jobs/domain/albaranDuplicado.ts`: `equipmentId` en `CAMPOS_QUE_VIAJAN`, con su motivo.
+- Las dos, copiadas de `d5d29ee22` (#3014, S1, 2-nov-2026), sin cambios.
+
+**Rojo primero, medido en esta rama** (`npm ci` + `prisma generate` en el `node_modules` propio del árbol,
+guard del cliente ✔, `npm run build`): `scrum1291` + `scrum302` → 15 tests, 12 pasan, **3 caen**: `scrum1291` ①
+(control positivo), `scrum1291` ③ (la misma dirección en los dos clientes) y `scrum302` («TODO campo de
+`Albaran` está clasificado, y en UN solo cubo»). Son los tres de c.22448.
+
+**Verde después:** los mismos dos ficheros + `scrum1057b` → 20 tests, 15 pasan, 0 caen, 5 saltan (los de
+`scrum1057b`, que piden Postgres desechable: no corridos aquí, los juzga el CI). Barrido de vecinos (78
+ficheros que casan con `fusion|duplic|914|equipo|scrum1057|scrum302|albaran`): 657 tests, 640 pasan, 0 caen,
+17 saltan. **La suite entera NO se ha corrido en local**: la corre el obligatorio.
+
+**Main.** La rama va 148 commits por detrás de `origin/main` `8e0d40816` (2026-11-24T08:31:18Z) y 1 por
+delante; `git merge-tree` contra main: sin conflictos. No he traído main (lo decide el orquestador).
+**Medido también sobre el MERGE con main** (lo que corre el CI de `pull_request`): árbol desechable con
+`git merge-tree` de esta punta y `8e0d40816`, `npm ci` propio, cliente ✔, `tsc` limpio. Los mismos 78
+ficheros vecinos: 657 tests, 640 pasan, 0 caen, 17 saltan. Para estos dos rojos **no hace falta traer main**.
