@@ -1,13 +1,14 @@
 // tests/scrum1429c-dos-envios-dos-cobros.test.mjs — SCRUM-1429c (antecedente: sonda de S1 del 2-oct, SCRUM-1429 c.18152)
 //
-// 🔴 ESTO NO ES UN VERDE QUE BENDICE EL DOBLE COBRO. Es un TRINQUETE DE UN DEFECTO CONOCIDO.
+// Nació (1429c) como TRINQUETE DE UN DEFECTO CONOCIDO, y SCRUM-1429d lo arregla y retira la declaración.
 //
-// Lo leído (src/modules/billing/domain/invoiceWhatsApp.service.ts, `sendInvoicePaymentRequest`): lee
-// `invoice.chargeId`; si no hay cobro, `POST ${BASE_URL}/charges` (ida y vuelta HTTP) y DESPUÉS
+// El defecto (src/modules/billing/domain/invoiceWhatsApp.service.ts, `sendInvoicePaymentRequest`): leía
+// `invoice.chargeId`; si no había cobro, `POST ${BASE_URL}/charges` (ida y vuelta HTTP) y DESPUÉS
 // `prisma.invoice.update({ chargeId })`, sin transacción ni condición. Dos envíos A LA VEZ de la misma
-// factura leen los dos `chargeId = null`, crean DOS cobros pendientes y la factura se queda con el que
-// escribe el último: el cliente recibe dos enlaces y el primero queda huérfano. Arreglarlo toca la
-// creación de cobros (flujo de cobro en producción, STOP): este fichero NO lo arregla.
+// factura leían los dos `chargeId = null`, creaban DOS cobros pendientes y la factura se quedaba con el
+// que escribía el último: el cliente recibía dos enlaces y el primero quedaba huérfano.
+// El arreglo (1429d, GO del fundador SCRUM-1429 c.22630): el enlace es CONDICIONAL sobre lo leído; el que
+// llega tarde cancela su cobro (`pending → cancelled`) y envía con el del primero. Sin esquema.
 //
 // CÓMO SE MIDE — molde de scrum1532d ②: el servicio de `dist/` tal cual; el POST a `/charges` sale de
 // verdad hacia el router REAL de `charges.routes` montado en este proceso. Se doblan la base y Meta
@@ -28,20 +29,46 @@ import http from 'node:http';
 import { createRequire } from 'node:module';
 import { inyectarBase, moduloDeDist, MERCHANT, CLIENTE } from './_envio-doblado.mjs';
 
-/** 🔴 LA DECLARACIÓN DEL DEFECTO. Quien arregle SCRUM-1429 la retira EN EL MISMO CAMBIO. */
+/**
+ * 🟢 LA DECLARACIÓN DEL DEFECTO, RETIRADA por SCRUM-1429d (GO del fundador, SCRUM-1429 c.22630): el enlace
+ * del cobro con la factura es condicional sobre lo leído, y el envío que llega tarde cancela su cobro y usa
+ * el del primero. Volver a declararlo con un solo cobro vivo es ROJO (las dos mitades, A23 · 7).
+ */
 export const DEFECTO_CONOCIDO = {
-  declarado: true,
+  declarado: false,
   tickets: ['SCRUM-1429'],
   que: 'Dos envíos a la vez de la misma factura sin cobro crean dos cobros pendientes y la factura se queda con el último',
 };
 
+// Los campos van LITERALES: el catálogo los lee por AST (`lecturaDeDeclaraciones`), no ejecutando el fichero.
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
-    // Quitar la declaración con el defecto presente es esconderlo: cae.
+    // SCRUM-1429d ①: el enlace vuelve a ser incondicional → los dos casan, dos cobros vivos.
+    fichero: 'src/modules/billing/domain/invoiceWhatsApp.service.ts',
+    de: 'merchantId: invoice.merchantId, chargeId: chargeIdLeido },',
+    a: 'merchantId: invoice.merchantId },',
+    cae: 'SCRUM-1429c · dos envíos a la vez de la misma factura: un solo cobro vivo',
+  },
+  {
+    // SCRUM-1429d ②: el que llega tarde no cancela su cobro → dos cobros vivos.
+    fichero: 'src/modules/billing/domain/invoiceWhatsApp.service.ts',
+    de: "data: { status: 'cancelled' },",
+    a: 'data: {},',
+    cae: 'SCRUM-1429c · dos envíos a la vez de la misma factura: un solo cobro vivo',
+  },
+  {
+    // SCRUM-1429d ②: el que llega tarde envía con su cobro (ya cancelado) y no con el del primero.
+    fichero: 'src/modules/billing/domain/invoiceWhatsApp.service.ts',
+    de: '        chargeId = ganador.chargeId;\n',
+    a: '',
+    cae: 'SCRUM-1429c · dos envíos a la vez de la misma factura: un solo cobro vivo',
+  },
+  {
+    // Volver a declarar el defecto con el arreglo puesto: cae (la otra mitad del trinquete).
     fichero: 'tests/scrum1429c-dos-envios-dos-cobros.test.mjs',
-    de: '  declarado: true,\n  tickets:',
-    a: '  declarado: false,\n  tickets:',
-    cae: 'SCRUM-1429c · dos envíos a la vez de la misma factura siguen siendo el defecto declarado',
+    de: '  declarado: false,\n  tickets:',
+    a: '  declarado: true,\n  tickets:',
+    cae: 'SCRUM-1429c · dos envíos a la vez de la misma factura: un solo cobro vivo',
   },
 ];
 
@@ -103,7 +130,8 @@ async function dosEnvios({ aLaVez }) {
       ? await Promise.all([sendInvoicePaymentRequest(facturaBase.id), sendInvoicePaymentRequest(facturaBase.id)])
       : [await sendInvoicePaymentRequest(facturaBase.id), await sendInvoicePaymentRequest(facturaBase.id)];
     const vivos = [...cobros.values()].filter((c) => c.status !== 'cancelled').map((c) => c.id);
-    return { posts, creados: [...cobros.keys()], vivos, resultados, escrituras, chargeIdFinal: factura.chargeId };
+    const cancelados = [...cobros.values()].filter((c) => c.status === 'cancelled').map((c) => c.id);
+    return { posts, creados: [...cobros.keys()], vivos, cancelados, resultados, escrituras, chargeIdFinal: factura.chargeId };
   } finally {
     console.error = error;
     console.warn = aviso;
@@ -138,11 +166,16 @@ export function juicio(m, declaracion) {
     : { ok: true, estado, motivo: `Declaración retirada y un solo cobro vivo: ${dato}.` };
 }
 
-test('SCRUM-1429c · dos envíos a la vez de la misma factura siguen siendo el defecto declarado', async (t) => {
+test('SCRUM-1429c · dos envíos a la vez de la misma factura: un solo cobro vivo, los dos envíos con él y el otro cancelado', async (t) => {
   const m = await dosEnvios({ aLaVez: true });
   const v = juicio(m, DEFECTO_CONOCIDO);
   t.diagnostic(v.motivo);
   assert.equal(v.ok, true, `🔴 ${v.motivo}`);
+  // La carrera ocurrió: sin dos POST a /charges, «un solo cobro» no mide el arreglo, mide que no hubo carrera.
+  assert.equal(m.posts, 2, `🔴 CIEGO: no hubo carrera (POST a /charges=${m.posts}); el arreglo no se ha medido`);
+  // SCRUM-1429d (GO c.22630): el cobro del que llegó tarde no se queda pendiente: se cancela al momento.
+  assert.deepEqual(m.cancelados, m.creados.filter((id) => id !== m.vivos[0]),
+    `🔴 el otro cobro no está cancelado: creados [${m.creados}] · vivos [${m.vivos}] · cancelados [${m.cancelados}]`);
 });
 
 test('SCRUM-1429c · control: uno detrás de otro, el segundo envío reutiliza el cobro (la base doblada tiene memoria)', async () => {

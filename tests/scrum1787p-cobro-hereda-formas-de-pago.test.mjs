@@ -72,6 +72,8 @@ async function enviar(factura, { formasDelPresupuesto = null, comercio = { id: M
   let posts = 0;
   inyectarBase({
     'invoice.findUnique': () => factura,
+    // SCRUM-1429d: el enlace cobro→factura es `updateMany` condicional sobre lo leído; casa si la factura sigue igual.
+    'invoice.updateMany': (args) => ({ count: (args.where || {}).chargeId === (factura.chargeId ?? null) ? 1 : 0 }),
     'quote.findUnique': () => (formasDelPresupuesto ? { payMethods: formasDelPresupuesto } : null),
     'merchant.findUnique': () => comercio,
     'charge.create': (args) => { creados.push(args.data); return { id: 90, expiresAt: null, reference: 'R', status: 'pending' }; },
