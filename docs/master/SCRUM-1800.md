@@ -80,3 +80,24 @@ Sin firma no se cambia.
 - Nada en staging ni en producción, aparte de los `SELECT`.
 
 A9: aviso → cicatriz J2 «crucé el tope de contexto del encargo antes de empujar: me medí al acabar el arranque (102k) y no volví a medirme hasta el final de la construcción (174k, tope 170k); el ④ se quedó sin captura y la suite entera sin correr» — no se pudo comprobar: la medición del contexto la hace la propia sesión y ningún hook la lee a mitad de tanda
+
+# SCRUM-1800c · «Cancelar cobro» con la factura ya pagada (J1, c.22496 ①)
+
+**Medido contra:** `origin/main` = `3c6c651fecd17adcad2ec6088d1cf44da0110154` · 2026-11-24T06:38:11Z
+
+Escrito por jv-j1jf (J1). Rama `scrum-1800c-boton-cancelar-con-factura-pagada`, nacida a propósito sobre la de 1532d (#3340, aún sin mergear: este PR lleva dentro sus commits hasta que entre) y con `origin/main` mergeado encima.
+
+Literal FIRMADO en SCRUM-1800 c.22496 ①, copiado de Jira: `Este documento ya consta como pagado: su cobro no se puede cancelar.` Ningún otro texto nuevo.
+
+Medición previa: el 409 `charge_not_pending` se pinta en `invoiceDetailView.js` con un ternario sobre `d.error`; ahí se añade la rama `document_already_paid`. El botón ya lo ocultaba el registro de acciones con `status: 'paid'` (`invoiceActionsRegistry.js`, fila `btnCancelarCobro`, y lo afirmaba ya el test de 1532d); faltaba solo la factura con `paidAt` y otro estado, que se añade a la condición de pintar.
+
+| qué | esperado | visto |
+|---|---|---|
+| rojo primero (vista sin el arreglo, `git apply -R`) | caen ① y ② paidAt; los controles y `status: 'paid'` pasan | 3 pasan · 2 caen, sobre 5 |
+| verde con el arreglo | 5 de 5 | 5 de 5 (`tests/scrum1800c-cancelar-cobro-con-factura-pagada.test.mjs`) |
+| mutación del catálogo (quitar `!invoice.paidAt`) | tumba ② paidAt | NO CORRIDA: el contexto llegó al tope antes |
+| capturas 1280 y 390 | miradas | NO HECHAS (contexto) |
+| dirigida (1532d, 1800, 1802, 601, 1415, 1294, 267, 854, 719 y los que nombran `invoiceDetailView`) | verde | NO CORRIDA salvo lo que diga la entrega |
+| suite entera | verde | NO CORRIDA (no cabe en el contexto del encargo) |
+
+A9: aviso → cicatriz J1 «Escribí el arreglo de la ficha antes de su test rojo, la cuarta vez tras 1780c, 1787e y 1787s» — no se pudo comprobar: el orden en que una sesión escribe test y arreglo no queda en el diff
