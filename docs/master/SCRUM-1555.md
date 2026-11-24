@@ -93,3 +93,27 @@ Tanda dirigida (este test, `scrum1430`, `scrum334`, `scrum1555*`, `scrum1185*`, 
 1. Con la propietaria QA, ver en el equipo (`GET /admin/team`) que exista un miembro con rol `tecnico`. Si no hay, crearlo NO es de este cambio: hace falta que lo dé de alta alguien (la invitación manda correo).
 2. `POST /auth/test-login` con `{ "email": <propietaria de la allowlist>, "secret": <el de staging>, "miembro": <correo del Técnico> }` → 200 y la cookie `pf_session` es la del Técnico.
 3. Con esa cookie, las 8 rutas de SCRUM-1555 sobre un presupuesto de la PROPIETARIA (o de otro miembro): PDF, aceptar, rechazar, enviar por WhatsApp, enviar por correo y notas → 404; Inicio y el buscador del albarán no lo listan. Y `GET /admin/team` → 403 como control de que la sesión es de Técnico.
+
+# SCRUM-1555c · El 404 de `POST /auth/test-login` con un `miembro` inexistente lleva texto humano
+
+**Medido contra:** `origin/main` = `3099fcbb78a4b1e6a4a009011847a4eb10e907f8` · 2026-11-24T13:34:07Z
+A9: comprobación → `tests/scrum275-message-en-superficie-publica.test.mjs`
+
+Decisión del fundador: SCRUM-1555 c.22642 (opción «Texto propuesto (Recomendado)»; descartada «Sacar la ruta del vigilante», que cambiaba un guard, regla 41). La escribe el orquestador J. Puesto J3 (`jv-j3da`), carril J3 (`src/modules/auth/**`), encima de `scrum-1555b-test-login-con-rol` (#3379). El test de 1555b: `carriles.mjs` dice NO-PUDE-MIRAR (lo da a la etiqueta `area-s1` del ticket); lo creó J3 en #3379 y aquí solo gana una aserción.
+
+**Literal firmado** (regla 39), copiado del ADF de c.22642 y cotejado por bytes contra los dos ficheros (64 B, una aparición en cada uno):
+
+> No hay ningún miembro del equipo con ese correo en esta cuenta.
+
+**Qué.** Solo la respuesta 404 `team_member_not_found` de `POST /auth/test-login` (miembro inexistente o suspendido) gana `message` con ese literal. El 500 `internal_error` de la misma ruta y todas las demás, sin tocar: no están firmadas para esto. `tests/scrum1555b-test-login-con-rol.test.mjs` exige ese `message` exacto en el caso del miembro inexistente. `tests/scrum275-message-en-superficie-publica.test.mjs`, sin tocar (regla 41).
+
+**Rojo antes · verde después.**
+
+| | antes · `11607c85298bf65fcdc47c61ac2207cefecc20b9` (CI de #3379; lo leyó el orquestador, yo no) | después · este árbol, local |
+|---|---|---|
+| SCRUM-275 · TRINQUETE | rojo: «HAY 19 RESPUESTAS PÚBLICAS SIN TEXTO HUMANO y el tope es 18» | verde: 18, tope 18 |
+| 1555b · miembro inexistente | verde, sin mirar el texto | verde, exige el literal |
+
+Control en rojo, una vez y sin guion en git (por eso no lleva línea de mutaciones y no cuenta como evidencia de mutación, A3): quitado el `message` de `src` y de `dist`, cayeron 2 de 7 casos, el TRINQUETE de 275 («HAY 19 … el tope es 18») y el del miembro inexistente de 1555b («el 404 no lleva el texto firmado»). Restaurado, `git status` limpio.
+
+Verde dirigido (TAP a fichero fuera del árbol): 23 ficheros (275, 1555b, los 10 que nombran `auth.routes` o `test-login`, 264, 644, 709, 715, 726, 861, 921, 921c, 1415, 1294, 267, 854, 719): 220 casos · 219 pass · 0 fail · 1 skip (`scrum94`, gateado por `QA_DB_TEST`: no corrió). Ningún censo de microcopy pidió registrar el literal. Build con tipos (`tsc`): salida 0. Suite entera: NO corrida (tope de contexto del encargo, 140k).
