@@ -2042,3 +2042,54 @@ _La pregunta._ Para cada cobro de una factura con criterio de caja, el libro de 
 _Lo que cambia según la respuesta:_ si hace falta la cuenta, el registro del cobro necesita un dato que hoy no se guarda.
 
 _Lo que ya tenemos:_ SIN RESPUESTA.
+
+---
+
+# Añadidas el 24-nov-2026 (SCRUM-1264a): lo que dejó para el asesor el sprint del 21-nov (SCRUM-1787, SCRUM-665, SCRUM-1316)
+
+> Al final, sin mover ninguna línea de encima. **Son PREGUNTAS, no respuestas:** nada de lo que sigue
+> lo ha contestado un asesor (no hay asesor hasta la SL, SCRUM-1264 c.22060). Lo que figura como
+> «decidido» lo decidió el fundador, y está pendiente de que un profesional lo confirme.
+> Busqué antes por contenido en este fichero («Bizum», «supresi», «custodi», «PDF», «dirección»):
+> la del Bizum ya está (fila 34, E6, A2); las otras dos tienen vecinas parecidas (P17 y la sección E;
+> P20 y la 18 · D1) y van aquí como ampliación, sin duplicarlas. Registro: tramo 1264a.
+
+### 34 · A2 (E6) · confirmación: la pregunta del Bizum YA está, y ahora decide dos cosas más
+
+La pregunta, tal cual está arriba en la fila 34 (E6): «**A2 · ¿Bizum cuenta como «transferencia bancaria»?**» (art. 91.Uno.2.10º LIVA en la redacción del RDL 29/2026). No se añade otra.
+
+_Lo que ha cambiado desde que se escribió:_ el 23-nov el fundador firmó el aviso del 10 % (SCRUM-1316 c.22424) y decidió (c.22438, punto 4) **no** añadir «cheque nominativo» ni «ingreso en cuenta» a la lista cerrada de medios de cobro mientras A2 siga sin respuesta. La lista sigue siendo Bizum · tarjeta · transferencia · efectivo, y el aviso firmado nombra «tarjeta, transferencia bancaria, cheque nominativo o ingreso en cuenta»: no nombra el Bizum.
+
+_Lo que depende de la respuesta:_ (1) si un cobro por Bizum de una obra al 10 % es correcto o el profesional tiene que recibir otro aviso; (2) si la lista cerrada de medios se amplía (cambio de máster). Tickets: SCRUM-1316 (c.22424, c.22438), SCRUM-1264 fila 34.
+
+_Lo que ya tenemos:_ SIN RESPUESTA.
+
+### 52 · P17 / E · ampliación: la DIRECCIÓN congelada en la factura, ante una supresión de datos
+
+_Contexto._ Desde SCRUM-1787d la factura emitida congela, además del nombre y el NIF del cliente, su **dirección de facturación** (columnas `customerBilling*` de `Invoice`, `src/modules/invoicing/domain/direccionCongelada.ts`). P17 y la sección E preguntan por los datos congelados en general; ninguna nombra la dirección, que es un dato nuevo en la factura.
+
+_La pregunta._ Si un cliente final ejerce su derecho de supresión (art. 17 RGPD), ¿la dirección y el NIF congelados en las facturas ya emitidas se conservan por obligación fiscal (art. 17.3.b RGPD, art. 19 ROF, art. 30 CCom), y **durante cuánto tiempo**: los 4 años de la LGT, los 6 del Código de Comercio u otro? ¿Hay que bloquearlos (art. 32 LOPDGDD) en vez de solo conservarlos?
+
+_Lo que el producto hace hoy._ No existe ninguna ruta para que un cliente final pida la supresión (P17). En la baja de un profesional, `anonimizarMerchant.ts` no nombra `Invoice` ni `customerBilling` (grep, 0 líneas; el mismo grep en `direccionCongelada.ts` sí casa): las facturas emitidas se quedan como estaban, dirección incluida.
+
+_Lo que depende de la respuesta._ El fundador decidió **conservar** la dirección, con el mismo criterio que el NIF congelado (SCRUM-1787 c.22390, punto 4: «la redacción de la política espera la confirmación del asesor»). Lo que espera: el texto de la política de privacidad sobre este punto, y el plazo que use cualquier flujo de supresión futuro. Ningún cambio de código ahora. Tickets: SCRUM-1787 (c.22322, c.22390), SCRUM-1023 (P17), SCRUM-244 (E).
+
+_Lo que ya tenemos:_ SIN RESPUESTA del asesor. Decisión del fundador, pendiente de aval.
+
+### 53 · P20 / 18 · D1 · ampliación: plazo y forma de custodia del PDF congelado, y el PDF de la rectificativa
+
+_Contexto._ El fundador decidió que el PDF de una factura emitida se guarde al emitir y se sirva siempre ése (SCRUM-665, opción A; D1 ya es una confirmación, fila 18). El 23-nov decidió también que la rectificativa R1 tenga su **propio** PDF congelado y que el de la factura rectificada no se toque ni se regenere (SCRUM-665 c.22395, ②).
+
+_La pregunta._ (1) ¿Qué **plazo** de custodia exige la norma para el PDF entregado al cliente (art. 19 ROF remite al de la LGT; ¿o el de 6 años del art. 30 CCom?), y qué **forma**: ¿basta un fichero en un volumen del proveedor de alojamiento, o hace falta copia de seguridad, otra ubicación o un formato concreto (art. 19.2 y 21.1 ROF: «contenido original», «formato original»)? (2) Con YaQu conservando «en nombre y por cuenta» del profesional (art. 19.3 ROF), ¿qué tiene que constar entre ellos? (3) La R1 con su propio PDF y el original intacto, ¿cumple el art. 15 ROF, o la norma pide algo más del documento original?
+
+_Lo que el producto hace hoy._ En `main`, el PDF se **regenera** con el código actual cada vez que falta en disco (`ensureInvoicePdf`, `src/lib/invoicing.ts`, condición `!fs.existsSync(diskPath)`), en `storage/invoices`, que vive en el volumen de Railway **sin copias** (plan Hobby, SCRUM-665 c.22395 ①). El guardado congelado con su huella está en el PR #3201 (`scrum-665e-pdf-persistente`), abierto y sin entrar.
+
+_Lo que depende de la respuesta._ El paso a Railway Pro con copias (decidido «cuando haya empresa y ventas»), y cualquier construcción más sobre la custodia: el fundador decidió que «la custodia legal del PDF (plazo y forma) se decide con el asesor; no se construye nada más hasta entonces» (c.22395 ③). Tickets: SCRUM-665 (c.16647, c.22358, c.22363, c.22395), SCRUM-1087 (P20).
+
+_Lo que ya tenemos:_ SIN RESPUESTA del asesor. Decisión del fundador sobre la R1, pendiente de aval.
+
+### 51 · La R1 por minoración de una factura con criterio de caja aún sin cobrar: ¿en qué periodo va?
+
+_Fila 51 del índice de SCRUM-1264 (c.22168, literal de J5 en SCRUM-1732 c.22167); estaba en Jira y no en este fichero. Texto literal:_ «Con el régimen especial del criterio de caja (LIVA art. 163 terdecies), el profesional expide una factura rectificativa por minoración (art. 80 y 89) de una factura que todavía no ha cobrado, así que su IVA no ha devengado. ¿En qué declaración-liquidación va la minoración: (i) en la del periodo en que se expide la rectificativa (art. 89.Cinco b), aunque la cuota original aún no se haya declarado; o (ii) la rectificativa reduce el importe de la operación, y lo que quede devenga al cobrarse o el 31 de diciembre del año siguiente al de la operación (art. 163 terdecies.Uno y Dos)? ¿Cambia la respuesta si la rectificativa anula la factura entera, o si la factura ya está cobrada en parte?»
+
+_Lo que ya tenemos:_ SIN RESPUESTA (pendiente del asesor). Mientras, O1 («la R1 devenga por su propia fecha»), declarada como lectura sin confirmar (SCRUM-1732 c.22167).
