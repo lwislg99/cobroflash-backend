@@ -6,6 +6,8 @@ A9: comprobación → `tests/scrum480-fin-de-linea.test.mjs`
 
 Lo que me salió mal: guardé las salidas del guard con la redirección de PowerShell y las copié al repo con sus CR (1.461 entre siete ficheros de evidencia). Lo cazó ese test, en su caso «los ficheros que TOCA ESTA RAMA no llevan ni un CR en disco», antes del push; los pasé a LF y volvió a verde. La comprobación ya existía: no hace falta otra.
 
+Y una segunda, que no cazó ningún test sino el orquestador: escribí que el guard 917 «no corre en ningún workflow» porque buscar su nombre en `.github` no dio nada. Un cero de un `grep` por nombre no es «no está»: el workflow lo deriva de `package.json`. Corregido abajo, en «Lo que este verde NO es».
+
 Puesto S4. El guard es de este carril: `docs/equipo/dos-equipos.md` §3, fila de `scripts/guard-detalle-trabajo-917.mjs` («por el área del ticket que los creó: SCRUM-917»), y `docs/master/SCRUM-1789.md` lo dejó reportado como «es de S4: sólo se reporta». Encargo del orquestador (`cobroflash-backend-41`), puesto 8 de SCRUM-1817.
 
 **La firma del diseño:** acta SCRUM-1656 §44, concretada por S2 en su PASO 0 de hoy. La cito **como me llegó en el encargo**: esta sesión no tiene Jira y no la ha leído en su fuente.
@@ -68,7 +70,8 @@ Y en la corrida sin mutar, la misma tarjeta antes y después del clic, en las 10
 ## Lo que este verde NO es
 
 - **No es el verde del job de guards de navegador.** `guard:lista-trabajos` sale 1 sobre este mismo árbol (medido hoy, 14 s, sin tocarlo): 1 hallazgo, 0 ciegos, en su bloque ⑥ — «Facturas NO trae lo declarado por SCRUM-1562g · el `<th>` sin texto de la columna "Ver detalle": 0 de 1». Es de la lista de Facturas, no de este carril; el orquestador ya lo tiene avisado. Cuando S5 haga obligatorio el job, seguirá rojo por ese hallazgo aunque el 917 esté en 0.
-- **El guard 917 no corre hoy en ningún workflow** (`git grep detalle-trabajo-917 -- .github` no devuelve nada). Este verde es local; el de CI no existe hasta que S5 lo monte.
+- **El guard 917 SÍ corre en CI, pero no es obligatorio.** El job `guards-visuales` de `.github/workflows/ci.yml` lanza `npm run guards:visuales`, y `scripts/guards-visuales.mjs` saca su lista de los `guard:*` de `package.json` que son de navegador: el 917 está entre ellos. Lo que falta es hacerlo obligatorio (S5). El verde de este registro es el local; el de ese job en este PR, sin ver al escribir esto.
+  *(Corregido el 24-nov tras el acuse del orquestador. La primera versión decía «no corre hoy en ningún workflow», deducido de que `git grep detalle-trabajo-917 -- .github` no devolvía nada. Era falso: el workflow no nombra el guard, lo deriva.)*
 - **G.2 mide los controles de la pestaña que abre por defecto, no los de toda la ficha:** 11 controles por caso (7 en el caso sin presupuesto). Los de las otras pestañas los mide `guard:objetivo-tactil`, que abre todos los paneles (`abrirTodasLasPestanas`, SCRUM-1789). No se ha tocado: el encargo es el bloque F.
 - **`guard:objetivo-tactil` no se ha tocado ni corrido aquí.** Lo dejó verde J6 en `bd8fd4610` (dato del encargo, no medido por mí).
 
