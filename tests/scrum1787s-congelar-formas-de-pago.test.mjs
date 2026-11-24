@@ -25,11 +25,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-// El banco se importa ANTES de cargar `dist/`: deja el doble de la base, el PDF y el correo.
-import { banco, prisma, reiniciar, nuevoId, requiere, rutaDe, asentar, M_PT, CLIENTE } from './_banco-emision-con-estado.mjs';
 import { lineasDePdf } from './_texto-del-pdf.mjs';
+// SCRUM-665g · EL DISCO DE ESTE TEST ES UN TEMPORAL DEL SISTEMA, nunca `<árbol>/storage/invoices`
+// (SCRUM-824): `dirs.js` lee `RAILWAY_VOLUME_MOUNT_PATH` al cargarse, así que la variable va ANTES
+// del banco, y el banco se importa con `await import` para que nada de `dist/` se cargue antes.
+const RAIZ_PDF = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-1787s-'));
+process.env.RAILWAY_VOLUME_MOUNT_PATH = RAIZ_PDF;
+const DIR_PDF = path.join(RAIZ_PDF, 'invoices');
+test.after(() => fs.rmSync(RAIZ_PDF, { recursive: true, force: true }));
+// El banco se importa ANTES de cargar `dist/`: deja el doble de la base, el PDF y el correo.
+const { banco, prisma, reiniciar, nuevoId, requiere, rutaDe, asentar, M_PT, CLIENTE } = await import('./_banco-emision-con-estado.mjs');
 
 // SCRUM-665g: el banco (S3) aún no modela las relaciones de Invoice; retirar cuando lo haga (aviso a Luis)
 for (const metodo of ['findUnique', 'findFirst']) {
@@ -51,16 +59,21 @@ for (const metodo of ['findUnique', 'findFirst']) {
 // SCRUM-665g: el doble del PDF del banco (S3) no escribe fichero, y desde SCRUM-665e la factura lee su huella; retirar cuando lo haga (aviso a Luis)
 const pdfDelBanco = requiere(rutaDe('dist/lib/pdf.js'));
 const { invoicesDir } = requiere(rutaDe('dist/core/storage/dirs.js'));
-const pdfsEscritos = [];
 const generarDelBanco = pdfDelBanco.generateInvoicePdf;
 pdfDelBanco.generateInvoicePdf = async (d) => {
   const r = await generarDelBanco(d);
-  const ruta = path.join(invoicesDir, `${d.merchantId}-${d.number}.pdf`); // la de `src/lib/invoicing.ts` (diskPath)
-  fs.writeFileSync(ruta, `%PDF-doble SCRUM-665g ${d.invoiceId}`);
-  pdfsEscritos.push(ruta);
+  fs.mkdirSync(DIR_PDF, { recursive: true });
+  // la ruta de `src/lib/invoicing.ts` (diskPath), bajo el temporal de arriba
+  fs.writeFileSync(path.join(DIR_PDF, `${d.merchantId}-${d.number}.pdf`), `%PDF-doble SCRUM-665g ${d.invoiceId}`);
   return r;
 };
-test.after(() => { for (const ruta of pdfsEscritos) fs.rmSync(ruta, { force: true }); });
+
+test('SCRUM-665g · el disco del doble es un temporal del sistema, y `dirs.js` apunta a él', () => {
+  assert.equal(invoicesDir, DIR_PDF,
+    '🔴 `dirs.js` se cargó antes de poner RAILWAY_VOLUME_MOUNT_PATH: el código buscaría el PDF en otro sitio que el doble.');
+  const relativa = path.relative(path.join(path.dirname(fileURLToPath(import.meta.url)), '..'), DIR_PDF);
+  assert.ok(relativa.startsWith('..') || path.isAbsolute(relativa), `🔴 el temporal cae dentro del árbol: ${DIR_PDF}`);
+});
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ts = requiere('typescript');

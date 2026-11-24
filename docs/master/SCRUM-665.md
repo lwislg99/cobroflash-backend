@@ -2202,3 +2202,17 @@ A9: comprobación → `tests/scrum824-temporales-fuera-del-arbol.test.mjs`
 - **NO EMPUJADO:** la sesión cruzó el tope de 145k del encargo (147.416 medido tras los últimos tests) antes del push. Queda un commit local en la rama `scrum-665f-al-dia-con-main-b`, y el empujón lo hace el relevo. Además, el primer control del recuento de marcadores no servía: contaba encabezados `## `, no el patrón. Se rehízo con el sembrado.
 
 A9: aviso → cicatriz J1 «Crucé el tope de 145k del encargo (147.416) sin empujar: me medí al acabar el arranque (117.593) y no otra vez hasta el final, y dos informes de subagente más tres ediciones se comieron 30k, en jv-j1kh» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
+
+# SCRUM-665g · 24-nov-2026 · J1 (jv-j1km) · el verde de 1787s en la rama de #3201, con el PDF del doble fuera del árbol
+
+**Medido contra:** `origin/main` = `6799ee2fb356aa2df1ed92adfd5953dbad3bba6a` · 2026-11-24T16:34:56Z (hora de GitHub). Rama `scrum-665e-pdf-persistente`, punta de partida `ef7899c0b0d8adb7b5dbbc36780368831808807c` (commit local de jv-j1kl sobre `f7c0c791`), y `origin/main` mergeado encima.
+
+**Las dos capas del rojo de 1787s** (solo cambia `tests/scrum1787s-congelar-formas-de-pago.test.mjs`): ① el banco de S3 (`tests/_banco-emision-con-estado.mjs`) no devuelve las relaciones `merchant`, `customer` y `rectifies` de `invoice` con `include`; ② su doble de `generateInvoicePdf` no escribe fichero, y desde 665e la factura lee la huella del PDF del disco. Los dos envoltorios van en el TEST y no en el banco porque el banco es del carril de S3 y lo usan otros seis tests; cada uno lleva «retirar cuando el banco lo haga».
+
+**Lo que corrige este tramo:** jv-j1kl escribía el PDF de ② en `<árbol>/storage/invoices`, con nombres que comparten otros tests del banco: `scrum824` lo cazaba (`not ok 8`, «el conjunto de ficheros SIN PROBAR no crece»). Ahora `RAILWAY_VOLUME_MOUNT_PATH` apunta a un `fs.mkdtempSync(path.join(os.tmpdir(), …))` ANTES de cargar el banco (que pasa a `await import`), se borra en `test.after`, y un caso nuevo comprueba que `invoicesDir` es ese temporal y cae fuera del árbol, como el ⓪ de 665e.
+
+**Verde, medido aquí:** 1787s 10 de 10 (11 casos cada una) · 1787s + 824 + `scrum665e*`: 37/37 · los 7 del banco + los 23 que nombran `ensureInvoiceForCharge` + 1415, 1294, 267, 854, 719 (32 ficheros): 318 casos, 317 pass, 0 fail, 1 skip (A12.2c, gateado por `QA_DB_TEST`) · `prisma generate` + `npm run build` con tipos: 0. La mutación ⑦ (`presupuesto: quote,` → `presupuesto: null,` en `src/lib/invoicing.ts`) sigue VIVA: tumba ⑦ y ⑨; la apliqué A MANO con `sed` y `tsc --noCheck`, no con el ejecutor de la casa, y la deshice con `git checkout` y un build con tipos. NO corrí la suite entera (el encargo lo prohíbe por contexto).
+
+**Corrección al encargo:** «`git status` limpio» no prueba nada sobre `storage/invoices`: `/storage/` está en `.gitignore` (línea 187). Lo medí con `find storage -newer <marca>` tras las 10 pasadas: 0 ficheros, y `storage/invoices` ni existía; control positivo sembrado (un fichero creado después de la marca) que el mismo `find` sí vio.
+
+A9: comprobación → `tests/scrum824-temporales-fuera-del-arbol.test.mjs`
