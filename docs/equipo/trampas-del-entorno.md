@@ -136,20 +136,39 @@ ausente**. Se borra en cada comando (A6) y se escribe en la primera línea de ca
   a node el **patrón entre comillas simples**, `'tests/*.test.mjs'`, para que lo expanda node y no el shell
   (así le llega desde `npm test`, porque cmd no expande el patrón). **Cómo se comprueba:** antes de creerse el
   código de salida, el TAP tiene que existir y traer su línea `# tests N`, con N del orden de los tests de la
-  última suite buena; sin esa línea no hay suite, hay un instrumento que no arrancó (A21).
-- **El reaper de Claude Code puede matar la tanda entera si va en SEGUNDO PLANO y la sesión está quieta**
-  («stopped because the system is running low on memory … while the session was idle»). El umbral **no** es
-  la memoria libre: en la misma condición, la tanda que murió nunca bajó de 1.704 MB libres y las que
-  sobrevivieron bajaron a 1.201 y a 1.263 MB. Cuál es el umbral no se sabe. → correr la tanda en **PRIMER
-  PLANO**, con la herramienta de shell y sin `run_in_background`, con un `timeout` de 600.000. En primer plano
-  terminaron 2 de 2, en 4,2 y 4,3 min, una de ellas bajando a 744 MB libres. Con n = 2 no es una garantía.
-  ⚠️ **Sólo si no hay otras sesiones trabajando:** una tanda en primer plano que aprieta la memoria podría
-  hacer que el reaper mate lo que otra sesión tenga en segundo plano. Esto se deduce del mecanismo; **no está
-  medido**. ⚠️ Una orden en primer plano tiene un tope de 10 min: si se agota, no hay veredicto. **Cómo se
-  comprueba:** la línea `ℹ tests N` con su recuento. Que la tanda termine sin que la maten no quiere decir que
-  esté en verde. No sustituye al CI, que sigue siendo el juez obligatorio. Tampoco autoriza a tocar
-  `CLAUDE_CODE_DISABLE_BG_SHELL_PRESSURE_REAP`, que es configuración del equipo de Javier. Medido por J6 el
-  28-sep-2026 con seis tandas enteras: `docs/master/SCRUM-1244.md` §⑤. Reportado en SCRUM-1254.
+  última suite buena; sin esa línea no hay suite, hay un instrumento que no arrancó (A21). Y el TAP de la tanda
+  anterior **se borra antes**: si no, el que se lee es el viejo, y sale 0 (SCRUM-1245, `CLAUDE.md`).
+- 🔴 **El reaper de Claude Code sólo mata shells en SEGUNDO PLANO, y un comando en primer plano que pasa de
+  600 s acaba en segundo plano.** El mensaje es «stopped because the system is running low on memory … while
+  the session was idle». Son dos hechos, de dos fuentes:
+  ① el reaper sólo actúa sobre shells `backgrounded`. Lo leyó jv-j6ef en el binario de Claude Code 2.1.325, y la
+  sesión que construyó SCRUM-1743 corría la 2.1.327 (cabecera de `scripts/tanda-entera-por-tramos.mjs`). Vale
+  para esas versiones: una versión nueva del binario puede cambiarlo, y entonces se vuelve a leer;
+  ② la herramienta de shell en primer plano tiene un tope de 600 s, y pasado ese tope **el arnés manda el
+  comando al segundo plano** (SCRUM-1244c, cabecera del mismo runner). Le pasó a jv-j3at el 23-oct-2026 con la
+  tanda entera y a J6 ese mismo día con una tanda de 30 pasadas (`docs/equipo/cicatrices/J6.md`, SCRUM-1218f).
+  El umbral de memoria del reaper sigue sin conocerse (SCRUM-1244 §⑤: la tanda que murió nunca bajó de
+  1.704 MB libres).
+  ⚠️ **Hasta el 24-nov-2026 aquí ponía lo contrario:** «correr la tanda en PRIMER PLANO … con un `timeout` de
+  600.000» (SCRUM-1254). Juntando ① y ②, esa receta es la que mata la tanda: con el equipo trabajando, la tanda
+  entera tardó 2.020 s el 23-oct-2026 (SCRUM-1244). No cabe en un comando, pasa de los 600 s, va al fondo y el
+  reaper la mata. Un bucle `for` de tramos dentro de un mismo comando termina igual (SCRUM-1743 §③; corregido
+  en SCRUM-1812).
+  → **Lo que se hace ahora** (fuente: `CLAUDE.md`, «Comandos»):
+  1. **La tanda entera, por tramos**: `node scripts/tanda-entera-por-tramos.mjs --plan`, después
+     `--tramo i/n` **uno por comando**, en primer plano y sin `run_in_background`, y al final `--resumen n`
+     (0 verde · 1 rojo · 2 CIEGO). El runner corta un tramo a los 540 s (`TOPE_MS`), antes de que el arnés lo
+     mande al fondo, y lo apunta CIEGO: no cupo, no es verde. Y si dos tramos de la misma pasada salen del
+     mismo comando, el segundo sale con 2 sin correr nada (SCRUM-1743). Un tramo CIEGO se vuelve a correr.
+  2. **Una tanda dirigida** (unos pocos ficheros) se corre en un comando y se lee en otro: el TAP va a un
+     **fichero fuera del árbol** (`--test-reporter=tap --test-reporter-destination=<tmp>/…tap`) y se lee
+     **en un segundo comando** (SCRUM-850). Si se le pone un filtro detrás en la misma línea, el código de
+     salida es el del filtro, y una tanda en rojo sale 0. Fuera del árbol, porque un temporal dentro del repo
+     es el rojo intermitente que midió SCRUM-824.
+  **Cómo se comprueba:** la línea `# tests N` del TAP, con sus recuentos; en la tanda por tramos, el
+  `--resumen` con los n tramos vistos. Que el comando termine no quiere decir que esté en verde. No sustituye al
+  CI, que sigue siendo el juez obligatorio. Tampoco autoriza a tocar `CLAUDE_CODE_DISABLE_BG_SHELL_PRESSURE_REAP`,
+  que es configuración del equipo de Javier.
 
 ## 8 · CI: un «build + tests» que agota el tiempo
 
