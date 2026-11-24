@@ -115,3 +115,46 @@ idéntico al acabar):
 | el mismo anillo dentro de un comentario de varias líneas | 0 (0) |
 
 **Main metido:** `70eefc40c`, sin conflictos. Lo que la rama cambia respecto a `main` siguen siendo sus 7 ficheros.
+
+# SCRUM-1639c · las dos tarjetas de la ficha del operario (Equipo) se abren con teclado (24-nov-2026, J3)
+
+**Medido contra:** `origin/main` = `8e0d408168865aab0c7862d7c004cf864450aa71` · 2026-11-24T11:40:31Z
+
+A9: aviso → cicatriz J3 «Tercera vez que corro un test de vistas en un árbol anidado sin el dist construido» — no se pudo comprobar: qué tiene construido el árbol antes de una tanda no deja rastro que un test lea; lo paró otra vez leer el texto del rojo antes de contarlo
+
+**Skill UI:** cargada (yaqu-premium-ui) antes de tocar `public/`. Sin tokens, clases ni texto nuevos: el anillo es `var(--ring)`.
+
+Puesto J3, rama `scrum-1639c-teclado-en-equipo`. Carril medido antes de escribir: `teamView.js` → J3 (`dos-equipos.md:145`;
+la excepción de S1 es sólo el clic de «+ Añadir miembro», que no se toca); `styles.css` → S2 **contenedor**: J3 añade
+SOLO su bloque, marcado `J3:` (`.claude/rules/carril-s2.md`).
+
+| qué | esperado | visto |
+|---|---|---|
+| tarjeta de trabajo del operario (`teamView.js`, `abrirTrabajo`) | `role="button"` + `tabindex="0"` + Intro/Espacio con `preventDefault()` → `jobs-detail` | caso 5 verde |
+| tarjeta de presupuesto del operario (`abrirPresupuesto`) | ídem → `quotes-detail` | caso 5 verde |
+| el ratón | el mismo destino que antes | caso 6 (🔵 control) verde |
+| el anillo | `.customers-card[role="button"]:focus-visible { box-shadow: var(--ring) }`: sin él, `.customers-card` pisa el global | caso 6 verde |
+| texto nuevo | ninguno, sin `aria-label` (el nombre es el texto de la tarjeta) | diff sin literales visibles |
+
+Patrón COPIADO de #3009 (`expensesView.js`, `que.setAttribute('role','button')`…) y de la receta de S2 de arriba. La tarjeta
+entera es el botón porque, a diferencia de Gastos y de la factura, no contiene ningún control.
+
+**Techo del censo (trinquete APRETADO, no aflojado):** `TECHO = { 'teamView.js': 2 }` → `{}`. Medido con
+`tests/_censo-filas-sin-teclado.mjs` sobre los 98 ficheros de `public/dashboard/js/`:
+
+| árbol | ficheros | navegan | nativas | con teclado | desconocidas | sin teclado |
+|---|---|---|---|---|---|---|
+| `origin/main` | 98 | 58 | 38 | 6 | 12 | **2** (`teamView.js:457`, `:483`) |
+| esta rama | 98 | 58 | 38 | 8 | 12 | **0** |
+
+Las 58 que navegan siguen siendo 58: el cero sale de que las dos GANAN teclado, no de que el censo deje de verlas.
+
+**Rojo primero:** con `teamView.js` y `styles.css` de `main` caen los casos 5, 6 y 7 (role=null; sin regla de anillo;
+censo 2 ≠ techo 0); los otros 6 verdes. Con el arreglo, 9/9.
+
+Mutaciones: catálogo → `tests/scrum1639-filas-con-teclado.test.mjs` (la de `teamView.js`: Espacio quitado en la tarjeta
+del presupuesto; ancla única, tumba sólo el caso 5, fichero restaurado idéntico).
+
+**Sin hacer (por contexto: pasé el tope de 160k del encargo):** las capturas 1280/390 con el foco visible; los vecinos
+1562, 1415, 854, 719 y los demás que nombran `teamView`. Corridos: el test de arriba, `guards:entrada`, 1294, 267, 811c
+y `tsc -p .` con tipos. Visto en yaqu.app: pendiente hasta que entre en `main`.
