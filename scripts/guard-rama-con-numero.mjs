@@ -26,10 +26,15 @@ import { execFileSync } from 'node:child_process';
 import { numeroDeRama } from './_numero-de-rama.mjs';
 import { agruparRamas } from './_censo-reparto.mjs';
 import { ejecutadoDirectamente } from './_puerta-de-entrada.mjs';
+import {
+  veredictoDe, SALIDA_VERDE as VERDE_DE_LA_CASA, SALIDA_HALLAZGO, SALIDA_NO_SUPE_MEDIR,
+} from './_hallazgos-y-ciegos.mjs';
 
-export const SALIDA_VERDE = 0;
-export const SALIDA_ROJO = 1;
-export const SALIDA_CIEGO = 2;
+// Los tres códigos son los de la casa (SCRUM-1320/1327): la salida la decide `veredictoDe`, no este
+// fichero. Se re-exportan con su nombre de aquí para que el test lea el mismo número que sale.
+export const SALIDA_VERDE = VERDE_DE_LA_CASA;
+export const SALIDA_ROJO = SALIDA_HALLAZGO;
+export const SALIDA_CIEGO = SALIDA_NO_SUPE_MEDIR;
 
 /** El filtro de `soloEnGit` de tests/scrum804-la-rama-viva.test.mjs (ver la cabecera). */
 export const FILTRO_DE_SCRUM804 = /^scrum-\d/i;
@@ -85,5 +90,10 @@ if (ejecutadoDirectamente(import.meta.url)) {
   const v = veredicto(nombre);
   const linea = `guard-rama-con-numero · 1 rama mirada: ${nombre ?? '(ninguna)'} (de ${origen}) · ${v.texto}`;
   if (v.salida === SALIDA_VERDE) console.log(linea); else console.error(linea);
-  process.exit(v.salida);
+  // SCRUM-1327: la salida la decide `veredictoDe` con las dos cuentas, no un `process.exit` propio.
+  const hallazgos = v.salida === SALIDA_ROJO ? [linea] : [];
+  const ciegos = v.salida === SALIDA_CIEGO ? [linea] : [];
+  const cierre = veredictoDe({ hallazgos, ciegos });
+  console.log(cierre.linea);
+  process.exit(cierre.codigo);
 }

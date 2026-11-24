@@ -65,3 +65,15 @@ Esto supone un `actions/checkout` antes del paso. Si el candado actual corre sin
 Al subir `SUELO_GUARD_QUE_DECLARAN` a 43 (`2e928584a`) no se movió la copia que la mutación ④ lleva en `MUTACIONES_QUE_ME_TUMBAN` (`de: …= 42;`). El ancla ya no existía, el test «mi ancla ④ muta la CONSTANTE» cayó en la pasada limpia y el meta-guard salió MUDO (run 45321217533, parte 1). Arreglo: la copia pasa a `43 → 42`. El suelo no baja y no se toca ningún guard. No corrido en local; lo decide el CI.
 
 A9: comprobación → `tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs`
+
+## Relevo del 24-nov-2026 (jv-j6fi) · los cuatro rojos del obligatorio de #3352 eran censos de guards que el guard nuevo no había pasado
+
+Punta de partida `f27071646d85e42607f68a147f87de88a537d8c7`; hora `Tue, 24 Nov 2026 06:31:50 GMT` (cabecera `Date:` de `gh api -i zen`). Ningún guard se afloja (regla 41): cada uno se cumple por la salida que él mismo nombra.
+
+- **SCRUM-1327** («ningún `scripts/guard-*.mjs` sale a mano»): el guard salía con `process.exit(v.salida)`. Ahora la salida la decide `veredictoDe({ hallazgos, ciegos })` de `scripts/_hallazgos-y-ciegos.mjs`, y sus tres códigos son los de la casa re-exportados (`SALIDA_ROJO = SALIDA_HALLAZGO`, `SALIDA_CIEGO = SALIDA_NO_SUPE_MEDIR`). `comoSale` (de `tests/_salidas-de-guard.mjs`) sobre el fuente viejo: 1 salida a mano (línea 88); sobre el nuevo: 0 a mano, 1 por veredicto.
+- **SCRUM-1480f** (script nuevo sin fila en §3.3): declarado en `scripts/_sin-fila-declarados.json`, salida 2 del test («lo crea el equipo de Javier, que no edita esa tabla; la S0 le da fila después»). Ese JSON es contenedor de S0 donde cualquier puesto añade SOLO su bloque. La fila propuesta sigue en «Para Luis», arriba.
+- **SCRUM-711** (los dos casos: «ningún guard deja de correr» y «el cero se juzga con la misma función»): el censo sólo lee `package.json` y los workflows, así que una ruta en un test no le basta. Se declara en `DECLARADOS` de `tests/scrum711-guards-sin-sitio.test.mjs`, la salida que nombra su propio mensaje («si corre por otro camino, decláralo en DECLARADOS con una prueba comprobable»), con la prueba comprobada en el caso «las pruebas de las declaraciones siguen siendo ciertas»: el test de 1801 contiene la ruta del guard y el `spawnSync` que lo lanza, fuera de comentarios, y lo cubre el patrón de la tanda. No va en `pretest`: con la cabeza suelta y sin variables de GitHub sale CIEGO (2) y tumbaría `npm test` en los worktrees de medición fijados a `origin/main`. Sin tocar workflows.
+
+**Corrido y en verde (local):** 1327, 1480f, 711 y 1801 en una tanda: 36 tests, 36 pass, 0 skipped. En otra: 1294, 1320, 1415, 237, 267, 719, 723, 804 (la rama viva), 812, 854 y 976: 120 tests, 120 pass, 0 skipped. `tsc -p .` con tipos: salida 0. Control negativo: `GITHUB_HEAD_REF=scrum-1787aa-x node scripts/guard-rama-con-numero.mjs` sale 1 y nombra la rama; con `scrum-1801-guard-rama-con-numero` sale 0. **No corrido:** la suite ENTERA (el encargo lo prohíbe por contexto); 719 salió verde sin regenerar `censo:mudez`.
+
+A9: comprobación → `tests/scrum1327-el-veredicto-no-se-decide-a-mano.test.mjs`
