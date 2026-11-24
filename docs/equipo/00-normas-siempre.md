@@ -133,3 +133,4 @@ Un bloque al principio de una hoja pierde contra las reglas posteriores: quien e
 Un recorte que no deja barra no se mide con la barra: con `overflow-x: clip` la página nunca hace scroll, y lo que se sale se pierde sin avisar. (SCRUM-1787g)
 El catálogo de mutaciones juzga por nombre de test: un guard de navegador no lo tiene, y su rojo vive en un guion de evidencias o no vive en ninguna parte. (SCRUM-1787g)
 El `filename` de `browser_run_code_unsafe` no esconde nada: el MCP devuelve el código que ejecutó, y un secreto que lleve dentro sale al chat. (SCRUM-1804b)
+Un SHA que no has leído de un comando no es un SHA: es una cadena con forma de SHA, y el que lo recibe no puede distinguirla. (SCRUM-1506d)

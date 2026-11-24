@@ -86,12 +86,14 @@ test('SCRUM-1295 · la cerradura para fuera del carril y deja pasar dentro', (t)
   assert.equal(cerradura(hoy, DE_S2).codigo, 0);
 });
 
-test('SCRUM-1295 · carpeta y nombre que discrepan paran; sin identidad solo para si se exige', (t) => {
+test('SCRUM-1295 · carpeta y nombre que discrepan paran; sin identidad, editar el repo para (SCRUM-1506d)', (t) => {
   const d = cerradura(mesa(t, { puesto: { puesto: 'S2' }, nombre: 's3-1oct' }), DE_S2);
   assert.equal(d.codigo, 2);
   assert.match(d.err, /DISCREPANCIA/);
   const nadie = mesa(t, { nombre: 'cobroflash-backend-57' });
-  assert.equal(cerradura(nadie, DE_J1).codigo, 0, 'hoy ninguna carpeta tiene identidad: sin --exigir-identidad no se para a nadie');
+  // Hasta SCRUM-1506d esto salía 0 («sin --exigir-identidad no se para a nadie»); la decisión c.22577 lo cierra.
+  assert.equal(cerradura(nadie, DE_J1).codigo, 2, 'sin identidad, una edición dentro del repo falla cerrada');
+  assert.equal(cerradura(nadie, DE_J1, { herramienta: 'Read' }).codigo, 0, 'leer sigue libre sin --exigir-identidad');
   const exigida = cerradura(nadie, DE_J1, { args: ['--exigir-identidad'] });
   assert.equal(exigida.codigo, 2);
   assert.match(exigida.err, /SIN IDENTIDAD/);

@@ -7,9 +7,14 @@
 // pasos (Emitida / Cobrada). Ningún texto nuevo: sólo cambia cómo se escribe el día.
 //
 // QUÉ MIRA: la ficha MONTADA en el banco de vistas (`renderInvoiceDetailView`), no el código fuente.
-// Control: un día de dos cifras (10) sigue saliendo con sus dos cifras. Las fechas van a mediodía UTC,
-// para que ninguna zona horaria de la máquina las mueva de día.
+// Control: un día de dos cifras (10) sigue saliendo con sus dos cifras.
 // QUÉ NO MIRA: otras pantallas (`quotesDetailView.js`, `jobDetailView.js`…), que no están en la decisión.
+//
+// SCRUM-1802b · LA ZONA SE FIJA A MANO, en la del profesional: la ficha se pinta en SU navegador. El
+// mediodía UTC no bastaba: en Pacific/Kiritimati (+14) las 12:00Z son las 02:00 del día siguiente, y el
+// trinquete de zona (`npm run trinquete:zona`) vio los tres casos caer allí y pasar en Pacific/Midway.
+process.env.TZ = 'Europe/Madrid';
+
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';

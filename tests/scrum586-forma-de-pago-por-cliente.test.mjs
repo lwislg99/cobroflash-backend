@@ -679,7 +679,7 @@ test('SCRUM-586 · 🔴 cada llamada a generateInvoicePdf pasa las formas de pag
     };
     visita(sf);
   }
-  assert.ok(llamadas.length >= 2, `🔴 CIEGO: sólo encuentro ${llamadas.length} llamadas a generateInvoicePdf en src/.`);
+  assert.ok(llamadas.length >= 1, `🔴 CIEGO: sólo encuentro ${llamadas.length} llamadas a generateInvoicePdf en src/.`); // 23-nov-2026, SCRUM-665e: de 2 a 1 por decisión del fundador (SCRUM-665 c.22379, con c.21182 y c.22358): queda un generador único, `ensureInvoicePdf`
   for (const { ruta, sf, n } of llamadas) {
     const donde = `${ruta}:${sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1}`;
     const obj = n.arguments[0];
@@ -826,17 +826,17 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     // ⑦ 23-nov-2026 (SCRUM-1787 c.22377) · el PDF de la factura recibe las formas de pago del
     // PRESUPUESTO en vez de las congeladas en la factura: lo que este ticket sigue prohibiendo.
     fichero: 'src/lib/invoicing.ts',
-    de: '        dueDate: inv.dueDate, payMethods: inv.payMethods, // SCRUM-1787m: los CONGELADOS en la factura\n',
-    a: '        dueDate: inv.dueDate, payMethods: inv.quote?.payMethods, // SCRUM-1787m: los CONGELADOS en la factura\n',
+    de: 'dueDate: inv.dueDate, payMethods: inv.payMethods, // SCRUM-1240d y SCRUM-1787m: los CONGELADOS, nunca los vivos\n', // 23-nov-2026, SCRUM-665e: reanclada a `ensureInvoicePdf`, el generador único (SCRUM-665 c.22379, con c.21182 y c.22358); antes apuntaba al segundo generador, que 665e unificó
+    a: 'dueDate: inv.dueDate, payMethods: inv.quote?.payMethods, // SCRUM-1240d y SCRUM-1787m: los CONGELADOS, nunca los vivos\n',
     cae: 'cada llamada a generateInvoicePdf pasa las formas de pago CONGELADAS de la factura',
   },
-  {
-    // ⑧ 23-nov-2026 (SCRUM-1787 c.22377) · el PDF recibe la preferencia VIVA del comercio.
-    fichero: 'src/modules/system/app/routes/invoicesAdmin.routes.ts',
-    de: '      dueDate: invoice.dueDate, payMethods: invoice.payMethods, // SCRUM-1787m: los CONGELADOS en la factura\n',
-    a: '      dueDate: invoice.dueDate, payMethods: (merchant as any).payMethods, // SCRUM-1787m: los CONGELADOS en la factura\n',
-    cae: 'pasa las formas de pago CONGELADAS de la factura (c.22377)',
-  },
+  // ⑧ RETIRADA el 23-nov-2026 (SCRUM-665e, decisión del fundador en SCRUM-665 c.22379): mutaba la
+  // llamada de `POST /admin/invoices/:id/regenerate-pdf` para que el PDF recibiera la preferencia
+  // VIVA del comercio (SCRUM-1787 c.22377), y esa ruta se retiró en 665e (SCRUM-665 c.21182,
+  // punto 3). Sin ruta no hay línea que mutar. Lo que prohibía lo sigue probando la ⑦, sobre el
+  // generador único.
+  //
+  //
   {
     // ⑨ 23-nov-2026 (SCRUM-1787 c.22377) · el PDF del PRESUPUESTO empieza a pintar sus formas de
     // pago: la mitad de la prohibición que vive en el test ⑧ de arriba.

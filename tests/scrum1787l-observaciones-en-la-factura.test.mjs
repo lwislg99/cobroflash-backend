@@ -172,7 +172,7 @@ test('SCRUM-1787l ⑤ la R1 no hereda las Observaciones (la ruta de rectificar n
 test('SCRUM-1787l ⑥ los tres generadores del PDF de factura pasan docFooterText de la fila', () => {
   const sitios = ['src/lib/invoicing.ts', 'src/modules/system/app/routes/invoicesAdmin.routes.ts'];
   const objs = sitios.flatMap((s) => llamadas(fuente(s), 'generateInvoicePdf').map(objetoArg));
-  assert.equal(objs.length, 3, `🔴 CIEGO: esperaba 3 llamadas a generateInvoicePdf, hay ${objs.length}`);
+  assert.equal(objs.length, 1, `🔴 CIEGO: esperaba 1 llamada a generateInvoicePdf, hay ${objs.length}`); // 23-nov-2026, SCRUM-665e: de 3 a 1 por decisión del fundador (SCRUM-665 c.22382, con c.21182 y c.22358): queda un generador único, `ensureInvoicePdf`; el segundo se unificó y `regenerate-pdf` se retiró
   for (const o of objs) {
     const p = valorDe(o, 'docFooterText');
     assert.ok(p, 'una llamada a generateInvoicePdf no pasa docFooterText');

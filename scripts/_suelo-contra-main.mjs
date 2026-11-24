@@ -101,6 +101,7 @@ export const RETIRADAS_A_PROPOSITO = [
   // 🔴 SCRUM-1129e · SE RETIRA `DEFECTO_CONOCIDO` DE scrum1240b, como manda su c.21173: la clave ya no va fija a 01
   // (GO c.21753). Queda la otra mitad del trinquete. Declarado aquí por decisión del jefe J en SCRUM-1129 c.21827.
   { guard: 'scrum1240b-clave-regimen-defecto-declarado.test.mjs', motivo: 'SCRUM-1129e: se retira DEFECTO_CONOCIDO al cablear la clave 07 (c.21173, GO c.21753, decisión c.21827) (3 → 1)', fecha: '2026-11-13', antes: 3, ahora: 1 },
+  { guard: 'scrum586-forma-de-pago-por-cliente.test.mjs', motivo: 'SCRUM-665e: ⑧ anclada a regenerate-pdf, ruta retirada (9 → 8)', fecha: '2026-11-23', antes: 9, ahora: 8 },
 ];
 
 // ══════════════════════════════════════════════════════════════════════════════════════════

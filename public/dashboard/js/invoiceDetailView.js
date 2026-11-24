@@ -997,29 +997,6 @@ async function fetchInvoiceDetail(id) {
       page.appendChild(zona);
     }
 
-    // Botón Regenerar PDF (con VeriFactu si aplica)
-    const btnRegen = document.createElement('button');
-    btnRegen.className = 'btn-ghost btn-sm';
-    btnRegen.textContent = 'Volver a generar el PDF';
-    btnRegen.title = 'Regenera el PDF aplicando VeriFactu si el merchant tiene NIF configurado';
-    btnRegen.addEventListener('click', async () => {
-      btnRegen.disabled = true;
-      btnRegen.textContent = 'Regenerando…';
-      try {
-        const r = await fetch(`/admin/invoices/${invoice.id}/regenerate-pdf`, { method: 'POST' });
-        const d = await r.json().catch(() => ({}));
-        if (!r.ok) throw new Error(d.error || 'error');
-        setStatus('success', d.veriFactu ? '✓ PDF regenerado con VeriFactu.' : '✓ PDF regenerado.');
-        if (d.pdfUrl) invoice.pdfUrl = d.pdfUrl;
-        if (d.veriFactu) invoice.vfHash = 'updated';
-      } catch (e) {
-        setStatus('error', 'Error al regenerar el PDF.');
-      }
-      btnRegen.disabled = false;
-      btnRegen.textContent = '↻ Regenerar PDF';
-    });
-    ubicarAccion(btnRegen, 'btnRegen');
-
     // Ensamblar la barra en orden: primaria (regla 1) · secundarias (regla 2) · «⋮» (regla 3). El
     // «⋮» reutiliza overflowMenu de AB3 (a11y, teclado, hoja inferior ≤640px). Si no está cargado,
     // las acciones del overflow se pintan sueltas: perder el menú no puede costar una acción (SCRUM-31).
