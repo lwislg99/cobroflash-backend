@@ -189,3 +189,23 @@ A9: aviso → cicatriz J1 «Con la orden de empujar a 130k, me medí al acabar l
 **Verde antes de empujar:** los 2 (15/15, antes y después) · los 5 de la parte 1 más 1415, 1294, 267, 854 y 719: 10 ficheros, 114 casos, 114 pass, 0 fail, 0 saltados · `npm run guards:entrada`: 16 guards, salida 0.
 
 **Sin medir:** la suite entera (NO CORRIDA, por encargo) y el arreglo 1730f (NO HECHO).
+
+## J1 · SCRUM-1730f · (iii) CONSTRUIDO: el Libro registro decide factura por factura con el criterio congelado, y la R1 hereda el de su F1
+
+**Medido contra:** `origin/main` = `3bbce2b4045d2065da480af9c3564843e410e454` · 2026-11-24T12:55:02Z (hora de GitHub; sesión J1 `jv-j1kc`, por encargo del orquestador `cobroflash-backend-2d`)
+
+**Permisos:** GO del fundador SCRUM-1730 c.21789 ③ (el libro lee el congelado por factura; NULL = por emisión, sin caer al vivo) y decisión c.22620 («La R1 hereda de su F1»). Los literales los tomé del encargo del orquestador: **no he releído Jira** (el encargo lo prohibía para caber en el tope), así que no están cotejados byte a byte. El camino de sellado no se ha tocado: el diff es `libroRegistro.repo.ts` (lector, sólo lectura) y un test nuevo.
+
+**Qué:** `merchantCriterioCaja` y `rectifiesId` entran en `CAMPOS_FACTURA`. `hayFacturaPorCaja` (un `findMany` con `take: 1`) decide si hay camino por caja: con la clave `criterioCaja` y al menos una factura sellada en `true`, corre aunque el vivo sea `false`; si no hay ninguna, el libro es el de siempre, por emisión. `idsPorCaja` decide cada factura: `true` → por caja; `false` o NULL → por emisión, entera; una R1 sin congelado propio coge el de su F1 por `rectifiesId` (segunda consulta acotada a esos ids y al comercio). `cobrosPorFactura` sale sólo de las de caja. El vivo se sigue leyendo con `campoDeDevengo` para que una lectura fallida LANCE.
+
+**Ausente frente a `Map` vacío** (lo que j1jv no midió): NO son iguales. Con un `Map`, `construirLibroRegistro` añade `cobrosSinMedio` y `cobradoDeMas` (`libroRegistro.ts:347`); los `cobros` de cada asiento salen siempre. Por eso, con ninguna factura en `true`, `cobrosPorFactura` se queda `undefined`, y el test lo ata comparando el libro entero con vivo `true` y con vivo `false`.
+
+**Esperado · visto:** `tests/scrum1730f-libro-decide-por-factura.test.mjs`, 7 casos. Antes del arreglo: 7 de 7 en rojo, todos por el control positivo («CIEGO: la F1 sellada por caja no se ha movido»). Después: verdes. Con el test nuevo, los de los fixtures (1730, 1732, 1732d, 294b, 294c, 1055b, 1445d), `scrum296-lector-tenencia` y los que nombran `libroRegistro`, `devengoPorCaja`, `modelo303` o los libros AEAT: **56 ficheros, 550 casos, 546 pasan, 0 fallan, 4 saltados** (los gateados por base). Compilado con tipos (`tsc -p .`): salida 0. Medido ANTES de `git merge origin/main`; el merge entró sin conflictos.
+
+Mutaciones: catálogo → `tests/scrum1730f-libro-decide-por-factura.test.mjs`. En la herencia, devolver siempre NULL: cae sólo el caso «R1 hereda», corrido una vez a mano.
+
+**Tras el merge, con este tramo dentro:** el test nuevo con 1415, 1294, 267, 854 y 719: 6 ficheros, 74 casos, 74 pasan, 0 fallan. `npm run guards:entrada`: salida 0 (16 guards).
+
+**NO medido:** la suite entera (orden del encargo: no correrla), ni los 5 guards de árbol entero que `guards:entrada` manda correr a mano (SCRUM-1560); `censo:mudez` no corrido; ninguna base real (los de Postgres, saltados).
+
+A9: sin fallo que generalice — el arreglo cupo justo: el arranque se comió 105k de 165k (medido) y el test nuevo, el arreglo y su mutación salieron en una pasada, sin una segunda lectura del libro.
