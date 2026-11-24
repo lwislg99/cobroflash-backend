@@ -85,6 +85,8 @@ A9: aviso → cicatriz J2 «crucé el tope de contexto del encargo antes de empu
 
 **Medido contra:** `origin/main` = `3c6c651fecd17adcad2ec6088d1cf44da0110154` · 2026-11-24T06:38:11Z
 
+**Skill UI:** no cargada · la añade el relevo jv-j1jj, que no toca `public/` (solo merges) y no la cargó; si jv-j1jf la cargó al escribir `invoiceDetailView.js` no consta en este tramo (el cambio es una rama de un ternario de error y una condición de pintar, sin tokens visuales nuevos).
+
 Escrito por jv-j1jf (J1). Rama `scrum-1800c-boton-cancelar-con-factura-pagada`, nacida a propósito sobre la de 1532d (#3340, aún sin mergear: este PR lleva dentro sus commits hasta que entre) y con `origin/main` mergeado encima.
 
 Literal FIRMADO en SCRUM-1800 c.22496 ①, copiado de Jira: `Este documento ya consta como pagado: su cobro no se puede cancelar.` Ningún otro texto nuevo.
@@ -100,7 +102,11 @@ Medición previa: el 409 `charge_not_pending` se pinta en `invoiceDetailView.js`
 | dirigida (1532d, 1800, 1802, 601, 1415, 1294, 267, 854, 719 y los que nombran `invoiceDetailView`) | verde | NO CORRIDA salvo lo que diga la entrega |
 | suite entera | verde | NO CORRIDA (no cabe en el contexto del encargo) |
 
+Relevo jv-j1jj (J1, 24-nov-2026 ~07:45Z): merge de main `356a9af5a9356f5f03aecad6e154e692e370023b` y de 1800b `4076ec3b8dffc4ee7cb01121b087558f41f8ee90` (este PR lleva los commits de #3354 hasta que entre); el merge de este registro se comió la línea en blanco entre este tramo y el de 1800b, repuesta a mano. Mutación medida: VIVA (`aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, base limpia 5 de 5; control: la misma con `a` = `de` + espacio sale «el guard NO cayó»). Build con tipos: salida 0. Dirigida (1294, 1415, 1532d, 1800, 1800b, 1800c, 601, 719, 854, 910d, 921c): 106 de 106, 0 saltos, sobre 11 ficheros; `tests/scrum1532e-*` no existe. Suite entera: NO CORRIDA (tope del encargo, 140k).
+Mutaciones: catálogo → `tests/scrum1800c-cancelar-cobro-con-factura-pagada.test.mjs`
+
 A9: aviso → cicatriz J1 «Escribí el arreglo de la ficha antes de su test rojo, la cuarta vez tras 1780c, 1787e y 1787s» — no se pudo comprobar: el orden en que una sesión escribe test y arreglo no queda en el diff
+
 # SCRUM-1800b · El recibo pendiente dice «a continuación»
 
 **Medido contra:** `origin/main` = `3c6c651fecd17adcad2ec6088d1cf44da0110154` · 2026-11-24T06:33:51Z
