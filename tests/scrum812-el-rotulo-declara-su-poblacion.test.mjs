@@ -235,9 +235,14 @@ function tituladosQueDeclaran() {
  * este mismo test sobre la rama `scrum-1765c-banco-1392-al-catalogo`, sobre `origin/main` =
  * `e37a7051f87b195ceeae4852c56a02bc0d218438`: «LA COBERTURA HA SUBIDO a 42 (el suelo decía 41)», con el
  * fichero nuevo en la lista.
+ *
+ * ⬆️ **43** (SCRUM-1801, 24-nov-2026, J6): entra `scrum1801-guard-rama-con-numero.test.mjs`, que se titula
+ * guard y declara sus mutaciones. Medido por el CI sobre el merge de la PR #3352 con `origin/main` =
+ * `17fbc935191f31272f51c47a436ba9ed542a2b58` (run 45316312123): «LA COBERTURA HA SUBIDO a 43 (el suelo
+ * decía 42)», con el fichero nuevo en la lista. No medido en local.
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
-export const SUELO_GUARD_QUE_DECLARAN = 42;
+export const SUELO_GUARD_QUE_DECLARAN = 43;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // ① SUELO · ¿he mirado algo? Un cero de población no es «no hay»: es «no he mirado».
