@@ -101,10 +101,11 @@ async function trozoDeLaPagina(factura, importeDelCobro = factura.total) {
   await new Promise((r) => server.close(r));
   // SUELO: la página se pintó. Un 500 tampoco tiene tabla, y sería un verde sobre nada.
   assert.equal(status, 200, `🔴 CIEGO: la página devolvió HTTP ${status}.`);
-  const a = html.indexOf('<div class="amount-wrap">');
+  // Sin el `>` pegado (SCRUM-553): una clase o un `id` añadidos a la etiqueta no la esconden.
+  const a = html.indexOf('<div class="amount-wrap"');
   const CIERRE = '    </div>\n    ';
   const ini = html.indexOf(CIERRE, a);
-  const fin = html.indexOf('\n\n    <div class="methods-label">', ini);
+  const fin = html.indexOf('\n\n    <div class="methods-label"', ini);
   assert.ok(a >= 0 && ini > a && fin >= ini + CIERRE.length,
     `🔴 CIEGO: no encuentro el hueco entre el importe y «Elige cómo pagar» (a=${a}, ini=${ini}, fin=${fin}).`);
   return html.slice(ini + CIERRE.length, fin);

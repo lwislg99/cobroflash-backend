@@ -28,6 +28,12 @@ Carril J2 (`src/modules/billing/**`, `docs/equipo/dos-equipos.md:120`; el ficher
 - El HTML lleva clases (`lines-table`, `totals-block`, `totals-row`) y ningún `style=`, por la CSP de la página de pago. En el correo hay que poner los estilos que use `renderEmailLayout`: eso es de S1.
 - Medido, no cambiado: el importe de cada línea es cantidad × precio SIN el descuento de línea (la caldera con `dto` 10 % sale «200,00 €» en su fila y el descuento va en el desglose). Es lo que ya pintaba la página; el oro lo fija.
 
+## Relevo (jv-j2ei): el obligatorio cayó con scrum553
+
+El obligatorio de #3343 cayó con 1 caso: `tests/scrum553-etiquetas-pegadas.test.mjs`, «22 (el tope es 20)». Los dos nuevos eran los extractores de `trozoDeLaPagina` en el test de esta rama, con el `>` pegado (`<div class="amount-wrap">` y `<div class="methods-label">`): una clase o un `id` añadidos a esas etiquetas los habrían dejado ciegos. Reproducido en local (22) → quitado el `>` de los dos, mismo índice de corte → scrum553 16/16 y este test 5/5. El tope no se tocó (regla 41). Es la misma causa que la línea de J2 del 2026-11-12: scrum553 no estaba en la dirigida de 24 ficheros.
+
+A9: comprobación → `tests/scrum553-etiquetas-pegadas.test.mjs`
+
 ## Lo que me salió mal (A9)
 
 Copié el oro a mano desde la salida JSON y perdí el U+00A0 que `formatMoneyEs` pone antes de «€»; luego, al escaparlo con `sed`, GNU sed leyó `\u` como «mayúscula siguiente» y escribió `00a0`. Los dos los cazó la propia comparación con la página en ①, antes de extraer nada. Lo corregí con node contando sustituciones (11 = 3 + 2 celdas y 2 + 4 filas del desglose) y el oro quedó escrito con ` ` visible.
