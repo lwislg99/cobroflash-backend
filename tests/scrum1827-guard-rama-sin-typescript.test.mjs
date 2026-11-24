@@ -26,8 +26,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     fichero: 'scripts/guard-rama-con-numero.mjs',
     de: "import { agruparRamas } from './_censo-reparto.mjs';\n",
-    a: "import { agruparRamas } from './_censo-reparto.mjs';\n"
-      + "import { ejecutadoDirectamente } from './_puerta-de-entrada.mjs';\n",
+    a: "import { agruparRamas } from './_censo-reparto.mjs';\nimport { ejecutadoDirectamente } from './_puerta-de-entrada.mjs';\n",
     cae: 'SCRUM-1827 · en limpio, VERDE para `scrum-1801-x`',
   },
 ];
