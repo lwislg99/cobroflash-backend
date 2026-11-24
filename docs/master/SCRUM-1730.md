@@ -209,3 +209,22 @@ Mutaciones: catálogo → `tests/scrum1730f-libro-decide-por-factura.test.mjs`. 
 **NO medido:** la suite entera (orden del encargo: no correrla), ni los 5 guards de árbol entero que `guards:entrada` manda correr a mano (SCRUM-1560); `censo:mudez` no corrido; ninguna base real (los de Postgres, saltados).
 
 A9: sin fallo que generalice — el arreglo cupo justo: el arranque se comió 105k de 165k (medido) y el test nuevo, el arreglo y su mutación salieron en una pasada, sin una segunda lectura del libro.
+
+## J1 · SCRUM-1730h · las dos mutaciones de scrum836 reancladas (escrito a posteriori en 1730i)
+
+**Medido contra:** `origin/main` = `651a143476a309308898fe252360d0b3d6a2a2ad` · 2026-11-24T17:00:51Z (hora de GitHub; sesión J1 `jv-j1ko`, por encargo del orquestador `cobroflash-backend-2d`)
+
+**Qué:** la suite entera sobre 1730f (sesión `jv-j1kg`, SCRUM-1730 c.22652) dio 1 rojo de 14.303: `tests/scrum836-ancla-de-mutacion-viva.test.mjs`, que da CIEGO cuando el ancla de una mutación declarada ya no está en su fichero. 1730f había reescrito la línea de `libroRegistro.repo.ts` a la que anclaban dos mutaciones. Lo arregló `jv-j1ki` (c.22654) con `ca26dd41a`, y entró en `main` con #3396 (merge `2db8e1c8b`). Las dos mutaciones —`tests/scrum1730-criterio-caja-huecos-declarados.test.mjs:74` y `tests/scrum1732-cobro-parcial-defecto-declarado.test.mjs:102` (campo `fichero:`; `de:` en :75 y :103)— anclan ya a `const campo = preguntado && await hayFacturaPorCaja(db, rango.merchantId) ? CAMPO_COBRO : CAMPO_EMISION;` (`src/modules/invoicing/domain/libroRegistro.repo.ts:329`). El reemplazo sigue siendo `const campo = CAMPO_EMISION;` (`a:` en :76 y :104).
+
+**Esperado · visto (dato de `jv-j1ki` en c.22654; NO re-medido por mí):** las dos salieron VIVAS con `correr` + `aplicarUna` de la casa: base limpia 10/10, `ok: true`, +6 y +1 colaterales. 836 pasó de rojo a verde.
+
+Mutaciones: catálogo → `tests/scrum1730-criterio-caja-huecos-declarados.test.mjs`
+Mutaciones: catálogo → `tests/scrum1732-cobro-parcial-defecto-declarado.test.mjs`
+
+**Medido por mí (1730i):** las tres líneas siguen en `origin/main` donde dice arriba (`git show origin/main:<ruta>` + `grep -n`, las tres con su número; ninguna se ha movido), y `ca26dd41a` es ancestro de `origin/main` (`git merge-base --is-ancestor`, salida 0). Tras escribir este tramo: `npm run guards:entrada`, salida 0 (16 guards, 177 tests); 1294, 267, 273, 525d y 854: 38 casos, 38 pasan. 836, corrido antes de compilar `dist/` (este árbol nace sin él): 1 rojo, con cinco anclas en ficheros de `dist/` que no existían (608, 624e, 624y) y ninguna de 1730 ni de 1732; eso dice además que el instrumento ve anclas muertas en este árbol. Con `dist/` compilado (`tsc -p . --noCheck`): 17 casos, 17 pasan.
+
+**Por qué se escribe ahora:** `jv-j1ki` empujó sin tramo por el tope de contexto (c.22654); lo apuntó `jv-j1kn` en c.22674. Que faltara no lo cazó ningún guard: lo cazó una sesión leyendo.
+
+**NO medido:** la suite entera (el encargo pide sólo los guards de abajo, porque el cambio es sólo este fichero); las mutaciones, que no he vuelto a correr; Jira, que no he leído (el encargo lo prohibía): los números de comentario los copio del encargo.
+
+A9: sin fallo que generalice — tramo administrativo a posteriori; el defecto lo cazó `tests/scrum836-ancla-de-mutacion-viva.test.mjs`
