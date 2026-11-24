@@ -141,7 +141,8 @@
       aviso.setAttribute('role', 'status');
       avisosConectados += 1;
       aviso.id = 'aviso-iva-10-' + avisosConectados;
-      enlace.contenedor.appendChild(aviso);
+      if (enlace.trasDe) enlace.trasDe.insertAdjacentElement('afterend', aviso);
+      else enlace.contenedor.appendChild(aviso);
       select.setAttribute('aria-describedby', aviso.id);
       enlace.aviso = aviso;
     }
@@ -150,12 +151,15 @@
   }
 
   /**
-   * Ata el aviso del 10 % a `select`, para colgarlo de `contenedor` cuando haga falta. Devuelve
-   * `true`, o `false` si ya estaba atado (conectar dos veces no pinta dos avisos).
+   * Ata el aviso del 10 % a `select`, para colgarlo de `contenedor` cuando haga falta —o, con
+   * `opciones.trasDe`, justo DESPUÉS de ese nodo: en una fila de campos, a todo el ancho y no
+   * dentro de la columna estrecha del campo—. Devuelve `true`, o `false` si ya estaba atado
+   * (conectar dos veces no pinta dos avisos).
    */
-  function conectarAvisoIvaAlDiez(select, contenedor) {
-    if (!select || !contenedor || select._avisoIvaAlDiez) return false;
-    select._avisoIvaAlDiez = { contenedor: contenedor, aviso: null };
+  function conectarAvisoIvaAlDiez(select, contenedor, opciones) {
+    var trasDe = opciones && opciones.trasDe ? opciones.trasDe : null;
+    if (!select || !(contenedor || trasDe) || select._avisoIvaAlDiez) return false;
+    select._avisoIvaAlDiez = { contenedor: contenedor, trasDe: trasDe, aviso: null };
     select.addEventListener('change', function () { refrescarAvisoIvaAlDiez(select); });
     refrescarAvisoIvaAlDiez(select);
     return true;

@@ -888,8 +888,6 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   // apuntando al `<select>` para no tocar los seis sitios que ya lo usaban. Cambiar aquí el
   // elemento y no el nombre es lo que hace que este diff sea de UNA pieza y no de siete.
   fieldVatDefault.input = fieldVatDefault.select;
-  // SCRUM-1804 · el mismo aviso del 10 % que la línea: este valor BAJA a cada línea nueva.
-  window.tiposDeIva.conectarAvisoIvaAlDiez(fieldVatDefault.select, fieldVatDefault.wrapper);
 
   // ── SCRUM-656 (T7) · CÓMO SE PRESENTA EL IVA EN ESTE PRESUPUESTO ────────────────────────
   // Va AQUÍ y no en Configuración porque lo decide el profesional cada vez, según el cliente que
@@ -950,6 +948,9 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   if (esDocumentoSuelto) ajustesSuelto.appendChild(sueltoVatRow);
   if (esDocumentoSuelto) sueltoVatRow.appendChild(fieldVatDefault.wrapper);
   else linesVatRow.appendChild(fieldVatDefault.wrapper);
+  // SCRUM-1804 · el mismo aviso del 10 % que la línea (este valor BAJA a cada línea nueva), DEBAJO
+  // de la fila y a todo su ancho: dentro de la columna del campo salía de 173 px (medido a 1280).
+  window.tiposDeIva.conectarAvisoIvaAlDiez(fieldVatDefault.select, null, { trasDe: esDocumentoSuelto ? sueltoVatRow : linesVatRow });
   // SCRUM-656: al lado del IVA por defecto, que es su misma familia de decisiones.
   // SCRUM-600 · el IVA POR DOCUMENTO (`ivaModo`) es otra clave que el emisor descarta, y su
   // rótulo dice «presupuesto». El IVA POR LÍNEA sí sobrevive y se queda: es `tax`, la única vía

@@ -69,8 +69,9 @@ const QUIETO = "document.getAnimations().every((a) => a.playState !== 'running')
 /** Mide el aviso visible que contiene `firma`, si lo hay. Se evalúa EN la página. */
 const MEDIR = `(firma) => {
   const vis = (n) => { const r = n.getBoundingClientRect(); return !n.hidden && r.width > 0 && r.height > 0; };
-  const avisos = [...document.querySelectorAll('.alert.warning')].filter((n) => vis(n) && n.textContent.includes(firma));
-  const a = avisos[0] || null;
+  // El nodo visible MÁS INTERNO con el texto (T4 es un .alert.warning; T3 sale por la barra de estado).
+  const con = [...document.querySelectorAll('body *')].filter((n) => vis(n) && n.textContent.includes(firma));
+  const a = con.filter((n) => !con.some((o) => o !== n && n.contains(o)))[0] || null;
   const r = a ? a.getBoundingClientRect() : null;
   return {
     visible: !!a,
@@ -86,8 +87,7 @@ async function pulsarTexto(page, selector, texto) {
     .find((b) => b.textContent.trim() === t && b.getBoundingClientRect().width > 0) || null, selector, texto);
   const el = h.asElement();
   if (!el) return false;
-  await el.evaluate((b) => b.scrollIntoView({ block: 'center', behavior: 'instant' }));
-  await el.click();
+  await el.evaluate((b) => { b.scrollIntoView({ block: 'center', behavior: 'instant' }); b.click(); });
   await new Promise((ok) => setTimeout(ok, 250));
   return true;
 }
@@ -111,10 +111,16 @@ const ESCENAS = [
   {
     nombre: 'linea', ruta: '/editor', firma: T4_INICIO,
     preparar: async (page) => {
-      const chip = await page.$('#view-container .quote-line__ajustes');
-      if (!chip) return 'no hay chip de ajustes en la primera línea';
-      await chip.evaluate((b) => b.scrollIntoView({ block: 'center', behavior: 'instant' }));
-      await chip.click();
+      // Clic de DOM, no por coordenadas: la captura enseña, no mide la diana del toque (eso es SCRUM-962).
+      const pulsado = await page.evaluate(() => {
+        const chip = [...document.querySelectorAll('#view-container .quote-line__ajustes')]
+          .find((c) => c.getBoundingClientRect().width > 0) || document.querySelector('#view-container .quote-line__ajustes');
+        if (!chip) return false;
+        chip.scrollIntoView({ block: 'center', behavior: 'instant' });
+        chip.click();
+        return true;
+      });
+      if (!pulsado) return 'no hay chip de ajustes en la primera línea';
       await page.waitForFunction(QUIETO, { timeout: 20000 });
       const ok = await page.evaluate(() => {
         const sel = [...document.querySelectorAll('.quote-line__vat select')].find((s) => s.getBoundingClientRect().width > 0);
@@ -129,17 +135,28 @@ const ESCENAS = [
   {
     nombre: 'iva-por-defecto', ruta: '/editor', firma: T4_INICIO,
     preparar: async (page) => {
-      // El camino del profesional (SCRUM-915d): cliente → Continuar → Continuar → «Cambiar» de Ajustes.
-      await page.evaluate((nombre) => {
-        const inp = [...document.querySelectorAll('#view-container input')].find((i) => i.getBoundingClientRect().width > 0);
-        if (inp) { inp.focus(); inp.value = nombre; inp.dispatchEvent(new Event('input', { bubbles: true })); }
-      }, CLIENTE.name);
-      await new Promise((ok) => setTimeout(ok, 400));
-      const opcion = await page.evaluateHandle((nombre) => [...document.querySelectorAll('#view-container li, #view-container button, #view-container [role="option"]')]
-        .find((n) => n.textContent.trim().startsWith(nombre) && n.getBoundingClientRect().width > 0) || null, CLIENTE.name);
-      if (opcion.asElement()) await opcion.asElement().click();
-      for (const paso of ['Continuar', 'Continuar', 'Cambiar']) {
-        await pulsarTexto(page, '#view-container button', paso);
+      // El camino del profesional, el mismo que recorre `scrum660` (SCRUM-915d): cliente → «Continuar» →
+      // una línea → «Continuar» → «Cambiar» en «Ajustes del documento».
+      const pasos = [
+        (id) => { const s = document.querySelector('select[name="customer_id"]'); if (!s) return 'no hay selector de cliente'; s.value = String(id); s.dispatchEvent(new Event('change', { bubbles: true })); return null; },
+        () => { const b = [...document.querySelectorAll('#view-container button')].filter((x) => x.textContent.trim() === 'Continuar')[0]; if (!b) return 'no hay «Continuar» del paso Cliente'; b.click(); return null; },
+        () => {
+          const c = document.querySelector('#view-container .quote-line__concept input'); const p = document.querySelector('#view-container .quote-line__price input');
+          if (!c || !p) return 'no hay concepto o precio en la primera línea';
+          c.value = 'Reforma de baño'; c.dispatchEvent(new Event('input', { bubbles: true }));
+          p.value = '100'; p.dispatchEvent(new Event('input', { bubbles: true })); return null;
+        },
+        () => { const b = [...document.querySelectorAll('#view-container button')].filter((x) => x.textContent.trim() === 'Continuar')[1]; if (!b) return 'no hay «Continuar» del paso Conceptos'; b.click(); return null; },
+        () => {
+          const h = [...document.querySelectorAll('#view-container h3')].find((x) => x.textContent.trim() === 'Ajustes del documento');
+          const b = h && [...h.parentElement.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Cambiar');
+          if (!b) return 'no hay «Cambiar» en «Ajustes del documento»'; b.click(); return null;
+        },
+      ];
+      for (const paso of pasos) {
+        const corte = await page.evaluate(paso, CLIENTE.id);
+        if (corte) return corte;
+        await new Promise((ok) => setTimeout(ok, 250));
         await page.waitForFunction(QUIETO, { timeout: 20000 });
       }
       const visible = await page.evaluate(() => {
@@ -153,11 +170,17 @@ const ESCENAS = [
   },
   {
     nombre: 'trabajo-efectivo', ruta: '/ficha', firma: T4_INICIO,
-    preparar: async (page) => (await elegir(page, '#metodo-cobro-inv-91', 'cash')) ? null : 'NO_HAY_SELECTOR',
+    preparar: async (page) => {
+      if (!(await pulsarTexto(page, '#view-container button, #view-container [role="tab"]', 'Facturas'))) return 'no hay pestaña «Facturas»';
+      await page.waitForFunction(QUIETO, { timeout: 20000 });
+      return (await elegir(page, '#metodo-cobro-inv-91', 'cash')) ? null : 'NO_HAY_SELECTOR';
+    },
   },
   {
     nombre: 'trabajo-sin-elegir', ruta: '/ficha', firma: T3,
     preparar: async (page) => {
+      if (!(await pulsarTexto(page, '#view-container button, #view-container [role="tab"]', 'Facturas'))) return 'no hay pestaña «Facturas»';
+      await page.waitForFunction(QUIETO, { timeout: 20000 });
       await page.evaluate(() => { window.confirm = () => true; window.prompt = () => '160.50'; });
       return (await pulsarTexto(page, '#view-container button', 'Marcar como PAGADA')) ? null : 'no hay «Marcar como PAGADA»';
     },
