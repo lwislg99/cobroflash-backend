@@ -379,3 +379,30 @@ test('SCRUM-916b · una fila VIAJANDO cuando otro camino repinta: si llega, se v
     }
   }
 });
+
+// ═══ LAS MUTACIONES QUE ME TUMBAN (SCRUM-745; las ejecuta `npm run meta:mutaciones`) ══════════════
+// Cada una imita un trozo del defecto, o un descuido que lo devolvería. Cada campo, LITERAL.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  // El defecto del fundador: con una fila ESCRITA en pantalla, pulsar no añade.
+  { fichero: 'public/dashboard/js/parteDetailView.js', de: "      var fila = ponerFilaNueva(bloque, null);", a: "      var fila = filasNuevas().some(function (f) { return !!loQueDice(f); }) ? null : ponerFilaNueva(bloque, null);", cae: 'SCRUM-916b · 🔴 con la fila escrita, UN clic en «Añadir línea» la guarda Y abre otra vacía' },
+  // Su otra mitad: una fila A MEDIAS bloquea los botones.
+  { fichero: 'public/dashboard/js/parteDetailView.js', de: "      var fila = ponerFilaNueva(bloque, null);", a: "      var fila = filasNuevas().some(function (f) { return !loQueDice(f); }) ? null : ponerFilaNueva(bloque, null);", cae: 'SCRUM-916b · 🔴 dos clics son dos filas vacías, y una fila a medias no bloquea NINGÚN botón (cero escrituras)' },
+  // Releer el parte entero aunque el PATCH ya traiga las líneas.
+  { fichero: 'public/dashboard/js/parteDetailView.js', de: "        if (guardada && !lineas) {", a: "        if (guardada) {", cae: 'SCRUM-916b · 🔴 guardar una línea NO repinta la ficha: las demás filas y el botón son los MISMOS nodos' },
+  // Volver a repintar la ficha entera al guardar, en vez de asentar la fila.
+  { fichero: 'public/dashboard/js/parteDetailView.js', de: "        if (cuadraConLoMandado(lineas, lista)) {", a: "        if (false) {", cae: 'SCRUM-916b · 🔴 lo que hay A MEDIAS en otra fila sigue ahí cuando una se guarda' },
+  // Pisar con la respuesta del servidor lo que el técnico sigue escribiendo.
+  { fichero: 'public/dashboard/js/parteDetailView.js', de: "      if (c.desc.value === enviada.crudoDesc) { c.desc.value = desc; crecerDescripcion(c.desc); }", a: "      c.desc.value = desc;", cae: 'SCRUM-916b · 🔴 lo que se teclea MIENTRAS viaja el guardado no se pisa, y se guarda al salir del campo' },
+  // La fila asentada sin el cable de una línea guardada.
+  { fichero: 'public/dashboard/js/parteDetailView.js', de: "      escucharCasillaGuardada(c.unds, unds);", a: "      ;", cae: 'SCRUM-916b · la fila asentada se corrige y se quita como cualquier línea guardada (y si el PATCH no trae las líneas, se releen)' },
+  // El aviso al final del bloque, y no detrás de SU fila.
+  { fichero: 'public/dashboard/js/parteDetailView.js', de: "      fila.insertAdjacentHTML('afterend', AVISO_DE_FILA_NO_GUARDADA);", a: "      fila.parentNode.insertAdjacentHTML('beforeend', AVISO_DE_FILA_NO_GUARDADA);", cae: 'SCRUM-916b · 🔴 si el guardado falla, el aviso va detrás de SU fila, lo tecleado sigue, y el siguiente «Añadir línea» lo reintenta' },
+  // El paso de las firmas, sin ponerse al día con la primera línea.
+  { fichero: 'public/dashboard/js/parteDetailView.js', de: "          ponerFirmasAlDia();", a: "          ;", cae: 'SCRUM-916b · 🔴 en un parte VACÍO, la primera línea pone el paso de las firmas al día sin repintarlo' },
+  // Un repintado que se lleva lo que estaba por escribir.
+  { fichero: 'public/dashboard/js/parteDetailView.js', de: "    var porEscribir = filasPorEscribirDe(contenedor, parteId);", a: "    var porEscribir = [];", cae: 'SCRUM-916b · 🔴 quitar una línea guardada (que repinta) conserva las filas por escribir, con lo tecleado' },
+  // La fila que esperaba su turno vuelve tras el repintado, pero nadie la guarda.
+  { fichero: 'public/dashboard/js/parteDetailView.js', de: "        } else if (escrito.guardando === 'espera') {", a: "        } else if (escrito.guardando === 'nunca') {", cae: 'SCRUM-916b · una fila EN COLA detrás de otro guardado que repinta se guarda UNA vez (ni se pierde ni se duplica)' },
+  // La fila que viajaba vuelve sin su recado: el desenlace del guardado no llega a la pantalla.
+  { fichero: 'public/dashboard/js/parteDetailView.js', de: "        if (escrito.guardando === 'enviando') {", a: "        if (escrito.guardando === 'nunca') {", cae: 'SCRUM-916b · una fila VIAJANDO cuando otro camino repinta: si llega, se ve guardada una vez; si falla, vuelve con su aviso' },
+];
