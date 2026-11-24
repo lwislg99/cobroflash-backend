@@ -182,3 +182,55 @@ discrepancia ES el dato». No lo he podido mirar: si en la máquina de Javier se
 
 **Sin medir:** la población real de nombres del equipo J (vive en su máquina) y si su lanzador acepta los relevos
 `jv-jN<letras>` (SCRUM-1549 §3 midió que la puerta solo acepta `jv-j1`…`jv-j6`).
+
+## SCRUM-1506d · pieza ③: la cerradura FALLA CERRADA (S5, 24-nov)
+
+**Medido contra:** `origin/main` = `2db8e1c8be5c289fb2643de9e211d29b2ab6f949` · 2026-11-24T16:01:02Z
+
+A9: sin fallo que generalice — es un encargo literal del orquestador con la decisión c.22577; el test sale rojo primero y las mutaciones están en el catálogo.
+
+**Decisión:** SCRUM-1506 c.22577, citada en el encargo del orquestador (`cobroflash-backend-41`, 24-nov). Yo no la he
+leído en Jira. El sufijo `c` ya lo tenía #3191 (mergeado), así que esto va como **`d`**.
+
+**PASO 0, hoy:** la premisa del encargo («`puestoDeNombre('jv-j6')` da null») **ya no se cumple**: da `J6` desde
+1506c. Medido: `jv-j6`→J6, `jv-j1-foo`→J1, `sesion-5`→S5, `cobroflash-backend-41`→null, null/''→null. Lo que sí
+seguía vivo es el hueco de la pieza ③: `carril.mjs` hacía `if (!fichero || !id.puesto || …) return;`, de modo que
+**cualquier identidad desconocida** (como `cobroflash-backend-41`, `jv-j9z` o una sesión sin nombre) editaba sin
+que nadie mirara. Además, un error dentro del hook salía con **1**, y Claude Code sólo bloquea con 2.
+
+**Qué cambia en `.claude/hooks/carril.mjs`.** Afecta sólo a las EDICIONES de un fichero **dentro del repo**:
+- sin identidad → salida 2, `⛔ SIN IDENTIDAD`, y el mensaje dice cómo identificarse por el nombre (`/rename`,
+  con las formas válidas) o por la mesa (`.yaqu-puesto.json`, `carriles.mjs mesa`);
+- mesa rota (`.yaqu-puesto.json` ilegible o inválido) → salida 2, aunque el nombre sea válido. Antes se usaba el
+  nombre y se pasaba;
+- un error de `principal()` → salida 2 con `NO-PUDE-MIRAR`, no 1.
+
+**Lo que sigue igual:** leer (el matcher sólo cubre Edit, Write, NotebookEdit y MultiEdit), editar fuera del repo
+(la memoria, los temporales), `orquestador`, y `--exigir-identidad`, que sigue sin estar armado.
+
+**Test:** `tests/scrum1506d-cerradura-falla-cerrada.test.mjs`, 5 casos, con el hook ejecutado como proceso. Sobre
+main: **3 rojos (①②③) y 2 verdes (④⑤, los controles)**. Con el cambio: 5/5.
+- ④ **controles positivos, la red:** cada puesto con fila edita un fichero SUYO, sacado del mapa y no supuesto, y
+  pasa. **Población: 11 puestos** (J1 J2 J3 J5 J6 S0 S1 S2 S3 S4 S5; J4 no tiene ninguna fila en
+  `carriles.json`). Pasan también la mesa S3 con su nombre, la mesa S2 sin `nombre` con `sesion-2`, el
+  `orquestador`, y, sin identidad, leer y editar fuera del repo.
+- `tests/scrum1295-carriles.test.mjs`: el caso que AFIRMABA lo contrario («sin --exigir-identidad no se para a
+  nadie») pasa a pedir 2, y además pide que leer siga dando 0. Esa línea era la decisión de antes, y la de
+  c.22577 la sustituye. Con eso 1295 sale 8/8, 1506c 5/5 y 1298b 8/8.
+
+Mutaciones: catálogo → tests/scrum1506d-cerradura-falla-cerrada.test.mjs
+
+Las corrí a mano una a una: primero la base sin mutar (5 ok) y restaurando cada vez. **3 de 3 vivas**: quitar el
+bloqueo sin identidad tumba ①, quitar el de la mesa rota tumba ② y relanzar el error tumba ③.
+
+🔴 **A quién puede parar, medido en `ListAgents` el 24-nov a las ~16:00Z:** `sesion-1`…`sesion-5` resuelven por su
+nombre, y `mesa-s3` y `mesa-s5` tienen una mesa válida. **`cobroflash-backend-41` (el orquestador) da null:
+cuando su carpeta de arranque tenga este hook al día, NO podrá editar el repo** hasta que haga `/rename
+orquestador` o arranque desde una mesa ORQ. Como el hook se lee del disco en cada llamada, el cambio llega a una
+sesión viva en cuanto su carpeta de arranque se actualiza, sin relanzarla. El checkout compartido (`e4ea95e5a`)
+no cablea el hook (1506b ②), así que a quien arranca ahí no le cambia nada. Tampoco he podido mirar la máquina
+de Javier.
+
+**Fuera de alcance (no se toca aquí):** los ficheros SIN fila (`tests/**`, por ejemplo) siguen libres para
+cualquier identidad conocida; es lo que dijo J4 en c.18864. Y el cableado del hook donde arrancan las sesiones
+sigue siendo la pieza ① (c.21944).
