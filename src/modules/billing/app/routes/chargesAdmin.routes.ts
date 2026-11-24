@@ -53,6 +53,15 @@ function hayFechaDeclarada(v: unknown): boolean {
 const ESPERA_WHATSAPP_MS = 3_000;
 const PASO_ESPERA_MS = 250;
 
+/**
+ * SCRUM-1800 · ¿el documento de este cobro ya consta pagado? Medido en staging el 24-nov: 3 de los
+ * 8 cobros `pending` lo tienen (justificantes marcados a mano: `marcar_pagado_manual` no cierra el
+ * cobro). Cancelar uno así dejaba el recibo «cancelado» y el documento «pagado» a la vez.
+ */
+function documentoDelCobroPagado(c: { invoices?: unknown[]; Quote?: { Invoice?: unknown[] }[] }): boolean {
+  return (c.invoices?.length ?? 0) > 0 || (c.Quote ?? []).some((q) => (q.Invoice?.length ?? 0) > 0);
+}
+
 const router = Router();
 
 /**
@@ -65,7 +74,8 @@ const router = Router();
  * (las dos barreras de `estadoDelCobro.ts`). Si el pago gana la carrera, P2025 y el mismo 409.
  *
  * Lo que NO hace, a propósito:
- *  · no toca la factura: se queda pendiente de cobro (decisión 2 de c.22430);
+ *  · no toca la factura: se queda pendiente de cobro (decisión 2 de c.22430); y si ya consta
+ *    pagada, NO cancela: 409 `document_already_paid` (SCRUM-1800);
  *  · no impide que un pago que llegue después lo deje pagado (decisión 1): el dinero es real;
  *  · no deja fila de auditoría TODAVÍA: la clave `cobro_cancelado` está aprobada (c.22435) y la añade
  *    S1 en `audit.service.ts`; la fila entra en 1532c. Lo declara `tests/scrum1532b-cancelar-cobro.test.mjs`.
@@ -76,13 +86,23 @@ router.post('/:id/cancel', requireRole('admin'), async (req, res) => {
     const id = Number(req.params.id);
     if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
+    // SCRUM-1800 · el documento del cobro, con el criterio de `facturaDelCobro` y de psp (por
+    // `chargeId` o por el presupuesto ligado), SÓLO si consta `paid`. En la misma lectura del cobro.
     const charge = await prisma.charge.findFirst({
       where: { id, merchantId: req.merchantId },
-      select: { status: true },
+      select: {
+        status: true,
+        invoices: { where: { merchantId: req.merchantId, status: 'paid' }, select: { id: true }, take: 1 },
+        Quote: {
+          where: { merchantId: req.merchantId },
+          select: { Invoice: { where: { merchantId: req.merchantId, status: 'paid' }, select: { id: true }, take: 1 } },
+        },
+      },
     });
     if (!charge) return res.status(404).json({ error: 'not_found' });
     if (charge.status === 'cancelled') return res.json({ ok: true, status: 'cancelled', yaEstaba: true });
     if (charge.status !== 'pending') return res.status(409).json({ error: 'charge_not_pending' });
+    if (documentoDelCobroPagado(charge)) return res.status(409).json({ error: 'document_already_paid' });
 
     try {
       await prisma.charge.update({
