@@ -44,6 +44,10 @@ el caso de J2 (sería tocar su test sin su firma) y descartado esperar (la clave
 **Medido contra:** `origin/main` = `db0a6c04541c258eda6499e1088cf16db9f1836b` · 2026-11-24T18:13:08Z
 A9: comprobación → `tests/scrum1808b-cancelar-cobro-en-ficha-trabajo.test.mjs`
 Mutaciones: catálogo → `tests/scrum1808b-cancelar-cobro-en-ficha-trabajo.test.mjs`
+**Skill UI:** cargada · DESPUÉS de escribir el cambio, no antes (lo cazó `scrum811c`); con ella repasé el diff con
+el checklist AB6: cero `style=` nuevos, solo inventario AB3 (`mkBtn` con `job-toolbar-btn-44`, el «⋯» de
+`overflowMenu`, la pill `status-pill-draft`), cero textos nuevos, botón deshabilitado durante el POST, errores por
+`setStatus`, capturas antes/después medidas a 390 y 1280 (alto de toque 51 px a 390 y 44 px a 1280).
 
 Rama `scrum-1808b-boton-en-ficha-trabajo` (creada por la sesión anterior de S2 sobre `ef1e95e26`; avanzada por
 fast-forward a `84e87de4d` y mergeada con `origin/main` `db0a6c045` antes del push). Encargo del orquestador
