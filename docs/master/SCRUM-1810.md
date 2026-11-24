@@ -1,5 +1,9 @@
 # SCRUM-1810 · En el «⋯» de un documento pagado sigue saliendo «Marcar como cobrada»
 
+**Skill UI:** cargada (yaqu-premium-ui, antes de tocar la vista; ver tramo 1810b)
+
+A9: comprobación → `tests/scrum811c-skill-ui-declarada.test.mjs`
+
 ## SCRUM-1810b · factura pagada sin el botón; justificante pagado con «Marcar como pendiente»
 
 **Medido contra:** `origin/main` = `9067651f76c23ded05ae3b63be1385a3ba90170e` · 2026-11-24T07:51:25Z
