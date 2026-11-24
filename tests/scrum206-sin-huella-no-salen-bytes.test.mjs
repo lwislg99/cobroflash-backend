@@ -168,6 +168,11 @@ test('SCRUM-206 · (b) los consumidores de `ensureInvoicePdf` no convierten el r
     'src/modules/system/app/routes/invoicesAdmin.routes.ts': 'esErrorSinSellar', // 409 + código
     'src/modules/exports/app/routes/exports.routes.ts': 'ok: false',          // se excluye del ZIP y se lista en `fallidos`
     'src/modules/messaging/domain/email.service.ts': null,                    // propaga: no hay catch, no se envía
+    // SCRUM-665e (decisión c.21592 punto 1): congela el PDF AL EMITIR. El rechazo NO deshace ni
+    // tumba el sellado (la factura ya está emitida, regla 29): se dice en voz alta, con el id y el
+    // motivo, y el PDF se queda sin congelar hasta que se pida. No entrega bytes: no hay a quién.
+    // El comportamiento lo fija `tests/scrum665e-pdf-de-la-emitida-congelado.test.mjs` ⑫.
+    'src/modules/invoicing/domain/selladoEstado.ts': 'PDF NO congelado al emitir',
   };
 
   const encontrados = [];

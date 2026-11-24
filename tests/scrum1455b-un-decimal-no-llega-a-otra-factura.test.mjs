@@ -50,7 +50,7 @@ inyectarBase(new Proxy({}, {
 const FACTURAS = '../dist/modules/system/app/routes/invoicesAdmin.routes.js';
 const WEBHOOK = '../dist/modules/invoicing/app/routes/invoice.routes.js';
 
-/** [módulo, verbo, ruta] — las 14 lecturas de id de la factura (re-medidas el 20-oct sobre `main`; `pay` y `unpay`, desmontadas en SCRUM-1250b). */
+/** [módulo, verbo, ruta] — las 13 lecturas de id de la factura (re-medidas el 20-oct sobre `main`; `pay` y `unpay`, desmontadas en SCRUM-1250b; `regenerate-pdf`, retirada en SCRUM-665e por decisión del fundador, SCRUM-665 c.21182 punto 3). */
 const LECTURAS = [
   [FACTURAS, 'get', '/:id'],
   [FACTURAS, 'post', '/:id/payment-anomaly'],
@@ -62,7 +62,6 @@ const LECTURAS = [
   [FACTURAS, 'post', '/:id/send-reminder'],
   [FACTURAS, 'post', '/:id/annul'],
   [FACTURAS, 'post', '/:id/rectify'],
-  [FACTURAS, 'post', '/:id/regenerate-pdf'],
   [FACTURAS, 'get', '/:id/pdf'],
   [FACTURAS, 'patch', '/:id/asignados'],
   [WEBHOOK, 'post', '/:id/paid-webhook'],
@@ -101,7 +100,7 @@ function pedidor([modulo, verbo, ruta]) {
 const nombreDe = ([modulo, verbo, ruta]) =>
   `${verbo.toUpperCase()} ${modulo === WEBHOOK ? '/invoice' : '/admin/invoices'} ${ruta}`;
 
-test('SCRUM-1455b · el censo: las 14 rutas con `:id` de los dos routers de factura son las 14 de este fichero', () => {
+test('SCRUM-1455b · el censo: las 13 rutas con `:id` de los dos routers de factura son las 13 de este fichero', () => {
   const conId = [];
   for (const m of [FACTURAS, WEBHOOK]) {
     for (const l of moduloDeDist(m).default.stack) {
@@ -149,13 +148,11 @@ test('SCRUM-1455b · POST /admin/invoices /:id/annul · 🔴 un id decimal → 4
 test('SCRUM-1455b · POST /admin/invoices /:id/annul · CONTROL: un id correcto llega a la base y no se rechaza', control(8));
 test('SCRUM-1455b · POST /admin/invoices /:id/rectify · 🔴 un id decimal → 400, y ninguna consulta recibe un decimal', decimal(9));
 test('SCRUM-1455b · POST /admin/invoices /:id/rectify · CONTROL: un id correcto llega a la base y no se rechaza', control(9));
-test('SCRUM-1455b · POST /admin/invoices /:id/regenerate-pdf · 🔴 un id decimal → 400, y ninguna consulta recibe un decimal', decimal(10));
-test('SCRUM-1455b · POST /admin/invoices /:id/regenerate-pdf · CONTROL: un id correcto llega a la base y no se rechaza', control(10));
-test('SCRUM-1455b · GET /admin/invoices /:id/pdf · 🔴 un id decimal → 400, y ninguna consulta recibe un decimal', decimal(11));
-test('SCRUM-1455b · GET /admin/invoices /:id/pdf · CONTROL: un id correcto llega a la base y no se rechaza', control(11));
-test('SCRUM-1455b · PATCH /admin/invoices /:id/asignados · 🔴 un id decimal → 400, y ninguna consulta recibe un decimal', decimal(12));
-test('SCRUM-1455b · PATCH /admin/invoices /:id/asignados · CONTROL: un id correcto llega a la base y no se rechaza', control(12));
-test('SCRUM-1455b · POST /invoice /:id/paid-webhook · 🔴 un id decimal → 400, y ninguna consulta recibe un decimal', decimal(13));
-test('SCRUM-1455b · POST /invoice /:id/paid-webhook · CONTROL: un id correcto llega a la base y no se rechaza', control(13));
+test('SCRUM-1455b · GET /admin/invoices /:id/pdf · 🔴 un id decimal → 400, y ninguna consulta recibe un decimal', decimal(10));
+test('SCRUM-1455b · GET /admin/invoices /:id/pdf · CONTROL: un id correcto llega a la base y no se rechaza', control(10));
+test('SCRUM-1455b · PATCH /admin/invoices /:id/asignados · 🔴 un id decimal → 400, y ninguna consulta recibe un decimal', decimal(11));
+test('SCRUM-1455b · PATCH /admin/invoices /:id/asignados · CONTROL: un id correcto llega a la base y no se rechaza', control(11));
+test('SCRUM-1455b · POST /invoice /:id/paid-webhook · 🔴 un id decimal → 400, y ninguna consulta recibe un decimal', decimal(12));
+test('SCRUM-1455b · POST /invoice /:id/paid-webhook · CONTROL: un id correcto llega a la base y no se rechaza', control(12));
 decimal.todos();
 control.todos();

@@ -137,16 +137,35 @@ test('SCRUM-577 · 🔴 la factura recibe `legalName` — antes NO viajaba', () 
   // campos —`legalName` incluido— desde la columna congelada. Así que lo que se exige es que los
   // tres usen ese lector: es la misma garantía, comprobada en los tres sitios en vez de en dos, y
   // sin depender de cómo esté escrito el literal.
+  //
+  // SCRUM-665e (decisión del orquestador J, SCRUM-665 c.21608 (b)): la rama junta los generadores en
+  // UNO. `ensureInvoiceForCharge` delega en `ensureInvoicePdf`, y la ruta «regenerar PDF» se retira
+  // (GO c.21182). Medido con `git grep`: en 4eea7720 hay 3 `generateInvoicePdf(` y 3
+  // `customer: clienteDelDocumento(` (2 en invoicing.ts, 1 en invoicesAdmin); en la rama, 1 y 1. La
+  // lista es un número derivado y se recalcula; la fila de invoicesAdmin se queda a 0, y además cada
+  // fichero tiene que tener tantos usos del lector como llamadas al generador: un generador que vuelva
+  // sin el lector lo tumba.
   const CAMINOS_PDF_DE_FACTURA = [
-    ['src/lib/invoicing.ts', 2],                                  // ensureInvoicePdf + ensureInvoiceForCharge
-    ['src/modules/system/app/routes/invoicesAdmin.routes.ts', 1],  // regenerar PDF (el que faltaba)
+    ['src/lib/invoicing.ts', 1],                                  // ensureInvoicePdf (el único generador)
+    ['src/modules/system/app/routes/invoicesAdmin.routes.ts', 0],  // la ruta «regenerar PDF» se retiró (665e)
   ];
   for (const [ruta, esperados] of CAMINOS_PDF_DE_FACTURA) {
     const codigo = soloCodigo(leer(ruta));
     const usos = (codigo.match(/customer:\s*clienteDelDocumento\(/g) || []).length;
+    const generadores = (codigo.match(/\bgenerateInvoicePdf\(/g) || []).length;
+    assert.equal(usos, generadores,
+      `🔴 ${ruta}: ${generadores} llamadas a \`generateInvoicePdf\` y ${usos} pasan el cliente por \`clienteDelDocumento\`.`);
     assert.equal(usos, esperados,
       `🔴 ${ruta}: ${usos} de ${esperados} caminos pasan el cliente por \`clienteDelDocumento\`. `
       + 'Ese lector es el que garantiza que `legalName` viaja SIEMPRE y desde el dato congelado; '
       + 'quien lo esquive vuelve a poder imprimir un cliente distinto según por dónde se pida.');
   }
 });
+
+// SCRUM-665e (c.21608 (b)) · el generador único deja de pasar el cliente por el lector: tiene que caer.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  { fichero: 'src/lib/invoicing.ts',
+    de: 'customer: clienteDelDocumento(inv, inv.customer),',
+    a: 'customer: inv.customer,',
+    cae: 'SCRUM-577 · 🔴 la factura recibe `legalName` — antes NO viajaba' },
+];

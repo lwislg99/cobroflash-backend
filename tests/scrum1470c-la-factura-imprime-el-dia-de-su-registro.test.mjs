@@ -178,12 +178,26 @@ test('SCRUM-1470c · CONTROL del lector: una llamada sembrada SIN zona se ve, y 
     '🔴 CIEGO: el lector no distingue una llamada con zona de una sin ella');
 });
 
-test('SCRUM-1470c · los TRES llamadores de `src/` pasan la zona del negocio (`….timezone`)', () => {
+test('SCRUM-1470c · los llamadores de `src/` pasan la zona del negocio (`….timezone`)', () => {
   const todas = fuentesQueLaLlaman().flatMap((p) => llamadas(path.relative(RAIZ, p).split(path.sep).join('/'), fs.readFileSync(p, 'utf8')));
   // Población declarada: medida el 23-oct-2026, dos en `src/lib/invoicing.ts` y una en
-  // `invoicesAdmin.routes.ts` (regenerar PDF). Una cuarta que nazca entra aquí y se mira.
-  assert.equal(todas.length, 3, `🔴 POBLACIÓN: esperaba 3 llamadas a generateInvoicePdf en src/, hay ${todas.length}: ${todas.map((l) => l.donde).join(', ')}`);
+  // `invoicesAdmin.routes.ts` (regenerar PDF): 3. Re-medida el 16-nov-2026 en SCRUM-665e: 1, la de
+  // `ensureInvoicePdf` en `src/lib/invoicing.ts`. La rama junta los generadores en UNO y retira la
+  // ruta «regenerar PDF» (GO SCRUM-665 c.21182 puntos 1 y 3). Se registra por la vía de c.21943
+  // punto 3, con la forma de scrum577 en c.21608 (b): la población es un número derivado y se
+  // recalcula; la comprobación (cada llamada lleva `….timezone`) no cambia. Una segunda que nazca
+  // entra aquí y se mira.
+  assert.equal(todas.length, 1, `🔴 POBLACIÓN: esperaba 1 llamada a generateInvoicePdf en src/, hay ${todas.length}: ${todas.map((l) => l.donde).join(', ')}`);
   for (const l of todas) {
     assert.ok(l.zona && /\.timezone$/.test(l.zona), `🔴 ${l.donde}: llama a generateInvoicePdf sin la zona del negocio (zona = ${l.zona})`);
   }
 });
+
+// SCRUM-665e (c.21943 punto 3, forma de c.21608 (b)) · el generador único deja de pasar la zona del
+// negocio: tiene que caer. El catálogo de la casa (scripts/meta-guard-mutaciones.mjs → aplicarUna).
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  { fichero: 'src/lib/invoicing.ts',
+    de: '      zona: inv.merchant.timezone, // SCRUM-1470c: el día de la «Fecha:», el de su registro\n',
+    a: '',
+    cae: 'SCRUM-1470c · los llamadores de `src/` pasan la zona del negocio' },
+];
