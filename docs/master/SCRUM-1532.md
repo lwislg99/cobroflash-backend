@@ -308,6 +308,10 @@ literales de 1532d: `c.22430`. [Escrito por la sesión, no por Javier.]
   la mutación del endpoint 3 → 4. Cita en la línea; nada más del guard.
 - `scrum707` ×2: `pending` y `factura|pending` incorporan `btnCancelarCobro` con la cita. Ningún otro estado lo
   ofrece: la mutación que lo pone en `paid` tumba el control positivo (guion de arriba).
+- `scrum1185` (no salía en aquel run; sale al fusionar main, que trae la declaración de J2): la ruta ya tiene
+  consumidor y su declaración en `scripts/_sin-consumir-declarados.json` pasa a `retiradas`. **Cruce de
+  carril declarado:** el fichero es de S0; lo muevo porque su propia línea decía «se mueve a retiradas en ese
+  PR» (el del botón) y es la única forma de que este PR salga verde. Una línea, nada más.
 
 **1532e.** Con `estadoDelCobro === 'cancelled'`, el bloque «Cobro» de la cabecera pinta la etiqueta
 `Cobro cancelado` (pill neutra `status-pill-draft` del inventario; como toda pill, se ve en mayúsculas por CSS).
