@@ -54,7 +54,8 @@ async function papel(lines, extra = {}, total = '121.00') {
   assert.equal(r.ok, true, `🔴 NO SUPE LEER EL PDF: ${r.motivo}`);
   const t = r.lineas.map((l) => l.texto);
   // Control positivo del lector: sin el bloque de totales no hay nada que medir.
-  assert.ok(t.some((x) => /^TOTAL( COBRADO)?:/.test(x)), '🔴 CIEGO: no encuentro el TOTAL en el papel.');
+  // SCRUM-1787w · literal FIRMADO en SCRUM-1787 c.22428 (GO c.22416): «Total factura:» sustituye a «TOTAL:».
+  assert.ok(t.some((x) => /^(Total factura|TOTAL COBRADO):/.test(x)), '🔴 CIEGO: no encuentro el TOTAL en el papel.');
   return t;
 }
 const conMencion = (t) => t.filter((x) => x.includes('criterio de caja'));
@@ -62,7 +63,7 @@ const conMencion = (t) => t.filter((x) => x.includes('criterio de caja'));
 test('1240d · congelado true + S1: la mención sale, literal, en su línea, tras el TOTAL y antes del QR', async () => {
   const t = await papel([S1], { merchantCriterioCaja: true });
   assert.deepEqual(conMencion(t), [MENCION], 'la mención no sale una vez, en su propia línea y con el literal firmado');
-  const iTotal = t.findIndex((x) => x.startsWith('TOTAL:'));
+  const iTotal = t.findIndex((x) => x.startsWith('Total factura:')); // c.22428 ⑤
   const iMencion = t.indexOf(MENCION);
   const iQr = t.findIndex((x) => x.startsWith('Escanea el QR'));
   assert.ok(iTotal >= 0 && iQr > 0, '🔴 CIEGO: no encuentro el TOTAL o el bloque del QR');

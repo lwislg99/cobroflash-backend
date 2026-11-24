@@ -24,10 +24,12 @@ const porId = (id) => censo.cobro.find((a) => a.id === id);
 // EL CENSO REAL — las 4 acciones-cobro con su destino (DECISIÓN DEL ASESOR, por objeto del endpoint)
 // ═════════════════════════════════════════════════════════════════════════════════════════
 test('SCRUM-285 · el censo deriva 4 acciones-cobro, cada una con su destino', () => {
+  // SCRUM-1532d: la 5ª es `btnCancelarCobro` (/charges/:id/cancel → Cobros), firmada en SCRUM-1532 c.22430.
+  // El nombre del test no se toca (lo citan catálogos por nombre); el VALOR esperado pasa de 4 a 5.
   assert.ok(censo.vistaEncontrada, `🔴 no encuentro ${FUNCION_VISTA}: el censo no mira nada`);
 
   const ids = censo.cobro.map((a) => `${a.id}→${a.destino}`).join(', ');
-  assert.equal(censo.cobro.length, 4, `🔴 el censo ya no ve 4 acciones-cobro sino ${censo.cobro.length}. Ahora ve: ${ids}`);
+  assert.equal(censo.cobro.length, 5, `🔴 el censo ya no ve 5 acciones-cobro sino ${censo.cobro.length}. Ahora ve: ${ids}`);
 
   // Destino por el OBJETO del endpoint: /charges/ → Cobros · /invoices/ → Factura. La divergencia
   // medida (dispute: URL /invoices/ pero objeto charge → Cobros) queda anclada aquí.
@@ -35,6 +37,7 @@ test('SCRUM-285 · el censo deriva 4 acciones-cobro, cada una con su destino', (
   assert.equal(porId('btnDispute')?.destino, 'Cobros', '🔴 btnDispute va a Cobros por OBJETO (chargeback), aunque su URL sea /invoices/');
   assert.equal(porId('btnReminder')?.destino, 'Factura', '🔴 btnReminder (/invoices/send-reminder) se queda en Factura');
   assert.equal(porId('btnTogglePaid')?.destino, 'Factura', '🔴 btnTogglePaid (/invoices/status) se queda en Factura');
+  assert.equal(porId('btnCancelarCobro')?.destino, 'Cobros', '🔴 btnCancelarCobro (/charges/cancel) va a Cobros (SCRUM-1532 c.22430)');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -81,7 +84,8 @@ test('SCRUM-285 · rojo por el mecanismo: cambiar el endpoint de una acción-cob
   assert.notEqual(mutado, codigoReal, 'la inyección encontró el endpoint de btnBizum');
   const r = censarCobroFactura(mutado);
   assert.ok(r.vistaEncontrada, 'el código mutado sigue parseando (no es un SyntaxError)');
-  assert.equal(r.cobro.length, 3, '🔴 el censo no reacciona a que una acción deje de tocar cobro');
+  // SCRUM-1532d (c.22430): con `btnCancelarCobro` el total real es 5, y la mutación lo baja a 4.
+  assert.equal(r.cobro.length, 4, '🔴 el censo no reacciona a que una acción deje de tocar cobro');
   assert.ok(!r.cobro.find((a) => a.id === 'btnBizum'), 'btnBizum ya no aparece como acción-cobro');
 });
 

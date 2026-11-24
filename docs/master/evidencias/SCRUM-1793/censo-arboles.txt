@@ -1,0 +1,402 @@
+arbol	rama	fuera_de_origin	sucio	node_modules	destino_nm	otros_enlaces	viva	bloqueado	existe	veredicto
+cobroflash-jv-j1cg	scrum-1330d-scrum173-en-staging	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1ch	scrum-1446-1448-preparar-decision	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j1ci	scrum-1404-pr2-preparar	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j1cj	scrum-1609-fecha-de-cobro-de-una-en-una	1	0	no-existe			False	False	True	NO borrado: commits fuera de origin: 1
+cobroflash-jv-j1ck	scrum-1446e-columna-sin-iva	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1cl	scrum-1404g-pr2-respuesta-409	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1cn	(detached)	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j1co	scrum-1446f-importe-en-presupuesto	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1cp	(detached)	0	4	no-existe			False	False	True	NO borrado: sucio: 4
+cobroflash-jv-j1cq	scrum-1446g-tramos-mayor-resto	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1cr	scrum-1599r-tests-serie-f	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j1cs	(detached)	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j1ct	scrum-1446h-sin-tramos-con-fraccion	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1cu	(detached)	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1cv	scrum-1612-diseno-subsanacion	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j1cw	scrum-1612b-aviso-nif-2001	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j1cx	scrum-1448a-just-camino	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1cy	scrum-1448b-filas-just	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1cz	scrum-1566d-empate	3	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	NO borrado: commits fuera de origin: 3
+cobroflash-jv-j1da	scrum-1448c-sonda-total-pdf	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1db	scrum-1585a-m-diseno	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1de	scrum-1063j-casos-limite	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1df	scrum-1562g-facturas-con-teclado	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1dg	scrum-1618-fecha-de-cobro	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1dh	scrum-1066f-excepciones-115	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1di	scrum-1051c-medir-isp	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1dj	scrum-1051d-suelta-conserva-causa	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1dk	scrum-665e-pdf-persistente	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1dl	scrum-1585b-sii-retomada	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1dn	scrum-1566e-reparto-entre-tramos	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1do	scrum-1051e-prueba-s2-aeat	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1dq	scrum-1640-lote-marca-cero	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1dr	conjunto-1566-b-y-c	6	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	NO borrado: commits fuera de origin: 6
+cobroflash-jv-j1ds	scrum-1713-pantalla-sii	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1dt	scrum-1063k-siguiente	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1du	scrum-1066g-retencion-sin-entrada	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1dw	scrum-1066h-ruta-borrador-retenciones	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1dx	scrum-1442c-pdf-opcion	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1dy	scrum-1647f-imprimir-factura	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1dz	scrum-1726-tanda-firmada-j1	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ea	scrum-1051f-lo-que-falta	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1eb	scrum-1129c-estado-y-propuesta	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ec	scrum-1051g-isp-pdf-nif-libro	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ed	scrum-1063l-siguiente	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ee	scrum-1051h-p5-y-libro	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ef	scrum-1240c-lo-que-queda	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1eg	scrum-1730-reproducir	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1eh	scrum-1051g-rojos-j1eh	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ei	scrum-1726-rojos-j1ei	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ej	scrum-1129e-clave-regimen-07	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ek	scrum-1730b-s2-y-31-dic	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1el	scrum-1442d-caso-en-staging	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1em	scrum-1732-medir-cobro-parcial	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1en	scrum-1129e-relevo-j1en	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1eo	scrum-1732-defecto-conocido	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ep	scrum-1129e-relevo-j1ep	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1eq	scrum-1063m-siguiente	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1er	scrum-1053-medir	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1es	scrum-1076-propuesta	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1et	scrum-1240d-mencion-pdf	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1eu	scrum-1054-suplido-al-sellar	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ev	scrum-1055b-caja-tests	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ew	scrum-1054b-porton-cero	1	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	NO borrado: commits fuera de origin: 1
+cobroflash-jv-j1ex	scrum-1442e-visto-en-staging	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ey	scrum-1076c-propuesta	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ez	scrum-1737-tarjeta-sin-iva	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1f0	scrum-1076d-plazos-servidor	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1f1	scrum-1445d-bordes-fiscales-zona	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1f2	scrum-1445e-bordes-fiscales-zona	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1f3	scrum-1076d-relevo-j1f3	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1f4	scrum-665e-relevo-j1f4	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1f5	scrum-1076d-relevo-j1f5	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1f6	scrum-665e-relevo-j1f6	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1f7	scrum-1445f-llamadores-zona	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1f8	scrum-665e-relevo-j1f8	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1f9	scrum-1076d-relevo-j1f9	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fa	scrum-1445f-relevo-j1fa	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fc	scrum-1445g-trinquete-y-mudo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fd	scrum-1732d-libro-por-tramos-u	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fe	scrum-665e-relevo-j1fe	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ff	scrum-1761a-anio-del-xml	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fg	scrum-1763-r1-total-del-desglose	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fh	scrum-1732d-relevo-j1fh	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fi	scrum-1756e-css-paquete-disputa	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fj	scrum-624w-qa-staging-modo-factura	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fk	scrum-1756j-panel-j1-sin-style-en-linea	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fl	scrum-1761c-anio-del-xml-por-zona-del-emisor	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fm	scrum-624y-a-en-la-r1	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fn	scrum-1771a-clave-del-marcador	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fo	scrum-1756j-relevo-j1fo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fp	scrum-624y-relevo-j1fp	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fq	scrum-624y-relevo-j1fq	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fr	scrum-1771b-base-imponible-por-tipo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fs	scrum-1771c-pieza-entera	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ft	scrum-1765g-bancos-1304-1330-al-catalogo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fu	scrum-1771c-relevo-j1fu	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fv	scrum-1765h-bancos-1333-1327-al-catalogo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fw	scrum-1765j-banco-1327-al-catalogo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fx	scrum-1771c-relevo-j1fx	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fy	scrum-1779a-que-emite-con-el-flag-on	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1fz	scrum-1780a-factura-desde-el-parte-medida	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ga	scrum-1780b-ddl-y-diseno-factura-desde-parte	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1gb	scrum-1779d-factura-sin-verifactu-con-sif-off	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1gc	scrum-1779d-relevo-j1gc	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1gd	scrum-1780c-factura-desde-parte	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1gf	scrum-1779d-relevo-j1gf	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1gh	scrum-1780c-relevo-j1gh	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1gi	scrum-1779d-relevo-j1gi	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1gj	scrum-1785-ocultar-datos-presupuesto	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1gk	scrum-1786a-subpartidas-diseno	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1gl	scrum-1780c-relevo-j1gl	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1gm	scrum-1785-relevo-j1gm	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1gn	scrum-1786b-cabeceras-fuera-de-factura	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1go	scrum-1779e-prueba-staging-qa	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1gp	scrum-1780c-relevo-j1gp	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1gq	scrum-1785b-whatsapp-con-nombre-comercial	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1gr	scrum-1779f-sin-aviso-falso-con-sif-off	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1gs	scrum-1786b-relevo-j1gs	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1gt	scrum-1779h-aviso-falso-en-albaranes	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1gu	scrum-1787a-facturas-como-presupuestos	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1gv	scrum-1788a-emisor-no-pisa-la-tabla	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1gw	scrum-1787b-ficha-de-factura	1	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	NO borrado: commits fuera de origin: 1
+cobroflash-jv-j1gx	scrum-1787c-ddl-direccion-cliente	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1gy	scrum-1787b-relevo-j1gy	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1gz	scrum-1787d-direccion-y-nif-en-factura	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1ha	scrum-1787e-conceptos-en-movil	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1hb	scrum-1787d-relevo-j1hb	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1hc	scrum-1787d-relevo-j1hc	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1hd	scrum-1787d-relevo-j1hd	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1he	scrum-1787f-ddl-vencimiento	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1hf	scrum-1785c-whatsapp-con-razon-social	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1hg	scrum-1786f1-total-del-apartado	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1hh	scrum-1787i-vencimiento-y-formas-de-pago	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1hi	scrum-1787k-lineas-con-descripcion-y-descuento	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1hj	scrum-1787l-notas-del-presupuesto-a-la-factura	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1hk	scrum-1787i-relevo-j1hk	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1hl	scrum-1787l-relevo-j1hl	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1hm	scrum-1787i-relevo-j1hm	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1hn	scrum-1787l-relevo-j1hn	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1ho	scrum-665e-relevo-j1ho	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1hp	scrum-1787m-pdf-vence-y-formas-de-pago	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1hq	scrum-1787n-lista-de-facturas	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1hr	scrum-1787o-enviada-tambien-por-correo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1hs	scrum-1787p-cobro-hereda-formas-de-pago	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1ht	scrum-1787i-relevo-j1ht	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1hu	scrum-1787m-relevo-j1hu	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1hw	scrum-665e-relevo-j1hw	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j1hx	scrum-1787r-prueba-staging-vencimiento	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1hy	scrum-1787s-formas-de-pago-por-defecto	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1hz	scrum-1787s-formas-de-pago-congeladas	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ia	scrum-1787t-vence-el-fecha-larga	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ib	scrum-1787s-congelar-formas-de-pago	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ic	scrum-1787v-pdf-factura-como-presupuesto	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1id	scrum-1787s-relevo-j1id	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ie	scrum-1787s-relevo-j1ie	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1if	scrum-1787w-pdf-factura-construido	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ig	scrum-1787x-vence-el-sin-cero	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ih	scrum-1787w-relevo-j1ih	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ii	scrum-1316l-medio-de-cobro-obligatorio-con-10	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ij	scrum-1787w-relevo-j1ij	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1ik	scrum-1532d-boton-cancelar-cobro-y-reenvio	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1il	scrum-1787z-guard-vence-el-entero	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1im	scrum-1779i-staging-formas-de-pago-congeladas	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j1in	scrum-1532d-relevo-j1in	2	1	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		True	False	True	NO borrado: sesion viva + commits fuera de origin: 2 + sucio: 1
+cobroflash-jv-j1io	scrum-1787w-relevo-j1io	1	1	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		True	False	True	NO borrado: sesion viva + commits fuera de origin: 1 + sucio: 1
+cobroflash-jv-j1ip	scrum-1316l-relevo-j1ip	1	5	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		True	False	True	NO borrado: sesion viva + commits fuera de origin: 1 + sucio: 5
+cobroflash-jv-j2	scrum-1400-asignar-no-es-un-permiso-alcance	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j2bf	scrum-1322b-literal-propuesto	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j2bg	scrum-1322c-literal-bot	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j2bh	scrum-1322d-sin-nombre	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2bi	scrum-1613-vale-acepta	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2bj	scrum-1573a-suprimido-sin-cobro	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2bk	scrum-1573b-suprimido-sin-cobro	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2bl	scrum-1568-portal-linea-con-descuento	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2bm	scrum-1615-mp-token-plataforma	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2bn	scrum-1624-portal-descuento-global	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2bp	scrum-1567b-portal-sin-facturas-en-receipt	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2bq	scrum-1502q-ancla-botflow	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2br	scrum-1624b-fila-descuento-global-sin-octopus	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2bs	scrum-1647a-csp-pago	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2bt	scrum-1631-fallo-wa-se-espera	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2bu	scrum-1647e-pago-en-navegador	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2bv	scrum-1436j-pago-de-la-factura	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2bw	scrum-1723b-css-pago	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2bx	scrum-1727-disputa-sin-factura	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2by	scrum-1723c-css-tarjeta-mp	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2bz	scrum-1727b-resena-ventana-horario	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2c0	scrum-1723e-tarjeta-mp-navegador	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2c1	scrum-1723c-al-dia-j2c1	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2c2	scrum-1719-baja-repetida-silencio	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2c3	scrum-1720-mp-failed-segunda-barrera	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2c4	scrum-1727-rojo-j2c4	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2c5	scrum-1735-paidat-fecha-del-cobro	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2c6	scrum-1732b-propuesta-cobros	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2c7	scrum-1732c-invoice-payments	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2c8	scrum-1732c-relevo-j2c8	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2c9	scrum-1732c-relevo-j2c9	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2d0	scrum-1732c-relevo-j2d0	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2d1	scrum-1756b-css-recibo-portal	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2d2	scrum-1756c-js-recibo-portal	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2d3	scrum-1005a-diseno-alter-adjuntos	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2d4	scrum-1756i-panel-j2-sin-style-en-linea	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2d5	scrum-1756i-relevo-j2d5-b	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2d6	scrum-1005a-relevo-j2d6	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2d7	scrum-1765f-banco-1326-al-catalogo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2d8	scrum-1732f-qa-staging-sin-avisos	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2d9	scrum-1005b-documentos-cliente-servidor	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j2da	scrum-1774a-bizum-por-flags-en-admin	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2db	scrum-1005c-textos-propuestos	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2dc	scrum-1765f-relevo-j2dc	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2dd	scrum-1005b-relevo-j2dd	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j2de	scrum-1778a-literal-media-1	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2df	scrum-1005d-pestana-documentos	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2dg	scrum-1732g-registro-sin-duplicados	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2dh	scrum-1005d-relevo-j2dh	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2di	scrum-1005d-relevo-j2di	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2dj	scrum-1005d-relevo-j2dj	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2dk	scrum-1005d-relevo-j2dk	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2dl	scrum-1778b-master-media-1	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2dm	scrum-1781-prefijo-y-tipo-de-cliente	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2dn	scrum-1784a-varios-tecnicos-borrador	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2do	scrum-1784a-relevo-j2do	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2dp	scrum-1783b-sin-selector-recargo-y-rotulo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2dr	scrum-1783b-relevo-j2dr	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2ds	scrum-1787h-pago-con-lineas	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2dt	scrum-1782b-rotulo-factura-como	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2du	scrum-1786g-portal-total-del-apartado	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2dv	scrum-1787q-pago-vence-el	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2dw	scrum-1781d-editar-cliente-con-prefijo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2dx	scrum-1787u-formas-de-pago-activas	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2dy	scrum-1787u-relevo-j2dy	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2dz	scrum-1756a-recibo-y-portal-sin-css-en-linea	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2ea	scrum-1532b-cancelar-cobro	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2eb	scrum-1316d-medio-de-cobro-medido	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2ec	scrum-1787y-pago-vence-el-sin-cero	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2ed	scrum-1316k-metodo-del-cargo-no-pagado	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2ee	scrum-1316m-registro-medicion-p2	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2ef	scrum-1532b-relevo-j2ef	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j2eg	scrum-1794-correo-con-lineas	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		True	False	True	NO borrado: sesion viva
+cobroflash-jv-j3bm	scrum-auditor-cierre-26oct-b	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j3bn	scrum-1577b-selects-y-color	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j3bo	(detached)	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j3bp	scrum-auditor-cierre-26oct-c	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j3br	scrum-1577c-enlace-44	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3bs	scrum-1105c-seed-ejercitado	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3bt	scrum-1498e-meta-guard-failure	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3bu	scrum-1551i-vinetas	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3bv	scrum-1405e-cuarto-saltado	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3bw	scrum-1405f-cuarto-desde-1574	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3bx	scrum-1616b-provincias-bilingues	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3by	scrum-1625-perdida-sube	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3bz	scrum-1625b-experimento-sonda-fuera	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3ca	scrum-1655b-puerta-1b-misma-unidad	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3cb	scrum-1647c-csp-login	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3cc	scrum-1647d-csp-alta	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3cd	scrum-1723d-css-login-alta	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3ce	scrum-1502s-marca-settings-submenus	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3cf	tz-produccion-j3cf	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3cg	scrum-1756d-css-publicas	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3ch	scrum-1756d-relevo-j3ch	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3ci	scrum-1756f-js-landing-precios	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3cj	scrum-1756g-censo-paso-3	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3ck	scrum-1756h-panel-j3-sin-style-en-linea	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3cl	scrum-1328x-tap-con-comillas	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3cm	scrum-1773a-trinquete-innerhtml	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3cn	scrum-1781b-prefijo-en-alta-y-ajustes	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3co	scrum-1781c-sin-ayuda-de-prefijo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3cq	scrum-1790-relevo-j3cq	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j3cr	scrum-914d-equipos-en-borrado-y-anonimizado	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j4	scrum-1403-el-tecnico-y-las-otras-dos-puertas	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j4ak	scrum-1039d-visto-bueno-j4	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j4al	scrum-1347b-filas-3-4	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j4am	scrum-1347c-master-filas	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j4an	scrum-1039e-arreglos-j4	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j4ao	scrum-524i-p25-titulo	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j4ap	scrum-1039f-comprobador-sobre-main	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4aq	scrum-870c-dos-firmantes	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4ar	scrum-1390y-inicio-por-rol	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4as	scrum-1551j-puerta-y-vivo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4at	scrum-1616-provincia-grafia	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4au	scrum-1567-factura-en-tres-superficies	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4av	scrum-665c-coste-opcion-a	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4aw	cierres-12nov-j4aw	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4ax	cierres-12nov-j4ax	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4ay	cierres-12nov-j4ay	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4az	cierres-12nov-j4az	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4ba	firmas-12nov-j4ba	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4bb	firmas2-12nov-j4bb	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4bc	cierres5-12nov-j4bc	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4bd	scrum-1502r-lo-que-queda	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4be	cierres6-12nov-j4be	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4bf	mantenimiento-dirty-13nov-j4bf	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4bg	cierres-7-j4bg	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4bh	cierres-8-j4bh	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4bi	mantenimiento-dirty-j4bi	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4bj	piloto1-p0-j4bj	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4bk	piloto1-p1-j4bk	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4bl	cierres-9-j4bl	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4bm	scrum-1502t-tres-comentarios	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4bn	cierres-j4bn	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4bo	digest-fundador-j4bo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4bp	cierres-j4bp	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4bq	scrum-624v-cierres-11-staging	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4br	scrum-624x-cierres-12-staging	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4bs	scrum-624z-cierres-13-staging	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4bt	scrum-1765e-bancos-j4-al-catalogo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4bu	scrum-1765i-bancos-1317-1338-al-catalogo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4bv	scrum-1765k-banco-1340-al-catalogo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4bw	scrum-1771d-cierres-14-staging	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4bx	scrum-1765i-bancos-1317-1338-j4bx	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4ca	scrum-1791-cierre-sprint-21nov	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4cb	scrum-1502k-las-28-marcas-sin-respaldo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j4cc	scrum-1566f-decisiones-traducidas	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		True	False	True	NO borrado: sesion viva
+cobroflash-jv-j5ao	scrum-1063i-regularizacion-bienes-inversion	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j5ap	scrum-524h-preguntas-p22-p25	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j5ar	scrum-1533b-notas-fechadas	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5as	scrum-1316g-convalidacion	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5at	scrum-1264q-asesor-12nov	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5au	dev-alter-12nov-j5au	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5av	asesor-desc-12nov-j5av	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5aw	scrum-1264r-preguntas-asesor-al-dia	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5ax	scrum-1129d-alter-regimen-congelado	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5ay	dev-alter-1129-j5ay	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5az	scrum-1264s-preguntas-12nov-tarde	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5bb	scrum-1076b-plazos-citados	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5bc	scrum-1264t-preguntas-16nov	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5bd	scrum-1264u-preguntas-1732-1054	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5be	scrum-1264v-lectura-69bis	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5bf	scrum-1264w-formato-libros-caja	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5bg	scrum-1316h-convalidacion-18nov	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5bh	scrum-1500i-banco-1500b-al-catalogo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5bi	scrum-1761b-anio-del-xml-norma	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5bj	scrum-1770a-literal-del-motivo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5bk	scrum-1770b-master-motivo-firmado	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5bl	scrum-1732e-r1-sin-cobro-en-recc	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5bm	scrum-1316a-medir-el-10-y-leer-el-rdl	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5bn	scrum-1783a-recargo-medido	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5bo	scrum-1779g-regla-24-nota-a8	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j5bp	scrum-1316c-rdl-26-2026-iva-10-medio-de-pago	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6	scrum-1154-privacidad-gemini-encargado	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j6-1092h	scrum-1092h-por-que-cayeron-las-seis	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j6-1099	scrum-1099-censo-ast-escritores-invoice	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j6-1101	scrum-1101-guard-acreditacion-flag-es	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j6-1109	scrum-1109-guard-acreditacion-programado	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j6cl	scrum-1599n-banco-ciego-hijo-prisma	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j6cm	scrum-1599o-medir-carrera-en-banco	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6cn	(detached)	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j6co	(detached)	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j6cp	scrum-1599p-lote-6a-banco	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j6cq	scrum-1599q-bisect-serie-f	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j6cs	(detached)	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j6ct	scrum-523e-nota-version-1-0-0	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6cu	scrum-1610-salida-cortada	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j6cv	scrum-1610b-salir-con-stdout-vacio	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6cw	scrum-1599s-lote-6b-serie-f	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6cx	(detached)	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j6cy	scrum-1611-banco-sin-carrera	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j6cz	scrum-1599t-los-dos-ultimos	0	0	carpeta			False	False	True	BORRABLE
+cobroflash-jv-j6da	(detached)	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j6db	scrum-1611b-barrera	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j6dc	(detached)	0	0	no-existe			False	False	True	BORRABLE
+cobroflash-jv-j6dd	scrum-1611c-scrum58-sin-carrera	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6df	scrum-1614-a122c-psp	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6dg	scrum-1527g-recuento	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6dh	scrum-1393g-vigia-27oct	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6di	scrum-1194d-metodo-a	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6dj	scrum-1194z-verificador-27oct	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6dk	scrum-1581-banco-pglite-casa	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6dl	scrum-1218i-disparo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6dm	scrum-1393g-cierre-con-ciegos-dichos	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6dn	scrum-1257z-verificador-2	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6dp	scrum-1396-censo-mkdtemp-por-variable	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6dq	scrum-1562z-verificador-3	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6dr	scrum-1218j-umbral-uno	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6ds	scrum-1612z-verificador-4	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6dt	scrum-1240z-verificador-5	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6du	scrum-1396d-lote-1-temporales	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6dv	scrum-1240b-trinquete-clave-regimen	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6dw	scrum-1396e-lote-2-temporales	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6dx	scrum-1252h-ancla-firma-correo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6dy	wip-1393g	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6dz	scrum-1547-datos-personales-por-esquema	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6ea	scrum-1547b-trinquete-clasificacion	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6eb	scrum-1387x-estado-y-decision	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6ec	medir-917-j6ec	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6ee	scrum-1581-pglite-socket	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6ef	suite-memoria-j6ef	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6eg	scrum-1743-un-tramo-por-comando	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6eh	scrum-1387y-sonda-bancos	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6ei	scrum-1765a-banco-1324-al-catalogo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6ej	scrum-1765b-los-que-quedan	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6ek	scrum-1765c-banco-1392-al-catalogo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6el	scrum-1765d-tmp-con-espacio-y-8-3	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6em	scrum-1581a-banco-pglite-de-la-casa	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6fa	scrum-1787g-instrumentos-ficha-y-viajes	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6fb	scrum-1787j-viajes-de-la-emision	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6fc	scrum-1789-guards-ciegos-en-ci	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6fd	scrum-1789b-ciego-es-rojo	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6fe	scrum-1789b-relevo-j6fe	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6ff	scrum-1765d-retirar-bancos-heredados	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		False	False	True	BORRABLE
+cobroflash-jv-j6fg	scrum-1793-borrar-arboles-viejos	0	0	Junction	C:\Users\Javier Pereira\cobroflash-backend\node_modules		True	False	True	NO borrado: sesion viva

@@ -1,0 +1,17 @@
+FACTURA
+Nº F260005
+Fecha: 23/11/2026
+Vence el 23 de diciembre de 2026
+Formas de pago: Bizum, Transferencia
+EMISORCLIENTE
+QA Staging S.L.
+Cliente QA sin avisos
+NIF/CIF: B12345674
+C/ Staging 1, 28000 Madrid
+qa@staging.yaqu
+CONCEPTOCANT.PRECIO UNITIVA %IMPORTE
+Prueba SCRUM-1779i formas de pago1,00100,0021%100,00
+Base imponible:100,00 EUR
+IVA 21%:21,00 EUR
+TOTAL:121,00 EUR
+Factura generada automáticamente por YaQu · yaqu.app

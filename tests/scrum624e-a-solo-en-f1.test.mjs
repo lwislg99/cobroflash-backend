@@ -64,7 +64,8 @@ async function bloque(type, total, lines) {
   assert.equal(r.ok, true, `🔴 NO SUPE LEER EL PDF: ${r.motivo}. Un papel sin leer no dice ningún importe.`);
   const t = r.lineas.map((l) => l.texto);
   const i = t.findIndex((x) => x.startsWith('Base imponible:'));
-  const j = t.findIndex((x) => /^TOTAL( COBRADO)?:/.test(x));
+  // SCRUM-1787w · literal FIRMADO en SCRUM-1787 c.22428 (GO c.22416): «Total factura:» sustituye a «TOTAL:»; el justificante conserva «TOTAL COBRADO:».
+  const j = t.findIndex((x) => /^(Total factura|TOTAL COBRADO):/.test(x));
   assert.ok(i >= 0 && j > i, '🔴 CIEGO: no encuentro el bloque de totales en el papel.');
   return t.slice(i, j + 1);
 }
@@ -75,7 +76,7 @@ async function bloque(type, total, lines) {
 
 test('SCRUM-624e · SUELO: una F1 que cuadra imprime su base, su cuota y su total', async () => {
   assert.deepEqual(await bloque('F1', '121.00', [L(100, 0.21)]),
-    ['Base imponible:100,00 EUR', 'IVA 21%:21,00 EUR', 'TOTAL:121,00 EUR'],
+    ['Base imponible:100,00 EUR', 'IVA 21%:21,00 EUR', 'Total factura:121,00 EUR'],
     '🔴 CIEGO: el lector no saca el bloque de la factura más simple.');
 });
 
@@ -85,7 +86,7 @@ test('SCRUM-624e · SUELO: una F1 que cuadra imprime su base, su cuota y su tota
 
 test('SCRUM-624e · ① F1: 3 × 9,99 al 21 % con 36,27 guardado imprime TOTAL 36,27, no 36,26', async () => {
   assert.deepEqual(await bloque('F1', '36.27', [L(9.99, 0.21), L(9.99, 0.21), L(9.99, 0.21)]),
-    ['Base imponible:29,97 EUR', 'IVA 21%:6,29 EUR', 'TOTAL:36,27 EUR'],
+    ['Base imponible:29,97 EUR', 'IVA 21%:6,29 EUR', 'Total factura:36,27 EUR'],
     '🔴 EL PAPEL DE LA F1 NO IMPRIME EL TOTAL GUARDADO (SCRUM-624): el de main imprimía 36,26.');
 });
 
@@ -96,7 +97,7 @@ test('SCRUM-624e · ① F1 con dos tipos: las cuotas son las del desglose y el T
     'ha cambiado el desglose de estas líneas: el caso ya no mide lo que dice');
   assert.deepEqual(await bloque('F1', '0.03', lines), [
     'Base imponible:0,03 EUR', 'Base imponible por tipo',
-    '21%0,02 EURIVA 21%:0,00 EUR', '10%0,01 EURIVA 10%:0,00 EUR', 'TOTAL:0,03 EUR',
+    '21%0,02 EURIVA 21%:0,00 EUR', '10%0,01 EURIVA 10%:0,00 EUR', 'Total factura:0,03 EUR',
   ], '🔴 la F1 de dos tipos no imprime el desglose del registro: el de main imprimía TOTAL 0,04.');
 });
 
@@ -125,6 +126,6 @@ test('SCRUM-624e · ② el justificante imprime EXACTAMENTE el bloque de totales
 
 test('SCRUM-624e · ③ CONTROL: 15,13 + 15,13 (SCRUM-1446) sigue con TOTAL 30,25, antes y después', async () => {
   assert.deepEqual(await bloque('F1', '30.25', [L(12.5, 0.21), L(12.5, 0.21)]),
-    ['Base imponible:25,00 EUR', 'IVA 21%:5,25 EUR', 'TOTAL:30,25 EUR'],
+    ['Base imponible:25,00 EUR', 'IVA 21%:5,25 EUR', 'Total factura:30,25 EUR'],
     'Ha cambiado el bloque de un caso que ya cuadraba: A no podía moverlo.');
 });

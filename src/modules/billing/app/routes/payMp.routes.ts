@@ -57,6 +57,8 @@ router.get('/mp/:token', async (req, res) => {
   if (comercioSuprimido(charge.merchant)) return res.status(404).send(documentNotFoundHtml()); // SCRUM-1573b
   if (charge.status === 'paid')    return res.redirect(`${BASE_URL}/pay/mp/${token}/result?status=approved`);
   if (charge.status === 'expired') return res.redirect(`${BASE_URL}/pay/mp/${token}/result?status=expired`);
+  // SCRUM-1532b: al recibo, no a «Cobro vencido», que no es lo que pasó.
+  if (charge.status === 'cancelled') return res.redirect(303, `/recibo/${token}`);
 
   const accessToken = (charge.merchant as any)?.mpAccessToken || config.MP_ACCESS_TOKEN;
   if (!accessToken) {

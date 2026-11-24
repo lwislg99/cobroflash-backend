@@ -1,0 +1,10 @@
+TEXTO:
+QA Staging S.L.
+✕
+Este cobro se ha cancelado.
+590,00 €
+Justificante J-20260916-93ZW
+Cobro #889 · Cliente: María López
+
+ACCIONES VISIBLES (0):
+

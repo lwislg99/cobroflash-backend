@@ -258,3 +258,100 @@ S2 · `public/dashboard/js/jobDetailView.js:3986` (hace falta aunque S1 esté ar
 - La suite entera por tramos: no cabe en el contexto de esta sesión (182k al empezar el registro); la corre el obligatorio de CI.
 - SCRUM-1780 (`facturaDesdeParte.ts`, de `jv-j1gp`): el fichero no está ni en `origin/main` ni en `scrum-1780b-ddl-y-diseno-factura-desde-parte` @ `df75c91fbe4b4ffb124ce45ea078170959760186`; no sé si devuelve el mismo `message`. No se toca desde aquí.
 - Postgres, staging y producción: nada.
+
+## SCRUM-1779i · 23-nov: prueba en STAGING — la factura emitida hoy desde el panel lleva «Formas de pago» en la ficha y en el PDF (J1, solo docs)
+
+**Medido contra:** `origin/main` = `27656eae71e62369a5e87f27ae40e82e5764211d` · 2026-11-23T21:30:30Z (cabecera `Date:` de `gh api -i zen`; sesión J1 `jv-j1im`, por encargo del orquestador `cobroflash-backend-2d`)
+
+A9: aviso → A10 «Una operación que no se ejecutó se lee exactamente igual que un éxito.» — no se pudo comprobar: mi guion de la emisión buscaba el id en `respuesta.invoice.id` y la respuesta lo trae en `factura.id`; imprimió `id undefined` y terminó sin error, sin capturas ni PDF. Lo vi al leer la salida y saqué las evidencias en una segunda pasada SIN emitir. Un guion de un solo uso contra staging no pasa por ningún guard del repositorio.
+
+**Qué se probó.** Staging (`yaqu-staging-production`) sirve `/health` = `27656eae…` = `origin/main`, que contiene `d05a4522` (1787s) y 1787t (#3327); 1787x no está en `main`. Cuenta QA (comercio 2) con el login de test por `page.request`, el secreto leído de `process.env` dentro de un guion de `node` (no pasó por el MCP de Playwright ni por ningún fichero que una herramienta devolviera). Chrome con contexto nuevo (`serviceWorkers:'block'`). Turno de staging (`turno-staging.mjs --base staging`, base `railway`) tomado a las 21:31:38Z y soltado a las 21:34:23Z; `estado` después: LIBRE. Flags del comercio leídos en la base, solo lectura, antes y después, idénticos y sin tocar: `INVOICING_ES_ENABLED=true`, `SIF_ENABLED=false`, `BIZUM_MANUAL_ENABLED=true`; IBAN sí, móvil Bizum sí, `connectStatus=none`.
+
+Desde el panel (Nueva factura → «Cliente QA sin avisos» → una línea de 100 € + 21 % → «Emitir factura») se emitió **F260005** (id 1980): `POST /admin/invoices` 201, `veriFactu:false`. El cuerpo de la petición NO traía `payMethods` (`{customerId, lines}`): las formas las congeló el servidor. Peticiones de escritura en las tres pasadas cuyo registro leí (la última exploración, la emisión y la de capturas): ese `POST` y el `POST /admin/entorno` que hace el panel al cargar. Las dos primeras exploraciones (sin pulsar «Emitir») no las leí: su registro se sobrescribió. **Ningún envío por WhatsApp ni correo.**
+
+| qué | esperado | visto |
+|---|---|---|
+| `payMethods` de F260005 (API y base) | las activas del comercio QA, sin `card` | `["bizum","transfer"]` |
+| Ficha · «Formas de pago» (1280 y 390) | sale, con Bizum y transferencia | «Formas de pago · Bizum, Transferencia» |
+| Ficha · «Vence el» | sale | «23 dic 2026»; `dueDate` 2026-12-23T21:33:37Z = `createdAt` + 30 días |
+| PDF · texto (`tests/_texto-del-pdf.mjs`, 17 líneas) | «Formas de pago» y «Vence el 23 de diciembre de 2026» | «Formas de pago: Bizum, Transferencia» y «Vence el 23 de diciembre de 2026» (fecha larga de 1787t; sin 1787x, así que no se pudo ver el día sin cero) |
+| Control: F260004 (de esta mañana, 1787r) | sigue SIN formas de pago (regla 29) | `payMethods = null`; ficha sin la fila; PDF de 16 líneas sin «Formas de pago» |
+| Página pública de pago | — | NO vista: exige Enviar (encargo) |
+
+**Evidencias** (`docs/master/evidencias/SCRUM-1779/1779i/`), miradas una a una: `01-ficha-F260005-1280.png` y `02-ficha-F260005-390.png` (COBRO con «Vence el» y «Formas de pago»), el texto del PDF de F260005 `03-F260005-texto.txt` (el `.pdf` no se versiona: su cuerpo comprimido trae `\r` sin ningún NUL y `tests/scrum480-fin-de-linea.test.mjs` lo cuenta como blob de texto con CR; se arregla el fichero, no el guard), `04-control-F260004-1280.png` (COBRO solo con «Vence el») y `05-control-F260004-pdf-texto.txt`.
+
+**Visto de paso, no es de este encargo:** la barra de estado de las dos facturas marca «Enviada» como paso actual aunque ninguna se ha enviado. No lo he investigado ni tocado; se lo paso al orquestador.
+
+**NO medido:** yaqu.app (el login de test solo existe en staging); la página de pago; una imagen del PDF renderizado (va solo su texto; el `.pdf` se retiró del PR por el guard SCRUM-480); los otros caminos de 1787s (factura tras cobrar, presupuesto con lista, los cinco de S1); la suite de tests: cambio solo de docs, corrí los guards de docs y `guards:entrada`.
+
+## SCRUM-1779l · 24-nov: prueba en STAGING — el PDF de una factura que vence un día de una cifra dice «5 de diciembre», sin cero (J1, solo docs)
+
+**Medido contra:** `origin/main` = `f8dc0244675d00709b896101b97c89bd22468923` · 2026-11-24T02:27:53Z (cabecera `Date:` de `gh api -i zen`; sesión J1 `jv-j1ix`, relevo de `jv-j1iw`, por encargo del orquestador `cobroflash-backend-2d`)
+
+A9: aviso → A10 «Un rojo sin población no es un hallazgo: es un instrumento que no llegó a arrancar.» — no se pudo comprobar: lancé el guion de Playwright desde la carpeta temporal y salió «FALTA el secreto» (salida 2); el secreto no faltaba: el cargador de entorno lo busca a partir del directorio de trabajo, y fuera del árbol no lo encontró. Lo relancé desde el árbol y entró. No se emitió nada en la pasada fallida (corta antes del navegador). Un guion de un solo uso contra staging no pasa por ningún guard del repositorio.
+
+**Qué se probó.** Staging sirve `/health` = `f8dc0244…` = `origin/main`, que contiene 1787x y `42cae6109` (1779i). Cuenta QA (comercio 2), login de test por `page.request` con el secreto leído de `process.env` dentro de un guion de `node` (no pasó por el MCP de Playwright ni se imprimió). Chrome con contexto nuevo (`serviceWorkers:'block'`). Turno de staging (`turno-staging.mjs --base staging`, base `railway`): a las 02:24:20Z lo tomó `scrum-1779m-staging-cancelar-cobro` y no se rompió; lo tomé a las 02:27:26Z y lo solté tras la emisión y las capturas (`soltar` salida 0, «marcador limpio»). Flags del comercio leídos en la base, solo lectura, antes y después, idénticos y sin tocar: `INVOICING_ES_ENABLED=true`, `SIF_ENABLED=false`, `BIZUM_MANUAL_ENABLED=true`.
+
+Se emitió por API, sin pasar por el formulario, `POST /admin/invoices` con `{ customerId: 3936 («Cliente QA sin avisos»), lines: [100 € + 21 %], dueDate: '2026-12-05' }` → 201, **F260006** (id 1981), `veriFactu:false`. **El servidor respetó el `dueDate`** del cuerpo (no aplicó +30 días). **Ningún envío por WhatsApp ni correo**: no se pulsó «Enviar».
+
+| qué | esperado | visto |
+|---|---|---|
+| `dueDate` de F260006 (API) | 2026-12-05, no `createdAt` + 30 | `2026-12-05T00:00:00.000Z` (`createdAt` 2026-11-24T02:27:44Z) |
+| PDF de F260006 · texto (`tests/_texto-del-pdf.mjs`, 17 líneas) | «Vence el 5 de diciembre de 2026», sin «05» | «Vence el 5 de diciembre de 2026»; «05 de» aparece 0 veces en el texto de los dos PDF |
+| Ficha de F260006 · fila «Vence el» (1280 y 390) | sale | «05 dic 2026» (formato corto de la ficha, con cero; ver abajo) |
+| Control: PDF de F260005 (id 1980, de 1779i) | sigue «Vence el 23 de diciembre de 2026» | «Vence el 23 de diciembre de 2026»; ficha «23 dic 2026» |
+| Enlace público de pago sin enviar | — | NO buscado ni usado (exige Enviar; encargo) |
+
+**Evidencias** (`docs/master/evidencias/SCRUM-1779/1779l/`), miradas: `ficha-1981-1280.png` y `ficha-1981-390.png` (COBRO: «Vence el 05 dic 2026», «Formas de pago · Bizum, Transferencia»), `control-ficha-1980-1280.png`, el texto de los dos PDF (`F-1981-texto.txt`, `control-F-1980-texto.txt`; los `.pdf` no se versionan: `tests/scrum480-fin-de-linea.test.mjs`), `emision-respuesta.txt` y `salida-de-la-prueba.txt`.
+
+**Visto, no juzgado:** la ficha escribe la fecha en formato corto con cero («05 dic 2026»), distinto del largo del PDF. Si 1787x debía cubrir también la ficha, no lo sé: no he leído su enunciado (el encargo pedía el PDF). Se lo paso al orquestador.
+
+**NO medido:** yaqu.app; la página pública de pago; una imagen del PDF renderizado (va solo su texto); la fila de F260006 en la base (mi lector de solo lectura falló en esa consulta por un nombre de columna; el `dueDate` sale de la API); la suite de tests: cambio solo de docs, corrí los guards de docs y `guards:entrada`.
+## SCRUM-1779m · 24-nov: prueba en STAGING — cancelar un cobro por la ruta de SCRUM-1532b y ver el recibo público (J1, solo docs)
+
+**Medido contra:** `origin/main` = `f8dc0244675d00709b896101b97c89bd22468923` · 2026-11-24T02:24:04Z (cabecera `Date:` de `gh api -i zen`; sesión J1 `jv-j1iy`, relevo de `jv-j1iw`, por encargo del orquestador `cobroflash-backend-2d`)
+
+A9: aviso → cicatriz J1 «Cancelé en staging el cobro 889 mirando solo el estado del cobro; su justificante ya constaba pagado y lo vi DESPUÉS, en la ficha» — no se pudo comprobar: el guion de un solo uso que elige la fila vive fuera del repositorio y ningún guard ve qué cobro elige ni qué dice su documento
+
+**Qué se probó.** Staging (`yaqu-staging-production`) sirve `/health` = `f8dc0244…` = `origin/main`, que contiene `5de5441c` (#3332, SCRUM-1532b). Cuenta QA (comercio 2) con el login de test por `page.request`; el secreto, leído de `process.env` dentro de un guion de `node`, no pasó por el MCP de Playwright ni por ningún fichero que una herramienta devolviera. Chrome con contexto nuevo (`serviceWorkers:'block'`). Turno de staging (`turno-staging.mjs --base staging`, base `railway`) tomado a las 02:24:20Z y soltado a las 02:26:24Z; `estado` después: LIBRE. Flags del comercio leídos en la base (solo lectura), sin tocar: `INVOICING_ES_ENABLED=true`, `SIF_ENABLED=false`, `BIZUM_MANUAL_ENABLED=true`. De los 9 cobros `pending` del comercio 2 (889–897) se usó el más antiguo, **889** (590,00 €, justificante J-20260916-93ZW, documento id 1966); no se creó ninguno. Única escritura de la prueba: los dos `POST /admin/charges/889/cancel` (más el `POST /admin/entorno` que hace el panel al cargar). **Ningún envío por WhatsApp ni correo**; no se pulsó «Enviar» ni «Reenviar». El token del recibo no está en ninguna evidencia (recuento por bytes sobre los 8 ficheros: 0; control positivo, el fichero temporal que lo guarda: 1).
+
+| qué | esperado | visto |
+|---|---|---|
+| Recibo ANTES (1280 y 390) | ofrece pagar | «Pago pendiente», botón «Pagar por transferencia» (1 acción visible) |
+| `POST /admin/charges/889/cancel` | `{ ok: true, status: 'cancelled' }` | 200 `{"ok":true,"status":"cancelled"}`; en la base `status=cancelled`, `updated_at` 02:25:35 |
+| Recibo DESPUÉS (1280 y 390) | «Este cobro se ha cancelado.» y sin pago | «✕ Este cobro se ha cancelado.», 0 botones ni enlaces visibles |
+| Ficha del documento del cobro | etiqueta «Cobro cancelado» (SCRUM-1532d) | NO está: #3340 (`scrum-1532d-boton-cancelar-cobro-y-reenvio`) sigue ABIERTO y staging sirve `f8dc0244`; la ficha no dice nada del cobro cancelado (0 apariciones de «cancel») |
+| Repetir el `POST` | `yaEstaba: true` | 200 `{"ok":true,"status":"cancelled","yaEstaba":true}` |
+
+**Evidencias** (`docs/master/evidencias/SCRUM-1779/1779m/`), miradas una a una: `01-recibo-antes-1280.png`, `02-recibo-antes-390.png`, `03-recibo-despues-1280.png`, `04-recibo-despues-390.png`, `05-ficha-justificante-J-20260916-93ZW-1280.png`, el texto y las acciones visibles del recibo antes y después (`06-…`, `07-…`, con el token tapado) y `08-resultado.json`.
+
+**Lo que encontré y no esperaba — el documento del cobro ya constaba pagado.** La ficha de J-20260916-93ZW dice «PAGADA · 📲 Bizum (confirmado a mano) · 16/9/2026», y en la base el documento 1966 es `type=JUST`, `status=paid`, `paid_via=bizum_manual`, mientras el cobro 889 estaba `pending`. La ruta lo canceló igual: solo mira `charges.status`. Cruce de los 9 (solo lectura): los 9 documentos son justificantes (`JUST`), no facturas, y **4 de 9** constan `paid` con su cobro `pending` (889, 890, 891, 893; solo 889 con `paid_via`). La «decisión 2» que cita la ruta («la factura se queda pendiente de cobro») da por hecho un documento pendiente; con uno pagado el resultado es un recibo «cancelado» y un justificante «pagado» del mismo cobro. No sé de dónde salen esos datos de staging ni si se pueden dar en producción: no lo he investigado. Se lo paso al orquestador; no lo he tocado.
+
+**Visto de paso, no es de este encargo:** el recibo ANTES dice «Puedes completarlo usando el botón de pago por banco que aparece más arriba», y el botón está DEBAJO del texto (las dos capturas). Texto que ve el usuario: no lo toco; se lo paso al orquestador.
+
+**NO medido:** yaqu.app (el login de test solo existe en staging); la etiqueta de 1532d (no está en `main`); la página `/pay/bank/` después de cancelar (no la abrí); un cobro con un documento `pending` (elegí el 889 por la orden, y lo vi pagado DESPUÉS de cancelarlo); la suite de tests: cambio solo de docs, corrí los guards de docs y `guards:entrada`.
+
+## SCRUM-1779n · 24-nov: prueba en STAGING — la ficha de F260006 dice «5 dic 2026», y «Cancelar cobro» no sale en un justificante pagado; la ruta da 409 `document_already_paid` (J1, solo docs)
+
+**Medido contra:** `origin/main` = `c3051127c94854ac296638bbffad0fc665d150ca` · 2026-11-24T06:52:49Z (cabecera `Date:` de `gh api -i zen`; sesión J1 `jv-j1ji`, por encargo del orquestador `cobroflash-backend-2d`)
+
+A9: aviso → A10 «Un rojo sin población no es un hallazgo: es un instrumento que no llegó a arrancar.» — no se pudo comprobar: mi primera pasada de ② buscó el menú «⋯» por su nombre accesible, no casó y se agotó a los 30 s sin abrir el menú; leída a secas, decía «no hay botón». No se pulsó nada (no hubo ningún `POST` de cancelar). La repetí buscando por el texto visible, y el «sin botón» solo vale porque lo acompaña un control positivo (la 1974, donde el mismo instrumento SÍ lo ve). Un guion de un solo uso contra staging no pasa por ningún guard del repositorio.
+
+**Qué se probó.** Staging (`yaqu-staging-production`) sirve `/health` = `c3051127…` = `origin/main` a las 06:50Z, que contiene `d47f8d5cf` (#3340, SCRUM-1532d), #3350 (SCRUM-1800) y #3351 (SCRUM-1802). Cuenta QA (comercio 2) con el login de test por `page.request`; el secreto, leído de `process.env` dentro de un guion de `node`, no pasó por el MCP de Playwright ni por ningún fichero que una herramienta devolviera. Chrome con contexto nuevo (`serviceWorkers:'block'`). Turno de staging (`turno-staging.mjs --base staging`, base `railway`) tomado a las 06:50:02Z y soltado antes de las 06:53:33Z; `estado` después: LIBRE. Flags del comercio 2 leídos en la base (transacción `READ ONLY`) antes y después, sin tocar: `INVOICING_ES_ENABLED=true`, `SIF_ENABLED=false`, `BIZUM_MANUAL_ENABLED=true`. Única petición que escribe: el `POST /admin/charges/890/cancel` (más el `POST /admin/entorno` que hace el panel al cargar). **Ningún envío por WhatsApp ni correo**; no se pulsó «Enviar» ni «Reenviar». Ninguna evidencia lleva el token del recibo (son capturas de la ficha, que no lo pinta).
+
+| qué | esperado | visto |
+|---|---|---|
+| ① Ficha de F260006 (id 1981, `due_date` 2026-12-05), 1280 y 390 | «Vence el · 5 dic 2026», sin «05» | «Vence el» / «5 dic 2026» en el texto de la ficha; «05 dic»: 0 apariciones; a 390 la fila «Vence el 5 dic 2026» en pantalla (captura 02) |
+| ② Documento del cobro 890 | — | id **1967**, `J-20260916-4GEN`, `type=JUST`, `status=paid`, `paid_at` 2026-09-16T14:00:47Z; cobro 890 `pending` |
+| ② «Cancelar cobro» en la ficha de la 1967 | si consta pagada, no sale (#3340 lo oculta por `status`) | NO sale: «⋯» abierto, 0 botones «Cancelar cobro» (captura 03). Lo oculta `invoiceActionsRegistry.js:53` (`paid: 'oculta'`) |
+| ② Lo mismo en 891 (id 1969) y 893 (id 1970) | igual | las dos `paid` con su cobro `pending`; 0 botones en las dos |
+| ② Control positivo: 1974 (`J-20260917-UYIC`, `pending`, cobro 897 `pending`) | el botón SÍ sale | sale «Cancelar cobro» en el «⋯» (1 botón, captura 04); no se pulsó |
+| ② `POST /admin/charges/890/cancel`, mandado directamente desde la sesión del navegador (la ficha no lo ofrece) | 409 `document_already_paid` | **409 `{"error":"document_already_paid"}`** a las 06:52:49Z |
+| ② El cobro después | sigue `pending` | 890, 891 y 893 `pending`, `updated_at` sin cambios (16-sep); la lectura antes y después es idéntica byte a byte |
+| ② Mensaje en pantalla al pulsar | genérico «Error actualizando estado: inténtalo de nuevo» (visto antes de #3355) | **NO SE PUDO VER**: con los tres cobros del encargo el botón no sale, así que la interfaz no llega a pedir el 409. Por qué pintaría ese texto se LEE en `invoiceDetailView.js` (cualquier `error` distinto de `charge_not_pending`); en pantalla, no comprobado |
+
+**Evidencias** (`docs/master/evidencias/SCRUM-1779/1779n/`): `01-ficha-F260006-1280.png`, `02-ficha-F260006-390.png`, `03-ficha-J-20260916-4GEN-menu-sin-boton-1280.png`, `04-control-positivo-J-20260917-UYIC-menu-con-boton-1280.png`. He mirado la 02, la 03 y la 04; la 01 no (su texto sí: lo leí del DOM).
+
+**Visto de paso, no es de este encargo:** en el «⋯» de la 1967, un justificante PAGADO, sigue saliendo «Marcar como cobrada» (captura 03). No lo he investigado; se lo paso al orquestador.
+
+**NO medido:** yaqu.app (el login de test solo existe en staging); el mensaje en pantalla tras el 409 (fila de arriba); qué hace #3355, que no está en `main`; la suite de tests: cambio solo de docs, corrí los guards de docs y `guards:entrada`.

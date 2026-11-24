@@ -880,6 +880,11 @@ function renderSettingsView(container) {
       );
       caja.appendChild(aviso);
       campo.classList.add("input-error");
+      // SCRUM-1790 · el panel desplaza con `scroll-behavior: smooth`: el salto que hace el navegador
+      // hasta el campo inválido era animado, y durante ~400 ms el aviso seguía fuera de la pantalla.
+      // Sin animación y antes de que valide, la CAJA entera (rótulo, campo y aviso): con solo el aviso,
+      // el campo quedaba bajo la barra superior y el navegador volvía a desplazar, animado (medido).
+      caja.scrollIntoView({ block: "nearest", behavior: "instant" });
       const limpiar = () => {
         aviso.remove();
         campo.classList.remove("input-error");

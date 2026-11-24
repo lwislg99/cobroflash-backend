@@ -189,3 +189,156 @@ completa no se corrió: no hay código ni test nuevo.
 | ⑤ qué existe que se parezca | apartado 4 ⑤ |
 | un positivo y un cero derivado | «Los controles» y `docs/master/evidencias/scrum1532/puertas-salida.txt` |
 | construir la cancelación | NO HECHO → pide GO del fundador y dos decisiones suyas (apartado 4 ④) |
+
+# SCRUM-1532b · Cancelar un cobro: la ruta, el recibo y las páginas públicas
+
+**Medido contra:** `origin/main` = `4aeac0f6c1f5a63b97b009a1c1b3ebc93c973e3e` · 2026-11-23T21:04:07Z
+
+A9: comprobación → `tests/scrum1532b-cancelar-cobro.test.mjs`
+A9: comprobación → `tests/scrum1415-nombres-construidos.test.mjs`
+Mutaciones: catálogo → `tests/scrum1532b-cancelar-cobro.test.mjs`
+
+23-nov-2026 · sesión `jv-j2ea` (J2). GO, dos decisiones y tres textos firmados: SCRUM-1532 `c.22430`;
+auditoría y vista: `c.22435`. [Escrito por la sesión, no por Javier.]
+
+**Qué entra.** `POST /admin/charges/:id/cancel` (`chargesAdmin.routes.ts`): sólo administrador, sólo
+desde `pending`, idempotente (`cancelled` → 200 `yaEstaba`), 409 `charge_not_pending` desde cualquier
+otro estado, `pending` y el comercio DENTRO del `where` (P2025 → el mismo 409), no toca la factura ni
+crea `Event` (el recibo pinta los tipos de evento: sería texto sin firma). El recibo de un cobro
+`cancelled` dice `Este cobro se ha cancelado.` y no ofrece pagar (antes caía a «Pago pendiente»).
+`/pay/invoice`, `/pay/bizum`, `/pay/bank` y `/pay/mp` mandan un cobro cancelado al recibo.
+
+**Decisiones de c.22430, medidas:** ① un `payment.confirmed` sobre un cobro `cancelled` lo deja
+pagado, como hoy (`psp.routes.ts` no mira el estado anterior); no hace falta aviso nuevo para que
+ocurra. ② cancelar no escribe la factura: se queda pendiente. ⚠️ **Pero «el profesional puede crear
+otro cobro» NO se cumple hoy:** el reenvío reutiliza `invoice.chargeId` sin mirar su estado
+(`invoiceWhatsApp.service.ts:56`, carril J1), así que mandaría el enlace cancelado. Cambiar la
+factura para soltar el cobro sería editar una factura emitida (regla 29): no lo hago.
+
+**Lo que NO entra:** la fila de auditoría (clave `cobro_cancelado` aprobada en c.22435, la añade S1 en
+`audit.service.ts`; el test la declara como falta y cae cuando exista → 1532c); el botón y su
+confirmación (`invoiceDetailView.js` es de J1, `jobDetailView.js` de S2); el recordatorio de 7/14
+días y el portal, que miran la factura (§1). Sin capturas: lo único visual de J2 es el recibo y no me
+cupo en contexto. La suite entera no se corrió en local: la corre el obligatorio.
+
+| aceptación (c.22430) | dónde se ve |
+| --- | --- |
+| GO: única transición `pending → cancelled`; `failed`/`expired` no | `tests/scrum1532b-cancelar-cobro.test.mjs` (① desde `pending`; 409 desde `paid`, `failed`, `expired`) |
+| idempotente, estado en el `where` | mismo test (idempotente; P2025; mutación del `where` lo tumba) |
+| decisión 1: dinero en un cobro cancelado → pagado | mismo test (④ decisión 1) |
+| decisión 2: la factura se queda pendiente | mismo test (④ decisión 2) · «crear otro cobro»: NO HECHO → J1 (`invoiceWhatsApp.service.ts:56`) |
+| botón `Cancelar cobro` y su confirmación | NO HECHO → J1 (`invoiceDetailView.js`) y S2 (`jobDetailView.js`) |
+| recibo `Este cobro se ha cancelado.` | mismo test (③ recibo; mutación lo tumba) |
+| auditoría | NO HECHO → 1532c, tras la clave de S1 (caso «FALTA DECLARADA») |
+
+**Trinquete SCRUM-1185:** la ruta nueva no la consume ninguna pantalla todavía (el botón es de J1/S2), así que
+queda declarada en `scripts/_sin-consumir-declarados.json` (carril J2, SCRUM-1532); se mueve a `retiradas`
+cuando entre el botón.
+
+**Lo que me salió mal:** declaré la mutación del `where` con un `cae` que no era subcadena del nombre
+del test y `aplicarUna` la dio CIEGA; corregido y repetido (las dos tumban). Y crucé el tope de
+contexto del encargo (190k) sin dejar la vista traspasada a tiempo: me medí a 188.918.
+
+# SCRUM-1532d · Cancelar un cobro: el botón en la ficha de factura y el reenvío con cobro cancelado
+
+**Medido contra:** `origin/main` = `27656eae71e62369a5e87f27ae40e82e5764211d` · 2026-11-23T21:36:19Z
+
+A9: comprobación → `tests/scrum1532d-cancelar-cobro-ficha-y-reenvio.test.mjs`
+**Skill UI:** cargada
+
+23-nov-2026 · sesión `jv-j1ik` (J1). GO, decisiones y literales: SCRUM-1532 `c.22430`; reparto: `c.22435`;
+la ruta de J2: `c.22441` (rama `scrum-1532b-cancelar-cobro`, fusionada en esta). [Escrito por la sesión, no por Javier.]
+
+**Qué entra.**
+- Ficha de factura (`invoiceDetailView.js`): `Cancelar cobro` en el «⋯», SOLO con la factura `pending` y su
+  cobro `pending`; pide `¿Cancelar este cobro? El cliente ya no podrá pagarlo con este enlace.` y llama a
+  `POST /admin/charges/:id/cancel`. Tras cancelar, la ficha se repinta y el botón ya no está. Registro de
+  acciones: `btnCancelarCobro` (overflow en `pending`, oculta en el resto).
+- `GET /admin/invoices/:id` lleva `estadoDelCobro` (solo lectura, `findFirst` con `merchantId`, regla 2).
+- Reenvío (`invoiceWhatsApp.service.ts`): si el cobro de la factura está `cancelled`, crea OTRO y la factura
+  apunta al nuevo (decisión 2). Con `pending`, `paid`, `expired` o `failed`, como hoy (reutiliza). La escritura
+  `invoice.update({ chargeId })` es la que ya existía para una factura sin cobro: no se añade ninguna.
+- `scrum283-censo-acciones-factura` (9 → 10) y `scrum283-microcopy-marcador` (rótulo aprobado): una acción
+  nueva es una decisión, y está firmada en `c.22430`. Se cambia el VALOR esperado; los nombres de los tests no.
+
+**Textos.** Solo los firmados. Los errores reutilizan dos que la ficha ya pinta: `Este cobro ya no está
+pendiente.` (409) y `Error actualizando estado: inténtalo de nuevo` (el resto).
+
+| aceptación (c.22430 / encargo) | dónde se ve |
+| --- | --- |
+| botón `Cancelar cobro` SOLO con el cobro `pending` | `tests/scrum1532d-cancelar-cobro-ficha-y-reenvio.test.mjs` ① · capturas `evidencias/scrum1532/1532d-menu-con-cancelar-{escritorio,movil}.png` |
+| confirmación literal y llamada a la ruta | mismo test ① · guion `evidencias/scrum1532/capturas-1532d.js` (exige el diálogo literal y el POST) |
+| tras cancelar, la ficha refleja el estado | el botón desaparece: `1532d-menu-tras-cancelar-{escritorio,movil}.png`. **Sin texto nuevo:** la ficha no pinta nada propio para un cobro no vivo (tampoco hoy para `expired`/`failed`); el bloque «Cobro» sigue con su importe. NO HECHO → pregunta al fundador |
+| decisión 2: «puede crear otro cobro» (reenvío) | mismo test ② |
+| con cobro `pending` el reenvío reutiliza, como hoy | mismo test ② control |
+
+**Medido:** test nuevo 8/8 (visto ROJO antes: 5 de 8; los 3 verdes eran los controles de «como hoy») ·
+dirigida corta 115 casos (1532d, 1532b, 1787b, 1787p, 1514, 1304, 283×3, 1773, 878, 1185): 113/115 con los
+dos de 283 en rojo, arreglados arriba; repetidos con 402 y 412: 43/43, 0 saltados · `tsc -p .` con tipos,
+salida 0 · capturas a 1280 y 390, miradas.
+**No medido:** las mutaciones (declaradas en `MUTACIONES_QUE_ME_TUMBAN`, NO corridas con `aplicarUna`: no
+cupo en contexto; las juzga el meta-guard de CI) · la dirigida larga del encargo (836, 700, 710b, 719,
+1157/1215/1415, 810, 1294, 267, 273, 525d, 854) salvo lo que corra `guards:entrada` · la suite entera (la
+corre el obligatorio) · yaqu.app.
+
+**Lo que me salió mal:** crucé 190k (el tope del encargo) y 200k antes de cerrar: avisé a 202.740.
+Mi primer banco de la vista no veía el «⋯» (sus acciones se pintan al abrirlo) y daba «no se pinta» en
+verde por vacío; lo cazó el caso positivo, y el test ahora abre el menú y exige ver «Ver la reclamación del banco».
+
+# SCRUM-1532e · Etiqueta «Cobro cancelado» en la ficha, y lo que cambia de 1532d al ponerlo al día con main
+
+**Medido contra:** `origin/main` = `42cae61092ba69761d6d7bba0504abe6baee1e52` · 2026-11-24T01:35:19Z
+
+A9: comprobación → `tests/scrum644-trinquete-mensaje-crudo.test.mjs`
+A9: comprobación → `tests/scrum719-el-suelo-de-los-doce.test.mjs`
+A9: comprobación → `tests/scrum289-censo-origen-factura.test.mjs`
+Mutaciones: catálogo → `tests/scrum1532d-cancelar-cobro-ficha-y-reenvio.test.mjs`
+Mutaciones: una vez → `docs/master/evidencias/scrum1532/mutar-1532e.mjs`
+**Skill UI:** cargada
+
+24-nov-2026 · sesión `jv-j1in` (J1), relevo de `jv-j1ik`. Firma de la etiqueta: SCRUM-1532 `c.22455`; GO y
+literales de 1532d: `c.22430`. [Escrito por la sesión, no por Javier.]
+
+**Puesta al día.** `git merge origin/main` en la rama (1532b ya estaba en main por #3332): entró SIN conflictos.
+
+**Los rojos del obligatorio de #3340 (run 45272461101), arreglados:**
+- `scrum644` (invoiceDetailView.js 5 > techo 4): arreglo de CÓDIGO. El fallo de cancelar ya no pinta
+  `e.message`: pinta uno de los dos literales que la ficha ya usaba (`Este cobro ya no está pendiente.` /
+  `Error actualizando estado: inténtalo de nuevo`), también si `fetch` lanza. El techo no se toca. Caso nuevo
+  en el test de 1532d con un `message` sembrado (`ZZCRUDO`) que no puede aparecer.
+- `scrum285-censo-cobro-factura` ×2: 4 → 5 acciones-cobro (`btnCancelarCobro→Cobros`, firmada en c.22430) y
+  la mutación del endpoint 3 → 4. Cita en la línea; nada más del guard.
+- `scrum707` ×2: `pending` y `factura|pending` incorporan `btnCancelarCobro` con la cita. Ningún otro estado lo
+  ofrece: la mutación que lo pone en `paid` tumba el control positivo (guion de arriba).
+- `scrum1185` (no salía en aquel run; sale al fusionar main, que trae la declaración de J2): la ruta ya tiene
+  consumidor y su declaración en `scripts/_sin-consumir-declarados.json` pasa a `retiradas`. **Cruce de
+  carril declarado:** el fichero es de S0; lo muevo porque su propia línea decía «se mueve a retiradas en ese
+  PR» (el del botón) y es la única forma de que este PR salga verde. Una línea, nada más.
+
+**1532e.** Con `estadoDelCobro === 'cancelled'`, el bloque «Cobro» de la cabecera pinta la etiqueta
+`Cobro cancelado` (pill neutra `status-pill-draft` del inventario; como toda pill, se ve en mayúsculas por CSS).
+
+| aceptación | dónde se ve |
+| --- | --- |
+| `Cobro cancelado` con el cobro cancelado (c.22455) | `tests/scrum1532d-cancelar-cobro-ficha-y-reenvio.test.mjs` (SCRUM-1532e, dos casos) |
+| no se pinta con otro estado ni sin cobro | mismo test |
+| el fallo de cancelar no pinta texto del servidor | mismo test · `tests/scrum644-trinquete-mensaje-crudo.test.mjs` |
+
+**Medido:** 1532d+e 11/11, con 285, 644 y 707: 37/37, 0 saltados · mutaciones 7 de 7 tumban (6 del catálogo y
+la de 707) · `tsc -p .` con tipos, salida 0 (tras el merge; mis cambios son solo `public/` y `tests/`).
+**No medido:** la dirigida larga del encargo (1532b, 1787b, 1773, 836, 700, 710b, 719, 1157/1215/1415, 810,
+1294, 267, 273, 525d, 854) salvo lo que corre `guards:entrada` · la suite entera (la corre el obligatorio) ·
+capturas de la etiqueta · yaqu.app.
+
+**Lo que me salió mal:** edité `invoiceDetailView.js` antes de cargar la skill `yaqu-premium-ui` (la cargué tras
+el primer Edit; la misma forma que la cicatriz de SCRUM-1787l). Y pasé el 170k del encargo sin medirme entre
+Jira (134.316) y el primer test: avisé a 181.256.
+
+**24-nov-2026 · relevo `jv-j1jb` (J1): merge de main resuelto en `invoicesAdmin.routes.ts`.** #3340 estaba DIRTY tras
+#3336 (1316l) y #3343. El encargo decía main `44007fdaa`; al hacer `git fetch` main era
+`7375ae8b929fd7d67207d07938a46a70d9c1f13c`, y es el que se fusionó. Único conflicto: el `GET /:id`, donde 1532d añade
+`estadoDelCobro` y 1316l `metodosConAvisoIvaAlDiez`; se quedan los dos en `cuerpo`. El `where` literal del `updateMany`
+de `bulk-paid` (1316l) queda byte a byte como en main (`git diff origin/main` no lo toca). 0 marcadores en el árbol.
+`invoiceDetailView.js` se auto-mezcló. **Medido:** `tsc -p .` con tipos, salida 0 · 289, 397, 441, 1316l (14/14),
+1532b/1532d, 707, 285, 644, 719, 1294, 854: 219/219 en 20 ficheros, 0 saltados · `guards:entrada` 15/15 (170 tests).
+**No medido:** la suite entera en local (la corre el obligatorio) · yaqu.app.

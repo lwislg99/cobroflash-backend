@@ -177,6 +177,7 @@
     {"clave":"export · src/modules/invoicing/domain/facturaDesdeParte.ts::facturarParte","donde":"src/modules/invoicing/domain/facturaDesdeParte.ts:177","carril":"J1","ticket":"SCRUM-1780","motivo":"J1: handler de POST /admin/partes/:id/facturar (GO SCRUM-1780 c.22237); lo monta S1 en partes.routes.ts, SCRUM-1780 (tres líneas literales en c.22242); hasta entonces la ruta no existe"}
   ],
   "retiradas": [
+    {"clave":"ruta · POST /admin/charges/:id/cancel","motivo":"SCRUM-1532d: conectada en public/dashboard/js/invoiceDetailView.js (botón «Cancelar cobro» de la ficha de factura, c.22430); lo mueve J1 en ese PR, como decía su declaración"},
     {"clave":"cuerpo · PUT /admin/invoices/:id/status::paidVia","motivo":"SCRUM-1787b: conectada en public/dashboard/js/invoiceDetailView.js (la ficha de factura LEE y pinta `invoice.paidVia` en «Cobro»; el envío del campo ya lo hacía cuerpoConMetodo desde SCRUM-441) y el censo, que es por nombre, lo da por consumido"},
     {"clave":"export · src/modules/billing/domain/paidVia.ts::esPaidViaValido","motivo":"SCRUM-1732c: conectada en src/modules/billing/app/routes/psp.routes.ts y mpWebhook.routes.ts (el método de la fila de invoice_payments sale del conjunto cerrado PAID_VIA o es NULL)"},
     {"clave":"export · src/modules/invoicing/domain/devengoPorCaja.ts::fechaDeDevengo","motivo":"SCRUM-1730b: conectada en src/modules/invoicing/domain/libroRegistro.repo.ts (leerPorCaja decide por ella qué factura devenga en el rango con criterio de caja; GO de SCRUM-1730 c.21789)"},
