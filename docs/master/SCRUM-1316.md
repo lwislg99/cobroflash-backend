@@ -1238,6 +1238,73 @@ la del BOE, literal.
 
 **Corrido:** ver el comentario de entrega en SCRUM-1316. Suite entera no corrida: solo documentos.
 
+# SCRUM-1316l · Con una línea al 10 % de IVA, marcar cobrada a mano exige el medio de cobro (servidor, ficha y lote)
+
+**Medido contra:** `origin/main` = `97e196f930334971538b5c0ba13e0224cbe7d184` · 2026-11-23T21:20:33Z (cabecera `Date:` de GitHub)
+
+A9: aviso → A10 «Una red de seguridad que no caza tiene el mismo aspecto que una que no tuvo nada que cazar.» — no se pudo comprobar: escribí el servidor ANTES que el test, así que el test nació verde y no lo he visto en rojo; las tres mutaciones están declaradas en `MUTACIONES_QUE_ME_TUMBAN`; las corrió el relevo (jv-j1ip) con `aplicarUna`: las tres VIVAS.
+
+**Skill UI:** cargada · `yaqu-premium-ui`, antes de tocar la ficha. Sin `style=` ni `on*=`: el aviso se oculta con `hidden`.
+
+Sesión jv-j1ii (J1), encargo del orquestador J (`cobroflash-backend-2d`). Decisiones y literales firmados:
+SCRUM-1316 c.22438 («1-Sí a las 5»); T4 es el texto firmado en c.22424. Marcar cobrada no es camino de
+emisión (medido en c.22437 y aquí: el cambio no toca numeración, creación ni sellado). Nada en `prisma/`.
+
+## Aceptación → dónde se ve
+
+| aceptación (c.22438) | dónde se ve |
+|---|---|
+| Obligatorio declarar el medio SOLO con alguna línea al 10 % (servidor) | `src/modules/system/invoiceAdmin.ts` (`llevaLineaAlDiez`, `MetodoDeCobroObligatorioError`) · `tests/scrum1316l-medio-de-cobro-con-iva-10.test.mjs` ①②③ |
+| El resto sigue como hoy | mismo test, ④ y ⑦ (positivos) |
+| T3 literal firmado | mismo test, caso «el literal T3…» (servidor y pantalla, byte a byte) |
+| Ficha de factura: selector obligatorio con 10 % y T3 si no se elige | `public/dashboard/js/invoiceDetailView.js` · test ⑨ ⑩ ⑪ (banco de vistas) |
+| T4 al elegir efectivo con 10 % (aviso, no bloqueo) | `invoiceDetailView.js` + `COPY_IVA_10` en `invoicesView.js` · test ⑨ |
+| Lote: una factura con línea al 10 % no se marca sin medio | `bulk-paid` en `invoicesAdmin.routes.ts`: se queda FUERA y vuelve en `sinMetodo` con T3; `invoicesView.js` lo dice · test ⑤ ⑥ ⑧bis |
+| No se añaden medios a la lista cerrada | no se toca `PAID_VIA` ni `selectorMetodoCobro.js` (J2) |
+| Ficha del trabajo (`jobDetailView.js`, S2) | NO HECHO → equipo de Luis (`aviso-a-luis`, c.22438 punto 5) |
+
+**Lote: lo que elegí y por qué.** Sin texto nuevo, el lote no lleva selector: las facturas con línea al
+10 % se quedan fuera y la respuesta trae `sinMetodo` y T3. Si no se marcó ninguna, la pantalla dice solo
+T3 (el «ya estaban pagadas o anuladas» de siempre sería falso); si se marcaron otras, dice el recuento y
+T3 detrás. T3 dice «en esta factura» aunque el lote tenga varias: es el literal firmado y no lo cambio.
+
+## Corrido
+
+- `tsc -p .` CON tipos: salida 0.
+- `tests/scrum1316l-medio-de-cobro-con-iva-10.test.mjs`: 14 tests · 14 pass · 0 fail · 0 skipped.
+
+## Lo que NO está corrido ni medido
+
+- Las mutaciones (declaradas, no corridas) y el test en rojo: ver la línea A9.
+- La dirigida (441, 1609, 1618, 1640, 1093, 1598, 1732c, 1787b, 1773, 836, 700, 710b, 719, 1157/1215/1415, 810, 1294, 267, 273, 525d, 854): NO corrida, por orden del orquestador. La corre el obligatorio.
+- La suite entera: no corrida en local; la corre el obligatorio.
+- Capturas 390/1280 de la ficha con el aviso: NO hechas.
+- yaqu.app: no verificado (no está mergeado).
+
+## Relevo · jv-j1ip (J1) · 2026-11-24T01:37Z (cabecera `Date:` de GitHub) · rama al día con `origin/main` = `42cae61092ba69761d6d7bba0504abe6baee1e52`
+
+Mutaciones: catálogo → `tests/scrum1316l-medio-de-cobro-con-iva-10.test.mjs`
+
+El obligatorio de #3336 tenía 4 rojos (run 45280354134). Se arregló el CÓDIGO; ningún guard se tocó.
+
+| rojo | causa | arreglo |
+|---|---|---|
+| `scrum441-selector-metodo` | `invoicesView.js` escribía `'cash'` (`METODO_EFECTIVO`) para decidir T4 | fuera la copia: `METODOS_CON_AVISO_IVA_10` vive en `invoiceAdmin.ts`, tipado contra `PaidVia`, y viaja en `GET /admin/invoices/:id` como `metodosConAvisoIvaAlDiez`; `avisoDeEfectivoVisible(conDiez, metodo, servidos)` sin lista servida no avisa |
+| `scrum627b` y `scrum627` | `llevaLineaAlDiez` hacía `Math.round(t * 10000) / 100`: aritmética sobre el tipo, para el censo | llama a `tipoEnPorcentaje` (`src/core/utils/utils.ts`), la de la casa: lee el tipo, no deriva IVA; `invoiceAdmin.ts` sale del censo |
+| `scrum397-fecha-real-de-cobro` (CIEGO) | el `updateMany` del lote pasó a `id: { in: idsDelLote }` y el escáner busca `id: { in: ids }` | vuelve `id: { in: ids }`; las del 10 % se apartan con `NOT: { id: { in: sinMetodo } }` aparte; 397 vuelve a VER (pasa su aserción de ciego y la de la fecha) |
+
+De paso (mi carril): el bloque nuevo de `invoiceAdmin.ts` estaba metido entre el comentario de `puedeMarcarsePagadaEnLote` y su función; el comentario vuelve a su sitio.
+
+**Corrido** (en `C:\Users\Javier Pereira\cobroflash-jv-j1ip`, después del merge de `origin/main`):
+
+- `tsc -p .` CON tipos: salida 0.
+- Los cinco del obligatorio (1316l, 441, 627, 627b, 397): 52 tests · 52 pass · 0 fail · 0 skipped; 1316l 14/14.
+- Mutaciones con `aplicarUna` (`scripts/meta-guard-mutaciones.mjs`): base limpia 14 pass / 0 caídos; las 3 declaradas VIVAS (servidor sin la comprobación, lote sin el `NOT`, ficha sin el aviso); árbol restaurado (las tres cadenas siguen en el fuente).
+- Capturas 390/1280 de la ficha con T3 y T4: `docs/master/evidencias/scrum1316/1316l/` (guion `docs/master/evidencias/scrum1316/capturas-1316l.mjs`, panel real con datos de ejemplo, sin base; lee la página y dice si el texto se ve: 4/4). Miradas. El chip «undefined» de la cabecera es del perfil de ejemplo del guion, no del cambio.
+- La dirigida y `npm run guards:entrada`: ver la entrega en Jira (se corrieron antes del empujón).
+
+**NO corrido:** la suite entera en local (la corre el obligatorio). yaqu.app: no verificado (sin mergear).
+
 # SCRUM-1316m · P2 medido: cómo se marca pagado un cobro a mano y qué medio queda guardado; las cinco decisiones del fundador
 
 **Medido contra:** `origin/main` = `4aeac0f6c1f5a63b97b009a1c1b3ebc93c973e3e` · 2026-11-23T21:06Z (cabecera `Date:` de GitHub, la que cita c.22437; la medición la hizo jv-j2eb)

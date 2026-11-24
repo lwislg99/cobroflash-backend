@@ -6,6 +6,9 @@ import { recalcJobCobradoForInvoice } from '../jobs/domain/job.service'; // SCRU
 import { campoPaidViaAlMarcar } from '../billing/domain/metodoDeCobro';
 import { esFilaQueNoCasa } from '../billing/domain/estadoDelCobro'; // SCRUM-1303
 import { apuntarCobroDeFactura, anularCobrosDeFactura } from '../billing/domain/cobrosDeFactura'; // SCRUM-1732
+import { lineasQueSuman } from '../quotes/domain/apartados'; // SCRUM-1316l: las cabeceras no son una operación
+import { tipoEnPorcentaje } from '../../core/utils/utils'; // SCRUM-1316l: el tipo en %, sin cuenta propia
+import type { PaidVia } from '../billing/domain/paidVia'; // SCRUM-1316l
 import { tagsParaPrisma } from './tagsDelCliente'; // SCRUM-595 (DOC-05): el MISMO mecanismo que CONT-07
 
 // Listado para el BO (con filtros)
@@ -203,6 +206,39 @@ export function puedeCobrarPorPasarela(documento: { status: string }): boolean {
 }
 
 /**
+ * SCRUM-1316l · T3, FIRMADO por el fundador en SCRUM-1316 c.22438 (regla 39). Lo dice el servidor
+ * al marcar cobrada sin medio una factura con alguna línea al 10 %, de una en una y en lote.
+ */
+export const COPY_METODO_OBLIGATORIO_IVA_10 = 'Elige cómo lo has cobrado: en esta factura hay IVA al 10 %.';
+
+/** SCRUM-1316l · marcar cobrada sin medio una factura con línea al 10 %. La ruta lo da como 422. */
+export class MetodoDeCobroObligatorioError extends Error {}
+
+/**
+ * SCRUM-1316l · ¿Lleva esta factura ALGUNA línea al 10 % de IVA? PURA: se prueba con filas de verdad.
+ *
+ * Las líneas guardan `tax` como FRACCIÓN (0.10 = 10 %, `vat.service.ts`). Se compara en porcentaje
+ * con `tipoEnPorcentaje` (la de la casa: dos decimales) para que el 0.1 de coma flotante no se
+ * escape. Solo LEE el tipo de cada línea: no deriva IVA (SCRUM-627b). Las cabeceras de apartado no cuentan (`lineasQueSuman`): no son una
+ * operación. Sin líneas legibles, `false`: la factura sigue el camino de siempre.
+ */
+export function llevaLineaAlDiez(lines: unknown): boolean {
+  if (!Array.isArray(lines)) return false;
+  return lineasQueSuman(lines as Record<string, unknown>[]).some((l) => {
+    const t = Number((l as { tax?: unknown }).tax);
+    return Number.isFinite(t) && tipoEnPorcentaje(t) === 10;
+  });
+}
+
+/**
+ * SCRUM-1316l · Los medios con los que, si la factura lleva una línea al 10 %, la ficha enseña T4
+ * (aviso, no bloqueo; c.22438). Vive en el SERVIDOR y viaja en el detalle de la factura: el
+ * navegador no escribe valores del conjunto cerrado (regla 22; lo vigila `scrum441`). Tipado
+ * contra `PaidVia`: un valor que salga del conjunto no compila.
+ */
+export const METODOS_CON_AVISO_IVA_10: readonly PaidVia[] = ['cash'];
+
+/**
  * ¿Puede este documento pasar a `paid` por el marcado masivo? PURA: se prueba con filas de verdad,
  * sin base de datos, que es la unica forma de que el rojo hable del HECHO y no de la forma del
  * filtro. Un test atado a `notIn` seguiria verde si alguien cambiara el filtro por otro equivalente
@@ -299,6 +335,14 @@ export async function updateInvoiceStatusAdmin(
   // La decisión vive en el dominio del método y es PURA, así que se prueba entera sin base de
   // datos. Un objeto VACÍO significa «no toques la columna», que es el caso de siempre.
   const campoMetodo = campoPaidViaAlMarcar(status, paidVia);
+
+  // SCRUM-1316l · CON UNA LÍNEA AL 10 %, «CÓMO LO HAS COBRADO» DEJA DE SER OPCIONAL. Decisión del
+  // fundador en SCRUM-1316 c.22438 (opción a): solo en esas facturas; el resto sigue como arriba.
+  // Va DESPUÉS de `campoPaidViaAlMarcar` a propósito: un valor que el conjunto cerrado no reconoce
+  // se descarta allí, y aquí cuenta como «no lo dijo». Se lanza antes de escribir nada.
+  if (status === 'paid' && llevaLineaAlDiez(existing.lines) && !(campoMetodo as { paidVia?: string }).paidVia) {
+    throw new MetodoDeCobroObligatorioError(COPY_METODO_OBLIGATORIO_IVA_10);
+  }
 
   // 🔴 SCRUM-1303 · EL ESTADO LEÍDO VA DENTRO DEL `where`. Las guardas de arriba miran `existing`,
   // leída al entrar, y entre esa lectura y esta escritura cabe otra petición: una anulación que
