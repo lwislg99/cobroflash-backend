@@ -134,3 +134,66 @@ SCRUM-732 entre contar cadenas y comparar conjuntos.
 ⛔ **Ni una línea de `_medidor-de-toque.mjs`.**
 ⛔ **Ni un píxel de CSS.** ⛔ **El umbral sigue en 44** (regla 41).
 ⛔ Ninguna dependencia (36). Vanilla (4). Ningún texto (30).
+
+---
+
+# SCRUM-936b · Lo que acierta el dedo: medición y arreglo PROPUESTO — paro por contexto sin escribirlo
+
+**Medido contra:** `origin/main` = `6fbcde28651d2eed9190ced9efbc7663d8cdac7a` · 2026-11-24T11:54:03Z
+**Rama:** `scrum-936b-tocable-lo-que-acierta-el-dedo` · carril J6 · sesión `jv-j6fo` · Jira c.22600
+
+A9: aviso → cicatriz J6 «Crucé el umbral de aviso de contexto sin medirme en el cruce: medí al arrancar y no volví a medir hasta después de un barrido ancho.» — no se pudo comprobar: la misma cicatriz otra vez; medí al acabar el arranque (103.771) y no volví a medir hasta 147.068, ya pasado el tope de 145k del encargo y sin el arreglo escrito; ningún hook de este árbol para a una sesión al cruzar su tope.
+
+**Decisión que aplica:** SCRUM-936 c.22578 (fundador, 24-nov-2026, elección «Lo que acierta el dedo»): AB6 mide el área que responde al toque (con su relleno), no el borde pintado. Deshace la pregunta de este registro de septiembre.
+
+## Qué · esperado · visto
+
+| qué | esperado | visto |
+|---|---|---|
+| ¿`tocable` es una función o hay copias? | una | **una**: `scripts/_medidor-de-toque.mjs`, `FUENTE_MEDIDOR`, `tocable: +(bottom - top)` en la línea 134. Población: 2.292 `.mjs` de `scripts/` y `tests/`; 20 nombran `tocable`; 13 importan el medidor (5 scripts, 8 tests). |
+| carril del medidor | sin cerradura | fila general de `scripts/`, sin dueño declarado (`node scripts/carriles.mjs de scripts/_medidor-de-toque.mjs`). `censo-objetivo-tactil-panel.mjs` es **S3** y `guard-hojas-del-trabajo-44.mjs` es **S4**: solo importan el medidor, el arreglo no los toca. |
+| qué ata hoy la fuente del medidor | — | `tests/scrum562-arbitro-de-toque.test.mjs` exige 5 literales (el árbitro `arriba.closest(SEL) === el`, `let top = cy, bottom = cy;`, `const afinar = (bueno, malo)` y los dos controles). El arreglo propuesto los conserva. |
+| arreglo escrito y probado | sí | **NO.** Paré a 147.068 de contexto (tope del encargo: 145k para empujar). |
+
+## Por qué el +1 depende del vecino — modelo, NO comprobado en navegador
+
+`elementsFromPoint(x, y)` se comporta como una ventana de 1 px que **baja** desde `y`, y gana el
+interactivo pintado más tarde de los que toca. Encaja con los siete casos de septiembre de arriba:
+
+- aislado: región medida `(top − 1 + 1/64, bottom)` → caja + 1 (el 0,984 de arriba, el −0,004 de abajo);
+- con un interactivo posterior pegado debajo (`pegA`): la ventana que cruza el borde la gana el vecino,
+  región `(top − 1 + 1/64, bottom − 1]` → caja (el −0,988 de abajo).
+
+## Arreglo propuesto, NO aplicado
+
+En `FUENTE_MEDIDOR`, la línea del `return` (la caja `r` ya está en el ámbito):
+
+```diff
+-    return { caja: +r.height.toFixed(1), tocable: +(bottom - top).toFixed(1) };
++    // SCRUM-936b · c.22578: el área que responde al toque, con su relleno. La ventana de 1 px de
++    // elementsFromPoint añade arriba un píxel que no existe y deja que el vecino de abajo se coma el último.
++    const alto = Math.min(bottom + 1, r.bottom) - Math.max(top, r.top);
++    return { caja: +r.height.toFixed(1), tocable: +alto.toFixed(1) };
+```
+
+Con los datos de septiembre: h43 → **43, corto** · h44 aislado → 44 · `pegA` → 44 · `pegB` → 44 ·
+48 → 48 · tapado por arriba (`.cta-band::after`) → sin cambio. Calculado, no medido.
+
+🔴 **Riesgo sin medir:** recortar a la caja deja fuera un área ampliada a propósito con un
+pseudo-elemento. Las descripciones de `censo:arbitro-de-toque` y `guard:a11y-landing` en
+`package.json` dicen que `.announce a::after` amplía su propia área (SCRUM-543): leído, no medido.
+Con el recorte, ese enlace mediría su caja y `guards:visuales` podría salir rojo. Variante si pasa:
+recortar solo el borde que cae a menos de 1 px de la caja (el píxel fantasma de arriba y el que el
+vecino se come abajo), y dejar el resto como lo mide el árbitro. Cuál de las dos, lo dice el navegador.
+
+## Veredictos que cambian
+
+**Sin medir.** No he corrido ningún guard con el medidor nuevo porque el medidor nuevo no existe.
+
+## Lo que falta, para quien siga
+
+1. Test rojo primero, con navegador (`lanzarNavegador` de `scripts/_navegador.mjs`): h43 corto;
+   h44 aislado y `pegA` dan 44 los dos; control positivo 48 conforme; y el caso `.announce a::after`.
+2. Aplicar la variante que el navegador dé por buena.
+3. `npm run guards:visuales` y `npm run censo:tactil-panel`: la lista de objetivos que pasan a cortos,
+   por pantalla, va aquí como hallazgos. Si sale rojo un guard del obligatorio, se para (regla 41).
