@@ -120,7 +120,7 @@ idéntico al acabar):
 
 **Medido contra:** `origin/main` = `8e0d408168865aab0c7862d7c004cf864450aa71` · 2026-11-24T11:40:31Z
 
-A9: aviso → cicatriz J3 «Tercera vez que corro un test de vistas en un árbol anidado sin el dist construido» — no se pudo comprobar: qué tiene construido el árbol antes de una tanda no deja rastro que un test lea; lo paró otra vez leer el texto del rojo antes de contarlo
+A9: aviso → cicatriz J3 «Tercera vez que corro un test de vistas en un árbol anidado sin el dist construido: conté como rojo cuatro casos de S2 que caían por Cannot find module.» — no se pudo comprobar: qué tiene construido el árbol antes de una tanda no deja rastro que un test lea; lo paró otra vez leer el texto del rojo antes de contarlo
 
 **Skill UI:** cargada (yaqu-premium-ui) antes de tocar `public/`. Sin tokens, clases ni texto nuevos: el anillo es `var(--ring)`.
 
