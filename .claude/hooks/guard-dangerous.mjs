@@ -533,7 +533,7 @@ function descarteGit(a) {
  * ⚠️ Si algo revienta aquí dentro, el llamante deja pasar: esta familia es cobertura NUEVA, y
  * un fallo mío parando a las cuatro sesiones es peor que volver al estado de ayer.
  */
-function perdidaInminente(lista, cwd) {
+function perdidaInminente(lista, cwd, entorno = {}) {
   for (const a of lista) {
     // 5) Redirección que trunca un fichero existente. El caso del 11-ago: `> SCRUM-447.md`.
     for (const destino of a.redirecciones) {
@@ -618,9 +618,19 @@ function perdidaInminente(lista, cwd) {
       || (a.programa === 'rm' && flags(a).some((f) => /^-[a-zA-Z]*r/i.test(f)))
       || (/\brmdir\b/.test(texto) && /\s\/s\b/i.test(texto));
     if (esBorradoDeArbol) {
-      for (const ruta of a.palabras.slice(1).map((p) => p.texto).filter((t) => !t.startsWith('-') && !t.startsWith('/'))) {
-        const abs = path.isAbsolute(ruta) ? ruta : path.resolve(cwd, ruta);
-        const victima = esEnlace(abs) ? abs : esEnlace(path.join(abs, 'node_modules')) ? path.join(abs, 'node_modules') : null;
+      // SCRUM-1792 · La forma MSYS (`/c/Users/…`, la de toda sesión desde Git Bash) empieza por
+      // `/`, y el filtro de abajo la tiraba ENTERA por tomarla por una opción de `rmdir` (`/s`):
+      // `git worktree remove "/c/…"` pasaba sin mirar nada. Se traduce ANTES del filtro y solo si
+      // es `/<letra>/…`: `/s`, `/q` y `/c` siguen siendo opciones. `plataforma` y la sonda son
+      // inyectables por `evaluar()` SOLO para que el test corra igual en el CI de Linux.
+      const plataforma = entorno.plataforma || process.platform;
+      const pth = plataforma === 'win32' ? path.win32 : path.posix;
+      const enlace = entorno.esEnlace || esEnlace;
+      const palabras = a.palabras.slice(1).map((p) => p.texto)
+        .map((t) => (/^\/[a-zA-Z]\//.test(t) ? posixADrive(t, plataforma) : t));
+      for (const ruta of palabras.filter((t) => !t.startsWith('-') && !t.startsWith('/'))) {
+        const abs = pth.isAbsolute(ruta) ? ruta : pth.resolve(cwd, ruta);
+        const victima = enlace(abs) ? abs : enlace(pth.join(abs, 'node_modules')) ? pth.join(abs, 'node_modules') : null;
         if (victima) {
           return {
             motivo:
@@ -778,7 +788,7 @@ function reglas(lista, sentinelPath, entorno = {}) {
   // no hace falta preguntarle a git nada, y el mensaje que llega sigue siendo el de siempre.
   let perdida = null;
   try {
-    perdida = perdidaInminente(lista, entorno.cwd || process.cwd());
+    perdida = perdidaInminente(lista, entorno.cwd || process.cwd(), entorno);
   } catch {
     perdida = null; // cobertura NUEVA: un fallo mío no puede parar a las cuatro sesiones.
   }
@@ -803,6 +813,8 @@ export function evaluar(crudo, sentinelPath = SENTINEL_POR_DEFECTO, opciones = {
   const entorno = {
     cwd: opciones.cwd ? opciones.cwd : cwdDelComando(comando || '', opciones.base || process.cwd()),
     sentinelDestructivo: opciones.sentinelDestructivo,
+    plataforma: opciones.plataforma, // SCRUM-1792: solo los tests; en uso real, process.platform
+    esEnlace: opciones.esEnlace, //     SCRUM-1792: solo los tests; en uso real, el lstat de verdad
   };
   // FAIL-CLOSED: si el JSON no se deja leer, se vuelve al comportamiento antiguo —mirar el
   // blob entero, SIN máscara— en vez de dejar pasar. Ruidoso, pero nunca ciego: un blob de
