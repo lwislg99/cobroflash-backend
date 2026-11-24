@@ -14,6 +14,34 @@ import assert from 'node:assert/strict';
 import { nodo } from './_banco-vistas.mjs';
 import { serializar } from '../scripts/_pagina-panel.mjs';
 
+// Cada mitad de la cura, quitada por separado, tiene que tumbar su caso (meta-guard de mutaciones).
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    fichero: 'tests/_banco-vistas.mjs',
+    de: 'if (!/-[a-z]/.test(k)) delete n._attrs[aAtributo(k)];',
+    a: '/* mutante: borrar por dataset no toca _attrs */',
+    cae: '🔴 delete el.dataset.x quita el atributo: getAttribute, hasAttribute, selector y página',
+  },
+  {
+    fichero: 'tests/_banco-vistas.mjs',
+    de: 'const poner = (k, v) => { n._attrs[aAtributo(k)] = String(v); reflejar(); return true; };',
+    a: 'const poner = (k, v) => { reflejar(); return true; };',
+    cae: '🔴 el.dataset.x = v crea el atributo, con su nombre en guiones',
+  },
+  {
+    fichero: 'scripts/_pagina-panel.mjs',
+    de: 'if (!Object.prototype.hasOwnProperty.call(attrs, nombre)) at.push',
+    a: 'at.push',
+    cae: '🔴 reescribir por dataset cambia el atributo, y la página sale UNA vez con el valor nuevo',
+  },
+  {
+    fichero: 'tests/_banco-vistas.mjs',
+    de: 'for (const k of claves()) espejo[k] = n._attrs[aAtributo(k)];',
+    a: '/* mutante: el espejo no se refresca */',
+    cae: 'el mensaje de un assert rojo enseña el dataset de verdad, tras poner, borrar y setAttribute',
+  },
+];
+
 const reg = () => ({ porId: new Map() });
 const conDos = () => {
   const c = nodo('div', reg());
