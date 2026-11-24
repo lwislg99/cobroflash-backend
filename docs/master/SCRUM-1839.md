@@ -48,7 +48,7 @@ Suman 881 + 98 + 85 + 14 = 1.078. De los 85 sin tramo: **5** se nombran en el cu
 
 **Medido contra:** `origin/main` = `84e87de4dcda46c0aeba52edfaab8f55aca0c234` · 2026-11-24T17:30:20Z
 
-A9: sin fallo que generalice — PENDIENTE
+A9: aviso → cicatriz J6 «Medí 121k al acabar Jira y escribí un encargo de subagente de ~17k sin medir antes lo que costaba: crucé el umbral de empujar (130k) sin nada en git» — no se pudo comprobar: ningún hook de este árbol lee el usage de la sesión antes de un mensaje largo
 
 **Encargo (jv-j6fz, J6):** segunda mitad: el trinquete «ninguna letra de tramo nueva llega a la rama principal sin su tramo», con la regla decidida en Jira SCRUM-1839 c.22677 (cabecera `#` o `##` exactos de `docs/master/SCRUM-<N>.md`, N+letra enteros con borde por los dos lados, con o sin «SCRUM-» delante). La rama sale de `0bd379704` (la foto `651a143` más el registro de SCRUM-1839); a la hora del ancla, `origin/main` iba tres merges por delante (#3408, #3409, #3410).
 
@@ -87,6 +87,6 @@ El job de la tanda lleva `.github/workflows/ci.yml:147` (`fetch-depth: 0`) y `.g
 
 ## Lo que NO medí
 
-- Al mezclar con `origin/main` = `84e87de4dcda46c0aeba52edfaab8f55aca0c234`, `1730h` ya tiene tramo (lo escribió #3409): el test pedirá quitar `'1730h'` de la lista en el mismo PR. No mezclé `main` en la rama.
+- Tras `git merge origin/main` (`84e87de4dcda46c0aeba52edfaab8f55aca0c234`), `1730h` ya tiene tramo (lo escribió #3409) y salió de la lista en este PR: la lista baja de 103 a 102. Test corrido después del merge: 6 pass / 0 fail, población 13.092 commits · 1.367 registros · 1.081 pares = 979 con tramo + 88 sin tramo + 14 sin fichero; `npm run guards:entrada` 177 / 0. Lo corrió jv-j6fz; lo demás de este tramo lo midió su subagente, y el resto de guards NO se repitió tras el merge.
 - El cuerpo de los commits, las ramas sin mergear, y si cada cabecera que cuenta es el tramo de verdad o una mención (la regla no lo distingue y el test tampoco).
 - La tanda entera: sólo los guards que se listan en la entrega.

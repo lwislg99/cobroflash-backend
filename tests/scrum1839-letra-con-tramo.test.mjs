@@ -229,7 +229,6 @@ export const SIN_TRAMO_CONGELADOS = [
   '1636c',
   '1669b',
   '1725e',
-  '1730h',
   '1742b',
   '1745d',
   '1762c',
