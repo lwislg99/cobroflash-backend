@@ -37,3 +37,34 @@ porque `opciones.plataforma/esEnlace` aún no existían; el rojo sin costuras es
   `rm -r -f "/c/…"` PASAN. Con un `node_modules` enlazado los para ahora la regla 7; sin enlace, no los para nadie.
 - No medido: si `rm -r` desde MSYS sigue de verdad el enlace (no se probó contra nada real, por encargo).
 - Suite entera NO corrida (encargo: «NO corras la suite entera»).
+
+# SCRUM-1792b · El test de 1792 tropezaba con dos guards de la casa (189 y 702)
+
+**Medido contra:** `origin/main` = `f14c253600aae315d1758524ae28872a81286758` · 2026-11-24T13:49:37Z (cabecera `Date:` de GitHub)
+
+Carril J6. Sesión jv-j6fu, por encargo del orquestador J: poner en verde #3389 sin tocar el hook. `origin/main` va
+fusionado dentro de la rama (A4), porque el CI prueba el merge. Un solo empujón, a la misma rama del PR.
+
+A9: comprobación → `tests/scrum702-suelo-misma-poblacion.test.mjs`
+
+## Qué · esperado · visto
+
+- **① scrum189** (`toda cita numerada a la doctrina nombra su fichero`): `tests/scrum1792-regla7-ruta-msys.test.mjs:5`
+  decía «la regla 7 de» y, cerca, sólo un `.mjs`. El guard sólo acepta un `.md` o «máster». Arreglado en el
+  comentario: ahora nombra el fichero del hook y dice «en su regla 7 (…)». El guard no se toca.
+- **② scrum702** (`no entra NINGUNA dependencia del entorno nueva sin declararla`): 24 ficheros y tope 23. El nuevo es
+  `tests/scrum1792-regla7-ruta-msys.test.mjs:103` (`process.platform`). Lo usan los 3 casos de extremo a extremo,
+  que montan una junction real y llaman a `evaluar()` sin inyectarle nada: son los que reproducen el incidente.
+  Decisión del fundador en Jira, **SCRUM-1792 c.22646** (regla 41; creado a las 13:46:44Z según Jira, aunque el
+  texto dice «~13:55Z»): «Subir el tope a 24 (Recomendado)». Descartada: «Quitar los casos de Windows». Hecho:
+  `TOPE_LEEN_EL_ENTORNO` pasa de 23 a 24 y lleva un párrafo como el de 1091. Va en el mismo commit que el arreglo
+  del test: el test ya estaba empujado, y reescribir la historia está prohibido (A4).
+- Antes del cambio, en local: scrum702 en rojo con este mismo mensaje (24 > 23) y scrum189 ya en verde tras
+  arreglar el comentario.
+
+## Lo que NO he hecho o NO he medido
+
+- Suite entera NO corrida (encargo). Tanda dirigida y `guards:entrada`: en el comentario de entrega del ticket.
+- No he medido por qué la tanda dirigida de 1792 no cazó el ② en local.
+- #3390 (SCRUM-1831) NO mirado: me pasé del tope de contexto del encargo (155k medidos; tope 145k). Cicatriz en
+  `docs/equipo/cicatrices/J6.md`, del 24-nov.

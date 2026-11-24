@@ -2,8 +2,8 @@
 //
 // EL CASO REAL (orquestador J, 23-nov-2026): desde Git Bash,
 //     git worktree remove "/c/Users/Javier Pereira/cobroflash-jv-j3cp"
-// sobre un árbol cuyo `node_modules` era un ENLACE al compartido, y la regla 7 de
-// `.claude/hooks/guard-dangerous.mjs` (cadenas de junction, SCRUM-429) NO paró.
+// sobre un árbol cuyo `node_modules` era un ENLACE al compartido, y `.claude/hooks/guard-dangerous.mjs`
+// NO paró en su regla 7 (cadenas de junction, SCRUM-429).
 //
 // La causa, medida aquí (no la que se leyó en el ticket): el bucle de la regla 7 descarta toda
 // palabra que empiece por `/`, para no tomar por ruta las opciones de `rmdir` (`/s`, `/q`). Una
