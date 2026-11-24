@@ -1226,6 +1226,17 @@ Encargo del orquestador J: construir T4 en tres relevos J1 (jv-j1if → jv-j1ih 
 | visto en yaqu.app | NO HECHO → tras el merge y el despliegue |
 
 **Dirigida** (un fichero por proceso): 1787w 6/6, 1788a 1/1, 1051g 13/13, 1240d 10/10, 1446 9/9, 1446e 11/11, 1787d 7/7, 1787m 8/8, 604 6/6, 623 10/10, 624e 6/6, 624y 3/3, 1787t 5/5, 1785b 7/7, 1786f1 4/4, 1787k 5/5, 603 8/8, 603b 9/9, 723 8/8, 523d 7/7, 1446d 3/3; los guards del registro, en la entrega. `npm run build` (tsc con tipos): salida 0. **La suite entera NO se ha corrido en local**: la corre el check obligatorio.
+
+**Relevo jv-j1io · 2026-11-24T01:34:52Z** (`Date:` de `gh api -i zen`) · `origin/main` = `42cae61092ba69761d6d7bba0504abe6baee1e52`. El PR #3337 estaba DIRTY (entraron 1787x, 1787z y 1316k) y su obligatorio tenía un rojo, `scrum601` (run 45269833417).
+
+A9: comprobación → `tests/scrum601-copy-del-documento-vs-flag.test.mjs`
+
+Por qué: el rojo era el guard haciendo su trabajo. T4 metió dos literales y el reparto pasó de 8/11/163 a 8/12/164. Medido con `censoCopy` conjunto contra conjunto, sobre origin/main `42cae6109` (da 8/11/163, el ancla de antes: es el control positivo) y sobre el árbol fusionado: entran 2 literales, no sale ninguno y ninguno cambia de categoría. Los dos de `pdf.service.ts` están FIRMADOS en c.22428: ② «Total factura:» (sustituye a «TOTAL:», que el censo no contaba) y ③ «Detalle de la factura:». Re-anclado con esa cita y el motivo «literal firmado, no regresión». No va a `PENDIENTES_DE_FIRMA`.
+
+- Merge de `origin/main` sin marcadores. Chocaba `tests/_cambios-autorizados-de-la-factura.mjs`: entran las dos entradas, primero la de 1787x y luego la de 1787w. La de 1787w se encadena: su `de` es el `a` de 1787x (cuerpo `3cc5a0bd…`, ámbito `7685e52d…`). Sus `a` salen de `evidencias/SCRUM-1446d/huellas.mjs` sobre el árbol fusionado, y esa herramienta, sobre la base `42cae6109`, da las cuatro tal como están escritas. «Vence el» conserva `day: 'numeric'` (1787x). El registro conserva todos los tramos: quitando éste, es byte a byte el de main.
+- Mutaciones con `aplicarUna`: 1787w ① VIVA, 1787w ⑤ VIVA, 1788a ① VIVA (3/3). El árbol queda limpio después.
+- Dirigida (un fichero por proceso, todos rc 0): 1787w 6/6, 1787t 6/6, 1787m 8/8, 1788a 1/1, 1785b 7/7, 1786f1 4/4, 601 5/5, 603 8/8, 603b 9/9, 723 8/8, 523d 7/7, 810 6/6, 1294 4/4, 267 14/14, 273 6/6, 525d 8/8, 854 6/6. `npm run guards:entrada` rc 0 (15 guards); y los 5 de árbol entero que nombra: 195 9/9, 414 5/5, 694 7/7, 710b 12/12, 737 5/5. `tsc -p .` con tipos (`npm run build`): salida 0. **La suite entera NO se ha corrido en local**: la corre el check obligatorio.
+
 # SCRUM-1787y · En la página de pago, «Vence el 5 de diciembre», sin el cero del día
 
 **Medido contra:** `origin/main` = `97e196f930334971538b5c0ba13e0224cbe7d184` · 2026-11-23T21:07:40Z (cabecera `Date:` de `gh api -i zen`)
