@@ -49,6 +49,7 @@ export const VOCABULARIO_PERSONAL = Object.freeze([
   'address', 'direccion',                   // domicilios y direcciones de trabajo
   'notes', 'internalNotes',                 // texto libre sobre personas
   'iban',                                   // cuenta bancaria
+  'serialNumber',                           // nº de serie de un aparato en casa de alguien (SCRUM-914)
   // SCRUM-1569d · el móvil del cliente y la cuenta mexicana: ninguna familia los leía (estaban en las
   // 157 de SCRUM-1569), así que quitarlos de `CAMPOS_PERSONALES` no lo habría visto nadie.
   'mobile', 'clabe',
@@ -301,6 +302,11 @@ export const NO_PERSONALES = Object.freeze({
   'fiscalPlazoEstado.estado': ESTADO,
   // vfFlujoObligado
   'vfFlujoObligado.ultimoEnvioId': ID_EXTERNO,
+  // equipment (SCRUM-914): qué clase de aparato y de qué fabricante. `name` y `serialNumber` SÍ se
+  // anonimizan (`CAMPOS_PERSONALES` en anonimizarMerchant.ts) y `modelName` va FUERA con su motivo en
+  // scrum497; la clasificación es la de J3 en docs/master/SCRUM-914.md §②.
+  'equipment.type': 'la CLASE de aparato (caldera, cuadro eléctrico, alarma): miles iguales, no señala a nadie',
+  'equipment.brand': 'el FABRICANTE del aparato (Vaillant, Saunier Duval): dato de catálogo, no de una persona',
 });
 
 /**
