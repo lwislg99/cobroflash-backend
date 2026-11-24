@@ -137,24 +137,25 @@ const ESCENAS = [
     preparar: async (page) => {
       // El camino del profesional, el mismo que recorre `scrum660` (SCRUM-915d): cliente → «Continuar» →
       // una línea → «Continuar» → «Cambiar» en «Ajustes del documento».
+      // Son TEXTO a propósito, como `QUIETO`: se evalúan DENTRO de la página, no aquí.
+      const continuar = (n, que) => `(() => { const b = [...document.querySelectorAll('#view-container button')]
+        .filter((x) => x.textContent.trim() === 'Continuar')[${n}]; if (!b) return ${JSON.stringify(`no hay «Continuar» del paso ${que}`)}; b.click(); return null; })()`;
       const pasos = [
-        (id) => { const s = document.querySelector('select[name="customer_id"]'); if (!s) return 'no hay selector de cliente'; s.value = String(id); s.dispatchEvent(new Event('change', { bubbles: true })); return null; },
-        () => { const b = [...document.querySelectorAll('#view-container button')].filter((x) => x.textContent.trim() === 'Continuar')[0]; if (!b) return 'no hay «Continuar» del paso Cliente'; b.click(); return null; },
-        () => {
-          const c = document.querySelector('#view-container .quote-line__concept input'); const p = document.querySelector('#view-container .quote-line__price input');
+        `(() => { const s = document.querySelector('select[name="customer_id"]'); if (!s) return 'no hay selector de cliente';
+          s.value = ${JSON.stringify(String(CLIENTE.id))}; s.dispatchEvent(new Event('change', { bubbles: true })); return null; })()`,
+        continuar(0, 'Cliente'),
+        `(() => { const c = document.querySelector('#view-container .quote-line__concept input');
+          const p = document.querySelector('#view-container .quote-line__price input');
           if (!c || !p) return 'no hay concepto o precio en la primera línea';
           c.value = 'Reforma de baño'; c.dispatchEvent(new Event('input', { bubbles: true }));
-          p.value = '100'; p.dispatchEvent(new Event('input', { bubbles: true })); return null;
-        },
-        () => { const b = [...document.querySelectorAll('#view-container button')].filter((x) => x.textContent.trim() === 'Continuar')[1]; if (!b) return 'no hay «Continuar» del paso Conceptos'; b.click(); return null; },
-        () => {
-          const h = [...document.querySelectorAll('#view-container h3')].find((x) => x.textContent.trim() === 'Ajustes del documento');
+          p.value = '100'; p.dispatchEvent(new Event('input', { bubbles: true })); return null; })()`,
+        continuar(1, 'Conceptos'),
+        `(() => { const h = [...document.querySelectorAll('#view-container h3')].find((x) => x.textContent.trim() === 'Ajustes del documento');
           const b = h && [...h.parentElement.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Cambiar');
-          if (!b) return 'no hay «Cambiar» en «Ajustes del documento»'; b.click(); return null;
-        },
+          if (!b) return 'no hay «Cambiar» en «Ajustes del documento»'; b.click(); return null; })()`,
       ];
       for (const paso of pasos) {
-        const corte = await page.evaluate(paso, CLIENTE.id);
+        const corte = await page.evaluate(paso);
         if (corte) return corte;
         await new Promise((ok) => setTimeout(ok, 250));
         await page.waitForFunction(QUIETO, { timeout: 20000 });

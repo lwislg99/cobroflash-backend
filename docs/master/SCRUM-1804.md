@@ -6,6 +6,11 @@
 pidió esta línea. Repasado contra AB6 después: componentes del inventario AB3 (`.alert.warning`, el selector
 común de 44 px), sin `style=`, `label` + `aria-required` + `aria-describedby`; capturas abajo.
 
+A9: comprobación → `tests/scrum811c-skill-ui-declarada.test.mjs`
+(mi fallo: escribí la UI sin cargar antes `yaqu-premium-ui`; este guard exige declararla en el registro y fue lo que me
+lo hizo ver. Otros dos tropiezos de esta rama los cazó la casa: un arnés sin rol, `tests/scrum1344-arnes-de-prueba-con-rol.test.mjs`,
+y el aviso montado de más al 21 %, `tests/scrum697-un-solo-render.test.mjs`; los tres están arreglados en la rama.)
+
 Puesto S2 (frontend), rama `scrum-1804-iva10-parte-s` (base = merge-base `8e0d40816`). Ticket padre: **SCRUM-1316** (RDL 29/2026, desde el
 1-dic-2026 el 10 % en obras de vivienda depende del medio de pago). El servidor y la ficha de factura los dejó
 el equipo J en main (SCRUM-1316l, PR #3336/#3334/#3328). Esto pone lo que faltaba: el aviso al elegir el 10 %
@@ -101,11 +106,39 @@ contando `card`); el de la línea salió CIEGO y lo corregí para abrir la hoja 
 árbol queda restaurado byte a byte (pasada manual; para los dos `.ts`, la mutación equivalente en su `.js` de
 `dist/`).
 
-**Suite completa:** _PENDIENTE_
+**Suite completa** (`node --test tests/*.test.mjs`, TAP a fichero fuera del árbol). Primera tanda, antes del
+commit: 14 300 tests · 14 096 pass · **21 fail** · 183 skip. Los 21, uno a uno:
+
+| rojo | causa | ahora |
+|---|---|---|
+| `scrum1344` · ④ ningún arnés arma un `req` sin rol | **mío**: el arnés de X2 iba sin rol | ✔ arreglado (`reqDeSesion`) |
+| `scrum697` / `scrum698` (3) · el editor monta 267 nodos | **mío**: el aviso nacía al montar (268) | ✔ arreglado en el CÓDIGO (el aviso nace al hacer falta); la exigencia no se ha tocado |
+| `scrum267` (×4 ficheros, 12) · `scrum854` ② · `scrum811c`/1340 (parte) | **mío**: registro sin commit, sin hora en el ancla y sin `**Skill UI:**` | ✔ arreglado (ancla de `scripts/equipo/ancla.mjs`) |
+| `scrum976` ④ `guards:entrada` sale 1 | consecuencia de los de arriba, más `scrum1294` (línea A9) y `scrum258` (`document` en mi script de capturas), que salieron al correrlo | ✔ los míos arreglados; sigue en rojo SOLO por el de abajo |
+| `scrum811c` · SCRUM-1340 · PR de interfaz sin `**Skill UI:**` | **ajeno, ya en main**: «el merge 8e0d40816 → SCRUM-1810.md» (PR #3365, J1). El propio guard dice «lo de esta rama: DECLARA» | ✖ sin tocar (carril J1) |
+| `scrum1726` · D1 (2) · fechas de la hoja de disputa | **ajeno, del entorno** (MI LECTURA, sin probar en un árbol limpio): espera «3 de octubre de 2026 a las 0:30» y Node v24.8 local da «3 de octubre de 2026, 0:30». Mismo día y hora; cambia el formato de Intl. Esta rama no toca la hoja de disputa | ✖ sin tocar |
+
+La segunda tanda completa **no terminó**: Claude Code la paró por falta de memoria en la máquina. No la he
+relanzado. En su lugar he vuelto a correr, uno a uno, los ficheros de cada rojo de la tabla, más
+`scrum660`, `scrum611`, `npm run guards:entrada` y el test de este ticket. Resultado: todos en verde salvo
+los dos ajenos. **No hay ninguna exigencia existente cambiada.**
 
 ## Capturas (antes = merge-base · después = esta rama; 390 y 1280)
 
-`node scripts/capturas-iva10-parte-s.mjs` → `docs/master/evidencias/SCRUM-1804/`. _PENDIENTE_
+`node scripts/capturas-iva10-parte-s.mjs` → `docs/master/evidencias/SCRUM-1804/` (16 PNG: 4 escenas × antes/después ×
+2 anchos). Monta las vistas REALES en Edge (`_banco-lista.mjs`); el «antes» es el `public/` del merge-base.
+Lo que mide el «después» (en el «antes» ninguna escena tiene aviso, como se esperaba):
+
+| escena | 390 (caja del aviso) | 1280 | cabe · desborde |
+|---|---|---|---|
+| `linea` · hoja de ajustes de la línea, IVA 10 % | 342×123 | 372×123 | ✔ · no |
+| `iva-por-defecto` · Condiciones → Ajustes del documento, 10 % | 324×144 | 544×83 | ✔ · no |
+| `trabajo-efectivo` · ficha del trabajo, pestaña Facturas, «Efectivo» → T4 | 286×164 | 540×83 | ✔ · no |
+| `trabajo-sin-elegir` · «Marcar como PAGADA» sin medio → T3 | 322×63 | 940×42 | ✔ · no |
+
+La primera pasada de capturas cazó un defecto de forma: a 1280, el aviso de «IVA por defecto» salía DENTRO de
+la columna del campo (173×285 px, una tira estrecha). Ahora nace justo debajo de su fila
+(`conectarAvisoIvaAlDiez(…, { trasDe })`) y mide 544×83.
 
 ## Lo que NO se ha tocado
 
