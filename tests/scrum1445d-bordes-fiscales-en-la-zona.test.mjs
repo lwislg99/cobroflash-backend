@@ -215,9 +215,10 @@ async function numerosEn(facturas, año, t, zona) {
 }
 
 test('SCRUM-1445d · leerPorCaja con zona: cobro y tope en el trimestre del comercio', async () => {
+  // SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora
   const facturas = [
-    factura('A-1', '2026-03-20T10:00:00Z', '2026-03-31T22:30:00Z'), // caso A: cobrada el 1-abr 00:30 de Madrid
-    factura('N-2', '2026-12-31T23:30:00Z', null), // emitida el 1-ene-2027 00:30 de Madrid, sin cobro
+    { ...factura('A-1', '2026-03-20T10:00:00Z', '2026-03-31T22:30:00Z'), merchantCriterioCaja: true }, // caso A: cobrada el 1-abr 00:30 de Madrid
+    { ...factura('N-2', '2026-12-31T23:30:00Z', null), merchantCriterioCaja: true }, // emitida el 1-ene-2027 00:30 de Madrid, sin cobro
   ];
   for (const tz of PROCESOS) {
     await enProceso(tz, async () => {
