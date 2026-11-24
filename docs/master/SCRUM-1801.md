@@ -59,3 +59,9 @@ Esto supone un `actions/checkout` antes del paso. Si el candado actual corre sin
 - **Corrido y en verde:** el test nuevo (7/7); `npm run guards:entrada` (15 guards, salida 0, entre ellos 237, 267, 273, 723 y 1294); en una sola tanda, 1415, 854, 976, 1185, 411, 1387, 804 y los cinco de árbol entero que nombra guards:entrada (195, 414, 694, 710b y 737): 116 tests, 116 pass, 0 skipped. `tsc -p . --noEmit` con tipos: salida 0.
 - **scrum723 lo cazó en la primera versión:** el guard comparaba con los literales de la rama principal y de la cabeza suelta en un fichero que llama a git. Se cambió el código, no la lista: la exclusión la decide `agruparRamas` y la cabeza suelta, `git symbolic-ref -q`. La mutación se volvió a pasar sobre `d003590126bbc8cac0abfa4478b1e0f13d24312d`: VIVA, y el árbol quedó limpio.
 - **No corrido:** la suite ENTERA y 719 (`npm run censo:mudez -- --escribir`). El tope de contexto del encargo (170k) no los admitía, y se avisó al orquestador antes de empujar.
+
+## Corrección del 24-nov-2026 · mutación ④ de SCRUM-812 seguía citando 42
+
+Al subir `SUELO_GUARD_QUE_DECLARAN` a 43 (`2e928584a`) no se movió la copia que la mutación ④ lleva en `MUTACIONES_QUE_ME_TUMBAN` (`de: …= 42;`). El ancla ya no existía, el test «mi ancla ④ muta la CONSTANTE» cayó en la pasada limpia y el meta-guard salió MUDO (run 45321217533, parte 1). Arreglo: la copia pasa a `43 → 42`. El suelo no baja y no se toca ningún guard. No corrido en local; lo decide el CI.
+
+A9: comprobación → `tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs`
