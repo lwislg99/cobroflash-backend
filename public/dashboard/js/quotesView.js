@@ -888,6 +888,8 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   // apuntando al `<select>` para no tocar los seis sitios que ya lo usaban. Cambiar aquí el
   // elemento y no el nombre es lo que hace que este diff sea de UNA pieza y no de siete.
   fieldVatDefault.input = fieldVatDefault.select;
+  // SCRUM-1804 · el mismo aviso del 10 % que la línea: este valor BAJA a cada línea nueva.
+  window.tiposDeIva.conectarAvisoIvaAlDiez(fieldVatDefault.select, fieldVatDefault.wrapper);
 
   // ── SCRUM-656 (T7) · CÓMO SE PRESENTA EL IVA EN ESTE PRESUPUESTO ────────────────────────
   // Va AQUÍ y no en Configuración porque lo decide el profesional cada vez, según el cliente que
@@ -4312,6 +4314,8 @@ conceptInput.dataset.pfProductId = ""; // vacío = "manual"
       window.tiposDeIva.ponerValor(vatInput, def);
     }
     vatTd.appendChild(vatInput);
+    // SCRUM-1804 · al elegir el 10 %, el aviso firmado debajo (texto de COPY_IVA_10; ver tiposDeIva.js).
+    window.tiposDeIva.conectarAvisoIvaAlDiez(vatInput, vatTd);
 
     /**
      * SCRUM-500 · LA CASILLA «SUPLIDO», con su aviso.

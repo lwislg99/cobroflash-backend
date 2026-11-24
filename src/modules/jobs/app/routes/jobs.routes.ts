@@ -80,6 +80,7 @@ import { SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/s
 import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206b
 import { sellarTrasEmision } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { envioDelDocumento } from '../../../billing/domain/envioDelDocumento'; // SCRUM-885
+import { llevaLineaAlDiez, METODOS_CON_AVISO_IVA_10 } from '../../../system/invoiceAdmin'; // SCRUM-1804 (cruce S2→S1, solo lectura)
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
 // SCRUM-650 (T1): la asignacion a VARIOS vive en su dominio; aqui no se decide nada de ella.
@@ -728,6 +729,7 @@ async function serializeJobDetail(job: any) {
           // Trabajo. Aditivo y de solo lectura: sin él la rectificativa se pinta como una fila
           // suelta que no dice a qué factura corrige, que es legalmente ilegible.
           rectifiesId: true,
+          lines: true, // SCRUM-1804: solo para `conIvaAlDiez`; NO viaja a la pantalla
         },
         orderBy: { createdAt: 'asc' },
       },
@@ -788,6 +790,10 @@ async function serializeJobDetail(job: any) {
     stageLabel: inv.stageLabel,       // SCRUM-27: etiqueta del tramo (custom); null en presets
     rectifiesId: inv.rectifiesId,     // SCRUM-319 (G4): a qué factura rectifica (solo R1)
     envioDocumento: envioDe(inv.chargeId), // SCRUM-885: null si su cobro no está pagado
+    // SCRUM-1804 (PARTE S de SCRUM-1316) · con línea al 10 %, marcar cobrada exige el medio (c.22438).
+    // La misma regla y la misma lista que sirve GET /admin/invoices/:id: la ficha no las decide.
+    conIvaAlDiez: llevaLineaAlDiez(inv.lines),
+    metodosConAvisoIvaAlDiez: METODOS_CON_AVISO_IVA_10,
   })));
 
   const charge = quote?.charge
