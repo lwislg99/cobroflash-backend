@@ -290,6 +290,7 @@ verde por vacío; lo cazó el caso positivo, y el test ahora abre el menú y exi
 **Medido contra:** `origin/main` = `42cae61092ba69761d6d7bba0504abe6baee1e52` · 2026-11-24T01:35:19Z
 
 A9: comprobación → `tests/scrum644-trinquete-mensaje-crudo.test.mjs`
+A9: comprobación → `tests/scrum719-el-suelo-de-los-doce.test.mjs`
 Mutaciones: catálogo → `tests/scrum1532d-cancelar-cobro-ficha-y-reenvio.test.mjs`
 Mutaciones: una vez → `docs/master/evidencias/scrum1532/mutar-1532e.mjs`
 **Skill UI:** cargada
