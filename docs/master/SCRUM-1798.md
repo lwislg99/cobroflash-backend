@@ -1,0 +1,117 @@
+# SCRUM-1798 · El guard del detalle del Trabajo (917) se re-ancla a las pestañas de la ficha
+
+**Medido contra:** `origin/main` = `8e0d408168865aab0c7862d7c004cf864450aa71` · 2026-11-24T10:27:43Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum480-fin-de-linea.test.mjs`
+
+Lo que me salió mal: guardé las salidas del guard con la redirección de PowerShell y las copié al repo con sus CR (1.461 entre siete ficheros de evidencia). Lo cazó ese test, en su caso «los ficheros que TOCA ESTA RAMA no llevan ni un CR en disco», antes del push; los pasé a LF y volvió a verde. La comprobación ya existía: no hace falta otra.
+
+Puesto S4. El guard es de este carril: `docs/equipo/dos-equipos.md` §3, fila de `scripts/guard-detalle-trabajo-917.mjs` («por el área del ticket que los creó: SCRUM-917»), y `docs/master/SCRUM-1789.md` lo dejó reportado como «es de S4: sólo se reporta». Encargo del orquestador (`cobroflash-backend-41`), puesto 8 de SCRUM-1817.
+
+**La firma del diseño:** acta SCRUM-1656 §44, concretada por S2 en su PASO 0 de hoy. La cito **como me llegó en el encargo**: esta sesión no tiene Jira y no la ha leído en su fuente.
+
+Nada en `src/` ni en `public/`. No cambia ningún texto que vea el usuario.
+
+## Qué pasaba
+
+Desde SCRUM-1768 (#3268, 20-nov-2026) la ficha del Trabajo va por pestañas: cada sección es un `role="tabpanel"` y sólo la elegida se ve; las demás llevan `hidden`. La tarjeta «El trabajo» no es la que abre por defecto. El bloque F del guard seguía midiéndola sin abrirla: cabeceras de 0 px (F.4) y ningún control visible al abrir una línea (F.7).
+
+Era el instrumento, no la pantalla: con la pestaña abierta, las mismas cabeceras miden 44 px.
+
+## ROJO primero (PASO 0, sin tocar nada)
+
+| cuándo | árbol | resultado | salida | dónde está |
+|---|---|---|---|---|
+| 20-nov (la BASE, de S2) | `main` `ed601ef49` | 202 de 244 · 42 hallazgos · 0 ciegos | 1 | `evidencias/SCRUM-1798/base-20nov-917-main-ed601ef49.txt` |
+| 24-nov, antes de tocar | `main` `8e0d40816` | 202 de 244 · 42 hallazgos (10 F.4 + 32 F.7) · 0 ciegos | 1 | `evidencias/SCRUM-1798/salida-rojo-sin-reanclar-main-8e0d40816.txt` |
+| 24-nov, re-anclado | `8e0d40816` + este cambio | **244 de 244 · 0 hallazgos · 0 ciegos** | **0** | `evidencias/SCRUM-1798/salida-verde-reanclado-sobre-8e0d40816.txt` |
+
+Las 10 F.4 del rojo dicen todas lo mismo: «Tipo de trabajo 0 · Nombre y dirección 0 · …». Un 0 no es una cabecera pequeña: es una cabecera sin pintar.
+
+## Qué cambia
+
+Sólo `scripts/guard-detalle-trabajo-917.mjs`, y sólo en el bloque F, antes de la primera medida de cada página:
+
+1. Busca el panel de la tarjeta: `tarjeta.closest('[role="tabpanel"]')`.
+2. Busca su pestaña **por identidad**: la única `[role="tab"]` cuyo `aria-controls` es el `id` de ese panel. No lee el rótulo.
+3. La **pulsa**. No le quita `hidden` al panel a mano: si la pestaña deja de abrir su panel, el guard tiene que enterarse.
+
+La identidad no es un adorno. Medido hoy: el jefe abre por `ficha-pestana-3 → ficha-panel-3` y el técnico por `ficha-pestana-2 → ficha-panel-2` (no tiene «Lo que falta»). Por posición habría abierto otra sección.
+
+Falla cerrado: si hay panel y no hay exactamente una pestaña que lo gobierne, o se pulsa y el panel sigue oculto, es SUELO («no supe mirar», salida 2), nunca un veredicto sobre una tarjeta a 0 px.
+
+## Qué NO cambia
+
+- Ninguna exigencia, ningún número, ningún caso. Las 244 comprobaciones son las mismas 244.
+- El re-anclaje no suma comprobaciones: imprime un rastro por página (`↪ F … antes: oculto, 1ª cabecera 0 px · después: a la vista, 44 px`) que no cuenta en la población.
+- Los bloques D y G se miden como antes, sobre la pestaña que abre por defecto.
+
+## Mutantes, en las dos direcciones
+
+Mutaciones: una vez → `docs/master/evidencias/SCRUM-1798/mutar-1798.mjs`
+
+El guard es de navegador y no es un fichero de `node --test`: el catálogo `MUTACIONES_QUE_ME_TUMBAN` sólo lee `tests/*.test.mjs` y no lo puede mutar. Va por el guion, como `evidencias/SCRUM-1787/mutar-1787g.mjs`. El encargo pedía «al catálogo»: no es posible para este guard, y se dice aquí.
+
+El guion corre primero la BASE sin mutar (tiene que salir 0 con 244 de 244) y restaura cada fichero comprobando los bytes. Salida entera en `evidencias/SCRUM-1798/salida-mutar-1798.txt`. Commit del árbol antes de inyectar: `7177a7b91a073ffbb336eb3c785fc7bafc221a4c`.
+
+| dirección | qué se muta | dónde | qué hace el guard | salida |
+|---|---|---|---|---|
+| 1 · no se volvió ciego | la cabecera baja a `min-height: 30px` DENTRO de la pestaña abierta | `styles.css` | F.4 cae en las 10 páginas y dice el alto que midió: **30**, no 0. 234 de 244, 10 hallazgos | 1 |
+| 2 · el clic es lo que mide | se salta el re-anclaje entero | el guard | vuelve la BASE exacta: 202 de 244, 42 hallazgos, las 10 F.4 a 0 px y 32 F.7 | 1 |
+| 2 · sin clic no hay veredicto | se quita sólo el clic | el guard | 10 SUELOS «pulsé la pestaña y su panel sigue oculto». 0 hallazgos, 10 ciegos | 2 |
+| 2 · pestaña que no gobierna | `aria-controls` apunta a otro id | `jobDetailView.js` | 10 SUELOS «lo gobiernan 0 pestañas». 0 hallazgos, 10 ciegos | 2 |
+
+4 mutaciones · 4 hacen lo que deben · 0 mudas · 0 no aplican. Tras el guion, `git status --porcelain` no enseña ningún fichero del producto ni el guard.
+
+Y en la corrida sin mutar, la misma tarjeta antes y después del clic, en las 10 páginas de F: antes oculta y 0 px; después a la vista y 44 · 44 · 44 · 44 · 44 · 55,4 · 44 · 44 · 44 · 55,4 px.
+
+## Lo que este verde NO es
+
+- **No es el verde del job de guards de navegador.** `guard:lista-trabajos` sale 1 sobre este mismo árbol (medido hoy, 14 s, sin tocarlo): 1 hallazgo, 0 ciegos, en su bloque ⑥ — «Facturas NO trae lo declarado por SCRUM-1562g · el `<th>` sin texto de la columna "Ver detalle": 0 de 1». Es de la lista de Facturas, no de este carril; el orquestador ya lo tiene avisado. Cuando S5 haga obligatorio el job, seguirá rojo por ese hallazgo aunque el 917 esté en 0.
+- **El guard 917 no corre hoy en ningún workflow** (`git grep detalle-trabajo-917 -- .github` no devuelve nada). Este verde es local; el de CI no existe hasta que S5 lo monte.
+- **G.2 mide los controles de la pestaña que abre por defecto, no los de toda la ficha:** 11 controles por caso (7 en el caso sin presupuesto). Los de las otras pestañas los mide `guard:objetivo-tactil`, que abre todos los paneles (`abrirTodasLasPestanas`, SCRUM-1789). No se ha tocado: el encargo es el bloque F.
+- **`guard:objetivo-tactil` no se ha tocado ni corrido aquí.** Lo dejó verde J6 en `bd8fd4610` (dato del encargo, no medido por mí).
+
+## Lo que se corrió en local además del guard
+
+- `npm run guards:entrada`: 16 guards, 176 casos en verde y **1 en rojo que no es de esta rama** — «SCRUM-1340 · todo PR que cambia public/ declara la skill en su registro», de `tests/scrum811c-skill-ui-declarada.test.mjs`, que acusa al merge `8e0d40816` y al registro de SCRUM-1810. Sale igual en `main` limpio; esta rama no toca `public/`. Puede teñir de rojo el check obligatorio de este PR.
+- Los 12 ficheros de test que leen este guard, su veredicto, los fines de línea o este registro (`scrum1294`, `1320`, `1327`, `1336`, `1480e`, `480`, `522`, `548`, `710b`, `850`, `850b`, `1177`): 111 tests, 111 pasan, 0 fallan, 0 saltados.
+
+## Sin medir
+
+- La suite entera en local: este worktree no tiene `dist` y el cliente de Prisma compartido va por detrás.
+- El CI de este PR, hasta que corra.
+
+## Evidencias
+
+En `docs/master/evidencias/SCRUM-1798/` (texto; sin BOM):
+
+- `base-20nov-917-main-ed601ef49.txt` — la BASE del 917 del 20-nov.
+- `base-20nov-tactil-main.txt`, `base-20nov-tactil-ba0be004c.txt`, `base-20nov-tactil-0b8b9eda5.txt` — las tres salidas de `guard:objetivo-tactil` de la misma BASE (carpeta local `evidencias-s2-20nov-base-guards`, de S2).
+- `salida-rojo-sin-reanclar-main-8e0d40816.txt`, `salida-verde-reanclado-sobre-8e0d40816.txt`, `salida-mutar-1798.txt` — lo de hoy.
+- `mutar-1798.mjs` — el guion de las cuatro mutaciones.
+
+### Las capturas r42 de SCRUM-1768b (NO van al repo)
+
+Están en la máquina de Luis, en `D:\MILLONARIO\cobroFlash\capturas\SCRUM-1768b\r42\`: 12 PNG (`vivo-ficha-<76|77>-<admin|operario>-<390|1280|1920>.png`, 1,3 MB entre todas) y `vivo.json` (26 KB).
+
+No se suben, y no por el peso: son la ficha de **producción** con la cuenta QA, y `vivo.json` lleva un número de teléfono 24 veces. El repo es público. Va el resumen, sin ese dato:
+
+- Build de producción medido: `cde9d2f04da5567dc45233cd9356ddcbf5f7cb9e`. 12 medidas: fichas 76 y 77 × jefe y operario × 390, 1280 y 1920 px.
+- En las 12: desborde horizontal 0, nada fuera de la pantalla, 0 controles por debajo de 44 px.
+- Pestañas del jefe: Lo que falta · Partes · Albaranes · El trabajo. Del operario: Partes · Albaranes · El trabajo.
+- Abre por defecto: la ficha 77 en «Partes» (los dos roles; su primaria es «+ Nuevo parte»); la 76 en «Lo que falta» para el jefe y en «Partes» para el operario.
+- En ninguna de las 12 abre por «El trabajo»: es lo que este guard encontraba cerrado.
+
+## Aceptación → dónde se ve
+
+| aceptación (del encargo) | dónde se ve |
+|---|---|
+| ① re-anclar F por identidad (`closest('[role=tabpanel]')` → `[role=tab][aria-controls]`); población 244 | `scripts/guard-detalle-trabajo-917.mjs`, bloque «SCRUM-1798 · RE-ANCLAJE A LAS PESTAÑAS» · `evidencias/SCRUM-1798/salida-verde-reanclado-sobre-8e0d40816.txt` |
+| ROJO-PRIMERO: la salida sin re-anclar, documentada | `evidencias/SCRUM-1798/salida-rojo-sin-reanclar-main-8e0d40816.txt` |
+| ② mutante (a): un summary de menos de 44 px dentro de la pestaña abierta hace caer F.4 | `evidencias/SCRUM-1798/salida-mutar-1798.txt`, primera mutación |
+| ② mutante (b): sin el clic mide 0, con el clic mide | misma salida, segunda y tercera mutación, y la línea del clic de la BASE |
+| ② mutaciones al catálogo del guard | NO HECHO así → van por guion (`mutar-1798.mjs`): el catálogo no lee guards de navegador. Lo decide el orquestador |
+| ③ la BASE del 20-nov al repo, en texto | `evidencias/SCRUM-1798/base-20nov-*.txt` |
+| ③ rutas y resumen de las capturas r42 | este registro, «Las capturas r42» |
+| ④ guard 917 a 0 con 244 antes del push | `evidencias/SCRUM-1798/salida-verde-reanclado-sobre-8e0d40816.txt` |
