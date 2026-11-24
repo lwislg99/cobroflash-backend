@@ -91,9 +91,13 @@ async function pedirRecibo(m) {
   return { status, cuerpo };
 }
 
-const AMBOS = 'usando los botones de <b>pago por banco</b> o <b>pago con tarjeta</b> que aparecen más arriba';
-const SOLO_BANCO = 'usando el botón de <b>pago por banco</b> que aparece más arriba';
-const SOLO_TARJETA = 'usando el botón de <b>pago con tarjeta</b> que aparece más arriba';
+// SCRUM-1800 ② (24-nov-2026): «que aparece(n) más arriba» → «que aparece(n) a continuación» en los
+// tres, porque los botones se pintan DEBAJO del texto. Literales firmados por el fundador en Jira
+// SCRUM-1800 c.22496 ② (regla 41 con literal firmado). No se afloja: desde aquí se exige la frase
+// ENTERA, del «Estamos» al punto final, y no solo su cola.
+const AMBOS = 'Estamos esperando tu pago. Puedes completarlo usando los botones de <b>pago por banco</b> o <b>pago con tarjeta</b> que aparecen a continuación.';
+const SOLO_BANCO = 'Estamos esperando tu pago. Puedes completarlo usando el botón de <b>pago por banco</b> que aparece a continuación.';
+const SOLO_TARJETA = 'Estamos esperando tu pago. Puedes completarlo usando el botón de <b>pago con tarjeta</b> que aparece a continuación.';
 const NINGUNO = 'El profesional te indicará cómo pagar.<br/>Contacta con él si tienes dudas.';
 
 const CASOS = [
