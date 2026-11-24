@@ -39,4 +39,5 @@ Encargo del orquestador J a jv-j1ja (J1). Hijo de SCRUM-1787 (letras agotadas). 
 ## NO hecho / NO visto
 
 - yaqu.app: no visto. Se ve tras el merge y el despliegue, en una factura con vencimiento de día menor que 10.
+- Suite entera: NO corrida. Sólo los tramos 1 y 2 de 15 (844 + 744 tests, 0 fail); el orquestador la paró ahí (la corre el check obligatorio del PR).
 - Nada contra staging ni producción.
