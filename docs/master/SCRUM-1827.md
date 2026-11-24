@@ -42,3 +42,21 @@ El test (`tests/scrum1827-guard-rama-sin-typescript.test.mjs`) deriva la cadena 
 - **En verde:** el test nuevo (4/4) y el de 1801 (7/7) juntos: 11/11. En una tanda, 1327, 1480f, 711, 976, 237, 1415, 1294, 267, 854, 719, 1801 y 1827: 126 tests, 124 pass y 2 rojos **antes** de escribir este registro (854 ② pide registro a una rama que toca código; 976 ④ corre `guards:entrada`, que contiene 854). Tras el registro, ver la entrega.
 - **No corrido:** la suite entera (el encargo lo prohíbe por contexto); `tsc -p .` **no corrido** (el cambio es un `.mjs` de `scripts/` y un test; no toca `src/`); `guards:entrada` dio 2 rojos tras el registro: 1294 (mío, la mutación no era un literal completo: arreglado, 16/16 con 1294, 1827 y 237) y 811c/1340, que nombra el merge `8e0d408…` de `main` → `SCRUM-1810.md` (J1), no esta rama — **no** lo he vuelto a correr tras el arreglo; el meta-guard de mutaciones entero (la mutación se pasó a mano, una vez).
 - **Mi error:** el encargo decía que a 145k de contexto empujara lo que tuviera; me medí a 143k sin nada escrito, seguí, y la siguiente medida fue 155k. Lo digo aquí y en la entrega.
+
+## SCRUM-1827b · El suelo del trinquete de SCRUM-812 sube de 43 a 44: entra el test de 1827
+
+**Puesto:** J6 (jv-j6ft) · **Rama:** `scrum-1827b-suelo-de-812` · 24-nov-2026 (Madrid)
+**Medido contra:** `origin/main` = `3bbce2b4045d2065da480af9c3564843e410e454` · 2026-11-24T13:00:58Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: comprobación → `tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs`
+
+- **El rojo:** el obligatorio del PR #3376 (run 45387498344) cayó en «SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA» y, por arrastre, en el meta-guard parte 3. Eso lo leyó el orquestador en el log; yo no he leído ese run.
+- **Medido en local** (`tsc -p .` con tipos, salida 0; después `node --test` sobre el test de 812, en la punta `1604f47c9a2c00fcae0355d17fc0c2895f51fc2b`, que lleva `origin/main` dentro: 0 commits por detrás): 6 casos, 5 pass, 1 fail, y el que cae dice «LA COBERTURA HA SUBIDO a 44 (el suelo decía 43)». **Subió, no bajó.** El fichero nuevo en la lista es `scrum1827-guard-rama-sin-typescript.test.mjs`: se titula guard y declara sus mutaciones. El diff de 1827 contra `main` toca un solo test (ese), así que la diferencia de conjunto es exactamente él.
+- **Qué cambié** (solo `tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs`, el suelo y nada del mecanismo): `SUELO_GUARD_QUE_DECLARAN` 43 → 44, con su párrafo ⬆️ **44** en la cabecera, y la mutación ④ del catálogo, que cita la constante, de `43→42` a `44→43`. Es la corrección que hizo SCRUM-1801 en `f27071646`; sin ella, «mi ancla ④ muta la CONSTANTE» cae (lo vi caer: «el ancla aparece 1 veces y se esperaban 2»).
+- **La mutación ④ (44→43) es exactamente el estado que vi en rojo** antes del cambio; no he corrido el meta-guard de mutaciones.
+- **Corrido y en verde**, en una sola tanda: 812, 1827, 1801, 711 (los que nombran `guard-rama-con-numero`), 1415, 1294, 267, 854 y 719 → 94 casos, 94 pass, 0 fail; el recuento por ticket suma 94. `npm run guards:entrada`: en la entrega.
+- **No corrido:** la suite entera (el encargo lo prohíbe por tope de contexto) ni los guards de navegador (`guard:lista-trabajos`, `guard:detalle-trabajo-917`), que no son de esta rama.
+- **Por qué el fallo pasa por aquí y no se repite en `main`:** el trinquete ES la comprobación, y cazó la subida en el obligatorio. Lo que costó fue una vuelta de CI, porque 812 no está en `guards:entrada` y 1827 no lo corrió antes de empujar.
+- **Mi error:** en el párrafo ⬆️ **44** escribí primero que el run 45387498344 «había dado lo mismo», sin haber leído su cifra; el orquestador solo me dio el caso que cayó. Lo corregí antes de commitear.
