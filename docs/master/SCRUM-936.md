@@ -302,3 +302,49 @@ A9: comprobación → `tests/scrum419-ci-declara-lo-que-no-corre.test.mjs`
 ## El fallo, y de quién
 
 El `skip: motivo` lo escribió la sesión que hizo 936d (`jv-j6fr`, mi mismo puesto). El guard que lo caza ya existía y cayó en CI, que es donde funcionó; lo que faltó fue correrlo en local antes del empujón. Por eso la línea `A9:` apunta a la comprobación que ya lo impide, no a una nueva.
+
+# SCRUM-936f · Punto ② de la descripción: lo declarado conforme en el borde, re-medido hoy
+
+**Medido contra:** `origin/main` = `377d7b2fea01ec742df1408c50e6697eab444c71` · 2026-11-24T16:09:49Z
+**Rama:** `scrum-936f-lo-declarado-en-el-borde` · carril J6 · sesión `jv-j6fx` · solo docs
+
+A9: comprobación → `tests/scrum936d-variante-del-medidor.test.mjs`
+
+## Las dos cifras
+
+- **Declarados conformes en el borde (toque medido entre 44,0 y 44,99): 11** objetivos o grupos, en 7 registros.
+- **Siguen conformes hoy: 7** (1 medido uno a uno, 6 por pantalla sin cortos). **Sin re-medir: 3** (el censo y el guard no los montan). **Corto hoy: 1**, y no en el borde: 30,7–31,0 px.
+
+## Cómo se buscó (población y controles)
+
+- `git grep -E '(^|[^0-9])4[45]([,.][0-9]+)? ?px' -- docs` → 1.423 líneas; las de valor decimal 44,x → **93** (población). De ésas, las que miden TOQUE (salida del guard o del censo, o texto que dice «toque/tocables») son las de la tabla. Fuera de la población: las de **altura de caja** («input 44,5 px de alto»: SCRUM-586, 587, 590, 602, 764, 1102), porque el +1 era de `tocable`, no de `caja`; y las «etiqueta envolvente 44,6–44,8» de scrum1559/1560, que salen como ARTEFACTO/DUDOSO, no como conformes.
+- **Control positivo:** `tocable` sale en 20 ficheros de `docs/` (p. ej. 11 veces en SCRUM-782). **Control de la medición de hoy:** la sonda del censo, «caja 40 · toque 30», se lee en 88 de 88 páginas con toque 29,0–30,0, sin el +1 de septiembre.
+- **Hoy:** `node scripts/censo-objetivo-tactil-panel.mjs` (salida 0; 28 de 29 vistas, 88 páginas×anchura, 115 objetivos distintos bajo 44) y `node scripts/guard-objetivo-tactil.mjs` (**salida 2**: 0 hallazgos y **4 ciegos**; no miré cuáles). Con `dist/` compilado con `tsc --noCheck`, sin tocar `src/`.
+- ⚠️ **El censo imprime solo los CORTOS** (por debajo de 44), no la lista de 43–46. Un objetivo «sigue conforme» aquí quiere decir: su pantalla se midió a las dos anchuras y él no sale entre los cortos ni entre los ocultos. Es una deducción por ausencia, no una cifra suya. Medido uno a uno solo está «Borrar». **Entre 43 y 44 no hay HOY ningún corto:** el más alto del censo es `A.contacto-link`, con 41,8.
+
+## La lista
+
+| objetivo declarado | dónde se declaró | toque declarado | hoy | veredicto |
+|---|---|---|---|---|
+| «Borrar» irreversible (caja 44) | SCRUM-917, SCRUM-1167 | 44,6–44,9 | 44,6 px en dos superficies del guard | ✅ sigue |
+| logo de la landing (caja 44) | SCRUM-562 | 44,5 | landing: 25 cumplen, 0 cortos (guard) | ✅ por ausencia |
+| «Ir →», Inicio @390 | SCRUM-1603b | 44,8 | renderHomeView: 0 cortos a 929 y 390 | ✅ por ausencia |
+| «Quién lo ejecuta» (`SUMMARY.detail-plega-cab`) | SCRUM-1603b | 44,0 | renderJobDetailView: 0 cortos; su `SUMMARY` no está entre los ocultos | ✅ por ausencia |
+| `gastos-chip` «Todos» | SCRUM-1603b | 44,6–44,7 | renderExpensesView: 0 cortos | ✅ por ausencia |
+| `gastos-chip` «Sin foto» | SCRUM-1603b | 44,6–44,7 | renderExpensesView: 0 cortos | ✅ por ausencia |
+| «Nuevo gasto» (`gastos-nuevo`) | SCRUM-1603b | 44,5 | renderExpensesView: 0 cortos | ✅ por ausencia |
+| «+ Nuevo presupuesto» (`btn-primary.btn-sm`), cabecera | SCRUM-1148 | 44,6–45,0 | el censo lo da **CORTO: 30,7–31,0** (clase en 3 pantallas) | 🔴 corto, no de borde |
+| botones de la lista a 700 px | SCRUM-1148 | 44,7–44,8 | el censo no mide 700 | sin re-medir |
+| «Cancelar» del modal de anulación (`#anul-no`) | SCRUM-1142 | 44,7 | modal cerrado: ni el censo ni el guard lo abren | sin re-medir |
+| hoja del trabajo, toque mínimo en móvil | SCRUM-1745 | 44,5–44,6 | es de `guard:hojas-del-trabajo-44`, que no corrí | sin re-medir |
+
+## Hallazgo (no arreglado: `public/` no es de J6)
+
+«+ Nuevo presupuesto» sale hoy entre los cortos con 30,7–31,0 px, y SCRUM-1148 lo dio por arreglado (31,0 → 45,0/44,6 en la cabecera). **No he mirado en cuál de las 3 pantallas de su clase aparece**: puede que vuelva a estar corto en la cabecera de la lista de presupuestos, o que sea otra instancia (p. ej. la ficha 360). No viene del +1: está 13 px por debajo.
+
+## Lo que no medí
+
+- Los 4 ciegos del guard (salida 2) y `guard:hojas-del-trabajo-44`: no los corrí ni los leí.
+- Los 3 «sin re-medir» de la tabla.
+- Lo que cuenta como «por ausencia» no tiene cifra propia.
+- Paré a 132k de contexto con el tope en 140k. El arranque se comió 103k, y las salidas del censo y del guard, leídas en el chat, el resto.
