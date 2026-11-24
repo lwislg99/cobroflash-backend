@@ -119,7 +119,7 @@ Las 33 de hoy, por fichero y por si su firma consta en algún sitio que se pueda
 
 **Medido contra:** `origin/main` = `e7be8c3d897e266cd26c80815065476ec2cc8f99` · 2026-11-24T12:08:39Z
 
-A9: aviso → cicatriz J1 «Crucé el tope de 150k del encargo (159.962) sin medirme entre el arranque (120.284) y el censo» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
+A9: aviso → cicatriz J1 «Crucé el tope de 150k del encargo (159.962) sin medirme entre el arranque (120.284) y el censo; lo avisé al medir, ya cruzado (SCRUM-1428c, jv-j1jt)» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
 
 24-nov-2026 · **J1** (jv-j1jt), encargo del orquestador `cobroflash-backend-2d`. Aplica el parche de 1428b, que ya no casaba: `git apply --check` cae en las DOS mitades (la vista, porque SCRUM-1051h metió `colIsp`/`valorIsp`; el JSON, por contexto). Rehecho a mano **por identidad**, no por número de línea.
 
