@@ -454,7 +454,15 @@ async function renderTeamMemberDetail(container, member) {
           </div>
           <div class="j3e-f38982b">${fmtMoneyEs(j.totalAceptado || 0, cur)}</div>
         `;
-        card.addEventListener('click', () => { if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: j.id }); });
+        const abrirTrabajo = () => { if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: j.id }); };
+        card.addEventListener('click', abrirTrabajo);
+        // SCRUM-1639c · con teclado, como Gastos (#3009): la tarjeta no contiene controles, así que ella
+        // es el botón; su nombre accesible es su propio texto (sin aria-label: sería texto nuevo).
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+        card.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); abrirTrabajo(); }
+        });
         cuerpoTrabajos.appendChild(card);
       });
     })
@@ -480,7 +488,14 @@ async function renderTeamMemberDetail(container, member) {
           </div>
           <div class="j3e-f38982b">${fmtMoneyEs(q.totalAmount || 0, q.currency || cur)}</div>
         `;
-        card.addEventListener('click', () => { if (window.renderAppView) window.renderAppView('quotes-detail', { quoteId: q.id }); });
+        const abrirPresupuesto = () => { if (window.renderAppView) window.renderAppView('quotes-detail', { quoteId: q.id }); };
+        card.addEventListener('click', abrirPresupuesto);
+        // SCRUM-1639c · igual que la tarjeta del trabajo, de arriba.
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+        card.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); abrirPresupuesto(); }
+        });
         cuerpoPresupuestos.appendChild(card);
       });
     })

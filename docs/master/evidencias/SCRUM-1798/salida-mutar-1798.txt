@@ -1,0 +1,15 @@
+BASE sin mutar → salida 0 · población: 244 comprobaciones · D y G sobre 4 casos × 2 anchuras · F sobre 5 casos (solo, equipo, equipo, tecnico, ciego) × 2 anchuras (1280, 390) · 0 no medidas · ✅ el detalle cuadra con su inventario: 244 de 244.
+       el clic, en las 10 páginas de F: antes oculto y 0 px · después a la vista y 44 · 44 · 44 · 44 · 44 · 55.4 · 44 · 44 · 44 · 55.4 px
+✔ CAE  · DIRECCIÓN 1 · cabecera de 30 px DENTRO de la pestaña abierta (el guard no se volvió ciego)
+       public/dashboard/css/styles.css → salida 1 · población: 244 comprobaciones · D y G sobre 4 casos × 2 anchuras · F sobre 5 casos (solo, equipo, equipo, tecnico, ciego) × 2 anchuras (1280, 390) · 0 no medidas · ❌ el detalle NO cuadra con su inventario: 234 de 244. · ⟦veredicto⟧ 10 hallazgos · 0 ciegos → salida 1 (hallazgo)
+       10 líneas en rojo o en suelo; la primera: ❌ F.4 [SIN EQUIPO · sin nombre · 0 gastos] cabeceras por debajo de 44 px: Tipo de trabajo 30 · Nombre y dirección 30 · Quién lo ejecuta 30 · Notas internas 30 · Gastos de este trabajo 30
+✔ CAE  · DIRECCIÓN 2 · sin el re-anclaje mide 0 px: es la BASE del 20-nov (202 de 244, 42 hallazgos)
+       scripts/guard-detalle-trabajo-917.mjs → salida 1 · población: 244 comprobaciones · D y G sobre 4 casos × 2 anchuras · F sobre 5 casos (solo, equipo, equipo, tecnico, ciego) × 2 anchuras (1280, 390) · 0 no medidas · ❌ el detalle NO cuadra con su inventario: 202 de 244. · ⟦veredicto⟧ 42 hallazgos · 0 ciegos → salida 1 (hallazgo)
+       42 líneas en rojo o en suelo; la primera: ❌ F.4 [SIN EQUIPO · sin nombre · 0 gastos] cabeceras por debajo de 44 px: Tipo de trabajo 0 · Nombre y dirección 0 · Quién lo ejecuta 0 · Notas internas 0 · Gastos de este trabajo 0
+✔ CAE  · DIRECCIÓN 2 · se quita SÓLO el clic: el panel sigue oculto y el guard dice «no supe mirar»
+       scripts/guard-detalle-trabajo-917.mjs → salida 2 · población: 92 comprobaciones · D y G sobre 4 casos × 2 anchuras · F sobre 5 casos (solo, equipo, equipo, tecnico, ciego) × 2 anchuras (1280, 390) · 10 no medidas · ⟦veredicto⟧ 0 hallazgos · 10 ciegos → salida 2 (no supe medir) · un ciego no es un verde
+       10 líneas en rojo o en suelo; la primera: 🟡 SUELO · F [SIN EQUIPO · sin nombre · 0 gastos] pulsé la pestaña «ficha-pestana-3» y su panel «ficha-panel-3» sigue oculto: no juzgo una tarjeta sin pintar
+✔ CAE  · DIRECCIÓN 2 · la pestaña deja de gobernar su panel (aria-controls roto): «no supe mirar»
+       public/dashboard/js/jobDetailView.js → salida 2 · población: 92 comprobaciones · D y G sobre 4 casos × 2 anchuras · F sobre 5 casos (solo, equipo, equipo, tecnico, ciego) × 2 anchuras (1280, 390) · 10 no medidas · ⟦veredicto⟧ 0 hallazgos · 10 ciegos → salida 2 (no supe medir) · un ciego no es un verde
+       10 líneas en rojo o en suelo; la primera: 🟡 SUELO · F [SIN EQUIPO · sin nombre · 0 gastos] la tarjeta vive en el panel «ficha-panel-3» y lo gobiernan 0 pestañas (esperaba UNA con aria-controls="ficha-panel-3"): no sé abrirlo, no juzgo nada de él
+4 mutaciones · 4 hacen lo que deben · 0 mudas · 0 no aplican

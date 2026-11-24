@@ -2686,6 +2686,9 @@ html, body { overflow-x: clip; }
    Va por `#po-lista` y no por una clase propia: la fila conserva la clase exacta `customers-card`. */
 #po-lista > button.customers-card { width: 100%; text-align: left; font: inherit; color: inherit; }
 #po-lista > button.customers-card:focus-visible { outline: none; box-shadow: var(--ring); }
+/* J3: SCRUM-1639c · las tarjetas de trabajos y presupuestos de la ficha del operario (`teamView.js`)
+   son `role="button"`: la misma trampa de arriba, `.customers-card` pisa el `:focus-visible` global. */
+.customers-card[role="button"]:focus-visible { outline: none; box-shadow: var(--ring); }
 /* SCRUM-1692 · la fila ABIERTA: el mismo marcado de selección que `.quote-cliente-opcion[aria-pressed]`
    (borde de marca + un píxel por dentro + fondo suave), sin tokens nuevos ni sólo color (WCAG 1.4.1). */
 #po-lista > button.customers-card[aria-current="true"] {

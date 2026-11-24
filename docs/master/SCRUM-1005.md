@@ -97,6 +97,31 @@ Carril medido con `node scripts/carriles.mjs de` (18-nov):
 6. **¿Aplicas el ALTER de `docs/sql/scrum-1005-adjuntos-cliente.sql` en las tres bases?** Son 3 columnas anulables, 0 destructivas. ✅/❌
 7. **Cambio de máster:** que la línea de MEDIA-1 (`docs/YAQU_MASTER.md:660`) diga `kind:'photo'|'audio'|'document'` y añada `entityType 'customer'`. ✅/❌
 
+## SCRUM-1005d · S3 · el contrato del censo para la pestaña Documentos (apéndice)
+
+**Medido contra:** `origin/main` = `8e0d408168865aab0c7862d7c004cf864450aa71` · 2026-11-24 09:50Z (cabecera `Date` de GitHub) · puesto S3, rama `scrum-1005d-contrato-censo`, por encargo del orquestador `cobroflash-backend-41`. Rama de #3277: `scrum-1005d-pestana-documentos` @ `57ff9098cf9c34dd0c1131a87543493797b6a528` (412 commits por detrás de main).
+
+> Va aquí, y no al final del fichero, a propósito: #3277 añade su tramo de 1005d al FINAL, y dos inserciones en el mismo sitio son un conflicto que deja al PR sin ref de merge (y sin CI).
+
+**Qué:** `scripts/_datos-del-censo.mjs` (`CONTRATOS`, carril S3) gana el contrato de `GET /admin/customers/:n/documentos`, el literal de c.22228 (J2 `jv-j2dj`) sin cambiar una coma, marcado `// J2: SCRUM-1005d` como pide c.22236: forma `objeto`, claves `documentos` y `limites`, filas `id, fileName, mime, sizeBytes, createdAt`, `fuente` = `customersAdmin.routes.ts`, `get` = `/:id/documentos`. Cotejado en el árbol: `SELECT_DOCUMENTO` y los topes `DOC_MAX_BYTES` (10 MiB) y `DOCS_MAX_BYTES_POR_CLIENTE` (100 MiB) están en `src/modules/system/customerAdmin.ts` de main; `limites` lo trae la rama de #3277 (`res.json({ documentos, limites: … })`). En main el GET devuelve sólo `{ documentos }`: el contrato describe el servidor de DESPUÉS de #3277, y en main no lo pide ninguna vista.
+
+**Rojo primero (`tests/scrum1560-datos-de-muestra-con-forma.test.mjs`, 12 casos, con `npm run build` antes de cada corrida):**
+
+| árbol | contrato | resultado |
+|---|---|---|
+| main `8e0d40816` | sin | 12/12 ✔ (ninguna vista de main pide la ruta) |
+| main + `57ff9098c` (merge sin commit, 0 conflictos) | sin | **11/12 ✖** · cae `:236` con `actual: [ '/admin/customers/:n/documentos' ]`, el mismo rojo de c.22228 |
+| main + contrato | con | 12/12 ✔ |
+| main + contrato + `57ff9098c` | con | **12/12 ✔** |
+
+La segunda y la cuarta fila son el control: el mismo árbol, con y sin el contrato. Además, los 18 tests que importan `_datos-del-censo` (`git grep -l`), sobre main + contrato: 103/103, 0 saltados.
+
+**Lo que esto NO mide:** el verde del obligatorio de #3277 (lo mide su CI cuando J2 traiga main a su rama) ni el POST, el DELETE o la descarga, que van detrás de clics y el banco no los pide al montar (c.22228, leído en el código por J2; aquí tampoco se ha corrido).
+
+⚠️ **Sufijo compartido:** esta rama y la de #3277 empiezan las dos por `scrum-1005d-`. El nombre lo dio el encargo; se dice para que `npm run enlace:ticket-rama` no se lea como un error de nadie.
+
+A9: sin fallo que generalice — el rojo era un contrato que faltaba en un fichero de otro carril, y lo cazaron el guard (`scrum1560`) y el hook de carril, cada uno en su sitio.
+
 ## SCRUM-1005b · J2 · ②-dev + esquema + servidor + tests (sin pestaña)
 
 **Medido contra:** `origin/main` = `6cabd3d42c1e0c7ba531a91ab94471c17c288949` · 2026-11-19T18:02:48Z (hora de GitHub; sesión J2 `jv-j2d9`, por encargo del orquestador `cobroflash-backend-c7`). A las 18:13:53Z main iba 9 commits por delante, y ninguno toca los ficheros de este tramo (`git diff --stat HEAD origin/main` sobre ellos: vacío).
