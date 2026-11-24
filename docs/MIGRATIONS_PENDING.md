@@ -3250,3 +3250,41 @@ tramo SCRUM-914d).
   sentencias sobre equipos**; sí salen 12 `DROP` de columnas e índices de OTROS tickets (1780, 1056, 587…)
   que dev ya tiene y `main` todavía no: dev va por delante, no es un hueco de este ALTER. Offline
   (`--desde` el esquema de `origin/main`): exactamente el DDL de arriba, veredicto «aditiva».
+
+## SCRUM-665e · `invoices.pdf_sha256` (huella del PDF guardado al emitir) — 27-oct-2026 · ✅ **APLICADA EN LAS TRES BASES**, según el fundador (producción, SCRUM-665 c.22567; staging y desarrollo, c.22650)
+
+Decisión del fundador: SCRUM-665 c.21182, punto 4 («Se guarda también la huella del fichero:
+columna nueva, ALTER aditivo»). **Una** sentencia, aditiva:
+
+    ALTER TABLE "invoices" ADD COLUMN "pdf_sha256" TEXT;
+
+Nullable, sin default, sin índice: ninguna fila cambia, y las facturas ya emitidas quedan a NULL
+(regla 29: no se rellena hacia atrás). El DDL lo sacó J1 (jv-j1dk) el 27-oct-2026 ~18:04Z con
+`node scripts/preview-migracion.mjs --desde <schema.prisma de origin/main 95016f26f>` (offline;
+control positivo «la herramienta responde (33 tablas)»; veredicto «aditiva»). Quien lo aplique puede
+añadir `IF NOT EXISTS`.
+
+- [x] **desarrollo y tests · yaqu_dev_javier** — SCRUM-665 c.22650 (creado el 2026-11-24T13:58:42Z
+  según Jira; lo escribe el orquestador J con la confirmación del fundador por formulario de
+  elección). A la pregunta «¿aplicaste el ALTER de `pdf_sha256` también en staging y desarrollo?»,
+  la opción elegida, literal: «Sí, en las tres»: «Producción, staging y desarrollo tienen la
+  columna.» Es la respuesta del fundador, no una medición contra la base. Casilla marcada por J1
+  (jv-j1kn, SCRUM-665i).
+- [x] **staging** — el mismo comentario, SCRUM-665 c.22650 (arriba). c.22567 no la nombraba.
+  **No medido por J1**: no tengo claves de esa base.
+- [x] **producción** — SCRUM-665 c.22567 (2026-11-24T11:29:10Z), a la pregunta «¿está montado el
+  volumen en el servicio de producción, con `RAILWAY_VOLUME_MOUNT_PATH` definida, y aplicado en
+  producción el ALTER de la columna `pdf_sha256`?», responde: «1-Sí el volumenb está montado y el
+  alter de la columna tambien». Es la respuesta del fundador, no una medición contra la base. La
+  casilla la marcó J1 (jv-j1kh, SCRUM-665f); desarrollo/tests y staging, el comentario no los nombra.
+
+El PR de esquema + código + tests (rama `scrum-665e-pdf-persistente`) **no se empuja** hasta que
+estén las tres casillas y el volumen persistente de Railway creado (c.21182, «Dependencias del
+fundador antes de empujar»).
+
+> 24-nov-2026 (J1, jv-j1kn, SCRUM-665i): **ya no está pendiente.** El párrafo de arriba se escribió
+> antes de c.22567 y c.22650; se deja como estaba. La rama `scrum-665e-pdf-persistente` entró en
+> `main` con el **PR #3201**, mergeado el 2026-11-24T16:48:27Z (según GitHub), commit de merge
+> `651a143476a309308898fe252360d0b3d6a2a2ad`. Entró con la casilla de producción marcada (c.22567) y
+> el volumen confirmado en el mismo comentario. Las casillas de staging y desarrollo se marcan aquí
+> después del merge, citando c.22650 (13:58:42Z), que es anterior al merge.

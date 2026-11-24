@@ -223,6 +223,9 @@ export const NO_PERSONALES = Object.freeze({
   'invoice.vfPrevHash': HUELLA,
   'invoice.vfAnulHash': HUELLA,
   'invoice.vfAnulPrevHash': HUELLA,
+  // SCRUM-665e (GO SCRUM-665 c.21182 punto 4; registrado por la vía de c.21943 punto 3): la huella
+  // SHA-256 del PDF emitido, tal como quedó en disco. Es una huella, como las cuatro de arriba.
+  'invoice.pdfSha256': HUELLA,
   // expense
   'expense.currency': MONEDA,
   'expense.category': ESTADO,

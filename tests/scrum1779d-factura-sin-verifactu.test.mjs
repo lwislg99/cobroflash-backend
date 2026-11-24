@@ -184,7 +184,7 @@ function cobroPagado() {
 test('SCRUM-1779d · ① emitida sin sello con SIF OFF: la segunda entrega del cobro, ya con SIF ON, NO la sella', async () => {
   const m = reiniciar({ INVOICING_ES_ENABLED: true });
   const chargeId = cobroPagado();
-  await ensureInvoiceForCharge(chargeId, prisma);
+  await ensureInvoiceForCharge(chargeId, prismaConRelaciones); // SCRUM-665e: la segunda entrega pasa por `ensureInvoicePdf`, que pide las relaciones
   await asentar();
   const emitidas = banco.tablas.invoice.filter((f) => f.chargeId === chargeId);
   assert.equal(emitidas.length, 1, 'población: el cobro emite UNA factura');
@@ -192,7 +192,7 @@ test('SCRUM-1779d · ① emitida sin sello con SIF OFF: la segunda entrega del c
   assert.equal(emitidas[0].vfEstado, 'no_aplica', 'nace sin sello (SIF OFF)');
   // Se enciende SIF en el comercio y llega otra entrega del mismo cobro.
   m.flags = { ...m.flags, SIF_ENABLED: true };
-  await ensureInvoiceForCharge(chargeId, prisma);
+  await ensureInvoiceForCharge(chargeId, prismaConRelaciones);
   await asentar();
   const f = banco.tablas.invoice.find((x) => x.id === id);
   assert.equal(banco.tablas.invoice.filter((x) => x.chargeId === chargeId).length, 1, 'sigue siendo UNA factura');
@@ -201,7 +201,7 @@ test('SCRUM-1779d · ① emitida sin sello con SIF OFF: la segunda entrega del c
   assert.equal(banco.tablas.vfSubmission.length, 0, '0 altas en VfSubmission');
   // Control positivo del mismo camino: un cobro NUEVO con SIF ya en ON sí nace sellado.
   const otro = cobroPagado();
-  await ensureInvoiceForCharge(otro, prisma);
+  await ensureInvoiceForCharge(otro, prismaConRelaciones);
   await asentar();
   const nueva = banco.tablas.invoice.find((x) => x.chargeId === otro);
   assert.equal(nueva?.vfEstado, 'sellado', 'control: con SIF ON en la emisión, el cobro nuevo sale sellado');

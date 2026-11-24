@@ -106,3 +106,36 @@ Puesto S3. Lo encontró el orquestador el 14-oct: el job «guards de navegador»
 - **Lo que NO arregla, y queda propuesto al orquestador:** la puerta (`scripts/guards-visuales.mjs`) contó esta caída como `rojo(1)`, es decir, «midió y encontró algo», y la tanda dijo «0 CIEGOS». Es una decisión a propósito de SCRUM-1343, fijada por un test («reventar en la primera línea es rojo»). Cambiarla obliga a cambiar ese test, y eso no se hace sin un GO.
 
 A9: sin fallo que generalice — el fallo de fondo (una caída antes de medir contada como hallazgo) no se arregla en esta entrega; queda propuesto en la clasificación de la puerta, a falta de GO porque cambia un test de SCRUM-1343.
+
+## SCRUM-1490b · el presupuesto adicional de `convertir-en-factura` guarda el año de su serie (24-nov-2026)
+
+**Medido contra:** `origin/main` = `2db8e1c8be5c289fb2643de9e211d29b2ab6f949` · 2026-11-24T15:58:31Z
+A9: comprobación → `tests/scrum1490-el-anio-de-la-serie.test.mjs`
+
+Puesto S1, rama `scrum-1490b-anio-en-convertir`. Encargo del orquestador (`cobroflash-backend-41`, versión 1.1, ficha SCRUM-1835).
+
+**El GO.** SCRUM-1490 c.22640, fundador, literal «si ok», en respuesta a la pregunta de c.20041: el OK a las dos líneas de camino de emisión de `albaranes.routes.ts`. Lo copio del encargo del orquestador; el comentario no lo he leído yo (esta sesión no tiene Rovo). El GO cubre ESAS dos líneas y nada más del manejador.
+
+**Qué cambia en `src`.** Dos líneas del manejador `POST /admin/albaranes/:id/convertir-en-factura`. En c.20041 eran `:1707` y `:1710`; medidas hoy, son `:1753` y `:1756`:
+
+| línea | antes | después |
+|---|---|---|
+| 1753 | `const { seq: quoteNumber } = await allocateQuoteNumber(tx, req.merchantId!);` | `const { seq: quoteNumber, year: seriesYear } = await allocateQuoteNumber(tx, req.merchantId!);` |
+| 1756 | `merchantId: req.merchantId!, customerId: job.customerId, quoteNumber,` | `merchantId: req.merchantId!, customerId: job.customerId, quoteNumber, seriesYear,` |
+
+`git diff --numstat -- src` → `2 2`, un solo fichero. No hay ningún comentario nuevo en el manejador: habría sido una tercera línea, y el GO no la cubre. Es la misma forma que ya usan el alta (`quotes.routes.ts:193/199`) y el mantenimiento (`maintenance.service.ts:430/436`). Ni esquema ni texto de usuario.
+
+**El test.** La constante `SIN_ANIO_POR_SER_CAMINO_DE_EMISION` pasa de `['src/modules/jobs/app/routes/albaranes.routes.ts']` a `[]`. La dejo vacía, en vez de borrarla, porque `SCRUM-1554.md:794` mide el cumplimiento así: «es `[]` en `origin/main`». La lista sigue siendo exacta en los dos sentidos.
+
+**Rojo primero, y es el del diseño del censo.** Con las dos líneas puestas y la lista sin tocar, `tests/scrum1490-el-anio-de-la-serie.test.mjs` da 9 pass y 1 fail: cae el caso 7 (aceptación 3, el censo), con `actual []` frente al fichero declarado. El censo está hecho para caer el día en que ese fichero empiece a guardar el año, y ha caído. Con la lista vacía, 10 de 10.
+
+**Control en rojo, una vez y sin guion en git** (por eso no lleva línea de mutaciones ni cuenta como evidencia de mutación, A3). Con las dos líneas ya puestas, deshice cada una por separado, sólo en `src`, porque el censo lee `src` por AST:
+
+- quitar `seriesYear` del `data` → cae el caso 7;
+- quitar `year: seriesYear` de la reserva → cae el caso 7.
+
+Restaurado y comprobado por hash contra la copia previa: `git diff --numstat` vuelve a dar `2 2`.
+
+**Tanda dirigida** (TAP a fichero fuera del árbol). Los 60 ficheros de `tests/` que nombran `albaranes.routes`, este incluido: 448 casos · 445 pass · 0 fail · 3 skip. Los tres skip son `scrum127` y `scrum49` (gateados por `QA_DB_TEST`/`LIBRO_PG_URL`) y `scrum1712` (gateado por `LIBRO_PG_URL`): no corrieron aquí, corren en el check obligatorio. Build (`npm run build`): salida 0. Suite entera: NO corrida en local, porque el disco D estaba a 52 MB libres; la corre el CI.
+
+**Lo que esto NO hace.** Las filas adicionales que ya existen en producción con `seriesYear` a NULL siguen leyéndose por su `createdAt`, como hasta hoy. Su relleno y la aceptación 6 son los del tramo «Lo que sigue sin hacer» de arriba, y este cambio no los toca. De ese tramo, este cambio cierra sólo la línea «El adicional del albarán no guarda el año». Ninguna coordenada se desplaza: el fichero tiene las mismas líneas que antes.

@@ -156,12 +156,14 @@ test('SCRUM-283 · fila `annulled`: sin primaria · solo PDF de secundaria · Re
   }
 });
 
-test('SCRUM-283 · fila `R1`: sin primaria · solo PDF de secundaria · solo Regenerar en ⋮', () => {
+test('SCRUM-283 · fila `R1`: sin primaria · solo PDF de secundaria · ⋮ vacío (SCRUM-665e)', () => {
   for (const ctx of CTXS) {
     const g = layout(INVOICE_ACTION_REGISTRY, 'R1', ctx);
     assert.deepEqual(g.primaria, [], `🔴 R1 no lleva primaria; tiene [${g.primaria}]`);
     assert.deepEqual(g.secundaria, ['btnPdf'], `🔴 R1: solo PDF de secundaria; tiene [${g.secundaria}]`);
-    assert.deepEqual(g.overflow, ['btnRegen'], `🔴 R1: solo Regenerar PDF en el ⋮; tiene [${g.overflow}]`);
+    // SCRUM-665e: su único ocupante era «Regenerar PDF», retirado por el fundador (SCRUM-665 c.21182
+    // punto 3). Con el ⋮ vacío la vista no lo pinta (`invoiceDetailView.js`, `cubosAcc.overflow.length`).
+    assert.deepEqual(g.overflow, [], `🔴 R1: el ⋮ va vacío; tiene [${g.overflow}]`);
   }
 });
 
@@ -171,9 +173,10 @@ test('SCRUM-283 · fila `R1`: sin primaria · solo PDF de secundaria · solo Reg
 test('SCRUM-283 · rojo por el mecanismo: meter una 2ª primaria en cualquier estado rompe la regla 1', () => {
   for (const st of INVOICE_STATES) {
     const mut = clonar(INVOICE_ACTION_REGISTRY);
-    // btnRegen vive en overflow en los 4 estados; ascenderlo a primaria crea una 2ª primaria en
+    // btnPdf es secundaria en los 4 estados; ascenderlo a primaria crea una 2ª primaria en
     // pending, y una 1ª indebida en paid/annulled/R1. En AMBOS casos la fila deja de cumplir su forma.
-    mut.find((a) => a.id === 'btnRegen').destinos[st] = 'primaria';
+    // (SCRUM-665e: antes era btnRegen, que vivía en overflow en los 4 y se retiró.)
+    mut.find((a) => a.id === 'btnPdf').destinos[st] = 'primaria';
     // SCRUM-402: los contextos nombran ya los predicados nuevos. Se usa el de «sin charge» para
     // `pending` por lo mismo que antes: es el que tiene UNA primaria legítima, así que la de más
     // se ve como segunda.
@@ -217,7 +220,7 @@ test('SCRUM-283 · control negativo: reordenar el ⋮ de un estado NO rompe la t
   // Mover una acción DENTRO del mismo destino (overflow) es cosmético: el guard de «sin sitio» y las
   // reglas 1/2 no deben inmutarse. Distingue «cambió el orden» de «desapareció/cambió de peso».
   const mut = clonar(INVOICE_ACTION_REGISTRY);
-  const i = mut.findIndex((a) => a.id === 'btnRegen');
+  const i = mut.findIndex((a) => a.id === 'btnRectify'); // SCRUM-665e: antes btnRegen (retirado)
   const j = mut.findIndex((a) => a.id === 'btnDispute');
   [mut[i], mut[j]] = [mut[j], mut[i]]; // intercambia posiciones en el array (mismo destino overflow)
   for (const st of INVOICE_STATES) {

@@ -210,7 +210,7 @@ test('SCRUM-1787m ⑧ los llamadores del PDF de factura pasan el vencimiento y l
   andar(path.join(RAIZ, 'src'));
   // Suelo: el 23-nov-2026 son tres (dos en `src/lib/invoicing.ts` y la de regenerar). Menos es que el
   // patrón ha dejado de casar, no que haya menos llamadores.
-  assert.ok(llamadas.length >= 3, `🔴 CIEGO: solo veo ${llamadas.length} llamadas a generateInvoicePdf en src/`);
+  assert.ok(llamadas.length >= 1, `🔴 CIEGO: solo veo ${llamadas.length} llamadas a generateInvoicePdf en src/`); // 23-nov-2026, SCRUM-665e: de 3 a 1 por decisión del fundador (SCRUM-665 c.22379, con c.21182 y c.22358): queda un generador único, `ensureInvoicePdf`; el segundo se unificó y `regenerate-pdf` se retiró
   for (const { ruta, cuerpo } of llamadas) {
     // El objeto del que salen es el mismo que da `createdAt` a esa llamada: la factura.
     const factura = /createdAt:\s*(\w+)\.createdAt/.exec(cuerpo)?.[1];
