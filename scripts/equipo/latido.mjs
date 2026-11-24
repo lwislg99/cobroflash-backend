@@ -9,6 +9,7 @@
 //   node scripts/equipo/latido.mjs contestada s<puesto> <dónde>   → (SCRUM-1474) lo mismo, para TODAS las
 //                                               preguntas abiertas de ese puesto a la vez
 //   node scripts/equipo/latido.mjs preguntas [s<puesto>]   → las preguntas sin marcar, ENTERAS (la sección las pliega)
+//      (SCRUM-1815) en `contestada` y `preguntas`, `j<puesto>` (j1…j6) vale para el equipo de Javier.
 //
 // POR QUÉ EXISTE. El 29-sep-2026 se abrieron diez PR que NACIERON rojos y estuvieron dos días así
 // con el auto-merge armado. Medido el 1-oct: los detectores EXISTÍAN y los vieron —`vigia-atascados`
@@ -250,11 +251,31 @@ export function seccionPRs({ prs, reglas, checksDe, minutosDesdePush, eventosDeA
 
 // ───────────────────────────── 2 y 3 · SESIONES y TRASPASOS ─────────────────────────────
 
-/** `s3-1oct`, `sesion-3`, `s4-1octb` → 3 · lo demás → null (no se inventa un puesto). */
+/**
+ * `s3-1oct`, `sesion-3`, `s4-1octb` → 3 · `jv-j1iv`, `jv-j6fm` → 'J1', 'J6' · lo demás → null (no se inventa
+ * un puesto). (SCRUM-1815) El puesto J es una CADENA a propósito: un número chocaría con el puesto S del mismo
+ * número, y quien sólo sabe de S (el traspaso de esta máquina, `aparcar`) no lo confunde con uno suyo. La forma
+ * `jv-jN` es la de `puestoDeNombre` de `scripts/_carriles.mjs` (SCRUM-1506c): N de 1 a 6, hasta 3 letras o `-…`.
+ */
 export function puestoDe(nombre) {
-  const m = String(nombre || '').match(/^(?:s|sesion-)(\d)(?:-|$)/);
-  return m ? Number(m[1]) : null;
+  const n = String(nombre || '').trim().toLowerCase();
+  const m = n.match(/^(?:s|sesion-)(\d)(?:-|$)/);
+  if (m) return Number(m[1]);
+  const j = /^jv-j([1-6])(?:[a-z]{1,3}|-[a-z0-9-]+)?$/.exec(n);
+  if (j) return `J${j[1]}`;
+  return null;
 }
+
+/** (SCRUM-1815) Cómo se escribe un puesto en las órdenes y en los renglones: 3 → `s3`, 'J1' → `j1`. */
+export const etiquetaDePuesto = (puesto) => (typeof puesto === 'number' ? `s${puesto}` : String(puesto).toLowerCase());
+/** (SCRUM-1815) Lo contrario, para las órdenes: `s3` → 3, `j1` → 'J1', lo demás → null. */
+export function puestoDeEtiqueta(texto) {
+  const m = /^(?:s(\d)|j([1-6]))$/i.exec(String(texto ?? '').trim());
+  if (!m) return null;
+  return m[1] !== undefined ? Number(m[1]) : `J${m[2]}`;
+}
+/** Orden estable para plegar: primero los S por número, luego los J. */
+const ordenDePuestos = (x, y) => (typeof x === typeof y ? (x < y ? -1 : x > y ? 1 : 0) : typeof x === 'number' ? -1 : 1);
 
 /** El bloqueo vive en TRES campos y basta uno: `state`, `tempo` o una pregunta en `needs`. */
 export function espera(s) {
@@ -286,7 +307,7 @@ export function relevosDe({ id, nombre, desde }, sesiones) {
 }
 
 /** La orden EXACTA que marca las preguntas de un puesto: se imprime donde se necesita, no se recuerda. */
-export const ordenDeMarcar = (puesto) => `node scripts/equipo/latido.mjs contestada s${puesto} "<dónde está la respuesta>"`;
+export const ordenDeMarcar = (puesto) => `node scripts/equipo/latido.mjs contestada ${etiquetaDePuesto(puesto)} "<dónde está la respuesta>"`;
 /** La orden impresa lleva un hueco entre ángulos: pegada sin rellenar no apunta nada. */
 export const esElHueco = (donde) => /^<.*>$/.test(String(donde).trim());
 const horaDe = (ms) => `${new Date(ms).toISOString().slice(0, 16)}Z`;
@@ -496,10 +517,11 @@ export function seccionCementerio({ sesiones, ilegibles = [], sinEstado = [], li
   const relevadas = viejas.filter((f) => f.cubo === 'RELEVADA');
   const porPuesto = new Map();
   for (const f of relevadas) { const p = puestoDe(f.nombre); porPuesto.set(p, [...(porPuesto.get(p) || []), f]); }
-  for (const [p, fs_] of [...porPuesto.entries()].sort((x, y) => x[0] - y[0])) {
+  for (const [p, fs_] of [...porPuesto.entries()].sort((x, y) => ordenDePuestos(x[0], y[0]))) {
     const nueva = fs_[fs_.length - 1];
     const edades = fs_.length === 1 ? `de hace ${edadDe(ahora - nueva.desde)}` : `la más vieja de hace ${edadDe(ahora - fs_[0].desde)}, la más nueva de hace ${edadDe(ahora - nueva.desde)}`;
-    alertas.push({ sesion: `s${p}`, desde: fs_[0].desde, puesto: p, linea: `s${p} · ${fs_.length} pregunta(s) RELEVADA(S) y SIN MARCAR (${edades}) · la más nueva es de ${nueva.nombre} y su puesto siguió con ${nueva.relevos[0].nombre} (${horaDe(nueva.relevos[0].creado)}) · si ya están despachadas → ${ordenDeMarcar(p)} · para leerlas enteras → node scripts/equipo/latido.mjs preguntas s${p}` });
+    const e = etiquetaDePuesto(p);
+    alertas.push({ sesion: e, desde: fs_[0].desde, puesto: p, linea: `${e} · ${fs_.length} pregunta(s) RELEVADA(S) y SIN MARCAR (${edades}) · la más nueva es de ${nueva.nombre} y su puesto siguió con ${nueva.relevos[0].nombre} (${horaDe(nueva.relevos[0].creado)}) · si ya están despachadas → ${ordenDeMarcar(p)} · para leerlas enteras → node scripts/equipo/latido.mjs preguntas ${e}` });
   }
   const sinContestar = sinRelevo.length + noSeSabe.length + relevadas.length;
   const poblacion = `${sesiones.length} trabajos leídos · ${sinContestar} pregunta(s) sin contestar (de más de ${HORAS_DE_SESION} h, o de una sesión ya parada): ${sinRelevo.length} SIN RELEVO · ${relevadas.length} RELEVADA(S) sin marcar, plegadas en ${porPuesto.size} puesto(s) · ${noSeSabe.length} que NO SE PUEDE SABER · ${deHoy} de hoy (están en SESIONES) · ${contestadas} marcada(s) como contestadas (siguen en el libro)${relevadas.length ? ` · ${LIMITE_DE_RELEVADA}: el aviso sólo lo quita la marca` : ''}${sinEstado.length ? ` · ${sinEstado.length} carpeta(s) de trabajo SIN state.json (${sinEstado.slice(0, 5).join(', ')}): lanzadas y sin registro` : ''}${libroGuardado ? '' : ' · ⚠️ NO pude guardar el libro: si paran una sesión bloqueada, su pregunta se pierde'}`;
@@ -518,10 +540,12 @@ export function seccionTraspasos({ sesiones, mtimeDelTraspaso, ahora }) {
   if (!Array.isArray(sesiones)) return ciega('TRASPASO', 'no se pudo leer la carpeta de trabajos');
   const cerradas = sesiones.filter((s) => (ahora - s.actualizado) / 36e5 <= HORAS_DE_SESION && s.estado !== 'working' && s.estado !== 'blocked');
   const alertas = [];
-  let sinPuesto = 0;
+  let sinPuesto = 0; let otroEquipo = 0;
   for (const s of cerradas) {
     const puesto = puestoDe(s.nombre);
     if (puesto === null) { sinPuesto++; continue; }
+    // (SCRUM-1815) Un puesto J tiene su traspaso en la máquina de Javier: aquí no se puede medir.
+    if (typeof puesto !== 'number') { otroEquipo++; continue; }
     const m = mtimeDelTraspaso(puesto);
     if (m === undefined) return ciega('TRASPASO', `no se pudo mirar el traspaso del puesto ${puesto}`);
     if (m === null) alertas.push({ sesion: s.nombre, linea: `${s.nombre} cerró (${s.estado}) y project_s${puesto}_traspaso.md NO EXISTE` });
@@ -532,7 +556,7 @@ export function seccionTraspasos({ sesiones, mtimeDelTraspaso, ahora }) {
   }
   return {
     nombre: 'TRASPASO', pudo: true, alertas,
-    poblacion: `${cerradas.length} sesiones que ya no trabajan en ${HORAS_DE_SESION} h${sinPuesto ? ` · ${sinPuesto} sin puesto reconocible en el nombre (NO medidas)` : ''}`,
+    poblacion: `${cerradas.length} sesiones que ya no trabajan en ${HORAS_DE_SESION} h${sinPuesto ? ` · ${sinPuesto} sin puesto reconocible en el nombre (NO medidas)` : ''}${otroEquipo ? ` · ${otroEquipo} del equipo de Javier (su traspaso vive en su máquina; NO medidas)` : ''}`,
   };
 }
 
@@ -1414,18 +1438,19 @@ export function marcarPuesto(libro, puesto, { cuando, donde }) {
 }
 
 function contestada(id, donde) {
-  if (!id || !donde) { console.log('uso: latido.mjs contestada <id del trabajo | s<puesto>> <dónde está la respuesta: ticket, comentario, mensaje, encargo de qué sesión>'); return SALIDA_CIEGO; }
+  if (!id || !donde) { console.log('uso: latido.mjs contestada <id del trabajo | s<puesto> | j<puesto>> <dónde está la respuesta: ticket, comentario, mensaje, encargo de qué sesión>'); return SALIDA_CIEGO; }
   if (esElHueco(donde)) { console.log(`🔴 «${donde}» es el hueco de la orden, no un sitio: di DÓNDE está la respuesta. No apunto nada.`); return SALIDA_CIEGO; }
   const t = leerTrabajos();
   const libro = leerLibro();
   if (!t || libro === undefined) { console.log('🔴 NO PUDE MIRAR: el registro de trabajos o el libro no se dejan leer. No apunto nada.'); return SALIDA_CIEGO; }
   const nuevo = actualizarLibro(libro || {}, t.sesiones);
-  const elPuesto = /^s(\d)$/i.exec(String(id));
-  if (elPuesto) {
-    const m = marcarPuesto(nuevo, Number(elPuesto[1]), { cuando: Date.now(), donde });
-    if (m.marcadas.length === 0) { console.log(`🔴 el puesto s${elPuesto[1]} no tiene ninguna pregunta abierta en el libro (${Object.keys(nuevo).length} apuntadas en total): no apunto nada.`); return SALIDA_AVISO; }
+  const elPuesto = puestoDeEtiqueta(id);
+  if (elPuesto !== null) {
+    const e = etiquetaDePuesto(elPuesto);
+    const m = marcarPuesto(nuevo, elPuesto, { cuando: Date.now(), donde });
+    if (m.marcadas.length === 0) { console.log(`🔴 el puesto ${e} no tiene ninguna pregunta abierta en el libro (${Object.keys(nuevo).length} apuntadas en total): no apunto nada.`); return SALIDA_AVISO; }
     if (!guardarLibro(m.libro)) { console.log('🔴 NO pude guardar el libro: las preguntas siguen contando como sin contestar.'); return SALIDA_CIEGO; }
-    console.log(`✅ s${elPuesto[1]}: ${m.marcadas.length} pregunta(s) marcadas como contestadas en ${donde} (siguen en el libro):`);
+    console.log(`✅ ${e}: ${m.marcadas.length} pregunta(s) marcadas como contestadas en ${donde} (siguen en el libro):`);
     for (const k of m.marcadas) console.log(`   · ${m.libro[k].nombre} (${k}): «${m.libro[k].needs.slice(0, 120)}»`);
     return SALIDA_OK;
   }
@@ -1442,13 +1467,13 @@ function preguntas(cual) {
   const t = leerTrabajos();
   const libro = leerLibro();
   if (!t || libro === undefined) { console.log('🔴 NO PUDE MIRAR: el registro de trabajos o el libro no se dejan leer.'); return SALIDA_CIEGO; }
-  const elPuesto = /^s(\d)$/i.exec(String(cual || ''));
-  if (cual && !elPuesto) { console.log('uso: latido.mjs preguntas [s<puesto>]'); return SALIDA_CIEGO; }
+  const elPuesto = cual ? puestoDeEtiqueta(cual) : null;
+  if (cual && elPuesto === null) { console.log('uso: latido.mjs preguntas [s<puesto> | j<puesto>]'); return SALIDA_CIEGO; }
   const ahora = Date.now();
   const todas = preguntasDelLibro({ sesiones: t.sesiones, libro: actualizarLibro(libro || {}, t.sesiones), ahora })
-    .filter((f) => !elPuesto || puestoDe(f.nombre) === Number(elPuesto[1]));
+    .filter((f) => elPuesto === null || puestoDe(f.nombre) === elPuesto);
   const abiertas = todas.filter((f) => !f.marcada);
-  console.log(`PREGUNTAS${elPuesto ? ` de s${elPuesto[1]}` : ''} · ${todas.length} en el registro y el libro · ${abiertas.length} sin marcar · ${todas.length - abiertas.length} marcadas como contestadas`);
+  console.log(`PREGUNTAS${elPuesto !== null ? ` de ${etiquetaDePuesto(elPuesto)}` : ''} · ${todas.length} en el registro y el libro · ${abiertas.length} sin marcar · ${todas.length - abiertas.length} marcadas como contestadas`);
   for (const f of abiertas) {
     const r = f.relevos && f.relevos.length ? ` · su puesto siguió con ${f.relevos[0].nombre} (${horaDe(f.relevos[0].creado)})` : '';
     console.log(`· [${f.cubo}${f.deHoy ? ', de hoy' : ''}] ${f.nombre} (${f.id}) · hace ${edadDe(ahora - f.desde)}${r}\n    espera: ${f.q || 'NO LO DICE (bloqueada sin `needs`)'}`);
