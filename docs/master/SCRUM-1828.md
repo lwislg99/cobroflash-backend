@@ -22,4 +22,4 @@ Verde en local (TAP fuera del árbol): los 55 ficheros de `scrum644*`, `scrum123
 
 Mutaciones: catálogo → `tests/scrum1828b-ajustes-carga-y-guardado-sin-crudo.test.mjs`
 
-A9: aviso → cicatriz J3 «Tercera vez que corro un test en un árbol anidado sin» — no se pudo comprobar: qué tiene construido el árbol antes de una tanda es cómo trabaja la sesión y ningún test del árbol lo ve; lo cazó leer el «Cannot find module ../dist» del primer rojo antes de contarlo.
+A9: aviso → cicatriz J3 «Tercera vez que corro un test en un árbol anidado sin dist: la misma orden me dijo NO-DIST y lo corrí igual, con 3 rojos de Cannot find module.» — no se pudo comprobar: qué tiene construido el árbol antes de una tanda es cómo trabaja la sesión y ningún test del árbol lo ve; lo cazó leer el «Cannot find module ../dist» del primer rojo antes de contarlo.
