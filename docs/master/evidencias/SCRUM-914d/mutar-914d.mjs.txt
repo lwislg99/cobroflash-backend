@@ -1,0 +1,25 @@
+// SCRUM-914d · corre SOLO las declaraciones de scrum914 con las piezas de la casa (censo, correr, aplicarUna).
+// Calcado de docs/master/evidencias/SCRUM-1218/mutar-1218j.mjs.txt. Uso: node <este fichero copiado a .mjs> <raíz>
+import path from 'node:path';
+import fs from 'node:fs';
+import { pathToFileURL } from 'node:url';
+const RAIZ = process.argv[2];
+const m = await import(pathToFileURL(path.join(RAIZ, 'scripts/meta-guard-mutaciones.mjs')).href);
+const GUARD = 'scrum914-equipos-borrado-y-anonimizado.test.mjs';
+const censo = m.censoDeDeclaraciones();
+console.log(`censo: ${censo.length} guards con declaración`);
+const fila = censo.find((x) => String(x.guard).endsWith(GUARD));
+if (!fila) { console.log('CIEGO: scrum914 no sale en el censo de la casa'); process.exit(2); }
+console.log(`guard=${fila.guard} · declaraciones=${fila.mutaciones.length} · incompletas=${(fila.incompletas || []).length}`);
+const limpia = await m.correr(fila.guard);
+console.log(`limpia: pasados=${limpia.pasados?.length} caidos=${limpia.caidos?.length}`);
+let rc = 0;
+for (const mut of fila.mutaciones) {
+  const r = await m.aplicarUna(mut, fila.guard, limpia);
+  const v = r.ok ? 'VIVA' : r.mudo ? 'MUDA' : r.muerto ? 'MUERTO' : 'CIEGA';
+  if (!r.ok) rc = 1;
+  console.log(`${v} · ${mut.fichero} · cae «${mut.cae}» · colaterales=${r.colaterales ?? 0}${r.ok ? '' : ' · ' + (r.mudo || r.ciego || r.muerto)}`);
+}
+const ahora = fs.readFileSync(path.join(RAIZ, 'src/modules/system/domain/borradoMerchant.ts'), 'utf8');
+console.log(`post-condición: borradoMerchant.ts conserva el ancla = ${ahora.includes("  'equipment', 'customerSite',")}`);
+process.exit(rc);
