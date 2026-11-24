@@ -184,13 +184,23 @@ test('SCRUM-889 · si el guardado FALLA no se hace como si se hubiera guardado: 
   assert.equal(nueva.desc.value, 'Cambio de diferencial');
 });
 
-test('SCRUM-889 · pulsar «Añadir línea» dos veces no deja dos líneas vacías', async () => {
-  const { cont } = await abrir();
-  await anadir(cont, 'mano_obra');
-  const antes = camposDesc(cont).length;
+// 🔴 SCRUM-916b · ESTA EXIGENCIA SE INVIRTIÓ, CON AUTORIZACIÓN NOMINAL (24-nov-2026; el bloque literal
+// está en `docs/master/SCRUM-916.md`). Decía «…dos veces no deja dos líneas vacías» y exigía que la
+// segunda pulsación NO añadiera nada. Eso era la mitad del defecto que el fundador señaló dos veces:
+// con una fila en pantalla, «Añadir línea» no añadía. El patrón ahora es el del editor de presupuestos:
+// CADA pulsación añade exactamente UNA fila vacía más, y pulsar no escribe nada en el servidor.
+test('SCRUM-889 · pulsar «Añadir línea» dos veces deja DOS líneas en las que escribir, y no escribe nada', async () => {
+  const { cont, srv } = await abrir();
+  const alAbrir = camposDesc(cont).length;
+  await anadir(cont, 'mano_obra');                      // (ya exige +1 por su cuenta)
+  assert.equal(camposDesc(cont).length, alAbrir + 1, 'control: la primera pulsación añade una');
   botonAnadir(cont, 'mano_obra').dispararClick();
   await vaciar();
-  assert.equal(camposDesc(cont).length, antes, '🔴 cada pulsación deja otra línea vacía');
+  assert.equal(camposDesc(cont).length, alAbrir + 2, '🔴 la segunda pulsación no añade otra línea: hay que poder pedir todas las que hagan falta');
+  assert.equal(camposUnds(cont).length, alAbrir + 2, '🔴 la segunda línea no trae su casilla de UNDS');
+  assert.equal(camposDesc(cont).filter((x) => x.hasAttribute('data-nueva-desc') && x.value === '').length, 2,
+    '🔴 las dos líneas nuevas no están vacías y por escribir');
+  assert.equal(srv.escrituras().length, 0, '🔴 pulsar «Añadir línea» ha escrito en el servidor: vacía no hay nada que guardar');
 });
 
 // ═══ ② LA «×» ═════════════════════════════════════════════════════════════════════════════════
