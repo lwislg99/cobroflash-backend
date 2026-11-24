@@ -81,6 +81,35 @@ Sin firma no se cambia.
 
 A9: aviso → cicatriz J2 «crucé el tope de contexto del encargo antes de empujar: me medí al acabar el arranque (102k) y no volví a medirme hasta el final de la construcción (174k, tope 170k); el ④ se quedó sin captura y la suite entera sin correr» — no se pudo comprobar: la medición del contexto la hace la propia sesión y ningún hook la lee a mitad de tanda
 
+# SCRUM-1800c · «Cancelar cobro» con la factura ya pagada (J1, c.22496 ①)
+
+**Medido contra:** `origin/main` = `3c6c651fecd17adcad2ec6088d1cf44da0110154` · 2026-11-24T06:38:11Z
+
+**Skill UI:** no cargada · la añade el relevo jv-j1jj, que no toca `public/` (solo merges) y no la cargó; si jv-j1jf la cargó al escribir `invoiceDetailView.js` no consta en este tramo (el cambio es una rama de un ternario de error y una condición de pintar, sin tokens visuales nuevos).
+
+Escrito por jv-j1jf (J1). Rama `scrum-1800c-boton-cancelar-con-factura-pagada`, nacida a propósito sobre la de 1532d (#3340, aún sin mergear: este PR lleva dentro sus commits hasta que entre) y con `origin/main` mergeado encima.
+
+Literal FIRMADO en SCRUM-1800 c.22496 ①, copiado de Jira: `Este documento ya consta como pagado: su cobro no se puede cancelar.` Ningún otro texto nuevo.
+
+Medición previa: el 409 `charge_not_pending` se pinta en `invoiceDetailView.js` con un ternario sobre `d.error`; ahí se añade la rama `document_already_paid`. El botón ya lo ocultaba el registro de acciones con `status: 'paid'` (`invoiceActionsRegistry.js`, fila `btnCancelarCobro`, y lo afirmaba ya el test de 1532d); faltaba solo la factura con `paidAt` y otro estado, que se añade a la condición de pintar.
+
+| qué | esperado | visto |
+|---|---|---|
+| rojo primero (vista sin el arreglo, `git apply -R`) | caen ① y ② paidAt; los controles y `status: 'paid'` pasan | 3 pasan · 2 caen, sobre 5 |
+| verde con el arreglo | 5 de 5 | 5 de 5 (`tests/scrum1800c-cancelar-cobro-con-factura-pagada.test.mjs`) |
+| mutación del catálogo (quitar `!invoice.paidAt`) | tumba ② paidAt | NO CORRIDA: el contexto llegó al tope antes |
+| capturas 1280 y 390 | miradas | NO HECHAS (contexto) |
+| dirigida (1532d, 1800, 1802, 601, 1415, 1294, 267, 854, 719 y los que nombran `invoiceDetailView`) | verde | NO CORRIDA salvo lo que diga la entrega |
+| suite entera | verde | NO CORRIDA (no cabe en el contexto del encargo) |
+
+Relevo jv-j1jj (J1, 24-nov-2026 ~07:45Z): merge de main `356a9af5a9356f5f03aecad6e154e692e370023b` y de 1800b `4076ec3b8dffc4ee7cb01121b087558f41f8ee90` (este PR lleva los commits de #3354 hasta que entre); el merge de este registro se comió la línea en blanco entre este tramo y el de 1800b, repuesta a mano. Mutación medida: VIVA (`aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, base limpia 5 de 5; control: la misma con `a` = `de` + espacio sale «el guard NO cayó»). Build con tipos: salida 0. Dirigida (1294, 1415, 1532d, 1800, 1800b, 1800c, 601, 719, 854, 910d, 921c): 106 de 106, 0 saltos, sobre 11 ficheros; `tests/scrum1532e-*` no existe. Suite entera: NO CORRIDA (tope del encargo, 140k).
+Mutaciones: catálogo → `tests/scrum1800c-cancelar-cobro-con-factura-pagada.test.mjs`
+
+Relevo jv-j1jm (J1, 2026-11-24T07:54:54Z, `origin/main` = `18aeb8941036f996d00426fce3ef41109e88263b`): rama rehecha como 1800d desde main por las bases de merge múltiples de #3355; contenido idéntico (cherry-pick de `4f04d628b` `c435770bb` `e356f4cc5` `53c2ba270`; git pegó este tramo DOS veces en el registro sin marcadores y se quitó la copia; después, `git diff` contra la rama vieja en los 4 ficheros: 0 B). Además, scrum836 caía en #3355: la mutación ① de 1532d anclaba a la línea entera que 1800c amplió con `!invoice.paidAt`; re-anclada a `invoice.chargeId && invoice.estadoDelCobro === 'pending'` (sin restaurar el texto viejo). `aplicarUna`: VIVA la de 1532d y la de 1800c; control: el ancla vieja sale CIEGO («la declaración caducó»). Build con tipos: salida 0. Dirigida (836, 1294, 1532d, 1800, 1800b, 1800c, 719, 854, 921c): 107 de 107, 0 saltos, sobre 9 ficheros. Suite entera: NO CORRIDA (tope del encargo, 140k).
+Mutaciones: catálogo → `tests/scrum1532d-cancelar-cobro-ficha-y-reenvio.test.mjs`
+
+A9: aviso → cicatriz J1 «Escribí el arreglo de la ficha antes de su test rojo, la cuarta vez tras 1780c, 1787e y 1787s» — no se pudo comprobar: el orden en que una sesión escribe test y arreglo no queda en el diff
+
 # SCRUM-1800b · El recibo pendiente dice «a continuación»
 
 **Medido contra:** `origin/main` = `3c6c651fecd17adcad2ec6088d1cf44da0110154` · 2026-11-24T06:33:51Z
