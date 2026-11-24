@@ -187,3 +187,81 @@ export function redactar(informe, codigo) {
     : '   No hay ningún otro rojo de caso: todo lo que ha caído en esta tanda está en las líneas de arriba.');
   return out.join('\n') + '\n';
 }
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1811 · ANTES DE MATAR, SE LISTA LO QUE SE MATA.
+//
+// El vigía de la tanda (`tanda-con-veredicto.mjs`) para el árbol del hijo cuando se calla más que su
+// tope, y hasta hoy lo hacía sin decir qué había vivo. Así cada colgada se clasificaba a ciegas: «el
+// runner se quedó sin memoria», «un hijo de node no terminó» y «el reporter se cortó» dejaban el mismo
+// rastro (SCRUM-1527b §⑧.1; tres colgadas del 11-nov). Ahora escribe, antes de matar, cada proceso del
+// árbol con su pid, su padre, su RSS y su línea de órdenes, en la salida de error (el log del job).
+//   · Es sólo LECTURA y no cambia el código de salida: si no puede listar, lo DICE («NO PUDE LISTAR»)
+//     y mata igual. Una lista vacía no es «no había nada»: sale con su motivo.
+//   · El árbol es el del hijo: sus descendientes por `ppid` y, en POSIX, su grupo de procesos (lo
+//     lanzamos `detached`, así que su pgid es su pid). Nunca «todos los node» de la máquina.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/** Las filas de `ps -e -o pid=,ppid=,pgid=,rss=,args=` (rss en KB). La línea de órdenes puede llevar espacios. */
+export function leerPs(texto) {
+  const filas = [];
+  for (const l of String(texto || '').split('\n')) {
+    const m = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(.*)$/.exec(l);
+    if (m) filas.push({ pid: Number(m[1]), ppid: Number(m[2]), pgid: Number(m[3]), rssKB: Number(m[4]), orden: m[5].trim() });
+  }
+  return filas;
+}
+
+/** Los procesos del árbol de `raiz`: ella, sus descendientes por `ppid` y los de su grupo. Ordenados por pid. */
+export function arbolDeProcesos(filas, raiz) {
+  const dentro = new Set([raiz]);
+  for (let cambio = true; cambio;) {
+    cambio = false;
+    for (const f of filas) if (!dentro.has(f.pid) && (dentro.has(f.ppid) || f.pgid === raiz)) { dentro.add(f.pid); cambio = true; }
+  }
+  return filas.filter((f) => dentro.has(f.pid)).sort((a, b) => a.pid - b.pid);
+}
+
+/** El texto que va al log. `r` = `{ filas }` o `{ error }`. */
+export function redactarArbol(r, raiz) {
+  if (!r || r.error || !Array.isArray(r.filas)) return `   🔴 NO PUDE LISTAR los procesos del árbol ${raiz} antes de pararlo: ${r?.error || 'sin respuesta'}. Se para igual.\n`;
+  if (!r.filas.length) return `   🔴 la lista de procesos no trae ni el propio hijo (${raiz}): NO es «no había nada», es que no supe mirarlo. Se para igual.\n`;
+  const mb = (kb) => (Number.isFinite(kb) ? `${(kb / 1024).toFixed(1)} MB` : '¿? MB');
+  const total = r.filas.reduce((s, f) => s + (Number.isFinite(f.rssKB) ? f.rssKB : 0), 0);
+  return `   PROCESOS DEL ÁRBOL ${raiz} antes de pararlo (SCRUM-1811): ${r.filas.length}, RSS sumado ${mb(total)}\n`
+    + r.filas.map((f) => `     pid ${f.pid} · padre ${f.ppid} · RSS ${mb(f.rssKB)} · ${String(f.orden || '(sin línea de órdenes)').slice(0, 300)}\n`).join('');
+}
+
+/** Las filas de Windows: `pid<TAB>ppid<TAB>WorkingSetSize(bytes)<TAB>línea de órdenes`, una por línea. */
+export function leerProcesosWindows(texto) {
+  const filas = [];
+  for (const l of String(texto || '').split('\n')) {
+    const m = /^(\d+)\t(\d+)\t(\d*)\t(.*)$/.exec(l.replace(/\r$/, ''));
+    if (m) filas.push({ pid: Number(m[1]), ppid: Number(m[2]), pgid: null, rssKB: m[3] === '' ? NaN : Number(m[3]) / 1024, orden: m[4].trim() });
+  }
+  return filas;
+}
+
+/**
+ * Lee la tabla de procesos de la máquina (impuro, síncrono, con tope de tiempo). `{ filas }` o `{ error }`.
+ * La plataforma la pasa quien llama (`tanda-con-veredicto.mjs` ya la lee): este módulo no lee el entorno
+ * (SCRUM-702 cuenta los ficheros que lo hacen).
+ */
+export function listarArbol(raiz, { spawnSync, plataforma } = {}) {
+  try {
+    if (!plataforma) return { error: 'quien llama no dijo la plataforma' };
+    if (plataforma === 'win32') {
+      // Texto separado por tabuladores, no JSON: hay líneas de órdenes con caracteres de control que
+      // `ConvertTo-Json` deja crudos y `JSON.parse` rechaza (medido el 24-nov: la lista entera se perdía).
+      const ps = "Get-CimInstance Win32_Process | ForEach-Object { \"$($_.ProcessId)`t$($_.ParentProcessId)`t$($_.WorkingSetSize)`t$(($_.CommandLine -replace '[\\x00-\\x1f]', ' '))\" }";
+      const r = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', ps], { encoding: 'utf8', timeout: 20_000, windowsHide: true, maxBuffer: 64 * 1024 * 1024 });
+      if (r.error || r.status !== 0) return { error: `powershell salió ${r.status ?? r.error?.code}` };
+      return { filas: arbolDeProcesos(leerProcesosWindows(r.stdout), raiz) };
+    }
+    const r = spawnSync('ps', ['-e', '-o', 'pid=,ppid=,pgid=,rss=,args='], { encoding: 'utf8', timeout: 20_000, maxBuffer: 64 * 1024 * 1024 });
+    if (r.error || r.status !== 0) return { error: `ps salió ${r.status ?? r.error?.code}` };
+    return { filas: arbolDeProcesos(leerPs(r.stdout), raiz) };
+  } catch (e) {
+    return { error: e?.message || String(e) };
+  }
+}
