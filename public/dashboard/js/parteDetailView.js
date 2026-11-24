@@ -444,6 +444,44 @@
   }
 
   /**
+   * 🔴 SCRUM-916b · LAS FILAS POR ESCRIBIR DE UN PARTE, tal y como están en pantalla AHORA.
+   *
+   * Las llama `renderParteDetailView` justo antes de repintar. La ficha se repinta entera por varios
+   * caminos (quitar una línea guardada, un campo que no se guardó, una firma que se confirma, lo
+   * dictado que entra), y cada uno se llevaba por delante lo que el técnico tenía a medias. Con UNA
+   * sola fila por escribir era una pérdida rara; desde que «Añadir línea» añade siempre, conviven
+   * varias y dejar que un repintado ajeno las borre sería romper lo que esta cura promete.
+   *
+   * Sólo las de ESTE parte (`data-nueva-del-parte`): el contenedor se reutiliza de un parte a otro.
+   * De cada una viaja lo tecleado, en qué casilla estaba el cursor, si tenía su aviso de «no se
+   * guardó» y en qué punto del guardado estaba (`data-nueva-guardando`: nada, `espera` o `enviando`),
+   * que es lo que decide qué se hace con ella al volver a ponerla.
+   */
+  function filasPorEscribirDe(contenedor, parteId) {
+    var filas = contenedor && contenedor.querySelectorAll
+      ? contenedor.querySelectorAll('[data-parte-linea-nueva]') : [];
+    var conCursor = typeof document !== 'undefined' && document ? document.activeElement : null;
+    var salida = [];
+    for (var i = 0; i < filas.length; i++) {
+      var fila = filas[i];
+      if (fila.getAttribute('data-nueva-del-parte') !== String(parteId)) continue;
+      var unds = fila.querySelector('[data-nueva-unds]');
+      var desc = fila.querySelector('[data-nueva-desc]');
+      var detras = fila.nextSibling;
+      salida.push({
+        vieja: fila,
+        bloque: fila.getAttribute('data-parte-linea-nueva'),
+        unds: unds && typeof unds.value === 'string' ? unds.value : '',
+        desc: desc && typeof desc.value === 'string' ? desc.value : '',
+        guardando: fila.getAttribute('data-nueva-guardando'),
+        avisada: !!(detras && detras.hasAttribute && detras.hasAttribute('data-aviso-de-fila')),
+        cursor: conCursor && conCursor === unds ? 'unds' : (conCursor && conCursor === desc ? 'desc' : null),
+      });
+    }
+    return salida;
+  }
+
+  /**
    * SCRUM-1287 · La descripción crece hacia abajo en vez de cortarse, y sigue siendo UNA línea de texto.
    *
    * · El alto sale de su contenido: `auto` y después su `scrollHeight`. Con una sola fila mide lo mismo
@@ -1483,6 +1521,22 @@
    * Cada uno es un botón si su ranura está libre, y un texto si ya se firmó. **El orden no se
    * exige** (`ordenDeFirmaExigido()` en el dominio): en la obra firma quien esté libre primero.
    */
+  /**
+   * La pista que abre el paso de las firmas mientras no ha firmado nadie: con el parte vacío, qué va
+   * antes de firmar (SCRUM-1676); con líneas, que la primera firma lo deja fijo (SCRUM-653).
+   *
+   * SCRUM-916b · Sale de `pintarLasDosFirmas` SIN cambiar una letra, porque ahora la pinta también
+   * quien asienta la PRIMERA línea de un parte vacío sin repintar la ficha (`ponerFirmasAlDia`): dos
+   * copias de este marcado serían dos pistas que pueden acabar diciendo cosas distintas.
+   */
+  function pistaDeLasFirmas(enEspera) {
+    return enEspera
+      ? '<p class="parte-pista" data-parte-apunta-primero="1">' +
+        esc(TEXTOS.apuntaPrimero) + '</p>'
+      : '<p class="parte-pista" data-parte-primera-firma-fija="1">' +
+        esc(TEXTOS.conLaPrimeraFirmaQuedaFijo) + '</p>';
+  }
+
   function pintarLasDosFirmas(parte) {
     // 🔴 SCRUM-1676 · UN PARTE VACÍO NO TIENE LA FIRMA COMO ACCIÓN PRINCIPAL. «Vacío» es la MISMA
     // pregunta que hace el servidor (`puedeFirmarse` en `parteTrabajo.ts`: cero líneas), no otra: con
@@ -1510,13 +1564,7 @@
       '<h4 class="parte-firmas-titulo">' + esc(TEXTOS.firmasTitulo) + '</h4>' +
       // SCRUM-653 c.17354 · el paso irreversible se enseña ANTES de darlo, y solo entonces.
       // SCRUM-1676 · con el parte vacío, en su sitio, el que dice además qué va antes de firmar.
-      (!parte.firmoElCliente && !parte.firmoElTecnico
-        ? (enEspera
-          ? '<p class="parte-pista" data-parte-apunta-primero="1">' +
-            esc(TEXTOS.apuntaPrimero) + '</p>'
-          : '<p class="parte-pista" data-parte-primera-firma-fija="1">' +
-            esc(TEXTOS.conLaPrimeraFirmaQuedaFijo) + '</p>')
-        : '') +
+      (!parte.firmoElCliente && !parte.firmoElTecnico ? pistaDeLasFirmas(enEspera) : '') +
       '<div class="parte-firma-caja" data-parte-caja-firma="cliente">' +
       recuadro(parte.firmoElCliente, 'firmar', TEXTOS.firmar, TEXTOS.yaFirmoElCliente, parte.firmadoPorNombre) +
       // 🔴 EL AVISO NOMBRA LA QUE FALTA, y si faltan las dos se dicen las dos: fundir ambas en
@@ -1884,6 +1932,9 @@
       return false;
     }
 
+    // SCRUM-916b · lo que el técnico tenía POR ESCRIBIR se recoge aquí, pegado al repintado (sin un
+    // `await` en medio), y se vuelve a poner más abajo, junto al cable de «Añadir línea».
+    var porEscribir = filasPorEscribirDe(contenedor, parteId);
     if (!renderParte(contenedor, parte)) {
       contenedor.innerHTML = '<div data-parte-error="1">' + esc(TEXTOS.noSePudoCargar) + '</div>';
       return false;
@@ -2068,25 +2119,28 @@
       conectarEsCorrecto(casillaDeLinea('data-es-correcto', indice));
     };
 
+    // El cable de UNA casilla de línea guardada. Es una función (y no el cuerpo del bucle) desde
+    // SCRUM-916b: la fila que se acaba de escribir se asienta en su sitio y pasa a escucharse igual
+    // que las que vinieron pintadas. `original` es lo que tiene el SERVIDOR en esa casilla.
+    var escucharCasillaGuardada = function (casilla, original) {
+      casilla.addEventListener('change', async function () {
+        if (casilla.value === original) return;
+        original = casilla.value;
+        var esUnds = casilla.hasAttribute('data-linea-unds');
+        var indice = Number(casilla.getAttribute(esUnds ? 'data-linea-unds' : 'data-linea-desc'));
+        if (!(await guardarLineasEnOrden(null))) {
+          await renderParteDetailView(contenedor, parteId, o);
+          return;
+        }
+        // La marca se acorta sola al corregir la descripción: el servidor sólo deja lo que sigue escrito.
+        if (!esUnds) repintarAvisoNoDictado(indice);
+      });
+    };
     var deLinea = contenedor.querySelectorAll
       ? contenedor.querySelectorAll('[data-linea-unds],[data-linea-desc]') : [];
     for (var d = 0; d < deLinea.length; d++) {
-      (function (casilla) {
-        if (casilla.hasAttribute('data-linea-desc')) conectarDescripcion(casilla);
-        var original = casilla.value;
-        casilla.addEventListener('change', async function () {
-          if (casilla.value === original) return;
-          original = casilla.value;
-          var esUnds = casilla.hasAttribute('data-linea-unds');
-          var indice = Number(casilla.getAttribute(esUnds ? 'data-linea-unds' : 'data-linea-desc'));
-          if (!(await guardarLineasEnOrden(null))) {
-            await renderParteDetailView(contenedor, parteId, o);
-            return;
-          }
-          // La marca se acorta sola al corregir la descripción: el servidor sólo deja lo que sigue escrito.
-          if (!esUnds) repintarAvisoNoDictado(indice);
-        });
-      }(deLinea[d]));
+      if (deLinea[d].hasAttribute('data-linea-desc')) conectarDescripcion(deLinea[d]);
+      escucharCasillaGuardada(deLinea[d], deLinea[d].value);
     }
 
     // SCRUM-1266 · «Es correcto»: la lista entera, con ESA línea mandando la marca vacía —que el
@@ -2132,83 +2186,235 @@
     // La «×» de la fila NUEVA sólo la quita de la pantalla, porque nunca llegó al servidor. La de una
     // línea YA GUARDADA va más abajo (segundo PR de SCRUM-889).
     // ═══════════════════════════════════════════════════════════════════════════════════
-    var laNueva = function () {
-      return {
-        fila: contenedor.querySelector('[data-parte-linea-nueva]'),
-        unds: contenedor.querySelector('[data-nueva-unds]'),
-        desc: contenedor.querySelector('[data-nueva-desc]'),
-      };
-    };
+    //
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // 🔴 SCRUM-916b · «AÑADIR LÍNEA» AÑADE SIEMPRE, Y LA FILA SE ASIENTA EN SU SITIO.
+    //
+    // Orden del fundador, dos veces: «esto de añadir lineas sigue roto cogelo como lo tenemos en
+    // presupuesto». Medido en navegador real, 4 de 4 (390 con el dedo y 1280 con el ratón, servidor
+    // a 0 y a 150 ms; `docs/master/evidencias/SCRUM-916/b-anadir-linea/`): había UNA sola fila por
+    // escribir y, al guardarse, la ficha se REPINTABA entera. Con la fila escrita, pulsar «Añadir
+    // línea» guardaba y repintaba: no abría fila, el foco no quedaba en ningún sitio y lo tecleado
+    // después se perdía; a 1280 el repintado le cambiaba el botón al ratón entre bajar y subir, y
+    // el clic ni llegaba. Y una fila a medias dejaba los DOS botones sin hacer nada.
+    //
+    // Lo que cambia respecto a lo de arriba (lo demás de SCRUM-889 sigue: qué es una línea
+    // completa, la lista ENTERA en el `PATCH`, y que un fallo se dice y no se lleva lo tecleado):
+    //   · CADA pulsación pone una fila vacía en su bloque, con el cursor en su UNDS. Conviven
+    //     todas las que se pidan, como en el editor de presupuestos. Ninguna bloquea ningún botón.
+    //   · Cada fila se guarda POR SU CUENTA al salir de sus casillas, y al volver la respuesta NO
+    //     se repinta la ficha: ESA fila pasa a ser una línea guardada sin dejar de ser el mismo
+    //     nodo (`asentar`). Lo que se ve es lo que devuelve el servidor, salvo en la casilla que
+    //     el técnico haya seguido escribiendo mientras tanto: ésa no se pisa, y se guarda al salir.
+    //   · El aviso de «no se guardó» va detrás de SU fila, y cada pulsación reintenta las que
+    //     estén completas y sin guardar.
+    //   · Si la respuesta no cuadra con lo mandado (otro largo, otro orden), no se adivina: se
+    //     repinta entera, como antes. Y un repintado, venga de donde venga, ya no se lleva las
+    //     filas por escribir (`filasPorEscribirDe`, y su vuelta al final de este bloque).
+    //
+    // La fila asentada NO se mueve de donde está: si se guardan en otro orden que el de pantalla,
+    // el orden del servidor se ve en el siguiente repintado. Los índices van en los atributos, no
+    // en la posición, así que nada de lo que se guarda depende de eso.
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    var AVISO_DE_FILA_NO_GUARDADA = '<tr data-aviso-de-fila="1"><td colspan="3" data-linea-no-guardada="1">' +
+      esc(TEXTOS.noSeGuardo) + '</td></tr>';
     var quitarAvisoNoGuardada = function () {
       var avisos = contenedor.querySelectorAll('[data-linea-no-guardada]');
-      for (var a = 0; a < avisos.length; a++) avisos[a].remove();
-    };
-    var quitarLaNueva = function () {
-      var n = laNueva();
-      quitarAvisoNoGuardada();
-      if (n.fila) n.fila.remove();
-    };
-    var guardandoLaNueva = false;
-    var guardarLaNueva = async function () {
-      var n = laNueva();
-      if (!n.fila || !n.unds || !n.desc || guardandoLaNueva) return;
-      var bloque = n.fila.getAttribute('data-parte-linea-nueva');
-      var unds = Number(n.unds.value);
-      var descripcion = String(n.desc.value || '').trim();
-      if (BLOQUES.indexOf(bloque) === -1) return;
-      if (n.unds.value === '' || !isFinite(unds) || unds <= 0 || descripcion === '') return;
-
-      guardandoLaNueva = true;
-      quitarAvisoNoGuardada();
-      try {
-        // SCRUM-1266 · en su turno, con las guardadas tal y como están en pantalla.
-        await enOrdenDelParte(parte, function () {
-          return pedir('/admin/partes/' + parteId, {
-            method: 'PATCH',
-            body: JSON.stringify({ lineas: listaDePantalla().concat([{ bloque: bloque, unds: unds, descripcion: descripcion }]) }),
-          });
-        });
-      } catch (e) {
-        guardandoLaNueva = false;
-        var filas = contenedor.querySelector('[data-parte-filas="' + bloque + '"]');
-        if (filas) {
-          filas.insertAdjacentHTML('beforeend',
-            '<tr><td colspan="3" data-linea-no-guardada="1">' + esc(TEXTOS.noSeGuardo) + '</td></tr>');
-        }
-        return;
+      for (var a = 0; a < avisos.length; a++) {
+        // Con su renglón: cada aviso va solo en el suyo, y quitar sólo la celda dejaba un `<tr>` hueco.
+        var renglon = avisos[a].parentNode;
+        if (renglon && renglon !== contenedor && renglon.remove) renglon.remove();
+        else avisos[a].remove();
       }
-      await renderParteDetailView(contenedor, parteId, o);
     };
-    var anadirLinea = function (bloque) {
-      var n = laNueva();
-      if (n.fila) {
-        var vacia = (!n.unds || n.unds.value === '') && (!n.desc || String(n.desc.value || '').trim() === '');
-        // Una sola fila nueva a la vez: con algo escrito, pulsar otra vez la guarda si ya está
-        // completa (es la forma de reintentar tras un fallo) y si no, devuelve el foco a ella.
-        if (!vacia || n.fila.getAttribute('data-parte-linea-nueva') === bloque) {
-          guardarLaNueva();
-          if (n.unds && n.unds.focus) n.unds.focus();
+    var esNueva = function (fila) {
+      return !!(fila && fila.hasAttribute && fila.hasAttribute('data-parte-linea-nueva'));
+    };
+    // ¿Sigue en ESTA ficha? Un repintado deja la fila vieja colgando de un árbol que ya no se ve.
+    var estaEnLaFicha = function (nodo) {
+      for (var p = nodo; p; p = p.parentNode) { if (p === contenedor) return true; }
+      return false;
+    };
+    var filasNuevas = function () {
+      var todas = contenedor.querySelectorAll ? contenedor.querySelectorAll('[data-parte-linea-nueva]') : [];
+      return Array.prototype.slice.call(todas);
+    };
+    var camposDeNueva = function (fila) {
+      return { unds: fila.querySelector('[data-nueva-unds]'), desc: fila.querySelector('[data-nueva-desc]') };
+    };
+    /** Lo que la fila dice AHORA, o `null` si no está para guardarse: cantidad (> 0) Y descripción. */
+    var loQueDice = function (fila) {
+      var c = camposDeNueva(fila);
+      var bloque = fila.getAttribute('data-parte-linea-nueva');
+      if (!c.unds || !c.desc || BLOQUES.indexOf(bloque) === -1) return null;
+      var unds = Number(c.unds.value);
+      var descripcion = String(c.desc.value || '').trim();
+      if (c.unds.value === '' || !isFinite(unds) || unds <= 0 || descripcion === '') return null;
+      return { bloque: bloque, unds: unds, descripcion: descripcion, crudoUnds: c.unds.value, crudoDesc: c.desc.value };
+    };
+    var avisoDe = function (fila) {
+      var detras = fila.nextSibling;
+      return detras && detras.hasAttribute && detras.hasAttribute('data-aviso-de-fila') ? detras : null;
+    };
+    var quitarAvisoDe = function (fila) { var aviso = avisoDe(fila); if (aviso) aviso.remove(); };
+    var ponerAvisoDe = function (fila) {
+      quitarAvisoDe(fila);
+      fila.insertAdjacentHTML('afterend', AVISO_DE_FILA_NO_GUARDADA);
+    };
+    var quitarNueva = function (fila) {
+      // Mientras viaja no se quita: un instante después es una línea guardada, y entonces su «×» la
+      // quita DEL SERVIDOR. Quitarla ahora sólo de la pantalla escondería una línea que sí se guardó.
+      if (!esNueva(fila) || fila.getAttribute('data-nueva-guardando') === 'enviando') return;
+      quitarAvisoDe(fila);
+      fila.remove();
+    };
+    /** ¿La respuesta es lo mandado, línea a línea? Mismo largo, mismo bloque y, donde había `id`, el mismo. */
+    var cuadraConLoMandado = function (lineas, lista) {
+      if (!Array.isArray(lineas) || lineas.length !== lista.length) return false;
+      for (var i = 0; i < lista.length; i++) {
+        if (!lineas[i] || lineas[i].bloque !== lista[i].bloque) return false;
+        if (lista[i].id !== undefined && lista[i].id !== null && lineas[i].id !== lista[i].id) return false;
+      }
+      return true;
+    };
+    // Lo único de la ficha que depende de «¿hay alguna línea?» es el paso de las firmas (SCRUM-1676):
+    // con el parte vacío la firma no es la acción principal y la pista dice qué va antes. Antes lo
+    // ponía al día el repintado; ahora, quien asienta la primera línea. Los botones y su cable no se
+    // tocan: sólo dejan de estar «en espera».
+    var ponerFirmasAlDia = function () {
+      if (!Array.isArray(parte.lineas) || parte.lineas.length === 0) return;
+      var pista = contenedor.querySelector('[data-parte-apunta-primero]');
+      if (pista && pista.insertAdjacentHTML) {
+        pista.insertAdjacentHTML('afterend', pistaDeLasFirmas(false));
+        pista.remove();
+      }
+      var enEspera = contenedor.querySelectorAll('[data-parte-firma-en-espera]');
+      for (var e = 0; e < enEspera.length; e++) enEspera[e].removeAttribute('data-parte-firma-en-espera');
+    };
+    /** La fila que se acaba de guardar pasa a ser la línea `indice`, sin dejar de ser el mismo nodo. */
+    var asentar = function (fila, indice, enviada) {
+      var c = camposDeNueva(fila);
+      var equis = fila.querySelector('[data-quitar-nueva]');
+      var linea = parte.lineas[indice] || {};
+      var unds = linea.unds !== undefined && linea.unds !== null ? String(linea.unds) : '';
+      var desc = linea.descripcion ? String(linea.descripcion) : '';
+      quitarAvisoDe(fila);
+      fila.removeAttribute('data-parte-linea-nueva');
+      fila.removeAttribute('data-nueva-del-parte');
+      fila.removeAttribute('data-nueva-guardando');
+      fila.setAttribute('data-parte-linea', String(indice));
+      c.unds.removeAttribute('data-nueva-unds');
+      c.unds.setAttribute('data-linea-unds', String(indice));
+      c.desc.removeAttribute('data-nueva-desc');
+      c.desc.setAttribute('data-linea-desc', String(indice));
+      // Lo que se ve es lo que devolvió el servidor… salvo que el técnico haya seguido escribiendo
+      // en esa casilla mientras viajaba: eso no se pisa. Como `original` es lo del servidor, su
+      // `change` al salir del campo lo guarda por el camino de cualquier línea guardada.
+      if (c.unds.value === enviada.crudoUnds) c.unds.value = unds;
+      if (c.desc.value === enviada.crudoDesc) { c.desc.value = desc; crecerDescripcion(c.desc); }
+      escucharCasillaGuardada(c.unds, unds);
+      escucharCasillaGuardada(c.desc, desc);
+      if (equis) {
+        equis.removeAttribute('data-quitar-nueva');
+        equis.setAttribute('data-indice', String(indice));
+        conectarEquisGuardada(equis);
+      }
+      repintarAvisoNoDictado(indice);
+    };
+    /**
+     * Guarda UNA fila por escribir, si está completa. Nunca lanza. Su marca va en la fila
+     * (`data-nueva-guardando`): `espera` mientras le llega el turno y `enviando` con el `PATCH` fuera.
+     */
+    var guardarNueva = function (fila) {
+      if (!esNueva(fila) || fila.hasAttribute('data-nueva-guardando') || !loQueDice(fila)) return Promise.resolve();
+      fila.setAttribute('data-nueva-guardando', 'espera');
+      quitarAvisoDe(fila);
+      // SCRUM-1266 · en su turno, con las guardadas tal y como están en pantalla. Y TODO lo que
+      // cambia `parte.lineas` y los índices de la pantalla pasa DENTRO del turno: el siguiente
+      // guardado arma su lista con ellos.
+      return enOrdenDelParte(parte, async function () {
+        // Mientras esperaba: se quitó con su «×», o un repintado la volvió a poner en la ficha nueva,
+        // que es quien la guarda. En los dos casos, ésta ya no es de nadie.
+        if (!esNueva(fila) || !estaEnLaFicha(fila)) return;
+        var dice = loQueDice(fila);
+        if (!dice) { fila.removeAttribute('data-nueva-guardando'); return; }   // la dejó a medias esperando
+        fila.setAttribute('data-nueva-guardando', 'enviando');
+        var lista = listaDePantalla().concat([{ bloque: dice.bloque, unds: dice.unds, descripcion: dice.descripcion }]);
+        var guardada = false;
+        var lineas = null;
+        var fresco = null;
+        try {
+          var r = await pedir('/admin/partes/' + parteId, { method: 'PATCH', body: JSON.stringify({ lineas: lista }) });
+          guardada = true;
+          lineas = r && Array.isArray(r.lineas) ? r.lineas : null;
+        } catch (e) { /* no se guardó: se dice abajo, detrás de su fila */ }
+        // Un `PATCH` que no trae las líneas obliga a releer: sin eso, la pantalla enseñaría lo que
+        // creemos que mandamos (SCRUM-889). El de verdad las trae y no hace falta.
+        if (guardada && !lineas) {
+          try {
+            fresco = await pedir('/admin/partes/' + parteId);
+            lineas = fresco && Array.isArray(fresco.lineas) ? fresco.lineas : null;
+          } catch (e2) { fresco = null; }
+        }
+        // Otro camino repintó la ficha con esta fila viajando: quien la volvió a poner dejó dicho
+        // qué hacer con el desenlace (ver la vuelta de las filas, al final de este bloque).
+        if (!estaEnLaFicha(fila)) {
+          if (typeof fila.alAcabarDeGuardarse === 'function') fila.alAcabarDeGuardarse(guardada);
           return;
         }
-        quitarLaNueva();   // vacía y en el otro bloque: se muda al bloque que ha pulsado
-      }
+        if (!guardada) {
+          fila.removeAttribute('data-nueva-guardando');
+          ponerAvisoDe(fila);
+          return;
+        }
+        if (cuadraConLoMandado(lineas, lista)) {
+          parte.lineas = lineas;
+          asentar(fila, lista.length - 1, dice);
+          ponerFirmasAlDia();
+          return;
+        }
+        // No cuadra (o no se pudo releer): no se adivina cuál es cuál. Se repinta entera, como antes;
+        // esta fila ya está guardada y vuelve pintada desde el servidor, las demás por escribir se conservan.
+        quitarAvisoDe(fila);
+        fila.remove();
+        await renderParteDetailView(contenedor, parteId, o, fresco || undefined);
+      });
+    };
+    /** Pone una fila por escribir al final de su bloque, cableada. `escrito` = lo que ya llevaba tecleado. */
+    var ponerFilaNueva = function (bloque, escrito) {
       var filas = contenedor.querySelector('[data-parte-filas="' + bloque + '"]');
-      if (!filas) return;
+      if (!filas) return null;
       var huecos = contenedor.querySelectorAll('[data-parte-sin-lineas]');
       for (var h = 0; h < huecos.length; h++) {
         if (huecos[h].getAttribute('data-parte-sin-lineas') === bloque) huecos[h].remove();
       }
       filas.insertAdjacentHTML('beforeend', filaNueva(bloque));
-      var nueva = laNueva();
-      if (nueva.unds) nueva.unds.addEventListener('change', guardarLaNueva);
-      if (nueva.desc) {
-        conectarDescripcion(nueva.desc);
-        nueva.desc.addEventListener('change', guardarLaNueva);
+      var fila = filas.lastElementChild;
+      if (!esNueva(fila)) return null;
+      fila.setAttribute('data-nueva-del-parte', String(parteId));
+      var c = camposDeNueva(fila);
+      if (escrito) {
+        if (c.unds) c.unds.value = escrito.unds;
+        if (c.desc) c.desc.value = escrito.desc;
       }
-      var equis = contenedor.querySelector('[data-quitar-nueva]');
-      if (equis) equis.addEventListener('click', quitarLaNueva);
+      if (c.unds) c.unds.addEventListener('change', function () { guardarNueva(fila); });
+      if (c.desc) {
+        conectarDescripcion(c.desc);
+        c.desc.addEventListener('change', function () { guardarNueva(fila); });
+      }
+      var equis = fila.querySelector('[data-quitar-nueva]');
+      if (equis) equis.addEventListener('click', function () { quitarNueva(fila); });
+      return fila;
+    };
+    var anadirLinea = function (bloque) {
+      // Las que estén completas y sin guardar se reintentan: tras un fallo no hay otro `change` que
+      // lo haga. La que acaba de perder el cursor por este mismo clic ya va de camino y no se repite.
+      filasNuevas().forEach(function (pendiente) { guardarNueva(pendiente); });
+      var fila = ponerFilaNueva(bloque, null);
+      if (!fila) return;
       // Al campo de la cantidad: es la primera columna del papel y abre el teclado numérico.
-      if (nueva.unds && nueva.unds.focus) nueva.unds.focus();
+      var unds = camposDeNueva(fila).unds;
+      if (unds && unds.focus) unds.focus();
     };
     var botonesAnadir = contenedor.querySelectorAll ? contenedor.querySelectorAll('.parte-anadir') : [];
     for (var b = 0; b < botonesAnadir.length; b++) {
@@ -2220,39 +2426,84 @@
     // SCRUM-889 (segundo PR) · LA «×» DE UNA LÍNEA GUARDADA. Lista entera SIN ella —con los ids de las
     // demás, que es lo que deja cada precio de la oficina en SU línea— y se relee del servidor. Si
     // falla no se relee: la línea sigue ahí y se dice con el literal ya aprobado `noSeGuardo`.
+    //
+    // SCRUM-916b · Es una función (y no el cuerpo del bucle) porque la fila recién asentada estrena
+    // esta misma «×». Y EL REPINTADO VA DENTRO DEL TURNO: quitar una línea corre los índices de las de
+    // detrás, y fuera del turno el guardado siguiente —una fila por escribir que esperaba— armaba su
+    // lista con los índices viejos y devolvía al servidor la línea recién quitada. Dentro, cuando le
+    // toca ya no está en la ficha vieja: la guarda la nueva, con la lista que hay.
     var quitando = false;
-    var equisGuardadas = contenedor.querySelectorAll ? contenedor.querySelectorAll('.parte-quitar-linea[data-indice]') : [];
-    for (var q = 0; q < equisGuardadas.length; q++) {
-      (function (equis) {
-        equis.addEventListener('click', async function () {
-          if (quitando) return;
-          var indice = Number(equis.getAttribute('data-indice'));
-          var todas = Array.isArray(parte.lineas) ? parte.lineas : [];
-          if (!todas[indice]) return;
-          quitando = true;
-          quitarAvisoNoGuardada();
-          try {
-            // SCRUM-1266 · en su turno, con las demás tal y como están en pantalla.
-            await enOrdenDelParte(parte, function () {
-              return pedir('/admin/partes/' + parteId, {
-                method: 'PATCH',
-                body: JSON.stringify({
-                  lineas: listaDePantalla().filter(function (_, i) { return i !== indice; }),
-                }),
-              });
+    var conectarEquisGuardada = function (equis) {
+      equis.addEventListener('click', async function () {
+        // La «×» de una fila asentada conserva el escuchador de cuando era nueva, que ya no hace nada.
+        if (quitando || !equis.hasAttribute('data-indice')) return;
+        var indice = Number(equis.getAttribute('data-indice'));
+        var todas = Array.isArray(parte.lineas) ? parte.lineas : [];
+        if (!todas[indice]) return;
+        quitando = true;
+        quitarAvisoNoGuardada();
+        var quitada = false;
+        try {
+          // SCRUM-1266 · en su turno, con las demás tal y como están en pantalla.
+          await enOrdenDelParte(parte, async function () {
+            await pedir('/admin/partes/' + parteId, {
+              method: 'PATCH',
+              body: JSON.stringify({
+                lineas: listaDePantalla().filter(function (_, i) { return i !== indice; }),
+              }),
             });
-          } catch (e) {
-            quitando = false;
-            var filas = contenedor.querySelector('[data-parte-filas="' + todas[indice].bloque + '"]');
-            if (filas) {
-              filas.insertAdjacentHTML('beforeend',
-                '<tr><td colspan="3" data-linea-no-guardada="1">' + esc(TEXTOS.noSeGuardo) + '</td></tr>');
-            }
-            return;
+            quitada = true;
+            await renderParteDetailView(contenedor, parteId, o);
+          });
+        } catch (e) {
+          if (quitada) throw e;   // se quitó; lo que falló fue repintar, y eso no es «no se guardó»
+          quitando = false;
+          var filas = contenedor.querySelector('[data-parte-filas="' + todas[indice].bloque + '"]');
+          if (filas) {
+            filas.insertAdjacentHTML('beforeend',
+              '<tr><td colspan="3" data-linea-no-guardada="1">' + esc(TEXTOS.noSeGuardo) + '</td></tr>');
           }
-          await renderParteDetailView(contenedor, parteId, o);
-        });
-      }(equisGuardadas[q]));
+        }
+      });
+    };
+    var equisGuardadas = contenedor.querySelectorAll ? contenedor.querySelectorAll('.parte-quitar-linea[data-indice]') : [];
+    for (var q = 0; q < equisGuardadas.length; q++) conectarEquisGuardada(equisGuardadas[q]);
+
+    // SCRUM-916b · LA VUELTA DE LAS FILAS POR ESCRIBIR tras un repintado (las recogió
+    // `filasPorEscribirDe` justo antes). Sólo si el parte se sigue pudiendo tocar: firmado, no hay
+    // dónde ponerlas. Qué se hace con cada una depende de dónde la pilló el repintado:
+    //   · sin marca → vuelve tal cual, con su aviso si lo tenía;
+    //   · `espera` → estaba en cola y su turno viejo ya no la manda (no está en la ficha): se guarda aquí;
+    //   · `enviando` → su `PATCH` está fuera y NO se repite (saldría duplicada). Vuelve bloqueada y se
+    //     le deja dicho a la fila vieja qué hacer cuando sepa el desenlace: si llegó, se relee el parte
+    //     —que ya la trae— y esta copia sobra; si no, se desbloquea con su aviso.
+    if (parte.puedeEditarContenido && parte.puedeEditarContenido.ok) {
+      porEscribir.forEach(function (escrito) {
+        var fila = ponerFilaNueva(escrito.bloque, escrito);
+        if (!fila) return;
+        if (escrito.guardando === 'enviando') {
+          fila.setAttribute('data-nueva-guardando', 'enviando');
+          escrito.vieja.alAcabarDeGuardarse = function (guardada) {
+            if (!estaEnLaFicha(fila)) {   // repintada otra vez mientras tanto: el recado sigue a su copia
+              if (typeof fila.alAcabarDeGuardarse === 'function') fila.alAcabarDeGuardarse(guardada);
+              return;
+            }
+            if (!guardada) {
+              fila.removeAttribute('data-nueva-guardando');
+              ponerAvisoDe(fila);
+              return;
+            }
+            fila.remove();
+            renderParteDetailView(contenedor, parteId, o);
+          };
+        } else if (escrito.guardando === 'espera') {
+          guardarNueva(fila);
+        } else if (escrito.avisada) {
+          ponerAvisoDe(fila);
+        }
+        var conCursor = escrito.cursor ? camposDeNueva(fila)[escrito.cursor] : null;
+        if (conCursor && conCursor.focus) conCursor.focus();
+      });
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════════
