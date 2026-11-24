@@ -283,3 +283,27 @@ Desde el panel (Nueva factura → «Cliente QA sin avisos» → una línea de 10
 **Visto de paso, no es de este encargo:** la barra de estado de las dos facturas marca «Enviada» como paso actual aunque ninguna se ha enviado. No lo he investigado ni tocado; se lo paso al orquestador.
 
 **NO medido:** yaqu.app (el login de test solo existe en staging); la página de pago; una imagen del PDF renderizado (va solo su texto; el `.pdf` se retiró del PR por el guard SCRUM-480); los otros caminos de 1787s (factura tras cobrar, presupuesto con lista, los cinco de S1); la suite de tests: cambio solo de docs, corrí los guards de docs y `guards:entrada`.
+
+## SCRUM-1779m · 24-nov: prueba en STAGING — cancelar un cobro por la ruta de SCRUM-1532b y ver el recibo público (J1, solo docs)
+
+**Medido contra:** `origin/main` = `f8dc0244675d00709b896101b97c89bd22468923` · 2026-11-24T02:24:04Z (cabecera `Date:` de `gh api -i zen`; sesión J1 `jv-j1iy`, relevo de `jv-j1iw`, por encargo del orquestador `cobroflash-backend-2d`)
+
+A9: aviso → cicatriz J1 «Cancelé en staging el cobro 889 mirando solo el estado del cobro; su justificante ya constaba pagado y lo vi DESPUÉS, en la ficha» — no se pudo comprobar: el guion de un solo uso que elige la fila vive fuera del repositorio y ningún guard ve qué cobro elige ni qué dice su documento
+
+**Qué se probó.** Staging (`yaqu-staging-production`) sirve `/health` = `f8dc0244…` = `origin/main`, que contiene `5de5441c` (#3332, SCRUM-1532b). Cuenta QA (comercio 2) con el login de test por `page.request`; el secreto, leído de `process.env` dentro de un guion de `node`, no pasó por el MCP de Playwright ni por ningún fichero que una herramienta devolviera. Chrome con contexto nuevo (`serviceWorkers:'block'`). Turno de staging (`turno-staging.mjs --base staging`, base `railway`) tomado a las 02:24:20Z y soltado a las 02:26:24Z; `estado` después: LIBRE. Flags del comercio leídos en la base (solo lectura), sin tocar: `INVOICING_ES_ENABLED=true`, `SIF_ENABLED=false`, `BIZUM_MANUAL_ENABLED=true`. De los 9 cobros `pending` del comercio 2 (889–897) se usó el más antiguo, **889** (590,00 €, justificante J-20260916-93ZW, documento id 1966); no se creó ninguno. Única escritura de la prueba: los dos `POST /admin/charges/889/cancel` (más el `POST /admin/entorno` que hace el panel al cargar). **Ningún envío por WhatsApp ni correo**; no se pulsó «Enviar» ni «Reenviar». El token del recibo no está en ninguna evidencia (recuento por bytes sobre los 8 ficheros: 0; control positivo, el fichero temporal que lo guarda: 1).
+
+| qué | esperado | visto |
+|---|---|---|
+| Recibo ANTES (1280 y 390) | ofrece pagar | «Pago pendiente», botón «Pagar por transferencia» (1 acción visible) |
+| `POST /admin/charges/889/cancel` | `{ ok: true, status: 'cancelled' }` | 200 `{"ok":true,"status":"cancelled"}`; en la base `status=cancelled`, `updated_at` 02:25:35 |
+| Recibo DESPUÉS (1280 y 390) | «Este cobro se ha cancelado.» y sin pago | «✕ Este cobro se ha cancelado.», 0 botones ni enlaces visibles |
+| Ficha del documento del cobro | etiqueta «Cobro cancelado» (SCRUM-1532d) | NO está: #3340 (`scrum-1532d-boton-cancelar-cobro-y-reenvio`) sigue ABIERTO y staging sirve `f8dc0244`; la ficha no dice nada del cobro cancelado (0 apariciones de «cancel») |
+| Repetir el `POST` | `yaEstaba: true` | 200 `{"ok":true,"status":"cancelled","yaEstaba":true}` |
+
+**Evidencias** (`docs/master/evidencias/SCRUM-1779/1779m/`), miradas una a una: `01-recibo-antes-1280.png`, `02-recibo-antes-390.png`, `03-recibo-despues-1280.png`, `04-recibo-despues-390.png`, `05-ficha-justificante-J-20260916-93ZW-1280.png`, el texto y las acciones visibles del recibo antes y después (`06-…`, `07-…`, con el token tapado) y `08-resultado.json`.
+
+**Lo que encontré y no esperaba — el documento del cobro ya constaba pagado.** La ficha de J-20260916-93ZW dice «PAGADA · 📲 Bizum (confirmado a mano) · 16/9/2026», y en la base el documento 1966 es `type=JUST`, `status=paid`, `paid_via=bizum_manual`, mientras el cobro 889 estaba `pending`. La ruta lo canceló igual: solo mira `charges.status`. Cruce de los 9 (solo lectura): los 9 documentos son justificantes (`JUST`), no facturas, y **4 de 9** constan `paid` con su cobro `pending` (889, 890, 891, 893; solo 889 con `paid_via`). La «decisión 2» que cita la ruta («la factura se queda pendiente de cobro») da por hecho un documento pendiente; con uno pagado el resultado es un recibo «cancelado» y un justificante «pagado» del mismo cobro. No sé de dónde salen esos datos de staging ni si se pueden dar en producción: no lo he investigado. Se lo paso al orquestador; no lo he tocado.
+
+**Visto de paso, no es de este encargo:** el recibo ANTES dice «Puedes completarlo usando el botón de pago por banco que aparece más arriba», y el botón está DEBAJO del texto (las dos capturas). Texto que ve el usuario: no lo toco; se lo paso al orquestador.
+
+**NO medido:** yaqu.app (el login de test solo existe en staging); la etiqueta de 1532d (no está en `main`); la página `/pay/bank/` después de cancelar (no la abrí); un cobro con un documento `pending` (elegí el 889 por la orden, y lo vi pagado DESPUÉS de cancelarlo); la suite de tests: cambio solo de docs, corrí los guards de docs y `guards:entrada`.
