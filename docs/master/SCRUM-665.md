@@ -2216,3 +2216,16 @@ A9: aviso → cicatriz J1 «Crucé el tope de 145k del encargo (147.416) sin emp
 **Corrección al encargo:** «`git status` limpio» no prueba nada sobre `storage/invoices`: `/storage/` está en `.gitignore` (línea 187). Lo medí con `find storage -newer <marca>` tras las 10 pasadas: 0 ficheros, y `storage/invoices` ni existía; control positivo sembrado (un fichero creado después de la marca) que el mismo `find` sí vio.
 
 A9: comprobación → `tests/scrum824-temporales-fuera-del-arbol.test.mjs`
+
+# SCRUM-665i · 24-nov-2026 · J1 (jv-j1kn) · la entrada 665e de MIGRATIONS al día: tres casillas (c.22650) y el PR #3201 ya en main
+
+**Medido contra:** `origin/main` = `651a143476a309308898fe252360d0b3d6a2a2ad` · 2026-11-24T16:53:59Z (hora de GitHub). Rama `scrum-665i-migraciones-al-dia`, nacida en ese mismo commit (el merge de #3201). Solo documentos: `docs/MIGRATIONS_PENDING.md`, este tramo y una línea en `docs/equipo/cicatrices/J1.md`.
+
+- **Qué cambió en `docs/MIGRATIONS_PENDING.md`, entrada «SCRUM-665e · `invoices.pdf_sha256`»:**
+  - El título pasa de «🟡 PRODUCCIÓN según el fundador; desarrollo, tests y staging SIN CONFIRMAR» a «✅ APLICADA EN LAS TRES BASES, según el fundador». Copia la forma de las entradas aplicadas del mismo fichero (SCRUM-914, 1490 y 1103: «✅ **APLICADA EN LAS TRES BASES**» y de dónde sale).
+  - Las casillas de desarrollo/tests y de staging quedan marcadas, citando **SCRUM-665 c.22650** (creado el 2026-11-24T13:58:42Z según Jira). Lo escribe el orquestador J con la confirmación del fundador por formulario de elección. Opción literal: «Sí, en las tres»: «Producción, staging y desarrollo tienen la columna.» Es una respuesta del fundador, no una medición contra la base. La casilla de producción (c.22567, jv-j1kh, 665f) no se toca.
+  - El párrafo «**no se empuja** hasta que…» se deja como estaba, que es historia. Debajo va una nota fechada: la rama entró en `main` con el **PR #3201**, mergeado el 2026-11-24T16:48:27Z (`gh pr view 3201`), commit de merge `651a1434…`.
+- **Por qué:** c.22650 dice «Hasta que lo haga una sesión, este comentario manda sobre el fichero». Mientras tanto, el fichero decía «SIN CONFIRMAR» y «no se empuja», y las dos cosas habían dejado de ser verdad.
+- **NO hecho aquí:** no se ha medido ninguna base (no tengo claves y el encargo lo prohíbe). Tampoco he corrido la suite entera: no cabía en el tope de contexto, y se lo dije al orquestador antes de empezar. Corrí `guards:entrada` y 1294, 267, 273, 525d y 854; sus cifras están en el comentario de entrega del ticket. La segunda pieza del encargo (el tramo 1730h en `docs/master/SCRUM-1730.md`) no la he empezado y queda para un relevo.
+
+A9: aviso → cicatriz J1 «Crucé el tope de 140k del encargo (142.776) al acabar de leer Jira, sin haber escrito nada» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
