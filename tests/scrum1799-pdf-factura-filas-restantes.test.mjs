@@ -1,4 +1,4 @@
-// tests/scrum1787aa-pdf-factura-filas-restantes.test.mjs — SCRUM-1787aa (T4, filas que quedan)
+// tests/scrum1799-pdf-factura-filas-restantes.test.mjs — SCRUM-1799 (T4, filas que quedan)
 //
 // QUÉ SE PIDE: de las filas de la tabla de SCRUM-1787 c.22426, 1787w construyó la 1, 2, 5-10, 13 y
 // 19. Las que quedan (3, 4, 11, 12, 14, 15, 16, 17, 18 y 20) NO dicen «igualar»: dicen «se queda
@@ -30,28 +30,28 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
     de: "  if (params.dueDate) doc.text(`Vence el ${fechaLargaDeVencimiento(params.dueDate)}`, { align: 'right' });",
     a: "  if (params.dueDate) doc.text(`Vence el ${fechaLargaDeVencimiento(params.dueDate)}`, { align: 'right' }); doc.moveDown(3);",
-    cae: 'SCRUM-1787aa ③④',
+    cae: 'SCRUM-1799 ③④',
   },
   {
     // Las Observaciones de la factura se desplazan respecto a las del presupuesto.
     fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
     de: '      .text(TITULO_OBSERVACIONES, M, doc.y, { width: W, align: \'left\' });',
     a: '      .text(TITULO_OBSERVACIONES, M + 8, doc.y, { width: W, align: \'left\' });',
-    cae: 'SCRUM-1787aa ⑭',
+    cae: 'SCRUM-1799 ⑭',
   },
   {
     // La leyenda VERI*FACTU deja de pintarse con sello.
     fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
     de: "        .text('Factura verificable en la sede electrónica de la AEAT', txX, qrY, { width: txW });",
     a: "        ; void txX;",
-    cae: 'SCRUM-1787aa ⑰',
+    cae: 'SCRUM-1799 ⑰',
   },
   {
     // La marca de agua demo deja de pintarse.
     fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
     de: '  drawWatermark();\n',
     a: '\n',
-    cae: 'SCRUM-1787aa ⑱',
+    cae: 'SCRUM-1799 ⑱',
   },
 ];
 
@@ -130,7 +130,7 @@ const fuentes = (buf) => new Set((buf.toString('latin1').match(/\/BaseFont\s*\/[
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-1787aa ③④ «Nº», «Fecha:», «Vence el» y «Formas de pago:» siguen, en orden, entre el título y «Emisor:»', () => {
+test('SCRUM-1799 ③④ «Nº», «Fecha:», «Vence el» y «Formas de pago:» siguen, en orden, entre el título y «Emisor:»', () => {
   const titulo = una(factura, (l) => l.texto === 'FACTURA', 'con el título');
   const num = una(factura, (l) => l.texto === 'Nº F-2026-0001', 'con el número');
   const fecha = una(factura, (l) => l.texto === 'Fecha: 05/11/2026', 'con la fecha');
@@ -149,7 +149,7 @@ test('SCRUM-1787aa ③④ «Nº», «Fecha:», «Vence el» y «Formas de pago:�
   for (const l of [fecha, vence, pago]) assert.ok(l.x > emisor.x + 100, `🔴 «${l.texto}» ya no va a la derecha (x=${l.x})`);
 });
 
-test('SCRUM-1787aa ⑭ el bloque «Observaciones» es igual en los dos PDF (texto, x y separación vertical)', () => {
+test('SCRUM-1799 ⑭ el bloque «Observaciones» es igual en los dos PDF (texto, x y separación vertical)', () => {
   const bloque = (d, que) => {
     const r = una(d, (l) => l.texto === 'Observaciones', `«Observaciones» en ${que}`);
     return ['Pago a 30 días.', 'Garantía de 6 meses sobre la mano de obra.'].map((t) => {
@@ -161,13 +161,13 @@ test('SCRUM-1787aa ⑭ el bloque «Observaciones» es igual en los dos PDF (text
     '🔴 las Observaciones de la factura ya no son las del presupuesto');
 });
 
-test('SCRUM-1787aa ⑮ la factura no inventa cláusulas (control: el presupuesto SÍ las pinta)', () => {
+test('SCRUM-1799 ⑮ la factura no inventa cláusulas (control: el presupuesto SÍ las pinta)', () => {
   const tieneClausula = (d) => textos(d).some((t) => t.includes('Seis meses sobre la mano de obra.'));
   assert.ok(tieneClausula(presupuesto), '🔴 CIEGO: el presupuesto no pinta la cláusula sembrada');
   assert.ok(!tieneClausula(factura), '🔴 la factura pinta una cláusula: la fila 15 es «fuera de T4»');
 });
 
-test('SCRUM-1787aa ⑰ con sello, QR y leyenda VERI*FACTU siguen; sin sello, ninguno', () => {
+test('SCRUM-1799 ⑰ con sello, QR y leyenda VERI*FACTU siguen; sin sello, ninguno', () => {
   const t = textos(facturaSellada);
   for (const f of ['Factura verificable en la sede electrónica de la AEAT', 'VERI*FACTU — escanea el QR para verificarla (RD 1007/2023).']) {
     assert.ok(t.includes(f), `🔴 la factura sellada ha perdido «${f}»: ${JSON.stringify(t)}`);
@@ -180,7 +180,7 @@ test('SCRUM-1787aa ⑰ con sello, QR y leyenda VERI*FACTU siguen; sin sello, nin
   assert.ok(!textos(factura).some((x) => x.includes('AEAT') || x.includes('VERI*FACTU')), '🔴 la factura sin sello habla de la AEAT');
 });
 
-test('SCRUM-1787aa ⑱ con marca de agua demo se pinta; sin ella, no', () => {
+test('SCRUM-1799 ⑱ con marca de agua demo se pinta; sin ella, no', () => {
   assert.ok(DEMO_WATERMARK && DEMO_WATERMARK.length > 5, '🔴 CIEGO: no leí DEMO_WATERMARK');
   // A 42 pt la marca no cabe en una línea: el lector la da en DOS («DEMO — no válida » y «fiscalmente»,
   // medido el 24-nov). Se exige que las palabras de la marca salgan, en orden, en líneas que la factura
@@ -191,7 +191,7 @@ test('SCRUM-1787aa ⑱ con marca de agua demo se pinta; sin ella, no', () => {
   assert.ok(!textos(factura).some((x) => x.includes('DEMO')), '🔴 la factura sin marca pinta la marca');
 });
 
-test('SCRUM-1787aa ⑳ Helvetica y sin numerar, en los dos', () => {
+test('SCRUM-1799 ⑳ Helvetica y sin numerar, en los dos', () => {
   for (const [que, d] of [['presupuesto', presupuesto], ['factura', factura]]) {
     const f = fuentes(d.buf);
     assert.ok(f.size > 0, `🔴 CIEGO: no leí ninguna fuente en el ${que}`);
