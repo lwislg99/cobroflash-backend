@@ -255,3 +255,33 @@ Encaja con 0,984 = 1 − 1/64 de septiembre si la coordenada se redondea hacia a
 3. Lo de 936b ③ y ④, sin cambios.
 
 ⛔ No he tocado `scripts/`, `tests/`, `public/` ni `.claude/`.
+
+---
+
+# SCRUM-936d · La variante de c.22615, medida antes de aplicarla: el defecto no sale hoy, y PARO sin tocar el medidor
+
+**Medido contra:** `origin/main` = `fc51ec7a2f11dd93e34141fae48b4357b72d9990` · 2026-11-24 (hora de GitHub en el comentario de Jira)
+**Rama:** `scrum-936d-variante-del-medidor` · carril J6 · sesión `jv-j6fr`
+
+A9: comprobación → `tests/scrum936d-variante-del-medidor.test.mjs`
+
+**Decisión que aplica:** SCRUM-936 c.22615, «Variante, sin tocar el vigía (Recomendado)». No la he releído en Jira: el encargo lo prohibía.
+
+## Qué · esperado · visto
+
+| qué | esperado | visto |
+|---|---|---|
+| test nuevo, contra el medidor de HOY | ROJO (h43 → 44, h44 → 45, 48 → 49, según los datos de septiembre de este registro) | **VERDE.** h43 → **43** · h44 aislado → **44** · h44 con vecino pegado debajo → **44** · 48 → **48** · enlace de 20 con `::after` a 44 → **45**. Las cinco cajas, las sembradas, y el árbitro alcanza a las cinco (sin `error`). |
+| lo mismo con las cajas en posición fraccionaria (separadores de 100,3 px) | — | idéntico: 43 · 44 · 44 · 48 · 45. Una pasada, sonda no comiteada. |
+| variante aplicada | sí | **NO.** El medidor de hoy ya da lo que la variante quería en los cuatro botones; aplicarla sería cambiar código sin defecto medido (A2). `scripts/_medidor-de-toque.mjs` sigue como en main. |
+| `guards:visuales`, `censo:tactil-panel` | lista de cortos nuevos | **No corridos:** sin cambio en el medidor no puede haber cortos nuevos. |
+
+Población: 1 navegador (el que resuelve `resolverNavegador` en esta máquina; arranque 0,5 s), 1 banco fabricado por el test, 5 objetivos, 2 pasadas.
+
+## Lo que esto dice, y lo que no
+
+- El +1 en un botón normal (aislado o con vecino) **no se reproduce hoy** en este navegador. Lo que sí sale es el +1 en el área ampliada con `::after`: el «resto conocido» de c.22615 es, hoy, **lo único** que queda del defecto.
+- **Sin medir:** por qué septiembre daba +1 en botones (otro navegador, otra versión, otro banco con texto). No lo sé.
+- El test fija los cinco valores: si el +1 vuelve a los botones, cae en h43/h44/48; si el resto desaparece, cae en el enlace.
+- ⚠️ Es el primer test de `tests/` que arranca un navegador real: si no hay navegador, salta con su motivo; si lo hay y no arranca, `lanzarNavegador` sale con 3 y el fichero cae. Sin medir en el job de CI.
+- Decisión para el fundador: ¿se cierra la variante como innecesaria, o se quiere el +1 del área ampliada quitado (eso abre el clasificador de scrum562, regla 41)?
