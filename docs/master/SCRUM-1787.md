@@ -1363,6 +1363,7 @@ Cuatro, una por fila comprobada con código propio, pasadas por `aplicarUna` (sc
 
 - Mi primer test pedía UNA imagen para el QR: el PNG lleva su máscara y son dos objetos. Y pedía la marca de agua en una línea: a 42 pt se parte en dos. Los dos rojos eran del test, no del PDF; los corregí midiendo.
 - Mi primer driver de mutaciones pasaba la ruta con `tests/` y `correr` la duplicaba: la pasada limpia salió «0 pasados · 1 caído» y `aplicarUna` dijo CIEGO sin mutar. Lo vi por el CIEGO, no por suerte.
+- La cabecera de mi test decía «de las 20 filas»: `scrum737` (cifra sin ancla) la tumbó en la pasada de los cinco de árbol entero. Cambié mi texto, no el guard.
 
 ## NO hecho / NO visto
 

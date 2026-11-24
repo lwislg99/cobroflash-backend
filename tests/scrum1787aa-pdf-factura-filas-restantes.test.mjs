@@ -1,6 +1,6 @@
 // tests/scrum1787aa-pdf-factura-filas-restantes.test.mjs — SCRUM-1787aa (T4, filas que quedan)
 //
-// QUÉ SE PIDE: de las 20 filas de la tabla de SCRUM-1787 c.22426, 1787w construyó la 1, 2, 5-10, 13 y
+// QUÉ SE PIDE: de las filas de la tabla de SCRUM-1787 c.22426, 1787w construyó la 1, 2, 5-10, 13 y
 // 19. Las que quedan (3, 4, 11, 12, 14, 15, 16, 17, 18 y 20) NO dicen «igualar»: dicen «se queda
 // igual» (NECESARIAS), «igual», «fuera de T4», «no se inventa» o «solo presupuesto». GO regla 40:
 // c.22416; literales firmados: c.22428. Aquí no se cambia `src/`: se comprueba, con PDF REALES, que
