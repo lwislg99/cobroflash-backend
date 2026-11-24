@@ -650,6 +650,32 @@ function perdidaInminente(lista, cwd, entorno = {}) {
  * Las CUATRO reglas de AA2. Los patrones son los mismos que tenía la versión en bash: lo que
  * cambia es el texto sobre el que se aplican, no lo que se considera peligroso.
  */
+// ── SCRUM-1831 · LA REGLA 4, POR SIGNIFICADO ────────────────────────────────────────────────
+// La regex exigía la r ANTES que la f y en el MISMO grupo: `rm -fr "/c/…"`, `rm -r -f "/c/…"` y
+// `rm -R -f "C:\…"` pasaban (medido en rojo: tests/scrum1831-regla4-banderas-por-significado).
+// Esto mira las PALABRAS desde un `rm` que se ejecuta (no entre comillas): recursivo (`r`/`R` en
+// un grupo corto, o `--recursive`) + forzado (`f`, o `--force`), en cualquier orden y posición
+// hasta `--`, y un operando absoluto (`/`, `~` o unidad). Solo SUMA: la regex sigue al lado.
+const RM_RF_LITERAL = /rm +-[a-zA-Z]*[rR][a-zA-Z]*[fF][a-zA-Z]* +("?(\/|~|[A-Za-z]:))/;
+function rmRecursivoForzadoFuera(a) {
+  const ps = a.palabras || [];
+  const i = ps.findIndex((p) => /^rm(\.exe)?$/i.test(path.basename(p.texto)) && (p.mascara || []).some((m) => !m));
+  if (i < 0) return false;
+  let recursivo = false, forzado = false, fuera = false, finOpciones = false;
+  for (const { texto: t } of ps.slice(i + 1)) {
+    if (!finOpciones && t === '--') { finOpciones = true; continue; }
+    if (!finOpciones && /^--recursive$/i.test(t)) { recursivo = true; continue; }
+    if (!finOpciones && /^--force$/i.test(t)) { forzado = true; continue; }
+    if (!finOpciones && /^-[a-zA-Z]+$/.test(t)) {
+      if (/r/i.test(t)) recursivo = true;
+      if (/f/i.test(t)) forzado = true;
+      continue;
+    }
+    if (/^["']?(\/|~|[A-Za-z]:)/.test(t)) fuera = true;
+  }
+  return recursivo && forzado && fuera;
+}
+
 function reglas(lista, sentinelPath, entorno = {}) {
   const enAlguna = (re) => lista.some((a) => coincide(re, a));
 
@@ -768,7 +794,9 @@ function reglas(lista, sentinelPath, entorno = {}) {
   }
 
   // 4) rm -rf fuera del workspace (ruta absoluta, unidad o ~). Relativo dentro del repo se permite.
-  if (enAlguna(/rm +-[a-zA-Z]*[rR][a-zA-Z]*[fF][a-zA-Z]* +("?(\/|~|[A-Za-z]:))/)) {
+  //    SCRUM-1831: la regex de siempre se queda (regla 41) y se le SUMAN las banderas por su
+  //    significado (`rmRecursivoForzadoFuera`): `-fr`, `-r -f`, `-R -f`… pasaban.
+  if (enAlguna(RM_RF_LITERAL) || lista.some(rmRecursivoForzadoFuera)) {
     return {
       bloqueado: true,
       motivo:
