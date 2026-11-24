@@ -1,7 +1,7 @@
 # SCRUM-1641 · La portada deja de afirmar «validez legal» en la tarjeta «Presupuestos y firma»
 
 **Medido contra:** `origin/main` = `fc51ec7a2f11dd93e34141fae48b4357b72d9990` · 2026-11-24T12:17:04Z (cabecera `Date:` de GitHub)
-**Skill UI:** `yaqu-premium-ui` cargada ANTES de editar `public/index.html`. El cambio no toca estilos, tokens, clases ni estructura: quita 18 caracteres de texto (« con validez legal»). Por eso no se releyó `DESIGN.md` y el checklist AB6 se reduce a que el párrafo sigue en la misma tarjeta.
+**Skill UI:** cargada (`yaqu-premium-ui`, ANTES de editar `public/index.html`). El cambio no toca estilos, tokens, clases ni estructura: quita 18 caracteres de texto (« con validez legal»). Por eso no se releyó `DESIGN.md` y el checklist AB6 se reduce a que el párrafo sigue en la misma tarjeta.
 
 Carril J3 (`node scripts/carriles.mjs de public/index.html` → J3). Sesión `jv-j3cy`.
 
@@ -37,9 +37,9 @@ Rojo primero: contra `public/index.html` sin tocar, 4 casos, 2 pasan y 2 caen (l
 Población: 38 ficheros — los 29 que nombran `public/index.html` más el nuevo, scrum438, 1415, 1294, 267, 854, 811c, 719, 564, 564b y 568. Primera pasada, antes de este registro: 376 casos, 372 pasan, 4 caen (372 + 4 = 376):
 
 1. `tests/scrum553-etiquetas-pegadas.test.mjs`: mi propio test buscaba la tarjeta con la etiqueta pegada a su `>` y subía el tope de 20 a 21. Arreglado en mi test (busca el título sin la etiqueta); el guard no se toca.
-2. `tests/scrum1340` y `tests/scrum854` ②: piden este registro. Caen hasta que existe.
+2. El caso SCRUM-1340 de `tests/scrum811c-skill-ui-declarada.test.mjs` y `tests/scrum854-todo-merge-deja-entrada.test.mjs` ②: piden este registro. Caen hasta que existe.
 3. `tests/scrum438-v3-sobre.test.mjs` (entró por el comodín `scrum438-*`, no es el scrum438 del encargo): no arranca, `Cannot find module …\cobroflash-backend\node_modules\.prisma\client\index.js`. Es el entorno: este árbol cuelga del `node_modules` compartido y ese cliente no está generado. No lo regenero (A1). No lo toca este cambio, que sólo es HTML y un test que lee HTML.
 
-Segunda pasada, con el registro: RESULTADO_SEGUNDA_PASADA
+Segunda pasada, con el registro: 393 casos, 392 pasan, 1 cae (392 + 1 = 393). La población subió de 376 a 393 porque `scrum438-v3-sobre` esta vez SÍ arrancó (el cliente compartido apareció entre las dos pasadas; no lo generé yo y no sé quién). El único rojo era el caso «SCRUM-1340 · 🔴 todo PR que cambia public/…» de `tests/scrum811c-skill-ui-declarada.test.mjs` (primero escribí aquí de memoria una ruta `scrum1340-…` que no existe; la cacé con `ls` antes del commit): mi línea decía «**Skill UI:** `yaqu-premium-ui` cargada» y el guard exige que empiece por «cargada». Segundo fallo mío en el mismo PR, cazado por un guard; corregido en este registro. La tercera pasada no la corrí entera: sólo `npm run guards:entrada` y scrum1340 (abajo, en el PR).
 
 A9: comprobación → `tests/scrum553-etiquetas-pegadas.test.mjs`
