@@ -148,3 +148,73 @@ la columna del campo (173×285 px, una tira estrecha). Ahora nace justo debajo d
 ## Apéndice · 24-nov-2026 · reparación del orquestador (PR #3370)
 
 El obligatorio cayó con 3 rojos: dos AJENOS (scrum1340/811c por docs/master/SCRUM-1810.md del equipo J sin «Skill UI:», avisado en SCRUM-1810 c.22554, y su arrastre scrum976 ④) y UNO de la rama: scrum1480f — `scripts/capturas-iva10-parte-s.mjs` nació sin fila en dos-equipos.md §3.3. REPARADO por el orquestador (precedente #3274, acta §46): fila S2 en §3.3 (por el área del ticket, `area-s2`) + `node scripts/carriles.mjs generar` (derivados regenerados: carriles.json y carril-s2.md; no editados a mano). Rojo→verde visto: 1480f con 1 fichero sin fila ANTES y 0 DESPUÉS; scrum1295 8/8. Los dos rojos ajenos se re-corren cuando el equipo J cure su registro. — orquestador cobroflash-backend-41 (delegación c.21978)
+
+---
+
+# SCRUM-1804b · r42 en vivo — verificación en yaqu.app del PR #3370
+
+**Medido contra:** `origin/main` = `f4dbf1f11d72c73e71ad9857a9ba87584144ff61` · 2026-11-24T15:16:39Z
+
+A9: aviso → A10 «El `filename` de `browser_run_code_unsafe` no esconde nada: el MCP devuelve el código que ejecutó, y un secreto que lleve dentro sale al chat.» — no se pudo comprobar: el eco lo hace el MCP de Playwright en el transcript, fuera del repo, y ningún guard lo lee.
+(mi fallo: para entrar con la cuenta QA metí la cookie de sesión en un fichero y lo cargué con `filename`, creyendo que así no
+pasaba por el chat; el resultado del MCP la imprimió entera. Revocada en el momento: «Salir» en el navegador → `POST /auth/logout`,
+y `node scripts/qa/sesion-panel.mjs estado` → «MUERTA — GET /admin/me → 401 … ha muerto ANTES de su hora».)
+
+Puesto S2, rama `scrum-1804b-r42-en-vivo`. Encargo del orquestador `cobroflash-backend-41` (24-nov, tarde): **regla 42** de
+SCRUM-1804, que se mergeó en #3370 (`f04e19db8`). **Sin código:** este tramo solo lee yaqu.app y deja las capturas.
+
+**Lo servido es main.** `git hash-object` de lo que sirve `https://yaqu.app/dashboard/js/<f>` frente a `origin/main:public/dashboard/js/<f>`:
+`tiposDeIva.js`, `quotesView.js`, `jobDetailView.js` e `invoicesView.js` → **IGUAL** los cuatro. Los 4 commits de main posteriores a
+`16a404982` no tocan ninguno de los ficheros verificados (`git diff --stat`, vacío).
+
+**Navegador real:** Chromium del MCP de Playwright, contra `https://yaqu.app`, a 1280×900 y a 390×844. La cuenta es la QA
+(`PruebaQA`, merchant 46, admin).
+
+## Lo que la cuenta QA NO permite, medido (y por qué ② se hizo con una respuesta inyectada)
+
+- La cuenta QA tiene 0 facturas (`GET /admin/invoices` → `[]`), ninguno de sus 13 trabajos tiene facturas (`GET /admin/jobs/:id` → `invoices: []`)
+  y `GET /admin/me` da `modoEmision: "receipt"`, `motivoSinEmision: "sii_no_consta"`, `documentoSuelto: "no"`, `serieEmitida.emitidas: 0`.
+  En `receipt`, el servidor no crea factura (`facturaDesdeParte.ts:106` → 409 `facturacion_no_disponible`; `facturaSuelta.ts:96` → `'no'`),
+  por la **regla 24**. Sacarla de ahí obliga a tocar `INVOICING_ES_ENABLED` o la respuesta del SII de esa cuenta: es un **STOP**
+  (flag de la Parte P y camino fiscal), así que **no lo he hecho**.
+- La demo (merchant 1, `modoEmision: "demo"`) tampoco tiene facturas (`[]`). No escribí en ella: la autorización es para la cuenta QA.
+- **Por eso ② se verificó así:** el JS DESPLEGADO en yaqu.app, con la ficha real del trabajo 77 de la cuenta QA, y la respuesta de
+  `GET /admin/jobs/77` interceptada en el navegador. Se le cambiaron las `invoices` por dos facturas FICTICIAS: `990001` «QA-INYECTADA-10», pendiente, 110 €,
+  `conIvaAlDiez: true`, `metodosConAvisoIvaAlDiez: ['cash']`; y `990002` «QA-INYECTADA-21», pendiente, 121 €, `conIvaAlDiez: false`.
+  **Mientras duró, todo método distinto de GET hacia `/admin/` o `/api/` se ABORTÓ en el navegador** y se apuntó; ninguno llegó al servidor.
+  **Lo que NO se ha visto en vivo:** que el servidor de producción sirva `conIvaAlDiez` y `metodosConAvisoIvaAlDiez` en una factura real.
+  Eso lo cubre `tests/scrum1804-iva10-parte-s.test.mjs` (caso `GET /admin/jobs/:id`, 14 campos previos intactos).
+
+## Aceptación → dónde se ve
+
+| aceptación (literal del encargo) | dónde se ve |
+|---|---|
+| ① editor: elegir el 10 % en el selector de IVA de una línea → aparece el aviso BYTE A BYTE (`window.COPY_IVA_10`) | yaqu.app → Presupuestos → Nuevo presupuesto → línea → «Ajustes (IVA, descuento, descripción…)» → IVA 10. `#aviso-iva-10-1`, `.alert.warning`, `role=status`, atado por `aria-describedby`; `textContent === COPY_IVA_10.avisoEfectivo` → **true**. Caja: 372×123 a 1280 (igual que el banco) y 312×144 a 390, sin desborde. `r42-vivo/linea-10-1280.png`, `linea-10-390.png` |
+| ① con el 21 % → SIN aviso | ídem, de vuelta al 21: `hidden = true`, 0 `.alert.warning` visibles; antes de tocar el 21, el selector ni siquiera lleva `aria-describedby` (el aviso nace la primera vez que hace falta). `linea-21-1280.png`, `linea-21-390.png` |
+| ① no bloquea ni cambia el cálculo | el selector se queda en `10`, sin diálogos. Vista previa con la línea al 10 %: base 100,00 € · IVA 10,00 € · total 110,00 €, el cálculo normal del 10 %. Con «IVA por defecto» a 10: total 121,00 € antes y después (la línea conserva su 21 %) |
+| ① ídem al elegir 10 % en «IVA por defecto» del documento (su aviso, bajo su fila) | Condiciones → «Ajustes del documento» → Cambiar → IVA por defecto 10. `#aviso-iva-10-2`, byte a byte → **true**, bajo la fila «IVA por defecto / IVA del presupuesto». Caja: 535×83 a 1280 (544×83 en el banco; la diferencia es la barra de desplazamiento del navegador real) y 309×144 a 390, sin desborde. Al 21: `hidden = true`. `iva-por-defecto-10-1280.png`, `iva-por-defecto-21-1280.png`, `iva-por-defecto-21-390.png` · ⚠️ a 390 la caja se MIDIÓ, pero la captura quedó corta (el aviso cae bajo el pliegue) y la quité: no la repetí para no abrir otra sesión cuya cookie saldría también al chat |
+| ② ficha del trabajo, factura pendiente CON línea al 10 % → «¿Cómo lo has cobrado?» OBLIGATORIO | trabajo 77 → pestaña Facturas: `select#metodo-cobro-inv-990001` con `required` y `aria-required="true"`, rótulo «¿Cómo lo has cobrado?»; opciones servidas: Sin especificar / Bizum / tarjeta / transferencia / efectivo. **Respuesta inyectada** (arriba) |
+| ② sin elegir → error firmado «Elige cómo lo has cobrado: en esta factura hay IVA al 10 %.» byte a byte | «Marcar como PAGADA» sin medio: `.alert.error` con `textContent === COPY_IVA_10.eligeMetodo` → **true** (940×42 a 1280, igual que el banco; 307×63 a 390). Foco al selector; 0 `confirm`, 0 `prompt` y 0 peticiones. `trabajo-sin-elegir-1280.png`, `trabajo-sin-elegir-390.png` · 🔴 **a 390 el profesional NO lo ve**: hallazgo de abajo, `trabajo-sin-elegir-390-tal-cual.png` |
+| ② al elegir efectivo sale el aviso de ① | `#metodo-cobro-inv-990001-aviso`, `.alert.warning`, byte a byte → **true** (540×83 a 1280, igual que el banco; 271×164 a 390). Con transferencia → `hidden = true`. `trabajo-efectivo-1280.png`, `trabajo-efectivo-390.png` |
+| ② (consecuencia) con medio elegido, el PUT lo lleva | transferencia + «Marcar como PAGADA»: `confirm` + `prompt` del importe como siempre → `PUT /admin/invoices/990001/status {"status":"paid","paidVia":"transfer"}`, **abortado en el navegador** |
+| ② factura SIN líneas al 10 % → NADA cambia (ni selector) | fila `990002`: 0 `select`. El único selector de la ficha es el de `990001`. «Marcar como PAGADA» → `confirm` + `prompt` → `PUT /admin/invoices/990002/status {"status":"paid"}`, el mismo cuerpo de siempre, **abortado** (de ahí el «Error actualizando estado» que se vio después) |
+| ③ informe X2 (`status: true`): servidor compilado → lo cubren el test de la rama y el arreglo de J en #3334 | **DECLARADO:** `tests/scrum1804-iva10-parte-s.test.mjs` (X2 con cargo `pending` `card` + `paidVia: 'cash'` cuenta `cash`; con cargo `paid` manda el cargo), y la regla de `metodoDeUnCobro` es de #3334 (SCRUM-1316k) |
+| ③ en vivo solo: el informe carga sin error | yaqu.app → Informes: `GET /admin/reports/x2?year=2026` → **200**, claves `year, byMethod, marcadosAMano, reminderEur, aging, pendingTotal`; 0 alertas de error en pantalla. `informes-x2-1280.png`. (En consola, un 403 de `/admin/metrics/platform-funnel`, métrica de plataforma, no de X2 — MI LECTURA, sin investigar) |
+| capturas del vivo 390 + 1280 (con 10 %, con 21 %, el error del selector) | `docs/master/evidencias/SCRUM-1804/r42-vivo/` (13 PNG, 1,4 MB). El teléfono del cliente QA de la ficha del trabajo está **enmascarado en el DOM** antes de capturar («[teléfono oculto]»): el repo es público. Borré la única captura en la que se veía sin enmascarar |
+
+## 🔴 Hallazgo (carril S2, mi propio código de SCRUM-1804): a 390, el error T3 sale fuera de la pantalla
+
+Medido a 390×844, recargando la ficha y pulsando «Marcar como PAGADA» sin medio, sin tocar el desplazamiento: T3 se pinta en la barra de estado
+de la ficha, arriba del todo (`top −196 px`, `bottom −134 px`, con `scrollY 688`), y el foco salta al selector (`top 557`). **La pantalla
+solo enseña el selector con el foco; el error, no.** Una persona que pulsa y no ve nada vuelve a pulsar. A 1280 sí se ve (la ficha cabe y
+no se desplaza). El banco no lo cazó porque la escena `trabajo-sin-elegir` fotografía la página entera. Ningún texto es nuevo; arreglarlo es
+cuestión de **dónde** se pinta T3 (junto a su selector, o desplazando la barra de estado a la vista). **No lo he tocado:** este encargo era
+solo verificar. Lo decide el orquestador: se arregla aquí o se parte en un ticket nuevo (A18) antes de cerrar SCRUM-1804.
+
+## Lo que se ha escrito en producción (todo en la cuenta QA, salvo el login de lectura de la demo)
+
+- **Facturas: 0. Presupuestos: 0** (`GET /admin/quotes` sigue terminando en el id 217, de 20-nov). El «✓ Guardado automáticamente» del
+  editor no creó presupuesto en el servidor; el borrador «Reforma baño [QA-1804b]» quedó solo en el navegador.
+- Sesiones: tres `POST /auth/test-login` con `scripts/qa/sesion-panel.mjs` (QA, demo para leer, QA) y un `POST /auth/logout` (la revocación de arriba).
+- Las peticiones que la página manda sola al cargar (`POST /admin/entorno`, por ejemplo) salieron como en cualquier visita mientras no
+  estaba la intercepción. Con ella puesta se abortaron (una apuntada: `POST /admin/entorno {"entorno":"pestana"}`).
