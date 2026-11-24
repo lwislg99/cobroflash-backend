@@ -153,6 +153,10 @@ export const GUARDS = [
   // 1 rojo. Es lo que tumbó a S3 en #2528 (run 38905690014: scrum267 en verde, 1294 en rojo).
   { fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
     porque: 'todo tramo de registro con ancla fechada lleva su línea `A9:` en uno de los cuatro formatos, y lo que nombra existe' },
+  // SCRUM-1801 · la rama desde la que vas a empujar tiene número para el censo; si no, scrum804 cae en
+  // TODOS los PR (24-nov-2026, `scrum-1787aa-…`). Sin `dist` ni base, ~2 s (siete hijos de node).
+  { fichero: 'tests/scrum1801-guard-rama-con-numero.test.mjs',
+    porque: 'una rama `scrum-<dígito>…` sin número para `numeroDeRama` tumba scrum804 en todos los PR' },
 ];
 
 // TECHO de este comando ENTERO, en milisegundos de reloj. Lo hace cumplir el propio comando (plazo
