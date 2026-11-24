@@ -35,6 +35,10 @@ Mutaciones: catálogo → `tests/scrum1801-guard-rama-con-numero.test.mjs`
 
 Antes de aceptarla, J3 mide el techo con `tests/scrum976-guards-entrada-con-techo.test.mjs` (los siete hijos de este test suman ~2 s en esta máquina).
 
+Hecho por jv-j3cs en `9a8fa2fe13d73dfbb8003de5a29c735283c66765`; techo medido: 19,7 s de 90 (con 16 guards, 177 tests; antes de la entrada, scrum976 ④ dio 17,0 s de 90 con 15). Negativo: `GITHUB_HEAD_REF=scrum-1787aa-x npm run guards:entrada` sale 1 y nombra la rama. `censo:mudez -- --escribir`: 0 medidos de 143; el test de 1801 no menciona el filtro de comentarios, así que no entra en su población y `tests/_veredicto-mudez.json` no cambia. `MINIMO` sigue en 15: subirlo no estaba en el encargo.
+
+A9: sin fallo que generalice — relevo de una línea ya escrita por J6; el techo se midió antes de aceptarla y cupo
+
 ## Para Luis (S0) · ② y la fila del script nuevo — solo propuesto
 
 **② `.github/workflows/pr-automatico.yml`**: un paso detrás del «Candado — solo ramas scrum-», con la rama por `env` como el candado:
