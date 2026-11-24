@@ -827,7 +827,10 @@ async function fetchInvoiceDetail(id) {
     // `pending` —la única transición del máster— y en el «⋯» (un acto que no se deshace no es la
     // primaria). Tras cancelar, la ficha se repinta y el botón ya no está; la factura sigue pendiente y
     // el reenvío le crea otro cobro (decisión 2). Los mensajes de error reutilizan los de esta ficha.
-    if (invoice.chargeId && invoice.estadoDelCobro === 'pending') {
+    // SCRUM-1800c (c.22496 ①): con la factura ya pagada el botón no se pinta, aunque el cobro siga
+    // `pending`. `status: 'paid'` ya lo oculta el registro (`invoiceActionsRegistry.js`); aquí falta
+    // solo la factura con `paidAt` y otro estado.
+    if (invoice.chargeId && invoice.estadoDelCobro === 'pending' && !invoice.paidAt) {
       const CONFIRMAR_CANCELAR_COBRO = '¿Cancelar este cobro? El cliente ya no podrá pagarlo con este enlace.';
       const btnCancelarCobro = document.createElement('button');
       btnCancelarCobro.className = 'btn-secondary btn-sm';
@@ -842,9 +845,12 @@ async function fetchInvoiceDetail(id) {
           const r = await fetch(`/admin/charges/${invoice.chargeId}/cancel`, { method: 'POST' });
           const d = await r.json().catch(() => ({}));
           if (!r.ok) {
+            // SCRUM-1800c: literal FIRMADO en SCRUM-1800 c.22496 ① para el 409 `document_already_paid`.
             aviso = d.error === 'charge_not_pending'
               ? 'Este cobro ya no está pendiente.'
-              : 'Error actualizando estado: inténtalo de nuevo';
+              : (d.error === 'document_already_paid'
+                ? 'Este documento ya consta como pagado: su cobro no se puede cancelar.'
+                : 'Error actualizando estado: inténtalo de nuevo');
           }
         } catch (_) {
           aviso = 'Error actualizando estado: inténtalo de nuevo';
