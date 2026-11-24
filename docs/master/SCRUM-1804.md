@@ -144,3 +144,7 @@ la columna del campo (173×285 px, una tira estrecha). Ahora nace justo debajo d
 
 `invoiceAdmin.ts`, `invoicesAdmin.routes.ts`, `invoiceDetailView.js`, `invoicesView.js` (J1),
 `selectorMetodoCobro.js` (J2), `prisma/schema.prisma`, ningún cálculo de IVA ni el camino de emisión.
+
+## Apéndice · 24-nov-2026 · reparación del orquestador (PR #3370)
+
+El obligatorio cayó con 3 rojos: dos AJENOS (scrum1340/811c por docs/master/SCRUM-1810.md del equipo J sin «Skill UI:», avisado en SCRUM-1810 c.22554, y su arrastre scrum976 ④) y UNO de la rama: scrum1480f — `scripts/capturas-iva10-parte-s.mjs` nació sin fila en dos-equipos.md §3.3. REPARADO por el orquestador (precedente #3274, acta §46): fila S2 en §3.3 (por el área del ticket, `area-s2`) + `node scripts/carriles.mjs generar` (derivados regenerados: carriles.json y carril-s2.md; no editados a mano). Rojo→verde visto: 1480f con 1 fichero sin fila ANTES y 0 DESPUÉS; scrum1295 8/8. Los dos rojos ajenos se re-corren cuando el equipo J cure su registro. — orquestador cobroflash-backend-41 (delegación c.21978)
