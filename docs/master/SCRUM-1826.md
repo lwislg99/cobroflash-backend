@@ -1,6 +1,6 @@
 # SCRUM-1826 · El guard de la lista de facturas espera la cabecera «Acciones» (decisión del fundador)
 
-**Medido contra:** `origin/main` = `8e0d408168865aab0c7862d7c004cf864450aa71` · 2026-11-24T11:43:10Z (cabecera `Date:` de GitHub)
+**Medido contra:** `origin/main` = `6fbcde28651d2eed9190ced9efbc7663d8cdac7a` · 2026-11-24T11:46:03Z (cabecera `Date:` de GitHub)
 
 A9: aviso → A10 «Un detector que acierta y publica donde nadie lee produce el mismo resultado que uno ciego.» — no se pudo comprobar: el desajuste (1787n cambió la cabecera y su test obligatorio, pero no la pieza que declara el guard de navegador) solo lo ve el job «guards de navegador», que no está en el check obligatorio; meterlo ahí es tocar un workflow (S5 y fundador)
 
@@ -22,13 +22,13 @@ Elección del fundador: «El guard pasa a esperar «Acciones»». La pieza decla
 
 En `scripts/guard-lista-trabajos.mjs`, `PIEZAS_1562g`, sólo la segunda pieza: el nombre pasa a «el `<th>Acciones</th>` de la columna «Ver detalle»», la expresión de `\n[ \t]*<th([^>]*)><\/th>` a `\n[ \t]*<th([^>]*)>Acciones<\/th>`, y una línea de comentario con «SCRUM-1826 · decisión del fundador (c.22585…)». Recuento esperado (1), sustituto (sin atributos → se quita), la pieza del `colspan` y el resto del guard: sin tocar.
 
-### Corrido (local, Edge de Windows, sobre la base `8e0d408168865aab0c7862d7c004cf864450aa71`, 127 ficheros de `public/`)
+### Corrido (local, Edge de Windows, sobre la base `6fbcde28651d2eed9190ced9efbc7663d8cdac7a`, 127 ficheros de `public/`; antes, sobre `8e0d408168865aab0c7862d7c004cf864450aa71`, el mismo resultado en las dos pasadas)
 
 | pasada | Facturas | veredicto |
 |---|---|---|
 | pieza vieja `<th></th>` (el fichero de `main`, antes del cambio) | «colspan … 1 de 1 · el `<th>` sin texto … 0 de 1» | 1 hallazgo · 0 ciegos → salida 1 (19 s) |
 | pieza nueva `<th>Acciones</th>` | «✅ Facturas · a659ec4c7a7f8e0e · idéntico a la base (que ya trae SCRUM-1562g)» | salida 0 · 20 comprobaciones ✅ y ninguna 🔴 (Trabajos ①–⑤, Presupuestos, calibraciones Ⓐ y Ⓑ, Albaranes, Clientes, Facturas) |
 
-El control se repite con `git checkout 8e0d40816 -- scripts/guard-lista-trabajos.mjs`, el guard, y `git checkout HEAD -- scripts/guard-lista-trabajos.mjs` para volver. El guard no tiene test propio que nombre la pieza (buscado `PIEZAS_1562g`, `<th>` y `1562g` en los tests que citan `guard-lista-trabajos`: ninguno).
+El control se repite con `git checkout 6fbcde286 -- scripts/guard-lista-trabajos.mjs`, el guard, y `git checkout HEAD -- scripts/guard-lista-trabajos.mjs` para volver (hecho así sobre la base nueva; `git status` limpio después). Entre las dos bases, `main` sólo cambió `docs/master/SCRUM-1810.md` (1810c), que es lo que tenía en rojo `guards:entrada` (scrum811c, SCRUM-1340) en la primera pasada: no era de esta rama. El guard no tiene test propio que nombre la pieza (buscado `PIEZAS_1562g`, `<th>` y `1562g` en los tests que citan `guard-lista-trabajos`: ninguno).
 
 **No medido:** el job «guards de navegador» de CI (sólo local); yaqu.app (la pantalla no cambia); la suite entera (el encargo la excluye). La línea de comentario de cabecera de la sección (la que habla del «`<th>` sin texto de la columna nueva») se ha dejado como está, porque el encargo pide no tocar nada más del guard: la explicación vigente está en la línea de la pieza.
