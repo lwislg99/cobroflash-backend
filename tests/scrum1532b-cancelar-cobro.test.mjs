@@ -12,8 +12,8 @@
 //   ④ decisión 1: si entra dinero en un cobro cancelado, pasa a pagado igual que hoy;
 //      decisión 2: cancelar NO escribe la factura (se queda pendiente de cobro).
 //
-// La fila de auditoría NO está: su literal es nuevo y vive en un fichero de S1 (audit.service.ts);
-// pedido al orquestador, sin respuesta al empujar. Lo dice el registro.
+// La fila de auditoría `cobro_cancelado` entra en SCRUM-1532c: la clave la añadió S1 en
+// audit.service.ts (SCRUM-1808) y la fila se escribe sólo al cancelar de verdad (ni yaEstaba ni 409).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
@@ -34,6 +34,7 @@ const R_INVOICE = require_.resolve('./dist/modules/billing/app/routes/payInvoice
 const R_BIZUM = require_.resolve('./dist/modules/billing/app/routes/payBizum.routes.js');
 const R_BANK = require_.resolve('./dist/modules/billing/app/routes/payBank.routes.js');
 const R_MP = require_.resolve('./dist/modules/billing/app/routes/payMp.routes.js');
+const R_AUDIT = require_.resolve('./dist/modules/system/audit.service.js'); // SCRUM-1532c
 
 /** Los tres literales FIRMADOS en SCRUM-1532 c.22430, copiados de Jira. El de la UI es de J1. */
 export const RECIBO_CANCELADO = 'Este cobro se ha cancelado.';
@@ -51,6 +52,12 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: "cancelled: { icon: '✕', title: 'Este cobro se ha cancelado.', cls: 'expired' },",
     a: '',
     cae: 'el recibo de un cobro cancelado',
+  },
+  {
+    fichero: 'src/modules/billing/app/routes/chargesAdmin.routes.ts',
+    de: 'recordAudit({',
+    a: 'void ({',
+    cae: 'cancelar un cobro pendiente deja su fila de auditoría',
   },
 ];
 
@@ -74,6 +81,7 @@ async function cancelar({ estado, rol = 'admin', id = '7', existe = true, update
   });
   poner(R_PRISMA, { prisma: new Proxy({}, { get: (_t, n) => modelo(String(n)) }) });
   delete require_.cache[R_ADMIN];
+  delete require_.cache[R_AUDIT]; // SCRUM-1532c: si no, la auditoría sigue con la base del PRIMER caso
   const router = require_(R_ADMIN).default;
   const capa = router.stack.find((l) => l.route && l.route.path === '/:id/cancel' && l.route.methods.post);
   assert.ok(capa, '🔴 CIEGO: no existe POST /:id/cancel en chargesAdmin');
@@ -86,7 +94,7 @@ async function cancelar({ estado, rol = 'admin', id = '7', existe = true, update
       return () => res;
     },
   });
-  const req = reqDeSesion({ rol, merchantId: MERCHANT, method: 'POST', params: { id }, query: {}, body: {}, teamMemberId: null });
+  const req = reqDeSesion({ rol, merchantId: MERCHANT, method: 'POST', params: { id }, query: {}, body: {}, teamMemberId: null, headers: {} }); // headers: Express siempre los trae, y la IP de la auditoría los lee (1532c)
   const callar = console.error; console.error = () => {};
   try {
     for (const l of capa.route.stack) {
@@ -154,8 +162,9 @@ test('SCRUM-1532b · ④ decisión 2: cancelar NO toca la factura (se queda pend
   const r = await cancelar({ estado: 'pending' });
   assert.equal(r.status, 200, 'control positivo: la cancelación sí ocurrió');
   assert.deepEqual(r.llamadas.filter((c) => c.q.startsWith('invoice.')).map((c) => c.q), []);
-  assert.deepEqual(r.llamadas.filter((c) => !c.q.startsWith('charge.')).map((c) => c.q), [],
-    'ni factura, ni presupuesto, ni eventos: sólo el cobro');
+  // SCRUM-1532c: lo único fuera del cobro es SU fila de auditoría, una y exacta (no se filtra: se exige).
+  assert.deepEqual(r.llamadas.filter((c) => !c.q.startsWith('charge.')).map((c) => c.q), ['auditLog.create'],
+    'ni factura, ni presupuesto, ni eventos: sólo el cobro y su fila de auditoría');
 });
 
 // ── ④ DECISIÓN 1: dinero que entra en un cobro cancelado ───────────────────────────────────────
@@ -260,17 +269,38 @@ test('SCRUM-1532b · ③ la página de pago (transferencia) de un cobro cancelad
 test('SCRUM-1532b · ③ la página de pago (Mercado Pago) de un cobro cancelado manda al recibo', paginaCancelada(3));
 paginaCancelada.todos();
 
-// ── LA FALTA DECLARADA (SCRUM-1532 c.22435) ────────────────────────────────────────────────────
-// La fila de auditoría necesita la clave `cobro_cancelado`, aprobada como clave interna, que añade S1
-// en `src/modules/system/audit.service.ts`. Hasta entonces la ruta NO deja fila, y este caso lo dice
-// en vez de callarlo. El día que la clave exista, cae: es la señal para 1532c (poner la fila).
-test('SCRUM-1532b · FALTA DECLARADA: sin fila de auditoría hasta que exista la clave `cobro_cancelado` (→ 1532c)', async () => {
+// ── SCRUM-1532c · LA FILA DE AUDITORÍA (SCRUM-1532 c.22435 y c.22562) ─────────────────────────────
+// Antes este caso declaraba la FALTA (la clave no existía). S1 añadió `cobro_cancelado` a la unión de
+// `src/modules/system/audit.service.ts` (SCRUM-1808) y 1532c pone la fila: el caso pasa a EXIGIRLA.
+const filasDeAuditoria = (r) => r.llamadas.filter((c) => c.q === 'auditLog.create');
+test('SCRUM-1532c · la clave `cobro_cancelado` existe y cancelar un cobro pendiente deja su fila de auditoría', async () => {
   const fs = await import('node:fs');
   const tipos = fs.readFileSync(path.join(RAIZ, 'src/modules/system/audit.service.ts'), 'utf8');
   assert.ok(tipos.includes("'factura_anulada'"), 'control positivo: leo la unión de acciones de verdad');
-  assert.ok(!tipos.includes("'cobro_cancelado'"),
-    '🔴 la clave `cobro_cancelado` ya existe: toca 1532c — la ruta tiene que dejar su fila y este caso pasa a exigirla');
+  assert.ok(tipos.includes("'cobro_cancelado'"), '🔴 la clave `cobro_cancelado` no está en la unión de acciones');
   const r = await cancelar({ estado: 'pending' });
   assert.equal(r.status, 200);
-  assert.equal(r.llamadas.filter((c) => c.q.startsWith('auditLog.')).length, 0, 'hoy no escribe auditoría, y se dice aquí');
+  const filas = filasDeAuditoria(r);
+  assert.equal(filas.length, 1, `🔴 cancelar un cobro pendiente dejó ${filas.length} filas de auditoría, no 1`);
+  const d = filas[0].args.data;
+  assert.equal(d.action, 'cobro_cancelado');
+  assert.equal(d.merchantId, MERCHANT, 'la fila es del comercio de la sesión');
+  assert.equal(d.entityType, 'charge');
+  assert.equal(d.entityId, 7, 'la fila nombra el cobro cancelado');
+  assert.equal(d.teamMemberId, null, 'el actor de la sesión (propietario): teamMemberId nulo');
+  assert.equal(d.meta?.actor?.tipo, 'pro_propietario', 'el actor va DICHO en meta, no deducido de un nulo');
+});
+test('SCRUM-1532c · sin fila de auditoría si el cobro ya estaba cancelado (yaEstaba)', async () => {
+  const r = await cancelar({ estado: 'cancelled' });
+  assert.equal(r.status, 200);
+  assert.equal(r.data?.yaEstaba, true, 'control: es el camino idempotente');
+  assert.equal(filasDeAuditoria(r).length, 0, '🔴 una cancelación que no cambia nada dejó fila');
+});
+test('SCRUM-1532c · sin fila de auditoría en el 409 (no pendiente, o un pago que gana la carrera)', async () => {
+  const r = await cancelar({ estado: 'paid' });
+  assert.equal(r.status, 409);
+  assert.equal(filasDeAuditoria(r).length, 0, '🔴 un 409 dejó fila');
+  const carrera = await cancelar({ estado: 'pending', updateLanza: Object.assign(new Error('x'), { code: 'P2025' }) });
+  assert.equal(carrera.status, 409, 'control: el pago ganó la carrera');
+  assert.equal(filasDeAuditoria(carrera).length, 0, '🔴 el 409 de la carrera dejó fila');
 });

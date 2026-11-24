@@ -80,7 +80,7 @@ test('SCRUM-1800 · control: pending con su documento SIN pagar → cancela (200
   const r = await cancelar();
   assert.equal(r.status, 200, `suelo: ${r.status} ${String(r.texto).slice(0, 200)}`);
   assert.equal(r.json?.status, 'cancelled');
-  assert.deepEqual(escrituras(), ['charge.update']);
+  assert.deepEqual(escrituras(), ['charge.update', 'auditLog.create']); // SCRUM-1532c: y su fila de auditoría
 });
 
 test('SCRUM-1800 · pending y su factura (por `chargeId`) ya consta pagada → 409 `document_already_paid` y no escribe nada', async () => {
@@ -103,7 +103,7 @@ test('SCRUM-1800 · regla 2: un documento pagado de OTRO comercio colgado del co
   programar({ porCargo: [{ status: 'paid', merchantId: OTRO }], porPresupuesto: [{ status: 'paid', merchantId: OTRO }] });
   const r = await cancelar();
   assert.equal(r.status, 200, `${r.status} ${String(r.texto).slice(0, 200)}`);
-  assert.deepEqual(escrituras(), ['charge.update']);
+  assert.deepEqual(escrituras(), ['charge.update', 'auditLog.create']); // SCRUM-1532c: y su fila de auditoría
 });
 
 test('SCRUM-1800 · el orden se conserva: un cobro ya cancelado sigue siendo idempotente y uno pagado sigue en `charge_not_pending`', async () => {
