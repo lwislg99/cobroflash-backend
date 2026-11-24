@@ -45,7 +45,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // El botón se pinta con cualquier cobro, no solo con el pendiente.
     fichero: 'public/dashboard/js/invoiceDetailView.js',
-    de: "if (invoice.chargeId && invoice.estadoDelCobro === 'pending') {",
+    de: "if (invoice.chargeId && invoice.estadoDelCobro === 'pending' && !invoice.paidAt) {",
     a: 'if (invoice.chargeId) {',
     cae: 'SCRUM-1532d · ① con el cobro en otro estado, o sin cobro, no se pinta',
   },
