@@ -86,9 +86,9 @@ const CENSO_HEREDADO = Object.freeze({
   'plansView.js': 2,
   'quotesDetailView.js': 9,
   'quotesView.js': 5,
-  // 3 → 1 (SCRUM-1828b, 24-nov-2026): la carga («No se han podido cargar los datos») y el guardado
-  // («Error al guardar») pasan por `mensajeParaPersona`. Queda la vista previa del resumen semanal.
-  'settingsView.js': 1,
+  // settingsView.js: 3 → 1 (SCRUM-1828b, 24-nov-2026): la carga («No se han podido cargar los datos») y
+  // el guardado («Error al guardar») pasan por `mensajeParaPersona`. 1 → 0 (SCRUM-1828c): la vista
+  // previa del resumen semanal, también. Sale de la tabla: su techo es CERO.
   'teamView.js': 1,
 });
 
