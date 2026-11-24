@@ -4,6 +4,8 @@
 
 A9: sin fallo que generalice — la cura y su test los dejó escritos y comiteados EN LOCAL la sesión anterior del puesto, que se quedó sin uso antes de empujar; este tramo los verifica y los entrega, y lo que salió mal (trabajo de un día sin empujar) ya lo dice A17.
 
+**Skill UI:** no cargada · la cura la escribió la sesión anterior y no se puede saber si la cargó; en este tramo no se ha cargado. Lo que cambia es el comportamiento de un botón que ya existía («Añadir al parte»): sin componente, sin clase, sin color y sin texto nuevos. **Microcopy:** ninguna.
+
 ## Qué pasaba (PASO 0: se reprodujo, 6 secuencias de 6)
 
 Con el `PATCH` de «Añadir al parte» en el aire, el técnico que seguía apuntando **borraba del servidor
