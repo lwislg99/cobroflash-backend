@@ -31,6 +31,37 @@ import { fileURLToPath } from 'node:url';
 import { banco, prisma, reiniciar, nuevoId, requiere, rutaDe, asentar, M_PT, CLIENTE } from './_banco-emision-con-estado.mjs';
 import { lineasDePdf } from './_texto-del-pdf.mjs';
 
+// SCRUM-665g: el banco (S3) aún no modela las relaciones de Invoice; retirar cuando lo haga (aviso a Luis)
+for (const metodo of ['findUnique', 'findFirst']) {
+  const delBanco = prisma.invoice[metodo];
+  prisma.invoice[metodo] = async (a) => {
+    const f = await delBanco(a);
+    const inc = a?.include;
+    if (!f || !inc) return f;
+    if (inc.merchant) f.merchant = banco.tablas.merchant.find((m) => m.id === f.merchantId) ?? null;
+    if (inc.customer) f.customer = banco.tablas.customer.find((c) => c.id === f.customerId) ?? null;
+    if (inc.rectifies) {
+      const r = f.rectifiesId == null ? undefined : banco.tablas.invoice.find((i) => i.id === f.rectifiesId);
+      const sel = inc.rectifies.select;
+      f.rectifies = !r ? null : sel ? Object.fromEntries(Object.keys(sel).map((k) => [k, r[k]])) : { ...r };
+    }
+    return f;
+  };
+}
+// SCRUM-665g: el doble del PDF del banco (S3) no escribe fichero, y desde SCRUM-665e la factura lee su huella; retirar cuando lo haga (aviso a Luis)
+const pdfDelBanco = requiere(rutaDe('dist/lib/pdf.js'));
+const { invoicesDir } = requiere(rutaDe('dist/core/storage/dirs.js'));
+const pdfsEscritos = [];
+const generarDelBanco = pdfDelBanco.generateInvoicePdf;
+pdfDelBanco.generateInvoicePdf = async (d) => {
+  const r = await generarDelBanco(d);
+  const ruta = path.join(invoicesDir, `${d.merchantId}-${d.number}.pdf`); // la de `src/lib/invoicing.ts` (diskPath)
+  fs.writeFileSync(ruta, `%PDF-doble SCRUM-665g ${d.invoiceId}`);
+  pdfsEscritos.push(ruta);
+  return r;
+};
+test.after(() => { for (const ruta of pdfsEscritos) fs.rmSync(ruta, { force: true }); });
+
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ts = requiere('typescript');
 
