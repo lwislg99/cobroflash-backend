@@ -780,7 +780,8 @@ function renderSettingsView(container) {
           ).join('');
         previewBox.style.display = "block";
       } catch (err) {
-        setAlert("error", "No se pudo cargar la vista previa: " + (err?.message || "error"));
+        // SCRUM-1828c · el rótulo solo, sin el crudo de `err.message` (SCRUM-1828 c.22597).
+        setAlert("error", mensajeParaPersona(err, "No se pudo cargar la vista previa"));
       } finally {
         previewBtn.disabled = false;
         previewBtn.textContent = original;
@@ -1601,7 +1602,7 @@ async function renderPublicProfileCard(container) {
       } catch (e) {
         btn.disabled = false; btn.textContent = 'Guardar página';
         msg.style.color = 'var(--red-600)';
-        msg.textContent = (e && e.data && e.data.message) || 'No se pudo guardar. Inténtalo de nuevo.';
+        msg.textContent = mensajeParaPersona(e, 'No se pudo guardar. Inténtalo de nuevo.'); // SCRUM-1828c
       }
     });
 
@@ -1694,7 +1695,8 @@ function renderProfileQrButton(card, m) {
         // El backend devuelve el motivo (contraste_insuficiente, qr_invertido…) con su mensaje:
         // se muestra ESE, no uno inventado aquí. [PENDIENTE microcopy oficial] solo el fallback.
         const cuerpo = await r.json().catch(() => null);
-        err.textContent = (cuerpo && cuerpo.message) || QR_COPY.errorGenerico;
+        // SCRUM-1828c · el cuerpo de un `fetch`, no un error de `apiRequest`: se le da su forma.
+        err.textContent = mensajeParaPersona({ data: cuerpo }, QR_COPY.errorGenerico);
         err.hidden = false;
         img.removeAttribute('src');
         return;
@@ -1870,7 +1872,7 @@ function montarDatosDeEjemplo(merchant) {
         }
       } catch (e) {
         cerrar();
-        salida.textContent = 'No se pudo eliminar: ' + (e?.data?.message || e.message);
+        salida.textContent = mensajeParaPersona(e, 'No se pudo eliminar');
       }
     });
   });
