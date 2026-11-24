@@ -997,7 +997,8 @@ function renderSettingsView(container) {
   
         setAlert(null, "");
       } catch (err) {
-        setAlert("error", "No se han podido cargar los datos: " + err.message);
+        // SCRUM-1828b · el rótulo solo, sin el crudo de `err.message` (SCRUM-1828 c.22597).
+        setAlert("error", mensajeParaPersona(err, "No se han podido cargar los datos"));
       }
     }
   
@@ -1205,7 +1206,7 @@ function renderSettingsView(container) {
         // SCRUM-1536d · «Sí» en el domicilio foral: el servidor no guarda NADA y manda el texto
         // firmado en SCRUM-1536 c.20225 (T2a). Se pinta ése, entero y sin el «Error al guardar:».
         if (err && err.code === "territorio_excluido") setAlert("error", mensajeParaPersona(err, ""));
-        else setAlert("error", "Error al guardar: " + err.message);
+        else setAlert("error", mensajeParaPersona(err, "Error al guardar"));
       } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = "Guardar cambios";

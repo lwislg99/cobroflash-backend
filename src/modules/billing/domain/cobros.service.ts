@@ -22,12 +22,12 @@
 // 🔴 SCRUM-445 · LA FUSIÓN SE DISEÑÓ CONTRA UNA PROPIEDAD QUE NADIE COMPROBÓ QUE EXISTIERA
 //
 // La primera versión decía que `chargeId: null` impedía contar dos veces: «si la factura tiene
-// charge, el charge ya la representa». **Era falso, y no a medias: el filtro no excluía NADA.**
-// Medido: `Invoice.chargeId` **no lo escribe nadie en todo el árbol** — `ensureInvoiceForCharge`
-// crea la factura del cobro con `merchantId, customerId, quoteId, number, type, total, currency,
-// lines, pdfUrl, qrData` y sin ese campo. Así que cada cobro por pasarela salía DOS VECES: su
-// `Charge` y su justificante. En la pantalla del dinero, ver el doble es peor que no ver.
-//
+// charge, el charge ya la representa». **Cuando se escribió era falso: nadie escribía el campo.**
+// Desde SCRUM-445 lo escriben DOS sitios: `ensureInvoiceForCharge` (`lib/invoicing.ts`, factura
+// que nace de un cobro ya pagado) y `sendInvoicePaymentRequest` (`invoiceWhatsApp.service`: al
+// mandar la factura por WhatsApp crea su cobro `pending` y lo enlaza). Esas facturas ya NO salen
+// sueltas: las quitan el filtro y `fundirCobros`. Las ANTERIORES al arreglo siguen con `chargeId`
+// nulo, y a esas solo las desduplica el evento `invoiced` (abajo).
 // El campo está en el esquema, es nullable, y **parecía escrito**. Es el mismo defecto que
 // `Job.direccion` en otra tabla: una columna declarada que nadie rellena, y un mecanismo apoyado
 // encima como si estuviera llena.
@@ -224,9 +224,9 @@ async function listarCobros(merchantId: number): Promise<Cobro[]> {
       include: { customer: { select: { name: true } } },
     }),
     prisma.invoice.findMany({
-      // `chargeId: null` se conserva y HOY NO EXCLUYE NADA — nadie escribe ese campo (ver arriba).
-      // Se deja porque el día que alguien lo escriba será correcto, no porque filtre: quien
-      // desduplica de verdad es el cruce con los eventos de abajo.
+      // `chargeId: null` SÍ excluye: quita las facturas enlazadas a su cobro (los dos escritores,
+      // arriba). No basta solo: las anteriores a SCRUM-445 lo tienen nulo, y a esas las desduplica
+      // el cruce con los eventos de abajo, que `fundirCobros` vuelve a comprobar.
       where: { merchantId, chargeId: null },
       orderBy: { createdAt: 'desc' },
       include: { customer: { select: { name: true } } },

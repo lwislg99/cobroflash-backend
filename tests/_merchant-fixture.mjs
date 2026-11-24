@@ -122,7 +122,10 @@ const MODELOS_POR_MERCHANT = [
   'invoicePayment',
   'albaran', 'maintenancePlan', 'invoice', 'charge', 'job', 'quote', 'quoteRequest',
   'botSession', 'quoteTemplate', 'expense', 'fiscalPlazoEstado', 'product', 'provider', 'authSession',
-  'teamMember', 'customer',
+  'teamMember',
+  // SCRUM-914 · `equipment` es FK-RESTRICT hacia `customer` y `merchant`: va antes de los dos.
+  'equipment',
+  'customer',
 ];
 
 /** Espera sin bloquear; el reintento existe por las escrituras asíncronas (ver abajo). */

@@ -1,7 +1,7 @@
 {
-  "_": "GENERADO por scripts/carriles.mjs desde docs/equipo/dos-equipos.md (sha256 78a8139d96c6). NO se edita a mano: se cambia la tabla y se regenera.",
+  "_": "GENERADO por scripts/carriles.mjs desde docs/equipo/dos-equipos.md (sha256 006865a67e93). NO se edita a mano: se cambia la tabla y se regenera.",
   "fuente": "docs/equipo/dos-equipos.md",
-  "sha": "78a8139d96c6",
+  "sha": "006865a67e93",
   "areas": {
     "S0": "consultoría y auditoría: «¿esto existe hoy?», filtro de las afirmaciones de SU orquestador, dueña de `00-normas-comunes.md`, `dos-equipos.md` y `trampas-del-entorno.md`",
     "S1": "servidor: importes, presupuestos, gastos, mantenimientos, y el servidor de todo lo que no sea de J1-J3",
@@ -1687,6 +1687,24 @@
       "motivo": "SCRUM-1755: cambiar sólo la regla de medida (hojas del índice + espera de las caras + LETRA en la salida), sin tocar ningún caso ni veredicto",
       "ticket": "SCRUM-1755",
       "linea": 277
+    },
+    {
+      "patron": "src/modules/jobs/app/routes/albaranes.routes.ts",
+      "quien": [
+        "J1"
+      ],
+      "motivo": "sólo `POST /:id/facturar-parcial` y `POST /:id/convertir-en-factura`: el `message` de fallo de sellado sale solo con el estado `pendiente_de_sellado` (criterio de `quotesAdmin.routes.ts`), más lo mínimo para leer ese estado (la constante en el `import` y la variable del estado); `veriFactu` no cambia y no hay texto nuevo. Excepción firmada por el fundador en SCRUM-1779 c.22290 («Ok lo hacemos ya ahora y se lo ponemos en un mensaje»); el resto del fichero sigue siendo de S1",
+      "ticket": "SCRUM-1779",
+      "linea": 278
+    },
+    {
+      "patron": "public/dashboard/js/jobDetailView.js",
+      "quien": [
+        "J1"
+      ],
+      "motivo": "sólo el toast tras `facturar-parcial`: «⚠️ Factura emitida, revisa su registro» sale cuando la respuesta trae `message`, no cuando `veriFactu === false`; sin texto nuevo. Excepción firmada por el fundador en SCRUM-1779 c.22290; el resto del fichero sigue siendo de S2",
+      "ticket": "SCRUM-1779",
+      "linea": 279
     }
   ]
 }
