@@ -1,0 +1,27 @@
+// SCRUM-1800b · sirve el recibo PENDIENTE (solo banco) con la app REAL de `dist/` y el doble de
+// Prisma del banco de tests (`tests/_banco-camino-real.mjs`), para la captura a 390 px.
+// Sin base de datos: nada sale de la máquina. Se copia a `tests/` como .mjs para correrlo
+// (importa `./_banco-camino-real.mjs` por ruta relativa) y se borra después.
+// Uso: node tests/_servidor-1800b.mjs   → imprime la URL y se apaga solo a los 10 min.
+import { montarAppReal, bancoDePrisma } from './_banco-camino-real.mjs';
+
+const TOKEN = 'tok1800b';
+const ch = {
+  id: 18002, receiptToken: TOKEN, status: 'pending', amount: 250, currency: 'EUR',
+  concept: 'Reparación de bajante', payMethods: null, createdAt: new Date(), paidAt: null,
+  merchantId: 42, customer: { id: 3, name: 'Ana', email: null }, events: [], reconciliations: [],
+  merchant: {
+    id: 42, name: 'Fontanería Ruiz', legalName: 'Fontanería Ruiz SL', email: 'ruiz@ejemplo.test',
+    country: 'ES', logoUrl: null, iban: 'ES9121000418450200051332', clabe: null, bizumPhone: null,
+    whatsappPhone: null, connectStatus: 'none', stripeAccountId: null, flags: null,
+  },
+};
+bancoDePrisma().programar({
+  charge: { findUnique: async (a) => (a?.where?.receiptToken === TOKEN || a?.where?.id === ch.id ? ch : null), update: async () => ch },
+  invoice: { findFirst: async () => null, findUnique: async () => null },
+  quote: { findFirst: async () => null },
+  event: { create: async () => ({ id: 1 }) },
+});
+const app = await montarAppReal();
+console.log(`URL ${app.base}/recibo/${TOKEN}`);
+setTimeout(() => { app.cerrar(); process.exit(0); }, 10 * 60 * 1000);

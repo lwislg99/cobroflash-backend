@@ -13,6 +13,7 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { montarAppReal, bancoDePrisma } from './_banco-camino-real.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 /** Mutaciones que este fichero tiene que tumbar (A3, SCRUM-1731). */
 export const MUTACIONES_QUE_ME_TUMBAN = [
@@ -64,8 +65,11 @@ const CASOS = [
   { nombre: 'pendiente con banco y tarjeta', merchant: { ...CONNECT, iban: IBAN }, esperado: AMBOS },
 ];
 
-for (const c of CASOS) {
-  test(`SCRUM-1800 ② · /recibo ${c.nombre} → su frase firmada en c.22496, entera, y el texto va ANTES de los botones`, async () => {
+// Nombres ESCRITOS (scrum1415): `casosEscritos` comprueba que cada literal sigue siendo el de su fila.
+const pendiente = casosEscritos(
+  CASOS,
+  (c) => `SCRUM-1800 ② · /recibo ${c.nombre} → su frase firmada en c.22496, entera, y el texto va ANTES de los botones`,
+  async (c) => {
     programar({ merchant: c.merchant });
     const r = await pedir();
     assert.equal(r.status, 200, `suelo: /recibo devolvió ${r.status} ${String(r.texto).slice(0, 200)}`);
@@ -78,11 +82,18 @@ for (const c of CASOS) {
     const enTexto = r.texto.indexOf(c.esperado);
     const enBotones = r.texto.indexOf('class="pay-stack"');
     assert.ok(enBotones > enTexto, `🔴 los botones (pay-stack @${enBotones}) no van detrás del texto (@${enTexto})`);
-  });
-}
+  },
+);
+test('SCRUM-1800 ② · /recibo pendiente solo con banco → su frase firmada en c.22496, entera, y el texto va ANTES de los botones', pendiente(0));
+test('SCRUM-1800 ② · /recibo pendiente solo con tarjeta → su frase firmada en c.22496, entera, y el texto va ANTES de los botones', pendiente(1));
+test('SCRUM-1800 ② · /recibo pendiente con banco y tarjeta → su frase firmada en c.22496, entera, y el texto va ANTES de los botones', pendiente(2));
+pendiente.todos();
 
-for (const estado of ['paid', 'cancelled']) {
-  test(`SCRUM-1800 ② · control: el recibo ${estado} no pinta ninguna frase del pendiente ni botones de pago`, async () => {
+const CERRADOS = [{ estado: 'paid' }, { estado: 'cancelled' }];
+const cerrado = casosEscritos(
+  CERRADOS,
+  ({ estado }) => `SCRUM-1800 ② · control: el recibo ${estado} no pinta ninguna frase del pendiente ni botones de pago`,
+  async ({ estado }) => {
     programar({ estado, merchant: { ...CONNECT, iban: IBAN } });
     const r = await pedir();
     assert.equal(r.status, 200, `suelo: /recibo devolvió ${r.status} ${String(r.texto).slice(0, 200)}`);
@@ -90,8 +101,11 @@ for (const estado of ['paid', 'cancelled']) {
     assert.equal(r.texto.includes('Estamos esperando tu pago'), false);
     assert.equal(r.texto.includes('class="pay-stack"'), false);
     if (estado === 'paid') assert.ok(r.texto.includes('Pago recibido correctamente'), 'positivo: el pagado pinta su propio texto');
-  });
-}
+  },
+);
+test('SCRUM-1800 ② · control: el recibo paid no pinta ninguna frase del pendiente ni botones de pago', cerrado(0));
+test('SCRUM-1800 ② · control: el recibo cancelled no pinta ninguna frase del pendiente ni botones de pago', cerrado(1));
+cerrado.todos();
 
 // Control del detector (SCRUM-113): si una frase fuera subcadena de otra, el «no pinta la de otro
 // caso» pasaría en vacío.
