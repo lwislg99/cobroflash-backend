@@ -597,8 +597,9 @@ titulo('⑥ las hermanas: TRES idénticas por hash · Albaranes trae LO DECLARAD
         /<td colspan="(\d+)"([^>]*)><div class="empty-state"([^>]*)>/g,
         1,
         (todo, n, td, caja, _pos, html) => (sinHuecos(td, caja) && Number(n) === columnas(html) ? '<td colspan="=columnas"><div class="empty-state">' : todo)],
-      ['el <th> sin texto de la columna «Ver detalle»',
-        /\n[ \t]*<th([^>]*)><\/th>/g,
+      // SCRUM-1826 · decisión del fundador (c.22585, sobre la medición de c.22572): la pieza pasa de `<th></th>` a `<th>Acciones</th>`, el rótulo que puso SCRUM-1787n (b4c2cb610).
+      ['el <th>Acciones</th> de la columna «Ver detalle»',
+        /\n[ \t]*<th([^>]*)>Acciones<\/th>/g,
         1,
         (todo, th) => (sinHuecos(th) ? '' : todo)],
     ];
