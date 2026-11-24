@@ -20,9 +20,9 @@ for ($i = $Desde; $i -lt $fin; $i++) {
   if (Test-Path -LiteralPath $nm) {
     $it = Get-Item -LiteralPath $nm -Force
     if ($it.LinkType -eq 'Junction' -or $it.LinkType -eq 'SymbolicLink') {
-      [System.IO.Directory]::Delete($nm)
+      $tipo = [string]$it.LinkType; [System.IO.Directory]::Delete($nm)
       if (Test-Path -LiteralPath $nm) { "$leaf`tNO borrado: el enlace sigue tras Directory.Delete" | Out-File $Log -Encoding utf8 -Append; continue }
-      $paso1 = "enlace-quitado($($it.LinkType))"
+      $paso1 = "enlace-quitado($tipo)"
     } else { $paso1 = 'copia-propia' }
   }
   $out = (git -C $Repo worktree remove $p 2>&1) -join ' '; $rc = $LASTEXITCODE

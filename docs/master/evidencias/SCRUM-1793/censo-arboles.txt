@@ -1,4 +1,4 @@
-﻿arbol	rama	fuera_de_origin	sucio	node_modules	destino_nm	otros_enlaces	viva	bloqueado	existe	veredicto
+arbol	rama	fuera_de_origin	sucio	node_modules	destino_nm	otros_enlaces	viva	bloqueado	existe	veredicto
 cobroflash-jv-j1cg	scrum-1330d-scrum173-en-staging	0	0	carpeta			False	False	True	BORRABLE
 cobroflash-jv-j1ch	scrum-1446-1448-preparar-decision	0	0	no-existe			False	False	True	BORRABLE
 cobroflash-jv-j1ci	scrum-1404-pr2-preparar	0	0	no-existe			False	False	True	BORRABLE
