@@ -101,3 +101,28 @@ Medición previa: el 409 `charge_not_pending` se pinta en `invoiceDetailView.js`
 | suite entera | verde | NO CORRIDA (no cabe en el contexto del encargo) |
 
 A9: aviso → cicatriz J1 «Escribí el arreglo de la ficha antes de su test rojo, la cuarta vez tras 1780c, 1787e y 1787s» — no se pudo comprobar: el orden en que una sesión escribe test y arreglo no queda en el diff
+# SCRUM-1800b · El recibo pendiente dice «a continuación»
+
+**Medido contra:** `origin/main` = `3c6c651fecd17adcad2ec6088d1cf44da0110154` · 2026-11-24T06:33:51Z
+
+Carril J2. Sesión jv-j2el, relevo de jv-j2ek: su commit `05d2459f3` se aplicó por cherry-pick sin conflictos, y el mío va encima.
+Literales firmados en Jira SCRUM-1800 c.22496 ②.
+
+| qué | esperado | visto |
+|---|---|---|
+| tres literales de `receipt.routes.ts` | idénticos a c.22496 ② | 3 de 3 casan por bytes en src, en el test nuevo y en 910d |
+| test por la ruta montada (`GET /recibo/:token`) | banco · tarjeta · los dos · control pagado/cancelado, con nombres literales | 6 de 6. El WIP construía los nombres en bucles: pasados a `casosEscritos` (scrum1415) |
+| scrum910d re-anclado | frase ENTERA, no la cola | sí, con nota que cita c.22496 |
+| captura a 390 px del pendiente con banco | texto arriba, botón debajo | `docs/master/evidencias/SCRUM-1800/1800b-recibo-pendiente-banco-390.png`: la nota acaba en y=362 y `.pay-stack` empieza en y=378, con ancho 390 |
+
+Mutaciones: catálogo → `tests/scrum1800b-recibo-pendiente-a-continuacion.test.mjs`. Pasada una vez con
+`docs/master/evidencias/SCRUM-1800/mutar-1800b.mjs`: VIVA 1 de 1, con la línea base igual al principio y al final.
+`tsc -p .` con tipos: 0. Los vecinos no se corrieron en local: los corre el obligatorio, por orden del orquestador.
+
+A9: comprobación → `tests/scrum1800b-recibo-pendiente-a-continuacion.test.mjs`
+
+Relevo jv-j2en (24-nov-2026): el obligatorio de #3354 cayó en SCRUM-1511h («par no leído: SCRUM-1800 comentario 22496»).
+Se añade la fila de c.22523 a `tests/_pares-leidos-en-jira.mjs` (carril J6, excepción A20 declarada por el orquestador J).
+Rojo reproducido antes; después, 921c + 1800b + 910d + 1294 + 854: 37 de 37.
+
+A9: comprobación → `tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs`
