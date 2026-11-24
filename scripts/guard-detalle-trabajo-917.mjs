@@ -398,6 +398,59 @@ for (const ancho of ANCHOS) {
     await page.goto(bancosF[caso.banco].base, { waitUntil: 'networkidle0' });
     const t = await pintarDetalle(page, caso.job.id);
     if (!t.ok) { suelo(`F ${q} el Trabajo ${caso.job.id} no se pintó (${t.por})`); await page.close(); continue; }
+    // 🔴 SCRUM-1798 · RE-ANCLAJE A LAS PESTAÑAS — cambia DÓNDE se mira, no lo que se exige.
+    // Desde SCRUM-1768 (#3268, 20-nov-2026) la ficha va por pestañas: cada sección es un
+    // `role="tabpanel"` y sólo la elegida se ve; las demás llevan `hidden`. La tarjeta «El trabajo» no
+    // es la que abre por defecto, así que este bloque medía un panel sin pintar: cabeceras de 0 px
+    // (F.4) y ningún control visible al abrir una línea (F.7). 42 hallazgos de 244, todos del
+    // instrumento y ninguno de la pantalla (`docs/master/SCRUM-1798.md` lleva esa salida entera).
+    // Antes de medir se hace lo que hace quien usa la ficha: pulsar la pestaña de la tarjeta.
+    //   · Por IDENTIDAD, no por texto: el panel es `tarjeta.closest('[role=tabpanel]')` y su pestaña
+    //     es la ÚNICA cuyo `aria-controls` es el `id` de ese panel. El rótulo no se lee: es el `<h3>`
+    //     de la sección y puede cambiar sin que cambie nada de lo que F juzga.
+    //   · Se PULSA la pestaña; no se le quita `hidden` al panel a mano. Si la pestaña deja de abrir
+    //     su panel, este bloque tiene que enterarse, y un `hidden = false` desde fuera lo taparía.
+    //   · FALLA CERRADO: hay panel y no hay exactamente una pestaña que lo gobierne, o se pulsa y el
+    //     panel sigue oculto → SUELO («no supe mirar»), nunca un veredicto sobre una tarjeta a 0 px.
+    //   · Si la tarjeta no cuelga de ningún panel no hay nada que abrir y se mide tal cual: si de
+    //     verdad estuviera oculta, F.4 mide 0 y cae en rojo, que es lo que hacía hasta hoy.
+    // No suma comprobaciones: la población sigue siendo la misma, y lo que imprime es el rastro de
+    // que el clic hizo algo (oculto y 0 px antes, visible y con su alto después).
+    const pst = await page.evaluate(async () => {
+      const c = document.getElementById('view');
+      const tarjeta = c.querySelector('.detail-trabajo');
+      if (!tarjeta) return { sinTarjeta: true };
+      const panel = tarjeta.closest('[role="tabpanel"]');
+      if (!panel) return { sinPanel: true };
+      const altoDeLaPrimera = () => {
+        const cab = tarjeta.querySelector('details.detail-plega > summary');
+        return cab ? Math.round(cab.getBoundingClientRect().height * 10) / 10 : null;
+      };
+      const antes = { oculto: panel.hidden, alto: altoDeLaPrimera() };
+      const pestanas = [...c.querySelectorAll('[role="tab"]')].filter((b) => panel.id && b.getAttribute('aria-controls') === panel.id);
+      if (pestanas.length !== 1) return { panel: panel.id || null, pestanas: pestanas.length, antes };
+      pestanas[0].click();
+      await new Promise((r) => setTimeout(r, 60));
+      return {
+        panel: panel.id, pestana: pestanas[0].id || null, pestanas: 1, antes,
+        despues: { oculto: panel.hidden, alto: altoDeLaPrimera(), elegida: pestanas[0].getAttribute('aria-selected') },
+      };
+    });
+    if (pst.sinPanel) {
+      console.log(`      ↪ F ${q} la tarjeta no cuelga de ningún [role=tabpanel]: no hay pestaña que abrir, se mide tal cual`);
+    } else if (!pst.sinTarjeta) {
+      if (pst.pestanas !== 1) {
+        suelo(`F ${q} la tarjeta vive en el panel «${pst.panel}» y lo gobiernan ${pst.pestanas} pestañas (esperaba UNA con aria-controls="${pst.panel}"): no sé abrirlo, no juzgo nada de él`);
+        await page.close();
+        continue;
+      }
+      if (pst.despues.oculto) {
+        suelo(`F ${q} pulsé la pestaña «${pst.pestana}» y su panel «${pst.panel}» sigue oculto: no juzgo una tarjeta sin pintar`);
+        await page.close();
+        continue;
+      }
+      console.log(`      ↪ F ${q} pestaña ${pst.pestana} → panel ${pst.panel}, por aria-controls · antes: ${pst.antes.oculto ? 'oculto' : 'a la vista'}, 1ª cabecera ${pst.antes.alto} px · después: a la vista, ${pst.despues.alto} px`);
+    }
     // Lo que se ve con todas las líneas CERRADAS. Devuelve datos; quien lo llama juzga.
     // ⚠️ El cuerpo va EN LA LLAMADA y no como función con nombre que se pasa a `page.evaluate`: el censo de
     // identificadores sin declarar (SCRUM-258) reconoce un cuerpo de navegador por estar DENTRO de una

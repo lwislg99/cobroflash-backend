@@ -34,6 +34,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   { fichero: 'public/dashboard/js/expensesView.js', de: "  que.setAttribute('role', 'button');\n", a: "  fila.setAttribute('role', 'button');\n", cae: 'Gastos · Intro y Espacio' },
   { fichero: 'public/dashboard/js/quotesDetailView.js', de: "        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirFactura(); }\n", a: "        if (e.key === 'Enter') { e.preventDefault(); abrirFactura(); }\n", cae: 'ficha del presupuesto · Intro y Espacio' },
   { fichero: 'public/dashboard/js/quotesDetailView.js', de: "      div.addEventListener('click', abrirFactura);\n", a: '', cae: 'ratón' },
+  { fichero: 'public/dashboard/js/teamView.js', de: "          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); abrirPresupuesto(); }\n", a: "          if (ev.key === 'Enter') { ev.preventDefault(); abrirPresupuesto(); }\n", cae: 'Equipo · Intro y Espacio' },
   { fichero: 'public/dashboard/css/styles.css', de: '.quote-line__ajustes:focus-visible { outline: none; box-shadow: var(--ring); }', a: '.quote-line__ajustes:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(34,197,94,.30); }', cae: 'el anillo de foco' },
 ];
 
@@ -157,11 +158,61 @@ test('SCRUM-1639 · ficha del presupuesto · 🔵 control: el ratón abre igual,
   assert.ok(todos(tarjetas[0]).some((n) => n.tagName === 'BUTTON'), '🔴 CIEGO: la pendiente ya no tiene «Marcar como pagada»; el control del botón no mide nada');
 });
 
+// ── Equipo · ficha del operario (SCRUM-1639c, J3: `teamView.js`) ───────────────────────────────
+// Sus dos tarjetas (trabajos y presupuestos del operario) no contienen controles: la tarjeta entera
+// es el botón, como dejó escrito la receta de S2 en `docs/master/SCRUM-1639.md`.
+const MIEMBRO = { id: 9, isOwner: false, name: 'Ana Operaria', email: 'ana@ejemplo.test', role: 'tecnico' };
+const TRABAJO_DEL_OPERARIO = { id: 31, titulo: 'Reforma cocina', customer: { name: 'Marta' }, estadoCobro: 'pendiente', totalAceptado: 1200 };
+const PRESUPUESTO_DEL_OPERARIO = { id: 44, number: 12, customerName: 'Marta', status: 'sent', totalAmount: 980, currency: 'EUR' };
+const DESTINOS_EQUIPO = [
+  { vista: 'jobs-detail', params: { jobId: TRABAJO_DEL_OPERARIO.id } },
+  { vista: 'quotes-detail', params: { quoteId: PRESUPUESTO_DEL_OPERARIO.id } },
+];
+
+async function montarEquipo() {
+  const banco = cargarDashboard(RAIZ, {
+    datos: (url) => (/\/admin\/jobs\?operarioId=/.test(String(url)) ? [TRABAJO_DEL_OPERARIO] : (/\/admin\/quotes\?teamMemberId=/.test(String(url)) ? [PRESUPUESTO_DEL_OPERARIO] : [])),
+  });
+  assert.deepEqual(banco.fallos, [], '🔴 CIEGO: el dashboard no carga entero en el banco.');
+  const navegaciones = [];
+  banco.ctx.renderAppView = (vista, params) => { navegaciones.push(JSON.parse(JSON.stringify({ vista, params }))); };
+  const r = await pintarVista(banco, 'renderTeamMemberDetail', MIEMBRO);
+  assert.equal(r.error, null, `🔴 CIEGO: la ficha del operario revienta al montarse: ${r.error}`);
+  await new Promise((ok) => setTimeout(ok, 0));
+  const tarjetas = todos(r.contenedor).filter((n) => clases(n).includes('customers-card') && n._oyentes && n._oyentes.click);
+  assert.equal(tarjetas.length, 2, `🔴 CIEGO: ${tarjetas.length} tarjetas con clic; sin las dos este test no mide nada.`);
+  return { tarjetas, navegaciones };
+}
+
+test('SCRUM-1639c · Equipo · Intro y Espacio abren el trabajo y el presupuesto del operario, una vez; otra tecla no', async () => {
+  for (const key of ['Enter', ' ']) {
+    for (let i = 0; i < 2; i++) {
+      const m = await montarEquipo();
+      comprobarActivable(m.tarjetas[i], `Equipo, tarjeta ${i}`);
+      assert.equal(tecla(m.tarjetas[i], key), true, `🔴 «${key}» no hace preventDefault: el Espacio desplazaría la página`);
+      assert.deepEqual(m.navegaciones, [DESTINOS_EQUIPO[i]], `🔴 «${key}» en la tarjeta ${i} hizo ${JSON.stringify(m.navegaciones)}`);
+    }
+  }
+  const m = await montarEquipo();
+  for (const t of m.tarjetas) tecla(t, 'Tab');
+  assert.deepEqual(m.navegaciones, [], '🔴 el tabulador navegó');
+});
+
+test('SCRUM-1639c · Equipo · 🔵 control: el ratón abre igual que antes, y `.customers-card` no pisa el anillo', async () => {
+  for (let i = 0; i < 2; i++) {
+    const m = await montarEquipo();
+    clicEnFila(m.tarjetas[i], m.tarjetas[i]);
+    assert.deepEqual(m.navegaciones, [DESTINOS_EQUIPO[i]], `🔴 el clic en la tarjeta ${i} hizo ${JSON.stringify(m.navegaciones)}`);
+  }
+  const css = soloCodigo(fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8'), 'styles.css');
+  assert.match(css, /\.customers-card\[role="button"\]:focus-visible\s*\{[^}]*box-shadow:\s*var\(--ring\)/, '🔴 sin regla propia, `.customers-card` (que va después) pisa el `:focus-visible` global y el anillo no se ve');
+});
+
 // ── El censo de todo el panel (aceptación 5) ───────────────────────────────────────────────────
 // TECHO EXACTO por fichero, en las dos direcciones: si sube, vuelve el defecto; si baja, alguien lo
 // arregló y el techo se baja AQUÍ, en el mismo PR (un trinquete que sólo mira hacia arriba esconde las
-// bajadas). Las dos de `teamView.js` son de J3 y quedan pedidas en SCRUM-1639.
-const TECHO = { 'teamView.js': 2 };
+// bajadas). Era `{ 'teamView.js': 2 }` (las dos de J3); SCRUM-1639c las arregla y lo baja a cero.
+const TECHO = {};
 
 test('SCRUM-1639 · censo: ninguna fila que navega sin vía de teclado, salvo el techo declarado de J3', () => {
   const dir = path.join(RAIZ, 'public/dashboard/js');
