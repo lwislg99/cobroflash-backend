@@ -1237,6 +1237,13 @@ Por qué: el rojo era el guard haciendo su trabajo. T4 metió dos literales y el
 - Mutaciones con `aplicarUna`: 1787w ① VIVA, 1787w ⑤ VIVA, 1788a ① VIVA (3/3). El árbol queda limpio después.
 - Dirigida (un fichero por proceso, todos rc 0): 1787w 6/6, 1787t 6/6, 1787m 8/8, 1788a 1/1, 1785b 7/7, 1786f1 4/4, 601 5/5, 603 8/8, 603b 9/9, 723 8/8, 523d 7/7, 810 6/6, 1294 4/4, 267 14/14, 273 6/6, 525d 8/8, 854 6/6. `npm run guards:entrada` rc 0 (15 guards); y los 5 de árbol entero que nombra: 195 9/9, 414 5/5, 694 7/7, 710b 12/12, 737 5/5. `tsc -p .` con tipos (`npm run build`): salida 0. **La suite entera NO se ha corrido en local**: la corre el check obligatorio.
 
+**Relevo jv-j1is · 2026-11-24T02:01:53Z** (`Date:` de `gh api -i zen`) · `origin/main` = `42cae61092ba69761d6d7bba0504abe6baee1e52`. El obligatorio de `6591f6e0f` (run 45306706655) tenía un rojo, `scrum719:399`: la ficha de mudez de `scrum601` caducó al re-anclarlo.
+
+A9: comprobación → `tests/scrum719-el-suelo-de-los-doce.test.mjs`
+
+- `npm run censo:mudez -- --escribir`: midió 1 de 143 (`scrum601`, VIVO) y reescribió su ficha. El JSON cambia SOLO en esa ficha: misma clase, otra huella; 143 fichas antes y después (comparado fichero a fichero).
+- `scrum719` 37/37 con el JSON nuevo; con el de antes, 36/37 y el rojo nombra a `scrum601` (control en rojo). `npm run guards:entrada` rc 0.
+
 # SCRUM-1787y · En la página de pago, «Vence el 5 de diciembre», sin el cero del día
 
 **Medido contra:** `origin/main` = `97e196f930334971538b5c0ba13e0224cbe7d184` · 2026-11-23T21:07:40Z (cabecera `Date:` de `gh api -i zen`)
