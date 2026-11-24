@@ -91,7 +91,8 @@ test('SCRUM-1787m ① con vencimiento, el PDF imprime «Vence el» debajo de la 
   // SCRUM-1787t: desde c.22390 ③ el vencimiento va en fecha LARGA (la «Fecha:» sigue en dd/mm/aaaa). SCRUM-1787x (c.22431): el día sin cero.
   assert.equal(vence.texto.trim(), 'Vence el 5 de diciembre de 2026', '🔴 el vencimiento no sale con la fecha larga de SCRUM-1787t');
   assert.ok(vence.y < fecha.y, `🔴 «Vence el» (y=${vence.y}) no está debajo de «Fecha:» (y=${fecha.y})`);
-  const emisor = laLinea(lineas, 'EMISOR');
+  // SCRUM-1787w · literal FIRMADO en SCRUM-1787 c.22428 (GO c.22416): «Emisor: » sustituye al rótulo «EMISOR».
+  const emisor = laLinea(lineas, 'Emisor: ');
   assert.ok(vence.y > emisor.y, `🔴 «Vence el» (y=${vence.y}) no está en la cabecera: cae a la altura del emisor (y=${emisor.y}) o por debajo`);
 });
 
@@ -109,7 +110,7 @@ test('SCRUM-1787m ③ con formas de pago, el PDF imprime «Formas de pago» con 
   const formas = laLinea(lineas, 'Formas de pago');
   assert.equal(formas.texto.trim(), 'Formas de pago: Tarjeta, Bizum');
   assert.ok(formas.y < laLinea(lineas, 'Vence el').y, '🔴 las formas de pago no van debajo del vencimiento');
-  assert.ok(formas.y > laLinea(lineas, 'EMISOR').y, '🔴 las formas de pago no están en la cabecera');
+  assert.ok(formas.y > laLinea(lineas, 'Emisor: ').y, '🔴 las formas de pago no están en la cabecera');
   // Las tres firmadas, en el orden en que se congelaron (no en el del diccionario).
   const tres = await lineasDeFactura({ payMethods: ['transfer', 'bizum', 'card'] });
   assert.equal(laLinea(tres, 'Formas de pago').texto.trim(), 'Formas de pago: Transferencia, Bizum, Tarjeta');

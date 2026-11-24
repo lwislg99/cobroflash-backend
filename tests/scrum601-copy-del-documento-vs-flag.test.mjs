@@ -278,7 +278,13 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // (`TEXTO_GARANTIA_NO_CUADRA`, el 409 de `/garantia`). Recalculado con `censoCopy` sobre el árbol FUSIONADO
 // (origin/main 6c5327559 + la rama): { flag: 8, tipo: 11, aPelo: 163 }, suman 182 de 182; es el único
 // literal nuevo de ③. Re-anclaje autorizado por el fundador en SCRUM-1732 c.22001.
-const VEREDICTO_AL_MEDIR = { flag: 8, tipo: 11, aPelo: 163 };
+// tipo 11 → 12 · aPelo 163 → 164 · 24-nov-2026 (SCRUM-1787w, T4) · literal firmado, no regresión: los dos
+// son literales FIRMADOS por el fundador en SCRUM-1787 c.22428 («sí a todo»), en `pdf.service.ts`:
+// ② «Total factura:» (sustituye a «TOTAL:», que este censo no contaba) y ③ «Detalle de la factura:»
+// (nuevo). MEDIDO con `censoCopy` sobre origin/main 42cae6109 (da 8/11/163, el ancla de antes: control
+// positivo) y sobre el árbol FUSIONADO (8/12/164): conjunto contra conjunto, +2 y 0 que salen o cambian
+// de categoría. No van a `PENDIENTES_DE_FIRMA`: están firmados.
+const VEREDICTO_AL_MEDIR = { flag: 8, tipo: 12, aPelo: 164 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA

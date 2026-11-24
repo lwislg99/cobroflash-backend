@@ -1,0 +1,182 @@
+[
+ {
+  "text": "Presupuesto",
+  "x": 436.25,
+  "y": 778.97,
+  "page": null
+ },
+ {
+  "text": "Presupuesto #1001",
+  "x": 449.89,
+  "y": 762.57,
+  "page": null
+ },
+ {
+  "text": "Válido hasta el 05 de diciembre de 2026",
+  "x": 349.78,
+  "y": 749.86,
+  "page": null
+ },
+ {
+  "text": "Emisor: Fontanería Ejemplo SL",
+  "x": 50,
+  "y": 728.79,
+  "page": null
+ },
+ {
+  "text": "NIF: B00000000",
+  "x": 50,
+  "y": 714.92,
+  "page": null
+ },
+ {
+  "text": "Calle Inventada 1, 28000 Ciudad Ficticia",
+  "x": 50,
+  "y": 701.05,
+  "page": null
+ },
+ {
+  "text": "Cliente: Cliente Ejemplo",
+  "x": 50,
+  "y": 673.3,
+  "page": null
+ },
+ {
+  "text": "NIF: 00000000T",
+  "x": 50,
+  "y": 659.43,
+  "page": null
+ },
+ {
+  "text": "Email: cliente@ejemplo.invalid",
+  "x": 50,
+  "y": 645.56,
+  "page": null
+ },
+ {
+  "text": "Dirección de la obra: Calle Falsa 123, 28000, Ciudad Ficticia",
+  "x": 50,
+  "y": 631.69,
+  "page": null
+ },
+ {
+  "text": "Detalle del presupuesto:",
+  "x": 50,
+  "y": 603.94,
+  "page": null
+ },
+ {
+  "text": "IMPORTEIVA%PrecioCant.",
+  "x": 316.1,
+  "y": 586.33,
+  "page": null
+ },
+ {
+  "text": "Concepto",
+  "x": 50,
+  "y": 584.57,
+  "page": null
+ },
+ {
+  "text": "Sustitución de grifo180,0021%80,00",
+  "x": 50,
+  "y": 567.84,
+  "page": null
+ },
+ {
+  "text": "Grifo monomando de cocina, incluye desmontaje del ",
+  "x": 50,
+  "y": 554.65,
+  "page": null
+ },
+ {
+  "text": "antiguo",
+  "x": 50,
+  "y": 544.25,
+  "page": null
+ },
+ {
+  "text": "Mano de obra235,0021%70,00",
+  "x": 50,
+  "y": 527.13,
+  "page": null
+ },
+ {
+  "text": "Material de fontanería312,5010%37,50",
+  "x": 50,
+  "y": 509.13,
+  "page": null
+ },
+ {
+  "text": "Suma de líneas: 187,50 EUR",
+  "x": 430.99,
+  "y": 479.57,
+  "page": null
+ },
+ {
+  "text": "Descuento: -7,00 EUR",
+  "x": 460.46,
+  "y": 468.01,
+  "page": null
+ },
+ {
+  "text": "Base imponible: 180,50 EUR",
+  "x": 432.31,
+  "y": 456.45,
+  "page": null
+ },
+ {
+  "text": "IVA 21%: 30,03 EUR",
+  "x": 467.92,
+  "y": 444.89,
+  "page": null
+ },
+ {
+  "text": "IVA 10%: 3,75 EUR",
+  "x": 473.48,
+  "y": 433.33,
+  "page": null
+ },
+ {
+  "text": "Total presupuesto: 214,28 EUR",
+  "x": 393.96,
+  "y": 420.33,
+  "page": null
+ },
+ {
+  "text": "Observaciones",
+  "x": 50,
+  "y": 380.15,
+  "page": null
+ },
+ {
+  "text": "Pago a 30 días.",
+  "x": 50,
+  "y": 368.25,
+  "page": null
+ },
+ {
+  "text": "Garantía de 6 meses sobre la mano de obra.",
+  "x": 50,
+  "y": 356.69,
+  "page": null
+ },
+ {
+  "text": "GARANTÍA",
+  "x": 50,
+  "y": 322.73,
+  "page": null
+ },
+ {
+  "text": "Seis meses sobre la mano de obra.",
+  "x": 50,
+  "y": 310.96,
+  "page": null
+ },
+ {
+  "text": "Presupuesto generado automáticamente por YaQu — válido salvo indicación en contrario.",
+  "x": 126.22,
+  "y": 286.2,
+  "page": null
+ }
+]

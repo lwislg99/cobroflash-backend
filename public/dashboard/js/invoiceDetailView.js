@@ -197,7 +197,7 @@ async function fetchInvoiceDetail(id) {
       cobroBlock.style.textAlign = 'right';
       cobroBlock.style.marginTop = '10px';
       const cuando = invoice.paidAt
-        ? new Date(invoice.paidAt).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' })
+        ? new Date(invoice.paidAt).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })
         : '';
       cobroBlock.innerHTML =
         '<div class="detail-total-label">Cobro</div>'
@@ -244,7 +244,7 @@ async function fetchInvoiceDetail(id) {
     {
       const fmtPaso = (v) => {
         if (!v) return '';
-        try { return new Date(v).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }); } catch { return ''; }
+        try { return new Date(v).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }); } catch { return ''; }
       };
       const cobrada = st === 'paid';
       const waSt = String((invoice.waDelivery && invoice.waDelivery.status) || '').toLowerCase();
@@ -320,7 +320,7 @@ async function fetchInvoiceDetail(id) {
       : null;
     // SCRUM-1787i · «Vence el» (firmado, c.22325 ①): la fecha CONGELADA al emitir, sólo si consta.
     addDefRow(dlCobro, 'Vence el', invoice.dueDate
-      ? new Date(invoice.dueDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
+      ? new Date(invoice.dueDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
       : null);
     // SCRUM-1787i · «Formas de pago» (firmado, c.22345 ①): una por cada forma CONGELADA al emitir, sólo
     // si constan. Una clave fuera del conjunto no se pinta en crudo: no tiene literal firmado.
