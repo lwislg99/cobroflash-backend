@@ -2,7 +2,7 @@
 
 ## SCRUM-1821 · S3 · la cura, con rojo primero, y el barrido
 
-**Medido contra:** `origin/main` = `8e0d408168865aab0c7862d7c004cf864450aa71` · 2026-11-24 09:59Z (cabecera `Date` de GitHub) · puesto S3, rama `scrum-1821-banco-removeattribute`, por encargo del orquestador `cobroflash-backend-41` (hallazgo de S4 del mismo día).
+**Medido contra:** `origin/main` = `8e0d408168865aab0c7862d7c004cf864450aa71` · 2026-11-24T09:59Z (cabecera Date de GitHub; puesto S3, rama scrum-1821-banco-removeattribute, por encargo del orquestador cobroflash-backend-41 — hallazgo de S4 del mismo día. Formato del ancla corregido por el orquestador al reparar el PR #3372: la fecha llevaba espacio en vez de «T» y el guard scrum267 la rechazaba; base y hora, las que S3 declaró.)
 
 **El defecto.** En `tests/_banco-vistas.mjs`, `removeAttribute(k)` hacía sólo `delete n._attrs[k]`. El selector `[data-x]` (`casaSimple`) lee `n.dataset`, no `_attrs`. Así que un nodo al que la vista le quitaba un `data-*` SEGUÍA casando con `[data-x]` y con `[data-x="v"]`, y su `dataset.x` seguía puesto; en un navegador ninguna de las dos cosas pasa. El hueco nació en SCRUM-451, que reflejó `data-*` en `dataset` al PONER el atributo y no al QUITARLO.
 
