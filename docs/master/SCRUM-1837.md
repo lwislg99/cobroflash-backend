@@ -5,7 +5,9 @@
 A9: sin fallo que generalice — tramo de solo medición, sin cambio de producto; lo que confundió al ticket (leer el «p.ej.» de una fila por CLASE del censo como si nombrara un elemento) queda dicho abajo y se lo lleva el orquestador al equipo que lo abrió.
 
 Los tres censos se corrieron con el árbol en `db0a6c04541c258eda6499e1088cf16db9f1836b`; los tres
-commits que `main` ganó después (hasta `f1cd9c39c`) no tocan `public/` ni el instrumento.
+commits que `main` ganó después (hasta `f1cd9c39c`) no tocan `public/` ni el instrumento. La rama
+lleva además fusionado un `main` posterior que sí toca `public/dashboard/js/jobDetailView.js`
+(+15 −2): la fila de la ficha del trabajo de abajo es la de `db0a6c045` y NO se ha vuelto a medir.
 
 ## Resultado, en corto
 
