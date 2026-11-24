@@ -538,8 +538,9 @@ export async function generateInvoicePdf(params: {
   // SCRUM-1787t (decisión c.22390 ③; GO regla 40 c.22408) · SOLO esta línea pasa a la fecha LARGA es-ES,
   // con las opciones COPIADAS de la página de pago (`payInvoice.routes.ts`, 1787q), que las tiene en línea
   // y no exporta: si una cambia, `tests/scrum1787t-pdf-vence-fecha-larga.test.mjs` ⑤ lo caza. La «Fecha:» no cambia.
+  // SCRUM-1787x (decisión c.22431, dentro del GO c.22408) · el día sin cero a la izquierda: «5 de diciembre».
   const fechaLargaDeVencimiento = (d: Date) =>
-    d.toLocaleDateString('es-ES', { timeZone: zonaDelMerchant({ timezone: params.zona }), day: '2-digit', month: 'long', year: 'numeric' });
+    d.toLocaleDateString('es-ES', { timeZone: zonaDelMerchant({ timezone: params.zona }), day: 'numeric', month: 'long', year: 'numeric' });
   if (params.dueDate) doc.text(`Vence el ${fechaLargaDeVencimiento(params.dueDate)}`, { align: 'right' });
   const FORMAS_DE_PAGO_FIRMADAS = { card: 'Tarjeta', bizum: 'Bizum', transfer: 'Transferencia' } as const;
   const formasDePago = (Array.isArray(params.payMethods) ? params.payMethods : [])

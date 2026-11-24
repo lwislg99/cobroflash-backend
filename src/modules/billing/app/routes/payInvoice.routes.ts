@@ -112,7 +112,8 @@ router.get('/invoice/:token', async (req, res) => {
   const id = charge.id;
 
   // Pagado o vencido → recibo
-  if (charge.status === 'paid' || charge.status === 'expired') {
+  // SCRUM-1532b: un cobro cancelado tampoco se paga; el recibo dice por qué.
+  if (charge.status === 'paid' || charge.status === 'expired' || charge.status === 'cancelled') {
     return res.redirect(303, `/recibo/${token}`);
   }
 
@@ -146,9 +147,10 @@ router.get('/invoice/:token', async (req, res) => {
   // SCRUM-1787q · «Vence el» (firmado, SCRUM-1787 c.22325 ①): la fecha CONGELADA al emitir la factura
   // (1787i), sólo si consta; nunca la del presupuesto. Formato y zona, los del recibo, la otra página
   // pública de esta familia («Pagado el …», receipt.routes.ts): día y mes largo, en la zona del negocio.
+  // SCRUM-1787y · el día sin cero a la izquierda («5 de diciembre», no «05»): SCRUM-1787 c.22431.
   const vence = invoice?.dueDate ? new Date(invoice.dueDate) : null;
   const venceHtml = vence && !Number.isNaN(vence.getTime())
-    ? `<div class="subline">Vence el ${esc(vence.toLocaleDateString('es-ES', { timeZone: zonaDelMerchant(m), day: '2-digit', month: 'long', year: 'numeric' }))}</div>`
+    ? `<div class="subline">Vence el ${esc(vence.toLocaleDateString('es-ES', { timeZone: zonaDelMerchant(m), day: 'numeric', month: 'long', year: 'numeric' }))}</div>`
     : '';
 
   // ── A2.1: métodos disponibles + orden por la matriz W4 (por importe) ──

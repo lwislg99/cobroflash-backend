@@ -97,7 +97,8 @@ router.get('/bizum/:token', async (req, res) => {
   if (!charge) return res.status(404).send(documentNotFoundHtml());
   if (comercioSuprimido(charge.merchant)) return res.status(404).send(documentNotFoundHtml()); // SCRUM-1573b
   const id = charge.id;
-  if (charge.status === 'paid' || charge.status === 'expired') {
+  // SCRUM-1532b: un cobro cancelado tampoco se paga; el recibo dice por qué.
+  if (charge.status === 'paid' || charge.status === 'expired' || charge.status === 'cancelled') {
     return res.redirect(303, `/recibo/${token}`);
   }
 

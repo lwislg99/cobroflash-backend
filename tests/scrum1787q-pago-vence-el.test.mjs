@@ -32,6 +32,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: '',
     cae: 'SCRUM-1787q · una factura con vencimiento: la página dice «Vence el» y la fecha, junto al importe',
   },
+  {
+    // SCRUM-1787y · «el día vuelve a llevar el cero a la izquierda» (5 → 05).
+    fichero: 'src/modules/billing/app/routes/payInvoice.routes.ts',
+    de: "timeZone: zonaDelMerchant(m), day: 'numeric', month: 'long'",
+    a: "timeZone: zonaDelMerchant(m), day: '2-digit', month: 'long'",
+    cae: 'SCRUM-1787y · un día de una cifra sale sin el cero: «Vence el 5 de diciembre de 2026»',
+  },
 ];
 
 const M = { id: 42, name: 'Fontanería Ruiz', legalName: 'Fontanería Ruiz SL', email: 'ruiz@ejemplo.test',
@@ -106,6 +113,17 @@ test('SCRUM-1787q · la fecha va en la zona del negocio, no en la de la máquina
   const html = await pagina([facturaDe()], { ...M, timezone: 'America/New_York' });
   assert.match(bloqueDelImporte(html), /Vence el 20 de diciembre de 2026/,
     '🔴 La fecha no sale en la zona del negocio.');
+});
+
+test('SCRUM-1787y · un día de una cifra sale sin el cero: «Vence el 5 de diciembre de 2026»', async () => {
+  // Decisión del fundador, SCRUM-1787 c.22431: el día sin el cero de delante. Los de dos cifras no cambian.
+  const html = await pagina([facturaDe({ dueDate: new Date('2026-12-05T00:00:00.000Z') })]);
+  const bloque = bloqueDelImporte(html);
+  assert.match(bloque, /Vence el 5 de diciembre de 2026/, '🔴 La página no dice «Vence el 5 de diciembre de 2026».');
+  assert.equal(bloque.includes('Vence el 05 '), false, '🔴 El día sale con el cero de delante («05»).');
+  // Control: un día de dos cifras sigue igual.
+  const doble = bloqueDelImporte(await pagina([facturaDe({ dueDate: new Date('2026-12-10T00:00:00.000Z') })]));
+  assert.match(doble, /Vence el 10 de diciembre de 2026/, '🔴 Un día de dos cifras ha cambiado.');
 });
 
 test('SCRUM-1787q · control: sin vencimiento, la página no dice «Vence el»', async () => {

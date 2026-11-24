@@ -88,8 +88,8 @@ test('SCRUM-1787m ① con vencimiento, el PDF imprime «Vence el» debajo de la 
   const lineas = await lineasDeFactura({ dueDate: VENCE });
   const fecha = laLinea(lineas, 'Fecha: 05/11/2026'); // positivo: la fecha de expedición está y se lee
   const vence = laLinea(lineas, 'Vence el');
-  // SCRUM-1787t: desde c.22390 ③ el vencimiento va en fecha LARGA (la «Fecha:» sigue en dd/mm/aaaa).
-  assert.equal(vence.texto.trim(), 'Vence el 05 de diciembre de 2026', '🔴 el vencimiento no sale con la fecha larga de SCRUM-1787t');
+  // SCRUM-1787t: desde c.22390 ③ el vencimiento va en fecha LARGA (la «Fecha:» sigue en dd/mm/aaaa). SCRUM-1787x (c.22431): el día sin cero.
+  assert.equal(vence.texto.trim(), 'Vence el 5 de diciembre de 2026', '🔴 el vencimiento no sale con la fecha larga de SCRUM-1787t');
   assert.ok(vence.y < fecha.y, `🔴 «Vence el» (y=${vence.y}) no está debajo de «Fecha:» (y=${fecha.y})`);
   // SCRUM-1787w · literal FIRMADO en SCRUM-1787 c.22428 (GO c.22416): «Emisor: » sustituye al rótulo «EMISOR».
   const emisor = laLinea(lineas, 'Emisor: ');
@@ -100,9 +100,9 @@ test('SCRUM-1787m ② el día del vencimiento es el de la zona del negocio, como
   // 23:30Z del día 5 ya es día 6 en Madrid, y sigue siendo día 5 en UTC.
   const instante = new Date('2026-12-05T23:30:00.000Z');
   const madrid = await lineasDeFactura({ dueDate: instante, zona: 'Europe/Madrid' });
-  assert.equal(laLinea(madrid, 'Vence el').texto.trim(), 'Vence el 06 de diciembre de 2026');
+  assert.equal(laLinea(madrid, 'Vence el').texto.trim(), 'Vence el 6 de diciembre de 2026');
   const sinZona = await lineasDeFactura({ dueDate: instante, zona: null });
-  assert.equal(laLinea(sinZona, 'Vence el').texto.trim(), 'Vence el 05 de diciembre de 2026');
+  assert.equal(laLinea(sinZona, 'Vence el').texto.trim(), 'Vence el 5 de diciembre de 2026');
 });
 
 test('SCRUM-1787m ③ con formas de pago, el PDF imprime «Formas de pago» con los literales firmados', async () => {
