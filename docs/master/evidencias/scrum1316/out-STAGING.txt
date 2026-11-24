@@ -1,0 +1,7 @@
+BASE STAGING
+## control_total_facturas [{"n":14}]
+## control_total_cobros [{"n":9}]
+## facturas_por_estado [{"status":"paid","n":5},{"status":"pending","n":9}]
+## pagadas_por_origen [{"origen":"cargo_no_pagado","pv":"paid_via=bizum_manual","metodo_cargo":"card","n":1},{"origen":"cargo_no_pagado","pv":"paid_via_NULL","metodo_cargo":"card","n":3},{"origen":"sin_cargo","pv":"paid_via_NULL","metodo_cargo":"-","n":1}]
+## cobros_pagados_por_metodo []
+## apuntes_por_metodo []

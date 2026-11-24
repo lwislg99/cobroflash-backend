@@ -208,13 +208,15 @@ router.get('/:token', async (req, res) => {
       // existen. Cuatro literales firmados (Jira SCRUM-910, comentario 16527 del orquestador):
       // "ambos" y "ninguno" ya estaban firmados (el segundo se reutiliza tal cual de
       // payInvoice.routes.ts:242); "solo banco" y "solo tarjeta" son los dos nuevos que firmó.
+      // SCRUM-1800 ②: los botones (`pay-stack`) se pintan DEBAJO de este texto, así que «más arriba»
+      // pasó a «a continuación» en los tres (firma del fundador, Jira SCRUM-1800 c.22496 ②).
       const pendingMessage =
         puedeTransferencia && puedeTarjeta
-          ? 'Estamos esperando tu pago. Puedes completarlo usando los botones de <b>pago por banco</b> o <b>pago con tarjeta</b> que aparecen más arriba.'
+          ? 'Estamos esperando tu pago. Puedes completarlo usando los botones de <b>pago por banco</b> o <b>pago con tarjeta</b> que aparecen a continuación.'
           : puedeTransferencia
-          ? 'Estamos esperando tu pago. Puedes completarlo usando el botón de <b>pago por banco</b> que aparece más arriba.'
+          ? 'Estamos esperando tu pago. Puedes completarlo usando el botón de <b>pago por banco</b> que aparece a continuación.'
           : puedeTarjeta
-          ? 'Estamos esperando tu pago. Puedes completarlo usando el botón de <b>pago con tarjeta</b> que aparece más arriba.'
+          ? 'Estamos esperando tu pago. Puedes completarlo usando el botón de <b>pago con tarjeta</b> que aparece a continuación.'
           : 'El profesional te indicará cómo pagar.<br/>Contacta con él si tienes dudas.';
 
       const statusMessage =
@@ -276,6 +278,8 @@ router.get('/:token', async (req, res) => {
     pending: { icon: '⏳', title: 'Pago pendiente',  cls: 'pending' },
     failed:  { icon: '✕', title: 'Pago fallido',    cls: 'failed' },
     expired: { icon: '⏰', title: 'Enlace caducado', cls: 'expired' },
+    // SCRUM-1532b · literal FIRMADO en SCRUM-1532 c.22430. Sin esta fila caía a «Pago pendiente».
+    cancelled: { icon: '✕', title: 'Este cobro se ha cancelado.', cls: 'expired' },
   };
   const sh = SH[ch.status] || SH.pending;
   const business = esc((ch as any).merchant?.legalName || (ch as any).merchant?.name || '');

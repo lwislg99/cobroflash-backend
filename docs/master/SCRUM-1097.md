@@ -162,3 +162,17 @@ que la declaración no pueda quedarse sola si algún día deja de ser cierta.
 `scrum859-identidad-y-motivo-cerrado.test.mjs` (MUDO) — un ticket ajeno a SCRUM-1097, sin relación
 con ninguno de los tres ficheros de este PR. No es el check obligatorio que señaló el aviso y no
 se ha tocado aquí.
+
+---
+
+## SCRUM-1097b · 24-nov: ¿se puede cerrar? — propuesta: CERRAR (J5, solo docs)
+
+**Medido contra:** `origin/main` = `093a128766d1d45c01c0f1cef3557c8680b1463c` · 2026-11-24T06:55:41Z (cabecera `Date:` de `gh api -i zen`; sesión J5 `jv-j5bq`, por encargo del orquestador `cobroflash-backend-2d`)
+
+A9: sin fallo que generalice — el único tropiezo fue dejar un «#…» sin rellenar en Jira c.22517 (PR de 1101/1109/1102h: #2707, #1747, #2725), y lo que lo corrige es releer el comentario devuelto, no un guard
+
+**Veredicto propuesto: CERRAR** (detalle en Jira SCRUM-1097 c.22517), por tres motivos: ① el ticket pedía un MECANISMO («guard de SOLO LECTURA contra producción, periódico o bajo demanda»), y está en main (#1744, #2707, #1747, #2725) y corre a diario contra producción según el correo que cita c.22417; ② su «hoy debe dar CERO filas» no aplica desde la excepción del fundador en la regla 24 (SCRUM-1779 c.22289: «la pérdida de la acreditación de SCRUM-1097 mientras dure»); ③ el aviso diario es esperado por decisión del fundador (c.22417, «4-Da igual que suene»).
+
+**Hallazgo:** el guard no ve la variable de entorno (límite declarado, §1.2): con el ON global caza a cada comercio ES a medida que EMITE (brazo b), no a «todos» (23-nov: 1 de 14). Y como una factura emitida no se borra (regla 29), ese rojo es PERMANENTE: al acabar la excepción el centinela no podrá volver a verde. **Decisión que queda para el fundador al acabar la excepción:** fecha de corte firmada para el brazo (b) (recomendada) o retirada del centinela con motivo; hoy no se toca (regla 41).
+
+**Sin medir:** producción y la tarea programada de Railway (solo lo que dice c.22417); los tests del guard no se corrieron; si la vía 13 (`seed-video.mjs`) tiene su ticket aparte.

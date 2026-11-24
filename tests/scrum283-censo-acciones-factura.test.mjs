@@ -43,8 +43,10 @@ test('SCRUM-283 · el censo deriva 9 acciones del árbol (el ticket decía 8)', 
 
   const ids = acciones.map((a) => a.id).join(', ');
   assert.equal(
-    acciones.length, 9,
-    `🔴 el censo ya no ve 9 acciones sino ${acciones.length}. Una acción que APARECE o DESAPARECE es ` +
+    // 23-nov-2026 · 9 → 10: `btnCancelarCobro` (SCRUM-1532d), decidido con GO y rótulo firmados en
+    // SCRUM-1532 c.22430. El nombre del test se deja: los catálogos de mutaciones lo citan por nombre.
+    acciones.length, 10,
+    `🔴 el censo ya no ve 10 acciones sino ${acciones.length}. Una acción que APARECE o DESAPARECE es ` +
       `una decisión, no un descuido — cuéntala en el ticket. Ahora ve: ${ids}`,
   );
 

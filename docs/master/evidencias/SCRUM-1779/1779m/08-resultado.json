@@ -1,0 +1,38 @@
+{
+  "cobro": 889,
+  "factura": 1966,
+  "antes-1280-http": 200,
+  "antes": {
+    "tokenEnTexto": false,
+    "cancelado": false,
+    "acciones": 1
+  },
+  "antes-390-http": 200,
+  "cancelar1": {
+    "http": 200,
+    "cuerpo": {
+      "ok": true,
+      "status": "cancelled"
+    }
+  },
+  "despues-1280-http": 200,
+  "despues": {
+    "tokenEnTexto": false,
+    "cancelado": true,
+    "acciones": 0
+  },
+  "despues-390-http": 200,
+  "ficha": {
+    "url": "https://yaqu-staging-production.up.railway.app/dashboard/#invoice-detail/1966",
+    "cobroCancelado": false,
+    "cancel": false
+  },
+  "cancelar2": {
+    "http": 200,
+    "cuerpo": {
+      "ok": true,
+      "status": "cancelled",
+      "yaEstaba": true
+    }
+  }
+}
