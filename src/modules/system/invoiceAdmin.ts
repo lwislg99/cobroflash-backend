@@ -3,7 +3,8 @@ import { prisma } from '../../core/db/prisma';
 import { Prisma } from '@prisma/client';
 import { recalcJobCobradoForInvoice } from '../jobs/domain/job.service'; // SCRUM-28
 // SCRUM-441: el conjunto cerrado de métodos se CONSUME desde su dueño. Aquí no se copia ni un valor.
-import { campoPaidViaAlMarcar } from '../billing/domain/metodoDeCobro';
+import { campoPaidViaAlMarcar, esMetodoValido } from '../billing/domain/metodoDeCobro';
+import { datosDeCobroPagado } from '../billing/domain/instanteDeCobro'; // SCRUM-1803
 import { esFilaQueNoCasa } from '../billing/domain/estadoDelCobro'; // SCRUM-1303
 import { apuntarCobroDeFactura, anularCobrosDeFactura } from '../billing/domain/cobrosDeFactura'; // SCRUM-1732
 import { lineasQueSuman } from '../quotes/domain/apartados'; // SCRUM-1316l: las cabeceras no son una operación
@@ -215,6 +216,39 @@ export const COPY_METODO_OBLIGATORIO_IVA_10 = 'Elige cómo lo has cobrado: en es
 export class MetodoDeCobroObligatorioError extends Error {}
 
 /**
+ * SCRUM-1803 (decisión del fundador SCRUM-1800 c.22496 ③) · MARCAR PAGADA A MANO UNA FACTURA CIERRA
+ * SU COBRO PENDIENTE. Solo el vínculo DIRECTO (`Invoice.chargeId`; `Quote.chargeId` queda pendiente
+ * del fundador, SCRUM-1803 c.22499). Con la función de la casa (`datosDeCobroPagado`: estado, fecha y
+ * evento `paid` en un solo instante), nunca `status/paidAt` a mano.
+ *
+ * El `status: 'pending'` va en el `where`: un cobro ya `paid`, `cancelled` o `expired` no casa (P2025)
+ * y se queda como estaba, sin leerlo antes. `method` solo se escribe si el profesional lo declaró y
+ * el conjunto cerrado lo reconoce; si no, se conserva el del cobro. Devuelve si cerró alguno.
+ */
+export async function cerrarCobroDeFacturaPagada(
+  merchantId: number,
+  chargeId: number | null | undefined,
+  fecha: Date,
+  metodo: string | null,
+  payload: Record<string, unknown>,
+): Promise<boolean> {
+  if (chargeId == null) return false;
+  try {
+    await prisma.charge.update({
+      where: { id: chargeId, merchantId, status: 'pending' },
+      data: {
+        ...datosDeCobroPagado(fecha, payload),
+        ...(metodo && esMetodoValido(metodo) ? { method: metodo } : {}),
+      },
+    });
+    return true;
+  } catch (e) {
+    if (esFilaQueNoCasa(e)) return false;
+    throw e;
+  }
+}
+
+/**
  * SCRUM-1316l · ¿Lleva esta factura ALGUNA línea al 10 % de IVA? PURA: se prueba con filas de verdad.
  *
  * Las líneas guardan `tax` como FRACCIÓN (0.10 = 10 %, `vat.service.ts`). Se compara en porcentaje
@@ -382,6 +416,13 @@ export async function updateInvoiceStatusAdmin(
     }
   } catch (e) {
     console.error('[invoiceAdmin] SCRUM-1732 no se pudo apuntar el cobro:', (e as any)?.message || 'error desconocido');
+  }
+  // SCRUM-1803 · su cobro `pending` se cierra con la MISMA fecha y el medio declarado (si lo hubo).
+  if (status === 'paid' && existing.status !== 'paid' && updated.paidAt) {
+    await cerrarCobroDeFacturaPagada(
+      updated.merchantId, updated.chargeId, updated.paidAt,
+      (campoMetodo as { paidVia?: string }).paidVia ?? null, { origen: 'marcar_pagado_manual', via: 'status', invoiceId: updated.id },
+    ).catch((e) => console.error('[invoiceAdmin] SCRUM-1803 no se pudo cerrar el cobro:', (e as any)?.message || 'error desconocido'));
   }
   // SCRUM-28 (COBROS-2): el cobro MANUAL (Bizum/transferencia) también materializa
   // Job.totalCobrado. Reutiliza el núcleo de SCRUM-13 (suma Invoices paid, idempotente).

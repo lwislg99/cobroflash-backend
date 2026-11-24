@@ -26,6 +26,7 @@ import {
   llevaLineaAlDiez, // SCRUM-1316l
   COPY_METODO_OBLIGATORIO_IVA_10, // SCRUM-1316l
   METODOS_CON_AVISO_IVA_10, // SCRUM-1316l
+  cerrarCobroDeFacturaPagada, // SCRUM-1803
 } from '../../invoiceAdmin';
 
 import { BASE_URL } from '../../../../core/config/env';
@@ -618,6 +619,11 @@ router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
           importe: Number(inv.total), fechaCobro: fecha.fecha,
           fechaOrigen: fecha.origen === 'declarada' ? 'declarada' : 'marcado', metodo: null, tipo: 'cobro',
         }).catch((e) => console.error(`[bulk-paid] SCRUM-1732 no se pudo apuntar el cobro de la factura ${inv.id}:`, e?.message || 'error desconocido'));
+        // SCRUM-1803 · su cobro `pending` se cierra con la fecha del lote; el lote no lleva medio, así
+        // que `method` no se toca. Una factura por iteración: el lote no es transaccional y el
+        // `updateMany` de arriba (lo leen 289/397 por su texto) no se mueve.
+        await cerrarCobroDeFacturaPagada(req.merchantId!, inv.chargeId, fecha.fecha, null, { origen: 'marcar_pagado_manual', via: 'bulk', invoiceId: inv.id })
+          .catch((e) => console.error(`[bulk-paid] SCRUM-1803 no se pudo cerrar el cobro de la factura ${inv.id}:`, e?.message || 'error desconocido'));
       }
     }
 
