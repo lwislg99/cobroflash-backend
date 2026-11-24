@@ -16,6 +16,7 @@ process.env.SIF_ENABLED = 'true';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { createRequire } from 'node:module';
@@ -28,14 +29,23 @@ const require = createRequire(import.meta.url);
 // Antes de cargar `invoicing.js`: el módulo compilado lee `pdf_1.generateInvoicePdf` en cada
 // llamada, y `lib/pdf.js` lo reexporta con un getter que lee `pdf.service.js` en cada acceso;
 // así que basta con cambiar la propiedad en las exportaciones del módulo de origen.
+// SCRUM-665e · EL DISCO DE ESTE TEST ES UN TEMPORAL DEL SISTEMA, nunca `<árbol>/storage/invoices`
+// (SCRUM-824; aviso 1 de SCRUM-665 c.22561). `dirs.js` lee `RAILWAY_VOLUME_MOUNT_PATH` al
+// cargarse, y `pdf.service.js` lo carga: por eso la variable va ANTES del primer `require`.
+// Las escrituras de aquí nombran `DIR_PDF` para que el censo de 824 vea de dónde cuelgan; que
+// `dirs.js` apunte al MISMO sitio lo comprueba el caso «⓪» de abajo.
+const RAIZ_PDF = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-665e-'));
+process.on('exit', () => { try { fs.rmSync(RAIZ_PDF, { recursive: true, force: true }); } catch { /* temporal */ } });
+process.env.RAILWAY_VOLUME_MOUNT_PATH = RAIZ_PDF;
+const DIR_PDF = path.join(RAIZ_PDF, 'invoices');
 const pdfMod = require('../dist/modules/invoicing/infra/pdf/pdf.service.js');
 const { invoicesDir } = require('../dist/core/storage/dirs.js');
 let generaciones = 0;
 pdfMod.generateInvoicePdf = async (args) => {
   generaciones += 1;
   const fileName = `${args.merchantId}-${args.number}.pdf`;
-  const diskPath = path.join(invoicesDir, fileName);
-  fs.mkdirSync(invoicesDir, { recursive: true });
+  const diskPath = path.join(DIR_PDF, fileName);
+  fs.mkdirSync(DIR_PDF, { recursive: true });
   // Un respiro para que dos peticiones simultáneas se crucen de verdad si no hay cerrojo.
   await new Promise((r) => setTimeout(r, 20));
   fs.writeFileSync(diskPath, `%PDF-falso generacion=${generaciones} ${crypto.randomUUID()}\n`);
@@ -73,9 +83,17 @@ function prismaConFila({ pdfSha256 = null, updateRevienta = false } = {}) {
     },
   };
 }
-const rutaDe = (fila) => path.join(invoicesDir, `${fila.merchantId}-${fila.number}.pdf`);
+const rutaDe = (fila) => path.join(DIR_PDF, `${fila.merchantId}-${fila.number}.pdf`);
 const sha = (ruta) => crypto.createHash('sha256').update(fs.readFileSync(ruta)).digest('hex');
 const limpiar = (fila) => fs.rmSync(rutaDe(fila), { force: true });
+
+test('SCRUM-665e · ⓪ el disco del test es un temporal del sistema, y `dirs.js` apunta a él', () => {
+  assert.equal(invoicesDir, DIR_PDF,
+    '🔴 `dirs.js` se cargó antes de poner RAILWAY_VOLUME_MOUNT_PATH: el código buscaría el PDF en otro sitio que el doble.');
+  const relativa = path.relative(RAIZ, DIR_PDF);
+  assert.ok(relativa.startsWith('..') || path.isAbsolute(relativa),
+    `🔴 el PDF del test caería DENTRO del árbol (${DIR_PDF}): justo lo que vigila SCRUM-824.`);
+});
 
 test('SCRUM-665e · ① sin huella: se genera UNA vez y se guarda el sha256 del fichero en disco', async (t) => {
   const p = prismaConFila();

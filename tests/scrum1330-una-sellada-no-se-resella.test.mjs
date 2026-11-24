@@ -73,7 +73,8 @@ const pdfDoble = requiere(rutaDe('dist/lib/pdf.js'));
 const generarDelBanco = pdfDoble.generateInvoicePdf;
 pdfDoble.generateInvoicePdf = async (d) => {
   const r = await generarDelBanco(d);
-  fs.writeFileSync(path.join(dirs.invoicesDir, `${d.merchantId}-${d.number}.pdf`), `%PDF-doble ${d.number}\n`);
+  // `DIR_PDF` y no `dirs.invoicesDir` (son el mismo): así el censo de SCRUM-824 ve que cuelga de `os.tmpdir()`.
+  fs.writeFileSync(path.join(DIR_PDF, `${d.merchantId}-${d.number}.pdf`), `%PDF-doble ${d.number}\n`);
   return r;
 };
 // `prisma.invoice` es el MISMO objeto dentro y fuera de una transacción (el mapa `modelos` del banco).
