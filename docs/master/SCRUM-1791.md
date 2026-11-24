@@ -88,3 +88,84 @@ Las 12 piezas del mensaje se cuentan tal como las recibí del orquestador en el 
 - **1787i en producción:** `due_date` y `pay_methods` ya están en el esquema de main y desplegados desde las 06:11Z. Ninguna cita confirma que el ALTER se aplicara en producción. Si no se aplicó, la lectura de facturas en producción puede fallar. **No lo he mirado** (encargo).
 - **665e lleva 41 commits sin entrar**, y cada merge de 1787 en los generadores le añade conflictos. Cuanto más espere el parche de S1, más cuesta el siguiente merge.
 - **1782b tiene el PR cerrado.** Ningún automatismo lo va a reabrir: una rama sin PR no aparece en el panel.
+
+# SCRUM-1791b · Segunda auditoría de cierre del sprint del 21-nov: veredicto por ticket con lo medido hoy (solo docs)
+
+**Medido contra:** `origin/main` = `42cae61092ba69761d6d7bba0504abe6baee1e52` · 2026-11-24T01:56:23Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: aviso → cicatriz J4 «filtré los PR del sprint con el patrón `17[89][0-9]` y dejé fuera a SCRUM-1779, cuya tercera cifra es un 7: la lista salía con 37 PR y ninguno era de 1779» — no se pudo comprobar: esta vez la población salió de `git log --first-parent 0b2f6451a..origin/main` (19 merges) y de los PR abiertos filtrados por número de ticket, pero sigue sin haber una herramienta que compare la lista pedida con la que deja pasar un filtro
+
+**Puesto:** J4 (`jv-j4ce`) · **Rama:** `scrum-1791b-cierre-segunda-auditoria` · encargo del orquestador J (`cobroflash-backend-2d`). Sólo este registro. **No cierro nada: propongo** (A13).
+
+## Población y cómo se midió
+
+- **Desde la primera auditoría** (`0b2f6451a`, 23-nov 08:20Z) han entrado en main **19 PR**, no 25: #3320, #3321, #3322, #3318, #3323, #3324, #3325, #3327, #3326, #3328, #3329, #3330, #3333, #3334, #3331, #3338, #3341, #3332 y #3339. El último, #3339, a las 22:48:47Z.
+- **PR abiertos de estos tickets** (en el repo hay 13 abiertos en total): #3336 (1316l), #3337 (1787w), #3340 (1532d), #3343 (1794b, abierto a las 01:54:56Z), #3335 (914d), #3201 (665e), #3277 (1005d, DIRTY), y #3014 y #2621 (914, DIRTY). En el rollup de la punta a las 01:56Z, `build + tests (con banco desechable)` sale así:
+  - **FAILURE** en #3335, #3336, #3337, #3340 y #3201.
+  - **Corriendo** en #3343.
+  - **No he leído ningún log.** No sé si son rojos de la rama, cola perdida o de otro main. En `42cae6109` ese job sale `success`.
+  - `guards de navegador` sale `failure` también en main, y no es obligatorio (c.22394).
+- **Jira:** sólo el ÚLTIMO comentario de cada ticket, más el penúltimo cuando era del fundador. Lo leyeron tres subagentes, con salida acotada. Las citas de abajo son suyas: no las he releído yo en Jira.
+- **Comprobado por mí en `origin/main`**, cada recuento con un positivo en el mismo fichero:
+  - `homeView.js`: `521XXXXXXXXXX` 1 y `selectorDePrefijo` 0.
+  - `tipoDestinatarioPendiente.js`: «Tipo de cliente» 1 y «Factura como» 0.
+  - `partes.routes.ts`: `facturar` 0, con `partes` 30.
+  - `parteDetailView.js`: «Nueva factura» 0, con «Nuevo presupuesto» 1.
+  - `cuerpoDelDocumentoSuelto.js`: `descripcion` 0, con «concepto» 3.
+  - `quotesAdmin.routes.ts` (system): `docFooterText` 0, con `router` 19.
+  - `jobDetailView.js:3986` sigue con «⚠️ Factura emitida, revisa su registro».
+  - `quote-conceptos-tabla`: 0 en `public/`.
+- **NO medido** (por encargo): producción, staging, `yaqu.app/health` y las bases. Que 1790 está desplegado lo dice c.22411, no lo he medido yo.
+
+## Tabla de veredictos
+
+| ticket | en main (PR) | PR abierto | de Luis (cita) | lo que vio alguien en yaqu.app / staging | veredicto propuesto |
+|---|---|---|---|---|---|
+| **1779** | lo de la 1ª auditoría + 1779i (#3339, solo docs: la prueba en staging) | — | S1/S2: el aviso falso y `convertir-en-factura`. Lo pidió el fundador en c.22391 («1-Ok todos si»): «Se le pide a Luis como pieza suya… Nada se construye desde el equipo J hasta entonces» · S0: §3.4 · S1: XML/ZIP sin huella | Fundador, en Railway (c.22425): «5- Si invoicing true y SIF ausente» · J1, en staging (1779i, `SCRUM-1779.md:262`): F260005 con «Formas de pago» y «Vence el» · nadie ha visto una factura emitida en yaqu.app | **ESPERA A LUIS.** La decisión ④ de la 1ª auditoría ya está respondida (c.22391). `jobDetailView.js:3986` sigue en main |
+| **1780** | #3281 + #3297 (servidor, 21-nov) | — | S1: el montaje (3 líneas) y bajar scrum411 a 4 · S2: el botón (c.22308) | nadie: `facturar` sigue en 0 en `partes.routes.ts` | **ESPERA A LUIS** (igual que en la 1ª auditoría) |
+| **1781** | #3287 · #3294 · **1781d #3325** («Editar cliente» con prefijo; firma c.22402 «1-OK Sí») | — | S2: Inicio (`homeView.js:1018`, sigue igual) | c.22313: «Sí sale el +34 y no sale lo otro, genial!» (1781b/c) · 1781d: «no lo he visto en yaqu.app» (c.22406) | **PARTIR:** se cierra lo de J y un hijo con `aviso-a-luis` se lleva Inicio. La pregunta 2 de la 1ª auditoría ya está respondida y construida (1781d). Falta que el fundador vea 1781d |
+| **1782** | **nada** | rama `scrum-1782b-rotulo-factura-como` @ `812d9793d9`, PR #3317 **CERRADO** a propósito: «Se reabre cuando S2 empuje la línea de tipoDestinatarioPendiente.js:58» (c.22376) | S2: la línea 58 y la bandeja (c.22272) | nadie | **ESPERA A LUIS**; después J reabre #3317 |
+| **1783** | #3293 | — | — | c.22306: «Sí, no sale el recargo de equivalencia» | **CERRAR** (ya está Finalizada) |
+| **1784** | #3286 | — | la tarjeta en móvil (S2/S4) | sólo capturas en local: «1-Ok están perfectas» | **CERRAR** (ya está Finalizada). Sigue pendiente la fe de erratas de `SCRUM-1784.md:54` |
+| **1785** | #3289 · #3295 · #3307 | — | S2: la vista previa, que ahora lleva también el rótulo (c.22393, «1-Ok todos si») · S1: «Duplicar» pierde `docFields` | c.22315: «Correcto sí sale!» (1785b) · **1785c no lo ha visto nadie** | **PARTIR:** se cierra lo de J y un hijo con `aviso-a-luis` se lleva las tres piezas. Antes, que el fundador vea 1785c (comercio sin nombre comercial) |
+| **1786** | #3283 · #3288 · #3305 · **1786g #3321** (portal) | — | S1: c, d y g (la firma) · S2: e · deuda: g pasará a usar `capitulos()` cuando S1 haga c (`SCRUM-1786.md:240+`) | c.22389: «Pendiente de ver en yaqu.app por el fundador» (1786g) | **ESPERA A LUIS** (c, d y e) **+ ESPERA A J** (f2, que espera a d y e). No se puede partir limpio: f2 es de J y depende de Luis |
+| **1787** | de a a p, y **q, r, s, s-bis, t, u, v (solo docs), x, y y z** (#3323 a #3341) | **#3337** (1787w, el PDF construido): build+tests FAILURE en el rollup a las 01:56Z, sin leer | S1: los 5 caminos de 1787s (`SCRUM-1787.md:1097+`, c.22405) · S2: el editor de Condiciones y `descripcion`/`dto` del suelto · S1: las 3 rutas de Observaciones · S1: el correo T5, que ahora es **1794** | 1787r, en STAGING: «Vence el» sí, «Formas de pago» no · 1779i, en staging: las dos sí · en yaqu.app, ninguna comprobación (c.22464 tiene «mirar yaqu.app» entre lo no hecho) | **ESPERA A J** (#3337); después, **PARTIR**. Decisión firmada hoy en c.22467, «1-Nah me vale»: en los guards de recuento, la firma de un literal vale como la decisión de la regla 41 |
+| **1788** | #3301 | — | — | c.22321: «Perfecto ya se ven bien» | **CERRAR** (ya está Finalizada) |
+| **1789** | #3315 · **1789b #3318** (09:10Z) · 1789c (solo docs, en el registro) | — | S4: 917 en verde · S5 o el fundador: hacerlo obligatorio · S3: el driver de mutaciones (1789c, `SCRUM-1789.md:137`) | no aplica (es CI). `guards de navegador` sale `failure` en main `42cae6109` | **PARTIR:** lo de J ya está en main. Un hijo con `aviso-a-luis` se lleva 917 → obligatorio (c.22394, «1-Ok todos si») y el driver de S3 |
+| **1790** | #3322 | — | — | c.22411: desplegado; «El fundador no lo ha mirado en su móvil» | **CERRAR** (ya está Finalizada, c.22411). Se reabre con captura si falla |
+| **665** | lo de la 1ª auditoría | **#3201**: build+tests FAILURE, 4 de 14.162 (c.22396) | S1: el parche `42655871` · S3: una línea en `RETIRADAS_A_PROPOSITO` para scrum810 (c.22396: «DOS cosas, no una») | Railway (c.21710 / c.21943). Nadie ha visto un PDF congelado | **ESPERA A LUIS** (dos piezas). Las decisiones de la 1ª auditoría están respondidas en c.22395, «1-Ok todos si»: Hobby hasta que haya ventas, la R1 con su propio PDF, la custodia con el asesor |
+| **1532** | **1532b #3332** (la ruta, el recibo y las páginas públicas) | **#3340** (1532d, el botón y el reenvío): build+tests FAILURE a las 01:56Z, sin leer | S1: la clave de auditoría `cobro_cancelado` (c.22435) · S2: el botón en `jobDetailView.js` · **S0: aviso de cruce de carril** en `scripts/_sin-consumir-declarados.json` (c.22463) | nadie: «No miró yaqu.app» (c.22462) | **ESPERA A J** (#3340); después, **PARTIR** (un hijo con S1 y S2, y la respuesta de S0 a c.22463) |
+| **1316** | 1316c #3328 · 1316k #3334 · 1316m #3338 (solo docs) | **#3336** (1316l): build+tests FAILURE a las 01:56Z; c.22465 lo daba «corriendo» a las 01:40Z | S2: el selector en `jobDetailView.js` · S1: `status: true` en `cobrosPorCubo.ts:203`, y la línea de `seRegistroAMano` y el informe X2 (c.22445, no lo he leído yo) | «yaqu.app sin verificar (sin mergear)» (c.22465) | **ESPERA A J** (#3336) **+ ESPERA A LUIS**. 🔴 **Fecha: 1-dic-2026.** Es el único de la lista con fecha límite |
+| **914** | el registro del diseño | **#3335** (914d) nace **ROJO a propósito** (c.22448, decisión de c.22443) · #3014 y #2621 en DIRTY | S1: `fusionClientes.ts:191` y `albaranDuplicado.ts:54` | ALTER aplicado en `yaqu_dev_javier`; los dos casos contra Postgres sin correr | **ESPERA A LUIS.** Lleva la etiqueta `equipo-luis`: no es de este sprint de J, y lo cierra quien lo tenga |
+| **1794** | — | **#3343** (1794b: J2 exporta `detalleDeLaFactura`): corriendo | S1: llamarla desde `email.service.ts:99-107` (c.22461) | nadie | **ESPERA A J** (#3343); después, Luis. No se cierra en este sprint |
+
+**Resumen:**
+
+- **CERRAR, 4.** Los cuatro ya están Finalizada: 1783, 1784, 1788 y 1790.
+- **PARTIR hoy, 3:** 1781, 1785 y 1789. Lo de J está entero en main y el resto se va a un hijo con `aviso-a-luis`.
+- **ESPERAN a un PR de J abierto, 4:** 1787 (#3337), 1532 (#3340), 1316 (#3336) y 1794 (#3343). Los tres primeros salen FAILURE en el rollup; #3343 está corriendo.
+- **ESPERAN sólo a Luis, 6:** 1779, 1780, 1782, 1786, 665 y 914. El de 914 es suyo: #3335 nace rojo a propósito hasta que entren sus dos líneas de S1.
+- **Decisiones del fundador:** de las 8 que dejó la 1ª auditoría, no he visto ninguna sin responder. Están contestadas la ④ de 1779 (c.22391), la de 1781 (construida en 1781d), la de 1785 (c.22393), la de 1789 (c.22394) y la de 665 (c.22395). La que sigue sin respuesta visible es la de RGPD de 1787 (c.22322): no sale en ningún último comentario, y como no leí los anteriores, no sé si se contestó en otro.
+
+## Cruce con las 27 piezas del mensaje del fundador a Luis
+
+Tengo la lista del encargo, no el mensaje. En ella cuento **21 entradas**, no 27; puede que alguna lleve varias piezas, y desde aquí no lo puedo saber.
+
+**Lo que el equipo J dejó para Luis y NO está en la lista:**
+
+1. **1787 · S2:** `descripcion` y `dto` en `cuerpoDelDocumentoSuelto.js` (`SCRUM-1787.md:632-674`, con el diff hecho). La lista dice «editor Condiciones», que es otra pieza (`:410-418`). En main, `descripcion` sigue en 0.
+2. **1532 · S0:** el cruce de carril en `_sin-consumir-declarados.json`. Lo pide c.22463: «para que S0 lo vea y, si prefiere otro mecanismo, lo diga».
+3. **1789c · S3:** decidir la población (`SCRUM-1789.md:137-145`): los guards de navegador como segunda población, y `scrum836` leyendo `scripts/guard-*.mjs`. La lista dice «1789c driver», pero esto es una decisión A12, no sólo el driver.
+4. **1316k · S1:** `seRegistroAMano` (`cobrosPorCubo.ts:234`) y el informe X2, que dice «tarjeta» (`SCRUM-1316.md:1412-1415`). Puede que lo cubra «status:true informe» de la lista; sin el mensaje no lo sé.
+5. **1782 · S2:** el literal de la bandeja (c.22272), además de la línea 58.
+6. **665 · S3:** la línea de `RETIRADAS_A_PROPOSITO` es de S3, no de S1. Si «línea 810» se le manda a S1, va al puesto equivocado.
+7. **1781 · opcional:** `admin.html:435` (`SCRUM-1781.md:25`), del superadmin.
+8. **1786g · deuda:** cuando S1 haga c, el portal pasará a usar `capitulos()`. Es trabajo de J, no de Luis, pero sólo funciona si la pieza c lo prevé.
+
+**Y al revés:** «917+job obligatorio», «1765 24 bancos», «1502 8 marcas», «1792 guard», «1756 filas S» y «1005d contrato S3» no son de estos 17 tickets, y no los he medido.
+
+## Fuera de esta auditoría
+
+- **Cinco PR del sprint en FAILURE a la vez** (#3201, #3335, #3336, #3337 y #3340), mientras main está en verde. #3335 es un rojo declarado; de los otros cuatro no he leído el log. Puede haber una causa común, y no lo sé.
+- **1787i en producción:** sigue sin haber una cita de que el ALTER de `due_date` y `pay_methods` esté aplicado. 1779i lo vio funcionar en staging, no en producción.
+- **1779i, «visto de paso»:** la barra de estado marca «Enviada» en facturas que no se han enviado (`SCRUM-1779.md:262+`). Se le pasó al orquestador; no sé si tiene ticket.
