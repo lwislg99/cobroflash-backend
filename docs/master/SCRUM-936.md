@@ -197,3 +197,61 @@ vecino se come abajo), y dejar el resto como lo mide el árbitro. Cuál de las d
 2. Aplicar la variante que el navegador dé por buena.
 3. `npm run guards:visuales` y `npm run censo:tactil-panel`: la lista de objetivos que pasan a cortos,
    por pantalla, va aquí como hallazgos. Si sale rojo un guard del obligatorio, se para (regla 41).
+
+---
+
+# SCRUM-936c · Relevo de 936b: paro otra vez por contexto, sin test ni arreglo — y con una restricción nueva
+
+**Medido contra:** `origin/main` = `e7be8c3d897e266cd26c80815065476ec2cc8f99` · 2026-11-24T12:05:51Z
+**Rama:** `scrum-936c-medidor-lo-que-acierta-el-dedo` · carril J6 · sesión `jv-j6fp`
+
+A9: aviso → cicatriz J6 «Crucé el umbral de aviso de contexto sin medirme en el cruce: medí al arrancar y no volví a medir hasta después de un barrido ancho.» — no se pudo comprobar: tercera vez en el mismo ticket; medí 103.466 al acabar el arranque y lo dije, pero la siguiente medida fue 139.207, ya pasado el tope de 135k del encargo, tras leer el medidor, scrum562 y el clasificador; ningún hook de este árbol avisa al cruzar.
+
+**Decisión que aplica:** SCRUM-936 c.22578 (elección «Lo que acierta el dedo»), la misma de 936b. No la he releído en Jira: el encargo lo prohibía.
+
+## Qué · esperado · visto
+
+| qué | esperado | visto |
+|---|---|---|
+| test con navegador en rojo | escrito y rojo | **NO escrito.** |
+| medidor arreglado | sí | **NO tocado.** `scripts/_medidor-de-toque.mjs` sigue como en main. |
+| ¿cabe el arreglo «exacto» en el árbitro? | — | **No sin tocar un guard** (abajo). Leído en el código, no corrido. |
+
+## La restricción que 936b no vio: el clasificador de scrum562
+
+`tests/scrum562-arbitro-de-toque.test.mjs` clasifica CADA llamada a `elementsFromPoint` de nuestro
+código con `clasificar()` de `scripts/censo-arbitro-de-toque.mjs` (ventana de 3 líneas antes y 7 después) y
+tumba las clases `PERTENENCIA` y `OTRO`. Sólo pasan `TOPE` (`…)[0]`), `POSICION` y `SINGULAR`.
+
+El arreglo que quita el píxel fantasma en TODOS los bordes —también el de arriba de un `::after` que
+amplía el área— necesita «el primero de la pila en `y` que también esté en la pila de `y − 1 + 1/64`»
+(las dos ventanas de 1 px). Eso es una consulta de pertenencia a la segunda pila: sale `OTRO` (con `Set`
+y `.has`) o `PERTENENCIA` (con `.includes`). Enseñarle al clasificador que `.has` vale abriría la puerta
+al idioma malo disfrazado (`new Set(pila).has(el)`), así que **no es un arreglo: es aflojar el guard (regla 41)**.
+
+Lo que queda dentro de las reglas, con lo que cada uno hace (calculado sobre los datos de septiembre, no medido):
+
+| caso | hoy | diff de j6fo (recorte a la caja) | variante (recortar solo a menos de 1 px de la caja) |
+|---|---|---|---|
+| h43 aislado | 44,0 ✅ (falso) | 43 ❌ | 43 ❌ |
+| h44 aislado | 45,0 | 44 ✅ | 44 ✅ |
+| h44 con vecino pegado debajo | 44,0 | 44 ✅ | 44 ✅ |
+| 48 | 49,0 | 48 ✅ | 48 ✅ |
+| enlace de 20 con `::after` a 44 | 45,0 | **20 ❌ (falso)** | **45,0** ✅ (sigue el +1 en el área ampliada) |
+
+La variante no da el área ampliada exacta: le deja el píxel fantasma de arriba. Un `::after` que amplía a
+43,5 saldría 44,5 y conforme. **Si eso se acepta, o si se abre el clasificador, es una decisión: no la tomo.**
+
+## Mecanismo probable (leído de memoria del código de Chromium, NO comprobado)
+
+`HitTestLocation` de un punto lleva una caja de 1×1 (`RectForPoint`), y `Intersects` compara contra esa caja
+y no contra el punto (hay un FIXME que lo dice). Por eso el punto `y` «toca» lo que empieza en `(y, y+1)`.
+Encaja con 0,984 = 1 − 1/64 de septiembre si la coordenada se redondea hacia abajo a LayoutUnit.
+
+## Lo que falta, para quien siga (orden)
+
+1. Decidir con el orquestador: variante (acepta el +1 en áreas ampliadas) o abrir el clasificador (STOP de regla 41).
+2. Test rojo primero. ⚠️ No comprobé dónde exporta `lanzarNavegador` `scripts/_navegador.mjs`: mi `grep` cortó en 8 líneas.
+3. Lo de 936b ③ y ④, sin cambios.
+
+⛔ No he tocado `scripts/`, `tests/`, `public/` ni `.claude/`.
