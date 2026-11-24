@@ -65,3 +65,31 @@ qué ids existen en el negocio, aunque no se pueda abrir ninguno. Ahora las dos 
 `FUGAS_CONOCIDAS` queda vacía.
 
 **NO medido:** en yaqu.app (haría falta una cuenta de Técnico en la cuenta QA).
+
+# SCRUM-1555b · El login de pruebas abre sesión también como miembro de equipo
+
+**Medido contra:** `origin/main` = `6fbcde28651d2eed9190ced9efbc7663d8cdac7a` · 2026-11-24T11:51:37Z
+A9: aviso → cicatriz J3 «Llegué a 122.860 tras leer Jira con un tope de 160k y no dije que el encargo no cabía» — no se pudo comprobar: cuándo se mide y se avisa una sesión no deja rastro en el árbol
+
+Decisión del fundador: SCRUM-1555 c.22569 («Login de pruebas con rol»). Puesto J3 (`jv-j3cu`), carril J3 (`src/modules/auth/**`).
+
+**Qué.** `POST /auth/test-login` (`src/modules/auth/app/routes/auth.routes.ts`) admite un campo OPCIONAL `miembro`: el correo de un miembro de equipo YA EXISTENTE del comercio de la propietaria de la allowlist. La sesión se escribe con su `teamMemberId`, y `requireAuth` saca el rol de esa fila (`session.teamMember.role`). Sin `miembro`, todo igual que antes. Las tres cerraduras (flag, secreto y allowlist del correo de la propietaria) no cambian y van ANTES; fuera de staging la ruta sigue sin existir. No crea usuarios, no activa invitados, no manda correos. Miembro inexistente, de otro comercio o suspendido: `404 {"error":"team_member_not_found"}` y no se escribe ninguna sesión. `src/core/http/publicAccessDeclarations.ts` NO se toca: su motivo («triple cerradura») sigue siendo verdad.
+
+**Esperado · visto** (`tests/scrum1555b-test-login-con-rol.test.mjs`, la app real de `dist/app.js` con el doble de Prisma de SCRUM-597):
+
+| caso | esperado | visto ANTES del arreglo | visto DESPUÉS |
+|---|---|---|---|
+| con `miembro` = Técnico | sesión con su `teamMemberId`; `GET /admin/team` → 403 `forbidden` | ROJO: la sesión sale sin `teamMemberId` (propietaria) | verde |
+| cuerpo de hoy | propietaria; `/admin/team` sin 401/403 | verde | verde |
+| `miembro` que no es del comercio | 404 `team_member_not_found`, 0 sesiones | ROJO: 200 y sesión de propietaria | verde |
+| gate apagado | 404, 0 sesiones | verde | verde |
+
+Tanda dirigida (este test, `scrum1430`, `scrum334`, `scrum1555*`, `scrum1185*`, `scrum1294*`, `scrum267*`, `scrum854*`, `scrum719*`): 91 casos; antes de este registro, 90 verdes y `scrum854 ②` rojo por falta del registro. Build con tipos (`tsc -p .`): salida 0.
+
+**NO HECHO** (el contexto no daba, se dice aquí y en la entrega): la mutación del catálogo (`MUTACIONES_QUE_ME_TUMBAN`), la suite entera y `censo:mudez`. El rojo de arriba es una pasada a mano sobre el código sin arreglo, no una mutación repetible.
+
+**Cómo lo usa la sesión de QA en staging** (sin valores: el secreto lo tiene el entorno):
+
+1. Con la propietaria QA, ver en el equipo (`GET /admin/team`) que exista un miembro con rol `tecnico`. Si no hay, crearlo NO es de este cambio: hace falta que lo dé de alta alguien (la invitación manda correo).
+2. `POST /auth/test-login` con `{ "email": <propietaria de la allowlist>, "secret": <el de staging>, "miembro": <correo del Técnico> }` → 200 y la cookie `pf_session` es la del Técnico.
+3. Con esa cookie, las 8 rutas de SCRUM-1555 sobre un presupuesto de la PROPIETARIA (o de otro miembro): PDF, aceptar, rechazar, enviar por WhatsApp, enviar por correo y notas → 404; Inicio y el buscador del albarán no lo listan. Y `GET /admin/team` → 403 como control de que la sesión es de Técnico.
