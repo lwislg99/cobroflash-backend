@@ -920,3 +920,89 @@ y hago **medidas de lectura** de CI. Nada de `src/`, `tests/`, `scripts/` ni wor
     node docs/master/evidencias/SCRUM-1527/1527g/recuento.mjs <carpeta>/juntas.json 2026-10-27T13:09:00Z
     # el instrumento de la casa, sobre una carpeta con juntas.json copiado como jobs.json:
     node docs/master/evidencias/SCRUM-1527/s3-reproduce-hoy.mjs 2026-10-22T00:00:00Z <carpeta2> --corte 2026-10-27T13:09:00Z --umbral 900 --de-cache
+
+# SCRUM-1527i · No se puede cerrar: 3 colgadas nuevas el 11-nov (una en `main`) en 883 jobs desde el 27-oct
+
+**Medido contra:** `origin/main` = `093a128766d1d45c01c0f1cef3557c8680b1463c` · 2026-11-24T06:53:56Z (cabecera `Date:` de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1527/1527g/recuento.mjs`
+
+Escribe J6 (sesión `jv-j6fj`, equipo de Javier), por encargo del orquestador: medir si el ticket se
+puede cerrar. Sólo lectura de CI y este tramo: nada de `src/`, `tests/`, `scripts/` ni workflows.
+**Propone; no cierra** (A13). Comentario en Jira: c.22516.
+
+## En corto
+
+- **Propuesta: SEGUIR.** El recuento que 1527h dejaba pendiente (~1.260 jobs tras #2905) ya se
+  puede hacer, y **no da cero**: hay **3 colgadas nuevas, las tres del 11-nov**, una de ellas en un
+  `push` a `main`.
+- **Población:** instrumento de 1527g/h sin cambiar. `1527g/jobs.mjs` desde el 29-oct 18:20:44Z (donde
+  acabó h): **978 ejecuciones** de `ci.yml`, las que declara GitHub, 806 jobs obligatorios, 0 fallos de
+  consulta. Juntas con las listas de g y h (`1527h/juntar.mjs`, 0 repetidos): **1.372 jobs** del 22-oct
+  09:03Z al 24-nov 06:43Z, **1.320 con paso «Tests»** (944 `success` · 305 `failure` · 71 `cancelled`)
+  y 52 sin paso (CIEGO: 36 cancelados, 2 `failure`, 10 en curso y 4 en cola al leer).
+- **Desde el 27-oct 13:09Z: 883 jobs con paso «Tests», 4 de 900 s o más.** Desde #2905 (26-oct
+  23:50:23Z): 898, los mismos 4.
+
+| job | creado | rama | paso | log | aviso | lo último que llegó |
+|---|---|---|---|---|---|---|
+| 130625371916 | 11-nov 15:38Z | `scrum-1671-partes-en-el-trabajo` | `failure`, 1.254 s | 1.671.962 B | **sí**, 906 s | `scrum615-pedir-tipo-destinatario` |
+| 130650930773 | 11-nov 16:14Z | **`main` (push)** | `failure`, 1.388 s | 2.187.245 B | **sí**, 914 s | «SCRUM-921d · 🐤 el canario…»: sitio nuevo |
+| 130741041930 | 11-nov 19:01Z | `scrum-1700-abrir-parte-en-curso` | `failure`, 1.435 s | 1.686.920 B | **sí**, 913 s | `scrum615-pedir-tipo-destinatario` |
+| 138160787095 | 24-nov 02:01Z | `scrum-1791b-cierre-segunda-auditoria` | `cancelled`, 1.384 s | 1.708.511 B | no | último caso 02:25:01Z, cancelación 02:26:53Z |
+
+- **Colgadas: 3 en 883 (0,34 %).** La tasa tras #2429 que usaba h era 1 en 422 (0,24 %). Con 3 casos
+  no lo doy por tendencia, ni al alza ni a la baja. Dos de las tres vuelven al sitio de las del 14-oct
+  y el 22-oct.
+- **El cuarto no lo clasifico.** Lo canceló el techo de 25 min (job de 1.519 s), sin aviso, con **112 s**
+  de silencio tras el último caso. El silencio sano más largo medido (1527e ②, 20-oct) era 102 s, sobre
+  un árbol más pequeño. Puede ser una tanda lenta o una colgada tardía; el log no lo separa.
+
+## ② El control positivo
+
+La colgada del 22-oct, **119769715166**, cae dentro por fecha, sale de 900 s o más en `recuento.mjs` y su
+log (1.409.303 B, bajado hoy con `--allow-escape-sequences`) lleva «TANDA SIN VEREDICTO». El instrumento
+no está ciego: el control **sigue siendo el sembrado por fecha de 1527g/h**, no un defecto del árbol.
+
+## ③ El mecanismo, en `main`
+
+- La tubería de #2429 sigue montada: `package.json:13` (`tanda-con-veredicto.mjs node --test
+  --test-force-exit --import=./scripts/tuberia-bloqueante.mjs tests/*.test.mjs`). `scripts/tuberia-bloqueante.mjs`
+  no cambia desde `f13e8664a` (14-oct).
+- El vigía `scripts/tanda-con-veredicto.mjs` no cambia desde `14000b4f0` (1-oct) y sigue matando el árbol
+  (`:164`-`:165`) **sin escribir qué procesos siguen vivos**: 1527b §⑧.1 sigue sin hacer, y es carril S5.
+- Ni uno ni otro ha curado la colgada: las tres del 11-nov corrieron con los dos puestos.
+
+## ④ Por qué no se cierra, y qué cerraría
+
+- «0 colgadas» ya no es cierto: el «que tampoco prueba nada» de 1527h era la lectura correcta.
+- **La causa sigue sin medir.** Lo que la separaría es lo mismo que en 1527b §⑧.1: que el vigía, antes de
+  matar, escriba quién vive. Con tres colgadas en dos semanas, el próximo caso llegaría en días.
+- **De pasada, sin medir más:** el paso «Tests» terminado ya va de 393 a 1.435 s, con mediana 668 s y
+  143 de 800 s o más. El techo de 25 min empieza a cortar tandas que no tienen aviso, y entonces una
+  tanda lenta y una colgada tardía se leen igual (el cuarto de la tabla).
+
+## Lo que no he medido
+
+- **Los 883 logs uno a uno.** Como en g y h, el veredicto descansa en la duración del paso (≥ 900 s) y
+  en el tope del vigía. Bajé 5: los 4 de la tabla y el positivo.
+- **Los 74 cancelados con el paso empezado**, salvo el de 1.384 s. El más largo después de él no lo he
+  mirado.
+- **La causa**, y si el sitio `scrum921d` es nuevo o ya salió antes del 17-sep.
+
+## Errores míos en este tramo
+
+- Me pasé del tope de contexto del encargo (150k): 141.364 al acabar la lectura de Jira y 156.973 antes
+  de escribir el comentario. Por eso escribí Jira primero.
+- `git merge --ff-only origin/main` me llevó a `093a12876`, no al `c3051127c` que había medido al arrancar:
+  otra sesión hizo `fetch` en el `.git` compartido. El ancla de arriba es la de después del merge.
+
+## Cómo se repite
+
+    node docs/master/evidencias/SCRUM-1527/1527g/jobs.mjs 2026-10-29T18:20:44Z <carpeta>
+    node docs/master/evidencias/SCRUM-1527/1527h/juntar.mjs <carpeta>/j1.json docs/master/evidencias/SCRUM-1527/1527g/jobs.json docs/master/evidencias/SCRUM-1527/1527h/jobs-desde-27oct.json
+    node docs/master/evidencias/SCRUM-1527/1527h/juntar.mjs <carpeta>/juntas.json <carpeta>/j1.json <carpeta>/jobs.json
+    node docs/master/evidencias/SCRUM-1527/1527g/recuento.mjs <carpeta>/juntas.json 2026-10-27T13:09:00Z
+    gh api --allow-escape-sequences repos/lwislg99/cobroflash-backend/actions/jobs/<job>/logs > <job>.log   # y buscar «TANDA SIN VEREDICTO»
+
+La lista nueva es `1527i/jobs-desde-29oct.json`, y la salida, `1527i/salida.txt`.
