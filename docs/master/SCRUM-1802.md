@@ -2,6 +2,8 @@
 
 **Medido contra:** `origin/main` = `f8dc0244675d00709b896101b97c89bd22468923` · 2026-11-24T02:49:45Z (cabecera `Date:` de `gh api -i zen`)
 
+**Skill UI:** cargada
+
 A9: comprobación → `tests/scrum1802-ficha-dia-sin-cero.test.mjs`
 
 Mutaciones: catálogo → `tests/scrum1802-ficha-dia-sin-cero.test.mjs`
