@@ -2157,3 +2157,12 @@ Encargo del orquestador J. El fundador decidió que #3201 entra ya (SCRUM-665 c.
 Mutaciones: catálogo → `tests/scrum586-forma-de-pago-por-cliente.test.mjs`
 
 A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
+
+# APÉNDICE (R) · SCRUM-665e · 24-nov-2026 · S1 (encargo SCRUM-1817 pieza ①) · el parche S1 entra en la rama y la fila del suelo, en el mismo push
+
+Medido el 24-nov-2026 09:47Z (`Date:` de GitHub) sobre `origin/main` 8e0d408168865aab0c7862d7c004cf864450aa71. Rama `scrum-665e-pdf-persistente`, punta de partida `f61882170`.
+
+- **Cherry-pick de `42655871`** (parte S1, líneas pedidas por J1 en c.21564): `src/core/storage/dirs.ts` (los PDF de factura en `RAILWAY_VOLUME_MOUNT_PATH/invoices`; en producción sin esa variable el arranque aborta) y `src/core/http/adminOnlyRoutes.ts` (fuera `POST /admin/invoices/:invoiceId/regenerate-pdf`, que esta rama desmonta). Sin conflictos. Entra ya, sin esperar al plan Pro: decisión de c.22358.
+- **Fila de suelo** en `RETIRADAS_A_PROPOSITO` de `scripts/_suelo-contra-main.mjs`, copiada literal de c.22396 (`scrum586-forma-de-pago-por-cliente.test.mjs`, 9 → 8, 2026-11-23). Cruce S1→S3 firmado por el orquestador (c.21978): sólo esa fila.
+- **Dirigida local** (4 ficheros: scrum55, scrum810, scrum824, tenancy-permisos), con `npm ci` y `npm run build` propios: 22 tests, 19 pasan, 1 cae, 2 saltan. `scrum55` y `scrum810` pasan a verde. `tenancy-permisos` se salta sin `QA_DB_TEST` ni `LIBRO_PG_URL`: su rojo del CI era el 404 de `regenerate-pdf` en `ADMIN_ONLY_ROUTES`, que el parche retira; lo ve el obligatorio.
+- 🔴 **`scrum824` NO lo cubre el parche S1**, contra lo que dice el tramo (Q). Sigue en rojo, con los mismos tres ficheros nuevos que en el CI del 23-nov: `scrum1304-un-cobro-una-factura`, `scrum1330-una-sellada-no-se-resella` y `scrum665e-pdf-de-la-emitida-congelado`. Causa leída en el código: los tres escriben el PDF en `invoicesDir`, que en un test es `<árbol>/storage/invoices` (por ejemplo `scrum665e-…:38-41`, `mkdirSync(invoicesDir)` + `writeFileSync`). Es un temporal dentro del árbol, justo lo que mide SCRUM-824. Se arregla en los tests de J1 (llevar el directorio a `os.tmpdir()`, por ejemplo con `RAILWAY_VOLUME_MOUNT_PATH` antes de cargar `dirs.js`) o se declara en `SIN_PROBAR_CONOCIDOS` (carril S3). No es de S1, y no se ha tocado.
