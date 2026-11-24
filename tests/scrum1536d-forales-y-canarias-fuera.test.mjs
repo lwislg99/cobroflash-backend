@@ -180,7 +180,8 @@ test('SCRUM-1536d · B · Ajustes: «Sí» foral se rechaza por la RUTA con el t
     const pinta = (err) => { const avisos = []; new Function('err', 'setAlert', `${funcion[0]}\n${sentencia[0]}`)(err, (tipo, texto) => avisos.push([tipo, texto])); return avisos; };
     const err = Object.assign(new Error(cuerpo.message), { status: 409, code: cuerpo.error, data: cuerpo });
     assert.deepEqual(pinta(err), [['error', T2A]], '🔴 la pantalla no pinta el texto firmado, entero y solo');
-    assert.deepEqual(pinta(Object.assign(new Error('API 500: internal_error'), { code: 'internal_error' })), [['error', 'Error al guardar: API 500: internal_error']],
+    // SCRUM-1828b: «el aviso de siempre» ya es el rótulo solo, sin el crudo (SCRUM-1828 c.22597).
+    assert.deepEqual(pinta(Object.assign(new Error('API 500: internal_error'), { code: 'internal_error' })), [['error', 'Error al guardar']],
       '🔴 CIEGO: cualquier otro error ya no cae en el aviso de siempre');
   } finally {
     await new Promise((r) => server.close(r));
