@@ -79,6 +79,9 @@ En lo que el censo ve del carril del parte no hay ningún `btn-primary.btn-sm` c
 - `dist` de este árbol: `tsc` salió 2 con 29 errores de tipos en 9 ficheros, todos por el cliente
   de Prisma compartido (18 campos por detrás, `scripts/_prisma-client-guard.mjs`); emitió igual
   (372 `.js`). El censo solo usa de `dist` módulos de dominio que no pasan por el cliente.
+- guards:entrada: CIEGO por carga de máquina (corte a 90 s, cuarta vez en la tarde); los 16 guards
+  de su lista con `node --test` sueltos: 177/177, 0 fallos. Mismo criterio que firmó el orquestador
+  para SCRUM-1824 (SCRUM-1656 c.22684 ①): el juez es el check obligatorio del CI.
 - Sin cambio de producto: la rama lleva este registro y las tres salidas del censo. suite con dist:
   NO CORRIDA; la corre el CI.
 
