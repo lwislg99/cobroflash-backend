@@ -984,7 +984,7 @@ async function fetchInvoiceDetail(id) {
         selMetodo.parentNode.appendChild(avisoEfectivo);
         selMetodo.setAttribute('aria-describedby', avisoEfectivo.id);
         selMetodo.addEventListener('change', () => {
-          avisoEfectivo.hidden = !window.avisoDeEfectivoVisible(true, window.metodoElegido(selMetodo));
+          avisoEfectivo.hidden = !window.avisoDeEfectivoVisible(true, window.metodoElegido(selMetodo), invoice.metodosConAvisoIvaAlDiez);
         });
       }
     }

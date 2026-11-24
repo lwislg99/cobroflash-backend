@@ -35,14 +35,14 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // El lote deja de apartar las del 10 %.
     fichero: 'src/modules/system/app/routes/invoicesAdmin.routes.ts',
-    de: 'const idsDelLote = ids.filter((id) => !sinMetodo.includes(id));',
-    a: 'const idsDelLote = ids;',
+    de: '...(sinMetodo.length ? { NOT: { id: { in: sinMetodo } } } : {}),',
+    a: '',
     cae: 'SCRUM-1316l · bulk-paid · 🔴 ⑤ la del 10 % se queda fuera con T3 y las demás se marcan',
   },
   {
     // La ficha deja de enseñar el aviso al elegir efectivo.
     fichero: 'public/dashboard/js/invoiceDetailView.js',
-    de: 'avisoEfectivo.hidden = !window.avisoDeEfectivoVisible(true, window.metodoElegido(selMetodo));',
+    de: 'avisoEfectivo.hidden = !window.avisoDeEfectivoVisible(true, window.metodoElegido(selMetodo), invoice.metodosConAvisoIvaAlDiez);',
     a: 'avisoEfectivo.hidden = true;',
     cae: 'SCRUM-1316l · ficha · 🔴 ⑨ con línea al 10 %, el selector es obligatorio y «efectivo» enseña T4',
   },
@@ -94,7 +94,7 @@ inyectarBase({
     const w = args?.where || {};
     let n = 0;
     for (const f of FILAS.values()) {
-      if ((w.id?.in || []).includes(f.id) && f.merchantId === w.merchantId && !(w.status?.notIn || []).includes(f.status)) {
+      if ((w.id?.in || []).includes(f.id) && !(w.NOT?.id?.in || []).includes(f.id) && f.merchantId === w.merchantId && !(w.status?.notIn || []).includes(f.status)) {
         Object.assign(f, args.data); n++;
       }
     }
@@ -192,11 +192,14 @@ test('SCRUM-1316l · PUT /:id/status · ④bis CONTROL: la regla solo mira el pa
   assert.equal(r.updates.length, 1);
 });
 
+/** Los ids que el `where` del lote deja marcar: `in` menos el `NOT` (la forma que lee scrum397). */
+const marcables = (w) => (w?.id?.in || []).filter((id) => !(w?.NOT?.id?.in || []).includes(id));
+
 test('SCRUM-1316l · bulk-paid · 🔴 ⑤ la del 10 % se queda fuera con T3 y las demás se marcan', async () => {
   const r = await lote({ ids: [CON_10, SIN_10] });
   assert.equal(r.status, 200, `responde ${r.status} ${JSON.stringify(r.body)}`);
   assert.equal(r.updateManys.length, 1, 'CIEGO: la base doblada no ha recibido el updateMany');
-  assert.deepEqual(r.updateManys[0].where.id.in, [SIN_10], '🔴 el lote marca una factura del 10 % sin medio');
+  assert.deepEqual(marcables(r.updateManys[0].where), [SIN_10], '🔴 el lote marca una factura del 10 % sin medio');
   assert.deepEqual(r.body, { ok: true, updated: 1, sinMetodo: [CON_10], message: T3 });
   const audit = r.auditorias.find((a) => a.action === 'marcar_pagado_manual');
   assert.deepEqual(audit?.meta?.sinMetodo, [CON_10], 'la auditoría no deja escrito qué se quedó fuera');
@@ -205,14 +208,15 @@ test('SCRUM-1316l · bulk-paid · 🔴 ⑤ la del 10 % se queda fuera con T3 y l
 test('SCRUM-1316l · bulk-paid · ⑥ solo con facturas del 10 % no se marca ninguna', async () => {
   const r = await lote({ ids: [CON_10] });
   assert.equal(r.status, 200);
-  assert.deepEqual(r.updateManys[0].where.id.in, [], '🔴 el lote marca la factura del 10 %');
+  assert.deepEqual(marcables(r.updateManys[0].where), [], '🔴 el lote marca la factura del 10 %');
   assert.deepEqual(r.body, { ok: true, updated: 0, sinMetodo: [CON_10], message: T3 });
 });
 
 test('SCRUM-1316l · bulk-paid · ⑦ POSITIVO: sin facturas del 10 % la respuesta es la de siempre', async () => {
   const r = await lote({ ids: [SIN_10] });
   assert.deepEqual(r.body, { ok: true, updated: 1 });
-  assert.deepEqual(r.updateManys[0].where.id.in, [SIN_10]);
+  assert.deepEqual(marcables(r.updateManys[0].where), [SIN_10]);
+  assert.equal(r.updateManys[0].where.NOT, undefined, 'sin facturas del 10 % el where es el de siempre');
 });
 
 test('SCRUM-1316l · ⑧ servidor y pantalla dicen lo mismo de «lleva línea al 10 %»', () => {
@@ -227,10 +231,14 @@ test('SCRUM-1316l · ⑧ servidor y pantalla dicen lo mismo de «lleva línea al
     assert.equal(dominio.llevaLineaAlDiez(lineas), esperado, `servidor: ${JSON.stringify(lineas)}`);
     assert.equal(vista.llevaLineaAlDiez(lineas), esperado, `pantalla: ${JSON.stringify(lineas)}`);
   }
-  assert.equal(vista.avisoDeEfectivoVisible(true, vista.METODO_EFECTIVO), true);
-  assert.equal(vista.avisoDeEfectivoVisible(false, vista.METODO_EFECTIVO), false);
-  assert.equal(vista.avisoDeEfectivoVisible(true, 'transfer'), false);
-  assert.equal(vista.avisoDeEfectivoVisible(true, null), false);
+  // La lista de medios con aviso la SIRVE el servidor (regla 22, scrum441): la pantalla no tiene copia.
+  const servidos = dominio.METODOS_CON_AVISO_IVA_10;
+  assert.deepEqual([...servidos], ['cash'], 'el servidor no sirve «efectivo» como medio con aviso');
+  assert.equal(vista.avisoDeEfectivoVisible(true, 'cash', servidos), true);
+  assert.equal(vista.avisoDeEfectivoVisible(false, 'cash', servidos), false);
+  assert.equal(vista.avisoDeEfectivoVisible(true, 'transfer', servidos), false);
+  assert.equal(vista.avisoDeEfectivoVisible(true, null, servidos), false);
+  assert.equal(vista.avisoDeEfectivoVisible(true, 'cash', undefined), false, 'sin lista servida, la pantalla se inventa el aviso');
 });
 
 test('SCRUM-1316l · ⑧bis el mensaje del lote: solo T3 si no se marcó ninguna, las dos cosas si se marcaron otras', () => {
@@ -255,6 +263,7 @@ async function ficha(lineas) {
     id: 7, number: 'F-2026-0007', status: 'pending', type: 'F1', total: 160.5, currency: 'EUR',
     createdAt: '2026-11-21T10:00:00.000Z', customerName: 'ZZCLIENTE Ejemplo', customer: { id: 1, name: 'ZZCLIENTE Ejemplo' },
     lines: lineas, rectifiedBy: [],
+    metodosConAvisoIvaAlDiez: ['cash'], // lo que sirve GET /admin/invoices/:id (SCRUM-1316l)
   };
   const banco = cargarDashboard(RAIZ);
   banco.ctx.appModoEmision = 'fiscal';

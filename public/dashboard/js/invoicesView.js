@@ -123,9 +123,6 @@ const COPY_IVA_10 = {
   avisoEfectivo: 'Desde el 1 de diciembre de 2026, el IVA del 10 % en obras de vivienda solo se aplica si el cliente paga con tarjeta, transferencia bancaria, cheque nominativo o ingreso en cuenta. Si cobras en efectivo, consúltalo con tu asesor.', // APROBADO por Javier el 23-nov-2026 (SCRUM-1316 comentario 22424; en la ficha de factura, SCRUM-1316 comentario 22438)
 };
 
-/** El valor de «efectivo» en `PAID_VIA`. El selector sirve el valor; aquí solo se reconoce. */
-const METODO_EFECTIVO = 'cash';
-
 /**
  * ¿Lleva la factura ALGUNA línea al 10 %? PURO. Misma regla que `llevaLineaAlDiez` del servidor:
  * `tax` en fracción, comparado en porcentaje a dos decimales, y las cabeceras de apartado no cuentan.
@@ -139,9 +136,13 @@ function llevaLineaAlDiez(lines) {
   });
 }
 
-/** ¿Se enseña T4? Solo con línea al 10 % y «efectivo» elegido. PURO. */
-function avisoDeEfectivoVisible(conDiez, metodo) {
-  return !!conDiez && metodo === METODO_EFECTIVO;
+/**
+ * ¿Se enseña T4? Solo con línea al 10 % y un medio de los que el SERVIDOR sirve con aviso
+ * (`metodosConAvisoIvaAlDiez` del detalle de la factura). PURO. La pantalla no escribe valores del
+ * conjunto cerrado (regla 22, `scrum441`): sin lista servida, no hay aviso.
+ */
+function avisoDeEfectivoVisible(conDiez, metodo, conAviso) {
+  return !!conDiez && !!metodo && Array.isArray(conAviso) && conAviso.includes(metodo);
 }
 
 /**
@@ -163,7 +164,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     COPY_BULK_PAGADAS, resultadoMarcadoEnBloque, textoMarcadas,
     COPY_FECHA_DE_COBRO, fechaDeCobroElegida, cuerpoConFechaDeCobro,
-    COPY_IVA_10, METODO_EFECTIVO, llevaLineaAlDiez, avisoDeEfectivoVisible, resultadoConIvaAlDiez,
+    COPY_IVA_10, llevaLineaAlDiez, avisoDeEfectivoVisible, resultadoConIvaAlDiez,
   };
 }
 

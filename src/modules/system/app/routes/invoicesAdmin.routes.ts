@@ -25,6 +25,7 @@ import {
   MetodoDeCobroObligatorioError, // SCRUM-1316l
   llevaLineaAlDiez, // SCRUM-1316l
   COPY_METODO_OBLIGATORIO_IVA_10, // SCRUM-1316l
+  METODOS_CON_AVISO_IVA_10, // SCRUM-1316l
 } from '../../invoiceAdmin';
 
 import { BASE_URL } from '../../../../core/config/env';
@@ -299,7 +300,9 @@ router.get('/:id', async (req, res) => {
     const envioDocumento = await envioDelDocumentoDeLaFactura(req.merchantId!, invoice.chargeId);
     // SCRUM-1787o · ¿salió ESTA factura por correo? Para que «Enviada» no sepa solo del WhatsApp.
     const correoEnviado = await correoDeLaFacturaSalio(req.merchantId!, id);
-    const cuerpo = { ...invoice, demo: isDemoMerchant({ id: req.merchantId }), waDelivery, payToken, asignados, envioDocumento, correoEnviado };
+    // SCRUM-1316l · con qué medio la ficha enseña T4 si hay línea al 10 %: lo dice el servidor (regla 22).
+    const metodosConAvisoIvaAlDiez = METODOS_CON_AVISO_IVA_10;
+    const cuerpo = { ...invoice, demo: isDemoMerchant({ id: req.merchantId }), waDelivery, payToken, asignados, envioDocumento, correoEnviado, metodosConAvisoIvaAlDiez };
     // `sinCosteEnDocumento` tapa TAMBIÉN `quote.lines`: este detalle arrastra el presupuesto de
     // origen entero (`include: { quote: true }`), y por ahí salía el mismo coste.
     res.json(veEconomiaDelNegocio(req.userRole) ? cuerpo : sinCosteEnDocumento(cuerpo as unknown as Record<string, unknown>));
@@ -581,11 +584,13 @@ router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
     // marca como siempre. Las líneas de una factura emitida no cambian (regla 29), así que leerlas antes
     // de escribir no abre carrera.
     const sinMetodo = aMarcar.filter((x) => llevaLineaAlDiez((x as { lines?: unknown }).lines)).map((x) => x.id);
-    const idsDelLote = ids.filter((id) => !sinMetodo.includes(id));
 
     const result = await prisma.invoice.updateMany({
       where: {
-        id: { in: idsDelLote },
+        id: { in: ids },
+        // SCRUM-1316l · las de línea al 10 % (sin medio) se quedan fuera; el filtro va APARTE para que
+        // el lote siga siendo `id: { in: ids }` (lo lee el escáner de `scrum397`).
+        ...(sinMetodo.length ? { NOT: { id: { in: sinMetodo } } } : {}),
         merchantId: req.merchantId,
         // SCRUM-496 · ANTES decia `{ not: 'paid' }`, y eso INCLUIA `annulled`: una factura dada de
         // baja ante la AEAT —con su registro de anulacion sellado y encadenado— podia volver a
