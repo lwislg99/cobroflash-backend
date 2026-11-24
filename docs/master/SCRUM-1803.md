@@ -140,3 +140,39 @@ A9: aviso → A10 «Referenciar por posición caduca. Referenciar por identidad 
 Mío (jv-j1jh): en los comentarios de `invoiceAdmin.ts` nombré la ruta por su nombre, y `scrum1455c ②` censa
 esa palabra en `src/` como «alguien la llama»: rojo en la tanda dirigida. Cambié mi texto, no el guard.
 A9: comprobación → `tests/scrum1455c-anomalia-y-webhook-id-que-cabe.test.mjs`
+
+# SCRUM-1803c · El comentario de `chargeId` dice la verdad de hoy, y el test 445 ② la exige
+
+**Medido contra:** `origin/main` = `fc51ec7a2f11dd93e34141fae48b4357b72d9990` · 2026-11-24T12:13:38Z
+
+Origen: medición de jv-j2ep en c.22598, comentarios de jv-j2eq, test por decisión c.22604
+(«Cambiar el test (Recomendado)», regla 41). Rama `scrum-1803d-test-445-dice-la-verdad`. Sin lógica:
+sólo comentarios y un test.
+
+- `src/modules/billing/domain/cobros.service.ts`: los dos comentarios de jv-j2eq (su commit local
+  `09510bf99194db36a7af5e02a19bf8fea42ccb7c`, aplicado limpio con `cherry-pick`): 9+/9−, mismo número de
+  líneas. Ya no dicen que `Invoice.chargeId` no lo escribe nadie (falso desde `eae75c3f4`, 2026-08-11, el
+  propio SCRUM-445): nombran a sus dos escritores (`ensureInvoiceForCharge` y `sendInvoicePaymentRequest`)
+  y dicen que el filtro «No basta solo».
+- `tests/scrum445-cobros-sin-duplicar.test.mjs` ②: deja de exigir «HOY NO EXCLUYE NADA». Exige, por
+  identidad y no por línea, que el bloque de comentario pegado a `where: { merchantId, chargeId: null }`
+  diga «No basta solo», y que los comentarios del fichero nombren a los dos escritores. Si la consulta
+  desaparece, cae (no se calla). La cabecera narrativa (la historia del 10-ago) queda intacta, con una
+  línea fechada añadida.
+
+Control negativo (salidas de `node --test` sobre el fichero, spec):
+
+| comentario | resultado |
+|---|---|
+| el de `origin/main` (copiado con `git show` y restaurado después; `git diff` vacío) | tests 7 · pass 6 · fail 1 — cae ② con «el comentario de `chargeId: null` ya no dice que ese filtro solo no basta» |
+| el nuevo | tests 7 · pass 7 · fail 0 |
+| el nuevo con `sendInvoicePaymentRequest` cambiado a mano (sed local, deshecho; no reproducible desde git) | tests 7 · pass 6 · fail 1 — cae ② con «ya no nombran a `sendInvoicePaymentRequest`» |
+
+Verde: los 12 ficheros que nombran `cobros.service` en `tests/` (285 ×2, 441, 442, 445 ×2, 474, 499,
+503, 506, 1235, 1576) → TAP de 27.438 B, tests 110 · pass 110 · fail 0 · skipped 0. `tsc -p .` con tipos:
+salida 0, 0 líneas. Registro: 1294, 267, 525d, 719 y 854 → tests 69 · pass 69 · fail 0 (719 en verde: el
+censo de mudez no cambia). `npm run guards:entrada` → salida 0, tests 177 · pass 177 · fail 0. De la suite,
+411 (lee `_huerfanos-declarados`), 237, 976, 553, 737, 747, 1415 y 709 → tests 84 · pass 84 · fail 0 ·
+skipped 0. Suite entera: NO corrida (el encargo lo prohíbe por contexto); CI la corre.
+
+A9: aviso → A10 «Referenciar por posición caduca. Referenciar por identidad no.» — no se pudo comprobar: la ruta y la línea del escritor venían en el texto del encargo, que no pasa por ningún guard
