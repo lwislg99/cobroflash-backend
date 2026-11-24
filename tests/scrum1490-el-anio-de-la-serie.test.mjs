@@ -295,15 +295,13 @@ function creacionesDePresupuesto() {
 // `nuevaRevisionDe`. Que ése guarda el año lo mide el test de la aceptación 3, ejecutándolo.
 const CREA_SIN_LITERAL = ['src/modules/system/quoteAdmin.ts'];
 
-// 🔴 EL QUE NO GUARDA EL AÑO, Y POR QUÉ: el presupuesto ADICIONAL que nace al convertir un albarán
-// en factura. Su `quote.create` vive DENTRO del manejador `POST /:id/convertir-en-factura`, unas
-// líneas debajo de `sellarTrasEmision`: es camino de emisión, y ese camino se lee, no se modifica
-// (reglas 38 y 40) sin el OK del fundador. Pedido en SCRUM-1490. Mientras, esa fila nace con el año
-// a NULL y se lee por su `createdAt`, que para un ORIGINAL es exacto (se numera en la transacción
-// que lo crea); su revisión sí guarda el año del grupo.
-// La lista es EXACTA en los dos sentidos: uno nuevo sin año sale rojo, y el día que éste lo guarde
-// también, para que se borre de aquí.
-const SIN_ANIO_POR_SER_CAMINO_DE_EMISION = ['src/modules/jobs/app/routes/albaranes.routes.ts'];
+// Hasta SCRUM-1490b aquí se declaraba uno: el presupuesto ADICIONAL que nace en
+// `POST /admin/albaranes/:id/convertir-en-factura` (albaranes.routes.ts), que es camino de emisión
+// y nacía con el año a NULL. El GO del fundador (SCRUM-1490 c.22640) cubrió las dos líneas que le
+// faltaban, y el fichero salió de esta lista, como pedía el censo. La lista sigue EXACTA en los dos
+// sentidos, y vacía: cualquier `quote.create` nuevo que numere sin guardar el año sale rojo.
+// (SCRUM-1554:794 la mide así: «es `[]` en `origin/main`».)
+const SIN_ANIO_POR_SER_CAMINO_DE_EMISION = [];
 
 test('SCRUM-1490 · 🔴 aceptación 3 (censo): TODO `quote.create` de src/ que numera guarda el año que le dio la reserva, menos el declarado', () => {
   const { salida, ficheros } = creacionesDePresupuesto();
