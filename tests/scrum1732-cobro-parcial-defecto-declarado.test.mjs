@@ -98,8 +98,9 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // (c) La caja desconectada: el 303 vuelve a devengar por emisión y el control sembrado «cobrada
     // en el T2 → devenga en el T2» no sale → CIEGO.
+    // SCRUM-1730h · reanclada: desde 1730f la caja la enciende `hayFacturaPorCaja`, no el vivo.
     fichero: 'src/modules/invoicing/domain/libroRegistro.repo.ts',
-    de: "  const campo = 'criterioCaja' in rango ? campoDeDevengo(rango.criterioCaja) : CAMPO_EMISION;",
+    de: '  const campo = preguntado && await hayFacturaPorCaja(db, rango.merchantId) ? CAMPO_COBRO : CAMPO_EMISION;',
     a: '  const campo = CAMPO_EMISION;',
     cae: 'SCRUM-1732 · (c) el 303 de caja devenga por los tramos de invoice_payments: arreglado por el PR-2',
   },

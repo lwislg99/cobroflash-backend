@@ -70,8 +70,9 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // La caja desconectada: el control positivo (una S1 cobrada en Q2 cae en Q2) no sale → CIEGO.
+    // SCRUM-1730h · reanclada: desde 1730f la caja la enciende `hayFacturaPorCaja`, no el vivo.
     fichero: 'src/modules/invoicing/domain/libroRegistro.repo.ts',
-    de: "  const campo = 'criterioCaja' in rango ? campoDeDevengo(rango.criterioCaja) : CAMPO_EMISION;",
+    de: '  const campo = preguntado && await hayFacturaPorCaja(db, rango.merchantId) ? CAMPO_COBRO : CAMPO_EMISION;',
     a: '  const campo = CAMPO_EMISION;',
     cae: 'SCRUM-1730 · (i) una factura S2 devenga por emisión aunque el merchant tenga caja',
   },
