@@ -284,3 +284,46 @@ corre el obligatorio) · yaqu.app.
 **Lo que me salió mal:** crucé 190k (el tope del encargo) y 200k antes de cerrar: avisé a 202.740.
 Mi primer banco de la vista no veía el «⋯» (sus acciones se pintan al abrirlo) y daba «no se pinta» en
 verde por vacío; lo cazó el caso positivo, y el test ahora abre el menú y exige ver «Ver la reclamación del banco».
+
+# SCRUM-1532e · Etiqueta «Cobro cancelado» en la ficha, y lo que cambia de 1532d al ponerlo al día con main
+
+**Medido contra:** `origin/main` = `42cae61092ba69761d6d7bba0504abe6baee1e52` · 2026-11-24T01:35:19Z
+
+A9: comprobación → `tests/scrum644-trinquete-mensaje-crudo.test.mjs`
+Mutaciones: catálogo → `tests/scrum1532d-cancelar-cobro-ficha-y-reenvio.test.mjs`
+Mutaciones: una vez → `docs/master/evidencias/scrum1532/mutar-1532e.mjs`
+**Skill UI:** cargada
+
+24-nov-2026 · sesión `jv-j1in` (J1), relevo de `jv-j1ik`. Firma de la etiqueta: SCRUM-1532 `c.22455`; GO y
+literales de 1532d: `c.22430`. [Escrito por la sesión, no por Javier.]
+
+**Puesta al día.** `git merge origin/main` en la rama (1532b ya estaba en main por #3332): entró SIN conflictos.
+
+**Los rojos del obligatorio de #3340 (run 45272461101), arreglados:**
+- `scrum644` (invoiceDetailView.js 5 > techo 4): arreglo de CÓDIGO. El fallo de cancelar ya no pinta
+  `e.message`: pinta uno de los dos literales que la ficha ya usaba (`Este cobro ya no está pendiente.` /
+  `Error actualizando estado: inténtalo de nuevo`), también si `fetch` lanza. El techo no se toca. Caso nuevo
+  en el test de 1532d con un `message` sembrado (`ZZCRUDO`) que no puede aparecer.
+- `scrum285-censo-cobro-factura` ×2: 4 → 5 acciones-cobro (`btnCancelarCobro→Cobros`, firmada en c.22430) y
+  la mutación del endpoint 3 → 4. Cita en la línea; nada más del guard.
+- `scrum707` ×2: `pending` y `factura|pending` incorporan `btnCancelarCobro` con la cita. Ningún otro estado lo
+  ofrece: la mutación que lo pone en `paid` tumba el control positivo (guion de arriba).
+
+**1532e.** Con `estadoDelCobro === 'cancelled'`, el bloque «Cobro» de la cabecera pinta la etiqueta
+`Cobro cancelado` (pill neutra `status-pill-draft` del inventario; como toda pill, se ve en mayúsculas por CSS).
+
+| aceptación | dónde se ve |
+| --- | --- |
+| `Cobro cancelado` con el cobro cancelado (c.22455) | `tests/scrum1532d-cancelar-cobro-ficha-y-reenvio.test.mjs` (SCRUM-1532e, dos casos) |
+| no se pinta con otro estado ni sin cobro | mismo test |
+| el fallo de cancelar no pinta texto del servidor | mismo test · `tests/scrum644-trinquete-mensaje-crudo.test.mjs` |
+
+**Medido:** 1532d+e 11/11, con 285, 644 y 707: 37/37, 0 saltados · mutaciones 7 de 7 tumban (6 del catálogo y
+la de 707) · `tsc -p .` con tipos, salida 0 (tras el merge; mis cambios son solo `public/` y `tests/`).
+**No medido:** la dirigida larga del encargo (1532b, 1787b, 1773, 836, 700, 710b, 719, 1157/1215/1415, 810,
+1294, 267, 273, 525d, 854) salvo lo que corre `guards:entrada` · la suite entera (la corre el obligatorio) ·
+capturas de la etiqueta · yaqu.app.
+
+**Lo que me salió mal:** edité `invoiceDetailView.js` antes de cargar la skill `yaqu-premium-ui` (la cargué tras
+el primer Edit; la misma forma que la cicatriz de SCRUM-1787l). Y pasé el 170k del encargo sin medirme entre
+Jira (134.316) y el primer test: avisé a 181.256.
