@@ -2,6 +2,9 @@
 
 ## Parte S1 · 24-nov-2026 · S1 (encargo SCRUM-1817 pieza ②) · la unión cerrada gana `cobro_cancelado`
 
+**Medido contra:** `origin/main` = `8e0d408168865aab0c7862d7c004cf864450aa71` · 2026-11-24T10:13Z
+(Ancla añadida por el orquestador el 24-nov al reparar el PR #3373: el guard scrum267 la exigía y S1 estaba aparcada; la base y la hora son las que S1 declaró en su entrega. Aviso del hueco: SCRUM-1532 c.22579/c.22588.)
+
 Rama `scrum-1808-cobro-cancelado-s1`, desde `origin/main` `8e0d40816` (Merge #3365). Antes de crearla,
 `git ls-remote origin` completo: ninguna rama `scrum-1808*` en el remoto. Decisión que se aplica: SCRUM-1532
 c.22435 (clave interna aprobada; el encargo la cita, el texto del comentario no lo he leído yo).
