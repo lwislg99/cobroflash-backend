@@ -3251,7 +3251,7 @@ tramo SCRUM-914d).
   que dev ya tiene y `main` todavía no: dev va por delante, no es un hueco de este ALTER. Offline
   (`--desde` el esquema de `origin/main`): exactamente el DDL de arriba, veredicto «aditiva».
 
-## SCRUM-665e · `invoices.pdf_sha256` (huella del PDF guardado al emitir) — 27-oct-2026 · 🔴 NINGUNA base tocada
+## SCRUM-665e · `invoices.pdf_sha256` (huella del PDF guardado al emitir) — 27-oct-2026 · 🟡 **PRODUCCIÓN** según el fundador (SCRUM-665 c.22567); desarrollo, tests y staging SIN CONFIRMAR
 
 Decisión del fundador: SCRUM-665 c.21182, punto 4 («Se guarda también la huella del fichero:
 columna nueva, ALTER aditivo»). **Una** sentencia, aditiva:
@@ -3265,8 +3265,12 @@ control positivo «la herramienta responde (33 tablas)»; veredicto «aditiva»)
 añadir `IF NOT EXISTS`.
 
 - [ ] **desarrollo y tests · yaqu_dev_javier**
-- [ ] **staging**
-- [ ] **producción**
+- [ ] **staging** — SCRUM-665 c.22567 no la nombra.
+- [x] **producción** — SCRUM-665 c.22567 (2026-11-24T11:29:10Z), a la pregunta «¿está montado el
+  volumen en el servicio de producción, con `RAILWAY_VOLUME_MOUNT_PATH` definida, y aplicado en
+  producción el ALTER de la columna `pdf_sha256`?», responde: «1-Sí el volumenb está montado y el
+  alter de la columna tambien». Es la respuesta del fundador, no una medición contra la base. La
+  casilla la marcó J1 (jv-j1kh, SCRUM-665f); desarrollo/tests y staging, el comentario no los nombra.
 
 El PR de esquema + código + tests (rama `scrum-665e-pdf-persistente`) **no se empuja** hasta que
 estén las tres casillas y el volumen persistente de Railway creado (c.21182, «Dependencias del
