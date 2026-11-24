@@ -283,3 +283,27 @@ Desde el panel (Nueva factura → «Cliente QA sin avisos» → una línea de 10
 **Visto de paso, no es de este encargo:** la barra de estado de las dos facturas marca «Enviada» como paso actual aunque ninguna se ha enviado. No lo he investigado ni tocado; se lo paso al orquestador.
 
 **NO medido:** yaqu.app (el login de test solo existe en staging); la página de pago; una imagen del PDF renderizado (va solo su texto; el `.pdf` se retiró del PR por el guard SCRUM-480); los otros caminos de 1787s (factura tras cobrar, presupuesto con lista, los cinco de S1); la suite de tests: cambio solo de docs, corrí los guards de docs y `guards:entrada`.
+
+## SCRUM-1779l · 24-nov: prueba en STAGING — el PDF de una factura que vence un día de una cifra dice «5 de diciembre», sin cero (J1, solo docs)
+
+**Medido contra:** `origin/main` = `f8dc0244675d00709b896101b97c89bd22468923` · 2026-11-24T02:27:53Z (cabecera `Date:` de `gh api -i zen`; sesión J1 `jv-j1ix`, relevo de `jv-j1iw`, por encargo del orquestador `cobroflash-backend-2d`)
+
+A9: aviso → A10 «Un rojo sin población no es un hallazgo: es un instrumento que no llegó a arrancar.» — no se pudo comprobar: lancé el guion de Playwright desde la carpeta temporal y salió «FALTA el secreto» (salida 2); el secreto no faltaba: el cargador de entorno lo busca a partir del directorio de trabajo, y fuera del árbol no lo encontró. Lo relancé desde el árbol y entró. No se emitió nada en la pasada fallida (corta antes del navegador). Un guion de un solo uso contra staging no pasa por ningún guard del repositorio.
+
+**Qué se probó.** Staging sirve `/health` = `f8dc0244…` = `origin/main`, que contiene 1787x y `42cae6109` (1779i). Cuenta QA (comercio 2), login de test por `page.request` con el secreto leído de `process.env` dentro de un guion de `node` (no pasó por el MCP de Playwright ni se imprimió). Chrome con contexto nuevo (`serviceWorkers:'block'`). Turno de staging (`turno-staging.mjs --base staging`, base `railway`): a las 02:24:20Z lo tomó `scrum-1779m-staging-cancelar-cobro` y no se rompió; lo tomé a las 02:27:26Z y lo solté tras la emisión y las capturas (`soltar` salida 0, «marcador limpio»). Flags del comercio leídos en la base, solo lectura, antes y después, idénticos y sin tocar: `INVOICING_ES_ENABLED=true`, `SIF_ENABLED=false`, `BIZUM_MANUAL_ENABLED=true`.
+
+Se emitió por API, sin pasar por el formulario, `POST /admin/invoices` con `{ customerId: 3936 («Cliente QA sin avisos»), lines: [100 € + 21 %], dueDate: '2026-12-05' }` → 201, **F260006** (id 1981), `veriFactu:false`. **El servidor respetó el `dueDate`** del cuerpo (no aplicó +30 días). **Ningún envío por WhatsApp ni correo**: no se pulsó «Enviar».
+
+| qué | esperado | visto |
+|---|---|---|
+| `dueDate` de F260006 (API) | 2026-12-05, no `createdAt` + 30 | `2026-12-05T00:00:00.000Z` (`createdAt` 2026-11-24T02:27:44Z) |
+| PDF de F260006 · texto (`tests/_texto-del-pdf.mjs`, 17 líneas) | «Vence el 5 de diciembre de 2026», sin «05» | «Vence el 5 de diciembre de 2026»; «05 de» aparece 0 veces en el texto de los dos PDF |
+| Ficha de F260006 · fila «Vence el» (1280 y 390) | sale | «05 dic 2026» (formato corto de la ficha, con cero; ver abajo) |
+| Control: PDF de F260005 (id 1980, de 1779i) | sigue «Vence el 23 de diciembre de 2026» | «Vence el 23 de diciembre de 2026»; ficha «23 dic 2026» |
+| Enlace público de pago sin enviar | — | NO buscado ni usado (exige Enviar; encargo) |
+
+**Evidencias** (`docs/master/evidencias/SCRUM-1779/1779l/`), miradas: `ficha-1981-1280.png` y `ficha-1981-390.png` (COBRO: «Vence el 05 dic 2026», «Formas de pago · Bizum, Transferencia»), `control-ficha-1980-1280.png`, el texto de los dos PDF (`F-1981-texto.txt`, `control-F-1980-texto.txt`; los `.pdf` no se versionan: `tests/scrum480-fin-de-linea.test.mjs`), `emision-respuesta.txt` y `salida-de-la-prueba.txt`.
+
+**Visto, no juzgado:** la ficha escribe la fecha en formato corto con cero («05 dic 2026»), distinto del largo del PDF. Si 1787x debía cubrir también la ficha, no lo sé: no he leído su enunciado (el encargo pedía el PDF). Se lo paso al orquestador.
+
+**NO medido:** yaqu.app; la página pública de pago; una imagen del PDF renderizado (va solo su texto); la fila de F260006 en la base (mi lector de solo lectura falló en esa consulta por un nombre de columna; el `dueDate` sale de la API); la suite de tests: cambio solo de docs, corrí los guards de docs y `guards:entrada`.

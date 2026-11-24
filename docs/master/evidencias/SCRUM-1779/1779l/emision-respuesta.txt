@@ -1,0 +1,13 @@
+{
+  "status": 201,
+  "cuerpo": {
+    "ok": true,
+    "factura": {
+      "id": 1981,
+      "number": "F260006",
+      "total": "121",
+      "currency": "EUR"
+    },
+    "veriFactu": false
+  }
+}
