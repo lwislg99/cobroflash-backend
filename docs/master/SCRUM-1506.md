@@ -234,3 +234,33 @@ de Javier.
 **Fuera de alcance (no se toca aquí):** los ficheros SIN fila (`tests/**`, por ejemplo) siguen libres para
 cualquier identidad conocida; es lo que dijo J4 en c.18864. Y el cableado del hook donde arrancan las sesiones
 sigue siendo la pieza ① (c.21944).
+
+### Apéndice del 24-nov (S5, relevo): ratificación del cambio de aserción en `scrum1295`
+
+**Medido contra:** `origin/main` = `db0a6c04541c258eda6499e1088cf16db9f1836b` · 2026-11-24T17:55:57Z
+
+A9: sin fallo que generalice — sólo registro: copia literal de una autorización, sin código.
+
+El cambio de 1506d en `tests/scrum1295-carriles.test.mjs` (el caso que afirmaba «sin --exigir-identidad no se para
+a nadie» pasa a pedir 2) es un cambio de una exigencia existente en un fichero de S0. Lo autoriza el orquestador
+(`cobroflash-backend-41`) a posteriori, de forma nominal. **Localizador:** SendMessage del orquestador a
+`sesion-5`, 24-nov-2026 ~18:05 hora local, msg_id `b86be85c-f21e-4b2c-b615-fdd351b71afe`, que repitió literal al
+relevo de S5 el mismo día. Copia literal:
+
+> «scrum1295: tu cambio de aserción queda RATIFICADO POST-HOC como autorización nominal mía — la exigencia vieja
+> («sin --exigir-identidad no se para a nadie») AFIRMABA el defecto, y la decisión firmada c.22577 la vuelca; copia
+> esta ratificación literal a docs/master/SCRUM-1506.md citándome.»
+
+**Lo que NO entra aquí:** la excepción del orquestador en `puestoDeNombre` (`cobroflash-backend-<número>` → ORQ).
+Hoy se encargó como 1506e y el mismo orquestador la descartó antes de que se empujara: si el orquestador queda
+exento de la cerradura, y cómo, lo decide el fundador (y el acuerdo entre los dos jefes que pide 1506), no él. MI
+LECTURA, que le pasé antes del descarte: con ese patrón, cualquier sesión que arranque sin `/rename` se llama
+`cobroflash-backend-N` y saldría de la cerradura, no sólo el orquestador.
+
+**Cómo se cerró:** el fundador renombró al orquestador con `/rename orquestador`, que es el camino que la cerradura
+ya prevé (`puestoDeNombre('orquestador')` → ORQ desde SCRUM-1295). Lo comunicó el orquestador a S5 el 24-nov por
+SendMessage («elige el fundador, opción 1»). No cambia nada en el código: `cobroflash-backend-<n>` sigue dando
+null. El trabajo de 1506e queda en un commit local de S5 que no se ha empujado (`ecf4d7ec2`, rama local
+`scrum-1506e-excepcion-orquestador`).
+
+**Antes del push:** guards:entrada salió CIEGO por plazo (90,0–90,1 s contra 90 s, CPU al 100 %, 2 intentos sobre esta rama); los 16 ficheros de su lista pasados con node --test sin plazo: 177/177, 0 fallos, 0 saltados. El presupuesto lo juzga el CI obligatorio. Push decidido por el orquestador (DELEGACIÓN c.21978).
