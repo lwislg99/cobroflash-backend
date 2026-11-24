@@ -44,9 +44,10 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // El botón se pinta con cualquier cobro, no solo con el pendiente.
+    // SCRUM-1800c: anclada a la pareja cobro+estado, no a la línea entera (1800c le añadió `!invoice.paidAt`).
     fichero: 'public/dashboard/js/invoiceDetailView.js',
-    de: "if (invoice.chargeId && invoice.estadoDelCobro === 'pending') {",
-    a: 'if (invoice.chargeId) {',
+    de: "invoice.chargeId && invoice.estadoDelCobro === 'pending'",
+    a: 'invoice.chargeId',
     cae: 'SCRUM-1532d · ① con el cobro en otro estado, o sin cobro, no se pinta',
   },
   {
