@@ -1,0 +1,218 @@
+═══ ① SUPERFICIES ═══
+vistas que publica el banco: 29 · montadas y serializadas: 28 · NO medidas: 1 (renderPartesOficinaView) · sin argumentos: 0 · rutas SIN contrato: 0 · pestañas abiertas: 16 de 23 (3 pantalla(s))
+✅ CONTROL POSITIVO · ¿está la de Clientes, que ya está montada en el guard? sí
+✅ CONTROL POSITIVO · ¿se abren las pestañas de Configuración? sí, 8
+
+NO MEDIDAS (no se cuentan como cero — se dicen):
+   ⚠️ renderPartesOficinaView → sólo 12 nodos con 1 petición(es) servida(s): la vista es así de pequeña con estos datos, o el dato de su contrato no la llena
+
+PESTAÑAS QUE NO SE DEJARON ABRIR (SCRUM-1593; su contenido sigue oculto y cuenta como NO MEDIDO) · 3
+   ⚠️ renderJobDetailView · pestaña «Partes»: pulsarla no cambia nada en el banco
+   ⚠️ renderQuotesListView · pestaña «Plantillas»: pulsarla no cambia nada en el banco
+   ⚠️ renderTemplatesView · pestaña «Historial»: pulsarla no cambia nada en el banco
+
+VISTAS QUE NO PIDIERON NADA (SCRUM-1560e) · 0
+
+DATOS DE MUESTRA (SCRUM-1560) · rutas servidas con su contrato: 46 · SIN contrato: 0
+
+═══ ✅ LA SONDA ═══
+páginas × anchuras: 88 (28 superficies + 16 pestañas abiertas) · sondas NO cazadas: 0
+✅ CONTROL POSITIVO · sonda tapada, se espera «caja 40 · toque 30»: leída en 88 de 88 páginas · caja 40.0–40.0 · toque 29.0–30.0
+fuente: Inter · caras cargadas 5 de 35 declaradas · fallidas 0 · en 176 página(s)
+
+═══ ③ POR PANTALLA Y ANCHURA ═══
+pantalla                      ancho  medidos  cortos  ocultos  sinCaja  noTocables
+renderAlbaranDetailView       929    5        0       0        0        0
+renderAlbaranesView           929    10       4       0        0        0
+renderCobrosView              929    6        0       0        0        1
+renderCustomer360View         929    17       17      0        0        0
+renderCustomersView           929    37       21      1        0        8
+renderDocumentoSueltoView     929    8        2       22       0        0
+renderExpenseDetailView       929    6        1       0        0        0
+renderExpensesView            929    8        0       0        0        0
+renderExportView              929    13       7       0        0        0
+renderFacturasRecibidasView   929    4        4       0        0        0
+renderHomeView                929    14       0       0        0        0
+renderInvoiceDetailView       929    9        6       0        0        0
+renderInvoicesView            929    12       10      3        0        0
+renderJobDetailView           929    10       0       16       0        0
+renderJobsView                929    18       0       0        0        2
+renderLibroRegistroView       929    0        0       0        0        0
+renderParteDetailView         929    8        1       0        0        3
+renderPlansView               929    7        7       0        0        0
+renderProductsView            929    19       3       1        0        0
+renderProvidersView           929    10       4       0        0        0
+renderQuoteDetailView         929    12       2       0        0        0
+renderQuoteRequestsView       929    3        1       0        0        0
+renderQuotesListView          929    9        7       1        0        0
+renderQuotesView              929    8        2       57       0        0
+renderReportsView             929    16       1       0        0        0
+renderSettingsView            929    22       2       20       0        0
+renderTeamView                929    5        5       0        0        0
+renderTemplatesView           929    6        0       0        0        0
+  · Cobros «Bizum»            929    6        0       0        0        0
+  · Cobros «tarjeta»          929    6        0       0        0        0
+  · Cobros «transferencia»    929    6        0       0        0        0
+  · Cobros «efectivo»         929    6        0       0        0        0
+  · Cobros «Método no registr 929    6        0       0        0        0
+  · JobDetail «Lo que falta»  929    10       0       16       0        0
+  · JobDetail «Albaranes»     929    9        0       17       0        0
+  · JobDetail «El trabajo»    929    14       0       5        0        7
+  · Settings «Facturación»    929    16       3       26       0        0
+  · Settings «Cobros»         929    15       2       27       0        0
+  · Settings «Avisos»         929    17       6       25       0        0
+  · Settings «Tu página públi 929    12       2       30       0        0
+  · Settings «Marca»          929    15       4       27       0        0
+  · Settings «Tus datos»      929    13       2       29       0        0
+  · Settings «Cumplimiento»   929    12       2       30       0        0
+  · Settings «Equipo»         929    14       3       28       0        0
+renderAlbaranDetailView       390    5        0       0        0        0
+renderAlbaranesView           390    10       0       0        0        0
+renderCobrosView              390    7        0       0        0        0
+renderCustomer360View         390    15       11      0        0        2
+renderCustomersView           390    33       0       5        0        8
+renderDocumentoSueltoView     390    8        0       22       0        0
+renderExpenseDetailView       390    6        1       0        0        0
+renderExpensesView            390    8        0       0        0        0
+renderExportView              390    13       4       0        0        0
+renderFacturasRecibidasView   390    4        2       0        0        0
+renderHomeView                390    14       0       0        0        0
+renderInvoiceDetailView       390    9        6       0        0        0
+renderInvoicesView            390    10       5       5        0        0
+renderJobDetailView           390    10       0       16       0        0
+renderJobsView                390    18       0       0        0        2
+renderLibroRegistroView       390    0        0       0        0        0
+renderParteDetailView         390    8        0       0        0        3
+renderPlansView               390    7        6       0        0        0
+renderProductsView            390    19       3       1        0        0
+renderProvidersView           390    10       0       0        0        0
+renderQuoteDetailView         390    12       1       0        0        0
+renderQuoteRequestsView       390    3        1       0        0        0
+renderQuotesListView          390    9        4       1        0        0
+renderQuotesView              390    8        0       57       0        0
+renderReportsView             390    16       1       0        0        0
+renderSettingsView            390    22       2       20       0        0
+renderTeamView                390    5        5       0        0        0
+renderTemplatesView           390    6        0       0        0        0
+  · Cobros «Bizum»            390    6        0       0        0        0
+  · Cobros «tarjeta»          390    6        0       0        0        0
+  · Cobros «transferencia»    390    6        0       0        0        0
+  · Cobros «efectivo»         390    6        0       0        0        0
+  · Cobros «Método no registr 390    6        0       0        0        0
+  · JobDetail «Lo que falta»  390    10       0       16       0        0
+  · JobDetail «Albaranes»     390    9        0       17       0        0
+  · JobDetail «El trabajo»    390    14       0       5        0        7
+  · Settings «Facturación»    390    16       2       26       0        0
+  · Settings «Cobros»         390    15       2       27       0        0
+  · Settings «Avisos»         390    17       6       25       0        0
+  · Settings «Tu página públi 390    12       2       30       0        0
+  · Settings «Marca»          390    15       4       27       0        0
+  · Settings «Tus datos»      390    13       2       29       0        0
+  · Settings «Cumplimiento»   390    12       2       30       0        0
+  · Settings «Equipo»         390    14       3       28       0        0
+   ⚠️ identidad propia (cambia el recuento al abrir la pestaña): renderCobrosView · pestaña «Bizum» @929px: 6 interactivos frente a 7 al montar
+   ⚠️ identidad propia (cambia el recuento al abrir la pestaña): renderCobrosView · pestaña «tarjeta» @929px: 6 interactivos frente a 7 al montar
+   ⚠️ identidad propia (cambia el recuento al abrir la pestaña): renderCobrosView · pestaña «transferencia» @929px: 6 interactivos frente a 7 al montar
+   ⚠️ identidad propia (cambia el recuento al abrir la pestaña): renderCobrosView · pestaña «efectivo» @929px: 6 interactivos frente a 7 al montar
+   ⚠️ identidad propia (cambia el recuento al abrir la pestaña): renderCobrosView · pestaña «Método no registrado» @929px: 6 interactivos frente a 7 al montar
+   ⚠️ identidad propia (cambia el recuento al abrir la pestaña): renderCobrosView · pestaña «Bizum» @390px: 6 interactivos frente a 7 al montar
+   ⚠️ identidad propia (cambia el recuento al abrir la pestaña): renderCobrosView · pestaña «tarjeta» @390px: 6 interactivos frente a 7 al montar
+   ⚠️ identidad propia (cambia el recuento al abrir la pestaña): renderCobrosView · pestaña «transferencia» @390px: 6 interactivos frente a 7 al montar
+   ⚠️ identidad propia (cambia el recuento al abrir la pestaña): renderCobrosView · pestaña «efectivo» @390px: 6 interactivos frente a 7 al montar
+   ⚠️ identidad propia (cambia el recuento al abrir la pestaña): renderCobrosView · pestaña «Método no registrado» @390px: 6 interactivos frente a 7 al montar
+
+═══ ③ CORTOS QUE SÓLO SE VEN ABRIENDO UNA PESTAÑA (SCRUM-1593) ═══
+   renderSettingsView · pestaña «Facturación» @929px  BUTTON.btn.btn-secondary     caja 36 · toque 36.9  «Añadir condición»
+   renderSettingsView · pestaña «Avisos» @929px  INPUT                        caja 16 · toque 17  «(sin texto)»
+   renderSettingsView · pestaña «Avisos» @929px  INPUT                        caja 16 · toque 17  «(sin texto)»
+   renderSettingsView · pestaña «Avisos» @929px  INPUT                        caja 16 · toque 17  «(sin texto)»
+   renderSettingsView · pestaña «Avisos» @929px  BUTTON.btn-ghost.btn-sm      caja 30 · toque 30.6  «Vista previa»
+   renderSettingsView · pestaña «Marca» @929px  BUTTON.btn.btn-secondary.btn-sm caja 30 · toque 30.6  «⬆ Subir logo»
+   renderSettingsView · pestaña «Marca» @929px  BUTTON.btn-secondary.btn-sm  caja 30 · toque 30.6  «Sin color (por defecto)»
+   renderSettingsView · pestaña «Equipo» @929px  INPUT                        caja 16 · toque 17  «(sin texto)»
+   renderSettingsView · pestaña «Avisos» @390px  INPUT                        caja 16 · toque 17  «(sin texto)»
+   renderSettingsView · pestaña «Avisos» @390px  INPUT                        caja 16 · toque 17  «(sin texto)»
+   renderSettingsView · pestaña «Avisos» @390px  INPUT                        caja 16 · toque 17  «(sin texto)»
+   renderSettingsView · pestaña «Avisos» @390px  BUTTON.btn-ghost.btn-sm      caja 30 · toque 30.9  «Vista previa»
+   renderSettingsView · pestaña «Marca» @390px  BUTTON.btn.btn-secondary.btn-sm caja 30 · toque 30.5  «⬆ Subir logo»
+   renderSettingsView · pestaña «Marca» @390px  BUTTON.btn-secondary.btn-sm  caja 30 · toque 30.7  «Sin color (por defecto)»
+   renderSettingsView · pestaña «Equipo» @390px  INPUT                        caja 16 · toque 17  «(sin texto)»
+   mediciones así: 15
+
+═══ ③ POR CLASE (elementos DISTINTOS, sin duplicar por anchura) ═══
+    16  BUTTON.btn-secondary.btn-sm                toque 30.6–37.0 px · caja 30.0–36.0 px · 5 pantalla(s) · p.ej. ✎ Editar / 🔗 Portal / 📇 Guardar en mis contactos
+    16  INPUT.input                                toque 34.6–39.0 px · caja 34.0–38.0 px · 9 pantalla(s) · p.ej. (sin texto)
+    11  BUTTON.btn-ghost.btn-sm                    toque 30.5–36.9 px · caja 30.0–36.0 px · 5 pantalla(s) · p.ej. ← Volver a Clientes / Ver → / 📊 Historial
+     6  A.contacto-link                            toque 37.0–41.8 px · caja 36.0–41.8 px · 2 pantalla(s) · p.ej. 34000000001 / 💬 WhatsApp / admin@fincassoler.es
+     6  BUTTON                                     toque 39.0–39.0 px · caja 38.0–38.0 px · 1 pantalla(s) · p.ej. Presupuestos (1) / Facturas (1) / Trabajos (1)
+     6  SELECT.input                               toque 36.6–39.0 px · caja 36.0–38.0 px · 5 pantalla(s) · p.ej. Todas las etiquetasadministradormo / Más recientesNombre A-ZMás pendien / T1T2T3T4
+     5  INPUT                                      toque 14.0–17.0 px · caja 13.0–16.0 px · 2 pantalla(s) · p.ej. (sin texto)
+     4  BUTTON.btn.btn-primary                     toque 36.6–37.0 px · caja 36.0–36.0 px · 4 pantalla(s) · p.ej. Nuevo albaránN / Continuar / Crear proveedor
+     4  BUTTON.btn-primary                         toque 36.9–37.0 px · caja 36.0–36.0 px · 4 pantalla(s) · p.ej. Nuevo clienteN / Descargar ZIP / Nueva facturaN
+     4  BUTTON.btn-secondary                       toque 36.7–37.0 px · caja 36.0–36.0 px · 2 pantalla(s) · p.ej. Descargar CSV / Descargar todo / Consultar
+     3  BUTTON.btn-primary.btn-sm                  toque 30.7–31.0 px · caja 30.0–30.0 px · 3 pantalla(s) · p.ej. + Nuevo presupuesto / Marcar como cobrada / + Añadir miembro
+     3  A.btn-secondary.btn-sm                     toque 31.0–37.0 px · caja 30.0–36.0 px · 3 pantalla(s) · p.ej. ⬇ Clientes CSV / ⬇ CSV
+     3  A.contacto-link.contacto-link--icono       toque 37.0–37.0 px · caja 36.0–36.0 px · 1 pantalla(s) · p.ej. 💬
+     3  BUTTON.btn.btn-secondary                   toque 36.8–36.9 px · caja 36.0–36.0 px · 3 pantalla(s) · p.ej. Volver al trabajo / Recargar / Añadir condición
+     3  A.j3e-4a12b6e                              toque 16.0–16.0 px · caja 15.0–15.0 px · 1 pantalla(s) · p.ej. presupuestos / cobros / gastos
+     3  BUTTON.btn.btn-secondary.btn-sm            toque 30.5–30.7 px · caja 30.0–30.0 px · 2 pantalla(s) · p.ej. Editar / Activar / ⬆ Subir logo
+     2  BUTTON.btn.btn-secondary.quote-ver-documento toque 36.6–36.9 px · caja 36.0–36.0 px · 2 pantalla(s) · p.ej. Ver documento
+     2  INPUT.segmented-input                      toque 16.5–16.5 px · caja 16.0–16.0 px · 1 pantalla(s) · p.ej. (sin texto)
+     2  SELECT                                     toque 32.5–33.0 px · caja 32.0–32.0 px · 2 pantalla(s) · p.ej. PendientesTodasCompletadas / 20262025202420232022
+     1  INPUT.input.alb-buscador                   toque 35.0–35.0 px · caja 34.0–34.0 px · 1 pantalla(s) · p.ej. (sin texto)
+     1  SELECT.input.alb-sel-cobro                 toque 37.0–37.0 px · caja 36.0–36.0 px · 1 pantalla(s) · p.ej. Facturación: todos (1)Sin facturar
+     1  A.alb-enlace                               toque 17.0–17.0 px · caja 16.0–16.0 px · 1 pantalla(s) · p.ej. Reforma de baño
+     1  A.gasto-trab-enlace                        toque 36.0–36.0 px · caja 44.0–44.0 px · 1 pantalla(s) · p.ej. Reforma de baño
+     1  INPUT.inv-row-check                        toque 14.0–14.0 px · caja 13.0–13.0 px · 1 pantalla(s) · p.ej. (sin texto)
+     1  BUTTON.j3e-3350dfb.plan-btn                toque 40.0–40.0 px · caja 39.0–39.0 px · 1 pantalla(s) · p.ej. Quiero mi plaza founding — 9,90 €/
+     1  BUTTON.j3e-fbb8fe6                         toque 29.0–29.0 px · caja 28.0–28.0 px · 1 pantalla(s) · p.ej. Mensual
+     1  BUTTON.j3e-c3d1d19                         toque 29.0–29.0 px · caja 28.0–28.0 px · 1 pantalla(s) · p.ej. Anual-17%
+     1  BUTTON.j3e-bc1a03e.btn-primary.plan-btn    toque 39.7–39.7 px · caja 39.0–39.0 px · 1 pantalla(s) · p.ej. Suscribirme — 19,90 €/mes
+     1  BUTTON.btn.btn-ghost                       toque 36.7–36.7 px · caja 36.0–36.0 px · 1 pantalla(s) · p.ej. Crear revisión
+     1  INPUT.j3e-a636e53                          toque 40.5–40.5 px · caja 40.0–40.0 px · 1 pantalla(s) · p.ej. (sin texto)
+     1  BUTTON.j3e-86abdab.btn.btn-primary.btn-sm  toque 30.5–30.5 px · caja 30.0–30.0 px · 1 pantalla(s) · p.ej. Copiar link
+     1  BUTTON.btn-danger.btn-sm                   toque 30.8–30.8 px · caja 30.0–30.0 px · 1 pantalla(s) · p.ej. Suspender
+
+═══ NO MEDIDOS POR ESTAR OCULTOS (SCRUM-1593) · 90 ═══
+   ocultos en todos los estados que el censo sabe abrir (sólo pestañas) y a las dos anchuras:
+   renderQuotesView: 8× BUTTON.quote-paso__cambiar · 5× SELECT · 4× BUTTON.btn-ghost.btn-sm · 1× BUTTON.btn-ghost.btn-sm.quote-header-btn · 4× BUTTON.quote-plantilla-chip · 2× BUTTON.quote-plantilla-chip.quote-concepto-chip · 16× INPUT · 1× BUTTON.btn-ghost.quote-line__ajustes.is-de-siempre · 1× BUTTON.overflow-trigger.btn-ghost.btn-sm · 1× BUTTON.btn-ghost.quote-add-line · 2× INPUT.segmented-input · 3× BUTTON.btn.btn-ghost · 2× BUTTON.btn.btn-secondary.quote-ver-documento · 3× BUTTON.btn.btn-primary · 1× BUTTON.btn.btn-secondary.btn-sm · 1× BUTTON.btn-ghost.btn-sm.sitios-guardados__boton · 2× TEXTAREA
+   renderDocumentoSueltoView: 4× BUTTON.quote-paso__cambiar · 2× SELECT · 1× BUTTON.btn-ghost.btn-sm · 1× BUTTON.btn-ghost.btn-sm.quote-header-btn · 1× BUTTON.quote-plantilla-chip · 2× BUTTON.quote-plantilla-chip.quote-concepto-chip · 3× INPUT · 1× BUTTON.btn-ghost.quote-line__ajustes · 1× BUTTON.overflow-trigger.btn-ghost.btn-sm · 1× BUTTON.btn-ghost.quote-add-line · 2× BUTTON.btn.btn-ghost · 1× BUTTON.btn.btn-secondary.quote-ver-documento · 2× BUTTON.btn.btn-primary
+   renderInvoicesView: 1× SELECT.input · 1× BUTTON.btn-primary.btn-sm · 1× BUTTON.btn-ghost.btn-sm.j1-bulk-cancelar
+   renderJobDetailView: 2× BUTTON.btn-secondary.btn-sm.job-toolbar-btn-44 · 1× BUTTON.btn-primary.btn-sm.job-toolbar-btn-44
+   renderSettingsView: 1× BUTTON.btn-ghost.btn-sm · 1× INPUT
+   renderCustomersView: 1× SELECT.input.customers-filtro-visita
+   renderProductsView: 1× INPUT
+   renderQuotesListView: 1× SELECT.input
+
+═══ EL NÚMERO ═══
+   elementos DISTINTOS por debajo de 44 px: 115
+   interactivos NO MEDIDOS por estar ocultos (ni abriendo pestañas se ven): 90, en 8 pantalla(s)
+   mediciones (pantalla × anchura × elemento): 206
+   de los distintos, con .btn-sm: 38 (33.0 %)
+   de los distintos, SIN .btn-sm: 77
+
+═══ ✅ CONTROL POSITIVO · Clientes, contra lo que imprime el guard ═══
+   @929px → medidos 37 · cortos 21 · no tocables 8
+        BUTTON.btn-secondary.btn-sm        caja 36 · toque 37     «⬆ Importar clientes»
+        A.btn-secondary.btn-sm             caja 36 · toque 37     «⬇ Clientes CSV»
+        BUTTON.btn-primary                 caja 36 · toque 37     «Nuevo clienteN»
+        INPUT.input                        caja 38 · toque 39     «(sin texto)»
+        SELECT.input                       caja 38 · toque 39     «Todas las etiquetasadministradormo»
+        SELECT.input                       caja 38 · toque 39     «Más recientesNombre A-ZMás pendien»
+        A.contacto-link                    caja 41.8 · toque 41.8 «34000000001»
+        A.contacto-link.contacto-link--icono caja 36 · toque 37     «💬»
+        BUTTON.btn-secondary.btn-sm        caja 36 · toque 36.9   «Editar»
+        BUTTON.btn-secondary.btn-sm        caja 36 · toque 36.9   «Portal»
+        BUTTON.btn-ghost.btn-sm            caja 36 · toque 36.9   «📊 Historial»
+        A.contacto-link                    caja 41.8 · toque 41.8 «34000000002»
+        A.contacto-link.contacto-link--icono caja 36 · toque 37     «💬»
+        BUTTON.btn-secondary.btn-sm        caja 36 · toque 36.9   «Editar»
+        BUTTON.btn-secondary.btn-sm        caja 36 · toque 36.9   «Portal»
+        BUTTON.btn-ghost.btn-sm            caja 36 · toque 36.9   «📊 Historial»
+        A.contacto-link                    caja 41.8 · toque 41.8 «34000000003»
+        A.contacto-link.contacto-link--icono caja 36 · toque 37     «💬»
+        BUTTON.btn-secondary.btn-sm        caja 36 · toque 36.8   «Editar»
+        BUTTON.btn-secondary.btn-sm        caja 36 · toque 36.8   «Portal»
+        BUTTON.btn-ghost.btn-sm            caja 36 · toque 36.8   «📊 Historial»
+   @390px → medidos 33 · cortos 0 · no tocables 8
+   (el guard imprime, hoy: 929 → 20 medidos / 11 cortos / 6 no tocables · 390 → 19 / 2 / 6)
