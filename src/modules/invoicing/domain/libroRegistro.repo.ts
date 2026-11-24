@@ -137,9 +137,49 @@ const CAMPOS_FACTURA = {
   chargeId: true,
   albaranRefs: true,
   lines: true,
+  // SCRUM-1730f (c.21789 ③, c.22620): el criterio CONGELADO al sellar y, para una R1, su F1.
+  merchantCriterioCaja: true,
+  rectifiesId: true,
 } as const;
 
-type FacturaLeida = FacturaParaLibro & { id: number };
+type FacturaLeida = FacturaParaLibro & { id: number; merchantCriterioCaja?: boolean | null; rectifiesId?: number | null };
+
+/**
+ * SCRUM-1730f (GO c.21789 ③) · ¿hay ALGUNA factura del comercio sellada por caja? Si no, el libro es el de
+ * siempre, por emisión, diga lo que diga el vivo. Se re-comprueba la fila: una ajena no cuenta (regla 2).
+ */
+async function hayFacturaPorCaja(db: ClienteDelLibro, merchantId: number): Promise<boolean> {
+  const fs = await db.invoice.findMany({
+    where: { merchantId: merchantId, merchantCriterioCaja: true },
+    select: { id: true, merchantId: true, merchantCriterioCaja: true },
+    take: 1,
+  });
+  return fs.some((f) => f.merchantId === merchantId && f.merchantCriterioCaja === true);
+}
+
+/**
+ * SCRUM-1730f · las que devengan POR CAJA: su congelado es `true`. NULL o `false` = por emisión, sin caer
+ * al vivo (c.21789 ③). Una R1 sin congelado propio hereda el de su F1 por `rectifiesId` (c.22620: «El
+ * criterio es de la operación, no del papel»); sin original encontrada, NULL = emisión.
+ */
+async function idsPorCaja(db: ClienteDelLibro, merchantId: number, facturas: readonly FacturaLeida[]): Promise<Set<number>> {
+  const idsOriginal = [...new Set(facturas
+    .filter((f) => f.merchantCriterioCaja == null && typeof f.rectifiesId === 'number')
+    .map((f) => f.rectifiesId as number))];
+  const originales = idsOriginal.length === 0 ? [] : await db.invoice.findMany({
+    where: { merchantId: merchantId, id: { in: idsOriginal } },
+    select: { id: true, merchantId: true, merchantCriterioCaja: true },
+  });
+  const congeladoDe = new Map<number, boolean | null>(originales
+    .filter((o) => o.merchantId === merchantId && idsOriginal.includes(o.id))
+    .map((o) => [o.id, o.merchantCriterioCaja ?? null]));
+  const ids = new Set<number>();
+  for (const f of facturas) {
+    const heredado = typeof f.rectifiesId === 'number' ? (congeladoDe.get(f.rectifiesId) ?? null) : null;
+    if ((f.merchantCriterioCaja ?? heredado) === true) ids.add(f.id);
+  }
+  return ids;
+}
 
 /**
  * SCRUM-1730 (i) y (ii) · Las facturas que DEVENGAN en el rango con criterio de caja.
@@ -197,13 +237,21 @@ async function leerPorCaja(db: ClienteDelLibro, rango: RangoLibro):
     }),
   ]);
   const candidatas = [...new Map(tandas.flat().map((f) => [f.id, f])).values()];
-  const filas = await filasPorFactura(db, rango.merchantId, candidatas.map((f) => f.id));
+  // SCRUM-1730f · decide cada factura su congelado; solo las de caja traen cobros.
+  const deCaja = await idsPorCaja(db, rango.merchantId, candidatas);
+  const filas = await filasPorFactura(db, rango.merchantId, candidatas.filter((f) => deCaja.has(f.id)).map((f) => f.id));
 
   const dentro = (d: Date | null) => d !== null
     && (!desde || d.getTime() >= desde.getTime()) && (!hasta || d.getTime() <= hasta.getTime());
   const porId = new Map<number, { f: FacturaLeida; d: Date }>();
   const devengo = new Map<number, DevengoDelPeriodo>();
   for (const f of candidatas) {
+    if (!deCaja.has(f.id)) {
+      // SCRUM-1730f · sellada sin caja (o NULL): devenga entera en su emisión.
+      const e = fechaDeDevengo(f as never, CAMPO_EMISION, zona);
+      if (e && dentro(e)) porId.set(f.id, { f, d: e });
+      continue;
+    }
     // SCRUM-1732d · con filas, por TRAMOS: entra si alguno cae dentro, y se ordena por el primero.
     const t = tramosDeDevengo(f as never, filas.get(f.id), zona);
     if (t) {
@@ -273,7 +321,12 @@ export async function leerLibroRegistro(
   // Si nadie pregunta por el criterio (`criterioCaja` ausente) se filtra por emisión, que es lo que
   // este libro ha hecho siempre. Si alguien pregunta, manda `campoDeDevengo` — y una lectura
   // fallida LANZA en vez de caer a emisión.
-  const campo = 'criterioCaja' in rango ? campoDeDevengo(rango.criterioCaja) : CAMPO_EMISION;
+  //
+  // SCRUM-1730f (GO c.21789 ③) · el vivo ya NO decide qué factura va por caja: lo decide su congelado.
+  // Se sigue leyendo para que una lectura fallida LANCE; el camino por caja corre si alguna está sellada así.
+  const preguntado = 'criterioCaja' in rango;
+  if (preguntado) campoDeDevengo(rango.criterioCaja);
+  const campo = preguntado && await hayFacturaPorCaja(db, rango.merchantId) ? CAMPO_COBRO : CAMPO_EMISION;
 
   // SCRUM-1732d (U′) · con caja, SOLO el 303 (`devengo`) lee por devengo. El libro de expedidas va
   // por EXPEDICIÓN también con caja (RIVA 69.5): ni se trae al periodo del cobro ni se repite.
@@ -290,7 +343,7 @@ export async function leerLibroRegistro(
       // Por fecha y, a igualdad, por número: dos facturas del mismo día tienen que salir en el
       // orden en que se emitieron, que es el de la serie.
       orderBy: [{ [CAMPO_EMISION]: 'asc' }, { number: 'asc' }],
-    })) as unknown as (FacturaParaLibro & { id: number })[]);
+    })) as unknown as FacturaLeida[]);
 
   // SCRUM-1232 · fuera los justificantes, pero SÓLO los de este merchant: uno ajeno que se colara
   // tiene que llegar al constructor para contarse en `ajenas`, no desaparecer aquí (SCRUM-348).
@@ -335,7 +388,7 @@ export async function leerLibroRegistro(
   // SCRUM-1732d · con caja, los cobros de cada factura (RIVA 61 decies.1): los del 303 ya vienen leídos.
   const cobrosPorFactura = campo === CAMPO_EMISION
     ? undefined
-    : (porCaja?.filas ?? await filasPorFactura(db, rango.merchantId, idsFactura));
+    : (porCaja?.filas ?? await filasPorFactura(db, rango.merchantId, [...await idsPorCaja(db, rango.merchantId, facturas)]));
 
   const libro = construirLibroRegistro({
     facturas,
