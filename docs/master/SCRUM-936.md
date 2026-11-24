@@ -197,3 +197,108 @@ vecino se come abajo), y dejar el resto como lo mide el árbitro. Cuál de las d
 2. Aplicar la variante que el navegador dé por buena.
 3. `npm run guards:visuales` y `npm run censo:tactil-panel`: la lista de objetivos que pasan a cortos,
    por pantalla, va aquí como hallazgos. Si sale rojo un guard del obligatorio, se para (regla 41).
+
+---
+
+# SCRUM-936c · Relevo de 936b: paro otra vez por contexto, sin test ni arreglo — y con una restricción nueva
+
+**Medido contra:** `origin/main` = `e7be8c3d897e266cd26c80815065476ec2cc8f99` · 2026-11-24T12:05:51Z
+**Rama:** `scrum-936c-medidor-lo-que-acierta-el-dedo` · carril J6 · sesión `jv-j6fp`
+
+A9: aviso → cicatriz J6 «Crucé el umbral de aviso de contexto sin medirme en el cruce: medí al arrancar y no volví a medir hasta después de un barrido ancho.» — no se pudo comprobar: tercera vez en el mismo ticket; medí 103.466 al acabar el arranque y lo dije, pero la siguiente medida fue 139.207, ya pasado el tope de 135k del encargo, tras leer el medidor, scrum562 y el clasificador; ningún hook de este árbol avisa al cruzar.
+
+**Decisión que aplica:** SCRUM-936 c.22578 (elección «Lo que acierta el dedo»), la misma de 936b. No la he releído en Jira: el encargo lo prohibía.
+
+## Qué · esperado · visto
+
+| qué | esperado | visto |
+|---|---|---|
+| test con navegador en rojo | escrito y rojo | **NO escrito.** |
+| medidor arreglado | sí | **NO tocado.** `scripts/_medidor-de-toque.mjs` sigue como en main. |
+| ¿cabe el arreglo «exacto» en el árbitro? | — | **No sin tocar un guard** (abajo). Leído en el código, no corrido. |
+
+## La restricción que 936b no vio: el clasificador de scrum562
+
+`tests/scrum562-arbitro-de-toque.test.mjs` clasifica CADA llamada a `elementsFromPoint` de nuestro
+código con `clasificar()` de `scripts/censo-arbitro-de-toque.mjs` (ventana de 3 líneas antes y 7 después) y
+tumba las clases `PERTENENCIA` y `OTRO`. Sólo pasan `TOPE` (`…)[0]`), `POSICION` y `SINGULAR`.
+
+El arreglo que quita el píxel fantasma en TODOS los bordes —también el de arriba de un `::after` que
+amplía el área— necesita «el primero de la pila en `y` que también esté en la pila de `y − 1 + 1/64`»
+(las dos ventanas de 1 px). Eso es una consulta de pertenencia a la segunda pila: sale `OTRO` (con `Set`
+y `.has`) o `PERTENENCIA` (con `.includes`). Enseñarle al clasificador que `.has` vale abriría la puerta
+al idioma malo disfrazado (`new Set(pila).has(el)`), así que **no es un arreglo: es aflojar el guard (regla 41)**.
+
+Lo que queda dentro de las reglas, con lo que cada uno hace (calculado sobre los datos de septiembre, no medido):
+
+| caso | hoy | diff de j6fo (recorte a la caja) | variante (recortar solo a menos de 1 px de la caja) |
+|---|---|---|---|
+| h43 aislado | 44,0 ✅ (falso) | 43 ❌ | 43 ❌ |
+| h44 aislado | 45,0 | 44 ✅ | 44 ✅ |
+| h44 con vecino pegado debajo | 44,0 | 44 ✅ | 44 ✅ |
+| 48 | 49,0 | 48 ✅ | 48 ✅ |
+| enlace de 20 con `::after` a 44 | 45,0 | **20 ❌ (falso)** | **45,0** ✅ (sigue el +1 en el área ampliada) |
+
+La variante no da el área ampliada exacta: le deja el píxel fantasma de arriba. Un `::after` que amplía a
+43,5 saldría 44,5 y conforme. **Si eso se acepta, o si se abre el clasificador, es una decisión: no la tomo.**
+
+## Mecanismo probable (leído de memoria del código de Chromium, NO comprobado)
+
+`HitTestLocation` de un punto lleva una caja de 1×1 (`RectForPoint`), y `Intersects` compara contra esa caja
+y no contra el punto (hay un FIXME que lo dice). Por eso el punto `y` «toca» lo que empieza en `(y, y+1)`.
+Encaja con 0,984 = 1 − 1/64 de septiembre si la coordenada se redondea hacia abajo a LayoutUnit.
+
+## Lo que falta, para quien siga (orden)
+
+1. Decidir con el orquestador: variante (acepta el +1 en áreas ampliadas) o abrir el clasificador (STOP de regla 41).
+2. Test rojo primero. ⚠️ No comprobé dónde exporta `lanzarNavegador` `scripts/_navegador.mjs`: mi `grep` cortó en 8 líneas.
+3. Lo de 936b ③ y ④, sin cambios.
+
+⛔ No he tocado `scripts/`, `tests/`, `public/` ni `.claude/`.
+
+---
+
+# SCRUM-936d · La variante de c.22615, medida antes de aplicarla: el defecto no sale hoy, y PARO sin tocar el medidor
+
+**Medido contra:** `origin/main` = `fc51ec7a2f11dd93e34141fae48b4357b72d9990` · 2026-11-24T12:18:03Z
+**Rama:** `scrum-936d-variante-del-medidor` · carril J6 · sesión `jv-j6fr`
+
+A9: comprobación → `tests/scrum936d-variante-del-medidor.test.mjs`
+
+**Decisión que aplica:** SCRUM-936 c.22615, «Variante, sin tocar el vigía (Recomendado)». No la he releído en Jira: el encargo lo prohibía.
+
+## Qué · esperado · visto
+
+| qué | esperado | visto |
+|---|---|---|
+| test nuevo, contra el medidor de HOY | ROJO (h43 → 44, h44 → 45, 48 → 49, según los datos de septiembre de este registro) | **VERDE.** h43 → **43** · h44 aislado → **44** · h44 con vecino pegado debajo → **44** · 48 → **48** · enlace de 20 con `::after` a 44 → **45**. Las cinco cajas, las sembradas, y el árbitro alcanza a las cinco (sin `error`). |
+| lo mismo con las cajas en posición fraccionaria (separadores de 100,3 px) | — | idéntico: 43 · 44 · 44 · 48 · 45. Una pasada, sonda no comiteada. |
+| variante aplicada | sí | **NO.** El medidor de hoy ya da lo que la variante quería en los cuatro botones; aplicarla sería cambiar código sin defecto medido (A2). `scripts/_medidor-de-toque.mjs` sigue como en main. |
+| `guards:visuales`, `censo:tactil-panel` | lista de cortos nuevos | **No corridos:** sin cambio en el medidor no puede haber cortos nuevos. |
+
+Población: 1 navegador (el que resuelve `resolverNavegador` en esta máquina; arranque 0,5 s), 1 banco fabricado por el test, 5 objetivos, 2 pasadas.
+
+## Lo que esto dice, y lo que no
+
+- El +1 en un botón normal (aislado o con vecino) **no se reproduce hoy** en este navegador. Lo que sí sale es el +1 en el área ampliada con `::after`: el «resto conocido» de c.22615 es, hoy, **lo único** que queda del defecto.
+- **Sin medir:** por qué septiembre daba +1 en botones (otro navegador, otra versión, otro banco con texto). No lo sé.
+- El test fija los cinco valores: si el +1 vuelve a los botones, cae en h43/h44/48; si el resto desaparece, cae en el enlace.
+- ⚠️ Es el primer test de `tests/` que arranca un navegador real: si no hay navegador, salta con su motivo; si lo hay y no arranca, `lanzarNavegador` sale con 3 y el fichero cae. Sin medir en el job de CI.
+- Decisión para el fundador: ¿se cierra la variante como innecesaria, o se quiere el +1 del área ampliada quitado (eso abre el clasificador de scrum562, regla 41)?
+
+# SCRUM-936e · El salto de 936d dice su motivo donde el guard de 456 lo lee
+
+**Medido contra:** `origin/main` = `0ddfa5032ecb8d5a71e3751b45867f748232d32f` · 2026-11-24T14:27:11Z
+**Rama:** `scrum-936d-variante-del-medidor` (la del PR #3387) · carril J6 · sesión `jv-j6fw`
+
+A9: comprobación → `tests/scrum419-ci-declara-lo-que-no-corre.test.mjs`
+
+## Qué · esperado · visto
+
+- **Qué:** el obligatorio de #3387 caía en «SCRUM-456 · 🔴 TODO salto declara su motivo»: `scrum936d-variante-del-medidor.test.mjs` saltaba con `skip: motivo`, una variable. El guard mira la EXPRESIÓN del `skip:` en el AST y exige dentro un literal de texto no vacío o una plantilla; una variable no la ve, aunque su valor sea un texto.
+- **Arreglo:** la plantilla va dentro del `skip:` (`!navegador.ok && \`sin navegador donde mirar (resolverNavegador): …\``) y desaparece la constante intermedia. El guard no se toca y el test no se activa a la fuerza: sin navegador sigue saltando, y ahora dice por qué.
+- **Visto en local:** con el fichero de antes (sacado de `HEAD` y devuelto después), los casos SCRUM-456 de 419 dan 3 · 2 pass · 1 fail, y el que cae nombra a 936d con `skip: motivo`. Con el arreglo: 419 + 936d + los siete que importan `_medidor-de-toque` = 64 casos · 64 pass · 0 fail · 0 skipped. En esta máquina hay navegador, así que 936d CORRIÓ: la rama del salto no la he visto ejecutarse aquí.
+
+## El fallo, y de quién
+
+El `skip: motivo` lo escribió la sesión que hizo 936d (`jv-j6fr`, mi mismo puesto). El guard que lo caza ya existía y cayó en CI, que es donde funcionó; lo que faltó fue correrlo en local antes del empujón. Por eso la línea `A9:` apunta a la comprobación que ya lo impide, no a una nueva.

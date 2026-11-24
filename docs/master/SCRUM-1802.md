@@ -41,3 +41,34 @@ Encargo del orquestador J a jv-j1ja (J1). Hijo de SCRUM-1787 (letras agotadas). 
 - yaqu.app: no visto. Se ve tras el merge y el despliegue, en una factura con vencimiento de día menor que 10.
 - Suite entera: NO corrida. Sólo los tramos 1 y 2 de 15 (844 + 744 tests, 0 fail); el orquestador la paró ahí (la corre el check obligatorio del PR).
 - Nada contra staging ni producción.
+
+# SCRUM-1802b · El test de 1802 fija su zona (Europe/Madrid)
+
+**Medido contra:** `origin/main` = `0ddfa5032ecb8d5a71e3751b45867f748232d32f` · 2026-11-24T14:29:34Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: aviso → cicatriz J1 «Crucé el tope de 140k del encargo (154.325) sin medirme entre el arranque (105.453) y la primera tanda» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
+
+Encargo del orquestador J a jv-j1kj (J1). El job «trinquete · ningún test nuevo mide la zona de la máquina» (`npm run trinquete:zona`, zonas Pacific/Kiritimati y Pacific/Midway) hablaba en todos los PR por los tres casos de `tests/scrum1802-ficha-dia-sin-cero.test.mjs` (leído por el orquestador en el CI de #3387). Las fechas del test iban a mediodía UTC «para que ninguna zona las mueva de día», y en +14 las 12:00Z son las 02:00 del día siguiente.
+
+## Qué se cambió
+
+- Sólo el test: `process.env.TZ = 'Europe/Madrid'` arriba, como `tests/scrum1672-cita-en-la-ficha-del-trabajo.test.mjs`. La ficha se pinta en el navegador del profesional. Se corrige el comentario que prometía lo contrario. NO entra en `CENSADAS`. Nada en `src/` ni en `public/`.
+
+## Rojo y verde del trinquete
+
+`trinquete-de-zona.mjs` no tiene forma para un fichero (sus opciones: `--zonas`, `--solo-canarios`, `--sin-confirmar`), y la pasada entera son dos tandas completas. Se midió con una sonda de un solo uso, FUERA del repositorio, que llama a las funciones de la casa (`escribirCanarios`, `medirEnZona`, `compararZonas` de `scripts/_trinquete-de-zona.mjs`) sobre el fichero de 1802 más los cuatro canarios del trinquete como control sembrado (los dos «dependiente» tienen que cambiar y los dos fijados no; si no, CIEGO).
+
+- ANTES: 5 ficheros, 7 pruebas por zona. Kiritimati: los 3 casos `fail`; Midway: los 3 `pass` → los 3 CAMBIAN. Canarios 4 de 4 como deben. Fuera de `CENSADAS`.
+- DESPUÉS: los 3 casos `pass` en las dos zonas, 0 cambian del fichero; los canarios, 4 de 4 como deben (cambian 2, los dependientes).
+- Error mío, cazado al leer la salida: la primera pasada salió «VERDE» con el fichero cayendo en las DOS zonas (al árbol le faltaba `dist/`). La sonda se corrigió para exigir `pass` en las dos zonas antes de decir verde, y el rojo de arriba es de después, con `dist/` compilado (`tsc --noCheck`).
+- La pasada entera de `npm run trinquete:zona` NO se corrió en local: la corre el job del PR.
+
+## ¿Está mal el producto? (paso ② del encargo) — no
+
+Leído sin tocar: el vencimiento es expedición + 30 días (`vencimientoDeLaSuelta`) o la fecha que llegue por API (`new Date(b.dueDate)`); ningún fichero de `public/` envía `dueDate`. Medido con el mismo formateo de `invoiceDetailView.js` (`'2026-12-05'`, `'2026-07-05'`, `…T12:00:00.000Z`, `…T22:30:00.000Z`): en Europe/Madrid y Atlantic/Canary, las cuatro dan su día. Control: en America/New_York la medianoche UTC sale el día anterior («4 dic 2026»), así que la sonda ve el desplazamiento cuando lo hay.
+
+## NO hecho / NO visto
+
+- Suite entera y `npm run trinquete:zona` entero: NO corridos (el encargo lo prohíbe; lo corre el CI del PR).
+- La sonda no está en git: es de un solo uso y lleva una ruta de esta máquina.
+- Nada contra staging ni producción.
