@@ -92,3 +92,49 @@ De `git grep -l parteDetailView -- 'tests/*.test.mjs'`: 35 ficheros, 299 casos, 
 - **Límite del banco** (SCRUM-1821, carril de S3): `removeAttribute` no limpia `dataset`. El test pregunta con `hasAttribute` y lo dice en su cabecera.
 - **No tocado, y lo dejo dicho:** «Añadir al parte» del dictado guarda en su turno pero repinta fuera de él, como hacía la «×». Si alguien completa una fila a mano justo mientras lo dictado viaja, esa fila arma su lista sin las líneas dictadas. Es la misma familia que el «de paso» de arriba y ya estaba antes de este tramo. Leído en el código, no reproducido. No lo arreglé porque el encargo deja el dictado fuera.
 - Nada contra staging ni producción.
+
+## SCRUM-916c · r42 en vivo: «+ Añadir línea» visto en yaqu.app
+
+**Medido contra:** `origin/main` = `44747663306139dc7513320efae02f9fd82fa437` · 2026-11-24T13:59:05Z
+
+A9: aviso → cicatriz S4 «Mi guion de producción exigía «lo único cortado es mi control» y salió rojo sobre un panel sano: el panel manda por su cuenta `POST /admin/entorno` al cargar, y el interceptor también lo corta.» — no se pudo comprobar: el guion vive en evidencias, fuera de la tanda de tests
+
+Puesto S4, rama `scrum-916c-r42-en-vivo`. Es la fila «visto en yaqu.app → NO HECHO» del tramo 916b, hecha. No toca producto: un guion, sus dos informes y diez capturas.
+
+### Qué se miró y con qué
+
+- **Dónde:** `https://yaqu.app`, cuenta de QA (negocio «PruebaQA»), parte en borrador `PT-2026-013` (id 21) y parte firmado `PT-2026-014` (id 22).
+- **Qué versión:** el PR #3367 entró en `main` como `f14c253600aae315d1758524ae28872a81286758`. Al medir, producción ya servía `44747663306139dc7513320efae02f9fd82fa437` (lo dice `GET /version`), que es la punta de `main`. El guion no se fía del número: calcula en la propia página el id de git del `parteDetailView.js` que ha cargado y lo compara con `git rev-parse origin/main:public/dashboard/js/parteDetailView.js`. Los dos dan `d08fa890ff16f81e478bedc4415123d71d1efb83`, y si no coinciden el guion sale 2 sin medir.
+- **Con qué:** `docs/master/evidencias/SCRUM-916/r42-vivo/verificar-en-vivo.mjs`. Chromium real sin interfaz, con la sesión de QA; a 390×844 pulsa con el dedo y a 1280×900 con el ratón, siempre en el punto del botón y comprobando antes que debajo de ese punto está el botón. Teclea con el teclado. Lee el estado después de cada paso (filas, foco, peticiones) y lee el parte del servidor por fuera de la página.
+- **Qué escribe:** sólo `PATCH /admin/partes/21`. Cualquier otra escritura se corta y se apunta (control positivo del interceptor antes de empezar). Pone cinco líneas marcadas `QA916c-<ancho>` y al acabar las quita con la «×» de la pantalla.
+
+### Aceptación → dónde se ve
+
+Cada fila se cumple en las dos pasadas (390 con el dedo y 1280 con el ratón): 24 comprobaciones de 24 en cada una, salida 0. Los informes son `vivo-390.json` y `vivo-1280.json`, en `docs/master/evidencias/SCRUM-916/r42-vivo/`; las comprobaciones van por su número.
+
+| aceptación (del encargo) | dónde se ve |
+|---|---|
+| ① escribir en la fila vacía → clic «+ Añadir línea» → lo escrito SE GUARDA y aparece fila nueva vacía CON EL FOCO en su UNDS | yaqu.app → Trabajos → el parte `PT-2026-013` de la cuenta QA → «+ Añadir línea», escribir, «+ Añadir línea» · informes, ①.0 a ①.5: el clic llega (2 de 2), un solo `PATCH` 200, la línea está en el servidor, hay una fila vacía y el foco está en su UNDS; lo que se teclea después cae en ella · capturas `vivo-390-1-…png` y `vivo-1280-1-…png` |
+| ② dos clics seguidos = DOS filas vacías escribibles | misma pantalla, bloque «Materiales» · informes, ②.1 a ②.3: dos filas vacías, ninguna escritura, ninguna bloqueada, foco en la última; en ③ se escribe en las dos · capturas `…-2-dos-clics-dos-filas.png` |
+| ③ nada se pierde: escribir en una fila mientras otra guarda | informes, ③a.1 a ③a.4: con el `PATCH` de una fila fuera se teclea la otra entera; llega la respuesta, la primera queda guardada y la segunda sigue con su texto y el cursor; el servidor acaba con todas |
+| ③ quitar una línea con «×» y completar otra → el servidor conserva lo correcto | informes, ③b.1 a ③b.6 y ③.fin: salen dos `PATCH` 200, el de la «×» sin la línea quitada y el siguiente también sin ella y con la nueva; el servidor no tiene la quitada y sí las demás; las de partida conservan su id; la fila a medias («7») sobrevive al repintado · capturas `…-3b-quitada-una-y-completada-otra.png` |
+| ④ SOLO MIRAR: el cuadro «Cuéntalo con tu voz» sigue en su sitio | misma pantalla, encima de «Mano de obra» · informes, ④.1 y el bloque `dictado`: rótulo, pista y botón iguales a los leídos en producción el 20-nov (916a); se ven los tres; no se pulsó «Ordenar en líneas» · capturas `…-4-cuadro-del-dictado.png` |
+| ④ SOLO MIRAR: el parte firmado sigue sellado | yaqu.app → el parte `PT-2026-014` de la cuenta QA · informes, ④.2 y ④.3: ningún «Añadir línea», ninguna casilla de línea, ninguna «×», sus 6 líneas a la vista; el parte leído del servidor es idéntico antes y después de abrirlo · capturas `…-4-parte-firmado-sellado.png` |
+| capturas del vivo a 390 y 1280 | diez PNG en la carpeta de arriba (825 KB). Otras cuatro (el paso ③a y el parte ya recogido) se quedan fuera de git, en la carpeta `capturas/SCRUM-916/r42-vivo` de la máquina del equipo |
+
+### Lo medido, en cifras
+
+- Tras guardar la primera línea, la ficha no relee el parte: 0 relecturas (la única es la de abrir). Con la «×» sí relee, una por cada línea quitada, que es lo que hace el código.
+- Diez `PATCH` por pasada, los diez con 200: dos de ①, dos de ③a, dos de ③b y cuatro de recoger.
+- Al acabar cada pasada el parte 21 vuelve a sus tres líneas de partida, con los mismos ids. Comprobado además con una segunda sonda (`scripts/qa/sesion-panel.mjs get`), comparando lo leído antes de la primera pasada con lo leído después de la última: iguales.
+- Ningún error de JavaScript en la página en todo el recorrido.
+
+### Lo que este tramo NO prueba, y un fallo mío
+
+- **El «antes» no se ha visto en producción**: el código viejo ya no está desplegado. Que el instrumento ve el defecto lo acredita el banco de 916b (`b-anadir-linea/reproducir.mjs`), de donde sale la función que lee filas y foco: allí dio el fallo 4 de 4 sobre el código anterior.
+- **En ③ la carrera se fabrica reteniendo el `PATCH` 1,5 s en el navegador** antes de dejarlo salir (cada `PATCH` del informe declara su `retrasoMs`). Sin eso, «tecleé mientras viajaba» sería una suposición sobre la red. El servidor no se toca; ① y ② van con la latencia real.
+- **Es Chromium con el dedo emulado, no un teléfono**: no aparece el teclado en pantalla, y lo que el teclado del móvil mueva la página no se ha medido.
+- **Una sola cuenta y un solo parte en borrador.** De la carrera de la «×» se ha recorrido un orden: «×» primero y fila completada mientras viaja. El otro (fila completada que sale a guardarse y, detrás, la «×») no se ha recorrido en vivo.
+- **Fallo mío:** la primera pasada a 390 salió 23 de 24. La roja era la ④.3, que exigía que lo único cortado por el interceptor fuera mi control; el panel manda por su cuenta `POST /admin/entorno` al cargar y también se cortó. Era una suposición del guion, no un defecto del parte: ahora lista lo cortado y exige que nada de ello apunte a un parte. Esa pasada fue sobre `f14c2536…`; las dos que quedan en los informes, sobre `44747663…`, con el mismo `parteDetailView.js`.
+- **Tanda:** este tramo no toca `public/`, `src/` ni tests. Se pasó `npm run guards:entrada`; la suite entera la corre el check obligatorio del PR.
+- El ticket SCRUM-916 sigue abierto por el micrófono (916a) y el rediseño. Este tramo sólo deja visto en producción el de añadir línea.

@@ -1,0 +1,798 @@
+{
+ "ventana": "390x844",
+ "puntero": "dedo",
+ "borrador": 21,
+ "firmado": {
+  "anadir": 0,
+  "casillasDeLinea": 0,
+  "equis": 0,
+  "porEscribir": 0,
+  "lineasEnPantalla": 6,
+  "cuadroDelDictado": false,
+  "servidor": {
+   "estado": "firmado",
+   "firmasCompletas": true,
+   "lineas": 6,
+   "llevaHuella": true
+  }
+ },
+ "horaDelServidor": "Tue, 24 Nov 2026 13:55:59 GMT",
+ "build": "44747663306139dc7513320efae02f9fd82fa437",
+ "blob": {
+  "esperado": "d08fa890ff16f81e478bedc4415123d71d1efb83",
+  "cargado": "/dashboard/js/parteDetailView.js?v=8a48cc41d1",
+  "id": "d08fa890ff16f81e478bedc4415123d71d1efb83",
+  "bytes": 164257
+ },
+ "control": "cortada",
+ "cortadas": [
+  "POST /admin/entorno",
+  "POST /__control-s4-916c-no-existe"
+ ],
+ "patch": [
+  {
+   "n": 1,
+   "ruta": "/admin/partes/21",
+   "retrasoMs": 0,
+   "estado": 200,
+   "lineas": [
+    "mano_obra · 2 × Mano de obra",
+    "materiales · 2 × Detectores de humo",
+    "materiales · 1 × Batería para central",
+    "mano_obra · 3 × QA916c-390 A purgado del circuito (sin id)"
+   ]
+  },
+  {
+   "n": 2,
+   "ruta": "/admin/partes/21",
+   "retrasoMs": 0,
+   "estado": 200,
+   "lineas": [
+    "mano_obra · 2 × Mano de obra",
+    "materiales · 2 × Detectores de humo",
+    "materiales · 1 × Batería para central",
+    "mano_obra · 3 × QA916c-390 A purgado del circuito",
+    "mano_obra · 1 × QA916c-390 B limpieza de filtros (sin id)"
+   ]
+  },
+  {
+   "n": 3,
+   "ruta": "/admin/partes/21",
+   "retrasoMs": 1500,
+   "estado": 200,
+   "lineas": [
+    "mano_obra · 2 × Mano de obra",
+    "materiales · 2 × Detectores de humo",
+    "materiales · 1 × Batería para central",
+    "mano_obra · 3 × QA916c-390 A purgado del circuito",
+    "mano_obra · 1 × QA916c-390 B limpieza de filtros",
+    "materiales · 2 × QA916c-390 C junta (sin id)"
+   ]
+  },
+  {
+   "n": 4,
+   "ruta": "/admin/partes/21",
+   "retrasoMs": 1500,
+   "estado": 200,
+   "lineas": [
+    "mano_obra · 2 × Mano de obra",
+    "materiales · 2 × Detectores de humo",
+    "materiales · 1 × Batería para central",
+    "mano_obra · 3 × QA916c-390 A purgado del circuito",
+    "mano_obra · 1 × QA916c-390 B limpieza de filtros",
+    "materiales · 2 × QA916c-390 C junta",
+    "materiales · 4 × QA916c-390 D codo (sin id)"
+   ]
+  },
+  {
+   "n": 5,
+   "ruta": "/admin/partes/21",
+   "retrasoMs": 1500,
+   "estado": 200,
+   "lineas": [
+    "mano_obra · 2 × Mano de obra",
+    "materiales · 2 × Detectores de humo",
+    "materiales · 1 × Batería para central",
+    "mano_obra · 3 × QA916c-390 A purgado del circuito",
+    "mano_obra · 1 × QA916c-390 B limpieza de filtros",
+    "materiales · 4 × QA916c-390 D codo"
+   ]
+  },
+  {
+   "n": 6,
+   "ruta": "/admin/partes/21",
+   "retrasoMs": 1500,
+   "estado": 200,
+   "lineas": [
+    "mano_obra · 2 × Mano de obra",
+    "materiales · 2 × Detectores de humo",
+    "materiales · 1 × Batería para central",
+    "mano_obra · 3 × QA916c-390 A purgado del circuito",
+    "mano_obra · 1 × QA916c-390 B limpieza de filtros",
+    "materiales · 4 × QA916c-390 D codo",
+    "materiales · 5 × QA916c-390 E manguito (sin id)"
+   ]
+  },
+  {
+   "n": 7,
+   "ruta": "/admin/partes/21",
+   "retrasoMs": 0,
+   "estado": 200,
+   "lineas": [
+    "mano_obra · 2 × Mano de obra",
+    "materiales · 2 × Detectores de humo",
+    "materiales · 1 × Batería para central",
+    "mano_obra · 1 × QA916c-390 B limpieza de filtros",
+    "materiales · 4 × QA916c-390 D codo",
+    "materiales · 5 × QA916c-390 E manguito"
+   ]
+  },
+  {
+   "n": 8,
+   "ruta": "/admin/partes/21",
+   "retrasoMs": 0,
+   "estado": 200,
+   "lineas": [
+    "mano_obra · 2 × Mano de obra",
+    "materiales · 2 × Detectores de humo",
+    "materiales · 1 × Batería para central",
+    "materiales · 4 × QA916c-390 D codo",
+    "materiales · 5 × QA916c-390 E manguito"
+   ]
+  },
+  {
+   "n": 9,
+   "ruta": "/admin/partes/21",
+   "retrasoMs": 0,
+   "estado": 200,
+   "lineas": [
+    "mano_obra · 2 × Mano de obra",
+    "materiales · 2 × Detectores de humo",
+    "materiales · 1 × Batería para central",
+    "materiales · 5 × QA916c-390 E manguito"
+   ]
+  },
+  {
+   "n": 10,
+   "ruta": "/admin/partes/21",
+   "retrasoMs": 0,
+   "estado": 200,
+   "lineas": [
+    "mano_obra · 2 × Mano de obra",
+    "materiales · 2 × Detectores de humo",
+    "materiales · 1 × Batería para central"
+   ]
+  }
+ ],
+ "pasos": [
+  {
+   "paso": "0 · parte en borrador abierto",
+   "bloques": {
+    "mano_obra": [
+     "guardada «2 · Mano de obra»"
+    ],
+    "materiales": [
+     "guardada «2 · Detectores de humo»",
+     "guardada «1 · Batería para central»"
+    ]
+   },
+   "foco": "ninguno",
+   "focoEnLaUltimaDeSuBloque": false,
+   "porEscribir": 0,
+   "porEscribirBloqueadas": 0,
+   "clicsLlegados": 0,
+   "patch": 0,
+   "relecturas": 1
+  },
+  {
+   "paso": "1 · pulso «Añadir línea» (mano de obra)",
+   "bloques": {
+    "mano_obra": [
+     "guardada «2 · Mano de obra»",
+     "POR ESCRIBIR « · »"
+    ],
+    "materiales": [
+     "guardada «2 · Detectores de humo»",
+     "guardada «1 · Batería para central»"
+    ]
+   },
+   "foco": "UNDS de la fila por escribir (mano_obra)",
+   "focoEnLaUltimaDeSuBloque": true,
+   "porEscribir": 1,
+   "porEscribirBloqueadas": 0,
+   "clicsLlegados": 1,
+   "patch": 0,
+   "relecturas": 1
+  },
+  {
+   "paso": "2 · escribo «3» y la descripción A; el cursor sigue en la descripción",
+   "bloques": {
+    "mano_obra": [
+     "guardada «2 · Mano de obra»",
+     "POR ESCRIBIR «3 · QA916c-390 A purgado del circuito»"
+    ],
+    "materiales": [
+     "guardada «2 · Detectores de humo»",
+     "guardada «1 · Batería para central»"
+    ]
+   },
+   "foco": "descripción de la fila por escribir (mano_obra)",
+   "focoEnLaUltimaDeSuBloque": true,
+   "porEscribir": 1,
+   "porEscribirBloqueadas": 0,
+   "clicsLlegados": 1,
+   "patch": 0,
+   "relecturas": 1
+  },
+  {
+   "paso": "3 · pulso «Añadir línea» OTRA VEZ, con la fila escrita",
+   "bloques": {
+    "mano_obra": [
+     "guardada «2 · Mano de obra»",
+     "guardada «3 · QA916c-390 A purgado del circuito»",
+     "POR ESCRIBIR « · »"
+    ],
+    "materiales": [
+     "guardada «2 · Detectores de humo»",
+     "guardada «1 · Batería para central»"
+    ]
+   },
+   "foco": "UNDS de la fila por escribir (mano_obra)",
+   "focoEnLaUltimaDeSuBloque": true,
+   "porEscribir": 1,
+   "porEscribirBloqueadas": 0,
+   "clicsLlegados": 2,
+   "patch": 1,
+   "relecturas": 1
+  },
+  {
+   "paso": "4 · sigo tecleando «1», Tab, descripción B (sin tocar el ratón) y pulso «Añadir línea»",
+   "bloques": {
+    "mano_obra": [
+     "guardada «2 · Mano de obra»",
+     "guardada «3 · QA916c-390 A purgado del circuito»",
+     "guardada «1 · QA916c-390 B limpieza de filtros»",
+     "POR ESCRIBIR « · »"
+    ],
+    "materiales": [
+     "guardada «2 · Detectores de humo»",
+     "guardada «1 · Batería para central»"
+    ]
+   },
+   "foco": "UNDS de la fila por escribir (mano_obra)",
+   "focoEnLaUltimaDeSuBloque": true,
+   "porEscribir": 1,
+   "porEscribirBloqueadas": 0,
+   "clicsLlegados": 3,
+   "patch": 2,
+   "relecturas": 1
+  },
+  {
+   "paso": "5 · dos clics seguidos en «Añadir línea» (materiales)",
+   "bloques": {
+    "mano_obra": [
+     "guardada «2 · Mano de obra»",
+     "guardada «3 · QA916c-390 A purgado del circuito»",
+     "guardada «1 · QA916c-390 B limpieza de filtros»",
+     "POR ESCRIBIR « · »"
+    ],
+    "materiales": [
+     "guardada «2 · Detectores de humo»",
+     "guardada «1 · Batería para central»",
+     "POR ESCRIBIR « · »",
+     "POR ESCRIBIR « · »"
+    ]
+   },
+   "foco": "UNDS de la fila por escribir (materiales)",
+   "focoEnLaUltimaDeSuBloque": true,
+   "porEscribir": 3,
+   "porEscribirBloqueadas": 0,
+   "clicsLlegados": 5,
+   "patch": 2,
+   "relecturas": 1
+  },
+  {
+   "paso": "6 · C completa y viajando (PATCH retenido); tecleo D en la otra fila",
+   "bloques": {
+    "mano_obra": [
+     "guardada «2 · Mano de obra»",
+     "guardada «3 · QA916c-390 A purgado del circuito»",
+     "guardada «1 · QA916c-390 B limpieza de filtros»",
+     "POR ESCRIBIR «7 · »"
+    ],
+    "materiales": [
+     "guardada «2 · Detectores de humo»",
+     "guardada «1 · Batería para central»",
+     "POR ESCRIBIR «2 · QA916c-390 C junta» [enviando]",
+     "POR ESCRIBIR «4 · QA916c-390 D codo»"
+    ]
+   },
+   "foco": "descripción de la fila por escribir (materiales)",
+   "focoEnLaUltimaDeSuBloque": true,
+   "porEscribir": 3,
+   "porEscribirBloqueadas": 0,
+   "clicsLlegados": 5,
+   "patch": 3,
+   "relecturas": 1
+  },
+  {
+   "paso": "7 · llega la respuesta de C",
+   "bloques": {
+    "mano_obra": [
+     "guardada «2 · Mano de obra»",
+     "guardada «3 · QA916c-390 A purgado del circuito»",
+     "guardada «1 · QA916c-390 B limpieza de filtros»",
+     "POR ESCRIBIR «7 · »"
+    ],
+    "materiales": [
+     "guardada «2 · Detectores de humo»",
+     "guardada «1 · Batería para central»",
+     "guardada «2 · QA916c-390 C junta»",
+     "POR ESCRIBIR «4 · QA916c-390 D codo»"
+    ]
+   },
+   "foco": "descripción de la fila por escribir (materiales)",
+   "focoEnLaUltimaDeSuBloque": true,
+   "porEscribir": 2,
+   "porEscribirBloqueadas": 0,
+   "clicsLlegados": 5,
+   "patch": 3,
+   "relecturas": 1
+  },
+  {
+   "paso": "8 · salgo de la fila D (Tab)",
+   "bloques": {
+    "mano_obra": [
+     "guardada «2 · Mano de obra»",
+     "guardada «3 · QA916c-390 A purgado del circuito»",
+     "guardada «1 · QA916c-390 B limpieza de filtros»",
+     "POR ESCRIBIR «7 · »"
+    ],
+    "materiales": [
+     "guardada «2 · Detectores de humo»",
+     "guardada «1 · Batería para central»",
+     "guardada «2 · QA916c-390 C junta»",
+     "guardada «4 · QA916c-390 D codo»"
+    ]
+   },
+   "foco": "button de una guardada (materiales)",
+   "focoEnLaUltimaDeSuBloque": true,
+   "porEscribir": 1,
+   "porEscribirBloqueadas": 0,
+   "clicsLlegados": 5,
+   "patch": 4,
+   "relecturas": 1
+  },
+  {
+   "paso": "9 · «×» de C viajando (PATCH retenido); completo E y salgo de su fila",
+   "bloques": {
+    "mano_obra": [
+     "guardada «2 · Mano de obra»",
+     "guardada «3 · QA916c-390 A purgado del circuito»",
+     "guardada «1 · QA916c-390 B limpieza de filtros»",
+     "POR ESCRIBIR «7 · »"
+    ],
+    "materiales": [
+     "guardada «2 · Detectores de humo»",
+     "guardada «1 · Batería para central»",
+     "guardada «2 · QA916c-390 C junta»",
+     "guardada «4 · QA916c-390 D codo»",
+     "POR ESCRIBIR «5 · QA916c-390 E manguito» [espera]"
+    ]
+   },
+   "foco": "button de la fila por escribir (materiales)",
+   "focoEnLaUltimaDeSuBloque": true,
+   "porEscribir": 2,
+   "porEscribirBloqueadas": 0,
+   "clicsLlegados": 6,
+   "patch": 5,
+   "relecturas": 1
+  },
+  {
+   "paso": "10 · llegan la «×» y, detrás, el guardado de E",
+   "bloques": {
+    "mano_obra": [
+     "guardada «2 · Mano de obra»",
+     "guardada «3 · QA916c-390 A purgado del circuito»",
+     "guardada «1 · QA916c-390 B limpieza de filtros»",
+     "POR ESCRIBIR «7 · »"
+    ],
+    "materiales": [
+     "guardada «2 · Detectores de humo»",
+     "guardada «1 · Batería para central»",
+     "guardada «4 · QA916c-390 D codo»",
+     "guardada «5 · QA916c-390 E manguito»"
+    ]
+   },
+   "foco": "ninguno",
+   "focoEnLaUltimaDeSuBloque": false,
+   "porEscribir": 1,
+   "porEscribirBloqueadas": 0,
+   "clicsLlegados": 6,
+   "patch": 6,
+   "relecturas": 2
+  },
+  {
+   "paso": "11 · quitadas las líneas de la prueba, una a una, con su «×»",
+   "bloques": {
+    "mano_obra": [
+     "guardada «2 · Mano de obra»"
+    ],
+    "materiales": [
+     "guardada «2 · Detectores de humo»",
+     "guardada «1 · Batería para central»"
+    ]
+   },
+   "foco": "ninguno",
+   "focoEnLaUltimaDeSuBloque": false,
+   "porEscribir": 0,
+   "porEscribirBloqueadas": 0,
+   "clicsLlegados": 6,
+   "patch": 10,
+   "relecturas": 6
+  }
+ ],
+ "comprobaciones": [
+  {
+   "id": "①.0",
+   "que": "el primer clic abre una fila vacía con el foco en su UNDS",
+   "ok": true,
+   "visto": {
+    "porEscribir": 1,
+    "foco": "UNDS de la fila por escribir (mano_obra)"
+   }
+  },
+  {
+   "id": "①.1",
+   "que": "el clic llega al botón (2 de 2)",
+   "ok": true,
+   "visto": {
+    "clicsLlegados": 2
+   }
+  },
+  {
+   "id": "①.2",
+   "que": "lo escrito SE GUARDA: está en el servidor y en pantalla como guardada, con un solo PATCH 200",
+   "ok": true,
+   "visto": {
+    "enServidor": true,
+    "enPantalla": [
+     "guardada «2 · Mano de obra»",
+     "guardada «3 · QA916c-390 A purgado del circuito»",
+     "POR ESCRIBIR « · »"
+    ],
+    "patch": [
+     200
+    ]
+   }
+  },
+  {
+   "id": "①.3",
+   "que": "aparece UNA fila nueva vacía",
+   "ok": true,
+   "visto": {
+    "porEscribir": 1,
+    "ultima": "POR ESCRIBIR « · »"
+   }
+  },
+  {
+   "id": "①.4",
+   "que": "el foco queda en la UNDS de la fila nueva",
+   "ok": true,
+   "visto": {
+    "foco": "UNDS de la fila por escribir (mano_obra)"
+   }
+  },
+  {
+   "id": "①.5",
+   "que": "lo tecleado a continuación cae en la fila nueva, se guarda, y vuelve a haber fila vacía con el foco en su UNDS",
+   "ok": true,
+   "visto": {
+    "servidor": [
+     "mano_obra · 2 × Mano de obra",
+     "materiales · 2 × Detectores de humo",
+     "materiales · 1 × Batería para central",
+     "mano_obra · 3 × QA916c-390 A purgado del circuito",
+     "mano_obra · 1 × QA916c-390 B limpieza de filtros"
+    ],
+    "porEscribir": 1,
+    "foco": "UNDS de la fila por escribir (mano_obra)"
+   }
+  },
+  {
+   "id": "②.1",
+   "que": "dos clics = DOS filas vacías en ese bloque (y la de mano de obra sigue: tres por escribir)",
+   "ok": true,
+   "visto": {
+    "vaciasDeMateriales": 2,
+    "porEscribir": 3
+   }
+  },
+  {
+   "id": "②.2",
+   "que": "ninguna escritura al servidor por añadir filas",
+   "ok": true,
+   "visto": {
+    "patchNuevos": 0
+   }
+  },
+  {
+   "id": "②.3",
+   "que": "el foco está en la UNDS de la ÚLTIMA añadida y ninguna está bloqueada",
+   "ok": true,
+   "visto": {
+    "foco": "UNDS de la fila por escribir (materiales)",
+    "bloqueadas": 0
+   }
+  },
+  {
+   "id": "③a.1",
+   "que": "se tecleó D CON el PATCH de C fuera (medido: en vuelo y sin respuesta al acabar de teclear)",
+   "ok": true,
+   "visto": {
+    "patchEnVuelo": 1,
+    "sinRespuesta": true,
+    "materiales": [
+     "guardada «2 · Detectores de humo»",
+     "guardada «1 · Batería para central»",
+     "POR ESCRIBIR «2 · QA916c-390 C junta» [enviando]",
+     "POR ESCRIBIR «4 · QA916c-390 D codo»"
+    ]
+   }
+  },
+  {
+   "id": "③a.2",
+   "que": "C queda guardada (servidor y pantalla) y lo tecleado en D sigue entero en su fila, con el cursor en ella",
+   "ok": true,
+   "visto": {
+    "materiales": [
+     "guardada «2 · Detectores de humo»",
+     "guardada «1 · Batería para central»",
+     "guardada «2 · QA916c-390 C junta»",
+     "POR ESCRIBIR «4 · QA916c-390 D codo»"
+    ],
+    "foco": "descripción de la fila por escribir (materiales)"
+   }
+  },
+  {
+   "id": "③a.3",
+   "que": "el servidor tiene TODO: las de partida, A, B, C y D (comparado como conjunto)",
+   "ok": true,
+   "visto": {
+    "servidor": [
+     "mano_obra · 2 × Mano de obra",
+     "materiales · 2 × Detectores de humo",
+     "materiales · 1 × Batería para central",
+     "mano_obra · 3 × QA916c-390 A purgado del circuito",
+     "mano_obra · 1 × QA916c-390 B limpieza de filtros",
+     "materiales · 2 × QA916c-390 C junta",
+     "materiales · 4 × QA916c-390 D codo"
+    ]
+   }
+  },
+  {
+   "id": "③a.4",
+   "que": "la fila a medias de mano de obra («7») sigue en su sitio",
+   "ok": true,
+   "visto": {
+    "mano_obra": [
+     "guardada «2 · Mano de obra»",
+     "guardada «3 · QA916c-390 A purgado del circuito»",
+     "guardada «1 · QA916c-390 B limpieza de filtros»",
+     "POR ESCRIBIR «7 · »"
+    ]
+   }
+  },
+  {
+   "id": "③b.1",
+   "que": "E se completó CON la «×» de C fuera, y espera su turno",
+   "ok": true,
+   "visto": {
+    "patchEnVuelo": 1,
+    "sinRespuesta": true,
+    "materiales": [
+     "guardada «2 · Detectores de humo»",
+     "guardada «1 · Batería para central»",
+     "guardada «2 · QA916c-390 C junta»",
+     "guardada «4 · QA916c-390 D codo»",
+     "POR ESCRIBIR «5 · QA916c-390 E manguito» [espera]"
+    ]
+   }
+  },
+  {
+   "id": "③b.2",
+   "que": "salen DOS PATCH 200: el de la «×» sin C, y el de E sin C, con D y con E (no devuelve la línea quitada)",
+   "ok": true,
+   "visto": {
+    "patch": [
+     {
+      "estado": 200,
+      "lineas": [
+       "mano_obra · 2 × Mano de obra",
+       "materiales · 2 × Detectores de humo",
+       "materiales · 1 × Batería para central",
+       "mano_obra · 3 × QA916c-390 A purgado del circuito",
+       "mano_obra · 1 × QA916c-390 B limpieza de filtros",
+       "materiales · 4 × QA916c-390 D codo"
+      ]
+     },
+     {
+      "estado": 200,
+      "lineas": [
+       "mano_obra · 2 × Mano de obra",
+       "materiales · 2 × Detectores de humo",
+       "materiales · 1 × Batería para central",
+       "mano_obra · 3 × QA916c-390 A purgado del circuito",
+       "mano_obra · 1 × QA916c-390 B limpieza de filtros",
+       "materiales · 4 × QA916c-390 D codo",
+       "materiales · 5 × QA916c-390 E manguito (sin id)"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "③b.3",
+   "que": "el servidor conserva lo correcto: C no está; las de partida, A, B, D y E sí (como conjunto)",
+   "ok": true,
+   "visto": {
+    "servidor": [
+     "mano_obra · 2 × Mano de obra",
+     "materiales · 2 × Detectores de humo",
+     "materiales · 1 × Batería para central",
+     "mano_obra · 3 × QA916c-390 A purgado del circuito",
+     "mano_obra · 1 × QA916c-390 B limpieza de filtros",
+     "materiales · 4 × QA916c-390 D codo",
+     "materiales · 5 × QA916c-390 E manguito"
+    ]
+   }
+  },
+  {
+   "id": "③b.4",
+   "que": "las líneas de partida conservan su id",
+   "ok": true,
+   "visto": {
+    "ids": 3
+   }
+  },
+  {
+   "id": "③b.5",
+   "que": "la pantalla enseña lo mismo que el servidor, línea a línea y en su orden por bloque",
+   "ok": true,
+   "visto": {
+    "pantalla": [
+     "mano_obra guardada «2 · Mano de obra»",
+     "mano_obra guardada «3 · QA916c-390 A purgado del circuito»",
+     "mano_obra guardada «1 · QA916c-390 B limpieza de filtros»",
+     "materiales guardada «2 · Detectores de humo»",
+     "materiales guardada «1 · Batería para central»",
+     "materiales guardada «4 · QA916c-390 D codo»",
+     "materiales guardada «5 · QA916c-390 E manguito»"
+    ]
+   }
+  },
+  {
+   "id": "③b.6",
+   "que": "la fila a medias de mano de obra («7») sobrevive al repintado de la «×»",
+   "ok": true,
+   "visto": {
+    "mano_obra": [
+     "guardada «2 · Mano de obra»",
+     "guardada «3 · QA916c-390 A purgado del circuito»",
+     "guardada «1 · QA916c-390 B limpieza de filtros»",
+     "POR ESCRIBIR «7 · »"
+    ]
+   }
+  },
+  {
+   "id": "④.1",
+   "que": "el cuadro del dictado está, se ve (cuadro, campo y botón) y no se ha tocado",
+   "ok": true,
+   "visto": {
+    "rotulo": "Cuéntalo con tu voz",
+    "pista": "Usa el micrófono de tu teclado. Luego lo ordenamos.",
+    "boton": "Ordenar en líneas",
+    "seVen": {
+     "caja": true,
+     "campo": true,
+     "boton": true
+    },
+    "campoVacio": true,
+    "antesDeLasLineas": true,
+    "microDelNavegador": false
+   }
+  },
+  {
+   "id": "③.fin",
+   "que": "el parte vuelve EXACTAMENTE a sus líneas de partida (mismos ids, mismo orden, mismo contenido)",
+   "ok": true,
+   "visto": {
+    "servidor": [
+     "mano_obra · 2 × Mano de obra",
+     "materiales · 2 × Detectores de humo",
+     "materiales · 1 × Batería para central"
+    ],
+    "partida": [
+     "mano_obra · 2 × Mano de obra",
+     "materiales · 2 × Detectores de humo",
+     "materiales · 1 × Batería para central"
+    ]
+   }
+  },
+  {
+   "id": "④.2",
+   "que": "el parte firmado sigue sellado: sin «Añadir línea», sin casillas de línea, sin «×», y sus líneas a la vista",
+   "ok": true,
+   "visto": {
+    "anadir": 0,
+    "casillasDeLinea": 0,
+    "equis": 0,
+    "porEscribir": 0,
+    "lineasEnPantalla": 6,
+    "cuadroDelDictado": false,
+    "servidor": {
+     "estado": "firmado",
+     "firmasCompletas": true,
+     "lineas": 6,
+     "llevaHuella": true
+    }
+   }
+  },
+  {
+   "id": "④.3",
+   "que": "mirar no ha escrito nada: ni un PATCH por mirar el dictado ni por abrir el firmado, ninguno fuera del borrador, ningún intento de escritura cortado contra un parte, y el firmado igual en el servidor",
+   "ok": true,
+   "visto": {
+    "patchPorMirarElDictado": 0,
+    "cortadas": [
+     "POST /admin/entorno",
+     "POST /__control-s4-916c-no-existe"
+    ],
+    "firmadoIgual": true
+   }
+  },
+  {
+   "id": "fin",
+   "que": "la página no ha dado ningún error de JavaScript en todo el recorrido",
+   "ok": true,
+   "visto": []
+  }
+ ],
+ "antes": {
+  "estado": "borrador",
+  "lineas": [
+   "mano_obra · 2 × Mano de obra",
+   "materiales · 2 × Detectores de humo",
+   "materiales · 1 × Batería para central"
+  ]
+ },
+ "relecturasTrasGuardarA": 0,
+ "dictado": {
+  "rotulo": "Cuéntalo con tu voz",
+  "pista": "Usa el micrófono de tu teclado. Luego lo ordenamos.",
+  "boton": "Ordenar en líneas",
+  "seVen": {
+   "caja": true,
+   "campo": true,
+   "boton": true
+  },
+  "campoVacio": true,
+  "antesDeLasLineas": true,
+  "microDelNavegador": false
+ },
+ "despues": {
+  "estado": "borrador",
+  "lineas": [
+   "mano_obra · 2 × Mano de obra",
+   "materiales · 2 × Detectores de humo",
+   "materiales · 1 × Batería para central"
+  ]
+ },
+ "erroresDePagina": [],
+ "resumen": {
+  "comprobaciones": 24,
+  "cumplen": 24,
+  "patch": 10,
+  "salida": 0
+ }
+}
