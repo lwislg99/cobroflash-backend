@@ -1747,29 +1747,70 @@
    *
    * ⛔ NI UN IMPORTE, en ninguna dirección: lo que viaja es {id, bloque, unds, descripcion}, que es lo
    * único que esta pantalla tiene. Los precios los pone la oficina, en otra pantalla.
+   *
+   * 🔴 SCRUM-1824 · TODO LO QUE PASA TRAS GUARDAR, PASA DENTRO DEL TURNO, Y LO DICTADO SE ASIENTA.
+   *
+   * Medido en navegador real (`docs/master/evidencias/SCRUM-1824/`, 6 secuencias de 6): con este
+   * `PATCH` en el aire, completar una fila a mano, corregir una línea guardada o quitarla BORRABA
+   * del servidor las líneas dictadas. Aquí no se apuntaba lo guardado en `parte.lineas` y la ficha
+   * se repintaba FUERA del turno: el guardado que esperaba detrás corría antes que el repintado y
+   * armaba su lista ENTERA con las líneas de antes. Es la familia que SCRUM-916b curó en «Añadir
+   * línea» y en la «×», y la cura es la misma:
+   *   · lo guardado se apunta en `parte.lineas` DENTRO del turno: el siguiente arma su lista con ello;
+   *   · `asentar` (lo pone `renderParteDetailView`, que es quien sabe cablear una línea) pinta las
+   *     líneas nuevas en su bloque SIN repintar la ficha: lo que el técnico tenga a medias en otra
+   *     casilla sigue en el mismo nodo;
+   *   · si no hay `asentar` o la respuesta no cuadra con lo mandado, se repinta desde el servidor,
+   *     como antes — pero también dentro del turno.
+   * Y con ESTA propuesta ya de camino, un segundo toque no manda nada: desde que lo guardado se
+   * apunta, repetirla la metería dos veces en un documento que se firma.
    */
-  async function confirmarLoDictado(parte, parteId, contenedor, opciones) {
+  async function confirmarLoDictado(parte, parteId, contenedor, opciones, asentar) {
     var o = opciones || {};
     var pedir = o.apiRequest || window.apiRequest;
     if (typeof pedir !== 'function') return false;
 
     var caja = contenedor.querySelector && contenedor.querySelector('[data-dictado-propuesta]');
+    if (caja && caja.hasAttribute && caja.hasAttribute('data-propuesta-viajando')) return false;
     // SCRUM-1230 · con una línea «Sin colocar» sin decidir NO se guarda: el `PATCH` la dejaría
     // fuera y lo dictado se perdería. El botón ya está bloqueado; esto es el respaldo.
     if (lineasSinColocar(caja) > 0) return false;
     var confirmadas = lineasConfirmadas(caja);
     if (!confirmadas.lineas.length) return false;   // nada que añadir: no se manda una petición vacía
+    if (caja && caja.setAttribute) caja.setAttribute('data-propuesta-viajando', '1');
+    // Lo que hay en el cuadro al pulsar: si al volver es otra cosa, el técnico ha seguido dictando.
+    var cuadro = contenedor.querySelector && contenedor.querySelector('[data-dictado-texto]');
+    var dictadoAlPulsar = cuadro && typeof cuadro.value === 'string' ? cuadro.value : null;
 
+    var guardado = false;
     try {
       // SCRUM-1266 · en su turno: lo que ya había se lee DESPUÉS de que vuelva el guardado anterior.
-      await enOrdenDelParte(parte, function () {
+      await enOrdenDelParte(parte, async function () {
         var yaHabia = (Array.isArray(parte.lineas) ? parte.lineas : []).map(lineaQueSeGuarda);
-        return pedir('/admin/partes/' + parteId, {
+        var lista = yaHabia.concat(confirmadas.lineas);
+        var r = await pedir('/admin/partes/' + parteId, {
           method: 'PATCH',
-          body: JSON.stringify({ lineas: yaHabia.concat(confirmadas.lineas) }),
+          body: JSON.stringify({ lineas: lista }),
         });
+        guardado = true;
+        var lineas = r && Array.isArray(r.lineas) ? r.lineas : null;
+        // SCRUM-1675 · ya está en el parte: lo guardado en el móvil sobra, y recuperarlo lo añadiría
+        // dos veces. Lo que el técnico haya empezado a dictar mientras viajaba NO es de esta
+        // propuesta: se queda en el cuadro y en el móvil.
+        borrarBorradorDelDictado(parteId);
+        var sigueDictando = !!cuadro && typeof cuadro.value === 'string' && cuadro.value !== dictadoAlPulsar;
+        if (sigueDictando) guardarBorradorDelDictado(parteId, { texto: cuadro.value });
+        if (lineas && typeof asentar === 'function' && asentar(lineas, lista, yaHabia.length, !sigueDictando)) return;
+        // No se pudo asentar: se vuelve a traer del servidor en vez de adivinar. Lo que se enseña es
+        // lo que quedó guardado, no lo que creemos que mandamos (mismo criterio que tras firmar).
+        // Y lo guardado se apunta igual (como `guardarLineasEnOrden`): un guardado de ESTA ficha que
+        // esperase detrás arma su lista con `parte.lineas`.
+        parte.lineas = lineas || lista;
+        await renderParteDetailView(contenedor, parteId, o);
       });
     } catch (e) {
+      if (guardado) throw e;   // se guardó; lo que falló fue repintar, y eso no es «no se guardó»
+      if (caja && caja.removeAttribute) caja.removeAttribute('data-propuesta-viajando');
       // SCRUM-1493b · 409 y 404, lo mismo que «Ordenar» ante esos dos (conducta 2 de SCRUM-1302 C):
       // se RELEE el parte y no se dice nada nuevo. El 409 del `PATCH` es `parte_locked` (firmado desde
       // otro sitio): «vuelve a intentarlo» era falso, porque reintentar no va a funcionar nunca; la
@@ -1787,12 +1828,6 @@
       avisarEnElDictado(contenedor, 'data-dictado-no-guardado', TEXTOS.noSeGuardo);
       return false;
     }
-
-    // SCRUM-1675 · ya está en el parte: lo guardado en el móvil sobra, y recuperarlo lo añadiría dos veces.
-    borrarBorradorDelDictado(parteId);
-    // Se vuelve a traer del servidor en vez de retocar la pantalla: lo que se enseña es lo que
-    // quedó guardado, no lo que creemos que mandamos. Mismo criterio que tras firmar.
-    await renderParteDetailView(contenedor, parteId, o);
     return true;
   }
 
@@ -2469,6 +2504,64 @@
     var equisGuardadas = contenedor.querySelectorAll ? contenedor.querySelectorAll('.parte-quitar-linea[data-indice]') : [];
     for (var q = 0; q < equisGuardadas.length; q++) conectarEquisGuardada(equisGuardadas[q]);
 
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // 🔴 SCRUM-1824 · LO DICTADO SE ASIENTA EN SU SITIO, igual que la fila escrita a mano (916b).
+    //
+    // Lo llama `confirmarLoDictado` DENTRO de su turno, con el `PATCH` ya contestado. `lineas` es
+    // lo que devolvió el servidor, `lista` lo mandado y `desde` cuántas había ya: las de `desde`
+    // en adelante son las dictadas. Cada una entra al final de su bloque —delante de las filas
+    // por escribir, que siguen abajo— con el cable de cualquier línea guardada.
+    //
+    // Devuelve `false` SIN TOCAR NADA si la respuesta no cuadra con lo mandado o si a la ficha le
+    // falta el sitio de alguna: entonces quien llama repinta entera. No se adivina.
+    //
+    // Lo que el repintado dejaba hecho y aquí hay que hacer a mano: el hueco de «sin líneas», el
+    // paso de las firmas (`ponerFirmasAlDia`), y el dictado limpio — sin propuesta, sin su aviso y
+    // con el cuadro vacío, salvo que el técnico haya seguido dictando (`vaciarElCuadro`).
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    var asentarLoDictado = function (lineas, lista, desde, vaciarElCuadro) {
+      if (!cuadraConLoMandado(lineas, lista) || !contenedor.querySelector) return false;
+      var hueco = contenedor.querySelector('[data-dictado-propuesta]');
+      if (!hueco) return false;
+      var sitios = {};
+      var i;
+      for (i = desde; i < lineas.length; i++) {
+        var sitio = contenedor.querySelector('[data-parte-filas="' + lineas[i].bloque + '"]');
+        if (!sitio || !sitio.insertAdjacentHTML) return false;
+        sitios[lineas[i].bloque] = sitio;
+      }
+      parte.lineas = lineas;
+      var porEscribirAhora = filasNuevas().filter(esNueva);
+      for (i = desde; i < lineas.length; i++) {
+        var filas = sitios[lineas[i].bloque];
+        var huecos = contenedor.querySelectorAll('[data-parte-sin-lineas]');
+        for (var h = 0; h < huecos.length; h++) {
+          if (huecos[h].getAttribute('data-parte-sin-lineas') === lineas[i].bloque) huecos[h].remove();
+        }
+        var primeraPorEscribir = null;
+        for (var n = 0; n < porEscribirAhora.length && !primeraPorEscribir; n++) {
+          if (porEscribirAhora[n].parentNode === filas) primeraPorEscribir = porEscribirAhora[n];
+        }
+        if (primeraPorEscribir) primeraPorEscribir.insertAdjacentHTML('beforebegin', filaDeLinea(lineas[i], i, true));
+        else filas.insertAdjacentHTML('beforeend', filaDeLinea(lineas[i], i, true));
+        var unds = casillaDeLinea('data-linea-unds', i);
+        var desc = casillaDeLinea('data-linea-desc', i);
+        if (unds) escucharCasillaGuardada(unds, unds.value);
+        if (desc) { conectarDescripcion(desc); escucharCasillaGuardada(desc, desc.value); }
+        var asentada = casillaDeLinea('data-parte-linea', i);
+        var equis = asentada && asentada.querySelector ? asentada.querySelector('.parte-quitar-linea') : null;
+        if (equis) conectarEquisGuardada(equis);
+        conectarEsCorrecto(casillaDeLinea('data-es-correcto', i));
+      }
+      ponerFirmasAlDia();
+      quitarAvisoDelDictado(contenedor);
+      hueco.innerHTML = '';
+      if (hueco.removeAttribute) hueco.removeAttribute('data-propuesta-viajando');
+      var cuadro = contenedor.querySelector('[data-dictado-texto]');
+      if (vaciarElCuadro && cuadro) cuadro.value = '';
+      return true;
+    };
+
     // SCRUM-916b · LA VUELTA DE LAS FILAS POR ESCRIBIR tras un repintado (las recogió
     // `filasPorEscribirDe` justo antes). Sólo si el parte se sigue pudiendo tocar: firmado, no hay
     // dónde ponerlas. Qué se hace con cada una depende de dónde la pilló el repintado:
@@ -2523,7 +2616,7 @@
       var confirmar = contenedor.querySelector('[data-propuesta-confirmar]');
       if (!(confirmar && confirmar.addEventListener)) return;
       confirmar.addEventListener('click', function () {
-        confirmarLoDictado(parte, parteId, contenedor, o);
+        confirmarLoDictado(parte, parteId, contenedor, o, asentarLoDictado);
       });
       // SCRUM-1230 · «Añadir al parte» espera a que cada línea «Sin colocar» tenga bloque.
       // Sin texto nuevo: lo que falta lo dice el rótulo del grupo, que ahora sí se puede cumplir.
