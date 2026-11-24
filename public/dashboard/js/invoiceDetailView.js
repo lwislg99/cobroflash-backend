@@ -651,6 +651,14 @@ async function fetchInvoiceDetail(id) {
     const btnTogglePaid = document.createElement('button');
     btnTogglePaid.className = 'btn-secondary btn-sm';
     btnTogglePaid.textContent = 'Marcar como cobrada';
+    // SCRUM-1810b (decisión A+B y literal FIRMADO: SCRUM-1810 c.22535). Sobre un `paid` el clic manda
+    // `status: 'pending'` —deshacer el pago—, que el servidor solo admite en un JUSTIFICANTE
+    // (`invoiceAdmin.ts`, `UnpayNotAllowedError`). B: en un justificante pagado el rótulo dice lo que
+    // hace. Se decide con el mismo `st === 'paid'` que elige `targetStatus` abajo: el rótulo y el clic
+    // no pueden discrepar. A (la factura pagada sin botón) va en `ubicarAccion`, más abajo.
+    if (isReceipt && st === 'paid') btnTogglePaid.textContent = 'Marcar como pendiente';
+    // A: «consta pagado» con el criterio de SCRUM-1532d/1800c (`status: 'paid'` o `paidAt`).
+    const constaPagado = st === 'paid' || Boolean(invoice.paidAt);
 
     btnTogglePaid.addEventListener('click', async () => {
       const targetStatus = st === 'paid' ? 'pending' : 'paid';
@@ -738,7 +746,8 @@ async function fetchInvoiceDetail(id) {
     // La visibilidad por estado la decide el registro: primaria de pending (sin chargeId), «⋮» en
     // paid (Marcar como PENDIENTE), oculta en annulled/R1 —SCRUM-153: una anulada no cambia de
     // estado (Parte L no declara transición que salga de `annulled`)—.
-    ubicarAccion(btnTogglePaid, 'btnTogglePaid');
+    // SCRUM-1810b · A: en una FACTURA que consta pagada no se pinta (el servidor la rechaza siempre).
+    if (!(constaPagado && !isReceipt)) ubicarAccion(btnTogglePaid, 'btnTogglePaid');
 
     // A21.1 (R14): paquete de evidencia de disputa en 1 clic — con cobro de
     // tarjeta (charge) siempre disponible; la firma digital gana disputas.
