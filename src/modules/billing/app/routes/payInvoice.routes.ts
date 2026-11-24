@@ -13,72 +13,13 @@ import { PAGO_JS, RUTA_PAGO_JS, cacheDelGuionDePago, etiquetaGuionDePago } from 
 import { cssDeHoja, RUTA_PAGO_CSS, cacheDelEstiloDePago, etiquetaEstiloDePago, paginaDeEstilo } from './pagoEstilo'; // SCRUM-1723 (style-src 'self')
 import { formasDePagoActivas, type FormaDePago } from './formasDePagoActivas'; // SCRUM-1787u
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
-import { pieDePresupuesto } from '../../../quotes/domain/presentacionIva'; // SCRUM-1787h: el desglose de la página del presupuesto
+import { detalleDeLaFactura } from './detalleDeLaFactura'; // SCRUM-1794b
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1787q: «Vence el» en la zona del negocio
 
 const router = Router();
 
-/**
- * SCRUM-1787h · EL DETALLE DE LÍNEAS DE LA FACTURA, COMO EN LA PÁGINA DEL PRESUPUESTO.
- *
- * Decisión del fundador (SCRUM-1787 c.22327, «1-Sí»): el cliente que abre el enlace de pago ve las
- * líneas de la factura. Se LEEN de la factura emitida (`Invoice.lines`); la emisión no se toca.
- *
- * Rótulos: ninguno nuevo. La tabla y el desglose son los de `quoteDecisionLanding.routes.ts`
- * (`renderQuoteDetail`): cabecera «Concepto · Cant. · Importe», importe de línea = cantidad × precio
- * (neto, el IVA va debajo), y las filas de `pieDePresupuesto` («Base imponible», «IVA (21%)» y, si hay
- * descuento, «Suma de líneas» y «Descuento») con el mismo `rotuloEnLaPagina`.
- *
- * 🔴 SÓLO SI CUADRA. La página dice «Importe a pagar» con el importe del COBRO. Si la suma del
- * desglose no es el total de la factura (suplidos, otro motor de redondeo: SCRUM-624) o el cobro no
- * es la factura entera, una tabla debajo diría otra cifra que la de arriba, y explicarlo pediría un
- * texto sin firmar (regla 39). En esos casos la página queda como estaba.
- */
-function detalleDeLaFactura(
-  invoice: { total: unknown; lines: unknown } | null,
-  importeDelCobro: number,
-  currency: string,
-): string {
-  const lineas: any[] = Array.isArray(invoice?.lines) ? (invoice!.lines as any[]) : [];
-  if (lineas.length === 0) return '';
-  const money = (n: number) => esc(formatMoneyEs(n, currency));
-  const pie = pieDePresupuesto({ lineas, modo: 'sumar', nombreImpuesto: 'IVA' });
-  const desdeBase = pie.filas.findIndex((f) => f.etiqueta === 'Base imponible:');
-  if (desdeBase < 0) return '';
-  const sumaDelDesglose = pie.filas.slice(desdeBase).reduce((s, f) => s + f.importe, 0);
-  const totalFactura = Number(invoice!.total);
-  const cuadra = (a: number, b: number) => Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) < 0.005;
-  if (!cuadra(sumaDelDesglose, totalFactura) || !cuadra(importeDelCobro, totalFactura)) return '';
-
-  const rotuloEnLaPagina = (etiqueta: string) => {
-    // «IVA 21%:» → «IVA (21%)», sin expresión regular (SCRUM-1325: ninguna mira texto sin declarar).
-    const sinDosPuntos = etiqueta.endsWith(':') ? etiqueta.slice(0, -1) : etiqueta;
-    if (sinDosPuntos.startsWith('IVA ') && sinDosPuntos.endsWith('%')) {
-      return `IVA (${sinDosPuntos.slice(4)})`;
-    }
-    return sinDosPuntos;
-  };
-  // Una cabecera de apartado (SCRUM-655) viaja sin cantidad ni precio: concepto sí, importe vacío.
-  const importeDeLinea = (l: any) => {
-    const neto = Number(l?.qty) * Number(l?.price);
-    return l?.qty != null && l?.price != null && Number.isFinite(neto) ? money(neto) : '';
-  };
-  return `
-    <table class="lines-table">
-      <thead><tr><th>Concepto</th><th>Cant.</th><th>Importe</th></tr></thead>
-      <tbody>${lineas.map((l: any) => `
-        <tr>
-          <td>${esc(l?.concept ?? '')}</td>
-          <td>${esc(l?.qty ?? '')}</td>
-          <td>${importeDeLinea(l)}</td>
-        </tr>`).join('')}
-      </tbody>
-    </table>
-    <div class="totals-block">
-      ${pie.filas.map((f) => `
-      <div class="totals-row"><span>${esc(rotuloEnLaPagina(f.etiqueta))}</span><span>${money(f.importe)}</span></div>`).join('')}
-    </div>`;
-}
+// SCRUM-1787h · la tabla de líneas y el desglose de la factura: SCRUM-1794b los sacó a
+// `detalleDeLaFactura.ts` (función pura, la regla «sólo si cuadra» dentro) para que el correo la reuse.
 
 // SCRUM-1647 · el guion de las tres páginas de pago, servido desde 'self' (`script-src 'self'`). Dos
 // tramos de ruta: ningún `/<algo>/:token` de los routers de /pay lo pisa. `immutable` sólo con la huella buena.
