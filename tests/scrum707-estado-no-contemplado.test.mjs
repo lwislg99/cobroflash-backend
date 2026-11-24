@@ -93,15 +93,17 @@ test('SCRUM-707 · ✅ CONTROL POSITIVO: `pending` sigue yendo a secundaria, 0/9
   const d = R.map((a) => ley.destinoEfectivo(a, 'pending', {}));
   assert.equal(d.filter((x) => x === undefined).length, 0);
   assert.equal(d[0], 'secundaria', '🔴 la primera acción de `pending` ha dejado de ir a secundaria');
+  // SCRUM-1532d: `btnCancelarCobro` entra SOLO en `pending` (GO y única transición, SCRUM-1532 c.22430).
   assert.deepEqual(ofrecidas(R, 'pending'),
-    ['btnPdf', 'btnWhatsApp', 'btnReminder', 'btnRectify', 'btnRegen', 'btnDispute'],
+    ['btnPdf', 'btnWhatsApp', 'btnReminder', 'btnRectify', 'btnRegen', 'btnDispute', 'btnCancelarCobro'],
     '🔴 ha cambiado lo que se ofrece en `pending`, que es un estado que ya funcionaba');
 });
 
 test('SCRUM-707 · ✅ CONTROL POSITIVO: los estados conocidos ofrecen lo mismo que antes', () => {
   // Enumerado, no contado: un número igual puede ser otro conjunto (SCRUM-727).
   const esperado = {
-    'factura|pending': ['btnPdf', 'btnWhatsApp', 'btnReminder', 'btnRectify', 'btnRegen', 'btnDispute'],
+    // SCRUM-1532d (c.22430): `btnCancelarCobro` solo aquí; ningún otro estado lo ofrece.
+    'factura|pending': ['btnPdf', 'btnWhatsApp', 'btnReminder', 'btnRectify', 'btnRegen', 'btnDispute', 'btnCancelarCobro'],
     'factura|paid': ['btnPdf', 'btnWhatsApp', 'btnTogglePaid', 'btnRectify', 'btnRegen', 'btnDispute'],
     'factura|annulled': ['btnPdf', 'btnRegen'],
     'factura|R1': ['btnPdf', 'btnRegen'],

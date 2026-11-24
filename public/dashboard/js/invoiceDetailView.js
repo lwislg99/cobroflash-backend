@@ -203,6 +203,14 @@ async function fetchInvoiceDetail(id) {
         '<div class="detail-total-label">Cobro</div>'
         + `<div class="detail-cobro-importe">${fmtInvMoney(invoice.total, invoice.currency)}</div>`
         + (cuando ? `<div class="detail-cobro-fecha">${cuando}</div>` : '');
+      // SCRUM-1532e · etiqueta de estado de un cobro cancelado (literal firmado: SCRUM-1532 c.22455).
+      // Pill neutra del inventario: cancelar no es un error, y la factura sigue pendiente.
+      if (invoice.estadoDelCobro === 'cancelled') {
+        const pillCobro = document.createElement('span');
+        pillCobro.className = 'status-pill status-pill-draft detail-cobro-estado';
+        pillCobro.textContent = 'Cobro cancelado';
+        cobroBlock.appendChild(pillCobro);
+      }
       summaryRow.appendChild(cobroBlock);
     }
     // Si NO hay cobro no se pinta nada: un bloque «Cobro» vacío en la pantalla del dinero se lee
@@ -808,19 +816,26 @@ async function fetchInvoiceDetail(id) {
       btnCancelarCobro.addEventListener('click', async () => {
         if (!window.confirm(CONFIRMAR_CANCELAR_COBRO)) return;
         btnCancelarCobro.disabled = true;
+        // SCRUM-644: el fallo NO pinta nada que venga del servidor ni de una excepción; solo uno de los
+        // dos literales que esta ficha ya usa para un error de cobro.
+        let aviso = null;
         try {
           const r = await fetch(`/admin/charges/${invoice.chargeId}/cancel`, { method: 'POST' });
           const d = await r.json().catch(() => ({}));
           if (!r.ok) {
-            throw new Error(d.error === 'charge_not_pending'
+            aviso = d.error === 'charge_not_pending'
               ? 'Este cobro ya no está pendiente.'
-              : 'Error actualizando estado: inténtalo de nuevo');
+              : 'Error actualizando estado: inténtalo de nuevo';
           }
-          if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: invoice.id });
-        } catch (e) {
-          setStatus('error', e.message);
-          btnCancelarCobro.disabled = false;
+        } catch (_) {
+          aviso = 'Error actualizando estado: inténtalo de nuevo';
         }
+        if (aviso) {
+          setStatus('error', aviso);
+          btnCancelarCobro.disabled = false;
+          return;
+        }
+        if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: invoice.id });
       });
       ubicarAccion(btnCancelarCobro, 'btnCancelarCobro');
     }

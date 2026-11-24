@@ -56,6 +56,27 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: 'if (false) return;',
     cae: 'SCRUM-1532d · ① si el profesional dice que no, no se llama a la ruta',
   },
+  {
+    // El fallo de cancelar vuelve a pintar el `message` del servidor (SCRUM-644).
+    fichero: 'public/dashboard/js/invoiceDetailView.js',
+    de: "aviso = d.error === 'charge_not_pending'",
+    a: "aviso = d.message || d.error === 'charge_not_pending'",
+    cae: 'SCRUM-1532d · ① un fallo de cancelar pinta el literal de la ficha, no el mensaje del servidor',
+  },
+  {
+    // 1532e · la etiqueta no se pinta con el cobro cancelado.
+    fichero: 'public/dashboard/js/invoiceDetailView.js',
+    de: "if (invoice.estadoDelCobro === 'cancelled') {",
+    a: "if (invoice.estadoDelCobro === 'zz-nunca') {",
+    cae: 'SCRUM-1532e · con el cobro cancelado la ficha pinta «Cobro cancelado»',
+  },
+  {
+    // 1532e · la etiqueta se pinta con cualquier cobro.
+    fichero: 'public/dashboard/js/invoiceDetailView.js',
+    de: "if (invoice.estadoDelCobro === 'cancelled') {",
+    a: 'if (invoice.chargeId) {',
+    cae: 'SCRUM-1532e · con el cobro en otro estado, o sin cobro, no se pinta la etiqueta',
+  },
 ];
 
 // ── ① la vista ────────────────────────────────────────────────────────────────────────────────
@@ -69,7 +90,7 @@ const BASE = Object.freeze({
   rectifiedBy: [],
 });
 
-async function ficha(cambios = {}, { confirma = true } = {}) {
+async function ficha(cambios = {}, { confirma = true, respuestaCancelar = null } = {}) {
   const factura = { ...BASE, ...cambios };
   const banco = cargarDashboard(RAIZ);
   banco.ctx.appModoEmision = 'fiscal';
@@ -78,7 +99,7 @@ async function ficha(cambios = {}, { confirma = true } = {}) {
   banco.ctx.confirm = (texto) => { confirmaciones.push(texto); return confirma; };
   banco.ctx.fetch = async (u, opts = {}) => {
     llamadas.push({ url: String(u), method: (opts && opts.method) || 'GET' });
-    if (/\/admin\/charges\/\d+\/cancel$/.test(String(u))) return { ok: true, json: async () => ({ ok: true, status: 'cancelled' }) };
+    if (/\/admin\/charges\/\d+\/cancel$/.test(String(u))) return respuestaCancelar || { ok: true, json: async () => ({ ok: true, status: 'cancelled' }) };
     return { ok: true, json: async () => (/\/admin\/invoices\/7$/.test(String(u)) ? factura : []) };
   };
   banco.ctx.apiRequest = async () => [];
@@ -93,7 +114,7 @@ async function ficha(cambios = {}, { confirma = true } = {}) {
   const botones = [...vistos].filter(esBoton);
   assert.ok(botones.length > 0, '🔴 CIEGO: la ficha no pinta ningún botón.');
   const cancelar = botones.filter((b) => b.textContent === BOTON);
-  return { banco, botones, cancelar, llamadas, confirmaciones };
+  return { banco, botones, cancelar, llamadas, confirmaciones, contenedor: r.contenedor };
 }
 
 test('SCRUM-1532d · ① con el cobro pendiente la ficha pinta «Cancelar cobro»', async () => {
@@ -132,6 +153,42 @@ test('SCRUM-1532d · ① si el profesional dice que no, no se llama a la ruta', 
   await new Promise((ok) => setTimeout(ok, 20));
   assert.equal(confirmaciones.length, 1, '🔴 CIEGO: no se pidió confirmación.');
   assert.equal(llamadas.filter((l) => l.method === 'POST').length, 0, '🔴 sin confirmar, se llamó a la ruta.');
+});
+
+// SCRUM-644: si la ruta contesta con error, la ficha pinta un literal SUYO, nunca el `message` del servidor.
+const CRUDO = 'ZZCRUDO charge_not_pending del servidor';
+test('SCRUM-1532d · ① un fallo de cancelar pinta el literal de la ficha, no el mensaje del servidor', async () => {
+  const casos = [
+    [{ ok: false, json: async () => ({ error: 'charge_not_pending', message: CRUDO }) }, 'Este cobro ya no está pendiente.'],
+    [{ ok: false, json: async () => ({ error: 'otro', message: CRUDO }) }, 'Error actualizando estado: inténtalo de nuevo'],
+  ];
+  for (const [respuestaCancelar, esperado] of casos) {
+    const { cancelar, banco, contenedor } = await ficha({ chargeId: 55, estadoDelCobro: 'pending' }, { respuestaCancelar });
+    await cancelar[0].click();
+    await new Promise((ok) => setTimeout(ok, 20));
+    const textos = [...new Set([...todos(contenedor), ...todos(banco.ctx.document.body)])].map((n) => n.textContent || '');
+    assert.ok(textos.some((t) => t === esperado), `🔴 CIEGO: no se pinta «${esperado}».`);
+    assert.ok(!textos.some((t) => t.includes('ZZCRUDO')), '🔴 se pinta el `message` crudo del servidor (SCRUM-644).');
+  }
+});
+
+// ── 1532e · etiqueta de estado del cobro cancelado (literal FIRMADO: SCRUM-1532 c.22455) ─────────
+const ETIQUETA_CANCELADO = 'Cobro cancelado';
+const conEtiqueta = (contenedor) => todos(contenedor).filter((n) => n.textContent === ETIQUETA_CANCELADO);
+
+test('SCRUM-1532e · con el cobro cancelado la ficha pinta «Cobro cancelado»', async () => {
+  const { contenedor } = await ficha({ chargeId: 55, estadoDelCobro: 'cancelled' });
+  assert.equal(conEtiqueta(contenedor).length, 1, `🔴 no hay UNA etiqueta «${ETIQUETA_CANCELADO}» con el cobro cancelado.`);
+});
+
+test('SCRUM-1532e · con el cobro en otro estado, o sin cobro, no se pinta la etiqueta', async () => {
+  for (const estadoDelCobro of ['pending', 'paid', 'expired', 'failed', undefined, null]) {
+    const { contenedor } = await ficha({ chargeId: 55, estadoDelCobro });
+    assert.ok(todos(contenedor).some((n) => n.textContent === 'Cobro'), `🔴 CIEGO (${estadoDelCobro}): no se pinta el bloque «Cobro».`);
+    assert.equal(conEtiqueta(contenedor).length, 0, `🔴 con el cobro «${estadoDelCobro}» se pinta «${ETIQUETA_CANCELADO}».`);
+  }
+  const sinCobro = await ficha({ chargeId: null, estadoDelCobro: 'cancelled' });
+  assert.equal(conEtiqueta(sinCobro.contenedor).length, 0, '🔴 sin cobro se pinta la etiqueta.');
 });
 
 // Leído del fuente: correr el GET pide base de datos. Se acota al handler de `router.get('/:id'`.
