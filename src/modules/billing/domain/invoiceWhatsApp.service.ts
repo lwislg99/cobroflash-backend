@@ -54,7 +54,9 @@ export async function sendInvoicePaymentRequest(
   if (!to) return { ok: false, reason: 'invalid_phone_format' };
 
   // Asegurar cobro (idempotente): reutiliza el existente o crea uno nuevo.
-  let chargeId: number | null = invoice.chargeId ?? null;
+  // SCRUM-1429d: lo LEÍDO se guarda aparte; el enlace de abajo solo escribe si la factura sigue así.
+  const chargeIdLeido: number | null = invoice.chargeId ?? null;
+  let chargeId: number | null = chargeIdLeido;
   // SCRUM-1532d (decisión 2 de SCRUM-1532 c.22430): un cobro CANCELADO no se reutiliza —su enlace ya no
   // cobra—: la factura sigue pendiente y el reenvío le crea otro. Solo `cancelled`; los demás, como hoy.
   if (chargeId) {
@@ -102,7 +104,33 @@ export async function sendInvoicePaymentRequest(
       const cj: any = await chargeResp.json().catch(() => null);
       if (!cj?.id) return { ok: false, reason: 'charge_creation_invalid_response' };
       chargeId = Number(cj.id);
-      await prisma.invoice.update({ where: { id: invoice.id }, data: { chargeId } });
+      // SCRUM-1429d (GO del fundador, SCRUM-1429 c.22630): al enlazar el cobro con la factura, solo gana
+      // el primero. Escritura CONDICIONAL sobre lo que se LEYÓ —null, o el cobro cancelado de 1532d—, no
+      // solo sobre null: dos envíos a la vez leen lo mismo, crean dos cobros y solo casa un enlace.
+      const enlace = await prisma.invoice.updateMany({
+        where: { id: invoice.id, merchantId: invoice.merchantId, chargeId: chargeIdLeido }, // regla 2
+        data: { chargeId },
+      });
+      if (enlace.count === 0) {
+        // Llegó tarde: su cobro se cancela al momento —su enlace no lo ha recibido nadie— y el envío
+        // usa el del primero. La misma transición y la misma barrera que `POST /admin/charges/:id/cancel`
+        // (SCRUM-1532b): `pending → cancelled` con el estado DENTRO del `where`.
+        const cobroQueLlegoTarde = chargeId;
+        const ganador = await prisma.invoice.findUnique({
+          where: { id: invoice.id, merchantId: invoice.merchantId },
+          select: { chargeId: true },
+        });
+        try {
+          await prisma.charge.updateMany({
+            where: { id: cobroQueLlegoTarde, merchantId: invoice.merchantId, status: 'pending' },
+            data: { status: 'cancelled' },
+          });
+        } catch (e: any) {
+          console.error('[invoiceWhatsApp] cobro que llegó tarde sin cancelar:', cobroQueLlegoTarde, e?.message || e);
+        }
+        if (!ganador?.chargeId) return { ok: false, reason: 'charge_creation_failed' };
+        chargeId = ganador.chargeId;
+      }
     } catch (err: any) {
       console.error('[invoiceWhatsApp] charge error:', err?.message || err);
       return { ok: false, reason: 'charge_creation_failed' };

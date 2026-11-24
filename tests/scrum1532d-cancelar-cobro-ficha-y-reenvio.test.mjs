@@ -43,6 +43,14 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'SCRUM-1532d · ② cobro cancelado → el reenvío crea OTRO cobro y la factura apunta a él',
   },
   {
+    // SCRUM-1429d: el enlace condicionado a `chargeId: null` a secas, y no a lo leído, no casa con una
+    // factura que apuntaba al cobro cancelado: el reenvío se iría con el cobro cancelado.
+    fichero: 'src/modules/billing/domain/invoiceWhatsApp.service.ts',
+    de: 'merchantId: invoice.merchantId, chargeId: chargeIdLeido },',
+    a: 'merchantId: invoice.merchantId, chargeId: null },',
+    cae: 'SCRUM-1532d · ② cobro cancelado → el reenvío crea OTRO cobro y la factura apunta a él',
+  },
+  {
     // El botón se pinta con cualquier cobro, no solo con el pendiente.
     // SCRUM-1800c: anclada a la pareja cobro+estado, no a la línea entera (1800c le añadió `!invoice.paidAt`).
     fichero: 'public/dashboard/js/invoiceDetailView.js',
@@ -236,7 +244,12 @@ async function reenviar(estadoDelCobroViejo) {
   let posts = 0;
   inyectarBase({
     'invoice.findUnique': () => facturaBase,
-    'invoice.update': (args) => { facturasEscritas.push(args); return { ...facturaBase, ...args.data }; },
+    // SCRUM-1429d: el enlace es `updateMany` CONDICIONAL sobre lo leído. El doble solo casa si la factura
+    // sigue con ese cobro (55): un enlace condicionado a `chargeId: null` no casaría aquí y el caso ② cae.
+    'invoice.updateMany': (args) => {
+      if ((args.where || {}).chargeId !== facturaBase.chargeId) return { count: 0 };
+      facturasEscritas.push(args); return { count: 1 };
+    },
     'quote.findUnique': () => null,
     'merchant.findUnique': () => ({ id: MERCHANT }),
     'charge.findFirst': (args) => (args.where.id === 55 ? { status: estadoDelCobroViejo } : null),
