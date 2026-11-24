@@ -427,6 +427,7 @@ export const FACTURA_LIBRO = {
   id: 1, merchantId: MERCHANT_LIBRO, number: 'F-1732', createdAt: new Date(2026, 1, 15, 12), paidAt: new Date(2026, 2, 31, 12),
   type: 'F1', total: '1000.00', currency: 'EUR', status: 'paid', customerId: CLIENTE, quoteId: null, chargeId: 1732,
   albaranRefs: null, lines: [{ qty: 1, price: 826.45, tax: 0.21 }],
+  merchantCriterioCaja: true, // SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora
 };
 
 // SCRUM-1732d · las filas del caso, como las deja el PR-1: 950 el 31-mar y la liberación (50) el 1-oct.

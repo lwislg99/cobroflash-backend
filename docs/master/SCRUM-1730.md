@@ -125,3 +125,40 @@ Con el control positivo sembrado: una F1 `true` cobrada en otro trimestre tiene 
 **Errores míos.** ① Leí el libro y los fixtures antes de medirme otra vez. El 137k lo vi después de leer, y no antes, que es cuando se decide si cabe. ② La skill `yaqu-verifactu-sif` se cargó, pero sus tres lecturas previas (`docs/SIF_SPEC_NOTES.md`, U1.3, `docs/AUDITORIA_RRSIF.md`) NO se leyeron, porque no cabían. No hacen falta para este tramo, que no toca código, pero quien construya el arreglo tiene que leerlas antes de tocar `invoicing/`.
 
 **Sin medir:** nada ejecutado · ninguna base · ni el test rojo ni el arreglo (NO HECHOS) · la suite (NO CORRIDA: el tramo es solo de documentos) · si `construirLibroRegistro` trata igual `cobrosPorFactura` ausente que un `Map` vacío. Es lo que decide si el camino «sin ninguna `true`» es idéntico al de hoy para libros AEAT y evidencias.
+
+## J1 · SCRUM-1730e · (iii) PARTE 1 de 2: las facturas de prueba que se leen por caja llevan su congelado (sin tocar `src/`)
+
+**Medido contra:** `origin/main` = `86103cb18c55e289b706cd3b530e717e644d54ca` · 2026-11-24T12:33:45Z (hora de GitHub; sesión J1 `jv-j1jz`, por encargo del orquestador `cobroflash-backend-2d`. La línea base se corrió sobre `2d1ac4c7157e352ba08dd7a06d124977009d84d8`: 0 cambios en `src/` y `prisma/` entre los dos)
+
+A9: sin fallo que generalice — tramo sólo de fixtures de test, con el mismo conjunto de casos en verde antes y después; mi único tropiezo (un commit local «wip» sin carril, hecho para poder mergear) se rehízo antes de empujar y no llegó al remoto, y un mensaje de commit local no lo ve ningún guard del repositorio.
+
+**Por qué.** El libro va a decidir con el criterio CONGELADO de cada factura (GO c.21789 ③; la R1 hereda el de su F1, c.22620), y NULL = por emisión. Estos tests leen el libro con `criterioCaja: true` y sus facturas no llevaban el campo: con el arreglo (1730f, otra sesión) pasarían a emisión. Hoy el libro IGNORA `merchantCriterioCaja` (`Invoice.merchantCriterioCaja`, `prisma/schema.prisma`, leído), así que el control de esta parte es que nada cambie: **los 5 ficheros, 47 casos, 47 pass, 0 fail, 0 saltados, antes y después, con el MISMO conjunto de nombres** (comparado por `diff` de los nombres, no por la cuenta). Ningún `assert` cambia: 0 líneas con `assert` en el diff. Ninguno de los 5 usa `LIBRO_PG_URL`, así que no hay saltados que declarar.
+
+**Fixture por fichero** (cada cambio lleva al lado `// SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora`):
+| fichero | fixture | cambio |
+|---|---|---|
+| `tests/scrum1730-criterio-caja-huecos-declarados.test.mjs` | `S1`, `SIN_COBRO` | `merchantCriterioCaja: true` |
+| ídem | `S2` y `F-MIXTA` | `true` también (decisión del orquestador, abajo) |
+| `tests/scrum1732-cobro-parcial-defecto-declarado.test.mjs` | `FACTURA_LIBRO` | `true` |
+| `tests/scrum294b-devengo-por-cobro.test.mjs` | `FACTURA` | `true` |
+| `tests/scrum1732d-libro-por-tramos.test.mjs` | `FA` | NO se toca: la comparte el caso ③, que va POR EMISIÓN |
+| ídem | `FA_CAJA` (nuevo, copia de `FA` con `true`) | la leen ①, ④, ⑤, ⑥, ⑦, ⑧ y el control «sin poder leer invoice_payments» |
+| ídem | `F-B` (caso ②) | `true` |
+| ídem | `fCaja` (nuevo en ⑨, copia de `F-R` con `true`) | la leen los tres tramos; `f` sin marca se queda para `entera`, que se mide con la caja apagada |
+| `tests/scrum294c-criterio-del-merchant.test.mjs` | ninguna | NO se toca: es un censo estático de llamadores de `leerLibroRegistro`, sin facturas (grep de `paidAt`/`findMany`/`number:` da 0 en él y 6 `paidAt` en 294b, el positivo) |
+
+**S2 y F-MIXTA con `true`: por qué** (decisión del orquestador en el encargo). El caso (i) espera que la S2 vaya por emisión por la REGLA S2 «aunque el merchant tenga caja». Sin la marca, con el arreglo iría por emisión por el NULL y no por la regla, y el caso quedaría verde sin medir nada. Lo mismo para la mixta. Va comentado en el test.
+
+**Contradice el tramo 1730d ③**, que pone `scrum294c-criterio-del-merchant` entre los siete que «cambian de lado»: 294c no tiene facturas de prueba (arriba). Los que leen el libro por caja con fixtures son seis, no siete: los cuatro de aquí más 1055b y 1445d.
+
+**El mapa no casaba con el fichero en 1732d ⑨.** Decía «en ⑨ marca también `F-B` y `fCaja`»: `F-B` está en el caso ②, no en el ⑨, y `fCaja` no existía. Lo apliqué con el mismo patrón que `FA`/`FA_CAJA`: `F-B` con `true` en ②, y en ⑨ una copia `fCaja` para las lecturas por caja.
+
+**Para quien construya 1730f (no lo he cambiado: ningún `assert` se toca).** Dos controles leen la MISMA factura ya marcada SIN pasar `criterioCaja` y esperan emisión: el «CONTROL NEGATIVO» de 294b (`FACTURA`, Q1 sí y Q2 no) y el positivo sembrado `sinCaja` de `medirLibro` en 1732 (`FACTURA_LIBRO` en el T1). Siguen en verde con el arreglo sólo si un rango SIN `criterioCaja` sigue yendo por emisión diga lo que diga el congelado. Si el diseño hace mandar al congelado también sin `criterioCaja`, esos dos necesitan su copia sin marca, como `FA` en 1732d.
+
+**PARTE 2 pendiente:** `tests/scrum1055b-caja-31mar-zona-y-devolucion.test.mjs` (tiene una R1: puede necesitar `rectifiesId`) y `tests/scrum1445d-bordes-fiscales-en-la-zona.test.mjs`.
+
+**La rama lleva también 1730c y 1730d** (nació de `scrum-1730d-libro-criterio-congelado-construido`): 1730c tiene PR propio abierto (#3385) y 1730d no tenía ninguno.
+
+**Verde antes de empujar:** los 5 ficheros de arriba (47/47, antes y después) · `scrum1415`, `scrum1294`, `scrum267`, `scrum854` y `scrum719`: 67 casos, 67 pass, 0 fail, 0 saltados · `npm run guards:entrada`: 16 guards, 177 casos, 177 pass, 0 fail, salida 0. TAP y salidas a fichero fuera del árbol, leídos en un segundo comando.
+
+**Sin medir:** el arreglo (1730f, NO HECHO), así que nada aquí demuestra que estos fixtures basten con él; la suite entera (NO CORRIDA: el encargo dice no correrla); 1055b y 1445d (PARTE 2).

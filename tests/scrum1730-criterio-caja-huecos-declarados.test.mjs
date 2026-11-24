@@ -115,11 +115,17 @@ const factura = (id, number, createdAt, paidAt, lines) => ({
 // (i): emitidas el 15-feb-2027 (Q1) y cobradas el 20-may-2027 (Q2). La S1 es el control positivo.
 const EMISION_I = new Date(2027, 1, 15, 12);
 const COBRO_I = new Date(2027, 4, 20, 12);
-const S2 = factura(1, 'F-S2', EMISION_I, COBRO_I, [{ qty: 1, price: 1000, tax: 0, causa: 'S2' }]);
-const S1 = factura(2, 'F-S1', EMISION_I, COBRO_I, [{ qty: 1, price: 1000, tax: 0.21 }]);
+// SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora.
+// La S2 también lleva `true`: este test espera que vaya por emisión por la REGLA S2 «aunque el
+// merchant tenga caja». Sin la marca iría por emisión por el NULL (NULL = por emisión), no por la
+// regla, y el caso (i) quedaría verde sin medir nada.
+const S2 = { ...factura(1, 'F-S2', EMISION_I, COBRO_I, [{ qty: 1, price: 1000, tax: 0, causa: 'S2' }]), merchantCriterioCaja: true };
+// SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora
+const S1 = { ...factura(2, 'F-S1', EMISION_I, COBRO_I, [{ qty: 1, price: 1000, tax: 0.21 }]), merchantCriterioCaja: true };
 
 // (ii): emitida el 10-mar-2026 y sin cobro → su tope es el 31-dic-2027 (Q4 de 2027).
-const SIN_COBRO = factura(3, 'F-SIN-COBRO', new Date(2026, 2, 10, 12), null, [{ qty: 1, price: 1000, tax: 0.21 }]);
+// SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora
+const SIN_COBRO = { ...factura(3, 'F-SIN-COBRO', new Date(2026, 2, 10, 12), null, [{ qty: 1, price: 1000, tax: 0.21 }]), merchantCriterioCaja: true };
 const TOPE = { año: 2027, trimestre: 4 };
 
 const numeros = (libro) => libro.asientos.map((a) => a.numero);
@@ -211,9 +217,14 @@ test('SCRUM-1730 · (ii) una factura sin cobro devenga el 31-dic del año siguie
 
 test('SCRUM-1730 · (i) una factura MIXTA (S1+S2) va ENTERA por emisión, en el libro y en el 303', async () => {
   // Decidido en c.21789 «hasta que conteste el asesor» (pregunta en SCRUM-1264).
-  const mixta = factura(4, 'F-MIXTA', EMISION_I, COBRO_I, [
-    { qty: 1, price: 600, tax: 0.21 }, { qty: 1, price: 400, tax: 0, causa: 'S2' },
-  ]);
+  // SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora. Con `true`, como la
+  // S2: tiene que ir por emisión por la regla S2 y no por el NULL, o este caso no mide nada.
+  const mixta = {
+    ...factura(4, 'F-MIXTA', EMISION_I, COBRO_I, [
+      { qty: 1, price: 600, tax: 0.21 }, { qty: 1, price: 400, tax: 0, causa: 'S2' },
+    ]),
+    merchantCriterioCaja: true,
+  };
   const db = baseCon([mixta, S1]);
   const q1 = await leerLibroRegistro(db, { merchantId: MERCHANT, ...rangoTrimestre(2027, 1), criterioCaja: true, devengo: true });
   const q2 = await leerLibroRegistro(db, { merchantId: MERCHANT, ...rangoTrimestre(2027, 2), criterioCaja: true, devengo: true });

@@ -111,10 +111,13 @@ const c21 = async (db, año, t) => {
 
 // ① El caso del encargo.
 const FA = factura(1, 'F-A', madrid('2026-02-10T12:00:00'), madrid('2026-03-20T12:00:00'));
+// SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora. `FA` se queda sin
+// marca porque la comparte el caso ③, que va POR EMISIÓN; los casos de caja leen esta copia.
+const FA_CAJA = { ...FA, merchantCriterioCaja: true };
 const FILAS_A = [fila(1, '605.00', madrid('2026-03-20T12:00:00'), { metodo: 'bizum' }), fila(1, '605.00', madrid('2026-05-15T12:00:00', true))];
 
 test('SCRUM-1732d · ① emitida en T1 y cobrada en dos tramos: el libro la lleva entera en T1 con sus dos cobros, y el 303 devenga cada tramo en su trimestre', async () => {
-  const db = base([FA], FILAS_A);
+  const db = base([FA_CAJA], FILAS_A); // SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora
   const t1 = await libro(db, 2026, 1);
   const a = t1.asientos.find((x) => x.numero === 'F-A');
   assert.ok(a, 'el libro de T1 tiene que llevar la factura (periodo de expedición)');
@@ -127,7 +130,8 @@ test('SCRUM-1732d · ① emitida en T1 y cobrada en dos tramos: el libro la llev
 });
 
 test('SCRUM-1732d · ② factura paid sin filas: como hoy, un cobro del 100 % en su paidAt', async () => {
-  const f = factura(2, 'F-B', madrid('2026-02-10T12:00:00'), madrid('2026-05-20T12:00:00', true));
+  // SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora
+  const f = { ...factura(2, 'F-B', madrid('2026-02-10T12:00:00'), madrid('2026-05-20T12:00:00', true)), merchantCriterioCaja: true };
   const db = base([f]);
   assert.deepEqual((await libro(db, 2026, 1)).asientos.find((x) => x.numero === 'F-B').cobros, []);
   assert.deepEqual(await c21(db, 2026, 1), { base: 0, cuota: 0 });
@@ -144,7 +148,7 @@ test('SCRUM-1732d · ③ criterio general: sin cambio, por emisión y sin cobros
 });
 
 test('SCRUM-1732d · ④ un tramo sin medio se lleva con metodo null y se cuenta aparte, y devenga igual', async () => {
-  const db = base([FA], [FILAS_A[0], { ...FILAS_A[1], metodo: null }]);
+  const db = base([FA_CAJA], [FILAS_A[0], { ...FILAS_A[1], metodo: null }]); // SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora
   const t1 = await libro(db, 2026, 1);
   assert.equal(t1.asientos.find((x) => x.numero === 'F-A').cobros[1].metodo, null);
   assert.deepEqual(t1.cobrosSinMedio, ['F-A']);
@@ -153,7 +157,8 @@ test('SCRUM-1732d · ④ un tramo sin medio se lleva con metodo null y se cuenta
 
 test('SCRUM-1732d · ⑤ una fila anulada y su anulación no cuentan: el tramo anulado se va al tope', async () => {
   const anulada = FILAS_A[1];
-  const db = base([FA], [...FILAS_A, fila(1, '605.00', madrid('2026-06-01T12:00:00', true), { tipo: 'anulacion', anulaId: anulada.id, chargeId: null })]);
+  // SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora
+  const db = base([FA_CAJA], [...FILAS_A, fila(1, '605.00', madrid('2026-06-01T12:00:00', true), { tipo: 'anulacion', anulaId: anulada.id, chargeId: null })]);
   assert.equal((await libro(db, 2026, 1)).asientos.find((x) => x.numero === 'F-A').cobros.length, 1);
   assert.deepEqual(await c21(db, 2026, 2), { base: 0, cuota: 0 });
   assert.deepEqual(await c21(db, 2027, 4), { base: 500, cuota: 105 }, 'lo no cobrado devenga el 31-dic del año siguiente');
@@ -162,7 +167,8 @@ test('SCRUM-1732d · ⑤ una fila anulada y su anulación no cuentan: el tramo a
 test('SCRUM-1732d · ⑥ filas vivas que suman más que el total: se devenga el total y lo de más va a cobradoDeMas', async () => {
   // El segundo cobro, en OTRO trimestre: si devengara, el T2 tendría la factura (con el resto del
   // último tramo a 0 en el T1, la mutación «sin tope» salía MUDA con los dos cobros en el T1).
-  const db = base([FA], [fila(1, '1210.00', madrid('2026-03-01T12:00:00')), fila(1, '1210.00', madrid('2026-05-02T12:00:00', true))]);
+  // SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora
+  const db = base([FA_CAJA], [fila(1, '1210.00', madrid('2026-03-01T12:00:00')), fila(1, '1210.00', madrid('2026-05-02T12:00:00', true))]);
   assert.deepEqual(await c21(db, 2026, 1), { base: 1000, cuota: 210 });
   assert.equal((await libro(db, 2026, 2, { devengo: true })).asientos.length, 0, 'lo cobrado de más no devenga en el trimestre en que entra');
   assert.deepEqual((await libro(db, 2026, 1)).cobradoDeMas, [{ numero: 'F-A', importe: 1210 }]);
@@ -170,7 +176,8 @@ test('SCRUM-1732d · ⑥ filas vivas que suman más que el total: se devenga el 
 
 test('SCRUM-1732d · ⑦ garantía retenida sin liberar: lo retenido devenga en el tope (Q6, defecto conocido de la pregunta 49)', async () => {
   assert.equal(DEFECTO_CONOCIDO.garantiaRetenidaAlTope.declarado, true, 'retirar la declaración es parte del cambio que la responda');
-  const db = base([FA], [fila(1, '1149.50', madrid('2026-03-20T12:00:00')), fila(1, '60.50', madrid('2028-02-01T12:00:00'), { tipo: 'liberacion_garantia' })]);
+  // SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora
+  const db = base([FA_CAJA], [fila(1, '1149.50', madrid('2026-03-20T12:00:00')), fila(1, '60.50', madrid('2028-02-01T12:00:00'), { tipo: 'liberacion_garantia' })]);
   assert.deepEqual(await c21(db, 2026, 1), { base: 950, cuota: 199.5 });
   assert.deepEqual(await c21(db, 2027, 4), { base: 50, cuota: 10.5 });
   assert.deepEqual(await c21(db, 2028, 1), { base: 0, cuota: 0 }, 'la liberación después del tope no vuelve a devengar');
@@ -178,14 +185,18 @@ test('SCRUM-1732d · ⑦ garantía retenida sin liberar: lo retenido devenga en 
 
 test('SCRUM-1732d · ⑧ el trimestre del tramo es el de la zona del comercio, no el de UTC', async () => {
   // 1-abr-2026 a las 00:30 en Madrid = 31-mar a las 22:30Z: es T2 en Madrid y T1 en UTC.
-  const db = base([FA], [fila(1, '605.00', madrid('2026-03-20T12:00:00')), fila(1, '605.00', new Date('2026-03-31T22:30:00Z'))]);
+  // SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora
+  const db = base([FA_CAJA], [fila(1, '605.00', madrid('2026-03-20T12:00:00')), fila(1, '605.00', new Date('2026-03-31T22:30:00Z'))]);
   assert.deepEqual(await c21(db, 2026, 1), { base: 500, cuota: 105 });
   assert.deepEqual(await c21(db, 2026, 2), { base: 500, cuota: 105 });
 });
 
 test('SCRUM-1732d · ⑨ tres tramos de 33,33/33,33/33,34: las tres cuotas suman la de la factura al céntimo', async () => {
   const f = factura(9, 'F-R', madrid('2026-01-10T12:00:00'), madrid('2026-02-10T12:00:00'), { total: '100.00', lines: [{ qty: 1, price: 82.64, tax: 0.21 }] });
-  const db = base([f], [fila(9, '33.33', madrid('2026-02-10T12:00:00')), fila(9, '33.33', madrid('2026-05-10T12:00:00', true)), fila(9, '33.34', madrid('2026-08-10T12:00:00', true))]);
+  // SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora. `f` sin marca se
+  // queda para `entera` (medida con la caja apagada); las lecturas de caja leen `fCaja`.
+  const fCaja = { ...f, merchantCriterioCaja: true };
+  const db = base([fCaja], [fila(9, '33.33', madrid('2026-02-10T12:00:00')), fila(9, '33.33', madrid('2026-05-10T12:00:00', true)), fila(9, '33.34', madrid('2026-08-10T12:00:00', true))]);
   const q = [await c21(db, 2026, 1), await c21(db, 2026, 2), await c21(db, 2026, 3)];
   const cent = (k) => q.reduce((s, x) => s + Math.round(x[k] * 100), 0);
   // La factura: base 82,64 y cuota 17,35 (calcVatBreakdown). Medida con la caja apagada, no escrita a mano.
@@ -195,7 +206,7 @@ test('SCRUM-1732d · ⑨ tres tramos de 33,33/33,33/33,34: las tres cuotas suman
 });
 
 test('SCRUM-1732d · control: con caja y sin poder leer invoice_payments, el libro LANZA (no lee «sin cobros»)', async () => {
-  const db = base([FA], FILAS_A);
+  const db = base([FA_CAJA], FILAS_A); // SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora
   delete db.invoicePayment;
   await assert.rejects(libro(db, 2026, 1), /invoice_payments/);
 });
