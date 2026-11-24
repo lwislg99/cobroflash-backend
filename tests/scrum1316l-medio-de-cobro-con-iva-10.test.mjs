@@ -35,7 +35,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // El lote deja de apartar las del 10 %.
     fichero: 'src/modules/system/app/routes/invoicesAdmin.routes.ts',
-    de: '...(sinMetodo.length ? { NOT: { id: { in: sinMetodo } } } : {}),',
+    de: 'NOT: { id: { in: sinMetodo } },',
     a: '',
     cae: 'SCRUM-1316l · bulk-paid · 🔴 ⑤ la del 10 % se queda fuera con T3 y las demás se marcan',
   },
@@ -216,7 +216,7 @@ test('SCRUM-1316l · bulk-paid · ⑦ POSITIVO: sin facturas del 10 % la respues
   const r = await lote({ ids: [SIN_10] });
   assert.deepEqual(r.body, { ok: true, updated: 1 });
   assert.deepEqual(marcables(r.updateManys[0].where), [SIN_10]);
-  assert.equal(r.updateManys[0].where.NOT, undefined, 'sin facturas del 10 % el where es el de siempre');
+  assert.deepEqual(r.updateManys[0].where.NOT, { id: { in: [] } }, 'sin facturas del 10 % el NOT no excluye nada');
 });
 
 test('SCRUM-1316l · ⑧ servidor y pantalla dicen lo mismo de «lleva línea al 10 %»', () => {

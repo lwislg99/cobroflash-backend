@@ -590,7 +590,9 @@ router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
         id: { in: ids },
         // SCRUM-1316l · las de línea al 10 % (sin medio) se quedan fuera; el filtro va APARTE para que
         // el lote siga siendo `id: { in: ids }` (lo lee el escáner de `scrum397`).
-        ...(sinMetodo.length ? { NOT: { id: { in: sinMetodo } } } : {}),
+        // Literal (sin spread condicional): el censo SCRUM-289 tiene que poder leer qué filtra. Con
+        // `sinMetodo` vacío, `NOT: { id: { in: [] } }` no excluye nada.
+        NOT: { id: { in: sinMetodo } },
         merchantId: req.merchantId,
         // SCRUM-496 · ANTES decia `{ not: 'paid' }`, y eso INCLUIA `annulled`: una factura dada de
         // baja ante la AEAT —con su registro de anulacion sellado y encadenado— podia volver a
