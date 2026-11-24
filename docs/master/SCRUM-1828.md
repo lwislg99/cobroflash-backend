@@ -1,6 +1,6 @@
 # SCRUM-1828b
 
-**Skill UI:** `yaqu-premium-ui` cargada antes de tocar la vista. Sin tokens, clases ni componentes nuevos: cambia solo el texto del aviso de `setAlert` (que ya escribe por `textContent`, `settingsView.js:236`).
+**Skill UI:** cargada (`yaqu-premium-ui`, antes de tocar la vista). Sin tokens, clases ni componentes nuevos: cambia solo el texto del aviso de `setAlert` (que ya escribe por `textContent`, `settingsView.js:236`).
 
 **Medido contra:** `origin/main` = `6fbcde28651d2eed9190ced9efbc7663d8cdac7a` · 2026-11-24T11:54:42Z
 
