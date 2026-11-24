@@ -2160,7 +2160,7 @@ A9: comprobación → `tests/scrum525d-anclas-que-apuntan.test.mjs`
 
 # APÉNDICE (R) · SCRUM-665e · 24-nov-2026 · S1 (encargo SCRUM-1817 pieza ①) · el parche S1 entra en la rama y la fila del suelo, en el mismo push
 
-Medido el 24-nov-2026 09:47Z (`Date:` de GitHub) sobre `origin/main` 8e0d408168865aab0c7862d7c004cf864450aa71. Rama `scrum-665e-pdf-persistente`, punta de partida `f61882170`.
+**Medido contra:** `origin/main` = `8e0d408168865aab0c7862d7c004cf864450aa71` · 2026-11-24T09:47Z (S1: «Medido el 24-nov-2026 09:47Z (`Date:` de GitHub)»; puesto en forma de ancla por J1 en el tramo (S), sin cambiar el dato). Rama `scrum-665e-pdf-persistente`, punta de partida `f61882170`.
 
 - **Cherry-pick de `42655871`** (parte S1, líneas pedidas por J1 en c.21564): `src/core/storage/dirs.ts` (los PDF de factura en `RAILWAY_VOLUME_MOUNT_PATH/invoices`; en producción sin esa variable el arranque aborta) y `src/core/http/adminOnlyRoutes.ts` (fuera `POST /admin/invoices/:invoiceId/regenerate-pdf`, que esta rama desmonta). Sin conflictos. Entra ya, sin esperar al plan Pro: decisión de c.22358.
 - **Fila de suelo** en `RETIRADAS_A_PROPOSITO` de `scripts/_suelo-contra-main.mjs`, copiada literal de c.22396 (`scrum586-forma-de-pago-por-cliente.test.mjs`, 9 → 8, 2026-11-23). Cruce S1→S3 firmado por el orquestador (c.21978): sólo esa fila.
