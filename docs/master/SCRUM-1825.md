@@ -75,10 +75,42 @@ es del FIXTURE del test, no del producto: en `ANTES`, una de las dos `'BUTTON:+ 
 igual. Lo decide su dueño. Hasta entonces la rama no se empuja: si entrara la cura sola, este test
 pasaría a rojo en `main`.
 
+### El fixture de 817, corregido aquí por cruce autorizado (S3 → carril S2)
+
+**Autorización** (orquestador, mensaje a S3, 24-nov-2026; literal): «DECISIÓN: CRUCE S3→S2 AUTORIZADO
+NOMINALMENTE AQUÍ (precedente de hoy: cruce S2→S1 en SCRUM-1804 c.22551; registro del uso en SCRUM-1656 lo
+hago yo). Alcance EXACTO y nada más: en tests/scrum817-orden-del-detalle-del-trabajo.test.mjs, UNA de las dos
+cadenas «BUTTON:+ Nuevo albarán» del fixture — la que corresponde al cta de jobDetailView.js:1166 — pasa a
+nombrarse por su gancho «data-accion=cta»; cero cambios más en ese fichero, jobDetailView.js NO se toca.» Y,
+tras medir el rojo en main: «SÍ a tu propuesta: commit aparte en la MISMA rama y el MISMO PR — mi «mismo
+commit» era por la atomicidad del aterrizaje, y eso el PR la da (main nunca ve una mitad sin la otra)». S2
+lo ratifica en su carril al relevo (lo señala el orquestador).
+
+**El diff, una línea** — `tests/scrum817-orden-del-detalle-del-trabajo.test.mjs:148`:
+
+```
+-    'BUTTON:+ Nuevo albarán', 'BUTTON:+ Nuevo albarán',
++    'BUTTON:+ Nuevo albarán', 'data-accion=cta',
+```
+
+**Medido** (scrum817 entero): con la cura, 4/4 ✔. Con el banco de main (`_banco-vistas` + `_pagina-panel` de
+`origin/main`, mismo árbol), 3/4: cae «el reorden no pierde NI UNA acción», porque sin la cura el banco no ve
+`cta.dataset.accion` y nombra el CTA por su texto. **El fixture corregido solo vale con la cura; entran juntos
+en el PR; por separado, cualquiera de los dos deja scrum817 en rojo en main.**
+
 **Lo que este barrido NO prueba:** un test que afirme «ya no está» y siga verde con la cura también lo
 estaba antes; el barrido sólo caza los que cambian de veredicto.
 
-**Estado al relevo:** commit local en `scrum-1825-dataset-proxy`, SIN empujar. Antes del push: decisión del
+**Re-medición sobre `main` `31af3ad11` (12 commits más; uno toca `jobDetailView.js`, SCRUM-1834, aviso del
+método de cobro, no el CTA):** mezclado y recompilado. Barrido de la CURA, ya con el fixture corregido: 426
+ficheros, 3.438 tests, 2 ✖, 0 ciegas. El de la BASE **lo cortó Claude Code por falta de memoria en la máquina**
+en la tanda 13 de 15, sin escribir su JSON: la comparación por conjuntos sobre este árbol NO está hecha, y sin
+ella no se empuja. Las copias del banco de main que dejó el corte en el árbol se guardaron en el stash
+`422e0760ae58ea4341a52981ed479996e3265c93` (idénticas a `origin/main`; el guard `guard-dangerous` no dejó
+descartarlas y el permiso de un solo uso fue denegado).
+
+**Estado al relevo:** commit local en `scrum-1825-dataset-proxy`, SIN empujar. Falta SÓLO el barrido de la base
+sobre el árbol mezclado (`poblacion` v3 = la v2 + la transitiva regenerada), cuando la máquina tenga memoria. Antes del push: decisión del
 dueño de 817 → re-mezclar `main` → repetir el barrido con `poblacion-v2.txt` (y regenerar la transitiva) →
 `ancla.mjs` + A9 + `guards:entrada`.
 
