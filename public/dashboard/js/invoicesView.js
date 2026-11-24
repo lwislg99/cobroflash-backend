@@ -114,10 +114,57 @@ function pintarFechaDeCobro(contenedor, opts) {
   return input;
 }
 
+// SCRUM-1316l · IVA AL 10 % Y MEDIO DE COBRO (RDL 29/2026, desde el 1-dic-2026). Decisión del fundador
+// en SCRUM-1316 c.22438: con alguna línea al 10 %, declarar el medio al marcar cobrada es OBLIGATORIO;
+// sin ella, todo sigue como antes. El servidor lo hace cumplir (`invoiceAdmin.ts`); la pantalla solo
+// lo adelanta. T4 es un AVISO, no un bloqueo: el tipo lo fijó el profesional al emitir (D3 de c.22424).
+const COPY_IVA_10 = {
+  eligeMetodo: 'Elige cómo lo has cobrado: en esta factura hay IVA al 10 %.', // APROBADO por Javier el 24-nov-2026 (SCRUM-1316 comentario 22438)
+  avisoEfectivo: 'Desde el 1 de diciembre de 2026, el IVA del 10 % en obras de vivienda solo se aplica si el cliente paga con tarjeta, transferencia bancaria, cheque nominativo o ingreso en cuenta. Si cobras en efectivo, consúltalo con tu asesor.', // APROBADO por Javier el 23-nov-2026 (SCRUM-1316 comentario 22424; en la ficha de factura, SCRUM-1316 comentario 22438)
+};
+
+/**
+ * ¿Lleva la factura ALGUNA línea al 10 %? PURO. Misma regla que `llevaLineaAlDiez` del servidor:
+ * `tax` en fracción, comparado en porcentaje a dos decimales, y las cabeceras de apartado no cuentan.
+ */
+function llevaLineaAlDiez(lines) {
+  if (!Array.isArray(lines)) return false;
+  return lines.some((l) => {
+    if (!l || l.apartado === true) return false; // la marca de `quoteApartados.js` (MARCA_APARTADO)
+    const t = Number(l.tax);
+    return Number.isFinite(t) && Math.round(t * 10000) / 100 === 10;
+  });
+}
+
+/**
+ * ¿Se enseña T4? Solo con línea al 10 % y un medio de los que el SERVIDOR sirve con aviso
+ * (`metodosConAvisoIvaAlDiez` del detalle de la factura). PURO. La pantalla no escribe valores del
+ * conjunto cerrado (regla 22, `scrum441`): sin lista servida, no hay aviso.
+ */
+function avisoDeEfectivoVisible(conDiez, metodo, conAviso) {
+  return !!conDiez && !!metodo && Array.isArray(conAviso) && conAviso.includes(metodo);
+}
+
+/**
+ * Lo que dice el lote cuando el servidor dejó fuera facturas con línea al 10 % (`sinMetodo`). PURO.
+ * Sin ninguna fuera, devuelve `r` tal cual. Si no se marcó ninguna, el motivo es SOLO T3 (el
+ * «ya estaban pagadas o anuladas» de siempre sería falso); si se marcaron otras, se dicen las dos cosas.
+ */
+function resultadoConIvaAlDiez(r, data) {
+  const fuera = data && Array.isArray(data.sinMetodo) ? data.sinMetodo.length : 0;
+  if (!fuera) return r;
+  if (!r.seMarcaron) return { tono: 'error', texto: COPY_IVA_10.eligeMetodo, seMarcaron: false };
+  return { tono: 'warning', texto: r.texto + ' ' + COPY_IVA_10.eligeMetodo, seMarcaron: true };
+}
+
+// Un `const` de nivel superior NO es propiedad de `window`: la ficha (`invoiceDetailView.js`) lo lee por aquí.
+if (typeof window !== 'undefined') window.COPY_IVA_10 = COPY_IVA_10;
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     COPY_BULK_PAGADAS, resultadoMarcadoEnBloque, textoMarcadas,
     COPY_FECHA_DE_COBRO, fechaDeCobroElegida, cuerpoConFechaDeCobro,
+    COPY_IVA_10, llevaLineaAlDiez, avisoDeEfectivoVisible, resultadoConIvaAlDiez,
   };
 }
 
@@ -595,7 +642,8 @@ async function fetchInvoices(options = {}) {
       let recargaOk = false;
       try { recargaOk = await reload(); } catch { recargaOk = false; }
 
-      const r = resultadoMarcadoEnBloque({ escrituraOk: true, recargaOk, marcadas: data.updated });
+      // SCRUM-1316l · las de IVA al 10 % vuelven en `sinMetodo`, sin marcar, con T3.
+      const r = resultadoConIvaAlDiez(resultadoMarcadoEnBloque({ escrituraOk: true, recargaOk, marcadas: data.updated }), data);
       statusBox.textContent = r.texto;
       statusBox.className = 'alert ' + r.tono;
       statusBox.style.display = 'block';

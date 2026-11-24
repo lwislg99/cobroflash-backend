@@ -646,6 +646,8 @@ async function fetchInvoiceDetail(id) {
     let selMetodo = null;
     // SCRUM-1618 · la fecha de cobro, igual: `null` mientras no se pinte, y vacía no viaja.
     let inpFechaCobro = null;
+    // SCRUM-1316l · con alguna línea al 10 %, el medio de cobro es obligatorio (SCRUM-1316 c.22438).
+    const conIvaAlDiez = typeof window.llevaLineaAlDiez === 'function' && window.llevaLineaAlDiez(invoice.lines);
     const btnTogglePaid = document.createElement('button');
     btnTogglePaid.className = 'btn-secondary btn-sm';
     btnTogglePaid.textContent = 'Marcar como cobrada';
@@ -656,6 +658,14 @@ async function fetchInvoiceDetail(id) {
       // A21.2 (V4/V5): al marcar PAGADA se pregunta el importe REAL recibido.
       // Si no coincide, NADA automático: la factura sigue pendiente y queda
       // anotado en la ficha 360 para la decisión manual (runbook O).
+      // SCRUM-1316l · sin medio elegido y con línea al 10 %, T3 ANTES de preguntar el importe: el
+      // servidor lo rechazaría igual (422), y así no se pregunta nada que luego no sirve.
+      if (targetStatus === 'paid' && conIvaAlDiez && selMetodo
+        && typeof window.metodoElegido === 'function' && !window.metodoElegido(selMetodo)) {
+        setStatus('error', window.COPY_IVA_10.eligeMetodo);
+        selMetodo.focus();
+        return;
+      }
       if (targetStatus === 'paid') {
         const totalNum = Number(invoice.total);
         const raw = window.prompt(
@@ -1004,6 +1014,23 @@ async function fetchInvoiceDetail(id) {
     // pantalla se comporta exactamente como antes de existir el selector.
     if (estadoFactura === 'pending' && typeof window.pintarSelectorMetodo === 'function') {
       selMetodo = window.pintarSelectorMetodo(actions, { id: 'metodo-cobro-factura' });
+      // SCRUM-1316l · con línea al 10 %: el selector es obligatorio, y al elegir «efectivo» sale T4
+      // debajo. Es un AVISO, no un bloqueo. `hidden`, no `style=` (CSP, SCRUM-1773).
+      if (selMetodo && conIvaAlDiez) {
+        selMetodo.required = true;
+        selMetodo.setAttribute('aria-required', 'true');
+        const avisoEfectivo = document.createElement('p');
+        avisoEfectivo.className = 'alert warning';
+        avisoEfectivo.id = 'metodo-cobro-factura-aviso';
+        avisoEfectivo.setAttribute('role', 'status');
+        avisoEfectivo.textContent = window.COPY_IVA_10.avisoEfectivo;
+        avisoEfectivo.hidden = true;
+        selMetodo.parentNode.appendChild(avisoEfectivo);
+        selMetodo.setAttribute('aria-describedby', avisoEfectivo.id);
+        selMetodo.addEventListener('change', () => {
+          avisoEfectivo.hidden = !window.avisoDeEfectivoVisible(true, window.metodoElegido(selMetodo), invoice.metodosConAvisoIvaAlDiez);
+        });
+      }
     }
     // SCRUM-1618 · «¿Cuándo lo has cobrado?», con la misma condición: solo si el gesto es MARCAR COBRADA.
     if (estadoFactura === 'pending' && typeof window.pintarFechaDeCobro === 'function') {

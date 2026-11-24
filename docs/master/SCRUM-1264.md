@@ -716,3 +716,29 @@ seguí por contexto.
 2. En SCRUM-1732 c.22054, Jira movió dos negritas que rodeaban un código: el texto se lee bien, pero
    no es exactamente lo que envié.
 3. Me quedé sin contexto antes de leer el Anexo I. Lo digo en Ⓔ, y no relleno lo que no he leído.
+
+---
+
+# SCRUM-1264a · Las preguntas del sprint del 21-nov: A2 confirmada (34), 2 ampliaciones nuevas (52 y 53) y la fila 51 copiada al fichero
+
+**Medido contra:** `origin/main` = `42cae61092ba69761d6d7bba0504abe6baee1e52` · 2026-11-24T01:49:40Z (cabecera `Date:` de GitHub)
+
+A9: aviso → A10 «El coste no es lo que entra en el chat: es lo que el chat arrastra.» — no se pudo comprobar: crucé el tope de 130k del encargo (133.235 al acabar de leer Jira) con 104.424 ya al acabar el arranque; los cuatro comentarios se sacaron a fichero y entraron solos, y aun así nada mide el contexto antes de cada llamada
+
+Sesión J4 (IA, `jv-j4cd`), 24-nov-2026, por encargo del orquestador del equipo de Javier
+(`cobroflash-backend-2d`). **Solo docs** (`docs/legal/PREGUNTAS_ASESOR.md` y este registro). **Son
+preguntas, no respuestas de asesor** (reglas 17 y 26; no hay asesor hasta la SL, c.22060).
+
+- **Leído en Jira, sólo esto:** SCRUM-1787 c.22390 (punto 4), SCRUM-665 c.22395, SCRUM-1316 c.22424 y
+  c.22438, y el último comentario de SCRUM-1264 (c.22168, para el formato de alta).
+- **PASO 0:** `git ls-remote origin 'refs/heads/scrum-1264*'` vacío; en `main`, el último tramo era 1264w.
+- **① A2 (Bizum):** ya estaba en la fila 34 (E6). No se duplica: se añade una nota de confirmación con lo
+  que ahora depende de ella (c.22424 y c.22438 punto 4).
+- **② dirección congelada y supresión:** vecinas P17 y E (no nombran la dirección). Ampliación **52**.
+- **③ custodia del PDF y R1:** vecinas P20 y 18 · D1. Ampliación **53**.
+- **Fila 51:** estaba en Jira (c.22168) y no en el fichero; copiada literal (comparada por bytes con el
+  comentario: presente, y el control con un carácter añadido da ausente).
+- Todo va al final del fichero, sin mover ninguna línea de encima.
+
+**Lo que NO está medido:** no he abierto el PR #3201 más allá de su título y estado (OPEN); que
+`anonimizarMerchant.ts` no toca la dirección lo digo por un grep sin casos (0 líneas), no por un test.
