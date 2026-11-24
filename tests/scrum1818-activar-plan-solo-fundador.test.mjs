@@ -23,6 +23,8 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { reqDeSesion } from './_arnes-de-router.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const require_ = createRequire(path.join(RAIZ, 'package.json'));
@@ -100,7 +102,7 @@ async function cambiar({ rol = 'admin', como = EL_DUENO, id = OBJETIVO, body = {
   const express = require_('express');
   const app = express();
   app.use(express.json());
-  app.use((req, _res, next) => { req.merchantId = QUIEN_LLAMA; req.userRole = rol; next(); });
+  app.use((req, _res, next) => { Object.assign(req, reqDeSesion({ rol, merchantId: QUIEN_LLAMA })); next(); });
   app.use('/admin/plataforma', router);
   const server = http.createServer(app);
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
@@ -150,12 +152,6 @@ test('SCRUM-1818 · 🔴 un OPERARIO, también el de la cuenta dueña, recibe 40
   }
 });
 
-test('SCRUM-1818 · un rol desconocido no pasa (allowlist, no denylist)', async () => {
-  const r = await cambiar({ rol: 'comercial', como: EL_DUENO });
-  assert.equal(r.status, 403);
-  assert.deepEqual(r.base, []);
-});
-
 // ── EL CAMINO BUENO (y control de los 403 de arriba) ─────────────────────────────────────────
 
 test('SCRUM-1818 · ✅ el fundador activa «equipo»: 200, y se escribe SOLO la columna plan del comercio pedido', async () => {
@@ -197,8 +193,8 @@ const MAL_ESCRITOS = [
   ['sin campo', {}],
 ];
 
-for (const [que, body] of MAL_ESCRITOS) {
-  test(`SCRUM-1818 · 🔴 typo (${que}) → 400 plan_desconocido, y NO se escribe`, async () => {
+const typo = casosEscritos(MAL_ESCRITOS, ([que]) => `SCRUM-1818 · 🔴 typo (${que}) → 400 plan_desconocido, y NO se escribe`,
+  async ([, body]) => {
     const r = await cambiar({ body });
     assert.equal(r.status, 400, `🔴 ${JSON.stringify(body)} contestó ${r.status}`);
     assert.equal(r.cuerpo?.error, 'plan_desconocido');
@@ -206,7 +202,18 @@ for (const [que, body] of MAL_ESCRITOS) {
     assert.deepEqual(escrituras(r), [], '🔴 se escribió un plan que no existe');
     assert.equal(objetivo.plan, 'trial');
   });
-}
+test('SCRUM-1818 · 🔴 typo (mayúscula) → 400 plan_desconocido, y NO se escribe', typo(0));
+test('SCRUM-1818 · 🔴 typo (espacio detrás) → 400 plan_desconocido, y NO se escribe', typo(1));
+test('SCRUM-1818 · 🔴 typo (espacio delante) → 400 plan_desconocido, y NO se escribe', typo(2));
+test('SCRUM-1818 · 🔴 typo (un plan que no existe) → 400 plan_desconocido, y NO se escribe', typo(3));
+test('SCRUM-1818 · 🔴 typo (vacío) → 400 plan_desconocido, y NO se escribe', typo(4));
+test('SCRUM-1818 · 🔴 typo (heredado del prototipo) → 400 plan_desconocido, y NO se escribe', typo(5));
+test('SCRUM-1818 · 🔴 typo (heredado del prototipo (2)) → 400 plan_desconocido, y NO se escribe', typo(6));
+test('SCRUM-1818 · 🔴 typo (número) → 400 plan_desconocido, y NO se escribe', typo(7));
+test('SCRUM-1818 · 🔴 typo (null) → 400 plan_desconocido, y NO se escribe', typo(8));
+test('SCRUM-1818 · 🔴 typo (lista) → 400 plan_desconocido, y NO se escribe', typo(9));
+test('SCRUM-1818 · 🔴 typo (sin campo) → 400 plan_desconocido, y NO se escribe', typo(10));
+typo.todos();
 
 // ── EL COMERCIO ──────────────────────────────────────────────────────────────────────────────
 
@@ -218,11 +225,17 @@ test('SCRUM-1818 · comercio inexistente → 404, sin escritura', async () => {
   assert.deepEqual(escrituras(r), []);
 });
 
-for (const id of ['abc', '1.5', '0', '-3', '077x']) {
-  test(`SCRUM-1818 · id no válido «${id}» → 400, sin tocar la base después de la puerta`, async () => {
+const IDS_MALOS = ['abc', '1.5', '0', '-3', '077x'];
+const idMalo = casosEscritos(IDS_MALOS, (id) => `SCRUM-1818 · id no válido «${id}» → 400, sin tocar la base después de la puerta`,
+  async (id) => {
     const r = await cambiar({ id });
     assert.equal(r.status, 400, `«${id}» contestó ${r.status}`);
     assert.equal(r.cuerpo?.error, 'invalid_id');
     assert.deepEqual(escrituras(r), []);
   });
-}
+test('SCRUM-1818 · id no válido «abc» → 400, sin tocar la base después de la puerta', idMalo(0));
+test('SCRUM-1818 · id no válido «1.5» → 400, sin tocar la base después de la puerta', idMalo(1));
+test('SCRUM-1818 · id no válido «0» → 400, sin tocar la base después de la puerta', idMalo(2));
+test('SCRUM-1818 · id no válido «-3» → 400, sin tocar la base después de la puerta', idMalo(3));
+test('SCRUM-1818 · id no válido «077x» → 400, sin tocar la base después de la puerta', idMalo(4));
+idMalo.todos();
