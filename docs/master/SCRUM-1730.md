@@ -52,3 +52,43 @@ A9: comprobación → `tests/scrum1730-criterio-caja-huecos-declarados.test.mjs`
 **Errores míos.** ① Leí el arranque de normas después de Jira y no antes, y la cifra del arranque no la mandé al medirla (va a mis cicatrices). ② El primer obligatorio (`2995507b`) cayó por 2 de 13.589 casos, de dos guards que recorren el árbol entero sin nombrar mis ficheros y que la dirigida no listó: `scrum1093h` (los `getFullYear` nuevos sin clase en `USO`) y `scrum289` (el `findMany` nuevo del libro sin censar). Es la misma forma que la de 1051g. Arreglado en la rama: los dos van a `AGREGADO` en `scripts/_censo-fecha-sin-zona.mjs`, en la zona de `rangoTrimestre`, que es quien pone las fronteras del trimestre, y el `findMany#2` se censa en `tests/_censo-origen-factura.mjs` como `OPACO`, porque no ata al origen. Después, 78 de 78 en los 8 ficheros que los leen. El job de navegador cayó por `guard:detalle-trabajo-917` (Trabajos), que no es de esta rama.
 
 **Sin medir:** ninguna base de datos (los 6 casos de `LIBRO_PG_URL`, saltados) · los libros AEAT y las evidencias, ejecutados sólo a través de los tests de la dirigida que los importan · la suite local entera (NO CORRIDA, por orden del encargo: 10 sesiones a la vez) · el cobro parcial (punto 4 de c.21789, ticket aparte) · el (iii), que espera a 1129.
+
+## J1 · SCRUM-1730c · (iii) vivo contra congelado: la medición (el arreglo NO se ha construido)
+
+**Medido contra:** `origin/main` = `fc51ec7a2f11dd93e34141fae48b4357b72d9990` · 2026-11-24T12:08:06Z (hora de GitHub; sesión J1 `jv-j1ju`, por encargo del orquestador `cobroflash-backend-2d`)
+
+A9: sin fallo que generalice — tramo sólo de medición, leída en el código; el arreglo no cupo en el tope de 160k del encargo (medido: 102k al acabar el arranque, 131k tras leer Jira), y eso es del reparto, no de una comprobación que falte.
+
+**El GO.** SCRUM-1730 c.21789, punto 3: «(iii) ✅: tras 1129, el libro lee el criterio congelado de cada factura, y NULL = por emisión, sin caer al Merchant vivo, igual que el PDF.» La propuesta que aprueba es la fila (iii) de c.21785 ③. 1129 ya está: la columna existe.
+
+**Medición ①. Leída en el código, NO EJECUTADA** (este árbol no trae `dist/` y no se compiló).
+
+- **La columna se escribe, y sólo en las F1.** `Invoice.merchantCriterioCaja` se sella en `verifactu.service.ts:352-354` y `:443` con el valor del `Merchant` en ese momento, pero solo si el tipo es `F1`. Con cualquier otro (R1, F2…) se queda en NULL.
+- **El libro no la lee.** Hay 0 apariciones de `merchantCriterioCaja` en `libroRegistro.repo.ts` y en `devengoPorCaja.ts`, y `CAMPOS_FACTURA` (16 campos) no la selecciona. Sin ese campo en el `select`, el libro no puede decidir factura por factura.
+- **Quién decide.** Lo decide `libroRegistro.repo.ts:276`: `campo = 'criterioCaja' in rango ? campoDeDevengo(rango.criterioCaja) : CAMPO_EMISION`. Es un solo valor por CONSULTA. Hay tres llamadores que lo pasan, y los tres lo sacan de `criterioDelMerchantParaElLibro` (`criterioDelMerchant.ts:92`), que hace `merchant.findUnique` sobre la fila VIVA del comercio:
+  - `modelo303.repo.ts:24-27`, con `devengo: true`;
+  - `librosAeat.repo.ts:49-51`;
+  - `paquete.repo.ts:43-50`, las evidencias.
+  Los demás no lo pasan y leen siempre por emisión: `libroRegistro.routes.ts:32`, `reports.routes.ts:278` y `:372`, `modelo130.repo.ts:22` y `modelo347.repo.ts:32`.
+- **Qué hace el criterio desde 1732d.** Solo el 303 (`devengo: true`) lee por devengo, con `leerPorCaja`. El libro de expedidas sigue yendo por fecha de expedición; con caja, además, adjunta los cobros (`cobrosPorFactura`).
+
+| caso | esperado según c.21789 ③ | lo que hace el código hoy |
+|---|---|---|
+| sellada con `true`; el comercio pasa hoy a `false` | el 303 la devenga al cobro (tramos o tope); el libro AEAT y las evidencias la llevan con sus cobros | `campo` = emisión: el 303 la cuenta en el trimestre en que se expidió, y sin cobros |
+| sellada con `false`; el comercio pasa hoy a `true` | por emisión | `leerPorCaja`: la devenga al cobro o en el tope del 31-dic |
+| congelado NULL (emitida antes de 1129, o no es F1); el comercio está en `true` | por emisión | por caja, que es lo que dice el vivo |
+
+**El arreglo.** Toca solo el libro: ni el sellado, ni el builder, ni la cadena, ni el XML, así que no es STOP. Tiene cuatro pasos:
+
+1. Añadir `merchantCriterioCaja` a `CAMPOS_FACTURA`.
+2. En `leerPorCaja`, una candidata cuyo congelado no sea `true` devenga en `createdAt`.
+3. Con `devengo` y un rango, `leerPorCaja` tiene que correr también cuando el vivo es `false`, y hoy no corre. Eso obliga a una de dos cosas: leer `invoice_payments` también para los comercios sin caja, o preguntar antes si hay alguna factura con el congelado en `true`. Es la decisión de diseño que queda abierta.
+4. `cobrosPorFactura` sale de las facturas con el congelado en `true`, no del vivo.
+
+Con esto, `criterioDelMerchant.ts` y sus tres llamadores dejan de decidir. Queda pendiente qué se hace con su comprobación de que el valor vivo se puede leer (`campoDeDevengo` lanza si no): conservarla o retirarla con el arreglo.
+
+**Una pregunta que el GO no contesta.** Una R1 que rectifica una F1 con criterio de caja se queda con el congelado en NULL, porque `verifactu.service.ts:352` solo congela las F1. Con el GO tal como está escrito, esa R1 va por emisión. ¿Es así, o la R1 hereda el criterio de la factura que rectifica? Va al fundador en el comentario de Jira de este tramo.
+
+**Errores míos.** ① Mi primera medida, 102k al acabar el arranque, ya decía que con un tope de 160k no cabía construir el arreglo. No lo dije hasta llegar a 131k. ② Puse la rama al día con `--ff-only` antes de mirar el cliente de Prisma. El avance traía 914d (`Equipment`), que el cliente compartido no tiene, y desde entonces `_prisma-client-guard` sale con código 1 en este árbol. A esta medición no le afecta, pero un `tsc` con tipos aquí fallaría por algo que no es de esta rama.
+
+**Sin medir:** nada ejecutado, ni el libro ni el 303, con un comercio que cambia de criterio · ninguna base · la suite (NO CORRIDA, porque el tramo es solo de documentos) · el test rojo y el arreglo (NO HECHOS: quedan para la siguiente sesión, con este tramo como plan).
