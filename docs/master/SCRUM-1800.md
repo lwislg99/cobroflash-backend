@@ -100,3 +100,9 @@ Mutaciones: catálogo → `tests/scrum1800b-recibo-pendiente-a-continuacion.test
 `tsc -p .` con tipos: 0. Los vecinos no se corrieron en local: los corre el obligatorio, por orden del orquestador.
 
 A9: comprobación → `tests/scrum1800b-recibo-pendiente-a-continuacion.test.mjs`
+
+Relevo jv-j2en (24-nov-2026): el obligatorio de #3354 cayó en SCRUM-1511h («par no leído: SCRUM-1800 comentario 22496»).
+Se añade la fila de c.22523 a `tests/_pares-leidos-en-jira.mjs` (carril J6, excepción A20 declarada por el orquestador J).
+Rojo reproducido antes; después, 921c + 1800b + 910d + 1294 + 854: 37 de 37.
+
+A9: comprobación → `tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs`
