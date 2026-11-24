@@ -169,3 +169,90 @@ Tengo la lista del encargo, no el mensaje. En ella cuento **21 entradas**, no 27
 - **Cinco PR del sprint en FAILURE a la vez** (#3201, #3335, #3336, #3337 y #3340), mientras main está en verde. #3335 es un rojo declarado; de los otros cuatro no he leído el log. Puede haber una causa común, y no lo sé.
 - **1787i en producción:** sigue sin haber una cita de que el ALTER de `due_date` y `pay_methods` esté aplicado. 1779i lo vio funcionar en staging, no en producción.
 - **1779i, «visto de paso»:** la barra de estado marca «Enviada» en facturas que no se han enviado (`SCRUM-1779.md:262+`). Se le pasó al orquestador; no sé si tiene ticket.
+
+# SCRUM-1791c · Tercera auditoría de cierre del sprint del 21-nov: qué falta, por partes y por equipo (solo docs)
+
+**Medido contra:** `origin/main` = `3c6c651fecd17adcad2ec6088d1cf44da0110154` · 2026-11-24T06:36:58Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: aviso → cicatriz J4 «filtré los PR del sprint con el patrón `17[89][0-9]` y dejé fuera a SCRUM-1779, cuya tercera cifra es un 7: la lista salía con 37 PR y ninguno era de 1779» — no se pudo comprobar: esta vez el JQL del encargo (`labels = sprint-21nov OR key in (…)`) dejó fuera a 1792, 1793, 1798, 1801 y 1804, que no llevan la etiqueta; los saqué con un segundo JQL por clave, pero ninguna herramienta compara la lista pedida con la que devuelve el filtro
+
+**Puesto:** J4 (`jv-j4cf`) · **Rama:** `scrum-1791c-tercera-auditoria-cierre`, que lleva dentro el merge de `scrum-1791b-cierre-segunda-auditoria` @ `2ac045dd6703bbff71e5c483e71035879e1446e0` (PR #3344, abierto, con el obligatorio CANCELADO: sin él este tramo no tendría encima el de 1791b, y los dos PR chocarían en la misma línea). **No cierro nada: propongo** (A13).
+
+## Población y cómo se midió
+
+- **Tickets: 24, más 7 hijos.** 1779 a 1790, 1793 a 1795, 1799 a 1803, 665, 914, 1316, 1532 (los J y los dos de Luis que el encargo nombra) y, como hijos, 1796, 1797, 1798, 1804, 1805, 1806 y 1807. 1791 (esta auditoría) y 1792 (guard de J6, sin etiqueta del sprint) no entran.
+- **Jira:** sólo `summary`, `status` y `labels`, de dos JQL (el del encargo, 27 tickets, y uno por clave para los 5 que dejaba fuera). **No he leído descripciones ni comentarios.** Por eso las «partes del enunciado» de abajo NO son el literal del fundador leído en Jira: son las piezas que ya habían separado 1791a y 1791b en sus tablas y los títulos de los hijos. El encargo pedía el literal; no lo he podido traer sin leer las descripciones, y lo digo aquí.
+- **Main:** `git log --first-parent 42cae6109..origin/main`: **9 merges** desde 1791b — #3342 (1264a), #3336 (1316l), #3343 (1794b), #3347 (1779m), #3337 (1787w), #3351 (1802), #3350 (1800 ①), #3346 (1793), #3349 (1779l). Coinciden con los 8 del encargo más #3342, que no es del sprint.
+- **PR abiertos** (`gh pr list --state open`, 16): de J, #3340 (1532d), #3352 (1801), #3353 (1803), #3354 (1800b) con `build + tests` **corriendo** a las 06:37Z; #3348 (1799) **DIRTY** con el obligatorio en SUCCESS (conflicto con main: no se mergea); #3344 (1791b) BLOCKED con el obligatorio CANCELADO. De Luis o mixtos: #3201 (665e) y #3335 (914d) en **FAILURE**. No he leído ningún log.
+- **Comprobado por mí en `origin/main`**, con positivo: `homeView.js` sigue con `521XXXXXXXXXX` (1); `tipoDestinatarioPendiente.js` sigue con «Tipo de cliente» (1); `jobDetailView.js` sigue con «Factura emitida, revisa su registro» (1); `facturar` en las rutas de partes: 0. Es decir: **ninguna de las cuatro piezas de Luis que sé localizar ha entrado**.
+- 🔴 **1795 está Finalizada y no tiene ni un commit ni un PR con su número** (`git log origin/main -i --grep=1795` sólo da tres commits de otros tickets; `gh pr list --search "1795 in:title"`: 0). Puede estar resuelto dentro de otro tramo; no lo he leído, así que **no lo cuento ni como hecho ni como pendiente**.
+- **NO medido** (por encargo): producción, staging, `yaqu.app/health`, las bases. Lo de «visto en yaqu.app/staging» sale de las citas de 1791a y 1791b, no releídas.
+
+## Tabla: qué falta por ticket
+
+Columnas: **J en main** (hecho) · **J pendiente** (PR o sesión) · **Luis pendiente** (hijo) · visto · veredicto.
+
+| ticket (Jira hoy) | J en main | J pendiente | Luis pendiente (hijo) | visto en yaqu.app / staging | veredicto |
+|---|---|---|---|---|---|
+| **1779** (Acción del fundador) | medición #3279 · modo sin VeriFactu #3282 · staging #3290, #3339, #3347, #3349 · aviso #3291 · nota y correo #3292 — **4/4** | — | S0 §3.4 · S1/S2 aviso falso en albaranes y `convertir-en-factura` (`jobDetailView.js` sigue) · S1 XML/ZIP sin huella — **0/3**, sin hijo propio | fundador en Railway (c.22425); J1 en staging (1779i). Nadie ha visto una factura emitida en yaqu.app | **DECISIÓN DEL FUNDADOR** (cambio de máster) **+ ESPERA A LUIS** (no tiene hijo: las 3 piezas viajan en el mensaje) |
+| **1780** (Por hacer) | medición #3278 · servidor #3281 #3297 · literal c.22230 — **3/3** | — | S1 montar la ruta · S1 scrum411 a 4 · S2 el botón — **0/3**, sin hijo | nadie: la ruta no está montada | **ESPERA A LUIS** · le falta un hijo `aviso-a-luis` como los demás |
+| **1781** (Finalizada) | #3287 · #3294 · #3325 — **3/3** | — | Inicio → **1796** (0/1) | c.22313 (1781b/c); 1781d sin ver | CERRADO (partido) · espera a 1796 |
+| **1782** (Finalizada) | **nada** | — (la rama `scrum-1782b-rotulo-factura-como`, PR #3317 cerrado, la reabre el hijo) | línea 58 + bandeja + reabrir #3317 → **1806** (0/2) | nadie | CERRADO (partido) · 🔴 **lo de J está en una rama sin PR abierto** (regla 42): si 1806 no la reabre, no entra nunca |
+| **1783** (Finalizada) | #3284 · #3293 — **2/2** | — | — | c.22306 | CERRADO |
+| **1784** (Finalizada) | #3286 — **2/2** | — | tarjeta en móvil: sin ticket ni decisión (no cuenta) | capturas en local, no en yaqu.app | CERRADO |
+| **1785** (Finalizada) | #3289 · #3295 · #3307 — **3/3** | — | vista previa · Duplicar · rótulo en la vista previa → **1797** (0/3) | 1785b c.22315; 1785c sin ver | CERRADO (partido) · espera a 1797 |
+| **1786** (Finalizada) | #3283 · #3288 · #3305 · #3321 — **4/5** | **f2** (J1): espera a d y e de Luis | c · d · e · g-firma → **1807** (0/4) | 1786g «pendiente de ver» (c.22389) | CERRADO (partido) · 🔴 **f2 es de J y no tiene ticket propio** que yo vea: al cerrarse 1786 se queda sin casa |
+| **1787** (Finalizada) | de a a z, más w (#3337, 03:09Z) y la ficha sin cero (1802, #3351) — editor-servidor, ficha, PDF, página de pago y correo-J (#3343) — **5/6** | **1799** (T4: filas restantes), #3348 **DIRTY** | editor · Observaciones en 3 rutas · formas de pago en 5 caminos · correo T5 · ficha de presupuesto en móvil → **1805** (0/5) | staging: 1787r y 1779i; yaqu.app: ninguna | CERRADO (partido) · espera a 1799 (J) y 1805 (Luis) |
+| **1788** (Finalizada) | #3301 — **1/1** | — | — | c.22321 | CERRADO |
+| **1789** (Finalizada) | #3315 · #3318 — **2/2** | — | 917 verde (S4) · job obligatorio (S5) · medidor de mutaciones (S3) → **1798** (0/3) | no aplica (CI) | CERRADO (partido) · espera a 1798 |
+| **1790** (Finalizada) | #3322 — **1/1** | — | — | desplegado (c.22411); sin ver en móvil | CERRADO |
+| **1793** (Finalizada) | #3346 — **1/1** | — | — | no aplica | CERRADO |
+| **1795** (Finalizada) | **0 commits y 0 PR con su número** | — | — | jv-j1im en staging (título) | **sin juzgar**: que el orquestador diga dónde entró |
+| **1802** (Finalizada) | #3351 — **1/1** | — | — | nadie | CERRADO |
+| **1794** (Por hacer) | 1794b #3343 (contada en 1787) | — | llamarla desde `email.service.ts` (S1): va dentro de **1805** (contada allí) | nadie | **PARTIR o cerrar contra 1805**: su parte J está en main |
+| **1799** (Por hacer) | — | #3348 **DIRTY**, obligatorio SUCCESS (contada en 1787) | — | — | **ESPERA A J**: `git merge origin/main` en su rama (A4) |
+| **1800** (Por hacer) | ① 409 #3350 — **1/2** | ② recibo «a continuación»: #3354 (jv-j2el), CI corriendo · ③ es 1803 | — | jv en staging (título: cobro 889) | **ESPERA A J** (#3354) |
+| **1801** (Por hacer) | — | #3352 (jv-j6fi), CI corriendo; el encargo dice 4 rojos — **0/1** | aviso-a-luis en la etiqueta: no sé qué pieza (no leí la descripción) | no aplica | **ESPERA A J** (#3352) |
+| **1803** (Por hacer) | — | #3353 (jv-j1je), CI corriendo · 1803b después (c.22506) — **0/2** | — | nadie | **ESPERA A J** |
+| **1532** (Por hacer) | 1532 #2360 · 1532b #3332 — **1/2** (cuento la medición #2360 como base, no como parte) | 1532d #3340 (botón y reenvío), CI corriendo | clave de auditoría `cobro_cancelado` (S1) · cruce de carril `_sin-consumir-declarados.json` (S0, c.22463) — **0/2**, sin hijo | «No miró yaqu.app» (c.22462) | **ESPERA A J** (#3340); después PARTIR con hijo de Luis |
+| **1316** (Finalizada) | 1316c #3328 · 1316k #3334 · 1316l #3336 · 1316m #3338 — **4/4** | — | aviso del 10 % en el editor · selector obligatorio en la ficha · `status: true` en el informe X2 → **1804** (0/3) | sin verificar en yaqu.app (c.22465, antes del merge) | CERRADO (partido) · 🔴 **FECHA 1-dic-2026: quedan 7 días y lo de Luis está a 0/3** |
+| **665** (En curso) | #1680 · #1699 · #2968 — **3/4** | 665e #3201 **FAILURE** (41 commits) | parche `42655871` (S1) · línea de `RETIRADAS_A_PROPOSITO` (S3) — **0/2**, sin hijo | Railway (c.21943); ningún PDF congelado visto | **ESPERA A LUIS** (dos piezas) → luego J |
+| **914** (En curso, `equipo-luis`) | — | — | `fusionClientes.ts:191` y `albaranDuplicado.ts:54` (S1); #3335 rojo a propósito — **0/2** | ALTER sólo en `yaqu_dev_javier` | **ESPERA A LUIS**: es suyo |
+
+Los siete hijos (1796, 1797, 1798, 1804, 1805, 1806, 1807) están **Por hacer**. ⚠️ **1796, 1797 y 1798 no llevan la etiqueta `equipo-luis`** (sólo `aviso-a-luis`); 1804 a 1807 sí. Si Luis filtra su tablero por `equipo-luis`, no ve tres de los siete.
+
+## Qué falta del lado J para cerrar el sprint
+
+1. **#3354** · 1800 ② recibo «a continuación» (jv-j2el) — CI corriendo.
+2. **#3353** · 1803 pago manual cierra el cobro (jv-j1je), y después 1803b — CI corriendo.
+3. **#3340** · 1532d botón y reenvío — CI corriendo; al entrar, partir 1532 con hijo de Luis.
+4. **#3352** · 1801 guard de rama con número (jv-j6fi) — CI corriendo.
+5. **#3348** · 1799 T4 filas restantes — **DIRTY**: hace falta `git merge origin/main` en su rama.
+6. **1786 f2** (J1) — sin PR y sin ticket propio; espera a 1807 (d y e).
+7. **665e #3201** — volver a poner al día con main cuando llegue el parche de S1.
+8. **1782b** — la rama existe y su PR está cerrado; la reapertura está escrita en 1806, que es de Luis. Alguien de J tiene que mergear main en ella cuando S2 empuje.
+9. **1795** — decir dónde entró (0 commits con su número).
+10. **#3344** (1791b) — obligatorio CANCELADO; si entra este PR, #3344 se queda vacío y se cierra.
+
+## Qué falta del lado de Luis
+
+1. **1804** · IVA 10 % y medio de cobro (S2/S1), 3 piezas — 🔴 **fecha 1-dic-2026**.
+2. **1805** · facturas iguales que presupuestos, parte S: editor, Observaciones, formas de pago, correo T5 (incluye lo de 1794), ficha en móvil — 5 piezas.
+3. **1807** · apartados c, d, e y g-firma — 4 piezas (desbloquea f2 de J).
+4. **1797** · vista previa, Duplicar y rótulo — 3 piezas.
+5. **1798** · 917 verde, job obligatorio, medidor de mutaciones — 3 piezas.
+6. **1806** · línea 58, bandeja y reabrir #3317 — 2 piezas.
+7. **1796** · Inicio con prefijo — 1 pieza.
+8. **Sin hijo:** 1779 (S0 §3.4, S1/S2 aviso falso, S1 XML/ZIP: 3) · 1780 (montaje, scrum411, botón: 3) · 1532 (S1 clave, S0 cruce: 2) · 665 (S1 parche, S3 línea: 2) · 914 (S1: 2).
+
+## El porcentaje, medido por partes
+
+Cómo lo conté: **una parte = una pieza con dueño único** tal como la separan 1791a, 1791b y los títulos de los hijos. Lo de Luis se cuenta una vez, en el padre (los hijos no suman otra vez). 1794 y 1799 se cuentan dentro de 1787 (J) y 1805 (Luis), no en su fila. Fuera: 1795 (sin juzgar), 1784-tarjeta (sin decisión), 1791 y 1792. Una parte está HECHA sólo si su commit está en `origin/main` `3c6c651fe`; un PR verde sin mergear NO cuenta.
+
+| equipo | hechas | total | % |
+|---|---|---|---|
+| **J** | 41 | 49 | **84 %** |
+| **Luis (S0–S5)** | 0 | 33 | **0 %** |
+| **sprint** | 41 | 82 | **50 %** |
+
+Por tickets, en cambio, 14 de los 23 de J están Finalizada (61 %), y de ahí puede salir una cifra alta. **El 94 % no lo he podido reproducir con ninguna de las dos cuentas**; no sé con qué se calculó. Lo que no se mueve es la columna de Luis: **0 de 33 piezas en main** (cuatro comprobadas por recuento, el resto por ausencia de commit con el número del hijo, que es un «no lo he visto», no un «no existe» en una rama suya).
