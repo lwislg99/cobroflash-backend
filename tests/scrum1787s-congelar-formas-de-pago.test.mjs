@@ -25,48 +25,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { lineasDePdf } from './_texto-del-pdf.mjs';
-// SCRUM-665g · EL DISCO DE ESTE TEST ES UN TEMPORAL DEL SISTEMA, nunca `<árbol>/storage/invoices`
-// (SCRUM-824): `dirs.js` lee `RAILWAY_VOLUME_MOUNT_PATH` al cargarse, así que la variable va ANTES
-// del banco, y el banco se importa con `await import` para que nada de `dist/` se cargue antes.
-const RAIZ_PDF = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-1787s-'));
-process.env.RAILWAY_VOLUME_MOUNT_PATH = RAIZ_PDF;
-const DIR_PDF = path.join(RAIZ_PDF, 'invoices');
-test.after(() => fs.rmSync(RAIZ_PDF, { recursive: true, force: true }));
-// El banco se importa ANTES de cargar `dist/`: deja el doble de la base, el PDF y el correo.
+// El banco se importa ANTES de cargar `dist/`: deja el doble de la base, el PDF y el correo, y pone
+// el disco de los PDF en un temporal del sistema (SCRUM-824).
+// SCRUM-1838 (descripción del orquestador J: «se quitan los dos envoltorios de 1787s EN EL MISMO PR»):
+// el banco modela ya las relaciones de Invoice y su doble del PDF escribe el fichero; los dos
+// envoltorios locales de SCRUM-665g se retiran. El control de abajo se queda: ahora vigila al banco.
 const { banco, prisma, reiniciar, nuevoId, requiere, rutaDe, asentar, M_PT, CLIENTE } = await import('./_banco-emision-con-estado.mjs');
-
-// SCRUM-665g: el banco (S3) aún no modela las relaciones de Invoice; retirar cuando lo haga (aviso a Luis)
-for (const metodo of ['findUnique', 'findFirst']) {
-  const delBanco = prisma.invoice[metodo];
-  prisma.invoice[metodo] = async (a) => {
-    const f = await delBanco(a);
-    const inc = a?.include;
-    if (!f || !inc) return f;
-    if (inc.merchant) f.merchant = banco.tablas.merchant.find((m) => m.id === f.merchantId) ?? null;
-    if (inc.customer) f.customer = banco.tablas.customer.find((c) => c.id === f.customerId) ?? null;
-    if (inc.rectifies) {
-      const r = f.rectifiesId == null ? undefined : banco.tablas.invoice.find((i) => i.id === f.rectifiesId);
-      const sel = inc.rectifies.select;
-      f.rectifies = !r ? null : sel ? Object.fromEntries(Object.keys(sel).map((k) => [k, r[k]])) : { ...r };
-    }
-    return f;
-  };
-}
-// SCRUM-665g: el doble del PDF del banco (S3) no escribe fichero, y desde SCRUM-665e la factura lee su huella; retirar cuando lo haga (aviso a Luis)
-const pdfDelBanco = requiere(rutaDe('dist/lib/pdf.js'));
+const DIR_PDF = banco.dirPdf;
 const { invoicesDir } = requiere(rutaDe('dist/core/storage/dirs.js'));
-const generarDelBanco = pdfDelBanco.generateInvoicePdf;
-pdfDelBanco.generateInvoicePdf = async (d) => {
-  const r = await generarDelBanco(d);
-  fs.mkdirSync(DIR_PDF, { recursive: true });
-  // la ruta de `src/lib/invoicing.ts` (diskPath), bajo el temporal de arriba
-  fs.writeFileSync(path.join(DIR_PDF, `${d.merchantId}-${d.number}.pdf`), `%PDF-doble SCRUM-665g ${d.invoiceId}`);
-  return r;
-};
 
 test('SCRUM-665g · el disco del doble es un temporal del sistema, y `dirs.js` apunta a él', () => {
   assert.equal(invoicesDir, DIR_PDF,
