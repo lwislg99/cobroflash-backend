@@ -113,3 +113,44 @@ Lo escribe S3 (equipo de Luis). `scripts/meta-guard-mutaciones.mjs` es de S3 (`c
 | de punta a punta: `scrum765` (corre el meta-guard real con `--solo-censo`) + `scrum1610b` | `tests 12 · pass 12 · fail 0` |
 
 **Lo que NO prueba.** Que esto evite el corte en el runner de Linux. En Windows la tubería es bloqueante y el corte no se reproduce (0 de 300, c.20951). Medirlo allí necesita un workflow (punto 3 de c.20952), que es de S5. **Tampoco cubre las otras 12 salidas del meta-guard** (13 `process.exit(` de código, medidas en el fuente sin comentarios): el encargo era la del MODO CENSO, la única cuya cola es la centinela que lee un test.
+
+## J6 · SCRUM-1610e · medición de cierre: ¿ha vuelto el corte desde el 27-oct?
+
+**Medido contra:** `origin/main` = `9067651f76c23ded05ae3b63be1385a3ba90170e` · 2026-11-24T07:45:48Z (hora de GitHub, cabecera `Date:`; sesión J6 `jv-j6fl`, por encargo del orquestador `cobroflash-backend-2d`. Sólo docs)
+
+A9: comprobación → `tests/scrum1610b-salida-cortada-sale-ciega.test.mjs`
+
+Mi error: la firma que di al subagente lector («cortes N: intento», «CIEGO · salida cortada») la imprime en TODOS los logs el autotest de 1610b, que siembra el corte a propósito. Sin excluir sus líneas («[cortada ×N]», «la sonda»), cada log habría salido como un corte. Lo cazó el propio escáner al ver 522 positivos sobre 523. La exclusión está en `escanear.mjs`. Que esas líneas lleguen a los 522 logs es también el positivo sembrado: prueba que una línea de rastro llega al log.
+
+**① El mecanismo que sigue montado en main.** Estas piezas existen en `9067651f7`, y la tanda las corre como `tests/*.test.mjs`:
+- **Hijo del censo de frontera.** `tests/_censo-frontera.mjs:48` define `fin`, que escribe `EXIT=c` y llama a `process.exit(c)` en el callback de esa escritura. El fichero tiene 8 `await fin(`.
+- **Hijo del meta-guard, MODO CENSO.** `scripts/meta-guard-mutaciones.mjs:1881-1886`: la centinela sale con `process.stdout.write(…, () => process.exit(0))` (1610d).
+- **Lector.** `tests/_salida-entera.mjs` exporta `sinCortar`/`sinCortarSync` (:33/:45), `rastroDeCortes` (:57) y `avisoDeCorte` (:64). Lo usan `scrum1516c` (:116-117) y `scrum765` (:270-271).
+- **Guards de la propia pieza.** `tests/scrum1610b-salida-cortada-sale-ciega.test.mjs` y `tests/scrum1610d-meta-guard-censo-sale-vaciado.test.mjs`.
+
+**② ¿Ha vuelto? Barrido de los logs del workflow CI** (id 321298878).
+- Población: 1.280 runs creados desde el 25-oct. De ellos, 1.180 desde el 27-oct: 468 failure, 330 success, 376 cancelled y 7 en curso.
+- Escaneado: los 650 logs de job en rojo de esos runs y el job de tests de los 330 verdes, todos sin muestreo. En total, 980 logs.
+- 75 logs salieron CIEGOS por pesar menos de 100 KB. 74 son de jobs sin tests. El otro es un job de tests: run 44341511745, intento 1, de 58 KB.
+- Quedan 523 logs de job de tests. En 522 corre 1516c.
+- Control cero: «cortes 0:» aparece 0 veces.
+- Control positivo: los tres jobs del 26-oct (121692797455 · 121706784273 · 121708898475) salen con su `test at tests/scrum765…`/`scrum1516c…`. El último además lleva «población ¿?» y «SEMBRADOS no dice true».
+
+| tramo (por la hora del merge del arreglo) | logs de tests | cortes (rastro «cortes 1 … llegó entero») | cortes dobles (CIEGO real) |
+|---|---|---|---|
+| tras 1610b (2026-10-26T23:50:23Z) y antes de 1610d (2026-11-03T09:07:56Z) | 103 | **15**, todos de `[meta-guard --solo-censo]`, 17.134–21.352 B; **0 de 1516c** | 0 |
+| tras 1610d, hasta 2026-11-24T06:36Z | 419 | **0** | 0 |
+
+- **Firma vieja tras el 27-oct (rojo de 765/1516c):** aparece 2 veces, en los runs 45149192784 (23-nov) y 44336229482 (18-nov). Ninguna es un corte: el meta-guard dice «DECLARACIÓN(ES) QUE NO PUEDO EVALUAR», porque la rama declaraba una mutación que no es un literal.
+- **Lectura:**
+  - La salida cortada siguió ocurriendo en el runner de Linux mientras su hijo hacía `console.log` + `process.exit`: 15 de 103 logs, un 14,6 %.
+  - Después de que ese hijo pasara a salir en el callback, ocurrió 0 veces en 419 logs. Con la tasa anterior, la probabilidad de 0 en 419 por azar es de 0,854^419 ≈ 10^-29.
+  - El hijo de 1516c, que ya salía por `fin`, dio 0 cortes en los 522 logs.
+  - Esto es, observada en el propio runner, la medición que el punto 3 de c.20952 pedía con un workflow.
+  - Y el lector hizo su trabajo: los 15 cortes se relanzaron, quedaron rastreados y no produjeron ningún rojo falso.
+
+**No medido:** los 376 runs cancelados; los jobs sin tests de los runs verdes; el log CIEGO de 58 KB. Tampoco medí el hueco del CI entre 2026-11-03T09:46Z y 2026-11-10T16:49Z, en el que hubo 0 runs de CI y 48 de otros workflows. Cae justo tras 1610d, así que el «después» empieza de verdad el 10-nov. La causa del corte (por qué se llena por debajo de 64 KB) sigue sin medir. Lo medido es que el arreglo lo quita.
+
+**③ Veredicto propuesto: CERRAR** (lo decide el orquestador, A13). La parte que c.21007 dejaba abierta, medir en el runner, queda cubierta por la tabla de arriba, sin workflow nuevo. Frase de cierre: «La salida cortada no ha vuelto: 0 cortes en 419 logs de tests tras 1610d, frente a 15 en 103 antes; si vuelve, sale CIEGA y no como un rojo del test». Comprobaciones que quedan en pie: `tests/scrum1610b-salida-cortada-sale-ciega.test.mjs` y `tests/scrum1610d-meta-guard-censo-sale-vaciado.test.mjs`. Las otras salidas `process.exit(` del meta-guard siguen fuera de alcance, como dice 1610d, porque ningún lector exige su cola.
+
+Evidencias: `docs/master/evidencias/SCRUM-1610/1610e/` (`escanear.mjs`, `resultado.tsv` con una fila por log, `cuenta.mjs` con el corte por tramos). Suite entera local: NO CORRIDA (tope de contexto del encargo); se corrieron sólo los guards de docs.
