@@ -330,3 +330,28 @@ A9: aviso → cicatriz J1 «Cancelé en staging el cobro 889 mirando solo el est
 **Visto de paso, no es de este encargo:** el recibo ANTES dice «Puedes completarlo usando el botón de pago por banco que aparece más arriba», y el botón está DEBAJO del texto (las dos capturas). Texto que ve el usuario: no lo toco; se lo paso al orquestador.
 
 **NO medido:** yaqu.app (el login de test solo existe en staging); la etiqueta de 1532d (no está en `main`); la página `/pay/bank/` después de cancelar (no la abrí); un cobro con un documento `pending` (elegí el 889 por la orden, y lo vi pagado DESPUÉS de cancelarlo); la suite de tests: cambio solo de docs, corrí los guards de docs y `guards:entrada`.
+
+## SCRUM-1779n · 24-nov: prueba en STAGING — la ficha de F260006 dice «5 dic 2026», y «Cancelar cobro» no sale en un justificante pagado; la ruta da 409 `document_already_paid` (J1, solo docs)
+
+**Medido contra:** `origin/main` = `c3051127c94854ac296638bbffad0fc665d150ca` · 2026-11-24T06:52:49Z (cabecera `Date:` de `gh api -i zen`; sesión J1 `jv-j1ji`, por encargo del orquestador `cobroflash-backend-2d`)
+
+A9: aviso → A10 «Un rojo sin población no es un hallazgo: es un instrumento que no llegó a arrancar.» — no se pudo comprobar: mi primera pasada de ② buscó el menú «⋯» por su nombre accesible, no casó y se agotó a los 30 s sin abrir el menú; leída a secas, decía «no hay botón». No se pulsó nada (no hubo ningún `POST` de cancelar). La repetí buscando por el texto visible, y el «sin botón» solo vale porque lo acompaña un control positivo (la 1974, donde el mismo instrumento SÍ lo ve). Un guion de un solo uso contra staging no pasa por ningún guard del repositorio.
+
+**Qué se probó.** Staging (`yaqu-staging-production`) sirve `/health` = `c3051127…` = `origin/main` a las 06:50Z, que contiene `d47f8d5cf` (#3340, SCRUM-1532d), #3350 (SCRUM-1800) y #3351 (SCRUM-1802). Cuenta QA (comercio 2) con el login de test por `page.request`; el secreto, leído de `process.env` dentro de un guion de `node`, no pasó por el MCP de Playwright ni por ningún fichero que una herramienta devolviera. Chrome con contexto nuevo (`serviceWorkers:'block'`). Turno de staging (`turno-staging.mjs --base staging`, base `railway`) tomado a las 06:50:02Z y soltado antes de las 06:53:33Z; `estado` después: LIBRE. Flags del comercio 2 leídos en la base (transacción `READ ONLY`) antes y después, sin tocar: `INVOICING_ES_ENABLED=true`, `SIF_ENABLED=false`, `BIZUM_MANUAL_ENABLED=true`. Única petición que escribe: el `POST /admin/charges/890/cancel` (más el `POST /admin/entorno` que hace el panel al cargar). **Ningún envío por WhatsApp ni correo**; no se pulsó «Enviar» ni «Reenviar». Ninguna evidencia lleva el token del recibo (son capturas de la ficha, que no lo pinta).
+
+| qué | esperado | visto |
+|---|---|---|
+| ① Ficha de F260006 (id 1981, `due_date` 2026-12-05), 1280 y 390 | «Vence el · 5 dic 2026», sin «05» | «Vence el» / «5 dic 2026» en el texto de la ficha; «05 dic»: 0 apariciones; a 390 la fila «Vence el 5 dic 2026» en pantalla (captura 02) |
+| ② Documento del cobro 890 | — | id **1967**, `J-20260916-4GEN`, `type=JUST`, `status=paid`, `paid_at` 2026-09-16T14:00:47Z; cobro 890 `pending` |
+| ② «Cancelar cobro» en la ficha de la 1967 | si consta pagada, no sale (#3340 lo oculta por `status`) | NO sale: «⋯» abierto, 0 botones «Cancelar cobro» (captura 03). Lo oculta `invoiceActionsRegistry.js:53` (`paid: 'oculta'`) |
+| ② Lo mismo en 891 (id 1969) y 893 (id 1970) | igual | las dos `paid` con su cobro `pending`; 0 botones en las dos |
+| ② Control positivo: 1974 (`J-20260917-UYIC`, `pending`, cobro 897 `pending`) | el botón SÍ sale | sale «Cancelar cobro» en el «⋯» (1 botón, captura 04); no se pulsó |
+| ② `POST /admin/charges/890/cancel`, mandado directamente desde la sesión del navegador (la ficha no lo ofrece) | 409 `document_already_paid` | **409 `{"error":"document_already_paid"}`** a las 06:52:49Z |
+| ② El cobro después | sigue `pending` | 890, 891 y 893 `pending`, `updated_at` sin cambios (16-sep); la lectura antes y después es idéntica byte a byte |
+| ② Mensaje en pantalla al pulsar | genérico «Error actualizando estado: inténtalo de nuevo» (visto antes de #3355) | **NO SE PUDO VER**: con los tres cobros del encargo el botón no sale, así que la interfaz no llega a pedir el 409. Por qué pintaría ese texto se LEE en `invoiceDetailView.js` (cualquier `error` distinto de `charge_not_pending`); en pantalla, no comprobado |
+
+**Evidencias** (`docs/master/evidencias/SCRUM-1779/1779n/`): `01-ficha-F260006-1280.png`, `02-ficha-F260006-390.png`, `03-ficha-J-20260916-4GEN-menu-sin-boton-1280.png`, `04-control-positivo-J-20260917-UYIC-menu-con-boton-1280.png`. He mirado la 02, la 03 y la 04; la 01 no (su texto sí: lo leí del DOM).
+
+**Visto de paso, no es de este encargo:** en el «⋯» de la 1967, un justificante PAGADO, sigue saliendo «Marcar como cobrada» (captura 03). No lo he investigado; se lo paso al orquestador.
+
+**NO medido:** yaqu.app (el login de test solo existe en staging); el mensaje en pantalla tras el 409 (fila de arriba); qué hace #3355, que no está en `main`; la suite de tests: cambio solo de docs, corrí los guards de docs y `guards:entrada`.
