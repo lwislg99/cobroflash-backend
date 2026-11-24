@@ -1,0 +1,47 @@
+# 1527g/jobs.mjs 2026-10-29T18:20:44Z <carpeta>
+runs declarados 978 · leídos 978 · consultados 978 · jobs obligatorios 806 · fallos 0
+
+# 1527h/juntar.mjs (g + h) y (g+h + nueva)
+vieja 452 · nueva 114 · en las dos 0 · juntas 566
+vieja 566 · nueva 806 · en las dos 0 · juntas 1372
+
+# 1527g/recuento.mjs juntas.json 2026-10-27T13:09:00Z
+SCRUM-1527g · población: 1372 jobs «build + tests» con reintentos · success 941 · cancelled 110 · failure 307 · in_progress 10 · queued 4
+creados de 2026-10-22T09:03:11Z a 2026-11-24T06:43:24Z · 1349 ejecuciones
+con paso «Tests»: 1320 (success 944 · cancelled 71 · failure 305) · pull_request 1079 · push 241
+sin paso «Tests» (no corrieron: CIEGO): 52 (cancelled 36 · failure 2 · in_progress 10 · queued 4)
+paso «Tests» terminado: 1249 · de 393 a 1435 s · mediana 668 s · de 800 s o más: 143
+paso «Tests» de 900 s o más (las únicas que pueden llevar el aviso): 5
+   job 119769715166 · 2026-10-22T10:21:15Z · pull_request · scrum-962c-editor-presupuestos-44 · paso failure en 1210 s
+   job 130625371916 · 2026-11-11T15:38:13Z · pull_request · scrum-1671-partes-en-el-trabajo · paso failure en 1254 s
+   job 130650930773 · 2026-11-11T16:14:01Z · push · main · paso failure en 1388 s
+   job 130741041930 · 2026-11-11T19:01:28Z · pull_request · scrum-1700-abrir-parte-en-curso · paso failure en 1435 s
+   job 138160787095 · 2026-11-24T02:01:34Z · pull_request · scrum-1791b-cierre-segunda-auditoria · paso cancelled en 1384 s
+cancelados con el paso «Tests» empezado: 74 · paso más largo 1384 s · job más largo 1569 s (techo 1.500 s)
+antes del corte 2026-10-27T13:09:00Z: 437 con paso «Tests» (success 340 · cancelled 24 · failure 73) · de 900 s o más: 1
+desde el corte 2026-10-27T13:09:00Z: 883 con paso «Tests» (success 604 · failure 232 · cancelled 47) · de 900 s o más: 4
+control positivo (119769715166): sale, de 900 s o más
+
+# 1527g/recuento.mjs juntas.json 2026-10-26T23:50:23Z (#2905)
+SCRUM-1527g · población: 1372 jobs «build + tests» con reintentos · success 941 · cancelled 110 · failure 307 · in_progress 10 · queued 4
+creados de 2026-10-22T09:03:11Z a 2026-11-24T06:43:24Z · 1349 ejecuciones
+con paso «Tests»: 1320 (success 944 · cancelled 71 · failure 305) · pull_request 1079 · push 241
+sin paso «Tests» (no corrieron: CIEGO): 52 (cancelled 36 · failure 2 · in_progress 10 · queued 4)
+paso «Tests» terminado: 1249 · de 393 a 1435 s · mediana 668 s · de 800 s o más: 143
+paso «Tests» de 900 s o más (las únicas que pueden llevar el aviso): 5
+   job 119769715166 · 2026-10-22T10:21:15Z · pull_request · scrum-962c-editor-presupuestos-44 · paso failure en 1210 s
+   job 130625371916 · 2026-11-11T15:38:13Z · pull_request · scrum-1671-partes-en-el-trabajo · paso failure en 1254 s
+   job 130650930773 · 2026-11-11T16:14:01Z · push · main · paso failure en 1388 s
+   job 130741041930 · 2026-11-11T19:01:28Z · pull_request · scrum-1700-abrir-parte-en-curso · paso failure en 1435 s
+   job 138160787095 · 2026-11-24T02:01:34Z · pull_request · scrum-1791b-cierre-segunda-auditoria · paso cancelled en 1384 s
+cancelados con el paso «Tests» empezado: 74 · paso más largo 1384 s · job más largo 1569 s (techo 1.500 s)
+antes del corte 2026-10-26T23:50:23Z: 422 con paso «Tests» (success 325 · cancelled 24 · failure 73) · de 900 s o más: 1
+desde el corte 2026-10-26T23:50:23Z: 898 con paso «Tests» (success 619 · failure 232 · cancelled 47) · de 900 s o más: 4
+control positivo (119769715166): sale, de 900 s o más
+
+# logs bajados con gh api --allow-escape-sequences .../actions/jobs/<job>/logs
+119769715166 bytes=1409303 avisos=1
+130625371916 bytes=1671962 avisos=1
+130650930773 bytes=2187245 avisos=1
+130741041930 bytes=1686920 avisos=1
+138160787095 bytes=1708511 avisos=0

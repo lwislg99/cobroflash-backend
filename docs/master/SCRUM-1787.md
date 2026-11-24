@@ -1332,3 +1332,5 @@ Encargo del orquestador J a jv-j1il (J1). Decisión del orquestador, SCRUM-1787 
 
 - yaqu.app: no visto; no cambia nada que se vea (sólo un test). Lo que se ve es de 1787x y 1787y.
 - Nada contra staging ni producción.
+
+Las filas restantes de c.22426 están en `docs/master/SCRUM-1799.md` (1787 agotó las letras de tramo).
