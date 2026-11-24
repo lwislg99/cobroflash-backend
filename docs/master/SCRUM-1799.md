@@ -47,3 +47,7 @@ Cuatro, una por fila comprobada con código propio, pasadas por `aplicarUna` (sc
 - Captura lado a lado: no la rehice; no cambia nada que se vea respecto a la de 1787w (`1787w/lado-a-lado.png`).
 - yaqu.app: no visto; esta rama solo añade un test.
 - Nada contra staging ni producción.
+
+## Merge de main (relevo jv-j1jg)
+
+- Merge de main `d47f8d5cf8bf9b4e11851c6e73fc45c43e4e955a` el 24-nov (06:40Z, cabecera `Date:` de GitHub) para sacar el PR #3348 de DIRTY; conflicto: no, en ningún fichero (`git merge-tree` también limpio).
