@@ -198,7 +198,7 @@ test('SCRUM-1808b · ① GET /admin/jobs/:id · `envioDocumento` sigue siendo SO
 function trabajoCon(factura) {
   return {
     id: 1808, status: 'en_curso', createdAt: '2026-11-20T09:00:00Z', titulo: 'ZZ caldera',
-    customer: { id: 5, name: 'ZZCLIENTE Ejemplo', phone: '+34600000000', mobile: null },
+    customer: { id: 5, name: 'ZZCLIENTE Ejemplo', phone: '34000000001', mobile: null },
     asignados: [], operario: null, gastos: [], notes: '', albaranes: [], partes: [],
     quote: null, direccion: null, totalAceptado: 100, totalCobrado: 0, estadoCobro: 'Pendiente',
     tipoOperacion: 'OPERACIONES_SUELTAS',
