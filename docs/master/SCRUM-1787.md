@@ -1185,3 +1185,92 @@ Para igualar, la factura tendría que imprimir rótulos del presupuesto que hoy 
 - No se construyó nada: esta rama no cambia `src/`, `public/` ni `prisma/`. Ni test rojo, ni cambio, ni mutaciones: dependen de la firma.
 - No se ejercieron con datos, solo se leyeron en el fuente: «Total del apartado», cláusulas, firma, QR con SIF encendido y marca de agua.
 - yaqu.app: no visto, porque no ha cambiado nada.
+
+# SCRUM-1787y · En la página de pago, «Vence el 5 de diciembre», sin el cero del día
+
+**Medido contra:** `origin/main` = `97e196f930334971538b5c0ba13e0224cbe7d184` · 2026-11-23T21:07:40Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: sin fallo que generalice — el cambio es una opción de formato y su rojo se vio antes del arreglo. Lo que no pude hacer lo digo abajo: leer c.22431 en Jira (la lectura de SCRUM-1787 con comentarios la denegó el clasificador de permisos de la sesión); trabajé con la cita del encargo del orquestador («4-Sí ok quita el 0»).
+
+Mutaciones: catálogo → `tests/scrum1787q-pago-vence-el.test.mjs`
+
+Encargo del orquestador J a jv-j2ec (J2). Decisión del fundador: SCRUM-1787 c.22431 («4-Sí ok quita el 0», citada por el orquestador; no leída por mí en Jira). Ningún texto nuevo: cambia solo cómo se escribe el día.
+
+## Qué se construyó (1787y)
+
+- `payInvoice.routes.ts` (J2), la línea de «Vence el» de 1787q: `day: '2-digit'` → `day: 'numeric'`. Sale «Vence el 5 de diciembre de 2026» (antes «05»). Los días de dos cifras no cambian. Zona del negocio, mes largo y año, igual que antes.
+- **¿Hay otra página pública de J2 con la MISMA fecha?** Medido con `grep` de `toLocaleDateString`/`2-digit` en `src/modules/billing/app/routes/` y de `Vence el` en `src/` y `public/`: el recibo (`receipt.routes.ts:311`) usa el mismo formato, pero para «Pagado el …», la fecha del PAGO, no la de vencimiento: no se toca. «Vence el» sale además en `public/dashboard/js/invoiceDetailView.js` (la ficha, panel privado, mes corto), `facturaSuelta.ts` y `pdf.service.ts` (PDF, lo cambia J1 en 1787x): ninguno es una página pública de J2, no se tocan.
+
+## Test (1787y)
+
+`tests/scrum1787q-pago-vence-el.test.mjs`, caso nuevo «un día de una cifra sale sin el cero»: `dueDate` 2026-12-05 → «Vence el 5 de diciembre de 2026» y no «Vence el 05 »; control: 2026-12-10 sigue «Vence el 10 de diciembre de 2026». ROJO antes del cambio (1 de 6, la página decía «Vence el 05 de diciembre de 2026»), VERDE 6 de 6 después.
+- Mutación por `aplicarUna` (catálogo del fichero, nueva entrada «vuelve a `2-digit`»): tumba el caso nuevo, `ok: true`. La de 1787q sigue viva (tumba su caso + 2 colaterales). `git status` tras las dos pasadas: solo mis dos ficheros.
+- Dirigida (1787q, 1787h, 1787p, 1723, 1647, 1773, 836, 700, 710b, 719, 810, 1294, 267, 273, 525d, 854 y 1787t), 17 ficheros: 165 casos, 163 pasan, 2 caen, 0 saltados. Caen: `scrum854` ② (pedía esta entrada de registro; se repite tras escribirla) y **`scrum1787t` ⑤ (J1) «las opciones son las de la página de pago»**: compara un literal fijo del formato en los dos ficheros y queda rojo hasta que entre 1787x (J1), que lo reescribe. Decisión del orquestador en SCRUM-1787 c.22436: se empuja con ⑤ en rojo, sin tocar ese test.
+- `npm run build` (tsc con tipos): salida 0.
+
+## NO medido (1787y)
+
+- La suite entera NO se corrió en local: la corre el obligatorio.
+- En yaqu.app: no visto; se ve tras el merge y el despliegue, con una factura suelta con vencimiento de día < 10.
+- Nada contra staging ni producción.
+
+# SCRUM-1787x · En el PDF de la factura, «Vence el» lleva el día sin cero a la izquierda
+
+**Medido contra:** `origin/main` = `97e196f930334971538b5c0ba13e0224cbe7d184` · 2026-11-23T21:10:02Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: sin fallo que generalice — el caso ⑤ de 1787t exigía un literal fijo en dos ficheros de dos carriles, y ningún PR de un solo carril podía cambiarlo sin dejarlo en rojo; lo avisé antes de empujar y el orquestador lo partió (c.22436). Ya lo cubre la frase de A10 «Una dependencia entre dos PR escrita en el prompt de UNA sesión no existe para la otra: o es un guard, o no es nada.»
+
+Mutaciones: catálogo → `tests/scrum1787t-pdf-vence-fecha-larga.test.mjs`
+
+Encargo del orquestador J a jv-j1ig (J1). Decisión del fundador: SCRUM-1787 c.22431 (pregunta: «¿«5 de diciembre» en vez de «05 de diciembre» en el PDF y en la página de pago (1787)?»; respuesta literal: «4-Sí ok quita el 0»). Es la misma línea y el mismo literal firmado de 1787t, dentro de su GO de regla 40 (c.22408): sólo el día pasa de `2-digit` a `numeric`. La página de pago (`payInvoice.routes.ts`, J2) la cambia el tramo 1787y; aquí no se toca. Ningún texto nuevo.
+
+## Qué se construyó (1787x)
+
+- `pdf.service.ts` (J1), `generateInvoicePdf`, la línea `Vence el …`: `day: '2-digit'` → `day: 'numeric'`, y una línea de comentario que cita c.22431. Nada más cambia: la `Fecha:` sigue en dd/mm/aaaa.
+- Recongelada la huella de `scrum603b`/`scrum723` por la vía de SCRUM-1446d: entrada nueva en `tests/_cambios-autorizados-de-la-factura.mjs` con firma `SCRUM-1787 c.22431` y cita `Respuesta literal: «4-Sí ok quita el 0»`, huellas de `docs/master/evidencias/SCRUM-1446d/huellas.mjs` sobre `4aeac0f6c1f5a63b97b009a1c1b3ebc93c973e3e` (cuerpo `2b62a73e…` → `3cc5a0bd…`; ámbito `a8bd2fb9…` → `7685e52d…`; el `de` es el `a` de 1787t). El merge de `97e196f9` sólo trajo documentos (1787v): `pdf.service.ts` no cambió entre las dos bases.
+- `tests/scrum1787t-…`: caso nuevo ⑥ (`dueDate` 2026-12-05 → `Vence el 5 de diciembre de 2026`) y su mutación en el catálogo («vuelve a `2-digit`»). ①, ② y ③ llevan días de dos cifras (23, 24, 30) y no cambian.
+- `tests/scrum1787t-…` ⑤ **partido por decisión del orquestador, SCRUM-1787 c.22436**: comparaba en los dos ficheros el literal fijo `day: '2-digit', month: 'long', year: 'numeric' })`, y el cambio firmado cruza dos carriles que no caben en un PR. Sigue exigiendo a las DOS superficies `es-ES`, `timeZone: zonaDelMerchant(`, `month: 'long'` y `year: 'numeric'`, y que el día vaya delante del mes; el valor del día se comprueba por superficie: el del PDF en ⑥, el de la página en el test de 1787y (J2). No es relajar un guard: es partir una exigencia que un solo carril no puede cumplir (c.22436). Cuando 1787y esté en main, el tramo 1787z (J1) vuelve a fijar `day: 'numeric'` en las dos.
+- `tests/scrum1787m-…`: ① y ② esperaban `Vence el 05 de diciembre de 2026` / `06 de diciembre`; ahora `5` / `6`. Siguen comprobando el texto exacto, la posición y la zona.
+
+## Cómo se ve
+
+- Texto extraído del PDF real (`lineasDePdf`), `dueDate` 2026-12-05: antes `Vence el 05 de diciembre de 2026` (rojo primero de ⑥, con `src/` sin tocar: 5 de 6 en verde, `actual: 'Vence el 05 de diciembre de 2026'`); después `Vence el 5 de diciembre de 2026` (6 de 6).
+- Mutaciones por `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, con la pasada limpia delante: «vuelve a `dateStr`» tumba ① (+3 colaterales: ②, ③, ⑥); «vuelve a `2-digit`» tumba ⑥ y sólo ⑥ (①–⑤ siguen en verde: ⑤ ya no mira el valor del día, c.22436). Las dos VIVAS; `git status` sin cambios tras las dos.
+- Dirigida: 1787t, 1446d, 1787m, 1788a, 603, 603b, 723, 523d, 810, 810b, 1294, 267, 273, 525d y 854 (cifras en la entrega de Jira).
+
+## NO hecho / NO visto
+
+- La suite entera NO se corrió en local (lo pide así el encargo): la corre el check obligatorio del PR.
+- yaqu.app: no visto. Se ve tras el merge y el despliegue, en una factura con vencimiento de día menor que 10.
+- La página de pago sigue con «05 de diciembre» hasta que entre 1787y (J2); mientras, las dos superficies divergen en el día, y sólo en el día. Es lo que decidió c.22436, con 1787x primero.
+
+# SCRUM-1787z · El guard ⑤ de 1787t vuelve a ser ENTERO: «Vence el» dice lo mismo en el PDF y en la página de pago, día incluido
+
+**Medido contra:** `origin/main` = `01e333ea0c288dab7a47ed5e2b4430dc584e69d3` · 2026-11-23T21:54:12Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: comprobación → `tests/scrum1787t-pdf-vence-fecha-larga.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1787t-pdf-vence-fecha-larga.test.mjs`
+
+Encargo del orquestador J a jv-j1il (J1). Decisión del orquestador, SCRUM-1787 c.22436 ③: «Cuando los dos estén en main, un tramo 1787z (J1) vuelve a fijar en ⑤ que el día es `numeric` en las DOS, recuperando la exigencia completa». El día sin cero es decisión del fundador, c.22431 («4-Sí ok quita el 0»). Sólo cambia un test: nada en `src/`, `public/` ni `prisma/`, y ningún texto nuevo.
+
+## Qué había al empezar
+
+- Al empezar, 1787x (`scrum-1787x-vence-el-sin-cero`, PR #3333, PDF) y 1787y (`scrum-1787y-pago-vence-el-sin-cero`, PR #3331, página de pago) **NO estaban en main** (los dos PR abiertos y `BLOCKED`), y los dos ya traían `day: 'numeric'` (leído en sus ramas). Como manda el encargo, `git merge` de las dos ramas remotas en ésta. Mientras corría la suite entraron las dos (#3333 a las 21:37:19Z, #3331 a las 21:52:24Z, `mergedAt` de GitHub) y se trajo `origin/main` = `01e333ea0c288dab7a47ed5e2b4430dc584e69d3`: este PR ya sólo lleva lo suyo.
+- En main los dos tramos de registro quedaron pegados sin línea en blanco entre el último punto de 1787y y la cabecera de 1787x; se añade esa línea, sin tocar su texto.
+
+## Qué se construyó (1787z)
+
+- `tests/scrum1787t-…` ⑤, mismo nombre. **Por EFECTO:** pinta el PDF (`generateInvoicePdf`) y la página `/pay/invoice/<token>` (montada con una base en memoria, como `scrum1787q`, que no se importa porque registraría sus casos) con el mismo vencimiento, y exige que las dos líneas «Vence el …» sean iguales y además iguales a un literal escrito a mano: `2026-12-04T23:30Z` → «Vence el 5 de diciembre de 2026» (día de una cifra, y en el borde de la zona: en Madrid ya es el 5) y `2026-12-23T12:00Z` → «Vence el 23 de diciembre de 2026». El literal a mano es lo que caza que las dos cambien a la vez. **Por FUENTE:** los dos ficheros llevan el literal ENTERO `), day: 'numeric', month: 'long', year: 'numeric' })` tras `toLocaleDateString('es-ES', { timeZone: zonaDelMerchant(`; desaparece la expresión regular que admitía `numeric|2-digit` (la que puso 1787x al partirlo).
+- Catálogo del fichero: mutación nueva «la página de pago vuelve a `2-digit`» → tumba ⑤.
+
+## Cómo se ve
+
+- Mutaciones por `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, con la pasada limpia delante (6 de 6): «PDF vuelve a `dateStr`» tumba ① (+4 colaterales, ⑤ incluido); «PDF vuelve a `2-digit`» tumba ⑥ (+1: ⑤); «página vuelve a `2-digit`» tumba ⑤ y sólo ⑤, con el mensaje «el PDF dice «Vence el 5 de diciembre de 2026» y la página de pago «Vence el 05 de diciembre de 2026»: las dos superficies divergen». Las tres VIVAS; `git status` tras las tres: sólo mi test.
+- Dirigida (1787t, 1787q, 1787m, 810, 1294, 267, 273, 525d y 854) más los 5 de árbol entero que nombra `guards:entrada` y `scrum1316k` (lo que trajo el último merge de main), y `npm run guards:entrada`: cifras en la entrega de Jira. `npm run build` (tsc con tipos): salida 0.
+- Suite entera por tramos (15 de 15) sobre el árbol con 1787x y 1787y fusionados, ANTES del último merge de main (que sólo trajo 1316k): 1.758 ficheros · 14.181 tests · 13.996 pass · 2 fail. Los 2 son `scrum1289b` ⑤ y ⑥, `EPERM: operation not permitted, open 'C:\Users\Javier'`: el banco parte en el espacio la ruta de este árbol (`C:\Users\Javier Pereira\…`); esta rama no toca ese fichero. Causa leída en el error, no medida contra main en esta máquina.
+
+## NO hecho / NO visto
+
+- yaqu.app: no visto; no cambia nada que se vea (sólo un test). Lo que se ve es de 1787x y 1787y.
+- Nada contra staging ni producción.
