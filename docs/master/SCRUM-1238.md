@@ -293,3 +293,76 @@ A9: comprobación → `tests/scrum1238c-espera-no-es-fin.test.mjs`
 - Contra la máquina, sólo leyendo: de 44 `state.json`, 38 terminales con la línea vieja y 38 con la nueva, y 0
   esperando. **Hoy el cambio es neutro en la máquina**, porque no hay ninguna sesión que espere. La diferencia sólo
   la prueban las formas medidas en los fixtures.
+
+## J6 · SCRUM-1238d · medición de cierre: ¿se puede cerrar?
+
+**Medido contra:** `origin/main` = `356a9af5a9356f5f03aecad6e154e692e370023b` · 2026-11-24T07:39:31Z (hora de GitHub; sesión J6 `jv-j6fm`, árbol `cobroflash-jv-j6fm`, por encargo del orquestador `cobroflash-backend-2d`. Al escribir, `origin/main` ya iba por `d22a7706`, y `git diff HEAD origin/main -- scripts/` sale vacío)
+
+A9: sin fallo que generalice — el latido entero no terminó en 280 s y dejó 0 B (CIEGO); lo dije y medí con sus funciones exportadas, que es lo que ya hace el hook de arranque cuando la pasada no cabe
+
+Solo lectura. De Jira solo hacía falta el último comentario (c.21841, 13-nov, «NO CERRAR»), pero la herramienta devuelve los seis y los leí todos.
+
+### ① Qué hay en main (sin cambios desde c.21841: `git log e1ebdcf..origin/main` sobre los cuatro ficheros = 0 commits)
+
+| pieza | qué clasifica hoy | fichero:línea |
+|---|---|---|
+| `sesion.mjs` `clasificarAgente` | `ESPERA` (sin pid y con `blocked`/`needs`, se trata como viva) · `MUERTA` (sin pid y `terminal`) · `VIVA` · `NO-PUDE-MIRAR` | `scripts/equipo/sesion.mjs:270-285`; `terminal` en `:1060` |
+| `latido.mjs` SESIONES | «BLOQUEADA hace N min · espera: <needs>», según `espera()` (`blocked` en `state`/`tempo`, o `needs`) | `scripts/equipo/latido.mjs:260` |
+| `latido.mjs` CEMENTERIO | SIN RELEVO / RELEVADA / NO SE PUEDE SABER / MARCADA, por `relevosDe` → `puestoDe` | `scripts/equipo/latido.mjs:254`, `:474`, `:491` |
+| `vigia-sesiones-jv.mjs` | solo `BLOQUEADA` y `MUERTA`; «esperando» y «te está esperando» no aparecen ni una vez | `scripts/vigia-sesiones-jv.mjs:40`, `:51` |
+| `clase-de-sesion.mjs` (1238b) | TERMINADA-ESPERANDO con «te está esperando», pero ni el latido ni el vigía la llaman | — |
+
+### ② Las cuatro sesiones de hoy, por el código real
+
+`latido.mjs` entero: `timeout 280` → salida 124 y **0 B**, así que eso es CIEGO y no un resultado. Lo medí con sus funciones
+exportadas (`leerTrabajos`, `seccionSesiones` con `filasPR: null`, `seccionCementerio`, sin guardar el libro) y con
+`sesion.mjs` (`leerJob` + `clasificarAgente`). Población: 504 `state.json`, 0 ilegibles. Control positivo: las 4 aparecen (4 de 4) y
+yo misma también (`jv-j6fm`, `working`).
+
+| sesión | `state` | `needs` | `sesion.mjs` | latido SESIONES / CEMENTERIO | resumen que guardó Claude Code |
+|---|---|---|---|---|---|
+| `jv-j1iv` `e234e70a` | `done` | vacío | **MUERTA** | ninguna línea | «staging sin probar; orquestador parado y lleva J1» |
+| `jv-j1iw` `7d854db3` | `done` | vacío | **MUERTA** | ninguna línea | «parada sin probar; relevo a dos sesiones lo lanza el orquestador» |
+| `jv-j2em` `d39f8c36` | `stopped` | vacío | **MUERTA** | ninguna línea | «stopped» |
+| `jv-j5bq` `5a4dfc55` | `stopped` | vacío | **MUERTA** | ninguna línea | «stopped» |
+
+La línea exacta de `sesion.mjs` para las cuatro es «sin pid, y su state.json dice que terminó (<lastTerminalAt>)». El latido no saca
+**ninguna** línea suya: no las llama MUERTAS, ni ESPERANDO, ni RELEVADAS.
+
+**Por qué no es el defecto del ticket:** el ticket es «una sesión que espera, con su pregunta en el `state.json`, sale MUERTA».
+Ninguna de las cuatro guardó la pregunta: sin `needs`, sin `blocked`. Las dos `stopped` las paró el orquestador al relevarlas, y eso
+es un final de verdad. Las dos `done` son la población de ⑤ (la pregunta vive en el transcript, no en el registro), y el fundador la
+decidió en c.20781: «No, como hoy»; son trabajo del orquestador, no de la herramienta. **Ninguna herramienta puede verlas sin leer
+el transcript**, y el ticket no lo pide.
+
+### ③ El «CEMENTERIO · 84/85 preguntas … NO SE PUEDE SABER»: es OTRO defecto, no este
+
+- Hoy hay 85 en el cubo NO SE PUEDE SABER, y **las 85 son nombres `jv-jN*`** (0 con forma `sN`). Control: `puestoDe('s5-x')` → 5;
+  `puestoDe('jv-j5bq')` → `null`.
+- La causa es `puestoDe` (`latido.mjs:254`, `/^(?:s|sesion-)(\d)(?:-|$)/`), que no reconoce los nombres del equipo J. Entonces
+  `relevosDe` devuelve `null` y cada pregunta vieja de una `jv-*` cae en «su nombre no dice de qué puesto es» (`:491`). SCRUM-1506c
+  enseñó la forma `jv-jN` a `puestoDeNombre`, que es la cerradura de carril y otra función; al cementerio del latido no se la
+  enseñó.
+- Con eso, el cementerio no puede decir RELEVADA de ninguna pregunta del equipo J, y sus 85 avisos no se pueden despachar por
+  puesto (`ordenDeMarcar` pide `s<N>`). **Es carril S5 (`latido.mjs`), sale de SCRUM-1474/1357 y no es SCRUM-1238.** No he
+  abierto ticket: lo propongo al orquestador.
+
+### ④ Veredicto propuesto: SEGUIR, y partirlo (A18). Cierra el orquestador (A13)
+
+| parte | hoy |
+|---|---|
+| Rojo primero, fixture `4d9f556d` | HECHO · `tests/scrum1238b-clase-de-sesion.test.mjs` |
+| Clase ESPERANDO con su `needs`; MUERTA exige un final de verdad | HECHO · `scripts/equipo/sesion.mjs:282` y `:1060` · `tests/scrum1238c-espera-no-es-fin.test.mjs` |
+| Bloqueada en el arranque con nombre propio | NO HECHO tal como está escrito · nadie ha firmado aceptar la desviación (motivo, no clase) |
+| El vigía avisa «te está esperando: <needs>» | NO HECHO · S5 (`vigia-sesiones-jv.mjs`, `latido.mjs`) |
+
+La parte de J6 está terminada. Para cerrar faltan dos cosas que no son de J6:
+1. Que el orquestador o el fundador acepten por escrito la desviación del «arranque».
+2. Partir el aviso del vigía y del latido a un ticket de S5, junto al de `puestoDe` de ③.
+
+Hecho eso, la frase de cierre es: «una sesión que espera, con su pregunta en el `state.json`, ya no sale MUERTA», y la comprobación que
+queda es `tests/scrum1238c-espera-no-es-fin.test.mjs`.
+
+**Sin medir:** que contestar a una ESPERA la despierte; si la copia de AppData de `sesion.mjs` está al día (aviso ALTERADO de c.21209);
+la salida de `vigia-sesiones-jv.mjs` (no lo corrí). Tampoco hoy ninguna sesión sin pid con `needs` en su `state.json`, así que la clase ESPERA
+solo está probada por los fixtures.
