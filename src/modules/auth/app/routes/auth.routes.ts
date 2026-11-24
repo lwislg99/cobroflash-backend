@@ -179,7 +179,8 @@ router.post('/test-login', testLoginGate, testLoginLimiter, async (req, res, nex
     let teamMemberId: number | null = null;
     if (miembro) {
       const tm = await prisma.teamMember.findFirst({ where: { email: miembro, merchantId: merchant.id }, select: { id: true, status: true } });
-      if (!tm || tm.status === 'suspended') return res.status(404).json({ error: 'team_member_not_found' });
+      // SCRUM-1555c: `message` firmado por el fundador (regla 39), SCRUM-1555 c.22642.
+      if (!tm || tm.status === 'suspended') return res.status(404).json({ error: 'team_member_not_found', message: 'No hay ningún miembro del equipo con ese correo en esta cuenta.' });
       teamMemberId = tm.id;
     }
 

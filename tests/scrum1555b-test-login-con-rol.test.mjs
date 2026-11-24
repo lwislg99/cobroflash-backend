@@ -75,6 +75,8 @@ test('SCRUM-1555b · 🔴 un `miembro` que no es del comercio da 404 team_member
   const r = await app.pedir('/auth/test-login', { metodo: 'POST', cuerpo: { email: PROPIETARIA, secret: SECRETO, miembro: 'nadie-1555b@yaqu.test' } });
   assert.equal(r.status, 404, `🔴 miembro inexistente contesta ${r.status}: ${r.texto}`);
   assert.equal(r.json?.error, 'team_member_not_found', `🔴 el 404 no dice qué falta: ${r.texto}`);
+  // SCRUM-1555c: el texto humano, literal firmado en SCRUM-1555 c.22642 (regla 39).
+  assert.equal(r.json?.message, 'No hay ningún miembro del equipo con ese correo en esta cuenta.', `🔴 el 404 no lleva el texto firmado: ${r.texto}`);
   assert.equal(creadas().length, 0, '🔴 con un miembro inexistente se escribió una sesión');
 });
 
