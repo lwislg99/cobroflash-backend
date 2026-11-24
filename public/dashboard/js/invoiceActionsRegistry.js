@@ -49,6 +49,8 @@ const INVOICE_ACTION_REGISTRY = [
   { id: 'btnRectify',    destinos: { pending: 'overflow',       paid: 'overflow',   annulled: 'oculta',     R1: 'oculta' } },
   { id: 'btnRegen',      destinos: { pending: 'overflow',       paid: 'overflow',   annulled: 'overflow',   R1: 'overflow' } },
   { id: 'btnDispute',    destinos: { pending: 'overflow',       paid: 'overflow',   annulled: 'oculta',     R1: 'oculta' } },
+  // SCRUM-1532d · además del estado de la FACTURA, la vista solo lo crea con el COBRO `pending`.
+  { id: 'btnCancelarCobro', destinos: { pending: 'overflow',    paid: 'oculta',     annulled: 'oculta',     R1: 'oculta' } },
   { id: 'btnAnular',     destinos: { pending: 'seccion-propia', paid: 'oculta',     annulled: 'oculta',     R1: 'oculta' } },
 ];
 

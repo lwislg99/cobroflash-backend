@@ -223,8 +223,26 @@ function metodoDeclaradoEnFactura(paidVia: unknown): string | null {
 
 /** Lo mínimo que hace falta para saber por dónde entró el dinero de un cobro. */
 export interface CobroConMetodo {
-  charge?: { method: string | null } | null;
+  /**
+   * SCRUM-1316k · `status` es opcional SOLO para los llamadores que todavía no lo seleccionan (el
+   * informe X2, `reports.routes.ts`, carril S1; pedido en SCRUM-1316 c.22445). Ausente = se
+   * conserva la regla anterior (el cargo manda). Quien lo trae, recibe la regla buena.
+   */
+  charge?: { method: string | null; status?: string | null } | null;
   paidVia?: string | null;
+}
+
+/** El estado de `Charge` que dice que el dinero ENTRÓ (`chargesAdmin.routes.ts`, `psp.routes.ts`). */
+const ESTADO_DE_CARGO_PAGADO = 'paid';
+
+/**
+ * SCRUM-1316k · ¿Este cargo puede decir por dónde entró el dinero? Solo si está PAGADO.
+ * `Charge.method` se escribe al CREAR el cargo (la intención), no al cobrarlo: un cargo `pending`,
+ * `failed` o `expired` no es un hecho consumado y no manda sobre lo declarado (c.22438, punto 2).
+ * Estado ausente (`undefined`): el llamador no lo seleccionó, y se conserva lo de antes.
+ */
+function cargoAportaMetodo(charge: { status?: string | null }): boolean {
+  return charge.status === undefined || charge.status === ESTADO_DE_CARGO_PAGADO;
 }
 
 /**
@@ -236,7 +254,7 @@ export interface CobroConMetodo {
  * documento que se le manda a un banco, y que diga una cosa distinta de la que ve el profesional en
  * su panel es lo que convierte una disputa ganada en una perdida.
  *
- *   · `Charge.method` MANDA cuando están los dos. No es un empate: uno lo confirma un WEBHOOK y el
+ *   · `Charge.method` MANDA cuando están los dos Y EL CARGO ESTÁ PAGADO (SCRUM-1316k). No es un empate: uno lo confirma un WEBHOOK y el
  *     otro lo dice una PERSONA (`paidVia.ts:17`), y ante una inspección son dos cadenas de
  *     evidencia distintas. Gana el hecho consumado.
  *   · `null`, `''` y ausente son la MISMA ausencia (`metodoDeclaradoEnFactura`).
@@ -248,7 +266,10 @@ export interface CobroConMetodo {
  * siguiente igual que la ausencia.
  */
 export function metodoDeUnCobro(cobro: CobroConMetodo): string | null {
-  const delCharge = cobro.charge?.method || null;
+  // SCRUM-1316k · solo un cargo PAGADO es «el hecho consumado» de arriba; uno pendiente o fallido
+  // dice lo que se intentó, no por dónde entró el dinero, y cede ante lo declarado.
+  const cargoQueCuenta = cobro.charge && cargoAportaMetodo(cobro.charge) ? cobro.charge : null;
+  const delCharge = cargoQueCuenta?.method || null;
   if (delCharge) return delCharge;
   return metodoDeclaradoEnFactura(cobro.paidVia);
 }

@@ -1,0 +1,12 @@
+TEXTO:
+QA Staging S.L.
+⏳
+Pago pendiente
+590,00 €
+Justificante J-20260916-93ZW
+Estamos esperando tu pago. Puedes completarlo usando el botón de pago por banco que aparece más arriba.
+Pagar por transferencia
+Cobro #889 · Cliente: María López
+
+ACCIONES VISIBLES (1):
+a «Pagar por transferencia» → https://yaqu-staging-production.up.railway.app/pay/bank/«TOKEN»

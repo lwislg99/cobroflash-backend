@@ -1,0 +1,5 @@
+base limpia: pasados 4 · caídos 0
+MUERE (la caza) · public/dashboard/js/customersView.js · el payload del modal ya NO envía la clave recargoEquivalencia
+MUERE (la caza) · public/dashboard/js/customersView.js · ninguna ficha de cliente tiene control del recargo
+CONTROL inocua: MUDA (bien)
+VEREDICTO: 2/2 cazadas · 0 no

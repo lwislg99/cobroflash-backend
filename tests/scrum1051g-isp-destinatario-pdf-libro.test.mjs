@@ -194,25 +194,26 @@ async function papel(total, lines, type = 'F1') {
   assert.equal(r.ok, true, `🔴 NO SUPE LEER EL PDF: ${r.motivo}`);
   const t = r.lineas.map((l) => l.texto);
   const i = t.findIndex((x) => x.startsWith('Base imponible:'));
-  const j = t.findIndex((x) => /^TOTAL( COBRADO)?:/.test(x));
+// SCRUM-1787w · literal FIRMADO en SCRUM-1787 c.22428 (GO c.22416): «Total factura:» sustituye a «TOTAL:»; el justificante conserva «TOTAL COBRADO:».
+  const j = t.findIndex((x) => /^(Total factura|TOTAL COBRADO):/.test(x));
   assert.ok(i >= 0 && j > i, '🔴 CIEGO: no encuentro el bloque de totales en el papel.');
   return { todo: t, bloque: t.slice(i, j + 1) };
 }
 
 test('1051g ① · una F1 sólo S2 imprime P1 en su propia fila, con la base y sin cuota', async () => {
   const { bloque } = await papel('1000.00', [S2]);
-  assert.deepEqual(bloque, ['Base imponible:1.000,00 EUR', `${P1}:1.000,00 EUR`, 'TOTAL:1.000,00 EUR']);
+  assert.deepEqual(bloque, ['Base imponible:1.000,00 EUR', `${P1}:1.000,00 EUR`, 'Total factura:1.000,00 EUR']);
 });
 
 test('1051g ① · una F1 mixta separa la fila S2 de la de su tipo: el 21 % ya cuadra desde el papel', async () => {
   const { bloque } = await papel('1121.00', [{ ...S2, tax: 0.21 }, NORMAL]);
   // Antes de 1051g: [Base 1.100, IVA 21 % 21,00, TOTAL]: 1.100 × 21 % no es 21,00.
-  assert.deepEqual(bloque, ['Base imponible:1.100,00 EUR', 'IVA 21%:21,00 EUR', `${P1}:1.000,00 EUR`, 'TOTAL:1.121,00 EUR']);
+  assert.deepEqual(bloque, ['Base imponible:1.100,00 EUR', 'IVA 21%:21,00 EUR', `${P1}:1.000,00 EUR`, 'Total factura:1.121,00 EUR']);
 });
 
 test('1051g ① · CONTROL: una F1 sin S2 sale como antes y P1 no aparece en ninguna parte del papel', async () => {
   const { bloque, todo } = await papel('121.00', [NORMAL]);
-  assert.deepEqual(bloque, ['Base imponible:100,00 EUR', 'IVA 21%:21,00 EUR', 'TOTAL:121,00 EUR']);
+  assert.deepEqual(bloque, ['Base imponible:100,00 EUR', 'IVA 21%:21,00 EUR', 'Total factura:121,00 EUR']);
   assert.equal(todo.filter((x) => x.includes('sujeto pasivo')).length, 0);
 });
 

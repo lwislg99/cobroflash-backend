@@ -1,4 +1,5 @@
 // src/lib/invoicing.ts
+import { direccionDeLaFactura, direccionEnUnaLinea } from '../modules/invoicing/domain/direccionCongelada'; // SCRUM-1787d
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
@@ -9,20 +10,20 @@ import { isDemoMerchant, DEMO_WATERMARK } from '../modules/invoicing/domain/emis
 import { generateInvoicePdf } from './pdf';
 import { invoicesDir } from '../core/storage/dirs';
 import { applyVeriFactu } from '../modules/invoicing/domain/verifactu.service';
-import { exigirDocumentoEmitible, FacturaSinSellarError } from '../modules/invoicing/domain/portonDocumento'; // SCRUM-206
+import { exigirDocumentoEmitible, FacturaSinSellarError, qrDelDocumento } from '../modules/invoicing/domain/portonDocumento'; // SCRUM-206 · SCRUM-1779d
 // SCRUM-205: este fichero YA NO SELLA. Solo consulta el estado para decidir si puede
 // producir documento; quien sella es `sellarTrasEmision`, en la emision.
 import {
   puedeProducirDocumento,
   sellarTrasEmision,
-  SELLADO_HECHO,
+  SELLADO_HECHO, SELLADO_NO_APLICA, // SCRUM-1779d
   ERROR_PDF_SIN_SELLAR,
 } from '../modules/invoicing/domain/selladoEstado';
 import { exigirLineasFacturables } from '../modules/invoicing/domain/lineasFacturables'; // SCRUM-246
-import { lineasParaFacturar } from '../modules/invoicing/domain/invoiceLines.service'; // SCRUM-887
+import { lineasParaFacturar } from '../modules/invoicing/domain/invoiceLines.service'; import { lineasQueSuman } from '../modules/quotes/domain/apartados'; // SCRUM-887 · SCRUM-1786b (una línea: anclas fichero:línea)
 import { exigirTiposDeIvaEmitibles } from '../core/validation/tiposIvaEmitibles'; // SCRUM-771
 import { exigirCausaLineaEmitible } from '../core/validation/causaLineaEmitible'; import { exigirDestinatarioParaIsp } from '../modules/invoicing/domain/destinatarioIsp'; // SCRUM-1051 · 1051g (en una línea: la auditoría cita este fichero por número de línea, scrum525d)
-import { crearFacturaEmitida } from '../modules/invoicing/domain/crearFacturaEmitida'; // SCRUM-729
+import { crearFacturaEmitida } from '../modules/invoicing/domain/crearFacturaEmitida'; import { formasDePagoACongelar } from '../modules/invoicing/domain/formasDePagoACongelar'; // SCRUM-729 · SCRUM-1787s-bis (en una línea: scrum525d)
 import { congelarDesdeFicha, clienteDelDocumento } from '../modules/invoicing/domain/clienteCongelado'; // SCRUM-729
 import { congelarEmisor, emisorDelDocumento } from '../modules/invoicing/domain/emisorCongelado'; // SCRUM-665
 import { tomarCerrojoDeSerie } from '../modules/jobs/domain/albaranIdempotencia'; // SCRUM-1304
@@ -101,7 +102,7 @@ export async function ensureInvoicePdf(
     // SCRUM-206 · PORTÓN, al borde de la salida y no al principio de la función: aquí la
     // garantía es local y se lee de un vistazo. Cubre además el caso que el `catch` no ve — una
     // factura que llega sin huella sin haberse intentado sellar en esta llamada.
-    exigirDocumentoEmitible({ number: inv.number, vfHash }, inv.merchant);
+    exigirDocumentoEmitible({ number: inv.number, vfHash, vfEstado: inv.vfEstado }, inv.merchant);
 
     const lines = Array.isArray(inv.lines) ? (inv.lines as any[]) : [];
     // SCRUM-665 · el emisor sale de la COLUMNA, no de la ficha viva — mismo criterio que el
@@ -130,10 +131,11 @@ export async function ensureInvoicePdf(
       //
       // SCRUM-729 · y ahora sale de la COLUMNA, no de la ficha viva. Hasta hoy, corregir el
       // nombre de un cliente reescribia el PDF de sus facturas ya emitidas.
-      customer: clienteDelDocumento(inv, inv.customer),
+      // SCRUM-1787d · NIF (ya venía en el congelado) y dirección: de la COLUMNA, nunca de la ficha.
+      customer: clienteDelDocumento(inv, inv.customer), customerAddress: direccionEnUnaLinea(direccionDeLaFactura(inv)) || null,
       currency: inv.currency,
       total: inv.total.toString(),
-      qrData,
+      qrData: qrDelDocumento({ number: inv.number, vfHash, vfEstado: inv.vfEstado }, inv.merchant, qrData), // SCRUM-1779d
       vfHash,
       createdAt: inv.createdAt,
       lines,
@@ -142,7 +144,8 @@ export async function ensureInvoicePdf(
       watermark: isDemoMerchant(inv.merchant) ? DEMO_WATERMARK : null,
       stageLabel: inv.stageLabel, // SCRUM-33
       zona: inv.merchant.timezone, // SCRUM-1470c: el día de la «Fecha:», el de su registro
-      merchantCriterioCaja: inv.merchantCriterioCaja, // SCRUM-1240d: el CONGELADO, nunca el vivo
+      docFooterText: inv.docFooterText ?? null, // SCRUM-1787l: las Observaciones congeladas al emitir
+      merchantCriterioCaja: inv.merchantCriterioCaja, dueDate: inv.dueDate, payMethods: inv.payMethods, // SCRUM-1240d y SCRUM-1787m: los CONGELADOS, nunca los vivos
     });
     await prisma.invoice.update({ where: { id: invoiceId }, data: { pdfUrl: publicUrlPath, qrData } });
   }
@@ -239,8 +242,10 @@ export async function ensureInvoiceForCharge(
     // Esta guarda mira la fila QUE TIENE EN LA MANO, que puede ser vieja: la entrega que leyó la
     // fila antes de que la otra la sellara entra igual. A ésa la para la guarda de dentro del
     // cerrojo, en `applyVeriFactu`. Hacen falta las dos.
-    if (inv.vfEstado !== SELLADO_HECHO) {
+    let vfEstado: string = inv.vfEstado; // SCRUM-1779d: el estado DESPUÉS de sellar, no el leído antes
+    if (inv.vfEstado !== SELLADO_HECHO && inv.vfEstado !== SELLADO_NO_APLICA) { // SCRUM-1779d · c.22245 ①: emitida sin sello, se queda sin sello
       const resultadoSellado = await sellarTrasEmision(inv, merchant ?? {}, prisma);
+      vfEstado = resultadoSellado.estado;
       if (resultadoSellado.estado === SELLADO_HECHO) {
         const releida = await prisma.invoice.findUnique({
           where: { id: inv.id },
@@ -260,7 +265,7 @@ export async function ensureInvoiceForCharge(
 
     // SCRUM-206 · PORTÓN. Va ANTES del `if (needsPdf)` a propósito: la rama `else` de abajo
     // también escribía `qrData` —el fallback casero— sobre una factura sin sellar.
-    exigirDocumentoEmitible({ number: inv.number, vfHash }, merchant);
+    exigirDocumentoEmitible({ number: inv.number, vfHash, vfEstado }, merchant);
 
     if (needsPdf) {
       const customer = await prisma.customer.findUnique({ where: { id: inv.customerId } });
@@ -291,10 +296,11 @@ export async function ensureInvoiceForCharge(
         merchant: { ...emisor, name: emisor.name },
         // SCRUM-577: idem — el segundo camino que arma la factura.
         // SCRUM-729 · idem: la columna manda, la ficha viva sólo si el documento es anterior.
-        customer: clienteDelDocumento(inv, customer),
+        // SCRUM-1787d · idem.
+        customer: clienteDelDocumento(inv, customer), customerAddress: direccionEnUnaLinea(direccionDeLaFactura(inv)) || null,
         currency: inv.currency,
         total: inv.total.toString(),
-        qrData,
+        qrData: qrDelDocumento({ number: inv.number, vfHash, vfEstado }, merchant, qrData), // SCRUM-1779d
         vfHash,
         createdAt: inv.createdAt,
         lines: invLines,
@@ -302,7 +308,9 @@ export async function ensureInvoiceForCharge(
         watermark: merchant && isDemoMerchant(merchant) ? DEMO_WATERMARK : null,
         stageLabel: inv.stageLabel ?? null, // SCRUM-33
         zona: merchant.timezone, // SCRUM-1470c: el día de la «Fecha:», el de su registro
+        docFooterText: inv.docFooterText ?? null, // SCRUM-1787l: idem
         merchantCriterioCaja: inv.merchantCriterioCaja, // SCRUM-1240d: el CONGELADO, nunca el vivo
+        dueDate: inv.dueDate, payMethods: inv.payMethods, // SCRUM-1787m: los CONGELADOS en la factura
       });
 
       updated = await prisma.invoice.update({
@@ -348,8 +356,8 @@ export async function ensureInvoiceForCharge(
   const quoteLines = quote
     ? await prisma.quote.findUnique({ where: { id: quote.id }, select: { lines: true, discountGlobalAmount: true } })
     : null;
-  // SCRUM-887 · las líneas del presupuesto con su dto de línea YA aplicado, como en los demás caminos.
-  const lineasDelPresupuesto = quoteLines ? lineasParaFacturar(quoteLines) : [];
+  // SCRUM-887 · dto de línea YA aplicado · SCRUM-1786b · sin cabeceras de apartado (títulos, no líneas).
+  const lineasDelPresupuesto = quoteLines ? lineasQueSuman(lineasParaFacturar(quoteLines)) : [];
   const invoiceLines: any[] = lineasDelPresupuesto.length > 0
     ? lineasDelPresupuesto
     : [{ concept: ch.concept, qty: 1, price: Number(ch.amount), tax: 0 }];
@@ -434,7 +442,7 @@ export async function ensureInvoiceForCharge(
       chargeId: ch.id,
       merchantId: ch.merchantId,
       customerId: ch.customerId ?? (() => { throw new Error('missing_customer_in_charge'); })(),
-      quoteId: quote?.id ?? null,
+      quoteId: quote?.id ?? null, payMethods: formasDePagoACongelar({ cobro: ch, presupuesto: quote, merchant: ch.merchant, importe: Number(ch.amount), moneda: ch.currency.toUpperCase() }) ?? undefined, // SCRUM-1787s-bis (c.22401 ③, c.22404, c.22423: cobro > presupuesto > activas)
       number,
       type: 'F1',
       total: ch.amount.toString(),

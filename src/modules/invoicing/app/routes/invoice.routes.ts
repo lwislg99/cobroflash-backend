@@ -4,6 +4,7 @@ import { IssueInvoiceSchema } from '../../../../core/validation/schemas';
 import { prisma } from '../../../../core/db/prisma';
 import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1455c
 import { apuntarCobroDeFactura } from '../../../billing/domain/cobrosDeFactura'; // SCRUM-1732
+import { cerrarCobroDeFacturaPagada } from '../../../system/invoiceAdmin'; // SCRUM-1803b
 
 // ⚠️ Igual que en otros puntos: seguimos usando lib/invoicing
 // Asegúrate de tener srcNew/lib/invoicing.ts copiado desde src/lib/invoicing.ts
@@ -130,6 +131,14 @@ router.post('/:id/paid-webhook', async (req, res) => {
       merchantId: updated.merchantId, invoiceId: updated.id, chargeId: updated.chargeId ?? null,
       importe: Number(updated.total), fechaCobro: updated.paidAt ?? now, fechaOrigen: 'aviso', metodo: null, tipo: 'cobro',
     }).catch((e) => console.error(`[paid-webhook] SCRUM-1732 no se pudo apuntar el cobro de la factura ${updated.id}:`, (e as any)?.message || 'error desconocido'));
+
+    // SCRUM-1803b (decisión del fundador SCRUM-1803 c.22506 b) · el aviso cierra también el cobro
+    // `pending` enlazado (`Invoice.chargeId`), con la MISMA fecha. Este aviso no trae medio: `method`
+    // se conserva. Su `origen` no es el del marcado manual, así que `deshacer_pago` no lo reabre (c).
+    await cerrarCobroDeFacturaPagada(
+      updated.merchantId, updated.chargeId, updated.paidAt ?? now, null,
+      { origen: 'paid_webhook', invoiceId: updated.id },
+    ).catch((e) => console.error(`[paid-webhook] SCRUM-1803b no se pudo cerrar el cobro de la factura ${updated.id}:`, (e as any)?.message || 'error desconocido'));
 
     const quote = updated.quote;
     const merchant = quote?.merchant;

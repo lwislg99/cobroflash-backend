@@ -36,6 +36,7 @@
 import type { Prisma } from '@prisma/client';
 import type { ClienteCongelado } from './clienteCongelado';
 import type { EmisorCongelado } from './emisorCongelado'; // SCRUM-665
+import { congelarDireccionAlEmitir, type DireccionCongelada } from './direccionCongelada'; // SCRUM-1787d
 
 /**
  * Todo lo que hoy se escribe en un `invoice.create`, MENOS los campos del cliente y del emisor:
@@ -43,7 +44,7 @@ import type { EmisorCongelado } from './emisorCongelado'; // SCRUM-665
  */
 export type DatosDeFacturaEmitida = Omit<
   Prisma.InvoiceUncheckedCreateInput,
-  keyof ClienteCongelado | keyof EmisorCongelado
+  keyof ClienteCongelado | keyof EmisorCongelado | keyof DireccionCongelada
 >;
 
 /**
@@ -56,11 +57,14 @@ export type DatosDeFacturaEmitida = Omit<
  * ⛔ No se llama para presupuestos (oferta viva) ni para rectificar una fila ya escrita: una
  *    factura emitida no se edita (regla 29). Sólo nace.
  */
-export function crearFacturaEmitida(
+export async function crearFacturaEmitida(
   tx: Prisma.TransactionClient,
   cliente: ClienteCongelado,
   emisor: EmisorCongelado,
   datos: DatosDeFacturaEmitida,
 ) {
-  return tx.invoice.create({ data: { ...datos, ...cliente, ...emisor } });
+  // SCRUM-1787d (c.22305/c.22311) · la dirección de facturación del cliente se congela AQUÍ, en la
+  // misma transacción: el albarán no la lleva y por eso no viaja en `cliente` (ver direccionCongelada.ts).
+  const direccion = await congelarDireccionAlEmitir(tx, datos);
+  return tx.invoice.create({ data: { ...datos, ...cliente, ...emisor, ...direccion } });
 }

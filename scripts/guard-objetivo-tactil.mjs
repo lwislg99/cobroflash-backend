@@ -103,6 +103,20 @@ function abrirTodosLosPasos(contenedor) {
   }
 }
 
+/**
+ * SCRUM-1789 · la ficha del Trabajo va por PESTAÑAS desde 3a8f4cb22 (SCRUM-1768, 20-nov-2026): sólo
+ * la abierta se ve, y las demás llevan `hidden`. La fila de la factura pendiente cae en la de
+ * Facturas, que no es la que abre por defecto, así que «Marcar como PAGADA» y «📲 Confirmar Bizum
+ * recibido» salían en caja 0×0 («sin pintar») y el guard decía CIEGO en cada run. El tamaño de un
+ * botón no depende de qué pestaña esté abierta (la misma razón que `abrirTodosLosPasos`): se abren
+ * TODOS los paneles por su ROL, no por su clase, para medir lo que hay en cada uno.
+ */
+function abrirTodasLasPestanas(contenedor) {
+  for (const n of todos(contenedor)) {
+    if (n.getAttribute && n.getAttribute('role') === 'tabpanel') n.hidden = false;
+  }
+}
+
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
 import { lanzarNavegador } from './_navegador.mjs';
@@ -444,7 +458,7 @@ const SUPERFICIES_791 = [
   // 390 con la lista de excepciones VACÍA. Lo que impide que un cero sea ceguera no es este número:
   // son `conocidos` (los botones de cobro, con nombre, tienen que salir) y las sondas del umbral.
   { ruta: '/__job', vista: 'renderJobDetailView', titulo: 'ficha del Trabajo',
-    datos: DATOS_1172, args: [1], distintosEsperados: 0,
+    datos: DATOS_1172, args: [1], distintosEsperados: 0, preparar: abrirTodasLasPestanas,
     // Los de COBRO primero (aceptación #4): si cualquiera deja de pintarse, CIEGO — no un cero que
     // parezca limpieza. «Marcar como PAGADA» y «📲 Confirmar Bizum recibido» son los dos que la
     // fixture de `DATOS_1172` existe para sacar a pantalla.

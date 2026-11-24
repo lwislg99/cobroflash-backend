@@ -40,13 +40,22 @@ async function fetchInvoiceDetail(id) {
     const headTitle = left.querySelector('h2');
     const headSub = left.querySelector('.detail-sub');
 
+    // SCRUM-1787b · la cabecera lleva sus acciones en `.detail-head-acciones`, como el presupuesto.
+    // Sin «Duplicar»: una factura emitida no se copia (c.22303 ④). El PDF NO sube aquí todavía: un
+    // botón nuevo en la cabecera cambia el censo de scrum283 (cabecera = navegación) y su rótulo es
+    // microcopy que vigila scrum600d. Es una decisión, no un descuido: queda preguntada en SCRUM-1787,
+    // y mientras tanto «Descargar PDF» sigue en «Siguiente paso», justo debajo del total.
+    const headAcc = document.createElement('div');
+    headAcc.className = 'detail-head-acciones';
+    header.appendChild(headAcc);
+
     const btnBack = document.createElement('button');
     btnBack.className = 'btn-secondary btn-sm';
     btnBack.textContent = '← Volver a facturas';
     btnBack.addEventListener('click', () => {
       if (window.renderAppView) window.renderAppView('invoices');
     });
-    header.appendChild(btnBack);
+    headAcc.appendChild(btnBack);
 
     const statusBox = document.createElement('div');
     statusBox.className = 'alert';
@@ -93,6 +102,8 @@ async function fetchInvoiceDetail(id) {
       if (headTitle) headTitle.textContent = 'Justificante de cobro';
       if (headSub) headSub.textContent = 'Detalle y acciones del justificante.';
     }
+    // SCRUM-1787b · el número de serie en el título, como «Presupuesto #N».
+    if (headTitle && invoice.number) headTitle.textContent = `${headTitle.textContent} ${invoice.number}`;
 
     // V0-0: marca de agua DEMO en pantalla (merchant demo)
     if (invoice.demo) {
@@ -186,12 +197,20 @@ async function fetchInvoiceDetail(id) {
       cobroBlock.style.textAlign = 'right';
       cobroBlock.style.marginTop = '10px';
       const cuando = invoice.paidAt
-        ? new Date(invoice.paidAt).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' })
+        ? new Date(invoice.paidAt).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })
         : '';
       cobroBlock.innerHTML =
         '<div class="detail-total-label">Cobro</div>'
         + `<div class="detail-cobro-importe">${fmtInvMoney(invoice.total, invoice.currency)}</div>`
         + (cuando ? `<div class="detail-cobro-fecha">${cuando}</div>` : '');
+      // SCRUM-1532e · etiqueta de estado de un cobro cancelado (literal firmado: SCRUM-1532 c.22455).
+      // Pill neutra del inventario: cancelar no es un error, y la factura sigue pendiente.
+      if (invoice.estadoDelCobro === 'cancelled') {
+        const pillCobro = document.createElement('span');
+        pillCobro.className = 'status-pill status-pill-draft detail-cobro-estado';
+        pillCobro.textContent = 'Cobro cancelado';
+        cobroBlock.appendChild(pillCobro);
+      }
       summaryRow.appendChild(cobroBlock);
     }
     // Si NO hay cobro no se pinta nada: un bloque «Cobro» vacío en la pantalla del dinero se lee
@@ -216,23 +235,111 @@ async function fetchInvoiceDetail(id) {
       summarySec.appendChild(remDiv);
     }
 
+    // ── SCRUM-1787b · LÍNEA DE PROGRESO: Emitida → Enviada → Cobrada ───────────────────────
+    // La misma idea que `buildStatusTimeline` del presupuesto, pero con CLASES (bloque J1 de
+    // styles.css) y no con `style.cssText`. Textos firmados en SCRUM-1787 c.22303 ③; el final
+    // ANULADA / RECTIFICATIVA reutiliza lo que esta ficha y `invoiceStatusMeta` ya pintan.
+    // SCRUM-1787o · «Enviada» si salió por WhatsApp O por correo: `correoEnviado` lo pone el GET de
+    // la ficha a partir de las filas de `email_messages` de esta factura.
+    {
+      const fmtPaso = (v) => {
+        if (!v) return '';
+        try { return new Date(v).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }); } catch { return ''; }
+      };
+      const cobrada = st === 'paid';
+      const waSt = String((invoice.waDelivery && invoice.waDelivery.status) || '').toLowerCase();
+      const enviada = cobrada || ['sent', 'delivered', 'read'].includes(waSt)
+        || (invoice.envioDocumento && invoice.envioDocumento.whatsapp === 'enviado')
+        || invoice.correoEnviado === true;
+      const pasos = [
+        { label: 'Emitida', estado: 'hecho', fecha: fmtPaso(invoice.createdAt) },
+        { label: 'Enviada', estado: enviada ? 'hecho' : 'actual', fecha: '' },
+      ];
+      if (st === 'annulled') pasos.push({ label: 'ANULADA', estado: 'final', fecha: '' });
+      else if (invoice.type === 'R1') pasos.push({ label: 'RECTIFICATIVA', estado: 'final', fecha: '' });
+      else pasos.push({ label: 'Cobrada', estado: cobrada ? 'hecho' : 'pendiente', fecha: cobrada ? fmtPaso(invoice.paidAt) : '' });
+
+      const prog = document.createElement('ol');
+      prog.className = 'j1-prog';
+      pasos.forEach((p) => {
+        const li = document.createElement('li');
+        li.className = `j1-prog-paso j1-prog-paso--${p.estado}`;
+        li.dataset.estado = p.estado;
+        if (p.estado === 'actual') li.setAttribute('aria-current', 'step');
+        const punto = document.createElement('span');
+        punto.className = 'j1-prog-punto';
+        punto.setAttribute('aria-hidden', 'true');
+        li.appendChild(punto);
+        const rot = document.createElement('span');
+        rot.className = 'j1-prog-rotulo';
+        rot.textContent = p.label;
+        li.appendChild(rot);
+        if (p.fecha) {
+          const f = document.createElement('span');
+          f.className = 'j1-prog-fecha';
+          f.textContent = p.fecha;
+          li.appendChild(f);
+        }
+        prog.appendChild(li);
+      });
+      summarySec.appendChild(prog);
+    }
+
     // --- Sección: datos ---
+    // SCRUM-1787b · «Datos» pasa a ser CLIENTE + COBRO en dos columnas, como CLIENTE + DECISIÓN del
+    // presupuesto. «Creada» sale: su fecha va en el paso «Emitida». «Dirección» NO se pinta: la
+    // factura no la guarda todavía (SCRUM-1787 c.22304/c.22305, llega en 1787d).
     const dataSec = document.createElement('div');
     dataSec.className = 'detail-section';
-    dataSec.innerHTML = '<h3 class="detail-section-title">Datos</h3>';
-    const dl = document.createElement('dl');
-    dl.className = 'detail-dl';
+    const dosCol = document.createElement('div');
+    dosCol.className = 'detail-2col';
+    dataSec.appendChild(dosCol);
+
     // SCRUM-1576b · el cliente congelado al emitir (`customerName`); la ficha viva sólo si la
     // factura es anterior al escritor. La misma regla que `clienteDelDocumento` (clienteCongelado.ts).
-    // El teléfono y el email de esta ficha siguen siendo los de HOY a propósito: son el destino de
-    // los envíos, no el documento (SCRUM-1576, clase c).
-    addDefRow(dl, 'Cliente', invoice.customerName != null ? invoice.customerName : invoice.customer?.name);
-    addDefRow(dl, 'Creada', invoice.createdAt ? new Date(invoice.createdAt).toLocaleString('es-ES') : null);
-    addDefRow(dl, 'Pagada', invoice.paidAt ? new Date(invoice.paidAt).toLocaleString('es-ES') : null);
-    addDefRow(dl, 'Rectifica a', invoice.rectifies ? invoice.rectifies.number : null);
-    addDefRow(dl, 'Rectificada por', (invoice.rectifiedBy && invoice.rectifiedBy.length) ? invoice.rectifiedBy.map((r) => r.number).join(', ') : null);
+    const congelado = invoice.customerName != null;
+    const cli = invoice.customer || {};
+    const colCli = document.createElement('div');
+    colCli.innerHTML = '<h3 class="detail-section-title">Cliente</h3>';
+    const dl = document.createElement('dl');
+    dl.className = 'detail-dl';
+    // El rótulo del nombre sigue siendo «Cliente»: es la fila que vigila scrum1576b.
+    addDefRow(dl, 'Cliente', congelado ? invoice.customerName : cli.name);
+    addDefRow(dl, 'NIF', congelado ? invoice.customerTaxId : null);
+    addDefRow(dl, 'Teléfono', congelado ? invoice.customerPhone : cli.phone);
+    addDefRow(dl, 'Email', congelado ? invoice.customerEmail : cli.email);
     if (!dl.children.length) dl.innerHTML = '<dd class="j1-fac-sin-datos">Sin datos.</dd>';
-    dataSec.appendChild(dl);
+    colCli.appendChild(dl);
+    dosCol.appendChild(colCli);
+
+    // «Cobro» (firmado, c.22303 ③): «Método» es el rótulo de Cobros y «Pagada» el de esta ficha.
+    const dlCobro = document.createElement('dl');
+    dlCobro.className = 'detail-dl';
+    const metodo = invoice.paidVia
+      ? (typeof window.etiquetaMetodoCobro === 'function' ? window.etiquetaMetodoCobro(invoice.paidVia) : invoice.paidVia)
+      : null;
+    // SCRUM-1787i · «Vence el» (firmado, c.22325 ①): la fecha CONGELADA al emitir, sólo si consta.
+    addDefRow(dlCobro, 'Vence el', invoice.dueDate
+      ? new Date(invoice.dueDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+      : null);
+    // SCRUM-1787i · «Formas de pago» (firmado, c.22345 ①): una por cada forma CONGELADA al emitir, sólo
+    // si constan. Una clave fuera del conjunto no se pinta en crudo: no tiene literal firmado.
+    const FORMAS_DE_PAGO_FIRMADAS = { card: 'Tarjeta', bizum: 'Bizum', transfer: 'Transferencia' };
+    const formas = Array.isArray(invoice.payMethods)
+      ? invoice.payMethods.map((f) => FORMAS_DE_PAGO_FIRMADAS[f]).filter(Boolean)
+      : [];
+    addDefRow(dlCobro, 'Formas de pago', formas.length ? formas.join(', ') : null);
+    addDefRow(dlCobro, 'Método', metodo);
+    addDefRow(dlCobro, 'Pagada', invoice.paidAt ? new Date(invoice.paidAt).toLocaleString('es-ES') : null);
+    addDefRow(dlCobro, 'Rectifica a', invoice.rectifies ? invoice.rectifies.number : null);
+    addDefRow(dlCobro, 'Rectificada por', (invoice.rectifiedBy && invoice.rectifiedBy.length) ? invoice.rectifiedBy.map((r) => r.number).join(', ') : null);
+    // Sin filas no se pinta la columna: un «Cobro» vacío se lee como un fallo de carga.
+    if (dlCobro.children.length) {
+      const colCobro = document.createElement('div');
+      colCobro.innerHTML = '<h3 class="detail-section-title">Cobro</h3>';
+      colCobro.appendChild(dlCobro);
+      dosCol.appendChild(colCobro);
+    }
     page.appendChild(dataSec);
 
     // --- Sección: etiquetas (SCRUM-595, DOC-05) ---
@@ -277,15 +384,105 @@ async function fetchInvoiceDetail(id) {
       });
     }
 
+    // ── SCRUM-1787b · CONCEPTOS: la misma tabla que la ficha del presupuesto ────────────────
+    // Solo LEE las líneas ya guardadas en la factura (no toca la emisión). Usa los helpers
+    // COMPARTIDOS sin tocarlos: `numerarLineas`/`celdaConcepto` (quoteApartados.js),
+    // `quoteDescuentos.importeDeLinea` y `fmtTipoIvaEs` (api.js). El concepto va como NODOS, no
+    // como cadena: la descripción larga lleva saltos de línea y el texto no puede inyectar marcado.
+    // Sin líneas no se pinta la sección.
+    const lineasFac = Array.isArray(invoice.lines) ? invoice.lines : [];
+    if (lineasFac.length && typeof numerarLineas === 'function' && typeof celdaConcepto === 'function') {
+      const concSec = document.createElement('div');
+      concSec.className = 'detail-section';
+      concSec.innerHTML = '<h3 class="detail-section-title">Conceptos</h3>';
+      const tablaConc = document.createElement('table');
+      // SCRUM-1787e · `j1-fac-conceptos`: a ≤640 px la tabla se APILA (bloque J1 de styles.css): el
+      // concepto a todo el ancho y Cant./Precio/IVA/Total debajo, cada uno con su rótulo. Medido a 390 px
+      // antes del arreglo: 2 de 5 columnas a la vista y 197 px escondidos tras el scroll de la tabla.
+      tablaConc.className = 'table j1-fac-conceptos';
+      tablaConc.innerHTML = '<thead><tr><th>Concepto</th><th>Cant.</th><th>Precio</th><th>IVA</th>'
+        + '<th class="j1-fac-col-total">Total</th></tr></thead>';
+      // El rótulo de cada celda apilada se LEE de la cabecera: ni un texto nuevo, ni dos copias del mismo.
+      const rotulosConc = [...tablaConc.querySelectorAll('thead th')].map((th) => th.textContent);
+      const tbodyConc = document.createElement('tbody');
+      tablaConc.appendChild(tbodyConc);
+      const numeracion = numerarLineas(lineasFac);
+      lineasFac.forEach((linea, i) => {
+        const l = linea || {};
+        const num = numeracion[i] || { cabecera: false, numero: null };
+        if (num.cabecera) {
+          const trA = document.createElement('tr');
+          trA.className = 'quote-apartado';
+          const td = document.createElement('td');
+          td.colSpan = 5;
+          td.appendChild(celdaConcepto(document, `${num.numero}. ${l.concept || ''}`));
+          trA.appendChild(td);
+          tbodyConc.appendChild(trA);
+          return;
+        }
+        const qty = Number(l.qty) || 0;
+        const price = Number(l.price) || 0;
+        const tax = Number(l.tax ?? 0);
+        const importe = window.quoteDescuentos.importeDeLinea(qty, price, l.dto, tax);
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td class="quote-line-cel"></td>'
+          + `<td>${qty}</td>`
+          + `<td>${fmtInvMoney(price, invoice.currency)}</td>`
+          + `<td>${fmtTipoIvaEs(tax)} %</td>`
+          + `<td class="amount j1-fac-col-total">${fmtInvMoney(importe.total, invoice.currency)}</td>`;
+        [...tr.children].forEach((td, k) => { if (k > 0) td.dataset.label = rotulosConc[k]; });
+        const celda = tr.querySelector('.quote-line-cel');
+        if (num.numero) {
+          const n = document.createElement('span');
+          n.className = 'quote-line-num';
+          n.textContent = num.numero;
+          celda.appendChild(n);
+        }
+        celda.appendChild(celdaConcepto(document, l.concept || ''));
+        tbodyConc.appendChild(tr);
+      });
+      concSec.appendChild(tablaConc);
+      page.appendChild(concSec);
+    }
+
+    // SCRUM-1787l (c.22345 ②) · las Observaciones congeladas al emitir, debajo de los conceptos como
+    // en el papel, con el MISMO rótulo y la misma forma que la ficha del presupuesto
+    // (`quotesDetailView.js`, `seccionDeTexto`): rótulo y pintado salen de `textoDelDocumento.js`,
+    // ningún texto nuevo. Sin texto, o sin la pieza, no se pinta nada.
+    const obsFac = invoice.docFooterText;
+    const secObsFac = (obsFac != null && String(obsFac).trim() !== ''
+      && window.TD_TITULO_OBSERVACIONES && typeof window.textoDelDocumentoPintado === 'function')
+      ? (() => {
+        const sec = document.createElement('div');
+        sec.className = 'detail-section';
+        sec.dataset.seccion = 'observaciones';
+        const h = document.createElement('h3');
+        h.className = 'detail-section-title';
+        h.textContent = window.TD_TITULO_OBSERVACIONES;
+        sec.appendChild(h);
+        const caja = document.createElement('div');
+        caja.className = 'quote-doc-texto';
+        caja.appendChild(window.textoDelDocumentoPintado(obsFac));
+        sec.appendChild(caja);
+        return sec;
+      })()
+      : null;
+    if (secObsFac) page.appendChild(secObsFac);
+
     // --- Sección: acciones (SCRUM-283 · la LEY del patrón: 1 primaria + ≤2 secundarias + ⋮) ---
     // Se PINTA desde el registro declarativo (invoiceActionsRegistry.js), la MISMA fuente que el
     // guard verifica: nadie escribe la tabla dos veces. El estado decide el destino de cada acción;
     // el rótulo es microcopy sin aprobar y sale con el marcador (regla 30). ANULAR no pasa por aquí:
     // se queda en su propia sección, con su código y su rótulo intactos (excepción de la regla 5).
+    //
+    // SCRUM-1787b · el bloque se llama «Siguiente paso» y cuelga del resumen (estado + total +
+    // progreso), como en la ficha del presupuesto. Lo que cambia es el SITIO en el DOM, que lo
+    // decide `appendChild`; este marcador se queda aquí por el orden que vigila scrum597.
     const actionsSec = document.createElement('div');
-    actionsSec.className = 'detail-section';
-    actionsSec.innerHTML = '<h3 class="detail-section-title">Acciones</h3>';
-    page.appendChild(actionsSec);
+    actionsSec.className = 'detail-next';
+    actionsSec.innerHTML = '<div class="detail-next-label">Siguiente paso</div>';
+    summarySec.appendChild(actionsSec);
 
     const actions = document.createElement('div');
     actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center';
@@ -449,9 +646,19 @@ async function fetchInvoiceDetail(id) {
     let selMetodo = null;
     // SCRUM-1618 · la fecha de cobro, igual: `null` mientras no se pinte, y vacía no viaja.
     let inpFechaCobro = null;
+    // SCRUM-1316l · con alguna línea al 10 %, el medio de cobro es obligatorio (SCRUM-1316 c.22438).
+    const conIvaAlDiez = typeof window.llevaLineaAlDiez === 'function' && window.llevaLineaAlDiez(invoice.lines);
     const btnTogglePaid = document.createElement('button');
     btnTogglePaid.className = 'btn-secondary btn-sm';
     btnTogglePaid.textContent = 'Marcar como cobrada';
+    // SCRUM-1810b (decisión A+B y literal FIRMADO: SCRUM-1810 c.22535). Sobre un `paid` el clic manda
+    // `status: 'pending'` —deshacer el pago—, que el servidor solo admite en un JUSTIFICANTE
+    // (`invoiceAdmin.ts`, `UnpayNotAllowedError`). B: en un justificante pagado el rótulo dice lo que
+    // hace. Se decide con el mismo `st === 'paid'` que elige `targetStatus` abajo: el rótulo y el clic
+    // no pueden discrepar. A (la factura pagada sin botón) va en `ubicarAccion`, más abajo.
+    if (isReceipt && st === 'paid') btnTogglePaid.textContent = 'Marcar como pendiente';
+    // A: «consta pagado» con el criterio de SCRUM-1532d/1800c (`status: 'paid'` o `paidAt`).
+    const constaPagado = st === 'paid' || Boolean(invoice.paidAt);
 
     btnTogglePaid.addEventListener('click', async () => {
       const targetStatus = st === 'paid' ? 'pending' : 'paid';
@@ -459,6 +666,14 @@ async function fetchInvoiceDetail(id) {
       // A21.2 (V4/V5): al marcar PAGADA se pregunta el importe REAL recibido.
       // Si no coincide, NADA automático: la factura sigue pendiente y queda
       // anotado en la ficha 360 para la decisión manual (runbook O).
+      // SCRUM-1316l · sin medio elegido y con línea al 10 %, T3 ANTES de preguntar el importe: el
+      // servidor lo rechazaría igual (422), y así no se pregunta nada que luego no sirve.
+      if (targetStatus === 'paid' && conIvaAlDiez && selMetodo
+        && typeof window.metodoElegido === 'function' && !window.metodoElegido(selMetodo)) {
+        setStatus('error', window.COPY_IVA_10.eligeMetodo);
+        selMetodo.focus();
+        return;
+      }
       if (targetStatus === 'paid') {
         const totalNum = Number(invoice.total);
         const raw = window.prompt(
@@ -531,7 +746,8 @@ async function fetchInvoiceDetail(id) {
     // La visibilidad por estado la decide el registro: primaria de pending (sin chargeId), «⋮» en
     // paid (Marcar como PENDIENTE), oculta en annulled/R1 —SCRUM-153: una anulada no cambia de
     // estado (Parte L no declara transición que salga de `annulled`)—.
-    ubicarAccion(btnTogglePaid, 'btnTogglePaid');
+    // SCRUM-1810b · A: en una FACTURA que consta pagada no se pinta (el servidor la rechaza siempre).
+    if (!(constaPagado && !isReceipt)) ubicarAccion(btnTogglePaid, 'btnTogglePaid');
 
     // A21.1 (R14): paquete de evidencia de disputa en 1 clic — con cobro de
     // tarjeta (charge) siempre disponible; la firma digital gana disputas.
@@ -605,6 +821,48 @@ async function fetchInvoiceDetail(id) {
         }
       });
       ubicarAccion(btnBizum, 'btnBizum');
+    }
+
+    // SCRUM-1532d · «Cancelar cobro» (GO y literales firmados: SCRUM-1532 c.22430). Solo con el cobro
+    // `pending` —la única transición del máster— y en el «⋯» (un acto que no se deshace no es la
+    // primaria). Tras cancelar, la ficha se repinta y el botón ya no está; la factura sigue pendiente y
+    // el reenvío le crea otro cobro (decisión 2). Los mensajes de error reutilizan los de esta ficha.
+    // SCRUM-1800c (c.22496 ①): con la factura ya pagada el botón no se pinta, aunque el cobro siga
+    // `pending`. `status: 'paid'` ya lo oculta el registro (`invoiceActionsRegistry.js`); aquí falta
+    // solo la factura con `paidAt` y otro estado.
+    if (invoice.chargeId && invoice.estadoDelCobro === 'pending' && !invoice.paidAt) {
+      const CONFIRMAR_CANCELAR_COBRO = '¿Cancelar este cobro? El cliente ya no podrá pagarlo con este enlace.';
+      const btnCancelarCobro = document.createElement('button');
+      btnCancelarCobro.className = 'btn-secondary btn-sm';
+      btnCancelarCobro.textContent = 'Cancelar cobro';
+      btnCancelarCobro.addEventListener('click', async () => {
+        if (!window.confirm(CONFIRMAR_CANCELAR_COBRO)) return;
+        btnCancelarCobro.disabled = true;
+        // SCRUM-644: el fallo NO pinta nada que venga del servidor ni de una excepción; solo uno de los
+        // dos literales que esta ficha ya usa para un error de cobro.
+        let aviso = null;
+        try {
+          const r = await fetch(`/admin/charges/${invoice.chargeId}/cancel`, { method: 'POST' });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            // SCRUM-1800c: literal FIRMADO en SCRUM-1800 c.22496 ① para el 409 `document_already_paid`.
+            aviso = d.error === 'charge_not_pending'
+              ? 'Este cobro ya no está pendiente.'
+              : (d.error === 'document_already_paid'
+                ? 'Este documento ya consta como pagado: su cobro no se puede cancelar.'
+                : 'Error actualizando estado: inténtalo de nuevo');
+          }
+        } catch (_) {
+          aviso = 'Error actualizando estado: inténtalo de nuevo';
+        }
+        if (aviso) {
+          setStatus('error', aviso);
+          btnCancelarCobro.disabled = false;
+          return;
+        }
+        if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: invoice.id });
+      });
+      ubicarAccion(btnCancelarCobro, 'btnCancelarCobro');
     }
 
     // Recordar pago: el estado (solo pending) lo decide el registro; aquí queda el dato (teléfono).
@@ -771,6 +1029,23 @@ async function fetchInvoiceDetail(id) {
     // pantalla se comporta exactamente como antes de existir el selector.
     if (estadoFactura === 'pending' && typeof window.pintarSelectorMetodo === 'function') {
       selMetodo = window.pintarSelectorMetodo(actions, { id: 'metodo-cobro-factura' });
+      // SCRUM-1316l · con línea al 10 %: el selector es obligatorio, y al elegir «efectivo» sale T4
+      // debajo. Es un AVISO, no un bloqueo. `hidden`, no `style=` (CSP, SCRUM-1773).
+      if (selMetodo && conIvaAlDiez) {
+        selMetodo.required = true;
+        selMetodo.setAttribute('aria-required', 'true');
+        const avisoEfectivo = document.createElement('p');
+        avisoEfectivo.className = 'alert warning';
+        avisoEfectivo.id = 'metodo-cobro-factura-aviso';
+        avisoEfectivo.setAttribute('role', 'status');
+        avisoEfectivo.textContent = window.COPY_IVA_10.avisoEfectivo;
+        avisoEfectivo.hidden = true;
+        selMetodo.parentNode.appendChild(avisoEfectivo);
+        selMetodo.setAttribute('aria-describedby', avisoEfectivo.id);
+        selMetodo.addEventListener('change', () => {
+          avisoEfectivo.hidden = !window.avisoDeEfectivoVisible(true, window.metodoElegido(selMetodo), invoice.metodosConAvisoIvaAlDiez);
+        });
+      }
     }
     // SCRUM-1618 · «¿Cuándo lo has cobrado?», con la misma condición: solo si el gesto es MARCAR COBRADA.
     if (estadoFactura === 'pending' && typeof window.pintarFechaDeCobro === 'function') {

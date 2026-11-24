@@ -38,9 +38,31 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  espiarReserva, conElCreateDelLlamador, cargarServicio, exigirSueloDeViajes, MERCHANTS, CensoCiego,
+  espiarReserva, espiarEmision, cargarServicio, exigirSueloDeViajes, MERCHANTS, CensoCiego,
 } from './_viajes-de-la-reserva.mjs';
 import { isReceiptNumber } from '../dist/modules/invoicing/domain/invoiceNumber.service.js';
+
+/**
+ * SCRUM-1787j · la mutación que este guard TIENE que ver: UNA lectura más dentro de la transacción
+ * de emisión y FUERA de `allocateInvoiceNumber`, que es justo lo que SCRUM-1787d (#3302) añadió en
+ * `direccionCongelada.ts` sin que este fichero se moviera. La aplica `aplicarUna` del meta-guard y
+ * la restaura; nunca se commitea.
+ */
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    fichero: 'src/modules/invoicing/domain/crearFacturaEmitida.ts',
+    de: 'const direccion = await congelarDireccionAlEmitir(tx, datos);',
+    a: 'const direccion = await congelarDireccionAlEmitir(tx, datos); await tx.merchant.findUnique({ where: { id: datos.merchantId } });',
+    cae: 'LO QUE LA EMISIÓN HACE DENTRO DEL CERROJO',
+  },
+  {
+    // La misma, pero en `emitInvoice`: entre la reserva y `crearFacturaEmitida`, fuera de las dos.
+    fichero: 'src/modules/invoicing/domain/invoicing.service.ts',
+    de: '  return crearFacturaEmitida(tx, input.clienteCongelado, input.emisorCongelado, {',
+    a: '  await tx.customer.findUnique({ where: { id: input.customerId } }); return crearFacturaEmitida(tx, input.clienteCongelado, input.emisorCongelado, {',
+    cae: 'LO QUE LA EMISIÓN HACE DENTRO DEL CERROJO',
+  },
+];
 
 /** Lo que midió la fase A para el ALBARÁN. Aquí es la referencia, no el objetivo. */
 const VIAJES_DEL_ALBARAN = 5;
@@ -65,14 +87,16 @@ test('SCRUM-728d · SUELO: el cerrojo sigue siendo la PRIMERA sentencia (si no, 
 });
 
 test('SCRUM-728d · 🔴 EL NÚMERO QUE EL TICKET NO TENÍA: la factura hace 8 viajes, no 5', async () => {
-  const f1 = conElCreateDelLlamador(await espiarReserva({
+  const f1 = await espiarEmision({
     merchant: MERCHANTS.fiscal, emitidas: [{ number: 'F260001' }, { number: 'F260002' }],
-  }));
-  assert.equal(f1.viajes, 8,
+  });
+  // SCRUM-1787j (21-nov-2026): 8 → 9 y 7 → 8, la lectura de la dirección congelada (1787d), que el
+  // doble de antes no veía; decisión del fundador en SCRUM-1787 c.22343.
+  assert.equal(f1.viajes, 9,
     `🔴 la emisión de una factura F1 hace ${f1.viajes} viajes (el ticket dimensionó con `
     + `${VIAJES_DEL_ALBARAN}, que son los del ALBARÁN). Si este número cambia, el tamaño del `
     + 'ticket cambia con él y hay que rehacer la proyección del parte.');
-  assert.equal(f1.dentroDelCerrojo, 7,
+  assert.equal(f1.dentroDelCerrojo, 8,
     '🔴 el cerrojo es `xact`: se suelta en el COMMIT, así que TODO lo que va detrás se serializa. '
     + 'Este es el número que multiplica por N cuando hay N emisiones a la vez.');
 });
@@ -91,8 +115,9 @@ test('SCRUM-1027 · el camino del ESPAÑOL REAL YA NO RESERVA NADA (antes: 7 via
 });
 
 test('SCRUM-728d · la rectificativa hace 7 — un viaje menos que la F1, y se ve por qué', async () => {
-  const r = await espiarReserva({ merchant: MERCHANTS.fiscal, rectifying: true });
-  assert.equal(conElCreateDelLlamador(r).viajes, 7);
+  const r = await espiarEmision({ merchant: MERCHANTS.fiscal, rectifying: true });
+  // SCRUM-1787j (21-nov-2026): 7 → 8, la dirección de la factura rectificada (1787d); c.22343.
+  assert.equal(r.viajes, 8);
   assert.ok(!r.sentencias.some((s) => s.includes('findMany')),
     '🔴 la rectificativa ha empezado a leer la serie F entera. Ese viaje es el que escala con los '
     + 'datos, y hasta hoy sólo lo pagaba la F1.');
@@ -118,13 +143,45 @@ test('SCRUM-728d · 🔴 ROJO: añadir UN viaje a la sección crítica hace caer
   // El guard tiene que doler cuando alguien mete una consulta más entre el cerrojo y el COMMIT —
   // que es exactamente cómo este defecto creció hasta aquí. Se simula con el doble porque
   // MODIFICAR `invoiceNumber.service.ts` es STOP: el rojo no puede costar tocar el emisor.
-  const conExtra = conElCreateDelLlamador(await espiarReserva({
+  const conExtra = await espiarEmision({
     merchant: MERCHANTS.fiscal, emitidas: [], viajeExtra: true,
-  }));
-  assert.equal(conExtra.viajes, 9,
+  });
+  // SCRUM-1787j (21-nov-2026): 9 → 10 y 8 → 9, la base pasó de 8 a 9; c.22343.
+  assert.equal(conExtra.viajes, 10,
     '🔴 el censo NO ha visto el viaje añadido. Un contador que no sube cuando se añade trabajo a '
     + 'la sección crítica no está contando nada.');
-  assert.notEqual(conExtra.viajes, 8, '🔴 el conteo no distingue con y sin el viaje extra');
+  assert.notEqual(conExtra.viajes, 9,'🔴 el conteo no distingue con y sin el viaje extra');
+});
+
+/**
+ * SCRUM-1787j · lo que la emisión pide DESPUÉS de la reserva, dentro de la misma transacción (o
+ * sea, dentro del cerrojo). Declarado sentencia a sentencia: un viaje nuevo aquí no se cuela en un
+ * número, se nombra. Medido el 21-nov-2026 sobre origin/main `ccb69008b5aa`.
+ */
+const DESPUES_DE_LA_RESERVA = {
+  F1: [
+    'customer.findFirst', // SCRUM-1787d · la dirección de la ficha (`direccionCongelada.ts`)
+    'invoice.create',
+  ],
+  R1: [
+    'invoice.findFirst', // SCRUM-1787d · la dirección de la factura que rectifica
+    'invoice.create',
+  ],
+};
+
+test('SCRUM-1787j · 🔴 LO QUE LA EMISIÓN HACE DENTRO DEL CERROJO Y FUERA DE LA RESERVA está declarado, sentencia a sentencia', async () => {
+  // Se DERIVA de lo medido: las sentencias de la emisión entera menos las de la reserva, que tienen
+  // que ser su prefijo exacto. Si no lo son, la reserva ha cambiado de forma dentro de la emisión.
+  for (const [tipo, rectifying] of [['F1', false], ['R1', true]]) {
+    const opts = { merchant: MERCHANTS.fiscal, rectifying, emitidas: [{ number: 'F260001' }] };
+    const reserva = await espiarReserva(opts);
+    const emision = await espiarEmision(opts);
+    assert.deepEqual(emision.sentencias.slice(0, reserva.sentencias.length), reserva.sentencias,
+      `🔴 ${tipo}: la emisión no empieza por la reserva entera`);
+    assert.deepEqual(emision.sentencias.slice(reserva.sentencias.length), DESPUES_DE_LA_RESERVA[tipo],
+      `🔴 ${tipo}: la emisión hace dentro del cerrojo algo que no está declarado (o ha dejado de `
+      + 'hacerlo). Cada viaje aquí se multiplica por N emisiones a la vez: se declara, no se cuela.');
+  }
 });
 
 test('SCRUM-728d · 🔴 SUELO EN ROJO: las dos cegueras lanzan, no devuelven cero', () => {

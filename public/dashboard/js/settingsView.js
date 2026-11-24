@@ -345,11 +345,14 @@ function renderSettingsView(container) {
     foralWrapper.appendChild(foralLabel);
     foralWrapper.appendChild(fDomicilioFiscalForal);
     const fWhatsappPhone = createField(
-      "Teléfono WhatsApp (E.164 sin +)",
+      "Teléfono WhatsApp",
       "whatsappPhone",
       "text",
       true
     );
+    // [J3] SCRUM-1781b · el prefijo aparte, +34 preseleccionado: el mismo selector que Clientes
+    // (`telefonoConPrefijo`, en `onboardingView.js`). El valor guardado no cambia de formato.
+    const fWhatsappPrefijo = telefonoConPrefijo.montar(fWhatsappPhone.input);
     const fDefaultCurrency = createField(
       "Moneda por defecto",
       "defaultCurrency",
@@ -877,6 +880,11 @@ function renderSettingsView(container) {
       );
       caja.appendChild(aviso);
       campo.classList.add("input-error");
+      // SCRUM-1790 · el panel desplaza con `scroll-behavior: smooth`: el salto que hace el navegador
+      // hasta el campo inválido era animado, y durante ~400 ms el aviso seguía fuera de la pantalla.
+      // Sin animación y antes de que valide, la CAJA entera (rótulo, campo y aviso): con solo el aviso,
+      // el campo quedaba bajo la barra superior y el navegador volvía a desplazar, animado (medido).
+      caja.scrollIntoView({ block: "nearest", behavior: "instant" });
       const limpiar = () => {
         aviso.remove();
         campo.classList.remove("input-error");
@@ -937,7 +945,7 @@ function renderSettingsView(container) {
           : merchant.llevaLibrosPorSii === false ? "no" : "";
         fDomicilioFiscalForal.value = merchant.domicilioFiscalForal === true ? "si"
           : merchant.domicilioFiscalForal === false ? "no" : "";
-        fWhatsappPhone.input.value = merchant.whatsappPhone || "";
+        telefonoConPrefijo.repartir(merchant.whatsappPhone || "", fWhatsappPhone.input, fWhatsappPrefijo); // [J3] SCRUM-1781b
         fDefaultCurrency.input.value = merchant.defaultCurrency || "EUR";
         fInvoiceSeriesPrefix.input.value = merchant.invoiceSeriesPrefix || "";
         // SCRUM-293 · TRES estados, y el orden de las ramas importa: `declarada` primero.
@@ -1143,7 +1151,7 @@ function renderSettingsView(container) {
         criterioCaja: fCriterioCaja.value === "si" ? true : fCriterioCaja.value === "no" ? false : null,
         llevaLibrosPorSii: fLlevaLibrosPorSii.value === "si" ? true : fLlevaLibrosPorSii.value === "no" ? false : null,
         domicilioFiscalForal: fDomicilioFiscalForal.value === "si" ? true : fDomicilioFiscalForal.value === "no" ? false : null,
-        whatsappPhone: fWhatsappPhone.input.value.trim(),
+        whatsappPhone: telefonoConPrefijo.componer(fWhatsappPhone.input, fWhatsappPrefijo), // [J3] SCRUM-1781b
         defaultCurrency: fDefaultCurrency.input.value.trim() || "EUR",
         invoiceSeriesPrefix: fInvoiceSeriesPrefix.input.value.trim(),
         // SCRUM-293 · se mandan LOS DOS: `declarada` dice SI lo ha dicho, `tipo` QUÉ dijo.

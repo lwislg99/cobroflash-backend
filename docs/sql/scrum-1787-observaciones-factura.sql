@@ -1,0 +1,55 @@
+-- docs/sql/scrum-1787-observaciones-factura.sql — SCRUM-1787 (tramo 1787l)
+--
+-- ✅ APLICADO (21-nov-2026). Staging y producción: el fundador, SCRUM-1787 c.22346 («Aplicado en
+--    las dos, 1 fila»; GO en c.22345 ③). Dev (`yaqu_dev_javier`): jv-j1hl con
+--    `scripts/aplicar-sql-dev.mjs --go`; verificación de abajo ANTES 0 filas, DESPUÉS 1 fila
+--    (`doc_footer_text`, `text`, `YES`), control positivo `stage_label` 1 en las dos. La línea de
+--    `prisma/schema.prisma` entra en el PR de construcción (orden A5).
+--    (Hasta el ALTER decía «PROPUESTO, SIN APLICAR».)
+--
+-- POR QUÉ. SCRUM-1787 c.22338 ② (literal del fundador «2-Sí»): al facturar un presupuesto, sus
+-- notas o texto del pie pasan a la factura; las cláusulas de aceptación NO. Hoy `model Invoice` no
+-- tiene ningún campo de texto libre donde congelarlo (medido en el registro, tramo 1787l ②).
+--
+-- QUÉ ES `doc_footer_text`. El MISMO campo que ya tiene el presupuesto (`quotes.doc_footer_text`,
+-- `Quote.docFooterText`, SCRUM-593), que el PDF del presupuesto pinta bajo el rótulo firmado
+-- «Observaciones» (`TITULO_OBSERVACIONES`, aprobado el 2-sep-2026 «en los tres documentos»). Mismo
+-- nombre y mismo tipo a propósito: dos nombres para lo mismo es la próxima confusión.
+-- NO es `quotes.doc_header_text` (el texto bajo la cabecera, sin rótulo: pregunta 1 del registro),
+-- ni `quotes.internal_notes` (privadas, nunca visibles al cliente), ni las cláusulas de cierre
+-- (`merchants.clausulas_presupuesto`, que la factura NO recibe).
+--
+-- `TEXT` nullable y SIN default, como su hermano del presupuesto: NULL = «el profesional no
+-- escribió nada», que NO es ''. Las facturas ya emitidas se quedan a NULL y NO se rellenan nunca
+-- (regla 29). Y como el PDF sólo pinta el bloque cuando hay texto, una factura con NULL regenerada
+-- por `ensureInvoicePdf` sale IGUAL que hoy: es la objeción de SCRUM-593 / SCRUM-665 a añadir un
+-- bloque a la factura, y con NULL no se activa.
+--
+-- Generado OFFLINE con `previewMigracion({ schema, desde })` de `scripts/preview-migracion.mjs`
+-- por `docs/master/evidencias/SCRUM-1787/preview-ddl-1787l.mjs`: desde = copia de
+-- `prisma/schema.prisma` de origin/main ccb69008b5aaa80d3f7cb712be77ce025c146238, schema = esa
+-- copia con UNA línea en `model Invoice`, detrás de `stageLabel`:
+--     docFooterText String?   @map("doc_footer_text") @db.Text
+-- Control de la herramienta: ok; `sentenciasDestructivas`: 0; lista blanca de
+-- `scripts/_aplicar-sql-dev.mjs` (`clasificarSentencias`): 1 permitida y 0 rechazadas; control
+-- negativo (actual → actual): `sin_cambios`; control positivo sembrado (un DROP fabricado de
+-- `clientComment` en la factura): destructivas 1, rechazadas 1. Con el sembrado cambiado por el
+-- propio propuesto, el guion sale 2 «CIEGO (un control no se cumple)». Salida en
+-- `preview-ddl-1787l.salida.txt`. Salida LITERAL:
+-- AlterTable
+ALTER TABLE "invoices" ADD COLUMN     "doc_footer_text" TEXT;
+
+-- ─── VERIFICACIÓN, DESPUÉS DEL ALTER (solo lectura) ───────────────────────────────────────────
+-- Se pega aparte. Resultado esperado: 1 fila (`doc_footer_text`, `text`, `YES`). En `base`, el
+-- nombre de la base en la que se aplicó (para no confundir staging con producción). 0 filas = no
+-- se aplicó en ESTA base.
+--
+-- SELECT current_database() AS base, column_name, data_type, is_nullable
+--   FROM information_schema.columns
+--  WHERE table_schema = current_schema()
+--    AND table_name = 'invoices'
+--    AND column_name = 'doc_footer_text';
+--
+--  base   | column_name     | data_type | is_nullable
+-- --------+-----------------+-----------+-------------
+--  <base> | doc_footer_text | text      | YES

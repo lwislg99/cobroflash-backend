@@ -1,0 +1,41 @@
+{
+  "fase": "emitir",
+  "health": {
+    "ok": true,
+    "service": "yaqu-backend",
+    "version": "b0b7cf9970e7b4202f547a11e1d09add4ffca971",
+    "db": "up",
+    "dbMs": 1.3
+  },
+  "horaHealth": "Fri, 20 Nov 2026 07:03:22 GMT",
+  "login": 200,
+  "sinVias": {
+    "cliente": {
+      "id": 3936,
+      "name": "Cliente QA sin avisos",
+      "phone": "vacío",
+      "mobile": "vacío",
+      "email": "vacío"
+    },
+    "merchant": {
+      "status": 200,
+      "notifyEmailOnPaid": false,
+      "whatsappPhone": "vacío"
+    },
+    "ok": true
+  },
+  "emision": {
+    "status": 201,
+    "cuerpo": {
+      "ok": true,
+      "factura": {
+        "id": 1977,
+        "number": "F260002",
+        "total": "93.5",
+        "currency": "EUR"
+      },
+      "veriFactu": true
+    },
+    "hora": "Fri, 20 Nov 2026 07:03:22 GMT"
+  }
+}

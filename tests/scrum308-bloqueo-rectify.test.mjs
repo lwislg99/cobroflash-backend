@@ -110,7 +110,11 @@ function montar(status, { yaRectificada = null } = {}) {
     findFirst: async () => ({ name: 'Cliente QA', legalName: null, taxId: null, email: null, phone: null }),
   };
   const tx = new Proxy({
-    invoice: { create: async ({ data }) => { cap.emitida = data; return { ...data, id: 11, number: 'F-2026-R-001', total: { toString: () => data.total } }; } },
+    invoice: {
+      create: async ({ data }) => { cap.emitida = data; return { ...data, id: 11, number: 'F-2026-R-001', total: { toString: () => data.total } }; },
+      // SCRUM-1787d · la R1 hereda en SU tx la dirección de la original: la misma original de arriba.
+      findFirst: async () => original,
+    },
     merchant: {
       findUnique: async () => ({ ...MERCHANT, invoiceSeq: 0, rectSeq: 0 }),
       update: async () => ({ ...MERCHANT, invoiceSeq: 1 }),
