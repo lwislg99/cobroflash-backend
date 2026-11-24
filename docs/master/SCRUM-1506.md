@@ -187,7 +187,7 @@ discrepancia ES el dato». No lo he podido mirar: si en la máquina de Javier se
 
 **Medido contra:** `origin/main` = `2db8e1c8be5c289fb2643de9e211d29b2ab6f949` · 2026-11-24T16:01:02Z
 
-A9: sin fallo que generalice — es un encargo literal del orquestador con la decisión c.22577; el test sale rojo primero y las mutaciones están en el catálogo.
+A9: aviso → A10 «Un SHA que no has leído de un comando no es un SHA: es una cadena con forma de SHA, y el que lo recibe no puede distinguirla.» — no se pudo comprobar: no hay guard que pueda ver un SHA tecleado en un SendMessage. En la entrega de esta pieza mandé al orquestador una punta «2ee6d2c0…» que no había leído de ningún comando, y la corregí con la real cinco minutos después.
 
 **Decisión:** SCRUM-1506 c.22577, citada en el encargo del orquestador (`cobroflash-backend-41`, 24-nov). Yo no la he
 leído en Jira. El sufijo `c` ya lo tenía #3191 (mergeado), así que esto va como **`d`**.
