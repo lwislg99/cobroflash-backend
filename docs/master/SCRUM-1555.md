@@ -69,7 +69,7 @@ qué ids existen en el negocio, aunque no se pueda abrir ninguno. Ahora las dos 
 # SCRUM-1555b · El login de pruebas abre sesión también como miembro de equipo
 
 **Medido contra:** `origin/main` = `6fbcde28651d2eed9190ced9efbc7663d8cdac7a` · 2026-11-24T11:51:37Z
-A9: aviso → cicatriz J3 «Llegué a 122.860 tras leer Jira con un tope de 160k y no dije que el encargo no cabía» — no se pudo comprobar: cuándo se mide y se avisa una sesión no deja rastro en el árbol
+A9: aviso → cicatriz J3 «Llegué a 122.860 tras leer Jira con un tope de 160k y no dije que el encargo no cabía; lo dije a 142k, con nada escrito.» — no se pudo comprobar: cuándo se mide y se avisa una sesión no deja rastro en el árbol
 
 Decisión del fundador: SCRUM-1555 c.22569 («Login de pruebas con rol»). Puesto J3 (`jv-j3cu`), carril J3 (`src/modules/auth/**`).
 
