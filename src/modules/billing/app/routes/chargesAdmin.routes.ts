@@ -18,6 +18,7 @@ import { tieneNumeroDeContacto } from '../../../../core/contacto/canalDeWhatsApp
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-1107 (D2: admin-only)
 import { PAID_VIA } from '../../domain/paidVia'; // SCRUM-1107
 import { esFilaQueNoCasa } from '../../domain/estadoDelCobro'; // SCRUM-1532b
+import { recordAudit, actorDeRequest, requestIp } from '../../../system/audit.service'; // SCRUM-1532c
 import {
   calcularSplitRetencion, tieneRetencionDeclarada, retencionPendiente,
   datosParaDeclararRetencion, datosParaMarcarCobrada,
@@ -77,8 +78,8 @@ const router = Router();
  *  · no toca la factura: se queda pendiente de cobro (decisión 2 de c.22430); y si ya consta
  *    pagada, NO cancela: 409 `document_already_paid` (SCRUM-1800);
  *  · no impide que un pago que llegue después lo deje pagado (decisión 1): el dinero es real;
- *  · no deja fila de auditoría TODAVÍA: la clave `cobro_cancelado` está aprobada (c.22435) y la añade
- *    S1 en `audit.service.ts`; la fila entra en 1532c. Lo declara `tests/scrum1532b-cancelar-cobro.test.mjs`.
+ *  · deja fila de auditoría `cobro_cancelado` (SCRUM-1532c; clave de S1, SCRUM-1808, aprobada en
+ *    c.22435) sólo al cancelar de verdad. Lo exige `tests/scrum1532b-cancelar-cobro.test.mjs`.
  *  · no crea un `Event`: el recibo público pinta los tipos de evento, y sería texto sin firma.
  */
 router.post('/:id/cancel', requireRole('admin'), async (req, res) => {
@@ -112,6 +113,22 @@ router.post('/:id/cancel', requireRole('admin'), async (req, res) => {
     } catch (e) {
       if (esFilaQueNoCasa(e)) return res.status(409).json({ error: 'charge_not_pending' });
       throw e;
+    }
+    // SCRUM-1532c · la fila de auditoría, SÓLO tras cancelar de verdad (ni `yaEstaba` ni 409).
+    // Fire-safe: un fallo del registro no deshace la cancelación (clave de S1, SCRUM-1808). El `try`
+    // es porque el cobro YA está cancelado: un 500 aquí diría que no, y mentiría.
+    try {
+      recordAudit({
+        merchantId: req.merchantId,
+        teamMemberId: (req as any).teamMemberId ?? null,
+        action: 'cobro_cancelado',
+        entityType: 'charge',
+        entityId: id,
+        meta: { actor: actorDeRequest(req as any) },
+        ip: requestIp(req),
+      });
+    } catch (e: any) {
+      console.error('[POST /admin/charges/:id/cancel] auditoría cobro_cancelado', id, e?.message || e);
     }
     return res.json({ ok: true, status: 'cancelled' });
   } catch (err: any) {
