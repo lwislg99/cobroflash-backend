@@ -129,7 +129,8 @@ async function bloque(type, total, lines) {
   assert.equal(r.ok, true, `🔴 NO SUPE LEER EL PDF: ${r.motivo}. Un papel sin leer no dice ningún importe.`);
   const t = r.lineas.map((l) => l.texto);
   const i = t.findIndex((x) => x.startsWith('Base imponible:'));
-  const j = t.findIndex((x) => /^TOTAL:/.test(x));
+  // SCRUM-1787w · literal FIRMADO en SCRUM-1787 c.22428 (GO c.22416): «Total factura:» sustituye a «TOTAL:» (también en la R1, que es factura).
+  const j = t.findIndex((x) => /^Total factura:/.test(x));
   assert.ok(i >= 0 && j > i, '🔴 CIEGO: no encuentro el bloque de totales en el papel.');
   return t.slice(i, j + 1);
 }
@@ -141,7 +142,7 @@ function leerBloque(b) {
     .map((x) => x.match(/^(\d+(?:,\d+)?%)(-?[\d.]+,\d{2}) EURIVA \1:(-?[\d.]+,\d{2}) EUR$/))
     .filter(Boolean)
     .map((m) => ({ tipo: m[1], base: num(m[2]), cuota: num(m[3]) }));
-  const total = num(b[b.length - 1].match(/^TOTAL:(-?[\d.]+,\d{2}) EUR$/)[1]);
+  const total = num(b[b.length - 1].match(/^Total factura:(-?[\d.]+,\d{2}) EUR$/)[1]);
   const suma = Math.round(filas.reduce((a, f) => a + f.base * 100 + f.cuota * 100, 0)) / 100;
   return { filas, total, suma };
 }
@@ -199,6 +200,6 @@ test('SCRUM-624y · ① la R1 de un solo tipo (12,50 al 21 %) imprime base, cuot
   const r1 = await rectificar({ ...F1_STAGING, lines, total: totalDelDesglose(lines) });
   assert.equal(String(r1.total), '-15.12', '🔴 la R1 de 12,50 ya no guarda −15,12 (SCRUM-1763)');
   assert.deepEqual(await bloque('R1', r1.total, r1.lines),
-    ['Base imponible:-12,50 EUR', 'IVA 21%:-2,62 EUR', 'TOTAL:-15,12 EUR'],
+    ['Base imponible:-12,50 EUR', 'IVA 21%:-2,62 EUR', 'Total factura:-15,12 EUR'],
     '🔴 la R1 de 12,50 al 21 % no imprime el desglose de su registro (antes: −2,63 con TOTAL −15,13)');
 });

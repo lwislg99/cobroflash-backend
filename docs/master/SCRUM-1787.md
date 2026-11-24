@@ -1186,6 +1186,64 @@ Para igualar, la factura tendría que imprimir rótulos del presupuesto que hoy 
 - No se ejercieron con datos, solo se leyeron en el fuente: «Total del apartado», cláusulas, firma, QR con SIF encendido y marca de agua.
 - yaqu.app: no visto, porque no ha cambiado nada.
 
+# SCRUM-1787w · El PDF de la factura con el dibujo del presupuesto (T4)
+
+**Medido contra:** `origin/main` = `97e196f930334971538b5c0ba13e0224cbe7d184` · 2026-11-23T21:22:08Z (cabecera `Date:` de `gh api -i zen`)
+
+A9: comprobación → `scripts/meta-guard-mutaciones.mjs`
+
+Por qué: las dos mutaciones de `scrum1787w` (heredadas de jv-j1if) declaraban `fichero: FUENTE` con una constante; el censo del meta-guard sólo lee literales y las contaba como 0 declaraciones buenas (lo vi con mi driver: «scrum1787w…:0»). Las pasé a literal y las dos salen VIVAS. El meta-guard ya las marca como declaración que no se puede evaluar (CIEGO), así que no hace falta otra comprobación. Heredadas sin línea propia: jv-j1if y jv-j1ih no llegaron a escribir su tramo (traspaso c.22440: 4 anclas de mutación caducadas en 1446e ×2, 1787d y 1788a, reapuntadas; el error lo cuenta allí).
+
+Mutaciones: catálogo → `tests/scrum1787w-pdf-factura-dibujo-del-presupuesto.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1788a-emisor-no-pisa-la-tabla.test.mjs`
+
+Encargo del orquestador J: construir T4 en tres relevos J1 (jv-j1if → jv-j1ih → jv-j1ij). GO de regla 40 del fundador para tocar `generateInvoicePdf`: SCRUM-1787 c.22416 («1-GO», ya citado en el tramo 1787v). Literales del dibujo firmados en c.22428; tabla de diferencias en c.22426 (1787v). Decisión sobre `scrum1788a`: c.22442 del orquestador.
+
+**Qué cambia:** `src/modules/invoicing/infra/pdf/pdf.service.ts`, sólo `generateInvoicePdf` y dos piezas del presupuesto que ahora comparte (`TABLA_DEL_DOCUMENTO`, `pintarCabeceraDeTabla`): una columna emisor/cliente, «Emisor:», «Cliente:», «Email:», «NIF:», «Detalle de la factura:», cabecera «Concepto · Cant. · Precio · IVA% · IMPORTE» con las columnas del presupuesto, «Total factura:», sin banda verde. El PDF del presupuesto no cambia (caso ④ del test, huella de texto y posiciones).
+
+**Tests recongelados** (jv-j1ih, 11, citando c.22428 en cada cambio; ninguno relajado): 1051g, 1240d, 1446, 1446e, 1787d, 1787m, 1788a, 604, 623, 624e, 624y. **Esta sesión:** 
+- `scrum1788a`: retirado el caso ② y recongelado el ① a la nueva geometría (c.22442). Se queda «la tabla empieza debajo del bloque más alto y nada se pisa». La dirección larga ahora parte por «Ciudad | Ficticia»: el final se busca como la única línea que es cola de la dirección, no con un trozo fijo.
+- `scrum603b`/`scrum723`: entrada nueva en `tests/_cambios-autorizados-de-la-factura.mjs` (vía 1446d), huellas de `evidencias/SCRUM-1446d/huellas.mjs` (el `de` es el `a` de 1787t). Control negativo: con una huella cambiada, 603b cae (8 pass, 1 fail). `scrum723` declara `TABLA_DEL_DOCUMENTO` y `pintarCabeceraDeTabla` en su ámbito, con motivo.
+
+**Mutaciones** (`aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, árbol limpio después): «vuelve el rótulo viejo» (`'Total factura:'` → `'TOTAL:'`) VIVA; «vuelve la banda» VIVA; 1788a «el cliente vuelve arriba, a la altura de la cabecera» VIVA. 3/3.
+
+**Captura:** `docs/master/evidencias/SCRUM-1787/1787w/lado-a-lado.png` (presupuesto a la izquierda, factura a la derecha, render con pdf.js; la he mirado), con `quote.pdf`, `invoice.pdf` y sus líneas en `.json`. Guion de datos: el de 1787v (`evidencias/SCRUM-1787/1787v/generar-pdfs.mjs`), sin copiarlo. Lo que se ve distinto y es NECESARIO: «Nº», «Fecha:», «Vence el», «Formas de pago» arriba (por eso todo baja ~30 px), «Dirección:» en vez de «Dirección de la obra:», la base imponible por tipo y «Total factura:». Lo que se ve distinto y NO he decidido yo: la factura no lleva el bloque «GARANTÍA» ni «Suma de líneas / Descuento»; el precio de «Mano de obra» sale 31,50 (descuento repartido en la línea, como en 1787v).
+
+**Aceptación → dónde se ve** (puntos del test, que traducen c.22428; c.22428 y c.22426 NO los he releído en Jira: el encargo me limitaba a c.22440 y c.22442):
+
+| aceptación | dónde se ve |
+|---|---|
+| la factura imprime los literales firmados de c.22428 y no los viejos | `tests/scrum1787w-pdf-factura-dibujo-del-presupuesto.test.mjs` ① · `1787w/lado-a-lado.png` |
+| conserva lo NECESARIO (número, fecha, vence, NIF, dirección, formas de pago, base por tipo) | mismo test ② · captura |
+| cabecera y columnas iguales a las del presupuesto con los mismos datos | mismo test ③ · captura |
+| el PDF del presupuesto no cambia | mismo test ④ |
+| sin banda verde de marca | mismo test ⑤ · captura |
+| con SIF encendido siguen la leyenda VERI*FACTU y el QR | mismo test ⑥ (en el fuente; no ejercido con SIF encendido) |
+| el emisor no se monta sobre la tabla | `tests/scrum1788a-emisor-no-pisa-la-tabla.test.mjs` ① |
+| filas de c.22426 construidas: 1, 2, 5-10, 13, 19 (según el commit `041a1ee6c` de jv-j1if) | test 1787w y captura |
+| resto de filas de c.22426 | NO HECHO / no verificado por mí → orquestador J, contra c.22426 |
+| visto en yaqu.app | NO HECHO → tras el merge y el despliegue |
+
+**Dirigida** (un fichero por proceso): 1787w 6/6, 1788a 1/1, 1051g 13/13, 1240d 10/10, 1446 9/9, 1446e 11/11, 1787d 7/7, 1787m 8/8, 604 6/6, 623 10/10, 624e 6/6, 624y 3/3, 1787t 5/5, 1785b 7/7, 1786f1 4/4, 1787k 5/5, 603 8/8, 603b 9/9, 723 8/8, 523d 7/7, 1446d 3/3; los guards del registro, en la entrega. `npm run build` (tsc con tipos): salida 0. **La suite entera NO se ha corrido en local**: la corre el check obligatorio.
+
+**Relevo jv-j1io · 2026-11-24T01:34:52Z** (`Date:` de `gh api -i zen`) · `origin/main` = `42cae61092ba69761d6d7bba0504abe6baee1e52`. El PR #3337 estaba DIRTY (entraron 1787x, 1787z y 1316k) y su obligatorio tenía un rojo, `scrum601` (run 45269833417).
+
+A9: comprobación → `tests/scrum601-copy-del-documento-vs-flag.test.mjs`
+
+Por qué: el rojo era el guard haciendo su trabajo. T4 metió dos literales y el reparto pasó de 8/11/163 a 8/12/164. Medido con `censoCopy` conjunto contra conjunto, sobre origin/main `42cae6109` (da 8/11/163, el ancla de antes: es el control positivo) y sobre el árbol fusionado: entran 2 literales, no sale ninguno y ninguno cambia de categoría. Los dos de `pdf.service.ts` están FIRMADOS en c.22428: ② «Total factura:» (sustituye a «TOTAL:», que el censo no contaba) y ③ «Detalle de la factura:». Re-anclado con esa cita y el motivo «literal firmado, no regresión». No va a `PENDIENTES_DE_FIRMA`.
+
+- Merge de `origin/main` sin marcadores. Chocaba `tests/_cambios-autorizados-de-la-factura.mjs`: entran las dos entradas, primero la de 1787x y luego la de 1787w. La de 1787w se encadena: su `de` es el `a` de 1787x (cuerpo `3cc5a0bd…`, ámbito `7685e52d…`). Sus `a` salen de `evidencias/SCRUM-1446d/huellas.mjs` sobre el árbol fusionado, y esa herramienta, sobre la base `42cae6109`, da las cuatro tal como están escritas. «Vence el» conserva `day: 'numeric'` (1787x). El registro conserva todos los tramos: quitando éste, es byte a byte el de main.
+- Mutaciones con `aplicarUna`: 1787w ① VIVA, 1787w ⑤ VIVA, 1788a ① VIVA (3/3). El árbol queda limpio después.
+- Dirigida (un fichero por proceso, todos rc 0): 1787w 6/6, 1787t 6/6, 1787m 8/8, 1788a 1/1, 1785b 7/7, 1786f1 4/4, 601 5/5, 603 8/8, 603b 9/9, 723 8/8, 523d 7/7, 810 6/6, 1294 4/4, 267 14/14, 273 6/6, 525d 8/8, 854 6/6. `npm run guards:entrada` rc 0 (15 guards); y los 5 de árbol entero que nombra: 195 9/9, 414 5/5, 694 7/7, 710b 12/12, 737 5/5. `tsc -p .` con tipos (`npm run build`): salida 0. **La suite entera NO se ha corrido en local**: la corre el check obligatorio.
+
+**Relevo jv-j1is · 2026-11-24T02:01:53Z** (`Date:` de `gh api -i zen`) · `origin/main` = `42cae61092ba69761d6d7bba0504abe6baee1e52`. El obligatorio de `6591f6e0f` (run 45306706655) tenía un rojo, `scrum719:399`: la ficha de mudez de `scrum601` caducó al re-anclarlo.
+
+A9: comprobación → `tests/scrum719-el-suelo-de-los-doce.test.mjs`
+
+- `npm run censo:mudez -- --escribir`: midió 1 de 143 (`scrum601`, VIVO) y reescribió su ficha. El JSON cambia SOLO en esa ficha: misma clase, otra huella; 143 fichas antes y después (comparado fichero a fichero).
+- `scrum719` 37/37 con el JSON nuevo; con el de antes, 36/37 y el rojo nombra a `scrum601` (control en rojo). `npm run guards:entrada` rc 0.
+
 # SCRUM-1787y · En la página de pago, «Vence el 5 de diciembre», sin el cero del día
 
 **Medido contra:** `origin/main` = `97e196f930334971538b5c0ba13e0224cbe7d184` · 2026-11-23T21:07:40Z (cabecera `Date:` de `gh api -i zen`)
