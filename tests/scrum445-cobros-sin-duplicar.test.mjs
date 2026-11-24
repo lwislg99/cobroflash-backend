@@ -14,6 +14,7 @@
 // El vínculo que SÍ existe es el `Event{ chargeId, type: 'invoiced', payload.invoice_id }`, y por
 // eso la desduplicación arregla **también los históricos**: ese evento se lleva escribiendo desde
 // siempre.
+// (24-nov-2026, SCRUM-1803c: desde eae75c3f4 —11-ago, el propio SCRUM-445— el campo SÍ se escribe; ver ②.)
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -149,8 +150,25 @@ test('SCRUM-445 · ② `listarCobros` lee las TRES poblaciones — mencionar no 
 
 test('SCRUM-445 · ② el comentario NO vuelve a afirmar que `chargeId` desduplica', () => {
   // El defecto de origen fue una afirmación sobre el esquema que nadie midió. Que el comentario
-  // diga hoy la verdad —que ese campo no lo escribe nadie— es parte del arreglo, no decoración.
-  assert.match(SERVICIO, /HOY NO EXCLUYE NADA/,
-    '🔴 el comentario de `chargeId: null` ha vuelto a presentarlo como si filtrara. Es la ' +
-    'afirmación no comprobada que creó este defecto.');
+  // diga hoy la verdad es parte del arreglo, no decoración. Hasta SCRUM-1803c exigía «HOY NO
+  // EXCLUYE NADA», que dejó de ser verdad con eae75c3f4. La verdad de hoy (decisión del fundador,
+  // SCRUM-1803 c.22604): el campo lo escriben DOS sitios, y aun así `chargeId` solo no basta.
+  const lineas = SERVICIO.split('\n');
+  const consulta = lineas.findIndex((l) => /where: \{ merchantId, chargeId: null \}/.test(l));
+  assert.ok(consulta > 0,
+    '🔴 no encuentro la consulta `where: { merchantId, chargeId: null }`: este test ya no sabe qué ' +
+    'comentario vigilar, y callarse sería un verde que no mira nada.');
+  let i = consulta - 1;
+  const bloque = [];
+  while (i >= 0 && lineas[i].trim().startsWith('//')) bloque.unshift(lineas[i--]);
+  assert.match(bloque.join('\n'), /No basta solo/,
+    '🔴 el comentario de `chargeId: null` ya no dice que ese filtro solo no basta: las facturas ' +
+    'anteriores a SCRUM-445 tienen el campo nulo y sólo las desduplica el cruce con los eventos. ' +
+    'Presentar `chargeId` como la única defensa es la afirmación no comprobada que creó este defecto.');
+  const comentarios = lineas.filter((l) => l.trim().startsWith('//')).join('\n');
+  for (const escritor of ['ensureInvoiceForCharge', 'sendInvoicePaymentRequest']) {
+    assert.ok(comentarios.includes(escritor),
+      `🔴 los comentarios de cobros.service ya no nombran a \`${escritor}\`, uno de los dos sitios ` +
+      'que escriben `Invoice.chargeId`: quien lea el filtro no sabrá de dónde sale el campo.');
+  }
 });
