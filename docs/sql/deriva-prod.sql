@@ -24,7 +24,7 @@
 -- ajenas ni valores de enum. Y no reporta columnas de MÁS en la base: que la base vaya por
 -- delante del código es el orden seguro de un cambio aditivo, no un problema.
 --
--- Columnas esperadas: 548. Tablas: 35.
+-- Columnas esperadas: 565. Tablas: 36.
 
 WITH esperado (tabla, columna) AS (
   VALUES
@@ -44,6 +44,7 @@ WITH esperado (tabla, columna) AS (
     ('albaranes','customer_tax_id'),
     ('albaranes','doc_header_text'),
     ('albaranes','enviado_para_firma_at'),
+    ('albaranes','equipment_id'),
     ('albaranes','estado'),
     ('albaranes','evidencia_firma'),
     ('albaranes','fecha'),
@@ -183,6 +184,19 @@ WITH esperado (tabla, columna) AS (
     ('email_messages','status'),
     ('email_messages','to_email'),
     ('email_messages','updated_at'),
+    ('equipments','brand'),
+    ('equipments','created_at'),
+    ('equipments','customer_id'),
+    ('equipments','customer_site_id'),
+    ('equipments','id'),
+    ('equipments','installed_on'),
+    ('equipments','merchant_id'),
+    ('equipments','model_name'),
+    ('equipments','name'),
+    ('equipments','serial_number'),
+    ('equipments','type'),
+    ('equipments','updated_at'),
+    ('equipments','warranty_until'),
     ('events','charge_id'),
     ('events','id'),
     ('events','payload'),
@@ -305,6 +319,7 @@ WITH esperado (tabla, columna) AS (
     ('jobs','created_at'),
     ('jobs','customer_id'),
     ('jobs','direccion'),
+    ('jobs','equipment_id'),
     ('jobs','id'),
     ('jobs','merchant_id'),
     ('jobs','notes'),
@@ -330,6 +345,7 @@ WITH esperado (tabla, columna) AS (
     ('maintenance_plans','active'),
     ('maintenance_plans','created_at'),
     ('maintenance_plans','customer_id'),
+    ('maintenance_plans','equipment_id'),
     ('maintenance_plans','id'),
     ('maintenance_plans','interval_months'),
     ('maintenance_plans','last_proposed_at'),
@@ -411,6 +427,7 @@ WITH esperado (tabla, columna) AS (
     ('partes_trabajo','customer_id'),
     ('partes_trabajo','desplazamientos'),
     ('partes_trabajo','entrada'),
+    ('partes_trabajo','equipment_id'),
     ('partes_trabajo','estado'),
     ('partes_trabajo','fecha'),
     ('partes_trabajo','firmado_at'),
