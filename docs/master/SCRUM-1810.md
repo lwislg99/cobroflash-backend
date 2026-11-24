@@ -45,6 +45,8 @@ literal `document_already_paid` siguen en la vista.
 Capturas y guion: `docs/master/evidencias/SCRUM-1810/` (`capturar-1810b.mjs`, cuatro PNG `1810b-*-pagado-{390,1280}.png`).
 Datos de ejemplo, sin base ni sesión; el guion quita la bienvenida (J3), que tapaba la ficha en el banco.
 
+Relevo jv-j1jn (J1, 2026-11-24 ~08:15Z, `origin/main` = `ec2d336f174affd3bc88a6415f3956508a5a39d8`): merge de 1800d (`245f3d31701184a348c62a267e523d09566d8703`, PR #3366, aún abierto) y de main: el re-anclaje de la mutación de 1532d entra con él, y scrum836 deja de caer (antes: «el ancla `de` no está en el fichero»). 0 conflictos. Mutación de 1810b: VIVA (`aplicarUna`, base 5 de 5 antes y después). Build con tipos: salida 0. Dirigida (836, 1294, 1532d, 1800c, 1810b, 719, 854): 85 de 85, 0 saltos, sobre 7 ficheros. Suite entera: NO CORRIDA (tope del encargo, 130k).
+
 Mutaciones: catálogo → `tests/scrum1810b-marcar-pendiente-y-oculto-en-factura.test.mjs`
 
 A9: comprobación → `tests/scrum1810b-marcar-pendiente-y-oculto-en-factura.test.mjs`
