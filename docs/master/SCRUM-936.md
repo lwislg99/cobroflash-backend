@@ -260,7 +260,7 @@ Encaja con 0,984 = 1 − 1/64 de septiembre si la coordenada se redondea hacia a
 
 # SCRUM-936d · La variante de c.22615, medida antes de aplicarla: el defecto no sale hoy, y PARO sin tocar el medidor
 
-**Medido contra:** `origin/main` = `fc51ec7a2f11dd93e34141fae48b4357b72d9990` · 2026-11-24 (hora de GitHub en el comentario de Jira)
+**Medido contra:** `origin/main` = `fc51ec7a2f11dd93e34141fae48b4357b72d9990` · 2026-11-24T12:18:03Z
 **Rama:** `scrum-936d-variante-del-medidor` · carril J6 · sesión `jv-j6fr`
 
 A9: comprobación → `tests/scrum936d-variante-del-medidor.test.mjs`
