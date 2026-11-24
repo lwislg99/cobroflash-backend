@@ -171,3 +171,5 @@ hasta que el job salga verde en su rama. En #2690 hace falta además que corra e
 en #3277.
 
 **Cómo se deshace:** el mismo PUT con el cuerpo de ANTES (está literal arriba).
+
+**Antes del push:** guards:entrada salió CIEGO por plazo (90,0–90,4 s contra 90 s, CPU al 100 %, 5 intentos sobre esta rama); los 16 ficheros de su lista pasados con node --test sin plazo: 177/177, 0 fallos, 0 saltados. El presupuesto lo juzga el CI obligatorio. Push decidido por el orquestador (DELEGACIÓN c.21978).
