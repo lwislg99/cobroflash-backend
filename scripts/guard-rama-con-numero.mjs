@@ -24,6 +24,7 @@
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import { execFileSync } from 'node:child_process';
 import { numeroDeRama } from './_numero-de-rama.mjs';
+import { agruparRamas } from './_censo-reparto.mjs';
 import { ejecutadoDirectamente } from './_puerta-de-entrada.mjs';
 
 export const SALIDA_VERDE = 0;
@@ -42,24 +43,26 @@ export function ramaActual({ env = process.env, cwd = process.cwd() } = {}) {
   if (env.GITHUB_REF_NAME && env.GITHUB_REF_TYPE !== 'tag') {
     return { nombre: env.GITHUB_REF_NAME, origen: 'GITHUB_REF_NAME' };
   }
+  // `symbolic-ref -q` falla con la cabeza suelta (y fuera de git): entonces no hay rama, y es CIEGO.
   try {
-    const nombre = execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
+    const nombre = execFileSync('git', ['symbolic-ref', '--short', '-q', 'HEAD'], {
       cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
     }).trim();
-    return { nombre: nombre || null, origen: 'git rev-parse --abbrev-ref HEAD' };
+    return { nombre: nombre || null, origen: 'git symbolic-ref' };
   } catch {
-    return { nombre: null, origen: 'git rev-parse --abbrev-ref HEAD (falló)' };
+    return { nombre: null, origen: 'git symbolic-ref (sin rama: cabeza suelta o fuera de git)' };
   }
 }
 
 /** El veredicto sobre UN nombre. Puro: lo prueba el test sin crear ramas. */
 export function veredicto(nombre) {
   const limpio = String(nombre ?? '').trim();
-  if (!limpio || limpio === 'HEAD') {
-    return { salida: SALIDA_CIEGO, texto: `CIEGO: no sé en qué rama estoy («${limpio || 'vacío'}»: HEAD suelto o fuera de git). No digo verde.` };
+  if (!limpio) {
+    return { salida: SALIDA_CIEGO, texto: 'CIEGO: no sé en qué rama estoy. No digo verde.' };
   }
-  if (limpio === 'main') {
-    return { salida: SALIDA_VERDE, texto: 'verde: `main` no entra en el censo (agruparRamas la excluye).' };
+  // Lo que el censo excluye lo decide el censo (`agruparRamas`), no una lista copiada aquí.
+  if (agruparRamas([limpio]).total === 0) {
+    return { salida: SALIDA_VERDE, texto: 'verde: el censo no la cuenta (agruparRamas la excluye).' };
   }
   const n = numeroDeRama(limpio);
   if (n !== null) return { salida: SALIDA_VERDE, texto: `verde: el censo la cuenta como SCRUM-${n}.` };
