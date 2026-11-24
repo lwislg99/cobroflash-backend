@@ -285,3 +285,20 @@ Población: 1 navegador (el que resuelve `resolverNavegador` en esta máquina; a
 - El test fija los cinco valores: si el +1 vuelve a los botones, cae en h43/h44/48; si el resto desaparece, cae en el enlace.
 - ⚠️ Es el primer test de `tests/` que arranca un navegador real: si no hay navegador, salta con su motivo; si lo hay y no arranca, `lanzarNavegador` sale con 3 y el fichero cae. Sin medir en el job de CI.
 - Decisión para el fundador: ¿se cierra la variante como innecesaria, o se quiere el +1 del área ampliada quitado (eso abre el clasificador de scrum562, regla 41)?
+
+# SCRUM-936e · El salto de 936d dice su motivo donde el guard de 456 lo lee
+
+**Medido contra:** `origin/main` = `0ddfa5032ecb8d5a71e3751b45867f748232d32f` · 2026-11-24T14:27:11Z
+**Rama:** `scrum-936d-variante-del-medidor` (la del PR #3387) · carril J6 · sesión `jv-j6fw`
+
+A9: comprobación → `tests/scrum419-ci-declara-lo-que-no-corre.test.mjs`
+
+## Qué · esperado · visto
+
+- **Qué:** el obligatorio de #3387 caía en «SCRUM-456 · 🔴 TODO salto declara su motivo»: `scrum936d-variante-del-medidor.test.mjs` saltaba con `skip: motivo`, una variable. El guard mira la EXPRESIÓN del `skip:` en el AST y exige dentro un literal de texto no vacío o una plantilla; una variable no la ve, aunque su valor sea un texto.
+- **Arreglo:** la plantilla va dentro del `skip:` (`!navegador.ok && \`sin navegador donde mirar (resolverNavegador): …\``) y desaparece la constante intermedia. El guard no se toca y el test no se activa a la fuerza: sin navegador sigue saltando, y ahora dice por qué.
+- **Visto en local:** con el fichero de antes (sacado de `HEAD` y devuelto después), los casos SCRUM-456 de 419 dan 3 · 2 pass · 1 fail, y el que cae nombra a 936d con `skip: motivo`. Con el arreglo: 419 + 936d + los siete que importan `_medidor-de-toque` = 64 casos · 64 pass · 0 fail · 0 skipped. En esta máquina hay navegador, así que 936d CORRIÓ: la rama del salto no la he visto ejecutarse aquí.
+
+## El fallo, y de quién
+
+El `skip: motivo` lo escribió la sesión que hizo 936d (`jv-j6fr`, mi mismo puesto). El guard que lo caza ya existía y cayó en CI, que es donde funcionó; lo que faltó fue correrlo en local antes del empujón. Por eso la línea `A9:` apunta a la comprobación que ya lo impide, no a una nueva.

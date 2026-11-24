@@ -24,9 +24,8 @@ body{margin:0}
 </body></html>`;
 
 const navegador = resolverNavegador();
-const motivo = navegador.ok ? false : `sin navegador donde mirar: ${navegador.motivo}`;
 
-test('SCRUM-936d · tocable recorta el borde a menos de 1 px de la caja, y deja el área ampliada como la mide el árbitro', { skip: motivo }, async () => {
+test('SCRUM-936d · tocable recorta el borde a menos de 1 px de la caja, y deja el área ampliada como la mide el árbitro', { skip: !navegador.ok && `sin navegador donde mirar (resolverNavegador): ${navegador.motivo}` }, async () => {
   const nav = await lanzarNavegador(puppeteer, { headless: 'new' });
   try {
     const page = await nav.newPage();
