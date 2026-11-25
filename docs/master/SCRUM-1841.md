@@ -68,3 +68,33 @@ Solo endurece. Con ese diff, en una copia fuera del árbol: 0 hallazgos. Los 4 c
 | ≥ 44 de toque a 390 y a 1280 | `tests/scrum1841-boton-presupuesto-360.test.mjs`, casos a y b |
 | Sin regresión en otra fila | el mismo test, caso c |
 | Capturas antes y después | `docs/master/evidencias/SCRUM-1841/` (`antes-*.png`, `despues-*.png`, `censo-*.txt`) |
+
+# SCRUM-1841b · el vigilante de toque, al día con la cura de la 360
+
+**Medido contra:** `origin/main` = `f23697aa1c7a7b9715ded3be545a50aaa1597706` · 2026-11-25T02:27:35Z
+
+A9: sin fallo que generalice — lancé el guard antes de construir `dist/` (la trampa del árbol anidado ya está en la ficha); cayó al instante con `MODULE_NOT_FOUND`, sin veredicto, y no se podía leer como verde. Construí con `tsc --noCheck` (no toco `src/`) y lo repetí.
+
+**Decisión:** del fundador, SCRUM-1841 c.22708, opción «Sí, si solo lo endurece (Recomendado)»: bajar la cifra esperada y quitar excepciones que sobran, nunca subirla ni añadirlas. Deja sin efecto el aviso «Guard sin tocar (25-nov)» de arriba, que se queda como estaba (A8: se anexa, no se escribe encima).
+
+## Qué cambia (solo `scripts/guard-objetivo-tactil.mjs`, commit `249f7f90479d14e48c7ce13eba54d54c2200e81a`)
+
+- Ficha 360: `distintosEsperados` 7 → 6, y su `origen` pasa a SCRUM-1841.
+- Fuera `BUTTON.btn-secondary.btn-sm` y `BUTTON.btn-primary.btn-sm` de `EXCEPCIONES_791.renderCustomer360View`.
+- Una línea de comentario en cada sitio con «SCRUM-1841 c.22708». Nada más del guard.
+
+## Verde y rojo (Edge local, `node scripts/guard-objetivo-tactil.mjs`)
+
+| caso | salida | veredicto |
+|---|---|---|
+| con la cura (punta de la rama) | 2 | 0 hallazgos · 4 ciegos; suelo de la 360: mide 6, espera 6; ninguna excepción sobrante |
+| sin `.c360-cabecera-acciones > .btn-sm { min-height: 44px; }` (borrada con `sed`, devuelta con `git restore --source=HEAD`) | 1 | 10 hallazgos: los 5 botones de la cabecera a 929 (31 px) y a 390 (30,7 px), sin excepción que los tape; suelo 11 |
+
+Los 4 ciegos son los 4 «FUENTE ROTA en /: 3 de 41 caras declaradas no se pudieron bajar» de la landing (`/`, a 1280 y a 360), que no es esta pantalla: fuentes que no bajan de la red en esta máquina. Salen igual en los dos casos. Cómo sale en CI se lee en el check del PR, no aquí.
+
+El rojo es de una vez y su guion no está en git: no lleva línea `Mutaciones:` y no cuenta como evidencia repetible (A3). Es el control de esta tanda.
+
+## De paso (sin tocar: fuera del alcance de c.22708)
+
+- Sin `dist/`, el guard muere con `MODULE_NOT_FOUND` y sale **1**, el código de «hallazgo», no el 2 de «no supe mirar». En CI `dist/` existe: hoy no tiene víctima.
+- Prosa de SCRUM-795 desfasada en `EXCEPCIONES_791.renderCustomer360View`: el comentario «Y HAY QUE DECIR CÓMO FALLA» habla de `BUTTON.btn-secondary.btn-sm`, ya retirada, y el motivo de `BUTTON` dice «hoy son exactamente esos dos (7 interactivos censados…)» cuando hoy excusa 4 pestañas («Presupuestos», «Facturas», «Sitios», «Notas») de 15 interactivos. No cambia el veredicto.
