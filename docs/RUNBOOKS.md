@@ -173,7 +173,7 @@
 - **Prevención:** mientras haya una sola réplica, no fijar esta variable — el
   fallback aleatorio por-proceso ya es más fuerte que cualquier valor manual.
 
-## R14 · Disputa de tarjeta (chargeback)
+## R28 · Disputa de tarjeta (chargeback)
 
 - **Síntoma:** webhook `charge.dispute.created` (Connect; los direct charges caen en la
   cuenta del MERCHANT).
