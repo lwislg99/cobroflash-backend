@@ -117,8 +117,10 @@ Para cada fichero JS/TS saca cuatro salidas, con el helper viejo y con el nuevo:
 
 - **Comparaciones:** 3.988 × 4 = 15.952.
 - **DISTINTOS: 0.**
-- **Huella de la población** (sha256 de fichero + salidas nuevas):
-  `e23456853b1fff30401d9d110060f734c6c770f9b3c2ccb3a536ff2010882bc9`.
+- **Huella de la población** (sha256 de fichero + salidas nuevas), con el helper final:
+  `34c4969b8001a985108af473171230414ada9313a0e0815224d10ff3594803bc`. La huella incluye el propio
+  helper, así que cambia con él. La primera pasada, con la firma movida, dio `e2345685…`, también con
+  0 distintos.
 - **El TSV**, con los cuatro sha256 de cada fichero, queda fuera del repo (unos 700 KB). El guion lo
   regenera.
 
@@ -133,6 +135,19 @@ Para cada fichero JS/TS saca cuatro salidas, con el helper viejo y con el nuevo:
 **Mi error, dicho:** el primer control «ciego» lo monté al revés. Puse de «viejo» una copia del helper
 NUEVO, que sí entiende la opción, y salió «cambia ✔»: comparaba dos llamadas distintas, no dos helpers.
 El control bueno es el de arriba: el helper sin arreglo en el sitio del nuevo.
+
+**La firma de `soloEjecutable` no se mueve.** `scripts/censo-mudez.mjs` la busca literal (su `FIRMA`)
+para mutar el filtro. Con la opción metida en la firma, el censo salió «CIEGO: no encuentro la firma».
+Por eso la opción se lee debajo, en `arguments[1]`, y sólo un `false` la apaga.
+
+**`censo:mudez -- --escribir`**, porque cambió el filtro y la ficha de 1395b caducó:
+- 144 de 144 medidos: VIVO 133 · MUDO 0 · CIEGO 0 · NO APLICA 11 · YA ROJO 0.
+- Contra el veredicto de antes, cambia de clase 1: el test nuevo, que entra VIVO.
+
+**Mi segundo error, dicho:** la primera pasada la corrí sin `dist/`, porque este árbol anidado no lo
+trae. Dio 64 fichas que pasaban de VIVO a NO APLICA o YA ROJO. No la comiteé. Compilé con tipos
+(`tsc -p .`, salida 0) y la repetí. Además, mi primera comparación de clases salió «0 cambian» porque
+leía `.clase` de un par `[clase, huella]`, y eso era ciego. La rehice por posición.
 
 **Regla 41:** ningún guard ni test cambia lo que mide. Sólo cambia el helper que filtra, y para JS/TS
 da lo mismo byte a byte.

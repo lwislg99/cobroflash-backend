@@ -1,6 +1,6 @@
 {
   "//": "SCRUM-1395b · lo escribe `npm run censo:mudez -- --escribir`; NO se edita a mano. Lo exige tests/scrum719-el-suelo-de-los-doce.test.mjs. Cada ficha: [clase, huella del fichero]. «filtro» es la huella de tests/_guard-texto.mjs con la que se midió.",
-  "filtro": "08264861770a1dd6",
+  "filtro": "75e0ff1372006251",
   "ficheros": {
     "scrum1027-atajo-flag-off-sin-documento.test.mjs": ["VIVO","6dae7dc6159b0599"],
     "scrum1042-ajuste-foto-tecnico.test.mjs": ["VIVO","9e5c159ad7120870"],
@@ -38,6 +38,7 @@
     "scrum1783b-sin-selector-recargo.test.mjs": ["VIVO","f40dbcfe4b4eeb92"],
     "scrum1787e-conceptos-en-movil.test.mjs": ["VIVO","811fb394cf6dc092"],
     "scrum1787i-vencimiento-y-formas-de-pago.test.mjs": ["VIVO","c2094add4b2617b5"],
+    "scrum1851-barra-doble-no-comenta-css.test.mjs": ["VIVO","c3c19e433b76ed9b"],
     "scrum188-turno-staging.test.mjs": ["VIVO","eeca922cabd4cb21"],
     "scrum191-paid-via.test.mjs": ["VIVO","50d2542b26d22087"],
     "scrum195-url-bd-sin-fuga.test.mjs": ["VIVO","35b29e0a3560132e"],
