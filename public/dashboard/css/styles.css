@@ -1593,6 +1593,7 @@ html, body { overflow-x: clip; }
 .quote-paso.is-cerrado .quote-conceptos,
 .quote-paso.is-cerrado .quote-lines,
 .quote-paso.is-cerrado .quote-add-line,
+.quote-paso.is-cerrado .quote-add-apartado,
 .quote-paso.is-cerrado .quote-dto-global,
 .quote-paso.is-cerrado .quote-fila,
 .quote-paso.is-cerrado .quote-ajustes,
@@ -2245,6 +2246,8 @@ html, body { overflow-x: clip; }
 .quote-apartado__modo select { min-height: 44px; }
 /* La columna de IVA (el sitio del chip «IVA 21 %» de una línea): el tipo o «Varios» en agrupado. */
 .quote-apartado__iva {
+  /* Móvil: a lo ancho, como el chip de la línea (`.quote-line__ajustes`); debajo, Total | ⋯. */
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
   min-height: 44px;
@@ -2253,9 +2256,19 @@ html, body { overflow-x: clip; }
   color: var(--ink, #0f1c17);
 }
 .quote-apartado__iva.is-vacia { display: none; }
+/* «TOTAL DEL APARTADO» es más largo que el «TOTAL» de una línea, y cada fila es su propia rejilla:
+   sin tope ensanchaba su columna y corría la fila entera 18 px a la izquierda (medido a 1920 en la
+   captura de SCRUM-1807e). Con el tope del mínimo de esa columna (96 px) el rótulo parte en dos
+   renglones y la columna mide lo que mide en una línea: lo que manda es el importe, como allí.
+   Sólo en la fila única: plegada, el total tiene media tarjeta y no corre nada. */
+@container linea-presupuesto (min-width: 880px) {
+  .quote-line--apartado .quote-line__totalwrap > .quote-line__label { max-width: 96px; }
+}
 @container linea-presupuesto (min-width: 640px) {
   /* El selector ocupa el hueco de Cantidad + Precio; el IVA cae en la columna del chip. */
   .quote-apartado__modo { grid-column: span 2; }
+  /* En la columna del chip «IVA 21 %», centrado como él. */
+  .quote-apartado__iva { grid-column: auto; justify-content: center; }
   /* En desglosado el hueco se CONSERVA (como `.is-de-siempre`, SCRUM-915h): las columnas cuadran. */
   .quote-apartado__iva.is-vacia { display: flex; visibility: hidden; }
 }

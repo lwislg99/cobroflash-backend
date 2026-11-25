@@ -4220,6 +4220,27 @@ conceptInput.addEventListener("input", () => {
 
     const actionsTd = document.createElement("div");
     actionsTd.className = "quote-line__actions";
+    // El asa de arrastre de la línea, igual (FRONT1-4): la cabecera se arrastra como cualquier fila,
+    // y con ella su columna de acciones mide lo mismo que la de una línea (las columnas cuadran).
+    const dragHandle = document.createElement("span");
+    dragHandle.className = "quote-drag-handle";
+    dragHandle.textContent = "⠿";
+    dragHandle.title = "Arrastra para reordenar";
+    dragHandle.draggable = true;
+    dragHandle.addEventListener("dragstart", function (e) {
+      draggedTr = tr;
+      tr.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+    });
+    dragHandle.addEventListener("dragend", function () {
+      tr.classList.remove("dragging");
+      draggedTr = null;
+      syncLinesOrder();
+      recalcTotals();
+      renderPreview();
+      scheduleDraftSave();
+    });
+    actionsTd.appendChild(dragHandle);
     const subirBtn = document.createElement("button");
     subirBtn.type = "button";
     subirBtn.textContent = "↑  Subir";
