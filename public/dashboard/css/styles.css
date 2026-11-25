@@ -5854,6 +5854,17 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
 .c360-datos .contacto-link, #c360-meta .contacto-link { min-height: 44px; }
 #c360-meta .input { min-height: 44px; }
 /* J2: fin del bloque SCRUM-1850 */
+/* J2: SCRUM-1852 (AB6, por contenedor) · cabecera de la ficha 360: «✎ Editar» se pintaba ENCIMA del
+   nombre a 929 y 1280. `.c360-identidad` lleva `min-width:0` (el literal de SCRUM-1756i, arriba) y se
+   encogía a 141 px con un contenido de 201: el nombre desbordaba por debajo de los botones, también con
+   un nombre corto. Con `min-width:auto` la identidad conserva su ancho mínimo y, si no cabe junto a la
+   fila de acciones, la fila baja de línea. Y la fila encoge (lo que SCRUM-1841 hacía solo por debajo
+   de 768): con la barra lateral, a 929, no se partía y «+ Nuevo presupuesto» salía 128,9 px de la
+   tarjeta. Sin tocar tamaños: los 44 px de 1841/1850 siguen. Medido con
+   `docs/master/evidencias/SCRUM-1852/medir.mjs`; lo ata `tests/scrum1852-editar-encima-del-nombre.test.mjs`. */
+.c360-identidad { min-width: auto; }
+.c360-cabecera-acciones { flex-shrink: 1; min-width: 0; }
+/* J2: fin del bloque SCRUM-1852 */
 .c360-kpi-valor { font-size:18px }
 .c360-verde { color:var(--green-600) }
 .c360-rojo { color:var(--red-600) }
