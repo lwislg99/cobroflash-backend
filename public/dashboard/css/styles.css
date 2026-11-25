@@ -5739,6 +5739,26 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
   #c360-meta .input { min-height: 44px; }
 }
 
+/* J2: SCRUM-1847 · la lista de Clientes a 44 px de toque también en escritorio (AB6, censo de
+   SCRUM-1845). A 1280 medían: «Nuevo cliente» 37, el buscador y los dos `select` 39, el teléfono
+   41,8 y su 💬 37; en la lista vacía, «+ Añadir cliente» 30,7-30,8 a 390 y a 1280. Decisión del
+   fundador SCRUM-1845 c.22728 (sobre DESIGN.md, la excepción de `btn-sm`): un `.btn-sm` que NO es la
+   primaria se queda como lo dejó SCRUM-1149 (más arriba), y se cura todo lo demás; «+ Añadir cliente»
+   es `btn-primary btn-sm` y HACE de primaria de la lista vacía, así que se cura. Misma ancla que 1149,
+   la barra de selección que sólo pinta esta lista; sólo tamaño, sin clase nueva en el marcado y sin
+   tocar `.input`, `.btn-primary`, `.btn-sm` ni `.contacto-link` globales. Va DETRÁS del bloque de
+   SCRUM-1584 (justo arriba), cuyo mínimo de 38 para la barra pesa (0,4,0): la barra lleva aquí un
+   selector del mismo peso, que gana por orden, y no se reescribe la regla de 1584, que también es de
+   la ficha 360. El resto pesa (0,3,0) y gana a `.btn.btn-sm` (0,2,0). Lo mide en navegador
+   `tests/scrum1847-clientes-44.test.mjs`. */
+.data-card:has(> .barra-seleccion) .data-card-toolbar .input,
+.data-card:has(> .barra-seleccion) .data-card-header > div > .btn-primary,
+.data-card:has(> .barra-seleccion) .input,
+.data-card:has(> .barra-seleccion) .contacto-link,
+.data-card:has(> .barra-seleccion) .clientes-vacio-cta { min-height:44px; }
+.data-card:has(> .barra-seleccion) .contacto-link--icono { min-width:44px; }
+/* J2: fin del bloque SCRUM-1847 */
+
 /* SCRUM-1056 · «Volver a llamar»: la nota es texto libre del profesional. Una palabra muy larga
    (un enlace, una referencia) se parte en vez de salirse de la tarjeta: medido a 390 px. */
 .volver-a-llamar-nota { overflow-wrap: anywhere; }
