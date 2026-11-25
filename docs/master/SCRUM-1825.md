@@ -109,10 +109,47 @@ ella no se empuja. Las copias del banco de main que dejó el corte en el árbol 
 `422e0760ae58ea4341a52981ed479996e3265c93` (idénticas a `origin/main`; el guard `guard-dangerous` no dejó
 descartarlas y el permiso de un solo uso fue denegado).
 
-**Estado al relevo:** commit local en `scrum-1825-dataset-proxy`, SIN empujar. Falta SÓLO el barrido de la base
-sobre el árbol mezclado (`poblacion` v3 = la v2 + la transitiva regenerada), cuando la máquina tenga memoria. Antes del push: decisión del
-dueño de 817 → re-mezclar `main` → repetir el barrido con `poblacion-v2.txt` (y regenerar la transitiva) →
-`ancla.mjs` + A9 + `guards:entrada`.
+**Estado al relevo (24-nov):** commit local en `scrum-1825-dataset-proxy`, SIN empujar. Faltaba SÓLO el barrido de la
+base sobre el árbol mezclado (`poblacion` v3 = la v2 + la transitiva regenerada).
 
 A9: comprobación → `tests/scrum1825-banco-dataset-es-el-atributo.test.mjs`
 Mutaciones: catálogo → `tests/scrum1825-banco-dataset-es-el-atributo.test.mjs`
+
+### El barrido de la base v3, completo (relevo del 25-nov)
+
+**Medido contra:** `origin/main` = `77c000deadc9fa6b80ae97b6b02752e18b2c9392` · 2026-11-25T07:54:42Z
+
+La sesión del 24-nov, tras el corte por memoria, lo re-corrió **un tramo de 30 por comando** (15 tramos) y dejó
+los JSON en el temporal de su trabajo antes de morir por límite; no llegó a copiarlos. Los he recuperado y
+comprobado: los 15 `tNNN.txt` concatenados en orden son EXACTAMENTE `poblacion-v3.txt` (426 líneas), y cada
+`tNNN.json` tiene una sola tanda de su tramo. Copiados tal cual a `evidencias/scrum1825/tramos-base-v3/` y unidos
+en `barrido-base-v3.json` (mismo formato que los demás; `origen` nombra cada tramo). La carpeta es la `scrum1825`
+que ya usa esta rama, no `SCRUM-1825`. Lo medido es del árbol `3e01d4fec` con el banco de `origin/main`.
+
+| banco | ficheros | tests | pass | fail | saltados | tandas ciegas |
+|---|---|---|---|---|---|---|
+| main | 426 | 3.438 | 3.421 | 8 | 9 | 0 |
+| cura | 426 | 3.438 | 3.427 | 2 | 9 | 0 |
+
+(`barrido-base-v3.json`, `barrido-cura-v3.json`.) Fallos por conjunto:
+
+| test | dónde cae | lectura |
+|---|---|---|
+| `scrum1825-banco-dataset-es-el-atributo.test.mjs`, 4 casos | sólo main | su rojo primero |
+| `scrum817-orden-del-detalle-del-trabajo.test.mjs` «el reorden no pierde NI UNA acción» | sólo main | esperado: el fixture corregido sólo vale con la cura (sección anterior) |
+| `scrum836-ancla-de-mutacion-viva.test.mjs` «NINGUNA mutación declarada tiene el ancla caducada» | sólo main | **artefacto del intercambio de banco:** las `MUTACIONES_QUE_ME_TUMBAN` del test nuevo anclan texto de la CURA en `tests/_banco-vistas.mjs` y `scripts/_pagina-panel.mjs`; con esos dos ficheros cambiados por los de `main`, sus anclas no están y 836 las da por caducadas. Con la cura, 836 en verde. No es un fallo que pueda ver `main`: el test nuevo y la cura entran en el mismo PR. **Lectura aceptada por el orquestador, SCRUM-1656 c.22748** |
+| `scrum1726-tanda-firmada-j1.test.mjs`, 2 casos D1 | los dos | ajeno (zona horaria de la hoja), igual que en v2 |
+
+**Sólo con la cura: ninguno.** Ningún test cambia de veredicto a peor con la cura.
+
+**Main al empujar:** `origin/main` = `77c000deadc9fa6b80ae97b6b02752e18b2c9392`, 87 commits por delante de la base
+del barrido (`31af3ad11`). Medido: ninguno de sus 140 ficheros cambiados es `tests/_banco-vistas.mjs`,
+`scripts/_pagina-panel.mjs`, `jobDetailView.js`, `_inventario-detalle-trabajo.mjs`, ni los tests 817/836. No se
+re-mezcla para no invalidar el barrido; el check del PR corre sobre la mezcla.
+
+**Para quien cierre el ticket — dos stashes de esta rama, NO tirados:** `00b424b3c77a3f79b5c78b463f16684e0085a0b7`
+(«s3-1825-banco-de-main-barrido-base-v3») y `422e0760ae58ea4341a52981ed479996e3265c93`
+(«s3-1825-banco-de-main-tras-barrido-cortado-24nov»). Son las copias del banco de `main` que dejaron los
+barridos de la base en el árbol; por lo medido el 24-nov, idénticas a `origin/main`. Se tiran al cerrar.
+
+A9: sin fallo que generalice — tramo de relevo que recupera, comprueba y copia evidencias ya medidas; el BOM que mete `Set-Content -Encoding utf8` de PowerShell 5.1 en el JSON unido lo vi en los primeros bytes y lo rehíce con node antes del commit (trampa ya escrita en la descripción de la herramienta)

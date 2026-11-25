@@ -1,0 +1,24 @@
+{
+ "ficheros": 30,
+ "tandas": [
+  {
+   "desde": 0,
+   "n": 30,
+   "exit": 1,
+   "tests": 226,
+   "pass": 221,
+   "fail": 1,
+   "skipped": 4
+  }
+ ],
+ "tests": 226,
+ "pass": 221,
+ "fail": 1,
+ "skipped": 4,
+ "fallos": [
+  {
+   "nombre": "SCRUM-817 · 🔴 el reorden no pierde NI UNA acción",
+   "loc": "\\scrum817-orden-del-detalle-del-trabajo.test.mjs"
+  }
+ ]
+}
