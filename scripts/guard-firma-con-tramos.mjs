@@ -28,10 +28,12 @@ import express from 'express';
 import puppeteer from 'puppeteer-core';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
-import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
-import { firmaTieneTrazo } from '../dist/modules/quotes/domain/firmaConTrazo.js';
-import { prisma } from '../dist/core/db/prisma.js';
-import { quoteDecisionLandingRouter } from '../dist/modules/system/app/routes/quoteDecisionLanding.routes.js';
+import { veredictoDe, vigilarArranque } from './_hallazgos-y-ciegos.mjs';
+// SCRUM-1846 · lo de dist/ va DESPUÉS de vigilarArranque(): sin dist/, sale con 2 y no con 1.
+vigilarArranque();
+const { firmaTieneTrazo } = await import('../dist/modules/quotes/domain/firmaConTrazo.js');
+const { prisma } = await import('../dist/core/db/prisma.js');
+const { quoteDecisionLandingRouter } = await import('../dist/modules/system/app/routes/quoteDecisionLanding.routes.js');
 
 let PUERTO = Number(process.env.FIRMA_TRAMOS_PUERTO || 0);
 const TOKEN = 'a'.repeat(32);
