@@ -44,3 +44,7 @@ La primaria de la pantalla es «+ Nuevo presupuesto» (`btn-primary`), a 44 desd
 ## De paso (sin tocar: el encargo era SOLO tamaño)
 
 - A 929 y 1280, la fila de acciones de la cabecera (`.c360-cabecera-acciones`, `flex-shrink: 0` por encima de 768) aprieta la columna del nombre a unos 90 px y «✎ Editar» queda ENCIMA de «Administración de Fincas Soler…». Ya pasaba antes de esta cura: se ve igual en `antes/360-1280.png` y en `despues/360-1280.png`. Lo reporto al orquestador.
+
+## Traspaso (jv-j2ew paró en el tope de 230k: 228.743 medidos, SIN empujar)
+
+Commit local en `scrum-1850-ficha-360-resto-44`. Lo que falta, en orden: `npm run guards:entrada` (la última pasada, con la cicatriz sin corregir, dio 1 hallazgo, el de scrum1294; corregida, scrum1294 da 4 de 4), `scrum976`, `scrum267`, `scrum854` (976 ④ cayó antes de escribir el registro), `npx tsc -p . --noEmit` no hace falta (no toco `src/`; el build con tipos dio salida 0 al empezar), `git merge-tree --write-tree HEAD origin/main` sin conflictos (la cicatriz va delante de la del 24-nov para no chocar), UN empujón y el comentario de entrega.
