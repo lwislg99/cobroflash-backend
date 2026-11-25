@@ -56,11 +56,21 @@ const ficheros = JSON.parse(fs.readFileSync(listaJson, 'utf8'));
  *     ENTERA no acusa a nadie, pero deja a la tanda sin comparar.
  *   · y 2 min por fichero cuando son pocos: la repesca mide a SOLAS cada fichero sospechoso, y un
  *     fichero cortado en la tanda lo es. Con la pared de la tanda, un solo cuelgue costaría
- *     4 × 15 min y no cabría en el techo; así cuesta 2 × 15 + 2 × 2 min.
+ *     4 × 15 min y no cabría en el techo; así cuesta 2 × 15 + 2 × 2 min (2 × 24 + 2 × 2 desde
+ *     SCRUM-1865, abajo).
  * Los dos se pueden pasar por argumento para que el test 813 siembre cuelgues de segundos.
+ *
+ * 🔴 25-nov-2026 · SCRUM-1865 · LA PARED DE LA TANDA SUBE DE 15 A 24 MIN, por la regla de arriba.
+ * Medido por S3 ese día (descripción del ticket): la pasada NORMAL ya va de 10 a 15 min, o sea que
+ * pasó los ~12 que la regla pone como aviso, y en runner lento la pared cortaba la cola. 24 min =
+ * 1,6 × 15, el mismo margen de 1,6 que se escribió el 15-oct. No es aflojar el guard: la pared no
+ * decide ningún veredicto, sólo cuándo se deja de esperar. Las dos pasadas con la pared entera son
+ * 48 min, así que el techo del job (`trinquete-zona` en `ci.yml`) sube con ella en el mismo commit.
+ * Si la pasada normal llega a ~19 min, se vuelve a subir por la misma regla.
  */
 const LIMITE_TEST_MS = Number(limiteArg) || 5 * 60_000;
-const PARED_MS = Number(paredArg) || Math.min(15 * 60_000, 2 * 60_000 * ficheros.length);
+const PARED_TANDA_MS = 24 * 60_000;
+const PARED_MS = Number(paredArg) || Math.min(PARED_TANDA_MS, 2 * 60_000 * ficheros.length);
 
 /** No es un veredicto: el mismo literal que `CORTADA` en `_trinquete-de-zona.mjs`. */
 const CORTADA = 'cortada';
