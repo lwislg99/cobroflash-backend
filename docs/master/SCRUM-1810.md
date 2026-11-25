@@ -54,3 +54,15 @@ Relevo jv-j1jn (J1, 2026-11-24 ~08:15Z, `origin/main` = `ec2d336f174affd3bc88a64
 Mutaciones: catálogo → `tests/scrum1810b-marcar-pendiente-y-oculto-en-factura.test.mjs`
 
 A9: comprobación → `tests/scrum1810b-marcar-pendiente-y-oculto-en-factura.test.mjs`
+
+## SCRUM-1810c · Skill UI declarada en el encabezado de este registro (escrito a posteriori en 1839c)
+
+**Medido contra:** `origin/main` = `123311beb24600b1db04371f83e3a67113e58de1` · 2026-11-25T01:51:45Z
+
+Lo escribe J4 en SCRUM-1839c, por encargo del orquestador del equipo de Javier. No añade medición; junta lo que dicen git y la entrega.
+
+- **Qué entró:** el commit `d5e9aa21cb3cce517f5aeca706b8c872e6ec878c`, «[carril J1] SCRUM-1810c: Skill UI declarada en el encabezado de SCRUM-1810.md (main en rojo por scrum811c/1340)»: este registro, +4. Son la línea `**Skill UI:**` y una línea A9 en el ENCABEZADO del fichero, encima del tramo «SCRUM-1810b · factura pagada sin el botón; justificante pagado con «Marcar como pendiente»», sin cabecera propia.
+- **Con qué PR:** #3375, merge `6fbcde28651d2eed9190ced9efbc7663d8cdac7a`.
+- **Qué se midió** (entrega en Jira, SCRUM-1810 c.22574, 2026-11-24 11:32:20Z, jv-j1jo): «el caso SCRUM-1340 de scrum811c pasó de rojo (reproducido) a verde en local, y guards:entrada sale 0.»
+
+A9: comprobación → `tests/scrum1839-letra-con-tramo.test.mjs`
