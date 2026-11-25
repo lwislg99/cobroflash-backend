@@ -164,5 +164,13 @@ comprobado idéntico al original tras la mutación, y `git status` después del 
 38 commits de main que entraron con el merge no dejaron ninguna ficha vieja (el censo habría vuelto a medir
 cualquiera que hubiera caducado, y midió sólo una).
 
+**Verdes, en local, sobre el árbol fusionado y con el json comiteado (TAP a fichero fuera del árbol; 0
+saltados en todos):** `npm run build` (tsc con tipos) salida 0 · `scrum719-el-suelo-de-los-doce` 37/37 ·
+`scrum1843-marcar-cobrada-44` 2/2 con navegador · `scrum700` + `scrum237` + `scrum976` 24/24 ·
+`scrum1294` + `scrum267` 18/18 y `npm run guards:entrada` salida 0 (16 guards, 177 tests), corridos sobre
+este tramo antes de añadirle este párrafo: se repiten tras el commit y el resultado va en la entrega · los
+5 de árbol entero que `guards:entrada` pide a mano (`scrum195`, `scrum414`, `scrum694`, `scrum710b`,
+`scrum737`) 38/38. No he corrido la suite entera (el encargo lo prohíbe).
+
 **Errores propios:** en el mensaje de arranque al orquestador le di «con las cicatrices J1 leídas, ~115k»
 de contexto: era una estimación, no una medida. La primera medida después de esa lectura dio 127.332.
