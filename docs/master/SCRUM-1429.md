@@ -51,3 +51,20 @@ Mutaciones: catálogo → `tests/scrum1532d-cancelar-cobro-ficha-y-reenvio.test.
 **No medido:** contra una base real (el doble no tiene cerrojos de fila; la condición del `where` es una sola sentencia en Postgres, pero no lo he corrido); la suite entera en local (no cabe en el contexto; queda para CI); yaqu.app (no se puede provocar la carrera sin un envío real).
 
 A9: comprobación → `tests/scrum1429c-dos-envios-dos-cobros.test.mjs`
+
+# SCRUM-1429e — el cobro que pierde la carrera se cancela CON su fila `cobro_cancelado`
+
+**Medido contra:** `origin/main` = `123311beb24600b1db04371f83e3a67113e58de1` · 2026-11-25T01:53:04Z (cabecera `Date:` de GitHub)
+
+GO del fundador: SCRUM-1429 c.22630 (el de 1429d). Cabo de SCRUM-1429 c.22635: el perdedor de 1429d se cancelaba sin auditoría. La clave `cobro_cancelado` entró con #3373 (SCRUM-1532c).
+
+- `src/modules/billing/domain/invoiceWhatsApp.service.ts` (J1): tras cancelar el cobro perdedor (`pending → cancelled`, estado en el `where`), `recordAudit` con la forma de `POST /admin/charges/:id/cancel` (`chargesAdmin.routes.ts`, SCRUM-1532c): `action: 'cobro_cancelado'`, `entityType: 'charge'`, `entityId` del perdedor, SÓLO si la cancelación cambió la fila (`count > 0`), y dentro de un `try` que no tumba el envío. Actor `{ tipo: 'sistema', ref: 'invoiceWhatsApp:carrera_de_envio' }` (no lo cancela una persona: `teamMemberId: null`, sin `ip`), `motivo: 'carrera_de_envio'` y `cobroGanador`. El motivo va como clave y no como frase: ningún texto nuevo que vea el usuario.
+- `tests/scrum1429c-dos-envios-dos-cobros.test.mjs`: el doble recoge `auditLog.create` y saca `audit.service` de la caché con el servicio. Caso nuevo: dos envíos a la vez → UNA fila `cobro_cancelado` con el `chargeId` del perdedor, del comercio de la factura, actor `sistema`, y ninguna del ganador. Control: un solo envío (positivo: 1 POST, 1 cobro, envío ok) → 0 filas.
+
+Rojo primero: con `src/` sin tocar y `dist/` compilado con tipos, 5 casos · 4 pass · 1 fail; cae el nuevo con «el cobro perdedor 901 se canceló con 0 filas cobro_cancelado (se espera 1)». Con el arreglo: 5 · 5 · 0 · 0 saltos; la fila sale `entityId 901`, ganador 900.
+
+Mutaciones: catálogo → `tests/scrum1429c-dos-envios-dos-cobros.test.mjs`
+
+**No medido (empujado al pasar el tope de 145k del encargo, a 151.811):** la mutación nueva del catálogo (`recordAudit({` → `void ({`) está declarada pero NO la he corrido; tampoco 1532c/1532d, los que nombran `invoiceWhatsApp`, 1415, 1294, 267, 854 ni 719; ni la suite entera; ni una base real; ni yaqu.app. Sí: `npm run build` (tsc con tipos) salida 0 y `npm run guards:entrada`.
+
+A9: aviso → cicatriz J1 «Crucé el tope de 145k del encargo (151.811) sin empujar» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
