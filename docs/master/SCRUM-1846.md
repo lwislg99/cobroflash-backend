@@ -21,7 +21,7 @@ Carril J6 (sin cerradura: `scripts/_hallazgos-y-ciegos.mjs` y los 4 guards tocad
 **Rojo primero:** con el código de hoy, `guard-aviso-bizum` salió con 1 y el caso 2 nombró los 3 estáticos. Tras el arreglo, verde.
 
 A9: comprobación → `tests/scrum1846-arranque-sin-dist-sale-2.test.mjs`
-A9: aviso → cicatriz J6 «Corrí `carriles.mjs de` sobre el test nuevo después de escribirlo» — no se pudo comprobar: ningún hook exige la consulta antes de la primera escritura
+A9: aviso → cicatriz J6 «Corrí `carriles.mjs de` sobre el test nuevo después de escribirlo, con los guards y el helper ya consultados antes: la cuarta de la familia de SCRUM-1218d» — no se pudo comprobar: ningún hook exige la consulta antes de la primera escritura
 
 ## TRASPASO (paré a 155k, tope del encargo 160k) — falta
 
