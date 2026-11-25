@@ -2776,8 +2776,11 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
         });
 
         // Confirmar Bizum → POST /admin/charges/:chargeId/confirm-bizum (doble toque). Solo con chargeId.
+        // SCRUM-1840 · y solo con el cobro `pending` (el único que el servidor deja confirmar; con otro
+        // estado su POST da 409 `charge_not_pending` DESPUÉS de dos toques). Sin `estadoDelCobro`
+        // servido cae CERRADO, como «Cancelar cobro» (SCRUM-1808b).
         let bizumBtn = null;
-        if (inv.chargeId) {
+        if (inv.chargeId && inv.estadoDelCobro === 'pending') {
           const amountTxt = fmtMoneyEs(inv.total, inv.currency || cur);
           const custName = job.customer?.name || 'el cliente';
           const bz = document.createElement('button');

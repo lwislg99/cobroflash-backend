@@ -5,6 +5,7 @@ paths:
   - "scripts/capturas-cancelar-cobro-trabajo.mjs"
   - "scripts/guard-965-un-solo-presupuesto.mjs"
   - "public/dashboard/js/quoteRevisiones.js"
+  - "scripts/capturas-1840-bizum-oculto.mjs"
   - "scripts/capturas-iva10-parte-s.mjs"
   - "public/dashboard/css/styles.css"
   - "public/dashboard/js/homeView.js"
