@@ -164,6 +164,245 @@ const SITIOS_CLIENTE = {
 };
 if (typeof window !== 'undefined') window.sitiosCliente = SITIOS_CLIENTE;
 
+// SCRUM-1005d · INICIO — la pestaña «Documentos» (ni un `style=` ni un `on*=` en cadenas: SCRUM-1773).
+/**
+ * SCRUM-1005d · LA PESTAÑA «DOCUMENTOS»: contratos, boletines y planos del cliente.
+ *
+ * El servidor es de SCRUM-1005b (`GET/POST /admin/customers/:id/documentos`, `GET …/:docId` descarga
+ * como adjunto, `DELETE …/:docId` solo admin) y contesta CÓDIGOS; las frases son estas. Los textos son
+ * los de SCRUM-1005 c.22192, byte a byte, y cada uno lleva su firma en SU línea: esta cabecera no firma
+ * el objeto entero, porque los métodos de abajo no son textos (SCRUM-1215g: una firma de grupo no cubre
+ * a quien llega después). Registro:
+ * `docs/microcopy/2026-11-20-SCRUM-1005-documentos-del-cliente.md`). Los huecos `{n}`, `{mb}` y
+ * `{nombre}` son los del propio comentario: `{mb}` sale de `limites` (bytes) que trae la lista, nunca
+ * de una cifra escrita aquí. Permisos de c.22192: ver y subir, todo el equipo; borrar, solo admin.
+ * La fila 10 («También se borrarán sus documentos.») no está: hoy ninguna pantalla borra clientes.
+ */
+const DOCUMENTOS_CLIENTE = {
+  TEXTOS: {
+    pestana: 'Documentos ({n})', // APROBADO por el fundador el 19-nov-2026 (SCRUM-1005 comentario 22192)
+    subir: '+ Subir documento', // APROBADO por el fundador el 19-nov-2026 (SCRUM-1005 comentario 22192)
+    vacio: 'Todavía no hay documentos guardados para este cliente.', // APROBADO por el fundador el 19-nov-2026 (SCRUM-1005 comentario 22192)
+    subiendo: 'Subiendo…', // APROBADO por el fundador el 19-nov-2026 (SCRUM-1005 comentario 22192)
+    subido: 'Documento guardado.', // APROBADO por el fundador el 19-nov-2026 (SCRUM-1005 comentario 22192)
+    formato: 'Solo se pueden subir documentos PDF, JPG o PNG.', // APROBADO por el fundador el 19-nov-2026 (SCRUM-1005 comentario 22192)
+    grande: 'Cada documento puede ocupar como máximo {mb} MB.', // APROBADO por el fundador el 19-nov-2026 (SCRUM-1005 comentario 22192)
+    topeAdmin: 'Este cliente ya tiene {mb} MB en documentos, el máximo. Borra alguno para subir otro.', // APROBADO por el fundador el 19-nov-2026 (SCRUM-1005 comentario 22192)
+    topeTecnico: 'Este cliente ha llegado al máximo de {mb} MB en documentos.', // APROBADO por el fundador el 19-nov-2026 (SCRUM-1005 comentario 22192)
+    descargar: 'Descargar', // APROBADO por el fundador el 19-nov-2026 (SCRUM-1005 comentario 22192)
+    eliminar: '🗑 Eliminar', // APROBADO por el fundador el 19-nov-2026 (SCRUM-1005 comentario 22192)
+    confirmarBorrar: '¿Borrar el documento "{nombre}"? Esta acción no se puede deshacer.', // APROBADO por el fundador el 19-nov-2026 (SCRUM-1005 comentario 22192)
+    ariaElegir: 'Elegir un documento para subir', // APROBADO por el fundador el 19-nov-2026 (SCRUM-1005 comentario 22192)
+    ariaDescargar: 'Descargar {nombre}', // APROBADO por el fundador el 19-nov-2026 (SCRUM-1005 comentario 22192)
+    ariaBorrar: 'Borrar {nombre}', // APROBADO por el fundador el 19-nov-2026 (SCRUM-1005 comentario 22192)
+    vacioFichero: 'Ese fichero está vacío: elige otro.', // APROBADO por el fundador el 19-nov-2026 (SCRUM-1005 comentario 22192)
+    errorCarga: 'No se pudieron cargar los documentos. Inténtalo de nuevo.', // APROBADO por el fundador el 19-nov-2026 (SCRUM-1005 comentario 22192)
+  },
+  /** Rellena los huecos `{clave}` de un texto firmado. */
+  rellenar(texto, valores) {
+    return String(texto).replace(/\{(\w+)\}/g, (m, k) => (valores && valores[k] !== undefined ? String(valores[k]) : m));
+  },
+  tituloPestana(n) {
+    return DOCUMENTOS_CLIENTE.rellenar(DOCUMENTOS_CLIENTE.TEXTOS.pestana, { n });
+  },
+  /** Bytes → la cifra de «{mb}»: entre 1024·1024, sin decimales si es entera. */
+  mb(bytes) {
+    return (Number(bytes) / (1024 * 1024)).toLocaleString('es-ES', { maximumFractionDigits: 1 });
+  },
+  /** El tamaño de una fila, con la unidad que pone `Intl` (no es un texto nuestro). */
+  tamano(bytes) {
+    const b = Number(bytes);
+    if (!Number.isFinite(b) || b < 0) return '';
+    const mega = b >= 1024 * 1024;
+    return new Intl.NumberFormat('es-ES', { style: 'unit', unit: mega ? 'megabyte' : 'kilobyte', maximumFractionDigits: 1 })
+      .format(mega ? b / (1024 * 1024) : Math.max(b / 1024, 0.1));
+  },
+  /**
+   * El texto de un código del servidor. `''` = sin texto (NOMBRE_NO_VALIDO, c.22192 fila 13);
+   * `null` = el genérico que ya existe en el panel (CUERPO_ILEGIBLE y lo que no tenga fila).
+   */
+  textoDeError(codigo, { puedeBorrar, limites }) {
+    const T = DOCUMENTOS_CLIENTE.TEXTOS;
+    const L = limites || {};
+    const conMb = (t, bytes) => (bytes ? DOCUMENTOS_CLIENTE.rellenar(t, { mb: DOCUMENTOS_CLIENTE.mb(bytes) }) : null);
+    switch (codigo) {
+      case 'FORMATO_NO_ADMITIDO': return T.formato;
+      case 'FICHERO_DEMASIADO_GRANDE': return conMb(T.grande, L.porFichero);
+      case 'TOPE_DEL_CLIENTE': return conMb(puedeBorrar ? T.topeAdmin : T.topeTecnico, L.porCliente);
+      case 'FICHERO_VACIO': return T.vacioFichero;
+      case 'NOMBRE_NO_VALIDO': return '';
+      default: return null;
+    }
+  },
+};
+if (typeof window !== 'undefined') window.documentosCliente = DOCUMENTOS_CLIENTE;
+
+/**
+ * Pinta la pestaña en `card`. Reusa las clases de «Sitios» (`sitios-cliente__*`): misma forma de lista
+ * con acciones, sin hoja nueva. Todo con `textContent`: los nombres los pone quien sube el fichero.
+ * `viva()` dice si esta apertura sigue siendo la última; `alContar(n)` repinta el número de la pestaña.
+ */
+function montarDocumentosDelCliente(card, customerId, viva, alContar) {
+  const D = DOCUMENTOS_CLIENTE;
+  const T = D.TEXTOS;
+  const puedeBorrar = window.appUserRole === 'admin';
+  // `base` solo para el enlace de descarga: las llamadas de red llevan la ruta ESCRITA, porque con una
+  // variable la sonda de SCRUM-1185 no ve quién consume la ruta (sale «ciega-llamada-opaca»).
+  const base = `/admin/customers/${customerId}/documentos`;
+  let limites = null;
+  card.classList.add('sitios-cliente');
+
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png';
+  input.hidden = true;
+  input.setAttribute('aria-label', T.ariaElegir);
+  card.appendChild(input);
+
+  const subir = document.createElement('button');
+  subir.type = 'button';
+  subir.className = 'btn btn-secondary sitios-cliente__nuevo';
+  subir.dataset.accion = 'subir';
+  subir.textContent = T.subir;
+  subir.addEventListener('click', () => input.click());
+  card.appendChild(subir);
+
+  const estado = document.createElement('p');
+  estado.className = 'sitios-cliente__contacto';
+  estado.dataset.rol = 'estado-documentos';
+  estado.setAttribute('role', 'status');
+  card.appendChild(estado);
+
+  const aviso = document.createElement('p');
+  aviso.className = 'sitios-cliente__error';
+  aviso.dataset.rol = 'aviso-documentos';
+  aviso.setAttribute('role', 'alert');
+  aviso.hidden = true;
+  card.appendChild(aviso);
+  function avisar(texto) { aviso.textContent = texto || ''; aviso.hidden = !texto; }
+  function avisarError(err, respaldo) {
+    if (err && err.handled) return; // la prueba vencida: `_pedir` ya llevó a Planes
+    const codigo = err && err.data && err.data.error;
+    const propio = D.textoDeError(codigo, { puedeBorrar, limites });
+    avisar(propio === null ? window.mensajeParaPersona(err, respaldo) : propio);
+  }
+
+  const lista = document.createElement('ul');
+  lista.className = 'sitios-cliente__lista';
+  card.appendChild(lista);
+
+  function linea(clase, texto) {
+    const s = document.createElement('span');
+    s.className = clase;
+    s.textContent = texto;
+    return s;
+  }
+
+  function pintarLista(documentos) {
+    lista.replaceChildren();
+    if (!documentos.length) {
+      const li = document.createElement('li');
+      li.className = 'sitios-cliente__vacio';
+      li.textContent = T.vacio;
+      lista.appendChild(li);
+      return;
+    }
+    documentos.forEach((d) => {
+      const nombre = d.fileName || String(d.id);
+      const li = document.createElement('li');
+      li.className = 'sitios-cliente__fila';
+      li.dataset.documento = String(d.id);
+      li.appendChild(linea('sitios-cliente__nombre', nombre));
+      const fecha = d.createdAt ? new Date(d.createdAt).toLocaleDateString('es-ES') : '';
+      li.appendChild(linea('sitios-cliente__direccion', [D.tamano(d.sizeBytes), fecha].filter(Boolean).join(' · ')));
+      const acciones = document.createElement('div');
+      acciones.className = 'sitios-cliente__acciones';
+      const a = document.createElement('a');
+      a.className = 'contacto-link';
+      a.setAttribute('href', `${base}/${d.id}`);
+      a.setAttribute('download', '');
+      a.setAttribute('aria-label', D.rellenar(T.ariaDescargar, { nombre }));
+      a.textContent = T.descargar;
+      acciones.appendChild(a);
+      // Borrar: solo admin (c.22192), y no es la acción principal: botón fantasma, al final, y pregunta.
+      if (puedeBorrar) {
+        const eliminar = document.createElement('button');
+        eliminar.type = 'button';
+        eliminar.className = 'btn-ghost btn-sm';
+        eliminar.dataset.accion = 'eliminar';
+        eliminar.setAttribute('aria-label', D.rellenar(T.ariaBorrar, { nombre }));
+        eliminar.textContent = T.eliminar;
+        eliminar.addEventListener('click', () => borrar(d, nombre, eliminar));
+        acciones.appendChild(eliminar);
+      }
+      li.appendChild(acciones);
+      lista.appendChild(li);
+    });
+  }
+
+  function cargar() {
+    return apiRequest(`/admin/customers/${customerId}/documentos`).then((r) => {
+      if (!viva()) return;
+      const docs = r && Array.isArray(r.documentos) ? r.documentos : [];
+      limites = r && r.limites ? r.limites : limites;
+      pintarLista(docs);
+      alContar(docs.length);
+    }, (err) => {
+      if (!viva()) return;
+      if (err && err.handled) return;
+      avisar(T.errorCarga);
+    });
+  }
+
+  function borrar(d, nombre, boton) {
+    if (!window.confirm(D.rellenar(T.confirmarBorrar, { nombre }))) return;
+    boton.disabled = true;
+    avisar('');
+    estado.textContent = '';
+    apiRequest(`/admin/customers/${customerId}/documentos/${d.id}`, { method: 'DELETE' }).then(() => {
+      if (viva()) cargar();
+    }, (err) => {
+      if (!viva()) return;
+      boton.disabled = false;
+      avisarError(err, SITIOS_CLIENTE.TEXTOS.generico);
+    });
+  }
+
+  input.addEventListener('change', () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    avisar('');
+    estado.textContent = '';
+    // Como la foto del albarán: lo que la pantalla ya sabe rechazar, no se envía.
+    if (file.size === 0) { avisar(T.vacioFichero); input.value = ''; return; }
+    if (limites && limites.porFichero && file.size > limites.porFichero) {
+      avisar(D.rellenar(T.grande, { mb: D.mb(limites.porFichero) })); input.value = ''; return;
+    }
+    estado.textContent = T.subiendo;
+    subir.disabled = true;
+    apiRequest(`/admin/customers/${customerId}/documentos`, {
+      method: 'POST',
+      headers: { 'Content-Type': file.type || 'application/octet-stream', 'X-Nombre-Fichero': encodeURIComponent(file.name) },
+      body: file,
+    }).then(() => {
+      if (!viva()) return;
+      subir.disabled = false;
+      input.value = '';
+      estado.textContent = T.subido;
+      cargar();
+    }, (err) => {
+      if (!viva()) return;
+      subir.disabled = false;
+      input.value = '';
+      estado.textContent = '';
+      avisarError(err, SITIOS_CLIENTE.TEXTOS.generico);
+    });
+  });
+
+  cargar();
+}
+// SCRUM-1005d · FIN
+
 /**
  * SCRUM-1126 · FUSIONAR DOS CLIENTES DUPLICADOS: las piezas sin DOM del flujo de la ficha.
  *
@@ -415,11 +654,14 @@ async function renderCustomer360View(container, customerId) {
   // así que a un técnico ni se le pide (sería un 403) ni se le pinta la pestaña.
   let whatsapp = null;
   const pideWhatsapp = window.appUserRole === 'admin';
+  let documentos = null;
   try {
-    [data, historial, whatsapp] = await Promise.all([
+    [data, historial, whatsapp, documentos] = await Promise.all([
       apiRequest(`/admin/customers/${id}/detail`),
       apiRequest(`/admin/customers/${id}/historial`).catch(() => null),
       pideWhatsapp ? apiRequest(`/admin/customers/${id}/whatsapp`).catch(() => null) : null,
+      // SCRUM-1005d · la lista de documentos, para el número de la pestaña; aparte, como las dos de arriba.
+      apiRequest(`/admin/customers/${id}/documentos`).catch(() => null),
     ]);
   } catch {
     alertEl.textContent = 'Error al cargar el historial del cliente.';
@@ -723,6 +965,13 @@ async function renderCustomer360View(container, customerId) {
   // SCRUM-1132c · la sexta, igual que «Sitios»: sin número, y sus notas se piden al abrirla.
   // Rutas `requireRole('admin')`: al técnico ni se le pinta la pestaña ni se le piden.
   if (window.appUserRole === 'admin') tabsWrap.appendChild(makeTab(NOTAS_CLIENTE.TEXTOS.titulo, 'notas'));
+  // SCRUM-1005d · «Documentos (n)», con el mismo mecanismo que «Trabajos»: solo si la lista llegó.
+  // Al abrirla se vuelve a pedir (y su número se repinta al subir o borrar).
+  const tabDocumentos = documentos && Array.isArray(documentos.documentos)
+    ? makeTab(DOCUMENTOS_CLIENTE.tituloPestana(documentos.documentos.length), 'documentos')
+    : null;
+  if (tabDocumentos) tabsWrap.appendChild(tabDocumentos);
+  let peticionDocumentos = 0;
   wrap.appendChild(tabsWrap);
   wrap.appendChild(tabContent);
 
@@ -737,6 +986,12 @@ async function renderCustomer360View(container, customerId) {
     card.className = 'data-card';
     tabContent.appendChild(card);
     if (key === 'sitios') { pintarSitios(card); return; }
+    if (key === 'documentos') {
+      const esta = ++peticionDocumentos;
+      montarDocumentosDelCliente(card, id, () => esta === peticionDocumentos,
+        (n) => { tabDocumentos.textContent = DOCUMENTOS_CLIENTE.tituloPestana(n); });
+      return;
+    }
     if (key === 'notas') {
       const esta = ++peticionNotas;
       montarNotasDelCliente(card, id, () => esta === peticionNotas);

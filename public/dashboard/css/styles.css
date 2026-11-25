@@ -2701,6 +2701,10 @@ html, body { overflow-x: clip; }
 /* J3: SCRUM-1639c · las tarjetas de trabajos y presupuestos de la ficha del operario (`teamView.js`)
    son `role="button"`: la misma trampa de arriba, `.customers-card` pisa el `:focus-visible` global. */
 .customers-card[role="button"]:focus-visible { outline: none; box-shadow: var(--ring); }
+/* J3: SCRUM-1844 (AB6, cura por contenedor como SCRUM-1841 y SCRUM-1148) · Equipo (`teamView.js`):
+   «+ Añadir miembro» (`#btn-invite-member`, `btn-primary btn-sm`) medía 30,7-31,0 px de toque; la regla
+   se acota a la cabecera de la vista y `.btn-sm` global no se toca. Sólo el tamaño: el clic es de S1. */
+.equipo-cabecera > .btn-sm { min-height: 44px; }
 /* SCRUM-1692 · la fila ABIERTA: el mismo marcado de selección que `.quote-cliente-opcion[aria-pressed]`
    (borde de marca + un píxel por dentro + fondo suave), sin tokens nuevos ni sólo color (WCAG 1.4.1). */
 #po-lista > button.customers-card[aria-current="true"] {
@@ -5846,6 +5850,14 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
 .c360-desde { color:var(--neutral-400) }
 .c360-notas { font-size:12.5px;color:var(--neutral-500);margin-top:6px;font-style:italic }
 .c360-cabecera-acciones { display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0 }
+/* SCRUM-1841 (AB6, cura por contenedor como SCRUM-1148) · ficha 360: «+ Nuevo presupuesto» y los
+   demás botones de la cabecera medían 30,7-31,0 px de toque; la regla se acota a su contenedor y
+   `.btn-sm` global no se toca.
+   Y a 390 la fila no se partía (`flex-shrink:0`) y `overflow-x:clip` recortaba «+ Nuevo presupuesto» y «Fusionar» fuera de la pantalla. */
+.c360-cabecera-acciones > .btn-sm { min-height: 44px; }
+@media (max-width: 768px) {
+  .c360-cabecera-acciones { flex-shrink: 1; min-width: 0; }
+}
 .c360-kpi-valor { font-size:18px }
 .c360-verde { color:var(--green-600) }
 .c360-rojo { color:var(--red-600) }

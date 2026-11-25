@@ -211,7 +211,7 @@ export function construirCorreo({ volcado, respaldo, sha256 = null, ahora }) {
       + `${pct.toFixed(1)} % del tope${cerca ? ' — pronto no cabrá en un correo' : ''}`,
     cuerpo: `${cabecera}\n${medida}\nsha256: ${sha256}\n\n`
       + 'El adjunto va cifrado: sin BACKUP_ENCRYPTION_KEY no se puede restaurar. '
-      + 'Cómo se restaura: docs/RUNBOOKS.md, §R14.',
+      + 'Cómo se restaura: docs/RUNBOOKS.md, §R28 · Restaurar la base de datos desde un backup lógico.',
   };
 }
 

@@ -22,7 +22,7 @@
 // se escribe fichero: el día de la foto nº 9 deja de haber backup, del todo y en silencio.
 //
 // En base64 el factor es 1,34×, así que el mismo techo pasa a ~400 MB. El tope no desaparece —los
-// topes no desaparecen, se mueven—, y por eso está MEDIDO y escrito en `docs/RUNBOOKS.md` §R14 y
+// topes no desaparecen, se mueven—, y por eso está MEDIDO y escrito en `docs/RUNBOOKS.md` §R28 y
 // vigilado con un número en el guard.
 import { Buffer } from 'node:buffer';
 

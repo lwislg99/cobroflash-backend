@@ -43,3 +43,16 @@ Control rojo: el mismo guion sobre el máster ya aplicado sale «PARA: sha256 de
 Los siete puntos que 1778a §6 dejó sin redactar siguen igual: el título «Foto y audio», el punto (d) del alcance, la privacidad de los documentos, «Job» frente a `albaran`, la parte S (RGPD y permisos) y la duda del art. 30 del CCom. Cada uno pide su propio literal y su propia firma. Ningún código y ningún guard.
 
 **Sin medir:** yaqu.app (es el máster, no hay superficie que ver); el check obligatorio de este PR, porque lo abre y lo arma el bot después del empujón.
+
+## SCRUM-1778a · J2 · literal propuesto (A y B) para MEDIA-1, sin aplicar (escrito a posteriori en 1839c)
+
+**Medido contra:** `origin/main` = `123311beb24600b1db04371f83e3a67113e58de1` · 2026-11-25T01:51:45Z
+
+Lo escribe J4 en SCRUM-1839c, por encargo del orquestador del equipo de Javier. El tramo «0 · Tramo a (sin registro propio)» de este registro ya cuenta de dónde salió la propuesta, pero su cabecera no nombra «1778a» y la regla de Jira SCRUM-1839 c.22677 no la cuenta. Esta cabecera junta lo que dicen git y la entrega; no añade medición.
+
+- **Qué entró:** el commit `1235598d7799ea94f9cd17c9c0b5695fb157b188`, con un solo fichero: `docs/master/evidencias/SCRUM-1778/1778a-literal-propuesto.md` (+82).
+- **Con qué PR:** #3267, merge `283c8c87ae78212e0b83eae35ec3dad746106d66` (Jira, SCRUM-1778 c.22247).
+- **Qué se midió** (entrega en Jira, SCRUM-1778 c.22209, 2026-11-20 07:02:17Z, jv-j2de): «Guards 1294, 267, 273, 525d y 854: 38 de 38, sin fallos ni saltos.»
+- **Lo que 1778a NO hizo:** aplicar el literal. Lo dice su commit: «El máster no se toca: lo firma Javier y lo aplica 1778b.» Lo aplicó 1778b, el tramo que abre este registro.
+
+A9: comprobación → `tests/scrum1839-letra-con-tramo.test.mjs`
