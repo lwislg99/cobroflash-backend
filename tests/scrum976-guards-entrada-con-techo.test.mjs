@@ -101,6 +101,11 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: "\n    if (enCI) return { rojo: `PRESUPUESTO: ${informe} En CI esto",
     a: "\n    if (false) return { rojo: `PRESUPUESTO: ${informe} En CI esto",
     cae: 'SCRUM-1345 ④ter' },
+  // SCRUM-1811c · el censo del meta-guard sale otra vez de la lista: queda por debajo de su suelo.
+  { fichero: 'scripts/guards-entrada.mjs',
+    de: "  { fichero: 'tests/scrum757-la-declaracion-que-nadie-lee.test.mjs',\n    porque: 'toda declaración de mutación del árbol es legible para el meta-guard: una que no lo es lo deja en exit 2 en todos sus jobs' },\n",
+    a: '',
+    cae: 'SCRUM-976 ①' },
 ];
 
 // Los cinco de antes y los seis de SCRUM-976. Es la lista por la que se decidió, escrita a
