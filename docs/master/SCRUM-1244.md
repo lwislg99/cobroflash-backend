@@ -469,3 +469,42 @@ J6 (`jv-j6bf`, equipo de Javier). Carril «un jefe» (`node scripts/carriles.mjs
 - **El número de tramos, recalculado:** `node scripts/tanda-entera-por-tramos.mjs --plan` sobre `7fa6d89cb` da **1491 ficheros → 13 tramos de hasta 115** (control: `ls tests/*.test.mjs` cuenta 1491). Es el mismo 13 de la firma y de `c.20708` (1488 ficheros), así que el literal no cambia. La fecha de la medición va aquí y no dentro del bloque: el bloque es literal firmado.
 - **Casa con el script de hoy:** `--plan`, `--tramo i/n` y `--resumen n` (`scripts/tanda-entera-por-tramos.mjs:103-105`); el resumen sale 0 · 1 · 2 (`:178`).
 - No he tocado `docs/YAQU_MASTER.md` ni ninguna otra parte de `CLAUDE.md`. El master no recoge esta receta: la firma la pidió sólo en `CLAUDE.md`.
+
+## SCRUM-1244b · La línea de Git Bash, firmada: el diff exacto, sin aplicar (escrito a posteriori en 1839d)
+
+**Medido contra:** `origin/main` = `f23697aa1c7a7b9715ded3be545a50aaa1597706` · 2026-11-25T02:37:06Z
+
+Lo escribe J6 (jv-j6gd) en SCRUM-1839d, por encargo del orquestador del equipo de Javier. No añade medición: el tramo ya existe con una cabecera que la regla de SCRUM-1839 (c.22677) no reconoce, y aquí se APUNTA a él, no se copia.
+
+- **Dónde está:** la cabecera «## ⑧ 23-oct: la línea de Git Bash, firmada…» (hoy la línea 320).
+- **Qué entró:** el commit `1f845f4f073d526bd72271e67a90da7a8f9d225d` (este registro), que crea esa cabecera.
+- **Con qué PR:** #2743, merge `9a9518c2e42f50a3d95d884f076ed58e647750e6`.
+- **Qué se midió** (entrega en Jira, SCRUM-1244 c.20523, 2026-10-23T13:55:31Z, J4 · jv-j4q; el PR, «SIN LEER»): «Guards de registro en local: 123 de 123 · `guards:entrada` verde».
+
+A9: comprobación → `tests/scrum1839-letra-con-tramo.test.mjs`
+
+## SCRUM-1244c · La tanda entera no cabe en UN comando; por tramos sí (escrito a posteriori en 1839d)
+
+**Medido contra:** `origin/main` = `f23697aa1c7a7b9715ded3be545a50aaa1597706` · 2026-11-25T02:37:06Z
+
+Lo escribe J6 (jv-j6gd) en SCRUM-1839d. Apunta, no copia.
+
+- **Dónde está:** la cabecera «## ⑩ 23-oct: la tanda entera no cabe en UN comando…» (hoy la línea 377).
+- **Qué entró:** nueve commits con «SCRUM-1244c» en el asunto; la cabecera la crea `3d24e9c401e3e243e4dd206fbb361402d45e9c1e`, y el último es `a758020d3f8463cf8fcf9f49c76541866af5fdc4`.
+- **Con qué PR:** #2787, merge `ba587af0205aef949bdedc4b7d479e5ca598950e`.
+- **Qué se midió** (entrega en Jira, SCRUM-1244 c.20674, 2026-10-23T21:00:05Z, J6 · jv-j6au, que cita el sha `643622adc16b6170677f36aef73edba30003595f`, distinto de los nueve de arriba: no lo he cruzado): «1.482 ficheros · 12.397 tests · 20 fallos (de entorno del árbol anidado) · 2.020 s». El relevo (c.20708, jv-j6bd) da tras el merge «12.448 tests, 12.358 pasan, 0 caen, 90 se saltan».
+
+A9: comprobación → `tests/scrum1839-letra-con-tramo.test.mjs`
+
+## SCRUM-1244d · La receta de la tanda por tramos, aplicada a `CLAUDE.md` (escrito a posteriori en 1839d)
+
+**Medido contra:** `origin/main` = `f23697aa1c7a7b9715ded3be545a50aaa1597706` · 2026-11-25T02:37:06Z
+
+Lo escribe J6 (jv-j6gd) en SCRUM-1839d. Apunta, no copia.
+
+- **Dónde está:** la cabecera «## ⑪ 23-oct: la receta de la tanda por tramos, APLICADA a `CLAUDE.md`…» (hoy la línea 459).
+- **Qué entró:** el commit `7bf584a2cfe56ec7cf8e6bd7254abda97fb1bde3` (2 ficheros), que crea esa cabecera.
+- **Con qué PR:** #2802, merge `ca97f91ae3422f6d253b9f807032a1eaa778159d`.
+- **Qué se midió** (entrega en Jira, SCRUM-1244 c.20712, 2026-10-23T22:29:27Z, J6 · jv-j6bf; el PR aún no estaba abierto): «`CLAUDE.md` +5 / −0, con 0 bytes CR» · «**1491 ficheros → 13 tramos**» · «**333 tests: 331 pasan, 2 caen, 0 se saltan.**».
+
+A9: comprobación → `tests/scrum1839-letra-con-tramo.test.mjs`
