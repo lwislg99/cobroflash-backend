@@ -1,0 +1,117 @@
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+
+[banco] @390px · nombre largo «Administración de Fincas Soler y Asociados» · 5 acciones · 2 líneas de tinta · 0 acciones encima de la tinta · 0 fuera de la tarjeta · scrollWidth 390
+  caja del h2: x 87 y 113 w 282 h 55.8
+  tinta: x 87 y 116 w 270.5 h 21
+  tinta: x 87 y 143.9 w 107.5 h 21
+  ok     «✎ Editar» x 21 y 346.3 w 76.9 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «🔗 Portal» x 105.9 y 346.3 w 82 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «📇 Guardar en mis contactos» x 21 y 398.3 w 201.3 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «Fusionar con otro cliente» x 21 y 450.3 w 175 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «+ Nuevo presupuesto» x 204 y 450.3 w 153.8 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+
+[banco] @929px · nombre largo «Administración de Fincas Soler y Asociados» · 5 acciones · 3 líneas de tinta · 1 acciones encima de la tinta · 0 fuera de la tarjeta · scrollWidth 929
+  caja del h2: x 87 y 113 w 135 h 83.7
+  tinta: x 87 y 116 w 133.9 h 21
+  tinta: x 87 y 143.9 w 132.8 h 21
+  tinta: x 87 y 171.8 w 107.5 h 21
+  ENCIMA «✎ Editar» x 178.1 y 113 w 76.9 h 44 · ∩tinta 1445.1 px² · ∩caja 1931.6 px² · sale 0 px
+  ok     «🔗 Portal» x 263 y 113 w 82 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «📇 Guardar en mis contactos» x 353 y 113 w 201.3 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «Fusionar con otro cliente» x 562.3 y 113 w 175 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «+ Nuevo presupuesto» x 745.3 y 113 w 153.8 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+
+[banco] @1280px · nombre largo «Administración de Fincas Soler y Asociados» · 5 acciones · 3 líneas de tinta · 1 acciones encima de la tinta · 0 fuera de la tarjeta · scrollWidth 1280
+  caja del h2: x 87 y 113 w 135 h 83.7
+  tinta: x 87 y 116 w 133.9 h 21
+  tinta: x 87 y 143.9 w 132.8 h 21
+  tinta: x 87 y 171.8 w 107.5 h 21
+  ENCIMA «✎ Editar» x 178.1 y 113 w 76.9 h 44 · ∩tinta 1445.1 px² · ∩caja 1931.6 px² · sale 0 px
+  ok     «🔗 Portal» x 263 y 113 w 82 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «📇 Guardar en mis contactos» x 353 y 113 w 201.3 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «Fusionar con otro cliente» x 562.3 y 113 w 175 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «+ Nuevo presupuesto» x 745.3 y 113 w 153.8 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+
+[banco] @390px · nombre corto «Carmen Ruiz» · 5 acciones · 1 líneas de tinta · 0 acciones encima de la tinta · 0 fuera de la tarjeta · scrollWidth 390
+  caja del h2: x 87 y 113 w 282 h 27.9
+  tinta: x 87 y 116 w 111.4 h 21
+  ok     «✎ Editar» x 21 y 318.4 w 76.9 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «🔗 Portal» x 105.9 y 318.4 w 82 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «📇 Guardar en mis contactos» x 21 y 370.4 w 201.3 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «Fusionar con otro cliente» x 21 y 422.4 w 175 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «+ Nuevo presupuesto» x 204 y 422.4 w 153.8 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+
+[banco] @929px · nombre corto «Carmen Ruiz» · 5 acciones · 1 líneas de tinta · 1 acciones encima de la tinta · 0 fuera de la tarjeta · scrollWidth 929
+  caja del h2: x 87 y 113 w 135 h 27.9
+  tinta: x 87 y 116 w 111.4 h 21
+  ENCIMA «✎ Editar» x 178.1 y 113 w 76.9 h 44 · ∩tinta 426.3 px² · ∩caja 1224.8 px² · sale 0 px
+  ok     «🔗 Portal» x 263 y 113 w 82 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «📇 Guardar en mis contactos» x 353 y 113 w 201.3 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «Fusionar con otro cliente» x 562.3 y 113 w 175 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «+ Nuevo presupuesto» x 745.3 y 113 w 153.8 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+
+[banco] @1280px · nombre corto «Carmen Ruiz» · 5 acciones · 1 líneas de tinta · 1 acciones encima de la tinta · 0 fuera de la tarjeta · scrollWidth 1280
+  caja del h2: x 87 y 113 w 135 h 27.9
+  tinta: x 87 y 116 w 111.4 h 21
+  ENCIMA «✎ Editar» x 178.1 y 113 w 76.9 h 44 · ∩tinta 426.3 px² · ∩caja 1224.8 px² · sale 0 px
+  ok     «🔗 Portal» x 263 y 113 w 82 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «📇 Guardar en mis contactos» x 353 y 113 w 201.3 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «Fusionar con otro cliente» x 562.3 y 113 w 175 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «+ Nuevo presupuesto» x 745.3 y 113 w 153.8 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+
+[app] @390px · nombre largo «Administración de Fincas Soler y Asociados» · 5 acciones · 2 líneas de tinta · 0 acciones encima de la tinta · 0 fuera de la tarjeta · scrollWidth 390
+  caja del h2: x 99 y 135 w 258 h 55.8
+  tinta: x 99 y 138 w 221.2 h 21
+  tinta: x 99 y 165.9 w 156.8 h 21
+  ok     «✎ Editar» x 33 y 368.3 w 76.9 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «🔗 Portal» x 117.9 y 368.3 w 82 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «📇 Guardar en mis contactos» x 33 y 420.3 w 201.3 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «Fusionar con otro cliente» x 33 y 472.3 w 175 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «+ Nuevo presupuesto» x 33 y 524.3 w 153.8 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+
+[app] @929px · nombre largo «Administración de Fincas Soler y Asociados» · 5 acciones · 1 líneas de tinta · 0 acciones encima de la tinta · 1 fuera de la tarjeta · scrollWidth 929
+  caja del h2: x 359 y 143 w 525 h 27.9
+  tinta: x 359 y 146 w 381.7 h 21
+  ok     «✎ Editar» x 293 y 292.4 w 76.9 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «🔗 Portal» x 377.9 y 292.4 w 82 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «📇 Guardar en mis contactos» x 467.9 y 292.4 w 201.3 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «Fusionar con otro cliente» x 677.2 y 292.4 w 175 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  SALE   «+ Nuevo presupuesto» x 860.2 y 292.4 w 153.8 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 128.9 px
+
+[app] @1280px · nombre largo «Administración de Fincas Soler y Asociados» · 5 acciones · 3 líneas de tinta · 1 acciones encima de la tinta · 0 fuera de la tarjeta · scrollWidth 1280
+  caja del h2: x 359 y 143 w 135 h 83.7
+  tinta: x 359 y 146 w 133.9 h 21
+  tinta: x 359 y 173.9 w 132.8 h 21
+  tinta: x 359 y 201.8 w 107.5 h 21
+  ENCIMA «✎ Editar» x 450.1 y 143 w 76.9 h 44 · ∩tinta 1445.1 px² · ∩caja 1931.6 px² · sale 0 px
+  ok     «🔗 Portal» x 535 y 143 w 82 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «📇 Guardar en mis contactos» x 625 y 143 w 201.3 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «Fusionar con otro cliente» x 834.3 y 143 w 175 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «+ Nuevo presupuesto» x 1017.3 y 143 w 153.8 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+
+[app] @390px · nombre corto «Carmen Ruiz» · 5 acciones · 1 líneas de tinta · 0 acciones encima de la tinta · 0 fuera de la tarjeta · scrollWidth 390
+  caja del h2: x 99 y 135 w 258 h 27.9
+  tinta: x 99 y 138 w 111.4 h 21
+  ok     «✎ Editar» x 33 y 340.4 w 76.9 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «🔗 Portal» x 117.9 y 340.4 w 82 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «📇 Guardar en mis contactos» x 33 y 392.4 w 201.3 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «Fusionar con otro cliente» x 33 y 444.4 w 175 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «+ Nuevo presupuesto» x 33 y 496.4 w 153.8 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+
+[app] @929px · nombre corto «Carmen Ruiz» · 5 acciones · 1 líneas de tinta · 0 acciones encima de la tinta · 1 fuera de la tarjeta · scrollWidth 929
+  caja del h2: x 359 y 143 w 525 h 27.9
+  tinta: x 359 y 146 w 111.4 h 21
+  ok     «✎ Editar» x 293 y 292.4 w 76.9 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «🔗 Portal» x 377.9 y 292.4 w 82 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «📇 Guardar en mis contactos» x 467.9 y 292.4 w 201.3 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «Fusionar con otro cliente» x 677.2 y 292.4 w 175 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  SALE   «+ Nuevo presupuesto» x 860.2 y 292.4 w 153.8 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 128.9 px
+
+[app] @1280px · nombre corto «Carmen Ruiz» · 5 acciones · 1 líneas de tinta · 1 acciones encima de la tinta · 0 fuera de la tarjeta · scrollWidth 1280
+  caja del h2: x 359 y 143 w 135 h 27.9
+  tinta: x 359 y 146 w 111.4 h 21
+  ENCIMA «✎ Editar» x 450.1 y 143 w 76.9 h 44 · ∩tinta 426.3 px² · ∩caja 1224.8 px² · sale 0 px
+  ok     «🔗 Portal» x 535 y 143 w 82 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «📇 Guardar en mis contactos» x 625 y 143 w 201.3 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «Fusionar con otro cliente» x 834.3 y 143 w 175 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px
+  ok     «+ Nuevo presupuesto» x 1017.3 y 143 w 153.8 h 44 · ∩tinta 0 px² · ∩caja 0 px² · sale 0 px

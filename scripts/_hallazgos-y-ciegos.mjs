@@ -175,3 +175,30 @@ export async function recorrerCasos(casos, juzgarCaso, nombrar = (caso) => Strin
   decir(linea);
   return { hallazgos, ciegos, recorridos, lanzaron, lanzaronConHallazgos, linea };
 }
+
+/**
+ * SCRUM-1846 · UN ARRANQUE QUE NO LLEGÓ A MEDIR SALE CON 2, NO CON 1.
+ *
+ * Sin `dist/` (un worktree recién creado no lo trae), un guard que importa de él moría con el
+ * `MODULE_NOT_FOUND` de node, y node sale con 1: el mismo código que «hay hallazgos». Se leía como
+ * un rojo del área que mide, y no había medido nada.
+ *
+ * Se llama la PRIMERA en el cuerpo del guard, y lo que viene de `dist/` se importa DESPUÉS con
+ * `await import(…)`: un `import … from '../dist/…'` estático falla al enlazar, antes de que corra una
+ * sola línea, y ahí no llega nada. Sólo cambia el módulo que falta (`ERR_MODULE_NOT_FOUND` de ESM,
+ * `MODULE_NOT_FOUND` de `require`): cualquier otro error sigue el camino de siempre de node, con su
+ * traza y su 1, porque `uncaughtExceptionMonitor` mira sin quitarle a node el manejo.
+ */
+export const CODIGOS_DE_MODULO_QUE_FALTA = Object.freeze(['ERR_MODULE_NOT_FOUND', 'MODULE_NOT_FOUND']);
+
+export function vigilarArranque(decir = (linea) => console.error(linea)) {
+  process.on('uncaughtExceptionMonitor', (e) => {
+    if (!CODIGOS_DE_MODULO_QUE_FALTA.includes(e?.code)) return;
+    const queFalto = String(e?.message ?? e).split('\n')[0];
+    const v = veredictoDe({ hallazgos: [], ciegos: [`no arrancó: falta un módulo (${queFalto})`] });
+    decir(`🔴 NO SUPE MEDIR: el guard no llegó a arrancar. ${queFalto}`);
+    decir('   Si lo que falta es de dist/: npm run build (un worktree recién creado no lo trae).');
+    decir(v.linea);
+    process.exit(v.codigo);
+  });
+}

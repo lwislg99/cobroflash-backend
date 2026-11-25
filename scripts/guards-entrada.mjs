@@ -157,6 +157,14 @@ export const GUARDS = [
   // TODOS los PR (24-nov-2026, `scrum-1787aa-…`). Sin `dist` ni base, ~2 s (siete hijos de node).
   { fichero: 'tests/scrum1801-guard-rama-con-numero.test.mjs',
     porque: 'una rama `scrum-<dígito>…` sin número para `numeroDeRama` tumba scrum804 en todos los PR' },
+  // SCRUM-1811c · el decimoséptimo. Su caso del árbol real llama a `declaracionesIlegibles()`, la MISMA
+  // función con la que el censo del meta-guard (`--solo-censo` y las tres partes del CI) sale 2. Sin
+  // `dist`, sin base y sin hijos: ~2,7 s en CI, ~7 s aquí con la CPU al 100 %. El caso que lo decide:
+  // el 24-nov-2026 #3419 se empujó con este comando en verde y una plantilla `${…}` en el `de` de un
+  // catálogo; el meta-guard salió 2 en sus 4 jobs y el build cayó en 745, 757 y 765 (run 45463680370).
+  // Lo que NO trae del `--solo-censo`: el CIEGO por otra pasada viva y el suelo de población.
+  { fichero: 'tests/scrum757-la-declaracion-que-nadie-lee.test.mjs',
+    porque: 'toda declaración de mutación del árbol es legible para el meta-guard: una que no lo es lo deja en exit 2 en todos sus jobs' },
 ];
 
 // TECHO de este comando ENTERO, en milisegundos de reloj. Lo hace cumplir el propio comando (plazo
@@ -175,7 +183,8 @@ export const PRESUPUESTO_MS = TECHO_MS;
 // SUELO Nº1. Un agregador que se queda corto es PEOR que no tenerlo: da la tranquilidad entera con
 // la cobertura a medias, y quien lo corre en verde deja de mirar. Si mañana alguien borra una línea
 // de la lista de arriba «porque molestaba», esto para.
-export const MINIMO = 15;
+// SCRUM-1811c · de 15 a 17: el 1801 entró sin subirlo, y sin subirlo quitar el decimoséptimo no tumba nada.
+export const MINIMO = 17;
 
 /**
  * SCRUM-1152c · LOS QUE TUMBAN PR Y NO ESTÁN EN LA LISTA. Medidos en `docs/master/SCRUM-1560.md`: de
