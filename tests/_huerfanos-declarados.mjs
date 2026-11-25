@@ -554,6 +554,19 @@ export const DECLARADOS = [
     exports: ['ACCION_DEL_SELLADO_FALLIDO', 'entraEnElReintento', 'ESPERA_INICIAL_S', 'esperaTrasFalloS', 'fechaDeCorte',
       'LOTE_DEL_REINTENTO', 'plazoDeAgotamientoS', 'REINTENTO_ACTIVO_DESDE', 'SUELO_DE_LA_FECHA_DE_CORTE', 'TOPE_DE_FALLOS',
       'turnoDe'] },
+  // SCRUM-1780 (S1, 25-nov-2026) · `facturaDesdeParte.ts` pasa a VIVO al montarse
+  // POST /admin/partes/:id/facturar en partes.routes.ts, y sus exports entran en esta población. El
+  // fichero es de J1 y del camino de emisión (regla 40): S1 no le quita el `export`; se declara y
+  // queda propuesto a J1. Hoy de fuera solo los nombra tests/scrum1780c-simultanea-postgres.test.mjs.
+  { modulo: 'src/modules/invoicing/domain/facturaDesdeParte.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-11-25',
+    motivo: 'Lo ejecuta `facturarParte` (el handler montado); el `export` es superficie que hoy solo consume su test de la carrera contra Postgres. '
+      + 'Quitarlo es de J1 (carril y camino de emisión), no de S1.',
+    exports: ['facturarParteDeMerchant', 'lineasDelParteParaFactura'] },
+  { modulo: 'src/modules/invoicing/domain/facturaDesdeParte.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-11-25',
+    motivo: 'Los códigos de error de la factura desde el parte, única fuente del término; hoy los lee su propio módulo y su test.',
+    exports: ['ERRORES_FACTURA_DESDE_PARTE'] },
   { modulo: 'src/modules/invoicing/domain/tipoDocumento.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
