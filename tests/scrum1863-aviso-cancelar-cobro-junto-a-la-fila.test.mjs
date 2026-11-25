@@ -84,12 +84,15 @@ async function ficha(fallos) {
   const body = banco.ctx.document.body;
   const texto = (n) => String(n.textContent || '').trim();
   const clases = (n) => String(n.className || '').split(/\s+/);
-  // La fila de la factura: el `.job-doc-row` que nombra su número. Si no la encuentro, CIEGO.
-  const fila = todos(body).find((n) => clases(n).includes('job-doc-row') && String(n.textContent || '').includes(NUMERO));
-  assert.ok(fila, '🔴 CIEGO: no encuentro la fila de la factura');
+  // La fila de la factura: el `.job-doc-row` que contiene sus acciones (el trabajo lleva UNA factura).
+  // Se busca subiendo por `parentNode`: el banco no da `textContent` a lo que nace de un `innerHTML`, así
+  // que buscarla por su número la deja CIEGA (medido al escribir este test).
+  const acts = todos(body).find((n) => clases(n).includes('jobdet-inv-actions'));
+  assert.ok(acts, '🔴 CIEGO: no encuentro las acciones de la factura');
+  let fila = acts;
+  while (fila && !clases(fila).includes('job-doc-row')) fila = fila.parentNode;
+  assert.ok(fila, '🔴 CIEGO: las acciones de la factura no cuelgan de ningún .job-doc-row');
   const abrirMenu = async () => {
-    const acts = todos(fila).find((n) => clases(n).includes('jobdet-inv-actions'));
-    assert.ok(acts, '🔴 CIEGO: no encuentro las acciones de la fila');
     const k = todos(acts).find((n) => clases(n).includes('overflow-trigger'));
     if (k) await pulsar(k);
   };
@@ -107,10 +110,10 @@ test('SCRUM-1863 · 🔴 cada error de «Cancelar cobro» se pinta DENTRO de la 
   ];
   for (const [fallo, literal] of casos) {
     const f = await ficha([fallo]);
-    // CONTROL POSITIVO del instrumento `dentroDeLaFila`: el número de la factura SÍ está en la fila, y
-    // la barra de estado de la ficha (fuera de toda fila) NO.
-    const numero = f.conTexto(NUMERO)[0] || [...f.fila.children].find(Boolean);
-    assert.ok(numero && f.dentroDeLaFila(numero), '🔴 CONTROL POSITIVO: el instrumento no ve dentro de la fila');
+    // CONTROL POSITIVO del instrumento `dentroDeLaFila`: «Marcar como PAGADA», buscado desde el body y no
+    // desde la fila, SÍ está en ella; el body (que contiene la barra de estado de arriba) NO.
+    const marcar = f.conTexto('Marcar como PAGADA')[0];
+    assert.ok(marcar && f.dentroDeLaFila(marcar), '🔴 CONTROL POSITIVO: el instrumento no ve dentro de la fila');
     assert.equal(f.dentroDeLaFila(f.body), false, '🔴 CONTROL NEGATIVO: el instrumento cree que el body está en la fila');
     await f.abrirMenu();
     const b = f.boton();
