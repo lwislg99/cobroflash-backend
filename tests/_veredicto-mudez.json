@@ -39,6 +39,7 @@
     "scrum1787e-conceptos-en-movil.test.mjs": ["VIVO","811fb394cf6dc092"],
     "scrum1787i-vencimiento-y-formas-de-pago.test.mjs": ["VIVO","c2094add4b2617b5"],
     "scrum1843-marcar-cobrada-44.test.mjs": ["VIVO","cea7b65ed0617354"],
+    "scrum1849-lista-facturas-44.test.mjs": ["VIVO","d31ac087805f11d4"],
     "scrum188-turno-staging.test.mjs": ["VIVO","eeca922cabd4cb21"],
     "scrum191-paid-via.test.mjs": ["VIVO","50d2542b26d22087"],
     "scrum195-url-bd-sin-fuga.test.mjs": ["VIVO","35b29e0a3560132e"],
