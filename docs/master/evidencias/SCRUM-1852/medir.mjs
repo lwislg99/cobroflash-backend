@@ -132,6 +132,9 @@ try {
           console.log(`  ${f.conTinta > 0 ? 'ENCIMA' : f.sale > 0 ? 'SALE  ' : 'ok    '} «${f.texto}» x ${f.caja.x} y ${f.caja.y} w ${f.caja.w} h ${f.caja.h} · ∩tinta ${f.conTinta} px² · ∩caja ${f.conCaja} px² · sale ${f.sale} px`);
         }
       }
+      // La vista entra con un fundido: sin esperar a que acabe, la captura sale a medio pintar
+      // (cicatriz J2 del 2026-11-21). Las cajas no dependen de la opacidad; la captura sí.
+      if (CAPTURAS && cual === 'largo') await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => null))));
       if (CAPTURAS && cual === 'largo') await page.screenshot({ path: path.join(CAPTURAS, `360-${ancho}${marco === 'app' ? '-app' : ''}.png`), fullPage: true });
       await page.close();
     }
