@@ -60,6 +60,7 @@ import { zonaDelMerchant, diaNaturalEn } from '../../../../core/zonaDelMerchant'
 import { AVISOS_DEL_DICTADO, sanearDictadoDelParte } from '../../domain/parteDictado';
 import { isAiConfigured, suggestLineasDeParte } from '../../../ai/domain/ai.service';
 import { exigirNombreFirmante, resolverCalidadFirmante } from '../../domain/albaranFirmante';
+import { facturarParte } from '../../../invoicing/domain/facturaDesdeParte'; // SCRUM-1780c (J1)
 
 const router = Router();
 
@@ -943,5 +944,8 @@ router.post('/:id/dictado', async (req: any, res) => {
     return res.status(500).json({ error: 'internal_error' });
   }
 });
+
+// SCRUM-1780c · factura desde el parte firmado (GO del fundador, SCRUM-1780 c.22237); la lógica es de J1
+router.post('/:id/facturar', requireRole('admin'), facturarParte);
 
 export default router;
