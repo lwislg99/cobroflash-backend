@@ -2229,3 +2229,20 @@ A9: comprobación → `tests/scrum824-temporales-fuera-del-arbol.test.mjs`
 - **NO hecho aquí:** no se ha medido ninguna base (no tengo claves y el encargo lo prohíbe). Tampoco he corrido la suite entera: no cabía en el tope de contexto, y se lo dije al orquestador antes de empezar. Corrí `guards:entrada` y 1294, 267, 273, 525d y 854; sus cifras están en el comentario de entrega del ticket. La segunda pieza del encargo (el tramo 1730h en `docs/master/SCRUM-1730.md`) no la he empezado y queda para un relevo.
 
 A9: aviso → cicatriz J1 «Crucé el tope de 140k del encargo (142.776) al acabar de leer Jira, sin haber escrito nada: me medí al acabar el arranque (117.610) y no otra vez hasta Jira, y el PASO 0 con las lecturas de las dos entradas se comió 25k (SCRUM-665i, jv-j1kn)» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
+
+# SCRUM-665j · 25-nov-2026 · J5 (jv-j5gq) · preparar el cierre: la pregunta 3 ya está en 1264, y el límite de las facturas anteriores a 665e
+
+**Medido contra:** `origin/main` = `4c8986e5b565ba5f0418a3279e49bb0bfb10cdc2` · 2026-11-25T02:22:00Z (hora de GitHub). Rama `scrum-665j-preparar-cierre`, nacida en ese mismo commit. Solo documentos: este tramo.
+
+- **① La pregunta 3 de la descripción («el hash sella el registro, no el PDF: ¿basta o el documento entregado también tiene que ser inmutable?»): NO la he publicado en SCRUM-1264, porque ya está allí.** Es la D1/P20 («¿El PDF que se entrega también tiene que ser inmutable?»), que vive en la descripción de 1264. El fundador la contestó el 23-sep con la opción A (SCRUM-665 c.16647), y en 1264 pasó a ser una CONFIRMACIÓN para el asesor: «hemos decidido archivar el PDF tal como se entregó y su huella; ¿es suficiente para el art. 19 ROF?» (c.21184; recogida en c.21663 y c.21741). La custodia del PDF congelado es la fila 53 (c.22471).
+  - Cómo se midió: se buscaron «PDF», «inmutab» y «665» en los 35 comentarios de 1264 (35 de 35, igual que el total de Jira). Salieron 9, y uno es un falso positivo dentro de un sha. El control positivo fue «asesor», que aparece en 35 de 35. La lectura la hizo un subagente, y la descripción de 1264 no la he leído yo.
+  - **Desfase que queda:** la fila 53 dice «el guardado congelado está en #3201 (abierto)» y «hoy en main el PDF se regenera si falta en disco». Desde el 24-nov las dos frases son falsas: #3201 está mergeado (c.22672). No lo he corregido en 1264 porque el encargo era no duplicar. Si se corrige, lo decide el orquestador.
+- **② Las facturas emitidas ANTES de 665e:** lo medido y la pregunta al fundador están en **SCRUM-665 c.22710**. En corto:
+  - Con `pdf_sha256` NULL, `ensureInvoicePdf` (`src/lib/invoicing.ts:84-94`) llama SIEMPRE a `generarYCongelar` (l.97-170), sin mirar si había fichero.
+  - `generarYCongelar` pinta con el código de ese día y mezcla columnas congeladas con datos vivos. Son vivos el emisor o el cliente cuando la factura es anterior a sus escritores, y siempre la marca demo, la zona horaria, el portón del QR y los bytes del logo.
+  - Después sella la sha256 y ya no se regenera.
+  - Confirma c.22672. Opciones para el fundador: (a) dejarlo escrito como límite conocido, que es la recomendada; (b) congelarlas ya con una tarea única, que es STOP porque es camino de emisión y producción; (c) otra.
+  - **Sin medir:** cuántas facturas sin huella hay en cada base. Las «4 en producción, de prueba» son un dato del orquestador.
+- **NO hecho:** no he corrido la suite entera. El contexto llegó a 135.302 antes de escribir nada, con un tope de 145k. Sí corrí `npm run guards:entrada`.
+
+A9: aviso → A10 «El coste no es lo que entra en el chat: es lo que el chat arrastra.» — no se pudo comprobar: medí 108.084 al acabar el arranque y 135.302 tras leer seis trozos de código y una descripción, sin haber escrito nada; ningún guard del repositorio ve el contexto de una sesión

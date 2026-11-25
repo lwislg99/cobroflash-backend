@@ -120,3 +120,16 @@ comentario.
 - No he corrido la tanda completa: la dirigida y los guards de suite, abajo en el comentario de Jira.
 
 A9: comprobación → `tests/scrum1251b-el-zip-dice-cuantas-facturas.test.mjs`
+
+## SCRUM-1251a · Desde dónde se descarga el `evidencias.zip` (PROPUESTA) (escrito a posteriori en 1839d)
+
+**Medido contra:** `origin/main` = `f23697aa1c7a7b9715ded3be545a50aaa1597706` · 2026-11-25T02:37:06Z
+
+Lo escribe J6 (jv-j6gd) en SCRUM-1839d, por encargo del orquestador del equipo de Javier. No añade medición: el tramo ya existe con una cabecera que la regla de SCRUM-1839 (c.22677) no reconoce, y aquí se APUNTA a él, no se copia.
+
+- **Dónde está:** la cabecera «# SCRUM-1251 · El `evidencias.zip` no lo ofrece ninguna pantalla…» (hoy la línea 1), hasta «## 1251b».
+- **Qué entró:** el commit `919676374ed573d2faec7a819e5356166948c6c5` (4 ficheros), que crea esa cabecera.
+- **Con qué PR:** #2786, merge `d11981b95f70a0c4ac284a8a9b04a8d99f895841`.
+- **Qué se midió** (entrega en Jira, SCRUM-1251 c.20672, 2026-10-23T20:56:54Z, J4 · jv-j4x; no cita el PR): «da **0** coincidencias» · «`libros/recibidas.csv` da **3**» · «**7 ficheros**».
+
+A9: comprobación → `tests/scrum1839-letra-con-tramo.test.mjs`

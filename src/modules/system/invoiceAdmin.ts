@@ -39,8 +39,8 @@ export async function listInvoicesAdmin(
    *
    * 🔴 Y NO LOS ESCONDE: su sitio es **Cobros** (diseño §B4). Comprobado ANTES de excluirlos, que
    * era el suelo de este ticket: `cobros.service.ts` lista **la unión** de todo `Charge` MÁS toda
-   * `Invoice` con `chargeId: null` —que hoy son todas, porque nadie escribe ese campo— y **no
-   * filtra por `type`**. Los 44 siguen alcanzables.
+   * `Invoice` con `chargeId: null` —lo escriben `ensureInvoiceForCharge` y `sendInvoicePaymentRequest`;
+   * las enlazadas salen por su `Charge`— y **no filtra por `type`**. Los 44 siguen alcanzables.
    *
    * Si Cobros listara solo `Charge`, excluirlos aquí los habría borrado del producto: un cobro por
    * transferencia o efectivo **no crea `Charge`** (SCRUM-441). Ese módulo ya lo dice con todas las
