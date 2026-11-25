@@ -606,3 +606,16 @@ este test, por 5 escrituras hechas desde fuera con `b.base` (:136, :138, :159-16
 
 - La tarea de **sólo refresco** cada 15 min y la (B) `s<N>-<sufijo>` de `validarNombre`: el orquestador decide que
   vayan en UN PR, DESPUÉS de que el fundador cree la tarea (escribe en la ruta `deny`). Sin su sí, no se construye.
+
+## SCRUM-1549b · La puerta `sesion.mjs`, re-medida el 24-oct (escrito a posteriori en 1839d)
+
+**Medido contra:** `origin/main` = `f23697aa1c7a7b9715ded3be545a50aaa1597706` · 2026-11-25T02:37:06Z
+
+Lo escribe J6 (jv-j6gd) en SCRUM-1839d, por encargo del orquestador del equipo de Javier. No añade medición: el tramo ya existe con una cabecera que la regla de SCRUM-1839 (c.22677) no reconoce, y aquí se APUNTA a él, no se copia.
+
+- **Dónde está:** la cabecera «# SCRUM-1549 · La puerta `sesion.mjs`, re-medida el 24-oct…» (hoy la línea 1) y sus secciones 0 a 7, hasta la cabecera «# SCRUM-1549 · El cerrojo de identidad…».
+- **Qué entró:** tres commits con «SCRUM-1549b» en el asunto, un fichero cada uno (este registro): `526aeff644fb1d1e234432e54fb36a0aa613fd76` (crea esa cabecera), `c5b330bbadff51533284be5f1ae5988ebcb32094` y `c4f1938331d2675880799def26019372b95858d7`.
+- **Con qué PR:** #2831, merge `15a0535ee9ff96225001aa7510e6e48f8b83bafc`.
+- **Qué se midió** (entrega en Jira, SCRUM-1549 c.20760, 2026-10-24T10:55:59Z, J3 · jv-j3bb): «`ALTERADO`, código 2» · «Muerta desde el merge #1992, 2026-09-29T17:39:30Z» · «**9 merges** que tocan `sesion.mjs`» · «cayó por 1 de 11.437». El comentario no cita el PR.
+
+A9: comprobación → `tests/scrum1839-letra-con-tramo.test.mjs`
