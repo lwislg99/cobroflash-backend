@@ -2689,6 +2689,10 @@ html, body { overflow-x: clip; }
 /* J3: SCRUM-1639c · las tarjetas de trabajos y presupuestos de la ficha del operario (`teamView.js`)
    son `role="button"`: la misma trampa de arriba, `.customers-card` pisa el `:focus-visible` global. */
 .customers-card[role="button"]:focus-visible { outline: none; box-shadow: var(--ring); }
+/* J3: SCRUM-1844 (AB6, cura por contenedor como SCRUM-1841 y SCRUM-1148) · Equipo (`teamView.js`):
+   «+ Añadir miembro» (`#btn-invite-member`, `btn-primary btn-sm`) medía 30,7-31,0 px de toque; la regla
+   se acota a la cabecera de la vista y `.btn-sm` global no se toca. Sólo el tamaño: el clic es de S1. */
+.equipo-cabecera > .btn-sm { min-height: 44px; }
 /* SCRUM-1692 · la fila ABIERTA: el mismo marcado de selección que `.quote-cliente-opcion[aria-pressed]`
    (borde de marca + un píxel por dentro + fondo suave), sin tokens nuevos ni sólo color (WCAG 1.4.1). */
 #po-lista > button.customers-card[aria-current="true"] {
