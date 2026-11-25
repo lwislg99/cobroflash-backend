@@ -1,6 +1,6 @@
 # SCRUM-1859 · La cola única pasa a la ficha de la versión en curso, y la línea fija de mantenimiento e instrumentos
 
-**Medido contra:** `origin/main` = `61163dfcf08c715600babc34f114508c1d77057d` · 2026-11-25T15:12:00Z
+**Medido contra:** `origin/main` = `89bb285dd0090f72efdc4bd1bea08296273f0c6f` · 2026-11-25T15:17:34Z
 
 A9: aviso → A10 «Cero resultados con tu vocabulario no es silencio del documento.» — no se pudo comprobar: ningún guard sabe con qué abreviaturas nombra el máster a una de sus partes; el `grep` del encargo («Parte U», «Sprint Registry», «cola única») no veía «en U» (máster :1840 y :1847, `CLAUDE.md`:71) ni el espejo `.agents/skills/`, y lo cazó ampliarlo antes de escribir
 
