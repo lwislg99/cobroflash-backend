@@ -205,6 +205,55 @@ Mutaciones: catálogo → `tests/scrum1005b-documentos-cliente.test.mjs`
 
 **Test:** `tests/scrum1005b-documentos-cliente.test.mjs` suma el caso «el técnico ve y sube, pero NO borra»: por la ruta real, el técnico recibe 200 en la lista, 201 al subir y 403 al borrar, el documento sigue; el admin, 204 (positivo del mismo camino). 15/15. Mutación nueva al catálogo: quitar `requireRole('admin')` del DELETE. Las tres del catálogo, pasadas con `aplicarUna` de `scripts/meta-guard-mutaciones.mjs` (línea base limpia de la casa): las tres VIVAS (tumban el test); `git status` después, sólo mis cambios.
 
+## SCRUM-1005d · J2 · la pestaña «Documentos» de la ficha del cliente (relevo jv-j2df → jv-j2dh)
+
+**Medido contra:** `origin/main` = `dff849bc78e0a8c1f1e32e5e18e2e17296c63ae5` · 2026-11-20T16:32:15Z (hora de GitHub; sesión J2 `jv-j2dh`, por encargo del orquestador `cobroflash-backend-c7`). Parte del commit local de `jv-j2df` `aedd87f21887bcfd7d6da59998f5857bbccc339e` (padre `0142551fb`), traído con `git merge` y no con `--ff-only`: main había avanzado #3275 (solo docs de SCRUM-1771, 8 ficheros, ninguno de este tramo).
+
+A9: comprobación → `tests/scrum757-la-declaracion-que-nadie-lee.test.mjs`
+
+**Skill UI:** cargada (`yaqu-premium-ui`, antes de tocar `customerDetailView.js`)
+
+Mutaciones: catálogo → `tests/scrum1005d-pestana-documentos.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1005b-documentos-cliente.test.mjs`
+
+**Literales:** los 14 de SCRUM-1005 c.22192, byte a byte (comparados por punto de código con `docs/master/evidencias/SCRUM-1005/1005c-textos-propuestos.md`, la columna A que cita c.22192: `🗑` es U+1F5D1 sin selector de variante y `…` es U+2026, igual en la vista, la ficha y el test). Ficha: `docs/microcopy/2026-11-20-SCRUM-1005-documentos-del-cliente.md`. La fila 10 está firmada y NO se aplica (no existe diálogo de borrar cliente): en la ficha va como nota, no como cita. La fila 13 es «sin texto». `CUERPO_ILEGIBLE` → el genérico del panel. `docs/MICROCOPY_APROBADA_SIN_APLICAR.md` no se toca: está congelado desde SCRUM-709. Ningún literal faltó ni se inventó.
+
+**Permisos (c.22192):** ver y subir, todo el equipo; borrar, solo admin (botón y confirmación solo si `appUserRole === 'admin'`; el `DELETE` ya lleva `requireRole('admin')` desde 1005b).
+
+**Lo que hizo jv-j2df (commit aedd87f):** la pestaña en `public/dashboard/js/customerDetailView.js` (bloque marcado `SCRUM-1005d · INICIO/FIN`, sin `style=` ni `on*=` en cadenas, clases de «Sitios»), `limites` en bytes en `GET /admin/customers/:id/documentos` (`customersAdmin.routes.ts`) para que `{mb}` salga de las constantes, la ficha de microcopy y los tests (`tests/scrum1005d-pestana-documentos.test.mjs` nuevo; `tests/scrum1005b-documentos-cliente.test.mjs` con el caso de `limites`, visto en rojo antes).
+
+**Lo que hice yo (jv-j2dh):**
+
+1. **Dos declaraciones de mutación de j2df estaban CIEGAS.** Las cuatro decían `fichero: VISTA` (un identificador): el lector estático de la casa (`lecturaDeDeclaraciones`) las dejaba en `incompletas`, y `scrum757` caía nombrando a `scrum1005d` (rojo visto en local reintroduciendo el identificador). Ahora es la ruta literal. Además, el `cae` de la del literal («los 14 textos son los de c.22192») no era subcadena de ningún nombre de test, y el ancla del `confirm` tenía 8 espacios donde el código tiene 4: `aplicarUna` la dio CIEGA («el ancla no está… caducó»). Las dos, corregidas.
+2. **Mutación nueva** en el catálogo de 1005b: «`limites` desaparece del GET» (`return res.json({ documentos });`).
+3. **Las 8 mutaciones** (4 de 1005d + 4 de 1005b), con `correr` + `aplicarUna` de `scripts/meta-guard-mutaciones.mjs` sobre la línea base limpia (25 y 16 pasados, 0 caídos, 0 saltados): las 8 `ok:true` (tumban su test). `git status` después: `src/` y `public/` sin diff.
+4. **`scrum1185`:** rojo visto (11 casos, 2 caen). ② GET y POST de documentos ya tienen consumidor → a `retiradas` de `scripts/_sin-consumir-declarados.json` con su motivo. ① traía 4 piezas ciegas nuevas: 3 `ciega-llamada-opaca` porque la pestaña llamaba con la ruta en una variable → **arreglado en el código** (la ruta escrita en cada `apiRequest`; `base` queda solo para el enlace de descarga, con su comentario). La cuarta, `ciega-lector-cuerpo · POST /admin/customers/:id/documentos`, es un límite de la sonda (el cuerpo es el fichero en binario y el nombre va en `X-Nombre-Fichero`): declarada en `declaradas`, carril J2, SCRUM-1005, como las de «Sitios». Después, 11/11.
+5. **`scrum700`** (92 > 91 ficheros con filtro de comentarios propio): el test nuevo quitaba el origen de la URL con `/^https?:\/\/[^/]+/`, que el censo cuenta como filtro. No es un filtro de comentarios, así que `soloEjecutable` no aplica: se cambia por `new URL(…).pathname + search`. Vuelve a 91; el trinquete no se toca.
+6. **Aviso ① de j2df (import de `medirTexto`):** se queda el import desde `tests/scrum1773-trinquete-style-en-innerhtml.test.mjs` con el recuento declarado: **25 casos en `scrum1005d` = 18 propios + 7 de 1773** que se ejecutan al importarlo. Extraer `medirTexto` a un módulo aparte obligaba a mover `RX_STYLE` y `NODOS_CADENA`, que son el `de:` de las mutaciones ① y ② del propio 1773: era tocar el guard de J3 más allá del import (el encargo dice PARA). 8 tests de la casa ya importan otro `.test.mjs`.
+
+**Verde, con recuento:**
+
+- `scrum1005d` 25/25 + `scrum1005b` 16/16 = 41/41 (`tsc -p .` con tipos: salida 0, sin `--noCheck`).
+- Lote dirigido, 36 ficheros (1773, 836, 700, 710b, 719, 1294, 267, 273, 525d, 854, 391, 1185, 1387, 514, 1145, 1005d, 1005b y los 21 que nombran `customerDetailView`): 371 tests = 367 pass + 2 fail + 2 saltados; los 2 rojos eran `scrum700` (arreglado, punto 5) y `scrum854` ② (faltaba este tramo). Re-medido después: 700 + 1005d + 1005b + 1185 = 57/57.
+
+**Lo que NO he medido:** yaqu.app (la pestaña no está desplegada: entra con el merge; la verifica CIERRES en staging, otra sesión); el obligatorio de CI de la punta; si el `🗑` de Jira lleva selector de variante (comparé con el fichero de evidencias que cita c.22192, no con los bytes del comentario).
+
+**Relevo jv-j2di (20-nov-2026, PR #3277 en rojo, run 44774971414, 6 fallos).** Rojo visto en local antes de tocar nada (5 de 34 en 1157/1215g/1215i/1415). Causa: la cabecera JSDoc de `DOCUMENTOS_CLIENTE` decía «FIRMADOS por el fundador» y firmaba el objeto ENTERO, así que los métodos `mb`, `tamano` y `textoDeError` (no son textos) salían «aprobados por grupo». Arreglo en el código, no en los guards: la cabecera ya no firma el grupo (cada texto lleva su firma en su línea), y el bucle de `CODIGOS` del test de 1005d se escribe con `casosEscritos` (7 casos con nombre literal). Los 14 literales no cambian. Positivo: con la cabecera de antes, vuelven a caer 4 de 28. Verde: los 4 guards + 1005d + 1005b, 75/75; lote de 18 ficheros, 210 = 209 pass + 1 saltado por gate.
+A9: comprobación → `tests/scrum1215g-una-firma-de-grupo-no-cubre-a-quien-llega-despues.test.mjs`
+
+## SCRUM-1005e · J2 · #3277 al día con main tras #3369 (sesión jv-j2es)
+
+**Medido contra:** `origin/main` = `25ddbe90bba5cbf75e6fd125fc8045ad040f0497` · 2026-11-25T02:04:47Z (hora de GitHub; sesión J2 `jv-j2es`, por encargo del orquestador `cobroflash-backend-2d`). Rama `scrum-1005d-pestana-documentos` @ `57ff9098cf9c34dd0c1131a87543493797b6a528` + `git merge origin/main` dos veces, limpio las dos. Sin cambios de código: 1005e no toca `public/` ni `src/`, solo trae main y deja este registro.
+
+A9: aviso → cicatriz J2 «lancé `npm run guards:visuales` en primer plano sin medir antes su coste: pasó de 600 s, el arnés lo mandó a segundo plano y acabó en salida 2, CIEGO por fuentes que no bajaron» — no se pudo comprobar: el hook de los 600 s mira los tramos de la suite, no los guards de navegador
+
+- `tsc -p .` con tipos: salida 0.
+- Lote dirigido, 31 ficheros (1005b, 1005d, 1560 —el que lee el contrato de `scripts/_datos-del-censo.mjs` que trajo #3369—, los 23 que nombran `customerDetailView`, 1415, 1294, 267, 854, 811c y 719): 344 tests = 342 pass + 0 fail + 2 saltados (1145 sin `LIBRO_PG_URL`, 692 sin `QA_DB_TEST`).
+- `censo:tactil-panel`: salida 0 (en CI es informativo).
+- `guards:visuales`, el paso que bloquea del job «guards de navegador (fuera de la tanda)», obligatorio desde SCRUM-1005 c.22683: salida 2, CIEGO en 1 guard (`guard:objetivo-tactil`: «FUENTE ROTA en /: 3 de 41 caras declaradas no se pudieron bajar»), 0 hallazgos. En esta máquina no da veredicto: lo da el CI del empujón.
+
+**Lo que NO he medido:** el job de navegador en CI (lo mide el empujón); `censo:clics-del-80`; la suite entera (el encargo dice no correrla); yaqu.app (la pestaña no está desplegada); la línea de población de `guards:visuales` (no la leí, por contexto). Contexto: 132k al decidir empujar (tope del encargo 140k; regla de empujar a 125k).
 ## SCRUM-1005c · J2 · textos propuestos de la pestaña Documentos, para la firma (escrito a posteriori en 1839c)
 
 **Medido contra:** `origin/main` = `123311beb24600b1db04371f83e3a67113e58de1` · 2026-11-25T01:51:45Z
