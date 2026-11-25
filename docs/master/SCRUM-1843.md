@@ -137,3 +137,32 @@ No he corrido la suite entera (el encargo lo prohíbe).
 **Errores propios:** el control positivo de mi `grep -F '.replace(/\/\*'` sobre `scrum700` (que lleva el
 filtro peligroso a propósito) dio 0: lo escribe de otra forma. Valió como positivo el mismo `grep` sobre la
 versión de `HEAD` del test, que dio 1.
+
+# SCRUM-1843c · relevo: veredicto de mudez al día tras merge de main
+
+**Medido contra:** `origin/main` = `c83ebdbea13a426c2a3e3b5655fca37567d62300` · 2026-11-25T03:27:20Z (hora de la cabecera `Date:` de GitHub; `git merge origin/main` dentro de `scrum-1843-marcar-cobrada-44` desde la punta `f0cbe95947c68d5452380d9e85cd5733a5d20228`, que iba 38 commits detrás; tras el merge, 0 detrás)
+
+A9: comprobación → `tests/scrum719-el-suelo-de-los-doce.test.mjs`
+
+**El rojo (dato del orquestador, run 45537041067, no lo bajé yo):** 14.474 tests, 14.461 pass, 1 fail:
+`tests/scrum719-el-suelo-de-los-doce.test.mjs:399` · «SCRUM-1395b · ① el veredicto guardado de
+`censo:mudez` cubre la población…» → `scrum1843-marcar-cobrada-44.test.mjs · sin ficha`. Desde 1843b el
+test llama a `ejecutableDe`, así que entra en la población de `censo:mudez` (los guards que mencionan el
+filtro), y no tenía ficha en `tests/_veredicto-mudez.json`.
+
+**El arreglo (regla 41: ni el guard ni el json a mano):** `git merge origin/main` sin conflictos
+(`public/dashboard/css/styles.css` se fusionó solo; frente a `origin/main` la rama sólo le añade sus 12
+líneas, 0 quitadas) → `npm run build` (tsc con tipos, salida 0) → `npm run censo:mudez -- --escribir`
+sobre el árbol fusionado, con TEMP sin espacios. El json sale del merge, no de la rama sola: CI prueba el merge.
+
+**Lo que dijo el censo, con su población:** 144 guards mencionan el filtro; a medir, 1 de 144 (los otros
+143 con ficha al día) → VIVO 1 · MUDO 0 · CIEGO 0 · NO APLICA 0 · YA ROJO 0. `tests/_guard-texto.mjs`
+comprobado idéntico al original tras la mutación, y `git status` después del censo: sólo el json modificado.
+
+**El diff del json:** 1 fichero, **+1 línea, 0 quitadas**:
+`"scrum1843-marcar-cobrada-44.test.mjs": ["VIVO","cea7b65ed0617354"]`. **0 fichas caducadas de otros**: los
+38 commits de main que entraron con el merge no dejaron ninguna ficha vieja (el censo habría vuelto a medir
+cualquiera que hubiera caducado, y midió sólo una).
+
+**Errores propios:** en el mensaje de arranque al orquestador le di «con las cicatrices J1 leídas, ~115k»
+de contexto: era una estimación, no una medida. La primera medida después de esa lectura dio 127.332.
