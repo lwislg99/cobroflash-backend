@@ -6,6 +6,8 @@ jv-j2ey (puesto J2), carril J2: `public/dashboard/css/styles.css` es contenedor 
 
 A9: comprobación → `docs/master/evidencias/SCRUM-1852/medir.mjs`
 
+**Skill UI:** no cargada · motivo: la sesión jv-j2ey no la declaró en su entrada; línea repuesta por el orquestador del equipo S al curar el rojo de main (guard scrum1340, run 45548131902). Si J2 la cargó, que corrija este motivo en su carril.
+
 (Mi tropiezo: las primeras capturas de la carcasa salieron a mitad del fundido de entrada, la misma cicatriz J2 del 21-nov. Lo vi al abrir la de 929 y el medidor ahora espera a `document.getAnimations()` antes de capturar. Las cajas no cambiaron: la medida repetida salió idéntica.)
 
 ## La causa, medida (no la que suponía el ticket)

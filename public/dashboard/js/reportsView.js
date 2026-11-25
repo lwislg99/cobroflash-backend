@@ -925,8 +925,9 @@ async function loadPlatformFunnel(card) {
     card.appendChild(src);
   }
 
-  // Tabla compacta por merchant (los 15 más recientes)
-  const rows = (data.merchants || []).slice(0, 15);
+  // Tabla compacta por merchant: TODOS. SCRUM-1818b quitó el tope de 15, porque el fundador tiene
+  // que llegar a cualquier comercio para cambiarle el plan (columna «Plan», `selectorDePlan`).
+  const rows = data.merchants || [];
   const table = document.createElement('div');
   table.style.cssText = 'overflow-x:auto';
   table.innerHTML = `
@@ -937,11 +938,11 @@ async function loadPlatformFunnel(card) {
         <th style="padding:4px 8px;text-align:right">Enviadas</th><th style="padding:4px 8px;text-align:right">Aceptadas</th>
         <th style="padding:4px 8px;text-align:right">Cobrado</th>
       </tr></thead>
-      <tbody>${rows.map((m) => `
+      <tbody>${rows.map((m, i) => `
         <tr style="border-top:1px solid var(--border)">
           <td style="padding:6px 8px 6px 0;color:var(--ink);font-weight:600">${m.name}</td>
           <td style="padding:6px 8px;color:var(--muted)">${m.acquisitionSource || 'orgánico'}</td>
-          <td style="padding:6px 8px;color:var(--muted)">${m.plan}</td>
+          <td style="padding:6px 8px;color:var(--muted)" data-plan-fila="${i}"></td>
           <td style="padding:6px 8px;text-align:right">${m.quotes}</td>
           <td style="padding:6px 8px;text-align:right">${m.sent}</td>
           <td style="padding:6px 8px;text-align:right">${m.accepted}</td>
@@ -949,7 +950,85 @@ async function loadPlatformFunnel(card) {
         </tr>`).join('')}
       </tbody>
     </table>`;
+  // SCRUM-1818b · la celda «Plan» de cada fila lleva su selector (DOM, no innerHTML: el nombre del
+  // comercio va al aria-label y a la confirmación como texto, nunca como HTML).
+  rows.forEach((m, i) => {
+    const celda = table.querySelector(`[data-plan-fila="${i}"]`);
+    if (celda) celda.appendChild(selectorDePlan(m));
+  });
   card.appendChild(table);
+}
+
+// ── SCRUM-1818b · cambiar el plan de un comercio desde el funnel (solo fundador) ──────────────────
+// Ruta de S1 (SCRUM-1818): `PUT /admin/plataforma/merchants/:id/plan` con `{ plan }`; la puerta de
+// fundador vive en el servidor. Escribe SOLO `merchants.plan`: no toca Stripe ni cobra nada.
+// ✅ MICROCOPY FIRMADA: SCRUM-1656 c.22694, byte a byte. Las opciones son los valores LITERALES de
+// `PLANES_CONOCIDOS` (`src/core/entitlements.ts`): lo que se ve es exactamente lo que se escribe.
+const PLANES_DE_YAQU = ['trial', 'pro', 'founding', 'equipo'];
+const MENSAJES_CAMBIO_DE_PLAN = {
+  400: 'Ese plan no existe. Los que hay: trial, pro, founding, equipo.',
+  403: 'Solo la cuenta del fundador puede cambiar planes.',
+  404: 'Ese comercio ya no existe.',
+};
+const MENSAJE_CAMBIO_DE_PLAN_FALLIDO = 'No se pudo cambiar el plan. Inténtalo otra vez.';
+
+function selectorDePlan(m) {
+  const caja = document.createElement('div');
+  caja.className = 'funnel-plan';
+  const sel = document.createElement('select');
+  sel.className = 'input';
+  sel.setAttribute('aria-label', `Plan de ${m.name}`);
+  PLANES_DE_YAQU.forEach((p) => {
+    const o = document.createElement('option');
+    o.value = p;
+    o.textContent = p;
+    sel.appendChild(o);
+  });
+  let actual = m.plan;
+  // Un plan que no está en la lista no se disfraza de otro: el selector arranca sin elegir.
+  const ponerActual = () => {
+    if (PLANES_DE_YAQU.includes(actual)) sel.value = actual;
+    else sel.selectedIndex = -1;
+  };
+  ponerActual();
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn-secondary btn-sm';
+  btn.textContent = 'Cambiar plan';
+  // Solo se puede pulsar con un plan DISTINTO elegido: «cambiar» al mismo no es un cambio.
+  const sincronizar = () => { btn.disabled = !sel.value || sel.value === actual; };
+  sel.addEventListener('change', sincronizar);
+  sincronizar();
+
+  btn.addEventListener('click', async () => {
+    const nuevo = sel.value;
+    if (!nuevo || nuevo === actual) return;
+    const pregunta = `¿Cambiar el plan de ${m.name} de ${actual} a ${nuevo}? Solo cambia el plan dentro de YaQu: no toca Stripe ni cobra nada.`;
+    if (!window.confirm(pregunta)) {
+      ponerActual();
+      sincronizar();
+      return;
+    }
+    btn.disabled = true;
+    sel.disabled = true;
+    try {
+      await apiRequest(`/admin/plataforma/merchants/${encodeURIComponent(m.id)}/plan`, { method: 'PUT', body: JSON.stringify({ plan: nuevo }) });
+      actual = nuevo;
+      showToast(`Plan de ${m.name}: ${nuevo}.`);
+    } catch (e) {
+      // Solo los literales firmados, nunca el texto del servidor (SCRUM-644).
+      showToast(MENSAJES_CAMBIO_DE_PLAN[e && e.status] || MENSAJE_CAMBIO_DE_PLAN_FALLIDO, 'error');
+      ponerActual();
+    } finally {
+      sel.disabled = false;
+      sincronizar();
+    }
+  });
+
+  caja.appendChild(sel);
+  caja.appendChild(btn);
+  return caja;
 }
 
 function renderFunnel(card, data) {
