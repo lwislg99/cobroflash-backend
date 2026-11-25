@@ -90,3 +90,55 @@ El job de la tanda lleva `.github/workflows/ci.yml:147` (`fetch-depth: 0`) y `.g
 - Tras `git merge origin/main` (`84e87de4dcda46c0aeba52edfaab8f55aca0c234`), `1730h` ya tiene tramo (lo escribió #3409) y salió de la lista en este PR: la lista baja de 103 a 102. Test corrido después del merge: 6 pass / 0 fail, población 13.092 commits · 1.367 registros · 1.081 pares = 979 con tramo + 88 sin tramo + 14 sin fichero; `npm run guards:entrada` 177 / 0. Lo corrió jv-j6fz; lo demás de este tramo lo midió su subagente, y el resto de guards NO se repitió tras el merge.
 - El cuerpo de los commits, las ramas sin mergear, y si cada cabecera que cuenta es el tramo de verdad o una mención (la regla no lo distingue y el test tampoco).
 - La tanda entera: sólo los guards que se listan en la entrega.
+
+# SCRUM-1839c · los tramos que faltaban de seis letras del equipo de Javier
+
+**Medido contra:** `origin/main` = `123311beb24600b1db04371f83e3a67113e58de1` · 2026-11-25T01:51:45Z
+
+A9: aviso → cicatriz J4 «crucé el 130k del encargo sin nada escrito: el arranque ya costaba 108.927 y leí la lista, las fechas, las etiquetas y los diffs en el chat antes de delegar la escritura; medí 140.802» — no se pudo comprobar: nada mide el contexto desde dentro después de cada lectura
+
+**Encargo (orquestador del equipo de Javier, a J4):** escribir el tramo que falta de seis pares de `SIN_TRAMO_CONGELADOS` en `tests/scrum1839-letra-con-tramo.test.mjs` y quitarlos de la lista. Rama `scrum-1839c-tramos-que-faltan`; sólo documentos y la lista del test.
+
+## Qué cambia
+
+La lista baja de **102 a 96** entradas: salen `1005c`, `1566d`, `1566e`, `1778a`, `1787aa` y `1810c`. Cada tramo se AÑADE al final de su registro, sin mover líneas ni tocar los tramos de otros, y lleva en la cabecera «(escrito a posteriori en 1839c)»:
+
+| par | registro | cabecera nueva |
+|---|---|---|
+| 1005c | `docs/master/SCRUM-1005.md` | «SCRUM-1005c · J2 · textos propuestos de la pestaña Documentos, para la firma» |
+| 1566d | `docs/master/SCRUM-1566.md` | «SCRUM-1566d · la medida de D, sin construirla» |
+| 1566e | `docs/master/SCRUM-1566.md` | «SCRUM-1566e · el reparto entre tramos, medido» |
+| 1778a | `docs/master/SCRUM-1778.md` | «SCRUM-1778a · J2 · literal propuesto (A y B) para MEDIA-1, sin aplicar» |
+| 1787aa | `docs/master/SCRUM-1787.md` | «SCRUM-1787aa · cabecera del test sin cifra suelta» |
+| 1810c | `docs/master/SCRUM-1810.md` | «SCRUM-1810c · Skill UI declarada en el encabezado de este registro» |
+
+Cada tramo dice qué entró (commit y ficheros, leídos con `git show --stat`), con qué PR (el merge, leído en git) y qué se midió según la entrega de Jira, con su número de comentario. Lo que no consta en ninguna parte no se escribe.
+
+## Cómo se eligieron los seis
+
+- Por cada par de la lista, el asunto de commit MÁS RECIENTE de `origin/main` que lo nombra con borde (la forma `SCRUM-<N><letra>` que lee el test).
+- **14** de los 102 tienen ese asunto en o después del 2026-10-26. La fecha es la del COMMIT (`%cI`), no la del merge.
+- Etiquetas de Jira de sus tickets: **6** `equipo-javier`, los de arriba, y **8** `equipo-luis`, que NO se tocan: `1589b`, `1608b`, `1636c`, `1669b`, `1725e`, `1742b`, `1745d` y `1762c`. La etiqueta es la del ticket, no la del autor: 1566d lo escribió S1, del equipo de Luis, en un ticket del equipo de Javier.
+
+## Lo que encontré
+
+- **1566d y 1566e ya tenían su contenido** en `docs/master/SCRUM-1566.md`, bajo «SCRUM-1566 (d) · LA MEDIDA DE D, sin construirla — …» y «SCRUM-1566 (e) · EL REPARTO ENTRE TRAMOS, MEDIDO — …»: la letra entre paréntesis y separada del número, una forma que la regla de c.22677 no reconoce. Los tramos nuevos apuntan allí; no copian.
+- **1787aa tiene su registro en `docs/master/SCRUM-1799.md`**: SCRUM-1799 renombró el tramo, con su test y su línea de registro. El tramo nuevo de `SCRUM-1787.md` sólo apunta allí.
+- **1778a** ya estaba contado en `SCRUM-1778.md`, en el tramo «0 · Tramo a (sin registro propio)», cuya cabecera no nombra la letra.
+- **1810c** escribió en el ENCABEZADO de `SCRUM-1810.md`, no en un tramo con cabecera.
+
+## Lo que NO cambia: la foto y el tope
+
+`MEDIDA_CONGELADA`, `CONGELADO` y el tope que se deriva de ellos NO se recalculan. Son lo que el instrumento vio en la foto `651a143476a309308898fe252360d0b3d6a2a2ad`, y esa foto da lo mismo para siempre aunque hoy se escriban cabeceras en otro commit. Re-medirlos para que cuadren sería ajustar la cifra de un trinquete. La lista sí baja, porque ④ exige quitar las entradas que ya tienen tramo.
+
+## Verde, con población (sobre el árbol de trabajo, antes del commit)
+
+- Dirigida, `tests/scrum1839-letra-con-tramo.test.mjs` con 1294, 267, 273, 525d y 854: **44 tests / 6 ficheros**, 44 pass, 0 fail, 0 saltos. Población de 1839: 13.120 commits · 1.372 registros (389 leídos por tener par) · 1.082 pares = 986 con tramo + 82 sin tramo + 14 sin fichero; 82 + 14 = 96, la lista.
+- `npm run guards:entrada`: salida 0, **177 tests / 16 guards**. Los 5 de árbol entero que nombra: 38 de 38 sobre 5 ficheros, sin saltos.
+- **Tanda entera: NO CORRIDA.** A las 2026-11-25T02:03:30Z la máquina tenía 1.768 MB libres, por debajo de los 2.700 que se piden para lanzarla, y este árbol no tiene `dist/`.
+
+## Lo que NO medí
+
+- Los comentarios de Jira (entregas, PR y etiquetas) los leyó un subagente, no la sesión directamente; cada cita lleva su número de comentario para cotejarla. Los tramos los escribió otro subagente con esos datos; lo que viene de git (commits, ficheros, merges, la elección de los 14) sí lo volvió a leer él en git.
+- yaqu.app: no aplica (sólo documentos y una lista de test).
+- El check obligatorio del PR: este tramo se escribe antes del empujón.

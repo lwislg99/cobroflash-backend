@@ -204,3 +204,16 @@ Mutaciones: catálogo → `tests/scrum1005b-documentos-cliente.test.mjs`
 ⚠️ **Carril:** `src/core/http/adminRouteDeclarations.ts` es S1 (`carriles.mjs`). Escribí en él las tres líneas de permisos que exige el guard de S1 para MIS rutas, con la decisión del fundador citada (c.22192); no toqué nada más del fichero. Se dice en el commit y en la entrega.
 
 **Test:** `tests/scrum1005b-documentos-cliente.test.mjs` suma el caso «el técnico ve y sube, pero NO borra»: por la ruta real, el técnico recibe 200 en la lista, 201 al subir y 403 al borrar, el documento sigue; el admin, 204 (positivo del mismo camino). 15/15. Mutación nueva al catálogo: quitar `requireRole('admin')` del DELETE. Las tres del catálogo, pasadas con `aplicarUna` de `scripts/meta-guard-mutaciones.mjs` (línea base limpia de la casa): las tres VIVAS (tumban el test); `git status` después, sólo mis cambios.
+
+## SCRUM-1005c · J2 · textos propuestos de la pestaña Documentos, para la firma (escrito a posteriori en 1839c)
+
+**Medido contra:** `origin/main` = `123311beb24600b1db04371f83e3a67113e58de1` · 2026-11-25T01:51:45Z
+
+Lo escribe J4 en SCRUM-1839c, por encargo del orquestador del equipo de Javier: la letra llegó a la rama principal sin su cabecera en este registro. No añade medición; junta lo que dicen git y la entrega.
+
+- **Qué entró:** el commit `218d2bdc3c708d0bd9a0620fa294a27fb226cac0`, «[carril J2] SCRUM-1005c: textos PROPUESTOS de la pestaña Documentos para la firma (solo docs, nada aplicado)», con un solo fichero: `docs/master/evidencias/SCRUM-1005/1005c-textos-propuestos.md` (+51). Este registro no lo tocó.
+- **Con qué PR:** #3264, merge `6a4478608511baf9078c98b38aa9c22070ce8119`. El número sale de git; la entrega no lo da.
+- **Qué se midió** (entrega en Jira, SCRUM-1005 c.22189, 2026-11-19 18:28:43Z, jv-j2db): «`guards:entrada`: salida 0, 15 guards y 170 tests.» · «11 ficheros, 79 de 79, 0 fallos y 0 saltos.»
+- **yaqu.app:** sin registro de la medición.
+
+A9: comprobación → `tests/scrum1839-letra-con-tramo.test.mjs`
