@@ -68,3 +68,19 @@ Mutaciones: catálogo → `tests/scrum1429c-dos-envios-dos-cobros.test.mjs`
 **No medido (empujado al pasar el tope de 145k del encargo, a 151.811):** la mutación nueva del catálogo (`recordAudit({` → `void ({`) está declarada pero NO la he corrido; tampoco 1532c/1532d, los que nombran `invoiceWhatsApp`, 1415, 1294, 267, 854 ni 719; ni la suite entera; ni una base real; ni yaqu.app. Sí: `npm run build` (tsc con tipos) salida 0 y `npm run guards:entrada`.
 
 A9: aviso → cicatriz J1 «Crucé el tope de 145k del encargo (151.811) sin empujar: me medí al acabar el arranque (119.743) y no otra vez hasta la tanda verde, y la mutación y la dirigida se quedaron sin correr, en jv-j1kp» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
+
+# SCRUM-1429f — el comentario de `invoiceAdmin.ts` sobre `Invoice.chargeId` dice lo que hace el código
+
+**Medido contra:** `origin/main` = `f23697aa1c7a7b9715ded3be545a50aaa1597706` · 2026-11-25T02:22:05Z (cabecera `Date:` de GitHub)
+
+Último punto de la aceptación de SCRUM-1429: los tres comentarios sobre `Invoice.chargeId` dicen lo que hace el código. Dos los corrigió 1803c (#3388) en `cobros.service.ts`; faltaba el de `src/modules/system/invoiceAdmin.ts` (J1), dentro de `listInvoicesAdmin`.
+
+- `src/modules/system/invoiceAdmin.ts`: el inciso «—que hoy son todas, porque nadie escribe ese campo—» pasa a «—lo escriben `ensureInvoiceForCharge` y `sendInvoicePaymentRequest`; las enlazadas salen por su `Charge`—». Los escritores van por NOMBRE de función, no por línea (A10: por identidad). Leídos en el código, no ejecutados: `ensureInvoiceForCharge` crea la `Invoice` con `chargeId: ch.id` (`src/lib/invoicing.ts`) y `sendInvoicePaymentRequest` la enlaza con `invoice.update` y `data: { chargeId }` (`src/modules/billing/domain/invoiceWhatsApp.service.ts`).
+- En su sitio: 493 líneas antes y después, `git diff --stat` 2+/2−, 0 CR antes y después. Las anclas `invoiceAdmin.ts:NN` de `docs/` y `tests/` (scrum525d) no se mueven.
+- Ningún test fijaba el literal viejo: `grep -rnF "nadie escribe ese campo"` sobre `tests/ docs/ scripts/ src/` dio la propia línea 42 (positivo) y un comentario ajeno de `albaranVerificacion.ts`; tras el cambio, 0 en el fichero.
+
+Solo comentario: ni una línea de código, ni del camino de emisión.
+
+**No leído:** las cicatrices de J1 enteras ni `puesto-j1.md` (29 KB y 7 KB): el encargo topaba en 135k y el arranque ya marcaba 101.126. Leí solo las tres primeras que asoma el hook de inicio; el resto de su salida quedó en el fichero persistido, sin abrir.
+
+A9: sin fallo que generalice — pieza de un solo comentario, cambiada en su sitio y comprobada con el recuento de líneas y el grep del literal viejo.
