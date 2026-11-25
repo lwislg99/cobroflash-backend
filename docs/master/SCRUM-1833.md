@@ -118,3 +118,45 @@ rediseño. Si P5 fuera ✅, la pastilla saldría de las de `DESIGN.md` §5 y el 
 - Por dentro, las 4 vistas de `public/dashboard/js/` que dicen «mantenimiento».
 - Si escribir `equipment_id` en un albarán o parte FIRMADO choca con algún test que vigile esas filas: lo mide
   1833b en rojo primero (en `docs/sql/` no hay disparadores).
+
+# SCRUM-1833b · rutas y lógica
+
+**Medido contra:** `origin/main` = `924c9b7ed6156a9c2516b8f10db650264037fcf5` · 2026-11-25T22:19:58Z
+
+**Escribe:** J2 (`jv-j2fd`, relevo de `jv-j2fc`) · **Rama:** `scrum-1833b-equipos-rutas-y-logica` · **Carril:** J2, con
+cruce declarado J2→S1 en `src/core/http/adminRouteDeclarations.ts` (precedente `147b4749b`). Decisiones: SCRUM-1833 c.22811;
+diseño: c.22817.
+
+A9: aviso → cicatriz J2 «Me medí el contexto al arrancar y tras Jira, y no durante el reconocimiento» — no se pudo comprobar: el aviso a 200k del hook ya existe y llegó tarde; la medida es medirse antes de cada fase
+
+**🔴 ESTADO: TRASPASO, SIN EMPUJAR.** Paro a 177k de contexto (tope de empujón 190k) con el código y el test hechos en
+un commit LOCAL; no me caben los guards ni la suite antes de 190k, y empujar sin ellos daría un CI rojo y gastaría el único empujón.
+
+**Hecho (commit local `180b3ef35`, en el worktree `cobroflash-jv-j2fd`):**
+- `src/modules/system/customerAdmin.ts`: `equipoCreateSchema` (`z.strictObject`: `customerSiteId` o `merchantId` → 400) y
+  `equipoUpdateSchema` (`.partial()`); `type`/`name` trim 1-200; opcionales '' → null; fechas `YYYY-MM-DD` con `diaExiste`;
+  `listarEquipos`, `crearEquipo` (tenencia con `clienteDelComercio`), `actualizarEquipo` (`updateMany` con merchant+cliente),
+  `desligarYBorrarEquipo(tx, merchantId, customerId, equipoId)` (4 `updateMany` a NULL en job, maintenancePlan, albaran y
+  parteTrabajo del comercio + `equipment.deleteMany`) y `borrarEquipo` en `prisma.$transaction`.
+- `src/modules/system/app/routes/customersAdmin.routes.ts`: `GET|POST /admin/customers/:id/equipos`,
+  `PUT|DELETE /admin/customers/:id/equipos/:equipoId`; 400 `invalid_id`/`invalid_body`, 404 `not_found`, 200/201/204,
+  500 `internal_error`; DELETE con `requireRole('admin')`.
+- Cruce para Luis (S1): 3 entradas en `TECNICO_ALLOWED` (GET, POST, PUT) + 2 líneas de comentario; el DELETE no. Escrituras
+  nuevas en las 4 tablas de documentos (solo `equipmentId` → NULL, filtrado por `merchantId`).
+- `tests/scrum1833b-equipos-rutas.test.mjs`: 6/6 en verde (sin gate). Rojo primero: las 4 mutaciones del catálogo con
+  `correr` + `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, limpia 6 pasados · 0 caídos · 0 saltados, las 4 `ok:true`,
+  0 colaterales; árbol igual después (mismo `git diff --stat`).
+- `tsc -p .` SIN `--noCheck`: salida 0.
+
+Mutaciones: catálogo → `tests/scrum1833b-equipos-rutas.test.mjs`
+
+**NO hecho (para el relevo, en este orden):**
+1. Guards: `scrum337` (probable línea `src/modules/system/customerAdmin.ts::equipment.deleteMany#1`), `scrum55`, 1185 y los de
+   `147b4749b`, `scripts/_sin-consumir-declarados.json` (S0) y `tests/_censo-datos-personales.mjs` si los piden; 237, 976,
+   700 (91/91), 824, 419, 719 (`npm run censo:mudez -- --escribir`), 1294, 267, 854; `npm run guards:entrada`.
+2. El caso gateado por `LIBRO_PG_URL` (trigger `BEFORE DELETE`): no escrito.
+3. Suite entera: no corrida.
+4. `deleteCustomer` con equipos: sin decisión del fundador tras c.22817 (5 comentarios, el último c.22817) → no tocado.
+   Hallazgo LEÍDO, no ejecutado: `deleteCustomer` no borra equipos y `equipments.customer_id` es FK RESTRICT
+   (`docs/sql/scrum-914-equipos-del-cliente.sql:107`), así que borrar un cliente con equipos dará 500. Lo de los sitios
+   (mismo 500, S1) es hallazgo para Luis.
