@@ -31,6 +31,7 @@ import { serializar } from '../scripts/_pagina-panel.mjs';
 import { enlacesDelPanel, TIPOS_DE_FUENTE, esperarFuentes, cegueraDeLaFuente } from '../scripts/_hojas-del-panel.mjs';
 import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL } from '../scripts/_medidor-de-toque.mjs';
 import { resolverNavegador, lanzarNavegador } from '../scripts/_navegador.mjs';
+import { ejecutableDe } from './_guard-texto.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
@@ -144,7 +145,11 @@ test('SCRUM-1843 ① · «Marcar como cobrada» da 44 px de toque a 390 y a 1280
 });
 
 // ── ② el ancla ──────────────────────────────────────────────────────────────────────────────
-const sinComentarios = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '');
+// El quitacomentarios es el de la casa (SCRUM-700: `soloEjecutable`, aquí con el suelo de SCRUM-1395).
+// En CSS `#` es un selector, no un comentario. SCRUM-1843b: un filtro propio aquí tumbaba el trinquete.
+const ANCLA_REGLA = '.j1-prog ~ .detail-next > div > ';
+const sinComentarios = (s) => ejecutableDe(s,
+  { ancla: ANCLA_REGLA, donde: 'styles.css (bloque J1 de SCRUM-1843)', almohadillaEsComentario: false });
 function bloque1843(hoja) {
   const ini = hoja.indexOf('/* J1: SCRUM-1843');
   const fin = hoja.indexOf('/* J1: fin del bloque SCRUM-1843 */');
@@ -157,8 +162,15 @@ const TOKEN_ANCLA = /(?<![\w-])j1-prog(?![\w-])/;
 test('SCRUM-1843 ② · la regla cuelga de `.j1-prog`, y esa clase sólo la escribe la ficha de factura', () => {
   const bloque = bloque1843(fs.readFileSync(HOJA, 'utf8'));
   assert.ok(bloque, '🔴 `styles.css` no tiene UN bloque «/* J1: SCRUM-1843 … */» con su cierre.');
-  const reglas = [...sinComentarios(bloque).matchAll(/([^{}]+)\{([^}]*)\}/g)];
+  const codigo = sinComentarios(bloque);
+  const reglas = [...codigo.matchAll(/([^{}]+)\{([^}]*)\}/g)];
   assert.ok(reglas.length >= 1, '🔴 CIEGO: el bloque J1 de SCRUM-1843 no tiene ninguna regla.');
+  // El filtro de la casa toma `//` por comentario también en CSS: un `url(https://…)` se comería
+  // hasta el fin de línea, llave de cierre incluida, y el selector de la regla siguiente quedaría
+  // dentro de un cuerpo, sin pasar por la comprobación del ancla (sembrado y medido en SCRUM-1843b).
+  const llaves = (c) => (codigo.match(c === '{' ? /\{/g : /\}/g) || []).length;
+  assert.ok(llaves('{') === reglas.length && llaves('}') === reglas.length,
+    `🔴 CIEGO: tras quitar comentarios hay ${llaves('{')} «{» y ${llaves('}')} «}» para ${reglas.length} reglas: el troceo no es fiable.`);
   for (const [, sel] of reglas) {
     for (const s of sel.split(',').map((x) => x.trim())) {
       assert.match(s, /^\.j1-prog ~ \.detail-next > div > /, `🔴 «${s}» no cuelga del ancla de la ficha de factura.`);

@@ -97,3 +97,43 @@ mide 42,0 px (caja 41,7): cumple los 36 de escritorio de DESIGN.md, corto contra
   TEMP, sin tocar el árbol.
 - Las uniones de esa copia las creé primero con `cmd //c mklink` y salieron con destino `C:\C:\…`: lo vio
   la comprobación de después (`ls` vacío) antes de lanzar nada, y se rehicieron con PowerShell.
+
+# SCRUM-1843b · relevo: el filtro propio del test pasa a `soloEjecutable`
+
+**Medido contra:** `origin/main` = `bdd808ebe9bae708028e8aab87c52bc7b0ee6a28` · 2026-11-25T02:59:14Z (hora de la cabecera `Date:` de GitHub; rama `scrum-1843-marcar-cobrada-44` con punta `ff08fd780494103beed2b4ccf8287eea7a2094f2`, 23 commits detrás de ese `origin/main`, sin mergearlo: CI prueba el merge)
+
+A9: comprobación → `tests/scrum700-filtros-de-comentario.test.mjs`
+
+**El rojo (dato del orquestador, run 45533291047, no lo bajé yo):** 14.444 tests, 1 fail:
+`SCRUM-700 · 🔴 el número de filtros que CIEGAN CÓDIGO no sube` → «92 > 91». El 92 era
+`tests/scrum1843-marcar-cobrada-44.test.mjs`, con `s.replace(/\/\*[\s\S]*?\*\//g, '')` para trocear el bloque.
+
+**El arreglo (regla 41: el tope de 91 no se toca):** el quitacomentarios es el de la casa, `ejecutableDe`
+de `tests/_guard-texto.mjs` (que llama a `soloEjecutable` y le añade el suelo de SCRUM-1395), con
+`almohadillaEsComentario: false` y el ancla `.j1-prog ~ .detail-next > div > `, como los dos precedentes
+de CSS (`scrum1587-reenviar-correo-cobros-44` y `scrum1145-pestana-sitios`). Los dos usan el mismo helper:
+no había un «otro precedente» con otro filtro.
+
+**Control, antes y después, sobre el bloque REAL (958 B):** el filtro propio sacaba **1 regla** y
+`ejecutableDe` saca **1 regla**, y es la misma (conjuntos comparados, no cuentas):
+`.j1-prog ~ .detail-next > div > .btn-sm { min-height:44px; }`.
+
+**Lo que el helper SÍ se come, medido con un caso sembrado:** toma `//` por comentario también en CSS.
+Sobre `.c{…}` / `.a{background:url(https://x.y/z.png)}` / `#b{…}` en tres líneas, el filtro propio saca 3
+reglas y el helper 2: se come `//x.y/z.png)}` hasta el fin de línea, y `#b` acaba DENTRO del cuerpo de `.a`,
+sin pasar por la comprobación del ancla. `#b` sobrevive (la almohadilla apagada funciona). En el bloque de
+hoy no hay `url(` ni `//` fuera de comentarios, y por eso el control da igual. Para que el día que lo haya
+no pase en verde, el caso ② cuenta las llaves que quedan tras el filtro y exige una de cada por regla:
+con la siembra cae con «tras quitar comentarios hay 3 «{» y 2 «}» para 2 reglas» (exit 1), y el árbol
+volvió a su sha256. Esa siembra la hizo un guion del TEMP de la sesión, que no está en git: no cuenta
+como mutación repetible (A3). El defecto del helper es de `tests/_guard-texto.mjs`, que no es de este carril: se
+reporta al orquestador, no se arregla aquí.
+
+**Verdes, en local, uno por comando:** `npm run build` (tsc con tipos) salida 0 ·
+`scrum700-filtros-de-comentario` 5/5 · `scrum1843-marcar-cobrada-44` 2/2 con navegador (0 saltados) ·
+`scrum237` + `scrum976` 19/19 · `scrum1294` y `scrum267` y `npm run guards:entrada`, tras escribir este tramo.
+No he corrido la suite entera (el encargo lo prohíbe).
+
+**Errores propios:** el control positivo de mi `grep -F '.replace(/\/\*'` sobre `scrum700` (que lleva el
+filtro peligroso a propósito) dio 0: lo escribe de otra forma. Valió como positivo el mismo `grep` sobre la
+versión de `HEAD` del test, que dio 1.
