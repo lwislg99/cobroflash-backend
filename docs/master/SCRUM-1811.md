@@ -116,3 +116,71 @@ guion de node que exige una coincidencia única.
 - El meta-guard ENTERO con mutaciones (las tres partes del CI) no lo he corrido en local, sólo su censo y las 3
   mutaciones de este catálogo. Lo juzga el CI en el push.
 - La rama no está al día con `main` (89 commits por detrás). No la he mezclado: el CI juzga el merge.
+
+# SCRUM-1811c
+
+**Medido contra:** `origin/main` = `77c000deadc9fa6b80ae97b6b02752e18b2c9392` · 2026-11-25T08:16:22Z
+
+A9: comprobación → `tests/scrum757-la-declaracion-que-nadie-lee.test.mjs`
+
+Encargo del orquestador del 25-nov, en respuesta al tramo 1811b: que `guards:entrada` corra el censo del meta-guard,
+porque ése fue el agujero por el que #3419 se empujó en verde con una declaración ilegible dentro. Rama
+`scrum-1811c-censo-en-entrada`, desde `main` y con la rama de #3419 mezclada, porque este registro sólo vive allí.
+Hasta que #3419 entre, este PR enseña también sus commits.
+
+## Qué cambia
+
+- `scripts/guards-entrada.mjs`: entra `tests/scrum757-la-declaracion-que-nadie-lee.test.mjs` en `GUARDS`, como
+  decimoséptimo. Su caso «el ÁRBOL REAL… CERO ilegibles» llama a `declaracionesIlegibles()`. Ésa es la función con
+  la que el meta-guard sale 2, en `--solo-censo` y en las tres partes del CI.
+- `MINIMO` pasa de 15 a 17. El 1801 entró sin subirlo, así que quitar una línea de la lista no tumbaba nada.
+- `tests/scrum976-guards-entrada-con-techo.test.mjs`: una mutación nueva en el catálogo. Quitar la entrada de 757
+  tumba `SCRUM-976 ①` («la lista es menor que su propio suelo»).
+- La cicatriz de S5 del 25-nov pasa de «sin comprobación» a «comprobación: scrum757».
+
+**Por qué el test y no el comando `--solo-censo`:** la lista es cerrada y de ficheros de test, y su veredicto lo lee
+`veredictoDe` sobre la salida de `node --test`. Así se hicieron las altas anteriores (1548b, 1801). Meter un
+comando aparte es otra maquinaria. **Lo que no trae del `--solo-censo`:** el CIEGO por otra pasada viva del
+meta-guard (de eso ya se ocupa la puerta de SCRUM-1349 de este comando) y su suelo de población. El tamaño del
+censo sí lo trae, a medias: 757 exige `>= 127` declaraciones.
+
+## Rojo primero (por efecto, con una declaración ilegible sembrada)
+
+La siembra: en `tests/scrum1349-…test.mjs:45` el `cae` pasa a ser `'…' + '…'` (una BinaryExpression). La pongo y la
+quito con un guion que exige una coincidencia única. `git status` sale limpio después de cada pasada.
+
+| Árbol | `guards:entrada` | Qué cae |
+|---|---|---|
+| `main` + siembra, sin el alta | 1ª pasada: exit 2, CIEGO (90,0 s, la CPU al 100 %) · 2ª: exit 1 (86,9 s) | sólo `SCRUM-1340`, el rojo de `main` (abajo). **La siembra no la ve ninguno de los 16.** |
+| rama + siembra | exit 1 (38,1 s) | `SCRUM-757 ✅ POSITIVO: el ÁRBOL REAL…`, que nombra `scrum1349…:40 · el campo cae (línea 45)… BinaryExpression`, y `SCRUM-1340` |
+| rama sin siembra | exit 1 (46,3 s, 17 guards) | sólo `SCRUM-1340` |
+
+`meta-guard --solo-censo` sale 2 con la siembra y 0 sin ella: el test y el comando están de acuerdo.
+
+**`main` está en rojo hoy, y no es de esta pieza.** `SCRUM-1340` cae por `SCRUM-1852.md` (J2, sin `**Skill UI:**`).
+Por eso `guards:entrada` no sale 0 en ningún árbol de hoy, y `SCRUM-976 ④` (que lo lanza de verdad) cae igual en
+`main` que en esta rama. El orquestador tiene el arreglo en vuelo. El verde de esta pieza hay que leerlo después.
+
+## Coste (lo que pidió el orquestador que se declarara)
+
+- En el CI (run 45463680370), el caso del árbol real de 757 tarda **2,7 s**. La lista entera (`976 ④`) tardaba
+  15,2 s, así que la cuenta queda en unos 18 s de 90.
+- Aquí: 757 solo, 8,7 s con la CPU al 100 % y 22 procesos node (7,2 s de ellos en ese caso). La lista entera, de
+  38 a 46 s con el alta. Pero hoy, **sin el alta**, una pasada salió CIEGA a los 90,0 s y otra se quedó en 86,9 s.
+  En una máquina así cargada, el plazo ya se agota sin esta pieza, y con ella se agota unos segundos antes.
+
+## Medido
+
+- `scrum976` + `757` + `1152c`: 25 de 26. El que cae es `976 ④`, por `SCRUM-1340` (lo de arriba).
+- La mutación nueva de 976: base `pass 1 · fail 0`, mutada `pass 0 · fail 1`. Restaurada.
+- `meta-guard --solo-censo` sobre la rama: exit 0, y la declaración nueva se lee.
+
+**Lo que me salió mal:** el primer guion para la mutación de 976 vaciaba `NODE_TEST_CONTEXT` en vez de quitarlo, y la
+base no traía recuento (`pass undefined`). Es la frase de A10 que dejó el tramo de 1811 (la base dice cuántos casos
+pasan). La cumplí porque imprimí la base antes de mirar el mutado. Lo arreglé quitando las dos variables, como hace
+`tests/scrum976`.
+
+## Lo que NO he medido
+
+- La tanda completa (`npm test`) sobre esta rama. La juzga el CI.
+- Que `guards:entrada` salga 0, porque hoy no sale 0 en ningún árbol (`SCRUM-1340`, de `main`).
