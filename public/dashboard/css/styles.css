@@ -4456,6 +4456,63 @@ textarea.parte-linea-desc {
 .parte-cabecera-numero [data-parte-visita] { font-weight: 600; color: var(--muted); }
 .parte-cabecera-cliente { margin: 2px 0 0; font-size: 0.9375rem; color: var(--body); }
 
+/* ── S4 · SCRUM-1822 ── LA RANURA DE LA CABECERA DEL PARTE: el candado con su motivo, o «Editar».
+   · `.parte-candado` (parte que NO se puede editar): una NOTA, no un error ni un botón. Tarjeta blanca
+     con su borde, como las de debajo, texto Cuerpo y el candado dibujado con el trazo de los demás
+     dibujos del parte. El texto es del servidor y se pinta tal cual: aquí no hay `text-transform`.
+   · `.parte-editar` (borrador): la regla de lectura de SCRUM-1722, «relleno = se pulsa». Va sobre el
+     lienzo y no sobre una tarjeta, así que el relleno es un escalón más oscuro que el de «Añadir línea»
+     (`--neutral-200`; con `--neutral-100` sobre `--bg` no se distinguía). Sin verde: la única voz verde
+     del parte es la firma. 44 px de alto en todos los anchos: es lo primero que se pulsa. */
+.parte-candado {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  box-sizing: border-box;
+  width: fit-content;          /* la nota mide lo que su frase; a 390 px, el ancho de la hoja */
+  max-width: 100%;
+  margin: 12px 0 0;
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--body);
+  font-size: 14px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.parte-editar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin: 12px 0 0;
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--r-full);
+  background: var(--neutral-200);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.parte-editar:hover { background: var(--neutral-300); }
+.parte-editar:focus-visible { outline: none; box-shadow: var(--ring); }
+.parte-candado::before,
+.parte-editar::before {
+  content: "";
+  flex: none;
+  width: 18px;
+  height: 18px;
+  background: currentColor;
+  -webkit-mask: var(--parte-icono) center / contain no-repeat;
+  mask: var(--parte-icono) center / contain no-repeat;
+}
+.parte-candado::before { margin-top: 1px; }
+.parte-candado { --parte-icono: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='11' width='14' height='9' rx='2'/%3E%3Cpath d='M8 11V8a4 4 0 0 1 8 0v3'/%3E%3C/svg%3E"); }
+.parte-editar { --parte-icono: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z'/%3E%3C/svg%3E"); }
+
 .parte-horas,
 .parte-dictado,
 .parte-bloque,
