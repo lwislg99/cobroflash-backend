@@ -1,0 +1,4 @@
+base: código 0 · verde · movidos 0 · 45 s
+  ✔ declarada → VIVA (esperado VIVA) · 33 s · · pending · movil → la línea de progreso no se ve: mide 0 (0×0)
+  ✔ inocua → MUDA (esperado MUDA) · 44 s · el guard de navegador `scripts/guard-ficha-de-factura.mjs` NO cayó: salió 0 con la mutación puesta.
+public/dashboard/css/styles.css restaurado byte a byte: true

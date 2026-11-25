@@ -1,0 +1,247 @@
+✔ control: el árbol TIENE guards de navegador en scripts/ (sin esto, «población 0» no diría nada) (1.69ms)
+✖ 🔴 el medidor VE la población de scripts/guard-*.mjs: la cuenta entera, no 0 (1.8709ms)
+✖ 🔴 control positivo: un guard sembrado que declara entra en el censo con su mutación; el que no declara, no (0.2931ms)
+✖ 🔴 una declaración con `de` en plantilla NO se descarta en silencio: sale como ilegible (0.2479ms)
+✖ la ruta decide qué es un guard de navegador, y un test de node:test no lo es (0.2001ms)
+✖ 🔴 un guard que sale 2 (NO SUPO MEDIR) es CIEGO, no un «caído»: ninguna `cae` lo puede dar por VIVO (4584.5363ms)
+✖ 🔴 un guard que sale 3 (no arrancó el navegador) también es CIEGO (3698.1583ms)
+✖ 🔴 un guard que sale 1 entrega el TEXTO del hallazgo: `cae` casa con su línea (3632.4957ms)
+✖ 🔴 un guard que sale 0 es la base verde, y no trae caídos (4382.8959ms)
+✖ 🔴 PUERTA 1 · con la base de un guard de navegador en 0, se pasa la puerta (no sale CIEGO por «no pasó») (1.6061ms)
+✖ 🔴 PUERTA 1 · con la base de un guard de navegador CIEGA, no se muta y el motivo es el del guard (1.5739ms)
+✖ 🔴 el juicio de una mutación sobre un guard de navegador: CIEGA si no midió, VIVA si nombra el hallazgo, MUDA si no (0.2672ms)
+✔ control: la población de tests/ y sus suelos NO se mueven (A12) (3784.7268ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 2
+ℹ fail 11
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 20817.5248
+
+✖ failing tests:
+
+test at tests\scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:70:1
+✖ 🔴 el medidor VE la población de scripts/guard-*.mjs: la cuenta entera, no 0 (1.8709ms)
+  AssertionError [ERR_ASSERTION]: el meta-guard no tiene censo de guards de navegador
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/scrum-1798c-medidor-mutaciones/tests/scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:71:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:77:1
+✖ 🔴 control positivo: un guard sembrado que declara entra en el censo con su mutación; el que no declara, no (0.2931ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/scrum-1798c-medidor-mutaciones/tests/scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:78:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:88:1
+✖ 🔴 una declaración con `de` en plantilla NO se descarta en silencio: sale como ilegible (0.2479ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/scrum-1798c-medidor-mutaciones/tests/scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:89:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:99:1
+✖ la ruta decide qué es un guard de navegador, y un test de node:test no lo es (0.2001ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/scrum-1798c-medidor-mutaciones/tests/scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:100:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:108:1
+✖ 🔴 un guard que sale 2 (NO SUPO MEDIR) es CIEGO, no un «caído»: ninguna `cae` lo puede dar por VIVO (4584.5363ms)
+  AssertionError [ERR_ASSERTION]: el CIEGO salió como caído con el nombre del fichero: una declaración así sería VIVA
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/scrum-1798c-medidor-mutaciones/tests/scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:111:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:116:1
+✖ 🔴 un guard que sale 3 (no arrancó el navegador) también es CIEGO (3698.1583ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/scrum-1798c-medidor-mutaciones/tests/scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:119:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:123:1
+✖ 🔴 un guard que sale 1 entrega el TEXTO del hallazgo: `cae` casa con su línea (3632.4957ms)
+  AssertionError [ERR_ASSERTION]: caídos: ["<TMP>\\scrum1798c-a9PWF4\\scripts\\guard-rojo.mjs"]
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/scrum-1798c-medidor-mutaciones/tests/scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:126:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:131:1
+✖ 🔴 un guard que sale 0 es la base verde, y no trae caídos (4382.8959ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  undefined !== 0
+  
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/scrum-1798c-medidor-mutaciones/tests/scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:134:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:145:1
+✖ 🔴 PUERTA 1 · con la base de un guard de navegador en 0, se pasa la puerta (no sale CIEGO por «no pasó») (1.6061ms)
+  AssertionError [ERR_ASSERTION]: se quedó en PUERTA 1: el test «la línea de progreso no se ve» NO aparece EN VERDE en la pasada limpia, así que no se ha mutado nada. Ese test NO LLEGÓ: ni pasó, ni cayó, ni se saltó. NO SÉ si corrió y su informe no llegó, o si no corrió. Lo que sí sé: el fichero NO está entre los caídos. Recuento de la LIMPIA: 1 pasados · 0 caídos · 0 saltados. Una pasada limpia que trae menos tests de los que el fichero tiene es la pérdida de informe medida en SCRUM-1405 (el hijo sale con `--test-force-exit` y la cola de su salida no llega). Para separarlo de un rojo de verdad, mira `build + tests` de ESTE MISMO run: si está verde, el test pasa y lo que ha fallado es este instrumento. NO es que el guard esté mudo: es que no se ha podido medir.
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/scrum-1798c-medidor-mutaciones/tests/scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:149:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'el test «la línea de progreso no se ve» NO aparece EN VERDE en la pasada limpia, así que no se ha mutado nada. Ese test NO LLEGÓ: ni pasó, ni cayó, ni se saltó. NO SÉ si corrió y su informe no llegó, o si no corrió. Lo que sí sé: el fichero NO está entre los caídos. Recuento de la LIMPIA: 1 pasados · 0 caídos · 0 saltados. Una pasada limpia que trae menos tests de los que el fichero tiene es la pérdida de informe medida en SCRUM-1405 (el hijo sale con `--test-force-exit` y la cola de su salida no llega). Para separarlo de un rojo de verdad, mira `build + tests` de ESTE MISMO run: si está verde, el test pasa y lo que ha fallado es este instrumento. NO es que el guard esté mudo: es que no se ha podido medir.',
+    expected: /el ancla no está/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at tests\scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:152:1
+✖ 🔴 PUERTA 1 · con la base de un guard de navegador CIEGA, no se muta y el motivo es el del guard (1.5739ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /NO SUPO MEDIR/. Input:
+  
+  'el test «la línea de progreso no se ve» NO aparece EN VERDE en la pasada limpia, así que no se ha mutado nada. Ese test NO LLEGÓ: ni pasó, ni cayó, ni se saltó. NO SÉ si corrió y su informe no llegó, o si no corrió. Lo que sí sé: el fichero NO está entre los caídos. Recuento de la LIMPIA: 0 pasados · 0 caídos · 0 saltados. Una pasada limpia que trae menos tests de los que el fichero tiene es la pérdida de informe medida en SCRUM-1405 (el hijo sale con `--test-force-exit` y la cola de su salida no llega). Para separarlo de un rojo de verdad, mira `build + tests` de ESTE MISMO run: si está verde, el test pasa y lo que ha fallado es este instrumento. NO es que el guard esté mudo: es que no se ha podido medir.'
+  
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/scrum-1798c-medidor-mutaciones/tests/scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:156:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'el test «la línea de progreso no se ve» NO aparece EN VERDE en la pasada limpia, así que no se ha mutado nada. Ese test NO LLEGÓ: ni pasó, ni cayó, ni se saltó. NO SÉ si corrió y su informe no llegó, o si no corrió. Lo que sí sé: el fichero NO está entre los caídos. Recuento de la LIMPIA: 0 pasados · 0 caídos · 0 saltados. Una pasada limpia que trae menos tests de los que el fichero tiene es la pérdida de informe medida en SCRUM-1405 (el hijo sale con `--test-force-exit` y la cola de su salida no llega). Para separarlo de un rojo de verdad, mira `build + tests` de ESTE MISMO run: si está verde, el test pasa y lo que ha fallado es este instrumento. NO es que el guard esté mudo: es que no se ha podido medir.',
+    expected: /NO SUPO MEDIR/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at tests\scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:160:1
+✖ 🔴 el juicio de una mutación sobre un guard de navegador: CIEGA si no midió, VIVA si nombra el hallazgo, MUDA si no (0.2672ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/scrum-1798c-medidor-mutaciones/tests/scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs:161:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
