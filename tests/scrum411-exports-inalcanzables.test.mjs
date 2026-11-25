@@ -244,7 +244,8 @@ const R = analizar(RAIZ);
 // superficie pública).
 // ═══════════════════════════════════════════════════════════════════════════════════════
 // 🔴 21-nov-2026 · SCRUM-1780c: `facturaDesdeParte.ts` sin llamador hasta que S1 monte las tres líneas de c.22242; baja a 4 el PR de S1 que las monte; decisión del fundador en este comentario (SCRUM-1780 c.22257, «1-A ok»).
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 5;
+// ✅ 25-nov-2026 · BAJA A 4 (SCRUM-1780, S1): `partes.routes.ts` monta `POST /:id/facturar` con las tres líneas de c.22242 e importa `facturaDesdeParte.ts`, que sale de la lista; es el PR que anunciaba la línea de arriba (c.22257).
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 4;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 
