@@ -728,7 +728,8 @@ export async function desligarYBorrarEquipo(
   await tx.job.updateMany(desligar);
   await tx.maintenancePlan.updateMany(desligar);
   await tx.albaran.updateMany(desligar);
-  await tx.parteTrabajo.updateMany(desligar);
+  // Literal, no `desligar`: scrum1488 tiene que poder leer que no escribe desplazamientos ni kilómetros.
+  await tx.parteTrabajo.updateMany({ where: { merchantId, equipmentId: equipoId }, data: { equipmentId: null } });
   const { count } = await tx.equipment.deleteMany({ where: { id: equipoId, merchantId, customerId } });
   return count > 0;
 }
