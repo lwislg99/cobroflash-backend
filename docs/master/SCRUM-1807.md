@@ -101,3 +101,49 @@ Mira tres cosas. Primero, que la clave **viaja**: la puerta la deja pasar, tambi
 **🔴 El trinquete de SCRUM-619 (`tests/scrum619-vocabulario-de-linea.test.mjs`) saltó, como debe.** Cayeron dos casos: «el vocabulario del PRESUPUESTO no crece sin que alguien decida» y «la divergencia, nombrada». Su mensaje pide decidir qué hace la factura con la clave, escribirlo y actualizar la lista. Es lo que hicieron SCRUM-655, 661, 594 y 632. La decisión no la toma esta sesión, la tomó el fundador: **P4 ✅**, la factura sale siempre desglosada. Va escrita en su bloque, y `agrupado` entra en `VOC_PRESUPUESTO` y en `DIVERGENCIA`. No se ha tocado ningún aserto, y la puerta de la factura suelta no se ha abierto (regla 40). Después: 8 de 8.
 
 **Guards que leen `tests/` entero** (262, 409, 1415, 1344, 850, 850b, 754, 765, 1294): 93 de 93.
+
+## SCRUM-1807g · la página de firma: «Total del apartado» y el apartado agrupado que se despliega (25-nov-2026)
+
+**Medido contra:** `origin/main` = `7592c8c140cbe5ddb1bcc516c8c6af38af90d59d` · 2026-11-25T08:59:38Z
+A9: sin fallo que generalice — el único tropiezo fue del test. Su extractor de filas partía por `<tr` y se comía el `<`, así que la comprobación de «sin texto nuevo» leyó el atributo `class` como texto. Lo enseñó el propio aserto, con el texto delante, y se arregló en el extractor. Por eso el rojo del caso agrupado se tomó con ese extractor, y la prueba de que el caso caza el defecto son sus dos mutaciones (abajo).
+Mutaciones: catálogo → `tests/scrum1807g-firma-total-del-apartado.test.mjs`
+
+Puesto S1. Fichero: `src/modules/system/app/routes/quoteDecisionLanding.routes.ts` (S1) y su hoja `quoteDecisionEstilo.ts`. El portal (`customerPortal.routes.ts`, J2) no se toca.
+
+**Decisiones:** SCRUM-1786 c.22269 (literal `Total del apartado`; P3, el modo por apartado; **P5 ✅**: en agrupado, el cliente puede desplegar las subpartidas en la página de firma) y c.22389 («cada vista suma como sus líneas: el portal CON IVA, el PDF SIN IVA. No se iguala»). Literales recibidos del orquestador, que los citó de Jira, porque esta sesión no tiene Rovo.
+
+### La cifra: SIN IVA, y por qué (lo medido antes de construir)
+
+El orquestador había decidido CON IVA, como el portal, y puso una condición: medir antes qué pintan las líneas. **Medido:** la columna «Importe» de esta página es NETA. Es `importeDeLinea` (`quoteDecisionLanding.routes.ts:197`, `qty × price`), sin IVA y sin `dto`, y la pinta la tabla en `:268-277`, cuyo comentario PC-B dice que la suma de las líneas es la Base imponible. Así que, por c.22389, el total del apartado es la base de sus líneas: `calcVatBreakdown(líneas del apartado).base`. Es la misma primitiva que el PDF del presupuesto (1786f1), y no `calcTotal`, como el portal, cuya columna va con IVA. El orquestador lo confirmó antes del push. El test no comprueba una cifra suelta, sino un invariante: **cada «Total del apartado» suma las celdas que el cliente tiene encima**. Lo prueba también con `dto` de línea, con céntimos, con líneas antes de la primera cabecera (no llevan total) y con un apartado vacío (0,00, como el PDF).
+
+### Qué pinta
+
+| apartado | filas |
+|---|---|
+| sin la clave (desglosado, lo de siempre) | la cabecera, sus líneas y debajo `Total del apartado` con el total en la columna Importe |
+| `agrupado: true` (tramo d) | UNA fila: un `<details>` cuyo `<summary>` es el icono, el concepto que escribió el profesional y el total. Desplegado, enseña las subpartidas con su cantidad y su importe (P5) |
+| líneas antes de la primera cabecera, o presupuesto sin apartados | como siempre, fila a fila, sin total |
+
+El recorrido es `capitulos()` (tramo c), y el agrupado lo decide `esAgrupado()` (tramo d). **Ningún texto nuevo:** el único indicio de que se despliega es el triángulo del navegador. El test lo comprueba: quitados conceptos, cantidades, importes e iconos, en la fila agrupada no queda nada. Estilo: nueve clases nuevas al final de la hoja de la firma, con los mismos colores y bordes que ya usa la tabla, sin `style=` (SCRUM-1646d). El test exige una regla `.clase {` para cada una. El resumen, que es lo que se toca para desplegar, mide 44 px de alto (AB6), y el foco lo pone la regla `:focus-visible` que ya tenía la hoja.
+
+**Sin apartados, la página es byte a byte la de antes:** lo comprueba la huella de `scrum888d` (8 casos, sha256 tomado con el código anterior), que sigue en verde.
+
+**Captura** (banco `docs/master/evidencias/SCRUM-1807/servir-firma-1807g.mjs`: la ruta REAL del `dist`, con un Prisma de mentira y datos de EJEMPLO; Playwright a 390 px):
+`captura-1807g-firma-plegado-390.png` y `captura-1807g-firma-desplegado-390.png`. Mirada: Baño agrupado = 728,50 € (320 + 180,50 + 228), plegado en una fila y desplegado con sus tres subpartidas; Cocina desglosada con «Total del apartado» 10.089,99 €, y un importe de 9.999,99 € que no se recorta. El único error de consola es el `favicon.svg`, que es del banco (no sirve `public/`).
+
+### El test (`tests/scrum1807g-firma-total-del-apartado.test.mjs`)
+
+Usa el banco de `scrum1442b`: el `GET /pay/quote/:token` real, con `prisma.quote.findUnique` doblado, y se lee el HTML. Tiene 5 casos. **Rojo primero** con el `dist` del tramo d: 2 de 5. Los dos verdes son los controles (sin apartados no sale nada nuevo, y lo que escribe el profesional sale escapado). Compilado: 5 de 5.
+
+**Mutaciones** (`aplicarUna`, driver de una vez `docs/master/evidencias/SCRUM-1807/mutar-un-catalogo.mjs`, base limpia 5 / 0 / 0). Las cuatro caen y el árbol queda restaurado:
+
+| mutante | resultado |
+|---|---|
+| la fila «Total del apartado» desaparece | CAE |
+| el total suma CON IVA (base + cuota, la cifra del portal) | CAE |
+| se ignora `agrupado`: el apartado sale desglosado | CAE |
+| el desplegable no trae las subpartidas | CAE |
+
+**Vecinos:** los 32 ficheros que ya leen la página de firma o su hoja, más `scrum1807c/d`, `scrum655`, `scrum1786g`, `scrum1786f1` y `scrum619`: 279 de 279 en 37 ficheros.
+
+**Lo que NO hace:** las tarjetas de opciones (`renderTierCards`) no pintan ni total del apartado ni agrupado. Es lo mismo que hizo el PDF en 1786f1, que sólo tocó el modo clásico. La descripción de la cabecera no sale en la fila agrupada, porque esta página no pinta descripciones de línea en ningún sitio. El PDF de FACTURA no se ha abierto (P4, regla 40). Falta verlo en yaqu.app: se verá después del merge.
