@@ -2931,11 +2931,14 @@ descWrapper.appendChild(descLabel);
 
     // SCRUM-1807e · lo que cada fila ENSEÑA, en orden, para el total y el IVA de cada apartado.
     const filasParaApartados = [];
+    // Y las cabeceras, para pintarlas al final SIN un segundo recorrido de `lines` (SCRUM-229).
+    const cabecerasPorPintar = [];
 
     lines.forEach((line, idx) => {
       // SCRUM-1807e · una cabecera no cobra: no entra en la cuenta. Su total se pinta al final.
       if (line.esApartado) {
         filasParaApartados.push({ apartado: true });
+        cabecerasPorPintar.push({ line, idx });
         line.subirBtn.disabled = idx === 0;
         line.bajarBtn.disabled = idx === lines.length - 1;
         return;
@@ -3056,8 +3059,7 @@ descWrapper.appendChild(descLabel);
     // SCRUM-1807e · «Total del apartado» = la suma de lo que enseñan sus filas (CON IVA, como cada
     // fila del editor; c.22389). Y en AGRUPADO, la columna de IVA dice el tipo o «Varios».
     const resumen = window.resumenDeApartados(filasParaApartados);
-    lines.forEach((line, idx) => {
-      if (!line.esApartado) return;
+    cabecerasPorPintar.forEach(({ line, idx }) => {
       const r = resumen[idx] || { total: 0, tipos: [] };
       line.totalCell.textContent = fmtMoneyEs(r.total, cur);
       const agrupado = line.agrupadoSelect.value === "agrupado";
@@ -4207,12 +4209,14 @@ conceptInput.addEventListener("input", () => {
     const totalWrap = campoLinea("Total del apartado", "quote-line__totalwrap");
     totalWrap.appendChild(totalTd);
 
-    const descTd = campoLinea("Descripción", "quote-line__descripcion quote-apartado__desc");
+    // Nombre propio: los guards de SCRUM-632 buscan por texto la línea que cuelga la descripción de
+    // la LÍNEA en su hoja de ajustes, y un homónimo aquí arriba la taparía.
+    const descApartadoTd = campoLinea("Descripción", "quote-line__descripcion quote-apartado__desc");
     const descInput = document.createElement("textarea");
     descInput.rows = 2;
     descInput.className = "input";
     descInput.value = initial && typeof initial.description === "string" ? initial.description : "";
-    descTd.appendChild(descInput);
+    descApartadoTd.appendChild(descInput);
 
     const actionsTd = document.createElement("div");
     actionsTd.className = "quote-line__actions";
@@ -4239,7 +4243,7 @@ conceptInput.addEventListener("input", () => {
     tr.appendChild(ivaTd);
     tr.appendChild(totalWrap);
     tr.appendChild(actionsTd);
-    tr.appendChild(descTd);
+    tr.appendChild(descApartadoTd);
     linesBody.appendChild(tr);
 
     const lineObj = {
@@ -4816,8 +4820,15 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
 
 
     removeBtn.addEventListener("click", function () {
-      // SCRUM-1807e · «al menos una» cuenta las líneas que cobran: una cabecera no es una línea.
-      if (lineasQueCobran().length === 1) {
+      // SCRUM-1807e · con cabeceras en la lista, la última línea que cobra se quita y en su lugar
+      // nace un renglón en blanco al final (el cuadernillo): nunca queda una lista de sólo títulos.
+      if (lines.length > 1 && lineasQueCobran().length === 1) {
+        linesBody.removeChild(tr);
+        lines = lines.filter(function (l) { return l !== lineObj; });
+        addLine();
+        return;
+      }
+      if (lines.length === 1) {
         // siempre al menos una línea
         conceptInput.value = "";
         qtyInput.value = "1";
