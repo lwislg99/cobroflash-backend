@@ -49,6 +49,12 @@ const RED_LENTA = 1200;
 const MARCA = `QA1824-${ancho} `;
 const MANUAL = { bloque: 'mano_obra', unds: 3, descripcion: MARCA + 'limpieza de filtros' };
 const DICTADO = 'He purgado el circuito y he puesto dos racores de tres cuartos';
+// CONTROL POSITIVO DEL GUION (no de la cura): con VISTA_DE_CONTROL=<fichero>, ESTE navegador recibe ese
+// `parteDetailView.js` en vez del de producción (nadie más lo ve; el servidor no se toca), y el <blob>
+// que se pasa es el de ESE fichero. Con la vista de antes de la cura, las de carrera tienen que salir
+// en ROJO: si salen en verde, el guion no ve la pérdida y su verde no vale. El informe va a otro nombre.
+const VISTA_DE_CONTROL = process.env.VISTA_DE_CONTROL || '';
+const SUFIJO = VISTA_DE_CONTROL ? `${ancho}-control-vista-de-antes` : String(ancho);
 
 const ciego = (m) => { console.error('CIEGO: ' + m); process.exit(2); };
 if (!fs.existsSync(RUTA_SESION)) ciego('no hay sesión guardada');
@@ -99,6 +105,9 @@ try {
     const r = ruta.request();
     const u = new URL(r.url());
     const esAdmin = u.host === 'yaqu.app' && u.pathname.startsWith('/admin/');
+    if (VISTA_DE_CONTROL && r.method() === 'GET' && u.host === 'yaqu.app' && /\/parteDetailView\.js$/.test(u.pathname)) {
+      return ruta.fulfill({ status: 200, contentType: 'application/javascript; charset=utf-8', body: fs.readFileSync(VISTA_DE_CONTROL) });
+    }
     if (r.method() === 'GET' || r.method() === 'HEAD') {
       if (esAdmin && latencia) await dormir(latencia);
       return ruta.continue();
@@ -243,7 +252,7 @@ try {
   const captura = async (nombre) => {
     await page.evaluate(() => { const n = document.querySelector('.parte-anadir[data-bloque="mano_obra"]'); if (n) n.scrollIntoView({ block: 'center', behavior: 'instant' }); });
     await dormir(250);
-    await page.screenshot({ path: path.join(salida, `vivo-${ancho}-${nombre}.png`) });
+    await page.screenshot({ path: path.join(salida, `vivo-${SUFIJO}-${nombre}.png`) });
   };
   const abrirParte = async () => {
     await page.evaluate((n) => window.renderAppView('parte-detail', { parteId: n }), borrador);
@@ -400,7 +409,12 @@ try {
     const rec = await recoger();
     apunte.recogido = rec;
     comprueba(id + '.fin', 'recogido con la pantalla: el parte vuelve EXACTAMENTE a sus líneas de partida (mismos ids, orden y contenido)', rec.ok, rec.lineas);
-    if (!rec.ok) throw new Error('NO SUPE RECOGER tras ' + id + ': se para aquí para no medir sobre un parte sucio');
+    if (!rec.ok && VISTA_DE_CONTROL) {
+      // Con la vista de antes, la pantalla puede no saber recoger: se deja como estaba por fuera y se sigue.
+      const p = await ctx.request.patch(BASE + RUTA_PARTE, { data: { lineas: antes.lineas } });
+      apunte.recogidoPorFuera = p.status();
+      if (JSON.stringify((await servidor()).lineas) !== JSON.stringify(antes.lineas)) throw new Error('NO SUPE RECOGER tras ' + id + ' ni por fuera');
+    } else if (!rec.ok) throw new Error('NO SUPE RECOGER tras ' + id + ': se para aquí para no medir sobre un parte sucio');
   };
 
   /* ── CONTROL · primero la fila a mano, después lo dictado (nada viajando) ─────────────────────── */
@@ -510,7 +524,8 @@ try {
   await navegador.close();
 }
 informe.resumen = { comprobaciones: informe.comprobaciones.length, cumplen: informe.comprobaciones.filter((c) => c.ok).length, patch: informe.patch.length, salida: codigo };
-fs.writeFileSync(path.join(salida, `vivo-${ancho}.json`), JSON.stringify(informe, null, 1) + '\n');
+informe.vistaSustituida = VISTA_DE_CONTROL ? 'SÍ: la vista de control (blob ' + blobEsperado + '), sólo en este navegador' : 'no: la de producción';
+fs.writeFileSync(path.join(salida, `vivo-${SUFIJO}.json`), JSON.stringify(informe, null, 1) + '\n');
 for (const c of informe.comprobaciones) console.log(`${c.ok ? '✔' : '✘'} ${c.id} · ${c.que}`);
 for (const s of informe.secuencias) console.log(`\n── ${s.titulo}\n   propuesta de: ${s.propuesta}\n   dictadas: ${JSON.stringify(s.dictadas)}\n   servidor: ${JSON.stringify(s.servidor)}\n   carrera: ${JSON.stringify(s.carrera)} · relecturas tras «Añadir al parte»: ${s.relecturasTrasAnadirAlParte}\n   PATCH: ${JSON.stringify(s.patch)}`);
 console.log(`\n${informe.ventana} (${informe.puntero}) · build ${informe.build} · ${informe.resumen.cumplen}/${informe.resumen.comprobaciones} cumplen · PATCH ${informe.patch.length} · salida ${codigo}`);
