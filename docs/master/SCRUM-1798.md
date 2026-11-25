@@ -173,3 +173,106 @@ en #3277.
 **Cómo se deshace:** el mismo PUT con el cuerpo de ANTES (está literal arriba).
 
 **Antes del push:** guards:entrada salió CIEGO por plazo (90,0–90,4 s contra 90 s, CPU al 100 %, 5 intentos sobre esta rama); los 16 ficheros de su lista pasados con node --test sin plazo: 177/177, 0 fallos, 0 saltados. El presupuesto lo juzga el CI obligatorio. Push decidido por el orquestador (DELEGACIÓN c.21978).
+
+## SCRUM-1798c · el meta-guard VE los guards de navegador y los juzga por su código (S3, 25-nov)
+
+**Medido contra:** `origin/main` = `7592c8c140cbe5ddb1bcc516c8c6af38af90d59d` · 2026-11-25T08:40:18Z
+
+A9: aviso → cicatriz S3 «Di por rojo-primero de SCRUM-1798c un rojo que caía por otra causa: dentro de un fichero de node:test el run() de correr() no ejecuta ficheros, y su hijo tampoco si hereda NODE_TEST_CONTEXT o va por node -e; lo cacé leyendo el motivo de cada fallo, no el recuento.» — no se pudo comprobar: es cómo leo un rojo, y ningún guard sabe si un fallo cae por la razón que su título dice
+Mutaciones: catálogo → `tests/scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs`
+
+Puesto S3, rama `scrum-1798c-medidor-mutaciones` (nacida de `origin/main` `77c000dea`), por encargo del
+orquestador: la parte de SCRUM-1798 que quedaba, y con su merge el orquestador cierra el ticket. El defecto lo
+midió J6 en SCRUM-1789c (`docs/master/SCRUM-1789.md`, c.22388); el medidor es de S3 y J6 paró con el diff
+propuesto. **Regla 41: se cura el medidor; ningún `scripts/guard-*.mjs` se toca.**
+
+### Qué pasaba (re-medido aquí, no sólo leído)
+
+- **No los veía.** `censoConPoblacion()` lee `tests/*.test.mjs`: sobre `scripts/` daba población 0. Hoy hay 46
+  `scripts/guard-*.mjs` y ninguno declara `MUTACIONES_QUE_ME_TUMBAN`.
+- **Si los viera, juzgaba mal.** `correr()` usa `run()` de node:test; con un script plano da UN caso con el
+  nombre del fichero. Re-medido con una sonda desde un proceso plano: un guard sembrado que sale 1 y otro que sale
+  2 dan lo MISMO, `caidos: ['<ruta del fichero>']`, `ERR_TEST_FAILURE`. Una declaración con `cae: '<fichero>'`
+  contaba un CIEGO como VIVA; una con `cae: '<texto del hallazgo>'` salía siempre CIEGA en PUERTA 1.
+
+### ¿Hay navegador en el job `meta-mutaciones` de CI? (la medición previa que pedía el encargo)
+
+Leído el workflow y un run real, no supuesto: el job **no instala navegador**, y tampoco `guards-visuales`. Los
+dos usan `scripts/_navegador.mjs`, que busca el navegador de la imagen en tiempo de ejecución y pone
+`--no-sandbox` sólo con `CI`; no hay ningún paso de workflow propio de uno que le falte al otro. En el run de main
+`45548131902` (25-nov 04:38Z), los jobs `meta-guard · parte 1 de 3` y `guards de navegador (fuera de la tanda)`
+corrieron en la **misma imagen** (`ubuntu-26.04`, versión `20261116.202.1`), y en ésa el resolutor imprimió
+`Edge (Linux) -> /usr/bin/microsoft-edge` y `guard:ficha-de-factura` salió verde en 9,4 s.
+**Lo que NO está medido:** un navegador lanzado DESDE el job del meta-guard. Hoy no puede pasar: ninguna
+declaración de navegador existe, así que ese job no lanza ninguno. La primera que declare un guard lo medirá en
+su PR; si saliera 3 (no arranca), el veredicto es CIEGO, que es lo honrado, no un verde.
+
+### La cura (`scripts/meta-guard-mutaciones.mjs`)
+
+- `esGuardDeNavegador(ruta)`: decide la ruta (`scripts/guard-*.mjs`, relativa o absoluta).
+- `censoDeGuardsDeNavegador(dir)`: la **segunda población**, aparte. Su propio suelo
+  (`sueloDePoblacionDeNavegador`: cero ficheros es CIEGO, no «no hay»), su propia línea en el rótulo
+  (`rotuloDeNavegador`), y sus declaraciones ilegibles caen en el MISMO suelo de SCRUM-757 (`ilegiblesDelCenso`):
+  un `de` en plantilla `${…}` sale como ilegible, salida 2 (el dato de S5 en #3419, con su caso en el test).
+- `resultadoDeNavegador`: 0 → base verde · 1 → cada línea de la salida es un «caído» (así `cae` es el texto del
+  hallazgo) · ≥ 2 o sin código → `ciegoDelGuard`, nunca caído.
+- `correr()`: para un guard de navegador, `spawn` del guard (no `spawnSync`: la vigilancia de SCRUM-754 necesita el
+  bucle de eventos vivo), con la misma gracia, cierre y `movidos` que la rama de node:test.
+- `aplicarUna()`: PUERTA 1 de navegador = «la base salió 0»; tras mutar, `juicioDeNavegador` (pura): CIEGA si no
+  midió, VIVA si una línea nombra `cae`, MUDA si salió 0 o si salió 1 sin nombrarlo. Sin ella, el «NO APARECE» de
+  `porQueNoCayo` pintaba CIEGA la mutación inocua (medido de punta a punta, abajo, antes de escribirla).
+- En el arranque, los suelos y el rótulo del censo miran **sólo `tests/`** (A12: `SUELO_GUARDS`,
+  `SUELO_DECLARACIONES` y sus lectores no se mueven); justo antes de repartir por partes, la población de navegador
+  se suma a `censo` y a sus totales, para que la parte y `--juntar` comparen lo juzgado con lo repartido.
+- **Dos anclas ajenas que mi primer borrador rompía, y que arreglé en MI código, no en sus declaraciones:** la línea
+  `  if (!paso(limpia, mut.cae)) {` (scrum745) queda letra por letra, con la rama de navegador delante con un
+  `else`; y mi suelo nuevo no copia `  if (poblacion > 0) return null;` (scrum812), que si no casaba dos veces.
+  Los guards de texto de SCRUM-1620/1620b piden `parteDelCenso(censo, parte)` y `guardsDelCenso:
+  guardsConDeclaracion` literales: se respetan (`let` donde había `const`, con su porqué al lado).
+
+### Rojo primero — `tests/scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs`, 13 casos
+
+| medidor | resultado | evidencia |
+|---|---|---|
+| el de `origin/main` (copia idéntica, comprobada con `git diff --quiet`, en el mismo árbol) | **11 ✖ / 2 ✔** (los 2 ✔ son los controles) | `evidencias/SCRUM-1798/1798c-rojo-medidor-de-main-77c000dea.txt` |
+| con la cura | 13/13 ✔ | `evidencias/SCRUM-1798/1798c-verde-con-la-cura.txt` |
+
+El ✖ que es el ticket, literal: «el CIEGO salió como caído con el nombre del fichero: una declaración así sería
+VIVA». **Control positivo:** un `scripts/` sembrado fuera del árbol con un guard que declara, otro que no y un
+`otro.mjs` que declara pero no es guard → población 2, censo 1, una mutación. Controles en verde en los dos
+medidores: el árbol tiene guards de navegador, y la población de `tests/` y sus suelos no se mueven.
+
+`correr()` va en un proceso hijo, escrito en un temporal y sin `NODE_TEST_CONTEXT`: dentro de un fichero de
+node:test su `run()` no ejecuta ficheros (aviso «called recursively… skipping»), y por `node -e` tampoco. Mi primer
+rojo caía por eso y no por el defecto; es la A9 de arriba.
+
+### Mutaciones — catálogo, juzgadas con `correr` + `aplicarUna` del propio medidor
+
+Las cinco del test, cada una quitando una mitad de la cura: **5 VIVAS** (`evidencias/SCRUM-1798/1798c-mutaciones-del-catalogo.txt`,
+guion `1798c-juzgar-un-test.mjs`; el medidor queda restaurado). Lo que NO se declara: que `aplicarUna` LLAME a
+`juicioDeNavegador`; ejercitarlo desde un test exige mutar el árbol dentro de otro meta-guard. Va medido de punta a punta:
+
+### De punta a punta, con un guard de navegador real (lo que J6 sólo pudo probar fuera del driver)
+
+`evidencias/SCRUM-1798/1798c-punta-a-punta.mjs`, el driver CURADO sobre `scripts/guard-ficha-de-factura.mjs` con las
+dos mutaciones de J6 (en local, Edge): **base salida 0 · `.j1-prog { display:none;` → VIVA** («pending · movil → la
+línea de progreso no se ve: mide 0 (0×0)») **· la inocua (un espacio más) → MUDA** («salió 0 con la mutación
+puesta») · `styles.css` restaurado byte a byte. (Antes de `juicioDeNavegador` la inocua salía CIEGA: así se vio.)
+
+### Lo que se corrió además
+
+- `--solo-censo`: salida 0; rótulo de `tests/` igual que antes (401 declarantes de 1.807 · 1.560 declaraciones) y la
+  línea nueva: «censo de navegador · 0 guards DECLARANTES de 46 `scripts/guard-*.mjs` · 0 declaraciones».
+- Los 97 tests que nombran el meta-guard, en 4 tramos uno por comando: **713 tests, 707 ✔, 2 ✖, 4 saltados.** Los 2 ✖
+  son `scrum1726-tanda-firmada-j1` D1 (zona horaria de la máquina), que en el barrido de SCRUM-1825 cae igual con
+  los dos bancos: ajeno. Los 4 saltados, SCRUM-781 gateado por `QA_DB_TEST`/`LIBRO_PG_URL`.
+- `scrum812` pidió subir su trinquete (`LA COBERTURA HA SUBIDO a 46`): el test nuevo se titula guard y declara.
+  Subido a 46 con su línea fechada, como las cinco anteriores, y su propia mutación re-anclada a 46 → 45.
+
+### Sin medir / pendiente
+
+- Un navegador lanzado desde el job del meta-guard en CI (ver arriba: no puede pasar hasta que un guard declare).
+- `scrum836` (ancla única, la criba barata) sigue leyendo sólo `tests/`; una declaración nueva en un
+  `scripts/guard-*.mjs` la vería sólo la PUERTA 1b del medidor. Cuando el primero declare, toca extenderlo.
+- Ningún guard de navegador declara aún: declarar (p. ej. `guard-ficha-de-factura` con la mutación de J6) es del
+  carril del guard, no de éste.
