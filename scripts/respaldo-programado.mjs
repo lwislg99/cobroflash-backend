@@ -44,7 +44,8 @@
 //   las de `backup-dump.mjs`   las hereda el hijo tal cual
 //   RESEND_API_KEY o SMTP_URL  el canal. Resend primero: SMTP se colgó desde Railway (SCRUM-1114)
 //   EMAIL_FROM                 el remitente de la casa
-//   BACKUP_EMAIL_DESTINO       a quién llega. Variable NUEVA: la pega el fundador
+//   BACKUP_EMAIL_DESTINO       a quién llega: una o varias, separadas por comas (SCRUM-1525c).
+//                              Variable NUEVA: la pega el fundador
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import { spawn } from 'node:child_process';
 import crypto from 'node:crypto';
@@ -64,11 +65,21 @@ export const LIMITES = { envioConAdjunto: 120_000, envioDeTexto: 20_000, vigiaTr
 
 export const SALIDA = Object.freeze({ ENTREGADO: 0, SIN_RESPALDO: 1, NO_ENTREGADO: 2 });
 
+/**
+ * SCRUM-1525c · ¿Se puede mandar a este destino? Una o varias direcciones separadas por comas; una
+ * pieza vacía o sin `@` invalida la lista ENTERA, para que nunca se intente mandar a una dirección
+ * rota (por Resend, una sola dirección mala tumba el envío a todas).
+ */
+export function destinosValidos(valor) {
+  if (typeof valor !== 'string') return false;
+  return valor.split(',').map((d) => d.trim()).every((d) => d.length > 0 && d.includes('@'));
+}
+
 /** Qué falta para poder mandar el correo. Puro. No decide si se vuelca: eso corre siempre. */
 export function validarCorreo(env) {
   const faltan = [];
   if (!env.RESEND_API_KEY && !env.SMTP_URL) faltan.push('SMTP_URL o RESEND_API_KEY');
-  if (!env.BACKUP_EMAIL_DESTINO) faltan.push('BACKUP_EMAIL_DESTINO');
+  if (!destinosValidos(env.BACKUP_EMAIL_DESTINO)) faltan.push('BACKUP_EMAIL_DESTINO');
   return { ok: faltan.length === 0, faltan };
 }
 
