@@ -137,3 +137,20 @@ test('SCRUM-493 · 🔴 el sesgo va en las DOS direcciones, y por eso no vale qu
   assert.ok(direcciones.has(`${NO}/${SI}`), '🔴 falta la dirección «① huérfano · ② sí llega».');
   assert.ok(direcciones.has(`${SI}/${NO_SE}`), '🔴 falta la dirección «① llega · ② no sabe».');
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// LA MUTACIÓN QUE ME TUMBA (SCRUM-1846b, GO en SCRUM-1846 c.22744)
+//
+// El clasificador vuelve a mirar sólo `src/`, MENOS que ②: un módulo que una entrada de comando
+// carga con `await import()` (`scripts/guard-aviso-bizum.mjs` → `avisoBizumSinTelefono.ts`) sale
+// NO_SE en ② y aquí queda sin clase, en OTRO. Medido en la rama de SCRUM-1846: con esta mutación,
+// `hayQueAvisar` vuelve a OTRO.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    fichero: 'tests/_comparador-alcance.mjs',
+    de: "  for (const p of [...ficherosTs(path.join(raiz, 'src')), ...entradasDeComando(raiz)]) {",
+    a: "  for (const p of ficherosTs(path.join(raiz, 'src'))) {",
+    cae: 'SCRUM-493 · 🔴 toda discrepancia está CLASIFICADA',
+  },
+];
