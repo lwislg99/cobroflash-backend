@@ -113,6 +113,18 @@
 .j1-prog ~ .detail-next > div > .btn-sm { min-height:44px; }
 /* J1: fin del bloque SCRUM-1843 */
 
+/* J1: SCRUM-1864 · los dos campos `.input` de la ficha de FACTURA a 44 px de toque (AB6), por contenedor
+   como 1843 y 1849, sólo tamaño: `.input` global no se toca, ni el JS. Son la fecha «¿Cuándo lo has
+   cobrado?» (36 px; sólo en una factura pendiente, dentro de «Siguiente paso») y el campo de Etiquetas
+   (34,6 px; en todos los estados, suelto en su sección). El ancla es `.j1-prog`, que sólo pinta esta
+   ficha: la del presupuesto también monta Etiquetas y `.detail-next`, y no se toca. Pesan (0,4,0) y
+   (0,5,0); `.input` (0,1,0) no fija alto. EXENTO por SCRUM-1845 c.22728: «← Volver a facturas»
+   (`.btn-sm` de la cabecera, no es la primaria). Lo mide en navegador
+   `tests/scrum1864-ficha-factura-inputs-44.test.mjs`. */
+.j1-prog ~ .detail-next > div > .form-group > .input { min-height:44px; }
+.detail-page:has(> .detail-section > .j1-prog) > .detail-section > .input { min-height:44px; }
+/* J1: fin del bloque SCRUM-1864 */
+
 /* ── SCRUM-731 · `hidden` TIENE QUE APAGAR. SIEMPRE. ───────────────────────────────────────
    Esto NO es una regla de estilo: es la que impide una clase entera de defecto silencioso.
 
