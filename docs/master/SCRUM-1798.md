@@ -276,3 +276,26 @@ puesta») · `styles.css` restaurado byte a byte. (Antes de `juicioDeNavegador` 
   `scripts/guard-*.mjs` la vería sólo la PUERTA 1b del medidor. Cuando el primero declare, toca extenderlo.
 - Ningún guard de navegador declara aún: declarar (p. ej. `guard-ficha-de-factura` con la mutación de J6) es del
   carril del guard, no de éste.
+
+## SCRUM-1798c · apéndice 25-nov tarde — los rojos de #3449 eran MÍOS (S3)
+
+**Medido contra:** `origin/main` = `2a6675c978794595696f87fb1a7ed3e52f904adb` · 2026-11-25T14:48:50Z
+
+Tras el update-branch (`c8ab92808`), el run 45623877773 se puso rojo en cuatro jobs. Medido en sus logs:
+
+| job | qué cayó | causa (de mi rama) | cura |
+|---|---|---|---|
+| build + tests | `scrum1308` · fuera de `tests/` un fichero se llama como un test | `evidencias/SCRUM-1798/1798c-juzgar-un-test.mjs` casa con `*-test.mjs`, y `node --test` lo ejecutaría | renombrado a `1798c-juzgar-una-prueba.mjs` (y su mención arriba) |
+| build + tests | `scrum1349` ×2 · hijo `node` que hereda el entorno | `tests/scrum1798c-…:52` borraba sólo `NODE_TEST_CONTEXT` | borra también `FORCE_COLOR` y `NODE_OPTIONS` |
+| build + tests | `scrum622` · el censo de redes benignas sube | `1798c-punta-a-punta.mjs:13`, `limpia.ciegoDelGuard \|\| 'verde'`: sin dato, pinta «verde» | imprime `ciego del guard: … ?? '(ninguno)'`, sin estado benigno por defecto |
+| meta-guard parte 2 y «caen cuando deben» | CIEGO: la base de `scrum1349` ya caía sin mutar | la misma de arriba | la misma |
+
+Rojo: el run del CI sobre `c8ab92808`, sin las curas. Verde en local con las curas (antes de mezclar main): los
+cuatro ficheros, `scrum1308`, `scrum1349`, `scrum622` y `scrum1798c`, **37/37**. El trinquete de zona, también rojo
+en este PR, NO es de esta rama: la pared de 15 min del hijo corta la cola de la tanda, también en ramas ajenas
+(medido y entregado al orquestador).
+
+Error propio: empujé con los sueltos del meta-guard en verde, pero sin pasar la tanda entera, y tres guards que ya
+existían me cazaron en el CI. El de `scrum1349` es el que habría saltado antes que nadie.
+
+A9: comprobación → `tests/scrum1349-entorno-prestado-solo-baja.test.mjs`
