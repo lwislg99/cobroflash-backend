@@ -87,3 +87,13 @@ El candado actual corre ANTES del checkout (`pr-automatico.yml:123`, y el checko
 
 - `node --test` de `scrum1295`, `1480e`, `1480f`, `1801` y `1827`, con TAP a fichero fuera del árbol: 28 de 28 pass. La misma tanda cogió `scrum699`, que entró por el filtro de nombre («carril»), y dio 4 rojos `MODULE_NOT_FOUND ../dist/…`. Es un test de pantallas y este worktree nació sin `dist/`; no tiene nada que ver con este cambio.
 - La suite entera no la corrí. El cambio es una tabla, su derivado y una entrada de JSON, y lo juzga el obligatorio del CI.
+
+## Aplicado el 25-nov-2026 — cruce S0→S5 autorizado
+
+**La autorización:** SCRUM-1656 c.22763 (25-nov-2026 09:44 +01:00, el orquestador usando la delegación c.21978). Es nominal para S0 y para este diff: «S0 aplica a .github/workflows/pr-automatico.yml EXACTAMENTE el diff que dejó medido en docs/master/SCRUM-1809.md […] Condiciones: ni una línea fuera de ese paso; el YAML queda CIEGO en local […] y se DECLARA — el juez es el primer push que pase por el workflow; la autorización va citada en el registro.» El precedente espejo es 1506c (S5→S0 por encargo), que tampoco puso fila en §3.4: la autorización va citada en el registro, como aquí.
+
+**Lo aplicado:** el bloque de arriba en `pr-automatico.yml`, 7 líneas, sin ninguna otra. Antes comprobé que ni el workflow ni el guard habían cambiado en `origin/main` desde `7592c8c14` (`git log 7592c8c14..origin/main -- <los dos>`: vacío).
+
+**El YAML sigue CIEGO en local:** no hay parser en la máquina. El juez es el primer push que pase por el workflow, que es el de esta misma rama. El paso tiene que salir verde con «el censo la cuenta como SCRUM-1809».
+
+**Corrido:** los 7 tests que leen `pr-automatico.yml` (`automerge-conflicto-no-es-averia`, `pr-automatico-el-mensaje-del-automerge`, `scrum1382`, `scrum1827`, `scrum834`, `scrum839e` y `scrum973`): 106 tests, 106 pass, 0 skipped.
