@@ -605,6 +605,32 @@ export function leerConInforme(bruto) {
 }
 
 /**
+ * 🔴 SCRUM-1865 · LOS CANARIOS SE MIDEN PRIMERO, y lo decide el instrumento, no quien lo llama.
+ *
+ * La pared del hijo corta la COLA de la lista: lo que no ha arrancado cuando salta se cancela y sale
+ * `cortada` con la ruta por nombre, y a solas esa clave no vuelve a aparecer, así que la repesca lo
+ * deja «sin comparar». La línea de órdenes ponía los canarios AL FINAL (`[...deLaTanda, ...canarios]`)
+ * y el 25-nov-2026, con pasadas normales de 10-15 min contra una pared de 15, eso dejó CIEGOS a ocho
+ * PR (medido por S3 en la descripción del ticket; banco en `tests/scrum1865-canarios-primero.test.mjs`).
+ *
+ * Se reordena AQUÍ y no en la línea de órdenes para que el veredicto de los centinelas no dependa de
+ * que ningún llamador se acuerde: cualquier lista que pase por `medirEnZona` lleva delante sus
+ * canarios. Se reconocen por las DOS cosas a la vez —fuera del árbol Y con el nombre de uno de
+ * `CANARIOS`—, así que un fichero de `tests/` no puede adelantarse aunque se llame igual. Es SÓLO el
+ * orden: quién es canario para el autocontrol lo sigue decidiendo `rutaClave`, en `juzgarCanarios`.
+ * El resto conserva su orden relativo.
+ */
+const NOMBRES_DE_CANARIO = new Set(CANARIOS.map((c) => c.fichero));
+export function canariosPrimero(ficheros, raiz = RAIZ) {
+  const esCanario = (f) => {
+    const rel = path.relative(raiz, path.resolve(raiz, f));
+    const fuera = rel.startsWith('..') || path.isAbsolute(rel);
+    return fuera && NOMBRES_DE_CANARIO.has(path.basename(f));
+  };
+  return [...ficheros.filter(esCanario), ...ficheros.filter((f) => !esCanario(f))];
+}
+
+/**
  * UNA pasada de la tanda con la zona `zona`.
  *
  * ⚠️ EL HIJO ESCRIBE A UN FICHERO, no a stdout, y no es manía: por stdout viaja lo que impriman
@@ -615,7 +641,8 @@ export function medirEnZona({ zona, ficheros, raiz = RAIZ, salida, topes }) {
   const destino = salida
     || path.join(temporal('trinquete-zona-med-'), 'medida.json');
   const lista = path.join(path.dirname(destino), 'ficheros.json');
-  fs.writeFileSync(lista, JSON.stringify(ficheros));
+  const enOrden = canariosPrimero(ficheros, raiz);
+  fs.writeFileSync(lista, JSON.stringify(enOrden));
 
   // 🔴 SE BORRA LA MEDIDA ANTERIOR ANTES DE MEDIR. Si el hijo muere sin escribir y el fichero de
   // una pasada anterior sigue ahí, esto leería la medida VIEJA y la daría por buena — un resultado
