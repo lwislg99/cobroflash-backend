@@ -29,6 +29,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { casosEscritos } from './_casos-escritos.mjs';
 // El banco ANTES que `dist/`: deja el doble de la base, el PDF y el correo.
 const { banco, prisma, reiniciar, requiere, rutaDe, asentar, M_PT, CLIENTE } = await import('./_banco-emision-con-estado.mjs');
 
@@ -39,6 +40,8 @@ const { congelarCliente } = requiere(rutaDe('dist/modules/invoicing/domain/clien
 const { congelarEmisorDesdeFicha } = requiere(rutaDe('dist/modules/invoicing/domain/emisorCongelado.js'));
 const { formasDePagoACongelar } = requiere(rutaDe('dist/modules/invoicing/domain/formasDePagoACongelar.js'));
 const { ensureInvoiceForCharge } = requiere(rutaDe('dist/lib/invoicing.js'));
+const { emitInvoice } = requiere(rutaDe('dist/modules/invoicing/domain/invoicing.service.js'));
+const { actorDeRequest } = requiere(rutaDe('dist/modules/system/audit.service.js'));
 
 export const MUTACIONES_QUE_ME_TUMBAN = [
   // ① Observaciones, una por camino (en quotesAdmin el ancla lleva la línea de antes: la de abajo sola sale dos veces).
@@ -90,6 +93,25 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: 'presupuesto: quote, merchant: quote.merchant, importe: Number(tramo.amount)',
     a: 'presupuesto: null, merchant: quote.merchant, importe: Number(tramo.amount)',
     cae: 'SCRUM-1805 ② #4 C2 · con lista → esa lista; sin lista → las activas',
+  },
+  // ③ #5: la llamada al ayudante y cada `select` ensanchado.
+  {
+    fichero: 'src/modules/jobs/app/routes/albaranes.routes.ts',
+    de: 'payMethods: formasDePagoACongelar({ presupuesto: quote,',
+    a: 'payMethods: formasDePagoACongelar({ presupuesto: null,',
+    cae: 'SCRUM-1805 ③ #5 C7 · con lista → esa lista; sin lista → las activas',
+  },
+  {
+    fichero: 'src/modules/jobs/app/routes/albaranes.routes.ts',
+    de: 'discountGlobalAmount: true, payMethods: true },',
+    a: 'discountGlobalAmount: true },',
+    cae: 'SCRUM-1805 ③ #5 C7 · con lista → esa lista; sin lista → las activas',
+  },
+  {
+    fichero: 'src/modules/jobs/app/routes/albaranes.routes.ts',
+    de: 'iban: true, clabe: true,',
+    a: 'clabe: true,',
+    cae: 'SCRUM-1805 ③ #5 C7 · con lista → esa lista; sin lista → las activas',
   },
 ];
 
@@ -230,22 +252,24 @@ test('SCRUM-1805 · #1–#4 leen el presupuesto sin `select` (traen docFooterTex
 });
 
 // ── ① Observaciones en #1–#4 (c.22345 ② y ⑤); la cabecera NO ───────────────────────────────────
-const NOMBRES_OBS = {
-  1: 'SCRUM-1805 ① #1 C3 · la factura del tramo lleva las Observaciones',
-  2: 'SCRUM-1805 ① #2 C4 · la factura del total lleva las Observaciones',
-  3: 'SCRUM-1805 ① #3 C1 · la factura al aceptar lleva las Observaciones',
-  4: 'SCRUM-1805 ① #4 C2 · cobrar el resto lleva las Observaciones (c.22345 ⑤)',
-};
-for (const n of [1, 2, 3, 4]) {
-  test(NOMBRES_OBS[n], async () => {
-    const f = await emitirPor(n);
-    assert.equal(f.docFooterText, OBSERVACIONES, `🔴 ${CAMINOS[n].nombre}: la factura no congela las Observaciones`);
-    assert.equal(f.docHeaderText, undefined, `🔴 ${CAMINOS[n].nombre}: la cabecera viaja a la factura (c.22345 ②: NO)`);
-    // Control: sin Observaciones en el presupuesto, NULL (no una cadena vacía ni la de otro).
-    const sin = await emitirPor(n, { docFooterText: null });
-    assert.equal(sin.docFooterText, null);
-  });
-}
+const observaciones = casosEscritos([
+  { n: 1, que: 'la factura del tramo lleva las Observaciones' },
+  { n: 2, que: 'la factura del total lleva las Observaciones' },
+  { n: 3, que: 'la factura al aceptar lleva las Observaciones' },
+  { n: 4, que: 'cobrar el resto lleva las Observaciones (c.22345 ⑤)' },
+], (f) => `SCRUM-1805 ① ${CAMINOS[f.n].nombre} · ${f.que}`, async ({ n }) => {
+  const f = await emitirPor(n);
+  assert.equal(f.docFooterText, OBSERVACIONES, `🔴 ${CAMINOS[n].nombre}: la factura no congela las Observaciones`);
+  assert.equal(f.docHeaderText, undefined, `🔴 ${CAMINOS[n].nombre}: la cabecera viaja a la factura (c.22345 ②: NO)`);
+  // Control: sin Observaciones en el presupuesto, NULL (no una cadena vacía ni la de otro).
+  const sin = await emitirPor(n, { docFooterText: null });
+  assert.equal(sin.docFooterText, null);
+});
+test('SCRUM-1805 ① #1 C3 · la factura del tramo lleva las Observaciones', observaciones(0));
+test('SCRUM-1805 ① #2 C4 · la factura del total lleva las Observaciones', observaciones(1));
+test('SCRUM-1805 ① #3 C1 · la factura al aceptar lleva las Observaciones', observaciones(2));
+test('SCRUM-1805 ① #4 C2 · cobrar el resto lleva las Observaciones (c.22345 ⑤)', observaciones(3));
+observaciones.todos();
 
 // ── Control ④ de c.22345: la R1 NO hereda las Observaciones ─────────────────────────────────────
 test('SCRUM-1805 · control: la R1 de una factura con Observaciones NO las copia (c.22345 ④)', async () => {
@@ -269,14 +293,8 @@ test('SCRUM-1805 · control: la R1 de una factura con Observaciones NO las copia
 });
 
 // ── ② Formas de pago en #1–#4 (c.22404 b y c.22429): la lista del presupuesto, o las activas ─────
-const NOMBRES_FORMAS = {
-  1: 'SCRUM-1805 ② #1 C3 · con lista → esa lista; sin lista → las activas',
-  2: 'SCRUM-1805 ② #2 C4 · con lista → esa lista; sin lista → las activas',
-  3: 'SCRUM-1805 ② #3 C1 · con lista → esa lista; sin lista → las activas',
-  4: 'SCRUM-1805 ② #4 C2 · con lista → esa lista; sin lista → las activas',
-};
-for (const n of [1, 2, 3, 4]) {
-  test(NOMBRES_FORMAS[n], async () => {
+const formas = casosEscritos([1, 2, 3, 4],
+  (n) => `SCRUM-1805 ② ${CAMINOS[n].nombre} · con lista → esa lista; sin lista → las activas`, async (n) => {
     // Con lista: ESA lista, aunque el comercio tenga otras activas (la tarjeta NO está activa hoy).
     const con = await emitirPor(n, { payMethods: ['card'] });
     assert.deepEqual(con.payMethods, ['card'], `🔴 ${CAMINOS[n].nombre}: no congela la lista del presupuesto`);
@@ -284,7 +302,11 @@ for (const n of [1, 2, 3, 4]) {
     const sin = await emitirPor(n, { payMethods: null });
     assert.deepEqual(sin.payMethods, ['bizum', 'transfer'], `🔴 ${CAMINOS[n].nombre}: sin lista no congela las activas`);
   });
-}
+test('SCRUM-1805 ② #1 C3 · con lista → esa lista; sin lista → las activas', formas(0));
+test('SCRUM-1805 ② #2 C4 · con lista → esa lista; sin lista → las activas', formas(1));
+test('SCRUM-1805 ② #3 C1 · con lista → esa lista; sin lista → las activas', formas(2));
+test('SCRUM-1805 ② #4 C2 · con lista → esa lista; sin lista → las activas', formas(3));
+formas.todos();
 
 // ── Controles: la suelta y la factura tras cobrar NO cambian ────────────────────────────────────
 test('SCRUM-1805 · control: la factura suelta sigue con su expresión de 1787s, sin tocar', () => {
@@ -314,4 +336,63 @@ test('SCRUM-1805 · control: la factura tras cobrar sigue mandando la lista del 
   assert.deepEqual(await trasCobrar(['transfer'], ['bizum']), ['bizum']);
   assert.deepEqual(await trasCobrar(['transfer'], null), ['transfer']);
   assert.deepEqual(await trasCobrar(null, null), ['bizum', 'transfer']);
+});
+// ── ③ #5 C7 albarán → factura: `emitInvoice` con los dos `select` ensanchados ───────────────────
+// Lo que leían ANTES de SCRUM-1805 (origin/main 734b01758, albaranes.routes.ts:1569-1573 y :1604).
+const SELECT_COMERCIO_DE_ANTES = ['id', 'email', 'country', 'flags', 'defaultCurrency', 'taxId',
+  'name', 'legalName', 'address', 'logoUrl', 'whatsappPhone', 'llevaLibrosPorSii'];
+const SELECT_PRESUPUESTO_DE_ANTES = ['id', 'quoteNumber', 'lines', 'discountGlobalAmount'];
+
+/** Las claves de los dos `select` con que #5 lee el comercio y el presupuesto. */
+function selectsDe5() {
+  const c = CAMINOS[5];
+  const sf = fuente(c.fichero);
+  const h = manejador(sf, c.verbo, c.ruta);
+  const leer = (texto, quien) => {
+    const [l, ...mas] = llamadas(sf, h, texto);
+    assert.ok(l && mas.length === 0, `🔴 CIEGO: #5 no lee ${quien} exactamente una vez`);
+    const sel = propiedad(l.arguments[0], 'select');
+    assert.ok(sel && ts.isObjectLiteralExpression(sel.initializer), `🔴 CIEGO: la lectura de ${quien} no lleva \`select\``);
+    return clavesDeSelect(sel);
+  };
+  return { comercio: leer('prisma.merchant.findUnique', 'el comercio'), presupuesto: leer('prisma.quote.findFirst', 'el presupuesto') };
+}
+
+async function emitirPor5(payMethods, selects = selectsDe5()) {
+  const completo = prepararComercio();
+  const merchant = proyectar(completo, selects.comercio);
+  const quote = proyectar(presupuesto(completo, { payMethods }), selects.presupuesto);
+  const { sf, obj } = datosDelCamino(CAMINOS[5]);
+  const datos = evaluar(sf, obj, {
+    req: { merchantId: M_PT }, job: { customerId: CLIENTE }, total: '121.00', merchant, quote,
+    invoiceLines: LINEAS, albaran: { id: 18051, numero: 'ALB-1805', fecha: new Date('2026-11-25T10:00:00Z') },
+    actorDeRequest, clienteCongelado: await congelarCliente(prisma, M_PT, CLIENTE),
+    emisorCongelado: congelarEmisorDesdeFicha(completo), formasDePagoACongelar,
+  });
+  const inv = await prisma.$transaction((tx) => emitInvoice(tx, datos));
+  await asentar();
+  const fila = banco.tablas.invoice.find((f) => f.id === inv.id);
+  assert.ok(fila, '🔴 CIEGO: #5 no dejó fila en invoices');
+  return fila;
+}
+
+test('SCRUM-1805 ③ #5 C7 · con lista → esa lista; sin lista → las activas', async () => {
+  assert.deepEqual((await emitirPor5(['card'])).payMethods, ['card'], '🔴 #5: no congela la lista del presupuesto');
+  assert.deepEqual((await emitirPor5(null)).payMethods, ['bizum', 'transfer'], '🔴 #5: sin lista no congela las activas');
+});
+
+test('SCRUM-1805 ③ #5 C7 · los dos `select` ensanchan SOLO lo nombrado; con los de antes, mal', async () => {
+  const s = selectsDe5();
+  for (const k of SELECT_COMERCIO_DE_ANTES) assert.ok(s.comercio.includes(k), `🔴 el select del comercio ha perdido «${k}»`);
+  for (const k of SELECT_PRESUPUESTO_DE_ANTES) assert.ok(s.presupuesto.includes(k), `🔴 el select del presupuesto ha perdido «${k}»`);
+  // Solo los campos de `ComercioParaFormasDePago` que faltaban, y solo `payMethods` en el presupuesto.
+  assert.deepEqual(s.comercio.filter((k) => !SELECT_COMERCIO_DE_ANTES.includes(k)).sort(),
+    ['bizumPhone', 'clabe', 'connectStatus', 'iban', 'stripeAccountId']);
+  assert.deepEqual(s.presupuesto.filter((k) => !SELECT_PRESUPUESTO_DE_ANTES.includes(k)), ['payMethods']);
+  // CONTROL NEGATIVO: con los `select` de antes la lista se pierde y la transferencia no aparece.
+  const antes = { comercio: SELECT_COMERCIO_DE_ANTES, presupuesto: SELECT_PRESUPUESTO_DE_ANTES };
+  const conLista = (await emitirPor5(['card'], antes)).payMethods ?? null;
+  assert.notDeepEqual(conLista, ['card'], `🔴 el control negativo no muerde (con lista): ${JSON.stringify(conLista)}`);
+  const sinLista = (await emitirPor5(null, antes)).payMethods ?? [];
+  assert.ok(!sinLista.includes('transfer'), `🔴 el control negativo no muerde (sin lista): ${JSON.stringify(sinLista)}`);
 });
