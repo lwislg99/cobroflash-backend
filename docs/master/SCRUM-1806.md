@@ -1,8 +1,8 @@
 # SCRUM-1806 · el rótulo firmado en el aviso de la bandeja (tercer sitio de SCRUM-1782b)
 
 **Medido contra:** `origin/main` = `2ab4549bd7ab38803be901e99fdc22b1fdeed195` · 2026-11-25T14:08:55Z (cabecera `Date:` de `gh api -i zen`)
-A9: sin fallo que generalice — una línea sobre la rama de J2. El único tropiezo fue la cifra derivada de `scrum601` en el merge con `main`: se RE-MIDIÓ con el censo, sin sumar a mano.
-Mutaciones: una vez → `docs/master/evidencias/SCRUM-1806/mutar-1806.mjs`
+A9: comprobación → `tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs`
+Mutaciones: catálogo → `tests/scrum615-pedir-tipo-destinatario.test.mjs`
 
 Puesto S2. Hijo de SCRUM-1782. Firma del fundador: SCRUM-1782 c.22268 (el literal) y c.22272 («1-Sí»: el mismo literal en el aviso de la bandeja). El re-anclaje de `scrum615` y `scrum601` lo autorizó c.22373.
 
@@ -12,7 +12,9 @@ Puesto S2. Hijo de SCRUM-1782. Firma del fundador: SCRUM-1782 c.22268 (el litera
 
 **Rojo primero.** Con la línea vieja, `scrum615` da 11 de 12, y cae «los cuatro textos del campo son los que YA existen, letra a letra». Con la nueva, 12 de 12. `scrum1782b` da 3 de 3. `scrum601` da 20 de 20 tras el re-anclaje de abajo.
 
-**Mutaciones** (`correr` + `aplicarUna`; base limpia 12 / 0 / 0). Las dos caen y el árbol queda restaurado:
+**Mutaciones.** Las corre `correr` + `aplicarUna`, con base limpia 12 / 0 / 0. Viven en `MUTACIONES_QUE_ME_TUMBAN` de `scrum615`: es el test que ata los tres sitios, y hasta hoy no tenía catálogo. Las dos caen y el árbol queda restaurado.
+
+**Error mío, cazado por un guard que ya existía.** Primero las escribí en un guion propio dentro de `evidencias/`. `scrum1387` (está en `guards:entrada`) lo tumbó por ser un banco de mutación nuevo fuera del catálogo. El guion se ha borrado, y la lista vive en el test.
 
 | mutante en `:58` | resultado |
 |---|---|

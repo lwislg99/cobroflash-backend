@@ -27,6 +27,23 @@ import { createRequire } from 'node:module';
 import { nodo, todos } from './_banco-vistas.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
+
+// SCRUM-1806 · el tercer sitio del rótulo firmado (SCRUM-1782 c.22272) tiene que tumbar este test si se
+// toca: es el que ata los tres sitios iguales. Lo corre el meta-guard (`scripts/meta-guard-mutaciones.mjs`).
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    fichero: 'public/dashboard/js/tipoDestinatarioPendiente.js',
+    de: "  var ETIQUETA = '¿Factura como empresa o autónomo (IVA)?';\n",
+    a: "  var ETIQUETA = 'Tipo de cliente';\n",
+    cae: 'los cuatro textos del campo son los que YA existen, letra a letra',
+  },
+  {
+    fichero: 'public/dashboard/js/tipoDestinatarioPendiente.js',
+    de: "  var ETIQUETA = '¿Factura como empresa o autónomo (IVA)?';\n",
+    a: "  var ETIQUETA = '¿Factura como empresa o autónomo?';\n",
+    cae: 'los cuatro textos del campo son los que YA existen, letra a letra',
+  },
+];
 const require_ = createRequire(import.meta.url);
 const mod = require_(path.join(RAIZ, 'public/dashboard/js/tipoDestinatarioPendiente.js'));
 
