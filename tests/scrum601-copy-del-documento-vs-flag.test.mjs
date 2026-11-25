@@ -284,7 +284,21 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // (nuevo). MEDIDO con `censoCopy` sobre origin/main 42cae6109 (da 8/11/163, el ancla de antes: control
 // positivo) y sobre el árbol FUSIONADO (8/12/164): conjunto contra conjunto, +2 y 0 que salen o cambian
 // de categoría. No van a `PENDIENTES_DE_FIRMA`: están firmados.
-const VEREDICTO_AL_MEDIR = { flag: 8, tipo: 12, aPelo: 164 };
+// 163 → 164 · 23-nov-2026 (SCRUM-1782b) · cuál entró y por qué no es regresión: el rótulo del campo
+// `tipoDestinatario` en el modal de cliente, `public/dashboard/js/customersView.js:1511`,
+// «¿Factura como empresa o autónomo (IVA)?», firmado por el fundador en SCRUM-1782 c.22268/c.22272. Entra
+// por la diana («Factura») y cae en ③ porque no lo elige ningún flag: pregunta cómo factura el CLIENTE, no
+// nombra el documento que emite YaQu. (El de `customerDetailView.js:1498` va dentro de la plantilla del
+// modal, que ya contaba.) Recalculado con `censoCopy` sobre el árbol FUSIONADO (origin/main d5bec9526 + la
+// rama): { flag: 8, tipo: 11, aPelo: 164 }; es la única fila nueva de ③. Re-anclaje autorizado por el
+// fundador en SCRUM-1782 c.22373.
+// FUSIÓN · 25-nov-2026 (SCRUM-1806, S2) · las dos ramas subieron `aPelo` 163 → 164, cada una por SU literal
+// (1787w y 1782b), y SCRUM-1806 añade el tercer sitio del rótulo firmado (`tipoDestinatarioPendiente.js:58`,
+// SCRUM-1782 c.22272). MEDIDO con `censoCopy` sobre el árbol FUSIONADO (origin/main 2ab4549bd + 1782b +
+// 1806): { flag: 8, tipo: 12, aPelo: 166 }. Cuadra con la suma (main 8/12/164, +1 de `customersView.js:1511`
+// y +1 de `tipoDestinatarioPendiente.js:58`, que el censo lista con su fichero y línea), usada como
+// COMPROBACIÓN, no como cifra. Mismo literal firmado; re-anclaje autorizado en SCRUM-1782 c.22373 ②.
+const VEREDICTO_AL_MEDIR = { flag: 8, tipo: 12, aPelo: 166 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
@@ -477,7 +491,13 @@ test('SCRUM-601 · EL VEREDICTO: las tres categorías, ancladas, y SUMAN', () =>
 // SCRUM-1732 c.21928, `chargesAdmin.routes.ts:31` (sumidero `PROP:message`, alcance
 // `const TEXTO_GARANTIA_NO_CUADRA`). Recalculado con `censoCopy` sobre el árbol fusionado: 41, y es la única
 // construcción no legible nueva. Autorizado en SCRUM-1732 c.22001.
-const NO_LEGIBLES_AL_MEDIR = 41;
+// 41 → 42 · 25-nov-2026 (SCRUM-1806, S2) · cuál entró y por qué no es regresión: el rótulo firmado en
+// SCRUM-1782 c.22268/c.22272, «¿Factura como empresa o autónomo (IVA)?», en su TERCER sitio,
+// `tipoDestinatarioPendiente.js:58` (sumidero `DOM:textContent`, alcance `const ETIQUETA`). Antes ahí decía
+// «Tipo de cliente», sin la diana, y el censo no lo contaba. Mirado a mano: el texto final es la constante,
+// letra a letra. Recalculado con `censoCopy` sobre el árbol fusionado: 42, y es la única construcción no
+// legible nueva. Mismo literal y mismo re-anclaje que autorizó SCRUM-1782 c.22373.
+const NO_LEGIBLES_AL_MEDIR = 42;
 
 test('SCRUM-601 · el censo DECLARA lo que no sabe leer, y esa lista no crece sola', () => {
   const n = censo.noLegibles.length;

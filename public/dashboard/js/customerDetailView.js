@@ -1806,7 +1806,7 @@ function openEdit360Modal(customer, customerId, container) {
         </select>
         <div class="c360-ayuda">Solo sirve para avisarte de que toca facturarle. YaQu nunca factura ni envía nada solo — y el plazo legal manda por encima de lo que pactes.</div>
       </div>
-      <div class="field"><label>Tipo de cliente</label>
+      <div class="field"><label>¿Factura como empresa o autónomo (IVA)?</label>
         <select id="e360-tipodestinatario" class="input">
           <option value="">Sin clasificar</option>
           <option value="PARTICULAR">Particular</option>
