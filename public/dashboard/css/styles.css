@@ -42,6 +42,27 @@
 #puerta-serie .j1-ps-guardar { min-height:44px; margin-top:14px; display:none; }
 /* J1: fin del bloque SCRUM-1756j */
 
+/* J1: SCRUM-1849 · la LISTA de facturas (`invoicesView.js`) a 44 px de toque (AB6), por contenedor
+   como 1559j y 1843, sólo tamaño: `.input`, `.btn-primary` y `.btn-sm` globales no se tocan, ni el JS.
+   El ancla es la tarjeta que contiene `.j1-fac-lista` (la tabla, clase que sólo escribe esta lista).
+   Curados: «Nueva factura» (37 en escritorio), los campos de filtros (35-37), la fecha del lote (36,6)
+   y dos primarias pequeñas que nacen ocultas, «✓ Marcar como pagadas» del lote y la del estado vacío
+   (30,8-30,9). Las casillas no crecen: su `::before` les da 13 + 2 × 16 = 45 de toque (como 1559j).
+   EXENTOS por SCRUM-1845 c.22728 (`.btn-sm` que no es la primaria): «⬇ CSV», «Ver detalle» y
+   «Cancelar» del lote. Pesa (0,4,0) o más y gana a `.btn.btn-sm` (0,2,0) aunque vaya arriba.
+   Lo mide en navegador `tests/scrum1849-lista-facturas-44.test.mjs`. */
+.data-card:has(.j1-fac-lista) > .data-card-header > .btn-primary,
+.data-card:has(.j1-fac-lista) > div > .data-card-toolbar > .input,
+.data-card:has(.j1-fac-lista) .j1-bulk-count ~ .form-group > .input,
+.data-card:has(.j1-fac-lista) .j1-bulk-count ~ .btn-primary,
+.data-card:has(.j1-fac-lista) .j1-fac-lista .btn-primary.j1-fac-vacio-cta { min-height:44px; }
+.data-card:has(.j1-fac-lista) .j1-fac-lista input[type="checkbox"] { position:relative; }
+.data-card:has(.j1-fac-lista) .j1-fac-lista input[type="checkbox"]::before { content:""; position:absolute; inset:-16px -6px; }
+/* La de la cabecera está a ~11 px del borde de `.table-scroll`, que recorta: con -16 arriba medía 40.
+   Mismos 45 px, corridos hacia abajo (la primera fila empieza más allá de esos 22). */
+.data-card:has(.j1-fac-lista) .j1-fac-lista .j1-fac-col-check > input[type="checkbox"]::before { inset:-10px -6px -22px; }
+/* J1: fin del bloque SCRUM-1849 */
+
 /* J1: SCRUM-1787b · línea de progreso de la ficha de factura (Emitida → Enviada → Cobrada).
    La misma forma que `buildStatusTimeline` del presupuesto, con clases y no con style= (CSP).
    Hecho = verde de marca; actual = anillo info; pendiente = neutro; final (ANULADA / RECTIFICATIVA)
