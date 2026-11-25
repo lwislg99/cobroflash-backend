@@ -62,3 +62,42 @@ El oráculo es el bucle de `filasConTotalDelApartado` tal y como estaba en `77c0
 **La tanda entera en local NO terminó.** Claude Code la cortó porque la máquina se quedó sin memoria. Llegó a 10.477 `ok` y 4 `not ok`. Tres son los de esta máquina, que ya salen en SCRUM-1818.md: `scrum1726` D1 ×2 (el ICU de las fechas) y `scrum351` (junctions de `node_modules` rotas en otros árboles). El cuarto, `scrum534b-documentos-fantasma`, cayó a nivel de FICHERO a los 138 s, sin ningún subtest nombrado, en plena falta de memoria. Corrido solo, da 10 de 10. Lo que no llegó a correr lo corre el check obligatorio. Esto no es una tanda verde. `npm run guards:entrada`: 16 guards, en verde.
 
 **Lo que esto NO hace.** No cambia ni una cifra ni un píxel: es la condición ①, y está medida. Tampoco toca la página de firma (eso es el tramo g) ni el PDF de factura.
+
+## SCRUM-1807d · la clave `agrupado` en la cabecera, sin esquema (25-nov-2026)
+
+**Medido contra:** `origin/main` = `7592c8c140cbe5ddb1bcc516c8c6af38af90d59d` · 2026-11-25T08:52:27Z
+A9: sin fallo que generalice — tramo nuevo sobre la misma rama, con `main` al día (0 commits por detrás); el trinquete de SCRUM-619 saltó como está diseñado para saltar, y se le dio la decisión que pide.
+Mutaciones: catálogo → `tests/scrum1807d-agrupado-en-la-cabecera.test.mjs`
+
+Puesto S1, relevo de la sesión que hizo el tramo c. **Decisión:** SCRUM-1786 c.22269, P3 ✅ (se elige POR APARTADO, en su cabecera, dentro del JSON de `Quote.lines`) y P4 ✅ (la factura sale siempre desglosada). **Sin esquema:** `prisma/schema.prisma` no se ha abierto; no ha asomado ningún ALTER.
+
+**Qué cambia en `src`:**
+
+| fichero | cambio |
+|---|---|
+| `src/core/validation/schemas.ts` | `QuoteLineSchema` declara `agrupado: z.boolean().optional()`. Sin esto, `z.object` la borraba en silencio (medido: rojo del primer caso). `.optional()` y sin `.default(false)`: una cabecera guardada antes no la lleva, y sale sin ella |
+| `src/modules/quotes/domain/apartados.ts` | nuevo `esAgrupado(cabecera)`: `true` sólo si es una cabecera (`esApartado`) y la clave es el booleano `true`. Es lo que leerá el tramo g |
+| `src/core/utils/utils.ts` | el tipo `QuoteLine` gana `agrupado?: boolean` (sólo tipo) |
+
+**Ningún texto nuevo.** Un valor que no es booleano lo rechaza zod con su error de siempre, como ya pasa con `apartado`. Tampoco se toca un importe: la clave sólo vive en una cabecera, y las cabeceras no suman (`lineasQueSuman`). El test lo comprueba con `calcTotal`, con y sin la clave.
+
+**🔴 Lo que NO hace, y queda como propuesta.** Una línea que NO es cabecera y trae `agrupado: true` pasa la puerta, y no significa nada, porque `esAgrupado` sólo la mira en una cabecera. Rechazarla, como se rechaza una cabecera con importes, pide un mensaje nuevo, y eso es texto que se firma (regla 39). Así que no se ha construido: va al orquestador.
+
+### El test (`tests/scrum1807d-agrupado-en-la-cabecera.test.mjs`)
+
+Mira tres cosas. Primero, que la clave **viaja**: la puerta la deja pasar, también con `false` y también en el modo de tres opciones. Segundo, que **se guarda**: el handler real de `POST /quote/create` (base doblada con `_envio-doblado.mjs`, WhatsApp en dry-run) se la pasa a `quote.create`. Tercero, que **se relee**: esa fila, después de pasar por `JSON`, recorrida con `capitulos()` + `esAgrupado()`, da `[true, false]` para los dos apartados. Y la **compatibilidad**: una cabecera sin la clave vale y sale sin ella.
+
+**Rojo primero.** Con el `dist` de la punta del tramo c (`1a0b9d314`): 1 de 5. El que pasa es el de compatibilidad, que es el control y tiene que estar verde antes y después. Compilado: 5 de 5. Junto a `scrum1807c`, `scrum655`, `scrum1786g` y `scrum1786f1`: 35 de 35.
+
+**Mutaciones**, con `aplicarUna` del meta-guard (driver de una vez, base limpia 5 pasados / 0 caídos / 0 saltados). Las cuatro caen:
+
+| mutante | resultado |
+|---|---|
+| la puerta deja de declarar `agrupado` | CAE |
+| `.default(false)`: el silencio se convierte en dato | CAE |
+| `esAgrupado` con `Boolean(…)`: se adivina | CAE |
+| `esAgrupado` mira también las líneas que no son cabecera | CAE |
+
+**🔴 El trinquete de SCRUM-619 (`tests/scrum619-vocabulario-de-linea.test.mjs`) saltó, como debe.** Cayeron dos casos: «el vocabulario del PRESUPUESTO no crece sin que alguien decida» y «la divergencia, nombrada». Su mensaje pide decidir qué hace la factura con la clave, escribirlo y actualizar la lista. Es lo que hicieron SCRUM-655, 661, 594 y 632. La decisión no la toma esta sesión, la tomó el fundador: **P4 ✅**, la factura sale siempre desglosada. Va escrita en su bloque, y `agrupado` entra en `VOC_PRESUPUESTO` y en `DIVERGENCIA`. No se ha tocado ningún aserto, y la puerta de la factura suelta no se ha abierto (regla 40). Después: 8 de 8.
+
+**Guards que leen `tests/` entero** (262, 409, 1415, 1344, 850, 850b, 754, 765, 1294): 93 de 93.

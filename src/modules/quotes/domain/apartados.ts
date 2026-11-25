@@ -96,6 +96,25 @@ export function capitulos<T>(lineas: readonly T[] | null | undefined): Capitulo<
   return salida;
 }
 
+// ── SCRUM-1807 (tramo d) · ¿ESTE APARTADO SE ENSEÑA AGRUPADO? ─────────────────────────────────
+//
+// La elección vive en la CABECERA (`agrupado: true`, SCRUM-1786 P3 ✅) y la deja pasar
+// `QuoteLineSchema`. Sin la clave, desglosado: así se leen todas las cabeceras guardadas antes de
+// que existiera, y no se rellena nada hacia atrás (SCRUM-1786.md §3.5).
+
+/** La clave de la elección dentro de la cabecera. La MISMA que deja pasar `QuoteLineSchema`. */
+const MARCA_AGRUPADO = 'agrupado';
+
+/**
+ * ¿Va agrupado el capítulo que abre esta cabecera? **Sólo el booleano `true`, y sólo en una
+ * cabecera.** En una línea normal la clave no significa nada, y `null` —lo que va antes de la
+ * primera cabecera— no es un apartado. Mismo trato que `esApartado`: no se adivina.
+ */
+export function esAgrupado(cabecera: unknown): boolean {
+  if (!esApartado(cabecera)) return false;
+  return (cabecera as Record<string, unknown>)[MARCA_AGRUPADO] === true;
+}
+
 // ── 🔴 Y LA NUMERACIÓN **NO** ESTÁ AQUÍ, A PROPÓSITO ──────────────────────────────────────
 //
 // Vive en `public/dashboard/js/quoteApartados.js`, y en un solo sitio. Hoy su ÚNICO consumidor es
