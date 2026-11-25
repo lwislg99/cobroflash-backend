@@ -42,6 +42,27 @@
 #puerta-serie .j1-ps-guardar { min-height:44px; margin-top:14px; display:none; }
 /* J1: fin del bloque SCRUM-1756j */
 
+/* J1: SCRUM-1849 · la LISTA de facturas (`invoicesView.js`) a 44 px de toque (AB6), por contenedor
+   como 1559j y 1843, sólo tamaño: `.input`, `.btn-primary` y `.btn-sm` globales no se tocan, ni el JS.
+   El ancla es la tarjeta que contiene `.j1-fac-lista` (la tabla, clase que sólo escribe esta lista).
+   Curados: «Nueva factura» (37 en escritorio), los campos de filtros (35-37), la fecha del lote (36,6)
+   y dos primarias pequeñas que nacen ocultas, «✓ Marcar como pagadas» del lote y la del estado vacío
+   (30,8-30,9). Las casillas no crecen: su `::before` les da 13 + 2 × 16 = 45 de toque (como 1559j).
+   EXENTOS por SCRUM-1845 c.22728 (`.btn-sm` que no es la primaria): «⬇ CSV», «Ver detalle» y
+   «Cancelar» del lote. Pesa (0,4,0) o más y gana a `.btn.btn-sm` (0,2,0) aunque vaya arriba.
+   Lo mide en navegador `tests/scrum1849-lista-facturas-44.test.mjs`. */
+.data-card:has(.j1-fac-lista) > .data-card-header > .btn-primary,
+.data-card:has(.j1-fac-lista) > div > .data-card-toolbar > .input,
+.data-card:has(.j1-fac-lista) .j1-bulk-count ~ .form-group > .input,
+.data-card:has(.j1-fac-lista) .j1-bulk-count ~ .btn-primary,
+.data-card:has(.j1-fac-lista) .j1-fac-lista .btn-primary.j1-fac-vacio-cta { min-height:44px; }
+.data-card:has(.j1-fac-lista) .j1-fac-lista input[type="checkbox"] { position:relative; }
+.data-card:has(.j1-fac-lista) .j1-fac-lista input[type="checkbox"]::before { content:""; position:absolute; inset:-16px -6px; }
+/* La de la cabecera está a ~11 px del borde de `.table-scroll`, que recorta: con -16 arriba medía 40.
+   Mismos 45 px, corridos hacia abajo (la primera fila empieza más allá de esos 22). */
+.data-card:has(.j1-fac-lista) .j1-fac-lista .j1-fac-col-check > input[type="checkbox"]::before { inset:-10px -6px -22px; }
+/* J1: fin del bloque SCRUM-1849 */
+
 /* J1: SCRUM-1787b · línea de progreso de la ficha de factura (Emitida → Enviada → Cobrada).
    La misma forma que `buildStatusTimeline` del presupuesto, con clases y no con style= (CSP).
    Hecho = verde de marca; actual = anillo info; pendiente = neutro; final (ANULADA / RECTIFICATIVA)
@@ -5735,9 +5756,10 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
    alto de `.input` es padding + borde + el interlineado de la fuente que haya: 36 en el Chromium de
    Windows y 34 en el de Linux de CI, donde el buscador y el campo de `#c360-meta` daban 35 de toque a
    929 contra 36. Un mínimo explícito de 38 (el alto que ya tienen los dos `select` de la barra) no
-   depende de la fuente ni del redondeo; en móvil manda el de 44, que va detrás. */
-.data-card:has(> .barra-seleccion) .data-card-toolbar > .input,
-#c360-meta .input { min-height: 38px; }
+   depende de la fuente ni del redondeo; en móvil manda el de 44, que va detrás.
+   SCRUM-1850: `#c360-meta .input` sale de la regla de escritorio y va a 44 en todas las anchuras, en el
+   bloque de SCRUM-1850 (más abajo); su regla de móvil se queda aquí. */
+.data-card:has(> .barra-seleccion) .data-card-toolbar > .input { min-height: 38px; }
 @media (max-width: 768px) {
   .data-card:has(> .barra-seleccion) .data-card-toolbar > .input,
   #c360-meta .input { min-height: 44px; }
@@ -5846,6 +5868,17 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
 @media (max-width: 768px) {
   .c360-cabecera-acciones { flex-shrink: 1; min-width: 0; }
 }
+/* J2: SCRUM-1850 (AB6, amplía SCRUM-1841 por contenedor) · ficha 360: lo que quedaba por debajo de
+   44 px de toque. Las 6 pestañas del historial medían 39 (su estilo en línea no fija alto); los
+   enlaces de contacto, 37 por encima de 768 (`.contacto-link` da 36 en escritorio, DESIGN.md), y
+   también «Cómo llegar», en `#c360-meta`; el campo de etiquetas, 38,9 (el mínimo de escritorio de
+   SCRUM-1592b). Solo tamaño, acotado a cada contenedor; `.contacto-link` e `.input` globales no se
+   tocan. «← Volver a Clientes» y «Ver →» son `.btn-sm` que no son la acción primaria y se quedan
+   en 30 (SCRUM-1845 c.22728, DESIGN.md:171). Medido con `docs/master/evidencias/SCRUM-1850/medir.mjs`. */
+.c360-pestanas > button { min-height: 44px; }
+.c360-datos .contacto-link, #c360-meta .contacto-link { min-height: 44px; }
+#c360-meta .input { min-height: 44px; }
+/* J2: fin del bloque SCRUM-1850 */
 .c360-kpi-valor { font-size:18px }
 .c360-verde { color:var(--green-600) }
 .c360-rojo { color:var(--red-600) }
