@@ -754,19 +754,22 @@ async function serializeJobDetail(job: any) {
   // detalle: un WhatsApp que Meta marca fallido DESPUÉS hace aparecer el aviso sin tocar nada.
   // Sólo lectura y dos consultas para todas las facturas: nada se envía desde aquí.
   const idsDeCobro = [...new Set(facturasDelTrabajo.map((inv) => inv.chargeId).filter((x): x is number => x != null))];
-  const [cobrosPagados, filasWhatsapp] = idsDeCobro.length === 0
+  // SCRUM-1808b · la MISMA consulta trae ahora el estado de cada cobro, no solo los pagados: la ficha
+  // ofrece «Cancelar cobro» con el cobro `pending`. `pagados` se deriva de ella y no cambia.
+  const [cobrosDelTrabajo, filasWhatsapp] = idsDeCobro.length === 0
     ? [[], []]
     : await Promise.all([
         prisma.charge.findMany({
-          where: { id: { in: idsDeCobro }, merchantId: job.merchantId, status: 'paid' }, // regla 2
-          select: { id: true },
+          where: { id: { in: idsDeCobro }, merchantId: job.merchantId }, // regla 2
+          select: { id: true, status: true },
         }),
         prisma.whatsAppMessage.findMany({
           where: { merchantId: job.merchantId, relatedType: 'charge', relatedId: { in: idsDeCobro } }, // regla 2
           select: { relatedId: true, status: true, createdAt: true },
         }),
       ]);
-  const pagados = new Set(cobrosPagados.map((c) => c.id));
+  const pagados = new Set(cobrosDelTrabajo.filter((c) => c.status === 'paid').map((c) => c.id));
+  const estadoDeCobro = new Map<number, string>(cobrosDelTrabajo.map((c) => [c.id, c.status]));
   const envioDe = (chargeId: number | null) =>
     chargeId != null && pagados.has(chargeId)
       ? envioDelDocumento({
@@ -794,6 +797,9 @@ async function serializeJobDetail(job: any) {
     // La misma regla y la misma lista que sirve GET /admin/invoices/:id: la ficha no las decide.
     conIvaAlDiez: llevaLineaAlDiez(inv.lines),
     metodosConAvisoIvaAlDiez: METODOS_CON_AVISO_IVA_10,
+    // SCRUM-1808b · el estado del cobro de la factura, o `null` si no tiene: el mismo nombre y dato que
+    // GET /admin/invoices/:id (`estadoDelCobroDeLaFactura`). La ficha solo ofrece cancelarlo con `pending`.
+    estadoDelCobro: inv.chargeId != null ? (estadoDeCobro.get(inv.chargeId) ?? null) : null,
   })));
 
   const charge = quote?.charge
