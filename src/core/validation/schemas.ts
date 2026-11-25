@@ -172,6 +172,17 @@ const QuoteLineSchema = z.object({
    * `Quote.lines`: la pantalla mostraría un apartado y la base guardaría una línea normal.
    */
   apartado: z.boolean().optional(),
+  /**
+   * SCRUM-1807 (tramo d) · CÓMO SE ENSEÑA ESE APARTADO AL CLIENTE: `true` = agrupado (una fila con
+   * el total), y si falta, desglosado, como hasta hoy. Se elige POR APARTADO, en su cabecera
+   * (SCRUM-1786 P3 ✅, c.22269): por eso cabe en el JSON de `Quote.lines` y no hay esquema ni ALTER.
+   *
+   * Sin declararla aquí, `z.object` la BORRA en silencio, como les pasó a `suplido` y a `apartado`.
+   * 🔴 `.optional()` Y NUNCA `.default(false)`: las cabeceras guardadas hasta hoy no la llevan, y un
+   * default escribiría en cada una una elección que nadie hizo. Quién la lee: `esAgrupado()`
+   * (`apartados.ts`), que sólo la mira en una cabecera.
+   */
+  agrupado: z.boolean().optional(),
 }).superRefine((linea, ctx) => {
   // 🔴 UN SUPLIDO NO LLEVA IVA, Y SE EXIGE EN LA PUERTA. La pantalla ya fuerza `tax: 0`
   // (`quoteSuplido.js`), pero la pantalla no es la única que llama a esta ruta: quedarse solo con
