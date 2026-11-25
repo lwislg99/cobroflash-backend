@@ -2,6 +2,7 @@
 paths:
   - "scripts/capturas-presupuesto-desde-la-lista-de-partes.mjs"
   - "scripts/capturas-1834-error-visible-390.mjs"
+  - "scripts/capturas-cancelar-cobro-trabajo.mjs"
   - "scripts/guard-965-un-solo-presupuesto.mjs"
   - "scripts/capturas-1818b-selector-plan.mjs"
   - "public/dashboard/js/quoteRevisiones.js"
