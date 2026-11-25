@@ -2689,6 +2689,10 @@ html, body { overflow-x: clip; }
 /* J3: SCRUM-1639c · las tarjetas de trabajos y presupuestos de la ficha del operario (`teamView.js`)
    son `role="button"`: la misma trampa de arriba, `.customers-card` pisa el `:focus-visible` global. */
 .customers-card[role="button"]:focus-visible { outline: none; box-shadow: var(--ring); }
+/* J3: SCRUM-1844 (AB6, cura por contenedor como SCRUM-1841 y SCRUM-1148) · Equipo (`teamView.js`):
+   «+ Añadir miembro» (`#btn-invite-member`, `btn-primary btn-sm`) medía 30,7-31,0 px de toque; la regla
+   se acota a la cabecera de la vista y `.btn-sm` global no se toca. Sólo el tamaño: el clic es de S1. */
+.equipo-cabecera > .btn-sm { min-height: 44px; }
 /* SCRUM-1692 · la fila ABIERTA: el mismo marcado de selección que `.quote-cliente-opcion[aria-pressed]`
    (borde de marca + un píxel por dentro + fondo suave), sin tokens nuevos ni sólo color (WCAG 1.4.1). */
 #po-lista > button.customers-card[aria-current="true"] {
@@ -5731,9 +5735,10 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
    alto de `.input` es padding + borde + el interlineado de la fuente que haya: 36 en el Chromium de
    Windows y 34 en el de Linux de CI, donde el buscador y el campo de `#c360-meta` daban 35 de toque a
    929 contra 36. Un mínimo explícito de 38 (el alto que ya tienen los dos `select` de la barra) no
-   depende de la fuente ni del redondeo; en móvil manda el de 44, que va detrás. */
-.data-card:has(> .barra-seleccion) .data-card-toolbar > .input,
-#c360-meta .input { min-height: 38px; }
+   depende de la fuente ni del redondeo; en móvil manda el de 44, que va detrás.
+   SCRUM-1850: `#c360-meta .input` sale de la regla de escritorio y va a 44 en todas las anchuras, en el
+   bloque de SCRUM-1850 (más abajo); su regla de móvil se queda aquí. */
+.data-card:has(> .barra-seleccion) .data-card-toolbar > .input { min-height: 38px; }
 @media (max-width: 768px) {
   .data-card:has(> .barra-seleccion) .data-card-toolbar > .input,
   #c360-meta .input { min-height: 44px; }
@@ -5842,6 +5847,17 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
 @media (max-width: 768px) {
   .c360-cabecera-acciones { flex-shrink: 1; min-width: 0; }
 }
+/* J2: SCRUM-1850 (AB6, amplía SCRUM-1841 por contenedor) · ficha 360: lo que quedaba por debajo de
+   44 px de toque. Las 6 pestañas del historial medían 39 (su estilo en línea no fija alto); los
+   enlaces de contacto, 37 por encima de 768 (`.contacto-link` da 36 en escritorio, DESIGN.md), y
+   también «Cómo llegar», en `#c360-meta`; el campo de etiquetas, 38,9 (el mínimo de escritorio de
+   SCRUM-1592b). Solo tamaño, acotado a cada contenedor; `.contacto-link` e `.input` globales no se
+   tocan. «← Volver a Clientes» y «Ver →» son `.btn-sm` que no son la acción primaria y se quedan
+   en 30 (SCRUM-1845 c.22728, DESIGN.md:171). Medido con `docs/master/evidencias/SCRUM-1850/medir.mjs`. */
+.c360-pestanas > button { min-height: 44px; }
+.c360-datos .contacto-link, #c360-meta .contacto-link { min-height: 44px; }
+#c360-meta .input { min-height: 44px; }
+/* J2: fin del bloque SCRUM-1850 */
 .c360-kpi-valor { font-size:18px }
 .c360-verde { color:var(--green-600) }
 .c360-rojo { color:var(--red-600) }
