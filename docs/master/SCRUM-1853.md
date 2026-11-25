@@ -76,3 +76,63 @@ VIVO → VIVO en los dos; en `tests/_veredicto-mudez.json` sólo cambian sus dos
 - La etiqueta `area-` de SCRUM-1145 y SCRUM-1587: la tomo de c.22788.
 
 A9: sin fallo que generalice — el defecto era latente (0 de 8 `.css` con `//` fuera de un comentario) y la cura no se apoyó en ninguna suposición sin medir: el único desacuerdo con el encargo (la huella del censo de mudez) lo destapó el propio censo antes de empujar.
+
+## SCRUM-1853b · parte J1 · el llamador de J1 (1787e) lee el CSS por su ruta
+
+**Medido contra:** `origin/main` = `2a6675c978794595696f87fb1a7ed3e52f904adb` + rama `scrum-1853-llamadores-css-de-j2` = `85db21eba7873ce6d0d9b9a96200f5e5508ca035` · 2026-11-25T15:20:32Z
+
+Puesto J1, sesión jv-j1kx, rama `scrum-1853b-llamador-css-de-j1`, nacida de la punta de J2 por encargo del
+orquestador J (reparto en c.22788). NO fusioné `origin/main` (a esa hora, `89bb285dd0090f72efdc4bd1bea08296273f0c6f`).
+Carril: `carriles.mjs de` contesta NO-PUDE-MIRAR (test de ticket); manda la etiqueta `area-j1` de SCRUM-1787
+según c.22788 (no la he releído en Jira). `tests/_guard-texto.mjs` (J6) no se toca; los otros 13 llamadores, tampoco.
+
+### Qué cambia
+
+- **Antes:** `tests/scrum1787e-conceptos-en-movil.test.mjs:27` leía `styles.css` con `fs.readFileSync`, y `reglas(css)`
+  lo filtraba en `:85` con `ejecutableDe(css, { ancla: '.j1-prog-paso', donde: …, almohadillaEsComentario: false })`,
+  sin `barraDobleEsComentario: false`.
+- **Después:** `:27` es `leerFuente(ruta, { ancla: '.j1-prog-paso' })`, que decide por la extensión, con su
+  comentario SCRUM-1853b en `:26`. `:85` pasa a `recorrer(css, null)`, comentado. Conserva la misma ancla y se quita el
+  `import fs`, que se quedaba sin uso. La línea `:85` sigue siendo la que cita SCRUM-1851.md:81.
+- **Lo que cambia de comportamiento:** el ancla se comprueba al cargar el módulo y no dentro de ② y ③. Si faltara,
+  cae el fichero entero, ① incluido.
+- `tests/_veredicto-mudez.json`: la huella de 1787e pasa de `811fb394cf6dc092` a `3bc32743671d1455`. La clase sigue en VIVO.
+
+### Los controles (guion suelto en TEMP, fuera del árbol, por encargo)
+
+El guion es `C:\Users\Public\tmp-jv-j1kx\control-1853b.mjs`. **No usa réplicas:** saca del FICHERO de test la línea
+`const CSS = …`, la función `reglas` y los cuerpos de los casos ② y ③, y los ejecuta tal cual. El viejo lo lee con
+`git show 85db21eba:<test>` y el nuevo, del árbol. Lo corre sobre tres raíces y sale con 0.
+
+| caso | viejo (`85db21eba`) | nuevo (árbol) |
+|---|---|---|
+| (a) `styles.css` de hoy, 373.497 car. | 196.042 car. · sha256 `cbcdcb0a…469d0cb8` · 1.907/1.907 llaves · 1.776 reglas · ② y ③ pasan | **idéntico**: mismo largo y sha256, y las 1.776 reglas con el mismo sha (`af67a0df`) |
+| (b) `.zz-sembrada { background:url(https://x/y.png); }` sembrada en el `@media (max-width: 640px)`, delante de `.j1-fac-conceptos thead` | 1.908 abren y 1.907 cierran: **se come la llave**. Quedan 1.771 reglas, porque `.zz-sembrada` se traga el resto del `@media`. ② da un **rojo falso** («en móvil la cabecera se oculta…») y ③ sale **CIEGO** (0 reglas de `.j1-fac-conceptos`) | 1.908/1.908 · 1.777 reglas · `.zz-sembrada` = `background:url(https://x/y.png);` · ② y ③ pasan |
+| (c) el mismo sembrado sin la `//`: `url(x/y.png)` | 196.086 car. · `9b25b52a…07f5bcf1` · 1.777 reglas · pasan | **idéntico** |
+
+- **Control del instrumento:** con `SIN_SIEMBRA=1`, la (b) se siembra sin la `//`. Así el positivo sale `NO`, con
+  salida 1, y no `OK`. El guion exige además que la marca de siembra aparezca una sola vez en el CSS; si no, dice
+  CIEGO (salida 2).
+- La (a) coincide con la cifra de J2 sobre el mismo `styles.css`: 196.042 car., 1.907 llaves y `cbcdcb0a…469d0cb8`.
+  Son dos llamadores distintos y dan el mismo texto filtrado.
+
+### Verdes (en este árbol, `node --test` por fichero, TAP a un fichero fuera del árbol)
+
+- `tsc -p .` (con tipos): salida 0. Los tests leen `dist/`; no hay `src/` en el diff.
+- **1787e:** 3 de 3, sin navegador (banco de vistas).
+- **700 + 719:** 42 de 42. En 700, los filtros propios son **91, con tope 91**. Lo medí extrayendo su `censo()`:
+  ciegan 7 (tope 7) y usan el helper 80. 1787e no cuenta como filtro propio, así que la cifra no sube.
+- **`censo:mudez -- --escribir`:** midió 1 de 148, y sale VIVO.
+- 1294, 267, 854, 237 y 976, `guards:entrada` y los de árbol entero que corrió J2: las cifras van en el
+  comentario de entrega de Jira. Este tramo se escribe antes de correrlos, porque 854 y 1294 lo leen.
+
+### Lo que NO he medido
+
+- **La suite entera:** no la corrí, porque el encargo lo prohíbe.
+- **El merge con `origin/main`:** no lo fusioné. Lo prueba CI.
+- **Las mutaciones del catálogo de 1787e (`MUTACIONES_QUE_ME_TUMBAN`):** no las he corrido tras el cambio. Por eso
+  aquí no se afirma ninguna.
+- **El guion de control** no está en git: vive en TEMP, por encargo. Lo necesario para repetirlo está arriba.
+- **La etiqueta `area-j1` de SCRUM-1787:** la tomo de c.22788.
+
+A9: sin fallo que generalice — la cura es la receta de J2 aplicada a un llamador, y los tres controles salieron como se esperaba antes de empujar; mi único tropiezo (lancé el arranque de normas a una carpeta TEMP aún sin crear) lo cazó el código de salida en el acto.
