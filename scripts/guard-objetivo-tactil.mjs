@@ -434,9 +434,10 @@ const SUPERFICIES_791 = [
   // Y entra porque este ticket le AÑADE un objetivo: el botón «🔗 Portal», que para un cliente sin
   // token no existía. Meter el botón y no meter la vista sería dejar la deuda sin contador.
   // SCRUM-1841 c.22708 · 7 → 6: la cabecera de acciones llega a 44 px por contenedor; suelo recalculado, solo endurece.
+  // SCRUM-1845 c.22728 · 6 → 2 (SCRUM-1850): pestañas, enlaces y campo a 44 por contenedor; quedan los dos `.btn-sm` no primarios. Solo endurece.
   { ruta: '/__cliente360', vista: 'renderCustomer360View', titulo: 'ficha 360 del cliente',
-    datos: DATOS_795, args: ARGUMENTOS_DE_VISTA.renderCustomer360View, distintosEsperados: 6,
-    origen: 'SCRUM-1841 (25-nov-2026, cabecera de acciones a 44 px por contenedor)' },
+    datos: DATOS_795, args: ARGUMENTOS_DE_VISTA.renderCustomer360View, distintosEsperados: 2,
+    origen: 'SCRUM-1850 (25-nov-2026, pestañas, enlaces y campo de la ficha a 44 px por contenedor)' },
   // 🔴 SCRUM-1167 · PROVEEDORES VUELVE, y por qué. SCRUM-786 la sacó de aquí con «cero deuda
   // conocida», y la deuda existía: «Borrar» medía 30 px en escritorio. Una superficie que no se
   // vigila no tiene deuda conocida porque nadie la mira. Vuelve con `irreversibles`: los textos de
@@ -865,7 +866,7 @@ const EXCEPCIONES_791 = {
   renderCustomer360View: [
     { sel: 'BUTTON.btn-ghost.btn-sm', motivo: 'clase compartida `.btn-sm` (30,5–31,0 px) — «← Volver a Clientes» y «Ver →». Pre-existentes. Las retira el fundador al decidir sobre `.btn-sm` (SCRUM-786; SCRUM-787 midió que 57 de los 76 cortos del panel son de esa clase).' },
     // SCRUM-1841 c.22708 · retiradas `BUTTON.btn-secondary.btn-sm` y `BUTTON.btn-primary.btn-sm`: cumplen por contenedor; las nombró el detector de sobrantes.
-    { sel: 'BUTTON', motivo: 'las DOS pestañas del historial, «Presupuestos (1)» y «Facturas (1)», a 41,0 px (caja 40). No llevan clase de botón: es el TERCER grupo de SCRUM-787 —los que no se arreglan con `.btn-sm` sino dándoles área donde están—. Sin decidir. ⚠️ Este selector es el más ancho de todo el fichero: excusa cualquier <button> SIN CLASE de esta pantalla, y hoy son exactamente esos dos (7 interactivos censados, 7 nombrados arriba).' },
+    // SCRUM-1845 c.22728 · retirada `BUTTON` (SCRUM-1850): las pestañas cumplen por `.c360-pestanas > button`; la nombró el detector de sobrantes.
   ],
   // 🔴 SCRUM-1167 · medido el 27-sep-2026 con esta lista VACÍA: tres cortos a 929 (30,7 px) y
   // ninguno a 390. «Borrar» era uno de los tres y se ARREGLA en el código (no se excusa: las
