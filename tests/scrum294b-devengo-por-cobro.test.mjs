@@ -35,6 +35,7 @@ const FACTURA = {
   type: 'F1', total: '121.00', currency: 'EUR', status: 'paid',
   customerId: 3, quoteId: null, chargeId: null, albaranRefs: null,
   lines: [{ qty: 1, price: 100, tax: 0.21 }],
+  merchantCriterioCaja: true, // SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora
 };
 
 function baseCon(facturas) {

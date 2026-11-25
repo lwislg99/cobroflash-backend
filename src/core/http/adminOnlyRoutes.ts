@@ -135,8 +135,6 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   // La factura del resto + payment_request. ERA EL OBJETIVO ORIGINAL DE SCRUM-54,
   // que se cerró sobre consolidar-albaranes y dejó esta abierta: aquí su evidencia.
   { method: 'POST', path: '/admin/jobs/999999/collect-rest' },
-  // Reescribe el PDF de una factura emitida (regla 29).
-  { method: 'POST', path: '/admin/invoices/:invoiceId/regenerate-pdf' },
   // Informes del negocio: /vat es "datos fiscales" ❌ explícito en S1; /pl y /x2 son
   // ingresos, beneficio y cobros. Gate en el MONTAJE de /admin/reports.
   { method: 'GET', path: '/admin/reports/vat' },

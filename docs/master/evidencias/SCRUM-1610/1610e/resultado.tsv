@@ -1,0 +1,981 @@
+pop	run	attempt	lastAttempt	runConclusion	job	jobName	jobConclusion	createdAt	branch	bytes	ciego	corre1516c	S_NEW_corte	S_NEW_ciego	AUTOTEST_1610b_visible	S_OLD_testat	S_OLD_sembrados	S_OLD_poblacion	CERO_cortes0
+A	40923822815	1	1	failure	123623883312	meta-guard · los guards caen cuando deben	failure	2026-10-29T17:42:04Z	scrum-1608b-visto-en-produccion	164686		0	0	0	0	0	0	0	0
+A	40926196787	1	1	failure	123632236088	meta-guard · los guards caen cuando deben	failure	2026-10-29T17:57:13Z	scrum-1632c-firma-tolera-la-url-sucia	162113		0	0	0	0	0	0	0	0
+A	40923660320	1	1	failure	123623300998	meta-guard · los guards caen cuando deben	failure	2026-10-29T17:41:02Z	scrum-1589b-visto-en-produccion	180232		0	0	0	0	0	0	0	0
+A	40925712892	1	1	failure	123630531291	meta-guard · los guards caen cuando deben	failure	2026-10-29T17:54:07Z	main	162369		0	0	0	0	0	0	0	0
+A	40925032231	1	1	failure	123628133616	meta-guard · los guards caen cuando deben	failure	2026-10-29T17:49:44Z	scrum-1549e-apagon-medido	162613		0	0	0	0	0	0	0	0
+A	40925948791	1	1	failure	123631358887	meta-guard · los guards caen cuando deben	failure	2026-10-29T17:55:37Z	scrum-1634-firmas-de-las-cinco-categorias	162748		0	0	0	0	0	0	0	0
+B	40928184325	1	1	success	123639246728	build + tests (con banco desechable)	success	2026-10-29T18:09:50Z	scrum-1563g-hoja-decisiones-fundador	2236382		1	0	0	1	0	0	0	0
+A	40926196787	1	1	failure	123632236082	build + tests (con banco desechable)	failure	2026-10-29T17:57:13Z	scrum-1632c-firma-tolera-la-url-sucia	2244721		1	1	0	1	0	0	0	0
+A	40864405058	1	1	failure	123415397201	meta-guard · los guards caen cuando deben	failure	2026-10-29T11:18:47Z	scrum-1603c-censo-imprime-la-caja	163529		0	0	0	0	0	0	0	0
+A	40862426112	1	1	failure	123408721148	meta-guard · los guards caen cuando deben	failure	2026-10-29T11:03:41Z	scrum-1563f-estado-29oct	161905		0	0	0	0	0	0	0	0
+A	40872477063	1	1	failure	123442782267	meta-guard · los guards caen cuando deben	failure	2026-10-29T12:20:41Z	main	160973		0	0	0	0	0	0	0	0
+A	40924498886	1	1	failure	123626270486	meta-guard · los guards caen cuando deben	failure	2026-10-29T17:46:22Z	scrum-1633-de-ruta-que-no-existe	160365		0	0	0	0	0	0	0	0
+B	40869318095	1	1	success	123432003697	build + tests (con banco desechable)	success	2026-10-29T11:57:00Z	scrum-1588b-alquiler-de-local-pantalla	2236677		1	0	0	1	0	0	0	0
+A	40924498886	1	1	failure	123626270314	build + tests (con banco desechable)	failure	2026-10-29T17:46:22Z	scrum-1633-de-ruta-que-no-existe	2314083		1	1	0	1	0	0	0	0
+A	40865190138	1	1	failure	123418269979	meta-guard · los guards caen cuando deben	failure	2026-10-29T11:24:46Z	scrum-1588b-alquiler-de-local-pantalla	184460		0	0	0	0	0	0	0	0
+A	40865190138	1	1	failure	123418269701	build + tests (con banco desechable)	failure	2026-10-29T11:24:46Z	scrum-1588b-alquiler-de-local-pantalla	2244157		1	0	0	1	0	0	0	0
+A	40867066226	1	1	failure	123428617946	meta-guard · los guards caen cuando deben	failure	2026-10-29T11:39:28Z	main	181879		0	0	0	0	0	0	0	0
+A	40861926429	1	1	failure	123407078620	meta-guard · los guards caen cuando deben	failure	2026-10-29T11:00:02Z	scrum-1588-alquiler-en-las-categorias	161297		0	0	0	0	0	0	0	0
+A	40864125260	1	1	failure	123415054152	meta-guard · los guards caen cuando deben	failure	2026-10-29T11:16:36Z	main	160622		0	0	0	0	0	0	0	0
+A	40861383542	1	1	failure	123405198170	meta-guard · los guards caen cuando deben	failure	2026-10-29T10:55:41Z	scrum-1602-paquete-del-trimestre	162064		0	0	0	0	0	0	0	0
+A	40861122923	1	1	failure	123404319330	meta-guard · los guards caen cuando deben	failure	2026-10-29T10:53:39Z	scrum-935f-ci-solo-docs-rescate	162018		0	0	0	0	0	0	0	0
+A	40864125260	1	1	failure	123415054096	build + tests (con banco desechable)	failure	2026-10-29T11:16:36Z	main	2237079		1	1	0	1	0	0	0	0
+A	40861108497	1	1	failure	123404269713	meta-guard · los guards caen cuando deben	failure	2026-10-29T10:53:32Z	scrum-1518c-chip-mensaje-del-cliente	172330		0	0	0	0	0	0	0	0
+A	40859473681	1	1	failure	123399020827	meta-guard · los guards caen cuando deben	failure	2026-10-29T10:40:56Z	main	161639		0	0	0	0	0	0	0	0
+A	40857297693	1	1	failure	123391361238	meta-guard · los guards caen cuando deben	failure	2026-10-29T10:24:22Z	scrum-1588b-alquiler-de-local-pantalla	161897		0	0	0	0	0	0	0	0
+A	40859160849	1	1	failure	123397664558	meta-guard · los guards caen cuando deben	failure	2026-10-29T10:38:30Z	scrum-1632b-guias-campo-url-sin-llaves	172580		0	0	0	0	0	0	0	0
+B	40859314093	1	1	success	123398305013	build + tests (con banco desechable)	success	2026-10-29T10:39:43Z	scrum-1238c-espera-no-es-fin	2231416		1	0	0	1	0	0	0	0
+A	40857283071	1	1	failure	123391312785	meta-guard · los guards caen cuando deben	failure	2026-10-29T10:24:15Z	scrum-1594-sii-en-los-select-del-modo	160809		0	0	0	0	0	0	0	0
+A	40859204440	1	1	failure	123397831816	meta-guard · los guards caen cuando deben	failure	2026-10-29T10:38:51Z	scrum-1628b-banco-compartido	181488		0	0	0	0	0	0	0	0
+A	40857297693	1	1	failure	123391361423	build + tests (con banco desechable)	failure	2026-10-29T10:24:22Z	scrum-1588b-alquiler-de-local-pantalla	2263611		1	0	0	1	0	0	0	0
+B	40857268602	1	1	success	123391263580	build + tests (con banco desechable)	success	2026-10-29T10:24:09Z	scrum-1626-plan-fundador	2231180		1	1	0	1	0	0	0	0
+A	40855927908	1	1	failure	123386769801	meta-guard · los guards caen cuando deben	failure	2026-10-29T10:14:08Z	scrum-1620-metaguard-por-partes	165035		0	0	0	0	0	0	0	0
+A	40856878737	1	1	failure	123389945960	meta-guard · los guards caen cuando deben	failure	2026-10-29T10:21:12Z	scrum-1602-paquete-del-trimestre	182305		0	0	0	0	0	0	0	0
+A	40855723995	1	1	failure	123386072017	meta-guard · los guards caen cuando deben	failure	2026-10-29T10:12:36Z	main	179066		0	0	0	0	0	0	0	0
+A	40856878737	1	1	failure	123389946405	build + tests (con banco desechable)	failure	2026-10-29T10:21:12Z	scrum-1602-paquete-del-trimestre	2236018		1	0	0	1	0	0	0	0
+A	40853344550	1	1	failure	123378044680	meta-guard · los guards caen cuando deben	failure	2026-10-29T09:54:51Z	scrum-1621-piezas-de-s5	160522		0	0	0	0	0	0	0	0
+A	40854678251	1	1	failure	123382576827	meta-guard · los guards caen cuando deben	failure	2026-10-29T10:04:55Z	scrum-1632-enlace-de-firma-plantillas	159380		0	0	0	0	0	0	0	0
+A	40854385876	1	1	failure	123381583050	meta-guard · los guards caen cuando deben	failure	2026-10-29T10:02:42Z	scrum-1623-plan-equipo-barra-lateral	177660		0	0	0	0	0	0	0	0
+A	40564270385	1	1	failure	122401214932	meta-guard · los guards caen cuando deben	failure	2026-10-27T18:54:19Z	scrum-1563e-estado-27oct	159821		0	0	0	0	0	0	0	0
+A	40563349559	1	1	failure	122397956812	meta-guard · los guards caen cuando deben	failure	2026-10-27T18:48:16Z	scrum-1628-de-ve-la-regla-del-test	158713		0	0	0	0	0	0	0	0
+A	40560216886	1	1	failure	122386887341	meta-guard · los guards caen cuando deben	failure	2026-10-27T18:27:54Z	scrum-1610c-fila-tres-de-j6	157554		0	0	0	0	0	0	0	0
+A	40557186284	1	1	failure	122376270360	guards de navegador (fuera de la tanda)	failure	2026-10-27T18:08:41Z	scrum-1618-fecha-de-cobro	94674	PEQUENO	0	0	0	0	0	0	0	0
+A	40567122288	1	1	failure	122411684527	meta-guard · los guards caen cuando deben	failure	2026-10-27T19:13:18Z	main	157700		0	0	0	0	0	0	0	0
+B	40559291923	1	1	success	122383651160	build + tests (con banco desechable)	success	2026-10-27T18:21:57Z	scrum-1252h-ancla-firma-correo	2225576		1	0	0	1	0	0	0	0
+A	40557186284	1	1	failure	122376270695	meta-guard · los guards caen cuando deben	failure	2026-10-27T18:08:41Z	scrum-1618-fecha-de-cobro	181242		0	0	0	0	0	0	0	0
+B	40559276178	1	1	success	122383595623	build + tests (con banco desechable)	success	2026-10-27T18:21:51Z	scrum-1051d-suelta-conserva-causa	2226897		1	0	0	1	0	0	0	0
+A	40556212113	1	1	failure	122372838241	meta-guard · los guards caen cuando deben	failure	2026-10-27T18:02:28Z	scrum-1602-paquete-del-trimestre	158573		0	0	0	0	0	0	0	0
+A	40557186284	1	1	failure	122376270892	build + tests (con banco desechable)	failure	2026-10-27T18:08:41Z	scrum-1618-fecha-de-cobro	2257579		1	0	0	1	0	0	0	0
+A	40555363243	1	1	failure	122369867550	meta-guard · los guards caen cuando deben	failure	2026-10-27T17:57:04Z	scrum-1593-censo-tactil-ocultos	157363		0	0	0	0	0	0	0	0
+A	40555572333	1	1	failure	122370614737	meta-guard · los guards caen cuando deben	failure	2026-10-27T17:58:25Z	scrum-1240b-trinquete-clave-regimen	157666		0	0	0	0	0	0	0	0
+A	40556212113	1	1	failure	122372837339	build + tests (con banco desechable)	failure	2026-10-27T18:02:28Z	scrum-1602-paquete-del-trimestre	2238642		1	0	0	1	0	0	0	0
+A	40554377558	1	1	failure	122366365678	meta-guard · los guards caen cuando deben	failure	2026-10-27T17:50:38Z	scrum-665c-coste-opcion-a	157607		0	0	0	0	0	0	0	0
+A	40554148109	1	1	failure	122365552656	meta-guard · los guards caen cuando deben	failure	2026-10-27T17:49:09Z	scrum-1066f-excepciones-115	157603		0	0	0	0	0	0	0	0
+A	40554306622	1	1	failure	122366119731	meta-guard · los guards caen cuando deben	failure	2026-10-27T17:50:11Z	scrum-1051c-medir-isp	157237		0	0	0	0	0	0	0	0
+A	40555281024	1	1	failure	122369581463	build + tests (con banco desechable)	failure	2026-10-27T17:56:32Z	scrum-1396e-lote-2-temporales	2253889		1	0	0	1	0	0	0	0
+A	40554143042	1	1	failure	122367260225	meta-guard · los guards caen cuando deben	failure	2026-10-27T17:49:07Z	main	161076		0	0	0	0	0	0	0	0
+A	40554086744	1	1	failure	122365331118	meta-guard · los guards caen cuando deben	failure	2026-10-27T17:48:44Z	scrum-1396d-lote-1-temporales	158347		0	0	0	0	0	0	0	0
+A	40553575634	1	1	failure	122363515021	meta-guard · los guards caen cuando deben	failure	2026-10-27T17:45:28Z	scrum-1621-piezas-de-s5	157036		0	0	0	0	0	0	0	0
+A	40554086744	1	1	failure	122365331563	build + tests (con banco desechable)	failure	2026-10-27T17:48:44Z	scrum-1396d-lote-1-temporales	2254471		1	0	0	1	0	0	0	0
+A	40552633828	1	1	failure	122360190185	meta-guard · los guards caen cuando deben	failure	2026-10-27T17:39:22Z	scrum-1586-recordatorio-presupuestos-no-reenvia	185718		0	0	0	0	0	0	0	0
+A	40551845913	1	1	failure	122357392872	meta-guard · los guards caen cuando deben	failure	2026-10-27T17:34:18Z	scrum-1620-metaguard-por-partes	170618		0	0	0	0	0	0	0	0
+A	40550084336	1	1	failure	122351140808	meta-guard · los guards caen cuando deben	failure	2026-10-27T17:23:12Z	scrum-1623-plan-equipo-barra-lateral	152747		0	0	0	0	0	0	0	0
+A	40551124058	1	1	failure	122354843037	meta-guard · los guards caen cuando deben	failure	2026-10-27T17:29:47Z	scrum-1562g-facturas-con-teclado	157272		0	0	0	0	0	0	0	0
+A	40551845913	1	1	failure	122357393003	build + tests (con banco desechable)	failure	2026-10-27T17:34:18Z	scrum-1620-metaguard-por-partes	2259551		1	0	0	1	0	0	0	0
+A	40553575634	1	1	failure	122363515141	build + tests (con banco desechable)	failure	2026-10-27T17:45:28Z	scrum-1621-piezas-de-s5	2232478		1	0	0	1	0	0	0	0
+A	40550669572	1	1	failure	122353204838	meta-guard · los guards caen cuando deben	failure	2026-10-27T17:26:50Z	scrum-1627-main-sin-comprobar	162689		0	0	0	0	0	0	0	0
+A	40550084336	1	1	failure	122351141597	build + tests (con banco desechable)	failure	2026-10-27T17:23:12Z	scrum-1623-plan-equipo-barra-lateral	2227039		1	0	0	1	0	0	0	0
+A	40547319891	1	1	failure	122341297748	meta-guard · los guards caen cuando deben	failure	2026-10-27T17:05:50Z	scrum-1624b-fila-descuento-global	162970		0	0	0	0	0	0	0	0
+A	40546686283	1	1	failure	122339055217	meta-guard · los guards caen cuando deben	failure	2026-10-27T17:01:56Z	scrum-1218j-umbral-uno	178944		0	0	0	0	0	0	0	0
+A	40548817032	1	1	failure	122346663632	meta-guard · los guards caen cuando deben	failure	2026-10-27T17:15:16Z	scrum-1622-zona-del-comercio	178882		0	0	0	0	0	0	0	0
+A	40547319891	1	1	failure	122341298084	build + tests (con banco desechable)	failure	2026-10-27T17:05:50Z	scrum-1624b-fila-descuento-global	2216514		1	0	0	1	0	0	0	0
+A	40546443040	1	1	failure	122345273342	meta-guard · los guards caen cuando deben	failure	2026-10-27T17:00:29Z	main	156590		0	0	0	0	0	0	0	0
+A	40545593135	1	1	failure	122335221075	meta-guard · los guards caen cuando deben	failure	2026-10-27T16:55:08Z	scrum-1549d-tr-entrecomillado	160317		0	0	0	0	0	0	0	0
+A	40546406120	1	1	failure	122338098881	meta-guard · los guards caen cuando deben	failure	2026-10-27T17:00:16Z	scrum-1063j-casos-limite	180343		0	0	0	0	0	0	0	0
+A	40545005703	1	1	failure	122333123153	meta-guard · los guards caen cuando deben	failure	2026-10-27T16:51:26Z	scrum-1502q-ancla-botflow	161111		0	0	0	0	0	0	0	0
+A	40543600381	1	1	failure	122328173757	meta-guard · los guards caen cuando deben	failure	2026-10-27T16:42:46Z	scrum-1567-factura-en-tres-superficies	158384		0	0	0	0	0	0	0	0
+A	40542902581	1	1	failure	122325717716	meta-guard · los guards caen cuando deben	failure	2026-10-27T16:38:30Z	scrum-1619-anclas-de-otro-equipo	182636		0	0	0	0	0	0	0	0
+A	40543083950	1	1	failure	122326364563	meta-guard · los guards caen cuando deben	failure	2026-10-27T16:39:38Z	scrum-1625b-experimento-sonda-fuera	158876		0	0	0	0	0	0	0	0
+A	40542866494	1	1	failure	122325593321	meta-guard · los guards caen cuando deben	failure	2026-10-27T16:38:17Z	scrum-1573b-suprimido-sin-cobro	164840		0	0	0	0	0	0	0	0
+A	40543083950	1	1	failure	122326364052	build + tests (con banco desechable)	failure	2026-10-27T16:39:38Z	scrum-1625b-experimento-sonda-fuera	2219289		1	0	0	1	0	0	0	0
+A	40542262866	1	1	failure	122323480576	meta-guard · los guards caen cuando deben	failure	2026-10-27T16:34:37Z	scrum-1562g-facturas-con-teclado	158987		0	0	0	0	0	0	0	0
+A	40537808926	1	1	failure	122307699399	meta-guard · los guards caen cuando deben	failure	2026-10-27T16:07:33Z	scrum-1387-poblacion-del-meta-guard	155998		0	0	0	0	0	0	0	0
+A	40538503878	1	1	failure	122310174456	meta-guard · los guards caen cuando deben	failure	2026-10-27T16:11:46Z	scrum-1624b-fila-descuento-global	160308		0	0	0	0	0	0	0	0
+A	40538503878	1	1	failure	122310174690	build + tests (con banco desechable)	failure	2026-10-27T16:11:46Z	scrum-1624b-fila-descuento-global	2214283		1	0	0	1	0	0	0	0
+A	40538495912	1	1	failure	122310146577	meta-guard · los guards caen cuando deben	failure	2026-10-27T16:11:44Z	scrum-1396-censo-mkdtemp-por-variable	177811		0	0	0	0	0	0	0	0
+A	40538495912	1	1	failure	122310146548	build + tests (con banco desechable)	failure	2026-10-27T16:11:44Z	scrum-1396-censo-mkdtemp-por-variable	2247307		1	1	0	1	0	0	0	0
+A	40536482404	1	1	failure	122303018899	meta-guard · los guards caen cuando deben	failure	2026-10-27T15:59:37Z	scrum-1624-portal-descuento-global	157713		0	0	0	0	0	0	0	0
+B	40537735911	1	1	success	122307443580	build + tests (con banco desechable)	success	2026-10-27T16:07:07Z	scrum-1605-vigia-cierra-el-aviso	2215079		1	0	0	1	0	0	0	0
+A	40536417467	1	1	failure	122302779470	meta-guard · los guards caen cuando deben	failure	2026-10-27T15:59:12Z	scrum-1218i-disparo	160061		0	0	0	0	0	0	0	0
+A	40535204088	1	1	failure	122298469268	meta-guard · los guards caen cuando deben	failure	2026-10-27T15:51:55Z	scrum-1608-tipo-de-iva-con-decimal	158706		0	0	0	0	0	0	0	0
+B	40536700418	1	1	success	122303774072	build + tests (con banco desechable)	success	2026-10-27T16:00:53Z	scrum-1625-perdida-sube	2212942		1	0	0	1	0	0	0	0
+A	40535108461	1	1	failure	122298132063	meta-guard · los guards caen cuando deben	failure	2026-10-27T15:51:20Z	scrum-1616b-provincias-bilingues	156589		0	0	0	0	0	0	0	0
+A	40535649172	1	1	failure	122305667145	meta-guard · los guards caen cuando deben	failure	2026-10-27T15:54:35Z	main	167157		0	0	0	0	0	0	0	0
+A	40534763975	1	1	failure	122296902054	meta-guard · los guards caen cuando deben	failure	2026-10-27T15:49:15Z	scrum-1393g-cierre-con-ciegos-dichos	157500		0	0	0	0	0	0	0	0
+A	40533690518	1	1	failure	122293074643	meta-guard · los guards caen cuando deben	failure	2026-10-27T15:42:47Z	scrum-1615-mp-token-plataforma	159439		0	0	0	0	0	0	0	0
+A	40534763975	1	1	failure	122296902192	build + tests (con banco desechable)	failure	2026-10-27T15:49:15Z	scrum-1393g-cierre-con-ciegos-dichos	2243736		1	1	0	1	0	0	0	0
+A	40533005423	1	1	failure	122290621361	meta-guard · los guards caen cuando deben	failure	2026-10-27T15:38:38Z	scrum-1573b-suprimido-sin-cobro	159332		0	0	0	0	0	0	0	0
+B	40534441116	1	1	success	122295734714	build + tests (con banco desechable)	success	2026-10-27T15:47:16Z	scrum-1405f-cuarto-desde-1574	2211297		1	0	0	1	0	0	0	0
+A	40532975167	1	1	failure	122290510461	meta-guard · los guards caen cuando deben	failure	2026-10-27T15:38:26Z	scrum-1390y-inicio-por-rol	158066		0	0	0	0	0	0	0	0
+A	40535036917	1	1	failure	122297871228	build + tests (con banco desechable)	failure	2026-10-27T15:50:53Z	scrum-1549d-tr-entrecomillado	2216511		1	0	0	1	0	0	0	0
+A	40532722382	1	1	failure	122289609768	meta-guard · los guards caen cuando deben	failure	2026-10-27T15:36:55Z	scrum-1568-portal-linea-con-descuento	156680		0	0	0	0	0	0	0	0
+A	40533005423	1	1	failure	122290620853	build + tests (con banco desechable)	failure	2026-10-27T15:38:38Z	scrum-1573b-suprimido-sin-cobro	2219023		1	0	0	1	0	0	0	0
+B	40532950406	1	1	success	122290420343	build + tests (con banco desechable)	success	2026-10-27T15:38:17Z	scrum-1252g-titular-del-correo-de-factura	2210410		1	0	0	1	0	0	0	0
+B	40532997020	1	1	success	122290590109	build + tests (con banco desechable)	success	2026-10-27T15:38:35Z	scrum-1480i-fila-censo-frontera	2210528		1	0	0	1	0	0	0	0
+A	40529846297	1	1	failure	122279340244	meta-guard · los guards caen cuando deben	failure	2026-10-27T15:19:36Z	scrum-1551j-puerta-y-vivo	156177		0	0	0	0	0	0	0	0
+A	40514583047	1	1	failure	122226255656	meta-guard · los guards caen cuando deben	failure	2026-10-27T13:43:32Z	main	158486		0	0	0	0	0	0	0	0
+B	40531854520	1	1	success	122286506069	build + tests (con banco desechable)	success	2026-10-27T15:31:40Z	scrum-1616-provincia-grafia	2209775		1	1	0	1	0	0	0	0
+B	40532410727	1	1	success	122288498534	build + tests (con banco desechable)	success	2026-10-27T15:35:02Z	main	2209136		1	0	0	1	0	0	0	0
+B	40531216590	1	1	success	122284218066	build + tests (con banco desechable)	success	2026-10-27T15:27:49Z	scrum-1448c-sonda-total-pdf	2210204		1	0	0	1	0	0	0	0
+A	40513090247	1	1	failure	122219705503	meta-guard · los guards caen cuando deben	failure	2026-10-27T13:33:43Z	scrum-1194d-metodo-a	178244		0	0	0	0	0	0	0	0
+A	40512668021	1	1	failure	122218244815	meta-guard · los guards caen cuando deben	failure	2026-10-27T13:30:46Z	scrum-1614-a122c-psp	176226		0	0	0	0	0	0	0	0
+A	40515818130	1	1	failure	122229365604	meta-guard · los guards caen cuando deben	failure	2026-10-27T13:51:45Z	scrum-1551i-vinetas	175872		0	0	0	0	0	0	0	0
+A	40518576319	1	1	failure	122241583529	meta-guard · los guards caen cuando deben	failure	2026-10-27T14:10:25Z	main	159536		0	0	0	0	0	0	0	0
+A	40511861865	1	1	failure	122215578414	meta-guard · los guards caen cuando deben	failure	2026-10-27T13:25:11Z	scrum-1498e-meta-guard-failure	159039		0	0	0	0	0	0	0	0
+A	40511730456	1	1	failure	122215120476	meta-guard · los guards caen cuando deben	failure	2026-10-27T13:24:16Z	scrum-1573a-suprimido-sin-cobro	162749		0	0	0	0	0	0	0	0
+A	40510760139	1	1	failure	122211737454	meta-guard · los guards caen cuando deben	failure	2026-10-27T13:17:39Z	scrum-1105c-seed-ejercitado	157098		0	0	0	0	0	0	0	0
+A	40511271426	1	1	failure	122213508330	build + tests (con banco desechable)	failure	2026-10-27T13:21:09Z	scrum-1551i-vinetas	2232447		1	0	0	1	0	0	0	0
+A	40503386789	1	1	failure	122198546079	meta-guard · los guards caen cuando deben	failure	2026-10-27T12:23:35Z	main	163009		0	0	0	0	0	0	0	0
+B	40510781175	1	1	success	122211809512	build + tests (con banco desechable)	success	2026-10-27T13:17:48Z	scrum-1527g-recuento	2207964		1	0	0	1	0	0	0	0
+A	40502636080	1	1	failure	122185211648	meta-guard · los guards caen cuando deben	failure	2026-10-27T12:17:45Z	main	156576		0	0	0	0	0	0	0	0
+B	40508258052	1	1	success	122203084569	build + tests (con banco desechable)	success	2026-10-27T13:00:05Z	scrum-1448b-filas-just	2208015		1	0	0	1	0	0	0	0
+B	40510657285	1	1	success	122212606946	build + tests (con banco desechable)	success	2026-10-27T13:16:57Z	main	2207365		1	0	0	1	0	0	0	0
+A	40499981847	1	1	failure	122174945714	meta-guard · los guards caen cuando deben	failure	2026-10-27T11:57:07Z	scrum-1448a-just-camino	160630		0	0	0	0	0	0	0	0
+B	40501258526	1	1	success	122179219802	build + tests (con banco desechable)	success	2026-10-27T12:07:05Z	scrum-1611c-scrum58-sin-carrera	2207812		1	0	0	1	0	0	0	0
+A	40499801142	1	1	failure	122174334210	meta-guard · los guards caen cuando deben	failure	2026-10-27T11:55:40Z	scrum-1039f-comprobador-sobre-main	172811		0	0	0	0	0	0	0	0
+A	40499657128	1	1	failure	122173849088	meta-guard · los guards caen cuando deben	failure	2026-10-27T11:54:32Z	scrum-1577c-enlace-44	165187		0	0	0	0	0	0	0	0
+A	40427901521	1	1	failure	121945013682	meta-guard · los guards caen cuando deben	failure	2026-10-27T00:40:32Z	main	160836		0	0	0	0	0	0	0	0
+A	40499304449	1	1	failure	122172665456	meta-guard · los guards caen cuando deben	failure	2026-10-27T11:51:43Z	main	157831		0	0	0	0	0	0	0	0
+A	40426066886	1	1	failure	121932019848	meta-guard · los guards caen cuando deben	failure	2026-10-27T00:23:17Z	scrum-1611b-barrera	159731		0	0	0	0	0	0	0	0
+A	40497761876	1	1	failure	122167449085	meta-guard · los guards caen cuando deben	failure	2026-10-27T11:39:18Z	scrum-1612b-aviso-nif-2001	161962		0	0	0	0	0	0	0	0
+A	40426370773	1	1	failure	121935067349	meta-guard · los guards caen cuando deben	failure	2026-10-27T00:26:07Z	main	156432		0	0	0	0	0	0	0	0
+A	40423707608	1	1	failure	121924104340	meta-guard · los guards caen cuando deben	failure	2026-10-27T00:01:48Z	scrum-524i-p25-titulo	175031		0	0	0	0	0	0	0	0
+B	40423909810	1	1	success	121924818844	build + tests (con banco desechable)	success	2026-10-27T00:03:39Z	scrum-1347c-master-filas	2200095		1	0	0	1	0	0	0	0
+B	41613699745	1	1	success	125843948292	build + tests (con banco desechable)	success	2026-11-03T09:46:08Z	main	2250748		1	0	0	1	0	0	0	0
+B	41609015375	1	1	success	125826880252	build + tests (con banco desechable)	success	2026-11-03T09:11:36Z	scrum-1335d-sin-informe-por-zona	2251888		1	0	0	1	0	0	0	0
+B	41611502938	1	1	success	125834611969	build + tests (con banco desechable)	success	2026-11-03T09:30:00Z	scrum-1335f-zona-fetch-depth	2251741		1	0	0	1	0	0	0	0
+B	41608781404	1	1	success	125827701664	build + tests (con banco desechable)	success	2026-11-03T09:09:55Z	main	2249904		1	0	0	1	0	0	0	0
+B	41606574180	1	1	success	125817775486	build + tests (con banco desechable)	success	2026-11-03T08:52:51Z	scrum-1335c-perdida-en-las-dos-zonas	2250541		1	0	0	1	0	0	0	0
+B	41609515469	1	1	success	125827580223	build + tests (con banco desechable)	success	2026-11-03T09:15:15Z	scrum-1651-duplicar-pierde-opciones	2249893		1	0	0	1	0	0	0	0
+A	41604223386	1	1	failure	125809963261	build + tests (con banco desechable)	failure	2026-11-03T08:33:59Z	scrum-1651-duplicar-pierde-opciones	2258294		1	1	0	1	0	0	0	0
+B	41604214118	1	1	success	125810252189	build + tests (con banco desechable)	success	2026-11-03T08:33:55Z	scrum-1650-listado-y-buscador-leen-lo-congelado	2249296		1	0	0	1	0	0	0	0
+B	41604229360	1	1	success	125809982005	build + tests (con banco desechable)	success	2026-11-03T08:34:02Z	scrum-1335e-scrum804-clon-somero	2250691		1	0	0	1	0	0	0	0
+B	41604218017	1	1	success	125809945322	build + tests (con banco desechable)	success	2026-11-03T08:33:56Z	scrum-1652-procedencia-de-las-39	2249672		1	0	0	1	0	0	0	0
+A	41601322400	1	1	failure	125800486668	build + tests (con banco desechable)	failure	2026-11-03T08:10:27Z	scrum-1652-procedencia-de-las-39	2251029		1	0	0	1	0	0	0	0
+A	41600276975	1	1	failure	125797115261	build + tests (con banco desechable)	failure	2026-11-03T08:01:50Z	scrum-1651-duplicar-pierde-opciones	2260434		1	0	0	1	0	0	0	0
+B	41602893482	1	1	success	125805607046	build + tests (con banco desechable)	success	2026-11-03T08:23:17Z	main	2247911		1	0	0	1	0	0	0	0
+B	41604208604	1	1	success	125810240635	build + tests (con banco desechable)	success	2026-11-03T08:33:52Z	scrum-1610d-meta-guard-censo-sale-vaciado	2250445		1	0	0	1	0	0	0	0
+B	41600930649	1	1	success	125799210644	build + tests (con banco desechable)	success	2026-11-03T08:07:15Z	scrum-1644-reclasificar-y-avisar-antes	2250020		1	0	0	1	0	0	0	0
+A	41537999788	1	1	failure	125594668440	build + tests (con banco desechable)	failure	2026-11-02T22:31:34Z	scrum-1335e-scrum804-clon-somero	2252321		1	0	0	1	0	0	0	0
+A	41600805362	1	1	failure	125799308902	build + tests (con banco desechable)	failure	2026-11-03T08:06:14Z	scrum-1563j-clases-hoja-y-claves	2251525		1	0	0	1	0	0	0	0
+A	41536674999	1	1	failure	125590160487	build + tests (con banco desechable)	failure	2026-11-02T22:22:13Z	scrum-1651-duplicar-pierde-opciones	2249590		1	0	0	1	0	0	0	0
+A	41536052500	1	1	failure	125588037816	build + tests (con banco desechable)	failure	2026-11-02T22:17:58Z	scrum-1505-ya-esta-en-cabecera	2252087		1	0	0	1	0	0	0	0
+A	41535278701	1	1	failure	125585427379	build + tests (con banco desechable)	failure	2026-11-02T22:12:46Z	scrum-1335c-perdida-en-las-dos-zonas	2251137		1	0	0	1	0	0	0	0
+A	41535739622	1	1	failure	125586970895	build + tests (con banco desechable)	failure	2026-11-02T22:15:50Z	scrum-1335f-zona-fetch-depth	2249282		1	0	0	1	0	0	0	0
+B	41606021269	1	1	success	125815917811	build + tests (con banco desechable)	success	2026-11-03T08:48:26Z	main	2248284		1	0	0	1	0	0	0	0
+A	41536058712	1	1	failure	125588059103	build + tests (con banco desechable)	failure	2026-11-02T22:18:01Z	scrum-1648-banco-guard-barras	2251188		1	0	0	1	0	0	0	0
+A	41534548044	1	1	failure	125582954913	build + tests (con banco desechable)	failure	2026-11-02T22:07:50Z	scrum-1335e-scrum804-clon-somero	2251786		1	0	0	1	0	0	0	0
+A	41523646603	1	1	failure	125545690573	build + tests (con banco desechable)	failure	2026-11-02T20:55:36Z	scrum-1505-ya-esta-en-cabecera	2265466		1	0	0	1	0	0	0	0
+A	41524765112	1	1	failure	125549540662	build + tests (con banco desechable)	failure	2026-11-02T21:03:06Z	scrum-1649-censo-marcas-del-fundador	2248959		1	0	0	1	0	0	0	0
+A	41528620408	1	1	failure	125562740760	build + tests (con banco desechable)	failure	2026-11-02T21:28:13Z	scrum-1335d-sin-informe-por-zona	2251242		1	0	0	1	0	0	0	0
+A	41523333491	1	1	failure	125544613411	build + tests (con banco desechable)	failure	2026-11-02T20:53:32Z	scrum-1335c-perdida-en-las-dos-zonas	2327503		1	0	0	1	0	0	0	0
+A	41522719507	1	1	failure	125543119093	build + tests (con banco desechable)	failure	2026-11-02T20:49:29Z	scrum-1563j-clases-hoja-y-claves	2265157		1	0	0	1	0	0	0	0
+A	41519659800	1	1	failure	125532100698	build + tests (con banco desechable)	failure	2026-11-02T20:29:28Z	scrum-1233j-cuatro-sin-sufijo-crudo	2249919		1	0	0	1	0	0	0	0
+A	41517766284	1	1	failure	125525591338	build + tests (con banco desechable)	failure	2026-11-02T20:16:51Z	scrum-1637-csp-solo-informe	2250493		1	0	0	1	0	0	0	0
+A	41521258276	1	1	failure	125537577707	build + tests (con banco desechable)	failure	2026-11-02T20:39:48Z	scrum-1648-banco-guard-barras	2264453		1	0	0	1	0	0	0	0
+A	41517564523	1	1	failure	125525633253	build + tests (con banco desechable)	failure	2026-11-02T20:15:32Z	scrum-914c-esquema-de-equipos	2255851		1	0	0	1	0	0	0	0
+A	41516150172	1	1	failure	125520427422	build + tests (con banco desechable)	failure	2026-11-02T20:06:35Z	scrum-1549f-latido-puerta	2250390		1	0	0	1	0	0	0	0
+A	41517561616	1	1	failure	125524878595	build + tests (con banco desechable)	failure	2026-11-02T20:15:31Z	scrum-1621g-cierre-pieza-5	2250414		1	1	0	1	0	0	0	0
+A	41519684851	1	1	failure	125532188527	build + tests (con banco desechable)	failure	2026-11-02T20:29:38Z	scrum-1506b-cerradura-sin-cablear	2249924		1	0	0	1	0	0	0	0
+A	41515691443	1	1	failure	125518564389	build + tests (con banco desechable)	failure	2026-11-02T20:03:41Z	scrum-1563j-clases-hoja-y-claves	2263436		1	0	0	1	0	0	0	0
+A	41512866952	1	1	failure	125508870312	build + tests (con banco desechable)	failure	2026-11-02T19:45:22Z	scrum-1636b-iva-con-coma	2250218		1	0	0	1	0	0	0	0
+A	41511928252	1	1	failure	125505673496	build + tests (con banco desechable)	failure	2026-11-02T19:39:12Z	scrum-1563j-clases-hoja-y-claves	2247511		1	0	0	1	0	0	0	0
+A	41516023904	1	1	failure	125519681808	build + tests (con banco desechable)	failure	2026-11-02T20:05:47Z	scrum-1428b-parche-probado-para-j1	2250083		1	0	0	1	0	0	0	0
+A	41513199188	1	1	failure	125510002382	build + tests (con banco desechable)	failure	2026-11-02T19:47:27Z	scrum-1639-filas-con-teclado	2248972		1	0	0	1	0	0	0	0
+A	41512723153	1	1	failure	125508406633	build + tests (con banco desechable)	failure	2026-11-02T19:44:30Z	scrum-1633-de-ruta-que-no-existe	2251109		1	0	0	1	0	0	0	0
+A	41512236844	1	1	failure	125506729260	build + tests (con banco desechable)	failure	2026-11-02T19:41:12Z	scrum-1636c-iva-con-coma-en-el-servidor	2249624		1	0	0	1	0	0	0	0
+B	41107020079	1	1	success	124240033757	build + tests (con banco desechable)	success	2026-10-30T18:26:54Z	scrum-1640-lote-marca-cero	2247006		1	0	0	1	0	0	0	0
+B	41100919540	1	1	success	124217889761	build + tests (con banco desechable)	success	2026-10-30T17:42:20Z	scrum-1051e-prueba-s2-aeat	2242735		1	1	0	1	0	0	0	0
+B	41109435385	1	1	success	124249560300	build + tests (con banco desechable)	success	2026-10-30T18:44:13Z	main	2245303		1	1	0	1	0	0	0	0
+B	41102616811	1	1	success	124223547087	build + tests (con banco desechable)	success	2026-10-30T17:56:44Z	main	2239987		1	0	0	1	0	0	0	0
+B	41101282886	1	1	success	124218787280	build + tests (con banco desechable)	success	2026-10-30T17:45:19Z	scrum-1631-fallo-wa-se-espera	2244756		1	0	0	1	0	0	0	0
+B	41099660357	1	1	success	124214370803	build + tests (con banco desechable)	success	2026-10-30T17:32:09Z	scrum-1566e-reparto-entre-tramos	2240283		1	1	0	1	0	0	0	0
+A	41099517796	1	1	failure	124213916810	build + tests (con banco desechable)	failure	2026-10-30T17:31:10Z	scrum-1624b-fila-descuento-global	2242453		1	0	0	1	0	0	0	0
+B	41105701382	1	1	success	124237176470	build + tests (con banco desechable)	success	2026-10-30T18:17:49Z	main	2244862		1	0	0	1	0	0	0	0
+B	41100499318	1	1	success	124216830840	build + tests (con banco desechable)	success	2026-10-30T17:38:27Z	scrum-1051d-suelta-conserva-causa	2242190		1	0	0	1	0	0	0	0
+B	41098394794	1	1	success	124210029207	build + tests (con banco desechable)	success	2026-10-30T17:23:25Z	scrum-1618-fecha-de-cobro	2240142		1	0	0	1	0	0	0	0
+A	41097464272	1	1	failure	124206811627	guards de navegador (fuera de la tanda)	failure	2026-10-30T17:17:06Z	scrum-1393g-cierre-con-ciegos-dichos	100417		0	0	0	0	0	0	0	0
+A	41098014433	1	1	failure	124208708263	build + tests (con banco desechable)	failure	2026-10-30T17:20:49Z	scrum-1396e-lote-2-temporales	2273260		1	1	0	1	0	0	0	0
+A	41097464272	1	1	failure	124206812136	build + tests (con banco desechable)	failure	2026-10-30T17:17:06Z	scrum-1393g-cierre-con-ciegos-dichos	2272540		1	0	0	1	0	0	0	0
+A	40937126500	1	1	failure	123670522020	meta-guard · los guards caen cuando deben	failure	2026-10-29T19:07:03Z	scrum-1636c-iva-con-coma-en-el-servidor	186063		0	0	0	0	0	0	0	0
+A	40938015332	1	1	failure	123673623367	build + tests (con banco desechable)	failure	2026-10-29T19:12:49Z	scrum-914c-esquema-de-equipos	2331048		1	0	0	1	0	0	0	0
+B	41097773280	1	1	success	124207885137	build + tests (con banco desechable)	success	2026-10-30T17:19:13Z	scrum-1624b-fila-descuento-global-sin-octopus	2239868		1	0	0	1	0	0	0	0
+A	40937126500	1	1	failure	123670522273	build + tests (con banco desechable)	failure	2026-10-29T19:07:03Z	scrum-1636c-iva-con-coma-en-el-servidor	2241740		1	0	0	1	0	0	0	0
+A	40936976345	1	1	failure	123669990175	meta-guard · los guards caen cuando deben	failure	2026-10-29T19:06:04Z	scrum-1629-paquete-periodo-de-arriba	162380		0	0	0	0	0	0	0	0
+B	40942639286	1	1	success	123696845843	build + tests (con banco desechable)	success	2026-10-29T19:43:28Z	main	2238820		1	0	0	1	0	0	0	0
+A	40934153636	1	1	failure	123661143954	meta-guard · los guards caen cuando deben	failure	2026-10-29T18:47:45Z	scrum-1636b-iva-con-coma	163863		0	0	0	0	0	0	0	0
+B	40935236347	1	1	success	123663915658	build + tests (con banco desechable)	success	2026-10-29T18:54:50Z	scrum-281-tanda-de-literales-landing	2237999		1	0	0	1	0	0	0	0
+A	40932874144	1	1	failure	123655645501	meta-guard · los guards caen cuando deben	failure	2026-10-29T18:39:32Z	scrum-1632c-firma-tolera-la-url-sucia	189681		0	0	0	0	0	0	0	0
+B	40937912125	1	1	success	123682126933	build + tests (con banco desechable)	success	2026-10-29T19:12:08Z	main	2238185		1	0	0	1	0	0	0	0
+B	41098148411	1	1	success	124209171190	build + tests (con banco desechable)	success	2026-10-30T17:21:42Z	scrum-1252h-ancla-firma-correo	2239147		1	1	0	1	0	0	0	0
+A	40934095490	1	1	failure	123659927807	build + tests (con banco desechable)	failure	2026-10-29T18:47:23Z	scrum-1639-filas-con-teclado	2238722		1	0	0	1	0	0	0	0
+A	40934213684	1	1	failure	123660336521	meta-guard · los guards caen cuando deben	failure	2026-10-29T18:48:09Z	scrum-1563j-clases-hoja-y-claves	163077		0	0	0	0	0	0	0	0
+A	40932237600	1	1	failure	123653392491	meta-guard · los guards caen cuando deben	failure	2026-10-29T18:35:24Z	scrum-1387f-rotulo-juzgados	166802		0	0	0	0	0	0	0	0
+A	40934153636	1	1	failure	123661144713	build + tests (con banco desechable)	failure	2026-10-29T18:47:45Z	scrum-1636b-iva-con-coma	2240440		1	0	0	1	0	0	0	0
+A	40931320559	1	1	failure	123650605608	meta-guard · los guards caen cuando deben	failure	2026-10-29T18:29:38Z	main	173743		0	0	0	0	0	0	0	0
+B	40931832116	1	1	success	123651988994	build + tests (con banco desechable)	success	2026-10-29T18:32:51Z	scrum-1527h-reproduce-por-nombre	2238008		1	1	0	1	0	0	0	0
+A	40929167203	1	1	failure	123642833796	meta-guard · los guards caen cuando deben	failure	2026-10-29T18:16:01Z	scrum-1636-iva-con-coma-y-productos-1280	165805		0	0	0	0	0	0	0	0
+A	40931664748	1	1	failure	123651391495	meta-guard · los guards caen cuando deben	failure	2026-10-29T18:31:46Z	scrum-1563i-etiquetas-hoja	162933		0	0	0	0	0	0	0	0
+B	40932173648	1	1	success	123653171906	build + tests (con banco desechable)	success	2026-10-29T18:35:00Z	scrum-1620b-matriz-ci	2238474		1	0	0	1	0	0	0	0
+A	40929055569	1	1	failure	123642772112	meta-guard · los guards caen cuando deben	failure	2026-10-29T18:15:19Z	scrum-1635-ficha-descuento-global	187542		0	0	0	0	0	0	0	0
+A	40929431054	1	1	failure	123643616150	meta-guard · los guards caen cuando deben	failure	2026-10-29T18:17:44Z	scrum-1215l-lo-que-prometen-las-34	164574		0	0	0	0	0	0	0	0
+A	45344780344	1	1	failure	138276594850	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-24T07:01:22Z	scrum-1097b-medicion-de-cierre	70283	PEQUENO	0	0	0	0	0	0	0	0
+A	45344328356	1	1	failure	138275139760	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-24T06:57:45Z	scrum-1743c-medicion-de-cierre	71713	PEQUENO	0	0	0	0	0	0	0	0
+B	40928930552	1	1	success	123641864433	build + tests (con banco desechable)	success	2026-10-29T18:14:32Z	scrum-1387e-cifra-honesta	2236302		1	0	0	1	0	0	0	0
+A	45342350067	1	1	failure	138268745987	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-24T06:41:41Z	scrum-1799-pdf-factura-filas-restantes	68525	PEQUENO	0	0	0	0	0	0	0	0
+A	45342562404	1	1	failure	138269425478	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-24T06:43:24Z	scrum-1791c-tercera-auditoria-cierre	69641	PEQUENO	0	0	0	0	0	0	0	0
+A	45342350067	1	1	failure	138268745759	guards de navegador (fuera de la tanda)	failure	2026-11-24T06:41:41Z	scrum-1799-pdf-factura-filas-restantes	152109		0	0	0	0	0	0	0	0
+A	45342003583	1	1	failure	138267620689	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-24T06:38:51Z	main	70603	PEQUENO	0	0	0	0	0	0	0	0
+A	40928275033	1	1	failure	123639554712	meta-guard · los guards caen cuando deben	failure	2026-10-29T18:10:23Z	scrum-1566d-medida-de-d	190001		0	0	0	0	0	0	0	0
+A	45342003583	1	1	failure	138267621092	guards de navegador (fuera de la tanda)	failure	2026-11-24T06:38:51Z	main	151895		0	0	0	0	0	0	0	0
+A	45341712244	1	1	failure	138266673176	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-24T06:36:29Z	scrum-1800b-recibo-a-continuacion	71348	PEQUENO	0	0	0	0	0	0	0	0
+A	45341712244	1	1	failure	138266673644	guards de navegador (fuera de la tanda)	failure	2026-11-24T06:36:29Z	scrum-1800b-recibo-a-continuacion	154010		0	0	0	0	0	0	0	0
+A	45341423580	1	1	failure	138265731124	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-24T06:34:11Z	scrum-1803-pago-manual-cierra-el-cobro-b	68552	PEQUENO	0	0	0	0	0	0	0	0
+A	45341423580	1	1	failure	138265730734	guards de navegador (fuera de la tanda)	failure	2026-11-24T06:34:11Z	scrum-1803-pago-manual-cierra-el-cobro-b	152187		0	0	0	0	0	0	0	0
+A	40928927821	1	1	failure	123641855842	meta-guard · los guards caen cuando deben	failure	2026-10-29T18:14:31Z	scrum-1549f-latido-puerta	185848		0	0	0	0	0	0	0	0
+A	40928927821	1	1	failure	123641855555	build + tests (con banco desechable)	failure	2026-10-29T18:14:31Z	scrum-1549f-latido-puerta	1636287		1	0	0	1	0	0	0	0
+A	45341712244	1	1	failure	138266673564	build + tests (con banco desechable)	failure	2026-11-24T06:36:29Z	scrum-1800b-recibo-a-continuacion	2437830		1	0	0	1	0	0	0	0
+A	45341342866	1	1	failure	138265472731	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-24T06:33:33Z	scrum-1801-guard-rama-con-numero	71219	PEQUENO	0	0	0	0	0	0	0	0
+A	45341342866	1	1	failure	138265472970	guards de navegador (fuera de la tanda)	failure	2026-11-24T06:33:33Z	scrum-1801-guard-rama-con-numero	156456		0	0	0	0	0	0	0	0
+A	45340350923	1	1	failure	138262236628	guards de navegador (fuera de la tanda)	failure	2026-11-24T06:25:30Z	scrum-1532d-boton-cancelar-cobro-y-reenvio	152085		0	0	0	0	0	0	0	0
+A	45340350923	1	1	failure	138262236707	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-24T06:25:30Z	scrum-1532d-boton-cancelar-cobro-y-reenvio	68208	PEQUENO	0	0	0	0	0	0	0	0
+A	45323679522	1	1	failure	138207961659	guards de navegador (fuera de la tanda)	failure	2026-11-24T04:03:16Z	scrum-1801-guard-rama-con-numero	151582		0	0	0	0	0	0	0	0
+A	45323679522	1	1	failure	138207962015	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-24T04:03:16Z	scrum-1801-guard-rama-con-numero	71188	PEQUENO	0	0	0	0	0	0	0	0
+A	45323679522	1	1	failure	138207961849	build + tests (con banco desechable)	failure	2026-11-24T04:03:16Z	scrum-1801-guard-rama-con-numero	2454711		1	0	0	1	0	0	0	0
+A	45316312123	1	1	failure	138183904712	meta-guard · parte 3 de 3	failure	2026-11-24T02:59:30Z	scrum-1801-guard-rama-con-numero	126283		0	0	0	0	0	0	0	0
+A	45316312123	1	1	failure	138183904366	guards de navegador (fuera de la tanda)	failure	2026-11-24T02:59:30Z	scrum-1801-guard-rama-con-numero	152731		0	0	0	0	0	0	0	0
+A	45316312123	1	1	failure	138199015633	meta-guard · los guards caen cuando deben	failure	2026-11-24T02:59:30Z	scrum-1801-guard-rama-con-numero	19991	PEQUENO	0	0	0	0	0	0	0	0
+A	45316648265	1	1	failure	138185229122	guards de navegador (fuera de la tanda)	failure	2026-11-24T03:02:17Z	scrum-1799-pdf-factura-filas-restantes	152585		0	0	0	0	0	0	0	0
+B	45316645857	1	1	success	138185093986	build + tests (con banco desechable)	success	2026-11-24T03:02:16Z	scrum-1779l-staging-cinco-de-diciembre	2428535		1	0	0	1	0	0	0	0
+A	45316249693	1	1	failure	138183699664	guards de navegador (fuera de la tanda)	failure	2026-11-24T02:58:57Z	scrum-1802-ficha-dia-sin-cero	153039		0	0	0	0	0	0	0	0
+A	45316249693	1	1	failure	138183699745	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-24T02:58:57Z	scrum-1802-ficha-dia-sin-cero	71547	PEQUENO	0	0	0	0	0	0	0	0
+A	45319878537	1	1	failure	138202460075	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-24T03:29:35Z	main	67225	PEQUENO	0	0	0	0	0	0	0	0
+A	45316312123	1	1	failure	138183904776	build + tests (con banco desechable)	failure	2026-11-24T02:59:30Z	scrum-1801-guard-rama-con-numero	2463626		1	0	0	1	0	0	0	0
+A	45319878537	1	1	failure	138202459457	guards de navegador (fuera de la tanda)	failure	2026-11-24T03:29:35Z	main	149024		0	0	0	0	0	0	0	0
+A	45321217533	1	1	failure	138199952896	guards de navegador (fuera de la tanda)	failure	2026-11-24T03:41:12Z	scrum-1801-guard-rama-con-numero	152040		0	0	0	0	0	0	0	0
+A	45321217533	1	1	failure	138199953030	meta-guard · parte 1 de 3	failure	2026-11-24T03:41:12Z	scrum-1801-guard-rama-con-numero	129818		0	0	0	0	0	0	0	0
+A	45321217533	1	1	failure	138199953109	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-24T03:41:12Z	scrum-1801-guard-rama-con-numero	68360	PEQUENO	0	0	0	0	0	0	0	0
+A	45321217533	1	1	failure	138206070324	meta-guard · los guards caen cuando deben	failure	2026-11-24T03:41:12Z	scrum-1801-guard-rama-con-numero	21975	PEQUENO	0	0	0	0	0	0	0	0
+A	45321217533	1	1	failure	138199953089	build + tests (con banco desechable)	failure	2026-11-24T03:41:12Z	scrum-1801-guard-rama-con-numero	2456251		1	0	0	1	0	0	0	0
+A	45316225359	1	1	failure	138183620132	guards de navegador (fuera de la tanda)	failure	2026-11-24T02:58:44Z	main	150217		0	0	0	0	0	0	0	0
+A	45315186874	1	1	failure	138180217129	guards de navegador (fuera de la tanda)	failure	2026-11-24T02:49:40Z	scrum-1800-cancelar-cobro-con-documento-pagado	154706		0	0	0	0	0	0	0	0
+A	45310157830	1	2	failure	138163576295	guards de navegador (fuera de la tanda)	failure	2026-11-24T02:08:17Z	scrum-1316l-medio-de-cobro-obligatorio-con-10	153902		0	0	0	0	0	0	0	0
+A	45312294367	1	1	failure	138170730699	guards de navegador (fuera de la tanda)	failure	2026-11-24T02:25:45Z	scrum-1794b-detalle-de-la-factura-exportado	152740		0	0	0	0	0	0	0	0
+A	45310157830	1	2	failure	138163575948	build + tests (con banco desechable)	failure	2026-11-24T02:08:17Z	scrum-1316l-medio-de-cobro-obligatorio-con-10	2435699		1	0	0	1	0	0	0	0
+A	45309839736	1	1	failure	138162522170	guards de navegador (fuera de la tanda)	failure	2026-11-24T02:05:46Z	main	151647		0	0	0	0	0	0	0	0
+B	45313013102	1	1	success	138173086570	build + tests (con banco desechable)	success	2026-11-24T02:31:30Z	scrum-1779m-staging-cancelar-cobro	2429052		1	0	0	1	0	0	0	0
+A	45309640470	1	2	failure	138161973599	guards de navegador (fuera de la tanda)	failure	2026-11-24T02:04:10Z	scrum-1787w-pdf-factura-construido	153832		0	0	0	0	0	0	0	0
+A	45310061476	1	2	success	138163249629	build + tests (con banco desechable)	failure	2026-11-24T02:07:31Z	scrum-1793-borrar-arboles-viejos	2430083		1	0	0	1	0	0	0	0
+A	45309640470	1	2	failure	138161973587	build + tests (con banco desechable)	failure	2026-11-24T02:04:10Z	scrum-1787w-pdf-factura-construido	2429224		1	0	0	1	0	0	0	0
+A	45309597698	1	2	failure	138161717544	guards de navegador (fuera de la tanda)	failure	2026-11-24T02:03:50Z	scrum-1532d-boton-cancelar-cobro-y-reenvio	152030		0	0	0	0	0	0	0	0
+A	45309839736	1	1	failure	138162522517	build + tests (con banco desechable)	failure	2026-11-24T02:05:46Z	main	2428988		1	0	0	1	0	0	0	0
+A	45310157830	2	2	failure	138179095581	guards de navegador (fuera de la tanda)	failure	2026-11-24T02:08:17Z	scrum-1316l-medio-de-cobro-obligatorio-con-10	154702		0	0	0	0	0	0	0	0
+A	45309597698	1	2	failure	138161717654	build + tests (con banco desechable)	failure	2026-11-24T02:03:50Z	scrum-1532d-boton-cancelar-cobro-y-reenvio	2433700		1	0	0	1	0	0	0	0
+A	45309429855	1	1	failure	138161157960	guards de navegador (fuera de la tanda)	failure	2026-11-24T02:02:28Z	scrum-1787aa-pdf-factura-filas-restantes	152548		0	0	0	0	0	0	0	0
+A	45309640470	2	2	failure	138179082479	guards de navegador (fuera de la tanda)	failure	2026-11-24T02:04:10Z	scrum-1787w-pdf-factura-construido	153241		0	0	0	0	0	0	0	0
+B	45308454747	1	1	success	138157932049	build + tests (con banco desechable)	success	2026-11-24T01:54:20Z	scrum-1264a-preguntas-del-sprint-21nov	2425245		1	0	0	1	0	0	0	0
+A	45306804721	1	1	failure	138152520857	guards de navegador (fuera de la tanda)	failure	2026-11-24T01:40:41Z	scrum-1316l-medio-de-cobro-obligatorio-con-10	153396		0	0	0	0	0	0	0	0
+A	45309429855	1	1	failure	138161157909	build + tests (con banco desechable)	failure	2026-11-24T02:02:28Z	scrum-1787aa-pdf-factura-filas-restantes	2439219		1	0	0	1	0	0	0	0
+A	45309597698	2	2	failure	138178117423	guards de navegador (fuera de la tanda)	failure	2026-11-24T02:03:50Z	scrum-1532d-boton-cancelar-cobro-y-reenvio	154832		0	0	0	0	0	0	0	0
+A	45283217009	1	1	failure	138081296750	guards de navegador (fuera de la tanda)	failure	2026-11-23T22:48:53Z	main	150831		0	0	0	0	0	0	0	0
+A	45306804721	1	1	failure	138152521035	build + tests (con banco desechable)	failure	2026-11-24T01:40:41Z	scrum-1316l-medio-de-cobro-obligatorio-con-10	2433491		1	0	0	1	0	0	0	0
+A	45306567989	1	1	failure	138151750073	guards de navegador (fuera de la tanda)	failure	2026-11-24T01:38:48Z	scrum-1532d-boton-cancelar-cobro-y-reenvio	153644		0	0	0	0	0	0	0	0
+A	45280354134	1	1	failure	138062880480	guards de navegador (fuera de la tanda)	failure	2026-11-23T22:30:37Z	scrum-1316l-medio-de-cobro-obligatorio-con-10	152183		0	0	0	0	0	0	0	0
+B	45310061476	2	2	success	138187177146	build + tests (con banco desechable)	success	2026-11-24T02:07:31Z	scrum-1793-borrar-arboles-viejos	2427661		1	0	0	1	0	0	0	0
+A	45306567989	1	1	failure	138151750112	build + tests (con banco desechable)	failure	2026-11-24T01:38:48Z	scrum-1532d-boton-cancelar-cobro-y-reenvio	2430607		1	0	0	1	0	0	0	0
+A	45281060630	1	1	failure	138071129656	guards de navegador (fuera de la tanda)	failure	2026-11-23T22:35:03Z	main	149103		0	0	0	0	0	0	0	0
+A	45278055909	1	1	failure	138054898761	guards de navegador (fuera de la tanda)	failure	2026-11-23T22:16:18Z	scrum-1787z-guard-vence-el-entero	153871		0	0	0	0	0	0	0	0
+B	45281261170	1	1	success	138066003702	build + tests (con banco desechable)	success	2026-11-23T22:36:18Z	scrum-1779i-staging-formas-de-pago-congeladas	2424970		1	0	0	1	0	0	0	0
+A	45274045101	1	1	failure	138041209683	guards de navegador (fuera de la tanda)	failure	2026-11-23T21:52:27Z	main	149860		0	0	0	0	0	0	0	0
+A	45279157139	1	1	failure	138058719220	guards de navegador (fuera de la tanda)	failure	2026-11-23T22:23:07Z	scrum-1532b-cancelar-cobro	153962		0	0	0	0	0	0	0	0
+A	45280354134	1	1	failure	138062880688	build + tests (con banco desechable)	failure	2026-11-23T22:30:37Z	scrum-1316l-medio-de-cobro-obligatorio-con-10	2446713		1	0	0	1	0	0	0	0
+A	45273112607	1	1	failure	138037807763	guards de navegador (fuera de la tanda)	failure	2026-11-23T21:46:46Z	scrum-1316l-medio-de-cobro-obligatorio-con-10	154138		0	0	0	0	0	0	0	0
+A	45273112607	1	1	failure	138037807466	build + tests (con banco desechable)	failure	2026-11-23T21:46:46Z	scrum-1316l-medio-de-cobro-obligatorio-con-10	2446821		1	0	0	1	0	0	0	0
+A	45271693612	1	1	failure	138033010626	guards de navegador (fuera de la tanda)	failure	2026-11-23T21:38:14Z	scrum-1787y-pago-vence-el-sin-cero	152445		0	0	0	0	0	0	0	0
+A	45272461101	1	1	failure	138035532943	guards de navegador (fuera de la tanda)	failure	2026-11-23T21:42:54Z	scrum-1532d-boton-cancelar-cobro-y-reenvio	154132		0	0	0	0	0	0	0	0
+B	45273103548	1	1	success	138038011946	build + tests (con banco desechable)	success	2026-11-23T21:46:43Z	scrum-1316m-registro-medicion-p2	2423066		1	0	0	1	0	0	0	0
+A	45272461101	1	1	failure	138035532362	build + tests (con banco desechable)	failure	2026-11-23T21:42:54Z	scrum-1532d-boton-cancelar-cobro-y-reenvio	2452425		1	0	0	1	0	0	0	0
+A	45272265416	1	1	failure	138034854100	build + tests (con banco desechable)	failure	2026-11-23T21:41:43Z	scrum-1779i-staging-formas-de-pago-congeladas	2430022		1	0	0	1	0	0	0	0
+A	45271335272	1	1	failure	138031609685	guards de navegador (fuera de la tanda)	failure	2026-11-23T21:36:09Z	scrum-1532b-cancelar-cobro	152001		0	0	0	0	0	0	0	0
+A	45269557552	1	1	failure	138025406213	guards de navegador (fuera de la tanda)	failure	2026-11-23T21:25:45Z	scrum-914d-equipos-en-borrado-y-anonimizado	152438		0	0	0	0	0	0	0	0
+A	45269833417	1	1	failure	138026375830	guards de navegador (fuera de la tanda)	failure	2026-11-23T21:27:22Z	scrum-1787w-pdf-factura-construido	153777		0	0	0	0	0	0	0	0
+A	45269557552	1	1	failure	138025405694	build + tests (con banco desechable)	failure	2026-11-23T21:25:45Z	scrum-914d-equipos-en-borrado-y-anonimizado	2433998		1	0	0	1	0	0	0	0
+A	45271335272	1	1	failure	138031609553	build + tests (con banco desechable)	failure	2026-11-23T21:36:09Z	scrum-1532b-cancelar-cobro	2429135		1	0	0	1	0	0	0	0
+A	45269423846	1	1	failure	138024951512	guards de navegador (fuera de la tanda)	failure	2026-11-23T21:24:59Z	scrum-1316k-metodo-del-cargo-no-pagado	151945		0	0	0	0	0	0	0	0
+A	45269423846	1	1	failure	138024951536	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-23T21:24:59Z	scrum-1316k-metodo-del-cargo-no-pagado	96819	PEQUENO	0	0	0	0	0	0	0	0
+A	45269833417	1	1	failure	138026376423	build + tests (con banco desechable)	failure	2026-11-23T21:27:22Z	scrum-1787w-pdf-factura-construido	2427701		1	0	0	1	0	0	0	0
+A	45265704863	1	1	failure	138018661698	guards de navegador (fuera de la tanda)	failure	2026-11-23T21:03:25Z	main	150253		0	0	0	0	0	0	0	0
+A	45267055741	1	1	failure	138016638150	guards de navegador (fuera de la tanda)	failure	2026-11-23T21:11:12Z	scrum-1532b-cancelar-cobro	151254		0	0	0	0	0	0	0	0
+A	45267354953	1	1	failure	138017690906	guards de navegador (fuera de la tanda)	failure	2026-11-23T21:12:56Z	scrum-1787x-vence-el-sin-cero	153371		0	0	0	0	0	0	0	0
+A	45267055741	1	1	failure	138016637499	build + tests (con banco desechable)	failure	2026-11-23T21:11:12Z	scrum-1532b-cancelar-cobro	2431419		1	0	0	1	0	0	0	0
+A	45265765918	1	1	failure	138013395279	guards de navegador (fuera de la tanda)	failure	2026-11-23T21:03:46Z	scrum-1787s-congelar-formas-de-pago	151403		0	0	0	0	0	0	0	0
+A	45264253761	1	1	failure	138006842054	guards de navegador (fuera de la tanda)	failure	2026-11-23T20:54:58Z	main	148594		0	0	0	0	0	0	0	0
+A	45159780579	1	1	failure	137647790979	guards de navegador (fuera de la tanda)	failure	2026-11-23T10:50:48Z	main	150282		0	0	0	0	0	0	0	0
+A	45157689291	1	1	failure	137634948240	constancia del ALTER (informativo)	failure	2026-11-23T10:36:45Z	scrum-1787u-formas-de-pago-activas	20844	PEQUENO	0	0	0	0	0	0	0	0
+B	45262821052	1	1	success	138001796809	build + tests (con banco desechable)	success	2026-11-23T20:46:27Z	scrum-1787v-pdf-factura-como-presupuesto	2423376		1	0	0	1	0	0	0	0
+A	45157689291	1	1	failure	137634945838	guards de navegador (fuera de la tanda)	failure	2026-11-23T10:36:45Z	scrum-1787u-formas-de-pago-activas	151449		0	0	0	0	0	0	0	0
+A	45157635952	1	1	failure	137634530086	guards de navegador (fuera de la tanda)	failure	2026-11-23T10:36:24Z	main	150255		0	0	0	0	0	0	0	0
+A	45149532164	1	1	failure	137612627438	guards de navegador (fuera de la tanda)	failure	2026-11-23T09:42:51Z	main	150669		0	0	0	0	0	0	0	0
+A	45155497850	1	1	failure	137627247244	guards de navegador (fuera de la tanda)	failure	2026-11-23T10:22:25Z	scrum-1787t-vence-el-fecha-larga	153123		0	0	0	0	0	0	0	0
+B	45261425446	1	1	success	137996877480	build + tests (con banco desechable)	success	2026-11-23T20:38:13Z	scrum-1316c-rdl-26-2026-iva-10-medio-de-pago	2423156		1	0	0	1	0	0	0	0
+A	45147206996	1	1	failure	137599344656	guards de navegador (fuera de la tanda)	failure	2026-11-23T09:27:35Z	scrum-1781d-editar-cliente-con-prefijo	153273		0	0	0	0	0	0	0	0
+A	45149192784	1	1	failure	137605948550	guards de navegador (fuera de la tanda)	failure	2026-11-23T09:40:32Z	scrum-1787u-formas-de-pago-activas	153138		0	0	0	0	0	0	0	0
+A	45149192784	1	1	failure	137605948711	meta-guard · parte 2 de 3	failure	2026-11-23T09:40:32Z	scrum-1787u-formas-de-pago-activas	47321	PEQUENO	0	0	0	0	0	0	0	0
+A	45149192784	1	1	failure	137605948777	meta-guard · parte 1 de 3	failure	2026-11-23T09:40:32Z	scrum-1787u-formas-de-pago-activas	49080	PEQUENO	0	0	0	0	0	0	0	0
+A	45149192784	1	1	failure	137605948789	meta-guard · parte 3 de 3	failure	2026-11-23T09:40:32Z	scrum-1787u-formas-de-pago-activas	49186	PEQUENO	0	0	0	0	0	0	0	0
+A	45149192784	1	1	failure	137605948636	build + tests (con banco desechable)	failure	2026-11-23T09:40:32Z	scrum-1787u-formas-de-pago-activas	2442848		1	0	0	1	1	0	0	0
+A	45149192784	1	1	failure	137606393002	meta-guard · los guards caen cuando deben	failure	2026-11-23T09:40:32Z	scrum-1787u-formas-de-pago-activas	19820	PEQUENO	0	0	0	0	0	0	0	0
+A	45144595392	1	1	failure	137598257721	guards de navegador (fuera de la tanda)	failure	2026-11-23T09:10:06Z	main	148497		0	0	0	0	0	0	0	0
+A	45143721630	1	1	failure	137588487931	guards de navegador (fuera de la tanda)	failure	2026-11-23T09:04:03Z	main	148481		0	0	0	0	0	0	0	0
+A	45140676885	1	1	failure	137577589972	guards de navegador (fuera de la tanda)	failure	2026-11-23T08:41:33Z	main	149614		0	0	0	0	0	0	0	0
+B	45145340113	1	1	success	137593126417	build + tests (con banco desechable)	success	2026-11-23T09:15:12Z	scrum-1787r-prueba-staging-vencimiento	2418519		1	0	0	1	0	0	0	0
+A	45139819250	1	1	failure	137574760805	guards de navegador (fuera de la tanda)	failure	2026-11-23T08:35:17Z	scrum-1790-aviso-nif-visible-en-movil	151770		0	0	0	0	0	0	0	0
+A	45141611050	1	1	failure	137580718184	guards de navegador (fuera de la tanda)	failure	2026-11-23T08:48:34Z	scrum-1787q-pago-vence-el	153112		0	0	0	0	0	0	0	0
+B	45142110581	1	1	success	137582388455	build + tests (con banco desechable)	success	2026-11-23T08:52:22Z	scrum-1789b-ciego-es-rojo	2420870		1	0	0	1	0	0	0	0
+B	45138892373	1	1	success	137571728743	build + tests (con banco desechable)	success	2026-11-23T08:28:29Z	scrum-1791-cierre-sprint-21nov	2416814		1	0	0	1	0	0	0	0
+A	45140193807	1	1	failure	137575990231	guards de navegador (fuera de la tanda)	failure	2026-11-23T08:38:01Z	scrum-665e-pdf-persistente	151389		0	0	0	0	0	0	0	0
+A	45139132207	1	1	failure	137572505182	guards de navegador (fuera de la tanda)	failure	2026-11-23T08:30:14Z	scrum-1786g-portal-total-del-apartado	151248		0	0	0	0	0	0	0	0
+A	45122555791	1	1	failure	137528139758	guards de navegador (fuera de la tanda)	failure	2026-11-23T06:12:23Z	main	148805		0	0	0	0	0	0	0	0
+A	45122428304	1	1	failure	137519024416	guards de navegador (fuera de la tanda)	failure	2026-11-23T06:11:12Z	main	150688		0	0	0	0	0	0	0	0
+A	45120974398	1	1	failure	137515050085	guards de navegador (fuera de la tanda)	failure	2026-11-23T05:57:27Z	scrum-1787i-vencimiento-y-formas-de-pago	151413		0	0	0	0	0	0	0	0
+A	45140193807	1	1	failure	137575990196	build + tests (con banco desechable)	failure	2026-11-23T08:38:01Z	scrum-665e-pdf-persistente	2449026		1	0	0	1	0	0	0	0
+A	45121048602	1	1	failure	137515256453	guards de navegador (fuera de la tanda)	failure	2026-11-23T05:58:13Z	scrum-1787p-cobro-hereda-formas-de-pago	153228		0	0	0	0	0	0	0	0
+A	45121197082	1	1	failure	137515133386	guards de navegador (fuera de la tanda)	failure	2026-11-23T05:59:44Z	scrum-1787m-pdf-vence-y-formas-de-pago	153284		0	0	0	0	0	0	0	0
+A	45113237157	1	1	failure	137490204627	guards de navegador (fuera de la tanda)	failure	2026-11-23T04:40:12Z	scrum-1787i-vencimiento-y-formas-de-pago	151754		0	0	0	0	0	0	0	0
+A	45113234417	1	1	failure	137490191967	guards de navegador (fuera de la tanda)	failure	2026-11-23T04:40:11Z	scrum-1787p-cobro-hereda-formas-de-pago	151797		0	0	0	0	0	0	0	0
+A	45113232031	1	1	failure	137490183494	meta-guard · parte 2 de 3	failure	2026-11-23T04:40:09Z	scrum-1787m-pdf-vence-y-formas-de-pago	128391		0	0	0	0	0	0	0	0
+A	45113237157	1	1	failure	137490204918	build + tests (con banco desechable)	failure	2026-11-23T04:40:12Z	scrum-1787i-vencimiento-y-formas-de-pago	2420784		1	0	0	1	0	0	0	0
+A	45113232031	1	1	failure	137497998249	meta-guard · los guards caen cuando deben	failure	2026-11-23T04:40:09Z	scrum-1787m-pdf-vence-y-formas-de-pago	19797	PEQUENO	0	0	0	0	0	0	0	0
+A	45113232031	1	1	failure	137490183906	guards de navegador (fuera de la tanda)	failure	2026-11-23T04:40:09Z	scrum-1787m-pdf-vence-y-formas-de-pago	153241		0	0	0	0	0	0	0	0
+A	45113234417	1	1	failure	137490191849	build + tests (con banco desechable)	failure	2026-11-23T04:40:11Z	scrum-1787p-cobro-hereda-formas-de-pago	2417883		1	0	0	1	0	0	0	0
+A	45110540958	1	1	failure	137481832116	guards de navegador (fuera de la tanda)	failure	2026-11-23T04:13:37Z	scrum-1787n-lista-de-facturas	195299		0	0	0	0	0	0	0	0
+A	45110791821	1	1	failure	137482426285	guards de navegador (fuera de la tanda)	failure	2026-11-23T04:15:58Z	scrum-1782b-rotulo-factura-como	176217		0	0	0	0	0	0	0	0
+A	45113232031	1	1	failure	137490183730	build + tests (con banco desechable)	failure	2026-11-23T04:40:09Z	scrum-1787m-pdf-vence-y-formas-de-pago	2430322		1	0	0	1	0	0	0	0
+A	45112703646	1	1	failure	137491065225	guards de navegador (fuera de la tanda)	failure	2026-11-23T04:34:54Z	main	150789		0	0	0	0	0	0	0	0
+A	45110647397	1	1	failure	137481987058	guards de navegador (fuera de la tanda)	failure	2026-11-23T04:14:40Z	scrum-1789b-ciego-es-rojo	144839		0	0	0	0	0	0	0	0
+A	45110064408	1	1	failure	137480145379	guards de navegador (fuera de la tanda)	failure	2026-11-23T04:08:55Z	main	183858		0	0	0	0	0	0	0	0
+A	45110791821	1	1	failure	137482426665	build + tests (con banco desechable)	failure	2026-11-23T04:15:58Z	scrum-1782b-rotulo-factura-como	2421443		1	0	0	1	0	0	0	0
+A	45108798307	1	1	failure	137476145914	guards de navegador (fuera de la tanda)	failure	2026-11-23T03:55:41Z	scrum-1787o-enviada-tambien-por-correo	185338		0	0	0	0	0	0	0	0
+A	45107948749	1	1	failure	137473438759	guards de navegador (fuera de la tanda)	failure	2026-11-23T03:46:34Z	main	182641		0	0	0	0	0	0	0	0
+A	45109819756	1	1	failure	137479364700	guards de navegador (fuera de la tanda)	failure	2026-11-23T04:06:26Z	scrum-1789-guards-ciegos-en-ci	144806		0	0	0	0	0	0	0	0
+A	45107905399	1	1	failure	137473301015	guards de navegador (fuera de la tanda)	failure	2026-11-23T03:46:06Z	scrum-665e-pdf-persistente	175973		0	0	0	0	0	0	0	0
+A	45106597728	1	1	failure	137469204517	guards de navegador (fuera de la tanda)	failure	2026-11-23T03:32:37Z	scrum-1787l-notas-del-presupuesto-a-la-factura	185677		0	0	0	0	0	0	0	0
+A	44956622872	1	1	failure	137011263355	meta-guard · los guards caen cuando deben	failure	2026-11-21T22:24:51Z	scrum-1787l-notas-del-presupuesto-a-la-factura	19993	PEQUENO	0	0	0	0	0	0	0	0
+A	44956622872	1	1	failure	137006356157	meta-guard · parte 3 de 3	failure	2026-11-21T22:24:51Z	scrum-1787l-notas-del-presupuesto-a-la-factura	123960		0	0	0	0	0	0	0	0
+A	44956622872	1	1	failure	137006356066	guards de navegador (fuera de la tanda)	failure	2026-11-21T22:24:51Z	scrum-1787l-notas-del-presupuesto-a-la-factura	186228		0	0	0	0	0	0	0	0
+A	45107905399	1	1	failure	137473301024	build + tests (con banco desechable)	failure	2026-11-23T03:46:06Z	scrum-665e-pdf-persistente	2441554		1	0	0	1	0	0	0	0
+A	44954983997	1	1	failure	137001315829	guards de navegador (fuera de la tanda)	failure	2026-11-21T22:06:25Z	scrum-1787k-lineas-con-descripcion-y-descuento	187377		0	0	0	0	0	0	0	0
+A	44956591476	1	1	failure	137007962160	guards de navegador (fuera de la tanda)	failure	2026-11-21T22:24:29Z	main	183160		0	0	0	0	0	0	0	0
+A	44956622872	1	1	failure	137006355670	build + tests (con banco desechable)	failure	2026-11-21T22:24:51Z	scrum-1787l-notas-del-presupuesto-a-la-factura	2432109		1	0	0	1	0	0	0	0
+A	45105546590	1	1	failure	137465859848	guards de navegador (fuera de la tanda)	failure	2026-11-23T03:21:58Z	scrum-1787i-vencimiento-y-formas-de-pago	185736		0	0	0	0	0	0	0	0
+A	44954517438	1	1	failure	136999545418	guards de navegador (fuera de la tanda)	failure	2026-11-21T22:01:13Z	scrum-1787i-vencimiento-y-formas-de-pago	175838		0	0	0	0	0	0	0	0
+A	45105546590	1	1	failure	137465859818	build + tests (con banco desechable)	failure	2026-11-23T03:21:58Z	scrum-1787i-vencimiento-y-formas-de-pago	2414359		1	0	0	1	0	0	0	0
+A	44954875022	1	1	failure	137000642876	guards de navegador (fuera de la tanda)	failure	2026-11-21T22:05:14Z	main	182952		0	0	0	0	0	0	0	0
+A	44954517438	1	1	failure	136999545608	build + tests (con banco desechable)	failure	2026-11-21T22:01:13Z	scrum-1787i-vencimiento-y-formas-de-pago	2414948		1	0	0	1	0	0	0	0
+A	44953694433	1	1	failure	136997010754	guards de navegador (fuera de la tanda)	failure	2026-11-21T21:51:29Z	scrum-1787j-viajes-de-la-emision	175540		0	0	0	0	0	0	0	0
+A	44949163501	1	1	failure	136984838838	guards de navegador (fuera de la tanda)	failure	2026-11-21T20:59:43Z	main	179707		0	0	0	0	0	0	0	0
+A	44947878379	1	1	failure	136979103872	guards de navegador (fuera de la tanda)	failure	2026-11-21T20:44:37Z	scrum-1785c-whatsapp-con-razon-social	187253		0	0	0	0	0	0	0	0
+A	44945773177	1	1	failure	136977116999	guards de navegador (fuera de la tanda)	failure	2026-11-21T20:20:40Z	main	182835		0	0	0	0	0	0	0	0
+A	44947784560	1	1	failure	136978809799	guards de navegador (fuera de la tanda)	failure	2026-11-21T20:43:29Z	scrum-1787g-instrumentos-ficha-y-viajes	185509		0	0	0	0	0	0	0	0
+A	44946255112	1	1	failure	136974113643	guards de navegador (fuera de la tanda)	failure	2026-11-21T20:26:03Z	scrum-1787h-pago-con-lineas	184964		0	0	0	0	0	0	0	0
+A	44944348500	1	1	failure	136968245666	guards de navegador (fuera de la tanda)	failure	2026-11-21T20:04:55Z	scrum-1786f1-total-del-apartado	175734		0	0	0	0	0	0	0	0
+A	44943673014	1	1	failure	136970855094	guards de navegador (fuera de la tanda)	failure	2026-11-21T19:57:21Z	main	184632		0	0	0	0	0	0	0	0
+A	44944288775	1	1	failure	136968058466	guards de navegador (fuera de la tanda)	failure	2026-11-21T20:04:16Z	scrum-1787h-pago-con-lineas	177017		0	0	0	0	0	0	0	0
+A	44942726182	1	1	failure	136963256195	guards de navegador (fuera de la tanda)	failure	2026-11-21T19:46:30Z	main	184275		0	0	0	0	0	0	0	0
+A	44941198584	1	1	failure	136958582777	guards de navegador (fuera de la tanda)	failure	2026-11-21T19:29:29Z	scrum-1787d-direccion-y-nif-en-factura	187000		0	0	0	0	0	0	0	0
+A	44879815395	1	1	failure	136772408346	meta-guard · parte 3 de 3	failure	2026-11-21T07:20:46Z	scrum-1787d-direccion-y-nif-en-factura	119318		0	0	0	0	0	0	0	0
+A	44944288775	1	1	failure	136968058567	build + tests (con banco desechable)	failure	2026-11-21T20:04:16Z	scrum-1787h-pago-con-lineas	2436258		1	0	0	1	0	0	0	0
+B	44942697581	1	1	success	136963165183	build + tests (con banco desechable)	success	2026-11-21T19:46:10Z	scrum-1787f-ddl-vencimiento	2406409		1	0	0	1	0	0	0	0
+A	44879815395	1	1	failure	136772408463	meta-guard · parte 1 de 3	failure	2026-11-21T07:20:46Z	scrum-1787d-direccion-y-nif-en-factura	122852		0	0	0	0	0	0	0	0
+A	44879815395	1	1	failure	136772408371	build + tests (con banco desechable)	failure	2026-11-21T07:20:46Z	scrum-1787d-direccion-y-nif-en-factura	2474874		1	0	0	1	0	0	0	0
+A	44879815395	1	1	failure	136772408513	guards de navegador (fuera de la tanda)	failure	2026-11-21T07:20:46Z	scrum-1787d-direccion-y-nif-en-factura	177054		0	0	0	0	0	0	0	0
+A	44879815395	1	1	failure	136776533823	meta-guard · los guards caen cuando deben	failure	2026-11-21T07:20:46Z	scrum-1787d-direccion-y-nif-en-factura	21418	PEQUENO	0	0	0	0	0	0	0	0
+A	44876258938	1	1	failure	136761502676	constancia del ALTER (informativo)	failure	2026-11-21T06:35:24Z	scrum-1787c-ddl-direccion-cliente	21045	PEQUENO	0	0	0	0	0	0	0	0
+A	44879771003	1	1	failure	136772276048	guards de navegador (fuera de la tanda)	failure	2026-11-21T07:20:15Z	main	174523		0	0	0	0	0	0	0	0
+A	44876256952	1	1	failure	136761566191	guards de navegador (fuera de la tanda)	failure	2026-11-21T06:35:22Z	scrum-1787d-direccion-y-nif-en-factura	186988		0	0	0	0	0	0	0	0
+B	44878693752	1	1	success	136768996590	build + tests (con banco desechable)	success	2026-11-21T07:06:43Z	scrum-1787c-ddl-direccion-cliente	2407599		1	0	0	1	0	0	0	0
+A	44874963723	1	1	failure	136758960014	guards de navegador (fuera de la tanda)	failure	2026-11-21T06:19:07Z	main	174776		0	0	0	0	0	0	0	0
+A	44876258938	1	1	failure	136761502527	build + tests (con banco desechable)	failure	2026-11-21T06:35:24Z	scrum-1787c-ddl-direccion-cliente	2413010		1	0	0	1	0	0	0	0
+A	44876256952	1	1	failure	136761566265	meta-guard · parte 1 de 3	failure	2026-11-21T06:35:22Z	scrum-1787d-direccion-y-nif-en-factura	123471		0	0	0	0	0	0	0	0
+A	44876256952	1	1	failure	136761566277	meta-guard · parte 3 de 3	failure	2026-11-21T06:35:22Z	scrum-1787d-direccion-y-nif-en-factura	119488		0	0	0	0	0	0	0	0
+A	44876256952	1	1	failure	136765908804	meta-guard · los guards caen cuando deben	failure	2026-11-21T06:35:22Z	scrum-1787d-direccion-y-nif-en-factura	19799	PEQUENO	0	0	0	0	0	0	0	0
+A	44876256952	1	1	failure	136761566231	build + tests (con banco desechable)	failure	2026-11-21T06:35:22Z	scrum-1787d-direccion-y-nif-en-factura	2473511		1	0	0	1	0	0	0	0
+A	44876230248	1	1	failure	136764396740	guards de navegador (fuera de la tanda)	failure	2026-11-21T06:35:03Z	main	184347		0	0	0	0	0	0	0	0
+A	44874912758	1	1	failure	136757382888	guards de navegador (fuera de la tanda)	failure	2026-11-21T06:18:27Z	scrum-1787e-conceptos-en-movil	177435		0	0	0	0	0	0	0	0
+A	44873517065	1	1	failure	136753060485	guards de navegador (fuera de la tanda)	failure	2026-11-21T06:00:55Z	scrum-1788a-emisor-no-pisa-la-tabla	175801		0	0	0	0	0	0	0	0
+A	44872620217	1	1	failure	136750419448	guards de navegador (fuera de la tanda)	failure	2026-11-21T05:48:58Z	scrum-1787b-ficha-de-factura	185064		0	0	0	0	0	0	0	0
+A	44874883272	1	1	failure	136757291536	guards de navegador (fuera de la tanda)	failure	2026-11-21T06:18:05Z	scrum-1787b-ficha-de-factura	185239		0	0	0	0	0	0	0	0
+A	44872618003	1	1	failure	136750290258	guards de navegador (fuera de la tanda)	failure	2026-11-21T05:48:56Z	scrum-1787e-conceptos-en-movil	177213		0	0	0	0	0	0	0	0
+A	44872620217	1	1	failure	136750419460	build + tests (con banco desechable)	failure	2026-11-21T05:48:58Z	scrum-1787b-ficha-de-factura	2412173		1	0	0	1	0	0	0	0
+A	44872595410	1	1	failure	136752022549	guards de navegador (fuera de la tanda)	failure	2026-11-21T05:48:38Z	main	179997		0	0	0	0	0	0	0	0
+A	44871043928	1	1	failure	136745422644	guards de navegador (fuera de la tanda)	failure	2026-11-21T05:28:31Z	scrum-1780c-factura-desde-parte	175646		0	0	0	0	0	0	0	0
+A	44870418372	1	1	failure	136743457546	guards de navegador (fuera de la tanda)	failure	2026-11-21T05:20:22Z	scrum-1786b-cabeceras-fuera-de-factura	187477		0	0	0	0	0	0	0	0
+A	44872618003	1	1	failure	136750290594	build + tests (con banco desechable)	failure	2026-11-21T05:48:56Z	scrum-1787e-conceptos-en-movil	2417287		1	0	0	1	0	0	0	0
+A	44869587689	1	1	failure	136740881812	guards de navegador (fuera de la tanda)	failure	2026-11-21T05:10:10Z	scrum-1785b-whatsapp-con-nombre-comercial	176044		0	0	0	0	0	0	0	0
+B	44871089339	1	1	success	136745571746	build + tests (con banco desechable)	success	2026-11-21T05:29:10Z	scrum-1787c-ddl-direccion-cliente	2405658		1	0	0	1	0	0	0	0
+B	44869560065	1	1	success	136740955138	build + tests (con banco desechable)	success	2026-11-21T05:09:50Z	scrum-1779g-regla-24-nota-a8	2400662		1	0	0	1	0	0	0	0
+A	44868939713	1	1	failure	136741603754	guards de navegador (fuera de la tanda)	failure	2026-11-21T05:02:11Z	main	175737		0	0	0	0	0	0	0	0
+A	44868859758	1	1	failure	136738604699	guards de navegador (fuera de la tanda)	failure	2026-11-21T05:01:13Z	scrum-1781c-sin-ayuda-de-prefijo	176261		0	0	0	0	0	0	0	0
+A	44868850147	1	1	failure	136738577600	guards de navegador (fuera de la tanda)	failure	2026-11-21T05:01:07Z	scrum-1783b-sin-selector-recargo-y-rotulo	187527		0	0	0	0	0	0	0	0
+A	44867525619	1	1	failure	136734612976	guards de navegador (fuera de la tanda)	failure	2026-11-21T04:43:59Z	main	184765		0	0	0	0	0	0	0	0
+B	44869607604	1	1	success	136740941509	build + tests (con banco desechable)	success	2026-11-21T05:10:24Z	scrum-1787a-facturas-como-presupuestos	2402773		1	0	0	1	0	0	0	0
+A	44868032065	1	1	failure	136736018351	guards de navegador (fuera de la tanda)	failure	2026-11-21T04:50:29Z	scrum-1779f-sin-aviso-falso-con-sif-off	185302		0	0	0	0	0	0	0	0
+B	44866651375	1	1	success	136731707397	build + tests (con banco desechable)	success	2026-11-21T04:33:00Z	scrum-1784a-relevo-j2do	2398051		1	0	0	1	0	0	0	0
+A	44865506732	1	1	failure	136728148236	guards de navegador (fuera de la tanda)	failure	2026-11-21T04:19:07Z	scrum-1785-ocultar-datos-presupuesto	185230		0	0	0	0	0	0	0	0
+B	44866466159	1	1	success	136731138450	build + tests (con banco desechable)	success	2026-11-21T04:30:46Z	scrum-1779e-prueba-staging-qa	2399176		1	0	0	1	0	0	0	0
+A	44864183945	1	1	failure	136724047572	guards de navegador (fuera de la tanda)	failure	2026-11-21T04:03:29Z	scrum-1781b-prefijo-en-alta-y-ajustes	185591		0	0	0	0	0	0	0	0
+A	44864938833	1	1	failure	136726395504	guards de navegador (fuera de la tanda)	failure	2026-11-21T04:12:24Z	scrum-1786b-cabeceras-fuera-de-factura	173138		0	0	0	0	0	0	0	0
+A	44865506732	1	1	failure	136728148041	build + tests (con banco desechable)	failure	2026-11-21T04:19:07Z	scrum-1785-ocultar-datos-presupuesto	2406206		1	0	0	1	0	0	0	0
+A	44865179217	1	1	failure	136728115679	guards de navegador (fuera de la tanda)	failure	2026-11-21T04:15:15Z	main	172998		0	0	0	0	0	0	0	0
+A	44864938833	1	1	failure	136726395204	build + tests (con banco desechable)	failure	2026-11-21T04:12:24Z	scrum-1786b-cabeceras-fuera-de-factura	2402067		1	0	0	1	0	0	0	0
+A	44863901118	1	1	failure	136723186966	build + tests (con banco desechable)	failure	2026-11-21T04:00:13Z	scrum-1784a-relevo-j2do	2404590		1	0	0	1	0	0	0	0
+A	44863735917	1	1	failure	136722664391	guards de navegador (fuera de la tanda)	failure	2026-11-21T03:58:05Z	main	169316		0	0	0	0	0	0	0	0
+A	44798134056	1	1	failure	136502937646	guards de navegador (fuera de la tanda)	failure	2026-11-20T19:00:47Z	scrum-1779d-factura-sin-verifactu-con-sif-off	171248		0	0	0	0	0	0	0	0
+B	44862964359	1	1	success	136720241361	build + tests (con banco desechable)	success	2026-11-21T03:48:15Z	scrum-1781-prefijo-y-tipo-de-cliente	2397856		1	0	0	1	0	0	0	0
+B	44862798275	1	1	success	136719715702	build + tests (con banco desechable)	success	2026-11-21T03:46:10Z	scrum-1786a-subpartidas-diseno	2398359		1	0	0	1	0	0	0	0
+A	44862670877	1	1	failure	136719330502	guards de navegador (fuera de la tanda)	failure	2026-11-21T03:44:40Z	scrum-1779d-factura-sin-verifactu-con-sif-off	171204		0	0	0	0	0	0	0	0
+B	44862820145	1	1	success	136719785009	build + tests (con banco desechable)	success	2026-11-21T03:46:26Z	scrum-1783a-recargo-medido	2397939		1	0	0	1	0	0	0	0
+A	44791478102	1	1	failure	136483231067	guards de navegador (fuera de la tanda)	failure	2026-11-20T18:18:11Z	main	170435		0	0	0	0	0	0	0	0
+A	44798134056	1	1	failure	136502937502	build + tests (con banco desechable)	failure	2026-11-20T19:00:47Z	scrum-1779d-factura-sin-verifactu-con-sif-off	2423284		1	0	0	1	0	0	0	0
+A	44788961387	1	1	failure	136471220207	build + tests (con banco desechable)	failure	2026-11-20T18:02:19Z	scrum-1780b-ddl-y-diseno-factura-desde-parte	2401531		1	0	0	1	0	0	0	0
+A	44789223657	1	1	failure	136472142510	guards de navegador (fuera de la tanda)	failure	2026-11-20T18:03:58Z	main	168790		0	0	0	0	0	0	0	0
+A	44781477439	1	1	failure	136444990459	meta-guard · parte 2 de 3	failure	2026-11-20T17:15:09Z	scrum-1005d-pestana-documentos	118351		0	0	0	0	0	0	0	0
+B	44789280621	1	1	success	136472588103	build + tests (con banco desechable)	success	2026-11-20T18:04:20Z	scrum-1779a-que-emite-con-el-flag-on	2397553		1	0	0	1	0	0	0	0
+A	44781477439	1	1	failure	136444990527	guards de navegador (fuera de la tanda)	failure	2026-11-20T17:15:09Z	scrum-1005d-pestana-documentos	173363		0	0	0	0	0	0	0	0
+A	44781477439	1	1	failure	136444990518	build + tests (con banco desechable)	failure	2026-11-20T17:15:09Z	scrum-1005d-pestana-documentos	2402478		1	0	0	1	0	0	0	0
+B	44788895835	1	1	success	136470987833	build + tests (con banco desechable)	success	2026-11-20T18:01:54Z	scrum-1778b-master-media-1	2400910		1	0	0	1	0	0	0	0
+A	44781477439	1	1	failure	136456077008	meta-guard · los guards caen cuando deben	failure	2026-11-20T17:15:09Z	scrum-1005d-pestana-documentos	21299	PEQUENO	0	0	0	0	0	0	0	0
+A	44774971414	1	1	failure	136422223620	meta-guard · parte 2 de 3	failure	2026-11-20T16:35:53Z	scrum-1005d-pestana-documentos	118550		0	0	0	0	0	0	0	0
+A	44774971414	1	1	failure	136422223596	guards de navegador (fuera de la tanda)	failure	2026-11-20T16:35:53Z	scrum-1005d-pestana-documentos	171968		0	0	0	0	0	0	0	0
+A	44774971414	1	1	failure	136432717202	meta-guard · los guards caen cuando deben	failure	2026-11-20T16:35:53Z	scrum-1005d-pestana-documentos	21419	PEQUENO	0	0	0	0	0	0	0	0
+A	44776000217	1	1	failure	136426258345	constancia del ALTER (informativo)	failure	2026-11-20T16:42:10Z	main	19255	PEQUENO	0	0	0	0	0	0	0	0
+B	44786576931	1	1	success	136462915417	build + tests (con banco desechable)	success	2026-11-20T17:47:02Z	scrum-1780a-factura-desde-el-parte-medida	2400203		1	0	0	1	0	0	0	0
+A	44776000217	1	1	failure	136426258497	guards de navegador (fuera de la tanda)	failure	2026-11-20T16:42:10Z	main	170286		0	0	0	0	0	0	0	0
+A	44774971414	1	1	failure	136422229179	build + tests (con banco desechable)	failure	2026-11-20T16:35:53Z	scrum-1005d-pestana-documentos	2436002		1	0	0	1	0	0	0	0
+A	44772888989	1	1	failure	136414887920	guards de navegador (fuera de la tanda)	failure	2026-11-20T16:23:23Z	main	168436		0	0	0	0	0	0	0	0
+B	44772968318	1	1	success	136415527121	build + tests (con banco desechable)	success	2026-11-20T16:23:51Z	scrum-1732g-registro-sin-duplicados	2400693		1	0	0	1	0	0	0	0
+B	44770627539	1	1	success	136407005289	build + tests (con banco desechable)	success	2026-11-20T16:10:13Z	scrum-1771d-cierres-14-staging	2397626		1	0	0	1	0	0	0	0
+A	44755855327	1	1	failure	136355262435	guards de navegador (fuera de la tanda)	failure	2026-11-20T14:41:20Z	main	169863		0	0	0	0	0	0	0	0
+A	44747573041	1	1	failure	136329249381	guards de navegador (fuera de la tanda)	failure	2026-11-20T13:48:35Z	main	168160		0	0	0	0	0	0	0	0
+A	44746669331	1	1	failure	136323646889	guards de navegador (fuera de la tanda)	failure	2026-11-20T13:42:29Z	scrum-1762d-hallmark-parte	171049		0	0	0	0	0	0	0	0
+A	44744978710	1	1	failure	136317836084	guards de navegador (fuera de la tanda)	failure	2026-11-20T13:30:59Z	main	168369		0	0	0	0	0	0	0	0
+A	44745136953	1	1	failure	136318386731	guards de navegador (fuera de la tanda)	failure	2026-11-20T13:32:04Z	scrum-1762c-hallmark-inicio	172313		0	0	0	0	0	0	0	0
+A	44753665109	1	1	failure	136347690347	guards de navegador (fuera de la tanda)	failure	2026-11-20T14:27:41Z	scrum-1762d-hallmark-parte	170936		0	0	0	0	0	0	0	0
+A	44742479979	1	1	failure	136309327817	guards de navegador (fuera de la tanda)	failure	2026-11-20T13:13:52Z	scrum-915c-boton-en-la-lista	172420		0	0	0	0	0	0	0	0
+A	44735524964	1	1	failure	136285801189	guards de navegador (fuera de la tanda)	failure	2026-11-20T12:24:29Z	scrum-1762c-hallmark-inicio	170869		0	0	0	0	0	0	0	0
+A	44731806508	1	1	failure	136280581298	guards de navegador (fuera de la tanda)	failure	2026-11-20T11:57:39Z	main	168041		0	0	0	0	0	0	0	0
+A	44726761564	1	1	failure	136263892564	meta-guard · los guards caen cuando deben	failure	2026-11-20T11:20:12Z	scrum-915b-presupuesto-desde-parte	19796	PEQUENO	0	0	0	0	0	0	0	0
+A	44735524964	1	1	failure	136285801563	build + tests (con banco desechable)	failure	2026-11-20T12:24:29Z	scrum-1762c-hallmark-inicio	2398650		1	0	0	1	0	0	0	0
+A	44726761564	1	1	failure	136256026123	meta-guard · parte 3 de 3	failure	2026-11-20T11:20:12Z	scrum-915b-presupuesto-desde-parte	118475		0	0	0	0	0	0	0	0
+A	44726761564	1	1	failure	136256026092	guards de navegador (fuera de la tanda)	failure	2026-11-20T11:20:12Z	scrum-915b-presupuesto-desde-parte	170648		0	0	0	0	0	0	0	0
+A	44729587247	1	1	failure	136265610730	guards de navegador (fuera de la tanda)	failure	2026-11-20T11:41:01Z	scrum-915b-presupuesto-desde-parte	172551		0	0	0	0	0	0	0	0
+A	44728699168	1	1	failure	136262590783	guards de navegador (fuera de la tanda)	failure	2026-11-20T11:34:23Z	scrum-1762b-hallmark-ficha	172550		0	0	0	0	0	0	0	0
+A	44730918755	1	1	failure	136270139101	guards de navegador (fuera de la tanda)	failure	2026-11-20T11:50:59Z	main	168173		0	0	0	0	0	0	0	0
+A	44698630927	1	1	failure	136163870530	guards de navegador (fuera de la tanda)	failure	2026-11-20T07:56:17Z	main	169926		0	0	0	0	0	0	0	0
+A	44694632984	1	1	failure	136152792026	guards de navegador (fuera de la tanda)	failure	2026-11-20T07:23:40Z	main	105741		0	0	0	0	0	0	0	0
+A	44696862805	1	1	failure	136155582939	guards de navegador (fuera de la tanda)	failure	2026-11-20T07:41:50Z	scrum-1768b-ficha-pestanas	179722		0	0	0	0	0	0	0	0
+A	44726761564	1	1	failure	136256025734	build + tests (con banco desechable)	failure	2026-11-20T11:20:12Z	scrum-915b-presupuesto-desde-parte	2427199		1	0	0	1	0	0	0	0
+A	44682587732	1	1	failure	136109265462	guards de navegador (fuera de la tanda)	failure	2026-11-20T05:40:30Z	main	105685		0	0	0	0	0	0	0	0
+B	44697191862	1	1	success	136156669749	build + tests (con banco desechable)	success	2026-11-20T07:44:30Z	scrum-1725j-lista-lavado	2391366		1	0	0	1	0	0	0	0
+A	44692477009	1	1	failure	136141305285	guards de navegador (fuera de la tanda)	failure	2026-11-20T07:06:08Z	scrum-1005b-documentos-cliente-servidor	106766		0	0	0	0	0	0	0	0
+A	44693673235	1	1	failure	136145213596	guards de navegador (fuera de la tanda)	failure	2026-11-20T07:15:50Z	main	105953		0	0	0	0	0	0	0	0
+A	44680707117	1	1	failure	136103135519	guards de navegador (fuera de la tanda)	failure	2026-11-20T05:23:26Z	scrum-1771c-pieza-entera	105603		0	0	0	0	0	0	0	0
+A	44693194738	1	1	failure	136143672303	guards de navegador (fuera de la tanda)	failure	2026-11-20T07:12:00Z	scrum-1725i-filtros-estado	106020		0	0	0	0	0	0	0	0
+A	44600672067	1	1	failure	135836924679	guards de navegador (fuera de la tanda)	failure	2026-11-19T19:40:00Z	main	104206		0	0	0	0	0	0	0	0
+A	44589564673	1	1	failure	135791563115	guards de navegador (fuera de la tanda)	failure	2026-11-19T18:36:16Z	scrum-1771c-pieza-entera	109003		0	0	0	0	0	0	0	0
+B	44692000005	1	1	success	136139732902	build + tests (con banco desechable)	success	2026-11-20T07:02:12Z	scrum-1778a-literal-media-1	2388936		1	0	0	1	0	0	0	0
+A	44596681077	1	1	failure	135823395347	guards de navegador (fuera de la tanda)	failure	2026-11-19T19:16:55Z	main	104380		0	0	0	0	0	0	0	0
+A	44591976603	1	1	failure	135800448250	guards de navegador (fuera de la tanda)	failure	2026-11-19T18:50:09Z	scrum-1765h-bancos-1333-1327-al-catalogo	108863		0	0	0	0	0	0	0	0
+A	44589564673	1	1	failure	135791563476	build + tests (con banco desechable)	failure	2026-11-19T18:36:16Z	scrum-1771c-pieza-entera	2418574		1	0	0	1	0	0	0	0
+B	44598703994	1	1	success	135823926008	build + tests (con banco desechable)	success	2026-11-19T19:28:39Z	scrum-1732f-qa-staging-sin-avisos	2389585		1	0	0	1	0	0	0	0
+A	44589199948	1	1	failure	135790592884	guards de navegador (fuera de la tanda)	failure	2026-11-19T18:34:12Z	scrum-1765f-banco-1326-al-catalogo	108856		0	0	0	0	0	0	0	0
+A	44591354630	1	1	failure	135800312009	guards de navegador (fuera de la tanda)	failure	2026-11-19T18:46:33Z	main	106786		0	0	0	0	0	0	0	0
+A	44588877814	1	1	failure	135789147673	guards de navegador (fuera de la tanda)	failure	2026-11-19T18:32:23Z	scrum-1774a-bizum-por-flags-en-admin	108950		0	0	0	0	0	0	0	0
+A	44587006217	1	1	failure	135782557136	meta-guard · parte 2 de 3	failure	2026-11-19T18:21:55Z	scrum-1005b-documentos-cliente-servidor	115593		0	0	0	0	0	0	0	0
+A	44587006217	1	1	failure	135800189357	meta-guard · los guards caen cuando deben	failure	2026-11-19T18:21:55Z	scrum-1005b-documentos-cliente-servidor	19793	PEQUENO	0	0	0	0	0	0	0	0
+A	44592401044	1	1	failure	135801574323	build + tests (con banco desechable)	failure	2026-11-19T18:52:34Z	scrum-1732f-qa-staging-sin-avisos	2401582		1	0	0	1	0	0	0	0
+A	44587006217	1	1	failure	135782557321	guards de navegador (fuera de la tanda)	failure	2026-11-19T18:21:55Z	scrum-1005b-documentos-cliente-servidor	109193		0	0	0	0	0	0	0	0
+B	44588874697	1	1	success	135789136734	build + tests (con banco desechable)	success	2026-11-19T18:32:22Z	scrum-1005c-textos-propuestos	2392789		1	0	0	1	0	0	0	0
+A	44585447711	1	1	failure	135777012595	guards de navegador (fuera de la tanda)	failure	2026-11-19T18:13:09Z	scrum-1765g-bancos-1304-1330-al-catalogo	107303		0	0	0	0	0	0	0	0
+A	44587006217	1	1	failure	135782557667	build + tests (con banco desechable)	failure	2026-11-19T18:21:55Z	scrum-1005b-documentos-cliente-servidor	2435701		1	0	0	1	0	0	0	0
+A	44586911027	1	1	failure	135782502299	guards de navegador (fuera de la tanda)	failure	2026-11-19T18:21:22Z	main	104630		0	0	0	0	0	0	0	0
+A	44585380202	1	1	failure	135776804518	build + tests (con banco desechable)	failure	2026-11-19T18:12:46Z	scrum-1732f-qa-staging-sin-avisos	2395695		1	0	0	1	0	0	0	0
+A	44582844698	1	1	failure	135767822415	guards de navegador (fuera de la tanda)	failure	2026-11-19T17:58:29Z	scrum-1773a-trinquete-innerhtml	107010		0	0	0	0	0	0	0	0
+A	44584085832	1	1	failure	135772198395	guards de navegador (fuera de la tanda)	failure	2026-11-19T18:05:29Z	scrum-624y-a-en-la-r1	108753		0	0	0	0	0	0	0	0
+A	44582347799	1	1	failure	135766033525	guards de navegador (fuera de la tanda)	failure	2026-11-19T17:55:33Z	scrum-1765f-banco-1326-al-catalogo	108866		0	0	0	0	0	0	0	0
+B	44584982301	1	1	success	135775381043	build + tests (con banco desechable)	success	2026-11-19T18:10:33Z	scrum-1770c-auditlog-nota-fechada	2389601		1	0	0	1	0	0	0	0
+A	44579377744	1	1	failure	135755531550	guards de navegador (fuera de la tanda)	failure	2026-11-19T17:38:37Z	scrum-1756j-panel-j1-sin-style-en-linea	106830		0	0	0	0	0	0	0	0
+A	44582060068	1	1	failure	135765036193	guards de navegador (fuera de la tanda)	failure	2026-11-19T17:53:56Z	main	105781		0	0	0	0	0	0	0	0
+A	44582347799	1	1	failure	135766033804	build + tests (con banco desechable)	failure	2026-11-19T17:55:33Z	scrum-1765f-banco-1326-al-catalogo	2393812		1	0	0	1	0	0	0	0
+A	44435929368	1	1	failure	135271737671	guards de navegador (fuera de la tanda)	failure	2026-11-19T01:18:42Z	main	104363		0	0	0	0	0	0	0	0
+A	44438575797	1	1	failure	135273505877	guards de navegador (fuera de la tanda)	failure	2026-11-19T01:39:46Z	scrum-1756i-panel-j2-sin-style-en-linea	106847		0	0	0	0	0	0	0	0
+A	44434676306	1	1	failure	135260433869	constancia del ALTER (informativo)	failure	2026-11-19T01:09:04Z	scrum-1756i-panel-j2-sin-style-en-linea	20417	PEQUENO	0	0	0	0	0	0	0	0
+A	44440615270	1	1	failure	135280233548	guards de navegador (fuera de la tanda)	failure	2026-11-19T01:56:21Z	main	104227		0	0	0	0	0	0	0	0
+B	44580543787	1	1	success	135759676153	build + tests (con banco desechable)	success	2026-11-19T17:45:14Z	scrum-1732e-r1-sin-cobro-en-recc	2390698		1	0	0	1	0	0	0	0
+A	44434676306	1	1	failure	135260434376	guards de navegador (fuera de la tanda)	failure	2026-11-19T01:09:04Z	scrum-1756i-panel-j2-sin-style-en-linea	107143		0	0	0	0	0	0	0	0
+A	44434661288	1	1	failure	135263405724	guards de navegador (fuera de la tanda)	failure	2026-11-19T01:08:57Z	main	106243		0	0	0	0	0	0	0	0
+A	44434676306	1	1	failure	135260434204	build + tests (con banco desechable)	failure	2026-11-19T01:09:04Z	scrum-1756i-panel-j2-sin-style-en-linea	2419279		1	0	0	1	0	0	0	0
+A	44432520334	1	1	failure	135253179221	guards de navegador (fuera de la tanda)	failure	2026-11-19T00:52:37Z	scrum-1756j-panel-j1-sin-style-en-linea	107220		0	0	0	0	0	0	0	0
+B	44434412684	1	1	success	135259526373	build + tests (con banco desechable)	success	2026-11-19T01:07:01Z	scrum-1770b-master-motivo-firmado	2387081		1	0	0	1	0	0	0	0
+A	44430644823	1	1	failure	135246842724	meta-guard · parte 2 de 3	failure	2026-11-19T00:38:37Z	scrum-1756i-panel-j2-sin-style-en-linea	110498		0	0	0	0	0	0	0	0
+A	44430644823	1	1	failure	135256360128	meta-guard · los guards caen cuando deben	failure	2026-11-19T00:38:37Z	scrum-1756i-panel-j2-sin-style-en-linea	21106	PEQUENO	0	0	0	0	0	0	0	0
+B	44434225311	1	1	success	135258893744	build + tests (con banco desechable)	success	2026-11-19T01:05:36Z	scrum-1771a-clave-del-marcador	2387437		1	0	0	1	0	0	0	0
+A	44430644823	1	1	failure	135246842894	guards de navegador (fuera de la tanda)	failure	2026-11-19T00:38:37Z	scrum-1756i-panel-j2-sin-style-en-linea	108897		0	0	0	0	0	0	0	0
+A	44432520334	1	1	failure	135253179564	build + tests (con banco desechable)	failure	2026-11-19T00:52:37Z	scrum-1756j-panel-j1-sin-style-en-linea	2393747		1	0	0	1	0	0	0	0
+A	44432275705	1	1	failure	135252369928	guards de navegador (fuera de la tanda)	failure	2026-11-19T00:50:47Z	scrum-1328x-tap-con-comillas	107392		0	0	0	0	0	0	0	0
+A	44430621157	1	1	failure	135249780921	guards de navegador (fuera de la tanda)	failure	2026-11-19T00:38:27Z	main	106358		0	0	0	0	0	0	0	0
+A	44430644823	1	1	failure	135246842223	build + tests (con banco desechable)	failure	2026-11-19T00:38:37Z	scrum-1756i-panel-j2-sin-style-en-linea	2427761		1	0	0	1	0	0	0	0
+A	44429268630	1	1	failure	135242124257	meta-guard · parte 2 de 3	failure	2026-11-19T00:28:25Z	scrum-624y-a-en-la-r1	110910		0	0	0	0	0	0	0	0
+A	44429268630	1	1	failure	135253018710	meta-guard · los guards caen cuando deben	failure	2026-11-19T00:28:25Z	scrum-624y-a-en-la-r1	19799	PEQUENO	0	0	0	0	0	0	0	0
+A	44429268630	1	1	failure	135242125364	guards de navegador (fuera de la tanda)	failure	2026-11-19T00:28:25Z	scrum-624y-a-en-la-r1	106952		0	0	0	0	0	0	0	0
+B	44430415393	1	1	success	135246053447	build + tests (con banco desechable)	success	2026-11-19T00:36:53Z	scrum-1770a-literal-del-motivo	2390303		1	0	0	1	0	0	0	0
+A	44428830341	1	1	failure	135241492869	guards de navegador (fuera de la tanda)	failure	2026-11-19T00:25:08Z	scrum-1756j-panel-j1-sin-style-en-linea	106847		0	0	0	0	0	0	0	0
+A	44427096272	1	1	failure	135234641340	guards de navegador (fuera de la tanda)	failure	2026-11-19T00:12:17Z	scrum-1756h-panel-j3-sin-style-en-linea	108425		0	0	0	0	0	0	0	0
+A	44428830341	1	1	failure	135241493183	build + tests (con banco desechable)	failure	2026-11-19T00:25:08Z	scrum-1756j-panel-j1-sin-style-en-linea	2389740		1	0	0	1	0	0	0	0
+A	44428028735	1	1	failure	135238152175	guards de navegador (fuera de la tanda)	failure	2026-11-19T00:19:08Z	main	105421		0	0	0	0	0	0	0	0
+A	44425350401	1	1	failure	135228659957	guards de navegador (fuera de la tanda)	failure	2026-11-18T23:59:42Z	scrum-1765c-banco-1392-al-catalogo	106508		0	0	0	0	0	0	0	0
+B	44429096149	1	1	success	135241526257	build + tests (con banco desechable)	success	2026-11-19T00:27:07Z	scrum-1005a-diseno-alter-adjuntos	2386671		1	0	0	1	0	0	0	0
+A	44429268630	1	1	failure	135242124385	build + tests (con banco desechable)	failure	2026-11-19T00:28:25Z	scrum-624y-a-en-la-r1	2395578		1	0	0	1	0	0	0	0
+A	44425101388	1	1	failure	135227783853	build + tests (con banco desechable)	failure	2026-11-18T23:57:46Z	scrum-1005a-diseno-alter-adjuntos	2404198		1	0	0	1	0	0	0	0
+B	44426298743	1	1	success	135231902049	build + tests (con banco desechable)	success	2026-11-19T00:06:30Z	scrum-624w-qa-staging-modo-factura	2385416		1	0	0	1	0	0	0	0
+A	44424338313	1	1	failure	135225162207	guards de navegador (fuera de la tanda)	failure	2026-11-18T23:52:05Z	main	105124		0	0	0	0	0	0	0	0
+B	44424011286	1	1	success	135224033718	build + tests (con banco desechable)	success	2026-11-18T23:49:41Z	scrum-1756g-censo-paso-3	2388924		1	0	0	1	0	0	0	0
+A	44366098662	1	1	failure	135020124289	guards de navegador (fuera de la tanda)	failure	2026-11-18T18:06:49Z	scrum-1768-ficha-formato	105959		0	0	0	0	0	0	0	0
+A	44368548899	1	1	failure	135028784482	guards de navegador (fuera de la tanda)	failure	2026-11-18T18:20:03Z	main	104889		0	0	0	0	0	0	0	0
+A	44364880372	1	1	failure	135015840565	guards de navegador (fuera de la tanda)	failure	2026-11-18T18:00:18Z	scrum-1725i-filtros-estado	106069		0	0	0	0	0	0	0	0
+B	44422540112	1	1	success	135218939769	build + tests (con banco desechable)	success	2026-11-18T23:38:59Z	scrum-1765b-los-que-quedan	2385809		1	0	0	1	0	0	0	0
+B	44423533175	1	1	success	135222370275	build + tests (con banco desechable)	success	2026-11-18T23:46:10Z	scrum-1761b-anio-del-xml-norma	2385420		1	0	0	1	0	0	0	0
+A	44364880372	1	1	failure	135015840688	build + tests (con banco desechable)	failure	2026-11-18T18:00:18Z	scrum-1725i-filtros-estado	2394989		1	0	0	1	0	0	0	0
+A	44362154267	1	1	failure	135011955735	guards de navegador (fuera de la tanda)	failure	2026-11-18T17:45:19Z	main	103167		0	0	0	0	0	0	0	0
+A	44359283117	1	1	failure	134995872066	guards de navegador (fuera de la tanda)	failure	2026-11-18T17:29:40Z	scrum-1725h-escalera-por-identidad	106129		0	0	0	0	0	0	0	0
+A	44355825860	1	1	failure	134983545259	guards de navegador (fuera de la tanda)	failure	2026-11-18T17:11:24Z	scrum-1500i-banco-1500b-al-catalogo	105168		0	0	0	0	0	0	0	0
+A	44356503164	1	1	failure	134987097425	guards de navegador (fuera de la tanda)	failure	2026-11-18T17:14:53Z	scrum-1756e-css-paquete-disputa	103572		0	0	0	0	0	0	0	0
+A	44356404688	1	1	failure	134986417378	guards de navegador (fuera de la tanda)	failure	2026-11-18T17:14:22Z	main	101173		0	0	0	0	0	0	0	0
+A	44360015986	1	1	failure	134999771598	guards de navegador (fuera de la tanda)	failure	2026-11-18T17:33:35Z	main	109996		0	0	0	0	0	0	0	0
+A	44354423431	1	1	failure	134978542993	guards de navegador (fuera de la tanda)	failure	2026-11-18T17:04:02Z	scrum-1725g-lista-plana	112871		0	0	0	0	0	0	0	0
+A	44353255576	1	1	failure	134974380791	guards de navegador (fuera de la tanda)	failure	2026-11-18T16:57:53Z	scrum-1756f-js-landing-precios	104162		0	0	0	0	0	0	0	0
+A	44352339312	1	1	failure	134971074449	guards de navegador (fuera de la tanda)	failure	2026-11-18T16:52:59Z	scrum-1725f-ficha-visual	103830		0	0	0	0	0	0	0	0
+A	44352404113	1	1	failure	134971302971	guards de navegador (fuera de la tanda)	failure	2026-11-18T16:53:19Z	scrum-1765a-banco-1324-al-catalogo	103959		0	0	0	0	0	0	0	0
+A	44346907513	1	1	failure	134951640451	guards de navegador (fuera de la tanda)	failure	2026-11-18T16:24:39Z	scrum-1763-r1-total-del-desglose	103954		0	0	0	0	0	0	0	0
+A	44349556099	1	1	failure	134969056877	guards de navegador (fuera de la tanda)	failure	2026-11-18T16:38:26Z	main	101179		0	0	0	0	0	0	0	0
+A	44350276921	1	1	failure	134964945258	guards de navegador (fuera de la tanda)	failure	2026-11-18T16:42:12Z	scrum-1725g-lista-plana	112459		0	0	0	0	0	0	0	0
+B	44351507517	1	1	success	134968099452	build + tests (con banco desechable)	success	2026-11-18T16:48:39Z	scrum-1316i-cabecera-1708	2383133		1	0	0	1	0	0	0	0
+A	44343899126	1	1	failure	134940988227	guards de navegador (fuera de la tanda)	failure	2026-11-18T16:09:25Z	scrum-1761a-anio-del-xml	105580		0	0	0	0	0	0	0	0
+A	44345056607	1	1	failure	134951802869	guards de navegador (fuera de la tanda)	failure	2026-11-18T16:15:16Z	main	102004		0	0	0	0	0	0	0	0
+A	44350276921	1	1	failure	134964945982	build + tests (con banco desechable)	failure	2026-11-18T16:42:12Z	scrum-1725g-lista-plana	2400810		1	0	0	1	0	0	0	0
+A	44343588701	1	1	failure	134939868811	guards de navegador (fuera de la tanda)	failure	2026-11-18T16:07:48Z	scrum-1732d-libro-por-tramos-u	106031		0	0	0	0	0	0	0	0
+A	44341511745	1	2	failure	134934063553	build + tests (con banco desechable)	failure	2026-11-18T15:57:07Z	scrum-1725f-ficha-visual	58138	PEQUENO	0	0	0	0	0	0	0	0
+A	44341511745	1	2	failure	134934064363	guards de navegador (fuera de la tanda)	failure	2026-11-18T15:57:07Z	scrum-1725f-ficha-visual	105686		0	0	0	0	0	0	0	0
+B	44343659985	1	1	success	134940121138	build + tests (con banco desechable)	success	2026-11-18T16:08:10Z	scrum-1316h-convalidacion-18nov	2382387		1	0	0	1	0	0	0	0
+A	44341433113	1	1	failure	134932166973	guards de navegador (fuera de la tanda)	failure	2026-11-18T15:56:41Z	main	102876		0	0	0	0	0	0	0	0
+A	44341273952	1	1	failure	134931590135	guards de navegador (fuera de la tanda)	failure	2026-11-18T15:55:50Z	scrum-1756d-css-publicas	104335		0	0	0	0	0	0	0	0
+B	44341876639	1	1	success	134933766020	build + tests (con banco desechable)	success	2026-11-18T15:59:03Z	scrum-1743b-linea-mutaciones	2381678		1	0	0	1	0	0	0	0
+B	44343691200	1	1	success	134940231510	build + tests (con banco desechable)	success	2026-11-18T16:08:19Z	scrum-1387y-sonda-bancos	2382631		1	0	0	1	0	0	0	0
+A	44341511745	2	2	failure	134955334015	guards de navegador (fuera de la tanda)	failure	2026-11-18T15:57:07Z	scrum-1725f-ficha-visual	105295		0	0	0	0	0	0	0	0
+A	44338717590	1	1	failure	134922430618	guards de navegador (fuera de la tanda)	failure	2026-11-18T15:42:25Z	scrum-1725e-lista-visual	103842		0	0	0	0	0	0	0	0
+A	44334079656	1	1	failure	134905907898	guards de navegador (fuera de la tanda)	failure	2026-11-18T15:18:21Z	scrum-665e-pdf-persistente	104734		0	0	0	0	0	0	0	0
+A	44336229482	1	1	failure	134913604058	meta-guard · parte 1 de 3	failure	2026-11-18T15:29:30Z	scrum-1732d-libro-por-tramos-u	46839	PEQUENO	0	0	0	0	0	0	0	0
+A	44336229482	1	1	failure	134913604519	meta-guard · parte 2 de 3	failure	2026-11-18T15:29:30Z	scrum-1732d-libro-por-tramos-u	46837	PEQUENO	0	0	0	0	0	0	0	0
+B	44338657434	1	1	success	134922215341	build + tests (con banco desechable)	success	2026-11-18T15:42:06Z	scrum-1264w-formato-libros-caja	2381924		1	0	0	1	0	0	0	0
+A	44336229482	1	1	failure	134913604486	guards de navegador (fuera de la tanda)	failure	2026-11-18T15:29:30Z	scrum-1732d-libro-por-tramos-u	105406		0	0	0	0	0	0	0	0
+A	44341511745	2	2	failure	134955333924	build + tests (con banco desechable)	failure	2026-11-18T15:57:07Z	scrum-1725f-ficha-visual	2395818		1	0	0	1	0	0	0	0
+A	44334079656	1	1	failure	134905907155	build + tests (con banco desechable)	failure	2026-11-18T15:18:21Z	scrum-665e-pdf-persistente	2408608		1	0	0	1	0	0	0	0
+A	44336229482	1	1	failure	134913604596	meta-guard · parte 3 de 3	failure	2026-11-18T15:29:30Z	scrum-1732d-libro-por-tramos-u	46794	PEQUENO	0	0	0	0	0	0	0	0
+A	44336229482	1	1	failure	134914151007	meta-guard · los guards caen cuando deben	failure	2026-11-18T15:29:30Z	scrum-1732d-libro-por-tramos-u	19824	PEQUENO	0	0	0	0	0	0	0	0
+A	44306892283	1	1	failure	134822170145	guards de navegador (fuera de la tanda)	failure	2026-11-18T12:45:01Z	main	102783		0	0	0	0	0	0	0	0
+A	44304413622	1	1	failure	134802138056	guards de navegador (fuera de la tanda)	failure	2026-11-18T12:29:30Z	scrum-1749-ficha-primarias	105334		0	0	0	0	0	0	0	0
+A	44336229482	1	1	failure	134913604711	build + tests (con banco desechable)	failure	2026-11-18T15:29:30Z	scrum-1732d-libro-por-tramos-u	2416336		1	0	0	1	1	0	0	0
+B	44298328163	1	1	success	134781418222	build + tests (con banco desechable)	success	2026-11-18T11:50:34Z	scrum-1670b-ficha-tipo-intervencion	2378493		1	0	0	1	0	0	0	0
+B	44303481360	1	1	success	134808423201	build + tests (con banco desechable)	success	2026-11-18T12:23:37Z	main	2376985		1	0	0	1	0	0	0	0
+B	44300611165	1	1	success	134793062362	build + tests (con banco desechable)	success	2026-11-18T12:05:30Z	main	2377722		1	0	0	1	0	0	0	0
+B	44301283522	1	1	success	134791360474	build + tests (con banco desechable)	success	2026-11-18T12:09:46Z	scrum-1670d-regla-42-tarjeta	2378653		1	0	0	1	0	0	0	0
+B	44295207753	1	1	success	134770370995	build + tests (con banco desechable)	success	2026-11-18T11:29:50Z	main	2375411		1	0	0	1	0	0	0	0
+B	44297724441	1	1	success	134779020968	build + tests (con banco desechable)	success	2026-11-18T11:46:32Z	scrum-1755d-pad-inter	2378575		1	0	0	1	0	0	0	0
+B	44293131584	1	1	success	134763147551	build + tests (con banco desechable)	success	2026-11-18T11:16:09Z	scrum-1755c-fila-carril-pad	2376271		1	0	0	1	0	0	0	0
+B	44294774938	1	1	success	134768832336	build + tests (con banco desechable)	success	2026-11-18T11:26:51Z	scrum-804j-propios-regla-canonica	2376136		1	0	0	1	0	0	0	0
+B	44293751893	1	1	success	134765318688	build + tests (con banco desechable)	success	2026-11-18T11:20:12Z	scrum-1739b-reglas-42-cara-trabajos	2375851		1	0	0	1	0	0	0	0
+B	44271221883	1	1	success	134697498333	build + tests (con banco desechable)	success	2026-11-18T08:55:48Z	main	2377520		1	0	0	1	0	0	0	0
+B	44268618249	1	1	success	134679428259	build + tests (con banco desechable)	success	2026-11-18T08:37:35Z	scrum-1679-cara-trabajos	2376288		1	0	0	1	0	0	0	0
+B	44267064060	1	1	success	134674970258	build + tests (con banco desechable)	success	2026-11-18T08:26:59Z	scrum-1731-norma-mutaciones-a3	2374165		1	0	0	1	0	0	0	0
+A	44270732561	1	1	failure	134686695943	build + tests (con banco desechable)	failure	2026-11-18T08:52:27Z	scrum-1755c-fila-carril-pad	2377336		1	0	0	1	0	0	0	0
+B	44296298749	1	1	success	134774090594	build + tests (con banco desechable)	success	2026-11-18T11:36:55Z	scrum-1670c-tarjeta-tipo-intervencion	2377477		1	0	0	1	0	0	0	0
+B	44267520698	1	1	success	134677624058	build + tests (con banco desechable)	success	2026-11-18T08:30:07Z	main	2373827		1	0	0	1	0	0	0	0
+A	44266639393	1	1	failure	134672699086	build + tests (con banco desechable)	failure	2026-11-18T08:24:02Z	scrum-1670b-ficha-tipo-intervencion	2382848		1	0	0	1	0	0	0	0
+B	44267053536	1	1	success	134674219103	build + tests (con banco desechable)	success	2026-11-18T08:26:54Z	scrum-1755-censo-letras-bancos	2374544		1	0	0	1	0	0	0	0
+B	44265377697	1	1	success	134668484788	build + tests (con banco desechable)	success	2026-11-18T08:15:08Z	scrum-1739-una-rellena-por-tarjeta	2375345		1	0	0	1	0	0	0	0
+B	44262468561	1	1	success	134658872405	build + tests (con banco desechable)	success	2026-11-18T07:53:56Z	scrum-1708-runbook-mesas-al-dia	2373350		1	0	0	1	0	0	0	0
+A	44261510118	1	1	failure	134655710442	build + tests (con banco desechable)	failure	2026-11-18T07:46:33Z	scrum-1731-norma-mutaciones-a3	2387796		1	0	0	1	0	0	0	0
+A	44264981751	1	1	failure	134667152794	build + tests (con banco desechable)	failure	2026-11-18T08:12:17Z	scrum-804j-propios-regla-canonica	2405921		1	0	0	1	0	0	0	0
+B	44261214379	1	1	success	134654750538	build + tests (con banco desechable)	success	2026-11-18T07:44:20Z	scrum-1670-tipo-intervencion-viaja	2375772		1	0	0	1	0	0	0	0
+B	44263317400	1	1	success	134661696970	build + tests (con banco desechable)	success	2026-11-18T08:00:29Z	main	2375433		1	0	0	1	0	0	0	0
+A	44261798161	1	1	failure	134656656830	build + tests (con banco desechable)	failure	2026-11-18T07:48:47Z	scrum-1745d-reglas-42-vistas-el-18-nov	2377799		1	0	0	1	0	0	0	0
+B	44265116248	1	1	success	134667609591	build + tests (con banco desechable)	success	2026-11-18T08:13:16Z	scrum-1745d-reglas-42-vistas-el-18-nov	2373735		1	0	0	1	0	0	0	0
+B	44298243396	1	1	success	134781263333	build + tests (con banco desechable)	success	2026-11-18T11:50:01Z	main	2376180		1	0	0	1	0	0	0	0
+B	44261214379	1	1	success	134654750538	build + tests (con banco desechable)	success	2026-11-18T07:44:20Z	scrum-1670-tipo-intervencion-viaja	2375772		1	0	0	1	0	0	0	0
+B	44253773323	1	1	success	134632348146	build + tests (con banco desechable)	success	2026-11-18T06:46:05Z	main	2374502		1	0	0	1	0	0	0	0
+B	44252282034	1	1	success	134625587561	build + tests (con banco desechable)	success	2026-11-18T06:34:02Z	scrum-1756b-css-recibo-portal	2372484		1	0	0	1	0	0	0	0
+A	44246476410	1	1	failure	134606530177	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-18T05:45:40Z	scrum-1756b-css-recibo-portal	67186	PEQUENO	0	0	0	0	0	0	0	0
+A	44246476410	1	1	failure	134606530547	meta-guard · parte 3 de 3	failure	2026-11-18T05:45:40Z	scrum-1756b-css-recibo-portal	115038		0	0	0	0	0	0	0	0
+B	44252235940	1	1	success	134625436477	build + tests (con banco desechable)	success	2026-11-18T06:33:40Z	main	2371862		1	0	0	1	0	0	0	0
+B	44250556721	1	1	success	134619912180	build + tests (con banco desechable)	success	2026-11-18T06:20:04Z	scrum-1756c-js-recibo-portal	2373046		1	0	0	1	0	0	0	0
+A	44246476410	1	1	failure	134614150040	meta-guard · los guards caen cuando deben	failure	2026-11-18T05:45:40Z	scrum-1756b-css-recibo-portal	19801	PEQUENO	0	0	0	0	0	0	0	0
+A	44252277985	1	1	failure	134625574767	build + tests (con banco desechable)	failure	2026-11-18T06:34:00Z	scrum-1756d-css-publicas	2492704		1	0	0	1	0	0	0	0
+B	44246888709	1	1	success	134612598732	build + tests (con banco desechable)	success	2026-11-18T05:49:16Z	main	2370693		1	0	0	1	0	0	0	0
+A	44246476186	1	1	failure	134607230538	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-18T05:45:40Z	scrum-1756c-js-recibo-portal	67232	PEQUENO	0	0	0	0	0	0	0	0
+A	44246476410	1	1	failure	134606530514	build + tests (con banco desechable)	failure	2026-11-18T05:45:40Z	scrum-1756b-css-recibo-portal	2378457		1	0	0	1	0	0	0	0
+A	44246476186	1	1	failure	134607230539	meta-guard · parte 3 de 3	failure	2026-11-18T05:45:40Z	scrum-1756c-js-recibo-portal	109731		0	0	0	0	0	0	0	0
+A	44246476186	1	1	failure	134615823929	meta-guard · los guards caen cuando deben	failure	2026-11-18T05:45:40Z	scrum-1756c-js-recibo-portal	19802	PEQUENO	0	0	0	0	0	0	0	0
+A	44246256917	1	1	failure	134605828729	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-18T05:43:48Z	scrum-1756d-css-publicas	67926	PEQUENO	0	0	0	0	0	0	0	0
+A	44246256917	1	1	failure	134605828662	meta-guard · parte 3 de 3	failure	2026-11-18T05:43:48Z	scrum-1756d-css-publicas	113458		0	0	0	0	0	0	0	0
+A	44246256917	1	1	failure	134612153370	meta-guard · los guards caen cuando deben	failure	2026-11-18T05:43:48Z	scrum-1756d-css-publicas	19799	PEQUENO	0	0	0	0	0	0	0	0
+A	44246476186	1	1	failure	134607230563	build + tests (con banco desechable)	failure	2026-11-18T05:45:40Z	scrum-1756c-js-recibo-portal	2380275		1	0	0	1	0	0	0	0
+A	44246256917	1	1	failure	134605828340	build + tests (con banco desechable)	failure	2026-11-18T05:43:48Z	scrum-1756d-css-publicas	2496049		1	0	0	1	0	0	0	0
+A	44245559582	1	1	failure	134603539082	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-18T05:37:41Z	main	66534	PEQUENO	0	0	0	0	0	0	0	0
+A	44245559582	1	1	failure	134611006507	meta-guard · los guards caen cuando deben	failure	2026-11-18T05:37:41Z	main	19535	PEQUENO	0	0	0	0	0	0	0	0
+A	44245559582	1	1	failure	134603539138	meta-guard · parte 3 de 3	failure	2026-11-18T05:37:41Z	main	105749		0	0	0	0	0	0	0	0
+A	44244213651	1	1	failure	134599100499	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-18T05:25:55Z	scrum-1732c-invoice-payments	66780	PEQUENO	0	0	0	0	0	0	0	0
+A	44244213651	1	1	failure	134599100634	meta-guard · parte 3 de 3	failure	2026-11-18T05:25:55Z	scrum-1732c-invoice-payments	109010		0	0	0	0	0	0	0	0
+A	44244213651	1	1	failure	134606380237	meta-guard · los guards caen cuando deben	failure	2026-11-18T05:25:55Z	scrum-1732c-invoice-payments	19800	PEQUENO	0	0	0	0	0	0	0	0
+B	44245170820	1	1	success	134602258137	build + tests (con banco desechable)	success	2026-11-18T05:34:16Z	scrum-1445g-trinquete-y-mudo	2370748		1	0	0	1	0	0	0	0
+A	44243148902	1	1	failure	134595597270	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-18T05:16:56Z	scrum-1756b-css-recibo-portal	67990	PEQUENO	0	0	0	0	0	0	0	0
+A	44243148902	1	1	failure	134595597318	meta-guard · parte 3 de 3	failure	2026-11-18T05:16:56Z	scrum-1756b-css-recibo-portal	107979		0	0	0	0	0	0	0	0
+A	44243148902	1	1	failure	134601053768	meta-guard · los guards caen cuando deben	failure	2026-11-18T05:16:56Z	scrum-1756b-css-recibo-portal	19794	PEQUENO	0	0	0	0	0	0	0	0
+A	44243800537	1	1	failure	134603599970	meta-guard · los guards caen cuando deben	failure	2026-11-18T05:22:27Z	scrum-1264v-lectura-69bis	19804	PEQUENO	0	0	0	0	0	0	0	0
+A	44243800537	1	1	failure	134597744381	meta-guard · parte 3 de 3	failure	2026-11-18T05:22:27Z	scrum-1264v-lectura-69bis	106548		0	0	0	0	0	0	0	0
+A	44243800537	1	1	failure	134597744402	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-18T05:22:27Z	scrum-1264v-lectura-69bis	67192	PEQUENO	0	0	0	0	0	0	0	0
+A	44243148902	1	1	failure	134595597249	build + tests (con banco desechable)	failure	2026-11-18T05:16:56Z	scrum-1756b-css-recibo-portal	2377503		1	0	0	1	0	0	0	0
+A	44242232541	1	1	failure	134594184566	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-18T05:09:23Z	main	66028	PEQUENO	0	0	0	0	0	0	0	0
+A	44242232541	1	1	failure	134594184674	meta-guard · parte 3 de 3	failure	2026-11-18T05:09:23Z	main	105386		0	0	0	0	0	0	0	0
+A	44242232541	1	1	failure	134601217045	meta-guard · los guards caen cuando deben	failure	2026-11-18T05:09:23Z	main	18725	PEQUENO	0	0	0	0	0	0	0	0
+A	44240863829	1	1	failure	134588156664	meta-guard · parte 3 de 3	failure	2026-11-18T04:57:33Z	scrum-1743-un-tramo-por-comando	106478		0	0	0	0	0	0	0	0
+A	44240863829	1	1	failure	134594665417	meta-guard · los guards caen cuando deben	failure	2026-11-18T04:57:33Z	scrum-1743-un-tramo-por-comando	20618	PEQUENO	0	0	0	0	0	0	0	0
+A	44240863829	1	1	failure	134588156872	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-18T04:57:33Z	scrum-1743-un-tramo-por-comando	68106	PEQUENO	0	0	0	0	0	0	0	0
+A	44240253075	1	1	failure	134586118814	meta-guard · parte 3 de 3	failure	2026-11-18T04:51:59Z	main	110378		0	0	0	0	0	0	0	0
+A	44240253075	1	1	failure	134586118866	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-18T04:51:59Z	main	65987	PEQUENO	0	0	0	0	0	0	0	0
+A	44240253075	1	1	failure	134592381388	meta-guard · los guards caen cuando deben	failure	2026-11-18T04:51:59Z	main	18716	PEQUENO	0	0	0	0	0	0	0	0
+A	44238444994	1	1	failure	134580154284	trinquete · ningún test nuevo mide la zona de la máquina	failure	2026-11-18T04:36:00Z	scrum-1445f-llamadores-zona	66577	PEQUENO	0	0	0	0	0	0	0	0
+A	44240157181	1	1	failure	134585791478	build + tests (con banco desechable)	failure	2026-11-18T04:51:06Z	scrum-1732c-invoice-payments	2373781		1	0	0	1	0	0	0	0
+A	44238444994	1	1	failure	134580154360	meta-guard · parte 3 de 3	failure	2026-11-18T04:36:00Z	scrum-1445f-llamadores-zona	111302		0	0	0	0	0	0	0	0
+A	44238444994	1	1	failure	134585255478	meta-guard · los guards caen cuando deben	failure	2026-11-18T04:36:00Z	scrum-1445f-llamadores-zona	19794	PEQUENO	0	0	0	0	0	0	0	0
+B	44236984372	1	1	success	134575376539	build + tests (con banco desechable)	success	2026-11-18T04:23:27Z	main	2364998		1	0	0	1	0	0	0	0
+A	44146638789	1	1	failure	134263642824	guards de navegador (fuera de la tanda)	failure	2026-11-17T18:19:45Z	scrum-1752-avisos-desplazamientos-plural	104764		0	0	0	0	0	0	0	0
+A	44147337435	1	1	failure	134267505113	guards de navegador (fuera de la tanda)	failure	2026-11-17T18:23:38Z	main	102128		0	0	0	0	0	0	0	0
+A	44143329384	1	1	failure	134255894490	guards de navegador (fuera de la tanda)	failure	2026-11-17T18:01:26Z	main	102166		0	0	0	0	0	0	0	0
+B	44149062941	1	1	success	134285132945	build + tests (con banco desechable)	success	2026-11-17T18:33:06Z	main	2366051		1	0	0	1	0	0	0	0
+B	44235206544	1	1	success	134569553680	build + tests (con banco desechable)	success	2026-11-18T04:08:09Z	scrum-1076d-plazos-servidor	2367460		1	0	0	1	0	0	0	0
+A	44238888311	1	1	failure	134582280137	build + tests (con banco desechable)	failure	2026-11-18T04:39:59Z	scrum-665e-pdf-persistente	2393262		1	0	0	1	0	0	0	0
+A	44144044759	1	1	failure	134254207239	guards de navegador (fuera de la tanda)	failure	2026-11-17T18:05:23Z	scrum-1670-tipo-intervencion-viaja	103682		0	0	0	0	0	0	0	0
+B	44146214618	1	1	success	134261927569	build + tests (con banco desechable)	success	2026-11-17T18:17:22Z	scrum-1745c-concepto-entero-sin-fuentes	2361989		1	0	0	1	0	0	0	0
+A	44141034138	1	1	failure	134243556148	guards de navegador (fuera de la tanda)	failure	2026-11-17T17:48:37Z	scrum-1740-pantalla-albaran-desde-parte	103681		0	0	0	0	0	0	0	0
+A	44144044759	1	1	failure	134254207001	build + tests (con banco desechable)	failure	2026-11-17T18:05:23Z	scrum-1670-tipo-intervencion-viaja	2411435		1	0	0	1	0	0	0	0
+A	44138833794	1	1	failure	134238024859	guards de navegador (fuera de la tanda)	failure	2026-11-17T17:36:23Z	main	101031		0	0	0	0	0	0	0	0
+A	44136952315	1	2	failure	134228971833	guards de navegador (fuera de la tanda)	failure	2026-11-17T17:26:12Z	scrum-1751-aviso-visita-nueva	103666		0	0	0	0	0	0	0	0
+B	44140333467	1	1	success	134241072575	build + tests (con banco desechable)	success	2026-11-17T17:44:44Z	scrum-1745b-regla-42-hojas-44px	2360155		1	0	0	1	0	0	0	0
+A	44131372433	1	1	failure	134209036111	build + tests (con banco desechable)	failure	2026-11-17T16:56:07Z	scrum-1740-albaran-nace-con-lineas-del-parte	2440759		1	0	0	1	0	0	0	0
+A	44135807653	1	1	failure	134224900470	guards de navegador (fuera de la tanda)	failure	2026-11-17T17:20:01Z	scrum-1740-albaran-nace-con-lineas-del-parte	104533		0	0	0	0	0	0	0	0
+A	44131850649	1	1	failure	134220172039	guards de navegador (fuera de la tanda)	failure	2026-11-17T16:58:46Z	main	101066		0	0	0	0	0	0	0	0
+A	44134357392	1	1	failure	134219714600	guards de navegador (fuera de la tanda)	failure	2026-11-17T17:12:15Z	scrum-1740-pantalla-albaran-desde-parte	104452		0	0	0	0	0	0	0	0
+A	44136952315	2	2	failure	134253084678	guards de navegador (fuera de la tanda)	failure	2026-11-17T17:26:12Z	scrum-1751-aviso-visita-nueva	103666		0	0	0	0	0	0	0	0
+A	44128469594	1	1	failure	134198667088	guards de navegador (fuera de la tanda)	failure	2026-11-17T16:40:39Z	scrum-1745-hoja-albaran-y-agendar-44px	104336		0	0	0	0	0	0	0	0
+B	44129133249	1	1	success	134201034701	build + tests (con banco desechable)	success	2026-11-17T16:44:10Z	main	2357881		1	0	0	1	0	0	0	0
+B	44129043426	1	1	success	134200719553	build + tests (con banco desechable)	success	2026-11-17T16:43:42Z	scrum-1506c-jv-jn-por-su-forma	2359253		1	0	0	1	0	0	0	0
+B	44126437914	1	1	success	134191735003	build + tests (con banco desechable)	success	2026-11-17T16:29:58Z	scrum-996f-dieta-arranque	2359034		1	0	0	1	0	0	0	0
+B	44123221394	1	1	success	134179917206	build + tests (con banco desechable)	success	2026-11-17T16:13:09Z	main	2360179		1	0	0	1	0	0	0	0
+A	44121425371	1	1	failure	134173518384	build + tests (con banco desechable)	failure	2026-11-17T16:03:46Z	scrum-1506c-jv-jn-por-su-forma	2362274		1	0	0	1	0	0	0	0
+B	44120135131	1	1	success	134168909654	build + tests (con banco desechable)	success	2026-11-17T15:56:55Z	scrum-804b-censo-regla-canonica	2361217		1	0	0	1	0	0	0	0
+B	44129035501	1	1	success	134200688356	build + tests (con banco desechable)	success	2026-11-17T16:43:40Z	scrum-1686h6-apendice-c-tramo-6-2-estados-oficina	2360490		1	0	0	1	0	0	0	0
+A	44054044211	1	2	failure	133947465264	build + tests (con banco desechable)	failure	2026-11-17T09:16:19Z	main	2359974		1	0	0	1	0	0	0	0
+A	44053769867	1	1	failure	133937768573	build + tests (con banco desechable)	failure	2026-11-17T09:14:37Z	scrum-1686h6c-tramo-6-2-estados-oficina	2362185		1	0	0	1	0	0	0	0
+B	44052021935	1	1	success	133931928142	build + tests (con banco desechable)	success	2026-11-17T09:03:17Z	scrum-1662d-parte-pinta-que-hay-que-hacer	2358207		1	0	0	1	0	0	0	0
+A	44053524890	1	1	failure	133937710331	build + tests (con banco desechable)	failure	2026-11-17T09:13:03Z	main	2361937		1	0	0	1	0	0	0	0
+B	44047235835	1	1	success	133915865728	build + tests (con banco desechable)	success	2026-11-17T08:29:58Z	scrum-1747-sonda-firma-token-operario	2355625		1	0	0	1	0	0	0	0
+B	44051636507	1	1	success	133930778528	build + tests (con banco desechable)	success	2026-11-17T09:00:43Z	scrum-1707b-lista-albaranes-sin-importe-operario	2356992		1	0	0	1	0	0	0	0
+A	44054044211	2	2	failure	133964165811	build + tests (con banco desechable)	failure	2026-11-17T09:16:19Z	main	2360143		1	0	0	1	0	0	0	0
+B	44050759375	1	1	success	133928002478	build + tests (con banco desechable)	success	2026-11-17T08:54:36Z	main	2355928		1	0	0	1	0	0	0	0
+A	44061427224	1	1	failure	133964014962	build + tests (con banco desechable)	failure	2026-11-17T10:04:38Z	scrum-1686h6-apendice-c-tramo-6-2-estados-oficina	2360588		1	0	0	1	0	0	0	0
+B	44046813379	1	1	success	133914653913	build + tests (con banco desechable)	success	2026-11-17T08:26:58Z	main	2357278		1	0	0	1	0	0	0	0
+B	44048937604	1	1	success	133921562732	build + tests (con banco desechable)	success	2026-11-17T08:41:49Z	scrum-1746-rotulo-desplazamientos	2356994		1	0	0	1	0	0	0	0
+B	44046806399	1	1	success	133914409446	build + tests (con banco desechable)	success	2026-11-17T08:26:55Z	scrum-1662c-parte-que-hay-que-hacer-get	2356040		1	0	0	1	0	0	0	0
+B	44044038587	1	1	success	133905345510	build + tests (con banco desechable)	success	2026-11-17T08:07:21Z	scrum-1729-guard-causa-en-las-bocas	2355689		1	0	0	1	0	0	0	0
+B	44044594609	1	1	success	133907049779	build + tests (con banco desechable)	success	2026-11-17T08:11:18Z	scrum-1742b-pad-regla42-en-bugs	2354494		1	0	0	1	0	0	0	0
+B	44040978651	1	1	success	133895224990	build + tests (con banco desechable)	success	2026-11-17T07:44:10Z	scrum-1742-pad-de-firma-cabe	2355996		1	0	0	1	0	0	0	0
+B	44043810868	1	1	success	133904604057	build + tests (con banco desechable)	success	2026-11-17T08:05:44Z	scrum-1744-pdf-albaran-sin-precios-operario	2357065		1	0	0	1	0	0	0	0
+B	44042923241	1	1	success	133901611437	build + tests (con banco desechable)	success	2026-11-17T07:59:15Z	main	2355676		1	0	0	1	0	0	0	0
+A	44042789020	1	1	failure	133901271788	build + tests (con banco desechable)	failure	2026-11-17T07:58:11Z	scrum-1747-sonda-firma-token-operario	2358150		1	0	0	1	0	0	0	0
+B	43917858814	1	1	success	133481348973	build + tests (con banco desechable)	success	2026-11-16T17:23:26Z	main	2355161		1	0	0	1	0	0	0	0
+A	44038460276	1	1	failure	133886949896	build + tests (con banco desechable)	failure	2026-11-17T07:24:28Z	scrum-1742-pad-de-firma-cabe	2358037		1	0	0	1	0	0	0	0
+A	43917621948	1	1	failure	133477052467	build + tests (con banco desechable)	failure	2026-11-16T17:22:05Z	scrum-1742-pad-de-firma-cabe	2365328		1	0	0	1	0	0	0	0
+A	44039147246	1	1	failure	133889230799	build + tests (con banco desechable)	failure	2026-11-17T07:29:53Z	scrum-1744-pdf-albaran-sin-precios-operario	2406830		1	0	0	1	0	0	0	0
+B	43915267188	1	1	success	133467573537	build + tests (con banco desechable)	success	2026-11-16T17:08:54Z	scrum-1264u-preguntas-1732-1054	2353967		1	0	0	1	0	0	0	0
+B	43913322392	1	1	success	133461016387	build + tests (con banco desechable)	success	2026-11-16T16:58:19Z	scrum-1686h6-recorrido-operario-simulado	2355446		1	0	0	1	0	0	0	0
+A	43912548668	1	1	failure	133458030207	build + tests (con banco desechable)	failure	2026-11-16T16:54:01Z	scrum-1076d-plazos-servidor	2358649		1	0	0	1	0	0	0	0
+B	43913668171	1	1	success	133462496651	build + tests (con banco desechable)	success	2026-11-16T17:00:16Z	main	2352461		1	0	0	1	0	0	0	0
+B	43910754293	1	1	success	133451686977	build + tests (con banco desechable)	success	2026-11-16T16:44:07Z	scrum-1502t-tres-comentarios	2353069		1	0	0	1	0	0	0	0
+B	43910114497	1	1	success	133450579279	build + tests (con banco desechable)	success	2026-11-16T16:40:34Z	main	2352163		1	0	0	1	0	0	0	0
+B	43910493938	1	1	success	133450756828	build + tests (con banco desechable)	success	2026-11-16T16:42:40Z	scrum-1506b-cerradura-sin-cablear	2355130		1	0	0	1	0	0	0	0
+A	43902230336	1	2	failure	133421601043	meta-guard · parte 1 de 3	failure	2026-11-16T15:58:08Z	scrum-1734-cicatrices-union	41080	PEQUENO	0	0	0	0	0	0	0	0
+B	43905399278	1	1	success	133432754848	build + tests (con banco desechable)	success	2026-11-16T16:15:05Z	scrum-1264t-preguntas-16nov	2351155		1	0	0	1	0	0	0	0
+B	43906744589	1	1	success	133437505900	build + tests (con banco desechable)	success	2026-11-16T16:22:22Z	scrum-1445e-bordes-fiscales-zona	2352543		1	0	0	1	0	0	0	0
+A	43902230336	1	2	failure	133421601116	guards de navegador (fuera de la tanda)	failure	2026-11-16T15:58:08Z	scrum-1734-cicatrices-union	139544		0	0	0	0	0	0	0	0
+B	43903162114	1	1	success	133424878207	build + tests (con banco desechable)	success	2026-11-16T16:03:09Z	scrum-1736-latido-rama-homonima	2350836		1	0	0	1	0	0	0	0
+A	43902230336	1	2	failure	133421600456	build + tests (con banco desechable)	failure	2026-11-16T15:58:08Z	scrum-1734-cicatrices-union	2352322		1	0	0	1	0	0	0	0
+A	43902230336	1	2	failure	133432535661	meta-guard · los guards caen cuando deben	failure	2026-11-16T15:58:08Z	scrum-1734-cicatrices-union	19029	PEQUENO	0	0	0	0	0	0	0	0
+A	43901132219	1	1	failure	133417723157	guards de navegador (fuera de la tanda)	failure	2026-11-16T15:52:21Z	scrum-1646-csp-avisos-publicos	138667		0	0	0	0	0	0	0	0
+A	43902230336	2	2	failure	133440826388	guards de navegador (fuera de la tanda)	failure	2026-11-16T15:58:08Z	scrum-1734-cicatrices-union	138686		0	0	0	0	0	0	0	0
+A	43898908397	1	1	failure	133409870602	guards de navegador (fuera de la tanda)	failure	2026-11-16T15:40:30Z	scrum-1717-aviso-sii-inicio	138623		0	0	0	0	0	0	0	0
+B	43903903331	1	1	success	133432836803	build + tests (con banco desechable)	success	2026-11-16T16:07:05Z	main	2349788		1	0	0	1	0	0	0	0
+A	43491205343	1	1	failure	132112725361	guards de navegador (fuera de la tanda)	failure	2026-11-13T19:20:05Z	scrum-1055b-caja-tests	139347		0	0	0	0	0	0	0	0
+A	43900320987	1	1	failure	133414825942	guards de navegador (fuera de la tanda)	failure	2026-11-16T15:48:01Z	main	136967		0	0	0	0	0	0	0	0
+B	43900824504	1	1	success	133416622756	build + tests (con banco desechable)	success	2026-11-16T15:50:42Z	scrum-1707-operario-sin-dinero	2349057		1	0	0	1	0	0	0	0
+A	43492994025	1	1	failure	132123913088	guards de navegador (fuera de la tanda)	failure	2026-11-13T19:31:22Z	main	135989		0	0	0	0	0	0	0	0
+A	43898156866	1	1	failure	133407244168	guards de navegador (fuera de la tanda)	failure	2026-11-16T15:36:26Z	scrum-1737-tarjeta-sin-iva	138622		0	0	0	0	0	0	0	0
+A	43490194242	1	1	failure	132108990109	guards de navegador (fuera de la tanda)	failure	2026-11-13T19:13:43Z	main	137245		0	0	0	0	0	0	0	0
+A	43488684105	1	1	failure	132103794010	guards de navegador (fuera de la tanda)	failure	2026-11-13T19:04:22Z	scrum-1076b-plazos-citados	139009		0	0	0	0	0	0	0	0
+A	43487811162	1	1	failure	132100816862	guards de navegador (fuera de la tanda)	failure	2026-11-13T18:58:58Z	scrum-1240d-mencion-pdf	139618		0	0	0	0	0	0	0	0
+A	43487554657	1	1	failure	132099911136	guards de navegador (fuera de la tanda)	failure	2026-11-13T18:57:17Z	scrum-1054-suplido-al-sellar	139666		0	0	0	0	0	0	0	0
+A	43476590525	1	1	failure	132061890744	guards de navegador (fuera de la tanda)	failure	2026-11-13T17:49:25Z	main	136289		0	0	0	0	0	0	0	0
+A	43475335921	1	1	failure	132057582253	guards de navegador (fuera de la tanda)	failure	2026-11-13T17:41:49Z	scrum-1129e-clave-regimen-07	139734		0	0	0	0	0	0	0	0
+A	43477506407	1	1	failure	132077282483	guards de navegador (fuera de la tanda)	failure	2026-11-13T17:55:06Z	main	136037		0	0	0	0	0	0	0	0
+A	43474499723	1	1	failure	132054652274	guards de navegador (fuera de la tanda)	failure	2026-11-13T17:36:41Z	scrum-1732-defecto-conocido	138927		0	0	0	0	0	0	0	0
+A	43474342538	1	1	failure	132054094922	guards de navegador (fuera de la tanda)	failure	2026-11-13T17:35:44Z	scrum-1735-paidat-fecha-del-cobro	138807		0	0	0	0	0	0	0	0
+A	43471171825	1	1	failure	132049061752	guards de navegador (fuera de la tanda)	failure	2026-11-13T17:16:34Z	main	137468		0	0	0	0	0	0	0	0
+A	43468107857	1	1	failure	132032561373	guards de navegador (fuera de la tanda)	failure	2026-11-13T16:58:39Z	scrum-1730b-s2-y-31-dic	138782		0	0	0	0	0	0	0	0
+A	43466061130	1	1	failure	132032540582	guards de navegador (fuera de la tanda)	failure	2026-11-13T16:46:19Z	main	137082		0	0	0	0	0	0	0	0
+A	43462676075	1	1	failure	132013389482	guards de navegador (fuera de la tanda)	failure	2026-11-13T16:26:04Z	scrum-1730b-s2-y-31-dic	140411		0	0	0	0	0	0	0	0
+A	43462146661	1	1	failure	132011551131	guards de navegador (fuera de la tanda)	failure	2026-11-13T16:22:54Z	scrum-1129e-clave-regimen-07	139150		0	0	0	0	0	0	0	0
+B	43463680831	1	1	success	132017160789	build + tests (con banco desechable)	success	2026-11-13T16:32:12Z	scrum-1723d-css-login-alta	2335649		1	0	0	1	0	0	0	0
+A	43462749096	1	1	failure	132013654518	guards de navegador (fuera de la tanda)	failure	2026-11-13T16:26:31Z	main	136953		0	0	0	0	0	0	0	0
+A	43462676075	1	1	failure	132013388833	build + tests (con banco desechable)	failure	2026-11-13T16:26:04Z	scrum-1730b-s2-y-31-dic	2350637		1	0	0	1	0	0	0	0
+A	43460735451	1	1	failure	132006654364	guards de navegador (fuera de la tanda)	failure	2026-11-13T16:14:39Z	scrum-1063l-siguiente	138858		0	0	0	0	0	0	0	0
+A	43301171758	1	1	failure	131472626271	guards de navegador (fuera de la tanda)	failure	2026-11-12T20:31:37Z	main	136957		0	0	0	0	0	0	0	0
+A	43298354986	1	1	failure	131462732415	guards de navegador (fuera de la tanda)	failure	2026-11-12T20:14:44Z	scrum-1662-que-hay-que-hacer	139278		0	0	0	0	0	0	0	0
+A	43462146661	1	1	failure	132011551789	build + tests (con banco desechable)	failure	2026-11-13T16:22:54Z	scrum-1129e-clave-regimen-07	2428310		1	0	0	1	0	0	0	0
+A	43298861241	1	1	failure	131464498485	build + tests (con banco desechable)	failure	2026-11-12T20:17:43Z	scrum-1707-operario-sin-dinero	2333261		1	0	0	1	0	0	0	0
+A	43301238157	1	1	failure	131488114912	guards de navegador (fuera de la tanda)	failure	2026-11-12T20:32:02Z	main	136393		0	0	0	0	0	0	0	0
+B	43297538347	1	1	success	131459743485	build + tests (con banco desechable)	success	2026-11-12T20:09:58Z	scrum-1051h-p5-y-libro	2333715		1	0	0	1	0	0	0	0
+B	43297577852	1	1	success	131461179166	build + tests (con banco desechable)	success	2026-11-12T20:10:11Z	scrum-1646d-estilo-firma-presupuesto	2331592		1	0	0	1	0	0	0	0
+A	43288411482	1	1	failure	131427862521	guards de navegador (fuera de la tanda)	failure	2026-11-12T19:16:12Z	scrum-1689-dictado-espera-al-efecto	100447		0	0	0	0	0	0	0	0
+B	43297180531	1	1	success	131459950915	build + tests (con banco desechable)	success	2026-11-12T20:07:49Z	main	2327746		1	0	0	1	0	0	0	0
+A	43288219459	1	1	failure	131427186846	guards de navegador (fuera de la tanda)	failure	2026-11-12T19:15:05Z	scrum-1673b-albaran-remates-front	101279		0	0	0	0	0	0	0	0
+A	43292289965	1	1	failure	131441398911	guards de navegador (fuera de la tanda)	failure	2026-11-12T19:38:50Z	scrum-1721-montaje-retenciones-y-campos-del-gasto	100406		0	0	0	0	0	0	0	0
+B	43293498847	1	1	success	131445560401	build + tests (con banco desechable)	success	2026-11-12T19:45:57Z	scrum-1646c-guard-firma-sirve-el-guion	2327107		1	0	0	1	0	0	0	0
+A	43292313077	1	1	failure	131442505609	guards de navegador (fuera de la tanda)	failure	2026-11-12T19:38:59Z	main	97924	PEQUENO	0	0	0	0	0	0	0	0
+A	43292490391	1	1	failure	131442074172	guards de navegador (fuera de la tanda)	failure	2026-11-12T19:40:03Z	scrum-1718-temporales-de-1621	100292		0	0	0	0	0	0	0	0
+A	43286167875	1	1	failure	131420023799	guards de navegador (fuera de la tanda)	failure	2026-11-12T19:03:14Z	scrum-1727b-resena-ventana-horario	100407		0	0	0	0	0	0	0	0
+A	43285819918	1	1	failure	131418806746	guards de navegador (fuera de la tanda)	failure	2026-11-12T19:01:14Z	scrum-1717-aviso-sii-inicio	100450		0	0	0	0	0	0	0	0
+A	43282741727	1	1	failure	131408040146	guards de navegador (fuera de la tanda)	failure	2026-11-12T18:43:08Z	scrum-1646c-csp-script-firma-presupuesto	101993		0	0	0	0	0	0	0	0
+B	43460600372	1	1	success	132006175767	build + tests (con banco desechable)	success	2026-11-13T16:13:52Z	scrum-1723e-tarjeta-mp-navegador	2335368		1	0	0	1	0	0	0	0
+A	43281222329	1	1	failure	131402896640	constancia del ALTER (informativo)	failure	2026-11-12T18:34:21Z	scrum-1051h-p5-y-libro	19773	PEQUENO	0	0	0	0	0	0	0	0
+A	43285819918	1	1	failure	131418806902	build + tests (con banco desechable)	failure	2026-11-12T19:01:14Z	scrum-1717-aviso-sii-inicio	2325664		1	0	0	1	0	0	0	0
+B	43285080677	1	1	success	131416829970	build + tests (con banco desechable)	success	2026-11-12T18:56:54Z	main	2318827		1	0	0	1	0	0	0	0
+A	43281222329	1	1	failure	131402896470	build + tests (con banco desechable)	failure	2026-11-12T18:34:21Z	scrum-1051h-p5-y-libro	2338276		1	0	0	1	0	0	0	0
+B	43282298278	1	1	success	131406475132	build + tests (con banco desechable)	success	2026-11-12T18:40:32Z	scrum-1725-lista-operario-sin-cobro	2317374		1	0	0	1	0	0	0	0
+B	43282759267	1	1	success	131408103651	build + tests (con banco desechable)	success	2026-11-12T18:43:14Z	scrum-1726-tanda-firmada-j1	2318393		1	0	0	1	0	0	0	0
+B	43280833811	1	1	success	131401358769	build + tests (con banco desechable)	success	2026-11-12T18:32:09Z	scrum-1051g-isp-pdf-nif-libro	2319266		1	0	0	1	0	0	0	0
+B	43277594140	1	1	success	131390050521	build + tests (con banco desechable)	success	2026-11-12T18:13:34Z	scrum-1730-reproducir	2317644		1	0	0	1	0	0	0	0
+B	43277513912	1	1	success	131389764446	build + tests (con banco desechable)	success	2026-11-12T18:13:05Z	scrum-1387x-estado-y-decision	2315816		1	0	0	1	0	0	0	0
+B	43275111989	1	1	success	131381349227	build + tests (con banco desechable)	success	2026-11-12T17:59:15Z	scrum-1719-baja-repetida-silencio	2316637		1	0	0	1	0	0	0	0
+B	43277156898	1	1	success	131388495302	build + tests (con banco desechable)	success	2026-11-12T18:11:01Z	scrum-1727-disputa-sin-factura	2318277		1	0	0	1	0	0	0	0
+B	43275249210	1	1	success	131381831364	build + tests (con banco desechable)	success	2026-11-12T18:00:05Z	scrum-1720-mp-failed-segunda-barrera	2318351		1	0	0	1	0	0	0	0
+B	43274698756	1	1	success	131379885349	build + tests (con banco desechable)	success	2026-11-12T17:56:46Z	scrum-1264s-preguntas-12nov-tarde	2314794		1	0	0	1	0	0	0	0
+B	43275531468	1	1	success	131382782841	build + tests (con banco desechable)	success	2026-11-12T18:01:38Z	scrum-1240c-lo-que-queda	2315611		1	0	0	1	0	0	0	0
+B	43275515029	1	1	success	131384945979	build + tests (con banco desechable)	success	2026-11-12T18:01:33Z	main	2317223		1	0	0	1	0	0	0	0
+B	43274158566	1	1	success	131377994225	build + tests (con banco desechable)	success	2026-11-12T17:53:33Z	scrum-1502s-marca-settings-submenus	2315568		1	0	0	1	0	0	0	0
+B	43274035328	1	1	success	131377563760	build + tests (con banco desechable)	success	2026-11-12T17:52:49Z	scrum-1051f-lo-que-falta	2317845		1	0	0	1	0	0	0	0
+B	43272180684	1	1	success	131371242500	build + tests (con banco desechable)	success	2026-11-12T17:42:00Z	scrum-1723d-css-login-alta	2317714		1	0	0	1	0	0	0	0
+A	43270348378	1	1	failure	131364900599	build + tests (con banco desechable)	failure	2026-11-12T17:31:30Z	scrum-1051g-isp-pdf-nif-libro	2356111		1	0	0	1	0	0	0	0
+A	43272131699	1	1	failure	131371152483	build + tests (con banco desechable)	failure	2026-11-12T17:41:43Z	scrum-1063l-siguiente	2326094		1	0	0	1	0	0	0	0
+B	43269774445	1	1	success	131362893141	build + tests (con banco desechable)	success	2026-11-12T17:28:20Z	scrum-1129d-alter-regimen-congelado	2315754		1	0	0	1	0	0	0	0
+B	43268195139	1	1	success	131357535652	build + tests (con banco desechable)	success	2026-11-12T17:19:26Z	scrum-1723c-css-tarjeta-mp	2315130		1	0	0	1	0	0	0	0
+B	43268421648	1	1	success	131358125857	build + tests (con banco desechable)	success	2026-11-12T17:20:40Z	scrum-1723e-tarjeta-mp-navegador	2315335		1	0	0	1	0	0	0	0
+B	43269947469	1	1	success	131363510498	build + tests (con banco desechable)	success	2026-11-12T17:29:19Z	scrum-1502r-lo-que-queda	2313737		1	0	0	1	0	0	0	0
+A	43268366346	1	1	failure	131357943241	build + tests (con banco desechable)	failure	2026-11-12T17:20:23Z	scrum-1726-tanda-firmada-j1	2325165		1	0	0	1	0	0	0	0
+B	43267105446	1	1	success	131353491883	build + tests (con banco desechable)	success	2026-11-12T17:13:22Z	scrum-1264r-preguntas-asesor-al-dia	2313458		1	0	0	1	0	0	0	0
+B	43267155221	1	1	success	131355120973	build + tests (con banco desechable)	success	2026-11-12T17:13:39Z	scrum-1129c-estado-y-propuesta	2315909		1	0	0	1	0	0	0	0
+A	43261787046	1	1	failure	131334936469	guards de navegador (fuera de la tanda)	failure	2026-11-12T16:43:35Z	main	48288	PEQUENO	0	0	0	0	0	0	0	0
+A	43266675783	1	1	failure	131351971252	build + tests (con banco desechable)	failure	2026-11-12T17:10:56Z	scrum-1051f-lo-que-falta	2328506		1	0	0	1	0	0	0	0
+B	43263071599	1	1	success	131339400759	build + tests (con banco desechable)	success	2026-11-12T16:50:43Z	scrum-1066h-ruta-borrador-retenciones	2311971		1	0	0	1	0	0	0	0
+B	43269793252	1	1	success	131364444372	build + tests (con banco desechable)	success	2026-11-12T17:28:26Z	main	2312952		1	0	0	1	0	0	0	0
+B	43265165673	1	1	success	131348058309	build + tests (con banco desechable)	success	2026-11-12T17:02:28Z	main	2313692		1	0	0	1	0	0	0	0
+A	43264636158	1	1	failure	131344846557	build + tests (con banco desechable)	failure	2026-11-12T16:59:35Z	scrum-1727-disputa-sin-factura	2316058		1	0	0	1	0	0	0	0
+B	43261781475	1	1	success	131334712060	build + tests (con banco desechable)	success	2026-11-12T16:43:34Z	scrum-1647f-imprimir-factura	2309985		1	0	0	1	0	0	0	0
+B	43259932234	1	1	success	131328161381	build + tests (con banco desechable)	success	2026-11-12T16:33:18Z	scrum-1442c-pdf-opcion	2309539		1	0	0	1	0	0	0	0
+B	43259443519	1	1	success	131326465216	build + tests (con banco desechable)	success	2026-11-12T16:30:41Z	scrum-1547b-trinquete-clasificacion	2309261		1	0	0	1	0	0	0	0
+B	43255452954	1	1	success	131319855512	build + tests (con banco desechable)	success	2026-11-12T16:08:49Z	main	2307962		1	0	0	1	0	0	0	0
+A	43250841956	1	1	failure	131295877601	build + tests (con banco desechable)	failure	2026-11-12T15:43:17Z	scrum-1717-aviso-sii-inicio	2334644		1	0	0	1	0	0	0	0
+B	43252200037	1	1	success	131300706742	build + tests (con banco desechable)	success	2026-11-12T15:50:51Z	scrum-1716b-selector-euro-porcentaje	2311952		1	0	0	1	0	0	0	0
+A	43250730647	1	1	failure	131295676203	build + tests (con banco desechable)	failure	2026-11-12T15:42:40Z	scrum-1646-csp-avisos-publicos	2313641		1	0	0	1	0	0	0	0
+B	43249314420	1	1	success	131290458272	build + tests (con banco desechable)	success	2026-11-12T15:34:47Z	main	2306873		1	0	0	1	0	0	0	0
+B	43250259905	1	1	success	131305788292	build + tests (con banco desechable)	success	2026-11-12T15:40:03Z	main	2306988		1	0	0	1	0	0	0	0
+B	43247136023	1	1	success	131282889220	build + tests (con banco desechable)	success	2026-11-12T15:22:45Z	scrum-1646-csp-albaran-publico	2310335		1	0	0	1	0	0	0	0
+B	43259567008	1	1	success	131326891666	build + tests (con banco desechable)	success	2026-11-12T16:31:21Z	scrum-1647d-csp-alta	2309717		1	0	0	1	0	0	0	0
+A	43247376835	1	1	failure	131283573375	build + tests (con banco desechable)	failure	2026-11-12T15:24:06Z	scrum-1716b-selector-euro-porcentaje	2312099		1	0	0	1	0	0	0	0
+A	43249261406	1	1	failure	131290274104	build + tests (con banco desechable)	failure	2026-11-12T15:34:29Z	scrum-1725-lista-operario-sin-cobro	2310050		1	0	0	1	0	0	0	0
+A	43246273459	1	1	failure	131279657812	build + tests (con banco desechable)	failure	2026-11-12T15:17:59Z	scrum-1646-csp-avisos-publicos	2310824		1	0	0	1	0	0	0	0
+B	43241685270	1	1	success	131263499767	build + tests (con banco desechable)	success	2026-11-12T14:52:15Z	scrum-1712-albaran-precios-solo-admin	2305140		1	0	0	1	0	0	0	0
+B	43244159694	1	1	success	131272207805	build + tests (con banco desechable)	success	2026-11-12T15:06:14Z	main	2306237		1	0	0	1	0	0	0	0
+B	43246280064	1	1	success	131279680128	build + tests (con banco desechable)	success	2026-11-12T15:18:01Z	scrum-1722b-parte-ancho-escritorio	2307083		1	0	0	1	0	0	0	0
+B	43234907406	1	1	success	131255348606	build + tests (con banco desechable)	success	2026-11-12T14:13:08Z	main	2302915		1	0	0	1	0	0	0	0
+B	43232604050	1	1	success	131231583593	build + tests (con banco desechable)	success	2026-11-12T13:59:31Z	scrum-1714-exports-miran-el-sii	2304176		1	0	0	1	0	0	0	0
+B	43232624699	1	1	success	131231657494	build + tests (con banco desechable)	success	2026-11-12T13:59:39Z	scrum-1716-casilla-dto-global	2303916		1	0	0	1	0	0	0	0
+B	43221993378	1	1	success	131195543423	build + tests (con banco desechable)	success	2026-11-12T12:52:58Z	scrum-1647c-csp-login	2301405		1	0	0	1	0	0	0	0
+B	43222384265	1	1	success	131196872511	build + tests (con banco desechable)	success	2026-11-12T12:55:29Z	scrum-1715b-scrum1489-y-912-node-http	2302544		1	0	0	1	0	0	0	0
+B	43227706365	1	1	success	131217594202	build + tests (con banco desechable)	success	2026-11-12T13:29:01Z	main	2303298		1	0	0	1	0	0	0	0
+A	43220494640	1	2	failure	131190479108	build + tests (con banco desechable)	failure	2026-11-12T12:43:18Z	scrum-1714-exports-miran-el-sii	2348728		1	0	0	1	0	0	0	0
+B	43219900282	1	1	success	131188456370	build + tests (con banco desechable)	success	2026-11-12T12:39:26Z	scrum-1717-motivo-sin-emision-en-me	2301599		1	0	0	1	0	0	0	0
+B	43219292110	1	1	success	131186395429	build + tests (con banco desechable)	success	2026-11-12T12:35:27Z	scrum-1643-informativo-no-decide	2301749		1	0	0	1	0	0	0	0
+B	43221623919	1	1	success	131196863498	build + tests (con banco desechable)	success	2026-11-12T12:50:35Z	main	2300239		1	0	0	1	0	0	0	0
+A	43219120935	1	1	failure	131185823582	build + tests (con banco desechable)	failure	2026-11-12T12:34:21Z	scrum-1647d-csp-alta	2309184		1	0	0	1	0	0	0	0
+B	43217861007	1	1	success	131181578725	build + tests (con banco desechable)	success	2026-11-12T12:26:11Z	scrum-1673-albaran-vacio-no-se-emite	2302305		1	0	0	1	0	0	0	0
+B	43234781362	1	1	success	131239121032	build + tests (con banco desechable)	success	2026-11-12T14:12:24Z	main	2302667		1	0	0	1	0	0	0	0
+A	43220494640	2	2	failure	131217232150	build + tests (con banco desechable)	failure	2026-11-12T12:43:18Z	scrum-1714-exports-miran-el-sii	2347668		1	0	0	1	0	0	0	0
+A	43215843044	1	3	failure	131174750298	build + tests (con banco desechable)	failure	2026-11-12T12:12:49Z	scrum-1716-casilla-dto-global	2378436		1	0	0	1	0	0	0	0
+B	43219212756	1	1	success	131186135725	build + tests (con banco desechable)	success	2026-11-12T12:34:57Z	scrum-1715-scrum1188d-node-http	2301412		1	0	0	1	0	0	0	0
+A	43213903214	1	1	failure	131168179478	meta-guard · parte 3 de 3	failure	2026-11-12T11:59:46Z	scrum-1547b-trinquete-clasificacion	99479	PEQUENO	0	0	0	0	0	0	0	0
+A	43213903214	1	1	failure	131187544881	meta-guard · los guards caen cuando deben	failure	2026-11-12T11:59:46Z	scrum-1547b-trinquete-clasificacion	20305	PEQUENO	0	0	0	0	0	0	0	0
+A	43213903214	1	1	failure	131168179477	build + tests (con banco desechable)	failure	2026-11-12T11:59:46Z	scrum-1547b-trinquete-clasificacion	2344276		1	0	0	1	0	0	0	0
+B	43215131096	1	1	success	131172324835	build + tests (con banco desechable)	success	2026-11-12T12:07:59Z	scrum-1436j-pago-de-la-factura	2300223		1	0	0	1	0	0	0	0
+B	43213969079	1	1	success	131168393558	build + tests (con banco desechable)	success	2026-11-12T12:00:12Z	scrum-1647e-pago-en-navegador	2300701		1	0	0	1	0	0	0	0
+A	43213310206	1	1	failure	131166134673	build + tests (con banco desechable)	failure	2026-11-12T11:55:29Z	scrum-1442c-pdf-opcion	2309037		1	0	0	1	0	0	0	0
+A	43213895786	1	1	failure	131168163696	build + tests (con banco desechable)	failure	2026-11-12T11:59:43Z	scrum-1647c-csp-login	2303407		1	0	0	1	0	0	0	0
+A	43213190010	1	1	failure	131165796322	build + tests (con banco desechable)	failure	2026-11-12T11:54:40Z	scrum-1066h-ruta-borrador-retenciones	2316803		1	0	0	1	0	0	0	0
+A	43213190010	1	1	failure	131183470211	meta-guard · los guards caen cuando deben	failure	2026-11-12T11:54:40Z	scrum-1066h-ruta-borrador-retenciones	20299	PEQUENO	0	0	0	0	0	0	0	0
+A	43215843044	3	3	failure	131216952346	build + tests (con banco desechable)	failure	2026-11-12T12:12:49Z	scrum-1716-casilla-dto-global	2380384		1	0	0	1	0	0	0	0
+A	43213190010	1	1	failure	131165796543	meta-guard · parte 2 de 3	failure	2026-11-12T11:54:40Z	scrum-1066h-ruta-borrador-retenciones	101382		0	0	0	0	0	0	0	0
+B	43212926641	1	1	success	131164846016	build + tests (con banco desechable)	success	2026-11-12T11:52:51Z	scrum-1264q-asesor-12nov	2297284		1	0	0	1	0	0	0	0
+A	43211175618	1	1	failure	131158871349	meta-guard · parte 1 de 3	failure	2026-11-12T11:40:32Z	scrum-1643-informativo-no-decide	99099	PEQUENO	0	0	0	0	0	0	0	0
+A	43211175618	1	1	failure	131174378013	meta-guard · los guards caen cuando deben	failure	2026-11-12T11:40:32Z	scrum-1643-informativo-no-decide	19798	PEQUENO	0	0	0	0	0	0	0	0
+B	43218485381	1	1	success	131183691199	build + tests (con banco desechable)	success	2026-11-12T12:30:18Z	scrum-1722-parte-del-operario-bonito	2300064		1	0	0	1	0	0	0	0
+A	43211175618	1	1	failure	131158870841	build + tests (con banco desechable)	failure	2026-11-12T11:40:32Z	scrum-1643-informativo-no-decide	2306645		1	0	0	1	0	0	0	0
+B	43210629718	1	1	success	131156996661	build + tests (con banco desechable)	success	2026-11-12T11:36:38Z	scrum-1647a-csp-pago	2297206		1	0	0	1	0	0	0	0
+A	43215843044	2	3	failure	131205290997	build + tests (con banco desechable)	failure	2026-11-12T12:12:49Z	scrum-1716-casilla-dto-global	2378137		1	0	0	1	0	0	0	0
+A	43210335458	1	1	failure	131155999761	build + tests (con banco desechable)	failure	2026-11-12T11:34:37Z	scrum-1647c-csp-login	2315530		1	0	0	1	0	0	0	0
+B	43210364665	1	1	success	131156098786	build + tests (con banco desechable)	success	2026-11-12T11:34:49Z	scrum-1051e-prueba-s2-aeat	2299499		1	0	0	1	0	0	0	0
+B	43210370806	1	1	success	131156120484	build + tests (con banco desechable)	success	2026-11-12T11:34:52Z	scrum-1066g-retencion-sin-entrada	2295810		1	0	0	1	0	0	0	0
+B	43210043931	1	1	success	131157403251	build + tests (con banco desechable)	success	2026-11-12T11:32:36Z	main	2295754		1	0	0	1	0	0	0	0
+B	43208859699	1	1	success	131150890453	build + tests (con banco desechable)	success	2026-11-12T11:24:16Z	scrum-1316g-convalidacion	2297095		1	0	0	1	0	0	0	0
+B	43215188644	1	1	success	131172816407	build + tests (con banco desechable)	success	2026-11-12T12:08:22Z	main	2301276		1	0	0	1	0	0	0	0
+B	43205812688	1	1	success	131140555563	build + tests (con banco desechable)	success	2026-11-12T11:03:38Z	scrum-1547-datos-personales-por-esquema	2295112		1	0	0	1	0	0	0	0
+B	43206682632	1	1	success	131144390270	build + tests (con banco desechable)	success	2026-11-12T11:09:24Z	scrum-1655b-puerta-1b-misma-unidad	2295724		1	0	0	1	0	0	0	0
+B	43205994067	1	1	success	131141175295	build + tests (con banco desechable)	success	2026-11-12T11:04:52Z	scrum-1063k-siguiente	2295374		1	0	0	1	0	0	0	0
+B	43205111099	1	1	success	131138329627	build + tests (con banco desechable)	success	2026-11-12T10:58:59Z	scrum-1713-pantalla-sii	2294470		1	0	0	1	0	0	0	0
+B	43206873380	1	1	success	131144144832	build + tests (con banco desechable)	success	2026-11-12T11:10:42Z	scrum-1533b-notas-fechadas	2293291		1	0	0	1	0	0	0	0
+B	43204860015	1	1	success	131141297433	build + tests (con banco desechable)	success	2026-11-12T10:57:11Z	main	2292409		1	0	0	1	0	0	0	0
+B	43202329298	1	1	success	131128800946	build + tests (con banco desechable)	success	2026-11-12T10:39:44Z	scrum-1567b-portal-sin-facturas-en-receipt	2295480		1	0	0	1	0	0	0	0
+B	43199413566	1	1	success	131118594188	build + tests (con banco desechable)	success	2026-11-12T10:20:00Z	main	2290287		1	0	0	1	0	0	0	0
+A	43201182104	1	1	failure	131124710528	build + tests (con banco desechable)	failure	2026-11-12T10:31:53Z	scrum-1655b-puerta-1b-misma-unidad	2305134		1	0	0	1	0	0	0	0
+B	43199983368	1	1	success	131127842771	build + tests (con banco desechable)	success	2026-11-12T10:23:45Z	main	2291934		1	0	0	1	0	0	0	0
+B	43187573055	1	1	success	131078502696	build + tests (con banco desechable)	success	2026-11-12T09:00:03Z	scrum-1697c-pantalla-lee-visita-del-parte	2292619		1	0	0	1	0	0	0	0
+B	43197611075	1	1	success	131112477797	build + tests (con banco desechable)	success	2026-11-12T10:07:56Z	scrum-1396e-lote-2-temporales	2291820		1	0	0	1	0	0	0	0
+B	43190023062	1	1	success	131087065465	build + tests (con banco desechable)	success	2026-11-12T09:16:34Z	main	2290665		1	0	0	1	0	0	0	0
+B	43197783248	1	1	success	131113073335	build + tests (con banco desechable)	success	2026-11-12T10:09:06Z	scrum-1393g-cierre-con-ciegos-dichos	2292528		1	0	0	1	0	0	0	0
+B	43185385389	1	1	success	131071439179	build + tests (con banco desechable)	success	2026-11-12T08:44:09Z	scrum-1686h4-inicio-operario	2290757		1	0	0	1	0	0	0	0
+B	43185360119	1	1	success	131074365711	build + tests (con banco desechable)	success	2026-11-12T08:43:58Z	main	2288313		1	0	0	1	0	0	0	0
+A	43183890766	1	1	failure	131066228477	build + tests (con banco desechable)	failure	2026-11-12T08:33:15Z	scrum-1697c-pantalla-lee-visita-del-parte	2293297		1	0	0	1	0	0	0	0
+B	43182377107	1	1	success	131065033574	build + tests (con banco desechable)	success	2026-11-12T08:22:17Z	main	2288095		1	0	0	1	0	0	0	0
+B	43180390457	1	1	success	131054645217	build + tests (con banco desechable)	success	2026-11-12T08:07:30Z	scrum-1697b-visita-en-el-servidor	2290157		1	0	0	1	0	0	0	0
+B	43179929954	1	1	success	131053156494	build + tests (con banco desechable)	success	2026-11-12T08:04:03Z	main	2289176		1	0	0	1	0	0	0	0
+B	43088911742	1	1	success	130761531724	build + tests (con banco desechable)	success	2026-11-11T19:37:21Z	main	2287591		1	0	0	1	0	0	0	0
+B	43183044930	1	1	success	131063565989	build + tests (con banco desechable)	success	2026-11-12T08:27:10Z	scrum-1661-albaran-valorado-lineas	2291657		1	0	0	1	0	0	0	0
+A	43087839442	1	1	failure	130756797008	build + tests (con banco desechable)	failure	2026-11-11T19:30:33Z	scrum-1661-albaran-valorado-lineas	2366395		1	0	0	1	0	0	0	0
+B	43085803451	1	1	success	130749735769	build + tests (con banco desechable)	success	2026-11-11T19:17:26Z	scrum-1298d-mesa-fallida-lanza-desde-el-repo	2285955		1	0	0	1	0	0	0	0
+B	43085141343	1	1	success	130747416748	build + tests (con banco desechable)	success	2026-11-11T19:13:13Z	scrum-1687-censo-almacen-por-alias	2288302		1	0	0	1	0	0	0	0
+A	43087787100	1	1	failure	130756626431	build + tests (con banco desechable)	failure	2026-11-11T19:30:14Z	scrum-1697b-visita-en-el-servidor	2290474		1	0	0	1	0	0	0	0
+B	43083961174	1	1	success	130743484710	build + tests (con banco desechable)	success	2026-11-11T19:05:48Z	scrum-1674-qa-en-prod	2287751		1	0	0	1	0	0	0	0
+B	43083840457	1	1	success	130743808712	build + tests (con banco desechable)	success	2026-11-11T19:05:03Z	main	2286209		1	0	0	1	0	0	0	0
+B	43082121343	1	1	success	130737065012	build + tests (con banco desechable)	success	2026-11-11T18:54:06Z	scrum-1697-visita-n-de-m	2287672		1	0	0	1	0	0	0	0
+B	43083761017	1	1	success	130742722848	build + tests (con banco desechable)	success	2026-11-11T19:04:34Z	scrum-1694-zona-firmada	2286837		1	0	0	1	0	0	0	0
+B	43080197336	1	1	success	130730442412	build + tests (con banco desechable)	success	2026-11-11T18:41:45Z	scrum-1686-dia-del-operario	2283804		1	0	0	1	0	0	0	0
+A	43083269445	1	2	success	130741041930	build + tests (con banco desechable)	failure	2026-11-11T19:01:28Z	scrum-1700-abrir-parte-en-curso	1686920		1	0	0	1	0	0	0	0
+B	43083269445	2	2	success	131047731938	build + tests (con banco desechable)	success	2026-11-11T19:01:28Z	scrum-1700-abrir-parte-en-curso	2286265		1	0	0	1	0	0	0	0
+B	43080863080	1	1	success	130732740825	build + tests (con banco desechable)	success	2026-11-11T18:46:01Z	scrum-1706-operario-abre-su-trabajo	2285658		1	0	0	1	0	0	0	0
+B	43079533875	1	1	success	130728107373	build + tests (con banco desechable)	success	2026-11-11T18:37:26Z	scrum-1694-seccion-partes	2285572		1	0	0	1	0	0	0	0
+A	43077769941	1	1	failure	130722009568	build + tests (con banco desechable)	failure	2026-11-11T18:26:19Z	scrum-1697-visita-n-de-m	2287231		1	0	0	1	0	0	0	0
+A	43075414862	1	1	failure	130727394761	meta-guard · los guards caen cuando deben	failure	2026-11-11T18:11:44Z	scrum-1674-parte-hereda-obra-y-tipo	20033	PEQUENO	0	0	0	0	0	0	0	0
+B	43078735328	1	1	success	130729858642	build + tests (con banco desechable)	success	2026-11-11T18:32:26Z	main	2282897		1	0	0	1	0	0	0	0
+B	43074497014	1	1	success	130710659505	build + tests (con banco desechable)	success	2026-11-11T18:06:02Z	scrum-1671-qa-en-prod	2280124		1	0	0	1	0	0	0	0
+A	43074335963	1	1	failure	130711194506	guards de navegador (fuera de la tanda)	failure	2026-11-11T18:05:05Z	scrum-1700-abrir-parte-en-curso	108056		0	0	0	0	0	0	0	0
+B	43075725228	1	1	success	130714914435	build + tests (con banco desechable)	success	2026-11-11T18:13:40Z	main	2281696		1	0	0	1	0	0	0	0
+A	43081734199	1	1	failure	130735743047	build + tests (con banco desechable)	failure	2026-11-11T18:51:37Z	scrum-1298d-mesa-fallida-lanza-desde-el-repo	2296755		1	0	0	1	0	0	0	0
+B	43082135422	1	1	success	130737111998	build + tests (con banco desechable)	success	2026-11-11T18:54:12Z	scrum-1563q-piloto-1-foto-semana	2285617		1	0	0	1	0	0	0	0
+B	43074955482	1	1	success	130712242673	build + tests (con banco desechable)	success	2026-11-11T18:08:52Z	scrum-1698-verificado-yaqu	2282364		1	0	0	1	0	0	0	0
+B	43074408611	1	1	success	130710364939	build + tests (con banco desechable)	success	2026-11-11T18:05:30Z	scrum-1705-audit-dice-por-que	2284022		1	0	0	1	0	0	0	0
+B	43071302863	1	1	success	130702901000	build + tests (con banco desechable)	success	2026-11-11T17:45:59Z	main	2278536		1	0	0	1	0	0	0	0
+B	43068304211	1	1	success	130689068128	build + tests (con banco desechable)	success	2026-11-11T17:27:11Z	scrum-1678-qa-en-prod	2280243		1	0	0	1	0	0	0	0
+A	43065199062	1	1	failure	130689715939	meta-guard · parte 3 de 3	failure	2026-11-11T17:08:23Z	main	41011	PEQUENO	0	0	0	0	0	0	0	0
+A	43070500681	1	1	failure	130696752474	build + tests (con banco desechable)	failure	2026-11-11T17:40:57Z	scrum-1674-parte-hereda-obra-y-tipo	2284396		1	0	0	1	0	0	0	0
+A	43065199062	1	1	failure	130697870836	meta-guard · los guards caen cuando deben	failure	2026-11-11T17:08:23Z	main	17957	PEQUENO	0	0	0	0	0	0	0	0
+A	43065301626	1	2	success	130678740972	build + tests (con banco desechable)	failure	2026-11-11T17:09:02Z	scrum-1701-menu-piloto-modo-emision	2282431		1	0	0	1	0	0	0	0
+B	43064437616	1	1	success	130676935845	build + tests (con banco desechable)	success	2026-11-11T17:03:49Z	main	2276527		1	0	0	1	0	0	0	0
+B	43062697669	1	1	success	130669235221	build + tests (con banco desechable)	success	2026-11-11T16:53:10Z	scrum-1704-agendar-propone-laborable	2278916		1	0	0	1	0	0	0	0
+B	43058726303	1	1	success	130664919500	build + tests (con banco desechable)	success	2026-11-11T16:28:48Z	main	2276735		1	0	0	1	0	0	0	0
+A	43056256810	1	1	failure	130650930773	build + tests (con banco desechable)	failure	2026-11-11T16:14:01Z	main	2187245		1	0	0	1	0	0	0	0
+B	43062068289	1	1	success	130666995404	build + tests (con banco desechable)	success	2026-11-11T16:49:17Z	scrum-1702-trabajo-nuevo-sitio-guardado	2278515		1	0	0	1	0	0	0	0
+B	43052309141	1	1	success	130632442496	build + tests (con banco desechable)	success	2026-11-11T15:50:15Z	scrum-1696-hoja-albaran-no-es-parte	2274254		1	0	0	1	0	0	0	0
+B	43052319178	1	1	success	130632478661	build + tests (con banco desechable)	success	2026-11-11T15:50:19Z	scrum-1685-campo-a-campo	2274811		1	0	0	1	0	0	0	0
+A	43050337612	1	2	success	130625371916	build + tests (con banco desechable)	failure	2026-11-11T15:38:13Z	scrum-1671-partes-en-el-trabajo	1671962		1	0	0	1	0	0	0	0
+B	43051873617	1	1	success	130631971052	build + tests (con banco desechable)	success	2026-11-11T15:47:34Z	scrum-1678-aviso-plazas-equipo	2276332		1	0	0	1	0	0	0	0
+B	43065301626	2	2	success	130706793377	build + tests (con banco desechable)	success	2026-11-11T17:09:02Z	scrum-1701-menu-piloto-modo-emision	2281667		1	0	0	1	0	0	0	0
+B	43051547088	1	1	success	130633347559	build + tests (con banco desechable)	success	2026-11-11T15:45:35Z	main	2273386		1	0	0	1	0	0	0	0
+B	43055998044	1	1	success	130646078733	build + tests (con banco desechable)	success	2026-11-11T16:12:27Z	scrum-1699-partes-n-lineas-y-cabeceras	2277157		1	0	0	1	0	0	0	0
+B	43045896877	1	1	success	130609614109	build + tests (con banco desechable)	success	2026-11-11T15:11:44Z	scrum-1698-sin-apuntar	2273430		1	0	0	1	0	0	0	0
+B	43048765832	1	1	success	130620106189	build + tests (con banco desechable)	success	2026-11-11T15:28:52Z	scrum-1669c-importe-en-la-lista	2274374		1	0	0	1	0	0	0	0
+A	43043776754	1	1	failure	130602233171	guards de navegador (fuera de la tanda)	failure	2026-11-11T14:59:13Z	scrum-1700-abrir-parte-en-curso	101845		0	0	0	0	0	0	0	0
+A	43048534907	1	1	failure	130618995614	build + tests (con banco desechable)	failure	2026-11-11T15:27:27Z	scrum-1685-campo-a-campo	2331971		1	0	0	1	0	0	0	0
+A	43043776754	1	1	failure	130602232948	build + tests (con banco desechable)	failure	2026-11-11T14:59:13Z	scrum-1700-abrir-parte-en-curso	2281395		1	0	0	1	0	0	0	0
+B	43044931196	1	1	success	130606239244	build + tests (con banco desechable)	success	2026-11-11T15:06:01Z	scrum-1681c-aviso-sin-firmar-se-ve	2273854		1	0	0	1	0	0	0	0
+B	43050337612	2	2	success	130690870694	build + tests (con banco desechable)	success	2026-11-11T15:38:13Z	scrum-1671-partes-en-el-trabajo	2274879		1	0	0	1	0	0	0	0
+B	43042730987	1	1	success	130598509807	build + tests (con banco desechable)	success	2026-11-11T14:52:41Z	main	2270877		1	0	0	1	0	0	0	0
+B	43042545066	1	1	success	130597860238	build + tests (con banco desechable)	success	2026-11-11T14:51:31Z	scrum-1669b-emision-vacia-en-borrador	2271148		1	0	0	1	0	0	0	0
+B	43044564929	1	1	success	130611741323	build + tests (con banco desechable)	success	2026-11-11T15:03:52Z	main	2273189		1	0	0	1	0	0	0	0
+B	43018123782	1	1	success	130514230411	build + tests (con banco desechable)	success	2026-11-11T12:10:58Z	scrum-1691-cliente-en-partes-por-valorar	2271876		1	0	0	1	0	0	0	0
+B	43040668052	1	1	success	130591287036	build + tests (con banco desechable)	success	2026-11-11T14:40:06Z	scrum-1681b-aviso-albaran-sin-firmar	2272433		1	0	0	1	0	0	0	0
+B	43015923535	1	1	success	130506841995	build + tests (con banco desechable)	success	2026-11-11T11:55:19Z	scrum-1685-alta-con-invitacion	2270666		1	0	0	1	0	0	0	0
+B	43041455865	1	1	success	130594040713	build + tests (con banco desechable)	success	2026-11-11T14:44:52Z	scrum-1686-maestro-m2-m1b	2270931		1	0	0	1	0	0	0	0
+B	43018379672	1	1	success	130518735626	build + tests (con banco desechable)	success	2026-11-11T12:12:47Z	main	2269252		1	0	0	1	0	0	0	0
+B	43040986232	1	1	success	130592382223	build + tests (con banco desechable)	success	2026-11-11T14:41:58Z	scrum-1693-verificado-yaqu	2270522		1	0	0	1	0	0	0	0
+B	43020345388	1	1	success	130531672158	build + tests (con banco desechable)	success	2026-11-11T12:26:28Z	main	2270924		1	0	0	1	0	0	0	0
+B	43011861132	1	1	success	130493191517	build + tests (con banco desechable)	success	2026-11-11T11:25:43Z	scrum-1685-formulario-de-alta	2269780		1	0	0	1	0	0	0	0
+B	43013496837	1	1	success	130498686725	build + tests (con banco desechable)	success	2026-11-11T11:37:35Z	scrum-1669-total-por-fila-de-albaran	2265907		1	0	0	1	0	0	0	0
+B	43040624891	1	1	success	130591131242	build + tests (con banco desechable)	success	2026-11-11T14:39:49Z	scrum-1692-fila-parte-abierta	2271096		1	0	0	1	0	0	0	0
+A	43012547853	1	1	failure	130495497796	build + tests (con banco desechable)	failure	2026-11-11T11:30:48Z	scrum-1691-cliente-en-partes-por-valorar	2272912		1	0	0	1	0	0	0	0
+B	43011633087	1	1	success	130492411898	build + tests (con banco desechable)	success	2026-11-11T11:24:03Z	scrum-1690-titulo-del-trabajo-es-el-cliente	2267664		1	0	0	1	0	0	0	0
+B	43011471552	1	1	success	130491854414	build + tests (con banco desechable)	success	2026-11-11T11:22:53Z	scrum-1692-fila-parte-abierta	2264907		1	0	0	1	0	0	0	0
+B	43009742516	1	1	success	130486185859	build + tests (con banco desechable)	success	2026-11-11T11:10:33Z	scrum-1681-modales-trabajo-relleno	2264910		1	0	0	1	0	0	0	0
+B	43010861795	1	1	success	130489820650	build + tests (con banco desechable)	success	2026-11-11T11:18:32Z	scrum-1681b-aviso-albaran-sin-firmar	2265664		1	0	0	1	0	0	0	0
+B	43011426404	1	1	success	130491702855	build + tests (con banco desechable)	success	2026-11-11T11:22:34Z	scrum-1693-parte-firmado-orden-papel	2266128		1	0	0	1	0	0	0	0
+A	43008809070	1	1	failure	130483861946	build + tests (con banco desechable)	failure	2026-11-11T11:03:52Z	scrum-1685-formulario-de-alta	2280678		1	0	0	1	0	0	0	0
+B	43011502060	1	1	success	130499329480	build + tests (con banco desechable)	success	2026-11-11T11:23:06Z	main	2263797		1	0	0	1	0	0	0	0
+B	43005410744	1	1	success	130471547558	build + tests (con banco desechable)	success	2026-11-11T10:39:12Z	scrum-1685b-carril-register	2264828		1	0	0	1	0	0	0	0
+A	43008817852	1	1	failure	130482967358	build + tests (con banco desechable)	failure	2026-11-11T11:03:56Z	scrum-1685-alta-con-invitacion	2341153		1	0	0	1	0	0	0	0
+B	43003655574	1	1	success	130465663836	build + tests (con banco desechable)	success	2026-11-11T10:26:39Z	scrum-1680-ficha-terminar-y-cerrar	2263240		1	0	0	1	0	0	0	0
+B	43007614370	1	1	success	130490086591	build + tests (con banco desechable)	success	2026-11-11T10:55:14Z	main	2263417		1	0	0	1	0	0	0	0
+B	43003618901	1	1	success	130465537096	build + tests (con banco desechable)	success	2026-11-11T10:26:23Z	main	2261574		1	0	0	1	0	0	0	0
+B	43003591389	1	1	success	130465714664	build + tests (con banco desechable)	success	2026-11-11T10:26:10Z	scrum-1686-flujo-trabajo-parte-albaran	2262628		1	0	0	1	0	0	0	0
+B	43002186112	1	1	success	130460755277	build + tests (con banco desechable)	success	2026-11-11T10:16:09Z	scrum-1677-parte-firmado-salida-al-trabajo	2261192		1	0	0	1	0	0	0	0
+B	43006633309	1	1	success	130477655335	build + tests (con banco desechable)	success	2026-11-11T10:48:05Z	main	2262991		1	0	0	1	0	0	0	0
+B	43001333525	1	1	success	130457916282	build + tests (con banco desechable)	success	2026-11-11T10:10:15Z	scrum-1676-firma-no-primaria-parte-vacio	2263354		1	0	0	1	0	0	0	0
+B	42884702783	1	1	success	130075678216	build + tests (con banco desechable)	success	2026-11-10T19:23:00Z	main	2261264		1	0	0	1	0	0	0	0
+B	43002111085	1	1	success	130460510817	build + tests (con banco desechable)	success	2026-11-11T10:15:38Z	scrum-1549f-latido-puerta	2262652		1	0	0	1	0	0	0	0
+B	42881843731	1	1	success	130065758682	build + tests (con banco desechable)	success	2026-11-10T19:05:58Z	main	2260769		1	0	0	1	0	0	0	0
+B	42876865219	1	1	success	130042362288	build + tests (con banco desechable)	success	2026-11-10T18:36:12Z	scrum-1650c-pdf-y-whatsapp-leen-lo-congelado	2257584		1	0	0	1	0	0	0	0
+A	42876810970	1	1	failure	130042171539	build + tests (con banco desechable)	failure	2026-11-10T18:35:53Z	scrum-1676-firma-no-primaria-parte-vacio	2270497		1	0	0	1	0	0	0	0
+B	42877955665	1	1	success	130046216688	build + tests (con banco desechable)	success	2026-11-10T18:42:46Z	scrum-1672-ficha-trabajo-cita	2259292		1	0	0	1	0	0	0	0
+A	42871116416	1	1	failure	130022347058	build + tests (con banco desechable)	failure	2026-11-10T18:02:47Z	scrum-1646-csp-albaran-publico	2266939		1	0	0	1	0	0	0	0
+A	42876433857	1	1	failure	130040861947	build + tests (con banco desechable)	failure	2026-11-10T18:33:41Z	scrum-1677-parte-firmado-salida-al-trabajo	2281923		1	0	0	1	0	0	0	0
+B	42871689924	1	1	success	130024278577	build + tests (con banco desechable)	success	2026-11-10T18:05:57Z	scrum-1656-piloto-1-en-el-master	2256462		1	0	0	1	0	0	0	0
+B	42870425358	1	1	success	130019930069	build + tests (con banco desechable)	success	2026-11-10T17:58:47Z	scrum-1675-dictado-sobrevive-recarga	2255618		1	0	0	1	0	0	0	0
+B	42870886199	1	1	success	130021544259	build + tests (con banco desechable)	success	2026-11-10T18:01:26Z	scrum-1636b-iva-con-coma	2253671		1	0	0	1	0	0	0	0
+B	42869025252	1	1	success	130014977604	build + tests (con banco desechable)	success	2026-11-10T17:50:23Z	scrum-1654b-retirar-aviso-plantilla	2252976		1	0	0	1	0	0	0	0
+B	42866050712	1	1	success	130004544024	build + tests (con banco desechable)	success	2026-11-10T17:32:45Z	scrum-1621g-cierre-pieza-5	2250979		1	0	0	1	0	0	0	0
+B	42875522285	1	1	success	130040679660	build + tests (con banco desechable)	success	2026-11-10T18:28:20Z	main	2257030		1	0	0	1	0	0	0	0
+B	42866032775	1	1	success	130004481170	build + tests (con banco desechable)	success	2026-11-10T17:32:39Z	scrum-1637-csp-solo-informe	2250776		1	0	0	1	0	0	0	0
+B	42865709208	1	1	success	130003721116	build + tests (con banco desechable)	success	2026-11-10T17:30:48Z	scrum-1633-de-ruta-que-no-existe	2252406		1	0	0	1	0	0	0	0
+B	42866015402	1	1	success	130004419904	build + tests (con banco desechable)	success	2026-11-10T17:32:33Z	scrum-1233j-cuatro-sin-sufijo-crudo	2253906		1	0	0	1	0	0	0	0
+B	42865866672	1	1	success	130003895292	build + tests (con banco desechable)	success	2026-11-10T17:31:41Z	scrum-1505-ya-esta-en-cabecera	2250833		1	0	0	1	0	0	0	0
+B	42865991749	1	1	success	130004336306	build + tests (con banco desechable)	success	2026-11-10T17:32:25Z	scrum-1648-banco-guard-barras	2253281		1	0	0	1	0	0	0	0
+B	42865632669	1	1	success	130003101233	build + tests (con banco desechable)	success	2026-11-10T17:30:22Z	scrum-1636c-iva-con-coma-en-el-servidor	2252932		1	0	0	1	0	0	0	0
+B	42869411725	1	1	success	130016329866	build + tests (con banco desechable)	success	2026-11-10T17:52:41Z	scrum-1585b-sii-retomada	2253900		1	0	0	1	0	0	0	0
+B	42865666329	1	1	success	130003205203	build + tests (con banco desechable)	success	2026-11-10T17:30:33Z	scrum-1639-filas-con-teclado	2252568		1	0	0	1	0	0	0	0
+B	42865167377	1	1	success	130001450981	build + tests (con banco desechable)	success	2026-11-10T17:27:38Z	scrum-1428b-parche-probado-para-j1	2250859		1	0	0	1	0	0	0	0
+B	42864650779	1	1	success	129999702608	build + tests (con banco desechable)	success	2026-11-10T17:24:35Z	main	2249204		1	0	0	1	0	0	0	0
+B	42864118225	1	1	success	129997743286	build + tests (con banco desechable)	success	2026-11-10T17:21:29Z	scrum-1684-main-sin-verde	2250833		1	0	0	1	0	0	0	0
+B	42863884555	1	1	success	129996935130	build + tests (con banco desechable)	success	2026-11-10T17:20:10Z	scrum-1650b-sugerencia-del-firmante-congelada	2251346		1	0	0	1	0	0	0	0
+B	42864602432	1	1	success	129999457234	build + tests (con banco desechable)	success	2026-11-10T17:24:19Z	scrum-1654-plantillas-medida	2250074		1	0	0	1	0	0	0	0
+B	42862410954	1	1	success	129991742334	build + tests (con banco desechable)	success	2026-11-10T17:11:48Z	scrum-1621h-umbral-tanda	2250905		1	0	0	1	0	0	0	0
+B	42860421645	1	1	success	129984741249	build + tests (con banco desechable)	success	2026-11-10T17:00:29Z	main	2250311		1	0	0	1	0	0	0	0
+B	42863333158	1	1	success	129995000962	build + tests (con banco desechable)	success	2026-11-10T17:17:00Z	scrum-1658-recorrido-trabajos-partes	2250510		1	0	0	1	0	0	0	0
+B	42861700526	1	1	success	129989244802	build + tests (con banco desechable)	success	2026-11-10T17:07:47Z	scrum-1659-albaranes-lista-pestanas	2252612		1	0	0	1	0	0	0	0
+B	42861827852	1	1	success	129989699132	build + tests (con banco desechable)	success	2026-11-10T17:08:32Z	scrum-1563j-clases-hoja-y-claves	2251144		1	0	0	1	0	0	0	0
+B	42858521264	1	1	success	129978026105	build + tests (con banco desechable)	success	2026-11-10T16:49:40Z	scrum-1649-censo-marcas-del-fundador	2249320		1	0	0	1	0	0	0	0

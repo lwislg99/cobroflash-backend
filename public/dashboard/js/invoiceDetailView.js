@@ -197,12 +197,20 @@ async function fetchInvoiceDetail(id) {
       cobroBlock.style.textAlign = 'right';
       cobroBlock.style.marginTop = '10px';
       const cuando = invoice.paidAt
-        ? new Date(invoice.paidAt).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' })
+        ? new Date(invoice.paidAt).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })
         : '';
       cobroBlock.innerHTML =
         '<div class="detail-total-label">Cobro</div>'
         + `<div class="detail-cobro-importe">${fmtInvMoney(invoice.total, invoice.currency)}</div>`
         + (cuando ? `<div class="detail-cobro-fecha">${cuando}</div>` : '');
+      // SCRUM-1532e · etiqueta de estado de un cobro cancelado (literal firmado: SCRUM-1532 c.22455).
+      // Pill neutra del inventario: cancelar no es un error, y la factura sigue pendiente.
+      if (invoice.estadoDelCobro === 'cancelled') {
+        const pillCobro = document.createElement('span');
+        pillCobro.className = 'status-pill status-pill-draft detail-cobro-estado';
+        pillCobro.textContent = 'Cobro cancelado';
+        cobroBlock.appendChild(pillCobro);
+      }
       summaryRow.appendChild(cobroBlock);
     }
     // Si NO hay cobro no se pinta nada: un bloque «Cobro» vacío en la pantalla del dinero se lee
@@ -236,7 +244,7 @@ async function fetchInvoiceDetail(id) {
     {
       const fmtPaso = (v) => {
         if (!v) return '';
-        try { return new Date(v).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }); } catch { return ''; }
+        try { return new Date(v).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }); } catch { return ''; }
       };
       const cobrada = st === 'paid';
       const waSt = String((invoice.waDelivery && invoice.waDelivery.status) || '').toLowerCase();
@@ -310,6 +318,17 @@ async function fetchInvoiceDetail(id) {
     const metodo = invoice.paidVia
       ? (typeof window.etiquetaMetodoCobro === 'function' ? window.etiquetaMetodoCobro(invoice.paidVia) : invoice.paidVia)
       : null;
+    // SCRUM-1787i · «Vence el» (firmado, c.22325 ①): la fecha CONGELADA al emitir, sólo si consta.
+    addDefRow(dlCobro, 'Vence el', invoice.dueDate
+      ? new Date(invoice.dueDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+      : null);
+    // SCRUM-1787i · «Formas de pago» (firmado, c.22345 ①): una por cada forma CONGELADA al emitir, sólo
+    // si constan. Una clave fuera del conjunto no se pinta en crudo: no tiene literal firmado.
+    const FORMAS_DE_PAGO_FIRMADAS = { card: 'Tarjeta', bizum: 'Bizum', transfer: 'Transferencia' };
+    const formas = Array.isArray(invoice.payMethods)
+      ? invoice.payMethods.map((f) => FORMAS_DE_PAGO_FIRMADAS[f]).filter(Boolean)
+      : [];
+    addDefRow(dlCobro, 'Formas de pago', formas.length ? formas.join(', ') : null);
     addDefRow(dlCobro, 'Método', metodo);
     addDefRow(dlCobro, 'Pagada', invoice.paidAt ? new Date(invoice.paidAt).toLocaleString('es-ES') : null);
     addDefRow(dlCobro, 'Rectifica a', invoice.rectifies ? invoice.rectifies.number : null);
@@ -627,9 +646,19 @@ async function fetchInvoiceDetail(id) {
     let selMetodo = null;
     // SCRUM-1618 · la fecha de cobro, igual: `null` mientras no se pinte, y vacía no viaja.
     let inpFechaCobro = null;
+    // SCRUM-1316l · con alguna línea al 10 %, el medio de cobro es obligatorio (SCRUM-1316 c.22438).
+    const conIvaAlDiez = typeof window.llevaLineaAlDiez === 'function' && window.llevaLineaAlDiez(invoice.lines);
     const btnTogglePaid = document.createElement('button');
     btnTogglePaid.className = 'btn-secondary btn-sm';
     btnTogglePaid.textContent = 'Marcar como cobrada';
+    // SCRUM-1810b (decisión A+B y literal FIRMADO: SCRUM-1810 c.22535). Sobre un `paid` el clic manda
+    // `status: 'pending'` —deshacer el pago—, que el servidor solo admite en un JUSTIFICANTE
+    // (`invoiceAdmin.ts`, `UnpayNotAllowedError`). B: en un justificante pagado el rótulo dice lo que
+    // hace. Se decide con el mismo `st === 'paid'` que elige `targetStatus` abajo: el rótulo y el clic
+    // no pueden discrepar. A (la factura pagada sin botón) va en `ubicarAccion`, más abajo.
+    if (isReceipt && st === 'paid') btnTogglePaid.textContent = 'Marcar como pendiente';
+    // A: «consta pagado» con el criterio de SCRUM-1532d/1800c (`status: 'paid'` o `paidAt`).
+    const constaPagado = st === 'paid' || Boolean(invoice.paidAt);
 
     btnTogglePaid.addEventListener('click', async () => {
       const targetStatus = st === 'paid' ? 'pending' : 'paid';
@@ -637,6 +666,14 @@ async function fetchInvoiceDetail(id) {
       // A21.2 (V4/V5): al marcar PAGADA se pregunta el importe REAL recibido.
       // Si no coincide, NADA automático: la factura sigue pendiente y queda
       // anotado en la ficha 360 para la decisión manual (runbook O).
+      // SCRUM-1316l · sin medio elegido y con línea al 10 %, T3 ANTES de preguntar el importe: el
+      // servidor lo rechazaría igual (422), y así no se pregunta nada que luego no sirve.
+      if (targetStatus === 'paid' && conIvaAlDiez && selMetodo
+        && typeof window.metodoElegido === 'function' && !window.metodoElegido(selMetodo)) {
+        setStatus('error', window.COPY_IVA_10.eligeMetodo);
+        selMetodo.focus();
+        return;
+      }
       if (targetStatus === 'paid') {
         const totalNum = Number(invoice.total);
         const raw = window.prompt(
@@ -709,7 +746,8 @@ async function fetchInvoiceDetail(id) {
     // La visibilidad por estado la decide el registro: primaria de pending (sin chargeId), «⋮» en
     // paid (Marcar como PENDIENTE), oculta en annulled/R1 —SCRUM-153: una anulada no cambia de
     // estado (Parte L no declara transición que salga de `annulled`)—.
-    ubicarAccion(btnTogglePaid, 'btnTogglePaid');
+    // SCRUM-1810b · A: en una FACTURA que consta pagada no se pinta (el servidor la rechaza siempre).
+    if (!(constaPagado && !isReceipt)) ubicarAccion(btnTogglePaid, 'btnTogglePaid');
 
     // A21.1 (R14): paquete de evidencia de disputa en 1 clic — con cobro de
     // tarjeta (charge) siempre disponible; la firma digital gana disputas.
@@ -783,6 +821,48 @@ async function fetchInvoiceDetail(id) {
         }
       });
       ubicarAccion(btnBizum, 'btnBizum');
+    }
+
+    // SCRUM-1532d · «Cancelar cobro» (GO y literales firmados: SCRUM-1532 c.22430). Solo con el cobro
+    // `pending` —la única transición del máster— y en el «⋯» (un acto que no se deshace no es la
+    // primaria). Tras cancelar, la ficha se repinta y el botón ya no está; la factura sigue pendiente y
+    // el reenvío le crea otro cobro (decisión 2). Los mensajes de error reutilizan los de esta ficha.
+    // SCRUM-1800c (c.22496 ①): con la factura ya pagada el botón no se pinta, aunque el cobro siga
+    // `pending`. `status: 'paid'` ya lo oculta el registro (`invoiceActionsRegistry.js`); aquí falta
+    // solo la factura con `paidAt` y otro estado.
+    if (invoice.chargeId && invoice.estadoDelCobro === 'pending' && !invoice.paidAt) {
+      const CONFIRMAR_CANCELAR_COBRO = '¿Cancelar este cobro? El cliente ya no podrá pagarlo con este enlace.';
+      const btnCancelarCobro = document.createElement('button');
+      btnCancelarCobro.className = 'btn-secondary btn-sm';
+      btnCancelarCobro.textContent = 'Cancelar cobro';
+      btnCancelarCobro.addEventListener('click', async () => {
+        if (!window.confirm(CONFIRMAR_CANCELAR_COBRO)) return;
+        btnCancelarCobro.disabled = true;
+        // SCRUM-644: el fallo NO pinta nada que venga del servidor ni de una excepción; solo uno de los
+        // dos literales que esta ficha ya usa para un error de cobro.
+        let aviso = null;
+        try {
+          const r = await fetch(`/admin/charges/${invoice.chargeId}/cancel`, { method: 'POST' });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            // SCRUM-1800c: literal FIRMADO en SCRUM-1800 c.22496 ① para el 409 `document_already_paid`.
+            aviso = d.error === 'charge_not_pending'
+              ? 'Este cobro ya no está pendiente.'
+              : (d.error === 'document_already_paid'
+                ? 'Este documento ya consta como pagado: su cobro no se puede cancelar.'
+                : 'Error actualizando estado: inténtalo de nuevo');
+          }
+        } catch (_) {
+          aviso = 'Error actualizando estado: inténtalo de nuevo';
+        }
+        if (aviso) {
+          setStatus('error', aviso);
+          btnCancelarCobro.disabled = false;
+          return;
+        }
+        if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: invoice.id });
+      });
+      ubicarAccion(btnCancelarCobro, 'btnCancelarCobro');
     }
 
     // Recordar pago: el estado (solo pending) lo decide el registro; aquí queda el dato (teléfono).
@@ -917,29 +997,6 @@ async function fetchInvoiceDetail(id) {
       page.appendChild(zona);
     }
 
-    // Botón Regenerar PDF (con VeriFactu si aplica)
-    const btnRegen = document.createElement('button');
-    btnRegen.className = 'btn-ghost btn-sm';
-    btnRegen.textContent = 'Volver a generar el PDF';
-    btnRegen.title = 'Regenera el PDF aplicando VeriFactu si el merchant tiene NIF configurado';
-    btnRegen.addEventListener('click', async () => {
-      btnRegen.disabled = true;
-      btnRegen.textContent = 'Regenerando…';
-      try {
-        const r = await fetch(`/admin/invoices/${invoice.id}/regenerate-pdf`, { method: 'POST' });
-        const d = await r.json().catch(() => ({}));
-        if (!r.ok) throw new Error(d.error || 'error');
-        setStatus('success', d.veriFactu ? '✓ PDF regenerado con VeriFactu.' : '✓ PDF regenerado.');
-        if (d.pdfUrl) invoice.pdfUrl = d.pdfUrl;
-        if (d.veriFactu) invoice.vfHash = 'updated';
-      } catch (e) {
-        setStatus('error', 'Error al regenerar el PDF.');
-      }
-      btnRegen.disabled = false;
-      btnRegen.textContent = '↻ Regenerar PDF';
-    });
-    ubicarAccion(btnRegen, 'btnRegen');
-
     // Ensamblar la barra en orden: primaria (regla 1) · secundarias (regla 2) · «⋮» (regla 3). El
     // «⋮» reutiliza overflowMenu de AB3 (a11y, teclado, hoja inferior ≤640px). Si no está cargado,
     // las acciones del overflow se pintan sueltas: perder el menú no puede costar una acción (SCRUM-31).
@@ -949,6 +1006,23 @@ async function fetchInvoiceDetail(id) {
     // pantalla se comporta exactamente como antes de existir el selector.
     if (estadoFactura === 'pending' && typeof window.pintarSelectorMetodo === 'function') {
       selMetodo = window.pintarSelectorMetodo(actions, { id: 'metodo-cobro-factura' });
+      // SCRUM-1316l · con línea al 10 %: el selector es obligatorio, y al elegir «efectivo» sale T4
+      // debajo. Es un AVISO, no un bloqueo. `hidden`, no `style=` (CSP, SCRUM-1773).
+      if (selMetodo && conIvaAlDiez) {
+        selMetodo.required = true;
+        selMetodo.setAttribute('aria-required', 'true');
+        const avisoEfectivo = document.createElement('p');
+        avisoEfectivo.className = 'alert warning';
+        avisoEfectivo.id = 'metodo-cobro-factura-aviso';
+        avisoEfectivo.setAttribute('role', 'status');
+        avisoEfectivo.textContent = window.COPY_IVA_10.avisoEfectivo;
+        avisoEfectivo.hidden = true;
+        selMetodo.parentNode.appendChild(avisoEfectivo);
+        selMetodo.setAttribute('aria-describedby', avisoEfectivo.id);
+        selMetodo.addEventListener('change', () => {
+          avisoEfectivo.hidden = !window.avisoDeEfectivoVisible(true, window.metodoElegido(selMetodo), invoice.metodosConAvisoIvaAlDiez);
+        });
+      }
     }
     // SCRUM-1618 · «¿Cuándo lo has cobrado?», con la misma condición: solo si el gesto es MARCAR COBRADA.
     if (estadoFactura === 'pending' && typeof window.pintarFechaDeCobro === 'function') {

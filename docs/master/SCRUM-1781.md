@@ -123,3 +123,42 @@ Ningún hueco pide texto: los dos campos sin marcador llevan al lado el desplega
 | «fuera el marcador «Ej: 34XXXXXXXXX (con código de país)» del alta» | `tests/scrum1781c-sin-ayuda-de-prefijo.test.mjs` ①; en yaqu.app: NO visto |
 | «(con código de país)» y «Ej: 34XXXXXXXXX» del primer cliente del alta | ② del mismo test |
 | «(E.164 sin +)» del rótulo de Configuración, que queda «Teléfono WhatsApp» | ③ del mismo test |
+
+# SCRUM-1781d · «Editar cliente» (ficha del cliente) con el prefijo aparte, como «Nuevo cliente» (J2)
+
+**Medido contra:** `origin/main` = `19859bf0b2d83c76598233b6814c2106d1630cfd` · 2026-11-23T09:25:15Z (cabecera `Date:` de `gh api -i zen`)
+A9: comprobación → `tests/scrum1781d-editar-cliente-con-prefijo.test.mjs`
+Mutaciones: catálogo → `tests/scrum1781d-editar-cliente-con-prefijo.test.mjs`
+**Skill UI:** cargada · antes de la primera edición de `customerDetailView.js`.
+
+**Puesto:** J2 (jv-j2dw) · **Rama:** `scrum-1781d-editar-cliente-con-prefijo`, nacida de `origin/main` @ `19859bf0b2d83c76598233b6814c2106d1630cfd`.
+
+**Decisión (no es texto):** SCRUM-1781 c.22392, respuesta literal del fundador «1-Ok todos si» a la pregunta 2 de c.22259. Revisa la decisión de SCRUM-590 que dejaba esta pantalla sin selector (el comentario de `customerDetailView.js` que la explicaba se ha reescrito para decir que se revisó y por qué).
+**Firma (regla 39):** SCRUM-1781 c.22402, respuesta literal «1-OK Sí»: el rótulo «Teléfono (E.164 sin +)» pasa a «Teléfono». Solo QUITAR, ningún texto nuevo.
+
+**Qué cambia (`public/dashboard/js/customerDetailView.js`, solo J2):**
+
+- Teléfono y Móvil (WhatsApp) llevan cada uno su `prefijosPais.selectorDePrefijo` (+34 por defecto) en una fila `.campo-telefono`, la que ya usa «Nuevo cliente». Cada número tiene su propio selector, por la razón de SCRUM-590 escrita en `customersView.js`. Sin CSS nuevo, sin `style=` ni `on*=` en innerHTML y sin servidor.
+- Al ABRIR, lo guardado se parte con `repartirConPrefijo`, y al GUARDAR se junta con `numeroConPrefijo`. Son **copias literales** de `repartirNumero` y `numeroCompleto` (`customersView.js`). No se importan porque allí son funciones internas de la vista y los guards de SCRUM-578 leen esa región del fichero (lo dice el propio comentario de SCRUM-590). Es lo mismo que hizo J3 en `onboardingView.js` (1781b). Que las dos copias digan lo mismo lo mide el test, no el comentario.
+- El móvil sigue viajando SOLO si hay móvil (vacío → `''` → no entra en el payload, SCRUM-590).
+- Rótulo «Teléfono».
+
+**Prefijos con los que casa:** los de `prefijosPais.listaDePrefijos()`, del más largo al más corto. Lo que no empieza por ninguno se deja ENTERO con +34 (medido: `0…` se abre como +34 y `0…`). ⚠️ **Leído en la regla, no medido:** con un número así, guardar sin tocar nada le antepone 34. Y una fila vieja guardada SIN prefijo que empiece por un prefijo de otro país (p. ej. `600…` → +60, Malasia) se abre con ese país; guardar sin tocar la devuelve igual. Las dos cosas pasan ya hoy al editar desde Clientes, porque la regla es la misma.
+
+**Cómo se mide.** `tests/scrum1781d-editar-cliente-con-prefijo.test.mjs` monta la ficha 360 real en el banco de vistas, pulsa «Editar» y «Guardar cambios», y compara el cuerpo del PUT con lo que guarda «Nuevo cliente» con el mismo prefijo y lo mismo tecleado: +34 nacional, +34 ya prefijado y +52. Casos: reparto al abrir (34… → +34, 52… → +52), +34 sin número, uno que no casa, ida y vuelta sin tocar nada, cambiar solo el número, sin móvil no viaja y el rótulo. Rojo antes del cambio: 6/6, todos por «no va en una fila .campo-telefono con su prefijo». El primer intento salió CIEGO (faltaba `dist/`): lo vi en la causa y compilé con `--noCheck`. Verde después: 6/6.
+**Mutaciones (catálogo, `aplicarUna` vía `docs/master/evidencias/SCRUM-1123f/arnes-mutaciones.mjs`):** 3 de 3 vivas: el guardado vuelve a pedir la cadena entera; al abrir ya no se reparte; vuelve el rótulo viejo. La tercera la añadí porque, en el rojo de antes, el caso del rótulo caía por el selector y no por el rótulo. Árbol limpio después (`git status`).
+
+**Capturas** (modal real con las hojas del panel, guion `docs/master/evidencias/SCRUM-1781/1781d-capturas.mjs`): `1781d-antes-1280.png`, `1781d-antes-390.png`, `1781d-despues-1280.png`, `1781d-despues-390.png`, en la misma carpeta. Las miré: a 390 px el selector y el número van en una fila sin salirse. La bandera sale como letras «ES»/«MX» porque es el navegador de esta máquina (Windows no pinta banderas emoji).
+
+**Dirigida:** 27 ficheros (1781b/c/d, 578 ×2, 590 ×2, 1773, 836, 700, 710b, 719, 1157, 1215, 1415, 1294, 267, 273, 525d, 854, 402, 575b, 983, 692 ×2, 1783b, 311): 239 casos, 237 pass · 1 fail · 1 skip (suman). El fail era scrum854 porque faltaba este registro; el skip, scrum692 gateado por `QA_DB_TEST`. Tras el registro: ver la entrega. **Suite entera NO corrida en local; la corre el obligatorio** (orden del orquestador).
+
+**NO medido:** yaqu.app (no lo he intentado: no tengo sesión de comercio); la matriz de dispositivos AB6, más allá de 1280 y 390 en Edge headless.
+
+### Aceptación → dónde se ve (1781d)
+
+| aceptación (literal) | dónde se ve |
+|---|---|
+| c.22392: «Editar cliente» pasa a usar `prefijosPais.selectorDePrefijo` con España por defecto | `tests/scrum1781d-editar-cliente-con-prefijo.test.mjs` (abrir / +34 sin número); `docs/master/evidencias/SCRUM-1781/1781d-despues-390.png`; yaqu.app NO visto |
+| c.22392: «al abrir, el prefijo se separa del número guardado» | mismo test, «al abrir, el número guardado se parte en prefijo + resto» |
+| c.22392: «Sin servidor, sin texto nuevo» | diff: solo `customerDetailView.js` |
+| c.22402: el rótulo pasa de «Teléfono (E.164 sin +)» a «Teléfono» | mismo test, «el rótulo es «Teléfono», sin «(E.164 sin +)»» |

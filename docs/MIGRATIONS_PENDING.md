@@ -3229,3 +3229,62 @@ fichero, medido el 27-oct sobre `63550e45e`). Lo que consta sale de `docs/master
 
 ⚠️ No medido: si el check «constancia del ALTER» del CI ha preguntado a producción por estas tres
 columnas después del 23-sep. Es la vía que tendría una medida propia, como en SCRUM-1490.
+
+## SCRUM-914 · `equipments` + `equipment_id` ×4 — 23-nov-2026 · ✅ **APLICADA EN LAS TRES BASES** (staging y producción por el fundador, SCRUM-914 c.22434; dev por jv-j3cr)
+
+DDL: `docs/sql/scrum-914-equipos-del-cliente.sql` (1 `CREATE TABLE`, 4 `ADD COLUMN` nullables, 7 índices,
+2 FK RESTRICT; todo `IF NOT EXISTS`). El esquema que lo recoge entra en el ③ (`docs/master/SCRUM-914.md`,
+tramo SCRUM-914d).
+
+- [x] **staging y producción** — aplicadas por el fundador: «Aplicado en las dos, 5 filas» (SCRUM-914
+      c.22434, creado el 23-nov-2026 21:03Z según Jira; el texto del comentario dice «24-nov ~00:10Z»).
+      **No medido por J3**: no tengo claves de esas bases.
+- [x] **desarrollo · yaqu_dev_javier** — jv-j3cr, 23-nov-2026 (~21:10Z), `scripts/aplicar-sql-dev.mjs --go`
+      (destino `DATABASE_URL_DEV → yaqu_dev_javier (DESARROLLO) ✅`, 12 sentencias de forma conocida). Leído
+      del catálogo después, tres controles de tipo distinto y `current_database() = yaqu_dev_javier`:
+      `information_schema.columns` → 5 filas (las de la verificación del `.sql`); `pg_constraint` → 2 FK
+      de `equipments`, las dos `r` (RESTRICT); `pg_indexes` → 7 índices `…equipment…` + `equipments_pkey`.
+      ⚠️ Con toda probabilidad ya estaba: la entrada «LOTE DE 7» (28-sep-2026, arriba) la da por aplicada
+      en dev; el `IF NOT EXISTS` hace que repetirla no cambie nada, y no medí el «antes».
+- Preview contra dev con el esquema del ③ (`preview-migracion.mjs`, control positivo 36 tablas): **0
+  sentencias sobre equipos**; sí salen 12 `DROP` de columnas e índices de OTROS tickets (1780, 1056, 587…)
+  que dev ya tiene y `main` todavía no: dev va por delante, no es un hueco de este ALTER. Offline
+  (`--desde` el esquema de `origin/main`): exactamente el DDL de arriba, veredicto «aditiva».
+
+## SCRUM-665e · `invoices.pdf_sha256` (huella del PDF guardado al emitir) — 27-oct-2026 · ✅ **APLICADA EN LAS TRES BASES**, según el fundador (producción, SCRUM-665 c.22567; staging y desarrollo, c.22650)
+
+Decisión del fundador: SCRUM-665 c.21182, punto 4 («Se guarda también la huella del fichero:
+columna nueva, ALTER aditivo»). **Una** sentencia, aditiva:
+
+    ALTER TABLE "invoices" ADD COLUMN "pdf_sha256" TEXT;
+
+Nullable, sin default, sin índice: ninguna fila cambia, y las facturas ya emitidas quedan a NULL
+(regla 29: no se rellena hacia atrás). El DDL lo sacó J1 (jv-j1dk) el 27-oct-2026 ~18:04Z con
+`node scripts/preview-migracion.mjs --desde <schema.prisma de origin/main 95016f26f>` (offline;
+control positivo «la herramienta responde (33 tablas)»; veredicto «aditiva»). Quien lo aplique puede
+añadir `IF NOT EXISTS`.
+
+- [x] **desarrollo y tests · yaqu_dev_javier** — SCRUM-665 c.22650 (creado el 2026-11-24T13:58:42Z
+  según Jira; lo escribe el orquestador J con la confirmación del fundador por formulario de
+  elección). A la pregunta «¿aplicaste el ALTER de `pdf_sha256` también en staging y desarrollo?»,
+  la opción elegida, literal: «Sí, en las tres»: «Producción, staging y desarrollo tienen la
+  columna.» Es la respuesta del fundador, no una medición contra la base. Casilla marcada por J1
+  (jv-j1kn, SCRUM-665i).
+- [x] **staging** — el mismo comentario, SCRUM-665 c.22650 (arriba). c.22567 no la nombraba.
+  **No medido por J1**: no tengo claves de esa base.
+- [x] **producción** — SCRUM-665 c.22567 (2026-11-24T11:29:10Z), a la pregunta «¿está montado el
+  volumen en el servicio de producción, con `RAILWAY_VOLUME_MOUNT_PATH` definida, y aplicado en
+  producción el ALTER de la columna `pdf_sha256`?», responde: «1-Sí el volumenb está montado y el
+  alter de la columna tambien». Es la respuesta del fundador, no una medición contra la base. La
+  casilla la marcó J1 (jv-j1kh, SCRUM-665f); desarrollo/tests y staging, el comentario no los nombra.
+
+El PR de esquema + código + tests (rama `scrum-665e-pdf-persistente`) **no se empuja** hasta que
+estén las tres casillas y el volumen persistente de Railway creado (c.21182, «Dependencias del
+fundador antes de empujar»).
+
+> 24-nov-2026 (J1, jv-j1kn, SCRUM-665i): **ya no está pendiente.** El párrafo de arriba se escribió
+> antes de c.22567 y c.22650; se deja como estaba. La rama `scrum-665e-pdf-persistente` entró en
+> `main` con el **PR #3201**, mergeado el 2026-11-24T16:48:27Z (según GitHub), commit de merge
+> `651a143476a309308898fe252360d0b3d6a2a2ad`. Entró con la casilla de producción marcada (c.22567) y
+> el volumen confirmado en el mismo comentario. Las casillas de staging y desarrollo se marcan aquí
+> después del merge, citando c.22650 (13:58:42Z), que es anterior al merge.

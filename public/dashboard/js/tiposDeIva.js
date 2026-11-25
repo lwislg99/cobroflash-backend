@@ -92,9 +92,77 @@
    */
   function ponerValor(select, valor) {
     var n = normalizar(valor);
-    if (n === null) { select.value = ''; return; }
+    if (n === null) { select.value = ''; refrescarAvisoIvaAlDiez(select); return; }
     pintarOpciones(select, opciones(n));
     select.value = String(n);
+    refrescarAvisoIvaAlDiez(select);
+  }
+
+  // ── SCRUM-1804 (PARTE S de SCRUM-1316) · EL AVISO AL ELEGIR EL 10 % ──────────────────────
+  // RDL 29/2026: desde el 1-dic-2026 el 10 % en obras de vivienda depende de cómo pague el
+  // cliente. Al elegirlo, en la línea o en «IVA por defecto», se AVISA debajo. Es un aviso y nada
+  // más: no bloquea, no cambia el tipo elegido y no toca ningún cálculo.
+  //
+  // 🔴 EL TEXTO NO SE ESCRIBE AQUÍ (regla 39). Es `window.COPY_IVA_10.avisoEfectivo`, la constante
+  // de `invoicesView.js` (J1) que ya enseñan la ficha de factura y el lote: la redacción de
+  // SCRUM-1316 c.22424, la única que hay en main (medido el 24-nov, registro SCRUM-1804). Sin esa
+  // constante no hay aviso: la pantalla no inventa uno.
+  //
+  // Va AQUÍ y no en quotesView.js porque el valor del selector lo escriben muchos sitios por
+  // `ponerValor` (borrador, plantilla, IA, autocompletado, suplido) y ninguno dispara `change`:
+  // el aviso sigue al VALOR, no al clic.
+
+  /** ¿El valor pide el aviso? Solo el 10 % exacto. PURO. */
+  function avisoIvaAlDiezVisible(valor) {
+    return normalizar(valor) === 10;
+  }
+
+  function textoAvisoIvaAlDiez() {
+    var c = typeof window !== 'undefined' ? window.COPY_IVA_10 : null;
+    return c && typeof c.avisoEfectivo === 'string' && c.avisoEfectivo ? c.avisoEfectivo : null;
+  }
+
+  var avisosConectados = 0;
+
+  /**
+   * El aviso NACE la primera vez que hace falta, no al montar: un editor al 21 % pinta los mismos
+   * nodos que antes de este ticket (lo vigilan `scrum697`/`scrum698`). Una vez creado se queda y se
+   * oculta/enseña. Componente del inventario AB3 (`.alert.warning`), `hidden` y no `style=` (CSP).
+   */
+  function refrescarAvisoIvaAlDiez(select) {
+    var enlace = select && select._avisoIvaAlDiez;
+    if (!enlace) return;
+    var texto = textoAvisoIvaAlDiez();
+    var aviso = enlace.aviso;
+    if (!aviso) {
+      if (!(texto && avisoIvaAlDiezVisible(select.value))) return;
+      aviso = document.createElement('p');
+      aviso.className = 'alert warning';
+      aviso.setAttribute('role', 'status');
+      avisosConectados += 1;
+      aviso.id = 'aviso-iva-10-' + avisosConectados;
+      if (enlace.trasDe) enlace.trasDe.insertAdjacentElement('afterend', aviso);
+      else enlace.contenedor.appendChild(aviso);
+      select.setAttribute('aria-describedby', aviso.id);
+      enlace.aviso = aviso;
+    }
+    if (texto && aviso.textContent !== texto) aviso.textContent = texto;
+    aviso.hidden = !(texto && avisoIvaAlDiezVisible(select.value));
+  }
+
+  /**
+   * Ata el aviso del 10 % a `select`, para colgarlo de `contenedor` cuando haga falta —o, con
+   * `opciones.trasDe`, justo DESPUÉS de ese nodo: en una fila de campos, a todo el ancho y no
+   * dentro de la columna estrecha del campo—. Devuelve `true`, o `false` si ya estaba atado
+   * (conectar dos veces no pinta dos avisos).
+   */
+  function conectarAvisoIvaAlDiez(select, contenedor, opciones) {
+    var trasDe = opciones && opciones.trasDe ? opciones.trasDe : null;
+    if (!select || !(contenedor || trasDe) || select._avisoIvaAlDiez) return false;
+    select._avisoIvaAlDiez = { contenedor: contenedor, trasDe: trasDe, aviso: null };
+    select.addEventListener('change', function () { refrescarAvisoIvaAlDiez(select); });
+    refrescarAvisoIvaAlDiez(select);
+    return true;
   }
 
   function montar(valorInicial) {
@@ -112,6 +180,8 @@
     pintarOpciones: pintarOpciones,
     ponerValor: ponerValor,
     montar: montar,
+    avisoIvaAlDiezVisible: avisoIvaAlDiezVisible, // SCRUM-1804
+    conectarAvisoIvaAlDiez: conectarAvisoIvaAlDiez, // SCRUM-1804
   };
 
   // El `typeof window` es lo que permite que la suite CARGUE este fichero y EJECUTE `opciones` de

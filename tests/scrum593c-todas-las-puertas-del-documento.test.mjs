@@ -174,8 +174,8 @@ test('SCRUM-593c · 🔴 el albarán pasa la CABECERA y NO un segundo pie', () =
 // emisión, `docFooterText` se toma de la FACTURA (`inv.` / `invoice.`) y de nada más. El control
 // positivo es `MUTACIONES_QUE_ME_TUMBAN`, al final: pasar el texto del presupuesto lo tumba.
 const LLAMADORES_FACTURA = [
-  ['src/lib/invoicing.ts', 2],
-  ['src/modules/system/app/routes/invoicesAdmin.routes.ts', 1],
+  ['src/lib/invoicing.ts', 1], // 23-nov-2026, SCRUM-665e: de 2 a 1 por decisión del fundador (SCRUM-665 c.22382, con c.21182 y c.22358): queda un generador único, `ensureInvoicePdf`
+  // 23-nov-2026, SCRUM-665e: aquí estaba la fila de `invoicesAdmin.routes.ts` con 1 llamada, la de `regenerate-pdf`; la ruta se retiró (SCRUM-665 c.21182 punto 3; c.22382 y c.22358)
 ];
 const PIE_CONGELADO = /^(inv|invoice)\.docFooterText( \?\? null)?$/;
 
@@ -217,7 +217,7 @@ test('SCRUM-593c · 🔴 la FACTURA solo recibe el pie CONGELADO en ella, nunca 
       vistas += 1;
     }
   }
-  assert.equal(vistas, 3, `🔴 CIEGO: he juzgado ${vistas} llamadas a generateInvoicePdf y son 3.`);
+  assert.equal(vistas, 1, `🔴 CIEGO: he juzgado ${vistas} llamadas a generateInvoicePdf y es 1.`); // 23-nov-2026, SCRUM-665e: de 3 a 1, el total de la tabla de arriba (SCRUM-665 c.22382, con c.21182 y c.22358)
   assert.deepEqual(malas, [],
     '🔴 la emisión recibe un texto que NO es el congelado en la factura. Solo vale '
     + '`inv.docFooterText` / `invoice.docFooterText` (la columna sellada al emitir, c.22353): el '

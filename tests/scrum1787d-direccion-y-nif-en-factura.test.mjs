@@ -26,8 +26,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     nombre: 'el PDF no pinta el NIF',
     fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
-    de: 'if (params.customer.taxId) {',
-    a: 'if (false && params.customer.taxId) {',
+    de: 'if (params.customer.taxId) doc.text(',
+    a: 'if (false && params.customer.taxId) doc.text(',
     cae: 'SCRUM-1787d ④ el PDF de factura pinta NIF y Dirección del cliente',
   },
 ];
@@ -104,7 +104,8 @@ async function textoDelPdf(sufijo, customer) {
   try {
     const r = lineasDePdf(fs.readFileSync(outPath));
     assert.equal(r.ok, true, `🔴 NO SUPE LEER EL PDF: ${r.motivo}`);
-    assert.ok(r.lineas.some((l) => l.texto.includes('CLIENTE')), '🔴 CIEGO: el PDF leído no trae el bloque CLIENTE');
+    // SCRUM-1787w · literal FIRMADO en SCRUM-1787 c.22428 (GO c.22416): «Cliente: » sustituye al bloque «CLIENTE».
+    assert.ok(r.lineas.some((l) => l.texto.startsWith('Cliente: ')), '🔴 CIEGO: el PDF leído no trae el bloque «Cliente: »');
     return r.lineas.map((l) => l.texto).join('\n');
   } finally { fs.rmSync(outPath, { force: true }); }
 }
@@ -124,7 +125,11 @@ test('SCRUM-1787d ⑤ factura anterior (dirección NULL): el lector NO cae a la 
 
 test('SCRUM-1787d ⑥ CIEGO: sin NIF ni dirección no se pinta ningún rótulo', async () => {
   const t = await textoDelPdf('b', { name: 'Cliente QA', address: null });
-  assert.doesNotMatch(t, /NIF: B0/);
+  // SCRUM-1787w · desde c.22428 ① el EMISOR también se rotula «NIF: » (antes «NIF/CIF: »), y sale ANTES
+  // del cliente: se mira sólo desde «Cliente: », y el emisor es el control de que el rótulo se ve.
+  assert.match(t, /^NIF: B00000000$/m, '🔴 control positivo: el NIF del emisor sí sale');
+  const delCliente = t.slice(t.indexOf('Cliente: '));
+  assert.doesNotMatch(delCliente, /NIF: /);
   assert.doesNotMatch(t, /Dirección:/);
   assert.match(t, /Cliente QA/, '🔴 control positivo: el nombre sí tiene que salir');
 });

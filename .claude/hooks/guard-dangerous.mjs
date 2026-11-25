@@ -533,7 +533,7 @@ function descarteGit(a) {
  * ⚠️ Si algo revienta aquí dentro, el llamante deja pasar: esta familia es cobertura NUEVA, y
  * un fallo mío parando a las cuatro sesiones es peor que volver al estado de ayer.
  */
-function perdidaInminente(lista, cwd) {
+function perdidaInminente(lista, cwd, entorno = {}) {
   for (const a of lista) {
     // 5) Redirección que trunca un fichero existente. El caso del 11-ago: `> SCRUM-447.md`.
     for (const destino of a.redirecciones) {
@@ -618,9 +618,19 @@ function perdidaInminente(lista, cwd) {
       || (a.programa === 'rm' && flags(a).some((f) => /^-[a-zA-Z]*r/i.test(f)))
       || (/\brmdir\b/.test(texto) && /\s\/s\b/i.test(texto));
     if (esBorradoDeArbol) {
-      for (const ruta of a.palabras.slice(1).map((p) => p.texto).filter((t) => !t.startsWith('-') && !t.startsWith('/'))) {
-        const abs = path.isAbsolute(ruta) ? ruta : path.resolve(cwd, ruta);
-        const victima = esEnlace(abs) ? abs : esEnlace(path.join(abs, 'node_modules')) ? path.join(abs, 'node_modules') : null;
+      // SCRUM-1792 · La forma MSYS (`/c/Users/…`, la de toda sesión desde Git Bash) empieza por
+      // `/`, y el filtro de abajo la tiraba ENTERA por tomarla por una opción de `rmdir` (`/s`):
+      // `git worktree remove "/c/…"` pasaba sin mirar nada. Se traduce ANTES del filtro y solo si
+      // es `/<letra>/…`: `/s`, `/q` y `/c` siguen siendo opciones. `plataforma` y la sonda son
+      // inyectables por `evaluar()` SOLO para que el test corra igual en el CI de Linux.
+      const plataforma = entorno.plataforma || process.platform;
+      const pth = plataforma === 'win32' ? path.win32 : path.posix;
+      const enlace = entorno.esEnlace || esEnlace;
+      const palabras = a.palabras.slice(1).map((p) => p.texto)
+        .map((t) => (/^\/[a-zA-Z]\//.test(t) ? posixADrive(t, plataforma) : t));
+      for (const ruta of palabras.filter((t) => !t.startsWith('-') && !t.startsWith('/'))) {
+        const abs = pth.isAbsolute(ruta) ? ruta : pth.resolve(cwd, ruta);
+        const victima = enlace(abs) ? abs : enlace(pth.join(abs, 'node_modules')) ? pth.join(abs, 'node_modules') : null;
         if (victima) {
           return {
             motivo:
@@ -640,6 +650,32 @@ function perdidaInminente(lista, cwd) {
  * Las CUATRO reglas de AA2. Los patrones son los mismos que tenía la versión en bash: lo que
  * cambia es el texto sobre el que se aplican, no lo que se considera peligroso.
  */
+// ── SCRUM-1831 · LA REGLA 4, POR SIGNIFICADO ────────────────────────────────────────────────
+// La regex exigía la r ANTES que la f y en el MISMO grupo: `rm -fr "/c/…"`, `rm -r -f "/c/…"` y
+// `rm -R -f "C:\…"` pasaban (medido en rojo: tests/scrum1831-regla4-banderas-por-significado).
+// Esto mira las PALABRAS desde un `rm` que se ejecuta (no entre comillas): recursivo (`r`/`R` en
+// un grupo corto, o `--recursive`) + forzado (`f`, o `--force`), en cualquier orden y posición
+// hasta `--`, y un operando absoluto (`/`, `~` o unidad). Solo SUMA: la regex sigue al lado.
+const RM_RF_LITERAL = /rm +-[a-zA-Z]*[rR][a-zA-Z]*[fF][a-zA-Z]* +("?(\/|~|[A-Za-z]:))/;
+function rmRecursivoForzadoFuera(a) {
+  const ps = a.palabras || [];
+  const i = ps.findIndex((p) => /^rm(\.exe)?$/i.test(path.basename(p.texto)) && (p.mascara || []).some((m) => !m));
+  if (i < 0) return false;
+  let recursivo = false, forzado = false, fuera = false, finOpciones = false;
+  for (const { texto: t } of ps.slice(i + 1)) {
+    if (!finOpciones && t === '--') { finOpciones = true; continue; }
+    if (!finOpciones && /^--recursive$/i.test(t)) { recursivo = true; continue; }
+    if (!finOpciones && /^--force$/i.test(t)) { forzado = true; continue; }
+    if (!finOpciones && /^-[a-zA-Z]+$/.test(t)) {
+      if (/r/i.test(t)) recursivo = true;
+      if (/f/i.test(t)) forzado = true;
+      continue;
+    }
+    if (/^["']?(\/|~|[A-Za-z]:)/.test(t)) fuera = true;
+  }
+  return recursivo && forzado && fuera;
+}
+
 function reglas(lista, sentinelPath, entorno = {}) {
   const enAlguna = (re) => lista.some((a) => coincide(re, a));
 
@@ -758,7 +794,9 @@ function reglas(lista, sentinelPath, entorno = {}) {
   }
 
   // 4) rm -rf fuera del workspace (ruta absoluta, unidad o ~). Relativo dentro del repo se permite.
-  if (enAlguna(/rm +-[a-zA-Z]*[rR][a-zA-Z]*[fF][a-zA-Z]* +("?(\/|~|[A-Za-z]:))/)) {
+  //    SCRUM-1831: la regex de siempre se queda (regla 41) y se le SUMAN las banderas por su
+  //    significado (`rmRecursivoForzadoFuera`): `-fr`, `-r -f`, `-R -f`… pasaban.
+  if (enAlguna(RM_RF_LITERAL) || lista.some(rmRecursivoForzadoFuera)) {
     return {
       bloqueado: true,
       motivo:
@@ -778,7 +816,7 @@ function reglas(lista, sentinelPath, entorno = {}) {
   // no hace falta preguntarle a git nada, y el mensaje que llega sigue siendo el de siempre.
   let perdida = null;
   try {
-    perdida = perdidaInminente(lista, entorno.cwd || process.cwd());
+    perdida = perdidaInminente(lista, entorno.cwd || process.cwd(), entorno);
   } catch {
     perdida = null; // cobertura NUEVA: un fallo mío no puede parar a las cuatro sesiones.
   }
@@ -803,6 +841,8 @@ export function evaluar(crudo, sentinelPath = SENTINEL_POR_DEFECTO, opciones = {
   const entorno = {
     cwd: opciones.cwd ? opciones.cwd : cwdDelComando(comando || '', opciones.base || process.cwd()),
     sentinelDestructivo: opciones.sentinelDestructivo,
+    plataforma: opciones.plataforma, // SCRUM-1792: solo los tests; en uso real, process.platform
+    esEnlace: opciones.esEnlace, //     SCRUM-1792: solo los tests; en uso real, el lstat de verdad
   };
   // FAIL-CLOSED: si el JSON no se deja leer, se vuelve al comportamiento antiguo —mirar el
   // blob entero, SIN máscara— en vez de dejar pasar. Ruidoso, pero nunca ciego: un blob de

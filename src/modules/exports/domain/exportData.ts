@@ -136,8 +136,18 @@ const idsDe = (filas: Array<{ customerId?: number | null }>): number[] =>
 //
 // Si vienes a "arreglar" esta divergencia: no lo hagas sin releer SCRUM-104. Unificarlas
 // rompe uno de los dos usos, y cuál se rompe depende de por cuál unifiques.
+//
+// ⚠️ La divergencia de SCRUM-104 es de FILTRO (qué clientes entran), no de COLUMNAS: la
+// cabecera y la fila de abajo son UNA para los dos usos, y así deben seguir. Una columna
+// nueva se añade AQUÍ y en `clienteRow` a la vez, en la MISMA posición — si no, el CSV se
+// desplaza en silencio y cada dato cae bajo el rótulo de al lado (SCRUM-1578 lo cuenta).
 const CLIENTES_HEADER = [
-  'Nombre', 'Razón social', 'NIF/CIF', 'Teléfono', 'Email', 'Notas', 'Baja WhatsApp',
+  'Nombre', 'Razón social', 'NIF/CIF', 'Teléfono',
+  // SCRUM-1578: el móvil (SCRUM-590 lo separó del fijo) ya venía en la consulta y se tiraba
+  // al montar la fila. El rótulo NO se inventa: es el de `ETIQUETA_CAMPO.mobile` del
+  // importador (importarClientes.service.ts), para que exportar e importar hablen igual.
+  'Móvil',
+  'Email', 'Notas', 'Baja WhatsApp',
   // SCRUM-104 (D3): la fecha de alta es DATO, no interpretación. En un paquete de julio
   // de 2026, un `2020-03-14` se explica solo: el asesor entiende que ese cliente entró
   // por sus documentos, no por haberse dado de alta en el periodo. Un flag "por
@@ -150,6 +160,7 @@ const clienteRow = (c: any) => csvRow([
   c.legalName ?? '',
   c.taxId ?? '',
   c.phone ?? '',
+  c.mobile ?? '', // SCRUM-1578 — misma posición que 'Móvil' en CLIENTES_HEADER
   c.email ?? '',
   c.notes ?? '',
   c.waOptOut ? 'Sí' : 'No',

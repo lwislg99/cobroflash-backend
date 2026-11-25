@@ -22,10 +22,12 @@ import { FLAG_DEFAULTS } from '../dist/core/flags.js';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
-const SELECTOR = fs.readFileSync(
-  path.join(RAIZ, 'src', 'modules', 'billing', 'app', 'routes', 'payInvoice.routes.ts'),
-  'utf8',
-);
+// SCRUM-1787u · el selector son DOS ficheros: la página pinta (`payInvoice.routes.ts`: claves,
+// rótulos, rutas) y `formasDePagoActivas.ts` decide (tope, tramos, permisos), porque J1 lo usa al
+// emitir. Se leen los dos; ninguna exigencia de abajo cambia.
+const SELECTOR = ['payInvoice.routes.ts', 'formasDePagoActivas.ts']
+  .map((f) => fs.readFileSync(path.join(RAIZ, 'src', 'modules', 'billing', 'app', 'routes', f), 'utf8'))
+  .join('\n');
 const WEBHOOK = fs.readFileSync(
   path.join(RAIZ, 'src', 'modules', 'payments', 'connect', 'connectWebhook.routes.ts'),
   'utf8',

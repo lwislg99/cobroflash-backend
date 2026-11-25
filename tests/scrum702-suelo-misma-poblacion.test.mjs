@@ -283,7 +283,18 @@ test('SCRUM-702 · CONTROL NEGATIVO: por encima del suelo y sin mudos, no dice n
 //     `::warning … NO CABE` en cualquier máquina; y lo nombra en el `de:` de la mutación que declara
 //     sobre esa línea del script. Ningún aserto depende de dónde corre. La lectura de verdad sigue
 //     siendo la de `scripts/meta-guard-mutaciones.mjs`, ya contada en 935d.
-const TOPE_LEEN_EL_ENTORNO = 23;
+// SCRUM-1792b (24-nov-2026, J6) · 23 → 24, firmado por el fundador en SCRUM-1792 c.22646 (regla 41):
+// «Subir el tope a 24 (Recomendado)»; descartada «Quitar los casos de Windows». Es el caso de 1091:
+//   · `tests/scrum1792-regla7-ruta-msys.test.mjs` lee `process.platform` para decidir si corren sus
+//     3 casos de extremo a extremo (`git worktree remove` y `rm -r`/`rmdir /s` con la ruta `/c/…`, y
+//     el control con `C:\…`) y la forma MSYS del control sin enlace. Montan una junction DE VERDAD en
+//     un temporal y llaman a `evaluar()` SIN inyectarle plataforma ni sonda: son los únicos que
+//     prueban que `.claude/hooks/guard-dangerous.mjs`, en su regla 7, toma por defecto la plataforma
+//     y el `lstat` reales, y los que reproducen el incidente. Fuera de win32 no hay `/c/…` que
+//     traducir a un disco que exista: se saltan CON motivo (el CI es `ubuntu-latest`). El grupo
+//     determinista del mismo fichero inyecta la plataforma y una sonda falsa, corre en cualquier
+//     host y no lee esta señal.
+const TOPE_LEEN_EL_ENTORNO = 24;
 
 /**
  * 🔴 PARTIDAS A PROPÓSITO, para que el censo NO SE CACE A SÍ MISMO. Escritas enteras, este

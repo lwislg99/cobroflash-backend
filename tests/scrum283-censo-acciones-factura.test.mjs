@@ -37,12 +37,20 @@ const codigoReal = fs.readFileSync(VISTA, 'utf8');
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // EL CENSO REAL — su salida es media respuesta a las cinco contradicciones
 // ═════════════════════════════════════════════════════════════════════════════════════════
-test('SCRUM-283 · el censo deriva 9 acciones del árbol (el ticket decía 8)', () => {
+// SCRUM-665e · eran 9 hasta que el GO c.21182 retiró «Regenerar PDF» (`btnRegen`): contado en main
+// (4eea7720) y en la rama, la diferencia es EXACTAMENTE ese botón (decisión c.21592 punto 3).
+test('SCRUM-283 · el censo deriva 9 acciones del árbol (SCRUM-665e retiró btnRegen; SCRUM-1532d añadió btnCancelarCobro)', () => {
   const { acciones, navegacion, vistaEncontrada } = censarAccionesFactura(codigoReal);
   assert.ok(vistaEncontrada, `🔴 no encuentro ${FUNCION_VISTA}: si se renombró, el censo no mira nada`);
 
   const ids = acciones.map((a) => a.id).join(', ');
   assert.equal(
+    acciones.map((a) => a.id).includes('btnRegen'), false,
+    '🔴 ha vuelto `btnRegen`: regenerar el PDF de una emitida es lo que retiró SCRUM-665e (regla 29)',
+  );
+  assert.equal(
+    // 23-nov-2026 · 9 → 10: `btnCancelarCobro` (SCRUM-1532d), decidido con GO y rótulo firmados en
+    // SCRUM-1532 c.22430. 24-nov-2026 · 10 → 9 al fusionar SCRUM-665e, que retira `btnRegen`.
     acciones.length, 9,
     `🔴 el censo ya no ve 9 acciones sino ${acciones.length}. Una acción que APARECE o DESAPARECE es ` +
       `una decisión, no un descuido — cuéntala en el ticket. Ahora ve: ${ids}`,

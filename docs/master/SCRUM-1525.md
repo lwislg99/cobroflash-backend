@@ -137,3 +137,43 @@ Comando: `node scripts/respaldo-programado.mjs`. Variables: las dos de `backup-d
 (`DATABASE_URL`, `BACKUP_ENCRYPTION_KEY`), `RESEND_API_KEY`, `EMAIL_FROM` y la nueva
 `BACKUP_EMAIL_DESTINO`. Una pasada al día. La primera pasada dice si funciona: llega un correo con el
 adjunto, o llega uno en rojo, o no llega nada y el panel está en rojo.
+
+# SCRUM-1525c · BACKUP_EMAIL_DESTINO admite varias direcciones, separadas por comas
+
+**Medido contra:** `origin/main` = `123311beb24600b1db04371f83e3a67113e58de1` · 2026-11-25T01:45:12Z
+
+A9: comprobación → `tests/scrum1525c-varios-destinatarios.test.mjs`
+
+25-nov-2026 · **J6** (sesión `jv-j6ga`, equipo de Javier), por encargo del orquestador (`cobroflash-backend-2d`).
+Carril a mano, instrumentos (J6): `scripts/` y `tests/` del respaldo, como en 1525b.
+
+**El defecto.** El respaldo pasa `BACKUP_EMAIL_DESTINO` tal cual al transportador, y el de Resend
+(`crearTransportadorResend`) mandaba `to: [to]`: con «a, b» Resend recibía UNA dirección inválida y no
+llegaba nada, ni el respaldo ni el aviso de fallo. El camino SMTP (nodemailer) ya aceptaba la lista.
+
+**El arreglo.** `destinatariosDe(to)` en `scripts/aviso-programado-acreditacion-invoicing-es.mjs`: una cadena
+se parte por comas, se recorta y se quitan las piezas vacías; un array se respeta tal cual; cualquier otra
+cosa sale envuelta como antes. `destinosValidos()` en `scripts/respaldo-programado.mjs`: una pieza vacía o
+sin `@` invalida la lista entera, y `validarCorreo` la cuenta como «falta BACKUP_EMAIL_DESTINO». La cabecera
+de `respaldo-programado.mjs` dice ahora «una o varias, separadas por comas» (es un comentario).
+
+**Visto en rojo** (antes del arreglo, sobre el mismo test): 5 casos, 2 pasan y 3 caen: «a, b» salía como
+`'a@example.com, b@example.com'` (una cadena), el array salía anidado (`[[…]]`) y las listas rotas daban
+`ok: true`. Los dos que pasaban son el control negativo (una dirección, cuerpo byte a byte igual) y la lista
+válida. **Verde** tras el arreglo: 1525c + 1525b + 1109 juntos, TAP `tests 40 · pass 40 · fail 0 · skipped 0`.
+
+**Cambio en 1525b, declarado:** tres casos usaban `BACKUP_EMAIL_DESTINO: 'x'` como destino válido; con la
+regla nueva `'x'` no tiene `@` y ya no vale, así que pasan a `'a@example.com'`. No se relaja nada: el caso
+sigue pidiendo `ok: true` con un destino bien formado.
+
+Mutaciones: catálogo → `tests/scrum1525c-varios-destinatarios.test.mjs` (volver a `to: [to]`, y volver a
+`if (!env.BACKUP_EMAIL_DESTINO)`). **No las he corrido con el meta-guard en local**: las juzga el CI.
+
+**Lo que NO se ha medido:** ningún envío real (ni a Resend ni por SMTP); la tarea de Railway no se ha tocado;
+la suite entera NO se ha corrido en local (el encargo lo prohíbe), solo los ficheros nombrados.
+
+## Mis errores (1525c)
+
+Pasé de 125k de contexto (132,8k medido) antes de empujar, que es justo lo que el encargo marcaba como
+punto de empujar. No leí entera mi hoja de cicatrices de J6 (14 KB): la recorrí por palabras clave para
+no pasar el tope.

@@ -181,6 +181,10 @@ export const RECIBO_PORTAL_CSS: Readonly<Record<HojaDeReciboOPortal, string>> = 
   .pf-line-row:last-child { border-bottom: none; }
   .pf-line-concept { color: var(--body); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pf-line-amount { font-weight: 600; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  /* SCRUM-1786g · «Total del apartado»: misma fila, en negrita y con raya encima (como el PDF) */
+  .pf-apartado-total { border-top: 1px solid var(--border); }
+  .pf-apartado-total-concepto { color: var(--ink); font-weight: 600; flex: 1; min-width: 0; text-align: right; }
+  .pf-apartado-total-importe { font-weight: 700; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
 
   /* Request form */
   .pf-request-btn { background: linear-gradient(135deg,var(--brand-bright),var(--brand));

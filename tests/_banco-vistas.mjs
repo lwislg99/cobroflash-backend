@@ -560,7 +560,13 @@ export function nodo(tag, reg) {
     set hidden(v) { if (v) n._attrs.hidden = ''; else delete n._attrs.hidden; },
     getAttribute: (k) => (Object.prototype.hasOwnProperty.call(n._attrs, String(k)) ? n._attrs[String(k)] : null),
     hasAttribute: (k) => Object.prototype.hasOwnProperty.call(n._attrs, String(k)),
-    removeAttribute(k) { delete n._attrs[String(k)]; },
+    // 🔴 SCRUM-1821 · quitar un `data-*` lo quita TAMBIÉN de `dataset`, como en el navegador. Antes
+    // sólo salía de `_attrs`, y el selector `[data-x]` lee `dataset`: el nodo seguía casando con
+    // `[data-x]` después de que la vista se lo quitara (hallazgo de S4, 24-nov-2026).
+    removeAttribute(k) {
+      const clave = String(k); delete n._attrs[clave];
+      if (clave.startsWith('data-')) delete n.dataset[clave.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase())];
+    },
     querySelector: (s) => buscar(n, s, reg, true)[0] || null,
     querySelectorAll: (s) => buscar(n, s, reg, false),
     /** Como el del navegador: se mira a SÍ MISMO y luego sube. */

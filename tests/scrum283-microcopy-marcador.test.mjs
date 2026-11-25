@@ -52,7 +52,7 @@ const ROTULOS_APROBADOS = Object.freeze({
   btnBizum: 'Cobrar por Bizum',
   btnReminder: 'Enviar recordatorio de pago',
   btnRectify: 'Emitir factura rectificativa',
-  btnRegen: 'Volver a generar el PDF',
+  btnCancelarCobro: 'Cancelar cobro', // SCRUM-1532d · firmado por el fundador en SCRUM-1532 c.22430
 });
 
 test('SCRUM-283 · todo rótulo de acción del patrón es su texto APROBADO (ninguno inventado)', () => {

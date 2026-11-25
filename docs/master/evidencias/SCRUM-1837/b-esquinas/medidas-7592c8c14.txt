@@ -1,0 +1,129 @@
+═══ ① ROJO-PRIMERO · lo que el censo ve HOY de cada esquina ═══
+ficha del trabajo, dato del censo · pestañas: «Lo que falta» · «Partes» · «Albaranes» · «El trabajo»
+   ✅ la pestaña que la ficha abre SOLA al montar es «Partes» (se espera «Partes»)
+   ✅ el aviso del censo, reproducido pulsando las pestañas en su orden: «Partes»: igual que AL MONTAR
+   ✅ filas de partes en ese panel: 0 (se espera 0: el dato de muestra del Trabajo no lleva `partes`) · botones del panel: 1
+   ✅ con `partes` en el dato (forma de jobs.routes.ts:689-693): 2 filas, panel a la vista, 4 botones (abría sola «Partes»)
+   ✅ lo mismo como técnico: 2 filas, 3 botones (abría sola «Partes»)
+   ✅ lista de oficina, dato del censo: 12 nodos (< 20, el suelo del censo → «NO MEDIDA») · 1 fila
+   ✅ con 3 pendientes: 22 nodos (≥ 20) · 3 filas
+   ✅ pulsando la primera fila (el censo sólo sabe abrir pestañas): 1 fila marcada, 3 casillas de precio, 1 botón en el parte abierto
+
+═══ ② LAS SONDAS Y LA FUENTE ═══
+páginas medidas: 21 (7 estados × 3 anchuras: 390, 929, 1280) · vara: 44 px de toque
+   ✅ las tres sondas (corta, oculta, tapada), en cada página: 0 fallos
+   ✅ la fuente de la app cargada en cada página: 0 cegueras
+
+═══ ③ CONTROL POSITIVO · lo que el censo YA mide tiene que salir igual aquí ═══
+   ✅ renderJobDetailView @929 · medidos/cortos/ocultos/sinCaja/noTocables · censo 10/0/16/0/0 · aquí 10/0/16/0/0
+   ✅ renderJobDetailView @390 · medidos/cortos/ocultos/sinCaja/noTocables · censo 10/0/16/0/0 · aquí 10/0/16/0/0
+   ✅ renderParteDetailView @929 · medidos/cortos/ocultos/sinCaja/noTocables · censo 8/1/0/0/3 · aquí 8/1/0/0/3
+   ✅ renderParteDetailView @390 · medidos/cortos/ocultos/sinCaja/noTocables · censo 8/0/0/0/3 · aquí 8/0/0/0/3
+   ✅ filas comparadas: 4 de 4 (2 vistas × 929 y 390; a 1280 el censo no mide: sin contraste)
+
+═══ ④ LAS ESQUINAS, ELEMENTO A ELEMENTO ═══
+
+── K1 · CONTROL · ficha del trabajo, dato del censo · 121 nodos
+   @390: 10 medidos · 0 cortos · 16 ocultos · 0 sin caja · 0 no tocables
+   @929: 10 medidos · 0 cortos · 16 ocultos · 0 sin caja · 0 no tocables
+   @1280: 10 medidos · 0 cortos · 16 ocultos · 0 sin caja · 0 no tocables
+
+── K2 · CONTROL · ficha del parte, dato del censo · 104 nodos
+   @390: 8 medidos · 0 cortos · 0 ocultos · 0 sin caja · 3 no tocables
+      ⚠️ no tocable: INPUT «(sin texto)» → el detector no lo alcanza ni en su centro
+      ⚠️ no tocable: INPUT «(sin texto)» → el detector no lo alcanza ni en su centro
+      ⚠️ no tocable: INPUT «(sin texto)» → el detector no lo alcanza ni en su centro
+   @929: 8 medidos · 1 cortos · 0 ocultos · 0 sin caja · 3 no tocables
+      ⚠️ no tocable: INPUT «(sin texto)» → el detector no lo alcanza ni en su centro
+      ⚠️ no tocable: INPUT «(sin texto)» → el detector no lo alcanza ni en su centro
+      ⚠️ no tocable: INPUT «(sin texto)» → el detector no lo alcanza ni en su centro
+   @1280: 8 medidos · 0 cortos · 0 ocultos · 0 sin caja · 3 no tocables
+      ⚠️ no tocable: INPUT «(sin texto)» → el detector no lo alcanza ni en su centro
+      ⚠️ no tocable: INPUT «(sin texto)» → el detector no lo alcanza ni en su centro
+      ⚠️ no tocable: INPUT «(sin texto)» → el detector no lo alcanza ni en su centro
+   BUTTON.btn.btn-secondary «Volver al trabajo»
+      @390: caja 44 · toque 44.6 ✓ | @929: caja 36 · toque 36.8 🔴 CORTO | @1280: caja 44 · toque 44.6 ✓
+
+── P1 · ficha · «Partes» con 2 partes (firmado + borrador) · admin · 141 nodos
+   @390: 13 medidos · 0 cortos · 16 ocultos · 0 sin caja · 0 no tocables · EN LA ESQUINA: 4 medidos, 0 cortos
+   @929: 13 medidos · 0 cortos · 16 ocultos · 0 sin caja · 0 no tocables · EN LA ESQUINA: 4 medidos, 0 cortos
+   @1280: 13 medidos · 0 cortos · 16 ocultos · 0 sin caja · 0 no tocables · EN LA ESQUINA: 4 medidos, 0 cortos
+   BUTTON.btn-primary «+ Nuevo parte»
+      @390: caja 44 · toque 44.8 ✓ | @929: caja 44 · toque 44.9 ✓ | @1280: caja 44 · toque 44.9 ✓
+   BUTTON.detail-miga-link «PT-2026-0042»
+      @390: caja 44 · toque 45 ✓ | @929: caja 44 · toque 45 ✓ | @1280: caja 44 · toque 45 ✓
+   BUTTON.btn-secondary.btn-sm.job-toolbar-btn-44.parte-fila-presupuesto «+ Nuevo presupuesto»
+      @390: caja 44 · toque 44.8 ✓ | @929: caja 44 · toque 44.7 ✓ | @1280: caja 44 · toque 44.7 ✓
+   BUTTON.detail-miga-link «PT-2026-0041»
+      @390: caja 44 · toque 45 ✓ | @929: caja 44 · toque 45 ✓ | @1280: caja 44 · toque 45 ✓
+   fuera de la esquina, cortos: 0
+
+── P2 · ficha · «Partes» con 2 partes (firmado + borrador) · técnico · 106 nodos
+   @390: 11 medidos · 0 cortos · 10 ocultos · 0 sin caja · 0 no tocables · EN LA ESQUINA: 3 medidos, 0 cortos
+   @929: 11 medidos · 0 cortos · 10 ocultos · 0 sin caja · 0 no tocables · EN LA ESQUINA: 3 medidos, 0 cortos
+   @1280: 11 medidos · 0 cortos · 10 ocultos · 0 sin caja · 0 no tocables · EN LA ESQUINA: 3 medidos, 0 cortos
+   BUTTON.btn-primary «+ Nuevo parte»
+      @390: caja 44 · toque 44.8 ✓ | @929: caja 44 · toque 44.9 ✓ | @1280: caja 44 · toque 44.9 ✓
+   BUTTON.detail-miga-link «PT-2026-0042»
+      @390: caja 44 · toque 45 ✓ | @929: caja 44 · toque 45 ✓ | @1280: caja 44 · toque 45 ✓
+   BUTTON.detail-miga-link «PT-2026-0041»
+      @390: caja 44 · toque 45 ✓ | @929: caja 44 · toque 45 ✓ | @1280: caja 44 · toque 45 ✓
+   fuera de la esquina, cortos: 0
+
+── O1 · oficina · lista con 1 pendiente (dato del censo) · 12 nodos
+   @390: 1 medidos · 0 cortos · 0 ocultos · 0 sin caja · 0 no tocables · EN LA ESQUINA: 1 medidos, 0 cortos
+   @929: 1 medidos · 0 cortos · 0 ocultos · 0 sin caja · 0 no tocables · EN LA ESQUINA: 1 medidos, 0 cortos
+   @1280: 1 medidos · 0 cortos · 0 ocultos · 0 sin caja · 0 no tocables · EN LA ESQUINA: 1 medidos, 0 cortos
+   BUTTON.customers-card «PT-2026-0041Administración de Finc»
+      @390: caja 88 · toque 88.8 ✓ | @929: caja 68.6 · toque 69.6 ✓ | @1280: caja 68.6 · toque 69.6 ✓
+   fuera de la esquina, cortos: 0
+
+── O2 · oficina · lista con 3 pendientes · 22 nodos
+   @390: 3 medidos · 0 cortos · 0 ocultos · 0 sin caja · 0 no tocables · EN LA ESQUINA: 3 medidos, 0 cortos
+   @929: 3 medidos · 0 cortos · 0 ocultos · 0 sin caja · 0 no tocables · EN LA ESQUINA: 3 medidos, 0 cortos
+   @1280: 3 medidos · 0 cortos · 0 ocultos · 0 sin caja · 0 no tocables · EN LA ESQUINA: 3 medidos, 0 cortos
+   BUTTON.customers-card «PT-2026-0041Ana Ruiz · C/ Mayor 13»
+      @390: caja 68.6 · toque 69.6 ✓ | @929: caja 68.6 · toque 69.6 ✓ | @1280: caja 68.6 · toque 69.6 ✓
+   BUTTON.customers-card «PT-2026-0042Ana Ruiz · Av. del Pue»
+      @390: caja 68.6 · toque 69 ✓ | @929: caja 68.6 · toque 69 ✓ | @1280: caja 68.6 · toque 69 ✓
+   BUTTON.customers-card «PT-2026-0043Ana Ruiz · C/ Colón 81»
+      @390: caja 68.6 · toque 69.6 ✓ | @929: caja 68.6 · toque 69.6 ✓ | @1280: caja 68.6 · toque 69.6 ✓
+   fuera de la esquina, cortos: 0
+
+── O3 · oficina · 3 pendientes y el primero ABIERTO (3 líneas por valorar) · 54 nodos
+   @390: 7 medidos · 3 cortos · 0 ocultos · 0 sin caja · 0 no tocables · EN LA ESQUINA: 7 medidos, 3 cortos
+   @929: 7 medidos · 4 cortos · 0 ocultos · 0 sin caja · 0 no tocables · EN LA ESQUINA: 7 medidos, 4 cortos
+   @1280: 7 medidos · 4 cortos · 0 ocultos · 0 sin caja · 0 no tocables · EN LA ESQUINA: 7 medidos, 4 cortos
+   BUTTON.customers-card «PT-2026-0041Ana Ruiz · C/ Mayor 13»
+      @390: caja 68.6 · toque 69.6 ✓ | @929: caja 68.6 · toque 69.6 ✓ | @1280: caja 68.6 · toque 69.6 ✓
+   BUTTON.customers-card «PT-2026-0042Ana Ruiz · Av. del Pue»
+      @390: caja 68.6 · toque 69 ✓ | @929: caja 68.6 · toque 69 ✓ | @1280: caja 68.6 · toque 69 ✓
+   BUTTON.customers-card «PT-2026-0043Ana Ruiz · C/ Colón 81»
+      @390: caja 68.6 · toque 69.6 ✓ | @929: caja 68.6 · toque 69.6 ✓ | @1280: caja 68.6 · toque 69.6 ✓
+   INPUT.po-col-precio «(sin texto)»
+      @390: caja 20 · toque 21 🔴 CORTO | @929: caja 20 · toque 21 🔴 CORTO | @1280: caja 20 · toque 21 🔴 CORTO
+   INPUT.po-col-precio «(sin texto)»
+      @390: caja 20 · toque 21 🔴 CORTO | @929: caja 20 · toque 21 🔴 CORTO | @1280: caja 20 · toque 21 🔴 CORTO
+   INPUT.po-col-precio «(sin texto)»
+      @390: caja 20 · toque 21 🔴 CORTO | @929: caja 20 · toque 21 🔴 CORTO | @1280: caja 20 · toque 21 🔴 CORTO
+   BUTTON.btn-primary «Guardar precios»
+      @390: caja 44 · toque 44.7 ✓ | @929: caja 36 · toque 36.9 🔴 CORTO | @1280: caja 36 · toque 36.9 🔴 CORTO
+   fuera de la esquina, cortos: 0
+
+═══ EL NÚMERO ═══
+   mediciones dentro de las dos esquinas (estado × anchura × elemento): 54
+   de ellas, por debajo de 44 px: 11
+   🔴 O3 @390 · INPUT.po-col-precio «(sin texto)» · caja 20 · toque 21
+   🔴 O3 @929 · INPUT.po-col-precio «(sin texto)» · caja 20 · toque 21
+   🔴 O3 @1280 · INPUT.po-col-precio «(sin texto)» · caja 20 · toque 21
+   🔴 O3 @390 · INPUT.po-col-precio «(sin texto)» · caja 20 · toque 21
+   🔴 O3 @929 · INPUT.po-col-precio «(sin texto)» · caja 20 · toque 21
+   🔴 O3 @1280 · INPUT.po-col-precio «(sin texto)» · caja 20 · toque 21
+   🔴 O3 @390 · INPUT.po-col-precio «(sin texto)» · caja 20 · toque 21
+   🔴 O3 @929 · INPUT.po-col-precio «(sin texto)» · caja 20 · toque 21
+   🔴 O3 @1280 · INPUT.po-col-precio «(sin texto)» · caja 20 · toque 21
+   🔴 O3 @929 · BUTTON.btn-primary «Guardar precios» · caja 36 · toque 36.9
+   🔴 O3 @1280 · BUTTON.btn-primary «Guardar precios» · caja 36 · toque 36.9
+   NO MEDIDO y dicho: la lista de oficina VACÍA (no tiene nada que tocar) · el parte abierto de un parte ya FACTURADO (casillas deshabilitadas, sin botón) · la ficha de un Trabajo CERRADO (la barra de «Partes» va oculta) · los estados de error con «Reintentar».
+
+✅ SALIDA 0: medido entero; los cortos, si los hay, están listados.

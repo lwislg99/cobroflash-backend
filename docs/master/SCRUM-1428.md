@@ -114,3 +114,33 @@ Las 33 de hoy, por fichero y por si su firma consta en algún sitio que se pueda
 - Aplicar el parche: es J1, en un PR suyo con los dos ficheros.
 - Las tres de Cobros: son J2; las marcas serían `// APROBADA (asesor, 10-ago-2026): docs/master/SCRUM-285.md:NNN`, si se acepta esa procedencia.
 - No he leído todo Jira buscando firmas de `card:stripe`/`manual` y de los seis del QR: el registro congelado, `docs/microcopy/`, SCRUM-230, SCRUM-285, SCRUM-398 y los registros de 285/398/481/488. «Con razón» quiere decir «sin firma en esos sitios».
+
+# SCRUM-1428c · La opción (a) aplicada en main, rehecha por clave: 15 firmas en su línea y el censo de 33 a 18 · **Skill UI:** cargada (`yaqu-premium-ui`; sólo comentarios, cero píxeles: el checklist AB6 no aplica)
+
+**Medido contra:** `origin/main` = `e7be8c3d897e266cd26c80815065476ec2cc8f99` · 2026-11-24T12:08:39Z
+
+A9: aviso → cicatriz J1 «Crucé el tope de 150k del encargo (159.962) sin medirme entre el arranque (120.284) y el censo; lo avisé al medir, ya cruzado (SCRUM-1428c, jv-j1jt)» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
+
+24-nov-2026 · **J1** (jv-j1jt), encargo del orquestador `cobroflash-backend-2d`. Aplica el parche de 1428b, que ya no casaba: `git apply --check` cae en las DOS mitades (la vista, porque SCRUM-1051h metió `colIsp`/`valorIsp`; el JSON, por contexto). Rehecho a mano **por identidad**, no por número de línea.
+
+## Lo que cambia
+- `public/dashboard/js/libroRegistroView.js`: 15 marcas `// APROBADA (fundador, 19-ago-2026): docs/MICROCOPY_APROBADA_SIN_APLICAR.md:NNN (SCRUM-709)`, cada una al final de la línea de SU clave. Antes de marcar, comprobé las 15 contra el registro congelado (sin cambios desde `2b9d91ae9`, 3-sep): `:362` `titulo`, `:364` `recuento`, `:365-371` las siete `col*`, `:372` `trazaCobro`, `:402-403` las dos `trazaPresupuesto*`, `:432` `error`, `:433` `vacioDeVerdad`, `:435` `trazaAlbaran`; el literal de cada una en main es el del registro. **Ninguna clave del parche falta en main ni cambió de texto: no queda ninguna sin marcar.** Las 15 líneas de código salen y vuelven idénticas sin la marca (`git diff`: 15 `-` y 15 `+`, par a par).
+- La cabecera (`:25-27` en main) decía «Ni un rótulo de esta pantalla está aprobado». Ahora dice lo de hoy: 17 aprobados el 19-ago (15 con la cita en su línea; `colTrazas` y `sinTrazas` en el comentario de encima, como ya estaban), `colIsp`/`valorIsp` firmados el 12-nov (SCRUM-1051 c.21750, que el parche de 1428b no podía conocer), `menu` retirada (`:414`), `cargando` común (c.18325), y el resto con el marcador. Es un comentario: ningún texto que ve el usuario cambia.
+- `scripts/_censo-convenio-microcopy-declarados.json`: las 15 salen de `acusadas` y entran en `retiradas`, con el `motivo` copiado del parche de 1428b. Lo movió un guion de un solo uso que casa por `id`, se niega si el fichero no redondea byte a byte con `JSON.stringify(…, null, 2)` y si alguna de las 15 falta o ya estaba retirada. `git diff --numstat`: 60 fuera, 60 dentro (15 × 4 líneas), nada más.
+
+## El censo 1157, medido (`node scripts/_censo-convenio-microcopy.mjs --raiz <copia sin .git de e7be8c3d8>`)
+
+| | main | sólo las marcas | sólo el JSON | las dos (esta rama) |
+|---|---|---|---|---|
+| hojas | 369 | 369 | 369 | 369 |
+| APROBADO | 336 | 351 | 336 | **351** |
+| acusadas | 33 | 18 | 33 | **18** |
+| nuevas · sobran | 0 · 0 | 0 · **15** | **15** · 0 | **0 · 0** |
+| salida | 0 | 1 | 1 | **0** |
+
+- Las dos mitades por separado salen ROJAS: por eso van juntas. Ése es el positivo: el censo VE las 15 marcas (columna 2) y las 15 retiradas (columna 3).
+- 🔴 El control que decide: los 7 del libro sin firma **siguen acusados** (`avisoAjenas`, `avisoIlegibles`, `avisoSinNumero`, `cargando`, `descuadre`, `menu`, `trazaNoSellado`), y la lista de 18 es la misma de `evidencias/SCRUM-1428/1428b/censo-con-propuesta.txt`. Lo que difiere de aquel fichero es la población (353 → 369 hojas, 100 → 103 ficheros): main creció desde el 2-nov.
+
+## Lo que NO está hecho
+- **La dirigida del encargo, entera:** crucé el tope de contexto y empujé con una reducida (los resultados, en el comentario de Jira de este tramo). No corridos: `scrum1415`, `scrum719` (y `censo:mudez`), y la mayoría de los 23 ficheros de `tests/` que nombran `libroRegistroView`. Ni la suite entera.
+- Las tres acusadas en falso de Cobros (J2) y la duda sobre la firma «asesor» del 10-ago: siguen como las dejó 1428b ②.

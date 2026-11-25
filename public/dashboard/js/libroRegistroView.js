@@ -22,9 +22,14 @@
 // el número de factura delante.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// MICROCOPY: TODAS LAS RANURAS VAN MARCADAS (regla 30)
+// MICROCOPY: CADA RANURA DICE SU ESTADO (regla 30)
 //
-// Ni un rótulo de esta pantalla está aprobado. Cada uno sale con `[PENDIENTE microcopy oficial]`
+// 17 rótulos de esta pantalla los aprobó el fundador el 19-ago-2026, en tres addenda del registro
+// congelado de SCRUM-709 (`docs/MICROCOPY_APROBADA_SIN_APLICAR.md` :355, :396 y :425): 15 llevan
+// la cita en su misma línea (SCRUM-1428c) y `colTrazas` y `sinTrazas`, en el comentario de encima.
+// `colIsp` y `valorIsp` los firmó Javier el 12-nov-2026 (SCRUM-1051 c.21750). `menu` no tiene
+// aprobación (se retiró el 19-ago, registro :414) y `cargando` es la cadena común del panel
+// (SCRUM-1428 c.18325). Los que esperan al asesor salen con `[PENDIENTE microcopy oficial]`
 // DELANTE del texto, no en vez de él: con el marcador solo, «no tienes facturas» y «el libro no
 // cuadra» dirían LO MISMO, y son justo los dos mensajes que esta pantalla existe para no
 // confundir. El guard (`tests/scrum296-pantalla-libro.test.mjs`) compara ranura a ranura contra
@@ -48,15 +53,15 @@
   function rotulo(t) { return MARCADOR + ' ' + t; }
 
   const COPY = {
-    titulo: 'Libro registro de facturas expedidas',
+    titulo: 'Libro registro de facturas expedidas', // APROBADA (fundador, 19-ago-2026): docs/MICROCOPY_APROBADA_SIN_APLICAR.md:362 (SCRUM-709)
     menu: 'Libro de registro',
     cargando: 'Cargando…', // NO es de este ticket: cadena ya usada en invoicesView.js, copiada tal cual
     // SCRUM-1232 · firmado SÓLO junto al filtro de justificantes (comentario 17435): con él, el
     // recuento cuenta facturas de verdad y la frase es cierta. Antes decía «1 facturas».
-    recuento: (n) => n === 1 ? '1 factura' : n + ' facturas',
-    error: 'No se ha podido cargar el libro. Vuelve a intentarlo.',
+    recuento: (n) => n === 1 ? '1 factura' : n + ' facturas', // APROBADA (fundador, 19-ago-2026): docs/MICROCOPY_APROBADA_SIN_APLICAR.md:364 (SCRUM-709)
+    error: 'No se ha podido cargar el libro. Vuelve a intentarlo.', // APROBADA (fundador, 19-ago-2026): docs/MICROCOPY_APROBADA_SIN_APLICAR.md:432 (SCRUM-709)
     // Los dos vacíos, que existen para NO decir lo mismo:
-    vacioDeVerdad: 'Todavía no has emitido ninguna factura.',
+    vacioDeVerdad: 'Todavía no has emitido ninguna factura.', // APROBADA (fundador, 19-ago-2026): docs/MICROCOPY_APROBADA_SIN_APLICAR.md:433 (SCRUM-709)
     descuadre: (miradas) => rotulo(
       'El libro no cuadra: se han revisado ' + miradas + ' facturas y no ha salido ningún asiento. '
       + 'No lo tomes como que no has facturado.'),
@@ -65,28 +70,28 @@
       + 'No los tomes por cero: escríbenos y los revisamos.'),
     avisoAjenas: rotulo('Se han descartado facturas que no son de este negocio.'),
     avisoSinNumero: (n) => rotulo(n + (n === 1 ? ' factura sin número no aparece como asiento.' : ' facturas sin número no aparecen como asiento.')),
-    colNumero: 'Número',
-    colFecha: 'Fecha',
-    colTipo: 'Tipo',
-    colBase: 'Base',
-    colCuota: 'IVA',
+    colNumero: 'Número', // APROBADA (fundador, 19-ago-2026): docs/MICROCOPY_APROBADA_SIN_APLICAR.md:365 (SCRUM-709)
+    colFecha: 'Fecha', // APROBADA (fundador, 19-ago-2026): docs/MICROCOPY_APROBADA_SIN_APLICAR.md:366 (SCRUM-709)
+    colTipo: 'Tipo', // APROBADA (fundador, 19-ago-2026): docs/MICROCOPY_APROBADA_SIN_APLICAR.md:367 (SCRUM-709)
+    colBase: 'Base', // APROBADA (fundador, 19-ago-2026): docs/MICROCOPY_APROBADA_SIN_APLICAR.md:368 (SCRUM-709)
+    colCuota: 'IVA', // APROBADA (fundador, 19-ago-2026): docs/MICROCOPY_APROBADA_SIN_APLICAR.md:369 (SCRUM-709)
     // SCRUM-1051h · P3, FIRMADA (SCRUM-1051 c.21750 punto 5): la columna y su valor, literales; los
     // mismos de `COPY_ISP_COLUMNA` / `COPY_ISP_VALOR_SI` del servidor. Para «no» no hay texto: vacía.
     colIsp: 'ISP',
     // APROBADO por Javier (jefe J; vale como fundador según dos-equipos.md), 12-nov-2026, SCRUM-1051 c.21750 punto 5
     valorIsp: 'Sí',
-    colTotal: 'Total',
-    colEstado: 'Estado',
+    colTotal: 'Total', // APROBADA (fundador, 19-ago-2026): docs/MICROCOPY_APROBADA_SIN_APLICAR.md:370 (SCRUM-709)
+    colEstado: 'Estado', // APROBADA (fundador, 19-ago-2026): docs/MICROCOPY_APROBADA_SIN_APLICAR.md:371 (SCRUM-709)
     // 19-ago-2026 · APROBADA con su frase larga, y el criterio se anota porque alguien lo
     // rediscutira: es la UNICA cabecera de esta tabla que no es un termino fiscal. Las otras siete
     // —Numero, Fecha, Tipo, Base, IVA, Total, Estado— las impone la norma; esta no.
     colTrazas: 'De dónde viene y dónde acabó',
-    trazaPresupuestoFirmado: 'Presupuesto firmado',
-    trazaPresupuestoSinFirmar: 'Presupuesto sin firmar',
+    trazaPresupuestoFirmado: 'Presupuesto firmado', // APROBADA (fundador, 19-ago-2026): docs/MICROCOPY_APROBADA_SIN_APLICAR.md:402 (SCRUM-709)
+    trazaPresupuestoSinFirmar: 'Presupuesto sin firmar', // APROBADA (fundador, 19-ago-2026): docs/MICROCOPY_APROBADA_SIN_APLICAR.md:403 (SCRUM-709)
     // ⚠️ El literal es solo «Albarán»: el numero se concatena al pintar (`:328`), asi que lo que
     // se aprobo —«Albarán {número}»— es el RESULTADO, no esta cadena.
-    trazaAlbaran: 'Albarán',
-    trazaCobro: 'Cobro',
+    trazaAlbaran: 'Albarán', // APROBADA (fundador, 19-ago-2026): docs/MICROCOPY_APROBADA_SIN_APLICAR.md:435 (SCRUM-709)
+    trazaCobro: 'Cobro', // APROBADA (fundador, 19-ago-2026): docs/MICROCOPY_APROBADA_SIN_APLICAR.md:372 (SCRUM-709)
     trazaNoSellado: rotulo('Albarán posterior al sello'),
     // 19-ago-2026 · APROBADA, y el criterio importa: «factura suelta» YA es el vocabulario del
     // codigo (`facturaSuelta.ts`, `modoDocumentoSuelto`). Un sinonimo nuevo habria creado DOS

@@ -171,11 +171,24 @@ router.post('/test-login', testLoginGate, testLoginLimiter, async (req, res, nex
     const merchant = await prisma.merchant.findUnique({ where: { email } });
     if (!merchant) return next(); // la cuenta la crea el seed → 404 estándar
 
+    // SCRUM-1555b (decisión del fundador, SCRUM-1555 c.22569): `miembro`, opcional, es el correo de
+    // un miembro de equipo YA EXISTENTE de ESE comercio; la sesión lleva su teamMemberId y, con él, su
+    // rol (requireAuth lo lee de la fila). Sin `miembro`, la propietaria como siempre. No crea, no
+    // activa a nadie y no manda correos. Suspendido = inexistente, como en el magic link.
+    const miembro = String(req.body?.miembro || '').toLowerCase().trim();
+    let teamMemberId: number | null = null;
+    if (miembro) {
+      const tm = await prisma.teamMember.findFirst({ where: { email: miembro, merchantId: merchant.id }, select: { id: true, status: true } });
+      // SCRUM-1555c: `message` firmado por el fundador (regla 39), SCRUM-1555 c.22642.
+      if (!tm || tm.status === 'suspended') return res.status(404).json({ error: 'team_member_not_found', message: 'No hay ningún miembro del equipo con ese correo en esta cuenta.' });
+      teamMemberId = tm.id;
+    }
+
     // Sesión real reutilizando las primitivas existentes (mismo type='session' + cookie
     // pf_session de authMiddleware). TTL corto de QA: 24 h (no los 30 días del flujo real).
     const token = crypto.randomBytes(32).toString('hex');
     await prisma.authSession.create({
-      data: { merchantId: merchant.id, token, type: 'session', expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
+      data: { merchantId: merchant.id, teamMemberId, token, type: 'session', expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
     });
     setCookie(res, token);
     return res.json({ ok: true }); // el token viaja SOLO en la cookie HttpOnly

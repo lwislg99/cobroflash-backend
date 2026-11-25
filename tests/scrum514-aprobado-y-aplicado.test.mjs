@@ -318,6 +318,13 @@ const DEL_MODAL_RETIRADO = [
 const APARCADOS = [
   ...DEL_MODAL_RETIRADO.map((texto) => ({ texto, motivo: MOTIVO_MODAL_RETIRADO })),
   {
+    texto: 'Volver a generar el PDF',
+    motivo: 'RETIRADO POR DECISIÓN DEL FUNDADOR (SCRUM-665 c.21182 punto 3, 27-oct-2026). Era el '
+      + 'botón «Regenerar PDF» de la factura emitida: el PDF de una emitida se genera una vez y se '
+      + 'sirve siempre ése (SCRUM-665e), así que el botón y su ruta `regenerate-pdf` se retiran. NO se '
+      + 'desaprueba en el registro —la firma ocurrió—. Registro del ticket: `docs/master/SCRUM-665.md`.',
+  },
+  {
     texto: 'Crear una factura nueva',
     motivo: 'RETIRADO POR DECISIÓN DEL FUNDADOR (SCRUM-875, 16-sep-2026). Era el `aria-label` del '
       + 'diálogo de «Nueva factura», servido por `rotulosDelDocumento.ariaDialogo()`. Su único '
@@ -772,7 +779,8 @@ test('SCRUM-514 · SUELO: la fuente se lee y tiene textos de sobra', () => {
 test('SCRUM-514 · SUELO: el cruce sabe decir SÍ y sabe decir NO', () => {
   // Sin esto, un «cero sin aplicar» podría ser un corpus vacío que lo contiene todo o nada.
   const { texto } = corpus();
-  assert.equal(texto.includes('Volver a generar el PDF'), true,
+  // SCRUM-665e: antes era «Volver a generar el PDF», retirado con su botón (c.21182 punto 3).
+  assert.equal(texto.includes('Emitir factura rectificativa'), true,
     '🔴 el cruce no encuentra un texto que SÍ está aplicado: no sabría distinguir.');
   assert.equal(texto.includes('Texto que nadie ha aprobado jamas 9x7'), false,
     '🔴 el cruce encuentra un texto inventado: está diciendo que sí a todo.');

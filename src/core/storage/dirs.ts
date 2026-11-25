@@ -7,7 +7,16 @@ import path from 'path';
 // enumerables (2026-CF-001, -002…): cualquiera podía descargar documentos ajenos sin login.
 // Llevan NIF del emisor, datos del cliente e importes. Se sirven SOLO por los endpoints
 // autenticados GET /admin/invoices/:id/pdf y GET /admin/quotes/:id/pdf (auth + tenancy).
-export const invoicesDir = path.join(process.cwd(), 'storage', 'invoices');
+// SCRUM-665e: en producción los PDF de factura viven en el volumen de Railway (montado en /data).
+function raizDeFacturas(): string {
+  const volumen = process.env.RAILWAY_VOLUME_MOUNT_PATH;
+  if (volumen) return path.join(volumen, 'invoices');
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('[SCRUM-665e] Falta RAILWAY_VOLUME_MOUNT_PATH: sin volumen, los PDF de factura irían a disco efímero. Arranque abortado.');
+  }
+  return path.join(process.cwd(), 'storage', 'invoices');
+}
+export const invoicesDir = raizDeFacturas();
 // SCRUM-96 (seguridad/RGPD): outboxDir vivía DENTRO de `public/` — los .eml de fallback
 // (email completo + PDF adjunto en base64, nombre enumerable: quote-1.eml, invoice-2026-CF-
 // 001.eml) quedaban servidos sin auth por express.static(public/). Mismo patrón que SCRUM-72

@@ -35,15 +35,17 @@ import path from 'node:path';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
-import { viasDeCobro } from '../dist/modules/billing/domain/viasDeCobro.js';
-import { decidirAvisoBizum } from '../dist/modules/billing/domain/avisoBizumSinTelefono.js';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
 const PUBLIC = path.join(RAIZ, 'public');
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
-import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
+import { veredictoDe, vigilarArranque } from './_hallazgos-y-ciegos.mjs';
+// SCRUM-1846 · lo de dist/ va DESPUÉS de vigilarArranque(): sin dist/, sale con 2 y no con 1.
+vigilarArranque();
+const { viasDeCobro } = await import('../dist/modules/billing/domain/viasDeCobro.js');
+const { decidirAvisoBizum } = await import('../dist/modules/billing/domain/avisoBizumSinTelefono.js');
 // SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
 // los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
 // hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
@@ -61,6 +63,12 @@ let PUERTO = Number(process.env.VIAS_PUERTO || 0);
 const ETIQUETA_FILA = 'Cobro por transferencia o Bizum';
 
 const JS = [
+  // SCRUM-1789 · desde 6727eb7e0 (SCRUM-1781b) `settingsView.js` monta el teléfono con
+  // `telefonoConPrefijo` (nivel superior de `onboardingView.js`) y `window.prefijosPais`.
+  // Sin ellos, renderSettingsView lanzaba y este guard salía CIEGO en cada run de CI.
+  // Mismo orden que `index.html` (272 y 275, antes que 362-364).
+  '/dashboard/js/onboardingView.js',
+  '/dashboard/js/prefijosPais.js',
   '/dashboard/js/settingsSubmenus.js',
   '/dashboard/js/puertaSerie.js',
   '/dashboard/js/settingsView.js',

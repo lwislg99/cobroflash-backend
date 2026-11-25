@@ -114,10 +114,57 @@ function pintarFechaDeCobro(contenedor, opts) {
   return input;
 }
 
+// SCRUM-1316l · IVA AL 10 % Y MEDIO DE COBRO (RDL 29/2026, desde el 1-dic-2026). Decisión del fundador
+// en SCRUM-1316 c.22438: con alguna línea al 10 %, declarar el medio al marcar cobrada es OBLIGATORIO;
+// sin ella, todo sigue como antes. El servidor lo hace cumplir (`invoiceAdmin.ts`); la pantalla solo
+// lo adelanta. T4 es un AVISO, no un bloqueo: el tipo lo fijó el profesional al emitir (D3 de c.22424).
+const COPY_IVA_10 = {
+  eligeMetodo: 'Elige cómo lo has cobrado: en esta factura hay IVA al 10 %.', // APROBADO por Javier el 24-nov-2026 (SCRUM-1316 comentario 22438)
+  avisoEfectivo: 'Desde el 1 de diciembre de 2026, el IVA del 10 % en obras de vivienda solo se aplica si el cliente paga con tarjeta, transferencia bancaria, cheque nominativo o ingreso en cuenta. Si cobras en efectivo, consúltalo con tu asesor.', // APROBADO por Javier el 23-nov-2026 (SCRUM-1316 comentario 22424; en la ficha de factura, SCRUM-1316 comentario 22438)
+};
+
+/**
+ * ¿Lleva la factura ALGUNA línea al 10 %? PURO. Misma regla que `llevaLineaAlDiez` del servidor:
+ * `tax` en fracción, comparado en porcentaje a dos decimales, y las cabeceras de apartado no cuentan.
+ */
+function llevaLineaAlDiez(lines) {
+  if (!Array.isArray(lines)) return false;
+  return lines.some((l) => {
+    if (!l || l.apartado === true) return false; // la marca de `quoteApartados.js` (MARCA_APARTADO)
+    const t = Number(l.tax);
+    return Number.isFinite(t) && Math.round(t * 10000) / 100 === 10;
+  });
+}
+
+/**
+ * ¿Se enseña T4? Solo con línea al 10 % y un medio de los que el SERVIDOR sirve con aviso
+ * (`metodosConAvisoIvaAlDiez` del detalle de la factura). PURO. La pantalla no escribe valores del
+ * conjunto cerrado (regla 22, `scrum441`): sin lista servida, no hay aviso.
+ */
+function avisoDeEfectivoVisible(conDiez, metodo, conAviso) {
+  return !!conDiez && !!metodo && Array.isArray(conAviso) && conAviso.includes(metodo);
+}
+
+/**
+ * Lo que dice el lote cuando el servidor dejó fuera facturas con línea al 10 % (`sinMetodo`). PURO.
+ * Sin ninguna fuera, devuelve `r` tal cual. Si no se marcó ninguna, el motivo es SOLO T3 (el
+ * «ya estaban pagadas o anuladas» de siempre sería falso); si se marcaron otras, se dicen las dos cosas.
+ */
+function resultadoConIvaAlDiez(r, data) {
+  const fuera = data && Array.isArray(data.sinMetodo) ? data.sinMetodo.length : 0;
+  if (!fuera) return r;
+  if (!r.seMarcaron) return { tono: 'error', texto: COPY_IVA_10.eligeMetodo, seMarcaron: false };
+  return { tono: 'warning', texto: r.texto + ' ' + COPY_IVA_10.eligeMetodo, seMarcaron: true };
+}
+
+// Un `const` de nivel superior NO es propiedad de `window`: la ficha (`invoiceDetailView.js`) lo lee por aquí.
+if (typeof window !== 'undefined') window.COPY_IVA_10 = COPY_IVA_10;
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     COPY_BULK_PAGADAS, resultadoMarcadoEnBloque, textoMarcadas,
     COPY_FECHA_DE_COBRO, fechaDeCobroElegida, cuerpoConFechaDeCobro,
+    COPY_IVA_10, llevaLineaAlDiez, avisoDeEfectivoVisible, resultadoConIvaAlDiez,
   };
 }
 
@@ -481,7 +528,7 @@ async function fetchInvoices(options = {}) {
     tableScroll.className = 'table-scroll';
     panelEmitidas.appendChild(tableScroll);
     const table = document.createElement('table');
-    table.className = 'table table--cards-mobile'; // feedback fundador 6-jul: cards en móvil
+    table.className = 'table table--cards-mobile j1-fac-lista'; // feedback fundador 6-jul: cards en móvil · j1-fac-lista: SCRUM-1787n
     tableScroll.appendChild(table);
 
     // Checkbox "seleccionar todo" en cabecera
@@ -491,11 +538,12 @@ async function fetchInvoices(options = {}) {
         <th class="col-hide-mobile j1-fac-col-check"><input type="checkbox" id="inv-check-all" title="Seleccionar todas"/></th>
         <th>${window.rotulosDelDocumento.columnaNumero()}</th>
         <th>Cliente</th>
-        <th class="j1-fac-col-total">Total</th>
+        <th>Fecha</th>
+        <th class="j1-fac-col-total">Importe</th>
         <th>Estado</th>
-        <th class="col-hide-mobile">Fecha</th>
+        <th class="col-hide-mobile">Método</th>
         <th class="col-hide-mobile">${FC.TEXTOS_ETIQUETAS.columna}</th>
-        <th></th>
+        <th>Acciones</th>
       </tr>
     `;
     table.appendChild(thead);
@@ -594,7 +642,8 @@ async function fetchInvoices(options = {}) {
       let recargaOk = false;
       try { recargaOk = await reload(); } catch { recargaOk = false; }
 
-      const r = resultadoMarcadoEnBloque({ escrituraOk: true, recargaOk, marcadas: data.updated });
+      // SCRUM-1316l · las de IVA al 10 % vuelven en `sinMetodo`, sin marcar, con T3.
+      const r = resultadoConIvaAlDiez(resultadoMarcadoEnBloque({ escrituraOk: true, recargaOk, marcadas: data.updated }), data);
       statusBox.textContent = r.texto;
       statusBox.className = 'alert ' + r.tono;
       statusBox.style.display = 'block';
@@ -753,7 +802,6 @@ async function fetchInvoices(options = {}) {
           tdTotal.className = 'amount cell-amount';
           tdTotal.style.textAlign = 'right';
           tdTotal.textContent = fmtInvMoney(inv.total, inv.currency);
-          tr.appendChild(tdTotal);
 
           const tdStatus = document.createElement('td');
           tdStatus.className = 'cell-status';
@@ -764,13 +812,31 @@ async function fetchInvoices(options = {}) {
           span.className = `status-pill ${metaSt.pillClass}`;
           span.textContent = metaSt.label;
           tdStatus.appendChild(span);
+
+          // ── SCRUM-1787n · LAS COLUMNAS Y SU ORDEN, LOS DE LA LISTA DE PRESUPUESTOS ─────────────
+          // Orden del fundador (SCRUM-1787): «igual, o solamente lo estrictamente necesario
+          // diferente, que presupuestos». La referencia es `quotesListView.js` (S2): Nº · Cliente ·
+          // Fecha · Importe · Estado · Método · Etiquetas · Acciones. Lo que se queda distinto, con
+          // su porqué, está en la cabecera de `tests/scrum1787n-lista-de-facturas-como-presupuestos.test.mjs`
+          // (casilla del lote, rótulo del número de serie, peso de «Ver detalle», estados).
+          // La fecha, con la clase y el formato de la de presupuestos: en móvil entra en la tarjeta.
+          const tdDate = document.createElement('td');
+          tdDate.className = 'cell-date';
+          tdDate.style.color = 'var(--muted)';
+          tdDate.textContent = inv.createdAt
+            ? new Date(inv.createdAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
+            : '';
+          tr.appendChild(tdDate);
+          tr.appendChild(tdTotal);
           tr.appendChild(tdStatus);
 
-          const tdDate = document.createElement('td');
-          tdDate.className = 'col-hide-mobile';
-          tdDate.style.color = 'var(--muted)';
-          tdDate.textContent = inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('es-ES') : '—';
-          tr.appendChild(tdDate);
+          // «Método»: cómo se cobró, con la etiqueta de la casa (`paidViaEtiquetas.js`, la misma de
+          // la ficha, `invoiceDetailView.js`). Sin cobro, el «—» de presupuestos sin método.
+          const tdMetodo = document.createElement('td');
+          tdMetodo.className = 'col-hide-mobile';
+          tdMetodo.style.color = 'var(--muted)';
+          tdMetodo.textContent = inv.paidVia ? window.etiquetaMetodoCobro(inv.paidVia) : '—';
+          tr.appendChild(tdMetodo);
 
           // SCRUM-595 · las etiquetas, con `.badge .badge-slate` del inventario (AB3): cero
           // tokens nuevos. `textContent` por etiqueta, nunca `innerHTML`: la escribe el

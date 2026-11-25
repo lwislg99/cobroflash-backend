@@ -42,6 +42,27 @@
 #puerta-serie .j1-ps-guardar { min-height:44px; margin-top:14px; display:none; }
 /* J1: fin del bloque SCRUM-1756j */
 
+/* J1: SCRUM-1849 · la LISTA de facturas (`invoicesView.js`) a 44 px de toque (AB6), por contenedor
+   como 1559j y 1843, sólo tamaño: `.input`, `.btn-primary` y `.btn-sm` globales no se tocan, ni el JS.
+   El ancla es la tarjeta que contiene `.j1-fac-lista` (la tabla, clase que sólo escribe esta lista).
+   Curados: «Nueva factura» (37 en escritorio), los campos de filtros (35-37), la fecha del lote (36,6)
+   y dos primarias pequeñas que nacen ocultas, «✓ Marcar como pagadas» del lote y la del estado vacío
+   (30,8-30,9). Las casillas no crecen: su `::before` les da 13 + 2 × 16 = 45 de toque (como 1559j).
+   EXENTOS por SCRUM-1845 c.22728 (`.btn-sm` que no es la primaria): «⬇ CSV», «Ver detalle» y
+   «Cancelar» del lote. Pesa (0,4,0) o más y gana a `.btn.btn-sm` (0,2,0) aunque vaya arriba.
+   Lo mide en navegador `tests/scrum1849-lista-facturas-44.test.mjs`. */
+.data-card:has(.j1-fac-lista) > .data-card-header > .btn-primary,
+.data-card:has(.j1-fac-lista) > div > .data-card-toolbar > .input,
+.data-card:has(.j1-fac-lista) .j1-bulk-count ~ .form-group > .input,
+.data-card:has(.j1-fac-lista) .j1-bulk-count ~ .btn-primary,
+.data-card:has(.j1-fac-lista) .j1-fac-lista .btn-primary.j1-fac-vacio-cta { min-height:44px; }
+.data-card:has(.j1-fac-lista) .j1-fac-lista input[type="checkbox"] { position:relative; }
+.data-card:has(.j1-fac-lista) .j1-fac-lista input[type="checkbox"]::before { content:""; position:absolute; inset:-16px -6px; }
+/* La de la cabecera está a ~11 px del borde de `.table-scroll`, que recorta: con -16 arriba medía 40.
+   Mismos 45 px, corridos hacia abajo (la primera fila empieza más allá de esos 22). */
+.data-card:has(.j1-fac-lista) .j1-fac-lista .j1-fac-col-check > input[type="checkbox"]::before { inset:-10px -6px -22px; }
+/* J1: fin del bloque SCRUM-1849 */
+
 /* J1: SCRUM-1787b · línea de progreso de la ficha de factura (Emitida → Enviada → Cobrada).
    La misma forma que `buildStatusTimeline` del presupuesto, con clases y no con style= (CSP).
    Hecho = verde de marca; actual = anillo info; pendiente = neutro; final (ANULADA / RECTIFICATIVA)
@@ -73,6 +94,24 @@
 .j1-prog-paso--final .j1-prog-rotulo { color:var(--red-600); font-weight:700; letter-spacing:.02em; }
 .j1-prog-fecha { font-size:11px; color:var(--muted); }
 /* J1: fin del bloque SCRUM-1787b */
+
+/* J1: SCRUM-1787n · lista de facturas con las columnas de la de presupuestos. Lleva una columna más
+   (la casilla del lote) y a 1280 px el número de serie, el importe, la fecha y la píldora de estado se partían en dos
+   líneas («PENDIENT/E»): medido en `evidencias/SCRUM-1787/1787n-listas-despues-escritorio.png`. */
+.j1-fac-lista td.cell-id, .j1-fac-lista td.cell-amount, .j1-fac-lista td.cell-date, .j1-fac-lista td.cell-status { white-space:nowrap; }
+/* J1: fin del bloque SCRUM-1787n */
+
+/* J1: SCRUM-1843 · la barra «Siguiente paso» de la ficha de FACTURA a 44 px de toque (AB6). En una
+   factura pendiente la primaria «Marcar como cobrada» sale `btn-primary btn-sm` (`ubicarAccion`) y
+   medía 30,7-31,0 px; sus hermanas «Descargar PDF» y «Enviar por WhatsApp», lo mismo. Regla ACOTADA
+   a su contenedor (opción ③ de SCRUM-786, como 1148 y 1559g), sólo tamaño: `.btn-sm` global no se
+   toca, ni el JS. Va la barra entera y no sólo la primaria: es la misma fila, y la primaria cambia
+   de ocupante según el estado (Bizum). El ancla es `.j1-prog`, la línea de progreso que precede a
+   `.detail-next` y que sólo pinta esta ficha: la del presupuesto también tiene `.detail-next` y no
+   se toca. Pesa (0,3,1) y gana a `.btn.btn-sm` (0,2,0) aunque vaya arriba. La cabecera («← Volver a
+   facturas») queda fuera. Lo mide en navegador `tests/scrum1843-marcar-cobrada-44.test.mjs`. */
+.j1-prog ~ .detail-next > div > .btn-sm { min-height:44px; }
+/* J1: fin del bloque SCRUM-1843 */
 
 /* ── SCRUM-731 · `hidden` TIENE QUE APAGAR. SIEMPRE. ───────────────────────────────────────
    Esto NO es una regla de estilo: es la que impide una clase entera de defecto silencioso.
@@ -2680,6 +2719,13 @@ html, body { overflow-x: clip; }
    Va por `#po-lista` y no por una clase propia: la fila conserva la clase exacta `customers-card`. */
 #po-lista > button.customers-card { width: 100%; text-align: left; font: inherit; color: inherit; }
 #po-lista > button.customers-card:focus-visible { outline: none; box-shadow: var(--ring); }
+/* J3: SCRUM-1639c · las tarjetas de trabajos y presupuestos de la ficha del operario (`teamView.js`)
+   son `role="button"`: la misma trampa de arriba, `.customers-card` pisa el `:focus-visible` global. */
+.customers-card[role="button"]:focus-visible { outline: none; box-shadow: var(--ring); }
+/* J3: SCRUM-1844 (AB6, cura por contenedor como SCRUM-1841 y SCRUM-1148) · Equipo (`teamView.js`):
+   «+ Añadir miembro» (`#btn-invite-member`, `btn-primary btn-sm`) medía 30,7-31,0 px de toque; la regla
+   se acota a la cabecera de la vista y `.btn-sm` global no se toca. Sólo el tamaño: el clic es de S1. */
+.equipo-cabecera > .btn-sm { min-height: 44px; }
 /* SCRUM-1692 · la fila ABIERTA: el mismo marcado de selección que `.quote-cliente-opcion[aria-pressed]`
    (borde de marca + un píxel por dentro + fondo suave), sin tokens nuevos ni sólo color (WCAG 1.4.1). */
 #po-lista > button.customers-card[aria-current="true"] {
@@ -4422,6 +4468,63 @@ textarea.parte-linea-desc {
 .parte-cabecera-numero [data-parte-visita] { font-weight: 600; color: var(--muted); }
 .parte-cabecera-cliente { margin: 2px 0 0; font-size: 0.9375rem; color: var(--body); }
 
+/* ── S4 · SCRUM-1822 ── LA RANURA DE LA CABECERA DEL PARTE: el candado con su motivo, o «Editar».
+   · `.parte-candado` (parte que NO se puede editar): una NOTA, no un error ni un botón. Tarjeta blanca
+     con su borde, como las de debajo, texto Cuerpo y el candado dibujado con el trazo de los demás
+     dibujos del parte. El texto es del servidor y se pinta tal cual: aquí no hay `text-transform`.
+   · `.parte-editar` (borrador): la regla de lectura de SCRUM-1722, «relleno = se pulsa». Va sobre el
+     lienzo y no sobre una tarjeta, así que el relleno es un escalón más oscuro que el de «Añadir línea»
+     (`--neutral-200`; con `--neutral-100` sobre `--bg` no se distinguía). Sin verde: la única voz verde
+     del parte es la firma. 44 px de alto en todos los anchos: es lo primero que se pulsa. */
+.parte-candado {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  box-sizing: border-box;
+  width: fit-content;          /* la nota mide lo que su frase; a 390 px, el ancho de la hoja */
+  max-width: 100%;
+  margin: 12px 0 0;
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--body);
+  font-size: 14px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.parte-editar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin: 12px 0 0;
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--r-full);
+  background: var(--neutral-200);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.parte-editar:hover { background: var(--neutral-300); }
+.parte-editar:focus-visible { outline: none; box-shadow: var(--ring); }
+.parte-candado::before,
+.parte-editar::before {
+  content: "";
+  flex: none;
+  width: 18px;
+  height: 18px;
+  background: currentColor;
+  -webkit-mask: var(--parte-icono) center / contain no-repeat;
+  mask: var(--parte-icono) center / contain no-repeat;
+}
+.parte-candado::before { margin-top: 1px; }
+.parte-candado { --parte-icono: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='11' width='14' height='9' rx='2'/%3E%3Cpath d='M8 11V8a4 4 0 0 1 8 0v3'/%3E%3C/svg%3E"); }
+.parte-editar { --parte-icono: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z'/%3E%3C/svg%3E"); }
+
 .parte-horas,
 .parte-dictado,
 .parte-bloque,
@@ -5722,13 +5825,34 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
    alto de `.input` es padding + borde + el interlineado de la fuente que haya: 36 en el Chromium de
    Windows y 34 en el de Linux de CI, donde el buscador y el campo de `#c360-meta` daban 35 de toque a
    929 contra 36. Un mínimo explícito de 38 (el alto que ya tienen los dos `select` de la barra) no
-   depende de la fuente ni del redondeo; en móvil manda el de 44, que va detrás. */
-.data-card:has(> .barra-seleccion) .data-card-toolbar > .input,
-#c360-meta .input { min-height: 38px; }
+   depende de la fuente ni del redondeo; en móvil manda el de 44, que va detrás.
+   SCRUM-1850: `#c360-meta .input` sale de la regla de escritorio y va a 44 en todas las anchuras, en el
+   bloque de SCRUM-1850 (más abajo); su regla de móvil se queda aquí. */
+.data-card:has(> .barra-seleccion) .data-card-toolbar > .input { min-height: 38px; }
 @media (max-width: 768px) {
   .data-card:has(> .barra-seleccion) .data-card-toolbar > .input,
   #c360-meta .input { min-height: 44px; }
 }
+
+/* J2: SCRUM-1847 · la lista de Clientes a 44 px de toque también en escritorio (AB6, censo de
+   SCRUM-1845). A 1280 medían: «Nuevo cliente» 37, el buscador y los dos `select` 39, el teléfono
+   41,8 y su 💬 37; en la lista vacía, «+ Añadir cliente» 30,7-30,8 a 390 y a 1280. Decisión del
+   fundador SCRUM-1845 c.22728 (sobre DESIGN.md, la excepción de `btn-sm`): un `.btn-sm` que NO es la
+   primaria se queda como lo dejó SCRUM-1149 (más arriba), y se cura todo lo demás; «+ Añadir cliente»
+   es `btn-primary btn-sm` y HACE de primaria de la lista vacía, así que se cura. Misma ancla que 1149,
+   la barra de selección que sólo pinta esta lista; sólo tamaño, sin clase nueva en el marcado y sin
+   tocar `.input`, `.btn-primary`, `.btn-sm` ni `.contacto-link` globales. Va DETRÁS del bloque de
+   SCRUM-1584 (justo arriba), cuyo mínimo de 38 para la barra pesa (0,4,0): la barra lleva aquí un
+   selector del mismo peso, que gana por orden, y no se reescribe la regla de 1584, que también es de
+   la ficha 360. El resto pesa (0,3,0) y gana a `.btn.btn-sm` (0,2,0). Lo mide en navegador
+   `tests/scrum1847-clientes-44.test.mjs`. */
+.data-card:has(> .barra-seleccion) .data-card-toolbar .input,
+.data-card:has(> .barra-seleccion) .data-card-header > div > .btn-primary,
+.data-card:has(> .barra-seleccion) .input,
+.data-card:has(> .barra-seleccion) .contacto-link,
+.data-card:has(> .barra-seleccion) .clientes-vacio-cta { min-height:44px; }
+.data-card:has(> .barra-seleccion) .contacto-link--icono { min-width:44px; }
+/* J2: fin del bloque SCRUM-1847 */
 
 /* SCRUM-1056 · «Volver a llamar»: la nota es texto libre del profesional. Una palabra muy larga
    (un enlace, una referencia) se parte en vez de salirse de la tarjeta: medido a 390 px. */
@@ -5825,6 +5949,36 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
 .c360-desde { color:var(--neutral-400) }
 .c360-notas { font-size:12.5px;color:var(--neutral-500);margin-top:6px;font-style:italic }
 .c360-cabecera-acciones { display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0 }
+/* SCRUM-1841 (AB6, cura por contenedor como SCRUM-1148) · ficha 360: «+ Nuevo presupuesto» y los
+   demás botones de la cabecera medían 30,7-31,0 px de toque; la regla se acota a su contenedor y
+   `.btn-sm` global no se toca.
+   Y a 390 la fila no se partía (`flex-shrink:0`) y `overflow-x:clip` recortaba «+ Nuevo presupuesto» y «Fusionar» fuera de la pantalla. */
+.c360-cabecera-acciones > .btn-sm { min-height: 44px; }
+@media (max-width: 768px) {
+  .c360-cabecera-acciones { flex-shrink: 1; min-width: 0; }
+}
+/* J2: SCRUM-1850 (AB6, amplía SCRUM-1841 por contenedor) · ficha 360: lo que quedaba por debajo de
+   44 px de toque. Las 6 pestañas del historial medían 39 (su estilo en línea no fija alto); los
+   enlaces de contacto, 37 por encima de 768 (`.contacto-link` da 36 en escritorio, DESIGN.md), y
+   también «Cómo llegar», en `#c360-meta`; el campo de etiquetas, 38,9 (el mínimo de escritorio de
+   SCRUM-1592b). Solo tamaño, acotado a cada contenedor; `.contacto-link` e `.input` globales no se
+   tocan. «← Volver a Clientes» y «Ver →» son `.btn-sm` que no son la acción primaria y se quedan
+   en 30 (SCRUM-1845 c.22728, DESIGN.md:171). Medido con `docs/master/evidencias/SCRUM-1850/medir.mjs`. */
+.c360-pestanas > button { min-height: 44px; }
+.c360-datos .contacto-link, #c360-meta .contacto-link { min-height: 44px; }
+#c360-meta .input { min-height: 44px; }
+/* J2: fin del bloque SCRUM-1850 */
+/* J2: SCRUM-1852 (AB6, por contenedor) · cabecera de la ficha 360: «✎ Editar» se pintaba ENCIMA del
+   nombre a 929 y 1280. `.c360-identidad` lleva `min-width:0` (el literal de SCRUM-1756i, arriba) y se
+   encogía a 141 px con un contenido de 201: el nombre desbordaba por debajo de los botones, también con
+   un nombre corto. Con `min-width:auto` la identidad conserva su ancho mínimo y, si no cabe junto a la
+   fila de acciones, la fila baja de línea. Y la fila encoge (lo que SCRUM-1841 hacía solo por debajo
+   de 768): con la barra lateral, a 929, no se partía y «+ Nuevo presupuesto» salía 128,9 px de la
+   tarjeta. Sin tocar tamaños: los 44 px de 1841/1850 siguen. Medido con
+   `docs/master/evidencias/SCRUM-1852/medir.mjs`; lo ata `tests/scrum1852-editar-encima-del-nombre.test.mjs`. */
+.c360-identidad { min-width: auto; }
+.c360-cabecera-acciones { flex-shrink: 1; min-width: 0; }
+/* J2: fin del bloque SCRUM-1852 */
 .c360-kpi-valor { font-size:18px }
 .c360-verde { color:var(--green-600) }
 .c360-rojo { color:var(--red-600) }
@@ -6282,6 +6436,27 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
 .j3e-dd1c338:not(#j3-sin-id):not(#j3-sin-id){margin:10px 0 0;font-size:13px;line-height:1.5;color:#6b756f}
 /* J3: fin del bloque SCRUM-1756h */
 
+/* J3: SCRUM-1848 · Ajustes y Planes a 44 px de toque (AB6), sobre el censo de SCRUM-1845. Reglas
+   ACOTADAS al contenedor de cada vista (opción ③ de SCRUM-786, como 1843), sólo tamaño: ni las
+   clases globales ni el JS. Las primarias pequeñas de la tarjeta de referidos («Copiar link» y
+   «Canjear 1 mes gratis», `btn-primary btn-sm`) pesan (0,3,0) y ganan a `.btn.btn-sm` (0,2,0).
+   Las 4 casillas de `.settings-panel .inline-checkbox` quedan PENDIENTES en 17 px por SCRUM-1848
+   c.22742: el ③ de scrum962f (S2) sólo admite reglas de 44 de esa familia dentro de
+   `.quote-ajustes`. Se quitaron sus dos reglas (etiqueta y `::before`); el `position:relative` de
+   la casilla se queda (sin efecto por sí solo). Los enlaces de exportación de Planes van en una frase:
+   `inline-flex` sólo para que les quepa el alto. Exentos por SCRUM-1845 c.22728 (`.btn-sm` no
+   primarios, pestaña Marca): «Vista previa», «⬆ Subir logo» y «Sin color (por defecto)». Lo mide
+   en navegador `tests/scrum1848-ajustes-planes-44.test.mjs`. */
+.j3e-033e7ec > .j3e-a636e53 { min-height:44px; }
+.j3e-033e7ec > .btn-primary.j3e-86abdab,
+.j3e-3d68052 > .btn-primary.j3e-86abdab { min-height:44px; }
+.settings-panel #clausulas-anadir { min-height:44px; }
+.settings-panel .inline-checkbox input[type="checkbox"] { position:relative; }
+.j3e-5521062 .plan-btn { min-height:44px; }
+.j3e-5521062 .j3e-3fe60ac > button { min-height:44px; }
+.j3e-5521062 .j3e-d56471a > a { display:inline-flex; align-items:center; min-height:44px; }
+/* J3: fin del bloque SCRUM-1848 */
+
 /* ════════════════════════════════════════════════════════════
    S2 · SCRUM-1762b · LAVADO HALLMARK DE LA FICHA (20-nov-2026)
    Ropa, no función: ni texto nuevo ni color nuevo. Todo sale de tokens que ya existían.
@@ -6441,3 +6616,9 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
   *:has(> header.parte-cabecera) > .parte-datos-del-parte:last-child > .parte-datos-del-parte-titulo { grid-column: 1 / -1; }
 }
 /* ══ fin S4 · SCRUM-1762d ══ */
+
+/* ── S2 · SCRUM-1818b · selector de plan por comercio en el funnel de plataforma (Informes, solo fundador) ──
+   Selector + «Cambiar plan» en la celda «Plan»: juntos, envuelven si no caben, y 44 px de toque (AB6). */
+.funnel-plan { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.funnel-plan > select.input { width: auto; min-height: 44px; }
+.funnel-plan > .btn-sm { min-height: 44px; }

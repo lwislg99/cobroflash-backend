@@ -80,6 +80,7 @@ import { SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/s
 import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206b
 import { sellarTrasEmision } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { envioDelDocumento } from '../../../billing/domain/envioDelDocumento'; // SCRUM-885
+import { llevaLineaAlDiez, METODOS_CON_AVISO_IVA_10 } from '../../../system/invoiceAdmin'; // SCRUM-1804 (cruce S2→S1, solo lectura)
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
 // SCRUM-650 (T1): la asignacion a VARIOS vive en su dominio; aqui no se decide nada de ella.
@@ -728,6 +729,7 @@ async function serializeJobDetail(job: any) {
           // Trabajo. Aditivo y de solo lectura: sin él la rectificativa se pinta como una fila
           // suelta que no dice a qué factura corrige, que es legalmente ilegible.
           rectifiesId: true,
+          lines: true, // SCRUM-1804: solo para `conIvaAlDiez`; NO viaja a la pantalla
         },
         orderBy: { createdAt: 'asc' },
       },
@@ -752,19 +754,22 @@ async function serializeJobDetail(job: any) {
   // detalle: un WhatsApp que Meta marca fallido DESPUÉS hace aparecer el aviso sin tocar nada.
   // Sólo lectura y dos consultas para todas las facturas: nada se envía desde aquí.
   const idsDeCobro = [...new Set(facturasDelTrabajo.map((inv) => inv.chargeId).filter((x): x is number => x != null))];
-  const [cobrosPagados, filasWhatsapp] = idsDeCobro.length === 0
+  // SCRUM-1808b · la MISMA consulta trae ahora el estado de cada cobro, no solo los pagados: la ficha
+  // ofrece «Cancelar cobro» con el cobro `pending`. `pagados` se deriva de ella y no cambia.
+  const [cobrosDelTrabajo, filasWhatsapp] = idsDeCobro.length === 0
     ? [[], []]
     : await Promise.all([
         prisma.charge.findMany({
-          where: { id: { in: idsDeCobro }, merchantId: job.merchantId, status: 'paid' }, // regla 2
-          select: { id: true },
+          where: { id: { in: idsDeCobro }, merchantId: job.merchantId }, // regla 2
+          select: { id: true, status: true },
         }),
         prisma.whatsAppMessage.findMany({
           where: { merchantId: job.merchantId, relatedType: 'charge', relatedId: { in: idsDeCobro } }, // regla 2
           select: { relatedId: true, status: true, createdAt: true },
         }),
       ]);
-  const pagados = new Set(cobrosPagados.map((c) => c.id));
+  const pagados = new Set(cobrosDelTrabajo.filter((c) => c.status === 'paid').map((c) => c.id));
+  const estadoDeCobro = new Map<number, string>(cobrosDelTrabajo.map((c) => [c.id, c.status]));
   const envioDe = (chargeId: number | null) =>
     chargeId != null && pagados.has(chargeId)
       ? envioDelDocumento({
@@ -788,6 +793,13 @@ async function serializeJobDetail(job: any) {
     stageLabel: inv.stageLabel,       // SCRUM-27: etiqueta del tramo (custom); null en presets
     rectifiesId: inv.rectifiesId,     // SCRUM-319 (G4): a qué factura rectifica (solo R1)
     envioDocumento: envioDe(inv.chargeId), // SCRUM-885: null si su cobro no está pagado
+    // SCRUM-1804 (PARTE S de SCRUM-1316) · con línea al 10 %, marcar cobrada exige el medio (c.22438).
+    // La misma regla y la misma lista que sirve GET /admin/invoices/:id: la ficha no las decide.
+    conIvaAlDiez: llevaLineaAlDiez(inv.lines),
+    metodosConAvisoIvaAlDiez: METODOS_CON_AVISO_IVA_10,
+    // SCRUM-1808b · el estado del cobro de la factura, o `null` si no tiene: el mismo nombre y dato que
+    // GET /admin/invoices/:id (`estadoDelCobroDeLaFactura`). La ficha solo ofrece cancelarlo con `pending`.
+    estadoDelCobro: inv.chargeId != null ? (estadoDeCobro.get(inv.chargeId) ?? null) : null,
   })));
 
   const charge = quote?.charge

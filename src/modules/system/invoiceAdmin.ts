@@ -3,9 +3,13 @@ import { prisma } from '../../core/db/prisma';
 import { Prisma } from '@prisma/client';
 import { recalcJobCobradoForInvoice } from '../jobs/domain/job.service'; // SCRUM-28
 // SCRUM-441: el conjunto cerrado de métodos se CONSUME desde su dueño. Aquí no se copia ni un valor.
-import { campoPaidViaAlMarcar } from '../billing/domain/metodoDeCobro';
+import { campoPaidViaAlMarcar, esMetodoValido } from '../billing/domain/metodoDeCobro';
+import { datosDeCobroPagado } from '../billing/domain/instanteDeCobro'; // SCRUM-1803
 import { esFilaQueNoCasa } from '../billing/domain/estadoDelCobro'; // SCRUM-1303
 import { apuntarCobroDeFactura, anularCobrosDeFactura } from '../billing/domain/cobrosDeFactura'; // SCRUM-1732
+import { lineasQueSuman } from '../quotes/domain/apartados'; // SCRUM-1316l: las cabeceras no son una operación
+import { tipoEnPorcentaje } from '../../core/utils/utils'; // SCRUM-1316l: el tipo en %, sin cuenta propia
+import type { PaidVia } from '../billing/domain/paidVia'; // SCRUM-1316l
 import { tagsParaPrisma } from './tagsDelCliente'; // SCRUM-595 (DOC-05): el MISMO mecanismo que CONT-07
 
 // Listado para el BO (con filtros)
@@ -35,8 +39,8 @@ export async function listInvoicesAdmin(
    *
    * 🔴 Y NO LOS ESCONDE: su sitio es **Cobros** (diseño §B4). Comprobado ANTES de excluirlos, que
    * era el suelo de este ticket: `cobros.service.ts` lista **la unión** de todo `Charge` MÁS toda
-   * `Invoice` con `chargeId: null` —que hoy son todas, porque nadie escribe ese campo— y **no
-   * filtra por `type`**. Los 44 siguen alcanzables.
+   * `Invoice` con `chargeId: null` —lo escriben `ensureInvoiceForCharge` y `sendInvoicePaymentRequest`;
+   * las enlazadas salen por su `Charge`— y **no filtra por `type`**. Los 44 siguen alcanzables.
    *
    * Si Cobros listara solo `Charge`, excluirlos aquí los habría borrado del producto: un cobro por
    * transferencia o efectivo **no crea `Charge`** (SCRUM-441). Ese módulo ya lo dice con todas las
@@ -203,6 +207,125 @@ export function puedeCobrarPorPasarela(documento: { status: string }): boolean {
 }
 
 /**
+ * SCRUM-1316l · T3, FIRMADO por el fundador en SCRUM-1316 c.22438 (regla 39). Lo dice el servidor
+ * al marcar cobrada sin medio una factura con alguna línea al 10 %, de una en una y en lote.
+ */
+export const COPY_METODO_OBLIGATORIO_IVA_10 = 'Elige cómo lo has cobrado: en esta factura hay IVA al 10 %.';
+
+/** SCRUM-1316l · marcar cobrada sin medio una factura con línea al 10 %. La ruta lo da como 422. */
+export class MetodoDeCobroObligatorioError extends Error {}
+
+/**
+ * SCRUM-1803 (decisión del fundador SCRUM-1800 c.22496 ③) · MARCAR PAGADA A MANO UNA FACTURA CIERRA
+ * SU COBRO PENDIENTE. Solo el vínculo DIRECTO (`Invoice.chargeId`; `Quote.chargeId` queda pendiente
+ * del fundador, SCRUM-1803 c.22499). Con la función de la casa (`datosDeCobroPagado`: estado, fecha y
+ * evento `paid` en un solo instante), nunca `status/paidAt` a mano.
+ *
+ * El `status: 'pending'` va en el `where`: un cobro ya `paid`, `cancelled` o `expired` no casa (P2025)
+ * y se queda como estaba, sin leerlo antes. `method` solo se escribe si el profesional lo declaró y
+ * el conjunto cerrado lo reconoce; si no, se conserva el del cobro. Devuelve si cerró alguno.
+ */
+export async function cerrarCobroDeFacturaPagada(
+  merchantId: number,
+  chargeId: number | null | undefined,
+  fecha: Date,
+  metodo: string | null,
+  payload: Record<string, unknown>,
+): Promise<boolean> {
+  if (chargeId == null) return false;
+  try {
+    await prisma.charge.update({
+      where: { id: chargeId, merchantId, status: 'pending' },
+      data: {
+        ...datosDeCobroPagado(fecha, payload),
+        ...(metodo && esMetodoValido(metodo) ? { method: metodo } : {}),
+      },
+    });
+    return true;
+  } catch (e) {
+    if (esFilaQueNoCasa(e)) return false;
+    throw e;
+  }
+}
+
+/**
+ * SCRUM-1803b · ¿Este evento `paid` lo escribió el marcado manual de ESTA factura? Es la marca que
+ * deja `cerrarCobroDeFacturaPagada` desde SCRUM-1803 (`origen` + `invoiceId`). Una pasarela guarda
+ * otro payload (el cuerpo del webhook, `mp_payment_id`…), y el aviso de pago interno (`invoice.routes.ts`) deja su propio
+ * `origen`: ninguno de los dos casa. PURA.
+ */
+export function esPagoDelMarcadoManual(payload: unknown, invoiceId: number): boolean {
+  const p = payload as { origen?: unknown; invoiceId?: unknown } | null | undefined;
+  return p?.origen === 'marcar_pagado_manual' && p?.invoiceId === invoiceId;
+}
+
+/**
+ * SCRUM-1803b (decisión del fundador SCRUM-1803 c.22506 c) · DESHACER EL PAGO DE UN JUSTIFICANTE
+ * REABRE SU COBRO, pero solo el que el marcado manual de ESE justificante había cerrado: vuelve a
+ * `pending`, `paidAt` null y un evento `unpaid` (el nombre lo firma c.22506 c; antes no existía).
+ *
+ * Se mira CADA evento `paid` del cobro: si alguno no es del marcado manual de esta factura (una
+ * pasarela, el aviso de pago interno, otra factura), el cobro no se toca: el dinero de una pasarela no
+ * se des-cobra a mano. Lo leído va al `where` (`status: 'paid'` y «ningún evento `paid` fuera de los
+ * que he leído»): si entre la lectura y la escritura entra otro pago, la fila no casa (P2025) y no se
+ * escribe nada. Devuelve si reabrió alguno.
+ */
+export async function reabrirCobroDeJustificanteDespagado(
+  merchantId: number,
+  chargeId: number | null | undefined,
+  invoiceId: number,
+): Promise<boolean> {
+  if (chargeId == null) return false;
+  const cobro = await prisma.charge.findFirst({
+    where: { id: chargeId, merchantId, status: 'paid' },
+    include: { events: { where: { type: 'paid' } } },
+  });
+  const pagos = cobro?.events ?? [];
+  if (!pagos.length || !pagos.every((e) => esPagoDelMarcadoManual(e.payload, invoiceId))) return false;
+  try {
+    await prisma.charge.update({
+      where: {
+        id: chargeId, merchantId, status: 'paid',
+        events: { none: { type: 'paid', id: { notIn: pagos.map((e) => e.id) } } },
+      },
+      data: {
+        status: 'pending',
+        paidAt: null,
+        events: { create: { type: 'unpaid', payload: { origen: 'deshacer_pago', invoiceId } } },
+      },
+    });
+    return true;
+  } catch (e) {
+    if (esFilaQueNoCasa(e)) return false;
+    throw e;
+  }
+}
+
+/**
+ * SCRUM-1316l · ¿Lleva esta factura ALGUNA línea al 10 % de IVA? PURA: se prueba con filas de verdad.
+ *
+ * Las líneas guardan `tax` como FRACCIÓN (0.10 = 10 %, `vat.service.ts`). Se compara en porcentaje
+ * con `tipoEnPorcentaje` (la de la casa: dos decimales) para que el 0.1 de coma flotante no se
+ * escape. Solo LEE el tipo de cada línea: no deriva IVA (SCRUM-627b). Las cabeceras de apartado no cuentan (`lineasQueSuman`): no son una
+ * operación. Sin líneas legibles, `false`: la factura sigue el camino de siempre.
+ */
+export function llevaLineaAlDiez(lines: unknown): boolean {
+  if (!Array.isArray(lines)) return false;
+  return lineasQueSuman(lines as Record<string, unknown>[]).some((l) => {
+    const t = Number((l as { tax?: unknown }).tax);
+    return Number.isFinite(t) && tipoEnPorcentaje(t) === 10;
+  });
+}
+
+/**
+ * SCRUM-1316l · Los medios con los que, si la factura lleva una línea al 10 %, la ficha enseña T4
+ * (aviso, no bloqueo; c.22438). Vive en el SERVIDOR y viaja en el detalle de la factura: el
+ * navegador no escribe valores del conjunto cerrado (regla 22; lo vigila `scrum441`). Tipado
+ * contra `PaidVia`: un valor que salga del conjunto no compila.
+ */
+export const METODOS_CON_AVISO_IVA_10: readonly PaidVia[] = ['cash'];
+
+/**
  * ¿Puede este documento pasar a `paid` por el marcado masivo? PURA: se prueba con filas de verdad,
  * sin base de datos, que es la unica forma de que el rojo hable del HECHO y no de la forma del
  * filtro. Un test atado a `notIn` seguiria verde si alguien cambiara el filtro por otro equivalente
@@ -300,6 +423,14 @@ export async function updateInvoiceStatusAdmin(
   // datos. Un objeto VACÍO significa «no toques la columna», que es el caso de siempre.
   const campoMetodo = campoPaidViaAlMarcar(status, paidVia);
 
+  // SCRUM-1316l · CON UNA LÍNEA AL 10 %, «CÓMO LO HAS COBRADO» DEJA DE SER OPCIONAL. Decisión del
+  // fundador en SCRUM-1316 c.22438 (opción a): solo en esas facturas; el resto sigue como arriba.
+  // Va DESPUÉS de `campoPaidViaAlMarcar` a propósito: un valor que el conjunto cerrado no reconoce
+  // se descarta allí, y aquí cuenta como «no lo dijo». Se lanza antes de escribir nada.
+  if (status === 'paid' && llevaLineaAlDiez(existing.lines) && !(campoMetodo as { paidVia?: string }).paidVia) {
+    throw new MetodoDeCobroObligatorioError(COPY_METODO_OBLIGATORIO_IVA_10);
+  }
+
   // 🔴 SCRUM-1303 · EL ESTADO LEÍDO VA DENTRO DEL `where`. Las guardas de arriba miran `existing`,
   // leída al entrar, y entre esa lectura y esta escritura cabe otra petición: una anulación que
   // entra en medio dejaba la factura `paid` encima de su registro de anulación. Si la fila ya no
@@ -338,6 +469,18 @@ export async function updateInvoiceStatusAdmin(
     }
   } catch (e) {
     console.error('[invoiceAdmin] SCRUM-1732 no se pudo apuntar el cobro:', (e as any)?.message || 'error desconocido');
+  }
+  // SCRUM-1803 · su cobro `pending` se cierra con la MISMA fecha y el medio declarado (si lo hubo).
+  if (status === 'paid' && existing.status !== 'paid' && updated.paidAt) {
+    await cerrarCobroDeFacturaPagada(
+      updated.merchantId, updated.chargeId, updated.paidAt,
+      (campoMetodo as { paidVia?: string }).paidVia ?? null, { origen: 'marcar_pagado_manual', via: 'status', invoiceId: updated.id },
+    ).catch((e) => console.error('[invoiceAdmin] SCRUM-1803 no se pudo cerrar el cobro:', (e as any)?.message || 'error desconocido'));
+  }
+  // SCRUM-1803b · des-pagar (solo un justificante llega aquí) reabre el cobro que su marcado manual cerró.
+  if (status === 'pending' && existing.status === 'paid') {
+    await reabrirCobroDeJustificanteDespagado(updated.merchantId, updated.chargeId, updated.id)
+      .catch((e) => console.error('[invoiceAdmin] SCRUM-1803b no se pudo reabrir el cobro:', (e as any)?.message || 'error desconocido'));
   }
   // SCRUM-28 (COBROS-2): el cobro MANUAL (Bizum/transferencia) también materializa
   // Job.totalCobrado. Reutiliza el núcleo de SCRUM-13 (suma Invoices paid, idempotente).
