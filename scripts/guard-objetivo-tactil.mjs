@@ -121,7 +121,9 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
-import { veredictoDe, recorrerCasos } from './_hallazgos-y-ciegos.mjs';
+import { veredictoDe, recorrerCasos, vigilarArranque } from './_hallazgos-y-ciegos.mjs';
+// SCRUM-1846 · el banco lee dist/ con un require perezoso: sin dist/, sale con 2 y no con 1.
+vigilarArranque();
 import { enlacesDelPanel, TIPOS_DE_FUENTE, esperarFuentes, cegueraDeLaFuente, decirFuente } from './_hojas-del-panel.mjs';
 // SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
 // los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad

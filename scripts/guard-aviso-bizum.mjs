@@ -37,7 +37,6 @@ import path from 'node:path';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
-import { decidirAvisoBizum } from '../dist/modules/billing/domain/avisoBizumSinTelefono.js';
 
 /**
  * ¿Se espera aviso para este veredicto? Es `hayQueAvisar` del dominio, y NO se importa a propósito:
@@ -57,7 +56,10 @@ const RAIZ = path.join(AQUI, '..');
 const PUBLIC = path.join(RAIZ, 'public');
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
-import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
+import { veredictoDe, vigilarArranque } from './_hallazgos-y-ciegos.mjs';
+// SCRUM-1846 · lo de dist/ va DESPUÉS de vigilarArranque(): sin dist/, sale con 2 y no con 1.
+vigilarArranque();
+const { decidirAvisoBizum } = await import('../dist/modules/billing/domain/avisoBizumSinTelefono.js');
 // SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
 // los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
 // hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
