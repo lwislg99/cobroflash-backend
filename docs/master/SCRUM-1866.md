@@ -58,3 +58,43 @@ Dos sondas que cuadran: los 30 son los 42 «vivos» de 1756g menos las 12 vistas
 - otras extensiones (`.svg`, `.cjs`, `.json`): fuera de la población, como en 1756g;
 - ficheros sin seguimiento en git: no entran hasta el `git add`;
 - yaqu.app: no aplica, porque el test no cambia nada servido.
+
+## SCRUM-1866b · relevo: la propuesta de recongelar va en el mensaje, sin temporal (J6)
+
+**Medido contra:** `origin/main` = `bdba2afe7ba22bb8f6e2cc08311094bb837cee35` · 2026-11-25T22:36:57Z (cabecera `Date:` de GitHub; sesión J6 `jv-j6gi`, relevo de `jv-j6gh` por encargo del orquestador `cobroflash-backend-2d`; la rama no fusiona el main nuevo, `924c9b7ed`, que va 2 commits por delante)
+
+A9: comprobación → `tests/scrum864c-el-temporal-no-vuelve.test.mjs`
+
+**El rojo de CI** (run 45710408048, medido por el orquestador): `scrum864c` cae con `[SIN_LIMPIEZA] tests/scrum1866-trinquete-csp-1756g.test.mjs:161`. El meta-guard parte 3 salía CIEGO en cascada por ese mismo rojo.
+
+**Corrección a la premisa del encargo:**
+- la `:161` no era la siembra; era la propuesta del caso BAJA, un fichero que el mensaje mandaba copiar con `cp` DESPUÉS de la ejecución;
+- con `temporal()`, que es lo que pedía el encargo, ese fichero se borraría al salir el proceso y el `cp` apuntaría a nada;
+- conservarlo habría exigido `DECLARADAS`, que el encargo prohibía.
+
+Hecho: la tabla recalculada va EN el mensaje de fallo, para pegarla entera, como ya hace `scrum523d`. Sin temporal no queda nada que borrar (864c) ni que sacar del árbol (824).
+
+**Rojo primero** (864c, en el mismo orden que el CI):
+- antes: 4 casos, 3 pasan y 1 cae, salida 1. Una sola fuga: `[SIN_LIMPIEZA] tests/scrum1866-trinquete-csp-1756g.test.mjs:161 · mkdtempSync(…) → dir · no se borra en ninguna parte`;
+- después: 4/4, salida 0.
+
+**El camino cambiado, ejercitado:**
+- con la mutación del catálogo (tabla congelada, `public/admin.html` `style_attr` 4→5), el caso BAJA cae (4 pasan y 1 cae) y su mensaje lleva la propuesta;
+- extraída del mensaje y parseada, la propuesta da 30 ficheros, idénticos a los 30 de la tabla real, con `admin.html` de vuelta a 4;
+- la tabla se restauró con `git checkout`, y `cmp` contra la copia previa la da idéntica.
+
+Mutaciones: catálogo → `tests/scrum1866-trinquete-csp-1756g.test.mjs`
+
+**Verdes** (rama sobre `bdba2afe7` más este cambio; `dist/` con `tsc -p . --noCheck`, salida 0; no toca `src/`):
+- 1866 · 864c · 824 y los dos 824b · 237 · 976 · 700 · 419 · 719 · 1294 · 267 · 854 → 118/118 en 13 ficheros, 0 `not ok` y 0 saltos;
+- 700 aparte: 5/5, y su censo `CON_PROPIO_HOY = 91` se cumple;
+- `censo:mudez -- --escribir`: salida 0 y `_veredicto-mudez.json` sin cambios. El censo mide 149 guards que nombran el filtro de comentarios, y 1866 no es uno de ellos: el encargo suponía que su huella cambiaría;
+- los 5 de árbol entero que pide `guards:entrada` (195 · 414 · 694 · 710b · 737) → 38/38;
+- `meta-guard-mutaciones.mjs --solo-censo`: salida 0, sin mutar nada;
+- con el registro escrito, 1294 · 267 · 854 · 237 · 1866 · 864c · 824 → 50/50, y `guards:entrada` salida 0 (17 guards, 186 casos);
+- control de que 1294 lee este tramo: con la ruta del `A9:` cambiada a una que no existe, cae (3 pasan y 1 cae) nombrando `docs/master/SCRUM-1866.md:64`. Restaurado, y `cmp` lo da idéntico.
+
+**NO medido:**
+- la parte 3 del meta-guard CON mutaciones: corre en CI. Su CIEGO venía de que 864c fallaba sin mutar nada, y 864c ya pasa;
+- la suite ENTERA en local: el encargo pedía no correrla;
+- el obligatorio de CI de este empujón: se mira después.

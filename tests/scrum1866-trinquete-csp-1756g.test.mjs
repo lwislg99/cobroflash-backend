@@ -156,16 +156,15 @@ test('SCRUM-1866 · ninguna cifra BAJA sin recongelar la tabla en el mismo PR', 
   noCiego();
   const { subidas, bajadas } = comparar(congelada.ficheros, censo.tabla);
   if (bajadas.length === 0) return;
+  // La propuesta va EN el mensaje, como en scrum523d, y no en un fichero: un temporal que se borra al salir
+  // (864c) dejaría el `cp` apuntando a nada, y uno que se conserva tendría que declararse (SCRUM-1866b).
   let propuesta = '(no se propone: hay subidas, mira el caso anterior)';
   if (subidas.length === 0) {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-1866-${process.pid}-`));
-    const destino = path.join(dir, '_scrum1866-congelada.json');
-    propuesta = destino;
     const { ficheros: _viejos, ...meta } = congelada;
-    fs.writeFileSync(path.join(dir, '_scrum1866-congelada.json'), serializar({ ...meta, medidoSobre: sha, fecha: `${new Date().toISOString()} (reloj de la máquina que recongeló)` }, censo.tabla));
+    propuesta = serializar({ ...meta, medidoSobre: sha, fecha: `${new Date().toISOString()} (reloj de la máquina que recongeló)` }, censo.tabla);
   }
   assert.fail(`✅ BAJA, que es la dirección buena, pero la tabla no lo sabe:\n    ${bajadas.map(comoLinea).join('\n    ')}\n`
-    + `    Recongélala en ESTE PR: cp '${propuesta}' ${CONGELADA}  (${POBLACION})`);
+    + `    Recongélala en ESTE PR: lo recalculado, para pegarlo entero en ${CONGELADA}  (${POBLACION}):\n${propuesta}`);
 });
 
 // CIEGO sale con 2, no con el 1 de un rojo: node:test pone 1 al acabar si algo cae, así que se fija al salir.
