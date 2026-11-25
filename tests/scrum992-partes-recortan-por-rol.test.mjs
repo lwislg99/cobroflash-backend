@@ -10,7 +10,7 @@
 //   · la RED ESTRUCTURAL, por AST y sin banco: corre en cada `npm test` y no deja que una ruta nueva de
 //     partes lea `parteTrabajo` sin mirar el rol;
 //   · el COMPORTAMIENTO, contra Postgres de verdad (`LIBRO_PG_URL`, o `QA_DB_TEST=1`): la app real, tres
-//     sesiones (dos técnicos y el propietario) y las nueve rutas.
+//     sesiones (dos técnicos y el propietario) y las rutas del fichero (diez desde SCRUM-1780).
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -48,9 +48,9 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const RUTAS = path.join(RAIZ, 'src', 'modules', 'jobs', 'app', 'routes', 'partes.routes.ts');
 
 // ── LA RED ESTRUCTURAL ────────────────────────────────────────────────────────────────────
-// POBLACIÓN DECLARADA: los `router.<verbo>(…)` de UN fichero (`partes.routes.ts`). Son nueve hoy; si el
+// POBLACIÓN DECLARADA: los `router.<verbo>(…)` de UN fichero (`partes.routes.ts`). Son diez desde el 25-nov-2026 (SCRUM-1780 monta POST /:id/facturar, solo admin); si el
 // censo ve menos, no ha mirado (SUELO), y si ve más, alguien añadió una ruta y tiene que decidir aquí.
-const HANDLERS_ESPERADOS = 9;
+const HANDLERS_ESPERADOS = 10;
 
 function censo() {
   const src = fs.readFileSync(RUTAS, 'utf8');
@@ -97,14 +97,16 @@ function censo() {
   return { rutas, findParteNode, miraElRol, llama, leeDirecto };
 }
 
-test('SCRUM-992 · la población: el censo ve las nueve rutas de partes (y sabe leerlas)', () => {
+test('SCRUM-992 · la población: el censo ve las diez rutas de partes (y sabe leerlas)', () => {
   const { rutas, findParteNode } = censo();
   assert.equal(rutas.length, HANDLERS_ESPERADOS,
     `el censo ve ${rutas.length} rutas y esperaba ${HANDLERS_ESPERADOS}: o no ha mirado, o hay una ruta nueva de partes — decide aquí su rol`);
   assert.ok(findParteNode, 'no se encontró `findParte`');
   // Control positivo: el instrumento ve lo que SABEMOS que hay.
   assert.ok(rutas.some((r) => r.verbo === 'get' && r.ruta === '/'), 'no ve `GET /`');
-  assert.equal(rutas.filter((r) => r.soloAdmin).length, 2, 'las dos rutas de oficina son de admin');
+  // SCRUM-1780 · la tercera de admin es POST /:id/facturar: facturar es de oficina, el técnico no factura.
+  assert.equal(rutas.filter((r) => r.soloAdmin).length, 3, 'las dos rutas de oficina y la de facturar son de admin');
+  assert.ok(rutas.some((r) => r.verbo === 'post' && r.ruta === '/:id/facturar' && r.soloAdmin), '🔴 POST /:id/facturar sin requireRole(admin): un técnico facturaría');
 });
 
 test('SCRUM-992 · `findParte` mira el rol y la pertenencia (los tres ejes viven en `esSuyoElTrabajo`)', () => {
