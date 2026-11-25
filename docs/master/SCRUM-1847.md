@@ -53,3 +53,31 @@ Bloque `/* J2: SCRUM-1847 … */ … /* J2: fin del bloque SCRUM-1847 */` en `pu
 - DESIGN.md pide 36 en escritorio; el ticket y la tanda AB6 (1841, 1843) curan a 44 en todas las anchuras. Sigo al ticket; si el fundador quiere 36 en escritorio, el bloque se quita entero.
 - La barra de selección (aparece al marcar una fila; su campo de etiquetas es `.input` y entra en la regla) no se ha medido: el test monta la lista sin seleccionar, como el censo.
 - yaqu.app: no verificado (sin desplegar).
+
+# SCRUM-1847b · relevo: el motivo del salto, dentro de la llamada (jv-j2ez, carril J2)
+
+**Medido contra:** `origin/main` = `c83ebdbea13a426c2a3e3b5655fca37567d62300` · 2026-11-25T03:47:21Z (hora de GitHub; los tests corrieron sobre la punta de la rama, `a07fb887db1d77bf8c15f6564b719a775547f85d` más este cambio, 3 commits por detrás de ese main; `git merge-tree` con main sale limpio)
+
+A9: comprobación → `tests/scrum419-ci-declara-lo-que-no-corre.test.mjs`
+
+**Qué cayó:** el PR #3433 salió rojo en CI por un caso, el de SCRUM-456 («todo salto declara su motivo»), que vive en el test de SCRUM-419. Su criterio (`declaraMotivo`) es estructural: la expresión del `skip:` tiene que llevar dentro un literal de cadena. Los casos ① y ② de este test pasaban `{ skip: SALTO }`, una constante: el motivo existía, pero el guard lee el fuente y en la llamada sólo ve un identificador.
+
+**Qué cambia:**
+- `tests/scrum1847-clientes-44.test.mjs`: la expresión del motivo va DENTRO de las dos llamadas a `test()`, como en el test de SCRUM-1841, y la constante desaparece (no la usaba nadie más). Ni el guard ni los nombres de los casos cambian.
+- `tests/_veredicto-mudez.json`: una línea, la de este fichero, con su generador (`npm run censo:mudez -- --escribir`, 1 medido de 144). La clase sigue VIVO; sólo cambia el hash, de `a018d8aa199adae5` a `2bb0372d3e28a5bc`. Va fuera de los dos ficheros del encargo porque el test de SCRUM-719 cae en rojo si no se regenera («el fichero cambió desde la medida»). Es consecuencia mecánica del arreglo, y no se edita a mano.
+
+## Comprobaciones (1847b)
+
+| qué | antes | después |
+|---|---|---|
+| `tests/scrum419-ci-declara-lo-que-no-corre.test.mjs` | 7 de 8, el que cae nombra los dos casos (el mismo rojo que CI) | 8 de 8 |
+| `tests/scrum1847-clientes-44.test.mjs` | — | 3 de 3, 0 saltados (hay navegador en esta máquina) |
+| 237, 976, 700, 1294, 267 (guards de suite, juntos) | — | 42 de 42 |
+| `tests/scrum719-el-suelo-de-los-doce.test.mjs` | 36 de 37 (el hash) | 37 de 37, después de regenerar el veredicto |
+| `npm run build` (`tsc`, con tipos) | — | salida 0 |
+
+## Lo que no está medido (1847b)
+
+- La suite entera no se ha corrido: el encargo lo prohibía.
+- La rama del salto (sin navegador) no se ha ejercitado: aquí hay navegador, así que no he visto el motivo impreso en el TAP. Lo que demuestra que ahora lo declara es el guard de SCRUM-419, que lee el fuente.
+- El test de SCRUM-419 no está entre los 21 de `npm run guards:entrada`, y por eso este salto pasó en local y sólo cayó en CI. Meterlo ahí no es de este carril ni de este encargo: se lo digo al orquestador.

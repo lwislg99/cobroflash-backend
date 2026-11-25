@@ -107,9 +107,9 @@ async function medirPagina(html, etiqueta) {
 
 const resumen = (xs) => xs.map((x) => `${x.tag}.${String(x.clases).trim().replace(/\s+/g, '.')} «${x.texto}» ${x.error || x.tocable}`).join(' | ');
 const navegador = resolverNavegador();
-const SALTO = !navegador.ok && `sin navegador donde medir (resolverNavegador): ${navegador.motivo}`;
 
-test('SCRUM-1847 ① · la lista de Clientes: lo que no es un .btn-sm secundario da 44 px de toque a 390 y a 1280', { skip: SALTO }, async (t) => {
+test('SCRUM-1847 ① · la lista de Clientes: lo que no es un .btn-sm secundario da 44 px de toque a 390 y a 1280',
+  { skip: !navegador.ok && `sin navegador donde medir (resolverNavegador): ${navegador.motivo}` }, async (t) => {
   const p = await paginaDeClientes(RAIZ, { seleccionar: false });
   assert.ok(p.html, `🔴 CIEGO: la lista de Clientes no se monta: ${p.aviso}`);
   const medidas = await medirPagina(p.html, 'la lista');
@@ -136,7 +136,8 @@ test('SCRUM-1847 ① · la lista de Clientes: lo que no es un .btn-sm secundario
   }
 });
 
-test('SCRUM-1847 ② · la lista vacía: «+ Añadir cliente», la primaria pequeña, da 44 px de toque a 390 y a 1280', { skip: SALTO }, async (t) => {
+test('SCRUM-1847 ② · la lista vacía: «+ Añadir cliente», la primaria pequeña, da 44 px de toque a 390 y a 1280',
+  { skip: !navegador.ok && `sin navegador donde medir (resolverNavegador): ${navegador.motivo}` }, async (t) => {
   const datos = (u) => (/\/admin\/merchant/.test(String(u || '')) ? { id: 1, name: 'Fontanería Soler' } : []);
   const p = await paginaDeVista(RAIZ, 'renderCustomersView', { datos });
   assert.ok(p.html, `🔴 CIEGO: la lista vacía no se monta: ${p.aviso}`);
