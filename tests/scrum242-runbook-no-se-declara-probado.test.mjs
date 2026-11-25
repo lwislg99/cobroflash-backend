@@ -27,10 +27,10 @@ import path from 'node:path';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const RUNBOOKS = path.join(RAIZ, 'docs/RUNBOOKS.md');
-const TITULO = '## R14 · Restaurar la base de datos desde un backup lógico';
+const TITULO = '## R28 · Restaurar la base de datos desde un backup lógico';
 
-/** La sección R14, recortada hasta el siguiente `## ` o el final. */
-function seccionR14() {
+/** La sección R28 (hasta el 25-nov-2026, R14: SCRUM-1842b), recortada hasta el siguiente `## ` o el final. */
+function seccionR28() {
   let texto;
   try {
     texto = fs.readFileSync(RUNBOOKS, 'utf8');
@@ -49,14 +49,14 @@ function seccionR14() {
 test('SCRUM-242 · SUELO: la sección del runbook existe y se encuentra', () => {
   // Sin esto, borrar o renombrar la sección haría que el guard pasara en vacío — y «no hay runbook
   // sin probar» se leería como «el runbook está probado».
-  const s = seccionR14();
+  const s = seccionR28();
   assert.ok(s, `🔴 no se encuentra «${TITULO}» en docs/RUNBOOKS.md: o se ha ido, o este guard dejó de mirar donde cree`);
   assert.ok(s.length > 800,
     `🔴 la sección del runbook tiene ${s.length} caracteres: un procedimiento que cabe en un párrafo no es un procedimiento`);
 });
 
 test('SCRUM-242 · o dice NO PROBADO, o nombra una evidencia QUE EXISTE', () => {
-  const s = seccionR14();
+  const s = seccionR28();
   const declaradoSinProbar = /NO PROBADO/.test(s);
   if (declaradoSinProbar) return; // estado honesto nº 1: borrador declarado
 
@@ -93,7 +93,7 @@ test('SCRUM-242 · el runbook no manda ejecutar un script que no existe', () => 
   // esto impide que el DOCUMENTO mande ejecutar un script ausente. A un runbook se llega a las tres
   // de la mañana con la base caída, y ahí un comando que no existe cuesta lo mismo que no tener
   // procedimiento — con la diferencia de que este tranquiliza.
-  const s = seccionR14();
+  const s = seccionR28();
   const scripts = [...s.matchAll(/scripts\/[A-Za-z0-9_.-]+\.mjs/g)].map((m) => m[0]);
 
   // Suelo: si el extractor deja de ver comandos, «ninguno roto» no significaría nada.
@@ -112,7 +112,7 @@ test('SCRUM-242 · el runbook no olvida las SECUENCIAS', () => {
   // El volcado hace `SELECT *`: trae los ids pero NO el estado de las secuencias. Restaurar sin
   // reponerlas deja la base rota de forma diferida — el siguiente INSERT choca—, y en facturas eso
   // no se arregla borrando (regla 29).
-  const s = seccionR14();
+  const s = seccionR28();
   assert.match(s, /setval|secuencia/i,
     '🔴 el runbook no dice cómo reponer las secuencias de autoincremento: la base quedaría rota en el siguiente INSERT, y en facturas eso es un incidente');
 });

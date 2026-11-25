@@ -527,7 +527,7 @@ no fue el valor, fue que vivía en un panel que nadie ve desde el código. La so
 fingerprint por contenido en el nombre del fichero (**SCRUM-274**), que permite cachear un año
 sin este riesgo.
 
-## R14 · Restaurar la base de datos desde un backup lógico
+## R28 · Restaurar la base de datos desde un backup lógico
 
 > **PROBADO de principio a fin el 10-ago-2026** contra una base desechable: volcar → vaciar →
 > restaurar → comparar → emitir. Evidencia pegada en `docs/evidencias/scrum242-restauracion.md`.
