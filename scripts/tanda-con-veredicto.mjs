@@ -37,7 +37,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { StringDecoder } from 'node:string_decoder';
 import { reportersComoArgumentos } from './_reporters-de-node-options.mjs';
-import { lectorDeHuellas, redactar } from './_huella-de-la-caida.mjs';
+import { lectorDeHuellas, redactar, listarArbol, redactarArbol } from './_huella-de-la-caida.mjs';
 
 const [orden, ...args] = process.argv.slice(2);
 if (!orden) {
@@ -111,6 +111,8 @@ const vigia = setInterval(() => {
     + '   La salida se retiene por orden de fichero: el que no ha terminado es el SIGUIENTE a ése.\n'
     + '   Esto NO es un verde: se para el árbol propio y se sale con 3.\n',
   );
+  // SCRUM-1811: lo que se va a matar, ANTES de matarlo (pid, padre, RSS, línea de órdenes). Sólo lee.
+  process.stderr.write(redactarArbol(listarArbol(hijo.pid, { spawnSync, plataforma: process.platform }), hijo.pid));
   pararArbol();
   process.exit(3);
 }, Math.min(15_000, Math.max(500, TOPE_MS / 6)));
