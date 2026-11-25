@@ -4,6 +4,8 @@
 
 A9: sin fallo que generalice — la técnica es la de 1843/1849 y el rojo se vio antes de la cura; el único tropiezo (el `className` supuesto de «← Volver a facturas», `btn btn-secondary btn-sm`, era `btn-secondary btn-sm`) lo corrigió el propio test antes de la primera corrida
 
+**Skill UI:** cargada (`yaqu-premium-ui`, antes de tocar la hoja). Sin tokens, clases, componentes ni textos nuevos: una regla de tamaño acotada a su contenedor. **Microcopy:** ninguna.
+
 Jefe: orquestador J (`cobroflash-backend-2d`). Puesto: J1 (jv-j1kw). Regla: SCRUM-1845 c.22728.
 
 ## Qué son los dos campos (medido con el banco de vistas, no leído del censo)
