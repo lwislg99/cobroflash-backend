@@ -249,7 +249,7 @@ rojo caía por eso y no por el defecto; es la A9 de arriba.
 ### Mutaciones — catálogo, juzgadas con `correr` + `aplicarUna` del propio medidor
 
 Las cinco del test, cada una quitando una mitad de la cura: **5 VIVAS** (`evidencias/SCRUM-1798/1798c-mutaciones-del-catalogo.txt`,
-guion `1798c-juzgar-un-test.mjs`; el medidor queda restaurado). Lo que NO se declara: que `aplicarUna` LLAME a
+guion `1798c-juzgar-una-prueba.mjs`; el medidor queda restaurado). Lo que NO se declara: que `aplicarUna` LLAME a
 `juicioDeNavegador`; ejercitarlo desde un test exige mutar el árbol dentro de otro meta-guard. Va medido de punta a punta:
 
 ### De punta a punta, con un guard de navegador real (lo que J6 sólo pudo probar fuera del driver)

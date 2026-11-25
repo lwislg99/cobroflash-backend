@@ -43,8 +43,11 @@ function correrEnHijo(guard) {
 const r = await mg.correr(${JSON.stringify(guard)});
 process.stdout.write('@@' + JSON.stringify({ pasados: r.pasados, caidos: r.caidos, codigo: r.codigo, ciegoDelGuard: r.ciegoDelGuard, vigilada: r.vigilada }) + '@@', () => process.exit(0));`;
   // Y sin `NODE_TEST_CONTEXT`: el hijo lo hereda del `node --test` padre y entonces su `run()` se
-  // cree recursivo y tampoco corre nada (medido: caídos [] para salida 1 y para salida 2).
+  // cree recursivo y tampoco corre nada (medido: caídos [] para salida 1 y para salida 2). Y fuera
+  // FORCE_COLOR y NODE_OPTIONS, que se le colarían al hijo (SCRUM-1349).
   const env = { ...process.env };
+  delete env.FORCE_COLOR;
+  delete env.NODE_OPTIONS;
   delete env.NODE_TEST_CONTEXT;
   // Un FICHERO y no `node -e`: con `-e` el `run()` del hijo tampoco ejecuta nada (medido igual).
   const hijo = path.join(temporal('scrum1798c-hijo-'), 'correr.mjs');

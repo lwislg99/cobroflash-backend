@@ -10,7 +10,7 @@ const CSS = 'public/dashboard/css/styles.css';
 const original = fs.readFileSync(path.join(RAIZ, CSS));
 const t0 = Date.now();
 const limpia = await mg.correr(GUARD);
-console.log(`base: código ${limpia.codigo} · ${limpia.ciegoDelGuard || 'verde'} · movidos ${limpia.movidos.length} · ${Math.round((Date.now() - t0) / 1000)} s`);
+console.log(`base: código ${limpia.codigo} · ciego del guard: ${limpia.ciegoDelGuard ?? '(ninguno)'} · movidos ${limpia.movidos.length} · ${Math.round((Date.now() - t0) / 1000)} s`);
 const CASOS = [
   { id: 'declarada', espera: 'VIVA', m: { fichero: CSS, de: '.j1-prog { display:flex;', a: '.j1-prog { display:none;', cae: 'la línea de progreso no se ve' } },
   { id: 'inocua', espera: 'MUDA', m: { fichero: CSS, de: '.j1-prog { display:flex;', a: '.j1-prog {  display:flex;', cae: 'la línea de progreso no se ve' } },
