@@ -38,6 +38,8 @@
     "scrum1783b-sin-selector-recargo.test.mjs": ["VIVO","f40dbcfe4b4eeb92"],
     "scrum1787e-conceptos-en-movil.test.mjs": ["VIVO","811fb394cf6dc092"],
     "scrum1787i-vencimiento-y-formas-de-pago.test.mjs": ["VIVO","c2094add4b2617b5"],
+    "scrum1843-marcar-cobrada-44.test.mjs": ["VIVO","cea7b65ed0617354"],
+    "scrum1847-clientes-44.test.mjs": ["VIVO","2bb0372d3e28a5bc"],
     "scrum1848-ajustes-planes-44.test.mjs": ["VIVO","c10e6e923e3d3875"],
     "scrum1849-lista-facturas-44.test.mjs": ["VIVO","d31ac087805f11d4"],
     "scrum1851-barra-doble-no-comenta-css.test.mjs": ["VIVO","c3c19e433b76ed9b"],
