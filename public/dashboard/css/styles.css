@@ -6616,3 +6616,9 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
   *:has(> header.parte-cabecera) > .parte-datos-del-parte:last-child > .parte-datos-del-parte-titulo { grid-column: 1 / -1; }
 }
 /* ══ fin S4 · SCRUM-1762d ══ */
+
+/* ── S2 · SCRUM-1818b · selector de plan por comercio en el funnel de plataforma (Informes, solo fundador) ──
+   Selector + «Cambiar plan» en la celda «Plan»: juntos, envuelven si no caben, y 44 px de toque (AB6). */
+.funnel-plan { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.funnel-plan > select.input { width: auto; min-height: 44px; }
+.funnel-plan > .btn-sm { min-height: 44px; }
