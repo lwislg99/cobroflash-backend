@@ -80,6 +80,18 @@
 .j1-fac-lista td.cell-id, .j1-fac-lista td.cell-amount, .j1-fac-lista td.cell-date, .j1-fac-lista td.cell-status { white-space:nowrap; }
 /* J1: fin del bloque SCRUM-1787n */
 
+/* J1: SCRUM-1843 · la barra «Siguiente paso» de la ficha de FACTURA a 44 px de toque (AB6). En una
+   factura pendiente la primaria «Marcar como cobrada» sale `btn-primary btn-sm` (`ubicarAccion`) y
+   medía 30,7-31,0 px; sus hermanas «Descargar PDF» y «Enviar por WhatsApp», lo mismo. Regla ACOTADA
+   a su contenedor (opción ③ de SCRUM-786, como 1148 y 1559g), sólo tamaño: `.btn-sm` global no se
+   toca, ni el JS. Va la barra entera y no sólo la primaria: es la misma fila, y la primaria cambia
+   de ocupante según el estado (Bizum). El ancla es `.j1-prog`, la línea de progreso que precede a
+   `.detail-next` y que sólo pinta esta ficha: la del presupuesto también tiene `.detail-next` y no
+   se toca. Pesa (0,3,1) y gana a `.btn.btn-sm` (0,2,0) aunque vaya arriba. La cabecera («← Volver a
+   facturas») queda fuera. Lo mide en navegador `tests/scrum1843-marcar-cobrada-44.test.mjs`. */
+.j1-prog ~ .detail-next > div > .btn-sm { min-height:44px; }
+/* J1: fin del bloque SCRUM-1843 */
+
 /* ── SCRUM-731 · `hidden` TIENE QUE APAGAR. SIEMPRE. ───────────────────────────────────────
    Esto NO es una regla de estilo: es la que impide una clase entera de defecto silencioso.
 
