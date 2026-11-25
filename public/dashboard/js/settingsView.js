@@ -345,11 +345,14 @@ function renderSettingsView(container) {
     foralWrapper.appendChild(foralLabel);
     foralWrapper.appendChild(fDomicilioFiscalForal);
     const fWhatsappPhone = createField(
-      "Teléfono WhatsApp (E.164 sin +)",
+      "Teléfono WhatsApp",
       "whatsappPhone",
       "text",
       true
     );
+    // [J3] SCRUM-1781b · el prefijo aparte, +34 preseleccionado: el mismo selector que Clientes
+    // (`telefonoConPrefijo`, en `onboardingView.js`). El valor guardado no cambia de formato.
+    const fWhatsappPrefijo = telefonoConPrefijo.montar(fWhatsappPhone.input);
     const fDefaultCurrency = createField(
       "Moneda por defecto",
       "defaultCurrency",
@@ -777,7 +780,8 @@ function renderSettingsView(container) {
           ).join('');
         previewBox.style.display = "block";
       } catch (err) {
-        setAlert("error", "No se pudo cargar la vista previa: " + (err?.message || "error"));
+        // SCRUM-1828c · el rótulo solo, sin el crudo de `err.message` (SCRUM-1828 c.22597).
+        setAlert("error", mensajeParaPersona(err, "No se pudo cargar la vista previa"));
       } finally {
         previewBtn.disabled = false;
         previewBtn.textContent = original;
@@ -877,6 +881,11 @@ function renderSettingsView(container) {
       );
       caja.appendChild(aviso);
       campo.classList.add("input-error");
+      // SCRUM-1790 · el panel desplaza con `scroll-behavior: smooth`: el salto que hace el navegador
+      // hasta el campo inválido era animado, y durante ~400 ms el aviso seguía fuera de la pantalla.
+      // Sin animación y antes de que valide, la CAJA entera (rótulo, campo y aviso): con solo el aviso,
+      // el campo quedaba bajo la barra superior y el navegador volvía a desplazar, animado (medido).
+      caja.scrollIntoView({ block: "nearest", behavior: "instant" });
       const limpiar = () => {
         aviso.remove();
         campo.classList.remove("input-error");
@@ -937,7 +946,7 @@ function renderSettingsView(container) {
           : merchant.llevaLibrosPorSii === false ? "no" : "";
         fDomicilioFiscalForal.value = merchant.domicilioFiscalForal === true ? "si"
           : merchant.domicilioFiscalForal === false ? "no" : "";
-        fWhatsappPhone.input.value = merchant.whatsappPhone || "";
+        telefonoConPrefijo.repartir(merchant.whatsappPhone || "", fWhatsappPhone.input, fWhatsappPrefijo); // [J3] SCRUM-1781b
         fDefaultCurrency.input.value = merchant.defaultCurrency || "EUR";
         fInvoiceSeriesPrefix.input.value = merchant.invoiceSeriesPrefix || "";
         // SCRUM-293 · TRES estados, y el orden de las ramas importa: `declarada` primero.
@@ -989,7 +998,8 @@ function renderSettingsView(container) {
   
         setAlert(null, "");
       } catch (err) {
-        setAlert("error", "No se han podido cargar los datos: " + err.message);
+        // SCRUM-1828b · el rótulo solo, sin el crudo de `err.message` (SCRUM-1828 c.22597).
+        setAlert("error", mensajeParaPersona(err, "No se han podido cargar los datos"));
       }
     }
   
@@ -1143,7 +1153,7 @@ function renderSettingsView(container) {
         criterioCaja: fCriterioCaja.value === "si" ? true : fCriterioCaja.value === "no" ? false : null,
         llevaLibrosPorSii: fLlevaLibrosPorSii.value === "si" ? true : fLlevaLibrosPorSii.value === "no" ? false : null,
         domicilioFiscalForal: fDomicilioFiscalForal.value === "si" ? true : fDomicilioFiscalForal.value === "no" ? false : null,
-        whatsappPhone: fWhatsappPhone.input.value.trim(),
+        whatsappPhone: telefonoConPrefijo.componer(fWhatsappPhone.input, fWhatsappPrefijo), // [J3] SCRUM-1781b
         defaultCurrency: fDefaultCurrency.input.value.trim() || "EUR",
         invoiceSeriesPrefix: fInvoiceSeriesPrefix.input.value.trim(),
         // SCRUM-293 · se mandan LOS DOS: `declarada` dice SI lo ha dicho, `tipo` QUÉ dijo.
@@ -1197,7 +1207,7 @@ function renderSettingsView(container) {
         // SCRUM-1536d · «Sí» en el domicilio foral: el servidor no guarda NADA y manda el texto
         // firmado en SCRUM-1536 c.20225 (T2a). Se pinta ése, entero y sin el «Error al guardar:».
         if (err && err.code === "territorio_excluido") setAlert("error", mensajeParaPersona(err, ""));
-        else setAlert("error", "Error al guardar: " + err.message);
+        else setAlert("error", mensajeParaPersona(err, "Error al guardar"));
       } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = "Guardar cambios";
@@ -1592,7 +1602,7 @@ async function renderPublicProfileCard(container) {
       } catch (e) {
         btn.disabled = false; btn.textContent = 'Guardar página';
         msg.style.color = 'var(--red-600)';
-        msg.textContent = (e && e.data && e.data.message) || 'No se pudo guardar. Inténtalo de nuevo.';
+        msg.textContent = mensajeParaPersona(e, 'No se pudo guardar. Inténtalo de nuevo.'); // SCRUM-1828c
       }
     });
 
@@ -1685,7 +1695,8 @@ function renderProfileQrButton(card, m) {
         // El backend devuelve el motivo (contraste_insuficiente, qr_invertido…) con su mensaje:
         // se muestra ESE, no uno inventado aquí. [PENDIENTE microcopy oficial] solo el fallback.
         const cuerpo = await r.json().catch(() => null);
-        err.textContent = (cuerpo && cuerpo.message) || QR_COPY.errorGenerico;
+        // SCRUM-1828c · el cuerpo de un `fetch`, no un error de `apiRequest`: se le da su forma.
+        err.textContent = mensajeParaPersona({ data: cuerpo }, QR_COPY.errorGenerico);
         err.hidden = false;
         img.removeAttribute('src');
         return;
@@ -1861,7 +1872,7 @@ function montarDatosDeEjemplo(merchant) {
         }
       } catch (e) {
         cerrar();
-        salida.textContent = 'No se pudo eliminar: ' + (e?.data?.message || e.message);
+        salida.textContent = mensajeParaPersona(e, 'No se pudo eliminar');
       }
     });
   });

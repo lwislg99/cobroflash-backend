@@ -32,7 +32,7 @@ const { calcTotal, precioConDto } = require('../dist/core/utils/utils.js');
 // el caso que nombra: la cabecera, la columna de la F1, la R1 que no se toca y el presupuesto.
 // Cada campo, LITERAL: el lector de declaraciones no resuelve constantes (con una, leía 0).
 export const MUTACIONES_QUE_ME_TUMBAN = [
-  { fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts', de: "doc.text(columnaSinIva ? 'IMPORTE' : 'TOTAL', XT,", a: "doc.text(columnaSinIva ? 'TOTAL' : 'TOTAL', XT,",
+  { fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts', de: "pintarCabeceraDeTabla(doc, impuesto, columnaSinIva ? 'IMPORTE' : 'TOTAL');\n\n    // Filas", a: "pintarCabeceraDeTabla(doc, impuesto, columnaSinIva ? 'TOTAL' : 'TOTAL');\n\n    // Filas",
     cae: 'SCRUM-1446e · ① la cabecera de la columna de la F1' },
   { fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts', de: 'qty * price * (1 + (columnaSinIva ? 0 : taxR))', a: 'qty * price * (1 + taxR)',
     cae: 'SCRUM-1446e · ① la F1 de dos líneas' },
@@ -40,7 +40,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'SCRUM-1446e · ③ la R1 y el justificante' },
   { fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts', de: 'const lineTotal = l.qty * l.price;', a: 'const lineTotal = l.qty * l.price * (1 + l.tax);',
     cae: 'SCRUM-1446e · ④ el presupuesto' },
-  { fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts', de: ".text('IMPORTE', X_TOTAL, doc.y - 12,", a: ".text('Total', X_TOTAL, doc.y - 12,",
+  { fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts', de: "rotuloImporte = 'IMPORTE')", a: "rotuloImporte = 'Total')",
     cae: 'SCRUM-1446e · ④ el presupuesto' },
   // SCRUM-1446g · el reparto de los tramos: a la ÚLTIMA línea (la opción A, rechazada en c.20945),
   // el desempate al revés, sin detectar el tramo, y sin respetar el tramo que ya suma.
@@ -93,10 +93,12 @@ async function papelFactura(type, lines, total) {
   });
   const textos = leer(outPath);
   return {
-    cabecera: unico(textos, /^CONCEPTOCANT\.PRECIO UNITIVA %(.*)$/, 'la cabecera de la tabla')[1],
+    // SCRUM-1787w · literal FIRMADO en SCRUM-1787 c.22428 (GO c.22416): cabecera «Concepto · Cant. · Precio · IVA% · IMPORTE», la del presupuesto.
+    // El lector de texto la da como la del presupuesto (abajo): «Concepto» en su línea y el resto en orden inverso de x.
+    cabecera: unico(textos, /^(.*)IVA%PrecioCant\.$/, 'la cabecera de la tabla')[1],
     lineas: columna(textos, '.*,\\d{2}(?:[\\d,]+%|—)'),
     base: aCent(unico(textos, new RegExp(`^Base imponible:(${IMPORTE}) EUR$`), 'la base')[1]),
-    total: aCent(unico(textos, new RegExp(`^TOTAL(?: COBRADO)?:(${IMPORTE}) EUR$`), 'el total')[1]),
+    total: aCent(unico(textos, new RegExp(`^(?:Total factura|TOTAL COBRADO):(${IMPORTE}) EUR$`), 'el total')[1]),
   };
 }
 

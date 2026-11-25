@@ -68,12 +68,23 @@ const ANCLAS = [PRODUCTOR, 'src/modules/fiscal/verifactu/registro.builder.ts', S
  * la versión, si no cambia cómo se crea o se remite un registro o si el fundador lo dice en su GO.
  * Recongeladas por esa vía: `emission.service.ts` e `invoiceNumber.service.ts` (SCRUM-1585, M, que
  * decide si se emite y no toca sellado ni XML), pegando lo que imprimió el mensaje de error.
+ * Y `selladoEstado.ts` (SCRUM-665e: congelar el PDF al emitir; ni XML, ni huella, ni cuota),
+ * con el GO de SCRUM-665 c.21182 y la orden de recongelar de SCRUM-665 c.21584 ③.
  * Y `registro.builder.ts` + `verifactu.service.ts` (SCRUM-1129e, ClaveRegimen 07 desde el criterio
  * de caja congelado al sellar): ESTE sí cambia el XML, y va por c.21290 porque el fundador lo dijo
  * en su GO (SCRUM-1129 c.21753, punto 3), con la condición de que la primera declaración no esté
  * entregada (medido el 13-nov-2026: 0 textos de declaración en `src/` y `public/`).
  * La de `verifactu.service.ts` se recongeló otra vez en ese PR (SCRUM-1129 c.21829, autorización de
  * Javier): el campo con nombre `merchantCriterioCaja` que pide scrum878, sin cambiar lo que se escribe.
+ * Y `selladoEstado.ts` (SCRUM-1779d: con `SIF_ENABLED` en OFF la emisión no sella; con ON, como
+ * antes), por SCRUM-1779 c.22239 por SCRUM-1585 c.21290 (decisión de recongelar: SCRUM-1779
+ * c.22253). No cambia cómo se crea ni cómo se remite un registro: con OFF no se crea ninguno.
+ * De los ficheros congelados, el guard nombró sólo éste como cambiado; huella pegada de su mensaje.
+ * Y `invoiceNumber.service.ts` otra vez (SCRUM-1780 c.22237 por SCRUM-1585 c.21290): un valor nuevo,
+ * `'C7-parte'`, en `OrigenC7`/`ORIGENES_C7` (factura desde el parte firmado, GO de regla 40 en
+ * c.22237); no cambia cómo se crea ni se remite un registro. Decisión del orquestador J en
+ * SCRUM-1780 c.22249, sin subir la versión, y GO del fundador con el diff delante en SCRUM-1780
+ * c.22280; pegado lo que imprimió el mensaje de error sobre el árbol fusionado con el main de 1779d.
  */
 const VERSION_CONGELADA = '1.0.0';
 const HUELLAS_CONGELADAS = Object.freeze({
@@ -87,8 +98,8 @@ const HUELLAS_CONGELADAS = Object.freeze({
   'src/modules/invoicing/domain/emisorCongelado.ts': 'f82c1d146a9e5c15',
   'src/modules/invoicing/domain/emission.service.ts': 'fb326e3f1fb6f79f',
   'src/modules/invoicing/domain/encolarRemision.ts': '9250c4d15ce607c2',
-  'src/modules/invoicing/domain/invoiceNumber.service.ts': '65ff392f155d005b',
-  'src/modules/invoicing/domain/selladoEstado.ts': 'f08728ab84b81ba2',
+  'src/modules/invoicing/domain/invoiceNumber.service.ts': '703674abecd33799', // recongelada: SCRUM-1780 c.22237 por SCRUM-1585 c.21290 (origen 'C7-parte'; orquestador J c.22249; GO del fundador con el diff delante, SCRUM-1780 c.22280)
+  'src/modules/invoicing/domain/selladoEstado.ts': 'd7419e27e7450aa1', // recongelada al juntar SCRUM-665e (congelar el PDF al emitir) con el 1779d de main: GO SCRUM-665 c.21182, orden de recongelar c.21584 ③, entrada c.21943, por SCRUM-1585 c.21290; pegado lo que imprimió el mensaje de error sobre el árbol fusionado (23-nov-2026)
   'src/modules/invoicing/domain/tipoDocumento.ts': '09a9e00aeb1068de',
   'src/modules/invoicing/domain/vat.service.ts': '91d10ea9159cdc0c',
   'src/modules/invoicing/domain/verifactu.service.ts': '7433c5b8fb3af758',

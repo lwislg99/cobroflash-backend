@@ -622,10 +622,84 @@ test('SCRUM-586 · ✅ `payMethods` NO llega al PDF: los documentos emitidos no 
   assert.ok(vistos.length >= 10,
     `🔴 SUELO CAÍDO: sólo ${vistos.length} campos de \`Quote\` aparecen en el camino del PDF. `
     + 'Con el censo así de ciego, «`payMethods` no aparece» no dice nada.');
-  assert.equal(aparece('payMethods'), false,
-    '🔴 `payMethods` ha entrado en el camino del PDF. Este ticket cambia el valor POR DEFECTO de '
-    + 'un documento nuevo; si además viajara al papel, tocaría el camino de emisión y esto pasa a '
-    + 'ser STOP de fundador (regla 38).');
+  // 🔴 23-nov-2026 · DECISIÓN DEL FUNDADOR, SCRUM-1787 c.22377 (regla 41): este guard prohibía la
+  // PALABRA `payMethods` en todo el camino del PDF. Desde 1787m (GO c.22338 ③) la factura imprime
+  // sus formas de pago CONGELADAS al emitir (`Invoice.payMethods`, 1787i), y eso SÍ puede llegar.
+  // Lo que sigue prohibido es lo de este ticket: las del presupuesto (`Quote.payMethods`) o la
+  // preferencia viva del comercio. Así que la regla se parte en dos sitios, y ninguno se relaja:
+  //   · aquí: fuera de `generateInvoicePdf` la palabra sigue prohibida en los cinco ficheros, y
+  //     dentro sólo se lee como `params.payMethods` (o se declara en su firma);
+  //   · el caso de abajo: cada llamada a `generateInvoicePdf` pasa `<factura>.payMethods`, del
+  //     mismo objeto que da `merchantCriterioCaja` —columna que sólo tiene la factura—.
+  const fueraDeLaFactura = [];
+  FICHEROS.forEach((f, i) => {
+    const sf = ts.createSourceFile(f, textos[i], ts.ScriptTarget.Latest, true);
+    const visita = (n, dentro) => {
+      const esLaFuncion = ts.isFunctionDeclaration(n) && n.name?.text === 'generateInvoicePdf';
+      if (ts.isIdentifier(n) && n.text === 'payMethods') {
+        const p = n.parent;
+        const permitido = dentro && (
+          (ts.isPropertyAccessExpression(p) && p.name === n && p.expression.getText(sf) === 'params')
+          || (ts.isPropertySignature(p) && p.name === n));
+        if (!permitido) fueraDeLaFactura.push(`${f}:${sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1}`);
+      }
+      ts.forEachChild(n, (h) => visita(h, dentro || esLaFuncion));
+    };
+    visita(sf, false);
+  });
+  assert.deepEqual(fueraDeLaFactura, [],
+    '🔴 `payMethods` ha entrado en el camino del PDF por otro sitio que las formas de pago congeladas '
+    + 'de la factura (`params.payMethods` de `generateInvoicePdf`, c.22377). Las del presupuesto o '
+    + 'las del comercio en el papel tocan el camino de emisión: STOP de fundador (regla 38).');
+});
+
+test('SCRUM-586 · 🔴 cada llamada a generateInvoicePdf pasa las formas de pago CONGELADAS de la factura (c.22377)', () => {
+  // La población se deriva: los ficheros de `src/` que nombran la función, y en ellos las llamadas
+  // por AST. Cero llamadas es CIEGO, no verde.
+  const fuentes = [];
+  const recorre = (dir) => {
+    for (const e of fs.readdirSync(path.join(RAIZ, dir), { withFileTypes: true })) {
+      const rel = dir + '/' + e.name;
+      if (e.isDirectory()) recorre(rel);
+      else if (/\.ts$/.test(e.name)) fuentes.push(rel);
+    }
+  };
+  recorre('src');
+  assert.ok(fuentes.length > 100, `🔴 CIEGO: sólo ${fuentes.length} ficheros .ts en src/.`);
+  const llamadas = [];
+  for (const ruta of fuentes) {
+    const texto = fs.readFileSync(path.join(RAIZ, ruta), 'utf8');
+    if (!texto.includes('generateInvoicePdf')) continue;
+    const sf = ts.createSourceFile(ruta, texto, ts.ScriptTarget.Latest, true);
+    const visita = (n) => {
+      if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'generateInvoicePdf') {
+        llamadas.push({ ruta, sf, n });
+      }
+      ts.forEachChild(n, visita);
+    };
+    visita(sf);
+  }
+  assert.ok(llamadas.length >= 1, `🔴 CIEGO: sólo encuentro ${llamadas.length} llamadas a generateInvoicePdf en src/.`); // 23-nov-2026, SCRUM-665e: de 2 a 1 por decisión del fundador (SCRUM-665 c.22379, con c.21182 y c.22358): queda un generador único, `ensureInvoicePdf`
+  for (const { ruta, sf, n } of llamadas) {
+    const donde = `${ruta}:${sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1}`;
+    const obj = n.arguments[0];
+    assert.ok(obj && ts.isObjectLiteralExpression(obj), `🔴 CIEGO: ${donde} no pasa un objeto literal`);
+    const valor = (clave) => {
+      const p = obj.properties.find((x) => x.name && x.name.getText(sf) === clave);
+      assert.ok(p && ts.isPropertyAssignment(p), `🔴 CIEGO: ${donde} no pasa \`${clave}\``);
+      return p.initializer;
+    };
+    const caja = valor('merchantCriterioCaja');
+    assert.ok(ts.isPropertyAccessExpression(caja) && caja.name.text === 'merchantCriterioCaja',
+      `🔴 CIEGO: ${donde} no lee \`merchantCriterioCaja\` de un objeto, y sin él no sé cuál es la factura`);
+    const factura = caja.expression.getText(sf);
+    const formas = valor('payMethods');
+    assert.ok(ts.isPropertyAccessExpression(formas) && formas.name.text === 'payMethods'
+      && formas.expression.getText(sf) === factura,
+      `🔴 ${donde} pasa al PDF «${formas.getText(sf)}», y lo único que puede llegar al papel son las `
+      + `formas de pago congeladas de la factura («${factura}.payMethods»). Las del presupuesto o las `
+      + 'del comercio siguen prohibidas en el PDF (SCRUM-1787 c.22377).');
+  }
 });
 
 // ═══ ⑨ LAS MUTACIONES, DERIVADAS DEL LECTOR OFICIAL ══════════════════════════════════════
@@ -747,5 +821,28 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: '    propuestaPagoBtn.textContent = "Aplicar";',
     a: '    propuestaPagoBtn.textContent = "Usar estas formas de pago";',
     cae: 'el rótulo del BOTÓN es el FIRMADO («Aplicar»), sin marcador',
+  },
+  {
+    // ⑦ 23-nov-2026 (SCRUM-1787 c.22377) · el PDF de la factura recibe las formas de pago del
+    // PRESUPUESTO en vez de las congeladas en la factura: lo que este ticket sigue prohibiendo.
+    fichero: 'src/lib/invoicing.ts',
+    de: 'dueDate: inv.dueDate, payMethods: inv.payMethods, // SCRUM-1240d y SCRUM-1787m: los CONGELADOS, nunca los vivos\n', // 23-nov-2026, SCRUM-665e: reanclada a `ensureInvoicePdf`, el generador único (SCRUM-665 c.22379, con c.21182 y c.22358); antes apuntaba al segundo generador, que 665e unificó
+    a: 'dueDate: inv.dueDate, payMethods: inv.quote?.payMethods, // SCRUM-1240d y SCRUM-1787m: los CONGELADOS, nunca los vivos\n',
+    cae: 'cada llamada a generateInvoicePdf pasa las formas de pago CONGELADAS de la factura',
+  },
+  // ⑧ RETIRADA el 23-nov-2026 (SCRUM-665e, decisión del fundador en SCRUM-665 c.22379): mutaba la
+  // llamada de `POST /admin/invoices/:id/regenerate-pdf` para que el PDF recibiera la preferencia
+  // VIVA del comercio (SCRUM-1787 c.22377), y esa ruta se retiró en 665e (SCRUM-665 c.21182,
+  // punto 3). Sin ruta no hay línea que mutar. Lo que prohibía lo sigue probando la ⑦, sobre el
+  // generador único.
+  //
+  //
+  {
+    // ⑨ 23-nov-2026 (SCRUM-1787 c.22377) · el PDF del PRESUPUESTO empieza a pintar sus formas de
+    // pago: la mitad de la prohibición que vive en el test ⑧ de arriba.
+    fichero: 'src/modules/quotes/domain/presupuestoParaPdf.ts',
+    de: '    currency: quote.currency,\n',
+    a: '    currency: quote.currency, payMethods: (quote as any).payMethods,\n',
+    cae: '`payMethods` NO llega al PDF: los documentos emitidos no se ven afectados',
   },
 ];

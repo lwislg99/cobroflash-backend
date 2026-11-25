@@ -54,7 +54,8 @@ async function papel(lines, extra = {}, total = '121.00') {
   assert.equal(r.ok, true, `🔴 NO SUPE LEER EL PDF: ${r.motivo}`);
   const t = r.lineas.map((l) => l.texto);
   // Control positivo del lector: sin el bloque de totales no hay nada que medir.
-  assert.ok(t.some((x) => /^TOTAL( COBRADO)?:/.test(x)), '🔴 CIEGO: no encuentro el TOTAL en el papel.');
+  // SCRUM-1787w · literal FIRMADO en SCRUM-1787 c.22428 (GO c.22416): «Total factura:» sustituye a «TOTAL:».
+  assert.ok(t.some((x) => /^(Total factura|TOTAL COBRADO):/.test(x)), '🔴 CIEGO: no encuentro el TOTAL en el papel.');
   return t;
 }
 const conMencion = (t) => t.filter((x) => x.includes('criterio de caja'));
@@ -62,7 +63,7 @@ const conMencion = (t) => t.filter((x) => x.includes('criterio de caja'));
 test('1240d · congelado true + S1: la mención sale, literal, en su línea, tras el TOTAL y antes del QR', async () => {
   const t = await papel([S1], { merchantCriterioCaja: true });
   assert.deepEqual(conMencion(t), [MENCION], 'la mención no sale una vez, en su propia línea y con el literal firmado');
-  const iTotal = t.findIndex((x) => x.startsWith('TOTAL:'));
+  const iTotal = t.findIndex((x) => x.startsWith('Total factura:')); // c.22428 ⑤
   const iMencion = t.indexOf(MENCION);
   const iQr = t.findIndex((x) => x.startsWith('Escanea el QR'));
   assert.ok(iTotal >= 0 && iQr > 0, '🔴 CIEGO: no encuentro el TOTAL o el bloque del QR');
@@ -127,10 +128,16 @@ test('1240d · la mención y la 07 del registro no discrepan: misma decisión qu
   assert.equal(conSiete, 5, `🔴 CIEGO: esperaba 5 casos con 07 y salen ${conSiete}`);
 });
 
-// ── Los tres llamadores pasan la columna CONGELADA, nunca el Merchant vivo ─────────────────────
+// ── Los llamadores pasan la columna CONGELADA, nunca el Merchant vivo ──────────────────────────
+// SCRUM-665e (GO SCRUM-665 c.21182 puntos 1 y 3; registrado por la vía de c.21943 punto 3, con la
+// forma de scrum577 en c.21608 (b)): la rama junta los generadores de PDF en UNO, `ensureInvoicePdf`,
+// y retira la ruta «regenerar PDF». Medido el 16-nov-2026 con el AST: en main, 2 llamadas en invoicing.ts y
+// 1 en invoicesAdmin.routes.ts; en la rama, 1 y 0. La lista es un número derivado y se recalcula; la
+// comprobación no se relaja: cada llamada que quede sigue pasando la columna congelada (lo tumba la
+// última mutación del catálogo), y una llamada que vuelva en cualquiera de los dos ficheros lo tumba.
 const LLAMADORES = [
-  ['src/lib/invoicing.ts', 2],
-  ['src/modules/system/app/routes/invoicesAdmin.routes.ts', 1],
+  ['src/lib/invoicing.ts', 1],                                   // ensureInvoicePdf (el único generador)
+  ['src/modules/system/app/routes/invoicesAdmin.routes.ts', 0],   // la ruta «regenerar PDF» se retiró (665e)
 ];
 
 test('1240d · cada llamada a generateInvoicePdf pasa merchantCriterioCaja de la FACTURA, no del merchant', () => {
@@ -154,7 +161,8 @@ test('1240d · cada llamada a generateInvoicePdf pasa merchantCriterioCaja de la
       total += 1;
     }
   }
-  assert.equal(total, 3);
+  assert.equal(total, LLAMADORES.reduce((n, [, e]) => n + e, 0));
+  assert.ok(total > 0, 'CIEGO: ninguna llamada a generateInvoicePdf medida');
 });
 
 test('1240d · pdf.service.ts no lee el criterio de caja vivo (sin `criterioCaja` de un merchant)', () => {
@@ -191,8 +199,10 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     fichero: 'src/lib/invoicing.ts',
-    de: '      merchantCriterioCaja: inv.merchantCriterioCaja, // SCRUM-1240d: el CONGELADO, nunca el vivo\n    });',
-    a: '      merchantCriterioCaja: inv.merchant.criterioCaja, // SCRUM-1240d: el CONGELADO, nunca el vivo\n    });',
+    // 23-nov-2026 · reanclada (SCRUM-1787 c.22377): 1787m puso `dueDate` y `payMethods` en esta
+    // misma línea para no mover el ancla :267 de la auditoría. Muta lo mismo que antes.
+    de: '      merchantCriterioCaja: inv.merchantCriterioCaja, dueDate: inv.dueDate, payMethods: inv.payMethods, // SCRUM-1240d y SCRUM-1787m: los CONGELADOS, nunca los vivos\n    });',
+    a: '      merchantCriterioCaja: inv.merchant.criterioCaja, dueDate: inv.dueDate, payMethods: inv.payMethods, // SCRUM-1240d y SCRUM-1787m: los CONGELADOS, nunca los vivos\n    });',
     cae: '1240d · cada llamada a generateInvoicePdf pasa merchantCriterioCaja de la FACTURA',
   },
 ];

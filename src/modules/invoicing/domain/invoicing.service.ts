@@ -92,6 +92,13 @@ export interface EmitInvoiceInput {
    * si ya tiene la ficha del merchant a mano— ANTES de abrir la `$transaction`, nunca esta función.
    */
   emisorCongelado: EmisorCongelado;
+  /**
+   * SCRUM-1787i (c.22325 ③, c.22331) · OPCIONALES: hasta cuándo paga el cliente y qué formas de
+   * pago verá. Hoy sólo los manda la factura suelta; sin ellos la fila queda a NULL, como antes.
+   * `dueDate` NO es `Charge.expiresAt` y no cambia el estado de la factura.
+   */
+  dueDate?: Date | null;
+  payMethods?: readonly string[];
 }
 
 /**
@@ -119,6 +126,9 @@ export async function emitInvoice(tx: Prisma.TransactionClient, input: EmitInvoi
     albaranRefs: (input.albaranRefs as any) ?? undefined,
     deductsRefs: (input.deductsRefs as any) ?? undefined,
     stageLabel: input.stageLabel ?? null,
+    // SCRUM-1787i (GO c.22325 ③) · sólo la suelta los manda; los demás orígenes escriben NULL.
+    dueDate: input.dueDate ?? null,
+    payMethods: input.payMethods ? [...input.payMethods] : undefined,
     // LAZY: se rellenan bajo demanda en ensureInvoicePdf (VeriFactu + PDF).
     pdfUrl: 'PENDING_PDF',
     qrData: 'PENDING_QR',

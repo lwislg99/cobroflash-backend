@@ -164,6 +164,7 @@ model Merchant {
   QuoteRequest  QuoteRequest[]
   CustomerEvent CustomerEvent[]
   CustomerSite  CustomerSite[]
+  Equipment     Equipment[]
   // SCRUM-1296: los registros de este comercio en la cola de remisión a la AEAT.
   vfSubmissions VfSubmission[]
   // SCRUM-1732 (opción A): lo cobrado de sus facturas, fila a fila (`invoice_payments`).
@@ -465,6 +466,7 @@ model Customer {
   QuoteRequest QuoteRequest[]
   events       CustomerEvent[]
   sites        CustomerSite[]
+  equipments   Equipment[]
 
   @@index([merchantId])
   // Se busca «las personas de esta empresa»; sin índice sería un recorrido de toda la tabla.
@@ -612,6 +614,8 @@ model Quote {
   // 🔴 LA FACTURA NO LOS TIENE, y no es un olvido: `ensureInvoicePdf` REGENERA el PDF con el
   // código de hoy (el fs de Railway es efímero), así que un bloque nuevo cambiaría el aspecto de
   // facturas YA EMITIDAS — regla 29. Es SCRUM-665.
+  // Excepción posterior: el PIE sí pasa (`Invoice.docFooterText`, SCRUM-1787l, c.22345 ②),
+  // nullable para que las emitidas antes sigan saliendo igual. La cabecera NO pasa.
   docHeaderText String? @map("doc_header_text") @db.Text
   docFooterText String? @map("doc_footer_text") @db.Text
 
@@ -783,6 +787,14 @@ model Invoice {
   customerTaxId     String? @map("customer_tax_id")
   customerEmail     String? @map("customer_email")
   customerPhone     String? @map("customer_phone")
+  /// SCRUM-1787d · la dirección de FACTURACIÓN del cliente, congelada al emitir (c.22305; ALTER
+  /// aplicado en staging y producción, c.22311). NO es la de la obra (`shippingAddress`). NULL en
+  /// toda factura anterior: no se rellena nunca y el lector no cae a la ficha viva (regla 29).
+  customerBillingAddress    String? @map("customer_billing_address")
+  customerBillingCity       String? @map("customer_billing_city")
+  customerBillingPostalCode String? @map("customer_billing_postal_code")
+  customerBillingProvince   String? @map("customer_billing_province")
+  customerBillingCountry    String? @map("customer_billing_country")
 
   /// SCRUM-665 (B) · EL EMISOR CONGELADO. La otra mitad del documento, con el mismo patrón que
   /// las cinco de arriba (el cliente congelado, SCRUM-729): columnas + escritor al emitir + lector
@@ -874,6 +886,17 @@ model Invoice {
   paidVia       String?   @map("paid_via")
   clientComment String?   @map("client_comment")
   stageLabel    String?   @map("stage_label") // SCRUM-27: etiqueta del tramo, congelada al crear la factura
+  // SCRUM-1787i (GO de c.22325 ③ y c.22331; ALTER de 1787f aplicado, c.22332/c.22333) · congelados al
+  // emitir la factura SUELTA; los demás caminos escriben NULL. `dueDate` es hasta cuándo paga el
+  // cliente: NO es `Charge.expiresAt` (hasta cuándo vale UN enlace) y NO cambia el estado `expired`.
+  // `payMethods`: el mismo Json que `quotes` y `charges` (NULL = todas las que estén activas).
+  dueDate       DateTime? @map("due_date")
+  payMethods    Json?     @map("pay_methods")
+  // SCRUM-1787l (c.22345 ②⑤, ALTER aplicado c.22346): las Observaciones (el pie) del presupuesto,
+  // congeladas al emitir. Mismo nombre y tipo que `Quote.docFooterText`. NULL en las emitidas antes
+  // (regla 29: no se rellenan) y el PDF sólo pinta el bloque con texto, así que una regenerada por
+  // `ensureInvoicePdf` sale igual que antes (SCRUM-665). La R1 NO lo hereda (c.22345 ④).
+  docFooterText String?   @map("doc_footer_text") @db.Text
 
   // Líneas de detalle (copiadas del Quote o del Charge al crear la factura)
   lines Json?
@@ -947,7 +970,12 @@ model Invoice {
   //   no_aplica            · justificante `J-` o merchant no-ES: nunca entra en la cadena.
   vfEstado        String    @default("pendiente_de_sellado") @map("vf_estado")
   vfHash          String?   @map("vf_hash") // huella SHA-256 de esta factura
-  vfPrevHash      String?   @map("vf_prev_hash") // huella de la factura anterior en la cadena
+  // SCRUM-665e: huella SHA-256 (hex) del FICHERO PDF que se guardó al emitir. Es la del
+  // DOCUMENTO, no la del registro (`vfHash`): el ROF exige conservar la copia tal como se
+  // expidió (arts. 19.2 y 21.1; SCRUM-665 c.16647). Con valor, el PDF se sirve del disco y
+  // nunca se regenera. NULL = factura anterior a este cambio, o PDF aún no guardado.
+  pdfSha256       String?   @map("pdf_sha256")
+  vfPrevHash     String?   @map("vf_prev_hash") // huella de la factura anterior en la cadena
   // SCRUM-145: instante EXACTO (con huso) que entró en el cálculo de la huella. Sin él, el
   // registro emite `FechaHoraHusoGenRegistro` con el momento de la FACTURA, que no es el que
   // se hasheó → un tercero no puede recomputar la huella y verificarla. Es dato del REGISTRO,
@@ -1336,6 +1364,36 @@ model CustomerSite {
   @@map("customer_sites")
 }
 
+// SCRUM-914 · EQUIPOS DEL CLIENTE: cada instalación o aparato (caldera, cuadro eléctrico, alarma…).
+// DDL en `docs/sql/scrum-914-equipos-del-cliente.sql`, aplicado en las tres bases (SCRUM-914
+// c.22434, 23-nov-2026). Cuelga del CLIENTE y, opcionalmente, de uno de sus sitios. `customerSiteId` y los
+// cuatro `equipmentId` (Job, MaintenancePlan, Albaran, ParteTrabajo) van SIN clave ajena, como
+// `Customer.companyId`: el borrado lo hace el código (SCRUM-192), no una cascada.
+// Las fechas son días del calendario (`DATE`), no instantes: la familia de SCRUM-1093.
+model Equipment {
+  id             Int       @id @default(autoincrement())
+  merchantId     Int       @map("merchant_id")
+  customerId     Int       @map("customer_id")
+  customerSiteId Int?      @map("customer_site_id")
+  type           String
+  name           String
+  brand          String?   @map("brand")
+  modelName      String?   @map("model_name")
+  serialNumber   String?   @map("serial_number")
+  installedOn    DateTime? @map("installed_on") @db.Date
+  warrantyUntil  DateTime? @map("warranty_until") @db.Date
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  merchant Merchant @relation(fields: [merchantId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([merchantId])
+  @@index([customerId])
+  @@index([customerSiteId])
+  @@map("equipments")
+}
+
 // WA-0b (master J4 · Parte L): log y estados de entrega de los mensajes de WhatsApp.
 // Tabla independiente (sin FKs) para mantenerla aditiva y tolerante: el código que la
 // escribe captura el error si aún no existe en prod (patrón ENT-3). El waMessageId mapea
@@ -1435,9 +1493,13 @@ model Job {
   // `assignedUserId` desaparece — dos sitios diciendo quien ejecuta acaban discrepando.
   assignees JobAssignee[]
 
+  // SCRUM-914: el equipo del cliente al que va ligado. NULL = ninguno. Sin FK (ver `Equipment`).
+  equipmentId Int? @map("equipment_id")
+
   @@index([merchantId, status])
   @@index([merchantId, scheduledAt])
   @@index([merchantId, operarioId])
+  @@index([equipmentId])
   @@map("jobs")
 }
 
@@ -1456,8 +1518,11 @@ model MaintenancePlan {
   rejectedStreak Int       @default(0) @map("rejected_streak")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
+  // SCRUM-914: el equipo del cliente al que va ligado. NULL = ninguno. Sin FK (ver `Equipment`).
+  equipmentId    Int?      @map("equipment_id")
 
   @@index([merchantId, active, nextDueAt])
+  @@index([equipmentId])
   @@map("maintenance_plans")
 }
 
@@ -1599,10 +1664,15 @@ model Albaran {
   /// línea ni un importe, y el sello certifica el CONTENIDO canónico, no el PDF.
   ocultarPreciosEnDocumento Boolean @default(false) @map("ocultar_precios_en_documento")
 
+  /// SCRUM-914: el equipo del cliente al que va ligado. NULL = ninguno. Sin FK (ver `Equipment`).
+  /// NO entra en el sobre de la firma: el canónico no lo lee.
+  equipmentId Int? @map("equipment_id")
+
   @@unique([merchantId, claveIdempotencia])
   @@unique([merchantId, numero])
   @@index([merchantId, jobId])
   @@index([merchantId, invoiceId])
+  @@index([equipmentId])
   @@map("albaranes")
 }
 
@@ -1729,6 +1799,10 @@ model ParteTrabajo {
   /// borrador | firmado | facturado (ESTADOS_PARTE)
   estado String @default("borrador")
 
+  /// SCRUM-1780c · la factura que nació de este parte (`facturaDesdeParte.ts`). Sin @relation ni FK,
+  /// igual que `Albaran.invoiceId`. ALTER previo: `docs/sql/scrum-1780-parte-facturado.sql` (regla 40).
+  invoiceId Int? @map("invoice_id")
+
   firmadoAt         DateTime? @map("firmado_at")
   firmadoPorNombre  String?   @map("firmado_por_nombre")
   firmadoPorCalidad String?   @map("firmado_por_calidad")
@@ -1768,6 +1842,10 @@ model ParteTrabajo {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // SCRUM-914: el equipo del cliente al que va ligado. NULL = ninguno. Sin FK (ver `Equipment`).
+  // NO entra en el contenido sellado (`contenido_hash`): el canónico no lo lee.
+  equipmentId Int? @map("equipment_id")
+
   // SCRUM-685b · EL NÚMERO DEL PARTE ES ÚNICO DENTRO DE SU MERCHANT, Y LO DICE LA BASE.
   //
   // 🔴 Esto NO es una redundancia del código: es la única red que hay. `siguienteNumeroParte`
@@ -1788,6 +1866,8 @@ model ParteTrabajo {
   @@unique([merchantId, numero])
   @@index([merchantId, fecha])
   @@index([merchantId, estado])
+  @@index([merchantId, invoiceId]) // SCRUM-1780c
+  @@index([equipmentId])
   @@map("partes_trabajo")
 }
 

@@ -77,6 +77,9 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // es lo mas importante que este inventario declara.
   'scrum324-cadena-hasta-el-libro.test.mjs': 2,
   'scrum244-supresion-y-anonimizado.test.mjs': 1,
+  // SCRUM-914: los equipos del cliente en el borrado y en el anonimizado. Necesitan banco porque lo
+  // que vigilan son las FK RESTRICT de `equipments`, y ésas sólo las hace cumplir el motor.
+  'scrum914-equipos-borrado-y-anonimizado.test.mjs': 2,
   'scrum295-modelo-303-postgres.test.mjs': 1,
   'scrum296-libro-postgres.test.mjs': 1,
   // SCRUM-980: el historial de la ficha. Necesita banco porque vigila la TENENCIA de cinco consultas
@@ -396,6 +399,12 @@ const GATEADOS_DECLARADOS = Object.freeze({
   'scrum127-paywall-bloquea.test.mjs': 1,
   'scrum173-cadena-verifactu-serializada.test.mjs': 7,
   'scrum178-emision-manual.test.mjs': 2,
+  // SCRUM-1780c: el que mira que dos «facturar este parte» a la vez dejan UNA factura, un 409 y el
+  // contador subido uno. Necesita banco porque lo que vigila es del MOTOR: que la tx perdedora se
+  // deshace entera (factura y número) y que su UPDATE espera al bloqueo de la fila y vuelve a evaluar
+  // `invoiceId: null` (READ COMMITTED; se mira en `pg_blocking_pids`). Los once casos del banco en
+  // memoria (`scrum1780c-factura-desde-parte`) corren siempre.
+  'scrum1780c-simultanea-postgres.test.mjs': 1,
   'scrum92-login-operario.test.mjs': 1,
   'scrum814-carrera-del-tramo.gated.test.mjs': 3,
   'scrum592-concurrencia-serie.test.mjs': 4,

@@ -47,12 +47,19 @@
 // esto: se endurece el ÚNICO punto que ya decidía (regla 38).
 import { getEmissionMode, type MerchantLike } from './emission.service';
 import { type Causa } from './vat.service'; // SCRUM-1051d
+import type { z } from 'zod';
+import { lineasParaFacturar } from './invoiceLines.service'; // SCRUM-1787k
+// SCRUM-1787k · las reglas de la línea · SCRUM-1787i · el conjunto de formas de pago
+import { CreateQuoteSchema } from '../../../core/validation/schemas';
 
 /** Error nombrado del gate. Un 500 no prueba nada: quien lo reciba tiene que poder ramificar. */
 export const ERROR_MODO_SIN_FACTURA = 'factura_suelta_no_disponible';
 /** Errores nombrados de la entrada. */
 export const ERROR_CLIENTE_INVALIDO = 'cliente_invalido';
 export const ERROR_LINEAS_INVALIDAS = 'lineas_invalidas';
+// SCRUM-1787i · códigos, no textos: los dos rechazos nuevos viajan sin `message` (regla 39).
+const ERROR_VENCIMIENTO_INVALIDO = 'vencimiento_invalido';
+const ERROR_FORMAS_DE_PAGO_INVALIDAS = 'formas_de_pago_invalidas';
 
 /**
  * EL GATE, y es UNO SOLO para los dos consumidores: esta misma función la llama la ruta
@@ -97,11 +104,54 @@ export interface LineaEntrada {
   tax: number;
   /** SCRUM-1051d · por qué la línea no repercute IVA (hoy sólo 'S2'). La valida la ruta, no esto. */
   causa?: Causa;
+  /** SCRUM-1787k · la descripción de la línea, como en `Quote.lines`. Texto: no mueve importes. */
+  description?: string;
+  /**
+   * SCRUM-1787k · el descuento de la línea en PORCENTAJE, como en `Quote.lines`. Sólo existe ENTRE
+   * la entrada y `lineasParaFacturar`: lo que devuelve `validarFacturaSuelta` ya no lo lleva.
+   */
+  dto?: number;
 }
 
+/** SCRUM-1787i · una forma de pago de las que acepta el presupuesto (`CreateQuoteSchema.payMethods`). */
+export type FormaDePago = NonNullable<z.infer<typeof FORMAS_DE_PAGO>>[number];
+
+/**
+ * SCRUM-1787k · las reglas de `description` y `dto` son las de la línea del presupuesto, leídas de
+ * su esquema (`CreateQuoteSchema`, que es de S1 y aquí sólo se lee). Si el presupuesto cambia la
+ * regla, la suelta cambia con él.
+ */
+const REGLAS_DE_LINEA = CreateQuoteSchema.shape.lines.unwrap().element.shape;
+
 export type ResultadoValidacion =
-  | { ok: true; customerId: number; lineas: LineaEntrada[] }
+  | {
+      ok: true; customerId: number; lineas: LineaEntrada[];
+      /**
+       * SCRUM-1787i (c.22331) · el vencimiento que pide el profesional. Los TRES valores significan
+       * cosas distintas: `undefined` = no lo mandó (se propone el de por defecto), `null` = lo vació
+       * (la factura queda sin vencimiento), `Date` = el que eligió.
+       */
+      dueDate: Date | null | undefined;
+      /** SCRUM-1787i · las formas de pago elegidas; `undefined` = no eligió (NULL = todas las activas). */
+      payMethods: FormaDePago[] | undefined;
+    }
   | { ok: false; error: string; message: string };
+
+// SCRUM-1787i · EL MISMO conjunto cerrado que el presupuesto, sin segunda lista: se lee de su
+// esquema. Si mañana el presupuesto acepta una forma más, la factura suelta también.
+const FORMAS_DE_PAGO = CreateQuoteSchema.shape.payMethods;
+
+/** SCRUM-1787i (c.22331) · «Vence el» se propone a 30 días de la fecha de expedición. */
+const DIAS_DE_VENCIMIENTO_POR_DEFECTO = 30;
+
+/**
+ * SCRUM-1787i · el vencimiento con el que se congela la factura suelta. Sólo decide el caso «no lo
+ * mandó»: lo que el profesional eligió —una fecha, o ninguna— se respeta tal cual.
+ */
+export function vencimientoDeLaSuelta(pedido: Date | null | undefined, expedicion: Date): Date | null {
+  if (pedido !== undefined) return pedido;
+  return new Date(expedicion.getTime() + DIAS_DE_VENCIMIENTO_POR_DEFECTO * 86_400_000);
+}
 
 const esNumeroFinito = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 
@@ -131,13 +181,21 @@ export function validarFacturaSuelta(body: unknown): ResultadoValidacion {
     const qty = Number(l.qty);
     const price = Number(l.price);
     const tax = Number(l.tax);
-    if (!concept) {
+    // SCRUM-1787k (GO regla 40, SCRUM-1787 c.22338 ①) · descripción y descuento de la línea, con las
+    // reglas del PRESUPUESTO: los dos validadores son los suyos (`REGLAS_DE_LINEA`), no una copia.
+    // Ausente o `null` = la línea no lo lleva, como la causa. Un rechazo sale con el mensaje YA
+    // servido del campo al que pertenece (la descripción es del concepto; el descuento, del precio):
+    // el del validador es de zod, en inglés, y aquí no se escribe ningún texto nuevo (regla 39).
+    const descripcion = l.description === undefined || l.description === null
+      ? null : REGLAS_DE_LINEA.description.safeParse(l.description);
+    const dto = l.dto === undefined || l.dto === null ? null : REGLAS_DE_LINEA.dto.safeParse(l.dto);
+    if (!concept || (descripcion && !descripcion.success)) {
       return { ok: false, error: ERROR_LINEAS_INVALIDAS, message: 'Cada línea necesita un concepto.' };
     }
     if (!esNumeroFinito(qty) || qty <= 0) {
       return { ok: false, error: ERROR_LINEAS_INVALIDAS, message: 'Cada línea necesita una cantidad mayor que cero.' };
     }
-    if (!esNumeroFinito(price) || price < 0) {
+    if (!esNumeroFinito(price) || price < 0 || (dto && !dto.success)) {
       return { ok: false, error: ERROR_LINEAS_INVALIDAS, message: 'Cada línea necesita un precio válido.' };
     }
     // Fracción, no porcentaje: 0.21, nunca 21. Es la convención de `Invoice.lines` en todo el
@@ -152,8 +210,38 @@ export function validarFacturaSuelta(body: unknown): ResultadoValidacion {
     // `calcVatBreakdown` comparan con deepEqual.
     const linea: LineaEntrada = { concept, qty, price, tax };
     if (l.causa !== undefined && l.causa !== null) linea.causa = l.causa as Causa;
+    // SCRUM-1787k · sin descripción o sin descuento, la clave no viaja (arriba se validaron).
+    if (descripcion?.success) linea.description = descripcion.data;
+    if (dto?.success) linea.dto = dto.data;
     lineas.push(linea);
   }
 
-  return { ok: true, customerId, lineas };
+  // SCRUM-1787i (GO de regla 40, c.22325 ③) · vencimiento y formas de pago. Se juzgan AQUÍ, antes
+  // de pedir número, como todo lo demás del cuerpo. El `message` va vacío a propósito: no hay
+  // texto firmado para estos dos rechazos (regla 39) y el editor cae a su respaldo, que sí lo está.
+  let dueDate: Date | null | undefined;
+  if (b.dueDate === null) dueDate = null;
+  else if (b.dueDate !== undefined) {
+    const fecha = typeof b.dueDate === 'string' ? new Date(b.dueDate) : null;
+    if (!fecha || Number.isNaN(fecha.getTime())) return { ok: false, error: ERROR_VENCIMIENTO_INVALIDO, message: '' };
+    dueDate = fecha;
+  }
+  let payMethods: FormaDePago[] | undefined;
+  if (b.payMethods !== undefined && b.payMethods !== null) {
+    const formas = FORMAS_DE_PAGO.safeParse(b.payMethods);
+    if (!formas.success || !formas.data) return { ok: false, error: ERROR_FORMAS_DE_PAGO_INVALIDAS, message: '' };
+    payMethods = [...formas.data];
+  }
+
+  // El descuento se aplica AQUÍ, con la función del camino desde presupuesto (SCRUM-887): el precio
+  // sale neto y la clave `dto` no se guarda, así que una suelta y una factura de presupuesto con las
+  // mismas líneas dan el mismo `Invoice.lines`. Una línea sin `dto` sale siendo el mismo objeto. La
+  // ruta no cambia: desglose, portones y emisión leen `val.lineas`, que ya es lo que se congela.
+  return {
+    ok: true,
+    customerId,
+    lineas: lineasParaFacturar({ lines: lineas, discountGlobalAmount: null }) as LineaEntrada[],
+    dueDate,
+    payMethods,
+  };
 }

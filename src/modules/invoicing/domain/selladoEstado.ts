@@ -42,6 +42,7 @@
  * la numeración fiscal garantiza. Un hueco en la serie es peor que una factura pendiente.
  */
 import { prisma as defaultPrisma } from '../../../core/db/prisma';
+import { isFlagEnabled } from '../../../core/flags';
 import { recordAudit } from '../../system/audit.service';
 import { isReceiptNumber } from './invoiceNumber.service';
 import { applyVeriFactu, applyVeriFactuAnulacion } from './verifactu.service';
@@ -127,8 +128,36 @@ export async function sellarTrasEmision(
   },
   merchant: MerchantFiscal,
   prismaClient = defaultPrisma,
+  opciones: { congelarPdf?: CongelarPdf } = {},
 ): Promise<{ estado: EstadoSellado; error?: string }> {
+  const congelarPdf = opciones.congelarPdf ?? congelarPdfDeLaCasa;
   if (!entraEnLaCadena(invoice.number, merchant)) {
+    await prismaClient.invoice.update({
+      where: { id: invoice.id },
+      data: { vfEstado: SELLADO_NO_APLICA },
+    });
+    await congelarTrasEmitir(invoice, prismaClient, congelarPdf);
+    return { estado: SELLADO_NO_APLICA };
+  }
+
+  // SCRUM-1779d · CON `SIF_ENABLED` EN OFF NO SE SELLA (GO del fundador, SCRUM-1779 c.22239).
+  // La factura sale como documento simple: sin huella, sin QR de la AEAT y sin alta en la cola.
+  // Se decide AQUÍ, en el único punto por el que la emisión entra en la cadena, y no en
+  // `verifactu.service.ts`. El flag se lee del COMERCIO de la factura en la base, porque varios
+  // llamadores pasan un comercio recortado (`{ country, taxId }`) sin `flags`, y con él la
+  // precedencia merchant > env > defecto daría el valor del entorno. Si no se puede leer, la
+  // factura se queda `pendiente_de_sellado` (fail-closed: ni sello ni documento).
+  let sifEncendido: boolean;
+  try {
+    const conFlags = await prismaClient.merchant.findUnique({
+      where: { id: invoice.merchantId },
+      select: { country: true, flags: true },
+    });
+    sifEncendido = isFlagEnabled('SIF_ENABLED', { merchant: conFlags ?? merchant });
+  } catch (e: any) {
+    return { estado: SELLADO_PENDIENTE, error: String(e?.message ?? e).slice(0, 300) };
+  }
+  if (!sifEncendido) {
     await prismaClient.invoice.update({
       where: { id: invoice.id },
       data: { vfEstado: SELLADO_NO_APLICA },
@@ -171,7 +200,48 @@ export async function sellarTrasEmision(
   // del `try`, un fallo de la cola se leería como fallo de SELLADO (`sellado_fallido`) y dejaría
   // la factura pendiente con la huella ya escrita.
   await encolarAltaTrasSellado(invoice, merchant, prismaClient);
+  await congelarTrasEmitir(invoice, prismaClient, congelarPdf);
   return { estado: SELLADO_HECHO };
+}
+
+/**
+ * SCRUM-665e · EL PDF SE GUARDA AL EMITIR (GO del fundador, SCRUM-665 c.21182 punto 1).
+ *
+ * Las 11 llamadas a `sellarTrasEmision` de `src/` pasan por aquí, así que éste es el punto único
+ * en vez de once copias. Va DESPUÉS del sellado y del encolado, con la factura ya en `sellado` o
+ * `no_aplica`, que son los dos estados en que `ensureInvoicePdf` produce documento. Una factura
+ * que se queda `pendiente_de_sellado` NO pasa por aquí: no tiene documento que congelar, y se
+ * congelará cuando el reintento la selle (`reintentoSellado.ts` llama a esta misma función).
+ *
+ * NO toca el registro, ni el XML, ni la huella del registro: sólo pide el PDF a `ensureInvoicePdf`,
+ * que lo genera UNA vez y guarda su `pdf_sha256` (o, si ya lo tiene, lo comprueba y no regenera).
+ *
+ * NO LANZA, como el resto de esta función (SCRUM-206): el número ya está consumido y la factura ya
+ * está sellada; un fallo al escribir el PDF no puede deshacer ni esconder eso. Se dice en voz alta y
+ * la factura se queda con la huella del PDF a NULL, que es el caso de c.21191: se congela la primera
+ * vez que alguien pida su PDF.
+ */
+export type CongelarPdf = (invoiceId: number, prismaClient: any) => Promise<unknown>;
+
+// Import diferido: `lib/invoicing.ts` importa este módulo, y traerlo arriba haría un ciclo.
+const congelarPdfDeLaCasa: CongelarPdf = async (invoiceId, prismaClient) => {
+  const { ensureInvoicePdf } = await import('../../../lib/invoicing');
+  return ensureInvoicePdf(invoiceId, prismaClient);
+};
+
+async function congelarTrasEmitir(
+  invoice: { id: number; number: string },
+  prismaClient: any,
+  congelarPdf: CongelarPdf,
+): Promise<void> {
+  try {
+    await congelarPdf(invoice.id, prismaClient);
+  } catch (e: any) {
+    console.error(
+      `[SCRUM-665e] PDF NO congelado al emitir la factura ${invoice.id} (${invoice.number}): `
+        + `${String(e?.message ?? e).slice(0, 300)}. Se congelará la primera vez que se pida.`,
+    );
+  }
 }
 
 /**

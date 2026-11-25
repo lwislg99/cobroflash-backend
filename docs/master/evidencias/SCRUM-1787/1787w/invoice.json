@@ -1,0 +1,176 @@
+[
+ {
+  "text": "FACTURA",
+  "x": 460.46,
+  "y": 778.97,
+  "page": null
+ },
+ {
+  "text": "Nº F-2026-0001",
+  "x": 467.29,
+  "y": 762.57,
+  "page": null
+ },
+ {
+  "text": "Fecha: 05/11/2026",
+  "x": 454.43,
+  "y": 749.86,
+  "page": null
+ },
+ {
+  "text": "Vence el 05 de diciembre de 2026",
+  "x": 379.24,
+  "y": 737.14,
+  "page": null
+ },
+ {
+  "text": "Formas de pago: Tarjeta, Bizum, Transferencia",
+  "x": 319.59,
+  "y": 724.42,
+  "page": null
+ },
+ {
+  "text": "Emisor: Fontanería Ejemplo SL",
+  "x": 50,
+  "y": 703.36,
+  "page": null
+ },
+ {
+  "text": "NIF: B00000000",
+  "x": 50,
+  "y": 689.49,
+  "page": null
+ },
+ {
+  "text": "Calle Inventada 1, 28000 Ciudad Ficticia",
+  "x": 50,
+  "y": 675.62,
+  "page": null
+ },
+ {
+  "text": "Cliente: Cliente Ejemplo",
+  "x": 50,
+  "y": 647.87,
+  "page": null
+ },
+ {
+  "text": "NIF: 00000000T",
+  "x": 50,
+  "y": 634,
+  "page": null
+ },
+ {
+  "text": "Email: cliente@ejemplo.invalid",
+  "x": 50,
+  "y": 620.13,
+  "page": null
+ },
+ {
+  "text": "Dirección: Calle Falsa 123, 28000, Ciudad Ficticia",
+  "x": 50,
+  "y": 606.26,
+  "page": null
+ },
+ {
+  "text": "Detalle de la factura:",
+  "x": 50,
+  "y": 578.51,
+  "page": null
+ },
+ {
+  "text": "IMPORTEIVA%PrecioCant.",
+  "x": 316.1,
+  "y": 560.9,
+  "page": null
+ },
+ {
+  "text": "Concepto",
+  "x": 50,
+  "y": 559.14,
+  "page": null
+ },
+ {
+  "text": "Sustitución de grifo180,0021%80,00",
+  "x": 50,
+  "y": 542.4,
+  "page": null
+ },
+ {
+  "text": "Grifo monomando de cocina, incluye desmontaje del ",
+  "x": 50,
+  "y": 529.22,
+  "page": null
+ },
+ {
+  "text": "antiguo",
+  "x": 50,
+  "y": 518.82,
+  "page": null
+ },
+ {
+  "text": "Mano de obra231,5021%63,00",
+  "x": 50,
+  "y": 501.7,
+  "page": null
+ },
+ {
+  "text": "Material de fontanería312,5010%37,50",
+  "x": 50,
+  "y": 483.7,
+  "page": null
+ },
+ {
+  "text": "Base imponible:180,50 EUR",
+  "x": 297.64,
+  "y": 454.14,
+  "page": null
+ },
+ {
+  "text": "Base imponible por tipo",
+  "x": 297.64,
+  "y": 437.95,
+  "page": null
+ },
+ {
+  "text": "21%143,00 EURIVA 21%:30,03 EUR",
+  "x": 297.64,
+  "y": 422.92,
+  "page": null
+ },
+ {
+  "text": "10%37,50 EURIVA 10%:3,75 EUR",
+  "x": 297.64,
+  "y": 406.74,
+  "page": null
+ },
+ {
+  "text": "Total factura:214,28 EUR",
+  "x": 297.64,
+  "y": 389.12,
+  "page": null
+ },
+ {
+  "text": "Observaciones",
+  "x": 50,
+  "y": 355.88,
+  "page": null
+ },
+ {
+  "text": "Pago a 30 días.",
+  "x": 50,
+  "y": 343.98,
+  "page": null
+ },
+ {
+  "text": "Garantía de 6 meses sobre la mano de obra.",
+  "x": 50,
+  "y": 332.42,
+  "page": null
+ },
+ {
+  "text": "Factura generada automáticamente por YaQu · yaqu.app",
+  "x": 184.61,
+  "y": 298.45,
+  "page": null
+ }
+]

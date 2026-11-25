@@ -1,0 +1,27 @@
+liva-metadatos · HTTP 200 · 1223 B · sha256 0b953b4214e62c190c605cbf0120e1b88b0578453e5dfed24dc7119edd4861e8 · Date Mon, 23 Nov 2026 20:34:52 GMT
+   BOE-A-2026-20823=0 · Real Decreto-ley 29/2026=0 · BOE-A-2026-23755=0 · tarjeta de crédito o débito, transferencia bancaria, cheque nominativo=0 · 1 de diciembre de 2026=0 · corrección de errores=0 · Ley 37/1992=1 · zzqx=0
+   fecha_actualizacion=20261007T092353Z · estatus_derogacion=N · vigencia_agotada=N
+liva-a91 · HTTP 200 · 1051987 B · sha256 03898893f793534bcd873aa844bcd5dcc0070d5ab355de7314640f8c317e8c6e · Date Mon, 23 Nov 2026 20:34:52 GMT
+   BOE-A-2026-20823=2 · Real Decreto-ley 29/2026=1 · BOE-A-2026-23755=0 · tarjeta de crédito o débito, transferencia bancaria, cheque nominativo=2 · 1 de diciembre de 2026=7 · corrección de errores=47 · Ley 37/1992=0 · zzqx=0
+   versiones=44 última=BOE-A-2026-20823@20261008
+rdl29-metadatos · HTTP 200 · 1359 B · sha256 8b3a0679954a65ff6e986cc673b2ff73b4df66129189afd01e16c80fcf543842 · Date Mon, 23 Nov 2026 20:34:52 GMT
+   BOE-A-2026-20823=2 · Real Decreto-ley 29/2026=1 · BOE-A-2026-23755=0 · tarjeta de crédito o débito, transferencia bancaria, cheque nominativo=0 · 1 de diciembre de 2026=0 · corrección de errores=0 · Ley 37/1992=0 · zzqx=0
+   fecha_actualizacion=20261113T084620Z · estatus_derogacion=N · vigencia_agotada=N
+rdl29-analisis · HTTP 200 · 7611 B · sha256 b74982788a78469f3dd4e5568f76a94181a073d5eefff3867ddae3176e0c4aff · Date Mon, 23 Nov 2026 20:34:52 GMT
+   BOE-A-2026-20823=0 · Real Decreto-ley 29/2026=0 · BOE-A-2026-23755=1 · tarjeta de crédito o débito, transferencia bancaria, cheque nominativo=0 · 1 de diciembre de 2026=2 · corrección de errores=0 · Ley 37/1992=1 · zzqx=0
+sumario-20261113 · HTTP 200 · 215891 B · sha256 f78b7ea7e1f378538b3c1f5974860068a81f4607c1c968dcc46b83148f40c696 · Date Mon, 23 Nov 2026 20:34:52 GMT
+   BOE-A-2026-20823=0 · Real Decreto-ley 29/2026=1 · BOE-A-2026-23755=4 · tarjeta de crédito o débito, transferencia bancaria, cheque nominativo=0 · 1 de diciembre de 2026=0 · corrección de errores=1 · Ley 37/1992=0 · zzqx=0
+   items=271
+sumario-20261119 · HTTP 200 · 192777 B · sha256 19f952f8df85418994e67f1da571fe63b563317a23c795e94c6936e5f58d8bb5 · Date Mon, 23 Nov 2026 20:34:52 GMT
+   BOE-A-2026-20823=0 · Real Decreto-ley 29/2026=0 · BOE-A-2026-23755=0 · tarjeta de crédito o débito, transferencia bancaria, cheque nominativo=0 · 1 de diciembre de 2026=0 · corrección de errores=2 · Ley 37/1992=0 · zzqx=0
+   items=243
+sumario-20261120 · HTTP 200 · 227699 B · sha256 854bd4c93a21b8f82faf6756cd4f28a14cbc1e2ad26ea5cee01a9a156d68ffe9 · Date Mon, 23 Nov 2026 20:34:52 GMT
+   BOE-A-2026-20823=0 · Real Decreto-ley 29/2026=0 · BOE-A-2026-23755=0 · tarjeta de crédito o débito, transferencia bancaria, cheque nominativo=0 · 1 de diciembre de 2026=0 · corrección de errores=2 · Ley 37/1992=0 · zzqx=0
+   items=282
+sumario-20261121 · HTTP 200 · 172993 B · sha256 33196366d82cd559fac690ce0f17978b18467321a9167986a3f336ccb1683308 · Date Mon, 23 Nov 2026 20:33:05 GMT
+   BOE-A-2026-20823=0 · Real Decreto-ley 29/2026=0 · BOE-A-2026-23755=0 · tarjeta de crédito o débito, transferencia bancaria, cheque nominativo=0 · 1 de diciembre de 2026=0 · corrección de errores=0 · Ley 37/1992=0 · zzqx=0
+   items=285
+sumario-20261123 · HTTP 200 · 249389 B · sha256 549171e7cea7d4ddb4d9e5233e02f0cf3a15464ec7473db40ef38849b276817d · Date Mon, 23 Nov 2026 20:33:06 GMT
+   BOE-A-2026-20823=0 · Real Decreto-ley 29/2026=0 · BOE-A-2026-23755=0 · tarjeta de crédito o débito, transferencia bancaria, cheque nominativo=0 · 1 de diciembre de 2026=0 · corrección de errores=5 · Ley 37/1992=0 · zzqx=0
+   items=328
+recursos=9 · fallos=0

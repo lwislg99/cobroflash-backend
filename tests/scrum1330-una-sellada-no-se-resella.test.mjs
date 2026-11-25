@@ -33,9 +33,14 @@
 //   · si esta transcripción cae, hay un choque con lo que `scrum173` fija, y basta para parar;
 //   · si pasa, NO prueba que el test real pase: el banco puede no montar lo que monta Postgres.
 // ⛔ `tests/scrum173-…` no se toca desde este ticket (límite expreso del GO).
+// SCRUM-1779d · este banco AFIRMA el sellado: con SIF_ENABLED en OFF (el defecto) la emisión ya no sella (SCRUM-1779 c.22239), así que se enciende aquí y lo afirmado no cambia.
+process.env.SIF_ENABLED = 'true';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 // El banco se importa ANTES de cargar `dist/`: deja el doble de la base, el PDF y el correo.
 import {
   banco, prisma, reiniciar as reiniciarBanco, nuevoId, POR_DEFECTO, requiere, rutaDe, asentar,
@@ -48,6 +53,41 @@ function reiniciar() {
   reiniciarBanco();
   banco.tablas.merchant.find((m) => m.id === M_ES).llevaLibrosPorSii = false;
 }
+
+// SCRUM-665e · EL DOBLE DEL PDF, AL DÍA CON SU CONTRATO (c.21584 punto 2). Desde 665e,
+// `ensureInvoicePdf` guarda la huella del fichero TAL COMO QUEDÓ EN DISCO, así que un generador
+// que no escribe nada deja la factura sin PDF (falla cerrado, ENOENT) y ④f caía por su SUELO
+// —`pdfUrl` en `PENDING_PDF`— desde `55613c8b`. Dos huecos del doble, medidos con el error a la
+// vista (`missing_relations`, y detrás el ENOENT de la huella):
+//   · `ensurePdfAndEvent` ya no llama a `generateInvoicePdf` con la fila en la mano: pasa por
+//     `ensureInvoicePdf`, que relee la factura con `include: { merchant, customer }`, y el banco
+//     sólo resuelve `include` en `charge`;
+//   · el generador de verdad escribe el fichero; el doble del banco no.
+// El banco es de S3 y no se toca: se envuelven AQUÍ, el PDF en un temporal del sistema y nunca
+// en el árbol (SCRUM-824). `invoicesDir` se lee al llamar.
+const DIR_PDF = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1330-'));
+process.on('exit', () => { try { fs.rmSync(DIR_PDF, { recursive: true, force: true }); } catch { /* temporal */ } });
+const dirs = requiere(rutaDe('dist/core/storage/dirs.js'));
+dirs.invoicesDir = DIR_PDF;
+const pdfDoble = requiere(rutaDe('dist/lib/pdf.js'));
+const generarDelBanco = pdfDoble.generateInvoicePdf;
+pdfDoble.generateInvoicePdf = async (d) => {
+  const r = await generarDelBanco(d);
+  // `DIR_PDF` y no `dirs.invoicesDir` (son el mismo): así el censo de SCRUM-824 ve que cuelga de `os.tmpdir()`.
+  fs.writeFileSync(path.join(DIR_PDF, `${d.merchantId}-${d.number}.pdf`), `%PDF-doble ${d.number}\n`);
+  return r;
+};
+// `prisma.invoice` es el MISMO objeto dentro y fuera de una transacción (el mapa `modelos` del banco).
+const facturas = prisma.invoice;
+const leerFacturaDelBanco = facturas.findUnique;
+facturas.findUnique = async (a) => {
+  const f = await leerFacturaDelBanco(a);
+  if (!f || !a?.include) return f;
+  if (a.include.merchant) f.merchant = banco.tablas.merchant.find((m) => m.id === f.merchantId) ?? null;
+  if (a.include.customer) f.customer = banco.tablas.customer.find((c) => c.id === f.customerId) ?? null;
+  if (a.include.rectifies) f.rectifies = null;
+  return f;
+};
 
 const { config } = requiere(rutaDe('dist/core/config/env.js'));
 const vf = requiere(rutaDe('dist/modules/invoicing/domain/verifactu.service.js'));
@@ -79,7 +119,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // MA · la guarda del punto de llamada no decide (la de dentro del cerrojo sigue puesta).
     fichero: 'src/lib/invoicing.ts',
-    de: '    if (inv.vfEstado !== SELLADO_HECHO) {',
+    // SCRUM-1779d · ancla re-copiada: la guarda ahora deja fuera también la `no_aplica` (c.22245 ①).
+    de: '    if (inv.vfEstado !== SELLADO_HECHO && inv.vfEstado !== SELLADO_NO_APLICA) {',
     a: '    if (true as boolean) {',
     cae: 'SCRUM-1330 · 🔴 A · con la fila ya `sellado`, `ensurePdfAndEvent` NO entra en `sellarTrasEmision`',
   },

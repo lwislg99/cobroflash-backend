@@ -84,7 +84,9 @@ test('SCRUM-600e · SUELO: los dos lados se leen de verdad, y ninguno sale vací
     '🔴 el lector del schema no ve ni `number` ni `total`: no está leyendo el modelo que dice');
 
   const supervivientes = clavesQueSobreviven(leer(RUTA_VALIDADOR));
-  assert.deepEqual([...supervivientes].sort(), ['customerId', 'lineas'],
+  // 21-nov-2026 · SCRUM-1787i: el emisor acepta también `dueDate` y `payMethods` (GO de regla 40 en
+  // SCRUM-1787 c.22325 ③ y c.22331; esta expectativa la mueve el fundador en c.22349 «1-Ok sí»).
+  assert.deepEqual([...supervivientes].sort(), ['customerId', 'dueDate', 'lineas', 'payMethods'],
     '🔴 lo que sobrevive a `validarFacturaSuelta` ha cambiado. Si el emisor acepta más claves, esta '
     + 'medición y el reparto 🟢/🟡/🔴 del parte hay que rehacerlos.');
 });
@@ -124,7 +126,10 @@ test('SCRUM-600e · 🔴 EL CONTROL QUE DECIDE: la pantalla no pide NADA que el 
 test('SCRUM-600e · 🔴 LA MEDICIÓN DEL TICKET: los tres campos del bloque NO existen en `Invoice`', () => {
   const enInvoice = new Set(camposDelModelo(leer(RUTA_SCHEMA), 'Invoice'));
   const conColumna = camposDelBloque().filter(({ campo }) => enInvoice.has(campo));
-  assert.deepEqual(conColumna, [],
+  // 21-nov-2026 · SCRUM-1787i: `payMethods` ya tiene columna en `Invoice` (ALTER firmado en SCRUM-1787
+  // c.22331; GO c.22325 ③). Esta expectativa la mueve el fundador en c.22349 «1-Ok sí». Las otras tres
+  // siguen sin columna, y una cuarta que la gane vuelve a poner esto en rojo.
+  assert.deepEqual(conColumna.map((x) => x.campo), ['payMethods'],
     '✅ ESTO ES UNA BUENA NOTICIA Y HAY QUE MIRARLA, NO BORRARLA: alguno de los campos de\n'
     + '  «3. Condiciones» YA TIENE COLUMNA. El reparto que cerró SCRUM-600e (0 🟢 · 0 🟡 · 3 🔴)\n'
     + '  ha cambiado y el bloque puede empezar a construirse. Actualiza el parte y abre el ticket.\n  '
@@ -145,10 +150,12 @@ test('SCRUM-600e · 🔴 ROJO ①: encender el bloque SIN las columnas cae, y NO
     // LADO B intacto, leído del disco: la mutación es de UN solo fichero.
   });
   // SCRUM-915d · son CUATRO desde que las formas de pago viven en Condiciones (un campo más vigilado).
-  assert.equal(r.pidenLoQueSeTira.length, 4,
-    `🔴 el guard NO ha cazado el encendido a medias (dijo ${r.pidenLoQueSeTira.length} de 4). Un `
+  // 21-nov-2026 · SCRUM-1787i: son TRES otra vez, porque `payMethods` ya tiene columna y sobrevive al
+  // emisor (SCRUM-1787 c.22325 ③ y c.22331). Esta expectativa la mueve el fundador en c.22349 «1-Ok sí».
+  assert.equal(r.pidenLoQueSeTira.length, 3,
+    `🔴 el guard NO ha cazado el encendido a medias (dijo ${r.pidenLoQueSeTira.length} de 3). Un `
     + 'guard que no se ha visto en rojo no está probado.');
-  for (const campo of ['paymentTerms', 'customBillingPlan', 'validUntil', 'payMethods']) {
+  for (const campo of ['paymentTerms', 'customBillingPlan', 'validUntil']) {
     assert.ok(r.pidenLoQueSeTira.some((m) => m.includes(campo)),
       `🔴 el rojo no nombra \`${campo}\`. Un rojo que no dice qué falta obliga a buscarlo a mano.`);
   }

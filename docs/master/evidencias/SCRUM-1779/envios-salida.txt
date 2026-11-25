@@ -1,0 +1,67 @@
+# SCRUM-1779a · punto 4 — lo que sale hacia fuera (banco, dist de origin/main)
+# fecha: 2026-11-20T17:55:56.866Z · comercio ES 5304 · INVOICING_ES_ENABLED ON (merchant) · SIF_ENABLED sin variable (OFF)
+# cliente fabricado: teléfono +34600000000 (dry-run, no sale), correo clienta@ejemplo.invalid
+
+## 1 · sendInvoicePaymentRequest(101) — llamado por quotes.routes.ts:734, jobs.routes.ts:1694, invoicesAdmin.routes.ts:723
+F1 F260001 vfEstado=sellado huella=sí qr=https://www2.agenciatributaria.gob.es/wlpl/TI…
+resultado: {"ok":true,"chargeId":901,"to":"34600000000","payToken":"<token>"}
+fetch internos: 1 → [{"url":"<BASE_URL>/charges","metodo":"POST","concept":"Factura F260001","amount":121}]
+WhatsApp (envoltorio): 1 intento(s)
+  to=34600000000 vía=template ok=true plantilla=payment_request_es
+  variables de la plantilla: [{"type":"body","parameters":[{"type":"text","text":"Clienta de prueba"},{"type":"text","text":"Fontanería de Lugo"},{"type":"text","text":"F260001"},{"type":"text","text":"121,00 €"}]},{"type":"button","sub_type":"url","index":"0","parameters":[{"type":"text","text":"<token>"}]}]
+  texto de ventana (si la ventana estuviese abierta): "Hola Clienta de prueba 👋\nFontanería de Lugo te envía el factura F260001.\nA pagar: 121,00 €\nPaga de forma segura desde aquí 👇\nhttp://localhost:3000/pay/invoice/<token>"
+  botón de ventana: {"bodyText":"Hola Clienta de prueba 👋\n*Fontanería de Lugo* te envía el factura F260001.\nA pagar: *121,00 €*","buttonText":"Pagar 121,00 €","url":"http://localhost:3000/pay/invoice/<token>"}
+  menciones fiscales en lo que sale: []
+buzón dry-run de whatsapp.ts (CONTROL): [{"kind":"template","to":"34600000000","templateName":"payment_request_es"}]
+J6/A3.2 — llamadas del sender a whatsAppMessage (tabla del tope): ["whatsAppMessage.findFirst","whatsAppMessage.count","whatsAppMessage.count","whatsAppMessage.create","whatsAppMessage.update"]
+OK   sendInvoicePaymentRequest devuelve ok
+OK   1 llamada interna POST /charges
+OK   1 intento WhatsApp, plantilla payment_request_es
+OK   CONTROL POSITIVO: el buzón dry-run de whatsapp.ts tiene la misma plantilla (la captura no es ciega)
+OK   el envío pasa por reservarPlantilla (count del tope J6/A3.2 + create de la reserva)
+OK   este momento NO manda correo
+
+## 2 · CONTROL NEGATIVO: el mismo envío con el cliente sin teléfono
+resultado: {"ok":false,"reason":"customer_missing_phone"} · WhatsApp 0 · buzón 0 · fetch 0
+OK   sin teléfono: 0 intentos (la captura distingue envío de no-envío)
+
+## 3 · sendInvoiceEmail(101) — llamado por psp.routes.ts:86/:257 y mpWebhook.routes.ts:151 (si AUTO_INVOICE_ON_PAID y AUTO_EMAIL_INVOICE_ON_PAID), invoicesAdmin.routes.ts:783 (botón), dev.routes.ts:83
+resultado: {"ok":true,"resend":true,"acuseId":"acuse-del-banco"}
+correos (Resend interceptado): 1
+  to=clienta@ejemplo.invalid from=YaQu <no-reply@yaqu.local> origen=factura
+  asunto: "Tu factura F260001"
+  cuerpo (texto del html): "YQ YaQu Tu factura está lista Hola Clienta de prueba , Te adjuntamos tu factura F260001 en PDF. Guárdalo para tus registros. Si tienes cualquier duda, responde a este correo. Enviado con YaQu — presupuestos, firma y cobro por WhatsApp Privacidad · Términos"
+  menciones fiscales en asunto+cuerpo: []
+  adjunto: F260001.pdf · 6334 B · empieza por %PDF: true
+  menciones fiscales en el ADJUNTO: ["Factura verificable en la sede electrónica de la AEAT","VERI*FACTU — escanea el QR para verificarla (RD 1007/2023).","Huella: 024785B743F3327897F0FDD392A795DA","Sistema de facturación verificable conforme al RD 1007/2023 (VeriFactu)."]
+OK   1 correo a Resend (interceptado)
+OK   adjunta el PDF de la factura
+OK   asunto y cuerpo del correo sin menciones fiscales
+OK   el adjunto SÍ lleva menciones fiscales (el PDF de pdf-banco)
+
+## 4 · sendPaymentConfirmationInvoice — llamado por psp.routes.ts:327 y mpWebhook.routes.ts (al confirmarse el pago)
+resultado: {"ok":true} · WhatsApp 1 · buzón [{"kind":"template","to":"34600000000","templateName":"payment_confirmation_invoice_es"}]
+  to=34600000000 vía=template plantilla=payment_confirmation_invoice_es
+  variables: [{"type":"body","parameters":[{"type":"text","text":"Clienta de prueba"},{"type":"text","text":"121,00 €"},{"type":"text","text":"F260001"},{"type":"text","text":"Fontanería de Lugo"}]},{"type":"button","sub_type":"url","index":"0","parameters":[{"type":"text","text":"<token>"}]}]
+  texto de ventana: "Hola Clienta de prueba 👋\nHemos confirmado tu pago de 121,00 € (documento de cobro F260001).\n¡Gracias por confiar en Fontanería de Lugo!\nTu recibo, aquí 👇\nhttp://localhost:3000/recibo/<token>"
+  menciones fiscales: []
+J6/A3.2: ["whatsAppMessage.findFirst","whatsAppMessage.count","whatsAppMessage.count","whatsAppMessage.create","whatsAppMessage.update"]
+OK   1 intento, plantilla payment_confirmation_invoice_es (captura y buzón coinciden)
+
+## 5 · páginas públicas (router de Express con req/res de mentira)
+### /pay/invoice/:token (cobro pendiente, la del botón de payment_request_es)
+  status=200 · 10 líneas de texto
+  texto visible: ["Pagar 121,00 € — YaQu","F","Fontanería de Lugo","Importe a pagar","121,00 €","Factura F260001","Elige cómo pagar","El profesional te indicará cómo pagar.","Contacta con él si tienes dudas.","Pago seguro y cifrado"]
+  enlaces: ["/favicon.svg","/pay/css/pago.css?p=factura&amp;v=cc23cc1525"]
+  menciones fiscales: []
+OK   /pay/invoice/:token pinta (control: no es una página vacía)
+### /recibo/:token (cobro pagado, evento invoiced → la factura)
+  status=200 · 27 líneas de texto
+  texto visible: ["Recibo #901 — YaQu","Fontanería de Lugo","✓","Pago confirmado","121,00 €","Factura F260001","Pagado el 20 de noviembre de 2026","✅","Pago recibido correctamente.","Tu factura está disponible para descargar y la hemos enviado por WhatsApp. Si tenemos tu correo, también la recibirás por email.","📄 Descargar factura en PDF (F260001)","Enviar factura por email","Se enviará a: clienta@ejemplo.invalid","¿Qué tal fue el trabajo?","⭐","⭐","⭐","⭐","⭐","Enviar valoración","Cobro #901 · Cliente: Clienta de prueba","🔧 Simulación (solo dev)","Simular pago SCTinst","Simular fallo","Simular expiración","Dev · eventos del cobro","invoiced · 20/11/2026, 18:55:57"]
+  enlaces: ["/pay/css/pago.css?p=recibo&amp;v=8303b4936b","http://localhost:3000/recibo/<token>/pdf","/pay/css/pago.css?p=recibo-valoracion&amp;v=9150bb6478"]
+  menciones fiscales: []
+OK   /recibo/:token pinta (control: no es una página vacía)
+
+AVISOS del dist (0): (ninguno)
+
+RESULTADO: todas las comprobaciones OK

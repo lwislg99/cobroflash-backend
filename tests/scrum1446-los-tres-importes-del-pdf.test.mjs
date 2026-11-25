@@ -96,7 +96,8 @@ async function papelFactura(lines, total) {
     // que se lee igual que «no hay pie».
     .map((t) => t.match(new RegExp(`^(?:[\\d,]+%${IMPORTE} EUR)?IVA ([\\d,]+%):(${IMPORTE}) EUR$`)))
     .filter(Boolean).map((m) => ({ rotulo: m[1], cuota: aCent(m[2]) }));
-  const conLineas = textos.map((t) => t.match(new RegExp(`^TOTAL:(${IMPORTE}) EUR$`))).filter(Boolean);
+  // SCRUM-1787w · literal FIRMADO en SCRUM-1787 c.22428 (GO c.22416): «Total factura:» sustituye a «TOTAL:».
+  const conLineas = textos.map((t) => t.match(new RegExp(`^Total factura:(${IMPORTE}) EUR$`))).filter(Boolean);
   const sinLineas = textos.map((t) => t.match(new RegExp(`^Total: (${IMPORTE}) EUR$`))).filter(Boolean);
   assert.equal(conLineas.length + sinLineas.length, 1, '🔴 esperaba UN total en el papel de la factura.');
   return { filas: filasDe(textos), pie, total: aCent((conLineas[0] || sinLineas[0])[1]), ramaSinLineas: sinLineas.length === 1 };

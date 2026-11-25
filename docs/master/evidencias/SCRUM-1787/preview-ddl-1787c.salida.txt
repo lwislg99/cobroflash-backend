@@ -1,0 +1,17 @@
+población: esquema prisma\schema.prisma · 108684 B · diff = 5 líneas en model Invoice
+control de la herramienta (preview): ok
+propuesto: ok=true clase=con_cambios
+--- DDL ---
+-- AlterTable
+ALTER TABLE "invoices" ADD COLUMN     "customer_billing_address" TEXT,
+ADD COLUMN     "customer_billing_city" TEXT,
+ADD COLUMN     "customer_billing_country" TEXT,
+ADD COLUMN     "customer_billing_postal_code" TEXT,
+ADD COLUMN     "customer_billing_province" TEXT;
+--- fin DDL ---
+destructivas: 0
+lista blanca: permitidas=1 rechazadas=0
+  ✔ ALTER TABLE … ADD COLUMN ← ALTER TABLE "invoices" ADD COLUMN "customer_billing_address" TEXT, ADD COLUMN "customer_billing_city" TEXT, ADD COLUMN "customer_billing_country" TEXT, ADD COLUMN "customer_billing_postal_code" TEXT, ADD COLUMN "customer_billing_province" TEXT
+control negativo (mismo esquema): ok=true clase=sin_cambios
+control positivo sembrado (DROP de «customerEmail» en Invoice): ok=true clase=con_cambios destructivas=1 rechazadas=1
+VEREDICTO: VERDE (aditivo, 0 destructivas, lista blanca 0 rechazadas, controles ok)

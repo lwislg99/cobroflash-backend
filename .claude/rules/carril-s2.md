@@ -1,8 +1,10 @@
 ---
 paths:
   - "scripts/capturas-presupuesto-desde-la-lista-de-partes.mjs"
+  - "scripts/capturas-1834-error-visible-390.mjs"
   - "scripts/guard-965-un-solo-presupuesto.mjs"
   - "public/dashboard/js/quoteRevisiones.js"
+  - "scripts/capturas-iva10-parte-s.mjs"
   - "public/dashboard/css/styles.css"
   - "public/dashboard/js/homeView.js"
   - "scripts/guard-duplicar-926.mjs"

@@ -200,6 +200,15 @@ const AMBITO_DECLARADO = [
   // imprime la F1, así que tienen que estar DENTRO de lo que vigilan 603b y este guard.
   'MENCION_CRITERIO_CAJA',
   'NOMBRE_IMPUESTO_POR_DEFECTO',
+  // SCRUM-1787l (21-nov-2026) · entra `TITULO_OBSERVACIONES`: el rótulo firmado del bloque de
+  // Observaciones, que la factura pinta ahora con `Invoice.docFooterText` (SCRUM-1787 c.22345 ②;
+  // ALTER c.22346). Decide qué imprime la F1, así que tiene que estar DENTRO de lo que se vigila.
+  // SCRUM-1787w (24-nov-2026) · entran `TABLA_DEL_DOCUMENTO` y `pintarCabeceraDeTabla`: la factura
+  // pinta la tabla con las columnas y la cabecera del presupuesto (dibujo y literales firmados en
+  // SCRUM-1787 c.22428; GO de regla 40 en c.22416). Deciden qué imprime la F1 y dónde, así que
+  // tienen que estar DENTRO de lo que vigilan 603b y este guard.
+  'TABLA_DEL_DOCUMENTO',
+  'TITULO_OBSERVACIONES',
   'fmtImporte',
   'generateInvoicePdf',
   // SCRUM-1446g (26-oct-2026) · entra `importesDeLaColumnaSinIva`: el céntimo de un tramo va a la
@@ -208,6 +217,7 @@ const AMBITO_DECLARADO = [
   'importesDeLaColumnaSinIva',
   'llevaMencionCriterioCaja',
   'loadLogoBuffer',
+  'pintarCabeceraDeTabla',
 ];
 
 test('SCRUM-723 · 🔴 el ámbito de la factura es la función MÁS lo que alcanza', () => {

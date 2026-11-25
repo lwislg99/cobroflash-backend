@@ -160,15 +160,78 @@ test('SCRUM-593c · 🔴 el albarán pasa la CABECERA y NO un segundo pie', () =
 // LA FACTURA SIGUE FUERA — y eso también se vigila, porque la tentación es «ya que estamos»
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-593c · 🔴 la FACTURA no ha recibido los bloques (regla 29 · SCRUM-665)', () => {
+// ── 23-nov-2026 · SCRUM-1787l · DECISIÓN DEL FUNDADOR (SCRUM-1787 c.22353, regla 41) ─────────────
+// Hasta hoy este caso prohibía CUALQUIER `docHeaderText|docFooterText` en `src/lib/invoicing.ts`.
+// El fundador ha decidido («1-Sí») que el PDF de factura PUEDE pintar las Observaciones CONGELADAS
+// en la propia factura al emitir (`Invoice.docFooterText`, c.22345/c.22346): al regenerarse con el
+// código de hoy lee la misma columna que se selló, y las emitidas antes del ALTER tienen NULL, así
+// que su papel no cambia. Lo que SIGUE prohibido es que la emisión reciba textos leídos EN VIVO del
+// presupuesto o del comercio (`Quote.docFooterText`, `docHeaderText`, cláusulas): ésos sí
+// cambiarían el aspecto de facturas YA EMITIDAS en el siguiente despliegue (SCRUM-665).
+//
+// Cómo se distingue, por AST (SCRUM-203) y con la misma forma que el guard de la columna congelada
+// gemela (`scrum1240d`, `merchantCriterioCaja`): en CADA llamada a `generateInvoicePdf` de la
+// emisión, `docFooterText` se toma de la FACTURA (`inv.` / `invoice.`) y de nada más. El control
+// positivo es `MUTACIONES_QUE_ME_TUMBAN`, al final: pasar el texto del presupuesto lo tumba.
+const LLAMADORES_FACTURA = [
+  ['src/lib/invoicing.ts', 1], // 23-nov-2026, SCRUM-665e: de 2 a 1 por decisión del fundador (SCRUM-665 c.22382, con c.21182 y c.22358): queda un generador único, `ensureInvoicePdf`
+  // 23-nov-2026, SCRUM-665e: aquí estaba la fila de `invoicesAdmin.routes.ts` con 1 llamada, la de `regenerate-pdf`; la ruta se retiró (SCRUM-665 c.21182 punto 3; c.22382 y c.22358)
+];
+const PIE_CONGELADO = /^(inv|invoice)\.docFooterText( \?\? null)?$/;
+
+test('SCRUM-593c · 🔴 la FACTURA solo recibe el pie CONGELADO en ella, nunca los textos vivos (regla 29 · SCRUM-665 · c.22353)', () => {
   const ruta = path.join(RAIZ, 'src/lib/invoicing.ts');
   const src = fs.readFileSync(ruta, 'utf8');
-  assert.equal(/docHeaderText|docFooterText/.test(src), false,
-    '🔴 el camino de emisión de la factura ha recibido los textos del documento. `ensureInvoicePdf` '
-    + 'REGENERA el PDF con el código de hoy —el fs de Railway es efímero—, así que esto cambiaría '
-    + 'el aspecto de facturas YA EMITIDAS en el siguiente despliegue. Es la regla 29, y está '
-    + 'fichado aparte como SCRUM-665.');
+  assert.equal(/docHeaderText/.test(src), false,
+    '🔴 el camino de emisión de la factura ha recibido la CABECERA del documento. Ésa no se congela '
+    + 'en la factura: `ensureInvoicePdf` REGENERA el PDF con el código de hoy —el fs de Railway es '
+    + 'efímero—, así que esto cambiaría el aspecto de facturas YA EMITIDAS en el siguiente '
+    + 'despliegue. Es la regla 29, y está fichado aparte como SCRUM-665.');
   // SUELO del control: que el fichero es el que creemos y sí se puede leer.
   assert.match(src, /ensureInvoicePdf/,
     '🔴 no encuentro `ensureInvoicePdf` en el fichero: el control de arriba no estaba mirando nada.');
+
+  let vistas = 0;
+  const malas = [];
+  for (const [rel, esperadas] of LLAMADORES_FACTURA) {
+    const llamadas = [];
+    const sf = ts.createSourceFile(rel, fs.readFileSync(path.join(RAIZ, rel), 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    const visita = (n) => {
+      if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'generateInvoicePdf') llamadas.push(n);
+      ts.forEachChild(n, visita);
+    };
+    visita(sf);
+    assert.equal(llamadas.length, esperadas,
+      `🔴 CIEGO: ${rel} llama ${llamadas.length} vez/veces a generateInvoicePdf y esperaba ${esperadas}.`);
+    for (const c of llamadas) {
+      const donde = `${rel}:${sf.getLineAndCharacterOfPosition(c.getStart(sf)).line + 1}`;
+      const obj = c.arguments[0];
+      assert.ok(obj && ts.isObjectLiteralExpression(obj), `🔴 CIEGO: ${donde} no pasa un objeto literal.`);
+      for (const p of obj.properties) {
+        const nombre = p.name && (ts.isIdentifier(p.name) || ts.isStringLiteral(p.name)) ? p.name.text : null;
+        if (nombre === 'docHeaderText') malas.push(`${donde} pasa docHeaderText`);
+        if (nombre !== 'docFooterText') continue;
+        const v = ts.isPropertyAssignment(p) ? p.initializer.getText(sf) : `(${ts.SyntaxKind[p.kind]})`;
+        if (!PIE_CONGELADO.test(v)) malas.push(`${donde} pasa docFooterText: «${v}»`);
+      }
+      vistas += 1;
+    }
+  }
+  assert.equal(vistas, 1, `🔴 CIEGO: he juzgado ${vistas} llamadas a generateInvoicePdf y es 1.`); // 23-nov-2026, SCRUM-665e: de 3 a 1, el total de la tabla de arriba (SCRUM-665 c.22382, con c.21182 y c.22358)
+  assert.deepEqual(malas, [],
+    '🔴 la emisión recibe un texto que NO es el congelado en la factura. Solo vale '
+    + '`inv.docFooterText` / `invoice.docFooterText` (la columna sellada al emitir, c.22353): el '
+    + 'texto del presupuesto o del comercio, leído en vivo, cambiaría el papel de facturas ya '
+    + 'emitidas al regenerarlas (regla 29 · SCRUM-665).');
 });
+
+// El catálogo de la casa (scripts/meta-guard-mutaciones.mjs → aplicarUna). Control positivo de la
+// decisión c.22353: si alguien pasa el texto del presupuesto en vez del congelado, cae.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    fichero: 'src/lib/invoicing.ts',
+    de: '      docFooterText: inv.docFooterText ?? null, // SCRUM-1787l: las Observaciones congeladas al emitir\n',
+    a: '      docFooterText: (inv as any).quote?.docFooterText ?? null, // SCRUM-1787l: las Observaciones congeladas al emitir\n',
+    cae: 'SCRUM-593c · 🔴 la FACTURA solo recibe el pie CONGELADO en ella',
+  },
+];

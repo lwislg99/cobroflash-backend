@@ -361,3 +361,16 @@ concreta.
 **La decisión sigue siendo del fundador.** La salida ① está firmada (7-sep-2026) y este apéndice no
 la ejecuta: el volumen persistente lo monta el fundador y `prisma/schema.prisma` es suyo. Lo que
 cambia hoy es que el defecto **ya no depende de que alguien se acuerde de medirlo**.
+
+# APÉNDICE (SCRUM-665e, 12-nov-2026) · RE-MEDIDO: la salida ① aterrizó y el censo cambia
+
+**Medido contra:** `origin/main` = `d8c441b9402cb21ea892afdf72f07b006294ba88` · rama `scrum-665e-pdf-persistente` · 2026-11-12T11:11:00Z
+
+El trinquete de este fichero pedía, si la boca de la factura dejaba de estar guardada por `existsSync` porque el PDF se congela, re-medir y reescribir esto en vez de ajustar. Es el caso (GO del fundador SCRUM-665 c.21182; decisión del orquestador J c.21608).
+
+- **Censo por AST en la rama** (`censoDeBocas`, sin cambios en cómo recorre): 5 bocas. Factura: **1** (`src/lib/invoicing.ts generateInvoicePdf`, dentro de `ensureInvoicePdf`), y ya **no** la guarda `existsSync`: la guarda la huella congelada (`pdfSha256`). Con huella no se genera nunca: si falta el fichero o no casa, falla cerrado (`pdf_congelado_sin_fichero` / `pdf_congelado_alterado`). Presupuesto: las **4** de siempre, sin guarda (no lo cubre 665e).
+- **Antes (`4eea7720`):** factura con 3 bocas — `invoicing.ts` ×2 (una con `existsSync`) e `invoicesAdmin.routes.ts` ×1 (regenerar). `ensureInvoiceForCharge` delega ahora en `ensureInvoicePdf` y la ruta de regenerar se retira.
+- **El test** (`tests/scrum762-el-pdf-emitido-se-rehace.test.mjs`): el censo anota `[congelado]` cuando una función que envuelve la boca lee `.pdfSha256`. Trinquete: factura = `invoicing.ts generateInvoicePdf [congelado] x1` y ninguna boca guardada sólo por `existsSync`. El suelo gira sobre el fichero real: cambiando `pdfSha256` por otra columna en una copia, la boca sale sin guarda; y sobre el árbol real sale guardada. 10/10.
+- **Lo que este censo NO ve:** que la huella se COMPRUEBE bien (eso lo prueban los casos de comportamiento y `scrum665e`); sólo que la boca la lee.
+
+A9: sin fallo que generalice — tramo de re-medición pedido por el propio trinquete; el fallo de la tanda está en `docs/master/SCRUM-665.md`, apéndice (J)

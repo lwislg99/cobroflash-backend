@@ -176,6 +176,160 @@ export const CAMBIOS_AUTORIZADOS = [
       a: 'deb02178fdb8d0346d7127db2f89c6e663a41c9725f7ec1b063c3060f51343a8',
     },
   },
+  {
+    // SCRUM-1779d · una factura que la emisión dejó sin sello (`SIF_ENABLED` en OFF) no dibuja QR:
+    // `qrData` vacío → sin imagen. SCRUM-1779 c.22239 por SCRUM-1585 c.21290 (decisión de
+    // autorizar: SCRUM-1779 c.22253). Huellas de `evidencias/SCRUM-1446d/huellas.mjs` sobre
+    // origin/main fea1c00078654d8d617af055de94f2b627df07ce.
+    firma: 'SCRUM-1779 c.22239',
+    registro: 'docs/master/SCRUM-1779.md',
+    cita: '«no linkado a verifactu»',
+    cuerpo: {
+      de: '7cbda25fd230c4f65873e4549c1a93ba0f98ee3b212cad922a0abcf12b7855e5',
+      a: '4daa145e0323e604a3c1a6e591204303466c4546e4b0dee47329a233ba0378d6',
+    },
+    ambito: {
+      de: 'deb02178fdb8d0346d7127db2f89c6e663a41c9725f7ec1b063c3060f51343a8',
+      a: '300a3fb3f0a1af3481188846a89e457e8cf4d4b75f71bfcbd9b0e5a1c7ca4b23',
+    },
+  },
+  {
+    // SCRUM-1788a · la tabla de conceptos empieza debajo del bloque más alto (emisor o cliente):
+    // un emisor de 5+ líneas ya no se pinta encima de la cabecera. Sin texto nuevo ni datos nuevos.
+    // Huellas de `evidencias/SCRUM-1446d/huellas.mjs` sobre origin/main
+    // 53cde1aa49e8b8235b6b562f9a81bb6d175ac571.
+    firma: 'SCRUM-1788 c.22299',
+    registro: 'docs/master/SCRUM-1788.md',
+    cita: '«Sí go»',
+    cuerpo: {
+      de: '4daa145e0323e604a3c1a6e591204303466c4546e4b0dee47329a233ba0378d6',
+      a: '44d7d101465e2f0909db25950bf4fc1dae8d729d6e31222924a72aeec310824f',
+    },
+    ambito: {
+      de: '300a3fb3f0a1af3481188846a89e457e8cf4d4b75f71bfcbd9b0e5a1c7ca4b23',
+      a: '0c1839e4d2df8ded0228160e90fdfd46eb9549daba2055fe29016bf5e5b13a08',
+    },
+  },
+  {
+    // SCRUM-1787d · el PDF de factura imprime «NIF:» y «Dirección:» del cliente, leídos de las
+    // columnas congeladas de la factura (nunca de la ficha viva). GO c.22303 ①; ALTER aplicado
+    // c.22311. La rama lleva 1788a (PR #3301) sin mergear: este par vale con la base en main
+    // SIN 1788a (origin/main c10a80edd301ed2a320f758f33fcd5814991c850). Huellas de
+    // `evidencias/SCRUM-1446d/huellas.mjs`.
+    firma: 'SCRUM-1787 c.22303',
+    registro: 'docs/master/SCRUM-1787.md',
+    cita: '«1-Sí GO · 2-Ok sí · 3-Firmo · 4-Sí»',
+    cuerpo: {
+      de: '4daa145e0323e604a3c1a6e591204303466c4546e4b0dee47329a233ba0378d6',
+      a: '60177ce0b87bb2564937abcb0dd56959186d36056e8714302a0629516558942b',
+    },
+    ambito: {
+      de: '300a3fb3f0a1af3481188846a89e457e8cf4d4b75f71bfcbd9b0e5a1c7ca4b23',
+      a: '837928ef82df7eadff7e17edb8887e39b358d0c8da6a3d847547632ae9f1d030',
+    },
+  },
+  {
+    // SCRUM-1787d · el MISMO cambio, si 1788a (PR #3301) entra antes en main: la base es entonces
+    // el `a` de 1788a (calculado sobre su punta e8b19bd74636e82bd6fa0c556aab5ffb79689ccb con
+    // `huella` y `ambitoDeLaFactura`; coincide con lo que declaró 1788a). Mismo disco.
+    firma: 'SCRUM-1787 c.22303',
+    registro: 'docs/master/SCRUM-1787.md',
+    cita: '«1-Sí GO · 2-Ok sí · 3-Firmo · 4-Sí»',
+    cuerpo: {
+      de: '44d7d101465e2f0909db25950bf4fc1dae8d729d6e31222924a72aeec310824f',
+      a: '60177ce0b87bb2564937abcb0dd56959186d36056e8714302a0629516558942b',
+    },
+    ambito: {
+      de: '0c1839e4d2df8ded0228160e90fdfd46eb9549daba2055fe29016bf5e5b13a08',
+      a: '837928ef82df7eadff7e17edb8887e39b358d0c8da6a3d847547632ae9f1d030',
+    },
+  },
+  {
+    // SCRUM-1787l · el PDF de factura pinta las Observaciones (`docFooterText`, congelado al
+    // emitir) con el rótulo firmado `TITULO_OBSERVACIONES`, sólo si hay texto. Decisión c.22345 ②;
+    // ALTER aplicado c.22346. Base origin/main ccb69008b5aaa80d3f7cb712be77ce025c146238. Huellas de
+    // `evidencias/SCRUM-1446d/huellas.mjs`.
+    firma: 'SCRUM-1787 c.22345',
+    registro: 'docs/master/SCRUM-1787.md',
+    cita: '«1-Sí 2-Solo pie 3-GO 4-No 5-Sí»',
+    cuerpo: {
+      de: '60177ce0b87bb2564937abcb0dd56959186d36056e8714302a0629516558942b',
+      a: '1a4bd416a2c0231ed8b7fa4b64c6f21f6c1bf91a3c73ca4075af714d1cc3656e',
+    },
+    ambito: {
+      de: '837928ef82df7eadff7e17edb8887e39b358d0c8da6a3d847547632ae9f1d030',
+      a: '9eecc6a9d13680f109b6f384d03b42a0f98bfc98c5b296a47a73e494e5517432',
+    },
+  },
+  {
+    // SCRUM-1787m · el PDF de factura imprime «Vence el <fecha>» y «Formas de pago: …» con el
+    // vencimiento y las formas de pago CONGELADOS en la factura (`dueDate` y `payMethods`, de
+    // SCRUM-1787i), sólo si constan: una factura sin ellos sale igual. GO de regla 40 en c.22338 ③.
+    // Huellas de `evidencias/SCRUM-1446d/huellas.mjs` sobre origin/main
+    // d5bec9526fe9165e38598f6eb054d0717e788740 (el `de` es el `a` de 1787l).
+    firma: 'SCRUM-1787 c.22338',
+    registro: 'docs/master/SCRUM-1787.md',
+    cita: '«1-Sí 2-Sí 3-GO»',
+    cuerpo: {
+      de: '1a4bd416a2c0231ed8b7fa4b64c6f21f6c1bf91a3c73ca4075af714d1cc3656e',
+      a: 'a83c6654bb5840ddd838a5d571c21c3f08f5f9dca2033f2876368c35c9f34d7a',
+    },
+    ambito: {
+      de: '9eecc6a9d13680f109b6f384d03b42a0f98bfc98c5b296a47a73e494e5517432',
+      a: '0fbb6f5bf50aa18f400151930edf508f199df754f619062d4eee6fee94fdf739',
+    },
+  },
+  {
+    // SCRUM-1787t · SOLO la línea «Vence el» del PDF de factura pasa a la fecha LARGA es-ES (zona del
+    // negocio), con las opciones de la página de pago (1787q); la «Fecha:» no cambia. Decisión
+    // c.22390 ③; GO de regla 40 en c.22408. Huellas de `evidencias/SCRUM-1446d/huellas.mjs` sobre
+    // origin/main 57cc6d45bca6debe92bd55d6a55e7232c21985d4 (el `de` es el `a` de 1787m).
+    firma: 'SCRUM-1787 c.22408',
+    registro: 'docs/master/SCRUM-1787.md',
+    cita: 'Respuesta literal: «go»',
+    cuerpo: {
+      de: 'a83c6654bb5840ddd838a5d571c21c3f08f5f9dca2033f2876368c35c9f34d7a',
+      a: '2b62a73e67001b850f2005f950480cf0a9e7a603d83e4325bd7acbb7cc9346ce',
+    },
+    ambito: {
+      de: '0fbb6f5bf50aa18f400151930edf508f199df754f619062d4eee6fee94fdf739',
+      a: 'a8bd2fb9e99037e52b07fcbdf3133bfcc4adf32100d4b50b8ea4796e2e8b3857',
+    },
+  },
+  {
+    // SCRUM-1787x · la misma línea «Vence el» de 1787t (dentro del GO c.22408): SOLO el día pasa de
+    // `2-digit` a `numeric` («5 de diciembre de 2026»). Decisión del fundador c.22431. Huellas de
+    // `evidencias/SCRUM-1446d/huellas.mjs` sobre origin/main 4aeac0f6c1f5a63b97b009a1c1b3ebc93c973e3e
+    // (el `de` es el `a` de 1787t).
+    firma: 'SCRUM-1787 c.22431',
+    registro: 'docs/master/SCRUM-1787.md',
+    cita: 'Respuesta literal: «4-Sí ok quita el 0»',
+    cuerpo: {
+      de: '2b62a73e67001b850f2005f950480cf0a9e7a603d83e4325bd7acbb7cc9346ce',
+      a: '3cc5a0bd8afcc8d7b9a69bff74fd60059271779970c09cc76b72bbdb204b2f24',
+    },
+    ambito: {
+      de: 'a8bd2fb9e99037e52b07fcbdf3133bfcc4adf32100d4b50b8ea4796e2e8b3857',
+      a: '7685e52da0bab2674ea7211a022a592b929598f1974b4528108aba98389c7676',
+    },
+  },
+  {
+    // SCRUM-1787w · el PDF de factura pasa al dibujo del presupuesto (una columna emisor/cliente,
+    // rótulos y cabecera de tabla del presupuesto, sin banda), con los literales firmados en
+    // c.22428. GO de regla 40 en c.22416. Huellas de `evidencias/SCRUM-1446d/huellas.mjs` sobre
+    // origin/main 42cae61092ba69761d6d7bba0504abe6baee1e52 (el `de` es el `a` de 1787x).
+    firma: 'SCRUM-1787 c.22416',
+    registro: 'docs/master/SCRUM-1787.md',
+    cita: '«1-GO»',
+    cuerpo: {
+      de: '3cc5a0bd8afcc8d7b9a69bff74fd60059271779970c09cc76b72bbdb204b2f24',
+      a: '8b726e56e936e44643995e02a292a06be7cfa45521ad23e5e804df89b509ae5a',
+    },
+    ambito: {
+      de: '7685e52da0bab2674ea7211a022a592b929598f1974b4528108aba98389c7676',
+      a: 'f979edbc86098b8aca725929c889f13c6ed9dfa0af7fcc8dffdd4114b17754fc',
+    },
+  },
 ];
 
 /**

@@ -67,6 +67,9 @@ const FUERA_DE_ANONIMIZADO = Object.freeze({
   // SCRUM-1569: lo hace visible el censo por núcleo («…Name»). Es el nombre de la plantilla de Meta
   // con que se mandó el mensaje: el hecho, no la persona (lo dice ya `anonimizarMerchant.ts`).
   'whatsAppMessage.templateName': 'el nombre de la PLANTILLA de Meta con que se mandó el mensaje, no el de una persona',
+  // SCRUM-914 · lo hace visible el mismo censo por núcleo. Clasificado FUERA por J3 en
+  // docs/master/SCRUM-914.md §② («`type`, `brand`, `modelName` (catálogo)»).
+  'equipment.modelName': 'el MODELO de catálogo del aparato («ecoTEC plus»), no el de una persona',
 });
 
 // SCRUM-1569 · la misma pregunta para las 17 copias de la factura y el albarán. Se escribe una vez:
@@ -123,6 +126,12 @@ const SIN_DECIDIR = Object.freeze({
   'invoice.merchantPhone': EN_DOCUMENTO_SELLABLE('el teléfono del profesional'),
   'invoice.merchantEmail': EN_DOCUMENTO_SELLABLE('el correo del profesional'),
   'invoice.shippingAddress': EN_DOCUMENTO_SELLABLE('la dirección de envío del cliente'),
+  // SCRUM-1787d · la dirección de facturación del cliente, congelada al emitir (c.22305): hermanas de las cinco `invoice.customer*`.
+  'invoice.customerBillingAddress': EN_DOCUMENTO_SELLABLE('la dirección de facturación del cliente'),
+  'invoice.customerBillingCity': EN_DOCUMENTO_SELLABLE('la ciudad de facturación del cliente'),
+  'invoice.customerBillingPostalCode': EN_DOCUMENTO_SELLABLE('el código postal de facturación del cliente'),
+  'invoice.customerBillingProvince': EN_DOCUMENTO_SELLABLE('la provincia de facturación del cliente'),
+  'invoice.customerBillingCountry': EN_DOCUMENTO_SELLABLE('el país de facturación del cliente'),
   'albaran.customerName': EN_DOCUMENTO_SELLABLE('el nombre del cliente'),
   'albaran.customerLegalName': EN_DOCUMENTO_SELLABLE('la razón social del cliente'),
   'albaran.customerTaxId': EN_DOCUMENTO_SELLABLE('el NIF del cliente'),
@@ -179,6 +188,8 @@ const SIN_DECIDIR = Object.freeze({
   'quote.docHeaderText': 'texto libre de cabecera del presupuesto, que puede estar sellado (regla 29): ¿puede llevar datos del cliente?',
   'quote.docFooterText': 'texto libre de pie del presupuesto, que puede estar sellado (regla 29): misma pregunta que quote.docHeaderText',
   'albaran.docHeaderText': 'texto libre de cabecera del albarán: misma pregunta que quote.docHeaderText',
+  // SCRUM-1787l · 23-nov-2026 · decisión del fundador en SCRUM-1787 c.22360: misma clasificación que quote.docFooterText.
+  'invoice.docFooterText': EN_DOCUMENTO_SELLABLE('las Observaciones del presupuesto, texto libre: misma pregunta que quote.docFooterText'),
   'quote.pdfUrl': 'el PDF del presupuesto, que lleva los datos del cliente: ¿se borra el fichero o lo conserva el documento?',
   'invoice.pdfUrl': EN_DOCUMENTO_SELLABLE('el PDF de la factura, con los datos del cliente dentro'),
   'albaran.pdfUrl': 'el PDF del albarán, que lleva los datos del cliente: misma pregunta que quote.pdfUrl',
@@ -322,8 +333,13 @@ test('SCRUM-497 · 🔴 TRINQUETE: noventa datos personales siguen sin anonimiza
     + '  o a `FUERA_DE_ANONIMIZADO` y baja este número a mano, en el mismo commit.\n'
     + '  Si no, el censo ha dejado de verlos y «cero pendientes» significa «no supe mirar».');
 
-  assert.equal(reparto.sinDecidir.length, 92,
-    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 92 (SCRUM-1005b sumó, el 20-nov-2026 y sobre 91, ` +
+  assert.equal(reparto.sinDecidir.length, 98,
+    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 98 (` +
+    'SCRUM-1787l sumó, el 23-nov-2026 y sobre 97, `invoice.docFooterText` en SIN_DECIDIR ' +
+    '(EN_DOCUMENTO_SELLABLE, misma clasificación que `quote.docFooterText`); decisión del fundador en SCRUM-1787 c.22360; ' +
+    'SCRUM-1787d sumó, el 21-nov-2026 y sobre 92, 5 columnas `invoice.customerBilling*` en SIN_DECIDIR ' +
+    '(EN_DOCUMENTO_SELLABLE); decisión del fundador en SCRUM-1787 c.22322; ' +
+    `SCRUM-1005b sumó, el 20-nov-2026 y sobre 91, ` +
     '`attachment.fileName`, el nombre del documento de un cliente: columna nueva, SIN decidir —decide el fundador—; ' +
     `SCRUM-1662 sumó, el 12-nov-2026 y sobre 90, ` +
     '`job.queHayQueHacer`, columna nueva de texto libre: misma pregunta que `job.notes`, SIN decidir —decide el fundador—; ' +

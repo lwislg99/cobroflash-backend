@@ -188,6 +188,17 @@ export const DECLARADOS = {
       + 'a través de su módulo puro: scrum1280 ejecuta `medir()` sobre el panel real y exige cero hallazgos.',
     prueba: { fichero: 'tests/scrum1280-nombres-no-declarados.test.mjs', llamada: 'medir({ piezasExtra: PIEZAS' },
   },
+  'scripts/guard-rama-con-numero.mjs': {
+    porque: 'SCRUM-1801 ①: corre dentro de `npm test` (el check obligatorio) LANZADO COMO PROCESO por '
+      + 'su test, que es además el que `guards:entrada` ejecuta antes de empujar. No va en `pretest`: '
+      + 'con la cabeza suelta y sin variables de GitHub (un worktree de medición fijado a origin/main) '
+      + 'sale CIEGO (2), y tumbaría `npm test` donde no hay rama que juzgar.',
+    prueba: {
+      fichero: 'tests/scrum1801-guard-rama-con-numero.test.mjs',
+      llamada: "path.join(RAIZ, 'scripts', 'guard-rama-con-numero.mjs')",
+      lanza: 'spawnSync(process.execPath, [GUARD]',
+    },
+  },
 };
 
 // ── EL ÁRBOL REAL ────────────────────────────────────────────────────────────────────────────
@@ -378,6 +389,16 @@ test('SCRUM-711 · las pruebas de las declaraciones siguen siendo ciertas', () =
     + '`guard-nombres-no-declarados` deja de correr en el check obligatorio y su declaración lo estaría tapando.');
   assert.ok(patrones.some((p) => p.test(pn.fichero)),
     `🔴 \`${pn.fichero}\` no lo cubre ningún patrón de la tanda (\`${scripts.test}\`).`);
+
+  const pr = DECLARADOS['scripts/guard-rama-con-numero.mjs'].prueba;
+  const codigoR = soloCodigo(fs.readFileSync(path.join(RAIZ, pr.fichero), 'utf8'));
+  for (const trozo of [pr.llamada, pr.lanza]) {
+    assert.ok(codigoR.includes(trozo),
+      `🔴 \`${pr.fichero}\` ya no contiene \`${trozo}\` (fuera de comentarios). Sin la ruta y el `
+      + 'lanzamiento, `guard-rama-con-numero` deja de correr en el check obligatorio y su declaración lo estaría tapando.');
+  }
+  assert.ok(patrones.some((p) => p.test(pr.fichero)),
+    `🔴 \`${pr.fichero}\` no lo cubre ningún patrón de la tanda (\`${scripts.test}\`).`);
 });
 
 test('SCRUM-1109 · el envoltorio programado también ejercita de verdad al guard importado', () => {

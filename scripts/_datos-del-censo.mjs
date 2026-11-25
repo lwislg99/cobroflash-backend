@@ -109,6 +109,15 @@ export const CONTRATOS = Object.freeze([
     claves: ['waOptOut', 'mensajes'], fuente: 'src/modules/system/app/routes/customersAdmin.routes.ts', get: '/:id/whatsapp',
     dato: () => ({ waOptOut: false, mensajes: [{ id: 1, type: 'template', templateName: 'presupuesto_enviado', status: 'delivered',
       error: null, relatedType: 'quote', relatedId: IDS.presupuesto, createdAt: F }] }) },
+  // J2: SCRUM-1005d · la pestaña Documentos de la ficha (contrato copiado de la rama de #3277 por J2,
+  // SCRUM-1005 c.22228; lo añade S3 por c.22236). `limites` lo trae ESA rama: en main a 24-nov-2026
+  // el GET devuelve sólo `{ documentos }`. Topes: DOC_MAX_BYTES y DOCS_MAX_BYTES_POR_CLIENTE
+  // (src/modules/system/customerAdmin.ts); filas: SELECT_DOCUMENTO, sin bytes.
+  { ruta: /^\/admin\/customers\/\d+\/documentos$/, ejemplo: '/admin/customers/1/documentos', forma: 'objeto',
+    claves: ['documentos', 'limites'], elementosDe: { documentos: ['id', 'fileName', 'mime', 'sizeBytes', 'createdAt'] },
+    fuente: 'src/modules/system/app/routes/customersAdmin.routes.ts', get: '/:id/documentos',
+    dato: () => ({ documentos: [{ id: 61, fileName: 'contrato.pdf', mime: 'application/pdf', sizeBytes: 245760, createdAt: F }],
+      limites: { porFichero: 10 * 1024 * 1024, porCliente: 100 * 1024 * 1024 } }) },
   { ruta: /^\/admin\/customers$/, ejemplo: '/admin/customers', forma: 'array', compartido: true,
     elemento: ['id', 'merchantId', 'name', 'phone', 'mobile', 'email', 'notes', 'legalName', 'taxId', 'waOptOut', 'createdAt',
       'updatedAt', 'contactKind', 'companyId', 'tipoDestinatario', 'billingPeriodicity', 'recargoEquivalencia', 'dtoPorDefecto',

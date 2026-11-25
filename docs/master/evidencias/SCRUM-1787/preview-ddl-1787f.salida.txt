@@ -1,0 +1,22 @@
+población: esquema prisma\schema.prisma · 108978 B · diff = 1 línea en model Invoice por propuesta
+--- A · vencimiento (firmado, c.22325 ① y ③) ---
+control de la herramienta (preview): ok · ok=true clase=con_cambios
+--- DDL ---
+-- AlterTable
+ALTER TABLE "invoices" ADD COLUMN     "due_date" TIMESTAMP(3);
+--- fin DDL ---
+destructivas: 0
+lista blanca: permitidas=1 rechazadas=0
+  ✔ ALTER TABLE … ADD COLUMN ← ALTER TABLE "invoices" ADD COLUMN "due_date" TIMESTAMP(3)
+--- B · formas de pago congeladas (pendiente de ✅) ---
+control de la herramienta (preview): ok · ok=true clase=con_cambios
+--- DDL ---
+-- AlterTable
+ALTER TABLE "invoices" ADD COLUMN     "pay_methods" JSONB;
+--- fin DDL ---
+destructivas: 0
+lista blanca: permitidas=1 rechazadas=0
+  ✔ ALTER TABLE … ADD COLUMN ← ALTER TABLE "invoices" ADD COLUMN "pay_methods" JSONB
+control negativo (mismo esquema): ok=true clase=sin_cambios
+control positivo sembrado (DROP de «clientComment» en Invoice): ok=true clase=con_cambios destructivas=1 rechazadas=1
+VEREDICTO: VERDE (A y B aditivos, 0 destructivas, lista blanca 0 rechazadas, controles ok)

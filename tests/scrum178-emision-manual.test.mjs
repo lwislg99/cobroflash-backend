@@ -10,6 +10,8 @@
 //     EXACTAMENTE las líneas del presupuesto y su importe, sin deriva de céntimos. Es lo que
 //     acaba sellado en la huella VeriFactu (SCRUM-141), así que se prueba aparte y siempre.
 //   · las PUERTAS, gateadas: los cuatro rechazos que impiden emitir de más.
+// SCRUM-1779d · este banco AFIRMA el sellado: con SIF_ENABLED en OFF (el defecto) la emisión ya no sella (SCRUM-1779 c.22239), así que se enciende aquí y lo afirmado no cambia.
+process.env.SIF_ENABLED = 'true';
 import './_staging-db.mjs'; // SCRUM-60: fuerza staging (fail-closed anti-prod)
 import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599p: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';

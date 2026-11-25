@@ -2721,9 +2721,27 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
         acts.before(banda);
       }
       if (!paid) {
+        // SCRUM-1804 (PARTE S de SCRUM-1316) · con alguna línea al 10 %, decir cómo se cobró es
+        // OBLIGATORIO (SCRUM-1316 c.22438). Lo dice el SERVIDOR (`conIvaAlDiez`, de `llevaLineaAlDiez`)
+        // y lo hace cumplir él (422); aquí se adelanta. Es el contrato de la ficha de factura
+        // (`invoiceDetailView.js`, SCRUM-1316l), con UNA diferencia a propósito: aquí el selector sale
+        // SOLO en facturas con línea al 10 %; las demás siguen exactamente como hoy (decisión del
+        // orquestador, registro SCRUM-1804). Textos: los de `COPY_IVA_10` y `selectorMetodoCobro.js`.
+        const conIvaAlDiez = inv.conIvaAlDiez === true;
+        let selMetodo = null;
+        let errorMetodo = null;
         // Marcar como PAGADA → PUT /admin/invoices/:id/status. Verificación de importe A21.2:
         // si el importe recibido no cuadra → payment-anomaly y la factura NO se marca pagada.
         const marcarBtn = mkBtn('Marcar como PAGADA', async () => {
+          // SCRUM-1804 · sin medio y con línea al 10 %, T3 ANTES de preguntar nada: el servidor lo
+          // rechazaría igual, y así no se pregunta un importe que luego no sirve.
+          if (conIvaAlDiez && selMetodo && typeof window.metodoElegido === 'function' && !window.metodoElegido(selMetodo)) {
+            // SCRUM-1834 · T3 JUNTO al selector, no en la barra de estado de arriba: a 390 el foco
+            // baja al selector y la barra queda fuera de pantalla (medido en la r42 de SCRUM-1804b).
+            errorMetodo.hidden = false;
+            selMetodo.focus();
+            return;
+          }
           // SCRUM-43: confirmación ligera ANTES del flujo A21.2
           // (el prompt de importe recibido sigue intacto tras ella)
           if (!window.confirm(`¿Marcar como pagada la factura ${inv.number} de ${fmtMoneyEs(inv.total, inv.currency || cur)}?`)) return;
@@ -2740,7 +2758,11 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
             return; // JAMÁS pagada con importe distinto
           }
           try {
-            await apiRequest(`/admin/invoices/${inv.id}/status`, { method: 'PUT', body: JSON.stringify({ status: 'paid' }) });
+            // SCRUM-1804 · el método viaja SOLO si se eligió (`cuerpoConMetodo`); sin selector, el de siempre.
+            const cuerpoPagada = selMetodo && typeof window.cuerpoConMetodo === 'function'
+              ? window.cuerpoConMetodo({ status: 'paid' }, selMetodo)
+              : { status: 'paid' };
+            await apiRequest(`/admin/invoices/${inv.id}/status`, { method: 'PUT', body: JSON.stringify(cuerpoPagada) });
             refresh(); // el semáforo/barra/timeline actualizados = feedback (como invoice-detail)
           } catch (e) {
             setStatus('error', mensajeDeFallo('Error actualizando estado', e));
@@ -2838,6 +2860,42 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
           acts.appendChild(roleLockedNote());
           if (payLink) acts.appendChild(payLink);
         } else {
+          // SCRUM-1804 · «¿Cómo lo has cobrado?» encima de las acciones, solo con línea al 10 %, con la
+          // pieza común (`selectorMetodoCobro.js`, opciones servidas). Sin opciones servidas devuelve
+          // `null` y la fila queda como hoy (el servidor sigue exigiendo el medio).
+          if (conIvaAlDiez && typeof window.pintarSelectorMetodo === 'function') {
+            const zonaMetodo = document.createElement('div');
+            zonaMetodo.className = 'job-doc-row__aviso';
+            acts.parentNode.insertBefore(zonaMetodo, acts);
+            selMetodo = window.pintarSelectorMetodo(zonaMetodo, { id: 'metodo-cobro-inv-' + inv.id });
+            if (selMetodo) {
+              selMetodo.required = true;
+              selMetodo.setAttribute('aria-required', 'true');
+              // SCRUM-1834 · T3 vive aquí, pegado al selector que recibe el foco, igual que T4. Nace
+              // escondido; lo enseña «Marcar como PAGADA» sin medio y lo esconde elegir uno.
+              errorMetodo = document.createElement('p');
+              errorMetodo.className = 'alert error';
+              errorMetodo.id = 'metodo-cobro-inv-' + inv.id + '-error';
+              errorMetodo.setAttribute('role', 'alert');
+              errorMetodo.textContent = window.COPY_IVA_10 ? window.COPY_IVA_10.eligeMetodo : '';
+              errorMetodo.hidden = true;
+              selMetodo.parentNode.appendChild(errorMetodo);
+              // T4 al elegir un medio de los que el SERVIDOR sirve con aviso. Un aviso, no un bloqueo.
+              const avisoEfectivo = document.createElement('p');
+              avisoEfectivo.className = 'alert warning';
+              avisoEfectivo.id = 'metodo-cobro-inv-' + inv.id + '-aviso';
+              avisoEfectivo.setAttribute('role', 'status');
+              avisoEfectivo.textContent = window.COPY_IVA_10 ? window.COPY_IVA_10.avisoEfectivo : '';
+              avisoEfectivo.hidden = true;
+              selMetodo.parentNode.appendChild(avisoEfectivo);
+              selMetodo.setAttribute('aria-describedby', errorMetodo.id + ' ' + avisoEfectivo.id);
+              selMetodo.addEventListener('change', () => {
+                if (window.metodoElegido(selMetodo)) errorMetodo.hidden = true;
+                avisoEfectivo.hidden = !(window.COPY_IVA_10 && typeof window.avisoDeEfectivoVisible === 'function'
+                  && window.avisoDeEfectivoVisible(true, window.metodoElegido(selMetodo), inv.metodosConAvisoIvaAlDiez));
+              });
+            }
+          }
           acts.appendChild(marcarBtn);
           if (bizumBtn) acts.appendChild(bizumBtn);
           addSecondary(acts, [recordarBtn, wa, payLink]);
