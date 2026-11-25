@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { formatMoneyEs, formatImporteEs, calcTotal, type QuoteLine } from '../../../../core/utils/utils'; // A22.1: dinero es-ES con símbolo
-import { lineasQueSuman } from '../../../quotes/domain/apartados'; // SCRUM-1568
+import { capitulos, lineasQueSuman } from '../../../quotes/domain/apartados'; // SCRUM-1568 · SCRUM-1807c: capitulos
 import { getLocale } from '../../../../core/i18n/locales';
 import { esc } from '../../../../core/utils/utils';
 import { BASE_URL } from '../../../../core/config/env';
@@ -122,26 +122,18 @@ function filaDescuentoGlobalDelPresupuesto(lineas: QuoteLine[], global: unknown)
  * Literal firmado en SCRUM-1786 c.22269; lanzado como en el PDF (1786f1, c.22329). El criterio es
  * el del PDF (`pdf.service.ts`, `generateQuotePdf`): una cabecera es la línea que `lineasQueSuman`
  * deja fuera, y sus líneas son las que la siguen hasta la próxima cabecera; las de antes de la
- * primera no son de ningún apartado. El recorrido está COPIADO de allí (vive dentro de la función
- * del PDF y no se puede importar). La cifra es `calcTotal` de esas líneas: en el portal cada línea
+ * primera no son de ningún apartado. SCRUM-1807c: el recorrido ya no es una COPIA del del PDF; los
+ * dos lo leen de `capitulos()` (`apartados.ts`). La cifra es `calcTotal` de esas líneas: en el portal cada línea
  * va CON IVA y con su descuento de línea, y el total de la tarjeta es `calcTotal` de todas, así que
  * la fila suma lo que el cliente ve encima. Sin cabeceras devuelve las líneas tal cual.
- * Deuda: cuando exista `capitulos()` (tramo c, S1), este recorrido pasa a usarla.
  */
 function filasConTotalDelApartado(lineas: QuoteLine[]): Array<{ linea: QuoteLine } | { totalDelApartado: number }> {
-  const suman = new Set<unknown>(lineasQueSuman(lineas));
   const filas: Array<{ linea: QuoteLine } | { totalDelApartado: number }> = [];
-  let abierto: QuoteLine[] | null = null;
-  for (const l of lineas) {
-    if (!suman.has(l)) {
-      if (abierto) filas.push({ totalDelApartado: calcTotal(abierto) });
-      abierto = [];
-    } else if (abierto) {
-      abierto.push(l);
-    }
-    filas.push({ linea: l });
+  for (const { cabecera, lineas: delApartado } of capitulos(lineas)) {
+    if (cabecera) filas.push({ linea: cabecera });
+    for (const l of delApartado) filas.push({ linea: l });
+    if (cabecera) filas.push({ totalDelApartado: calcTotal(delApartado) });
   }
-  if (abierto) filas.push({ totalDelApartado: calcTotal(abierto) });
   return filas;
 }
 
