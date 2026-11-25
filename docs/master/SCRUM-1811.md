@@ -68,3 +68,51 @@ lista vacía como buena tumba ④.
 - El cuarto caso del ticket (138160787095: lo cortó el techo de 25 min del job, sin aviso y con 112 s de
   silencio) **no pasa por este vigía**. Ahí mata GitHub y no el envoltorio, así que no saldrá ninguna lista. Lo
   digo para que nadie la espere en esos casos.
+
+# SCRUM-1811b
+
+**Medido contra:** `origin/main` = `77c000deadc9fa6b80ae97b6b02752e18b2c9392` · 2026-11-25T07:57:58Z
+
+A9: aviso → cicatriz S5 «Un catálogo de mutaciones nuevo se mide con el meta-guard (`--solo-censo`) antes del push, no con un guion propio: guards:entrada no lo corre.» — no se pudo comprobar: `scripts/guards-entrada.mjs` no corre ese censo ni `tests/scrum757-la-declaracion-que-nadie-lee.test.mjs`, y llevarlo ahí es otra pieza.
+
+Relevo del 25-nov (S5). El PR #3419 amaneció en rojo en el CI (run 45463680370, sobre `3e463f42d`).
+
+## Qué estaba rojo y por qué
+
+| Job | Lo que dice el log | Causa |
+|---|---|---|
+| meta-guard partes 1/2/3 y «los guards caen cuando deben» | exit 2 a los 4 s: «1 DECLARACIÓN QUE NO PUEDO EVALUAR · scrum1811…:24 · el campo `de` no es un literal: es TemplateExpression» | La primera mutación del catálogo usaba una plantilla `${'process'}.${'platform'}` para partir la señal del censo 702. El meta-guard sólo acepta un literal de cadena, y si no puede leer una declaración no la descarta: sale 2. |
+| build + tests (con banco desechable) | 3 fallos de 14 414 (TAP del artifact `tanda-tap`): SCRUM-745, SCRUM-757 (positivo del árbol real) y SCRUM-765 (el meta-guard arranca) | La misma declaración ilegible, vista por los tres tests que vigilan al meta-guard. |
+
+**La rama POSIX no tenía la culpa.** En ese mismo TAP los 4 casos de SCRUM-1811 salen `ok` en Linux, ① por
+efecto incluido. Así que lo que el tramo anterior dejó en «Lo que NO se ha medido» («la rama POSIX por efecto»)
+ya está medido: lo midió el CI, en el run 45463680370 (`ok 6253` a `ok 6256`). El cambio de ruta del censo 702
+tampoco: SCRUM-702 sale verde en ese run.
+
+## La cura
+
+Una línea del test: `de` pasa a ser UN literal de cadena, y la señal se parte con el escape unicode del punto
+dentro del literal. El meta-guard lee el valor ya cocinado (`nodo.text`), así que la mutación sigue siendo la
+línea exacta del vigía. El censo 702 lee el fuente sin comentarios, y ahí no aparece la señal entera.
+
+**Lo que me salió mal al curarlo:** la herramienta de edición escribió el escape como un punto literal, igual
+que la cicatriz de S5 del 7-oct. Lo cacé porque SCRUM-702 se puso rojo («25 ficheros y el tope es 24», con
+`scrum1811` en la lista). Una sonda con `soloCodigo` me enseñó el punto en disco, y reescribí la línea con un
+guion de node que exige una coincidencia única.
+
+## Medido (Windows, sobre la rama con la cura)
+
+- 1811 + 702 + 745 + 757 + 765: `# pass 41 · fail 0 · skipped 0`. Los 4 casos de 1811 están en verde.
+- Los otros 10 ficheros de test que usan `tanda-con-veredicto.mjs`: `# tests 59 · pass 58 · fail 0 · skipped 1`.
+  El que se salta es `SCRUM-858b`, «en Windows no hay señales POSIX que propagar; lo mide el CI (Linux)».
+  Esta población (los 12 ficheros que nombran el envoltorio, ya sin el lector de huellas) no es la misma que la
+  de los «72» del tramo anterior. Por eso no comparo las dos cifras.
+- `node scripts/meta-guard-mutaciones.mjs --solo-censo`: sale 0, sin declaraciones ilegibles.
+- Las 3 mutaciones del catálogo, aplicadas una a una y restauradas: quitar la llamada tumba ①, ensanchar el
+  árbol tumba ② y aceptar una lista vacía tumba ④. `git status` después: sólo el test.
+
+## Lo que NO he medido
+
+- El meta-guard ENTERO con mutaciones (las tres partes del CI) no lo he corrido en local, sólo su censo y las 3
+  mutaciones de este catálogo. Lo juzga el CI en el push.
+- La rama no está al día con `main` (89 commits por detrás). No la he mezclado: el CI juzga el merge.

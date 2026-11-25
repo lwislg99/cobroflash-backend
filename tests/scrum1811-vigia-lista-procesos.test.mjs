@@ -25,7 +25,10 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     // El vigía vuelve a matar sin listar.
     fichero: 'scripts/tanda-con-veredicto.mjs',
     // La señal va PARTIDA: este test no lee la plataforma, sólo cita la línea (el censo de SCRUM-702 la contaría).
-    de: `  process.stderr.write(redactarArbol(listarArbol(hijo.pid, { spawnSync, plataforma: ${'process'}.${'platform'} }), hijo.pid));\n`,
+    // Se parte con un ESCAPE dentro de un único literal (el escape unicode del punto): el meta-guard sólo acepta un
+    // literal de cadena y lee su valor ya cocinado, así que la mutación es la línea exacta. Con una plantilla
+    // `${…}` el meta-guard la declara ILEGIBLE y sale 2 (CI del 24-nov, run 45463680370).
+    de: '  process.stderr.write(redactarArbol(listarArbol(hijo.pid, { spawnSync, plataforma: process\u002eplatform }), hijo.pid));\n',
     a: '',
     cae: 'SCRUM-1811 ① ·',
   },
