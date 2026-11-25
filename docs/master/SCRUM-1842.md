@@ -35,3 +35,31 @@ La tanda entera NO (tope de contexto). Corridos: los de la lista del encargo que
 ## Mis errores
 
 - Pasé el tope de empuje (125k) sin nada escrito: 111,9k al acabar el arranque, 131k tras clasificar las citas. Lo dije y empujé lo mínimo.
+
+# SCRUM-1842b · se da la vuelta: la disputa vuelve a R14 y la restauración pasa a R28
+
+**Medido contra:** `origin/main` = `4c8986e5b565ba5f0418a3279e49bb0bfb10cdc2` · 2026-11-25T02:19:43Z
+
+A9: comprobación → `tests/scrum1842-runbooks-sin-numero-doble.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1842-runbooks-sin-numero-doble.test.mjs` (restaurar de vuelta a `## R14`; disputa sin su título)
+
+## Por qué se dio la vuelta
+
+El máster (Parte O, `:462` y `:1690`; también `:1760` «R14 (disputa)») llama R14 a la DISPUTA, y el máster es la única fuente de verdad (regla 35). Decisión del orquestador (encargo de jv-j6gc): se mueve la que el máster NO nombra, la restauración. El criterio anterior («la de menos citas») era del encargo, no de j6gb.
+
+## Qué se hizo
+
+- `docs/RUNBOOKS.md`: `:176` vuelve a `## R14 · Disputa de tarjeta (chargeback)`; `:530` pasa a `## R28 · Restaurar la base de datos desde un backup lógico` (R28 era el que j6gb había usado: libre en cuanto la disputa vuelve).
+- Citas de la restauración a R28 (17 líneas, cada una con UNA «R14», medido antes de cambiar): correo de `scripts/respaldo-programado.mjs:214` («§R28 · Restaurar la base de datos desde un backup lógico.»), `scripts/_backup-codec.mjs:25`, `scripts/backup-dump.mjs:31`, `scripts/backup-restore.mjs:192,206`, `tests/scrum242-backup-codec.test.mjs:91`, `tests/scrum242-runbook-no-se-declara-probado.test.mjs` (`TITULO` y `seccionR28`), `docs/master/SCRUM-242.md` (6), `docs/evidencias/scrum242-restauracion.md` (4), `docs/master/SCRUM-390.md:118`, `docs/master/SCRUM-1554.md:430`. Editadas en sitio, sin mover líneas.
+- Test: caso nuevo «la sección R14 es la disputa, como la llama el máster» (lee el máster: si deja de decir `**R14 · Disputa de tarjeta`, sale CIEGO). Medido: verde 4/4; con el RUNBOOKS de j6gb (87730a4e) caen 2 de 4; cada mutación del catálogo tumba su caso; árbol restaurado byte a byte.
+
+## Lo que queda fuera
+
+- `src/modules/system/domain/avisoPuerta.service.ts:35` cita «§R14» para la restauración: es `src/`, no se toca. Pasa al dueño (comentario, no texto de usuario).
+- Máster: ninguna cita a R14 apunta a la restauración (`:462`, `:1690`, `:1760` disputa; `:1133` y `:1670` otra cosa). Propuesta para un jefe: `:595` «R1-R14» ya no describe los runbooks (llegan a R28).
+- Los 7 «A21.1 (R14)» de `src/` y `public/` vuelven a ser correctos: nada que hacer.
+
+## Mis errores
+
+- Crucé 125k (135k medido) sin haber empujado: la lectura de arranque dejó 102k. Empujo con la comprobación dirigida, no con la lista entera del encargo; lo que no corrí, en el comentario de Jira.
