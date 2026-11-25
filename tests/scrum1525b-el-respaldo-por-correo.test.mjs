@@ -216,11 +216,11 @@ test('SCRUM-1525b · sin correo configurado el volcado CORRE igual, y la salida 
   assert.match(r.rastro, /CORREO SIN CONFIGURAR \(faltan: BACKUP_EMAIL_DESTINO\)/);
 
   assert.deepEqual(validarCorreo({}).faltan, ['SMTP_URL o RESEND_API_KEY', 'BACKUP_EMAIL_DESTINO']);
-  assert.equal(validarCorreo({ SMTP_URL: 'x', BACKUP_EMAIL_DESTINO: 'x' }).ok, true);
-  assert.equal(validarCorreo({ RESEND_API_KEY: 'x', BACKUP_EMAIL_DESTINO: 'x' }).ok, true);
+  assert.equal(validarCorreo({ SMTP_URL: 'x', BACKUP_EMAIL_DESTINO: 'a@example.com' }).ok, true);
+  assert.equal(validarCorreo({ RESEND_API_KEY: 'x', BACKUP_EMAIL_DESTINO: 'a@example.com' }).ok, true);
   assert.equal((await crearTransportador({})).transportador, null);
   // El positivo: con el canal puesto, el transportador SÍ se construye (sin conectar a nada).
-  const listo = await crearTransportador({ RESEND_API_KEY: 'clave-de-prueba', BACKUP_EMAIL_DESTINO: 'x' });
+  const listo = await crearTransportador({ RESEND_API_KEY: 'clave-de-prueba', BACKUP_EMAIL_DESTINO: 'a@example.com' });
   assert.equal(typeof listo.transportador.sendMail, 'function');
   assert.equal(listo.canal, 'Resend (HTTPS)');
 });
