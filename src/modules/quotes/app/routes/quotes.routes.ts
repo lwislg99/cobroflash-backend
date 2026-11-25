@@ -663,6 +663,7 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
             type: 'F1',
             total: invoiceAmount.toFixed(2),
             stageLabel: isCustomPlan ? stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
+            docFooterText: quote.docFooterText ?? null, // SCRUM-1787l (c.22345 ②⑤): las Observaciones; la cabecera NO
             currency: quote.currency,
             lines: scaledLines.length > 0 ? scaledLines : undefined,
             pdfUrl: 'PENDING_PDF',

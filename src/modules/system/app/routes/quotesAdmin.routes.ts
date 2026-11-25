@@ -368,6 +368,7 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
         type: 'F1',
         total: tramo.invoiceAmount.toFixed(2),
         stageLabel: isCustomPlan ? tramo.stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
+        docFooterText: quote.docFooterText ?? null, // SCRUM-1787l (c.22345 ②⑤): las Observaciones; la cabecera NO
         currency: quote.currency,
         lines: tramo.scaledLines.length > 0 ? tramo.scaledLines : undefined,
         pdfUrl: 'PENDING_PDF',
@@ -661,6 +662,7 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
         type: 'F1',
         total: invoiceAmount.toFixed(2),
         stageLabel: null, // no es un tramo: es el documento entero
+        docFooterText: quote.docFooterText ?? null, // SCRUM-1787l (c.22345 ②⑤): las Observaciones; la cabecera NO
         currency: quote.currency,
         lines: scaledLines,
         pdfUrl: 'PENDING_PDF',
