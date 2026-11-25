@@ -11,15 +11,21 @@
 //
 // La cura es la de SCRUM-1843 (opción ③ de SCRUM-786): reglas de `styles.css` ACOTADAS al
 // contenedor de cada vista (`.settings-panel`, `.j3e-5521062`), sólo tamaño, sin tocar las
-// clases globales ni el JS. Las casillas, con el patrón de SCRUM-962f: la ETIQUETA a 44 y la
-// casilla con un área de 44 anclada a su izquierda.
+// clases globales ni el JS.
+//
+// Las 4 casillas de Ajustes NO se curan aquí: quedan PENDIENTES por SCRUM-1848 c.22742 («Quitar
+// Avisos y avisar»). Sus dos reglas (etiqueta a 44 y `::before` de 44, el patrón de SCRUM-962f) las
+// tumbaba el ③ de `scrum962f-editor-cuatro-44` (S2), que sólo admite reglas de 44 de la familia
+// `.inline-checkbox` dentro de `.quote-ajustes`. No se saltan en silencio: ① exige que sigan pintadas
+// y CORTAS, y cuántas medidas cortas dan; el día que se curen, la lista sobra y el test lo dice.
 //
 // ① en NAVEGADOR: cada vista REAL montada con los datos del censo (`datosDelCenso`), con CADA
 //   pestaña pulsada en el banco como hace el censo, serializada y servida con las hojas del índice,
 //   y medida con el árbitro de la casa (`__areaDeToque`) a 390, 929 y 1280 px. Se mide TODO
 //   interactivo pintado, no una lista: lo que quede corto y no sea un exento declarado, cae.
 //   Controles: un botón SEMBRADO de 30 px sale corto; los 17 objetivos del censo aparecen; los
-//   tres exentos siguen pintados y en 30 (la regla no se sale de su sitio).
+//   tres exentos siguen pintados y en 30 (la regla no se sale de su sitio); las 4 PENDIENTES
+//   aparecen una vez por anchura, siguen cortas y dan exactamente 4 × anchuras medidas cortas.
 // ② sin navegador: cada selector del bloque cuelga de su ancla, y cada ancla la escribe sólo su
 //   vista.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -84,9 +90,21 @@ const EXENTOS = Object.freeze([
   { txt: 'Sin color (por defecto)', clases: 'btn-secondary btn-sm' },
 ]);
 
+// PENDIENTES por SCRUM-1848 c.22742 (decisión del fundador, «Quitar Avisos y avisar»): las 4 casillas de
+// Ajustes (3 en la pestaña Avisos y `showTechPhotoToClient`, en Equipo; las cuatro cuelgan de
+// `.settings-panel .inline-checkbox`) se quedan en 17 px. NO son exentas: el test exige que sigan CORTAS,
+// para que el día que S2 acote su ③ y alguien las cure, esta lista avise de que sobra.
+const PENDIENTES = Object.freeze([
+  { id: 'notifyEmailOnPaid', motivo: 'SCRUM-1848 c.22742: bloqueadas por el ③ de scrum962f (S2) hasta que S2 lo acote' },
+  { id: 'notifyEmailOnQuoteAccepted', motivo: 'SCRUM-1848 c.22742: bloqueadas por el ③ de scrum962f (S2) hasta que S2 lo acote' },
+  { id: 'notifyEmailWeeklyDigest', motivo: 'SCRUM-1848 c.22742: bloqueadas por el ③ de scrum962f (S2) hasta que S2 lo acote' },
+  { id: 'showTechPhotoToClient', motivo: 'SCRUM-1848 c.22742: bloqueadas por el ③ de scrum962f (S2) hasta que S2 lo acote' },
+]);
+
 const clases = (c) => String(c || '').trim().split(/\s+/).filter(Boolean).sort();
 const tiene = (e, c) => clases(e.cls).includes(c);
 const exentoDe = (e) => EXENTOS.find((x) => e.tag === 'BUTTON' && e.txt === x.txt && clases(e.cls).join(' ') === clases(x.clases).join(' '));
+const pendienteDe = (e) => (e.tag === 'INPUT' && e.tipo === 'checkbox' ? PENDIENTES.find((p) => p.id === e.id) : undefined);
 
 /** La vista montada con los datos del censo y, como el censo, un estado por cada pestaña pulsada. */
 async function estadosDe(fn) {
@@ -148,7 +166,7 @@ const MEDIR = `(async (SEL, ANCLA, S) => {
 
 const navegador = resolverNavegador();
 
-test('SCRUM-1848 ① · Ajustes (todas sus pestañas) y Planes: todo interactivo da 44 px de toque a 390, 929 y 1280, salvo los 3 `.btn-sm` exentos por c.22728', { skip: !navegador.ok && `sin navegador donde medir (resolverNavegador): ${navegador.motivo}` }, async (t) => {
+test('SCRUM-1848 ① · Ajustes (todas sus pestañas) y Planes: todo interactivo da 44 px de toque a 390, 929 y 1280, salvo los 3 `.btn-sm` exentos por c.22728 y las 4 casillas PENDIENTES por c.22742',{ skip: !navegador.ok && `sin navegador donde medir (resolverNavegador): ${navegador.motivo}` }, async (t) => {
   const paginas = [];
   const poblacion = {};
   for (const fn of VISTAS) {
@@ -227,13 +245,26 @@ test('SCRUM-1848 ① · Ajustes (todas sus pestañas) y Planes: todo interactivo
     assert.ok(suyos.length >= ANCHOS.length, `🔴 CIEGO: el exento «${x.txt}» no aparece a cada anchura (${suyos.length}).`);
     for (const e of suyos) assert.ok(e.tocable < 36, `🔴 CONTROL: el exento «${x.txt}» mide ${e.tocable} px: la regla se ha salido de su sitio. ${linea(e)}`);
   }
+  // PENDIENTES (c.22742): cada una pintada UNA vez por anchura y todavía CORTA. Si ya llega a 44, sobra en
+  // la lista: se quita de PENDIENTES y pasa a exigirse como las demás.
+  for (const p of PENDIENTES) {
+    for (const ancho of ANCHOS) {
+      const suyas = vistos.filter((e) => e.ancho === ancho && pendienteDe(e) === p);
+      assert.equal(suyas.length, 1, `🔴 CIEGO: la casilla pendiente #${p.id} aparece ${suyas.length} veces @${ancho}px; se esperaba 1.`);
+      assert.ok(suyas[0].tocable < MINIMO_TACTIL,
+        `🔴 la casilla #${p.id} ya da ${suyas[0].tocable} px @${ancho}px y sigue en PENDIENTES («${p.motivo}»): sobra en la lista; quítala y que se exija a ${MINIMO_TACTIL}. ${linea(suyas[0])}`);
+    }
+  }
+  const cortosPendientes = cortos.filter(pendienteDe);
+  assert.equal(cortosPendientes.length, PENDIENTES.length * ANCHOS.length,
+    `🔴 cortos declarados PENDIENTES: ${cortosPendientes.length}; la lista dice ${PENDIENTES.length} casillas × ${ANCHOS.length} anchuras = ${PENDIENTES.length * ANCHOS.length}.`);
   // La población y el toque MÍNIMO de cada objetivo, por anchura: lo que el registro copia como «después».
-  t.diagnostic(`medidas ${medidos} · estados ${paginas.length} · anchuras ${ANCHOS.join('/')} · cortos ${cortos.length} (exentos ${cortos.filter(exentoDe).length})`);
+  t.diagnostic(`medidas ${medidos} · estados ${paginas.length} · anchuras ${ANCHOS.join('/')} · cortos ${cortos.length} (exentos ${cortos.filter(exentoDe).length} · pendientes ${cortosPendientes.length})`);
   for (const o of OBJETIVOS) {
     t.diagnostic(`${o.nombre}: ` + ANCHOS.map((a) => `@${a} ${Math.min(...vistos.filter((e) => e.fn === o.fn && e.ancho === a && o.casa(e)).map((e) => e.tocable))}`).join(' · '));
   }
-  // EL TICKET: nada por debajo de 44 salvo los exentos.
-  const malos = cortos.filter((e) => !exentoDe(e));
+  // EL TICKET: nada por debajo de 44 salvo los exentos y las pendientes.
+  const malos = cortos.filter((e) => !exentoDe(e) && !pendienteDe(e));
   assert.equal(malos.length, 0,
     `🔴 ${malos.length} objetivos por debajo de ${MINIMO_TACTIL} px (AB6) sobre ${medidos} medidas en ${paginas.length} estados × ${ANCHOS.length} anchuras:\n${malos.map(linea).join('\n')}`);
 });
