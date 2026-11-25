@@ -115,3 +115,69 @@ y con su GO se re-arma). Queda pendiente, y lo hace un relevo si Javier pide ret
 2. **Las cuatro filas «no»** de la tabla de arriba (máster :5, :1840, :1847 y `CLAUDE.md`:71): si no las
    quiere, se devuelven a su texto de `main`, y el espejo de `.agents/skills/` no se toca.
 3. **Las citas de fuera** (la última tabla) se pasan a sus dueños: `docs/equipo/puesto-j1.md` a J1.
+
+## SCRUM-1859b · remate tras la firma (J4)
+
+**Medido contra:** `origin/main` = `bdba2afe7ba22bb8f6e2cc08311094bb837cee35` · 2026-11-25T21:53:08Z
+
+A9: sin fallo que generalice — es quitar un marcador que la firma deja sin objeto y citarla en la misma línea; lo único que no casaba era una cifra del encargo (1.951 líneas, cuando `wc -l` da 1.950), y lo que vigila `scrum525d` no es esa cifra sino que ninguna línea se mueva, que se mide con el mismo `wc -l` antes y después
+
+25-nov-2026 · **J4** (sesión `jv-j4cl`, equipo de Javier), por encargo del orquestador (`cobroflash-backend-2d`).
+Rama `scrum-1859b-cifra-firmada`. Carril a mano, como el tramo de arriba: el máster es «de un jefe»
+(`node scripts/carriles.mjs de docs/YAQU_MASTER.md` → «**un jefe**»); lo toca este tramo porque la cifra
+está firmada, y sólo en la línea 992.
+
+**La firma**, leída en Jira: SCRUM-1859 c.22809 (Javier, 25-nov-2026 ~21:30Z, por chat al orquestador J, que la
+transcribe): «1-Firmo el literal y el tope tal cual». Cubre el literal del cambio de #3463 y la cifra del tope de
+la línea fija. El ticket tiene 2 comentarios (c.22800 y c.22809) y ninguno posterior a la firma.
+
+### Qué cambia
+
+Máster :992, sólo el final de la línea:
+
+- antes: `…**a lo sumo una sesión por equipo trabajando en ella a la vez** [cifra a firmar].`
+- después: `…**a lo sumo una sesión por equipo trabajando en ella a la vez** (firmada en SCRUM-1859 c.22809, «1-Firmo el literal y el tope tal cual»).`
+
+La cita copia la forma que esa misma línea ya usa para las otras dos decisiones («decisión del fundador en
+SCRUM-1835 c.22775, «2-Sí firmo»» y «… c.22791, «1-Sí firmo»»). La cifra y el literal, tal cual.
+
+- Ninguna línea se mueve: `wc -l` da 1.950 antes y después. El «1.951» del encargo y de c.22800 es el mismo
+  fichero contado con `split("\n")`, que suma el trozo vacío tras el último salto de línea. Sin CR ni BOM.
+- `git diff --stat` contra `origin/main`: dos ficheros, el máster (1 línea) y este registro. Ni `CLAUDE.md`,
+  ni `.claude/`, ni `.agents/`, ni la ficha de J1.
+- `[cifra a firmar]` estaba, fuera de este registro, en una sola línea del repo (`git grep -F`): la 992 del
+  máster. Ningún test lo nombra. Control positivo del mismo `git grep`: este registro lo nombra 2 veces.
+
+### El traspaso de `jv-j4ck`, punto por punto
+
+1. **La firma del literal y de la cifra:** firmadas tal cual (c.22809). Se quita «[cifra a firmar]» de :992 y se
+   cita la firma. La regla 31 (máster :248) no lleva la cifra (0 apariciones de «cifra» o del tope en la
+   línea): no se toca.
+2. **Las cuatro filas «no»** (máster :5, :1840, :1847 y `CLAUDE.md`:71): «tal cual» las firma con el resto del
+   literal. Se quedan como entraron en #3463; no se toca nada, tampoco el espejo de `.agents/skills/`.
+3. **Las citas de fuera: `docs/equipo/puesto-j1.md`:7**, leída por mí sobre `bdba2afe7`: «Es la **prioridad nº 1
+   del máster** (SIF-1, Parte U): mientras SIF-1 no esté 8/8, YaQu no puede decir nada fiscal». No cita la
+   Parte U como cola: dice dónde vive SIF-1. Y las dos mitades son ciertas hoy: el máster :5 dice
+   «**Prioridad absoluta de F1:** SIF-1.», y la definición de SIF-1 («### U1.3 · SIF-1 v2», máster :1097) sigue
+   dentro de la Parte U (de :991 a :1150; la Parte V empieza en :1151), que la conserva como histórico.
+   **No hay nada que arreglar en el carril de J1.** Esto corrige c.22809, que decía «sigue citando la Parte U
+   como cola (…); se arregla en su carril (J1)». El resto de la tabla «Lo que queda citando la Parte U fuera
+   de este PR» no cambia con la firma, y este tramo no la toca.
+
+### Comprobaciones
+
+Sobre el árbol de esta rama, con `dist/` compilado (`tsc -p . --noCheck`, salida 0, 372 `.js`; no hay cambios en
+`src/`). Con 1.242 MB libres no se lanzó nada más pesado que esto.
+
+- `npm run guards:entrada`: 17 guards, 186 tests, 186 pass, 0 fail, 0 skipped. Salida 0.
+- Dirigida, 33 ficheros: los 22 `tests/*.test.mjs` que nombran `YAQU_MASTER` (`grep -l`), más 525d, 637
+  (`un-numero-una-regla`), 1089b, 1294, 267, 854, 237, 976, 700 y los cinco de árbol entero que `guards:entrada`
+  manda correr a mano (195, 414, 694, 710b, 737); tres ya estaban entre los 22. Resultado: 324 tests, 324 pass,
+  0 fail, 0 skipped, salida 0. Contando las líneas del TAP que EMPIEZAN por `ok` y `not ok`: 324 y 0, que suman
+  el total. Cada uno de los 14 nombrados deja casos `ok` en el TAP (de 4 a 10), y 525d imprime «0 pares nuevos
+  sin testigo · congelados 86».
+- Rojo primero de la A9: con mi línea `A9:` quitada, `tests/scrum1294-a9-leccion-en-a10.test.mjs` cae (1 de 4)
+  y nombra `docs/master/SCRUM-1859.md:121 · ancla del 2026-11-25 sin línea «A9:»`, que es este tramo; con la
+  línea, 4 de 4. El fichero se restauró desde una copia y `cmp` dice que es idéntico.
+- La suite entera NO se ha corrido: el encargo lo prohíbe en esta sesión. Tampoco `censo:mudez`: no se toca
+  ningún test.
