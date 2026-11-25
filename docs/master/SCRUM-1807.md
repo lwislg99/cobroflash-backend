@@ -1,7 +1,10 @@
 # SCRUM-1807 · apartados del presupuesto
 
+**Skill UI:** cargada (tramo e, `yaqu-premium-ui`)
+
 ## SCRUM-1807e · el apartado en el EDITOR (S2, 25-nov-2026)
 
+**Skill UI:** cargada
 **Medido contra:** `origin/main` = `724f33f69039a1f6de55f4ea3cde791790b110bb` · 2026-11-25T14:29:46Z
 A9: comprobación → `tests/scrum794-un-solo-anadir-linea.test.mjs`
 A9: comprobación → `tests/scrum632-los-dos-cortes-de-la-linea.test.mjs`
