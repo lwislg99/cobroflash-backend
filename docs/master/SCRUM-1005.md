@@ -241,3 +241,16 @@ Mutaciones: catálogo → `tests/scrum1005b-documentos-cliente.test.mjs`
 
 **Relevo jv-j2di (20-nov-2026, PR #3277 en rojo, run 44774971414, 6 fallos).** Rojo visto en local antes de tocar nada (5 de 34 en 1157/1215g/1215i/1415). Causa: la cabecera JSDoc de `DOCUMENTOS_CLIENTE` decía «FIRMADOS por el fundador» y firmaba el objeto ENTERO, así que los métodos `mb`, `tamano` y `textoDeError` (no son textos) salían «aprobados por grupo». Arreglo en el código, no en los guards: la cabecera ya no firma el grupo (cada texto lleva su firma en su línea), y el bucle de `CODIGOS` del test de 1005d se escribe con `casosEscritos` (7 casos con nombre literal). Los 14 literales no cambian. Positivo: con la cabecera de antes, vuelven a caer 4 de 28. Verde: los 4 guards + 1005d + 1005b, 75/75; lote de 18 ficheros, 210 = 209 pass + 1 saltado por gate.
 A9: comprobación → `tests/scrum1215g-una-firma-de-grupo-no-cubre-a-quien-llega-despues.test.mjs`
+
+## SCRUM-1005e · J2 · #3277 al día con main tras #3369 (sesión jv-j2es)
+
+**Medido contra:** `origin/main` = `25ddbe90bba5cbf75e6fd125fc8045ad040f0497` · 2026-11-25T02:04:47Z (hora de GitHub; sesión J2 `jv-j2es`, por encargo del orquestador `cobroflash-backend-2d`). Rama `scrum-1005d-pestana-documentos` @ `57ff9098cf9c34dd0c1131a87543493797b6a528` + `git merge origin/main` dos veces, limpio las dos. Sin cambios de código: 1005e no toca `public/` ni `src/`, solo trae main y deja este registro.
+
+A9: aviso → cicatriz J2 «lancé `npm run guards:visuales` en primer plano sin medir antes su coste: pasó de 600 s, el arnés lo mandó a segundo plano y acabó en salida 2, CIEGO por fuentes que no bajaron» — no se pudo comprobar: el hook de los 600 s mira los tramos de la suite, no los guards de navegador
+
+- `tsc -p .` con tipos: salida 0.
+- Lote dirigido, 31 ficheros (1005b, 1005d, 1560 —el que lee el contrato de `scripts/_datos-del-censo.mjs` que trajo #3369—, los 23 que nombran `customerDetailView`, 1415, 1294, 267, 854, 811c y 719): 344 tests = 342 pass + 0 fail + 2 saltados (1145 sin `LIBRO_PG_URL`, 692 sin `QA_DB_TEST`).
+- `censo:tactil-panel`: salida 0 (en CI es informativo).
+- `guards:visuales`, el paso que bloquea del job «guards de navegador (fuera de la tanda)», obligatorio desde SCRUM-1005 c.22683: salida 2, CIEGO en 1 guard (`guard:objetivo-tactil`: «FUENTE ROTA en /: 3 de 41 caras declaradas no se pudieron bajar»), 0 hallazgos. En esta máquina no da veredicto: lo da el CI del empujón.
+
+**Lo que NO he medido:** el job de navegador en CI (lo mide el empujón); `censo:clics-del-80`; la suite entera (el encargo dice no correrla); yaqu.app (la pestaña no está desplegada); la línea de población de `guards:visuales` (no la leí, por contexto). Contexto: 132k al decidir empujar (tope del encargo 140k; regla de empujar a 125k).
