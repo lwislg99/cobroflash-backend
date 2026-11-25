@@ -2689,12 +2689,18 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
       const item = document.createElement('div');
       item.className = 'job-doc-row';
       const when = paid ? (inv.paidAt || inv.createdAt) : inv.createdAt;
+      // SCRUM-1808b · etiqueta de un cobro cancelado (literal firmado: SCRUM-1532 c.22455), espejo de la
+      // ficha de factura (SCRUM-1532e). Pill neutra del inventario: cancelar no es un error.
+      const pillCobroCancelado = inv.estadoDelCobro === 'cancelled'
+        ? '<span class="status-pill status-pill-draft">Cobro cancelado</span>'
+        : '';
       item.innerHTML =
         `<div class="job-doc-row__icon" aria-hidden="true">${paid ? '💰' : '🧾'}</div>` +
         `<div class="job-doc-row__body">` +
           `<div class="job-doc-row__title">${inv.stageLabel ? esc(inv.stageLabel) + ' · ' : ''}${jobDetDocLabel(inv)} ${esc(inv.number)}</div>` +
           `<div class="job-doc-row__meta">` +
             `<span class="status-pill ${jobDetInvPill(inv.status)}">${jobDetInvEstado(inv.status)}</span>` +
+            pillCobroCancelado +
             `<span>${esc(docDate(when))}</span>` +
             `<span class="job-doc-row__amount">${fmtMoneyEs(inv.total, inv.currency || cur)}</span>` +
           `</div>` +
@@ -2805,6 +2811,47 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
           bizumBtn = bz;
         }
 
+        // SCRUM-1808b · «Cancelar cobro», espejo de la ficha de factura (SCRUM-1532d; GO y literales
+        // firmados: SCRUM-1532 c.22430). Solo con el cobro `pending` —la única transición del máster— y
+        // sin `paidAt`; sin `estadoDelCobro` servido cae CERRADO. Va al «⋯»: un acto que no se deshace no
+        // es primario. Tras cancelar, `refresh()` repinta y el botón ya no está. Los errores pintan solo
+        // los literales de aquel botón, nunca lo que diga el servidor (SCRUM-644).
+        let cancelarCobroBtn = null;
+        if (inv.chargeId && inv.estadoDelCobro === 'pending' && !inv.paidAt) {
+          const CONFIRMAR_CANCELAR_COBRO = '¿Cancelar este cobro? El cliente ya no podrá pagarlo con este enlace.';
+          // SCRUM-1863 · el error va JUNTO a la fila de esta factura, no en la barra de estado de arriba:
+          // el botón vive en el «⋯» de abajo y, a 390, la barra quedaba fuera de pantalla (r42 de
+          // SCRUM-1808b: top −100 con scrollY 592). Espejo de T3 (SCRUM-1834). Nace al primer error.
+          let errorCancelar = null;
+          cancelarCobroBtn = mkBtn('Cancelar cobro', async () => {
+            if (!window.confirm(CONFIRMAR_CANCELAR_COBRO)) return;
+            cancelarCobroBtn.disabled = true;
+            if (errorCancelar) errorCancelar.hidden = true;
+            try {
+              await apiRequest(`/admin/charges/${inv.chargeId}/cancel`, { method: 'POST' });
+            } catch (e) {
+              const error = e?.data?.error;
+              if (!errorCancelar) {
+                errorCancelar = document.createElement('p');
+                errorCancelar.className = 'alert error job-doc-row__aviso';
+                errorCancelar.id = 'cancelar-cobro-inv-' + inv.id + '-error';
+                errorCancelar.setAttribute('role', 'alert');
+                acts.parentNode.insertBefore(errorCancelar, acts);
+              }
+              errorCancelar.textContent = error === 'charge_not_pending'
+                ? 'Este cobro ya no está pendiente.'
+                : (error === 'document_already_paid'
+                  ? 'Este documento ya consta como pagado: su cobro no se puede cancelar.'
+                  : 'Error actualizando estado: inténtalo de nuevo');
+              errorCancelar.hidden = false;
+              errorCancelar.scrollIntoView({ block: 'nearest' });
+              cancelarCobroBtn.disabled = false;
+              return;
+            }
+            refresh();
+          });
+        }
+
         // Recordar pago → POST /admin/invoices/:id/send-reminder (solo si el cliente tiene teléfono).
         // SCRUM-126: este botón (distinto del de la CTA del héroe, arriba) nunca miró el
         // resultado del envío — mostraba "✓ Recordatorio enviado" aunque hubiera fallado.
@@ -2856,7 +2903,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
         // Enlace)). Técnico = TODAS las de dinero VISIBLES pero DESHABILITADAS + UNA explicación por grupo
         // (no ocultar: que aprenda que el cobro es del admin); el "Enlace de pago" (no es dinero) sí es suyo.
         if (isTecnico) {
-          [marcarBtn, bizumBtn, recordarBtn, wa].filter(Boolean).forEach((b) => acts.appendChild(lockActionForRole(b)));
+          [marcarBtn, bizumBtn, recordarBtn, wa, cancelarCobroBtn].filter(Boolean).forEach((b) => acts.appendChild(lockActionForRole(b)));
           acts.appendChild(roleLockedNote());
           if (payLink) acts.appendChild(payLink);
         } else {
@@ -2898,7 +2945,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
           }
           acts.appendChild(marcarBtn);
           if (bizumBtn) acts.appendChild(bizumBtn);
-          addSecondary(acts, [recordarBtn, wa, payLink]);
+          addSecondary(acts, [recordarBtn, wa, payLink, cancelarCobroBtn]);
         }
       }
   });
