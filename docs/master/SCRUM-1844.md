@@ -35,3 +35,21 @@ entera. Sólo corrí el test nuevo (rojo y verde) y `npm run guards:entrada`. `t
 en el árbol: el de 1639 es `tests/scrum1639-filas-con-teclado.test.mjs`, y no lo corrí.
 
 A9: sin fallo que generalice — el único tropiezo fue lanzar el test sin `dist/` (salió CIEGO, no verde, y lo dijo); ya lo recoge la memoria del equipo sobre los árboles anidados.
+
+## SCRUM-1844c · J3 · verificación alrededor del arreglo (relevo jv-j3dd)
+
+**Medido contra:** `origin/main` = `f23697aa1c7a7b9715ded3be545a50aaa1597706` · 2026-11-25T02:33:36Z
+
+Rama `scrum-1844b-anadir-miembro-44`, punta de partida `f3a3f29ae54576dfa50bf0132c2ebd59500b3d5b` (0 commits por detrás de main). Sin cambios de código en este tramo: solo se mide.
+
+| paso | resultado |
+|---|---|
+| ① `npm run build` (tsc con tipos) | salida 0; el guard del cliente de Prisma, ✔ |
+| ① tanda dirigida: 14 ficheros (`tests/scrum1639-filas-con-teclado.test.mjs`, los 6 que nombran `teamView`, y los de 1844, 419, 1415, 1294, 267, 854, 811c y 719) | 173 casos · 173 pass · 0 fail · 0 skipped · 0 `not ok` de raíz |
+| ② `node scripts/guard-objetivo-tactil.mjs` | salida 2: 0 hallazgos · 4 ciegos. Las 4 líneas «FUENTE ROTA en /» (3 de 41 caras de la landing sin bajar) son de esta máquina y no se tocan. Mide 5 vistas del panel a 929 y 390 px; **la de Equipo no está entre ellas**, así que no hay suelo ni excepción de Equipo que poner al día y no se ha usado la autorización de SCRUM-1841 c.22708 |
+| ③ capturas a 390 y 1280 de Equipo | **NO HECHO**: no cabía en el contexto del relevo (118k de un tope de 140k). Haría falta un guion nuevo con datos de `/admin/team`. Lo que sí mide la pantalla en navegador es `tests/scrum1844-anadir-miembro-44.test.mjs` |
+| ④ `npm run guards:entrada` | salida 0 · 16 guards (con este tramo ya escrito) |
+
+Suite entera NO corrida (el encargo la excluye y no cabía en el contexto).
+
+A9: sin fallo que generalice — el control positivo de `ls-remote` del PASO 0 lo saqué de una rama ya mergeada y borrada (salió vacío); A4 ya exige una rama que exista hoy, y la de 1844b sí salió.
