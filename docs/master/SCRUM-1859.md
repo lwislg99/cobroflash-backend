@@ -102,3 +102,16 @@ Sobre el árbol de esta rama, con `dist/` compilado (`tsc -p . --noCheck`; no ha
 - Rojo primero del espejo: con `.agents/skills/yaqu-sprint/SKILL.md` devuelto a su versión de `HEAD`,
   `tests/scrum1089b-espejo-skills-agentes.test.mjs` da 2 fallos de 5; con la copia, 5 de 5.
 - La suite entera NO se ha corrido: el encargo lo prohíbe en esta sesión.
+- Tras mergear `origin/main` (`89bb285dd`) y recompilar `dist/`, la misma dirigida otra vez: 547 tests, 547
+  pass, 0 fail, 0 skipped.
+
+## Traspaso (25-nov-2026 15:20Z, `jv-j4ck` a 207.216 de contexto)
+
+Empujado por orden del orquestador (cambio de plan: Javier lee el diff en GitHub con el auto-merge desarmado,
+y con su GO se re-arma). Queda pendiente, y lo hace un relevo si Javier pide retoques:
+
+1. **La firma del literal**, en el PR. Si Javier firma la cifra del tope, se quita «[cifra a firmar]» del
+   máster :992; si propone otra, se cambia allí y en la regla 31 no hace falta (no lleva la cifra).
+2. **Las cuatro filas «no»** de la tabla de arriba (máster :5, :1840, :1847 y `CLAUDE.md`:71): si no las
+   quiere, se devuelven a su texto de `main`, y el espejo de `.agents/skills/` no se toca.
+3. **Las citas de fuera** (la última tabla) se pasan a sus dueños: `docs/equipo/puesto-j1.md` a J1.
