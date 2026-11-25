@@ -254,3 +254,15 @@ A9: aviso → cicatriz J2 «lancé `npm run guards:visuales` en primer plano sin
 - `guards:visuales`, el paso que bloquea del job «guards de navegador (fuera de la tanda)», obligatorio desde SCRUM-1005 c.22683: salida 2, CIEGO en 1 guard (`guard:objetivo-tactil`: «FUENTE ROTA en /: 3 de 41 caras declaradas no se pudieron bajar»), 0 hallazgos. En esta máquina no da veredicto: lo da el CI del empujón.
 
 **Lo que NO he medido:** el job de navegador en CI (lo mide el empujón); `censo:clics-del-80`; la suite entera (el encargo dice no correrla); yaqu.app (la pestaña no está desplegada); la línea de población de `guards:visuales` (no la leí, por contexto). Contexto: 132k al decidir empujar (tope del encargo 140k; regla de empujar a 125k).
+## SCRUM-1005c · J2 · textos propuestos de la pestaña Documentos, para la firma (escrito a posteriori en 1839c)
+
+**Medido contra:** `origin/main` = `123311beb24600b1db04371f83e3a67113e58de1` · 2026-11-25T01:51:45Z
+
+Lo escribe J4 en SCRUM-1839c, por encargo del orquestador del equipo de Javier: la letra llegó a la rama principal sin su cabecera en este registro. No añade medición; junta lo que dicen git y la entrega.
+
+- **Qué entró:** el commit `218d2bdc3c708d0bd9a0620fa294a27fb226cac0`, «[carril J2] SCRUM-1005c: textos PROPUESTOS de la pestaña Documentos para la firma (solo docs, nada aplicado)», con un solo fichero: `docs/master/evidencias/SCRUM-1005/1005c-textos-propuestos.md` (+51). Este registro no lo tocó.
+- **Con qué PR:** #3264, merge `6a4478608511baf9078c98b38aa9c22070ce8119`. El número sale de git; la entrega no lo da.
+- **Qué se midió** (entrega en Jira, SCRUM-1005 c.22189, 2026-11-19 18:28:43Z, jv-j2db): «`guards:entrada`: salida 0, 15 guards y 170 tests.» · «11 ficheros, 79 de 79, 0 fallos y 0 saltos.»
+- **yaqu.app:** sin registro de la medición.
+
+A9: comprobación → `tests/scrum1839-letra-con-tramo.test.mjs`
