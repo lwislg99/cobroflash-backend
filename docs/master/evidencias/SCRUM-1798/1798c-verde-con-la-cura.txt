@@ -1,0 +1,21 @@
+✔ control: el árbol TIENE guards de navegador en scripts/ (sin esto, «población 0» no diría nada) (0.9394ms)
+✔ 🔴 el medidor VE la población de scripts/guard-*.mjs: la cuenta entera, no 0 (365.4799ms)
+✔ 🔴 control positivo: un guard sembrado que declara entra en el censo con su mutación; el que no declara, no (4.1261ms)
+✔ 🔴 una declaración con `de` en plantilla NO se descarta en silencio: sale como ilegible (17.3218ms)
+✔ la ruta decide qué es un guard de navegador, y un test de node:test no lo es (0.2534ms)
+✔ 🔴 un guard que sale 2 (NO SUPO MEDIR) es CIEGO, no un «caído»: ninguna `cae` lo puede dar por VIVO (3459.6317ms)
+✔ 🔴 un guard que sale 3 (no arrancó el navegador) también es CIEGO (2960.4468ms)
+✔ 🔴 un guard que sale 1 entrega el TEXTO del hallazgo: `cae` casa con su línea (2526.79ms)
+✔ 🔴 un guard que sale 0 es la base verde, y no trae caídos (2282.5835ms)
+✔ 🔴 PUERTA 1 · con la base de un guard de navegador en 0, se pasa la puerta (no sale CIEGO por «no pasó») (1.1323ms)
+✔ 🔴 PUERTA 1 · con la base de un guard de navegador CIEGA, no se muta y el motivo es el del guard (0.3038ms)
+✔ 🔴 el juicio de una mutación sobre un guard de navegador: CIEGA si no midió, VIVA si nombra el hallazgo, MUDA si no (0.4261ms)
+✔ control: la población de tests/ y sus suelos NO se mueven (A12) (2844.1392ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15237.3543

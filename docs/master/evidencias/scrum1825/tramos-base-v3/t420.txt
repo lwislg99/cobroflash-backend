@@ -1,0 +1,6 @@
+tests/scrum982-la-nota-del-cliente-en-el-trabajo.test.mjs
+tests/scrum983-la-ficha-360-carga-lo-que-edita.test.mjs
+tests/scrum984-del-presupuesto-al-albaran.test.mjs
+tests/scrum986-chip-whatsapp-en-la-lista.test.mjs
+tests/scrum988-revisiones-en-la-ficha.test.mjs
+tests/scrum993-boton-un-toque.test.mjs

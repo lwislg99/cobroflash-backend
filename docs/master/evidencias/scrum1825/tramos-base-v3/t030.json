@@ -1,0 +1,19 @@
+{
+ "ficheros": 30,
+ "tandas": [
+  {
+   "desde": 0,
+   "n": 30,
+   "exit": 0,
+   "tests": 190,
+   "pass": 189,
+   "fail": 0,
+   "skipped": 1
+  }
+ ],
+ "tests": 190,
+ "pass": 189,
+ "fail": 0,
+ "skipped": 1,
+ "fallos": []
+}
