@@ -1,6 +1,6 @@
 ---
 name: yaqu-release-check
-description: Cierre de sprint de YaQu (protocolo AA1.7) — QA del sprint, docs actualizados, done/evidencias en la Parte U y actualización del master. Usar cuando un sprint del registry está listo para cerrarse o el usuario invoque /yaqu-release-check.
+description: Cierre de sprint de YaQu (protocolo AA1.7) — QA del sprint, docs actualizados, done/evidencias en la ficha de la versión en curso y actualización del master. Usar cuando una pieza de esa ficha está lista para cerrarse o el usuario invoque /yaqu-release-check.
 ---
 
 # /yaqu-release-check — Cierre de sprint (AA1.7)
@@ -42,7 +42,8 @@ description: Cierre de sprint de YaQu (protocolo AA1.7) — QA del sprint, docs 
    Parte Q crece por sprint) · `docs/BUGS.md` (bugs del sprint cerrados o registrados) ·
    `docs/MIGRATIONS_PENDING.md` si hubo db push · `docs/WHATSAPP_TEMPLATES.md` si se
    tocaron plantillas.
-4. **Done + evidencias en U.** En `docs/YAQU_MASTER.md` Parte U: marcar el done de la fila
+4. **Done + evidencias en la ficha.** En la ficha de la versión en curso (Jira; la Parte U del master
+   apunta a ella y lo que lleva debajo es histórico): marcar el done de la pieza
    con motivo/evidencias (capturas, IDs, docs de evidencia que pida la tarea, p. ej.
    `EVIDENCIAS_E2E.md`). **✅ con motivo; nunca borrar filas
    ni reescribir historia.**
