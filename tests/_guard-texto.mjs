@@ -58,7 +58,10 @@ import fs from 'node:fs'; // SCRUM-193: `leerFuente` LEE, no solo filtra
  * Por defecto sigue en `true`, así que JS y TS salen exactamente igual que antes. `leerFuente` lo
  * decide por la ruta (`barraDobleComenta`); quien filtra un CSS leído a mano lo tiene que pedir.
  */
-export function soloEjecutable(fuente, { almohadillaEsComentario = true, barraDobleEsComentario = true } = {}) {
+export function soloEjecutable(fuente, { almohadillaEsComentario = true } = {}) {
+  // SCRUM-1851 · la opción nueva se lee aquí y no en la firma: `scripts/censo-mudez.mjs` busca esa
+  // firma LITERAL para mutar el filtro (su `FIRMA`), y moverla lo deja CIEGO. Sólo `false` la apaga.
+  const barraDobleEsComentario = arguments[1]?.barraDobleEsComentario !== false;
   const n = fuente.length;
   let out = '';
   let i = 0;
