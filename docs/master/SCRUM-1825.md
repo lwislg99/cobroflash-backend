@@ -153,3 +153,23 @@ re-mezcla para no invalidar el barrido; el check del PR corre sobre la mezcla.
 barridos de la base en el árbol; por lo medido el 24-nov, idénticas a `origin/main`. Se tiran al cerrar.
 
 A9: sin fallo que generalice — tramo de relevo que recupera, comprueba y copia evidencias ya medidas; el BOM que mete `Set-Content -Encoding utf8` de PowerShell 5.1 en el JSON unido lo vi en los primeros bytes y lo rehíce con node antes del commit (trampa ya escrita en la descripción de la herramienta)
+
+## SCRUM-1825 · apéndice 25-nov tarde — el rojo de #3439 (S3)
+
+**Medido contra:** `origin/main` = `2a6675c978794595696f87fb1a7ed3e52f904adb` · 2026-11-25T14:51:41Z
+
+En el run 45623864611 (tras el update-branch, punta `2d92b3100`), `build + tests` cayó con UN fallo: `scrum719`
+«SCRUM-1395b · ① el veredicto guardado de `censo:mudez` cubre la población, al día», con el motivo literal
+«scrum817-orden-del-detalle-del-trabajo.test.mjs · el fichero cambió desde la medida». Es el fixture de 817 que
+corregí en esta rama (cruce autorizado, arriba): su ficha en `tests/_veredicto-mudez.json` se quedó caducada.
+Cura con el comando del propio test, `npm run censo:mudez -- --escribir`, sobre main `2a6675c97` mezclado: midió 1 de
+148 → **VIVO 1 · MUDO 0 · CIEGO 0**, filtro `_guard-texto.mjs` idéntico al original; el diff del JSON es una
+línea, la huella de 817 (`b07a09d0…` → `5dda44c2…`), que sigue VIVO.
+
+El trinquete de zona, también rojo en este PR, NO es de esta rama: la pared de 15 min del hijo corta la cola de
+la tanda, y le pasa también a ramas ajenas (medido y entregado al orquestador).
+
+Error propio: toqué un guard de la población de `censo:mudez` y no regeneré el derivado. El barrido de esta rama
+no pasa por `scrum719`.
+
+A9: comprobación → `tests/scrum719-el-suelo-de-los-doce.test.mjs`
