@@ -142,3 +142,17 @@ Cada tramo dice qué entró (commit y ficheros, leídos con `git show --stat`), 
 - Los comentarios de Jira (entregas, PR y etiquetas) los leyó un subagente, no la sesión directamente; cada cita lleva su número de comentario para cotejarla. Los tramos los escribió otro subagente con esos datos; lo que viene de git (commits, ficheros, merges, la elección de los 14) sí lo volvió a leer él en git.
 - yaqu.app: no aplica (sólo documentos y una lista de test).
 - El check obligatorio del PR: este tramo se escribe antes del empujón.
+
+# SCRUM-1839d · Ocho tramos a posteriori del equipo de Javier de más de 30 días; la lista baja de 96 a 88
+
+**Medido contra:** `origin/main` = `f23697aa1c7a7b9715ded3be545a50aaa1597706` · 2026-11-25T02:37:06Z
+
+J6 (jv-j6gd), por encargo del orquestador del equipo de Javier. Sólo docs y la lista del trinquete.
+
+- **Cómo se eligieron:** de los 96 pares de `SIN_TRAMO_CONGELADOS`, la fecha del último commit de `origin/main` que nombra el par en el asunto; los anteriores al 26-oct-2026; de esos, los de tickets con `equipo-javier` o `area-jN` en Jira y SIN `equipo-luis`; los 8 más recientes.
+- **Fuera, y por qué:** 1507d y 1442b llevan `equipo-javier` y `equipo-luis` a la vez; 1559d…h y 710b no llevan etiqueta. No se tocan.
+- **Los 8 escritos:** 1549b, 1310a, 1244b, 1244c, 1244d, 1251a, 1499a, 1058b. Los 8 ya tenían su texto con una cabecera que la regla de c.22677 no reconoce, así que cada tramo apunta a esa cabecera con la línea de hoy, el commit, el PR con su merge y lo medido en el comentario de entrega de Jira. 1058b no tiene comentario de entrega de la sesión: va como «sin registro de la medición».
+- **La lista:** 96 → 88. `MEDIDA_CONGELADA` y el tope no cambian (son la foto). El trinquete, 6 de 6 en verde: «1085 pares = 997 con tramo + 74 sin tramo + 14 sin fichero» (antes, 989 + 82 + 14).
+- **No medido:** las citas de Jira las extrajo un subagente de lectura y no las he releído; la suite entera no se corrió (no cabía en contexto).
+
+A9: aviso → cicatriz J6 «Medí 111k al acabar el arranque y lancé una búsqueda de Jira sin acotar lo que devolvía: ~25k, y crucé el umbral de empujar (130k) y el tope (145k) sin nada en git» — no se pudo comprobar: ningún hook de este árbol mide el tamaño de una respuesta antes de traerla
