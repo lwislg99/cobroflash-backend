@@ -96,3 +96,82 @@ había tocado la vista ni `tests/_banco-vistas.mjs` desde el punto de partida).
 | rojo-primero | `tests/scrum1824-dictado-sin-carrera.test.mjs`: 8 de 11 caen con la vista de `main` |
 | sin tocar 683 | el diff de la rama no toca `tests/scrum683*` |
 | verlo en yaqu.app | NO HECHO → tras el merge; lo pide el orquestador a quien tenga la sesión QA |
+
+---
+
+## SCRUM-1824b · r42 en vivo: «Añadir al parte» visto en yaqu.app (25-nov)
+
+**Medido contra:** `origin/main` = `77c000deadc9fa6b80ae97b6b02752e18b2c9392` · 2026-11-25T08:08:41Z
+
+A9: aviso → cicatriz S4 «Un guion en vivo no hereda del banco lo que contesta el servidor de mentira: el dictado de verdad devolvió una línea SIN cantidad y, dos minutos después, una propuesta vacía para el mismo texto, y mis cuatro primeros rojos eran de mi expectativa, no de la cura.» — no se pudo comprobar: el guion vive en evidencias, fuera de la tanda de tests
+
+Guion: `docs/master/evidencias/SCRUM-1824/r42-vivo/verificar-en-vivo.mjs` (molde: el de SCRUM-916c).
+Navegador real a 390×844 con el dedo, cuenta de QA, parte #21 en borrador. Lo servido es `main`: la
+página cargó `parteDetailView.js` con el blob `80bef8425231393cd1f054dfcc225d39b5b25b8e`, que es el de
+`origin/main` (`/version` = `77c000de…`). Salida: `r42-vivo/vivo-390.json` y cuatro capturas.
+
+Población: 4 secuencias (las 3 de carrera del banco y su control), 21 comprobaciones. A 1280 NO se ha
+corrido en vivo (el encargo era a 390; a 1280 queda lo del banco, 3 de 3).
+
+| secuencia (390, dedo) | la carrera se dio | queda en el servidor | pantalla = servidor | resultado |
+|---|---|---|---|---|
+| CONTROL · primero la fila a mano, después lo dictado | no aplica (nada viajando) | 6 de 6: 3 de partida + 2 dictadas + la de a mano | sí | ✔ |
+| ① fila a mano mientras viaja lo dictado (`PATCH` retenido 873 ms) | sí: fila completa con el `PATCH` aún retenido, 0 respuestas | 6 de 6 | sí | ✔ |
+| ① bis · sin retén, /admin/ sale 1200 ms tarde | sí: fila completa a los 476 ms, 0 respuestas | 6 de 6 | sí | ✔ |
+| ② cantidad de una línea guardada corregida (2 → 4) mientras viaja | sí: fuera de la casilla con el `PATCH` aún retenido | 5 de 5, con la cantidad corregida | sí | ✔ |
+
+21 de 21 comprobaciones. Dictadas perdidas: 0 de 8 (2 por secuencia). Relecturas de la ficha tras
+«Añadir al parte»: 0 en las cuatro. Errores de JavaScript: 0. La propuesta salió las cuatro veces del
+dictado de verdad (`POST /admin/partes/21/dictado`), no enlatada.
+
+### Control positivo del guion: la vista de antes, en vivo
+
+Para saber que este guion VE la pérdida cuando la hay, las mismas cuatro secuencias con la vista de
+antes de la cura (`251de009e~1`, blob `d08fa890ff16f81e478bedc4415123d71d1efb83`) servida SÓLO a este
+navegador; el servidor es el de producción y nadie más recibe ese fichero. Salida:
+`r42-vivo/vivo-390-control-vista-de-antes.json`.
+
+| secuencia | con la vista de antes | con la de producción |
+|---|---|---|
+| CONTROL | 6 de 6 | 6 de 6 |
+| ① retén | 4: las 2 dictadas PERDIDAS | 6 |
+| ① bis, 1200 ms | 4: las 2 dictadas PERDIDAS | 6 |
+| ② cantidad corregida | 3: las 2 dictadas PERDIDAS, y la pantalla enseñaba 5 con la cantidad vieja | 5, pantalla = servidor |
+
+Es lo mismo que midió el banco, ahora contra el servidor de verdad: 3 de 3 pierden antes, 0 de 3 después.
+
+### Escrituras en producción, declaradas
+
+Sólo `PATCH /admin/partes/21` (cuenta de QA): 20 en la pasada buena, 14 en la del control positivo, y
+las de las dos pasadas que no llegaron a medir (abajo). El `POST …/dictado` pasa y no guarda nada.
+Todo lo demás que no fuera GET se cortó en el navegador (`POST /admin/entorno`, que el panel manda
+solo, y el control del interceptor). El parte #21 quedó en sus 3 líneas de partida, con sus ids,
+comprobado al acabar cada secuencia y al final de cada pasada.
+
+### Lo que salió mal antes de la pasada buena
+
+- **Primera pasada: 17 de 21, y los 4 rojos eran del guion.** El dictado de verdad propuso «Purgado de
+  circuito» SIN cantidad (nadie dictó un número), y una línea propuesta sin cantidad no se confirma:
+  es diseño (`lineasConfirmadas`, con su aviso en la línea), y pasó igual en el control. El guion
+  esperaba las dos líneas porque el servidor de mentira del banco siempre trae cantidad. Arreglo: el
+  guion hace lo que el técnico al ver el aviso, ponerle «1», y lo apunta (`cantidadesPuestasAMano`).
+- **Segunda y tercera: CIEGAS (salida 2).** El mismo dictado contestó `vacia: true`,
+  `sin_lineas_reconocidas`, dos veces seguidas, a los dos minutos de haber sacado líneas cuatro
+  veces. No sé por qué (no lo he mirado en el servidor); es del dictado, no de la carrera. El guion
+  ahora reintenta y, a la tercera vacía, enlata la propuesta y lo dice en la secuencia. En la pasada
+  buena no hizo falta. En esas dos pasadas la fila a mano del control quedó en el parte y la quitó
+  la red de seguridad del guion (un `PATCH` con la lista de partida; `restauradoPorFuera`).
+
+### Lo que NO se ha probado, dicho
+
+- Un teléfono de verdad (teclado en pantalla): esto es Chromium con dedo emulado.
+- 1280 en vivo.
+- El retén vive en el navegador (el `PATCH` sale tarde); no se ha retrasado la RESPUESTA del servidor.
+- El segundo toque a «Añadir al parte» con la propuesta de camino, en vivo (lo cubre el test vm).
+
+### Aceptación → dónde se ve
+
+| aceptación | dónde se ve |
+|---|---|
+| verlo en yaqu.app (la fila NO HECHO del tramo anterior) | `docs/master/evidencias/SCRUM-1824/r42-vivo/vivo-390.json`: 21/21, y las capturas `vivo-390-*-final.png` |
+| el guion ve la pérdida cuando la hay | `…/r42-vivo/vivo-390-control-vista-de-antes.json`: 1.2, 1bis.2 y 2.2 en rojo, control en verde |

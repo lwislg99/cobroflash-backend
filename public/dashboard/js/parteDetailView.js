@@ -289,6 +289,11 @@
     // FIRMADO: N4 de la tanda N1-N13 de SCRUM-1686 (c.21471) · cabecera del parte, con varios en el
     // trabajo. Cómo se cuenta: M2 del máster (073c67ade). SCRUM-1697.
     visitaDeLas: 'Visita {n} de {m}',
+    // ── SCRUM-1822 (tramo ⓐ) · «EDITAR», ARRIBA, EN EL BORRADOR ───────────────────────────
+    // La palabra es la de la ficha del cliente (`customerDetailView.js`, SCRUM-1145 comentario 20598):
+    // aquí estrena SITIO, no palabra. Sólo con el parte editable. Consta en
+    // `docs/microcopy/2026-11-25-SCRUM-1822-candado-explicado.md`.
+    editar: 'Editar', // APROBADO por delegación del fundador · SCRUM-1656 comentario 22758
   };
 
   // El vocabulario CERRADO del dominio (`parteTrabajo.ts`). No se inventa aquí ni se amplía:
@@ -825,7 +830,9 @@
       // SCRUM-1697 · «· Visita n de m» llega DESPUÉS, cuando se ha leído el trabajo (`pintarVisita`).
       esc(parte.numero) + ' <span data-parte-visita="1"></span></h3>' +
       '<p class="parte-cabecera-cliente">' +
-      esc(parte.clienteNombre || '') + '</p></header>' +
+      esc(parte.clienteNombre || '') + '</p>' +
+      // SCRUM-1822 · UNA ranura, dos estados: el candado con su motivo, o «Editar». Nunca los dos.
+      pintarCandado(parte, editable) + pintarEditar(editable) + '</header>' +
       // SCRUM-1662 (d) · la tarea del trabajo, lo primero que se lee. Sin tarea no pinta nada.
       pintarQueHayQueHacer(parte) +
       // 🔴 SCRUM-1693 · FIRMADO = EL ORDEN DE UN PAPEL: los datos del documento arriba y las
@@ -898,6 +905,47 @@
       '<h4 class="parte-tarea-titulo">' + esc(TEXTOS.queHayQueHacer) + '</h4>' +
       // `.detail-tarea` es el párrafo de la ficha del trabajo: conserva los saltos del jefe.
       '<p class="detail-tarea">' + esc(tarea) + '</p></section>';
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  // 🔴 SCRUM-1822 (tramo ⓐ) · EL CANDADO DEL PARTE, EXPLICADO.
+  //
+  // Pedido del fundador (20-nov-2026, sobre el parte firmado PT-2026-010): «un parte ahora como que no
+  // es editable... un boton arriba para editar y que se desbloqueen los campos». Medido el 25-nov: el
+  // servidor ya manda POR QUÉ no se puede (`puedeEditarContenido.motivo`, `parteTrabajo.ts`) y esta
+  // pantalla no lo pintaba en ningún sitio. Una ranura en la cabecera, con dos estados:
+  //
+  //   · NO EDITABLE → el motivo, TAL CUAL LLEGA. Ni se recorta, ni se le pone mayúscula, ni se le añade
+  //     una palabra: la frase es del servidor y aquí no hay copia (firma: SCRUM-1656 comentario 22754).
+  //     El candado es un dibujo de la hoja de estilos. Sin motivo no se pinta nada: un candado mudo no
+  //     explica, y una frase de esta pantalla sería texto que nadie ha firmado (regla 39).
+  //   · EDITABLE → «Editar», que deja el cursor en la primera casilla. No desbloquea nada porque en un
+  //     borrador no hay nada bloqueado: dice arriba, donde se mira, que este parte se puede tocar.
+  //
+  // Esta pantalla NO decide el candado: lo lee (`editable` es `puedeEditarContenido.ok`).
+  // Lo fija `tests/scrum1822-candado-explicado.test.mjs`.
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  function pintarCandado(parte, editable) {
+    if (editable) return ''; // el candado es sólo de lo que NO se puede editar
+    var contenido = parte.puedeEditarContenido;
+    var motivo = contenido && typeof contenido.motivo === 'string' ? contenido.motivo : '';
+    if (!motivo.trim()) return '';
+    return '<p class="parte-candado" data-parte-candado="1">' + esc(motivo) + '</p>';
+  }
+
+  function pintarEditar(editable) {
+    if (!editable) return ''; // «Editar» es sólo de lo que SÍ se puede editar
+    return '<button type="button" class="parte-editar" data-parte-editar="1">' + esc(TEXTOS.editar) + '</button>';
+  }
+
+  /** «Editar» → la primera casilla del parte, en el orden en que se pinta. */
+  function atarEditar(contenedor) {
+    var boton = contenedor.querySelector ? contenedor.querySelector('[data-parte-editar]') : null;
+    if (!boton) return;
+    boton.addEventListener('click', function () {
+      var primera = contenedor.querySelector('[data-parte-campo]');
+      if (primera && typeof primera.focus === 'function') primera.focus();
+    });
   }
 
   function pintarMigaDelTrabajo(parte) {
@@ -1976,6 +2024,7 @@
     }
     atarSalidasAlTrabajo(contenedor, parte, o);
     atarHacerPresupuesto(contenedor, parte, o);
+    atarEditar(contenedor); // SCRUM-1822
     // SCRUM-1697 · «Visita n de m»: el parte ya trae `visitaN`/`visitaM` del servidor (SCRUM-1697 (b));
     // `parteVisita.js` solo los comprueba y los pinta, sin leer el trabajo.
     if (typeof window.partePintarVisita === 'function') window.partePintarVisita(contenedor, parte);
