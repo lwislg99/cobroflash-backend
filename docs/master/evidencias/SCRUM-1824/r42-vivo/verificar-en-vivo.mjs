@@ -87,6 +87,13 @@ try {
 
   /* El viaje: `reten` deja el SIGUIENTE `PATCH` del parte parado hasta `soltar()`; `latencia` retrasa TODO lo de /admin/. */
   let reten = false, soltar = null, latencia = 0;
+  // `enlatar` contesta el SIGUIENTE `POST …/dictado` desde el navegador, con la propuesta del banco y
+  // los avisos que el servidor de verdad mandó en su última respuesta (no se reteclea ningún texto).
+  let enlatar = false, avisosDelServidor = {}, origenDeLaPropuesta = null;
+  const ENLATADA = {
+    mano_obra: [{ unds: 1, descripcion: 'Purgado del circuito' }], materiales: [{ unds: 2, descripcion: 'Racores de tres cuartos' }],
+    sinBloque: [], cantidadesRetiradas: [], datosRetirados: [], vacia: false,
+  };
   const viajeDe = new Map();
   await ctx.route('**/*', async (ruta) => {
     const r = ruta.request();
@@ -109,6 +116,10 @@ try {
     }
     if (u.host === 'yaqu.app' && firma === POST_DEL_DICTADO) {
       if (latencia) await dormir(latencia);
+      if (enlatar) {
+        enlatar = false;
+        return ruta.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ propuesta: ENLATADA, avisos: avisosDelServidor }) });
+      }
       return ruta.continue();
     }
     informe.cortadas.push(firma);
@@ -145,6 +156,7 @@ try {
     if (a) { a.estado = res.status(); a.viaje = viajeDe.get(res.request()) || a.viaje; respuestasPatch++; }
     if (res.request().method() === 'POST' && new URL(res.url()).pathname === RUTA_PARTE + '/dictado') {
       try { propuestaDelServidor = { estado: res.status(), cuerpo: await res.json() }; } catch { propuestaDelServidor = { estado: res.status(), cuerpo: null }; }
+      if (propuestaDelServidor.cuerpo && propuestaDelServidor.cuerpo.avisos && !res.fromServiceWorker() && origenDeLaPropuesta === 'el servidor de verdad') avisosDelServidor = propuestaDelServidor.cuerpo.avisos;
     }
   });
 
@@ -247,6 +259,16 @@ try {
     await pulsar('el cuadro del dictado', elDe, '#parte-dictado');
     await page.keyboard.type(DICTADO);
     await pulsar('«Ordenar en líneas»', elDe, '[data-dictado-ordenar]');
+    // El dictado de verdad puede contestar «vacía» (medido el 25-nov: 4 propuestas con líneas y, a los
+    // dos minutos, `sin_lineas_reconocidas` para el MISMO texto). Se reintenta como lo haría el técnico
+    // y, si sigue vacía, la propuesta se ENLATA en el navegador y se DICE en la secuencia: lo que este
+    // guion mide es la carrera de los `PATCH`, y esos van siempre contra el servidor de verdad.
+    origenDeLaPropuesta = 'el servidor de verdad';
+    for (let intento = 1; intento <= 3 && !(await foto()).propuesta.length; intento++) {
+      if (intento === 3) { enlatar = true; origenDeLaPropuesta = 'ENLATADA en el navegador (el dictado de verdad contestó vacía 3 veces: ' + ((propuestaDelServidor && propuestaDelServidor.cuerpo && propuestaDelServidor.cuerpo.propuesta && propuestaDelServidor.cuerpo.propuesta.motivo) || 'sin motivo') + ')'; }
+      else await dormir(latencia ? 2000 : 20000);
+      await pulsar('«Ordenar en líneas», otra vez', elDe, '[data-dictado-ordenar]');
+    }
     // Lo que hace el técnico al ver el aviso de su línea: a la que vino SIN cantidad le pone «1».
     // Una línea propuesta sin cantidad no se confirma (`lineasConfirmadas`, por diseño), y eso pasa
     // igual sin carrera: sin este paso el guion mediría esa regla, no la de SCRUM-1824.
@@ -262,6 +284,8 @@ try {
     if (!f.propuesta.length || f.confirmar !== 'libre' || sinColocar.length) {
       throw new Error('NO SUPE MIRAR: el dictado de verdad no dejó una propuesta confirmable: ' + JSON.stringify({
         estado: propuestaDelServidor && propuestaDelServidor.estado, propuesta: f.propuesta, confirmar: f.confirmar, aviso: f.aviso,
+        cuerpo: propuestaDelServidor && propuestaDelServidor.cuerpo,
+        enElHueco: await page.evaluate(() => { const h = document.querySelector('[data-dictado-propuesta]'); return h ? h.textContent.trim().slice(0, 300) : null; }),
       }));
     }
     return f.propuesta.map(cara);
@@ -359,7 +383,7 @@ try {
     const f = await foto();
     const s = await servidor();
     const misPatch = informe.patch.slice(patchAlEmpezar);
-    apunte.dictadas = r.dictadas; apunte.esperado = r.esperado; apunte.servidor = caras(s); apunte.pantalla = enPantalla(f);
+    apunte.dictadas = r.dictadas; apunte.esperado = r.esperado; apunte.propuesta = origenDeLaPropuesta; apunte.servidor = caras(s); apunte.pantalla = enPantalla(f);
     apunte.carrera = r.carrera || null;
     apunte.relecturasTrasAnadirAlParte = r.relecturasAlConfirmar == null ? null : relecturas - r.relecturasAlConfirmar;
     apunte.patch = misPatch.map((p) => `${p.viaje} → ${p.estado} · ${p.lineas ? p.lineas.length : '?'} líneas`);
@@ -488,6 +512,6 @@ try {
 informe.resumen = { comprobaciones: informe.comprobaciones.length, cumplen: informe.comprobaciones.filter((c) => c.ok).length, patch: informe.patch.length, salida: codigo };
 fs.writeFileSync(path.join(salida, `vivo-${ancho}.json`), JSON.stringify(informe, null, 1) + '\n');
 for (const c of informe.comprobaciones) console.log(`${c.ok ? '✔' : '✘'} ${c.id} · ${c.que}`);
-for (const s of informe.secuencias) console.log(`\n── ${s.titulo}\n   dictadas: ${JSON.stringify(s.dictadas)}\n   servidor: ${JSON.stringify(s.servidor)}\n   carrera: ${JSON.stringify(s.carrera)} · relecturas tras «Añadir al parte»: ${s.relecturasTrasAnadirAlParte}\n   PATCH: ${JSON.stringify(s.patch)}`);
+for (const s of informe.secuencias) console.log(`\n── ${s.titulo}\n   propuesta de: ${s.propuesta}\n   dictadas: ${JSON.stringify(s.dictadas)}\n   servidor: ${JSON.stringify(s.servidor)}\n   carrera: ${JSON.stringify(s.carrera)} · relecturas tras «Añadir al parte»: ${s.relecturasTrasAnadirAlParte}\n   PATCH: ${JSON.stringify(s.patch)}`);
 console.log(`\n${informe.ventana} (${informe.puntero}) · build ${informe.build} · ${informe.resumen.cumplen}/${informe.resumen.comprobaciones} cumplen · PATCH ${informe.patch.length} · salida ${codigo}`);
 process.exit(codigo);
