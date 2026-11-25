@@ -40,6 +40,7 @@ const datos = `(function () {
 const RUTAS = [{ ruta: '/informes', fnVista: 'renderReportsView', modoEmision: 'fiscal', args: '[]', datos }];
 
 const QUIETO = "document.getAnimations().every((a) => a.playState !== 'running')";
+const CON_FILAS = "document.querySelectorAll('#view-container table tbody tr').length > 5";
 
 /** Fila `n` (1 = primera): la lleva a la vista (también en horizontal) y mide sus controles. En la página. */
 const MEDIR = `(n) => {
@@ -79,7 +80,7 @@ try {
           const { page, errores } = await abrirVista(browser, puerto, '/informes', ancho, alto);
           await page.waitForFunction(QUIETO, { timeout: 20000 });
           // La tarjeta del funnel carga sin `await`: se espera a que su tabla tenga filas.
-          const llego = await page.waitForFunction(() => document.querySelectorAll('#view-container table tbody tr').length > 5, { timeout: 20000 })
+          const llego = await page.waitForFunction(CON_FILAS, { timeout: 20000 })
             .then(() => true, () => false);
           const m = llego ? await page.evaluate(`(${MEDIR})(${JSON.stringify(e.fila)})`) : { fila: false, filas: 0 };
           await new Promise((ok) => setTimeout(ok, 150));
