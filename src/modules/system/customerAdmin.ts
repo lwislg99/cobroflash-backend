@@ -8,6 +8,8 @@ import { normalizePhone } from '../../core/utils/utils'; // SCRUM-578: la que YA
 import { BASE_URL } from '../../core/config/env'; // SCRUM-967b
 import { saldosPendientesPorCliente } from './domain/saldoPendiente'; // SCRUM-1043
 import { garantiasRetenidasPorCliente, type GarantiaDelCliente } from '../billing/domain/garantiasRetenidas'; // SCRUM-1108
+import { z } from 'zod'; // SCRUM-1833b
+import { diaExiste } from '../../core/zonaDelMerchant'; // SCRUM-1833b: solo se importa
 
 function generatePortalToken() {
   return crypto.randomBytes(16).toString('hex');
@@ -611,4 +613,127 @@ export async function borrarClienteYSusDocumentos(
   const r = await desvincularYBorrar(tx, merchantId, id);
   if (r.count > 0) await tx.attachment.deleteMany({ where: { merchantId, entityType: 'customer', entityId: id } });
   return r;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1833b · EQUIPOS DEL CLIENTE. Decisiones del fundador en SCRUM-1833 c.22811: el equipo
+// cuelga SOLO del cliente (P3 ❌: `customerSiteId` no se acepta en el cuerpo), borrar es solo de
+// admin (P4 ✅, en la ruta) y la garantía es una fecha, no un estado (P5 ❌). Criterio 4 de
+// SCRUM-914: borrar un equipo pone a NULL su `equipmentId` en trabajo, plan de mantenimiento,
+// albarán y parte, EN LA MISMA transacción. El servidor contesta CÓDIGOS, ninguna frase (1833c).
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+const DIA_ISO = /^\d{4}-\d{2}-\d{2}$/;
+const vacioANull = (v: string | null | undefined) => (v === '' ? null : v);
+const textoDelEquipo = z.string().trim().min(1).max(200);
+const opcionalDelEquipo = z.string().trim().max(200).nullable().optional().transform(vacioANull);
+const diaDelEquipo = z
+  .string()
+  .trim()
+  .refine((s) => s === '' || (DIA_ISO.test(s) && diaExiste(s)))
+  .nullable()
+  .optional()
+  .transform(vacioANull);
+
+/** `z.strictObject`: un campo que no está aquí (`customerSiteId`, `merchantId`…) es un 400. */
+export const equipoCreateSchema = z.strictObject({
+  type: textoDelEquipo,
+  name: textoDelEquipo,
+  brand: opcionalDelEquipo,
+  modelName: opcionalDelEquipo,
+  serialNumber: opcionalDelEquipo,
+  installedOn: diaDelEquipo,
+  warrantyUntil: diaDelEquipo,
+});
+export const equipoUpdateSchema = equipoCreateSchema.partial();
+export type EquipoCreateInput = z.infer<typeof equipoCreateSchema>;
+export type EquipoUpdateInput = z.infer<typeof equipoUpdateSchema>;
+
+const SELECT_EQUIPO = {
+  id: true, customerId: true, type: true, name: true, brand: true, modelName: true, serialNumber: true,
+  installedOn: true, warrantyUntil: true, createdAt: true, updatedAt: true,
+} as const;
+
+/** Las dos fechas son `@db.Date`: entran y salen como `YYYY-MM-DD`, sin hora ni zona. */
+const aDia = (s: string | null | undefined) => (s === undefined ? undefined : s === null ? null : new Date(`${s}T00:00:00.000Z`));
+const deDia = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
+
+function columnasDelEquipo(datos: EquipoUpdateInput) {
+  return {
+    type: datos.type,
+    name: datos.name,
+    brand: datos.brand,
+    modelName: datos.modelName,
+    serialNumber: datos.serialNumber,
+    installedOn: aDia(datos.installedOn),
+    warrantyUntil: aDia(datos.warrantyUntil),
+  };
+}
+
+function equipoParaFuera<T extends { installedOn: Date | null; warrantyUntil: Date | null }>(e: T) {
+  return { ...e, installedOn: deDia(e.installedOn), warrantyUntil: deDia(e.warrantyUntil) };
+}
+
+/** Los equipos del cliente. `null` si el cliente no es de este comercio. */
+export async function listarEquipos(merchantId: number, customerId: number) {
+  if (!(await clienteDelComercio(merchantId, customerId))) return null;
+  const filas = await prisma.equipment.findMany({
+    where: { merchantId, customerId },
+    select: SELECT_EQUIPO,
+    orderBy: { id: 'asc' },
+  });
+  return filas.map(equipoParaFuera);
+}
+
+/** Alta de un equipo. `null` si el cliente no es de este comercio. */
+export async function crearEquipo(merchantId: number, customerId: number, datos: EquipoCreateInput) {
+  if (!(await clienteDelComercio(merchantId, customerId))) return null;
+  const creado = await prisma.equipment.create({
+    data: { merchantId, customerId, ...columnasDelEquipo(datos), type: datos.type, name: datos.name },
+    select: SELECT_EQUIPO,
+  });
+  return equipoParaFuera(creado);
+}
+
+/** Edita un equipo de ESTE cliente de ESTE comercio. `null` si no lo es. */
+export async function actualizarEquipo(merchantId: number, customerId: number, equipoId: number, datos: EquipoUpdateInput) {
+  const { count } = await prisma.equipment.updateMany({
+    where: { id: equipoId, merchantId, customerId },
+    data: columnasDelEquipo(datos),
+  });
+  if (count === 0) return null;
+  const fila = await prisma.equipment.findFirst({ where: { id: equipoId, merchantId, customerId }, select: SELECT_EQUIPO });
+  return fila ? equipoParaFuera(fila) : null;
+}
+
+type ConUpdateMany = { updateMany: Function };
+/**
+ * LOS PASOS DEL BORRADO, EN ORDEN, SOBRE EL CLIENTE QUE SE LE DÉ (patrón `desvincularYBorrar`):
+ * ① el equipo tiene que ser de este cliente de este comercio; ② se desliga de los cuatro
+ * documentos del comercio que lo nombran; ③ se borra. Recibe `tx` para que la suite lo ejerza
+ * entero sin Postgres; la transacción la pone `borrarEquipo`.
+ */
+export async function desligarYBorrarEquipo(
+  tx: {
+    equipment: { findFirst: Function; deleteMany: Function };
+    job: ConUpdateMany; maintenancePlan: ConUpdateMany; albaran: ConUpdateMany; parteTrabajo: ConUpdateMany;
+  },
+  merchantId: number,
+  customerId: number,
+  equipoId: number,
+): Promise<boolean> {
+  const equipo = await tx.equipment.findFirst({ where: { id: equipoId, merchantId, customerId }, select: { id: true } });
+  if (!equipo) return false;
+  const desligar = { where: { merchantId, equipmentId: equipoId }, data: { equipmentId: null } };
+  await tx.job.updateMany(desligar);
+  await tx.maintenancePlan.updateMany(desligar);
+  await tx.albaran.updateMany(desligar);
+  await tx.parteTrabajo.updateMany(desligar);
+  const { count } = await tx.equipment.deleteMany({ where: { id: equipoId, merchantId, customerId } });
+  return count > 0;
+}
+
+/** Borra un equipo: o se desliga y se borra todo, o no cambia nada. */
+export async function borrarEquipo(merchantId: number, customerId: number, equipoId: number) {
+  return prisma.$transaction((tx) => desligarYBorrarEquipo(tx as any, merchantId, customerId, equipoId));
 }

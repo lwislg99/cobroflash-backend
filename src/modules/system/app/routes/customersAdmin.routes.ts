@@ -37,6 +37,9 @@ import { crearNota, listarNotas, resolverAutor } from '../../domain/notasDelClie
 import { previsualizarFusion, fusionarClientes } from '../../domain/fusionClientes'; // SCRUM-1057
 import { listarSitios, crearSitio, actualizarSitio, borrarSitio } from '../../domain/sitiosDelCliente'; // SCRUM-1014
 import { customerSiteCreateSchema, customerSiteUpdateSchema } from '../../../../core/validation/schemas';
+import { // SCRUM-1833b · equipos del cliente
+  equipoCreateSchema, equipoUpdateSchema, listarEquipos, crearEquipo, actualizarEquipo, borrarEquipo,
+} from '../../customerAdmin';
 
 const router = Router();
 
@@ -535,6 +538,77 @@ router.delete('/:id/sites/:siteId', async (req, res) => {
     return res.status(204).send();
   } catch (err) {
     console.error('[DELETE /admin/customers/:id/sites/:siteId]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1833b · EQUIPOS DEL CLIENTE. La lógica vive en `customerAdmin.ts`; aquí, la forma HTTP.
+// Contestan CÓDIGOS, ninguna frase (los textos de la pestaña son 1833c, firmados en c.22811).
+// Ver, crear y editar: también el técnico (declaradas en `adminRouteDeclarations.ts`). BORRAR un
+// equipo, solo admin (decisión del fundador, SCRUM-1833 c.22811 P4 ✅, como Documentos).
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/** Los dos ids de la URL, o `null` si alguno no cabe en la columna. */
+function idsDeEquipo(req: Request): { id: number; equipoId: number } | null {
+  const id = Number(req.params.id);
+  const equipoId = Number(req.params.equipoId);
+  if (!cabeEnColumnaInt(id) || id <= 0 || !cabeEnColumnaInt(equipoId) || equipoId <= 0) return null;
+  return { id, equipoId };
+}
+
+router.get('/:id/equipos', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!cabeEnColumnaInt(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    const equipos = await listarEquipos(req.merchantId, id);
+    if (!equipos) return res.status(404).json({ error: 'not_found' });
+    return res.json({ equipos });
+  } catch (err) {
+    console.error('[GET /admin/customers/:id/equipos]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+router.post('/:id/equipos', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!cabeEnColumnaInt(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    const parsed = equipoCreateSchema.parse(req.body);
+    const equipo = await crearEquipo(req.merchantId, id, parsed);
+    if (!equipo) return res.status(404).json({ error: 'not_found' });
+    return res.status(201).json({ equipo });
+  } catch (err: any) {
+    if (err?.name === 'ZodError') return res.status(400).json({ error: 'invalid_body', details: err.issues });
+    console.error('[POST /admin/customers/:id/equipos]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+router.put('/:id/equipos/:equipoId', async (req, res) => {
+  try {
+    const ids = idsDeEquipo(req);
+    if (!ids) return res.status(400).json({ error: 'invalid_id' });
+    const parsed = equipoUpdateSchema.parse(req.body);
+    const equipo = await actualizarEquipo(req.merchantId, ids.id, ids.equipoId, parsed);
+    if (!equipo) return res.status(404).json({ error: 'not_found' });
+    return res.json({ equipo });
+  } catch (err: any) {
+    if (err?.name === 'ZodError') return res.status(400).json({ error: 'invalid_body', details: err.issues });
+    console.error('[PUT /admin/customers/:id/equipos/:equipoId]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+router.delete('/:id/equipos/:equipoId', requireRole('admin'), async (req, res) => {
+  try {
+    const ids = idsDeEquipo(req);
+    if (!ids) return res.status(400).json({ error: 'invalid_id' });
+    const borrado = await borrarEquipo(req.merchantId, ids.id, ids.equipoId);
+    if (!borrado) return res.status(404).json({ error: 'not_found' });
+    return res.status(204).send();
+  } catch (err) {
+    console.error('[DELETE /admin/customers/:id/equipos/:equipoId]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });
