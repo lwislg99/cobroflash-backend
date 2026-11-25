@@ -51,3 +51,36 @@ Mutaciones: catálogo → `tests/scrum1532d-cancelar-cobro-ficha-y-reenvio.test.
 **No medido:** contra una base real (el doble no tiene cerrojos de fila; la condición del `where` es una sola sentencia en Postgres, pero no lo he corrido); la suite entera en local (no cabe en el contexto; queda para CI); yaqu.app (no se puede provocar la carrera sin un envío real).
 
 A9: comprobación → `tests/scrum1429c-dos-envios-dos-cobros.test.mjs`
+
+# SCRUM-1429e — el cobro que pierde la carrera se cancela CON su fila `cobro_cancelado`
+
+**Medido contra:** `origin/main` = `123311beb24600b1db04371f83e3a67113e58de1` · 2026-11-25T01:53:04Z (cabecera `Date:` de GitHub)
+
+GO del fundador: SCRUM-1429 c.22630 (el de 1429d). Cabo de SCRUM-1429 c.22635: el perdedor de 1429d se cancelaba sin auditoría. La clave `cobro_cancelado` entró con #3373 (SCRUM-1532c).
+
+- `src/modules/billing/domain/invoiceWhatsApp.service.ts` (J1): tras cancelar el cobro perdedor (`pending → cancelled`, estado en el `where`), `recordAudit` con la forma de `POST /admin/charges/:id/cancel` (`chargesAdmin.routes.ts`, SCRUM-1532c): `action: 'cobro_cancelado'`, `entityType: 'charge'`, `entityId` del perdedor, SÓLO si la cancelación cambió la fila (`count > 0`), y dentro de un `try` que no tumba el envío. Actor `{ tipo: 'sistema', ref: 'invoiceWhatsApp:carrera_de_envio' }` (no lo cancela una persona: `teamMemberId: null`, sin `ip`), `motivo: 'carrera_de_envio'` y `cobroGanador`. El motivo va como clave y no como frase: ningún texto nuevo que vea el usuario.
+- `tests/scrum1429c-dos-envios-dos-cobros.test.mjs`: el doble recoge `auditLog.create` y saca `audit.service` de la caché con el servicio. Caso nuevo: dos envíos a la vez → UNA fila `cobro_cancelado` con el `chargeId` del perdedor, del comercio de la factura, actor `sistema`, y ninguna del ganador. Control: un solo envío (positivo: 1 POST, 1 cobro, envío ok) → 0 filas.
+
+Rojo primero: con `src/` sin tocar y `dist/` compilado con tipos, 5 casos · 4 pass · 1 fail; cae el nuevo con «el cobro perdedor 901 se canceló con 0 filas cobro_cancelado (se espera 1)». Con el arreglo: 5 · 5 · 0 · 0 saltos; la fila sale `entityId 901`, ganador 900.
+
+Mutaciones: catálogo → `tests/scrum1429c-dos-envios-dos-cobros.test.mjs`
+
+**No medido (empujado al pasar el tope de 145k del encargo, a 151.811):** la mutación nueva del catálogo (`recordAudit({` → `void ({`) está declarada pero NO la he corrido; tampoco 1532c/1532d, los que nombran `invoiceWhatsApp`, 1415, 1294, 267, 854 ni 719; ni la suite entera; ni una base real; ni yaqu.app. Sí: `npm run build` (tsc con tipos) salida 0 y `npm run guards:entrada`.
+
+A9: aviso → cicatriz J1 «Crucé el tope de 145k del encargo (151.811) sin empujar: me medí al acabar el arranque (119.743) y no otra vez hasta la tanda verde, y la mutación y la dirigida se quedaron sin correr, en jv-j1kp» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
+
+# SCRUM-1429f — el comentario de `invoiceAdmin.ts` sobre `Invoice.chargeId` dice lo que hace el código
+
+**Medido contra:** `origin/main` = `f23697aa1c7a7b9715ded3be545a50aaa1597706` · 2026-11-25T02:22:05Z (cabecera `Date:` de GitHub)
+
+Último punto de la aceptación de SCRUM-1429: los tres comentarios sobre `Invoice.chargeId` dicen lo que hace el código. Dos los corrigió 1803c (#3388) en `cobros.service.ts`; faltaba el de `src/modules/system/invoiceAdmin.ts` (J1), dentro de `listInvoicesAdmin`.
+
+- `src/modules/system/invoiceAdmin.ts`: el inciso «—que hoy son todas, porque nadie escribe ese campo—» pasa a «—lo escriben `ensureInvoiceForCharge` y `sendInvoicePaymentRequest`; las enlazadas salen por su `Charge`—». Los escritores van por NOMBRE de función, no por línea (A10: por identidad). Leídos en el código, no ejecutados: `ensureInvoiceForCharge` crea la `Invoice` con `chargeId: ch.id` (`src/lib/invoicing.ts`) y `sendInvoicePaymentRequest` la enlaza con `invoice.update` y `data: { chargeId }` (`src/modules/billing/domain/invoiceWhatsApp.service.ts`).
+- En su sitio: 493 líneas antes y después, `git diff --stat` 2+/2−, 0 CR antes y después. Las anclas `invoiceAdmin.ts:NN` de `docs/` y `tests/` (scrum525d) no se mueven.
+- Ningún test fijaba el literal viejo: `grep -rnF "nadie escribe ese campo"` sobre `tests/ docs/ scripts/ src/` dio la propia línea 42 (positivo) y un comentario ajeno de `albaranVerificacion.ts`; tras el cambio, 0 en el fichero.
+
+Solo comentario: ni una línea de código, ni del camino de emisión.
+
+**No leído:** las cicatrices de J1 enteras ni `puesto-j1.md` (29 KB y 7 KB): el encargo topaba en 135k y el arranque ya marcaba 101.126. Leí solo las tres primeras que asoma el hook de inicio; el resto de su salida quedó en el fichero persistido, sin abrir.
+
+A9: sin fallo que generalice — pieza de un solo comentario, cambiada en su sitio y comprobada con el recuento de líneas y el grep del literal viejo.

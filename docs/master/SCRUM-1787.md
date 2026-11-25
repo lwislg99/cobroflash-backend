@@ -1334,3 +1334,15 @@ Encargo del orquestador J a jv-j1il (J1). Decisión del orquestador, SCRUM-1787 
 - Nada contra staging ni producción.
 
 Las filas restantes de c.22426 están en `docs/master/SCRUM-1799.md` (1787 agotó las letras de tramo).
+
+## SCRUM-1787aa · cabecera del test sin cifra suelta (escrito a posteriori en 1839c)
+
+**Medido contra:** `origin/main` = `123311beb24600b1db04371f83e3a67113e58de1` · 2026-11-25T01:51:45Z
+
+Lo escribe J4 en SCRUM-1839c, por encargo del orquestador del equipo de Javier. **El registro de este trabajo vive en `docs/master/SCRUM-1799.md`**: el commit `cbaae76a86f76cb63f04f900027dcfe93b01a9f6` («[carril J1] SCRUM-1799: renombra el tramo 1787aa (test, registro, mudez, cicatriz J1)») se llevó allí el registro y renombró el test a `tests/scrum1799-pdf-factura-filas-restantes.test.mjs`. Jira, SCRUM-1787 c.22489: «Del tramo 1787aa no queda nada en el árbol; su registro está en `docs/master/SCRUM-1799.md`.» El origen lo cuenta SCRUM-1799 en su línea que empieza «Nació como tramo 1787aa». Esta cabecera sólo apunta allí.
+
+- **Qué entró:** el commit `49ab537e72031290d5382bd7701e1922df4847e7`, «[carril J1] SCRUM-1787aa: cabecera del test sin cifra suelta (scrum737)»: este registro (+1; esa línea está hoy en `docs/master/SCRUM-1799.md`) y una línea cambiada en el test del tramo, el que hoy se llama `tests/scrum1799-pdf-factura-filas-restantes.test.mjs`.
+- **Con qué PR:** llegó a la rama principal dentro de #3348 (rama `scrum-1799-pdf-factura-filas-restantes`, merge `69c6338865e67951b70d4adead5bbadeb920ec47`; Jira c.22489, jv-j1iz).
+- **Qué se midió** (entrega en Jira, SCRUM-1787 c.22474, 2026-11-24 02:02:19Z, jv-j1ir): «test nuevo 6/6 … Dirigida: 22 ficheros, 150/150, 0 fallos. `guards:entrada` 0.»
+
+A9: comprobación → `tests/scrum1839-letra-con-tramo.test.mjs`

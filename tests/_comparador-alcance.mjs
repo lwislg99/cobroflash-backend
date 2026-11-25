@@ -36,7 +36,7 @@
 import ts from 'typescript';
 import fs from 'node:fs';
 import path from 'node:path';
-import { analizar, ficherosTs, exportsDe } from './_alcance-dominio.mjs';
+import { analizar, ficherosTs, exportsDe, entradasDeComando } from './_alcance-dominio.mjs';
 import { censarAlcance, importacionesDe } from './_alcance-desde-entradas.mjs';
 import { temporal, borrarTemporal } from './_temporal.mjs';
 
@@ -84,7 +84,13 @@ function reexportaciones(raiz) {
 function ataduraOpaca(raiz) {
   const dinamicos = new Set();
   const namespaces = new Set();
-  for (const p of ficherosTs(path.join(raiz, 'src'))) {
+  // SCRUM-1846b (GO en SCRUM-1846 c.22744) · LA MISMA POBLACIÓN QUE ②. ② vuelve opaco un módulo
+  // cuando lo carga con `import()` cualquier fichero que recorre: `src/` Y las entradas de comando
+  // (`scripts/*.mjs` de `package.json`). Este clasificador sólo miraba `src/`, así que el día que un
+  // guard pasó a `await import('../dist/…')` (SCRUM-1846), ② dijo NO_SE con razón y aquí salió OTRO,
+  // sin explicar. Medido: sobre main, 184 = 184 sin diferencias; sobre la rama, sólo
+  // `hayQueAvisar` cambia, de OTRO a IMPORT_DINAMICO. Mirar MENOS que ② es explicar menos de lo que ② sabe.
+  for (const p of [...ficherosTs(path.join(raiz, 'src')), ...entradasDeComando(raiz)]) {
     const { namespaces: ns, dinamicos: din } = importacionesDe(p);
     for (const m of ns) namespaces.add(rel(raiz, m));
     for (const m of din) dinamicos.add(rel(raiz, m));

@@ -539,3 +539,28 @@ a mitad o tramos ya emitidos, guards de navegador, ninguna base. Un diseño simu
 
 `sonda-e.cjs` (`SIM=C,D,D2,E1,E2,F`) · `reparto-tramos.cjs` (`DETALLE=1`, `DUMP=<fichero>`) ·
 `d2-cuantos-shim.cjs` (`d-cuantos-cambian.cjs` contra la variante 2) · salida en `salida-e.txt`.
+
+## SCRUM-1566d · la medida de D, sin construirla (escrito a posteriori en 1839c)
+
+**Medido contra:** `origin/main` = `123311beb24600b1db04371f83e3a67113e58de1` · 2026-11-25T01:51:45Z
+
+Lo escribe J4 en SCRUM-1839c, por encargo del orquestador del equipo de Javier. **El contenido de 1566d ya está en este registro**, bajo la cabecera «## SCRUM-1566 (d) · LA MEDIDA DE D, sin construirla — qué es, cuántos sitios, de quién, y qué rompe». Esa forma, con la letra entre paréntesis y separada del número, no la reconoce la regla decidida en Jira SCRUM-1839 c.22677 (número y letra enteros en una cabecera `#` o `##`). Esta cabecera sólo apunta allí: no copia nada, y aquel tramo no se toca.
+
+- **Qué entró:** el commit `9d46a41897bb29ac157b92db4aa15901af03f022` (autor en git: «Luis»), con este registro (+99) y cuatro ficheros en `docs/master/evidencias/SCRUM-1566/`: `d-contar-887.mjs`, `d-cuantos-cambian.cjs`, `salida-d.txt` y `sonda-d.cjs`. De su cuerpo: «58 ficheros / 565 tests: 3 caen con D (scrum594 pantalla=calcTotal, huella de 887, techo 50/50 de 887b 31 -> 35).»
+- **Con qué PR:** #3000, merge `3f0b9893f0cc9f501a3722a006a5b84c3649296b` (también en Jira, SCRUM-1566 c.21276).
+- **Qué se midió** (entrega en Jira, SCRUM-1566 c.21260, 2026-10-29 18:09:28Z, firmada «S1», del equipo de Luis): «58 ficheros / 565 tests: **3** caen» y «Detalle completo en el tramo (d) del registro.»
+- **La misma letra, otro commit:** jv-j1cz usó «1566d» para un commit local que nunca se empujó (Jira c.21028, rama `scrum-1566d-empate`). El que está en la rama principal es el de S1.
+
+A9: comprobación → `tests/scrum1839-letra-con-tramo.test.mjs`
+
+## SCRUM-1566e · el reparto entre tramos, medido (escrito a posteriori en 1839c)
+
+**Medido contra:** `origin/main` = `123311beb24600b1db04371f83e3a67113e58de1` · 2026-11-25T01:51:45Z
+
+Lo escribe J4 en SCRUM-1839c, por encargo del orquestador del equipo de Javier. **El contenido de 1566e ya está en este registro**, con su propia ancla, bajo la cabecera «## SCRUM-1566 (e) · EL REPARTO ENTRE TRAMOS, MEDIDO — dónde nace el céntimo y qué salida baja los tres techos». Como en el tramo «SCRUM-1566d · la medida de D, sin construirla», la forma «(e)» no la reconoce la regla de Jira SCRUM-1839 c.22677; esta cabecera apunta allí y no copia nada.
+
+- **Qué entró:** el commit `879caf5297f479cf78f245c7ead09386ef4c423b`, «SCRUM-1566e: carril J1 · el reparto entre tramos, medido: la salida que baja los tres techos»: este registro (+72, -1), `docs/equipo/cicatrices/J1.md` (+1) y cuatro ficheros en `docs/master/evidencias/SCRUM-1566/`: `d2-cuantos-shim.cjs`, `reparto-tramos.cjs`, `salida-e.txt` y `sonda-e.cjs`. De su cuerpo: «C+D2+E2+F deja 0·0·0 y 0·0·0 sin subir ningun techo; simulado en memoria, sin construir.»
+- **Con qué PR:** #3016, merge `af18648b792d35fc57100bc911bf560e1a0d05d6`. El número sale de git; la entrega no lo da.
+- **Qué se midió** (entrega en Jira, SCRUM-1566 c.21289, 2026-10-30 17:26:41Z, jv-j1dn): «`origin/main` = `06ad4f1bd53d25b701cd11ae42791db753329ceb` · solo medición, nada construido, nada en `src/`» · «Dirigida: los 58 ficheros y 565 tests de S1, base 0 fallos.»
+
+A9: comprobación → `tests/scrum1839-letra-con-tramo.test.mjs`

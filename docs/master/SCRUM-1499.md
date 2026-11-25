@@ -240,3 +240,16 @@ piden el CLI de Prisma en el `node_modules` del árbol. Lo que miden (que el SQL
 
 - Los 9 saltados y la tanda completa. El obligatorio de este PR, cuando se escribe esto, sin leer.
 - yaqu.app: un comentario del esquema no se sirve.
+
+## SCRUM-1499a · La Parte J apunta a la Parte L: redacción para firmar (escrito a posteriori en 1839d)
+
+**Medido contra:** `origin/main` = `f23697aa1c7a7b9715ded3be545a50aaa1597706` · 2026-11-25T02:37:06Z
+
+Lo escribe J6 (jv-j6gd) en SCRUM-1839d, por encargo del orquestador del equipo de Javier. No añade medición: el tramo ya existe con una cabecera que la regla de SCRUM-1839 (c.22677) no reconoce, y aquí se APUNTA a él, no se copia.
+
+- **Dónde está:** la cabecera «# SCRUM-1499 · La Parte J deja de enumerar los valores de `WhatsAppMessage`…» (hoy la línea 1) y sus secciones Ⓐ a Ⓕ, hasta «## SCRUM-1499b».
+- **Qué entró:** el commit `a1722f5dcc622adb85cda525ca3668f556c38fb7` (6 ficheros), que crea esa cabecera.
+- **Con qué PR:** #2779, merge `bd2369c069766ee0c7fcab3be68701d347801a56`.
+- **Qué se midió** (entrega en Jira, SCRUM-1499 c.20656, 2026-10-23T20:32:17Z, J5 · jv-j5ae; el PR aún no estaba abierto): «**57 de 57**, más 22 de 22».
+
+A9: comprobación → `tests/scrum1839-letra-con-tramo.test.mjs`

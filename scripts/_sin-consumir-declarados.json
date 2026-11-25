@@ -3,8 +3,7 @@
   "declaradas": [
     {"clave":"ciega-lector-cuerpo · POST /admin/customers/:id/sites","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:484","carril":"J2","ticket":"SCRUM-1145","motivo":"J2: la consume la pestaña «Sitios» de customerDetailView.js; el handler pasa el cuerpo entero a customerSiteCreateSchema y la sonda no ve qué campos lee"},
     {"clave":"ciega-lector-cuerpo · PUT /admin/customers/:id/sites/:siteId","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:500","carril":"J2","ticket":"SCRUM-1145","motivo":"J2: la consume la pestaña «Sitios» de customerDetailView.js; el handler pasa el cuerpo entero a customerSiteUpdateSchema y la sonda no ve qué campos lee"},
-    {"clave":"ruta · GET /admin/customers/:id/documentos","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:564","carril":"J2","ticket":"SCRUM-1005","motivo":"J2: la consume la pestaña «Documentos» de customerDetailView.js, que es SCRUM-1005c (textos firmados en c.22192); se mueve a retiradas en ese PR"},
-    {"clave":"ruta · POST /admin/customers/:id/documentos","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:594","carril":"J2","ticket":"SCRUM-1005","motivo":"J2: la consume el botón «+ Subir documento» de la pestaña de SCRUM-1005c (c.22192); se mueve a retiradas en ese PR"},
+    {"clave":"ciega-lector-cuerpo · POST /admin/customers/:id/documentos","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:595","carril":"J2","ticket":"SCRUM-1005","motivo":"J2: la consume el botón «+ Subir documento» de la pestaña «Documentos» de customerDetailView.js (SCRUM-1005d); el cuerpo es el fichero en BINARIO (express.raw) y el nombre viaja en la cabecera X-Nombre-Fichero: no hay campos que la sonda pueda leer"},
     {"clave":"ciega-lector-cuerpo · PATCH /admin/jobs/:id","donde":"src/modules/jobs/app/routes/jobs.routes.ts:934","carril":"S0","ticket":"SCRUM-1185"},
     {"clave":"ciega-lector-cuerpo · PATCH /admin/partes/:id","donde":"src/modules/jobs/app/routes/partes.routes.ts:461","carril":"S0","ticket":"SCRUM-1185"},
     {"clave":"ciega-lector-cuerpo · POST /admin/customers","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:157","carril":"S0","ticket":"SCRUM-1185"},
@@ -244,6 +243,8 @@
     {"clave":"export · src/modules/invoicing/domain/reintentoSellado.ts::resumenDelReintento","motivo":"SCRUM-1507 (PR-2 de SCRUM-1404, J1): la importa la tarea programada «reintento de sellado (cada minuto)» de src/core/cron/cron.ts, bloque de S1 (SCRUM-1507 c.19344 §3)"},
     {"clave":"ruta · GET /admin/evidencias.zip","motivo":"SCRUM-1602: conectada en exportView.js (tarjeta «Paquete del trimestre», sólo en modo fiscal; año y trimestre de la tarjeta de emitidas)"},
     {"clave":"cuerpo · POST /admin/invoices/bulk-paid::paidAt","motivo":"SCRUM-1618: conectada en invoicesView.js (el campo de fecha de la barra del lote, vía cuerpoConFechaDeCobro; solo viaja si se escribe una fecha)"},
-    {"clave":"export · src/modules/auth/domain/auth.service.ts::registerMerchant","motivo":"SCRUM-1685: conectada en auth.routes.ts (POST /auth/register vuelve a llamarla para los correos de REGISTRATION_INVITED_EMAILS; tramo a)"}
+    {"clave":"export · src/modules/auth/domain/auth.service.ts::registerMerchant","motivo":"SCRUM-1685: conectada en auth.routes.ts (POST /auth/register vuelve a llamarla para los correos de REGISTRATION_INVITED_EMAILS; tramo a)"},
+    {"clave":"ruta · GET /admin/customers/:id/documentos","motivo":"SCRUM-1005d: conectada en customerDetailView.js (la pestaña «Documentos ({n})»: la lista al abrir la ficha y al abrir la pestaña)"},
+    {"clave":"ruta · POST /admin/customers/:id/documentos","motivo":"SCRUM-1005d: conectada en customerDetailView.js (el botón «+ Subir documento» de la pestaña «Documentos»)"}
   ]
 }

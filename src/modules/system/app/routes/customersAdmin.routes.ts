@@ -1,7 +1,7 @@
 import express, { Router, Request, Response, NextFunction } from 'express';
 import { listCustomers, getCustomer, createCustomer, updateCustomer, deleteCustomer, ensurePortalToken } from '../../customerAdmin';
 import {
-  DOC_MAX_BYTES, listarDocumentos, subirDocumento, leerDocumento, borrarDocumento, contentDispositionAdjunto,
+  DOC_MAX_BYTES, DOCS_MAX_BYTES_POR_CLIENTE, listarDocumentos, subirDocumento, leerDocumento, borrarDocumento, contentDispositionAdjunto,
 } from '../../customerAdmin'; // SCRUM-1005b
 import { config } from '../../../../core/config/env';
 import { customerCreateSchema, customerUpdateSchema } from '../../../../core/validation/schemas';
@@ -567,7 +567,8 @@ router.get('/:id/documentos', async (req, res) => {
     if (!ids) return res.status(400).json({ error: 'invalid_id' });
     const documentos = await listarDocumentos(req.merchantId, ids.id);
     if (!documentos) return res.status(404).json({ error: 'not_found' });
-    return res.json({ documentos });
+    // SCRUM-1005d · los topes en BYTES, de las constantes: la pestaña pinta «{mb}» (c.22192) sin escribir la cifra.
+    return res.json({ documentos, limites: { porFichero: DOC_MAX_BYTES, porCliente: DOCS_MAX_BYTES_POR_CLIENTE } });
   } catch (err) {
     console.error('[GET /admin/customers/:id/documentos]', err);
     return res.status(500).json({ error: 'internal_error' });
