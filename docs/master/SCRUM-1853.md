@@ -55,8 +55,12 @@ los dos (90 y 194 caracteres). La diferencia de (b) la pone la `//`, no otra cos
 - `scrum700`: 5 de 5. Filtros propios 91 con tope 91: no sube (cifra sacada con una copia del censo en
   TEMP; mis dos ficheros no son de filtro propio ni antes ni después).
 - `scrum719`: 37 de 37, tras `npm run censo:mudez -- --escribir`.
-- `scrum237`, `scrum976`, `scrum854`, `scrum1294`, `scrum267` y `npm run guards:entrada`: en la entrega de
-  SCRUM-1853 en Jira, con su población.
+- `scrum1294`, `scrum267`, `scrum854`, `scrum237` y `scrum976`: 43 casos, 42 ok y 1 rojo, el ② de `scrum854`
+  (falta `docs/master/SCRUM-1853.md`), porque el registro aún no estaba en git; con el commit, `scrum854` 6
+  de 6. Antes de escribir el registro, el mismo ② ya caía con ese mensaje.
+- `npm run guards:entrada`: 17 guards, 186 casos, salida 0. Los 5 de árbol entero que pide correr a mano
+  (`scrum195`, `scrum414`, `scrum694`, `scrum710b`, `scrum737`): 38 de 38. Y los que tumbaron entregas de J2
+  por la muestra a mano (`scrum1177`, `scrum525d`, `scrum419`, `scrum1415`, `scrum553`, `scrum709`): 49 de 49.
 
 **Corrección al encargo:** decía «`censo:mudez -- --escribir` sólo si cambia la clase». Hace falta siempre
 que se toca el fichero: la ficha guarda la huella del fichero, y el censo dijo «A medir: 2 de 148». Clase
