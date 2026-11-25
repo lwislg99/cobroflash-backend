@@ -46,7 +46,7 @@ import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsA
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { allocateInvoiceNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { getEmissionMode } from '../../../invoicing/domain/emission.service'; // SCRUM-1027
-import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
+import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; import { formasDePagoACongelar } from '../../../invoicing/domain/formasDePagoACongelar'; // SCRUM-729 · SCRUM-1805
 import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
 import { congelarEmisorDesdeFicha } from '../../../invoicing/domain/emisorCongelado'; // SCRUM-665
 // SCRUM-814 · el MISMO cerrojo de serie que toman `quotesAdmin` y `collect-rest`
@@ -664,6 +664,7 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
             total: invoiceAmount.toFixed(2),
             stageLabel: isCustomPlan ? stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
             docFooterText: quote.docFooterText ?? null, // SCRUM-1787l (c.22345 ②⑤): las Observaciones; la cabecera NO
+            payMethods: formasDePagoACongelar({ presupuesto: quote, merchant: quote.merchant, importe: Number(invoiceAmount), moneda: quote.currency.toUpperCase() }) ?? undefined, // SCRUM-1805 (c.22404, c.22429)
             currency: quote.currency,
             lines: scaledLines.length > 0 ? scaledLines : undefined,
             pdfUrl: 'PENDING_PDF',

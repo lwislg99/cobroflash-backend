@@ -37,6 +37,8 @@ const ts = requiere('typescript');
 const { crearFacturaEmitida } = requiere(rutaDe('dist/modules/invoicing/domain/crearFacturaEmitida.js'));
 const { congelarCliente } = requiere(rutaDe('dist/modules/invoicing/domain/clienteCongelado.js'));
 const { congelarEmisorDesdeFicha } = requiere(rutaDe('dist/modules/invoicing/domain/emisorCongelado.js'));
+const { formasDePagoACongelar } = requiere(rutaDe('dist/modules/invoicing/domain/formasDePagoACongelar.js'));
+const { ensureInvoiceForCharge } = requiere(rutaDe('dist/lib/invoicing.js'));
 
 export const MUTACIONES_QUE_ME_TUMBAN = [
   // ① Observaciones, una por camino (en quotesAdmin el ancla lleva la línea de antes: la de abajo sola sale dos veces).
@@ -63,6 +65,31 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: 'docFooterText: quote.docFooterText ?? null, // SCRUM-1787l',
     a: 'docFooterText: null, // SCRUM-1787l',
     cae: 'SCRUM-1805 ① #4 C2 · cobrar el resto lleva las Observaciones (c.22345 ⑤)',
+  },
+  // ② Formas de pago, una por camino: sin el presupuesto, el ayudante da las activas y no la lista.
+  {
+    fichero: 'src/modules/system/app/routes/quotesAdmin.routes.ts',
+    de: 'presupuesto: quote, merchant: quote.merchant, importe: Number(tramo.invoiceAmount)',
+    a: 'presupuesto: null, merchant: quote.merchant, importe: Number(tramo.invoiceAmount)',
+    cae: 'SCRUM-1805 ② #1 C3 · con lista → esa lista; sin lista → las activas',
+  },
+  {
+    fichero: 'src/modules/system/app/routes/quotesAdmin.routes.ts',
+    de: 'presupuesto: quote, merchant: quote.merchant, importe: Number(invoiceAmount)',
+    a: 'presupuesto: null, merchant: quote.merchant, importe: Number(invoiceAmount)',
+    cae: 'SCRUM-1805 ② #2 C4 · con lista → esa lista; sin lista → las activas',
+  },
+  {
+    fichero: 'src/modules/quotes/app/routes/quotes.routes.ts',
+    de: 'presupuesto: quote, merchant: quote.merchant, importe: Number(invoiceAmount)',
+    a: 'presupuesto: null, merchant: quote.merchant, importe: Number(invoiceAmount)',
+    cae: 'SCRUM-1805 ② #3 C1 · con lista → esa lista; sin lista → las activas',
+  },
+  {
+    fichero: 'src/modules/jobs/app/routes/jobs.routes.ts',
+    de: 'presupuesto: quote, merchant: quote.merchant, importe: Number(tramo.amount)',
+    a: 'presupuesto: null, merchant: quote.merchant, importe: Number(tramo.amount)',
+    cae: 'SCRUM-1805 ② #4 C2 · con lista → esa lista; sin lista → las activas',
   },
 ];
 
@@ -162,7 +189,7 @@ function presupuesto(merchant, campos = {}) {
 /** Las variables que cada camino tiene en el punto de la emisión. `quote` y `merchant` los pone quien llama. */
 function variablesDe(n, { quote, merchant }) {
   const tramo = { stage: { index: 0, label: 'Anticipo', percentage: 1 }, scaledLines: LINEAS, invoiceAmount: 121, amount: 121 };
-  const comunes = { quote, invoiceNumber: `F-1805-${n}` };
+  const comunes = { quote, invoiceNumber: `F-1805-${n}`, formasDePagoACongelar };
   switch (n) {
     case 1: return { ...comunes, tramo, isCustomPlan: false };
     case 2: return { ...comunes, invoiceAmount: 121, scaledLines: LINEAS, merchant };
@@ -239,4 +266,52 @@ test('SCRUM-1805 · control: la R1 de una factura con Observaciones NO las copia
   const fila = banco.tablas.invoice.find((f) => f.id === rect.id);
   assert.equal(fila.type, 'R1');
   assert.equal(fila.docFooterText ?? null, null, '🔴 la R1 copia las Observaciones de la original (c.22345 ④: NO)');
+});
+
+// ── ② Formas de pago en #1–#4 (c.22404 b y c.22429): la lista del presupuesto, o las activas ─────
+const NOMBRES_FORMAS = {
+  1: 'SCRUM-1805 ② #1 C3 · con lista → esa lista; sin lista → las activas',
+  2: 'SCRUM-1805 ② #2 C4 · con lista → esa lista; sin lista → las activas',
+  3: 'SCRUM-1805 ② #3 C1 · con lista → esa lista; sin lista → las activas',
+  4: 'SCRUM-1805 ② #4 C2 · con lista → esa lista; sin lista → las activas',
+};
+for (const n of [1, 2, 3, 4]) {
+  test(NOMBRES_FORMAS[n], async () => {
+    // Con lista: ESA lista, aunque el comercio tenga otras activas (la tarjeta NO está activa hoy).
+    const con = await emitirPor(n, { payMethods: ['card'] });
+    assert.deepEqual(con.payMethods, ['card'], `🔴 ${CAMINOS[n].nombre}: no congela la lista del presupuesto`);
+    // Sin lista («todas»): las activas hoy para el importe de ESA factura (121 € → Bizum delante).
+    const sin = await emitirPor(n, { payMethods: null });
+    assert.deepEqual(sin.payMethods, ['bizum', 'transfer'], `🔴 ${CAMINOS[n].nombre}: sin lista no congela las activas`);
+  });
+}
+
+// ── Controles: la suelta y la factura tras cobrar NO cambian ────────────────────────────────────
+test('SCRUM-1805 · control: la factura suelta sigue con su expresión de 1787s, sin tocar', () => {
+  const sf = fuente('src/modules/system/app/routes/invoicesAdmin.routes.ts');
+  const [emision, ...mas] = llamadas(sf, manejador(sf, 'post', '/'), 'emitInvoice');
+  assert.ok(emision && mas.length === 0, '🔴 CIEGO: la suelta no emite exactamente una vez');
+  assert.equal(propiedad(emision.arguments[1], 'payMethods')?.initializer.getText(sf),
+    "val.payMethods ?? formasDePagoACongelar({ presupuesto: null, merchant, importe: Number(total), moneda: merchant.defaultCurrency || 'EUR' }) ?? undefined");
+});
+
+test('SCRUM-1805 · control: la factura tras cobrar sigue mandando la lista del COBRO, luego la del presupuesto', async () => {
+  async function trasCobrar(delPresupuesto, delCobro) {
+    prepararComercio();
+    const id = 18050 + banco.tablas.charge.length;
+    banco.tablas.charge.push({
+      id, merchantId: M_PT, customerId: CLIENTE, status: 'paid', amount: '121.00', currency: 'EUR',
+      concept: 'ZZ Arreglo', method: 'card', reference: null, intentId: null, receiptToken: null, paidAt: null,
+      payMethods: delCobro,
+    });
+    banco.tablas.quote.push({ id: id + 1, merchantId: M_PT, chargeId: id, payMethods: delPresupuesto, lines: [], discountGlobalAmount: null });
+    await ensureInvoiceForCharge(id, prisma);
+    await asentar();
+    const fs_ = banco.tablas.invoice.filter((f) => f.chargeId === id);
+    assert.equal(fs_.length, 1, `🔴 CIEGO: el cobro dejó ${fs_.length} facturas`);
+    return fs_[0].payMethods;
+  }
+  assert.deepEqual(await trasCobrar(['transfer'], ['bizum']), ['bizum']);
+  assert.deepEqual(await trasCobrar(['transfer'], null), ['transfer']);
+  assert.deepEqual(await trasCobrar(null, null), ['bizum', 'transfer']);
 });

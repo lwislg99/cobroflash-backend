@@ -28,7 +28,7 @@ import { veredictoAlbaranSinPresupuesto } from '../../domain/albaranSinPresupues
 import { precargaDelParte, type PrecargaDelParte } from '../../domain/albaranDesdeParte'; // SCRUM-1740
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber } from '../../../invoicing/domain/invoiceNumber.service';
-import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
+import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; import { formasDePagoACongelar } from '../../../invoicing/domain/formasDePagoACongelar'; // SCRUM-729 · SCRUM-1805
 import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
 import { congelarEmisorDesdeFicha } from '../../../invoicing/domain/emisorCongelado'; // SCRUM-665
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-173
@@ -1652,6 +1652,7 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
         total: tramo.amount.toFixed(2),
         stageLabel: isCustomPlan ? tramo.stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
         docFooterText: quote.docFooterText ?? null, // SCRUM-1787l (c.22345 ②⑤): las Observaciones; la cabecera NO
+        payMethods: formasDePagoACongelar({ presupuesto: quote, merchant: quote.merchant, importe: Number(tramo.amount), moneda: quote.currency.toUpperCase() }) ?? undefined, // SCRUM-1805 (c.22404, c.22429)
         currency: quote.currency,
         lines: tramo.scaledLines.length > 0 ? tramo.scaledLines : undefined,
         pdfUrl: 'PENDING_PDF',
