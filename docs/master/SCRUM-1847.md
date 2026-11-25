@@ -2,6 +2,7 @@
 
 **Medido contra:** `origin/main` = `bdd808ebe9bae708028e8aab87c52bc7b0ee6a28` · 2026-11-25T03:07:33Z (hora de GitHub; al escribir, 03:15:29Z y main ya en `e28f3582ec13e3c6102245a33bab02e4e7fa2370`, que sólo añade en `styles.css` un bloque de la ficha 360, lejos de éste)
 A9: comprobación → `tests/scrum1847-clientes-44.test.mjs`
+**Skill UI:** no cargada · error mío: no la abrí antes de editar `styles.css` (la misma omisión que mi cicatriz J2 del 2026-11-21); el cambio es sólo `min-height`/`min-width` dentro de un contenedor, con la regla de DESIGN.md (excepción de `btn-sm`) leída en SCRUM-1845 c.22728, y sin color, tipografía, espaciado ni texto
 
 jv-j2ev (J2). Nace de la lista J del censo de SCRUM-1845 (rama `scrum-1845-censo-tactil-por-carril`, PR #3431) y de la decisión del fundador SCRUM-1845 c.22728.
 
