@@ -1,8 +1,6 @@
-# SCRUM-1866
+# SCRUM-1866 · el trinquete
 
 **Medido contra:** `origin/main` = `bdba2afe7ba22bb8f6e2cc08311094bb837cee35` · 2026-11-25T22:02:14Z (cabecera `Date:` de GitHub; sesión J6 `jv-j6gh`, por encargo del orquestador `cobroflash-backend-2d`; la rama sale de ese main, que no se movió durante la tanda)
-
-# SCRUM-1866 · el trinquete
 
 A9: aviso → cicatriz J6 «Escribí `process.exitCode = 2` para el CIEGO de un test y node:test lo pisó con 1 al acabar: sólo lo vi corriéndolo con la población quitada» — no se pudo comprobar: ningún meta-guard corre un test nuevo en estado CIEGO para leer su código de salida
 

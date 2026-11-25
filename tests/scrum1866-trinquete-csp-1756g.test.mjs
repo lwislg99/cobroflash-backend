@@ -159,9 +159,10 @@ test('SCRUM-1866 · ninguna cifra BAJA sin recongelar la tabla en el mismo PR', 
   let propuesta = '(no se propone: hay subidas, mira el caso anterior)';
   if (subidas.length === 0) {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-1866-${process.pid}-`));
-    propuesta = path.join(dir, '_scrum1866-congelada.json');
+    const destino = path.join(dir, '_scrum1866-congelada.json');
+    propuesta = destino;
     const { ficheros: _viejos, ...meta } = congelada;
-    fs.writeFileSync(propuesta, serializar({ ...meta, medidoSobre: sha, fecha: `${new Date().toISOString()} (reloj de la máquina que recongeló)` }, censo.tabla));
+    fs.writeFileSync(path.join(dir, '_scrum1866-congelada.json'), serializar({ ...meta, medidoSobre: sha, fecha: `${new Date().toISOString()} (reloj de la máquina que recongeló)` }, censo.tabla));
   }
   assert.fail(`✅ BAJA, que es la dirección buena, pero la tabla no lo sabe:\n    ${bajadas.map(comoLinea).join('\n    ')}\n`
     + `    Recongélala en ESTE PR: cp '${propuesta}' ${CONGELADA}  (${POBLACION})`);
