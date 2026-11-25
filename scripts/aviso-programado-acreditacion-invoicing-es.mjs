@@ -192,6 +192,18 @@ export function conLimite(promesa, ms, etapa) {
 // ═══════════════════════════════════════════════════════════════════════════════════
 
 /**
+ * SCRUM-1525c · Los destinatarios, como LISTA, que es lo que pide Resend. Una cadena admite una o
+ * varias direcciones separadas por comas (como en nodemailer): se parte, se recorta y se quitan las
+ * piezas vacías. Un array se respeta tal cual, y cualquier otra cosa sale como antes, envuelta.
+ * Con una sola dirección el resultado es `[to]`: el cuerpo de siempre, byte a byte.
+ */
+export function destinatariosDe(to) {
+  if (Array.isArray(to)) return to;
+  if (typeof to !== 'string') return [to];
+  return to.split(',').map((d) => d.trim()).filter(Boolean);
+}
+
+/**
  * Un transportador con la MISMA forma que el de nodemailer (`sendMail`), para que
  * `ejecutarPasada` no se entere de por dónde sale el correo y sus tests sigan valiendo.
  *
@@ -213,7 +225,7 @@ export function crearTransportadorResend(apiKey, { peticion } = {}) {
       const r = await pedir('https://api.resend.com/emails', {
         method: 'POST',
         headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from, to: [to], subject, text, ...(adjuntos.length ? { attachments: adjuntos } : {}) }),
+        body: JSON.stringify({ from, to: destinatariosDe(to), subject, text, ...(adjuntos.length ? { attachments: adjuntos } : {}) }),
       });
       const cuerpo = await r.text();
       // 🔴 El mensaje lleva estado y cuerpo, NUNCA la clave: un error acaba en un log.

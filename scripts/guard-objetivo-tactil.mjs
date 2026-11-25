@@ -121,7 +121,9 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
-import { veredictoDe, recorrerCasos } from './_hallazgos-y-ciegos.mjs';
+import { veredictoDe, recorrerCasos, vigilarArranque } from './_hallazgos-y-ciegos.mjs';
+// SCRUM-1846 · el banco lee dist/ con un require perezoso: sin dist/, sale con 2 y no con 1.
+vigilarArranque();
 import { enlacesDelPanel, TIPOS_DE_FUENTE, esperarFuentes, cegueraDeLaFuente, decirFuente } from './_hojas-del-panel.mjs';
 // SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
 // los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
@@ -433,9 +435,11 @@ const SUPERFICIES_791 = [
   //
   // Y entra porque este ticket le AÑADE un objetivo: el botón «🔗 Portal», que para un cliente sin
   // token no existía. Meter el botón y no meter la vista sería dejar la deuda sin contador.
+  // SCRUM-1841 c.22708 · 7 → 6: la cabecera de acciones llega a 44 px por contenedor; suelo recalculado, solo endurece.
+  // SCRUM-1845 c.22728 · 6 → 2 (SCRUM-1850): pestañas, enlaces y campo a 44 por contenedor; quedan los dos `.btn-sm` no primarios. Solo endurece.
   { ruta: '/__cliente360', vista: 'renderCustomer360View', titulo: 'ficha 360 del cliente',
-    datos: DATOS_795, args: ARGUMENTOS_DE_VISTA.renderCustomer360View, distintosEsperados: 7,
-    origen: 'SCRUM-795 (7-sep-2026, con la lista de excepciones VACÍA)' },
+    datos: DATOS_795, args: ARGUMENTOS_DE_VISTA.renderCustomer360View, distintosEsperados: 2,
+    origen: 'SCRUM-1850 (25-nov-2026, pestañas, enlaces y campo de la ficha a 44 px por contenedor)' },
   // 🔴 SCRUM-1167 · PROVEEDORES VUELVE, y por qué. SCRUM-786 la sacó de aquí con «cero deuda
   // conocida», y la deuda existía: «Borrar» medía 30 px en escritorio. Una superficie que no se
   // vigila no tiene deuda conocida porque nadie la mira. Vuelve con `irreversibles`: los textos de
@@ -863,9 +867,8 @@ const EXCEPCIONES_791 = {
   // su texto y sus píxeles, uno por uno. Quien lea la salida ve «🔗 Portal 30,9px» escrito.
   renderCustomer360View: [
     { sel: 'BUTTON.btn-ghost.btn-sm', motivo: 'clase compartida `.btn-sm` (30,5–31,0 px) — «← Volver a Clientes» y «Ver →». Pre-existentes. Las retira el fundador al decidir sobre `.btn-sm` (SCRUM-786; SCRUM-787 midió que 57 de los 76 cortos del panel son de esa clase).' },
-    { sel: 'BUTTON.btn-secondary.btn-sm', motivo: '🔴 DOS VÍCTIMAS Y NO SON IGUALES: «✎ Editar» (30,5–30,9 px) es pre-existente, y «🔗 Portal» (30,5–30,9 px) LO AÑADE SCRUM-795 — antes, sin token, ese botón no se pintaba. La clase es la de SCRUM-786, pero el objetivo corto es nuevo y se cuenta como nuevo. El emparejador va por selector y no sabe separarlos.' },
-    { sel: 'BUTTON.btn-primary.btn-sm', motivo: 'clase compartida `.btn-sm` (30,5–30,9 px) — «+ Nuevo presupuesto». Pre-existente, misma decisión que las anteriores.' },
-    { sel: 'BUTTON', motivo: 'las DOS pestañas del historial, «Presupuestos (1)» y «Facturas (1)», a 41,0 px (caja 40). No llevan clase de botón: es el TERCER grupo de SCRUM-787 —los que no se arreglan con `.btn-sm` sino dándoles área donde están—. Sin decidir. ⚠️ Este selector es el más ancho de todo el fichero: excusa cualquier <button> SIN CLASE de esta pantalla, y hoy son exactamente esos dos (7 interactivos censados, 7 nombrados arriba).' },
+    // SCRUM-1841 c.22708 · retiradas `BUTTON.btn-secondary.btn-sm` y `BUTTON.btn-primary.btn-sm`: cumplen por contenedor; las nombró el detector de sobrantes.
+    // SCRUM-1845 c.22728 · retirada `BUTTON` (SCRUM-1850): las pestañas cumplen por `.c360-pestanas > button`; la nombró el detector de sobrantes.
   ],
   // 🔴 SCRUM-1167 · medido el 27-sep-2026 con esta lista VACÍA: tres cortos a 929 (30,7 px) y
   // ninguno a 390. «Borrar» era uno de los tres y se ARREGLA en el código (no se excusa: las

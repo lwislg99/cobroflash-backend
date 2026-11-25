@@ -28,7 +28,7 @@
 // de la mañana con la base caída.
 //
 // ── ESTADO REAL HOY, y por eso vuelve a haber un puntero ───────────────────────────────────────
-// El procedimiento es **`docs/RUNBOOKS.md` §R14** y quien escribe de vuelta es
+// El procedimiento es **`docs/RUNBOOKS.md` §R28** y quien escribe de vuelta es
 // **`scripts/backup-restore.mjs`**. Se probó de punta a punta contra una base desechable —volcar,
 // vaciar, restaurar, comparar, emitir— y la prueba **encontró dos fallos que hacían este volcado
 // lógico irrestaurable**: los tipos (JSON no tiene fechas ni decimales) y el orden de inserción.

@@ -495,3 +495,16 @@ de `filasLibroExpedidas`. Nada más del camino de emisión: recibidas.csv, expor
   de Prisma compartido va por detrás del esquema; no se regeneró (árbol anidado). El tipado real lo da CI.
 
 A9: comprobación → `tests/scrum1058c-libro-expedidas-lee-el-congelado.test.mjs`
+
+## SCRUM-1058b · Visto bueno de J1 al diseño de fusionar clientes con facturas (escrito a posteriori en 1839d)
+
+**Medido contra:** `origin/main` = `f23697aa1c7a7b9715ded3be545a50aaa1597706` · 2026-11-25T02:37:06Z
+
+Lo escribe J6 (jv-j6gd) en SCRUM-1839d, por encargo del orquestador del equipo de Javier. No añade medición: el tramo ya existe con una cabecera que la regla de SCRUM-1839 (c.22677) no reconoce, y aquí se APUNTA a él, no se copia.
+
+- **Dónde está:** la cabecera «## 1058 · visto bueno de J1» (hoy la línea 304), hasta «## 1058c».
+- **Qué entró:** el commit `86296fe9f8a7703c466da791348fd12977198b8a` (3 ficheros), que crea esa cabecera.
+- **Con qué PR:** #2644, merge `9415ff9df6a092898e61138718ce17c9c3f275b5`.
+- **Qué se midió:** sin registro de la medición en Jira. No hay comentario de entrega de la sesión que hizo la letra (leídos los 10 comentarios del ticket); sólo la cita el orquestador en c.20207 (2026-10-22T08:53:25Z), con la rama `scrum-1058b-visto-bueno-j1`, «PR #2644 en main» y «Jira estaba caído el 21-oct».
+
+A9: comprobación → `tests/scrum1839-letra-con-tramo.test.mjs`
