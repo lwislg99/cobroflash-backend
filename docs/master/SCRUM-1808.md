@@ -115,3 +115,22 @@ sin errores de consola. CONTROL POSITIVO: en ANTES ninguno de los dos aparece (0
 factura sigue ofreciendo «📲 Confirmar Bizum recibido» (se ve en `cobro-cancelado-despues-1280.png`); ya pasaba
 antes de esta rama. Su POST respondería 409 `charge_not_pending` y la ficha diría «Este cobro ya no está
 pendiente.». Ocultarlo es cambiar qué ofrece la ficha: decisión aparte.
+
+### Vuelta de merge · 25-nov-2026 · S2 · desatascar #3414 (DIRTY tras el main de la noche)
+
+**Medido contra:** `origin/main` = `77c000deadc9fa6b80ae97b6b02752e18b2c9392` · 2026-11-25T07:55:50Z
+A9: comprobación → `tests/scrum1808b-cancelar-cobro-en-ficha-trabajo.test.mjs`
+
+`git merge origin/main` (99 commits). Tres conflictos, y ninguno de código: `docs/equipo/dos-equipos.md` §3
+(la fila de `scripts/capturas-1834-error-visible-390.mjs` llegó de main en el mismo hueco que la mía de
+`capturas-cancelar-cobro-trabajo.mjs`; se quedan LAS DOS, la de main primero) y sus dos derivados
+`.claude/carriles.json` y `.claude/rules/carril-s2.md`, REGENERADOS con `node scripts/carriles.mjs generar`
+(`comprobar` → IGUAL a la tabla), sin cifra a mano. `public/dashboard/js/jobDetailView.js` se mezcló solo con la
+ficha 360: su diff contra `origin/main` es EXACTAMENTE el de esta rama (pill + botón + las dos listas, 35+/2−).
+
+Tras el merge: `tests/scrum1808b-cancelar-cobro-en-ficha-trabajo.test.mjs` **8/8**. Tanda de los 197 ficheros de
+`tests/` que leen `jobDetailView`, `jobs.routes`, `carriles` o `dos-equipos` → 1601 tests · 1586 pass · 14 skip
+(gateados) · **1 fail**: `scrum1633-de-dice-si-la-ruta-no-existe.test.mjs:71` (`r.stdout` undefined). **No es de
+esta rama:** la muestra que pasa a la CLI (1 de cada 40 ficheros, 236 rutas absolutas) mide **~33.300 caracteres**
+desde esta ruta de worktree, por encima del límite de 32.767 de la línea de órdenes de Windows; el spawn no
+arranca. En el CI (Linux) no existe ese límite. Avisado al orquestador como trampa del entorno.
