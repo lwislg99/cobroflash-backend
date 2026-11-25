@@ -2,6 +2,8 @@
 
 **Medido contra:** `origin/main` = `92df30d4d9c469d74f842ec596ea0a865ae6cebe` · 2026-11-25T13:07:55Z
 
+A9: sin fallo que generalice — el cambio es el que pide el ticket, y los tres rojos se vieron antes de darlo por bueno.
+
 Puesto S2 (dueño del guard `tests/scrum962f-editor-cuatro-44.test.mjs`), rama `scrum-1860-guard-por-pantalla` (base
 `92df30d4d`). Encargo del orquestador (25-nov, tarde). Origen: SCRUM-1848 c.22742 — J3 tuvo que QUITAR sus dos reglas de 44 px
 de las casillas de Ajustes (`fbb2a4ab8`, SCRUM-1848b) porque el ③ solo admitía reglas de esa familia que empezaran por
