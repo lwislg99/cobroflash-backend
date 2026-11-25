@@ -26,6 +26,7 @@
 // `merchantId` y el `id.in` de los referenciados: lo que no sabe evaluar LANZA, no contesta.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const { prisma } = await import('../dist/core/db/prisma.js');
 const { buildClientes, buildClientesReferenciados, csvBody } =
@@ -38,17 +39,20 @@ const ALTA = new Date('2026-07-15T10:00:00Z');
 
 const CON_MOVIL = {
   id: 501, merchantId: MIO, name: 'CON-MOVIL', legalName: 'Con Móvil SL', taxId: 'B12345678',
-  phone: '910000001', mobile: '612000001', email: 'con@movil.test',
+  // Teléfonos del rango imposible (SCRUM-262, scripts/_telefonos-prueba.mjs): no son de nadie.
+  phone: '34000000001', mobile: '34000000002', email: 'con@movil.test',
   // `;` y comillas dentro: si la fila no se escapara bien, aquí saldría una celda de más.
   notes: 'portal 3; llamar "antes" de las 9', waOptOut: false, createdAt: ALTA,
 };
 const SIN_MOVIL_NULL = {
   id: 502, merchantId: MIO, name: 'SIN-MOVIL-NULL', legalName: null, taxId: null,
-  phone: '910000002', mobile: null, email: null, notes: null, waOptOut: true, createdAt: ALTA,
+  phone: '34000000003', mobile: null, email: null, notes: null, waOptOut: true, createdAt: ALTA,
 };
 // El campo AUSENTE (no null): una fila montada de un objeto sin `mobile` tampoco puede escribir «undefined».
 const { mobile: _fuera, ...SIN_MOVIL_AUSENTE } = { ...SIN_MOVIL_NULL, id: 503, name: 'SIN-MOVIL-AUSENTE' };
-const AJENO = { ...CON_MOVIL, id: 999, merchantId: 1, name: 'AJENO', mobile: '699999999' };
+// Otro comercio cualquiera (no el 1, que es el demo: SCRUM-409).
+const OTRO = 78;
+const AJENO = { ...CON_MOVIL, id: 999, merchantId: OTRO, name: 'AJENO', mobile: '34000000009' };
 const TABLA = [CON_MOVIL, SIN_MOVIL_NULL, SIN_MOVIL_AUSENTE, AJENO];
 
 function casa(fila, where) {
@@ -95,8 +99,14 @@ test('SCRUM-1578: el rótulo es el del importador, no uno inventado', () => {
   assert.equal(ETIQUETA_CAMPO.mobile, 'Móvil', '🔴 CIEGO: el rótulo de referencia del importador ha cambiado; revisa la cabecera del export');
 });
 
-for (const uso of Object.keys(USOS)) {
-  test(`SCRUM-1578 · ${uso}: ③ cabecera y CADA fila tienen las mismas celdas`, async () => {
+// Cada caso con su nombre LITERAL (SCRUM-1415): la señal por nombres busca en el TAP lo que está
+// escrito. `casosEscritos` comprueba que el literal sigue saliendo de su fila y que ninguna fila
+// se queda sin caso.
+const NOMBRES_USO = Object.keys(USOS);
+
+const mismasCeldas = casosEscritos(NOMBRES_USO,
+  (uso) => `SCRUM-1578 · ${uso}: ③ cabecera y CADA fila tienen las mismas celdas`,
+  async (uso) => {
     const { cabecera, filas } = await leer(uso);
     assert.equal(filas.length, 3, `🔴 CIEGO: esperaba los 3 clientes de MIO (el ajeno fuera), salen ${filas.length}`);
     for (const f of filas) {
@@ -105,7 +115,9 @@ for (const uso of Object.keys(USOS)) {
     }
   });
 
-  test(`SCRUM-1578 · ${uso}: ① el móvil sale bajo «Móvil», junto a «Teléfono»`, async () => {
+const movilJuntoATelefono = casosEscritos(NOMBRES_USO,
+  (uso) => `SCRUM-1578 · ${uso}: ① el móvil sale bajo «Móvil», junto a «Teléfono»`,
+  async (uso) => {
     const { cabecera, filas } = await leer(uso);
     const iTel = cabecera.indexOf('Teléfono');
     const iMov = cabecera.indexOf(ETIQUETA_CAMPO.mobile);
@@ -124,7 +136,9 @@ for (const uso of Object.keys(USOS)) {
     assert.equal(c['Fecha de alta'], '2026-07-15', 'la última columna sigue siendo la fecha de alta');
   });
 
-  test(`SCRUM-1578 · ${uso}: ② sin móvil la celda va vacía, sin «undefined» ni «null»`, async () => {
+const sinMovilVacio = casosEscritos(NOMBRES_USO,
+  (uso) => `SCRUM-1578 · ${uso}: ② sin móvil la celda va vacía, sin «undefined» ni «null»`,
+  async (uso) => {
     const { texto, cabecera, filas } = await leer(uso);
     for (const nombre of ['SIN-MOVIL-NULL', 'SIN-MOVIL-AUSENTE']) {
       const c = fila(filas, cabecera, nombre);
@@ -135,7 +149,18 @@ for (const uso of Object.keys(USOS)) {
     }
     assert.ok(!/undefined|null/.test(texto), `🔴 el CSV escribe «undefined»/«null»:\n${texto}`);
   });
-}
+
+test('SCRUM-1578 · CSV suelto (buildClientes): ③ cabecera y CADA fila tienen las mismas celdas', mismasCeldas(0));
+test('SCRUM-1578 · clientes.csv del ZIP (buildClientesReferenciados): ③ cabecera y CADA fila tienen las mismas celdas', mismasCeldas(1));
+mismasCeldas.todos();
+
+test('SCRUM-1578 · CSV suelto (buildClientes): ① el móvil sale bajo «Móvil», junto a «Teléfono»', movilJuntoATelefono(0));
+test('SCRUM-1578 · clientes.csv del ZIP (buildClientesReferenciados): ① el móvil sale bajo «Móvil», junto a «Teléfono»', movilJuntoATelefono(1));
+movilJuntoATelefono.todos();
+
+test('SCRUM-1578 · CSV suelto (buildClientes): ② sin móvil la celda va vacía, sin «undefined» ni «null»', sinMovilVacio(0));
+test('SCRUM-1578 · clientes.csv del ZIP (buildClientesReferenciados): ② sin móvil la celda va vacía, sin «undefined» ni «null»', sinMovilVacio(1));
+sinMovilVacio.todos();
 
 test('SCRUM-1578: los dos usos llevan EXACTAMENTE la misma cabecera', async () => {
   // En serie, no Promise.all: dos dobles a la vez se restaurarían cruzados.
