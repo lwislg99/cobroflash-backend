@@ -1,0 +1,241 @@
+﻿[
+ {
+  "caso": "ok",
+  "ancho": 390,
+  "filaInyectadaPintada": true,
+  "menuAbierto": true,
+  "botonAntes": {
+   "visible": true,
+   "n": 1,
+   "caja": [
+    8,
+    785,
+    374,
+    51
+   ],
+   "cabe": true
+  },
+  "preguntas": [
+   "¿Cancelar este cobro? El cliente ya no podrá pagarlo con este enlace."
+  ],
+  "confirmaLiteral": true,
+  "pill": {
+   "visible": true,
+   "n": 1,
+   "caja": [
+    170,
+    1113,
+    141,
+    24
+   ],
+   "cabe": true
+  },
+  "botonDespues": {
+   "visible": false,
+   "n": 0,
+   "caja": null,
+   "cabe": null
+  },
+  "lecturasDelTrabajo": 2,
+  "escriturasInterceptadas": [
+   {
+    "metodo": "POST",
+    "ruta": "/admin/entorno",
+    "cuerpo": "{\"entorno\":\"pestana\"}"
+   },
+   {
+    "metodo": "POST",
+    "ruta": "/admin/charges/990077/cancel",
+    "cuerpo": null
+   }
+  ],
+  "erroresDePagina": []
+ },
+ {
+  "caso": "ok",
+  "ancho": 1280,
+  "filaInyectadaPintada": true,
+  "menuAbierto": true,
+  "botonAntes": {
+   "visible": true,
+   "n": 1,
+   "caja": [
+    566,
+    556,
+    184,
+    44
+   ],
+   "cabe": true
+  },
+  "preguntas": [
+   "¿Cancelar este cobro? El cliente ya no podrá pagarlo con este enlace."
+  ],
+  "confirmaLiteral": true,
+  "pill": {
+   "visible": true,
+   "n": 1,
+   "caja": [
+    434,
+    375,
+    141,
+    24
+   ],
+   "cabe": true
+  },
+  "botonDespues": {
+   "visible": false,
+   "n": 0,
+   "caja": null,
+   "cabe": null
+  },
+  "lecturasDelTrabajo": 2,
+  "escriturasInterceptadas": [
+   {
+    "metodo": "POST",
+    "ruta": "/admin/entorno",
+    "cuerpo": "{\"entorno\":\"pestana\"}"
+   },
+   {
+    "metodo": "POST",
+    "ruta": "/admin/charges/990077/cancel",
+    "cuerpo": null
+   }
+  ],
+  "erroresDePagina": []
+ },
+ {
+  "caso": "pagado",
+  "ancho": 390,
+  "filaInyectadaPintada": true,
+  "menuAbierto": true,
+  "botonAntes": {
+   "visible": true,
+   "n": 1,
+   "caja": [
+    8,
+    785,
+    374,
+    51
+   ],
+   "cabe": true
+  },
+  "preguntas": [
+   "¿Cancelar este cobro? El cliente ya no podrá pagarlo con este enlace."
+  ],
+  "confirmaLiteral": true,
+  "avisoPagado": {
+   "visible": true,
+   "caja": [
+    34,
+    -100,
+    322,
+    63
+   ],
+   "enPantalla": false
+  },
+  "scrollY": 592,
+  "botonTrasError": {
+   "visible": true,
+   "n": 1,
+   "caja": [
+    8,
+    785,
+    374,
+    51
+   ],
+   "cabe": true
+  },
+  "lecturasDelTrabajo": 1,
+  "escriturasInterceptadas": [
+   {
+    "metodo": "POST",
+    "ruta": "/admin/entorno",
+    "cuerpo": "{\"entorno\":\"pestana\"}"
+   },
+   {
+    "metodo": "POST",
+    "ruta": "/admin/charges/990077/cancel",
+    "cuerpo": null
+   }
+  ],
+  "erroresDePagina": []
+ },
+ {
+  "caso": "pagado",
+  "ancho": 1280,
+  "filaInyectadaPintada": true,
+  "menuAbierto": true,
+  "botonAntes": {
+   "visible": true,
+   "n": 1,
+   "caja": [
+    566,
+    556,
+    184,
+    44
+   ],
+   "cabe": true
+  },
+  "preguntas": [
+   "¿Cancelar este cobro? El cliente ya no podrá pagarlo con este enlace."
+  ],
+  "confirmaLiteral": true,
+  "avisoPagado": {
+   "visible": true,
+   "caja": [
+    294,
+    280,
+    940,
+    42
+   ],
+   "enPantalla": true
+  },
+  "scrollY": 0,
+  "botonTrasError": {
+   "visible": true,
+   "n": 1,
+   "caja": [
+    566,
+    612,
+    184,
+    44
+   ],
+   "cabe": true
+  },
+  "lecturasDelTrabajo": 1,
+  "escriturasInterceptadas": [
+   {
+    "metodo": "POST",
+    "ruta": "/admin/entorno",
+    "cuerpo": "{\"entorno\":\"pestana\"}"
+   },
+   {
+    "metodo": "POST",
+    "ruta": "/admin/charges/990077/cancel",
+    "cuerpo": null
+   }
+  ],
+  "erroresDePagina": []
+ },
+ {
+  "caso": "control-sin-pending",
+  "ancho": 390,
+  "filaInyectadaPintada": true,
+  "menuAbierto": true,
+  "botonAntes": {
+   "visible": false,
+   "n": 0,
+   "caja": null,
+   "cabe": null
+  },
+  "lecturasDelTrabajo": 1,
+  "escriturasInterceptadas": [
+   {
+    "metodo": "POST",
+    "ruta": "/admin/entorno",
+    "cuerpo": "{\"entorno\":\"pestana\"}"
+   }
+  ],
+  "erroresDePagina": []
+ }
+]

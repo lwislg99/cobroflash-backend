@@ -72,8 +72,28 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // Sin comentarios con el helper único (trinquetes SCRUM-694/700); sobre styles.css da lo mismo que la regex de bloques.
 const CSS = soloCodigo(fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8'), 'styles.css');
-const reglas = () => CSS.replace(/@media[^{]*\{/g, '').split('}')
+const reglasDe = (css) => css.replace(/@media[^{]*\{/g, '').split('}')
   .map((b) => { const [sel, cuerpo = ''] = b.split('{'); return { sel: sel.split(',').map((s) => s.trim().replace(/\s+/g, ' ')), cuerpo }; });
+const reglas = () => reglasDe(CSS);
+
+// SCRUM-1860 · Una regla de 44 px de la familia `.radio-label` / `.inline-checkbox` es legítima si está ACOTADA
+// a UNA pantalla: su PRIMER compuesto nombra la clase de un contenedor que no es de la familia
+// (`.quote-ajustes`, el editor; `.settings-panel`, Ajustes de J3, SCRUM-1848 c.22742). Una regla GLOBAL cae:
+// la que empieza por la familia, por un elemento a secas (`div`, `label`), por `*`, por `:root` o por un
+// `:not(...)` (que acota a TODO menos algo). Se mira el primer compuesto y no «hay un ancestro cualquiera»
+// porque `div .inline-checkbox label` tiene ancestro y alcanza a toda la app.
+const FAMILIA = ['.radio-label', '.inline-checkbox'];
+function acotadaAUnaPantalla(sel) {
+  const compuestos = sel.trim().split(/\s*[>+~]\s*|\s+/).filter(Boolean);
+  if (compuestos.length < 2) return false;
+  const primero = compuestos[0].replace(/:[\w-]+\([^)]*\)/g, '');
+  const clases = primero.match(/\.[A-Za-z_][\w-]*/g) || [];
+  return clases.length > 0 && !clases.some((c) => FAMILIA.includes(c));
+}
+/** Las reglas de 44 de la familia que NO están acotadas a una pantalla, leídas de `css`. */
+const sueltasEn = (css) => reglasDe(css).flatMap((r) => r.sel.map((s) => ({ s, cuerpo: r.cuerpo })))
+  .filter(({ s, cuerpo }) => /(\.radio-label|\.inline-checkbox)/.test(s) && /min-height:\s*44px|::before/.test(s + cuerpo) && !acotadaAUnaPantalla(s))
+  .map(({ s }) => s);
 const con = (s) => reglas().filter((r) => r.sel.includes(s));
 const cuerpoDe = (s) => con(s).map((r) => r.cuerpo).join(';');
 const CONTROLES = ['.quote-ajustes .radio-label input[type="radio"]', '.quote-ajustes .inline-checkbox input[type="checkbox"]'];
@@ -99,11 +119,34 @@ test('SCRUM-962f ② · el área del radio y de la casilla crece hacia SU texto,
   }
 });
 
-test('SCRUM-962f ③ · todo está ACOTADO al editor (`.inline-checkbox` la comparten la ficha 360 de J2 y Avisos de J3)', () => {
-  const sueltas = reglas().flatMap((r) => r.sel.map((s) => ({ s, cuerpo: r.cuerpo })))
-    .filter(({ s, cuerpo }) => /(\.radio-label|\.inline-checkbox)/.test(s) && /min-height:\s*44px|::before/.test(s + cuerpo) && !/^\.quote-ajustes /.test(s))
-    .map(({ s }) => s);
-  assert.deepEqual(sueltas, [], `🔴 hay reglas de 44 px de esta familia SIN acotar a \`.quote-ajustes\`: ${sueltas.join(' · ')}`);
+test('SCRUM-962f ③ · toda regla de 44 de la familia está ACOTADA a una pantalla (`.inline-checkbox` la comparten la ficha 360 de J2 y Avisos de J3)', () => {
+  // SUELO: las reglas del editor existen y este mismo filtro las ve (si no, «0 sueltas» sería no haber mirado).
+  const familia = reglas().flatMap((r) => r.sel).filter((s) => /(\.radio-label|\.inline-checkbox)/.test(s));
+  assert.ok(familia.some((s) => s.startsWith('.quote-ajustes ')), '🔴 CIEGO: no veo ninguna regla de la familia en `.quote-ajustes`');
+  const sueltas = sueltasEn(CSS);
+  assert.deepEqual(sueltas, [], `🔴 hay reglas de 44 px de esta familia SIN acotar a una pantalla (globales): ${sueltas.join(' · ')}`);
+});
+
+test('SCRUM-962f ③b · SCRUM-1860: la regla de J3 limitada a `.settings-panel` PASA; una global sigue CAYENDO', () => {
+  // Las dos reglas que J3 tuvo que quitar en SCRUM-1848b (fbb2a4ab8) por el ③ de antes, LITERALES.
+  const DE_J3 = '\n.settings-panel .inline-checkbox label { min-height:44px; }\n'
+    + '.settings-panel .inline-checkbox input[type="checkbox"]::before { content:""; position:absolute; top:50%; left:0; width:44px; height:44px; transform:translateY(-50%); }\n';
+  assert.deepEqual(sueltasEn(CSS + DE_J3), [], '🔴 la regla de J3 acotada a `.settings-panel` cae: el ③ sigue exigiendo `.quote-ajustes`');
+  // CONTROL: lo global sigue cayendo, una a una (cada una sola, para que ninguna pase escondida tras otra).
+  const GLOBALES = [
+    '.inline-checkbox label { min-height:44px; }',
+    '.radio-label { min-height: 44px; }',
+    '.inline-checkbox input[type="checkbox"]::before { content:""; }',
+    'label.inline-checkbox { min-height:44px; }',
+    'div .inline-checkbox label { min-height:44px; }',
+    '* .radio-label { min-height:44px; }',
+    ':root .inline-checkbox label { min-height:44px; }',
+    ':not(.quote-ajustes) .inline-checkbox label { min-height:44px; }',
+    '.inline-checkbox .settings-panel label { min-height:44px; }',
+  ];
+  for (const g of GLOBALES) {
+    assert.equal(sueltasEn(CSS + '\n' + g + '\n').length, 1, `🔴 la regla GLOBAL «${g}» pasa el ③`);
+  }
 });
 
 test('SCRUM-962f ④ · el <select> «IVA %» es un campo de 44 como sus hermanos, y bloqueado PARECE bloqueado', () => {
