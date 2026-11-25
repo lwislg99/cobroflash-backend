@@ -278,13 +278,70 @@ function comoNodo(x, reg) {
 /** SCRUM-1278 · los eventos que en el navegador SUBEN por el árbol (`bubbles: true`). */
 const TIPOS_QUE_SUBEN = new Set(['click', 'dblclick', 'input', 'change', 'submit', 'keydown', 'keyup', 'keypress', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'contextmenu']);
 
+/**
+ * 🔴 SCRUM-1825 · `dataset` ES el atributo, en las dos direcciones, como en el navegador.
+ *
+ * Era un objeto suelto que `setAttribute` rellenaba y `removeAttribute` vaciaba (SCRUM-451, 1821),
+ * pero lo que la vista hacía SOBRE `dataset` no llegaba a `_attrs`: `delete el.dataset.x` dejaba
+ * `hasAttribute('data-x')`, `getAttribute` y la página de `serializar` diciendo que seguía, y
+ * `el.dataset.x = 'v'` no lo creaba. En `public/` se borra por `dataset` en 5 sitios.
+ *
+ * Ahora es un `Proxy` sobre `_attrs`, que es la ÚNICA fuente: leer, poner, borrar, `in` y enumerar
+ * van a `data-<guiones>`. El valor se guarda como cadena, como `DOMStringMap`.
+ *
+ * ⚠️ EL OBJETIVO DEL PROXY ES SÓLO UN ESPEJO PARA LA INSPECCIÓN. `assert` pinta un Proxy por su
+ * objetivo, sin pasar por las trampas (medido: `{}` para un `dataset` con datos). Se refresca en
+ * cada escritura de un `data-*` (aquí y en `setAttribute`/`removeAttribute`, las únicas que tocan
+ * `_attrs`); NADIE lo lee para contestar.
+ */
+const aCamello = (s) => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+const aAtributo = (k) => {
+  // Como el navegador: un nombre con «-minúscula» no tiene atributo que le corresponda.
+  if (/-[a-z]/.test(k)) {
+    const e = new Error(`dataset: «${k}» no es un nombre válido (lleva «-» seguido de minúscula)`);
+    e.name = 'SyntaxError';
+    throw e;
+  }
+  return 'data-' + k.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase());
+};
+function datasetDe(n) {
+  const espejo = {};
+  const tiene = (k) => typeof k === 'string' && !/-[a-z]/.test(k)
+    && Object.prototype.hasOwnProperty.call(n._attrs, aAtributo(k));
+  const claves = () => Object.keys(n._attrs).filter((a) => a.startsWith('data-')).map((a) => aCamello(a.slice(5)));
+  const poner = (k, v) => { n._attrs[aAtributo(k)] = String(v); reflejar(); return true; };
+  function reflejar() {
+    for (const k of Object.keys(espejo)) delete espejo[k];
+    for (const k of claves()) espejo[k] = n._attrs[aAtributo(k)];
+  }
+  // Lo que no es un `data-*` se busca en `Object.prototype` (`toString`, `hasOwnProperty`…), como
+  // en `DOMStringMap`; nunca en el espejo.
+  const ds = new Proxy(espejo, {
+    get: (o, k, r) => (tiene(k) ? n._attrs[aAtributo(k)] : Reflect.get(Object.prototype, k, r)),
+    set: (o, k, v, r) => (typeof k === 'string' ? poner(k, v) : Reflect.set(o, k, v, r)),
+    defineProperty: (o, k, d) => (typeof k === 'string' ? poner(k, d.value) : Reflect.defineProperty(o, k, d)),
+    deleteProperty: (o, k) => {
+      if (typeof k !== 'string') return Reflect.deleteProperty(o, k);
+      if (!/-[a-z]/.test(k)) delete n._attrs[aAtributo(k)];
+      reflejar();
+      return true;
+    },
+    has: (o, k) => tiene(k) || Reflect.has(Object.prototype, k),
+    ownKeys: () => claves(),
+    getOwnPropertyDescriptor: (o, k) => (tiene(k)
+      ? { value: n._attrs[aAtributo(k)], writable: true, enumerable: true, configurable: true }
+      : undefined),
+  });
+  return { ds, reflejar };
+}
+
 export function nodo(tag, reg) {
   const n = {
     tagName: String(tag).toUpperCase(),
     className: '', _id: '', type: '', value: '', disabled: false, checked: false,
     href: '', download: '', title: '', placeholder: '', name: '', src: '',
     style: { cssText: '', color: '', display: '', setProperty() {} },
-    dataset: {}, hijos: [], _texto: '', _html: '', _padre: null,
+    hijos: [], _texto: '', _html: '', _padre: null, // `dataset`: al final, sobre `_attrs` (SCRUM-1825)
     // SCRUM-697 · las CUATRO inserciones desenganchan antes de insertar. Si sólo lo hiciera
     // `appendChild`, la próxima vista que use `prepend` traería el mismo síntoma con otra
     // cara y costaría otro ticket entenderlo.
@@ -546,7 +603,8 @@ export function nodo(tag, reg) {
           if (prop) n.style[prop] = decl.slice(i + 1).trim();
         }
       } else if (clave.startsWith('data-')) {
-        n.dataset[clave.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase())] = String(v);
+        // SCRUM-1825 · `dataset` lee de `_attrs`: aquí sólo se refresca el espejo de la inspección.
+        reflejarDataset();
       }
     },
     // 🔴 SCRUM-1158 · `hidden` ES el atributo, en los DOS sentidos, como en el navegador. Antes no
@@ -563,9 +621,11 @@ export function nodo(tag, reg) {
     // 🔴 SCRUM-1821 · quitar un `data-*` lo quita TAMBIÉN de `dataset`, como en el navegador. Antes
     // sólo salía de `_attrs`, y el selector `[data-x]` lee `dataset`: el nodo seguía casando con
     // `[data-x]` después de que la vista se lo quitara (hallazgo de S4, 24-nov-2026).
+    // SCRUM-1825 · desde que `dataset` es una vista de `_attrs`, borrarlo de `_attrs` YA lo quita de
+    // `dataset`; aquí sólo se refresca el espejo de la inspección.
     removeAttribute(k) {
       const clave = String(k); delete n._attrs[clave];
-      if (clave.startsWith('data-')) delete n.dataset[clave.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase())];
+      if (clave.startsWith('data-')) reflejarDataset();
     },
     querySelector: (s) => buscar(n, s, reg, true)[0] || null,
     querySelectorAll: (s) => buscar(n, s, reg, false),
@@ -712,6 +772,11 @@ export function nodo(tag, reg) {
     },
     get innerHTML() { return n._html; },
   };
+  // 🔴 SCRUM-1825 · `dataset` sobre `_attrs` (ver `datasetDe`). Propio y enumerable como antes —que
+  // los mensajes de `assert` lo sigan enseñando—, pero de sólo lectura, como en el navegador:
+  // `el.dataset = {…}` lanza `TypeError` en vez de dejar un objeto suelto que ya no es el atributo.
+  const { ds, reflejar: reflejarDataset } = datasetDe(n);
+  Object.defineProperty(n, 'dataset', { value: ds, writable: false, enumerable: true, configurable: false });
   // 🔴 SCRUM-1221 · UN FALLO DEL TEST TIENE QUE VERSE COMO FALLO, no como «la máquina no da».
   // `assert` construye su mensaje inspeccionando el valor con `getters: true` y `depth: 1000`. Los
   // accesores de este nodo (`parentNode`, `children`, `innerHTML`…) devuelven objetos NUEVOS en cada

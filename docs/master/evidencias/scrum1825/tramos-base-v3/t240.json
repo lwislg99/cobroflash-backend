@@ -1,0 +1,36 @@
+{
+ "ficheros": 30,
+ "tandas": [
+  {
+   "desde": 0,
+   "n": 30,
+   "exit": 1,
+   "tests": 195,
+   "pass": 191,
+   "fail": 4,
+   "skipped": 0
+  }
+ ],
+ "tests": 195,
+ "pass": 191,
+ "fail": 4,
+ "skipped": 0,
+ "fallos": [
+  {
+   "nombre": "🔴 delete el.dataset.x quita el atributo: getAttribute, hasAttribute, selector y página",
+   "loc": "\\scrum1825-banco-dataset-es-el-atributo.test.mjs"
+  },
+  {
+   "nombre": "🔴 el.dataset.x = v crea el atributo, con su nombre en guiones",
+   "loc": "\\scrum1825-banco-dataset-es-el-atributo.test.mjs"
+  },
+  {
+   "nombre": "🔴 reescribir por dataset cambia el atributo, y la página sale UNA vez con el valor nuevo",
+   "loc": "\\scrum1825-banco-dataset-es-el-atributo.test.mjs"
+  },
+  {
+   "nombre": "dataset es de sólo lectura, como en el navegador: reasignarlo lanza",
+   "loc": "\\scrum1825-banco-dataset-es-el-atributo.test.mjs"
+  }
+ ]
+}
