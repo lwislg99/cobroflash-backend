@@ -67,4 +67,4 @@ Mutaciones: catálogo → `tests/scrum1429c-dos-envios-dos-cobros.test.mjs`
 
 **No medido (empujado al pasar el tope de 145k del encargo, a 151.811):** la mutación nueva del catálogo (`recordAudit({` → `void ({`) está declarada pero NO la he corrido; tampoco 1532c/1532d, los que nombran `invoiceWhatsApp`, 1415, 1294, 267, 854 ni 719; ni la suite entera; ni una base real; ni yaqu.app. Sí: `npm run build` (tsc con tipos) salida 0 y `npm run guards:entrada`.
 
-A9: aviso → cicatriz J1 «Crucé el tope de 145k del encargo (151.811) sin empujar» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
+A9: aviso → cicatriz J1 «Crucé el tope de 145k del encargo (151.811) sin empujar: me medí al acabar el arranque (119.743) y no otra vez hasta la tanda verde, y la mutación y la dirigida se quedaron sin correr» — no se pudo comprobar: lo impediría un hook que mire el contexto en cada turno, y los hooks no son de este puesto
