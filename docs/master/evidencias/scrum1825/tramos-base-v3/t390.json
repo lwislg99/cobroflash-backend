@@ -1,0 +1,24 @@
+{
+ "ficheros": 30,
+ "tandas": [
+  {
+   "desde": 0,
+   "n": 30,
+   "exit": 1,
+   "tests": 243,
+   "pass": 242,
+   "fail": 1,
+   "skipped": 0
+  }
+ ],
+ "tests": 243,
+ "pass": 242,
+ "fail": 1,
+ "skipped": 0,
+ "fallos": [
+  {
+   "nombre": "SCRUM-836 · 🔴 NINGUNA mutación declarada tiene el ancla caducada",
+   "loc": "\\scrum836-ancla-de-mutacion-viva.test.mjs"
+  }
+ ]
+}

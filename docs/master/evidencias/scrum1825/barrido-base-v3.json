@@ -1,0 +1,195 @@
+{
+ "ficheros": 426,
+ "tandas": [
+  {
+   "desde": 0,
+   "n": 30,
+   "exit": 0,
+   "tests": 234,
+   "pass": 234,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 30,
+   "n": 30,
+   "exit": 0,
+   "tests": 190,
+   "pass": 189,
+   "fail": 0,
+   "skipped": 1
+  },
+  {
+   "desde": 60,
+   "n": 30,
+   "exit": 0,
+   "tests": 189,
+   "pass": 189,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 90,
+   "n": 30,
+   "exit": 0,
+   "tests": 203,
+   "pass": 203,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 120,
+   "n": 30,
+   "exit": 0,
+   "tests": 286,
+   "pass": 282,
+   "fail": 0,
+   "skipped": 4
+  },
+  {
+   "desde": 150,
+   "n": 30,
+   "exit": 0,
+   "tests": 191,
+   "pass": 191,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 180,
+   "n": 30,
+   "exit": 0,
+   "tests": 170,
+   "pass": 170,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 210,
+   "n": 30,
+   "exit": 1,
+   "tests": 206,
+   "pass": 204,
+   "fail": 2,
+   "skipped": 0
+  },
+  {
+   "desde": 240,
+   "n": 30,
+   "exit": 1,
+   "tests": 195,
+   "pass": 191,
+   "fail": 4,
+   "skipped": 0
+  },
+  {
+   "desde": 270,
+   "n": 30,
+   "exit": 0,
+   "tests": 317,
+   "pass": 317,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 300,
+   "n": 30,
+   "exit": 0,
+   "tests": 408,
+   "pass": 408,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 330,
+   "n": 30,
+   "exit": 0,
+   "tests": 308,
+   "pass": 308,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 360,
+   "n": 30,
+   "exit": 1,
+   "tests": 226,
+   "pass": 221,
+   "fail": 1,
+   "skipped": 4
+  },
+  {
+   "desde": 390,
+   "n": 30,
+   "exit": 1,
+   "tests": 243,
+   "pass": 242,
+   "fail": 1,
+   "skipped": 0
+  },
+  {
+   "desde": 420,
+   "n": 6,
+   "exit": 0,
+   "tests": 72,
+   "pass": 72,
+   "fail": 0,
+   "skipped": 0
+  }
+ ],
+ "tests": 3438,
+ "pass": 3421,
+ "fail": 8,
+ "skipped": 9,
+ "fallos": [
+  {
+   "nombre": "SCRUM-1726 · D1 · 🔴 las fechas de la hoja van en la zona del negocio (las 00:30 de Madrid son el 3-oct, no el 2)",
+   "loc": "\\scrum1726-tanda-firmada-j1.test.mjs"
+  },
+  {
+   "nombre": "SCRUM-1726 · D1 · CONTROL: un negocio sin zona guardada sale en UTC (la decisión A de `zonaDelMerchant`)",
+   "loc": "\\scrum1726-tanda-firmada-j1.test.mjs"
+  },
+  {
+   "nombre": "🔴 delete el.dataset.x quita el atributo: getAttribute, hasAttribute, selector y página",
+   "loc": "\\scrum1825-banco-dataset-es-el-atributo.test.mjs"
+  },
+  {
+   "nombre": "🔴 el.dataset.x = v crea el atributo, con su nombre en guiones",
+   "loc": "\\scrum1825-banco-dataset-es-el-atributo.test.mjs"
+  },
+  {
+   "nombre": "🔴 reescribir por dataset cambia el atributo, y la página sale UNA vez con el valor nuevo",
+   "loc": "\\scrum1825-banco-dataset-es-el-atributo.test.mjs"
+  },
+  {
+   "nombre": "dataset es de sólo lectura, como en el navegador: reasignarlo lanza",
+   "loc": "\\scrum1825-banco-dataset-es-el-atributo.test.mjs"
+  },
+  {
+   "nombre": "SCRUM-817 · 🔴 el reorden no pierde NI UNA acción",
+   "loc": "\\scrum817-orden-del-detalle-del-trabajo.test.mjs"
+  },
+  {
+   "nombre": "SCRUM-836 · 🔴 NINGUNA mutación declarada tiene el ancla caducada",
+   "loc": "\\scrum836-ancla-de-mutacion-viva.test.mjs"
+  }
+ ],
+ "origen": [
+  "tramos-base-v3/t000.json",
+  "tramos-base-v3/t030.json",
+  "tramos-base-v3/t060.json",
+  "tramos-base-v3/t090.json",
+  "tramos-base-v3/t120.json",
+  "tramos-base-v3/t150.json",
+  "tramos-base-v3/t180.json",
+  "tramos-base-v3/t210.json",
+  "tramos-base-v3/t240.json",
+  "tramos-base-v3/t270.json",
+  "tramos-base-v3/t300.json",
+  "tramos-base-v3/t330.json",
+  "tramos-base-v3/t360.json",
+  "tramos-base-v3/t390.json",
+  "tramos-base-v3/t420.json"
+ ]
+}

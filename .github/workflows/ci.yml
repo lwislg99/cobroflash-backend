@@ -963,7 +963,11 @@ jobs:
   trinquete-zona:
     name: trinquete · ningún test nuevo mide la zona de la máquina
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # SCRUM-1865 (25-nov-2026): 45 → 60. La pared de cada pasada subió de 15 a 24 min (la regla
+    # escrita en `scripts/_trinquete-de-zona-hijo.mjs`: 1,6 × la pasada más lenta medida, que ese día
+    # era de 15 min). Dos pasadas con la pared entera son 48 min, y con 45 el job moriría sin
+    # veredicto ANTES de que la pared hablara. Quedan ~12 min para el montaje (~4) y la repesca.
+    timeout-minutes: 60
 
     services:
       postgres:
