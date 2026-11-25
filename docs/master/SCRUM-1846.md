@@ -23,9 +23,15 @@ Carril J6 (sin cerradura: `scripts/_hallazgos-y-ciegos.mjs` y los 4 guards tocad
 A9: comprobación → `tests/scrum1846-arranque-sin-dist-sale-2.test.mjs`
 A9: aviso → cicatriz J6 «Corrí `carriles.mjs de` sobre el test nuevo después de escribirlo, con los guards y el helper ya consultados antes: la cuarta de la familia de SCRUM-1218d» — no se pudo comprobar: ningún hook exige la consulta antes de la primera escritura
 
-## TRASPASO (paré a 155k, tope del encargo 160k) — falta
+Mutaciones: catálogo → `tests/scrum1846-arranque-sin-dist-sale-2.test.mjs`
 
-1. Añadir la línea de la cicatriz de arriba a `docs/equipo/cicatrices/J6.md` (o el guard de A9 cae).
-2. `npm run guards:entrada`; correr 237/976/700/1294/267/719 con este registro (854 caía solo por faltar el registro).
-3. Mutaciones del catálogo (`MUTACIONES_QUE_ME_TUMBAN` del test) con `scripts/meta-guard-mutaciones.mjs`: no corridas.
-4. No medido: los 4 guards CON `dist/` (este árbol no lo trae; sin `tsc` aquí). Empujón, comentario en Jira y entrega: no hechos.
+## Lo medido después (misma sesión, tras el traspaso a 155k; el orquestador subió el tope a 230k)
+
+- **Mutaciones** con `correr` + `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, una por proceso: base 3/3 en verde. Quitar `vigilarArranque();` de `guard-vias-de-cobro` → cae el caso 1. Salir con 1 en el helper → caen el 1 y el 3. `git status` limpio después de cada una.
+- **Con `dist/`** (`tsc --noCheck` en este árbol; `node_modules` es enlace al compartido, cliente de Prisma ✔, sin `generate`): los 4 guards, versión de `main` (`git show bdd808ebe…`) frente a la nueva, salida IDÉNTICA. aviso-bizum, firma-con-tramos y vias-de-cobro salen 0; objetivo-tactil sale 2 con 4 ciegos en las dos versiones (es de esta máquina, no de este cambio).
+- **Sin `dist/` de verdad** (`mv dist dist.aparte`, restaurado; 7 entradas antes y después): vias-de-cobro sale 2 con «no llegó a arrancar» y «npm run build». Control: `guard-nombres-no-declarados` (no llega a `dist/`) sale 0 con y sin él, salida idéntica.
+- **Verdes:** 1846, 237, 976, 700, 1294, 267, 854, 719 → 88/88 en TAP, 0 `not ok`. `npm run guards:entrada` 0. `tsc -p .` con tipos 0 (no toca `src/`). No he corrido la suite entera: el encargo la prohíbe.
+
+## Para Luis (S4)
+
+- `scripts/guard-detalle-trabajo-917.mjs` llega a `dist/` por el `require` perezoso de `tests/_banco-vistas.mjs:1357` y sin `dist/` sigue saliendo con 1. El arreglo es una línea: importar `vigilarArranque` de `./_hallazgos-y-ciegos.mjs` y llamarla al principio del cuerpo. Cuando entre, se añade al `GUARDS` del test.
