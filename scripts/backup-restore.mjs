@@ -189,7 +189,7 @@ async function main() {
   // veinte minutos perdidos persiguiendo el error equivocado.
   //
   // Se para ANTES en vez de envolverlo todo en una transacción: una restauración grande en una sola
-  // transacción es un candado larguísimo, y aquí el destino DEBE estar vacío de todas formas (R14
+  // transacción es un candado larguísimo, y aquí el destino DEBE estar vacío de todas formas (R28
   // §2). Fail-closed y con la instrucción dentro del mensaje.
   const ocupadas = [];
   for (const t of Object.keys(tablas)) {
@@ -203,7 +203,7 @@ async function main() {
       + '  No se escribe nada. Restaurar encima mezclaría el backup con lo que ya hay, y los ids\n'
       + '  chocarían a mitad dejando la base peor que antes.\n\n'
       + '  Si vienes de una restauración que falló, la base quedó A MEDIAS: vacíala y vuelve a\n'
-      + '  empezar desde el paso 2 de R14 (`prisma db push` sobre una base limpia).');
+      + '  empezar desde el paso 2 de R28 (`prisma db push` sobre una base limpia).');
     process.exit(1);
   }
 

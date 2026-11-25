@@ -115,7 +115,7 @@ Pro. **Cero copias del proveedor, cero copias propias ejecutándose (0 invocacio
 fuera de la infraestructura.**
 
 ⚠️ **Corregido el 10-ago:** el motivo decía además «ningún camino de restauración», y eso **ya no
-es cierto** — la sesión 4 probó la restauración contra la base desechable y existen §R14 y
+es cierto** — la sesión 4 probó la restauración contra la base desechable y existen §R28 y
 `scripts/backup-restore.mjs`. La cláusula **sigue abierta** por su otra mitad, que no se ha movido:
 **el fichero del que volver no existe**, porque nadie dispara el volcado. Se corrige porque un
 motivo que exagera se descarta entero el día que alguien comprueba una de sus partes.

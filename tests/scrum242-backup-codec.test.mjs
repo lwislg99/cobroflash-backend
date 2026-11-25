@@ -88,7 +88,7 @@ test('SCRUM-242 · el factor de expansión se mantiene ≈1,34× — es el techo
     + '  pasarse, `JSON.stringify` LANZA y el fail-closed no escribe fichero: se deja de tener\n'
     + '  backup, del todo y sin avisar.\n\n'
     + '  Si has cambiado el códec a propósito, mide el techo nuevo y escríbelo en docs/RUNBOOKS.md\n'
-    + '  §R14 antes de tocar este número. Un tope sin número es un tope que nadie vigila.');
+    + '  §R28 antes de tocar este número. Un tope sin número es un tope que nadie vigila.');
 
   // Y el techo, calculado con el factor REAL de esta ejecución. Se afirma que sigue siendo de
   // cientos de MB: si alguien baja el margen de arriba sin querer, esto lo dice en MB de fotos.

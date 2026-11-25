@@ -2735,13 +2735,16 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
         // orquestador, registro SCRUM-1804). Textos: los de `COPY_IVA_10` y `selectorMetodoCobro.js`.
         const conIvaAlDiez = inv.conIvaAlDiez === true;
         let selMetodo = null;
+        let errorMetodo = null;
         // Marcar como PAGADA → PUT /admin/invoices/:id/status. Verificación de importe A21.2:
         // si el importe recibido no cuadra → payment-anomaly y la factura NO se marca pagada.
         const marcarBtn = mkBtn('Marcar como PAGADA', async () => {
           // SCRUM-1804 · sin medio y con línea al 10 %, T3 ANTES de preguntar nada: el servidor lo
           // rechazaría igual, y así no se pregunta un importe que luego no sirve.
           if (conIvaAlDiez && selMetodo && typeof window.metodoElegido === 'function' && !window.metodoElegido(selMetodo)) {
-            setStatus('error', window.COPY_IVA_10.eligeMetodo);
+            // SCRUM-1834 · T3 JUNTO al selector, no en la barra de estado de arriba: a 390 el foco
+            // baja al selector y la barra queda fuera de pantalla (medido en la r42 de SCRUM-1804b).
+            errorMetodo.hidden = false;
             selMetodo.focus();
             return;
           }
@@ -2901,6 +2904,15 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
             if (selMetodo) {
               selMetodo.required = true;
               selMetodo.setAttribute('aria-required', 'true');
+              // SCRUM-1834 · T3 vive aquí, pegado al selector que recibe el foco, igual que T4. Nace
+              // escondido; lo enseña «Marcar como PAGADA» sin medio y lo esconde elegir uno.
+              errorMetodo = document.createElement('p');
+              errorMetodo.className = 'alert error';
+              errorMetodo.id = 'metodo-cobro-inv-' + inv.id + '-error';
+              errorMetodo.setAttribute('role', 'alert');
+              errorMetodo.textContent = window.COPY_IVA_10 ? window.COPY_IVA_10.eligeMetodo : '';
+              errorMetodo.hidden = true;
+              selMetodo.parentNode.appendChild(errorMetodo);
               // T4 al elegir un medio de los que el SERVIDOR sirve con aviso. Un aviso, no un bloqueo.
               const avisoEfectivo = document.createElement('p');
               avisoEfectivo.className = 'alert warning';
@@ -2909,8 +2921,9 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
               avisoEfectivo.textContent = window.COPY_IVA_10 ? window.COPY_IVA_10.avisoEfectivo : '';
               avisoEfectivo.hidden = true;
               selMetodo.parentNode.appendChild(avisoEfectivo);
-              selMetodo.setAttribute('aria-describedby', avisoEfectivo.id);
+              selMetodo.setAttribute('aria-describedby', errorMetodo.id + ' ' + avisoEfectivo.id);
               selMetodo.addEventListener('change', () => {
+                if (window.metodoElegido(selMetodo)) errorMetodo.hidden = true;
                 avisoEfectivo.hidden = !(window.COPY_IVA_10 && typeof window.avisoDeEfectivoVisible === 'function'
                   && window.avisoDeEfectivoVisible(true, window.metodoElegido(selMetodo), inv.metodosConAvisoIvaAlDiez));
               });

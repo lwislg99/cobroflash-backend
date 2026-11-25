@@ -118,3 +118,58 @@ No se suben, y no por el peso: son la ficha de **producción** con la cuenta QA,
 | ③ la BASE del 20-nov al repo, en texto | `evidencias/SCRUM-1798/base-20nov-*.txt` |
 | ③ rutas y resumen de las capturas r42 | este registro, «Las capturas r42» |
 | ④ guard 917 a 0 con 244 antes del push | `evidencias/SCRUM-1798/salida-verde-reanclado-sobre-8e0d40816.txt` |
+
+
+## SCRUM-1798b · el job «guards de navegador (fuera de la tanda)» pasa a OBLIGATORIO (S5, 24-nov)
+
+**Medido contra:** `origin/main` = `db0a6c04541c258eda6499e1088cf16db9f1836b` · 2026-11-24T18:03:18Z
+
+A9: sin fallo que generalice — cambio de configuración del repositorio, con el antes y el después leídos de la API.
+
+**Encargo y señal:** el orquestador, 24-nov: «ADELANTE DADO para el ruleset». Él midió que el run de CI de `main`
+45441410146 terminó en SUCCESS, y su job «guards de navegador (fuera de la tanda)» también (con el 917 re-anclado
+por esta misma ficha y `guard:lista-trabajos` curado por J). Lo he comprobado leyendo los jobs de ese run
+(`gh api …/actions/runs/45441410146/jobs`): los 9 en `success`, y ese entre ellos.
+
+**Antes de tocar, comprobé que el job puede ser obligatorio sin dejar ningún PR atascado.** En
+`.github/workflows/ci.yml`, `guards-visuales` no tiene `if:` ni `needs:` a nivel de job, y el workflow corre en
+todo `pull_request` a `main` sin filtro de rutas. En un PR que solo toca documentación se salta su paso
+(`if: steps.alcance.outputs.solo_docs != 'true'`), pero el job termina igual y da su veredicto. Un check obligatorio
+que en algún PR no apareciera lo dejaría esperando para siempre. Este aparece en todos.
+
+**Qué se ha tocado:** sólo el ruleset `protect-main` (id 18770370), con
+`PUT repos/lwislg99/cobroflash-backend/rulesets/18770370` y un cuerpo que es el de antes más una entrada en
+`required_status_checks`. Se usa el mismo `integration_id` (15368, GitHub Actions) que el obligatorio que ya
+estaba. `strict_required_status_checks_policy` se queda en `false`. Nada más.
+
+**Diferencia, campo a campo** (las dos respuestas aplanadas y comparadas con un script, no a ojo):
+
+| campo | antes | después |
+|---|---|---|
+| `/rules/3/parameters/required_status_checks/1/context` | — | `"guards de navegador (fuera de la tanda)"` |
+| `/rules/3/parameters/required_status_checks/1/integration_id` | — | `15368` |
+| `/updated_at` | `2026-08-10T19:07:43.415+02:00` | `2026-11-24T18:59:10.975+01:00` |
+
+No cambia ningún otro campo.
+
+**ANTES**, literal (`gh api repos/lwislg99/cobroflash-backend/rulesets/18770370`, antes del PUT):
+
+```json
+{"id":18770370,"name":"protect-main","target":"branch","source_type":"Repository","source":"lwislg99/cobroflash-backend","enforcement":"active","conditions":{"ref_name":{"exclude":[],"include":["~DEFAULT_BRANCH"]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"},{"type":"pull_request","parameters":{"required_approving_review_count":0,"dismiss_stale_reviews_on_push":false,"required_reviewers":[],"require_code_owner_review":false,"require_last_push_approval":false,"required_review_thread_resolution":false,"require_extra_approval_for_unattributed_changes":true,"allowed_merge_methods":["squash","merge"]}},{"type":"required_status_checks","parameters":{"strict_required_status_checks_policy":false,"do_not_enforce_on_create":false,"required_status_checks":[{"context":"build + tests (con banco desechable)","integration_id":15368}]}}],"node_id":"RRS_lACqUmVwb3NpdG9yec4_L-k3zgEeacI","created_at":"2026-07-10T13:31:40.477+02:00","updated_at":"2026-08-10T19:07:43.415+02:00","bypass_actors":[],"current_user_can_bypass":"never","_links":{"self":{"href":"https://api.github.com/repos/lwislg99/cobroflash-backend/rulesets/18770370"},"html":{"href":"https://github.com/lwislg99/cobroflash-backend/rules/18770370"}}}
+```
+
+**DESPUÉS**, literal (la misma llamada después del PUT):
+
+```json
+{"id":18770370,"name":"protect-main","target":"branch","source_type":"Repository","source":"lwislg99/cobroflash-backend","enforcement":"active","conditions":{"ref_name":{"exclude":[],"include":["~DEFAULT_BRANCH"]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"},{"type":"pull_request","parameters":{"required_approving_review_count":0,"dismiss_stale_reviews_on_push":false,"required_reviewers":[],"require_code_owner_review":false,"require_last_push_approval":false,"required_review_thread_resolution":false,"require_extra_approval_for_unattributed_changes":true,"allowed_merge_methods":["squash","merge"]}},{"type":"required_status_checks","parameters":{"strict_required_status_checks_policy":false,"do_not_enforce_on_create":false,"required_status_checks":[{"context":"build + tests (con banco desechable)","integration_id":15368},{"context":"guards de navegador (fuera de la tanda)","integration_id":15368}]}}],"node_id":"RRS_lACqUmVwb3NpdG9yec4_L-k3zgEeacI","created_at":"2026-07-10T13:31:40.477+02:00","updated_at":"2026-11-24T18:59:10.975+01:00","bypass_actors":[],"current_user_can_bypass":"never","_links":{"self":{"href":"https://api.github.com/repos/lwislg99/cobroflash-backend/rulesets/18770370"},"html":{"href":"https://github.com/lwislg99/cobroflash-backend/rules/18770370"}}}
+```
+
+**A quién afecta hoy** (`gh pr list --state open`, con el último resultado de ese check en cada PR):
+de 7 PR abiertos, 5 lo tienen en SUCCESS. **#3277** (`scrum-1005d-pestana-documentos`) lo tiene en FAILURE y
+**#2690** (`scrum-962e-censo-tactil-cuatro-averias`) no lo ha corrido nunca. Ninguno de esos dos se puede mergear
+hasta que el job salga verde en su rama. En #2690 hace falta además que corra el CI. No he mirado por qué falla
+en #3277.
+
+**Cómo se deshace:** el mismo PUT con el cuerpo de ANTES (está literal arriba).
+
+**Antes del push:** guards:entrada salió CIEGO por plazo (90,0–90,4 s contra 90 s, CPU al 100 %, 5 intentos sobre esta rama); los 16 ficheros de su lista pasados con node --test sin plazo: 177/177, 0 fallos, 0 saltados. El presupuesto lo juzga el CI obligatorio. Push decidido por el orquestador (DELEGACIÓN c.21978).

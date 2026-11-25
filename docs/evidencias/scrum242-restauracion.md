@@ -7,7 +7,7 @@ jamás un dato real.
 El host y la cadena de conexión **no aparecen aquí**: las salidas pegadas llevan `<host redactado>`
 donde `scripts/_scratch-run.mjs` imprime el destino. Un informe también es un sitio.
 
-Procedimiento: `docs/RUNBOOKS.md` §R14. Análisis y decisiones: `docs/master/SCRUM-242.md`.
+Procedimiento: `docs/RUNBOOKS.md` §R28. Análisis y decisiones: `docs/master/SCRUM-242.md`.
 
 ---
 
@@ -36,7 +36,7 @@ y llevaban ahí desde que existe el script:
    ```
 
    El orden se sacaba de `ORDEN_BORRADO_MERCHANT` invertido —que es lo que decía el borrador de
-   R14—, y esa lista enumera los **hijos** de un merchant: `merchants` no está en ella y caía al
+   R28—, y esa lista enumera los **hijos** de un merchant: `merchants` no está en ella y caía al
    final. Corregido con un **orden topológico derivado del schema**: una tabla va después de todas
    aquellas a las que referencia.
 
@@ -109,7 +109,7 @@ dejaría una restauración que se saltara el `setval`— y el mismo INSERT:
 {"choca": true, "error": "Unique constraint failed on the fields: (`id`)"}
 ```
 
-Es decir: **el paso 4 de R14 no es cosmético.** Sin él la base queda rota en diferido, y el que la
+Es decir: **el paso 4 de R28 no es cosmético.** Sin él la base queda rota en diferido, y el que la
 rompe es el primer usuario que emite. En facturas, un id repetido no se arregla borrando (regla 29).
 
 ---
@@ -160,7 +160,7 @@ exists` — un error que no dice nada de lo que pasa de verdad. Añadida una com
 🔴 EL DESTINO NO ESTÁ VACÍO: merchants (1), customers (1), invoices (4), attachments (1)
   No se escribe nada. […]
   Si vienes de una restauración que falló, la base quedó A MEDIAS: vacíala y vuelve a
-  empezar desde el paso 2 de R14 (`prisma db push` sobre una base limpia).
+  empezar desde el paso 2 de R28 (`prisma db push` sobre una base limpia).
 ```
 
 Lo vigila `tests/scrum242-restauracion-cubre-todos-los-tipos.test.mjs`: **todo tipo escalar del

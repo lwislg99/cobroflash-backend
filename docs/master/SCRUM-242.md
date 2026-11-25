@@ -119,7 +119,7 @@ Ficheros: ninguno. Este ticket **mide**; no construye.
 **10-ago-2026, 12:55 CEST (UTC+0200)** · commit `8034f5a1fc0e68f9a35aeb0c4dc918b978d646a9`
 
 El punto 4 de la lista de arriba —*«escribir el RUNBOOK de restauración y probarlo»*— está hecho.
-Procedimiento: **`docs/RUNBOOKS.md` §R14**. Evidencia: **`docs/evidencias/scrum242-restauracion.md`**.
+Procedimiento: **`docs/RUNBOOKS.md` §R28**. Evidencia: **`docs/evidencias/scrum242-restauracion.md`**.
 
 Se ejecutó contra la base desechable `postgres-scratch`, que no tiene ni tendrá jamás un dato real.
 **Nada contra producción ni staging, ni en lectura.**
@@ -133,7 +133,7 @@ ejecutándolo**. Es exactamente el motivo de haber probado el runbook en vez de 
    con *«column "created_at" is of type timestamp without time zone but expression is of type
    text»*. Corregido con casts **derivados del DMMF**, no escritos a mano: un campo nuevo trae el
    suyo solo.
-2. **El orden de inserción.** El borrador de R14 decía «`ORDEN_BORRADO_MERCHANT` invertido», y al
+2. **El orden de inserción.** El borrador de R28 decía «`ORDEN_BORRADO_MERCHANT` invertido», y al
    ejecutarlo saltó *«insert or update on table "customers" violates foreign key constraint
    "customers_merchant_id_fkey"»*. Esa lista enumera los **hijos** de un merchant: `merchants` no
    está en ella y caía al final. Corregido con **orden topológico derivado del schema**.
@@ -201,7 +201,7 @@ hay es el fichero del que volver.**
 
 > **Nota para el fundador, no la arreglo yo (regla 9):** el comentario de esa cláusula dice también
 > «ningún camino de restauración», y eso **ha dejado de ser cierto** con este commit — hoy existen
-> §R14 y `scripts/backup-restore.mjs`. La cláusula en sí sigue abierta con razón, porque su otra
+> §R28 y `scripts/backup-restore.mjs`. La cláusula en sí sigue abierta con razón, porque su otra
 > mitad («hay copia de seguridad») sigue siendo NINGUNA. Es un comentario del carril de SCRUM-390.
 
 ## Sobre el fichero que rompió SCRUM-273
@@ -212,7 +212,7 @@ entender el error — **un runbook no es una entrada de máster**: se busca con 
 nadie abre `docs/master/`. Su sitio es `docs/RUNBOOKS.md`, junto a los otros trece.
 
 Ficheros: `scripts/backup-restore.mjs` (nuevo) · `scripts/_scratch-run.mjs` (nuevo) ·
-`docs/RUNBOOKS.md` §R14 · `docs/evidencias/scrum242-restauracion.md` (nuevo) ·
+`docs/RUNBOOKS.md` §R28 · `docs/evidencias/scrum242-restauracion.md` (nuevo) ·
 `scripts/backup-dump.mjs` · `tests/scrum242-runbook-no-se-declara-probado.test.mjs`.
 
 ---
@@ -389,11 +389,11 @@ Tres rojos por `$?`.
 
 **Y hay que decirlo claro: 76 fotos siguen siendo pocas** para un año de trabajo. Cuando se acerque,
 las salidas son `pg_dump` (formato físico, sin este límite) o sacar los ficheros de Postgres a R2 —
-que es lo que el propio schema ya contempla («fallback persistente sin R2»). Está escrito en R14 §6.
+que es lo que el propio schema ya contempla («fallback persistente sin R2»). Está escrito en R28 §6.
 
 Ficheros: `scripts/_backup-codec.mjs` (nuevo) · `scripts/backup-dump.mjs` ·
 `scripts/backup-restore.mjs` · `tests/scrum242-backup-codec.test.mjs` (nuevo) ·
-`tests/scrum242-restauracion-cubre-todos-los-tipos.test.mjs` · `docs/RUNBOOKS.md` §R14.6 ·
+`tests/scrum242-restauracion-cubre-todos-los-tipos.test.mjs` · `docs/RUNBOOKS.md` §R28.6 ·
 `docs/evidencias/scrum242-restauracion.md`.
 
 ---

@@ -1,0 +1,58 @@
+⟦arranque⟧ 0.6 s COMPLETA · proceso+ws 0.6 s · primera-página 0.0 s
+
+@390px · 17 interactivos visibles · 8 por debajo de 44 · 0 sin alcanzar
+  CORTO BUTTON.btn-ghost.btn-sm «← Volver a Clientes» · en DIV · caja 30 · toque 30.5
+  ok    A.contacto-link «34000000001» · en SPAN · caja 44 · toque 45
+  ok    A.contacto-link «💬 WhatsApp» · en SPAN · caja 44 · toque 45
+  ok    A.contacto-link «admin@fincassoler.es» · en SPAN · caja 44 · toque 45
+  ok    BUTTON.btn-secondary.btn-sm «✎ Editar» · en c360-cabecera-acciones · caja 44 · toque 44.7
+  ok    BUTTON.btn-secondary.btn-sm «🔗 Portal» · en c360-cabecera-acciones · caja 44 · toque 44.7
+  ok    BUTTON.btn-secondary.btn-sm «📇 Guardar en mis contactos» · en c360-cabecera-acciones · caja 44 · toque 44.7
+  ok    BUTTON.btn-secondary.btn-sm «Fusionar con otro cliente» · en c360-cabecera-acciones · caja 44 · toque 44.7
+  ok    BUTTON.btn-primary.btn-sm «+ Nuevo presupuesto» · en c360-cabecera-acciones · caja 44 · toque 44.7
+  ok    INPUT.input «(sin texto)» · en detail-section · caja 44 · toque 44.9
+  CORTO BUTTON «Presupuestos (1)» · en c360-pestanas · caja 38 · toque 39
+  CORTO BUTTON «Facturas (1)» · en c360-pestanas · caja 38 · toque 39
+  CORTO BUTTON «Trabajos (1)» · en c360-pestanas · caja 38 · toque 39
+  CORTO BUTTON «WhatsApp (1)» · en c360-pestanas · caja 38 · toque 39
+  CORTO BUTTON «Sitios» · en c360-pestanas · caja 38 · toque 39
+  CORTO BUTTON «Notas» · en c360-pestanas · caja 38 · toque 39
+  CORTO BUTTON.btn-ghost.btn-sm «Ver →» · en TD · caja 30 · toque 30.8
+
+@929px · 17 interactivos visibles · 12 por debajo de 44 · 0 sin alcanzar
+  CORTO BUTTON.btn-ghost.btn-sm «← Volver a Clientes» · en DIV · caja 30 · toque 30.5
+  CORTO A.contacto-link «34000000001» · en SPAN · caja 36 · toque 37
+  CORTO A.contacto-link «💬 WhatsApp» · en SPAN · caja 36 · toque 37
+  CORTO A.contacto-link «admin@fincassoler.es» · en SPAN · caja 36 · toque 37
+  ok    BUTTON.btn-secondary.btn-sm «✎ Editar» · en c360-cabecera-acciones · caja 44 · toque 45
+  ok    BUTTON.btn-secondary.btn-sm «🔗 Portal» · en c360-cabecera-acciones · caja 44 · toque 45
+  ok    BUTTON.btn-secondary.btn-sm «📇 Guardar en mis contactos» · en c360-cabecera-acciones · caja 44 · toque 45
+  ok    BUTTON.btn-secondary.btn-sm «Fusionar con otro cliente» · en c360-cabecera-acciones · caja 44 · toque 45
+  ok    BUTTON.btn-primary.btn-sm «+ Nuevo presupuesto» · en c360-cabecera-acciones · caja 44 · toque 45
+  CORTO INPUT.input «(sin texto)» · en detail-section · caja 38 · toque 38.9
+  CORTO BUTTON «Presupuestos (1)» · en c360-pestanas · caja 38 · toque 39
+  CORTO BUTTON «Facturas (1)» · en c360-pestanas · caja 38 · toque 39
+  CORTO BUTTON «Trabajos (1)» · en c360-pestanas · caja 38 · toque 39
+  CORTO BUTTON «WhatsApp (1)» · en c360-pestanas · caja 38 · toque 39
+  CORTO BUTTON «Sitios» · en c360-pestanas · caja 38 · toque 39
+  CORTO BUTTON «Notas» · en c360-pestanas · caja 38 · toque 39
+  CORTO BUTTON.btn-ghost.btn-sm «Ver →» · en TD · caja 30 · toque 30.6
+
+@1280px · 17 interactivos visibles · 12 por debajo de 44 · 0 sin alcanzar
+  CORTO BUTTON.btn-ghost.btn-sm «← Volver a Clientes» · en DIV · caja 30 · toque 30.5
+  CORTO A.contacto-link «34000000001» · en SPAN · caja 36 · toque 37
+  CORTO A.contacto-link «💬 WhatsApp» · en SPAN · caja 36 · toque 37
+  CORTO A.contacto-link «admin@fincassoler.es» · en SPAN · caja 36 · toque 37
+  ok    BUTTON.btn-secondary.btn-sm «✎ Editar» · en c360-cabecera-acciones · caja 44 · toque 45
+  ok    BUTTON.btn-secondary.btn-sm «🔗 Portal» · en c360-cabecera-acciones · caja 44 · toque 45
+  ok    BUTTON.btn-secondary.btn-sm «📇 Guardar en mis contactos» · en c360-cabecera-acciones · caja 44 · toque 45
+  ok    BUTTON.btn-secondary.btn-sm «Fusionar con otro cliente» · en c360-cabecera-acciones · caja 44 · toque 45
+  ok    BUTTON.btn-primary.btn-sm «+ Nuevo presupuesto» · en c360-cabecera-acciones · caja 44 · toque 45
+  CORTO INPUT.input «(sin texto)» · en detail-section · caja 38 · toque 38.9
+  CORTO BUTTON «Presupuestos (1)» · en c360-pestanas · caja 38 · toque 39
+  CORTO BUTTON «Facturas (1)» · en c360-pestanas · caja 38 · toque 39
+  CORTO BUTTON «Trabajos (1)» · en c360-pestanas · caja 38 · toque 39
+  CORTO BUTTON «WhatsApp (1)» · en c360-pestanas · caja 38 · toque 39
+  CORTO BUTTON «Sitios» · en c360-pestanas · caja 38 · toque 39
+  CORTO BUTTON «Notas» · en c360-pestanas · caja 38 · toque 39
+  CORTO BUTTON.btn-ghost.btn-sm «Ver →» · en TD · caja 30 · toque 30.6

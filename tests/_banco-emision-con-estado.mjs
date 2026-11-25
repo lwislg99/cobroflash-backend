@@ -20,6 +20,8 @@
 // ⚠️ HAY QUE IMPORTARLO ANTES de cargar nada de `dist/`: al importarse deja el doble de la base,
 // del PDF y del correo en la caché de `require`. Un `dist/` cargado antes hablaría con Prisma.
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { casa, filaNoEncontrada } from './_where-como-prisma.mjs';
@@ -30,6 +32,18 @@ process.env.WHATSAPP_DRY_RUN = '1';
 const RAIZ = path.resolve(import.meta.dirname, '..');
 export const requiere = createRequire(import.meta.url);
 export const rutaDe = (r) => requiere.resolve(path.join(RAIZ, r));
+
+// 🔴 SCRUM-1838 · EL DISCO DE LOS PDF ES UN TEMPORAL DEL SISTEMA, nunca `<árbol>/storage/invoices`
+// (SCRUM-824: un temporal dentro del repo es un rojo intermitente). `dirs.js` lee
+// `RAILWAY_VOLUME_MOUNT_PATH` AL CARGARSE, así que va aquí, antes de que nada cargue `dist/`. Si
+// `dirs.js` ya estaba cargado, su `invoicesDir` es otro y el doble escribiría donde el código no
+// lee: se para en voz alta en vez de dar un verde que no ha mirado. Se borra al salir el proceso.
+const DIRS = rutaDe('dist/core/storage/dirs.js');
+assert.ok(!requiere.cache[DIRS], '🔴 EL BANCO DE EMISIÓN se ha importado DESPUÉS de cargar `dist/core/storage/dirs.js`: '
+  + 'el disco de los PDF ya no es el suyo. Impórtalo antes de cargar nada de `dist/`.');
+const RAIZ_PDF = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-banco-emision-'));
+process.env.RAILWAY_VOLUME_MOUNT_PATH = RAIZ_PDF;
+process.on('exit', () => { try { fs.rmSync(RAIZ_PDF, { recursive: true, force: true }); } catch { /* el SO lo limpia */ } });
 
 export const M_PT = 4304; // fuera de España: emite factura sin entrar en la cadena (como la sonda de J6)
 export const M_ES = 5304; // España con el flag por merchant: entra en la cadena
@@ -43,6 +57,7 @@ export const banco = {
   tomas: [],           // cada toma del cerrojo de serie, en orden
   alPedirCerrojoDeSerie: null,
   pdf: { fallos: 0, generados: 0 },
+  dirPdf: path.join(RAIZ_PDF, 'invoices'), // SCRUM-1838 · donde `dirs.js` pone `invoicesDir` (temporal, fuera del árbol)
   ajenas: [],          // llamadas a modelos que el banco no gobierna
   escriturasFactura: [], // cada `invoice.update`, en orden: { id, campos } — para contar por EFECTO qué se escribió
 };
@@ -111,12 +126,44 @@ export const POR_DEFECTO = {
   event: () => ({ ts: new Date() }),
 };
 
+/** `include: { rel: { select } }` proyecta la fila relacionada como Prisma; `true`, entera. COPIA siempre. */
+const proyectar = (fila, pedido) => {
+  if (!fila) return null;
+  const sel = pedido && typeof pedido === 'object' ? pedido.select : null;
+  return sel ? Object.fromEntries(Object.keys(sel).filter((k) => sel[k]).map((k) => [k, fila[k]])) : { ...fila };
+};
+
+/**
+ * 🔴 SCRUM-1838 · LAS RELACIONES QUE EL BANCO SABE, POR TABLA. Antes sólo las de `charge`. Desde
+ * SCRUM-665e, `ensureInvoicePdf` relee la factura con `merchant`, `customer` y `rectifies` —sin las
+ * dos primeras lanza `missing_relations`, y el camino de emisión se lo traga con un aviso—, y
+ * SCRUM-1787s tuvo que ponerse un envoltorio local (SCRUM-665g) hasta que el banco lo hiciera.
+ *
+ * Una relación pedida que no está aquí LANZA: un `include` sin modelar daría la fila sin ella y el
+ * test leería «el código no la usa» donde lo que pasa es «el banco no la sabe».
+ */
+const RELACIONES = {
+  charge: {
+    customer: (f, p) => proyectar(banco.tablas.customer.find((c) => c.id === f.customerId), p),
+    merchant: (f, p) => proyectar(banco.tablas.merchant.find((m) => m.id === f.merchantId), p),
+    events: (f, p) => banco.tablas.event.filter((e) => e.chargeId === f.id).map((e) => proyectar(e, p)),
+  },
+  invoice: {
+    merchant: (fac, p) => proyectar(banco.tablas.merchant.find((m) => m.id === fac.merchantId), p),
+    customer: (fac, p) => proyectar(banco.tablas.customer.find((c) => c.id === fac.customerId), p),
+    rectifies: (fac, p) => (fac.rectifiesId == null ? null : proyectar(banco.tablas.invoice.find((i) => i.id === fac.rectifiesId), p)),
+  },
+};
+
 function conRelaciones(tabla, fila, include) {
   const copia = { ...fila };
-  if (tabla !== 'charge' || !include) return copia;
-  if (include.customer) copia.customer = banco.tablas.customer.find((c) => c.id === fila.customerId) ?? null;
-  if (include.merchant) copia.merchant = banco.tablas.merchant.find((m) => m.id === fila.merchantId) ?? null;
-  if (include.events) copia.events = banco.tablas.event.filter((e) => e.chargeId === fila.id).map((e) => ({ ...e }));
+  if (!include) return copia;
+  for (const [rel, pedido] of Object.entries(include)) {
+    if (!pedido) continue;
+    const resolver = RELACIONES[tabla]?.[rel];
+    assert.ok(resolver, `🔴 EL BANCO NO SABE la relación \`${tabla}.${rel}\`. Enséñasela; no la des por buena.`);
+    copia[rel] = resolver(fila, pedido);
+  }
   return copia;
 }
 
@@ -242,10 +289,20 @@ const fPrisma = rutaDe('dist/core/db/prisma.js');
 requiere.cache[fPrisma] = { id: fPrisma, filename: fPrisma, loaded: true, exports: { prisma } };
 for (const [r, exports] of [
   ['dist/lib/pdf.js', {
+    // 🔴 SCRUM-1838 · el doble cumple el contrato de `pdf.service.ts`: ESCRIBE el fichero en
+    // `invoicesDir/<merchantId>-<number>.pdf` y devuelve `outPath`. Antes no escribía nada, y desde
+    // SCRUM-665e la factura lee la huella de ese fichero (`huellaDeFichero`): ENOENT.
     generateInvoicePdf: async (d) => {
       if (banco.pdf.fallos > 0) { banco.pdf.fallos--; throw new Error('pdf_caido_a_proposito'); }
       banco.pdf.generados++;
-      return { publicUrlPath: `/admin/invoices/${d.invoiceId}/pdf` };
+      // Se escribe en `RAIZ_PDF` (un `mkdtemp` de `os.tmpdir()`, a la vista: así lo prueba el censo de
+      // SCRUM-824), no en el `invoicesDir` que diga `dirs.js`. Que los dos coincidan lo exige
+      // `tests/scrum1838-…` ③: si no coinciden, el código leería otro sitio y lo dice ese test.
+      const dirPdf = path.join(RAIZ_PDF, 'invoices');
+      const outPath = path.join(dirPdf, `${d.merchantId}-${d.number}.pdf`);
+      fs.mkdirSync(dirPdf, { recursive: true });
+      fs.writeFileSync(outPath, `%PDF-doble del banco de emisión (SCRUM-1838) · factura ${d.invoiceId}\n`);
+      return { outPath, publicUrlPath: `/admin/invoices/${d.invoiceId}/pdf` };
     },
     generateQuotePdf: async () => ({}),
   }],

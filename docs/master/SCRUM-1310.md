@@ -114,3 +114,16 @@ Depende de #2849 (rama `scrum-1310b-consulta-y-trinquete`, sin mergear al empeza
 - El trinquete: 11 de 11.
 - 237, 976, 824, 836, 419, 702, 700, 719, 1415, 222, 441, 475, 461, 425, 758, 1214, 395, 815, 685b: 201 casos, 196 pasan, 5 caen. Los 5 (222 entero, tres de 475, uno de 836) **caen igual sobre `origin/main` `bcfc99b0d`** en este árbol, que no tiene `dist/` ni CLI de prisma propios: no los decide esta medición, los decide el obligatorio de CI.
 - **Suite entera en local: NO CORRIDA.**
+
+## SCRUM-1310a · Re-medición de las claves ajenas sin DDL (escrito a posteriori en 1839d)
+
+**Medido contra:** `origin/main` = `f23697aa1c7a7b9715ded3be545a50aaa1597706` · 2026-11-25T02:37:06Z
+
+Lo escribe J6 (jv-j6gd) en SCRUM-1839d, por encargo del orquestador del equipo de Javier. No añade medición: el tramo ya existe con una cabecera que la regla de SCRUM-1839 (c.22677) no reconoce, y aquí se APUNTA a él, no se copia.
+
+- **Dónde está:** la cabecera «# SCRUM-1310 · 13 de las 37 claves ajenas de producción…» (hoy la línea 1) y sus secciones Ⓐ a Ⓓ, hasta «## Tramo 1310b».
+- **Qué entró:** el commit `be590d5af7b1074a1276d63ad7b3d1310e7f2e20` (4 ficheros), que crea esa cabecera.
+- **Con qué PR:** #2834, merge `1d1dbd3c8434440704cf026ef049cb5c2a768d6e`.
+- **Qué se midió** (entrega en Jira, SCRUM-1310 c.20753, 2026-10-24T10:51:18Z, J5 · jv-j5ah; no nombra la letra ni el PR): «**37 en 19 tablas**» · «**13 (35 %)**, la misma lista» · «75 ficheros (15 congeladas y 60 de `docs/sql/`), 255.593 B y 33 modelos» · «**sólo 2 de las 37**».
+
+A9: comprobación → `tests/scrum1839-letra-con-tramo.test.mjs`
