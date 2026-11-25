@@ -183,4 +183,6 @@ pasan). La cumplí porque imprimí la base antes de mirar el mutado. Lo arreglé
 ## Lo que NO he medido
 
 - La tanda completa (`npm test`) sobre esta rama. La juzga el CI.
-- Que `guards:entrada` salga 0, porque hoy no sale 0 en ningún árbol (`SCRUM-1340`, de `main`).
+- ~~Que `guards:entrada` salga 0, porque hoy no sale 0 en ningún árbol (`SCRUM-1340`, de `main`).~~ **Medido
+  después**, con `main` curado por #3440 y mezclado en la rama: `✓ 17 guards de entrada en verde (186 tests, 29.0 s
+  de 90)`, exit 0. `tests/scrum976-guards-entrada-con-techo.test.mjs`: 11 de 11, `976 ④` incluido.
