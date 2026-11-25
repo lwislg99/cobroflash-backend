@@ -52,8 +52,16 @@ import fs from 'node:fs'; // SCRUM-193: `leerFuente` LEE, no solo filtra
  * escriben `\/\/`— y distinguir una regex de una división pide un parser de verdad. Y ojo con
  * ese parser: `ts.createScanner` a pelo NO sirve, medido en SCRUM-700 — ve 148 de los 352
  * comentarios de `src/app.ts` porque sin contexto no sabe si un `/` abre regex o divide.
+ *
+ * SCRUM-1851 · EN CSS LA BARRA DOBLE NO ES UN COMENTARIO. Con `barraDobleEsComentario: false` sólo
+ * se quitan los bloques: un `url(https://…)` sin comillas ya no se come la llave que cierra la regla.
+ * Por defecto sigue en `true`, así que JS y TS salen exactamente igual que antes. `leerFuente` lo
+ * decide por la ruta (`barraDobleComenta`); quien filtra un CSS leído a mano lo tiene que pedir.
  */
 export function soloEjecutable(fuente, { almohadillaEsComentario = true } = {}) {
+  // SCRUM-1851 · la opción nueva se lee aquí y no en la firma: `scripts/censo-mudez.mjs` busca esa
+  // firma LITERAL para mutar el filtro (su `FIRMA`), y moverla lo deja CIEGO. Sólo `false` la apaga.
+  const barraDobleEsComentario = arguments[1]?.barraDobleEsComentario !== false;
   const n = fuente.length;
   let out = '';
   let i = 0;
@@ -81,7 +89,7 @@ export function soloEjecutable(fuente, { almohadillaEsComentario = true } = {}) 
     // Un `/` ESCAPADO no abre comentario. Sin esto, un literal de regex que acaba en `\/` —como
     // `/https:\/\//`— junta su última barra escapada con la de cierre y parece un `//`. Medido:
     // era el único de las nueve sondas que fallaba.
-    if (c === '/' && d === '/' && fuente[i - 1] !== '\\') {
+    if (c === '/' && d === '/' && barraDobleEsComentario && fuente[i - 1] !== '\\') {
       while (i < n && fuente[i] !== '\n') i += 1;
       continue;                     // el `\n` se copia en la vuelta siguiente
     }
@@ -121,6 +129,18 @@ export function almohadillaComenta(ruta) {
 }
 
 /**
+ * SCRUM-1851 · ¿la barra doble es un comentario en ESTE tipo de fichero?
+ *
+ * En todos menos en CSS. En CSS el único comentario es el bloque, y la barra doble aparece en
+ * `url(https://…)` sin comillas, que es CSS válido: tratarla como comentario se comía el resto de
+ * la línea, llave incluida, y la regla siguiente quedaba dentro de un cuerpo (medido por jv-j1kt en
+ * SCRUM-1843b: tres reglas sembradas se leían como dos). Sólo `.css`: SCSS y LESS sí la tienen.
+ */
+export function barraDobleComenta(ruta) {
+  return !/\.css$/i.test(ruta);
+}
+
+/**
  * SCRUM-719 · EL CÓDIGO DE UN FUENTE, **CON LA GARANTÍA DE QUE SE HA MIRADO ALGO**.
  *
  * ── EL DEFECTO, MEDIDO EL 4-sep-2026 ────────────────────────────────────────────────────
@@ -154,12 +174,14 @@ export function almohadillaComenta(ruta) {
  * pasos de más. Que llamarlo obligue a decir QUÉ tiene que sobrevivir es el mecanismo, no un
  * requisito de forma.
  */
-export function ejecutableDe(fuente, { ancla, donde, almohadillaEsComentario = true, sinAncla = false } = {}) {
+export function ejecutableDe(fuente, {
+  ancla, donde, almohadillaEsComentario = true, barraDobleEsComentario = true, sinAncla = false,
+} = {}) {
   if (!ancla && !sinAncla) {
     throw new Error('ejecutableDe: falta `ancla`. Sin decir qué tiene que sobrevivir al filtro, '
       + 'esto no da ningún suelo: usa `soloEjecutable` y asume la ceguera, o elige un ancla.');
   }
-  const codigo = soloEjecutable(String(fuente ?? ''), { almohadillaEsComentario });
+  const codigo = soloEjecutable(String(fuente ?? ''), { almohadillaEsComentario, barraDobleEsComentario });
   const anclas = ancla == null ? [] : (Array.isArray(ancla) ? ancla : [ancla]);
   const faltan = anclas.filter((a) => !codigo.includes(a));
   if (faltan.length) {
@@ -196,9 +218,9 @@ export function ejecutablesDe(entradas, { donde } = {}) {
       + 'se ha mirado, y devolverlo como limpieza sería el verde falso que este helper existe '
       + 'para impedir.');
   }
-  const salida = items.map(({ nombre, texto, almohadillaEsComentario = true }) => ({
+  const salida = items.map(({ nombre, texto, almohadillaEsComentario = true, barraDobleEsComentario = true }) => ({
     nombre,
-    codigo: soloEjecutable(String(texto ?? ''), { almohadillaEsComentario }),
+    codigo: soloEjecutable(String(texto ?? ''), { almohadillaEsComentario, barraDobleEsComentario }),
   }));
   const vacios = salida.filter((s) => !s.codigo.trim()).map((s) => s.nombre);
   if (vacios.length) {
@@ -242,6 +264,7 @@ export function leerFuente(ruta, { conComentarios = false, ancla = null } = {}) 
     ancla: ancla || undefined,
     donde: ruta,
     almohadillaEsComentario: almohadillaComenta(ruta),
+    barraDobleEsComentario: barraDobleComenta(ruta),
     sinAncla: !ancla,
   });
 }

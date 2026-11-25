@@ -64,6 +64,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'SCRUM-1429c · dos envíos a la vez de la misma factura: un solo cobro vivo',
   },
   {
+    // SCRUM-1429e: sin la llamada a `recordAudit`, el cobro perdedor se cancela sin su fila `cobro_cancelado`.
+    fichero: 'src/modules/billing/domain/invoiceWhatsApp.service.ts',
+    de: 'recordAudit({',
+    a: 'void ({',
+    cae: 'SCRUM-1429e · el cobro que pierde la carrera deja UNA fila cobro_cancelado',
+  },
+  {
     // Volver a declarar el defecto con el arreglo puesto: cae (la otra mitad del trinquete).
     fichero: 'tests/scrum1429c-dos-envios-dos-cobros.test.mjs',
     de: '  declarado: false,\n  tickets:',
@@ -94,11 +101,15 @@ const facturaBase = {
   customer: { id: CLIENTE, name: 'Cliente de prueba', phone: '34000000001', mobile: null, email: 'cliente@example.invalid' },
 };
 
-/** Dos envíos de la factura 7 (sin cobro), a la vez o uno detrás de otro. Devuelve lo que queda escrito. */
-async function dosEnvios({ aLaVez }) {
+/**
+ * Dos envíos de la factura 7 (sin cobro), a la vez o uno detrás de otro —o uno solo, con `uno`—. Devuelve lo
+ * que queda escrito, y las filas de auditoría (SCRUM-1429e).
+ */
+async function dosEnvios({ aLaVez, uno = false }) {
   const factura = { chargeId: null };
   const cobros = new Map();
   const escrituras = [];
+  const auditorias = [];
   let siguiente = 900;
   let posts = 0;
   const aplicar = (id, data) => { const c = cobros.get(id); if (c && data && data.status) c.status = data.status; return c; };
@@ -115,7 +126,10 @@ async function dosEnvios({ aLaVez }) {
     'charge.findUnique': (args) => { const c = cobros.get(args.where.id); return c ? { ...c, receiptToken: `tok-1429c-${c.id}` } : null; },
     'charge.update': (args) => aplicar(args.where.id, args.data),
     'charge.updateMany': (args) => ({ count: aplicar(args.where.id, args.data) ? 1 : 0 }),
-  }, [SERVICIO, RUTA_COBROS, '../dist/lib/invoicing.js']);
+    'auditLog.create': (args) => { auditorias.push(args.data); return { id: auditorias.length }; },
+    // `audit.service` sale de la caché con el servicio: si no, se queda con el doble de la llamada ANTERIOR
+    // y sus filas caen en otro `auditorias`.
+  }, [SERVICIO, RUTA_COBROS, '../dist/lib/invoicing.js', '../dist/modules/system/audit.service.js']);
   const router = moduloDeDist(RUTA_COBROS).default;
   assert.equal(typeof router, 'function', '🔴 CIEGO: no encuentro el router de /charges');
   routerActual = (req, res, next) => { posts++; return router(req, res, next); };
@@ -126,12 +140,16 @@ async function dosEnvios({ aLaVez }) {
   console.error = () => {};
   console.warn = () => {};
   try {
-    const resultados = aLaVez
-      ? await Promise.all([sendInvoicePaymentRequest(facturaBase.id), sendInvoicePaymentRequest(facturaBase.id)])
-      : [await sendInvoicePaymentRequest(facturaBase.id), await sendInvoicePaymentRequest(facturaBase.id)];
+    const resultados = uno
+      ? [await sendInvoicePaymentRequest(facturaBase.id)]
+      : aLaVez
+        ? await Promise.all([sendInvoicePaymentRequest(facturaBase.id), sendInvoicePaymentRequest(facturaBase.id)])
+        : [await sendInvoicePaymentRequest(facturaBase.id), await sendInvoicePaymentRequest(facturaBase.id)];
+    // `recordAudit` no se espera (fire-safe): una vuelta del bucle para que su `create` llegue al doble.
+    await new Promise((ok) => setImmediate(ok));
     const vivos = [...cobros.values()].filter((c) => c.status !== 'cancelled').map((c) => c.id);
     const cancelados = [...cobros.values()].filter((c) => c.status === 'cancelled').map((c) => c.id);
-    return { posts, creados: [...cobros.keys()], vivos, cancelados, resultados, escrituras, chargeIdFinal: factura.chargeId };
+    return { posts, creados: [...cobros.keys()], vivos, cancelados, resultados, escrituras, auditorias, chargeIdFinal: factura.chargeId };
   } finally {
     console.error = error;
     console.warn = aviso;
@@ -182,6 +200,33 @@ test('SCRUM-1429c · control: uno detrás de otro, el segundo envío reutiliza e
   const m = await dosEnvios({ aLaVez: false });
   assert.equal(clasificar(m), 'UNO', `🔴 sin carrera no sale UN cobro: ${juicio(m, undefined).motivo}`);
   assert.equal(m.posts, 1, '🔴 sin carrera se pidió más de un cobro a /charges');
+});
+
+// SCRUM-1429e (GO c.22630): el cobro que pierde la carrera se cancela CON su fila de auditoría, la misma
+// clave `cobro_cancelado` que `POST /admin/charges/:id/cancel` (SCRUM-1532c).
+const filasCobroCancelado = (m) => m.auditorias.filter((a) => a && a.action === 'cobro_cancelado');
+
+test('SCRUM-1429e · el cobro que pierde la carrera deja UNA fila cobro_cancelado con su chargeId, y el ganador ninguna', async (t) => {
+  const m = await dosEnvios({ aLaVez: true });
+  assert.equal(m.posts, 2, `🔴 CIEGO: no hubo carrera (POST a /charges=${m.posts}); no hay perdedor que auditar`);
+  assert.equal(m.cancelados.length, 1, `🔴 CIEGO: no hay UN cobro perdedor (cancelados [${m.cancelados}])`);
+  const filas = filasCobroCancelado(m);
+  t.diagnostic(`filas cobro_cancelado: ${JSON.stringify(filas)} · perdedor ${m.cancelados[0]} · ganador ${m.vivos[0]}`);
+  assert.equal(filas.length, 1, `🔴 el cobro perdedor ${m.cancelados[0]} se canceló con ${filas.length} filas cobro_cancelado (se espera 1)`);
+  assert.equal(filas[0].entityType, 'charge');
+  assert.equal(filas[0].entityId, m.cancelados[0], '🔴 la fila no lleva el chargeId del perdedor');
+  assert.equal(filas[0].merchantId, MERCHANT, '🔴 la fila no es del comercio de la factura (regla 2)');
+  assert.equal(filas[0].meta?.actor?.tipo, 'sistema', '🔴 la cancelación por carrera no la hace una persona');
+  assert.equal(filas.filter((f) => f.entityId === m.vivos[0]).length, 0, '🔴 el cobro ganador tiene fila cobro_cancelado');
+});
+
+test('SCRUM-1429e · control: un solo envío crea su cobro y no deja ninguna fila cobro_cancelado', async () => {
+  const m = await dosEnvios({ aLaVez: false, uno: true });
+  // Positivo: hubo envío y cobro; sin esto, «cero filas» sería no haber medido.
+  assert.equal(m.posts, 1, `🔴 CIEGO: un envío pidió ${m.posts} cobros a /charges`);
+  assert.equal(m.creados.length, 1, `🔴 CIEGO: un envío creó [${m.creados}]`);
+  assert.equal(m.resultados[0]?.ok, true, `🔴 CIEGO: el envío no salió (${m.resultados[0]?.reason})`);
+  assert.equal(filasCobroCancelado(m).length, 0, `🔴 sin carrera hay filas cobro_cancelado: ${JSON.stringify(filasCobroCancelado(m))}`);
 });
 
 // ── Controles SEMBRADOS: el positivo lo fabrica el propio test, no se toma prestado del árbol ──

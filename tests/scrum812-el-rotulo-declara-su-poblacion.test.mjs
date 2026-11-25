@@ -247,9 +247,16 @@ function tituladosQueDeclaran() {
  * `origin/main` = `3bbce2b4045d2065da480af9c3564843e410e454`): «LA COBERTURA HA SUBIDO a 44 (el suelo
  * decía 43)», con el fichero nuevo en la lista. El obligatorio del PR #3376 (run 45387498344) cayó en
  * este mismo caso; eso lo leyó el orquestador, y la cifra de ese run no la he leído.
+ *
+ * ⬆️ **45** (SCRUM-1846b, 25-nov-2026, J6): entra `scrum1846-arranque-sin-dist-sale-2.test.mjs`, que se
+ * titula guard y declara sus mutaciones. Medido en local con este mismo test sobre la rama
+ * `scrum-1846-arranque-sin-dist-sale-2` (punta `fa029a9ded2263f08c909704155774acb8fd03aa`, que lleva
+ * dentro `origin/main` = `e28f3582ec13e3c6102245a33bab02e4e7fa2370`): «LA COBERTURA HA SUBIDO a 45 (el
+ * suelo decía 44)», con el fichero nuevo en la lista. Es el mismo rojo del obligatorio del PR #3432,
+ * según el orquestador; ese run no lo he leído.
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
-export const SUELO_GUARD_QUE_DECLARAN = 44;
+export const SUELO_GUARD_QUE_DECLARAN = 45;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // ① SUELO · ¿he mirado algo? Un cero de población no es «no hay»: es «no he mirado».
@@ -450,8 +457,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // ④ El trinquete se afloja una unidad: deja hueco para que la cobertura baje sin aviso.
     fichero: 'tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs',
-    de: 'export const SUELO_GUARD_QUE_DECLARAN = 44;',
-    a: 'export const SUELO_GUARD_QUE_DECLARAN = 43;',
+    de: 'export const SUELO_GUARD_QUE_DECLARAN = 45;',
+    a: 'export const SUELO_GUARD_QUE_DECLARAN = 44;',
     cae: 'SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA',
   },
   {

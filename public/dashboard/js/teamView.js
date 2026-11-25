@@ -33,7 +33,7 @@ async function renderTeamView(container) {
 
   // Header card con botón Invitar
   const header = document.createElement('div');
-  header.className = 'customers-card';
+  header.className = 'customers-card equipo-cabecera';
   header.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap';
   header.innerHTML = `
     <div>

@@ -13,6 +13,7 @@ import { canalDeWhatsApp, tieneNumeroDeContacto } from '../../../core/contacto/c
 import { sendWhatsAppWindowFirst } from '../../../integrations/whatsapp';
 import { buildPaymentRequest } from '../../../integrations/whatsappTemplates';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
+import { recordAudit } from '../../system/audit.service'; // SCRUM-1429e
 import { isReceiptNumber, appendStageLabel } from '../../invoicing/domain/invoiceNumber.service';
 import { ensureChargeReceiptToken } from '../../../lib/invoicing';
 import { CreateQuoteSchema } from '../../../core/validation/schemas'; // SCRUM-1787p: el conjunto cerrado de formas de pago
@@ -120,13 +121,36 @@ export async function sendInvoicePaymentRequest(
           where: { id: invoice.id, merchantId: invoice.merchantId },
           select: { chargeId: true },
         });
+        let cancelado = false;
         try {
-          await prisma.charge.updateMany({
+          const r = await prisma.charge.updateMany({
             where: { id: cobroQueLlegoTarde, merchantId: invoice.merchantId, status: 'pending' },
             data: { status: 'cancelled' },
           });
+          cancelado = r.count > 0;
         } catch (e: any) {
           console.error('[invoiceWhatsApp] cobro que llegó tarde sin cancelar:', cobroQueLlegoTarde, e?.message || e);
+        }
+        // SCRUM-1429e · su fila `cobro_cancelado`, la misma forma que `POST /admin/charges/:id/cancel`
+        // (SCRUM-1532c): SÓLO si se canceló de verdad, y fire-safe —el `try` no deja que un fallo del
+        // registro tumbe el envío—. No lo cancela una persona: actor `sistema`, motivo la carrera.
+        if (cancelado) {
+          try {
+            recordAudit({
+              merchantId: invoice.merchantId,
+              teamMemberId: null,
+              action: 'cobro_cancelado',
+              entityType: 'charge',
+              entityId: cobroQueLlegoTarde,
+              meta: {
+                actor: { tipo: 'sistema', ref: 'invoiceWhatsApp:carrera_de_envio' },
+                motivo: 'carrera_de_envio',
+                cobroGanador: ganador?.chargeId ?? null,
+              },
+            });
+          } catch (e: any) {
+            console.error('[invoiceWhatsApp] auditoría cobro_cancelado', cobroQueLlegoTarde, e?.message || e);
+          }
         }
         if (!ganador?.chargeId) return { ok: false, reason: 'charge_creation_failed' };
         chargeId = ganador.chargeId;
