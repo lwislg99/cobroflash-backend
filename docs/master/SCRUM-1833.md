@@ -1,0 +1,120 @@
+# SCRUM-1833a · medición y plan
+
+**Medido contra:** `origin/main` = `f3b96b729d6a223c352f097e01f44fe2d9911982` · 2026-11-25T15:11:02Z
+
+**Escribe:** J2 (`jv-j2fb`) · **Rama:** `scrum-1833-equipos-del-cliente-medicion` · **Carril:** J2, sólo
+`docs/master/` (ni código, ni `prisma/schema.prisma`, ni `src/`, ni `public/`; nada contra ninguna base).
+Pieza 2 de la versión 1.2 (SCRUM-1836). Luis la puso en el carril J2 (SCRUM-1835 c.22778, según el encargo
+del orquestador; ese comentario NO lo he leído). Diseño de partida: `docs/master/SCRUM-914.md` (decisión C,
+criterios 1-6 del ③, tramo 914d y apéndice de S1).
+
+A9: sin fallo que generalice — tramo de sólo medición; lo que no medí va en la última sección, en la misma frase que lo que sí.
+
+**Población.** Leído desde este árbol, que es `origin/main` (`git rev-list --count HEAD..origin/main` = 0).
+Carriles con `node scripts/carriles.mjs de <ruta>`: 30 llamadas = 24 rutas que existen (las 24 con dueño), 5
+con `--nueva` (4 con dueño; la del test la da «al puesto que trabaje el ticket», `docs/equipo/dos-equipos.md:171`)
+y 1 errata mía de ruta («no existe»), re-medida con la buena. De Jira: SÓLO la descripción de SCRUM-1833 y la de SCRUM-1836,
+por orden del encargo; sus comentarios NO.
+
+## 1 · Qué existe
+
+| pieza | medida |
+|---|---|
+| Modelo | `prisma/schema.prisma:1373-1395`, `model Equipment` → tabla `equipments`: `type` y `name` obligatorios; `brand`, `modelName`, `serialNumber`, `installedOn`, `warrantyUntil` (las dos fechas `DATE`) y `customerSiteId` opcionales. FK con RESTRICT sólo a `merchant` y `customer`; `customerSiteId` SIN FK. Leído, no tocado (regla 40). |
+| `equipmentId` en documentos | opcional, sin FK, con índice, en `Job` (:1497), `MaintenancePlan` (:1522), `Albaran` (:1669) y `ParteTrabajo` (:1847). |
+| ALTER | Aplicado en las tres bases según el registro: dev, por catálogo (`docs/MIGRATIONS_PENDING.md:2982`, lote de 7 con 914); staging y producción, por el fundador el 29-sep-2026 con verificación de 23 objetos (`docs/MIGRATIONS_PENDING.md:3056-3066`); y el comentario del esquema (`schema.prisma:1368-1369`) cita SCRUM-914 c.22434. **Las bases no las he mirado** (el encargo lo prohíbe). |
+| `CustomerSite` | Existe (`schema.prisma:1335`). CRUD en `customersAdmin.routes.ts:473-541` (J2) con la lógica en `src/modules/system/domain/sitiosDelCliente.ts` (S1), y pestaña «Sitios» en la ficha (SCRUM-1145). |
+| Los 4 ficheros de `src/` con `equipment` | `borradoMerchant.ts:115` (J3): `'equipment', 'customerSite'` antes de `customer` al borrar un comerciante. `anonimizarMerchant.ts:95` (J3): anonimiza `name` y `serialNumber`. `fusionClientes.ts:196` (S1): al fusionar dos clientes, pasa los equipos al principal. `albaranDuplicado.ts:58` (S1): `equipmentId` viaja al duplicar un albarán. Ninguno crea, edita ni borra un equipo: **0 rutas, 0 pantallas** (`grep -rn -i equipment src/` da esas 4 líneas más 6 de comentario en `borradoMerchant.ts`; el mismo barrido en `public/` da 4 ficheros, los 4 por la palabra `dos-equipos.md` dentro de un comentario). |
+| La ficha del cliente | `customerDetailView.js:944-972` (J2) monta SIETE pestañas con un mismo `makeTab`: Presupuestos (n) · Facturas (n) · Trabajos (n) (si llega el historial) · WhatsApp (n) (si llega) · Sitios (sin número, la lista se pide al abrirla) · Notas (sólo admin) · Documentos (n) (si llega). `renderTab` (:983) pinta cada una dentro de un `data-card`. |
+| Mantenimientos | módulo `src/modules/maintenance/` (S1) con rutas; en `public/dashboard/js/` no hay ninguna vista de mantenimientos por nombre (las 4 que dicen «mantenimiento» no las he leído por dentro). |
+
+**Dos hallazgos de la medición** (ninguno con víctima hoy: no existe ninguna ruta que escriba `customerSiteId`):
+
+1. **Criterio 1 de 914 sin cumplir.** `borrarSitio` (`sitiosDelCliente.ts:69-72`, S1) hace `deleteMany` del sitio
+   y no pone a NULL `equipments.customer_site_id`. El día que un equipo pueda colgar de un sitio, borrar el sitio
+   deja el equipo apuntando a un id que no existe. Es de S1: se declara a Luis (tramo S1-① abajo).
+2. **Comentario caducado en mi carril.** `customerDetailView.js:104-106` dice que «ningún modelo apunta a
+   `CustomerSite`» y que borrar un sitio no alcanza a nada guardado; desde 914d `Equipment.customerSiteId` le
+   apunta. Lo corrige 1833c, que es quien hace verdad el cambio (en este tramo no se toca código).
+
+## 2 · Qué falta, trozo a trozo, con su carril medido
+
+| trozo | dónde iría | carril medido | nota |
+|---|---|---|---|
+| A · rutas CRUD `/admin/customers/:id/equipos` (listar, crear, editar, borrar) | `src/modules/system/app/routes/customersAdmin.routes.ts`, junto a las de Sitios y Documentos | **J2** | mismo patrón que Sitios: `cabeEnColumnaInt`, 404 si el cliente no es del merchant, códigos y no frases (como 1005b). |
+| A · lógica (tenencia, validación, borrado) | `src/modules/system/customerAdmin.ts` | **J2** | un fichero NUEVO en `src/modules/system/domain/` o en `src/modules/system/` sería **S1** (medido con `--nueva`); por eso va en `customerAdmin.ts`, como la lógica de Documentos (1005b). El esquema de zod, ahí mismo: `src/core/validation/schemas.ts` es **S1**. |
+| A · permisos del técnico | `src/core/http/adminRouteDeclarations.ts` | **S1** | cruce declarado de 4 líneas, sólo las de estas rutas, con la decisión de roles del fundador (precedente `147b4749b`, SCRUM-1005b, +3 líneas). |
+| A · criterio 4 (borrar un equipo pone a NULL `equipment_id` en los 4 documentos, en la misma transacción) | `customerAdmin.ts` | **J2** | escribe en filas de `jobs`, `maintenance_plans`, `albaranes` y `partes_trabajo` desde un fichero J2: se declara a Luis en el PR. `equipmentId` no entra en el contenido sellado (criterio 6). `grep -rli trigger docs/sql/` = 0 de 17 ficheros con `CREATE TABLE` (control positivo): ningún disparador lo impediría, al menos ninguno escrito en `docs/sql/`. |
+| A · criterio 2 (el sitio asignado es del mismo cliente y merchant) | `customerAdmin.ts` | **J2** | sólo si el fundador dice ✅ a P3. |
+| B · pestaña «Equipos» en la ficha | `public/dashboard/js/customerDetailView.js` | **J2** | octava pestaña, detrás de «Sitios». Un módulo nuevo en `public/dashboard/js/` sería **S2** (`--nueva`): va dentro de la ficha, como Sitios, Notas y Documentos. |
+| B · estilos | ninguno | — | reusa las clases `sitios-cliente__*`, como ya hace Documentos (`customerDetailView.js:241`). `public/dashboard/css/styles.css` es contenedor de **S2**: si hiciera falta una regla, bloque marcado y declarado. |
+| C · al borrar un sitio, sus equipos a NULL (criterio 1) | `src/modules/system/domain/sitiosDelCliente.ts` | **S1** | **para Luis.** Precondición de que la pestaña deje elegir el sitio. |
+| D · selector de equipo en trabajo, albarán y parte (+ criterio 5 en servidor) | servidor: `src/modules/jobs/domain/job.service.ts`, `albaran.service.ts`, `albaranEdicion.ts` · pantallas: `jobDetailView.js`, `jobNuevoModal.js`, `albaranDesdePresupuestoModal.js`, `parteOficinaView.js` (S2) y `albaranDetailView.js`, `parteDetailView.js` (S4) | **S1 + S2 + S4** | **para Luis.** No se cruza. |
+| E · historial de trabajos por equipo | filtro por `equipmentId` en `src/modules/system/domain/historialDelCliente.ts` (**S1**: ahí vive el recorte del técnico; copiarlo en J2 serían dos anclas para la misma comprobación) + ruta en `customersAdmin.routes.ts` y pintado en la pestaña (**J2**) | **S1 + J2** | sin D, sale siempre vacío. |
+| F · garantía | el campo `warrantyUntil` en el formulario y en la fila de la pestaña | **J2** (dentro de B) | «vencida» como pastilla sería un estado nuevo (regla 5): pregunta P5. |
+| G · mantenimientos ligados al equipo | `src/modules/maintenance/` | **S1** | sin pantalla hoy. Pregunta P2. |
+| Borrado, anonimizado, fusión, duplicado | — | — | hechos (914d + apéndice de S1). |
+
+## 3 · Los textos nuevos que verá el usuario — TODOS a firmar por el fundador (regla 39)
+
+Patrón: la pestaña «Sitios» (`customerDetailView.js:108-131`, SCRUM-1145 c.20592/c.20598) y «Documentos»
+(`:183-194`, SCRUM-1005 c.22192). «Reusa» = el MISMO literal que ya está firmado en esas líneas; aun así va en la
+tabla, porque una firma lo es para su pantalla (A7: que exista en otra no acredita que se firmara para ésta).
+
+| clave | literal PROPUESTO | origen |
+|---|---|---|
+| pestaña | «Equipos» | nuevo · ⚠️ el menú ya dice «Equipo» por tu equipo de trabajo (`public/dashboard/index.html:194`, `teamView.js:40`): alternativa «Instalaciones» (P1) |
+| botón alta | «+ Nuevo equipo» | nuevo, forma de `:111` («+ Nuevo sitio») |
+| vacío | «Todavía no hay equipos guardados para este cliente.» | nuevo, forma de `:112` |
+| campo `type` | «Tipo de equipo» | nuevo |
+| ejemplo de tipo | «Caldera / Aire acondicionado / Cuadro eléctrico» | nuevo, forma de `:115` |
+| campo `name` | «Nombre del equipo» | nuevo, forma de «Nombre del sitio» |
+| ejemplo de nombre | «Caldera de la cocina» | nuevo |
+| campo `brand` | «Marca» | nuevo |
+| campo `modelName` | «Modelo» | nuevo |
+| campo `serialNumber` | «Número de serie» | nuevo |
+| campo `installedOn` | «Fecha de instalación» | nuevo |
+| campo `warrantyUntil` | «Garantía hasta» | nuevo |
+| campo `customerSiteId` (si P3 ✅) | «Sitio» · opción vacía «Sin sitio concreto» | nuevo |
+| fila: garantía | «Garantía hasta {fecha}» | nuevo (P5) |
+| fila: garantía pasada (si P5 ✅) | «Garantía vencida el {fecha}» | nuevo, sería estado |
+| error: faltan obligatorios | «Escribe el tipo y el nombre del equipo.» | nuevo |
+| error al cargar | «No se pudieron cargar los equipos guardados. Inténtalo de nuevo.» | nuevo, forma de `:130` |
+| error genérico | «No se ha podido completar la acción. Vuelve a intentarlo.» | reusa `:131` |
+| Editar · 🗑 Eliminar · Guardar · Cancelar | «Editar» · «🗑 Eliminar» · «Guardar» · «Cancelar» | reusa `:126-129` |
+| confirmación de borrado | «¿Borrar el equipo "{nombre}"? Los trabajos ligados a él lo perderán de su historial. Esta acción no se puede deshacer.» | nuevo, forma de `:194` |
+| historial (tramo E) · título | «Trabajos en este equipo» | nuevo |
+| historial · vacío | «Todavía no hay trabajos ligados a este equipo.» | nuevo |
+| selector en trabajo/albarán/parte (Luis) · rótulo y opción vacía | «Equipo» · «Sin equipo» | nuevo; lo usa S2/S4 |
+
+## 4 · Preguntas ✅/❌ para el fundador (sólo las que cambian el plan)
+
+- **P1 · Nombre de la pestaña.** ✅ «Equipos» (tu palabra en SCRUM-914) · ❌ «Instalaciones» (el menú ya dice «Equipo» por tu equipo de trabajo).
+- **P2 · ¿Mantenimientos entra en la 1.2?** ❌ recomendado: sólo historial + garantía. Hoy no hay pantalla de mantenimientos; meterlo es otra pieza de S1 con su pantalla.
+- **P3 · ¿El equipo puede colgar de un sitio en la 1.2?** ✅ = la pestaña deja elegir el sitio, y antes S1 cierra el criterio 1 (`borrarSitio` suelta los equipos) · ❌ = el equipo cuelga sólo del cliente y `customerSiteId` se queda vacío hasta otra versión (la 1.2 no depende de S1 para la pestaña).
+- **P4 · ¿Quién borra un equipo?** ✅ sólo admin (como Documentos, c.22192: borrar uno lo desliga de su historial) · ❌ cualquiera (como Sitios). Ver, crear y editar: también el técnico en la obra, como Sitios y Documentos.
+- **P5 · ¿La garantía pasada se pinta como estado?** ❌ recomendado: sólo la fecha («Garantía hasta …»), sin pastilla; ✅ = pastilla «Garantía vencida», que es un estado nuevo y pide cambio de master (regla 5).
+- **P6 · ¿El selector de equipo en trabajo, albarán y parte entra en la 1.2?** ✅ recomendado: es de Luis (S1 + S2 + S4); sin él, el historial por equipo sale siempre vacío.
+
+## 5 · Plan por tramos (cada uno de UNA sesión)
+
+| tramo | qué hace | carril | depende de | qué lo prueba |
+|---|---|---|---|---|
+| **1833b** | rutas CRUD + lógica en `customerAdmin.ts` + 4 líneas de permisos (cruce S1 declarado) + criterio 4 (y 2 si P3 ✅) | J2 | P4 contestada. Sin textos: las rutas contestan códigos | test nuevo de 1833b: tenencia (otro merchant → 404), obligatorios (400), borrar desliga los 4 documentos en la misma transacción (rojo primero), permisos por rol; los casos de transacción real contra Postgres desechable, gateados (`LIBRO_PG_URL`) |
+| **1833c** | pestaña «Equipos»: lista al abrirla, alta, edición, borrado con confirmación, garantía como fecha; corrige el comentario de `:104-106`; sin CSS nuevo | J2 | 1833b en `main` + firma de §3 (P1, P5) + P3 | piezas sin DOM de la pestaña (como `HISTORIAL_CLIENTE`) + recorrido de navegador a 390 y 1280 px con el checklist AB6 (vacío, error, carga, textos largos, técnico sin «Eliminar» si P4 ✅) |
+| **S1-①** (para Luis) | `borrarSitio` pone a NULL `customer_site_id` de los equipos, en la misma transacción (criterio 1) | S1 | — | lo decide S1 |
+| **S1/S2/S4-②** (para Luis) | selector de equipo en trabajo, albarán y parte + criterio 5 en servidor | S1 + S2 + S4 | 1833b en `main`, P6 ✅ | lo decide Luis |
+| **1833d** | historial por equipo: S1 añade el filtro por `equipmentId` en `historialDelCliente.ts`; J2, la ruta y su pintado en la pestaña | S1 + J2 | ② en `main` | test de tenencia y del recorte del técnico con el filtro |
+
+**UI (skill `yaqu-premium-ui` cargada antes de este plan).** La pestaña reusa el inventario de AB3 y los tokens
+de `DESIGN.md` sin añadir ninguno: card de contenido (`data-card`), campos con rótulo encima y error en Peligro,
+estado vacío, botones del inventario, objetivos ≥ 44 px, móvil primero. Una pantalla por cambio (la ficha), sin
+rediseño. Si P5 fuera ✅, la pastilla saldría de las de `DESIGN.md` §5 y el estado iría antes al master.
+
+## Lo que NO he medido
+
+- Las bases: el ALTER «aplicado» es lo que dicen el registro y el esquema, no una consulta mía.
+- Los comentarios de SCRUM-1833 y SCRUM-1836, y SCRUM-1835 c.22778 (el carril J2 lo da el encargo).
+- Por dentro, las 4 vistas de `public/dashboard/js/` que dicen «mantenimiento».
+- Si escribir `equipment_id` en un albarán o parte FIRMADO choca con algún test que vigile esas filas: lo mide
+  1833b en rojo primero (en `docs/sql/` no hay disparadores).
