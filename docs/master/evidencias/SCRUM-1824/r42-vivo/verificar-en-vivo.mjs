@@ -240,11 +240,23 @@ try {
   };
 
   /** Dicta, ordena (el servidor de verdad) y deja la propuesta en pantalla. Devuelve lo PROPUESTO, leído de la pantalla. */
+  const cantidadesPuestasAMano = [];
+  informe.cantidadesPuestasAMano = cantidadesPuestasAMano;
   const dictarYOrdenar = async () => {
     propuestaDelServidor = null;
     await pulsar('el cuadro del dictado', elDe, '#parte-dictado');
     await page.keyboard.type(DICTADO);
     await pulsar('«Ordenar en líneas»', elDe, '[data-dictado-ordenar]');
+    // Lo que hace el técnico al ver el aviso de su línea: a la que vino SIN cantidad le pone «1».
+    // Una línea propuesta sin cantidad no se confirma (`lineasConfirmadas`, por diseño), y eso pasa
+    // igual sin carrera: sin este paso el guion mediría esa regla, no la de SCRUM-1824.
+    const propuesto = (await foto()).propuesta;
+    for (let i = 0; i < propuesto.length; i++) {
+      if (String(propuesto[i].unds || '') !== '') continue;
+      await pulsar('la cantidad vacía de la línea propuesta ' + (i + 1), (n) => document.querySelectorAll('[data-propuesta-unds="1"]')[n], i, false);
+      await page.keyboard.type('1');
+      cantidadesPuestasAMano.push(`${propuesto[i].bloque} · ${propuesto[i].descripcion}`);
+    }
     const f = await foto();
     const sinColocar = f.propuesta.filter((p) => p.bloque !== 'mano_obra' && p.bloque !== 'materiales');
     if (!f.propuesta.length || f.confirmar !== 'libre' || sinColocar.length) {
