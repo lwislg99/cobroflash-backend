@@ -166,3 +166,6 @@ test('SCRUM-1866 · ninguna cifra BAJA sin recongelar la tabla en el mismo PR', 
   assert.fail(`✅ BAJA, que es la dirección buena, pero la tabla no lo sabe:\n    ${bajadas.map(comoLinea).join('\n    ')}\n`
     + `    Recongélala en ESTE PR: cp '${propuesta}' ${CONGELADA}  (${POBLACION})`);
 });
+
+// CIEGO sale con 2, no con el 1 de un rojo: node:test pone 1 al acabar si algo cae, así que se fija al salir.
+process.on('exit', () => { if (ciego.length) process.exitCode = 2; });
