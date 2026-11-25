@@ -2,6 +2,8 @@
 
 **Medido contra:** `origin/main` = `e28f3582ec13e3c6102245a33bab02e4e7fa2370` · 2026-11-25T03:17:29Z
 
+**Skill UI:** cargada (`yaqu-premium-ui`, antes de escribir el CSS y después de escribir el test)
+
 Carril J3 (sesión jv-j3de): `settingsView.js` y `plansView.js` son de J3; la cura es un bloque marcado
 `/* J3: SCRUM-1848 … */` en `styles.css` (contenedor de S2), sin tocar JS, texto ni clases globales.
 Nace de la lista J del censo SCRUM-1845 (`docs/master/SCRUM-1845.md` en la rama
@@ -59,6 +61,7 @@ cobertura (fuera de alcance).
 
 - En `yaqu.app`: nada (la medida es del banco de vistas servido en local con las hojas del índice).
 - Ajustes con otros datos (otro plan, sin referidos): solo los del censo más un mes gratis.
-- **Skill UI:** `yaqu-premium-ui` cargada antes de escribir el CSS, después de escribir el test.
+- La suite entera: no se corrió (orden del encargo). Corridos: este test, 237, 976, 700, 1294, 267, 854,
+  719 y `npm run guards:entrada`.
 
 A9: sin fallo que generalice — el único tropiezo fue leer en Jira los tres comentarios de SCRUM-1845 cuando el encargo pedía solo c.22728, y es de cómo pide una sesión a Jira, sin rastro en el árbol; se lo dije al orquestador en el momento.
