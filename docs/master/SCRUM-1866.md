@@ -40,7 +40,16 @@ Dos sondas que cuadran: los 30 son los 42 «vivos» de 1756g menos las 12 vistas
 
 **Tiempo:** el censo tarda ~1,3–1,7 s y el fichero entero ~3 s en primer plano. No hace falta prefiltrar con `git grep -l` (el umbral era 60 s).
 
-**Verdes antes del empujón:** en la entrega y en el comentario de Jira, con su población.
+**Verdes antes del empujón** (rama sobre `bdba2afe7`; no toca `src/`, así que no hay build):
+- 267 · 824 · 1294 · 1866 → 32/32;
+- 976 · 854 · 237 · 700 · 419 · 719 → 75/75, 0 saltos;
+- 700 no pasa su tope de 91; la cifra exacta no la imprimí;
+- `censo:mudez -- --escribir`: la ficha no cambia;
+- `guards:entrada`: salida 0 (17 guards, 186 casos).
+
+**Dos rojos míos, arreglados antes de empujar:**
+- 267: el ancla iba tras `# SCRUM-1866` y no tras el tramo;
+- 824: la escritura de la propuesta no colgaba a la vista del `mkdtempSync`.
 
 **NO medido:**
 - el obligatorio de CI;
