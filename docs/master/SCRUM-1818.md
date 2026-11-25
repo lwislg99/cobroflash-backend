@@ -78,3 +78,20 @@ El guion de los mutantes no se queda en git. Vivía en el temporal de la sesión
 - No toca Stripe, ni el cobro, ni `planExpiresAt`, ni el esquema.
 - No lo he verificado en yaqu.app: la ruta no tiene llamante hasta que entre la pieza de S2, y la verificación en producción va con esa pieza.
 - `docs/RUNBOOKS.md:940` sigue describiendo cómo comprobar `plan = equipo` leyendo `platform-funnel`. Eso sigue siendo cierto y no lo he tocado.
+
+## SCRUM-1818 · relevo de mañana: se empuja lo que dejó la S1 de anoche (25-nov-2026)
+
+**Medido contra:** `origin/main` = `77c000deadc9fa6b80ae97b6b02752e18b2c9392` · 2026-11-25T07:59:49Z
+A9: sin fallo que generalice — el trabajo de anoche estaba commiteado y completo; sólo faltaba empujarlo, y eso lo cortó el límite de uso, no un error del método.
+
+Puesto S1, relevo (la S1 de anoche murió por límite de uso). Forense del árbol `.claude/worktrees/s1-1818-plan`: rama `scrum-1818-activar-plan-servidor`, tres commits encima de `main` (`35594b0fa`, el merge `7bb77f411` y `c875d8462`), `git status --short` vacío, y en `origin` ninguna rama `scrum-1818*` (`git ls-remote --heads`). O sea, todo estaba commiteado y nada empujado.
+
+Lo he revisado contra el diseño de SCRUM-1656 c.22694 y se queda tal cual: la puerta espejo de `platform-funnel`, la clave exacta de `PLANES_CONOCIDOS` sin `trim`, 400 `plan_desconocido` con la lista, 404, el `update` sólo de `{ plan }` y el log sin correos. Lo único que no se hace como lo decía el encargo es la entrada en `adminRouteDeclarations.ts`, y el tramo de arriba explica por qué: ese fichero declara lo que el OPERARIO conserva (`TECNICO_ALLOWED`) y lo pendiente (`PENDIENTE_CLASIFICAR`, con tope 0). Una ruta sólo-admin queda declarada con su `requireRole('admin')`, igual que `platform-funnel`, que tampoco tiene entrada. La mutación M1 lo demuestra: sin el `requireRole`, la red de SCRUM-55 cae sola y nombra la ruta.
+
+**Lo que he hecho hoy:** fusionar `origin/main` (merge, no rebase), `npm run build` y volver a correr. El test de la pieza, junto a `scrum55`, `scrum158`, `scrum168`, `scrum1338`, `scrum128` y los tres guards de siembra que tumbaron el PR #3417 esta noche (`scrum262`, `scrum409` y `scrum1415`): 74 de 74, 0 fallos, 0 saltos. Después, la tanda entera en local (`node --test "tests/*.test.mjs"`, TAP a fichero fuera del árbol): 14.519 tests, 14.329 pass, **5 fail** y 185 skipped. Ninguno de los cinco toca este diff:
+
+| test | por qué cae aquí |
+|---|---|
+| `scrum811c` · SCRUM-1340 y `scrum976` ④ | el rojo que ya tiene `main` en `77c000d` (CI run `45548131902`): el merge #3438 sin `**Skill UI:**` en SCRUM-1852.md. Lo cura el orquestador en `scrum-1852b-skill-ui` |
+| `scrum1726` D1, los dos casos | el formato de fecha del ICU del Node de esta máquina (`3 de octubre de 2026, 0:30`, cuando lo esperado es `… a las 0:30`). En el CI de `main` sale verde |
+| `scrum351` control negativo | 29 `node_modules` de OTROS árboles de esta máquina son enlaces rotos (`ENOENT`), los que quedaron al liberar disco el 24-nov. Es la máquina, no el repo; en CI sale verde |
