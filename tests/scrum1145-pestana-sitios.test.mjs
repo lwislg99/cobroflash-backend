@@ -15,14 +15,13 @@
 // (registro: docs/microcopy/2026-10-23-SCRUM-1145-sitios-del-cliente.md).
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 import { constaAprobado } from './_microcopy-aprobada.mjs';
-import { ejecutableDe } from './_guard-texto.mjs';
+import { leerFuente } from './_guard-texto.mjs';
 import { parseBDSegura } from '../scripts/_db-guard.mjs';
 import { withMerchant } from './_merchant-fixture.mjs';
 
@@ -271,9 +270,9 @@ test('SCRUM-1145 · la fila de pestañas PARTE LÍNEA: con cinco no cabe a 390 (
   const f = await montarFicha();
   const fila = f.pestana()._padre;
   assert.ok(fila.classList.contains('c360-pestanas'), '🔴 la fila de pestañas perdió su clase: la regla de abajo ya no le llega');
-  // El quitacomentarios de la casa (SCRUM-700) con suelo (SCRUM-1395); en CSS `#` es un selector.
-  const css = ejecutableDe(fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8'),
-    { ancla: '.c360-pestanas', donde: 'styles.css', almohadillaEsComentario: false });
+  // El quitacomentarios de la casa (SCRUM-700) con suelo (SCRUM-1395). SCRUM-1853: por su RUTA, para que
+  // decida por la extensión: en CSS ni `#` (un selector) ni `//` (un `url(https://…)`) comentan.
+  const css = leerFuente(path.join(RAIZ, 'public/dashboard/css/styles.css'), { ancla: '.c360-pestanas' });
   assert.match(css, /\.c360-pestanas\s*\{[^}]*flex-wrap:\s*wrap/, '🔴 sin `flex-wrap: wrap` la quinta pestaña queda fuera de la pantalla en el móvil');
 });
 
