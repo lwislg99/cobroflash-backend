@@ -53,7 +53,7 @@ El banco de vistas monta el editor de verdad, lee lo que pinta y captura el cuer
 
 **Rojo primero:** sobre los tres ficheros de `origin/main`, 1 de 8. El que pasa es el control. Con el cambio, 8 de 8.
 
-**Mutaciones** (`correr` + `aplicarUna`, base limpia 8 / 0 / 0): **6 de 6 CAEN**. Son: sin el despacho de `addLine` · la cabecera sale del POST · «Varios» se cambia por la lista de tipos · el total no suma · el borrador pierde el modo · `agrupado` no viaja.
+**Mutaciones** (`correr` + `aplicarUna`, base limpia 8 / 0 / 0): **6 de 6 CAEN** sobre `main`, y 7 de 7 con la pila (abajo). Son: sin el despacho de `addLine` · la cabecera sale del POST · «Varios» se cambia por la lista de tipos · el total no suma · el borrador pierde el modo · `agrupado` no viaja.
 
 ### Vecinos (tanda dirigida: 203 ficheros que nombran el editor, la pieza o la hoja)
 
@@ -69,7 +69,8 @@ Después, los cinco ficheros y el nuevo, en verde. 🔴 La tanda dirigida corri�
 ### Lo que NO hace, y queda declarado
 
 - **La vista previa** («Así lo verá el cliente») no pinta los apartados: sigue enseñando las líneas que cobran. Sería un quinto sitio que agrupa (PDF, firma, portal, editor) y no está en este tramo.
-- **La puerta del servidor** conserva `agrupado` desde el tramo d de S1 (#3446, aún OPEN a las 14:30Z). Sin él, `z.object` borra la clave en silencio. El test mide la mitad del front: que el cuerpo la lleve.
+- **APILADA sobre el tramo d de S1** (`scrum-1807-apartados-s1`, #3446, OPEN a las 14:50Z). Lo decidió el orquestador: empujar sobre `main` habría abierto una ventana en la que se elige «Agrupado» y la puerta lo borra en silencio. Con la pila, el test cierra el viaje entero, porque el cuerpo del POST pasa por `CreateQuoteSchema` (el `dist/` de la rama) y conserva `[true, false]`. Por eso hay una 7.ª mutación, la de S1 («la puerta deja de declarar `agrupado`»), y también CAE: **7 de 7**. El registro de S1 y éste se juntaron sin conflicto. Con la pila, verdes también `scrum1807c/d/g` y `scrum619`.
+- **Stash e3d8e53c** («s2-1807e-rojo-primero-versiones-de-main»): es la copia de recuperación del rojo-primero, con las versiones de `main` de los tres ficheros. Se queda hasta que 1807 se cierre, y entonces se tira (por decisión del orquestador, la misma política que con los de 1825).
 - **En móvil, «Varios» va solo.** Sin la palabra «IVA» delante, como sí la lleva el chip de una línea («IVA 10 %»). Ponérsela sería texto nuevo, así que lo dejo como observación para el fundador.
 - No se ha visto en yaqu.app con la rama en `main`: eso es la r42, después del merge.
 # SCRUM-1807 · apartados del presupuesto: la parte de S1 (tramos c, d y g)

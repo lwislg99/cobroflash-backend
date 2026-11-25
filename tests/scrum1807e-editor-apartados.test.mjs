@@ -67,6 +67,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: '',
     cae: '«Generar» manda las cabeceras, en su sitio, con su modo y su descripción',
   },
+  {
+    // La otra mitad del viaje: la puerta del servidor (tramo d de S1) deja de conservar la clave.
+    fichero: 'src/core/validation/schemas.ts',
+    de: '  agrupado: z.boolean().optional(),',
+    a: '',
+    cae: '«Generar» manda las cabeceras, en su sitio, con su modo y su descripción',
+  },
 ];
 
 const MID = 7;
@@ -214,6 +221,13 @@ test('SCRUM-1807e · 🔴 «Generar» manda las cabeceras, en su sitio, con su m
     { cab: 'Cocina', agrupado: false, description: null },
     { linea: 'Grifo' },
   ], '🔴 el cuerpo del POST pierde las cabeceras, su sitio o su modo');
+  // Y la PUERTA del servidor lo conserva (tramo d de S1, SCRUM-1807d): sin eso, el modo elegido aquí
+  // se borraría en silencio al guardar.
+  const { CreateQuoteSchema } = require(path.join(RAIZ, 'dist/core/validation/schemas.js'));
+  const leido = CreateQuoteSchema.safeParse(post);
+  assert.ok(leido.success, `🔴 el servidor rechaza el cuerpo del editor: ${leido.error && leido.error.message}`);
+  assert.deepEqual(leido.data.lines.filter((l) => l.apartado === true).map((l) => l.agrupado === true), [true, false],
+    '🔴 la puerta del servidor pierde `agrupado`: el modo elegido no se guardaría');
   // La cabecera no lleva importes: la puerta del servidor rechaza una con `qty`/`price` (SCRUM-655).
   for (const l of post.lines.filter((x) => x.apartado === true)) {
     assert.equal(l.qty, undefined);
