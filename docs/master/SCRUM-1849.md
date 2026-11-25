@@ -2,7 +2,9 @@
 
 **Medido contra:** `origin/main` = `9c4ea478777694eb68b731d02773311343b3e01f` · 2026-11-25T03:17:44Z
 
-A9: aviso → cicatriz J1 «Crucé los 200k (202.793) sin medirme entre Jira (132.763) y el primer rojo» — no se pudo comprobar: medirse tras cada tanda no lo ve ningún guard
+**Skill UI:** cargada
+
+A9: aviso → cicatriz J1 «Crucé los 200k (202.793) sin medirme entre Jira (132.763) y el primer rojo; avisó el hook del orquestador, y cargué la skill `yaqu-premium-ui` después del Edit del CSS, no antes (SCRUM-1849, jv-j1ku)» — no se pudo comprobar: medirse tras cada tanda no lo ve ningún guard
 
 **Qué (J1, AB6):** la lista de Facturas (`public/dashboard/js/invoicesView.js`) a 44 px de toque, por contenedor, en un bloque J1 NUEVO de `styles.css` (`/* J1: SCRUM-1849 … */`, tras el de 1756j; lejos del de 1843, PR #3426). Sólo tamaño: sin JS, sin texto, sin tocar `.input`, `.btn-primary` ni `.btn-sm` globales. Ancla: la tarjeta que contiene `.j1-fac-lista` (`:has`), clase que sólo escribe esta lista. Especificidad (0,4,0) o más: gana a `.btn.btn-sm` (0,2,0).
 
