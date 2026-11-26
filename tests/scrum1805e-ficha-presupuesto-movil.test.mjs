@@ -137,7 +137,10 @@ test('SCRUM-1805e · ② a ≤640 px la tabla se apila: cabecera fuera, cuatro c
   const cuerpoDe = (sel) => movil.filter((r) => r.selectores.includes(sel)).map((r) => r.cuerpo).join(';');
   assert.match(cuerpoDe(`.${CLASE} thead`), /display:none/, '🔴 en móvil la cabecera se oculta: cada celda lleva su rótulo');
   assert.match(cuerpoDe(`.${CLASE} tbody tr`), /display:grid/, '🔴 cada línea es una rejilla, no una fila que scrollea');
-  assert.match(cuerpoDe(`.${CLASE} tbody tr`), /grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/, '🔴 Cant., Precio, IVA y Total, en cuatro columnas que no desbordan');
+  // Cuatro columnas; Precio y Total no bajan de su contenido (AB6: «12.099,99 €» partía el «€» con 4 × 1fr).
+  assert.match(cuerpoDe(`.${CLASE} tbody tr`), /grid-template-columns:minmax\(0,\.6fr\)minmax\(min-content,1fr\)minmax\(0,\.6fr\)minmax\(min-content,1\.2fr\)/, '🔴 Cant., Precio, IVA y Total, en cuatro columnas, con los importes a su ancho');
+  assert.match(cuerpoDe(`.${CLASE} tbody td:nth-child(3)`), /white-space:nowrap/, '🔴 el precio se parte en dos renglones');
+  assert.match(cuerpoDe(`.${CLASE} tbody td:nth-child(5)`), /white-space:nowrap/, '🔴 el total se parte en dos renglones');
   assert.match(cuerpoDe(`.${CLASE} tbody td`), /white-space:normal/, '🔴 sin el `nowrap` global de móvil, que ensancha la tabla');
   assert.match(cuerpoDe(`.${CLASE} tbody td:first-child`), /grid-column:1\/-1/, '🔴 el concepto ocupa todo el ancho');
   assert.match(cuerpoDe(`.${CLASE} tbody td[data-label]::before`), /content:attr\(data-label\)/, '🔴 el rótulo sale del data-label, no de un texto escrito en el CSS');
