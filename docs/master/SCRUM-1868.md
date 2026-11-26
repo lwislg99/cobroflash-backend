@@ -59,4 +59,4 @@ Mutaciones: catálogo → `tests/scrum1868b-borrar-cliente-pantalla.test.mjs`
 
 **NO hecho:** la suite entera (la corre el CI de #3472, por orden del orquestador) · el recorrido de navegador a 390 y 1280 con AB6 (otro relevo, o en staging tras el merge, patrón 1833e) · el meta-guard de mutaciones · la pregunta ② (`Charge` con cliente y sin factura) · nada en staging, producción ni yaqu.app. Contexto: 102k tras el arranque, 110k tras Jira y 158k tras editar el test, sin medida en medio (la línea de 1868a, repetida).
 
-A9: aviso → cicatriz J2 «edité la tabla de textos de `customerDetailView.js` (la fila de c.22867) sin cargar antes la skill `yaqu-premium-ui`» — no se pudo comprobar: ningún hook ve qué skill se cargó antes de un Edit
+A9: aviso → cicatriz J2 «edité la tabla de textos de `customerDetailView.js` (la fila de c.22867) sin cargar antes la skill `yaqu-premium-ui`; es la segunda línea de J2 con lo mismo (SCRUM-1868b)» — no se pudo comprobar: ningún hook ve qué skill se cargó antes de un Edit
