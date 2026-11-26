@@ -239,7 +239,8 @@ test('SCRUM-286 · ROJO: quitar un bloque entero cae nombrando SUS campos', () =
     // SCRUM-915d · los tres cuelgan ahora de sus filas del paso Condiciones (que cuelgan del bloque).
     .replace('    filaCobroDetalle.appendChild(fieldPaymentTerms.wrapper);', '')
     .replace('    filaCobroDetalle.appendChild(stagesWrapper);', '')
-    .replace('    filaValidezDetalle.appendChild(validWrapper);', '');
+    // SCRUM-1805 ① (c.22325 ②) · la caducidad lleva ahora su guarda: en la factura esa fila es «Vence el».
+    .replace('    if (!esDocumentoSuelto) filaValidezDetalle.appendChild(validWrapper);', '');
   assert.notEqual(mutada, FUENTE, 'la mutación no se aplicó');
   const r = revisarAsignacionDeBloques(mutada, 'quotesView.js');
   assert.deepEqual(r.sinControlEnPantalla, [
@@ -279,8 +280,9 @@ test('SCRUM-286 · NEGATIVO: reordenar DENTRO de un bloque no es un campo perdid
   // Mover un control dentro de su propio bloque es una decisión de diseño legítima; sólo cambia
   // de bloque lo que este guard vigila. Si tumbara esto, nadie podría volver a tocar el orden
   // interno sin pelearse con el test.
-  const r = mutar('    filaValidezDetalle.appendChild(validWrapper);',
-    '    filaValidezDetalle.appendChild(validWrapper); // mismo bloque, otro sitio');
+  // SCRUM-1805 ① (c.22325 ②) · literal con la guarda que la caducidad lleva desde 1805.
+  const r = mutar('    if (!esDocumentoSuelto) filaValidezDetalle.appendChild(validWrapper);',
+    '    if (!esDocumentoSuelto) filaValidezDetalle.appendChild(validWrapper); // mismo bloque, otro sitio');
   assert.deepEqual([r.dejaronDeViajar, r.enElBloqueEquivocado], [[], []]);
 });
 

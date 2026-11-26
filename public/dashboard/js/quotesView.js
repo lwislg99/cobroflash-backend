@@ -5534,11 +5534,11 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
       if (p.resumen) p.resumen.textContent = hecho ? p.texto() : "";
     });
 
-    // Lo elegido en cada fila de Condiciones, en su propia fila. SÓLO en el presupuesto: el
-    // documento suelto no cuelga Condiciones, y calcular aquí sus textos sería hacer pasar por su
-    // flujo rótulos que dicen «presupuesto» (lo vigila el censo de SCRUM-601). Lo único que el
-    // justificante resume es su propia fila de Ajustes (SCRUM-915g), y «IVA por defecto N %» no
-    // dice «presupuesto».
+    // Lo elegido en cada fila de Condiciones, en su propia fila. Cada modo pinta SÓLO sus filas: el
+    // documento suelto no cuelga el plan de cobro ni la caducidad, y calcular aquí sus textos sería
+    // hacer pasar por su flujo rótulos que dicen «presupuesto» (lo vigila el censo de SCRUM-601).
+    // Desde SCRUM-1805 ① la factura resume sus formas de pago, su «Vence el» y su fila de Ajustes
+    // (SCRUM-915g); ninguno de los tres dice «presupuesto».
     if (esDocumentoSuelto) {
       const ivaPorDefecto = fieldVatDefault.input.value;
       // SCRUM-1636 ① · el valor del selector es «7.5»: se pinta «7,5» (`fmtTipoIvaEs`, SCRUM-1608).

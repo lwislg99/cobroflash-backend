@@ -215,7 +215,10 @@ export function censarInsercionesDelSuelto(fuente, ruta = RUTA_PANTALLA) {
         // justo lo que este fichero no puede permitirse.
         const excluido = opaca || guardas.some((g) =>
           (g.forma === 'solo-presupuesto' && !g.enElse) || (g.forma === 'solo-suelto' && g.enElse));
-        inserciones.push({ padre, hijo, linea, excluido, opaca, guardas });
+        // SCRUM-1805 ① · y la simétrica: la arista que NO llega al presupuesto (guarda `esDocumentoSuelto`).
+        const excluidoEnPresupuesto = opaca || guardas.some((g) =>
+          (g.forma === 'solo-suelto' && !g.enElse) || (g.forma === 'solo-presupuesto' && g.enElse));
+        inserciones.push({ padre, hijo, linea, excluido, excluidoEnPresupuesto, opaca, guardas });
       }
     }
     n.forEachChild(recorrer);
@@ -304,6 +307,31 @@ export const NO_SON_CAMPOS = {
   filaValidez: 'fila plegable de la validez', filaValidezCab: 'cabecera de la fila',
   filaValidezTitulo: 'rótulo de la fila', filaValidezValor: 'lo elegido, en texto', filaValidezBoton: '«Cambiar» / «Listo»',
   filaValidezDetalle: 'contenedor de los campos de la fila',
+  // SCRUM-1805 ① (1787f ⑤, decisión SCRUM-1787 c.22325 ②) · la FACTURA tiene ya paso «Condiciones»:
+  // su fila «Ajustes del documento» sube de «Revisar y emitir» a este paso, y el pie del paso (que en
+  // el presupuesto va al final de Entrega) se cuelga aquí. Andamio: ni uno recoge un dato. El único
+  // control de dentro, el IVA por defecto, se declara en `SOLO_EN_EL_SUELTO` y se mide.
+  ajustesSuelto: 'fila «Ajustes del documento» de la factura', ajustesSueltoTitulo: 'rótulo de la fila',
+  ajustesSueltoValor: 'lo elegido, en texto', ajustesSueltoBoton: '«Cambiar» / «Listo»',
+  sueltoVatRow: 'contenedor del IVA por defecto dentro de la fila',
+  pasoCondicionesPie: 'pie del paso (en la factura, al final de Condiciones)',
+  pasoCondicionesFalta: 'motivo por el que «Seguir» no avanza', pasoCondicionesAtras: '«Atrás»',
+  pasoCondicionesSeguir: '«Seguir»',
+};
+
+/**
+ * 🔴 SCRUM-1805 ① · CONTROLES QUE CUELGAN DE «CONDICIONES» SÓLO EN LA FACTURA, cada uno con el dato
+ * que lleva. No van en `CAMPO_A_BLOQUE` porque aquél es el mapa del PRESUPUESTO (SCRUM-286) y en el
+ * presupuesto ninguno de estos dos vive en Condiciones. Pero SON controles, así que no se esconden en
+ * `NO_SON_CAMPOS`: su dato se mide contra el emisor con la MISMA regla ① que los del presupuesto
+ * (columna en `model Invoice` o clave que sobrevive a `validarFacturaSuelta`), y si dejan de llegar al
+ * documento suelto la excepción SOBRA y cae.
+ */
+export const SOLO_EN_EL_SUELTO = {
+  // «Vence el» (firmado, SCRUM-1787 c.22325 ①) → `Invoice.dueDate` (1787i).
+  dueWrapper: 'dueDate',
+  // El IVA por defecto no viaja como clave propia: BAJA a cada línea nueva, y llega como `lineas[].tax`.
+  fieldVatDefault: 'lineas',
 };
 
 /**
@@ -347,7 +375,9 @@ export function revisarCondicionesContraEmisor(fuentes) {
   const llega = (control) => enSuelto.has(control);
 
   // ① EL DEFECTO: un control de este bloque se pinta y su dato NO tiene dónde ir.
-  const pidenLoQueSeTira = delBloque
+  //    SCRUM-1805 ① · con los controles que sólo la factura cuelga de aquí, medidos IGUAL.
+  const soloSuelto = Object.entries(SOLO_EN_EL_SUELTO).map(([control, campo]) => ({ campo, control }));
+  const pidenLoQueSeTira = [...delBloque, ...soloSuelto]
     .filter(({ control }) => llega(control))
     .filter(({ campo }) => !guardables.has(campo) && !supervivientes.has(campo))
     .map(({ campo, control }) =>
@@ -369,6 +399,7 @@ export function revisarCondicionesContraEmisor(fuentes) {
     }
     return vistos;
   };
+  for (const c of Object.keys(SOLO_EN_EL_SUELTO)) asignados.add(c); // SCRUM-1805 ①: medidos arriba
   const dentroDeUnControl = colgadoDe([...asignados, ...Object.keys(PARTE_DE_UN_CONTROL)]);
   const bajoElBloque = inserciones.filter((i) => colgadoDe([BLOQUE]).has(i.padre));
   const sinAsignar = bajoElBloque
@@ -380,6 +411,26 @@ export function revisarCondicionesContraEmisor(fuentes) {
   const colgados = new Set(bajoElBloque.map((i) => i.hijo));
   const noSonCamposQueSobran = [...Object.keys(NO_SON_CAMPOS), ...Object.keys(PARTE_DE_UN_CONTROL)]
     .filter((n) => !colgados.has(n));
+  // SCRUM-1805 ① · y un control «sólo de la factura» que ya no cuelga del bloque, o que no llega al
+  // documento suelto, también SOBRA: su excepción no puede quedarse abierta.
+  for (const c of Object.keys(SOLO_EN_EL_SUELTO)) {
+    if (!colgados.has(c)) noSonCamposQueSobran.push(c);
+    else if (!llega(c)) noSonCamposQueSobran.push(`${c} (cuelga de \`${BLOQUE}\` pero no llega al documento suelto)`);
+  }
+  // Y que sea DE VERDAD sólo de la factura: desde el bloque, en modo presupuesto, no se llega a él.
+  // (Desde otro bloque sí puede: el IVA por defecto del presupuesto vive en «2. Conceptos».)
+  const desdeElBloqueEnPresupuesto = new Set([BLOQUE]);
+  for (let cambio = true; cambio;) {
+    cambio = false;
+    for (const i of inserciones) {
+      if (i.excluidoEnPresupuesto) continue;
+      if (desdeElBloqueEnPresupuesto.has(i.padre) && !desdeElBloqueEnPresupuesto.has(i.hijo)) {
+        desdeElBloqueEnPresupuesto.add(i.hijo); cambio = true;
+      }
+    }
+  }
+  const soloEnElSueltoEnElPresupuesto = Object.keys(SOLO_EN_EL_SUELTO)
+    .filter((c) => desdeElBloqueEnPresupuesto.has(c));
 
   // ③ El SUELO del propio mapa: un control asignado que ya no llega ni al PRESUPUESTO. Se mide
   //    contra el presupuesto y no contra el suelto a propósito — en el suelto no llegar es lo
@@ -389,13 +440,14 @@ export function revisarCondicionesContraEmisor(fuentes) {
     .map(({ campo, control }) => `\`${control}\` (campo \`${campo}\`) ya no llega ni al presupuesto`);
 
   return {
-    pidenLoQueSeTira, sinAsignar, asignadosFantasma, noSonCamposQueSobran,
+    pidenLoQueSeTira, sinAsignar, asignadosFantasma, noSonCamposQueSobran, soloEnElSueltoEnElPresupuesto,
     opacas: opacas.map((o) => `${o.padre}.appendChild(${o.hijo}) línea ${o.linea}`),
     medicion: {
       raiz,
       controlesDelBloque: delBloque,
       lleganAlSuelto: delBloque.filter(({ control }) => llega(control)).map((x) => x.control),
       lleganAlPresupuesto: delBloque.filter(({ control }) => enPresupuesto.has(control)).map((x) => x.control),
+      soloEnElSueltoQueLlegan: soloSuelto.filter(({ control }) => llega(control)).map((x) => x.control),
       camposDeInvoice: guardables.size,
       supervivientes: [...supervivientes],
       inserciones: inserciones.length,

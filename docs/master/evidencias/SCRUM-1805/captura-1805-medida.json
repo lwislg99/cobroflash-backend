@@ -1,0 +1,69 @@
+﻿[
+ {
+  "ancho": 390,
+  "servidosLocales": [
+   "/dashboard/js/cuerpoDelDocumentoSuelto.js",
+   "/dashboard/js/quotesView.js"
+  ],
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "autocompletadoAbierto": false,
+  "abierto": {
+   "pasoAbierto": true,
+   "filas": [
+    "Formas de pago que verá el cliente",
+    "Vence el"
+   ],
+   "venceEl": "2026-12-26",
+   "bloque": [
+    33,
+    400,
+    324,
+    373
+   ],
+   "desborda": false
+  },
+  "cerrado": {
+   "resumen": "💳 Tarjeta · 📲 Bizum · vence el 26/12/2026",
+   "numeroCondiciones": "3",
+   "numeroRevisar": "4",
+   "desborda": false
+  }
+ },
+ {
+  "ancho": 1280,
+  "servidosLocales": [
+   "/dashboard/js/cuerpoDelDocumentoSuelto.js",
+   "/dashboard/js/quotesView.js"
+  ],
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "autocompletadoAbierto": false,
+  "abierto": {
+   "pasoAbierto": true,
+   "filas": [
+    "Formas de pago que verá el cliente",
+    "Vence el"
+   ],
+   "venceEl": "2026-12-26",
+   "bloque": [
+    293,
+    344,
+    544,
+    292
+   ],
+   "desborda": false
+  },
+  "cerrado": {
+   "resumen": "💳 Tarjeta · 📲 Bizum · vence el 26/12/2026",
+   "numeroCondiciones": "3",
+   "numeroRevisar": "4",
+   "desborda": false
+  }
+ }
+]
+

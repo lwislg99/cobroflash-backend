@@ -241,13 +241,24 @@ test('SCRUM-600g · ④ NEGATIVO: «3. Condiciones» y «4. Envío» siguen FUER
   // fuera. Lo que sigue prohibido —dirección de la obra, IVA del presupuesto, los datos del cliente—
   // lo ata `scrum600b` por su nombre; aquí, que el bloque de Condiciones no vuelva y que la fila de
   // Ajustes sea UNA.
+  //
+  // 🔴 SCRUM-1805 ① (decisión SCRUM-1787 c.22325 ②) · «Condiciones» ENTRA en la factura, con sus filas
+  // que viajan (formas de pago → `Invoice.payMethods`, «Vence el» → `Invoice.dueDate`) y la fila de
+  // Ajustes subida a este paso. Lo que sigue FUERA se exige ahora por sus rótulos propios —el plan de
+  // cobro y la caducidad, que no tienen columna (600e)— y la dirección de la obra (`scrum600b`).
+  const DEL_PRESUPUESTO = ['Condiciones de pago', 'Válido hasta', 'Dirección de la obra'];
+  const estan = (c, ts) => ts.filter((t) => todos(c).some((n) => texto(n).trim() === t));
+  assert.deepEqual(estan(presupuesto.contenedor, DEL_PRESUPUESTO), DEL_PRESUPUESTO,
+    '🔴 SUELO: el lector no encuentra las filas del presupuesto ni en el presupuesto, así que no sabe mirar.');
   for (const modo of ['factura', 'justificante']) {
     const { contenedor } = await montar(modo);
-    assert.deepEqual(bloques(contenedor), ['Ajustes del documento'],
-      `🔴 en modo ${modo} el documento suelto debe llevar SÓLO su fila «Ajustes del documento» (915g) y no ` +
-      '«Condiciones». Los campos de «3. Condiciones» no existen en `Invoice` (600e) y los de «4. Envío» ' +
-      'tampoco; además, «4. Envío» tiene trabajo vivo en scrum-820b. Levantar la parada de plantillas no ' +
-      'levanta éstas.');
+    assert.deepEqual(bloques(contenedor), ['Condiciones', 'Ajustes del documento'],
+      `🔴 en modo ${modo} el documento suelto debe llevar su paso «Condiciones» (SCRUM-1805 ①) y su fila ` +
+      '«Ajustes del documento» (915g).');
+    assert.deepEqual(estan(contenedor, DEL_PRESUPUESTO), [],
+      `🔴 en modo ${modo} el documento suelto trae filas del presupuesto cuyos campos no existen en ` +
+      '`Invoice` (600e) o son de «4. Envío» (trabajo vivo en scrum-820b). Levantar la parada de ' +
+      'plantillas no levanta éstas.');
   }
 });
 
