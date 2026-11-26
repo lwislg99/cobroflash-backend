@@ -1,0 +1,42 @@
+{
+  "ejemplo": "INVENTADO para el test del generador (SCRUM-1870): merchant Demo, refs #0000, ninguna fila es real",
+  "versiones": [
+    {
+      "id": "9.1",
+      "nombre": "Demo en obra",
+      "estado": "en-obra",
+      "ficha": "SCRUM-0",
+      "objetivo": "Objetivo inventado: que el merchant Demo vea su panel.",
+      "piezas": [
+        { "ticket": "SCRUM-0", "titulo": "Pieza Demo A", "detalle": "dentro, inventada", "quien": [{ "equipo": "S", "puesto": "S5" }], "estado": "dentro", "ref": "#0000", "medidoA": "2026-11-26T16:05:00Z" },
+        { "ticket": "SCRUM-0", "titulo": "Pieza Demo B", "quien": [{ "equipo": "J", "puesto": "J2" }], "estado": "dentro", "ref": ["#0000", "c.0"], "medidoA": "2026-11-26T16:07:00Z" },
+        { "ticket": "SCRUM-0", "titulo": "Pieza Demo C", "quien": [{ "equipo": "S", "puesto": "S1" }, { "equipo": "S", "puesto": "S2" }], "estado": "robot", "ref": "#0000", "medidoA": "2026-11-26T16:10:00Z" },
+        { "ticket": null, "titulo": "Pieza Demo D", "quien": [], "estado": "cola", "ref": null, "medidoA": "2026-11-25T22:30:00Z" }
+      ]
+    },
+    {
+      "id": "9.0",
+      "nombre": "Demo terminada",
+      "estado": "terminada",
+      "terminadaEl": "2026-11-24T18:00:00Z",
+      "ficha": "SCRUM-0",
+      "objetivo": "Objetivo inventado de una versión cerrada.",
+      "piezas": [
+        { "ticket": "SCRUM-0", "titulo": "Pieza Demo E", "quien": [{ "equipo": "S", "puesto": "S3" }], "estado": "dentro", "ref": "#0000", "medidoA": "2026-11-26T16:05:00Z" }
+      ]
+    },
+    {
+      "id": "9.2",
+      "nombre": "Demo propuesta",
+      "estado": "propuesta",
+      "ficha": "SCRUM-0",
+      "objetivo": "Sin piezas todavía: no se pinta barra.",
+      "piezas": []
+    }
+  ],
+  "kpis": [
+    { "etiqueta": "Piezas de la 9.1 dentro", "version": "9.1", "cuenta": ["dentro"] },
+    { "etiqueta": "En el robot", "version": "9.1", "cuenta": ["robot"] },
+    { "etiqueta": "En obra o en cola", "version": "9.1", "cuenta": ["obra", "cola"] }
+  ]
+}
