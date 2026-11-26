@@ -57,3 +57,16 @@ igual con `TZ=UTC`.
 cancelado (`bizum-cancelado-despues-390.png`), pero marcar pagada a mano no depende del cobro y no es este
 ticket. La ficha de FACTURA (`invoiceDetailView.js`, J1) ya condiciona su Bizum a la bandera
 `appBizumManualEnabled` (SCRUM-402); la del trabajo no mira esa bandera. Se avisa al orquestador y no se toca.
+
+## 26-nov-2026 · S2 · `guard:objetivo-tactil` salía CIEGO: su fixture no traía el cobro `pending`
+
+**Medido contra:** `origin/main` = `f336e00c20b23a7fa11ae491c8cf8bfaa931fd6d` · 2026-11-26T16:46:06Z
+A9: comprobación → `scripts/guard-objetivo-tactil.mjs`
+
+**Qué salió mal (A9).** Empujé #3442 sin correr el guard de navegador de la ficha del Trabajo. Run 45623986902, job 139239233028: `guard:objetivo-tactil` CIEGO a 929 y 390 px, «no he medido ningún botón «📲 Confirmar Bizum recibido»». Ese guard tiene el Bizum en `conocidos` (SCRUM-1193): no vigila que el botón salga SIEMPRE, sino que su fixture `DATOS_1172` lo saque a pantalla para medirle los 44 px. Con este ticket el botón exige `estadoDelCobro === 'pending'`, y la fixture no lo traía.
+
+**La cura no toca lo que el guard exige** (regla 41): `conocidos`, `distintosEsperados: 0` y las sondas siguen igual. Solo la fixture declara `estadoDelCobro: 'pending'` junto a `chargeId`, el mismo contrato que sirve el servidor desde 1808b. Así el guard vuelve a medir el botón de cobro, en vez de quitarlo de su lista.
+
+| medida | antes (CI, sobre 4616375b8) | después (local, sobre afe561d9d) |
+|---|---|---|
+| `guard:objetivo-tactil` · ficha del Trabajo | CIEGO · 2 ciegos (929, 390) | 0 hallazgos · 0 ciegos · suelo 0 cortos |

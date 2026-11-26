@@ -311,7 +311,9 @@ const DATOS_1172 = (url) => {
         total: 250, currency: 'EUR', createdAt: '2026-09-01T09:00:00.000Z',
         // `chargeId` pinta el botón de Bizum; `payToken`, el «Enlace de pago». Sin los dos, la
         // fila de cobro se queda con SOLO «Marcar como PAGADA» y no mide lo que el ticket manda.
-        chargeId: 99, payToken: 'tok-1172',
+        // SCRUM-1840 · y `estadoDelCobro: 'pending'`: desde 1840 el Bizum solo se pinta con el cobro
+        // pendiente (el único que el servidor deja confirmar). Sin él, este guard sale CIEGO.
+        chargeId: 99, payToken: 'tok-1172', estadoDelCobro: 'pending',
       }],
     };
   }
