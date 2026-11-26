@@ -6,6 +6,7 @@ paths:
   - "scripts/guard-965-un-solo-presupuesto.mjs"
   - "scripts/capturas-1818b-selector-plan.mjs"
   - "public/dashboard/js/quoteRevisiones.js"
+  - "scripts/capturas-1840-bizum-oculto.mjs"
   - "scripts/capturas-iva10-parte-s.mjs"
   - "public/dashboard/css/styles.css"
   - "public/dashboard/js/homeView.js"
