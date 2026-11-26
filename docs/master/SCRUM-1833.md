@@ -288,3 +288,21 @@ y la Parte AB no los releí (no se cambia UI). Medido, en los 12:
 - La suite entera (el encargo la prohíbe). `censo:mudez -- --escribir`: 0 medidos de 149; el test nuevo no cita
   el filtro de comentarios, así que no entra en su población y `tests/_veredicto-mudez.json` no cambia.
 - `scrum1845`: no hay ningún `tests/scrum1845*`; para los 44 px corrí `scrum1850` y `scrum962f`.
+
+## CI del tercer empujón (`171fbf208`): rojo de `scrum1185`, arreglado en el cuarto (orquestador)
+
+El check obligatorio del run 45809008017 (creado 2026-11-26T11:15:59Z) cayó con `fail 2` sobre 14.619 tests, los dos de
+`tests/scrum1185-trinquete-sin-consumir.test.mjs`: ① dos piezas nuevas sin clasificar (`ciega-lector-cuerpo` de
+`POST /admin/customers/:id/equipos`, `customersAdmin.routes.ts:573`, y de `PUT …/:equipoId`, `:588`: el handler pasa el
+cuerpo entero a `equipoCreateSchema`/`equipoUpdateSchema` y la sonda no ve qué campos lee), y ② las cuatro rutas
+`/equipos` que declaró 1833b (`e9da0a023`) ya tienen consumidor y debían salir de `declaradas`. Era lo previsto en el
+motivo de 1833b («se mueve a retiradas en ese PR»; GO del fundador en SCRUM-1833 c.22828 ①), y el encargo de `jv-j2fi`
+no llevaba ni el paso ni el guard 1185 en su lista: error del orquestador, cazado por el guard en CI y no en local.
+
+Arreglo (orquestador, solo `scripts/_sin-consumir-declarados.json`; ningún guard tocado): las cuatro rutas pasan a
+`retiradas` con motivo «SCRUM-1833c: conectada en customerDetailView.js (…)», y las dos ciegas se declaran con carril J2
+y ticket SCRUM-1833, con el mismo texto de motivo que las de «Sitios» (SCRUM-1145, `6bcbb99d3`, también J2). Esas dos
+declaraciones son nuevas y NO estaban en el GO de c.22828: se avisan al fundador en la entrega. Medido en el árbol de la
+rama: antes del cambio, 11 tests, 9 pasan y caen ① y ②, los mismos que en CI; después, 11 de 11. El JSON se editó
+parseando y re-serializando, con control previo de ida y vuelta idéntica (176 declaradas, 71 retiradas); diff: 8 líneas
+añadidas y 6 quitadas, dos de ellas la coma final de las entradas vecinas. `censo:mudez` no cambia: no hay test nuevo.
