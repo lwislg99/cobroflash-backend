@@ -1508,3 +1508,182 @@ causas).
   (`dos-equipos.md:144`). La firma cubre el cruce en los dos casos; no lo he corregido en Jira.
 - yaqu.app: no abierto. `customersView.js` se sirve, pero lo que cambia es un comentario.
 - Las 8 que quedan (S1/S2, c.21333) no son de este tramo. No se ha transicionado el ticket (A13).
+
+## SCRUM-1502u · Tramo 20 (S0, 26-nov-2026): las marcas de firma que viven en `docs/` — 221 de uso a nombre del fundador, 138 sin constancia verificable, y por qué ningún guard las ve; tabla y cura, NINGUNA tocada
+
+**Medido contra:** `origin/main` = `f336e00c20b23a7fa11ae491c8cf8bfaa931fd6d` · 2026-11-26T16:40:41Z (hora de GitHub)
+A9: sin fallo que generalice — la primera pasada del script leyó «comentarios N y M» (plural) como sin cita y eran 2 con cita; lo vi al leer la tabla fila a fila, está corregido en el script y dicho en su comentario
+**Skill UI:** no cargada · sólo docs: este tramo
+
+Encargo del orquestador (26-nov, cabecera S0): censo de las marcas de firma de `docs/` sin constancia verificable,
+clase de cada una y cura propuesta, **sin editar ni borrar ninguna**. Decide el fundador, o el orquestador por la
+delegación de SCRUM-1656 c.21978, registrándolo.
+
+### La premisa, corregida antes de contar
+
+El encargo decía «unas 28». **28 es la cifra del CÓDIGO** (`scrum921c`, tramo 1), que tras 19 tramos está en **8**
+(tramo 19; las 8 esperan c.21333, equipo de Luis). En `docs/` nadie había contado con este criterio, y la cifra no
+se parece: **838** líneas con la forma canónica.
+
+### El instrumento y la población (impresa entera antes de clasificar)
+
+`node docs/master/evidencias/scrum1502u/censo-docs.mjs . <salida.json>`. No hay censo nuevo: la población es la de
+`censarFirmas` (`tests/_censo-firmas-autorizacion.mjs`, SCRUM-921) con `dirs: ['docs']`, filtrada por la
+`MARCA_CANONICA` de `tests/scrum921-firmas-con-respaldo.test.mjs`.
+
+| | |
+|---|---|
+| ficheros seguidos / leídos / saltados (extensión) | 6.395 / 5.047 / 1.348 · ilegibles 0 |
+| líneas leídas | 888.084 |
+| bruto · descartes · candidatos (todas las formas) | 3.319 · 475 · 2.844 |
+| con la forma canónica: candidatas · descartadas por el censo | **838** · 56 (49 norma, 6 firma del producto, 1 agente externo) |
+| excluidas por ser de este tramo | 0 (el script las excluye por ruta y por el rango de este tramo) |
+| por agente (todas / de uso) | fundador 509 / **221** · orquestador 242 / 210 · asesor 87 / 38 |
+
+«Mención» (369 en total) = la marca va entre comillas o backticks (se HABLA de ella), o el fichero es una salida de
+instrumento o un banco guardado como `.txt`/`.json` bajo `evidencias/`. Muestreadas 12 al azar (semilla 7): las 12
+lo son.
+
+### La clase, leída en el BLOQUE contiguo (la unidad de SCRUM-921)
+
+| clase | criterio |
+|---|---|
+| A1 · cita de Jira | `c.N`, `comentario(s) N` o `focusedCommentId=N` en el bloque |
+| A2 · acta con fecha | fecha **y** canal (chat, AskUserQuestion, mensaje, reunión…) en el bloque |
+| C · remite sin cita | nombra un `SCRUM-<n>` (C-ticket) o un documento (C-doc), pero no el comentario |
+| B · fecha sola / nada | ni cita, ni acta, ni a dónde ir a mirar |
+
+**Sin constancia verificable = B + C.** A1 es **forma**, no verificación (como el «27 bien escrito» del tramo 3).
+
+### Las 221 de uso a nombre del fundador, por peso
+
+| peso | total | A1 | A2 | C-ticket | C-doc | B-fecha | B-nada | **sin constancia** |
+|---|---|---|---|---|---|---|---|---|
+| 1 · texto visible (`docs/microcopy/`, `MICROCOPY_*`) | 54 | 27 | 1 | 20 | 1 | 3 | 2 | **26** |
+| 2 · esquema o BD (`MIGRATIONS_PENDING.md`, `docs/sql/`) | 16 | 2 | 0 | 2 | 0 | 2 | 10 | **14** |
+| 3 · norma (máster, `docs/equipo/`) | 17 | 9 | 4 | 3 | 0 | 1 | 0 | **4** |
+| 4 · registro (`docs/master/`) | 115 | 31 | 1 | 22 | 4 | 34 | 23 | **83** |
+| 5 · otros | 19 | 1 | 7 | 6 | 1 | 3 | 1 | **11** |
+| **total** | **221** | 70 | 13 | 53 | 6 | 43 | 36 | **138** |
+
+La tabla entera, fila a fila (fichero:línea, literal con la marca tapada, clase, lo que cita y cura):
+`docs/master/evidencias/scrum1502u/tabla-fundador.md` (221 filas, generada por el script; no se edita a mano).
+
+### 🔴 Lo que pesa: el peso 1 (regla 39) — 26, y una causa que las explica casi todas
+
+- **20 de las 26 son C-ticket y tienen la MISMA forma**: «… el <fecha>, en **SCRUM-<n>**.», en la línea 3 de una
+  ficha de `docs/microcopy/` del 3-sep al 1-oct-2026 (402, 704, 599, 605, 653, 720, 720c, 727→726, 769, 713,
+  725, 814, 818, 707, 728, 688, 1136→590, 1154, 1196, 1388). Dicen en qué ticket mirar, no qué comentario.
+- **La causa no es de quien escribió cada ficha: es la PLANTILLA.** `docs/microcopy/README.md:36` (último cambio
+  `221d20978`, 14-oct) pide literalmente la línea «… el <fecha>, en **SCRUM-<n>**.» y nada más. Las fichas
+  posteriores al 1-oct llevan casi todas el comentario (la de `SCRUM-1746`, 17-nov, no: A2) porque la práctica
+  cambió, no porque la plantilla lo pida. (Esa línea
+  de la plantilla sale ella misma en el censo como B-nada: es la plantilla, no una marca; se cuenta en las 26 y se
+  dice.)
+- 3 B-fecha (`722`, `597`, `832`, 7-9 sep), 1 B-nada real (`MICROCOPY_APROBADA_SIN_APLICAR.md:25`, el título del
+  fichero) y 1 C-doc (`713:15`, que remite a `MICROCOPY_APROBADA_SIN_APLICAR.md`, que tampoco cita: «la afirma otro
+  doc que tampoco cita»).
+
+### El peso 2: las autorizaciones de esquema, julio-agosto
+
+12 de las 14 están en `docs/MIGRATIONS_PENDING.md` (`:1746` a `:2295`): `db push` contra Railway y tablas
+aditivas, con «GO explícito», «respuesta explícita» o «AskUserQuestion», pero sin fecha en el bloque o sin canal,
+de cuando la firma iba por la conversación de la sesión y no por Jira. El esquema ya está aplicado: **no hay nada
+que deshacer, sólo la atribución**.
+
+### 🔴 Por qué ningún guard las vio: la mitad `docs/` de `scrum921` es CIEGA por construcción (MI LECTURA)
+
+`clasificarLinea` da `procedencia` si `RE_PROCEDENCIA` (`/SCRUM-\d+|docs\/[\w./-]+/i`) casa el bloque **o el nombre
+del fichero**. Todo fichero de `docs/` empieza por `docs/`, así que **las 838 tienen `procedencia: true`** (medido:
+838 de 838). `SIN_PROCEDENCIA = 18` sólo puede contar marcas de `tests/`, `src/` y `scripts/`: el censo dice mirar
+`docs/` y lo mira, pero el eje que decide no puede fallar ahí. No lo toco (regla 41, y `scrum921` no es de S0):
+**propuesta** para su dueño: que del nombre del fichero cuente sólo un `SCRUM-<n>`, no el prefijo `docs/`, con el
+positivo sembrado antes y el número que salga escrito (subirá: es un instrumento arreglado, no un guard relajado;
+tramo 1 de `scrum921c` explica cómo se distinguen).
+
+### La cura propuesta, por clase (la columna «cura» de la tabla)
+
+| clase | cura propuesta | quién decide |
+|---|---|---|
+| A1 | nada en el doc; LEER el `c.N` y ver que es del fundador | nadie: es lectura |
+| A2 | buscar el mensaje de esa fecha; si consta en Jira, añadir su `c.N` al lado | orquestador (delegación) |
+| C-ticket | buscar en ese ticket el comentario del sí y escribir su `c.N`; si no está → pregunta ✅/❌ | orquestador; lo no encontrado, el fundador |
+| C-doc | seguir el doc: si él cita, copiar la cita; si tampoco → pregunta ✅/❌ | ídem |
+| B-fecha / B-nada | pregunta ✅/❌ al fundador, **o** reescribir la atribución como «lo afirma la sesión X» (tramo 3) | el fundador |
+
+Y dos curas de causa, que valen más que las 138 de una en una:
+
+1. **La plantilla** (`docs/microcopy/README.md:36`): que pida `SCRUM-<n> c.<id>`. Es texto de norma: lo firma el
+   orquestador por delegación. Sin esto, la ficha número 55 nace C-ticket igual que las 20.
+2. **El eje de `scrum921`** (arriba): para su dueño, con su rojo primero.
+
+Orden que propongo: ① las 26 del peso 1 (son las que la regla 39 mira); ② la plantilla; ③ las 12 de
+`MIGRATIONS_PENDING.md`, reescribiendo la atribución sin tocar el contenido; ④ el eje de `scrum921`. **Las 83 del peso 4
+son registros que narran una firma pasada: propongo NO curarlas una a una**; un registro es historia, y se cura sólo
+si un guard o un doc vivo se apoya en él.
+
+### Verificación de A1: 1 de 70 leída
+
+`SCRUM-1771 c.22164` (la de `docs/microcopy/2026-11-19-SCRUM-1771-rotulo-desglose-por-tipo.md:3`), leído entero por
+Rovo: existe, es la firma de Javier («A»), y lo **publica el orquestador J**, no el fundador. Es la clase (c) de la
+pregunta de política de c.21333. Las otras 69: forma, no leídas.
+
+### Lo que NO se ha hecho
+
+- **Ninguna marca editada ni borrada**; ningún guard tocado; ningún número de trinquete movido. `scrum921`,
+  `scrum921c` y `scrum563`, corridos sobre este árbol con el tramo escrito: verdes.
+- 69 A1 sin leer contra Jira; las 59 C sin seguir hasta su ticket o doc; ninguna pregunta ✅/❌ redactada todavía
+  (sale de la cura de C, que va antes).
+- Las 248 marcas de uso del orquestador y del asesor: contadas, no puestas en la tabla (otra autoridad: la
+  delegación; si se quieren, el script las saca cambiando un filtro).
+- `.json` de la salida completa: no se ha subido (D: sin espacio; es reproducible con el script).
+- yaqu.app: no aplica (sólo docs). Ticket no transicionado (A13).
+
+### Lo que decidió el orquestador sobre esta entrega (26-nov, por SendMessage; delegación de SCRUM-1656 c.21978)
+
+1. **Peso 1, las 26 (25 sin la línea de la plantilla): SÍ se curan.** El orquestador busca en Jira el comentario
+   real de cada una y devuelve la lista; S0 escribe la cura en cada ficha. Las que no aparezcan → fila de
+   preguntas ✅/❌ al fundador, sin tocar la ficha. **Pendiente de esa lista: ninguna ficha tocada en este commit.**
+2. **La plantilla, APLICADA aquí** (registro nº12 de la delegación): `docs/microcopy/README.md` pide ahora la
+   línea `… el <fecha> — SCRUM-<n> comentario <id>.`, con el comentario obligatorio. El encargo decía «c.<id>»;
+   va como «comentario <id>» porque es la forma que el oráculo YA lee (`REFERENCIA_JIRA`,
+   `tests/_microcopy-aprobada.mjs:90`) y la misma de la firma delegada; la frase de apertura no cambia, así que
+   `FIRMA_DEL_FUNDADOR` (`:69`) sigue casando. Ningún guard tocado.
+3. **El eje ciego de `scrum921`** → SCRUM-1872, cola de instrumentos (S5); hoy no se toca.
+4. **Peso 4, las 83 de registro: NO se curan una a una** (conforme a la propuesta de arriba). Un registro narra
+   una firma pasada; se cura sólo si un guard o un doc vivo se apoya en él.
+
+### Apéndice ③ · los textos visibles NUEVOS de la 1.1 (regla 39): 0 huérfanos
+
+**Base:** la 1.0 se cerró el 24-nov a las 18:33Z (SCRUM-1817, «TERMINADA»; no hay tag). Base = el último commit de
+primer padre de `main` antes de esa hora: `db0a6c045` (17:53:22Z, #3411). **Elección MÍA**, no escrita en la
+ficha. Punta: `f336e00c2`. 54 merges de primer padre entre las dos.
+
+`node docs/master/evidencias/scrum1502u/literales-nuevos.mjs db0a6c045 origin/main` — cada cadena entre comillas de
+una línea AÑADIDA (`diff -U0`) de `public/` y `src/` (`.js/.ts/.mjs/.html`), con su commit (blame en la punta) y si
+su texto está en alguna ficha de `docs/microcopy/`.
+
+| población | |
+|---|---|
+| ficheros cambiados que se leen | 18: 7 `.js` de `public/dashboard/js` (más `styles.css`, fuera por extensión; ningún `.html`) y 11 de `src/`, ninguno de `messaging/` ni `integrations/` |
+| líneas añadidas · de comentario | 1.132 · 214 |
+| cadenas · tiradas por el filtro «parece texto» | 348 · 279 (revisadas a mano con `VER_TIRADAS=1`: la única visible tirada es `🗑 Eliminar`, que ya estaba en la 1.0, `customerDetailView.js:127` en `db0a6c045`) |
+| **parecen texto** | **69** |
+
+Las 69:
+
+| grupo | n | constancia |
+|---|---|---|
+| en una ficha de `docs/microcopy/` (sobre todo SCRUM-1005 documentos y SCRUM-1833 equipos, c.22811) | 44 | ficha (las de una palabra, como «Marca» o «Editar», casan fichas viejas: casamiento DÉBIL, pero van en el mismo bloque de textos que la ficha de 1833) |
+| ya existían en la 1.0 (reusados en otra pantalla): «Cobro cancelado», «¿Cancelar este cobro?…», «Cancelar cobro», «Este cobro ya no está pendiente.», «…ya consta como pagado…», «Error actualizando estado…», y en el export «Razón social» y «Baja WhatsApp» (reordenados) | 8 | no es texto nuevo |
+| **nuevos SIN ficha, firmados en su registro**: los 6 del selector de plan (`reportsView.js:969-1007`, SCRUM-1818b) → SCRUM-1656 c.22694 (`docs/master/SCRUM-1818.md:37`); «¿Factura como empresa o autónomo (IVA)?» ×2 (`customersView.js:1511`, `tipoDestinatarioPendiente.js:58`) → SCRUM-1782 c.22268 y c.22272 (`docs/master/SCRUM-1782.md:11-13`) | 8 | comentario de Jira en el registro |
+| no los ve nadie: descripciones de `adminRouteDeclarations.ts` (3), log, `Content-Type`, clases CSS (2), nombre de tipo, un resto de comentario | 9 | no aplica |
+
+**Huérfanos (texto nuevo visible sin firma registrada): 0.** Hallazgo menor: los 8 firmados del tercer grupo no
+tienen ficha en `docs/microcopy/`, así que el oráculo `comoConstaAprobado` no los ve; la firma vive en el registro.
+Cura propuesta: una ficha por ticket (1818b y 1782b) con la línea nueva de la plantilla. No hecho: decide el
+orquestador.
+
+**No medido:** los comentarios de Jira citados no se han leído (c.22694, c.22268, c.22272, c.22811); textos
+construidos por concatenación de cadenas sin espacio (el filtro los tira; la revisión de tiradas no vio ninguno);
+PDFs y correos (ningún fichero de `pdf/` ni de `mailer` cambió entre las dos puntas); yaqu.app no abierto.
