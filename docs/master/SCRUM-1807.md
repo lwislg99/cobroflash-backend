@@ -222,3 +222,21 @@ Usa el banco de `scrum1442b`: el `GET /pay/quote/:token` real, con `prisma.quote
 **Vecinos:** los 32 ficheros que ya leen la página de firma o su hoja, más `scrum1807c/d`, `scrum655`, `scrum1786g`, `scrum1786f1` y `scrum619`: 279 de 279 en 37 ficheros.
 
 **Lo que NO hace:** las tarjetas de opciones (`renderTierCards`) no pintan ni total del apartado ni agrupado. Es lo mismo que hizo el PDF en 1786f1, que sólo tocó el modo clásico. La descripción de la cabecera no sale en la fila agrupada, porque esta página no pinta descripciones de línea en ningún sitio. El PDF de FACTURA no se ha abierto (P4, regla 40). Falta verlo en yaqu.app: se verá después del merge.
+
+## SCRUM-1807e (2) · «+ Añadir apartado» va DETRÁS de «+ Añadir descuento» (S2, 26-nov-2026)
+
+**Skill UI:** cargada
+**Medido contra:** `origin/main` = `f336e00c20b23a7fa11ae491c8cf8bfaa931fd6d` · 2026-11-26T16:42:09Z
+A9: comprobación → `scripts/guard-915h-conceptos-limpios.mjs`
+
+**Qué salió mal (A9).** Empujé #3456 con «+ Añadir apartado» montado ENTRE «+ Añadir línea» y «+ Añadir descuento», y el comentario del propio código lo decía. SCRUM-915h exige el descuento PEGADO a «+ Añadir línea» (`add.nextElementSibling === dto`), y el job «guards de navegador (fuera de la tanda)» lo cazó: run 45635626766, job 139280164609, `guard:conceptos-limpios` rojo(1) «descuento-junto -> «+ Añadir descuento» no va justo detrás de «+ Añadir línea»». No corrí los guards de navegador del editor antes del push; `guards:entrada` no los incluye.
+
+**La cura, en el código, no en el guard:** el botón se sigue creando donde estaba (el clic se ata más abajo, `quotesView.js`), pero se MONTA justo detrás de `dtoGlobalWrap`, con la misma condición `!esDocumentoSuelto`. Nada más cambia: ni nodos (268, `scrum697`/`scrum698` intactos; solo su comentario), ni texto, ni CSS.
+
+| medida | antes (CI, sobre 368753893) | después (local, sobre f31f2b11c) |
+|---|---|---|
+| `guard:conceptos-limpios` | rojo(1) · descuento-junto | verde · 5 de 5 casos · `junto=true` |
+| `tests/scrum1807e-editor-apartados.test.mjs` | — | 8/8 |
+| `tests/scrum697-un-solo-render.test.mjs` · `scrum698` | — | 9/9 · 11/11 |
+
+**El otro rojo de #3456 no es de este tramo:** `tests/scrum553-etiquetas-pegadas.test.mjs` cae (22 extractores con el `>` pegado, tope 20) por dos líneas de `tests/scrum1807g-firma-total-del-apartado.test.mjs` (:92 `<tbody>`, :177 `<script>`), que vienen del PR de S1 #3446 (`scrum-1807-apartados-s1`, apilado debajo). Se cura en su rama; aquí entra con el siguiente merge de esa rama.

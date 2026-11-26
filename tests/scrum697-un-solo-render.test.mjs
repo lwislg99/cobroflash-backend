@@ -388,7 +388,8 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   // «Equivale a …» + la `p` del error, ocultos hasta abrir el descuento. 9 = el delta.
   // SCRUM-1807e · 25-nov-2026 · 267 → 268, y lo mueve la VISTA. Por identidad: el
   // `button.quote-add-apartado` «+ Añadir apartado» (firmado, SCRUM-1656 c.22787), detrás de
-  // «+ Añadir línea». Sin cabeceras no se monta nada más. 1 = el delta.
+  // «+ Añadir descuento» (26-nov: antes, entre línea y descuento; SCRUM-915h). Sin cabeceras no se
+  // monta nada más. 1 = el delta.
   assert.equal(nodos.length, 268,
     `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 268 `
     + '(236 sobre `origin/main` = 80db312b, + la opción de alta de SCRUM-591, + el bloque de '

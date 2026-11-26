@@ -1828,11 +1828,12 @@ descWrapper.appendChild(descLabel);
   // Secundario, con el lenguaje de «+ Añadir descuento». NO en el documento suelto: su cuerpo
   // (`cuerpoDelDocumentoSuelto`) no lleva cabeceras, y un control cuyo dato no sobrevive al emisor
   // no se pinta (regla de este fichero, SCRUM-632).
+  // Se CREA aquí (el clic se ata más abajo) y se MONTA detrás de «+ Añadir descuento»: SCRUM-915h
+  // quiere el descuento pegado a «+ Añadir línea» (`guard:conceptos-limpios`, «descuento-junto»).
   const addApartadoBtn = document.createElement("button");
   addApartadoBtn.type = "button";
   addApartadoBtn.className = "btn-ghost btn-sm quote-add-apartado";
   addApartadoBtn.textContent = "+ Añadir apartado";
-  if (!esDocumentoSuelto) blockLines.appendChild(addApartadoBtn);
 
   // ---------- DRAG & DROP para reordenar líneas (FRONT1-4) ----------
   let draggedTr = null;
@@ -2050,9 +2051,10 @@ descWrapper.appendChild(descLabel);
   // línea: no se pide lo que el emisor no puede guardar.
   // SCRUM-915h · y va JUNTO A «+ Añadir línea» (v3: «secundaria junto a “+ Añadir línea”»), no en
   // el bloque de totales, que en Conceptos ya sólo lleva el TOTAL. `addLineBtnBottom` es el último
-  // hijo de `blockLines` en este punto, así que esto lo deja pegado detrás. (SCRUM-1807e: entre
-  // los dos va «+ Añadir apartado», que también es «añadir a la lista».)
+  // hijo de `blockLines` en este punto, así que esto lo deja pegado detrás. (SCRUM-1807e:
+  // «+ Añadir apartado» va DETRÁS del descuento, no entre los dos: entre ellos rompía «junto a».)
   if (!esDocumentoSuelto) blockLines.appendChild(dtoGlobalWrap);
+  if (!esDocumentoSuelto) blockLines.appendChild(addApartadoBtn);
 
   // ═══ SCRUM-587 (CONT-14) · EL DESCUENTO PACTADO CON EL CLIENTE, PROPUESTO ═══════════════════
   //

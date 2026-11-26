@@ -436,7 +436,7 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // delta. El checklist sigue entero, solo cambia de sitio.
   // SCRUM-1807e · 25-nov-2026 · `renderQuotesView` 267 → 268, y las otras tres intactas. Lo mueve la
   // VISTA, POR IDENTIDAD: `button.quote-add-apartado` «+ Añadir apartado» (firmado, SCRUM-1656 c.22787),
-  // detrás de «+ Añadir línea». 1 = todo el delta.
+  // detrás de «+ Añadir descuento» (26-nov: antes, entre línea y descuento; SCRUM-915h). 1 = todo el delta.
   for (const [vista, nodos] of [['renderQuotesView', 268], ['renderProductsView', 176],
     ['renderCustomersView', 89], ['renderHomeView', 151]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
