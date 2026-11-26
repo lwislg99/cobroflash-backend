@@ -109,6 +109,13 @@ export interface AsientoLibro {
    * consta el medio (Q3). `origen` es `fecha_origen` de la fila.
    */
   cobros: { fecha: string; importe: number; metodo: string | null; origen: string | null }[];
+  /**
+   * SCRUM-1055c (c.21863 ⑤; vía sin esquema, c.22874) · `true` = algún cobro vivo de la factura se
+   * apuntó a mano sin decir qué día entró el dinero (`fecha_origen = 'marcado'`): su fecha es la del
+   * marcado. `aviso` y `declarada` no la llevan. Sólo con criterio de caja (como `cobros`). Una
+   * factura `paid` SIN filas no la lleva —no se afirma lo que no se sabe— y se cuenta en `cobrosSinFilas`.
+   */
+  cobroSinFechaDeclarada?: boolean;
   moneda: string | null;
   estado: string | null;
   /** ⚠️ `true` = el importe no se pudo leer. NO es cero: es «no se sabe». */
@@ -174,6 +181,13 @@ export interface LibroRegistro {
   cobrosSinMedio?: string[];
   /** SCRUM-1732d · Q5 · lo cobrado por encima del total, por factura. No devenga. Sólo con caja. */
   cobradoDeMas?: { numero: string; importe: number }[];
+  /** SCRUM-1055c · cuántos asientos llevan `cobroSinFechaDeclarada`. Sólo con caja; viaja con el dato. */
+  cobrosSinFechaDeclarada?: number;
+  /**
+   * SCRUM-1055c · facturas de caja `paid` SIN ninguna fila en `invoice_payments` (anteriores a 1732, que
+   * se leen como hoy): de su fecha no se sabe el origen, así que no llevan la señal y se CUENTAN aquí.
+   */
+  cobrosSinFilas?: number;
 }
 
 /** SCRUM-1732d · el devengo de una factura en el periodo: sus tramos y cuáles caen dentro. */
@@ -248,6 +262,8 @@ export function construirLibroRegistro(params: {
   let sinNumeroImporte = 0;
   const cobrosSinMedio: string[] = [];
   const cobradoDeMas: { numero: string; importe: number }[] = [];
+  let cobrosSinFechaDeclarada = 0;
+  let cobrosSinFilas = 0;
 
   for (const f of params.facturas) {
     if (f.merchantId !== params.merchantId) { ajenas += 1; continue; }
@@ -277,7 +293,9 @@ export function construirLibroRegistro(params: {
     const idsSellados = new Set(sellados.map((r) => r.albaranId).filter((n) => n !== null));
     const noSellados = vivos.filter((v) => !idsSellados.has(v.albaranId)).length;
 
-    const filas = typeof f.id === 'number' ? filasVivas(params.cobrosPorFactura?.get(f.id) ?? []) : [];
+    // SCRUM-1055c · `undefined` = factura que no va por caja; `[]` = de caja y SIN filas (el lector la pide).
+    const crudas = typeof f.id === 'number' ? params.cobrosPorFactura?.get(f.id) : undefined;
+    const filas = filasVivas(crudas ?? []);
     const cobros = filas.map((c) => ({
       fecha: c.fechaCobro.toISOString(),
       importe: (centimosDe(c.importe) ?? Number.NaN) / 100,
@@ -285,6 +303,10 @@ export function construirLibroRegistro(params: {
       origen: c.fechaOrigen ?? null,
     }));
     if (cobros.some((c) => c.metodo === null)) cobrosSinMedio.push(f.number);
+    // SCRUM-1055c · sobre las filas VIVAS: una anulación (que nace `marcado`) no la enciende.
+    const sinFechaDeclarada = cobros.some((c) => c.origen === 'marcado');
+    if (sinFechaDeclarada) cobrosSinFechaDeclarada += 1;
+    if (crudas !== undefined && crudas.length === 0 && f.status === 'paid') cobrosSinFilas += 1;
     const totalC = centimosDe(f.total);
     const cobradoC = filas.reduce((s, c) => s + (centimosDe(c.importe) ?? 0), 0);
     if (totalC !== null && cobradoC > totalC) cobradoDeMas.push({ numero: f.number, importe: (cobradoC - totalC) / 100 });
@@ -322,6 +344,7 @@ export function construirLibroRegistro(params: {
         : suplidos,
       total: total !== null && dev ? parteDelPeriodo(total, dev) : total,
       cobros,
+      ...(params.cobrosPorFactura ? { cobroSinFechaDeclarada: sinFechaDeclarada } : {}),
       moneda: f.currency ?? null,
       estado: f.status ?? null,
       importeIlegible: total === null,
@@ -344,6 +367,6 @@ export function construirLibroRegistro(params: {
     sinNumero,
     sinNumeroImporte: Math.round(sinNumeroImporte * 100) / 100,
     importesIlegibles,
-    ...(params.cobrosPorFactura ? { cobrosSinMedio, cobradoDeMas } : {}),
+    ...(params.cobrosPorFactura ? { cobrosSinMedio, cobradoDeMas, cobrosSinFechaDeclarada, cobrosSinFilas } : {}),
   };
 }
