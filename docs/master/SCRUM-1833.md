@@ -306,3 +306,33 @@ declaraciones son nuevas y NO estaban en el GO de c.22828: se avisan al fundador
 rama: antes del cambio, 11 tests, 9 pasan y caen ① y ②, los mismos que en CI; después, 11 de 11. El JSON se editó
 parseando y re-serializando, con control previo de ida y vuelta idéntica (176 declaradas, 71 retiradas); diff: 8 líneas
 añadidas y 6 quitadas, dos de ellas la coma final de las entradas vecinas. `censo:mudez` no cambia: no hay test nuevo.
+
+# SCRUM-1833e · recorrido en staging de la pestaña «Equipos»
+
+**Medido contra:** `origin/main` = `4e9ed16270d000fa3a9c73813fc1719b5f9d6df6` · 2026-11-26T15:58:09Z
+
+**Escribe:** J2 (`jv-j2fj`) · **Rama:** `scrum-1833e-recorrido-staging` · **Carril:** J2 · solo `docs/master/` (ni `src/`, ni `public/`, ni `tests/`, ni `scripts/`)
+
+**Qué se miró:** un despliegue real, no el banco. Staging servía `/version` = `4e9ed16270d000fa3a9c73813fc1719b5f9d6df6` (Date 15:52:01Z; re-leído al final, 15:57:19Z, el mismo), `/health` 200, y su `customerDetailView.js` era byte a byte el de `origin/main` (`cmp`, 4 marcas `SCRUM-1833c`). yaqu.app daba el mismo sha (solo `GET /version`, sin cookie).
+
+**Instrumento:** `docs/master/evidencias/SCRUM-1833/staging-recorrido.mjs` (puppeteer-core 25.3.0 + Edge por `lanzarNavegador`). La entrada es `POST /auth/test-login` con la cuenta QA del comercio 2 (rol `admin`, leído de `window.appUserRole`), y el secreto se lee del `.env` por código. El guion se niega si la URL no es la de staging, y en el navegador corta `send-*`, `resend-*`, `confirm-bizum` y `/auth/logout` (0 cortadas). La salida está en `staging-recorrido.txt`. Antes de comitear comprobé los 11 ficheros `staging-*`: ninguno lleva el secreto ni un valor de cookie, y el positivo (el nombre `pf_session=`, que está en el código del guion) sí aparece.
+
+**Dos pasadas, un login cada una (el tope era 2):** la 1.ª cayó en «crear-cliente» antes de crear nada. El atajo de teclado añade su marca al texto de «Nuevo cliente», y el guion lo comparaba entero. Queda su captura, `staging-fallo-crear-cliente.png`. La 2.ª salió completa (salida 0).
+
+**Lo medido en la 2.ª pasada (población: 4 estados × 2 anchos = 8 capturas, más 3 pasos sin captura):**
+- (a) Creé el cliente «[QA-1833e] Cliente de pruebas» por la UI y se abrió su ficha. Tiene 8 pestañas: Presupuestos · Facturas · Trabajos · WhatsApp · Sitios · **Equipos** · Notas · Documentos.
+- (b) `vacio`: muestra «Todavía no hay equipos guardados para este cliente.».
+- (c) `alta`: los 7 rótulos y los 2 ejemplos. Con el tipo solo de espacios, el formulario avisa «Escribe el tipo y el nombre del equipo.» sin pedir nada al servidor. Guardé con textos largos (un número de serie de 44 caracteres sin espacios) y fechas, y salió `lista` con 1 fila.
+- (d) `editar`: el formulario sale relleno igual que lo guardado (los 7 campos). Cambié la marca y la fila la muestra; la marca vieja ya no está.
+- (e) «🗑 Eliminar»: el confirm nativo sale literal y con el nombre. Lo acepté y la lista volvió a 0 filas, con el texto de vacío.
+- Ninguna respuesta de staging ≥ 400 y 0 errores de consola.
+
+**Textos:** las 21 constantes del guion están copiadas de c.22798 §3 (firma c.22811). Las cotejé por código contra el ticket: 21 de 21 casan, y un positivo sembrado sin tilde NO casa. En staging vi **19 de 19** de los cotejados. Los otros 2 de los 21 aplicados («No se pudieron cargar…» y el genérico) no se provocaron. **Por qué no los 23 de c.22811:** el resto de la tabla no está en esta pantalla y quedó fuera de la población. Son la fila de sitio («Sitio» · «Sin sitio concreto», P3 ❌) y «Garantía vencida el {fecha}» (P5 ❌), que no se construyen; el título y el vacío del historial, que son de 1833d; y «Equipo» · «Sin equipo», el selector de S. Así lo registra la ficha `docs/microcopy/2026-11-26-SCRUM-1833-equipos-del-cliente.md`. El separador «: » de c.22837 está visto: «Número de serie: SN-…» y «Fecha de instalación: 15/3/2026». **Ningún texto difiere de lo firmado.**
+
+**AB6 (las 8 capturas):** `scrollWidth` = `clientWidth` en las 8 y 0 nodos de la fila se salen por la derecha. La pestaña «Equipos» mide 84×44. «Editar» y «🗑 Eliminar» de fila miden **30 px** de alto a 390 y a 1280, lo ya sabido: la clase compartida `btn-ghost btn-sm`, avisada a S en SCRUM-1835 c.22842. No es hallazgo nuevo. A 1280, «+ Nuevo equipo», «Cancelar» y «Guardar» miden 36 px, y a 390 llegan a 44. Son las mismas cifras que dio el banco local de 1833c.
+
+**(f) NO hecho:** el panel no tiene ningún control que borre un cliente. Hay 0 llamadas a `DELETE /admin/customers/:id` en `public/`, y el positivo, los `DELETE` de otras rutas (gastos, equipo, plantillas…), sí aparece. El cliente «[QA-1833e] Cliente de pruebas» se queda en el comercio 2 de staging, sin equipos. No lo borré por API: el encargo decía «por la UI», y el borrado de datos de clientes es un STOP.
+
+**NO medido:** los textos de error de carga y genérico; la vista del técnico (la cuenta QA es admin; la cubre `tests/scrum1833c-pestana-equipos.test.mjs`); contraste y foco; las capturas no las miré a ojo, todo lo de arriba sale del DOM; yaqu.app con sesión; la suite entera (este tramo no toca código ni tests).
+
+A9: aviso → cicatriz J2 «Me medí el contexto al arrancar y tras Jira, y no durante el reconocimiento» — no se pudo comprobar: me pasó otra vez en este tramo (115.860 tras Jira, 167.250 al terminar de leer el código; el encargo pedía empujar antes de 170k), y ningún hook del repositorio lee el contexto a mitad de tanda
