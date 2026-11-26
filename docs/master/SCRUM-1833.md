@@ -236,7 +236,7 @@ A9: comprobación → `tests/scrum1833b-equipos-rutas.test.mjs`
 **Escribe:** J2 (`jv-j2fi`, relevo de cierre; código y test de `jv-j2fh`) · **Rama:** `scrum-1833c-pestana-equipos` · **Carril:** J2
 (`public/dashboard/js/customerDetailView.js` → J2, `node scripts/carriles.mjs de`). Traspaso de `jv-j2fg`: SCRUM-1833 c.22834.
 
-**Skill UI:** no cargada · el relevo `jv-j2fi` no tocó la interfaz (solo el test y este registro); si `jv-j2fh` la cargó al construir `5dacc0331` no consta en su commit, y no lo he medido.
+**Skill UI:** cargada · por `jv-j2fi`, antes del recorrido de navegador (el relevo no tocó la interfaz: solo test, registro y evidencias); si `jv-j2fh` la cargó al construir `5dacc0331` no consta en su commit, y no lo he medido.
 
 A9: comprobación → `tests/scrum1833c-pestana-equipos.test.mjs`
 
@@ -265,9 +265,26 @@ salió CIEGO por no haber `dist/` en su árbol y lo sustituyó una mutación rea
 - c.22837 (fundador, leída en Jira): las filas pintan la etiqueta firmada + «: » + el dato («Número de serie: X»).
   Respuesta literal: «1-Ok vale así». ✅ Queda como lo construyó `jv-j2fh`; ya no es pregunta abierta.
 
+## Recorrido de navegador (390 y 1280 px) — segundo empujón
+
+`docs/master/evidencias/SCRUM-1833/`: `pagina.mjs` monta la ficha real en el banco (patrón de SCRUM-1145) en seis
+estados (lista admin con un equipo de textos largos, alta, editar, técnico, vacío, error 500), y `medir-390-1280.js`
+mide y captura `<estado>-<ancho>.png` (12). Skill `yaqu-premium-ui` cargada antes de abrir el navegador; DESIGN.md
+y la Parte AB no los releí (no se cambia UI). Medido, en los 12:
+- Sin desbordamiento: `scrollWidth` = ancho de la vista en todos; 0 nodos de una fila se salen por la derecha.
+- Técnico: 3 filas, 0 «Eliminar» (admin: 3 de 3). Vacío y error: 0 filas, su texto y «+ Nuevo equipo» a la vista.
+- 🔴 **AB6, objetivos < 44 px:** «Editar» y «🗑 Eliminar» de cada fila miden 30 px de alto a 390 y a 1280. Es la
+  clase de la casa `btn-ghost btn-sm`, la misma de Sitios (`customerDetailView.js:1656`, `:1664`) y Documentos
+  (`:332`): no lo trae esta pestaña, y arreglarlo es CSS compartido, fuera de este encargo. A 1280, «+ Nuevo
+  equipo», «Cancelar» y «Guardar» miden 36 px; a 390 llegan a 44. Ni `scrum1850` ni `scrum962f` miden filas.
+- Visto en las capturas de 390 (lista, alta, error): los textos largos parten línea sin cortarse; el marcador del
+  primer campo del alta («Caldera / Aire acondicionado / Cuadro eléctr…») se corta a 390. Es un texto firmado y no
+  se toca. No he mirado contraste, foco ni las capturas de 1280; el `confirm` del borrado es nativo y no se captura
+  (lo cubre el test).
+
 ## Lo NO medido
 
-- El recorrido de navegador a 390 y 1280 px (AB6) y yaqu.app: ver la entrega en SCRUM-1833.
+- yaqu.app (lo verifica el orquestador tras el merge).
 - La suite entera (el encargo la prohíbe). `censo:mudez -- --escribir`: 0 medidos de 149; el test nuevo no cita
   el filtro de comentarios, así que no entra en su población y `tests/_veredicto-mudez.json` no cambia.
 - `scrum1845`: no hay ningún `tests/scrum1845*`; para los 44 px corrí `scrum1850` y `scrum962f`.
