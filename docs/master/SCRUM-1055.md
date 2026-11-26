@@ -114,3 +114,56 @@ emisión con el caso de ② (sólo leído: usa el mismo `rangoTrimestre`); Q-C6 
 
 **Error mío:** leí Jira antes del arranque de normas (la cicatriz de 1730b, otra vez) y crucé los 200k
 sin medirme entre el arranque y la sonda; avisó el hook del orquestador, no yo.
+
+# SCRUM-1055c · la señal «cobro sin fecha declarada»
+**Medido contra:** `origin/main` = `f336e00c20b23a7fa11ae491c8cf8bfaa931fd6d` · 2026-11-26T17:20:35Z (hora de GitHub; sesión J1 `jv-j1kz`, encargo del orquestador `cobroflash-backend-2d`)
+
+A9: comprobación → `tests/scrum1055c-senal-cobro-sin-fecha.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1055c-senal-cobro-sin-fecha.test.mjs`
+
+Alcance: SCRUM-1055 c.22857 ③ (los tres textos, firmados) y c.22874 (sin columna ni ALTER: la señal sale de
+`invoice_payments.fecha_origen = 'marcado'`, SCRUM-1732 c.21928 ③). Partido con el GO del orquestador: **aquí
+sólo el servidor**; la pantalla pasa al tramo **1055e** (la letra d es la pregunta al asesor, jv-j4co).
+
+**① Lo medido antes de escribir (base del encargo de 1055e):**
+- (a) La ruta del panel, `src/modules/invoicing/app/routes/libroRegistro.routes.ts:32`, NO preguntaba el criterio
+  de caja: `preguntado` salía falso (`libroRegistro.repo.ts:330`), el campo era emisión y `cobrosPorFactura` no
+  existía, así que en pantalla `cobros` era siempre `[]` y el origen no llegaba nunca. Sí lo preguntan el 303
+  (`src/modules/fiscal/modelo303/modelo303.repo.ts:27`, con `devengo: true`) y las evidencias
+  (`src/modules/fiscal/evidencias/paquete.repo.ts:50`).
+- (b) El constructor ya copiaba el origen de cada cobro vivo: `cobros[].origen = fechaOrigen`
+  (`src/modules/invoicing/domain/libroRegistro.ts:285` en la base). `FiabilidadDelCobro`
+  (`src/modules/invoicing/domain/criterioCaja.ts:46`) no la usa nadie en `src/`.
+- (c) La vista (`public/dashboard/js/libroRegistroView.js`) no pinta ninguna fecha de cobro ni `ADVERTENCIA_CAJA`:
+  no hay patrón que copiar. El sitio natural es la columna de trazas, junto a la marca «Cobro»
+  (`libroRegistroView.js:362`, `badge-green`), con `badge-amber`; los avisos de resumen van por `avisar()` (:216).
+
+**② Qué cambia (servidor, carril J1):**
+- La ruta pide el criterio del comercio con `criterioDelMerchantParaElLibro`, como el 303 y las evidencias. Sin
+  criterio declarado es `{}` y el libro es el de siempre (por emisión, sin cobros): lo fija el caso CONTROL.
+- Cada asiento de caja lleva `cobroSinFechaDeclarada: boolean` = algún cobro VIVO con `fecha_origen = 'marcado'`.
+  `aviso` y `declarada` no la llevan; una anulación (nace `marcado`, `cobrosDeFactura.ts:113`) tampoco.
+- El libro de caja lleva `cobrosSinFechaDeclarada` (asientos con la señal) y `cobrosSinFilas`.
+- **Regla de «sin filas»:** una factura de caja `paid` SIN ninguna fila en `invoice_payments` (anteriores a 1732,
+  que se leen como hoy) NO lleva la señal —no se afirma lo que no se sabe— y se cuenta en `cobrosSinFilas`.
+  Para poder contarla, `filasPorFactura` da entrada `[]` a cada factura pedida (`libroRegistro.repo.ts`).
+- **Cuántas hay:** en el banco del test, 1 de 6 (`F-SIN-FILAS`; la pendiente sin filas no cuenta). En staging,
+  **no lo he medido**: el árbol no tiene `.env` ni `DATABASE_URL_STAGING` (no corrí `comprobar-claves-bd.mjs`).
+  Queda para el fundador cuando decida qué hacer con ellas.
+
+**③ El 303 y las evidencias:** los dos leen el libro con criterio, así que el recuento ya viaja en el objeto que
+leen. Ninguno lo saca a su salida: el 303 construye sus casillas y las evidencias sus CSV y avisos
+(`paquete.ts:259-267`). Sacarlo ahí toca otras salidas: **declarado para 1055e**, no hecho.
+
+**Verdes, con población:** `tests/scrum1055c-senal-cobro-sin-fecha.test.mjs` 3 tests · 3 pass · 0 fail · 0 skip.
+Mutaciones con `correr` + `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`: base 3 pasados, y **4 de 4**
+tumban el test (la ruta sin criterio, la señal con `declarada`, el recuento a 0, el lector sin la entrada vacía).
+Build con tipos (`npm run build`, sin `--noCheck`): salida 0. La suite entera la corre el CI y el orquestador
+(orden suya); `censo:mudez` no lo he corrido.
+
+**NO hecho → 1055e:** la pantalla (texto 1 en la columna de trazas, texto 2 al pasar o pulsar, texto 3 en el
+resumen), su test de vista y la línea en el 303 y las evidencias.
+
+**Errores míos:** escribí el código antes que el test. El rojo lo da la primera mutación del catálogo, que deja
+la ruta como estaba (sin `...criterio`) y tumba el test. Y crucé los 200k otra vez (201.723, avisó el hook).
