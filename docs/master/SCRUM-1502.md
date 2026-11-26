@@ -1638,3 +1638,52 @@ pregunta de política de c.21333. Las otras 69: forma, no leídas.
   delegación; si se quieren, el script las saca cambiando un filtro).
 - `.json` de la salida completa: no se ha subido (D: sin espacio; es reproducible con el script).
 - yaqu.app: no aplica (sólo docs). Ticket no transicionado (A13).
+
+### Lo que decidió el orquestador sobre esta entrega (26-nov, por SendMessage; delegación de SCRUM-1656 c.21978)
+
+1. **Peso 1, las 26 (25 sin la línea de la plantilla): SÍ se curan.** El orquestador busca en Jira el comentario
+   real de cada una y devuelve la lista; S0 escribe la cura en cada ficha. Las que no aparezcan → fila de
+   preguntas ✅/❌ al fundador, sin tocar la ficha. **Pendiente de esa lista: ninguna ficha tocada en este commit.**
+2. **La plantilla, APLICADA aquí** (registro nº12 de la delegación): `docs/microcopy/README.md` pide ahora la
+   línea `… el <fecha> — SCRUM-<n> comentario <id>.`, con el comentario obligatorio. El encargo decía «c.<id>»;
+   va como «comentario <id>» porque es la forma que el oráculo YA lee (`REFERENCIA_JIRA`,
+   `tests/_microcopy-aprobada.mjs:90`) y la misma de la firma delegada; la frase de apertura no cambia, así que
+   `FIRMA_DEL_FUNDADOR` (`:69`) sigue casando. Ningún guard tocado.
+3. **El eje ciego de `scrum921`** → SCRUM-1872, cola de instrumentos (S5); hoy no se toca.
+4. **Peso 4, las 83 de registro: NO se curan una a una** (conforme a la propuesta de arriba). Un registro narra
+   una firma pasada; se cura sólo si un guard o un doc vivo se apoya en él.
+
+### Apéndice ③ · los textos visibles NUEVOS de la 1.1 (regla 39): 0 huérfanos
+
+**Base:** la 1.0 se cerró el 24-nov a las 18:33Z (SCRUM-1817, «TERMINADA»; no hay tag). Base = el último commit de
+primer padre de `main` antes de esa hora: `db0a6c045` (17:53:22Z, #3411). **Elección MÍA**, no escrita en la
+ficha. Punta: `f336e00c2`. 54 merges de primer padre entre las dos.
+
+`node docs/master/evidencias/scrum1502u/literales-nuevos.mjs db0a6c045 origin/main` — cada cadena entre comillas de
+una línea AÑADIDA (`diff -U0`) de `public/` y `src/` (`.js/.ts/.mjs/.html`), con su commit (blame en la punta) y si
+su texto está en alguna ficha de `docs/microcopy/`.
+
+| población | |
+|---|---|
+| ficheros cambiados que se leen | 18: 7 `.js` de `public/dashboard/js` (más `styles.css`, fuera por extensión; ningún `.html`) y 11 de `src/`, ninguno de `messaging/` ni `integrations/` |
+| líneas añadidas · de comentario | 1.132 · 214 |
+| cadenas · tiradas por el filtro «parece texto» | 348 · 279 (revisadas a mano con `VER_TIRADAS=1`: la única visible tirada es `🗑 Eliminar`, que ya estaba en la 1.0, `customerDetailView.js:127` en `db0a6c045`) |
+| **parecen texto** | **69** |
+
+Las 69:
+
+| grupo | n | constancia |
+|---|---|---|
+| en una ficha de `docs/microcopy/` (sobre todo SCRUM-1005 documentos y SCRUM-1833 equipos, c.22811) | 44 | ficha (las de una palabra, como «Marca» o «Editar», casan fichas viejas: casamiento DÉBIL, pero van en el mismo bloque de textos que la ficha de 1833) |
+| ya existían en la 1.0 (reusados en otra pantalla): «Cobro cancelado», «¿Cancelar este cobro?…», «Cancelar cobro», «Este cobro ya no está pendiente.», «…ya consta como pagado…», «Error actualizando estado…», y en el export «Razón social» y «Baja WhatsApp» (reordenados) | 8 | no es texto nuevo |
+| **nuevos SIN ficha, firmados en su registro**: los 6 del selector de plan (`reportsView.js:969-1007`, SCRUM-1818b) → SCRUM-1656 c.22694 (`docs/master/SCRUM-1818.md:37`); «¿Factura como empresa o autónomo (IVA)?» ×2 (`customersView.js:1511`, `tipoDestinatarioPendiente.js:58`) → SCRUM-1782 c.22268 y c.22272 (`docs/master/SCRUM-1782.md:11-13`) | 8 | comentario de Jira en el registro |
+| no los ve nadie: descripciones de `adminRouteDeclarations.ts` (3), log, `Content-Type`, clases CSS (2), nombre de tipo, un resto de comentario | 9 | no aplica |
+
+**Huérfanos (texto nuevo visible sin firma registrada): 0.** Hallazgo menor: los 8 firmados del tercer grupo no
+tienen ficha en `docs/microcopy/`, así que el oráculo `comoConstaAprobado` no los ve; la firma vive en el registro.
+Cura propuesta: una ficha por ticket (1818b y 1782b) con la línea nueva de la plantilla. No hecho: decide el
+orquestador.
+
+**No medido:** los comentarios de Jira citados no se han leído (c.22694, c.22268, c.22272, c.22811); textos
+construidos por concatenación de cadenas sin espacio (el filtro los tira; la revisión de tiradas no vio ninguno);
+PDFs y correos (ningún fichero de `pdf/` ni de `mailer` cambió entre las dos puntas); yaqu.app no abierto.
