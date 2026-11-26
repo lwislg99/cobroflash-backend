@@ -33,7 +33,10 @@ const TICKET = /^SCRUM-\d+[a-z]?$/;
 const REF = /^(#\d+|c\.\d+)$/;
 const REF_DE_EJEMPLO = /^(#0+|c\.0+)$/;
 const ID_VERSION = /^\d+\.\d+$/;
-const PUESTO = /^[SJ]\d$/;
+// S0-S5 y J1-J6, más el orquestador de cada equipo: `orq` (S) y `orqJ` (J). Una pieza que hizo el
+// orquestador lleva su sello; mapearla a un puesto falsearía el dato (orquestador, 26-nov).
+const PUESTO = /^([SJ]\d|orq|orqJ)$/;
+const equipoDelPuesto = (p) => (p === 'orq' ? 'S' : p === 'orqJ' ? 'J' : p[0]);
 
 // Claves que, si aparecen, son una cifra escrita a mano: se nombran como tal, no como «clave desconocida».
 const CLAVE_DE_CIFRA = /^(pct|porcentaje|progreso|percent|percentage|total|cifra|valor|n|numero|número|cuantas|cuántas|hechas|dentro)$/i;
@@ -146,8 +149,8 @@ export function validarPanel(datos) {
           if (!esObjeto(q)) { errores.push(`${dq}: no es un objeto.`); return; }
           revisarClaves(q, 'quien', dq, errores);
           if ('equipo' in q && !['S', 'J'].includes(q.equipo)) errores.push(`${dq}: «equipo» es S o J.`);
-          if ('puesto' in q && !(typeof q.puesto === 'string' && PUESTO.test(q.puesto))) errores.push(`${dq}: «puesto» con forma S2 o J1.`);
-          else if (typeof q.puesto === 'string' && q.puesto[0] !== q.equipo) errores.push(`${dq}: el puesto ${q.puesto} no es del equipo ${q.equipo}.`);
+          if ('puesto' in q && !(typeof q.puesto === 'string' && PUESTO.test(q.puesto))) errores.push(`${dq}: «puesto» con forma S2, J1, orq u orqJ.`);
+          else if (typeof q.puesto === 'string' && equipoDelPuesto(q.puesto) !== q.equipo) errores.push(`${dq}: el puesto ${q.puesto} no es del equipo ${q.equipo}.`);
         });
       }
       if ('ref' in p) {

@@ -22,7 +22,7 @@
       "ficha": "SCRUM-0",
       "objetivo": "Objetivo inventado de una versión cerrada.",
       "piezas": [
-        { "ticket": "SCRUM-0", "titulo": "Pieza Demo E", "quien": [{ "equipo": "S", "puesto": "S3" }], "estado": "dentro", "ref": "#0000", "medidoA": "2026-11-26T16:05:00Z" }
+        { "ticket": "SCRUM-0", "titulo": "Pieza Demo E", "quien": [{ "equipo": "S", "puesto": "S3" }, { "equipo": "J", "puesto": "orqJ" }], "estado": "dentro", "ref": "#0000", "medidoA": "2026-11-26T16:05:00Z" }
       ]
     },
     {

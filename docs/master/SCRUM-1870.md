@@ -72,3 +72,13 @@ horizontal (`scrollWidth` = `clientWidth` = 375). Visto ahí y corregido antes d
   dice cuándo.
 - Los textos fijos del panel (leyenda, pie) salen de la v11 del orquestador; si alguno pide firma (regla 39), es suya.
 - No publica nada: el HTML se publica a mano (Artifact) con el fichero que escribe.
+
+## Tramo b · 26-nov noche (relevo de S5) · ajuste `orq`/`orqJ` y rojo de SCRUM-553
+
+- **Ajuste pedido por el orquestador:** `quien.puesto` admite, además de S0-5 y J1-6, el orquestador de cada equipo:
+  `orq` (equipo S) y `orqJ` (equipo J). En la 1.0 hay piezas del orquestador y mapearlas a un puesto falsearía el dato.
+  Schema (`pattern ^([SJ]\d|orq|orqJ)$`), validador (`equipoDelPuesto`: `orq`→S, `orqJ`→J) y ejemplo (una pieza con `orqJ`).
+  Rojo-primero en el test: `orqJ` en S, `orq` en J y `orquestador` como puesto se CAZAN; `orq` en S valida y se pinta.
+- **Rojo del CI de la punta `86871d2c4`** (run 45863159589, 1 fallo de 14626): `scrum553` — 8 extractores del test de 1870
+  con el `>` pegado subían el trinquete de 20 a 28. Curado en el test (hueco `[^>]*` a los atributos, lo vigilado sigue siendo
+  el texto); el censo da 0 en el fichero. El trinquete no se toca (regla 41).

@@ -70,7 +70,7 @@
             "required": ["equipo", "puesto"],
             "properties": {
               "equipo": { "enum": ["S", "J"] },
-              "puesto": { "description": "Empieza por la letra de su equipo.", "type": "string", "pattern": "^[SJ]\\d$" }
+              "puesto": { "description": "S0-S5 o J1-J6 (empieza por la letra de su equipo), u orquestador: «orq» (equipo S) y «orqJ» (equipo J).", "type": "string", "pattern": "^([SJ]\\d|orq|orqJ)$" }
             }
           }
         },

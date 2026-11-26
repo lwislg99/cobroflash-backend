@@ -75,11 +75,11 @@ test('SCRUM-1870 · el ejemplo genera y CADA número del panel sale de las filas
     assert.ok(html.includes(`aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Progreso de la versión ${v.id}"`),
       `la barra de ${v.id} no dice ${pct}`);
   }
-  assert.ok(html.includes('<span class="pct">50 %</span>'), 'la 9.1 del ejemplo es 2 de 4 dentro: 50 %');
+  assert.match(html, /<span class="pct"[^>]*>50 %<\/span>/, 'la 9.1 del ejemplo es 2 de 4 dentro: 50 %');
   assert.ok(html.includes('En obra · 50 %'), 'el tren repite el mismo % calculado');
 
   // Cada KPI es una cuenta de filas.
-  const cifras = [...html.matchAll(/<div class="kpi"><div class="n">(\d+)<\/div><div class="l">([^<]+)<\/div><\/div>/g)];
+  const cifras = [...html.matchAll(/<div class="kpi"[^>]*><div class="n"[^>]*>(\d+)<\/div><div class="l"[^>]*>([^<]+)<\/div><\/div>/g)];
   assert.equal(cifras.length, datos.kpis.length, 'un KPI por declaración');
   datos.kpis.forEach((k, i) => {
     const v = datos.versiones.find((x) => x.id === k.version);
@@ -88,11 +88,11 @@ test('SCRUM-1870 · el ejemplo genera y CADA número del panel sale de las filas
   });
 
   // «medido a las HH:MM» en CADA fila, en hora de Madrid (16:05Z del 26-nov = 17:05 en Madrid).
-  const filas = [...html.matchAll(/<tr><td class="p">[\s\S]*?<\/tr>/g)].map((m) => m[0]);
+  const filas = [...html.matchAll(/<tr[^>]*><td class="p"[^>]*>[\s\S]*?<\/tr>/g)].map((m) => m[0]);
   const piezas = datos.versiones.flatMap((v) => v.piezas);
   assert.equal(filas.length, piezas.length, 'una fila por pieza');
-  for (const f of filas) assert.match(f, /<time datetime="[^"]+">a las \d{2}:\d{2}/, `fila sin «a las HH:MM»: ${f}`);
-  assert.ok(html.includes('<time datetime="2026-11-26T16:05:00Z">a las 17:05</time>'), 'hora de Madrid, fijada en el código');
+  for (const f of filas) assert.match(f, /<time datetime="[^"]+"[^>]*>a las \d{2}:\d{2}/, `fila sin «a las HH:MM»: ${f}`);
+  assert.match(html, /<time datetime="2026-11-26T16:05:00Z"[^>]*>a las 17:05<\/time>/, 'hora de Madrid, fijada en el código');
   assert.ok(html.includes('a las 23:30 del 25 nov'), 'una fila de OTRO día que la cabecera lo dice');
   assert.ok(html.includes('entre las 23:30 del 25 nov y las 17:10 del 26 nov'), 'la cabecera es el intervalo de las filas');
 
@@ -181,6 +181,16 @@ test('SCRUM-1870 · CONTROL · el validador acepta el ejemplo y rechaza cada reg
   caza((d) => { delete d.ejemplo; }, 'ref de ejemplo');
   caza((d) => { d.versiones[0].piezas[0].medidoA = '2026-11-26 17:05'; }, 'no es un instante ISO con zona');
   caza((d) => { d.versiones[0].piezas[0].quien[0].puesto = 'J5'; }, 'no es del equipo S');
+  // El orquestador de cada equipo tiene sello propio: `orq` es del S, `orqJ` del J, y no se cruzan.
+  caza((d) => { d.versiones[0].piezas[0].quien[0].puesto = 'orqJ'; }, 'el puesto orqJ no es del equipo S');
+  caza((d) => { d.versiones[0].piezas[1].quien[0].puesto = 'orq'; }, 'el puesto orq no es del equipo J');
+  caza((d) => { d.versiones[0].piezas[0].quien[0].puesto = 'orquestador'; }, '«puesto» con forma S2, J1, orq u orqJ');
+  {
+    const d = ejemplo();
+    d.versiones[0].piezas[0].quien = [{ equipo: 'S', puesto: 'orq' }];
+    assert.deepEqual(validarPanel(d), [], 'orq en el equipo S es válido');
+    assert.match(generarPanel(d, TOKENS), /<span class="sello eq-s"[^>]*>orq<\/span>/, 'y se pinta con su sello');
+  }
   caza((d) => { d.kpis[0].version = '7.7'; }, 'no está en «versiones»');
   caza((d) => { d.versiones[0].piezas[0].quienes = []; }, 'clave «quienes» que no está en panel.schema.json');
 });
