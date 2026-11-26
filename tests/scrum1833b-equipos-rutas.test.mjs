@@ -1,9 +1,9 @@
 // SCRUM-1833b · rutas CRUD de los equipos del cliente, por la RUTA real con el doble de la casa.
 // Decisiones del fundador: SCRUM-1833 c.22811 (P3 ❌ sin sitio, P4 ✅ borrar solo admin). Diseño: c.22817.
-// Trampa 1 de c.22817: el doble ejecuta `$transaction(cb)` como `cb(tx)` sobre LOS MISMOS modelos, así
+// Primera trampa, la de c.22817: el doble ejecuta `$transaction(cb)` como `cb(tx)` sobre LOS MISMOS modelos, así
 // que no distingue si hay transacción. Aquí se envuelve: foto de las tablas y, si algo lanza, se
 // restaura. Sin transacción en el código, el fallo sembrado deja los 4 documentos a NULL y el caso cae.
-// Trampa 2: `meta-mutaciones` corre SIN base, así que cada mutación la caza un caso de este fichero, sin gate.
+// Segunda trampa: `meta-mutaciones` corre SIN base, así que cada mutación la caza un caso de este fichero, sin gate.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
@@ -78,7 +78,7 @@ function tabla(nombre) {
 const respuestas = Object.assign({}, ...['customer', 'equipment', ...DOCS].map(tabla));
 inyectarBase(respuestas, ['../dist/modules/system/customerAdmin.js', '../dist/modules/system/app/routes/customersAdmin.routes.js']);
 
-// Trampa 1: la transacción de verdad es «todo o nada». La foto se restaura si el callback lanza.
+// Primera trampa: la transacción de verdad es «todo o nada». La foto se restaura si el callback lanza.
 const modPrisma = requiere.cache[requiere.resolve('../dist/core/db/prisma.js')].exports;
 const doble = modPrisma.prisma;
 modPrisma.prisma = new Proxy(doble, {
