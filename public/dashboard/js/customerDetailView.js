@@ -763,6 +763,80 @@ const FUSION_CLIENTE = {
 };
 if (typeof window !== 'undefined') window.fusionCliente = FUSION_CLIENTE;
 
+// ── SCRUM-1868b · ELIMINAR ESTE CLIENTE: tarjeta al final de la ficha + modal ────────────────────
+/**
+ * Textos FIRMADOS por el fundador en SCRUM-1868 (descripción: «2-Los textos valen»; c.22850: el
+ * toast, «1-✅»). `generico` se REUSA byte a byte de FUSION_CLIENTE. `{nombre}`, `{n}` y `{m}` son
+ * los huecos del lienzo. El servidor (SCRUM-1868a) contesta CÓDIGOS: cada motivo se traduce por
+ * `MOTIVOS`, y uno fuera de la tabla cae en el genérico (regla 39, como la fusión).
+ * ⛔ `cuenta.solicitudes` viaja y NO se pinta: no hay fila firmada para ella.
+ */
+const BORRAR_CLIENTE = {
+  TEXTOS: {
+    tarjetaTitulo: 'Eliminar este cliente',
+    tarjetaTexto: 'Se borra su ficha con sus documentos, sus sitios y sus equipos. No se puede deshacer. Si tiene presupuestos o facturas, no se puede eliminar.',
+    tarjetaSoloAdmin: 'Solo lo ve el administrador.',
+    boton: 'Eliminar cliente',
+    titulo: 'Eliminar cliente',
+    subtitulo: 'Revisa lo que se borra antes de confirmar',
+    seBorra: 'Se borra',
+    filaFicha: 'La ficha de {nombre}',
+    FILAS: { documentos: 'Documentos adjuntos', sitios: 'Sitios', equipos: 'Equipos', historial: 'Historial de actividad' },
+    nota: 'Este cliente no tiene presupuestos ni facturas: por eso se puede eliminar.',
+    irreversible: 'Esto no se puede deshacer.',
+    cancelar: 'Cancelar',
+    confirmar: 'Eliminar',
+    bloqueo: 'No se puede eliminar a {nombre}. Tiene {n} facturas emitidas y {m} presupuestos, y una factura emitida no se borra.',
+    loImpide: 'Lo que lo impide',
+    MOTIVOS: { tiene_facturas: 'Facturas emitidas', tiene_presupuestos: 'Presupuestos' },
+    salida: 'Puedes fusionarlo con otro cliente o dejarlo como está.',
+    enlaceFusion: 'fusionarlo con otro cliente',
+    cerrar: 'Cerrar',
+    exito: 'Cliente eliminado',
+    generico: 'No se ha podido completar la acción. Vuelve a intentarlo.',
+  },
+  /** De qué cantidad de `cuenta` sale el número de cada motivo. */
+  CUENTA_DEL_MOTIVO: { tiene_facturas: 'facturas', tiene_presupuestos: 'presupuestos' },
+  rellenar(texto, valores) { return DOCUMENTOS_CLIENTE.rellenar(texto, valores); },
+  numero(v) { const n = Number(v); return Number.isFinite(n) && n >= 0 ? n : 0; },
+  /** El rótulo firmado de un motivo; `null` si el código no es uno de los dos. */
+  motivo(codigo) {
+    return Object.prototype.hasOwnProperty.call(BORRAR_CLIENTE.TEXTOS.MOTIVOS, codigo) ? BORRAR_CLIENTE.TEXTOS.MOTIVOS[codigo] : null;
+  },
+  /**
+   * La alerta del bloqueo, DERIVADA del literal firmado sin palabras nuevas (la cláusula de la
+   * descripción de SCRUM-1868, «se derivan sin cambiar las palabras»; confirmado por el orquestador J
+   * sobre c.22850, que cierra los textos): el singular de cada cantidad y, si bloquea solo una de las dos, el trozo de la otra
+   * fuera; sin facturas se va también la coletilla de la factura. `null` con cero de las dos.
+   */
+  alertaBloqueo(nombre, facturas, presupuestos) {
+    const n = BORRAR_CLIENTE.numero(facturas);
+    const m = BORRAR_CLIENTE.numero(presupuestos);
+    if (!n && !m) return null;
+    let t = BORRAR_CLIENTE.TEXTOS.bloqueo;
+    if (n === 1) t = t.replace('{n} facturas emitidas', '1 factura emitida');
+    if (m === 1) t = t.replace('{m} presupuestos', '1 presupuesto');
+    if (!m) t = t.replace(' y {m} presupuestos', '');
+    if (!n) t = t.replace('{n} facturas emitidas y ', '').replace(', y una factura emitida no se borra.', '.');
+    return BORRAR_CLIENTE.rellenar(t, { nombre, n, m });
+  },
+  /**
+   * Qué enseña el modal con un cuerpo: la previa (GET) o el de un 409 del DELETE, que no trae
+   * `bloqueado` pero sí `motivos`. `revisar` (se puede eliminar), `bloqueado` (con sus motivos) o
+   * `generico` (un motivo fuera de la tabla, o un cuerpo que no se entiende: no hay «Eliminar»).
+   */
+  estado(r) {
+    if (!r || typeof r !== 'object' || !r.cuenta || typeof r.cuenta !== 'object') return { tipo: 'generico' };
+    const motivos = Array.isArray(r.motivos) ? r.motivos : [];
+    if (r.bloqueado === true || motivos.length) {
+      if (!motivos.length || motivos.some((c) => BORRAR_CLIENTE.motivo(c) === null)) return { tipo: 'generico' };
+      return { tipo: 'bloqueado', motivos };
+    }
+    return r.bloqueado === false ? { tipo: 'revisar' } : { tipo: 'generico' };
+  },
+};
+if (typeof window !== 'undefined') window.borrarCliente = BORRAR_CLIENTE;
+
 /**
  * SCRUM-1132 · LA PESTAÑA «NOTAS»: las notas con fecha y autor de `GET /admin/customers/:id/notes`
  * (SCRUM-1036) y el campo para añadir una con `POST` a la misma ruta. SCRUM-1132c (c.20627): es
@@ -1249,6 +1323,27 @@ async function renderCustomer360View(container, customerId) {
   let peticionEquipos = 0;
   wrap.appendChild(tabsWrap);
   wrap.appendChild(tabContent);
+
+  // SCRUM-1868b · «Eliminar este cliente», al final y DESPUÉS de las pestañas (opción B de SCRUM-1868).
+  // Las rutas son `requireRole('admin')`: con la condición de «Fusionar», a quien no lo es ni se le pinta.
+  if (window.appUserRole === 'admin') {
+    const TB = BORRAR_CLIENTE.TEXTOS;
+    const parte = (tag, clase, texto) => { const n = document.createElement(tag); n.className = clase; n.textContent = texto; return n; };
+    const tarjeta = document.createElement('div');
+    tarjeta.className = 'customers-card';
+    tarjeta.dataset.rol = 'borrar-cliente';
+    tarjeta.appendChild(parte('h3', 'section-title', TB.tarjetaTitulo));
+    tarjeta.appendChild(parte('p', 'fusion-linea', TB.tarjetaTexto));
+    tarjeta.appendChild(parte('p', 'c360-ayuda', TB.tarjetaSoloAdmin));
+    // Secundario con el texto en Peligro-tinta: `gasto-opcion-eliminar` es la clase que ya existe con
+    // `--danger-ink` (la del «Eliminar» de gastos). Sin `btn-sm`: 36 px en escritorio y 44 en móvil.
+    const botonBorrar = parte('button', 'btn btn-secondary gasto-opcion-eliminar', TB.boton);
+    botonBorrar.type = 'button';
+    botonBorrar.dataset.accion = 'abrir-borrado';
+    botonBorrar.addEventListener('click', () => abrirBorradoDeCliente(customer, id, container));
+    tarjeta.appendChild(botonBorrar);
+    wrap.appendChild(tarjeta);
+  }
 
   const STATUS_LABELS = { draft:'Borrador', sent:'Enviado', accepted:'Aceptado', rejected:'Rechazado', pending:'Pendiente', paid:'Pagada', expired:'Caducada', pending_approval:'Pend. aprob.' };
   const STATUS_CLASS  = { accepted:'status-pill-accepted', paid:'status-pill-accepted', sent:'status-pill-pending', pending:'status-pill-pending', rejected:'status-pill-rejected', expired:'status-pill-draft', draft:'status-pill-draft', pending_approval:'status-pill-approval' };
@@ -1992,6 +2087,146 @@ function abrirFusionDeClientes(customer, customerId, container) {
     .then((r) => { clientes = Array.isArray(r) ? r : []; pintarLista(); })
     .catch((err) => mostrarError(window.mensajeParaPersona(err, T.generico)));
   if (typeof buscar.focus === 'function') buscar.focus();
+}
+
+// ── SCRUM-1868b · Eliminar cliente ─────────────────────────────────────────────
+// Abrir → previa (GET, no escribe nada) → «Eliminar» → DELETE. El DELETE solo sale de ese botón, y
+// el botón solo se habilita con una previa NO bloqueada en pantalla (`listo`). Un 409 al pulsar
+// (entre mirar y pulsar alguien pudo emitir una factura) repinta el bloqueo con SU cuerpo.
+function abrirBorradoDeCliente(customer, customerId, container) {
+  const B = BORRAR_CLIENTE;
+  const T = B.TEXTOS;
+  const nombre = customer && customer.name ? customer.name : '';
+  const el = (tag, clase, texto) => {
+    const n = document.createElement(tag);
+    if (clase) n.className = clase;
+    if (texto !== undefined) n.textContent = texto;
+    return n;
+  };
+
+  const overlay = el('div', 'modal-overlay');
+  overlay.dataset.rol = 'modal-borrar-cliente';
+  const modal = el('div', 'modal');
+  const cerrar = () => overlay.remove();
+  modal.appendChild(cabeceraModal({ titulo: T.titulo, sinCierre: true }));
+  const cuerpo = el('div', 'modal-body');
+  const previa = el('div', 'fusion-previa');
+  const aviso = el('div', 'alert error');
+  aviso.dataset.rol = 'aviso-borrar';
+  cuerpo.appendChild(previa);
+  cuerpo.appendChild(aviso);
+  modal.appendChild(cuerpo);
+
+  const pie = el('div', 'modal-footer');
+  const boton = (clase, texto, accion) => { const b = el('button', clase, texto); b.type = 'button'; b.dataset.accion = accion; return b; };
+  const cancelar = boton('btn btn-secondary', T.cancelar, 'cancelar-borrado');
+  const confirmar = boton('btn btn-danger', T.confirmar, 'confirmar-borrado');
+  confirmar.disabled = true;
+  const cerrarBtn = boton('btn btn-secondary', T.cerrar, 'cerrar-borrado');
+  cerrarBtn.hidden = true;
+  pie.appendChild(cancelar);
+  pie.appendChild(confirmar);
+  pie.appendChild(cerrarBtn);
+  modal.appendChild(pie);
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
+  cancelar.addEventListener('click', cerrar);
+  cerrarBtn.addEventListener('click', cerrar);
+
+  // `true` solo con una previa NO bloqueada en pantalla: el botón desactivado Y el clic que no llama.
+  let listo = false;
+  const mostrarError = (texto) => { aviso.textContent = texto || ''; };
+  const tabla = (filas) => {
+    const t = el('table', 'table');
+    const tb = el('tbody');
+    filas.forEach(([rotulo, n]) => {
+      const tr = el('tr');
+      tr.appendChild(el('td', '', rotulo));
+      tr.appendChild(el('td', 'c360-celda-numero', String(n)));
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+    return t;
+  };
+
+  const pintarRevision = (c) => {
+    previa.innerHTML = '';
+    previa.appendChild(el('p', 'fusion-linea fusion-contados', T.subtitulo));
+    previa.appendChild(el('h4', 'fusion-previa-titulo', T.seBorra));
+    const filas = [[B.rellenar(T.filaFicha, { nombre }), 1]];
+    Object.keys(T.FILAS).forEach((k) => filas.push([T.FILAS[k], B.numero(c[k])]));
+    previa.appendChild(tabla(filas));
+    previa.appendChild(el('p', 'fusion-linea', T.nota));
+    previa.appendChild(el('p', 'fusion-irreversible', T.irreversible));
+    listo = true;
+    confirmar.disabled = false;
+  };
+
+  const pintarBloqueo = (motivos, c) => {
+    previa.innerHTML = '';
+    listo = false;
+    confirmar.disabled = true;
+    confirmar.hidden = true;
+    cancelar.hidden = true;
+    cerrarBtn.hidden = false;
+    const cuanto = (k) => (motivos.includes(k) ? B.numero(c[B.CUENTA_DEL_MOTIVO[k]]) : 0);
+    const alerta = B.alertaBloqueo(nombre, cuanto('tiene_facturas'), cuanto('tiene_presupuestos'));
+    if (!alerta) { mostrarError(T.generico); return; }
+    previa.appendChild(el('div', 'alert error', alerta));
+    previa.appendChild(el('h4', 'fusion-previa-titulo', T.loImpide));
+    previa.appendChild(tabla(motivos.map((k) => [T.MOTIVOS[k], cuanto(k)])));
+    // La frase firmada entera, con su trozo «fusionarlo con otro cliente» como enlace al modal de fusión.
+    const salida = el('p', 'fusion-linea');
+    const i = T.salida.indexOf(T.enlaceFusion);
+    salida.appendChild(el('span', '', T.salida.slice(0, i)));
+    const enlace = el('a', 'contacto-link', T.enlaceFusion);
+    enlace.href = '#';
+    enlace.dataset.accion = 'fusionar-en-vez';
+    enlace.addEventListener('click', (e) => {
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      cerrar();
+      abrirFusionDeClientes(customer, customerId, container);
+    });
+    salida.appendChild(enlace);
+    salida.appendChild(el('span', '', T.salida.slice(i + T.enlaceFusion.length)));
+    previa.appendChild(salida);
+  };
+
+  const pintar = (r) => {
+    const e = B.estado(r);
+    mostrarError('');
+    if (e.tipo === 'revisar') pintarRevision(r.cuenta);
+    else if (e.tipo === 'bloqueado') pintarBloqueo(e.motivos, r.cuenta);
+    else { listo = false; confirmar.disabled = true; mostrarError(T.generico); }
+  };
+
+  confirmar.addEventListener('click', async () => {
+    if (!listo) return;
+    listo = false;
+    confirmar.disabled = true;
+    cancelar.disabled = true;
+    mostrarError('');
+    try {
+      await apiRequest(`/admin/customers/${customerId}`, { method: 'DELETE' });
+    } catch (err) {
+      cancelar.disabled = false;
+      if (err && err.status === 409 && B.estado(err.data).tipo === 'bloqueado') { pintar(err.data); return; }
+      mostrarError(window.mensajeParaPersona(err, T.generico));
+      // Un 409 sin motivo de la tabla o un 404 no cambian reintentando: no se vuelve a ofrecer.
+      if (!(err && (err.status === 409 || err.status === 404))) { listo = true; confirmar.disabled = false; }
+      return;
+    }
+    cerrar();
+    if (typeof window.showToast === 'function') window.showToast(T.exito);
+    // La misma vuelta que «← Volver a Clientes».
+    if (typeof window.renderAppView === 'function') window.renderAppView('customers');
+  });
+
+  apiRequest(`/admin/customers/${customerId}/borrado-previa`)
+    .then(pintar)
+    .catch((err) => mostrarError(window.mensajeParaPersona(err, T.generico)));
 }
 
 // ── SCRUM-1781d · el prefijo aparte en «Editar cliente», como en «Nuevo cliente» ──────────
