@@ -700,12 +700,17 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   concSec.innerHTML = '<h3 class="detail-section-title">Conceptos</h3>';
   page.appendChild(concSec);
 
+  // SCRUM-1805e · la MISMA receta que la ficha de factura (SCRUM-1787e): a ≤640 px cada línea se apila
+  // —el concepto a todo el ancho, Cant./Precio/IVA/Total debajo con su rótulo— en vez de esconder tres
+  // columnas tras el scroll propio de la tabla (medido a 390 px: 2 de 5 a la vista). Los rótulos salen
+  // de ESTA cabecera (`data-label`), sin un texto nuevo. El `style=` del «Total» pasa a una clase (CSP).
   const table = document.createElement('table');
-  table.className = 'table';
+  table.className = 'table quote-conceptos-tabla';
   table.innerHTML = `
     <thead><tr>
-      <th>Concepto</th><th>Cant.</th><th>Precio</th><th>IVA</th><th style="text-align:right">Total</th>
+      <th>Concepto</th><th>Cant.</th><th>Precio</th><th>IVA</th><th class="quote-conceptos-col-total">Total</th>
     </tr></thead>`;
+  const rotulos = [...table.querySelectorAll('thead th')].map((th) => th.textContent);
   const tbody = document.createElement('tbody');
   table.appendChild(tbody);
   concSec.appendChild(table);
@@ -757,7 +762,9 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       `<td>${qty}</td>` +
       `<td>${fmtQuoteMoney(price, cur)}</td>` +
       `<td>${fmtTipoIvaEs(tax)} %</td>` +
-      `<td style="text-align:right" class="amount">${fmtQuoteMoney(total, cur)}</td>`;
+      `<td class="amount quote-conceptos-col-total">${fmtQuoteMoney(total, cur)}</td>`;
+    // SCRUM-1805e · cada celda numérica lleva el rótulo de SU columna (el concepto no: va a todo el ancho).
+    [...tr.children].forEach((td, k) => { if (k > 0) td.dataset.label = rotulos[k]; });
 
     // 🔴 EL CONCEPTO SE CONSTRUYE COMO NODOS, no como cadena de HTML. La descripción larga viaja
     // dentro del concepto detrás de un salto de línea (SCRUM-603) y el HTML COLAPSA los saltos:
