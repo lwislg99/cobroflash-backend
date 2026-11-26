@@ -42,7 +42,7 @@ import { albaranOrigenDelPresupuesto, type AlbaranOrigen } from '../../../jobs/d
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 import { getEmissionMode } from '../../../invoicing/domain/emission.service'; // SCRUM-1027
 import { allocateInvoiceNumber } from '../../../invoicing/domain/invoiceNumber.service';
-import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
+import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; import { formasDePagoACongelar } from '../../../invoicing/domain/formasDePagoACongelar'; // SCRUM-729 · SCRUM-1805
 import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
 import { congelarEmisorDesdeFicha } from '../../../invoicing/domain/emisorCongelado'; // SCRUM-665
 // SCRUM-814 · el cerrojo de serie que YA EXISTE, tomado por el llamador para que el recuento de
@@ -368,6 +368,8 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
         type: 'F1',
         total: tramo.invoiceAmount.toFixed(2),
         stageLabel: isCustomPlan ? tramo.stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
+        docFooterText: quote.docFooterText ?? null, // SCRUM-1787l (c.22345 ②⑤): las Observaciones; la cabecera NO
+        payMethods: formasDePagoACongelar({ presupuesto: quote, merchant: quote.merchant, importe: Number(tramo.invoiceAmount), moneda: quote.currency.toUpperCase() }) ?? undefined, // SCRUM-1805 (c.22404, c.22429)
         currency: quote.currency,
         lines: tramo.scaledLines.length > 0 ? tramo.scaledLines : undefined,
         pdfUrl: 'PENDING_PDF',
@@ -661,6 +663,8 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
         type: 'F1',
         total: invoiceAmount.toFixed(2),
         stageLabel: null, // no es un tramo: es el documento entero
+        docFooterText: quote.docFooterText ?? null, // SCRUM-1787l (c.22345 ②⑤): las Observaciones; la cabecera NO
+        payMethods: formasDePagoACongelar({ presupuesto: quote, merchant: quote.merchant, importe: Number(invoiceAmount), moneda: quote.currency.toUpperCase() }) ?? undefined, // SCRUM-1805 (c.22404, c.22429)
         currency: quote.currency,
         lines: scaledLines,
         pdfUrl: 'PENDING_PDF',

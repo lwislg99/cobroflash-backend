@@ -65,8 +65,13 @@ export function serializar(n) {
     if (['class', 'id', 'type', 'style'].includes(k)) continue;
     at.push(`${esc(k)}="${esc(v)}"`);
   }
+  // 🔴 SCRUM-1825 · el `data-*` ya salió de `_attrs` justo arriba. Antes salía DOS veces cuando se
+  // ponía con `setAttribute` o venía del marcado (el banco lo guardaba en `_attrs` y en `dataset`);
+  // hoy `dataset` es una vista de `_attrs` y saldría dos veces SIEMPRE. Sólo se emite de aquí lo que
+  // `_attrs` no tenga (un nodo que no sea del banco).
   for (const [k, v] of Object.entries(n.dataset || {})) {
-    at.push(`data-${k.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase())}="${esc(v)}"`);
+    const nombre = `data-${k.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase())}`;
+    if (!Object.prototype.hasOwnProperty.call(attrs, nombre)) at.push(`${nombre}="${esc(v)}"`);
   }
   const abre = `<${t}${at.length ? ' ' + at.join(' ') : ''}>`;
   if (VACIO.has(n.tagName)) return abre;
