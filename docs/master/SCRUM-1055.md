@@ -114,3 +114,46 @@ emisión con el caso de ② (sólo leído: usa el mismo `rangoTrimestre`); Q-C6 
 
 **Error mío:** leí Jira antes del arranque de normas (la cicatriz de 1730b, otra vez) y crucé los 200k
 sin medirme entre el arranque y la sonda; avisó el hook del orquestador, no yo.
+
+# SCRUM-1055d · la pregunta de la R1 por devolución, al asesor
+**Medido contra:** `origin/main` = `4fba03364e8b7c072ad669f1d43cebda4573e022` · 2026-11-26T17:18:18Z (hora de GitHub; sesión J4 `jv-j4co`, encargo del orquestador `cobroflash-backend-2d`; la rama nace de `f336e00c2`, y los 3 commits de main entre los dos tocan 5 ficheros, ninguno de esta entrega)
+
+A9: aviso → cicatriz J4 «busqué con git grep la línea que hace nacer pagada a la R1 en una ruta mal escrita, de un fichero que no existe, y salió 0 sin error: un cero que no podía fallar, al lado de tres búsquedas que sí medían» — no se pudo comprobar: la búsqueda era de un solo uso, fuera del repo, y git grep no avisa de una ruta que no existe
+
+**Qué se añadió.** `docs/legal/PREGUNTAS_ASESOR.md:1041`, **Q-C10**, detrás de Q-C9 en el bloque C (criterio
+de caja), con el número siguiente: con RECC, ¿la R1 emitida por la devolución de un cobro minora el IVA en
+el periodo en que se EMITE o en el que se DEVUELVE el dinero? Marcada **SIN RESPUESTA**. El enunciado es el
+del encargo, fiel a la pregunta candidata de c.21863 ③; el contexto, el de c.21863 ③ y la regla 29; la
+decisión, del fundador en c.22857 ④ (respuesta literal «2-Ok tus recomendaciones»; c.22874 corrige el punto
+2 y deja el 4 como estaba). La pregunta no se contesta aquí: es para el asesor.
+
+**Recuentos que cambiaron.** Solo el título del bloque: «Q-C1…Q-C9» → «Q-C1…Q-C10» (línea 839). El fichero
+no lleva índice de las Q-C ni recuento de abiertas: `grep "Q-C6"` da 3 líneas (la pregunta y dos menciones
+junto a la 49), ninguna es fila de tabla; «sin respuesta» sale 27 veces y «RESPONDIDA» 4, y ninguna es un
+contador. El índice de SCRUM-1264 (Jira) dejó fuera Q-C1…Q-C9 a propósito (`PREGUNTAS_ASESOR.md:1579`, «No
+se añaden»), así que tampoco lleva fila para Q-C10. Ningún test cuenta preguntas: de los 12 tests que nombran
+el fichero, el único que lee entradas Q-C es `tests/scrum1106-respuestas-ia-no-son-del-asesor.test.mjs`, y
+su patrón (`Q-C` + una cifra + punto) no ve dos cifras: Q-C10 queda fuera de su población, y no es del lote
+de IA que vigila.
+
+**Lo que movió la inserción.** +14 líneas desde la 1041. Las únicas coordenadas vivas que apuntaban más
+abajo y acertaban hoy eran dos de `docs/producto/DECISIONES-DEL-FUNDADOR.md` (líneas 108 y 261, la P20):
+corregidas de 1118-1121 a 1132-1135 y de 1121 a 1135, y comprobado con grep que ahí están «# P20.» y su
+«Nota de estado (SCRUM-665c». Los registros de `docs/master/` que citan líneas a partir de la 1041
+(SCRUM-1023, 524, 1316, 1563 y evidencias de 1496b, c y f) no se tocan: cada uno se midió contra su sha.
+
+**Re-comprobado en el código** (solo lectura, `git grep` sobre `f336e00c2`) lo que la pregunta da por
+hecho: la R1 nace pagada (`src/modules/system/app/routes/invoicesAdmin.routes.ts:1293`, `paidAt: new
+Date()`; c.21863 la situaba en 1175-1176); la F1 emitida no se des-paga (`src/modules/system/invoiceAdmin.ts:395`);
+el devengo por caja lee `paidAt` (`src/modules/invoicing/domain/devengoPorCaja.ts:34`); no hay `model Refund`
+en el esquema, y ni `devengoPorCaja.ts` ni `criterioCaja.ts` nombran «refund» ni «devoluci». Antes de
+escribir busqué por contenido: la 47 (qué régimen lleva una R1) y la 51 (la R1 de una factura aún SIN
+cobrar) son vecinas y no preguntan esto; van en la pregunta como «relacionadas, que no la contestan».
+
+**Sin medir:** el libro de caja EJECUTADO con una R1 por devolución (aquí solo se leyó código; la medición
+es la de J1 del 13-nov); los literales de Jira se leyeron en el Markdown que devuelve Jira, por un agente
+lector, no en el ADF; si el asesor ya tiene esta duda por otra vía.
+
+**Error mío:** el primer `git grep` de la R1 lo lancé sobre una carpeta de rutas que no existe
+(la puse bajo invoicing, y vive bajo system) y dio 0 sin error; lo vi porque era la única de las cuatro búsquedas sin
+salida, y repetí con la ruta del `import`. Va a las cicatrices de J4.
