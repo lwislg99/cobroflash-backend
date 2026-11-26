@@ -141,6 +141,10 @@ abajo y acertaban hoy eran dos de `docs/producto/DECISIONES-DEL-FUNDADOR.md` (l�
 corregidas de 1118-1121 a 1132-1135 y de 1121 a 1135, y comprobado con grep que ahí están «# P20.» y su
 «Nota de estado (SCRUM-665c». Los registros de `docs/master/` que citan líneas a partir de la 1041
 (SCRUM-1023, 524, 1316, 1563 y evidencias de 1496b, c y f) no se tocan: cada uno se midió contra su sha.
+El toque a `docs/producto/DECISIONES-DEL-FUNDADOR.md` va **fuera del encargo, consecuencia mecánica de la
+inserción, fichero sin fila en §3**; avisado al orquestador antes de empujar, que lo dio por bueno.
+La suite entera NO se corrió en local (1,06 y 2,04 GB libres, mínimo 2,7): la corre el CI sobre el merge,
+por decisión del orquestador; en local, los dirigidos, `guards:entrada` y los 5 de árbol entero.
 
 **Re-comprobado en el código** (solo lectura, `git grep` sobre `f336e00c2`) lo que la pregunta da por
 hecho: la R1 nace pagada (`src/modules/system/app/routes/invoicesAdmin.routes.ts:1293`, `paidAt: new
