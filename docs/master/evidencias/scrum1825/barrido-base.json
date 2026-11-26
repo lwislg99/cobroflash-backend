@@ -1,0 +1,145 @@
+{
+ "ficheros": 406,
+ "tandas": [
+  {
+   "desde": 0,
+   "n": 30,
+   "exit": 0,
+   "tests": 234,
+   "pass": 234,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 30,
+   "n": 30,
+   "exit": 0,
+   "tests": 190,
+   "pass": 189,
+   "fail": 0,
+   "skipped": 1
+  },
+  {
+   "desde": 60,
+   "n": 30,
+   "exit": 0,
+   "tests": 190,
+   "pass": 190,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 90,
+   "n": 30,
+   "exit": 0,
+   "tests": 207,
+   "pass": 207,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 120,
+   "n": 30,
+   "exit": 0,
+   "tests": 257,
+   "pass": 253,
+   "fail": 0,
+   "skipped": 4
+  },
+  {
+   "desde": 150,
+   "n": 30,
+   "exit": 0,
+   "tests": 176,
+   "pass": 176,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 180,
+   "n": 30,
+   "exit": 0,
+   "tests": 179,
+   "pass": 179,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 210,
+   "n": 30,
+   "exit": 1,
+   "tests": 198,
+   "pass": 196,
+   "fail": 2,
+   "skipped": 0
+  },
+  {
+   "desde": 240,
+   "n": 30,
+   "exit": 0,
+   "tests": 235,
+   "pass": 235,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 270,
+   "n": 30,
+   "exit": 0,
+   "tests": 367,
+   "pass": 367,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 300,
+   "n": 30,
+   "exit": 0,
+   "tests": 340,
+   "pass": 340,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 330,
+   "n": 30,
+   "exit": 0,
+   "tests": 272,
+   "pass": 268,
+   "fail": 0,
+   "skipped": 4
+  },
+  {
+   "desde": 360,
+   "n": 30,
+   "exit": 0,
+   "tests": 219,
+   "pass": 219,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 390,
+   "n": 16,
+   "exit": 0,
+   "tests": 150,
+   "pass": 150,
+   "fail": 0,
+   "skipped": 0
+  }
+ ],
+ "tests": 3214,
+ "pass": 3203,
+ "fail": 2,
+ "skipped": 9,
+ "fallos": [
+  {
+   "nombre": "SCRUM-1726 · D1 · 🔴 las fechas de la hoja van en la zona del negocio (las 00:30 de Madrid son el 3-oct, no el 2)",
+   "loc": "\\scrum1726-tanda-firmada-j1.test.mjs"
+  },
+  {
+   "nombre": "SCRUM-1726 · D1 · CONTROL: un negocio sin zona guardada sale en UTC (la decisión A de `zonaDelMerchant`)",
+   "loc": "\\scrum1726-tanda-firmada-j1.test.mjs"
+  }
+ ]
+}

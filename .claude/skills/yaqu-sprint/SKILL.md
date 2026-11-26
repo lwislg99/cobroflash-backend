@@ -10,9 +10,9 @@ description: Abrir y ejecutar un sprint de YaQu según el protocolo AA1 del mast
 
 ## Pasos (en orden, sin saltarse ninguno)
 
-1. **Registry.** Abrir `docs/YAQU_MASTER.md` → Parte U (Sprint Registry, cola única — regla 31).
-   Localizar el sprint activo y su detalle (U1.x). El orden de U es estricto: no reordenar
-   ni intercalar sin cambio de master. Duda → preguntar al fundador, nunca asumir.
+1. **Registry.** Abrir `docs/YAQU_MASTER.md` → Parte U, que apunta a la cola única: la ficha de la
+   versión en curso, en Jira (regla 31). Localizar la pieza en esa ficha. Nada entra sin constar en ella,
+   y no se reordena ni intercala sin el acuerdo de los dos orquestadores en la ficha. Duda → preguntar al fundador, nunca asumir.
 2. **Sprint activo.** Confirmar dependencias de la fila ("Depende de") y flags implicados
    (Parte P). Si una dependencia no está ✅, parar y avisar.
 3. **Plan de archivos ANTES de tocar código.** Para la tarea atómica elegida, listar:

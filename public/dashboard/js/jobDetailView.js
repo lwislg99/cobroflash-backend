@@ -2822,18 +2822,32 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
         let cancelarCobroBtn = null;
         if (inv.chargeId && inv.estadoDelCobro === 'pending' && !inv.paidAt) {
           const CONFIRMAR_CANCELAR_COBRO = '¿Cancelar este cobro? El cliente ya no podrá pagarlo con este enlace.';
+          // SCRUM-1863 · el error va JUNTO a la fila de esta factura, no en la barra de estado de arriba:
+          // el botón vive en el «⋯» de abajo y, a 390, la barra quedaba fuera de pantalla (r42 de
+          // SCRUM-1808b: top −100 con scrollY 592). Espejo de T3 (SCRUM-1834). Nace al primer error.
+          let errorCancelar = null;
           cancelarCobroBtn = mkBtn('Cancelar cobro', async () => {
             if (!window.confirm(CONFIRMAR_CANCELAR_COBRO)) return;
             cancelarCobroBtn.disabled = true;
+            if (errorCancelar) errorCancelar.hidden = true;
             try {
               await apiRequest(`/admin/charges/${inv.chargeId}/cancel`, { method: 'POST' });
             } catch (e) {
               const error = e?.data?.error;
-              setStatus('error', error === 'charge_not_pending'
+              if (!errorCancelar) {
+                errorCancelar = document.createElement('p');
+                errorCancelar.className = 'alert error job-doc-row__aviso';
+                errorCancelar.id = 'cancelar-cobro-inv-' + inv.id + '-error';
+                errorCancelar.setAttribute('role', 'alert');
+                acts.parentNode.insertBefore(errorCancelar, acts);
+              }
+              errorCancelar.textContent = error === 'charge_not_pending'
                 ? 'Este cobro ya no está pendiente.'
                 : (error === 'document_already_paid'
                   ? 'Este documento ya consta como pagado: su cobro no se puede cancelar.'
-                  : 'Error actualizando estado: inténtalo de nuevo'));
+                  : 'Error actualizando estado: inténtalo de nuevo');
+              errorCancelar.hidden = false;
+              errorCancelar.scrollIntoView({ block: 'nearest' });
               cancelarCobroBtn.disabled = false;
               return;
             }

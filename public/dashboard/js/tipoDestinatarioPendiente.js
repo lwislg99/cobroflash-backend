@@ -55,7 +55,7 @@
   // ⚠️ LOS CUATRO TEXTOS EXISTENTES. Copiados letra a letra de `customersView.js:167-174` y
   // `customerDetailView.js:312-316`. Si algún día el fundador los aprueba de nuevo, se cambian en
   // los tres sitios a la vez — y el censo de SCRUM-615 dice cuáles son.
-  var ETIQUETA = 'Tipo de cliente';
+  var ETIQUETA = '¿Factura como empresa o autónomo (IVA)?';
   var OPCIONES = [
     { valor: '', texto: 'Sin clasificar' },
     { valor: 'PARTICULAR', texto: 'Particular' },
