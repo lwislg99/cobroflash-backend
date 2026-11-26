@@ -1336,7 +1336,8 @@ async function renderCustomer360View(container, customerId) {
     tarjeta.appendChild(parte('p', 'fusion-linea', TB.tarjetaTexto));
     tarjeta.appendChild(parte('p', 'c360-ayuda', TB.tarjetaSoloAdmin));
     // Secundario con el texto en Peligro-tinta: `gasto-opcion-eliminar` es la clase que ya existe con
-    // `--danger-ink` (la del «Eliminar» de gastos). Sin `btn-sm`: 36 px en escritorio y 44 en móvil.
+    // `--danger-ink` (la del «Eliminar» de gastos). Sin `btn-sm`: 44 px en todas las anchuras
+    // (SCRUM-1845 c.22728), con la regla del bloque SCRUM-1868b de `styles.css`.
     const botonBorrar = parte('button', 'btn btn-secondary gasto-opcion-eliminar', TB.boton);
     botonBorrar.type = 'button';
     botonBorrar.dataset.accion = 'abrir-borrado';
