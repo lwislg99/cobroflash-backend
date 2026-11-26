@@ -769,7 +769,7 @@ if (typeof window !== 'undefined') window.fusionCliente = FUSION_CLIENTE;
  * toast, «1-✅»). `generico` se REUSA byte a byte de FUSION_CLIENTE. `{nombre}`, `{n}` y `{m}` son
  * los huecos del lienzo. El servidor (SCRUM-1868a) contesta CÓDIGOS: cada motivo se traduce por
  * `MOTIVOS`, y uno fuera de la tabla cae en el genérico (regla 39, como la fusión).
- * ⛔ `cuenta.solicitudes` viaja y NO se pinta: no hay fila firmada para ella.
+ * `cuenta.solicitudes` se pinta detrás de «Historial de actividad»: fila firmada en SCRUM-1868 c.22867.
  */
 const BORRAR_CLIENTE = {
   TEXTOS: {
@@ -781,7 +781,7 @@ const BORRAR_CLIENTE = {
     subtitulo: 'Revisa lo que se borra antes de confirmar',
     seBorra: 'Se borra',
     filaFicha: 'La ficha de {nombre}',
-    FILAS: { documentos: 'Documentos adjuntos', sitios: 'Sitios', equipos: 'Equipos', historial: 'Historial de actividad' },
+    FILAS: { documentos: 'Documentos adjuntos', sitios: 'Sitios', equipos: 'Equipos', historial: 'Historial de actividad', solicitudes: 'Solicitudes de presupuesto' },
     nota: 'Este cliente no tiene presupuestos ni facturas: por eso se puede eliminar.',
     irreversible: 'Esto no se puede deshacer.',
     cancelar: 'Cancelar',

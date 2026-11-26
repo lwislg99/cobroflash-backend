@@ -7,7 +7,8 @@
 // que contesta ese contrato: se PULSA y se mira qué pinta y qué pide.
 //
 // Los textos son los FIRMADOS por el fundador en SCRUM-1868 (descripción, «2-Los textos valen») y el
-// toast en SCRUM-1868 c.22850 («1-✅»); ficha: docs/microcopy/2026-11-26-SCRUM-1868-eliminar-cliente.md.
+// toast en SCRUM-1868 c.22850 («1-✅»); la fila «Solicitudes de presupuesto», en c.22867 («1-Ok»);
+// ficha: docs/microcopy/2026-11-26-SCRUM-1868-eliminar-cliente.md.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
@@ -24,13 +25,15 @@ const espera = async () => { for (let i = 0; i < 20; i++) await new Promise((r) 
 
 // Catálogo del meta-guard (SCRUM-1387 / A3, SCRUM-1731): `aplicarUna` de la casa.
 export const MUTACIONES_QUE_ME_TUMBAN = [
-  { fichero: VISTA, de: '    if (!listo) return;', a: '    // sin cierre',
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: '    if (!listo) return;', a: '    // sin cierre',
     cae: 'BLOQUEADO: no hay «Eliminar» visible, y pulsarlo igualmente no manda el DELETE' },
-  { fichero: VISTA, de: "if (err && err.status === 409 && B.estado(err.data).tipo === 'bloqueado') { pintar(err.data); return; }", a: '',
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: "if (err && err.status === 409 && B.estado(err.data).tipo === 'bloqueado') { pintar(err.data); return; }", a: '',
     cae: '409 tras pulsar «Eliminar»: el modal pasa al bloqueo con el cuerpo del 409' },
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: ", solicitudes: 'Solicitudes de presupuesto' }", a: ' }',
+    cae: 'al abrir, la previa (GET) pinta lo que se borra con sus cuentas, y «Eliminar» se habilita' },
 ];
 
-// ── Los firmados, copiados de Jira (SCRUM-1868: descripción y c.22850). `generico` se reusa de la fusión.
+// ── Los firmados, copiados de Jira (SCRUM-1868: descripción, c.22850 y c.22867). `generico` se reusa de la fusión.
 const FIRMADOS = {
   tarjetaTitulo: 'Eliminar este cliente',
   tarjetaTexto: 'Se borra su ficha con sus documentos, sus sitios y sus equipos. No se puede deshacer. Si tiene presupuestos o facturas, no se puede eliminar.',
@@ -40,7 +43,7 @@ const FIRMADOS = {
   subtitulo: 'Revisa lo que se borra antes de confirmar',
   seBorra: 'Se borra',
   filaFicha: 'La ficha de {nombre}',
-  FILAS: { documentos: 'Documentos adjuntos', sitios: 'Sitios', equipos: 'Equipos', historial: 'Historial de actividad' },
+  FILAS: { documentos: 'Documentos adjuntos', sitios: 'Sitios', equipos: 'Equipos', historial: 'Historial de actividad', solicitudes: 'Solicitudes de presupuesto' },
   nota: 'Este cliente no tiene presupuestos ni facturas: por eso se puede eliminar.',
   irreversible: 'Esto no se puede deshacer.',
   cancelar: 'Cancelar',
@@ -60,7 +63,7 @@ const CLIENTE = {
   createdAt: '2026-01-10T00:00:00.000Z', waOptOut: false, taxId: null, tags: null,
 };
 const STATS = { totalQuotes: 0, acceptedQuotes: 0, totalBilled: 0, totalPaid: 0, totalExpenses: 0, profit: 0 };
-const CUENTA = { documentos: 3, sitios: 2, equipos: 4, historial: 7, solicitudes: 1, presupuestos: 0, facturas: 0 };
+const CUENTA = { documentos: 3, sitios: 2, equipos: 4, historial: 7, solicitudes: 6, presupuestos: 0, facturas: 0 };
 const LIBRE = { bloqueado: false, motivos: [], cuenta: CUENTA };
 const BLOQUEADO = { bloqueado: true, motivos: ['tiene_facturas', 'tiene_presupuestos'], cuenta: { ...CUENTA, facturas: 2, presupuestos: 5 } };
 
@@ -122,12 +125,13 @@ test('SCRUM-1868b · los textos del panel son, byte a byte, los firmados en SCRU
 test('SCRUM-1868b · cada texto sin hueco consta en la ficha de microcopy, y uno parecido no', () => {
   const planos = [...Object.values(FIRMADOS).filter((t) => typeof t === 'string'), ...Object.values(FIRMADOS.FILAS), ...Object.values(FIRMADOS.MOTIVOS)];
   const sinHueco = planos.filter((t) => !/{[^}]+}/.test(t));
-  assert.equal(sinHueco.length, 23, `esperaba 23 textos sin hueco y veo ${sinHueco.length}`);
+  assert.equal(sinHueco.length, 24, `esperaba 24 textos sin hueco (23 + la fila de c.22867) y veo ${sinHueco.length}`);
   for (const t of sinHueco) assert.ok(constaAprobado(t).includes(FICHA), `🔴 «${t}» no consta en ${FICHA}`);
   assert.deepEqual(constaAprobado('Cliente eliminado.'), [], 'CONTROL NEGATIVO: uno parecido no consta');
   const md = fs.readFileSync(path.join(RAIZ, FICHA), 'utf8');
   for (const t of planos) assert.ok(md.includes(t), `🔴 «${t}» no está literal en la ficha`);
   assert.match(md, /SCRUM-1868 c\.22850/);
+  assert.match(md, /SCRUM-1868 c\.22867/);
 });
 
 test('SCRUM-1868b · la alerta del bloqueo se DERIVA del literal firmado sin palabras nuevas (plural, singular, solo una de las dos)', () => {
@@ -170,10 +174,10 @@ test('SCRUM-1868b · al abrir, la previa (GET) pinta lo que se borra con sus cue
   await f.abrir();
   assert.equal(f.previas().length, 1, 'al abrir se pide UNA previa');
   assert.ok(f.modal(), 'CIEGO: no se abrió el modal');
-  assert.deepEqual(f.filas(), [['La ficha de Cliente QA 1868', '1'], ['Documentos adjuntos', '3'], ['Sitios', '2'], ['Equipos', '4'], ['Historial de actividad', '7']]);
+  // c.22867: «Solicitudes de presupuesto», con `cuenta.solicitudes` (6), DETRÁS de «Historial de actividad».
+  assert.deepEqual(f.filas(), [['La ficha de Cliente QA 1868', '1'], ['Documentos adjuntos', '3'], ['Sitios', '2'], ['Equipos', '4'], ['Historial de actividad', '7'], ['Solicitudes de presupuesto', '6']]);
   const t = f.texto(f.modal());
   for (const s of [FIRMADOS.titulo, FIRMADOS.subtitulo, FIRMADOS.seBorra, FIRMADOS.nota, FIRMADOS.irreversible]) assert.ok(t.includes(s), `falta «${s}»`);
-  assert.ok(!/Solicitudes/.test(t), 'la cuenta de solicitudes NO se pinta: no hay fila firmada');
   assert.equal(f.en(f.modal(), 'confirmar-borrado').disabled, false, '«Eliminar» habilitado con la previa libre');
   assert.equal(f.borrados().length, 0, 'abrir NO borra nada');
 });
