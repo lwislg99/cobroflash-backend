@@ -376,3 +376,35 @@ A9: comprobación → `tests/scrum189-citas-con-destino.test.mjs`
 - **Suite entera** (15 tramos, sobre `17bb5378`, TEMP `C:\tmp\j1gp`): 1.733 ficheros · 14.023 tests · 13.834 pass · **4 fail, los cuatro de `scrum932`** (AMBIENTE: el `.env` del árbol; 8/12 con él, 12/12 apartándolo y restaurándolo). Resumen de la pasada: ROJO solo por esos cuatro.
 - Main se movió 12 commits; volví a mergear (sin conflictos; `invoicesAdmin.routes.ts` y un test de 1779f, ninguno mío). Sobre ese merge: dirigida de 19 ficheros, 170 casos, 165 pasan, 5 saltados (gateados), 0 fallan; `guards:entrada` 15/15; los 185 ficheros que lista `guards:entrada`, 1.637 casos, 4 fallan (los mismos de `scrum932`). **No he repetido la suite entera sobre el segundo merge.**
 - **No medido:** la simultánea contra Postgres (en esta máquina sale SKIP; la corre el CI).
+
+## SCRUM-1780h · El montaje de S1: «+ Nueva factura» desde el parte llega a la app (rama `scrum-1780-ruta-factura-desde-parte`)
+
+**Medido contra:** `origin/main` = `92df30d4d9c469d74f842ec596ea0a865ae6cebe` · 2026-11-25T13:21:21Z
+
+A9: sin fallo que generalice — montaje literal de c.22242 y los censos que él mismo mueve; una sustitución de PowerShell me metió un retorno de carro en un mensaje de 992 y lo vi en el diff antes del commit.
+
+**Skill UI:** no aplica (solo servidor; el botón es de S2). **Microcopy:** ninguna. **Regla 40:** no se toca `facturaDesdeParte.ts` (J1, camino de emisión): solo se le monta su handler, con el GO del fundador de c.22237.
+
+| pieza | qué |
+|---|---|
+| `src/modules/jobs/app/routes/partes.routes.ts` | las TRES líneas literales de c.22242 (§③ de 1780c): el `import { facturarParte }`, su comentario y `router.post('/:id/facturar', requireRole('admin'), facturarParte)` |
+| `tests/scrum411-exports-inalcanzables.test.mjs` | `MODULOS_DOMINIO_INALCANZABLES_MAX` **5 → 4** con su línea fechada (lo anunciaba la de c.22257): `facturaDesdeParte.ts` sale de los inalcanzables |
+| `tests/_huerfanos-declarados.mjs` | al pasar a vivo, tres exports de `facturaDesdeParte.ts` entran en la segunda población de 411 y se declaran (`facturarParteDeMerchant` y `lineasDelParteParaFactura`: PIEZA_INTERNA_EXPORTADA; `ERRORES_FACTURA_DESDE_PARTE`: VOCABULARIO_DEL_MODULO). Para `facturarParteDeMerchant` el guard aconseja quitar el `export`: el fichero es de J1, así que queda **propuesto a J1**, no hecho |
+| `scripts/_sin-consumir-declarados.json` (contenedor de S0: solo lo que el guard manda) | `facturarParte` y `esErrorTipoIvaNoEmitible` (que se consume desde `facturaDesdeParte.ts`) pasan a `retiradas`; la ruta nueva `POST /admin/partes/:id/facturar` se declara con carril **S2** hasta que su botón la consuma |
+| `tests/scrum992-partes-recortan-por-rol.test.mjs` | el censo de rutas de partes pasa de 9 a 10 y «decide aquí su rol», como pide su mensaje: la nueva es la tercera de admin, y se añade una aserción que tumba la ruta si pierde el `requireRole('admin')` |
+
+### Medición
+
+Población: los ficheros de `tests/` que nombran `partes.routes`, `facturaDesdeParte`, `/facturar`, `emitInvoice`, `sin-consumir`, `inalcanzables`, `requireRole`, `HUELLAS_CONGELADAS` o `_huerfanos-declarados`, más los 5 de árbol entero de SCRUM-1560: **149 ficheros · 1.293 tests · 1.276 pass · 2 fail · 15 skip**.
+
+- Primera pasada (solo con las tres líneas y el 5 → 4): 7 rojos, todos de censos que la ruta mueve: 1185 ① (ruta sin consumidor) y ② (dos piezas ya consumidas), 411 ×2 (tres exports nuevos sin declarar), 992 (10 rutas, esperaba 9). Arreglados como dice cada guard; ninguno relajado.
+- Los **2 que quedan** son de `scrum1726` D1, y no son de este diff: esperan «3 de octubre de 2026 a las 0:30» y el ICU de esta máquina (Node 24.8.0, ICU 77.1) pinta «…, 0:30». Este diff no toca fechas; lo dirá el CI.
+- `npm run guards:entrada`: en verde (abajo).
+
+**No medido:** la ruta contra Postgres (la cubre `scrum1780c-*` en el CI); yaqu.app hasta el merge; el botón (S2).
+
+| aceptación (literal del encargo) | dónde se ve |
+|---|---|
+| la ruta «+ Nueva factura» desde el parte con las TRES líneas de c.22242 en partes.routes.ts | `src/modules/jobs/app/routes/partes.routes.ts` · `tests/scrum992-partes-recortan-por-rol.test.mjs` (la ruta, de admin) · `tests/scrum1185-trinquete-sin-consumir.test.mjs` (`facturarParte` consumida) |
+| EN EL MISMO PR bajar MODULOS_DOMINIO_INALCANZABLES_MAX de 5 a 4 | `tests/scrum411-exports-inalcanzables.test.mjs` |
+| El botón lo pinta S2 | NO HECHO aquí → S2, SCRUM-1780 (la ruta está declarada a su nombre en `scripts/_sin-consumir-declarados.json`) |

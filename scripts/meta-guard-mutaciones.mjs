@@ -50,6 +50,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url'; // SCRUM-730: `pathname` no decodifica
 import { run } from 'node:test'; // SCRUM-745 (adopción): eventos, no reporter
+import { spawn } from 'node:child_process'; // SCRUM-1798c: un guard de navegador no es de node:test
 import ts from 'typescript';
 import { ejecutadoDirectamente } from './_puerta-de-entrada.mjs'; // SCRUM-765
 // 🔴 SCRUM-808 · LA RED VIVE EN UNA PIEZA APARTE, y no por estética: `censo-mudez` tiene el mismo
@@ -495,8 +496,13 @@ export function lecturaDeDeclaraciones(codigo, nombre = 'x.mjs') {
  * el suelo en ruido, y el ruido se aprende a ignorar.
  */
 export function declaracionesIlegibles(dir = DIR_TESTS) {
+  return ilegiblesDelCenso(censoDeDeclaraciones(dir));
+}
+
+/** SCRUM-1798c · las ilegibles de un censo ya leído (el de `tests/` o el de los guards de navegador). */
+export function ilegiblesDelCenso(censo) {
   const out = [];
-  for (const { guard, incompletas } of censoDeDeclaraciones(dir)) {
+  for (const { guard, incompletas } of censo) {
     for (const inc of incompletas || []) {
       out.push({
         guard,
@@ -623,6 +629,101 @@ export function censoConPoblacion(dir = DIR_TESTS) {
  */
 export function censoDeDeclaraciones(dir = DIR_TESTS) {
   return censoConPoblacion(dir).censo;
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-1798c · LA SEGUNDA POBLACIÓN: LOS GUARDS DE NAVEGADOR (`scripts/guard-*.mjs`).
+ *
+ * Medido por J6 (SCRUM-1789c): `censoConPoblacion` sólo lee `tests/*.test.mjs`, así que sobre
+ * `scripts/` daba POBLACIÓN 0 y ningún guard de navegador podía declarar una mutación que alguien
+ * juzgara. Y si los hubiera visto, `correr()` los habría juzgado mal (ver `resultadoDeNavegador`).
+ *
+ * Va APARTE y no mezclada con la de `tests/` (A12): `SUELO_GUARDS`, `SUELO_DECLARACIONES` y los
+ * que leen `censoConPoblacion` (scrum745, 753, 757, 765, 812, 836…) no se mueven. Tiene su propia
+ * población, su propio suelo y su propia línea en el rótulo.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+const DIR_SCRIPTS = path.join(RAIZ, 'scripts');
+
+/** ¿Este guard es un script de navegador y no un fichero de node:test? Decide la RUTA. */
+export const esGuardDeNavegador = (g) => /(^|[\\/])scripts[\\/]guard-[^\\/]+\.mjs$/.test(String(g));
+
+export function censoDeGuardsDeNavegador(dir = DIR_SCRIPTS) {
+  const ficheros = fs.readdirSync(dir).filter((f) => /^guard-.*\.mjs$/.test(f));
+  const propio = path.resolve(dir) === path.resolve(DIR_SCRIPTS);
+  const censo = [];
+  for (const f of ficheros) {
+    const { buenas, incompletas } = lecturaDeDeclaraciones(fs.readFileSync(path.join(dir, f), 'utf8'), f);
+    // `scripts/<f>` relativo a la raíz en el árbol; absoluto fuera de él (lo sembrado por un test).
+    if (buenas.length || incompletas.length) {
+      censo.push({ guard: propio ? `scripts/${f}` : path.join(dir, f), mutaciones: buenas, incompletas });
+    }
+  }
+  return { poblacion: ficheros.length, declarantes: censo.filter((c) => c.mutaciones.length).length, censo };
+}
+
+/** El suelo de esa población: cero ficheros leídos es «no he mirado», no «no hay». */
+export function sueloDePoblacionDeNavegador({ poblacion }) {
+  if (poblacion >= 1) return null; // (no `> 0`: esa línea es ancla de scrum812 en `sueloDePoblacion`)
+  return 'he leído CERO guards de navegador (`scripts/guard-*.mjs`). No es que no declaren: es que no '
+    + 'he mirado nada. Comprueba el directorio y el checkout antes de leer ningún número.';
+}
+
+/** Su línea del rótulo, pegada a la del censo de `tests/`. */
+export function rotuloDeNavegador({ poblacion, declarantes, declaraciones }) {
+  return `censo de navegador · ${declarantes} guards DECLARANTES de ${poblacion} \`scripts/guard-*.mjs\` · `
+    + `${declaraciones} declaraciones (veredicto por código de salida: 0 base · 1 hallazgo · ≥ 2 CIEGO)`;
+}
+
+/**
+ * 🔴 SCRUM-1798c · UN GUARD DE NAVEGADOR NO ES UN FICHERO DE node:test: SU VEREDICTO ES SU CÓDIGO.
+ *
+ * Con `run()`, un script plano da UN caso con el nombre del fichero, y medido (J6, y otra vez aquí
+ * con un guard sembrado): sale 1 (hallazgo) y sale 2 (NO SUPO MEDIR) dan EXACTAMENTE lo mismo, un
+ * «caído» `ERR_TEST_FAILURE`. Una declaración con `cae: '<fichero>'` contaba un CIEGO como VIVA.
+ *
+ *   · 0 → base verde (un «pasado» sintético: el que `aplicarUna` exige no es un nombre, es el 0);
+ *   · 1 → hallazgo: cada línea de la salida es un «caído», y `cae` es el TEXTO del hallazgo;
+ *   · ≥ 2, o sin código (plazo, señal) → CIEGO, nunca caído (`_navegador.mjs`: 2 no lo hay · 3 no arranca).
+ */
+export function resultadoDeNavegador({ status, signal = null, stdout = '', stderr = '' }) {
+  const lineas = `${stdout}\n${stderr}`.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const vacio = { pasados: [], caidos: [], saltados: [], errores: {} };
+  if (status === 0) return { ...vacio, codigo: 0, pasados: ['(salida 0)'] };
+  if (status === 1) return { ...vacio, codigo: 1, caidos: lineas };
+  return {
+    ...vacio,
+    codigo: status ?? null,
+    ciegoDelGuard: `salió ${status ?? `sin código (${signal || 'plazo o señal'})`}: NO SUPO MEDIR`,
+  };
+}
+
+/**
+ * 🔴 SCRUM-1798c · el veredicto de UNA mutación sobre un guard de navegador, con la base ya en 0.
+ * PURA: `aplicarUna` la llama con la pasada mutada, y su test la ejercita sin mutar nada.
+ *   · salió ≥ 2 o sin código → CIEGA (no llegó a mirar; con `run()` esto salía «caído» = VIVA);
+ *   · salió 1 y una línea nombra `cae` → VIVA;
+ *   · salió 1 sin nombrarlo, o salió 0 → MUDA (el guard no vio ESE defecto).
+ */
+export function juicioDeNavegador(tras, cae, guard = 'el guard') {
+  if (tras.ciegoDelGuard) {
+    return {
+      ok: false,
+      ciego: `con la mutación puesta, el guard de navegador \`${guard}\` ${tras.ciegoDelGuard}. `
+        + 'No es que no la vea: es que no llegó a mirar.',
+    };
+  }
+  if (cayo(tras, cae)) { // sólo hay «caídos» con salida 1 (`resultadoDeNavegador`)
+    const colateralesNombres = tras.caidos.filter((n) => !n.includes(cae));
+    return { ok: true, colaterales: colateralesNombres.length, colateralesNombres, tras };
+  }
+  return {
+    ok: false,
+    mudo: `el guard de navegador \`${guard}\` NO cayó: ${tras.codigo === 0
+      ? 'salió 0 con la mutación puesta'
+      : `salió ${tras.codigo}, pero ninguna línea de su salida nombra «${cae}»`}.`,
+  };
 }
 
 /**
@@ -1217,6 +1318,31 @@ export async function correr(guard, propias = null) {
   const vigia = abrirObservacion(RAIZ);
   const TIMEOUT_MS = 300000;
   const inicio = Date.now();
+  // 🔴 SCRUM-1798c · un guard de navegador se ejecuta como lo que es, un proceso, y se juzga por su
+  // código (`resultadoDeNavegador`). `spawn` y no `spawnSync`: la vigilancia de arriba necesita el
+  // bucle de eventos vivo mientras el guard corre. La gracia, el cierre y `movidos`, como abajo.
+  if (esGuardDeNavegador(guard)) {
+    const salida = await new Promise((resolver) => {
+      let stdout = '';
+      let stderr = '';
+      const h = spawn(process.execPath, [path.isAbsolute(guard) ? guard : path.join(RAIZ, guard)], {
+        cwd: RAIZ, stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      h.stdout.setEncoding('utf8').on('data', (d) => { stdout += d; });
+      h.stderr.setEncoding('utf8').on('data', (d) => { stderr += d; });
+      const plazo = setTimeout(() => h.kill('SIGKILL'), TIMEOUT_MS);
+      h.on('error', (e) => { clearTimeout(plazo); resolver({ status: null, signal: e.code || 'error', stdout, stderr }); });
+      h.on('close', (status, signal) => { clearTimeout(plazo); resolver({ status, signal, stdout, stderr }); });
+    });
+    const duracionMs = Date.now() - inicio;
+    await new Promise((s) => setTimeout(s, GRACIA_MS));
+    vigia.cerrar();
+    return {
+      ...resultadoDeNavegador(salida),
+      movidos: vigia.movimientos(desde, propias), sinVigilar: vigia.sinVigilar, vigilada: true,
+      resumen: null, duracionMs, timeoutMs: TIMEOUT_MS,
+    };
+  }
   const flujo = run({
     // SCRUM-754c · se admite una ruta ABSOLUTA para poder ejercitar esto con un fichero de
     // fuera del árbol. No es una concesión al test: crear el fichero de prueba DENTRO de
@@ -1491,6 +1617,21 @@ export async function aplicarUna(mut, guard, limpia) {
     };
   }
 
+  // 🔴 SCRUM-1798c · PUERTA 1 de un guard de navegador: su base es «salió 0», no un nombre de test
+  // en verde (con `paso()` saldría SIEMPRE ciego: «(salida 0)» no contiene ningún `cae`).
+  // El `else` va SOLO en su línea a propósito: la de abajo, `if (!paso(…)) {`, es el ancla que declara
+  // scrum745 y se queda letra por letra; un guard de node:test sigue pasando por ella como antes.
+  const nav = esGuardDeNavegador(guard);
+  if (nav) {
+    if (limpia?.codigo !== 0) {
+      return {
+        ok: false,
+        ciego: `el guard de navegador \`${guard}\` no sale 0 en la pasada limpia `
+          + `(${limpia?.ciegoDelGuard || `salió ${limpia?.codigo ?? 'sin código'}: ya tiene hallazgos`}), `
+          + 'así que no se ha mutado nada: sin una base verde, su rojo no diría nada de la mutación.',
+      };
+    }
+  } else
   if (!paso(limpia, mut.cae)) {
     // SCRUM-1100d · el veredicto es el de siempre (CIEGO, sin mutar). El texto ya no reparte tres
     // causas a ciegas: dice si el test CAYÓ o NO LLEGÓ, que es lo que separa un rojo del árbol de
@@ -1526,7 +1667,7 @@ export async function aplicarUna(mut, guard, limpia) {
   // en `npm test` (`scrum836`, con el MISMO `ambiguedadDelAncla`) y debería pararlo antes; ésta
   // es la segunda línea, para el día que aquélla no esté o no llegue.
   // ═══════════════════════════════════════════════════════════════════════════════════════════
-  const absGuard = path.isAbsolute(guard) ? guard : path.join(DIR_TESTS, guard);
+  const absGuard = path.isAbsolute(guard) ? guard : path.join(nav ? RAIZ : DIR_TESTS, guard);
   const ambigua = ambiguedadDelAncla(texto, mut.de, { seCitaASiMismo: path.resolve(abs) === path.resolve(absGuard) });
   if (ambigua) {
     return {
@@ -1624,6 +1765,11 @@ export async function aplicarUna(mut, guard, limpia) {
             : 'MUDA, acusando al guard de algo que quizá no es suyo')
           + '. Deja el árbol quieto y vuelve a correrme.',
       };
+    } else if (nav) {
+      // 🔴 SCRUM-1798c · un guard de navegador se juzga por su código, no por nombres de test que
+      // aparecen o no: ver `juicioDeNavegador`. `porQueNoCayo` de abajo no aplica («NO APARECE» es
+      // lo normal en un guard que salió 0, y lo pintaría CIEGO en vez de MUDO).
+      resultado = juicioDeNavegador(tras, mut.cae, guard);
     } else if (cayo(tras, mut.cae)) {
       // 📌 SCRUM-784 (medición, no veredicto): qué OTROS tests se han caído además del que la
       // declaración nombra. Hoy no cambia nada; se cuenta porque hasta entonces era invisible.
@@ -1831,7 +1977,9 @@ if (ejecutadoDirectamente(import.meta.url)) {
   // para la siguiente. Que el lector entienda o no una concatenación es secundario; que se calle
   // cuando no entiende es el defecto.
   // ═══════════════════════════════════════════════════════════════════════════════════════════
-  const ilegibles = declaracionesIlegibles();
+  // SCRUM-1798c · la segunda población se lee AQUÍ, para que sus ilegibles caigan en el mismo suelo.
+  const navegador = censoDeGuardsDeNavegador();
+  const ilegibles = [...declaracionesIlegibles(), ...ilegiblesDelCenso(navegador.censo)];
   if (ilegibles.length) {
     console.error(`🔴 ${ilegibles.length} DECLARACIÓN(ES) QUE NO PUEDO EVALUAR. No se descartan en `
       + 'silencio: cada una es un guard que se queda SIN VIGILAR y un recuento que baja sin que '
@@ -1857,10 +2005,16 @@ if (ejecutadoDirectamente(import.meta.url)) {
     console.error(`🔴 CIEGO · ${sinPoblacion}`);
     process.exit(SALIDA_CIEGO);
   }
+  const sinNavegador = sueloDePoblacionDeNavegador(navegador);
+  if (sinNavegador) {
+    console.error(`🔴 CIEGO · ${sinNavegador}`);
+    process.exit(SALIDA_CIEGO);
+  }
 
   // ── SUELO ① · EL TAMAÑO DEL CENSO ─────────────────────────────────────────────────────────
-  const declaraciones = censo.reduce((n, c) => n + c.mutaciones.length, 0);
-  const guardsConDeclaracion = censo.filter((c) => c.mutaciones.length).length;
+  // `let` y no `const` (SCRUM-1798c): antes de repartir se les suma la población de navegador.
+  let declaraciones = censo.reduce((n, c) => n + c.mutaciones.length, 0);
+  let guardsConDeclaracion = censo.filter((c) => c.mutaciones.length).length;
   const encogido = sueloDelCenso({ guards: guardsConDeclaracion, declaraciones });
   if (encogido) {
     console.error(`🔴 CIEGO · ${encogido}`);
@@ -1874,6 +2028,8 @@ if (ejecutadoDirectamente(import.meta.url)) {
   for (const linea of rotuloDelCenso({
     poblacion, declarantes: guardsConDeclaracion, declaraciones, titulados, tituladosQueDeclaran,
   })) console.log(linea);
+  const declaracionesDeNavegador = navegador.censo.reduce((n, c) => n + c.mutaciones.length, 0);
+  console.log(rotuloDeNavegador({ ...navegador, declaraciones: declaracionesDeNavegador }));
   if (soloCenso) {
     const expo = censoDeExposicionATypeScript(); // `expo`, no `ts`: `ts` es el compilador de arriba
     console.log(`  sobre la frontera src/ ↔ dist/ (SCRUM-763): ${expo.expuestas.length} de ${expo.poblacion}`);
@@ -1895,6 +2051,13 @@ if (ejecutadoDirectamente(import.meta.url)) {
     process.exit(SALIDA_CIEGO);
   }
   const { parte } = leida;
+  // 🔴 SCRUM-1798c · lo que se reparte y se juzga son las DOS poblaciones. Los suelos y el rótulo de
+  // arriba ya han mirado SÓLO la de `tests/` (A12: sus números no se mueven); desde aquí, `censo` y sus
+  // totales llevan también la de navegador, para que la parte y `--juntar` comparen lo juzgado con el
+  // censo que de verdad se ha repartido.
+  censo.push(...navegador.censo);
+  declaraciones += declaracionesDeNavegador;
+  guardsConDeclaracion += navegador.declarantes;
   const enJuego = parteDelCenso(censo, parte);
   const declaracionesEnJuego = enJuego.reduce((n, c) => n + c.mutaciones.length, 0);
   const guardsEnJuego = enJuego.filter((c) => c.mutaciones.length).length;

@@ -1,0 +1,8 @@
+base limpia: pasados 5 · caídos 0
+MUERE (la caza) · public/dashboard/js/invoicesView.js · SCRUM-1866 · ninguna columna SUBE
+MUERE (la caza) · public/admin.html · SCRUM-1866 · ninguna columna SUBE
+MUERE (la caza) · tests/_scrum1866-congelada.json · SCRUM-1866 · ninguna cifra BAJA sin recongelar
+MUERE (la caza) · tests/_scrum1866-csp-1756g.mjs · SCRUM-1866 · controles: la siembra
+MUERE (la caza) · tests/_scrum1866-csp-1756g.mjs · SCRUM-1866 · controles: la siembra
+CONTROL inocua: MUDA (bien)
+VEREDICTO: 5/5 cazadas · 0 no

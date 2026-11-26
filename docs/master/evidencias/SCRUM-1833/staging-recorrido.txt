@@ -1,0 +1,70 @@
+# SCRUM-1833e · salida de staging-recorrido.mjs (dos pasadas, un login cada una; sin cookie ni secreto)
+# 1.ª pasada (15:56Z): cayó en «crear-cliente» ANTES de crear nada; el atajo de teclado añade su marca al texto del botón.
+staging /version = 4e9ed16270d000fa3a9c73813fc1719b5f9d6df6 · Date Thu, 26 Nov 2026 15:56:25 GMT
+login 200 · cookie pf_session recibida · Date Thu, 26 Nov 2026 15:56:25 GMT
+GET /dashboard/ → 200 · url final /dashboard/
+window.appUserRole = admin
+🔴 PASO «crear-cliente»: sin botón «Nuevo cliente»
+separador «: » (c.22837): «Número de serie: SN-QA1833E-00000000000000000000000000000001» NO visto · «Fecha de instalación: 15/3/2026» NO visto
+textos firmados vistos en staging: 0 de 19 cotejados (de 21 aplicados; errorCarga y generico no se provocan)
+   NO visto: pestana = "Equipos"
+   NO visto: nuevo = "+ Nuevo equipo"
+   NO visto: vacio = "Todavía no hay equipos guardados para este cliente."
+   NO visto: type = "Tipo de equipo"
+   NO visto: name = "Nombre del equipo"
+   NO visto: brand = "Marca"
+   NO visto: modelName = "Modelo"
+   NO visto: serialNumber = "Número de serie"
+   NO visto: installedOn = "Fecha de instalación"
+   NO visto: warrantyUntil = "Garantía hasta"
+   NO visto: ejemploTipo = "Caldera / Aire acondicionado / Cuadro eléctrico"
+   NO visto: ejemploNombre = "Caldera de la cocina"
+   NO visto: guardar = "Guardar"
+   NO visto: cancelar = "Cancelar"
+   NO visto: obligatorios = "Escribe el tipo y el nombre del equipo."
+   NO visto: garantia = "Garantía hasta {fecha}"
+   NO visto: editar = "Editar"
+   NO visto: eliminar = "🗑 Eliminar"
+   NO visto: confirmarBorrar = "¿Borrar el equipo \"{nombre}\"? Los trabajos ligados a él lo perderán de su historial. Esta acción no se puede deshacer."
+diálogos: []
+peticiones cortadas por la cerradura (send-*/resend-*/confirm-bizum/logout): 0 []
+respuestas >= 400 de staging: 0 []
+errores de consola: 0 []
+hosts pedidos: {"yaqu-staging-production.up.railway.app":122,"":5}
+(f) borrar el cliente: NO intentado por la UI (el panel no tiene ninguna llamada a DELETE /admin/customers/:id; medido aparte). Queda «[QA-1833e] Cliente de pruebas» en el comercio 2.
+fin · staging /version = 4e9ed16270d000fa3a9c73813fc1719b5f9d6df6 · Date Thu, 26 Nov 2026 15:56:28 GMT · CON FALLO
+
+# 2.ª pasada (15:57Z), con el botón buscado por «empieza por»: la que vale.
+staging /version = 4e9ed16270d000fa3a9c73813fc1719b5f9d6df6 · Date Thu, 26 Nov 2026 15:57:12 GMT
+login 200 · cookie pf_session recibida · Date Thu, 26 Nov 2026 15:57:12 GMT
+GET /dashboard/ → 200 · url final /dashboard/
+window.appUserRole = admin
+(a) cliente creado por la UI y ficha abierta · su nombre en la ficha: true
+pestañas (8): Presupuestos (0) · Facturas (0) · Trabajos (0) · WhatsApp (0) · Sitios · Equipos · Notas · Documentos (0)
+vacio@390 · scroll 390/390 · filas 0 · eliminar 0 · pestaña «Equipos» 84x44 · se salen 0 · <44: []
+vacio@1280 · scroll 1280/1280 · filas 0 · eliminar 0 · pestaña «Equipos» 84x44 · se salen 0 · <44: [{"q":"nuevo-equipo","w":137,"h":36}]
+   texto[vacio] = "+ Nuevo equipo\nTodavía no hay equipos guardados para este cliente."
+alta@390 · scroll 390/390 · filas 0 · eliminar 0 · pestaña «Equipos» 84x44 · se salen 0 · <44: []
+alta@1280 · scroll 1280/1280 · filas 0 · eliminar 0 · pestaña «Equipos» 84x44 · se salen 0 · <44: [{"q":"Cancelar","w":92,"h":36},{"q":"Guardar","w":106,"h":36}]
+   texto[alta] = "Tipo de equipo\nNombre del equipo\nMarca\nModelo\nNúmero de serie\nFecha de instalación\nGarantía hasta\nCancelar\nGuardar\nTodavía no hay equipos guardados para este cliente."
+   placeholders[alta] = ["Caldera / Aire acondicionado / Cuadro eléctrico","Caldera de la cocina"]
+(c) tipo solo con espacios → aviso "Escribe el tipo y el nombre del equipo."
+lista@390 · scroll 390/390 · filas 1 · eliminar 1 · pestaña «Equipos» 84x44 · se salen 0 · <44: [{"q":"editar","w":59,"h":30},{"q":"eliminar","w":84,"h":30}]
+lista@1280 · scroll 1280/1280 · filas 1 · eliminar 1 · pestaña «Equipos» 84x44 · se salen 0 · <44: [{"q":"nuevo-equipo","w":137,"h":36},{"q":"editar","w":59,"h":30},{"q":"eliminar","w":84,"h":30}]
+   texto[lista] = "+ Nuevo equipo\n[QA-1833e] Equipo de pruebas con un nombre largo para medir el ajuste de la fila\nAire acondicionado de conductos con bomba de calor y recuperador de energía · Mitsubishi Electric Climatización Industrial · PUZ-ZM100YKA-R32-CONDUCTOS-EDICION-LARGA\nNúmero de serie: SN-QA1833E-00000000000000000000000000000001 · Fecha de instalación: 15/3/2026 · Garantía hasta 15/3/2029\nEditar\n🗑 Eliminar"
+(d) formulario de edición relleno igual que lo guardado: true
+editar@390 · scroll 390/390 · filas 1 · eliminar 1 · pestaña «Equipos» 84x44 · se salen 0 · <44: [{"q":"editar","w":59,"h":30},{"q":"eliminar","w":84,"h":30}]
+editar@1280 · scroll 1280/1280 · filas 1 · eliminar 1 · pestaña «Equipos» 84x44 · se salen 0 · <44: [{"q":"Cancelar","w":92,"h":36},{"q":"Guardar","w":106,"h":36},{"q":"editar","w":59,"h":30},{"q":"eliminar","w":84,"h":30}]
+   texto[editar] = "Tipo de equipo\nNombre del equipo\nMarca\nModelo\nNúmero de serie\nFecha de instalación\nGarantía hasta\nCancelar\nGuardar\n[QA-1833e] Equipo de pruebas con un nombre largo para medir el ajuste de la fila\nAire acondicionado de conductos con bomba de calor y recuperador de energía · Mitsubishi Electric Climatización Industrial · PUZ-ZM100YKA-R32-CONDUCTOS-EDICION-LARGA\nNúmero de serie: SN-QA1833E-00000000000000000000000000000001 · Fecha de instalación: 15/3/2026 · Garantía hasta 15/3/2029\nEditar\n🗑 Eliminar"
+   placeholders[editar] = ["Caldera / Aire acondicionado / Cuadro eléctrico","Caldera de la cocina"]
+(d) fila tras editar = "[QA-1833e] Equipo de pruebas con un nombre largo para medir el ajuste de la fila\nAire acondicionado de conductos con bomba de calor y recuperador de energía · Daikin [QA-1833e editada] · PUZ-ZM100YKA-R32-CONDUCTOS-EDICION-LARGA\nNúmero de serie: SN-QA1833E-00000000000000000000000000000001 · Fecha de instalación: 15/3/2026 · Garantía hasta 15/3/2029\nEditar\n🗑 Eliminar" · marca vieja presente: false
+(e) tras eliminar: filas 0 · vacío visible: true
+separador «: » (c.22837): «Número de serie: SN-QA1833E-00000000000000000000000000000001» VISTO · «Fecha de instalación: 15/3/2026» VISTO
+textos firmados vistos en staging: 19 de 19 cotejados (de 21 aplicados; errorCarga y generico no se provocan)
+diálogos: [{"tipo":"confirm","texto":"¿Borrar el equipo \"[QA-1833e] Equipo de pruebas con un nombre largo para medir el ajuste de la fila\"? Los trabajos ligados a él lo perderán de su historial. Esta acción no se puede deshacer."}]
+peticiones cortadas por la cerradura (send-*/resend-*/confirm-bizum/logout): 0 []
+respuestas >= 400 de staging: 0 []
+errores de consola: 0 []
+hosts pedidos: {"yaqu-staging-production.up.railway.app":130,"":6}
+(f) borrar el cliente: NO intentado por la UI (el panel no tiene ninguna llamada a DELETE /admin/customers/:id; medido aparte). Queda «[QA-1833e] Cliente de pruebas» en el comercio 2.
+fin · staging /version = 4e9ed16270d000fa3a9c73813fc1719b5f9d6df6 · Date Thu, 26 Nov 2026 15:57:19 GMT · completo
