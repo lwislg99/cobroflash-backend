@@ -114,3 +114,102 @@ emisión con el caso de ② (sólo leído: usa el mismo `rangoTrimestre`); Q-C6 
 
 **Error mío:** leí Jira antes del arranque de normas (la cicatriz de 1730b, otra vez) y crucé los 200k
 sin medirme entre el arranque y la sonda; avisó el hook del orquestador, no yo.
+
+# SCRUM-1055d · la pregunta de la R1 por devolución, al asesor
+**Medido contra:** `origin/main` = `4fba03364e8b7c072ad669f1d43cebda4573e022` · 2026-11-26T17:18:18Z (hora de GitHub; sesión J4 `jv-j4co`, encargo del orquestador `cobroflash-backend-2d`; la rama nace de `f336e00c2`, y los 3 commits de main entre los dos tocan 5 ficheros, ninguno de esta entrega)
+
+A9: aviso → cicatriz J4 «busqué con git grep la línea que hace nacer pagada a la R1 en una ruta mal escrita, de un fichero que no existe, y salió 0 sin error: un cero que no podía fallar, al lado de tres búsquedas que sí medían» — no se pudo comprobar: la búsqueda era de un solo uso, fuera del repo, y git grep no avisa de una ruta que no existe
+
+**Qué se añadió.** `docs/legal/PREGUNTAS_ASESOR.md:1041`, **Q-C10**, detrás de Q-C9 en el bloque C (criterio
+de caja), con el número siguiente: con RECC, ¿la R1 emitida por la devolución de un cobro minora el IVA en
+el periodo en que se EMITE o en el que se DEVUELVE el dinero? Marcada **SIN RESPUESTA**. El enunciado es el
+del encargo, fiel a la pregunta candidata de c.21863 ③; el contexto, el de c.21863 ③ y la regla 29; la
+decisión, del fundador en c.22857 ④ (respuesta literal «2-Ok tus recomendaciones»; c.22874 corrige el punto
+2 y deja el 4 como estaba). La pregunta no se contesta aquí: es para el asesor.
+
+**Recuentos que cambiaron.** Solo el título del bloque: «Q-C1…Q-C9» → «Q-C1…Q-C10» (línea 839). El fichero
+no lleva índice de las Q-C ni recuento de abiertas: `grep "Q-C6"` da 3 líneas (la pregunta y dos menciones
+junto a la 49), ninguna es fila de tabla; «sin respuesta» sale 27 veces y «RESPONDIDA» 4, y ninguna es un
+contador. El índice de SCRUM-1264 (Jira) dejó fuera Q-C1…Q-C9 a propósito (`PREGUNTAS_ASESOR.md:1579`, «No
+se añaden»), así que tampoco lleva fila para Q-C10. Ningún test cuenta preguntas: de los 12 tests que nombran
+el fichero, el único que lee entradas Q-C es `tests/scrum1106-respuestas-ia-no-son-del-asesor.test.mjs`, y
+su patrón (`Q-C` + una cifra + punto) no ve dos cifras: Q-C10 queda fuera de su población, y no es del lote
+de IA que vigila.
+
+**Lo que movió la inserción.** +14 líneas desde la 1041. Las únicas coordenadas vivas que apuntaban más
+abajo y acertaban hoy eran dos de `docs/producto/DECISIONES-DEL-FUNDADOR.md` (líneas 108 y 261, la P20):
+corregidas de 1118-1121 a 1132-1135 y de 1121 a 1135, y comprobado con grep que ahí están «# P20.» y su
+«Nota de estado (SCRUM-665c». Los registros de `docs/master/` que citan líneas a partir de la 1041
+(SCRUM-1023, 524, 1316, 1563 y evidencias de 1496b, c y f) no se tocan: cada uno se midió contra su sha.
+El toque a `docs/producto/DECISIONES-DEL-FUNDADOR.md` va **fuera del encargo, consecuencia mecánica de la
+inserción, fichero sin fila en §3**; avisado al orquestador antes de empujar, que lo dio por bueno.
+La suite entera NO se corrió en local (1,06 y 2,04 GB libres, mínimo 2,7): la corre el CI sobre el merge,
+por decisión del orquestador; en local, los dirigidos, `guards:entrada` y los 5 de árbol entero.
+
+**Re-comprobado en el código** (solo lectura, `git grep` sobre `f336e00c2`) lo que la pregunta da por
+hecho: la R1 nace pagada (`src/modules/system/app/routes/invoicesAdmin.routes.ts:1293`, `paidAt: new
+Date()`; c.21863 la situaba en 1175-1176); la F1 emitida no se des-paga (`src/modules/system/invoiceAdmin.ts:395`);
+el devengo por caja lee `paidAt` (`src/modules/invoicing/domain/devengoPorCaja.ts:34`); no hay `model Refund`
+en el esquema, y ni `devengoPorCaja.ts` ni `criterioCaja.ts` nombran «refund» ni «devoluci». Antes de
+escribir busqué por contenido: la 47 (qué régimen lleva una R1) y la 51 (la R1 de una factura aún SIN
+cobrar) son vecinas y no preguntan esto; van en la pregunta como «relacionadas, que no la contestan».
+
+**Sin medir:** el libro de caja EJECUTADO con una R1 por devolución (aquí solo se leyó código; la medición
+es la de J1 del 13-nov); los literales de Jira se leyeron en el Markdown que devuelve Jira, por un agente
+lector, no en el ADF; si el asesor ya tiene esta duda por otra vía.
+
+**Error mío:** el primer `git grep` de la R1 lo lancé sobre una carpeta de rutas que no existe
+(la puse bajo invoicing, y vive bajo system) y dio 0 sin error; lo vi porque era la única de las cuatro búsquedas sin
+salida, y repetí con la ruta del `import`. Va a las cicatrices de J4.
+# SCRUM-1055c · la señal «cobro sin fecha declarada»
+**Medido contra:** `origin/main` = `f336e00c20b23a7fa11ae491c8cf8bfaa931fd6d` · 2026-11-26T17:20:35Z (hora de GitHub; sesión J1 `jv-j1kz`, encargo del orquestador `cobroflash-backend-2d`)
+
+A9: comprobación → `tests/scrum1055c-senal-cobro-sin-fecha.test.mjs`
+
+Mutaciones: catálogo → `tests/scrum1055c-senal-cobro-sin-fecha.test.mjs`
+
+Alcance: SCRUM-1055 c.22857 ③ (los tres textos, firmados) y c.22874 (sin columna ni ALTER: la señal sale de
+`invoice_payments.fecha_origen = 'marcado'`, SCRUM-1732 c.21928 ③). Partido con el GO del orquestador: **aquí
+sólo el servidor**; la pantalla pasa al tramo **1055e** (la letra d es la pregunta al asesor, jv-j4co).
+
+**① Lo medido antes de escribir (base del encargo de 1055e):**
+- (a) La ruta del panel, `src/modules/invoicing/app/routes/libroRegistro.routes.ts:32`, NO preguntaba el criterio
+  de caja: `preguntado` salía falso (`libroRegistro.repo.ts:330`), el campo era emisión y `cobrosPorFactura` no
+  existía, así que en pantalla `cobros` era siempre `[]` y el origen no llegaba nunca. Sí lo preguntan el 303
+  (`src/modules/fiscal/modelo303/modelo303.repo.ts:27`, con `devengo: true`) y las evidencias
+  (`src/modules/fiscal/evidencias/paquete.repo.ts:50`).
+- (b) El constructor ya copiaba el origen de cada cobro vivo: `cobros[].origen = fechaOrigen`
+  (`src/modules/invoicing/domain/libroRegistro.ts:285` en la base). `FiabilidadDelCobro`
+  (`src/modules/invoicing/domain/criterioCaja.ts:46`) no la usa nadie en `src/`.
+- (c) La vista (`public/dashboard/js/libroRegistroView.js`) no pinta ninguna fecha de cobro ni `ADVERTENCIA_CAJA`:
+  no hay patrón que copiar. El sitio natural es la columna de trazas, junto a la marca «Cobro»
+  (`libroRegistroView.js:362`, `badge-green`), con `badge-amber`; los avisos de resumen van por `avisar()` (:216).
+
+**② Qué cambia (servidor, carril J1):**
+- La ruta pide el criterio del comercio con `criterioDelMerchantParaElLibro`, como el 303 y las evidencias. Sin
+  criterio declarado es `{}` y el libro es el de siempre (por emisión, sin cobros): lo fija el caso CONTROL.
+- Cada asiento de caja lleva `cobroSinFechaDeclarada: boolean` = algún cobro VIVO con `fecha_origen = 'marcado'`.
+  `aviso` y `declarada` no la llevan; una anulación (nace `marcado`, `cobrosDeFactura.ts:113`) tampoco.
+- El libro de caja lleva `cobrosSinFechaDeclarada` (asientos con la señal) y `cobrosSinFilas`.
+- **Regla de «sin filas»:** una factura de caja `paid` SIN ninguna fila en `invoice_payments` (anteriores a 1732,
+  que se leen como hoy) NO lleva la señal —no se afirma lo que no se sabe— y se cuenta en `cobrosSinFilas`.
+  Para poder contarla, `filasPorFactura` da entrada `[]` a cada factura pedida (`libroRegistro.repo.ts`).
+- **Cuántas hay:** en el banco del test, 1 de 6 (`F-SIN-FILAS`; la pendiente sin filas no cuenta). En staging,
+  **no lo he medido**: el árbol no tiene `.env` ni `DATABASE_URL_STAGING` (no corrí `comprobar-claves-bd.mjs`).
+  Queda para el fundador cuando decida qué hacer con ellas.
+
+**③ El 303 y las evidencias:** los dos leen el libro con criterio, así que el recuento ya viaja en el objeto que
+leen. Ninguno lo saca a su salida: el 303 construye sus casillas y las evidencias sus CSV y avisos
+(`paquete.ts:259-267`). Sacarlo ahí toca otras salidas: **declarado para 1055e**, no hecho.
+
+**Verdes, con población:** `tests/scrum1055c-senal-cobro-sin-fecha.test.mjs` 3 tests · 3 pass · 0 fail · 0 skip.
+Mutaciones con `correr` + `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`: base 3 pasados, y **4 de 4**
+tumban el test (la ruta sin criterio, la señal con `declarada`, el recuento a 0, el lector sin la entrada vacía).
+Build con tipos (`npm run build`, sin `--noCheck`): salida 0. La suite entera la corre el CI y el orquestador
+(orden suya); `censo:mudez` no lo he corrido.
+
+**NO hecho → 1055e:** la pantalla (texto 1 en la columna de trazas, texto 2 al pasar o pulsar, texto 3 en el
+resumen), su test de vista y la línea en el 303 y las evidencias.
+
+**Errores míos:** escribí el código antes que el test. El rojo lo da la primera mutación del catálogo, que deja
+la ruta como estaba (sin `...criterio`) y tumba el test. Y crucé los 200k otra vez (201.723, avisó el hook).
