@@ -598,6 +598,70 @@ export async function borrarDocumento(merchantId: number, customerId: number, do
   return count > 0;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1868a · BORRAR UN CLIENTE: qué lo impide y qué se va con él. Decisión del fundador en
+// SCRUM-1868 (descripción y c.22850): BLOQUEAN sus presupuestos y sus facturas (una factura emitida no
+// se borra, regla 29); SE BORRAN en la misma transacción sus equipos, sitios, historial, solicitudes
+// y documentos. Sin tocar el esquema (reglas 3 y 40): `Quote`, `Invoice`, `QuoteRequest`,
+// `CustomerEvent` y `CustomerSite` apuntan a `customers` sin `onDelete` (RESTRICT), así que la
+// cascada la hace el código. `Charge.customerId` es opcional: la base lo pone a NULL y el cobro se
+// queda; aquí no se toca. El servidor contesta CÓDIGOS, ninguna frase (regla 39).
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+export type MotivoDeBloqueo = 'tiene_facturas' | 'tiene_presupuestos';
+export interface CuentaDelBorrado {
+  documentos: number; sitios: number; equipos: number; historial: number;
+  solicitudes: number; presupuestos: number; facturas: number;
+}
+
+/** Lo lanza el borrado cuando el cliente tiene presupuestos o facturas; la ruta lo convierte en 409. */
+export class BorradoBloqueado extends Error {
+  constructor(readonly motivos: MotivoDeBloqueo[], readonly cuenta: CuentaDelBorrado) {
+    super(motivos[0]);
+    this.name = 'BorradoBloqueado';
+  }
+}
+
+type ConCount = { count: Function };
+
+/**
+ * EL ÚNICO CRITERIO DE BLOQUEO: lo usan la lectura previa del modal y el borrado, así que no pueden
+ * discrepar. Cada cuenta lleva el comercio (regla 2). Los documentos se cuentan con el MISMO `where`
+ * con que se borran (todos los adjuntos del cliente, no sólo `kind: 'document'`). Las facturas van
+ * delante en `motivos`: si hay de las dos, el `error` del 409 es `tiene_facturas`.
+ */
+export async function contarLoQueSeBorra(
+  tx: {
+    attachment: ConCount; customerSite: ConCount; equipment: ConCount; customerEvent: ConCount;
+    quoteRequest: ConCount; quote: ConCount; invoice: ConCount;
+  },
+  merchantId: number,
+  id: number,
+): Promise<{ motivos: MotivoDeBloqueo[]; cuenta: CuentaDelBorrado }> {
+  const delCliente = { where: { merchantId, customerId: id } };
+  const cuenta: CuentaDelBorrado = {
+    documentos: await tx.attachment.count({ where: { merchantId, entityType: 'customer', entityId: id } }),
+    sitios: await tx.customerSite.count(delCliente),
+    equipos: await tx.equipment.count(delCliente),
+    historial: await tx.customerEvent.count(delCliente),
+    solicitudes: await tx.quoteRequest.count(delCliente),
+    presupuestos: await tx.quote.count(delCliente),
+    facturas: await tx.invoice.count(delCliente),
+  };
+  const motivos: MotivoDeBloqueo[] = [];
+  if (cuenta.facturas > 0) motivos.push('tiene_facturas');
+  if (cuenta.presupuestos > 0) motivos.push('tiene_presupuestos');
+  return { motivos, cuenta };
+}
+
+/** La lectura previa del modal «Eliminar cliente»: `null` si el cliente no es de este comercio. No escribe. */
+export async function previaDeBorrado(merchantId: number, id: number) {
+  const cliente = await prisma.customer.findFirst({ where: { id, merchantId }, select: { id: true } });
+  if (!cliente) return null;
+  const { motivos, cuenta } = await contarLoQueSeBorra(prisma, merchantId, id);
+  return { bloqueado: motivos.length > 0, motivos, cuenta };
+}
+
 /**
  * El borrado del cliente, con sus documentos (c.22140), EN LA MISMA transacción: o se va todo o
  * no se va nada. Sin FK a `customers` a propósito (la tabla es polimórfica; ver
@@ -612,16 +676,30 @@ export async function borrarDocumento(merchantId: number, customerId: number, do
  * ajeno no encuentra ningún equipo.
  */
 export async function borrarClienteYSusDocumentos(
-  tx: Parameters<typeof desligarYBorrarEquipo>[0] & {
-    customer: { updateMany: Function; deleteMany: Function };
+  tx: Parameters<typeof desligarYBorrarEquipo>[0] & Parameters<typeof contarLoQueSeBorra>[0] & {
+    customer: { findFirst: Function; updateMany: Function; deleteMany: Function };
     attachment: { deleteMany: Function };
     equipment: { findMany: Function };
+    customerSite: { deleteMany: Function };
+    customerEvent: { deleteMany: Function };
+    quoteRequest: { deleteMany: Function };
   },
   merchantId: number,
   id: number,
 ) {
+  // SCRUM-1868a · ① de este comercio o no se toca nada (la ruta da 404); ② con presupuestos o
+  // facturas no se borra (409): el MISMO contador que la lectura previa del modal.
+  const cliente = await tx.customer.findFirst({ where: { id, merchantId }, select: { id: true } });
+  if (!cliente) return { count: 0 };
+  const { motivos, cuenta } = await contarLoQueSeBorra(tx, merchantId, id);
+  if (motivos.length > 0) throw new BorradoBloqueado(motivos, cuenta);
   const equipos: Array<{ id: number }> = await tx.equipment.findMany({ where: { merchantId, customerId: id }, select: { id: true } });
   for (const e of equipos) await desligarYBorrarEquipo(tx, merchantId, id, e.id);
+  // ③ SCRUM-1868a · lo que apunta a `customers` sin `onDelete` (RESTRICT), antes de su fila. Los sitios
+  // DESPUÉS de los equipos: un equipo puede colgar de un sitio (`customer_site_id`, sin FK).
+  await tx.customerSite.deleteMany({ where: { merchantId, customerId: id } });
+  await tx.customerEvent.deleteMany({ where: { merchantId, customerId: id } });
+  await tx.quoteRequest.deleteMany({ where: { merchantId, customerId: id } });
   const r = await desvincularYBorrar(tx, merchantId, id);
   if (r.count > 0) await tx.attachment.deleteMany({ where: { merchantId, entityType: 'customer', entityId: id } });
   return r;
