@@ -228,3 +228,81 @@ El comentario de `:210-211` dice «la MISMA función que usa `deleteCustomer`»:
   el CI con `LIBRO_PG_URL` ahora que 419 lo declara. Y no cubre el borrado del cliente: ese caso solo vive con el doble.
 - Los sitios: borrar un cliente con sitios sigue dando 500 (FK RESTRICT, S1). Es hallazgo para Luis, no se cruza.
 A9: comprobación → `tests/scrum1833b-equipos-rutas.test.mjs`
+
+# SCRUM-1833c · pestaña «Equipos»
+
+**Medido contra:** `origin/main` = `8e44c80f2b0a719f8724537cdd5bce30a848b8a2` · 2026-11-26T11:09:45Z
+
+**Escribe:** J2 (`jv-j2fi`, relevo de cierre; código y test de `jv-j2fh`) · **Rama:** `scrum-1833c-pestana-equipos` · **Carril:** J2
+(`public/dashboard/js/customerDetailView.js` → J2, `node scripts/carriles.mjs de`). Traspaso de `jv-j2fg`: SCRUM-1833 c.22834.
+
+**Skill UI:** cargada · por `jv-j2fi`, antes del recorrido de navegador (el relevo no tocó la interfaz: solo test, registro y evidencias); si `jv-j2fh` la cargó al construir `5dacc0331` no consta en su commit, y no lo he medido.
+
+A9: comprobación → `tests/scrum1833c-pestana-equipos.test.mjs`
+
+## Qué hay
+
+- `5dacc0331` (`jv-j2fh`): la pestaña entre las marcas `// SCRUM-1833c · INICIO/FIN` de `customerDetailView.js`
+  (`EQUIPOS_CLIENTE`, `montarEquiposDelCliente`) y el comentario de :104-106 corregido; el test
+  `tests/scrum1833c-pestana-equipos.test.mjs` (10 casos propios + 8 que entran por el import de scrum1773: 18); la ficha
+  `docs/microcopy/2026-11-26-SCRUM-1833-equipos-del-cliente.md`.
+- Commit de `jv-j2fi` encima, sin reescribir el de `jv-j2fh`: un positivo en el test (`t2` lleva «Split del salón»)
+  antes de la negación `!t2.includes('Garantía hasta')`. Sin él, `scrum237` caía: «negación SIN NINGÚN respaldo»,
+  `tests/scrum1833c-pestana-equipos.test.mjs:171`. El positivo de la fila 1 va en una plantilla y el analizador no lo
+  cuenta como hermano. Ningún texto que ve el usuario cambia; ningún guard se ha tocado.
+
+Mutaciones: catálogo → `tests/scrum1833c-pestana-equipos.test.mjs`
+
+Las dos de `MUTACIONES_QUE_ME_TUMBAN`, pasadas por un mutador temporal fuera del árbol (base sin mutar: 18 pasan, 0 caen):
+`puedeBorrarEquipo = true` → MUERE «TÉCNICO: no hay «🗑 Eliminar»»; el `confirm` quitado → MUERE «ADMIN: «🗑 Eliminar»
+pregunta». Vivas 0 de 2; `git status` después, solo el cambio del test. Según el encargo, el «rojo primero» de `jv-j2fh`
+salió CIEGO por no haber `dist/` en su árbol y lo sustituyó una mutación real; eso no lo he medido yo, sí lo de arriba.
+
+## Decisiones aplicadas
+
+- c.22811 (citadas del encargo; no he releído ese comentario): P1 la pestaña se llama «Equipos»; P3 sin campo sitio;
+  P4 borrar, solo admin (el técnico ve, crea y edita); P5 la garantía se pinta como fecha, sin pastilla de estado.
+- c.22837 (fundador, leída en Jira): las filas pintan la etiqueta firmada + «: » + el dato («Número de serie: X»).
+  Respuesta literal: «1-Ok vale así». ✅ Queda como lo construyó `jv-j2fh`; ya no es pregunta abierta.
+
+## Recorrido de navegador (390 y 1280 px) — segundo empujón
+
+`docs/master/evidencias/SCRUM-1833/`: `pagina.mjs` monta la ficha real en el banco (patrón de SCRUM-1145) en seis
+estados (lista admin con un equipo de textos largos, alta, editar, técnico, vacío, error 500), y `medir-390-1280.js`
+mide y captura `<estado>-<ancho>.png` (12). Skill `yaqu-premium-ui` cargada antes de abrir el navegador; DESIGN.md
+y la Parte AB no los releí (no se cambia UI). Medido, en los 12:
+- Sin desbordamiento: `scrollWidth` = ancho de la vista en todos; 0 nodos de una fila se salen por la derecha.
+- Técnico: 3 filas, 0 «Eliminar» (admin: 3 de 3). Vacío y error: 0 filas, su texto y «+ Nuevo equipo» a la vista.
+- 🔴 **AB6, objetivos < 44 px:** «Editar» y «🗑 Eliminar» de cada fila miden 30 px de alto a 390 y a 1280. Es la
+  clase de la casa `btn-ghost btn-sm`, la misma de Sitios (`customerDetailView.js:1656`, `:1664`) y Documentos
+  (`:332`): no lo trae esta pestaña, y arreglarlo es CSS compartido, fuera de este encargo. A 1280, «+ Nuevo
+  equipo», «Cancelar» y «Guardar» miden 36 px; a 390 llegan a 44. Ni `scrum1850` ni `scrum962f` miden filas.
+- Visto en las capturas de 390 (lista, alta, error): los textos largos parten línea sin cortarse; el marcador del
+  primer campo del alta («Caldera / Aire acondicionado / Cuadro eléctr…») se corta a 390. Es un texto firmado y no
+  se toca. No he mirado contraste, foco ni las capturas de 1280; el `confirm` del borrado es nativo y no se captura
+  (lo cubre el test).
+
+## Lo NO medido
+
+- yaqu.app (lo verifica el orquestador tras el merge).
+- La suite entera (el encargo la prohíbe). `censo:mudez -- --escribir`: 0 medidos de 149; el test nuevo no cita
+  el filtro de comentarios, así que no entra en su población y `tests/_veredicto-mudez.json` no cambia.
+- `scrum1845`: no hay ningún `tests/scrum1845*`; para los 44 px corrí `scrum1850` y `scrum962f`.
+
+## CI del tercer empujón (`171fbf208`): rojo de `scrum1185`, arreglado en el cuarto (orquestador)
+
+El check obligatorio del run 45809008017 (creado 2026-11-26T11:15:59Z) cayó con `fail 2` sobre 14.619 tests, los dos de
+`tests/scrum1185-trinquete-sin-consumir.test.mjs`: ① dos piezas nuevas sin clasificar (`ciega-lector-cuerpo` de
+`POST /admin/customers/:id/equipos`, `customersAdmin.routes.ts:573`, y de `PUT …/:equipoId`, `:588`: el handler pasa el
+cuerpo entero a `equipoCreateSchema`/`equipoUpdateSchema` y la sonda no ve qué campos lee), y ② las cuatro rutas
+`/equipos` que declaró 1833b (`e9da0a023`) ya tienen consumidor y debían salir de `declaradas`. Era lo previsto en el
+motivo de 1833b («se mueve a retiradas en ese PR»; GO del fundador en SCRUM-1833 c.22828 ①), y el encargo de `jv-j2fi`
+no llevaba ni el paso ni el guard 1185 en su lista: error del orquestador, cazado por el guard en CI y no en local.
+
+Arreglo (orquestador, solo `scripts/_sin-consumir-declarados.json`; ningún guard tocado): las cuatro rutas pasan a
+`retiradas` con motivo «SCRUM-1833c: conectada en customerDetailView.js (…)», y las dos ciegas se declaran con carril J2
+y ticket SCRUM-1833, con el mismo texto de motivo que las de «Sitios» (SCRUM-1145, `6bcbb99d3`, también J2). Esas dos
+declaraciones son nuevas y NO estaban en el GO de c.22828: se avisan al fundador en la entrega. Medido en el árbol de la
+rama: antes del cambio, 11 tests, 9 pasan y caen ① y ②, los mismos que en CI; después, 11 de 11. El JSON se editó
+parseando y re-serializando, con control previo de ida y vuelta idéntica (176 declaradas, 71 retiradas); diff: 8 líneas
+añadidas y 6 quitadas, dos de ellas la coma final de las entradas vecinas. `censo:mudez` no cambia: no hay test nuevo.
