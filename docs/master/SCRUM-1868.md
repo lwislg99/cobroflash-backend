@@ -35,6 +35,16 @@ la FK), y la copia firmada dice «Facturas emitidas»; `cuenta.documentos` cuent
 borrado. `Job`, `MaintenancePlan`, `ParteTrabajo`, `WhatsAppMessage` y `EmailMessage` guardan `customerId` sin FK y
 se quedan con el número de un cliente borrado, como antes de este tramo: no está en lo firmado y no lo toco.
 
+## CI del primer empujón (`f211de3ee`): rojo de `scrum1456`, arreglado por el orquestador
+
+El obligatorio del run 45864266702 cayó con `fail 1` sobre 14.629: `tests/scrum1456-ids-que-no-caben-en-la-columna.test.mjs:252`,
+el control negativo «un id CORRECTO sigue llegando al borrado y contesta 204», contestó 404. Causa: desde este tramo la
+ruta BUSCA al cliente (`customer.findFirst`) y cuenta lo que le cuelga ANTES de borrar, y ese caso solo sembraba
+`customer.deleteMany`: el banco decía «no existe» y la ruta, como manda SCRUM-1571, 404. No es un defecto del código: el
+caso siembra ahora también `'customer.findFirst': { id: 7 }`; la aserción no cambia. Medido en el árbol de la rama: antes
+61/62 (cae ese caso), después 62/62, y con 1868a, 1571, 337, 1294, 267 y 854: 9 ficheros, 127/127. El encargo de
+`jv-j2fk` no pedía correr `scrum1456` (vecino del DELETE): error del orquestador, cazado por el CI.
+
 A9: aviso → cicatriz J2 «otra vez crucé el tope del primer empujón sin medirme entre la lectura de Jira y el final del test» — no se pudo comprobar: ningún hook del repositorio lee el contexto a mitad de tanda
 
 # SCRUM-1868b · pantalla del borrado de cliente
