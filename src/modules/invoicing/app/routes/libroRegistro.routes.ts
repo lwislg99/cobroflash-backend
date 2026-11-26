@@ -9,6 +9,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { leerLibroRegistro } from '../../domain/libroRegistro.repo';
+import { criterioDelMerchantParaElLibro } from '../../domain/criterioDelMerchant';
 
 const router = Router();
 
@@ -29,10 +30,15 @@ function fechaDe(valor: unknown): Date | undefined {
  */
 router.get('/', async (req, res) => {
   try {
+    // SCRUM-1055c · el criterio del comercio, como el 303 y las evidencias: sin él, este libro nunca
+    // traía los cobros de `invoice_payments` y la señal «cobro sin fecha declarada» no llegaba al panel.
+    // Sin criterio declarado es `{}` y el libro hace lo de siempre (por emisión, sin cobros).
+    const criterio = await criterioDelMerchantParaElLibro(prisma as never, req.merchantId);
     const libro = await leerLibroRegistro(prisma, {
       merchantId: req.merchantId,
       desde: fechaDe(req.query.desde),
       hasta: fechaDe(req.query.hasta),
+      ...criterio,
       // SCRUM-1232: el libro de facturas EXPEDIDAS no lleva justificantes (RIVA 63).
       soloFacturas: true,
     });
