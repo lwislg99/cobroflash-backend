@@ -604,12 +604,24 @@ export async function borrarDocumento(merchantId: number, customerId: number, do
  * `docs/sql/scrum-1005-adjuntos-cliente.sql`), así que lo hace el código. Se borran TODOS los
  * adjuntos del cliente, no sólo `kind: 'document'`: un dato personal no se queda por su `kind`.
  * Sólo si el cliente se ha borrado de verdad (count > 0): un id ajeno no toca nada.
+ *
+ * SCRUM-1833b · y sus equipos (decisión del fundador, SCRUM-1833 c.22828 ②), ANTES de la fila del
+ * cliente: `equipments.customer_id` es FK RESTRICT (`docs/sql/scrum-914-equipos-del-cliente.sql:107`)
+ * y sin esto el borrado da 500. Cada equipo pasa por `desligarYBorrarEquipo`, la MISMA función que el
+ * botón de borrar un equipo: ninguna segunda copia del desligue. Con el comercio en el `where`, un id
+ * ajeno no encuentra ningún equipo.
  */
 export async function borrarClienteYSusDocumentos(
-  tx: { customer: { updateMany: Function; deleteMany: Function }; attachment: { deleteMany: Function } },
+  tx: Parameters<typeof desligarYBorrarEquipo>[0] & {
+    customer: { updateMany: Function; deleteMany: Function };
+    attachment: { deleteMany: Function };
+    equipment: { findMany: Function };
+  },
   merchantId: number,
   id: number,
 ) {
+  const equipos: Array<{ id: number }> = await tx.equipment.findMany({ where: { merchantId, customerId: id }, select: { id: true } });
+  for (const e of equipos) await desligarYBorrarEquipo(tx, merchantId, id, e.id);
   const r = await desvincularYBorrar(tx, merchantId, id);
   if (r.count > 0) await tx.attachment.deleteMany({ where: { merchantId, entityType: 'customer', entityId: id } });
   return r;

@@ -42,6 +42,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: 'export const equipoCreateSchema = z.object({',
     cae: 'obligatorios y campos prohibidos',
   },
+  {
+    // Sin el borrado de sus equipos, borrar un cliente que los tenga choca con la FK RESTRICT (c.22828 ②).
+    fichero: 'src/modules/system/customerAdmin.ts',
+    de: '  for (const e of equipos) await desligarYBorrarEquipo(tx, merchantId, id, e.id);\n',
+    a: '',
+    cae: 'borrar el cliente se lleva sus equipos',
+  },
 ];
 
 const A = 7, B = 8, CLI_A = 31, CLI_B = 32;
@@ -69,13 +76,18 @@ function tabla(nombre) {
     [`${nombre}.deleteMany`]: ({ where }) => {
       const filas = db[nombre].filter((x) => casa(x, where));
       if (filas.some((f) => f.falla)) throw new Error('fallo sembrado en el borrado del equipo');
+      // La FK RESTRICT de `equipments.customer_id` (`docs/sql/scrum-914-equipos-del-cliente.sql:107`):
+      // en Postgres, borrar un cliente que aún tiene equipos lanza. El doble lo imita.
+      if (nombre === 'customer' && db.equipment.some((e) => filas.some((c) => c.id === e.customerId))) {
+        throw new Error('FK RESTRICT: equipments.customer_id');
+      }
       db[nombre] = db[nombre].filter((x) => !casa(x, where));
       return { count: filas.length };
     },
   };
 }
 
-const respuestas = Object.assign({}, ...['customer', 'equipment', ...DOCS].map(tabla));
+const respuestas = Object.assign({}, ...['customer', 'equipment', 'attachment', ...DOCS].map(tabla));
 inyectarBase(respuestas, ['../dist/modules/system/customerAdmin.js', '../dist/modules/system/app/routes/customersAdmin.routes.js']);
 
 // Primera trampa: la transacción de verdad es «todo o nada». La foto se restaura si el callback lanza.
@@ -218,4 +230,28 @@ test('SCRUM-1833b · 🔴 borrar es atómico: si el borrado del equipo falla, lo
   assert.equal(r.json.error, 'internal_error');
   assert.ok(db.equipment.some((e) => e.id === 3), 'el equipo sigue');
   assert.deepEqual(ligados(3), [1, 1, 1, 1], 'y sus 4 documentos siguen ligados: o todo o nada');
+});
+
+test('SCRUM-1833b · 🔴 borrar el cliente se lleva sus equipos y desliga sus documentos; el equipo de B, intacto (c.22828 ②)', async () => {
+  const { deleteCustomer } = moduloDeDist('../dist/modules/system/customerAdmin.js');
+  db = {
+    customer: [{ id: CLI_A, merchantId: A }, { id: CLI_B, merchantId: B }],
+    equipment: [
+      { id: 1, merchantId: A, customerId: CLI_A, type: 'Caldera', name: 'Caldera cocina' },
+      { id: 4, merchantId: A, customerId: CLI_A, type: 'Aire', name: 'Split dormitorio' },
+      { id: 2, merchantId: B, customerId: CLI_B, type: 'Aire', name: 'Split salón' },
+    ],
+    job: [{ id: 1, merchantId: A, equipmentId: 1 }],
+    albaran: [{ id: 1, merchantId: A, equipmentId: 1 }],
+    maintenancePlan: [],
+    parteTrabajo: [],
+    attachment: [],
+  };
+  const r = await deleteCustomer(A, CLI_A);
+  assert.equal(r.count, 1, 'el cliente se borra');
+  assert.ok(!db.customer.some((c) => c.id === CLI_A));
+  assert.deepEqual(db.equipment.filter((e) => e.customerId === CLI_A), [], 'sus 2 equipos se van con él');
+  assert.equal(db.job[0].equipmentId, null, 'el trabajo queda sin equipo');
+  assert.equal(db.albaran[0].equipmentId, null, 'el albarán queda sin equipo');
+  assert.deepEqual(db.equipment.map((e) => e.id), [2], 'el equipo del comercio B, intacto');
 });
