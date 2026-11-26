@@ -202,6 +202,14 @@ const BORRADOS_DECLARADOS = [
   // acción MANUAL de un admin (`DELETE /admin/customers/:id/equipos/:equipoId`, `requireRole('admin')`
   // por c.22811 P4), o el borrado del cliente por un admin (c.22828 ②). Sin cron ni trial de por medio.
   'src/modules/system/customerAdmin.ts::equipment.deleteMany#1',
+  // SCRUM-1868a · CONTESTADA (decisión del fundador, SCRUM-1868 descripción y c.22850): NO se disparan al
+  // vencer la prueba ni por inactividad. Van dentro de `borrarClienteYSusDocumentos`: los sitios, el
+  // historial y las solicitudes se van con su cliente, en la misma transacción, sólo cuando un admin lo
+  // borra (`DELETE /admin/customers/:id`, `requireRole('admin')`) y sólo si no tiene presupuestos ni
+  // facturas (409 si los tiene). Sin cron ni trial de por medio.
+  'src/modules/system/customerAdmin.ts::customerEvent.deleteMany#1',
+  'src/modules/system/customerAdmin.ts::customerSite.deleteMany#1',
+  'src/modules/system/customerAdmin.ts::quoteRequest.deleteMany#1',
   // SCRUM-1014 · CONTESTADA: NO se dispara al vencer la prueba ni por inactividad. Es el botón
   // «Borrar sitio» de la agenda del cliente — acción MANUAL del profesional sobre una fila suya
   // (`DELETE /admin/customers/:id/sites/:siteId`), sin cron ni trial de por medio.
