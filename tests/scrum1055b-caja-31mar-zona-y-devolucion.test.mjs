@@ -12,14 +12,22 @@
 // El cobro PARCIAL no está aquí a propósito: ya lo fija `tests/scrum1732-cobro-parcial-defecto-declarado.test.mjs`,
 // hueco (c). Duplicarlo serían dos anclas para la misma comprobación.
 //
-// 🔴 (②) ES UN TRINQUETE DE UN DEFECTO CONOCIDO, no un verde que lo bendice: el borde del trimestre se
-// calcula en la zona del PROCESO (`new Date(año, mes, …)` en `rangoTrimestre`), no en la del
-// merchant. Con el proceso en UTC —lo que `fechaDeCobro.ts` dice de Railway; NO medido en producción—
-// un cobro del 1-abr a las 00:30 de Madrid cae en el T1. Cómo trabaja, igual que `scrum1732`:
-//   · DECLARADO + defecto presente → verde, y dice que es un defecto conocido, no conformidad.
-//   · DECLARADO + el comportamiento cambió → ROJO: quien lo arregle retira la declaración en su PR.
-//   · RETIRADO + defecto presente → ROJO: retirar la declaración no es arreglarlo.
-//   · el control (proceso en Madrid → T2) no sale → CIEGO, que es ROJO.
+// (②) Fue un TRINQUETE de un defecto conocido (el borde del trimestre en la zona del PROCESO). Lo
+// arregló SCRUM-1445 (d: `rangoTrimestre` acepta `zona`; f: los lectores de J1 se la pasan), y
+// SCRUM-1872 retira la declaración: desde entonces ② mide por los LECTORES REALES del libro de caja
+// (`leerLibroExpedidasDelTrimestre` y `leerModelo303`), que leen la zona y el criterio de caja de la
+// fila del merchant, con el proceso en UTC (Railway, c.21873), Madrid y Canarias. Cómo juzga:
+//   · RETIRADO + borde en la zona del merchant → verde.
+//   · RETIRADO + el borde vuelve a la zona del proceso → ROJO.
+//   · DECLARADO otra vez con el borde arreglado → ROJO: una declaración que ya no describe nada.
+//   · la caja no lleva la factura a 2026, o el proceso no ve su zona → CIEGO, que es ROJO.
+// El respaldo «sin zona» de `rangoTrimestre` sigue vivo (lo usa `reports.routes.ts`, carril S1) y lo
+// fija `scrum1445d`; aquí sólo sirve de DEFECTO SEMBRADO para el control del instrumento.
+//
+// 🔴 La zona del PROCESO se fija ANTES de cargar `dist/` (el patrón de `scrum1445d`), y cada cambio
+// de zona comprueba que el proceso la VE antes de fiarse de lo que mide.
+process.env.TZ = 'UTC';
+
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -33,20 +41,37 @@ const RAIZ = path.resolve(import.meta.dirname, '..');
 const requiere = createRequire(path.join(RAIZ, 'package.json'));
 const rutaDe = (r) => requiere.resolve(path.join(RAIZ, r));
 
-/** 🔴 La declaración del defecto ②. Quien lo arregle la retira (`declarado: false`) en el mismo cambio. */
+/**
+ * 🔴 La declaración del defecto ②, RETIRADA en SCRUM-1872 (el arreglo es de SCRUM-1445f). Volver a
+ * `true` con el borde arreglado tumba ②: una declaración que no describe nada esconde el siguiente.
+ */
 export const DEFECTO_CONOCIDO = {
-  bordeEnZonaDelProceso: { declarado: true,
-    tickets: ['SCRUM-1055'],
-    que: 'el borde del trimestre sale de la zona del proceso: con TZ=UTC, un cobro del 1-abr 00:30 de Madrid cae en el T1' },
+  bordeEnZonaDelProceso: { declarado: false,
+    tickets: ['SCRUM-1055', 'SCRUM-1445', 'SCRUM-1872'],
+    que: 'el borde del trimestre salía de la zona del proceso: con TZ=UTC, un cobro del 1-abr 00:30 de Madrid caía en el T1' },
 };
 
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
-    // Retirar la declaración sin arreglar el defecto.
+    // Volver a declarar el defecto con el borde ya arreglado.
     fichero: 'tests/scrum1055b-caja-31mar-zona-y-devolucion.test.mjs',
-    de: 'DEFECTO_CONOCIDO = {\n  bordeEnZonaDelProceso: { declarado: true,',
-    a: 'DEFECTO_CONOCIDO = {\n  bordeEnZonaDelProceso: { declarado: false,',
-    cae: 'SCRUM-1055b · ② el borde del trimestre sigue en la zona del proceso: defecto declarado',
+    de: 'DEFECTO_CONOCIDO = {\n  bordeEnZonaDelProceso: { declarado: false,',
+    a: 'DEFECTO_CONOCIDO = {\n  bordeEnZonaDelProceso: { declarado: true,',
+    cae: 'SCRUM-1055b · ② el 1-abr 00:30 de Madrid es T2 por el libro de caja real',
+  },
+  {
+    // El libro de expedidas deja de pasar la zona del merchant al trimestre.
+    fichero: 'src/modules/fiscal/librosAeat/librosAeat.repo.ts',
+    de: 'rangoTrimestre(params.año, params.trimestre, zona);\n  const { merchantId } = params;\n\n  // SCRUM-294',
+    a: 'rangoTrimestre(params.año, params.trimestre);\n  const { merchantId } = params;\n\n  // SCRUM-294',
+    cae: 'SCRUM-1055b · ② el 1-abr 00:30 de Madrid es T2 por el libro de caja real',
+  },
+  {
+    // El 303 deja de pasar la zona del merchant al trimestre.
+    fichero: 'src/modules/fiscal/modelo303/modelo303.repo.ts',
+    de: '  const { desde, hasta } = rangoTrimestre(params.año, params.trimestre, zona);\n',
+    a: '  const { desde, hasta } = rangoTrimestre(params.año, params.trimestre);\n',
+    cae: 'SCRUM-1055b · ② el 1-abr 00:30 de Madrid es T2 por el libro de caja real',
   },
   {
     // La fecha declarada se ignora y el cobro se fecha con el reloj de la confirmación.
@@ -67,6 +92,9 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 const { leerLibroRegistro } = requiere(rutaDe('dist/modules/invoicing/domain/libroRegistro.repo.js'));
 const { rangoTrimestre } = requiere(rutaDe('dist/modules/fiscal/modelo303/modelo303.js'));
 const { resolverInstanteDeCobro } = requiere(rutaDe('dist/modules/billing/domain/instanteDeCobro.js'));
+// SCRUM-1872 · los lectores REALES del trimestre (los que usan las rutas de libros y del 303).
+const { leerLibroExpedidasDelTrimestre } = requiere(rutaDe('dist/modules/fiscal/librosAeat/librosAeat.repo.js'));
+const { leerModelo303 } = requiere(rutaDe('dist/modules/fiscal/modelo303/modelo303.repo.js'));
 
 const M = 1055;
 const cumple = (v, f) => !f || ((!f.gte || (v && v >= f.gte)) && (!f.lte || (v && v <= f.lte)));
@@ -90,7 +118,10 @@ function factura(numero, createdAt, paidAt, { type = 'F1', signo = 1 } = {}) {
   };
 }
 
-/** Los asientos de cada trimestre de 2026, con o sin caja. */
+/**
+ * Los asientos de cada trimestre de 2026, con o sin caja, con el rango SIN zona: el respaldo de la
+ * zona del proceso (1445d). ① y ③ no tocan ningún borde; ② lo usa sólo como defecto SEMBRADO.
+ */
 async function porTrimestre(facturas, { caja = true } = {}) {
   const q = {};
   for (const t of [1, 2, 3, 4]) {
@@ -103,11 +134,20 @@ async function porTrimestre(facturas, { caja = true } = {}) {
 }
 const trimestresDe = (q, numero) => [1, 2, 3, 4].filter((t) => q[t].some((a) => a.numero === numero));
 
-/** Corre `fn` con el proceso en la zona `tz` y la deja como estaba. */
+/** La hora de `instante` en `tz` según Intl, que no depende de la zona del proceso. */
+const horaEn = (instante, tz) => Number(new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: 'numeric', hourCycle: 'h23' }).format(instante));
+// Un instante de verano: UTC 12, Canarias 13, Madrid 14. En invierno, UTC y Canarias no se distinguen.
+const SONDA_DE_ZONA = new Date('2026-07-01T12:00:00Z');
+
+/** Corre `fn` con el proceso en la zona `tz`, comprueba que el proceso la VE, y la deja como estaba. */
 async function enZona(tz, fn) {
   const antes = process.env.TZ;
   process.env.TZ = tz;
-  try { return await fn(); } finally {
+  try {
+    const visto = SONDA_DE_ZONA.getHours();
+    assert.equal(visto, horaEn(SONDA_DE_ZONA, tz), `CIEGO: el proceso no está en ${tz} (getHours=${visto})`);
+    return await fn();
+  } finally {
     if (antes === undefined) delete process.env.TZ; else process.env.TZ = antes;
   }
 }
@@ -145,40 +185,98 @@ test('SCRUM-1055b · ① control: el último minuto del 31-mar de Madrid es T1 e
   }
 });
 
-// ── ② EL BORDE DEL TRIMESTRE Y LA ZONA DEL PROCESO (DEFECTO DECLARADO) ─────────────────────
+// ── ② EL BORDE DEL TRIMESTRE, EN LA ZONA DEL MERCHANT (SCRUM-1872) ─────────────────────────
 
 // 1-abr-2026 00:30 en Madrid (CEST, UTC+2) = 31-mar 22:30Z. Para un merchant de Madrid es del T2.
 const BORDE = new Date('2026-03-31T22:30:00Z');
+// 31-mar-2026 23:30 en Madrid = 21:30Z: el control, del T1.
+const VISPERA = new Date('2026-03-31T21:30:00Z');
+const PROCESOS = ['UTC', 'Europe/Madrid', 'Atlantic/Canary'];
+const NUMERO_BORDE = 'F-10553';
 
-export async function medirBorde(paidAt = BORDE) {
-  // SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora
-  const f = { ...factura('F-10553', new Date('2025-12-10T11:00:00Z'), paidAt), merchantCriterioCaja: true };
-  const enUtc = await enZona('UTC', async () => trimestresDe(await porTrimestre([f]), 'F-10553'));
-  const enMadrid = await enZona('Europe/Madrid', async () => trimestresDe(await porTrimestre([f]), 'F-10553'));
-  const poblacion = `1 factura cobrada el ${paidAt.toISOString()} · proceso UTC → T[${enUtc}] · proceso Europe/Madrid → T[${enMadrid}]`;
-  if (enMadrid.join() !== '2') return { estado: 'CIEGO', poblacion };
-  if (enUtc.join() === '1') return { estado: 'DEFECTO', poblacion };
-  return { estado: 'CAMBIADO', poblacion };
+/** La base del libro más la fila del merchant: los lectores reales sacan de ella la zona y el criterio. */
+function baseDelMerchant(facturas, zonaMerchant) {
+  return {
+    ...baseDelLibro(facturas),
+    // `zonaDelMerchantParaElLibro` lee `timezone`; `criterioDelMerchantParaElLibro`, la fila entera.
+    merchant: { async findUnique(args) { return args?.where?.id === M ? { id: M, timezone: zonaMerchant, criterioCaja: true } : null; } },
+    customer: { async findMany() { return []; } },
+    expense: { async findMany() { return []; } },
+  };
+}
+
+/**
+ * Emitida en dic-2025 y cobrada en `instante`: por emisión NO es de 2026, así que si sale en un
+ * trimestre de 2026 sólo puede ser por el COBRO (el criterio de caja). Lo midió jv-j1eo en 1732.
+ */
+// SCRUM-1730e: el congelado de la factura (c.21789 ③); hoy el libro lo ignora
+const cobradaEn = (instante) => ({ ...factura(NUMERO_BORDE, new Date('2025-12-10T11:00:00Z'), instante), merchantCriterioCaja: true });
+
+/** Los lectores reales: en qué trimestres de 2026 cae `instante`. */
+const LECTORES_REALES = {
+  // EL LIBRO DE CAJA: el 303 lee el libro con `criterioCaja` (de la fila del merchant) y `devengo`.
+  // Con UNA factura en la base, «base del 303 distinta de cero» es «el cobro cae en ese trimestre».
+  async '303 por caja (cobro)'(instante, zonaMerchant) {
+    const t = [];
+    for (const q of [1, 2, 3, 4]) {
+      const m = await leerModelo303(baseDelMerchant([cobradaEn(instante)], zonaMerchant), { merchantId: M, año: 2026, trimestre: q });
+      if (m.totalBase !== 0) t.push(q);
+    }
+    return t;
+  },
+  // El libro de expedidas corta por la fecha de EXPEDICIÓN (RIVA 63; sin `devengo`): el mismo borde,
+  // con la factura EMITIDA en `instante`. Una emitida en dic-2025 no sale nunca en él.
+  async 'libro de expedidas (emisión)'(instante, zonaMerchant) {
+    const t = [];
+    for (const q of [1, 2, 3, 4]) {
+      const base = baseDelMerchant([factura(NUMERO_BORDE, instante, null)], zonaMerchant);
+      const { filas } = await leerLibroExpedidasDelTrimestre(base, { merchantId: M, año: 2026, trimestre: q });
+      if (filas.some((f) => f.serieNumero === NUMERO_BORDE)) t.push(q);
+    }
+    return t;
+  },
+};
+/** DEFECTO SEMBRADO: el rango SIN zona (el respaldo de 1445d), que es lo que este test medía antes de SCRUM-1872. */
+const LECTOR_SIN_ZONA = {
+  async 'caja por el respaldo sin zona'(instante) { return trimestresDe(await porTrimestre([cobradaEn(instante)]), NUMERO_BORDE); },
+};
+
+export async function medirBorde({ instante = BORDE, zonaMerchant = 'Europe/Madrid', esperado = 2, lectores = LECTORES_REALES } = {}) {
+  const vistos = [];
+  for (const [lector, leer] of Object.entries(lectores)) {
+    for (const tz of PROCESOS) vistos.push({ lector, tz, t: await enZona(tz, () => leer(instante, zonaMerchant)) });
+  }
+  const poblacion = `instante ${instante.toISOString()}, merchant en ${zonaMerchant}, esperado T${esperado} · `
+    + `${vistos.length} lecturas: ` + vistos.map((v) => `${v.lector} [proceso ${v.tz}] → T[${v.t}]`).join(' · ');
+  if (vistos.length === 0 || vistos.some((v) => v.t.length === 0)) return { estado: 'CIEGO', poblacion };
+  const cambiaConElProceso = Object.keys(lectores)
+    .some((l) => new Set(vistos.filter((v) => v.lector === l).map((v) => v.t.join())).size > 1);
+  if (cambiaConElProceso) return { estado: 'DEFECTO', poblacion };
+  if (vistos.every((v) => v.t.join() === String(esperado))) return { estado: 'EN_ZONA_DEL_MERCHANT', poblacion };
+  return { estado: 'OTRO', poblacion };
 }
 
 export function juicio(medida, declaracion) {
   const declarado = declaracion?.declarado === true;
   switch (medida.estado) {
-    case 'CIEGO':
-      return { ok: false, motivo: `CIEGO: el control (proceso en Madrid → T2) no sale (${medida.poblacion}). Eso no es un verde.` };
+    case 'EN_ZONA_DEL_MERCHANT':
+      return declarado
+        ? { ok: false, motivo: `El borde ya se corta en la zona del merchant y el defecto sigue DECLARADO: ${medida.poblacion}. `
+          + 'Una declaración que ya no describe nada esconde el siguiente defecto: retírala.' }
+        : { ok: true, motivo: `En la zona del merchant (arreglo de SCRUM-1445f, declaración retirada en SCRUM-1872): ${medida.poblacion}.` };
     case 'DEFECTO':
       return declarado
-        ? { ok: true, motivo: `DEFECTO CONOCIDO, declarado (SCRUM-1055 c.21863): ${medida.poblacion}. No es conformidad.` }
-        : { ok: false, motivo: `Se retiró la declaración y el defecto sigue: ${medida.poblacion}. Retirarla es parte del arreglo, no lo sustituye.` };
+        ? { ok: true, motivo: `DEFECTO CONOCIDO, declarado: ${medida.poblacion}. No es conformidad.` }
+        : { ok: false, motivo: `El borde del trimestre ha vuelto a la zona del PROCESO: ${medida.poblacion}. `
+          + 'Un lector de caja ha dejado de pasar la zona del merchant a `rangoTrimestre` (SCRUM-1445f).' };
+    case 'OTRO':
+      return { ok: false, motivo: `Ni la zona del merchant ni la del proceso: ${medida.poblacion}.` };
     default:
-      return declarado
-        ? { ok: false, motivo: `El borde del trimestre ha CAMBIADO con el defecto todavía declarado: ${medida.poblacion}. `
-          + 'Si es el arreglo (bordes en la zona del merchant), retira `bordeEnZonaDelProceso` de DEFECTO_CONOCIDO en este mismo cambio.' }
-        : { ok: true, motivo: `Declaración retirada y arreglado: ${medida.poblacion}.` };
+      return { ok: false, motivo: `CIEGO: algún lector, en alguna zona, no llevó la factura a 2026 (${medida.poblacion}). Eso no es un verde.` };
   }
 }
 
-test('SCRUM-1055b · ② el borde del trimestre sigue en la zona del proceso: defecto declarado', async (t) => {
+test('SCRUM-1055b · ② el 1-abr 00:30 de Madrid es T2 por el libro de caja real, en las tres zonas del proceso', async (t) => {
   const medida = await medirBorde();
   t.diagnostic(`estado ${medida.estado} · ${medida.poblacion}`);
   const v = juicio(medida, DEFECTO_CONOCIDO.bordeEnZonaDelProceso);
@@ -186,23 +284,38 @@ test('SCRUM-1055b · ② el borde del trimestre sigue en la zona del proceso: de
   assert.equal(v.ok, true, `🔴 ${v.motivo}`);
 });
 
-test('SCRUM-1055b · ② control: el instrumento con entradas fabricadas, en los dos sentidos', async () => {
-  // SÍ: el instante del borde (1-abr 00:30 de Madrid) da el defecto.
-  assert.equal((await medirBorde(new Date('2026-03-31T22:30:00Z'))).estado, 'DEFECTO');
-  // NO: un cobro del 15-may cae en el T2 en las dos zonas; no hay defecto que ver.
-  assert.equal((await medirBorde(new Date('2026-05-15T10:00:00Z'))).estado, 'CAMBIADO');
-  // CIEGO: con un cobro del T1 en las dos zonas, el control (Madrid → T2) no sale.
-  assert.equal((await medirBorde(new Date('2026-03-15T10:00:00Z'))).estado, 'CIEGO');
+test('SCRUM-1055b · ② control: el 31-mar 23:30 de Madrid sigue en el T1 por los mismos lectores, en las tres zonas', async () => {
+  const medida = await medirBorde({ instante: VISPERA, esperado: 1 });
+  assert.equal(medida.estado, 'EN_ZONA_DEL_MERCHANT', medida.poblacion);
+});
+
+test('SCRUM-1055b · ② control: manda la zona del MERCHANT, no una fija: el mismo instante, con el merchant en Canarias, es T1', async () => {
+  // 31-mar 22:30Z son las 23:30 del 31-mar en Canarias (WEST, UTC+1 desde el 29-mar-2026).
+  const medida = await medirBorde({ zonaMerchant: 'Atlantic/Canary', esperado: 1 });
+  assert.equal(medida.estado, 'EN_ZONA_DEL_MERCHANT', medida.poblacion);
+});
+
+test('SCRUM-1055b · ② control: el instrumento con entradas fabricadas, en los tres sentidos', async () => {
+  // DEFECTO sembrado: el rango SIN zona cambia con el proceso (UTC → T1, Madrid → T2).
+  assert.equal((await medirBorde({ lectores: LECTOR_SIN_ZONA })).estado, 'DEFECTO');
+  // CIEGO: un instante de dic-2025 no cae en ningún trimestre de 2026, ni por cobro ni por emisión.
+  assert.equal((await medirBorde({ instante: new Date('2025-12-20T10:00:00Z') })).estado, 'CIEGO');
+  // CIEGO: sin lectores no hay medición, y eso no puede salir verde.
+  assert.equal((await medirBorde({ lectores: {} })).estado, 'CIEGO');
+  // OTRO: lo esperado no sale en ninguna zona.
+  assert.equal((await medirBorde({ esperado: 3 })).estado, 'OTRO');
 });
 
 test('SCRUM-1055b · ② control: las casillas del juicio', () => {
-  const d = { declarado: true };
-  assert.equal(juicio({ estado: 'DEFECTO', poblacion: '' }, d).ok, true);
-  assert.equal(juicio({ estado: 'DEFECTO', poblacion: '' }, { declarado: false }).ok, false);
-  assert.equal(juicio({ estado: 'CAMBIADO', poblacion: '' }, d).ok, false);
-  assert.equal(juicio({ estado: 'CAMBIADO', poblacion: '' }, { declarado: false }).ok, true);
-  assert.equal(juicio({ estado: 'CIEGO', poblacion: '' }, d).ok, false);
-  assert.equal(juicio({ estado: 'CIEGO', poblacion: '' }, { declarado: false }).ok, false);
+  const j = (estado, declarado) => juicio({ estado, poblacion: '' }, { declarado }).ok;
+  assert.equal(j('EN_ZONA_DEL_MERCHANT', false), true);
+  assert.equal(j('EN_ZONA_DEL_MERCHANT', true), false);
+  assert.equal(j('DEFECTO', false), false);
+  assert.equal(j('DEFECTO', true), true);
+  for (const d of [true, false]) {
+    assert.equal(j('OTRO', d), false);
+    assert.equal(j('CIEGO', d), false);
+  }
 });
 
 // ── ③ LA DEVOLUCIÓN: LO QUE HACE HOY EL PRODUCTO ──────────────────────────────────────────

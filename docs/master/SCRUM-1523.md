@@ -425,3 +425,118 @@ devuelve un objeto con `ok`. Lo paró la siembra, que es para lo que está: sin 
   Contadas, sin clasificar: no sé cuántas son texto que alguien lee.
 - Los comentarios 17444, 17384, 17446 y 18287: citados por lo que dice el repositorio, sin abrir.
 - Ninguna tanda completa. Sólo los comprobadores de registro, tras escribir esto.
+
+# SCRUM-1523d · El recuento de las tres bases, y la parte J2 (el portal) ya estaba firmada
+
+**Medido contra:** `origin/main` = `4fba03364e8b7c072ad669f1d43cebda4573e022` · 2026-11-26T17:18:05Z (cabecera `Date` de GitHub)
+
+A9: aviso → cicatriz J2 «para comprobar UNA firma leí entero en Jira SCRUM-1567 (10 comentarios)» — no se pudo comprobar: la herramienta de Jira devuelve todos los comentarios de un ticket y no deja pedir uno solo
+
+26-nov-2026 · sesión `jv-j2fn` (puesto J2, equipo de Javier), por encargo del orquestador J
+(`cobroflash-backend-2d`). [Escrito por una sesión. No es firma del fundador ni del orquestador.]
+Entrega en Jira: SCRUM-1523 c.22879.
+
+**Es MEDICIÓN.** No se ha tocado `src/`, `public/`, `tests/`, `scripts/` ni `prisma/`, ni producción
+(su recuento es el de c.22866). En staging y dev se corrió UNA sola SELECT de lectura. Ningún ticket
+transicionado.
+
+**Dos etiquetas, dos equipos.** El ticket lleva `equipo-javier` y `equipo-luis`. La parte de Luis es
+`exportData.ts:626` (S1), que su orquestador dejó fuera de esta semana (c.22022). La de Javier es el
+portal (J2) y la decisión ② de SCRUM-1640.
+
+## d0 · Lo primero: el recuento ya existía, y los textos del portal ya estaban firmados
+
+SCRUM-1567 c.21121 (27-oct-2026, encabezado «Decisión del FUNDADOR»; c.21627 confirma que lo es)
+dice, en su punto 2: «Los J- pendientes ya están contados (SCRUM-1448 c.21012/21016): 2 en producción
+(216 y 217, comercio 18, cuenta de prueba), 9 en staging y 0 en dev.» Hoy sale lo mismo en las tres
+bases (d1). c.21641 y c.21858 de este ticket lo daban por «NO HECHO, lo pasa el fundador» porque el
+dato estaba en otro ticket. Los comentarios c.21012/21016 de SCRUM-1448 **no los he abierto**: los cito
+por c.21121.
+
+## d1 · Recuento de las tres bases
+
+Consulta, literal de c.22860:
+`SELECT type, vf_estado, COUNT(*) FROM invoices WHERE type = 'JUST' OR number LIKE 'J-%' GROUP BY 1, 2;`
+
+| base | quién la midió y cuándo | type | vf_estado | count |
+|---|---|---|---|---|
+| producción | el fundador; transcrita por el orquestador en c.22866 (26-nov) | `JUST` | `no_aplica` | 2 |
+| staging | `jv-j2fn`, 2026-11-26T17:15:38Z | `JUST` | `no_aplica` | 9 |
+| dev | `jv-j2fn`, 2026-11-26T17:15:46Z | — | — | 0 filas |
+
+En ninguna base hay una fila con número `J-` fuera del tipo `JUST`: la fila D de §b1 (`F1` con `J-`)
+no existe hoy en ninguna de las tres.
+
+**Destino, antes de conectar:** `node scripts/comprobar-claves-bd.mjs` dio `DATABASE_URL_STAGING` →
+STAGING ✅ y `DATABASE_URL_DEV` → DESARROLLO (`yaqu_dev_javier`) ✅. Ninguna apunta a producción. El
+comando sale 1 por `DATABASE_URL_TESTS`, que no está declarada para este árbol y no se ha usado.
+
+**Instrumento:** un script efímero FUERA del repo, como pedía el encargo. Lee la clave del `.env` del
+árbol sin imprimirla, corre la SELECT de arriba con el cliente Prisma del árbol (`$queryRawUnsafe`) e
+imprime solo las filas. Sale 0 si la consulta corrió (aunque devuelva cero filas) y 2 = CIEGO si no
+corrió. Controles: con una clave que no existe dice CIEGO y sale 2 (comprobado). El mismo instrumento
+devuelve la fila de staging, así que el cero de dev no es ceguera del instrumento.
+**Límite:** ese cero no dice si dev tiene facturas. Saberlo exige otra SELECT, y el encargo no la
+autoriza. El apéndice de SCRUM-825 del 21-sep hablaba de filas `JUST` en dev (comercio 18). Si es otra
+base o si las borraron desde entonces: no lo sé.
+
+## d2 · La parte J2: los textos del portal están firmados
+
+| literal en `main` | dónde | cuándo se ve | firma |
+|---|---|---|---|
+| «📄 Descargar justificante» (si no, «📄 Descargar factura») | `src/modules/system/app/routes/customerPortal.routes.ts:349` | comercio en `receipt` (`:248`, `getEmissionMode`) + número `J-` + PDF disponible | SCRUM-1567 c.21121, punto 3 |
+| «Justificante J-…» (si no, «Factura J-…») | `customerPortal.routes.ts:363` | comercio en `receipt` + número `J-` | SCRUM-1567 c.21121, punto 3 |
+
+Literal de la firma, copiado de Jira: «con un J- antiguo: «Justificante J-…» y «📄 Descargar
+justificante».». Es del 27-oct, **posterior** a la frase del fundador que abrió este ticket (13-oct):
+el fundador decidió con esa frase delante que un `J-` antiguo conserva su nombre. Lo fija
+`tests/scrum1567b-portal-sin-facturas-en-receipt.test.mjs:149-153`. **La parte J2 de 1523 está hecha
+y no queda ningún literal J2 por firmar.** En `docs/microcopy/` no hay ficha de estos literales (0
+apariciones de «Descargar justificante»; control: el directorio tiene 173 ficheros). No hace falta:
+la firma es del fundador en Jira, y la ficha de `docs/microcopy/` es para las firmas delegadas (A7).
+
+Sin firma, pero sin texto nuevo (como ya dijeron c.21126 y c.21627): en `receipt`, el bloque donde sale
+un `J-` no tiene título (`:447-452`). Solo hace falta firma si alguien quiere ponérselo.
+
+## d3 · Lo de otros
+
+**`exportData.ts:626` (S1, equipo de Luis; antes era `:615`).** Literal de hoy:
+`facturas/  ${pdfsOk} de ${pdfsTotal} PDF de factura/justificante`. Sale en el LÉEME de todo export de
+datos, haya justificantes o no.
+
+| literal de hoy | propuesta (1523b §b5) | ✅/❌ del fundador |
+|---|---|---|
+| «facturas/  N de M PDF de factura/justificante» | «facturas/  N de M PDF de factura» | pendiente |
+
+⚠️ Sigue sin medir lo que ya decía §b5: si el ZIP incluye los PDF de las filas `JUST`.
+
+**La decisión ② de SCRUM-1640.** No la plantea un comentario, sino la descripción del ticket
+(orquestador de Luis, 29-oct): «`justificantesFuera` se calcula y la pantalla no lo enseña … puede que
+lo correcto no sea pintarlo, sino retirarlo». c.21292 solo dice «El punto ② va a SCRUM-1523», y ningún
+comentario posterior trae una decisión del fundador. Esto lo leyó un subagente, no yo (5 comentarios
+leídos). Lo que mido yo: lo calcula `libroRegistro.repo.ts:402`. En `public/` sale 0 veces (control:
+en `src/` sale en 3 ficheros), así que el Libro no lo pinta. **Pero sí se usa:** `paquete.ts:267` añade
+al paquete de evidencias el aviso firmado `AVISO_LIBRO_SOLO_FACTURAS` cuando es mayor que 0.
+
+La pregunta, en una frase: **¿`justificantesFuera` se queda como está (✅ A: el aviso del paquete solo
+le sale a quien tenga justificantes antiguos, hoy el comercio 18 de prueba según c.21121, y a un
+comercio nuevo nunca) o se retira (❌ B: el aviso no sale nunca, tampoco a quien tenga justificantes
+cuyo IVA está en su 303; es carril J1 y cambia `scrum1252` con la decisión citada)?** Pintarlo en el
+Libro sería un texto nuevo, y por eso no lo propongo.
+
+## d4 · Lo que salió mal aquí
+
+Para comprobar una firma leí SCRUM-1567 entero en Jira: 10 comentarios, todos dentro del contexto. El
+encargo pedía leer solo los que nombraran el portal, y era el primer empujón antes de 175k. Medí
+167.619 justo después, y 179.665 antes de escribir este tramo; antes de esa lectura no me medí. Para
+SCRUM-1640 mandé la lectura a un subagente, con la salida acotada, y ahí no se repitió. Va a la
+cicatriz de J2.
+
+## d5 · Lo que NO se ha hecho
+
+- Si dev tiene facturas: haría falta otra SELECT, y no estaba autorizada.
+- De qué comercio son hoy las 2 filas de producción y las 9 de staging: la consulta agrupa por tipo y
+  estado, no por comercio.
+- El portal con un `J-` en un navegador, y el test 1567b: este árbol no tiene `dist/`, y no lo he corrido.
+- SCRUM-1448 c.21012/21016, sin abrir.
+- La suite entera, sin correr. Es un cambio solo de `docs/`: corrí los guards del encargo (abajo, en el PR).
