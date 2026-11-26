@@ -48,7 +48,7 @@ Mutaciones: 11 en el catálogo del test (4 de ①, 4 de ②, 3 de ③: la llamad
 
 A9: sin fallo que generalice — el tropiezo de esta tanda fue de mi guion de capturas (dejaba abierto el autocompletado del concepto porque salía del campo antes de que su búsqueda contestara); lo cazó la propia captura, se corrigió en el guion y el informe mide ahora `autocompletadoAbierto: false`.
 
-Mutaciones: catálogo → `tests/scrum1805-editor-modo-factura.test.mjs` (6 en `MUTACIONES_QUE_ME_TUMBAN`; resultado abajo). Además, `tests/scrum600e-condiciones-contra-el-emisor.test.mjs` lleva sus rojos DENTRO (①, ②, ②b, ③, ④, ⑤ y ⑥, cada uno mutando un solo lado en memoria), y el rojo-primero del test propio sobre los dos ficheros de `origin/main` dio 8 de 9 en rojo: el que queda verde es el control del presupuesto, que tiene que estarlo en los dos.
+Mutaciones: catálogo → `tests/scrum1805-editor-modo-factura.test.mjs` (6 en `MUTACIONES_QUE_ME_TUMBAN`, corridas con `mutacionesDeclaradas` + `correr` + `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`: base limpia 9/0, y las 6 mueren cada una en el caso que nombra su `cae`; árbol restaurado). Además, `tests/scrum600e-condiciones-contra-el-emisor.test.mjs` lleva sus rojos DENTRO (①, ②, ②b, ③, ④, ⑤ y ⑥, cada uno mutando un solo lado en memoria), y el rojo-primero del test propio sobre los dos ficheros de `origin/main` dio 8 de 9 en rojo: el que queda verde es el control del presupuesto, que tiene que estarlo en los dos.
 
 **Skill UI:** cargada · en el relevo, DESPUÉS de construir (el tramo A+B lo construyó mi antecesora; yo la cargué al ver el rojo de `scrum811c` en `guards:entrada`) y pasado el checklist AB6 sobre el diff: cero clases nuevas, cero `style=` nuevos, cero textos nuevos fuera de los firmados; el campo «Vence el» abierto mide 47 px de alto y su «Cambiar»/«Listo» 44 px, dentro del ancho a 390 y 1280 (`venceAbierto` en la medida, `captura-1805-vence-abierto-{390,1280}.png`); mismos estilos que «Válido hasta» (ninguno de los dos lleva clase propia).
 
@@ -65,6 +65,10 @@ Mutaciones: catálogo → `tests/scrum1805-editor-modo-factura.test.mjs` (6 en `
 - `scrum600g` ④: la factura lleva ahora `['Condiciones', 'Ajustes del documento']`, y se exige que NO traiga «Condiciones de pago», «Válido hasta» ni «Dirección de la obra», con su suelo en el presupuesto.
 - `scrum286-bloques-orden` (2): el literal de la caducidad lleva ahora su guarda `if (!esDocumentoSuelto)`.
 - `scrum632` (en `881935468`): la descripción se pinta en la factura y viaja como clave propia; el concepto intacto.
+- `scrum605`: el +30 d de la caducidad se ancla a SU línea (`diaPintadoPorDefecto`), porque «Vence el» usa la misma pieza; se sigue exigiendo UNA.
+- `scrum930`: «una plantilla con descuento NO baja el importe de la factura» era cierto mientras la factura no pintaba ni emitía el «Dto. %». Ahora se exige lo que la regla pide con el dato nuevo: el campo ENSEÑA el 10 y el total baja con él (98,01 €), con el presupuesto de control.
+
+**Regresión dirigida** (los 103 ficheros de `tests/` que nombran `quotesView`, `cuerpoDelDocumentoSuelto`, `renderQuotesView` o `renderDocumentoSueltoView`): 974 tests, y tras los arreglos de arriba sólo quedan los 2 de `scrum1199`, que son de ambiente (piden `node_modules/express` DENTRO del worktree, que cuelga del compartido) y no tocan nada de este diff. La tanda entera la paré a los ~4.400 tests: un fichero colgado delante tenía el TAP 10 min sin escribir; la pasa el check obligatorio.
 
 **Test propio** `tests/scrum1805-editor-modo-factura.test.mjs` (9): el compositor (reglas del `dto`, descripción con concepto intacto, condiciones que sólo viajan si hay algo), y la pantalla montada en el banco de vistas: descripción y «Dto. %» viajan · formas marcadas y vencimiento viajan (fin del día) · «Vence el» vacío = sin clave · el resumen firmado del paso, con fecha y sin ella · numeración 3/4 · el presupuesto no cambia (sin «Vence el», con «Condiciones de pago» y «Válido hasta»).
 
