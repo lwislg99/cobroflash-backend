@@ -145,7 +145,7 @@ test('SCRUM-817 · 🔴 el reorden no pierde NI UNA acción', async () => {
   const ANTES = [
     'A:Abrir en mapa',
     'BUTTON', 'BUTTON',
-    'BUTTON:+ Nuevo albarán', 'BUTTON:+ Nuevo albarán',
+    'BUTTON:+ Nuevo albarán', 'data-accion=cta',
     'BUTTON:Cambiar', 'BUTTON:Cancelar',
     'BUTTON:Consolidar seleccionados',
     'BUTTON:Facturar el trabajo',

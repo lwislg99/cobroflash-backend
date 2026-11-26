@@ -66,7 +66,7 @@ import {
   pendientePorLinea,
   validarPeticionParcial,
 } from '../../domain/albaranFacturacion';
-import { emitInvoice } from '../../../invoicing/domain/invoicing.service';
+import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; import { formasDePagoACongelar } from '../../../invoicing/domain/formasDePagoACongelar'; // SCRUM-1805
 import { lineasParaFacturar, tieneDescuentoGlobal } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-887
 import { congelarCliente, clienteDelDocumento } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729 · SCRUM-1650b (lector de GET /:id)
 import { congelarEmisorDesdeFicha } from '../../../invoicing/domain/emisorCongelado'; // SCRUM-665
@@ -1570,6 +1570,7 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
         id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true,
         name: true, legalName: true, address: true, logoUrl: true, whatsappPhone: true,
         llevaLibrosPorSii: true,
+        iban: true, clabe: true, bizumPhone: true, connectStatus: true, stripeAccountId: true, // SCRUM-1805: los de `ComercioParaFormasDePago` que faltaban
       },
     });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
@@ -1601,7 +1602,7 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
     const quote = job.quoteId
       ? await prisma.quote.findFirst({
           where: { id: job.quoteId, merchantId: req.merchantId },
-          select: { id: true, quoteNumber: true, lines: true, discountGlobalAmount: true }, // SCRUM-887
+          select: { id: true, quoteNumber: true, lines: true, discountGlobalAmount: true, payMethods: true }, // SCRUM-887 · SCRUM-1805
         })
       : null;
 
@@ -1712,6 +1713,7 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
         origen: 'C7-albaran', // SCRUM-347: albarán → factura (A0.4)
         clienteCongelado,
         emisorCongelado,
+        payMethods: formasDePagoACongelar({ presupuesto: quote, merchant, importe: Number(total), moneda: merchant.defaultCurrency || 'EUR' }) ?? undefined, // SCRUM-1805 (c.22404, c.22429)
       });
       if (isReceiptNumber(inv.number)) throw new Error('facturacion_no_disponible');
 

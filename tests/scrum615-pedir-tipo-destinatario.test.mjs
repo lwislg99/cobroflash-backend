@@ -27,6 +27,23 @@ import { createRequire } from 'node:module';
 import { nodo, todos } from './_banco-vistas.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
+
+// SCRUM-1806 · el tercer sitio del rótulo firmado (SCRUM-1782 c.22272) tiene que tumbar este test si se
+// toca: es el que ata los tres sitios iguales. Lo corre el meta-guard (`scripts/meta-guard-mutaciones.mjs`).
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    fichero: 'public/dashboard/js/tipoDestinatarioPendiente.js',
+    de: "  var ETIQUETA = '¿Factura como empresa o autónomo (IVA)?';\n",
+    a: "  var ETIQUETA = 'Tipo de cliente';\n",
+    cae: 'los cuatro textos del campo son los que YA existen, letra a letra',
+  },
+  {
+    fichero: 'public/dashboard/js/tipoDestinatarioPendiente.js',
+    de: "  var ETIQUETA = '¿Factura como empresa o autónomo (IVA)?';\n",
+    a: "  var ETIQUETA = '¿Factura como empresa o autónomo?';\n",
+    cae: 'los cuatro textos del campo son los que YA existen, letra a letra',
+  },
+];
 const require_ = createRequire(import.meta.url);
 const mod = require_(path.join(RAIZ, 'public/dashboard/js/tipoDestinatarioPendiente.js'));
 
@@ -162,7 +179,10 @@ test('SCRUM-615 · 🔴 los cuatro textos del campo son los que YA existen, letr
   const fuenteLista = readFuente('public/dashboard/js/customersView.js');
   const fuenteFicha = readFuente('public/dashboard/js/customerDetailView.js');
 
-  assert.equal(mod.ETIQUETA, 'Tipo de cliente');
+  // 23-nov-2026 · SCRUM-1782b · REANCLADO con autorización del fundador (SCRUM-1782 c.22373): el rótulo
+  // firmado en c.22268/c.22272 sustituye a «Tipo de cliente» en los TRES sitios. El guard sigue exigiendo
+  // los tres iguales; queda rojo hasta que S2 cambie `tipoDestinatarioPendiente.js:58`.
+  assert.equal(mod.ETIQUETA, '¿Factura como empresa o autónomo (IVA)?');
   assert.deepEqual(mod.OPCIONES.map((o) => o.texto), ['Sin clasificar', 'Particular', 'Empresa / profesional']);
 
   // Y que esos textos SIGAN estando en los dos formularios: si alguien los cambia allí y no aquí,

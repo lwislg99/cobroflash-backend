@@ -111,3 +111,70 @@ ficheros, «Check time» 4,11 s).
 de este empujón, hasta que lo mire.
 
 A9: comprobación → `tests/scrum962f-editor-cuatro-44.test.mjs`
+
+# SCRUM-1848c
+
+**Medido contra:** `origin/main` = `2a6675c978794595696f87fb1a7ed3e52f904adb` · 2026-11-25T14:56:14Z
+
+**Skill UI:** cargada (`yaqu-premium-ui`, antes de tocar el test y el CSS)
+
+Relevo corto (sesión jv-j3dg, carril J3; bloque J3 de `styles.css`, contenedor S2): las 4 casillas que 1848b
+dejó PENDIENTES en 17 px vuelven a 44. S2 acotó el ③ en SCRUM-1860 (#3452, `60ef0aeb1`): su caso ③b
+comprueba que las dos reglas de J3 limitadas a `.settings-panel` PASAN y que una global sigue CAYENDO (aviso
+del orquestador S en SCRUM-1848 c.22785; la decisión que se levanta es c.22742).
+
+- `styles.css`, bloque `J3: SCRUM-1848`: vuelven, literales, las dos reglas que quitó `fbb2a4ab8`
+  (`.settings-panel .inline-checkbox label { min-height:44px; }` y su `input[type="checkbox"]::before` de
+  44×44), debajo del `position:relative`. Comprobado con `grep -cxF` de cada línea quitada en el diff de
+  `fbb2a4ab8` contra la hoja: 1 y 1. El comentario del bloque ya no dice PENDIENTES: dice que las curó 1848c
+  porque S2 acotó el ③.
+- `tests/scrum1848-ajustes-planes-44.test.mjs`: fuera `PENDIENTES`, `pendienteDe` y la aserción «4 × 3 = 12»;
+  las casillas se exigen a 44 como todo lo demás, y el control de población «casillas (4)» de `OBJETIVOS`
+  sigue. El nombre del caso ① pierde «y las 4 casillas PENDIENTES por c.22742»: `git grep` de ese literal
+  fuera de este registro, 0 catálogos que lo citen.
+- `tests/_veredicto-mudez.json`: 719 caía con «el fichero cambió desde la medida»; renovada con
+  `npm run censo:mudez -- --escribir` (1 ficha medida de 148). La clase no cambia (VIVO → VIVO): sólo la
+  huella, `c10e6e923e3d3875` → `e9de3de91ca68fd8`.
+
+**Rojo primero** (test ya sin `PENDIENTES`, hoja de `main`; `node --test` del fichero, salida 1): 2 casos,
+1 pass, 1 fail. `medidas 456 · estados 10 · anchuras 390/929/1280 · cortos 21 (exentos 9)`, y ① cae con
+«12 objetivos por debajo de 44 px»: exactamente las 4 casillas a cada anchura, caja 16, toque 17.
+
+| casilla | pestaña | @390 | @929 | @1280 |
+|---|---|---|---|---|
+| `#notifyEmailOnPaid` | Avisos | 17 | 17 | 17 |
+| `#notifyEmailOnQuoteAccepted` | Avisos | 17 | 17 | 17 |
+| `#notifyEmailWeeklyDigest` | Avisos | 17 | 17 | 17 |
+| `#showTechPhotoToClient` | Equipo | 17 | 17 | 17 |
+
+**Verde después** (el mismo comando con las dos reglas, salida 0): 2/2. `medidas 456 · estados 10 · anchuras
+390/929/1280 · cortos 9 (exentos 9)`, y `casillas (4): @390 45 · @929 45 · @1280 45` (el mínimo de las cuatro
+por anchura: 17 → 45). Lo único corto que queda son los 9 de los 3 exentos de SCRUM-1845 c.22728: «Vista
+previa» 30,9 / 30,6 / 30,6 · «⬆ Subir logo» 30,5 / 30,6 / 30,6 · «Sin color (por defecto)» 30,7 / 30,6 /
+30,6. Los otros 13 objetivos, igual que en el rojo (44,5 a 45).
+
+`tests/scrum962f-editor-cuatro-44.test.mjs` (S2, sin tocar), con las dos reglas: 7 casos, 7 pass, 0 fail,
+0 saltados (③ y ③b incluidos).
+
+**Verdes en local** (árbol = `2a6675c9`, sin merge pendiente; `main` no se había movido al cerrar): 419, 237,
+976, 700, 719, 1294, 267 y 854 en un solo `node --test` a TAP: 93 de 93, 0 saltados; los casos contados por
+línea anclada suman los 93 declarados, y el mismo contador sobre el TAP anterior (sin registro ni ficha de
+mudez) ve sus 2 rojos. `npm run guards:entrada`: salida 0 (17 guards, 36,9 s). Los 5 de árbol entero de
+SCRUM-1560 (195, 414, 694, 710b, 737): 38 de 38. Sin `src/` tocado: el `npm run build` del arranque (salida 0)
+es el único `tsc`.
+
+**Capturas** (Ajustes en Avisos y en Equipo, a 390 y 1280), en `docs/master/evidencias/SCRUM-1848/`:
+`1848c-ajustes-avisos-390.png`, `1848c-ajustes-avisos-1280.png`, `1848c-ajustes-equipo-390.png` y
+`1848c-ajustes-equipo-1280.png`. Salen de una copia de `capturas.mjs` (misma carpeta) con dos cambios —`ESTADOS`
+con las pestañas «Avisos» y «Equipo», y el nombre `1848c-<estado>-<ancho>.png`— que no se sube porque el
+encargo limitaba los ficheros. Control: las dos de Avisos son idénticas byte a byte (`cmp`) a
+`despues-ajustes-avisos-{390,1280}.png` de 1848, hechas con estas mismas dos reglas, y la de 390 es distinta
+de `antes-ajustes-avisos-390.png`.
+
+**Lo que NO está medido:** nada en `yaqu.app` (no está desplegado; ① mide el banco de vistas con los datos del
+censo, no la pantalla de producción); el toque con un dedo en un móvil real; la suite entera (el encargo lo
+prohíbe, y la ficha general la pide antes de empujar: no se corrió); el check obligatorio de este empujón,
+hasta que lo mire. Visto de paso en las capturas y sin medir si es del banco o de la pantalla: textos pegados
+(«300 plantillas/mesnunca cortamos», «Tienes1», «0(0 pagando)»), iguales en las `despues-*` de 1848.
+
+A9: comprobación → `tests/scrum962f-editor-cuatro-44.test.mjs`
