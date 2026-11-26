@@ -228,3 +228,46 @@ El comentario de `:210-211` dice «la MISMA función que usa `deleteCustomer`»:
   el CI con `LIBRO_PG_URL` ahora que 419 lo declara. Y no cubre el borrado del cliente: ese caso solo vive con el doble.
 - Los sitios: borrar un cliente con sitios sigue dando 500 (FK RESTRICT, S1). Es hallazgo para Luis, no se cruza.
 A9: comprobación → `tests/scrum1833b-equipos-rutas.test.mjs`
+
+# SCRUM-1833c · pestaña «Equipos»
+
+**Medido contra:** `origin/main` = `8e44c80f2b0a719f8724537cdd5bce30a848b8a2` · 2026-11-26T11:09:45Z
+
+**Escribe:** J2 (`jv-j2fi`, relevo de cierre; código y test de `jv-j2fh`) · **Rama:** `scrum-1833c-pestana-equipos` · **Carril:** J2
+(`public/dashboard/js/customerDetailView.js` → J2, `node scripts/carriles.mjs de`). Traspaso de `jv-j2fg`: SCRUM-1833 c.22834.
+
+**Skill UI:** no cargada · el relevo `jv-j2fi` no tocó la interfaz (solo el test y este registro); si `jv-j2fh` la cargó al construir `5dacc0331` no consta en su commit, y no lo he medido.
+
+A9: comprobación → `tests/scrum1833c-pestana-equipos.test.mjs`
+
+## Qué hay
+
+- `5dacc0331` (`jv-j2fh`): la pestaña entre las marcas `// SCRUM-1833c · INICIO/FIN` de `customerDetailView.js`
+  (`EQUIPOS_CLIENTE`, `montarEquiposDelCliente`) y el comentario de :104-106 corregido; el test
+  `tests/scrum1833c-pestana-equipos.test.mjs` (10 casos propios + 8 que entran por el import de scrum1773: 18); la ficha
+  `docs/microcopy/2026-11-26-SCRUM-1833-equipos-del-cliente.md`.
+- Commit de `jv-j2fi` encima, sin reescribir el de `jv-j2fh`: un positivo en el test (`t2` lleva «Split del salón»)
+  antes de la negación `!t2.includes('Garantía hasta')`. Sin él, `scrum237` caía: «negación SIN NINGÚN respaldo»,
+  `tests/scrum1833c-pestana-equipos.test.mjs:171`. El positivo de la fila 1 va en una plantilla y el analizador no lo
+  cuenta como hermano. Ningún texto que ve el usuario cambia; ningún guard se ha tocado.
+
+Mutaciones: catálogo → `tests/scrum1833c-pestana-equipos.test.mjs`
+
+Las dos de `MUTACIONES_QUE_ME_TUMBAN`, pasadas por un mutador temporal fuera del árbol (base sin mutar: 18 pasan, 0 caen):
+`puedeBorrarEquipo = true` → MUERE «TÉCNICO: no hay «🗑 Eliminar»»; el `confirm` quitado → MUERE «ADMIN: «🗑 Eliminar»
+pregunta». Vivas 0 de 2; `git status` después, solo el cambio del test. Según el encargo, el «rojo primero» de `jv-j2fh`
+salió CIEGO por no haber `dist/` en su árbol y lo sustituyó una mutación real; eso no lo he medido yo, sí lo de arriba.
+
+## Decisiones aplicadas
+
+- c.22811 (citadas del encargo; no he releído ese comentario): P1 la pestaña se llama «Equipos»; P3 sin campo sitio;
+  P4 borrar, solo admin (el técnico ve, crea y edita); P5 la garantía se pinta como fecha, sin pastilla de estado.
+- c.22837 (fundador, leída en Jira): las filas pintan la etiqueta firmada + «: » + el dato («Número de serie: X»).
+  Respuesta literal: «1-Ok vale así». ✅ Queda como lo construyó `jv-j2fh`; ya no es pregunta abierta.
+
+## Lo NO medido
+
+- El recorrido de navegador a 390 y 1280 px (AB6) y yaqu.app: ver la entrega en SCRUM-1833.
+- La suite entera (el encargo la prohíbe). `censo:mudez -- --escribir`: 0 medidos de 149; el test nuevo no cita
+  el filtro de comentarios, así que no entra en su población y `tests/_veredicto-mudez.json` no cambia.
+- `scrum1845`: no hay ningún `tests/scrum1845*`; para los 44 px corrí `scrum1850` y `scrum962f`.

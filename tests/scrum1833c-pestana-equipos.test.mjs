@@ -168,6 +168,7 @@ test('SCRUM-1833c · la pestaña va justo después de «Sitios», y al abrirla p
     assert.ok(t.includes(trozo), `🔴 la fila no lleva «${trozo}»: ${t}`);
   }
   const t2 = f.texto(f.filas()[1]);
+  assert.ok(t2.includes('Split del salón'), `CIEGO: la segunda fila no es el equipo sin garantía: ${t2}`);
   assert.ok(!t2.includes('Garantía hasta'), `un equipo sin garantía no pinta la línea: ${t2}`);
   assert.equal(todos(f.c).filter((n) => /status-pill/.test(n.className || '')).length, 0, 'P5 ❌: ninguna pastilla de estado');
 });
