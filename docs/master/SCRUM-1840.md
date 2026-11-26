@@ -70,3 +70,22 @@ A9: comprobación → `scripts/guard-objetivo-tactil.mjs`
 | medida | antes (CI, sobre 4616375b8) | después (local, sobre afe561d9d) |
 |---|---|---|
 | `guard:objetivo-tactil` · ficha del Trabajo | CIEGO · 2 ciegos (929, 390) | 0 hallazgos · 0 ciegos · suelo 0 cortos |
+
+# APÉNDICE SCRUM-1840 · r42 en vivo (26-nov-2026, S2)
+
+**Medido contra:** `origin/main` = `13e5bb69532b7d56d8d0be4b8386210aa2e5202b` · 2026-11-26T21:26:01Z (relevo de S2; #3442 mergeado a las 17:19Z).
+
+A9: sin fallo que generalice — la medida salió a la primera, con su control positivo.
+
+**Método recibo, escrituras cero.** yaqu.app sirve TODO (nada local: se mide lo desplegado), cuenta +qa. La respuesta del GET `/admin/jobs/1840` se sustituye en el navegador por el trabajo de EJEMPLO de `scripts/capturas-1840-bizum-oculto.mjs`, con su factura en `cancelled` o en `pending`. Toda escritura se intercepta y no sale (la única fue `POST /admin/entorno`); el botón no se pulsa. Guion: `docs/master/evidencias/SCRUM-1840/r42-1840-bizum.mjs` · medida: `r42-1840-medida.json` · fotos `r42-1840-{cancelled,pending}-{390,1280}.png`.
+
+| ancho | cobro | debe verse | «📲 Confirmar Bizum recibido» | caja | lo desplegado lleva `estadoDelCobro === 'pending'` | errores · desborde |
+|---|---|---|---|---|---|---|
+| 390 | cancelled | no | no está | — | sí | 0 · no |
+| 390 | pending (control) | sí | está | `[75,681,197,44]` | sí | 0 · no |
+| 1280 | cancelled | no | no está | — | sí | 0 · no |
+| 1280 | pending (control) | sí | está | `[507,406,197,44]` | sí | 0 · no |
+
+La fila de acciones de la factura está en los cuatro casos (`hayFila: true`): el «no está» no es una ficha sin pintar.
+
+**Veredicto r42: VERDE.** Lo cierra el orquestador.
