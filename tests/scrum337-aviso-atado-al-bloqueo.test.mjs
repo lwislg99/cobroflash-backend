@@ -197,6 +197,11 @@ const BORRADOS_DECLARADOS = [
   // (decisión del fundador, SCRUM-1005 c.22140), y solo cuando un admin borra ese cliente. Sin cron.
   'src/modules/system/customerAdmin.ts::attachment.deleteMany#1',
   'src/modules/system/customerAdmin.ts::attachment.deleteMany#2',
+  // SCRUM-1833b · CONTESTADA (GO del fundador, SCRUM-1833 c.22828 ①): NO se dispara al vencer la
+  // prueba ni por inactividad. Es `desligarYBorrarEquipo`: el botón de borrar un equipo del cliente,
+  // acción MANUAL de un admin (`DELETE /admin/customers/:id/equipos/:equipoId`, `requireRole('admin')`
+  // por c.22811 P4), o el borrado del cliente por un admin (c.22828 ②). Sin cron ni trial de por medio.
+  'src/modules/system/customerAdmin.ts::equipment.deleteMany#1',
   // SCRUM-1014 · CONTESTADA: NO se dispara al vencer la prueba ni por inactividad. Es el botón
   // «Borrar sitio» de la agenda del cliente — acción MANUAL del profesional sobre una fila suya
   // (`DELETE /admin/customers/:id/sites/:siteId`), sin cron ni trial de por medio.

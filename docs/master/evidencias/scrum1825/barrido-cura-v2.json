@@ -1,0 +1,158 @@
+{
+ "ficheros": 425,
+ "tandas": [
+  {
+   "desde": 0,
+   "n": 30,
+   "exit": 0,
+   "tests": 234,
+   "pass": 234,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 30,
+   "n": 30,
+   "exit": 0,
+   "tests": 190,
+   "pass": 189,
+   "fail": 0,
+   "skipped": 1
+  },
+  {
+   "desde": 60,
+   "n": 30,
+   "exit": 0,
+   "tests": 189,
+   "pass": 189,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 90,
+   "n": 30,
+   "exit": 0,
+   "tests": 203,
+   "pass": 203,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 120,
+   "n": 30,
+   "exit": 0,
+   "tests": 286,
+   "pass": 282,
+   "fail": 0,
+   "skipped": 4
+  },
+  {
+   "desde": 150,
+   "n": 30,
+   "exit": 0,
+   "tests": 191,
+   "pass": 191,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 180,
+   "n": 30,
+   "exit": 0,
+   "tests": 170,
+   "pass": 170,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 210,
+   "n": 30,
+   "exit": 1,
+   "tests": 206,
+   "pass": 204,
+   "fail": 2,
+   "skipped": 0
+  },
+  {
+   "desde": 240,
+   "n": 30,
+   "exit": 0,
+   "tests": 195,
+   "pass": 195,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 270,
+   "n": 30,
+   "exit": 0,
+   "tests": 323,
+   "pass": 323,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 300,
+   "n": 30,
+   "exit": 0,
+   "tests": 409,
+   "pass": 409,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 330,
+   "n": 30,
+   "exit": 0,
+   "tests": 320,
+   "pass": 320,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 360,
+   "n": 30,
+   "exit": 1,
+   "tests": 214,
+   "pass": 209,
+   "fail": 1,
+   "skipped": 4
+  },
+  {
+   "desde": 390,
+   "n": 30,
+   "exit": 0,
+   "tests": 248,
+   "pass": 248,
+   "fail": 0,
+   "skipped": 0
+  },
+  {
+   "desde": 420,
+   "n": 5,
+   "exit": 0,
+   "tests": 57,
+   "pass": 57,
+   "fail": 0,
+   "skipped": 0
+  }
+ ],
+ "tests": 3435,
+ "pass": 3423,
+ "fail": 3,
+ "skipped": 9,
+ "fallos": [
+  {
+   "nombre": "SCRUM-1726 · D1 · 🔴 las fechas de la hoja van en la zona del negocio (las 00:30 de Madrid son el 3-oct, no el 2)",
+   "loc": "\\scrum1726-tanda-firmada-j1.test.mjs"
+  },
+  {
+   "nombre": "SCRUM-1726 · D1 · CONTROL: un negocio sin zona guardada sale en UTC (la decisión A de `zonaDelMerchant`)",
+   "loc": "\\scrum1726-tanda-firmada-j1.test.mjs"
+  },
+  {
+   "nombre": "SCRUM-817 · 🔴 el reorden no pierde NI UNA acción",
+   "loc": "\\scrum817-orden-del-detalle-del-trabajo.test.mjs"
+  }
+ ]
+}

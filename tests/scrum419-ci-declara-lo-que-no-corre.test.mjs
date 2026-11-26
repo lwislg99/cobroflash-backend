@@ -80,6 +80,9 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // SCRUM-914: los equipos del cliente en el borrado y en el anonimizado. Necesitan banco porque lo
   // que vigilan son las FK RESTRICT de `equipments`, y ésas sólo las hace cumplir el motor.
   'scrum914-equipos-borrado-y-anonimizado.test.mjs': 2,
+  // SCRUM-1833b (GO c.22828 ①): borrar un equipo es atómico en Postgres de verdad; el doble de la
+  // suite no tiene transacción ni FK, así que el caso pide la base desechable de LIBRO_PG_URL.
+  'scrum1833b-equipos-postgres.test.mjs': 1,
   'scrum295-modelo-303-postgres.test.mjs': 1,
   'scrum296-libro-postgres.test.mjs': 1,
   // SCRUM-980: el historial de la ficha. Necesita banco porque vigila la TENENCIA de cinco consultas

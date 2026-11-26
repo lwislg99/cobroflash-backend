@@ -113,6 +113,18 @@
 .j1-prog ~ .detail-next > div > .btn-sm { min-height:44px; }
 /* J1: fin del bloque SCRUM-1843 */
 
+/* J1: SCRUM-1864 · los dos campos `.input` de la ficha de FACTURA a 44 px de toque (AB6), por contenedor
+   como 1843 y 1849, sólo tamaño: `.input` global no se toca, ni el JS. Son la fecha «¿Cuándo lo has
+   cobrado?» (36 px; sólo en una factura pendiente, dentro de «Siguiente paso») y el campo de Etiquetas
+   (34,6 px; en todos los estados, suelto en su sección). El ancla es `.j1-prog`, que sólo pinta esta
+   ficha: la del presupuesto también monta Etiquetas y `.detail-next`, y no se toca. Pesan (0,4,0) y
+   (0,5,0); `.input` (0,1,0) no fija alto. EXENTO por SCRUM-1845 c.22728: «← Volver a facturas»
+   (`.btn-sm` de la cabecera, no es la primaria). Lo mide en navegador
+   `tests/scrum1864-ficha-factura-inputs-44.test.mjs`. */
+.j1-prog ~ .detail-next > div > .form-group > .input { min-height:44px; }
+.detail-page:has(> .detail-section > .j1-prog) > .detail-section > .input { min-height:44px; }
+/* J1: fin del bloque SCRUM-1864 */
+
 /* ── SCRUM-731 · `hidden` TIENE QUE APAGAR. SIEMPRE. ───────────────────────────────────────
    Esto NO es una regla de estilo: es la que impide una clase entera de defecto silencioso.
 
@@ -6440,10 +6452,11 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
    ACOTADAS al contenedor de cada vista (opción ③ de SCRUM-786, como 1843), sólo tamaño: ni las
    clases globales ni el JS. Las primarias pequeñas de la tarjeta de referidos («Copiar link» y
    «Canjear 1 mes gratis», `btn-primary btn-sm`) pesan (0,3,0) y ganan a `.btn.btn-sm` (0,2,0).
-   Las 4 casillas de `.settings-panel .inline-checkbox` quedan PENDIENTES en 17 px por SCRUM-1848
-   c.22742: el ③ de scrum962f (S2) sólo admite reglas de 44 de esa familia dentro de
-   `.quote-ajustes`. Se quitaron sus dos reglas (etiqueta y `::before`); el `position:relative` de
-   la casilla se queda (sin efecto por sí solo). Los enlaces de exportación de Planes van en una frase:
+   Las 4 casillas de `.settings-panel .inline-checkbox` (3 de Avisos, 1 de Equipo), con el patrón de
+   SCRUM-962f: la ETIQUETA a 44 y la casilla con un área de 44 anclada a su izquierda, sin agrandarla.
+   SCRUM-1848b las dejó en 17 px (c.22742) porque el ③ de scrum962f (S2) sólo admitía esas reglas
+   dentro de `.quote-ajustes`; las curó SCRUM-1848c cuando S2 acotó el ③ a una pantalla en
+   SCRUM-1860 (#3452). Los enlaces de exportación de Planes van en una frase:
    `inline-flex` sólo para que les quepa el alto. Exentos por SCRUM-1845 c.22728 (`.btn-sm` no
    primarios, pestaña Marca): «Vista previa», «⬆ Subir logo» y «Sin color (por defecto)». Lo mide
    en navegador `tests/scrum1848-ajustes-planes-44.test.mjs`. */
@@ -6452,6 +6465,8 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
 .j3e-3d68052 > .btn-primary.j3e-86abdab { min-height:44px; }
 .settings-panel #clausulas-anadir { min-height:44px; }
 .settings-panel .inline-checkbox input[type="checkbox"] { position:relative; }
+.settings-panel .inline-checkbox label { min-height:44px; }
+.settings-panel .inline-checkbox input[type="checkbox"]::before { content:""; position:absolute; top:50%; left:0; width:44px; height:44px; transform:translateY(-50%); }
 .j3e-5521062 .plan-btn { min-height:44px; }
 .j3e-5521062 .j3e-3fe60ac > button { min-height:44px; }
 .j3e-5521062 .j3e-d56471a > a { display:inline-flex; align-items:center; min-height:44px; }
@@ -6616,3 +6631,9 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
   *:has(> header.parte-cabecera) > .parte-datos-del-parte:last-child > .parte-datos-del-parte-titulo { grid-column: 1 / -1; }
 }
 /* ══ fin S4 · SCRUM-1762d ══ */
+
+/* ── S2 · SCRUM-1818b · selector de plan por comercio en el funnel de plataforma (Informes, solo fundador) ──
+   Selector + «Cambiar plan» en la celda «Plan»: juntos, envuelven si no caben, y 44 px de toque (AB6). */
+.funnel-plan { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.funnel-plan > select.input { width: auto; min-height: 44px; }
+.funnel-plan > .btn-sm { min-height: 44px; }

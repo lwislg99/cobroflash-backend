@@ -17,14 +17,14 @@
 // de `.j1-fac-conceptos` vive fuera de un `@media (max-width: 640px)`, así que a 1280 px la tabla es la de hoy.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
-import { ejecutableDe } from './_guard-texto.mjs';
+import { leerFuente } from './_guard-texto.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const CSS = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8');
+// SCRUM-1853b: por su RUTA, para que el filtro decida por la extensión: en CSS ni `#` ni `//` (un `url(https://…)`) comentan.
+const CSS = leerFuente(path.join(RAIZ, 'public/dashboard/css/styles.css'), { ancla: '.j1-prog-paso' });
 const CLASE = 'j1-fac-conceptos';
 const ROTULOS = ['Cant.', 'Precio', 'IVA', 'Total'];
 
@@ -65,7 +65,7 @@ async function montar() {
   return todos(r.contenedor);
 }
 
-/** Todas las reglas, con el `@media` que las envuelve (o `null`). Sin comentarios (sitio único, SCRUM-700). */
+/** Todas las reglas, con el `@media` que las envuelve (o `null`). Recibe el CSS ya sin comentarios (sitio único, SCRUM-700). */
 function reglas(css) {
   const out = [];
   const recorrer = (t, medio) => {
@@ -82,7 +82,7 @@ function reglas(css) {
       i = j;
     }
   };
-  recorrer(ejecutableDe(css, { ancla: '.j1-prog-paso', donde: 'public/dashboard/css/styles.css', almohadillaEsComentario: false }), null);
+  recorrer(css, null); // SCRUM-1853b: el filtro ya lo hizo `leerFuente` al leer `CSS` (arriba), con su ancla.
   return out;
 }
 

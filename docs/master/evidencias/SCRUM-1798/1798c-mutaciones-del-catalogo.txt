@@ -1,0 +1,8 @@
+scrum1798c-meta-guard-ve-los-guards-de-navegador.test.mjs: 5 declaraciones
+limpia: 13 pasados · 0 caídos · movidos 0
+  ✔ VIVA · CIEGA si no midió, VIVA si nombra el hallazgo · colaterales 0
+  ✔ VIVA · el medidor VE la población de scripts/guard-*.mjs · colaterales 2
+  ✔ VIVA · un guard que sale 2 (NO SUPO MEDIR) es CIEGO · colaterales 3
+  ✔ VIVA · un guard que sale 1 entrega el TEXTO del hallazgo · colaterales 1
+  ✔ VIVA · con la base de un guard de navegador CIEGA · colaterales 0
+restaurado: true

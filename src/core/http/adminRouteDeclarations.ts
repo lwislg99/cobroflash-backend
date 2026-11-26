@@ -106,6 +106,11 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   { method: 'GET',  path: '/admin/customers/:id/documentos', why: 'Ver la lista de documentos del cliente que va a visitar (SCRUM-1005 c.22192)' },
   { method: 'POST', path: '/admin/customers/:id/documentos', why: 'Subir desde la obra el boletín o el plano del cliente; borrar sigue siendo de admin (SCRUM-1005 c.22192)' },
   { method: 'GET',  path: '/admin/customers/:id/documentos/:docId', why: 'Descargar un documento del cliente que va a visitar (SCRUM-1005 c.22192)' },
+  // SCRUM-1833b · DECISIÓN DEL FUNDADOR (SCRUM-1833 c.22811 P4 ✅): ver, crear y editar los equipos, también
+  // el técnico. El DELETE de un equipo NO está aquí: lleva `requireRole('admin')` en su ruta. Cruce J2→S1.
+  { method: 'GET',  path: '/admin/customers/:id/equipos', why: 'Ver los equipos del cliente que va a visitar (SCRUM-1833 c.22811)' },
+  { method: 'POST', path: '/admin/customers/:id/equipos', why: 'Dar de alta desde la obra el equipo que instala o revisa; borrar sigue siendo de admin (SCRUM-1833 c.22811)' },
+  { method: 'PUT',  path: '/admin/customers/:id/equipos/:equipoId', why: 'Corregir desde la obra la marca, el modelo o el n.º de serie del equipo (SCRUM-1833 c.22811)' },
 
   // Presupuestos — S1: "quotes crear-ver · enviar WA" ✅. EMITIR FACTURA no (ver /invoice).
   { method: 'GET',  path: '/admin/quotes', why: 'S1: quotes crear-ver ✅ — SÓLO LOS SUYOS: autor, asignado o Trabajo suyo (SCRUM-1403)' },
