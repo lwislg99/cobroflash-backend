@@ -1,0 +1,57 @@
+[
+ {
+  "ancho": 390,
+  "desplegadoLlevaElLiteral": true,
+  "pestana": "Pendientes1",
+  "inyectado": 1,
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "rotulos": [
+   "¿Factura como empresa o autónomo (IVA)?"
+  ],
+  "caja": [
+   50,
+   431,
+   260,
+   39
+  ],
+  "enPantalla": true,
+  "tarjetas": 1,
+  "opciones": [
+   "Sin clasificar",
+   "Particular",
+   "Empresa / profesional"
+  ],
+  "desborda": false
+ },
+ {
+  "ancho": 1280,
+  "desplegadoLlevaElLiteral": true,
+  "pestana": "Pendientes1",
+  "inyectado": 1,
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "rotulos": [
+   "¿Factura como empresa o autónomo (IVA)?"
+  ],
+  "caja": [
+   310,
+   382,
+   260,
+   39
+  ],
+  "enPantalla": true,
+  "tarjetas": 1,
+  "opciones": [
+   "Sin clasificar",
+   "Particular",
+   "Empresa / profesional"
+  ],
+  "desborda": false
+ }
+]
+

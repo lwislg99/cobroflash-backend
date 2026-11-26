@@ -28,3 +28,22 @@ Puesto S2. Hijo de SCRUM-1782. Firma del fundador: SCRUM-1782 c.22268 (el litera
 **🔴 Sin `npm run build`.** Este worktree cuelga del `node_modules` compartido, y su cliente de Prisma va 18 campos por detrás de `schema.prisma` (lo dice `_prisma-client-guard.mjs`). No lo he regenerado (A1), y se lo he dicho al orquestador. Los tres tests de arriba leen el fuente o montan el banco de vistas, y no dependen de `dist/`. La tanda entera la corre el check obligatorio.
 
 **Sin medir:** yaqu.app. Se verá tras el merge de #3317.
+
+# APÃ‰NDICE SCRUM-1806 Â· r42 en vivo (26-nov-2026, S2)
+
+**Medido contra:** `origin/main` = `13e5bb69532b7d56d8d0be4b8386210aa2e5202b` Â· 2026-11-26T21:26:01Z (relevo de S2; #3317 ya mergeado).
+
+A9: sin fallo que generalice â€” la medida saliÃ³ a la primera; el Ãºnico tropiezo fue la sesiÃ³n +qa caducada (24 h), que `sesion-panel.mjs estado` ya dice.
+
+**MÃ©todo recibo, escrituras cero.** yaqu.app sirve TODO (nada local: se mide lo desplegado), cuenta +qa. La bandeja real estÃ¡ vacÃ­a (`GET /admin/albaranes/pendientes-facturar` â†’ `{"clientes":[]}`, leÃ­do con `scripts/qa/sesion-panel.mjs get`), asÃ­ que la respuesta de ESE GET se sustituye en el navegador por dos clientes de EJEMPLO: uno sin tipo declarado y otro con Ã©l (control). Toda escritura se intercepta y no sale: la Ãºnica fue `POST /admin/entorno`. Guion: `docs/master/evidencias/SCRUM-1806/r42-1806-bandeja.mjs` Â· medida: `r42-1806-medida.json` Â· fotos `r42-1806-bandeja-{390,1280}.png`.
+
+| ancho | el fichero desplegado lleva el literal | rÃ³tulo pintado | caja del rÃ³tulo | tarjetas que preguntan (de 2) | errores Â· desborde |
+|---|---|---|---|---|---|
+| 390 | sÃ­ | Â«Â¿Factura como empresa o autÃ³nomo (IVA)?Â» | `[50,431,260,39]` | 1 | 0 Â· no |
+| 1280 | sÃ­ | Â«Â¿Factura como empresa o autÃ³nomo (IVA)?Â» | `[310,382,260,39]` | 1 | 0 Â· no |
+
+Opciones: Â«Sin clasificarÂ», Â«ParticularÂ», Â«Empresa / profesionalÂ» (las de siempre). El cliente CON tipo no pregunta: el sentido negativo tambiÃ©n se ve en vivo.
+
+**Visto y declarado, fuera de este ticket:** encima del rÃ³tulo sigue el marcador `[PENDIENTE microcopy oficial]` del aviso (salida C de SCRUM-615), que no es de 1806 ni lo toca.
+
+**Veredicto r42: VERDE.** Lo cierra el orquestador.
