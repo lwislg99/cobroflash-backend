@@ -105,7 +105,7 @@ Etiquetas leídas a las 07:4xZ (1563n, punto 3): **ninguna choca con estas decis
 | 3.19 va **por detrás**: el diseño está firmado | 3.19 (SCRUM-1612) | c.21141 (sin cotejar): «Queda firmado así»; construir va a fase 2 (SCRUM-1296). **Sale en cuanto S0 lo coteje**; hasta entonces, en D |
 | **entra 3.21** (no estaba en las 48) | SCRUM-1566 | c.21289 (sin cotejar): tres ✅/❌, la primera «¿Se amplía el GO de c.21019 a D (variante 2), E2 y F, en el mismo PR?». `stop-fundador`. ⚠️ **Desbloquea al equipo de Javier**: si el orquestador la quiere en B, la sube él |
 | **entra 3.16 en C** (no estaba en las 48) | SCRUM-1041 | espera a un asesor que **no habrá hasta la S.L.** (c.21281, medido por S4). No se le pregunta |
-| 0.3 · 3.6 (b): una pregunta menos, y **NO la contestó el fundador** | SCRUM-1264 | la P20 de `docs/legal/PREGUNTAS_ASESOR.md:1118-1121` la contestó **JAVIER** en SCRUM-665 c.16647 (23-sep), con fuente y «no es dictamen». ⚠️ **El encargo de hoy decía «la D1 la contestó el fundador»: cotejado, el autor es Javier** |
+| 0.3 · 3.6 (b): una pregunta menos, y **NO la contestó el fundador** | SCRUM-1264 | la P20 de `docs/legal/PREGUNTAS_ASESOR.md:1132-1135` la contestó **JAVIER** en SCRUM-665 c.16647 (23-sep), con fuente y «no es dictamen». ⚠️ **El encargo de hoy decía «la D1 la contestó el fundador»: cotejado, el autor es Javier** |
 | **parte G nueva:** la cola de Javier | 1393 · 523 · 1566 | para que el fundador tenga **una** lista y no dos (SCRUM-1554 c.21308). 1393, **incompleta** |
 
 | de las 48 (**versión del 2-nov**, 1563k) | cuántas | qué cambia |
@@ -258,7 +258,7 @@ No se le pregunta nada de esto: se desbloquean solas, en este orden, cuando la S
 |---|---|---|---|
 | 0.2 | ceder a la S.L. los derechos del código ~~(SCRUM-1283)~~ → **cuelga de SCRUM-1561** | S.L. constituida | 🔵 **2-nov (1563l):** la mitad (b), `LICENSE` propietaria y `package.json` `UNLICENSED`, **está en `main` y SCRUM-1283 está Finalizada**. **Queda SÓLO la cesión**, que no entra en ese cierre: **`fundador`** (la firman los dos socios). 1561 lleva ahora `equipo-luis` + `fundador` |
 | 0.3 · 3.6 (a) | contratar al asesor fiscal y encargar la revisión externa (SCRUM-1264) | aplazado por él hasta la S.L. | **`fundador`** |
-| ↳ (b) | la lista de 28 preguntas para el asesor (SCRUM-1264) | — | **`equipo-javier`** · 🔵 2-nov: la **P20** ya tiene respuesta **de Javier**, con fuente y «no es dictamen» (SCRUM-665 c.16647; `docs/legal/PREGUNTAS_ASESOR.md:1121`). **No es del fundador** |
+| ↳ (b) | la lista de 28 preguntas para el asesor (SCRUM-1264) | — | **`equipo-javier`** · 🔵 2-nov: la **P20** ya tiene respuesta **de Javier**, con fuente y «no es dictamen» (SCRUM-665 c.16647; `docs/legal/PREGUNTAS_ASESOR.md:1135`). **No es del fundador** |
 | 3.16 *(entra el 2-nov; no está en las 48)* | quitar los «[PENDIENTE]» del libro y la exportación (SCRUM-1041) | **un asesor, que no habrá hasta la S.L.** (c.21281, S4). La pregunta de ese comentario («¿esperan a la S.L., o decides tú…?») **no se le hace**: la decidió el orquestador el 2-nov | `equipo-luis` + `esperando-asesor` |
 | 3.1 (a) | el certificado de representante de la S.L. (SCRUM-143) | S.L. inscrita | **`fundador`** |
 | ↳ (b) | el alta del Convenio 017 con la AEAT (SCRUM-143) | el certificado de (a) | **`equipo-javier`** |
