@@ -118,3 +118,113 @@ rediseño. Si P5 fuera ✅, la pastilla saldría de las de `DESIGN.md` §5 y el 
 - Por dentro, las 4 vistas de `public/dashboard/js/` que dicen «mantenimiento».
 - Si escribir `equipment_id` en un albarán o parte FIRMADO choca con algún test que vigile esas filas: lo mide
   1833b en rojo primero (en `docs/sql/` no hay disparadores).
+
+# SCRUM-1833b · rutas y lógica
+
+**Medido contra:** `origin/main` = `924c9b7ed6156a9c2516b8f10db650264037fcf5` · 2026-11-25T22:19:58Z
+
+**Escribe:** J2 (`jv-j2fe`, segundo relevo; código de `jv-j2fd`, diseño de `jv-j2fc`) · **Rama:** `scrum-1833b-equipos-rutas-y-logica` · **Carril:** J2, con
+cruce declarado J2→S1 en `src/core/http/adminRouteDeclarations.ts` (precedente `147b4749b`). Decisiones: SCRUM-1833 c.22811;
+diseño: c.22817; traspaso de `jv-j2fd`: c.22819.
+
+A9: aviso → cicatriz J2 «Me medí el contexto al arrancar y tras Jira, y no durante el reconocimiento» — no se pudo comprobar: el aviso a 200k del hook ya existe y llegó tarde; la medida es medirse antes de cada fase
+
+El detalle de esa cicatriz, que antes iba pegado a ella: `jv-j2fc` pasó de 122k a 201k sin una línea de código; `jv-j2fd`
+arrancó a 104k, leyó dos ficheros de test enteros por patrón, pasó de 116k a 156k en tres lecturas y paró a 184k sin empujar.
+
+**🔴 Error de `jv-j2fd`, medido por `jv-j2fe`:** el rojo de `scrum1294` («el aviso no está LITERAL en `cicatrices/J2.md`»)
+era de la cicatriz, no del guard. `leerCicatrices` toma como frase TODO lo que va entre `· ` y ` → sin comprobación:`
+(menos un `(SCRUM-N)` final) y compara por IDENTIDAD: la frase del aviso era una subcadena de la cicatriz, que llevaba
+el detalle de arriba detrás. Medido con la propia función del guard: antes `identica=false subcadena=true`; después
+`identica=true`. Arreglo: la cicatriz se queda en la frase y el detalle viene aquí. El guard no se tocó.
+Rojo primero: `scrum1294` 4 tests · 3 pass · 1 fail (`docs/master/SCRUM-1833.md:124`); después 4 · 4 · 0.
+
+## Qué hay
+
+- `src/modules/system/customerAdmin.ts`: `equipoCreateSchema` (`z.strictObject`: `customerSiteId` o `merchantId` → 400) y
+  `equipoUpdateSchema` (`.partial()`); `type`/`name` trim 1-200; opcionales '' → null; fechas `YYYY-MM-DD` con `diaExiste`;
+  `listarEquipos`, `crearEquipo` (tenencia con `clienteDelComercio`), `actualizarEquipo` (`updateMany` con merchant+cliente),
+  `desligarYBorrarEquipo(tx, merchantId, customerId, equipoId)` (4 `updateMany` a NULL en job, maintenancePlan, albaran y
+  parteTrabajo del comercio + `equipment.deleteMany`) y `borrarEquipo` en `prisma.$transaction`. El `updateMany` del parte
+  va con el argumento LITERAL (`jv-j2fe`): con la variable compartida, `scrum1488` lo daba por OPACO.
+- `src/modules/system/app/routes/customersAdmin.routes.ts`: `GET|POST /admin/customers/:id/equipos`,
+  `PUT|DELETE /admin/customers/:id/equipos/:equipoId`; 400 `invalid_id`/`invalid_body`, 404 `not_found`, 200/201/204,
+  500 `internal_error`; DELETE con `requireRole('admin')` (P4 ✅).
+- **Cruce para Luis (S1):** 3 entradas en `TECNICO_ALLOWED` (GET, POST, PUT) + 2 líneas de comentario en
+  `adminRouteDeclarations.ts`; el DELETE no. Escrituras nuevas en las 4 tablas de documentos: solo `equipmentId` → NULL,
+  filtrado por `merchantId`.
+- `tests/scrum1833b-equipos-rutas.test.mjs`: 6 casos sin gate (tenencia, obligatorios, permisos por rol, desligado,
+  atomicidad con foto del doble).
+- `tests/scrum1833b-equipos-postgres.test.mjs` (`jv-j2fe`): 1 caso gateado SOLO por `LIBRO_PG_URL` (no por `QA_DB_TEST`:
+  crea un disparador, y eso no va contra staging). Un `BEFORE DELETE` en `equipments` rechaza el borrado de un equipo
+  marcado → `borrarEquipo` falla y los 4 documentos siguen ligados; quitado el disparador, los desliga y borra el equipo.
+
+Mutaciones: catálogo → `tests/scrum1833b-equipos-rutas.test.mjs`
+
+Rojo primero (de `jv-j2fd`, c.22819): las 4 mutaciones del catálogo con `correr` + `aplicarUna` de
+`scripts/meta-guard-mutaciones.mjs`; base 6 pasados · 0 caídos · 0 saltados; las 4 `ok:true`, 0 colaterales. El cambio de
+`jv-j2fe` en `customerAdmin.ts` no toca ninguna de sus anclas (la línea del parte no está en el catálogo).
+
+## Verdes (medidos por `jv-j2fe`, en este árbol, con `npm run build` CON tipos: salida 0)
+
+- Tanda 1 (23 ficheros: 1294, 267, 854, 237, 976, 700, 824, 419, 719, 1185, 337, 55, los dos de 1833b, 1650c, 1677, 1360,
+  1303, 1315, 1379b, 1379c, 1456, 1488): 312 tests · 306 pass · 5 fail · 1 skipped (el gateado). Los 5 rojos, abajo.
+- Tras el arreglo del parte: 1488 + 1833b-rutas + 1294 + 1303 + 1315: 43 · 43 · 0 · 0.
+- `npm run censo:mudez -- --escribir`: 149 fichas, 0 medidas ahora, `_veredicto-mudez.json` sin cambios.
+- El gateado, sin base: 1 · 0 pass · 0 fail · 1 skipped, motivo LITERAL en la llamada:
+  «sin LIBRO_PG_URL (banco desechable): corre en el check obligatorio del CI».
+
+## ✅ Las tres declaraciones, hechas con el GO del fundador (SCRUM-1833 c.22828 ①) · relevo jv-j2ff
+
+El relevo anterior no las tocó (el encargo lo prohibía y el clasificador denegó la de 337). Con el GO, las hace jv-j2ff,
+en las líneas que pedía cada guard, y ningún guard se ha tocado fuera de ellas:
+
+1. `tests/scrum337-aviso-atado-al-bloqueo.test.mjs` · `BORRADOS_DECLARADOS` += `'src/modules/system/customerAdmin.ts::equipment.deleteMany#1'`,
+   CONTESTADA como la vecina de `attachment.deleteMany` (botón manual de admin, sin cron ni trial; precedente `147b4749b`).
+   El borrado del cliente (abajo) NO añade un `#2`: reusa la misma llamada.
+2. `tests/scrum419-ci-declara-lo-que-no-corre.test.mjs` · `GATEADOS_DECLARADOS` += `'scrum1833b-equipos-postgres.test.mjs': 1`.
+   El total no se escribe a mano: `TOTAL_DECLARADO` lo suma (179 → 180).
+3. `scripts/_sin-consumir-declarados.json` (**S0**, contenedor: bloque marcado `carril: J2`) += las 4 rutas
+   (`customersAdmin.routes.ts:560/573/588/603`), motivo «las consume la pestaña Equipos de SCRUM-1833c».
+
+Y **scrum189** (sin GO, no es declaración): `tests/scrum1833b-equipos-rutas.test.mjs:3` decía «Trampa 1 de c.22817», que
+el guard lee como cita numerada a la doctrina sin `SUITE_REGRESION.md` al lado. Ahora dice «Primera trampa, la de
+c.22817» (y «Segunda trampa» / «Primera trampa» en sus dos referencias). Guard sin tocar.
+
+Los cuatro guards (337, 419, 1185, 189), antes y después, misma orden:
+- ROJO antes: 31 tests · 26 pass · 5 fail · 0 skipped (los 5 `not ok` del run del CI: 1185 ①, 189, 337 capa ②, 419 ×2;
+  419 decía «se declaran 179 tests sin ejecutar y hay 180»).
+- VERDE después: 31 · 31 · 0 · 0.
+
+## ✅ Borrar el cliente se lleva sus equipos (decisión del fundador, SCRUM-1833 c.22828 ②)
+
+`borrarClienteYSusDocumentos` (`src/modules/system/customerAdmin.ts`, J2), que `deleteCustomer` llama dentro de
+`prisma.$transaction`, busca los equipos del cliente (`equipment.findMany` con `merchantId` y `customerId`) y pasa cada
+uno por `desligarYBorrarEquipo`, la MISMA función del botón de borrar un equipo: ninguna segunda copia del desligue
+(los 4 documentos a NULL por `merchantId`, argumentos literales). Va ANTES de borrar la fila del cliente, por la FK
+RESTRICT de `equipments.customer_id` (`docs/sql/scrum-914-equipos-del-cliente.sql:107`).
+
+Test, en el mismo fichero (`tests/scrum1833b-equipos-rutas.test.mjs`): un cliente de A con 2 equipos, un trabajo y un
+albarán ligados a uno de ellos, y un equipo de B → `deleteCustomer(A, cliente)` → los 2 equipos fuera, los documentos con
+`equipmentId` NULL, el cliente borrado y el equipo de B intacto. El doble imita la FK RESTRICT en `customer.deleteMany`.
+- ROJO antes del cambio: 7 tests · 6 pass · 1 fail, con el error «FK RESTRICT: equipments.customer_id».
+- VERDE después: 7 · 7 · 0 · 0.
+
+Mutaciones: catálogo → `tests/scrum1833b-equipos-rutas.test.mjs` (quitar el bucle de los equipos → cae «borrar el
+cliente se lleva sus equipos»). Pasada con `correr` + `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`: base 7 pasados ·
+0 caídos · 0 saltados; la mutación `ok:true`, 0 colaterales; el fuente, restaurado (el bucle sigue: 1 coincidencia).
+**Error mío:** la primera pasada la lancé con `tests/` delante del nombre y `correr` ya lo pone (`tests\tests\…`): la base
+salió 0 pasados y `aplicarUna` contestó CIEGO («ese test NO LLEGÓ»), no verde. Lo cazó el propio instrumento.
+
+**Lectura de la fusión (S1, solo leída):** `src/modules/system/domain/fusionClientes.ts:196` mueve los equipos del
+duplicado al principal (`equipment.updateMany` → `customerId: principalId`) y `:211` borra el duplicado con
+`desvincularYBorrar`, NO con `deleteCustomer`: el cambio no le llega, y aunque le llegara ya no tendría equipos que borrar.
+El comentario de `:210-211` dice «la MISMA función que usa `deleteCustomer`»: es `desvincularYBorrar`, que sigue igual.
+
+## Lo que NO he medido
+
+- La suite entera (el encargo la prohíbe).
+- El caso gateado contra Postgres (`tests/scrum1833b-equipos-postgres.test.mjs`): no hay Postgres en la máquina; lo corre
+  el CI con `LIBRO_PG_URL` ahora que 419 lo declara. Y no cubre el borrado del cliente: ese caso solo vive con el doble.
+- Los sitios: borrar un cliente con sitios sigue dando 500 (FK RESTRICT, S1). Es hallazgo para Luis, no se cruza.
+A9: comprobación → `tests/scrum1833b-equipos-rutas.test.mjs`
