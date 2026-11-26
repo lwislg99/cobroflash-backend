@@ -102,8 +102,9 @@ if (typeof window !== 'undefined') window.whatsappCliente = WHATSAPP_CLIENTE;
  * `billing*` del cliente, que se siguen editando donde siempre. No es un `CustomerSite`.
  *
  * Borrar un sitio CONSERVA lo que ya lo usaba (c.20592, decisión de c.16245), y sin preguntar:
- * ningún modelo apunta a `CustomerSite` y el selector de SCRUM-1144 copia la dirección como texto
- * en el documento, así que el borrado no alcanza a nada guardado.
+ * el selector de SCRUM-1144 copia la dirección como texto en el documento. Desde SCRUM-914d SÍ hay un
+ * modelo que apunta a `CustomerSite`: el equipo del cliente, con su `customerSiteId` opcional
+ * (`prisma/schema.prisma`), que la pestaña «Equipos» no rellena (P3 ❌ de SCRUM-1833 c.22811).
  */
 const SITIOS_CLIENTE = {
   TEXTOS: {
@@ -402,6 +403,277 @@ function montarDocumentosDelCliente(card, customerId, viva, alContar) {
   cargar();
 }
 // SCRUM-1005d · FIN
+
+// SCRUM-1833c · INICIO — la pestaña «Equipos» (ni un `style=` ni un `on*=` en cadenas: SCRUM-1773).
+/**
+ * SCRUM-1833c · LA PESTAÑA «EQUIPOS»: calderas, aires, cuadros… de cada cliente.
+ *
+ * El servidor es de SCRUM-1833b (`GET/POST /admin/customers/:id/equipos`, `PUT …/:equipoId`, y
+ * `DELETE …/:equipoId` con `requireRole('admin')`). La lista se pide AL ABRIR la pestaña, como «Sitios».
+ * Los textos llevan su firma en SU línea (registro en
+ * `docs/microcopy/2026-11-26-SCRUM-1833-equipos-del-cliente.md`). Decisiones de c.22811: P3 ❌ (el
+ * equipo cuelga solo del cliente: sin campo de sitio), P4 ✅ (borrar, solo admin), P5 ❌ (la garantía
+ * es una FECHA: ni pastilla ni estado).
+ */
+const EQUIPOS_CLIENTE = {
+  TEXTOS: {
+    pestana: 'Equipos', // APROBADO por el fundador el 25-nov-2026 (SCRUM-1833 comentario 22811)
+    nuevo: '+ Nuevo equipo', // APROBADO por el fundador el 25-nov-2026 (SCRUM-1833 comentario 22811)
+    vacio: 'Todavía no hay equipos guardados para este cliente.', // APROBADO por el fundador el 25-nov-2026 (SCRUM-1833 comentario 22811)
+    ejemploTipo: 'Caldera / Aire acondicionado / Cuadro eléctrico', // APROBADO por el fundador el 25-nov-2026 (SCRUM-1833 comentario 22811)
+    ejemploNombre: 'Caldera de la cocina', // APROBADO por el fundador el 25-nov-2026 (SCRUM-1833 comentario 22811)
+    CAMPOS: {
+      type: 'Tipo de equipo', // APROBADO por el fundador el 25-nov-2026 (SCRUM-1833 comentario 22811)
+      name: 'Nombre del equipo', // APROBADO por el fundador el 25-nov-2026 (SCRUM-1833 comentario 22811)
+      brand: 'Marca', // APROBADO por el fundador el 25-nov-2026 (SCRUM-1833 comentario 22811)
+      modelName: 'Modelo', // APROBADO por el fundador el 25-nov-2026 (SCRUM-1833 comentario 22811)
+      serialNumber: 'Número de serie', // APROBADO por el fundador el 25-nov-2026 (SCRUM-1833 comentario 22811)
+      installedOn: 'Fecha de instalación', // APROBADO por el fundador el 25-nov-2026 (SCRUM-1833 comentario 22811)
+      warrantyUntil: 'Garantía hasta', // APROBADO por el fundador el 25-nov-2026 (SCRUM-1833 comentario 22811)
+    },
+    garantia: 'Garantía hasta {fecha}', // APROBADO por el fundador el 25-nov-2026 (SCRUM-1833 comentario 22811)
+    obligatorios: 'Escribe el tipo y el nombre del equipo.', // APROBADO por el fundador el 25-nov-2026 (SCRUM-1833 comentario 22811)
+    errorCarga: 'No se pudieron cargar los equipos guardados. Inténtalo de nuevo.', // APROBADO por el fundador el 25-nov-2026 (SCRUM-1833 comentario 22811)
+    generico: 'No se ha podido completar la acción. Vuelve a intentarlo.', // APROBADO por el fundador el 25-nov-2026 (SCRUM-1833 comentario 22811)
+    editar: 'Editar', // APROBADO por el fundador el 25-nov-2026 (SCRUM-1833 comentario 22811)
+    eliminar: '🗑 Eliminar', // APROBADO por el fundador el 25-nov-2026 (SCRUM-1833 comentario 22811)
+    guardar: 'Guardar', // APROBADO por el fundador el 25-nov-2026 (SCRUM-1833 comentario 22811)
+    cancelar: 'Cancelar', // APROBADO por el fundador el 25-nov-2026 (SCRUM-1833 comentario 22811)
+    confirmarBorrar: '¿Borrar el equipo "{nombre}"? Los trabajos ligados a él lo perderán de su historial. Esta acción no se puede deshacer.', // APROBADO por el fundador el 25-nov-2026 (SCRUM-1833 comentario 22811)
+  },
+  /** El orden del formulario. `type` y `name` son los obligatorios (1-200, como el esquema del servidor). */
+  ORDEN: ['type', 'name', 'brand', 'modelName', 'serialNumber', 'installedOn', 'warrantyUntil'],
+  FECHAS: ['installedOn', 'warrantyUntil'],
+  rellenar(texto, valores) {
+    return String(texto).replace(/\{(\w+)\}/g, (m, k) => (valores && valores[k] !== undefined ? String(valores[k]) : m));
+  },
+  /**
+   * `YYYY-MM-DD` → la fecha con el formato de la ficha (`toLocaleDateString('es-ES')`). Se construye en
+   * hora LOCAL: `new Date('YYYY-MM-DD')` es medianoche UTC, y en una zona negativa saldría el día anterior.
+   */
+  fecha(ymd) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
+    if (!m) return '';
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).toLocaleDateString('es-ES');
+  },
+  /** «Garantía hasta {fecha}», o nada si no hay fecha (P5 ❌: no se compara con hoy). */
+  garantia(ymd) {
+    const f = EQUIPOS_CLIENTE.fecha(ymd);
+    return f ? EQUIPOS_CLIENTE.rellenar(EQUIPOS_CLIENTE.TEXTOS.garantia, { fecha: f }) : '';
+  },
+  /**
+   * Lo que viaja al servidor. Recortado; «ausente ≠ vacío»: un texto en blanco va `null` (así se BORRA
+   * al editar) y una fecha en blanco va `''`, que es lo que el servidor guarda como null. Sin sitio (P3 ❌).
+   */
+  cuerpo(valores) {
+    const v = valores || {};
+    const out = {};
+    EQUIPOS_CLIENTE.ORDEN.forEach((k) => {
+      const t = String(v[k] === null || v[k] === undefined ? '' : v[k]).trim();
+      if (k === 'type' || k === 'name' || EQUIPOS_CLIENTE.FECHAS.includes(k)) out[k] = t;
+      else out[k] = t === '' ? null : t;
+    });
+    return out;
+  },
+};
+if (typeof window !== 'undefined') window.equiposCliente = EQUIPOS_CLIENTE;
+
+/**
+ * Pinta la pestaña en `card`, con la forma y las clases de «Sitios» (`sitios-cliente__*`), sin hoja
+ * nueva: alta y edición en el mismo formulario encima de la lista; borrar, solo admin y preguntando
+ * (como «Documentos»). Todo con `textContent`: los datos los escribe el profesional.
+ * `viva()` dice si esta apertura sigue siendo la última.
+ */
+function montarEquiposDelCliente(card, customerId, viva) {
+  const E = EQUIPOS_CLIENTE;
+  const T = E.TEXTOS;
+  const puedeBorrarEquipo = window.appUserRole === 'admin';
+  card.classList.add('sitios-cliente');
+
+  const nuevo = document.createElement('button');
+  nuevo.type = 'button';
+  nuevo.className = 'btn btn-secondary sitios-cliente__nuevo';
+  nuevo.dataset.accion = 'nuevo-equipo';
+  nuevo.textContent = T.nuevo;
+  card.appendChild(nuevo);
+
+  const hueco = document.createElement('div');
+  card.appendChild(hueco);
+
+  const aviso = document.createElement('p');
+  aviso.className = 'sitios-cliente__error';
+  aviso.dataset.rol = 'aviso-equipos';
+  aviso.setAttribute('role', 'alert');
+  aviso.hidden = true;
+  card.appendChild(aviso);
+  function avisar(texto) { aviso.textContent = texto || ''; aviso.hidden = !texto; }
+
+  const lista = document.createElement('ul');
+  lista.className = 'sitios-cliente__lista';
+  card.appendChild(lista);
+
+  function linea(clase, texto) {
+    const d = document.createElement('div');
+    d.className = clase;
+    d.textContent = texto;
+    return d;
+  }
+  function boton(accion, texto, alPulsar) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn-ghost btn-sm';
+    b.dataset.accion = accion;
+    b.textContent = texto;
+    b.addEventListener('click', () => alPulsar(b));
+    return b;
+  }
+
+  function pintarLista(equipos) {
+    lista.replaceChildren();
+    if (!equipos.length) {
+      const li = document.createElement('li');
+      li.className = 'sitios-cliente__vacio';
+      li.textContent = T.vacio;
+      lista.appendChild(li);
+      return;
+    }
+    equipos.forEach((q) => {
+      const nombre = q.name || String(q.id);
+      const li = document.createElement('li');
+      li.className = 'sitios-cliente__fila';
+      li.dataset.equipo = String(q.id);
+      li.appendChild(linea('sitios-cliente__nombre', nombre));
+      const queEs = [q.type, q.brand, q.modelName].filter((x) => x && String(x).trim()).join(' · ');
+      if (queEs) li.appendChild(linea('sitios-cliente__direccion', queEs));
+      const datos = [
+        q.serialNumber ? `${T.CAMPOS.serialNumber}: ${q.serialNumber}` : '',
+        E.fecha(q.installedOn) ? `${T.CAMPOS.installedOn}: ${E.fecha(q.installedOn)}` : '',
+        E.garantia(q.warrantyUntil),
+      ].filter(Boolean).join(' · ');
+      if (datos) li.appendChild(linea('sitios-cliente__contacto', datos));
+      const acciones = document.createElement('div');
+      acciones.className = 'sitios-cliente__acciones';
+      acciones.appendChild(boton('editar', T.editar, () => abrirFormulario(q)));
+      // Borrar: solo admin (P4 de c.22811), y no es la acción principal: botón fantasma, al final, y pregunta.
+      if (puedeBorrarEquipo) acciones.appendChild(boton('eliminar', T.eliminar, (b) => borrar(q, nombre, b)));
+      li.appendChild(acciones);
+      lista.appendChild(li);
+    });
+  }
+
+  function cargar() {
+    avisar('');
+    return apiRequest(`/admin/customers/${customerId}/equipos`).then((r) => {
+      if (!viva()) return;
+      pintarLista(r && Array.isArray(r.equipos) ? r.equipos : []);
+    }, (err) => {
+      if (!viva()) return;
+      // `handled` = la prueba vencida: `_pedir` ya ha llevado al profesional a Planes.
+      if (err && err.handled) return;
+      avisar(T.errorCarga);
+    });
+  }
+
+  function borrar(q, nombre, b) {
+    if (!window.confirm(E.rellenar(T.confirmarBorrar, { nombre }))) return;
+    b.disabled = true;
+    avisar('');
+    apiRequest(`/admin/customers/${customerId}/equipos/${q.id}`, { method: 'DELETE' }).then(() => {
+      if (viva()) cargar();
+    }, (err) => {
+      if (!viva()) return;
+      b.disabled = false;
+      if (err && err.handled) return;
+      avisar(window.mensajeParaPersona(err, T.generico));
+    });
+  }
+
+  /** Alta (`equipo` nulo) o edición: UN formulario a la vez, encima de la lista. */
+  function abrirFormulario(equipo) {
+    avisar('');
+    const form = document.createElement('form');
+    form.className = 'sitios-cliente__form';
+    const campos = {};
+    E.ORDEN.forEach((k) => {
+      const caja = document.createElement('div');
+      caja.className = 'field';
+      const label = document.createElement('label');
+      label.htmlFor = 'c360-equipo-' + k;
+      label.textContent = T.CAMPOS[k];
+      caja.appendChild(label);
+      const input = document.createElement('input');
+      input.type = E.FECHAS.includes(k) ? 'date' : 'text';
+      if (!E.FECHAS.includes(k)) input.maxLength = 200;
+      if (k === 'type') { input.required = true; input.placeholder = T.ejemploTipo; }
+      if (k === 'name') { input.required = true; input.placeholder = T.ejemploNombre; }
+      input.id = 'c360-equipo-' + k;
+      input.name = k;
+      input.className = 'input';
+      input.value = equipo && equipo[k] != null ? String(equipo[k]) : '';
+      caja.appendChild(input);
+      campos[k] = input;
+      form.appendChild(caja);
+    });
+    const errorForm = document.createElement('p');
+    errorForm.className = 'sitios-cliente__error';
+    errorForm.setAttribute('role', 'alert');
+    errorForm.hidden = true;
+    form.appendChild(errorForm);
+
+    const pie = document.createElement('div');
+    pie.className = 'sitios-cliente__pie';
+    const cancelar = document.createElement('button');
+    cancelar.type = 'button';
+    cancelar.className = 'btn btn-secondary';
+    cancelar.textContent = T.cancelar;
+    const guardar = document.createElement('button');
+    guardar.type = 'submit';
+    guardar.className = 'btn btn-primary';
+    guardar.textContent = T.guardar;
+    pie.appendChild(cancelar);
+    pie.appendChild(guardar);
+    form.appendChild(pie);
+
+    function cerrar() { hueco.replaceChildren(); nuevo.hidden = false; }
+    cancelar.addEventListener('click', cerrar);
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const valores = {};
+      E.ORDEN.forEach((k) => { valores[k] = campos[k].value; });
+      const cuerpo = E.cuerpo(valores);
+      // Sólo espacios: el `required` del navegador lo deja pasar y el servidor contestaría 400.
+      if (!cuerpo.type || !cuerpo.name) {
+        errorForm.textContent = T.obligatorios;
+        errorForm.hidden = false;
+        return;
+      }
+      guardar.disabled = true;
+      errorForm.hidden = true;
+      const peticion = equipo
+        ? apiRequest(`/admin/customers/${customerId}/equipos/${equipo.id}`, { method: 'PUT', body: JSON.stringify(cuerpo) })
+        : apiRequest(`/admin/customers/${customerId}/equipos`, { method: 'POST', body: JSON.stringify(cuerpo) });
+      peticion.then(() => {
+        if (!viva()) return;
+        cerrar();
+        cargar();
+      }, (err) => {
+        if (!viva()) return;
+        guardar.disabled = false;
+        if (err && err.handled) return;
+        errorForm.textContent = window.mensajeParaPersona(err, T.generico);
+        errorForm.hidden = false;
+      });
+    });
+
+    hueco.replaceChildren(form);
+    nuevo.hidden = true;
+    campos.type.focus();
+  }
+
+  nuevo.addEventListener('click', () => abrirFormulario(null));
+  cargar();
+}
+// SCRUM-1833c · FIN
 
 /**
  * SCRUM-1126 · FUSIONAR DOS CLIENTES DUPLICADOS: las piezas sin DOM del flujo de la ficha.
@@ -962,6 +1234,8 @@ async function renderCustomer360View(container, customerId) {
   // SCRUM-1145 · la quinta, sin número: su lista se pide al abrirla, no antes.
   const tabSitios = makeTab(SITIOS_CLIENTE.TEXTOS.pestana, 'sitios');
   tabsWrap.appendChild(tabSitios);
+  // SCRUM-1833c · justo detrás de «Sitios», igual que ella: sin número, y su lista se pide al abrirla.
+  tabsWrap.appendChild(makeTab(EQUIPOS_CLIENTE.TEXTOS.pestana, 'equipos'));
   // SCRUM-1132c · la sexta, igual que «Sitios»: sin número, y sus notas se piden al abrirla.
   // Rutas `requireRole('admin')`: al técnico ni se le pinta la pestaña ni se le piden.
   if (window.appUserRole === 'admin') tabsWrap.appendChild(makeTab(NOTAS_CLIENTE.TEXTOS.titulo, 'notas'));
@@ -972,6 +1246,7 @@ async function renderCustomer360View(container, customerId) {
     : null;
   if (tabDocumentos) tabsWrap.appendChild(tabDocumentos);
   let peticionDocumentos = 0;
+  let peticionEquipos = 0;
   wrap.appendChild(tabsWrap);
   wrap.appendChild(tabContent);
 
@@ -986,6 +1261,11 @@ async function renderCustomer360View(container, customerId) {
     card.className = 'data-card';
     tabContent.appendChild(card);
     if (key === 'sitios') { pintarSitios(card); return; }
+    if (key === 'equipos') {
+      const esta = ++peticionEquipos;
+      montarEquiposDelCliente(card, id, () => esta === peticionEquipos);
+      return;
+    }
     if (key === 'documentos') {
       const esta = ++peticionDocumentos;
       montarDocumentosDelCliente(card, id, () => esta === peticionDocumentos,
@@ -1806,7 +2086,7 @@ function openEdit360Modal(customer, customerId, container) {
         </select>
         <div class="c360-ayuda">Solo sirve para avisarte de que toca facturarle. YaQu nunca factura ni envía nada solo — y el plazo legal manda por encima de lo que pactes.</div>
       </div>
-      <div class="field"><label>Tipo de cliente</label>
+      <div class="field"><label>¿Factura como empresa o autónomo (IVA)?</label>
         <select id="e360-tipodestinatario" class="input">
           <option value="">Sin clasificar</option>
           <option value="PARTICULAR">Particular</option>

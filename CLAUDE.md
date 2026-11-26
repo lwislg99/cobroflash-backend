@@ -6,7 +6,7 @@
 **YaQu** — cobro por WhatsApp para oficios en España: presupuesto en 30s → WhatsApp con botones →
 firma del cliente → (post SIF-1) factura VeriFactu → cobro de señal/total. **Antes de SIF-1, en España,
 ni documento ni cobro por YaQu (regla 24; SCRUM-612).** España-first.
-**Sprint activo y cola única: Parte U del master (regla 31). Prioridad absoluta de F1: SIF-1.**
+**Cola única: la ficha de la versión en curso, en Jira; la Parte U del master apunta a ella (regla 31). Prioridad absoluta de F1: SIF-1.**
 
 - Producción: `https://yaqu.app` · Deploy: Railway auto-deploy desde `main`
 - Repo: `github.com/lwislg99/cobroflash-backend` · Merchant demo: `demo@yaqu.app`, id=1 (regla 8)
@@ -34,7 +34,7 @@ junto a la A10 (SCRUM-1294). Lo exige un guard.
 al día:** el checkout compartido `cobroflash-backend` va miles de commits por detrás, y lo que se carga
 desde él (este mismo CLAUDE.md incluido) puede ser una versión antigua. *(17-sep-2026, auditoría de la S0.)*
 
-1. Leer este archivo → abrir `docs/YAQU_MASTER.md` → localizar el **sprint activo en la Parte U**.
+1. Leer este archivo → abrir `docs/YAQU_MASTER.md` → ir a la **ficha de la versión en curso** (Jira), a la que apunta la Parte U.
    Duda → preguntar, nunca asumir.
 2. **Una tarea → una RAMA (`scrum-<n>-<slug>`) → commit de feature (+ registro en `docs/master/SCRUM-<n>.md`, misma rama; nunca en YAQU_MASTER.md, lo bloquea SCRUM-273) → se empuja y el PR se abre y se arma solo (`pr-automatico.yml`; lo mergea yaqu-bot cuando pasa el check obligatorio).** `main` protegida: push directo BLOQUEADO. Claude no mergea a mano ni se salta checks. *(Corregido el 17-sep-2026: decía «el merge lo hace un HUMANO», y desde el 9-sep es automático.)* `git pull` de `main` antes de empezar cada tarea. Plan de archivos ANTES de tocar código (skill `/yaqu-sprint`).
 3. Tests relevantes en verde antes de commit (`npm test`); verificación en **yaqu.app**
@@ -68,7 +68,7 @@ desde él (este mismo CLAUDE.md incluido) puede ser una versión antigua. *(17-s
 5. **Prohibido inventar** estados, transiciones, flags o textos de landing/bot
    (Partes L, P, N5, K1; reglas 27 y 30). Necesidad nueva = propuesta de cambio de master.
 6. Bugs → `docs/BUGS.md` con su formato; nada de arreglos "de paso" sin registrar.
-7. Cierre de sprint: `/yaqu-release-check` (QA del sprint + docs + done/evidencias en U)
+7. Cierre de sprint: `/yaqu-release-check` (QA del sprint + docs + done/evidencias en la ficha de la versión en curso)
    y actualizar el master (✅ con motivo; nunca borrar).
 8. Producción: deploy = MERGE del PR a `main` (Railway auto-deploy desde `main`; push directo
    bloqueado por protección de rama). Nada destructivo contra la BD de prod sin preview
@@ -104,7 +104,7 @@ desde él (este mismo CLAUDE.md incluido) puede ser una versión antigua. *(17-s
    tokens visuales; cambios de UI = una pantalla/componente, jamás rediseño total (Parte AB).
 5. **Estados (L), flags (P) y microcopy (N5/K1) son CERRADOS.** Lo que no está en el master
    no se construye: se propone cambio de master primero.
-6. **El Sprint Registry (U) es la cola única:** no reordenar ni intercalar sin cambio de master.
+6. **La ficha de la versión en curso (Jira) es la cola única; la Parte U apunta a ella** (regla 31): nada entra sin constar en la ficha, y no se reordena ni intercala sin el acuerdo de los dos orquestadores en ella.
 7. **Cero claims fiscales hasta SIF-1 8/8** (reglas 17/24/26): `INVOICING_ES_ENABLED=OFF` para
    merchants ES reales **—y con OFF, ni documento ni cobro por YaQu (regla 24)—**; demo con marca de agua; la pregunta VeriFactu se responde SOLO con el guion H2.
 8. **Tarjeta real solo con Stripe Connect activo en ese merchant** (reglas 18/23). PROHIBIDO

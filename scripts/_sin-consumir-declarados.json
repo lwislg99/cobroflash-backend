@@ -3,6 +3,8 @@
   "declaradas": [
     {"clave":"ciega-lector-cuerpo · POST /admin/customers/:id/sites","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:484","carril":"J2","ticket":"SCRUM-1145","motivo":"J2: la consume la pestaña «Sitios» de customerDetailView.js; el handler pasa el cuerpo entero a customerSiteCreateSchema y la sonda no ve qué campos lee"},
     {"clave":"ciega-lector-cuerpo · PUT /admin/customers/:id/sites/:siteId","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:500","carril":"J2","ticket":"SCRUM-1145","motivo":"J2: la consume la pestaña «Sitios» de customerDetailView.js; el handler pasa el cuerpo entero a customerSiteUpdateSchema y la sonda no ve qué campos lee"},
+    {"clave":"ciega-lector-cuerpo · POST /admin/customers/:id/equipos","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:573","carril":"J2","ticket":"SCRUM-1833","motivo":"J2: la consume la pestaña «Equipos» de customerDetailView.js (SCRUM-1833c: el formulario «+ Nuevo equipo»); el handler pasa el cuerpo entero a equipoCreateSchema y la sonda no ve qué campos lee"},
+    {"clave":"ciega-lector-cuerpo · PUT /admin/customers/:id/equipos/:equipoId","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:588","carril":"J2","ticket":"SCRUM-1833","motivo":"J2: la consume la pestaña «Equipos» de customerDetailView.js (SCRUM-1833c: la edición, con el mismo formulario que el alta); el handler pasa el cuerpo entero a equipoUpdateSchema y la sonda no ve qué campos lee"},
     {"clave":"ciega-lector-cuerpo · POST /admin/customers/:id/documentos","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:595","carril":"J2","ticket":"SCRUM-1005","motivo":"J2: la consume el botón «+ Subir documento» de la pestaña «Documentos» de customerDetailView.js (SCRUM-1005d); el cuerpo es el fichero en BINARIO (express.raw) y el nombre viaja en la cabecera X-Nombre-Fichero: no hay campos que la sonda pueda leer"},
     {"clave":"ciega-lector-cuerpo · PATCH /admin/jobs/:id","donde":"src/modules/jobs/app/routes/jobs.routes.ts:934","carril":"S0","ticket":"SCRUM-1185"},
     {"clave":"ciega-lector-cuerpo · PATCH /admin/partes/:id","donde":"src/modules/jobs/app/routes/partes.routes.ts:461","carril":"S0","ticket":"SCRUM-1185"},
@@ -245,6 +247,10 @@
     {"clave":"cuerpo · POST /admin/invoices/bulk-paid::paidAt","motivo":"SCRUM-1618: conectada en invoicesView.js (el campo de fecha de la barra del lote, vía cuerpoConFechaDeCobro; solo viaja si se escribe una fecha)"},
     {"clave":"export · src/modules/auth/domain/auth.service.ts::registerMerchant","motivo":"SCRUM-1685: conectada en auth.routes.ts (POST /auth/register vuelve a llamarla para los correos de REGISTRATION_INVITED_EMAILS; tramo a)"},
     {"clave":"ruta · GET /admin/customers/:id/documentos","motivo":"SCRUM-1005d: conectada en customerDetailView.js (la pestaña «Documentos ({n})»: la lista al abrir la ficha y al abrir la pestaña)"},
-    {"clave":"ruta · POST /admin/customers/:id/documentos","motivo":"SCRUM-1005d: conectada en customerDetailView.js (el botón «+ Subir documento» de la pestaña «Documentos»)"}
+    {"clave":"ruta · POST /admin/customers/:id/documentos","motivo":"SCRUM-1005d: conectada en customerDetailView.js (el botón «+ Subir documento» de la pestaña «Documentos»)"},
+    {"clave":"ruta · GET /admin/customers/:id/equipos","motivo":"SCRUM-1833c: conectada en customerDetailView.js (la pestaña «Equipos»: montarEquiposDelCliente pide la lista al abrir la pestaña, como «Sitios»)"},
+    {"clave":"ruta · POST /admin/customers/:id/equipos","motivo":"SCRUM-1833c: conectada en customerDetailView.js (el formulario «+ Nuevo equipo» de la pestaña «Equipos»)"},
+    {"clave":"ruta · PUT /admin/customers/:id/equipos/:equipoId","motivo":"SCRUM-1833c: conectada en customerDetailView.js (la edición de un equipo desde la pestaña «Equipos», con el mismo formulario que el alta)"},
+    {"clave":"ruta · DELETE /admin/customers/:id/equipos/:equipoId","motivo":"SCRUM-1833c: conectada en customerDetailView.js (el botón «Eliminar» con confirmación de la pestaña «Equipos»; solo lo ve el admin, como en «Documentos»)"}
   ]
 }

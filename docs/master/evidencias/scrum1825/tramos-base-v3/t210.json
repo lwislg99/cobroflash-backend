@@ -1,0 +1,28 @@
+{
+ "ficheros": 30,
+ "tandas": [
+  {
+   "desde": 0,
+   "n": 30,
+   "exit": 1,
+   "tests": 206,
+   "pass": 204,
+   "fail": 2,
+   "skipped": 0
+  }
+ ],
+ "tests": 206,
+ "pass": 204,
+ "fail": 2,
+ "skipped": 0,
+ "fallos": [
+  {
+   "nombre": "SCRUM-1726 · D1 · 🔴 las fechas de la hoja van en la zona del negocio (las 00:30 de Madrid son el 3-oct, no el 2)",
+   "loc": "\\scrum1726-tanda-firmada-j1.test.mjs"
+  },
+  {
+   "nombre": "SCRUM-1726 · D1 · CONTROL: un negocio sin zona guardada sale en UTC (la decisión A de `zonaDelMerchant`)",
+   "loc": "\\scrum1726-tanda-firmada-j1.test.mjs"
+  }
+ ]
+}
