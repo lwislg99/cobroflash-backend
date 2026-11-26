@@ -142,13 +142,6 @@ jobs:
       - name: Traer `main` (el rango origin/main..HEAD lo necesita)
         run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
 
-      # ── 2bis · LA RAMA TIENE NÚMERO PARA EL CENSO (SCRUM-1801) ─────────────────────────
-      # Una rama `scrum-<dígito>…` sin número para `numeroDeRama` pone en rojo scrum804 en el
-      # obligatorio de TODOS los PR. Aquí se dice en su push, antes de abrir el PR. Sin npm ci:
-      # el guard sólo importa `node:` y ficheros hermanos (SCRUM-1827).
-      - name: Candado — la rama tiene número para el censo (SCRUM-1801)
-        run: node scripts/guard-rama-con-numero.mjs
-
       # ── 3 · ¿EN QUÉ MODO ESTOY? ────────────────────────────────────────────────────────
       # Los secretos se leen por `env` (única forma de mirarlos sin imprimirlos) y solo se
       # comprueba si están VACÍOS. Aquí no se decide si son válidos: eso se mide después,

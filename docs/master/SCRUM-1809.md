@@ -97,3 +97,18 @@ El candado actual corre ANTES del checkout (`pr-automatico.yml:123`, y el checko
 **El YAML sigue CIEGO en local:** no hay parser en la máquina. El juez es el primer push que pase por el workflow, que es el de esta misma rama. El paso tiene que salir verde con «el censo la cuenta como SCRUM-1809».
 
 **Corrido:** los 7 tests que leen `pr-automatico.yml` (`automerge-conflicto-no-es-averia`, `pr-automatico-el-mensaje-del-automerge`, `scrum1382`, `scrum1827`, `scrum834`, `scrum839e` y `scrum973`): 106 tests, 106 pass, 0 skipped.
+
+# SCRUM-1809 · 26-nov-2026 — el paso de `pr-automatico.yml` se RETIRA: superado por SCRUM-1801 ①
+
+**Medido contra:** `origin/main` = `8e9fefe8bb8bf070f7e26db7866a6cc41a5ac94c` · 2026-11-26T22:07:19Z (cabecera `Date:` de `gh api -i zen`)
+A9: comprobación → `tests/scrum711-guards-sin-sitio.test.mjs`
+
+**El rojo.** El obligatorio del run 45859832665 (job 140047642351, artifact `tanda-tap`) dio dos `not ok`, los dos en `tests/scrum711-guards-sin-sitio.test.mjs`:
+- 11914 «SCRUM-711 · 🔒 NINGÚN guard deja de correr en algún sitio»: «🔴 sobra una declaración: ese guard ya se invoca, o ya no existe. Se BORRA, no se deja. scripts/guard-rama-con-numero.mjs»
+- 11915 «SCRUM-711 · 🔴 el cero se juzga con la MISMA función…»: sin declaraciones, el censo ya no ve `guard-rama-con-numero`.
+
+**La causa.** Mis 7 líneas de `pr-automatico.yml` se cruzaron con la entrada `DECLARADOS['scripts/guard-rama-con-numero.mjs']` que J6 metió en `main` en `295f48280` (SCRUM-1801 ①), después de c.22763. Con el paso en un workflow, el censo cuenta el guard como invocado y la declaración sobra.
+
+**Decisión del orquestador** (SendMessage a S0, 26-nov-2026 noche, opción (c) de las tres que le propuse): quitar las 7 líneas y dejar #3447 solo con la fila de §3.3. Las 7 líneas quedan **superadas por SCRUM-1801 ①**. La colocación de J6 es más fuerte: dentro del obligatorio, un fallo del guard BLOQUEA el merge. En `pr-automatico` solo evitaba armar el automerge, y el obligatorio se quedaba en verde. **La autorización c.22763 no se amplía a borrar la entrada de J6.** No se toca nada de su carril.
+
+**Lo aplicado:** `.github/workflows/pr-automatico.yml` vuelve a ser el de `origin/main` (`git checkout origin/main -- <fichero>`). `git diff origin/main -- .github/workflows/` sale vacío. Siguen en el PR la fila de §3.3, su derivado (`.claude/carriles.json` y `.claude/rules/carril-j6.md`) y la entrada retirada de `scripts/_sin-fila-declarados.json`.
