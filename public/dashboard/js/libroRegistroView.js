@@ -97,6 +97,13 @@
     // codigo (`facturaSuelta.ts`, `modoDocumentoSuelto`). Un sinonimo nuevo habria creado DOS
     // nombres para el mismo hecho — el defecto que acaba de aparecer con el rotulo del menu.
     sinTrazas: 'Factura suelta',
+    // SCRUM-1055e · los tres textos FIRMADOS por el fundador en SCRUM-1055 c.22857 ③ (26-nov-2026).
+    // Registro: docs/microcopy/2026-11-26-SCRUM-1055-cobro-sin-fecha.md. El plural es «{n}» + la cola
+    // de abajo (como `trazaAlbaran` + número); el singular va entero porque es otra frase.
+    etiquetaSinFechaCobro: 'Fecha de cobro sin indicar',
+    explicacionSinFechaCobro: 'Esta factura se marcó como cobrada sin indicar el día en que entró el dinero. Se ha tomado el día en que se marcó. Si entró otro día, corrígelo antes de pasarle el trimestre a tu asesor.',
+    resumenSinFechaCobroUna: '1 factura cobrada sin fecha de cobro indicada.',
+    resumenSinFechaCobroVarias: 'facturas cobradas sin fecha de cobro indicada.',
   };
 
   /**
@@ -250,6 +257,13 @@
       }
       if (libro.ajenas > 0) avisar(COPY.avisoAjenas, 'warning');
       if (libro.sinNumero > 0) avisar(COPY.avisoSinNumero(libro.sinNumero), 'warning');
+      // SCRUM-1055e · el recuento del periodo (servidor de 1055c). `cobrosSinFilas` NO se pinta:
+      // qué decir de las facturas cobradas sin filas lo decide el fundador (SCRUM-1055 c.22882).
+      const sinFecha = libro.cobrosSinFechaDeclarada;
+      if (typeof sinFecha === 'number' && sinFecha > 0) {
+        avisar(sinFecha === 1 ? COPY.resumenSinFechaCobroUna
+          : sinFecha + ' ' + COPY.resumenSinFechaCobroVarias, 'warning');
+      }
 
       if (asientos.length === 0) {
         // Las dos ramas que NO se pueden confundir.
@@ -362,6 +376,16 @@
         if (e.cobroId != null) {
           alguna = true;
           tdTrazas.appendChild(marca(COPY.trazaCobro, 'badge-green'));
+        }
+        // SCRUM-1055e · junto a «Cobro», la pastilla de Aviso de la casa. La explicación va en el
+        // `title` (la vista no tiene otro mecanismo de ayuda) y la marca NO es pulsable: en una
+        // pantalla táctil el `title` no se ve, y eso queda declarado en el registro de 1055e.
+        if (a.cobroSinFechaDeclarada === true) {
+          alguna = true;
+          const sinFechaMarca = marca(COPY.etiquetaSinFechaCobro, 'badge-amber');
+          sinFechaMarca.title = COPY.explicacionSinFechaCobro;
+          sinFechaMarca.dataset.senal = 'cobro-sin-fecha';
+          tdTrazas.appendChild(sinFechaMarca);
         }
         // La factura suelta (SCRUM-289) es legítima y tiene que VERSE como tal, no salir en blanco
         // — una celda vacía se lee como «falta un dato».

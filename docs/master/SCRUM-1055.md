@@ -167,3 +167,54 @@ resumen), su test de vista y la línea en el 303 y las evidencias.
 
 **Errores míos:** escribí el código antes que el test. El rojo lo da la primera mutación del catálogo, que deja
 la ruta como estaba (sin `...criterio`) y tumba el test. Y crucé los 200k otra vez (201.723, avisó el hook).
+
+# SCRUM-1055e · la señal, en la pantalla del libro
+**Medido contra:** `origin/main` = `81a6dda49cda4adb87e49529257568e4fc5e72c0` · 2026-11-26T17:33:17Z (hora de GitHub; sesión J1 `jv-j1la`, encargo del orquestador `cobroflash-backend-2d`; rama nacida de `scrum-1055c-senal-cobro-sin-fecha` en `39d92e280`)
+
+**Skill UI:** cargada
+
+A9: comprobación → `scripts/meta-guard-mutaciones.mjs`
+
+Mutaciones: catálogo → `tests/scrum1055e-senal-en-el-libro.test.mjs`
+
+Alcance: SCRUM-1055 c.22857 ③ (los tres textos, firmados) sobre el servidor de 1055c (c.22882). Sólo la
+pantalla; el servidor no se toca.
+
+**Qué hay y dónde se pinta** (`public/dashboard/js/libroRegistroView.js`):
+- Las cuatro ranuras de `COPY` (:100-106): `etiquetaSinFechaCobro`, `explicacionSinFechaCobro`,
+  `resumenSinFechaCobroUna` y `resumenSinFechaCobroVarias` (el plural es `{n}` + espacio + la cola, como
+  `trazaAlbaran` + número). Ficha: `docs/microcopy/2026-11-26-SCRUM-1055-cobro-sin-fecha.md`.
+- Texto 1: en la columna de trazas, detrás de «Cobro», con `marca(…, 'badge-amber')` (:380-389), sólo si el
+  asiento trae `cobroSinFechaDeclarada === true`. Pastilla de Aviso de la casa: ni color ni clase nuevos.
+- Texto 2: el `title` de esa pastilla. La vista no tiene otro mecanismo de ayuda.
+- Texto 3: un `avisar(…, 'warning')` más en el resumen (:260-266), si `cobrosSinFechaDeclarada > 0`;
+  singular con 1. `cobrosSinFilas` NO se pinta: lo decide el fundador.
+- `tests/scrum296-pantalla-libro.test.mjs`: las cuatro ranuras entran en `APROBADAS` con la cita de c.22857 ③,
+  y la cuenta pasa de 20 a 24, como hizo 1051h con las suyas. No se relaja nada: una ranura más sin
+  clasificar seguiría tumbándolo.
+
+**Verdes, con población:** `tests/scrum1055e-senal-en-el-libro.test.mjs` 5 tests · 5 pass (banco de vistas +
+doble de `fetch`: la etiqueta sólo en el asiento con señal, el `title`, la línea con 2, 1 y 0, y los literales
+cotejados con c.22857). Dirigida con 1055c, 296, 514, 402, 1051h, 628, 1233, 755, 1041 y 1232: 131 tests ·
+131 pass · 0 fail · 0 skip. Mutaciones con `correr` + `aplicarUna`: base 5 pasados, y **3 de 3** tumban su
+test (la condición quitada, el plural fijo, la línea con 0). Build con tipos (`npm run build`): salida 0.
+Guards 1294, 267, 854, 237, 976, 700, 824 (y los dos 824b), 419, 1866 y 1850: 82 tests · 81 pass · 1 fail (976 ④:
+faltaba `**Skill UI:**` en este tramo; puesta, y vuelta a correr). Después: los 5 de árbol entero que propone
+`guards:entrada`, más 976, 1294, 267 y 1055e: 72 tests · 72 pass · 0 fail · 0 skip. `guards:entrada`: 17
+guards, salida 0. `censo:mudez -- --escribir`: no cambia el fichero (149 fichas, 0 medidas ahora).
+
+**NO hecho:**
+- El recuento en la salida del 303 y de las evidencias (punto 4 del encargo): DECLARADO para otro tramo,
+  por contexto (decisión del orquestador). Los dos leen el libro con criterio y el recuento ya viaja en el
+  objeto; sacarlo a su salida está sin hacer.
+- En una pantalla táctil el `title` no se ve: el texto 2 sólo llega pasando el ratón. Hacer la pastilla
+  pulsable pide un objetivo de 44 px (1850), y queda para otro tramo.
+- La suite entera en local: no me cabía en contexto. Corridos los guards con población y `guards:entrada`.
+- Staging y yaqu.app: no lo he intentado.
+- Choque previsto: 1055d (jv-j4co, todavía sin entrar) también añade su tramo al final de este fichero. El
+  segundo PR en entrar tendrá conflicto aquí, y se resuelve conservando los dos tramos.
+
+**Errores míos:** mi primer guion de mutaciones le pasó a `correr` la ruta `tests/…`, y `correr` ya antepone
+`tests/`. La base salió con 0 pasados y `aplicarUna` se negó a mutar: dijo CIEGO, no «muda». Lo cazó el
+instrumento de la casa, no yo. Cargué la skill de UI pero no lo escribí en el tramo: lo cazó 976 ④. Y no
+llegué al push antes de 175k: lo avisé al orquestador a 166k.
