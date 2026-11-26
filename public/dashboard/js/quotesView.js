@@ -550,7 +550,11 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   // SCRUM-915d · la numeración va en `data-numero`, no en el título (ver arriba).
   const blockConditions = document.createElement("div");
   blockConditions.className = "quote-block quote-paso";
-  if (!esDocumentoSuelto) leftCard.appendChild(blockConditions);
+  // 🔴 SCRUM-1805 ① (1787f ⑤, decisión SCRUM-1787 c.22325 ②) · EL PASO «CONDICIONES» TAMBIÉN EN LA
+  // FACTURA: formas de pago, «Vence el» y ajustes del documento, y SIN «Condiciones de pago» (abajo,
+  // `filaCobro`). Ya no es la excepción de SCRUM-600: `Invoice.payMethods` y `Invoice.dueDate`
+  // existen y `validarFacturaSuelta` las deja pasar (1787i), así que el dato sobrevive al emisor.
+  leftCard.appendChild(blockConditions);
   const blockConditionsTitle = document.createElement("h3");
   blockConditionsTitle.className = "quote-block-title";
   blockConditionsTitle.textContent = "Condiciones";
@@ -576,7 +580,8 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   // Los títulos de fila son los rótulos que esos mismos campos ya tenían, literales.
   const filaCobro = document.createElement("div");
   filaCobro.className = "quote-fila";
-  blockConditions.appendChild(filaCobro);
+  // SCRUM-1805 ① · c.22325 ②: la factura NO lleva «Condiciones de pago» (ni tramos): no tiene dónde.
+  if (!esDocumentoSuelto) blockConditions.appendChild(filaCobro);
   const filaCobroCab = document.createElement("div");
   filaCobroCab.className = "quote-fila__cab";
   filaCobro.appendChild(filaCobroCab);
@@ -628,7 +633,8 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   filaValidez.appendChild(filaValidezCab);
   const filaValidezTitulo = document.createElement("span");
   filaValidezTitulo.className = "quote-fila__titulo";
-  filaValidezTitulo.textContent = "Válido hasta";
+  // SCRUM-1805 ① · en la factura la fila es su vencimiento: «Vence el» (firmado, SCRUM-1787 c.22325 ①).
+  filaValidezTitulo.textContent = esDocumentoSuelto ? "Vence el" : "Válido hasta";
   filaValidezCab.appendChild(filaValidezTitulo);
   const filaValidezValor = document.createElement("span");
   filaValidezValor.className = "quote-fila__valor";
@@ -948,6 +954,11 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   if (esDocumentoSuelto) ajustesSuelto.appendChild(sueltoVatRow);
   if (esDocumentoSuelto) sueltoVatRow.appendChild(fieldVatDefault.wrapper);
   else linesVatRow.appendChild(fieldVatDefault.wrapper);
+  // 🔴 SCRUM-1805 ① (1787f ⑤.3, c.22325 ②) · la fila «Ajustes del documento» de la factura SUBE de
+  // «Revisar y emitir» (915g) al paso Condiciones, detrás de las filas de pagos y vencimiento: es la
+  // cuarta fila, como en el presupuesto. Se cuelga AQUÍ, al nivel del esqueleto, por el censo de
+  // orden (SCRUM-286), y antes del pie del paso, que se cuelga más abajo.
+  if (esDocumentoSuelto) blockConditions.appendChild(ajustesSuelto);
   // SCRUM-1804 · el mismo aviso del 10 % que la línea (este valor BAJA a cada línea nueva), DEBAJO
   // de la fila y a todo su ancho: dentro de la columna del campo salía de 173 px (medido a 1280).
   window.tiposDeIva.conectarAvisoIvaAlDiez(fieldVatDefault.select, null, { trasDe: esDocumentoSuelto ? sueltoVatRow : linesVatRow });
@@ -1167,6 +1178,11 @@ descWrapper.appendChild(descLabel);
         validInput.value = window.quoteCaducidad.diaPorDefecto(currentMerchant, 30);
       }
       validInput.min = window.quoteCaducidad.diaPorDefecto(currentMerchant, 1);
+      // SCRUM-1805 ① · el vencimiento de la factura, con la misma regla: sólo si nadie lo ha tocado.
+      // (`dueInput` se declara más abajo en este mismo bloque; esto corre cuando llega el merchant.)
+      if (dueInput.value === diaVencePorDefecto) {
+        dueInput.value = window.quoteCaducidad.diaPorDefecto(currentMerchant, 30);
+      }
     }
     window.__refrescarCaducidadDelPresupuesto = refrescarCaducidad;
 
@@ -1226,7 +1242,30 @@ descWrapper.appendChild(descLabel);
     }
 
     validWrapper.appendChild(validNote);
-    filaValidezDetalle.appendChild(validWrapper); // SCRUM-915d: en su fila de Condiciones
+    // SCRUM-1805 ① · la caducidad es del PRESUPUESTO (su nota y sus atajos lo dicen): en la factura su
+    // fila lleva el vencimiento, `dueWrapper`, justo debajo.
+    if (!esDocumentoSuelto) filaValidezDetalle.appendChild(validWrapper); // SCRUM-915d: en su fila de Condiciones
+
+    // ---------- SCRUM-1805 ① (1787f ⑤.2) · «VENCE EL», el vencimiento de la FACTURA ----------
+    // Un control PROPIO y no `validWrapper` con otro rótulo: aquél guarda `validUntil` (lo vigila
+    // `tests/scrum600e-condiciones-contra-el-emisor.test.mjs`) y arrastra una nota y unos atajos que
+    // hablan de la caducidad del presupuesto. Viaja como `dueDate` (`Invoice.dueDate`, 1787i), con la
+    // MISMA conversión que `validUntil` (fin del día). Por defecto, +30 días (enunciado de SCRUM-1805),
+    // calculados en la zona del NEGOCIO con la pieza de SCRUM-633 y refrescados como la caducidad.
+    // Vaciarlo es «sin vencimiento»: la clave no viaja y `due_date` queda NULL.
+    const dueWrapper = document.createElement("div");
+    dueWrapper.className = "field";
+    const dueInput = document.createElement("input");
+    dueInput.type = "date";
+    dueInput.id = "invoice-due-date";
+    const dueLabel = document.createElement("label");
+    dueLabel.htmlFor = dueInput.id;
+    dueLabel.textContent = "Vence el";
+    const diaVencePorDefecto = window.quoteCaducidad.diaPorDefecto(null, 30);
+    dueInput.value = diaVencePorDefecto;
+    dueWrapper.appendChild(dueLabel);
+    dueWrapper.appendChild(dueInput);
+    if (esDocumentoSuelto) filaValidezDetalle.appendChild(dueWrapper);
 
     // ---------- A2.1: MÉTODOS DE PAGO PARA ESTE PRESUPUESTO ----------
     // ☐ Tarjeta ☐ Bizum ☐ Transferencia — todos marcados por defecto (= null
@@ -1658,7 +1697,9 @@ descWrapper.appendChild(descLabel);
     // un plan por tramos que no cuadra, y el motivo es el texto que «Generar» ya da hoy para eso.
     const pasoCondicionesPie = document.createElement("div");
     pasoCondicionesPie.className = "quote-paso__pie";
-    blockDelivery.appendChild(pasoCondicionesPie);
+    // SCRUM-1805 ① · en la factura no hay `blockDelivery`: el pie va al final de su paso Condiciones.
+    if (!esDocumentoSuelto) blockDelivery.appendChild(pasoCondicionesPie);
+    if (esDocumentoSuelto) blockConditions.appendChild(pasoCondicionesPie);
     const pasoCondicionesFalta = document.createElement("span");
     pasoCondicionesFalta.className = "quote-paso__falta";
     pasoCondicionesFalta.textContent = "Revisa los tramos: cada uno necesita etiqueta y porcentaje, y deben sumar 100 %.";
@@ -2195,7 +2236,8 @@ descWrapper.appendChild(descLabel);
   const blockActionsTitle = document.createElement("h3");
   blockActionsTitle.className = "quote-block-title";
   blockActionsTitle.textContent = esDocumentoSuelto ? "Revisar y emitir" : "Revisar y enviar";
-  blockActionsTitle.dataset.numero = esDocumentoSuelto ? "3" : "4";
+  // SCRUM-1805 ① (1787f ⑤.4) · «Revisar y emitir» es el 4 también en la factura: ya tiene Condiciones.
+  blockActionsTitle.dataset.numero = "4";
   blockActions.appendChild(blockActionsTitle);
   const pasoRevisarCambiar = document.createElement("button");
   pasoRevisarCambiar.type = "button";
@@ -2212,7 +2254,7 @@ descWrapper.appendChild(descLabel);
   // v3). Se cuelga aquí, bajo `esDocumentoSuelto`, y no en una función anidada: el censo de orden
   // (SCRUM-286) lee los `appendChild` de este fichero y un nodo que se cuelga desde dentro de una
   // función no lo ve.
-  if (esDocumentoSuelto) blockActions.appendChild(ajustesSuelto);
+  // SCRUM-1805 ① · ya no: sube al paso Condiciones (ver `blockConditions.appendChild(ajustesSuelto)`).
   // Lo que se va a mandar, en una línea: el cliente y cuántos conceptos (y en el presupuesto, cómo
   // se cobra). Son el nombre del cliente y textos firmados o ya existentes, compuestos.
   const pasoRevisarResumen = document.createElement("p");
@@ -4525,7 +4567,11 @@ conceptInput.dataset.pfProductId = ""; // vacío = "manual"
     // fila principal: es texto largo y allí costaría alto por línea, que es la medición por la
     // que SCRUM-594 rechazó meter «Dto. %» en la tarjeta (+77 px POR FILA).
     // ═══════════════════════════════════════════════════════════════════════════════════
-    if (!esDocumentoSuelto) ajustesCampos.appendChild(descTd);
+    // 🔴 SCRUM-1805 ① (1787k, GO SCRUM-1787 c.22338 ①) · YA SÍ: `validarFacturaSuelta` deja pasar
+    // `description` y `cuerpoDelDocumentoSuelto` la manda, así que el corte de arriba deja de tener
+    // motivo y la descripción se pinta en los dos modos (`scrum632` lo ejecuta). La regla no cambia:
+    // cambió lo que el emisor guarda.
+    ajustesCampos.appendChild(descTd);
     // 🔴 SCRUM-594 · «Dto. %» VA EN LA HOJA, Y LO DECIDIÓ LA MEDICIÓN, NO EL GUSTO.
     //
     // Se montó primero en la TARJETA, junto al precio, que es lo natural: se descuenta sobre el
@@ -4540,7 +4586,9 @@ conceptInput.dataset.pfProductId = ""; // vacío = "manual"
     // SCRUM-600 · y el descuento de línea, por lo mismo: `dto` no viaja más allá del validador.
     // Un descuento que el profesional teclea y el documento no recoge cambiaría el importe que
     // él espera por otro, que es la peor forma de perder un dato.
-    if (!esDocumentoSuelto) ajustesCampos.appendChild(dtoTd);
+    // SCRUM-1805 ① (1787k) · desde 1787k el validador de la suelta acepta `dto` y lo aplica al precio
+    // (`lineasParaFacturar`, el mismo del camino desde presupuesto): el dato sobrevive, se pinta.
+    ajustesCampos.appendChild(dtoTd);
 
     const ajustesBtn = document.createElement("button");
     ajustesBtn.type = "button";
@@ -4849,8 +4897,9 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
       // no: esos dos campos no se pintan allí porque el emisor los descarta (SCRUM-616), y un
       // descuento puesto en un campo que no se ve bajaría el importe de la vista previa sin que
       // el documento emitido lo recoja.
-      const descripcion = esDocumentoSuelto ? undefined : l.description;
-      const dto = esDocumentoSuelto ? undefined : l.dto;
+      // SCRUM-1805 ① (1787k) · en la factura también: los dos sobreviven ya al emisor.
+      const descripcion = l.description;
+      const dto = l.dto;
       addLine({ concept: l.concept, qty: l.qty, price: l.price, tax: l.tax, description: descripcion, dto: dto });
     });
     setAlert('success', `Plantilla "${tpl.name}" cargada — ${templateLines.length} líneas añadidas.`);
@@ -5401,6 +5450,19 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
       texto: function () { return textoDeCobro() + " · válido hasta " + fechaCorta(validInput.value); },
     });
   }
+  // SCRUM-1805 ① · el paso Condiciones de la FACTURA. Sin tramos nada lo frena. Su resumen cerrado es
+  // el FIRMADO (SCRUM-1656, delegación c.21978, registro nº 13): «<formas elegidas> · vence el
+  // <fecha corta>», y sin vencimiento sólo «<formas elegidas>».
+  if (esDocumentoSuelto) {
+    PASOS_DEL_EDITOR.push({
+      bloques: [blockConditions], resumen: pasoCondicionesResumen, cambiar: pasoCondicionesCambiar,
+      seguir: pasoCondicionesSeguir, falta: pasoCondicionesFalta, atras: pasoCondicionesAtras,
+      puede: function () { return true; },
+      texto: function () {
+        return formasElegidasTexto() + (dueInput.value ? " · vence el " + fechaCorta(dueInput.value) : "");
+      },
+    });
+  }
   PASOS_DEL_EDITOR.push({
     bloques: [blockActions], resumen: null, cambiar: pasoRevisarCambiar,
     seguir: null, falta: null, atras: pasoRevisarAtras,
@@ -5428,6 +5490,13 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
       boton: esDocumentoSuelto ? ajustesSueltoBoton : filaAjustesBoton,
     },
   ];
+
+  /** Las formas de pago marcadas, en texto (`💳 Tarjeta · 📲 Bizum`), o «—» si no hay ninguna. */
+  function formasElegidasTexto() {
+    const pagos = pmDefs.filter(function (d) { return pmChecks[d.key].checked; })
+      .map(function (d) { return d.label; });
+    return pagos.length ? pagos.join(" · ") : "—";
+  }
 
   function pintarFilas() {
     FILAS_DE_CONDICIONES.forEach(function (f) {
@@ -5474,11 +5543,13 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
       const ivaPorDefecto = fieldVatDefault.input.value;
       // SCRUM-1636 ① · el valor del selector es «7.5»: se pinta «7,5» (`fmtTipoIvaEs`, SCRUM-1608).
       ajustesSueltoValor.textContent = "IVA por defecto" + (ivaPorDefecto === "" ? "" : " " + fmtTipoIvaEs(Number(ivaPorDefecto) / 100) + " %");
+      // SCRUM-1805 ① · las dos filas nuevas de la factura: las formas, como en el presupuesto, y la
+      // fecha corta del vencimiento (o «—», el mismo vacío que las formas, si se vació).
+      filaPagosValor.textContent = formasElegidasTexto();
+      filaValidezValor.textContent = dueInput.value ? fechaCorta(dueInput.value) : "—";
     } else {
       filaCobroValor.textContent = textoDeCobro();
-      const pagos = pmDefs.filter(function (d) { return pmChecks[d.key].checked; })
-        .map(function (d) { return d.label; });
-      filaPagosValor.textContent = pagos.length ? pagos.join(" · ") : "—";
+      filaPagosValor.textContent = formasElegidasTexto();
       filaValidezValor.textContent = fechaCorta(validInput.value);
       filaAjustesValor.textContent = (fieldIvaModo.select.value === "no_incluido" ? "IVA no incluido" : "IVA sumado")
         + " · "
@@ -5702,8 +5773,17 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
             cantidad: line.qtyInput.value,
             precio: line.priceInput.value,
             iva: line.vatInput.value,
+            // SCRUM-1805 ① (1787k) · tal como se escribieron; el compositor decide si viajan.
+            descripcion: line.descInput ? line.descInput.value : "",
+            dto: line.dtoInput ? line.dtoInput.value : "",
           };
         }),
+        // SCRUM-1805 ① (1787f ⑤.5-6) · lo del paso Condiciones. `undefined` = todas las formas / sin
+        // vencimiento: el compositor no manda la clave y la columna queda NULL.
+        {
+          payMethods: selectedPayMethods(),
+          dueDate: dueInput.value ? new Date(dueInput.value + "T23:59:59").toISOString() : undefined,
+        },
       );
 
       submitBtn.disabled = true;
