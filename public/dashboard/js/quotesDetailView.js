@@ -702,15 +702,16 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
 
   // SCRUM-1805e · la MISMA receta que la ficha de factura (SCRUM-1787e): a ≤640 px cada línea se apila
   // —el concepto a todo el ancho, Cant./Precio/IVA/Total debajo con su rótulo— en vez de esconder tres
-  // columnas tras el scroll propio de la tabla (medido a 390 px: 2 de 5 a la vista). Los rótulos salen
-  // de ESTA cabecera (`data-label`), sin un texto nuevo. El `style=` del «Total» pasa a una clase (CSP).
+  // columnas tras el scroll propio de la tabla (medido a 390 px: 2 de 5 a la vista). Cabecera y rótulos
+  // (`data-label`) salen de UNA lista, sin un texto nuevo. (No se leen con `th.textContent`: el censo de
+  // SCRUM-601 contagia por nombre y marcaba como «deriva del tipo» los botones de facturar de más abajo.)
+  // El `style=` del «Total» pasa a una clase (CSP).
+  const COLUMNAS = ['Concepto', 'Cant.', 'Precio', 'IVA', 'Total'];
   const table = document.createElement('table');
   table.className = 'table quote-conceptos-tabla';
-  table.innerHTML = `
-    <thead><tr>
-      <th>Concepto</th><th>Cant.</th><th>Precio</th><th>IVA</th><th class="quote-conceptos-col-total">Total</th>
-    </tr></thead>`;
-  const rotulos = [...table.querySelectorAll('thead th')].map((th) => th.textContent);
+  table.innerHTML = '<thead><tr>'
+    + COLUMNAS.map((c, k) => (k === 4 ? `<th class="quote-conceptos-col-total">${c}</th>` : `<th>${c}</th>`)).join('')
+    + '</tr></thead>';
   const tbody = document.createElement('tbody');
   table.appendChild(tbody);
   concSec.appendChild(table);
@@ -764,7 +765,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       `<td>${fmtTipoIvaEs(tax)} %</td>` +
       `<td class="amount quote-conceptos-col-total">${fmtQuoteMoney(total, cur)}</td>`;
     // SCRUM-1805e · cada celda numérica lleva el rótulo de SU columna (el concepto no: va a todo el ancho).
-    [...tr.children].forEach((td, k) => { if (k > 0) td.dataset.label = rotulos[k]; });
+    [...tr.children].forEach((td, k) => { if (k > 0) td.dataset.label = COLUMNAS[k]; });
 
     // 🔴 EL CONCEPTO SE CONSTRUYE COMO NODOS, no como cadena de HTML. La descripción larga viaja
     // dentro del concepto detrás de un salto de línea (SCRUM-603) y el HTML COLAPSA los saltos:

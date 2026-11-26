@@ -132,7 +132,7 @@ export const CONGELADA_STYLE = {
   'public/dashboard/js/providersView.js': 10,
   'public/dashboard/js/quoteRequestsView.js': 16,
   'public/dashboard/js/quoteRevisiones.js': 10,
-  'public/dashboard/js/quotesDetailView.js': 38,
+  'public/dashboard/js/quotesDetailView.js': 36,
   'public/dashboard/js/quotesListView.js': 3,
   'public/dashboard/js/quotesView.js': 13,
   'public/dashboard/js/reportsView.js': 161,
@@ -154,6 +154,9 @@ export const HISTORIAL = [
   // 1756i (J2) y 1756j (J1) ya bajaron a 0 sus doce ficheros (−228, −61 y −28), y `quoteRequestsView.js` lleva
   // 2 más (+2), dos cadenas concatenadas que abren con `'style="` y la regex del censo no veía.
   { fecha: '2026-11-19', ticket: 'SCRUM-1773', sha: '6cabd3d42c1e0c7ba531a91ab94471c17c288949', style: 565, on: 6 },
+  // S2 · quotesDetailView.js 38 → 36: el «Total» de la tabla de conceptos (cabecera y celda) pasa a la clase
+  // quote-conceptos-col-total al apilar la tabla en móvil.
+  { fecha: '2026-11-26', ticket: 'SCRUM-1805e', sha: '13e5bb69532b7d56d8d0be4b8386210aa2e5202b', style: 563, on: 6 },
 ];
 
 const CONGELADA = { style: CONGELADA_STYLE, on: CONGELADA_ON };

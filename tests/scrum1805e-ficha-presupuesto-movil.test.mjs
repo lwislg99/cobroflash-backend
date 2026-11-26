@@ -35,7 +35,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     fichero: 'public/dashboard/js/quotesDetailView.js',
-    de: '[...tr.children].forEach((td, k) => { if (k > 0) td.dataset.label = rotulos[k]; });',
+    de: '[...tr.children].forEach((td, k) => { if (k > 0) td.dataset.label = COLUMNAS[k]; });',
     a: '',
     cae: 'SCRUM-1805e · ① la tabla de conceptos lleva su clase y cada celda numérica su rótulo de la cabecera',
   },
