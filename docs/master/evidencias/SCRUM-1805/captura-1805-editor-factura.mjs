@@ -113,6 +113,33 @@ try {
     await espera(300);
     await page.screenshot({ path: path.join(salida, `captura-1805-condiciones-abierto-${ancho}.png`) });
 
+    // AB6 · la fila «Vence el» ABIERTA: el campo de fecha, medido (toque ≥ 44 px, dentro del ancho).
+    const venceAbierto = await page.evaluate(() => {
+      const fila = [...document.querySelectorAll('#view-container .quote-fila')]
+        .find((f) => f.querySelector('.quote-fila__titulo') && f.querySelector('.quote-fila__titulo').textContent.trim() === 'Vence el');
+      const b = fila && [...fila.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Cambiar');
+      if (b) b.click();
+      const i = document.querySelector('#invoice-due-date');
+      const q = i.getBoundingClientRect();
+      const qb = b ? b.getBoundingClientRect() : null;
+      return {
+        campo: [Math.round(q.left), Math.round(q.top), Math.round(q.width), Math.round(q.height)],
+        boton: qb ? [Math.round(qb.left), Math.round(qb.top), Math.round(qb.width), Math.round(qb.height)] : null,
+        cabe: q.right <= window.innerWidth,
+      };
+    });
+    await espera(300);
+    const filaVence = await page.$('#invoice-due-date');
+    await filaVence.evaluate((n) => n.scrollIntoView({ block: 'center' }));
+    await espera(300);
+    await page.screenshot({ path: path.join(salida, `captura-1805-vence-abierto-${ancho}.png`) });
+    // Se vuelve a plegar con su «Listo».
+    await page.evaluate(() => {
+      const b = [...document.querySelectorAll('#view-container .quote-fila button')].find((x) => x.textContent.trim() === 'Listo');
+      if (b) b.click();
+    });
+    await espera(200);
+
     await page.evaluate(() => {
       const chk = [...document.querySelectorAll('#view-container input[type="checkbox"]')]
         .find((x) => (x.parentElement && x.parentElement.textContent.includes('Transferencia')));
@@ -135,7 +162,7 @@ try {
     await cond.evaluate((n) => n.scrollIntoView({ block: 'start' }));
     await espera(300);
     await page.screenshot({ path: path.join(salida, `captura-1805-condiciones-cerrado-${ancho}.png`) });
-    informe.push({ ancho, servidosLocales: [...servidosLocales], escrituras, errores, autocompletadoAbierto, abierto: medidaAbierto, cerrado: medidaCerrado });
+    informe.push({ ancho, servidosLocales: [...servidosLocales], escrituras, errores, autocompletadoAbierto, abierto: medidaAbierto, venceAbierto, cerrado: medidaCerrado });
     await page.close();
   }
 } finally {

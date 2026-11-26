@@ -23,6 +23,46 @@ import { fileURLToPath } from 'node:url';
 
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 
+/** Catálogo de mutaciones (SCRUM-1294): cada una tumba el caso que nombra `cae`. */
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    fichero: 'public/dashboard/js/cuerpoDelDocumentoSuelto.js',
+    de: 'if (descripcion) linea.description = descripcion;',
+    a: '',
+    cae: 'SCRUM-1805 · 🔴 tramo A: descripción y «Dto. %» se pintan en la factura y VIAJAN',
+  },
+  {
+    fichero: 'public/dashboard/js/cuerpoDelDocumentoSuelto.js',
+    de: 'if (dto !== null) linea.dto = dto;',
+    a: '',
+    cae: 'SCRUM-1805 · el compositor: «Dto. %» con el criterio de `descuentoParaPayload`',
+  },
+  {
+    fichero: 'public/dashboard/js/quotesView.js',
+    de: 'if (!esDocumentoSuelto) blockConditions.appendChild(filaCobro);',
+    a: 'blockConditions.appendChild(filaCobro);',
+    cae: 'SCRUM-1805 · 🔴 tramo B: formas de pago y «Vence el» VIAJAN; sin «Condiciones de pago»',
+  },
+  {
+    fichero: 'public/dashboard/js/quotesView.js',
+    de: 'dueDate: dueInput.value ? new Date(dueInput.value + "T23:59:59").toISOString() : undefined,',
+    a: 'dueDate: undefined,',
+    cae: 'SCRUM-1805 · 🔴 tramo B: formas de pago y «Vence el» VIAJAN; sin «Condiciones de pago»',
+  },
+  {
+    fichero: 'public/dashboard/js/quotesView.js',
+    de: 'return formasElegidasTexto() + (dueInput.value ? " · vence el " + fechaCorta(dueInput.value) : "");',
+    a: 'return formasElegidasTexto();',
+    cae: 'SCRUM-1805 · 🔴 el resumen firmado del paso: «<formas> · vence el <fecha corta>», y sin fecha sólo las formas',
+  },
+  {
+    fichero: 'public/dashboard/js/quotesView.js',
+    de: 'blockActionsTitle.dataset.numero = "4";',
+    a: 'blockActionsTitle.dataset.numero = esDocumentoSuelto ? "3" : "4";',
+    cae: 'SCRUM-1805 · la numeración: «Condiciones» es el 3 y «Revisar y emitir» el 4 en la factura',
+  },
+];
+
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PIEZA = 'public/dashboard/js/cuerpoDelDocumentoSuelto.js';
 const CLIENTE = '7';

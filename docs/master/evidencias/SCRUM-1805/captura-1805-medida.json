@@ -1,4 +1,4 @@
-﻿[
+[
  {
   "ancho": 390,
   "servidosLocales": [
@@ -24,6 +24,21 @@
     373
    ],
    "desborda": false
+  },
+  "venceAbierto": {
+   "campo": [
+    33,
+    303,
+    324,
+    47
+   ],
+   "boton": [
+    308,
+    225,
+    49,
+    44
+   ],
+   "cabe": true
   },
   "cerrado": {
    "resumen": "💳 Tarjeta · 📲 Bizum · vence el 26/12/2026",
@@ -57,6 +72,21 @@
     292
    ],
    "desborda": false
+  },
+  "venceAbierto": {
+   "campo": [
+    293,
+    568,
+    544,
+    47
+   ],
+   "boton": [
+    788,
+    490,
+    49,
+    44
+   ],
+   "cabe": true
   },
   "cerrado": {
    "resumen": "💳 Tarjeta · 📲 Bizum · vence el 26/12/2026",

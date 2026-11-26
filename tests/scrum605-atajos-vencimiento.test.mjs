@@ -172,7 +172,10 @@ test('SCRUM-605 · ✅ el campo de siempre no se ha tocado: default +30 d, min +
   // su propio control negativo: un merchant sin zona ve EXACTAMENTE lo de antes.
   const trozos = [
     ['el rótulo aprobado', '    validLabel.textContent = "Válido hasta";'],
-    ['el valor por defecto (+30 d)', 'window.quoteCaducidad.diaPorDefecto(null, 30)'],
+    // SCRUM-1805 ① · el «Vence el» de la FACTURA usa también +30 d con la misma pieza
+    // (`diaVencePorDefecto`), así que la expresión suelta ya sale DOS veces. Se ancla a la línea de la
+    // caducidad del presupuesto, que es la que este control vigila, y sigue exigiéndose UNA.
+    ['el valor por defecto (+30 d)', 'const diaPintadoPorDefecto = window.quoteCaducidad.diaPorDefecto(null, 30);'],
     ['el mínimo (+1 d)', 'window.quoteCaducidad.diaPorDefecto(null, 1)'],
     ['la nota de caducidad que ve el cliente',
       '    validNote.textContent = "Pasada esta fecha el presupuesto caduca solo y el cliente verá \\"pide uno actualizado\\".";'],
