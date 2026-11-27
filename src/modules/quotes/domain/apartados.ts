@@ -58,6 +58,63 @@ export function lineasQueSuman<T extends LineaPresupuesto>(lineas: readonly T[] 
   return (Array.isArray(lineas) ? lineas : []).filter((l) => !esApartado(l));
 }
 
+// ── SCRUM-1807 (tramo c) · LOS CAPÍTULOS: EL RECORRIDO CABECERA → SUBPARTIDAS, EN UN SITIO ──
+//
+// Antes lo hacían por su cuenta el PDF del presupuesto (`generateQuotePdf`, SCRUM-1786f1) y el
+// portal del cliente (`filasConTotalDelApartado`, SCRUM-1786g): el portal lo COPIÓ del PDF porque
+// allí vivía dentro de una función y no se podía importar (deuda declarada en SCRUM-1786 c.22329).
+// Ahora los dos lo leen de aquí.
+//
+// Lo que se comparte es SÓLO el recorrido. La cifra del total la pone cada consumidor, porque
+// cada uno suma lo que pinta encima y no es lo mismo (c.22389: no se igualan): el PDF, la columna
+// IMPORTE sin IVA; el portal, las líneas con IVA.
+//
+// EL CRITERIO, el que ya tenían los dos: una cabecera abre un capítulo y sus líneas son las que la
+// siguen hasta la próxima cabecera. Las líneas de ANTES de la primera cabecera no son de ningún
+// apartado: forman un capítulo con `cabecera: null`, que no lleva total. Una cabecera seguida de
+// otra es un capítulo con `lineas: []`. Sin cabeceras sale un único capítulo sin cabecera con
+// todas las líneas, y sin líneas, ninguno. Las líneas son las MISMAS referencias que entraron.
+
+/** Un capítulo: una cabecera de apartado (o `null`, para lo que va antes de la primera) y sus líneas. */
+export type Capitulo<T> = { cabecera: T | null; lineas: T[] };
+
+/** Las líneas de un presupuesto agrupadas en capítulos, en el orden en que vienen. */
+export function capitulos<T>(lineas: readonly T[] | null | undefined): Capitulo<T>[] {
+  const salida: Capitulo<T>[] = [];
+  let abierto: Capitulo<T> | null = null;
+  for (const l of Array.isArray(lineas) ? lineas : []) {
+    if (esApartado(l)) {
+      abierto = { cabecera: l, lineas: [] };
+      salida.push(abierto);
+    } else if (abierto) {
+      abierto.lineas.push(l);
+    } else {
+      abierto = { cabecera: null, lineas: [l] };
+      salida.push(abierto);
+    }
+  }
+  return salida;
+}
+
+// ── SCRUM-1807 (tramo d) · ¿ESTE APARTADO SE ENSEÑA AGRUPADO? ─────────────────────────────────
+//
+// La elección vive en la CABECERA (`agrupado: true`, SCRUM-1786 P3 ✅) y la deja pasar
+// `QuoteLineSchema`. Sin la clave, desglosado: así se leen todas las cabeceras guardadas antes de
+// que existiera, y no se rellena nada hacia atrás (SCRUM-1786.md §3.5).
+
+/** La clave de la elección dentro de la cabecera. La MISMA que deja pasar `QuoteLineSchema`. */
+const MARCA_AGRUPADO = 'agrupado';
+
+/**
+ * ¿Va agrupado el capítulo que abre esta cabecera? **Sólo el booleano `true`, y sólo en una
+ * cabecera.** En una línea normal la clave no significa nada, y `null` —lo que va antes de la
+ * primera cabecera— no es un apartado. Mismo trato que `esApartado`: no se adivina.
+ */
+export function esAgrupado(cabecera: unknown): boolean {
+  if (!esApartado(cabecera)) return false;
+  return (cabecera as Record<string, unknown>)[MARCA_AGRUPADO] === true;
+}
+
 // ── 🔴 Y LA NUMERACIÓN **NO** ESTÁ AQUÍ, A PROPÓSITO ──────────────────────────────────────
 //
 // Vive en `public/dashboard/js/quoteApartados.js`, y en un solo sitio. Hoy su ÚNICO consumidor es

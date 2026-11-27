@@ -175,12 +175,21 @@ function vocabularioFacturaSuelta(linea) {
 // Eso NO es lo deseable a largo plazo y se dice: lo deseable es que `pdf.service` prefiera la
 // clave y la pegada se retire. Eso es camino de emisión (regla 38) y va en su propio ticket.
 // ─────────────────────────────────────────────────────────────────────────────────────────
-const VOC_PRESUPUESTO = ['apartado', 'concept', 'costeUnitario', 'description', 'dto', 'price', 'qty', 'suplido', 'tax'];
+// SCRUM-1807d · 25-nov-2026 · ENTRA `agrupado`, Y ESTE TRINQUETE SALTÓ EN LA TANDA, COMO DEBE.
+//
+// Es la elección «desglosado / agrupado» de un apartado, en su CABECERA (SCRUM-1786 P3 ✅,
+// c.22269). LA DECISIÓN, que aquí no la toma la sesión: la tomó el fundador en el MISMO comentario,
+// **P4 ✅ — la factura sale SIEMPRE desglosada; agrupar es sólo del presupuesto.** Así que la
+// factura no la hereda, y es deliberado. Y no se pierde nada facturable: la clave sólo vive en una
+// cabecera, y las cabeceras ya no entran en `Invoice.lines` (SCRUM-1786b). La puerta de la factura
+// suelta no se ha tocado (camino de emisión, regla 40).
+// ─────────────────────────────────────────────────────────────────────────────────────────
+const VOC_PRESUPUESTO = ['agrupado', 'apartado', 'concept', 'costeUnitario', 'description', 'dto', 'price', 'qty', 'suplido', 'tax'];
 const VOC_FACTURA = ['concept', 'price', 'qty', 'tax'];
 // `apartado`, `costeUnitario` y ahora `dto` se unen a `suplido` en la lista de lo que el
 // presupuesto guarda y la factura no. Que la lista CREZCA no es neutro: cada entrada es un dato
-// que muere al facturar.
-const DIVERGENCIA = ['apartado', 'costeUnitario', 'description', 'dto', 'suplido'];
+// que muere al facturar. (`agrupado`, SCRUM-1807d: muere a propósito, P4.)
+const DIVERGENCIA = ['agrupado', 'apartado', 'costeUnitario', 'description', 'dto', 'suplido'];
 
 /**
  * Los sitios que reconstruyen una linea con la firma EXACTA de `Invoice.lines`. Fijado POR
