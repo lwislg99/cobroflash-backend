@@ -45,10 +45,12 @@ export const ERROR_SIN_SELLAR = 'invoice_sin_sellar';
 
 /**
  * Copy OFICIAL para el cliente final desde el 30-jul-2026 (regla 30). Que lo firmara el fundador lo
- * dice sólo la sesión que lo aplicó (58d6d136d y su entrada de SCRUM-206 en el máster); no consta (SCRUM-1502v).
+ * dice sólo la sesión que lo aplicó (58d6d136d y su entrada de SCRUM-206 en el máster); no consta (SCRUM-1502v);
+ * firmado por el fundador el 27-nov-2026 (SCRUM-1502 c.22945).
  * No menciona sellado, ni huella, ni VeriFactu, ni el error técnico: el destinatario es el
  * cliente de un fontanero. Y por la regla 26, ni una palabra que explique VeriFactu.
  */
+// APROBADO por el fundador el 27-nov-2026 (SCRUM-1502 comentario 22945)
 export const COPY_PUBLICO_SIN_SELLAR =
   'Esta factura se está registrando en Hacienda. Vuelve a intentarlo en un minuto.';
 

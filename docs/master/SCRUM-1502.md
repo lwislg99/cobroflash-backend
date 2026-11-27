@@ -1708,3 +1708,34 @@ Ninguna es A: la búsqueda en Jira por el literal (JQL con los 3 textos; positiv
 **Censos, antes → después.** 1157, 1215g y 1215i no cambian, porque su población es `public/` y no ven `src/`. Así que los 3 textos quedan **sin firma del fundador localizable** sin que ningún censo lo diga, y la firma se pide aparte (c.22934). `scrum387`: con procedencia 63 → 61 y sin procedencia 12 → 11, y por eso baja `SIN_PROCEDENCIA` a 11. `scrum921`: 18 → 17, y baja a 17. `scrum921c`: rastreable 226 → 224, documental 12 → 11, y sin respaldo sigue en 8. Dirigidos (921c, 387 ×2, 921, 1157, 1215g, 1215i, 563 y los 14 que nombran los dos ficheros): 204 de 204 tras bajar los trinquetes; antes de bajarlos caían sólo esos dos.
 
 **No medido:** la suite entera (la mide el CI, por orden del orquestador: no cabía en contexto); el turno del fundador del verano (no quedan transcripciones de antes del 6-oct, SCRUM-1652); yaqu.app (sólo cambian comentarios).
+
+## SCRUM-1502x · la firma del fundador en los tres textos de 1502v
+**Medido contra:** `origin/main` = `b04c191cef4cc1b08bc29f585931afb652853e6f` · 2026-11-27T12:57:51Z
+Versión: 1.2 (SCRUM-1836)
+A9: aviso → cicatriz J1 «Puse la marca de firma tras el `=` de la constante, donde el censo de firmas de 387/921 no la ve, y su 94/94 verde no lo decía; lo cacé interrogando a `censarProcedencia` con una sonda (SCRUM-1502x, jv-j1le)» — no se pudo comprobar: el lector de comentarios es de J6 (`tests/_procedencia-aprobacion.mjs`); el hallazgo queda abajo y en SCRUM-1502
+
+J1, sesión jv-j1le. Encargo: la firma del fundador de SCRUM-1502 c.22945 (respuesta literal «2-Ok firmoo», 27-nov-2026 12:47:09Z, transcrita por el orquestador J), con la letra corregida en c.22950 (la «w» ya estaba usada en main). Sólo comentarios en ficheros de emisión: lo cubre el GO de SCRUM-1645 c.22934, que c.22945 repite. Ni un carácter de texto que vea el usuario cambia.
+
+**Los tres literales, cotejados byte a byte** con c.22945 (ticket bajado entero con `getJiraIssue`, 48 comentarios; el texto entre «» de cada ítem contra el literal del fuente). Control positivo sembrado: el literal de `COPY_PUBLICO_SIN_SELLAR` con una tilde quitada sale DISTINTO.
+
+| constante | la marca, en | bytes | cotejo |
+|---|---|---|---|
+| `COPY_ADMIN_SIN_LINEAS` | `src/modules/invoicing/domain/lineasFacturables.ts:56` | 104 | idéntico |
+| `COPY_PUBLICO_SIN_LINEAS` | `src/modules/invoicing/domain/lineasFacturables.ts:75` | 136 | idéntico |
+| `COPY_PUBLICO_SIN_SELLAR` | `src/modules/invoicing/domain/portonDocumento.ts:53` | 80 | idéntico |
+
+En cada una, la marca `// APROBADO por el fundador el 27-nov-2026 (SCRUM-1502 comentario 22945)` va en su propia línea, justo encima del `export const`. La procedencia que escribió 1502v se conserva, y se le añade al final «; firmado por el fundador el 27-nov-2026 (SCRUM-1502 c.22945).».
+
+**Hallazgo: por qué encima y no en la línea del `export const`.** La puse primero en la misma línea (`export const X = // APROBADO…`, la opción 1 del encargo) y los censos salieron 94/94 en verde, con los mismos números. Una sonda sobre `bloquesDeComentario` de `tests/_procedencia-aprobacion.mjs` dio **0 bloques con marca** en los dos ficheros: el censo de 387/921 no ve un comentario puesto tras el `=`. El porqué es lectura mía del parser, no medido: ese comentario no es «leading» del literal (está en la línea del token anterior) ni «trailing» del identificador (el `=` está en medio). El mismo agujero existe ya en main: en `public/dashboard/js/customerDetailView.js` la sonda ve 4 bloques con marca (837 a 840) y ninguno de las marcas de las líneas 111 a 116, que van detrás de la `,` de cada propiedad. No lo arreglo: el lector es de J6. Con la marca encima, la sonda ve 2 + 1 bloques y `censarProcedencia` (477 ficheros) da conProcedencia 61 → 64.
+
+**Sólo comentarios, por instrumento.** `tsc -p . --removeComments` sobre HEAD y sobre el árbol, a un `outDir` fuera del árbol: 373 .js en los dos, `diff -rq` sin diferencias, y `cmp` de los dos ficheros, 0. Controles con `transpileModule` sobre HEAD y el árbol: sin `--removeComments` sale DISTINTO, y un literal sembrado (una tilde quitada) sale DISTINTO en los dos ficheros. Build con tipos (`tsc -p .`, sin `--noCheck`): salida 0 y sin mensajes.
+
+**Trinquetes y censos, antes → después (ninguno se toca).** `scrum387` SIN_PROCEDENCIA 11 → 11 · `scrum921` SIN_PROCEDENCIA 17 → 17 · `scrum921c` SIN_RESPALDO 8 → 8 y REFERENCIAS_ROTAS 1 → 1 · `scrum563` REGISTRADOS 52 → 52. Las tres marcas nuevas citan su ticket, así que no entran en ningún «sin procedencia». Quitarle la cita a la marca de `portonDocumento.ts:53` pone `scrum387` en rojo («antes: 11 · ahora: 12»); restaurado y comprobado con `cmp`. Esa mutación se corrió una vez y su guion no está en git: no cuenta como evidencia. 1157, 1215g y 1215i salen verdes, pero su población es `public/`: no ven `src/`.
+
+**🔴 Rojo en local, declarado: `scrum921c` · SCRUM-1511h.** Ahora que la marca se ve, 921c exige el par (SCRUM-1502, comentario 22945) en `tests/_pares-leidos-en-jira.mjs`, y las tres marcas salen «par no leído». El fichero es de J6 y el hook de carril me bloquea el Edit. No lo he rodeado. Por decisión del orquestador (mensaje a jv-j1le del 27-nov, opción A), la fila la pone J6 o el orquestador, con la excepción declarada, en un commit aparte sobre esta rama antes de que entre el PR. Hasta entonces, el obligatorio de esta rama sale rojo por eso. Lo leído para esa fila: c.22945 existe, es de SCRUM-1502 y es la firma de estos tres textos.
+
+**Guards, con población.** Tests que nombran los dos ficheros: 15 ficheros, 128/128. Censos (387 ×2, 921, 921c, 563, 1157, 1215g, 1215i): 8 ficheros, 94 casos, 93 pass, 1 fail (el de arriba). 237, 419, 700, 824 y 976: 5 ficheros, 41/41. 1294, 267, 854, 836 y `guards:entrada`: en la entrega (SCRUM-1502), porque leen este tramo.
+
+**No medido:** la suite entera. No cabe: a 179k de contexto el orquestador mandó empujar, y la mide el CI. Tampoco yaqu.app: sólo cambian comentarios. El turno del fundador lo transcribió el orquestador en c.22945, y no lo he visto. Y main avanzó a `36ac74f2d` (#3497, 13:05:28Z), que sólo toca ficheros de J2 y CSS: no he vuelto a medir sobre él.
+
+**Errores propios.** ① La marca tras el `=`: los censos salían verdes porque no la veían (la cicatriz de la línea A9). ② Mi primer control sembrado de `dist/` quitaba la tilde de «ningún concepto» y cayó en un comentario, no en el literal. El control lo dijo («NO ve»), y lo rehíce sobre «ningún concepto con precio». ③ Crucé los 175k del primer empujón (179.201) sin medirme entre Jira (126.280) y el bloqueo. Repite la cicatriz J1 del 27-nov de jv-j1lc.
