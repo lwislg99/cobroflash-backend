@@ -1,4 +1,4 @@
-# SCRUM-1818 · cambiar el plan de un comercio sin tocar Railway (la parte del servidor)
+# SCRUM-1818 · cambiar el plan de un comercio sin tocar Railway
 
 ## SCRUM-1818 · la ruta solo-fundador `PUT /admin/plataforma/merchants/:id/plan` (24-nov-2026)
 
@@ -95,7 +95,6 @@ Lo he revisado contra el diseño de SCRUM-1656 c.22694 y se queda tal cual: la p
 | `scrum811c` · SCRUM-1340 y `scrum976` ④ | el rojo que ya tiene `main` en `77c000d` (CI run `45548131902`): el merge #3438 sin `**Skill UI:**` en SCRUM-1852.md. Lo cura el orquestador en `scrum-1852b-skill-ui` |
 | `scrum1726` D1, los dos casos | el formato de fecha del ICU del Node de esta máquina (`3 de octubre de 2026, 0:30`, cuando lo esperado es `… a las 0:30`). En el CI de `main` sale verde |
 | `scrum351` control negativo | 29 `node_modules` de OTROS árboles de esta máquina son enlaces rotos (`ENOENT`), los que quedaron al liberar disco el 24-nov. Es la máquina, no el repo; en CI sale verde |
-# SCRUM-1818 · cambiar el plan de un comercio sin tocar Railway
 
 ## Parte S2 · SCRUM-1818b · 25-nov-2026 · S2 · selector de plan en el funnel de plataforma
 
@@ -172,3 +171,10 @@ Windows): 6340 tests · 6308 pass · 27 skip · **5 fail, ninguno de esta rama**
 | microcopy firmada byte a byte | mismo test, casos 2-5 (opciones, aria-label, confirmación, éxito, 400/403/404/otro) |
 | skill yaqu-premium-ui antes de tocar la vista | la línea **Skill UI** de arriba |
 | prueba de punta a punta con el servidor de S1 | NO HECHO → depende del merge de la rama de S1; después, en yaqu.app (regla 42) |
+
+## SCRUM-1818 · el registro entrelazado, juntado a mano (27-nov-2026)
+
+**Medido contra:** `origin/main` = `cbd15f1f0f60781a282b9179b11e6db9ecc14d2e` · 2026-11-27T10:15:49Z
+A9: sin fallo que generalice — el aviso «quien mergee el segundo junta las dos partes» de la Parte S2 estaba escrito y no se cumplió al traer main; lo cazó `tests/scrum1572-registro-creado-por-dos-ramas.test.mjs` en el CI (run `45971147342`, artefacto `tanda-tap` leído fuera del árbol, único `not ok` de la tanda).
+
+Puesto S1, relevo 2. Este fichero lo crean las dos ramas (`scrum-1818-activar-plan-servidor` y `scrum-1818b-selector-plan`, ya en main en `f1c6f6366`), y la unión de git (`merge=union`) los pegó en los merges `ec9053b28` y `c4e244328`: uno detrás de otro, con el segundo título `#` a mitad de fichero y sin línea en blanco entre las dos partes. Aquí van juntadas: primero las dos partes del servidor (24 y 25-nov), luego la Parte S2 tal cual está en main, sin cambiar una palabra de ninguna; sólo el título queda uno (el de main). Contenido: el de `e6f2079cf` (rama) más el de `f1c6f6366` (main), verificado por diff.
