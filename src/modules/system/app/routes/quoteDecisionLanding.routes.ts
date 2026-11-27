@@ -35,6 +35,7 @@ import { // SCRUM-1646d · el estilo de la firma, servido desde 'self'
   cacheDeLaHoja, colorDeLaRuta, cssDeMarca, hrefDeLaHojaDeMarca,
 } from './quoteDecisionEstilo';
 import { tieneVersionMasReciente, fraseDeLaVersionAntigua, ERROR_VERSION_NO_VIGENTE } from '../../../quotes/domain/versionMasReciente'; // SCRUM-1302
+import { capitulos, esAgrupado } from '../../../quotes/domain/apartados'; // SCRUM-1807g
 
 type DecisionApiError = { message?: string; error?: string };
 
@@ -199,6 +200,54 @@ function importeDeLinea(l: any, fmt: (n: number) => string): string {
   return Number.isFinite(neto) ? fmt(neto) : '';
 }
 
+/**
+ * SCRUM-1807 (tramo g) · LAS FILAS DE LA TABLA DEL PRESUPUESTO, POR APARTADOS.
+ *
+ * El recorrido cabecera → subpartidas es `capitulos()` (`apartados.ts`, tramo c): el mismo que usan
+ * el PDF y el portal; aquí no se recorre a mano. Lo de antes de la primera cabecera, y un presupuesto
+ * sin apartados, salen como siempre, fila a fila: sin apartados la tabla es byte a byte la de antes.
+ *
+ * Por apartado, según su cabecera (SCRUM-1786 P3, `esAgrupado`, tramo d):
+ *   · DESGLOSADO (sin la clave, lo de siempre): la cabecera, sus líneas y debajo «Total del apartado»
+ *     (literal firmado en SCRUM-1786 c.22269).
+ *   · AGRUPADO: UNA fila, un <details> cuyo <summary> es el concepto del profesional y el total, y que
+ *     al desplegarse enseña las subpartidas con su cantidad e importe (P5 ✅). Sin texto nuevo: el
+ *     triángulo del navegador es el único indicio de que se despliega.
+ *
+ * 🔴 LA CIFRA, SIN IVA: «cada vista suma como sus líneas» (c.22389), y las de esta página son NETAS
+ * —`importeDeLinea` = qty × price, sin IVA y sin `dto`—. Así que el total es la base de sus líneas,
+ * `calcVatBreakdown(...).base`, la misma primitiva que usa el PDF del presupuesto (SCRUM-1786f1) y que
+ * suma, sin `dto`, la «Base imponible» (o la «Suma de líneas» con descuentos) del pie de esta página.
+ * El portal suma CON IVA porque su columna va con IVA; no se igualan.
+ *
+ * Las tarjetas de opciones (`renderTierCards`) no se tocan.
+ */
+function filasDeLaTabla(lines: any[], money: (n: number) => string): string {
+  const filaDeLinea = (l: any) => `
+          <tr>
+            <td><span class="line-icon">${lineIcon(l.concept)}</span>${esc(l.concept)}</td>
+            <td>${esc(l.qty)}</td>
+            <td>${importeDeLinea(l, money)}</td>
+          </tr>`;
+  const filaDeTotalDelApartado = (total: number) => `
+          <tr class="apartado-total">
+            <td>Total del apartado</td>
+            <td></td>
+            <td>${money(total)}</td>
+          </tr>`;
+  const sublineaAgrupada = (l: any) => `<div class="apartado-sublinea"><span class="apartado-sublinea-concepto">${esc(l.concept)}</span><span class="apartado-sublinea-cant">${esc(l.qty)}</span><span class="apartado-sublinea-importe">${importeDeLinea(l, money)}</span></div>`;
+  const filaDeApartadoAgrupado = (cabecera: any, delApartado: any[], total: number) => `
+          <tr class="apartado-agrupado">
+            <td colspan="3"><details class="apartado-detalle"><summary><span class="apartado-resumen"><span><span class="line-icon">${lineIcon(cabecera.concept)}</span>${esc(cabecera.concept)}</span><span class="apartado-resumen-importe">${money(total)}</span></span></summary>${delApartado.map(sublineaAgrupada).join('')}</details></td>
+          </tr>`;
+  return capitulos(lines).map(({ cabecera, lineas: delApartado }) => {
+    if (!cabecera) return delApartado.map(filaDeLinea).join('');
+    const total = calcVatBreakdown(delApartado).base;
+    if (esAgrupado(cabecera)) return filaDeApartadoAgrupado(cabecera, delApartado, total);
+    return filaDeLinea(cabecera) + delApartado.map(filaDeLinea).join('') + filaDeTotalDelApartado(total);
+  }).join('');
+}
+
 function renderTierCards(tiers: any[], token: string, locale: ReturnType<typeof getLocale>): string {
   return `
     <div id="tier-cards">
@@ -270,12 +319,7 @@ function renderQuoteDetail(
   const linesHtml = lines.length
     ? `<table class="lines-table">
         <thead><tr><th>Concepto</th><th>Cant.</th><th>Importe</th></tr></thead>
-        <tbody>${lines.map((l: any) => `
-          <tr>
-            <td><span class="line-icon">${lineIcon(l.concept)}</span>${esc(l.concept)}</td>
-            <td>${esc(l.qty)}</td>
-            <td>${importeDeLinea(l, money)}</td>
-          </tr>`).join('')}
+        <tbody>${filasDeLaTabla(lines, money) /* SCRUM-1807g: por apartados, con capitulos() */}
         </tbody>
       </table>` : '';
 

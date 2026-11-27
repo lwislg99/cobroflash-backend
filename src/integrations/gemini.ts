@@ -109,7 +109,13 @@ async function callGeminiModel(model: string, params: GeminiParams): Promise<str
     try { detail = JSON.parse(bodyText)?.error?.message || detail; } catch { /* texto plano */ }
     console.error(`[gemini:${model}] HTTP ${response.status}: ${detail}`);
     // 429 (cuota) y 404 (modelo no disponible) son RECUPERABLES con otro modelo.
-    if (response.status === 429) throw new GeminiError('gemini_rate_limited', detail, 429, cuotasDelError(bodyText));
+    if (response.status === 429) {
+      // SCRUM-1856a · QUÉ cuota (diaria o por minuto) va también al LOG: antes sólo viajaba en el
+      // error, y quien lee Railway no podía distinguir «mañana» de «en un minuto».
+      const cuotas = cuotasDelError(bodyText);
+      console.error(`[gemini:${model}] 429 quotaId: ${cuotas.length ? cuotas.join(', ') : 'el cuerpo no trae quotaId (no se sabe si es diaria o por minuto)'}`);
+      throw new GeminiError('gemini_rate_limited', detail, 429, cuotas);
+    }
     if (response.status === 404) throw new GeminiError('gemini_model_unavailable', detail, 404);
     if (response.status === 400 && /API key/i.test(detail)) throw new GeminiError('gemini_bad_key', detail, 400);
     throw new GeminiError('gemini_http_error', detail, response.status);
@@ -123,6 +129,17 @@ async function callGeminiModel(model: string, params: GeminiParams): Promise<str
     throw new GeminiError('gemini_empty', `finishReason: ${reason || 'desconocido'}`);
   }
   return text;
+}
+
+/**
+ * SCRUM-1856a · Los 5xx de Google que se curan con OTRO modelo: 500 INTERNAL, 502, 503 UNAVAILABLE
+ * («This model is currently experiencing high demand», ocho veces en Railway el 25-nov-2026 tirando
+ * el dictado con los otros dos modelos libres) y 504 DEADLINE_EXCEEDED. El código del error NO
+ * cambia (`gemini_http_error`): si fallan todos, la pantalla ve lo mismo que antes.
+ */
+const HTTP_TRANSITORIOS = new Set([500, 502, 503, 504]);
+function esTransitorio(e: GeminiError): boolean {
+  return e.code === 'gemini_http_error' && HTTP_TRANSITORIOS.has(e.httpStatus ?? 0);
 }
 
 /**
@@ -154,9 +171,12 @@ export async function geminiCompleteConModelo(params: GeminiParams): Promise<{ t
     } catch (err) {
       const e = err as GeminiError;
       lastErr = e;
-      // Probamos otro modelo si: cuota agotada, no existe, o respuesta vacía
-      // (p. ej. un modelo que "piensa" agotó el margen de tokens).
-      if (e.code === 'gemini_rate_limited' || e.code === 'gemini_model_unavailable' || e.code === 'gemini_empty') continue;
+      // Probamos otro modelo si: cuota agotada, no existe, respuesta vacía (p. ej. un modelo que
+      // "piensa" agotó el margen de tokens) o un 5xx TRANSITORIO de Google (SCRUM-1856a).
+      if (e.code === 'gemini_rate_limited' || e.code === 'gemini_model_unavailable' || e.code === 'gemini_empty' || esTransitorio(e)) {
+        console.error(`[gemini:${model}] no contestó (${e.code}${e.httpStatus ? ` ${e.httpStatus}` : ''}): se prueba el siguiente modelo de la lista`);
+        continue;
+      }
       throw e; // red, key inválida, etc. → no tiene sentido reintentar
     }
   }

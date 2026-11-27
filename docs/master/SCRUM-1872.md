@@ -22,3 +22,28 @@ Con `correr` + `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`: la base dio 
 **Pendiente, de S1 y no de J:** `reports.routes.ts:274` y `:368` siguen sin pasar la zona (SCRUM-1835, Luis). Hasta entonces, el respaldo «sin zona» de `rangoTrimestre` (`modelo303.ts:214-219`) **no se toca**. Cuando S1 lo pase, se queda sin llamadores y se puede quitar (1445d).
 
 A9: comprobación → `tests/scrum1055b-caja-31mar-zona-y-devolucion.test.mjs`
+
+## SCRUM-1872b · Informes (`/vat` y `/resumen-trimestre`) cortan el trimestre en la zona del comercio — la pieza de S1 (27-nov-2026)
+
+**Medido contra:** `origin/main` = `246e5b8eeb33b70de41d009bb5615cd645fe3141` · 2026-11-27T09:19:04Z
+A9: sin fallo que generalice — rojo primero y cura en el mismo tramo; el único tropiezo, un control que pasaba de vacío en el rojo, se cazó al leer el rojo y se blindó antes de curar
+
+Es la pieza que el orquestador J dejó a S1 en SCRUM-1836 **c.22871**, y la que quedaba «pendiente, de S1» unas líneas más arriba en este registro. `src/modules/reports/app/routes/reports.routes.ts` llamaba a `rangoTrimestre(year, quarter)` SIN zona en `:274` (`/vat`) y `:368` (`/resumen-trimestre`). Ahora las dos leen `zonaDelMerchantParaElLibro(prisma, req.merchantId)`, el mismo cable que los lectores fiscales de 1445f, que falla cerrado si no hay fila del comercio, y le pasan la zona a `rangoTrimestre`.
+
+**Lo que no se veía y entra en el mismo tramo:** las dos rutas devuelven `from`/`to` con `toISOString().slice(0, 10)`, e Informes los pinta («Facturas emitidas del ${data.from} al ${data.to}», `reportsView.js:428`). Con la zona de Madrid, `desde` es `2026-03-31T22:00Z`, así que habría pintado el **31 de marzo**. Pasan a `diaNaturalEn(…, zona)`. El texto no cambia, sólo el día que lleva, que ahora es el correcto.
+
+**Quién ve la diferencia:** un comercio SIN zona declarada sigue en `ZONA_POR_DEFECTO` ('UTC'), lo mismo que hace hoy el proceso en Railway: cero cambio. Lo fija el CONTROL del test. Uno con zona (Madrid, Canarias) pasa a ver el mismo trimestre que el 303 y los libros.
+
+**Test (rojo primero):** `tests/scrum1872b-resumen-iva-en-la-zona.test.mjs` usa el handler real de `dist/` con `prisma` doblado (patrón de scrum1151) y compara los `where` de facturas y gastos con `rangoTrimestre(…, zona)`, en dos rutas × {Madrid, Canarias}, más dos controles: sin zona → UTC, y sin comercio → 500 y ni una factura pedida.
+- Rojo sobre `main`: 5 de 6. El de «sin zona» también cae EN LOCAL, porque la máquina va en hora de Madrid: es justo el defecto, la zona del proceso. Medido en `C:\Users\Admin\.claude\jobs\4cb11208\tmp\rojo1872b.txt`, efímero; el motivo, copiado: «🔴 /vat no leyó la zona de SU comercio · actual [] · expected [4242]».
+- El control de fallo cerrado pasaba de VACÍO en el rojo (el 500 venía de la base real), así que se blindó con el doble entero: ahora cae en el rojo porque la ruta sigue y pide facturas.
+- Verde con la cura: 6/6.
+
+**Vecino tocado:** `tests/scrum1151-conteo-no-deducible.test.mjs`. Su doble de `prisma` no tenía `merchant`, y la ruta ahora lo lee. Se le añade `merchant.findUnique → { timezone: null }` (UTC) y se restaura con los demás. No cambia ninguna aserción.
+
+**Verificación local:** 39 ficheros que nombran `_trinquete-de-zona`, `reports.routes`, `zonaDelLibro` o `toISOString().slice`: 366 pass, 0 fail, 4 skip (con motivo: LIBRO_PG_URL / QA_DB_TEST). Pasan también guards:entrada, los 5 de árbol entero, scrum1415 y scrum553.
+
+**Medido y fuera del alcance:**
+- (1) `scrum389-un-solo-iva` siembra los bordes con `new Date(2026, 3, 1)`, en la zona del PROCESO, y compara con `rangoTrimestre(año, t)` sin zona. En el CI (UTC, sin `TZ` en `ci.yml`) cuadra. En una máquina en Madrid con `LIBRO_PG_URL` ya no cuadraba antes de este tramo, porque `leerModelo303` corta en la zona del comercio desde 1445f. Es preexistente y no se toca aquí.
+- (2) El año y el trimestre POR DEFECTO de las dos rutas (sin `?year`/`?quarter`) salen de `new Date().getMonth()` en la zona del proceso. Las dos pantallas los pasan siempre (`reportsView.js:407/535`, `homeView.js:446`).
+- (3) Retirar el respaldo «sin zona» de `rangoTrimestre` (1445d) ya se puede hacer, porque no queda ningún llamador de `src/` sin zona, pero es de J1 y lo fija `scrum1445d`.

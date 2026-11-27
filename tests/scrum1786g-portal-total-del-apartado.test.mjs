@@ -6,7 +6,8 @@
 // ── LO FIRMADO ───────────────────────────────────────────────────────────────────────────
 // SCRUM-1786 c.22269: literal `Total del apartado` (regla 39) y GO a P1-P5.
 // SCRUM-1786 c.22329: el subtotal es «la suma de sus líneas, igual que el total del documento»;
-// sin apartados no cambia nada. Deuda: cuando S1 haga `capitulos()`, se pasa a usarla.
+// sin apartados no cambia nada. Deuda: cuando S1 haga `capitulos()`, se pasa a usarla. (Hecho en
+// SCRUM-1807c: el recorrido sale de `capitulos()`, en `apartados.ts`.)
 //
 // ── EL CRITERIO, EL MISMO QUE EL PDF (1786f1, `pdf.service.ts`) ─────────────────────────
 // Cabecera = la línea que `lineasQueSuman` deja fuera; sus líneas, las que la siguen hasta la
@@ -27,18 +28,21 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 
 export const MUTACIONES_QUE_ME_TUMBAN = [
+  // SCRUM-1807c · las dos mutaciones siguen siendo las mismas DOS FORMAS de fallar, reapuntadas al
+  // código nuevo: el recorrido pasó de este fichero a `capitulos()` en `apartados.ts`, y el texto
+  // que citaban ya no existe. Las dos se han corrido y caen (SCRUM-1807.md).
   {
-    // La fila desaparece: el último apartado se queda sin total.
+    // La fila desaparece: el último apartado (el de 2 líneas) se queda sin total.
     fichero: 'src/modules/system/app/routes/customerPortal.routes.ts',
-    de: 'if (abierto) filas.push({ totalDelApartado: calcTotal(abierto) });\n  return filas;',
-    a: 'return filas;',
+    de: 'if (cabecera) filas.push({ totalDelApartado: calcTotal(delApartado) });',
+    a: 'if (cabecera && delApartado.length > 2) filas.push({ totalDelApartado: calcTotal(delApartado) });',
     cae: 'SCRUM-1786g · dos apartados → dos filas «Total del apartado», cada una bajo el suyo y con su importe',
   },
   {
     // Suma mal: el total arrastra las líneas de los apartados anteriores.
-    fichero: 'src/modules/system/app/routes/customerPortal.routes.ts',
-    de: 'filas.push({ totalDelApartado: calcTotal(abierto) });\n      abierto = [];',
-    a: 'filas.push({ totalDelApartado: calcTotal(abierto) });\n      abierto = abierto ?? [];',
+    fichero: 'src/modules/quotes/domain/apartados.ts',
+    de: '      abierto = { cabecera: l, lineas: [] };',
+    a: '      abierto = { cabecera: l, lineas: abierto ? [...abierto.lineas] : [] };',
     cae: 'SCRUM-1786g · dos apartados → dos filas «Total del apartado», cada una bajo el suyo y con su importe',
   },
 ];
