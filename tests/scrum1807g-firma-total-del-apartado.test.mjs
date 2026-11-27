@@ -89,7 +89,7 @@ async function pagina(lines, extra = {}) {
 const tabla = (html) => {
   const t = html.split('class="lines-table"')[1];
   assert.ok(t, '🔴 CIEGO: la página no trae la tabla del presupuesto');
-  return t.split('</tbody>')[0].split('<tbody>')[1];
+  return (t.match(/<tbody[^>]*>([\s\S]*?)<\/tbody>/) || [])[1];
 };
 /** Las filas de la tabla principal, en orden, cada una desde su `<tr`. Un <details> no lleva <tr> dentro. */
 const filas = (html) => tabla(html).split(/(?=<tr\b)/).slice(1).map((f) => f.split('</tr>')[0]);
@@ -174,6 +174,6 @@ test('SCRUM-1807g · lo que escribe el profesional sale escapado, también en el
   const html = await pagina([cab('<img src=x onerror=alert(1)>', { agrupado: true }), { ...PLATO, concept: '<script>alert(2)</script>' }]);
   const t = tabla(html);
   assert.ok(!t.includes('<img src=x'), '🔴 el concepto de la cabecera agrupada sale sin escapar');
-  assert.ok(!t.includes('<script>alert(2)'), '🔴 el concepto de una subpartida sale sin escapar');
+  assert.ok(!/<script[^>]*>alert\(2\)/.test(t),'🔴 el concepto de una subpartida sale sin escapar');
   assert.ok(t.includes('&lt;script&gt;'), 'SUELO: la subpartida no aparece');
 });

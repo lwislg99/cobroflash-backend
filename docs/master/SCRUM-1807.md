@@ -240,3 +240,9 @@ A9: comprobación → `scripts/guard-915h-conceptos-limpios.mjs`
 | `tests/scrum697-un-solo-render.test.mjs` · `scrum698` | — | 9/9 · 11/11 |
 
 **El otro rojo de #3456 no es de este tramo:** `tests/scrum553-etiquetas-pegadas.test.mjs` cae (22 extractores con el `>` pegado, tope 20) por dos líneas de `tests/scrum1807g-firma-total-del-apartado.test.mjs` (:92 `<tbody>`, :177 `<script>`), que vienen del PR de S1 #3446 (`scrum-1807-apartados-s1`, apilado debajo). Se cura en su rama; aquí entra con el siguiente merge de esa rama.
+## SCRUM-1807g-cura · el test de 1807g, sin extractores con el `>` pegado (27-nov-2026)
+
+**Medido contra:** `origin/main` = `246e5b8eeb33b70de41d009bb5615cd645fe3141` · 2026-11-27T09:10:30Z
+A9: comprobación → `tests/scrum553-etiquetas-pegadas.test.mjs`
+
+El CI del PR #3446 (run 45961179052, cabeza `8162293fd`) cayó en UN test: `not ok 10085 - SCRUM-553 · 🔴 el número de etiquetas con el `>` pegado NO SUBE`, con 22 extractores contra un tope de 20. Los dos que sobraban eran de esta rama: `tests/scrum1807g-firma-total-del-apartado.test.mjs:92` (`'<tbody>'`) y `:177` (`'<script>alert(2)'`). El diagnóstico fue de S2 y lo he comprobado en el TAP del artifact `tanda-tap`. La cura va en el test y el guard no se toca: `:92` pasa a `/<tbody[^>]*>([\s\S]*?)<\/tbody>/` y `:177` pasa a `!/<script[^>]*>alert\(2\)/.test(t)`, así que si el concepto sale sin escapar la comprobación sigue fallando. En local pasan `scrum1807g` + `scrum553` (21/21), guards:entrada y los 5 de árbol entero. El tropiezo: el tramo g se empujó sin pasar `scrum553`, que no está en guards:entrada y sólo corre en la tanda completa del CI.
