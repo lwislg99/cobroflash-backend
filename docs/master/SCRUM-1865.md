@@ -65,7 +65,7 @@ Las dos anclas casan una vez cada una; aplicadas a mano, restauradas con `git ch
 
 ---
 
-# APÉNDICE · SCRUM-1865 · veredicto de campo de las dos curas (27-nov-2026, relevo de S5)
+# SCRUM-1865b · APÉNDICE · veredicto de campo de las dos curas (27-nov-2026, relevo de S5)
 
 **Medido contra:** `origin/main` = `b627357327a4d595c8116baa38183ca967160fda` · 2026-11-27T08:17:39Z
 
@@ -197,3 +197,6 @@ uso en el tmp del job, no en el árbol. «Pasadas» = los dos «… N pruebas ·
 | run | creado (Z) | rama | job (min) | pasadas +14 / −11 (s) | veredicto |
 |---|---|---|---|---|---|
 | 45646913052 | 15:35 | `main` | 37 | 728 / 1440 | VERDE |
+
+Nota del primer CI (#3488, run 45965214225): scrum1839b cayó porque el commit se titula `SCRUM-1865b` y este apéndice se
+encabezaba `# APÉNDICE · SCRUM-1865`. La cabecera pasa a `# SCRUM-1865b · APÉNDICE · …`; en local, 1839 + 267 + 1294 + 273 + 737 + 710b, 47/47.
