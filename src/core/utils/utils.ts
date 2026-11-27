@@ -148,6 +148,8 @@ export function normalizePhone(input?: string | null): string {
   // tipo dice la verdad sobre la forma real de `Quote.lines`; quien sume, filtra por la marca.
   export type QuoteLine = {
     concept: string; qty?: number; price?: number; tax?: number; apartado?: boolean;
+    /** SCRUM-1807d · sólo en una cabecera: `true` = ese apartado se enseña agrupado (`esAgrupado`). */
+    agrupado?: boolean;
     /**
      * SCRUM-594 (DOC-04) · el descuento de ESTA línea, en PORCENTAJE.
      *

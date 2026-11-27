@@ -11,7 +11,7 @@ import { formatImporteEs, tipoEnPorcentaje, rotuloDeTipo, calcTotal } from '../.
 import { nombreParaDocumento } from '../../../../core/documentos/nombreParaDocumento'; // SCRUM-577
 import { partirConceptoYDescripcion } from './conceptoLinea'; // SCRUM-603 (DOC-13)
 // SCRUM-656 (T7): CÓMO se presenta el IVA de un PRESUPUESTO y sus cláusulas de cierre. El cálculo sigue siendo `calcVatBreakdown`; estos módulos solo deciden qué se pinta.
-import { lineasQueSuman as lineasQueSumanDelDominio } from '../../../quotes/domain/apartados'; // SCRUM-1786f1 · qué línea es cabecera de apartado
+import { capitulos as capitulosDelDominio } from '../../../quotes/domain/apartados'; // SCRUM-1807c · el recorrido cabecera → subpartidas (antes, SCRUM-1786f1 lo hacía aquí)
 import { pieDePresupuesto, leerModoIva } from '../../../quotes/domain/presentacionIva';
 import { clausulasParaDocumento } from '../../../quotes/domain/clausulas';
 // SCRUM-688 · el número con su revisión lo forma el DOMINIO, no este documento.
@@ -1212,10 +1212,9 @@ drawTableHeader();
 // copia aquí); sus líneas son las que la siguen hasta la próxima cabecera. La cifra es la suma de la
 // columna IMPORTE de esas líneas (sin IVA y sin el `dto` de línea, SCRUM-1446e), y sale de
 // `calcVatBreakdown(...).base`: la MISMA primitiva y el mismo redondeo que la base del pie. Sin
-// cabeceras no entra nunca aquí, y el papel sale como salía. Deuda: cuando exista `capitulos()`
-// (tramo c, S1) este recorrido pasa a usarla.
-const lineasQueSumanDelPapel = new Set<unknown>(lineasQueSumanDelDominio(params.lines as any));
-let apartadoAbierto: typeof params.lines | null = null;
+// cabeceras no entra nunca aquí, y el papel sale como salía. SCRUM-1807c: el recorrido (qué líneas
+// son de qué apartado) ya no vive aquí, sale de `capitulos()` en `apartados.ts`, compartido con el
+// portal; el orden de pintado es el mismo y el PDF sale idéntico byte a byte (medido, SCRUM-1807.md).
 function pintarTotalDelApartado(lineasDelApartado: typeof params.lines) {
   const importe = calcVatBreakdown(lineasDelApartado as any).base;
   const rowH = 18;
@@ -1233,14 +1232,7 @@ function pintarTotalDelApartado(lineasDelApartado: typeof params.lines) {
   doc.y = y + rowH;
 }
 
-params.lines.forEach((l) => {
-  if (!lineasQueSumanDelPapel.has(l)) {
-    if (apartadoAbierto) pintarTotalDelApartado(apartadoAbierto); // cierra el apartado anterior
-    apartadoAbierto = [];
-  } else if (apartadoAbierto) {
-    apartadoAbierto.push(l);
-  }
-
+function pintarFila(l: (typeof params.lines)[number]) {
   // SCRUM-1446e · la columna de cada línea va SIN IVA, como en la factura (decisión del fundador:
   // SCRUM-1446 comentario 20917, P4). Antes sólo en `no_incluido`; ahora en los dos modos, y así
   // las líneas suman lo que el pie llama base. El Total sigue siendo el guardado.
@@ -1302,8 +1294,15 @@ params.lines.forEach((l) => {
 
   // avanzar el cursor al final de la fila
   doc.y = y + rowH;
-});
-  if (apartadoAbierto) pintarTotalDelApartado(apartadoAbierto);
+}
+
+// Cada capítulo: su cabecera (una fila más, con las celdas vacías), sus líneas y, si es un
+// apartado, su «Total del apartado» debajo. Lo de antes de la primera cabecera no lleva total.
+for (const { cabecera, lineas: delApartado } of capitulosDelDominio(params.lines)) {
+  if (cabecera) pintarFila(cabecera);
+  delApartado.forEach(pintarFila);
+  if (cabecera) pintarTotalDelApartado(delApartado);
+}
 
 
 doc.moveDown();
