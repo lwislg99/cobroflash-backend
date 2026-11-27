@@ -78,11 +78,11 @@ export const SALIDA_CIEGO = 2;
 const REPO = 'lwislg99/cobroflash-backend';
 
 /** Ejecuciones seguidas en failure, en un job de push, a partir de las cuales se avisa. */
-export const UMBRAL_ROJOS_SEGUIDOS = 5;
+export const UMBRAL_ROJOS_SEGUIDOS = 2;
 /** Runs seguidos sin ejecutarse, en un job de push, a partir de los cuales se avisa. */
-export const UMBRAL_RUNS_SIN_EJECUTAR = 22;
+export const UMBRAL_RUNS_SIN_EJECUTAR = 12;
 /** Horas que un job de cron puede pasar sin run (silencio) o sin verde (rojo) antes de avisar. */
-export const UMBRAL_HORAS_DE_CRON = 10;
+export const UMBRAL_HORAS_DE_CRON = 28;
 /**
  * Rojos seguidos que necesita un cron para avisar por ROJO. No es un umbral afinado: es el control
  * positivo del ticket («uno que falla una vez y se recupera no avisa») aplicado a un job lento.
@@ -93,19 +93,25 @@ export const AVISOS_FALSOS_AL_MES = 1;
 
 /**
  * Los jobs que hablan del estado de `main`, por IDENTIDAD (workflow + nombre del job), con su
- * unidad. Es el censo del 1-oct-2026: 9 jobs en 4 workflows. El test comprueba que este conjunto
+ * unidad. Es el censo del fixture (SCRUM-1534b: el del 27-nov-2026, 13 jobs en 5 workflows; el del
+ * 1-oct-2026 eran 9 en 4). El test comprueba que este conjunto
  * es EXACTAMENTE el que aparece en el historial real — ni uno de más ni uno de menos.
  */
+/** SCRUM-1534b · las partes en que corre el meta-guard; el job que las agrega es el que decide. */
+export const PARTES_DEL_META_GUARD = ['meta-guard · parte 1 de 3', 'meta-guard · parte 2 de 3', 'meta-guard · parte 3 de 3'];
 export const JOBS_DE_MAIN = [
   { workflow: 'CI', job: 'build + tests (con banco desechable)', unidad: 'runs' },
   { workflow: 'CI', job: 'guards de navegador (fuera de la tanda)', unidad: 'runs' },
   { workflow: 'CI', job: 'meta-guard · los guards caen cuando deben', unidad: 'runs' },
+  ...PARTES_DEL_META_GUARD.map((job) => ({ workflow: 'CI', job, unidad: 'runs' })),
   { workflow: 'CI', job: 'trinquete · ningún test nuevo mide la zona de la máquina', unidad: 'runs' },
   { workflow: 'CI', job: 'vigía del despliegue (informativo)', unidad: 'runs' },
   { workflow: 'CI', job: 'constancia del ALTER (informativo)', unidad: 'runs' },
   { workflow: 'Conflicto de registro', job: 'resolver', unidad: 'runs' },
   { workflow: 'Vigía de PR atascados', job: 'vigilar', unidad: 'horas' },
   { workflow: 'Vigía del despliegue', job: 'vigia', unidad: 'horas' },
+  // SCRUM-1534b (c.22944 c): el cron diario del modo por commit. El vigía vigila que el vigía corra.
+  { workflow: 'Vigía de main', job: 'vigilar', unidad: 'horas' },
 ];
 
 const EJECUTO = new Set(['success', 'failure']);
@@ -183,6 +189,7 @@ export function huecosSinEjecutar(serie) {
  * Con el historial del 1-oct-2026 el peor es el meta-guard: 41 rojos de 159 fuera de su racha
  * larga (25,8 %, la pérdida de eventos de SCRUM-908) → N=4 daría 1,8 avisos falsos al mes y N=5,
  * 0,46. Sale 5. El día que SCRUM-908 se arregle, este número BAJA solo al regenerar el historial.
+ * SCRUM-1534b: regenerado el 2026-11-27 sobre origin/main eafe4fda2, bajó: el detalle, en docs/master/SCRUM-1534.md.
  */
 export function umbralDeRojos(runs, jobs = JOBS_DE_MAIN, tolerancia = AVISOS_FALSOS_AL_MES) {
   const deRuns = jobs.filter((j) => j.unidad === 'runs');
@@ -537,7 +544,9 @@ export function canceladoSinArrancar(j) {
 }
 
 /** Los jobs del workflow CI que se exigen en cada commit de `main`: los de `JOBS_DE_MAIN`. */
-export const JOBS_DEL_CI = JOBS_DE_MAIN.filter((j) => j.workflow === 'CI').map((j) => j.job);
+// SCRUM-1534b: las partes del meta-guard se quedan FUERA de esta lista para que el modo por commit
+// (SCRUM-1393) siga exigiendo exactamente los seis jobs de antes; el job que agrega ya está en ella.
+export const JOBS_DEL_CI = JOBS_DE_MAIN.filter((j) => j.workflow === 'CI' && !PARTES_DEL_META_GUARD.includes(j.job)).map((j) => j.job);
 
 /** Lo más que puede durar un run del CI, en minutos: la suma de sus `timeout-minutes`. `null` si no hay ninguno. */
 export function topeDeCorridaDelCI(textoCiYml) {
@@ -945,7 +954,13 @@ async function leerDeGitHub(jobs) {
     if (!wf) continue; // el workflow ya no existe: sus jobs saldrán en SILENCIO, que es la verdad
     const deCron = jobs.some((j) => j.workflow === nombre && j.unidad === 'horas');
     const pagina = await gh(`repos/${REPO}/actions/workflows/${wf.id}/runs?branch=main&per_page=${deCron ? 30 : 100}`);
-    const propios = pagina.workflow_runs.filter((r) => ['push', 'schedule', 'workflow_dispatch'].includes(r.event));
+    // SCRUM-1534b: «Vigía de main» corre sobre todo por `workflow_run` (uno por cada CI), y sus runs
+    // de cron no caben en la página de arriba: se piden aparte, o el cron saldría en SILENCIO sin estarlo.
+    const deSchedule = deCron
+      ? (await gh(`repos/${REPO}/actions/workflows/${wf.id}/runs?branch=main&event=schedule&per_page=30`)).workflow_runs
+      : [];
+    const porId = new Map([...pagina.workflow_runs, ...deSchedule].map((r) => [r.id, r]));
+    const propios = [...porId.values()].filter((r) => ['push', 'schedule', 'workflow_dispatch'].includes(r.event));
     const cola = [...propios];
     await Promise.all(Array.from({ length: 8 }, async () => {
       for (let r = cola.shift(); r; r = cola.shift()) {
