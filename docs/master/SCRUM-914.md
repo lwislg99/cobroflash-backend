@@ -211,3 +211,5 @@ Es la pieza S1-① que el orquestador J dejó en SCRUM-1836 **c.22799**: «`siti
 **Verde (local):** los 17 ficheros que nombran `borrarSitio`, `customerSite`, `/sites` o `sitiosDelCliente` dan 182 pass, 0 fail y 14 skip (gateados, con su motivo). También pasan guards:entrada, los 5 de árbol entero, scrum419, scrum1415 y scrum553.
 
 **Fuera del alcance:** los criterios 2 y 5 de 914 (comprobar el sitio o el equipo al ligar) y el selector de equipo en trabajo, albarán y parte (② de c.22799) no son este tramo.
+
+**Rojo del CI** (PR #3491, commit `02fda4c1a`, run `45973666524`, artefacto `tanda-tap` leído FUERA del árbol): caen los 4 casos de `scrum914e` que corren allí (2 de Postgres con el banco desechable + 2 sin banco; el CONTROL del comercio ajeno pasa, como debe), y con ellos `scrum1839b` ②④⑥ (la letra `914e` sin tramo) y `scrum854` ② (rama que toca código sin entrada de registro): las dos las trae este commit de cura. «meta-guard · parte 2 de 3» y «los guards caen cuando deben», en rojo por arrastre del mismo push.
