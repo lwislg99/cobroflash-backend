@@ -83,6 +83,10 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // SCRUM-1833b (GO c.22828 ①): borrar un equipo es atómico en Postgres de verdad; el doble de la
   // suite no tiene transacción ni FK, así que el caso pide la base desechable de LIBRO_PG_URL.
   'scrum1833b-equipos-postgres.test.mjs': 1,
+  // SCRUM-914e (SCRUM-1836 c.22799 S1-①): borrar un sitio suelta sus equipos, en la MISMA transacción
+  // que el borrado; el disparador que lo mide sólo existe en un Postgres de verdad. Los 2 casos sin
+  // banco del mismo fichero (prisma doblado) corren siempre.
+  'scrum914e-borrar-sitio-suelta-equipos.test.mjs': 3,
   'scrum295-modelo-303-postgres.test.mjs': 1,
   'scrum296-libro-postgres.test.mjs': 1,
   // SCRUM-980: el historial de la ficha. Necesita banco porque vigila la TENENCIA de cinco consultas
