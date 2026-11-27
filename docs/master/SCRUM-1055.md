@@ -324,3 +324,11 @@ entera, `censo:mudez`, staging y yaqu.app. Los guards de la lista los corre el o
 
 **Errores míos:** crucé el umbral de 175k del primer push sin medirme entre Jira (137.186) y la lectura del 303
 (184.892), y después los 200k (205.394, avisó el hook).
+
+# SCRUM-1055g · la decisión del fundador sobre las facturas cobradas antes de la tabla de cobros (solo docs)
+**Medido contra:** `origin/main` = `81b244c1ff492a0bfecb508474ddd7e41a2ee63d` · 2026-11-27T10:51:14Z (hora de GitHub; lo escribe el orquestador del equipo J, sesión `cobroflash-backend-2d`, sin sesión de puesto: es una línea de registro, no una construcción)
+Versión: 1.2 (SCRUM-1836)
+
+**Decisión (SCRUM-1055 c.22917; literal del fundador «3-A», 27-nov-2026 10:31:05Z):** las facturas `paid` sin fila en `invoice_payments` (`cobrosSinFilas`, las de antes de SCRUM-1732) **siguen sin señal y se cuentan aparte**. Opción B, descartada: tratarlas como «sin fecha declarada» habría puesto la etiqueta a todas las antiguas marcadas a mano. Consecuencia: ningún cambio de código. Es lo que 1055c construyó (`cobrosSinFilas` aparte, sin `cobroSinFechaDeclarada`; tramo `# SCRUM-1055c` de este registro), lo que 1055e pinta y lo que 1055f lleva al borrador del 303 y al paquete de evidencias. Cifra en staging al decidir (c.22907, solo SELECT con `DATABASE_URL_STAGING`): 5 facturas `paid`, las 5 sin filas, `invoice_payments` vacía. Producción: NO medida.
+
+A9: sin fallo que generalice — tramo de una decisión ya tomada, sin código ni medición nueva; la decisión vive en Jira (c.22917) y aquí solo se enlaza para que quien lea el registro no la busque.
