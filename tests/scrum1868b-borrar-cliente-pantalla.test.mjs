@@ -29,7 +29,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'BLOQUEADO: no hay «Eliminar» visible, y pulsarlo igualmente no manda el DELETE' },
   { fichero: 'public/dashboard/js/customerDetailView.js', de: "if (err && err.status === 409 && B.estado(err.data).tipo === 'bloqueado') { pintar(err.data); return; }", a: '',
     cae: '409 tras pulsar «Eliminar»: el modal pasa al bloqueo con el cuerpo del 409' },
-  { fichero: 'public/dashboard/js/customerDetailView.js', de: ", solicitudes: 'Solicitudes de presupuesto' }", a: ' }',
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: "solicitudes: 'Solicitudes de presupuesto', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 comentario 22867)", a: '',
     cae: 'al abrir, la previa (GET) pinta lo que se borra con sus cuentas, y «Eliminar» se habilita' },
 ];
 
