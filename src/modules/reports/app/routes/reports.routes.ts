@@ -6,6 +6,8 @@ import { filasDelInforme } from '../../domain/cobrosPorCubo'; // SCRUM-488 / SCR
 import { leerLibroRegistro } from '../../../invoicing/domain/libroRegistro.repo'; // SCRUM-389: un solo agregador
 import { leerLibroRecibidas } from '../../../invoicing/domain/libroRecibidas.repo'; // SCRUM-1151: solo lectura (regla 38)
 import { rangoTrimestre } from '../../../fiscal/modelo303/modelo303'; // SCRUM-389: un solo criterio de fechas
+import { zonaDelMerchantParaElLibro } from '../../../invoicing/domain/zonaDelLibro'; // SCRUM-1872b (SCRUM-1836 c.22871)
+import { diaNaturalEn } from '../../../../core/zonaDelMerchant'; // SCRUM-1872b: el día que se pinta, en la misma zona
 import { avisosLibroRecibidas } from '../../../fiscal/librosAeat/librosAeat'; // SCRUM-1151: solo lectura (regla 38)
 import { calcularBeneficioSobreLaBase } from '../../domain/beneficioBaseImponible'; // SCRUM-1047 (CON-06)
 import { construirResumenTrimestre } from '../../domain/resumenTrimestre'; // SCRUM-1048 (CON-07a)
@@ -271,7 +273,10 @@ router.get('/vat', async (req, res) => {
     // SCRUM-389 · el periodo lo fija `rangoTrimestre`, el MISMO que usa el 303. Antes se
     // construía aquí con las mismas dos líneas, y dos copias del mismo criterio de fechas es
     // exactamente cómo empiezan a discrepar dos cifras que deberían ser una.
-    const { desde: from, hasta: to } = rangoTrimestre(year, quarter);
+    // SCRUM-1872b (SCRUM-1836 c.22871) · con la zona del comercio, como el 303 y los libros desde
+    // 1445f: sin ella el borde era el de la zona del PROCESO. Falla cerrado si no se lee el comercio.
+    const zona = await zonaDelMerchantParaElLibro(prisma, req.merchantId);
+    const { desde: from, hasta: to } = rangoTrimestre(year, quarter, zona);
 
     // Y los euros salen del LIBRO (SCRUM-296), no de una lectura propia: es la única forma de
     // que Informes, el Libro y el 303 no puedan decir tres cifras distintas del mismo trimestre.
@@ -315,8 +320,8 @@ router.get('/vat', async (req, res) => {
     return res.json({
       year,
       quarter,
-      from: from.toISOString().slice(0, 10),
-      to: to.toISOString().slice(0, 10),
+      from: diaNaturalEn(from, zona), // SCRUM-1872b: el día en la zona del comercio
+      to: diaNaturalEn(to, zona),
       currency,
       rates,
       totals: {
@@ -365,7 +370,9 @@ router.get('/resumen-trimestre', async (req, res) => {
     const qRaw = Number(req.query.quarter) || Math.floor(now.getMonth() / 3) + 1;
     const quarter = Math.min(4, Math.max(1, qRaw));
 
-    const { desde: from, hasta: to } = rangoTrimestre(year, quarter);
+    // SCRUM-1872b · la misma zona que `/vat`: el mismo trimestre, los mismos bordes.
+    const zona = await zonaDelMerchantParaElLibro(prisma, req.merchantId);
+    const { desde: from, hasta: to } = rangoTrimestre(year, quarter, zona);
 
     // Mismo libro que `/vat`: si este resumen leyera las facturas por su cuenta, el repercutido
     // de las dos rutas podría acabar diciendo cifras distintas del mismo trimestre.
@@ -405,8 +412,8 @@ router.get('/resumen-trimestre', async (req, res) => {
 
     return res.json({
       ...resumen,
-      from: from.toISOString().slice(0, 10),
-      to: to.toISOString().slice(0, 10),
+      from: diaNaturalEn(from, zona), // SCRUM-1872b: el día en la zona del comercio
+      to: diaNaturalEn(to, zona),
       facturasSinDesglose: {
         count: facturasSinDesgloseCount,
         importe: Math.round(facturasSinDesgloseImporte * 100) / 100,
