@@ -1,6 +1,6 @@
 # SCRUM-1870 · El panel de versiones se GENERA: números calculados y «medido a las» por fila
 
-**Medido contra:** `origin/main` = `f336e00c20b23a7fa11ae491c8cf8bfaa931fd6d` · 2026-11-26T16:49:53Z
+**Medido contra:** `origin/main` = `b627357327a4d595c8116baa38183ca967160fda` · 2026-11-27T08:21:15Z
 
 A9: sin fallo que generalice — cada regla del validador se vio caer con su mutación (5 de 5 VIVAS, base sin mutar limpia) antes de darla por buena.
 
@@ -73,7 +73,7 @@ horizontal (`scrollWidth` = `clientWidth` = 375). Visto ahí y corregido antes d
 - Los textos fijos del panel (leyenda, pie) salen de la v11 del orquestador; si alguno pide firma (regla 39), es suya.
 - No publica nada: el HTML se publica a mano (Artifact) con el fichero que escribe.
 
-## Tramo b · 26-nov noche (relevo de S5) · ajuste `orq`/`orqJ` y rojo de SCRUM-553
+## SCRUM-1870b · 26-nov noche (relevo de S5) · ajuste `orq`/`orqJ` y rojo de SCRUM-553
 
 - **Ajuste pedido por el orquestador:** `quien.puesto` admite, además de S0-5 y J1-6, el orquestador de cada equipo:
   `orq` (equipo S) y `orqJ` (equipo J). En la 1.0 hay piezas del orquestador y mapearlas a un puesto falsearía el dato.
@@ -82,3 +82,7 @@ horizontal (`scrollWidth` = `clientWidth` = 375). Visto ahí y corregido antes d
 - **Rojo del CI de la punta `86871d2c4`** (run 45863159589, 1 fallo de 14626): `scrum553` — 8 extractores del test de 1870
   con el `>` pegado subían el trinquete de 20 a 28. Curado en el test (hueco `[^>]*` a los atributos, lo vigilado sigue siendo
   el texto); el censo da 0 en el fichero. El trinquete no se toca (regla 41).
+- **Rojo del CI de la punta `868b9667b`** (run 45961135163, 27-nov, relevo): 3 fallos de 14652, los tres de `scrum1839b` («letra
+  de tramo sin su tramo»: el commit `686532593` se titula `SCRUM-1870b` y este registro lo encabezaba «Tramo b»), y su arrastre
+  en el meta-guard parte 2 (`scrum1839` CIEGO: su base salía roja). Curado en el registro: la cabecera de este tramo pasa a
+  `## SCRUM-1870b · …`, que es lo que pide el guard. Visto en local: `scrum1839` + `scrum267` + `scrum1294`, 24/24.
