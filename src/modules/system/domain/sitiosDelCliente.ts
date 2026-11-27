@@ -67,6 +67,16 @@ export async function actualizarSitio(
 
 /** `false` si el sitio no existe, no es de este cliente o no es de este merchant. */
 export async function borrarSitio(merchantId: number, customerId: number, siteId: number): Promise<boolean> {
-  const r = await prisma.customerSite.deleteMany({ where: { id: siteId, customerId, merchantId } });
-  return r.count > 0;
+  // SCRUM-914e (SCRUM-1836 c.22799 S1-①; criterio 1 de SCRUM-914): los equipos del sitio SE QUEDAN en
+  // el cliente, sin sitio. `equipments.customer_site_id` va sin clave ajena (SCRUM-192), así que lo
+  // suelta el código, y en la MISMA transacción que el borrado: si el borrado falla, ninguno se suelta.
+  return prisma.$transaction(async (tx) => {
+    const r = await tx.customerSite.deleteMany({ where: { id: siteId, customerId, merchantId } });
+    if (r.count === 0) return false;
+    await tx.equipment.updateMany({
+      where: { merchantId, customerId, customerSiteId: siteId },
+      data: { customerSiteId: null },
+    });
+    return true;
+  });
 }

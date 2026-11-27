@@ -187,3 +187,27 @@ delante; `git merge-tree` contra main: sin conflictos. No he traído main (lo de
 **Medido también sobre el MERGE con main** (lo que corre el CI de `pull_request`): árbol desechable con
 `git merge-tree` de esta punta y `8e0d40816`, `npm ci` propio, cliente ✔, `tsc` limpio. Los mismos 78
 ficheros vecinos: 657 tests, 640 pasan, 0 caen, 17 saltan. Para estos dos rojos **no hace falta traer main**.
+## SCRUM-914e · S1 · criterio 1: borrar un sitio suelta sus equipos, en la misma transacción (27-nov-2026)
+
+**Medido contra:** `origin/main` = `246e5b8eeb33b70de41d009bb5615cd645fe3141` · 2026-11-27T09:25:39Z
+A9: sin fallo que generalice — rojo primero en el CI con el banco desechable y cura en un commit aparte; el único tropiezo, una constante `SALTO` como motivo del `skip`, lo cazó `tests/scrum419-ci-declara-lo-que-no-corre.test.mjs` antes del push
+
+Es la pieza S1-① que el orquestador J dejó en SCRUM-1836 **c.22799**: «`sitiosDelCliente.ts:69-72`: `borrarSitio` no pone a NULL los equipos del sitio (criterio 1 de SCRUM-914 sin cumplir)». El criterio, literal (arriba, «Criterios de ACEPTACIÓN del ③»): «Al borrar un **sitio**, sus equipos quedan con `customer_site_id` a NULL, en la misma transacción (test)». Desde #3466 (SCRUM-1833b), la pestaña «Equipos» escribe `customerSiteId`, así que la víctima ya existe.
+
+**Cura** (`src/modules/system/domain/sitiosDelCliente.ts`, `borrarSitio`): `prisma.$transaction(async (tx) => …)` con el `deleteMany` de siempre (mismo `where`: id + cliente + comercio). Si borró algo, hace `tx.equipment.updateMany({ where: { merchantId, customerId, customerSiteId: siteId }, data: { customerSiteId: null } })`. Los equipos se quedan en el cliente, sin sitio; no se borran. Sólo se tocan los de ESE cliente de ESE comercio (`customer_site_id` no tiene FK, así que nada impide que otro cliente lleve el mismo número).
+
+**Test** (`tests/scrum914e-borrar-sitio-suelta-equipos.test.mjs`):
+- Tres casos contra Postgres de verdad, gateados SOLO por `LIBRO_PG_URL`, el banco desechable del check obligatorio (patrón de scrum1833b):
+  - suelta los dos del sitio y deja intactos el del otro sitio, el que no tiene sitio y el de otro cliente con el mismo número;
+  - CONTROL: un comercio ajeno no borra ni suelta nada;
+  - ATÓMICO: un disparador `BEFORE DELETE` en `customer_sites` rechaza el borrado y ningún equipo pierde su sitio. Su control: sin el disparador, el mismo borrado sale y suelta.
+- Dos casos sin banco, con `prisma` doblado, para que la tanda local no salga verde por no mirar: el `updateMany` exacto, dentro de la transacción, y nada fuera de ella. CONTROL: 0 borrados → 0 soltados.
+- Declarado en `scrum419` (`GATEADOS_DECLARADOS`: 3).
+
+**Rojo:**
+- Local, sin banco: 2/2 de los casos doblados caen («🔴 se tocó la base FUERA de la transacción» y «CIEGO: no se pidió borrar el sitio») y los 3 de Postgres saltan con su motivo.
+- CI (commit `02fda4c1a`, sólo el test): ver la línea «Rojo del CI» al pie.
+
+**Verde (local):** los 17 ficheros que nombran `borrarSitio`, `customerSite`, `/sites` o `sitiosDelCliente` dan 182 pass, 0 fail y 14 skip (gateados, con su motivo). También pasan guards:entrada, los 5 de árbol entero, scrum419, scrum1415 y scrum553.
+
+**Fuera del alcance:** los criterios 2 y 5 de 914 (comprobar el sitio o el equipo al ligar) y el selector de equipo en trabajo, albarán y parte (② de c.22799) no son este tramo.
