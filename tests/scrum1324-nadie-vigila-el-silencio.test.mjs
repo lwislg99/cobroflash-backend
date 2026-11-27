@@ -204,7 +204,7 @@ test('SCRUM-1324 · ② los tres umbrales no se eligen: se recalculan del histor
   const porN = Object.fromEntries(rojos.detalle.map((d) => [d.N, d]));
   console.log(`scrum1324 · umbral de rojos: ${rojos.detalle.map((d) => `N=${d.N} → ${d.esperadas.toFixed(2)}/mes`).join(' · ')}`);
   assert.equal(rojos.umbral, UMBRAL_ROJOS_SEGUIDOS);
-  // El peor job es el obligatorio: 3 rojos de 147 fuera de sus dos rachas de 2 (2,0 %). La derivación
+  // El peor job es el obligatorio, con sus rojos sueltos (los cuenta la aserción de abajo). La derivación
   // empieza en N=2 (con 1 se avisaría de cada rojo) y se queda ahí: el primer N ya cabe en la tolerancia.
   assert.deepEqual(rojos.detalle.map((d) => d.N), [2]);
   assert.equal(porN[2].job, `CI / ${OBLIGATORIO}`);
