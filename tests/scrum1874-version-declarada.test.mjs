@@ -11,7 +11,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -21,6 +20,7 @@ import {
 } from '../scripts/equipo/version-declarada.mjs';
 import { leerLista, cotejar, lineaSinVersion, edadLegible } from '../scripts/equipo/sin-version.mjs';
 import { baseDeLaRama } from './_base-de-la-rama.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CLI = path.join(RAIZ, 'scripts', 'equipo', 'version-declarada.mjs');
@@ -74,7 +74,7 @@ function escribir(dir, rel, texto) {
 }
 /** Repo con `main` (version-en-curso + un registro VIEJO sin línea) y una rama encima. */
 function repo({ conMain = true } = {}) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1874-'));
+  const dir = temporal('scrum1874-'); // os.tmpdir(), y se borra al salir aunque un assert caiga (SCRUM-864c)
   g(dir, 'init', '-q', '-b', conMain ? 'main' : 'otra');
   g(dir, 'config', 'user.email', 'banco@example.invalid');
   g(dir, 'config', 'user.name', 'banco');
@@ -86,8 +86,10 @@ function repo({ conMain = true } = {}) {
   if (conMain) g(dir, 'checkout', '-q', '-b', 'scrum-9-rama');
   return dir;
 }
-const tirar = (dir) => fs.rmSync(dir, { recursive: true, force: true });
-const correr = (dir, env = {}) => spawnSync(process.execPath, [CLI, '--raiz', dir], { encoding: 'utf8', timeout: 30_000, env: { ...process.env, GITHUB_ACTIONS: '', ...env } });
+const tirar = (dir) => borrarTemporal(dir);
+// `--anotar` es lo que pide el paso del CI: las líneas `::warning`. Por argumento y no por el entorno,
+// para que ni el script ni este test lean una señal del entorno (tope de SCRUM-702).
+const correr = (dir, ...mas) => spawnSync(process.execPath, [CLI, '--raiz', dir, ...mas], { encoding: 'utf8', timeout: 30_000 });
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 test('SCRUM-1874 · 🔴 juzgarRegistro: sin línea, otra versión, dos líneas y mal formada NO pasan', () => {
@@ -118,7 +120,7 @@ test('SCRUM-1874 · el fichero de la versión en curso es de UNA línea y se lee
   const real = leerVersionEnCurso(RAIZ);
   assert.ok(!real.error, `🔴 ${FICHERO_EN_CURSO} del árbol no se lee: ${real.error}`);
   assert.match(real.texto, /^\S+ \(SCRUM-\d+\)$/);
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1874-f-'));
+  const dir = temporal('scrum1874-f-');
   try {
     assert.match(leerVersionEnCurso(dir).error, /no existe/);
     for (const [contenido, dice] of [['', /UNA línea y tiene 0/], ['1.1 (SCRUM-1835)\n1.2 (SCRUM-2)\n', /tiene 2/],
@@ -146,8 +148,8 @@ test('SCRUM-1874 · 🔴 un registro NUEVO sin línea se NOMBRA; uno viejo tocad
       'la población de «nuevos» no es la que git da como añadida + sin rastrear');
     assert.deepEqual(r.sinDeclarar.map((f) => f.fichero), ['docs/master/SCRUM-11.md', 'docs/master/SCRUM-9.md']);
 
-    // La línea de órdenes: INFORMATIVO → sale 0, pero los NOMBRA; en el CI, como ::warning sobre el fichero.
-    const cli = correr(dir, { GITHUB_ACTIONS: 'true' });
+    // La línea de órdenes: INFORMATIVO → sale 0, pero los NOMBRA; con `--anotar` (el CI), como ::warning sobre el fichero.
+    const cli = correr(dir, '--anotar');
     assert.equal(cli.status, OBLIGATORIO ? 1 : 0, `salida ${cli.status}\n${cli.stdout}${cli.stderr}`);
     assert.match(cli.stdout, /registros NUEVOS \.\.\. 3 · declaran 1 · sin declarar 2/);
     assert.match(cli.stdout, /::warning file=docs\/master\/SCRUM-9\.md::SCRUM-1874 · sin línea «Versión:»/);

@@ -2,6 +2,7 @@
 //
 //   node scripts/equipo/version-declarada.mjs            informe de la rama (sale 0 mientras sea INFORMATIVO)
 //   node scripts/equipo/version-declarada.mjs --raiz R   lo mismo, sobre otro repositorio (lo usa el test)
+//   node scripts/equipo/version-declarada.mjs --anotar   además, una línea `::warning` por fichero (el paso del CI)
 //
 // ── QUÉ HUECO CIERRA ─────────────────────────────────────────────────────────────────────────────
 // Medido por S5 el 26-nov-2026 (propuesta «PR sin versión»): 373 PR en 15 días, mediana de
@@ -137,7 +138,9 @@ function main() {
   // `--raiz` sólo lo usa el test (un repo temporal); por defecto, el árbol de este fichero.
   const iRaiz = process.argv.indexOf('--raiz');
   const raiz = iRaiz > 0 ? path.resolve(process.argv[iRaiz + 1]) : path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-  const enCi = process.env.GITHUB_ACTIONS === 'true';
+  // `--anotar` lo pone el paso del CI: escribe las líneas `::warning` que GitHub enseña en el PR. Va
+  // por argumento y no leyendo el entorno (tope de señales del entorno de SCRUM-702).
+  const enCi = process.argv.includes('--anotar');
   const modo = OBLIGATORIO ? 'OBLIGATORIO' : `INFORMATIVO hasta el ${INFORMATIVO_HASTA}: cuenta y avisa, no bloquea`;
   console.log(`VERSIÓN DECLARADA (SCRUM-1874) · ${modo}`);
   const r = medirRama(raiz);

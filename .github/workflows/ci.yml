@@ -187,7 +187,7 @@ jobs:
       # esta línea, en su PR.
       - name: Versión declarada en los registros nuevos (informativo, SCRUM-1874)
         continue-on-error: true
-        run: node scripts/equipo/version-declarada.mjs
+        run: node scripts/equipo/version-declarada.mjs --anotar
 
       # `npm ci` y no `npm install`: instala EXACTAMENTE el lockfile y falla si package.json
       # y package-lock.json han divergido. En un CI eso es lo que se quiere — reproducir, no
