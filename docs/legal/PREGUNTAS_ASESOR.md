@@ -836,7 +836,7 @@ la factura, o cuando pida su borrado?
 
 ---
 
-# Q-C1…Q-C9 · Contabilidad para un autónomo de oficio (bloquea CON-08/09, `docs/producto/CONTABILIDAD.md` §4)
+# Q-C1…Q-C10 · Contabilidad para un autónomo de oficio (bloquea CON-08/09, `docs/producto/CONTABILIDAD.md` §4)
 
 > **Propuesta de S0, 22-sep-2026 (SCRUM-1039/CON-03) — dueño J4: visto bueno de J4 (sesión jv-j4an, 26-oct-2026, SCRUM-1039e) a la formulación y a las marcas de Q-C1…Q-C9, tras aplicar los arreglos 1, 3 y 4 de `docs/master/SCRUM-1039.md` §1039d; comprobado: las citas LIVA de Q-C2 y Q-C9 contra el consolidado del BOE de hoy, por script con control negativo (`docs/master/evidencias/scrum1039/scrum1039e-cotejo-liva.mjs`). No es la respuesta del asesor ni la firma del fundador: ninguna respuesta de este bloque está confirmada.**
 > Nacen de `docs/producto/CONTABILIDAD.md` §1 y §3: el diseño del bloque de Contabilidad leyó el
@@ -1037,6 +1037,20 @@ leídos aplica** a la venta ordinaria de un servicio de reforma/instalación de 
 de YaQu (electricista, fontanero, reformista, pintor, cerrajero, climatización) que caiga en una
 exención o no sujeción del resto de la lista? ¿Y fuera de los arts. 7 y 20: Canarias, Ceuta y Melilla, o una obra en un inmueble fuera de España? Si la respuesta es «ninguno» a las dos, Exento/No sujeto puede
 quedar fuera del selector de tipos de IVA en vez de construirse sin caso de uso.
+
+**Q-C10.** Devolución de un cobro con criterio de caja · **SIN RESPUESTA.** Con el criterio de caja
+(RECC), una factura rectificativa (R1) emitida por la devolución de un cobro ¿minora el IVA en el
+periodo en que se EMITE la rectificativa o en el periodo en que se DEVUELVE efectivamente el dinero?
+_Contexto (SCRUM-1055 c.21863 ③, medido por J1 leyendo el código el 13-nov-2026):_ hoy el libro de
+caja pone la F1 en el trimestre de su cobro y la R1 sale negativa en el trimestre en que se emitió, no
+en el que se devolvió el dinero, y no hay ningún sitio donde declarar la fecha de la devolución. Una
+F1 cobrada no se des-paga ni se anula: el único camino es la R1 (regla 29 del máster). J1 no lo llamó
+defecto porque no sabe qué exige la norma, y eso es lo que se pregunta. _Origen:_ la pregunta
+candidata de c.21863 ③, que el fundador decidió traer a este fichero (SCRUM-1055 c.22857 ④,
+26-nov-2026; su respuesta literal, «2-Ok tus recomendaciones»). La añade J4 el 26-nov-2026
+(SCRUM-1055d): el visto bueno de SCRUM-1039e a Q-C1…Q-C9 no la cubre. _Relacionadas, que no la
+contestan:_ Q-C6 (qué fecha de cobro vale para el RECC), la 47 (qué régimen lleva una R1) y la 51
+(la R1 de una factura aún SIN cobrar).
 
 **Fuentes citadas arriba, con SHA-256 de la descarga y método de comprobación:**
 `docs/producto/CONTABILIDAD.md` §8. Los ficheros HTML no están en git (se vuelven a bajar de las
