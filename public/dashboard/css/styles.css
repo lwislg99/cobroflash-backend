@@ -6046,6 +6046,12 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
 .c360-datos .contacto-link, #c360-meta .contacto-link { min-height: 44px; }
 #c360-meta .input { min-height: 44px; }
 /* J2: fin del bloque SCRUM-1850 */
+/* J2: SCRUM-1868b (AB6, por contenedor como SCRUM-1850) · ficha 360: el botón de la tarjeta de borrado
+   (`.btn-secondary` sin `-sm`) medía 36 px por encima de 768. SCRUM-1845 c.22728: todo lo que no es un
+   `.btn-sm` no primario llega a 44. Solo tamaño y solo esta tarjeta; `.btn-secondary` global no se toca.
+   Lo mide `tests/scrum1850-ficha-360-resto-44.test.mjs`. */
+.customers-card[data-rol="borrar-cliente"] > .btn-secondary { min-height: 44px; }
+/* J2: fin del bloque SCRUM-1868b */
 /* J2: SCRUM-1852 (AB6, por contenedor) · cabecera de la ficha 360: «✎ Editar» se pintaba ENCIMA del
    nombre a 929 y 1280. `.c360-identidad` lleva `min-width:0` (el literal de SCRUM-1756i, arriba) y se
    encogía a 141 px con un contenido de 201: el nombre desbordaba por debajo de los botones, también con
