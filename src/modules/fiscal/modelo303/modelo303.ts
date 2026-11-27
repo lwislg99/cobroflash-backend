@@ -183,6 +183,9 @@ export interface Modelo303 {
   asientos: number;
   motivosParaNoFiarse: string[];
   avisoObligatorio: string;
+  /** SCRUM-1055f · los recuentos del libro de caja (1055c), en la salida: viajan con el dato. Sin caja, no salen. */
+  cobrosSinFechaDeclarada?: number;
+  cobrosSinFilas?: number;
 }
 
 /**
@@ -545,5 +548,8 @@ export function construirModelo303(params: {
     asientos: params.libro.asientos.length,
     motivosParaNoFiarse,
     avisoObligatorio: AVISO_ORIENTATIVO,
+    // SCRUM-1055f · sólo si el libro los trae (caja); un número, ningún texto nuevo.
+    ...(params.libro.cobrosSinFechaDeclarada !== undefined ? { cobrosSinFechaDeclarada: params.libro.cobrosSinFechaDeclarada } : {}),
+    ...(params.libro.cobrosSinFilas !== undefined ? { cobrosSinFilas: params.libro.cobrosSinFilas } : {}),
   };
 }
