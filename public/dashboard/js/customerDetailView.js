@@ -767,8 +767,9 @@ if (typeof window !== 'undefined') window.fusionCliente = FUSION_CLIENTE;
 /**
  * Los textos llevan su firma en SU línea (registro en
  * `docs/microcopy/2026-11-26-SCRUM-1868-eliminar-cliente.md`): la descripción de SCRUM-1868 («2-Los
- * textos valen»), c.22850 (el toast, «1-✅») y c.22867 (la fila de las solicitudes, detrás de
- * «Historial de actividad»). `generico` se REUSA byte a byte de FUSION_CLIENTE. `{nombre}`, `{n}` y
+ * textos valen»), c.22850 (el toast, «1-✅»), c.22867 (la fila de las solicitudes, detrás de
+ * «Historial de actividad») y c.22916 (SCRUM-1868e: bloquean también trabajos, partes y
+ * mantenimientos; la tarjeta, la nota, sus tres filas y su alerta). `generico` se REUSA byte a byte de FUSION_CLIENTE. `{nombre}`, `{n}` y
  * `{m}` son los huecos del lienzo. El servidor (SCRUM-1868a) contesta CÓDIGOS: cada motivo se traduce
  * por `MOTIVOS`, y uno fuera de la tabla cae en el genérico (regla 39, como la fusión).
  * Sin firma de grupo en la cabecera (el patrón de EQUIPOS_CLIENTE): `CUENTA_DEL_MOTIVO` y `estado`
@@ -777,7 +778,7 @@ if (typeof window !== 'undefined') window.fusionCliente = FUSION_CLIENTE;
 const BORRAR_CLIENTE = {
   TEXTOS: {
     tarjetaTitulo: 'Eliminar este cliente', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 descripción, «2-Los textos valen»)
-    tarjetaTexto: 'Se borra su ficha con sus documentos, sus sitios y sus equipos. No se puede deshacer. Si tiene presupuestos o facturas, no se puede eliminar.', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 descripción, «2-Los textos valen»)
+    tarjetaTexto: 'Se borra su ficha con sus documentos, sus sitios y sus equipos. No se puede deshacer. Si tiene presupuestos, facturas, trabajos, partes o mantenimientos, no se puede eliminar.', // APROBADO por el fundador el 27-nov-2026 (SCRUM-1868 comentario 22916)
     tarjetaSoloAdmin: 'Solo lo ve el administrador.', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 descripción, «2-Los textos valen»)
     boton: 'Eliminar cliente', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 descripción, «2-Los textos valen»)
     titulo: 'Eliminar cliente', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 descripción, «2-Los textos valen»)
@@ -791,15 +792,19 @@ const BORRAR_CLIENTE = {
       historial: 'Historial de actividad', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 descripción, «2-Los textos valen»)
       solicitudes: 'Solicitudes de presupuesto', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 comentario 22867)
     },
-    nota: 'Este cliente no tiene presupuestos ni facturas: por eso se puede eliminar.', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 descripción, «2-Los textos valen»)
+    nota: 'Este cliente no tiene presupuestos, facturas, trabajos, partes ni mantenimientos: por eso se puede eliminar.', // APROBADO por el fundador el 27-nov-2026 (SCRUM-1868 comentario 22916)
     irreversible: 'Esto no se puede deshacer.', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 descripción, «2-Los textos valen»)
     cancelar: 'Cancelar', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 descripción, «2-Los textos valen»)
     confirmar: 'Eliminar', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 descripción, «2-Los textos valen»)
     bloqueo: 'No se puede eliminar a {nombre}. Tiene {n} facturas emitidas y {m} presupuestos, y una factura emitida no se borra.', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 descripción, «2-Los textos valen»)
+    bloqueoTrabajos: 'No se puede eliminar a {nombre}. Tiene trabajos, partes o mantenimientos que se quedarían sin cliente.', // APROBADO por el fundador el 27-nov-2026 (SCRUM-1868 comentario 22916)
     loImpide: 'Lo que lo impide', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 descripción, «2-Los textos valen»)
     MOTIVOS: {
       tiene_facturas: 'Facturas emitidas', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 descripción, «2-Los textos valen»)
       tiene_presupuestos: 'Presupuestos', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 descripción, «2-Los textos valen»)
+      tiene_trabajos: 'Trabajos', // APROBADO por el fundador el 27-nov-2026 (SCRUM-1868 comentario 22916)
+      tiene_partes: 'Partes de trabajo', // APROBADO por el fundador el 27-nov-2026 (SCRUM-1868 comentario 22916)
+      tiene_mantenimientos: 'Mantenimientos', // APROBADO por el fundador el 27-nov-2026 (SCRUM-1868 comentario 22916)
     },
     salida: 'Puedes fusionarlo con otro cliente o dejarlo como está.', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 descripción, «2-Los textos valen»)
     enlaceFusion: 'fusionarlo con otro cliente', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 descripción, «2-Los textos valen»)
@@ -808,10 +813,13 @@ const BORRAR_CLIENTE = {
     generico: 'No se ha podido completar la acción. Vuelve a intentarlo.', // APROBADO por el orquestador por delegación del fundador el 25-sep-2026 (SCRUM-1124 comentario 17002; se reusa byte a byte, como en FUSION_CLIENTE)
   },
   /** De qué cantidad de `cuenta` sale el número de cada motivo. */
-  CUENTA_DEL_MOTIVO: { tiene_facturas: 'facturas', tiene_presupuestos: 'presupuestos' },
+  CUENTA_DEL_MOTIVO: {
+    tiene_facturas: 'facturas', tiene_presupuestos: 'presupuestos',
+    tiene_trabajos: 'trabajos', tiene_partes: 'partes', tiene_mantenimientos: 'mantenimientos', // SCRUM-1868e: el contrato de c.22916
+  },
   rellenar(texto, valores) { return DOCUMENTOS_CLIENTE.rellenar(texto, valores); },
   numero(v) { const n = Number(v); return Number.isFinite(n) && n >= 0 ? n : 0; },
-  /** El rótulo firmado de un motivo; `null` si el código no es uno de los dos. */
+  /** El rótulo firmado de un motivo; `null` si el código no está en la tabla. */
   motivo(codigo) {
     return Object.prototype.hasOwnProperty.call(BORRAR_CLIENTE.TEXTOS.MOTIVOS, codigo) ? BORRAR_CLIENTE.TEXTOS.MOTIVOS[codigo] : null;
   },
@@ -831,6 +839,17 @@ const BORRAR_CLIENTE = {
     if (!m) t = t.replace(' y {m} presupuestos', ''); // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 descripción, «se derivan sin cambiar las palabras»)
     if (!n) t = t.replace('{n} facturas emitidas y ', '').replace(', y una factura emitida no se borra.', '.'); // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 descripción, «se derivan sin cambiar las palabras»)
     return BORRAR_CLIENTE.rellenar(t, { nombre, n, m });
+  },
+  /**
+   * SCRUM-1868e · la hermana de `alertaBloqueo` para cuando SOLO lo impiden trabajos, partes o
+   * mantenimientos (c.22916): el literal firmado entero, sin números ni derivaciones; solo `{nombre}`.
+   * Quien la llama la usa cuando `alertaBloqueo` da `null` (cero facturas y cero presupuestos).
+   * `null` con cero de los tres: cae en el genérico, como su hermana.
+   */
+  alertaBloqueoTrabajos(nombre, trabajos, partes, mantenimientos) {
+    const N = BORRAR_CLIENTE.numero;
+    if (!N(trabajos) && !N(partes) && !N(mantenimientos)) return null;
+    return BORRAR_CLIENTE.rellenar(BORRAR_CLIENTE.TEXTOS.bloqueoTrabajos, { nombre });
   },
   /**
    * Qué enseña el modal con un cuerpo: la previa (GET) o el de un 409 del DELETE, que no trae
@@ -2185,7 +2204,9 @@ function abrirBorradoDeCliente(customer, customerId, container) {
     cancelar.hidden = true;
     cerrarBtn.hidden = false;
     const cuanto = (k) => (motivos.includes(k) ? B.numero(c[B.CUENTA_DEL_MOTIVO[k]]) : 0);
-    const alerta = B.alertaBloqueo(nombre, cuanto('tiene_facturas'), cuanto('tiene_presupuestos'));
+    // Con facturas o presupuestos, la alerta de siempre; si solo lo impiden los de c.22916, la suya.
+    const alerta = B.alertaBloqueo(nombre, cuanto('tiene_facturas'), cuanto('tiene_presupuestos'))
+      || B.alertaBloqueoTrabajos(nombre, cuanto('tiene_trabajos'), cuanto('tiene_partes'), cuanto('tiene_mantenimientos'));
     if (!alerta) { mostrarError(T.generico); return; }
     previa.appendChild(el('div', 'alert error', alerta));
     previa.appendChild(el('h4', 'fusion-previa-titulo', T.loImpide));

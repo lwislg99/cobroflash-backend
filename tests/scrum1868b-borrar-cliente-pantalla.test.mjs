@@ -8,6 +8,9 @@
 //
 // Los textos son los FIRMADOS por el fundador en SCRUM-1868 (descripción, «2-Los textos valen») y el
 // toast en SCRUM-1868 c.22850 («1-✅»); la fila «Solicitudes de presupuesto», en c.22867 («1-Ok»);
+// el bloqueo por trabajos, partes y mantenimientos y sus cuatro textos, en c.22916 («1-✅ textos valen»,
+// SCRUM-1868e: `cuenta` trae además `trabajos`, `partes` y `mantenimientos`, y `motivos` puede traer
+// `tiene_trabajos`, `tiene_partes` y `tiene_mantenimientos` detrás de los dos de siempre);
 // ficha: docs/microcopy/2026-11-26-SCRUM-1868-eliminar-cliente.md.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -31,12 +34,15 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: '409 tras pulsar (alguien emitió una factura entre mirar y pulsar) → el modal pasa al bloqueo con el cuerpo del 409' },
   { fichero: 'public/dashboard/js/customerDetailView.js', de: "solicitudes: 'Solicitudes de presupuesto', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 comentario 22867)", a: '',
     cae: 'al abrir, la previa (GET) pinta lo que se borra con sus cuentas, y «Eliminar» se habilita' },
+  // SCRUM-1868e: sin `tiene_trabajos` en la tabla, el motivo cae en el genérico y el caso del trabajo lo nota.
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: "tiene_trabajos: 'Trabajos', // APROBADO por el fundador el 27-nov-2026 (SCRUM-1868 comentario 22916)", a: '',
+    cae: 'SOLO TRABAJOS: la alerta de c.22916, la fila «Trabajos» con su cuenta y solo «Cerrar»; «Eliminar» no manda el DELETE' },
 ];
 
-// ── Los firmados, copiados de Jira (SCRUM-1868: descripción, c.22850 y c.22867). `generico` se reusa de la fusión.
+// ── Los firmados, copiados de Jira (SCRUM-1868: descripción, c.22850, c.22867 y c.22916). `generico` se reusa de la fusión.
 const FIRMADOS = {
   tarjetaTitulo: 'Eliminar este cliente',
-  tarjetaTexto: 'Se borra su ficha con sus documentos, sus sitios y sus equipos. No se puede deshacer. Si tiene presupuestos o facturas, no se puede eliminar.',
+  tarjetaTexto: 'Se borra su ficha con sus documentos, sus sitios y sus equipos. No se puede deshacer. Si tiene presupuestos, facturas, trabajos, partes o mantenimientos, no se puede eliminar.',
   tarjetaSoloAdmin: 'Solo lo ve el administrador.',
   boton: 'Eliminar cliente',
   titulo: 'Eliminar cliente',
@@ -44,13 +50,14 @@ const FIRMADOS = {
   seBorra: 'Se borra',
   filaFicha: 'La ficha de {nombre}',
   FILAS: { documentos: 'Documentos adjuntos', sitios: 'Sitios', equipos: 'Equipos', historial: 'Historial de actividad', solicitudes: 'Solicitudes de presupuesto' },
-  nota: 'Este cliente no tiene presupuestos ni facturas: por eso se puede eliminar.',
+  nota: 'Este cliente no tiene presupuestos, facturas, trabajos, partes ni mantenimientos: por eso se puede eliminar.',
   irreversible: 'Esto no se puede deshacer.',
   cancelar: 'Cancelar',
   confirmar: 'Eliminar',
   bloqueo: 'No se puede eliminar a {nombre}. Tiene {n} facturas emitidas y {m} presupuestos, y una factura emitida no se borra.',
+  bloqueoTrabajos: 'No se puede eliminar a {nombre}. Tiene trabajos, partes o mantenimientos que se quedarían sin cliente.',
   loImpide: 'Lo que lo impide',
-  MOTIVOS: { tiene_facturas: 'Facturas emitidas', tiene_presupuestos: 'Presupuestos' },
+  MOTIVOS: { tiene_facturas: 'Facturas emitidas', tiene_presupuestos: 'Presupuestos', tiene_trabajos: 'Trabajos', tiene_partes: 'Partes de trabajo', tiene_mantenimientos: 'Mantenimientos' },
   salida: 'Puedes fusionarlo con otro cliente o dejarlo como está.',
   enlaceFusion: 'fusionarlo con otro cliente',
   cerrar: 'Cerrar',
@@ -63,9 +70,13 @@ const CLIENTE = {
   createdAt: '2026-01-10T00:00:00.000Z', waOptOut: false, taxId: null, tags: null,
 };
 const STATS = { totalQuotes: 0, acceptedQuotes: 0, totalBilled: 0, totalPaid: 0, totalExpenses: 0, profit: 0 };
-const CUENTA = { documentos: 3, sitios: 2, equipos: 4, historial: 7, solicitudes: 6, presupuestos: 0, facturas: 0 };
+const CUENTA = { documentos: 3, sitios: 2, equipos: 4, historial: 7, solicitudes: 6, presupuestos: 0, facturas: 0, trabajos: 0, partes: 0, mantenimientos: 0 };
 const LIBRE = { bloqueado: false, motivos: [], cuenta: CUENTA };
 const BLOQUEADO = { bloqueado: true, motivos: ['tiene_facturas', 'tiene_presupuestos'], cuenta: { ...CUENTA, facturas: 2, presupuestos: 5 } };
+// SCRUM-1868e (c.22916): solo lo impiden los nuevos, y los cinco a la vez, en el orden del contrato.
+const SOLO_TRABAJOS = { bloqueado: true, motivos: ['tiene_trabajos'], cuenta: { ...CUENTA, trabajos: 3 } };
+const LOS_CINCO = { bloqueado: true, motivos: ['tiene_facturas', 'tiene_presupuestos', 'tiene_trabajos', 'tiene_partes', 'tiene_mantenimientos'],
+  cuenta: { ...CUENTA, facturas: 2, presupuestos: 5, trabajos: 3, partes: 1, mantenimientos: 4 } };
 
 /** La ficha REAL en el banco. `previa()` y `borrar()` contestan las dos rutas: `{ status, json }`. */
 async function montarFicha({ rol = 'admin', previa = () => ({ status: 200, json: LIBRE }), borrar = () => ({ status: 204, json: null }) } = {}) {
@@ -125,13 +136,14 @@ test('SCRUM-1868b · los textos del panel son, byte a byte, los firmados en SCRU
 test('SCRUM-1868b · cada texto sin hueco consta en la ficha de microcopy, y uno parecido no', () => {
   const planos = [...Object.values(FIRMADOS).filter((t) => typeof t === 'string'), ...Object.values(FIRMADOS.FILAS), ...Object.values(FIRMADOS.MOTIVOS)];
   const sinHueco = planos.filter((t) => !/{[^}]+}/.test(t));
-  assert.equal(sinHueco.length, 24, `esperaba 24 textos sin hueco (23 + la fila de c.22867) y veo ${sinHueco.length}`);
+  assert.equal(sinHueco.length, 27, `esperaba 27 textos sin hueco (23 + la fila de c.22867 + las tres filas de c.22916) y veo ${sinHueco.length}`);
   for (const t of sinHueco) assert.ok(constaAprobado(t).includes(FICHA), `🔴 «${t}» no consta en ${FICHA}`);
   assert.deepEqual(constaAprobado('Cliente eliminado.'), [], 'CONTROL NEGATIVO: uno parecido no consta');
   const md = fs.readFileSync(path.join(RAIZ, FICHA), 'utf8');
   for (const t of planos) assert.ok(md.includes(t), `🔴 «${t}» no está literal en la ficha`);
   assert.match(md, /SCRUM-1868 c\.22850/);
   assert.match(md, /SCRUM-1868 c\.22867/);
+  assert.match(md, /SCRUM-1868 c\.22916/);
 });
 
 test('SCRUM-1868b · la alerta del bloqueo se DERIVA del literal firmado sin palabras nuevas (plural, singular, solo una de las dos)', () => {
@@ -150,6 +162,10 @@ test('SCRUM-1868b · la alerta del bloqueo se DERIVA del literal firmado sin pal
   const firmadas = new Set(palabras(FIRMADOS.bloqueo).map((w) => w.replace(/s$/, '')));
   for (const [, , esperado] of casos) for (const w of palabras(esperado)) assert.ok(firmadas.has(w.replace(/s$/, '')), `🔴 «${w}» no está en el literal firmado`);
   assert.ok(!firmadas.has('mañana'), 'CONTROL NEGATIVO: una palabra que no está no casa');
+  // SCRUM-1868e (c.22916): la alerta de los nuevos es el literal entero, solo con el nombre; sin ninguno, null.
+  const nueva = 'No se puede eliminar a Ana. Tiene trabajos, partes o mantenimientos que se quedarían sin cliente.';
+  for (const [t, p, m] of [[3, 0, 0], [0, 1, 0], [0, 0, 4], [3, 1, 4]]) assert.equal(B.alertaBloqueoTrabajos('Ana', t, p, m), nueva, `t=${t} p=${p} m=${m}`);
+  assert.equal(B.alertaBloqueoTrabajos('Ana', 0, 0, 0), null, 'con cero de los tres no hay alerta: cae en el genérico');
 });
 
 test('SCRUM-1868b · TÉCNICO: no hay tarjeta (las rutas son solo admin); ADMIN: una, DESPUÉS de las pestañas', async () => {
@@ -208,6 +224,33 @@ test('SCRUM-1868b · BLOQUEADO: alerta, «Lo que lo impide» y solo «Cerrar»; 
   assert.equal(f.borrados().length, 0, '🔴 bloqueado y salió el DELETE');
   await f.pulsar('cerrar-borrado');
   assert.equal(f.modal(), null, '«Cerrar» cierra el modal');
+});
+
+test('SCRUM-1868e · SOLO TRABAJOS: la alerta de c.22916, la fila «Trabajos» con su cuenta y solo «Cerrar»; «Eliminar» no manda el DELETE', async () => {
+  const f = await montarFicha({ previa: () => ({ status: 200, json: SOLO_TRABAJOS }) });
+  await f.abrir();
+  const t = f.texto(f.modal());
+  assert.ok(t.includes('No se puede eliminar a Cliente QA 1868. Tiene trabajos, partes o mantenimientos que se quedarían sin cliente.'), `🔴 no pintó la alerta de c.22916: ${t.slice(0, 200)}`);
+  assert.ok(!t.includes('facturas emitidas'), 'sin facturas ni presupuestos, la alerta de siempre no sale');
+  assert.equal(f.aviso(), '', 'no cae en el genérico');
+  assert.ok(t.includes(FIRMADOS.loImpide));
+  assert.deepEqual(f.filas(), [['Trabajos', '3']]);
+  assert.equal(f.en(f.modal(), 'confirmar-borrado').hidden, true, '🔴 bloqueado por trabajos y con «Eliminar» a la vista');
+  assert.equal(f.en(f.modal(), 'cancelar-borrado').hidden, true, 'bloqueado: ni «Cancelar»');
+  assert.equal(f.en(f.modal(), 'cerrar-borrado').hidden, false, 'bloqueado: solo «Cerrar»');
+  await f.pulsar('confirmar-borrado');
+  assert.equal(f.borrados().length, 0, '🔴 bloqueado por trabajos y salió el DELETE');
+});
+
+test('SCRUM-1868e · LOS CINCO MOTIVOS: una fila por motivo en el orden de `motivos`, y la alerta es la de facturas y presupuestos, no la nueva', async () => {
+  const f = await montarFicha({ previa: () => ({ status: 200, json: LOS_CINCO }) });
+  await f.abrir();
+  const t = f.texto(f.modal());
+  assert.ok(t.includes('No se puede eliminar a Cliente QA 1868. Tiene 2 facturas emitidas y 5 presupuestos, y una factura emitida no se borra.'), 'con facturas o presupuestos, la alerta de siempre');
+  assert.ok(!t.includes('que se quedarían sin cliente'), '🔴 con facturas y presupuestos salió la alerta de los nuevos');
+  assert.deepEqual(f.filas(), [['Facturas emitidas', '2'], ['Presupuestos', '5'], ['Trabajos', '3'], ['Partes de trabajo', '1'], ['Mantenimientos', '4']]);
+  assert.equal(f.en(f.modal(), 'confirmar-borrado').hidden, true);
+  assert.equal(f.en(f.modal(), 'cerrar-borrado').hidden, false);
 });
 
 test('SCRUM-1868b · el enlace «fusionarlo con otro cliente» cierra este modal y abre el de fusión', async () => {
