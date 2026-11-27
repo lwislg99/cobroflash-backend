@@ -1687,3 +1687,24 @@ orquestador.
 **No medido:** los comentarios de Jira citados no se han leído (c.22694, c.22268, c.22272, c.22811); textos
 construidos por concatenación de cadenas sin espacio (el filtro los tira; la revisión de tiradas no vio ninguno);
 PDFs y correos (ningún fichero de `pdf/` ni de `mailer` cambió entre las dos puntas); yaqu.app no abierto.
+
+## SCRUM-1502v · las tres marcas del verano en el camino de emisión (J1, jv-j1ld)
+**Medido contra:** `origin/main` = `600aafc43ea249b07b2982cd518f4026a996c2bf` · 2026-11-27T12:37:02Z
+Versión: 1.2 (SCRUM-1836)
+A9: aviso → A10 «Un registro escrito por la misma mano que aplicó el texto no es su firma: es quien lo aplicó contando que la tuvo.» — no se pudo comprobar: quién escribió un comentario de Jira o una entrada del máster no lo dice ningún dato que un test pueda leer (la cuenta no es el autor)
+
+Encargo: SCRUM-1645 c.22934 («3-✅», GO del fundador para cambiar SOLO comentarios en ficheros de emisión) y SCRUM-1836 c.22936. Medición previa publicada en SCRUM-1502 c.22938. Los trinquetes, con el sí del orquestador J (mensaje del 27-nov a esta sesión) y el precedente de c.18900 (Tramo 3) y 1502t.
+
+| marca | fuente leída | veredicto | ahora dice |
+|---|---|---|---|
+| `lineasFacturables.ts:44` | SCRUM-264: 2 comentarios (c.11922 ENTREGADO y c.11923 CIERRE), los dos informes de sesión con la cuenta de Luis; commit `acc28cc9a` (Co-Authored-By Claude); `SCRUM-264.md` de la misma sesión. SCRUM-246 c.11732 lo afirmaba de otra redacción, y c.11861 la daba por pendiente | **B** | «Que lo firmara el fundador lo dice la sesión que lo aplicó (SCRUM-264 c.11923); no consta su firma (SCRUM-1645 c.21325; SCRUM-1502v).» |
+| `lineasFacturables.ts:60` | las mismas | **B** | «su procedencia, la de arriba (SCRUM-1502v)» |
+| `portonDocumento.ts:47` | SCRUM-206: 2 comentarios de sesión y ninguno cita el texto; commit `58d6d136d`; la entrada del máster de SCRUM-206, de la misma sesión (`f752641e8`). SCRUM-1502 c.18835 («2-Si reconozco») cubre sólo `invoicesAdmin.routes.ts:1293` y lo dice | **B** | «lo dice sólo la sesión que lo aplicó (58d6d136d y su entrada de SCRUM-206 en el máster); no consta (SCRUM-1502v).» |
+
+Ninguna es A: la búsqueda en Jira por el literal (JQL con los 3 textos; positivo: sale SCRUM-264) da 246, 264, 1404, 1517 y 1523, y en ninguna hay un literal del fundador sobre estos textos. Ninguna es C: en las tres la autoría la afirma una sesión. **Hallazgo, no arreglado:** SCRUM-1404 c.18840/c.18851 extienden c.18835 a «las dos frases del 409», y c.18835 lo niega expresamente. SCRUM-921b había contado `portonDocumento` como FIRMA REAL apoyándose en el máster.
+
+**Sólo comentarios, por instrumento.** Mi ficha suponía que el JSDoc no llega a `dist/`, y sí llega: `tsconfig.json` no lleva `removeComments`. La prueba se hace así: `tsc -p . --removeComments` antes y después, a un `outDir` fuera del árbol, y `diff -rq` sale **vacío sobre 373 `.js`**. Control positivo: el mismo `diff` contra el `dist/` con comentarios SÍ ve diferencias. En el `dist/` normal sólo cambian líneas de comentario (0 de código). `git diff -U0` de `src/`: 5 líneas, 0 fuera de comentarios, el mismo número de líneas por fichero (118 y 153). Build con tipos: salida 0.
+
+**Censos, antes → después.** 1157, 1215g y 1215i no cambian, porque su población es `public/` y no ven `src/`. Así que los 3 textos quedan **sin firma del fundador localizable** sin que ningún censo lo diga, y la firma se pide aparte (c.22934). `scrum387`: con procedencia 63 → 61 y sin procedencia 12 → 11, y por eso baja `SIN_PROCEDENCIA` a 11. `scrum921`: 18 → 17, y baja a 17. `scrum921c`: rastreable 226 → 224, documental 12 → 11, y sin respaldo sigue en 8. Dirigidos (921c, 387 ×2, 921, 1157, 1215g, 1215i, 563 y los 14 que nombran los dos ficheros): 204 de 204 tras bajar los trinquetes; antes de bajarlos caían sólo esos dos.
+
+**No medido:** la suite entera (la mide el CI, por orden del orquestador: no cabía en contexto); el turno del fundador del verano (no quedan transcripciones de antes del 6-oct, SCRUM-1652); yaqu.app (sólo cambian comentarios).

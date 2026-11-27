@@ -41,8 +41,8 @@ export const ERROR_SIN_LINEAS = 'factura_sin_lineas';
 
 /**
  * Copy para el PROFESIONAL (rutas de admin).
- * ✅ TEXTO OFICIAL — aprobado por el fundador el 3-ago-2026 (SCRUM-264, regla 30). No se toca
- * sin él.
+ * TEXTO OFICIAL desde el 3-ago-2026 (regla 30, la de entonces). Que lo firmara el fundador lo dice
+ * la sesión que lo aplicó (SCRUM-264 c.11923); no consta su firma (SCRUM-1645 c.21325; SCRUM-1502v).
  *
  * Lo lee un fontanero en el momento de facturar: dice qué pasa y qué hacer, sin jerga.
  *
@@ -57,7 +57,7 @@ export const COPY_ADMIN_SIN_LINEAS =
 
 /**
  * Copy para el CLIENTE FINAL (C1: acepta el presupuesto desde WhatsApp).
- * ✅ TEXTO OFICIAL — aprobado por el fundador el 3-ago-2026 (SCRUM-264, regla 30).
+ * TEXTO OFICIAL desde el 3-ago-2026 (SCRUM-264 c.11923); su procedencia, la de arriba (SCRUM-1502v).
  *
  * Aquí importa más: **el cliente no puede arreglarlo**. Su aceptación ya ha valido; lo que falta
  * es que el profesional complete el presupuesto. Por eso no dice «inténtalo de nuevo»: le diría
