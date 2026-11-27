@@ -18,6 +18,9 @@ const BASE = path.join(BANCO, 'base-no-repo'); // desde donde «arranca» la ses
 //   [IO.Directory]::Delete("<banco>\conj\node_modules", $false)   # la junction, sin seguirla
 //   Test-Path "<banco>\destino\vale.txt"                          # el destino sigue lleno
 //   y sólo entonces se borra <banco>.
+// SCRUM-1648b · Sin comillas, una ruta con espacios son VARIAS palabras: el banco mediría el espacio
+// y no las barras (27-nov-2026: 35 MAL de 71 bajo `C:\Users\Nombre Apellido\…`, 19 en su forma 8.3).
+if (/\s/.test(BANCO)) { console.log(`PARO: ${BANCO} lleva espacios; pásame una ruta sin ellos (en Windows, la forma corta 8.3)`); process.exit(3); }
 if (fs.existsSync(BANCO)) { console.log(`PARO: ${BANCO} ya existe; pásame un directorio nuevo`); process.exit(3); }
 const SUCIO = path.join(BANCO, 'sucio');
 const LIMPIO = path.join(BANCO, 'limpio');
@@ -46,10 +49,10 @@ const FORMAS = {
 };
 
 const filas = [];
-const caso = (familia, debe, herramienta, forma, comando) => {
+const caso = (familia, debe, herramienta, forma, comando, base = BASE) => {
   const crudo = JSON.stringify({ tool_name: herramienta, tool_input: { command: comando } });
   let r;
-  try { r = evaluar(crudo, FALSO, { base: BASE, sentinelDestructivo: FALSO }); } catch (e) { r = { bloqueado: 'EXCEPCION', motivo: String(e) }; }
+  try { r = evaluar(crudo, FALSO, { base, sentinelDestructivo: FALSO }); } catch (e) { r = { bloqueado: 'EXCEPCION', motivo: String(e) }; }
   const visto = r.bloqueado === true ? 'BLOQUEA' : r.bloqueado === false ? 'deja' : String(r.bloqueado);
   const motivo = (r.motivo || '').split('\n')[0].slice(0, 70);
   filas.push({ familia, herramienta, forma, debe, visto, ok: visto === debe, motivo, comando });
@@ -73,6 +76,9 @@ for (const herr of ['PowerShell', 'Bash']) {
 }
 // Control de cobertura (no de barras): PowerShell nativo.
 caso('Remove-Item -Recurse con junction', 'BLOQUEA', 'PowerShell', 'D:/…', `Remove-Item -Recurse -Force ${fw(CONJ)}`);
+// Caso 72 (SCRUM-1648b; el quinto hueco, SCRUM-1648 c.21339): `Set-Location X` cuenta como `cd`.
+// La sesión «arranca» en el repo LIMPIO: si el guard mira ahí y no en X, dice «nada que perder».
+caso('Set-Location SUCIO + reset --hard (sesion en el LIMPIO)', 'BLOQUEA', 'PowerShell', 'D:/…', `Set-Location ${fw(SUCIO)}; git reset --hard`, LIMPIO);
 
 // Control de que el banco NO se ha tocado (el guard sólo pregunta).
 const intacto = fs.readFileSync(path.join(SUCIO, 'rastreado.txt'), 'utf8') === 'trabajo SIN COMMITEAR\n'
