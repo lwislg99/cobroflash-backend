@@ -1,6 +1,6 @@
 # «Eliminar este cliente» — la tarjeta y el modal de la ficha del cliente · SCRUM-1868b
 
-**Aprobado por el fundador** el 26-nov-2026, en **SCRUM-1868** (la descripción: «1-B / 2-Los textos valen») y en **SCRUM-1868 c.22850** (el toast: «1-✅»). La fila «Solicitudes de presupuesto» del modal de revisión, en **SCRUM-1868 c.22867** («1-Ok»), detrás de «Historial de actividad»; la aplica jv-j2fm (J2). El bloqueo por trabajos, partes y mantenimientos y sus cuatro textos, el 27-nov-2026 en **SCRUM-1868 c.22916** («1-✅ textos valen»); los aplica jv-j2fs (J2, SCRUM-1868e).
+**Aprobado por el fundador** el 26-nov-2026, en **SCRUM-1868** (la descripción: «1-B / 2-Los textos valen») y en **SCRUM-1868 c.22850** (el toast: «1-✅»). La fila «Solicitudes de presupuesto» del modal de revisión, en **SCRUM-1868 c.22867** («1-Ok»), detrás de «Historial de actividad»; la aplica jv-j2fm (J2). El bloqueo por trabajos, partes y mantenimientos y sus cuatro textos, el 27-nov-2026 en **SCRUM-1868 c.22916** (comentario 22916: «1-✅ textos valen»); los aplica jv-j2fs (J2, SCRUM-1868e).
 
 Lo transcribe en Jira el orquestador del equipo de Javier. Lo escribe aquí la sesión que aplica los
 textos (jv-j2fl, J2): es quien los aplicó contando que se firmaron, no la firma; la firma son la
