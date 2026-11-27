@@ -9,6 +9,7 @@ import { BASE_URL } from '../../core/config/env'; // SCRUM-967b
 import { saldosPendientesPorCliente } from './domain/saldoPendiente'; // SCRUM-1043
 import { garantiasRetenidasPorCliente, type GarantiaDelCliente } from '../billing/domain/garantiasRetenidas'; // SCRUM-1108
 import { z } from 'zod'; // SCRUM-1833b
+import { desligarClienteEnBorrado } from '../messaging/domain/registroDeEnvios'; // SCRUM-1868d: el ÚNICO escritor de email_messages (scrum508, scrum475 2B)
 import { diaExiste } from '../../core/zonaDelMerchant'; // SCRUM-1833b: solo se importa
 
 function generatePortalToken() {
@@ -693,7 +694,7 @@ export async function borrarClienteYSusDocumentos(
     customerEvent: { deleteMany: Function };
     quoteRequest: { deleteMany: Function };
     whatsAppMessage: { updateMany: Function };
-    emailMessage: { updateMany: Function };
+    emailMessage: Parameters<typeof desligarClienteEnBorrado>[0]['emailMessage'];
   },
   merchantId: number,
   id: number,
@@ -712,8 +713,11 @@ export async function borrarClienteYSusDocumentos(
   await tx.customerEvent.deleteMany({ where: { merchantId, customerId: id } });
   await tx.quoteRequest.deleteMany({ where: { merchantId, customerId: id } });
   // ④ SCRUM-1868d · b3 (c.22916): sus mensajes se quedan, sin cliente. `toPhone` y `toEmail` no se tocan.
+  // Los correos los desliga `registroDeEnvios.ts`, el ÚNICO fichero que escribe `email_messages` (scrum508 y
+  // scrum475 2B lo cazaron aquí en el CI del primer empujón, run 45985810879); `whatsapp_messages` no tiene ese
+  // guard y `fusionClientes.ts:183` ya la escribe con `updateMany` desde fuera: mismo precedente.
   await tx.whatsAppMessage.updateMany({ where: { merchantId, customerId: id }, data: { customerId: null } });
-  await tx.emailMessage.updateMany({ where: { merchantId, customerId: id }, data: { customerId: null } });
+  await desligarClienteEnBorrado(tx, merchantId, id);
   const r = await desvincularYBorrar(tx, merchantId, id);
   if (r.count > 0) await tx.attachment.deleteMany({ where: { merchantId, entityType: 'customer', entityId: id } });
   return r;

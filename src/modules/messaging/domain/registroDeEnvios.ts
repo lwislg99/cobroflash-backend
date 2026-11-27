@@ -344,16 +344,29 @@ export async function aplicarAvisoDeProveedor(args: {
  *
  * Recibe el `tx` de la transacción del llamador (mismo patrón que `desvincularYBorrar`): la
  * reasignación tiene que caer o quedar junto con el resto de la fusión, no en una transacción propia.
+ *
+ * SCRUM-1868d · el borrado de un cliente también cambia el `customerId` de sus filas (a NULL: decisión b3
+ * del fundador, SCRUM-1868 c.22916; la fila se queda con su `toEmail`). Es la MISMA escritura con otro
+ * destino, así que las dos entradas comparten UN `updateMany` (`cambiarClienteDeLasFilas`): `scrum508`
+ * exige exactamente un `create`, un `update` y un `updateMany` sobre la tabla, y un segundo `updateMany`
+ * en `customerAdmin.ts` fue lo que cazó, junto con `scrum475 2B`, en el CI del primer empujón de 1868d
+ * (run 45985810879). Un camino para «estas filas cambian de cliente», no dos parecidos.
  */
-export async function reasignarClienteEnFusion(
-  tx: { emailMessage: { updateMany: (args: { where: Record<string, unknown>; data: Record<string, unknown> }) => Promise<{ count: number }> } },
-  merchantId: number,
-  deId: number,
-  aId: number,
-): Promise<number> {
+type TxDeCorreos = { emailMessage: { updateMany: (args: { where: Record<string, unknown>; data: Record<string, unknown> }) => Promise<{ count: number }> } };
+
+async function cambiarClienteDeLasFilas(tx: TxDeCorreos, merchantId: number, deId: number, aId: number | null): Promise<number> {
   const r = await tx.emailMessage.updateMany({
     where: { merchantId, customerId: deId },
     data: { customerId: aId },
   });
   return r.count;
+}
+
+export async function reasignarClienteEnFusion(tx: TxDeCorreos, merchantId: number, deId: number, aId: number): Promise<number> {
+  return cambiarClienteDeLasFilas(tx, merchantId, deId, aId);
+}
+
+/** SCRUM-1868d · las filas del cliente que se borra se quedan sin cliente (c.22916, b3). */
+export async function desligarClienteEnBorrado(tx: TxDeCorreos, merchantId: number, customerId: number): Promise<number> {
+  return cambiarClienteDeLasFilas(tx, merchantId, customerId, null);
 }

@@ -13,6 +13,7 @@ import http from 'node:http';
 import { createRequire } from 'node:module';
 import { inyectarBase, moduloDeDist } from './_envio-doblado.mjs';
 import { reqDeSesion } from './_arnes-de-router.mjs';
+import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs'; // SCRUM-262: rango imposible 340
 
 const requiere = createRequire(import.meta.url);
 
@@ -87,7 +88,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     fichero: 'src/modules/system/customerAdmin.ts',
-    de: '  await tx.emailMessage.updateMany({ where: { merchantId, customerId: id }, data: { customerId: null } });\n',
+    de: '  await desligarClienteEnBorrado(tx, merchantId, id);\n', // SCRUM-1868d: el desligue de correos vive en registroDeEnvios.ts (scrum508, escritor único); aquí se muta la llamada
     a: '',
     cae: 'SCRUM-1868d · 🔴 con solo mensajes, el DELETE da 204 y sus dos mensajes siguen, desligados y con su teléfono y su correo',
   },
@@ -198,9 +199,9 @@ function sembrar({ presupuestos = 0, facturas = 0, trabajos = 0, partes = 0, man
     albaran: [],
     parteTrabajo: [{ id: 900, merchantId: B, customerId: CLI_A }, ...deA(partes, 10)],
     whatsAppMessage: [
-      { id: 900, merchantId: B, customerId: CLI_A, toPhone: '+34600000900' }, // 🔴 de B, mismo número de cliente
-      { id: 901, merchantId: A, customerId: CLI_OTRO, toPhone: '+34600000901' }, // de A, de OTRO cliente
-      ...(mensajes ? [{ id: 1, merchantId: A, customerId: CLI_A, toPhone: '+34600000001' }] : []),
+      { id: 900, merchantId: B, customerId: CLI_A, toPhone: telefonoDePrueba(900) }, // 🔴 de B, mismo número de cliente
+      { id: 901, merchantId: A, customerId: CLI_OTRO, toPhone: telefonoDePrueba(901) }, // de A, de OTRO cliente
+      ...(mensajes ? [{ id: 1, merchantId: A, customerId: CLI_A, toPhone: telefonoDePrueba(1) }] : []),
     ],
     emailMessage: [
       { id: 900, merchantId: B, customerId: CLI_A, toEmail: 'b@ejemplo.test' }, // 🔴
@@ -408,7 +409,7 @@ test('SCRUM-1868d · 🔴 con solo mensajes, el DELETE da 204 y sus dos mensajes
   const r = await borrar();
   assert.equal(r.status, 204, `dio ${r.status} ${JSON.stringify(r.json)}`);
   assert.equal(filasDeA().customer, 0, 'el cliente se ha ido');
-  assert.deepEqual(db.whatsAppMessage.find((m) => m.id === 1), { id: 1, merchantId: A, customerId: null, toPhone: '+34600000001' });
+  assert.deepEqual(db.whatsAppMessage.find((m) => m.id === 1), { id: 1, merchantId: A, customerId: null, toPhone: telefonoDePrueba(1) });
   assert.deepEqual(db.emailMessage.find((m) => m.id === 1), { id: 1, merchantId: A, customerId: null, toEmail: 'a@ejemplo.test' });
   assert.deepEqual(MENSAJES.map((t) => db[t].length), [3, 3], 'ningún mensaje se borra');
 });
