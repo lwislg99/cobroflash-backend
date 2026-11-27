@@ -214,6 +214,82 @@ resumen), su test de vista y la línea en el 303 y las evidencias.
 **Errores míos:** escribí el código antes que el test. El rojo lo da la primera mutación del catálogo, que deja
 la ruta como estaba (sin `...criterio`) y tumba el test. Y crucé los 200k otra vez (201.723, avisó el hook).
 
+# SCRUM-1055e · la señal, en la pantalla del libro
+**Medido contra:** `origin/main` = `81a6dda49cda4adb87e49529257568e4fc5e72c0` · 2026-11-26T17:33:17Z (hora de GitHub; sesión J1 `jv-j1la`, encargo del orquestador `cobroflash-backend-2d`; rama nacida de `scrum-1055c-senal-cobro-sin-fecha` en `39d92e280`)
+
+Versión: 1.2 (SCRUM-1836)
+
+**Skill UI:** cargada
+
+A9: comprobación → `scripts/meta-guard-mutaciones.mjs`
+
+Mutaciones: catálogo → `tests/scrum1055e-senal-en-el-libro.test.mjs`
+
+Alcance: SCRUM-1055 c.22857 ③ (los tres textos, firmados) sobre el servidor de 1055c (c.22882). Sólo la
+pantalla; el servidor no se toca.
+
+**Qué hay y dónde se pinta** (`public/dashboard/js/libroRegistroView.js`):
+- Las cuatro ranuras de `COPY` (:100-106): `etiquetaSinFechaCobro`, `explicacionSinFechaCobro`,
+  `resumenSinFechaCobroUna` y `resumenSinFechaCobroVarias` (el plural es `{n}` + espacio + la cola, como
+  `trazaAlbaran` + número). Ficha: `docs/microcopy/2026-11-26-SCRUM-1055-cobro-sin-fecha.md`.
+- Texto 1: en la columna de trazas, detrás de «Cobro», con `marca(…, 'badge-amber')` (:380-389), sólo si el
+  asiento trae `cobroSinFechaDeclarada === true`. Pastilla de Aviso de la casa: ni color ni clase nuevos.
+- Texto 2: el `title` de esa pastilla. La vista no tiene otro mecanismo de ayuda.
+- Texto 3: un `avisar(…, 'warning')` más en el resumen (:260-266), si `cobrosSinFechaDeclarada > 0`;
+  singular con 1. `cobrosSinFilas` NO se pinta: lo decide el fundador.
+- `tests/scrum296-pantalla-libro.test.mjs`: las cuatro ranuras entran en `APROBADAS` con la cita de c.22857 ③,
+  y la cuenta pasa de 20 a 24, como hizo 1051h con las suyas. No se relaja nada: una ranura más sin
+  clasificar seguiría tumbándolo.
+
+**Verdes, con población:** `tests/scrum1055e-senal-en-el-libro.test.mjs` 5 tests · 5 pass (banco de vistas +
+doble de `fetch`: la etiqueta sólo en el asiento con señal, el `title`, la línea con 2, 1 y 0, y los literales
+cotejados con c.22857). Dirigida con 1055c, 296, 514, 402, 1051h, 628, 1233, 755, 1041 y 1232: 131 tests ·
+131 pass · 0 fail · 0 skip. Mutaciones con `correr` + `aplicarUna`: base 5 pasados, y **3 de 3** tumban su
+test (la condición quitada, el plural fijo, la línea con 0). Build con tipos (`npm run build`): salida 0.
+Guards 1294, 267, 854, 237, 976, 700, 824 (y los dos 824b), 419, 1866 y 1850: 82 tests · 81 pass · 1 fail (976 ④:
+faltaba `**Skill UI:**` en este tramo; puesta, y vuelta a correr). Después: los 5 de árbol entero que propone
+`guards:entrada`, más 976, 1294, 267 y 1055e: 72 tests · 72 pass · 0 fail · 0 skip. `guards:entrada`: 17
+guards, salida 0. `censo:mudez -- --escribir`: no cambia el fichero (149 fichas, 0 medidas ahora).
+
+**NO hecho:**
+- El recuento en la salida del 303 y de las evidencias (punto 4 del encargo): DECLARADO para otro tramo,
+  por contexto (decisión del orquestador). Los dos leen el libro con criterio y el recuento ya viaja en el
+  objeto; sacarlo a su salida está sin hacer.
+- En una pantalla táctil el `title` no se ve: el texto 2 sólo llega pasando el ratón. Hacer la pastilla
+  pulsable pide un objetivo de 44 px (1850), y queda para otro tramo.
+- La suite entera en local: no me cabía en contexto. Corridos los guards con población y `guards:entrada`.
+- Staging y yaqu.app: no lo he intentado.
+- Choque previsto: 1055d (jv-j4co, todavía sin entrar) también añade su tramo al final de este fichero. El
+  segundo PR en entrar tendrá conflicto aquí, y se resuelve conservando los dos tramos.
+
+**Errores míos:** mi primer guion de mutaciones le pasó a `correr` la ruta `tests/…`, y `correr` ya antepone
+`tests/`. La base salió con 0 pasados y `aplicarUna` se negó a mutar: dijo CIEGO, no «muda». Lo cazó el
+instrumento de la casa, no yo. Cargué la skill de UI pero no lo escribí en el tramo: lo cazó 976 ④. Y no
+llegué al push antes de 175k: lo avisé al orquestador a 166k.
+
+**Relevo jv-j1lb: marcas del censo de microcopy** · 2026-11-27T06:41:07Z (hora de GitHub) · `origin/main` =
+`5ed6e94f6a61547eb4589ec913e93be9a4ce4b55` · encargo del orquestador `cobroflash-backend-2d`. El PR #3479 cayó en
+el obligatorio (run `45869328257`: 14.630 casos = 14.614 pass + 4 fail + 12 skip) por cuatro casos del censo de
+microcopy: `tests/scrum1157-censo-convenio-microcopy.test.mjs` ① y ③,
+`tests/scrum1215g-una-firma-de-grupo-no-cubre-a-quien-llega-despues.test.mjs` y
+`tests/scrum1215i-las-marcas-de-s2.test.mjs`. Reproducido en local antes de tocar nada: 28 casos · 24 pass ·
+4 fail. El censo acusó cuatro claves NUEVA de `public/dashboard/js/libroRegistroView.js`:
+- `COPY.etiquetaSinFechaCobro`, `COPY.explicacionSinFechaCobro` y `COPY.resumenSinFechaCobroUna`: «APROBADO
+  POR GRUPO, sin nombrar» (la firma de la cabecera del grupo no cubre a cada clave);
+- `COPY.resumenSinFechaCobroVarias`: SIN_COMENTARIO (la cabecera dice «tres textos» y las ranuras son cuatro).
+
+Las cuatro están en SCRUM-1055 c.22857 ③ (textos 1, 2, 3 singular y la cola del 3 plural, «{n}» + espacio +
+cola). A cada una le puse en SU línea, detrás de la coma, `// APROBADO por el fundador el 26-nov-2026
+(SCRUM-1055 comentario 22857)`. Ni una letra de los textos cambia: quitar la marca devuelve el fichero de
+`5cb821719` byte a byte (22.678 B; 4 marcas). Ningún guard tocado.
+
+**Verdes, con población:** los tres guards de arriba más `tests/scrum1055e-senal-en-el-libro.test.mjs`: 33
+casos · 33 pass · 0 fail · 0 skip. Los demás verdes de este relevo van en el comentario de entrega de Jira y
+en el mensaje al orquestador, con su población.
+
+**Error, del encargo y de 1055e:** el encargo de 1055e no pedía correr 1157 ni 1215, y la sesión que lo hizo
+corrió `scrum296` (APROBADAS) pero no el censo. La comprobación ya existe y actuó: el obligatorio tumbó el PR
+antes de entrar en `main`, así que no hace falta otra.
 # SCRUM-1055f · el recuento, en el 303 y en las evidencias
 **Medido contra:** `origin/main` = `5ed6e94f6a61547eb4589ec913e93be9a4ce4b55` · 2026-11-27T06:40:08Z (hora de GitHub; sesión J1 `jv-j1lc`, encargo del orquestador `cobroflash-backend-2d`)
 Versión: 1.2 (SCRUM-1836)
@@ -248,3 +324,11 @@ entera, `censo:mudez`, staging y yaqu.app. Los guards de la lista los corre el o
 
 **Errores míos:** crucé el umbral de 175k del primer push sin medirme entre Jira (137.186) y la lectura del 303
 (184.892), y después los 200k (205.394, avisó el hook).
+
+# SCRUM-1055g · la decisión del fundador sobre las facturas cobradas antes de la tabla de cobros (solo docs)
+**Medido contra:** `origin/main` = `81b244c1ff492a0bfecb508474ddd7e41a2ee63d` · 2026-11-27T10:51:14Z (hora de GitHub; lo escribe el orquestador del equipo J, sesión `cobroflash-backend-2d`, sin sesión de puesto: es una línea de registro, no una construcción)
+Versión: 1.2 (SCRUM-1836)
+
+**Decisión (SCRUM-1055 c.22917; literal del fundador «3-A», 27-nov-2026 10:31:05Z):** las facturas `paid` sin fila en `invoice_payments` (`cobrosSinFilas`, las de antes de SCRUM-1732) **siguen sin señal y se cuentan aparte**. Opción B, descartada: tratarlas como «sin fecha declarada» habría puesto la etiqueta a todas las antiguas marcadas a mano. Consecuencia: ningún cambio de código. Es lo que 1055c construyó (`cobrosSinFilas` aparte, sin `cobroSinFechaDeclarada`; tramo `# SCRUM-1055c` de este registro), lo que 1055e pinta y lo que 1055f lleva al borrador del 303 y al paquete de evidencias. Cifra en staging al decidir (c.22907, solo SELECT con `DATABASE_URL_STAGING`): 5 facturas `paid`, las 5 sin filas, `invoice_payments` vacía. Producción: NO medida.
+
+A9: sin fallo que generalice — tramo de una decisión ya tomada, sin código ni medición nueva; la decisión vive en Jira (c.22917) y aquí solo se enlaza para que quien lea el registro no la busque.

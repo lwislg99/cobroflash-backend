@@ -62,7 +62,10 @@ async function conPrismaSustituido(fn, gastos = GASTOS) {
     invoice: moduloPrisma.prisma.invoice,
     quote: moduloPrisma.prisma.quote,
     albaran: moduloPrisma.prisma.albaran,
+    merchant: moduloPrisma.prisma.merchant,
   };
+  // SCRUM-1872b · la ruta lee la zona del comercio para los bordes del trimestre: sin zona → UTC.
+  moduloPrisma.prisma.merchant = { findUnique: async () => ({ timezone: null }) };
   moduloPrisma.prisma.expense = { findMany: async () => gastos };
   // Repercutido vacío a propósito: este ticket mide el lado de gastos, no el de facturas.
   moduloPrisma.prisma.invoice = { findMany: async () => [] };
@@ -75,6 +78,7 @@ async function conPrismaSustituido(fn, gastos = GASTOS) {
     moduloPrisma.prisma.invoice = original.invoice;
     moduloPrisma.prisma.quote = original.quote;
     moduloPrisma.prisma.albaran = original.albaran;
+    moduloPrisma.prisma.merchant = original.merchant;
   }
 }
 

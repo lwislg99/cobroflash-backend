@@ -1605,6 +1605,7 @@ html, body { overflow-x: clip; }
 .quote-paso.is-cerrado .quote-conceptos,
 .quote-paso.is-cerrado .quote-lines,
 .quote-paso.is-cerrado .quote-add-line,
+.quote-paso.is-cerrado .quote-add-apartado,
 .quote-paso.is-cerrado .quote-dto-global,
 .quote-paso.is-cerrado .quote-fila,
 .quote-paso.is-cerrado .quote-ajustes,
@@ -2244,6 +2245,46 @@ html, body { overflow-x: clip; }
 }
 .quote-add-line:hover:not(:disabled) { background: var(--neutral-100); color: var(--neutral-700); }
 
+/* SCRUM-1807e · «+ Añadir apartado»: secundario, como «+ Añadir descuento», a 44 px (AB6). */
+.quote-add-apartado { min-height: 44px; margin-top: 8px; }
+
+/* SCRUM-1807e · LA CABECERA DE APARTADO. La MISMA tarjeta y la MISMA rejilla que una línea
+   (`.quote-line`): así Subir/Bajar y el arrastre la mueven sin saber nada de ella, y sus columnas
+   cuadran con las de las líneas. Se distingue por el fondo apagado, un token que ya existe
+   (`--bg`), no por un color nuevo. Debajo, a todo lo ancho, su descripción. */
+.quote-line--apartado { background: var(--bg, #f6f7f5); }
+.quote-apartado__modo,
+.quote-apartado__desc { grid-column: 1 / -1; }
+.quote-apartado__modo select { min-height: 44px; }
+/* La columna de IVA (el sitio del chip «IVA 21 %» de una línea): el tipo o «Varios» en agrupado. */
+.quote-apartado__iva {
+  /* Móvil: a lo ancho, como el chip de la línea (`.quote-line__ajustes`); debajo, Total | ⋯. */
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink, #0f1c17);
+}
+.quote-apartado__iva.is-vacia { display: none; }
+/* «TOTAL DEL APARTADO» es más largo que el «TOTAL» de una línea, y cada fila es su propia rejilla:
+   sin tope ensanchaba su columna y corría la fila entera 18 px a la izquierda (medido a 1920 en la
+   captura de SCRUM-1807e). Con el tope del mínimo de esa columna (96 px) el rótulo parte en dos
+   renglones y la columna mide lo que mide en una línea: lo que manda es el importe, como allí.
+   Sólo en la fila única: plegada, el total tiene media tarjeta y no corre nada. */
+@container linea-presupuesto (min-width: 880px) {
+  .quote-line--apartado .quote-line__totalwrap > .quote-line__label { max-width: 96px; }
+}
+@container linea-presupuesto (min-width: 640px) {
+  /* El selector ocupa el hueco de Cantidad + Precio; el IVA cae en la columna del chip. */
+  .quote-apartado__modo { grid-column: span 2; }
+  /* En la columna del chip «IVA 21 %», centrado como él. */
+  .quote-apartado__iva { grid-column: auto; justify-content: center; }
+  /* En desglosado el hueco se CONSERVA (como `.is-de-siempre`, SCRUM-915h): las columnas cuadran. */
+  .quote-apartado__iva.is-vacia { display: flex; visibility: hidden; }
+}
+
 /* SCRUM-915h · aquí vivían `.quote-totals` y `.quote-totals__apoyo`, el desglose de apoyo del
    editor (Base, IVA, descuentos). Se fue con él al documento de la derecha, que lo pinta con
    `.preview-total-row`. En Conceptos queda sólo el TOTAL (SCRUM-139 F3 · Signature KPI). */
@@ -2390,6 +2431,27 @@ html, body { overflow-x: clip; }
   transform: translateY(-50%);
 }
 /* S2: ── fin SCRUM-962f (radios y casilla) ──────────────────────────────────────────────────── */
+
+/* S2: ── SCRUM-1805e · CONCEPTOS de la ficha del PRESUPUESTO (`quotesDetailView.js`) ─────────────────
+   El «Total» a la derecha con una clase y no con `style=` (CSP). Y en móvil, la MISMA receta que la ficha
+   de factura (SCRUM-1787e, bloque J1): a ≤640 px cada línea es un bloque, el concepto a todo el ancho y
+   Cant., Precio, IVA y Total debajo en cuatro columnas con su rótulo (`data-label`, leído de la cabecera).
+   Medido a 390 px antes: 2 de 5 columnas a la vista, el resto tras el scroll propio de la tabla. */
+.quote-conceptos-tabla .quote-conceptos-col-total { text-align:right; }
+@media (max-width: 640px) {
+  .quote-conceptos-tabla thead { display:none; }
+  .quote-conceptos-tabla tbody { display:block; }
+  /* Una diferencia con la receta de 1787e, medida (AB6, importes grandes): con `repeat(4, 1fr)`, a 390 px
+     «12.099,99 €» partía el «€» a otro renglón. Precio y Total no se parten (
+owrap) y su columna no baja de
+     ese ancho (min-content; con max-content el concepto largo, que abarca las cuatro, ensanchaba la rejilla); Cant. e IVA, cortos siempre, ceden el sitio. */
+  .quote-conceptos-tabla tbody tr { display:grid; grid-template-columns:minmax(0, .6fr) minmax(min-content, 1fr) minmax(0, .6fr) minmax(min-content, 1.2fr); gap:4px 8px; padding:10px 0; border-bottom:1px solid var(--border); }
+  .quote-conceptos-tabla tbody td { display:block; min-width:0; padding:0; border:0; white-space:normal; overflow-wrap:anywhere; }
+  .quote-conceptos-tabla tbody td:nth-child(3), .quote-conceptos-tabla tbody td:nth-child(5) { white-space:nowrap; overflow-wrap:normal; }
+  .quote-conceptos-tabla tbody td:first-child { grid-column:1 / -1; }
+  .quote-conceptos-tabla tbody td[data-label]::before { content:attr(data-label); display:block; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+}
+/* S2: ── fin SCRUM-1805e ─────────────────────────────────────────────────────────────────────── */
 
 /* ── Customers ───────────────────────────────────────────────── */
 .customers-header {
@@ -2765,6 +2827,10 @@ html, body { overflow-x: clip; }
 }
 #po-detalle .po-linea > .po-col-cant { color: var(--muted); }
 #po-detalle .po-linea > .po-col-importe { font-weight: 600; }
+/* S2: SCRUM-1857 ① (AB6, cura por contenedor como 1849 y 1844) · la casilla del precio por unidad medía
+   20 px de caja y 21 de toque a 390, 929 y 1280. Sólo el tamaño y sólo aquí: el `input` global no se
+   toca, ni el ancho de columna (la cabecera casa con la línea), ni «Guardar precios» (c.22779). */
+#po-detalle .po-linea > input.po-col-precio { min-height: 44px; }
 /* El `@media` va DETRÁS de las reglas base: con la misma especificidad gana la última (ya mordió:
    el `gap` de la línea pisaba el del móvil y descuadraba 4 px). */
 @media (max-width: 480px) {

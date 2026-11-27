@@ -14,7 +14,7 @@
  * merchant, devuelve líneas de presupuesto listas para rellenar el formulario.
  * generateQuoteMessage: genera el mensaje de WhatsApp del link del presupuesto.
  */
-import { geminiComplete, isGeminiConfigured } from '../../../integrations/gemini';
+import { geminiComplete, geminiCompleteConModelo, isGeminiConfigured } from '../../../integrations/gemini';
 import { prisma } from '../../../core/db/prisma';
 // SCRUM-760 · la MISMA regla fiscal que ya guarda la puerta del presupuesto (SCRUM-217). Se
 // importa, no se copia: ver el bloque de `sanearLineasAlbaran`.
@@ -41,6 +41,15 @@ async function aiComplete(params: {
 }): Promise<string> {
   if (isGeminiConfigured()) {
     return geminiComplete({ system: params.system, user: params.user, maxTokens: params.maxTokens, jsonSchema: params.jsonSchema });
+  }
+  throw new Error('ai_not_configured');
+}
+
+// SCRUM-1856a · lo mismo diciendo QUÉ modelo contestó: con la lista de respaldo, un log del
+// dictado sin el modelo no dice cuál de los tres devolvió la respuesta inservible.
+async function aiCompleteConModelo(params: Parameters<typeof aiComplete>[0]): Promise<{ texto: string; modelo: string }> {
+  if (isGeminiConfigured()) {
+    return geminiCompleteConModelo({ system: params.system, user: params.user, maxTokens: params.maxTokens, jsonSchema: params.jsonSchema });
   }
   throw new Error('ai_not_configured');
 }
@@ -403,8 +412,7 @@ Total: ${params.total} ${params.currency}`;
 // ⛔ NI UN IMPORTE, en ninguna dirección: no se consulta el catálogo (que es lo único que aporta
 // precios) y el esquema que se le pide al modelo no tiene campo de precio ni de IVA.
 export async function suggestLineasDeParte(params: { dictado: string }): Promise<PropuestaDelDictado> {
-  const raw = (
-    await aiComplete({
+  const { texto, modelo } = await aiCompleteConModelo({
       system: PROMPT_PARTE_APROBADO,
       user: `Dictado del técnico:\n${params.dictado}`,
       maxTokens: 2048,
@@ -422,15 +430,29 @@ export async function suggestLineasDeParte(params: { dictado: string }): Promise
           required: ['descripcion'],
         },
       },
-    })
-  ).trim();
+    });
+  const raw = texto.trim();
 
   const jsonMatch = raw.match(/\[[\s\S]*\]/);
   // Sin JSON reconocible se entrega al saneador tal cual: devuelve la propuesta VACÍA con su
   // motivo en vez de lanzar, que es lo que deja al técnico seguir escribiendo a mano.
-  if (!jsonMatch) return sanearDictadoDelParte(null, params.dictado);
-
   let parsed: unknown = null;
-  try { parsed = JSON.parse(jsonMatch[0]); } catch { parsed = null; }
-  return sanearDictadoDelParte(parsed, params.dictado);
+  let forma: 'sin_json' | 'json_invalido' | 'lista' = 'sin_json';
+  if (jsonMatch) {
+    try { parsed = JSON.parse(jsonMatch[0]); forma = 'lista'; } catch { parsed = null; forma = 'json_invalido'; }
+  }
+  const propuesta = sanearDictadoDelParte(parsed, params.dictado);
+
+  // SCRUM-1856a · el caso que hasta hoy era MUDO: el modelo contestó, sin error, y el saneador no
+  // sacó ni una línea. Sin esta línea, en Railway no queda rastro de por qué el técnico vio el
+  // parte vacío. ⛔ Ni el dictado ni la respuesta van al log (pueden llevar datos del cliente):
+  // sólo su FORMA y sus tamaños.
+  if (propuesta.vacia && propuesta.motivo === 'sin_lineas_reconocidas') {
+    const elementos = Array.isArray(parsed) ? parsed.length : 0;
+    console.warn(
+      `[ai:dictado] el modelo ${modelo} contestó y el saneador no sacó líneas ` +
+      `(forma: ${forma}, elementos: ${elementos}, longitud de la respuesta: ${raw.length})`,
+    );
+  }
+  return propuesta;
 }

@@ -172,6 +172,24 @@ export const PRESUPUESTO_FIRMA_CSS = `
     .rechazo-sub { font-size:13px;color:#6b756f;margin:0 0 16px;text-align:center }
     .rechazo-label { font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px }
     .enlace-volver { display:block;text-align:center;margin-top:16px;font-size:13.5px;color:#15803d;font-weight:600;text-decoration:none }
+    /* SCRUM-1807g · apartados: «Total del apartado» bajo un apartado desglosado (en negrita y con raya
+       encima, como el PDF y el portal) y la fila de un apartado agrupado, que se despliega. Mismos
+       colores y bordes que la tabla; el foco lo pone la regla :focus-visible de arriba. */
+    .apartado-total { font-weight: 600; color: #0f1c17; }
+    .apartado-total td { border-top: 1px solid #e7e9e5; }
+    .apartado-total td:first-child { text-align: right; }
+    .apartado-agrupado { color: #0f1c17; }
+    .apartado-agrupado > td { padding: 0 6px; }
+    .apartado-detalle { margin: 0; }
+    /* AB6: el resumen es lo que se toca para desplegar → 44 px de alto como mínimo */
+    .apartado-detalle > summary { cursor: pointer; padding: 12px 0; min-height: 44px; }
+    .apartado-resumen { display: inline-flex; justify-content: space-between; align-items: baseline; gap: 8px;
+      width: calc(100% - 1.2em); vertical-align: top; }
+    .apartado-resumen-importe { white-space: nowrap; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .apartado-sublinea { display: flex; gap: 8px; padding: 4px 0 4px 1.2em; font-size: 13px; color: #6b756f; }
+    .apartado-sublinea-concepto { flex: 1; min-width: 0; overflow-wrap: break-word; }
+    .apartado-sublinea-cant { width: 38px; text-align: right; }
+    .apartado-sublinea-importe { width: 88px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 `;
 
 /** La hoja de las opciones (`TIER_CSS`), tal cual. Sólo la enlaza la cara de firmar. */

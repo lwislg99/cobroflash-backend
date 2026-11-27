@@ -1,8 +1,8 @@
 {
   "ticket": "SCRUM-1866",
   "origen": "sonda 2 del censo SCRUM-1756g (docs/master/evidencias/SCRUM-1756/1756g-censo.mjs.txt), en tests/_scrum1866-csp-1756g.mjs",
-  "medidoSobre": "bdba2afe7ba22bb8f6e2cc08311094bb837cee35",
-  "fecha": "2026-11-25T21:58:35Z (cabecera Date de GitHub)",
+  "medidoSobre": "83e96fad8f39fe85d646d2af890f7b636fd4bae3",
+  "fecha": "2026-11-27T10:11:28.646Z (reloj de la máquina que recongeló)",
   "poblacion": "git ls-files src public = 523 · fuera correo 13 · quedan 510 · de texto 480",
   "columnas": "style_tag = <style · style_attr = style=\" · script = <script> sin src (sin datos json) · on = on*=",
   "ficheros": {
@@ -26,7 +26,7 @@
     "public/dashboard/js/providersView.js": {"style_tag":0,"style_attr":10,"script":0,"on":0},
     "public/dashboard/js/quoteRequestsView.js": {"style_tag":0,"style_attr":14,"script":0,"on":0},
     "public/dashboard/js/quoteRevisiones.js": {"style_tag":0,"style_attr":10,"script":0,"on":0},
-    "public/dashboard/js/quotesDetailView.js": {"style_tag":0,"style_attr":38,"script":0,"on":1},
+    "public/dashboard/js/quotesDetailView.js": {"style_tag":0,"style_attr":36,"script":0,"on":1},
     "public/dashboard/js/quotesListView.js": {"style_tag":0,"style_attr":3,"script":0,"on":0},
     "public/dashboard/js/quotesView.js": {"style_tag":0,"style_attr":13,"script":0,"on":0},
     "public/dashboard/js/reportsView.js": {"style_tag":0,"style_attr":161,"script":0,"on":0},

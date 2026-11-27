@@ -1649,7 +1649,7 @@ pregunta de política de c.21333. Las otras 69: forma, no leídas.
    va como «comentario <id>» porque es la forma que el oráculo YA lee (`REFERENCIA_JIRA`,
    `tests/_microcopy-aprobada.mjs:90`) y la misma de la firma delegada; la frase de apertura no cambia, así que
    `FIRMA_DEL_FUNDADOR` (`:69`) sigue casando. Ningún guard tocado.
-3. **El eje ciego de `scrum921`** → SCRUM-1872, cola de instrumentos (S5); hoy no se toca.
+3. **El eje ciego de `scrum921`** → SCRUM-1873, cola de instrumentos (S5); hoy no se toca.
 4. **Peso 4, las 83 de registro: NO se curan una a una** (conforme a la propuesta de arriba). Un registro narra
    una firma pasada; se cura sólo si un guard o un doc vivo se apoya en él.
 
