@@ -253,7 +253,10 @@ test('SCRUM-1456 · DELETE customers /:id · un id CORRECTO sigue llegando al bo
   const pedir = pedidor(LECTURAS[26]);
   // SCRUM-1571: el 7 EXISTE (el borrado toca una fila). Con la base vacía, el 204 era el defecto de
   // 1571 —«borrado» sin borrar nada—, y ahora esa ruta contesta 404: `scrum1571-…` lo mide.
-  const r = await pedir('7', { 'customer.deleteMany': { count: 1 } });
+  // SCRUM-1868a: antes de borrar, la ruta BUSCA al cliente (`customer.findFirst`) y cuenta lo que le
+  // cuelga; sin la fila, el banco contesta «no existe» y la ruta 404. El 7 tiene que estar en la base
+  // del caso, igual que su `deleteMany`. Las cuentas quedan vacías: nada que bloquee.
+  const r = await pedir('7', { 'customer.findFirst': { id: 7 }, 'customer.deleteMany': { count: 1 } });
   assert.ok(r.consultas > 0, '🔴 con un id correcto el borrado no ha llegado a la base');
   assert.equal(r.status, 204, `🔴 un id correcto ya no borra: la ruta contesta ${r.status}`);
 });

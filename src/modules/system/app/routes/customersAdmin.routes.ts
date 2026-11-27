@@ -1,5 +1,6 @@
 import express, { Router, Request, Response, NextFunction } from 'express';
 import { listCustomers, getCustomer, createCustomer, updateCustomer, deleteCustomer, ensurePortalToken } from '../../customerAdmin';
+import { BorradoBloqueado, previaDeBorrado } from '../../customerAdmin'; // SCRUM-1868a
 import {
   DOC_MAX_BYTES, DOCS_MAX_BYTES_POR_CLIENTE, listarDocumentos, subirDocumento, leerDocumento, borrarDocumento, contentDispositionAdjunto,
 } from '../../customerAdmin'; // SCRUM-1005b
@@ -839,6 +840,22 @@ router.get('/:id/detail', async (req, res) => {
   }
 });
 
+// SCRUM-1868a · GET /admin/customers/:id/borrado-previa — la LECTURA del modal «Eliminar cliente»: qué
+// se borraría y si algo lo impide, SIN escribir nada. Mismo contador que el DELETE de abajo
+// (`contarLoQueSeBorra`), así que no pueden discrepar. Admin, como el borrado (SCRUM-55 D2).
+router.get('/:id/borrado-previa', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
+    const previa = await previaDeBorrado(req.merchantId, id);
+    if (!previa) return res.status(404).json({ error: 'not_found' });
+    return res.json(previa);
+  } catch (err) {
+    console.error('[GET /admin/customers/:id/borrado-previa]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 // SCRUM-55 (D2 del fundador): borrado DURO (`customer.deleteMany`) e irreversible,
 // que además arrastra el historial del cliente → admin. AA1.4 lo lista como stop
 // condition ("datos de clientes: export/borrado").
@@ -852,6 +869,11 @@ router.delete('/:id', requireRole('admin'), async (req, res) => {
     if (count === 0) return res.status(404).json({ error: 'not_found' });
     res.status(204).send();
   } catch (err) {
+    // SCRUM-1868a · con presupuestos o facturas no se borra: 409 con el motivo y la cuenta, como la
+    // fusión. Antes, la FK RESTRICT de `quotes`/`invoices` daba un 500. Códigos, nunca frases (regla 39).
+    if (err instanceof BorradoBloqueado) {
+      return res.status(409).json({ error: err.motivos[0], motivos: err.motivos, cuenta: err.cuenta });
+    }
     console.error('[DELETE /admin/customers/:id]', err);
     res.status(500).json({ error: 'internal_error' });
   }
