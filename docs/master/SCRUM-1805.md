@@ -75,3 +75,37 @@ Mutaciones: catálogo → `tests/scrum1805-editor-modo-factura.test.mjs` (6 en `
 **Capturas** (yaqu.app, cuenta +qa, `quotesView.js` y `cuerpoDelDocumentoSuelto.js` servidos desde el árbol por interceptación; datos de EJEMPLO; nada se emite). Guion: `docs/master/evidencias/SCRUM-1805/captura-1805-editor-factura.mjs` · medida: `captura-1805-medida.json` · fotos `captura-1805-condiciones-abierto-{390,1280}.png` y `captura-1805-condiciones-cerrado-{390,1280}.png`. En los dos anchos: resumen `💳 Tarjeta · 📲 Bizum · vence el 26/12/2026` (la cuenta +qa no tiene la transferencia configurada: su casilla nace sin marcar), pasos 3 y 4, 0 errores de página, sin desborde lateral, y la única escritura (`POST /admin/entorno`) interceptada.
 
 **Visto en las capturas y declarado:** en la factura aparece ahora la guía del paso, «Ya van puestas las de siempre. Cámbialas sólo si este cliente es distinto.» — texto ya existente del presupuesto, no nuevo. **Decisión del orquestador (26-nov, antes del push): va TAL CUAL** — es literal ya firmado y en la factura sigue siendo verdad (las formas vienen precargadas igual); registrado como uso nº 14 de la delegación (SCRUM-1656 c.21978).
+# SCRUM-1805e · S2 · la ficha del presupuesto en móvil: los conceptos apilados (receta de 1787e)
+
+**Medido contra:** `origin/main` = `13e5bb69532b7d56d8d0be4b8386210aa2e5202b` · 2026-11-26T21:57:30Z (relevo de S2 del 26-nov noche; rama `scrum-1805e-ficha-movil`).
+
+A9: aviso → cicatriz S2 «Un censo que contagia por NOMBRE se dispara con un `th.textContent` inocente: si una cifra derivada se mueve con un cambio que no toca textos, se busca qué nombre la contagió antes de re-anclarla.» — no se pudo comprobar: el contagio por nombre es el diseño del censo de SCRUM-601 (`tests/_censo-copy-vs-flag.mjs`), y cambiarlo no es de este ticket; se evitó en el código (una lista, sin `textContent`) y se dice aquí.
+
+Mutaciones: catálogo → `tests/scrum1805e-ficha-presupuesto-movil.test.mjs` (4 en `MUTACIONES_QUE_ME_TUMBAN`, corridas con `mutacionesDeclaradas` + `correr` + `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`: base 4/0 y las 4 mueren en el caso que nombran; árbol restaurado).
+
+**Skill UI:** cargada · antes de tocar la ficha, en esta misma tanda; checklist AB6 abajo.
+
+**El encargo.** Orquestador, relevo de S2 del 26-nov: `quotesDetailView.js:703-707`, a 390 px solo caben 2 de 5 columnas; «el arreglo es el MISMO de 1787e» (`docs/master/SCRUM-1787.md`, «Para Luis (S2): el presupuesto tiene el mismo defecto»).
+
+**Qué entra.**
+- `public/dashboard/js/quotesDetailView.js`: la tabla lleva `quote-conceptos-tabla`; cabecera y rótulos (`data-label`) salen de UNA lista `COLUMNAS` (los cinco textos de siempre, ni uno nuevo); cada celda numérica lleva el rótulo de su columna, el concepto no. El `style="text-align:right"` del «Total» (cabecera y celda) pasa a la clase `quote-conceptos-col-total` (CSP), y el trinquete de SCRUM-1773 se recongela 38 → 36 con su línea fechada (lo pide su propio mensaje de rojo; el test es del puesto de SCRUM-1773, se declara aquí).
+- `public/dashboard/css/styles.css`, bloque S2 nuevo detrás del de 962f: la alineación del «Total» y, dentro de `@media (max-width: 640px)`, las reglas del bloque J1 de 1787e con `.quote-conceptos-tabla`.
+
+**Dos diferencias con la receta, las dos medidas.**
+1. **Rejilla.** Con `repeat(4, 1fr)`, a 390 px «12.099,99 €» partía el «€» a otro renglón (AB6, importes grandes: lo enseñó la primera captura). Ahora `minmax(0,.6fr) minmax(min-content,1fr) minmax(0,.6fr) minmax(min-content,1.2fr)`, y Precio y Total con `white-space:nowrap`. El primer intento, con `max-content`, ensanchaba la rejilla a 378 px de scroll propio: el concepto largo abarca las cuatro columnas y repartía su ancho entre ellas. La ficha de FACTURA (J1) tiene el mismo «€» partido con 9.999,99 €: se avisa al orquestador, no se toca.
+2. **Rótulos de una lista, no de `th.textContent`.** La primera versión (la literal de la receta) movió 7 literales del censo de SCRUM-601 de «a pelo» a «tipo» sin tocar un texto: el censo contagia por nombre (`textContent` → `rotulos` → `label` → … → `isFullUpfront`) y daba por «derivados del tipo» los botones de facturar de más abajo. No se re-ancló la cifra: se quitó el contagio. `scrum601` vuelve a 5/5 con `{ flag: 8, tipo: 12, aPelo: 166 }`.
+
+**Rojo primero** (`tests/scrum1805e-ficha-presupuesto-movil.test.mjs`, sobre `quotesDetailView.js` y `styles.css` de `origin/main`): 0 de 4. Con el cambio: 4/4.
+
+**Capturas** (yaqu.app, cuenta +qa; ANTES = lo desplegado, DESPUÉS = mis dos ficheros por interceptación; el GET `/admin/quotes/1805` sustituido por un presupuesto de EJEMPLO con un concepto largo y 9.999,99 €; la única escritura, `POST /admin/entorno`, interceptada). Guion `docs/master/evidencias/SCRUM-1805/captura-1805e-ficha-presupuesto.mjs` · medida `captura-1805e-medida.json` · fotos `captura-1805e-{antes,despues}-{390,1280}.png`.
+
+| ancho | lado | celdas de la 1.ª línea a la vista | scroll propio de la tabla | desborde de página | errores |
+|---|---|---|---|---|---|
+| 390 | antes | 0 de 5 | 743 px | no | 0 |
+| 390 | después | 5 de 5 | 0 | no | 0 |
+| 1280 | antes | 5 de 5 | 0 | no | 0 |
+| 1280 | después | 5 de 5 (fila idéntica: `[295,910,938,67]`) | 0 | no | 0 |
+
+**AB6 sobre el diff.** Cero textos nuevos; cero `style=` nuevos (dos menos); el `::before` del rótulo usa `var(--muted)`, el token de la receta; sin controles nuevos (nada que medir a 44 px); importes grandes medidos con 9.999,99 € y 12.232,89 €, cada uno en su renglón; concepto largo, a todo el ancho y sin desborde; la cabecera de apartado sigue siendo una celda a todo lo ancho.
+
+**Regresión dirigida** (los 164 ficheros de `tests/` que nombran `quotesDetailView`, `renderQuoteDetailView` o `styles.css`): 1.287 tests, 0 fallos (con el trinquete y el censo de 601 ya en verde). `guards:entrada` verde. La tanda entera la pasa el check obligatorio.

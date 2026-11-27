@@ -71,6 +71,7 @@ import partesRouter from './modules/jobs/app/routes/partes.routes'; // SCRUM-652
 import precargaAdminRouter from './modules/jobs/app/routes/precargaAdmin.routes'; // SCRUM-460 (H1 fase 3)
 import entornoAdminRouter from './modules/auth/app/routes/entornoAdmin.routes'; // SCRUM-360 (H5 fase 2)
 import soporteAdminRouter from './modules/system/app/routes/soporteAdmin.routes'; // SCRUM-406
+import planAdminRouter from './modules/system/app/routes/planAdmin.routes'; // S1: SCRUM-1818
 import libroRegistroRouter from './modules/invoicing/app/routes/libroRegistro.routes'; // SCRUM-296 (A6): libro de registro, SOLO LECTURA
 import librosAeatRouter from './modules/fiscal/librosAeat/librosAeat.routes'; // SCRUM-325 (E4): el libro de A6, por periodo y en CSV. SOLO LECTURA
 import modelo303Router from './modules/fiscal/modelo303/modelo303.routes'; // SCRUM-295 (A5): modelo 303, SOLO LECTURA
@@ -605,6 +606,7 @@ mountAdmin(app, '/admin/cobros',     cobrosAdminRouter); // SCRUM-285 (B4)
 mountAdmin(app, '/admin/products',   productsAdminRouter);
 mountAdmin(app, '/admin/providers',  providersAdminRouter);
 mountAdmin(app, '/admin/metrics',    metricsRouter);
+mountAdmin(app, '/admin/plataforma', planAdminRouter); // S1: SCRUM-1818 — solo-fundador; la puerta va en la ruta
 mountAdmin(app, '/admin/expenses',   expensesRouter);
 mountAdmin(app, '/admin/bot',        botAdminRouter); // A8.3: handoffs pendientes del bot
 mountAdmin(app, '/admin/jobs',       jobsRouter);    // A13 (JOB-1): trabajos
