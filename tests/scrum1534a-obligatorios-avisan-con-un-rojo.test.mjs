@@ -5,8 +5,8 @@
 // modo RACHAS de `scripts/vigia-silencio-de-main.mjs`, un check OBLIGATORIO de `main` (los que el
 // vigía lee del ruleset y pasa en `veredicto({ obligatorios })`) avisa con UN rojo. Los demás jobs
 // siguen avisando con `UMBRAL_ROJOS_SEGUIDOS` seguidos. Antes, la línea `!f.obligatorio` les quitaba
-// el aviso de rojo: «guards de navegador», obligatorio hoy, tuvo una racha de 72 rojos en `main`
-// (16 → 27-nov) de la que este modo no podía avisar (c.22940).
+// el aviso de rojo: «guards de navegador», obligatorio hoy, tuvo una racha de 72 rojos (medida el 2026-11-27 sobre origin/main 600aafc43, SCRUM-1534 c.22940)
+// en `main` entre el 16 y el 27-nov, de la que este modo no podía avisar.
 //
 // Banco: historiales sembrados en memoria con la forma de `leerHistorial` (sin red, sin fixture).
 // Los nombres de job son los REALES de `JOBS_DE_MAIN`, y los obligatorios, los dos que el ruleset
