@@ -42,7 +42,8 @@ export const ERROR_SIN_LINEAS = 'factura_sin_lineas';
 /**
  * Copy para el PROFESIONAL (rutas de admin).
  * TEXTO OFICIAL desde el 3-ago-2026 (regla 30, la de entonces). Que lo firmara el fundador lo dice
- * la sesión que lo aplicó (SCRUM-264 c.11923); no consta su firma (SCRUM-1645 c.21325; SCRUM-1502v).
+ * la sesión que lo aplicó (SCRUM-264 c.11923); no consta su firma (SCRUM-1645 c.21325; SCRUM-1502v);
+ * firmado por el fundador el 27-nov-2026 (SCRUM-1502 c.22945).
  *
  * Lo lee un fontanero en el momento de facturar: dice qué pasa y qué hacer, sin jerga.
  *
@@ -52,12 +53,14 @@ export const ERROR_SIN_LINEAS = 'factura_sin_lineas';
  * su importe.». Mismo patrón —qué pasa, dos puntos, y qué hacer— para que el profesional no lea
  * dos voces distintas sobre lo mismo.
  */
+// APROBADO por el fundador el 27-nov-2026 (SCRUM-1502 comentario 22945)
 export const COPY_ADMIN_SIN_LINEAS =
   'No se puede facturar: este presupuesto no tiene ningún concepto con precio. Añade lo que vas a cobrar.';
 
 /**
  * Copy para el CLIENTE FINAL (C1: acepta el presupuesto desde WhatsApp).
- * TEXTO OFICIAL desde el 3-ago-2026 (SCRUM-264 c.11923); su procedencia, la de arriba (SCRUM-1502v).
+ * TEXTO OFICIAL desde el 3-ago-2026 (SCRUM-264 c.11923); su procedencia, la de arriba (SCRUM-1502v);
+ * firmado por el fundador el 27-nov-2026 (SCRUM-1502 c.22945).
  *
  * Aquí importa más: **el cliente no puede arreglarlo**. Su aceptación ya ha valido; lo que falta
  * es que el profesional complete el presupuesto. Por eso no dice «inténtalo de nuevo»: le diría
@@ -69,6 +72,7 @@ export const COPY_ADMIN_SIN_LINEAS =
  * ⚠️ Para que este texto llegue a la pantalla hace falta que la landing lea `message` y no
  * `error` — antes de SCRUM-264 leía el código y el cliente veía el identificador interno.
  */
+// APROBADO por el fundador el 27-nov-2026 (SCRUM-1502 comentario 22945)
 export const COPY_PUBLICO_SIN_LINEAS =
   'Hemos recibido tu aceptación. El profesional tiene que terminar de detallar el presupuesto; te enviaremos la factura en cuanto lo haga.';
 
