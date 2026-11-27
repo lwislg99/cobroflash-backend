@@ -240,6 +240,7 @@ A9: comprobación → `scripts/guard-915h-conceptos-limpios.mjs`
 | `tests/scrum697-un-solo-render.test.mjs` · `scrum698` | — | 9/9 · 11/11 |
 
 **El otro rojo de #3456 no es de este tramo:** `tests/scrum553-etiquetas-pegadas.test.mjs` cae (22 extractores con el `>` pegado, tope 20) por dos líneas de `tests/scrum1807g-firma-total-del-apartado.test.mjs` (:92 `<tbody>`, :177 `<script>`), que vienen del PR de S1 #3446 (`scrum-1807-apartados-s1`, apilado debajo). Se cura en su rama; aquí entra con el siguiente merge de esa rama.
+
 ## SCRUM-1807g-cura · el test de 1807g, sin extractores con el `>` pegado (27-nov-2026)
 
 **Medido contra:** `origin/main` = `246e5b8eeb33b70de41d009bb5615cd645fe3141` · 2026-11-27T09:10:30Z
