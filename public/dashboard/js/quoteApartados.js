@@ -119,6 +119,84 @@
     return caja;
   }
 
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+  // SCRUM-1807e · EL APARTADO EN EL EDITOR: su total, su IVA y lo que viaja.
+  //
+  // Decisión del fundador: SCRUM-1786 c.22269 (P2, P3 y los literales) y SCRUM-1656 c.22787
+  // («+ Añadir apartado»). La clave `agrupado` la escribió S1 en la puerta (SCRUM-1807d). El
+  // recorrido es el mismo que el de `capitulos()` del dominio (SCRUM-1807c): una cabecera abre
+  // apartado, y sus líneas son las que la siguen hasta la próxima cabecera.
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * TOTAL E IVA DE CADA APARTADO, en un solo recorrido. `filas` es la lista del editor, en orden,
+   * con `{ apartado: true }` en las cabeceras y `{ total, vatPerc, enBlanco }` en las líneas.
+   * Devuelve una lista PARALELA: en la posición de cada cabecera, `{ total, tipos }`, y `null` en
+   * las líneas. `tipos` son los tipos de IVA DISTINTOS de sus líneas, en el orden en que salen.
+   *
+   * El total suma lo mismo que enseña cada fila del editor (c.22389: «cada vista suma como sus
+   * líneas»), y por eso las cifras entran ya hechas: aquí no se calcula ningún importe. Una línea
+   * EN BLANCO (sin concepto y sin precio) no aporta su tipo, porque nadie lo ha elegido: es el
+   * renglón libre del cuadernillo, que nace con el IVA por defecto.
+   */
+  function resumenDeApartados(filas) {
+    var src = Array.isArray(filas) ? filas : [];
+    var salida = [];
+    var abierto = null;
+    for (var i = 0; i < src.length; i++) {
+      var f = src[i] || {};
+      if (f.apartado === true) {
+        abierto = { total: 0, tipos: [] };
+        salida.push(abierto);
+        continue;
+      }
+      salida.push(null);
+      if (!abierto) continue;
+      var t = Number(f.total);
+      if (Number.isFinite(t)) abierto.total = Math.round((abierto.total + t) * 100) / 100;
+      if (f.enBlanco) continue;
+      var v = Number(f.vatPerc);
+      if (Number.isFinite(v) && abierto.tipos.indexOf(v) === -1) abierto.tipos.push(v);
+    }
+    return salida;
+  }
+
+  /**
+   * LO QUE SE PINTA EN LA COLUMNA DE IVA DE UN APARTADO AGRUPADO (c.22269 y su encargo, c.22787):
+   * con varios tipos, «Varios» (literal firmado); con uno, ese tipo («21 %»), que es un valor y no
+   * un texto nuevo; sin líneas que lo digan, nada. `fmt` es el que formatea el número en pantalla.
+   */
+  function ivaDelApartado(tipos, fmt) {
+    var lista = Array.isArray(tipos) ? tipos : [];
+    if (lista.length > 1) return 'Varios';
+    if (lista.length === 1) return (typeof fmt === 'function' ? fmt(lista[0]) : String(lista[0])) + ' %';
+    return '';
+  }
+
+  /**
+   * LA CABECERA, TAL COMO VIAJA en `lines` (POST /quote/create): concepto, la marca y, sólo si
+   * las hay, la descripción y `agrupado`. Mismo criterio que el coste y el descuento de la línea:
+   * lo que no se ha escrito NO viaja (ausente ≠ vacío). `agrupado: false` tampoco: sin la clave la
+   * cabecera es desglosada (SCRUM-1807d, compatibilidad con las cabeceras de antes). Con
+   * «Incluir descripción en el PDF» marcada, la descripción va además pegada al concepto tras un
+   * salto, igual que en una línea (SCRUM-603): es lo que el PDF sabe leer.
+   *
+   * Sin concepto no hay cabecera (`null`): un título vacío no es un apartado.
+   */
+  function cabeceraParaPayload(concepto, descripcion, incluirDescripcion, agrupado) {
+    var titulo = typeof concepto === 'string' ? concepto.trim() : '';
+    if (!titulo) return null;
+    var desc = typeof descripcion === 'string' ? descripcion.trim() : '';
+    var out = { concept: incluirDescripcion && desc ? titulo + '\n' + desc : titulo };
+    out[MARCA_APARTADO] = true;
+    if (desc) out.description = desc;
+    if (agrupado === true) out.agrupado = true;
+    return out;
+  }
+
+  root.resumenDeApartados = resumenDeApartados;
+  root.ivaDelApartado = ivaDelApartado;
+  root.cabeceraParaPayload = cabeceraParaPayload;
   root.MARCA_APARTADO = MARCA_APARTADO;
   root.esApartado = esApartado;
   root.numerarLineas = numerarLineas;

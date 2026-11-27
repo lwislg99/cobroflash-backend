@@ -1,0 +1,230 @@
+﻿[
+ {
+  "ancho": 390,
+  "botonConPasoCerrado": false,
+  "servidosLocales": [
+   "/dashboard/css/styles.css",
+   "/dashboard/js/quoteApartados.js",
+   "/dashboard/js/quotesView.js"
+  ],
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "cab": [
+   {
+    "concepto": "Baño",
+    "modo": "agrupado",
+    "iva": "Varios",
+    "ivaCaja": [
+     46,
+     746,
+     298,
+     44
+    ],
+    "total": "231,00 €",
+    "selectorCaja": [
+     46,
+     692,
+     298,
+     44
+    ],
+    "fila": [
+     33,
+     580,
+     324,
+     382
+    ]
+   },
+   {
+    "concepto": "Cocina",
+    "modo": "desglosado",
+    "iva": "",
+    "ivaCaja": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "total": "12.099,99 €",
+    "selectorCaja": [
+     46,
+     1650,
+     298,
+     44
+    ],
+    "fila": [
+     33,
+     1538,
+     324,
+     328
+    ]
+   }
+  ],
+  "chipIvaDeLinea": [
+   46,
+   1394,
+   298,
+   44
+  ],
+  "boton": [
+   33,
+   2182,
+   133,
+   44
+  ],
+  "desborda": false
+ },
+ {
+  "ancho": 1280,
+  "botonConPasoCerrado": false,
+  "servidosLocales": [
+   "/dashboard/css/styles.css",
+   "/dashboard/js/quoteApartados.js",
+   "/dashboard/js/quotesView.js"
+  ],
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "cab": [
+   {
+    "concepto": "Baño",
+    "modo": "agrupado",
+    "iva": "Varios",
+    "ivaCaja": [
+     306,
+     667,
+     518,
+     44
+    ],
+    "total": "231,00 €",
+    "selectorCaja": [
+     306,
+     611,
+     518,
+     44
+    ],
+    "fila": [
+     293,
+     496,
+     544,
+     390
+    ]
+   },
+   {
+    "concepto": "Cocina",
+    "modo": "desglosado",
+    "iva": "",
+    "ivaCaja": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "total": "12.099,99 €",
+    "selectorCaja": [
+     306,
+     1587,
+     518,
+     44
+    ],
+    "fila": [
+     293,
+     1472,
+     544,
+     334
+    ]
+   }
+  ],
+  "chipIvaDeLinea": [
+   306,
+   1327,
+   518,
+   44
+  ],
+  "boton": [
+   293,
+   2126,
+   133,
+   44
+  ],
+  "desborda": false
+ },
+ {
+  "ancho": 1920,
+  "botonConPasoCerrado": false,
+  "servidosLocales": [
+   "/dashboard/css/styles.css",
+   "/dashboard/js/quoteApartados.js",
+   "/dashboard/js/quotesView.js"
+  ],
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "cab": [
+   {
+    "concepto": "Baño",
+    "modo": "agrupado",
+    "iva": "Varios",
+    "ivaCaja": [
+     853,
+     551,
+     168,
+     44
+    ],
+    "total": "231,00 €",
+    "selectorCaja": [
+     619,
+     551,
+     222,
+     44
+    ],
+    "fila": [
+     293,
+     496,
+     933,
+     196
+    ]
+   },
+   {
+    "concepto": "Cocina",
+    "modo": "desglosado",
+    "iva": "",
+    "ivaCaja": [
+     853,
+     962,
+     168,
+     44
+    ],
+    "total": "12.099,99 €",
+    "selectorCaja": [
+     619,
+     962,
+     222,
+     44
+    ],
+    "fila": [
+     293,
+     907,
+     933,
+     196
+    ]
+   }
+  ],
+  "chipIvaDeLinea": [
+   853,
+   840,
+   168,
+   44
+  ],
+  "boton": [
+   293,
+   1266,
+   133,
+   44
+  ],
+  "desborda": false
+ }
+]

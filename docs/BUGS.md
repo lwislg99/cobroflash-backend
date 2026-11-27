@@ -1283,6 +1283,10 @@
 - **Arreglo:** helper `fmtMoneyEs` global en `api.js` (espejo del servidor) y pasada pantalla a pantalla (Parte AB).
 - **CERRADO (5-jul, `43b52c3`→`9c43b51`), 12 pantallas:** creador (totales/línea/hint/picker/preview) · Home (héroe, KPIs, semana, actividad, tops, dropdown QQ) · presupuestos lista+detalle · facturas lista+detalle (incl. doble toque Bizum) · cliente 360 · búsqueda global · gastos · asistente IA · informes (KPIs con símbolo, cuadro IVA, servicios; la tabla P&L queda en números desnudos a propósito) · catálogo · resumen semanal (Configuración) · planes. Sin dinero: proveedores, equipo, plantillas, solicitudes, onboarding. Los inputs numéricos NO se tocaron (siguen siendo números planos).
 
+### [x] SCRUM-1807e · «Duplicar» (y el borrador) convertían una cabecera de apartado en una línea
+- **Síntoma (medido el 25-nov-2026 en `origin/main` 2ab4549bd, leyendo el código):** el editor (`quotesView.js`) no conocía la marca `apartado` (SCRUM-655). «Duplicar» (`template.lines.forEach(addLine)`), el borrador (`loadDraft`), las plantillas (`cargarPlantilla`) y la IA montaban la cabecera como una línea normal, con cantidad 1 y precio vacío. El presupuesto copiado perdía sus apartados sin aviso. Ninguna pantalla creaba cabeceras: sólo llegaban por la API.
+- **Arreglo:** dentro de SCRUM-1807e (regla 37). `addLine` despacha a `addApartado` cuando llega `apartado: true`, y el borrador, el cuerpo del POST y «Guardar plantilla» la mandan COMO cabecera. Lo cubre `tests/scrum1807e-editor-apartados.test.mjs` (rojo sobre `main`, 1 de 8 verde: el control).
+
 ---
 
 ## P4 — Pre-lanzamiento (registrar, NO ahora)

@@ -434,7 +434,10 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // final) + `div#home-hoy` (el admin ya NO lo quita: «Para hoy» arriba; vacío aquí porque el banco no
   // sirve una lista) + `span.con-icono--hecho` (el ✓ que sustituye al 🎉 en el héroe vacío) = 3, todo el
   // delta. El checklist sigue entero, solo cambia de sitio.
-  for (const [vista, nodos] of [['renderQuotesView', 267], ['renderProductsView', 176],
+  // SCRUM-1807e · 25-nov-2026 · `renderQuotesView` 267 → 268, y las otras tres intactas. Lo mueve la
+  // VISTA, POR IDENTIDAD: `button.quote-add-apartado` «+ Añadir apartado» (firmado, SCRUM-1656 c.22787),
+  // detrás de «+ Añadir descuento» (26-nov: antes, entre línea y descuento; SCRUM-915h). 1 = todo el delta.
+  for (const [vista, nodos] of [['renderQuotesView', 268], ['renderProductsView', 176],
     ['renderCustomersView', 89], ['renderHomeView', 151]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
@@ -507,7 +510,9 @@ test('SCRUM-698 · CONTROL NEGATIVO: el fixture NO se impone a quien ya pasaba l
   // los datos, así que los pintan los dos montajes. Los dos dan 258.
   // SCRUM-1716b (12-nov-2026): +9, el selector €/% con su pista y su error, ocultos y sin datos;
   // los pintan los dos montajes. Los dos dan 267.
-  assert.equal(todos(desnuda.contenedor).length, 267,
+  // SCRUM-1807e (25-nov-2026): +1, el botón «+ Añadir apartado»; no depende de los datos, así que lo
+  // pintan los dos montajes. Los dos dan 268.
+  assert.equal(todos(desnuda.contenedor).length, 268,
     '🔴 montar sin `datos` ya no da lo de siempre: el fixture se ha colado como valor por '
     + 'defecto y está moviendo lo que miden otros.');
 });

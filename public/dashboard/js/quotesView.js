@@ -1823,6 +1823,18 @@ descWrapper.appendChild(descLabel);
   addLineBtnBottom.title = "Añade una línea al final de la lista";
   blockLines.appendChild(addLineBtnBottom);
 
+  // SCRUM-1807e · «+ Añadir apartado» (firmado: SCRUM-1656 c.22787). Hasta hoy ninguna pantalla
+  // creaba una cabecera de apartado: sólo llegaban por la API, y al duplicar se perdían (BUGS.md).
+  // Secundario, con el lenguaje de «+ Añadir descuento». NO en el documento suelto: su cuerpo
+  // (`cuerpoDelDocumentoSuelto`) no lleva cabeceras, y un control cuyo dato no sobrevive al emisor
+  // no se pinta (regla de este fichero, SCRUM-632).
+  // Se CREA aquí (el clic se ata más abajo) y se MONTA detrás de «+ Añadir descuento»: SCRUM-915h
+  // quiere el descuento pegado a «+ Añadir línea» (`guard:conceptos-limpios`, «descuento-junto»).
+  const addApartadoBtn = document.createElement("button");
+  addApartadoBtn.type = "button";
+  addApartadoBtn.className = "btn-ghost btn-sm quote-add-apartado";
+  addApartadoBtn.textContent = "+ Añadir apartado";
+
   // ---------- DRAG & DROP para reordenar líneas (FRONT1-4) ----------
   let draggedTr = null;
   linesBody.addEventListener("dragover", function (e) {
@@ -2039,8 +2051,10 @@ descWrapper.appendChild(descLabel);
   // línea: no se pide lo que el emisor no puede guardar.
   // SCRUM-915h · y va JUNTO A «+ Añadir línea» (v3: «secundaria junto a “+ Añadir línea”»), no en
   // el bloque de totales, que en Conceptos ya sólo lleva el TOTAL. `addLineBtnBottom` es el último
-  // hijo de `blockLines` en este punto, así que esto lo deja pegado detrás.
+  // hijo de `blockLines` en este punto, así que esto lo deja pegado detrás. (SCRUM-1807e:
+  // «+ Añadir apartado» va DETRÁS del descuento, no entre los dos: entre ellos rompía «junto a».)
   if (!esDocumentoSuelto) blockLines.appendChild(dtoGlobalWrap);
+  if (!esDocumentoSuelto) blockLines.appendChild(addApartadoBtn);
 
   // ═══ SCRUM-587 (CONT-14) · EL DESCUENTO PACTADO CON EL CLIENTE, PROPUESTO ═══════════════════
   //
@@ -2123,7 +2137,12 @@ descWrapper.appendChild(descLabel);
    * mirara `dtoInput` a mano, habría dos sitios que saben la regla y uno se quedaría atrás.
    */
   function lineasParaPropuesta() {
-    return lines.map((l) => ({ dto: l.dtoInput ? l.dtoInput.value : null }));
+    return lineasQueCobran().map((l) => ({ dto: l.dtoInput ? l.dtoInput.value : null }));
+  }
+
+  /** SCRUM-1807e · las líneas del editor SIN las cabeceras de apartado (no cobran ni llevan dto). */
+  function lineasQueCobran() {
+    return lines.filter((l) => !l.esApartado);
   }
 
   function refrescarPropuestaDeDescuento() {
@@ -2153,9 +2172,10 @@ descWrapper.appendChild(descLabel);
     // La pieza pura decide QUÉ líneas cambian; aquí sólo se escriben las que ella ha cambiado.
     const antes = lineasParaPropuesta();
     const despues = M.aplicarA(antes, pct);
-    for (let i = 0; i < lines.length; i++) {
+    const cobran = lineasQueCobran();                  // la MISMA lista, en el mismo orden, que `antes`
+    for (let i = 0; i < cobran.length; i++) {
       if (antes[i] === despues[i]) continue;          // ésta ya traía su propio `dto`: no se toca
-      if (lines[i] && lines[i].dtoInput) lines[i].dtoInput.value = String(despues[i].dto);
+      if (cobran[i] && cobran[i].dtoInput) cobran[i].dtoInput.value = String(despues[i].dto);
     }
     // Aceptada, la tira desaparece: ya no hay nada que proponer.
     propuestaWrap.hidden = true;
@@ -2764,7 +2784,14 @@ descWrapper.appendChild(descLabel);
         ? stages.map((s) => ({ label: s.labelInput.value || "", pct: s.pctInput.value || "" }))
         : undefined,
       vatDefault: fieldVatDefault.input.value || "21",
-      lines: lines.map((l) => ({
+      // SCRUM-1807e · una cabecera de apartado se guarda COMO cabecera: sin esto, un F5 la devolvía
+      // convertida en una línea normal (el defecto de BUGS.md). Al restaurar la recoge `addLine`.
+      lines: lines.map((l) => l.esApartado ? {
+        concept: l.conceptInput.value || "",
+        apartado: true,
+        description: (l.descInput && l.descInput.value) || "",
+        agrupado: l.agrupadoSelect.value === "agrupado",
+      } : ({
         concept: l.conceptInput.value || "",
         qty: l.qtyInput.value || "",
         price: l.priceInput.value || "",
@@ -2904,7 +2931,20 @@ descWrapper.appendChild(descLabel);
     // markup ilegible NO es «margen cero», es un dato que falta, y el pie tiene que decirlo.
     const cur = (currentMerchant && currentMerchant.defaultCurrency) || 'EUR';
 
+    // SCRUM-1807e · lo que cada fila ENSEÑA, en orden, para el total y el IVA de cada apartado.
+    const filasParaApartados = [];
+    // Y las cabeceras, para pintarlas al final SIN un segundo recorrido de `lines` (SCRUM-229).
+    const cabecerasPorPintar = [];
+
     lines.forEach((line, idx) => {
+      // SCRUM-1807e · una cabecera no cobra: no entra en la cuenta. Su total se pinta al final.
+      if (line.esApartado) {
+        filasParaApartados.push({ apartado: true });
+        cabecerasPorPintar.push({ line, idx });
+        line.subirBtn.disabled = idx === 0;
+        line.bajarBtn.disabled = idx === lines.length - 1;
+        return;
+      }
       const qty = parseFloat(
         String(line.qtyInput.value || "").replace(",", ".")
       );
@@ -2951,6 +2991,7 @@ descWrapper.appendChild(descLabel);
         !line.conceptInput.value.trim() && !String(line.priceInput.value || "").trim();
       line.totalCell.textContent = enBlanco ? "—" : fmtMoneyEs(lineBase + lineVat, cur);
       line.row.classList.toggle("quote-line--vacia", enBlanco);
+      filasParaApartados.push({ total: lineBase + lineVat, vatPerc: safeVat, enBlanco });
 
       // SCRUM-139 F4: el botón de ajustes DICE lo que esconde. Un disparador mudo ("Ajustes")
       // obligaría a abrir la hoja para comprobar el IVA de cada línea; así se lee de un vistazo
@@ -3015,6 +3056,17 @@ descWrapper.appendChild(descLabel);
       // es la pieza pura, extraída para poder exigir por test que un markup ilegible NO se cuele
       // como 0. (SCRUM-598 retiró el consumo: la pieza pura sigue existiendo y probada.)
       // — este ticket no la cambia, solo hace que el pie diga lo que se perdió.
+    });
+
+    // SCRUM-1807e · «Total del apartado» = la suma de lo que enseñan sus filas (CON IVA, como cada
+    // fila del editor; c.22389). Y en AGRUPADO, la columna de IVA dice el tipo o «Varios».
+    const resumen = window.resumenDeApartados(filasParaApartados);
+    cabecerasPorPintar.forEach(({ line, idx }) => {
+      const r = resumen[idx] || { total: 0, tipos: [] };
+      line.totalCell.textContent = fmtMoneyEs(r.total, cur);
+      const agrupado = line.agrupadoSelect.value === "agrupado";
+      line.ivaCell.textContent = agrupado ? window.ivaDelApartado(r.tipos, fmtNumeroEs) : "";
+      line.ivaCell.classList.toggle("is-vacia", !line.ivaCell.textContent);
     });
 
     refrescarRotuloPlantillas();
@@ -3102,7 +3154,9 @@ descWrapper.appendChild(descLabel);
     const totals = recalcTotals();
 
     // Filtrar líneas válidas
-    const previewLines = lines
+    // SCRUM-1807e · la vista previa sigue enseñando sólo las líneas que cobran: pintar aquí el
+    // apartado sería un quinto sitio que agrupa (PDF, firma, portal, editor) y no es este tramo.
+    const previewLines = lineasQueCobran()
       .map((line) => {
         const concept = line.conceptInput.value.trim();
         const qty = parseFloat(
@@ -4109,7 +4163,149 @@ conceptInput.addEventListener("input", () => {
     return wrap;
   }
 
+  /**
+   * SCRUM-1807e · LA CABECERA DE APARTADO EN EL EDITOR (SCRUM-1786 P2: es el apartado que ya
+   * existía en los datos, SCRUM-655, no un elemento nuevo).
+   *
+   * Es una tarjeta de la MISMA lista y la MISMA rejilla que las líneas (`.quote-line`), para que
+   * Subir/Bajar, el arrastre y `syncLinesOrder` la muevan sin saber nada de ella: el orden es lo
+   * que decide qué líneas son suyas. Lleva concepto, descripción, el selector «Mostrar al
+   * cliente:» (Desglosado/Agrupado, c.22269 P3: por apartado) y su «Total del apartado». En
+   * agrupado, la columna de IVA dice el tipo de sus líneas, o «Varios» si son varios.
+   *
+   * Textos: todos firmados (c.22269, c.22787) o ya existentes en esta pantalla («Concepto»,
+   * «Descripción», «Subir», «Bajar», «Acciones de la línea»).
+   */
+  function addApartado(initial) {
+    const tr = document.createElement("div");
+    tr.className = "quote-line quote-line--apartado";
+    tr.setAttribute("role", "listitem");
+
+    const conceptTd = campoLinea("Concepto", "quote-line__concept");
+    const conceptInput = document.createElement("input");
+    conceptInput.type = "text";
+    conceptInput.value = initial && typeof initial.concept === "string" ? initial.concept : "";
+    conceptTd.appendChild(conceptInput);
+
+    // «Mostrar al cliente:» — el rótulo firmado lleva sus dos puntos, y por eso va tal cual.
+    const modoTd = campoLinea("Mostrar al cliente:", "quote-apartado__modo");
+    const agrupadoSelect = document.createElement("select");
+    agrupadoSelect.className = "input";
+    [["desglosado", "Desglosado"], ["agrupado", "Agrupado"]].forEach(function (par) {
+      const o = document.createElement("option");
+      o.value = par[0];
+      o.textContent = par[1];
+      agrupadoSelect.appendChild(o);
+    });
+    // Sin la clave, desglosado (SCRUM-1807d): las cabeceras de antes no se reinterpretan.
+    agrupadoSelect.value = initial && initial.agrupado === true ? "agrupado" : "desglosado";
+    modoTd.appendChild(agrupadoSelect);
+
+    // La columna de IVA: vacía en desglosado (el hueco se conserva, como el de la ficha «de
+    // siempre» de SCRUM-915h, para que las columnas cuadren entre filas).
+    const ivaTd = document.createElement("div");
+    ivaTd.className = "quote-apartado__iva";
+
+    const totalTd = document.createElement("div");
+    totalTd.className = "quote-line__total";
+    const totalWrap = campoLinea("Total del apartado", "quote-line__totalwrap");
+    totalWrap.appendChild(totalTd);
+
+    // Nombre propio: los guards de SCRUM-632 buscan por texto la línea que cuelga la descripción de
+    // la LÍNEA en su hoja de ajustes, y un homónimo aquí arriba la taparía.
+    const descApartadoTd = campoLinea("Descripción", "quote-line__descripcion quote-apartado__desc");
+    const descInput = document.createElement("textarea");
+    descInput.rows = 2;
+    descInput.className = "input";
+    descInput.value = initial && typeof initial.description === "string" ? initial.description : "";
+    descApartadoTd.appendChild(descInput);
+
+    const actionsTd = document.createElement("div");
+    actionsTd.className = "quote-line__actions";
+    // El asa de arrastre de la línea, igual (FRONT1-4): la cabecera se arrastra como cualquier fila,
+    // y con ella su columna de acciones mide lo mismo que la de una línea (las columnas cuadran).
+    const dragHandle = document.createElement("span");
+    dragHandle.className = "quote-drag-handle";
+    dragHandle.textContent = "⠿";
+    dragHandle.title = "Arrastra para reordenar";
+    dragHandle.draggable = true;
+    dragHandle.addEventListener("dragstart", function (e) {
+      draggedTr = tr;
+      tr.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+    });
+    dragHandle.addEventListener("dragend", function () {
+      tr.classList.remove("dragging");
+      draggedTr = null;
+      syncLinesOrder();
+      recalcTotals();
+      renderPreview();
+      scheduleDraftSave();
+    });
+    actionsTd.appendChild(dragHandle);
+    const subirBtn = document.createElement("button");
+    subirBtn.type = "button";
+    subirBtn.textContent = "↑  Subir";
+    const bajarBtn = document.createElement("button");
+    bajarBtn.type = "button";
+    bajarBtn.textContent = "↓  Bajar";
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    // El de la línea, tal cual: la cabecera es una fila más de la lista, y un «Eliminar» suelto
+    // sería un texto nuevo sin firmar.
+    removeBtn.textContent = "🗑️  Eliminar línea";
+    const menuBtn =
+      typeof overflowMenu === "function"
+        ? overflowMenu([subirBtn, bajarBtn, removeBtn], { label: "Acciones de la línea" })
+        : null;
+    if (menuBtn) actionsTd.appendChild(menuBtn);
+    else { actionsTd.appendChild(subirBtn); actionsTd.appendChild(bajarBtn); actionsTd.appendChild(removeBtn); }
+
+    tr.appendChild(conceptTd);
+    tr.appendChild(modoTd);
+    tr.appendChild(ivaTd);
+    tr.appendChild(totalWrap);
+    tr.appendChild(actionsTd);
+    tr.appendChild(descApartadoTd);
+    linesBody.appendChild(tr);
+
+    const lineObj = {
+      esApartado: true,
+      row: tr,
+      conceptInput,
+      descInput,
+      agrupadoSelect,
+      ivaCell: ivaTd,
+      totalCell: totalTd,
+      subirBtn,
+      bajarBtn,
+      menuBtn: menuBtn || removeBtn,
+    };
+    lines.push(lineObj);
+
+    subirBtn.addEventListener("click", function () { moverLinea(lineObj, -1); });
+    bajarBtn.addEventListener("click", function () { moverLinea(lineObj, +1); });
+    const onChange = function () { recalcTotals(); renderPreview(); scheduleDraftSave(); };
+    conceptInput.addEventListener("input", onChange);
+    descInput.addEventListener("input", onChange);
+    agrupadoSelect.addEventListener("change", onChange);
+    // Quitar la cabecera NO borra sus líneas: pasan al apartado de arriba (o a ninguno). Borrar
+    // dinero escrito por quitar un título sería un efecto que nadie ha pedido.
+    removeBtn.addEventListener("click", function () {
+      linesBody.removeChild(tr);
+      lines = lines.filter(function (l) { return l !== lineObj; });
+      onChange();
+    });
+
+    recalcTotals();
+    renderPreview();
+    return lineObj;
+  }
+
   function addLine(initial) {
+    // SCRUM-1807e · una cabecera (borrador, «Duplicar», plantilla o IA) se monta COMO cabecera.
+    // Antes entraba aquí como una línea más, con cantidad 1 y sin precio, y perdía la marca.
+    if (initial && initial.apartado === true) return addApartado(initial);
     // SCRUM-139 F1: tarjeta, no `<tr>`. Se conservan EXACTAMENTE las mismas claves en `lineObj`
     // (conceptInput, qtyInput, priceInput, vatInput, totalCell) para que
     // todo lo que ya las consume —payload, borrador, recalcTotals, plantillas, IA, autocompletado—
@@ -4647,6 +4843,14 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
 
 
     removeBtn.addEventListener("click", function () {
+      // SCRUM-1807e · con cabeceras en la lista, la última línea que cobra se quita y en su lugar
+      // nace un renglón en blanco al final (el cuadernillo): nunca queda una lista de sólo títulos.
+      if (lines.length > 1 && lineasQueCobran().length === 1) {
+        linesBody.removeChild(tr);
+        lines = lines.filter(function (l) { return l !== lineObj; });
+        addLine();
+        return;
+      }
       if (lines.length === 1) {
         // siempre al menos una línea
         conceptInput.value = "";
@@ -4732,6 +4936,15 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
   // ha borrado. El de abajo conserva EXACTAMENTE el mismo manejador, así que el comportamiento del
   // que queda no cambia ni una línea.
   addLineBtnBottom.addEventListener("click", addLineAndFocus);
+
+  // SCRUM-1807e · la cabecera nace al FINAL de la lista, como una línea: las que se añadan después
+  // son suyas. El foco va a su concepto, igual que «+ Añadir línea» (SCRUM-133).
+  addApartadoBtn.addEventListener("click", function () {
+    const cab = addApartado({});
+    scheduleDraftSave();
+    cab.conceptInput.focus({ preventScroll: true });
+    cab.row.scrollIntoView({ block: "nearest" });
+  });
 
   // Botón IA — añade las líneas sugeridas por Claude
   aiBtn.addEventListener("click", function () {
@@ -4843,6 +5056,9 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     }
     const templateLines = Array.isArray(tpl.lines) ? tpl.lines : [];
     templateLines.forEach(function (l) {
+      // SCRUM-1807e · una cabecera de apartado entra COMO cabecera (`addLine` la despacha). En el
+      // documento suelto no entra: allí no hay apartados, y como línea sería un renglón sin precio.
+      if (l && l.apartado === true) { if (!esDocumentoSuelto) addLine(l); return; }
       // SCRUM-132: `l.tax` CRUDO, sin `|| 0`. El `|| 0` convertía "esta línea no trae IVA" en
       // "IVA 0 %", y desde SCRUM-65 el 0 % es un tipo legítimo (21/10/4/0).
       // SCRUM-930 · y su descripción y su «Dto. %», si la plantilla los trae. En el DOCUMENTO SUELTO
@@ -5046,6 +5262,12 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     // Leer líneas válidas del formulario
     const templateLines = lines
       .map(function (line) {
+        // SCRUM-1807e · la cabecera se guarda COMO cabecera (y `cargarPlantilla` la devuelve igual).
+        // Sin pegar la descripción al concepto: eso es cosa del documento, no de la plantilla.
+        if (line.esApartado) {
+          return window.cabeceraParaPayload(line.conceptInput.value, line.descInput.value, false,
+            line.agrupadoSelect.value === 'agrupado');
+        }
         const concept = line.conceptInput.value.trim();
         const qty     = parseFloat(String(line.qtyInput.value   || '1').replace(',', '.'));
         const price   = parseFloat(String(line.priceInput.value || '0').replace(',', '.'));
@@ -5351,6 +5573,8 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
    * abre el paso siguiente, y una que Generar acepta no lo frena.
    */
   function lineaValidaParaGenerar(line) {
+    // SCRUM-1807e · una cabecera no es un concepto que cobre: no abre el paso siguiente.
+    if (line.esApartado) return false;
     const concept = line.conceptInput.value.trim();
     const qty = parseFloat(String(line.qtyInput.value || "").replace(",", "."));
     const price = parseFloat(String(line.priceInput.value || "").replace(",", "."));
@@ -5696,7 +5920,8 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     if (esDocumentoSuelto) {
       const cuerpo = window.documentoSuelto.cuerpoDelDocumentoSuelto(
         customerId,
-        lines.map(function (line) {
+        // SCRUM-1807e · aquí no hay apartados (el botón no se pinta); por si llegara uno, fuera.
+        lineasQueCobran().map(function (line) {
           return {
             concepto: line.conceptInput.value,
             cantidad: line.qtyInput.value,
@@ -5782,6 +6007,17 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
 
     const payloadLines = [];
     lines.forEach(function (line) {
+      // SCRUM-1807e · la cabecera viaja COMO cabecera, en su sitio (el orden decide sus líneas).
+      if (line.esApartado) {
+        const cab = window.cabeceraParaPayload(
+          line.conceptInput.value,
+          line.descInput.value,
+          !!(descCheck && descCheck.checked),
+          line.agrupadoSelect.value === "agrupado",
+        );
+        if (cab) payloadLines.push(cab);
+        return;
+      }
       let concept = line.conceptInput.value.trim();
 
 
@@ -5892,7 +6128,8 @@ payloadLines.push(lineaParaPayload({
 
     });
 
-    if (payloadLines.length === 0) {
+    // SCRUM-1807e · una cabecera sola no es un presupuesto: cuentan las líneas que cobran.
+    if (!payloadLines.some(function (l) { return l.apartado !== true; })) {
       setAlert(
         "error",
         "Añade al menos una línea válida con concepto, cantidad y precio."

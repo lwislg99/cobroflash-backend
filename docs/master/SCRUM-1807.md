@@ -1,3 +1,78 @@
+# SCRUM-1807 · apartados del presupuesto
+
+**Skill UI:** cargada (tramo e, `yaqu-premium-ui`)
+
+## SCRUM-1807e · el apartado en el EDITOR (S2, 25-nov-2026)
+
+**Skill UI:** cargada
+**Medido contra:** `origin/main` = `724f33f69039a1f6de55f4ea3cde791790b110bb` · 2026-11-25T14:29:46Z
+A9: comprobación → `tests/scrum794-un-solo-anadir-linea.test.mjs`
+A9: comprobación → `tests/scrum632-los-dos-cortes-de-la-linea.test.mjs`
+Mutaciones: catálogo → `tests/scrum1807e-editor-apartados.test.mjs`
+
+Puesto S2. Rama `scrum-1807e-editor-apartados`. Skill `yaqu-premium-ui` cargada antes de tocar la pantalla. Ficheros: `public/dashboard/js/quotesView.js`, `public/dashboard/js/quoteApartados.js` y `public/dashboard/css/styles.css`, los tres del carril S2.
+
+**Decisiones y textos.** SCRUM-1786 c.22269 firma P2 (el «Salón» es el apartado que ya existe, SCRUM-655), P3 (el modo se elige por apartado) y los literales «Total del apartado», «Mostrar al cliente:», «Desglosado», «Agrupado» y «Varios». SCRUM-1656 c.22787 firma la opción A y el botón «+ Añadir apartado». El orquestador precisó dónde va «Varios»: en la COLUMNA de IVA, sólo en agrupado; con un único tipo, ese tipo («21 %»: es un valor, no un texto). El resto de rótulos ya existían en esta pantalla: «Concepto», «Descripción», «↑  Subir», «↓  Bajar», «🗑️  Eliminar línea», «Acciones de la línea» y «Arrastra para reordenar». No hay ni un texto más.
+
+### Lo medido antes de construir (la premisa estaba rota)
+
+El ticket decía «editor: descripción, subtotal y selector». **El editor no tenía apartados.** `quotesView.js` sólo nombraba la marca en un comentario («este editor no crea cabeceras»), y en `src/` sólo la conoce la puerta (`schemas.ts`). Ninguna pantalla creaba una cabecera, y las que llegaban por la API se perdían al duplicar (BUGS.md, entrada SCRUM-1807e). Se paró y se preguntó. **Opción A** (elegida): firmar el botón y construir el tramo entero. Descartadas: **B**, conservar y pintar sin poder crear, que deja la pantalla sin uso porque ninguna cabecera nace en la UI; y **C**, aparcar el tramo, que deja vivo el defecto de duplicar.
+
+### Qué hace
+
+| pieza | dónde | qué |
+|---|---|---|
+| «+ Añadir apartado» | `quotesView.js` | secundario, detrás de «+ Añadir línea». La cabecera nace al final de la lista y el foco va a su concepto. No sale en el documento suelto, cuyo emisor no lleva cabeceras |
+| la cabecera | `addApartado` | una tarjeta `.quote-line--apartado` de la MISMA lista y la MISMA rejilla que una línea, así que Subir, Bajar, el arrastre y `syncLinesOrder` la mueven sin saber nada de ella. Lleva concepto, el selector «Mostrar al cliente:» (sin la clave = Desglosado, como en SCRUM-1807d), la columna de IVA, «Total del apartado», «⋯» y la descripción a todo lo ancho |
+| el total | `resumenDeApartados` (pura) | la suma de lo que ENSEÑA cada fila del editor, CON IVA (c.22389: «cada vista suma como sus líneas»). Ninguna cuenta nueva: las cifras entran ya hechas |
+| la columna de IVA | `ivaDelApartado` (pura) | en agrupado, «Varios» si sus líneas llevan varios tipos y el tipo si sólo llevan uno. En desglosado queda vacía, pero el hueco se conserva (como `.is-de-siempre`, SCRUM-915h). Un renglón en blanco no aporta su tipo |
+| lo que viaja | `cabeceraParaPayload` (pura) | `{concept, apartado: true}`, más `description` y `agrupado: true` sólo si los hay (ausente ≠ vacío). Con «Incluir descripción en el PDF», la descripción va además pegada al concepto, como en una línea (SCRUM-603) |
+| conservar | `addLine`, borrador, «Guardar plantilla», `cargarPlantilla` | `addLine` despacha a `addApartado` si llega `apartado: true`. Eso cubre «Duplicar», el borrador, las plantillas y la IA |
+| lo que NO cuenta una cabecera | `lineasQueCobran()` | la propuesta de descuento pactado, la vista previa, «Continuar», «al menos una línea válida», el documento suelto y el suelo de «Eliminar línea». Si se borra la última línea que cobra y quedan cabeceras, nace un renglón en blanco: nunca queda una lista de sólo títulos |
+
+Quitar una cabecera NO borra sus líneas: pasan al apartado de arriba, o a ninguno.
+
+### Capturas (yaqu.app, cuenta QA, mis tres ficheros servidos por interceptación; datos de EJEMPLO)
+
+Guion: `docs/master/evidencias/SCRUM-1807/captura-1807e-editor.mjs`. Medida: `captura-1807e-medida.json`. Fotos: `captura-1807e-editor-390.png`, `-1280.png` y `-1920.png`. Las escrituras se interceptan: la única fue `POST /admin/entorno`, que no llegó a prod. Errores de página: 0. Desborde lateral: no, en los tres anchos.
+
+| ancho | «Varios» (caja) | chip «IVA 10 %» de una línea (caja) | Total del apartado |
+|---|---|---|---|
+| 390 | 46 · 298 × 44 | 46 · 298 × 44 | 231,00 € y 12.099,99 € |
+| 1280 (el editor mide 544 px: va plegado) | 306 · 518 × 44 | 306 · 518 × 44 | igual |
+| 1920 (fila única) | **853 · 168 × 44** | **853 · 168 × 44** | igual |
+
+**La columna de IVA cuadra al píxel con la del chip en los tres anchos.** Lo enseñaron las capturas, en tres vueltas, y no la lectura del código:
+1. Con el paso «Conceptos» CERRADO, «+ Añadir apartado» asomaba en su cabecera. Se añadió a la lista `.quote-paso.is-cerrado … { display: none }`. La captura lo mide (`botonConPasoCerrado: false`).
+2. A 1920, «TOTAL DEL APARTADO» ensanchaba su columna y la fila corría 18 px. Ahora tiene un tope de 96 px, sólo en la fila única.
+3. Después se pasaba 28 px al otro lado, porque le faltaba el asa «⠿» que tiene la línea. Se le puso (la misma pieza y el mismo texto), y de paso la cabecera se arrastra.
+
+### El test (`tests/scrum1807e-editor-apartados.test.mjs`)
+
+El banco de vistas monta el editor de verdad, lee lo que pinta y captura el cuerpo del POST /quote/create. Ocho casos: «Duplicar» conserva las dos cabeceras con su modo y su descripción · rótulos firmados, ni una coma más · el total suma lo que enseñan las filas · «Varios», el tipo único, y nada en desglosado · el POST lleva las cabeceras en su sitio · CONTROL: sin apartados, el POST no lleva ninguna clave nueva · «+ Añadir apartado», con el borrador que la guarda y la devuelve · las piezas puras.
+
+**Rojo primero:** sobre los tres ficheros de `origin/main`, 1 de 8. El que pasa es el control. Con el cambio, 8 de 8.
+
+**Mutaciones** (`correr` + `aplicarUna`, base limpia 8 / 0 / 0): **6 de 6 CAEN** sobre `main`, y 7 de 7 con la pila (abajo). Son: sin el despacho de `addLine` · la cabecera sale del POST · «Varios» se cambia por la lista de tipos · el total no suma · el borrador pierde el modo · `agrupado` no viaja.
+
+### Vecinos (tanda dirigida: 203 ficheros que nombran el editor, la pieza o la hoja)
+
+Primera pasada: 1.745 de 1.755, con 9 caídos. Se arregló el CÓDIGO, nunca un aserto (regla 41):
+- `scrum229`: un segundo `lines.forEach` en `recalcTotals`. Las cabeceras se apuntan en el mismo recorrido y se pintan después, desde su propia lista.
+- `scrum632`: su ancla de texto («appendChild» de la descripción de la LÍNEA) encontraba antes la de la cabecera. La variable de la cabecera se llama ahora `descApartadoTd`, y el comentario ya no repite el ancla.
+- `scrum794`: su suelo se lee con la línea literal `if (lines.length === 1) {`. Se queda intacta, y el caso de las cabeceras va en una rama aparte, delante.
+- `scrum697` y `scrum698`: cuentan los nodos que monta el editor, y hay uno más, 267 → 268. **Re-anclados por IDENTIDAD**, con su línea fechada, igual que 1716b, 1144 y 1180: es el `button.quote-add-apartado`. Sin cabeceras no se monta nada más.
+- `scrum1340`: pedía este registro con la skill declarada. Es éste.
+
+Después, los cinco ficheros y el nuevo, en verde. 🔴 La tanda dirigida corrió con el `dist/` de antes de regenerar el cliente de Prisma (el orquestador lo regeneró a mitad). Esos 203 ficheros no los he vuelto a correr enteros: los seis que cayeron sí. La suite entera la corre el check obligatorio.
+
+### Lo que NO hace, y queda declarado
+
+- **La vista previa** («Así lo verá el cliente») no pinta los apartados: sigue enseñando las líneas que cobran. Sería un quinto sitio que agrupa (PDF, firma, portal, editor) y no está en este tramo.
+- **APILADA sobre el tramo d de S1** (`scrum-1807-apartados-s1`, #3446, OPEN a las 14:50Z). Lo decidió el orquestador: empujar sobre `main` habría abierto una ventana en la que se elige «Agrupado» y la puerta lo borra en silencio. Con la pila, el test cierra el viaje entero, porque el cuerpo del POST pasa por `CreateQuoteSchema` (el `dist/` de la rama) y conserva `[true, false]`. Por eso hay una 7.ª mutación, la de S1 («la puerta deja de declarar `agrupado`»), y también CAE: **7 de 7**. El registro de S1 y éste se juntaron sin conflicto. Con la pila, verdes también `scrum1807c/d/g` y `scrum619`.
+- **Stash e3d8e53c** («s2-1807e-rojo-primero-versiones-de-main»): es la copia de recuperación del rojo-primero, con las versiones de `main` de los tres ficheros. Se queda hasta que 1807 se cierre, y entonces se tira (por decisión del orquestador, la misma política que con los de 1825).
+- **En móvil, «Varios» va solo.** Sin la palabra «IVA» delante, como sí la lleva el chip de una línea («IVA 10 %»). Ponérsela sería texto nuevo, así que lo dejo como observación para el fundador.
+- No se ha visto en yaqu.app con la rama en `main`: eso es la r42, después del merge.
 # SCRUM-1807 · apartados del presupuesto: la parte de S1 (tramos c, d y g)
 
 Hijo de SCRUM-1786. Decisiones y literales firmados: SCRUM-1786 c.22269 (P1–P5 y los tres textos), c.22329 y c.22389. Encargo del orquestador (`orquestador`), con cinco condiciones: ① el tramo c es un refactor y el PDF del presupuesto y el portal tienen que salir idénticos byte a byte; ② el tramo d va sin esquema; ③ el tramo g lleva sólo literales firmados; ④ el PDF de FACTURA ni se mira (P4, regla 40); ⑤ los literales se piden si no están en main. Rama `scrum-1807-apartados-s1`, un tramo por commit.
@@ -147,6 +222,24 @@ Usa el banco de `scrum1442b`: el `GET /pay/quote/:token` real, con `prisma.quote
 **Vecinos:** los 32 ficheros que ya leen la página de firma o su hoja, más `scrum1807c/d`, `scrum655`, `scrum1786g`, `scrum1786f1` y `scrum619`: 279 de 279 en 37 ficheros.
 
 **Lo que NO hace:** las tarjetas de opciones (`renderTierCards`) no pintan ni total del apartado ni agrupado. Es lo mismo que hizo el PDF en 1786f1, que sólo tocó el modo clásico. La descripción de la cabecera no sale en la fila agrupada, porque esta página no pinta descripciones de línea en ningún sitio. El PDF de FACTURA no se ha abierto (P4, regla 40). Falta verlo en yaqu.app: se verá después del merge.
+
+## SCRUM-1807e (2) · «+ Añadir apartado» va DETRÁS de «+ Añadir descuento» (S2, 26-nov-2026)
+
+**Skill UI:** cargada
+**Medido contra:** `origin/main` = `f336e00c20b23a7fa11ae491c8cf8bfaa931fd6d` · 2026-11-26T16:42:09Z
+A9: comprobación → `scripts/guard-915h-conceptos-limpios.mjs`
+
+**Qué salió mal (A9).** Empujé #3456 con «+ Añadir apartado» montado ENTRE «+ Añadir línea» y «+ Añadir descuento», y el comentario del propio código lo decía. SCRUM-915h exige el descuento PEGADO a «+ Añadir línea» (`add.nextElementSibling === dto`), y el job «guards de navegador (fuera de la tanda)» lo cazó: run 45635626766, job 139280164609, `guard:conceptos-limpios` rojo(1) «descuento-junto -> «+ Añadir descuento» no va justo detrás de «+ Añadir línea»». No corrí los guards de navegador del editor antes del push; `guards:entrada` no los incluye.
+
+**La cura, en el código, no en el guard:** el botón se sigue creando donde estaba (el clic se ata más abajo, `quotesView.js`), pero se MONTA justo detrás de `dtoGlobalWrap`, con la misma condición `!esDocumentoSuelto`. Nada más cambia: ni nodos (268, `scrum697`/`scrum698` intactos; solo su comentario), ni texto, ni CSS.
+
+| medida | antes (CI, sobre 368753893) | después (local, sobre f31f2b11c) |
+|---|---|---|
+| `guard:conceptos-limpios` | rojo(1) · descuento-junto | verde · 5 de 5 casos · `junto=true` |
+| `tests/scrum1807e-editor-apartados.test.mjs` | — | 8/8 |
+| `tests/scrum697-un-solo-render.test.mjs` · `scrum698` | — | 9/9 · 11/11 |
+
+**El otro rojo de #3456 no es de este tramo:** `tests/scrum553-etiquetas-pegadas.test.mjs` cae (22 extractores con el `>` pegado, tope 20) por dos líneas de `tests/scrum1807g-firma-total-del-apartado.test.mjs` (:92 `<tbody>`, :177 `<script>`), que vienen del PR de S1 #3446 (`scrum-1807-apartados-s1`, apilado debajo). Se cura en su rama; aquí entra con el siguiente merge de esa rama.
 
 ## SCRUM-1807g-cura · el test de 1807g, sin extractores con el `>` pegado (27-nov-2026)
 
