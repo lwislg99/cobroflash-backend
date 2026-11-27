@@ -80,6 +80,10 @@ const SIN_PROBAR_CONOCIDOS = [
   // y `commit(c, …)` escriben en la carpeta que les llega por PARÁMETRO: el censo no atraviesa la llamada.
   // Lo retira quien enseñe al censo a seguir un parámetro, o quien pase el juguete a `temporal()`.
   'tests/scrum1540-borrables-por-la-punta-viva.test.mjs',
+  // SCRUM-1874: sus repos de usar y tirar cuelgan de `temporal()` (tests/_temporal.mjs), y `escribir(dir, …)`
+  // escribe en la carpeta que le llega por PARÁMETRO: mismo caso que 951d y 1540. Lo retira quien enseñe al
+  // censo a seguir un parámetro.
+  'tests/scrum1874-version-declarada.test.mjs',
   'tests/scrum253-adopcion.test.mjs',
   'tests/scrum258-nota-por-sesion.test.mjs',
   'tests/scrum351-diagnostico-dependencias.test.mjs',
