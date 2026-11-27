@@ -13,6 +13,7 @@ import http from 'node:http';
 import { createRequire } from 'node:module';
 import { inyectarBase, moduloDeDist } from './_envio-doblado.mjs';
 import { reqDeSesion } from './_arnes-de-router.mjs';
+import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs'; // SCRUM-262: rango imposible 340
 
 const requiere = createRequire(import.meta.url);
 
@@ -59,13 +60,57 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: "router.get('/:id/borrado-previa', async (req, res) => {",
     cae: 'permisos: el técnico recibe 403 en la previa y en el borrado',
   },
+  {
+    // SCRUM-1868d · sin contar sus trabajos, el cliente se borra y el trabajo queda apuntando a nadie (sin FK).
+    fichero: 'src/modules/system/customerAdmin.ts',
+    de: '    trabajos: await tx.job.count(delCliente),\n',
+    a: '    trabajos: 0,\n',
+    cae: 'SCRUM-1868d · 🔴 con un trabajo, el DELETE da 409 tiene_trabajos y no borra nada',
+  },
+  {
+    fichero: 'src/modules/system/customerAdmin.ts',
+    de: '    partes: await tx.parteTrabajo.count(delCliente),\n',
+    a: '    partes: 0,\n',
+    cae: 'SCRUM-1868d · 🔴 con un parte, el DELETE da 409 tiene_partes y no borra nada',
+  },
+  {
+    fichero: 'src/modules/system/customerAdmin.ts',
+    de: '    mantenimientos: await tx.maintenancePlan.count(delCliente),\n',
+    a: '    mantenimientos: 0,\n',
+    cae: 'SCRUM-1868d · 🔴 con un plan de mantenimiento, el DELETE da 409 tiene_mantenimientos y no borra nada',
+  },
+  {
+    // Sin el desligue, el mensaje se queda con el número de un cliente que ya no existe (b3, c.22916).
+    fichero: 'src/modules/system/customerAdmin.ts',
+    de: '  await tx.whatsAppMessage.updateMany({ where: { merchantId, customerId: id }, data: { customerId: null } });\n',
+    a: '',
+    cae: 'SCRUM-1868d · 🔴 con solo mensajes, el DELETE da 204 y sus dos mensajes siguen, desligados y con su teléfono y su correo',
+  },
+  {
+    fichero: 'src/modules/system/customerAdmin.ts',
+    de: '  await desligarClienteEnBorrado(tx, merchantId, id);\n', // SCRUM-1868d: el desligue de correos vive en registroDeEnvios.ts (scrum508, escritor único); aquí se muta la llamada
+    a: '',
+    cae: 'SCRUM-1868d · 🔴 con solo mensajes, el DELETE da 204 y sus dos mensajes siguen, desligados y con su teléfono y su correo',
+  },
+  {
+    // Sin el comercio en el desligue, se desligan los mensajes de B que llevan el mismo número de cliente (regla 2).
+    fichero: 'src/modules/system/customerAdmin.ts',
+    de: '  await tx.whatsAppMessage.updateMany({ where: { merchantId, customerId: id }',
+    a: '  await tx.whatsAppMessage.updateMany({ where: { customerId: id }',
+    cae: 'SCRUM-1868d · 🔴 tenencia de los mensajes: los de B con el mismo número de cliente y los de otro cliente de A no se tocan',
+  },
 ];
 
 const A = 7, B = 8, CLI_A = 31, CLI_B = 32;
 // Las tablas que apuntan a `customers` sin `onDelete` (RESTRICT): las cinco del ticket y la de los equipos.
 const RESTRICT = ['equipment', 'customerSite', 'customerEvent', 'quoteRequest', 'quote', 'invoice'];
 const DOCS = ['job', 'maintenancePlan', 'albaran', 'parteTrabajo'];
-const TABLAS = ['customer', 'attachment', 'charge', ...RESTRICT, ...DOCS];
+// SCRUM-1868d · c.22916: `job`, `parteTrabajo` y `maintenancePlan` apuntan al cliente SIN FK (el doble no
+// puede imitar un RESTRICT que la base no tiene: si el código no bloquea, aquí sale 204 con el huérfano
+// dentro). Los mensajes tampoco tienen FK: se desligan (`customerId` a NULL) y la fila se queda.
+const MENSAJES = ['whatsAppMessage', 'emailMessage'];
+const CLI_OTRO = 33; // otro cliente del comercio A: sus mensajes no se tocan
+const TABLAS = ['customer', 'attachment', 'charge', ...RESTRICT, ...DOCS, ...MENSAJES];
 let db = {};
 
 const casa = (fila, where = {}) => Object.entries(where).every(([k, v]) => fila[k] === v);
@@ -115,7 +160,8 @@ const express = requiere('express');
 const router = moduloDeDist('../dist/modules/system/app/routes/customersAdmin.routes.js').default;
 
 /** El cliente de (c): 1 sitio, 2 equipos (uno colgado del sitio), 1 documento, 2 eventos y 1 solicitud. */
-function sembrar({ presupuestos = 0, facturas = 0 } = {}) {
+function sembrar({ presupuestos = 0, facturas = 0, trabajos = 0, partes = 0, mantenimientos = 0, mensajes = false } = {}) {
+  const deA = (n, desde) => Array.from({ length: n }, (_, i) => ({ id: desde + i, merchantId: A, customerId: CLI_A }));
   db = {
     customer: [{ id: CLI_A, merchantId: A }, { id: CLI_B, merchantId: B }],
     customerSite: [
@@ -146,10 +192,22 @@ function sembrar({ presupuestos = 0, facturas = 0 } = {}) {
     ],
     invoice: Array.from({ length: facturas }, (_, i) => ({ id: 1 + i, merchantId: A, customerId: CLI_A })),
     charge: [{ id: 1, merchantId: A, customerId: CLI_A }, { id: 2, merchantId: B, customerId: CLI_B }],
-    job: [{ id: 1, merchantId: A, equipmentId: 1 }],
-    maintenancePlan: [],
+    // El trabajo 1 nombra al equipo y NO es del cliente (sin `customerId`): no bloquea. Los 900 son de B
+    // con el MISMO número de cliente: tampoco bloquean, y delatan un contador sin comercio.
+    job: [{ id: 1, merchantId: A, equipmentId: 1 }, { id: 900, merchantId: B, customerId: CLI_A }, ...deA(trabajos, 10)],
+    maintenancePlan: [{ id: 900, merchantId: B, customerId: CLI_A }, ...deA(mantenimientos, 10)],
     albaran: [],
-    parteTrabajo: [],
+    parteTrabajo: [{ id: 900, merchantId: B, customerId: CLI_A }, ...deA(partes, 10)],
+    whatsAppMessage: [
+      { id: 900, merchantId: B, customerId: CLI_A, toPhone: telefonoDePrueba(900) }, // 🔴 de B, mismo número de cliente
+      { id: 901, merchantId: A, customerId: CLI_OTRO, toPhone: telefonoDePrueba(901) }, // de A, de OTRO cliente
+      ...(mensajes ? [{ id: 1, merchantId: A, customerId: CLI_A, toPhone: telefonoDePrueba(1) }] : []),
+    ],
+    emailMessage: [
+      { id: 900, merchantId: B, customerId: CLI_A, toEmail: 'b@ejemplo.test' }, // 🔴
+      { id: 901, merchantId: A, customerId: CLI_OTRO, toEmail: 'otro@ejemplo.test' },
+      ...(mensajes ? [{ id: 1, merchantId: A, customerId: CLI_A, toEmail: 'a@ejemplo.test' }] : []),
+    ],
   };
 }
 
@@ -189,11 +247,27 @@ const filasDeA = () => ({
   quote: db.quote.filter((r) => r.merchantId === A && r.customerId === CLI_A).length,
   invoice: db.invoice.filter((r) => r.merchantId === A && r.customerId === CLI_A).length,
 });
-const CUENTA_DEL_SEMBRADO = { documentos: 1, sitios: 1, equipos: 2, historial: 2, solicitudes: 1, presupuestos: 0, facturas: 0 };
+/** SCRUM-1868d · lo mismo para las cinco tablas SIN FK: las tres que bloquean y las dos que se desligan. */
+const sinFkDeA = () => Object.fromEntries(['job', 'parteTrabajo', 'maintenancePlan', ...MENSAJES]
+  .map((t) => [t, db[t].filter((r) => r.merchantId === A && r.customerId === CLI_A).length]));
+const CUENTA_DEL_SEMBRADO = {
+  documentos: 1, sitios: 1, equipos: 2, historial: 2, solicitudes: 1, presupuestos: 0, facturas: 0,
+  trabajos: 0, partes: 0, mantenimientos: 0,
+};
 
 test('SCRUM-1868a · ✅ control del banco: el sembrado tiene filas del cliente en las ocho tablas que mira el borrado (positivo)', () => {
   sembrar({ presupuestos: 1, facturas: 1 });
   assert.deepEqual(filasDeA(), { customer: 1, customerSite: 1, equipment: 2, attachment: 1, customerEvent: 2, quoteRequest: 1, quote: 1, invoice: 1 });
+});
+
+test('SCRUM-1868d · ✅ control del banco: con todo sembrado hay filas del cliente en las cinco tablas sin FK, y sin sembrar, ninguna (positivo y cero)', () => {
+  sembrar({ trabajos: 1, partes: 1, mantenimientos: 1, mensajes: true });
+  assert.deepEqual(sinFkDeA(), { job: 1, parteTrabajo: 1, maintenancePlan: 1, whatsAppMessage: 1, emailMessage: 1 });
+  sembrar();
+  assert.deepEqual(sinFkDeA(), { job: 0, parteTrabajo: 0, maintenancePlan: 0, whatsAppMessage: 0, emailMessage: 0 });
+  // Las trampas (de B con el mismo número, y de otro cliente de A) están SIEMPRE: sin ellas, la tenencia no mide.
+  assert.deepEqual(['job', 'parteTrabajo', 'maintenancePlan', ...MENSAJES].map((t) => db[t].filter((r) => r.merchantId === B && r.customerId === CLI_A).length), [1, 1, 1, 1, 1]);
+  assert.deepEqual(MENSAJES.map((t) => db[t].filter((r) => r.merchantId === A && r.customerId === CLI_OTRO).length), [1, 1]);
 });
 
 test('SCRUM-1868a · 🔴 con un presupuesto, el DELETE da 409 tiene_presupuestos y no borra nada', async () => {
@@ -270,7 +344,7 @@ test('SCRUM-1868a · la previa cuenta exacto, dice bloqueado en los dos sentidos
 });
 
 test('SCRUM-1868a · 🔴 la previa y el DELETE no discrepan: mismo bloqueo, mismos motivos y misma cuenta', async () => {
-  for (const caso of [{}, { presupuestos: 1 }, { facturas: 1 }, { presupuestos: 1, facturas: 1 }]) {
+  for (const caso of [{}, { presupuestos: 1 }, { facturas: 1 }, { presupuestos: 1, facturas: 1 }, { trabajos: 1 }, { partes: 1 }, { mantenimientos: 1 }, { mensajes: true }]) {
     sembrar(caso);
     const p = await previa();
     const d = await borrar();
@@ -286,6 +360,81 @@ test('SCRUM-1868a · el cobro del cliente se queda: no se borra y su customerId 
   // El NULL lo pone el doble imitando a Postgres (relación opcional, SET NULL); lo que mide este caso es
   // que el código NO borra el cobro: `charge` no aparece en el borrado.
   assert.deepEqual(db.charge, [{ id: 1, merchantId: A, customerId: null }, { id: 2, merchantId: B, customerId: CLI_B }]);
+});
+
+// ── SCRUM-1868d · c.22916: bloquean también trabajos, partes y mantenimientos; los mensajes se desligan ──
+
+async function bloqueaSinFk(clave, motivo) {
+  sembrar({ [clave]: 1 });
+  const antes = structuredClone(db);
+  const r = await borrar();
+  assert.equal(r.status, 409, `sin el bloqueo sale 204 y la fila queda apuntando a nadie; dio ${r.status}`);
+  assert.deepEqual(r.json, { error: motivo, motivos: [motivo], cuenta: { ...CUENTA_DEL_SEMBRADO, [clave]: 1 } });
+  assert.deepEqual(db, antes, 'el 409 no toca ninguna fila');
+}
+
+test('SCRUM-1868d · 🔴 con un trabajo, el DELETE da 409 tiene_trabajos y no borra nada', () => bloqueaSinFk('trabajos', 'tiene_trabajos'));
+test('SCRUM-1868d · 🔴 con un parte, el DELETE da 409 tiene_partes y no borra nada', () => bloqueaSinFk('partes', 'tiene_partes'));
+test('SCRUM-1868d · 🔴 con un plan de mantenimiento, el DELETE da 409 tiene_mantenimientos y no borra nada', () => bloqueaSinFk('mantenimientos', 'tiene_mantenimientos'));
+
+test('SCRUM-1868d · 🔴 con factura, trabajo, parte y plan, los motivos van en el orden del contrato y el error es tiene_facturas', async () => {
+  sembrar({ facturas: 1, presupuestos: 1, trabajos: 2, partes: 1, mantenimientos: 3 });
+  const antes = structuredClone(db);
+  const r = await borrar();
+  assert.equal(r.status, 409);
+  assert.deepEqual(r.json, {
+    error: 'tiene_facturas',
+    motivos: ['tiene_facturas', 'tiene_presupuestos', 'tiene_trabajos', 'tiene_partes', 'tiene_mantenimientos'],
+    cuenta: { ...CUENTA_DEL_SEMBRADO, facturas: 1, presupuestos: 1, trabajos: 2, partes: 1, mantenimientos: 3 },
+  });
+  assert.deepEqual(db, antes);
+  sembrar({ trabajos: 1, partes: 1, mantenimientos: 1 });
+  const sinDocumentos = await borrar();
+  assert.deepEqual([sinDocumentos.json.error, sinDocumentos.json.motivos], ['tiene_trabajos', ['tiene_trabajos', 'tiene_partes', 'tiene_mantenimientos']]);
+});
+
+test('SCRUM-1868d · 🔴 la previa con un trabajo dice bloqueado y tiene_trabajos, y no escribe', async () => {
+  sembrar({ trabajos: 1 });
+  const antes = structuredClone(db);
+  const p = await previa();
+  assert.equal(p.status, 200);
+  assert.deepEqual(p.json, { bloqueado: true, motivos: ['tiene_trabajos'], cuenta: { ...CUENTA_DEL_SEMBRADO, trabajos: 1 } });
+  assert.deepEqual(db, antes, 'la previa no escribe');
+});
+
+test('SCRUM-1868d · 🔴 con solo mensajes, el DELETE da 204 y sus dos mensajes siguen, desligados y con su teléfono y su correo', async () => {
+  sembrar({ mensajes: true });
+  const p = await previa();
+  assert.deepEqual(p.json, { bloqueado: false, motivos: [], cuenta: CUENTA_DEL_SEMBRADO }, 'los mensajes ni bloquean ni entran en la cuenta');
+  const r = await borrar();
+  assert.equal(r.status, 204, `dio ${r.status} ${JSON.stringify(r.json)}`);
+  assert.equal(filasDeA().customer, 0, 'el cliente se ha ido');
+  assert.deepEqual(db.whatsAppMessage.find((m) => m.id === 1), { id: 1, merchantId: A, customerId: null, toPhone: telefonoDePrueba(1) });
+  assert.deepEqual(db.emailMessage.find((m) => m.id === 1), { id: 1, merchantId: A, customerId: null, toEmail: 'a@ejemplo.test' });
+  assert.deepEqual(MENSAJES.map((t) => db[t].length), [3, 3], 'ningún mensaje se borra');
+});
+
+test('SCRUM-1868d · 🔴 tenencia de los mensajes: los de B con el mismo número de cliente y los de otro cliente de A no se tocan', async () => {
+  sembrar({ mensajes: true });
+  const ajenos = () => structuredClone(MENSAJES.map((t) => db[t].filter((m) => m.id >= 900)));
+  const antes = ajenos();
+  assert.equal(antes.flat().length, 4, 'control: hay cuatro mensajes ajenos sembrados');
+  assert.equal((await borrar()).status, 204);
+  assert.deepEqual(ajenos(), antes);
+  // Y B, pidiendo el cliente de A, no desliga nada (404 antes de tocar).
+  sembrar({ mensajes: true });
+  const todo = structuredClone(db);
+  assert.equal((await borrar(CLI_A, { merchantId: B })).status, 404);
+  assert.deepEqual(db, todo);
+});
+
+test('SCRUM-1868d · 🔴 un fallo después de desligar los mensajes los deja como estaban (misma transacción)', async () => {
+  sembrar({ mensajes: true });
+  db.customer[0].falla = true; // la fila del cliente es lo ÚLTIMO que se borra
+  const antes = structuredClone(db);
+  const r = await borrar();
+  assert.equal(r.status, 500);
+  assert.deepEqual(db, antes, 'el desligue no sobrevive a un borrado que falla');
 });
 
 test('SCRUM-1868a · 🔴 permisos: el técnico recibe 403 en la previa y en el borrado, y el admin no (positivo)', async () => {

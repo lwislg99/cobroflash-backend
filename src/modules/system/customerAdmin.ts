@@ -9,6 +9,7 @@ import { BASE_URL } from '../../core/config/env'; // SCRUM-967b
 import { saldosPendientesPorCliente } from './domain/saldoPendiente'; // SCRUM-1043
 import { garantiasRetenidasPorCliente, type GarantiaDelCliente } from '../billing/domain/garantiasRetenidas'; // SCRUM-1108
 import { z } from 'zod'; // SCRUM-1833b
+import { desligarClienteEnBorrado } from '../messaging/domain/registroDeEnvios'; // SCRUM-1868d: el ÚNICO escritor de email_messages (scrum508, scrum475 2B)
 import { diaExiste } from '../../core/zonaDelMerchant'; // SCRUM-1833b: solo se importa
 
 function generatePortalToken() {
@@ -606,12 +607,14 @@ export async function borrarDocumento(merchantId: number, customerId: number, do
 // `CustomerEvent` y `CustomerSite` apuntan a `customers` sin `onDelete` (RESTRICT), así que la
 // cascada la hace el código. `Charge.customerId` es opcional: la base lo pone a NULL y el cobro se
 // queda; aquí no se toca. El servidor contesta CÓDIGOS, ninguna frase (regla 39).
+// SCRUM-1868d · c.22916: bloquean también Job/ParteTrabajo/MaintenancePlan (sin FK: el huérfano lo evita el código); WhatsAppMessage/EmailMessage se desligan.
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 
-export type MotivoDeBloqueo = 'tiene_facturas' | 'tiene_presupuestos';
+export type MotivoDeBloqueo = 'tiene_facturas' | 'tiene_presupuestos' | 'tiene_trabajos' | 'tiene_partes' | 'tiene_mantenimientos';
 export interface CuentaDelBorrado {
   documentos: number; sitios: number; equipos: number; historial: number;
   solicitudes: number; presupuestos: number; facturas: number;
+  trabajos: number; partes: number; mantenimientos: number;
 }
 
 /** Lo lanza el borrado cuando el cliente tiene presupuestos o facturas; la ruta lo convierte en 409. */
@@ -634,6 +637,7 @@ export async function contarLoQueSeBorra(
   tx: {
     attachment: ConCount; customerSite: ConCount; equipment: ConCount; customerEvent: ConCount;
     quoteRequest: ConCount; quote: ConCount; invoice: ConCount;
+    job: ConCount; parteTrabajo: ConCount; maintenancePlan: ConCount;
   },
   merchantId: number,
   id: number,
@@ -647,10 +651,16 @@ export async function contarLoQueSeBorra(
     solicitudes: await tx.quoteRequest.count(delCliente),
     presupuestos: await tx.quote.count(delCliente),
     facturas: await tx.invoice.count(delCliente),
+    trabajos: await tx.job.count(delCliente),
+    partes: await tx.parteTrabajo.count(delCliente),
+    mantenimientos: await tx.maintenancePlan.count(delCliente),
   };
   const motivos: MotivoDeBloqueo[] = [];
   if (cuenta.facturas > 0) motivos.push('tiene_facturas');
   if (cuenta.presupuestos > 0) motivos.push('tiene_presupuestos');
+  if (cuenta.trabajos > 0) motivos.push('tiene_trabajos');
+  if (cuenta.partes > 0) motivos.push('tiene_partes');
+  if (cuenta.mantenimientos > 0) motivos.push('tiene_mantenimientos');
   return { motivos, cuenta };
 }
 
@@ -683,6 +693,8 @@ export async function borrarClienteYSusDocumentos(
     customerSite: { deleteMany: Function };
     customerEvent: { deleteMany: Function };
     quoteRequest: { deleteMany: Function };
+    whatsAppMessage: { updateMany: Function };
+    emailMessage: Parameters<typeof desligarClienteEnBorrado>[0]['emailMessage'];
   },
   merchantId: number,
   id: number,
@@ -700,6 +712,12 @@ export async function borrarClienteYSusDocumentos(
   await tx.customerSite.deleteMany({ where: { merchantId, customerId: id } });
   await tx.customerEvent.deleteMany({ where: { merchantId, customerId: id } });
   await tx.quoteRequest.deleteMany({ where: { merchantId, customerId: id } });
+  // ④ SCRUM-1868d · b3 (c.22916): sus mensajes se quedan, sin cliente. `toPhone` y `toEmail` no se tocan.
+  // Los correos los desliga `registroDeEnvios.ts`, el ÚNICO fichero que escribe `email_messages` (scrum508 y
+  // scrum475 2B lo cazaron aquí en el CI del primer empujón, run 45985810879); `whatsapp_messages` no tiene ese
+  // guard y `fusionClientes.ts:183` ya la escribe con `updateMany` desde fuera: mismo precedente.
+  await tx.whatsAppMessage.updateMany({ where: { merchantId, customerId: id }, data: { customerId: null } });
+  await desligarClienteEnBorrado(tx, merchantId, id);
   const r = await desvincularYBorrar(tx, merchantId, id);
   if (r.count > 0) await tx.attachment.deleteMany({ where: { merchantId, entityType: 'customer', entityId: id } });
   return r;
