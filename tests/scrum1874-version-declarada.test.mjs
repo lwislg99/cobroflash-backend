@@ -20,6 +20,7 @@ import {
   juzgarRegistro, lineasDeVersion, parsearVersion, leerVersionEnCurso, medirRama, OBLIGATORIO, FICHERO_EN_CURSO,
 } from '../scripts/equipo/version-declarada.mjs';
 import { leerLista, cotejar, lineaSinVersion, edadLegible } from '../scripts/equipo/sin-version.mjs';
+import { baseDeLaRama } from './_base-de-la-rama.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CLI = path.join(RAIZ, 'scripts', 'equipo', 'version-declarada.mjs');
@@ -176,12 +177,13 @@ test('SCRUM-1874 · CONTROL: una rama que no crea registros da 0 nuevos y sale 0
 });
 
 test('SCRUM-1874 · el árbol REAL: se mide y se CUENTA (informativo: no cae por un registro sin línea)', (t) => {
-  try { g(RAIZ, 'rev-parse', '--verify', '-q', 'origin/main'); } catch {
-    t.skip('sin origin/main en este checkout: no hay base contra la que medir (el CI lo trae, ci.yml)');
+  // La base se pregunta al motor canónico (SCRUM-723), no a la punta móvil de `origin/main`.
+  if (!baseDeLaRama(RAIZ)) {
+    t.skip('sin base de la rama en este checkout (baseDeLaRama da null): el CI la trae, ci.yml');
     return;
   }
   const r = medirRama(RAIZ);
-  assert.ok(!r.ciego, `🔴 con origin/main presente, el árbol real salió ciego: ${r.ciego}`);
+  assert.ok(!r.ciego, `🔴 con base de la rama resuelta, el árbol real salió ciego: ${r.ciego}`);
   t.diagnostic(`versión en curso ${r.enCurso} · registros nuevos ${r.filas.length} · sin declarar ${r.sinDeclarar.length}`
     + (r.sinDeclarar.length ? ` (${r.sinDeclarar.map((f) => f.fichero).join(', ')})` : ''));
   // El registro de este ticket se estrena a sí mismo declarando «mantenimiento» (descripción de SCRUM-1874).

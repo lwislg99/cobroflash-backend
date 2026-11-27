@@ -106,7 +106,7 @@ const git = (raiz, args) => execFileSync('git', args, { cwd: raiz, encoding: 'ut
  */
 export function registrosNuevos(raiz) {
   const base = baseDeLaRama(raiz);
-  if (!base) return { base: null, motivo: 'sin base de la rama (no resuelven origin/main, origin/HEAD ni main): no se sabe qué es nuevo' };
+  if (!base) return { base: null, motivo: 'sin base de la rama (`baseDeLaRama` no resuelve ninguna de sus referencias): no se sabe qué es nuevo' };
   let anadidos; let sinRastrear;
   try {
     anadidos = git(raiz, ['-c', 'core.quotepath=false', 'diff', '--name-only', '--no-renames', '--diff-filter=A', base.sha, '--', 'docs/master/']);
