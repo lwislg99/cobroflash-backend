@@ -2765,6 +2765,10 @@ html, body { overflow-x: clip; }
 }
 #po-detalle .po-linea > .po-col-cant { color: var(--muted); }
 #po-detalle .po-linea > .po-col-importe { font-weight: 600; }
+/* S2: SCRUM-1857 ① (AB6, cura por contenedor como 1849 y 1844) · la casilla del precio por unidad medía
+   20 px de caja y 21 de toque a 390, 929 y 1280. Sólo el tamaño y sólo aquí: el `input` global no se
+   toca, ni el ancho de columna (la cabecera casa con la línea), ni «Guardar precios» (c.22779). */
+#po-detalle .po-linea > input.po-col-precio { min-height: 44px; }
 /* El `@media` va DETRÁS de las reglas base: con la misma especificidad gana la última (ya mordió:
    el `gap` de la línea pisaba el del móvil y descuadraba 4 px). */
 @media (max-width: 480px) {

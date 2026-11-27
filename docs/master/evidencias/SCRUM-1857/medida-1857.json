@@ -1,0 +1,344 @@
+[
+ {
+  "lado": "antes",
+  "ancho": 390,
+  "servidosLocales": [],
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "medida": [
+   {
+    "caja": [
+     193,
+     482,
+     80,
+     20
+    ],
+    "toque": [
+     80,
+     21
+    ],
+    "disabled": false
+   },
+   {
+    "caja": [
+     193,
+     535,
+     80,
+     20
+    ],
+    "toque": [
+     80,
+     21
+    ],
+    "disabled": false
+   },
+   {
+    "caja": [
+     193,
+     616,
+     80,
+     20
+    ],
+    "toque": [
+     80,
+     21
+    ],
+    "disabled": false
+   }
+  ],
+  "guardarPrecios": [
+   324,
+   44
+  ],
+  "desbordaPagina": false,
+  "casillas": 4
+ },
+ {
+  "lado": "antes",
+  "ancho": 929,
+  "servidosLocales": [],
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "medida": [
+   {
+    "caja": [
+     664,
+     585,
+     110,
+     20
+    ],
+    "toque": [
+     110,
+     21
+    ],
+    "disabled": false
+   },
+   {
+    "caja": [
+     664,
+     618,
+     110,
+     20
+    ],
+    "toque": [
+     110,
+     21
+    ],
+    "disabled": false
+   },
+   {
+    "caja": [
+     664,
+     689,
+     110,
+     20
+    ],
+    "toque": [
+     110,
+     21
+    ],
+    "disabled": false
+   }
+  ],
+  "guardarPrecios": [
+   591,
+   36
+  ],
+  "desbordaPagina": false,
+  "casillas": 4
+ },
+ {
+  "lado": "antes",
+  "ancho": 1280,
+  "servidosLocales": [],
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "medida": [
+   {
+    "caja": [
+     991,
+     585,
+     110,
+     20
+    ],
+    "toque": [
+     110,
+     21
+    ],
+    "disabled": false
+   },
+   {
+    "caja": [
+     991,
+     618,
+     110,
+     20
+    ],
+    "toque": [
+     110,
+     21
+    ],
+    "disabled": false
+   },
+   {
+    "caja": [
+     991,
+     689,
+     110,
+     20
+    ],
+    "toque": [
+     110,
+     21
+    ],
+    "disabled": false
+   }
+  ],
+  "guardarPrecios": [
+   918,
+   36
+  ],
+  "desbordaPagina": false,
+  "casillas": 4
+ },
+ {
+  "lado": "despues",
+  "ancho": 390,
+  "servidosLocales": [
+   "/dashboard/css/styles.css"
+  ],
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "medida": [
+   {
+    "caja": [
+     193,
+     417,
+     80,
+     44
+    ],
+    "toque": [
+     80,
+     45
+    ],
+    "disabled": false
+   },
+   {
+    "caja": [
+     193,
+     474,
+     80,
+     44
+    ],
+    "toque": [
+     80,
+     45
+    ],
+    "disabled": false
+   },
+   {
+    "caja": [
+     193,
+     569,
+     80,
+     44
+    ],
+    "toque": [
+     80,
+     45
+    ],
+    "disabled": false
+   }
+  ],
+  "guardarPrecios": [
+   324,
+   44
+  ],
+  "desbordaPagina": false,
+  "casillas": 4
+ },
+ {
+  "lado": "despues",
+  "ancho": 929,
+  "servidosLocales": [
+   "/dashboard/css/styles.css"
+  ],
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "medida": [
+   {
+    "caja": [
+     664,
+     489,
+     110,
+     44
+    ],
+    "toque": [
+     110,
+     45
+    ],
+    "disabled": false
+   },
+   {
+    "caja": [
+     664,
+     546,
+     110,
+     44
+    ],
+    "toque": [
+     110,
+     45
+    ],
+    "disabled": false
+   },
+   {
+    "caja": [
+     664,
+     641,
+     110,
+     44
+    ],
+    "toque": [
+     110,
+     45
+    ],
+    "disabled": false
+   }
+  ],
+  "guardarPrecios": [
+   591,
+   36
+  ],
+  "desbordaPagina": false,
+  "casillas": 4
+ },
+ {
+  "lado": "despues",
+  "ancho": 1280,
+  "servidosLocales": [
+   "/dashboard/css/styles.css"
+  ],
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "medida": [
+   {
+    "caja": [
+     991,
+     489,
+     110,
+     44
+    ],
+    "toque": [
+     110,
+     45
+    ],
+    "disabled": false
+   },
+   {
+    "caja": [
+     991,
+     546,
+     110,
+     44
+    ],
+    "toque": [
+     110,
+     45
+    ],
+    "disabled": false
+   },
+   {
+    "caja": [
+     991,
+     641,
+     110,
+     44
+    ],
+    "toque": [
+     110,
+     45
+    ],
+    "disabled": false
+   }
+  ],
+  "guardarPrecios": [
+   918,
+   36
+  ],
+  "desbordaPagina": false,
+  "casillas": 4
+ }
+]
