@@ -33,8 +33,14 @@ Lo que hace falta para que la aprobación sea **verificable por alguien que no e
 3. **🔴 LA FIRMA, Y AHORA SE COMPRUEBA** (SCRUM-726). Una línea, fuera de cualquier cita:
 
    ```
-   **Aprobado por el fundador** el <fecha>, en **SCRUM-<n>**.
+   **Aprobado por el fundador** el <fecha> — SCRUM-<n> comentario <id>.
    ```
+
+   **El comentario es obligatorio** (desde el 26-nov-2026; lo decide el orquestador con la delegación de
+   SCRUM-1656 c.21978, registro nº12): el ticket solo dice dónde buscar, el comentario dice cuál es el sí. Las 20
+   fichas del 3-sep al 1-oct que siguieron la línea antigua («en **SCRUM-<n>**», sin comentario) nacieron
+   sin constancia verificable (`docs/master/SCRUM-1502.md`, tramo 1502u). Misma forma que la delegada de
+   abajo, que es la que el oráculo ya lee (`REFERENCIA_JIRA` en `tests/_microcopy-aprobada.mjs`).
 
    **O la firma delegada** (SCRUM-861), cuando el texto lo aprueba el orquestador por la
    delegación permanente que el fundador dejó escrita en `docs/equipo/limites-del-fundador.md`:

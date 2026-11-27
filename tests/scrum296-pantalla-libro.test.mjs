@@ -280,6 +280,12 @@ test('SCRUM-296 · TODA la copy de esta pantalla va marcada como PENDIENTE (regl
     // la columna de la inversión del sujeto pasivo y su valor. Registro: docs/microcopy/2026-11-12-SCRUM-1051-isp.md
     colIsp: 'ISP',
     valorIsp: 'Sí',
+    // 26-nov-2026 · SCRUM-1055e · los tres textos FIRMADOS por el fundador en SCRUM-1055 c.22857 ③
+    // (el plural es «{n}» + su cola). Registro: docs/microcopy/2026-11-26-SCRUM-1055-cobro-sin-fecha.md
+    etiquetaSinFechaCobro: 'Fecha de cobro sin indicar',
+    explicacionSinFechaCobro: 'Esta factura se marcó como cobrada sin indicar el día en que entró el dinero. Se ha tomado el día en que se marcó. Si entró otro día, corrígelo antes de pasarle el trimestre a tu asesor.',
+    resumenSinFechaCobroUna: '1 factura cobrada sin fecha de cobro indicada.',
+    resumenSinFechaCobroVarias: 'facturas cobradas sin fecha de cobro indicada.',
   };
   for (const [ranura, texto] of Object.entries(APROBADAS)) {
     assert.equal(COPY[ranura], texto,
@@ -317,11 +323,12 @@ test('SCRUM-296 · TODA la copy de esta pantalla va marcada como PENDIENTE (regl
   // 20 = las 19 de la tabla + `recuento`, que lleva parametro y se comprueba aparte. El numero se
   // fija CONTANDO, no de memoria: si alguien anade una aprobada sin tocar este numero, cae aqui.
   // 12-nov-2026 · 18 → 20 (SCRUM-1051h): `colIsp` y `valorIsp`, P3 firmada en SCRUM-1051 c.21750.
-  assert.equal(Object.keys(APROBADAS).length + 1, 20,
-    `🔴 la tabla de aprobadas ya no tiene 20 ranuras sino ${Object.keys(APROBADAS).length + 1}.`);
-  // Y el total cuadra: 20 aprobadas + 5 del asesor + `cargando` (declarada fuera) = todas.
-  assert.equal(Object.keys(COPY).length, 20 + MARCADAS_A_PROPOSITO.length + DECLARADAS_FUERA.length,
-    `🔴 las partes no suman el total: ${Object.keys(COPY).length} ranuras en COPY, y 20 + `
+  // 26-nov-2026 · 20 → 24 (SCRUM-1055e): las cuatro ranuras de los tres textos de SCRUM-1055 c.22857 ③.
+  assert.equal(Object.keys(APROBADAS).length + 1, 24,
+    `🔴 la tabla de aprobadas ya no tiene 24 ranuras sino ${Object.keys(APROBADAS).length + 1}.`);
+  // Y el total cuadra: 24 aprobadas + 5 del asesor + `cargando` (declarada fuera) = todas.
+  assert.equal(Object.keys(COPY).length, 24 + MARCADAS_A_PROPOSITO.length + DECLARADAS_FUERA.length,
+    `🔴 las partes no suman el total: ${Object.keys(COPY).length} ranuras en COPY, y 24 + `
     + `${MARCADAS_A_PROPOSITO.length} + ${DECLARADAS_FUERA.length}. Hay una ranura nueva sin clasificar.`);
 
   assert.deepEqual(sinMarcar, [],

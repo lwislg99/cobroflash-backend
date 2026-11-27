@@ -34,3 +34,81 @@ La fila de `scripts/guard-rama-con-numero.mjs` en §3.3 tampoco se ha añadido. 
 
 - `node --test --test-force-exit tests/scrum1295-carriles.test.mjs`: 8 tests, 8 pass, 0 fail, 0 skipped.
 - La suite entera no la corrí: el cambio es una tabla de papel y su derivado. Lo decide el obligatorio del CI.
+
+# SCRUM-1809 · 25-nov-2026 — Pieza ①: la fila de §3.3 (HECHA) y el paso de `pr-automatico.yml` (PREPARADO, carril S5)
+
+**Puesto:** S0 · **Rama:** `scrum-1809-candado-workflow` · encargo del orquestador del 25-nov-2026 (cabecera de la mañana).
+**Medido contra:** `origin/main` = `7592c8c140cbe5ddb1bcc516c8c6af38af90d59d` · 2026-11-25T08:38:43Z (cabecera `Date:` de `gh api -i zen`)
+A9: comprobación → `tests/scrum1480f-un-script-nuevo-no-entra-sin-fila.test.mjs`
+
+**Qué ha cambiado desde la parada del 24-nov.** El primer motivo ya no vale: J6 quitó el `import` de `typescript` del camino del guard (SCRUM-1827, `c5a985691`, en `main`; aviso de J6 en SCRUM-1809 c.22584). El segundo sigue: `node scripts/carriles.mjs de .github/workflows/pr-automatico.yml` → **S5**, y la decisión del orquestador en SCRUM-1809 c.22557 dice que, cuando el guard quedara autónomo, «la pieza del workflow (+ fila §3.3) pasa al encargo de S5». El encargo de hoy se la da a S0. No edito un fichero de otro carril sin una excepción en §3.4: hago la parte que es de S0 y dejo el paso preparado y medido para quien lo tenga en su carril.
+
+## La fila de §3.3 — HECHA
+
+- `docs/equipo/dos-equipos.md` §3.3: una fila `scripts/guard-rama-con-numero.mjs` → **J6**, por el área del ticket que lo crea. SCRUM-1801 lleva `area-j6`: lo leí en Jira hoy (etiquetas `area-j6`, `ci`, `equipo-javier`, `instrumentos`). Sus tres ayudantes (`_numero-de-rama.mjs`, `_censo-reparto.mjs`, `_hallazgos-y-ciegos.mjs`) no entran, porque los importan otros scripts.
+- `scripts/_sin-fila-declarados.json`: retirada su entrada de `declarados`, en el mismo commit. `quedan` no cambia (217): el guard es posterior a la foto del 9-oct.
+- `.claude/carriles.json` y `.claude/rules/carril-j6.md` se regeneraron con `node scripts/carriles.mjs generar` (89 filas, 216 reglas, 19 excepciones, 2 ficheros escritos), no a mano. `node scripts/carriles.mjs de scripts/guard-rama-con-numero.mjs` → J6, `dos-equipos.md:205`.
+
+**Rojo primero, por mutación.** Quité la fila y dejé la entrada retirada: `tests/scrum1480f-…` sale con código 1 (6 tests, 5 pass, 1 fail) y el fallo nombra justo ese fichero: «1 fichero(s) de scripts/ sin fila en dos-equipos.md §3.3 y sin declarar: scripts/guard-rama-con-numero.mjs». Con la fila puesta otra vez y regenerado, 1480f, 1295 y 1480e salen con código 0.
+
+## El paso de `pr-automatico.yml` — PREPARADO para S5, sin aplicar
+
+El candado actual corre ANTES del checkout (`pr-automatico.yml:123`, y el checkout está en la `:139`). El guard necesita el árbol, así que el paso va detrás de «Traer `main`» (`:142-143`) y antes de «Detectar modo»:
+
+```diff
+       - name: Traer `main` (el rango origin/main..HEAD lo necesita)
+         run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
++
++      # ── 2bis · LA RAMA TIENE NÚMERO PARA EL CENSO (SCRUM-1801) ─────────────────────────
++      # Una rama `scrum-<dígito>…` sin número para `numeroDeRama` pone en rojo scrum804 en el
++      # obligatorio de TODOS los PR. Aquí se dice en su push, antes de abrir el PR. Sin npm ci:
++      # el guard sólo importa `node:` y ficheros hermanos (SCRUM-1827).
++      - name: Candado — la rama tiene número para el censo (SCRUM-1801)
++        run: node scripts/guard-rama-con-numero.mjs
+```
+
+⚠️ **MI LECTURA, no medida en el remoto: el paso va SIN el `env: GITHUB_HEAD_REF` del diff de SCRUM-1801.** Los motivos:
+- En un `push`, GitHub deja `GITHUB_HEAD_REF` vacío (sólo lo rellena en `pull_request`). Además, la documentación de Actions dice que las variables por defecto `GITHUB_*` no se pueden sobrescribir desde `env:`. Esto lo recuerdo, no lo he vuelto a leer hoy.
+- El guard ya cubre el caso: con `GITHUB_HEAD_REF` vacío lee `GITHUB_REF_NAME` (`guard-rama-con-numero.mjs:57-59`), que en un push es el nombre de la rama.
+- Con el `env:` también funcionaría: o se ignora, o pone el mismo valor. Quitarlo es para que el YAML no aparente algo que no hace.
+
+**Lo medido, en una carpeta limpia FUERA del repo** (`scripts/*.mjs` copiados, sin `node_modules` en ninguno de los padres, comprobado con `Test-Path`):
+
+| entorno | salida |
+|---|---|
+| `GITHUB_HEAD_REF=scrum-1809-candado-workflow` | 0 · «verde: el censo la cuenta como SCRUM-1809» |
+| `GITHUB_HEAD_REF=scrum-1787aa-x` | 1 · ROJO, nombra la rama |
+| `GITHUB_HEAD_REF=` vacío + `GITHUB_REF_NAME=scrum-1787aa-x` (lo que trae un push) | 1 · ROJO, «de GITHUB_REF_NAME» |
+| `GITHUB_HEAD_REF=` vacío + `GITHUB_REF_NAME=scrum-1809-candado-workflow` | 0 · verde |
+
+**CIEGO: el YAML no lo ha validado un parser.** En esta máquina no hay ninguno: ni `yaml` ni `js-yaml` en `node_modules`, ni PyYAML. Instalar uno sería una dependencia, y eso lo decide un jefe. Sólo he comprobado que la sangría coincide con la de los pasos de al lado. El primer push que lleve el paso es el que lo juzga, y el control positivo es el PR real siguiente: una rama `scrum-NNNN-…` tiene que salir verde en ese paso.
+
+## Qué corrí
+
+- `node --test` de `scrum1295`, `1480e`, `1480f`, `1801` y `1827`, con TAP a fichero fuera del árbol: 28 de 28 pass. La misma tanda cogió `scrum699`, que entró por el filtro de nombre («carril»), y dio 4 rojos `MODULE_NOT_FOUND ../dist/…`. Es un test de pantallas y este worktree nació sin `dist/`; no tiene nada que ver con este cambio.
+- La suite entera no la corrí. El cambio es una tabla, su derivado y una entrada de JSON, y lo juzga el obligatorio del CI.
+
+## Aplicado el 25-nov-2026 — cruce S0→S5 autorizado
+
+**La autorización:** SCRUM-1656 c.22763 (25-nov-2026 09:44 +01:00, el orquestador usando la delegación c.21978). Es nominal para S0 y para este diff: «S0 aplica a .github/workflows/pr-automatico.yml EXACTAMENTE el diff que dejó medido en docs/master/SCRUM-1809.md […] Condiciones: ni una línea fuera de ese paso; el YAML queda CIEGO en local […] y se DECLARA — el juez es el primer push que pase por el workflow; la autorización va citada en el registro.» El precedente espejo es 1506c (S5→S0 por encargo), que tampoco puso fila en §3.4: la autorización va citada en el registro, como aquí.
+
+**Lo aplicado:** el bloque de arriba en `pr-automatico.yml`, 7 líneas, sin ninguna otra. Antes comprobé que ni el workflow ni el guard habían cambiado en `origin/main` desde `7592c8c14` (`git log 7592c8c14..origin/main -- <los dos>`: vacío).
+
+**El YAML sigue CIEGO en local:** no hay parser en la máquina. El juez es el primer push que pase por el workflow, que es el de esta misma rama. El paso tiene que salir verde con «el censo la cuenta como SCRUM-1809».
+
+**Corrido:** los 7 tests que leen `pr-automatico.yml` (`automerge-conflicto-no-es-averia`, `pr-automatico-el-mensaje-del-automerge`, `scrum1382`, `scrum1827`, `scrum834`, `scrum839e` y `scrum973`): 106 tests, 106 pass, 0 skipped.
+
+# SCRUM-1809 · 26-nov-2026 — el paso de `pr-automatico.yml` se RETIRA: superado por SCRUM-1801 ①
+
+**Medido contra:** `origin/main` = `8e9fefe8bb8bf070f7e26db7866a6cc41a5ac94c` · 2026-11-26T22:07:19Z (cabecera `Date:` de `gh api -i zen`)
+A9: comprobación → `tests/scrum711-guards-sin-sitio.test.mjs`
+
+**El rojo.** El obligatorio del run 45859832665 (job 140047642351, artifact `tanda-tap`) dio dos `not ok`, los dos en `tests/scrum711-guards-sin-sitio.test.mjs`:
+- 11914 «SCRUM-711 · 🔒 NINGÚN guard deja de correr en algún sitio»: «🔴 sobra una declaración: ese guard ya se invoca, o ya no existe. Se BORRA, no se deja. scripts/guard-rama-con-numero.mjs»
+- 11915 «SCRUM-711 · 🔴 el cero se juzga con la MISMA función…»: sin declaraciones, el censo ya no ve `guard-rama-con-numero`.
+
+**La causa.** Mis 7 líneas de `pr-automatico.yml` se cruzaron con la entrada `DECLARADOS['scripts/guard-rama-con-numero.mjs']` que J6 metió en `main` en `295f48280` (SCRUM-1801 ①), después de c.22763. Con el paso en un workflow, el censo cuenta el guard como invocado y la declaración sobra.
+
+**Decisión del orquestador** (SendMessage a S0, 26-nov-2026 noche, opción (c) de las tres que le propuse): quitar las 7 líneas y dejar #3447 solo con la fila de §3.3. Las 7 líneas quedan **superadas por SCRUM-1801 ①**. La colocación de J6 es más fuerte: dentro del obligatorio, un fallo del guard BLOQUEA el merge. En `pr-automatico` solo evitaba armar el automerge, y el obligatorio se quedaba en verde. **La autorización c.22763 no se amplía a borrar la entrada de J6.** No se toca nada de su carril.
+
+**Lo aplicado:** `.github/workflows/pr-automatico.yml` vuelve a ser el de `origin/main` (`git checkout origin/main -- <fichero>`). `git diff origin/main -- .github/workflows/` sale vacío. Siguen en el PR la fila de §3.3, su derivado (`.claude/carriles.json` y `.claude/rules/carril-j6.md`) y la entrada retirada de `scripts/_sin-fila-declarados.json`.
