@@ -49,12 +49,27 @@ const FORMAS = {
 };
 
 const filas = [];
-const caso = (familia, debe, herramienta, forma, comando, base = BASE) => {
+// SCRUM-1648b · CORRECCIÓN DECLARADA AL INSTRUMENTO (decisión del orquestador J, 27-nov-2026). En las
+// cinco filas de Bash con `D:\…` SIN comillas el banco esperaba lo mismo que en PowerShell, y el
+// propio ticket dice lo contrario: «En Bash el guard lee lo mismo que lee bash, así que ahí la `\`
+// sin comillas no es un defecto del guard». bash convierte `D:\a\b` en `D:ab`, que no existe: no hay
+// nada que perder ahí (→ deja), y un `cd` a esa carpeta no deja comprobar el árbol (→ BLOQUEA, que
+// es el fallo CERRADO de siempre). El «debe» de esas filas es el de esa lectura.
+const RECLASIFICADAS_BASH_SIN_COMILLAS = {
+  'switch -c, arbol LIMPIO (legitimo)': 'BLOQUEA',
+  '> rastreado (relativa tras cd)': 'deja',
+  '> rastreado (absoluta, sin cd)': 'deja',
+  'worktree remove con junction (absoluta)': 'deja',
+  'rm -r con junction (absoluta)': 'deja',
+};
+const caso = (familia, debeOriginal, herramienta, forma, comando, base = BASE) => {
+  const reclasificada = herramienta === 'Bash' && forma === 'D:\\… (invertida, sin comillas)' && RECLASIFICADAS_BASH_SIN_COMILLAS[familia];
+  const debe = reclasificada || debeOriginal;
   const crudo = JSON.stringify({ tool_name: herramienta, tool_input: { command: comando } });
   let r;
   try { r = evaluar(crudo, FALSO, { base, sentinelDestructivo: FALSO }); } catch (e) { r = { bloqueado: 'EXCEPCION', motivo: String(e) }; }
   const visto = r.bloqueado === true ? 'BLOQUEA' : r.bloqueado === false ? 'deja' : String(r.bloqueado);
-  const motivo = (r.motivo || '').split('\n')[0].slice(0, 70);
+  const motivo = (reclasificada ? `[debe RECLASIFICADO en SCRUM-1648b; era ${debeOriginal}] ` : '') + (r.motivo || '').split('\n')[0].slice(0, 70);
   filas.push({ familia, herramienta, forma, debe, visto, ok: visto === debe, motivo, comando });
 };
 

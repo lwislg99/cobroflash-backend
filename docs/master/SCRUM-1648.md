@@ -49,3 +49,62 @@ con comillas.
 
 No he tocado el guard ni ningún test. No he medido `Set-Location` dentro del banco (punto 5, visto una vez en
 vivo). La tanda completa no la he corrido: esta rama sólo añade `docs/`.
+
+## SCRUM-1648b · las cinco curas, con el banco a 0 MAL de 72
+**Medido contra:** `origin/main` = `ba521b73339f1e56972c301a372101c8422f5120` · 2026-11-27T12:38Z (cabecera `Date:` de GitHub)
+Versión: 1.2 (SCRUM-1836)
+A9: comprobación → `docs/master/evidencias/scrum1648/mide.mjs`
+Mutaciones: catálogo → `tests/scrum1648b-guard-dangerous-powershell-y-cwd.test.mjs`
+
+Puesto: J6 (sesión jv-j6gj). Lo asigna Javier en SCRUM-1648 c.22932; `.claude/hooks/**` sigue «SIN CERRADURA · un jefe».
+
+**El banco, antes y después** (`mide.mjs`, en un directorio desechable del TEMP, forma corta 8.3):
+
+| guard | casos | MAL |
+|---|---|---|
+| `origin/main` del 2-nov (`salida-main.txt`, S5) | 71 | 23 |
+| el de hoy antes de tocar (ya con SCRUM-1792 y 1831) | 71 | 19 |
+| con las cinco curas (`salida-1648b.txt`) | 72 | 0 |
+
+`compara.mjs salida-main.txt salida-1648b.txt`: los 42 casos que bloqueaban siguen bloqueando, **0 aflojados**, 1
+destrabado (el `switch -c` legítimo de PowerShell con `\` sin comillas) y 1 caso nuevo, el 72 (`Set-Location`).
+`control-base.mjs`: mismo repo, otro repo y no-repo → BLOQUEA los tres (antes: sólo el primero).
+
+**Corrección declarada al instrumento de la S5** (decisión del orquestador J, 27-nov): en las cinco filas de Bash
+con `D:\…` sin comillas el banco esperaba lo mismo que en PowerShell, y la descripción del ticket dice que ahí la
+`\` «no es un defecto del guard». Con el banco sin tocar salían 5 MAL de 72, exactamente esas cinco. Su «debe»
+pasa a ser el de la lectura de bash (`D:ab` no existe): cuatro «deja» y un BLOQUEA (el `cd` a una carpeta que no
+existe no deja comprobar el árbol). Cada fila lo dice en su columna de motivo. La S5 puede discutirlo en el ticket.
+
+**Las curas** (`.claude/hooks/guard-dangerous.mjs`, cada una con su comentario `SCRUM-1648b`):
+
+1. `\` literal cuando `tool_name` es `PowerShell`; en Bash sigue siendo escape.
+2. `check-ignore` se pregunta desde la carpeta del fichero Y desde la de la sesión: basta que una diga «existe y no
+   se ignora». El `status` de la regla 6 pregunta cada ruta absoluta en su repo; `git clean` con ruta absoluta
+   pregunta además allí. La forma MSYS de un `>` se traduce antes de mirar el disco.
+3. MSYS en la regla 7: ya lo curó SCRUM-1792; aquí sólo se ata (el caso (f) pasaba con el guard de hoy).
+4. `Remove-Item -Recurse` y sus alias (`ri`, `del`, `erase`, `rd`, `rmdir`) entran en la regla 7.
+5. `Set-Location`, `sl` y `chdir` cuentan como `cd`, también con `-Path`.
+
+**Lo que se destraba además del `switch -c`**, fuera del banco: `git checkout -- <ruta absoluta de OTRO repo>`
+antes se bloqueaba siempre («no se pudo comprobar») y ahora se pregunta en ese repo: para si está sucio, deja si
+está limpio. Es la cura 2 tal como la pide el ticket; lo ata el caso «regla 6 con ruta absoluta» del test.
+
+**Rojo primero:** el test nuevo, 19 casos, contra el guard de `origin/main`: caen 16 y pasan 3 (el banco, el
+control de Bash y la familia MSYS). Con el arreglo, 19 de 19. Las cuatro mutaciones del catálogo tumban el caso
+que nombran (base 19/19; caen 10, 4, 2 y 4), medidas con una sonda propia de una pasada, no con `aplicarUna`.
+
+**Verdes con población:** el test nuevo con scrum1091, 1792, 1831, 454, 176, 237, 976, 419, 824 y 854 →
+159 casos, 0 fallos tras un arreglo (scrum824 cayó a la primera: las carpetas del banco se creaban en un bucle
+que su censo no sigue); con 700, 836d y 267 → 54 de 54.
+
+**Mis errores:** corrí el banco bajo una ruta con espacios y dio 35 MAL de 71, que no era el guard: sin comillas,
+esa ruta son varias palabras. `mide.mjs` ahora PARA (salida 3) si la ruta lleva espacios. Parcheé el test con un
+guion pasado por heredoc y se comió las barras invertidas (lo cazó `node --check`). Y crucé 175k y 200k de
+contexto sin nada empujado.
+
+**Lo NO medido:** la tanda entera en local (no cabía en contexto; la mide el CI). El hook por stdin: el test
+llama a `evaluar()` con los sentinels falsos, porque por el CLI un caso que bloquea gastaría un
+`.claude/allow-destructivo` de verdad. La versión del hook que corre en el checkout compartido, que no es de esta
+rama. PowerShell con acento grave como escape. Una cita por número de línea se mueve:
+`tests/scrum774-arbol-de-otra-sesion.test.mjs:16` nombra `guard-dangerous.mjs:479`, en un comentario.
