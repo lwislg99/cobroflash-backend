@@ -95,6 +95,16 @@ export function extraerComando(crudo) {
   return typeof cmd === 'string' ? cmd : null;
 }
 
+/** SCRUM-1648b · Qué herramienta lanza el comando (`Bash`, `PowerShell`), o `null` si no se sabe. */
+export function extraerHerramienta(crudo) {
+  try {
+    const nombre = JSON.parse(crudo)?.tool_name;
+    return typeof nombre === 'string' ? nombre : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Descuenta del comando las regiones que son carga de texto y no invocación.
  * El orden importa: primero los bloques (heredoc, here-string), que pueden contener a su vez
@@ -161,7 +171,11 @@ const TRUNCANTES = new Set(['>', '>|', '&>']);
  * dentro de unas comillas. Esa máscara es todo el mecanismo: sin ella no hay forma de
  * distinguir ejecutar de mencionar.
  */
-export function tokenizar(linea) {
+export function tokenizar(linea, herramienta) {
+  // SCRUM-1648b · En PowerShell `\` NO escapa nada: es el separador de ruta. Leerla como escape de
+  // POSIX dejaba `cd D:\a\b` en `D:ab`, una ruta que no existe, y «no existe» se leía como «nada
+  // que perder». En Bash sigue siendo escape, que es lo que hace bash.
+  const barraLiteral = herramienta === 'PowerShell';
   const tokens = [];
   let palabra = null;
   const cerrar = () => {
@@ -183,7 +197,7 @@ export function tokenizar(linea) {
   let i = 0;
   while (i < linea.length) {
     const c = linea[i];
-    if (c === '\\' && i + 1 < linea.length) { anadir(linea[i + 1], false); i += 2; continue; }
+    if (c === '\\' && i + 1 < linea.length && !barraLiteral) { anadir(linea[i + 1], false); i += 2; continue; }
     if (c === '"' || c === "'") {
       const fin = linea.indexOf(c, i + 1);
       const corte = fin === -1 ? linea.length : fin;
@@ -247,7 +261,7 @@ function construir(tokens) {
  * Todas las acciones que una línea llega a EJECUTAR: cada comando simple, más lo que se
  * ejecuta dentro de un envoltorio o de una sustitución de comando.
  */
-export function acciones(comando, profundidad = 0) {
+export function acciones(comando, profundidad = 0, herramienta) {
   const salida = [];
   if (profundidad > 3) return salida; // cota: una línea no se anida sola hasta el infinito
   let actual = [];
@@ -255,7 +269,7 @@ export function acciones(comando, profundidad = 0) {
     if (actual.length) salida.push(construir(actual));
     actual = [];
   };
-  for (const t of tokenizar(comando)) {
+  for (const t of tokenizar(comando, herramienta)) {
     if (t.operador && SEPARADORES.has(t.operador)) cerrar();
     else actual.push(t);
   }
@@ -264,7 +278,7 @@ export function acciones(comando, profundidad = 0) {
   // 1) Envoltorios: su argumento entrecomillado es una línea de comando de verdad.
   for (const a of [...salida]) {
     if (!ENVOLTORIOS.has(a.programa)) continue;
-    for (const p of a.palabras) if (p.entrecomillado) salida.push(...acciones(p.texto, profundidad + 1));
+    for (const p of a.palabras) if (p.entrecomillado) salida.push(...acciones(p.texto, profundidad + 1, herramienta));
   }
   // 1-bis) SCRUM-744 · Banderas que llevan CÓDIGO (`node -e "…"`).
   //
@@ -293,12 +307,12 @@ export function acciones(comando, profundidad = 0) {
         redirecciones: [],
         programa: '',
       });
-      salida.push(...acciones(payload, profundidad + 1));
+      salida.push(...acciones(payload, profundidad + 1, herramienta));
     }
   }
   // 2) Sustitución de comando: se ejecuta esté donde esté, también dentro de comillas.
   for (const m of comando.matchAll(/\$\(([\s\S]*?)\)|`([\s\S]*?)`/g)) {
-    salida.push(...acciones(m[1] ?? m[2] ?? '', profundidad + 1));
+    salida.push(...acciones(m[1] ?? m[2] ?? '', profundidad + 1, herramienta));
   }
   return salida;
 }
@@ -447,25 +461,47 @@ function posixADrive(destino, plataforma) {
  * `ubuntu-latest` (`.github/workflows/ci.yml`), y esta máquina de desarrollo es Windows — el
  * defecto y el arreglo son de Windows, pero la prueba tiene que poder correr en los dos sitios.
  */
-export function cwdDelComando(comando, base, plataforma = process.platform) {
+// SCRUM-1648b · `Set-Location X` (y sus alias) cambia de carpeta igual que `cd X`. Sin esto,
+// `Set-Location X; git reset --hard` miraba el árbol de la sesión y no el de X.
+const SET_LOCATION = new Set(['set-location', 'sl', 'chdir']);
+
+export function cwdDelComando(comando, base, plataforma = process.platform, herramienta) {
   // El `path` AMBIENTE es el de la máquina que ejecuta node, no el de `plataforma`: en el CI de
   // este repo (`ubuntu-latest`) sería SIEMPRE `path.posix`, por mucho que aquí se pida 'win32', y
   // entonces ni `isAbsolute` reconocería `d:/…` ni `resolve` sabría qué hacer con él — el mismo
   // defecto una capa más abajo. Se elige el `path` a mano según `plataforma`, nunca el ambiente.
   const p = plataforma === 'win32' ? path.win32 : path.posix;
-  for (const a of acciones(comando)) {
-    if (a.programa === 'cd' && a.palabras.length >= 2) {
-      const destino = posixADrive(a.palabras[1].texto, plataforma);
-      return p.isAbsolute(destino) ? destino : p.resolve(base, destino);
-    }
+  for (const a of acciones(comando, 0, herramienta)) {
+    const esCd = a.programa === 'cd';
+    if (!esCd && !SET_LOCATION.has(a.programa)) continue;
+    // `cd` se lee como siempre; `Set-Location -Path X` lleva la carpeta detrás de su bandera.
+    const palabra = esCd ? a.palabras[1] : a.palabras.slice(1).find((w) => !w.texto.startsWith('-'));
+    if (!palabra) continue;
+    const destino = posixADrive(palabra.texto, plataforma);
+    return p.isAbsolute(destino) ? destino : p.resolve(base, destino);
   }
   return base;
+}
+
+/** SCRUM-1648b · La carpeta desde la que preguntarle a git por `ruta`: ella, o su primer ancestro que exista. */
+function carpetaDe(ruta) {
+  let d = ruta;
+  for (;;) {
+    try {
+      if (fs.statSync(d).isDirectory()) return d;
+    } catch { /* no existe: se sube */ }
+    const padre = path.dirname(d);
+    if (padre === d) return d;
+    d = padre;
+  }
 }
 
 /** ¿La redirección trunca algo que git considera trabajo? Devuelve la ruta, o null. */
 function ficheroQueSePierde(destino, cwd) {
   if (RUTAS_INERTES.test(destino)) return null;
-  const abs = path.isAbsolute(destino) ? destino : path.resolve(cwd, destino);
+  // SCRUM-1648b · La forma MSYS (`/c/…`) se traduce antes de mirar el disco, como en `cwdDelComando`.
+  const nativo = posixADrive(destino, process.platform);
+  const abs = path.isAbsolute(nativo) ? nativo : path.resolve(cwd, nativo);
   let st;
   try {
     st = fs.lstatSync(abs);
@@ -473,9 +509,37 @@ function ficheroQueSePierde(destino, cwd) {
     return null; // NO EXISTE: es el control negativo, y no puede caer nunca.
   }
   if (!st.isFile()) return null;
-  const ig = correrGit(['check-ignore', '-q', '--', abs], cwd);
-  if (ig === null || ig.code === 0 || ig.code > 1) return null; // ignorado, o fuera de jurisdicción
-  return abs;
+  // SCRUM-1648b · Se pregunta a git desde LA CARPETA DEL FICHERO, no sólo desde la de la sesión: con
+  // el fichero en OTRO repo, desde la sesión git da 128 y eso se leía como «fuera de jurisdicción»
+  // (el `> SCRUM-447.md` del 11-ago, lanzado desde el checkout compartido). Se conserva también la
+  // pregunta desde la sesión: basta con que UNA diga «existe y no se ignora», así que esto solo suma.
+  const carpetas = [path.dirname(abs), cwd];
+  for (const carpeta of carpetas) {
+    const ig = correrGit(['check-ignore', '-q', '--', abs], carpeta);
+    if (ig !== null && ig.code === 1) return abs; // 0 = ignorado · >1 = fuera de jurisdicción
+  }
+  return null;
+}
+
+/**
+ * SCRUM-1648b · El `git status` de la regla 6. Una ruta ABSOLUTA se pregunta en SU repo (desde su
+ * carpeta), no en el de la sesión; las relativas, donde siempre. `null` = no se pudo mirar.
+ */
+function estadoDelDescarte(rutas, cwd) {
+  const base = ['status', '--porcelain', '--untracked-files=no'];
+  const nativas = rutas.map((r) => posixADrive(r, process.platform));
+  const absolutas = nativas.filter((r) => path.isAbsolute(r));
+  const relativas = nativas.filter((r) => !path.isAbsolute(r));
+  const consultas = [];
+  if (relativas.length || !absolutas.length) consultas.push([relativas, cwd]);
+  for (const r of absolutas) consultas.push([[r], carpetaDe(r)]);
+  const lineas = [];
+  for (const [de, donde] of consultas) {
+    const estado = correrGit(de.length ? [...base, '--', ...de] : base, donde);
+    if (estado === null || estado.code !== 0) return null;
+    if (estado.salida) lineas.push(estado.salida);
+  }
+  return { code: 0, salida: lineas.join('\n') };
 }
 
 const flags = (a) => a.palabras.map((p) => p.texto).filter((t) => t.startsWith('-'));
@@ -528,6 +592,11 @@ function descarteGit(a) {
   return null;
 }
 
+// SCRUM-1648b · `Remove-Item -Recurse` (y sus alias) borra un árbol igual que `rm -r`: entra en la
+// regla 7. PowerShell admite la bandera abreviada (`-r`, `-rec`…), así que se compara por prefijo.
+const REMOVE_ITEM = new Set(['remove-item', 'ri', 'del', 'erase', 'rd', 'rmdir']);
+const esRecurse = (f) => /^-r[a-z]*$/i.test(f) && 'recurse'.startsWith(f.slice(1).toLowerCase());
+
 /**
  * Las reglas 5-7. Devuelve `{motivo}` si hay algo que perder, o `null`.
  * ⚠️ Si algo revienta aquí dentro, el llamante deja pasar: esta familia es cobertura NUEVA, y
@@ -552,9 +621,7 @@ function perdidaInminente(lista, cwd, entorno = {}) {
     // 6) Descartar cambios del arbol de trabajo. Solo bloquea si HAY cambios que descartar.
     const descarte = descarteGit(a);
     if (descarte) {
-      const args = ['status', '--porcelain', '--untracked-files=no'];
-      if (descarte.rutas.length) args.push('--', ...descarte.rutas);
-      const estado = correrGit(args, cwd);
+      const estado = estadoDelDescarte(descarte.rutas, cwd);
       if (estado === null || estado.code !== 0) {
         return {
           motivo:
@@ -595,7 +662,13 @@ function perdidaInminente(lista, cwd, entorno = {}) {
     if (a.programa === 'git' && a.palabras.length >= 2 && a.palabras[1].texto === 'clean') {
       const seco = ['clean', '-n', '-d'];
       if (flags(a).some((f) => /^-[a-zA-Z]*x/.test(f))) seco.push('-x');
-      const previo = correrGit(seco, cwd);
+      let previo = correrGit(seco, cwd);
+      // SCRUM-1648b · Una ruta ABSOLUTA en `git clean` se pregunta ADEMÁS en su carpeta (solo suma).
+      for (const r of sinFlags(a, 2).map((t) => posixADrive(t, process.platform)).filter((t) => path.isAbsolute(t))) {
+        const alli = correrGit(seco, carpetaDe(r));
+        if (previo === null || alli === null || alli.code !== 0) { previo = null; break; }
+        if (alli.salida) previo = { code: previo.code, salida: [previo.salida, alli.salida].filter(Boolean).join('\n') };
+      }
       if (previo === null || previo.code !== 0) {
         return { motivo: `'git clean' y NO se pudo comprobar que borraria desde ${cwd}. Se trata como el peor caso.` };
       }
@@ -616,6 +689,7 @@ function perdidaInminente(lista, cwd, entorno = {}) {
     const esBorradoDeArbol =
       (a.programa === 'git' && /\bworktree\b[\s\S]*\bremove\b/.test(texto))
       || (a.programa === 'rm' && flags(a).some((f) => /^-[a-zA-Z]*r/i.test(f)))
+      || (REMOVE_ITEM.has(a.programa) && flags(a).some(esRecurse))
       || (/\brmdir\b/.test(texto) && /\s\/s\b/i.test(texto));
     if (esBorradoDeArbol) {
       // SCRUM-1792 · La forma MSYS (`/c/Users/…`, la de toda sesión desde Git Bash) empieza por
@@ -838,8 +912,9 @@ function reglas(lista, sentinelPath, entorno = {}) {
  */
 export function evaluar(crudo, sentinelPath = SENTINEL_POR_DEFECTO, opciones = {}) {
   const comando = extraerComando(crudo);
+  const herramienta = extraerHerramienta(crudo); // SCRUM-1648b: en PowerShell `\` es literal
   const entorno = {
-    cwd: opciones.cwd ? opciones.cwd : cwdDelComando(comando || '', opciones.base || process.cwd()),
+    cwd: opciones.cwd ? opciones.cwd : cwdDelComando(comando || '', opciones.base || process.cwd(), undefined, herramienta),
     sentinelDestructivo: opciones.sentinelDestructivo,
     plataforma: opciones.plataforma, // SCRUM-1792: solo los tests; en uso real, process.platform
     esEnlace: opciones.esEnlace, //     SCRUM-1792: solo los tests; en uso real, el lstat de verdad
@@ -851,7 +926,7 @@ export function evaluar(crudo, sentinelPath = SENTINEL_POR_DEFECTO, opciones = {
   if (comando === null) {
     return reglas([{ texto: crudo, mascara: [], palabras: [], redirecciones: [], programa: '' }], sentinelPath, entorno);
   }
-  return reglas(acciones(descontarTexto(comando)), sentinelPath, entorno);
+  return reglas(acciones(descontarTexto(comando), 0, herramienta), sentinelPath, entorno);
 }
 
 // ── CLI ──────────────────────────────────────────────────────────────────────────────────
