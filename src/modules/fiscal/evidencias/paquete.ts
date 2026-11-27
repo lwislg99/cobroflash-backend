@@ -124,6 +124,9 @@ export interface PaqueteEvidencias {
     albaranesConHallazgo: number;
     facturasSinAlbaran: number;
     facturasSueltas: number;
+    /** SCRUM-1055f · los recuentos del libro de caja (1055c); van al `manifiesto.json`. Sin caja, no salen. */
+    cobrosSinFechaDeclarada?: number;
+    cobrosSinFilas?: number;
   };
   /** Motivos por los que este paquete NO se puede leer como «todo en orden». */
   avisos: string[];
@@ -356,6 +359,9 @@ export function construirPaqueteEvidencias(params: {
     albaranesConHallazgo: params.informeVerificacion.hallazgos.length,
     facturasSinAlbaran,
     facturasSueltas,
+    // SCRUM-1055f · sólo si el libro los trae (caja); un número, ningún texto nuevo.
+    ...(params.libro.cobrosSinFechaDeclarada !== undefined ? { cobrosSinFechaDeclarada: params.libro.cobrosSinFechaDeclarada } : {}),
+    ...(params.libro.cobrosSinFilas !== undefined ? { cobrosSinFilas: params.libro.cobrosSinFilas } : {}),
   };
 
   // El manifiesto va EL ÚLTIMO: lleva el SHA-256 de cada fichero anterior, que es lo que permite
