@@ -235,3 +235,48 @@ Run 45985810879 (job 140461015585), 3 de 14.743 (12 saltados), sin «TANDA SIN V
 Medido en local, con `dist/` de `tsc -p .` con tipos (salida 0): `scrum1868a` + `scrum262` + `scrum475` + `scrum508` + `scrum836d` = 53 de 53, 0 saltados; vecinos `scrum1057*` + `scrum501*` + `scrum243*` = 23 (18 pasan, 5 saltados por `QA_DB_TEST`/`LIBRO_PG_URL`, 0 caen). NO medido: la suite entera (la corre el obligatorio del segundo empujón); nada en yaqu.app ni staging.
 
 A9: comprobación → `tests/scrum1868a-borrar-cliente-rutas.test.mjs`
+
+# SCRUM-1868f · recorrido en staging de la tarjeta «Eliminar este cliente»
+**Medido contra:** `origin/main` = `600aafc43ea249b07b2982cd518f4026a996c2bf` · 2026-11-27T12:11:45Z
+Versión: 1.2 (SCRUM-1836)
+
+Sesión jv-j2ft (J2). No construye nada: mira el despliegue de staging, captura, mide y borra de verdad dos clientes «[QA-…]». Guion: `docs/master/evidencias/SCRUM-1868/staging-recorrido.mjs` (copia adaptada del de 1833e, que no se toca); salida entera, sin cookie ni secreto: `docs/master/evidencias/SCRUM-1868/staging-recorrido.txt`; capturas `staging-<estado>-<390|1280>.png` en la misma carpeta. Los literales se leen en tiempo de ejecución de la ficha `docs/microcopy/2026-11-26-SCRUM-1868-eliminar-cliente.md` (29 aprobados, 2 retirados), no de una copia.
+
+**Qué servía staging:** `/version` = `600aafc43ea249b07b2982cd518f4026a996c2bf` al empezar (12:11:45Z) y al acabar (12:11:57Z), el mismo sha que `yaqu.app/version` a las 12:08:12Z. Login `POST /auth/test-login` con la cuenta QA (comercio 2): 200 al primer intento; `window.appUserRole` = `admin`.
+
+**① Servidor antes que pantalla.** `GET /admin/customers` → 9 clientes; 9 previas pedidas: 8 bloqueadas por facturas o presupuestos, 1 libre (el «[QA-1833e] Cliente de pruebas», id 3937), **0 bloqueadas solo por trabajos, partes o mantenimientos**.
+- (a) id 49: `{"bloqueado":true,"motivos":["tiene_facturas","tiene_presupuestos","tiene_trabajos","tiene_mantenimientos"],"cuenta":{"documentos":0,"sitios":0,"equipos":0,"historial":2,"solicitudes":0,"presupuestos":2,"facturas":2,"trabajos":4,"partes":0,"mantenimientos":1}}`
+- (b) **NINGUNO en el comercio 2.** Los 3 que midió 1868c («12 clientes de 4 comercios») no son de la cuenta QA. Así que el caso «motivos de (b) = `tiene_trabajos` y nunca `tiene_facturas`» queda **NO medido** en staging. Sí se vio que el orden del contrato de c.22916 se cumple en (a): facturas, presupuestos, trabajos, mantenimientos.
+- El QA nuevo (id 3938), recién creado: `{"bloqueado":false,"motivos":[],"cuenta":{…todo 0}}`.
+
+**Los 6 estados** (scroll = `scrollWidth`/`clientWidth`; «< 44» = objetivos de la tarjeta o del modal):
+
+| estado | 390 | 1280 |
+|---|---|---|
+| ② tarjeta (QA nuevo, creado por la UI) | scroll 390/390 · «Eliminar cliente» 134×44 · se salen 0 · < 44: ninguno | 1280/1280 · 134×44 · se salen 0 · < 44: ninguno |
+| ③ revisar (modal libre) | 390/390 · «Cancelar» 92×44 · «Eliminar» 86×44 habilitado · se salen 0 · < 44: «?» 29×26 | 1280/1280 · «Cancelar» 92×**36** · «Eliminar» 86×**36** · «?» 29×26 · se salen 0 |
+| ④ bloqueado-facturas (a) | 390/390 · solo «Cerrar» 76×44 · se salen 0 · < 44: «?» 29×26 | 1280/1280 · «Cerrar» 76×**36** · enlace «fusionarlo con otro cliente» 167×36 · «?» 29×26 · se salen 0 |
+| ⑤ bloqueado-trabajos (b) | NO medido: sin cliente (b) | NO medido |
+| ⑥ borrado real del QA | lista de clientes, sin el QA; toast «Cliente eliminado» | `GET /admin/customers/3938` → **404** (12:11:57Z) |
+
+- ③ «Cancelar» cierra el modal y el cliente sigue: `GET /admin/customers/3938` → 200.
+- ⑥ Tras «Eliminar», el toast «Cliente eliminado» aparece y la pantalla vuelve a la lista de clientes (botón «Nuevo cliente», sin tarjeta). El QA ya no está en la pantalla.
+- ⑥bis «[QA-1833e] Cliente de pruebas» (id 3937, de 1833e, previa libre): **borrado también por la UI**, con el mismo toast. `GET /admin/customers/3937` → 404 (12:11:57Z).
+
+**Textos (`innerText` a 1280 contra la ficha):** casan las **30 de 30** comprobaciones.
+- Tarjeta: título, la frase de c.22916, «Solo lo ve el administrador.» y el botón.
+- Revisar: título, subtítulo, «Se borra», «La ficha de [QA-1868f] Cliente de pruebas», las cinco filas con «Solicitudes de presupuesto», la nota de c.22916, «Esto no se puede deshacer.», «Cancelar» y «Eliminar».
+- Bloqueado (a): la alerta derivada «No se puede eliminar a {nombre}. Tiene 2 facturas emitidas y 2 presupuestos, y una factura emitida no se borra.», «Lo que lo impide», las cuatro filas («Facturas emitidas 2», «Presupuestos 2», «Trabajos 4», «Mantenimientos 1»), la salida y «Cerrar»; «Cancelar» oculto.
+- Los 2 textos retirados no salen ni en la tarjeta ni en el modal. **Textos distintos: ninguno.**
+- Las filas nuevas de 1868e «Trabajos» y «Mantenimientos» se vieron, con su cuenta, dentro del modal de (a). La alerta de c.22916 («…Tiene trabajos, partes o mantenimientos que se quedarían sin cliente.») **no se vio**, porque no hay cliente (b).
+
+**Hallazgos (literales, sin arreglar: son `public/`, fuera de este encargo):**
+1. A 1280, los botones del pie del modal miden 36 px: «Cancelar» 92×36, «Eliminar» 86×36, «Cerrar» 76×36. A 390 miden 44. La tarjeta mide 44 en los dos anchos. c.22728 (SCRUM-1845) pide 44 fuera de `btn-sm` y de los primarios. Que la ficha 360 lo exija también dentro de un modal: SIN MEDIR (no he leído el alcance de `scrum1850`).
+2. El «?» de la cabecera del modal (`cabeceraModal`, compartida por todos los modales) mide 29×26 en los dos anchos.
+3. Fuera del encargo, visto de paso en la captura ⑥ (lista de clientes a 1280): «se salen 59» nodos por la derecha sin barra (scroll 1280/1280), y celdas de correo de 39 px de ancho y 84-105 de alto. No analizado.
+
+**Instrumento — error mío, contado:** el guion cuenta los `DELETE` que ve salir del navegador (`page.on('request')`) y da **0**, mientras los dos borrados sí ocurrieron (las dos fichas dan 404). El contador estaba ciego. La causa está SIN MEDIR; candidata no comprobada: el `sw.js` que registra `public/dashboard/index.html:404`. Así que la cerradura del mismo guion (corta `send-*`, `resend-*`, `confirm-bizum` y `/auth/logout`; «0 cortadas») **no prueba que no saliera ninguna**: ve lo mismo que el contador. Ningún paso del recorrido pulsa un envío. Lo heredé de 1833e sin control positivo, y el único positivo que había, el `DELETE`, lo desmiente.
+
+**NO medido:** ⑤ entero (sin cliente (b) en el comercio 2: habría que sembrar un trabajo en un cliente «[QA-…]», y eso no lo pedía el encargo); el 409 al pulsar «Eliminar» con una previa vieja; el error genérico; producción (solo `GET /version` sin cookie); la causa de la ceguera del contador. Tampoco la suite entera: solo los guards del encargo, abajo. Las capturas de ④ y ⑥ enseñan nombres de clientes de pruebas de staging (comercio 2, cuenta QA). En este registro y en el `.txt`, el de (a) va como «{nombre}».
+
+A9: aviso → A10 «Una red de seguridad que no caza tiene el mismo aspecto que una que no tuvo nada que cazar.» — no se pudo comprobar: la ceguera del contador de `DELETE` del guion de staging (y de su cerradura) no tiene test que la caiga; no sé su causa, y el guion vive en `docs/`, que ningún test recorre
