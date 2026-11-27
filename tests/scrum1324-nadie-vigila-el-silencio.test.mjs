@@ -82,10 +82,11 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: '② los tres umbrales no se eligen',
   },
   {
-    // M05 · el rojo del obligatorio también avisa
+    // M05 · el rojo del obligatorio vuelve a callar (SCRUM-1534a le dio la vuelta: hasta el 27-nov la
+    // mutación era la contraria, «el rojo del obligatorio también avisa», y caía en el mismo ⑦)
     fichero: 'scripts/vigia-silencio-de-main.mjs',
-    de: "(f.estado === 'ROJO-SOSTENIDO' && !f.obligatorio)",
-    a: "(f.estado === 'ROJO-SOSTENIDO')",
+    de: "(f.estado === 'ROJO-SOSTENIDO')",
+    a: "(f.estado === 'ROJO-SOSTENIDO' && !f.obligatorio)",
     cae: '⑦ lo que no sabe, lo dice',
   },
   {
@@ -225,15 +226,20 @@ test('SCRUM-1324 · ③ EL ROJO, con los datos de entonces: el meta-guard dispar
   assert.equal(quinto.avisos.filter((f) => f.job === META).length, 1);
 
   // Y al cierre del historial sigue avisando, con el recuento que J3b midió por otra vía (31 de 31).
+  // SCRUM-1534a: el obligatorio también, con su único rojo vivo (e9e71cab, 30-sep 23:41Z).
   const cierre = mirar(HISTORIAL.tomada);
   assert.equal(fila(cierre, META).rojosSeguidos, 31);
   assert.equal(fila(cierre, NAVEGADOR).rojosSeguidos, 35);
+  assert.equal(fila(cierre, OBLIGATORIO).rojosSeguidos, 1);
   assert.deepEqual(nombres(cierre.avisos), [
+    `ROJO-SOSTENIDO · CI / ${OBLIGATORIO}`,
     `ROJO-SOSTENIDO · CI / ${META}`,
     `ROJO-SOSTENIDO · CI / ${NAVEGADOR}`,
   ].sort());
 });
 
+// SCRUM-1534a: las ocho de 1324 más las DIEZ rachas rojas del obligatorio (11 rojos, la mayor de 2),
+// que desde c.22933 avisan cada una con su primer rojo. El nombre del caso se queda (lo citan catálogos).
 test('SCRUM-1324 · ④ EL POSITIVO, sobre el historial entero: avisa de estas ocho veces y de ninguna más', () => {
   // Un instante por run, más una rejilla de 30 minutos (el cron se mide en horas y entre dos runs
   // suyos también pasa el tiempo). En cada uno, qué avisa; un episodio es un tramo seguido de aviso.
@@ -259,6 +265,8 @@ test('SCRUM-1324 · ④ EL POSITIVO, sobre el historial entero: avisa de estas o
     `2026-09-28 · ROJO-SOSTENIDO · CI / ${NAVEGADOR}`,
     `2026-09-29 · ROJO-SOSTENIDO · CI / ${META}`,
     `2026-09-29 · ROJO-SOSTENIDO · CI / ${NAVEGADOR}`,
+    ...['2026-09-20', '2026-09-20', '2026-09-21', '2026-09-23', '2026-09-25', '2026-09-25', '2026-09-27', '2026-09-27', '2026-09-29', '2026-09-30']
+      .map((dia) => `${dia} · ROJO-SOSTENIDO · CI / ${OBLIGATORIO}`),
   ].sort());
 
   // Lo que eso deja FUERA, contado para que el positivo no se cumpla sobre el vacío:
@@ -331,7 +339,7 @@ test('SCRUM-1324 · ⑤ EL SILENCIO: un job que deja de ejecutarse avisa igual q
   assert.equal(commitsSinRun(hasta, 'CI', ['otro', 'distinto']), null);
   assert.equal(commitsSinRun(hasta, 'CI', null), null);
 
-  // El silencio del obligatorio TAMBIÉN avisa (su rojo no: ése ya para la cola).
+  // El silencio del obligatorio TAMBIÉN avisa (y desde SCRUM-1534a, su rojo también: caso ⑦).
   const obligatorioMudo = hasta.map((r) => {
     if (!new Set(deCi.slice(-UMBRAL_RUNS_SIN_EJECUTAR)).has(r)) return r;
     const jobs = { ...r.jobs };
@@ -379,7 +387,8 @@ test('SCRUM-1324 · ⑦ lo que no sabe, lo dice: CIEGO, SIN-DECLARAR, y un suelo
   assert.match(vacio.ciego, /ningún run/);
   assert.equal(mirar(HISTORIAL.tomada).ciego, null);
 
-  // El rojo sostenido del OBLIGATORIO se ve en su fila y NO es aviso de este instrumento.
+  // El rojo del OBLIGATORIO es aviso de este instrumento (SCRUM-1534a, c.22933: hasta el 27-nov este
+  // caso exigía lo contrario, «su rojo ya para la cola»). El de los demás, con la racha.
   const t = (i) => new Date(Date.UTC(2026, 0, 1, 0, i)).toISOString();
   const jobs = [{ workflow: 'W', job: 'bloquea', unidad: 'runs' }, { workflow: 'W', job: 'no-bloquea', unidad: 'runs' }];
   const runs = Array.from({ length: UMBRAL_ROJOS_SEGUIDOS }, (_, i) => ({
@@ -388,11 +397,12 @@ test('SCRUM-1324 · ⑦ lo que no sabe, lo dice: CIEGO, SIN-DECLARAR, y un suelo
   const v = veredicto({ runs, ahora: t(60), obligatorios: ['bloquea'], jobs });
   assert.equal(fila(v, 'bloquea').estado, 'ROJO-SOSTENIDO');
   assert.equal(fila(v, 'no-bloquea').estado, 'ROJO-SOSTENIDO');
-  assert.deepEqual(nombres(v.avisos), ['ROJO-SOSTENIDO · W / no-bloquea']);
-  // Y con uno menos, ninguno de los dos llega a sostenido.
+  assert.deepEqual(nombres(v.avisos), ['ROJO-SOSTENIDO · W / bloquea', 'ROJO-SOSTENIDO · W / no-bloquea']);
+  // Y con uno menos, el que no bloquea no llega a sostenido; el obligatorio sigue avisando.
   const corto = veredicto({ runs: runs.slice(1), ahora: t(60), obligatorios: ['bloquea'], jobs });
   assert.equal(fila(corto, 'no-bloquea').estado, 'ROJO-RECIENTE');
   assert.equal(fila(corto, 'no-bloquea').rojosSeguidos, UMBRAL_ROJOS_SEGUIDOS - 1);
+  assert.deepEqual(nombres(corto.avisos), ['ROJO-SOSTENIDO · W / bloquea']);
 
   // Un job que corre en main y no está en la lista: SIN-DECLARAR. Si no, la lista se queda corta callada.
   const sinUno = JOBS_DE_MAIN.filter((j) => j.job !== TRINQUETE);
@@ -412,8 +422,8 @@ test('SCRUM-1324 · ⑧ el informe declara su población en la primera línea y 
   const texto = informe(cierre, { ahora: HISTORIAL.tomada, origen: 'historial real', poblacion: `runs=${RUNS.length}` }).split('\n');
   assert.equal(texto[0], `POBLACION runs=1084 · medido ${HISTORIAL.tomada} · historial real`);
   assert.equal(texto.at(-1), `EXIT=${SALIDA_AVISO}`);
-  assert.equal(texto.filter((l) => l.startsWith('ROJO-SOSTENIDO')).length, 2);
-  assert.match(texto.at(-2), /^AVISO: 2 de 9 jobs/);
+  assert.equal(texto.filter((l) => l.startsWith('ROJO-SOSTENIDO')).length, 3); // SCRUM-1534a: + el obligatorio
+  assert.match(texto.at(-2), /^AVISO: 3 de 9 jobs/);
 
   const sano = mirar('2026-09-28T12:00:00Z');
   const limpio = informe(sano, { ahora: '2026-09-28T12:00:00Z', origen: 'historial real', poblacion: 'runs=…' }).split('\n');
