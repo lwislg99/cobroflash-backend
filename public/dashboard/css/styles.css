@@ -6052,6 +6052,14 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
    Lo mide `tests/scrum1850-ficha-360-resto-44.test.mjs`. */
 .customers-card[data-rol="borrar-cliente"] > .btn-secondary { min-height: 44px; }
 /* J2: fin del bloque SCRUM-1868b */
+/* J2: SCRUM-1868g (AB6, por contenedor como SCRUM-1850) · el modal «Eliminar cliente»: por encima de 768
+   el pie («Cancelar», «Eliminar», «Cerrar») y el enlace a la fusión daban 36,5-37 px de toque (recorrido
+   en staging de 1868f, c.22930). SCRUM-1845 c.22728: todo lo que no es un `.btn-sm` no primario llega a
+   44, por contenedor. Solo tamaño y solo este modal; `.modal-footer .btn` y `.contacto-link` globales no
+   se tocan. El «?» ya daba 45 de toque (SCRUM-962d). Lo mide `tests/scrum1868g-modal-borrar-44.test.mjs`. */
+[data-rol="modal-borrar-cliente"] .modal-footer > .btn { min-height: 44px; }
+[data-rol="modal-borrar-cliente"] .fusion-linea > .contacto-link { min-height: 44px; }
+/* J2: fin del bloque SCRUM-1868g */
 /* J2: SCRUM-1852 (AB6, por contenedor) · cabecera de la ficha 360: «✎ Editar» se pintaba ENCIMA del
    nombre a 929 y 1280. `.c360-identidad` lleva `min-width:0` (el literal de SCRUM-1756i, arriba) y se
    encogía a 141 px con un contenido de 201: el nombre desbordaba por debajo de los botones, también con

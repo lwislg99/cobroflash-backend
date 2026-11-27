@@ -236,6 +236,32 @@ Medido en local, con `dist/` de `tsc -p .` con tipos (salida 0): `scrum1868a` + 
 
 A9: comprobación → `tests/scrum1868a-borrar-cliente-rutas.test.mjs`
 
+# SCRUM-1868g · AB6 del modal y de la lista tras el recorrido en staging
+**Medido contra:** `origin/main` = `ba521b73339f1e56972c301a372101c8422f5120` · 2026-11-27T12:46:40Z
+Versión: 1.2 (SCRUM-1836)
+**Skill UI:** cargada (yaqu-premium-ui; de `DESIGN.md`, las líneas 168-176 y 225, sobre los 44 px y `btn-sm`)
+
+Sesión jv-j2fu (J2). Los tres hallazgos de 1868f (c.22930), medidos en LOCAL con Edge y el árbitro de la casa (`__areaDeToque`, área de toque, no caja), antes de tocar nada. Instrumento: `docs/master/evidencias/SCRUM-1868/g-medir.mjs` (el modal lo abre el código del producto en el banco de 1868b y se serializa; la lista, con `paginaDeClientes`); salida después de la cura en `docs/master/evidencias/SCRUM-1868/g-medir.txt`. Sin staging ni producción. Decisión aplicada: SCRUM-1845 c.22728 (44 en todo lo que no es un `.btn-sm` no primario; cura por contenedor, sin regla global).
+
+**Antes (main `ba521b733`):**
+1. **Pie del modal: REAL.** A 1280, «Cancelar» y «Eliminar» (libre) 36 de caja · 36,9 de toque; «Cerrar» (bloqueado) 36 · 36,5. A 390, 44 · 45. Y uno más que staging ya listaba y 1868f no contó entre los hallazgos: el enlace «fusionarlo con otro cliente» (`.contacto-link`, `public/dashboard/js/customerDetailView.js:2218`), 36 · 37 a 1280.
+2. **El «?»: falso positivo del medidor de staging.** Caja 29×26 en los dos anchos, pero 45 de toque (44,6 en una pasada): el `::before` de 44 de SCRUM-962d (`public/dashboard/css/styles.css:3964`, bloque S2). Es un botón de verdad (abre la guía, `public/dashboard/js/modalHeader.js:65`), así que es objetivo y entra en el guard; el guion de 1868f medía `getBoundingClientRect`, no el área. No se toca.
+3. **Los 59 nodos de la lista: falso positivo, se declaran y no se tocan.** Sin barra lateral, a 1280 se salen 0; a 1012 (1280 menos la barra de 228 y el margen), 23 de los 3 clientes de muestra, y los 23 viven dentro de `div.table-scroll` con `overflow-x: auto` (`public/dashboard/js/customersView.js:384`): la tabla mide 1250 en un contenedor de 1012 y se desplaza dentro de él; la página no (scroll 1012/1012, y en staging 1280/1280). Lo que SÍ queda dicho, sin arreglar: a ese ancho las acciones de la fila («Portal», «📊 Historial») quedan tapadas a la derecha hasta desplazar la tabla, y la celda del correo se estrecha a 39×84. La causa del ancho de 1250 está SIN MEDIR: no es acotada, y no la toco.
+
+**Rojo primero:** `tests/scrum1868g-modal-borrar-44.test.mjs` contra el CSS de main: 5 casos, 2 pasan y 3 caen; el b) da «4 de 12 mediciones por debajo de 44» (los cuatro de arriba, todos a 1280) y el d) no encuentra el bloque (0 reglas quitadas).
+
+**Cura:** bloque J2 `SCRUM-1868g` de `public/dashboard/css/styles.css:6055`, dos reglas de solo `min-height: 44px`, acotadas a `[data-rol="modal-borrar-cliente"]` (el pie `> .btn` y `.fusion-linea > .contacto-link`). `.modal-footer .btn` y `.contacto-link` globales no se tocan; nada de `src/`; ningún texto.
+
+**Después:** a 1280, 44 de caja y 44,5-45 de toque en los cuatro; a 390, igual que antes (las capturas `-antes`/`-despues` de 390 son idénticas byte a byte). Capturas `docs/master/evidencias/SCRUM-1868/g-<libre|bloqueado>-<390|1280>-<antes|despues>.png`: el «antes» es la misma página con las dos reglas quitadas por CSSOM, no un checkout de main.
+
+**Verdes con población:** el guard, 5 de 5 (a: suelo con fuente y los 3 objetivos de cada estado; b: 12 de 12 mediciones ≥ 44; c: ningún `.btn-sm`; d: control, sin las 2 reglas vuelven a 36-37 los 4 de 1280 y el «?» mide lo mismo). Tanda del dashboard (1868g, 1850, 1866, 1868b, 1145, 1847): 53 casos, 52 pasan, 0 caen, 1 saltado (1145, pide `LIBRO_PG_URL`: no corrido aquí). Guards del encargo y `guards:entrada`: en el comentario de entrega, con su población.
+
+**NO medido:** la lista con la barra lateral de verdad (lo de 1012 es una aproximación del ancho, no el panel montado); la causa del ancho de 1250 de la tabla; staging y producción (es 1868h); la suite entera (la corre el obligatorio, por orden del orquestador).
+
+**Error mío, contado:** la primera pasada del instrumento dio «el detector no lo alcanza ni en su centro» para los tres objetivos del modal bloqueado a 390, y en la segunda solo para «Cerrar» (centro en y=915 de 900): medía durante la animación `slide-up` de `.modal` (`public/dashboard/css/styles.css:1261`) y con el modal más alto que la ventana. Ahora se esperan las animaciones y la ventana mide 1200 de alto; si vuelve, el caso a) del guard lo da por CIEGO.
+
+A9: comprobación → `tests/scrum1868g-modal-borrar-44.test.mjs`
+
 # SCRUM-1868f · recorrido en staging de la tarjeta «Eliminar este cliente»
 **Medido contra:** `origin/main` = `600aafc43ea249b07b2982cd518f4026a996c2bf` · 2026-11-27T12:11:45Z
 Versión: 1.2 (SCRUM-1836)

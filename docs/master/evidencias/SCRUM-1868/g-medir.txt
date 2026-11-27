@@ -1,0 +1,36 @@
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+modal libre@390 · fuente: Inter · caras cargadas 5 de 35 declaradas · fallidas 0 · 3 interactivos
+   button.modal-ayuda «?» caja 29×26 · toque 45
+   button.btn.btn-secondary[cancelar-borrado] «Cancelar» caja 92×44 · toque 45
+   button.btn.btn-danger[confirmar-borrado] «Eliminar» caja 86×44 · toque 45
+   capturas g-libre-390-{antes,despues}.png · reglas quitadas para «antes»: 2
+modal libre@1280 · fuente: Inter · caras cargadas 5 de 35 declaradas · fallidas 0 · 3 interactivos
+   button.modal-ayuda «?» caja 29×26 · toque 45
+   button.btn.btn-secondary[cancelar-borrado] «Cancelar» caja 92×44 · toque 44.9
+   button.btn.btn-danger[confirmar-borrado] «Eliminar» caja 86×44 · toque 44.9
+   capturas g-libre-1280-{antes,despues}.png · reglas quitadas para «antes»: 2
+modal bloqueado@390 · fuente: Inter · caras cargadas 5 de 35 declaradas · fallidas 0 · 3 interactivos
+   button.modal-ayuda «?» caja 29×26 · toque 45
+   a.contacto-link[fusionar-en-vez] «fusionarlo con otro cliente» caja 167×44 · toque 45
+   button.btn.btn-secondary[cerrar-borrado] «Cerrar» caja 76×44 · toque 45
+   capturas g-bloqueado-390-{antes,despues}.png · reglas quitadas para «antes»: 2
+modal bloqueado@1280 · fuente: Inter · caras cargadas 5 de 35 declaradas · fallidas 0 · 3 interactivos
+   button.modal-ayuda «?» caja 29×26 · toque 45
+   a.contacto-link[fusionar-en-vez] «fusionarlo con otro cliente» caja 167×44 · toque 45
+   button.btn.btn-secondary[cerrar-borrado] «Cerrar» caja 76×44 · toque 44.5
+   capturas g-bloqueado-1280-{antes,despues}.png · reglas quitadas para «antes»: 2
+lista@390 · scroll 390/390 · se salen 0 · tabla 1..389 (388) · correos 0×0 0×0 0×0
+   
+lista@1012 · scroll 1012/1012 · se salen 23 · tabla 1..1251 (1250) · correos 39×84 39×84 39×84
+   1 × table.table.table--stack-mobile · recorta div.table-scroll (overflow-x auto) · asoma
+   1 × thead · recorta div.table-scroll (overflow-x auto) · asoma
+   4 × tr · recorta div.table-scroll (overflow-x auto) · asoma
+   1 × th · recorta div.table-scroll (overflow-x auto) · asoma
+   1 × tbody · recorta div.table-scroll (overflow-x auto) · asoma
+   3 × td.cell-actions · recorta div.table-scroll (overflow-x auto) · asoma
+   3 × div · recorta div.table-scroll (overflow-x auto) · asoma
+   3 × button.btn-secondary.btn-sm · recorta div.table-scroll (overflow-x auto) · asoma
+   3 × button.btn-secondary.btn-sm · recorta div.table-scroll (overflow-x auto) · oculto
+   3 × button.btn-ghost.btn-sm · recorta div.table-scroll (overflow-x auto) · oculto
+lista@1280 · scroll 1280/1280 · se salen 0 · tabla 1..1279 (1278) · correos 45×84 45×84 45×63
+   
