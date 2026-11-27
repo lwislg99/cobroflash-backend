@@ -115,3 +115,57 @@ de staging y no para los comercios reales; quién LEE hoy `customerId` de `whats
 de 1868b, tampoco; la suite entera NO la corrí (solo docs; guards 1294, 267, 824, 419 y `guards:entrada`).
 
 A9: aviso → A10 «Cero resultados con tu vocabulario no es silencio del documento.» — no se pudo comprobar: mi primera sonda de columnas buscaba `customer_id` y no veía `quotes`/`invoices` (`customerId`); lo destapó un error de SQL, no un control, y la sonda vive en el temporal de la sesión
+
+# SCRUM-1868d · servidor: bloqueo por trabajos, partes y mantenimientos; mensajes desligados
+**Medido contra:** `origin/main` = `10f12420dd8194a16a0165f1417e4fa8a2ad204b` · 2026-11-27T10:48:58Z
+Versión: 1.2 (SCRUM-1836)
+
+Carril J2 (jv-j2fr). Decisión del fundador: SCRUM-1868 c.22916 (① ✅, ② b3), leído por un subagente que lo copió
+literal; el contrato lo fija el orquestador en ese mismo comentario. Sin esquema, sin textos (el servidor contesta
+códigos), sin `public/`: la pantalla es 1868e, en otra rama.
+
+**El contrato, donde vive** (`src/modules/system/customerAdmin.ts`):
+- `MotivoDeBloqueo` (:612) gana `tiene_trabajos`, `tiene_partes` y `tiene_mantenimientos`; `CuentaDelBorrado` (:613)
+  gana `trabajos`, `partes` y `mantenimientos`.
+- `contarLoQueSeBorra` cuenta `job`, `parteTrabajo` y `maintenancePlan` con el mismo `delCliente` (:653-655; los tres
+  modelos llevan `merchantId`, medido con `awk` sobre el esquema) y empuja los motivos detrás de facturas y
+  presupuestos, en el orden del contrato (:660-662). La previa (GET) y el DELETE usan esa única función.
+- b3: `borrarClienteYSusDocumentos` pone a NULL el `customerId` de `whatsAppMessage` (:715) y de `emailMessage` (:716),
+  con el comercio en el `where`, dentro de la transacción y antes de `desvincularYBorrar`. `toPhone` y `toEmail` no se
+  tocan. Los mensajes no entran en `cuenta` ni en `motivos`.
+- La ruta (`customersAdmin.routes.ts`) NO cambia: 204 | 409 `{error, motivos, cuenta}` | 404.
+- Ninguna línea citada se mueve: de las 47 citas `customerAdmin.ts:<n>` del árbol, la más alta es la :573, y el bloque
+  empieza en la :601.
+
+**Rojos vistos primero, por la ruta** (`tests/scrum1868a-borrar-cliente-rutas.test.mjs`, con el servidor de main sin
+tocar y `dist` de `tsc --noCheck`): 19 casos, 10 pasan y 9 caen. Caen los cinco nuevos de bloqueo y previa, el de solo
+mensajes y tres de 1868a por las tres claves nuevas de la cuenta. Los dos nuevos de tenencia y de fallo a mitad pasan
+ya en main (no hay desligue que pueda equivocarse): su rojo es el de sus mutaciones, abajo.
+
+**Verdes, con población.** Con el servidor: ese fichero, 19 de 19. Build con tipos (`tsc -p .`): salida 0. Vecinos
+que siembran o doblan el borrado (los ocho patrones del encargo: 12 ficheros): 174 casos, 172 pasan, 0 caen, 2
+saltados; ninguno pidió sembrado nuevo.
+
+Mutaciones: catálogo → `tests/scrum1868a-borrar-cliente-rutas.test.mjs`
+
+Las seis nuevas (posiciones 6 a 11 de `MUTACIONES_QUE_ME_TUMBAN`), corridas con `aplicarUna` de la casa mediante
+`docs/master/evidencias/SCRUM-1868/mutar-1868d.mjs`: las seis `ok: true`, ninguna ciega ni muda; árbol igual después
+(`git status`). Quitar `job.count`, `parteTrabajo.count` o `maintenancePlan.count` tumba su caso de 409; quitar el
+`updateMany` de WhatsApp o el de correo tumba el de solo mensajes; quitar `merchantId` del `where` del de WhatsApp
+tumba el de tenencia de los mensajes.
+
+Guards, una pasada con el registro ya escrito (15 ficheros: 1294, 267, 854, 237, 976, 700, 824, 419, 836, 1157,
+1215g, 1215i, 1415, 553 y 719): 169 casos, 169 pasan, 0 saltados. Y `npm run guards:entrada`: salida 0.
+
+**NO medido, en la misma frase:** la suite entera NO la corrí (orden del orquestador por mensaje, con la sesión a 160k:
+la mide el obligatorio); las seis mutaciones de 1868a (posiciones 0 a 5) no las corrí, solo las nuevas; la mutación de
+`merchantId` en el `updateMany` de correo no está en el catálogo (el caso de tenencia mira las dos tablas, pero su rojo
+solo lo vi con la de WhatsApp); quién LEE hoy `customerId` en `whatsapp_messages` y `email_messages` sigue sin mirar
+(lo decía 1868c); nada en yaqu.app ni en staging; y contra Postgres real no hay nada medido: el doble no imita ninguna
+FK en las cinco tablas sin FK, que es justo por lo que bloquea el código.
+
+**Errores propios.** Escribí los tres casos de bloqueo con el nombre construido en un bucle; lo cambié a tres nombres
+literales antes de correr nada más. Y crucé el tope del primer empujón (175k) sin haber empujado: me medí a 105.822 al
+acabar el arranque y a 159.660 con el servidor en verde, y avisé ahí.
+
+A9: comprobación → `tests/scrum1415-nombres-construidos.test.mjs`

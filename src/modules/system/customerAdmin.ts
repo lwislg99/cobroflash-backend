@@ -606,12 +606,14 @@ export async function borrarDocumento(merchantId: number, customerId: number, do
 // `CustomerEvent` y `CustomerSite` apuntan a `customers` sin `onDelete` (RESTRICT), así que la
 // cascada la hace el código. `Charge.customerId` es opcional: la base lo pone a NULL y el cobro se
 // queda; aquí no se toca. El servidor contesta CÓDIGOS, ninguna frase (regla 39).
+// SCRUM-1868d · c.22916: bloquean también Job/ParteTrabajo/MaintenancePlan (sin FK: el huérfano lo evita el código); WhatsAppMessage/EmailMessage se desligan.
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 
-export type MotivoDeBloqueo = 'tiene_facturas' | 'tiene_presupuestos';
+export type MotivoDeBloqueo = 'tiene_facturas' | 'tiene_presupuestos' | 'tiene_trabajos' | 'tiene_partes' | 'tiene_mantenimientos';
 export interface CuentaDelBorrado {
   documentos: number; sitios: number; equipos: number; historial: number;
   solicitudes: number; presupuestos: number; facturas: number;
+  trabajos: number; partes: number; mantenimientos: number;
 }
 
 /** Lo lanza el borrado cuando el cliente tiene presupuestos o facturas; la ruta lo convierte en 409. */
@@ -634,6 +636,7 @@ export async function contarLoQueSeBorra(
   tx: {
     attachment: ConCount; customerSite: ConCount; equipment: ConCount; customerEvent: ConCount;
     quoteRequest: ConCount; quote: ConCount; invoice: ConCount;
+    job: ConCount; parteTrabajo: ConCount; maintenancePlan: ConCount;
   },
   merchantId: number,
   id: number,
@@ -647,10 +650,16 @@ export async function contarLoQueSeBorra(
     solicitudes: await tx.quoteRequest.count(delCliente),
     presupuestos: await tx.quote.count(delCliente),
     facturas: await tx.invoice.count(delCliente),
+    trabajos: await tx.job.count(delCliente),
+    partes: await tx.parteTrabajo.count(delCliente),
+    mantenimientos: await tx.maintenancePlan.count(delCliente),
   };
   const motivos: MotivoDeBloqueo[] = [];
   if (cuenta.facturas > 0) motivos.push('tiene_facturas');
   if (cuenta.presupuestos > 0) motivos.push('tiene_presupuestos');
+  if (cuenta.trabajos > 0) motivos.push('tiene_trabajos');
+  if (cuenta.partes > 0) motivos.push('tiene_partes');
+  if (cuenta.mantenimientos > 0) motivos.push('tiene_mantenimientos');
   return { motivos, cuenta };
 }
 
@@ -683,6 +692,8 @@ export async function borrarClienteYSusDocumentos(
     customerSite: { deleteMany: Function };
     customerEvent: { deleteMany: Function };
     quoteRequest: { deleteMany: Function };
+    whatsAppMessage: { updateMany: Function };
+    emailMessage: { updateMany: Function };
   },
   merchantId: number,
   id: number,
@@ -700,6 +711,9 @@ export async function borrarClienteYSusDocumentos(
   await tx.customerSite.deleteMany({ where: { merchantId, customerId: id } });
   await tx.customerEvent.deleteMany({ where: { merchantId, customerId: id } });
   await tx.quoteRequest.deleteMany({ where: { merchantId, customerId: id } });
+  // ④ SCRUM-1868d · b3 (c.22916): sus mensajes se quedan, sin cliente. `toPhone` y `toEmail` no se tocan.
+  await tx.whatsAppMessage.updateMany({ where: { merchantId, customerId: id }, data: { customerId: null } });
+  await tx.emailMessage.updateMany({ where: { merchantId, customerId: id }, data: { customerId: null } });
   const r = await desvincularYBorrar(tx, merchantId, id);
   if (r.count > 0) await tx.attachment.deleteMany({ where: { merchantId, entityType: 'customer', entityId: id } });
   return r;
