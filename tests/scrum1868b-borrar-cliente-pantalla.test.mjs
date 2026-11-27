@@ -26,9 +26,9 @@ const espera = async () => { for (let i = 0; i < 20; i++) await new Promise((r) 
 // Catálogo del meta-guard (SCRUM-1387 / A3, SCRUM-1731): `aplicarUna` de la casa.
 export const MUTACIONES_QUE_ME_TUMBAN = [
   { fichero: 'public/dashboard/js/customerDetailView.js', de: '    if (!listo) return;', a: '    // sin cierre',
-    cae: 'BLOQUEADO: no hay «Eliminar» visible, y pulsarlo igualmente no manda el DELETE' },
+    cae: 'BLOQUEADO: alerta, «Lo que lo impide» y solo «Cerrar»; pulsar «Eliminar» igualmente no manda el DELETE' },
   { fichero: 'public/dashboard/js/customerDetailView.js', de: "if (err && err.status === 409 && B.estado(err.data).tipo === 'bloqueado') { pintar(err.data); return; }", a: '',
-    cae: '409 tras pulsar «Eliminar»: el modal pasa al bloqueo con el cuerpo del 409' },
+    cae: '409 tras pulsar (alguien emitió una factura entre mirar y pulsar) → el modal pasa al bloqueo con el cuerpo del 409' },
   { fichero: 'public/dashboard/js/customerDetailView.js', de: "solicitudes: 'Solicitudes de presupuesto', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1868 comentario 22867)", a: '',
     cae: 'al abrir, la previa (GET) pinta lo que se borra con sus cuentas, y «Eliminar» se habilita' },
 ];
