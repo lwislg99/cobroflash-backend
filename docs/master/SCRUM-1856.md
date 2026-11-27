@@ -48,3 +48,10 @@ Test: `tests/scrum1856a-salto-con-503.test.mjs` (12 casos; `fetch` simulado, có
 | loguear el caso hoy SILENCIOSO | ídem, cuatro formas del vacío + control |
 | CERO texto de usuario; el motivo de pantalla NO se toca | ídem, «con TODOS en 503 … el error es el MISMO de antes» y `motivo === 'sin_lineas_reconocidas'` |
 | fixture con el 503 literal de los logs | ídem, `LOG_503_DE_RAILWAY` |
+
+## SCRUM-1856a-cura · los casos por tabla, con el nombre escrito (27-nov-2026)
+
+**Medido contra:** `origin/main` = `246e5b8eeb33b70de41d009bb5615cd645fe3141` · 2026-11-27T09:12:46Z
+A9: comprobación → `tests/scrum1415-nombres-construidos.test.mjs`
+
+El CI del PR #3453 (run 45961180453, cabeza `67200e8e6`) cayó en UN test: `not ok 3659 - SCRUM-1415 · 🔴 EL ÁRBOL: las llamadas de nombre construido son exactamente las de la lista`. El motivo: `tests/scrum1856a-salto-con-503.test.mjs` tenía 2 de nombre construido (líneas 102 y 167) y la lista declara 0. La cura fue desenrollar los dos bucles con `casosEscritos` (`tests/_casos-escritos.mjs`): 3 casos 5xx y 4 casos del saneador, cada uno con su nombre LITERAL, y `todos()` cae si una fila se queda sin caso. La lista de 1415 NO se ha tocado, porque sólo baja. Mismos casos que antes. En local pasan `scrum1856a` + `scrum1415` (18/18), guards:entrada y los 5 de árbol entero. El tropiezo es una trampa ya apuntada en el traspaso de S1 (25-nov): se repitió porque scrum1415 no está en guards:entrada y sólo corre en la tanda completa del CI.

@@ -12,6 +12,7 @@
 // No llama a Google: `fetch` simulado, sobre el código REAL de `dist/` (no una copia).
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const { geminiCompleteConModelo } = await import('../dist/integrations/gemini.js');
 const { config } = await import('../dist/core/config/env.js');
@@ -98,8 +99,10 @@ test('SCRUM-1856a · 🔴 un 503 «high demand» en el primer modelo SALTA al se
   });
 });
 
-for (const status of [500, 502, 504]) {
-  test(`SCRUM-1856a · un ${status} (5xx transitorio) también salta de modelo`, async () => {
+// SCRUM-1415: un caso por fila con el nombre ESCRITO (casosEscritos), no un `test()` dentro de un `for`.
+const salta5xx = casosEscritos([500, 502, 504],
+  (status) => `SCRUM-1856a · un ${status} (5xx transitorio) también salta de modelo`,
+  async (status) => {
     await conClave(async () => {
       const g = simular((m) => (m === 'modelo-uno' ? new Response('{}', { status }) : ok('hola')));
       try {
@@ -109,7 +112,10 @@ for (const status of [500, 502, 504]) {
       } finally { g.restaurar(); }
     });
   });
-}
+test('SCRUM-1856a · un 500 (5xx transitorio) también salta de modelo', salta5xx(0));
+test('SCRUM-1856a · un 502 (5xx transitorio) también salta de modelo', salta5xx(1));
+test('SCRUM-1856a · un 504 (5xx transitorio) también salta de modelo', salta5xx(2));
+salta5xx.todos();
 
 test('SCRUM-1856a · CONTROL: un 400 que no es transitorio NO salta (sigue lanzando en el primero)', async () => {
   await conClave(async () => {
@@ -158,13 +164,13 @@ test('SCRUM-1856a · 🔴 el 429 deja en el log su quotaId (diario o por minuto)
 
 const DICTADO = 'Sustituir el termo de la cocina de la señora Pilar';
 
-for (const [nombre, respuesta] of [
+const vacioDelSaneador = casosEscritos([
   ['lista vacía', '[]'],
   ['sin JSON', 'Lo siento, no puedo ayudar con eso.'],
   ['JSON roto', '[{"descripcion": }]'],
   ['líneas sin descripción', '[{"descripcion": ""}, {"bloque": "materiales"}]'],
-]) {
-  test(`SCRUM-1856a · 🔴 «contestó y el saneador no sacó líneas» (${nombre}) deja UNA línea de log, sin el dictado`, async () => {
+], ([nombre]) => `SCRUM-1856a · 🔴 «contestó y el saneador no sacó líneas» (${nombre}) deja UNA línea de log, sin el dictado`,
+  async ([, respuesta]) => {
     await conClave(async () => {
       const g = simular(() => ok(respuesta));
       try {
@@ -180,7 +186,11 @@ for (const [nombre, respuesta] of [
       } finally { g.restaurar(); }
     });
   });
-}
+test('SCRUM-1856a · 🔴 «contestó y el saneador no sacó líneas» (lista vacía) deja UNA línea de log, sin el dictado', vacioDelSaneador(0));
+test('SCRUM-1856a · 🔴 «contestó y el saneador no sacó líneas» (sin JSON) deja UNA línea de log, sin el dictado', vacioDelSaneador(1));
+test('SCRUM-1856a · 🔴 «contestó y el saneador no sacó líneas» (JSON roto) deja UNA línea de log, sin el dictado', vacioDelSaneador(2));
+test('SCRUM-1856a · 🔴 «contestó y el saneador no sacó líneas» (líneas sin descripción) deja UNA línea de log, sin el dictado', vacioDelSaneador(3));
+vacioDelSaneador.todos();
 
 test('SCRUM-1856a · CONTROL: un dictado que SÍ saca líneas no deja la línea de log del vacío', async () => {
   await conClave(async () => {
