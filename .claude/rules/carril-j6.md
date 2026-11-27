@@ -5,6 +5,7 @@ paths:
   - "tests/scrum1610b-salida-cortada-sale-ciega.test.mjs"
   - "docs/equipo/afirmaciones-verificadas-javier.md"
   - "tests/scrum765-la-puerta-y-el-suelo.test.mjs"
+  - "scripts/guard-rama-con-numero.mjs"
   - "tests/_pares-leidos-en-jira.mjs"
   - "scripts/_senal-de-nombres.mjs"
   - "scripts/_evidencia-tanda.mjs"

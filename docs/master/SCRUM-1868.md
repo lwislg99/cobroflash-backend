@@ -84,3 +84,71 @@ A9: aviso → cicatriz J2 «edité la tabla de textos de `customerDetailView.js`
 - Las otras 4 de las 30 acusadas no eran textos: `CUENTA_DEL_MOTIVO.tiene_facturas`/`tiene_presupuestos` y `estado` (`generico`, `bloqueado`, `revisar`) son CÓDIGOS, y `alertaBloqueo` deriva texto. Pasados a minúscula con el patrón de `EQUIPOS_CLIENTE`, salen del censo. Los 4 trozos de `alertaBloqueo` llevan su marca en su línea, pero el censo no lee cuerpos de método: los ve un humano, no el instrumento. Decisión de la sesión, validada por el orquestador.
 - `cae` medidos con `aplicarUna` (base 20/20): mut.1 (`if (!listo) return;`) tumba 2 → «BLOQUEADO: alerta, «Lo que lo impide» y solo «Cerrar»; pulsar «Eliminar» igualmente no manda el DELETE»; mut.2 (el 409) tumba 1 → «409 tras pulsar (alguien emitió una factura entre mirar y pulsar) → el modal pasa al bloqueo con el cuerpo del 409»; mut.3 (al partir `FILAS` su ancla pasa a la línea nueva) sigue tumbando su `cae` (2 caen).
 - Verdes, con población: 1157 + 1215g + 1215i + 836 + 1868b = 65 de 65, 0 saltados. NO corridos por la sesión: 837, 1850, 1866, 1294, 267, `guards:entrada` y la suite entera (el CI de #3472 los corre; el PR sigue en borrador hasta la decisión del fundador, c.22900). Error de la sesión, confesado: cruzó 200k sin medirse entre Jira y las marcas.
+# SCRUM-1868c · huérfanos del borrado: medición y propuesta
+**Medido contra:** `origin/main` = `5ed6e94f6a61547eb4589ec913e93be9a4ce4b55` · 2026-11-27T06:45:25Z
+Versión: 1.2 (SCRUM-1836)
+
+Carril J2, solo documentación (jv-j2fq). Nace de SCRUM-1868 c.22890 ② (pregunta A/B del orquestador) y c.22898; sin
+respuesta del fundador al medir (11 comentarios, ninguno posterior a c.22898). **Ningún texto de aquí está firmado.**
+
+**① La lista.** Dos sondas independientes que casan: el esquema (`grep customerId`, 12 campos que apuntan a un cliente)
+y la base de staging (`information_schema` + `pg_constraint`: 12 columnas, 7 con FK). Con FK: `quotes` e `invoices`
+(columna `customerId`, RESTRICT), `quote_requests`, `customer_events`, `customer_sites`, `equipments` (RESTRICT) y
+`charges` (SET NULL). **Sin FK, las cinco del registro de 1868a y ninguna más:**
+
+| modelo (tabla) | campo | qué ve el profesional si apunta a un cliente borrado |
+|---|---|---|
+| `Job` (`jobs`) | `prisma/schema.prisma:1449`, `Int` NOT NULL | un trabajo sin cliente: agenda y cobros sin a quién; no se puede desligar sin esquema |
+| `MaintenancePlan` (`maintenance_plans`) | `prisma/schema.prisma:1510`, `Int` NOT NULL | un plan activo que sigue venciendo y proponiendo visitas a nadie; no se puede desligar sin esquema |
+| `ParteTrabajo` (`partes_trabajo`) | `prisma/schema.prisma:1779`, `Int?` | un parte, firmado o facturado, cuyo cliente ya no existe: el documento firmado se queda sin su ficha |
+| `WhatsAppMessage` (`whatsapp_messages`) | `prisma/schema.prisma:1404`, `Int?` | un envío en el registro sin cliente; el número (`toPhone`) se queda en la fila |
+| `EmailMessage` (`email_messages`) | `prisma/schema.prisma:1718`, `Int?` | un correo en el registro sin cliente; la dirección (`toEmail`) se queda en la fila |
+
+Fuera de la población, por ser polimórficas (`entityType`/`entityId`): `attachments` (el borrado ya los quita) y
+`audit_log` (en staging, 48 filas de 5 tipos; ningún tipo contiene «cust» ni «client», y no miré cuáles son).
+
+**② Staging, hoy (SOLO SELECT, en transacción `READ ONLY`; destino comprobado antes con `comprobar-claves-bd.mjs`:
+`DATABASE_URL_STAGING` → STAGING).** Población: 12 clientes de 4 comercios, 21 presupuestos, 16 facturas.
+- **Huérfanas YA: 0 en las cinco tablas** (jobs 22 filas, maintenance_plans 10, partes_trabajo 7, whatsapp_messages 35
+  —24 con cliente—, email_messages 1 —0 con cliente—). Cada recuento lleva un control SEMBRADO en la propia consulta (un
+  id que no existe suma 1, uno que existe suma 0): salió +1 en las cinco, así que el 0 es «mirado», no «ciego».
+  Filas que apuntan a un cliente de OTRO comercio: 0.
+- **Clientes que el borrado de hoy deja borrar** (sin presupuestos ni facturas): 4. **De ellos, 3 (de 3 comercios)
+  tienen trabajos: 5, todos en `pendiente_agendar`**; 0 con partes, 0 con mantenimientos, 0 con WhatsApp o correo. La
+  unión sale 3 por `EXISTS` y 3 por `EXCEPT`. Es decir: con la tarjeta de 1868b, hoy en staging 3 de los 4 clientes
+  borrables dejarían trabajos apuntando a nadie.
+
+**③ La propuesta (no decido; el fundador elige).** Textos **PROPUESTOS, sin firmar**; los vigentes, de la ficha de
+microcopy de la rama de 1868b (`cf8794eacc8e621efe92d561214f99f266c0ef55`), no copiados de Jira.
+- **(a) Bloquear también por trabajos, partes y mantenimientos.** Servidor: tres `count` más en `contarLoQueSeBorra`
+  y tres motivos nuevos en el 409 (`tiene_trabajos`, `tiene_partes`, `tiene_mantenimientos`; `cuenta` gana `trabajos`,
+  `partes`, `mantenimientos`). Pantalla, PROPUESTOS:
+  - frase de la tarjeta: «Se borra su ficha con sus documentos, sus sitios y sus equipos. No se puede deshacer. Si tiene presupuestos, facturas, trabajos, partes o mantenimientos, no se puede eliminar.»
+  - filas nuevas en «Lo que lo impide»: «Trabajos» · «Partes de trabajo» · «Mantenimientos»
+  - cabecera cuando solo impiden los nuevos: «No se puede eliminar a {nombre}. Tiene trabajos, partes o mantenimientos que se quedarían sin cliente.»
+  - la de «se puede»: «Este cliente no tiene presupuestos, facturas, trabajos, partes ni mantenimientos: por eso se puede eliminar.»
+  Alternativa que NO propongo y anoto: borrarlos en cascada. `Job` y `MaintenancePlan` no admiten NULL, y un parte
+  firmado lleva la firma del cliente: borrarlo es borrar un documento (dato de cliente, STOP del fundador).
+- **(b) Mensajes de WhatsApp y correo.** Las dos columnas admiten NULL, así que las tres salidas caben sin esquema:
+  (b1) bloquean, y la tarjeta casi nunca dejaría borrar a un cliente al que se le escribió; (b2) se quedan con el
+  número de cliente, como hoy (cero trabajo, huérfanos en el registro); (b3) se desligan con `customerId` a NULL en la
+  misma transacción (dos `updateMany` con el comercio en el `where`). En (b3) el teléfono y el correo SIGUEN en
+  `toPhone`/`toEmail`: si eso también se borra es una decisión de datos de cliente (STOP), no de este tramo.
+- **(c) Tamaño.** (a): 1 tramo de servidor J2 (`src/modules/system/customerAdmin.ts`, su test de 1868a y los bancos
+  que siembran el borrado, p. ej. `scrum1456`, porque el contador pedirá `job.count`) + 1 tramo de pantalla J2 (la
+  vista de 1868b, su ficha de microcopy y la firma). (b3): cabe en el tramo de servidor de (a) o en uno propio; la
+  pantalla no cambia salvo que el fundador quiera decirlo. (b1) y (b2): sin pantalla nueva. **Esquema: NO en ninguna.**
+
+**④ La nota de c.22890 (borradores), corregida.** En `invoices` **no hay borradores**: la única creación de una fila
+es `src/modules/invoicing/domain/crearFacturaEmitida.ts:69` (el embudo de SCRUM-729; 1 `invoice.create` en `src/`).
+Staging: 16 facturas, todas con número, `paid`/`pending` × `no_aplica`/`sellado`; 0 sin número, 0 `annulled`. La
+frase «borradores incluidos» del registro de 1868a (este puesto) y de c.22890 no se sostiene: lo que cuenta
+`cuenta.facturas` son facturas emitidas, anuladas incluidas (una anulada tampoco se borra, regla 29 y FK RESTRICT).
+Propuesta: **el texto «Facturas emitidas» se queda como está** y el bloqueo sigue contando todas.
+
+**NO medido, en la misma frase:** producción (no se toca desde aquí), así que las cifras de ② valen para 12 clientes
+de staging y no para los comercios reales; quién LEE hoy `customerId` de `whatsapp_messages` y `email_messages`
+(pantallas, anti-spam J6) no lo he mirado; la derivación de singulares y plurales de las filas propuestas en la vista
+de 1868b, tampoco; la suite entera NO la corrí (solo docs; guards 1294, 267, 824, 419 y `guards:entrada`).
+
+A9: aviso → A10 «Cero resultados con tu vocabulario no es silencio del documento.» — no se pudo comprobar: mi primera sonda de columnas buscaba `customer_id` y no veía `quotes`/`invoices` (`customerId`); lo destapó un error de SQL, no un control, y la sonda vive en el temporal de la sesión
