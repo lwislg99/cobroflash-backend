@@ -2391,6 +2391,27 @@ html, body { overflow-x: clip; }
 }
 /* S2: ── fin SCRUM-962f (radios y casilla) ──────────────────────────────────────────────────── */
 
+/* S2: ── SCRUM-1805e · CONCEPTOS de la ficha del PRESUPUESTO (`quotesDetailView.js`) ─────────────────
+   El «Total» a la derecha con una clase y no con `style=` (CSP). Y en móvil, la MISMA receta que la ficha
+   de factura (SCRUM-1787e, bloque J1): a ≤640 px cada línea es un bloque, el concepto a todo el ancho y
+   Cant., Precio, IVA y Total debajo en cuatro columnas con su rótulo (`data-label`, leído de la cabecera).
+   Medido a 390 px antes: 2 de 5 columnas a la vista, el resto tras el scroll propio de la tabla. */
+.quote-conceptos-tabla .quote-conceptos-col-total { text-align:right; }
+@media (max-width: 640px) {
+  .quote-conceptos-tabla thead { display:none; }
+  .quote-conceptos-tabla tbody { display:block; }
+  /* Una diferencia con la receta de 1787e, medida (AB6, importes grandes): con `repeat(4, 1fr)`, a 390 px
+     «12.099,99 €» partía el «€» a otro renglón. Precio y Total no se parten (
+owrap) y su columna no baja de
+     ese ancho (min-content; con max-content el concepto largo, que abarca las cuatro, ensanchaba la rejilla); Cant. e IVA, cortos siempre, ceden el sitio. */
+  .quote-conceptos-tabla tbody tr { display:grid; grid-template-columns:minmax(0, .6fr) minmax(min-content, 1fr) minmax(0, .6fr) minmax(min-content, 1.2fr); gap:4px 8px; padding:10px 0; border-bottom:1px solid var(--border); }
+  .quote-conceptos-tabla tbody td { display:block; min-width:0; padding:0; border:0; white-space:normal; overflow-wrap:anywhere; }
+  .quote-conceptos-tabla tbody td:nth-child(3), .quote-conceptos-tabla tbody td:nth-child(5) { white-space:nowrap; overflow-wrap:normal; }
+  .quote-conceptos-tabla tbody td:first-child { grid-column:1 / -1; }
+  .quote-conceptos-tabla tbody td[data-label]::before { content:attr(data-label); display:block; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+}
+/* S2: ── fin SCRUM-1805e ─────────────────────────────────────────────────────────────────────── */
+
 /* ── Customers ───────────────────────────────────────────────── */
 .customers-header {
   display: flex; justify-content: space-between; gap: 12px; margin-bottom: 16px; align-items: center;

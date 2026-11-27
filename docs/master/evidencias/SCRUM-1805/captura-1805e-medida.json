@@ -1,0 +1,96 @@
+[
+ {
+  "lado": "antes",
+  "ancho": 390,
+  "servidosLocales": [],
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "tabla": true,
+  "celdasALaVista": 0,
+  "scrollPropioPx": 743,
+  "desbordaPagina": false,
+  "totalTexto": "12.099,99 €",
+  "totalAlineado": "right",
+  "cabeceraVisible": true,
+  "cajaFila": [
+   35,
+   1130,
+   1063,
+   42
+  ]
+ },
+ {
+  "lado": "antes",
+  "ancho": 1280,
+  "servidosLocales": [],
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "tabla": true,
+  "celdasALaVista": 5,
+  "scrollPropioPx": 0,
+  "desbordaPagina": false,
+  "totalTexto": "12.099,99 €",
+  "totalAlineado": "right",
+  "cabeceraVisible": true,
+  "cajaFila": [
+   295,
+   910,
+   938,
+   67
+  ]
+ },
+ {
+  "lado": "despues",
+  "ancho": 390,
+  "servidosLocales": [
+   "/dashboard/css/styles.css",
+   "/dashboard/js/quotesDetailView.js"
+  ],
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "tabla": true,
+  "celdasALaVista": 5,
+  "scrollPropioPx": 0,
+  "desbordaPagina": false,
+  "totalTexto": "12.099,99 €",
+  "totalAlineado": "right",
+  "cabeceraVisible": false,
+  "cajaFila": [
+   35,
+   1087,
+   320,
+   143
+  ]
+ },
+ {
+  "lado": "despues",
+  "ancho": 1280,
+  "servidosLocales": [
+   "/dashboard/css/styles.css",
+   "/dashboard/js/quotesDetailView.js"
+  ],
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "tabla": true,
+  "celdasALaVista": 5,
+  "scrollPropioPx": 0,
+  "desbordaPagina": false,
+  "totalTexto": "12.099,99 €",
+  "totalAlineado": "right",
+  "cabeceraVisible": true,
+  "cajaFila": [
+   295,
+   910,
+   938,
+   67
+  ]
+ }
+]
