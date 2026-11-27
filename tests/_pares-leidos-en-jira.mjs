@@ -70,6 +70,9 @@ const POR_1640 = 'jv-j1dq · SCRUM-1640';
 const POR_1618 = 'jv-j1dg · SCRUM-1618';
 const POR_1662D = 'orquestador de Luis, a petición de S4 · SCRUM-1662d';
 const POR_1800B = 'jv-j2em · SCRUM-1800b';
+// SCRUM-1502x · el par (1502, c.22945) lo escribió y lo leyó el orquestador J el 27-nov-2026; la fila la añade él
+// con el OK del fundador («El pendiente te doy el ok», 27-nov-2026 13:19:45Z).
+const POR_1502X = 'orquestador J, con OK del fundador · SCRUM-1502x';
 
 export const PARES_LEIDOS = Object.freeze([
   { ticket: 299, comentario: 12188, leido: '2026-10-24', por: POR_1511G },
@@ -108,4 +111,5 @@ export const PARES_LEIDOS = Object.freeze([
   { ticket: 1618, comentario: 21221, leido: '2026-10-30', por: POR_1618 },
   { ticket: 1662, comentario: 21548, leido: '2026-11-17', por: POR_1662D },
   { ticket: 1800, comentario: 22496, leido: '2026-11-24', por: POR_1800B },
+  { ticket: 1502, comentario: 22945, leido: '2026-11-27', por: POR_1502X },
 ].map(Object.freeze));
