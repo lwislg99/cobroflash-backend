@@ -147,3 +147,10 @@ Usa el banco de `scrum1442b`: el `GET /pay/quote/:token` real, con `prisma.quote
 **Vecinos:** los 32 ficheros que ya leen la página de firma o su hoja, más `scrum1807c/d`, `scrum655`, `scrum1786g`, `scrum1786f1` y `scrum619`: 279 de 279 en 37 ficheros.
 
 **Lo que NO hace:** las tarjetas de opciones (`renderTierCards`) no pintan ni total del apartado ni agrupado. Es lo mismo que hizo el PDF en 1786f1, que sólo tocó el modo clásico. La descripción de la cabecera no sale en la fila agrupada, porque esta página no pinta descripciones de línea en ningún sitio. El PDF de FACTURA no se ha abierto (P4, regla 40). Falta verlo en yaqu.app: se verá después del merge.
+
+## SCRUM-1807g-cura · el test de 1807g, sin extractores con el `>` pegado (27-nov-2026)
+
+**Medido contra:** `origin/main` = `246e5b8eeb33b70de41d009bb5615cd645fe3141` · 2026-11-27T09:10:30Z
+A9: comprobación → `tests/scrum553-etiquetas-pegadas.test.mjs`
+
+El CI del PR #3446 (run 45961179052, cabeza `8162293fd`) cayó en UN test: `not ok 10085 - SCRUM-553 · 🔴 el número de etiquetas con el `>` pegado NO SUBE`, con 22 extractores contra un tope de 20. Los dos que sobraban eran de esta rama: `tests/scrum1807g-firma-total-del-apartado.test.mjs:92` (`'<tbody>'`) y `:177` (`'<script>alert(2)'`). El diagnóstico fue de S2 y lo he comprobado en el TAP del artifact `tanda-tap`. La cura va en el test y el guard no se toca: `:92` pasa a `/<tbody[^>]*>([\s\S]*?)<\/tbody>/` y `:177` pasa a `!/<script[^>]*>alert\(2\)/.test(t)`, así que si el concepto sale sin escapar la comprobación sigue fallando. En local pasan `scrum1807g` + `scrum553` (21/21), guards:entrada y los 5 de árbol entero. El tropiezo: el tramo g se empujó sin pasar `scrum553`, que no está en guards:entrada y sólo corre en la tanda completa del CI.
