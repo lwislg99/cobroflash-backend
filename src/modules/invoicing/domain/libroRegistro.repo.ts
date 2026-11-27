@@ -292,6 +292,9 @@ async function filasPorFactura(db: ClienteDelLibro, merchantId: number, ids: num
     if (!db.invoicePayment) await leerFilasDeCobro(db, merchantId, {});
     return porFactura;
   }
+  // SCRUM-1055c · cada factura pedida tiene su entrada, aunque sea `[]`: «de caja y sin filas» (las
+  // `paid` anteriores a 1732) no puede leerse igual que «no va por caja», o no se podría contar.
+  for (const id of ids) porFactura.set(id, []);
   for (const f of await leerFilasDeCobro(db, merchantId, { invoiceId: { in: ids } })) {
     const l = porFactura.get(f.invoiceId) ?? [];
     l.push(f);

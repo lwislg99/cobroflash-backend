@@ -1,0 +1,77 @@
+[
+ {
+  "ancho": 390,
+  "estado": "cancelled",
+  "debeVerse": false,
+  "desplegadoLlevaLaCondicion": true,
+  "pestana": true,
+  "inyectado": 2,
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "hayFila": true,
+  "visible": false,
+  "caja": null,
+  "desborda": false
+ },
+ {
+  "ancho": 390,
+  "estado": "pending",
+  "debeVerse": true,
+  "desplegadoLlevaLaCondicion": true,
+  "pestana": true,
+  "inyectado": 2,
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "hayFila": true,
+  "visible": true,
+  "caja": [
+   75,
+   681,
+   197,
+   44
+  ],
+  "desborda": false
+ },
+ {
+  "ancho": 1280,
+  "estado": "cancelled",
+  "debeVerse": false,
+  "desplegadoLlevaLaCondicion": true,
+  "pestana": true,
+  "inyectado": 2,
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "hayFila": true,
+  "visible": false,
+  "caja": null,
+  "desborda": false
+ },
+ {
+  "ancho": 1280,
+  "estado": "pending",
+  "debeVerse": true,
+  "desplegadoLlevaLaCondicion": true,
+  "pestana": true,
+  "inyectado": 2,
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "hayFila": true,
+  "visible": true,
+  "caja": [
+   507,
+   406,
+   197,
+   44
+  ],
+  "desborda": false
+ }
+]
+
