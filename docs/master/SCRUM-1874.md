@@ -60,7 +60,7 @@ declara (D). Las ramas sin número salen aparte: no se pueden cotejar.
 
 Los casos de repositorio corren en `os.tmpdir()` (fuera del árbol, SCRUM-824) con un `main` propio. El que decide: una rama que
 crea `SCRUM-9.md` (commiteado, sin línea), `SCRUM-10.md` (bien) y `SCRUM-11.md` (sin rastrear, sin línea), y toca el viejo
-`SCRUM-1.md`. La línea de órdenes, con `GITHUB_ACTIONS=true`, sale 0 (informativo) y escribe `registros NUEVOS ... 3 · declaran 1 ·
+`SCRUM-1.md`. La línea de órdenes, con `--anotar` (lo que pasa el paso del CI), sale 0 (informativo) y escribe `registros NUEVOS ... 3 · declaran 1 ·
 sin declarar 2` y un `::warning file=docs/master/SCRUM-9.md::SCRUM-1874 · sin línea «Versión:»…` (y otro para el 11); al viejo no
 lo nombra. Sin `main` ni `origin`: NO PUDE MIRAR, salida 2. CONTROL: una rama sin registros nuevos da 0 y sale 0.
 
@@ -85,6 +85,20 @@ tests); los 5 de árbol entero de SCRUM-1560, 38/38; `meta-guard-mutaciones --so
 
 Ensayo de C contra el remoto real (27-nov, lista de 2 tickets): 12 PR abiertos, 166 ramas sin mergear, 8 s. De ahí el orden de la
 salida: los 11 primeros «sin versión» eran ramas de más de 120 días que tapaban los PR; ahora salen en dos bloques, PR primero.
+
+## El rojo del primer CI (#3489, run 45965247366, punta `64ab595ca`)
+
+3 fallos de la tanda, los tres por el test nuevo, y su arrastre en el meta-guard parte 2 (`scrum864c` CIEGO: su base salía roja):
+
+- `scrum702`: 25 ficheros leyendo una señal del entorno con tope 24. El test nombraba `GITHUB_ACTIONS` para pasárselo al hijo, y
+  el script lo leía. Ahora va por argumento: `--anotar`, que pone el paso del CI. Ninguno de los dos lee el entorno.
+- `scrum864c`: dos `mkdtempSync` que no se borraban si caía un `assert`. Ahora son `temporal()` (`tests/_temporal.mjs`), que
+  borra al salir.
+- `scrum824`: `escribir(dir, …)` escribe en una carpeta que le llega por parámetro, y el censo no atraviesa la llamada. Se
+  declara en `SIN_PROBAR_CONOCIDOS` con su motivo, como 951d y 1540 (cada ticket declara su propia línea en su PR).
+
+Visto en local tras la cura: 702 + 824 + 864c + 723 + 1643 + 710b + el de este ticket, 58/58; las 5 mutaciones siguen VIVAS.
+Ningún guard se ha tocado (regla 41): sólo se ha añadido la declaración propia en el censo de 824.
 
 ## Lo que NO dice esto
 
