@@ -280,12 +280,18 @@ export function veredicto({ runs, ahora, obligatorios, commitsDeMain = null, job
       const sinRun = commitsSinRun(vistos, j.workflow, commitsDeMain);
       fila.sinEjecutar = huecosSinEjecutar(serie).vivo + (sinRun ?? 0);
       fila.commitsSinRun = sinRun;
+      // SCRUM-1534a (decisión del fundador, SCRUM-1534 c.22933; c.22944 d): un check OBLIGATORIO de
+      // `main` avisa con UN rojo; los demás, con la racha. Un rojo suyo en `main` es un PR que pasó y
+      // rompe al fusionarse: no es ruido. Que pare la cola de los PR no lo dice en `main`.
+      const umbralDeRojos = fila.obligatorio ? 1 : U.rojos;
       if (fila.sinEjecutar >= U.runs) {
         fila.estado = 'SILENCIO';
         fila.motivo = `${fila.sinEjecutar} runs seguidos de main sin ejecutarse (umbral ${U.runs})`;
-      } else if (fila.rojosSeguidos >= U.rojos) {
+      } else if (fila.rojosSeguidos >= umbralDeRojos) {
         fila.estado = 'ROJO-SOSTENIDO';
-        fila.motivo = `${fila.rojosSeguidos} ejecuciones seguidas en rojo desde ${racha.desde} (umbral ${U.rojos})`;
+        fila.motivo = fila.obligatorio
+          ? `${fila.rojosSeguidos} en rojo en un check obligatorio, el último en ${ultima.sha} (${ultima.creado}): avisa con 1 (SCRUM-1534a)`
+          : `${fila.rojosSeguidos} ejecuciones seguidas en rojo desde ${racha.desde} (umbral ${U.rojos})`;
       } else if (fila.rojosSeguidos > 0) {
         fila.estado = 'ROJO-RECIENTE';
         fila.motivo = `${fila.rojosSeguidos} en rojo, por debajo del umbral ${U.rojos}: no avisa`;
@@ -311,8 +317,9 @@ export function veredicto({ runs, ahora, obligatorios, commitsDeMain = null, job
     return fila;
   });
 
-  // Un check obligatorio en rojo ya para la cola: su rojo no es de este instrumento. Su SILENCIO sí.
-  const avisos = filas.filter((f) => f.estado === 'SILENCIO' || (f.estado === 'ROJO-SOSTENIDO' && !f.obligatorio));
+  // SCRUM-1534a: el rojo de un obligatorio TAMBIÉN es aviso (antes `&& !f.obligatorio` se lo quitaba:
+  // «guards de navegador», obligatorio, tuvo 72 rojos seguidos en main sin aviso posible, c.22940).
+  const avisos = filas.filter((f) => f.estado === 'SILENCIO' || (f.estado === 'ROJO-SOSTENIDO'));
 
   const declarados = new Set(jobs.map((j) => clave(j.workflow, j.job)));
   const workflows = new Set(jobs.map((j) => j.workflow));
@@ -373,7 +380,7 @@ export function informe(v, { ahora, origen, poblacion }) {
   const l = [];
   l.push(`POBLACION ${poblacion} · medido ${ahora} · ${origen}`);
   if (v.ciego) { l.push(`CIEGO — ${v.ciego}`); l.push(`EXIT=${SALIDA_CIEGO}`); return l.join('\n'); }
-  l.push(`umbrales: ${UMBRAL_ROJOS_SEGUIDOS} rojos seguidos · ${UMBRAL_RUNS_SIN_EJECUTAR} runs sin ejecutar · ${UMBRAL_HORAS_DE_CRON} h de cron sin run o sin verde`);
+  l.push(`umbrales: ${UMBRAL_ROJOS_SEGUIDOS} rojos seguidos (1 en un check obligatorio, SCRUM-1534a) ·${UMBRAL_RUNS_SIN_EJECUTAR} runs sin ejecutar · ${UMBRAL_HORAS_DE_CRON} h de cron sin run o sin verde`);
   for (const f of v.filas) {
     const medida = f.unidad === 'runs'
       ? `${f.rojosSeguidos} rojos seg. · ${f.sinEjecutar} sin ejecutar${f.commitsSinRun === null ? ' (commits de main: no leídos)' : ''}`
