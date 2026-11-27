@@ -12,7 +12,10 @@
 //
 // ── LA MISMA FORMA QUE scrum1792 ───────────────────────────────────────────────────────────
 //   ① Grupo determinista: corre en CUALQUIER host (el CI es `ubuntu-latest`). `plataforma` y la
-//     sonda del enlace se inyectan por `opciones` de `evaluar()`.
+//     sonda del enlace se inyectan por `opciones` de `evaluar()`. Una ruta relativa a una UNIDAD
+//     (`Z:xrepo`, la lectura de bash) la completa el host: de ésas se asevera la forma, no la ruta
+//     (rojo del primer CI, run 46000711974; se reproduce en Windows con
+//     `docs/master/evidencias/scrum1648/host-linux.mjs`).
 //   ② End-to-end con dos repos de git fabricados en un temporal (uno sucio, uno limpio), con barra
 //     normal: corre en cualquier host. Ata el `>` absoluto desde otro repo y `Set-Location`.
 //   ③ End-to-end sólo en win32: la ruta con `\` sin comillas y una junction de verdad, cuyo destino
@@ -84,7 +87,18 @@ test('SCRUM-1648b · (a) control: la MISMA orden en Bash sigue leyendo `\\` como
   const r = evaluarWin32('Bash', 'git worktree remove Z:\\x\\arbol', [ENLACE_FALSO]);
   assert.equal(r.bloqueado, false);
   assert.ok(r.consultas.length > 0, 'el control no miró nada: no distingue «no es enlace» de «no pregunté»');
-  assert.ok(r.consultas.includes('Z:\\xarbol'), JSON.stringify(r.consultas));
+  // Lo que no depende del host es la lectura del shell: la palabra es `Z:xarbol`.
+  const palabras = acciones('git worktree remove Z:\\x\\arbol', 0, 'Bash').flatMap((a) => a.palabras.map((p) => p.texto));
+  assert.ok(palabras.includes('Z:xarbol'), JSON.stringify(palabras));
+  // `Z:xarbol` es relativa a la UNIDAD Z:, y `path.win32.resolve` la completa con la carpeta actual
+  // de esa unidad, que saca del host (`process.env['=Z:']` o `process.cwd()`): en Windows sale
+  // `Z:\xarbol`, y en el CI de Linux `Z:\home\runner\work\…\xarbol` (run 46000711974). Por eso se
+  // asevera la forma, no la ruta: se pregunta por una `…\xarbol` de Z:, y nunca por la que lee
+  // PowerShell.
+  assert.ok(r.consultas.some((q) => q.startsWith('Z:\\') && path.win32.basename(q) === 'xarbol'), JSON.stringify(r.consultas));
+  for (const dePowerShell of ['Z:\\x\\arbol', 'Z:\\x\\arbol\\node_modules']) {
+    assert.ok(!r.consultas.includes(dePowerShell), `leyó la ruta de PowerShell: ${JSON.stringify(r.consultas)}`);
+  }
 });
 
 test('SCRUM-1648b · (b) PowerShell, en cualquier host: `rm -r Z:\\x\\arbol` sin comillas, con el node_modules enlazado, PARA', () => {
@@ -103,7 +117,11 @@ test('SCRUM-1648b · (c) PowerShell, en cualquier host: el destino de `> Z:\\x\\
 
 test('SCRUM-1648b · (d) PowerShell, en cualquier host: `cd Z:\\x\\repo; …` se evalúa en Z:\\x\\repo, no en una ruta inventada', () => {
   assert.equal(cwdDelComando('cd Z:\\x\\repo; git switch -c nueva', 'Q:/base', 'win32', 'PowerShell'), 'Z:\\x\\repo');
-  assert.equal(cwdDelComando('cd Z:\\x\\repo && git switch -c nueva', 'Q:/base', 'win32', 'Bash'), 'Z:\\xrepo');
+  // En Bash es `Z:xrepo`, relativa a la unidad Z:: su carpeta la pone el host, como en el control de
+  // (a). Fijo en cualquier host: no es la de PowerShell, es de Z: y acaba en `xrepo`.
+  const enBash = cwdDelComando('cd Z:\\x\\repo && git switch -c nueva', 'Q:/base', 'win32', 'Bash');
+  assert.notEqual(enBash, 'Z:\\x\\repo');
+  assert.ok(enBash.startsWith('Z:\\') && path.win32.basename(enBash) === 'xrepo', enBash);
 });
 
 test('SCRUM-1648b · (f) MSYS, en cualquier host: `git worktree remove /z/x/arbol` con el node_modules enlazado PARA', () => {

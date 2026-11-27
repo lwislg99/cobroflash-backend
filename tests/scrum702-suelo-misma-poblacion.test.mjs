@@ -294,7 +294,13 @@ test('SCRUM-702 · CONTROL NEGATIVO: por encima del suelo y sin mudos, no dice n
 //     traducir a un disco que exista: se saltan CON motivo (el CI es `ubuntu-latest`). El grupo
 //     determinista del mismo fichero inyecta la plataforma y una sonda falsa, corre en cualquier
 //     host y no lee esta señal.
-const TOPE_LEEN_EL_ENTORNO = 24;
+// SCRUM-1648b (27-nov-2026, J6) · 24 → 25, ordenado por el orquestador J en SCRUM-1648 c.22949 sobre
+// la decisión del jefe c.22932; es el caso de 1792:
+//   · `tests/scrum1648b-guard-dangerous-powershell-y-cwd.test.mjs` lee `process.platform` sólo para
+//     saltar, con motivo, sus 5 casos de extremo a extremo con `X:\…` sin comillas, la forma MSYS y
+//     una junction DE VERDAD: junction, letra de unidad y PowerShell sólo existen en win32. Su grupo
+//     determinista inyecta `plataforma: 'win32'` y una sonda falsa, y corre igual en cualquier host.
+const TOPE_LEEN_EL_ENTORNO = 25;
 
 /**
  * 🔴 PARTIDAS A PROPÓSITO, para que el censo NO SE CACE A SÍ MISMO. Escritas enteras, este
