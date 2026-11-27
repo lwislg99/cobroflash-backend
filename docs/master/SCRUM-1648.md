@@ -108,3 +108,41 @@ llama a `evaluar()` con los sentinels falsos, porque por el CLI un caso que bloq
 `.claude/allow-destructivo` de verdad. La versión del hook que corre en el checkout compartido, que no es de esta
 rama. PowerShell con acento grave como escape. Una cita por número de línea se mueve:
 `tests/scrum774-arbol-de-otra-sesion.test.mjs:16` nombra `guard-dangerous.mjs:479`, en un comentario.
+
+### CI del primer empujón (bb0ed7930): rojo de scrum702 y de los casos (a) y (d) en Linux, arreglado en el test
+**Medido contra:** `origin/main` = `36ac74f2d15fdbeb918bf90873815cfc4c02629f` · 2026-11-27T13:11Z (cabecera `Date:` de GitHub) · relevo jv-j6gn
+A9: comprobación → `docs/master/evidencias/scrum1648/host-linux.mjs`
+
+El run 46000711974 (PR #3495) dio 3 rojos de 14.784, los tres de este test en `ubuntu-latest` (SCRUM-1648 c.22949).
+
+**Causa, medida:** en bash `Z:\x\arbol` es `Z:xarbol`, una ruta relativa a la UNIDAD Z:. `path.win32.resolve('Q:/base',
+'Z:xarbol')` la completa con la carpeta actual de Z: (`process.env['=Z:']` o `process.cwd()`). En Windows ese cwd es de
+otra unidad y node lo descarta (`Z:\xarbol`); en Linux empieza por `/` y lo usa entero
+(`Z:\home\runner\work\…\xarbol`). Los casos (a) control y (d) fijaban el valor de Windows. El hook no cambia: en uso
+real corre en win32, y ahí ésa es la semántica de Windows.
+
+**Reproducido en Windows, sin Linux:** `docs/master/evidencias/scrum1648/host-linux.mjs` es una precarga que pone el
+cwd del runner. Con el test de `bb0ed7930`, el grupo determinista da 2 de 8 en rojo con los mismos valores que el CI;
+con el arreglo, 8 de 8. La precarga imprime lo que resuelve: es su control positivo. Simulando además
+`process.platform = 'linux'`, los 5 casos del grupo ③ salen saltados, cada uno con su motivo literal.
+
+**Qué cambió en el test:** (a) control asevera la palabra que deja el shell (`Z:xarbol`, fija), que la consulta es una
+`Z:\…\xarbol` y que ninguna consulta es la ruta que lee PowerShell; (d) en Bash asevera que no es `Z:\x\repo`, que es
+de Z: y que acaba en `xrepo`. Ningún caso cambia de nombre, así que las 4 `cae:` del catálogo siguen valiendo. El hook
+no se ha tocado: `git hash-object .claude/hooks/guard-dangerous.mjs` = `77d2e6c6b7c05a3885632b9654d86be0ae4d5158`
+antes y después.
+
+**scrum702, tope 24 → 25** en el mismo commit y con su línea: el test lee `process.platform` sólo para saltar sus 5
+casos de extremo a extremo (junction, letra de unidad y PowerShell sólo existen en win32). Lo ordena el orquestador J
+en c.22949. El 1792b tuvo firma del fundador (c.22646); éste no la tiene.
+
+**Mutaciones con `aplicarUna`:** `docs/master/evidencias/SCRUM-1123f/arnes-mutaciones.mjs`, que usa las mismas
+funciones que el bucle de `scripts/meta-guard-mutaciones.mjs`. Base: 19 pasan · 0 caen. **4 de 4 VIVAS.** Después, el
+hook con la misma huella y el árbol limpio.
+
+**Verdes con población (Windows):** test + 702, 29 de 29. Los guards del encargo (1648b, 1091, 1792, 1831, 702, 1294,
+267, 854, 237, 976, 700, 824 y 419): 118 de 118, 0 saltados. 836: 17 de 17 con `dist/` compilado (`tsc --noCheck`);
+sin `dist/` daba 1 rojo por anclas de `dist/…/pdf.service.js`, que no son de esta rama. `npm run guards:entrada`: 17 guards, 186 tests, verde; y los 5 de árbol entero que nombra (SCRUM-1560): 38 de 38.
+
+**Lo NO medido:** la tanda entera en local (con 157k de contexto no cabía antes del tope de 175k para empujar: la mide
+el CI); el obligatorio de este empujón, al escribir esto; Linux de verdad (la precarga simula el cwd, no el sistema).
