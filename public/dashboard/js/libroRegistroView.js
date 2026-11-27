@@ -100,10 +100,10 @@
     // SCRUM-1055e · los tres textos FIRMADOS por el fundador en SCRUM-1055 c.22857 ③ (26-nov-2026).
     // Registro: docs/microcopy/2026-11-26-SCRUM-1055-cobro-sin-fecha.md. El plural es «{n}» + la cola
     // de abajo (como `trazaAlbaran` + número); el singular va entero porque es otra frase.
-    etiquetaSinFechaCobro: 'Fecha de cobro sin indicar',
-    explicacionSinFechaCobro: 'Esta factura se marcó como cobrada sin indicar el día en que entró el dinero. Se ha tomado el día en que se marcó. Si entró otro día, corrígelo antes de pasarle el trimestre a tu asesor.',
-    resumenSinFechaCobroUna: '1 factura cobrada sin fecha de cobro indicada.',
-    resumenSinFechaCobroVarias: 'facturas cobradas sin fecha de cobro indicada.',
+    etiquetaSinFechaCobro: 'Fecha de cobro sin indicar', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1055 comentario 22857)
+    explicacionSinFechaCobro: 'Esta factura se marcó como cobrada sin indicar el día en que entró el dinero. Se ha tomado el día en que se marcó. Si entró otro día, corrígelo antes de pasarle el trimestre a tu asesor.', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1055 comentario 22857)
+    resumenSinFechaCobroUna: '1 factura cobrada sin fecha de cobro indicada.', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1055 comentario 22857)
+    resumenSinFechaCobroVarias: 'facturas cobradas sin fecha de cobro indicada.', // APROBADO por el fundador el 26-nov-2026 (SCRUM-1055 comentario 22857)
   };
 
   /**

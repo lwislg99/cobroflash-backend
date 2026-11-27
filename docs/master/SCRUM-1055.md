@@ -171,6 +171,8 @@ la ruta como estaba (sin `...criterio`) y tumba el test. Y crucé los 200k otra 
 # SCRUM-1055e · la señal, en la pantalla del libro
 **Medido contra:** `origin/main` = `81a6dda49cda4adb87e49529257568e4fc5e72c0` · 2026-11-26T17:33:17Z (hora de GitHub; sesión J1 `jv-j1la`, encargo del orquestador `cobroflash-backend-2d`; rama nacida de `scrum-1055c-senal-cobro-sin-fecha` en `39d92e280`)
 
+Versión: 1.2 (SCRUM-1836)
+
 **Skill UI:** cargada
 
 A9: comprobación → `scripts/meta-guard-mutaciones.mjs`
@@ -218,3 +220,27 @@ guards, salida 0. `censo:mudez -- --escribir`: no cambia el fichero (149 fichas,
 `tests/`. La base salió con 0 pasados y `aplicarUna` se negó a mutar: dijo CIEGO, no «muda». Lo cazó el
 instrumento de la casa, no yo. Cargué la skill de UI pero no lo escribí en el tramo: lo cazó 976 ④. Y no
 llegué al push antes de 175k: lo avisé al orquestador a 166k.
+
+**Relevo jv-j1lb: marcas del censo de microcopy** · 2026-11-27T06:41:07Z (hora de GitHub) · `origin/main` =
+`5ed6e94f6a61547eb4589ec913e93be9a4ce4b55` · encargo del orquestador `cobroflash-backend-2d`. El PR #3479 cayó en
+el obligatorio (run `45869328257`: 14.630 casos = 14.614 pass + 4 fail + 12 skip) por cuatro casos del censo de
+microcopy: `tests/scrum1157-censo-convenio-microcopy.test.mjs` ① y ③,
+`tests/scrum1215g-una-firma-de-grupo-no-cubre-a-quien-llega-despues.test.mjs` y
+`tests/scrum1215i-las-marcas-de-s2.test.mjs`. Reproducido en local antes de tocar nada: 28 casos · 24 pass ·
+4 fail. El censo acusó cuatro claves NUEVA de `public/dashboard/js/libroRegistroView.js`:
+- `COPY.etiquetaSinFechaCobro`, `COPY.explicacionSinFechaCobro` y `COPY.resumenSinFechaCobroUna`: «APROBADO
+  POR GRUPO, sin nombrar» (la firma de la cabecera del grupo no cubre a cada clave);
+- `COPY.resumenSinFechaCobroVarias`: SIN_COMENTARIO (la cabecera dice «tres textos» y las ranuras son cuatro).
+
+Las cuatro están en SCRUM-1055 c.22857 ③ (textos 1, 2, 3 singular y la cola del 3 plural, «{n}» + espacio +
+cola). A cada una le puse en SU línea, detrás de la coma, `// APROBADO por el fundador el 26-nov-2026
+(SCRUM-1055 comentario 22857)`. Ni una letra de los textos cambia: quitar la marca devuelve el fichero de
+`5cb821719` byte a byte (22.678 B; 4 marcas). Ningún guard tocado.
+
+**Verdes, con población:** los tres guards de arriba más `tests/scrum1055e-senal-en-el-libro.test.mjs`: 33
+casos · 33 pass · 0 fail · 0 skip. Los demás verdes de este relevo van en el comentario de entrega de Jira y
+en el mensaje al orquestador, con su población.
+
+**Error, del encargo y de 1055e:** el encargo de 1055e no pedía correr 1157 ni 1215, y la sesión que lo hizo
+corrió `scrum296` (APROBADAS) pero no el censo. La comprobación ya existe y actuó: el obligatorio tumbó el PR
+antes de entrar en `main`, así que no hace falta otra.
