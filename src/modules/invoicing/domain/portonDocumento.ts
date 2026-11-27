@@ -44,8 +44,8 @@ import { ERROR_PDF_SIN_SELLAR, SELLADO_NO_APLICA } from './selladoEstado'; // SC
 export const ERROR_SIN_SELLAR = 'invoice_sin_sellar';
 
 /**
- * Copy OFICIAL para el cliente final, aprobado por el fundador el 30-jul-2026 (regla 30).
- *
+ * Copy OFICIAL para el cliente final desde el 30-jul-2026 (regla 30). Que lo firmara el fundador lo
+ * dice sólo la sesión que lo aplicó (58d6d136d y su entrada de SCRUM-206 en el máster); no consta (SCRUM-1502v).
  * No menciona sellado, ni huella, ni VeriFactu, ni el error técnico: el destinatario es el
  * cliente de un fontanero. Y por la regla 26, ni una palabra que explique VeriFactu.
  */
