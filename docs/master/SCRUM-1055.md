@@ -213,3 +213,38 @@ resumen), su test de vista y la línea en el 303 y las evidencias.
 
 **Errores míos:** escribí el código antes que el test. El rojo lo da la primera mutación del catálogo, que deja
 la ruta como estaba (sin `...criterio`) y tumba el test. Y crucé los 200k otra vez (201.723, avisó el hook).
+
+# SCRUM-1055f · el recuento, en el 303 y en las evidencias
+**Medido contra:** `origin/main` = `5ed6e94f6a61547eb4589ec913e93be9a4ce4b55` · 2026-11-27T06:40:08Z (hora de GitHub; sesión J1 `jv-j1lc`, encargo del orquestador `cobroflash-backend-2d`)
+Versión: 1.2 (SCRUM-1836)
+
+A9: comprobación → `tests/scrum1055f-senal-en-303-y-evidencias.test.mjs`
+
+**① Medido antes de escribir** (también en Jira, c.22902): el libro trae `cobrosSinFechaDeclarada` y `cobrosSinFilas`
+con caja (`src/modules/invoicing/domain/libroRegistro.ts:370`) en los dos caminos: el 303 lo pide con `devengo: true`
+(`src/modules/fiscal/modelo303/modelo303.repo.ts:27`) y las evidencias con `soloFacturas: true`
+(`src/modules/fiscal/evidencias/paquete.repo.ts:50`). Los dos lo PERDÍAN: `construirModelo303` enumera su salida
+(interfaz en `modelo303.ts:161`, `return` hasta `:547`; la ruta devuelve `{ ...modelo, rotulos }`,
+`modelo303.routes.ts:43`) y el paquete enumera `resumen` (`paquete.ts:351`), que es lo que va a `manifiesto.json`
+(`paquete.ts:378`). **`ADVERTENCIA_CAJA` no es un patrón que copiar:** solo la devuelve `clasificarPorCobro`
+(`criterioCaja.ts:76`), y en `src/` y `public/` no la llama nadie; no llega a ninguna salida.
+
+**② Qué cambia (servidor, J1):** `Modelo303` y `resumen` del paquete llevan los dos números, y sólo cuando el libro
+los trae (caja); sin criterio declarado no salen. Ningún texto nuevo: ni `motivosParaNoFiarse` ni `avisos` (frases),
+ni `modelo-303.csv`. No toca emisión, esquema ni vistas.
+
+**③ `cobrosSinFilas` en staging:** **NO medido.** `node scripts/comprobar-claves-bd.mjs` en este árbol: 
+`DATABASE_URL_STAGING` → STAGING ✅ (sale 1 por `DATABASE_URL_TESTS`, sin destino declarado para este worktree). La
+SELECT no la corrí: me quedé sin contexto (orden del orquestador: «no medido» y seguir).
+
+**Verdes, con población:** rojo primero: el test nuevo, con `src/` sin tocar, 2 de 3 caen por el 303 (el control
+pasa); el rojo del manifiesto no lo vi aparte, porque el 303 cae antes. Tras el cambio,
+`tests/scrum1055f-senal-en-303-y-evidencias.test.mjs` + `tests/scrum1055c-senal-cobro-sin-fecha.test.mjs`: 6 tests,
+6 pass, 0 fail, 0 skip. Build con tipos (`npm run build`): salida 0.
+
+**NO corrido:** las mutaciones del catálogo (declaradas en el test, sin correr: no van como evidencia), la suite
+entera, `censo:mudez`, staging y yaqu.app. Los guards de la lista los corre el orquestador sobre la rama, salvo 1294,
+267, 854 y `guards:entrada`.
+
+**Errores míos:** crucé el umbral de 175k del primer push sin medirme entre Jira (137.186) y la lectura del 303
+(184.892), y después los 200k (205.394, avisó el hook).
