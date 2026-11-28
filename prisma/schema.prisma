@@ -468,6 +468,12 @@ model Customer {
   sites        CustomerSite[]
   equipments   Equipment[]
 
+  // SCRUM-1876b · columnas que YA existen en las tres bases (SCRUM-1056 y SCRUM-586).
+  callbackOn           DateTime? @map("callback_on") @db.Date
+  callbackNote         String?   @map("callback_note")
+  payMethodsPorDefecto Json?     @map("pay_methods_por_defecto")
+
+  @@index([merchantId, callbackOn])
   @@index([merchantId])
   // Se busca «las personas de esta empresa»; sin índice sería un recorrido de toda la tabla.
   @@index([companyId])
@@ -1018,6 +1024,9 @@ model Invoice {
   // SCRUM-1732 (opción A): lo cobrado de esta factura, fila a fila. Virtual, sin columna en `invoices`.
   payments InvoicePayment[]
 
+  // SCRUM-1876b · SCRUM-1146: la columna ya existe en las tres bases.
+  retencionIrpfImporte Decimal? @map("retencion_irpf_importe") @db.Decimal(12, 2)
+
   // El número es único POR MERCHANT (antes era único global: dos merchants con el
   // mismo prefijo "CF" colisionaban; la serie es del emisor, no de la plataforma)
   @@unique([merchantId, number])
@@ -1266,6 +1275,9 @@ model QuoteTemplate {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   merchant Merchant @relation(fields: [merchantId], references: [id])
+
+  // SCRUM-1876b · SCRUM-930: la columna ya existe en las tres bases.
+  discountGlobalAmount Decimal? @map("discount_global_amount") @db.Decimal(12, 2)
 
   @@index([merchantId])
   @@map("quote_templates")
@@ -1668,8 +1680,15 @@ model Albaran {
   /// NO entra en el sobre de la firma: el canónico no lo lee.
   equipmentId Int? @map("equipment_id")
 
+  // SCRUM-1876b · columnas que YA existen en las tres bases (A5 ②: 359 el 28/29-sep; parte_id, el fundador, c.22972).
+  firmadoEnDispositivoAt DateTime? @map("firmado_en_dispositivo_at")
+  ventanaSueloAt         DateTime? @map("ventana_suelo_at")
+  ventanaSueloFuente     String?   @map("ventana_suelo_fuente")
+  parteId                Int?      @map("parte_id")
+
   @@unique([merchantId, claveIdempotencia])
   @@unique([merchantId, numero])
+  @@index([merchantId, parteId])
   @@index([merchantId, jobId])
   @@index([merchantId, invoiceId])
   @@index([equipmentId])

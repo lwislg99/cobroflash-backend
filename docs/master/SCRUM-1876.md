@@ -99,3 +99,95 @@ ese control. Este árbol no está declarado para `DATABASE_URL_TESTS` en `script
 (`comprobar-claves-bd.mjs` sale 1). Y «si en staging falta alguno, no pares» estaba mal: faltaba uno, y paré.
 
 A9: comprobación → `docs/master/evidencias/scrum1876a/catalogo.mjs`
+
+# SCRUM-1876b · las once líneas del esquema
+**Medido contra:** `origin/main` = `b811319eb3ba10f663d38d2cd39a665b4ee9273c` · 2026-11-28T08:34:12Z
+Versión: 1.2 (SCRUM-1836)
+
+**Qué es este tramo:** el paso ③ de A5 para los 11 objetos que ya estaban en las tres bases (decisión
+«A» del fundador, c.22975; dev y staging 11/11 medidos por el orquestador, c.22979; producción 11/11
+pegada por el fundador, c.22981). `prisma/schema.prisma` + `docs/sql/deriva-prod.sql` regenerado +
+dos anclas de `docs/legal/AUDITORIA_CAMINO_EMISION.md` (36 y 40) llevadas a su línea. `src/` intacto.
+Ningún DDL contra ninguna base.
+
+## Las líneas (blob final `c0d43e03cd993fef7c8f64b4b26b4ae7f5d3fbfb`)
+
+- `Customer`: `callbackOn DateTime? @map("callback_on") @db.Date` · `callbackNote String? @map("callback_note")` ·
+  `payMethodsPorDefecto Json? @map("pay_methods_por_defecto")` · `@@index([merchantId, callbackOn])`.
+- `Invoice`: `retencionIrpfImporte Decimal? @map("retencion_irpf_importe") @db.Decimal(12, 2)` (antes del
+  comentario del `@@unique`, no entre los dos como dejaba el parche de 1876a).
+- `QuoteTemplate`: `discountGlobalAmount Decimal? @map("discount_global_amount") @db.Decimal(12, 2)`.
+- `Albaran`: `firmadoEnDispositivoAt DateTime?` · `ventanaSueloAt DateTime?` (TIMESTAMP(3), el de Prisma
+  por defecto) · `ventanaSueloFuente String?` · `parteId Int?`, cada uno con su `@map`, y
+  `@@index([merchantId, parteId])` detrás de los dos `@@unique`.
+
+Los nombres de índice que genera Prisma son los de la base (sin `map:`): lo dice el offline de abajo.
+
+## Los previews (08:33:53Z → 08:34:05Z, esquema final)
+
+- **DEV** (`acela…/yaqu_dev_javier`), salida 0: «✔ control positivo: la herramienta responde (36 tablas).»
+  «✔ sin cambios pendientes — y el vacío está COMPROBADO, no supuesto».
+- **STAGING** (`acela…/railway`, «declarado como no-producción»), salida 2, control 36 tablas. Lo único
+  que propone es `DROP INDEX "public"."customers_merchant_id_company_id_idx";` +
+  `CREATE INDEX "customers_company_id_idx" ON "customers"("company_id");`. **No es de las 11:** es la
+  deriva del índice de `company_id` anotada el 29-sep en `docs/MIGRATIONS_PENDING.md` (staging y
+  producción tienen el compuesto, dev el simple; «es una decisión, no una corrección»). Rojo primero:
+  la misma herramienta (`previewMigracion({ schema })` importada, sin tocarla) con el esquema de main
+  contra staging da 12 destructivas: los 2 DROP INDEX y 9 DROP COLUMN de las 11 más ese par.
+- **Offline** `--desde <schema.prisma de main>` (blob `1c3d66ef6`), salida 0: 9 `ADD COLUMN` (customers 3,
+  invoices 1, quote_templates 1, albaranes 4) + `CREATE INDEX "customers_merchant_id_callback_on_idx"` +
+  `CREATE INDEX "albaranes_merchant_id_parte_id_idx"` · «✔ aditiva: ni DROP, ni RENAME, ni TRUNCATE, ni
+  DELETE, ni SET NOT NULL.»
+
+## Cliente, compilación y preflight
+
+- `./node_modules/.bin/prisma generate` (node_modules propio, `npm run topologia`: «directorio propio»),
+  salida 0. `_prisma-client-guard`: ✔ columnas en los dos sentidos. `_prisma-procedencia-guard`: **rojo
+  con mi primera colocación** (Prisma reordena los atributos de bloque al copiar el esquema al cliente y
+  dejaba el `@@index([merchantId, parteId])` detrás de los `@@unique`); verde, 862 líneas, tras moverlo.
+- `tsc -p .` con tipos: salida 0, 373 `.js` en `dist/`. Control: un error de tipos sembrado da salida 2
+  (fichero temporal en `src/`, borrado en el mismo comando; `git status` solo con los míos).
+- `generar-sql-deriva.mjs` (lo pedía scrum222): «Columnas esperadas: 566» → 575, más las 9 tuplas.
+- **Preflight** (`DATABASE_URL_TESTS` → `acela…/yaqu_dev_javier`, la misma URL que `DATABASE_URL_DEV`):
+  con el esquema de main (`PREFLIGHT_DATAMODEL`), 08:31:28Z, **salida 3**, «❌ preflight: DERIVA DE
+  ESQUEMA … la BD va POR DELANTE del schema — tiene 11 objeto(s)»; con el mío, 08:31:35Z y otra vez a
+  las 08:34Z, **salida 0**, «✅ preflight: el esquema de la BD coincide con prisma/schema.prisma. En sync.»
+- `comprobar-claves-bd.mjs`: STAGING y DEV ✅ con su destino; salida 1 solo porque este árbol no está
+  declarado para `DATABASE_URL_TESTS` en `scripts/_clave-vs-destino.mjs`. Nada apunta a producción.
+
+## `parteId` y los nombres en `src/`
+
+`git grep -n parteId -- src`: 10 líneas en 4 ficheros, ninguna sobre `prisma.albaran.*`.
+`src/modules/invoicing/domain/facturaDesdeParte.ts:86` es `prisma.parteTrabajo.findFirst({ where: { id: parteId … } })`;
+`src/modules/jobs/app/routes/jobs.routes.ts:1459` arma la respuesta; `src/modules/jobs/domain/albaranDesdeParte.ts:63`
+es una interfaz y `src/modules/jobs/domain/visitaDelParte.ts:29` un parámetro. Los 8 nombres camel y los 9 snake
+dan 0 en `src/` **salvo `discountGlobalAmount`, 32**: son de `Quote` e `Invoice` (ya en el esquema); las rutas de
+`quoteTemplate` (`src/modules/templates/app/routes/templates.routes.ts`) leen con `select` y escriben con un `data`
+en lista blanca. Control: `merchant_id` 31, `claveIdempotencia` 6. (1876a dijo «0» sobre los snake: correcto.)
+
+## Verdes, con población
+
+TAP a fichero fuera del árbol, recuento del propio TAP:
+
+- **Esquema** (222, 205 ×3, 475 ×6, 665b, 1296 ×3, 1310b, 252, 385): 17 ficheros · 175 casos · 173 pass ·
+  0 fail · 2 saltos (los dos «GATEADO» de 222: «sin QA_DB_TEST=1 ni LIBRO_PG_URL»). 222 antes de regenerar
+  el SQL de deriva: 1 rojo de 23 («el SQL del censo de producción NO está desfasado»).
+- **Árbol entero** (237, 976, 700 sin filtro, 824, 419, 1839, 525d, 1185, 411): 9 ficheros · 91 casos · 90 ·
+  **1 rojo, 525d**: mis líneas movían las dos anclas con testigo de la auditoría (`vf_prev_hash` 978→984,
+  `model VfSubmission` 1962→1981). Las llevé a su línea; al hacerlo escribí el nombre del modelo entre
+  acentos graves en la nota y 525d lo tomó como testigo (2.º rojo, mío). Sin ellos: 525d 8/8.
+- **Registro** (1294, 267, 854, 525d, 1839): 5 ficheros · 38 casos · 37 + el 525d de arriba. 854 no pidió
+  entrada en `docs/MIGRATIONS_PENDING.md`, así que no la hay.
+- `npm run guards:entrada`: 186 casos · 186 pass · 0 fail · 0 saltos.
+- **Suite entera: NO corrida antes del empujón.** A 181k de contexto no cabía (16 tramos); lo dije antes de
+  empujar. La mide el obligatorio del PR.
+
+## Lo que NO medí
+
+- **Producción**, por ninguna sesión: es lo que pegó el fundador (c.22981).
+- Que en producción esté también la deriva del índice de `company_id`: lo anotado el 29-sep dice que sí.
+- `docs/legal/AUDITORIA_CAMINO_EMISION.md:145-146` (`schema.prisma:931-932` y `:921`, sin testigo) ya
+  apuntaban a otra cosa en main; no son de este ticket y no los toqué.
+- La tanda gateada: la lanza el fundador.
+
+A9: comprobación → `scripts/_prisma-procedencia-guard.mjs`
