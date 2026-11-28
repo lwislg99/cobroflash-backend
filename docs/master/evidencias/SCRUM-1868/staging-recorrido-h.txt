@@ -1,0 +1,38 @@
+staging /version = f8c7a8be652d76dca72cc5b06797db58fd89e919 · Date Sat, 28 Nov 2026 06:38:03 GMT
+ficha de microcopy: 29 literales aprobados · 2 retirados
+login 200 · cookie pf_session recibida · Date Sat, 28 Nov 2026 06:38:03 GMT
+GET /admin/customers → 200 · 8 clientes · «[QA-…]»: [] · Date Sat, 28 Nov 2026 06:38:03 GMT
+GET /dashboard/ → 200 · url final /dashboard/
+service worker tras la primera carga: listo
+window.appUserRole = admin
+fase «con-sw» · SW controla la página: true · peticiones a /admin/: puppeteer ve 0 · la página apunta 14 (de ellas GET /admin/customers: puppeteer 0, página 1)
+   sonda de la cerradura GET /qa-1868h-sonda/send-sonda: llegó a staging: 404 · cortadas por la cerradura en esta fase: 0
+fase «sin-sw» · SW controla la página: false · peticiones a /admin/: puppeteer ve 14 · la página apunta 14 (de ellas GET /admin/customers: puppeteer 1, página 1)
+   sonda de la cerradura GET /qa-1868h-sonda/send-sonda: rechazada en el navegador (TypeError) · cortadas por la cerradura en esta fase: 1
+① cliente «[QA-1868h] Cliente de pruebas» creado por la UI · id 3939
+   previa del QA antes del trabajo → 200 · {"bloqueado":false,"motivos":[],"cuenta":{"documentos":0,"sitios":0,"equipos":0,"historial":0,"solicitudes":0,"presupuestos":0,"facturas":0,"trabajos":0,"partes":0,"mantenimientos":0}}
+①bis trabajo creado por la UI: botón «Nuevo trabajoN» → modal (campos ["Cliente","Tipo de intervención","Dirección de la obra","Qué hay que hacer"]) → cliente «[QA-1868h] Cliente de pruebas» → «Abrir trabajo» · respuesta {"id":3113,"status":"pendiente_agendar","customerId":3939}
+② GET /admin/customers/3939/borrado-previa → 200 · {"bloqueado":true,"motivos":["tiene_trabajos"],"cuenta":{"documentos":0,"sitios":0,"equipos":0,"historial":0,"solicitudes":0,"presupuestos":0,"facturas":0,"trabajos":1,"partes":0,"mantenimientos":0}} · Date Sat, 28 Nov 2026 06:38:13 GMT
+   ¿bloqueado, motivos = ["tiene_trabajos"], cuenta.trabajos = 1 y facturas, presupuestos, partes y mantenimientos a 0? true
+   GET /admin/jobs/3113 → 200 · status pendiente_agendar
+bloqueado-trabajos@390 · scroll 390/390 · interactivos 3 · botones "? 29.2x26 | Cerrar 75.8x44" · enlaces "fusionarlo con otro cliente 166.6x44" · visibles: Eliminar false · Cancelar false · Cerrar true · se salen 0 · <44 (caja): [{"q":"?","w":29.2,"h":26}]
+   texto[bloqueado-trabajos@390] = "Eliminar cliente\n?\nNo se puede eliminar a [QA-1868h] Cliente de pruebas. Tiene trabajos, partes o mantenimientos que se quedarían sin cliente.\nLo que lo impide\nTrabajos\t1\n\nPuedes fusionarlo con otro cliente o dejarlo como está.\n\nCerrar"
+bloqueado-trabajos@1280 · scroll 1280/1280 · interactivos 3 · botones "? 29.2x26 | Cerrar 75.8x44" · enlaces "fusionarlo con otro cliente 166.6x44" · visibles: Eliminar false · Cancelar false · Cerrar true · se salen 0 · <44 (caja): [{"q":"?","w":29.2,"h":26}]
+   texto[bloqueado-trabajos@1280] = "Eliminar cliente\n?\nNo se puede eliminar a [QA-1868h] Cliente de pruebas. Tiene trabajos, partes o mantenimientos que se quedarían sin cliente.\nLo que lo impide\nTrabajos\t1\n\nPuedes fusionarlo con otro cliente o dejarlo como está.\n\nCerrar"
+③ tras «Cerrar»: modal abierto false · GET /admin/customers/3939 → 200
+④ ficha del trabajo 3113: 37 botones/enlaces en el DOM · los que dicen eliminar/borrar/suprimir: 0 []
+⑤ «[QA-1868h] Control del contador» creado por la UI · id 3940 · DELETE vistos en el recorrido hasta aquí: 0
+   «Eliminar» pulsado · toast «Cliente eliminado» en span. · lista de clientes (botón «Nuevo cliente» y sin tarjeta) · GET /admin/customers/3940 → 404 · Date Sat, 28 Nov 2026 06:38:18 GMT
+   contador de DELETE del recorrido: 1 ["recorrido · DELETE /admin/customers/3940"] · ¿es 1 y es DELETE /admin/customers/3940? true
+cotejo con la ficha: 30 de 30 comprobaciones casan (sobre 29 literales de la ficha)
+final · «[QA-1868h] Cliente de pruebas» id 3939: previa → 200 · {"bloqueado":true,"motivos":["tiene_trabajos"],"cuenta":{"documentos":0,"sitios":0,"equipos":0,"historial":0,"solicitudes":0,"presupuestos":0,"facturas":0,"trabajos":1,"partes":0,"mantenimientos":0}}
+final · «[QA-…]» en el comercio: [{"id":3939,"nombre":"[QA-1868h] Cliente de pruebas"}]
+diagnóstico del contador: {"conSw":{"controlado":true,"pup":0,"pagina":14,"sonda":"llegó a staging: 404","cortadas":0},"sinSw":{"controlado":false,"pup":14,"pagina":14,"sonda":"rechazada en el navegador (TypeError)","cortadas":1}}
+DELETE emitidos por el navegador (todas las fases): ["recorrido · DELETE /admin/customers/3940","recorrido ·   → 204 · Date Sat, 28 Nov 2026 06:38:17 GMT"]
+escrituras (no GET) que vio el navegador: 6 ["carga-1 · POST /admin/entorno → 200 · Date Sat, 28 Nov 2026 06:38:04 GMT","sin-sw · POST /admin/entorno → 200 · Date Sat, 28 Nov 2026 06:38:09 GMT","recorrido · POST /admin/customers → 201 · Date Sat, 28 Nov 2026 06:38:12 GMT","recorrido · POST /admin/jobs → 201 · Date Sat, 28 Nov 2026 06:38:12 GMT","recorrido · POST /admin/customers → 201 · Date Sat, 28 Nov 2026 06:38:17 GMT","recorrido · DELETE /admin/customers/3940 → 204 · Date Sat, 28 Nov 2026 06:38:17 GMT"]
+diálogos: []
+peticiones cortadas por la cerradura (send-*/resend-*/confirm-bizum/logout): 1 ["sin-sw · GET /qa-1868h-sonda/send-sonda"]
+respuestas >= 400 de staging: 0 []
+errores de consola: 2 ["Failed to load resource: the server responded with a status of 404 ()","Failed to load resource: net::ERR_FAILED"]
+hosts pedidos: {"yaqu-staging-production.up.railway.app":290,"":15} · peticiones a staging que vio puppeteer por fase: {"carga-1":121,"sin-sw":129,"recorrido":40}
+fin · staging /version = f8c7a8be652d76dca72cc5b06797db58fd89e919 · Date Sat, 28 Nov 2026 06:38:18 GMT · completo

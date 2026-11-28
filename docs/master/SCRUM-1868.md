@@ -306,3 +306,51 @@ Sesión jv-j2ft (J2). No construye nada: mira el despliegue de staging, captura,
 **NO medido:** ⑤ entero (sin cliente (b) en el comercio 2: habría que sembrar un trabajo en un cliente «[QA-…]», y eso no lo pedía el encargo); el 409 al pulsar «Eliminar» con una previa vieja; el error genérico; producción (solo `GET /version` sin cookie); la causa de la ceguera del contador. Tampoco la suite entera: solo los guards del encargo, abajo. Las capturas de ④ y ⑥ enseñan nombres de clientes de pruebas de staging (comercio 2, cuenta QA). En este registro y en el `.txt`, el de (a) va como «{nombre}».
 
 A9: aviso → A10 «Una red de seguridad que no caza tiene el mismo aspecto que una que no tuvo nada que cazar.» — no se pudo comprobar: la ceguera del contador de `DELETE` del guion de staging (y de su cerradura) no tiene test que la caiga; no sé su causa, y el guion vive en `docs/`, que ningún test recorre
+
+# SCRUM-1868h · recorrido en staging: el bloqueo por trabajos
+**Medido contra:** `origin/main` = `f8c7a8be652d76dca72cc5b06797db58fd89e919` · 2026-11-28T06:39:04Z
+Versión: 1.2 (SCRUM-1836)
+
+Sesión jv-j2fw (J2). Segunda parte de 1868f: el estado ⑤ «bloqueado por trabajos», que 1868f no pudo medir porque en el comercio 2 no había ningún cliente con trabajos y sin facturas ni presupuestos (c.22930). No construye nada: siembra por la UI, mide, intenta deshacer y lo apunta. Guion: `docs/master/evidencias/SCRUM-1868/staging-recorrido-h.mjs` (copia adaptada del de 1868f, que no se toca; comiteado antes de correrlo). Salida entera, sin cookie ni secreto (comprobado por código contra el valor del `.env`, con el propio `.env` como positivo): `docs/master/evidencias/SCRUM-1868/staging-recorrido-h.txt`. Capturas `staging-bloqueado-trabajos-390.png` y `staging-bloqueado-trabajos-1280.png`, en la misma carpeta.
+
+**Qué servía staging:** `/version` = `f8c7a8be652d76dca72cc5b06797db58fd89e919` al empezar (06:38:03Z) y al acabar (06:38:18Z), el mismo sha que mi `origin/main`. Login `POST /auth/test-login` (cuenta QA, comercio 2): 200 al primer intento; `window.appUserRole` = `admin`. Antes de empezar, el comercio tenía 8 clientes y ningún «[QA-…]».
+
+**① La siembra, por la UI.** «Clientes» → «Nuevo cliente» → «[QA-1868h] Cliente de pruebas» (id 3939; previa libre, todo a 0). Después «Trabajos» → «Nuevo trabajo» → modal con «Cliente», «Tipo de intervención», «Dirección de la obra» y «Qué hay que hacer» → el cliente QA → «Abrir trabajo»: `POST /admin/jobs` → 201, trabajo 3113, `pendiente_agendar`, `customerId` 3939. Ni presupuestos ni facturas. La UI deja abrir un trabajo sin presupuesto: solo el cliente es obligatorio.
+
+**② Servidor antes que pantalla.** `GET /admin/customers/3939/borrado-previa` → 200 (06:38:13Z):
+`{"bloqueado":true,"motivos":["tiene_trabajos"],"cuenta":{"documentos":0,"sitios":0,"equipos":0,"historial":0,"solicitudes":0,"presupuestos":0,"facturas":0,"trabajos":1,"partes":0,"mantenimientos":0}}`
+Es lo esperado, exacto: `tiene_trabajos` solo, `cuenta.trabajos` 1, sin `tiene_facturas` ni `tiene_presupuestos`. Ningún hallazgo.
+
+**③ Pantalla: ficha → tarjeta → «Eliminar cliente».**
+
+| | 390 | 1280 |
+|---|---|---|
+| scroll | 390/390 | 1280/1280 |
+| botones visibles | solo «Cerrar» 75,8×44 («Eliminar» y «Cancelar» ocultos) | solo «Cerrar» 75,8×44 |
+| enlace «fusionarlo con otro cliente» | 166,6×44 | 166,6×44 |
+| se salen | 0 | 0 |
+| < 44 (caja) | «?» 29,2×26 | «?» 29,2×26 |
+
+- `innerText` del modal, igual en los dos anchos: «Eliminar cliente» · «?» · «No se puede eliminar a [QA-1868h] Cliente de pruebas. Tiene trabajos, partes o mantenimientos que se quedarían sin cliente.» · «Lo que lo impide» · «Trabajos» con 1 · «Puedes fusionarlo con otro cliente o dejarlo como está.» · «Cerrar».
+- **Textos:** casan las **30 de 30** comprobaciones (15 por ancho) contra la ficha `docs/microcopy/2026-11-26-SCRUM-1868-eliminar-cliente.md`, leída en tiempo de ejecución. Se ven el título, la alerta de c.22916 ①, «Lo que lo impide», la fila «Trabajos» con 1, la salida y «Cerrar». No salen la alerta de facturas, las filas de facturas, presupuestos, partes y mantenimientos, la nota de «se puede eliminar» ni los 2 textos retirados. **Textos distintos: ninguno.**
+- **AB6:** los 36 px del pie que vio 1868f a 1280 **ya no están**: «Cerrar» y el enlace miden 44 en los dos anchos (1868g, `36ac74f2d`, ancestro del sha que servía staging). El «?» de 29,2×26 es su caja; 1868g midió su área de toque en 45 por el `::before` de SCRUM-962d. Es el falso positivo conocido de este medidor, que mide la caja; sin tocar.
+- «Cerrar» cierra el modal y el cliente sigue: `GET /admin/customers/3939` → 200.
+
+**④ Deshacer la siembra: el trabajo NO se puede borrar, así que el cliente se queda.** En la ficha del trabajo 3113 hay 37 botones y enlaces en el DOM, y ninguno dice eliminar, borrar ni suprimir (ni en su texto, ni en `data-accion`, ni en `aria-label`). Segunda sonda, leída en el código y no intentada: `src/modules/jobs/app/routes/jobs.routes.ts` no registra ningún `router.delete`; de los 10 `.delete(` de `src/`, el de clientes es `src/modules/system/app/routes/customersAdmin.routes.ts:862` y ninguno es de trabajos. Cancelarlo tampoco lo desbloquearía: la previa cuenta `tx.job.count(delCliente)` sin filtro de estado (`src/modules/system/customerAdmin.ts:654`, leído). **Queda en staging «[QA-1868h] Cliente de pruebas» (id 3939) con su trabajo 3113, bloqueado**, con un nombre que nadie confunde con uno real. No lo he cancelado: sería más estado escrito y no lo desbloquea.
+
+**⑤ El contador de `DELETE` de 1868f: causa medida y arreglada en la copia h.** Era el service worker. `public/sw.js` contesta a `/admin/*` con `fetch(event.request)` desde el worker, y `page.on('request')` con la intercepción de la página no ve nada de lo que pide el worker. Medido en dos fases de solo lectura, con dos sondas independientes (puppeteer y el Resource Timing de la propia página) y una sonda SEMBRADA para la cerradura: un `GET /qa-1868h-sonda/send-sonda`, ruta que no existe y que casa con el patrón prohibido.
+
+| fase | el SW controla | `/admin/`: puppeteer · página | sonda de la cerradura |
+|---|---|---|---|
+| con SW (como 1868f) | sí | **0** · 14 | **llegó a staging: 404** (0 cortadas) |
+| `page.setBypassServiceWorker(true)` | no | 14 · 14 | rechazada en el navegador, 1 cortada |
+
+Con el SW, puppeteer no vio NINGUNA petición a staging, ni de estáticos: las 125 de 1868f eran las de la primera carga, antes de que el worker tomara la página. El arreglo (el bypass, puesto para todo el recorrido) se comprobó con un borrado REAL de un segundo cliente sembrado, «[QA-1868h] Control del contador» (id 3940), por la UI: toast «Cliente eliminado», vuelta a la lista, contador de `DELETE` = **1** (`DELETE /admin/customers/3940` → 204, 06:38:17Z) y `GET /admin/customers/3940` → **404** (06:38:18Z). Consecuencia: en 1868f, y en 1833e de donde lo heredó, la cerradura de envíos tampoco cortaba nada de lo que la página pedía a `/admin/`. Ningún paso de aquellos recorridos pulsaba un envío, pero eso lo dice el guion, no la cerradura.
+
+Escrituras que vio el navegador en este recorrido, todas: `POST /admin/entorno` ×2 (lo pide el dashboard al cargar), `POST /admin/customers` ×2 (201), `POST /admin/jobs` (201) y `DELETE /admin/customers/3940` (204). Diálogos: 0. Respuestas ≥ 400 vistas: 0. En consola, 2 errores de carga, que son las dos sondas: el 404 de la fase con SW (puppeteer no lo vio) y el `ERR_FAILED` de la cortada.
+
+**NO medido:** el 409 al pulsar «Eliminar» con una previa vieja; el error genérico; el bloqueo solo por partes o solo por mantenimientos (comparten la alerta, no la fila); el área de toque del «?» (este medidor mide la caja); producción (nada contra yaqu.app). Los guiones de 1833e y 1868f siguen ciegos: no se tocan. Ruido del instrumento: el rótulo del botón sale «Nuevo trabajoN» en la salida porque `textContent` suma la tecla del atajo (SCRUM-769); no es un texto de pantalla.
+
+**Error mío:** el encargo pedía el primer empujón antes de 175k de contexto, y medí 188.833 (leído en el jsonl) al acabar el recorrido, antes de escribir este registro.
+
+A9: aviso → A10 «Una red de seguridad que no caza tiene el mismo aspecto que una que no tuvo nada que cazar.» — no se pudo comprobar: la ceguera venía del service worker, y su arreglo (`setBypassServiceWorker` y la sonda sembrada de la cerradura) vive solo en la copia h del guion, en `docs/`, que ningún test recorre; un guion de staging nuevo que copie el de 1868f nacerá ciego otra vez
