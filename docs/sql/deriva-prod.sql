@@ -24,7 +24,7 @@
 -- ajenas ni valores de enum. Y no reporta columnas de MÁS en la base: que la base vaya por
 -- delante del código es el orden seguro de un cambio aditivo, no un problema.
 --
--- Columnas esperadas: 566. Tablas: 36.
+-- Columnas esperadas: 575. Tablas: 36.
 
 WITH esperado (tabla, columna) AS (
   VALUES
@@ -51,6 +51,7 @@ WITH esperado (tabla, columna) AS (
     ('albaranes','fecha_entrega'),
     ('albaranes','firma_token'),
     ('albaranes','firmado_at'),
+    ('albaranes','firmado_en_dispositivo_at'),
     ('albaranes','firmado_por_calidad'),
     ('albaranes','firmado_por_nombre'),
     ('albaranes','id'),
@@ -63,9 +64,12 @@ WITH esperado (tabla, columna) AS (
     ('albaranes','notas'),
     ('albaranes','numero'),
     ('albaranes','ocultar_precios_en_documento'),
+    ('albaranes','parte_id'),
     ('albaranes','pdf_url'),
     ('albaranes','signature_url'),
     ('albaranes','updated_at'),
+    ('albaranes','ventana_suelo_at'),
+    ('albaranes','ventana_suelo_fuente'),
     ('albaranes','version'),
     ('attachments','created_at'),
     ('attachments','data'),
@@ -152,6 +156,8 @@ WITH esperado (tabla, columna) AS (
     ('customers','billing_periodicity'),
     ('customers','billing_postal_code'),
     ('customers','billing_province'),
+    ('customers','callback_note'),
+    ('customers','callback_on'),
     ('customers','company_id'),
     ('customers','contact_kind'),
     ('customers','created_at'),
@@ -164,6 +170,7 @@ WITH esperado (tabla, columna) AS (
     ('customers','mobile'),
     ('customers','name'),
     ('customers','notes'),
+    ('customers','pay_methods_por_defecto'),
     ('customers','phone'),
     ('customers','portal_token'),
     ('customers','recargo_equivalencia'),
@@ -298,6 +305,7 @@ WITH esperado (tabla, columna) AS (
     ('invoices','registerId'),
     ('invoices','reminder_14_sent_at'),
     ('invoices','reminder_7_sent_at'),
+    ('invoices','retencion_irpf_importe'),
     ('invoices','shipping_address'),
     ('invoices','shipping_address_mode'),
     ('invoices','stage_label'),
@@ -492,6 +500,7 @@ WITH esperado (tabla, columna) AS (
     ('quote_requests','zone'),
     ('quote_templates','created_at'),
     ('quote_templates','currency'),
+    ('quote_templates','discount_global_amount'),
     ('quote_templates','id'),
     ('quote_templates','lines'),
     ('quote_templates','merchant_id'),
