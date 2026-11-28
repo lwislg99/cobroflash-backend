@@ -1739,3 +1739,48 @@ En cada una, la marca `// APROBADO por el fundador el 27-nov-2026 (SCRUM-1502 co
 **No medido:** la suite entera. No cabe: a 179k de contexto el orquestador mandó empujar, y la mide el CI. Tampoco yaqu.app: sólo cambian comentarios. El turno del fundador lo transcribió el orquestador en c.22945, y no lo he visto. Y main avanzó a `36ac74f2d` (#3497, 13:05:28Z), que sólo toca ficheros de J2 y CSS: no he vuelto a medir sobre él.
 
 **Errores propios.** ① La marca tras el `=`: los censos salían verdes porque no la veían (la cicatriz de la línea A9). ② Mi primer control sembrado de `dist/` quitaba la tilde de «ningún concepto» y cayó en un comentario, no en el literal. El control lo dijo («NO ve»), y lo rehíce sobre «ningún concepto con precio». ③ Crucé los 175k del primer empujón (179.201) sin medirme entre Jira (126.280) y el bloqueo. Repite la cicatriz J1 del 27-nov de jv-j1lc.
+
+## SCRUM-1502y · el censo ve el comentario al final de la línea
+**Medido contra:** `origin/main` = `154c44557f771e9bb7a6e20a2f5a8e55a18c979a` · 2026-11-28T07:59:49Z
+Versión: 1.2 (SCRUM-1836)
+A9: aviso → cicatriz J6 «Medí 130k al acabar Jira y la siguiente cifra fue 177k, tras verificar 19 pares en Jira con un subagente: crucé el umbral de empujar (175k) sin nada empujado y seguí hasta 201k (SCRUM-1502y)» — no se pudo comprobar: el contexto lo mide la propia sesión leyendo su jsonl, y ningún hook de este árbol lo lee antes de lanzar un subagente
+Mutaciones: catálogo → `tests/scrum1502y-el-censo-ve-el-comentario-al-final-de-linea.test.mjs`
+
+J6, sesión jv-j6gp (copia reanudada en Opus por el orquestador J a las ~08:05Z tras agotarse el cupo de Fable; mismo árbol, mismo contexto). Encargo: el hallazgo de jv-j1le en SCRUM-1502 c.22953, asignado en c.22974 y anotado en SCRUM-1836 c.22973. Carril: `tests/_procedencia-aprobacion.mjs`, `tests/_pares-leidos-en-jira.mjs` y `tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs` son de J6 (`carriles.mjs de`, consultado ANTES de escribir); el test nuevo es el del ticket. Ni `src/` ni `public/`: `public/dashboard/js/customerDetailView.js` (J2) sólo se leyó.
+
+**El defecto, visto en rojo antes de tocar nada.** `bloquesDeComentario` recorría con `forEachChild`, que sólo entrega NODOS; una `,`, un `=`, una `{` o un `[` no lo son, y el comentario escrito detrás de ellos no cuelga del final de ningún nodo. Sonda sobre fuente sembrado (misma marca en las dos formas):
+
+| caso | antes | después |
+|---|---|---|
+| (a) marca en su línea, encima del literal | 1 bloque, línea 2 | 1, línea 2 |
+| (b) marca detrás de la `,` del literal | **0** | 1, línea 2 |
+| detrás de la `,` de la última propiedad · de un elemento de lista · de un argumento | 0 · 0 · 0 | 1 · 1 · 1 |
+| detrás de un `=` · detrás de `{` | 0 · 0 | 1 · 1 |
+| detrás del `;` (control: ya se veía) | 1 | 1 |
+
+**Lo invisible en main** (`src/` + `public/`, 477 ficheros `.ts/.js/.mjs`, 47 con la marca de 387): 168 líneas con `// … aprobad@ por el fundador`, 52 en su propia línea y 116 detrás de código. El censo veía 56 y **no veía 112**, todas detrás de una `,`: `customerDetailView.js` 87, `parteDetailView.js` 9, `jobDetailView.js` 6, `filtroClientes.js` 4, `libroRegistroView.js` 4, `homeView.js` 2 (todos en `public/dashboard/js/`). Después del arreglo: 168 de 168, 0 invisibles.
+
+**El arreglo**, sólo en `bloquesDeComentario`: tras cada nodo, se recorren sus hijos con `getChildren` (que sí da los signos), se entra en las `SyntaxList` y, de cada signo, se recogen sus comentarios «trailing» con `getTrailingCommentRanges`. No se entra en los nodos de JSDoc. La deduplicación por posición, la unión de `//` seguidos, la firma y `censarProcedencia` no se tocan.
+
+**Los cuatro guards, antes y después** (cifras de su propio camino: `censarProcedencia` con las constantes de 387 y `porNivel`/`congeladas` exportadas por 921c):
+
+| guard | antes | después | trinquete |
+|---|---|---|---|
+| `scrum387` (5/5 → 5/5) | con 64 · **sin 11** · 3.431 bloques · 477 ficheros | con 175 · **sin 11** · 3.689 bloques · 477 ficheros | `SIN_PROCEDENCIA = 11`, no se mueve |
+| `scrum921` (14/14 → 14/14) | no usa este lector (lee `docs/` con `_censo-firmas-autorizacion.mjs`) | igual | `SIN_PROCEDENCIA = 17`, no se mueve |
+| `scrum921c` (16/16 → 15/16 → 16/16) | anclado 57 · rastreable 227 · documental 11 · **sin respaldo 8** · negada 13 · citada 1 | anclado 147 · rastreable 249 · documental 11 · **sin respaldo 8** · negada 13 · citada 1 | `SIN_RESPALDO = 8`, `REFERENCIAS_ROTAS = 1`, no se mueven |
+| `scrum563` (16/16 → 16/16) | no usa este lector | igual | `REGISTRADOS = 52`, no se mueve |
+
+Comparado por CONJUNTOS, no por cuentas: las 11 rutas sin procedencia de 387 y las 8 congeladas de 921c son **las mismas** antes y después (0 nuevas, 0 perdidas). **Ninguna marca que era invisible sale sin procedencia: no hay defecto de main que listar.** En 387 «salen» 4 rutas con procedencia (`albaranDetailView.js:199`, `:215`, `:221`, `parteDetailView.js:284`) y aparecen a una línea de distancia (`:198`, `:214`, `:220`, `:283`): es la unión de `//` seguidos, que ahora junta el comentario de fin de línea de encima con el de su propia línea (medido: las cuatro nuevas están en la lista de después).
+
+**El rojo de 921c y lo que se hizo.** Con 92 marcas nuevas visibles con la forma del ancla, `SCRUM-1511h · toda marca con la forma del ancla tiene sus pares en la lista` cayó: 18 pares `SCRUM-N comentario M` que nadie había leído. Es el mecanismo que el propio guard declara («ábrelo en Jira, comprueba que existe y que es de ese ticket, y añade su fila»): se leyeron y se añadieron, sin tocar el guard. Tras añadirlos salió un 19.º (`SCRUM-1215 comentario 17367`, de `parteDetailView.js:155`, que la unión junta con la marca de fin de línea de `:154`).
+
+Los 19 pares, leídos en Jira el 28-nov-2026 por id exacto, con la lista de comentarios completa de cada ticket (total == recibidos): 653 c.17354 · 1005 c.22192 · 1043 c.20536 · 1055 c.22857 · 1132 c.20435 · 1145 c.20592 y c.20598 · 1215 c.17367, c.17494, c.17496 y c.19084 · 1656 c.21408 · 1686 c.21471 · 1717 c.21705 · 1722 c.21708 · 1833 c.22811 · 1868 c.22850, c.22867 y c.22916. **Cómo se leyeron, sin adornar:** 18 los leyó un subagente de esta sesión (getJiraIssue con todos los comentarios): 9 enteros y 9 —los de 1005, 1215, 1656, 1833 y 1868— sólo sus primeros 1.500 caracteres; el 17367 lo leí yo de la respuesta guardada, por id, los primeros 700 caracteres (control: un id inventado da 0 coincidencias). Los 19 existen y son de su ticket, y los 19 contienen una firma o una aprobación de textos. Quién firma, según el texto: 14 son transcripciones de un orquestador (J o de Luis) con la respuesta literal del fundador; 5 (1215 c.17367, c.17494, c.17496, c.19084 y 653 c.17354) son firmas del orquestador de Luis en nombre propio, y las marcas que los citan dicen «APROBADO ·» o «por delegación», salvo `jobDetailView.js:349`, `:350` y `:375`, que dicen «APROBADO por el fundador (docs/master/SCRUM-320.md …; marca: SCRUM-1215 comentario 19084)». Eso último NO lo he juzgado: la lista sólo dice que el par existe, no qué firma (lo dice su propia cabecera).
+
+**Test nuevo** (8/8): `tests/scrum1502y-el-censo-ve-el-comentario-al-final-de-linea.test.mjs`, todo con fuente sembrado: (a) y (b), la coma en objeto/lista/argumentos, el `=`, la llave y el corchete, que nada sale dos veces, la unión de `//` seguidos (control: igual que antes), lo que queda dicho de la unión con la línea siguiente, una plantilla con `${}` delante (SCRUM-814) y el texto de un comentario dentro de una cadena o un JSDoc. Catálogo medido con `aplicarUna` de `scripts/meta-guard-mutaciones.mjs` (sólo ejecutado): base 8/8; quitar el recorrido de signos → muere (6 caen); no entrar en las `SyntaxList` → muere (5 caen); recoger sólo tras la coma → muere (cae el del `=`). `git status` vacío después. La ficha de mudez (719): `censo:mudez -- --escribir` mide los 151 guards que mencionan el filtro de comentarios; el test nuevo no lo menciona y el fichero no cambió.
+
+**Lo que queda dicho y NO se ha cambiado:** un comentario de fin de línea y un `//` en la línea siguiente, sin código entre los dos, salen como UN bloque (ya pasaba detrás de un `;`). Así la procedencia de uno puede vestir al otro; hoy no cambia ningún veredicto (conjuntos iguales arriba), pero el test lo fija para quien toque la unión.
+
+**No medido:** la suite entera en local (no cabe en el contexto que queda; la mide el CI); yaqu.app (no cambia nada servido); los 9 comentarios grandes de Jira más allá de sus 1.500 primeros caracteres; qué firma de verdad cada marca de `jobDetailView.js` citada arriba.
+
+**Errores propios.** ① El cruce de 175k sin empujar (la línea A9). ② Le pasé a `correr` del meta-guard la ruta con `tests/` delante y la base salió CIEGA (buscaba `tests/tests/…`): lo dijo la PUERTA 1 de `aplicarUna` antes de mutar nada, no yo. ③ La primera lectura del fichero guardado de Jira salió «0 ficheros de ese ticket» porque la respuesta va en `issues.nodes`: el control (ningún ticket encontrado) lo delató.
