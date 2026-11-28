@@ -284,4 +284,10 @@ cuando lo hay. El 23-sep, la misma base daba 7 y 0 (§3). No mide nada de produc
   correo entregado no deja nada que leer. Lo que hay que vigilar es **el día que no llega el correo de las
   07:0x**. Si se quiere que lo vigile algo y no alguien, eso es un ticket aparte. Se propone, no se abre.
 
-### 4 · Guards (población en la entrega de Jira)
+### 4 · Guards, con su población (local, sobre el commit del apéndice)
+
+- 10 ficheros pedidos (1294, 267, 854, 237, 976, 700, 824, 419, 1839, 525d): **79 casos · 79 pass · 0 fail · 0 skip**.
+- `npm run guards:entrada`: **17 guards · 186 pass · 0 fail · 0 skip**.
+- Los 5 de árbol entero que nombra su salida (195, 414, 694, 710b, 737): **38 pass · 0 fail · 0 skip**.
+- **NO corrida:** la suite entera, porque no cabía en el contexto antes de empujar. Es un PR solo de docs.
+  No he interrogado a ningún guard con una mutación.
