@@ -100,27 +100,33 @@ test('SCRUM-632b · ✅ propietario en PRESUPUESTO: están LOS DOS', () => {
     + 'que el otro desapareció, porque son `appendChild` sueltos y nada más se rompe.');
 });
 
-test('SCRUM-632b · ✅ DOCUMENTO SUELTO: no está NINGUNO de los dos, y por motivos distintos', () => {
+// 🔴 SCRUM-1805 ① (26-nov-2026) · ESTE CASO DECÍA «no está NINGUNO de los dos» y se volvió a decidir,
+// como pedía su propio comentario de abajo: desde 1787k (GO SCRUM-1787 c.22338 ①) la descripción
+// SÍ sobrevive al emisor de la factura suelta, y SCRUM-1805 ① la pide en el editor en modo factura.
+// La regla del fichero no cambia —«se pinta si y sólo si su dato sobrevive»—; cambió el dato. El
+// COSTE sigue fuera, y por el mismo motivo de siempre: el emisor lo descarta.
+test('SCRUM-632b · ✅ DOCUMENTO SUELTO: la DESCRIPCIÓN sí (viaja desde 1787k); el COSTE no, se vea o no la economía', () => {
   const puestos = loQueSePinta({ veEconomia: true, esDocumentoSuelto: true });
-  assert.deepEqual(puestos, [],
-    `🔴 en documento suelto se pinta algo que no llega al emisor: ${JSON.stringify(puestos)}.\n`
+  assert.deepEqual(puestos, ['DESCRIPCION'],
+    `🔴 en documento suelto se pinta otra cosa que la descripción: ${JSON.stringify(puestos)}.\n`
     + '  La regla del fichero: «un control aparece en modo documento suelto SI Y SÓLO SI SU DATO\n'
-    + '  SOBREVIVE AL EMISOR». El coste lo descarta el emisor (SCRUM-600/616) y la descripción no\n'
-    + '  viaja en `cuerpoDelDocumentoSuelto` — MEDIDO ejecutándolo, no leyéndolo.');
+    + '  SOBREVIVE AL EMISOR». El coste lo descarta el emisor (SCRUM-600/616); la descripción viaja\n'
+    + '  en `cuerpoDelDocumentoSuelto` desde SCRUM-1805 ① — MEDIDO ejecutándolo, abajo.');
 
-  // Y con las dos condiciones en contra, tampoco.
-  assert.deepEqual(loQueSePinta({ veEconomia: false, esDocumentoSuelto: true }), [],
-    '🔴 con técnico Y documento suelto se sigue pintando algo.');
+  // Con técnico: el coste sigue sin salir, la descripción sí.
+  assert.deepEqual(loQueSePinta({ veEconomia: false, esDocumentoSuelto: true }), ['DESCRIPCION'],
+    '🔴 con técnico Y documento suelto no queda sólo la descripción.');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
-// 🔴 LA MEDICIÓN QUE SOSTIENE EL CORTE DE LA DESCRIPCIÓN — ejecutada aquí, no citada
+// 🔴 LA MEDICIÓN QUE SOSTIENE QUE LA DESCRIPCIÓN SE PINTE — ejecutada aquí, no citada
 //
-// Si algún día la descripción SÍ empezara a viajar en documento suelto, este caso cae y hay que
-// volver a decidir si el campo se pinta. Sin él, el corte de arriba sería una opinión de hoy.
+// Si algún día la descripción DEJARA de viajar en documento suelto, este caso cae y hay que volver
+// a decidir si el campo se pinta. Sin él, el corte de arriba sería una opinión de hoy.
+// (Hasta SCRUM-1805 ① afirmaba lo contrario: que NO viajaba.)
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-632b · 🔴 la descripción NO sobrevive al emisor del documento suelto (por eso no se pinta)', () => {
+test('SCRUM-632b · 🔴 la descripción SÍ sobrevive al emisor del documento suelto, como clave propia (por eso se pinta)', () => {
   const win = {};
   new Function('window', fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/cuerpoDelDocumentoSuelto.js'), 'utf8'))(win);
 
@@ -131,13 +137,21 @@ test('SCRUM-632b · 🔴 la descripción NO sobrevive al emisor del documento su
 
   assert.equal(cuerpo.lines.length, 1, '🔴 el compositor no ha producido la línea: no se mide nada');
   const l = cuerpo.lines[0];
-  assert.equal('description' in l, false,
-    '🔴 la descripción SÍ viaja ahora en documento suelto. Entonces el corte de `descTd` sobra y '
-    + 'hay que volver a decidirlo: el campo dejaría de ser un control que no llega a ningún sitio.');
-  assert.equal(/TEXTO DEL PROFESIONAL/.test(l.concept), false,
-    '🔴 la descripción viaja PEGADA al concepto en documento suelto. Mismo caso que arriba: si '
-    + 'llega al papel, el campo tiene que poder rellenarse.');
-  assert.deepEqual(Object.keys(l).sort(), ['concept', 'price', 'qty', 'tax'],
+  assert.equal(l.description, 'TEXTO DEL PROFESIONAL',
+    '🔴 la descripción NO viaja en documento suelto. Entonces el campo vuelve a ser un control que '
+    + 'no llega a ningún sitio, y el corte de `descTd` hay que volver a decidirlo.');
+  // Decisión (a) de SCRUM-1805 ①: NO se pega al concepto. El concepto que se sella no cambia.
+  assert.equal(l.concept, 'Grifo monomando',
+    '🔴 la descripción viaja PEGADA al concepto: cambia el texto que se sella (decisión (a) de '
+    + 'SCRUM-1805 ①: sólo la clave propia).');
+  assert.deepEqual(Object.keys(l).sort(), ['concept', 'description', 'price', 'qty', 'tax'],
     `🔴 el cuerpo del documento suelto ha cambiado de forma: ${JSON.stringify(Object.keys(l))}. `
     + 'Lo que este caso afirma sobre la descripción se apoya en esa forma.');
+
+  // Y sin descripción, la línea es el objeto de siempre (ni una clave vacía).
+  const sinNada = win.documentoSuelto.cuerpoDelDocumentoSuelto(7, [
+    { concepto: 'Grifo', cantidad: 1, precio: '100', iva: 21, descripcion: '   ', dto: '' },
+  ]);
+  assert.deepEqual(Object.keys(sinNada.lines[0]).sort(), ['concept', 'price', 'qty', 'tax'],
+    '🔴 una línea sin descripción ni descuento ya no es el mismo objeto de antes.');
 });

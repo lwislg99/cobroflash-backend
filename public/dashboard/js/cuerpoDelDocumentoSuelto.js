@@ -33,13 +33,30 @@
 // sitio: confundirlas multiplicaría el IVA por cien sin que nada fallara.
 (function () {
   /**
+   * SCRUM-1805 ① (1787k) · el descuento de la línea, con el criterio de `descuentoParaPayload`
+   * (`quoteDescuentos.js`): vacío, ilegible o ≤ 0 → la clave NO viaja; por encima de 100, 100. Se
+   * escribe aquí y no se llama a aquél porque este fichero se carga SOLO (la suite lo ejecuta sin
+   * `window.quoteDescuentos`). La coma decimal se acepta, como en el campo del presupuesto. El
+   * servidor quiere un NÚMERO con dos decimales como máximo: una cadena sería un 400.
+   */
+  function dtoParaElCuerpo(valor) {
+    var t = String(valor == null ? '' : valor).trim().replace(',', '.');
+    if (!t) return null;
+    var n = Number(t);
+    if (!isFinite(n) || n <= 0) return null;
+    return Math.min(100, n);
+  }
+
+  /**
    * @param {string|number} cliente  el `value` del selector de cliente, tal cual.
-   * @param {Array<{concepto:string, cantidad:string, precio:string, iva:string}>} filas
+   * @param {Array<{concepto:string, cantidad:string, precio:string, iva:string, descripcion?:string, dto?:string}>} filas
    *        las filas TAL COMO SE ESCRIBIERON. Cadenas, no números ya convertidos: la regla de la
    *        fila vacía mira el precio ESCRITO, y un `0` y un campo en blanco no son lo mismo.
-   * @returns {{customerId:number, lines:Array<{concept:string, qty:number, price:number, tax:number}>}}
+   * @param {{payMethods?:string[], dueDate?:string}} [condiciones] SCRUM-1805 ① (1787f): lo del paso
+   *        «Condiciones» de la factura. Sin este parámetro el cuerpo sale EXACTAMENTE como antes.
+   * @returns {{customerId:number, lines:Array<{concept:string, qty:number, price:number, tax:number, description?:string, dto?:number}>, payMethods?:string[], dueDate?:string}}
    */
-  function cuerpoDelDocumentoSuelto(cliente, filas) {
+  function cuerpoDelDocumentoSuelto(cliente, filas, condiciones) {
     var lines = [];
     var todas = Array.isArray(filas) ? filas : [];
     for (var i = 0; i < todas.length; i++) {
@@ -47,14 +64,30 @@
       var concept = String(f.concepto == null ? '' : f.concepto).trim();
       var precioEscrito = String(f.precio == null ? '' : f.precio);
       if (!concept && !precioEscrito) continue; // fila vacía se ignora
-      lines.push({
+      var linea = {
         concept: concept,
         qty: Number(f.cantidad),
         price: Number(precioEscrito),
         tax: Number(f.iva) / 100,
-      });
+      };
+      // SCRUM-1805 ① (1787k) · la descripción y el descuento viajan como claves propias, y sólo si
+      // hay algo: una línea sin ellas sigue siendo el mismo objeto de antes. La descripción NO se
+      // pega al `concept` (decisión (a), registro de SCRUM-1805): el concepto que se sella no cambia.
+      var descripcion = String(f.descripcion == null ? '' : f.descripcion).trim();
+      if (descripcion) linea.description = descripcion;
+      var dto = dtoParaElCuerpo(f.dto);
+      if (dto !== null) linea.dto = dto;
+      lines.push(linea);
     }
-    return { customerId: Number(cliente), lines: lines };
+    var cuerpo = { customerId: Number(cliente), lines: lines };
+    if (condiciones) {
+      // `undefined` = todas las activas (el criterio de `selectedPayMethods` y de `Invoice.payMethods`).
+      if (Array.isArray(condiciones.payMethods) && condiciones.payMethods.length) {
+        cuerpo.payMethods = condiciones.payMethods.slice();
+      }
+      if (typeof condiciones.dueDate === 'string' && condiciones.dueDate) cuerpo.dueDate = condiciones.dueDate;
+    }
+    return cuerpo;
   }
 
   /**

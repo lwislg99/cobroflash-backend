@@ -222,12 +222,19 @@ test('SCRUM-930 · POSITIVO: una plantilla guardada ANTES de este cambio se carg
   assert.deepEqual(await leerAjustes(m), { descripcion: '', dto: '' }, '🔴 una plantilla sin descripción ni descuento se los inventa');
 });
 
-test('SCRUM-930 · 🔴 DOCUMENTO SUELTO: una plantilla con descuento NO baja el importe de un documento que no lo recoge', async () => {
+// 🔴 SCRUM-1805 ① (1787k, GO SCRUM-1787 c.22338 ①) · ESTE CASO DECÍA «una plantilla con descuento NO
+// baja el importe de un documento que no lo recoge», y era verdad mientras la factura suelta NO pintaba
+// ni emitía el «Dto. %». Desde 1805 ① lo pinta y lo emite (`cuerpoDelDocumentoSuelto`, `dto`), así que
+// la regla de este caso —«lo que baja el importe es lo que se VE y se EMITE»— pide ahora lo contrario
+// en el importe, y se comprueba por las dos mitades: el campo lleva el 10 y el total baja con él.
+test('SCRUM-930 · 🔴 DOCUMENTO SUELTO: el descuento de la plantilla se VE en su campo y baja el importe (SCRUM-1805 ①)', async () => {
   const suelto = await montar(servidor([CON_TODO]), null, true);
   await pulsarFicha(suelto, 'Caldera');
   const [l] = lineas(suelto);
   assert.equal(l.concepto.value, 'Revisión de caldera', 'SUELO: la ficha carga la línea también en el documento suelto');
-  assert.match(totalDe(suelto), /108[.,]90/, '🔴 el total de la línea sale rebajado por un descuento que en el documento suelto no se ve ni se emite');
+  assert.deepEqual(await leerAjustes(suelto), { descripcion: DESCRIPCION, dto: '10' },
+    '🔴 la factura no enseña la descripción o el descuento de la plantilla: bajaría el importe un dato que no se ve');
+  assert.match(totalDe(suelto), /98[.,]01/, '🔴 el descuento que se ve en el campo no baja el importe de la factura');
   // CONTROL del mismo dato en el presupuesto: ahí SÍ baja (si no, la fila de arriba no mediría nada).
   const presupuesto = await montar(servidor([CON_TODO]));
   await pulsarFicha(presupuesto, 'Caldera');

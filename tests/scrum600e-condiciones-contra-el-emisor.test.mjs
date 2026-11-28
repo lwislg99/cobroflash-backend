@@ -20,6 +20,12 @@
 //
 // Y el día que el fundador apruebe el ALTER, éste **se pone verde solo**: no hay lista que editar.
 //
+// ── 26-nov-2026 · SCRUM-1805 ① (decisión SCRUM-1787 c.22325 ②) ──────────────────────────────
+// La factura TIENE ya paso «Condiciones»: formas de pago (`Invoice.payMethods`), «Vence el»
+// (`Invoice.dueDate`) y ajustes. Lo que sigue sin columna —`paymentTerms`, `customBillingPlan`,
+// `validUntil`— sigue FUERA, y la vara de este guard es la misma: las puertas bajan al nivel de la
+// fila (ver `PUERTAS`) y los dos controles nuevos se miden con la regla ① (`SOLO_EN_EL_SUELTO`).
+//
 // 🔴 NADA DE ESTO MODIFICA EL CAMINO DE EMISIÓN (regla 38). Se lee `facturaSuelta.ts` y
 // `prisma/schema.prisma`; las mutaciones de los negativos ocurren EN MEMORIA, sobre una copia del
 // texto, y nunca tocan el disco.
@@ -32,15 +38,35 @@ import {
   RUTA_PANTALLA, RUTA_SCHEMA, RUTA_VALIDADOR, BLOQUE,
 } from './_condiciones-vs-emisor.mjs';
 
-/** La puerta que hoy deja «3. Condiciones» fuera del documento suelto. Literal del árbol. */
-const PUERTA = 'if (!esDocumentoSuelto) leftCard.appendChild(blockConditions);';
+/**
+ * Las puertas que dejan fuera del documento suelto los controles de «3. Condiciones» SIN columna.
+ * Literales del árbol.
+ *
+ * 🔴 SCRUM-1805 ① (decisión SCRUM-1787 c.22325 ②) · hasta aquí la puerta era UNA, la del bloque
+ * entero (`if (!esDocumentoSuelto) leftCard.appendChild(blockConditions);`). Desde 1805 la factura
+ * TIENE paso Condiciones —formas de pago (`Invoice.payMethods`), «Vence el» (`Invoice.dueDate`) y
+ * ajustes—, así que el bloque entra en los dos modos y las puertas bajan un nivel: la fila de cobro
+ * (`paymentTerms` + `customBillingPlan`) y la caducidad (`validUntil`), que siguen sin columna. La
+ * mutación abre LAS DOS, y el rojo ① tiene que nombrar los mismos tres campos de siempre: la vara
+ * no baja, sólo se mueve a donde está ahora la puerta.
+ */
+const PUERTAS = [
+  'if (!esDocumentoSuelto) blockConditions.appendChild(filaCobro);',
+  'if (!esDocumentoSuelto) filaValidezDetalle.appendChild(validWrapper);',
+];
+/** La de la fila de cobro, para el rojo ③ (guarda compuesta). */
+const PUERTA = PUERTAS[0];
 
-/** LADO A mutado: se abre la puerta y el bloque entra en el documento suelto. */
+/** LADO A mutado: se abren las puertas y los tres controles sin columna entran en el documento suelto. */
 function conCondicionesEncendidas(pantalla) {
-  assert.ok(pantalla.includes(PUERTA),
-    `🔴 la puerta ya no es literalmente \`${PUERTA}\`. Sin ella, la mutación de este test no muta `
-    + 'nada y los rojos de abajo saldrían verdes por no haber cambiado el código.');
-  return pantalla.replace(PUERTA, 'leftCard.appendChild(blockConditions);');
+  let out = pantalla;
+  for (const p of PUERTAS) {
+    assert.ok(out.includes(p),
+      `🔴 la puerta ya no es literalmente \`${p}\`. Sin ella, la mutación de este test no muta `
+      + 'nada y los rojos de abajo saldrían verdes por no haber cambiado el código.');
+    out = out.replace(p, p.replace('if (!esDocumentoSuelto) ', ''));
+  }
+  return out;
 }
 
 /** LADO B mutado: `model Invoice` gana las tres columnas. Sólo en memoria. */
@@ -121,6 +147,10 @@ test('SCRUM-600e · 🔴 EL CONTROL QUE DECIDE: la pantalla no pide NADA que el 
   assert.deepEqual(r.noSonCamposQueSobran, [],
     '🔴 `NO_SON_CAMPOS` declara piezas que ya no cuelgan de Condiciones: una excepción que sobra es\n'
     + '  un hueco por el que mañana entra otra cosa con ese nombre.\n  ' + r.noSonCamposQueSobran.join('\n  '));
+  // SCRUM-1805 ① · lo declarado «sólo de la factura» no puede colgarse de Condiciones en el presupuesto.
+  assert.deepEqual(r.soloEnElSueltoEnElPresupuesto, [],
+    '🔴 un control de `SOLO_EN_EL_SUELTO` llega también al Condiciones del PRESUPUESTO.\n  '
+    + r.soloEnElSueltoEnElPresupuesto.join('\n  '));
 });
 
 test('SCRUM-600e · 🔴 LA MEDICIÓN DEL TICKET: los tres campos del bloque NO existen en `Invoice`', () => {
@@ -207,11 +237,13 @@ test('SCRUM-915d · 🔴 ROJO ②b: un control nuevo colgado DE UNA FILA de Cond
 test('SCRUM-600e · 🔴 ROJO ③: si la guarda toma una forma que el censo no sabe leer, se DECLARA', () => {
   // No se adivina una condición compuesta: se dice que no se sabe. Un censo que sigue reportando
   // con el modelo roto es peor que no tener censo.
-  const pantalla = leer(RUTA_PANTALLA).replace(PUERTA,
-    'if (!esDocumentoSuelto && algo) leftCard.appendChild(blockConditions);');
+  const original = leer(RUTA_PANTALLA);
+  assert.ok(original.includes(PUERTA), `🔴 la puerta ya no existe: ${PUERTA}`);
+  const pantalla = original.replace(PUERTA,
+    'if (!esDocumentoSuelto && algo) blockConditions.appendChild(filaCobro);');
   const r = revisarCondicionesContraEmisor({ [RUTA_PANTALLA]: pantalla });
   assert.equal(r.opacas.length, 1, '🔴 la guarda compuesta no se ha declarado opaca: se estaría adivinando');
-  assert.match(r.opacas[0], /blockConditions/);
+  assert.match(r.opacas[0], /blockConditions\.appendChild\(filaCobro\)/);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -226,6 +258,51 @@ test('SCRUM-600e · ✅ POSITIVO: «3. Condiciones» sigue ENTERO en el presupue
     ['fieldPaymentTerms', 'stagesWrapper', 'validWrapper', 'payMethodsWrapper'],
     '🔴 el presupuesto ha PERDIDO controles de «3. Condiciones». Ahí sí se guardan: `Quote` tiene '
     + 'las tres columnas.');
-  assert.deepEqual(r.medicion.lleganAlSuelto, [],
-    '🔴 algún control de «3. Condiciones» ha empezado a llegar al documento suelto.');
+  // SCRUM-1805 ① (c.22325 ②) · al documento suelto llegan EXACTAMENTE las formas de pago, que tienen
+  // columna (`Invoice.payMethods`, 1787i). Igualdad exacta, no «al menos»: cualquier otro control del
+  // presupuesto que empiece a llegar a la factura vuelve a poner esto en rojo.
+  assert.deepEqual(r.medicion.lleganAlSuelto, ['payMethodsWrapper'],
+    '🔴 al documento suelto llega de «3. Condiciones» algo distinto de las formas de pago.');
+  assert.deepEqual(r.medicion.soloEnElSueltoQueLlegan, ['dueWrapper', 'fieldVatDefault'],
+    '🔴 la factura ha perdido «Vence el» o el IVA por defecto de su paso Condiciones (SCRUM-1805 ①).');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 SCRUM-1805 ① · LOS CONTROLES QUE SÓLO LA FACTURA CUELGA DE CONDICIONES, medidos igual
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+
+test('SCRUM-1805 · 🔴 ROJO ④: si `dueDate` no tuviera dónde ir, «Vence el» cae con la MISMA regla', () => {
+  // LADO B mutado (en memoria): `Invoice` y `validarFacturaSuelta` pierden `dueDate`. La pantalla,
+  // intacta. Si el veredicto no se moviera, `SOLO_EN_EL_SUELTO` sería una lista de excusas.
+  const schema = leer(RUTA_SCHEMA);
+  const validador = leer(RUTA_VALIDADOR);
+  const lineaDue = schema.split(/\r?\n/).find((l) => /^\s*dueDate\s+\S/.test(l));
+  assert.ok(lineaDue, '🔴 no encuentro la columna `dueDate` en el schema: la mutación no mutaría nada');
+  assert.ok(/\bdueDate\b/.test(validador), '🔴 el validador ya no nombra `dueDate`: la mutación no mutaría nada');
+  const r = revisarCondicionesContraEmisor({
+    [RUTA_SCHEMA]: schema.split(/\r?\n/).filter((l) => !/^\s*dueDate\s+\S/.test(l)).join('\n'),
+    [RUTA_VALIDADOR]: validador.replace(/\bdueDate\b/g, 'fechaQueNoExiste'),
+  });
+  assert.equal(r.pidenLoQueSeTira.length, 1, `🔴 «Vence el» sin columna no ha caído: ${JSON.stringify(r.pidenLoQueSeTira)}`);
+  assert.match(r.pidenLoQueSeTira[0], /dueWrapper.*dueDate/);
+});
+
+test('SCRUM-1805 · 🔴 ROJO ⑤: si «Vence el» deja de colgarse del paso, su excepción SOBRA y cae', () => {
+  const ANCLA = 'if (esDocumentoSuelto) filaValidezDetalle.appendChild(dueWrapper);';
+  const original = leer(RUTA_PANTALLA);
+  assert.ok(original.includes(ANCLA), `🔴 el ancla de la mutación ya no existe: ${ANCLA}`);
+  const r = revisarCondicionesContraEmisor({ [RUTA_PANTALLA]: original.replace(ANCLA, '') });
+  assert.deepEqual(r.noSonCamposQueSobran, ['dueWrapper'],
+    '🔴 una excepción de `SOLO_EN_EL_SUELTO` que ya no cuelga del bloque no ha sonado.');
+});
+
+test('SCRUM-1805 · 🔴 ROJO ⑥: si «Vence el» se colgara también en el PRESUPUESTO, deja de ser «sólo de la factura»', () => {
+  // La guarda `if (esDocumentoSuelto)` quitada: el control llega a los dos modos. Su dato sigue
+  // teniendo columna, así que la regla ① no lo caza; lo caza que deje de estar guardado.
+  const ANCLA = 'if (esDocumentoSuelto) filaValidezDetalle.appendChild(dueWrapper);';
+  const original = leer(RUTA_PANTALLA);
+  assert.ok(original.includes(ANCLA), `🔴 el ancla de la mutación ya no existe: ${ANCLA}`);
+  const r = revisarCondicionesContraEmisor({ [RUTA_PANTALLA]: original.replace(ANCLA, 'filaValidezDetalle.appendChild(dueWrapper);') });
+  assert.deepEqual(r.soloEnElSueltoEnElPresupuesto, ['dueWrapper'],
+    '🔴 «Vence el» ha entrado en el presupuesto y nadie lo ha visto.');
 });

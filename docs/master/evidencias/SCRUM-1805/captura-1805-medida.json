@@ -1,0 +1,99 @@
+[
+ {
+  "ancho": 390,
+  "servidosLocales": [
+   "/dashboard/js/cuerpoDelDocumentoSuelto.js",
+   "/dashboard/js/quotesView.js"
+  ],
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "autocompletadoAbierto": false,
+  "abierto": {
+   "pasoAbierto": true,
+   "filas": [
+    "Formas de pago que verá el cliente",
+    "Vence el"
+   ],
+   "venceEl": "2026-12-26",
+   "bloque": [
+    33,
+    400,
+    324,
+    373
+   ],
+   "desborda": false
+  },
+  "venceAbierto": {
+   "campo": [
+    33,
+    303,
+    324,
+    47
+   ],
+   "boton": [
+    308,
+    225,
+    49,
+    44
+   ],
+   "cabe": true
+  },
+  "cerrado": {
+   "resumen": "💳 Tarjeta · 📲 Bizum · vence el 26/12/2026",
+   "numeroCondiciones": "3",
+   "numeroRevisar": "4",
+   "desborda": false
+  }
+ },
+ {
+  "ancho": 1280,
+  "servidosLocales": [
+   "/dashboard/js/cuerpoDelDocumentoSuelto.js",
+   "/dashboard/js/quotesView.js"
+  ],
+  "escrituras": [
+   "POST /admin/entorno"
+  ],
+  "errores": [],
+  "autocompletadoAbierto": false,
+  "abierto": {
+   "pasoAbierto": true,
+   "filas": [
+    "Formas de pago que verá el cliente",
+    "Vence el"
+   ],
+   "venceEl": "2026-12-26",
+   "bloque": [
+    293,
+    344,
+    544,
+    292
+   ],
+   "desborda": false
+  },
+  "venceAbierto": {
+   "campo": [
+    293,
+    568,
+    544,
+    47
+   ],
+   "boton": [
+    788,
+    490,
+    49,
+    44
+   ],
+   "cabe": true
+  },
+  "cerrado": {
+   "resumen": "💳 Tarjeta · 📲 Bizum · vence el 26/12/2026",
+   "numeroCondiciones": "3",
+   "numeroRevisar": "4",
+   "desborda": false
+  }
+ }
+]
+

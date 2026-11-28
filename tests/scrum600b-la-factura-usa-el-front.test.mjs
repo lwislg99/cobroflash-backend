@@ -93,11 +93,18 @@ const respirar = () => new Promise((r) => setTimeout(r, 60));
 const texto = (n) => String((n && n.textContent) || '');
 
 /** Teclea la línea y pulsa la acción primaria de LA PÁGINA. Devuelve lo enviado. */
-async function emitirPorLaPagina(precio = LINEA.precio) {
+async function emitirPorLaPagina(precio = LINEA.precio, { vence } = {}) {
   const { banco, enviado } = bancoConRed();
   const r = await pintarVista(banco, 'renderQuotesView', null, true);
   assert.equal(r.error, null, `🔴 la página no monta: ${r.error && r.error.message}`);
   const n = todos(r.contenedor);
+
+  // SCRUM-1805 ① · «Vence el» (`dueDate`) nace a +30 días. `vence: ''` lo VACÍA, que es «sin
+  // vencimiento»: el cuerpo vuelve a ser el que emitía el modal, byte a byte. Se devuelve el valor
+  // que quedó en el campo para que quien compare sepa qué fecha viajó.
+  const due = n.find((x) => x.tagName === 'INPUT' && x.id === 'invoice-due-date');
+  assert.ok(due, '🔴 SUELO: la página no tiene el campo «Vence el» (SCRUM-1805 ①)');
+  if (vence !== undefined) due.value = vence;
 
   const sel = n.find((x) => x.tagName === 'SELECT' && x.name === 'customer_id');
   assert.ok(sel, '🔴 SUELO: no se encuentra el selector de cliente de la página');
@@ -116,7 +123,9 @@ async function emitirPorLaPagina(precio = LINEA.precio) {
   assert.ok(emitir, '🔴 SUELO: la página no tiene acción primaria de emisión');
   emitir.disparar('click');
   await respirar();
-  return enviado.filter((x) => /\/admin\/invoices/.test(x.url));
+  const altas = enviado.filter((x) => /\/admin\/invoices/.test(x.url));
+  altas.vence = due.value;
+  return altas;
 }
 
 // SCRUM-867 · aquí vivía `emitirPorElModal`, que tecleaba lo mismo en el modal viejo. Se fue con
@@ -197,7 +206,9 @@ test('SCRUM-600b · SUELO: el banco MONTA las dos pantallas sin errores', async 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-600b · 🔴 EL CONTROL QUE DECIDE: la PÁGINA emite EXACTAMENTE lo que emitía el MODAL', async () => {
-  const dePagina = await emitirPorLaPagina();
+  // SCRUM-1805 ① · con «Vence el» vacío (sin vencimiento) y todas las formas de pago —lo único
+  // que el modal no tenía—, el cuerpo es el congelado SIN UN BYTE de diferencia.
+  const dePagina = await emitirPorLaPagina(LINEA.precio, { vence: '' });
 
   assert.equal(dePagina.length, 1, `🔴 la página no hizo UN alta: hizo ${dePagina.length}`);
   assert.equal(dePagina[0].url, '/admin/invoices', '🔴 el alta ha cambiado de ruta');
@@ -213,9 +224,20 @@ test('SCRUM-600b · 🔴 EL CONTROL QUE DECIDE: la PÁGINA emite EXACTAMENTE lo 
 test('SCRUM-600b · ✅ CONTROL NEGATIVO: si la página divergiera del cuerpo congelado, esto CAERÍA', async () => {
   // 🔴 La comparación de arriba da verde también si el recolector no recoge nada o si el cuerpo se
   // compone solo con constantes. Se teclea OTRO precio y se exige que deje de cuadrar.
-  const otra = await emitirPorLaPagina('999');
+  const otra = await emitirPorLaPagina('999', { vence: '' });
   assert.notEqual(otra[0].body, CUERPO_DEL_MODAL,
     '🔴 el comparador da IGUAL con precios distintos: no está comparando nada.');
+});
+
+test('SCRUM-1805 · 🔴 con el vencimiento por defecto, el cuerpo es el congelado MÁS `dueDate`, y nada más', async () => {
+  // Lo ÚNICO que 1805 ① añade al cuerpo por defecto es la clave `dueDate` (GO de regla 40, SCRUM-1787
+  // c.22325 ③), AL FINAL y con la conversión de `validUntil` (fin del día). Byte a byte.
+  const dePagina = await emitirPorLaPagina();
+  assert.match(dePagina.vence, /^\d{4}-\d{2}-\d{2}$/, `🔴 «Vence el» no nace con fecha: ${JSON.stringify(dePagina.vence)}`);
+  const esperado = CUERPO_DEL_MODAL.slice(0, -1)
+    + ',"dueDate":' + JSON.stringify(new Date(dePagina.vence + 'T23:59:59').toISOString()) + '}';
+  assert.equal(dePagina[0].body, esperado,
+    `🔴 el cuerpo por defecto no es el congelado + dueDate.\n  página  : ${dePagina[0].body}\n  esperado: ${esperado}`);
 });
 
 test('SCRUM-600b · 🔴 y lo que se GUARDA es lo mismo: mismas líneas y mismo total', async () => {
@@ -374,8 +396,14 @@ test('SCRUM-600b · 🔴 y el modo documento suelto NO arrastra lo que el emisor
   const r = await pintarPagina('justificante', true);
   const todas = ranurasLegibles(r.contenedor).map((x) => x.texto);
   const NO_DEBEN_ESTAR = [
-    // SCRUM-915d · «Condiciones» por subcadena caza el paso Y sus filas («Condiciones de pago»).
-    'Condiciones',             // plazos y formas de pago: no viajan
+    // SCRUM-915d · «Condiciones» por subcadena cazaba el paso Y sus filas («Condiciones de pago»).
+    // 🔴 SCRUM-1805 ① (decisión SCRUM-1787 c.22325 ②) · la factura TIENE ya paso «Condiciones»: las
+    // formas de pago viajan (`Invoice.payMethods`) y el vencimiento también (`Invoice.dueDate`). Lo
+    // que sigue sin viajar se prohíbe AHORA por su rótulo propio —el plan de cobro y la caducidad del
+    // presupuesto—, y el paso se vigila por IDENTIDAD debajo, como «Ajustes del documento».
+    'Condiciones de pago',     // `paymentTerms` + `customBillingPlan`: no viajan
+    'Válido hasta',            // `validUntil`: la caducidad es del presupuesto
+    'Pasada esta fecha el presupuesto caduca', // su nota, por si la fila cambiara de rótulo
     // SCRUM-915g · «Ajustes del documento» SALE de esta lista y se vigila por IDENTIDAD debajo. Era el
     // título del bloque «4. Envío» (qué datos salen, dirección e IVA del documento: nada de eso viaja),
     // y el título sigue sin viajar. Pero el justificante tiene ahora SU fila con ese nombre, y lo único
@@ -408,6 +436,14 @@ test('SCRUM-600b · 🔴 y el modo documento suelto NO arrastra lo que el emisor
     `🔴 el justificante debe llevar UNA fila «Ajustes del documento» (915g) y lleva ${filas.length}.`);
   assert.ok(todas.some((x) => x.includes('IVA por defecto')),
     '🔴 el justificante ya no ofrece «IVA por defecto»: la fila de Ajustes se quedó sin su único contenido.');
+
+  // SCRUM-1805 ① · el paso «Condiciones» de la factura, por IDENTIDAD: UNO, con sus dos filas que
+  // viajan —formas de pago y «Vence el»—, y nada más de las del presupuesto (lista de arriba).
+  assert.equal(todas.filter((x) => x === 'Condiciones').length, 1,
+    '🔴 la factura debe llevar UN paso «Condiciones» (SCRUM-1805 ①).');
+  for (const t of ['Formas de pago que verá el cliente', 'Vence el']) {
+    assert.ok(todas.some((x) => x === t), `🔴 el paso Condiciones de la factura ha perdido «${t}».`);
+  }
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -452,8 +488,14 @@ test('SCRUM-600b · 🔴 la ruta se monta con UN argumento: el instrumento tiene
   const textos = ranurasLegibles(porLaPuerta.contenedor).map((x) => x.texto);
   assert.ok(textos.some((t) => t.includes('Emitir factura')),
     '🔴 montada por la puerta, la pantalla no es la del documento suelto');
-  assert.ok(!textos.some((t) => t.includes('Condiciones')), // SCRUM-915d: era «3. Condiciones»
-    '🔴 montada por la puerta, la pantalla trae bloques del presupuesto');
+  // SCRUM-1805 ① · la factura tiene ya paso «Condiciones»: lo que delata al presupuesto son SUS
+  // filas (plan de cobro y caducidad) y su panel de estado.
+  for (const t of ['Condiciones de pago', 'Válido hasta', 'Estado del presupuesto']) {
+    assert.ok(!textos.some((x) => x.includes(t)),
+      `🔴 montada por la puerta, la pantalla trae piezas del presupuesto («${t}»)`);
+  }
+  assert.ok(textos.some((x) => x === 'Vence el'),
+    '🔴 montada por la puerta, la pantalla no trae el «Vence el» de la factura');
 });
 
 test('SCRUM-600b · 🔴 la tira de propuesta de descuento NO se pinta en el documento suelto', async () => {
