@@ -165,3 +165,123 @@ explícitamente intentarla). El script efímero de verificación fue borrado y n
    `yaqu_lectura`), `SMTP_URL`/`EMAIL_FROM` (puede reutilizar los que ya usa el servicio principal
    si la tarea comparte variables de proyecto) y `AVISO_ACREDITACION_EMAIL_DESTINO`.
 3. Confirmar aquí, en un apéndice (SCRUM-1109b), la primera pasada real contra `--prod-ro`.
+
+---
+
+## SCRUM-1109b · primera pasada real contra `--prod-ro` (J6, solo docs)
+**Medido contra:** `origin/main` = `154c44557f771e9bb7a6e20a2f5a8e55a18c979a` · 2026-11-28T08:05:11Z
+Versión: 1.2 (SCRUM-1836)
+
+**Puesto:** J6 (`jv-j6gr`, encargo del orquestador `cobroflash-backend-2d`) · **Rama:** `scrum-1109b-primera-pasada-real` · hora: cabecera `Date:` de `gh api -i zen`
+
+A9: aviso → cicatriz J6 «Corrí `carriles.mjs de` sobre el registro después de escribir el apéndice, no antes: la quinta de la familia de SCRUM-1218d» — no se pudo comprobar: la cerradura de carril no para (SCRUM-1506) y ningún hook de este árbol exige la consulta antes de la primera escritura
+
+### a · Lo que muestra la captura de Railway (fuente: SCRUM-1109 c.22977 y c.22978; la transcribe el orquestador, yo no la he visto)
+
+Servicio `guard-acreditacion`, pestaña «Cron Runs»: «Runs at 07:00 am (UTC)» · «Next run in 23 hours» · cron
+`0 7 * * *` · Start Command `node scripts/aviso-programado-acreditacion-invoicing-es.mjs --pro…` (cortado en
+pantalla; que es `--prod-ro` lo dice el log de abajo: `destino · [DATABASE_URL_PROD_RO]`, la clave de
+esa bandera, §1 de este registro) · «Current Deployment: CRASHED · Merge pull request #3501 … 30 minutes ago».
+«Recent Executions», las cuatro en rojo y de **3 s**:
+
+| ejecución (UTC) | deployment |
+|---|---|
+| 2026-11-28 07:04 | #3501 |
+| 2026-11-27 07:04 | #3447 |
+| 2026-11-26 07:00 | #3465 |
+| 2026-11-25 07:02 | #3432 |
+
+### b · El log del 28-nov, literal (c.22978; pegado por el fundador ~07:50Z)
+
+```
+[2026-11-28T07:04:07.631Z] === SCRUM-1109 · aviso programado de acreditación INVOICING_ES ===
+[2026-11-28T07:04:07.631Z] destino · [DATABASE_URL_PROD_RO] → autorack.proxy.rlwy.net/railway
+[2026-11-28T07:04:07.633Z] canal del aviso · Resend (HTTPS)
+[2026-11-28T07:04:07.649Z] ① midiendo · conectando y consultando
+[2026-11-28T07:04:07.720Z] ① medido · filas: 1
+[2026-11-28T07:04:07.720Z] ② enviando aviso · a destinatario configurado
+[2026-11-28T07:04:07.974Z] ② aviso entregado
+🔴 [YaQu · SCRUM-1097] HALLAZGO — 1 merchant(es) acreditado(s) sin deber estarlo · aviso ENTREGADO
+```
+
+El correo que salió de esa pasada (c.22980; captura de Gmail del fundador, remitente `YaQu <no-reply@yaqu.app>`,
+recibido 7:04), cuerpo literal:
+
+```
+fecha: 2026-11-28T07:04:07.720Z
+host: autorack.proxy.rlwy.net/railway
+consulta: merchants WHERE country='ES' AND id<>1 AND (flags.INVOICING_ES_ENABLED=true OR EXISTS invoice.type IN (F1,F2,F3,R1,R2,R3,R4,R5))
+suelo: 14 merchant(s) ES no-demo
+recuento: 1
+merchant id(s): 2
+```
+
+Hubo un segundo correo a las 7:30; el fundador: «Es el mismo correo» (c.22982). El host es el de
+`PROD_HOST` (`scripts/_db-guard.mjs:23`), sin credencial. Del log al aviso entregado van 343 ms; los 3 s del
+panel incluyen lo que el log no cuenta (arranque del contenedor: sin medir).
+
+### c · Qué significa el «CRASHED»: un HALLAZGO, por diseño
+
+El guard tiene tres veredictos (`scripts/guard-acreditacion-invoicing-es.mjs:41-44`): `0` limpio (`:323`),
+`1` HALLAZGO (`:315`), `2` CIEGO (`:270`, `:305`). El aviso los hereda (`scripts/aviso-programado-acreditacion-invoicing-es.mjs:39-46`)
+y decide el código en `:283-287`: con hallazgo sale `1` «manda igual aunque el aviso falle» (`:286`), y
+`process.exit(codigo)` (`:361`). Railway pinta todo código ≠ 0 como «CRASHED»; §1 de este registro ya lo
+preveía («el exit code ya deja la pasada en rojo en el panel de Railway»). **Un hallazgo no es un verde, y
+el dato que vale es el correo entregado**, no el color del panel. La tarea no se cae: c.22978 corrige a
+c.22977.
+
+### d · Por qué c.22859 (26-nov) decía que la tarea no existía
+
+No fue una medición: fue la respuesta del fundador ese día, literal «2-No sé qué tarea me hablas» y, al
+explicársela, «4-DIme la tarea». Lo que había escrito antes: `docs/master/SCRUM-1097.md:174` (tramo 1097b,
+24-nov) dice que el guard «corre a diario contra producción según el correo que cita c.22417», y `:176`,
+«23-nov: 1 de 14»; SCRUM-1779 c.22425 (23-nov) dice que ese centinela «contó 1 (comercio id 2)». La captura
+solo lista cuatro ejecuciones, así que «desde el 25-nov» es su suelo, no su comienzo. **Sin medir:** c.22417
+lo he leído por esas dos citas, no en Jira; si el correo del 23-nov salió de esta tarea o de una pasada a mano.
+
+### 2 · El hallazgo: el comercio id 2 de producción, cruzado
+
+- **SCRUM-1814** (descripción; 0 comentarios, leído hoy): no nombra ningún comercio. Dice que el brazo (b)
+  da rojo por cada comercio ES que EMITE con el flag encendido, y que con la excepción A8 ese rojo es esperado.
+- **SCRUM-1779**: c.22290 (21-nov ~06:05Z), producción encendida, literal del fundador «Ok he puesto invoicing
+  enabled en true y SIF no está»; c.22289 firma la excepción para **TODOS** los comercios ES de producción, no
+  solo el del piloto; c.22425 (23-nov), «la variable global de producción está en `true` para TODOS los
+  comercios ES», y el centinela «solo ve overrides en `true` o facturas, por eso contó 1 (comercio id 2)».
+  **1779 sí nombra el id 2, como el «1» del centinela del 23-nov. Ningún ticket dice que el 2 sea el comercio
+  del piloto:** 1779 pide su email «nunca su id», y las otras cuatro menciones de «comercio 2» en sus 30
+  comentarios (c.22283, c.22480, c.22482, c.22483) son de STAGING, donde el 2 es la cuenta QA. Un id es de
+  su base: el 2 de staging no dice nada del 2 de producción.
+- **Hipótesis que cuadran con «1»:** (H1) el 2 tiene override `INVOICING_ES_ENABLED=true` (brazo a);
+  (H2) el 2 ha emitido alguna F1–F3/R1–R5 desde el ON global del 21-nov (brazo b, el caso de 1814);
+  (H3) las dos. La consulta es un único `OR` y el correo no dice qué brazo casó.
+- **Para decidir:** (i) qué brazo, con una pasada de solo lectura por brazo en producción, que no se hace
+  desde un árbol; (ii) si el 2 es el piloto: el fundador sabe qué cuenta es el 2 de producción. Basta un
+  ✅/❌ suyo, sin el email en el chat.
+- **Lo que el «1» NO es:** el número de comercios que pueden facturar. Con el ON global los 14 ES no-demo
+  pueden emitir, y el guard no ve la variable de entorno (`scripts/guard-acreditacion-invoicing-es.mjs:17-24`;
+  1097b, `:176`). Es el límite que ya estaba declarado, no un hallazgo nuevo. Del 23-nov (1 de 14) al 28-nov
+  (1 de 14) el guard no ha visto ningún comercio ES más con override ni con factura.
+
+**Control en STAGING (28-nov, solo lectura; el guard no importa ningún mailer y su rastro va a `~/.yaqu/`).**
+Turno `--base staging` tomado a las 08:04:29Z y soltado después (hora de la máquina: el marcador del turno),
+`estado` LIBRE al acabar. `ACREDITACION_CONFIRM=acela.proxy.rlwy.net node scripts/guard-acreditacion-invoicing-es.mjs --staging`:
+misma consulta literal que el correo, `suelo: 7` · `recuento acreditados: 1` · `merchant id=2` · **exit 1**.
+El 2 de staging es la cuenta QA con override en ON (1779 c.22283 y c.22480), así que el guard caza un override
+cuando lo hay. El 23-sep, la misma base daba 7 y 0 (§3). No mide nada de producción.
+
+### 3 · Lo que esto cierra, y lo que no
+
+- **El paso 3 de §8 queda hecho:** la primera pasada real contra `--prod-ro` existe, como muy tarde, desde el
+  2026-11-25 07:02 UTC; corre sola cada día a las 07:00 UTC y su aviso llega con el id. Los pasos 1 y 2 son
+  del fundador, y el log los prueba: la clave `DATABASE_URL_PROD_RO` y el aviso entregado. El canal es Resend,
+  no el SMTP de §1: qué PR lo cambió, sin medir.
+- **SCRUM-1109 queda cerrable por efecto cuando entre este PR.** Lo cierra el orquestador (A13).
+- **El hallazgo no es de 1109.** Es de 1097, 1779 y 1814: el aviso diario es esperado por decisión del fundador
+  (1097b, `:174`, c.22417 «4-Da igual que suene»), y su vuelta a verde es la decisión pendiente de SCRUM-1814.
+- **El panel en rojo cada día (propuesta, nada construido):** basta con que el correo sea la lectura. No se
+  toca el código de salida (regla 41): un hallazgo es rojo. Pero Railway pinta igual el `1` y el `2`, así que
+  el panel no distingue un HALLAZGO de un CIEGO. Lo que distingue es el ASUNTO del correo, y un CIEGO sin
+  correo entregado no deja nada que leer. Lo que hay que vigilar es **el día que no llega el correo de las
+  07:0x**. Si se quiere que lo vigile algo y no alguien, eso es un ticket aparte. Se propone, no se abre.
+
+### 4 · Guards (población en la entrega de Jira)
