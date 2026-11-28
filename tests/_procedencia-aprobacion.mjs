@@ -56,11 +56,15 @@ export function bloquesDeComentario(codigo, nombre) {
   const recoger = (rangos) => {
     for (const r of rangos ?? []) {
       if (porInicio.has(r.pos)) continue;
+      // 🔴 SCRUM-1502z · «SUELTO» ES UN `//` EN SU PROPIA LÍNEA, SIN CÓDIGO DELANTE. Un comentario
+      // de fin de línea no se une con el `//` de la línea siguiente: si se unían, la procedencia de
+      // uno vestía a una marca que no la tiene, y el censo fallaba hacia ABIERTO (SCRUM-1502 c.22983).
+      const delante = codigo.slice(codigo.lastIndexOf('\n', r.pos - 1) + 1, r.pos);
       porInicio.set(r.pos, {
         texto: codigo.slice(r.pos, r.end),
         inicio: r.pos,
         fin: r.end,
-        suelto: r.kind === ts.SyntaxKind.SingleLineCommentTrivia,
+        suelto: r.kind === ts.SyntaxKind.SingleLineCommentTrivia && /^\s*$/.test(delante),
       });
     }
   };

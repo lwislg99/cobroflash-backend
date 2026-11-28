@@ -20,9 +20,9 @@
 //
 // ── LO QUE NO ATA ────────────────────────────────────────────────────────────────────────────────
 // · Los números de los censos que usan el lector (scrum387, scrum921c): cada uno tiene su trinquete.
-// · La unión de `//` seguidos NO se ha tocado, y eso tiene una consecuencia que se fija abajo para
-//   que conste: un comentario de fin de línea y un `//` en la línea SIGUIENTE, sin código entre los
-//   dos, salen como UN bloque (ya pasaba detrás de un `;`).
+// · La unión de `//` seguidos NO se tocó aquí. Desde SCRUM-1502z un comentario de fin de línea y el
+//   `//` de la línea SIGUIENTE ya no salen como UN bloque: el caso de abajo lo afirma así (antes lo
+//   fijaba como «queda dicho»).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -122,13 +122,13 @@ test('SCRUM-1502y · la unión de `//` seguidos sigue igual', () => {
   assert.deepEqual(conMarca(dosLineas), [{ linea: 2, texto: TEXTO }, { linea: 3, texto: SIN }]);
 });
 
-test('SCRUM-1502y · QUEDA DICHO: un comentario de fin de línea y el `//` de la línea siguiente son un bloque', () => {
-  // No es lo deseable y no se ha cambiado aquí (la unión no se toca en este ticket): se fija para
-  // que el día que alguien la cambie lo haga sabiendo qué movía. Ya pasaba detrás de un `;`.
+test('SCRUM-1502y · un comentario de fin de línea y el `//` de la línea siguiente son DOS bloques', () => {
+  // Lo cambia SCRUM-1502z (c.22993): hasta entonces eran UN bloque y la procedencia de uno vestía al
+  // otro, así que el censo fallaba hacia abierto. Un comentario de fin de línea ya no se une con el siguiente.
   const trasComa = `const T = {\n  uno: 'Texto de prueba uno', ${TEXTO}\n  // y esto va en su propia línea\n  dos: 2,\n};\n`;
   const trasPuntoYComa = `const uno = 'Texto de prueba uno'; ${TEXTO}\n// y esto va en su propia línea\nconst dos = 2;\n`;
-  assert.deepEqual(conMarca(trasComa), [{ linea: 2, texto: `${TEXTO}\n// y esto va en su propia línea` }]);
-  assert.deepEqual(conMarca(trasPuntoYComa), [{ linea: 1, texto: `${TEXTO}\n// y esto va en su propia línea` }]);
+  assert.deepEqual(conMarca(trasComa), [{ linea: 2, texto: TEXTO }]);
+  assert.deepEqual(conMarca(trasPuntoYComa), [{ linea: 1, texto: TEXTO }]);
 });
 
 test('SCRUM-1502y · una plantilla con `${}` delante no ciega lo que viene detrás (SCRUM-814)', () => {

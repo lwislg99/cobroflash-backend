@@ -1786,3 +1786,36 @@ Los 19 pares, leídos en Jira el 28-nov-2026 por id exacto, con la lista de come
 **No medido:** la suite entera en local (no cabe en el contexto que queda; la mide el CI); yaqu.app (no cambia nada servido); los 9 comentarios grandes de Jira más allá de sus 1.500 primeros caracteres; qué firma de verdad cada marca de `jobDetailView.js` citada arriba.
 
 **Errores propios.** ① El cruce de 175k sin empujar (la línea A9). ② Le pasé a `correr` del meta-guard la ruta con `tests/` delante y la base salió CIEGA (buscaba `tests/tests/…`): lo dijo la PUERTA 1 de `aplicarUna` antes de mutar nada, no yo. ③ La primera lectura del fichero guardado de Jira salió «0 ficheros de ese ticket» porque la respuesta va en `issues.nodes`: el control (ningún ticket encontrado) lo delató.
+
+## SCRUM-1502z · la unión no cruza el fin de línea
+**Medido contra:** `origin/main` = `00021db7f02f77fd3db94fb062f700c982030ea2` · 2026-11-28T08:43:37Z
+Versión: 1.2 (SCRUM-1836)
+A9: aviso → cicatriz J6 «Medí 140k al acabar Jira y crucé el umbral de empujar (175k) esperando una decisión, sin nada empujado: la siguiente cifra fue 186k y el aviso de 200k llegó antes del registro» — no se pudo comprobar: el contexto lo mide la propia sesión leyendo su jsonl, y ningún hook de este árbol lo lee mientras la sesión espera una respuesta
+Mutaciones: catálogo → `tests/scrum1502z-la-union-no-cruza-el-fin-de-linea.test.mjs`
+
+Sesión jv-j6gt (J6). Encargo del orquestador J del 28-nov-2026. Bloqueo en SCRUM-1502 c.22992 y decisión en c.22993.
+
+**El rojo, con fuente sembrado.** `uno: 'Texto de prueba uno', // nota (SCRUM-5 comentario 6)` y, en la línea siguiente, `// APROBADO por el fundador el 1-ene-2026`. Antes del arreglo salían como **1 bloque** (línea 2, con marca y con procedencia): la marca, que no tiene procedencia, contaba como «con procedencia». El caso real de main: `public/dashboard/js/parteDetailView.js:155` (marca al final de la línea) formaba bloque con el `//` de la :156.
+
+**El arreglo**, solo en `bloquesDeComentario` (`tests/_procedencia-aprobacion.mjs`). «Suelto» pasa a ser un `//` en su propia línea, sin código delante. Un comentario de fin de línea ya no se une con el siguiente. La unión de dos `//` sueltos seguidos no cambia, ni la firma de la función, ni `censarProcedencia`. Con el arreglo, el sembrado da 2 bloques y la marca sale SIN procedencia.
+
+**Conjuntos, antes y después** (sonda fuera del árbol, con las constantes de cada guard):
+
+| guard | antes | regla estricta | + 377:72 (c.22993) |
+|---|---|---|---|
+| 387 sin procedencia | 11 | 11, el mismo conjunto | 11, el mismo conjunto |
+| 387 con procedencia | 175 | 176: `albaranDetailView.js:198/214/220` pasan a `:199/215/221` y entra `parteDetailView.js:284` (las 4 de 1502y vuelven a su línea) | igual |
+| 921c sin respaldo | 8 | **9**: entra `tests/scrum377-plural-de-programador.test.mjs:72` y cae «el trinquete no sube» | **8, el mismo conjunto** |
+| 921c por nivel | anclado 147 · rastreable 249 | anclado 144 · rastreable 252 | anclado 145 · rastreable 252 |
+
+**`scrum377:72`.** La marca va al final de la línea y su firma estaba en la :73 (`// Consta en: SCRUM-1502 comentario 20853.`, de SCRUM-1502p, `f2d5f025f`). Por excepción de carril de c.22993, la cita pasa al final de la :72 con el mismo texto. La :73 queda como un comentario que dice dónde está la cita desde 1502z. El fichero sigue con 149 líneas y `transpileModule` con `removeComments` sale idéntico (4.636 B antes y después).
+
+**Las otras 3 que bajan de anclado a rastreable**, medidas una a una con `respaldoDe` sobre el bloque viejo y el nuevo: `public/dashboard/js/albaranDetailView.js:215`, `:221` y `public/dashboard/js/parteDetailView.js:198`. **No son el patrón de 377.** Estaban ancladas por el par `SCRUM-N comentario M` del rótulo de la línea de ARRIBA, es decir, por el fallo hacia abierto que se cierra aquí. Con su propio texto (`SCRUM-302`, `SCRUM-653`) son rastreables, que es lo que son. Los dos ficheros son de S4 (`carriles.mjs de`): no se tocan, y quedan listadas para Luis.
+
+**Tests.** El caso de `tests/scrum1502y-el-censo-ve-el-comentario-al-final-de-linea.test.mjs:125` pasa a afirmar dos bloques, en las mismas líneas y diciendo que lo cambia 1502z. Test nuevo con tres casos: el sembrado, su control (dos `//` sueltos siguen siendo un bloque, también con sangría) y el coste conocido (una firma en el `//` de debajo ya no cuenta). Test nuevo + 1502y + 377: 17/17. Las dos mutaciones del catálogo, medidas con `correr` + `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, mueren las dos, y el árbol sale limpio (`git status`).
+
+**Guards:** 1502z, 1502y, 377, 387 (los dos ficheros), 921, 563, 252, 1294, 267, 854, 237, 976, 700, 824, 419, 719 y 1839 dan **191/191** (0 saltados). 921c, con 1511h dentro, da **16/16**. `npm run guards:entrada` da **186/186**. 836d no se corrió: con `ls tests | grep 836d` no aparece ningún fichero con ese número.
+
+**Lo NO medido.** La suite entera en local: no cabía en el contexto que quedaba, y la mide el CI. Tampoco qué firma de verdad las tres marcas de S4 citadas arriba.
+
+**Errores propios.** ① El cruce de 175k sin empujar (la línea A9).

@@ -69,8 +69,8 @@ function censo() {
 
 // El tope se sube A MANO, nunca se deriva del censo: derivarlo haría que añadir uno subiera el
 // techo solo (lección de SCRUM-379 y del trinquete de SCRUM-402).
-const TOPE = 6;    // 9-ago: 26. 10-ago: 6, tras aplicar la microcopy aprobada por el fundador.
-// Consta en: SCRUM-1502 comentario 20853.
+const TOPE = 6;    // 9-ago: 26. 10-ago: 6, tras aplicar la microcopy aprobada por el fundador. Consta en: SCRUM-1502 comentario 20853.
+// Desde SCRUM-1502z (decisión en SCRUM-1502 c.22993) la cita va al final de la línea de arriba: el censo ya no la une con esta.
 
 test('SCRUM-377 · SUELO: el censo ve «(s)» de verdad, y NO los de código', () => {
   // Dos suelos en uno. Si el censo diera 0, no estaría mirando; si contara `test(s)` o `has(s)`,
