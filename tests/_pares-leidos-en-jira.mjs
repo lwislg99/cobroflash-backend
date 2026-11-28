@@ -73,9 +73,9 @@ const POR_1800B = 'jv-j2em · SCRUM-1800b';
 // SCRUM-1502x · el par (1502, c.22945) lo escribió y lo leyó el orquestador J el 27-nov-2026; la fila la añade él
 // con el OK del fundador («El pendiente te doy el ok», 27-nov-2026 13:19:45Z).
 const POR_1502X = 'orquestador J, con OK del fundador · SCRUM-1502x';
-// SCRUM-1502y · 18 pares que ya citaban 92 marcas de main escritas al FINAL de una línea de código, y que
+// SCRUM-1502y · 19 pares que ya citaban 92 marcas de main escritas al FINAL de una línea de código, y que
 // el censo no veía hasta este tramo. Los leyó jv-j6gp el 28-nov-2026, cada ticket con todos sus
-// comentarios (total == recibidos): los 18 existen y son de su ticket. Lo que dice cada uno, quién lo
+// comentarios (total == recibidos): los 19 existen y son de su ticket. Lo que dice cada uno, quién lo
 // firma y lo que NO se leyó, en el tramo 1502y del registro.
 const POR_1502Y = 'jv-j6gp · SCRUM-1502y';
 
@@ -124,6 +124,7 @@ export const PARES_LEIDOS = Object.freeze([
   { ticket: 1132, comentario: 20435, leido: '2026-11-28', por: POR_1502Y },
   { ticket: 1145, comentario: 20592, leido: '2026-11-28', por: POR_1502Y },
   { ticket: 1145, comentario: 20598, leido: '2026-11-28', por: POR_1502Y },
+  { ticket: 1215, comentario: 17367, leido: '2026-11-28', por: POR_1502Y },
   { ticket: 1215, comentario: 17494, leido: '2026-11-28', por: POR_1502Y },
   { ticket: 1215, comentario: 17496, leido: '2026-11-28', por: POR_1502Y },
   { ticket: 1215, comentario: 19084, leido: '2026-11-28', por: POR_1502Y },
