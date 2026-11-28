@@ -69,6 +69,22 @@ export function bloquesDeComentario(codigo, nombre) {
     recoger(ts.getTrailingCommentRanges(codigo, n.getEnd()));
     // 🔴 sin `return`: `forEachChild` corta el recorrido en cuanto el callback devuelve truthy.
     ts.forEachChild(n, (h) => { visitar(h); });
+    // 🔴 SCRUM-1502y · LOS COMENTARIOS QUE VAN DETRÁS DE UN SIGNO, EN LA MISMA LÍNEA QUE EL CÓDIGO.
+    // `forEachChild` solo entrega NODOS, y una `,`, un `=`, una `{` o un `[` no lo son: el
+    // comentario escrito detrás de ellos no cuelga del final de ningún nodo (el literal acaba
+    // ANTES de la coma) ni es «leading» del siguiente (el parser lo da como «trailing» del signo).
+    // Medido el 28-nov-2026 sobre `origin/main` 154c44557: de 168 líneas de `src/` y `public/` con
+    // la marca en un `//`, 112 iban detrás de una `,` y este censo no veía NINGUNA.
+    // Los signos solo salen con `getChildren`; de ahí se toma el final de cada uno. No se entra en
+    // los nodos de JSDoc: son texto de un comentario, y `forEachChild` tampoco los visita.
+    recogerTrasLosSignos(n);
+  };
+  const recogerTrasLosSignos = (n) => {
+    for (const h of n.getChildren(sf)) {
+      if (h.kind >= ts.SyntaxKind.FirstJSDocNode && h.kind <= ts.SyntaxKind.LastJSDocNode) continue;
+      if (h.kind === ts.SyntaxKind.SyntaxList) recogerTrasLosSignos(h);
+      else if (ts.isTokenKind(h.kind)) recoger(ts.getTrailingCommentRanges(codigo, h.getEnd()));
+    }
   };
   visitar(sf);
   const trozos = [...porInicio.values()].sort((a, b) => a.inicio - b.inicio);
