@@ -73,6 +73,11 @@ const POR_1800B = 'jv-j2em · SCRUM-1800b';
 // SCRUM-1502x · el par (1502, c.22945) lo escribió y lo leyó el orquestador J el 27-nov-2026; la fila la añade él
 // con el OK del fundador («El pendiente te doy el ok», 27-nov-2026 13:19:45Z).
 const POR_1502X = 'orquestador J, con OK del fundador · SCRUM-1502x';
+// SCRUM-1502y · 19 pares que ya citaban 92 marcas de main escritas al FINAL de una línea de código, y que
+// el censo no veía hasta este tramo. Los leyó jv-j6gp el 28-nov-2026, cada ticket con todos sus
+// comentarios (total == recibidos): los 19 existen y son de su ticket. Lo que dice cada uno, quién lo
+// firma y lo que NO se leyó, en el tramo 1502y del registro.
+const POR_1502Y = 'jv-j6gp · SCRUM-1502y';
 
 export const PARES_LEIDOS = Object.freeze([
   { ticket: 299, comentario: 12188, leido: '2026-10-24', por: POR_1511G },
@@ -112,4 +117,23 @@ export const PARES_LEIDOS = Object.freeze([
   { ticket: 1662, comentario: 21548, leido: '2026-11-17', por: POR_1662D },
   { ticket: 1800, comentario: 22496, leido: '2026-11-24', por: POR_1800B },
   { ticket: 1502, comentario: 22945, leido: '2026-11-27', por: POR_1502X },
+  { ticket: 653, comentario: 17354, leido: '2026-11-28', por: POR_1502Y },
+  { ticket: 1005, comentario: 22192, leido: '2026-11-28', por: POR_1502Y },
+  { ticket: 1043, comentario: 20536, leido: '2026-11-28', por: POR_1502Y },
+  { ticket: 1055, comentario: 22857, leido: '2026-11-28', por: POR_1502Y },
+  { ticket: 1132, comentario: 20435, leido: '2026-11-28', por: POR_1502Y },
+  { ticket: 1145, comentario: 20592, leido: '2026-11-28', por: POR_1502Y },
+  { ticket: 1145, comentario: 20598, leido: '2026-11-28', por: POR_1502Y },
+  { ticket: 1215, comentario: 17367, leido: '2026-11-28', por: POR_1502Y },
+  { ticket: 1215, comentario: 17494, leido: '2026-11-28', por: POR_1502Y },
+  { ticket: 1215, comentario: 17496, leido: '2026-11-28', por: POR_1502Y },
+  { ticket: 1215, comentario: 19084, leido: '2026-11-28', por: POR_1502Y },
+  { ticket: 1656, comentario: 21408, leido: '2026-11-28', por: POR_1502Y },
+  { ticket: 1686, comentario: 21471, leido: '2026-11-28', por: POR_1502Y },
+  { ticket: 1717, comentario: 21705, leido: '2026-11-28', por: POR_1502Y },
+  { ticket: 1722, comentario: 21708, leido: '2026-11-28', por: POR_1502Y },
+  { ticket: 1833, comentario: 22811, leido: '2026-11-28', por: POR_1502Y },
+  { ticket: 1868, comentario: 22850, leido: '2026-11-28', por: POR_1502Y },
+  { ticket: 1868, comentario: 22867, leido: '2026-11-28', por: POR_1502Y },
+  { ticket: 1868, comentario: 22916, leido: '2026-11-28', por: POR_1502Y },
 ].map(Object.freeze));
